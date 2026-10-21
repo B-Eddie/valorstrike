@@ -1431,6 +1431,34 @@ if (!NO3) {
   if (!R || R.length !== 2) report.push({ label: "vA maps visual audit (Ascent + Bind)", el: true, handler: true, pass: false, cond: false, errs: err });
 }
 
+// ---------- vB maps visual pass (Haven + Split): site letters on wall + floor, mesh budget, Valorant-scale crates, spawns clear, sites reachable ----------
+if (!NO3) {
+  let R = null, err = [];
+  try { R = JSON.parse(vm.runInContext("__xe", context)(`(() => { const out = [], keepB = boxes, keepS = Object.assign({}, SITES);
+    try { for (const k of ["haven", "split"]) {
+      xBuildMap(k); const X = k === "haven" ? HAV_X : SPL_X, bx = FMAP[k].boxes, P = k === "haven" ? HSITES : SSITES, sp = xSpawn(k), bad = [], info = {};
+      for (const s in P) { if (!X.mark.includes("wall" + s)) bad.push("no wall letter " + s); if (!X.mark.includes("floor" + s)) bad.push("no plant-zone floor marking " + s); }
+      info.meshes = X.meshes; info.budget = X.base + 400; if (!(X.meshes > X.base && X.meshes <= X.base + 400)) bad.push("objects added " + X.meshes + " outside " + X.base + ".." + (X.base + 400));
+      // crate-like = 0.9-3.2 m footprint, not a wall / pillar; height measured above whatever it stands on (Split raised sites are 2 m)
+      const ctr = (b) => [(b.x1 + b.x2) / 2, (b.z1 + b.z2) / 2], area = (b) => (b.x2 - b.x1) * (b.z2 - b.z1);
+      const sup = (b) => { const [cx, cz] = ctr(b); return bx.reduce((m, o) => (o !== b && o.h < 4 && o.h < b.h && area(o) > area(b) && cx > o.x1 && cx < o.x2 && cz > o.z1 && cz < o.z2 ? Math.max(m, o.h) : m), 0); };
+      let nc = 0; bx.forEach((b) => { const w = b.x2 - b.x1, d = b.z2 - b.z1, e = b.h - sup(b); if (Math.min(w, d) < 0.9 || Math.max(w, d) > 3.2 || e >= 4) return; nc++;
+        if (e < 1 - 1e-6 || e > 3.2 + 1e-6) bad.push("crate (" + ctr(b).map((v) => v.toFixed(1)) + ") " + e.toFixed(2) + " m tall"); });
+      info.crates = nc; if (nc < 8) bad.push("only " + nc + " crate-like colliders");
+      for (const z of [sp.atk, -sp.atk]) for (let x = -8; x <= 8; x += 2) bx.forEach((b) => { if (b.h > 0.3 && x > b.x1 - 0.4 && x < b.x2 + 0.4 && z > b.z1 - 0.4 && z < b.z2 + 0.4) bad.push("collider over spawn (" + x + "," + z + ")"); });
+      for (const s in SITES) delete SITES[s]; Object.assign(SITES, P); boxes = bx; const G = xgBuild(k); boxes = keepB;
+      if (G.nc !== 1) bad.push("nav graph has " + G.nc + " components");
+      const near = (x, z) => { let bi = -1, bd = 1e9; G.N.forEach((q, i) => { const d = Math.hypot(q[0] - x, q[1] - z); if (d < bd) { bd = d; bi = i; } }); return [bi, bd]; };
+      const D = G.N.map(() => 1e9), [s0] = near(0, sp.atk), done = G.N.map(() => false); D[s0] = 0;
+      for (;;) { let u = -1; D.forEach((v, i) => { if (!done[i] && v < 1e9 && (u < 0 || v < D[u])) u = i; }); if (u < 0) break; done[u] = true; G.adj[u].forEach(([v, c]) => { if (D[u] + c < D[v]) D[v] = D[u] + c; }); }
+      for (const q of [[0, -sp.atk, "def spawn"]].concat(Object.keys(P).map((s) => [P[s][0], P[s][1], "site " + s]))) { const [e, ed] = near(q[0], q[1]); if (ed > 8 || !(D[e] < 1e8)) bad.push(q[2] + " unreachable from atk spawn"); }
+      out.push({ k, info, bad });
+    } } finally { boxes = keepB; for (const s in SITES) delete SITES[s]; Object.assign(SITES, keepS); }
+    return JSON.stringify(out); })()`)); } catch (e) { err.push(String(e).slice(0, 300)); }
+  for (const m of R || []) report.push({ label: `vB map visuals ${m.k}: wall + floor site letters, ${m.info.meshes}/${m.info.budget} objects, ${m.info.crates} crate colliders 1-3.2 m, spawns clear, sites reachable on the nav graph`, el: true, handler: true, cond: !m.bad.length, pass: !m.bad.length, errs: m.bad.slice(0, 5) });
+  if (!R) report.push({ label: "vB map visuals audit", el: true, handler: true, pass: false, cond: false, errs: err });
+}
+
 // ---------- print ----------
 const bad = report.filter((r) => !r.pass);
 console.log(`\n=== audit (${MID ? "THREE loads, 3D init throws" : NO3 ? "THREE missing" : "THREE stub loaded"}) — ${report.length} checks, ${bad.length} failing ===`);
