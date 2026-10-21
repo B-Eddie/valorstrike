@@ -963,6 +963,37 @@ if (!NO3) {
   try { toLobby(); } catch (e) {}
 }
 
+// ---------- valorant movement: knife run 6.75 m/s, stop on release within ~0.1 s, walk slower, diagonal not faster, no bhop gain ----------
+{
+  phase = "valorant movement"; let ok = false, err = [];
+  try {
+    const xe = vm.runInContext("__xe", context);
+    xe('FV.pick = "ascent"; FV.srOn = 0; FV.dm = false; FV.tdm = false; window.xSwift = false; startFive(); clearTimeout(FV.to); FV.buy = 0; player.hp = 100; paused = false; running = true; true'); advance(50);
+    const r = xe(`(() => { const b0 = blocked, g0 = groundAt, a0 = ads, rw0 = rw; try {
+      blocked = () => false; groundAt = () => 0; ads = 0; yaw = 0; const dt = 1 / 120, ks = ["KeyW", "KeyA", "KeyS", "KeyD", "ShiftLeft", "ControlLeft", "Space"];
+      const reset = () => { ks.forEach((k) => (keys[k] = false)); Object.assign(player, { x: 0, z: 0, y: 0, vy: 0, vx: 0, vz: 0, air: false, ch: 0, tagT: 0, lp: 0 }); };
+      const sp = () => Math.hypot(player.vx, player.vz), run = (s, set) => { for (let i = 0; i < s * 120; i++) { if (set) set(i); moveP(dt, 6.75, false); } return sp(); };
+      const o = {}; rw = "knife"; reset(); keys.KeyW = true; o.knife = run(0.6);
+      keys.KeyW = false; let t = 0; while (sp() > 0.01 && t < 1) { moveP(dt, 6.75, false); t += dt; } o.stop = t;
+      reset(); keys.KeyW = true; keys.ShiftLeft = true; o.walk = run(0.6);
+      reset(); keys.KeyW = true; keys.KeyD = true; o.diag = run(0.6);
+      reset(); keys.KeyW = true; run(0.6); keys.KeyD = true; let mx = 0; run(4, () => { keys.Space = true; mx = Math.max(mx, sp()); }); o.bhop = mx;
+      rw = "pri"; reset(); keys.KeyW = true; o.gun = run(0.6); o.gunW = wName(); return JSON.stringify(o);
+    } finally { blocked = b0; groundAt = g0; ads = a0; rw = rw0; ["KeyW", "KeyA", "KeyS", "KeyD", "ShiftLeft", "ControlLeft", "Space"].forEach((k) => (keys[k] = false)); } })()`);
+    const o = JSON.parse(r);
+    if (Math.abs(o.knife - 6.75) > 0.05) err.push("knife run " + o.knife.toFixed(3) + " m/s (want 6.75)");
+    if (!(o.stop <= 0.11)) err.push("stop after release " + o.stop.toFixed(3) + " s (want <= 0.1)");
+    if (!(o.walk < o.knife * 0.7 && o.walk > o.knife * 0.4)) err.push("walk " + o.walk.toFixed(3));
+    if (o.diag > o.knife + 0.01) err.push("diagonal " + o.diag.toFixed(3) + " faster than " + o.knife.toFixed(3));
+    if (o.bhop > o.knife + 0.01) err.push("repeated jumps reached " + o.bhop.toFixed(3) + " m/s");
+    if (!(o.gun < o.knife)) err.push(o.gunW + " run " + o.gun.toFixed(3) + " not slower than knife");
+    if (!err.length) console.log("valorant movement: " + r);
+    ok = !err.length;
+  } catch (e) { err.push(String(e).slice(0, 300)); }
+  report.push({ label: "valmove: knife run 6.75 m/s, stops <= 0.1 s after release, Shift-walk slower, diagonal not faster, no speed gain from repeated jumps, guns slower than knife", el: true, handler: true, cond: ok, pass: ok, errs: err });
+  try { toLobby(); } catch (e) {}
+}
+
 // ---------- print ----------
 const bad = report.filter((r) => !r.pass);
 console.log(`\n=== audit (${MID ? "THREE loads, 3D init throws" : NO3 ? "THREE missing" : "THREE stub loaded"}) — ${report.length} checks, ${bad.length} failing ===`);

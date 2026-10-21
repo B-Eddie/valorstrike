@@ -2279,6 +2279,10 @@ function allyDie(a, by, w) {
   if (player.hp <= 0 && !allies.some((x) => x.alive)) end(false, "Your team was eliminated");
 }
 // movement shared by both modes: Space jump, Ctrl crouch (C is abilities only), Shift walk, footsteps when running
+// Valorant movement (1 world unit = 1 m; eye 1.6 m): run 6.75 m/s with knife, guns slower (VRUN, share of knife speed); walk x0.6, crouch x0.45, ADS x0.76
+const VRUN = { Classic: 0.85, Frenzy: 0.85, Ghost: 0.85, Stinger: 0.85, Spectre: 0.85, Operator: 0.76, Odin: 0.76, Ares: 0.76 }; // pistols / SMGs 5.73 · rifles, shotguns, Sheriff, Marshal 5.4 (0.8 default) · heavies + Operator 5.13
+const vRunK = (n) => (!n || n === "Knife" || n === "knife" ? 1 : VRUN[n] || 0.8);
+const V_ACC = 0.12, V_DEC = 0.075; // s to full run speed / s to stop from full run on release or counter-strafe (no ice-skating)
 function moveP(dt, run, hold) {
   const kk = J.dr ? {} : keys; // Owl Drone: the body stays put
   const P = player, cr = !!(kk.ControlLeft || kk.ControlRight), wk = !!(kk.ShiftLeft || kk.ShiftRight);
@@ -2286,12 +2290,13 @@ function moveP(dt, run, hold) {
   if (kk.KeyW) { mx += fx; mz += fz; } if (kk.KeyS) { mx -= fx; mz -= fz; }
   if (kk.KeyA) { mx += fz; mz -= fx; } if (kk.KeyD) { mx -= fz; mz += fx; }
   if (P.tagT > 0) P.tagT -= dt;
-  const l = Math.hypot(mx, mz), sp = (cr ? 2.3 / 6.75 : wk ? 3.3 / 6.75 : 1) * run * (P.tagT > 0 ? P.tagK : 1); // tagged: slowed; run 6.75 · walk 3.3 · crouch 2.3 m/s
+  const l = Math.hypot(mx, mz), sp = (cr ? 0.45 : wk ? 0.6 : 1) * run * (P.tagT > 0 ? P.tagK : 1); // tagged: slowed; knife run 6.75 · walk 4.05 · crouch 3.04 m/s
   P.lp = Math.max(0, (P.lp || 0) - dt); // landing accuracy penalty timer
   const want = !!l && !hold, tx = want ? (mx / l) * sp : 0, tz = want ? (mz / l) * sp : 0;
   P.vx = P.vx || 0; P.vz = P.vz || 0; P.cr = cr; P.wk = wk;
   { const ex = tx - P.vx, ez = tz - P.vz, e = Math.hypot(ex, ez), air = P.y > groundAt(P.x, P.z, 0.3, P.y) + 0.001;
-    const rate = (Math.max(sp, Math.hypot(P.vx, P.vz)) / 0.08) * dt * (air ? 0.06 : 1); // full speed / full stop in ~0.08 s; low air control
+    const v = Math.hypot(P.vx, P.vz), dec = tx * P.vx + tz * P.vz <= 0 || Math.hypot(tx, tz) < v - 1e-4; // releasing, slowing or reversing: brake hard
+    const rate = (dec ? Math.max(run, v) / V_DEC : Math.max(sp, 0.1) / V_ACC) * dt * (air ? 0.06 : 1); // ground: stop ~0.075 s, full speed ~0.12 s; air control ~6%, never above target speed (no bhop gain)
     if (e <= rate || e < 1e-4) { P.vx = tx; P.vz = tz; } else { P.vx += (ex / e) * rate; P.vz += (ez / e) * rate; } }
   P.mv = Math.hypot(P.vx, P.vz) > 0.25; P.sf = run > 0 ? Math.hypot(P.vx, P.vz) / run : 0; // share of run speed (accuracy gate at 0.3)
   if (kLg > 0) { const s = Math.min(dt, kLg); kLg -= s; const n = Math.ceil(8 * s / 0.1), st = 8 * s / n; // 8 m/s, 0.1 m sub-steps, same wall checks
@@ -2309,7 +2314,7 @@ function moveP(dt, run, hold) {
   P.vy -= 22 * dt; P.y += P.vy * dt; if (P.y <= gY) { P.y = gY; P.vy = 0; } }
   const wasAir = P.air; P.air = P.y > gY + 0.001;
   if (wasAir && !P.air) { P.vx *= 0.7; P.vz *= 0.7; SFX.land(); P.st = 0.3; P.lp = 0.15; } // small landing slowdown + thud + 0.15 s accuracy penalty
-  P.ch += ((cr ? 0.55 : 0) - P.ch) * Math.min(1, dt * 12);
+  { const ct = cr ? 0.55 : 0, cs = 0.55 / 0.1 * dt; P.ch = Math.abs(ct - P.ch) <= cs ? ct : P.ch + Math.sign(ct - P.ch) * cs; } // crouch eye drop 0.55 m in 0.1 s, linear (no float)
   if (P.mv && gr && !cr && !wk) { P.st -= dt; if (P.st <= 0) { P.st = 0.36; SFX.selfStep(P.y > 0.4); } } else P.st = 0.12; // walk / crouch silent
 }
 const pEye = () => new THREE.Vector3(player.x, 1.5 - player.ch + player.y, player.z);
@@ -3564,7 +3569,7 @@ function tick(dt) {
   const ret = mode === "retake", rf = !ret;
   const alive = player.hp > 0, defusing = ret && alive && (keys.Digit4 || keys.Numpad4);
   const planting = mode === "five" && alive && xFvOK && FV.sp && FV.sp.st === "carry" && FV.sp.c === player && !!(keys.Digit4 || keys.Numpad4) && !!inSite(player);
-  if (alive) moveP(dt, (rw === "knife" ? 7.4 : 6.75) * (J.dis > 0 ? 1.6 : 1), defusing || planting);
+  if (alive) moveP(dt, 6.75 * (J.dis > 0 ? 1.6 : 1), defusing || planting); // knife speed; the weapon wrapper below scales it
   if (kSwing > 0) kSwing -= dt;
   if (fcd > 0) fcd -= dt;
   since += dt; if (since > (sprW === "Phantom" ? 0.27 : 0.3)) spray = Math.max(0, spray - dt * 40);
@@ -3817,7 +3822,7 @@ function duelShoot() {
 }
 function duelTick(dt) {
   if (du.wait > 0) { du.wait -= dt; if (du.wait <= 0) duelSpawn(); return; }
-  moveP(dt, du.scoped ? 2.4 : du.w === "knife" ? 7 : 5.4, false);
+  moveP(dt, du.w === "knife" ? 6.75 : 6.75 * vRunK("Operator") * (du.scoped ? 0.76 : 1), false); // knife 6.75 · Operator 5.13 · scoped 3.9 m/s
   const l = player.mv;
   if (du.bolt > 0) du.bolt -= dt;
   if (du.swing > 0) du.swing -= dt;
@@ -4002,7 +4007,7 @@ const XWS = (() => {
     [W.head, f[1], W.body, f[0], W.legs, f[2]].forEach((v, i) => { if (td && td[i]) td[i].textContent = pl + v; });
     const sec = n === "Classic" || n === "Sheriff" || n === "Shorty", rows = [["Fire rate", W.rate + " /s"], ["Magazine", W.mag + " / " + W.mag * 3]];
     const pn = xPen(n); rows.push(["Wall pen", pn === XPN.H ? "High" : pn === XPN.M ? "Medium" : "Low"]);
-    rows.push(["Run speed", W.heavy ? "90%" : "100%"]);
+    rows.push(["Run speed", (6.75 * vRunK(n)).toFixed(2) + " m/s"]);
     rows.push(["Equip", xEq(n) + " s"]);
     rows.push(["Reload", (sec ? 1.2 : W.rld || 1.6) + " s"]);
     dl.innerHTML = rows.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join("");
@@ -6708,7 +6713,7 @@ function fiveTick(dt) {
   const s = FV.sp;
   if (FV.buy > 0) { // 20 s buy phase: everyone frozen in spawn, invisible barrier at the spawn edge
     FV.buy -= dt;
-    if (player.hp > 0 && !FV.menu) moveP(dt, 6, false);
+    if (player.hp > 0 && !FV.menu) moveP(dt, 6.75, false);
     { const e = xSpawn(FV.map).edge; player.z = FV.atk ? Math.max(e, player.z) : Math.min(-e, player.z); }
     $("timer").textContent = bpT(); if (FV.menu) $("xBT").textContent = "00:" + String(Math.max(0, Math.ceil(FV.buy))).padStart(2, "0");
     if (FV.buy <= 0) { FV.buy = 0; buyMenu(false); say("Round start", 900); updHud(); }
@@ -7159,8 +7164,8 @@ function xBurst() {
   camera.updateProjectionMatrix();
 }; }
 { const g1 = gSpread; gSpread = function (w, W, B) { return g1(w, W, B) + (!B && xAD.bs ? 0.045 : 0); }; } // Classic burst: big spread
-{ const m0 = moveP; moveP = function (dt, run, hold) { const W = rw === "pri" ? WEAP[wName()] : null; return m0(dt, W && W.heavy && mode !== "duel" ? run * 0.9 : run, hold); }; } // heavy weapons: move x0.9
-{ const m1 = moveP; moveP = function (dt, run, hold) { return m1(dt, ads === 1 && mode !== "duel" ? run * 0.76 : run, hold); }; }
+{ const m0 = moveP; moveP = function (dt, run, hold) { const kn = rw === "knife" || (mode === "aim" && aimW() === "Knife"); return m0(dt, mode === "duel" ? run : run * vRunK(kn ? "knife" : wName()), hold); }; } // weapon run speed (VRUN): knife 6.75, pistols/SMGs 5.73, rifles 5.4, heavies 5.13
+{ const m1 = moveP; moveP = function (dt, run, hold) { return m1(dt, ads && mode !== "duel" ? run * 0.76 : run, hold); }; } // ADS / scoped: x0.76
 { const sh = shoot; shoot = function (hv) { const c = fcd, r = sh.apply(this, arguments); if (ads === 1 && fcd > c) { fcd /= 0.9; kick *= 0.85; } return r; }; }
 { const sh2 = shoot; shoot = function (hv) { // Bulldog ADS: 3-round burst (1.25x zoom from XZ default)
   if (!hv && !xAD.bb && ads === 1 && rw !== "knife" && player && wName() === "Bulldog") {
@@ -7241,7 +7246,7 @@ function aimFire(hv) {
   aimHud();
 }
 function aimTick(dt) {
-  moveP(dt, 5, false); const sk = AM.dr === "spike"; player.x = Math.max(sk ? -12 : -2.3, Math.min(sk ? 12 : 2.3, player.x)); player.z = Math.max(sk ? -10 : 1, Math.min(3, player.z));
+  moveP(dt, 6.75, false); const sk = AM.dr === "spike"; player.x = Math.max(sk ? -12 : -2.3, Math.min(sk ? 12 : 2.3, player.x)); player.z = Math.max(sk ? -10 : 1, Math.min(3, player.z));
   AM.cd -= dt; if (kSwing > 0) kSwing -= dt; since += dt; if (since > (sprW === "Phantom" ? 0.28 : 0.35)) spray = Math.max(0, spray - dt * 40);
   const w = aimW();
   if (AM.rl > 0) { AM.rl -= dt; if (AM.rl <= 0) { AM.rl = 0; AM.ammo = WEAP[w].mag; } }
