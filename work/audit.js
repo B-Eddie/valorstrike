@@ -1400,6 +1400,82 @@ if (!NO3) {
   if (!R) report.push({ label: "Map scale audit", el: true, handler: true, pass: false, cond: false, errs: err });
 }
 
+// ---------- fidelity pass 1: bot run speed (weapon table + near-stop to fire), DM placement / DRAW, round banners, loss-bonus economy ----------
+if (!NO3) {
+  const xe = vm.runInContext("__xe", context);
+  const FIDP = (label, f) => { let errs = []; try { const r = f(); if (r !== true) errs.push(String(r)); } catch (e) { errs.push(String(e.stack || e).slice(0, 300)); } report.push({ label, el: true, handler: true, cond: !errs.length, pass: !errs.length, errs }); };
+  const f5 = 'FV.pick = "ascent"; FV.srOn = 0; FV.dm = false; FV.tdm = false; FV.esc = false; window.xSwift = false; startFive(); clearTimeout(FV.to); FV.buy = 0; FV.menu = false; player.hp = 100; paused = false; running = true; ';
+  phase = "fid bot speed";
+  FIDP("fid bot speed: rifle bots run >= 5 m/s (5.4 table, not 2.6), knife 6.75 / pistol 5.73 / heavy 5.13 via the player VRUN table, walk x0.6, every bot shot fired near-stationary", () => {
+    xe(f5 + "true"); advance(50);
+    const R = JSON.parse(xe(`(() => { const out = { mx: 0, wk: 0, shots: 0, fast: 0, worst: 0, tab: [botRun({ w: "Knife" }), botRun({ w: "Classic" }), botRun({ w: "Vandal" }), botRun({ w: "Odin" }), botRun({ w: "Vandal" }, true)] };
+      bots.concat(allies).forEach((b) => { b.w = "Vandal"; }); const at0 = SFX.at;
+      SFX.at = function (p) { const b = bots.concat(allies).find((u) => u.g && u.g.position === p); if (b && b.alive) { out.shots++; if ((b.spd || 0) > BOT_STOP + 1e-6) { out.fast++; out.worst = Math.max(out.worst, b.spd); } } return at0.apply(this, arguments); };
+      try { const DT = 1 / 30; for (let i = 0; i < 40 * 30 && running; i++) { player.hp = Math.max(player.hp, 1e6); fiveTick(DT); xBotYaw(DT);
+        for (const b of bots) if (b.alive && !b.see && !b.wk && !(b.xk != null || b.xj != null)) out.mx = Math.max(out.mx, b.spd || 0); else if (b.alive && b.wk && !b.see) out.wk = Math.max(out.wk, b.spd || 0); }
+        const l0 = los; los = () => true; try { for (let i = 0; i < 8 * 30 && running; i++) { player.hp = Math.max(player.hp, 1e6); fiveTick(DT); xBotYaw(DT); } } finally { los = l0; } } // forced sight lines: bots engage, every shot must come from a near-stop
+      finally { SFX.at = at0; } return JSON.stringify(out); })()`));
+    const t = R.tab.map((v) => +v.toFixed(2));
+    if (t[0] !== 6.75 || t[1] !== 5.74 && t[1] !== 5.73 || t[2] !== 5.4 || t[3] !== 5.13 || t[4] !== 3.24) return "speed table " + t.join("/");
+    if (!(R.mx >= 5 && R.mx <= 5.45)) return "max measured rifle run " + R.mx.toFixed(2) + " m/s";
+    if (!R.shots) return "no bot shots in the forced-sight engagement"; if (R.fast) return R.fast + "/" + R.shots + " shots fired while moving (worst " + R.worst.toFixed(2) + " m/s)";
+    console.log("fid bot speed: max rifle run " + R.mx.toFixed(2) + " m/s, max walk " + R.wk.toFixed(2) + " m/s, " + R.shots + " bot shots, " + R.fast + " while moving");
+    return true;
+  });
+  try { toLobby(); } catch (e) {}
+  phase = "fid dm results";
+  FIDP("fid DM results: tie for 1st shows DRAW (shared placement), placement titles 1st / Shared 2nd, kills-to-win shown, no round score or MVP", () => {
+    const run = (kYou, kOthers) => { xe('FV.pick = "ascent"; FV.esc = false; startDM(); true'); advance(100); if (!xe("running")) return "DM not running";
+      xe(`(() => { const ns = ["You"].concat(bots.map((b) => b.name)); DM.k = {}; DM.d = {}; ns.forEach((n, i) => { DM.k[n] = n === "You" ? ${kYou} : (${JSON.stringify(kOthers)})[i - 1] || 0; DM.d[n] = 3; }); DM.over = null; dmEnd(); try { sbResult(); } catch (e) {} return true; })()`); advance(50);
+      return { t: $("resTitle").textContent, x: $("resText").textContent, b: $("xResB").innerHTML || "" }; };
+    let r = run(10, [10, 4, 3]); if (typeof r === "string") return r;
+    if (r.t !== "DRAW") return "tie title " + r.t; if (/Victory/i.test(r.t) || r.b.trim()) return "round score / MVP shown on a DM tie"; if (!/first to \d+ kills/.test(r.x)) return "kills-to-win missing: " + r.x.slice(0, 80);
+    if (!/1st[^]*You[^]*1st/.test(r.x) && !/1st[^]*1st/.test(r.x)) return "no shared 1st in list: " + r.x.slice(0, 120);
+    r = run(12, [10, 4]); if (r.t !== "1st place") return "solo win title " + r.t; if (r.b.trim()) return "score bar on DM win";
+    r = run(5, [9, 5]); if (r.t !== "Shared 2nd place") return "shared 2nd title " + r.t;
+    $("lobbyBtn").click(); advance(50); return true;
+  });
+  try { toLobby(); } catch (e) {}
+  phase = "fid banners";
+  FIDP("fid round banners: FIRST BLOOD once per round, ACE / TEAM ACE / CLUTCH / FLAWLESS / THRIFTY each get their own centred banner queued after ROUND WON", () => {
+    xe(f5 + "true"); advance(50);
+    const res = JSON.parse(xe(`(() => { const out = {}, T = () => sbTeams(), seen = () => (annc.log || []).concat(ANQ.map((q) => q[0]));
+      const seed = (f) => { annClear(); annc.log = []; for (const n in SB) Object.assign(SB[n], { k: 0, k0: 0, d: 0, d0: 0, sp: 0, s0: 0 }); xRes.c = {}; f(T()[0], T()[1]); running = false; xRes(true, "Enemies eliminated", false, false); return seen(); };
+      out.team = [T()[0].length, T()[1].length];
+      out.ACE = seed((W) => { SB[W[0]].k = 5; SB[W[1]].d = 1; });
+      out["TEAM ACE"] = seed((W) => { W.forEach((n) => SB[n].k = 1); SB[W[2]].d = 1; });
+      out.CLUTCH = seed((W) => { SB[W[0]].k = 3; SB[W[1]].d = 1; SB[W[2]].d = 1; xRes.c = { a: W[0] }; });
+      out.FLAWLESS = seed((W) => { SB[W[0]].k = 3; SB[W[1]].k = 2; });
+      out.THRIFTY = seed((W, L) => { SB[W[0]].k = 3; SB[W[1]].k = 2; SB[W[2]].d = 1; W.forEach((n) => SB[n].sp = 200); L.forEach((n) => SB[n].sp = 3900); });
+      out.NONE = seed((W, L) => { SB[W[0]].k = 3; SB[W[1]].k = 2; SB[W[2]].d = 1; W.forEach((n) => SB[n].sp = 3000); L.forEach((n) => SB[n].sp = 3000); });
+      annClear(); annc.log = []; running = true; FV.you = 0; FV.them = 0; xFirstBlood.r = null; sbKill("You", F_EN[0], false); sbKill(F_EN[1], F_MATES[0], false); out.FB = seen();
+      FV.you = 1; annClear(); annc.log = []; sbKill(F_EN[2], "You", false); out.FB2 = seen(); annClear(); return JSON.stringify(out); })()`));
+    if (res.team[0] !== 5 || res.team[1] !== 5) return "teams " + res.team;
+    for (const k of ["ACE", "TEAM ACE", "CLUTCH", "FLAWLESS", "THRIFTY"]) { const s = res[k]; if (s[0] !== "ROUND WON" || s[1] !== k) return k + " banners: " + JSON.stringify(s); }
+    if (res.NONE.length !== 1) return "plain win banners: " + JSON.stringify(res.NONE);
+    if (res.FB.filter((t) => t === "FIRST BLOOD").length !== 1) return "first blood (round 1): " + JSON.stringify(res.FB);
+    if (res.FB2.filter((t) => t === "FIRST BLOOD").length !== 1) return "first blood (round 2): " + JSON.stringify(res.FB2);
+    return true;
+  });
+  try { xe("annClear(); true"); toLobby(); } catch (e) {}
+  phase = "fid economy";
+  FIDP("fid economy: loss bonus 1900 / 2400 / 2900 / 2900 by streak, reset on win, win 3000, enemy streak mirrors, getLossBonus(team) predicts next round", () => {
+    xe(f5 + "true"); advance(50);
+    const R = JSON.parse(xe(`(() => { const out = [], seq = [false, false, false, false, true, false, true, true]; FV.lsY = FV.lsT = 0;
+      for (const w of seq) { const pre = getLossBonus("you"), preE = getLossBonus("enemy"), e0 = FV.bs[F_EN[0]]; FV.cr = 0; if (e0) e0.cr = 0; FV.sp.st = "carry"; running = true;
+        fCheck(w, "eco test"); clearTimeout(FV.to); annClear(); out.push([w ? 1 : 0, FV.cr, pre, e0 ? e0.cr : -1, preE]); }
+      running = false; return JSON.stringify(out); })()`));
+    const want = [1900, 2400, 2900, 2900, 3000, 1900, 3000, 3000], wantE = [3000, 3000, 3000, 3000, 1900, 3000, 1900, 2400];
+    for (let i = 0; i < R.length; i++) { const [w, cr, pre, ecr, preE] = R[i];
+      if (cr !== want[i]) return "round " + (i + 1) + " (" + (w ? "win" : "loss") + "): +" + cr + " want +" + want[i];
+      if (!w && pre !== cr) return "getLossBonus('you') said " + pre + ", paid " + cr;
+      if (ecr !== -1 && ecr !== wantE[i]) return "enemy round " + (i + 1) + ": +" + ecr + " want +" + wantE[i];
+      if (w && ecr !== -1 && preE !== ecr) return "getLossBonus('enemy') said " + preE + ", paid " + ecr; }
+    return true;
+  });
+  try { toLobby(); } catch (e) {}
+}
+
 // ---------- print ----------
 const bad = report.filter((r) => !r.pass);
 console.log(`\n=== audit (${MID ? "THREE loads, 3D init throws" : NO3 ? "THREE missing" : "THREE stub loaded"}) — ${report.length} checks, ${bad.length} failing ===`);
