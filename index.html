@@ -4302,39 +4302,39 @@ const HAVEN_CALLOUTS = [ // [name, x, z], for minimap labels + 3D pins
   ["C Cubby", 15, -7], ["C Back Link", 23.75, -31], ["Back Link", -11, -27.5], ["Back Link", 11, -27.5], ["C Link", 11, -10.5], ["Attacker Side", 0, 34], ["Defender Side", 0, -35],
   ["Mid Doors", 0, 23.5], ["Mid Window", 10, 5.75], ["B Back", 0, -26.5]];
 function xBuildHaven() {
+  const vbAdd = mapG.add; HAV_X.meshes = 0; HAV_X.mark.length = 0; mapG.add = function (...o) { o.forEach((x) => { HAV_X.meshes += 1 + (x && Array.isArray(x.children) ? x.children.length : 0); }); return vbAdd.apply(this, o); }; // vB audit: count objects this build adds
   const fl = xFloor(60, 80, new THREE.MeshLambertMaterial({ map: HT.stone }), 4); fl.rotation.x = -Math.PI / 2; mapG.add(fl); solids.push(fl);
   const pad = (x, z, w, d, mat, T) => { const m = new THREE.Mesh(xUV(new THREE.PlaneGeometry(w, d), w, d, undefined, T || 2), mat); m.rotation.x = -Math.PI / 2; m.position.set(x, 0.02, z); m.receiveShadow = true; mapG.add(m); };
   const gm = new THREE.MeshLambertMaterial({ map: HT.gravel, transparent: true, opacity: 0.75, depthWrite: false });
   for (const k in HSITES) pad(HSITES[k][0], HSITES[k][1], 14, 12, gm, 3); // raked-gravel sites
-  pad(0, 8.75, 23, 25.5, new THREE.MeshLambertMaterial({ map: HT.wood, transparent: true, opacity: 0.35, depthWrite: false }), 3); // Mid Courtyard boardwalk tint
   for (const k in HSITES) xDecal(mapG, k, HSITES[k][0], HSITES[k][1], 7);
-  xSign(mapG, "A", -29.48, 3, -22, Math.PI / 2); xSign(mapG, "C", 29.48, 3, -22, -Math.PI / 2); xSign(mapG, "B", 0, 3, -28.98, 0);
   const FW = 0xe8e2d4, FC = 0x3a2a1e;
-  box(0, -40, 60, 5, 1, FW); box(0, 40, 60, 5, 1, FW); box(-30, 0, 1, 5, 80, FW); box(30, 0, 1, 5, 80, FW);
-  box(-12, 0, 1, 5, 8, FW); box(-12, 16.5, 1, 5, 19, FW); // A side | Mid, gap z 4..7 = Sewer entrance from Mid Courtyard
+  box(0, -40, 60, HAV_WB, 1, FW); box(0, 40, 60, HAV_WB, 1, FW); box(-30, 0, 1, HAV_WB, 80, FW); box(30, 0, 1, HAV_WB, 80, FW); // vB: boundary 9 m, buildings 8 m (was 5)
+  box(-12, 0, 1, HAV_WH, 8, FW); box(-12, 16.5, 1, HAV_WH, 19, FW); // A side | Mid, gap z 4..7 = Sewer entrance from Mid Courtyard
   // A side: A Long lane along the outer wall (x -29.5..-24), Sewer tunnel west from mid then A Short south into the site front
-  box(-18, 15.5, 12, 5, 16, FW); box(-23.5, 0.75, 1, 5, 13.5, FW); // block between A Long and Mid; A Long inner wall
-  box(-14.75, -0.75, 5.5, 5, 9.5, FW); // Sewer south wall + A Short east wall (Sewer z 4..7.5, A Short x -23..-17.5)
-  box(12, -2, 1, 5, 4, FW); box(12, 4.5, 1, 5, 1, FW); box(12, 5.75, 1, 1, 1.5, FC); box(12, 16.25, 1, 5, 19.5, FW); // Mid | C side: gap z 0..4 = Garage door, z 5..6.5 = Mid Window (waist-high sill) into Garage
+  box(-18, 15.5, 12, HAV_WH, 16, FW); box(-23.5, 0.75, 1, HAV_WH, 13.5, FW); // block between A Long and Mid; A Long inner wall
+  box(-14.75, -0.75, 5.5, HAV_WH, 9.5, FW); // Sewer south wall + A Short east wall (Sewer z 4..7.5, A Short x -23..-17.5)
+  box(12, -2, 1, HAV_WH, 4, FW); box(12, 4.5, 1, HAV_WH, 1, FW); box(12, 5.75, 1, 1, 1.5, FC); box(12, 16.25, 1, HAV_WH, 19.5, FW); // Mid | C side: gap z 0..4 = Garage door, z 5..6.5 = Mid Window (waist-high sill) into Garage
   // C side: C Long lane along the outer wall (x 24..29.5) from attacker side into C Site; Garage room (x 12.5..23, z -4..6.5) from mid into the site
-  box(18.25, 14.75, 11.5, 5, 16.5, FW); box(23.5, -1.75, 1, 5, 16.5, FW); // block between C Long and Mid; C Long inner wall (= Garage east wall), ends z -10
-  box(15.25, -4.5, 5.5, 5, 1, FW); box(17.5, -7, 1, 5, 3, FW); // Garage north wall (exit gap x 18..23 into C Site); C Cubby east wall (cubby x 13..17, z -8.5..-5)
-  box(-11, -19, 4, 5, 14, FW); box(-11, -6.5, 4, 5, 5, FW); box(11, -19, 4, 5, 14, FW); box(11, -6.5, 4, 5, 5, FW); // buildings between the sites; A Link gap x -11 and C Link gap x 11, both z -12..-9, into B
-  box(-7.25, 22, 9.5, 5, 1, FW); box(7.25, 22, 9.5, 5, 1, FW); // Mid Doors: attacker side into Mid Courtyard, door x -2.5..2.5
+  box(18.25, 14.75, 11.5, HAV_WH, 16.5, FW); box(23.5, -1.75, 1, HAV_WH, 16.5, FW); // block between C Long and Mid; C Long inner wall (= Garage east wall), ends z -10
+  box(15.25, -4.5, 5.5, HAV_WH, 1, FW); box(17.5, -7, 1, HAV_WH, 3, FW); // Garage north wall (exit gap x 18..23 into C Site); C Cubby east wall (cubby x 13..17, z -8.5..-5)
+  box(-11, -19, 4, HAV_WH, 14, FW); box(-11, -6.5, 4, HAV_WH, 5, FW); box(11, -19, 4, HAV_WH, 14, FW); box(11, -6.5, 4, HAV_WH, 5, FW); // buildings between the sites; A Link gap x -11 and C Link gap x 11, both z -12..-9, into B
+  box(-7.25, 22, 9.5, HAV_WH, 1, FW); box(7.25, 22, 9.5, HAV_WH, 1, FW); // Mid Doors: attacker side into Mid Courtyard, door x -2.5..2.5
   box(0, 8.5, 3, 2, 3, FC); // Mid Courtyard central box
-  box(-6, -8, 6, 5, 1, FW); box(6, -8, 6, 5, 1, FW); // B front: courtyard into B through x -3..3; B Site x -9..9, z -23.5..-8.5
-  box(-6, -24, 6, 5, 1, FW); box(6, -24, 6, 5, 1, FW); // B Back: gap x -3..3 toward the back links and Defender Spawn
+  box(-6, -8, 6, HAV_WH, 1, FW); box(6, -8, 6, HAV_WH, 1, FW); // B front: courtyard into B through x -3..3; B Site x -9..9, z -23.5..-8.5
+  box(-6, -24, 6, HAV_WH, 1, FW); box(6, -24, 6, HAV_WH, 1, FW); // B Back: gap x -3..3 toward the back links and Defender Spawn
   box(-26.5, -27, 6, 1.4, 4, FC); // A Heaven ledge at the back of A Site (walkable top)
-  box(-25, -22.5, 3, 0.35, 1, FC); box(-25, -23.5, 3, 0.7, 1, FC); box(-25, -24.5, 3, 1.05, 1, FC); // A Heaven stairs up from A Site, 0.35 per step
-  box(-27, -29, 5, 5, 1, FW); box(-14.5, -29, 3, 5, 1, FW); box(-6.5, -29, 5, 5, 1, FW); box(6.5, -29, 5, 5, 1, FW); box(17.5, -29, 9, 5, 1, FW); box(27.5, -29, 4, 5, 1, FW); // site backs, links behind; C Back Link door x 22..25.5 toward Defender Spawn
-  [[-6, 14, 2, 1.6, 2], [6, 6, 2, 1.6, 2], [-5, -1, 1.5, 1.2, 1.5], // Mid Courtyard
-   [-28, 10, 2, 1.6, 2], [-26, -1, 2, 2, 2], // A Long
-   [25, 10, 2, 1.6, 2], [26, -1, 2, 2, 2], [16, 2, 1.5, 1.2, 1.5], // C Long + Garage
-   [-25.5, -18, 3, 1.8, 3], [-16, -20, 2, 1.2, 2], // A site (open)
-   [-4, -20, 2, 1.6, 2], [5, -13, 2, 1.2, 2], [4.5, -21, 2.5, 1.8, 2.5], // B site
-   [24.5, -23, 3, 1.8, 3], [16, -20, 2, 1.2, 2], [27, -14, 2, 1.6, 2], // C site
-   [-8, 31, 2, 1.6, 2], [8, 31, 2, 1.6, 2], [-14, -35, 2, 1.6, 2], [14, -35, 2, 1.6, 2]]
-    .forEach(([x, z, w, h, d]) => box(x, z, w, h, d, FC));
+  for (let i = 0; i < 6; i++) box(-25, -22.25 - i * 0.5, 3, 0.2 * (i + 1), 0.5, FC); // A Heaven stairs up from A Site: 6 x 0.2 m rises over z -22..-25 (vB, was 3 x 0.35)
+  box(-27, -29, 5, HAV_WH, 1, FW); box(-14.5, -29, 3, HAV_WH, 1, FW); box(-6.5, -29, 5, HAV_WH, 1, FW); box(6.5, -29, 5, HAV_WH, 1, FW); box(17.5, -29, 9, HAV_WH, 1, FW); box(27.5, -29, 4, HAV_WH, 1, FW); // site backs, links behind; C Back Link door x 22..25.5 toward Defender Spawn
+  // vB: Valorant-scale crates (1.2-1.5 m cubes, 2.8-3 m double stacks), each inside its old footprint so no lane gets narrower
+  [[-6, 14, 1.4, 1.4, 1.4], [6, 6, 1.4, 1.4, 1.4], [-5, -1, 1.3, 1.3, 1.3], // Mid Courtyard
+   [-28, 10, 1.4, 1.4, 1.4], [-26, -1, 1.5, 2.9, 1.5], // A Long
+   [25, 10, 1.4, 1.4, 1.4], [26, -1, 1.5, 2.9, 1.5], [16, 2, 1.3, 1.3, 1.3], // C Long + Garage
+   [-26.25, -18.75, 1.5, 3, 1.5], [-24.75, -18.75, 1.5, 1.5, 1.5], [-26.25, -17.25, 1.5, 1.5, 1.5], [-16, -20, 1.4, 1.4, 1.4], // A site (open)
+   [-4, -20, 1.4, 1.4, 1.4], [5, -13, 1.2, 1.2, 1.2], [4.0, -21.5, 1.4, 2.8, 1.4], [5.25, -20.5, 1.2, 1.2, 1.2], // B site
+   [25.25, -23.75, 1.5, 3, 1.5], [25.25, -22.25, 1.5, 1.5, 1.5], [23.75, -22.25, 1.5, 1.5, 1.5], [16, -20, 1.4, 1.4, 1.4], [27, -14, 1.4, 1.4, 1.4], // C site
+   [-8, 31, 1.4, 1.4, 1.4], [8, 31, 1.4, 1.4, 1.4], [-14, -35, 1.4, 1.4, 1.4], [14, -35, 1.4, 1.4, 1.4]]
+    .forEach(([x, z, w, h, d]) => havCrate(x, z, w, h, d));
   mapG.traverse((o) => { if (o.material === XM.wall) o.material = HM.wall; else if (o.material === XM.roof) o.material = HM.roof; else if (o.material === XM.metal || o.material === XM.wood) o.material = HM.wood; });
   // torii-style gates: red pillars (collision) + black kasagi and red nuki beams (visual)
   const pil = (x, z) => { const t = new THREE.Mesh(xG("Cylinder", 0.32, 0.36, 4.6, 12), HM.red); t.position.set(x, 2.3, z); t.castShadow = true; mapG.add(t); solids.push(t); boxes.push({ x1: x - 0.36, x2: x + 0.36, z1: z - 0.36, z2: z + 0.36, h: 5 }); };
@@ -4350,12 +4350,11 @@ function xBuildHaven() {
       const st = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.11, h, 8), HM.bamboo); st.position.set(px, h / 2, pz); st.rotation.z = (Math.random() - 0.5) * 0.12; st.castShadow = true; mapG.add(st); solids.push(st);
       for (let j = 0; j < 3; j++) { const lf = new THREE.Mesh(new THREE.PlaneGeometry(0.22, 0.9), HM.leaf); lf.position.set(px, h - 0.2 - j * 0.35, pz); lf.rotation.set(-0.9, Math.random() * 6.28, 0, "YXZ"); lf.translateY(0.4); mapG.add(lf); } }
   });
-  // dark wood eave beams over the Sewer and Garage gaps (visual only)
-  [[-12, 5.5], [12, 2]].forEach(([x, z]) => { const b = new THREE.Mesh(xG("Box", 1.4, 0.5, 4), HM.black); b.position.set(x, 4.7, z); mapG.add(b); });
   xHavenTint();
+  havDress(); // vB: zones, site markers, ceilings, door frames, trims, props, backdrop, light + fog
   // Bhutanese monastery look pass (decoration only): no solids/boxes, no lights, no shadows; merged into one mesh per material
   {
-    const L = (c, ds) => new THREE.MeshLambertMaterial({ color: c, side: ds ? THREE.DoubleSide : THREE.FrontSide }), fogT = (c, t) => new THREE.Color(FOG_C).lerp(new THREE.Color(c), t);
+    const L = (c, ds) => new THREE.MeshLambertMaterial({ color: c, side: ds ? THREE.DoubleSide : THREE.FrontSide }), fogT = (c, t) => new THREE.Color(HAV_FOG).lerp(new THREE.Color(c), t);
     const DM = { maroon: L(0x6e1f1c), gold: L(0xd1a33c), pane: L(0x241a16), roof: L(0x2b2420), stone: L(0x8e8a82), glow: new THREE.MeshBasicMaterial({ color: 0xffd27a }), cord: L(0xd8d2c2),
       fb: L(0x2f66b8, 1), fw: L(0xf2efe6, 1), fr: L(0xc8352b, 1), fg: L(0x3d9150, 1), fy: L(0xe8c13a, 1),
       mtnN: new THREE.MeshBasicMaterial({ color: fogT(0x3f7a6e, 0.5), fog: false }), mtnF: new THREE.MeshBasicMaterial({ color: fogT(0x4f6f96, 0.32), fog: false }) }; // mountains: fog-free, tinted toward the fog colour
@@ -4365,22 +4364,22 @@ function xBuildHaven() {
     const walls = boxes.filter((b) => b.h >= 5 && Math.max(b.x2 - b.x1, b.z2 - b.z1) >= 3);
     // maroon-and-gold carved window frames on the whitewashed walls (local +z = out of the wall)
     const gF = BX(1.1, 1.4, 0.06), gI = BX(0.8, 1.1, 0.08), gP = BX(0.6, 0.9, 0.1), gLt = BX(1.5, 0.2, 0.14), gSl = BX(1.3, 0.1, 0.12), gCv = BX(0.12, 0.12, 0.12);
-    const win = (x, z, ry) => { const g = grp(x, 2.7, z, ry); P(g, "maroon", gF, 0, 0, 0.03); P(g, "gold", gI, 0, 0, 0.04); P(g, "pane", gP, 0, 0, 0.05); P(g, "maroon", gLt, 0, 0.8, 0.07); P(g, "gold", gSl, 0, -0.75, 0.06);
+    const win = (x, z, ry, y = 2.7) => { const g = grp(x, y, z, ry); P(g, "maroon", gF, 0, 0, 0.03); P(g, "gold", gI, 0, 0, 0.04); P(g, "pane", gP, 0, 0, 0.05); P(g, "maroon", gLt, 0, 0.8, 0.07); P(g, "gold", gSl, 0, -0.75, 0.06);
       for (let t = -0.6; t <= 0.61; t += 0.3) P(g, "gold", gCv, t, 0.95, 0.1); };
     walls.forEach((b) => { const w = b.x2 - b.x1, d = b.z2 - b.z1, cx = (b.x1 + b.x2) / 2, cz = (b.z1 + b.z2) / 2;
-      if (w >= d) { for (let t = -w / 2 + 2.5; t < w / 2 - 1; t += 5) { if (b.z2 < 39.9) win(cx + t, b.z2, 0); if (b.z1 > -39.9) win(cx + t, b.z1, Math.PI); } }
-      else { for (let t = -d / 2 + 2.5; t < d / 2 - 1; t += 5) { if (b.x2 < 29.9) win(b.x2, cz + t, HP); if (b.x1 > -29.9) win(b.x1, cz + t, -HP); } } });
+      if (w >= d) { for (let t = -w / 2 + 2.5; t < w / 2 - 1; t += 5) { if (b.z2 < 39.9) { win(cx + t, b.z2, 0); win(cx + t, b.z2, 0, 6); } if (b.z1 > -39.9) { win(cx + t, b.z1, Math.PI); win(cx + t, b.z1, Math.PI, 6); } } }
+      else { for (let t = -d / 2 + 2.5; t < d / 2 - 1; t += 5) { if (b.x2 < 29.9) { win(b.x2, cz + t, HP); win(b.x2, cz + t, HP, 6); } if (b.x1 > -29.9) { win(b.x1, cz + t, -HP); win(b.x1, cz + t, -HP, 6); } } } });
     // sloped dark roofs with upturned eaves and gold finials on the building blocks
     const gPyr = new THREE.ConeGeometry(Math.SQRT1_2, 1, 4, 1); gPyr.rotateY(Math.PI / 4); gPyr.translate(0, 0.5, 0);
     const gHorn = BX(0.2, 0.6, 0.2), gOrb = new THREE.SphereGeometry(0.22, 10, 8), gSpk = new THREE.ConeGeometry(0.12, 0.6, 8), gFb = new THREE.CylinderGeometry(0.16, 0.24, 0.3, 8);
-    walls.filter((b) => Math.min(b.x2 - b.x1, b.z2 - b.z1) >= 3).forEach((b) => { const w = b.x2 - b.x1, d = b.z2 - b.z1, g = grp((b.x1 + b.x2) / 2, 5, (b.z1 + b.z2) / 2), rise = 1.2 + Math.min(w, d) * 0.08;
+    walls.filter((b) => Math.min(b.x2 - b.x1, b.z2 - b.z1) >= 3).forEach((b) => { const w = b.x2 - b.x1, d = b.z2 - b.z1, g = grp((b.x1 + b.x2) / 2, b.h, (b.z1 + b.z2) / 2), rise = 1.2 + Math.min(w, d) * 0.08;
       P(g, "maroon", BX(w + 0.3, 0.3, d + 0.3), 0, 0.15, 0); P(g, "roof", BX(w + 1.4, 0.16, d + 1.4), 0, 0.38, 0);
       P(g, "roof", gPyr, 0, 0.46, 0).scale.set(w + 1.2, rise, d + 1.2);
       for (const sx of [-1, 1]) for (const sz of [-1, 1]) { const m = P(g, "roof", gHorn, sx * (w / 2 + 0.65), 0.55, sz * (d / 2 + 0.65)); m.rotation.set(sz * 0.7, 0, -sx * 0.7); }
       const top = 0.46 + rise; P(g, "gold", gFb, 0, top + 0.1, 0); P(g, "gold", gOrb, 0, top + 0.4, 0); P(g, "gold", gSpk, 0, top + 0.85, 0); });
     // strings of prayer flags between a few high points
     const gFl = new THREE.PlaneGeometry(0.34, 0.44), FK = ["fb", "fw", "fr", "fg", "fy"];
-    [[[-18, 7, 15.5], [18.25, 7, 14.75]], [[-11, 7, -19], [11, 7, -19]], [[-14.75, 6.8, -0.75], [-11, 7, -6.5]], [[11, 7, -6.5], [18.25, 7, 14.75]], [[-11, 7, -19], [-26.5, 4.2, -29.5]]].forEach(([a, c]) => {
+    [[[-18, 10.4, 15.5], [18.25, 10.4, 14.75]], [[-11, 10.4, -19], [11, 10.4, -19]], [[-14.75, 9.8, -0.75], [-11, 10.4, -6.5]], [[11, 10.4, -6.5], [18.25, 10.4, 14.75]], [[-11, 10.4, -19], [-26.5, 9.2, -29.5]]].forEach(([a, c]) => {
       const dx = c[0] - a[0], dz = c[2] - a[2], len = Math.hypot(dx, dz), ry = Math.atan2(-dz, dx), n = Math.floor(len / 0.55);
       for (let i = 0; i <= n; i++) { const t = i / n, y = a[1] + (c[1] - a[1]) * t - Math.sin(Math.PI * t) * len * 0.06, g = grp(a[0] + dx * t, y, a[2] + dz * t, ry);
         P(g, "cord", BX(len / n + 0.02, 0.03, 0.03), 0, 0, 0); if (i > 0 && i < n) P(g, FK[i % 5], gFl, 0, -0.24, 0); } });
@@ -4398,6 +4397,148 @@ function xBuildHaven() {
     Object.keys(D).forEach((k) => { const mm = new THREE.Mesh(xMergeGeo(D[k], inv), DM[k]); mm.name = "xDeco"; mm.raycast = () => {}; mm.castShadow = mm.receiveShadow = false; mm.updateMatrix(); mm.matrixAutoUpdate = false; mapG.add(mm); });
   }
   HAVEN_CALLOUTS.forEach(([t, x, z]) => xCallout(t, x, z));
+  mapG.add = vbAdd;
+}
+// ---- vB Haven visual pass: Himalayan monastery zones (white stone, red lacquer, gold), site markers, door frames, ceilings, props, backdrop, light + fog ----
+const HAV_X = { mark: [], meshes: 0, base: 287 }; // audit: site markers built, objects added to the Haven group, pre-pass object count
+const HAV_FOG = 0xdde3e1, HAV_WH = 8, HAV_WB = 9; // mountain haze; building / boundary wall height (m)
+function havTex(s, draw) { const c = document.createElement("canvas"); c.width = c.height = s; const g = c.getContext("2d"); draw(g, s); const t = new THREE.CanvasTexture(c); xTexRep(t); t.anisotropy = 4; return t; }
+function havGrain(g, s, a) { const d = g.getImageData(0, 0, s, s), p = d.data; for (let i = 0; i < p.length; i += 4) { const r = (Math.random() - 0.5) * a; p[i] += r; p[i + 1] += r; p[i + 2] += r; } g.putImageData(d, 0, 0); }
+let HAV_MT = null;
+function havMats() { // procedural canvas textures (128-256 px) + Haven materials, built once
+  if (HAV_MT) return HAV_MT;
+  const R = (a, b) => a + Math.random() * (b - a), L = (o) => new THREE.MeshLambertMaterial(o);
+  const T = {
+    wall: havTex(256, (g, s) => { // 4 m tile: whitewashed ashlar, grey plinth, red lacquer band with gold edges at the top (3.6-4 m)
+      g.fillStyle = "#efe9dc"; g.fillRect(0, 0, s, s);
+      for (let y = 26, r = 0; y < s - 14; y += 32, r++) for (let x = (r % 2) * 32 - 32; x < s; x += 64) { g.fillStyle = `hsl(${R(36, 44)},${R(14, 22)}%,${R(86, 92)}%)`; g.fillRect(x + 1, y + 1, 62, 30); }
+      g.strokeStyle = "rgba(150,135,110,.35)"; g.lineWidth = 1.5; for (let y = 26; y < s - 14; y += 32) { g.beginPath(); g.moveTo(0, y); g.lineTo(s, y); g.stroke(); }
+      g.fillStyle = "#9d1f18"; g.fillRect(0, 0, s, 22); g.fillStyle = "#d8a93c"; g.fillRect(0, 22, s, 4); g.fillRect(0, 0, s, 2);
+      for (let x = 8; x < s; x += 16) { g.fillStyle = "#e6be55"; g.beginPath(); g.arc(x, 11, 3, 0, 7); g.fill(); }
+      g.fillStyle = "#b9b1a2"; g.fillRect(0, s - 14, s, 14); g.fillStyle = "rgba(120,100,80,.25)"; g.fillRect(0, s - 30, s, 16);
+      havGrain(g, s, 12); }),
+    lacq: havTex(128, (g, s) => { // red lacquer wood, vertical grain, gold pinstripes at the edges
+      g.fillStyle = "#a3241c"; g.fillRect(0, 0, s, s);
+      for (let i = 0; i < 26; i++) { g.fillStyle = `rgba(${R(60, 120)},10,8,.18)`; g.fillRect(R(0, s), 0, R(1, 4), s); }
+      g.fillStyle = "rgba(255,200,170,.12)"; g.fillRect(s * 0.3, 0, s * 0.12, s);
+      g.fillStyle = "#d8a93c"; g.fillRect(0, 0, 5, s); g.fillRect(s - 5, 0, 5, s); havGrain(g, s, 10); }),
+    gold: havTex(128, (g, s) => { // gold band: diamonds and dots on deep red
+      g.fillStyle = "#7d1913"; g.fillRect(0, 0, s, s); g.fillStyle = "#d9ab3e"; g.fillRect(0, 0, s, 18); g.fillRect(0, s - 18, s, 18);
+      for (let x = 0; x <= s; x += 32) { g.beginPath(); g.moveTo(x, 28); g.lineTo(x + 16, s / 2); g.lineTo(x, s - 28); g.lineTo(x - 16, s / 2); g.closePath(); g.fill(); }
+      g.fillStyle = "#f0d27a"; for (let x = 16; x < s; x += 32) { g.beginPath(); g.arc(x, s / 2, 5, 0, 7); g.fill(); } havGrain(g, s, 10); }),
+    flag: havTex(256, (g, s) => { // 4 m tile: warm grey flagstones
+      g.fillStyle = "#857d72"; g.fillRect(0, 0, s, s);
+      for (let y = 0, r = 0; y < s; y += 48, r++) for (let x = -(r % 3) * 20; x < s; x += R(48, 80)) { g.fillStyle = `hsl(${R(28, 40)},${R(8, 14)}%,${R(58, 70)}%)`; g.fillRect(x + 2, y + 2, R(42, 76), 44); }
+      havGrain(g, s, 16); }),
+    slate: havTex(256, (g, s) => { // 4 m tile: cool blue-grey slate (defender side)
+      g.fillStyle = "#4b5258"; g.fillRect(0, 0, s, s);
+      for (let j = 0; j < 8; j++) for (let i = 0; i < 4; i++) { g.fillStyle = `hsl(${R(200, 215)},${R(6, 12)}%,${R(46, 56)}%)`; g.fillRect(i * 64 + (j % 2) * 32 + 2 - 32, j * 32 + 2, 60, 28); g.fillRect(i * 64 + (j % 2) * 32 + 2 + 224, j * 32 + 2, 60, 28); }
+      havGrain(g, s, 14); }),
+    plank: havTex(128, (g, s) => { // interior floor: dark red-brown planks
+      g.fillStyle = "#4a2418"; g.fillRect(0, 0, s, s); g.strokeStyle = "#2a130c"; g.lineWidth = 3;
+      for (let y = 0; y < s; y += 21) { g.beginPath(); g.moveTo(0, y); g.lineTo(s, y); g.stroke(); const o = R(0, s); g.beginPath(); g.moveTo(o, y); g.lineTo(o, y + 21); g.stroke(); }
+      g.strokeStyle = "rgba(160,90,60,.25)"; g.lineWidth = 1; for (let i = 0; i < 30; i++) { const y = R(0, s); g.beginPath(); g.moveTo(0, y); g.lineTo(s, y + R(-3, 3)); g.stroke(); } havGrain(g, s, 14); }),
+    crate: havTex(128, (g, s) => { // wooden supply crate: planks, dark frame, cross brace, brass corners
+      g.fillStyle = "#8a5a32"; g.fillRect(0, 0, s, s); g.strokeStyle = "rgba(50,28,12,.6)"; g.lineWidth = 2; for (let y = 0; y < s; y += 21) { g.beginPath(); g.moveTo(0, y); g.lineTo(s, y); g.stroke(); }
+      g.strokeStyle = "#4a2c16"; g.lineWidth = 14; g.strokeRect(7, 7, s - 14, s - 14); g.lineWidth = 10; g.beginPath(); g.moveTo(14, 14); g.lineTo(s - 14, s - 14); g.stroke();
+      g.fillStyle = "#c9a043"; [[0, 0], [s - 18, 0], [0, s - 18], [s - 18, s - 18]].forEach(([x, y]) => g.fillRect(x, y, 18, 18)); havGrain(g, s, 18); }),
+    sky: (() => { const c = document.createElement("canvas"); c.width = 2; c.height = 256; const g = c.getContext("2d"), gr = g.createLinearGradient(0, 0, 0, 256);
+      gr.addColorStop(0, "#3f7bc2"); gr.addColorStop(0.45, "#86b4dc"); gr.addColorStop(0.8, "#d4e0e4"); gr.addColorStop(1, "#e4e8e4"); g.fillStyle = gr; g.fillRect(0, 0, 2, 256);
+      const t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding; return t; })(),
+  };
+  HAV_MT = { T,
+    wallA: L({ map: T.wall, color: 0xfff1ea }), wallB: L({ map: T.wall, color: 0xffffff }), wallC: L({ map: T.wall, color: 0xfff3dc }), wallD: L({ map: T.wall, color: 0xe4e8ee }),
+    lacq: L({ map: T.lacq }), gold: L({ map: T.gold }), crate: L({ map: T.crate }), barrel: L({ map: T.lacq, color: 0x8a6a50 }),
+    flag: L({ map: T.flag, polygonOffset: true, polygonOffsetFactor: -1 }), flagW: L({ map: T.flag, color: 0xfff0dc, polygonOffset: true, polygonOffsetFactor: -1 }),
+    slate: L({ map: T.slate, polygonOffset: true, polygonOffsetFactor: -1 }), plank: L({ map: T.plank, polygonOffset: true, polygonOffsetFactor: -1 }),
+    moss: L({ color: 0x6b8f3e, polygonOffset: true, polygonOffsetFactor: -1 }) };
+  return HAV_MT;
+}
+function havKit(DM) { // merged decoration: P(k, geo, x, y, z, rx, ry, rz) → one mesh per material on done(); no collision, no shadows
+  const D = {};
+  const P = (k, geo, x, y, z, rx = 0, ry = 0, rz = 0) => { const m = new THREE.Mesh(geo, DM[k]); m.position.set(x, y, z); m.rotation.set(rx, ry, rz); (D[k] || (D[k] = [])).push(m); return m; };
+  const done = (far) => { mapG.updateMatrixWorld(true); const inv = new THREE.Matrix4().copy(mapG.matrixWorld).invert(), out = [];
+    Object.keys(D).forEach((k) => { if (far) { const a = new THREE.Mesh(new THREE.BoxGeometry(0.01, 0.01, 0.01), DM[k]); a.position.set(0, -400, 0); D[k].push(a); } // far anchor: keeps backdrop out of the sun-shadow fit (xFitSun skips > 400 m)
+      D[k].forEach((m) => m.updateMatrixWorld(true));
+      const mm = new THREE.Mesh(xMergeGeo(D[k], inv), DM[k]); mm.name = "xDeco"; mm.raycast = () => {}; mm.castShadow = mm.receiveShadow = false; mm.updateMatrix(); mm.matrixAutoUpdate = false; mapG.add(mm); out.push(mm); });
+    return out; };
+  return { P, done };
+}
+function havCrate(x, z, w, h, d) { box(x, z, w, h, d, 0x3a2a1e); const m = solids[solids.length - 1]; m.material = havMats().crate; xUV(m.geometry, w, h, d, Math.min(w, d)); return m; }
+function havSlab(x1, x2, z1, z2, y0, y1, mat) { // ceiling / lintel: solid for bullets + decals, not in boxes (overhead, nobody reaches it)
+  const w = x2 - x1, h = y1 - y0, d = z2 - z1, m = new THREE.Mesh(xUV(new THREE.BoxGeometry(w, h, d), w, h, d, 4), mat); m.position.set((x1 + x2) / 2, y0 + h / 2, (z1 + z2) / 2); m.castShadow = m.receiveShadow = true; mapG.add(m); solids.push(m); return m;
+}
+function havPad(x, z, w, d, mat, y) { const m = new THREE.Mesh(xUV(new THREE.PlaneGeometry(w, d), w, d, undefined, 4), mat); m.rotation.x = -Math.PI / 2; m.position.set(x, y || 0.012, z); m.receiveShadow = true; m.raycast = () => {}; mapG.add(m); return m; }
+function havPlaque(txt, x, y, z, ry) { const m = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 0.55), new THREE.MeshLambertMaterial({ map: xText(txt, { w: 256, h: 64, size: 34, bg: "#6e1a14", col: "#f3d98a" }) })); m.position.set(x, y, z); m.rotation.y = ry; m.raycast = () => {}; mapG.add(m); return m; }
+function havDress() {
+  const M = havMats(), HP = Math.PI / 2, BX = (w, h, d) => new THREE.BoxGeometry(w, h, d), BXU = (w, h, d, T) => xUV(new THREE.BoxGeometry(w, h, d), w, h, d, T);
+  // 1. per-zone wall palettes: A (west, warm white), B (centre, pure white), C (east, saffron white), defender side (cool), on the shared wall texture
+  mapG.traverse((o) => { if (!o.isMesh || !o.geometry || !o.geometry.parameters || o.geometry.parameters.height < 4 || !(o.material === HMT.wall || o.material === HM.wall)) return;
+    const p = o.position; o.material = p.z < -29.6 ? M.wallD : p.x < -11.6 ? M.wallA : p.x > 11.6 ? M.wallC : M.wallB; });
+  // 2. floor zones: attacker plaza flagstone, defender slate, Mid Courtyard flagstone with moss borders, plank interiors (Sewer, A Short, Garage, links)
+  havPad(0, 31, 59, 17, M.flagW); havPad(0, -34.5, 59, 10, M.slate);
+  havPad(0, 7, 23, 29, M.flag); havPad(-11.1, 7, 0.8, 28, M.moss, 0.014); havPad(11.1, 7, 0.8, 28, M.moss, 0.014);
+  havPad(-17.5, 5.75, 11, 3.5, M.plank); havPad(-20.25, -0.75, 5.5, 9.5, M.plank); havPad(17.75, 1, 10.5, 10, M.plank); havPad(-11, -10.5, 4, 3, M.plank); havPad(11, -10.5, 4, 3, M.plank);
+  // 3. site markers: big painted letter in a lacquer + gold frame on a site wall, dashed plant-zone border on the floor (inSite: |dx| < 7, |dz| < 6)
+  const SC = { A: 0xc8352b, B: 0xe0b040, C: 0xe8792e }, KD = { lacq: M.lacq, gold: M.gold }, kit = havKit(Object.assign({ pA: new THREE.MeshBasicMaterial({ color: SC.A }), pB: new THREE.MeshBasicMaterial({ color: SC.B }), pC: new THREE.MeshBasicMaterial({ color: SC.C }), pW: new THREE.MeshBasicMaterial({ color: 0xf6efe0 }) }, KD)), P = kit.P;
+  [["A", -29.45, 3.6, -15, HP, 4.4], ["B", -6, 3.2, -23.45, 0, 3.6], ["C", 29.45, 3.6, -15, -HP, 4.4]].forEach(([k, x, y, z, ry, s]) => {
+    const g = new THREE.Group(); g.position.set(x, y, z); g.rotation.y = ry; g.name = "vBHavSite" + k;
+    const fr = new THREE.Mesh(BX(s + 0.5, s + 0.5, 0.08), M.lacq); fr.position.z = 0.04; g.add(fr);
+    [[0, s / 2 + 0.12, s + 0.5, 0.14], [0, -s / 2 - 0.12, s + 0.5, 0.14], [s / 2 + 0.12, 0, 0.14, s + 0.5], [-s / 2 - 0.12, 0, 0.14, s + 0.5]].forEach(([a, b, w, h]) => { const e = new THREE.Mesh(BX(w, h, 0.1), M.gold); e.position.set(a, b, 0.07); g.add(e); });
+    const lt = new THREE.Mesh(new THREE.PlaneGeometry(s, s), new THREE.MeshLambertMaterial({ map: xText(k, { col: "#f7e3a8", size: 220, stroke: "rgba(60,12,8,.9)" }), transparent: true })); lt.position.z = 0.1; g.add(lt);
+    g.traverse((o) => { o.raycast = () => {}; }); mapG.add(g); HAV_X.mark.push("wall" + k);
+    const [cx, cz] = HSITES[k], ed = (x1, z1, x2, z2) => { const len = Math.hypot(x2 - x1, z2 - z1), n = Math.floor(len / 1.5), ax = x2 !== x1;
+      for (let i = 0; i < n; i++) { const t = (i + 0.5) / n; P("p" + k, BX(ax ? 1 : 0.22, 0.012, ax ? 0.22 : 1), x1 + (x2 - x1) * t, 0.036, z1 + (z2 - z1) * t); } };
+    ed(cx - 7, cz - 6, cx + 7, cz - 6); ed(cx - 7, cz + 6, cx + 7, cz + 6); ed(cx - 7, cz - 6, cx - 7, cz + 6); ed(cx + 7, cz - 6, cx + 7, cz + 6);
+    for (const sx of [-1, 1]) for (const sz of [-1, 1]) { P("pW", BX(2, 0.014, 0.3), cx + sx * 6.15, 0.038, cz + sz * 6); P("pW", BX(0.3, 0.014, 2), cx + sx * 7, 0.038, cz + sz * 5.15); }
+    HAV_X.mark.push("floor" + k); });
+  // 4. ceilings over the tunnels / links and lintels over doorways (y0 = clear height): solid for bullets, overhead only
+  const SL = [[-23.5, -11.5, 4, 7.5, 4], [-23.5, -17.5, -5.5, 4, 4], [11.5, 23.5, -4.5, 6.5, 4.5], [-13, -9, -12, -9, 4], [9, 13, -12, -9, 4], // Sewer, A Short, Garage, A Link, C Link
+    [-2.5, 2.5, 21.5, 22.5, 3.4], [-3, 3, -8.5, -7.5, 4], [-3, 3, -24.5, -23.5, 4], [-13, -9, -29.5, -28.5, 3.4], [9, 13, -29.5, -28.5, 3.4], [22, 25.5, -29.5, -28.5, 3.4]]; // Mid Doors, B front, B back, back links
+  SL.forEach(([x1, x2, z1, z2, y0]) => { havSlab(x1, x2, z1, z2, y0, HAV_WH, M.wallB);
+    const w = x2 - x1, d = z2 - z1; P("lacq", BXU(w + 0.1, 0.4, d + 0.1, 0.4), (x1 + x2) / 2, y0 + 0.2, (z1 + z2) / 2); P("gold", BXU(w + 0.14, 0.1, d + 0.14, 0.1), (x1 + x2) / 2, y0 + 0.45, (z1 + z2) / 2);
+    if (w > 3 && d > 3) for (let t = 1; t < (w > d ? w : d) - 0.5; t += 1.5) P("lacq", w > d ? BX(0.22, 0.3, d - 0.1) : BX(w - 0.1, 0.3, 0.22), w > d ? x1 + t : (x1 + x2) / 2, y0 - 0.15, w > d ? (z1 + z2) / 2 : z1 + t); }); // underside rafters
+  havSlab(11.5, 12.5, 0, 4, 3.4, 4.5, M.wallC); havSlab(11.5, 12.5, 5, 6.5, 2.7, 4.5, M.wallC); havSlab(18, 23, -5, -4, 3.4, 4.5, M.wallC); // Garage door, Mid Window, Garage exit
+  // door frames: lacquer pillars (inside the wall footprint) with gold capitals and stone bases; [wall along x?, wall line, gap start, gap end, height]
+  [[1, 22, -2.5, 2.5, 3.4], [1, -8, -3, 3, 4], [1, -24, -3, 3, 4], [1, -29, -13, -9, 3.4], [1, -29, 9, 13, 3.4], [1, -29, 22, 25.5, 3.4], [0, 12, 0, 4, 3.4], [0, -12, 4, 7, 4], [1, -4.5, 18, 23, 3.4]].forEach(([ax, c, a1, a2, h]) => {
+    for (const a of [a1 - 0.5, a2 + 0.5]) { const x = ax ? a : c, z = ax ? c : a; P("lacq", BXU(1.04, h, 1.04, 1), x, h / 2, z); P("gold", BX(1.2, 0.3, 1.2), x, h - 0.15, z); P("gold", BX(1.16, 0.25, 1.16), x, 0.125, z); } });
+  // 5. baseboards + cornices on every wall: red lacquer skirting with a gold line, gold-and-red cornice under the cap
+  boxes.filter((b) => b.h >= 4).forEach((b) => { const w = b.x2 - b.x1, d = b.z2 - b.z1, cx = (b.x1 + b.x2) / 2, cz = (b.z1 + b.z2) / 2, top = Math.min(b.h, HAV_WB);
+    if (w < 1.5 && d < 1.5) return; // pillars / bamboo clumps
+    P("lacq", BXU(w + 0.08, 0.45, d + 0.08, 0.45), cx, 0.225, cz); P("gold", BXU(w + 0.1, 0.07, d + 0.1, 0.07), cx, 0.48, cz); P("gold", BXU(w + 0.16, 0.5, d + 0.16, 0.5), cx, top - 0.25, cz); });
+  // arches over the two wide back gaps (A back, B back on the z -29 line): lacquer half-rings with a gold keystone
+  [[-20.25, 4.25], [0, 4]].forEach(([x, r]) => { P("lacq", xG("Torus", r, 0.2, 6, 20, Math.PI), x, 3.2, -29); P("gold", BXU(0.5, 0.6, 1.1, 0.6), x, 3.2 + r, -29); });
+  // 6. callout plaques over doorways / on lane walls
+  [["A LONG", -24.03, 2.6, 2, -HP], ["SEWER", -11.44, 5, 5.75, HP], ["A SHORT", -20.5, 4.9, -5.56, Math.PI], ["GARAGE", 11.44, 5.1, 2, -HP], ["C LONG", 24.03, 2.6, 2, HP], ["MID", 0, 4.6, 22.56, 0],
+   ["A LINK", -8.94, 4.6, -10.5, HP], ["C LINK", 8.94, 4.6, -10.5, -HP], ["B SITE", 0, 4.6, -7.44, 0]].forEach(([t, x, y, z, ry]) => havPlaque(t, x, y, z, ry));
+  kit.done();
+  // 7. props with collision: brass-banded barrels + small crates in corners (flush to walls, clear of lanes and nav links)
+  const bar = (x, z) => { const m = new THREE.Mesh(xG("Cylinder", 0.35, 0.35, 1.0, 12), M.barrel); m.position.set(x, 0.5, z); m.castShadow = m.receiveShadow = true; mapG.add(m); solids.push(m); boxes.push({ x1: x - 0.35, x2: x + 0.35, z1: z - 0.35, z2: z + 0.35, h: 1.0 }); return m; };
+  const BK = havKit({ gold: M.gold, lacq: M.lacq }), band = (x, z) => { BK.P("gold", xG("Cylinder", 0.37, 0.37, 0.07, 12), x, 0.2, z); BK.P("gold", xG("Cylinder", 0.37, 0.37, 0.07, 12), x, 0.8, z); };
+  [[-28.9, 38.9], [-28.1, 39.0], [28.9, 38.9], [28.1, 39.0], [-28.9, -38.9], [-28.9, -38.1], [28.9, -38.9], [28.9, -38.1], [22.55, 5.85], [21.75, 5.9], [-8.4, -23.0], [8.4, -23.0], [-10.9, 20.9], [10.9, 20.9], [29.0, -28.3]]
+    .forEach(([x, z]) => { bar(x, z); band(x, z); });
+  [[-26.9, 38.8], [26.9, 38.8], [-27.7, -38.8], [27.7, -38.8], [28.95, -27.0]].forEach(([x, z]) => havCrate(x, z, 1.2, 1.2, 1.2));
+  BK.done();
+  // 8. Mid Courtyard shrine on the centre box: stepped stone stupa with a gold spire, prayer-flag poles (visual on top of the 2 m collider)
+  { const SK = havKit({ st: new THREE.MeshLambertMaterial({ map: M.T.wall, color: 0xf4efe4 }), gold: M.gold, lacq: M.lacq, g2: new THREE.MeshLambertMaterial({ color: 0xd9ab3e }) });
+    SK.P("lacq", BX(3.06, 0.3, 3.06), 0, 0.15, 8.5); SK.P("st", BX(2.6, 0.5, 2.6), 0, 2.25, 8.5); SK.P("st", xG("Sphere", 1.05, 14, 8, 0, Math.PI * 2, 0, HP), 0, 2.5, 8.5); SK.P("g2", BX(0.7, 0.5, 0.7), 0, 3.75, 8.5);
+    SK.P("g2", xG("Cone", 0.35, 1.6, 10), 0, 4.8, 8.5); SK.P("g2", xG("Sphere", 0.18, 8, 6), 0, 5.7, 8.5); SK.done(); }
+  // 9. backdrop: whitewashed monastery blocks with red top bands, dark roofs and gold finials outside the boundary, a tall dzong behind the defenders
+  { const fogC = (c, t) => new THREE.Color(HAV_FOG).lerp(new THREE.Color(c), t), BB = { wh: new THREE.MeshLambertMaterial({ color: 0xf2ede2 }), rd: new THREE.MeshLambertMaterial({ color: 0x8e2a20 }), rf: new THREE.MeshLambertMaterial({ color: 0x2f2723 }),
+      gd: new THREE.MeshLambertMaterial({ color: 0xd2a640 }), wn: new THREE.MeshLambertMaterial({ color: 0x2a1c16 }), rock: new THREE.MeshBasicMaterial({ color: fogC(0x6d7468, 0.6), fog: false }) }, K = havKit(BB);
+    let sd = 23; const rnd = () => ((sd = (sd * 16807) % 2147483647) / 2147483647), pyr = new THREE.ConeGeometry(Math.SQRT1_2, 1, 4, 1); pyr.rotateY(Math.PI / 4); pyr.translate(0, 0.5, 0);
+    const bld = (x, z, w, d, h, ry) => { const cy = h / 2; K.P("wh", BX(w, h, d), x, cy, z, 0, ry); K.P("rd", BX(w + 0.1, Math.min(2.2, h * 0.14), d + 0.1), x, h - Math.min(1.1, h * 0.07), z, 0, ry);
+      K.P("rf", BX(w + 1.6, 0.25, d + 1.6), x, h + 0.12, z, 0, ry); K.P("rf", pyr, x, h + 0.2, z, 0, ry).scale.set(w + 1.2, 1.5 + w * 0.12, d + 1.2); K.P("gd", xG("Cone", 0.4, 1.6, 8), x, h + 2.4 + w * 0.12, z);
+      const lz = -d / 2 - 0.03; for (let r = 0; r < Math.floor(h / 4); r++) for (let c = -1; c <= 1; c++) { if (rnd() < 0.3) continue; const lx = c * w * 0.28; // windows on the face toward the map
+        K.P("wn", BX(0.9, 1.3, 0.1), x + lx * Math.cos(ry) + lz * Math.sin(ry), 2.4 + r * 4, z - lx * Math.sin(ry) + lz * Math.cos(ry), 0, ry); } };
+    for (let i = 0; i < 22; i++) { const a = (i / 22) * Math.PI * 2 + rnd() * 0.12, R = 1 + rnd() * 0.4, x = Math.sin(a) * 44 * R, z = Math.cos(a) * 56 * R; if (Math.abs(x) < 34 && Math.abs(z) < 44) continue;
+      bld(x, z, 7 + rnd() * 8, 6 + rnd() * 6, 9 + rnd() * 12, Math.atan2(x, z)); K.P("rock", BX(18, 6, 14), x * 1.05, -1.5, z * 1.05, 0, Math.atan2(x, z)); }
+    bld(0, -64, 18, 10, 26, 0); bld(-13, -60, 8, 8, 18, 0); bld(13, -60, 8, 8, 18, 0); bld(0, 58, 10, 8, 14, Math.PI); // dzong behind the defenders, gatehouse behind the attackers
+    const out = K.done(true);
+    // fog + sky for Haven: set while this map renders; useMap() restores the shared fog / sky on every map switch
+    if (out[0]) out[0].onBeforeRender = () => { scene.fog.color.setHex(HAV_FOG); scene.fog.near = 40; scene.fog.far = 165; scene.background = M.T.sky; }; }
+  // 10. subtle zone lights (no shadows): warm lamps in the Sewer and Garage, gold over B, a lantern glow in Mid Courtyard
+  [[0xffb062, 22, 9, -17, 3.3, 5.75], [0xffc27a, 26, 11, 18, 3.6, 1], [0xffd590, 40, 16, 0, 5.5, -16], [0xffe2b0, 20, 12, 0, 4.5, 12]].forEach(([c, i, dist, x, y, z]) => { const l = new THREE.PointLight(c, i, dist, 2); l.position.set(x, y, z); l.castShadow = false; mapG.add(l); });
 }
 // Bind / Haven palettes, same technique as ASC_TINT: tinted clones built once, swapped in only while that map builds.
 // colour = target / texture base colour, so dark or bright textures land on the target hue; geometry and shared caches untouched.
@@ -4441,33 +4582,34 @@ function xSplitTint() {
     if (m === XM.wall) o.material = SMT.wall; else if (m === XM.roof) o.material = SMT.cap; else if (m === XM.metal || m === XM.wood) o.material = SMT.concrete; });
 }
 function xBuildSplit() {
-  const fl = xFloor(100, 99, new THREE.MeshLambertMaterial({ color: SPLIT_TINT.floor }), 4); fl.rotation.x = -Math.PI / 2; fl.position.z = -5.5; mapG.add(fl); solids.push(fl);
+  const vbAdd = mapG.add; SPL_X.meshes = 0; SPL_X.mark.length = 0; mapG.add = function (...o) { o.forEach((x) => { SPL_X.meshes += 1 + (x && Array.isArray(x.children) ? x.children.length : 0); }); return vbAdd.apply(this, o); }; // vB audit: count objects this build adds
+  const fl = xFloor(100, 99, splMats().asphalt, 4); fl.rotation.x = -Math.PI / 2; fl.position.z = -5.5; mapG.add(fl); solids.push(fl);
   const W = 0xf1f0ec, C = 0x8c8c8a;
-  box(0, -55, 100, 5, 1, W); box(0, 44, 100, 5, 1, W); box(-50, -5.5, 1, 5, 99, W); box(50, -5.5, 1, 5, 99, W); // boundary: z -55..44 (the attacker wall sits 9 m behind the z 35 spawn; it was 20 m of dead space)
+  box(0, -55, 100, SPL_WH, 1, W); box(0, 44, 100, SPL_WH, 1, W); box(-50, -5.5, 1, SPL_WH, 99, W); box(50, -5.5, 1, SPL_WH, 99, W); // vB: city blocks 10 m (was 5) // boundary: z -55..44 (the attacker wall sits 9 m behind the z 35 spawn; it was 20 m of dead space)
   for (const s of [1, -1]) { // s = 1 builds the A (east) half, s = -1 mirrors it as B (west)
-    if (s > 0) { box(18, -10, 24, 5, 8, W); box(18, 8, 24, 5, 20, W); } // building between Mid and A Main; gap z -6..-2 = Mail
-    else { box(-18, -12.5, 24, 5, 3, W); box(-18, 5, 24, 5, 26, W); } // building between Mid and B Main; narrow gap z -11..-8 = Vents
-    box(s * 14, -30.5, 16, 5, 1, W); // Mid Top | Defender Side wall, open x -6..6
-    box(s * 47, 4, 6, 5, 32, W); // A / B Main outer fill x 44..50, z -12..20: Main lane 20 m -> 14 m (rope base at z -19 stays open)
+    if (s > 0) { box(18, -10, 24, SPL_WH, 8, W); box(18, 8, 24, SPL_WH, 20, W); } // building between Mid and A Main; gap z -6..-2 = Mail
+    else { box(-18, -12.5, 24, SPL_WH, 3, W); box(-18, 5, 24, SPL_WH, 26, W); } // building between Mid and B Main; narrow gap z -11..-8 = Vents
+    box(s * 14, -30.5, 16, SPL_WH, 1, W); // Mid Top | Defender Side wall, open x -6..6
+    box(s * 47, 4, 6, SPL_WH, 32, W); // A / B Main outer fill x 44..50, z -12..20: Main lane 20 m -> 14 m (rope base at z -19 stays open)
     box(s * 35.75, -29, 27.5, 2, 18, C); // raised site platform, x 22..49.5, z -38..-20, top 2 m
-    [1.75, 1.4, 1.05, 0.7, 0.35].forEach((h, i) => box(s * 36, -19.5 + i, 8, h, 1, C)); // south ramp stairs (from A/B Main)
-    [1.75, 1.4, 1.05, 0.7, 0.35].forEach((h, i) => box(s * 27, -38.5 - i, 6, h, 1, C)); // north stairs (from defender side)
+    for (let i = 0; i < 7; i++) box(s * 36, -19.65 + 0.7 * i, 8, 1.75 - 0.25 * i, 0.7, C); // south ramp stairs (from A/B Main): 7 x 0.25 m rises (vB, was 5 x 0.35)
+    for (let i = 0; i < 7; i++) box(s * 27, -38.35 - 0.7 * i, 6, 1.75 - 0.25 * i, 0.7, C); // north stairs (from defender side): 7 x 0.25 m rises
     box(s * 44.75, -42, 9.5, 2.8, 8, C); // Heaven ledge x 40..49.5, z -46..-38, top 2.8 m, overlooks the site
-    for (let i = 1; i <= 7; i++) box(s * (32 + i), -44, 1, 0.35 * i, 4, C); // Heaven stairs west -> east, up from defender side
-    [[s * 43, -25, 2, 3.6, 2], [s * 28, -24, 2, 3.4, 2], [s * 44, 12, 2, 1.6, 2], [s * 34, -2, 2, 1.2, 2], [s * 26, 26, 2, 1.6, 2], [s * 14, -46, 2, 1.6, 2]]
-      .forEach(([x, z, w, h, d]) => box(x, z, w, h, d, C)); // cover (site cover rises 1.4-1.6 m above the platform)
+    for (let i = 1; i <= 11; i++) box(s * (32.5 + (i - 0.5) * 7 / 11), -44, 7 / 11, 0.25 * i, 4, C); // Heaven stairs west -> east, up from defender side: 11 x 0.25 m rises over x 32.5..39.5
+    [[s * 43, -25, 1.5, 2], [s * 28, -24, 1.4, 2], [s * 44, 12, 1.4, 0], [s * 34, -2, 1.2, 0], [s * 26, 26, 1.4, 0], [s * 14, -46, 1.4, 0]]
+      .forEach(([x, z, c, base]) => splCrate(x, z, c, c, c, base)); // vB: Valorant-scale crate cover (1.2-1.5 m cubes; site cover sits on the 2 m platform)
   }
-  box(3, 6, 2, 1.6, 2, C); box(-3, -22, 2, 1.6, 2, C); box(-10, 31, 2, 1.6, 2, C); box(10, 31, 2, 1.6, 2, C); // Mid Bottom, Mid Top, Attacker Side
+  splCrate(3, 6, 1.4, 1.4, 1.4); splCrate(-3, -22, 1.4, 1.4, 1.4); splCrate(-10, 31, 1.4, 1.4, 1.4); splCrate(10, 31, 1.4, 1.4, 1.4); // Mid Bottom, Mid Top, Attacker Side
   box(4, -26, 4, 2, 4, C); // Mid Top perch x 2..6, z -28..-24, top 2 m (rope up, drop off north)
   // site detail (heights include the 2 m platform): A default plant box, stacked crates, A Screens | B pillar, garage door, boxes
-  box(38, -33, 2.4, 3, 1.6, 0xa0805a); box(31, -27, 2, 3.2, 2, 0xa0805a); box(31.2, -27.2, 1.4, 4.4, 1.4, 0xa0805a); box(25, -30, 0.5, 4.6, 4, 0x2c2f36);
-  box(-32, -33, 1.4, 7, 1.4, C); box(-49.3, -30, 0.4, 5, 5, 0x6d6f73); box(-31.5, -26.5, 2, 3.2, 2, 0xa0805a); box(-38.5, -35, 2, 3, 2, 0xa0805a);
+  splCrate(38, -33, 2.4, 1.0, 1.6, 2); splCrate(31.3, -27.3, 1.4, 2.8, 1.4, 2); box(25, -30, 0.5, 4.6, 4, 0x2c2f36); solids[solids.length - 1].material = splMats().glass; // A default plant box, double stack, frosted A Screens
+  box(-32, -33, 1.4, 7, 1.4, C); box(-49.3, -30, 0.4, 5, 5, 0x6d6f73); { const m = solids[solids.length - 1]; m.material = splMats().metal; xUV(m.geometry, 0.4, 5, 5, 2); } // B pillar, rolling garage shutter
+  splCrate(-31.5, -26.5, 1.4, 1.4, 1.4, 2); splCrate(-38.5, -35, 1.3, 1.3, 1.3, 2);
   // ropes: thin dark cylinders, no collision; climbed in moveP (player) and by "rope" links in xStep (bots)
   SROPES = [{ x: 47, z: -19.7, top: 2, sx: 47, sz: -21.5 }, { x: -47, z: -19.7, top: 2, sx: -47, sz: -21.5 }, { x: 4, z: -23.7, top: 2, sx: 4, sz: -26 }];
-  { const rm = new THREE.MeshLambertMaterial({ color: 0x2a2622 }); SROPES.forEach((r) => { const m = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, r.top + 2.6, 6), rm); m.position.set(r.x, (r.top + 2.6) / 2, r.z); m.raycast = () => {}; mapG.add(m); }); }
-  for (const k in SSITES) xDecal(mapG, k, SSITES[k][0], SSITES[k][1] + 2, 7);
-  xSign(mapG, "A", 30.52, 3, -4, Math.PI / 2); xSign(mapG, "B", -30.52, 3, -9.5, -Math.PI / 2);
+  // rope visuals (braided rope, anchor beam, coil) are built in splDress
   xSplitTint();
+  splDress(); // vB: zones, site markers on the platform tops, ceilings, shop fronts, props, backdrop, light + fog
   // Tokyo look pass (decoration only): orange/red banners + red lanterns, merged into one mesh per material, no collision
   {
     const DM = { red: new THREE.MeshLambertMaterial({ color: SPLIT_TINT.cap, side: THREE.DoubleSide }), orange: new THREE.MeshLambertMaterial({ color: SPLIT_TINT.orange, side: THREE.DoubleSide }), glow: new THREE.MeshBasicMaterial({ color: 0xffb070 }) };
@@ -4482,7 +4624,7 @@ function xBuildSplit() {
   }
   // Tokyo pass 2 (decoration only): neon signs, vending machines, paper lanterns, shoji screens, tiled roof edges, distant skyline; merged per material, no collision/lights/shadows
   {
-    const fogT = (c, t) => new THREE.Color(FOG_C).lerp(new THREE.Color(c), t), L = (c) => new THREE.MeshLambertMaterial({ color: c });
+    const fogT = (c, t) => new THREE.Color(SPL_FOG).lerp(new THREE.Color(c), t), L = (c) => new THREE.MeshLambertMaterial({ color: c });
     const DM = { pink: new THREE.MeshBasicMaterial({ color: 0xff3fa8 }), cyan: new THREE.MeshBasicMaterial({ color: 0x3fe8ff }), back: L(0x1c1f26), vend: L(0xd8dde2), vglow: new THREE.MeshBasicMaterial({ color: 0xe8fbff }),
       paper: new THREE.MeshBasicMaterial({ color: 0xffe2b0 }), cord: L(0x2a2622), wood: L(0x4a3020), shoji: L(0xf3ead6), tile: L(0x3a4150),
       sky: new THREE.MeshBasicMaterial({ color: fogT(0x4a5262, 0.42), fog: false }), win: new THREE.MeshBasicMaterial({ color: fogT(0xffd27a, 0.62), fog: false }) };
@@ -4503,9 +4645,9 @@ function xBuildSplit() {
       // tiled roof edges along every building rim
       (s > 0 ? [[6, 30, -14, -6], [6, 30, -2, 18]] : [[-30, -6, -14, -11], [-30, -6, -8, 18]]).forEach(([x1, x2, z1, z2]) => {
         const w = x2 - x1 + 0.6, d = z2 - z1 + 0.6, cx = (x1 + x2) / 2, cz = (z1 + z2) / 2;
-        P("tile", new THREE.BoxGeometry(w, 0.22, 0.6), cx, 5.11, z1); P("tile", new THREE.BoxGeometry(w, 0.22, 0.6), cx, 5.11, z2);
-        P("tile", new THREE.BoxGeometry(0.6, 0.22, d), x1, 5.11, cz); P("tile", new THREE.BoxGeometry(0.6, 0.22, d), x2, 5.11, cz);
-        P("tile", new THREE.BoxGeometry(w + 0.3, 0.1, 0.25), cx, 4.98, z1 - 0.3); P("tile", new THREE.BoxGeometry(w + 0.3, 0.1, 0.25), cx, 4.98, z2 + 0.3); });
+        P("tile", new THREE.BoxGeometry(w, 0.22, 0.6), cx, SPL_WH + 0.11, z1); P("tile", new THREE.BoxGeometry(w, 0.22, 0.6), cx, SPL_WH + 0.11, z2);
+        P("tile", new THREE.BoxGeometry(0.6, 0.22, d), x1, SPL_WH + 0.11, cz); P("tile", new THREE.BoxGeometry(0.6, 0.22, d), x2, SPL_WH + 0.11, cz);
+        P("tile", new THREE.BoxGeometry(w + 0.3, 0.1, 0.25), cx, SPL_WH - 0.02, z1 - 0.3); P("tile", new THREE.BoxGeometry(w + 0.3, 0.1, 0.25), cx, SPL_WH - 0.02, z2 + 0.3); });
     }
     // hanging paper lanterns on cords: A Main (x 40) and Mid (x 0)
     [[40, -16, 16], [0, -18, 20]].forEach(([x, z1, z2]) => { P("cord", gC(z2 - z1), x, 4.6, (z1 + z2) / 2);
@@ -4521,8 +4663,148 @@ function xBuildSplit() {
     Object.keys(D).forEach((k) => { const mm = new THREE.Mesh(xMergeGeo(D[k], inv), DM[k]); mm.name = "xDeco"; mm.raycast = () => {}; mm.castShadow = mm.receiveShadow = false; mm.updateMatrix(); mm.matrixAutoUpdate = false; mapG.add(mm); });
   }
   SPLIT_CALLOUTS.forEach(([t, x, z]) => xCallout(t, x, z));
+  mapG.add = vbAdd;
 }
 const SPLIT_CALL = [];
+// ---- vB Split visual pass: neon Japanese city zones (concrete, glass, signage, ropes), site markers on the raised sites, ceilings, props, backdrop, light + fog ----
+const SPL_X = { mark: [], meshes: 0, base: 114 }; // audit: site markers built, objects added to the Split group, pre-pass object count
+const SPL_FOG = 0xb7a6c2, SPL_WH = 10; // dusk haze; building / boundary wall height (m)
+function splTex(s, draw, h) { const c = document.createElement("canvas"); c.width = s; c.height = h || s; const g = c.getContext("2d"); draw(g, s, h || s); const t = new THREE.CanvasTexture(c); xTexRep(t); t.anisotropy = 4; return t; }
+function splGrain(g, w, h, a) { const d = g.getImageData(0, 0, w, h), p = d.data; for (let i = 0; i < p.length; i += 4) { const r = (Math.random() - 0.5) * a; p[i] += r; p[i + 1] += r; p[i + 2] += r; } g.putImageData(d, 0, 0); }
+let SPL_MT = null;
+function splMats() { // procedural canvas textures (64-256 px) + Split materials, built once
+  if (SPL_MT) return SPL_MT;
+  const R = (a, b) => a + Math.random() * (b - a), L = (o) => new THREE.MeshLambertMaterial(o), B = (o) => new THREE.MeshBasicMaterial(o);
+  const T = {
+    wall: splTex(256, (g, s) => { // 4 m tile: cast concrete panels, form-tie holes, stains, a dark plinth
+      g.fillStyle = "#c9c6c0"; g.fillRect(0, 0, s, s);
+      for (let j = 0; j < 2; j++) for (let i = 0; i < 2; i++) { g.fillStyle = `hsl(30,${R(2, 6)}%,${R(74, 82)}%)`; g.fillRect(i * 128 + 2, j * 128 + 2, 124, 124); }
+      g.fillStyle = "rgba(60,60,60,.45)"; for (let j = 0; j < 4; j++) for (let i = 0; i < 4; i++) { g.beginPath(); g.arc(32 + i * 64, 32 + j * 64, 2.5, 0, 7); g.fill(); }
+      for (let i = 0; i < 14; i++) { g.fillStyle = "rgba(80,70,60,.07)"; g.fillRect(R(0, s), R(0, s * 0.6), R(4, 14), R(30, 110)); }
+      g.fillStyle = "#77746f"; g.fillRect(0, s - 12, s, 12); splGrain(g, s, s, 14); }),
+    asphalt: splTex(256, (g, s) => { g.fillStyle = "#3b3c40"; g.fillRect(0, 0, s, s); for (let i = 0; i < 900; i++) { g.fillStyle = `rgba(${R(120, 200)},${R(120, 200)},${R(120, 200)},.12)`; g.fillRect(R(0, s), R(0, s), 2, 2); }
+      g.strokeStyle = "rgba(20,20,22,.5)"; g.lineWidth = 2; g.beginPath(); g.moveTo(0, R(0, s)); g.bezierCurveTo(80, R(0, s), 170, R(0, s), s, R(0, s)); g.stroke(); splGrain(g, s, s, 16); }),
+    tile: splTex(256, (g, s) => { // 4 m tile: pale 0.5 m paving squares (sidewalks, sites tinted per site)
+      g.fillStyle = "#77767a"; g.fillRect(0, 0, s, s); for (let j = 0; j < 8; j++) for (let i = 0; i < 8; i++) { g.fillStyle = `hsl(220,${R(2, 6)}%,${R(70, 80)}%)`; g.fillRect(i * 32 + 1, j * 32 + 1, 30, 30); } splGrain(g, s, s, 12); }),
+    brick: splTex(256, (g, s) => { // 4 m tile: red-brown plaza bricks in herringbone-ish rows
+      g.fillStyle = "#5a3a32"; g.fillRect(0, 0, s, s); for (let j = 0; j < 16; j++) for (let i = -1; i < 9; i++) { g.fillStyle = `hsl(${R(8, 18)},${R(30, 42)}%,${R(36, 46)}%)`; g.fillRect(i * 32 + (j % 2) * 16 + 1, j * 16 + 1, 30, 14); } splGrain(g, s, s, 14); }),
+    crate: splTex(128, (g, s) => { // industrial crate: orange-tan boards, black frame, stencil bar
+      g.fillStyle = "#b9824a"; g.fillRect(0, 0, s, s); g.strokeStyle = "rgba(60,35,15,.55)"; g.lineWidth = 2; for (let x = 0; x < s; x += 18) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x, s); g.stroke(); }
+      g.strokeStyle = "#2b2622"; g.lineWidth = 12; g.strokeRect(6, 6, s - 12, s - 12); g.fillStyle = "#2b2622"; g.fillRect(30, 54, 68, 8); g.fillRect(30, 68, 40, 6); splGrain(g, s, s, 16); }),
+    metal: splTex(128, (g, s) => { g.fillStyle = "#7d858c"; g.fillRect(0, 0, s, s); for (let y = 0; y < s; y += 8) { g.fillStyle = "rgba(255,255,255,.16)"; g.fillRect(0, y, s, 3); g.fillStyle = "rgba(0,0,0,.18)"; g.fillRect(0, y + 5, s, 2); } splGrain(g, s, s, 12); }),
+    hazard: splTex(64, (g, s) => { g.fillStyle = "#f2c21b"; g.fillRect(0, 0, s, s); g.fillStyle = "#1b1b1b"; for (let x = -s; x < s; x += 32) { g.beginPath(); g.moveTo(x, s); g.lineTo(x + 16, s); g.lineTo(x + 16 + s, 0); g.lineTo(x + s, 0); g.closePath(); g.fill(); } }),
+    win: splTex(256, (g, s) => { // 4 m tile of upper-storey facade: dark glass grid, some windows lit warm / cool
+      g.fillStyle = "#2a2d36"; g.fillRect(0, 0, s, s);
+      for (let j = 0; j < 4; j++) for (let i = 0; i < 4; i++) { const q = Math.random(); g.fillStyle = q < 0.3 ? "#ffd79a" : q < 0.42 ? "#9fe6ff" : q < 0.5 ? "#ff9fd0" : "#3b4150"; g.fillRect(i * 64 + 8, j * 64 + 10, 48, 40); g.fillStyle = "rgba(0,0,0,.35)"; g.fillRect(i * 64 + 31, j * 64 + 10, 2, 40); }
+      g.fillStyle = "#4b4f5a"; for (let j = 0; j < 4; j++) g.fillRect(0, j * 64 + 54, s, 6); }),
+    shop: splTex(256, (g, s, h) => { // storefront strip (4 m x 2.8 m): mullioned glass over warm interiors, noren curtain band
+      const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, "#ffe2b0"); gr.addColorStop(1, "#d98a5a"); g.fillStyle = gr; g.fillRect(0, 0, s, h);
+      for (let i = 0; i < 6; i++) { g.fillStyle = `rgba(${R(40, 120)},${R(30, 80)},${R(30, 70)},.55)`; g.fillRect(R(0, s), R(h * 0.45, h * 0.8), R(14, 40), R(20, 60)); }
+      g.fillStyle = "#2b2622"; for (let x = 0; x <= s; x += 64) g.fillRect(x - 3, 0, 6, h); g.fillRect(0, 0, s, 8); g.fillRect(0, h - 10, s, 10);
+      g.fillStyle = "#3a4fa0"; for (let x = 6; x < s; x += 64) { g.fillRect(x, 8, 24, 34); g.fillRect(x + 28, 8, 24, 34); } }, 128),
+    sky: (() => { const c = document.createElement("canvas"); c.width = 2; c.height = 256; const g = c.getContext("2d"), gr = g.createLinearGradient(0, 0, 0, 256);
+      gr.addColorStop(0, "#28285a"); gr.addColorStop(0.4, "#5a4a8c"); gr.addColorStop(0.75, "#c48aa6"); gr.addColorStop(1, "#d6b0b8"); g.fillStyle = gr; g.fillRect(0, 0, 2, 256);
+      const t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding; return t; })(),
+  };
+  const po = { polygonOffset: true, polygonOffsetFactor: -1 };
+  SPL_MT = { T,
+    wallAtk: L({ map: T.wall, color: 0xfff0dc }), wallA: L({ map: T.wall, color: 0xeef6fa }), wallB: L({ map: T.wall, color: 0xfbeef0 }), wallDef: L({ map: T.wall, color: 0xb8c0cc }), wallMid: L({ map: T.wall, color: 0xf2efe8 }),
+    asphalt: L({ map: T.asphalt }), conc: L({ map: T.wall, color: 0xb9b6b0 }), crate: L({ map: T.crate }), metal: L({ map: T.metal }), hazard: L({ map: T.hazard }),
+    tile: L(Object.assign({ map: T.tile }, po)), tileA: L(Object.assign({ map: T.tile, color: 0xbfeef0 }, po)), tileB: L(Object.assign({ map: T.tile, color: 0xf6c6e0 }, po)), tileDef: L(Object.assign({ map: T.tile, color: 0x9aa4b4 }, po)),
+    brick: L(Object.assign({ map: T.brick }, po)), duct: L({ map: T.metal, color: 0xa8b0b8 }), glass: L({ color: 0x9fc7d6, transparent: true, opacity: 0.82 }),
+    win: B({ map: T.win, color: 0xd8d8e0 }), shop: B({ map: T.shop }) };
+  return SPL_MT;
+}
+function splKit(DM) { // merged decoration: P(k, geo, x, y, z, rx, ry, rz) → one mesh per material on done(); no collision, no shadows
+  const D = {};
+  const P = (k, geo, x, y, z, rx = 0, ry = 0, rz = 0) => { const m = new THREE.Mesh(geo, DM[k]); m.position.set(x, y, z); m.rotation.set(rx, ry, rz); (D[k] || (D[k] = [])).push(m); return m; };
+  const done = (far) => { mapG.updateMatrixWorld(true); const inv = new THREE.Matrix4().copy(mapG.matrixWorld).invert(), out = [];
+    Object.keys(D).forEach((k) => { if (far) { const a = new THREE.Mesh(new THREE.BoxGeometry(0.01, 0.01, 0.01), DM[k]); a.position.set(0, -400, 0); D[k].push(a); } // far anchor: keeps backdrop out of the sun-shadow fit (xFitSun skips > 400 m)
+      D[k].forEach((m) => m.updateMatrixWorld(true));
+      const mm = new THREE.Mesh(xMergeGeo(D[k], inv), DM[k]); mm.name = "xDeco"; mm.raycast = () => {}; mm.castShadow = mm.receiveShadow = false; mm.updateMatrix(); mm.matrixAutoUpdate = false; mapG.add(mm); out.push(mm); });
+    return out; };
+  return { P, done };
+}
+function splCrate(x, z, w, h, d, base, mat) { // crate sitting on `base` (0 = street, 2 = raised site): mesh only above the support, collider to the crate top
+  base = base || 0; const m = new THREE.Mesh(xUV(new THREE.BoxGeometry(w, h, d), w, h, d, Math.min(w, d)), mat || splMats().crate); m.position.set(x, base + h / 2, z); m.castShadow = m.receiveShadow = true; mapG.add(m); solids.push(m);
+  boxes.push({ x1: x - w / 2, x2: x + w / 2, z1: z - d / 2, z2: z + d / 2, h: base + h }); return m;
+}
+function splSlab(x1, x2, z1, z2, y0, y1, mat) { // ceiling / bridge deck: solid for bullets + decals, not in boxes (overhead, nobody reaches it)
+  const w = x2 - x1, h = y1 - y0, d = z2 - z1, m = new THREE.Mesh(xUV(new THREE.BoxGeometry(w, h, d), w, h, d, 4), mat); m.position.set((x1 + x2) / 2, y0 + h / 2, (z1 + z2) / 2); m.castShadow = m.receiveShadow = true; mapG.add(m); solids.push(m); return m;
+}
+function splPad(x, z, w, d, mat, y) { const m = new THREE.Mesh(xUV(new THREE.PlaneGeometry(w, d), w, d, undefined, 4), mat); m.rotation.x = -Math.PI / 2; m.position.set(x, y || 0.012, z); m.receiveShadow = true; m.raycast = () => {}; mapG.add(m); return m; }
+function splPlaque(txt, x, y, z, ry, col) { const m = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 0.6), new THREE.MeshBasicMaterial({ map: xText(txt, { w: 256, h: 64, size: 34, bg: "#1c1f2a", col: col || "#ffe36e" }) })); m.position.set(x, y, z); m.rotation.y = ry; m.raycast = () => {}; mapG.add(m); return m; }
+function splDress() {
+  const M = splMats(), HP = Math.PI / 2, BX = (w, h, d) => new THREE.BoxGeometry(w, h, d), BXU = (w, h, d, T) => xUV(new THREE.BoxGeometry(w, h, d), w, h, d, T), PL = (w, h, T) => xUV(new THREE.PlaneGeometry(w, h), w, h, undefined, T || 4);
+  // 1. per-zone wall palettes on the concrete texture: attacker street warm, A side cool white, B side rose, defender side dark blue-grey, Mid neutral
+  mapG.traverse((o) => { if (!o.isMesh || o.material !== SMT.wall) return; const p = o.position;
+    o.material = p.z > 30 ? M.wallAtk : p.z < -30 ? M.wallDef : p.x > 5.9 ? M.wallA : p.x < -5.9 ? M.wallB : M.wallMid; });
+  // raised sites, ramps, Heaven ledges and the Mid perch: cast concrete
+  mapG.traverse((o) => { if (o.isMesh && o.material === SMT.concrete) o.material = M.conc; });
+  // 2. floor zones: attacker street brick, Mid plaza brick, sidewalks along the Main walls, defender tiles, site tops tinted (A cyan, B rose), Mail / Vents metal-dark tile
+  splPad(0, 31, 99, 25, M.brick); splPad(0, -6, 12, 49, M.brick); splPad(0, -42.75, 99, 24.5, M.tileDef);
+  for (const s of [1, -1]) { splPad(s * 42.75, 4, 2.5, 32, M.tile); splPad(s * 31.25, 6, 2.5, 24, M.tile); splPad(s * 35.75, -29, 27.5, 18, s > 0 ? M.tileA : M.tileB, 2.012); }
+  splPad(18, -4, 24, 4, M.tileDef); splPad(-18, -9.5, 24, 3, M.tileDef);
+  // 3. site markers: neon-framed letter on the boundary wall above each raised site, plant-zone border + floor letter on the platform top (y 2)
+  const NC = { A: 0x3fe8ff, B: 0xff4fb0 }, DK = { nA: new THREE.MeshBasicMaterial({ color: NC.A }), nB: new THREE.MeshBasicMaterial({ color: NC.B }), pW: new THREE.MeshBasicMaterial({ color: 0xf4f4f0 }), hz: M.hazard, dark: new THREE.MeshLambertMaterial({ color: 0x1c1f26 }), metal: M.metal, duct: M.duct, glow: new THREE.MeshBasicMaterial({ color: 0xfff1d0 }), rope: new THREE.MeshLambertMaterial({ color: 0x5a4632 }), cord: new THREE.MeshLambertMaterial({ color: 0x1a1a1e }) };
+  ["red", "teal", "navy", "orange"].forEach((k, i) => (DK["aw" + i] = new THREE.MeshLambertMaterial({ color: [0xc8402c, 0x2f9a94, 0x2d3a6a, 0xe8792e][i], side: THREE.DoubleSide })));
+  const kit = splKit(DK), P = kit.P;
+  [["A", 49.45, -29, -HP], ["B", -49.45, -22.5, HP]].forEach(([k, x, z, ry]) => { const s = 4.4, g = new THREE.Group(); g.position.set(x, 5.2, z); g.rotation.y = ry; g.name = "vBSplSite" + k;
+    const bk = new THREE.Mesh(BX(s + 0.6, s + 0.6, 0.08), DK.dark); bk.position.z = 0.04; g.add(bk);
+    [[0, s / 2 + 0.2, s + 0.6, 0.12], [0, -s / 2 - 0.2, s + 0.6, 0.12], [s / 2 + 0.2, 0, 0.12, s + 0.6], [-s / 2 - 0.2, 0, 0.12, s + 0.6]].forEach(([a, b, w, h]) => { const e = new THREE.Mesh(BX(w, h, 0.1), DK["n" + k]); e.position.set(a, b, 0.09); g.add(e); });
+    const lt = new THREE.Mesh(new THREE.PlaneGeometry(s, s), new THREE.MeshBasicMaterial({ map: xText(k, { col: k === "A" ? "#9ff6ff" : "#ffb3dc", size: 220, stroke: "rgba(10,10,20,.9)" }), transparent: true })); lt.position.z = 0.11; g.add(lt);
+    g.traverse((o) => { o.raycast = () => {}; }); mapG.add(g); SPL_X.mark.push("wall" + k);
+    const [cx, cz] = SSITES[k], y = 2.036, ed = (x1, z1, x2, z2) => { const len = Math.hypot(x2 - x1, z2 - z1), n = Math.floor(len / 1.5), ax = x2 !== x1;
+      for (let i = 0; i < n; i++) { const t = (i + 0.5) / n; P("n" + k, BX(ax ? 1 : 0.22, 0.012, ax ? 0.22 : 1), x1 + (x2 - x1) * t, y, z1 + (z2 - z1) * t); } };
+    ed(cx - 7, cz - 6, cx + 7, cz - 6); ed(cx - 7, cz + 6, cx + 7, cz + 6); ed(cx - 7, cz - 6, cx - 7, cz + 6); ed(cx + 7, cz - 6, cx + 7, cz + 6);
+    for (const sx of [-1, 1]) for (const sz of [-1, 1]) { P("pW", BX(2, 0.014, 0.3), cx + sx * 6.15, y + 0.002, cz + sz * 6); P("pW", BX(0.3, 0.014, 2), cx + sx * 7, y + 0.002, cz + sz * 5.15); }
+    const fl = new THREE.Mesh(new THREE.PlaneGeometry(7, 7), new THREE.MeshLambertMaterial({ map: xText(k, { col: "rgba(250,245,235,.8)" }), transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 }));
+    fl.rotation.x = -HP; fl.position.set(cx, 2.03, cz + 2); fl.raycast = () => {}; mapG.add(fl); SPL_X.mark.push("floor" + k); });
+  // hazard stripes on the raised-site, Heaven and perch edges
+  for (const s of [1, -1]) { P("hz", BXU(27.6, 0.16, 0.04, 0.16), s * 35.75, 1.9, -19.98); P("hz", BXU(27.6, 0.16, 0.04, 0.16), s * 35.75, 1.9, -38.02); P("hz", BXU(0.04, 0.16, 18, 0.16), s * 21.98, 1.9, -29);
+    P("hz", BXU(9.6, 0.16, 0.04, 0.16), s * 44.75, 2.7, -37.98); P("hz", BXU(0.04, 0.16, 8, 0.16), s * 39.98, 2.7, -42); }
+  P("hz", BXU(4.04, 0.16, 4.04, 0.16), 4, 1.9, -26);
+  // 4. ceilings: Mail (4 m) and Vents (3.5 m) become covered corridors; a pedestrian bridge spans Mid Top at 5 m
+  splSlab(6, 30, -6, -2, 4, SPL_WH, M.wallA); splSlab(-30, -6, -11, -8, 3.5, SPL_WH, M.wallB); splSlab(-6, 6, -14, -11.5, 5, 5.6, M.conc);
+  for (let x = 8; x < 30; x += 4) { P("glow", BX(1.2, 0.06, 0.5), x, 3.95, -4); P("dark", BX(1.4, 0.1, 0.7), x, 3.98, -4); } // Mail ceiling lights
+  P("duct", BXU(24, 0.6, 1.0, 1), -18, 3.15, -9.0); for (let x = -28; x < -7; x += 3) P("metal", BX(0.12, 0.7, 1.1), x, 3.15, -9.0); // Vents duct run
+  for (const z of [-14.02, -11.48]) { P("dark", BXU(12, 0.9, 0.06, 0.9), 0, 6.05, z); P("nA", BX(12, 0.06, 0.08), 0, 6.5, z); } // bridge rails + neon edge
+  // 5. shop-front streets: storefront glass + awnings along the Main walls and the attacker-street faces, glass facades on the upper storeys, door-height neon plaques
+  const front = (x, z, ry, len, shop = true) => { // wall face centre (x, z), facing ry, length len; shop = storefronts + awnings at street level
+    const n = Math.max(1, Math.round(len / 4)), sl = len / n, ax = Math.cos(ry), az = -Math.sin(ry), nx = Math.sin(ry), nz = Math.cos(ry);
+    for (let i = 0; i < n; i++) { const o = -len / 2 + sl * (i + 0.5), cx = x + ax * o, cz = z + az * o;
+      if (i % 3 !== 2 && shop) { P("shop", PL(sl - 0.5, 2.8, 2.8), cx + nx * 0.03, 1.7, cz + nz * 0.03, 0, ry); P("aw" + (i % 4), BX(sl - 0.3, 0.06, 1.8), cx + nx * 0.9, 3.35, cz + nz * 0.9).rotation.set(0.22, ry, 0, "YXZ"); } // awning droops outward
+      else if (shop) P("dark", BX(sl - 0.5, 2.6, 0.06), cx + nx * 0.03, 1.5, cz + nz * 0.03, 0, ry); }
+    P("win", PL(len, 5.6, 4), x + nx * 0.03, 6.9, z + nz * 0.03, 0, ry); };
+  for (const s of [1, -1]) { front(s * 44, 4, -s * HP, 30); front(s * 18, 18, 0, 22); front(s * 30, 8, s * HP, 18, false); front(s * 6, 8, -s * HP, 18, false); front(s * 18, -14, Math.PI, 22); front(s * 49.5, 30, -s * HP, 24); } // A/B Main + Mid faces keep their vending / shoji / neon at street level
+  front(0, 43.5, Math.PI, 70); front(0, -54.5, 0, 70);
+  [["A MAIN", 43.94, 4.5, -6, -HP], ["B MAIN", -43.94, 4.5, -6, HP], ["MAIL", 5.94, 4.6, -4, -HP], ["MAIL", 30.06, 4.6, -4, HP], ["VENTS", -5.94, 4.2, -9.5, HP], ["VENTS", -30.06, 4.2, -9.5, -HP],
+   ["A LOBBY", 27, 4.5, 18.06, 0], ["B LOBBY", -27, 4.5, 18.06, 0], ["MID", 0, 6.05, -11.4, 0]].forEach(([t, x, y, z, ry], i) => splPlaque(t, x, y, z, ry, t[0] === "A" || t === "MAIL" ? "#9ff6ff" : t[0] === "B" || t === "VENTS" ? "#ffb3dc" : "#ffe36e"));
+  // 6. ropes: thicker braided rope, steel anchor beam at the top, coil at the base
+  (SROPES || []).forEach((r) => { P("rope", xG("Cylinder", 0.05, 0.05, r.top + 2.6, 6), r.x, (r.top + 2.6) / 2, r.z); P("metal", BX(1.4, 0.18, 0.18), r.x, r.top + 2.6, r.z); P("rope", xG("Torus", 0.28, 0.06, 6, 14), r.x + 0.3, 0.07, r.z + 0.2, HP); });
+  // kerb baseboards: dark concrete skirting with a thin neon-free steel line on every building / boundary wall
+  boxes.filter((b) => b.h >= 4 && Math.max(b.x2 - b.x1, b.z2 - b.z1) >= 3).forEach((b) => { const w = b.x2 - b.x1, d = b.z2 - b.z1, cx = (b.x1 + b.x2) / 2, cz = (b.z1 + b.z2) / 2;
+    P("dark", BX(w + 0.08, 0.3, d + 0.08), cx, 0.15, cz); P("metal", BX(w + 0.1, 0.05, d + 0.1), cx, 0.32, cz); });
+  // 7. power lines + paper-lantern cords across the Mains
+  for (const s of [1, -1]) for (const z of [-8, 2, 12]) P("cord", BX(14.2, 0.03, 0.03), s * 37, 7.2, z);
+  kit.done();
+  // 8. props with collision: trash bins + cardboard crates in street corners and along the Main walls (clear of lanes, ropes and nav links)
+  const bin = (x, z) => splCrate(x, z, 0.8, 1.1, 0.6, 0, M.metal);
+  [[48.9, 42.6], [47.9, 42.6], [-48.9, 42.6], [-47.9, 42.6], [48.9, -53.6], [-48.9, -53.6], [43.3, 17.0], [-43.3, 17.0], [5.35, 13.0], [-5.35, 13.0]].forEach(([x, z]) => bin(x, z));
+  [[46.4, 42.8], [-46.4, 42.8], [47.6, -53.8], [-47.6, -53.8], [43.1, -9.4], [-43.1, -9.4]].forEach(([x, z]) => splCrate(x, z, 1.2, 1.2, 1.2));
+  // 9. backdrop: dusk city blocks outside the boundary with glass facades, rooftop neon boards and water tanks
+  { const BK = { body: new THREE.MeshLambertMaterial({ color: 0x3a3e4c }), win: new THREE.MeshBasicMaterial({ map: M.T.win, color: 0xbcb6c8 }), nP: new THREE.MeshBasicMaterial({ color: 0xff4fb0 }), nC: new THREE.MeshBasicMaterial({ color: 0x3fe8ff }), nY: new THREE.MeshBasicMaterial({ color: 0xffd34f }), tank: new THREE.MeshLambertMaterial({ color: 0x6a6f7a }) }, K = splKit(BK);
+    let sd = 31; const rnd = () => ((sd = (sd * 16807) % 2147483647) / 2147483647), NK = ["nP", "nC", "nY"];
+    for (let i = 0; i < 30; i++) { const a = (i / 30) * Math.PI * 2 + rnd() * 0.1, x = Math.sin(a) * 66 * (1 + rnd() * 0.25), z = Math.cos(a) * 62 * (1 + rnd() * 0.25) - 5; if (Math.abs(x) < 56 && z < 50 && z > -61) continue;
+      const w = 8 + rnd() * 8, d = 8 + rnd() * 6, h = 14 + rnd() * 20, ry = Math.atan2(x, z + 5);
+      K.P("body", BX(w, h, d), x, h / 2, z, 0, ry); const lz = -d / 2 - 0.05; K.P("win", PL(w - 1, h - 3, 4), x + lz * Math.sin(ry), h / 2 + 1, z + lz * Math.cos(ry), 0, ry + Math.PI);
+      if (rnd() < 0.6) K.P(NK[i % 3], BX(w * 0.7, 1.4, 0.2), x + (lz - 0.2) * Math.sin(ry), h + 1.2, z + (lz - 0.2) * Math.cos(ry), 0, ry); else K.P("tank", xG("Cylinder", 1.2, 1.2, 2.4, 10), x, h + 1.2, z); }
+    const out = K.done(true);
+    // fog + sky for Split: set while this map renders; useMap() restores the shared fog / sky on every map switch
+    if (out[0]) out[0].onBeforeRender = () => { scene.fog.color.setHex(SPL_FOG); scene.fog.near = 38; scene.fog.far = 150; scene.background = M.T.sky; }; }
+  // 10. subtle zone lights (no shadows): cyan over A, rose over B, warm Mail, amber Mid, cool Vents
+  [[0x6ff0ff, 40, 16, 36, 5.5, -29], [0xff6fc0, 40, 16, -36, 5.5, -29], [0xffc27a, 26, 12, 18, 3.4, -4], [0xffb050, 30, 16, 0, 5, 2], [0x9fc0ff, 18, 10, -18, 3, -9.5]].forEach(([c, i, dist, x, y, z]) => { const l = new THREE.PointLight(c, i, dist, 2); l.position.set(x, y, z); l.castShadow = false; mapG.add(l); });
+}
 // ---- Lotus (5v5), PASS 1 blockout: ~110 x 110 m, attackers south (+z), defenders north (-z); A east, B centre, C west ----
 // lanes: C Main | B Main | A Main split by two blocks with C Link (B↔C) and A Link (A↔B) gaps; A Tree + C Waterfall pockets;
 // doorway gaps left for later: A Door + C Door (site dividers x ±18), breakable wall (A Main ↔ A Tree, x 44.5)
@@ -4897,7 +5179,7 @@ const XG_NODES = {
   bind: () => [[0, 35], [-20, 33], [20, 33], [13, 33], [-20, 20], [-23, 15.5], [-21, 17], [-27.5, 14], [-27.5, 8], [-27.5, 0], [-27.5, -9], [-27, -20], // spawn, A Lobby, A Short
     [-21, 9], [-21, 0], [-15, -1], [-15, -9], [-12, -20], [-11, -26], [-11, -32], [-11, -35], [0, -35], [13, -35], [13, -31.5], [13, -26], // Showers, Bath, A Site, U-Hall, Def Spawn, B Hall
     [13, 24], [13, 18], [13, 13], [13, 7], [13, -3], [13, -9], [13, -11.7], [13, -14.8], [13, -17], [24.5, 24], [25, 20], [24.5, 12], [24.5, 0], [27.5, -9], [23, -10], [23, -16], SITES.A, SITES.B, [-28, -24], [-16, -15], [-15, -17], [-20.5, -17], [-9.8, -27], [-9.8, -19], [-13, -17]], // Market, Hookah, B site, B Long, Garden, Elbow; last 5: A Bath → A Site and U-Hall → A Site (A Site was only reachable one-way via the A Short teleporter)
-  haven: () => XG_LANES.filter(([x, z]) => z !== 11 || x !== 0 && Math.abs(x) !== 20).concat([[0, 16], [-4, 11], [4, 11], [7, -10.5], [15, -10.5], [0, -26], [-25, -21], [-26.5, -27], [28, 22], [28, 4], [28, -8], [25, -11], [19, -2], [15, -7], [23.75, -26], [23.75, -31], [-27, 11], [-27, -4], [-20.5, 5.75], [-20.5, -3], [-15, -10.5], [-7, -10.5], [-21, -33], [0, -33], [21, -33], [-10, 5.5], [-15, 5.5], [10, 2], [14.5, 0.8], HSITES.A, HSITES.B, HSITES.C, [0, 35], [0, -35], [-28, 31]]), // last Bind 2 / Haven 1: reconnect A site + A Long after the layout rebuild (work/audit.js)
+  haven: () => XG_LANES.filter(([x, z]) => z !== 11 || x !== 0 && Math.abs(x) !== 20).concat([[0, 16], [-4, 11], [4, 11], [7, -10.5], [15, -10.5], [0, -26], [-25, -21], [-26.5, -27], [28, 22], [28, 4], [28, -8], [25, -11], [19, -2], [15, -7], [23.75, -26], [23.75, -31], [-26, 11], [-27, -4], [-20.5, 5.75], [-20.5, -3], [-15, -10.5], [-7, -10.5], [-21, -33], [0, -33], [21, -33], [-10, 5.5], [-15, 5.5], [10, 2], [14.5, 0.8], HSITES.A, HSITES.B, HSITES.C, [0, 35], [0, -35], [-28, 31]]), // last Bind 2 / Haven 1: reconnect A site + A Long after the layout rebuild (work/audit.js)
   split: () => [[0, 35], [0, 24], [0, 10], [0, -4], [0, -9.5], [0, -22], [0, -35], [0, -42], [18, -4], [-18, -9.5], // spawns, Mid Bottom / Top, Mail, Vents
     [30, 24], [39, 24], [39, 10], [39, -4], [36, -14], [29, -17], [-30, 24], [-39, 24], [-39, 10], [-39, -9.5], [-36, -14], [-29, -17], // lobbies, mains, ramps
     [14, -50], [38, -50], [27, -44], [31, -44], [-14, -50], [-38, -50], [-27, -44], [-31, -44], // defender side to stairs
