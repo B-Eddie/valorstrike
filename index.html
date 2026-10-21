@@ -1203,6 +1203,8 @@ body.x-cbh #game{--ha:#3d8bff;--he:#ff9f1c}
   <div class="x-xhp"><canvas id="xhPrev" width="480" height="320" role="img" aria-label="Crosshair preview"></canvas></div>
   <div class="srow">Crosshair color<div class="sw" id="xhSw"></div></div>
   <div class="srow x-sr"><span class="st-l">Crosshair</span><div class="seg" id="xXhM"><button data-v="static">Static</button><button data-v="dynamic" class="on">Dynamic</button></div></div>
+  <div class="srow">Hit marker<div class="seg" data-key="hm"><button data-v="0" class="on">Off</button><button data-v="1">On</button></div></div>
+  <div class="srow">Damage numbers<div class="seg" data-key="dn"><button data-v="0" class="on">Off</button><button data-v="1">On</button></div></div>
   <div class="x-xcs" id="xcSet"></div>
   </div>
   <div data-sp="v" id="xVid" role="tabpanel" aria-label="Video" hidden>
@@ -1426,7 +1428,7 @@ const toast = $("toast"); let tt;
 const say = (msg, ms) => { toast.textContent = msg; toast.classList.add("on"); clearTimeout(tt); tt = setTimeout(() => toast.classList.remove("on"), ms || 1600); };
 document.querySelectorAll(".soon").forEach((b) => b.onclick = () => say("Coming soon"));
 // ---- settings, inventory, stats (in memory) ----
-const S = { sens: 1.6, vol: 70, bright: 100, fps: false, xh: "#ffffff", diff: "normal", muted: true, weapon: "Vandal" };
+const S = { sens: 1.6, vol: 70, bright: 100, fps: false, xh: "#ffffff", diff: "normal", muted: true, weapon: "Vandal", hm: false, dn: false }; // hm / dn: hit marker, damage numbers (off, as in Valorant)
 let mode = "retake";
 // rate = shots/s, body/head/legs = damage 0-30 m, ff = [body, head, legs] past 15 m, rec = recoil
 const WEAP = { Vandal: { mag: 25, rate: 9.75, body: 40, head: 160, legs: 34, rec: 1, vol: 0.3, f: 170 }, Phantom: { mag: 30, rate: 11, body: 39, head: 156, legs: 33, ff: [35, 140, 30], ff2: [31, 124, 26], ffd2: 30, rec: 0.6, vol: 0.14, f: 230 },
@@ -1446,7 +1448,10 @@ WEAP.Ghost = { mag: 15, rate: 6.75, body: 30, head: 105, legs: 25, ff: [25, 88, 
 WEAP.Outlaw = { mag: 2, rate: 1 / 0.75, body: 140, head: 238, legs: 119, rec: 1.4, vol: 0.3, f: 100, semi: 1, rld: 2.8 }; // double-barrel sniper, 0.75 s between shots, 3.5x scope via XSZ
 let xSpS = 0, xSpL = 0; // spin-up: start of the current spray, last shot (ms)
 function xRate(W) { if (!W.spin) return W.rate; const n = performance.now(); if (n - xSpL > 250) xSpS = n; xSpL = n; return W.spin[0] + (W.spin[1] - W.spin[0]) * Math.min(1, (n - xSpS) / 1000); }
-function xRT() { if (rw === "pis") return 1.2; const W = WEAP[wName()]; return (W && W.rld) || 1.6; } // reload anim duration; machine guns run it longer
+// Valorant reload times (s), one per gun; Ares / Odin / Outlaw keep their own rld above
+{ const RLD = { Classic: 1.75, Shorty: 1.75, Frenzy: 1.5, Ghost: 1.5, Sheriff: 2.25, Stinger: 2.25, Spectre: 2.25, Bucky: 2.5, Judge: 2.2, Bulldog: 2.5, Guardian: 2.5, Phantom: 2.5, Vandal: 2.5, Marshal: 2.5, Operator: 3.7 };
+  for (const n in RLD) if (WEAP[n] && !WEAP[n].rld) WEAP[n].rld = RLD[n]; }
+function xRT() { const W = WEAP[wName()]; return (W && W.rld) || 2.5; } // reload duration from the gun's own Valorant reload time
 // one damage table for player and bots; zone = "body" | "head" | "legs"; falloff ff past ffd m (default 15); knife 50 light, heavy 75 body / 150 back-stab or head
 const KNIFE = { light: 50, heavy: 75, heavyCrit: 150 }; let kHv = 0, kLg = 0, kLx = 0, kLz = 0;
 // bot yaw r is set as atan2(dx, dz) toward where it aims/moves, so its forward is (sin r, cos r); back-stab when forward · dir(attacker→target) > 0.5
@@ -1639,6 +1644,9 @@ const SFX = {
   heal() { if (!sOk()) return; [660, 880, 1320].forEach((f, i) => sTn(i * 0.1, f, f, 0.45, "sine", 0.15, 0, 0.01)); },
   ult() { annc("ULTIMATE READY", 1800); if (!sOk()) return; [880, 1320, 1760, 2640].forEach((f, i) => sTn(i * 0.08, f, f, 0.6, "triangle", 0.12, 0, 0.01)); },
   buy() { annc("BUY PHASE", 2000, { s: "buy" }); whoosh(); },
+  lowT(u) { if (!sOk() || !sCap("lowT", 1, 0.5)) return; const f = u ? 1480 : 1180; sTn(0, f, f, 0.05, "square", 0.06); sTn(0, f * 1.5, f * 1.5, 0.04, "sine", 0.04); }, // last-10-s round clock tick, higher in the last 5 s
+  roundStart() { if (!sOk()) return; [392, 523, 784].forEach((f, i) => sTn(i * 0.07, f, f * 1.01, 0.35, "triangle", 0.13, 0, 0.01)); sNz(0, 0.4, "bandpass", 900, 2600, 0.12, 0, 1.5); }, // barrier drop stinger (original)
+  defHalf() { if (!sOk()) return; sTn(0, 1320, 1320, 0.08, "sine", 0.14); sTn(0.09, 1760, 1760, 0.12, "sine", 0.12); }, // half-defuse checkpoint chime
   stinger(win) { if (!sOk()) return; (win ? [523, 659, 784] : [392, 330, 262]).forEach((f, i) => sTn(i * 0.12, f, f, 0.5, win ? "triangle" : "sawtooth", win ? 0.2 : 0.08, 0, 0.01)); },
   fanfare(win) { if (!sOk()) return; if (win) { [523, 659, 784, 1046].forEach((f, i) => sTn(0.7 + i * 0.15, f, f, 0.5, "triangle", 0.18)); [523, 659, 784, 1046].forEach((f) => sTn(1.35, f, f, 1.6, "triangle", 0.1, 0, 0.03)); }
     else { [220, 208, 196, 147].forEach((f, i) => sTn(0.7 + i * 0.35, f, f * 0.98, i === 3 ? 1.6 : 0.4, "sawtooth", 0.08, 0, 0.03)); sTn(0.7, 55, 50, 2.4, "sine", 0.3, 0, 0.1); } },
@@ -1683,7 +1691,7 @@ const open = (id) => $(id).classList.add("on");
 const closeAll = () => document.querySelectorAll(".modal.on").forEach((m) => m.classList.remove("on"));
 // settings
 // crosshair (Valorant-style): state in S.xc; one canvas, redrawn only when settings or the spread gap change
-S.xc = { ol: true, olo: 0.5, dot: false, dt: 2, inr: { on: true, op: 0.8, len: 6, th: 2, off: 3 }, out: { on: true, op: 0.35, len: 2, th: 2, off: 10 }, me: true, fe: true };
+S.xc = { ol: true, olo: 0.5, dot: false, dt: 2, inr: { on: true, op: 0.8, len: 6, th: 2, off: 3 }, out: { on: true, op: 0.35, len: 2, th: 2, off: 10 }, me: false, fe: false }; // Valorant defaults: movement / firing error lines off
 const XC_COL = { White: "#ffffff", Green: "#00ff00", "Yellow-Green": "#adff2f", "Green-Yellow": "#dfff00", Yellow: "#ffff00", Cyan: "#00ffff", Pink: "#ff00ff", Red: "#ff0000" };
 const XCF = [["Outlines", "ol"], ["Outline opacity", "olo", 0, 1, 0.05], ["Center dot", "dot"], ["Center dot thickness", "dt", 1, 6, 1],
   ["Inner lines", "inr.on"], ["Inner opacity", "inr.op", 0, 1, 0.05], ["Inner length", "inr.len", 0, 20, 1], ["Inner thickness", "inr.th", 1, 10, 1], ["Inner offset", "inr.off", 0, 20, 1],
@@ -1818,7 +1826,7 @@ function xLobbyInit() {
   bind("brightness", () => $("sBri").oninput = (e) => { S.bright = +e.target.value; $("vBri").textContent = (S.bright / 100).toFixed(2); applyBright(); });
   bind("settings toggles", () => document.querySelectorAll(".seg").forEach((seg) => seg.querySelectorAll("button").forEach((b) => b.onclick = () => {
     seg.querySelectorAll("button").forEach((x) => x.classList.toggle("on", x === b));
-    if (seg.dataset.key === "fps") { S.fps = b.dataset.v === "1"; $("fps").style.display = S.fps ? "block" : "none"; } else if (seg.dataset.key === "diff") S.diff = b.dataset.v;
+    if (seg.dataset.key === "fps") { S.fps = b.dataset.v === "1"; $("fps").style.display = S.fps ? "block" : "none"; } else if (seg.dataset.key === "diff") S.diff = b.dataset.v; else if (seg.dataset.key === "hm" || seg.dataset.key === "dn") S[seg.dataset.key] = b.dataset.v === "1";
   })));
   bind("settings tabs", () => { const tabs = $("xSTab").querySelectorAll("button[data-st]"); tabs.forEach((b) => b.addEventListener("click", () => { // left category tabs: one pane visible at a time
     tabs.forEach((t) => { t.classList.toggle("on", t === b); t.setAttribute("aria-selected", t === b ? "true" : "false"); });
@@ -2932,9 +2940,9 @@ xo.innerHTML = '<div class="x-hm" id="xHm"><i></i><i></i><i></i><i></i></div><di
 $("game").appendChild(xo);
 const XDN = []; // pooled damage-number spans (up to 40)
 function vmHit(p, dmg, hs, dead) {
-  const hm = $("xHm"); hm.classList.remove("on", "hs"); void hm.offsetWidth; hm.classList.add("on"); if (dead && hs) hm.classList.add("hs");
+  const hm = $("xHm"); hm.classList.remove("on", "hs"); if (S.hm) { void hm.offsetWidth; hm.classList.add("on"); if (dead && hs) hm.classList.add("hs"); } // Valorant shows no hit marker: opt-in (Settings > Crosshair)
   const v = p.clone().project(camera), R = renderer.domElement.getBoundingClientRect();
-  if (v.z < 1) { // perf pass 9: pooled spans stay in the DOM; hidden when idle, display toggled to restart the animation
+  if (S.dn && v.z < 1) { // damage numbers: opt-in, off by default like Valorant // perf pass 9: pooled spans stay in the DOM; hidden when idle, display toggled to restart the animation
     let n = XDN.pop(); if (!n) { n = document.createElement("span"); n.style.display = "none"; xo.appendChild(n); }
     n.className = "x-dn" + (hs ? " hs" : ""); n.textContent = Math.round(dmg); n.style.left = (R.left + (v.x + 1) / 2 * R.width + (Math.random() - 0.5) * 30) + "px"; n.style.top = (R.top + (1 - v.y) / 2 * R.height) + "px"; n.style.display = "none"; void n.offsetWidth; n.style.display = "";
     const g = n.xG = (n.xG || 0) + 1; setTimeout(() => { if (n.xG !== g) return; n.style.display = "none"; if (XDN.length < 40) XDN.push(n); }, 800); }
@@ -3812,7 +3820,7 @@ function tick(dt) {
   if (alive && fireHeld && rw !== "knife" && !WEAP[wName()].semi && fcd <= 0 && ammo > 0) shoot();
   if (reloading > 0) { reloading -= dt; if (reloading <= 0) { const n = Math.min(MAG() - ammo, rsv); ammo += n; rsv -= n; } updHud(); }
   const near = ret && alive && Math.hypot(player.x, player.z) < 2.5;
-  if (near && defusing) defuseT += dt; else defuseT = defuseT >= 3.5 ? 3.5 : 0; // half defuse is kept
+  if (near && defusing) { const d0 = defuseT; defuseT += dt; if (d0 < 3.5 && defuseT >= 3.5) SFX.defHalf(); } else defuseT = defuseT >= 3.5 ? 3.5 : 0; // half defuse is kept
   let ad = false; if (ret) for (const a of allies) if (a.alive && a.def > 0) { ad = a; break; }
   hudS($("defuse"), "display", near || ad ? "block" : "none");
   hudT($("defuse").firstChild, (ad ? ad.name + " defusing" : defusing ? "Defusing" : "Hold 4 to defuse") + (!ad && defuseT >= 3.5 ? " · half" : ""));
@@ -3964,7 +3972,7 @@ function tick(dt) {
 }
 // ---- Operator Duel: 1v1 vs a bot, Operator + knife, first to 7 kills ----
 const RETAKE_HINT = $("hint").textContent;
-const DUEL_WIN = 7, OP_MAG = 5, BOLT = 1.2, OP_RELOAD = 2.8;
+const DUEL_WIN = 7, OP_MAG = 5, BOLT = 1.2, OP_RELOAD = 3.7; // Valorant Operator reload
 const DB = { easy: { react: 1.3, acc: 0.35 }, normal: { react: 0.85, acc: 0.55 }, hard: { react: 0.55, acc: 0.75 } };
 const du = { you: 0, them: 0, w: "op", ammo: OP_MAG, bolt: 0, reload: 0, scoped: false, wait: 0, swing: 0 };
 let duelBot = null; xDbOK = true;
@@ -6505,7 +6513,7 @@ const KITS = {
   Raze: { r: "Duelist · C Boom Bot · Q Blast Pack · E Paint Shells · X Showstopper", n: ["Boom Bot", "Blast Pack", "Paint Shells", "Showstopper"], u: 8, mx: { c: 1, q: 2 }, buy: [["c", "Boom Bot", 300], ["q", "Blast Pack", 200]], h: "C Boom Bot · Q Blast Pack (Q again to detonate) · E Paint Shells · X Showstopper (click to fire)" },
   Skye: { r: "Initiator · C Regrowth · Q Trailblazer · E Guiding Light · X Seekers", n: ["Regrowth", "Trailblazer", "Guiding Light", "Seekers"], u: 7, mx: { c: 1, q: 1, e: 2 }, buy: [["c", "Regrowth", 200], ["q", "Trailblazer", 250], ["e", "Guiding Light", 150]], h: "C Regrowth (C to stop) · Q Trailblazer (click to leap) · E Guiding Light (E to flash) · X Seekers" },
   Breach: { r: "Initiator · C Aftershock · Q Flashpoint · E Fault Line · X Rolling Thunder", n: ["Aftershock", "Flashpoint", "Fault Line", "Rolling Thunder"], u: 8, mx: { c: 1, q: 2 }, buy: [["c", "Aftershock", 200], ["q", "Flashpoint", 250]], h: "C Aftershock (aim at a wall) · Q Flashpoint (through the wall) · E Fault Line · X Rolling Thunder" },
-  Cypher: { r: "Sentinel · C Trapwire · Q Cyber Cage · E Spycam · X Neural Theft", n: ["Trapwire", "Cyber Cage", "Spycam", "Neural Theft"], u: 6, mx: { c: 1, q: 2 }, buy: [["c", "Trapwire", 200], ["q", "Cyber Cage", 100]], h: "C Trapwire · Q Cyber Cage · E Spycam (E to view, F dart) · X Neural Theft (fallen enemy within 8 m)" },
+  Cypher: { r: "Sentinel · C Trapwire · Q Cyber Cage · E Spycam · X Neural Theft", n: ["Trapwire", "Cyber Cage", "Spycam", "Neural Theft"], u: 7, mx: { c: 2, q: 2 }, buy: [["c", "Trapwire", 200], ["q", "Cyber Cage", 100]], h: "C Trapwire · Q Cyber Cage · E Spycam (E to view, F dart) · X Neural Theft (fallen enemy within 8 m)" },
   Chamber: { r: "Sentinel · C Trademark · Q Headhunter · E Rendezvous · X Tour De Force", n: ["Trademark", "Headhunter", "Rendezvous", "Tour De Force"], u: 8, mx: { c: 1, q: 8 }, buy: [["q", "Headhunter round", 150]], h: "C Trademark · Q Headhunter (click to fire) · E Rendezvous (E again to return) · X Tour De Force" },
 };
 const K = () => KITS[J.pick] || KITS.Jett;
@@ -7882,7 +7890,7 @@ function fiveTick(dt) {
     if (player.hp > 0 && !FV.menu) moveP(dt, 6.75, false);
     { const e = xSpawn(FV.map).edge; player.z = FV.atk ? Math.max(e, player.z) : Math.min(-e, player.z); }
     $("timer").textContent = bpT(); if (FV.menu) $("xBT").textContent = "00:" + String(Math.max(0, Math.ceil(FV.buy))).padStart(2, "0");
-    if (FV.buy <= 0) { FV.buy = 0; buyMenu(false); say("Round start", 900); updHud(); }
+    if (FV.buy <= 0) { FV.buy = 0; buyMenu(false); say("Round start", 900); SFX.roundStart(); updHud(); }
     return;
   }
   XNF++; // replan budget (xPath: 2 per step) follows the sim step, not only the render frame
@@ -7920,7 +7928,7 @@ function fiveTick(dt) {
     const safe = (u) => { const p = fPos(u); return !fAtk().some((a) => { const q = fPos(a); return Math.hypot(q.x - p.x, q.z - p.z) < 10; }); };
     const pn = near.includes(player), u = pn && hold ? player : near.find((x) => x !== player && safe(x));
     if (u !== s.du) { s.du = u || null; if (u && u !== player) feed(u.name + " is defusing"); }
-    if (u) { s.dt += dt; SFX.whir(s.dt / 7); } else s.dt = s.dt >= 3.5 ? 3.5 : 0;
+    if (u) { const d0 = s.dt; s.dt += dt; SFX.whir(s.dt / 7); if (d0 < 3.5 && s.dt >= 3.5 && u === player) SFX.defHalf(); } else s.dt = s.dt >= 3.5 ? 3.5 : 0;
     if (pn || (u && !FV.atk)) { show = u === player ? "Defusing" : u ? u.name + " defusing" : "Hold 4 to defuse"; prog = s.dt / 7; }
     if (s.dt >= 7) { if (u === player) jUlt(); s.st = "done"; fsM.visible = false; return fCheck(!FV.atk, fName(u) + " defused the Spike", "SPIKE DEFUSED"); }
   }
@@ -8187,6 +8195,8 @@ function xHud() {
     if (mt && xHud.ux !== mt[0]) { xHud.ux = mt[0]; xe.setAttribute("data-pips", mt[0]); let p = document.getElementById("xPips"); if (!p) { p = document.createElement("span"); p.id = "xPips"; p.style.cssText = "position:absolute;left:0;right:0;bottom:5px;display:flex;justify-content:center;gap:3px"; $("jX").appendChild(p); } p.innerHTML = Array.from({ length: +mt[2] }, (_, i) => `<i class="x-pip${i < +mt[1] ? " on" : ""}" style="position:static;height:6px;background:${i < +mt[1] ? "#ffe14d" : "none"}"></i>`).join(""); }
   }
   setT("xTm", duel ? clk(du.t) : mode === "five" && FV.buy > 0 ? bpT() : clk(timeLeft)); if (mode === "five") setT("xCrN", FV.cr); $("xTm").classList.toggle("lo", !duel && timeLeft <= 10);
+  { const lw = running && !paused && ((mode === "five" && FV.buy <= 0 && !FV.dm && !(FV.sp && FV.sp.st === "plant")) || mode === "rifle"), sc = Math.ceil(timeLeft); // low-time warning: one tick per second in the last 10 s of an unplanted round
+    if (lw && timeLeft > 0 && sc <= 10 && sc !== xHud.lt) SFX.lowT(sc <= 5); xHud.lt = lw && timeLeft > 0 && timeLeft <= 10 ? sc : -1; }
   const rf = mode === "rifle";
   const fv = mode === "five";
   setT("xSA", duel ? du.you : rf ? RF.you : fv ? FV.you : score.you); setT("xSE", duel ? du.them : rf ? RF.them : fv ? FV.them : score.bots);
@@ -8395,7 +8405,7 @@ function aimHud() {
   xQ("hp", "span").textContent = "100";
   xQ("ammo", "span").textContent = w === "Knife" ? "—" : AM.rl > 0 ? "Reloading" : AM.ammo + " / ∞";
 }
-function aimReload() { const w = aimW(); if (w === "Knife" || AM.rl > 0 || AM.ammo >= WEAP[w].mag) return; AM.rl = w === "Operator" ? 2.5 : w === "Classic" || w === "Sheriff" ? 1.2 : 1.6; setScope(false); SFX.reload(); }
+function aimReload() { const w = aimW(); if (w === "Knife" || AM.rl > 0 || AM.ammo >= WEAP[w].mag) return; AM.rl = WEAP[w].rld || 2.5; setScope(false); SFX.reload(); } // same Valorant reload time as the match
 function aimKey(c) {
   const m = /^(Digit|Numpad)([1-8])$/.exec(c);
   if (m && +m[2] - 1 !== AM.w) { AM.w = +m[2] - 1; const w = aimW(); AM.rl = 0; AM.cd = 0; AM.ammo = w === "Knife" ? 0 : WEAP[w].mag; rw = w === "Knife" ? "knife" : "pri"; VM.sw = 0.35; VM.ins = 0; blip(420, 0.05, "square", 0.08); onSkin(); setScope(false); }
