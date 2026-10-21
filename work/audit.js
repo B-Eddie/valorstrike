@@ -411,12 +411,12 @@ matchFlow("5v5", () => { toCustom(); return clickCheck("CUSTOM: 5v5 GO", $("pm5v
   }
   { phase = "5v5 cast anim"; const e0 = errors.length, err = []; let ok = false;
     try {
-      const r = xe(`(() => { try { J.pick = "Jett"; FV.buy = 0; player.hp = 100; J.q = 2; if (J.cd) J.cd.q = 0; xCaEnd(); jKey("KeyQ"); let blk = true; try { const f0 = fcd; fcd = 0; const a0 = typeof ammo !== "undefined" ? ammo : null; shoot(); blk = (a0 == null || ammo === a0); fcd = f0; } catch (e) {} return XCA.on && XCA.ty === "throw" && blk ? true : "no cast state: " + JSON.stringify({ on: XCA.on, ty: XCA.ty, blk, jon: jOn() }); } catch (e) { return String(e.stack || e).slice(0, 300); } })()`);
+      const r = xe(`(() => { try { J.pick = "Jett"; FV.buy = 0; player.hp = 100; J.c = 2; if (J.cd) J.cd.c = 0; xCaEnd(); jKey("KeyC"); let blk = true; try { const f0 = fcd; fcd = 0; const a0 = typeof ammo !== "undefined" ? ammo : null; shoot(); blk = (a0 == null || ammo === a0); fcd = f0; } catch (e) {} return XCA.on && XCA.ty === "throw" && blk ? true : "no cast state: " + JSON.stringify({ on: XCA.on, ty: XCA.ty, blk, jon: jOn() }); } catch (e) { return String(e.stack || e).slice(0, 300); } })()`);
       if (r !== true) err.push(r);
       else { advance(1000); const r2 = xe(`(() => !XCA.on && XCA.g === 0 && (!XCA.h || !XCA.h.visible) ? true : "still casting t=" + XCA.t + " g=" + XCA.g)()`); if (r2 !== true) err.push(r2); }
       errors.slice(e0).forEach((x) => err.push(x.msg)); ok = !err.length;
     } catch (e) { err.push(String(e).slice(0, 300)); }
-    report.push({ label: "Ability cast animation: Jett Q sets the viewmodel cast state (throw gesture, firing blocked) and returns to the gun within 1 s", el: true, handler: true, cond: ok, pass: ok, errs: err });
+    report.push({ label: "Ability cast animation: Jett C (Cloudburst) sets the viewmodel cast state (throw gesture, firing blocked) and returns to the gun within 1 s", el: true, handler: true, cond: ok, pass: ok, errs: err });
   }
 });
 // Swiftplay tab: shared 5v5 flow, win target 5
@@ -1599,9 +1599,9 @@ if (!NO3) {
   R("ability charges: per-charge pips, buy fills a pip, right-click sells it back", () => {
     xe('(() => { J.on = true; J.pick = "Jett"; J.c = 0; J.q = 0; FV.bt = []; return true; })()'); open(1000); const b = btn("ab:c"); if (!b) return "no ability card";
     const pips = () => Array.from(btn("ab:c").querySelectorAll(".xb-pips i")); if (pips().length !== xe("K().mx.c")) return "pips " + pips().length;
-    b.click(); if (xe("J.c") !== 1 || xe("FV.cr") !== 850) return "buy: J.c " + xe("J.c") + " cr " + xe("FV.cr"); if (pips().filter((i) => i.classList.contains("on")).length !== 1) return "pip not filled";
+    b.click(); if (xe("J.c") !== 1 || xe("FV.cr") !== 800) return "buy: J.c " + xe("J.c") + " cr " + xe("FV.cr"); if (pips().filter((i) => i.classList.contains("on")).length !== 1) return "pip not filled";
     btn("ab:q").click(); if (xe("J.q") !== 1 || xe("FV.cr") !== 650) return "Q buy";
-    rclick(btn("ab:c")); if (xe("J.c") !== 0 || xe("FV.cr") !== 800) return "sell: J.c " + xe("J.c") + " cr " + xe("FV.cr"); return true; });
+    rclick(btn("ab:c")); if (xe("J.c") !== 0 || xe("FV.cr") !== 850) return "sell: J.c " + xe("J.c") + " cr " + xe("FV.cr"); return true; });
   R("next round minimum shows credits + loss bonus; round number shown", () => {
     xe("FV.lsY = 1; true"); open(1000); if (String($("xBLB").textContent).trim() !== "3400") return "lsY 1: " + $("xBLB").textContent;
     xe("FV.lsY = 0; buyRender(); true"); if (String($("xBLB").textContent).trim() !== "2900") return "lsY 0: " + $("xBLB").textContent;
@@ -2029,7 +2029,7 @@ if (!NO3) {
     const ok = r === true && errors.length === e0; report.push({ label: "feel3: " + label, el: true, handler: true, cond: ok, pass: ok, errs: ok ? [] : [r === true ? "errors: " + errors.slice(e0).map((e) => e.msg).join(" ; ").slice(0, 300) : String(r)] }); };
   const xe = vm.runInContext("__xe", context);
   FE("weapon table: mags, body/head damage and reload times match Valorant", () => {
-    const MAGS = { Vandal: 25, Phantom: 30, Spectre: 30, Classic: 12, Ghost: 15, Sheriff: 6, Operator: 5, Marshal: 5, Judge: 7, Bucky: 5, Ares: 50, Odin: 100, Guardian: 12, Bulldog: 24, Stinger: 20, Frenzy: 13, Shorty: 2, Outlaw: 2 };
+    const MAGS = { Vandal: 25, Phantom: 30, Spectre: 30, Classic: 12, Ghost: 13, Sheriff: 6, Operator: 5, Marshal: 5, Judge: 7, Bucky: 5, Ares: 50, Odin: 100, Guardian: 12, Bulldog: 24, Stinger: 20, Frenzy: 13, Shorty: 2, Outlaw: 2 };
     const DMG = { Vandal: [40, 160], Phantom: [39, 156], Sheriff: [55, 159], Classic: [26, 78], Ghost: [30, 105], Operator: [150, 255], Guardian: [65, 195], Spectre: [26, 78], Odin: [38, 95] };
     const RLD = { Vandal: 2.5, Phantom: 2.5, Spectre: 2.25, Sheriff: 2.25, Classic: 1.75, Operator: 3.7, Odin: 5 };
     const W = JSON.parse(xe("JSON.stringify(WEAP)")), bad = [];
@@ -2065,6 +2065,47 @@ if (!NO3) {
     for (const a in K) { if (!K[a].n || K[a].n.length !== 4) bad.push(a + " has " + (K[a].n && K[a].n.length) + " abilities"); if (!(K[a].u >= 6 && K[a].u <= 9)) bad.push(a + " ult " + K[a].u); }
     const C = K.Cypher; if (C.mx.c !== 2 || C.u !== 7 || !C.buy.some((b) => b[0] === "c" && b[2] === 200)) bad.push("Cypher " + JSON.stringify([C.mx, C.u]));
     return bad.length ? bad.join(" | ") : true; });
+  FE("kits: names, max charges, credit cost per charge and ult points match current Valorant (valorant.fandom.com, Oct 2026); Ghost mag 13", () => {
+    // [C, Q, E, X] names · max charges {c,q,e} · buy [[slot, cost]] · ult points. E (signature) = 1 free per round; listed E costs buy the extra charge.
+    const V = {
+      Jett: [["Cloudburst", "Updraft", "Tailwind", "Blade Storm"], { c: 2, q: 1 }, [["c", 200], ["q", 150]], 8],
+      Phoenix: [["Blaze", "Hot Hands", "Curveball", "Run It Back"], { c: 1, q: 1, e: 2 }, [["c", 150], ["q", 200], ["e", 250]], 6],
+      Sova: [["Owl Drone", "Shock Bolt", "Recon Bolt", "Hunter's Fury"], { c: 1, q: 2 }, [["c", 400], ["q", 150]], 8],
+      Sage: [["Barrier Orb", "Slow Orb", "Healing Orb", "Resurrection"], { c: 1, q: 2 }, [["c", 300], ["q", 200]], 7],
+      Reyna: [["Leer", "Devour", "Dismiss", "Empress"], { c: 2, q: 2 }, [["c", 250], ["q", 200]], 7],
+      Omen: [["Shrouded Step", "Paranoia", "Dark Cover", "From the Shadows"], { c: 2, q: 1, e: 2 }, [["c", 100], ["q", 250], ["e", 150]], 7],
+      Killjoy: [["Nanoswarm", "Alarmbot", "Turret", "Lockdown"], { c: 2, q: 1 }, [["c", 200], ["q", 200]], 9],
+      Raze: [["Boom Bot", "Blast Pack", "Paint Shells", "Showstopper"], { c: 1, q: 2 }, [["c", 300], ["q", 200]], 8],
+      Skye: [["Regrowth", "Trailblazer", "Guiding Light", "Seekers"], { c: 1, q: 1, e: 2 }, [["c", 150], ["q", 300], ["e", 250]], 8],
+      Breach: [["Aftershock", "Flashpoint", "Fault Line", "Rolling Thunder"], { c: 1, q: 2 }, [["c", 200], ["q", 250]], 8],
+      Cypher: [["Trapwire", "Cyber Cage", "Spycam", "Neural Theft"], { c: 2, q: 2 }, [["c", 200], ["q", 100]], 7],
+      Chamber: [["Trademark", "Headhunter", "Rendezvous", "Tour De Force"], { c: 1, q: 8 }, [["c", 200], ["q", 100]], 8] };
+    const K = JSON.parse(xe("JSON.stringify(KITS)")), bad = [];
+    for (const a in V) { const k = K[a], [n, mx, buy, u] = V[a]; if (!k) { bad.push(a + " missing"); continue; }
+      if (JSON.stringify(k.n) !== JSON.stringify(n)) bad.push(a + " names " + k.n.join("/"));
+      for (const s of ["c", "q", "e"]) if ((k.mx[s] || 0) !== (mx[s] || 0)) bad.push(a + " max " + s + " " + k.mx[s]);
+      if (JSON.stringify(k.buy.map((b) => [b[0], b[2]])) !== JSON.stringify(buy)) bad.push(a + " buy " + JSON.stringify(k.buy.map((b) => [b[0], b[2]])));
+      if (k.u !== u) bad.push(a + " ult " + k.u + " (want " + u + ")");
+      if (!k.r.includes("C " + n[0]) || !k.r.includes("Q " + n[1]) || !k.r.includes("E " + n[2]) || !k.r.includes("X " + n[3])) bad.push(a + " role line keys " + k.r); }
+    if (xe("WEAP.Ghost.mag") !== 13) bad.push("Ghost mag " + xe("WEAP.Ghost.mag"));
+    return bad.length ? bad.join(" | ") : true; });
+  FE("kits: signature charges (1 free per round, bought extra carries), Reyna Dismiss blocks damage, Devour overheals, Phoenix Q = Hot Hands / E = Curveball", () => {
+    const r = xe(`(() => { const out = [], m0 = mode, o0 = { pick: J.pick, on: J.on }; try {
+      mode = "five"; J.on = true; FV.buy = 0; running = true; player.hp = 100;
+      J.pick = "Omen"; J.e = 0; jRound(true); if (J.e !== 1) out.push("Omen match-start Dark Cover " + J.e);
+      J.e = 2; jRound(false); if (J.e !== 2) out.push("Omen bought Dark Cover lost " + J.e);
+      J.pick = "Reyna"; J.q = 0; jRound(false); if (J.q !== 1) out.push("Reyna free signature " + J.q);
+      J.pick = "Killjoy"; J.q = 0; jRound(false); if (J.q !== 0) out.push("Killjoy Alarmbot free " + J.q);
+      J.pick = "Reyna"; J.dis = 1.5; player.hp = 100; hurt(player, 40); if (player.hp !== 100) out.push("Dismiss took damage " + player.hp); J.dis = 0;
+      J.so.push({ m: new THREE.Object3D(), p: { x: player.x, y: 0.5, z: player.z }, t: 3 }); J.q = 1; J.emp = 0; player.hp = 100; jKey("KeyQ"); for (let i = 0; i < 40; i++) sgTick(0.1); if (!(player.hp > 140)) out.push("Devour no overheal " + player.hp); if (J.q !== 0) out.push("Devour charge " + J.q);
+      for (let i = 0; i < 80; i++) sgTick(0.1); if (player.hp > 100) out.push("overheal did not expire " + player.hp); player.hp = 100;
+      J.pick = "Phoenix"; J.q = 1; J.e = 2; J.cd = { c: 0, q: 0, e: 0, x: 0 }; const z0 = J.zones.length, o1 = J.orbs.length; jKey("KeyQ"); jKey("KeyE");
+      if (J.zones.length !== z0 + 1 || J.q !== 0) out.push("Phoenix Q not Hot Hands"); if (J.orbs.length !== o1 + 1 || J.e !== 1) out.push("Phoenix E not Curveball");
+      J.e = 0; J.tk = 0; jKill(); jKill(); if (J.e !== 1) out.push("Curveball 2-kill recharge " + J.e);
+      J.pick = "Jett"; J.c = 2; J.q = 1; J.cd = { c: 0, q: 0, e: 0, x: 0 }; const s0 = J.smokes.length; jKey("KeyC"); if (J.smokes.length !== s0 + 1) out.push("Jett C not Cloudburst"); jKey("KeyQ"); if (J.q !== 0) out.push("Jett Q not Updraft");
+    } catch (e) { out.push(String(e.stack || e).slice(0, 200)); } finally { try { jClear(); } catch (e) {} mode = m0; J.pick = o0.pick; J.on = o0.on; player.hp = 100; }
+    return out.length ? out.join(" | ") : true; })()`);
+    return r; });
   try { xe("running = false; true"); toLobby(); } catch (e) {}
 }
 

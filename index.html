@@ -1298,8 +1298,8 @@ body.x-cbh #game{--ha:#3d8bff;--he:#ff9f1c}
   <div class="hud" id="hp"><small>Health</small><span>100</span></div>
   <div class="hud" id="ammo"><small>Vandal</small><span>25 / 25</span></div>
   <div class="hud" id="defuse">Defusing<div class="bar"><i></i></div></div>
-  <div class="hud" id="hint">WASD move · Space jump · Ctrl crouch · Shift walk · Click shoot · 1 primary · 2 Classic · 3 knife · R reload · Hold 4 at spike to defuse · C Updraft · Q smoke · E dash · X ult</div>
-  <div class="hud x-ab" id="xAb" aria-label="Jett abilities"><div class="x-as" id="jC"><i></i><b>C</b><span>Updraft</span><em></em></div><div class="x-as" id="jQ"><i></i><b>Q</b><span>Cloudburst</span><em></em></div><div class="x-as" id="jE"><i></i><b>E</b><span>Tailwind</span><em></em></div><div class="x-as" id="jX"><i></i><b>X</b><span>Blade Storm</span><em></em></div></div>
+  <div class="hud" id="hint">WASD move · Space jump · Ctrl crouch · Shift walk · Click shoot · 1 primary · 2 Classic · 3 knife · R reload · Hold 4 at spike to defuse · C smoke · Q Updraft · E dash · X ult</div>
+  <div class="hud x-ab" id="xAb" aria-label="Jett abilities"><div class="x-as" id="jC"><i></i><b>C</b><span>Cloudburst</span><em></em></div><div class="x-as" id="jQ"><i></i><b>Q</b><span>Updraft</span><em></em></div><div class="x-as" id="jE"><i></i><b>E</b><span>Tailwind</span><em></em></div><div class="x-as" id="jX"><i></i><b>X</b><span>Blade Storm</span><em></em></div></div>
   <div class="hud" id="dmg"></div>
   <div class="hud" id="xWh"></div>
   <div class="hud" id="xEmp"></div>
@@ -1450,7 +1450,7 @@ const WEAP = { Vandal: { mag: 25, rate: 9.75, body: 40, head: 160, legs: 34, rec
   // machine guns: spin = [start, full] rps over the first second of a spray (rate = bots' average); adsK = ADS spread mult; pen = wall penetration (3 high); rld = reload s; heavy = move x0.9
   Ares: { mag: 50, rate: 11.5, spin: [10, 13], body: 30, head: 72, legs: 25, rec: 0.7, vol: 0.3, f: 240, adsK: 0.75, pen: 2, rld: 3.25, heavy: 1 },
   Odin: { mag: 100, rate: 13.8, spin: [12, 15.6], body: 38, head: 95, legs: 32, rec: 0.75, vol: 0.32, f: 260, adsK: 0.55, pen: 3, rld: 5, heavy: 1 } };
-WEAP.Ghost = { mag: 15, rate: 6.75, body: 30, head: 105, legs: 25, ff: [25, 88, 21], ffd: 30, rec: 0.55, vol: 0.12, f: 250, semi: 1 }; // buy menu rebuild: suppressed sidearm
+WEAP.Ghost = { mag: 13, rate: 6.75, body: 30, head: 105, legs: 25, ff: [25, 88, 21], ffd: 30, rec: 0.55, vol: 0.12, f: 250, semi: 1 }; // buy menu rebuild: suppressed sidearm
 WEAP.Outlaw = { mag: 2, rate: 1 / 0.75, body: 140, head: 238, legs: 119, rec: 1.4, vol: 0.3, f: 100, semi: 1, rld: 2.8 }; // double-barrel sniper, 0.75 s between shots, 3.5x scope via XSZ
 let xSpS = 0, xSpL = 0; // spin-up: start of the current spray, last shot (ms)
 function xRate(W) { if (!W.spin) return W.rate; const n = performance.now(); if (n - xSpL > 250) xSpS = n; xSpL = n; return W.spin[0] + (W.spin[1] - W.spin[0]) * Math.min(1, (n - xSpS) / 1000); }
@@ -4324,7 +4324,7 @@ function fSell(n) { // right-click: full refund for anything bought this round, 
   const L = bLog(), ab = n.startsWith("ab:") ? n.slice(3) : "";
   let i = -1; for (let j = L.length - 1; j >= 0; j--) if (ab ? L[j].ab === ab : L[j].n === n) { i = j; break; }
   if (i < 0) return false; const e = L[i];
-  if (ab) { if (!(J[ab] > 0)) return false; J[ab]--; FV.cr += e.p; bBack("You", e.p); }
+  if (ab) { if (!(J[ab] > 0)) return false; J[ab]--; if (ab === "e" && J.pick === "Omen") J.oeM = J.e; FV.cr += e.p; bBack("You", e.p); }
   else if (e.a) { if ((player.armor || 0) < e.a) { L.splice(i, 1); return false; } player.armor = e.prev; FV.cr += e.p; bBack("You", e.p); }
   else { if ((e.sl === "pis" ? FV.sec : FV.pri) !== n) { L.splice(i, 1); return false; } bUndo(e); }
   L.splice(i, 1); blip(420, 0.08, "triangle", 0.12); onSkin(); updHud(); buyRender(); xHud(); return true;
@@ -6497,7 +6497,7 @@ function startFive() {
   clearTimeout(FV.to); mode = "five"; FV.map = FV.pick === "random" ? ["ascent", "bind", "haven", "split", "lotus", "breeze"][Math.floor(Math.random() * 6)] : FV.pick || "ascent"; fUseMap(); useMap("five"); if (duelBot) { scene.remove(duelBot.g); duelBot = null; }
   $("pre").style.display = "none"; $("lobby").style.display = "none"; $("result").style.display = "none"; $("xBan").style.display = "none"; $("game").style.display = "block";
   FV.you = 0; FV.them = 0; FV.lsY = FV.lsT = 0; FV.atk = true; fEco(); sbReset(F_EN, F_MATES);
-  $("hint").textContent = "WASD move · Space jump · Ctrl crouch · Shift walk · Click shoot · B buy (buy phase) · 1 primary · 2 sidearm · 3 knife · R reload · Hold 4 plant/defuse · F pick up · G drop · C Updraft · Q smoke · E dash · X ult · Tab scores · Esc pause";
+  $("hint").textContent = "WASD move · Space jump · Ctrl crouch · Shift walk · Click shoot · B buy (buy phase) · 1 primary · 2 sidearm · 3 knife · R reload · Hold 4 plant/defuse · F pick up · G drop · C smoke · Q Updraft · E dash · X ult · Tab scores · Esc pause";
   resize(); fRound();
 }
 // ---- spawn safety, unstuck, accidental Bind teleports (all modes) ----
@@ -6646,19 +6646,20 @@ const J = { pick: "", on: false, c: 2, q: 2, e: 1, ult: 0, tk: 0, bs: 0, bsOn: f
   walls: [], zones: [], orbs: [], arrows: [], fx: [], rv: [], rvT: 0, rib: 0, ribP: null, ribM: null, hf: 0,
   sw: null, slz: [], so: [], leer: [], hl: null, dis: 0, emp: 0, par: [], nano: [], oe: 0 };
 const KITS = {
-  Jett: { r: "Duelist · C Updraft · Q Cloudburst · E Tailwind · X Blade Storm", n: ["Updraft", "Cloudburst", "Tailwind", "Blade Storm"], u: 7, mx: { c: 2, q: 2 }, buy: [["c", "Updraft", 150], ["q", "Cloudburst", 200]], h: "C Updraft · Q smoke · E dash · X ult" },
-  Phoenix: { r: "Duelist · C Blaze · Q Curveball · E Hot Hands · X Run It Back", n: ["Blaze", "Curveball", "Hot Hands", "Run It Back"], u: 6, mx: { c: 1, q: 2 }, buy: [["c", "Blaze", 200], ["q", "Curveball", 250]], h: "C Blaze · Q Curveball · E Hot Hands · X Run It Back" },
-  Sova: { r: "Initiator · C Owl Drone · Q Shock Bolt · E Recon Bolt · X Hunter's Fury", n: ["Owl Drone", "Shock Bolt", "Recon Bolt", "Hunter's Fury"], u: 7, mx: { c: 1, q: 2 }, buy: [["c", "Owl Drone", 400], ["q", "Shock Bolt", 150]], h: "C Owl Drone · Q Shock Bolt · E Recon Bolt · X Hunter's Fury" },
-  Sage: { r: "Sentinel · C Barrier Orb · Q Slow Orb · E Healing Orb · X Resurrection", n: ["Barrier", "Slow Orb", "Heal", "Resurrect"], u: 8, mx: { c: 1, q: 2 }, buy: [["c", "Barrier Orb", 400], ["q", "Slow Orb", 200]], h: "C Barrier Orb · Q Slow Orb · E Healing Orb · X Resurrection" },
-  Reyna: { r: "Duelist · C Leer · Q Devour · E Dismiss · X Empress", n: ["Leer", "Devour", "Dismiss", "Empress"], u: 6, mx: { c: 2, q: 0 }, buy: [["c", "Leer", 250]], h: "C Leer · Q Devour (soul orb) · E Dismiss (soul orb) · X Empress" },
-  Omen: { r: "Controller · C Shrouded Step · Q Paranoia · E Dark Cover · X From the Shadows", n: ["Shrouded Step", "Paranoia", "Dark Cover", "From the Shadows"], u: 7, mx: { c: 2, q: 1 }, buy: [["c", "Shrouded Step", 100], ["q", "Paranoia", 300]], h: "C Shrouded Step · Q Paranoia · E Dark Cover · X From the Shadows (click minimap)" },
-  Killjoy: { r: "Sentinel · C Nanoswarm · Q Alarmbot · E Turret · X Lockdown", n: ["Nanoswarm", "Alarmbot", "Turret", "Lockdown"], u: 8, mx: { c: 2, q: 1 }, buy: [["c", "Nanoswarm", 200]], h: "C Nanoswarm (C again to trigger) · Q Alarmbot · E Turret · X Lockdown" },
+  Jett: { r: "Duelist · C Cloudburst · Q Updraft · E Tailwind · X Blade Storm", n: ["Cloudburst", "Updraft", "Tailwind", "Blade Storm"], u: 8, mx: { c: 2, q: 1 }, buy: [["c", "Cloudburst", 200], ["q", "Updraft", 150]], h: "C smoke · Q Updraft · E dash · X ult" },
+  Phoenix: { r: "Duelist · C Blaze · Q Hot Hands · E Curveball · X Run It Back", n: ["Blaze", "Hot Hands", "Curveball", "Run It Back"], u: 6, mx: { c: 1, q: 1, e: 2 }, buy: [["c", "Blaze", 150], ["q", "Hot Hands", 200], ["e", "Curveball", 250]], h: "C Blaze · Q Hot Hands · E Curveball · X Run It Back" },
+  Sova: { r: "Initiator · C Owl Drone · Q Shock Bolt · E Recon Bolt · X Hunter's Fury", n: ["Owl Drone", "Shock Bolt", "Recon Bolt", "Hunter's Fury"], u: 8, mx: { c: 1, q: 2 }, buy: [["c", "Owl Drone", 400], ["q", "Shock Bolt", 150]], h: "C Owl Drone · Q Shock Bolt · E Recon Bolt · X Hunter's Fury" },
+  Sage: { r: "Sentinel · C Barrier Orb · Q Slow Orb · E Healing Orb · X Resurrection", n: ["Barrier Orb", "Slow Orb", "Healing Orb", "Resurrection"], u: 7, mx: { c: 1, q: 2 }, buy: [["c", "Barrier Orb", 300], ["q", "Slow Orb", 200]], h: "C Barrier Orb · Q Slow Orb · E Healing Orb · X Resurrection" },
+  Reyna: { r: "Duelist · C Leer · Q Devour · E Dismiss · X Empress", n: ["Leer", "Devour", "Dismiss", "Empress"], u: 7, mx: { c: 2, q: 2 }, buy: [["c", "Leer", 250], ["q", "Devour / Dismiss", 200]], h: "C Leer · Q Devour (soul orb) · E Dismiss (soul orb) · X Empress" },
+  Omen: { r: "Controller · C Shrouded Step · Q Paranoia · E Dark Cover · X From the Shadows", n: ["Shrouded Step", "Paranoia", "Dark Cover", "From the Shadows"], u: 7, mx: { c: 2, q: 1, e: 2 }, buy: [["c", "Shrouded Step", 100], ["q", "Paranoia", 250], ["e", "Dark Cover", 150]], h: "C Shrouded Step · Q Paranoia · E Dark Cover · X From the Shadows (click minimap)" },
+  Killjoy: { r: "Sentinel · C Nanoswarm · Q Alarmbot · E Turret · X Lockdown", n: ["Nanoswarm", "Alarmbot", "Turret", "Lockdown"], u: 9, mx: { c: 2, q: 1 }, buy: [["c", "Nanoswarm", 200], ["q", "Alarmbot", 200]], h: "C Nanoswarm (C again to trigger) · Q Alarmbot · E Turret · X Lockdown" },
   Raze: { r: "Duelist · C Boom Bot · Q Blast Pack · E Paint Shells · X Showstopper", n: ["Boom Bot", "Blast Pack", "Paint Shells", "Showstopper"], u: 8, mx: { c: 1, q: 2 }, buy: [["c", "Boom Bot", 300], ["q", "Blast Pack", 200]], h: "C Boom Bot · Q Blast Pack (Q again to detonate) · E Paint Shells · X Showstopper (click to fire)" },
-  Skye: { r: "Initiator · C Regrowth · Q Trailblazer · E Guiding Light · X Seekers", n: ["Regrowth", "Trailblazer", "Guiding Light", "Seekers"], u: 7, mx: { c: 1, q: 1, e: 2 }, buy: [["c", "Regrowth", 200], ["q", "Trailblazer", 250], ["e", "Guiding Light", 150]], h: "C Regrowth (C to stop) · Q Trailblazer (click to leap) · E Guiding Light (E to flash) · X Seekers" },
+  Skye: { r: "Initiator · C Regrowth · Q Trailblazer · E Guiding Light · X Seekers", n: ["Regrowth", "Trailblazer", "Guiding Light", "Seekers"], u: 8, mx: { c: 1, q: 1, e: 2 }, buy: [["c", "Regrowth", 150], ["q", "Trailblazer", 300], ["e", "Guiding Light", 250]], h: "C Regrowth (C to stop) · Q Trailblazer (click to leap) · E Guiding Light (E to flash) · X Seekers" },
   Breach: { r: "Initiator · C Aftershock · Q Flashpoint · E Fault Line · X Rolling Thunder", n: ["Aftershock", "Flashpoint", "Fault Line", "Rolling Thunder"], u: 8, mx: { c: 1, q: 2 }, buy: [["c", "Aftershock", 200], ["q", "Flashpoint", 250]], h: "C Aftershock (aim at a wall) · Q Flashpoint (through the wall) · E Fault Line · X Rolling Thunder" },
   Cypher: { r: "Sentinel · C Trapwire · Q Cyber Cage · E Spycam · X Neural Theft", n: ["Trapwire", "Cyber Cage", "Spycam", "Neural Theft"], u: 7, mx: { c: 2, q: 2 }, buy: [["c", "Trapwire", 200], ["q", "Cyber Cage", 100]], h: "C Trapwire · Q Cyber Cage · E Spycam (E to view, F dart) · X Neural Theft (fallen enemy within 8 m)" },
-  Chamber: { r: "Sentinel · C Trademark · Q Headhunter · E Rendezvous · X Tour De Force", n: ["Trademark", "Headhunter", "Rendezvous", "Tour De Force"], u: 8, mx: { c: 1, q: 8 }, buy: [["q", "Headhunter round", 150]], h: "C Trademark · Q Headhunter (click to fire) · E Rendezvous (E again to return) · X Tour De Force" },
+  Chamber: { r: "Sentinel · C Trademark · Q Headhunter · E Rendezvous · X Tour De Force", n: ["Trademark", "Headhunter", "Rendezvous", "Tour De Force"], u: 8, mx: { c: 1, q: 8 }, buy: [["c", "Trademark", 200], ["q", "Headhunter round", 100]], h: "C Trademark · Q Headhunter (click to fire) · E Rendezvous (E again to return) · X Tour De Force" },
 };
+// Valorant kit data verified against valorant.fandom.com agent pages (Oct 2026): first E (signature) charge is free each round; extra E charges are bought (fs: free signature count)
 const K = () => KITS[J.pick] || KITS.Jett;
 // look pass: original ability glyphs by TYPE (white strokes, 24x24) + per-agent C/Q/E/X type lookup
 const ABI_SVG = {
@@ -6675,7 +6676,7 @@ const ABI_SVG = {
   device: '<rect x="5" y="5" width="14" height="14" rx="2"/><circle cx="12" cy="12" r="2" fill="#fff"/>',
   ult: '<path d="M12 2.5l9 9.5-9 9.5-9-9.5z"/><path d="M12 8l4 4-4 4-4-4z" fill="#fff" stroke="none" opacity=".6"/>'
 };
-const ABI_M = { Jett: "dash smoke dash", Phoenix: "wall flash fire", Sova: "drone stun eye", Sage: "wall stun heal", Reyna: "eye heal dash", Omen: "dash flash smoke", Killjoy: "trap drone device", Raze: "drone dash fire", Skye: "heal drone flash", Breach: "stun flash stun", Cypher: "trap smoke eye", Chamber: "trap device dash" };
+const ABI_M = { Jett: "smoke dash dash", Phoenix: "wall fire flash", Sova: "drone stun eye", Sage: "wall stun heal", Reyna: "eye heal dash", Omen: "dash flash smoke", Killjoy: "trap drone device", Raze: "drone dash fire", Skye: "heal drone flash", Breach: "stun flash stun", Cypher: "trap smoke eye", Chamber: "trap device dash" };
 for (const a in ABI_M) ABI_M[a] = (ABI_M[a] + " ult").split(" ");
 function abIco(a, i) { const t = (ABI_M[a] || ABI_M.Jett)[i] || "ult"; return '<svg class="x-aic" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + ABI_SVG[t] + "</svg>"; }
 function xTbIco() { const a = J.pick || "Jett"; ["c", "q", "e", "x"].forEach((k, i) => { const b = document.querySelector(`.tb[data-k="${k}"]`); if (!b || b.dataset.ag === a) return; b.dataset.ag = a; b.classList.add("x-ti"); b.innerHTML = abIco(a, i) + `<small class="x-tl">${k.toUpperCase()}</small>`; }); }
@@ -6755,24 +6756,24 @@ function phKey(code) {
   const P = player, no = () => blip(120, 0.08, "square", 0.1), fx = -Math.sin(yaw), fz = -Math.cos(yaw);
   if (code === "KeyC") {
     if (J.c < 1 || J.cd.c > 0) return no(); J.c--; J.cd.c = 0.6;
-    const w = { p: new THREE.Vector3(P.x + fx * 3, 1.5, P.z + fz * 3), ax: Math.cos(yaw), az: -Math.sin(yaw), t: 6 };
+    const w = { p: new THREE.Vector3(P.x + fx * 3, 1.5, P.z + fz * 3), ax: Math.cos(yaw), az: -Math.sin(yaw), t: 8 };
     w.m = jM(blazeGeo, fireMat(0xff7a1a, 0.7)); w.m.position.copy(w.p); w.m.rotation.y = yaw; scene.add(w.m); J.walls.push(w); SFX.wall(); SFX.ab("blaze");
   }
-  if (code === "KeyQ") {
-    if (J.q < 1 || J.cd.q > 0) return no(); J.q--; J.cd.q = 0.6;
+  if (code === "KeyE") { // Curveball (signature, E in Valorant): 1 free + 1 bought, a charge back every 2 kills
+    if (J.e < 1 || J.cd.e > 0) return no(); J.e--; J.tk = 0; J.cd.e = 0.6;
     const o = pEye(), d = jAim(); ray.set(o, d); ray.far = 6; const h = ray.intersectObjects(solids)[0];
     const e = h ? h.point.clone().addScaledVector(d, -0.4) : o.clone().addScaledVector(d, 6);
     const m = jM(orbGeo, jMat("orb", () => new THREE.MeshBasicMaterial({ color: 0xfff2b0 }))); m.position.copy(o); scene.add(m); J.orbs.push({ m, a: o, b: e, t: 0 }); blip(800, 0.1, "sine", 0.15);
   }
-  if (code === "KeyE") {
-    if (J.e < 1) return no(); J.e = 0; J.cd.e = 0.4;
+  if (code === "KeyQ") { // Hot Hands (basic, Q in Valorant)
+    if (J.q < 1 || J.cd.q > 0) return no(); J.q--; J.cd.q = 0.6;
     ray.set(new THREE.Vector3(P.x, 1, P.z), new THREE.Vector3(fx, 0, fz)); ray.far = 5; const h = ray.intersectObjects(solids)[0];
     const dd = h ? Math.max(0, h.distance - 0.5) : 5, c = new THREE.Vector3(P.x + fx * dd, 0.05, P.z + fz * dd);
     const m = jM(zoneGeo, fireMat(0xff5a1a, 0.55)); m.rotation.x = -Math.PI / 2; m.position.copy(c); scene.add(m); J.zones.push({ m, p: c, t: 4 }); blip(220, 0.3, "sawtooth", 0.1);
   }
   if (code === "KeyX") {
     if (J.rib > 0) return say("Run It Back · " + Math.ceil(J.rib) + " s", 700);
-    if (J.ult < 6) return no(), say("Run It Back " + J.ult + "/6", 800);
+    if (J.ult < K().u) return no(), say("Run It Back " + J.ult + "/" + K().u, 800);
     J.ult = 0; J.rib = 10; J.ribP = { x: P.x, z: P.z };
     J.ribM = new THREE.Mesh(ringGeo, fireMat(0xff9a3a, 0.9)); J.ribM.rotation.x = -Math.PI / 2; J.ribM.position.set(P.x, 0.06, P.z); scene.add(J.ribM);
     say("Run It Back · 10 s", 1000); blip(880, 0.3, "triangle", 0.2); SFX.ab("rewind");
@@ -6788,10 +6789,10 @@ function svKey(code) {
   }
   if (J.dr) return;
   if (code === "KeyQ") { if (J.q < 1 || J.cd.q > 0) return no(); J.q--; J.cd.q = 0.6; jArrow("shock"); }
-  if (code === "KeyE") { if (J.e < 1) return no(); J.e = 0; J.cd.e = 0.4; jArrow("recon"); }
+  if (code === "KeyE") { if (J.e < 1) return no(), say("Recon Bolt · " + Math.ceil(J.cd.e) + " s", 700); J.e = 0; J.cd.e = 60; jArrow("recon"); } // free signature, 60 s recharge
   if (code === "KeyX") {
     if (J.hf > 0) return jBeam();
-    if (J.ult < 7) return no(), say("Hunter's Fury " + J.ult + "/7", 800);
+    if (J.ult < K().u) return no(), say("Hunter's Fury " + J.ult + "/" + K().u, 800);
     J.ult = 0; J.hf = 3; say("Hunter's Fury · 3 shots", 1000); jBeam();
   }
 }
@@ -6831,7 +6832,7 @@ const sgNo = () => blip(120, 0.08, "square", 0.1);
 function sgWallD(x, z) { const w = J.sw, dx = x - w.p.x, dz = z - w.p.z, t = Math.max(-3, Math.min(3, dx * w.ax + dz * w.az)); return Math.hypot(dx - w.ax * t, dz - w.az * t); }
 function sgBlk(x, z, r, y) { try { return !!(J.sw && J.sw.m && (y || 0) + 0.5 < 3 && sgWallD(x, z) < r + 0.2); } catch (e) { return false; } return !!(J.sw && (y || 0) + 0.5 < 3 && sgWallD(x, z) < r + 0.2); }
 function sgWallEnd(msg) { const w = J.sw; if (!w) return; scene.remove(w.m); const i = w.arr.indexOf(w.m); if (i >= 0) w.arr.splice(i, 1); J.sw = null; if (msg) { say(msg, 900); blip(300, 0.25, "square", 0.12); } }
-function sgDmg(n) { if (!J.sw) return; J.sw.hp -= n; J.sw.m.material.opacity = 0.55 + 0.35 * Math.max(0, J.sw.hp / 800); if (J.sw.hp <= 0) sgWallEnd("Barrier broken"); }
+function sgDmg(n) { if (!J.sw) return; J.sw.hp -= n; J.sw.m.material.opacity = 0.55 + 0.35 * Math.max(0, J.sw.hp / 600); if (J.sw.hp <= 0) sgWallEnd("Barrier broken"); }
 function sgSlow(p) { return (J.slz || []).some((z) => Math.hypot(p.x - z.p.x, p.z - z.p.z) < 3.5) ? 0.5 : 1; }
 function sgLook(list, far, cos) { const e = pEyeTo(PE_V), d = jAim(); return list.find((a) => { const v = new THREE.Vector3(a.g.position.x, 1, a.g.position.z).sub(e), l = v.length() || 0.01; return l < far && v.dot(d) / l > cos; }); }
 function sgKey(code) {
@@ -6842,7 +6843,7 @@ function sgKey(code) {
     const p = new THREE.Vector3(P.x + fx * 2.5, 1.5, P.z + fz * 2.5), m = new THREE.Mesh(sgWallGeo, ice);
     [[-2.25, 3.15, 0.04], [-0.75, 3.55, -0.03], [0.75, 3.3, 0.02], [2.25, 3.6, -0.04]].forEach(([x, h, r]) => { const s = new THREE.Mesh(sgShard, ice); s.scale.y = h; s.position.set(x, -1.5 + h / 2, 0); s.rotation.set(r, 0, r); s.raycast = () => {}; m.add(s); });
     m.position.copy(p); m.rotation.y = yaw; m.userData.sw = true; scene.add(m); solids.push(m);
-    J.sw = { m, p, ax: Math.cos(yaw), az: -Math.sin(yaw), t: 30, hp: 800, arr: solids }; SFX.wall(); say("Barrier Orb · 800 HP · 30 s", 900);
+    J.sw = { m, p, ax: Math.cos(yaw), az: -Math.sin(yaw), t: 40, hp: 600, arr: solids }; SFX.wall(); say("Barrier Orb · 600 HP (fortified) · 40 s", 900);
   }
   if (code === "KeyQ") {
     if (J.q < 1 || J.cd.q > 0) return sgNo(); J.q--; J.cd.q = 0.6;
@@ -6854,10 +6855,10 @@ function sgKey(code) {
     if (J.e < 1) return sgNo(), say("Healing Orb · " + Math.ceil(J.cd.e) + " s", 700);
     const a = sgLook(allies.filter((x) => x.alive && x.hp < 100), 20, 0.96), tg = a || (P.hp < 100 ? P : null);
     if (!tg) return sgNo(), say("Full HP · look at a hurt teammate", 900);
-    J.e = 0; J.cd.e = 45; J.hl = { tg, t: 3, r: 20 }; say("Healing " + (a ? a.name : "yourself") + " · 60 HP", 900); SFX.heal();
+    J.e = 0; J.cd.e = 45; J.hl = { tg, t: 5, r: a ? 20 : 10 }; say("Healing " + (a ? a.name : "yourself") + " · " + (a ? 100 : 50) + " HP over 5 s", 900); SFX.heal();
   }
   if (code === "KeyX") {
-    if (J.ult < 8) return sgNo(), say("Resurrection " + J.ult + "/8", 800);
+    if (J.ult < K().u) return sgNo(), say("Resurrection " + J.ult + "/" + K().u, 800);
     const a = sgLook(allies.filter((x) => !x.alive), 5, 0.8);
     if (!a) return sgNo(), say("Look at a fallen teammate within 5 m", 900);
     J.ult = 0; a.alive = true; a.hp = 100; a.def = 0; a.cd = 1; scene.add(a.g);
@@ -6894,13 +6895,14 @@ function ryKey(code) {
   if (code === "KeyQ" || code === "KeyE") {
     let best = null, bd = 15; J.so.forEach((s) => { const d = Math.hypot(s.p.x - P.x, s.p.z - P.z); if (d < bd) { bd = d; best = s; } });
     if (!best) return sgNo(), say("No soul orb nearby", 700);
+    if (!(J.emp > 0)) { if (J.q < 1) return sgNo(), say("No Devour / Dismiss charges", 700); J.q--; } // shared signature charges; Empress makes them free
     scene.remove(best.m); { const k = J.so.indexOf(best); if (k >= 0) J.so.splice(k, 1); }
-    if (code === "KeyQ") { J.hl = { tg: P, t: 3, r: 100 / 3 }; say("Devour · +100 HP", 800); SFX.heal(); SFX.ab("devour"); }
-    else { J.dis = 2; $("xEmp").classList.add("dis"); say("Dismiss · intangible 2 s", 800); blip(900, 0.25, "sine", 0.15); SFX.ab("dismiss"); }
+    if (code === "KeyQ") { J.hl = { tg: P, t: 3, r: 50 / 3, cap: J.emp > 0 ? 100 : 150 }; if (!(J.emp > 0)) J.ohT = 10; say("Devour · +50 HP" + (J.emp > 0 ? "" : " (overheal 10 s)"), 800); SFX.heal(); SFX.ab("devour"); }
+    else { J.dis = 1.5; $("xEmp").classList.add("dis"); say("Dismiss · intangible 1.5 s", 800); blip(900, 0.25, "sine", 0.15); SFX.ab("dismiss"); }
   }
   if (code === "KeyX") {
     if (J.emp > 0) return say("Empress · " + Math.ceil(J.emp) + " s", 700);
-    if (J.ult < 6) return sgNo(), say("Empress " + J.ult + "/6", 800);
+    if (J.ult < K().u) return sgNo(), say("Empress " + J.ult + "/" + K().u, 800);
     J.ult = 0; J.emp = 30; $("xEmp").classList.add("on"); say("Empress · 30 s", 1000); blip(880, 0.4, "sawtooth", 0.15); SFX.ab("empress");
   }
 }
@@ -6909,7 +6911,9 @@ function sgTick(dt) {
   if (J.sw) { J.sw.t -= dt; if (J.sw.t <= 0) sgWallEnd(); }
   prune(J.slz, (z) => { z.t -= dt; z.m.material.opacity = 0.45 * Math.min(1, z.t / 0.5); if (z.t > 0) return true; jRel(z.m); return false; });
   if (J.pick === "Sage" && J.e < 1 && J.cd.e <= 0) { J.e = 1; say("Healing Orb ready", 700); }
-  if (J.hl) { const t = J.hl.tg, ok = t === P ? P.hp > 0 : t.alive; if (ok) t.hp = Math.min(100, t.hp + J.hl.r * dt); J.hl.t -= dt; if (J.hl.t <= 0 || !ok) J.hl = null; }
+  if ((J.pick === "Sova" || J.pick === "Skye") && J.e < 1 && J.cd.e <= 0) { J.e = 1; say(J.pick === "Sova" ? "Recon Bolt ready" : "Guiding Light ready", 700); }
+  if (J.ohT > 0) { J.ohT -= dt; if (J.ohT <= 0 && P.hp > 100) P.hp = 100; } // Devour overheal is temporary
+  if (J.hl) { const t = J.hl.tg, ok = t === P ? P.hp > 0 : t.alive, cap = J.hl.cap || 100; if (ok && t.hp < cap) t.hp = Math.min(cap, t.hp + J.hl.r * dt); J.hl.t -= dt; if (J.hl.t <= 0 || !ok) J.hl = null; }
   prune(J.so, (s) => { s.t -= dt; s.m.material.opacity = 0.9 * Math.min(1, s.t / 0.5); if (s.t > 0) return true; jRel(s.m); return false; });
   prune(J.leer, (l) => {
     l.t += dt; l.m.position.lerpVectors(l.a, l.b, Math.min(1, l.t / 0.4)); ryLeerLook(l); const p = l.m.position;
@@ -6921,7 +6925,7 @@ function sgTick(dt) {
   if (J.emp > 0) { J.emp -= dt; if (J.emp <= 0) { J.emp = 0; $("xEmp").classList.remove("on"); say("Empress ended", 700); } }
   okTick(dt);
 }
-{ const h0 = hurt; hurt = function (t, n) { return h0(t, t && t.vul > 0 && bots.includes(t) ? n * 2 : n); }; } // Killjoy Alarmbot: Vulnerable takes double
+{ const h0 = hurt; hurt = function (t, n) { if (t === player && J.dis > 0 && J.pick === "Reyna" && jOn()) return; return h0(t, t && t.vul > 0 && bots.includes(t) ? n * 2 : n); }; } // Killjoy Alarmbot: Vulnerable takes double · Reyna Dismiss: intangible, no damage // Killjoy Alarmbot: Vulnerable takes double
 function sgClear() {
   sgWallEnd(); (J.slz || []).concat(J.so || [], J.leer || []).forEach((s) => scene.remove(s.m));
   J.slz = []; J.so = []; J.leer = []; J.hl = null; J.dis = 0; J.emp = 0; $("xEmp").classList.remove("on", "dis");
@@ -6962,7 +6966,7 @@ function okKey(code) {
       J.par.push({ m, fx, fz, t: 0 }); say("Paranoia", 600); blip(140, 0.5, "sawtooth", 0.15); SFX.ab("paranoia");
     }
     if (code === "KeyE") {
-      if (J.e < 1 || J.cd.e > 0) return sgNo(), say("Dark Cover · next charge " + Math.ceil(30 - J.oe) + " s", 800); J.e--; J.cd.e = 0.6;
+      if (J.e < 1 || J.cd.e > 0) return sgNo(), say("Dark Cover · next charge " + Math.ceil(40 - (J.oe || 0)) + " s", 800); J.e--; J.cd.e = 0.6;
       const o = pEye(), d = jAim(); ray.set(o, d); ray.far = 30; const h = ray.intersectObjects(solids)[0];
       const p = h ? h.point.clone().addScaledVector(d, -0.5) : o.clone().addScaledVector(d, 30); p.y = Math.max(1.5, Math.min(p.y, 4));
       const m = jM(smokeGeo, xSmokeM("s3x", 0x22183a, 0x8a5cff));
@@ -6971,7 +6975,7 @@ function okKey(code) {
     if (code === "KeyX") {
       if (J.fts) return say("From the Shadows · " + Math.ceil(J.fts.t) + " s", 700);
       if (J.ftp) { J.ftp = false; MM.style.pointerEvents = ""; say("From the Shadows cancelled", 700); try { renderer.domElement.requestPointerLock(); } catch (er) {} return; }
-      if (J.ult < 7) return sgNo(), say("From the Shadows " + J.ult + "/7", 800);
+      if (J.ult < K().u) return sgNo(), say("From the Shadows " + J.ult + "/" + K().u, 800);
       if (!MM.okB) { MM.okB = 1; MM.addEventListener("click", okMMClick); }
       J.ftp = true; MM.style.pointerEvents = "auto"; fireHeld = false; if (document.pointerLockElement) document.exitPointerLock();
       say("Click a spot on the minimap · X to cancel", 1600);
@@ -6991,13 +6995,13 @@ function okKey(code) {
   }
   if (code === "KeyE") {
     if (J.e < 1) return sgNo(); J.e = 0; okRm(J.tur);
-    const m = okPlace(kjTur, 0xf2c230, 1.5); xKjAcc(m, 0.5); J.tur = { m, p: m.position, fx: -Math.sin(yaw), fz: -Math.cos(yaw), hp: 125, cd: 0.5 }; say("Turret placed · 125 HP", 800); blip(500, 0.2, "square", 0.12); SFX.ab("turret", m.position);
+    const m = okPlace(kjTur, 0xf2c230, 1.5); xKjAcc(m, 0.5); J.tur = { m, p: m.position, fx: -Math.sin(yaw), fz: -Math.cos(yaw), hp: 100, cd: 0.5 }; say("Turret placed · 100 HP", 800); blip(500, 0.2, "square", 0.12); SFX.ab("turret", m.position);
   }
   if (code === "KeyX") {
     if (J.ld) return say("Lockdown · " + Math.ceil(J.ld.t) + " s", 700);
-    if (J.ult < 8) return sgNo(), say("Lockdown " + J.ult + "/8", 800);
+    if (J.ult < K().u) return sgNo(), say("Lockdown " + J.ult + "/" + K().u, 800);
     J.ult = 0; const m = okPlace(kjLd, 0xf2c230, 1), r = new THREE.Mesh(ldRing, fireMat(0xf2c230, 0.5)); r.rotation.x = -Math.PI / 2; r.position.set(m.position.x, 0.07, m.position.z); scene.add(r);
-    J.ld = { m, r, p: m.position, t: 13, hp: 150 }; say("Lockdown · 13 s windup", 1100); blip(220, 0.6, "sawtooth", 0.15); SFX.ab("lockdown", m.position); feed("Killjoy ▸ Lockdown");
+    J.ld = { m, r, p: m.position, t: 13, hp: 200 }; say("Lockdown · 13 s windup", 1100); blip(220, 0.6, "sawtooth", 0.15); SFX.ab("lockdown", m.position); feed("Killjoy ▸ Lockdown");
   }
 }
 const PF_A = new THREE.Vector3(), PF_B = new THREE.Vector3(), PF_C = new THREE.Vector3(); // perf pass 145: per-frame scratch (los does not keep them)
@@ -7011,7 +7015,7 @@ function okTick(dt) {
   if (J.om) { J.om.t -= dt; if (J.om.t <= 0) { if (alive) { P.x = J.om.x; P.z = J.om.z; P.y = 0; P.vy = 0; SFX.tp(); } okRm(J.om); J.om = null; } }
   if (J.fts) { J.fts.t -= dt; if (!alive) { okRm(J.fts); J.fts = null; } else if (J.fts.t <= 0) { P.x = J.fts.x; P.z = J.fts.z; P.y = 0; P.vy = 0; okRm(J.fts); J.fts = null; say("From the Shadows", 700); SFX.tp(); SFX.ab("shadows"); } }
   if (J.ftp && !alive) { J.ftp = false; MM.style.pointerEvents = ""; }
-  if (J.pick === "Omen" && J.e < 2) { J.oe = (J.oe || 0) + dt; if (J.oe >= 30) { J.e++; J.oe = 0; say("Dark Cover charge ready", 700); } }
+  if (J.pick === "Omen" && J.e < (J.oeM || 1)) { J.oe = (J.oe || 0) + dt; if (J.oe >= 40) { J.e++; J.oe = 0; say("Dark Cover charge ready", 700); } } // 40 s recharge, back up to the charges owned this round
   prune(J.par, (s) => {
     s.t += dt; const p = s.m.position; p.x += s.fx * 14 * dt; p.z += s.fz * 14 * dt; s.m.material.opacity = 0.6 * Math.min(1, (2.2 - s.t) / 0.4);
     bots.forEach((b) => { if (!b.alive) return; const q = b.g.position, vx = q.x - p.x, vz = q.z - p.z, along = vx * s.fx + vz * s.fz, side = Math.abs(vx * s.fz - vz * s.fx); if (Math.abs(along) < 1.2 && side < 2.8) b.blind = Math.max(b.blind || 0, 2); });
@@ -7049,7 +7053,7 @@ function okClear() {
   if (J.ftp) { J.ftp = false; try { MM.style.pointerEvents = ""; } catch (e) {} }
 }
 function okSl(u) {
-  if (J.pick === "Omen") return [["jC", J.c || J.om, J.om ? "…" : J.c + "", J.cd.c / 0.6], ["jQ", J.q, J.q + "", J.cd.q / 0.6], ["jE", J.e, J.e + (J.e < 2 ? " · " + Math.ceil(30 - (J.oe || 0)) + "s" : ""), J.e < 1 ? 1 - (J.oe || 0) / 30 : J.cd.e / 0.6],
+  if (J.pick === "Omen") return [["jC", J.c || J.om, J.om ? "…" : J.c + "", J.cd.c / 0.6], ["jQ", J.q, J.q + "", J.cd.q / 0.6], ["jE", J.e, J.e + (J.e < (J.oeM || 1) ? " · " + Math.ceil(40 - (J.oe || 0)) + "s" : ""), J.e < 1 ? 1 - (J.oe || 0) / 40 : J.cd.e / 0.6],
     ["jX", J.fts || J.ftp || J.ult >= u, J.fts ? Math.ceil(J.fts.t) + " s" : J.ftp ? "Map" : J.ult + "/" + u, J.fts ? 1 - J.fts.t / 3 : 1 - J.ult / u]];
   const pend = J.nano.some((n) => !n.on);
   return [["jC", J.c || pend, pend ? "Trigger" : J.c + "", J.cd.c / 0.6], ["jQ", J.q, J.q ? "1" : J.ab ? "Armed" : "Used", 0], ["jE", J.e, J.e ? "1" : J.tur ? Math.ceil(J.tur.hp) + " HP" : "Used", 0],
@@ -7058,7 +7062,7 @@ function okSl(u) {
 function sgSl(u, cq) {
   const c = ["jC", J.c, J.c + "", J.cd.c / 0.6];
   if (J.pick === "Sage") return [c, cq, ["jE", J.e, J.e ? "1" : Math.ceil(J.cd.e) + " s", J.cd.e / 45], ["jX", J.ult >= u, J.ult + "/" + u, 1 - J.ult / u]];
-  const n = J.so.length, o = ["", n, n + " orb" + (n === 1 ? "" : "s"), n ? 0 : 1];
+  const n = J.so.length, o = ["", n && (J.q > 0 || J.emp > 0), (J.emp > 0 ? "∞" : J.q) + " · " + n + " orb" + (n === 1 ? "" : "s"), n ? 0 : 1]; // shared Devour/Dismiss charges · soul orbs nearby
   return [c, ["jQ"].concat(o.slice(1)), ["jE"].concat(o.slice(1)), ["jX", J.emp > 0 || J.ult >= u, J.emp > 0 ? Math.ceil(J.emp) + " s" : J.ult + "/" + u, J.emp > 0 ? 1 - J.emp / 30 : 1 - J.ult / u]];
 }
 // ---- Raze + Skye kits (player) ----
@@ -7129,7 +7133,7 @@ function rsKey(code) {
     }
     if (code === "KeyX") {
       if (RS.ss) return say("Showstopper · click to fire", 700);
-      if (J.ult < 8) return no(), say("Showstopper " + J.ult + "/8", 800);
+      if (J.ult < K().u) return no(), say("Showstopper " + J.ult + "/" + K().u, 800);
       J.ult = 0; RS.ss = 1; RS.sst = 10; say("Showstopper · 1 rocket · click to fire", 1200); blip(880, 0.3, "sawtooth", 0.2); fireHeld = false; setScope(false);
     }
     return;
@@ -7148,12 +7152,12 @@ function rsKey(code) {
   }
   if (code === "KeyE") {
     if (RS.hk) return hkPop();
-    if (J.e < 1 || J.cd.e > 0) return no(); J.e--; J.cd.e = 0.6; const d = jAim();
+    if (J.e < 1 || J.cd.e > 0) return no(); J.e--; J.cd.e = J.e < 1 ? 60 : 0.6; const d = jAim(); // Guiding Light: last charge recharges in 60 s
     RS.hk = { m: rsMesh(0xffe27a, 1.4, pEye().clone().addScaledVector(d, 0.8)), d, t: 2.5 }; say("Guiding Light · E to flash", 800); blip(1200, 0.15, "sine", 0.12);
   }
   if (code === "KeyX") {
     if (RS.sk.length) return say("Seekers hunting", 700);
-    if (J.ult < 7) return no(), say("Seekers " + J.ult + "/7", 800);
+    if (J.ult < K().u) return no(), say("Seekers " + J.ult + "/" + K().u, 800);
     J.ult = 0; const live = bots.filter((b) => b.alive).sort((a, b) => Math.hypot(a.g.position.x - P.x, a.g.position.z - P.z) - Math.hypot(b.g.position.x - P.x, b.g.position.z - P.z));
     for (let i = 0; i < 3; i++) RS.sk.push({ m: rsMesh(0x7fd84a, 1.3, pEye().clone().add(new RV((i - 1) * 0.5, 0.3, 0))), tg: live[i] || live[0] || null, t: 15 });
     say("Seekers · 3 released", 1000); blip(700, 0.4, "triangle", 0.18); feed("Skye ▸ Seekers");
@@ -7184,7 +7188,7 @@ function rsTick(dt) {
     if (blocked(nx, p.z, 0.3, 0)) o.dx = -o.dx; else p.x = nx;
     if (blocked(p.x, nz, 0.3, 0)) o.dz = -o.dz; else p.z = nz;
     o.m.rotation.y += dt * 8;
-    if (tg && bd < 1.2) { if (o.own) xBotBoom(p, 1.5, 125, o, "Boom Bot", tg); else rsBoom(p, 1.5, 125, "Boom Bot", 0xff8a1f, tg); scene.remove(o.m); return false; }
+    if (tg && bd < 1.2) { if (o.own) xBotBoom(p, 1.5, 80, o, "Boom Bot", tg); else rsBoom(p, 1.5, 80, "Boom Bot", 0xff8a1f, tg); scene.remove(o.m); return false; }
     if (o.t > 0) return true; scene.remove(o.m); return false;
   });
   if (RS.kb) { const s = 14 * dt, nx = P.x + RS.kb.x * s, nz = P.z + RS.kb.z * s; if (!blocked(nx, P.z, 0.4, P.y)) P.x = nx; if (!blocked(P.x, nz, 0.4, P.y)) P.z = nz; if ((RS.kb.t -= dt) <= 0) RS.kb = null; }
@@ -7192,7 +7196,7 @@ function rsTick(dt) {
   if (RS.rg) {
     if (P.hp <= 0) rgEnd(); else {
       RS.rg.m.position.set(P.x, 0.05, P.z);
-      allies.filter((a) => a.alive && a.hp < 100 && Math.hypot(a.g.position.x - P.x, a.g.position.z - P.z) < 18).forEach((a) => { const h = Math.min(25 * dt, 100 - a.hp, RS.rg.pool); a.hp += h; RS.rg.pool -= h; });
+      allies.filter((a) => a.alive && a.hp < 100 && Math.hypot(a.g.position.x - P.x, a.g.position.z - P.z) < 18).forEach((a) => { const h = Math.min(20 * dt, 100 - a.hp, RS.rg.pool); a.hp += h; RS.rg.pool -= h; });
       if (RS.rg.pool <= 0.01) rgEnd("Regrowth spent");
     }
   }
@@ -7205,7 +7209,7 @@ function rsTick(dt) {
     s.t -= dt; const p = s.m.position;
     if (!s.tg || !s.tg.alive) s.tg = bots.filter((b) => b.alive).sort((a, b) => a.g.position.distanceTo(p) - b.g.position.distanceTo(p))[0] || null;
     if (s.tg) { const q = new RV(s.tg.g.position.x, 1.2, s.tg.g.position.z), v = q.sub(p), l = v.length();
-      if (l < 1) { s.tg.blind = Math.max(s.tg.blind || 0, 3); s.tg.ns = 3; say(s.tg.name + " nearsighted 3 s", 800); blip(500, 0.2, "sine", 0.12); scene.remove(s.m); return false; }
+      if (l < 1) { s.tg.blind = Math.max(s.tg.blind || 0, 3); s.tg.ns = 3; s.tg.chs = Math.max(s.tg.chs || 0, 5); say(s.tg.name + " nearsighted 3 s · slowed 5 s", 800); blip(500, 0.2, "sine", 0.12); scene.remove(s.m); return false; }
       p.addScaledVector(v, Math.min(1, (10 * dt) / l)); }
     if (s.t > 0) return true; scene.remove(s.m); return false;
   });
@@ -7219,7 +7223,7 @@ function rsSl(u) {
   if (J.pick === "Raze") return [["jC", J.c || RS.bb.length, RS.bb.length ? "Rolling" : J.c + "", J.cd.c / 0.6], ["jQ", J.q || RS.pk.length, RS.pk.length ? "Detonate" : J.q + "", J.cd.q / 0.6],
     ["jE", J.e, J.e ? "1" : J.tk + "/2 kills", J.cd.e / 0.4], ["jX", RS.ss || J.ult >= u, RS.ss ? Math.ceil(RS.sst) + " s" : J.ult + "/" + u, RS.ss ? 0 : 1 - J.ult / u]];
   return [["jC", J.c || !!RS.rg, RS.rg ? Math.ceil(RS.rg.pool) + " HP" : J.c + "", RS.rg ? 1 - RS.rg.pool / 100 : J.cd.c / 0.6], ["jQ", J.q || !!J.dr, J.dr ? Math.ceil(J.dr.t) + " s" : J.q + "", J.dr ? 1 - J.dr.t / 3 : J.cd.q / 0.6],
-    ["jE", J.e || !!RS.hk, RS.hk ? "Flash" : J.e + "", J.cd.e / 0.6], ["jX", RS.sk.length || J.ult >= u, RS.sk.length ? RS.sk.length + " seekers" : J.ult + "/" + u, RS.sk.length ? 0 : 1 - J.ult / u]];
+    ["jE", J.e || !!RS.hk, RS.hk ? "Flash" : J.e > 0 ? J.e + "" : Math.ceil(J.cd.e) + " s", J.cd.e > 1 ? J.cd.e / 60 : J.cd.e / 0.6], ["jX", RS.sk.length || J.ult >= u, RS.sk.length ? RS.sk.length + " seekers" : J.ult + "/" + u, RS.sk.length ? 0 : 1 - J.ult / u]];
 }
 // ---- Breach + Chamber kits (player), ability viewmodels, Trailblazer creature, nearsight, kill-feed names ----
 const BC = { as: [], tm: [], sf: [], an: null, td: 0, eq: "", cd: 0, vm: "" };
@@ -7366,7 +7370,7 @@ function bcDaze(b, t, ku) { b.blind = Math.max(b.blind || 0, t); b.cnc = Math.ma
 function bcFlash(p) {
   SFX.flash(); const m = new THREE.Mesh(orbGeo, fireMat(0xffd9a0, 1)); m.scale.setScalar(4); m.position.copy(p); jFx(m, 0.3); let n = 0;
   bots.forEach((b) => { if (!b.alive) return; const bp = new RV(b.g.position.x, 1.6, b.g.position.z), ry = b.g.rotation.y, vx = p.x - bp.x, vz = p.z - bp.z, l = Math.hypot(vx, vz) || 0.01;
-    if (l < 30 && (vx * Math.sin(ry) + vz * Math.cos(ry)) / l > 0.3 && los(bp, p)) { b.blind = Math.max(b.blind || 0, 2); n++; } });
+    if (l < 30 && (vx * Math.sin(ry) + vz * Math.cos(ry)) / l > 0.3 && los(bp, p)) { b.blind = Math.max(b.blind || 0, 2.25); n++; } });
   say("Flashpoint · " + n + " blinded", 800);
 }
 function bcLine(P, fx, fz, L, w, t) {
@@ -7403,14 +7407,14 @@ function bcKey(code) {
     if (code === "KeyC") {
       if (J.c < 1 || J.cd.c > 0) return no(); const p = bcWall(8); if (!p) return no(), say("Aim at a wall", 800); J.c--; J.cd.c = 0.6;
       const m = jM(zoneGeo, fireMat(0xff9a3a, 0.35)); m.rotation.x = -Math.PI / 2; m.scale.setScalar(3 / 2.5); m.position.set(p.x, 0.06, p.z); scene.add(m);
-      BC.as.push({ p, m, t: 1, n: 3 }); say("Aftershock · bursts in 1 s", 800); blip(160, 0.3, "sawtooth", 0.15); try { XCUE.play("rumble"); } catch (e) {}
+      BC.as.push({ p, m, t: 1, n: 2 }); say("Aftershock · 2 bursts of 80", 800); blip(160, 0.3, "sawtooth", 0.15); try { XCUE.play("rumble"); } catch (e) {}
     }
     if (code === "KeyQ") {
       if (J.q < 1 || J.cd.q > 0) return no(); const p = bcWall(8); if (!p) return no(), say("Aim at a wall", 800); J.q--; J.cd.q = 0.6; p.y = 1.8;
       setTimeout(() => { if (jOn()) bcFlash(p); }, 350); blip(900, 0.12, "square", 0.12);
     }
-    if (code === "KeyE") { if (J.cd.e > 0) return no(), say("Fault Line " + Math.ceil(J.cd.e) + " s", 700); J.cd.e = 40; bcLine(P, fx, fz, 25, 1.6, 3); try { XCUE.play("rumble"); } catch (e) {} }
-    if (code === "KeyX") { if (J.ult < 8) return no(), say("Rolling Thunder " + J.ult + "/8", 800); J.ult = 0; bcCone(); }
+    if (code === "KeyE") { if (J.cd.e > 0) return no(), say("Fault Line " + Math.ceil(J.cd.e) + " s", 700); J.cd.e = 60; bcLine(P, fx, fz, 25, 1.6, 2.5); try { XCUE.play("rumble"); } catch (e) {} }
+    if (code === "KeyX") { if (J.ult < K().u) return no(), say("Rolling Thunder " + J.ult + "/" + K().u, 800); J.ult = 0; bcCone(); }
     return;
   }
   if (code === "KeyC") {
@@ -7433,7 +7437,7 @@ function bcKey(code) {
   }
   if (code === "KeyX") {
     if (BC.td > 0) { BC.eq = BC.eq === "sn" ? "" : "sn"; fireHeld = false; return; }
-    if (J.ult < 8) return no(), say("Tour De Force " + J.ult + "/8", 800);
+    if (J.ult < K().u) return no(), say("Tour De Force " + J.ult + "/" + K().u, 800);
     J.ult = 0; BC.td = 5; BC.eq = "sn"; fireHeld = false; setScope(false); say("Tour De Force · 5 rounds · any hit kills", 1100); blip(880, 0.3, "triangle", 0.2);
   }
 }
@@ -7448,13 +7452,13 @@ function bcTick(dt) {
   BC.as = BC.as.filter((a) => {
     a.t -= dt; if (a.t > 0) return true;
     const m = jM(smokeGeo, fireMat(0xff9a3a, 0.45)); m.scale.setScalar(0.75); m.position.set(a.p.x, 1, a.p.z); jFx(m, 0.35); blip(70, 0.3, "sawtooth", 0.2);
-    if (a.own) xBbTg(a).forEach((t) => { const q = xBbPos(t); if (q && Math.hypot(q.x - a.p.x, q.z - a.p.z) < 3) { xBotDmg(t, 60, a.own.name, "Aftershock"); if (t.alive && bots.indexOf(t) >= 0) flash(t); } });
-    else bots.forEach((b) => { if (b.alive && Math.hypot(b.g.position.x - a.p.x, b.g.position.z - a.p.z) < 3) { jHit(b, 60, "Aftershock"); if (b.alive) flash(b); } });
-    if (--a.n > 0) { a.t = 0.5; return true; } scene.remove(a.m); return false;
+    if (a.own) xBbTg(a).forEach((t) => { const q = xBbPos(t); if (q && Math.hypot(q.x - a.p.x, q.z - a.p.z) < 3) { xBotDmg(t, 80, a.own.name, "Aftershock"); if (t.alive && bots.indexOf(t) >= 0) flash(t); } });
+    else bots.forEach((b) => { if (b.alive && Math.hypot(b.g.position.x - a.p.x, b.g.position.z - a.p.z) < 3) { jHit(b, 80, "Aftershock"); if (b.alive) flash(b); } });
+    if (--a.n > 0) { a.t = 0.6; return true; } scene.remove(a.m); return false;
   });
   BC.tm = BC.tm.filter((t) => {
     const b = bots.find((b) => b.alive && Math.hypot(b.g.position.x - t.p.x, b.g.position.z - t.p.z) < 6 && los(t.p, new RV(b.g.position.x, 1, b.g.position.z)));
-    if (!b) return true; b.chs = 6; scene.remove(t.m); SFX.ab("slow", t.p); say("Trademark · " + b.name + " slowed 6 s", 900); return false;
+    if (!b) return true; b.chs = 4; scene.remove(t.m); SFX.ab("slow", t.p); say("Trademark · " + b.name + " slowed 4 s", 900); return false;
   });
   BC.sf = BC.sf.filter((f) => { f.t -= dt; f.m.material.opacity = 0.35 * Math.min(1, f.t); if (f.t > 0) return true; jRel(f.m); return false; });
   bots.concat(allies.filter(Boolean)).forEach((b) => { if (b.chs > 0) b.chs -= dt; if (b.ku > 0) { b.ku -= dt; b.kg = b.kg != null ? b.kg : b.g.position.y; b.g.position.y = b.ku > 0 ? b.kg + Math.sin((1 - b.ku / 0.7) * Math.PI) * 1.5 : b.kg; if (b.ku <= 0) b.kg = null; } else if (b.g && b.xk == null && b.xj == null) { const q = b.g.position; q.y = groundAt(q.x, q.z, 0.3, q.y + 0.01); } }); // bots stand on box tops / ledges like the player (same floor lookup)
@@ -7469,7 +7473,7 @@ function bcClear() {
 }
 function bcSl(u) {
   if (J.pick === "Breach") return [["jC", J.c, J.c + "", J.cd.c / 0.6], ["jQ", J.q, J.q + "", J.cd.q / 0.6],
-    ["jE", J.cd.e <= 0, J.cd.e > 0 ? Math.ceil(J.cd.e) + " s" : "Ready", J.cd.e / 40], ["jX", J.ult >= u, J.ult + "/" + u, 1 - J.ult / u]];
+    ["jE", J.cd.e <= 0, J.cd.e > 0 ? Math.ceil(J.cd.e) + " s" : "Ready", J.cd.e / 60], ["jX", J.ult >= u, J.ult + "/" + u, 1 - J.ult / u]];
   return [["jC", J.c || BC.tm.length, BC.tm.length ? "Set" : J.c + "", J.cd.c / 0.6], ["jQ", J.q, BC.eq === "hp" ? J.q + " rds" : J.q + "", BC.eq === "hp" ? BC.cd / 0.4 : 0],
     ["jE", !!BC.an || J.cd.e <= 0, BC.an ? "Return" : J.cd.e > 0 ? Math.ceil(J.cd.e) + " s" : "Ready", BC.an ? 0 : J.cd.e / 30], ["jX", BC.td > 0 || J.ult >= u, BC.td > 0 ? BC.td + " rds" : J.ult + "/" + u, BC.td > 0 ? 0 : 1 - J.ult / u]];
 }
@@ -7530,7 +7534,7 @@ function cyKey(code) {
   }
   if (code === "KeyQ") {
     if (J.q < 1 || J.cd.q > 0) return no(); J.q--; J.cd.q = 0.6;
-    const p = okGround(15), m = jM(smokeGeo, xSmokeM("cyq", 0x5a6a6c, 0x3fd0c0)); m.position.set(p.x, 1.2, p.z); scene.add(m); J.smokes.push({ m, p: m.position, t: 5 }); SFX.smoke(); say("Cyber Cage · 5 s", 600);
+    const p = okGround(15), m = jM(smokeGeo, xSmokeM("cyq", 0x5a6a6c, 0x3fd0c0)); m.position.set(p.x, 1.2, p.z); scene.add(m); J.smokes.push({ m, p: m.position, t: 7.25 }); SFX.smoke(); say("Cyber Cage · 7 s", 600);
   }
   if (code === "KeyE") {
     if (!BC.cam) {
@@ -7767,17 +7771,20 @@ function jRound(match) { // each round start in Retake and 5v5
   resetBotRoundAbilities();
   if (mode === "five" && typeof FV !== "undefined" && FV.map === "lotus" && LG.on) { xLotusReset(); LG.pl = player; } // doors open + wall intact every round start
   J.on = !!KITS[J.pick] && (mode === "retake" || mode === "five"); jClear();
-  J.bs = 0; J.bsOn = false; J.e = 1; J.tk = 0; J.cd = { c: 0, q: 0, e: 0, x: 0 };
+  J.prevE = J.e; J.bs = 0; J.bsOn = false; J.e = 1; J.tk = 0; J.cd = { c: 0, q: 0, e: 0, x: 0 };
   const M = K().mx;
   if (match) { J.ult = 0; J.c = mode === "five" ? 0 : M.c; J.q = mode === "five" ? 0 : M.q; }
   if (mode === "retake") { J.c = M.c; J.q = M.q; }
-  if (J.pick === "Omen") { J.e = 2; J.oe = 0; } if (J.pick === "Killjoy") J.q = 1; if (J.pick === "Chamber") J.c = 1;
+  if (M.e) J.e = mode === "retake" ? M.e : match ? 1 : Math.max(1, Math.min(M.e, J.prevE | 0)); // signature: 1 free charge each round, extra charges bought (unused bought ones carry over)
+  if (J.pick === "Reyna") J.q = mode === "retake" ? M.q : Math.max(1, J.q | 0); // Devour/Dismiss share Reyna's signature charges: 1 free per round
+  if (J.pick === "Omen") { J.oe = 0; J.oeM = J.e; }
   ["jC", "jQ", "jE", "jX"].forEach((id, i) => { const sp = $(id) && $(id).querySelector("span"); if (sp) sp.textContent = K().n[i]; }); $("xAb").setAttribute("aria-label", (J.pick || "Jett") + " abilities"); J.hs = ""; xAbIcons();
 }
 function jUlt() { if (jOn()) { const u = K().u, was = J.ult; J.ult = Math.min(u, J.ult + 1); if (was < u && J.ult >= u) SFX.ult(); } }
 function jKill() {
   if (!jOn()) return; jUlt();
   if (J.pick === "Raze" && J.e < 1 && ++J.tk >= 2) { J.e = 1; J.tk = 0; say("Paint Shells ready", 700); }
+  if (J.pick === "Phoenix" && J.e < 1 && ++J.tk >= 2) { J.e = 1; J.tk = 0; say("Curveball ready", 700); }
   if (J.pick !== "Jett") return;
   if (J.e < 1 && ++J.tk >= 2) { J.e = 1; J.tk = 0; say("Tailwind ready", 700); }
   if (J.bsOn) J.bs = 5;
@@ -7795,9 +7802,9 @@ function jKey(code) {
   if (J.pick === "Breach" || J.pick === "Chamber") return bcKey(code), true;
   if (J.pick === "Cypher") return cyKey(code), true;
   const P = player, no = () => blip(120, 0.08, "square", 0.1);
-  if (code === "KeyC") { if (J.c < 1 || J.cd.c > 0) return true; J.c--; J.cd.c = 0.6; P.vy = Math.sqrt(2 * 18 * 6); P.y = Math.max(P.y, 0.01); SFX.ab("updraft"); }
-  if (code === "KeyQ") {
-    if (J.q < 1 || J.cd.q > 0) return no(), true; J.q--; J.cd.q = 0.6;
+  if (code === "KeyQ") { if (J.q < 1 || J.cd.q > 0) return no(), true; J.q--; J.cd.q = 0.6; P.vy = Math.sqrt(2 * 18 * 6); P.y = Math.max(P.y, 0.01); SFX.ab("updraft"); }
+  if (code === "KeyC") { // Cloudburst (C in Valorant)
+    if (J.c < 1 || J.cd.c > 0) return no(), true; J.c--; J.cd.c = 0.6;
     const o = pEye(), d = new THREE.Vector3(-Math.sin(yaw) * Math.cos(pitch), Math.sin(pitch), -Math.cos(yaw) * Math.cos(pitch));
     ray.set(o, d); ray.far = 14; const h = ray.intersectObjects(solids)[0];
     const p = h ? h.point.addScaledVector(d, -0.5) : o.clone().addScaledVector(d, 14); p.y = Math.max(1.5, Math.min(p.y, 4));
@@ -7815,7 +7822,7 @@ function jKey(code) {
   }
   if (code === "KeyX") {
     if (J.bsOn) { swapW("knife"); return true; }
-    if (J.ult < 7) { no(); say("Blade Storm " + J.ult + "/7", 800); return true; }
+    if (J.ult < K().u) { no(); say("Blade Storm " + J.ult + "/" + K().u, 800); return true; }
     J.ult = 0; J.bs = 5; J.bsOn = true; swapW("knife"); say("Blade Storm · 5 knives", 1000); blip(880, 0.3, "triangle", 0.2); SFX.ab("bsDraw");
   }
   return true;
@@ -7840,7 +7847,7 @@ function jBuyHtml() {
 function jBuy(k) {
   const it = K().buy.find((x) => x[0] === k); if (!it) return;
   const p = it[2]; if (J[k] >= K().mx[k] || FV.cr < p) return;
-  J[k]++; FV.cr -= p; bLog().push({ ab: k, p }); sbSpend("You", p); blip(700, 0.08, "triangle", 0.15); buyRender(); xHud();
+  J[k]++; if (k === "e" && J.pick === "Omen") J.oeM = J.e; FV.cr -= p; bLog().push({ ab: k, p }); sbSpend("You", p); blip(700, 0.08, "triangle", 0.15); buyRender(); xHud();
 }
 function jTick(dt) {
   const on = jOn() && running && $("game").style.display !== "none";
@@ -7851,9 +7858,9 @@ function jTick(dt) {
   jFxTick(dt); sgTick(dt); rsTick(dt); bcTick(dt);
   const hn = $("hint"); if (hn && J.pick !== "Jett" && hn.textContent.includes(KITS.Jett.h)) hn.textContent = hn.textContent.replace(KITS.Jett.h, K().h);
   const u = K().u, cq = ["jQ", J.q, J.q + "", J.cd.q / 0.6], ce = ["jE", J.e, J.e ? "1" : "Used", J.cd.e / 0.4];
-  const sl = J.pick === "Breach" || J.pick === "Chamber" ? bcSl(u) : J.pick === "Cypher" ? cySl(u) : J.pick === "Raze" || J.pick === "Skye" ? rsSl(u) : J.pick === "Omen" || J.pick === "Killjoy" ? okSl(u) : J.pick === "Sage" || J.pick === "Reyna" ? sgSl(u, cq) : J.pick === "Phoenix" ? [["jC", J.c, J.c + "", J.cd.c / 0.6], cq, ce, ["jX", J.rib > 0 || J.ult >= u, J.rib > 0 ? Math.ceil(J.rib) + " s" : J.ult + "/" + u, J.rib > 0 ? 1 - J.rib / 10 : 1 - J.ult / u]]
-    : J.pick === "Sova" ? [["jC", J.c || J.dr, J.dr ? Math.ceil(J.dr.t) + " s" : J.c + "", J.dr ? 1 - J.dr.t / 7 : J.cd.c / 0.6], cq, ce, ["jX", J.hf > 0 || J.ult >= u, J.hf > 0 ? J.hf + " shots" : J.ult + "/" + u, J.hf > 0 ? J.cd.x / 0.9 : 1 - J.ult / u]]
-    : [["jC", J.c, J.c + "", J.cd.c / 0.6], ["jQ", J.q, J.q + "", J.cd.q / 0.6], ["jE", J.e, J.e ? "1" : J.tk + "/2 kills", J.cd.e / 0.4], ["jX", J.bsOn || J.ult >= 7, J.bsOn ? J.bs + " knives" : J.ult + "/7", J.bsOn ? J.cd.x / 0.33 : 1 - J.ult / 7]];
+  const sl = J.pick === "Breach" || J.pick === "Chamber" ? bcSl(u) : J.pick === "Cypher" ? cySl(u) : J.pick === "Raze" || J.pick === "Skye" ? rsSl(u) : J.pick === "Omen" || J.pick === "Killjoy" ? okSl(u) : J.pick === "Sage" || J.pick === "Reyna" ? sgSl(u, cq) : J.pick === "Phoenix" ? [["jC", J.c, J.c + "", J.cd.c / 0.6], cq, ["jE", J.e, J.e > 0 ? J.e + "" : J.tk + "/2 kills", J.cd.e / 0.6], ["jX", J.rib > 0 || J.ult >= u, J.rib > 0 ? Math.ceil(J.rib) + " s" : J.ult + "/" + u, J.rib > 0 ? 1 - J.rib / 10 : 1 - J.ult / u]]
+    : J.pick === "Sova" ? [["jC", J.c || J.dr, J.dr ? Math.ceil(J.dr.t) + " s" : J.c + "", J.dr ? 1 - J.dr.t / 7 : J.cd.c / 0.6], cq, ["jE", J.e, J.e ? "1" : Math.ceil(J.cd.e) + " s", J.cd.e / 60], ["jX", J.hf > 0 || J.ult >= u, J.hf > 0 ? J.hf + " shots" : J.ult + "/" + u, J.hf > 0 ? J.cd.x / 0.9 : 1 - J.ult / u]]
+    : [["jC", J.c, J.c + "", J.cd.c / 0.6], ["jQ", J.q, J.q + "", J.cd.q / 0.6], ["jE", J.e, J.e ? "1" : J.tk + "/2 kills", J.cd.e / 0.4], ["jX", J.bsOn || J.ult >= u, J.bsOn ? J.bs + " knives" : J.ult + "/" + u, J.bsOn ? J.cd.x / 0.33 : 1 - J.ult / u]];
   const PK = { jC: "c", jQ: "q", jE: "e" }, mx = K().mx || {}, pc = (id) => { const v = J[PK[id]]; return typeof v === "number" ? Math.max(0, v | 0) : v ? 1 : 0; }, pm = (id) => Math.min(4, Math.max(pc(id), mx[PK[id]] || (J.pick === "Omen" && id === "jE" ? 2 : 1)));
   const st = JSON.stringify(sl.map((x) => [x[1], x[2], Math.round(x[3] * 40), PK[x[0]] ? pc(x[0]) + "/" + pm(x[0]) : 0])); if (st === J.hs) return; J.hs = st;
   sl.forEach(([id, ok, txt, cd]) => {
