@@ -72,6 +72,9 @@ button{font:inherit;text-transform:inherit;letter-spacing:inherit;cursor:pointer
 #result{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:rgba(15,25,35,.88);z-index:20;text-align:center}
 #result h2{font-size:clamp(48px,10vw,110px);font-weight:900}
 #result p{font-size:18px;opacity:.8}
+#result.x-glerr p{text-transform:none;letter-spacing:.02em;max-width:640px;line-height:1.45} /* engine error: one sentence-case body in every mode */
+#result #xGlDiag{font-size:13px;opacity:.85;font-family:ui-monospace,Menlo,Consolas,monospace}
+#sndBtn[aria-pressed=false] #sndWave{stroke:#ff4655}#sndBtn[aria-pressed=true]{color:#5fffb0}
 .row{display:flex;gap:12px;margin-top:12px}
 .ghost{background:transparent;border:1px solid var(--bone);color:var(--bone);font-size:20px;padding:16px 40px}
 .tl{display:flex;align-items:center;gap:10px}
@@ -707,12 +710,12 @@ body.x-cbh #game{--ha:#3d8bff;--he:#ff9f1c}
 .x-qp{display:flex;flex-direction:column;gap:16px;min-width:0}.x-qp[hidden]{display:none}
 .x-q .x-qcard,.x-q .x-qcard:hover{all:unset;box-sizing:border-box;display:flex;flex-direction:column;gap:12px;width:100%;min-width:0;padding:24px;background:linear-gradient(135deg,rgba(255,70,85,.16),rgba(236,232,225,.04) 60%);border-left:3px solid #ff4655;color:#ece8e1;cursor:default}
 .x-q .x-qcard h3{margin:0;font-size:48px;line-height:1;font-weight:700;text-transform:uppercase;letter-spacing:.02em;overflow-wrap:anywhere}
-.x-q .x-qcard p{margin:0;font-size:15px;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.x-q .x-qcard small{font-size:12px;letter-spacing:.06em;opacity:.7;line-height:1.5}
+.x-q .x-qcard p{margin:0;font-size:15px;line-height:1.4;opacity:.85;white-space:normal;overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow-wrap:anywhere} /* lobby polish: wraps to 2 lines instead of ellipsizing mid-sentence */
+.x-q .x-qcard small{font-size:12px;letter-spacing:.06em;opacity:1;color:#c9cdd2;line-height:1.5}
 .x-qchips{display:flex;flex-wrap:wrap;gap:8px}
 .x-qchips span{padding:4px 10px;border:1px solid rgba(236,232,225,.25);font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase}
 .x-qmaps{min-width:0}
-.x-qmaps>p{margin:0 0 10px;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.55)}
+.x-qmaps>p{margin:0 0 10px;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:#c9cdd2}
 .x-qgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
 .x-qmap{position:relative;min-height:84px;padding:10px;display:flex;align-items:flex-end;border:0;outline:2px solid transparent;outline-offset:-2px;color:#fff;font:inherit;font-size:14px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;text-shadow:0 1px 3px rgba(0,0,0,.6);cursor:pointer;transition:filter .15s,outline-color .15s}
 .x-qmap:hover{filter:brightness(1.15)}
@@ -728,14 +731,16 @@ body.x-cbh #game{--ha:#3d8bff;--he:#ff9f1c}
 .x-qplay:hover,.x-qplay:focus-visible{filter:brightness(1.15)}
 .x-qrange{min-height:44px;padding:0 18px;background:none;border:1px solid rgba(236,232,225,.3);color:#ece8e1;font:inherit;font-size:13px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;cursor:pointer}
 .x-qrange:hover{border-color:#ece8e1}
+.x-qgo #xqRange{box-sizing:border-box;height:64px;min-height:64px;padding:0 28px} /* lobby polish: same height as START */
 /* ONLINE section (PLAY queue panel) + in-game online HUD / name tags */
 .x-qon{display:flex;flex-direction:column;gap:12px;padding-top:16px;border-top:1px solid rgba(236,232,225,.14)}
 .x-qon__h{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
 .x-qon__h h3{margin:0;font-size:20px;letter-spacing:.14em;text-transform:uppercase}
-.x-qon__h small{font-size:12px;opacity:.65;letter-spacing:.04em}
-.x-qon__nm{display:inline-flex;align-items:center;gap:8px;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:rgba(236,232,225,.7)}
+.x-qon__h small{font-size:12px;opacity:1;color:#c9cdd2;letter-spacing:.04em}
+.x-qon__nm{display:inline-flex;align-items:center;gap:8px;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:#c9cdd2}
 .x-qon__h .x-qon__nm{margin-left:auto}
 .x-qon input,.x-qon select{min-height:40px;box-sizing:border-box;padding:0 10px;background:rgba(236,232,225,.06);border:1px solid rgba(236,232,225,.3);color:#ece8e1;font:inherit;font-size:14px;border-radius:0}
+.x-qon input::placeholder{color:#a9b1ba;opacity:1;letter-spacing:.08em} /* lobby polish: readable placeholders (CODE, Your name) */
 .x-qon input:focus-visible,.x-qon select:focus-visible{outline:2px solid #ff4655;outline-offset:1px}
 #xOnName{width:150px}#xOnCode{width:110px;text-transform:uppercase;letter-spacing:.2em;font-weight:700}
 .x-qon select option{background:#0f1923}
@@ -751,16 +756,17 @@ body.x-cbh #game{--ha:#3d8bff;--he:#ff9f1c}
 .x-qon__room{display:flex;flex-direction:column;gap:10px;padding:14px;background:rgba(236,232,225,.04);border-left:3px solid #ff4655}
 .x-qon__room[hidden]{display:none}
 .x-qon__code{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-.x-qon__code small{font-size:11px;letter-spacing:.12em;text-transform:uppercase;opacity:.65}
+.x-qon__code small{font-size:11px;letter-spacing:.12em;text-transform:uppercase;opacity:1;color:#c9cdd2}
 .x-qon__code b{font-size:30px;letter-spacing:.24em;font-variant-numeric:tabular-nums;font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace}
 .x-qon__code span{font-size:13px;opacity:.8}
 .x-qon__list{margin:0;padding:0;list-style:none;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px}
 .x-qon__list li{display:flex;justify-content:space-between;gap:8px;padding:8px 10px;background:rgba(15,25,35,.8);border:1px solid rgba(236,232,225,.14);font-size:13px;min-width:0}
 .x-qon__list li b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.x-qon__list li small{opacity:.65;flex:none}
+.x-qon__list li small{opacity:1;color:#c9cdd2;flex:none}
 .x-qon__list li.bot{opacity:.4}
 #xOnWait{font-size:13px;opacity:.75}
-.x-qon__msg{margin:0;min-height:1.2em;font-size:13px;color:rgba(236,232,225,.8)}
+.x-qon__msg{margin:0;min-height:1.2em;font-size:13px;color:#c9cdd2}
+.x-qon__msg:empty{min-height:0;margin-top:-12px} /* lobby polish: an empty status line adds no extra bottom padding */
 .x-mphud{position:fixed;top:8px;left:50%;transform:translateX(-50%);z-index:40;padding:3px 10px;background:rgba(15,25,35,.7);color:#5fffb0;font:600 11px/1.4 system-ui,sans-serif;letter-spacing:.12em;pointer-events:none}
 .x-mptags{position:fixed;inset:0;pointer-events:none;z-index:20;overflow:hidden}
 .x-mptag{position:absolute;left:0;top:0;padding:1px 6px;font:600 12px/1.3 system-ui,sans-serif;white-space:nowrap;text-shadow:0 1px 2px #000;background:rgba(15,25,35,.45)}
@@ -863,7 +869,7 @@ body.x-cbh #game{--ha:#3d8bff;--he:#ff9f1c}
       <button id="setBtn" data-nav="settings" aria-label="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><span class="x-nl">Settings</span></button>
     </nav>
     <div class="x-acct">
-      <button class="x-ib" id="sndBtn" aria-pressed="false" aria-label="Sound"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4z"/><path id="sndWave" d="M22 9l-6 6M16 9l6 6"/></svg><span class="x-vh">Tap for sound</span></button>
+      <button class="x-ib" id="sndBtn" aria-pressed="false" aria-label="Sound off — click to enable" title="Sound off — click to enable"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4z"/><path id="sndWave" d="M22 9l-6 6M16 9l6 6"/></svg><span class="x-vh">Tap for sound</span></button>
       <span class="x-lvb" id="xLvl" title="Account level">1</span>
       <div class="x-xp"><i role="progressbar" aria-label="XP to next level" aria-valuemin="0" aria-valuemax="5000"><b id="xXpF"></b></i><small id="xXpT">0 / 5000 XP</small></div>
       <div class="x-me" id="meBtn" role="button" tabindex="0" aria-label="Open your profile"><span class="x-av"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7z"/></svg></span><span class="x-mt"><b>You</b><span id="meStats">0 kills · 0 deaths · 0 wins</span></span></div>
@@ -958,7 +964,7 @@ body.x-cbh #game{--ha:#3d8bff;--he:#ff9f1c}
     <button class="x-qrange" id="xqRange">Range</button>
   </div>
   <section class="x-qon" id="xOn" aria-labelledby="xOnH">
-    <div class="x-qon__h"><h3 id="xOnH">Online</h3><small>Peer-to-peer with friends · bots fill empty slots</small><label class="x-qon__nm">Name <input id="xOnName" maxlength="16" autocomplete="off" spellcheck="false"></label></div>
+    <div class="x-qon__h"><h3 id="xOnH">Online</h3><small>Peer-to-peer with friends · bots fill empty slots</small><label class="x-qon__nm">Name <input id="xOnName" placeholder="Your name" maxlength="16" autocomplete="off" spellcheck="false"></label></div>
     <div class="x-qon__row">
       <div class="x-qon__seg" role="group" aria-label="Online mode"><button type="button" data-om="dm" aria-pressed="false">Deathmatch</button><button type="button" data-om="tdm" aria-pressed="true">Team Deathmatch</button></div>
       <button type="button" class="x-qrange x-qon__go" id="xOnQuick">Quick Match</button>
@@ -1387,7 +1393,7 @@ body.x-cbh #game{--ha:#3d8bff;--he:#ff9f1c}
   <div class="x-pane" data-p="p"><button class="play" id="xResume">Resume</button><button class="ghost" id="xDrills" hidden>RANGE DRILLS</button></div>
   <div class="x-pane" data-p="s"><p>Sensitivity, volume, brightness, FPS, crosshair and bot difficulty.</p><button class="ghost" id="xSet">Open settings</button></div>
 </div></div>
-<div id="result"><h2 id="resTitle">Victory</h2><p id="resText"></p><div id="xResB"></div><div class="row"><button class="play" id="againBtn">Play again</button><button class="ghost" id="lobbyBtn">Lobby</button></div></div>
+<div id="result"><h2 id="resTitle">Victory</h2><p id="resText"></p><p id="xGlDiag" hidden></p><div id="xResB"></div><div class="row"><button class="play" id="againBtn">Play again</button><button class="play" id="xRetry" type="button" hidden>Retry</button><button class="ghost" id="lobbyBtn">Lobby</button></div></div>
 <script>
 // error toast: any uncaught error (or one caught in the game loop) shows bottom-left for 5 s instead of freezing silently
 (function () {
@@ -1687,8 +1693,8 @@ const AB = {
   choir: (o) => { [262, 330, 392, 523].forEach((f, i) => { sTn(i * 0.08, f, f, 2.4, "sine", 0.07, o, 0.5); sTn(i * 0.08, f * 1.006, f * 1.006, 2.4, "triangle", 0.03, o, 0.6); }); }
 };
 // modals
-const open = (id) => $(id).classList.add("on");
-const closeAll = () => document.querySelectorAll(".modal.on").forEach((m) => m.classList.remove("on"));
+const open = (id) => { const m = $(id); m.hidden = false; m.classList.add("on"); };
+const closeAll = () => document.querySelectorAll(".modal.on").forEach((m) => { m.classList.remove("on"); m.hidden = true; });
 // settings
 // crosshair (Valorant-style): state in S.xc; one canvas, redrawn only when settings or the spread gap change
 S.xc = { ol: true, olo: 0.5, dot: false, dt: 2, inr: { on: true, op: 0.8, len: 6, th: 2, off: 3 }, out: { on: true, op: 0.35, len: 2, th: 2, off: 10 }, me: false, fe: false }; // Valorant defaults: movement / firing error lines off
@@ -1754,27 +1760,49 @@ function renderInv() {
 }
 // drifting player counts
 const metas = [...document.querySelectorAll(".meta")];
-function drift() {
-  let tot = 0;
-  metas.forEach((m) => {
-    let on = Math.max(1, +m.dataset.on + Math.round((Math.random() - 0.5) * 4)); let vis = +m.dataset.vis + Math.floor(Math.random() * 4);
-    m.dataset.on = on; m.dataset.vis = vis; tot += on;
+// one "online" number (xOnN) feeds every spot: each mode card shows a fixed share of it, the lobby chip shows the total; it moves by at most 1 every 20 s
+var xOnN = 48;
+const XON_SH = [0.19, 0.29]; // Operator Duel, Rifle 2v2 shares of the total
+function drift(step) {
+  if (step) xOnN = Math.min(64, Math.max(36, xOnN + (Math.random() < 0.5 ? -1 : 1)));
+  metas.forEach((m, i) => {
+    const on = Math.max(1, Math.round(xOnN * (XON_SH[i] || 0.1))); let vis = +m.dataset.vis + (step ? Math.floor(Math.random() * 2) : 0);
+    m.dataset.on = on; m.dataset.vis = vis;
     m.innerHTML = `<i></i>${on} online · ${vis.toLocaleString("en-US")} visits`;
   });
-  $("totOn").textContent = tot + 3;
+  $("totOn").textContent = xOnN;
 }
+window.xOnDrift = drift;
 // ---- lobby wiring: one init that runs before any 3D code, each binding in its own try/catch ----
 // Mode launches go through xGo: they call the hoisted mode functions only once the whole 3D init has finished
 // (xReady, set on the last line of this script); otherwise they show "Couldn't load 3D engine".
-var xReady = false, xFailMsg = "", xInitErr = "", xNoGL = false;
+var xReady = false, xFailMsg = "", xInitErr = "", xNoGL = false, xGlErr = "", xRetryFn = null, xLastBtn = "";
+// engine error diagnostics: which WebGL contexts this browser can create, plus the reason string we got
+function xGlDiag() {
+  const yn = (v) => (v ? "yes" : "no"); let g2 = false, g1 = false, why = "";
+  try { const c = document.createElement("canvas"); try { c.addEventListener("webglcontextcreationerror", (e) => { if (e && e.statusMessage) why = e.statusMessage; }); } catch (e) {}
+    const lose = (g) => { try { const x = g && g.getExtension && g.getExtension("WEBGL_lose_context"); if (x) x.loseContext(); } catch (e) {} };
+    let g = null; try { g = c.getContext("webgl2"); } catch (e) {} g2 = !!(g && typeof g === "object" && g.getParameter); lose(g);
+    const c1 = document.createElement("canvas"); g = null; try { g = c1.getContext("webgl") || c1.getContext("experimental-webgl"); } catch (e) {} g1 = !!(g && typeof g === "object" && g.getParameter); lose(g);
+  } catch (e) {}
+  const reason = !window.THREE ? "3D library (three.js) did not load" : xGlErr || xInitErr || why || (xNoGL ? "renderer could not be created" : "init did not finish");
+  return "WebGL2: " + yn(g2) + " · WebGL: " + yn(g1) + " · reason: " + reason;
+}
+function xRetry() { // Retry on the engine error: re-run the same launch if the engine is up now, otherwise reload to re-attempt WebGL init and relaunch the same mode
+  const fn = xRetryFn; $("result").style.display = "none"; $("result").classList.remove("x-glerr"); $("xRetry").hidden = true; $("xGlDiag").hidden = true; $("againBtn").style.display = "";
+  if (xReady && fn) { $("lobby").style.display = "flex"; return xGo(fn); }
+  try { if (xLastBtn) sessionStorage.setItem("vs.retry", xLastBtn); } catch (e) {}
+  try { location.reload(); } catch (e) { $("lobby").style.display = "flex"; }
+}
 function xFail() {
   const msg = xFailMsg || (!window.THREE ? "Check your connection and reload the page." : "The 3D engine stopped while starting" + (xInitErr ? ": " + xInitErr : "") + ". Reload the page.");
   closeAll(); $("pre").style.display = "none"; $("xAg").style.display = "none";
   $("resTitle").textContent = "Couldn't load 3D engine"; $("resTitle").style.color = "#ff4655"; $("resTitle").style.fontSize = "clamp(32px,7vw,72px)";
-  $("resText").textContent = msg; $("againBtn").style.display = "none"; $("result").style.display = "flex";
+  $("resText").textContent = msg; $("againBtn").style.display = "none"; $("result").classList.add("x-glerr");
+  const d = $("xGlDiag"); d.textContent = xGlDiag(); d.hidden = false; $("xRetry").hidden = false; $("result").style.display = "flex";
 }
 function xGo(fn) {
-  if (!xReady) return xFail();
+  if (!xReady) { xRetryFn = fn; return xFail(); }
   try { if (typeof xSolLoad === "function") xSolLoad(); } catch (e) {}
   xLob0 = false; // perf pass 16: a mode launched, the first-load lobby no longer covers the game
   try { fn(); } catch (e) { if (window.xErr) window.xErr(e); }
@@ -1800,9 +1828,14 @@ function xLobbyInit() {
     S.muted = !S.muted; audio();
     $("sndBtn").setAttribute("aria-pressed", String(!S.muted));
     xQ("sndBtn", "span").textContent = S.muted ? "Tap for sound" : "Sound on · tap to mute";
+    { const l = S.muted ? "Sound off — click to enable" : "Sound on — click to mute"; $("sndBtn").setAttribute("aria-label", l); $("sndBtn").title = l; }
     $("sndWave").setAttribute("d", S.muted ? "M22 9l-6 6M16 9l6 6" : "M15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14");
     blip(660, 0.08, "sine");
   });
+  bind("engine retry", () => { $("xRetry").onclick = xRetry;
+    $("lobbyBtn").addEventListener("click", () => { $("result").classList.remove("x-glerr"); $("xRetry").hidden = true; $("xGlDiag").hidden = true; $("againBtn").style.display = ""; });
+    document.addEventListener("click", (e) => { const b = e.target && e.target.closest && e.target.closest("button[id]"); if (b && b.closest("#lobby, #pre, .modal") && b.id !== "xRetry") xLastBtn = b.id; }, true); });
+  bind("modal hidden sync", () => document.querySelectorAll(".modal").forEach((m) => { if (!m.classList.contains("on")) m.hidden = true; })); // closed modals stay out of layout and the accessibility tree
   bind("modal openers", () => document.querySelectorAll("[data-open]").forEach((b) => b.onclick = () => open(b.dataset.open)));
   bind("modal closers", () => document.querySelectorAll("[data-close]").forEach((b) => b.onclick = closeAll));
   bind("modal backdrop", () => document.querySelectorAll(".modal").forEach((m) => m.onclick = (e) => { if (e.target === m) closeAll(); }));
@@ -1842,7 +1875,7 @@ function xLobbyInit() {
   bind("crosshair settings", xcUI);
   bind("arrange buttons", () => $("xArr").onclick = () => say("Button layout opens once the 3D engine has loaded")); // replaced by the editor once it loads
   bind("inventory list", renderInv);
-  bind("player counts", () => { drift(); setInterval(drift, 3000); });
+  bind("player counts", () => { drift(); setInterval(() => drift(true), 20000); });
   bind("settings persistence", () => { // sensitivity, touch aim, volume, brightness, FPS, difficulty and crosshair colour were in memory only: lost on every reload
     const K = "vs.set", mem = window.xSetMem || (window.xSetMem = { v: null });
     const save = () => setTimeout(save0, 0); // after the inputs' own handlers have updated S
@@ -1868,7 +1901,7 @@ function xLobbyInit() {
   bind("rifle 2v2", () => $("rifleBtn").onclick = () => xGo(() => openPre("rifle")));
   bind("deathmatch", () => $("dmBtn").onclick = () => xGo(() => startDM()));
   // no fallbacks: a missing or failing start shows the error toast and stays in the lobby
-  const xStrict = (name, fnName) => { if (!xReady) return xFail(); xGo(() => { try { const f = window[fnName] || (fnName === "startTDM" ? (typeof startTDM === "function" ? startTDM : null) : (typeof startSR === "function" ? startSR : null)); if (typeof f !== "function") throw new Error(fnName + " missing"); f(); } catch (e) { try { console.error(e); } catch (_) {} try { running = false; } catch (_) {} ["game", "result", "pre", "xAg"].forEach((id) => { const el = $(id); if (el) el.style.display = "none"; }); $("lobby").style.display = "flex"; say("Couldn't start " + name); } }); };
+  const xStrict = (name, fnName) => { xGo(() => { try { const f = window[fnName] || (fnName === "startTDM" ? (typeof startTDM === "function" ? startTDM : null) : (typeof startSR === "function" ? startSR : null)); if (typeof f !== "function") throw new Error(fnName + " missing"); f(); } catch (e) { try { console.error(e); } catch (_) {} try { running = false; } catch (_) {} ["game", "result", "pre", "xAg"].forEach((id) => { const el = $(id); if (el) el.style.display = "none"; }); $("lobby").style.display = "flex"; say("Couldn't start " + name); } }); };
   bind("team deathmatch", () => $("tdmBtn").onclick = () => xStrict("Team Deathmatch", "startTDM"));
   bind("spike rush", () => $("srBtn").onclick = (e) => { if (e) e.stopPropagation(); xStrict("Spike Rush", "startSR"); });
   bind("surf boreas", () => $("surfBtn").onclick = () => { SM = "boreas"; xGo(() => openPre("surf")); });
@@ -1903,7 +1936,9 @@ const xTexRep = (t) => { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.encoding = 
 const xAASet = (on) => { xAAMem.v = on ? "1" : "0"; try { localStorage.setItem("vs.aa", xAAMem.v); } catch (e) {} };
 const xAA0 = xAAGet(); // saved AA, read before the first renderer
 try { renderer = new THREE.WebGLRenderer({ antialias: xAA0, powerPreference: "high-performance", stencil: false }); }
-catch (e) { failWith("Your browser couldn't start WebGL. Try another browser or enable hardware acceleration."); return; }
+catch (e) { xGlErr = String((e && e.message) || e); // second try with the lowest settings before giving up
+  try { renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: "default", failIfMajorPerformanceCaveat: false, precision: "mediump", stencil: false }); xGlErr = ""; }
+  catch (e2) { xGlErr = String((e2 && e2.message) || e2 || xGlErr); failWith("Your browser couldn't start WebGL. Try another browser or enable hardware acceleration."); return; } }
 renderer.outputEncoding = THREE.sRGBEncoding;
 renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.05; // look pass: filmic, sRGB out
 renderer.physicallyCorrectLights = true;
@@ -10633,6 +10668,8 @@ window.xLdInfo = function () { const ag = (u) => { try { return xAg(u) || u.agen
 window.xLdKeys = function (dt) { for (const k in keys) keys[k] = false; fireHeld = false; if (dt) try { clock.getDelta(); } catch (e) {} };
 try { applyBright(); } catch (e) {} // a saved brightness reaches the game canvas, which did not exist yet when settings loaded
 xReady = true; // every mode is initialised; lobby launches may now start them
+{ let rb = null; try { rb = sessionStorage.getItem("vs.retry"); sessionStorage.removeItem("vs.retry"); } catch (e) {} // Retry on the engine error reloaded the page: relaunch the same mode
+  if (rb) setTimeout(() => { const b = $(rb); if (b) b.click(); }, 300); }
 })();
 </script>
 <style>
