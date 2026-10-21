@@ -2095,11 +2095,9 @@ function box(x, z, w, h, d, col) {
 const floor = xFloor(40, 40, XM.tile, 4);
 floor.rotation.x = -Math.PI / 2; mapG.add(floor); solids.push(floor);
 // Retake is played on B site: painted B around the spike, B signs on the long walls
-xDecal(mapG, "B", 0, 4.5, 5); xSign(mapG, "B", 0, 3.2, -19.48, 0); xSign(mapG, "B", -19.48, 3.2, 0, Math.PI / 2);
-const W = 0xd8c7a8, C = 0x8a6a45;
+// site letters, plant paint, crates, props and backdrop are added by rtdBuildRetake() once the zone kit exists (after the 5v5 kit below)
+const W = 0xd8c7a8;
 box(0, -20, 40, 6, 1, W); box(0, 20, 40, 6, 1, W); box(-20, 0, 1, 6, 40, W); box(20, 0, 1, 6, 40, W);
-[[-5, -3, 2, 2, 2], [5, 3, 2, 2, 2], [-4, 6, 3, 1.5, 1.5], [7, -6, 2, 3, 2], [-9, -9, 3, 2, 3], [10, 9, 2, 2, 4], [0, -10, 6, 1.2, 1.5], [-12, 4, 2, 2.5, 2], [13, -1, 1.5, 1.5, 1.5], [3, 12, 2, 1.5, 2]]
-  .forEach(([x, z, w, h, d]) => box(x, z, w, h, d, C));
 box(-14, -14, 4, 4, 1, W); box(14, -14, 1, 4, 6, W);
 const spike = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.3, 0.8, 12), new THREE.MeshLambertMaterial({ color: 0xff4655, emissive: 0x550000 }));
 spike.position.set(0, 0.4, 0); mapG.add(spike);
@@ -2109,9 +2107,7 @@ MAPS.duel = { g: mapG, solids, boxes };
 const dFloor = xFloor(20, 32, XM.tile, 4);
 dFloor.rotation.x = -Math.PI / 2; mapG.add(dFloor); solids.push(dFloor);
 box(0, -16, 20, 5, 1, 0xd0d6dc); box(0, 16, 20, 5, 1, 0xd0d6dc); box(-10, 0, 1, 5, 32, 0xd0d6dc); box(10, 0, 1, 5, 32, 0xd0d6dc);
-box(0, 0, 3, 2.4, 3, 0x4a5866);
-[[-6, -6, 2, 1.6, 2], [5, -9, 3, 2.4, 1], [-3, -12, 1.5, 1.2, 1.5], [7, -2, 1, 2.4, 4], [-6.5, 4.5, 1.2, 1.4, 1.2]]
-  .forEach(([x, z, w, h, d]) => { box(x, z, w, h, d, 0x4a5866); box(-x, -z, w, h, d, 0x4a5866); });
+// cover, lane paint, trusses and backdrop: rtdBuildDuel() (after the 5v5 zone kit below)
 // memory: on a map switch, free the GPU copies of the previous map's geometries/materials/textures (three.js re-uploads them if that map is shown again)
 let xCurMap = null;
 function xFreeMap(o, keep) {
@@ -4491,6 +4487,115 @@ function ascGable(kit, roof, mass, cx, cz, w, d, y, rise) { const along = w >= d
 // fog per map while that map is on screen (useMap resets it for every other map)
 function ascFog(g, col, near, far) { const m = new THREE.Mesh(new THREE.PlaneGeometry(0.01, 0.01), new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false })); m.name = "xDeco"; m.frustumCulled = false; m.raycast = () => {}; m.position.set(0, -1, 0);
   m.onBeforeRender = () => { try { if (scene.fog && mode === "five") { scene.fog.color.setHex(col); scene.fog.near = near; scene.fog.far = far; } } catch (e) {} }; g.add(m); return m; }
+// ---- Retake (Ascent-style B site) + Operator Duel arena visual rebuild: reuses the vA zone kit (textures, material cache, merged decoration, letters, plant paint, crates, ceilings, lintels, pools) ----
+// both maps were laid out at load time (floor + outer walls); these add the themed zones into MAPS.retake / MAPS.duel by swapping the builder globals
+ASC_VIS.retake = { letters: [], zones: [], crates: 0, adds: 0, ceil: 0, mats: 0 }; ASC_VIS.duel = { letters: [], zones: [], crates: 0, adds: 0, ceil: 0, mats: 0 };
+ASC_TD.rtGrid = (g, s, R) => { g.fillStyle = "#7d858a"; g.fillRect(0, 0, s, s); // range concrete: 1 m slabs, 4 m per texture, darker 4 m seam
+  for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) { g.fillStyle = `hsl(${R(196, 206)},${R(5, 9)}%,${R(70, 77)}%)`; g.fillRect(i * 64 + 1, j * 64 + 1, 62, 62); }
+  g.fillStyle = "rgba(40,50,58,.55)"; g.fillRect(0, 0, s, 3); g.fillRect(0, 0, 3, s);
+  for (let i = 0; i < 40; i++) { g.fillStyle = ["rgba(60,70,80,.06)", "rgba(255,255,255,.07)"][i % 2]; g.beginPath(); g.arc(R(0, s), R(0, s), R(6, 26), 0, 7); g.fill(); } };
+ASC_TD.rtPanel = (g, s, R) => { g.fillStyle = "#c9d0d4"; g.fillRect(0, 0, s, s); // range wall: 2 m composite panels, bolt rows, accent band at knee height (tinted per side by material colour)
+  for (let x = 0; x < s; x += 128) { g.fillStyle = `hsl(200,${R(6, 10)}%,${R(84, 90)}%)`; g.fillRect(x + 3, 3, 122, s - 6); g.fillStyle = "rgba(255,255,255,.25)"; g.fillRect(x + 3, 3, 122, 4); }
+  g.fillStyle = "rgba(40,50,60,.35)"; for (let x = 0; x < s; x += 128) for (let y = 14; y < s; y += 40) { g.fillRect(x + 10, y, 4, 4); g.fillRect(x + 114, y, 4, 4); }
+  g.fillStyle = "#5c6b74"; g.fillRect(0, s - 34, s, 18); g.fillStyle = "#e8eef0"; g.fillRect(0, s - 38, s, 3); g.fillStyle = "#3d474e"; g.fillRect(0, s - 8, s, 8); };
+ASC_TD.rtChev = (g, s) => { g.clearRect(0, 0, s, s); g.fillStyle = "#ffffff"; for (let k = 0; k < 3; k++) { const y = 30 + k * 70; g.beginPath(); g.moveTo(s * 0.18, y + 40); g.lineTo(s / 2, y); g.lineTo(s * 0.82, y + 40); g.lineTo(s * 0.82, y + 62); g.lineTo(s / 2, y + 22); g.lineTo(s * 0.18, y + 62); g.fill(); } return true; };
+function rtdSwap(k, fn) { // run fn with box()/ascSolid()/ascFloor() writing into MAPS[k]
+  const keep = [mapG, solids, boxes, XMK, XMO], M = MAPS[k]; mapG = M.g; solids = M.solids; boxes = M.boxes; XMK = 1; XMO = null;
+  const m0 = ASC_MATC.size, stop = ascCount(mapG);
+  try { fn(M); } finally { ASC_VIS[k].adds = stop(); ASC_VIS[k].mats = ASC_MATC.size - m0; [mapG, solids, boxes, XMK, XMO] = keep; }
+}
+// per-mode fog (useMap() restores the shared fog / sky on every switch); no allocation per frame
+function rtdFog(g, md, col, near, far) { const m = new THREE.Mesh(xG("Plane", 0.01, 0.01), new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false })); m.name = "xDeco"; m.frustumCulled = false; m.raycast = () => {}; m.position.set(0, -1, 0);
+  m.onBeforeRender = () => { try { if (scene.fog && (mode === md || (md === "duel" && mode === "rifle"))) { scene.fog.color.setHex(col); scene.fog.near = near; scene.fog.far = far; } } catch (e) {} }; g.add(m); return m; }
+// fogged backdrop blocks just past a square boundary (merged into the kit); seeded so both maps look the same every load
+function rtdBackdrop(kit, half, seed, mats, roof, win) {
+  let s = seed; const r = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  const put = (x, z, w, d, h, face) => { const m = mats[Math.floor(r() * mats.length)]; kit.P(m, ascUVBox(w, h, d, 4), x, h / 2, z); if (roof) ascGable(kit, roof, m, x, z, w, d, h, Math.min(3, Math.min(w, d) * 0.3));
+    else kit.P(win, xG("Box", w + 0.2, 0.5, d + 0.2), x, h + 0.25, z);
+    for (let k = -1; k <= 1; k++) { const t = k * Math.min(w, d) * 0.28; if (face === "z") { kit.P(win, xG("Box", 1, 1.6, 0.1), x + t, h * 0.62, z - Math.sign(z) * (d / 2 + 0.03)); kit.P(win, xG("Box", 1, 1.6, 0.1), x + t, h * 0.3, z - Math.sign(z) * (d / 2 + 0.03)); }
+      else { kit.P(win, xG("Box", 0.1, 1.6, 1), x - Math.sign(x) * (w / 2 + 0.03), h * 0.62, z + t); kit.P(win, xG("Box", 0.1, 1.6, 1), x - Math.sign(x) * (w / 2 + 0.03), h * 0.3, z + t); } } };
+  for (let x = -half; x <= half; x += 10 + r() * 3) { put(x, half + 9 + r() * 4, 8 + r() * 3, 7 + r() * 3, 10 + r() * 8, "z"); put(x + 3, -half - 9 - r() * 4, 8 + r() * 3, 7 + r() * 3, 10 + r() * 8, "z"); }
+  for (let z = -half + 6; z <= half - 6; z += 10 + r() * 3) { put(half + 9 + r() * 4, z, 7 + r() * 3, 8 + r() * 3, 10 + r() * 8, "x"); put(-half - 9 - r() * 4, z + 3, 7 + r() * 3, 8 + r() * 3, 10 + r() * 8, "x"); }
+}
+function rtdBuildRetake() { rtdSwap("retake", (M) => {
+  const K = "retake", g = mapG, HP = Math.PI / 2, kit = ascKit();
+  // walls: outer limestone ashlar, inner site walls rose plaster, terracotta caps
+  const outer = ascMat("stone", 0xfff4e4), inner = XMA.wall.clone(); inner.color.setHex(0xffd3b4);
+  solids.forEach((m) => { if (m.material !== XM.wall) return; m.material = (Math.abs(m.position.x) > 19 || Math.abs(m.position.z) > 19) ? outer : inner; });
+  g.children.forEach((m) => { if (m.isMesh && m.material === XM.roof) m.material = XMA.roof; });
+  // floors: warm sandstone pavers everywhere, marble on the site, terracotta in the B Main approach (south) and under the covered back corners
+  floor.material = ascMat("brick", 0xf6e4c8);
+  ascFloor(g, ascMat("marble", 0xe8f0f0), -9, 9, -8, 8, 4, 0.014);
+  ascFloor(g, ascMat("terraT"), -6, 6, 11, 19.5, 4); ascFloor(g, ascMat("terraT"), 14.5, 19.5, -19.5, -11, 4); ascFloor(g, ascMat("terraT"), -19.5, -12, -19.5, -14.5, 4);
+  // site identity: ring letters on the back (north) wall and both side walls, floor letter in front of the spike, plant-zone paint on |dx| < 7, |dz| < 6
+  ascLetter(g, K, "B", 0, 3.6, -19.46, 0, 4.2, "#f2c94c", "#fff6e2"); ascLetter(g, K, "B", -19.46, 3.4, 4, HP, 3.4, "#a8322a", "#a8322a"); ascLetter(g, K, "B", 19.46, 3.4, 4, -HP, 3.4, "#a8322a", "#a8322a");
+  ascLetter(g, K, "B", 0, 0.03, 4, 0, 4.5, "rgba(255,246,226,.85)", "rgba(255,246,226,.85)", true);
+  ascPlant(kit, K, "B", 0, 0, 0xf2c94c);
+  // planted spike: dark hex plate + red ring and a red glow pool (visual, flat: the defuse radius stays clear)
+  kit.P(ascMat("", 0x24282c), xG("Cylinder", 0.62, 0.66, 0.05, 6), 0, 0.03, 0); kit.P(ascBasic(0xff4655), new THREE.TorusGeometry(0.85, 0.035, 4, 24), 0, 0.045, 0, -HP);
+  ascPools(g, [[0, 0, 2.2]], [], 0xff3040, 0.5);
+  // cover at player scale: 1.4 m crates (jumpable), 2.8 m double stacks (head cover); stone low wall 1.1 m in front of the defender side
+  const cw = ascMat("crateW"), cm = ascMat("crateM");
+  [[-5, -3, "P"], [5, 3, "L"], [-4, 6, "s"], [7, -6, "t"], [-9, -9, "L"], [10, 9, "P"], [-12, 4, "t"], [13, -1, "s"], [3, 12, "s"]].forEach(([x, z, k]) => ascCluster(K, x, z, k, cw, cm));
+  const sw = ascMat("stone", 0xf6ead6), cap = ascMat("stone", 0xfffaf0);
+  ascSolid(g, 0, -10, 5, 1.1, 0.7, sw).crate = 1; kit.P(cap, xG("Box", 5.12, 0.1, 0.82), 0, 1.15, -10);
+  // covered back corners: NE closet (door in the x = 14 wall gap) and NW heaven overhang, beamed ceilings at 4 m, lintels over the open sides
+  const slab = ascMat("beam", 0xcfa77a), beam = ascMat("beam", 0x8a5a34), trim = ascMat("stone", 0xfff1dc);
+  ascCeil(g, kit, K, 14.5, 19.5, -19.5, -11, 4, slab, beam); ascCeil(g, kit, K, -19.5, -12, -19.5, -14.5, 4, slab, beam);
+  ascLintel(g, kit, 14, -18.25, 2.5, 1, HP, 3.1, 4, inner, trim); ascLintel(g, kit, -17.75, -14, 3.5, 1, 0, 3.1, 4, inner, trim); ascLintel(g, kit, -12, -17, 5, 0.6, HP, 3.1, 4, inner, trim);
+  // B Main gate behind the retakers: dark recess + pilasters and cornice on the south wall (wall stays solid)
+  const dark = ascMat("", 0x1c2024), gP = xG("Box", 0.5, 3.6, 0.22);
+  kit.P(dark, xG("Plane", 4, 3.2), 0, 1.6, 19.47, 0, Math.PI); kit.P(trim, gP, -2.3, 1.8, 19.4); kit.P(trim, gP, 2.3, 1.8, 19.4); kit.P(trim, xG("Box", 5.4, 0.35, 0.3), 0, 3.6, 19.38);
+  // barrels in the corners (one collider each, invisible hit box for bullets)
+  const brl = ascMat("", 0x7a4a2a), band = ascMat("", 0x2b2d30);
+  [[-18.6, 18.6], [18.6, 18.6], [18.6, -9.5], [-18.6, -8]].forEach(([x, z]) => ascBarrels(g, kit, K, x, z, 3, brl, band));
+  // wall lamps with warm glow pools, banners, callout plaques
+  const iron = ascMat("", 0x23272b), glass = ascBasic(0xffd38a), gA = xG("Box", 0.06, 0.06, 0.45), gL = xG("Box", 0.26, 0.36, 0.26), gG = xG("Box", 0.2, 0.28, 0.2), gC = xG("Cone", 0.22, 0.2, 4), pf = [], pw = [];
+  [[-19.5, -6, HP], [-19.5, 12, HP], [19.5, -4, -HP], [19.5, 12, -HP], [-10.5, -19.5, 0], [10.5, -19.5, 0], [-9, 19.5, Math.PI], [9, 19.5, Math.PI]].forEach(([x, z, ry]) => { const y = 3.3, p = (lz) => ascR(x, z, ry, 0, lz); let [px, pz] = p(0.22); kit.P(iron, gA, px, y + 0.25, pz, 0, ry); [px, pz] = p(0.45);
+    kit.P(iron, gL, px, y, pz, 0, ry); kit.P(glass, gG, px, y, pz, 0, ry); kit.P(iron, gC, px, y + 0.28, pz, 0, ry + Math.PI / 4); [px, pz] = p(1.4); pf.push([px, pz, 2.4]); pw.push([x, y - 0.2, z, 1.6, ry]); });
+  ascPools(g, pf, pw, 0xffb35c, 0.36);
+  const bT = ascMat("banner", 0x2f9a94, true), bO = ascMat("banner", 0xe0782e, true), gBn = xG("Plane", 1.1, 3.2), gRod = xG("Box", 1.4, 0.07, 0.07);
+  [[-4.5, -19.5, 0, bT], [4.5, -19.5, 0, bO], [-19.5, -12, HP, bO], [19.5, -1, -HP, bT]].forEach(([x, z, ry, m]) => { let [px, pz] = ascR(x, z, ry, 0, 0.07); kit.P(m, gBn, px, 3.9, pz, 0, ry); [px, pz] = ascR(x, z, ry, 0, 0.1); kit.P(iron, gRod, px, 5.55, pz, 0, ry); });
+  ascSigns(g, [["B SITE", -7, 2.6, -19.45, 0], ["B MAIN", 5, 2.6, 19.45, Math.PI], ["B LINK", -19.45, 2.6, 0, HP], ["MARKET", 19.45, 2.6, 8, -HP], ["B BACK", 19.45, 2.4, -15, -HP]], "#1d4f5a", "#f6ecd6");
+  // town beyond the walls (fogged, merged)
+  rtdBackdrop(kit, 22, 41, [ascMat("stone", 0xf0e2c8), ascMat("stone", 0xf2c7a2)], XMA.roof, ascMat("", 0x2a3138));
+  kit.flush(g); rtdFog(g, "retake", 0xeadfcb, 34, 105);
+}); }
+function rtdBuildDuel() { rtdSwap("duel", (M) => {
+  const K = "duel", g = mapG, HP = Math.PI / 2, kit = ascKit();
+  // walls: composite range panels, teal accent on the player half, red on the opponent half; dark metal caps
+  const pT = ascMat("rtPanel", 0xe8fbfa), pR = ascMat("rtPanel", 0xfff0f0), capM = ascMat("", 0x2b3440);
+  solids.forEach((m) => { if (m.material === XM.wall) m.material = m.position.z > 0.5 ? pT : m.position.z < -0.5 ? pR : ascMat("rtPanel"); });
+  g.children.forEach((m) => { if (m.isMesh && m.material === XM.roof) m.material = capM; });
+  dFloor.material = ascMat("rtGrid");
+  // lane paint: long sightlines down x = 0 and x = +-4.5, centre circle, spawn pads (teal = you, red = opponent) with chevrons
+  const wht = ascBasic(0xe9eef0), teal = ascBasic(0x3fd6c8), red = ascBasic(0xff4655), y = 0.032, gLn = xG("Box", 0.12, 0.012, 24);
+  [-4.5, 4.5].forEach((x) => kit.P(wht, gLn, x, y, 0)); kit.P(wht, xG("Box", 19, 0.012, 0.12), 0, y, 0);
+  kit.P(wht, new THREE.TorusGeometry(2.6, 0.06, 3, 40), 0, y, 0, -HP);
+  for (const [sz, col] of [[1, teal], [-1, red]]) { const z = sz * 13.8; kit.P(col, xG("Box", 8.2, 0.012, 0.16), 0, y, z - sz * 1.6); kit.P(col, xG("Box", 8.2, 0.012, 0.16), 0, y, z + sz * 1.6); kit.P(col, xG("Box", 0.16, 0.012, 3.2), -4.1, y, z); kit.P(col, xG("Box", 0.16, 0.012, 3.2), 4.1, y, z);
+    const cm = new THREE.MeshBasicMaterial({ map: ascT("rtChev"), color: col.color.getHex(), transparent: true, depthWrite: false }); ASC_MATC.set("chev|" + sz, cm); kit.P(cm, xG("Plane", 1.6, 1.6), 0, y + 0.004, z - sz * 2.6, -HP, sz > 0 ? 0 : Math.PI); }
+  // cover at player scale (point-symmetric): 2.8 m centre stack, 1.4 m crates (jumpable), 2.8 m panel walls (full cover), 1.1 m barrier
+  const cw = ascMat("crateW", 0xd8e2e6), cmM = ascMat("crateM"), panel = ascMat("rtPanel", 0xdfe6ea), bar = ascMat("", 0x55616a), hz = ascMat("crateM", 0xffd27a);
+  const mid = ascSolid(g, 0, 0, 2.8, 2.8, 2.8, cmM); mid.crate = 1; solids[solids.length - 1].geometry = ascStackGeo(2.8, 2.8, 2.8, 2); ASC_VIS[K].crates++;
+  for (const sg of [1, -1]) {
+    ascCrate(K, -6 * sg, -6 * sg, 1.4, 1.4, 1.4, cw); ascCrate(K, -3 * sg, -12 * sg, 1.4, 1.4, 1.4, cw); ascCrate(K, -6.5 * sg, 4.5 * sg, 1.2, 1.2, 1.2, cw);
+    ascSolid(g, 5 * sg, -9 * sg, 3, 2.8, 0.6, panel); kit.P(capM, xG("Box", 3.1, 0.12, 0.7), 5 * sg, 2.86, -9 * sg);
+    ascSolid(g, 7 * sg, -2 * sg, 0.6, 2.8, 4, panel); kit.P(capM, xG("Box", 0.7, 0.12, 4.1), 7 * sg, 2.86, -2 * sg);
+    ascSolid(g, -7 * sg, -10.5 * sg, 2.2, 1.1, 0.8, bar).crate = 1; kit.P(hz, xG("Box", 2.24, 0.16, 0.84), -7 * sg, 0.85, -10.5 * sg); ASC_VIS[K].crates++;
+  }
+  // overhead trusses on the wall tops every 4 m with light strips (solid hit boxes so shots stop on them), glow pools under the strips
+  const steel = ascMat("", 0x3a444c), lite = ascBasic(0xfff4e0), gT = xG("Box", 20, 0.35, 0.3), gS = xG("Box", 18, 0.06, 0.14), pf = [];
+  for (let z = -12; z <= 12; z += 4) { kit.P(steel, gT, 0, 5.75, z); kit.P(lite, gS, 0, 5.54, z); const h = new THREE.Mesh(gT, steel); h.visible = false; h.position.set(0, 5.75, z); g.add(h); solids.push(h); pf.push([-4.5, z, 2.2], [4.5, z, 2.2]); }
+  ASC_VIS[K].ceil = 7; ascPools(g, pf, [], 0xfff1d8, 0.22);
+  // end walls: big ring numbers per side, side-wall plaques, team light washes
+  ascLetter(g, K, "1", 0, 3, 15.46, Math.PI, 3.6, "#3fd6c8", "#e9fbf9"); ascLetter(g, K, "2", 0, 3, -15.46, 0, 3.6, "#ff4655", "#fff0f0");
+  ascSigns(g, [["OPERATOR DUEL", -9.45, 3.2, 0, HP], ["OPERATOR DUEL", 9.45, 3.2, 0, -HP], ["SPAWN 1", 5.5, 2.4, 15.45, Math.PI], ["SPAWN 2", -5.5, 2.4, -15.45, 0]], "#1e2a33", "#e9eef0");
+  ascPools(g, [], [[-6, 3.2, 15.5, 2.4, Math.PI], [6, 3.2, 15.5, 2.4, Math.PI]], 0x3fd6c8, 0.3); ascPools(g, [], [[-6, 3.2, -15.5, 2.4, 0], [6, 3.2, -15.5, 2.4, 0]], 0xff4655, 0.3);
+  // facility towers outside (flat tops, fogged)
+  rtdBackdrop(kit, 18, 77, [ascMat("rtPanel", 0xb8c2c8), ascMat("stone", 0xc8d0d4)], null, ascMat("", 0x1e252b));
+  kit.flush(g); rtdFog(g, "duel", 0xd6dde2, 30, 95);
+}); }
+rtdBuildRetake(); rtdBuildDuel();
 // Ascent zones (vA): runs inside the Ascent block (XMK = AK) right after the wall list; crates go through box() (authored frame), the rest is in the built frame
 function ascBuildAscentZones(s0) {
   const K = "ascent", g = mapG, A = AK, HP = Math.PI / 2, kit = ascKit(), [ax, az] = ASC_SITES.A, [bx, bz] = ASC_SITES.B;
@@ -8257,11 +8362,13 @@ try { if (typeof MutationObserver !== "undefined") new MutationObserver(() => { 
 // ---- Aim Training: 60 s on an indoor range, every gun, three target types ----
 const AG = new THREE.Group(); AG.visible = false; scene.add(AG); MAPS.aim = { g: AG, solids: [], boxes: [] };
 {
-  const f = xFloor(30, 46, XM.tile, 6); f.rotation.x = -Math.PI / 2; f.position.z = -16; AG.add(f); MAPS.aim.solids.push(f);
-  const wm = XLM(0xd0d6dc), dm = XLM(0x4a5866), lm = new THREE.MeshBasicMaterial({ color: 0xfff4e0 });
-  const W = (x, y, z, w, h, d, m, s) => { const o = new THREE.Mesh(xG("Box", w, h, d), m); o.position.set(x, y, z); AG.add(o); if (s) MAPS.aim.solids.push(o); return o; };
+  // range look shared with the Operator Duel arena: concrete slab floor, composite wall panels, slab ceiling, distance lines (textured pieces get world-scale UVs)
+  const f = xFloor(30, 46, ascMat("rtGrid"), 4); f.rotation.x = -Math.PI / 2; f.position.z = -16; AG.add(f); MAPS.aim.solids.push(f);
+  const wm = ascMat("rtPanel"), dm = XLM(0x4a5866), cm = ascMat("rtGrid", 0x8a96a0), lm = new THREE.MeshBasicMaterial({ color: 0xfff4e0 });
+  const W = (x, y, z, w, h, d, m, s) => { const o = new THREE.Mesh(m.map ? ascUVBox(w, h, d, 4) : xG("Box", w, h, d), m); o.position.set(x, y, z); AG.add(o); if (s) MAPS.aim.solids.push(o); return o; };
+  { const kit = ascKit(), wl = ascBasic(0xe9eef0), gL = xG("Box", 28, 0.012, 0.1); for (let z = -4; z >= -36; z -= 8) kit.P(wl, gL, 0, 0.03, z); kit.flush(AG); }
   W(0, 4, -39, 30, 8, 1, wm, 1); W(0, 4, 7, 30, 8, 1, wm, 1); W(-15, 4, -16, 1, 8, 46, wm, 1); W(15, 4, -16, 1, 8, 46, wm, 1);
-  W(0, 8, -16, 30, 0.4, 46, dm, 1); [-8, 0, 8].forEach((x) => W(x, 7.75, -16, 0.6, 0.1, 40, lm));
+  W(0, 8, -16, 30, 0.4, 46, cm, 1); [-8, 0, 8].forEach((x) => W(x, 7.75, -16, 0.6, 0.1, 40, lm));
   W(0, 0.05, 2, 5.4, 0.1, 3, dm); W(0, 0.95, 0.4, 5.4, 0.08, 0.08, dm); W(-2.65, 0.5, 0.4, 0.08, 0.9, 0.08, dm); W(2.65, 0.5, 0.4, 0.08, 0.9, 0.08, dm);
   const hl = new THREE.PointLight(0xfff0dd, 0.6, 60); hl.position.set(0, 7, -14); scene.add(hl); hl.intensity = 0; XAGL = hl;
 }
