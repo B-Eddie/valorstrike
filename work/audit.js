@@ -1400,6 +1400,78 @@ if (!NO3) {
   if (!R) report.push({ label: "Map scale audit", el: true, handler: true, pass: false, cond: false, errs: err });
 }
 
+// ---------- buy menu rebuild: categories, cards + prices, buy / sell / unaffordable, shields, ability charges, request, loss bonus, Outlaw ----------
+if (!NO3) {
+  const xe = vm.runInContext("__xe", context), R = (label, f) => { phase = "buy " + label; const e0 = errors.length; let r; try { r = f(); } catch (e) { r = "threw: " + String((e && e.stack) || e).split("\n").slice(0, 2).join(" | ").slice(0, 300); }
+    const errs = []; if (r !== true) errs.push(String(r).slice(0, 400)); errors.slice(e0).forEach((e) => errs.push(e.where + ": " + e.msg.slice(0, 200)));
+    report.push({ label: "buy: " + label, el: true, handler: true, cond: r === true, pass: !errs.length, errs }); lastErr = errors.length; };
+  const btn = (n) => Array.from(doc.querySelectorAll("#xBG button[data-n]")).find((b) => b.dataset.n === n);
+  const open = (cr) => { xe(`(() => { running = true; paused = false; FV.dm = false; FV.buy = 20; player.hp = 100; ${cr != null ? "FV.cr = " + cr + ";" : ""} buyMenu(true); buyRender(); return true; })()`); };
+  const rclick = (b) => dispatch(b, mkEvent("contextmenu", {}));
+  let started = false;
+  try { toLobby(); xe('(() => { FV.pick = "ascent"; FV.srOn = 0; window.xSwift = false; startFive(); clearTimeout(FV.to); return true; })()'); advance(60); started = xe("mode === 'five' && running"); } catch (e) {}
+  const EXP = [["Sidearms", [["Classic", 0], ["Shorty", 150], ["Frenzy", 450], ["Ghost", 500], ["Sheriff", 800]]], ["SMGs", [["Stinger", 1100], ["Spectre", 1600]]], ["Shotguns", [["Bucky", 850], ["Judge", 1850]]],
+    ["Rifles", [["Bulldog", 2050], ["Guardian", 2250], ["Phantom", 2900], ["Vandal", 2900]]], ["Sniper", [["Marshal", 950], ["Outlaw", 2400], ["Operator", 4700]]], ["Machine guns", [["Ares", 1600], ["Odin", 3200]]], ["Shields", [["Light Shields", 400], ["Heavy Shields", 1000]]]];
+  R("menu opens in a 5v5 buy phase with all 7 category columns in Valorant order and every card at the right price", () => {
+    if (!started) return "5v5 did not start"; xe("FV.pri = null; FV.sec = 'Classic'; player.armor = 0; FV.bt = []; true"); open(9000); if (!$("xBuy").classList.contains("on")) return "menu not open";
+    const cols = Array.from(doc.querySelectorAll("#xBG .x-bc")).map((c) => String(c.querySelector("h4").textContent)), bad = [];
+    EXP.forEach(([cat, its], i) => { if (!new RegExp(cat, "i").test(cols[i] || "")) bad.push("column " + (i + 1) + " is " + cols[i] + " (want " + cat + ")");
+      its.forEach(([n, p]) => { const b = btn(n); if (!b) return bad.push("no card " + n); const t = b.querySelector(".x-tp"); if (!t || String(t.textContent).trim() !== String(p)) bad.push(n + " shows " + (t && t.textContent) + " want " + p);
+        if (!b.querySelector("svg")) bad.push(n + " no silhouette"); if (!/Shields/.test(n) && !xe(`!!WEAP[${JSON.stringify(n)}]`)) bad.push(n + " missing from WEAP"); }); });
+    if (!$("xBTm") || !/Team loadout/i.test($("xBTm").textContent)) bad.push("no team loadout panel");
+    return bad.length ? bad.slice(0, 6).join(" | ") : true; });
+  R("buying deducts credits and equips; right-click sells back for the full price; a sidearm sale restores the Classic", () => {
+    xe("FV.pri = null; FV.sec = 'Classic'; FV.bt = []; true"); open(5000); btn("Vandal").click(); advance(10);
+    if (xe("FV.cr") !== 2100 || xe("FV.pri") !== "Vandal" || xe("rw") !== "pri" || xe("wName()") !== "Vandal") return "buy: cr " + xe("FV.cr") + " pri " + xe("FV.pri") + " rw " + xe("rw");
+    if (!btn("Vandal").classList.contains("on")) return "Vandal card not marked owned";
+    btn("Phantom").click(); if (xe("FV.cr") !== 2100 || xe("FV.pri") !== "Phantom") return "same-round swap should refund the Vandal: cr " + xe("FV.cr");
+    rclick(btn("Phantom")); if (xe("FV.cr") !== 5000 || xe("FV.pri") !== null) return "sell: cr " + xe("FV.cr") + " pri " + xe("FV.pri");
+    btn("Sheriff").click(); if (xe("FV.sec") !== "Sheriff" || xe("FV.cr") !== 4200) return "sheriff buy"; rclick(btn("Sheriff")); if (xe("FV.sec") !== "Classic" || xe("FV.cr") !== 5000) return "sheriff sell: " + xe("FV.sec") + " " + xe("FV.cr"); return true; });
+  R("unaffordable cards are dimmed and blocked", () => {
+    xe("FV.pri = null; FV.bt = []; true"); open(500); const b = btn("Vandal"); if (!b || b.getAttribute("aria-disabled") !== "true" || !b.classList.contains("xb-no")) return "Vandal not marked unaffordable at 500";
+    b.click(); xe('fBuy("Operator"); true'); if (xe("FV.cr") !== 500 || xe("FV.pri") !== null) return "bought anyway: cr " + xe("FV.cr") + " pri " + xe("FV.pri");
+    if (btn("Ghost").getAttribute("aria-disabled") === "true") return "Ghost (500) dimmed at 500"; return true; });
+  R("shields: light then heavy (light refunded), right-click sells heavy back", () => {
+    xe("player.armor = 0; FV.bt = []; true"); open(2000); btn("Light Shields").click(); if (xe("player.armor") !== 25 || xe("FV.cr") !== 1600) return "light: " + xe("player.armor") + " / " + xe("FV.cr");
+    btn("Heavy Shields").click(); if (xe("player.armor") !== 50 || xe("FV.cr") !== 1000) return "heavy: " + xe("player.armor") + " / " + xe("FV.cr");
+    rclick(btn("Heavy Shields")); if (xe("player.armor") !== 0 || xe("FV.cr") !== 2000) return "sell: " + xe("player.armor") + " / " + xe("FV.cr"); return true; });
+  R("ability charges: per-charge pips, buy fills a pip, right-click sells it back", () => {
+    xe('(() => { J.on = true; J.pick = "Jett"; J.c = 0; J.q = 0; FV.bt = []; return true; })()'); open(1000); const b = btn("ab:c"); if (!b) return "no ability card";
+    const pips = () => Array.from(btn("ab:c").querySelectorAll(".xb-pips i")); if (pips().length !== xe("K().mx.c")) return "pips " + pips().length;
+    b.click(); if (xe("J.c") !== 1 || xe("FV.cr") !== 850) return "buy: J.c " + xe("J.c") + " cr " + xe("FV.cr"); if (pips().filter((i) => i.classList.contains("on")).length !== 1) return "pip not filled";
+    btn("ab:q").click(); if (xe("J.q") !== 1 || xe("FV.cr") !== 650) return "Q buy";
+    rclick(btn("ab:c")); if (xe("J.c") !== 0 || xe("FV.cr") !== 800) return "sell: J.c " + xe("J.c") + " cr " + xe("FV.cr"); return true; });
+  R("next round minimum shows credits + loss bonus; round number shown", () => {
+    xe("FV.lsY = 1; true"); open(1000); if (String($("xBLB").textContent).trim() !== "3400") return "lsY 1: " + $("xBLB").textContent;
+    xe("FV.lsY = 0; buyRender(); true"); if (String($("xBLB").textContent).trim() !== "2900") return "lsY 0: " + $("xBLB").textContent;
+    xe("FV.lsY = 5; buyRender(); true"); if (String($("xBLB").textContent).trim() !== "3900") return "cap: " + $("xBLB").textContent;
+    return /Round \d+/.test($("xBRd").textContent) || "round " + $("xBRd").textContent; });
+  R("team loadout lists teammates' credits; request: a teammate with spare credits buys it for you, selling refunds them", () => {
+    xe('(() => { FV.pri = null; FV.bt = []; FV.lsY = 0; F_MATES.forEach((m, i) => { FV.bs[m] = { cr: i ? 100 : 9000, w: "Classic", arm: 0, alive: true }; }); return true; })()'); open(0);
+    const m0 = xe("F_MATES[0]"), tm = String($("xBTm").textContent); if (!xe("F_MATES").every((m) => tm.includes(m))) return "team panel missing a mate"; if (!tm.includes("9000")) return "mate credits not shown";
+    const rq = Array.from(doc.querySelectorAll("#xBG button[data-rq]")).find((b) => b.dataset.rq === "Vandal"); if (!rq) return "no request button on the unaffordable Vandal"; rq.click(); advance(20);
+    if (xe("FV.req") !== "Vandal" || !/Requested Vandal/.test($("xBTm").textContent)) return "request not shown in team list";
+    advance(1000); if (xe("FV.pri") !== "Vandal" || xe("FV.reqBy") !== m0 || xe(`FV.bs[${JSON.stringify(m0)}].cr`) !== 6100) return "not bought by teammate: pri " + xe("FV.pri") + " by " + xe("FV.reqBy");
+    if (!/Bought your Vandal/.test($("xBTm").textContent)) return "team list does not show the gift";
+    rclick(btn("Vandal")); if (xe("FV.pri") !== null || xe(`FV.bs[${JSON.stringify(m0)}].cr`) !== 9000 || xe("FV.cr") !== 0) return "sell of gift: pri " + xe("FV.pri") + " mate cr " + xe(`FV.bs[${JSON.stringify(m0)}].cr`);
+    xe("F_MATES.forEach((m) => { FV.bs[m].cr = 0; }); true"); xe('fReq("Odin"); true'); advance(1000); if (xe("FV.pri") !== null || !xe("FV.reqNo") || !/Requested Odin/.test($("xBTm").textContent)) return "no-donor request";
+    return true; });
+  R("keyboard: 1-7 pick the column, Escape closes, B reopens", () => {
+    open(9000); const key = (c, k) => { dispatch(win, mkEvent("keydown", { code: c, key: k || "" })); dispatch(win, mkEvent("keyup", { code: c, key: k || "" })); };
+    key("Digit3"); if (xe("FV.cat") !== 5) return "3 -> cat " + xe("FV.cat"); const c3 = doc.querySelectorAll("#xBG .x-bc")[2]; if (!c3.classList.contains("on")) return "shotgun column not highlighted";
+    key("Digit7"); if (xe("FV.cat") !== 4) return "7 -> cat " + xe("FV.cat");
+    key("Escape", "Escape"); if (xe("FV.menu")) return "Escape did not close"; key("KeyB", "b"); return xe("FV.menu") || "B did not reopen"; });
+  R("Outlaw: 2400, buys, fires 2 shots 0.75 s apart, empties, reloads to 2; scoped 3.5x", () => {
+    xe("FV.pri = null; FV.bt = []; true"); open(2400); btn("Outlaw").click(); if (xe("FV.pri") !== "Outlaw" || xe("FV.cr") !== 0) return "buy: " + xe("FV.pri") + " cr " + xe("FV.cr");
+    const r = xe(`(() => { FV.buy = 0; buyMenu(false); swapW("pri"); VM.sw = 0; if (wName() !== "Outlaw") return "wName " + wName(); if (MAG() !== 2 || ammo !== 2) return "mag " + ammo + "/" + MAG();
+      if (!(XSZ.Outlaw && XSZ.Outlaw[0] === 3.5)) return "no 3.5x scope"; reloading = 0; fcd = 0; shoot(); if (ammo !== 1) return "shot 1 ammo " + ammo; if (!(fcd > 0.6 && fcd < 0.9)) return "fire delay " + fcd;
+      fcd = 0; shoot(); if (ammo !== 0) return "shot 2 ammo " + ammo; const r0 = rsv;
+      window.dispatchEvent(Object.assign(new Event("keydown"), { code: "KeyR", key: "r" })); window.dispatchEvent(Object.assign(new Event("keyup"), { code: "KeyR", key: "r" })); if (!(reloading > 0)) return "R did not reload";
+      for (let i = 0; i < 300 && reloading > 0; i++) tick(1 / 30); return ammo === 2 && rsv < r0 ? true : "after reload " + ammo + " rsv " + rsv; })()`);
+    return r; });
+  try { xe("(() => { try { buyMenu(false); running = false; FV.bt = []; } catch (e) {} return true; })()"); toLobby(); } catch (e) {}
+}
+
 // ---------- print ----------
 const bad = report.filter((r) => !r.pass);
 console.log(`\n=== audit (${MID ? "THREE loads, 3D init throws" : NO3 ? "THREE missing" : "THREE stub loaded"}) — ${report.length} checks, ${bad.length} failing ===`);
