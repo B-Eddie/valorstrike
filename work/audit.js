@@ -2068,6 +2068,24 @@ if (!NO3) {
   try { xe("running = false; true"); toLobby(); } catch (e) {}
 }
 
+// ---------- spawn-to-spawn sightlines: no straight line at eye level from anywhere in attacker spawn to defender spawn, every 5v5 map ----------
+if (!NO3) {
+  let R = null, err = [];
+  try { R = JSON.parse(vm.runInContext("__xe", context)(`(() => { const out = []; if (!FMAP.ascent || !FMAP.ascent.boxes.length) ensureMapBuilt("five");
+    for (const k of ["ascent", "bind", "haven", "split", "lotus", "breeze"]) { if (k !== "ascent") xBuildMap(k);
+      const bx = FMAP[k].boxes, sp = xSpawn(k), wall = bx.filter((b) => BH(b) >= 1.8), bad = []; /* anything 1.8 m+ hides a standing head */
+      const hit = (ax, az, cx, cz, b) => { let t0 = 0, t1 = 1; for (const [o, d, l, h] of [[ax, cx - ax, b.x1, b.x2], [az, cz - az, b.z1, b.z2]]) { if (Math.abs(d) < 1e-9) { if (o < l || o > h) return false; continue; } let s = (l - o) / d, e = (h - o) / d; if (s > e) [s, e] = [e, s]; t0 = Math.max(t0, s); t1 = Math.min(t1, e); if (t0 > t1) return false; } return true; };
+      const inC = (x, z) => bx.some((b) => BH(b) > 0.3 && x > b.x1 - 0.4 && x < b.x2 + 0.4 && z > b.z1 - 0.4 && z < b.z2 + 0.4);
+      const real = []; for (let x = -8; x <= 8; x += 4) real.push([x, sp.atk], [x, -sp.atk], [x, sp.def != null ? sp.def : -sp.atk]); /* fSpawn / fRound points */
+      real.forEach(([x, z]) => { if (inC(x, z)) bad.push("spawn point (" + x + "," + z + ") inside a collider"); });
+      const A = [], D = []; for (let x = -10; x <= 10; x++) for (const dz of [-2, 0, 2]) { if (!inC(x, sp.atk + dz)) A.push([x, sp.atk + dz]); if (!inC(x, -sp.atk + dz)) D.push([x, -sp.atk + dz]); } /* the whole spawn pad, not just the 5 points */
+      let open = 0; A.forEach((a) => D.forEach((d) => { if ([-0.3, 0, 0.3].some((p) => [-0.3, 0, 0.3].some((q) => !wall.some((b) => hit(a[0] + p, a[1], d[0] + q, d[1], b))))) { open++; if (open <= 3) bad.push("open line " + a.join(",") + " -> " + d.join(",")); } }));
+      out.push({ k, n: A.length * D.length, open, bad }); }
+    return JSON.stringify(out); })()`)); } catch (e) { err.push(String(e).slice(0, 300)); }
+  for (const m of R || []) { const ok = !m.bad.length; report.push({ label: `Spawn sightlines ${m.k}: no attacker-spawn -> defender-spawn line of sight (${m.n} pad pairs, 0.3 m body offsets, ${m.open} open), spawn points clear of colliders`, el: true, handler: true, cond: ok, pass: ok, errs: m.bad.slice(0, 5) }); }
+  if (!R) report.push({ label: "Spawn sightlines audit", el: true, handler: true, pass: false, cond: false, errs: err });
+}
+
 // ---------- print ----------
 const bad = report.filter((r) => !r.pass);
 console.log(`\n=== audit (${MID ? "THREE loads, 3D init throws" : NO3 ? "THREE missing" : "THREE stub loaded"}) — ${report.length} checks, ${bad.length} failing ===`);
