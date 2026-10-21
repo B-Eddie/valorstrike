@@ -1400,7 +1400,7 @@ const ANQ = [];
 function annc(t, ms, o) { if (ANQ.length < 4) ANQ.push([t, ms, o || {}]); if (!annc.on) annNext(); }
 function annClear() { ANQ.length = 0; annc.on = 0; clearTimeout(annc.t); const e = $("xAnn"); if (e) { e.classList.remove("on"); e.style.display = "none"; } }
 function annNext() {
-  const q = ANQ.shift(), e = $("xAnn"); if (!q || !e) { annc.on = 0; return; } annc.on = 1; const [t, ms, o] = q;
+  const q = ANQ.shift(), e = $("xAnn"); if (!q || !e) { annc.on = 0; return; } annc.on = 1; const [t, ms, o] = q; (annc.log || (annc.log = [])).push(t); if (annc.log.length > 24) annc.log.shift(); // shown-banner log (audit / debugging)
   if (!e.querySelector(".x-ant") || !e.querySelector(".x-ans")) e.innerHTML = '<p class="x-ant"></p><p class="x-ans"></p>';
   const eT = e.querySelector(".x-ant"), eS = e.querySelector(".x-ans"); if (eT) eT.textContent = t; if (eS) eS.textContent = o.sub || "";
   if (o.tag && eS) { const g = document.createElement("span"); g.className = "x-tag"; g.textContent = o.tag; eS.appendChild(g); }
@@ -1442,8 +1442,17 @@ function xRes(win, text, over, mWin, title) {
     xRes.hh = `<div class="x-rh">${h.map((x, i) => `<i class="${x[0] ? "w" : "l"}" title="Round ${i + 1}${x[1] ? " · " + x[1] : ""}">${x[1] ? X_TAGI[x[1]] : i + 1}</i>`).join("")}</div>`; } catch (e) {}
   if (over) annc(mWin ? "VICTORY" : "DEFEAT", 2600, { c: mWin ? "win" : "loss", big: 1, sub: xWhy(text), s: mWin ? "vic" : "def", tag: tg });
   else annc(title || (win ? "ROUND WON" : "ROUND LOST"), 2000, { c: win ? "win" : "loss", sub: xWhy(text), s: win ? "win" : "loss", tag: tg });
-  if (g.ace === "You") annc("ACE", 2200, { c: "ace", big: 1, sub: "5 KILLS", s: "ace" });
+  if (g.tag) annc(g.tag, 1600, X_TAGB[g.tag](g.who, win)); // fidelity: highlight gets its own centred banner, queued after the round-end one (never overlapping)
 }
+const X_TAGB = { // round highlight banners: ACE (one player kills all 5) · TEAM ACE · CLUTCH (last alive beat 2+) · FLAWLESS (no deaths) · THRIFTY (won on a much smaller spend)
+  ACE: (w) => ({ c: "ace", big: 1, sub: (w ? w + " · " : "") + "5 KILLS", s: "ace" }), "TEAM ACE": (w, win) => ({ c: "ace", sub: "EVERY PLAYER SCORED", s: win ? "win" : "loss" }),
+  CLUTCH: (w, win) => ({ c: win ? "win" : "loss", sub: (w ? w + " · " : "") + "LAST ONE STANDING", s: win ? "win" : "loss" }), FLAWLESS: (w, win) => ({ c: win ? "win" : "loss", sub: "NO DEATHS", s: win ? "win" : "loss" }),
+  THRIFTY: (w, win) => ({ c: win ? "win" : "loss", sub: "ECO WIN", s: win ? "win" : "loss" }) };
+function xFirstBlood(by, victim) { // FIRST BLOOD: first kill of each round in round modes (5v5 / Swiftplay / Spike Rush / Retake / Rifle), not Deathmatch
+  try { if (mode === "duel" || mode === "aim" || mode === "surf" || (mode === "five" && FV.dm) || !by || by === victim) return;
+    const s = sbScore(), r = s[0] + s[1]; if (xFirstBlood.r === r) return; xFirstBlood.r = r;
+    const mine = sbTeams()[0].indexOf(by) >= 0; annc("FIRST BLOOD", 1300, { c: mine ? "win" : "loss", sub: by + " ▸ " + victim });
+  } catch (e) {} }
 function xCue(a, b, half, need) { // after scoring a round that did not end the match
   const n = a + b;
   if (half && n === half - 1) annc("LAST ROUND OF THE HALF", 2000, { s: "half" });
@@ -3692,12 +3701,14 @@ function tick(dt) {
     if (!see) xFace(b, dt, vx, vz); b.cr = see && d < 8 && !!b.crR; // crouch-spray up close, 30% of fights
     [vx, vz] = xSmV(b, dt, vx, vz);
     if (b.tagT > 0) b.tagT -= dt;
-    const D = DIFF[S.diff], bs = 2.6 * D.speed * dt * bk * (b.tagT > 0 ? b.tagK : 1) * (b.pk === 2 ? 1.3 : 1); b.mv = !!(vx || vz) && bs > 0;
+    const D = DIFF[S.diff], bwk = botWalk(b, see, d), bs = botRun(b, bwk) * Math.min(1, D.speed) * dt * bk * (b.tagT > 0 ? b.tagK : 1); b.mv = !!(vx || vz) && bs > 0; b.wk = bwk ? 1 : 0; // fidelity: player speed table, walk x0.6 near contact
+    { const vl = Math.hypot(vx, vz); if (vl > 1) { vx /= vl; vz /= vl; } } const bx0 = p.x, bz0 = p.z;
     if (!blocked(p.x + vx * bs, p.z, 0.45, p.y)) p.x += vx * bs; else { b.strafe *= -1; b.blk = 1; }
     if (!blocked(p.x, p.z + vz * bs, 0.45, p.y)) p.z += vz * bs; else { b.strafe *= -1; b.blk = 1; }
+    b.spd = dt > 0 ? Math.hypot(p.x - bx0, p.z - bz0) / dt : 0; // measured ground speed (m/s): the fire gate below needs a near-stop
     b.fs = (b.fs || 0) - dt; if ((vx || vz) && bs > 0 && b.fs <= 0) { b.fs = 0.4 / Math.max(0.6, DIFF[S.diff].speed || 1); if (!b.cr && !b.wk) SFX.step(p); } // crouching / walking bots are silent
     b.cd -= dt; b.lt = (b.lt || 0) + dt; b.see = see ? (b.see || 0) + dt : 0;
-    if (see && b.cd <= 0 && b.see * 1000 >= D.rt + (b.pre ? 0 : 150) && botCanShoot(b) && b.xs && !(b.pk === 3 && b.mv)) { // tight peek: fully stopped first
+    if (see && b.cd <= 0 && b.see * 1000 >= D.rt + (b.pre ? 0 : 150) && botCanShoot(b) && b.xs && !(b.pk === 3 && b.mv) && (b.spd || 0) <= BOT_STOP) { // tight peek: fully stopped first
       const w = b.w || "Classic", W = WEAP[w] || WEAP.Classic, far = d > 20;
       if (!(b.bn > 0)) { b.bn = far ? D.bu[0] + Math.floor(Math.random() * (D.bu[1] - D.bu[0] + 1)) : 6 + Math.floor(Math.random() * 5); b.hd = Math.random() < (b.pre && b.see < 0.6 ? Math.min(1, D.hs * 1.5) : D.hs); } // pre-aimed first bullets land nearer the head // tap/burst far, spray close
       b.bn--; b.cd = b.bn > 0 ? 1 / (W.rate || 4) : ((far ? 0.45 : 0.3) + Math.random() * 0.4) * D.cd; SFX.at(p, w);
@@ -3758,13 +3769,15 @@ function tick(dt) {
     { const pg = window.xPG; if (!tg && pg && pg.ex > 0 && performance.now() < pg.ex && Math.abs(vx) + Math.abs(vz) < 0.15) a.g.rotation.y = Math.atan2(pg.x - p.x, pg.z - p.z); } // idle allies turn toward an enemy ping
     { const pc = window.xCPl; if (!tg && pc && performance.now() < pc.ex && pc.s.has(a) && Math.abs(vx) + Math.abs(vz) < 0.15) a.g.rotation.y = Math.atan2(p.x - pc.x, p.z - pc.z); } // "Planting" call: covering allies face outward from the plant
     [vx, vz] = xSmV(a, dt, vx, vz);
-    const bs = 2.8 * dt * (a.pk === 2 ? 1.3 : 1);
+    const awk = botWalk(a, !!tg, pd), bs = botRun(a, awk) * dt * botK(a); a.wk = awk ? 1 : 0; // fidelity: same speed table as the player and enemy bots
+    { const vl = Math.hypot(vx, vz); if (vl > 1) { vx /= vl; vz /= vl; } } const ax0 = p.x, az0 = p.z;
     if (!blocked(p.x + vx * bs, p.z, 0.45, p.y)) p.x += vx * bs; else { a.strafe *= -1; a.blk = 1; } // p.y: steps / ramps climb (Split B stairs, soak)
     if (!blocked(p.x, p.z + vz * bs, 0.45, p.y)) p.z += vz * bs; else { a.strafe *= -1; a.blk = 1; }
+    a.spd = dt > 0 ? Math.hypot(p.x - ax0, p.z - az0) / dt : 0;
     if (a.xk == null && a.xj == null) p.y = groundAt(p.x, p.z, 0.3, p.y + 0.01); // allies climb steps like bots (Split B stairs: carrier stuck on step 1 at y 0)
     a.fs = (a.fs || 0) - dt; if ((vx || vz) && a.fs <= 0) { a.fs = 0.4; if (!a.cr && !a.wk) SFX.step(p); } // ally footsteps: same pooled step voices
     a.cd -= dt;
-    if (tg && a.cd <= 0 && a.xs && !(a.pk === 3 && a.mv)) { // tight peek: fully stopped first
+    if (tg && a.cd <= 0 && a.xs && !(a.pk === 3 && a.mv) && (a.spd || 0) <= BOT_STOP) { // tight peek: fully stopped first
       a.cd = 0.8 + Math.random() * 0.8; SFX.at(p, a.w || "Vandal");
       if (Math.random() < Math.max(0.25, 0.6 - td * 0.012)) {
         const hs = Math.random() < 0.2, AW = WEAP[a.w || "Vandal"]; hurt(tg, hs ? AW.head : AW.body, a.name); xTag(tg, hs ? AW.head : AW.body); if (tg.hp <= 0.001) kill(tg, hs, a.name, xWeapOf(a)); else flash(tg);
@@ -3894,7 +3907,7 @@ function duelTick(dt) {
   if (!see || d > 16 || d < 3) { vx = dx / d; vz = dz / d; } else { b.cd = Math.max(b.bolt, R.react - b.aim); [vx, vz] = xFight(b, dt, player.x, player.z, d); }
   if (d > 1.2 && !(b.det > 0)) [vx, vz] = xUn(b, dt, vx, vz);
   if (b.tagT > 0) b.tagT -= dt;
-  const bs = 2.6 * D.speed * dt * botK(b) * (b.tagT > 0 ? b.tagK : 1);
+  const bs = botRun(b, false) * Math.min(1, D.speed) * dt * botK(b) * (b.tagT > 0 ? b.tagK : 1);
   if (d > 1.2) {
     if (!blocked(p.x + vx * bs, p.z, 0.45)) p.x += vx * bs; else b.strafe *= -1;
     if (!blocked(p.x, p.z + vz * bs, 0.45)) p.z += vz * bs; else b.strafe *= -1;
@@ -3988,6 +4001,12 @@ const BUY_SIL = { // look pass: flat white gun silhouettes, viewBox 64 x 20
   sh: "M32 1l12 4v6c0 4-5 7-12 9-7-2-12-5-12-9V5z",
 };
 function bpT() { return "BUY PHASE 0:" + String(Math.max(0, Math.ceil(FV.buy))).padStart(2, "0"); }
+// economy (Valorant): round win 3000 · loss 1900 / 2400 / 2900 by loss streak, streak resets on a win · kill 200 · plant +300 to every attacker
+const LOSS_B = [1900, 2400, 2900];
+function getLossBonus(team) { // credits `team` gets next round if it loses it: "you" / "ally" / 0 = your team, "enemy" / "bots" / 1 = theirs, "atk" / "def" by side
+  const en = team === 1 || team === "enemy" || team === "them" || team === "bots" || (team === "atk" ? !FV.atk : team === "def" ? !!FV.atk : false);
+  const st = (en ? FV.lsT : FV.lsY) || 0; return LOSS_B[Math.min(st + 1, 3) - 1]; }
+window.getLossBonus = getLossBonus;
 function fKC(n) { if (mode === "five" && FV.bs[n]) FV.bs[n].cr = capC(FV.bs[n].cr + 200); }
 function fEco() { // match start and side swap: everyone back to 800 and a Classic
   FV.cr = 800; FV.pri = null; FV.sec = "Classic"; FV.alive = false; FV.arm = 0; FV.bs = {};
@@ -6147,6 +6166,14 @@ function xSmV(u, dt, vx, vz) { // ease bot velocity so strafe flips don't jitter
   if (!vx && !vz && Math.hypot(u.svx, u.svz) < 0.05) u.svx = u.svz = 0;
   XS_V[0] = u.svx; XS_V[1] = u.svz; return XS_V;
 }
+// fidelity pass 1: bot run speed from the player's weapon table (VRUN): knife 6.75 · pistols / SMGs 5.73 · rifles 5.4 · heavies 5.13 m/s; walk x0.6
+const BOT_STOP = 1.4; // m/s: bots only fire once (nearly) stopped, like a counter-strafe
+function botRun(u, walk) { const w = u && u.w ? u.w : u && u === duelBot ? "Operator" : "Classic"; return 6.75 * vRunK(w) * (walk ? 0.6 : 1); }
+function botWalk(u, see, d) { // shift-walk while holding an angle (scoped) or creeping up on an enemy it cannot see yet; never for the Spike carrier or a wide swing
+  if (!u || see) return false; if (u.scp) return true;
+  if (mode === "five" && FV.sp && FV.sp.c === u) return false;
+  return d < 12 && u.pk !== 2 && !(u.trT > 0);
+}
 function xBotYaw(dt) { // turn-rate limit + lerp toward the yaw the AI chose, before render
   if (!dt) return;
   [].concat(typeof bots !== "undefined" ? bots : [], typeof allies !== "undefined" ? allies : []).forEach((u) => {
@@ -7633,7 +7660,7 @@ function fiveTick(dt) {
   } else if (s.st === "plant") {
     // beep is synced to the spike's light pulse in xVis (Val cadence)
     if (FV.atk && !fAtk().length) bots.forEach((b) => { // attackers gone: defender bots walk to the spike
-      if (!b.alive) return; const p = b.g.position, [gx, gz] = fNav(p.x, p.z, s.x, s.z), ex = gx - p.x, ez = gz - p.z, ed = Math.hypot(ex, ez), st = 2.6 * dt;
+      if (!b.alive) return; const p = b.g.position, [gx, gz] = fNav(p.x, p.z, s.x, s.z), ex = gx - p.x, ez = gz - p.z, ed = Math.hypot(ex, ez), st = botRun(b, false) * dt;
       if (ed > 1.5) { if (!blocked(p.x + (ex / ed) * st, p.z, 0.45)) p.x += (ex / ed) * st; if (!blocked(p.x, p.z + (ez / ed) * st, 0.45)) p.z += (ez / ed) * st; }
     });
     const near = fDef().filter((u) => { const p = fPos(u); return Math.hypot(p.x - s.x, p.z - s.z) < (u === player ? 2.5 : 3.2); });
@@ -7654,7 +7681,7 @@ function fCheck(win, text, title) {
   running = false; fireHeld = false; buyMenu(false);
   if (FV.surr) {} else if (win) FV.you++; else FV.them++; // surrender: final score stays as it stood
   FV.lsY = win ? 0 : (FV.lsY || 0) + 1; FV.lsT = win ? (FV.lsT || 0) + 1 : 0; // loss streaks: 1900 / 2400 / 2900
-  const lb = (s) => [1900, 2400, 2900][Math.min(s, 3) - 1];
+  const lb = (s) => LOSS_B[Math.min(s, 3) - 1];
   const swB = FV.sw ? 4000 : null; // Swiftplay: 4000 each round plus that round's economy, capped (pistol round 5 resets via fEco on the swap)
   FV.cr = capC((swB ?? FV.cr) + (win ? 3000 : lb(FV.lsY))); FV.alive = player.hp > 0; FV.arm = FV.alive ? player.armor || 0 : 0;
   bots.concat(allies).forEach((u) => { const st = FV.bs[u.name], w2 = allies.includes(u) ? win : !win; if (!st) return; st.cr = capC((swB ?? st.cr) + (w2 ? 3000 : lb(allies.includes(u) ? FV.lsY : FV.lsT))); st.alive = u.alive; st.arm = u.alive ? u.armor || 0 : 0; });
@@ -7944,7 +7971,8 @@ function sbTable(list, cls, alive) {
   if (a === 1 && eb.length >= 2 && !c.a) c.a = me ? "You" : al[0].name;
   if (eb.length === 1 && a >= 2 && !c.e) c.e = eb[0].name; } catch (e) {} return r; }; }
 // clear the round-history strip and clutch marks at every match start (sbReset runs once per match in all modes)
-{ const r0 = sbReset; sbReset = function () { xRes.h = []; xRes.hh = ""; xRes.c = {}; return r0.apply(this, arguments); }; }
+{ const r0 = sbReset; sbReset = function () { xRes.h = []; xRes.hh = ""; xRes.c = {}; xFirstBlood.r = null; return r0.apply(this, arguments); }; }
+{ const k1 = sbKill; sbKill = function (by, victim) { const r = k1.apply(this, arguments); xFirstBlood(by, victim); return r; }; }
 function board() {
   const alive = (n) => n === "You" ? player.hp > 0 || (mode === "duel" && du.wait <= 0) : mode === "duel" ? duelBot && duelBot.alive : bots.concat(allies).some((b) => b.name === n && b.alive);
   const s = sbScore(), t = sbTeams();
@@ -7953,7 +7981,7 @@ function board() {
 }
 function sbResult() { // end-of-match: final score + MATCH MVP / TEAM MVP cards (top ACS)
   const el = $("xResB"); if (!el) return; const tt = ($("resTitle").textContent || "").toLowerCase();
-  if (!SB || Object.keys(SB).length < 2 || (tt !== "victory" && tt !== "defeat")) { el.innerHTML = ""; return; }
+  if (!SB || Object.keys(SB).length < 2 || (tt !== "victory" && tt !== "defeat") || (mode === "five" && FV.dm)) { el.innerHTML = ""; return; } // deathmatch: placement only, no round score / MVP
   const s = sbScore(), t = sbTeams(), top = (l) => l.slice().sort((a, b) => sbAcs(SB[b]) - sbAcs(SB[a]))[0];
   const all = t[0].concat(t[1]), m = top(all), tm = top(t[0]);
   const card = (lab, n, cls) => n ? `<div class="x-mvp ${cls}">${sbTile(n)}<div><small>${lab}</small><b>${n}</b><span>${sbAcs(SB[n])} ACS · ${SB[n].k} / ${SB[n].d} / ${SB[n].a || 0}</span></div></div>` : "";
@@ -9263,6 +9291,8 @@ function dmScore(by, victim) {
 function dmRank() {
   return ["You"].concat(FV.tdm ? allies.map((a) => a.name) : [], bots.map((b) => b.name)).map((n) => ({ n, k: DM.k[n] || 0, d: DM.d[n] || 0 })).sort((a, b) => b.k - a.k || a.d - b.d);
 }
+function dmPlace(R) { const P = []; R.forEach((r, i) => { P[i] = i && R[i - 1].k === r.k ? P[i - 1] : i + 1; }); return P; } // competition ranking on kills: equal kills share a placement
+const dmOrd = (n) => n + (n % 100 >= 11 && n % 100 <= 13 ? "th" : ["th", "st", "nd", "rd"][n % 10] || "th");
 function dmLB() {
   dmUI(); const R = dmRank(), me = R.findIndex((r) => r.n === "You"), rows = R.slice(0, 5).map((r, i) => [i, r]);
   if (me >= 5) rows.push([me, R[me]]);
@@ -9283,17 +9313,18 @@ function dmTick(dt) {
 }
 function dmEnd() {
   if (!running) return; running = false; fireHeld = false; if (DM.menu) dmMenu(false); FV.menu = false;
-  const R = dmRank(), me = R.findIndex((r) => r.n === "You") + 1, T = FV.tdm ? tdmTot() : [0, 0], won = FV.tdm ? T[0] > T[1] : me === 1,
+  const R = dmRank(), PL = dmPlace(R), me = R.findIndex((r) => r.n === "You") + 1, myP = PL[me - 1] || me, shared = !FV.tdm && PL.filter((q) => q === myP).length > 1, T = FV.tdm ? tdmTot() : [0, 0], won = FV.tdm ? T[0] > T[1] : myP === 1 && !shared,
     why = FV.tdm ? (DM.over ? (DM.over === "t" ? "Your team" : "Enemy team") + " reached " + DM.win + " kills" : "Time up") + " · " + T[0] + "–" + T[1] : DM.over ? (DM.over === "You" ? "You reached " : DM.over + " reached ") + DM.win + " kills" : "Time up";
   if (DM.ts) DM.ts.style.display = "none";
   DM.over = null; if (won) stats.w++; try { showStats(); } catch (e) {}
   if (document.pointerLockElement) document.exitPointerLock();
   try { SFX.fanfare(won); } catch (e) {}
-  $("resTitle").textContent = won ? "Victory" : FV.tdm ? (T[0] === T[1] ? "Draw" : "Defeat") : "#" + me + " of " + R.length; $("resTitle").style.color = won ? "#5fffb0" : "#ff4655";
-  $("resText").innerHTML = (FV.tdm ? "Team Deathmatch · " : "Deathmatch · ") + why + '<ol class="x-dmr">' + R.map((r, i) => '<li' + (r.n === "You" ? ' class="me"' : "") + '><span>' + (i + 1) + '</span><b>' + r.n + '</b><em>' + r.k + ' K · ' + r.d + ' D</em></li>').join("") + "</ol>";
+  const draw = FV.tdm ? T[0] === T[1] : myP === 1 && shared; // fidelity: DM shows placement (shared on equal kills), a tie for 1st is a DRAW, no round score / MVP
+  $("resTitle").textContent = FV.tdm ? (won ? "Victory" : draw ? "DRAW" : "Defeat") : draw ? "DRAW" : (shared ? "Shared " : "") + dmOrd(myP) + " place"; $("resTitle").style.color = won ? "#5fffb0" : draw ? "#f2f4f7" : "#ff4655";
+  $("resText").innerHTML = (FV.tdm ? "Team Deathmatch · " : "Deathmatch · ") + why + " · first to " + DM.win + " kills" + '<ol class="x-dmr">' + R.map((r, i) => '<li' + (r.n === "You" ? ' class="me"' : "") + '><span>' + (FV.tdm ? i + 1 : dmOrd(PL[i])) + '</span><b>' + r.n + '</b><em>' + r.k + ' K · ' + r.d + ' D</em></li>').join("") + "</ol>";
   if (DM.lb) DM.lb.style.display = "none";
   $("againBtn").textContent = "Play again"; $("result").style.display = "flex";
-  if (window.xCareerRec) { const mr = R[me - 1] || {}; xCareerRec({ result: FV.tdm ? (T[0] > T[1] ? "win" : T[0] < T[1] ? "loss" : "draw") : me === 1 ? "win" : "loss", mode: FV.tdm ? "tdm" : "dm", map: (typeof F_MAPN !== "undefined" && F_MAPN[FV.map]) || FV.map, score: FV.tdm ? T[0] + " – " + T[1] : "#" + me + " of " + R.length, placement: FV.tdm ? undefined : me, kills: mr.k != null ? mr.k : undefined, deaths: mr.d != null ? mr.d : undefined }); }
+  if (window.xCareerRec) { const mr = R[me - 1] || {}; xCareerRec({ result: FV.tdm ? (T[0] > T[1] ? "win" : T[0] < T[1] ? "loss" : "draw") : won ? "win" : draw ? "draw" : "loss", mode: FV.tdm ? "tdm" : "dm", map: (typeof F_MAPN !== "undefined" && F_MAPN[FV.map]) || FV.map, score: FV.tdm ? T[0] + " – " + T[1] : dmOrd(myP) + " of " + R.length, placement: FV.tdm ? undefined : myP, kills: mr.k != null ? mr.k : undefined, deaths: mr.d != null ? mr.d : undefined }); }
 }
 function startTDM() { FV.tdm = true; dmGo(); }
 function startDM() { FV.tdm = false; dmGo(); }
@@ -9447,7 +9478,7 @@ function startESC() { FV.esc = true; ESC.lv = [0, 0]; ESC.k = [0, 0]; FV.tdm = t
   const why = (DM.over ? (DM.over === "t" ? "Your team" : "Enemy team") + " finished the knife level" : "Time up") + " · level " + (L[0] + 1) + " vs " + (L[1] + 1);
   if (DM.ts) DM.ts.style.display = "none"; if (DM.lb) DM.lb.style.display = "none"; DM.over = null; if (won) stats.w++; try { showStats(); } catch (e) {}
   if (document.pointerLockElement) document.exitPointerLock(); try { SFX.fanfare(won); } catch (e) {}
-  $("resTitle").textContent = won ? "Victory" : draw ? "Draw" : "Defeat"; $("resTitle").style.color = won ? "#5fffb0" : "#ff4655";
+  $("resTitle").textContent = won ? "Victory" : draw ? "DRAW" : "Defeat"; $("resTitle").style.color = won ? "#5fffb0" : "#ff4655";
   $("resText").innerHTML = "Escalation · " + why + '<ol class="x-dmr">' + R.map((r, i) => '<li' + (r.n === "You" ? ' class="me"' : "") + '><span>' + (i + 1) + '</span><b>' + r.n + '</b><em>' + r.k + ' K · ' + r.d + ' D</em></li>').join("") + "</ol>";
   $("againBtn").textContent = "Play again"; $("result").style.display = "flex";
   if (window.xCareerRec) { const me = R.find((r) => r.n === "You") || {}; try { xCareerRec({ result: won ? "win" : draw ? "draw" : "loss", mode: "escalation", map: (typeof F_MAPN !== "undefined" && F_MAPN[FV.map]) || FV.map, score: "Lv " + (L[0] + 1) + " – " + (L[1] + 1), kills: me.k, deaths: me.d }); } catch (e) {} } }; }
