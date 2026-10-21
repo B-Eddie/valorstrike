@@ -264,7 +264,7 @@ const win = {
 };
 for (const k in ET) win[k] = ET[k].bind(win); win.window = win; win.self = win; win.globalThis = win;
 // no localStorage at all: any access throws, so a use shows up as an error
-Object.defineProperty(win, "localStorage", { get() { throw new Error("localStorage used"); } });
+Object.defineProperty(win, "localStorage", { get() { if (win.__ls) return win.__ls; throw new Error("localStorage used"); } }); // win.__ls: a test-only store (obs minimap persistence)
 Object.defineProperty(win, "sessionStorage", { get() { throw new Error("sessionStorage used"); } });
 const context = vm.createContext(win);
 vm.runInContext("Date.now = () => performance.now() + 1.7e12;", context);
@@ -1522,7 +1522,7 @@ if (!NO3) {
   });
   try { toLobby(); } catch (e) {}
   phase = "fid banners";
-  FIDP("fid round banners: FIRST BLOOD once per round, ACE / TEAM ACE / CLUTCH / FLAWLESS / THRIFTY each get their own centred banner queued after ROUND WON", () => {
+  FIDP("fid round banners: FIRST BLOOD once per round, ACE / TEAM ACE / CLUTCH / FLAWLESS / THRIFTY each get their own centred banner queued after ROUND WIN", () => {
     xe(f5 + "true"); advance(50);
     const res = JSON.parse(xe(`(() => { const out = {}, T = () => sbTeams(), seen = () => (annc.log || []).concat(ANQ.map((q) => q[0]));
       const seed = (f) => { annClear(); annc.log = []; for (const n in SB) Object.assign(SB[n], { k: 0, k0: 0, d: 0, d0: 0, sp: 0, s0: 0 }); xRes.c = {}; f(T()[0], T()[1]); running = false; xRes(true, "Enemies eliminated", false, false); return seen(); };
@@ -1536,7 +1536,7 @@ if (!NO3) {
       annClear(); annc.log = []; running = true; FV.you = 0; FV.them = 0; xFirstBlood.r = null; sbKill("You", F_EN[0], false); sbKill(F_EN[1], F_MATES[0], false); out.FB = seen();
       FV.you = 1; annClear(); annc.log = []; sbKill(F_EN[2], "You", false); out.FB2 = seen(); annClear(); return JSON.stringify(out); })()`));
     if (res.team[0] !== 5 || res.team[1] !== 5) return "teams " + res.team;
-    for (const k of ["ACE", "TEAM ACE", "CLUTCH", "FLAWLESS", "THRIFTY"]) { const s = res[k]; if (s[0] !== "ROUND WON" || s[1] !== k) return k + " banners: " + JSON.stringify(s); }
+    for (const k of ["ACE", "TEAM ACE", "CLUTCH", "FLAWLESS", "THRIFTY"]) { const s = res[k]; if (s[0] !== "ROUND WIN" || s[1] !== k) return k + " banners: " + JSON.stringify(s); }
     if (res.NONE.length !== 1) return "plain win banners: " + JSON.stringify(res.NONE);
     if (res.FB.filter((t) => t === "FIRST BLOOD").length !== 1) return "first blood (round 1): " + JSON.stringify(res.FB);
     if (res.FB2.filter((t) => t === "FIRST BLOOD").length !== 1) return "first blood (round 2): " + JSON.stringify(res.FB2);
@@ -1803,6 +1803,81 @@ if (!NO3) {
     odOk = typeof a === "number" && b > a + 2; if (!odOk) odErr.push(JSON.stringify([a, b])); } catch (e) { odErr.push(String(e).slice(0, 300)); }
   report.push({ label: "fid2: Odin spin-up raises the fire rate over a held spray", el: true, handler: true, cond: odOk, pass: odOk, errs: odErr });
   try { toLobby(); } catch (e) {}
+}
+
+// ---------- observer pass: death spectator, team side panels, kill emblem, round-end reasons, rotating minimap ----------
+if (!NO3) {
+  const xe = vm.runInContext("__xe", context);
+  const OB = (label, f) => { phase = "obs " + label; const e0 = errors.length; let r; try { r = f(); } catch (e) { r = "threw: " + String((e && e.stack) || e).split("\n").slice(0, 2).join(" | ").slice(0, 300); }
+    const errs = []; if (r !== true) errs.push(String(r).slice(0, 400)); errors.slice(e0).forEach((e) => errs.push(e.where + ": " + e.msg.slice(0, 200)));
+    report.push({ label: "obs: " + label, el: true, handler: true, cond: r === true, pass: !errs.length, errs }); lastErr = errors.length; };
+  const f5 = '(() => { FV.pick = "ascent"; FV.srOn = 0; FV.dm = false; FV.tdm = false; FV.esc = false; window.xSwift = false; startFive(); clearTimeout(FV.to); FV.buy = 0; FV.menu = false; player.hp = 100; paused = false; running = true; window.xLdOn = false; return true; })()';
+  const start5 = () => { toLobby(); xe(f5); advance(60); return xe("mode === 'five' && running && allies.length === 4 && bots.length === 5"); };
+  OB("spectator starts 2 s after death, follows a living teammate (first-person, their weapon / ammo / HP in the HUD) and cycles on left / right click and Space", () => {
+    if (!start5()) return "5v5 did not start"; xe("xLob0 = false; xResOn = false; true"); frames(2); if (xe("xKL.p === player") !== true) return "death-flow state not bound to this round's player";
+    xe('(() => { allies.forEach((a, i) => { a.hp = 100; a.alive = true; a.w = ["Phantom", "Vandal", "Spectre", "Sheriff"][i]; }); player.hp = 0; pDie(bots[0].name, "Vandal"); return true; })()');
+    if (xe("player.hp") > 0) return "player not dead"; if (xe("xKL.on && !xKL.sp") !== true) return "killed-by card not up first";
+    xe("xSpec(2.1); true"); if (xe("xKL.sp") !== true) return "spectator did not start after 2 s";
+    const c0 = xe("xKL.cur && xKL.cur.name"); if (!c0) return "no teammate spectated"; if (!/^SPECTATING /.test(xe("xKL.sn.textContent"))) return "label: " + xe("xKL.sn.textContent");
+    dispatch(win, mkEvent("mousedown", { button: 0 })); xe("xSpec(0.05); true"); const c1 = xe("xKL.cur.name"); if (c1 === c0) return "left click did not cycle";
+    dispatch(win, mkEvent("mousedown", { button: 2 })); xe("xSpec(0.05); true"); if (xe("xKL.cur.name") !== c0) return "right click did not cycle back";
+    dispatch(win, mkEvent("keydown", { code: "Space", key: " " })); dispatch(win, mkEvent("keyup", { code: "Space", key: " " })); xe("xSpec(0.05); true"); const c2 = xe("xKL.cur.name"); if (c2 === c0) return "Space did not cycle";
+    if (!new RegExp(c2, "i").test(xe("xKL.sn.textContent"))) return "label not updated: " + xe("xKL.sn.textContent");
+    xe("xHud(); true"); const w = xe("xKL.cur.w"); if ($("xWn").textContent !== w) return "HUD weapon " + $("xWn").textContent + " want " + w;
+    if (String($("xMag").textContent) !== String(xe("WEAP[xKL.cur.w].mag"))) return "HUD ammo " + $("xMag").textContent; if ($("xHp").textContent !== "100") return "HUD hp " + $("xHp").textContent;
+    xe("xLob0 = false; xResOn = false; true"); frames(3); if (xe("XOB.fp === xKL.cur && XOB.vy === XOB.fpY && XOB.orb === null") !== true) return "camera not on the teammate's eye / aim: " + xe("JSON.stringify([XOB.fp && XOB.fp.name, xKL.cur && xKL.cur.name, XOB.vy, XOB.fpY, XOB.orb])");
+    xe("allies.forEach((a) => { a.alive = false; a.hp = 0; }); running = false; xLob0 = false; xResOn = false; xSpec(0.05); true"); /* round logic paused: the camera loop alone */ if (!/NO TEAMMATES ALIVE/.test(xe("xKL.sn.textContent"))) return "no-teammate label: " + xe("xKL.sn.textContent");
+    frames(3); if (xe("!!XOB.orb && XOB.fp === null && Number.isFinite(XOB.orb.yw) && XOB.orb.y > 5") !== true) return "no orbit camera with every teammate dead: " + xe("JSON.stringify([xKL.sp, xResOn, xLob0, !!XOB.orb])");
+    xe("running = false; fRound(); running = true; window.xLdOn = false; xLob0 = false; xResOn = false; true"); frames(3);
+    if (xe("player.hp > 0 && !xKL.sp && XOB.fp === null && XOB.orb === null") !== true) return "next round did not return to own view: " + xe("JSON.stringify([player.hp, xKL.sp, xKL.on, xLob0, xResOn, paused, XNF])");
+    return true; });
+  OB("side panels: buy phase shows both teams, 5 rows each with agent square, name, weapon, HP + shield bar, ult pips; credits on own team only", () => {
+    if (!start5()) return "5v5 did not start";
+    xe("FV.buy = 20; running = true; player.hp = 100; player.armor = 50; xObsTick(true); true");
+    if (!$("xObs").classList.contains("on")) return "panels not shown in buy phase";
+    const cols = doc.querySelectorAll("#xObs .x-obc"); if (cols.length !== 2) return "columns " + cols.length; const bad = [];
+    cols.forEach((c, ci) => { const rows = c.querySelectorAll(".x-obr").filter((r) => !r.hidden); if (rows.length !== 5) bad.push((ci ? "enemy" : "own") + " rows " + rows.length);
+      rows.forEach((r) => { const hp = parseFloat(r.querySelector(".hp").style.width) || 0; if (!(hp > 0)) bad.push("no hp bar " + r.querySelector(".x-obn").textContent); if (!r.querySelector(".x-oba").textContent || !r.querySelector(".x-oba").style.background) bad.push("no agent square");
+        if (!r.querySelector(".x-obw").textContent) bad.push("no weapon"); if (!r.querySelectorAll(".x-obu i").length) bad.push("no ult pips");
+        const cr = r.querySelector(".x-obcr").textContent; if (ci === 0 && !/^\d+$/.test(cr)) bad.push("own credits '" + cr + "'"); if (ci === 1 && cr) bad.push("enemy credits shown"); }); });
+    const me = doc.querySelector("#xObs .x-obc.al .x-obr.me"); if (!me || !(parseFloat(me.querySelector(".sh").style.width) > 0)) bad.push("own shield segment missing");
+    xe("FV.buy = 0; xObsTick(true); true"); if ($("xObs").classList.contains("on")) bad.push("panels still up after buy phase while alive");
+    xe("player.hp = 0; pDie(bots[0].name, 'Vandal'); xSpec(2.1); xObsTick(true); true"); if (!$("xObs").classList.contains("on")) bad.push("panels not shown while spectating");
+    return bad.length ? bad.slice(0, 5).join(" | ") : true; });
+  OB("side panels: dead players' rows greyed with skull, ult-ready row flashes", () => {
+    if (!start5()) return "5v5 did not start";
+    xe("FV.buy = 20; running = true; const b = bots[1]; b.alive = false; b.hp = 0; allies[0].alive = false; allies[0].hp = 0; window.xBotUC[bots[2].name] = 99; xObsTick(true); true");
+    const nb = xe("bots[1].name"), na = xe("allies[0].name"), nu = xe("bots[2].name"), row = (n) => doc.querySelectorAll("#xObs .x-obr").find((r) => r.querySelector(".x-obn").textContent === n);
+    if (!row(nb) || !row(nb).classList.contains("dead")) return "dead enemy row not greyed"; if (!row(na) || !row(na).classList.contains("dead")) return "dead teammate row not greyed";
+    if (row(nu).classList.contains("dead")) return "living row greyed"; if (!row(nu).querySelector(".x-obu").classList.contains("rdy")) return "ult-ready row not flashing";
+    if (!/x-obr\.dead \.x-obk\{display:block/.test(html) || !/x-obr\.dead\{filter:grayscale/.test(html)) return "dead-row skull / greyscale CSS missing";
+    return true; });
+  OB("kill emblem: segment count builds per kill this round with a headshot marker, resets next round", () => {
+    if (!start5()) return "5v5 did not start";
+    xe("xKiReset(); kill(bots[0], false); true"); if (xe("XKI.n") !== 1 || xe("XKI.nb.textContent") !== "1") return "first kill: n " + xe("XKI.n");
+    xe("kill(bots[1], true); true"); if (xe("XKI.n") !== 2 || xe("XKI.nb.textContent") !== "2") return "second kill: n " + xe("XKI.n");
+    if (xe("XKI.sg.filter((g) => g.classList.contains('on')).length") !== 2) return "ring segments lit " + xe("XKI.sg.filter((g) => g.classList.contains('on')).length");
+    if (xe("XKI.em.classList.contains('hs')") !== true) return "no headshot marker"; if (xe("XKI.el.classList.contains('on')") !== true) return "emblem not shown";
+    xe("running = false; fRound(); running = true; true"); if (xe("XKI.n") !== 0 || xe("XKI.nb.textContent") !== "0" || xe("XKI.sg.some((g) => g.classList.contains('on'))")) return "not reset next round";
+    return true; });
+  OB("round end: ROUND WIN / ROUND LOSS, round number and team colour, reason line for each reason", () => {
+    if (!start5()) return "5v5 did not start";
+    const C = [[true, "Enemies eliminated", null, "ELIMINATION"], [false, "Attackers win", "SPIKE DETONATED", "SPIKE DETONATED"], [true, "Sage defused the Spike", "SPIKE DEFUSED", "SPIKE DEFUSED"], [false, "Time ran out before the plant", null, "TIME EXPIRED"], [false, "All defenders eliminated after the plant", null, "ELIMINATION"]], bad = [];
+    C.forEach(([w, t, ti, want]) => { const r = JSON.parse(xe(`(() => { annClear(); annc.log = []; running = false; xRes(${w}, ${JSON.stringify(t)}, false, false, ${JSON.stringify(ti)}); const e = document.getElementById("xAnn"); return JSON.stringify({ t: annc.log[0], s: e.querySelector(".x-ans").textContent, c: e.className, n: xRes.h.length }); })()`));
+      if (r.t !== (w ? "ROUND WIN" : "ROUND LOSS")) bad.push(want + " title " + r.t); if (r.s.indexOf(want) !== 0 && r.s.indexOf(" · " + want) < 0) bad.push(want + " reason '" + r.s + "'");
+      if (r.s.indexOf("ROUND " + r.n) !== 0) bad.push("round number missing: " + r.s); if (!new RegExp("\\b" + (w ? "win" : "loss") + "\\b").test(r.c) || !/\brnd\b/.test(r.c)) bad.push("class " + r.c); });
+    xe("annClear(); true"); return bad.length ? bad.slice(0, 5).join(" | ") : true; });
+  OB("minimap: Rotate minimap in General (default on) rotates with the view yaw, off keeps it fixed, persisted in localStorage vs.minirot", () => {
+    const cb = $("xMiniRot"); if (!cb || cb.closest("[data-sp]").dataset.sp !== "g") return "toggle missing from General"; if (!cb.checked || xe("XOB.mr") !== true) return "not on by default";
+    const st = {}; win.__ls = { getItem: (k) => (k in st ? st[k] : null), setItem: (k, v) => { st[k] = String(v); }, removeItem: (k) => { delete st[k]; } };
+    try { if (!start5()) return "5v5 did not start";
+      const draw = (v) => xe(`(() => { XOB.vy = ${v}; minimap.d = 0; minimap(); return minimap.r; })()`); if (draw(1.25) !== 1.25) return "rotate on: minimap angle " + draw(1.25);
+      cb.checked = false; dispatch(cb, mkEvent("change")); if (st["vs.minirot"] !== "0" || xe("XOB.mr") !== false) return "off not saved: " + st["vs.minirot"];
+      if (draw(1.25) !== 0) return "rotate off: minimap still rotated";
+      xe("XOB.mr = true; true"); if (xe("xMiniRotLoad()") !== false || cb.checked) return "reload did not restore off";
+      cb.checked = true; dispatch(cb, mkEvent("change")); if (st["vs.minirot"] !== "1" || xe("xMiniRotLoad()") !== true) return "on not saved";
+      return true; } finally { delete win.__ls; } });
+  try { xe("annClear(); running = false; true"); toLobby(); } catch (e) {}
 }
 
 // ---------- print ----------

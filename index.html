@@ -416,6 +416,13 @@ button{font:inherit;text-transform:inherit;letter-spacing:inherit;cursor:pointer
 .x-kb svg{width:28px;height:28px;display:none}.x-kb.hs svg{display:block}
 .x-ki{position:absolute;left:50%;bottom:64px;transform:translateX(-50%);display:flex;gap:6px;pointer-events:none;opacity:0;transition:opacity .25s}
 .x-ki.on{opacity:1}
+.x-ki{flex-direction:column;align-items:center;gap:4px}.x-ki .x-kir{display:flex;gap:2px}
+.x-kie{position:relative;width:64px;height:64px;display:flex;align-items:center;justify-content:center}
+.x-kie svg{position:absolute;inset:0;width:64px;height:64px;overflow:visible}.x-kie .sg{fill:none;stroke:rgba(236,232,225,.18);stroke-width:5;transition:stroke .2s}.x-kie .sg.on{stroke:#ff4655;filter:drop-shadow(0 0 4px rgba(255,70,85,.8))}
+.x-kie .cr{fill:rgba(15,20,28,.8);stroke:rgba(255,70,85,.9);stroke-width:1.5}.x-kie b{position:relative;font:800 20px/1 var(--f,var(--sans));color:#fff;text-shadow:0 1px 6px rgba(0,0,0,.7)}
+.x-kie .x-kih{position:absolute;top:-10px;left:50%;width:16px;height:16px;margin-left:-8px;display:none}.x-kie.hs .x-kih{display:block}.x-kie.hs .sg.on.last{stroke:#ffd54a}
+.x-ki.pop .x-kie{animation:x-kipop .22s ease-out}
+.x-ki .x-kir span{width:22px;height:14px;border:0;background:rgba(236,232,225,.22);clip-path:polygon(0 0,50% 55%,100% 0,100% 45%,50% 100%,0 45%)}.x-ki .x-kir span.on{background:#ff4655}.x-ki .x-kir span.hs{background:#ffd54a}.x-ki .x-kir span svg{display:none!important}
 .x-ki span{display:none;width:30px;height:30px;align-items:center;justify-content:center;background:rgba(15,20,28,.72);border:1px solid rgba(255,70,85,.9);clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}
 .x-ki span.on{display:flex;animation:x-kipop .22s ease-out}
 .x-ki svg{width:16px;height:16px}.x-ki .x-sk{display:none}.x-ki span.hs .x-sk{display:block}.x-ki span.hs .x-kx{display:none}.x-ki span.hs{border-color:#ffd54a;background:rgba(120,20,30,.85)}
@@ -1176,6 +1183,7 @@ body.x-cbh #game{--ha:#3d8bff;--he:#ff9f1c}
   <div data-sp="g" role="tabpanel" aria-label="General">
   <p class="st-h">Gameplay</p>
   <div class="srow"><label for="xAuR">Auto-reload<br /><small class="st-n">Reload automatically when the magazine runs empty</small></label><input type="checkbox" id="xAuR" role="switch" checked /></div>
+  <div class="srow"><label for="xMiniRot">Rotate minimap<br /><small class="st-n">Turn the minimap with your view; off keeps it fixed</small></label><input type="checkbox" id="xMiniRot" role="switch" checked /></div>
   <div class="srow">Bot difficulty<div class="seg" data-key="diff"><button data-v="easy">Easy</button><button data-v="normal" class="on">Normal</button><button data-v="hard">Hard</button></div></div>
   <p class="st-h">Accessibility</p>
   <div class="srow x-sr"><span class="st-l">Enemy highlight colour</span><div class="seg" id="xEnC"><button data-v="red" class="on">Red (default)</button><button data-v="yellow">Yellow (Deuteranopia)</button><button data-v="purple">Purple (Tritanopia)</button></div></div>
@@ -1300,6 +1308,20 @@ body.x-cbh #game{--ha:#3d8bff;--he:#ff9f1c}
     .x-ans:empty{display:none}
     .x-ann.win{color:#4fe3c1}.x-ann.loss{color:#ff4655}
     .x-ann.big .x-ant{font-size:clamp(44px,10vw,112px)}
+    .x-ann.rnd{top:30%}.x-ann.rnd .x-ant{font-size:clamp(40px,8vw,88px);letter-spacing:.14em}.x-ann.rnd .x-ans{display:inline-block;margin-top:12px;padding:6px 18px;background:rgba(10,14,20,.6);border-top:2px solid currentColor;color:#ece8e1;letter-spacing:.32em}
+    /* observer pass: team side panels (spectating / buy phase) */
+    .x-obs{position:fixed;left:0;right:0;top:184px;z-index:11;display:none;justify-content:space-between;padding:0 12px;pointer-events:none;font:600 12px/1.2 var(--f,var(--sans));color:#ece8e1}
+    .x-obs.on{display:flex}.x-obc{display:flex;flex-direction:column;gap:3px;width:210px}
+    .x-obr{display:flex;align-items:center;gap:6px;height:34px;padding:0 6px;background:linear-gradient(90deg,rgba(79,227,193,.22),rgba(10,16,22,.62));border-left:3px solid #4fe3c1}
+    .x-obc.en .x-obr{flex-direction:row-reverse;text-align:right;background:linear-gradient(270deg,rgba(255,70,85,.22),rgba(10,16,22,.62));border-left:0;border-right:3px solid #ff4655}
+    .x-oba{flex:none;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font:800 13px/1 var(--f,var(--sans));color:#0b0f14}
+    .x-obm{flex:1;min-width:0}.x-obm p{display:flex;gap:6px;margin:0 0 3px;white-space:nowrap}.x-obc.en .x-obm p{flex-direction:row-reverse}
+    .x-obn{overflow:hidden;text-overflow:ellipsis;max-width:78px}.x-obw{font-style:normal;opacity:.7;text-transform:uppercase;overflow:hidden;text-overflow:ellipsis}.x-obcr{margin-left:auto;color:#ffd54a}.x-obc.en .x-obcr{margin:0 auto 0 0}
+    .x-obh{position:relative;height:5px;background:rgba(236,232,225,.14);display:flex}.x-obc.en .x-obh{flex-direction:row-reverse}.x-obh .hp{display:block;height:100%;background:#ece8e1}.x-obh .sh{display:block;height:100%;background:#7fc8ff}
+    .x-obu{display:flex;gap:2px;margin-top:3px}.x-obc.en .x-obu{justify-content:flex-end}.x-obu i{width:5px;height:5px;transform:rotate(45deg);background:rgba(236,232,225,.22)}.x-obu i.on{background:#ece8e1}.x-obu.rdy i{background:#ffd54a;animation:xObU .7s ease-in-out infinite alternate}
+    @keyframes xObU{to{opacity:.45}}
+    .x-obk{flex:none;width:16px;height:16px;display:none}.x-obr.dead{filter:grayscale(1);opacity:.5}.x-obr.dead .x-obk{display:block}.x-obr.dead .x-obh{visibility:hidden}.x-obr.me .x-obn{color:#ffd54a}
+    @media (prefers-reduced-motion:reduce){.x-obu.rdy i{animation:none}}
     .x-ann.pulse .x-ant{animation:xAnP .6s ease-in-out infinite alternate}
     @keyframes xAnP{to{opacity:.55;text-shadow:0 0 24px #ff4655}}
     @media (prefers-reduced-motion:reduce){.x-ann{transition:none;transform:none}.x-ann.pulse .x-ant{animation:none}}
@@ -1487,7 +1509,7 @@ function annNext() {
   if (!e.querySelector(".x-ant") || !e.querySelector(".x-ans")) e.innerHTML = '<p class="x-ant"></p><p class="x-ans"></p>';
   const eT = e.querySelector(".x-ant"), eS = e.querySelector(".x-ans"); if (eT) eT.textContent = t; if (eS) eS.textContent = o.sub || "";
   if (o.tag && eS) { const g = document.createElement("span"); g.className = "x-tag"; g.textContent = o.tag; eS.appendChild(g); }
-  e.className = "x-ann" + (o.c ? " " + o.c : "") + (o.big ? " big" : "") + (o.pulse ? " pulse" : "");
+  e.className = "x-ann" + (o.c ? " " + o.c : "") + (o.cls ? " " + o.cls : "") + (o.big ? " big" : "") + (o.pulse ? " pulse" : "");
   e.style.display = "block"; void e.offsetWidth; e.classList.add("on"); if (o.s) xSting(o.s);
   clearTimeout(annc.t); annc.t = setTimeout(() => { e.classList.remove("on"); annc.t = setTimeout(() => { e.style.display = "none"; annNext(); }, 250); }, (ms || 2000) + 250);
 }
@@ -1518,13 +1540,14 @@ function xTags(win) {
     for (const n in SB) { const p = SB[n]; p.k0 = p.k || 0; p.d0 = p.d || 0; p.s0 = p.sp || 0; } xRes.c = {};
   } catch (e) {} return r;
 }
-const xWhy = (t) => /defus/i.test(t) ? "SPIKE DEFUSED" : /deton|explo|boom/i.test(t) ? "SPIKE DETONATED" : /time/i.test(t) ? "TIME EXPIRED" : "ENEMIES ELIMINATED";
+const xWhy = (t) => /defus/i.test(t) ? "SPIKE DEFUSED" : /deton|explo|boom/i.test(t) ? "SPIKE DETONATED" : /surrender/i.test(t) ? "SURRENDER" : /time/i.test(t) ? "TIME EXPIRED" : "ELIMINATION";
 function xRes(win, text, over, mWin, title) {
   const g = xTags(win), tg = g.tag ? g.tag + (g.who ? " · " + g.who : "") : "";
   try { const s = sbScore(), h = xRes.h || (xRes.h = []); if (s[0] + s[1] < h.length) h.length = 0; h.push([win ? 1 : 0, g.tag]);
     xRes.hh = `<div class="x-rh">${h.map((x, i) => `<i class="${x[0] ? "w" : "l"}" title="Round ${i + 1}${x[1] ? " · " + x[1] : ""}">${x[1] ? X_TAGI[x[1]] : i + 1}</i>`).join("")}</div>`; } catch (e) {}
-  if (over) annc(mWin ? "VICTORY" : "DEFEAT", 2600, { c: mWin ? "win" : "loss", big: 1, sub: xWhy(text), s: mWin ? "vic" : "def", tag: tg });
-  else annc(title || (win ? "ROUND WON" : "ROUND LOST"), 2000, { c: win ? "win" : "loss", sub: xWhy(text), s: win ? "win" : "loss", tag: tg });
+  const why = xWhy((title || "") + " " + (text || "")), rn = (xRes.h && xRes.h.length) || 0; xRes.why = why; // observer pass: one round-end banner, title + "ROUND n · REASON"
+  if (over) annc(mWin ? "VICTORY" : "DEFEAT", 2600, { c: mWin ? "win" : "loss", big: 1, sub: why, s: mWin ? "vic" : "def", tag: tg });
+  else annc(win ? "ROUND WIN" : "ROUND LOSS", 2000, { c: win ? "win" : "loss", cls: "rnd", sub: (rn ? "ROUND " + rn + " · " : "") + why, s: win ? "win" : "loss", tag: tg });
   if (g.tag) annc(g.tag, 1600, X_TAGB[g.tag](g.who, win)); // fidelity: highlight gets its own centred banner, queued after the round-end one (never overlapping)
 }
 const X_TAGB = { // round highlight banners: ACE (one player kills all 5) · TEAM ACE · CLUTCH (last alive beat 2+) · FLAWLESS (no deaths) · THRIFTY (won on a much smaller spend)
@@ -2396,7 +2419,7 @@ function xKLog(t, by, d) { const hs = xHS; xHS = false; if (!(d > 0) || !player 
   else if (by === undefined && t !== player && t && t.name && player.hp > 0) { e = xKLe(t.name); if (e) { e.dd += d; e.dh++; if (hs) e.dhs++; } } }
 function xKLui() { if (xKL.el && xKL.el.parentNode && xKL.t && xKL.nm && xKL.w && xKL.dd && xKL.tk && xKL.sn) return; if (xKL.el && xKL.el.parentNode) xKL.el.parentNode.removeChild(xKL.el); if (xKL.sl && xKL.sl.parentNode) xKL.sl.parentNode.removeChild(xKL.sl); const c = document.createElement("div"); c.className = "x-kb"; c.setAttribute("aria-live", "polite");
   c.innerHTML = '<p class="x-kb__h">KILLED BY</p><div class="x-kb__r"><i></i><div><b></b><span></span></div></div><dl class="x-kb__d"><dt>DEALT</dt><dd></dd><dt>TAKEN</dt><dd></dd></dl>';
-  const s = document.createElement("div"); s.className = "x-sp"; s.innerHTML = "<span></span><small>Left / right click to switch · V or tap for 3rd person</small>"; s.querySelector("span").addEventListener("click", (e) => { e.stopPropagation(); xTPToggle(); }); s.querySelector("span").addEventListener("mousedown", (e) => e.stopPropagation()); s.querySelector("span").style.cursor = "pointer"; s.querySelector("span").style.pointerEvents = "auto"; s.style.pointerEvents = "auto";
+  const s = document.createElement("div"); s.className = "x-sp"; s.innerHTML = "<span></span><small>Left / right click or Space to switch · V or tap for 3rd person</small>"; s.querySelector("span").addEventListener("click", (e) => { e.stopPropagation(); xTPToggle(); }); s.querySelector("span").addEventListener("mousedown", (e) => e.stopPropagation()); s.querySelector("span").style.cursor = "pointer"; s.querySelector("span").style.pointerEvents = "auto"; s.style.pointerEvents = "auto";
   document.body.appendChild(c); document.body.appendChild(s); xKL.el = c; xKL.sl = s;
   const q = (k) => c.querySelector(k); xKL.t = q("i"); xKL.nm = q("b"); xKL.w = q(".x-kb__r span"); const dd = c.querySelectorAll("dd"); xKL.dd = dd[0]; xKL.tk = dd[1]; xKL.sn = s.querySelector("span"); }
 function xKLfx(on) { try { const cv = renderer.domElement; cv.style.transition = "filter .35s ease-out"; cv.style.filter = on ? "saturate(.12) brightness(.55)" : ""; } catch (e) {} }
@@ -2411,9 +2434,18 @@ function xKLDie(by, w) { if (!xKLm()) return; xKLui(); xKL.on = true; xKL.st = 0
 function xKLReset() { xKL.p = player; xKL.n = 0; xKL.st = 0; xKL.on = false; xKL.sp = false; xKL.cur = null; xHS = false; if (xKL.el) { xKL.el.classList.remove("on"); xKL.sl.classList.remove("on"); xKLfx(false); } }
 function xSpec(dt) { if (!xKL.on) return xSpecPick(); xKL.st += dt; if (xKL.st < 2) return null;
   if (!xKL.sp) { xKL.sp = true; xKLfx(false); xKL.el.classList.remove("on"); xKL.sl.classList.add("on"); }
-  const a = xSpecPick(); if (a !== xKL.cur) { xKL.cur = a; if (xKL.sn) xKL.sn.textContent = a ? "SPECTATING " + String(a.name).toUpperCase() : "NO TEAMMATES ALIVE"; } return a; }
+  const a = xSpecPick(); if (a !== xKL.cur) { xKL.cur = a; if (xKL.sn) xKL.sn.textContent = a ? "SPECTATING " + String(a.name).toUpperCase() : "NO TEAMMATES ALIVE · SPIKE CAM"; } return a; }
 function xSpecPick() { let n = 0; for (const x of allies) if (x.alive) n++; if (!n) return null; let i = ((xKL.si % n) + n) % n; for (const x of allies) if (x.alive && i-- === 0) return x; return null; }
 addEventListener("mousedown", (e) => { if (xKL.sp && player && player.hp <= 0) { if (e.button === 0) xKL.si++; else if (e.button === 2) xKL.si--; } });
+// observer pass: first-person spectating follows the teammate's own aim at eye height; Space cycles; nobody left = slow orbit over the spike / carrier
+const XOB = { fp: null, fpU: null, fpY: 0, fpP: -0.04, orb: null, oa: 0, e: { x: 0, y: 0, z: 0 }, o: { x: 0, y: 0, z: 0, yw: 0, p: 0, cx: 0, cz: 0 }, vy: null, vx: null, vz: null, mr: true, el: null, rows: [[], []], t: 0 };
+addEventListener("keydown", (e) => { if (e.code === "Space" && !e.repeat && xKL.sp && player && player.hp <= 0) { xKL.si++; e.preventDefault(); } });
+function xObsEye(a, dt) { const q = a.g.position, ry = a.g.rotation.y, ty = ry + Math.PI; if (XOB.fpU !== a) { XOB.fpU = a; XOB.fpY = ty; }
+  XOB.fpY += xAng(ty - XOB.fpY) * Math.min(1, (dt || 0) * 14); const e = XOB.e; e.x = q.x + Math.sin(ry) * 0.3; e.y = (q.y || 0) + 1.6; e.z = q.z + Math.cos(ry) * 0.3; return e; }
+function xObsOrbit(dt) { if (!player) return null; let x = player.x, z = player.z;
+  try { const s = mode === "five" && FV.sp; if (s && s.st !== "plant" && s.c && s.c.g) { x = s.c.g.position.x; z = s.c.g.position.z; } else if (s && Number.isFinite(s.x) && Number.isFinite(s.z)) { x = s.x; z = s.z; } } catch (e) {}
+  XOB.oa += (dt || 0) * 0.22; const R = 15, H = 12, o = XOB.o; o.cx = x; o.cz = z; o.x = x + Math.sin(XOB.oa) * R; o.z = z + Math.cos(XOB.oa) * R; o.y = H; o.yw = Math.atan2(o.x - x, o.z - z); o.p = -Math.atan2(H - 1, R); return o; }
+{ const b0 = bfxBot; bfxBot = function (p) { try { if (p && typeof allies !== "undefined") for (const u of allies) if (u.alive && Math.hypot(u.g.position.x - p.x, u.g.position.z - p.z) < 0.6) { const m = (WEAP[u.w || "Classic"] || {}).mag || 12; if (u.xAmW !== (u.w || "Classic") || !(u.xAm > 0)) { u.xAm = m; u.xAmW = u.w || "Classic"; } u.xAm--; break; } } catch (e) {} return b0.apply(this, arguments); }; } // spectated teammate's mag count (refills when empty)
 // Valorant tagging: a bullet hit slows the target for 0.25 s; heavy (28%) for big hits, lighter (50%) for sidearm / SMG body shots
 function xTag(t, n) { if (!t) return; const k = n < 30 ? 0.5 : 0.28; if (!(t.tagT > 0) || k < t.tagK) t.tagK = k; t.tagT = 0.5; } // tagging: 0.5 s, rifle hits slow 72%
 function pDie(by, w) {
@@ -2869,11 +2901,16 @@ function vmHit(p, dmg, hs, dead) {
 const XKI = { n: 0, t: 0, el: null, s: [], da: [], di: 0 };
 { const r = document.createElement("div"); r.className = "x-ki"; r.setAttribute("aria-hidden", "true");
   for (let i = 0; i < 5; i++) { const s = document.createElement("span"); s.innerHTML = '<svg class="x-kx" viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="2.4"><path d="M3 3l10 10M13 3L3 13"/></svg><svg class="x-sk" viewBox="0 0 16 16" fill="#fff"><path d="M8 1.5C4.4 1.5 2 4 2 7.2c0 1.9.9 3.2 2.2 4V14h7.6v-2.8C13.1 10.4 14 9.1 14 7.2 14 4 11.6 1.5 8 1.5z"/><circle cx="5.7" cy="7.6" r="1.6" fill="#7a1420"/><circle cx="10.3" cy="7.6" r="1.6" fill="#7a1420"/><path d="M7.3 10.2h1.4L8 11.6z" fill="#7a1420"/></svg>'; r.appendChild(s); XKI.s.push(s); }
+  { const row = document.createElement("div"); row.className = "x-kir"; XKI.s.forEach((s) => row.appendChild(s)); // observer pass: emblem ring (5 segments build up per kill) over a chevron row
+    const em = document.createElement("div"); em.className = "x-kie"; const seg = []; for (let i = 0; i < 5; i++) { const a0 = (-90 + i * 72 + 6) * Math.PI / 180, a1 = (-90 + (i + 1) * 72 - 6) * Math.PI / 180, R = 27, p = (a) => (32 + R * Math.cos(a)).toFixed(2) + " " + (32 + R * Math.sin(a)).toFixed(2); seg.push('<path class="sg" d="M' + p(a0) + " A" + R + " " + R + " 0 0 1 " + p(a1) + '"/>'); }
+    em.innerHTML = '<svg viewBox="0 0 64 64" aria-hidden="true">' + seg.join("") + '<path class="cr" d="M32 12l18 20-18 20-18-20z"/></svg><b>0</b><svg class="x-kih" viewBox="0 0 16 16" fill="none" stroke="#ffd54a" stroke-width="1.8"><circle cx="8" cy="8" r="5"/><circle cx="8" cy="8" r="1.2" fill="#ffd54a"/><path d="M8 0v3M8 13v3M0 8h3M13 8h3"/></svg>';
+    r.appendChild(em); r.appendChild(row); XKI.em = em; XKI.sg = Array.from(em.querySelectorAll(".sg")); XKI.nb = em.querySelector("b"); }
   xo.appendChild(r); XKI.el = r;
   for (let i = 0; i < 4; i++) { const d = document.createElement("div"); d.className = "x-da"; d.setAttribute("aria-hidden", "true"); xo.appendChild(d); XKI.da.push(d); } }
-function xKiReset() { XKI.n = 0; XKI.el.classList.remove("on"); for (const s of XKI.s) s.classList.remove("on", "hs"); }
+function xKiReset() { XKI.n = 0; XKI.el.classList.remove("on"); for (const s of XKI.s) s.classList.remove("on", "hs"); if (XKI.em) { XKI.em.classList.remove("hs"); XKI.nb.textContent = "0"; XKI.sg.forEach((g) => g.classList.remove("on", "last")); } }
 function xKiAdd(hs) {
   if (XKI.n >= 5) xKiReset(); const i = XKI.n++, s = XKI.s[i]; s.classList.toggle("hs", !!hs); s.classList.remove("on"); void s.offsetWidth; s.classList.add("on"); XKI.el.classList.add("on");
+  if (XKI.em) { XKI.nb.textContent = String(XKI.n); XKI.em.classList.toggle("hs", !!hs); XKI.sg.forEach((g, j) => { g.classList.toggle("on", j < XKI.n); g.classList.toggle("last", j === i); }); XKI.el.classList.remove("pop"); void XKI.el.offsetWidth; XKI.el.classList.add("pop"); }
   clearTimeout(XKI.t); XKI.t = setTimeout(() => XKI.el.classList.remove("on"), 5000);
   const f = 880 * Math.pow(1.122, i); // whole-step rise per kill in the round
   if (hs) { blip(f * 1.5, 0.06, "square", 0.12); blip(f * 2, 0.18, "sine", 0.18); setTimeout(() => blip(f * 3, 0.16, "triangle", 0.12), 45); }
@@ -3692,14 +3729,16 @@ function loop() {
   try {
     if (player) {
       let cx = player.x, cy = 1.6 - (player.ch || 0) + (player.y || 0), cz = player.z;
-      if (player !== xKL.p) xKLReset();
-      if (mode !== "duel" && player.hp <= 0) { const a = xSpec(running && !paused ? dt : 0); xTP.cur = null; if (a) { if (xTP.on && xKL.sp) { xTPCam(a, dt); xTP.cur = a; cx = xTP.x; cy = xTP.y; cz = xTP.z; } else { cx = a.g.position.x; cy = 1.75; cz = a.g.position.z; } } } else xTP.cur = null;
+      if (player !== xKL.p || (xKL.on && player.hp > 0)) xKLReset(); // observer pass: alive again (next round / revive) = back to own view
+      XOB.fp = XOB.orb = null;
+      if (mode !== "duel" && player.hp <= 0) { const a = xSpec(running && !paused ? dt : 0); xTP.cur = null; if (a) { if (xTP.on && xKL.sp) { xTPCam(a, dt); xTP.cur = a; cx = xTP.x; cy = xTP.y; cz = xTP.z; } else { const e = xObsEye(a, dt); XOB.fp = a; cx = e.x; cy = e.y; cz = e.z; } } else if (xKL.sp) { const o = xObsOrbit(running && !paused ? dt : 0); if (o) { XOB.orb = o; cx = o.x; cy = o.y; cz = o.z; } } } else xTP.cur = null;
       if (J.dr) { const tb = J.dr.tb ? 1.3 : 0; cx = J.dr.x + Math.sin(yaw) * tb; cy = J.dr.y + tb * 0.35; cz = J.dr.z + Math.cos(yaw) * tb; gun.visible = false; knife.visible = false; }
       if (shk > 0) { shk = Math.max(0, shk - 0.015); cx += (Math.random() - 0.5) * shk; cy += (Math.random() - 0.5) * shk * 0.6; cz += (Math.random() - 0.5) * shk; }
       // no head bob: the camera stays level while moving, as in Valorant
       camera.position.set(cx, cy, cz);
       const rk = Math.min(1, dt * (since > 0.1 ? (sprW === "Phantom" ? 11 : 8) : 1.5)); rcl -= rcl * rk; rclH -= rclH * rk; // smooth recovery
-      if (xTP.cur && !J.dr) camera.rotation.set(-0.12, xTP.yw, 0, "YXZ"); else { const cq = xCU > 0 ? xCon() : 0; if (xCOn && cq <= 0) xConEnd(); camera.rotation.set(pitch + rcl, yaw - rclH, cq > 0 ? Math.sin(performance.now() * 0.0042) * 0.02618 * Math.min(1, cq * 4) : 0, "YXZ"); } camera.updateMatrixWorld(); sfxL();
+      XOB.vx = cx; XOB.vz = cz; XOB.vy = J.dr ? yaw : xTP.cur ? xTP.yw : XOB.orb ? XOB.orb.yw : XOB.fp ? XOB.fpY : yaw - rclH;
+      if (xTP.cur && !J.dr) camera.rotation.set(-0.12, xTP.yw, 0, "YXZ"); else if (XOB.orb && !J.dr) camera.rotation.set(XOB.orb.p, XOB.orb.yw, 0, "YXZ"); else if (XOB.fp && !J.dr) camera.rotation.set(XOB.fpP, XOB.fpY, 0, "YXZ"); else { const cq = xCU > 0 ? xCon() : 0; if (xCOn && cq <= 0) xConEnd(); camera.rotation.set(pitch + rcl, yaw - rclH, cq > 0 ? Math.sin(performance.now() * 0.0042) * 0.02618 * Math.min(1, cq * 4) : 0, "YXZ"); } camera.updateMatrixWorld(); sfxL();
       const cw = mode === "aim" && typeof aimW === "function" ? aimW() : wName(), CW = WEAP[cw];
       const gt = S.xhd !== false && CW && running ? Math.min(40, gSpread(cw, CW) * 450) : 0;
       VM.xh = (VM.xh || 0) + (gt - (VM.xh || 0)) * Math.min(1, dt * (gt > (VM.xh || 0) ? 30 : 22)); // opens fast, closes fast
@@ -8584,8 +8623,12 @@ function minimap() {
     mmStatic(X, Z, k);
     mmx = real;
   }
-  mmx.clearRect(0, 0, W, W); mmx.drawImage(minimap.c, 0, 0); mmx.lineWidth = k;
+  mmx.clearRect(0, 0, W, W);
+  const rt = XOB.mr, vx = Number.isFinite(XOB.vx) ? XOB.vx : player.x, vz = Number.isFinite(XOB.vz) ? XOB.vz : player.z, vy = Number.isFinite(XOB.vy) ? XOB.vy : yaw; // observer pass: Rotate minimap (view yaw up, centred on the view)
+  minimap.r = rt ? vy : 0; if (rt) { mmx.save(); mmx.translate(W / 2, W / 2); mmx.rotate(vy); mmx.translate(-X(vx), -Z(vz)); }
+  mmx.drawImage(minimap.c, 0, 0); mmx.lineWidth = k;
   mmDyn(X, Z, k);
+  if (rt) mmx.restore();
 }
 function mmStatic(X, Z, k) {
   if (mode === "five" && (FV.map === "ascent" || FV.map === "bind" || FV.map === "haven" || FV.map === "split" || FV.map === "lotus" || FV.map === "breeze")) { // site letters + small callouts
@@ -8676,6 +8719,29 @@ setInterval(() => {
     if (xLocEl.xK !== k) { xLocEl.xK = k; xLocEl.style.left = Math.round(r.left) + "px"; xLocEl.style.top = Math.round(r.bottom + 6) + "px"; xLocEl.style.width = Math.round(r.width) + "px"; }
   }
 }, 250);
+// ---- observer pass: Rotate minimap setting (vs.minirot, default on) + team side panels (spectating / buy phase) + spectated teammate's HUD ----
+function xMiniRotLoad() { let v = null; try { v = localStorage.getItem("vs.minirot"); } catch (e) {} if (v == null && xAAMem.minirot != null) v = xAAMem.minirot; XOB.mr = v !== "0"; const cb = $("xMiniRot"); if (cb) cb.checked = XOB.mr; return XOB.mr; }
+{ xMiniRotLoad(); const cb = $("xMiniRot"); if (cb) cb.onchange = () => { XOB.mr = !!cb.checked; const v = XOB.mr ? "1" : "0"; xAAMem.minirot = v; try { localStorage.setItem("vs.minirot", v); } catch (e) {} }; }
+{ const d = document.createElement("div"); d.className = "x-obs"; d.id = "xObs"; d.setAttribute("aria-label", "Team status");
+  const sk = '<svg class="x-obk" viewBox="0 0 16 16" fill="#ece8e1" aria-label="Dead"><path d="M8 1.5C4.4 1.5 2 4 2 7.2c0 1.9.9 3.2 2.2 4V14h7.6v-2.8C13.1 10.4 14 9.1 14 7.2 14 4 11.6 1.5 8 1.5z"/><circle cx="5.7" cy="7.6" r="1.6" fill="#1a1d22"/><circle cx="10.3" cy="7.6" r="1.6" fill="#1a1d22"/></svg>';
+  ["al", "en"].forEach((t, ti) => { const c = document.createElement("div"); c.className = "x-obc " + t; for (let i = 0; i < 5; i++) { const r = document.createElement("div"); r.className = "x-obr";
+    r.innerHTML = '<span class="x-oba"></span><div class="x-obm"><p><b class="x-obn"></b><em class="x-obw"></em><span class="x-obcr"></span></p><div class="x-obh"><i class="hp"></i><i class="sh"></i></div><span class="x-obu"></span></div>' + sk;
+    c.appendChild(r); XOB.rows[ti].push({ r, a: r.querySelector(".x-oba"), n: r.querySelector(".x-obn"), w: r.querySelector(".x-obw"), cr: r.querySelector(".x-obcr"), hp: r.querySelector(".hp"), sh: r.querySelector(".sh"), u: r.querySelector(".x-obu"), k: "" }); }
+    d.appendChild(c); }); document.body.appendChild(d); XOB.el = d; }
+function xObsShow() { try { return mode === "five" && !FV.dm && !!player && $("game").style.display !== "none" && ((player.hp <= 0 && xKL.sp) || (running && FV.buy > 0)); } catch (e) { return false; } }
+function xObsTick(force) { const on = xObsShow(); if (XOB.el.classList.contains("on") !== on) XOB.el.classList.toggle("on", on); if (!on) return;
+  const now = performance.now(); if (!force && now - XOB.t < 120) return; XOB.t = now; const T = sbTeams(), buy = FV.buy > 0;
+  T.forEach((L, ti) => XOB.rows[ti].forEach((R, i) => { const n = L[i]; R.r.hidden = !n; if (!n) return; const me = n === "You", u = me ? player : sbUnit(n);
+    let ag = n; try { ag = me ? J.pick || "Jett" : (u && xAg(u)) || (typeof xAgOf === "function" ? xAgOf(n) : n); } catch (e) {}
+    const al = me ? player.hp > 0 : !!(u && u.alive && u.hp > 0), hp = al ? Math.max(0, Math.min(100, u.hp)) : 0, ar = al ? Math.max(0, Math.min(50, u.armor || 0)) : 0;
+    let w = "—"; try { w = me ? (rw === "knife" ? "Knife" : wName()) : (u && u.w) || "Classic"; } catch (e) {}
+    const ul = sbUlt(n), cr = ti === 0 && buy ? String(sbCred(n, SB[n] || {})) : "";
+    const k = [ag, n, al ? 1 : 0, Math.round(hp), Math.round(ar), w, ul[0], ul[1], cr].join("|"); if (k === R.k) return; R.k = k;
+    R.r.className = "x-obr" + (me ? " me" : "") + (al ? "" : " dead"); R.a.textContent = String(ag)[0].toUpperCase(); R.a.style.background = mmAgC(String(ag));
+    R.n.textContent = me ? "You" : n; R.w.textContent = al ? w : ""; R.cr.textContent = cr; R.hp.style.width = hp * 0.8 + "%"; R.sh.style.width = ar * 0.4 + "%"; // bar = 100 hp + 50 shield
+    R.u.classList.toggle("rdy", ul[1] > 0 && ul[0] >= ul[1]); R.u.setAttribute("aria-label", "Ult " + ul[0] + " of " + ul[1]); R.u.innerHTML = Array.from({ length: ul[1] }, (_, j) => j < ul[0] ? '<i class="on"></i>' : "<i></i>").join(""); })); }
+(window.XHK || (window.XHK = [])).push(() => xObsTick(false));
+{ const h0 = xHud; xHud = function () { const r = h0.apply(this, arguments); try { const a = player && player.hp <= 0 && xKL.sp ? xKL.cur : null; if (a && a.alive) { const w = a.w || "Classic", W = WEAP[w] || {}; setT("xWn", w); setT("xMag", a.xAmW === w && a.xAm > 0 ? a.xAm : W.mag || "—"); setT("xRs", W.mag ? W.mag * 3 : "—"); setT("xHp", Math.max(0, Math.ceil(a.hp))); setT("xArm", Math.ceil(a.armor || 0)); } } catch (e) {} return r; }; } // spectated teammate's weapon / ammo / health in the HUD
 // ---- Settings: FPS limit, resolution, render scale, anti-aliasing, aim assist, shadows ----
 const XS = { cap: "auto", res: "std", scale: xLowDev ? "0.8" : "auto", aa: xAA0, aim: "aim", shd: "off" }; // touch: low preset (AA off, 0.8 scale, 512 shadows)
 // ---- Keybinds: XS.keys maps logical action -> physical code; one capture-phase lookup at the keydown entry translates to the game's default codes ----
