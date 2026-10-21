@@ -4025,6 +4025,280 @@ $("xBG").onclick = (e) => { const b = e.target.closest("button"); if (!b) return
 $("xBuy").addEventListener("contextmenu", (e) => { e.preventDefault(); $("xBL").hidden = !$("xBL").hidden; });
 mapG = xMG(); mapG.visible = false; scene.add(mapG); solids = []; boxes = [];
 MAPS.five = { g: mapG, solids, boxes };
+// ---- vA zone kit (Ascent + Bind only): own textures + material cache, merged decoration, site letters, plant-zone paint, sign atlas, light pools, crates, lintels, ceilings ----
+// everything here is in the map group's built frame (metres, no XMK scaling) except ascCluster, which goes through box() like the authored crate lists
+const ASC_VIS = { ascent: { letters: [], zones: [], crates: 0, adds: 0, ceil: 0 }, bind: { letters: [], zones: [], crates: 0, adds: 0, ceil: 0 } };
+const ASC_TEXC = new Map(), ASC_MATC = new Map();
+function ascCount(g) { const a = g.add; let n = 0; g.add = function (...o) { n += o.length; return a.apply(this, o); }; return () => { g.add = a; return n; }; } // counts meshes/groups added to a map group while it builds
+function ascTex(name, s, draw) { // own cache: xTexMk keys on draw.toString(), these are named instead
+  let t = ASC_TEXC.get(name); if (t) return t; const c = document.createElement("canvas"); c.width = c.height = s; const g = c.getContext("2d"), R = (a, b) => a + Math.random() * (b - a);
+  const raw = draw(g, s, R); if (!raw) { const d = g.getImageData(0, 0, s, s), p = d.data; for (let i = 0; i < p.length; i += 4) { const r = (Math.random() - 0.5) * 14; p[i] += r; p[i + 1] += r; p[i + 2] += r; } g.putImageData(d, 0, 0); }
+  t = new THREE.CanvasTexture(c); t.generateMipmaps = true; t.minFilter = THREE.LinearMipmapLinearFilter; t.anisotropy = 4; xTexRep(t); ASC_TEXC.set(name, t); return t;
+}
+const ASC_TD = {
+  stone: (g, s, R) => { g.fillStyle = "#857258"; g.fillRect(0, 0, s, s); // limestone ashlar, 4 m per tile: 8 courses of 0.5 m
+    for (let y = 0, r = 0; y < s; y += 32, r++) for (let x = r % 2 ? -32 : 0; x < s; x += 64) { g.fillStyle = `hsl(${R(30, 40)},${R(22, 32)}%,${R(70, 80)}%)`; g.fillRect(x + 2, y + 2, 60, 28); g.fillStyle = "rgba(255,255,255,.14)"; g.fillRect(x + 2, y + 2, 60, 3); g.fillStyle = "rgba(80,60,40,.12)"; g.fillRect(x + 2, y + 27, 60, 3); } },
+  terraT: (g, s, R) => { g.fillStyle = "#6e3a22"; g.fillRect(0, 0, s, s); // terracotta floor tiles, 0.5 m
+    for (let y = 0; y < s; y += 32) for (let x = 0; x < s; x += 32) { g.fillStyle = `hsl(${R(14, 22)},${R(48, 58)}%,${R(42, 52)}%)`; g.fillRect(x + 2, y + 2, 28, 28); }
+    for (let y = 0; y < s; y += 64) for (let x = 0; x < s; x += 64) { g.fillStyle = "#e9d7b4"; g.beginPath(); g.moveTo(x, y - 6); g.lineTo(x + 6, y); g.lineTo(x, y + 6); g.lineTo(x - 6, y); g.fill(); } },
+  marble: (g, s, R) => { for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) { g.fillStyle = (i + j) % 2 ? `hsl(${R(18, 24)},${R(30, 40)}%,${R(70, 76)}%)` : `hsl(${R(38, 44)},${R(30, 38)}%,${R(86, 90)}%)`; g.fillRect(i * 64, j * 64, 64, 64); } // site marble, 1 m checks
+    g.strokeStyle = "rgba(120,100,80,.25)"; g.lineWidth = 2; for (let k = 0; k <= s; k += 64) { g.beginPath(); g.moveTo(k, 0); g.lineTo(k, s); g.moveTo(0, k); g.lineTo(s, k); g.stroke(); }
+    g.strokeStyle = "rgba(150,120,100,.18)"; g.lineWidth = 1; for (let i = 0; i < 26; i++) { g.beginPath(); let x = R(0, s), y = R(0, s); g.moveTo(x, y); for (let k = 0; k < 4; k++) { x += R(-30, 30); y += R(-30, 30); g.lineTo(x, y); } g.stroke(); } },
+  plank: (g, s, R) => { g.fillStyle = "#4a2e18"; g.fillRect(0, 0, s, s); // wood floor, 0.25 m boards
+    for (let y = 0; y < s; y += 16) { const off = R(0, s); for (let x = -s; x < s; x += 128) { g.fillStyle = `hsl(${R(24, 30)},${R(40, 50)}%,${R(30, 40)}%)`; g.fillRect(x + off, y + 1, 126, 14); } } },
+  beam: (g, s, R) => { g.fillStyle = "#5a3a20"; g.fillRect(0, 0, s, s); for (let y = 0; y < s; y += 32) { g.fillStyle = `hsl(26,${R(35, 45)}%,${R(26, 34)}%)`; g.fillRect(0, y + 2, s, 28); } }, // ceiling boards
+  crateW: (g, s, R) => { g.fillStyle = "#a8763f"; g.fillRect(0, 0, s, s); for (let y = 0; y < s; y += 21) { g.fillStyle = `hsl(30,${R(42, 52)}%,${R(40, 48)}%)`; g.fillRect(0, y + 1, s, 19); } // crate face: planks, frame, brace, stencil
+    g.strokeStyle = "#5c3a1a"; g.lineWidth = 12; g.strokeRect(6, 6, s - 12, s - 12); g.beginPath(); g.moveTo(12, 12); g.lineTo(s - 12, s - 12); g.stroke();
+    g.fillStyle = "rgba(30,20,10,.55)"; g.font = "900 22px Arial"; g.textAlign = "center"; g.fillText("VLR-07", s / 2 + 18, s / 2 + 34); },
+  crateM: (g, s, R) => { g.fillStyle = "#2f7f86"; g.fillRect(0, 0, s, s); g.fillStyle = "rgba(255,255,255,.08)"; for (let x = 14; x < s - 10; x += 14) g.fillRect(x, 10, 5, s - 20); // ribbed metal crate
+    g.strokeStyle = "#1b4a50"; g.lineWidth = 10; g.strokeRect(5, 5, s - 10, s - 10); g.fillStyle = "#e8b53a"; g.fillRect(10, s / 2 - 8, s - 20, 16); g.fillStyle = "#1d2125"; for (let x = 10; x < s - 10; x += 16) g.fillRect(x, s / 2 - 8, 8, 16); },
+  banner: (g, s) => { g.fillStyle = "#f4f0e6"; g.fillRect(0, 0, s, s); g.fillStyle = "#d9d2c2"; g.fillRect(0, 0, 10, s); g.fillRect(s - 10, 0, 10, s); // tinted by material colour
+    g.fillStyle = "#ffffff"; g.beginPath(); g.moveTo(s / 2, s * 0.28); g.lineTo(s * 0.72, s * 0.5); g.lineTo(s / 2, s * 0.72); g.lineTo(s * 0.28, s * 0.5); g.fill(); g.fillStyle = "#bdb5a5"; g.fillRect(0, s - 18, s, 8); },
+  mosaic: (g, s, R) => { g.fillStyle = "#e8d6b0"; g.fillRect(0, 0, s, s); const q = 32; // Bind zellige floor: 8-point stars, 0.5 m
+    for (let y = 0; y < s; y += q) for (let x = 0; x < s; x += q) { const c = ((x + y) / q) % 2 ? "#1f8a8a" : "#b8562e"; g.fillStyle = c; g.save(); g.translate(x + q / 2, y + q / 2); for (let k = 0; k < 2; k++) { g.rotate(Math.PI / 4); g.fillRect(-9, -9, 18, 18); } g.restore(); g.fillStyle = "#f4ead2"; g.beginPath(); g.arc(x + q / 2, y + q / 2, 4, 0, 7); g.fill(); }
+    g.strokeStyle = "rgba(90,60,30,.35)"; g.lineWidth = 1; for (let k = 0; k <= s; k += q) { g.beginPath(); g.moveTo(k, 0); g.lineTo(k, s); g.moveTo(0, k); g.lineTo(s, k); g.stroke(); } },
+  brick: (g, s, R) => { g.fillStyle = "#8a6a46"; g.fillRect(0, 0, s, s); // sandstone pavers, 0.5 x 0.25 m
+    for (let y = 0, r = 0; y < s; y += 16, r++) for (let x = r % 2 ? -16 : 0; x < s; x += 32) { g.fillStyle = `hsl(${R(30, 36)},${R(40, 50)}%,${R(58, 68)}%)`; g.fillRect(x + 1, y + 1, 30, 14); } },
+  rug: (g, s, R) => { g.fillStyle = "#8e2a22"; g.fillRect(0, 0, s, s); g.strokeStyle = "#e0b45a"; g.lineWidth = 8; g.strokeRect(10, 10, s - 20, s - 20); g.strokeStyle = "#1f5f7a"; g.lineWidth = 5; g.strokeRect(24, 24, s - 48, s - 48); // woven rug
+    g.fillStyle = "#e0b45a"; g.save(); g.translate(s / 2, s / 2); g.rotate(Math.PI / 4); g.fillRect(-28, -28, 56, 56); g.fillStyle = "#1f5f7a"; g.fillRect(-14, -14, 28, 28); g.restore();
+    g.fillStyle = "rgba(255,230,180,.18)"; for (let y = 34; y < s - 34; y += 8) g.fillRect(34, y, s - 68, 2); },
+  tileW: (g, s, R) => { g.fillStyle = "#9fb3b8"; g.fillRect(0, 0, s, s); for (let y = 0; y < s; y += 16) for (let x = 0; x < s; x += 16) { g.fillStyle = (x / 16 + y / 16) % 7 ? `hsl(190,${R(10, 18)}%,${R(86, 92)}%)` : "#2f7fa0"; g.fillRect(x + 1, y + 1, 14, 14); } }, // shower tiles, 0.25 m
+  adobe: (g, s, R) => { g.fillStyle = "#c99a68"; g.fillRect(0, 0, s, s); for (let i = 0; i < 90; i++) { g.fillStyle = ["rgba(160,110,60,.14)", "rgba(240,205,160,.16)"][i % 2]; g.beginPath(); g.arc(R(0, s), R(0, s), R(4, 28), 0, 7); g.fill(); } }, // backdrop clay
+  glow: (g, s) => { const gr = g.createRadialGradient(s / 2, s / 2, 0, s / 2, s / 2, s / 2); gr.addColorStop(0, "rgba(255,255,255,1)"); gr.addColorStop(0.45, "rgba(255,255,255,.45)"); gr.addColorStop(1, "rgba(255,255,255,0)"); g.clearRect(0, 0, s, s); g.fillStyle = gr; g.fillRect(0, 0, s, s); return true; },
+};
+function ascT(name) { return ascTex(name, name === "glow" ? 64 : name === "crateW" || name === "crateM" || name === "banner" || name === "rug" ? 128 : 256, ASC_TD[name]); }
+function ascMat(name, col, side) { const k = name + "|" + (col == null ? "" : col) + "|" + (side ? 1 : 0); let m = ASC_MATC.get(k); if (m) return m;
+  m = name ? new THREE.MeshLambertMaterial({ map: ascT(name) }) : new THREE.MeshLambertMaterial({}); if (col != null && m.color) m.color.setHex(col); if (side) m.side = THREE.DoubleSide; ASC_MATC.set(k, m); return m; }
+function ascBasic(col) { const k = "basic|" + col; let m = ASC_MATC.get(k); if (!m) { m = new THREE.MeshBasicMaterial({ color: col }); ASC_MATC.set(k, m); } return m; }
+// merged decoration: P(material, geometry, x, y, z, rx, ry, rz) -> one mesh per material on flush (bullets pass through, no shadows cast)
+function ascKit() {
+  const D = new Map(), root = new THREE.Group();
+  const P = (mat, geo, x, y, z, rx, ry, rz) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.rotation.set(rx || 0, ry || 0, rz || 0); root.add(m); let a = D.get(mat); if (!a) D.set(mat, (a = [])); a.push(m); return m; };
+  const flush = (g, recv) => { root.updateMatrixWorld(true); const inv = new THREE.Matrix4(); let n = 0;
+    D.forEach((arr, mat) => { if (!arr.length) return; const mm = new THREE.Mesh(xMergeGeo(arr, inv), mat); mm.name = "xDeco"; mm.raycast = () => {}; mm.castShadow = false; mm.receiveShadow = !!recv; mm.updateMatrix(); mm.matrixAutoUpdate = false; g.add(mm); n++; });
+    D.clear(); return n; };
+  return { P, flush };
+}
+const ascR = (x, z, ry, lx, lz) => [x + lx * Math.cos(ry) + lz * Math.sin(ry), z - lx * Math.sin(ry) + lz * Math.cos(ry)]; // local (lx, lz) of a frame at (x, z) turned ry -> world
+function ascUVBox(w, h, d, T) { return xUV(new THREE.BoxGeometry(w, h, d), w, h, d, T || 4); }
+// floor patch per zone (in solids so bullet decals land on it, not on the base floor 1 cm below)
+function ascFloor(g, mat, x1, x2, z1, z2, T, y) { const m = xFloor(x2 - x1, z2 - z1, mat, T || 4); m.rotation.x = -Math.PI / 2; m.position.set((x1 + x2) / 2, y || 0.012, (z1 + z2) / 2); g.add(m); solids.push(m); return m; }
+// a solid prop in the built frame, same contract as box(): mesh in solids, collider column in boxes
+function ascSolid(g, x, z, w, h, d, mat, T) { const m = new THREE.Mesh(ascUVBox(w, h, d, T || 2), mat); m.position.set(x, h / 2, z); m.castShadow = m.receiveShadow = true; g.add(m); solids.push(m); boxes.push({ x1: x - w / 2, x2: x + w / 2, z1: z - d / 2, z2: z + d / 2, h, vA: 1 }); return boxes[boxes.length - 1]; }
+// crates through box() (authored frame, XMK applies to centres only); stacks are two cubes in one geometry, collider is the whole stack
+function ascStackGeo(w, h, d, n) { const arr = [], hh = h / n; for (let i = 0; i < n; i++) { const m = new THREE.Mesh(new THREE.BoxGeometry(w, hh, d)); m.position.y = -h / 2 + hh * (i + 0.5); m.updateMatrixWorld(true); arr.push(m); } return xMergeGeo(arr, new THREE.Matrix4()); }
+function ascCrate(k, x, z, w, h, d, mat) { box(x, z, w, h, d, 0); const m = solids[solids.length - 1]; boxes[boxes.length - 1].crate = boxes[boxes.length - 1].vA = 1; m.material = mat; if (h > 2) m.geometry = ascStackGeo(w, h, d, 2); ASC_VIS[k].crates++; return m; }
+function ascCluster(k, x, z, kind, mw, mm) { // colliders stay inside the old crate footprint, so nav lines keep their clearance
+  const s = 1.4;
+  if (kind === "s") ascCrate(k, x, z, s, s, s, mw); // standard 1.4 m crate: jumpable
+  else if (kind === "t") ascCrate(k, x, z, s, 2.8, s, mm); // double stack: not jumpable
+  else if (kind === "L") { ascCrate(k, x - 0.75, z - 0.75, s, 2.8, s, mm); ascCrate(k, x + 0.75, z - 0.75, s, s, s, mw); ascCrate(k, x - 0.7, z + 0.8, 1.2, 1.2, 1.2, mw); }
+  else if (kind === "P") { ascCrate(k, x - 0.75, z, s, s, s, mw); ascCrate(k, x + 0.75, z, s, 2.8, s, mm); }
+}
+// barrel cluster against a wall: one collider box (h 1.1) around 2-3 barrels
+function ascBarrels(g, kit, k, x, z, n, mat, band) { const gB = xG("Cylinder", 0.32, 0.32, 1.0, 12), gR = xG("Cylinder", 0.335, 0.335, 0.07, 12), P = [[-0.36, -0.2], [0.36, -0.2], [0, 0.38]].slice(0, n);
+  P.forEach(([a, b]) => { kit.P(mat, gB, x + a, 0.5, z + b); kit.P(band, gR, x + a, 0.25, z + b); kit.P(band, gR, x + a, 0.75, z + b); });
+  boxes.push({ x1: x - 0.72, x2: x + 0.72, z1: z - 0.56, z2: z + 0.74, h: 1.1, crate: 1, vA: 1 }); ASC_VIS[k].crates++;
+  const c = new THREE.Mesh(xG("Box", 1.44, 1.1, 1.3), mat); c.visible = false; c.position.set(x, 0.55, z + 0.09); g.add(c); solids.push(c); } // invisible hit box so bullets stop on the barrels
+// big painted site letter in a ring (wall: local +z out of the wall; floor: flat)
+function ascLetter(g, k, ch, x, y, z, ry, s, ring, fill, flat) {
+  const c = document.createElement("canvas"); c.width = c.height = 256; const q = c.getContext("2d");
+  q.lineWidth = 16; q.strokeStyle = ring; q.beginPath(); q.arc(128, 128, 110, 0, 7); q.stroke(); q.lineWidth = 4; q.beginPath(); q.arc(128, 128, 92, 0, 7); q.stroke();
+  q.font = "900 160px Arial, sans-serif"; q.textAlign = "center"; q.textBaseline = "middle"; q.fillStyle = fill; q.fillText(ch, 128, 138);
+  const t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding;
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(s, s), new THREE.MeshLambertMaterial({ map: t, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -3 }));
+  m.position.set(x, y, z); if (flat) { m.rotation.x = -Math.PI / 2; m.rotation.z = ry; } else m.rotation.y = ry; m.renderOrder = 1; g.add(m);
+  ASC_VIS[k].letters.push({ ch, at: flat ? "floor" : "wall", x, z }); return m;
+}
+// plant-zone paint: border line around the real plant rect (|dx| < 7, |dz| < 6, see inSite), hatch dashes inside it, corner brackets
+function ascPlant(kit, k, site, cx, cz, col) { const mat = ascBasic(col), y = 0.036, t = 0.2, x1 = cx - 7, x2 = cx + 7, z1 = cz - 6, z2 = cz + 6;
+  const gH = new THREE.BoxGeometry(14 + t, 0.012, t), gV = new THREE.BoxGeometry(t, 0.012, 12), gD = new THREE.BoxGeometry(0.14, 0.012, 0.75), gC = new THREE.BoxGeometry(1.6, 0.014, 0.4), gC2 = new THREE.BoxGeometry(0.4, 0.014, 1.6);
+  kit.P(mat, gH, cx, y, z1); kit.P(mat, gH, cx, y, z2); kit.P(mat, gV, x1, y, cz); kit.P(mat, gV, x2, y, cz);
+  for (let x = x1 + 0.8; x < x2 - 0.5; x += 1.1) { kit.P(mat, gD, x, y, z1 + 0.5, 0, Math.PI / 4); kit.P(mat, gD, x, y, z2 - 0.5, 0, Math.PI / 4); }
+  for (let z = z1 + 1.6; z < z2 - 1.2; z += 1.1) { kit.P(mat, gD, x1 + 0.5, y, z, 0, -Math.PI / 4); kit.P(mat, gD, x2 - 0.5, y, z, 0, -Math.PI / 4); }
+  [[x1, z1, 1, 1], [x2, z1, -1, 1], [x1, z2, 1, -1], [x2, z2, -1, -1]].forEach(([x, z, sx, sz]) => { kit.P(mat, gC, x + sx * 0.8, y + 0.002, z + sz * 0.2); kit.P(mat, gC2, x + sx * 0.2, y + 0.002, z + sz * 0.8); });
+  ASC_VIS[k].zones.push({ site, x: cx, z: cz });
+}
+// callout plaques: one 1024 x 1024 atlas (16 cells of 512 x 128) and one merged mesh; list [text, x, y, z, ry]
+function ascSigns(g, list, bg, fg) {
+  const c = document.createElement("canvas"); c.width = c.height = 1024; const q = c.getContext("2d");
+  list.slice(0, 16).forEach(([t], i) => { const cx = (i % 2) * 512, cy = (i >> 1) * 128; q.fillStyle = bg; q.fillRect(cx + 4, cy + 4, 504, 120); q.strokeStyle = fg; q.lineWidth = 5; q.strokeRect(cx + 16, cy + 16, 480, 96);
+    q.font = "800 56px Arial, sans-serif"; q.textAlign = "center"; q.textBaseline = "middle"; q.fillStyle = fg; q.fillText(t, cx + 256, cy + 68); });
+  const tx = new THREE.CanvasTexture(c); tx.encoding = THREE.sRGBEncoding; const mat = new THREE.MeshLambertMaterial({ map: tx }), kit = ascKit();
+  list.slice(0, 16).forEach(([t, x, y, z, ry], i) => { const ge = new THREE.PlaneGeometry(2.4, 0.6), uv = ge.attributes.uv, u0 = (i % 2) * 0.5, v0 = 1 - ((i >> 1) + 1) * 0.125;
+    for (let j = 0; j < uv.count; j++) uv.setXY(j, u0 + uv.getX(j) * 0.5, v0 + uv.getY(j) * 0.125); kit.P(mat, ge, x, y, z, 0, ry); });
+  return kit.flush(g);
+}
+// fake per-zone light: additive glow pools on the floor ([x, z, r]) and washes on walls ([x, y, z, r, ry]); one mesh, no real lights (no shader / light-count change)
+function ascPools(g, floor, walls, col, op) { const mat = new THREE.MeshBasicMaterial({ map: ascT("glow"), color: col, transparent: true, opacity: op || 0.42, blending: THREE.AdditiveBlending, depthWrite: false }), kit = ascKit();
+  floor.forEach(([x, z, r]) => kit.P(mat, new THREE.PlaneGeometry(r * 2, r * 2), x, 0.05, z, -Math.PI / 2));
+  walls.forEach(([x, y, z, r, ry]) => { const [px, pz] = ascR(x, z, ry, 0, 0.06); kit.P(mat, new THREE.PlaneGeometry(r * 2, r * 2), px, y, pz, 0, ry); });
+  const n = kit.flush(g); return n;
+}
+// doorway header (solid for bullets, above head height so no collider) + pilasters / cornice on both faces
+function ascLintel(g, kit, x, z, w, d, ry, y0, y1, mat, trim) {
+  const h = y1 - y0, m = new THREE.Mesh(ascUVBox(w, h, d, 4), mat); m.position.set(x, y0 + h / 2, z); m.rotation.y = ry; m.castShadow = m.receiveShadow = true; g.add(m); solids.push(m);
+  if (kit && trim) { const gP = new THREE.BoxGeometry(0.45, y0 + 0.3, 0.16), gK = new THREE.BoxGeometry(w + 1.2, 0.28, 0.2), gS = new THREE.BoxGeometry(0.7, 0.9, 0.14);
+    for (const sd of [1, -1]) { const oz = sd * (d / 2 + 0.07);
+      for (const sx of [1, -1]) { const [px, pz] = ascR(x, z, ry, sx * (w / 2 + 0.23), oz); kit.P(trim, gP, px, (y0 + 0.3) / 2, pz, 0, ry); }
+      let [px, pz] = ascR(x, z, ry, 0, sd * (d / 2 + 0.1)); kit.P(trim, gK, px, y0 + 0.14, pz, 0, ry); [px, pz] = ascR(x, z, ry, 0, sd * (d / 2 + 0.07)); kit.P(trim, gS, px, y0 + 0.75, pz, 0, ry); } }
+  return m;
+}
+// corridor / room ceiling: solid slab (bullets, decals) + beams underneath (merged)
+function ascCeil(g, kit, k, x1, x2, z1, z2, y, mat, beam) { const w = x2 - x1, d = z2 - z1, m = new THREE.Mesh(ascUVBox(w, 0.3, d, 4), mat); m.position.set((x1 + x2) / 2, y + 0.15, (z1 + z2) / 2); m.receiveShadow = m.castShadow = true; g.add(m); solids.push(m); ASC_VIS[k].ceil++;
+  if (kit && beam) { const along = w >= d, L = along ? w : d, n = Math.max(2, Math.round(L / 1.8)), gb = along ? new THREE.BoxGeometry(0.24, 0.3, d) : new THREE.BoxGeometry(w, 0.3, 0.24);
+    for (let i = 1; i < n; i++) { const t = (along ? x1 : z1) + (i * L) / n; kit.P(beam, gb, along ? t : (x1 + x2) / 2, y - 0.15, along ? (z1 + z2) / 2 : t); } }
+  return m;
+}
+// gable roof over a block: two tilted slabs + a triangular gable mass (prism geometry)
+function ascPrism() { const p = [-1, 0, -0.5, 0, 1, -0.5, 1, 0, -0.5, -1, 0, 0.5, 1, 0, 0.5, 0, 1, 0.5, -1, 0, -0.5, -1, 0, 0.5, 0, 1, 0.5, -1, 0, -0.5, 0, 1, 0.5, 0, 1, -0.5, 1, 0, -0.5, 0, 1, -0.5, 0, 1, 0.5, 1, 0, -0.5, 0, 1, 0.5, 1, 0, 0.5];
+  const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute(p, 3)); g.setAttribute("uv", new THREE.Float32BufferAttribute(new Array((p.length / 3) * 2).fill(0).map((v, i) => (i % 2 ? p[(i >> 1) * 3 + 1] : p[(i >> 1) * 3] * 0.5 + p[(i >> 1) * 3 + 2])), 2)); g.computeVertexNormals(); return g; }
+function ascGable(kit, roof, mass, cx, cz, w, d, y, rise) { const along = w >= d, L = (along ? w : d) + 0.5, half = (along ? d : w) / 2 + 0.5, sl = Math.hypot(half, rise), a = Math.atan2(rise, half);
+  const ge = new THREE.BoxGeometry(along ? L : sl, 0.2, along ? sl : L);
+  if (along) { kit.P(roof, ge, cx, y + rise / 2, cz - half / 2, -a); kit.P(roof, ge, cx, y + rise / 2, cz + half / 2, a); }
+  else { kit.P(roof, ge, cx - half / 2, y + rise / 2, cz, 0, 0, a); kit.P(roof, ge, cx + half / 2, y + rise / 2, cz, 0, 0, -a); }
+  const pm = kit.P(mass, ascPrism(), cx, y, cz, 0, along ? Math.PI / 2 : 0); pm.scale.set(half - 0.45, rise - 0.12, L - 0.6);
+}
+// fog per map while that map is on screen (useMap resets it for every other map)
+function ascFog(g, col, near, far) { const m = new THREE.Mesh(new THREE.PlaneGeometry(0.01, 0.01), new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false })); m.name = "xDeco"; m.frustumCulled = false; m.raycast = () => {}; m.position.set(0, -1, 0);
+  m.onBeforeRender = () => { try { if (scene.fog && mode === "five") { scene.fog.color.setHex(col); scene.fog.near = near; scene.fog.far = far; } } catch (e) {} }; g.add(m); return m; }
+// Ascent zones (vA): runs inside the Ascent block (XMK = AK) right after the wall list; crates go through box() (authored frame), the rest is in the built frame
+function ascBuildAscentZones(s0) {
+  const K = "ascent", g = mapG, A = AK, HP = Math.PI / 2, kit = ascKit(), [ax, az] = ASC_SITES.A, [bx, bz] = ASC_SITES.B;
+  // zone palettes: walls re-tinted by area (A side rose plaster, B side pale stone, mid ochre, spawns cool), outer walls in limestone ashlar
+  const zm = {}; const zMat = (k, c) => zm[k] || (zm[k] = (() => { const m = XMA.wall.clone(); if (m.color) m.color.setHex(c); return m; })());
+  const zoneOf = (x, z) => (z > 36 ? "atk" : z < -40 ? "def" : x < -14 ? "A" : x > 14 ? "B" : "mid"), ZC = { atk: 0xe4e7ea, def: 0xe4e7ea, A: 0xffd3b4, B: 0xeef0ee, mid: 0xffe6b0 };
+  const outer = ascMat("stone", 0xfff4e4);
+  for (let i = s0; i < solids.length; i++) { const m = solids[i]; if (m.material !== XMA.wall) continue; const p = m.position;
+    m.material = Math.abs(p.x) > 47 || Math.abs(p.z) > 52 ? outer : zMat(zoneOf(p.x, p.z), ZC[zoneOf(p.x, p.z)]); }
+  // floors per zone (attacker / defender spawn paving, A Main terracotta, B Main grey slabs, Mid Bottom warm stone, Market + Tree wood, sites marble)
+  const fAtk = ascFloor(g, ascMat("stone", 0xd2d8dc), -47.96, 47.96, 38.72, 52.36, 4);
+  ascFloor(g, ascMat("stone", 0xd2d8dc), -47.96, 47.96, -52.36, -40.5, 4);
+  ascFloor(g, ascMat("terraT"), -44.88, -35.2, 3.52, 38.72, 4); ascFloor(g, ascMat("stone", 0xc9d2d6), 35.2, 44.88, 3.52, 38.72, 4);
+  ascFloor(g, ascMat("stone", 0xf2dcb4), -7.04, 7.04, 26.4, 38.72, 4);
+  ascFloor(g, ascMat("plank"), 9.24, 19.36, -17.16, -7.48, 3); ascFloor(g, ascMat("plank"), -22.44, -15.84, -17.6, -9.24, 3);
+  ascFloor(g, ascMat("marble"), ax - 9, ax + 9, az - 8, az + 8, 4, 0.014); ascFloor(g, ascMat("marble", 0xe8f0f0), bx - 9, bx + 9, bz - 8, bz + 8, 4, 0.014);
+  // site identity: big ring letters on the wall behind each site and on the floor, plant-zone paint on the real plant rect
+  ascLetter(g, K, "A", -15.86, 4, -27.3, -HP, 4.5, "#f2c94c", "#fff6e2"); ascLetter(g, K, "B", 15.86, 4, -27.3, HP, 4.5, "#f2c94c", "#fff6e2");
+  ascLetter(g, K, "A", -47.92, 5.9, az, HP, 4, "#a8322a", "#a8322a"); ascLetter(g, K, "B", 47.92, 5.9, bz, -HP, 4, "#a8322a", "#a8322a");
+  ascLetter(g, K, "A", ax, 0.03, az, 0, 6.5, "rgba(255,246,226,.85)", "rgba(255,246,226,.85)", true); ascLetter(g, K, "B", bx, 0.03, bz, 0, 6.5, "rgba(255,246,226,.85)", "rgba(255,246,226,.85)", true);
+  ascPlant(kit, K, "A", ax, az, 0xf2c94c); ascPlant(kit, K, "B", bx, bz, 0xf2c94c);
+  // crates at Valorant scale: 1.4 m standard (jumpable), 2.8 m double stacks; each cluster sits inside the old crate footprint (authored frame)
+  const cw = ascMat("crateW"), cm = ascMat("crateM");
+  [[-31, -17, "s"], [-51, -7, "L"], [-47, 4, "s"], [-47, 24, "s"], [-50, 36, "t"], [0, 10, "L"], [0.5, 25, "t"], [-8, 20, "s"], [9, 2, "s"], [-4, 34, "s"], [25, -2, "P"],
+   [30, -26, "L"], [41, -17, "s"], [36, -38, "s"], [47, 24, "s"], [50, 36, "t"], [-12, 52, "s"], [12, 52, "s"], [-12, -52, "s"], [12, -52, "s"]].forEach(([x, z, k]) => ascCluster(K, x, z, k, cw, cm));
+  // new site cover (built frame, clear of every nav edge): A low stone wall 1.0 m (crouch cover), B 1.3 m (standing cover)
+  const sw = ascMat("stone", 0xf6ead6), cap = ascMat("stone", 0xfffaf0);
+  ascSolid(g, -27, -24, 3, 1.0, 0.6, sw).crate = 1; kit.P(cap, new THREE.BoxGeometry(3.12, 0.1, 0.72), -27, 1.05, -24);
+  ascSolid(g, 34, -25, 3, 1.3, 0.6, sw).crate = 1; kit.P(cap, new THREE.BoxGeometry(3.12, 0.1, 0.72), 34, 1.35, -25);
+  // barrel clusters tucked into corners
+  const brl = ascMat("", 0x7a4a2a), band = ascMat("", 0x2b2d30);
+  [[-46.9, 51.4], [46.9, -51.4], [-44.1, 10], [44.1, 10], [9.9, -16.3]].forEach(([x, z]) => ascBarrels(g, kit, K, x, z, 3, brl, band));
+  // ceilings: Market (indoor room) and Mid Bottom (covered passage), beams underneath
+  const beam = ascMat("beam", 0x8a5a34), slab = ascMat("beam", 0xcfa77a);
+  ascCeil(g, kit, K, 9.24, 19.36, -17.16, -7.48, 4.2, slab, beam); ascCeil(g, kit, K, -7.04, 7.04, 26.9, 38.2, 4.6, slab, beam);
+  // doorways: headers make 3-3.5 m wide x 3.1 m openings; wide gates get 4.5 m arches; stone pilasters + cornice on both faces
+  const trim = ascMat("stone", 0xfff1dc);
+  ascLintel(g, kit, 14.08, -7.04, 3.52, 0.88, 0, 3.1, 7, zMat("mid", ZC.mid), trim); // Market door
+  ascLintel(g, kit, -22.88, -10.78, 3.08, 0.88, HP, 3.1, 7, zMat("A", ZC.A), trim); // Tree door
+  ascLintel(g, kit, 0, 26.7, 14.08, 0.6, 0, 4.6, 7, zMat("mid", ZC.mid), trim); ascLintel(g, kit, 0, 38.42, 14.08, 0.6, 0, 4.6, 7, zMat("atk", ZC.atk), trim); // Mid Bottom gates
+  ascLintel(g, kit, -40.04, 26.1, 9.68, 0.6, 0, 4.5, 7, zMat("A", ZC.A), trim); ascLintel(g, kit, 40.04, 26.1, 9.68, 0.6, 0, 4.5, 7, zMat("B", ZC.B), trim); // A / B Main gates
+  ascLintel(g, kit, -41.58, -40.04, 12.76, 0.88, 0, 4.6, 7, zMat("def", ZC.def), trim); ascLintel(g, kit, 41.58, -40.04, 12.76, 0.88, 0, 4.6, 7, zMat("def", ZC.def), trim); // defender exits
+  // terracotta gable roofs over the building blocks
+  const roofM = XMA.roof, mass = zMat("mid", ZC.mid);
+  boxes.forEach((b) => { const w = b.x2 - b.x1, d = b.z2 - b.z1; if (!(b.h >= 7) || w < 8 || d < 8 || Math.abs((b.x1 + b.x2) / 2) > 46) return; ascGable(kit, roofM, mass, (b.x1 + b.x2) / 2, (b.z1 + b.z2) / 2, w, d, b.h + 0.44, Math.min(3.6, Math.min(w, d) * 0.28)); });
+  // wall lamps (iron lantern + warm glass) with glow pools under them
+  const iron = ascMat("", 0x23272b), glass = ascBasic(0xffd38a), gA = new THREE.BoxGeometry(0.06, 0.06, 0.45), gL = new THREE.BoxGeometry(0.26, 0.36, 0.26), gG = new THREE.BoxGeometry(0.2, 0.28, 0.2), gC = new THREE.ConeGeometry(0.22, 0.2, 4);
+  const LAMPS = [[-35.2, 8, -HP], [-35.2, 18, -HP], [35.2, 8, HP], [35.2, 18, HP], [-7.92, 10, HP], [-7.92, 20, HP], [8.8, 14, -HP], [8.8, 22, -HP], [9.24, -12.3, HP],
+    [-15.86, -21, -HP], [-15.86, -33.6, -HP], [15.86, -21, HP], [15.86, -33.6, HP], [-14, 38.72, 0], [-28, 38.72, 0], [14, 38.72, 0], [28, 38.72, 0], [-26, -40.48, Math.PI], [26, -40.48, Math.PI]];
+  const pf = [], pw = [];
+  LAMPS.forEach(([x, z, ry]) => { const y = 3.3, p = (lz) => ascR(x, z, ry, 0, lz); let [px, pz] = p(0.22); kit.P(iron, gA, px, y + 0.25, pz, 0, ry); [px, pz] = p(0.45);
+    kit.P(iron, gL, px, y, pz, 0, ry); kit.P(glass, gG, px, y, pz, 0, ry); kit.P(iron, gC, px, y + 0.28, pz, 0, ry + Math.PI / 4); [px, pz] = p(1.4); pf.push([px, pz, 2.6]); pw.push([x, y - 0.2, z, 1.7, ry]); });
+  pf.push([ax, az, 7], [bx, bz, 7]);
+  ascPools(g, pf, pw, 0xffb35c, 0.38);
+  // hanging banners (teal / orange) on spawn, mid and main faces
+  const bT = ascMat("banner", 0x2f9a94, true), bO = ascMat("banner", 0xe0782e, true), gBn = new THREE.PlaneGeometry(1.1, 3.2), gRod = new THREE.BoxGeometry(1.4, 0.07, 0.07);
+  [[-21, 38.72, 0, bT], [21, 38.72, 0, bO], [-7.92, 15, HP, bO], [8.8, 18, -HP, bT], [-35.2, 22.5, -HP, bO], [35.2, 22.5, HP, bT], [-6, -40.48, Math.PI, bT], [6, -40.48, Math.PI, bO], [-15.86, -18.7, -HP, bO], [15.86, -18.7, HP, bT]]
+    .forEach(([x, z, ry, m]) => { let [px, pz] = ascR(x, z, ry, 0, 0.07); kit.P(m, gBn, px, 4.7, pz, 0, ry); [px, pz] = ascR(x, z, ry, 0, 0.1); kit.P(iron, gRod, px, 6.35, pz, 0, ry); });
+  // callout plaques
+  ascSigns(g, [["A MAIN", -35.25, 2.6, 22.5, -HP], ["B MAIN", 35.25, 2.6, 22.5, HP], ["A LOBBY", -35.25, 2.6, 33, -HP], ["B LOBBY", 35.25, 2.6, 33, HP], ["MID", -6.99, 2.6, 32.5, HP], ["MID COURTYARD", -7.87, 2.6, 7, HP],
+    ["MARKET", 10.56, 2.6, -6.55, 0], ["PIZZA", 20, 2.6, 9.63, Math.PI], ["TREE", -19.4, 2.6, -8.31, 0], ["GARDEN", -16, 2.6, 5.23, Math.PI], ["WINE", -47.91, 2.6, -2, HP], ["HEAVEN", -15.89, 2.6, -37.2, -HP],
+    ["BOATHOUSE", 39.55, 2.6, -6, -HP], ["B LANE", 38.23, 2.6, -30, -HP], ["DEFENDER SPAWN", 0, 2.6, -40.53, Math.PI], ["ATTACKER SPAWN", 0, 2.6, 52.31, Math.PI]], "#1d4f5a", "#f6ecd6");
+  // backdrop: limestone town blocks with terracotta roofs, towers and a dome just past the boundary (fogged, merged)
+  { let s = 21; const r = () => (s = (s * 16807) % 2147483647) / 2147483647, bm = ascMat("stone", 0xf0e2c8), bm2 = ascMat("stone", 0xf2c7a2), win = ascMat("", 0x2a3138), dome = ascMat("", 0x3f9a92);
+    const put = (x, z, w, d, h) => { const m = r() < 0.5 ? bm : bm2; kit.P(m, ascUVBox(w, h, d, 4), x, h / 2, z); ascGable(kit, roofM, m, x, z, w, d, h, Math.min(3, Math.min(w, d) * 0.3));
+      const q = r(); if (q < 0.12) { kit.P(m, ascUVBox(2.6, 9, 2.6, 4), x, h + 4.5, z); kit.P(roofM, new THREE.ConeGeometry(2.1, 3.4, 4), x, h + 10.7, z, 0, Math.PI / 4); }
+      else if (q < 0.2) { const dm = kit.P(dome, new THREE.SphereGeometry(1, 12, 6, 0, Math.PI * 2, 0, HP), x, h, z); dm.scale.setScalar(Math.min(w, d) * 0.42); }
+      for (let k = 0; k < 3; k++) { const t = (k - 1) * w * 0.28; kit.P(win, xG("Box", 1, 1.6, 0.1), x + t, h * 0.62, z + Math.sign(-z || 1) * (d / 2 + 0.03)); kit.P(win, xG("Box", 1, 1.6, 0.1), x + t, h * 0.32, z + Math.sign(-z || 1) * (d / 2 + 0.03)); } };
+    for (let x = -50; x <= 50; x += 11 + r() * 3) { put(x, 59 + r() * 4, 9 + r() * 3, 8 + r() * 3, 11 + r() * 7); put(x + 4, -59 - r() * 4, 9 + r() * 3, 8 + r() * 3, 11 + r() * 7); }
+    for (let z = -44; z <= 44; z += 11 + r() * 3) { put(55 + r() * 4, z, 8 + r() * 3, 9 + r() * 3, 11 + r() * 7); put(-55 - r() * 4, z + 4, 8 + r() * 3, 9 + r() * 3, 11 + r() * 7); } }
+  kit.flush(g);
+  ascFog(g, 0xeadfcb, 38, 115); // warm haze
+  return fAtk;
+}
+// Bind zones (vA): runs at the end of xBuildBind (built frame = authored, no XMK)
+function ascBuildBindZones(s0, b0) {
+  const K = "bind", g = mapG, HP = Math.PI / 2, PI = Math.PI, kit = ascKit(), SA = [-20, -21], SB = [20, -21];
+  // zone palettes on the walls: B side rose clay, defender spawn pale lime, attacker spawn warm sand (A side keeps the Bind tint)
+  const base = (BMT && BMT.wall) || BM.wall, zm = {}, zMat = (k, c) => zm[k] || (zm[k] = (() => { const m = base.clone(); if (m.color) m.color.multiply(new THREE.Color(c)); return m; })());
+  const zoneOf = (x, z) => (z < -29.4 ? "def" : z > 28.4 ? "atk" : x > 8.6 ? "B" : "A"), ZC = { def: 0xf4f7ee, atk: 0xfff2dc, B: 0xffd2bc, A: 0xffffff };
+  for (let i = s0; i < solids.length; i++) { const m = solids[i]; if (!BMT || m.material !== BMT.wall) continue; const k = zoneOf(m.position.x, m.position.z); if (k !== "A") m.material = zMat(k, ZC[k]); }
+  const wallAt = (x, z) => { const k = zoneOf(x, z); return k === "A" ? base : zMat(k, ZC[k]); };
+  // floors per zone: spawn pavers, Market boards, Hookah + sites zellige, Showers / Bath tiles, A Short terracotta, B Long / Elbow pavers
+  const fA = ascFloor(g, ascMat("brick"), -29.5, 29.5, 28, 39.5, 4); ascFloor(g, ascMat("brick", 0xe8e0cc), -29.5, 29.5, -39.5, -29.5, 4);
+  ascFloor(g, ascMat("plank", 0xd8b58c), 8, 18, 10.5, 28, 3); ascFloor(g, ascMat("brick", 0xf0d8b8), 8, 18, -5.5, 9.5, 4);
+  ascFloor(g, ascMat("mosaic"), 11, 17, -12.5, -6.5, 3); ascFloor(g, ascMat("tileW"), -24, -18, 4, 14, 3); ascFloor(g, ascMat("tileW", 0xe8ddd0), -24, -8, -6, 4, 3); ascFloor(g, ascMat("tileW", 0xe8ddd0), -17, -13, -15, -6, 3);
+  ascFloor(g, ascMat("terraT"), -29.5, -26.5, -15, 17, 4); ascFloor(g, ascMat("brick", 0xf0d8b8), 22.5, 26.5, 1.5, 22, 4); ascFloor(g, ascMat("brick", 0xf0d8b8), 21, 29.5, -12.5, -6.5, 4);
+  ascFloor(g, ascMat("mosaic", 0xfff4e8), -29.5, -8.5, -28.5, -15.2, 4, 0.014); ascFloor(g, ascMat("mosaic", 0xfff4e8), 11, 29.5, -28.5, -13.5, 4, 0.014);
+  // site identity: big ring letters on each site's back wall and on the floor, plant-zone paint on the real plant rect
+  ascLetter(g, K, "A", -21, 4.5, -28.48, 0, 4.2, "#f2c94c", "#fff3dc"); ascLetter(g, K, "B", 22.5, 4.3, -28.48, 0, 4.2, "#f2c94c", "#fff3dc");
+  ascLetter(g, K, "A", SA[0], 0.03, SA[1], 0, 6.5, "rgba(255,244,226,.85)", "rgba(255,244,226,.85)", true); ascLetter(g, K, "B", SB[0], 0.03, SB[1], 0, 6.5, "rgba(255,244,226,.85)", "rgba(255,244,226,.85)", true);
+  ascPlant(kit, K, "A", SA[0], SA[1], 0xf2c94c); ascPlant(kit, K, "B", SB[0], SB[1], 0xf2c94c);
+  // ceilings (4 m): A Short, Bath → site corridor, Showers, Hookah, B Hall, Market
+  const slab = ascMat("beam", 0xd9b48a), beam = ascMat("beam", 0x7a5232);
+  [[-29.5, -26.5, -14.6, 13.5], [-17, -13, -15, -6], [-24, -18, 4, 14], [11, 17, -12.5, -6.5], [11, 15, -33.5, -29.5], [8, 18, 10.5, 24]].forEach(([x1, x2, z1, z2]) => ascCeil(g, kit, K, x1, x2, z1, z2, 4, slab, beam));
+  // doorways: headers give 2-4 m wide x 2.8-3.2 m openings, teal pilasters + cornice; Hookah window gets a 3 m head
+  const teal = ascMat("", 0x2f9a94);
+  [[13, 10, 4, 1, 3.2], [13, -6, 2, 1, 2.8], [-15, -6, 4, 1, 3.2], [-15, -14.8, 4, 0.4, 3.2], [-28, -14.8, 3, 0.4, 3.2], [-21, 13.8, 6, 0.4, 3.2], [11.5, -29, 7, 1, 3.2], [-11, -29, 6, 1, 3.4], [23, -13, 4, 1, 3.2], [13.5, -13, 3, 1, 3.0], [27.25, -6, 4.5, 1, 3.2]]
+    .forEach(([x, z, w, d, y0]) => ascLintel(g, kit, x, z, w, d, 0, y0, 7, wallAt(x, z), teal));
+  // crenellated parapets on every full-height wall, teal-tiled domes on the two central blocks
+  const par = ascMat("", 0xdcb684), gMx = new THREE.BoxGeometry(0.7, 0.7, 1.1), gMz = new THREE.BoxGeometry(1.1, 0.7, 0.7);
+  boxes.slice(b0).forEach((b) => { if (!(b.h >= 7)) return; const w = b.x2 - b.x1, d = b.z2 - b.z1, y = b.h + 0.35, row = (x1, x2, z, gx) => { for (let x = x1 + 0.6; x < x2 - 0.3; x += 1.4) kit.P(par, gx, x, y, z); }, col = (z1, z2, x, gz) => { for (let z = z1 + 0.6; z < z2 - 0.3; z += 1.4) kit.P(par, gz, x, y, z); };
+    if (d <= 1.5) row(b.x1, b.x2, (b.z1 + b.z2) / 2, gMx); else if (w <= 1.5) col(b.z1, b.z2, (b.x1 + b.x2) / 2, gMz); else { row(b.x1, b.x2, b.z1 + 0.35, gMx); row(b.x1, b.x2, b.z2 - 0.35, gMx); col(b.z1, b.z2, b.x1 + 0.35, gMz); col(b.z1, b.z2, b.x2 - 0.35, gMz); } });
+  const dome = ascMat("mosaic", 0x7fd0d0), drum = ascMat("adobe", 0xf0d8b0), brass = ascMat("", 0xc9a24a), gHem = new THREE.SphereGeometry(1, 16, 8, 0, PI * 2, 0, HP);
+  [[0, 11, 5], [0, -17, 4.2]].forEach(([x, z, r]) => { kit.P(drum, new THREE.CylinderGeometry(r + 0.2, r + 0.2, 1.4, 16), x, 7.7, z); kit.P(dome, gHem, x, 8.4, z).scale.set(r, r * 0.9, r); kit.P(brass, new THREE.ConeGeometry(0.25, 1.4, 8), x, 8.4 + r * 0.9 + 0.6, z); });
+  // Market: striped wall awnings (low edge 2.7 m) over stalls, urn clusters against the walls, rugs
+  const sT = ascMat("", 0x1f8a8a), sC = ascMat("", 0xf1e6cc), sR = ascMat("", 0xb4482a), gSl = new THREE.BoxGeometry(0.62, 0.06, 1.4);
+  [[8, 14, HP, sT], [8, 19, HP, sR], [18, 16.5, -HP, sT], [18, 2, -HP, sR], [8, 4, HP, sT]].forEach(([x, z, ry, c]) => { for (let i = 0; i < 5; i++) { const [px, pz] = ascR(x, z, ry, -1.24 + i * 0.62, 0.65); kit.P(i % 2 ? sC : c, gSl, px, 3.0, pz, 0.38, ry, 0).rotation.order = "YXZ"; } });
+  const urn = ascMat("", 0xb8693a), urnB = ascMat("", 0x1f6f78);
+  [[8.95, 15.5], [17.25, 19.2], [-28.6, 26.5], [-24, -38.6], [28.4, 25]].forEach(([x, z]) => ascBarrels(g, kit, K, x, z, 3, urn, urnB));
+  const rug = ascMat("rug"), gRug = new THREE.PlaneGeometry(2.4, 3.6);
+  [[14, -9.5, 0], [13, 15, 0], [13, 21.5, HP], [-21, 9, 0]].forEach(([x, z, ry]) => kit.P(rug, gRug, x, 0.03, z, -HP, 0, ry));
+  // Truck: wheels, windshield, grille; Generator: vents + cable
+  const tyre = ascMat("", 0x1c1d20), glassD = ascMat("", 0x2c3e48), chrome = ascMat("", 0xb9c0c4), gW = new THREE.CylinderGeometry(0.45, 0.45, 0.3, 14);
+  [-18.6, -20.4, -22.4].forEach((z) => { kit.P(tyre, gW, -18.52, 0.45, z, 0, 0, HP); kit.P(tyre, gW, -15.48, 0.45, z, 0, 0, HP); });
+  kit.P(glassD, new THREE.BoxGeometry(2.6, 0.6, 0.05), -17, 1.35, -23.03); kit.P(chrome, new THREE.BoxGeometry(2.2, 0.35, 0.05), -17, 0.7, -23.03);
+  kit.P(chrome, new THREE.BoxGeometry(0.05, 0.9, 2.4), -11.48, 1.0, -23); kit.P(tyre, new THREE.BoxGeometry(0.12, 0.12, 4.5), -11.4, 0.06, -26.2);
+  // lantern light pools (under the Bind wall lanterns) + soft washes at the teleporters and sites
+  const LN = [[-29.5, -34, HP], [-29.5, 25, HP], [-29.5, 35, HP], [29.5, -34, -HP], [29.5, 25, -HP], [29.5, 35, -HP], [-8, 2, -HP], [-8, 16, -HP], [8, 2, HP], [8, 16, HP], [-26, -39.5, 0], [-12, -39.5, 0], [12, -39.5, 0], [26, -39.5, 0], [-20, 39.5, PI], [-4, 39.5, PI], [4, 39.5, PI], [20, 39.5, PI], [-23.5, -5.5, 0], [16.5, -5.5, 0]];
+  const pf = LN.map(([x, z, ry]) => { const [px, pz] = ascR(x, z, ry, 0, 1.2); return [px, pz, 2.4]; }), pw = LN.map(([x, z, ry]) => [x, 3.0, z, 1.5, ry]);
+  ascPools(g, pf.concat([[-27.5, 8, 2.2], [25, 20, 2.2], [SA[0], SA[1], 6.5], [SB[0], SB[1], 6.5]]), pw, 0xffa94d, 0.4);
+  // callout plaques
+  ascSigns(g, [["A LOBBY", -8.05, 2.6, 26.5, -HP], ["MARKET", 8.05, 2.6, 26.5, HP], ["A SHORT", -27, 2.6, 18.05, 0], ["SHOWERS", -13, 2.6, 14.05, 0], ["A BATH", -10.5, 2.6, -5.45, 0], ["A HEAVEN", -27.5, 2.6, -28.45, 0],
+    ["U-HALL", -4, 2.6, -29.55, PI], ["B HALL", 19, 2.6, -29.55, PI], ["HOOKAH", 22.8, 2.6, -5.45, 0], ["B SHORT", 16.5, 2.6, 9.45, PI], ["B LONG", 22.55, 2.6, 6, HP], ["GARDEN", 21, 2.6, 0.45, PI],
+    ["ELBOW", 27.5, 2.6, -12.45, 0], ["ATTACKER SPAWN", 0, 2.6, 39.45, PI], ["DEFENDER SPAWN", 0, 2.6, -39.45, 0]], "#14605f", "#f4e9d0");
+  // backdrop: clay town blocks with crenellations and domes just past the boundary (fogged, merged)
+  { let s = 33; const r = () => (s = (s * 16807) % 2147483647) / 2147483647, am = ascMat("adobe", 0xf2d2a8), am2 = ascMat("adobe", 0xe6b48a), win = ascMat("", 0x24343a), dm = ascMat("", 0x2f8f9d);
+    const put = (x, z, w, d, h) => { const m = r() < 0.5 ? am : am2; kit.P(m, ascUVBox(w, h, d, 4), x, h / 2, z);
+      for (let t = -w / 2 + 0.5; t < w / 2; t += 1.4) { kit.P(m, gMx, x + t, h + 0.35, z - d / 2 + 0.35); kit.P(m, gMx, x + t, h + 0.35, z + d / 2 - 0.35); }
+      const q = r(); if (q < 0.22) kit.P(dm, gHem, x, h, z).scale.setScalar(Math.min(w, d) * 0.4); else if (q < 0.32) { kit.P(m, new THREE.CylinderGeometry(1.1, 1.3, 10, 10), x + w * 0.3, h + 5, z); kit.P(dm, gHem, x + w * 0.3, h + 10, z).scale.setScalar(1.3); }
+      for (let k = -1; k <= 1; k++) kit.P(win, xG("Box", 0.9, 1.4, 0.1), x + k * w * 0.28, h * 0.6, z + Math.sign(-z || 1) * (d / 2 + 0.03)); };
+    for (let x = -28; x <= 28; x += 9 + r() * 3) { put(x, 53 + r() * 3, 7 + r() * 3, 7 + r() * 3, 9 + r() * 6); put(x + 3, -53 - r() * 3, 7 + r() * 3, 7 + r() * 3, 9 + r() * 6); }
+    for (let z = -36; z <= 36; z += 9 + r() * 3) { put(42 + r() * 3, z, 7 + r() * 3, 7 + r() * 3, 9 + r() * 6); put(-42 - r() * 3, z + 3, 7 + r() * 3, 7 + r() * 3, 9 + r() * 6); } }
+  kit.flush(g);
+  ascFog(g, 0xead6b0, 34, 100); // dusty desert haze
+  return fA;
+}
 // Ascent 5v5 layout, authored 110 x 120 (x -55..55, z -60..60) and built at AK = 0.88 (~97 x 106 m): attackers south (+z), defenders north (-z)
 // ASC_SITES / ASC_SPAWN / CALLOUTS / ASC_NODE are in the built (scaled) frame; the builder block below is authored at 1.0 and box() scales it
 const AK = 0.88;
@@ -4035,17 +4309,15 @@ const CALLOUTS = [ // [name, x, z], for minimap labels
   ["Mid Bottom", 0, 32.6], ["Mid Courtyard", 0, 10.6], ["Catwalk", -10.6, -10.6], ["Market", 14.1, -12.3], ["Pizza", 22, -1.8],
   ["B Lobby", 41.4, 44], ["B Main", 41.4, 19.4], ["B Site", 31.7, -19.4], ["Boathouse", 44, -8.8], ["B Lane", 43.1, -28.2], ["Defender Path", 41.4, -39.6]];
 {
-  XMO = XMA; XMK = AK;
+  XMO = XMA; XMK = AK; const ascStop = ascCount(mapG), ascS0 = solids.length;
   const fl = xFloor(110 * AK, 120 * AK, XMA.tile, 4);
   fl.rotation.x = -Math.PI / 2; mapG.add(fl); solids.push(fl);
   const pad = (x, z, w, d, col) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(w, d), new THREE.MeshLambertMaterial({ color: col, transparent: true, opacity: 0.35, depthWrite: false })); m.rotation.x = -Math.PI / 2; m.position.set(x, 0.02, z); m.receiveShadow = true; mapG.add(m); };
   const [ax, az] = ASC_SITES.A, [bx, bz] = ASC_SITES.B;
-  pad(ax, az, 14, 12, 0x3fb8b0); pad(bx, bz, 14, 12, 0x3fb8b0); // A and B plant zones (tinted over the tiles)
   pad(0, ASC_SPAWN.atk, 40 * AK, 12 * AK, 0x8fa7b8); pad(0, ASC_SPAWN.def, 40 * AK, 12 * AK, 0x8fa7b8); // spawns
   // Mid Courtyard: darker cobblestone, open between the two side blocks
   const cob = xFloor(56 * AK, 34 * AK, XMA.cobble, 2); cob.rotation.x = -Math.PI / 2; cob.position.set(0, 0.015, 13 * AK); mapG.add(cob);
   // painted site letters + red wall signs
-  xDecal(mapG, "A", ax, az, 7); xDecal(mapG, "B", bx, bz, 7);
   xSign(mapG, "A", -54.48 * AK, 3, az, Math.PI / 2); xSign(mapG, "B", 54.48 * AK, 3, bz, -Math.PI / 2);
   xSign(mapG, "A", -29 * AK, 3, -45.48 * AK, 0); xSign(mapG, "B", 29 * AK, 3, -45.48 * AK, 0);
   // faint floating callouts, shown together with the minimap
@@ -4053,28 +4325,23 @@ const CALLOUTS = [ // [name, x, z], for minimap labels
   mapG.add(XCALL);
   const FW = 0xe8dcc4, FC = 0x8a5a32, FH = 0xc9a27a, FG = 0x3fb8b0, ascCaps = [];
   // [x, z, w, d, h, color]
-  [[0, -60, 110, 1, 6, FW], [0, 60, 110, 1, 6, FW], [-55, 0, 1, 120, 6, FW], [55, 0, 1, 120, 6, FW], // outer walls
-   [-24, 37, 32, 14, 5, FW], [24, 37, 32, 14, 5, FW], // spawn blocks: A Lobby | Mid Bottom | B Lobby
-   [-34, 17, 12, 26, 5, FW], [34, 17, 12, 26, 5, FW], // A Main | Mid Courtyard | B Main
-   [-18.5, 18, 19, 24, 5, FW], [19, 20.5, 18, 19, 5, FW], // courtyard blocks: the old 56 m open courtyard becomes a ~19 m Mid lane (west block ends at z 6 for the Catwalk, east at z 11 for Market Door)
-   [-53, 26, 4, 36, 5, FW], [53, 26, 4, 36, 5, FW], // A / B Main outer fills: lanes 15 m -> 11 m (authored)
-   [0, -33, 36, 26, 5, FW], // building between the sites
-   [-29, -46, 22, 1, 5, FW], [29, -46, 22, 1, 5, FW], // defender spawn wall, exits west to A and east to the Defender Path
-   [-26, -17, 1, 6, 5, FW], [-22, -10, 8, 1, 5, FW], // Tree room
-   [-12, -13, 1, 8, 1.1, FW], // Catwalk rail
-   [16, -20, 12, 1, 5, FW], [10, -14, 1, 12, 5, FW], [12, -8, 4, 1, 5, FW], [20, -8, 4, 1, 5, FW], // Market, door to mid, open to B
-   [44, -32, 1, 16, 5, FW], // B Lane wall
-   [50, -10, 10, 12, 5, FW], // Boathouse corner
-   [-29, -40, 18, 8, 1.4, FH], // Heaven platform at the back of A (walkable top)
-   [-24, -33.5, 4, 1, 0.35, FH], [-24, -34.5, 4, 1, 0.7, FH], [-24, -35.5, 4, 1, 1.05, FH], // Heaven stairs up from A Site, 0.35 per step
-   [-42, -27, 4, 3, 2.2, FG], [-31, -17, 2, 2, 1.6, FC], [-51, -7, 3, 3, 2, FC], [-47, 4, 2, 2, 1.6, FC], // Generator, A site, Wine, A Main exit
-   [-47, 24, 2, 2, 1.6, FC], [-50, 36, 2, 2, 2, FC], // A Main
-   [0, 10, 3, 3, 2.2, FC], [0.5, 25, 2, 2, 2.2, FC], [-8, 20, 2, 2, 1.6, FC], [9, 2, 2, 2, 1.6, FC], [-4, 34, 2, 2, 1.6, FC], // Mid
-   [25, -2, 3, 2, 1.8, FC], // Pizza
-   [30, -26, 3, 3, 2, FC], [41, -17, 2, 2, 1.6, FC], [36, -38, 2, 2, 1.6, FC], // B site
-   [47, 24, 2, 2, 1.6, FC], [50, 36, 2, 2, 2, FC], // B Main
-   [-12, 52, 2, 2, 1.6, FC], [12, 52, 2, 2, 1.6, FC], [-12, -52, 2, 2, 1.6, FC], [12, -52, 2, 2, 1.6, FC]] // spawns (x ±12 authored: clear of the x -8..8 spawn line once scaled)
+  [[0, -60, 110, 1, 8, FW], [0, 60, 110, 1, 8, FW], [-55, 0, 1, 120, 8, FW], [55, 0, 1, 120, 8, FW], // outer walls
+   [-24, 37, 32, 14, 7, FW], [24, 37, 32, 14, 7, FW], // spawn blocks: A Lobby | Mid Bottom | B Lobby
+   [-34, 17, 12, 26, 7, FW], [34, 17, 12, 26, 7, FW], // A Main | Mid Courtyard | B Main
+   [-18.5, 18, 19, 24, 7, FW], [19, 20.5, 18, 19, 7, FW], // courtyard blocks: the old 56 m open courtyard becomes a ~19 m Mid lane (west block ends at z 6 for the Catwalk, east at z 11 for Market Door)
+   [-53, 26, 4, 36, 7, FW], [53, 26, 4, 36, 7, FW], // A / B Main outer fills: lanes 15 m -> 11 m (authored)
+   [0, -33, 36, 26, 7, FW], // building between the sites
+   [-29, -46, 22, 1, 7, FW], [29, -46, 22, 1, 7, FW], // defender spawn wall, exits west to A and east to the Defender Path
+   [-26, -17, 1, 6, 7, FW], [-22, -10, 8, 1, 7, FW], // Tree room
+   [-12, -13, 1, 8, 1.0, FW], // Catwalk rail (1.0 m: crouch cover)
+   [16, -20, 12, 1, 7, FW], [10, -14, 1, 12, 7, FW], [12, -8, 4, 1, 7, FW], [20, -8, 4, 1, 7, FW], // Market, door to mid, open to B
+   [44, -32, 1, 16, 7, FW], // B Lane wall
+   [50, -10, 10, 12, 7, FW], // Boathouse corner
+   [-29, -40, 18, 8, 1.5, FH], // Heaven platform at the back of A (walkable top)
+   [-24, -33.25, 4, 0.5, 0.25, FH], [-24, -33.75, 4, 0.5, 0.5, FH], [-24, -34.25, 4, 0.5, 0.75, FH], [-24, -34.75, 4, 0.5, 1.0, FH], [-24, -35.25, 4, 0.5, 1.25, FH], [-24, -35.75, 4, 0.5, 1.5, FH], // Heaven stairs up from A Site, 0.25 m per step
+   [-42, -27, 4, 3, 2.2, FG]] // Generator; crates are built by ascBuildAscentZones at Valorant scale (1.4 m / 2.8 m stacks)
     .forEach(([x, z, w, d, h, c]) => { box(x, z, w, h, d, c); if (h >= 5) ascCaps.push([x, z, w, d, h]); });
+  ascBuildAscentZones(ascS0); // vA: zone floors, wall palettes, site letters + plant paint, crates, cover, ceilings, doorways, roofs, lamps, signs, backdrop
   // Venice look pass: decoration only (no solids/boxes), merged into one mesh per material, no shadows
   {
     const L = (c) => new THREE.MeshLambertMaterial({ color: c });
@@ -4103,7 +4370,7 @@ const CALLOUTS = [ // [name, x, z], for minimap labels
     awn(-40.5, 2.8, 14, -HP, "orange", true); // A Main
     // potted trees: A Main and Mid Courtyard
     const gPot = new THREE.CylinderGeometry(0.42, 0.32, 0.7, 10), gSoil = new THREE.CylinderGeometry(0.37, 0.37, 0.05, 10), gTr = new THREE.CylinderGeometry(0.07, 0.09, 1.3, 6), gF1 = new THREE.IcosahedronGeometry(0.75, 0), gF2 = new THREE.IcosahedronGeometry(0.5, 0);
-    [[-41, 8], [-41, 22], [-26.9, 5.5], [26.9, 5.5], [-8.4, 29.3], [9.5, 29.3]].forEach(([x, z]) => { const g = grp(x, 0, z); P(g, "terra", gPot, 0, 0.35, 0); P(g, "dark", gSoil, 0, 0.69, 0); P(g, "wood", gTr, 0, 1.3, 0); P(g, "leaf", gF1, 0, 2.2, 0); P(g, "leaf", gF2, 0.3, 2.75, 0.1); const X = x * AK, Z = z * AK; boxes.push({ x1: X - 0.42, x2: X + 0.42, z1: Z - 0.42, z2: Z + 0.42, h: 0.75 }); }); // deco authored at 1.0, scaled by AK below // pot collision (all pots are 2.5 m+ clear of nav edges)
+    [[-41, 8], [-41, 22], [-26.9, 5.5], [26.9, 5.5], [-8.4, 29.3], [9.5, 29.3]].forEach(([x, z]) => { const g = grp(x, 0, z); P(g, "terra", gPot, 0, 0.35, 0); P(g, "dark", gSoil, 0, 0.69, 0); P(g, "wood", gTr, 0, 1.3, 0); P(g, "leaf", gF1, 0, 2.2, 0); P(g, "leaf", gF2, 0.3, 2.75, 0.1); const X = x * AK, Z = z * AK; boxes.push({ x1: X - 0.42, x2: X + 0.42, z1: Z - 0.42, z2: Z + 0.42, h: 1.0 }); }); // deco authored at 1.0, scaled by AK below // pot collision (all pots are 2.5 m+ clear of nav edges)
     // slim bell tower with a pointed roof, on the building behind mid
     { const g = grp(6, 5, -40); P(g, "terra", BX(2.4, 16, 2.4), 0, 8, 0); P(g, "stone", BX(2.7, 0.3, 2.7), 0, 16, 0); P(g, "dark", BX(1.8, 2.6, 1.8), 0, 17.45, 0);
       [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([a, b]) => P(g, "stone", BX(0.45, 2.6, 0.45), a, 17.45, b));
@@ -4116,6 +4383,7 @@ const CALLOUTS = [ // [name, x, z], for minimap labels
     mapG.updateMatrixWorld(true); const inv = new THREE.Matrix4().copy(mapG.matrixWorld).invert(); G.forEach((g) => g.updateMatrixWorld(true));
     Object.keys(D).forEach((k) => { const mm = new THREE.Mesh(xMergeGeo(D[k], inv), DM[k]); mm.name = "xDeco"; mm.raycast = () => {}; mm.scale.set(AK, 1, AK); mm.updateMatrix(); mm.matrixAutoUpdate = false; mapG.add(mm); });
   }
+  ASC_VIS.ascent.adds = ascStop();
   XMO = null; XMK = 1;
 }
 // ---- Bind (5v5): same box-list format; attackers south (+z), defenders north (-z), no mid, two one-way teleporters ----
@@ -4165,45 +4433,44 @@ function xLazyMap(k, cap, build) {
 }
 function xBuildMap(k) { if (k === "bind") xLazyMap("bind", BIND_CALL, xBuildBind); else if (k === "haven") xLazyMap("haven", HAVEN_CALL, xBuildHaven); else if (k === "split") xLazyMap("split", SPLIT_CALL, xBuildSplit); else if (k === "lotus") xLazyMap("lotus", LOTUS_CALL, xBuildLotus); else if (k === "breeze") xLazyMap("breeze", BREEZE_CALL, xBuildBreeze); }
 function xBuildBind() {
-  const b0 = boxes.length;
+  const b0 = boxes.length, ascStop = ascCount(mapG), ascS0 = solids.length;
   const fl = xFloor(60, 80, new THREE.MeshLambertMaterial({ map: BT.sand }), 4); fl.rotation.x = -Math.PI / 2; mapG.add(fl); solids.push(fl);
   const pad = (x, z, w, d, mat) => { const m = new THREE.Mesh(xUV(new THREE.PlaneGeometry(w, d), w, d, undefined, 2), mat); m.rotation.x = -Math.PI / 2; m.position.set(x, 0.02, z); m.receiveShadow = true; mapG.add(m); };
   const tm = new THREE.MeshLambertMaterial({ map: BT.teal, transparent: true, opacity: 0.45, depthWrite: false });
-  pad(-20, -21, 14, 12, tm); pad(20, -21, 14, 12, tm); // A and B sites in teal tile
-  xDecal(mapG, "A", -20, -21, 7); xDecal(mapG, "B", 20, -21, 7);
+  // A and B sites: zellige floors, ring letters and plant-zone paint come from ascBuildBindZones
   xSign(mapG, "A", -29.48, 3, -21, Math.PI / 2); xSign(mapG, "B", 29.48, 3, -21, -Math.PI / 2);
   const FW = 0xe0bd86, FC = 0x8a6a45;
-  box(0, -40, 60, 5, 1, FW); box(0, 40, 60, 5, 1, FW); box(-30, 0, 1, 5, 80, FW); box(30, 0, 1, 5, 80, FW);
-  box(0, 11, 16, 5, 34, FW); // solid block x -8..8, z -6..28: no mid
-  box(0, -17, 16, 5, 22, FW); box(0, -29, 16, 5, 1, FW); // building between the sites
+  box(0, -40, 60, 7, 1, FW); box(0, 40, 60, 7, 1, FW); box(-30, 0, 1, 7, 80, FW); box(30, 0, 1, 7, 80, FW);
+  box(0, 11, 16, 7, 34, FW); // solid block x -8..8, z -6..28: no mid
+  box(0, -17, 16, 7, 22, FW); box(0, -29, 16, 7, 1, FW); // building between the sites
   // A side: A Short = 3 m L corridor (east-west leg z 14..17 from x -24, then south x -29.5..-26.5 to z -6) | Showers (x -24..-18, z 4..14) → A Bath (z -6..4) → site door x -17..-13
-  box(-25.25, 4, 2.5, 5, 20, FW); box(-26.75, 17.5, 5.5, 5, 1, FW); box(-13, 9, 10, 5, 10, FW);
-  box(-21, -6, 8, 5, 1, FW); box(-10.5, -6, 5, 5, 1, FW);
+  box(-25.25, 4, 2.5, 7, 20, FW); box(-26.75, 17.5, 5.5, 7, 1, FW); box(-13, 9, 10, 7, 10, FW);
+  box(-21, -6, 8, 7, 1, FW); box(-10.5, -6, 5, 7, 1, FW);
   // A Site: 22 m wide (x -30..-8) x 14 m deep (z -29..-15). Front wall z -15 with two openings: A Short (x -29.5..-26.5) and the Showers / Bath corridor (x -17..-13)
-  box(-21.75, -10.5, 9.5, 5, 9, FW); box(-10.5, -10.5, 5, 5, 9, FW);
+  box(-21.75, -10.5, 9.5, 7, 9, FW); box(-10.5, -10.5, 5, 7, 9, FW);
   // B side: Market (x 8..18, z 10..28) → B Short (z -5.5..9.5, door x 11..15) → Hookah door x 12..14 → Hookah; B Long (x 19..29.5) → Garden → Elbow → site
-  box(18.5, 8, 1, 5, 28, FW); box(20.75, 11.75, 3.5, 5, 20.5, FW); box(28, 11.75, 3, 5, 20.5, FW); // B Long: 4 m straight lane x 22.5..26.5, z 1.5..22, open sightline into Garden
-  box(9.5, 10, 3, 5, 1, FW); box(16.5, 10, 3, 5, 1, FW); box(21, 1, 4, 5, 1, FW);
-  box(10, -6, 4, 5, 1, FW); box(19.5, -6, 11, 5, 1, FW); // z -6: Hookah door x 12..14, Garden → Elbow gap x 25..29.5
+  box(18.5, 8, 1, 7, 28, FW); box(20.75, 11.75, 3.5, 7, 20.5, FW); box(28, 11.75, 3, 7, 20.5, FW); // B Long: 4 m straight lane x 22.5..26.5, z 1.5..22, open sightline into Garden
+  box(9.5, 10, 3, 7, 1, FW); box(16.5, 10, 3, 7, 1, FW); box(21, 1, 4, 7, 1, FW);
+  box(10, -6, 4, 7, 1, FW); box(19.5, -6, 11, 7, 1, FW); // z -6: Hookah door x 12..14, Garden → Elbow gap x 25..29.5
   // Hookah: enclosed 6 x 6 room (x 11..17, z -12.5..-6.5) on the attacker side of B Site
-  box(9.5, -9.5, 3, 5, 6, FW); box(19, -9.5, 4, 5, 6, FW); // Hookah west fill | east fill (Hookah / Elbow)
+  box(9.5, -9.5, 3, 7, 6, FW); box(19, -9.5, 4, 7, 6, FW); // Hookah west fill | east fill (Hookah / Elbow)
   // B Site front wall z -13: Hookah window x 12..15, Elbow gap x 21..25 (Elbow: x 21..29.5, z -12.5..-6.5, in from Garden at the NE, out to the site at the SW)
-  box(10, -13, 4, 5, 1, FW); box(18, -13, 6, 5, 1, FW); box(27.5, -13, 5, 5, 1, FW);
+  box(10, -13, 4, 7, 1, FW); box(18, -13, 6, 7, 1, FW); box(27.5, -13, 5, 7, 1, FW);
   box(13.5, -13, 3, 1.1, 1, FC); // Hookah window ledge: waist high, jump through
-  box(9.5, -21, 3, 5, 15, FW); // B Site west wall: site is boxy, x 11..29.5 x z -28.5..-13.5 (about 18 x 16)
+  box(9.5, -21, 3, 7, 15, FW); // B Site west wall: site is boxy, x 11..29.5 x z -28.5..-13.5 (about 18 x 16)
   // site backs: U-Hall gap x -14..-8 (A), B Hall gap x 11..15 (B), to Defender Spawn
-  box(-22, -29, 16, 5, 1, FW); box(22.5, -29, 15, 5, 1, FW);
-  box(10.5, -31.5, 1, 5, 4, FW); box(15.5, -31.5, 1, 5, 4, FW); // B Hall: short 4 m corridor x 11..15, z -33.5..-29.5, toward Defender Spawn
+  box(-22, -29, 16, 7, 1, FW); box(22.5, -29, 15, 7, 1, FW);
+  box(10.5, -31.5, 1, 7, 4, FW); box(15.5, -31.5, 1, 7, 4, FW); // B Hall: short 4 m corridor x 11..15, z -33.5..-29.5, toward Defender Spawn
   box(-21, -27.25, 10, 1.4, 2.5, FC); // A Heaven: raised back ledge on the back wall (x -26..-16), walkable top
-  box(-24, -25.5, 2, 1.05, 1, FC); box(-24, -24.5, 2, 0.7, 1, FC); box(-24, -23.5, 2, 0.35, 1, FC); // Heaven stairs, 0.35 per step
+  [[-25.7, 1.25], [-25.1, 1.0], [-24.5, 0.75], [-23.9, 0.5], [-23.3, 0.25]].forEach(([z, h]) => { box(-24, z, 2, h, 0.6, FC); boxes[boxes.length - 1].step = 1; }); // Heaven stairs, 0.25 m per step
   { const own = (c) => { solids[solids.length - 1].material = new THREE.MeshLambertMaterial({ color: c }); }; // Truck, Generator: own materials, not crate textures
     box(-17, -19.5, 3, 2.2, 3, FC); own(0x2a9d94); box(-17, -22, 3, 1.8, 2, FC); own(0xf2f2ee); // Truck: teal body, white cab, center-left main cover
     box(-12.5, -23, 2, 1.6, 3, FC); own(0x3a3d42); } // Generator: dark gray, back right toward U-Hall
-  [[-14, 22, 2, 1.6, 2], [10, 24, 1.5, 1.2, 1.5], [28, -2, 2, 1.2, 2], [26, -24, 3, 1.8, 3], [-25, -19, 2, 1.2, 2],
-   [-11, 31, 2, 1.6, 2], [11, 31, 2, 1.6, 2], [-22, -34, 2, 1.6, 2], [22, -34, 2, 1.6, 2]].forEach(([x, z, w, h, d]) => box(x, z, w, h, d, FC));
+  { const cw = ascMat("crateW", 0xf0d0a8), cm = ascMat("crateM"); // crates at Valorant scale (1.2-1.4 m singles, 2.8 m stacks), inside the old footprints
+    [[-14, 22, "t"], [28, -2, "s"], [26, -24, "L"], [-25, -19, "s"], [-11, 31, "s"], [11, 31, "s"], [-22, -34, "t"], [22, -34, "s"]].forEach(([x, z, k]) => ascCluster("bind", x, z, k, cw, cm)); ascCrate("bind", 10, 24, 1.2, 1.2, 1.2, cw); }
   // B Fountain: round teal basin (collision box) with a sandstone spout
-  { const f = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.3, 0.9, 20), BM.teal); f.position.set(16, 0.45, -18); f.castShadow = true; mapG.add(f); solids.push(f); // left of center (attacker view), site cover
-    const sp = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.35, 1.8, 10), BM.wall); sp.position.set(16, 0.9, -18); mapG.add(sp); boxes.push({ x1: 14.8, x2: 17.2, z1: -19.2, z2: -16.8, h: 0.9 }); }
+  { const f = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.3, 1.0, 20), BM.teal); f.position.set(16, 0.5, -18); f.castShadow = true; mapG.add(f); solids.push(f); // left of center (attacker view), site cover
+    const sp = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.35, 1.8, 10), BM.wall); sp.position.set(16, 0.9, -18); mapG.add(sp); boxes.push({ x1: 14.8, x2: 17.2, z1: -19.2, z2: -16.8, h: 1.0 }); }
   // palm-ish pillars: bark trunk (collision box) + fronds
   [[-27, -37], [27, -37], [-27, 37], [27, 37]].forEach(([x, z]) => {
     const t = new THREE.Mesh(xG("Cylinder", 0.3, 0.42, 5, 10), BM.bark); t.position.set(x, 2.5, z); t.castShadow = true; mapG.add(t); solids.push(t);
@@ -4259,7 +4526,9 @@ function xBuildBind() {
     mapG.updateMatrixWorld(true); const inv = new THREE.Matrix4().copy(mapG.matrixWorld).invert(); G.forEach((g) => g.updateMatrixWorld(true));
     Object.keys(D).forEach((k) => { const mm = new THREE.Mesh(xMergeGeo(D[k], inv), DM[k]); mm.name = "xDeco"; mm.raycast = () => {}; mm.castShadow = mm.receiveShadow = false; mm.updateMatrix(); mm.matrixAutoUpdate = false; mapG.add(mm); });
   }
+  ascBuildBindZones(ascS0, b0); // vA: zone floors + wall palettes, site letters + plant paint, ceilings, doorways, parapets, domes, market, lamps, signs, backdrop
   BIND_CALLOUTS.forEach(([t, x, z]) => xCallout(t, x, z));
+  ASC_VIS.bind.adds = ascStop();
 }
 const BIND_CALL = []; XCALL.clear();
 // ---- Haven (5v5): same box-list format; three sites A / B (center) / C, attackers south (+z), defenders north (-z) ----
