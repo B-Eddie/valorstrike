@@ -1365,10 +1365,10 @@ if (!NO3) {
   try { toLobby(); } catch (e) {}
 }
 
-// ---------- map scale + layout: size, spawn→site run time on the bot nav graph, spawns clear, sites reachable (1 unit = 1 m: eye 1.5, run 6.75 m/s) ----------
+// ---------- map scale + layout: size, spawn→site + site→site run times on the bot nav graph at rifle speed, spawns clear, sites reachable (1 unit = 1 m: eye 1.6, rifle run 5.4 m/s) ----------
 if (!NO3) {
   let R = null, err = [];
-  try { R = JSON.parse(vm.runInContext("__xe", context)(`(() => { const RUN = 6.75, out = [], keepS = Object.assign({}, SITES), keepB = boxes;
+  try { R = JSON.parse(vm.runInContext("__xe", context)(`(() => { const RUN = 5.4, out = [], keepS = Object.assign({}, SITES), keepB = boxes;
     const pads = { ascent: ASC_SITES, bind: { A: [-20, -21], B: [20, -21] }, haven: HSITES, split: SSITES, lotus: LSITES, breeze: BZSITES };
     try { for (const k of ["ascent", "bind", "haven", "split", "lotus", "breeze"]) {
       if (k !== "ascent") xBuildMap(k); const bx = FMAP[k].boxes, sp = xSpawn(k), P = pads[k], bad = [];
@@ -1387,15 +1387,22 @@ if (!NO3) {
       const t = {};
       for (const side of ["atk", "def"]) { const [s, sd] = near(0, side === "atk" ? sp.atk : -sp.atk), Dd = dj(s);
         for (const q in P) { const [e, ed] = near(P[q][0], P[q][1]), d = Dd[e] + sd + ed; if (sd > 8 || ed > 8 || !(d < 1e8)) { bad.push(side + "→" + q + " unreachable"); t[side + q] = null; } else t[side + q] = +(d / RUN).toFixed(1); } }
+      const ks = Object.keys(P); for (let i = 0; i < ks.length; i++) for (let j = i + 1; j < ks.length; j++) { const [a, ad] = near(P[ks[i]][0], P[ks[i]][1]), [b, bd] = near(P[ks[j]][0], P[ks[j]][1]), d = dj(a)[b] + ad + bd; t["rot" + ks[i] + ks[j]] = d < 1e8 ? +(d / RUN).toFixed(1) : null; }
       out.push({ k, W: +W.toFixed(1), D: +D.toFixed(1), t, bad });
     } } finally { boxes = keepB; for (const s in SITES) delete SITES[s]; Object.assign(SITES, keepS); }
     return JSON.stringify(out); })()`)); } catch (e) { err.push(String(e).slice(0, 300)); }
   for (const m of R || []) {
-    const big = Math.max(m.W, m.D), tA = Object.entries(m.t).filter(([q]) => q.startsWith("atk")), tD = Object.entries(m.t).filter(([q]) => q.startsWith("def"));
-    const sizeOk = big <= 150 && Math.min(m.W, m.D) >= 60; // Valorant-like 90-150 m; Bind / Haven are compact by design (61 x 81 m) and pass on run time
-    const runOk = tA.every(([, v]) => v != null && v >= 7.5 && v <= 16.5) && tD.every(([, v]) => v != null && v <= 16.5); // attacker spawn → each site ~8-16 s at 6.75 m/s; defenders no slower
-    const ok = sizeOk && runOk && !m.bad.length;
-    report.push({ label: `Map scale ${m.k}: ${m.W} x ${m.D} m; spawn→site run ${Object.entries(m.t).map(([q, v]) => q + " " + (v == null ? "—" : v + "s")).join(", ")}; spawns clear, sites reachable on the nav graph`, el: true, handler: true, cond: ok, pass: ok, errs: m.bad.concat(sizeOk ? [] : ["size out of 60-150 m"], runOk ? [] : ["run time out of 7.5-16.5 s"]) });
+    const big = Math.max(m.W, m.D), E = Object.entries(m.t), tA = E.filter(([q]) => q.startsWith("atk")), tD = E.filter(([q]) => q.startsWith("def")), tR = E.filter(([q]) => q.startsWith("rot"));
+    const sizeOk = big <= 150 && Math.min(m.W, m.D) >= 60; // Valorant-like 90-150 m; Bind / Haven are narrower (61 m wide, ~90-97 m deep) and pass on run time
+    // Valorant targets at rifle run 5.4 m/s (±0.5 s rounding slack): attacker spawn → each site 15-20 s, defender spawn → each site 5-10 s, longest defender rotation 10-15 s.
+    // Named exceptions (kept out of the band on purpose, see the dims pass notes): Haven B and Lotus B are the central site of three (attacker floor 10.5 / 12.5 s; a B Main chicane on Lotus left bots stuck at its walls);
+    // Bind B is also reached through the A Short teleporter + the Market / Hookah lane (attacker floor 13 s)
+    const atkLo = (q) => (q !== "atkB" ? 14.5 : m.k === "haven" ? 10.5 : m.k === "lotus" ? 12.5 : m.k === "bind" ? 13 : 14.5), rotMax = tR.reduce((a, [, v]) => Math.max(a, v == null ? 1e9 : v), 0);
+    const errs = []; tA.forEach(([q, v]) => { if (!(v != null && v >= atkLo(q) && v <= 20.5)) errs.push(q + " " + v + " s out of " + atkLo(q) + "-20.5"); });
+    tD.forEach(([q, v]) => { if (!(v != null && v >= 4.5 && v <= 10.5)) errs.push(q + " " + v + " s out of 4.5-10.5"); });
+    if (!(rotMax >= 9.5 && rotMax <= 15.5)) errs.push("longest rotation " + rotMax + " s out of 9.5-15.5");
+    const ok = sizeOk && !errs.length && !m.bad.length;
+    report.push({ label: `Map scale ${m.k}: ${m.W} x ${m.D} m; rifle run (5.4 m/s) ${E.map(([q, v]) => q + " " + (v == null ? "—" : v + "s")).join(", ")}; targets atk 15-20 s, def 5-10 s, rotation 10-15 s; spawns clear, sites reachable on the nav graph`, el: true, handler: true, cond: ok, pass: ok, errs: m.bad.concat(sizeOk ? [] : ["size out of 60-150 m"], errs) });
   }
   if (!R) report.push({ label: "Map scale audit", el: true, handler: true, pass: false, cond: false, errs: err });
 }
@@ -2303,6 +2310,48 @@ if (!NO3) {
   const src = [/XU\.b\[u\.name\] = 1\.3; return 1; \} \/\/ Empress/, /delete XU\.b\[b\.name\]/, /PTS\[a\] = KITS\[a\]\.u/, /try \{ xBBuy\(n, s\); \}/, /\(UC\[b\.name\] \|\| 0\) < KITS\.Chamber\.u/, /const def = !xBAtk\(al\)/].filter((r) => !r.test(html));
   report.push({ label: "bot kits: source wiring (Empress until death, ult costs from KITS, bot ability buy, Chamber defence)", el: true, handler: true, pass: !src.length, cond: !src.length, errs: src.map(String) });
   try { vm.runInContext("__xe", context)("running = false; true"); toLobby(); } catch (e) {}
+}
+
+// ---------- dims pass: player scale (eye 1.6 m, crouch eye 1.15 m), crate / stack heights + wall heights on every 5v5 map, per-map mechanics (Ascent doors, Bind teleporters, Haven 3 sites, Split ropes, Lotus rotating doors, Breeze 2 big sites) ----------
+{
+  const err = [];
+  if (!/cy = 1\.6 - \(player\.ch \|\| 0\)/.test(html)) err.push("camera eye is not 1.6 m");
+  if (!/const pEye = \(\) => new THREE\.Vector3\(player\.x, 1\.6 - player\.ch/.test(html) || !/out\.set\(player\.x, 1\.6 - player\.ch/.test(html)) err.push("gameplay eye (pEye / pEyeTo) is not 1.6 m");
+  if (/1\.5 - player\.ch/.test(html)) err.push("a 1.5 m eye is still used somewhere");
+  if (!/const ct = cr \? 0\.45 : 0/.test(html)) err.push("crouch eye drop is not 0.45 m (crouch eye 1.15 m)");
+  report.push({ label: "Player scale: eye 1.6 m on the camera and in gameplay line-of-sight, crouch eye 1.15 m (0.45 m drop)", el: true, handler: true, cond: !err.length, pass: !err.length, errs: err });
+}
+if (!NO3) {
+  let R = null, err = [];
+  try { R = JSON.parse(vm.runInContext("__xe", context)(`(() => { const out = {}, keepB = boxes;
+    try { for (const k of ["ascent", "bind", "haven", "split", "lotus", "breeze"]) { if (k !== "ascent") xBuildMap(k); const bx = FMAP[k].boxes, bad = [], plat = bx.filter((q) => q.h < 4 && q.x2 - q.x1 > 6 && q.z2 - q.z1 > 6); let nc = 0, ns = 0, minW = 99;
+      bx.forEach((b) => { const w = b.x2 - b.x1, d = b.z2 - b.z1; if (b.h >= 4) { if (Math.max(w, d) > 2) minW = Math.min(minW, b.h); return; } if (Math.min(w, d) < 1.1 || Math.max(w, d) > 1.6) return;
+        const cx = (b.x1 + b.x2) / 2, cz = (b.z1 + b.z2) / 2, p = plat.find((q) => q !== b && cx > q.x1 && cx < q.x2 && cz > q.z1 && cz < q.z2 && q.h < b.h), e = b.h - (p ? p.h : 0); if (e < 0.9) return;
+        if (e <= 1.2 + 1e-6) nc++; else if (e >= 2.2 - 1e-6 && e <= 2.4 + 1e-6) ns++; else bad.push("crate (" + cx.toFixed(1) + "," + cz.toFixed(1) + ") " + e.toFixed(2) + " m: not 1.0-1.2 (single) or 2.2-2.4 (stack)"); });
+      if (minW < 4.4) bad.push("full wall only " + minW + " m tall"); if (nc < 5) bad.push("only " + nc + " single crates");
+      const S = { ascent: ASC_SITES, bind: { A: 1, B: 1 }, haven: HSITES, split: SSITES, lotus: LSITES, breeze: BZSITES }[k], n = Object.keys(S).length;
+      if (n !== ({ haven: 3, lotus: 3 }[k] || 2)) bad.push(n + " sites");
+      if (k === "ascent" && !(AD.doors.length === 2 && AD.doors.every((d) => bx.includes(d.b) && d.b.h === 0 && FMAP.ascent.solids.includes(d.m)))) bad.push("Ascent closable site doors missing / not open at load");
+      if (k === "bind" && (XG_SPEC.bind || []).filter((l) => l[2] === "tp").length !== 2) bad.push("Bind needs two one-way teleporters");
+      if (k === "split" && !(SROPES && SROPES.length >= 2 && SROPES.every((r) => r.top >= 2))) bad.push("Split vertical ropes missing");
+      if (k === "lotus" && !(LG.doors.length === 2 && LG.doors.every((d) => bx.includes(d.b)))) bad.push("Lotus rotating doors missing");
+      if (k === "breeze") { const a = BZSITES.A, b = BZSITES.B; if (Math.hypot(a[0] - b[0], a[1] - b[1]) < 60) bad.push("Breeze sites too close for long sightlines"); }
+      out[k] = { nc, ns, minW, n, bad };
+    } } finally { boxes = keepB; }
+    return JSON.stringify(out); })()`)); } catch (e) { err.push(String(e).slice(0, 300)); }
+  for (const k in R || {}) { const m = R[k]; report.push({ label: `Map dims ${k}: ${m.nc} single crates 1.0-1.2 m, ${m.ns} stacks 2.2-2.4 m, walls >= ${m.minW} m, ${m.n} sites` + ({ ascent: ", 2 closable site doors", bind: ", 2 one-way teleporters", split: ", vertical ropes", lotus: ", rotating doors", breeze: ", long A-B sightline span" }[k] || ""), el: true, handler: true, cond: !m.bad.length, pass: !m.bad.length, errs: m.bad.slice(0, 6) }); }
+  if (!R) report.push({ label: "Map dims audit", el: true, handler: true, pass: false, cond: false, errs: err });
+}
+// Ascent shutters: F toggles a door near the player, the collider closes then reopens, bots walking into a closed shutter raise it, a new round opens them
+if (!NO3) {
+  let ok = false, err = [];
+  try { const xe = vm.runInContext("__xe", context); const r = JSON.parse(xe(`(() => { const d = AD.doors[0], o = []; d.cd = 0; d.tgt = 1; d.t = 1; d.b.h = 0; const kp = player; player = null; ascDoorUse(d); player = kp;
+      for (let i = 0; i < 40; i++) { d.t = d.tgt > d.t ? Math.min(1, d.t + 0.05) : Math.max(0, d.t - 0.05); d.b.h = d.t < 0.5 ? 3.1 : 0; } o.push(d.b.h); d.cd = 0; ascDoorUse(d); for (let i = 0; i < 40; i++) { d.t = d.tgt > d.t ? Math.min(1, d.t + 0.05) : Math.max(0, d.t - 0.05); d.b.h = d.t < 0.5 ? 3.1 : 0; } o.push(d.b.h);
+      return JSON.stringify(o); })()`));
+    if (r[0] !== 3.1) err.push("closing did not raise the collider: " + r[0]); if (r[1] !== 0) err.push("opening did not clear the collider: " + r[1]);
+    if (!/ascDoorTick\(\) \{ \/\/ no allocations per frame/.test(html) || !/xLBotNear\(typeof bots !== "undefined" \? bots : null, d\) \|\| xLBotNear\(typeof allies/.test(html.slice(html.indexOf("function ascDoorTick")))) err.push("bots do not raise closed shutters");
+    ok = !err.length; } catch (e) { err.push(String(e).slice(0, 300)); }
+  report.push({ label: "Ascent closable site doors: shutter collider closes (3.1 m) and reopens, bots raise a closed shutter, rounds start open", el: true, handler: true, cond: ok, pass: ok, errs: err });
 }
 
 // ---------- print ----------
