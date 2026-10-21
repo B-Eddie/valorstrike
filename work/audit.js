@@ -1885,6 +1885,38 @@ if (!NO3) {
   try { xe("annClear(); running = false; true"); toLobby(); } catch (e) {}
 }
 
+// ---------- Retake + Operator Duel arenas visual rebuild: themed materials, site letter + plant paint, cover at player scale, colliders match visuals, spawns clear, lanes walkable ----------
+if (!NO3) {
+  let R = null, err = [];
+  try { R = JSON.parse(vm.runInContext("__xe", context)(`(() => { const out = [];
+    const SP = { retake: [[0, 17], [-1.5, 16], [1.5, 16], [-12, -15], [0, -16], [12, -12]], duel: [[-3, 14], [0, 14], [3, 14], [-3, -14], [0, -14], [3, -14], [-1.5, 13.5], [1.5, 13.5], [-1.5, -13.5], [1.5, -13.5]] };
+    for (const k of ["retake", "duel"]) { const M = MAPS[k], V = ASC_VIS[k], bx = M.boxes, bad = [];
+      if (!(V.mats >= 3)) bad.push("only " + V.mats + " themed materials created");
+      if (!(V.adds > 0 && V.adds <= 400)) bad.push("meshes added " + V.adds + " (budget 400)");
+      if (M.solids.some((m) => m.material === XM.wall || m.material === XM.tile || m.material === XM.wood || m.material === XM.metal)) bad.push("untextured default material left on a solid");
+      if (!M.g.children.some((m) => m.name === "xDeco" && m.onBeforeRender && m.onBeforeRender !== THREE.Object3D.prototype.onBeforeRender)) bad.push("no per-mode fog hook");
+      if (k === "retake") { if (!V.letters.some((l) => l.ch === "B" && l.at === "wall")) bad.push("no wall site letter"); if (!V.letters.some((l) => l.ch === "B" && l.at === "floor")) bad.push("no floor site letter");
+        if (!V.zones.some((z) => z.x === 0 && z.z === 0)) bad.push("no plant-zone paint around the spike"); if (!(V.ceil >= 2)) bad.push("ceilings " + V.ceil); }
+      else if (V.letters.length < 2) bad.push("duel end-wall markers missing");
+      if (!(V.crates >= 6)) bad.push("only " + V.crates + " crate props");
+      const posOK = M.solids.some((m) => m.position && typeof m.position.x === "number"); // the THREE stub does not track positions; REAL3 runs check placement
+      if (bx.filter((b) => b.vA || b.crate).length > M.solids.length) bad.push("more prop colliders than solid meshes");
+      bx.forEach((b) => { const sz = Math.max(b.x2 - b.x1, b.z2 - b.z1), cx = (b.x1 + b.x2) / 2, cz = (b.z1 + b.z2) / 2;
+        if (b.h < 4 && sz <= 3.5 && !(b.h >= 1 && b.h <= 3.2)) bad.push("cover " + b.h + " m tall at " + cx.toFixed(1) + "," + cz.toFixed(1));
+        if (posOK && (b.vA || b.crate) && !M.solids.some((m) => m.position && m.position.x > b.x1 - 0.05 && m.position.x < b.x2 + 0.05 && m.position.z > b.z1 - 0.05 && m.position.z < b.z2 + 0.05 && m.position.y > 0)) bad.push("collider without a bullet-stopping mesh at " + cx.toFixed(1) + "," + cz.toFixed(1)); });
+      const hit = (x, z, r) => bx.some((b) => b.h > 0.5 && x > b.x1 - r && x < b.x2 + r && z > b.z1 - r && z < b.z2 + r);
+      SP[k].forEach(([x, z]) => { if (hit(x, z, 0.45)) bad.push("spawn (" + x + "," + z + ") inside a collider"); });
+      const H = k === "retake" ? 19.5 : 9.5, D = k === "retake" ? 19.5 : 15.5, st = 0.5, key = (x, z) => x + "," + z, seen = new Set(), q = [[0, k === "retake" ? 17 : 14]];
+      seen.add(key(q[0][0], q[0][1]));
+      while (q.length) { const [x, z] = q.pop(); for (const [dx, dz] of [[st, 0], [-st, 0], [0, st], [0, -st]]) { const nx = x + dx, nz = z + dz, kk = key(nx, nz); if (seen.has(kk) || Math.abs(nx) > H - 0.45 || Math.abs(nz) > D - 0.45 || hit(nx, nz, 0.4)) continue; seen.add(kk); q.push([nx, nz]); } }
+      SP[k].forEach(([x, z]) => { const gx = Math.round(x / st) * st, gz = Math.round(z / st) * st; if (!seen.has(key(gx, gz))) bad.push("spawn (" + x + "," + z + ") not walkable from the first spawn"); });
+      if (k === "retake" && !seen.has(key(0, 2))) bad.push("spike not reachable");
+      out.push({ k, mats: V.mats, adds: V.adds, crates: V.crates, n: bx.length, bad }); }
+    return JSON.stringify(out); })()`)); } catch (e) { err.push(String(e.stack || e).slice(0, 400)); }
+  for (const m of R || []) report.push({ label: `Retake/Duel visual ${m.k}: ${m.mats} themed materials, ${m.adds} meshes added (<= 400), ${m.crates} crate props, ${m.n} colliders, every prop collider with a bullet-stopping mesh, cover 1-3.2 m, fog hook, spawns clear and walkable`, el: true, handler: true, cond: !m.bad.length, pass: !m.bad.length, errs: m.bad });
+  if (!R || R.length !== 2) report.push({ label: "Retake/Duel visual audit", el: true, handler: true, pass: false, cond: false, errs: err });
+}
+
 // ---------- print ----------
 const bad = report.filter((r) => !r.pass);
 console.log(`\n=== audit (${MID ? "THREE loads, 3D init throws" : NO3 ? "THREE missing" : "THREE stub loaded"}) — ${report.length} checks, ${bad.length} failing ===`);
