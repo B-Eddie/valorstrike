@@ -966,7 +966,7 @@ body.x-cbh #game{--ha:#3d8bff;--he:#ff9f1c}
   <section class="x-qon" id="xOn" aria-labelledby="xOnH">
     <div class="x-qon__h"><h3 id="xOnH">Online</h3><small>Peer-to-peer with friends · bots fill empty slots</small><label class="x-qon__nm">Name <input id="xOnName" placeholder="Your name" maxlength="16" autocomplete="off" spellcheck="false"></label></div>
     <div class="x-qon__row">
-      <div class="x-qon__seg" role="group" aria-label="Online mode"><button type="button" data-om="dm" aria-pressed="false">Deathmatch</button><button type="button" data-om="tdm" aria-pressed="true">Team Deathmatch</button></div>
+      <div class="x-qon__seg" role="group" aria-label="Online mode"><button type="button" data-om="dm" aria-pressed="false">Deathmatch</button><button type="button" data-om="tdm" aria-pressed="true">Team Deathmatch</button><button type="button" data-om="five" aria-pressed="false">Unrated (Spike)</button></div>
       <button type="button" class="x-qrange x-qon__go" id="xOnQuick">Quick Match</button>
       <button type="button" class="x-qrange" id="xOnCreate">Create private</button>
       <span class="x-qon__join"><input id="xOnCode" maxlength="6" placeholder="CODE" aria-label="Room code" autocomplete="off" spellcheck="false"><button type="button" class="x-qrange" id="xOnJoin">Join</button></span>
@@ -8008,7 +8008,7 @@ function xdTick() {
   if (player && player.hp > 0 && !FV.pri) { for (const d of XD.L) if (!XD.SIDE[d.w] && Math.hypot(d.x - player.x, d.z - player.z) < 0.9) { xdTake(d); xdArm(d.w, d.am); feed("Picked up " + d.w); break; } } // walk over: auto-pickup with no primary
   if (++XD.f % 6) return; // bots: every 6th step
   for (const u of bots.concat(typeof allies !== "undefined" ? allies : [])) {
-    if (!u || !u.alive || u.hp <= 0 || !u.g) continue; const p = u.g.position;
+    if (!u || !u.alive || u.hp <= 0 || !u.g || u.nt) continue; const p = u.g.position;
     const uw = xdBW(u); for (const d of XD.L) if (!XD.SIDE[d.w] && xdRank(d.w) > xdRank(uw) && Math.hypot(d.x - p.x, d.z - p.z) < 2) { xdTake(d); if (uw && !XD.SIDE[uw]) xdDrop(uw, p.x, p.z); xdSetBW(u, d.w); break; }
   }
 }
@@ -8112,7 +8112,7 @@ function fiveTick(dt) {
   const hold = alive4(), bar = $("defuse"); let show = "", prog = 0;
   if (s.st === "carry") {
     const c = s.c, p = fPos(c), site = inSite(p);
-    if (site && (c !== player || (hold && !player.mv && since > 0.15))) { s.pt += dt; s.pb = (s.pb || 0) - dt; if (s.pb <= 0) { s.pb = 0.5; SFX.plantBeep(c === player ? null : p); } if (c === player) { show = "Planting"; prog = s.pt / 4; } } // player plant: stationary; moving or firing cancels
+    if (site && (c !== player ? !c.nt || c.h4 : (hold && !player.mv && since > 0.15))) { s.pt += dt; s.pb = (s.pb || 0) - dt; if (s.pb <= 0) { s.pb = 0.5; SFX.plantBeep(c === player ? null : p); } if (c === player) { show = "Planting"; prog = s.pt / 4; } } // player plant: stationary; moving or firing cancels
     else { s.pt = 0; if (c === player && site) show = "Hold 4 to plant"; }
     if (s.pt >= 4) {
       s.st = "plant"; s.site = site; s.pn = fName(c); if (SB[s.pn]) SB[s.pn].pl = (SB[s.pn].pl || 0) + 1; s.t = 45; s.x = p.x; s.z = p.z; s.dt = 0; s.beep = 0;
@@ -8123,12 +8123,12 @@ function fiveTick(dt) {
   } else if (s.st === "plant") {
     // beep is synced to the spike's light pulse in xVis (Val cadence)
     if (FV.atk && !fAtk().length) bots.forEach((b) => { // attackers gone: defender bots walk to the spike
-      if (!b.alive) return; const p = b.g.position, [gx, gz] = fNav(p.x, p.z, s.x, s.z), ex = gx - p.x, ez = gz - p.z, ed = Math.hypot(ex, ez), st = botRun(b, false) * dt;
+      if (!b.alive || b.nt) return; const p = b.g.position, [gx, gz] = fNav(p.x, p.z, s.x, s.z), ex = gx - p.x, ez = gz - p.z, ed = Math.hypot(ex, ez), st = botRun(b, false) * dt;
       if (ed > 1.5) { if (!blocked(p.x + (ex / ed) * st, p.z, 0.45)) p.x += (ex / ed) * st; if (!blocked(p.x, p.z + (ez / ed) * st, 0.45)) p.z += (ez / ed) * st; }
     });
     const near = fDef().filter((u) => { const p = fPos(u); return Math.hypot(p.x - s.x, p.z - s.z) < (u === player ? 2.5 : 3.2); });
     const safe = (u) => { const p = fPos(u); return !fAtk().some((a) => { const q = fPos(a); return Math.hypot(q.x - p.x, q.z - p.z) < 10; }); };
-    const pn = near.includes(player), u = pn && hold ? player : near.find((x) => x !== player && safe(x));
+    const pn = near.includes(player), u = pn && hold ? player : near.find((x) => x !== player && (x.nt ? x.h4 : safe(x)));
     if (u !== s.du) { s.du = u || null; if (u && u !== player) feed(u.name + " is defusing"); }
     if (u) { const d0 = s.dt; s.dt += dt; SFX.whir(s.dt / 7); if (d0 < 3.5 && s.dt >= 3.5 && u === player) SFX.defHalf(); } else s.dt = s.dt >= 3.5 ? 3.5 : 0;
     if (pn || (u && !FV.atk)) { show = u === player ? "Defusing" : u ? u.name + " defusing" : "Hold 4 to defuse"; prog = s.dt / 7; }
@@ -10106,7 +10106,7 @@ function mpReset() {
   MP.closing = true;
   try { MP.conns.forEach((c) => { try { c.conn.close(); } catch (e) {} }); } catch (e) {}
   try { if (MP.hc) MP.hc.close(); } catch (e) {} try { if (MP.peer) MP.peer.destroy(); } catch (e) {}
-  MP.conns = new Map(); MP.peer = null; MP.hc = null; MP.on = false; MP.role = null; MP.st = "idle"; MP.code = ""; MP.ev = []; MP.me = -1; MP.cl = false; MP.cdAt = 0; MP.room = null; MP.hitT = {};
+  MP.conns = new Map(); MP.peer = null; MP.hc = null; MP.on = false; MP.role = null; MP.st = "idle"; MP.code = ""; MP.ev = []; MP.me = -1; MP.cl = false; MP.cdAt = 0; MP.room = null; MP.hitT = {}; MP.m5 = 0; MP.u5 = null;
   MP.closing = false; mpTagsOff();
 }
 function mpBusy() { return MP.st === "conn" || MP.st === "find"; }
@@ -10201,12 +10201,13 @@ function mpHostMsg(c, m) {
     if (m.v !== MP_V) { mpSend(c.conn, { t: "bad" }); return setTimeout(() => { try { c.conn.close(); } catch (e) {} }, 200); }
     if (mpHumans() >= MP_MAX) { mpSend(c.conn, { t: "full" }); return setTimeout(() => { try { c.conn.close(); } catch (e) {} }, 200); }
     c.name = mpUniq(m.n); c.ag = XAG[m.ag] ? m.ag : null; c.ok = true; MP.conns.set(c.id, c);
-    if (MP.st === "game" && running) { if (!mpSeat(c)) { MP.conns.delete(c.id); mpSend(c.conn, { t: "full" }); return; } try { feed(c.name + " joined"); } catch (e) {} mpNote(c.name + " joined"); }
+    if (MP.st === "game" && (running || MP.m5)) { if (!(MP.m5 ? mpSeat5(c, false) : mpSeat(c))) { MP.conns.delete(c.id); mpSend(c.conn, { t: "full" }); return; } try { feed(c.name + " joined"); } catch (e) {} mpNote(c.name + " joined"); }
     return mpRoomCast();
   }
   if (!c.ok) return;
   if (m.t === "bye") { try { c.conn.close(); } catch (e) {} return mpDrop(c); }
   const u = c.u; if (!u || MP.st !== "game") return;
+  if (MP.m5 && mpHost5(c, u, m)) return;
   if (m.t === "in") { // movement: client-predicted, host clamps teleports and wall clips
     if (typeof m.w === "string" && WEAP[m.w]) u.w = m.w;
     if (m.sq !== u.sq || !u.alive) return;
@@ -10226,7 +10227,8 @@ function mpHostHit(c, u, m) { // a client's hit claim: target alive, enemy, in r
   const t = mpUnit(m.i), n = Math.round(+m.n || 0), now = performance.now();
   if (!t || t === u || !u.alive || !(n > 0)) return;
   if (t === player ? player.hp <= 0 : !t.alive) return;
-  if (FV.tdm && mpTeamOf(t) === mpTeamOf(u)) return;
+  if ((FV.tdm || MP.m5) && mpTeamOf(t) === mpTeamOf(u)) return;
+  if (MP.m5 && FV.buy > 0) return;
   const tx = t === player ? player.x : t.g.position.x, tz = t === player ? player.z : t.g.position.z;
   if (Math.hypot(tx - u.g.position.x, tz - u.g.position.z) > 120) return;
   if (now - c.nT > 1000) { c.nT = now; c.nH = 0; } if (++c.nH > 24) return;
@@ -10263,6 +10265,7 @@ function mpEnts() { // snapshot rows: [nid, team, name, agent, x, y, z, rotY, hp
 }
 function mpStart() { // host: build the match, number every unit, seat every connected player
   if (MP.role !== "host" || MP.st === "game") return;
+  MP.m5 = 0; if (MP.mode === "five") return mpStart5();
   const tdm = MP.mode === "tdm", pk = FV.pick; MP.ev = [];
   FV.pick = MP.map || "ascent"; FV.dmN = 9; MP.st = "game";
   try { xGo(tdm ? startTDM : startDM); } finally { FV.pick = pk; FV.dmN = 0; }
@@ -10293,6 +10296,7 @@ function mpMkUnit(e, ally) {
 }
 function mpCliStart(m) {
   if (m.v !== MP_V) return mpLost("The host runs a different game version.");
+  MP.m5 = 0; if (m.mode === "five") return mpCliStart5(m);
   const tdm = m.mode === "tdm", pk = FV.pick; FV.pick = m.map; FV.dmN = 9;
   try { $("result").style.display = "none"; xGo(tdm ? startTDM : startDM); } finally { FV.pick = pk; FV.dmN = 0; }
   bots.forEach((b) => scene.remove(b.g)); allies.forEach((a) => scene.remove(a.g)); bots = []; allies = [];
@@ -10316,7 +10320,7 @@ function mpCliSnap(m) {
   for (const e of m.u || []) {
     if (e[0] === MP.me) { mpCliSelf(e); continue; }
     seen.add(e[0]); const all = bots.concat(allies); let u = all.find((x) => x.nid === e[0]);
-    if (!u) { const ally = FV.tdm && e[1] === MP.team; u = mpMkUnit(e, ally); (ally ? allies : bots).push(u); try { SB[u.name] = SB[u.name] || { k: 0, d: 0, a: 0, fb: 0, pd: 0, hs: 0, dmg: 0, pl: 0, sp: 0, ping: 0 }; } catch (er) {} }
+    if (!u) { const ally = (FV.tdm || MP.m5) && e[1] === MP.team; u = mpMkUnit(e, ally); (ally ? allies : bots).push(u); try { SB[u.name] = SB[u.name] || { k: 0, d: 0, a: 0, fb: 0, pd: 0, hs: 0, dmg: 0, pl: 0, sp: 0, ping: 0 }; } catch (er) {} }
     const n = mpClean(e[2]); if (n && n !== u.name) { mpRename(u, n); XBA[n] = XAG[e[3]] ? e[3] : u.agent; }
     if (XAG[e[3]] && e[3] !== u.agent) { u.agent = e[3]; XBA[u.name] = e[3]; mpDropModel(u); }
     u.hum = e[12]; u.w = e[11]; u.armor = e[9]; u.ping = e[13];
@@ -10332,12 +10336,14 @@ function mpCliSnap(m) {
   for (const v of m.ev || []) try {
     if (v[0] === "k") { const k = mpIn(v[1]), d = mpIn(v[2]); kfeed(k, d, !!v[3], v[4]); if (d === "You") { try { xKLDie(k, v[4]); } catch (e) {} stats.d++; } if (k === "You") { stats.k++; if (v[3]) stats.hs = (stats.hs || 0) + 1; try { jKill(); } catch (e) {} } }
     else if (v[0] === "n") feed(v[1]);
+    else if (v[0] === "sp") { feed(mpIn(v[2]) + " planted the Spike on " + v[3]); say("Spike planted · " + v[3], 1500); try { SFX.planted(); } catch (e) {} }
     else if (v[0] === "s" && v[1] !== MP.me) { const u = bots.concat(allies).find((x) => x.nid === v[1]); if (u && u.alive) SFX.at(u.g.position, WEAP[v[2]] ? v[2] : "Vandal"); }
   } catch (e) {}
   try { showStats(); } catch (e) {}
 }
 function mpCliSelf(e) {
-  if (e[14] !== MP.sq) { MP.sq = e[14]; player.x = e[4]; player.z = e[6]; player.y = 0; player.vy = 0; player.vx = player.vz = 0; yaw = Math.atan2(e[4], e[6]); pitch = 0; player.hp = 100; player.armor = 50; try { dmAmmo(); xKLReset(); setScope(false); } catch (er) {} updHud(); }
+  if (e[14] !== MP.sq && MP.m5) { MP.sq = e[14]; mpCliRound5(e); }
+  else if (e[14] !== MP.sq) { MP.sq = e[14]; player.x = e[4]; player.z = e[6]; player.y = 0; player.vy = 0; player.vx = player.vz = 0; yaw = Math.atan2(e[4], e[6]); pitch = 0; player.hp = 100; player.armor = 50; try { dmAmmo(); xKLReset(); setScope(false); } catch (er) {} updHud(); }
   if (e[10]) { if (e[8] < player.hp - 0.5) { try { $("dmg").style.opacity = 1; setTimeout(() => $("dmg").style.opacity = 0, 150); } catch (er) {} } if (player.hp > 0 || e[8] > 0) { player.hp = e[8]; player.armor = e[9]; } }
   else if (player.hp > 0) { player.hp = 0; reloading = 0; fireHeld = false; try { setScope(false); } catch (er) {} }
   updHud();
@@ -10349,28 +10355,30 @@ function mpCliMsg(m) {
   if (m.t === "room") { MP.room = m; MP.mode = m.mode; MP.map = m.map; if (MP.st !== "game" && MP.st !== "post") MP.st = "room"; return mpUI(); }
   if (m.t === "start") return mpCliStart(m);
   if (m.t === "s") return mpCliSnap(m);
+  if (MP.m5 && mpCli5(m)) return;
   if (m.t === "end") { if (MP.st !== "game") return; mpCliSnap(Object.assign({ ev: [] }, m)); MP.st = "post"; DM.over = m.over == null ? null : m.over === "t" || m.over === "r" ? (MP.team === 0 ? m.over : m.over === "t" ? "r" : "t") : mpIn(m.over); try { dmEnd(); } catch (e) { xE(e); } MP.cl = false; return mpUI(); }
   if (m.t === "full") return mpLost("The room is full.");
 }
 // client: no local AI / scoring; own damage to others becomes a hit claim; damage to you comes only from the host
 { const h0 = hurt; hurt = function (t, n, by) {
-  if (MP.cl && MP.st === "game" && mode === "five" && FV.dm) {
+  if (MP.cl && MP.st === "game" && mode === "five" && (FV.dm || MP.m5)) {
     if (!t || t === player) return;
     if (t.nt && t.nid != null && by === undefined && t.alive && n > 0) { const hs = xHS; xHS = false; mpSend(MP.hc, { t: "hit", i: t.nid, n: Math.round(n), hs: hs ? 1 : 0, w: rw === "knife" ? "Knife" : wName() }); }
     return;
   }
   return h0.apply(this, arguments); }; }
-{ const k0 = kill; kill = function (b) { if (MP.cl && MP.st === "game" && mode === "five" && FV.dm) return; return k0.apply(this, arguments); }; }
+{ const k0 = kill; kill = function (b) { if (MP.cl && MP.st === "game" && mode === "five" && (FV.dm || MP.m5)) return; return k0.apply(this, arguments); }; }
 { const t0 = fiveTick; fiveTick = function (dt) {
+  if (MP.cl && MP.st === "game" && mode === "five" && MP.m5) return mpCliTick5(dt);
   if (MP.cl && MP.st === "game" && mode === "five" && FV.dm) { // client tick: own movement + gun only; the host owns everything else
     xdTick(); if (window.xLdOn) dt = 0; if (!running) return;
     tick(dt); if ((DM.lbT -= dt) <= 0) { DM.lbT = 0.25; try { dmLB(); } catch (e) {} } return;
   }
   return t0.apply(this, arguments); }; }
 // scoreboard: team split by the live arrays; humans show ping, bots a BOT tag
-{ const t0 = sbTeams; sbTeams = function () { if (!(MP.on && mode === "five" && FV.dm)) return t0.apply(this, arguments);
+{ const t0 = sbTeams; sbTeams = function () { if (!(MP.on && mode === "five" && (FV.dm || MP.m5))) return t0.apply(this, arguments);
   const A = ["You"].concat(allies.map((u) => u.name)).filter((n) => SB[n]), B = bots.map((u) => u.name).filter((n) => SB[n]); return [A, B]; }; }
-{ const t0 = sbTable; sbTable = function (list) { let h = t0.apply(this, arguments); if (!(MP.on && mode === "five" && FV.dm)) return h;
+{ const t0 = sbTable; sbTable = function (list) { let h = t0.apply(this, arguments); if (!(MP.on && mode === "five" && (FV.dm || MP.m5))) return h;
   const U = bots.concat(allies);
   for (const n of list) { const u = n === "You" ? null : U.find((x) => x.name === n), tag = n === "You" ? (MP.role === "host" ? "HOST" : MP.ping + " ms") : u && u.hum ? (MP.role === "host" ? (([...MP.conns.values()].find((c) => c.u === u) || {}).ping || 0) + " ms" : u.nid === 0 ? "HOST" : (u.ping || 0) + " ms") : "BOT";
     h = h.split('<td class="nm">' + n + "</td>").join('<td class="nm">' + n + ' <small class="x-mpp">' + tag + "</small></td>"); }
@@ -10421,11 +10429,12 @@ setInterval(function mpNet() {
     if (now - MP.piT > 1000) { MP.piT = now; MP.conns.forEach((c) => { mpSend(c.conn, { t: "pi", c: now }); if (now - c.last > 10000) { try { c.conn.close(); } catch (e) {} mpDrop(c); } }); }
     if (MP.st === "room" && MP.pub && MP.cdAt) { if (now >= MP.cdAt) { MP.cdAt = 0; mpStart(); } else if (now - MP.rmT > 1000) { MP.rmT = now; mpRoomCast(); } }
     else if ((MP.st === "room" || MP.st === "post") && now - MP.rmT > 2000) { MP.rmT = now; mpRoomCast(); }
-    if (MP.st === "game" && now - MP.nsT >= 50) { MP.nsT = now; const s = { t: "s", tl: +(+timeLeft).toFixed(2), u: mpEnts(), k: mpKD(DM.k), d: mpKD(DM.d), ev: MP.ev }; MP.ev = []; MP.conns.forEach((c) => { if (c.u) mpSend(c.conn, s); }); }
+    if (MP.m5 && MP.st === "game") mpRSNet(now);
+    if (MP.st === "game" && now - MP.nsT >= 50) { MP.nsT = now; const s = { t: "s", tl: +(+timeLeft).toFixed(2), u: mpEnts(), k: MP.m5 ? mpSBK("k") : mpKD(DM.k), d: MP.m5 ? mpSBK("d") : mpKD(DM.d), ev: MP.ev }; MP.ev = []; MP.conns.forEach((c) => { if (c.u) mpSend(c.conn, s); }); }
   } else if (MP.role === "client") {
     if (now - MP.piT > 1000) { MP.piT = now; mpSend(MP.hc, { t: "pi", c: now }); }
     if (now - MP.last > 10000) return mpLost("Lost connection to the host.");
-    if (MP.st === "game" && running && player && now - MP.inT >= 33) { MP.inT = now; mpSend(MP.hc, { t: "in", x: +player.x.toFixed(3), y: +(player.y || 0).toFixed(3), z: +player.z.toFixed(3), r: +yaw.toFixed(3), p: +pitch.toFixed(3), w: wName(), sq: MP.sq }); }
+    if (MP.st === "game" && running && player && now - MP.inT >= 33) { MP.inT = now; mpSend(MP.hc, { t: "in", x: +player.x.toFixed(3), y: +(player.y || 0).toFixed(3), z: +player.z.toFixed(3), r: +yaw.toFixed(3), p: +pitch.toFixed(3), w: wName(), sq: MP.sq, h4: MP.m5 && alive4() ? 1 : 0 }); }
   }
 }, 33);
 // ---- ONLINE section UI (PLAY queue panel) ----
@@ -10438,7 +10447,7 @@ function mpUI() {
   box.querySelectorAll("[data-om]").forEach((b) => { b.setAttribute("aria-pressed", b.dataset.om === MP.mode ? "true" : "false"); b.disabled = busy || (inR && !(MP.role === "host" && !MP.pub)); });
   if (!inR) { mpMsg(MP.msg); return; }
   set("xOnCodeT", MP.pub ? "PUBLIC" : MP.code || "—"); const cp = mpEl("xOnCopy"); if (cp) cp.hidden = MP.pub || !MP.code;
-  set("xOnRoomM", (MP.mode === "tdm" ? "Team Deathmatch" : "Deathmatch") + " · " + ((R && R.map) || MP.map || "ascent").replace(/^./, (c) => c.toUpperCase()) + (MP.pub && R && R.cd > 0 && (R.st || MP.st) === "room" ? " · starts in " + R.cd + " s" : "") + ((R && R.st) === "game" ? " · match in progress" : ""));
+  set("xOnRoomM", (MP.mode === "five" ? "Unrated (Spike) · 5v5" : MP.mode === "tdm" ? "Team Deathmatch" : "Deathmatch") + " · " + ((R && R.map) || MP.map || "ascent").replace(/^./, (c) => c.toUpperCase()) + (MP.pub && R && R.cd > 0 && (R.st || MP.st) === "room" ? " · starts in " + R.cd + " s" : "") + ((R && R.st) === "game" ? " · match in progress" : ""));
   const ul = mpEl("xOnList"); if (ul && R) { const s = R.pl.map((p) => p.n + "|" + p.p + "|" + p.h).join(","); if (ul.dataset.s !== s) { ul.dataset.s = s; ul.textContent = "";
     R.pl.forEach((p) => { const li = document.createElement("li"), b = document.createElement("b"), sm = document.createElement("small"); b.textContent = p.n + (p.n === MP.name ? " (you)" : ""); sm.textContent = p.h ? "HOST" : p.p + " ms"; li.append(b, sm); ul.appendChild(li); });
     for (let i = R.pl.length; i < MP_MAX; i++) { const li = document.createElement("li"), b = document.createElement("b"); li.className = "bot"; b.textContent = "Bot"; li.appendChild(b); ul.appendChild(li); } } }
@@ -10462,6 +10471,202 @@ try {
     try { if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(c).then(ok, no); else no(); } catch (e) { no(); } });
   mpUI();
 } catch (e) { console.warn("online UI unavailable", e); }
+// ---- ONLINE 5v5 UNRATED (Spike): the host runs the offline 5v5 round loop (buy phase, timer, spike, economy, half swap, OT); remote players
+// take bot slots (by name, kept across rounds: fSpawn rebuilds the units every round), bots fill the rest. Round state goes out at 5 Hz ("rs":
+// each team only gets its own credits), round start ("rd") / round end ("re") / buy results ("bo") as events; snapshots are the DM ones. ----
+const mp5H = () => MP.role === "host" && MP.m5 && MP.st === "game";
+const mp5C = () => MP.cl && MP.m5 && MP.st === "game" && mode === "five";
+function mpSBK(f) { const r = {}; try { for (const n in SB) if (SB[n] && SB[n][f]) r[mpOut(n)] = SB[n][f]; } catch (e) {} return r; }
+function mpRename5(u, n) { const o = u.name; if (o === n) return; mpRename(u, n);
+  for (const A of [F_MATES, F_EN]) { const i = A.indexOf(o); if (i >= 0) A[i] = n; }
+  if (FV.bs[o]) { FV.bs[n] = FV.bs[o]; delete FV.bs[o]; } if (MP.u5 && MP.u5[o]) { MP.u5[n] = MP.u5[o]; delete MP.u5[o]; } XBA[n] = XBA[o]; }
+function mp5Seat(n) { if (!(MP.role === "host" && MP.m5)) return null; for (const c of MP.conns.values()) if (c.ok && c.u && !c.pend && c.nm === n) return c; return null; }
+function mpSeat5(c, now) { // now=false: late join, seated at the next round start (fSpawn)
+  if (!now) { let free = 0; for (const u of allies.concat(bots)) if (!u.hum) free++; MP.conns.forEach((o) => { if (o !== c && o.pend) free--; }); if (free <= 0) return false;
+    c.pend = 1; mpSend(c.conn, mpRoomInfo()); mpNote(c.name + " joins next round"); return true; }
+  let h0 = 1, h1 = 0; for (const u of allies) if (u.hum) h0++; for (const u of bots) if (u.hum) h1++;
+  let team = h0 <= h1 ? 0 : 1, L = team ? bots : allies, u = L.find((x) => !x.hum);
+  if (!u) { team = 1 - team; L = team ? bots : allies; u = L.find((x) => !x.hum); }
+  if (!u) return false;
+  mpRename5(u, c.name); const inf = MP.u5[u.name] || (MP.u5[u.name] = { nid: u.nid, ag: u.agent || "Jett", sq: 0 });
+  if (c.ag && XAG[c.ag] && c.ag !== inf.ag) { inf.ag = c.ag; u.agent = c.ag; mpDropModel(u); } XBA[u.name] = inf.ag;
+  const fresh = FV.you + FV.them === 0 && FV.buy > 0;
+  let s = FV.bs[u.name]; if (!s || fresh) { const sp = s ? 800 - s.cr : 0; s = FV.bs[u.name] = { cr: 800, w: "Classic", arm: 0, alive: false }; bBack(u.name, sp); u.armor = 0; }
+  if (!s.alive && !fresh) { s.w = "Classic"; s.arm = 0; }
+  c.nm = u.name; c.team = team; c.pend = 0; c.ab = { c: 0, q: 0, e: 1 }; c.bl = [];
+  c.pri = s.w && !bSide(s.w) ? s.w : null; c.sec = s.w && bSide(s.w) ? s.w : "Classic"; u.w = c.pri || c.sec;
+  Object.assign(u, { nt: 1, hum: 1, rp: c.id, nb: [], h4: 0, xTt: null, sq: inf.sq }); c.u = u;
+  return true;
+}
+function mpStartMsg5(c) { return { t: "start", v: MP_V, mode: "five", map: FV.map, you: c.u.nid, team: c.team, u: mpEnts(), k: mpSBK("k"), d: mpSBK("d"), rs: mpRS(c.team), me: mpMe5(c), ld: [c.pri, c.sec], atk: FV.atk ? 1 : 0 }; }
+function mpMe5(c) { const s = FV.bs[c.nm]; return s ? s.cr | 0 : 0; }
+function mpStart5() {
+  const pk = FV.pick, sw = window.xSwift; MP.ev = []; MP.u5 = null; MP.spSt = "";
+  FV.pick = MP.map || "ascent"; FV.dm = false; FV.tdm = false; FV.srOn = 0; window.xSwift = false; MP.st = "game"; MP.m5 = 1;
+  try { xGo(startFive); } finally { FV.pick = pk; window.xSwift = sw; }
+  if (!running) { MP.st = "room"; MP.m5 = 0; mpMsg("The match couldn't start."); return mpUI(); }
+  MP.u5 = {}; let n = 1; for (const u of allies.concat(bots)) { u.nid = n++; u.hum = 0; u.nt = 0; u.sq = 0; MP.u5[u.name] = { nid: u.nid, ag: u.agent || xAg(u) || "Jett", sq: 0 }; }
+  MP.conns.forEach((c) => { if (c.ok && mpSeat5(c, true)) mpSend(c.conn, mpStartMsg5(c)); });
+  mpUI();
+}
+{ const f0 = fSpawn; fSpawn = function () { // host: keep nids / seats across the per-round unit rebuild; late joiners take their slot here
+  if (!(mp5H() && MP.u5)) return f0.apply(this, arguments);
+  const nw = []; MP.conns.forEach((c) => { if (c.ok && c.pend && mpSeat5(c, true)) nw.push(c); });
+  const r = f0.apply(this, arguments), all = allies.concat(bots);
+  for (const u of all) { const inf = MP.u5[u.name]; if (!inf) continue; u.nid = inf.nid; u.agent = inf.ag; XBA[u.name] = inf.ag; u.hum = 0; u.nt = 0; u.sq = inf.sq; }
+  MP.conns.forEach((c) => { if (!c.u || c.pend) return; const u = all.find((x) => x.name === c.nm), inf = MP.u5[c.nm]; if (!u || !inf) { c.u = null; return; }
+    inf.sq++; Object.assign(u, { nt: 1, hum: 1, rp: c.id, nb: [], h4: 0, sq: inf.sq, w: c.pri || c.sec }); c.u = u; c.bl = []; c.ab.e = Math.max(1, c.ab.e | 0); });
+  MP.conns.forEach((c) => { if (!c.u) return; if (nw.indexOf(c) >= 0) mpSend(c.conn, mpStartMsg5(c)); else mpSend(c.conn, { t: "rd", ld: [c.pri, c.sec], cr: mpMe5(c), b: FV.buy, atk: FV.atk ? 1 : 0 }); });
+  return r; }; }
+{ const b0 = fBotBuy; fBotBuy = function (n) { const c = mp5H() ? mp5Seat(n) : null; if (!c) return b0.apply(this, arguments); // a human's slot: no bot shopping
+  const s = FV.bs[n]; if (!s.alive) { c.pri = null; c.sec = "Classic"; s.arm = 0; } s.w = c.pri || c.sec; return s; }; }
+{ const c0 = fCheck; fCheck = function (win, text, title) {
+  if (mp5C()) return; // clients never score rounds
+  const was = running, r = c0.apply(this, arguments);
+  if (mp5H() && was && !running) {
+    const over = !!FV.surr || (Math.max(FV.you, FV.them) >= FIVE_WIN && Math.abs(FV.you - FV.them) >= 2);
+    const m = { t: "re", w: win ? 1 : 0, tx: String(text || "").replace(/\bYou\b/g, MP.name), ti: title || "", o: over ? 1 : 0, sc: [FV.you, FV.them], u: mpEnts(), k: mpSBK("k"), d: mpSBK("d") };
+    MP.conns.forEach((c) => { if (c.u) mpSend(c.conn, Object.assign({ me: mpMe5(c) }, m)); });
+    if (over) { MP.st = "post"; const e = { t: "end", sc: [FV.you, FV.them] }; MP.conns.forEach((c) => { if (c.u) mpSend(c.conn, e); c.u = null; c.pend = 0; }); mpUI(); }
+  }
+  return r; }; }
+function mpRS(team) { // compact round state for one team
+  const s = FV.sp || {}, mine = team === (FV.atk ? 0 : 1), see = mine || s.st === "plant" || !!s.seen;
+  let cn = -1; if (s.st === "carry" && s.c && mine) cn = s.c === player ? 0 : s.c.nid != null ? s.c.nid : -1;
+  const cr = {}; if (team === 0) { cr[MP.name] = FV.cr | 0; for (const u of allies) cr[u.name] = ((FV.bs[u.name] || {}).cr) | 0; } else for (const u of bots) cr[u.name] = ((FV.bs[u.name] || {}).cr) | 0;
+  return { b: +Math.max(0, FV.buy).toFixed(1), tl: +(+timeLeft).toFixed(1), sc: [FV.you, FV.them], atk: FV.atk ? 1 : 0,
+    sp: [s.st || "", cn, see ? +(+s.x || 0).toFixed(2) : 0, see ? +(+s.z || 0).toFixed(2) : 0, +(+s.t || 0).toFixed(1), +(+s.dt || 0).toFixed(2), +(+s.pt || 0).toFixed(2), mine || s.st === "plant" ? s.site || "" : "", s.seen ? 1 : 0], cr };
+}
+function mpRSNet(now) {
+  const s = FV.sp || {}; if (s.st !== MP.spSt) { if (s.st === "plant") MP.ev.push(["sp", "plant", mpOut(s.pn || ""), s.site || ""]); MP.spSt = s.st; }
+  if (now - (MP.rsT || 0) < 200) return; MP.rsT = now;
+  const R = [mpRS(0), mpRS(1)]; MP.conns.forEach((c) => { if (c.u) mpSend(c.conn, Object.assign({ t: "rs", me: mpMe5(c) }, R[c.team ? 1 : 0])); });
+}
+function mpHost5(c, u, m) { // returns true when handled
+  if (m.t === "in") { u.h4 = m.h4 ? 1 : 0; if (m.w !== c.pri && m.w !== c.sec) delete m.w; return false; }
+  const s = FV.bs[c.nm]; if (!s) return m.t === "buy" || m.t === "sell";
+  const no = (n) => { mpSend(c.conn, { t: "bo", ok: 0, n, cr: s.cr, ld: [c.pri, c.sec], a: s.arm, ab: c.ab }); return true; };
+  const ok = (n) => { s.w = c.pri || c.sec; u.w = s.w; mpSend(c.conn, { t: "bo", ok: 1, n, cr: s.cr, ld: [c.pri, c.sec], a: s.arm, ab: c.ab }); return true; };
+  if (m.t === "buy") { const n = String(m.n || "");
+    if (!(FV.buy > 0) || !u.alive) return no(n);
+    if (n.startsWith("ab:")) { const k = n.slice(3), K2 = KITS[u.agent] || KITS.Jett, it = K2 && K2.buy && K2.buy.find((x) => x[0] === k);
+      if (!it || (c.ab[k] | 0) >= ((K2.mx || {})[k] || 0) || s.cr < it[2]) return no(n);
+      c.ab[k] = (c.ab[k] | 0) + 1; s.cr -= it[2]; c.bl.push({ ab: k, p: it[2] }); sbSpend(c.nm, it[2]); return ok(n); }
+    const it = bItem(n); if (!it || !(it[2] || WEAP[n])) return no(n); const p = it[1], a = it[2];
+    if (a) { if ((s.arm || 0) >= a) return no(n); const i = c.bl.findIndex((x) => x.a), e = c.bl[i]; if (s.cr + (e ? e.p : 0) < p) return no(n);
+      let prev = s.arm || 0; if (e) { prev = e.prev; s.cr += e.p; bBack(c.nm, e.p); c.bl.splice(i, 1); } s.arm = a; u.armor = a; c.bl.push({ n, p, a, prev }); }
+    else { if (n === c.pri || n === c.sec) return no(n); const sl = bSide(n) ? "pis" : "pri", i = c.bl.findIndex((x) => x.sl === sl), e = c.bl[i];
+      if (s.cr + (e ? e.p : 0) < p) return no(n);
+      if (e) { s.cr += e.p; bBack(c.nm, e.p); if (sl === "pis") c.sec = e.prev; else c.pri = e.prev; c.bl.splice(i, 1); }
+      const prev = sl === "pis" ? c.sec : c.pri; if (sl === "pis") c.sec = n; else c.pri = n; c.bl.push({ n, p, sl, prev }); }
+    s.cr = capC(s.cr - p); sbSpend(c.nm, p); return ok(n); }
+  if (m.t === "sell") { const n = String(m.n || ""), ab = n.startsWith("ab:") ? n.slice(3) : ""; if (!(FV.buy > 0)) return no(n);
+    let i = -1; for (let j = c.bl.length - 1; j >= 0; j--) if (ab ? c.bl[j].ab === ab : c.bl[j].n === n) { i = j; break; } if (i < 0) return no(n);
+    const e = c.bl[i]; if (ab) { if (!(c.ab[ab] > 0)) return no(n); c.ab[ab]--; } else if (e.a) { s.arm = e.prev; u.armor = e.prev; } else { if (e.sl === "pis") c.sec = e.prev || "Classic"; else c.pri = e.prev || null; }
+    s.cr = capC(s.cr + e.p); bBack(c.nm, e.p); c.bl.splice(i, 1); return ok(n); }
+  if (m.t === "drop") { const sp = FV.sp; if (FV.buy > 0 || !sp || sp.st !== "carry" || sp.c !== u || !u.alive) return true;
+    const p = u.g.position, r = +m.r || 0; let x = p.x - Math.sin(r) * 2, z = p.z - Math.cos(r) * 2; try { if (!isFinite(x) || !isFinite(z) || blocked(x, z, 0.3)) { x = p.x; z = p.z; } } catch (e) { x = p.x; z = p.z; }
+    sp.st = "drop"; sp.x = x; sp.z = z; sp.nd = u; sp.ndt = performance.now() + 1000; fsM.position.set(x, 0.4, z); fsM.visible = true; fsSet(); feed(u.name + " dropped the Spike"); return true; }
+  if (m.t === "ab") { const k = String(m.k || ""); if (!/^[cqe]$/.test(k) || !u.alive) return true; // cast: host keeps the charge count
+    if ((c.ab[k] | 0) > 0) c.ab[k]--; else mpSend(c.conn, { t: "abn", k, n: 0 }); return true; }
+  return false;
+}
+{ const d0 = mpDrop; mpDrop = function (c) { if (c && c.u && MP.m5) { const u = c.u; u.h4 = 0; } return d0.apply(this, arguments); }; }
+// ---- client ----
+function mpCliStart5(m) {
+  const pk = FV.pick, sw = window.xSwift; FV.pick = m.map; FV.dm = false; FV.tdm = false; FV.srOn = 0; window.xSwift = false;
+  try { $("result").style.display = "none"; xGo(startFive); } finally { FV.pick = pk; window.xSwift = sw; }
+  clearTimeout(FV.to); try { buyMenu(false); } catch (e) {}
+  bots.forEach((b) => scene.remove(b.g)); allies.forEach((a) => scene.remove(a.g)); bots = []; allies = [];
+  MP.me = m.you; MP.team = m.team; MP.cl = true; MP.m5 = 1; MP.st = "game"; MP.inT = 0;
+  const en = [], ma = []; let self = null;
+  for (const e of m.u) { if (e[0] === m.you) { self = e; MP.sq = e[14]; continue; } const ally = e[1] === m.team, u = mpMkUnit(e, ally); (ally ? allies : bots).push(u); (ally ? ma : en).push(u.name); }
+  F_MATES.splice(0, F_MATES.length, ...ma); F_EN.splice(0, F_EN.length, ...en);
+  FV.bs = {}; ma.forEach((n) => { FV.bs[n] = { cr: 0, w: "Classic", arm: 0 }; });
+  try { sbReset(en, ma); } catch (e) {} mpCliKD(m.k, m.d);
+  if (fsIcon.parent) fsIcon.parent.remove(fsIcon); fsM.visible = false; FV.sp = { st: "", c: null, site: "", t: 45, pt: 0, dt: 0, x: 0, z: 0 };
+  FV.atk = m.team === 0 ? !!m.atk : !m.atk; FV.pri = m.ld && m.ld[0] && WEAP[m.ld[0]] ? m.ld[0] : null; FV.sec = m.ld && WEAP[m.ld[1]] ? m.ld[1] : "Classic"; FV.cr = m.me | 0;
+  mpCliRS(Object.assign({ me: m.me }, m.rs)); if (self) mpCliRound5(self);
+  try { xHud(); updHud(); } catch (e) {}
+  mpUI(); say("Online Unrated · " + (MP.pub ? "public match" : "room " + MP.code), 2200);
+}
+function mpCliRound5(e) { // round start: own unit back at spawn with this round's loadout
+  player.x = e[4]; player.z = e[6]; player.y = 0; player.vy = 0; player.vx = player.vz = 0; player.hp = e[10] ? Math.max(1, e[8]) : 0; player.armor = e[9]; player._xd = 0;
+  yaw = FV.atk ? 0 : Math.PI; pitch = 0;
+  const pm = FV.pri && WEAP[FV.pri] ? WEAP[FV.pri].mag : 0, sm = (WEAP[FV.sec] || WEAP.Classic).mag;
+  slots.pri = FV.pri ? { ammo: pm, rsv: pm * 3 } : {}; slots.pis = { ammo: sm, rsv: sm * 3 };
+  rw = FV.pri ? "pri" : "pis"; ammo = slots[rw].ammo; rsv = slots[rw].rsv; reloading = 0; fcd = 0; spray = 0; fireHeld = false;
+  try { onSkin(); setScope(false); xKLReset(); } catch (er) {} updHud();
+}
+function mpCliLoad(ld, a) {
+  const p = ld && ld[0] && WEAP[ld[0]] ? ld[0] : null, s = ld && ld[1] && WEAP[ld[1]] ? ld[1] : "Classic";
+  if (s !== FV.sec) bEquip(s, "pis");
+  if (p !== FV.pri) { if (p) bEquip(p, "pri"); else { FV.pri = null; if (rw === "pri") swapW("pis"); slots.pri = {}; } }
+  if (a != null) player.armor = a;
+}
+function mpCliRS(r) {
+  if (typeof r.b === "number") FV.buy = r.b; if (typeof r.tl === "number") timeLeft = r.tl;
+  const t0 = MP.team === 0; if (r.sc) { FV.you = t0 ? r.sc[0] : r.sc[1]; FV.them = t0 ? r.sc[1] : r.sc[0]; }
+  if (r.atk != null) FV.atk = t0 ? !!r.atk : !r.atk; if (r.me != null) FV.cr = r.me | 0;
+  for (const n in r.cr || {}) { const nn = mpIn(n); if (nn === "You") continue; const u = allies.find((x) => x.name === nn); FV.bs[nn] = { cr: r.cr[n] | 0, w: u ? u.w || "Classic" : "Classic", arm: u ? u.armor || 0 : 0 }; }
+  if (!r.sp) return; const s = FV.sp, [st, cn, x, z, t, dt, pt, site, seen] = r.sp;
+  const c = st === "carry" && cn >= 0 ? (cn === MP.me ? player : bots.concat(allies).find((u) => u.nid === cn) || null) : null, ch = s.st !== st || s.c !== c;
+  Object.assign(s, { st, c, x, z, t, dt, pt, site, seen: !!seen });
+  if (st === "drop" || st === "plant") { fsM.position.set(x, 0.4, z); fsM.visible = st === "plant" || FV.atk || !!seen; } else fsM.visible = false;
+  if (ch) { if (st === "carry" && !c) { if (fsIcon.parent) fsIcon.parent.remove(fsIcon); } else try { fsSet(); } catch (e) {} }
+}
+function mpCliTick5(dt) { // client: own movement + HUD; the host owns rounds, spike and economy
+  if (window.xLdOn) dt = 0; if (!running) return;
+  const s = FV.sp;
+  if (FV.buy > 0) {
+    FV.buy = Math.max(0, FV.buy - dt);
+    if (player.hp > 0 && !FV.menu) moveP(dt, 6.75, false);
+    { const e = xSpawn(FV.map).edge; player.z = FV.atk ? Math.max(e, player.z) : Math.min(-e, player.z); }
+    $("timer").textContent = bpT(); if (FV.menu) $("xBT").textContent = "00:" + String(Math.max(0, Math.ceil(FV.buy))).padStart(2, "0");
+    if (FV.buy <= 0) { buyMenu(false); say("Round start", 900); try { SFX.roundStart(); } catch (e) {} updHud(); }
+    return;
+  }
+  tick(dt); if (!running) return;
+  const me = s.st === "carry" && s.c === player, ic = $("xSpkC"); if (ic) ic.style.display = me ? "flex" : "none";
+  const hold = alive4(), bar = $("defuse"); let show = "", prog = 0;
+  if (me && inSite(player)) { show = hold ? "Planting" : "Hold 4 to plant"; prog = hold ? s.pt / 4 : 0; }
+  else if (s.st === "plant" && !FV.atk && player.hp > 0 && Math.hypot(player.x - s.x, player.z - s.z) < 2.5) { show = hold ? "Defusing" : "Hold 4 to defuse"; prog = s.dt / 7; }
+  bar.style.display = show ? "block" : "none";
+  if (show) { if (bar.firstChild) bar.firstChild.textContent = show + (s.st === "plant" && s.dt >= 3.5 ? " · half" : ""); const bi = bar.querySelector("i"); if (bi) bi.style.width = Math.min(100, prog * 100) + "%"; }
+}
+function mpCli5(m) { // client 5v5 messages; true when handled
+  if (m.t === "rs") { if (MP.st === "game") mpCliRS(m); return true; }
+  if (m.t === "bo") { if (MP.st !== "game") return true; FV.cr = m.cr | 0; mpCliLoad(m.ld, m.a); if (m.ab) { for (const k of ["c", "q"]) if (typeof m.ab[k] === "number") J[k] = m.ab[k]; }
+    if (m.ok) try { blip(m.n && m.n.indexOf("ab:") === 0 ? 700 : 700, 0.08, "triangle", 0.15); } catch (e) {}
+    try { onSkin(); updHud(); if (FV.menu) { buyRender.h = null; buyRender(); } xHud(); } catch (e) {} return true; }
+  if (m.t === "abn") { if (/^[cqe]$/.test(m.k)) J[m.k] = 0; return true; }
+  if (m.t === "rd") { if (MP.st !== "game") return true;
+    FV.pri = m.ld && m.ld[0] && WEAP[m.ld[0]] ? m.ld[0] : null; FV.sec = m.ld && WEAP[m.ld[1]] ? m.ld[1] : "Classic"; FV.cr = m.cr | 0; FV.buy = m.b || 0; FV.atk = MP.team === 0 ? !!m.atk : !m.atk;
+    running = true; try { clock.getDelta(); } catch (e) {} try { $("feed").innerHTML = ""; $("defuse").style.display = "none"; $("xBan").style.display = "none"; } catch (e) {}
+    try { jRound(false); } catch (e) {} say("Buy phase · press B to buy", 1800); try { SFX.buy(); } catch (e) {} updHud(); return true; }
+  if (m.t === "re") { if (MP.st !== "game") return true;
+    if (m.u) mpCliSnap(Object.assign({ ev: [] }, m)); running = false; fireHeld = false; try { buyMenu(false); } catch (e) {}
+    const t0 = MP.team === 0, w = t0 ? !!m.w : !m.w; FV.you = t0 ? m.sc[0] : m.sc[1]; FV.them = t0 ? m.sc[1] : m.sc[0]; if (m.me != null) FV.cr = m.me | 0;
+    const tx = String(m.tx || "").replace(new RegExp("\\b" + MP.name.replace(/[.\-]/g, "\\$&") + "\\b", "g"), "You");
+    try { xRes(w, tx, !!m.o, FV.you > FV.them, m.ti || undefined); if (!m.o && FV.you + FV.them < 24) xCue(FV.you, FV.them, 12, FIVE_WIN); } catch (e) {} try { xHud(); } catch (e) {} return true; }
+  if (m.t === "end") { if (MP.st !== "game") return true; MP.st = "post"; MP.cl = false; running = false;
+    const won = FV.you > FV.them; setTimeout(() => { if (MP.st !== "post" || MP.role !== "client") return;
+      try { if (won) stats.w++; showStats(); if (document.pointerLockElement) document.exitPointerLock(); SFX.fanfare(won); } catch (e) {}
+      $("resTitle").textContent = won ? "Victory" : "Defeat"; $("resTitle").style.color = won ? "#5fffb0" : "#ff4655";
+      $("resText").textContent = "Online Unrated · You " + FV.you + " · " + FV.them; $("againBtn").textContent = "Back to room"; $("result").style.display = "flex"; }, 2200);
+    mpUI(); return true; }
+  return false;
+}
+{ const b0 = fBuy; fBuy = function (n) { if (!mp5C()) return b0.apply(this, arguments); if (!(FV.buy > 0) || !n) return; mpSend(MP.hc, { t: "buy", n: String(n) }); }; }
+{ const s0 = fSell; fSell = function (n) { if (!mp5C()) return s0.apply(this, arguments); if (!n || !(FV.buy > 0)) return false; mpSend(MP.hc, { t: "sell", n: String(n) }); return true; }; }
+{ const r0 = fReq; fReq = function () { if (mp5C()) return false; return r0.apply(this, arguments); }; }
+{ const j0 = jBuy; jBuy = function (k) { if (!mp5C()) return j0.apply(this, arguments); if (FV.buy > 0) mpSend(MP.hc, { t: "buy", n: "ab:" + k }); }; }
+{ const k0 = jKey; jKey = function (code) { if (!mp5C() || !/^Key[CQE]$/.test(String(code))) return k0.apply(this, arguments);
+  const k = String(code)[3].toLowerCase(), n0 = J[k], r = k0.apply(this, arguments); if (typeof n0 === "number" && J[k] < n0) mpSend(MP.hc, { t: "ab", k }); return r; }; }
+window.addEventListener("keydown", (e) => { // G with the Spike: ask the host to drop it
+  if (e.code !== "KeyG" || !mp5C() || !running || FV.buy > 0) return; const s = FV.sp; if (!s || s.st !== "carry" || s.c !== player) return;
+  e.stopImmediatePropagation(); mpSend(MP.hc, { t: "drop", r: +yaw.toFixed(3) });
+}, true);
 window.xMP = { quick: mpQuick, create: mpCreate, join: mpJoin, start: mpStart, leave: mpLeave, ui: mpUI, get S() { return MP; }, unit: mpUnit };
 // fidelity 2: the ult-orb block lives inside the game scope (as a separate <script> it could not see scene/FV and never ran)
 // feel pass: ultimate orbs (5v5). 2 contested orbs per round, hold F / Use 3 s for +1 ult point. Pooled meshes, shared materials, no per-frame allocs.
@@ -10527,7 +10732,7 @@ window.xMP = { quick: mpQuick, create: mpCreate, join: mpJoin, start: mpStart, l
     for (let k = 0; k < 2; k++) {
       const arr = k === 0 ? bl : typeof allies !== "undefined" ? allies : null; if (!arr) continue;
       for (let j = 0; j < arr.length; j++) {
-        const b = arr[j], o = b && b.xOrb; if (!o || !o.on || !b.alive || !b.g) continue;
+        const b = arr[j], o = b && b.xOrb; if (!o || !o.on || !b.alive || !b.g || b.nt) continue;
         if (b.xSe || b.see > 0) { b.xOrb = null; continue; } // bot AI: xSe = has LOS to its current target (xTt), see = seconds seeing it
         const p = b.g.position, dx = o.x - p.x, dz = o.z - p.z, d = Math.hypot(dx, dz);
         if (d > 0.8) { const s = Math.min(d, 3 * dt), nx = p.x + dx / d * s, nz = p.z + dz / d * s; if (typeof blocked !== "function" || !blocked(nx, nz, 0.4)) { p.x = nx; p.z = nz; } else b.xOrb = null; o.bb = null; }

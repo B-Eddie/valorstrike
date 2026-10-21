@@ -1740,6 +1740,97 @@ if (!NO3) {
     doc.querySelector('#xOn [data-om="tdm"]').click(); $("xOnQuick").click(); advance(200);
     mpOk("Quick Match joins an existing public lobby instead of hosting", S().role === "client" && S().pub && pin.some((m) => m.t === "hi") && !reg.has("valorstrike-pub-tdm-2") && /PubHost/.test($("xOnList").textContent), JSON.stringify([S().role, S().pub, S().st, pin.map((m) => m.t), [...reg.keys()], $("xOnList").textContent, $("xOnMsg").textContent]));
     $("xOnLeave").click(); advance(60); ph.destroy();
+    // --- F: this game hosts online 5v5 Unrated; two scripted clients (one per team): buy, plant, round end credits, hidden enemy economy, late join, disconnect ---
+    toLobby(); phase = "mp5 host"; $("playBtn").click(); advance(30);
+    vm.runInContext("xMP.create(false, 'five')", context); advance(60);
+    const code5 = S().code;
+    mpOk("Room mode selector has Unrated (Spike) and the room shows it", !!doc.querySelector('#xOn [data-om="five"]') && /Unrated/.test($("xOnRoomM").textContent), $("xOnRoomM").textContent);
+    const mk5 = (n, ag) => { const p = new FPeer(), box = []; const c = p.connect("valorstrike-priv-" + code5); c.on("data", (m) => { box.push(m); if (m.t === "pi") c.send({ t: "po", c: m.c }); }); c.on("open", () => c.send({ t: "hi", v: 1, n, ag })); return { p, c, box }; };
+    const A5 = mk5("Five", "Sova"); advance(80); const B5 = mk5("Mate", "Omen"); advance(120);
+    $("xOnStart").click(); advance(200);
+    const sa = A5.box.find((m) => m.t === "start"), sb = B5.box.find((m) => m.t === "start");
+    mpOk("Host START (Unrated): 5v5 rounds running, both joiners seated on opposite teams, bots fill the rest", !!sa && !!sb && sa.mode === "five" && sa.team !== sb.team && inGame() && ev("mode === 'five' && !FV.dm && running && FV.buy > 0 && bots.length === 5 && allies.length === 4 && [].concat(bots, allies).filter((u) => u.hum && u.nt).length === 2") === true && !!sa.rs && sa.u.length === 10, JSON.stringify([sa && sa.team, sb && sb.team, ev("[mode, FV.dm, running, FV.buy, bots.length, allies.length]")]));
+    if (sa && sb) {
+      const D = sa.team === 1 ? A5 : B5, At = sa.team === 1 ? B5 : A5, sd = D === A5 ? sa : sb, sat = D === A5 ? sb : sa; // team 0 (host's) attacks first
+      const dN = D === A5 ? "Five" : "Mate", aN = D === A5 ? "Mate" : "Five";
+      const t1 = sd.u.filter((e) => e[1] === 1).map((e) => e[2]), t0 = sd.u.filter((e) => e[1] === 0).map((e) => e[2]);
+      D.c.send({ t: "buy", n: "Ghost" }); advance(80);
+      const bo = D.box.filter((m) => m.t === "bo").pop();
+      mpOk("Client buy request: host validates credits, equips the unit and answers with the new loadout", !!bo && bo.ok === 1 && bo.cr === 300 && bo.ld[1] === "Ghost" && ev(`FV.bs[${JSON.stringify(dN)}].cr === 300 && xMP.unit(${sd.you}).w === "Ghost"`) === true, JSON.stringify(bo));
+      D.c.send({ t: "buy", n: "Vandal" }); advance(80);
+      const bo2 = D.box.filter((m) => m.t === "bo").pop();
+      mpOk("Client buy it cannot afford is refused (credits unchanged)", !!bo2 && bo2.ok === 0 && bo2.cr === 300 && ev(`FV.bs[${JSON.stringify(dN)}].cr`) === 300, JSON.stringify(bo2));
+      const rsD = D.box.filter((m) => m.t === "rs"), rsA = At.box.filter((m) => m.t === "rs");
+      const leakD = rsD.some((m) => Object.keys(m.cr || {}).some((n) => t0.includes(n))), leakA = rsA.some((m) => Object.keys(m.cr || {}).some((n) => t1.includes(n)));
+      mpOk("Round state at ~5 Hz; each client gets only its own team's credits (no enemy economy)", rsD.length >= 2 && rsA.length >= 2 && !leakD && !leakA && Object.keys(rsD[rsD.length - 1].cr).length === 5 && rsD[rsD.length - 1].me === 300 && sd.u.every((e) => e.length === 15), JSON.stringify([rsD.length, rsA.length, leakD, leakA, rsD.length && rsD[rsD.length - 1].cr]));
+      ev("FV.buy = 0.01; fiveTick(0.05); true"); advance(100);
+      // freeze the bots (no AI) so the scripted plant is deterministic; the attacking client's unit carries the Spike to site A and holds 4
+      const aid = sat.you;
+      ev(`(() => { [].concat(bots, allies).forEach((u) => { if (!u.hum) { u.nt = 1; u.nb = []; } }); const u = xMP.unit(${aid}); FV.sp.st = "carry"; FV.sp.c = u; fsSet(); u.g.position.x = SITES.A[0]; u.g.position.z = SITES.A[1]; u.nb = []; return true; })()`);
+      const crA0 = ev("FV.cr"), crM0 = ev(`FV.bs[${JSON.stringify(aN)}].cr`), crD0 = ev(`FV.bs[${JSON.stringify(dN)}].cr`), sqA = ev(`xMP.unit(${aid}).sq`);
+      const sx = ev("SITES.A[0]"), sz = ev("SITES.A[1]");
+      for (let k = 0; k < 150; k++) { if (k % 2 === 0) At.c.send({ t: "in", x: sx, y: 0, z: sz, r: 0, p: 0, w: "Classic", sq: sqA, h4: 1 }); advance(17); ev("fiveTick(1 / 30); true"); }
+      const pl = ev("FV.sp.st"), rsP = At.box.filter((m) => m.t === "rs").pop(), spEv = At.box.some((m) => m.t === "s" && (m.ev || []).some((v) => v[0] === "sp" && v[2] === aN));
+      mpOk("Client hold-4 plant: host plants for that unit, +300 to every attacker, plant event + spike state reach clients", pl === "plant" && ev("FV.cr") === crA0 + 300 && ev(`FV.bs[${JSON.stringify(aN)}].cr`) === crM0 + 300 && ev(`FV.bs[${JSON.stringify(dN)}].cr`) === crD0 && !!rsP && rsP.sp[0] === "plant" && rsP.sp[7] === "A" && spEv, JSON.stringify([pl, ev("FV.cr"), crA0, rsP && rsP.sp, spEv]));
+      const L5 = mk5("Late", "Jett"); advance(150);
+      mpOk("Late joiner mid-round waits for the next round (no seat yet)", !L5.box.some((m) => m.t === "start") && L5.box.some((m) => m.t === "room"));
+      ev("FV.sp.t = 0.05; fiveTick(0.1); true"); advance(200);
+      const reD = D.box.find((m) => m.t === "re"), reA = At.box.find((m) => m.t === "re");
+      mpOk("Spike detonates: round end event to both clients (attackers win), scores 1-0", !!reD && !!reA && reD.w === 1 && reD.sc[0] === 1 && reD.sc[1] === 0 && /DETONATED/.test(reD.ti) && ev("FV.you === 1 && FV.them === 0 && !running") === true, JSON.stringify(reD));
+      mpOk("Round-end credits: winners +3000, losers +1900 (loss bonus), each client told its own", reA.me === crM0 + 300 + 3000 && reD.me === crD0 + 1900 && ev("FV.cr") === crA0 + 300 + 3000, JSON.stringify([reA.me, crM0, reD.me, crD0, ev("FV.cr"), crA0]));
+      advance(7300);
+      const rdD = D.box.find((m) => m.t === "rd"), rdA = At.box.find((m) => m.t === "rd");
+      mpOk("Next round: round-start event with credits + kept loadout (survivor keeps Ghost), units re-seated by name", !!rdD && !!rdA && rdD.cr === crD0 + 1900 && rdD.ld[1] === "Ghost" && rdA.cr === crM0 + 3300 && ev("running && FV.buy > 0 && [].concat(bots, allies).filter((u) => u.hum && u.nt).length === 3") === true, JSON.stringify([rdD, rdA, ev("[running, FV.buy, [].concat(bots, allies).filter((u) => u.hum).map((u) => u.name)]")]));
+      const ls = L5.box.find((m) => m.t === "start");
+      mpOk("Late joiner takes a bot slot at the next round start", !!ls && ls.mode === "five" && ev(`xMP.unit(${ls ? ls.you : -9}).name`) === "Late" && !!ls.rs, JSON.stringify(ls && [ls.you, ls.team]));
+      const nD = D.box.filter((m) => m.t === "rs").length; advance(400);
+      const leak2 = D.box.filter((m) => m.t === "rs").some((m) => Object.keys(m.cr || {}).some((n) => t0.includes(n)));
+      mpOk("Enemy credits are never sent to the client (whole match so far)", !leak2 && D.box.filter((m) => m.t === "rs").length > nD);
+      ev("FV.buy = 0.01; fiveTick(0.05); true"); advance(100);
+      D.c.close(); advance(150);
+      mpOk("Disconnect mid-round: that player's unit becomes a bot, round keeps running", ev(`(() => { const u = [].concat(bots, allies).find((x) => x.name === ${JSON.stringify(dN)}); return !!u && !u.hum && !u.nt && running && xMP.S.conns.size === 2; })()`) === true, ev("[running, xMP.S.conns.size]"));
+      frames(60);
+      mpOk("Online Unrated frames run clean after the disconnect", inGame());
+    }
+    phase = "mp5 host leave"; $("xPow").click(); advance(100);
+    mpOk("Host leaving the Unrated room closes it", !S().on && !reg.has("valorstrike-priv-" + code5));
+    // --- G: this game joins a scripted 5v5 host: buy menu sends requests, round state / spike HUD / banners applied ---
+    toLobby(); phase = "mp5 client";
+    const gp = new FPeer("valorstrike-priv-GHJKLM"), gin = []; let gc = null; gp.on("connection", (c) => { gc = c; c.on("data", (m) => gin.push(m)); }); advance(10);
+    $("xOnCode").value = "GHJKLM"; $("xOnJoin").click(); advance(120);
+    const ghi = gin.find((m) => m.t === "hi");
+    if (gc && ghi) {
+      gc.send({ t: "room", v: 1, code: "GHJKLM", pub: false, mode: "five", map: "ascent", st: "room", cd: 0, pl: [{ n: "Hosty", p: 0, h: 1 }, { n: ghi.n, p: 20, h: 0 }] }); advance(40);
+      const row = (i, tm, n, ag, x, z, sq) => [i, tm, n, ag, x, 0, z, 0, 100, 0, 1, "Classic", i === 0 || i === 6 ? 1 : 0, 30, sq || 0];
+      const AG = ["Phoenix", "Sage", "Jett", "Omen", "Viper", "Sova", "Reyna", "Cypher", "Killjoy", "Breach"];
+      const ros = (sq) => AG.map((a, i) => i === 6 ? row(6, 1, ghi.n, "Reyna", 2, -40, sq) : row(i, i < 5 ? 0 : 1, i === 0 ? "Hosty" : "B" + i, a, i * 2 - 8, i < 5 ? 40 : -40));
+      const crT1 = { B5: 800, B7: 800, B8: 800, B9: 800 }; crT1[ghi.n] = 800;
+      const rs = (b, sp, me) => ({ t: "rs", b, tl: 100, sc: [0, 0], atk: 1, r: 1, sp, cr: Object.assign({}, crT1, { [ghi.n]: me }), me });
+      gc.send({ t: "start", v: 1, mode: "five", map: "ascent", you: 6, team: 1, u: ros(0), k: {}, d: {}, rs: rs(30, ["carry", -1, 0, 0, 45, 0, 0, "", 0], 800), me: 800, ld: [null, "Classic"], atk: 1 }); advance(120);
+      mpOk("Client builds the 5v5 from the host roster: own team as allies, defending, 800 credits, no local AI", inGame() && ev("MP.cl && MP.m5 && mode === 'five' && !FV.dm && allies.length === 4 && bots.length === 5 && [].concat(bots, allies).every((u) => u.nt) && !FV.atk && FV.cr === 800 && FV.buy > 0") === true, ev("[MP.cl, MP.m5, allies.length, bots.length, FV.atk, FV.cr, FV.buy]"));
+      ev("buyMenu(true); true"); const gb = doc.querySelector('#xBG [data-n="Ghost"]'); if (gb) gb.click(); advance(60);
+      const breq = gin.find((m) => m.t === "buy");
+      mpOk("Client buy menu sends a buy request to the host (no local spend)", !!breq && breq.n === "Ghost" && ev("FV.cr === 800 && FV.sec === 'Classic'") === true, JSON.stringify(breq) + " " + !!gb);
+      gc.send({ t: "bo", ok: 1, n: "Ghost", cr: 300, ld: [null, "Ghost"], a: 0, ab: { c: 0, q: 0, e: 1 } }); advance(60);
+      mpOk("Host buy confirmation equips the gun and sets credits on the client", ev("FV.cr === 300 && FV.sec === 'Ghost' && rw === 'pis' && ammo === WEAP.Ghost.mag") === true, ev("[FV.cr, FV.sec, rw, ammo]"));
+      gc.send(rs(0, ["plant", -1, -20, -21, 44, 0, 0, "A", 0], 300)); advance(60);
+      gc.send({ t: "s", tl: 44, u: ros(0), k: {}, d: {}, ev: [["sp", "plant", "B1", "A"]] }); advance(60);
+      mpOk("Spike state from the host: planted spike shown on the client (site A), plant event in the feed", ev("FV.sp.st === 'plant' && FV.sp.site === 'A' && fsM.visible && FV.buy === 0") === true && /planted the Spike/.test($("feed").textContent), ev("[FV.sp.st, FV.sp.site, fsM.visible, FV.buy]"));
+      ev("player.x = -20; player.z = -21; keys.Digit4 = true; fiveTick(1 / 30); true"); advance(120); ev("fiveTick(1 / 30); true");
+      const hin4 = gin.filter((m) => m.t === "in").pop();
+      mpOk("Client defuse hold reaches the host (h4) and the defuse HUD shows", !!hin4 && hin4.h4 === 1 && /Defus/.test($("defuse").textContent), JSON.stringify(hin4) + " " + $("defuse").textContent);
+      ev("keys.Digit4 = false; true");
+      gc.send({ t: "re", w: 0, tx: "Hosty... B6 defused the Spike", ti: "SPIKE DEFUSED", o: 0, sc: [0, 1], u: ros(0), k: {}, d: {}, me: 3000 }); advance(60);
+      mpOk("Round end from the host: client scores the round for its team, credits updated, round frozen", ev("FV.you === 1 && FV.them === 0 && FV.cr === 3000 && !running") === true, ev("[FV.you, FV.them, FV.cr, running]"));
+      gc.send({ t: "rd", ld: [null, "Ghost"], cr: 3000, b: 30, atk: 1 }); gc.send({ t: "s", tl: 100, u: ros(1), k: {}, d: {}, ev: [] }); advance(80);
+      mpOk("Next round from the host: running again, buy phase, own unit back at spawn with its kept gun", ev("running && FV.buy > 0 && MP.sq === 1 && player.x === 2 && FV.sec === 'Ghost' && FV.pri === null && ammo === WEAP.Ghost.mag") === true, ev("[running, FV.buy, MP.sq, player.x, FV.sec, ammo]"));
+      frames(60);
+      gc.send({ t: "end", sc: [13, 5] }); advance(2500);
+      mpOk("Match end from the host: result screen, Back to room", disp("result") === "flex" && S().st === "post", disp("result") + " " + S().st);
+      $("lobbyBtn").onclick(); advance(60);
+      gc.close(); advance(150);
+    } else mpOk("5v5 client joined the scripted host", false, JSON.stringify(gin));
+    gp.destroy();
     // --- E: PeerJS unavailable → clear message, nothing breaks; single player untouched ---
     win.__mpPeer = null; const oldPeer = win.Peer; win.Peer = undefined; toLobby(); phase = "mp no peerjs";
     $("xOnCreate").click(); advance(50); { const sc = doc.head.querySelectorAll("script").find((x) => /peerjs@1\.5\.4/.test(x.src)); if (sc && sc.onerror) sc.onerror(); } advance(50);
