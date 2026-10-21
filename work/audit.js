@@ -1877,6 +1877,11 @@ if (!NO3) {
       xe("XOB.mr = true; true"); if (xe("xMiniRotLoad()") !== false || cb.checked) return "reload did not restore off";
       cb.checked = true; dispatch(cb, mkEvent("change")); if (st["vs.minirot"] !== "1" || xe("xMiniRotLoad()") !== true) return "on not saved";
       return true; } finally { delete win.__ls; } });
+  OB("ping: Z ping block runs inside the game scope (window.xPG exists) and a Z press in 5v5 places a marker", () => {
+    const P = xe("window.xPG ? window.xPG.s.length : -1"); if (P !== 3) return "xPG pool missing: " + P;
+    if (!start5()) return "5v5 did not start"; xe("FV.buy = 0; true");
+    dispatch(win, mkEvent("keydown", { key: "z", code: "KeyZ" })); advance(30);
+    const n = xe("window.xPG.s.filter((q) => q.on).length"); return n >= 1 || "no ping marker after Z: " + n; });
   try { xe("annClear(); running = false; true"); toLobby(); } catch (e) {}
 }
 

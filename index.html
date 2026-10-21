@@ -10253,10 +10253,7 @@ window.xMP = { quick: mpQuick, create: mpCreate, join: mpJoin, start: mpStart, l
   }
   (window.XHK = window.XHK || []).push(tick);
 })();
-xReady = true; // every mode is initialised; lobby launches may now start them
-})();
-</script>
-<script>
+// ping moved inside game scope (separate <script> could not see scene, so Z never worked)
 // feel pass: Valorant ping (Z / PING). One raycast vs static meshes + bot hitboxes; 3 pooled sprites + labels, 0.5 s cooldown, 4 s life, no per-frame allocs.
 (function () {
   if (typeof THREE === "undefined" || typeof scene === "undefined" || !THREE.Sprite || !THREE.CanvasTexture) return;
@@ -10314,6 +10311,8 @@ xReady = true; // every mode is initialised; lobby launches may now start them
     }
   }
   (window.XHK = window.XHK || []).push(tick);
+})();
+xReady = true; // every mode is initialised; lobby launches may now start them
 })();
 </script>
 <style>
