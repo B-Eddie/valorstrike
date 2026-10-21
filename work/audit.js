@@ -1567,7 +1567,7 @@ if (!NO3) {
     const errs = []; if (r !== true) errs.push(String(r).slice(0, 400)); errors.slice(e0).forEach((e) => errs.push(e.where + ": " + e.msg.slice(0, 200)));
     report.push({ label: "buy: " + label, el: true, handler: true, cond: r === true, pass: !errs.length, errs }); lastErr = errors.length; };
   const btn = (n) => Array.from(doc.querySelectorAll("#xBG button[data-n]")).find((b) => b.dataset.n === n);
-  const open = (cr) => { xe(`(() => { running = true; paused = false; FV.dm = false; FV.buy = 20; player.hp = 100; ${cr != null ? "FV.cr = " + cr + ";" : ""} buyMenu(true); buyRender(); return true; })()`); };
+  const open = (cr) => { xe(`(() => { running = true; paused = false; window.xLdOn = false; FV.dm = false; FV.buy = 20; player.hp = 100; ${cr != null ? "FV.cr = " + cr + ";" : ""} buyMenu(true); buyRender(); return true; })()`); };
   const rclick = (b) => dispatch(b, mkEvent("contextmenu", {}));
   let started = false;
   try { toLobby(); xe('(() => { FV.pick = "ascent"; FV.srOn = 0; window.xSwift = false; startFive(); clearTimeout(FV.to); return true; })()'); advance(60); started = xe("mode === 'five' && running"); } catch (e) {}
