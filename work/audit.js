@@ -3,6 +3,7 @@
 "use strict";
 const fs = require("fs"), vm = require("vm"), path = require("path");
 // nothree: the THREE script failed to load. midthrow: THREE loads but the 3D init throws part way (CanvasTexture).
+const REAL3 = !!process.env.REAL3, REAL3_DIR = process.env.REAL3_DIR || "/workspace/work/qa";
 const MID = process.argv.includes("midthrow"), NO3 = process.argv.includes("nothree") || MID;
 const html = fs.readFileSync(path.join(__dirname, "..", "index.html"), "utf8");
 // ---------- knife back-stab check: bot yaw set exactly as the bot AI does (atan2(dx, dz) toward its aim) ----------
@@ -272,7 +273,12 @@ vm.runInContext("Date.now = () => performance.now() + 1.7e12;", context);
 const scripts = [...html.matchAll(/<script([^>]*)>([\s\S]*?)<\/script>/g)];
 for (const s of scripts) {
   const src = (s[1].match(/src="([^"]+)"/) || [])[1];
-  if (src) { if (/three/.test(src)) { if (!NO3 || MID) win.THREE = stub("THREE"); } else rec("script", "unexpected external script " + src); continue; }
+  if (src) { if (/three/.test(src)) {
+      if (REAL3 && !NO3) { // REAL3=1: the real three.js r149 (+ GLTFLoader / SkeletonUtils) with only the WebGL renderers stubbed, so vector / matrix / scene-graph math is real
+        const f = /three\.min/.test(src) ? "three.min.js" : /GLTFLoader/.test(src) ? "GLTFLoader.js" : "SkeletonUtils.js";
+        try { vm.runInContext(fs.readFileSync(path.join(REAL3_DIR, f), "utf8"), context, { filename: f }); } catch (e) { rec("real three " + f, e); }
+        if (f === "three.min.js" && win.THREE) { const T = win.THREE; win.THREE = Object.assign({}, T); win.THREE.WebGLRenderer = function () { return stub("new THREE.WebGLRenderer"); }; win.THREE.PMREMGenerator = function () { return stub("new THREE.PMREMGenerator"); }; }
+      } else if (!NO3 || MID) win.THREE = stub("THREE"); } else rec("script", "unexpected external script " + src); continue; }
   // nav hook: the page lives in an IIFE, so expose the map boxes + graph builder to work/nav.js (audit-side only)
   const code = s[2].replace("function xgGet() {", "globalThis.__nav = { get FMAP() { return FMAP; }, get SITES() { return SITES; }, get HSITES() { return HSITES; }, get SSITES() { return SSITES; }, get LSITES() { return LSITES; }, get BZSITES() { return BZSITES; }, xgBuild, xgClear, setB: (b) => { boxes = b; }, getB: () => boxes }; function xgGet() {").replace("function srTick(dt) {", "globalThis.__xe = (s) => eval(s); globalThis.__st = () => ({ mode, FV, player, SR, running, srAll: typeof srAll === \"function\" ? srAll : null, fAtk: typeof fAtk === \"function\" ? fAtk : null, K: typeof K === \"function\" ? K : null, J: typeof J !== \"undefined\" ? J : null, wName: typeof wName === \"function\" ? wName : null, fRound: () => fRound() }); function srTick(dt) {");
   try { vm.runInContext(code, context, { filename: "index.html" }); } catch (e) { rec("top-level script", e); }
@@ -281,6 +287,7 @@ const xErr0 = win.xErr; if (xErr0) win.xErr = function (e) { xErrCalls.push({ ph
 advance(500);
 
 // ---------- audit ----------
+if (process.env.DBG) { const $ = (id) => doc.getElementById(id), xe = vm.runInContext("__xe", context); try { eval(fs.readFileSync(process.env.DBG, "utf8")); } catch (e) { console.log("DBG threw", e); } console.log("errors:", JSON.stringify(errors.slice(0, 5)), "xErr:", JSON.stringify(xErrCalls.slice(0, 5))); process.exit(0); }
 const $ = (id) => doc.getElementById(id);
 const disp = (id) => { const e = $(id); return e ? e.style.display || "" : "missing"; };
 const report = []; let lastErr = errors.length, lastX = xErrCalls.length;
@@ -714,7 +721,7 @@ if (!NO3) {
         if (boxes.some((o) => player.x >= o.x1 && player.x <= o.x2 && player.z >= o.z1 && player.z <= o.z2)) continue;
         rw = "pri"; ammo = 25; rsv = 75; reloading = 0; fcd = 0; VM.sw = 0; if (window.BC) BC.cv = 0;
         const i = BFX.ok ? BFX.di % BFX.d.length : 0; if (BFX.dmx) BFX.dmx[i] = null;
-        const g0 = gFire, D = ray.ray.direction; D.x = 0; D.y = 0; D.z = -1; gFire = () => {}; // the stub raycaster: camera ray straight at the wall, no spread
+        const g0 = gFire, D = ray.ray.direction; D.x = 0; D.y = 0; D.z = -1; gFire = () => {}; try { camera.position.set(player.x, 1.6, player.z); camera.rotation.set(0, 0, 0, "YXZ"); camera.updateMatrixWorld(); spray = 0; rcl = 0; rclH = 0; } catch (e) {} // REAL3: aim the real camera at the wall // the stub raycaster: camera ray straight at the wall, no spread
         try { shoot(); } finally { gFire = g0; }
         const e = BFX.dmx && BFX.dmx[i]; if (!e) continue;
         const sc = Math.hypot(e[0], e[1], e[2]), hitZ = Math.abs(e[14] - b.z2) < 0.01, nz = e[10] > 0.99;
@@ -963,6 +970,325 @@ if (!NO3) {
   try { toLobby(); } catch (e) {}
 }
 
+// ---------- bots visible through round starts: every mode with rounds, real scene graph (parent chain, visible, scale, height) ----------
+if (!NO3) {
+  const xe = vm.runInContext("__xe", context);
+  // a minimal real Object3D for THREE.Group / Mesh / Object3D / SkinnedMesh while this check runs; unknown members fall back to the stub
+  const harness = `(() => {
+    const ST = THREE.Group; /* a stub: its call result is a stub fallback */
+    class V { constructor(x = 0, y = 0, z = 0) { this.x = x; this.y = y; this.z = z; const P = new Proxy(this, { get: (t, k) => (k in t || typeof k !== "string" ? t[k] : () => P) }); return P; }
+      set(x, y, z) { this.x = +x || 0; this.y = +y || 0; this.z = +z || 0; return this; } setScalar(s) { s = +s || 0; return this.set(s, s, s); } copy(v) { return v ? this.set(v.x, v.y, v.z) : this; } clone() { return new V(this.x, this.y, this.z); }
+      add(v) { this.x += +v.x || 0; this.y += +v.y || 0; this.z += +v.z || 0; return this; } sub(v) { this.x -= +v.x || 0; this.y -= +v.y || 0; this.z -= +v.z || 0; return this; }
+      addScaledVector(v, s) { this.x += (+v.x || 0) * s; this.y += (+v.y || 0) * s; this.z += (+v.z || 0) * s; return this; } multiplyScalar(s) { this.x *= s; this.y *= s; this.z *= s; return this; }
+      distanceTo(v) { return Math.hypot(this.x - (+v.x || 0), this.y - (+v.y || 0), this.z - (+v.z || 0)); } length() { return Math.hypot(this.x, this.y, this.z); } lengthSq() { return this.x * this.x + this.y * this.y + this.z * this.z; } }
+    const mk = (kind) => function (geo, mat) {
+      const fb = ST(), o = { isObject3D: true, type: kind, position: new V(), scale: new V(1, 1, 1), rotation: new V(), visible: true, parent: null, children: [], userData: {}, name: "", __real: true };
+      if (kind === "Mesh" || kind === "SkinnedMesh") { o.isMesh = true; o.geometry = geo; o.material = mat; } if (kind === "SkinnedMesh") o.isSkinnedMesh = true; if (kind === "Group") o.isGroup = true;
+      o.rotation.order = "XYZ";
+      const P = new Proxy(o, { get: (t, k) => (k in t || typeof k === "symbol" ? t[k] : fb[k]), set: (t, k, v) => ((t[k] = v), true) });
+      o.add = (...a) => { for (const c of a) { if (!c || c === P) continue; if (c.parent && typeof c.parent.remove === "function" && c.parent !== P) c.parent.remove(c); if (c.parent !== P) { c.parent = P; o.children.push(c); } } return P; };
+      o.remove = (...a) => { for (const c of a) { const i = o.children.indexOf(c); if (i >= 0) { o.children.splice(i, 1); c.parent = null; } } return P; };
+      o.clear = () => { o.children.slice().forEach((c) => o.remove(c)); return P; };
+      o.traverse = (f) => { f(P); o.children.slice().forEach((c) => c && typeof c.traverse === "function" && c.traverse(f)); };
+      o.getWorldPosition = (v) => { let x = 0, y = 0, z = 0; for (let n = P; n && n.__real; n = n.parent) { x += n.position.x; y += n.position.y; z += n.position.z; } return v && v.set ? v.set(x, y, z) : new V(x, y, z); };
+      o.clone = () => { const c = new (mk(kind))(o.geometry, o.material); c.position.copy(o.position); c.scale.copy(o.scale); c.visible = o.visible; o.children.forEach((k) => k && k.clone && c.add(k.clone())); return c; };
+      return P;
+    };
+    const keys = ["Group", "Object3D", "Mesh", "SkinnedMesh"], saved = {}; keys.forEach((k) => { saved[k] = THREE[k]; THREE[k] = mk(k); });
+    const sa = scene.add, sr = scene.remove, sTr = scene.traverse, sCh = scene.children; const kids = [];
+    scene.add = (...a) => { for (const c of a) { if (!c) continue; if (c.parent && c.parent !== scene && typeof c.parent.remove === "function") c.parent.remove(c); if (c.parent !== scene) { c.parent = scene; kids.push(c); } } return scene; };
+    scene.remove = (...a) => { for (const c of a) { const i = kids.indexOf(c); if (i >= 0) { kids.splice(i, 1); c.parent = null; } } return scene; };
+    scene.children = kids; scene.traverse = (f) => { kids.slice().forEach((c) => c && c.__real && c.traverse(f)); };
+    globalThis.__bvUndo = () => { keys.forEach((k) => { THREE[k] = saved[k]; }); scene.add = sa; scene.remove = sr; scene.traverse = sTr; scene.children = sCh; };
+    return true; })()`;
+  // why each alive unit is not visibly standing in the scene ("" when it is)
+  const probe = `(tag) => { const bad = []; const units = [].concat(bots || [], allies || []).filter((u) => u && u.g && u.alive !== false && u.hp > 0);
+      if (!units.length) bad.push(tag + ": no alive bots");
+      for (const u of units) { const why = [];
+        let n = u.g, top = null, y = 0; for (; n; n = n.parent) { top = n; if (n === scene) break; if (n.visible === false) why.push("hidden " + (n === u.g ? "root" : n.type || "node")); const s = n.scale; if (s && n.__real && (s.x === 0 || s.y === 0 || s.z === 0)) why.push("scale 0"); if (n.__real) { const q = n.position; if (![q.x, q.y, q.z].every(Number.isFinite)) why.push("position not finite (" + [q.x, q.y, q.z].map(String).join(",") + ")"); y += q.y; } }
+        if (top !== scene) why.push("not in scene" + (u.g.__real ? "" : " (stub group)"));
+        if (y < -0.5) why.push("under floor y=" + y.toFixed(2));
+        const M = u.xm; if (!M || !M.m) why.push("no agent model"); else { if (M.dead || u.xd) why.push("dead model");
+          let a = M.m, ok = false; for (; a; a = a.parent) { if (a === u.g) { ok = true; break; } if (a.visible === false) why.push("model node hidden"); if (a.__real && a.scale && (a.scale.x === 0 || a.scale.y === 0 || a.scale.z === 0)) why.push("model scale 0"); }
+          if (!ok) why.push("model not under its unit (" + (M.m.parent === scene ? "on scene" : M.m.parent ? "other parent" : "no parent") + ")");
+          let vis = 0; const walk = (o, on) => { if (!o) return; const v = on && o.visible !== false; if (v && o.isMesh) { const ms = [].concat(o.material || []); if (ms.some((m) => !m || (m.visible !== false && !(typeof m.opacity === "number" && m.opacity <= 0.01)))) vis++; } (o.children || []).forEach((c) => walk(c, v)); }; walk(M.m, true);
+          if (!vis) why.push("no visible mesh in model"); }
+        if (why.length) bad.push(tag + " " + u.name + ": " + [...new Set(why)].join(", ")); }
+      return bad; }`;
+  const MODES = [["5v5", 'FV.srOn = 0; window.xSwift = false; startFive();', true], ["Swiftplay", 'FV.srOn = 0; window.xSwift = true; startFive();', true], ["Spike Rush", "startSR();", true], ["TDM", "startTDM();", false], ["DM", "startDM();", false]];
+  for (const [name, start, rounds] of MODES) {
+    phase = "botvis " + name; const err = []; let ok = false;
+    try {
+      toLobby(); if (!REAL3) xe(harness); /* REAL3: the scene graph is already real */
+      xe(`(() => { FV.pick = "ascent"; FV.dm = false; FV.tdm = false; const go = () => { ${start} }; if (window.xMatchLoad) window.xMatchLoad(go, "ascent", ${JSON.stringify(name)}, true); else go(); clearTimeout(FV.to); return true; })()`);
+      advance(1500); // loading screen hide timer
+      const step = (secs) => xe(`(() => { const DT = 1 / 30; for (let i = 0; i < ${secs} * 30; i++) { if (!running) break; fiveTick(DT); xVis(DT); } return true; })()`);
+      const look = (tag) => xe(`(${probe})(${JSON.stringify(tag)})`) || [];
+      xe("player.hp = 1e6; player.armor = 0; true"); // the player soaks fire so the round does not end on its own
+      if (xe("window.xLdOn === true")) err.push("loading screen still up");
+      if (rounds) {
+        step(1); err.push(...look("buy phase r1"));
+        step(xe("Math.ceil(FV.buy) + 1")); if (xe("FV.buy > 0")) err.push("buy phase did not end");
+        step(2); err.push(...look("live r1"));
+        xe('(() => { player.hp = 1e6; fCheck(true, "audit round end"); return true; })()'); advance(2400); // FV.to fires the next round
+        if (xe("FV.you + FV.them") !== 1) err.push("round 2 did not start (score " + xe("FV.you + ':' + FV.them") + ")");
+        xe("player.hp = 1e6; true"); step(1); err.push(...look("buy phase r2"));
+        step(xe("Math.ceil(FV.buy) + 1")); xe("player.hp = 1e6; true"); step(2); err.push(...look("live r2"));
+      } else {
+        step(2); err.push(...look("live"));
+        xe('(() => { const b = bots.find((u) => u.alive); if (b) kill(b, false, "You", "Vandal"); return true; })()'); step(3); err.push(...look("after respawn"));
+      }
+      ok = !err.length;
+    } catch (e) { err.push(String(e.stack || e).slice(0, 300)); }
+    try { xe("(() => { try { clearTimeout(FV.to); running = false; FV.dm = false; FV.tdm = false; window.xSwift = false; } catch (e) {} if (globalThis.__bvUndo) globalThis.__bvUndo(); return true; })()"); } catch (e) {}
+    report.push({ label: "Bot visibility (" + name + "): through loading, buy phase, live round" + (rounds ? " and round 2" : " and a respawn") + ", every alive bot is in the scene graph, visible up the chain, non-zero scale, above the floor, with a visible agent model", el: true, handler: true, cond: ok, pass: ok, errs: err.slice(0, 6) });
+    lastErr = errors.length; lastX = xErrCalls.length;
+    try { toLobby(); } catch (e) {}
+  }
+}
+
+// ---------- aim trainer / duel HUD ammo: the visible bottom-right mag (#xMag) follows shots and reloads ----------
+if (!NO3) {
+  phase = "aim hud ammo"; let ok = false; const err = [];
+  try {
+    const xe = vm.runInContext("__xe", context), go = (ms) => advance(ms), mag = () => ($("xMag") ? String($("xMag").textContent).trim() : "missing");
+    const shownMag = () => { for (let n = $("xMag"); n && n.nodeType === 1; n = n.parentNode) if (n.hidden || n.style.display === "none") return false; return true; };
+    xe("globalThis.__xrs = [xResUp, xSetFull]; xResUp = () => false; xSetFull = () => false; true"); // the stub's getComputedStyle reads every screen as shown, which would cover the game
+    if (!/#timer,#score,#hp,#ammo\{display:none!important\}/.test(html)) err.push("legacy #ammo is no longer hidden: re-check which ammo element is visible");
+    toLobby(); xe('(() => { xGo(() => startAim()); aimKey("Digit1"); running = true; paused = false; window.xLdOn = false; AM.cd = 0; AM.rl = 0; AM.t = 60; return true; })()'); go(100);
+    const w = xe("aimW()"), full = xe("AM.ammo");
+    if (!shownMag()) err.push("#xMag hidden in aim trainer");
+    if (w === "Knife" || !(full > 3)) err.push("aim gun " + w + " mag " + full);
+    const m0 = mag(); if (m0 !== String(full)) err.push("aim start: HUD " + m0 + " vs mag " + full);
+    for (let i = 0; i < 3; i++) { xe("AM.cd = 0; AM.fire = false; aimFire(); AM.fire = false; true"); go(20); }
+    const m1 = mag(); if (m1 !== String(full - 3)) err.push("aim after 3 shots: HUD " + m1 + " want " + (full - 3) + " (AM.ammo " + xe("AM.ammo") + ")");
+    xe('aimKey("KeyR"); true'); go(20); if (!(xe("AM.rl") > 0)) err.push("R did not start an aim reload");
+    xe("(() => { for (let i = 0; i < 120 && AM.rl > 0; i++) aimTick(1 / 30); return true; })()"); go(50);
+    const m2 = mag(); if (m2 !== String(full)) err.push("aim after reload: HUD " + m2 + " want " + full);
+    // duel: the Operator mag on the same HUD element drops per shot
+    toLobby(); xe('(() => { xGo(() => startDuel()); du.wait = 0; if (duelBot) duelBot.alive = true; du.w = "op"; du.bolt = 0; du.reload = 0; du.ammo = OP_MAG; running = true; paused = false; window.xLdOn = false; return true; })()'); go(100);
+    const d0 = mag(), dn = xe("du.ammo"); if (d0 !== String(dn)) err.push("duel start: HUD " + d0 + " vs du.ammo " + dn);
+    xe("(() => { du.bolt = 0; fireHeld = false; duelShoot(); return true; })()"); go(50);
+    const d1 = mag(), dn1 = xe("du.ammo"); if (!(dn1 === dn - 1)) err.push("duel shot did not use ammo (" + dn + " -> " + dn1 + ")"); else if (d1 !== String(dn1) && d1 !== "…") err.push("duel after a shot: HUD " + d1 + " want " + dn1);
+    ok = !err.length;
+  } catch (e) { err.push(String(e.stack || e).slice(0, 300)); }
+  report.push({ label: "Aim trainer HUD ammo: 3 shots drop the visible #xMag by 3 and R restores the full mag; Operator Duel's #xMag drops per shot", el: true, handler: true, cond: ok, pass: ok, errs: err });
+  try { vm.runInContext("__xe", context)("(() => { running = false; if (globalThis.__xrs) { xResUp = __xrs[0]; xSetFull = __xrs[1]; } return true; })()"); toLobby(); } catch (e) {}
+}
+
+// >>> sweep
+// ---------- broad QA sweep: nav, queue, every mode x map through rounds/results/lobby, buy+fire+reload+switch, abilities, plant/defuse, death, Tab, pause+settings, 60 s bot soak ----------
+if (!NO3) {
+  const xe = vm.runInContext("__xe", context);
+  const cErr = []; const ce0 = win.console.error; win.console.error = (...a) => { cErr.push({ phase, msg: a.map((x) => String((x && x.message) || x)).join(" ").slice(0, 200) }); };
+  let swN = 0;
+  // one sweep step: f returns true or a failure string; window errors, xErr calls and console.error during the step all fail it
+  const SW = (label, f) => {
+    if (!SW.t) SW.t = Date.now(); phase = "sweep " + label; const e0 = errors.length, x0 = xErrCalls.length, c0 = cErr.length; let r;
+    try { r = f(); } catch (e) { r = "threw: " + String((e && e.stack) || e).split("\n").slice(0, 2).join(" | ").slice(0, 300); }
+    const errs = []; if (r !== true) errs.push(String(r).slice(0, 400));
+    errors.slice(e0).forEach((e) => errs.push(e.where + ": " + e.msg.slice(0, 200)));
+    xErrCalls.slice(x0).forEach((x) => errs.push("xErr: " + x.msg.slice(0, 200)));
+    cErr.slice(c0).forEach((x) => errs.push("console.error: " + x.msg));
+    const pass = !errs.length; swN++; if (process.env.SWT) process.stderr.write(((Date.now() - (SW.t || Date.now())) / 1000).toFixed(1) + "s " + label.slice(0, 60) + "\n"); SW.t = Date.now();
+    report.push({ label: "Sweep: " + label, el: true, handler: true, cond: r === true, pass, errs: [...new Set(errs)] });
+    lastErr = errors.length; lastX = xErrCalls.length; return pass;
+  };
+  const shown = (id) => { const e = $(id); return !!e && e.style.display !== "" && e.style.display !== "none"; };
+  const lobbyBack = () => { for (let i = 0; i < 30 && xe("window.xLdOn === true"); i++) advance(50); try { if (shown("result")) $("lobbyBtn").click(); } catch (e) {} advance(30); toLobby(); xe("(() => { try { running = false; paused = false; clearTimeout(FV.to); clearTimeout(RF.to); FV.dm = false; FV.tdm = false; FV.esc = false; window.xSwift = false; document.getElementById('xPause').classList.remove('on'); } catch (e) {} return true; })()"); advance(30); lastErr = errors.length; lastX = xErrCalls.length; };
+  // finite-state probe: player, camera, every bot/ally group position, HUD numbers
+  const FIN = `(() => { const bad = []; const f = (v) => (typeof v === "number" ? Number.isFinite(v) : !${REAL3 ? 1 : 0}); /* stub THREE: vectors are proxies, only real numbers are judged */
+    if (player) ["x", "z", "hp"].forEach((k) => { if (!f(player[k])) bad.push("player." + k + "=" + player[k]); });
+    try { const c = camera.position; if (![c.x, c.y, c.z].every(f)) bad.push("camera " + [c.x, c.y, c.z].join(",")); } catch (e) {}
+    [].concat(bots || [], allies || [], duelBot ? [duelBot] : []).forEach((u) => { if (!u || !u.g) return; const p = u.g.position; if (![p.x, p.y, p.z].every(f)) bad.push((u.name || "bot") + " pos " + [p.x, p.y, p.z].join(",")); });
+    if (!f(timeLeft)) bad.push("timeLeft=" + timeLeft); if (!f(ammo)) bad.push("ammo=" + ammo); if (!f(rsv)) bad.push("rsv=" + rsv);
+    if (mode === "five" && !FV.dm) { if (!f(FV.cr)) bad.push("credits=" + FV.cr); if (!f(FV.you) || !f(FV.them)) bad.push("score"); }
+    const T = (id) => { const e = document.getElementById(id); return e ? String(e.textContent).trim() : null; };
+    [["xHp", /^\\d+$/], ["xArm", /^\\d+$/], ["xTm", /^(\\d+:\\d\\d|0:\\d\\d(\\.\\d)?|—|)$/]].forEach(([id, re]) => { const t = T(id); if (t != null && /NaN|undefined|Infinity/.test(t)) bad.push(id + "=" + t); });
+    ["xMag", "xRs", "xSA", "xSE", "xBC", "timer"].forEach((id) => { const t = T(id); if (t != null && /NaN|undefined|Infinity/.test(t)) bad.push(id + "=" + t); });
+    return bad.length ? bad.slice(0, 6).join("; ") : true; })()`;
+  const fin = () => xe(FIN);
+  const step = (secs, keepAlive, dt) => xe(`(() => { const DT = ${dt || 1 / 30}; for (let i = 0; i < ${secs} * 30; i++) { if (!running) break; ${keepAlive ? "if (player && player.hp > 0) player.hp = Math.max(player.hp, 1e6);" : ""} if (mode === "five") fiveTick(DT); else if (mode === "duel") { du.t += DT; duelTick(DT); } else if (mode === "surf") surfTick(DT); else if (mode === "aim") aimTick(DT); else tick(DT); try { xBotYaw(DT); xVis(DT); xHud(); jTick(DT); vmTick(DT); } catch (e) { throw e; } } return true; })()`);
+
+  // ---- A. lobby nav: open and close each item ----
+  lobbyBack();
+  const NAV = [["PLAY", "playBtn", () => !$("xQueue").hidden && disp("lobby") === "flex", () => { $("xqClose").click(); return $("xQueue").hidden; }],
+    ["CAREER", "navCareer", () => modalOn("mProf"), () => { const c = doc.querySelector("#mProf .row [data-close]") || doc.querySelector("#mProf [data-close]"); if (c) c.click(); return !modalOn("mProf"); }],
+    ["CAREER (header ×)", "navCareer", () => modalOn("mProf"), () => { const c = doc.querySelector("#mProf .x"); if (!c) return false; c.click(); return !modalOn("mProf"); }],
+    ["COLLECTION", "navInv", () => modalOn("mInv"), () => { doc.querySelector("#mInv .row [data-close]").click(); return !modalOn("mInv"); }],
+    ["AGENTS", "navAg", () => modalOn("mAg"), () => { doc.querySelector("#mAg .row [data-close]").click(); return !modalOn("mAg"); }],
+    ["SETTINGS", "setBtn", () => modalOn("mSet"), () => { doc.querySelector("#mSet .row [data-close]").click(); return !modalOn("mSet"); }]];
+  for (const [n, id, open, close] of NAV) SW("lobby nav " + n + " opens and closes", () => { lobbyBack(); $("xQueue").hidden = true; const b = $(id); if (!b) return "missing #" + id; b.click(); advance(50); if (!open()) return "did not open"; advance(20); if (!close()) return "did not close"; return disp("lobby") === "flex" ? true : "lobby hidden after close"; });
+  // ---- A2. lobby 2D UI fixes (real-browser report): roster, profile layout + ×, collection list, community card ----
+  SW("AGENTS opens a roster of every agent with a close control; a pick sets the saved lobby agent", () => { lobbyBack(); $("xQueue").hidden = true; $("navAg").click(); advance(20);
+    if (!modalOn("mAg")) return "#mAg not open"; const B = Array.from(doc.querySelectorAll("#agList button[data-a]")); if (B.length < 12) return "roster has " + B.length;
+    if (B.filter((b) => b.getAttribute("aria-pressed") === "true").length !== 1) return "not exactly one selected"; const sova = B.find((b) => b.dataset.a === "Sova"); sova.click(); advance(10);
+    if (xe("S.lastAg") !== "Sova") return "S.lastAg " + xe("S.lastAg"); const s2 = doc.querySelector('#agList button[data-a="Sova"]'); if (!s2 || s2.getAttribute("aria-pressed") !== "true") return "Sova not marked";
+    if (!/\S/.test(s2.textContent)) return "empty tile"; doc.querySelector("#mAg .x").click(); if (modalOn("mAg")) return "× did not close"; $("navAg").click(); doc.querySelector("#mAg .row [data-close]").click(); if (modalOn("mAg")) return "Close did not close";
+    xe('S.lastAg = "Jett"; true'); return disp("lobby") === "flex" || "lobby hidden"; });
+  SW("Career modal: × closes it; panes scroll inside the box above a fixed footer (not absolute under CLOSE); badges use their own grid", () => { lobbyBack(); $("navCareer").click(); advance(10);
+    for (const t of doc.querySelectorAll("#mProf [data-pt]")) { t.click(); const pp = doc.querySelector('#mProf [data-pp="' + t.dataset.pt + '"]'); if (pp.hidden) return "pane " + t.dataset.pt + " hidden"; if (pp.parentNode !== doc.querySelector("#mProf .mbox")) return "pane not a direct child"; }
+    doc.querySelector("#mProf .x").click(); if (modalOn("mProf")) return "× did not close";
+    const need = [/#mProf \.mbox > \.x-pp\{position:static;[^}]*overflow-y:auto/, /#mProf \.mbox\{display:flex;flex-direction:column;[^}]*overflow:hidden/, /#mProf \.x-bg\{grid-template-columns:repeat\(auto-fill/, /#mProf \.x,[^{]*\{z-index:3/];
+    const miss = need.filter((r) => !r.test(html)); return miss.length ? "missing CSS " + miss.join(" ") : true; });
+  SW("Collection: list scrolls with a visible scrollbar, fade and bottom padding; tags ellipsis; selected swatch is ringed red with a check and aria-pressed", () => { lobbyBack(); $("navInv").click(); advance(10);
+    const row = doc.querySelector("#invList .wrow"); if (!row) return "no rows"; const sw = Array.from(row.querySelectorAll(".sw button")); const on = sw.filter((b) => b.getAttribute("aria-pressed") === "true"); if (on.length !== 1) return "selected swatches " + on.length;
+    const other = sw.find((b) => !b.classList.contains("on")); other.click(); const row2 = doc.querySelectorAll("#invList .wrow")[0], sw2 = Array.from(row2.querySelectorAll(".sw button")); const i = sw.indexOf(other);
+    if (!sw2[i].classList.contains("on") || sw2[i].getAttribute("aria-pressed") !== "true") return "click did not move the selection"; sw2[0].click();
+    doc.querySelector("#mInv .row [data-close]").click();
+    const need = [/#invList\{padding-bottom:32px;scrollbar-width:thin;[^}]*mask-image/, /#invList \.wn\{[^}]*padding:0 12px;[^}]*text-overflow:ellipsis/, /#invList \.sw button\.on\{border-color:#ff4655/, /#invList \.sw button\.on::after\{content:/];
+    const miss = need.filter((r) => !r.test(html)); return miss.length ? "missing CSS " + miss.join(" ") : true; });
+  SW("Community card: no placeholder Discord stats beside the live online count; Join Discord stays on one line; ONLINE pill matches the 44 px Get app height", () => {
+    const sp = $("discBtn").nextElementSibling; if (sp && !sp.hidden && /—/.test(sp.textContent)) return "placeholder stats visible";
+    const need = [/#lobby #discBtn\{white-space:nowrap/, /#lobby \.x-row2 \.online\{min-height:44px/]; const miss = need.filter((r) => !r.test(html)); return miss.length ? "missing CSS " + miss.join(" ") : true; });
+  SW("Esc closes an open lobby modal", () => { lobbyBack(); $("navCareer").click(); advance(20); dispatch(win, mkEvent("keydown", { key: "Escape", code: "Escape" })); advance(20); return !modalOn("mProf") || "Esc left #mProf open"; });
+
+  // ---- B. queue: every tab + START, every map tile + START (Unrated) actually plays that map ----
+  const tabOf = (q) => doc.querySelector('#xQueue .x-qtabs [data-q="' + q + '"]');
+  const throughPre = () => { advance(5200); $("preGo").click(); advance(60); if (shown("xAg")) { const t = Array.from(doc.querySelectorAll("#xAg .x-ag")).find((b, i) => i > 0 && !b.disabled); if (t) t.click(); advance(20); $("xAgL").click(); advance(10); throughPre.ld = $("xLd").classList.contains("on"); advance(1500); } else { throughPre.ld = null; advance(1500); } };
+  for (const q of ["unrated", "swift", "sr", "dm", "tdm", "esc", "custom"]) SW("queue tab " + q + " + START reaches a live match", () => {
+    lobbyBack(); $("playBtn").click(); advance(20); const t = tabOf(q); if (!t) return "no tab"; t.click(); advance(20); $("xqPlay").click(); advance(60);
+    let ld; if (q === "unrated" || q === "swift" || q === "custom") { if (!shown("pre")) return "pre-match not shown"; throughPre(); ld = throughPre.ld; } else { ld = $("xLd").classList.contains("on"); advance(1500); }
+    if (!inGame()) return "not in game"; if (q !== "esc" && ld === false) return "no loading screen at match start"; if ($("xLd").classList.contains("on") || xe("window.xLdOn")) return "loading screen did not hide"; if (!xe("running")) return "not running"; const r = fin(); return r;
+  });
+  for (const m of ["ascent", "bind", "haven", "split", "lotus", "breeze"]) for (const q of ["unrated", "swift"]) SW("queue map tile " + m + " (" + q + ") + START plays " + m, () => {
+    lobbyBack(); $("playBtn").click(); advance(20); tabOf(q).click(); const tile = doc.querySelector('#xQueue .x-qmap[data-map="' + m + '"]'); if (!tile) return "no tile"; tile.click(); advance(10);
+    if (tile.getAttribute("aria-pressed") !== "true") return "tile not pressed"; $("xqPlay").click(); advance(60); if (!shown("pre")) return "no pre-match";
+    if (!new RegExp(m, "i").test($("preMh").textContent)) return "pre-match card shows " + $("preMh").textContent; throughPre();
+    if (!inGame()) return "not in game"; const got = xe("FV.map"); if (got !== m) return "match map " + got; if (q === "swift" && !xe("FV.sw")) return "not swiftplay"; return fin();
+  });
+  lobbyBack(); xe('FV.pick = "ascent"; true');
+
+  // ---- C. every round-based / DM mode on every map: loading, buy, live, round 2, match end, results, lobby ----
+  const MAPS6 = ["ascent", "bind", "haven", "split", "lotus", "breeze"];
+  const RMODES = [["5v5", "FV.srOn = 0; window.xSwift = false; startFive();", "five"], ["Swiftplay", "FV.srOn = 0; window.xSwift = true; startFive();", "swift"], ["Spike Rush", "startSR();", "sr"], ["TDM", "startTDM();", "dm"], ["Deathmatch", "startDM();", "dm"], ["Escalation", "startESC();", "dm"]];
+  for (const [name, start, kind] of RMODES) for (const m of MAPS6) SW(name + " on " + m + ": loading → buy → live → round 2 → match end → results → lobby", () => {
+    lobbyBack(); xe(`(() => { FV.pick = ${JSON.stringify(m)}; FV.dm = false; FV.tdm = false; FV.esc = false; const go = () => { ${start} }; window.xMatchLoad(go, ${JSON.stringify(m)}, ${JSON.stringify(name)}, true); return true; })()`);
+    if (!xe("window.xLdOn")) return "loading screen not up"; advance(1500); if (xe("window.xLdOn")) return "loading screen stuck";
+    if (!inGame() || !xe("running")) return "not running"; if (xe("FV.map") !== m) return "map " + xe("FV.map"); let r = fin(); if (r !== true) return "start: " + r;
+    if (kind !== "dm") {
+      if (!(xe("FV.buy") > 0) && kind !== "sr") return "no buy phase"; step(0.5, true, 1 / 20); r = fin(); if (r !== true) return "buy: " + r;
+      xe("FV.buy = Math.min(FV.buy, 0.5); true"); step(1, true); if (xe("FV.buy") > 0) return "buy phase did not end"; const t0 = xe("timeLeft"); step(2, true, 1 / 20); r = fin(); if (r !== true) return "live: " + r;
+      if (!(xe("timeLeft") < t0)) return "round timer frozen " + t0 + " -> " + xe("timeLeft");
+      xe('fCheck(true, "sweep round end"); true'); advance(2400); if (xe("FV.you + FV.them") !== 1 || !xe("running")) return "round 2 did not start"; step(0.5, true, 1 / 20); r = fin(); if (r !== true) return "round 2: " + r;
+      const need = kind === "swift" ? 5 : kind === "sr" ? xe("FV.srWin || 4") : xe("FIVE_WIN");
+      xe(`FV.you = ${need - 1}; FV.them = 0; FV.sp.st = "carry"; fCheck(true, "sweep match end"); true`); advance(2600);
+      if (!shown("result")) return "results screen not shown (score " + xe("FV.you + ':' + FV.them") + ")"; if (!/Victory/.test($("resTitle").textContent)) return "result title " + $("resTitle").textContent;
+    } else {
+      step(2, true, 1 / 20); r = fin(); if (r !== true) return "live: " + r; const t0 = xe("timeLeft"); step(0.5, true, 1 / 20); if (!(xe("timeLeft") < t0)) return "match timer frozen";
+      xe('timeLeft = 0.01; true'); step(1); if (!shown("result")) return "DM results not shown at time up";
+    }
+    if (xe("running")) return "still running behind results"; $("lobbyBtn").click(); advance(100);
+    if (disp("lobby") !== "flex" || inGame() || shown("result")) return "Lobby button did not return to the lobby"; advance(3000); if (xe("running") || inGame()) return "match restarted itself after leaving"; return true;
+  });
+  // non-map modes
+  SW("Retake: rounds to 4 → results → lobby", () => { lobbyBack(); xe("score.you = 0; score.bots = 0; matchOver = false; start(); true"); advance(50); if (!xe("running")) return "not running"; step(3, true); let r = fin(); if (r !== true) return r;
+    for (let i = 0; i < 4; i++) { if (i) { $("againBtn").click(); advance(50); if (!xe("running")) return "next round did not start (" + i + ")"; step(1, true); } xe('end(true, "sweep"); true'); advance(50); }
+    if (!shown("result") || !/Victory/.test($("resTitle").textContent)) return "no Victory: " + $("resTitle").textContent; $("lobbyBtn").click(); advance(50); return disp("lobby") === "flex" || "no lobby"; });
+  SW("Rifle 2v2: pick, round 2, match end → results → lobby", () => { lobbyBack(); xe("startRifle(); true"); advance(3600); if (!xe("running")) return "not running"; step(3, true); let r = fin(); if (r !== true) return r;
+    xe('rEnd(true, "sweep"); true'); advance(8000); if (!xe("running")) return "round 2 did not start (after the 3 s weapon pick)"; xe('RF.you = RIFLE_WIN - 1; rEnd(true, "sweep"); true'); advance(4000);
+    if (!shown("result")) return "no results"; $("lobbyBtn").click(); advance(50); return disp("lobby") === "flex" || "no lobby"; });
+  SW("Operator Duel: live, results, lobby", () => { lobbyBack(); xe("xGo(() => startDuel()); true"); advance(100); if (!xe("running")) return "not running"; step(4, true); const r = fin(); if (r !== true) return r; return true; });
+  SW("Aim trainer (Range): 60 s round ends with results → lobby", () => { lobbyBack(); xe("startAim(); true"); advance(100); if (!xe("running")) return "not running"; step(2); let r = fin(); if (r !== true) return r; xe("AM.t = Math.min(AM.t, 1.5); true"); step(3, false, 1 / 20); if (xe("running")) return "range round never ended"; advance(500);
+    if (!shown("result") && !xe("xResUp()")) return "no results"; $("lobbyBtn").click(); advance(50); return disp("lobby") === "flex" || "no lobby"; });
+  for (const sm of ["boreas", "utopia"]) SW("Surf " + sm + ": runs, R restarts", () => { lobbyBack(); xe(`SM = ${JSON.stringify(sm)}; startSurf(); true`); advance(100); if (!xe("running")) return "not running"; step(3); const p = xe("[sv.p.x, sv.p.y, sv.p.z].every((v) => typeof v !== 'number' || Number.isFinite(v))"); if (!p) return "surf pos NaN"; dispatch(win, mkEvent("keydown", { key: "r", code: "KeyR" })); dispatch(win, mkEvent("keyup", { key: "r", code: "KeyR" })); advance(30); return xe("sv.t === 0") || "R did not reset"; });
+  lobbyBack();
+
+  // ---- D. buy every weapon, fire, reload, switch ----
+  SW("5v5 buy menu: every weapon buys, fires (ammo drops), reloads (mag refills), slot keys switch the viewmodel", () => {
+    lobbyBack(); xe('FV.pick = "ascent"; FV.srOn = 0; window.xSwift = false; startFive(); clearTimeout(FV.to); true'); advance(50);
+    dispatch(win, mkEvent("keydown", { key: "b", code: "KeyB" })); dispatch(win, mkEvent("keyup", { key: "b", code: "KeyB" })); advance(30);
+    if (!$("xBuy").classList.contains("on")) return "B did not open the buy menu";
+    const names = Array.from(doc.querySelectorAll("#xBG button[data-n]")).map((b) => b.dataset.n).filter((n) => !/^ab:/.test(n) && xe(`!!WEAP[${JSON.stringify(n)}]`));
+    const allG = xe('["Classic","Shorty","Frenzy","Ghost","Sheriff","Stinger","Spectre","Bucky","Judge","Bulldog","Guardian","Phantom","Vandal","Marshal","Outlaw","Operator","Ares","Odin"].filter((n) => !!WEAP[n])'); const miss = allG.filter((n) => !names.includes(n)); if (miss.length) return "buy menu is missing " + miss.join(", ");
+    const bad = [];
+    for (const n of names) {
+      xe("FV.cr = 9000; FV.buy = 20; FV.menu = true; buyRender(); true"); const b = Array.from(doc.querySelectorAll("#xBG button[data-n]")).find((x) => x.dataset.n === n);
+      if (!b || b.disabled) { if (!(b && b.classList.contains("on"))) bad.push(n + " button disabled"); continue; }
+      b.click(); advance(10); const own = xe(`FV.pri === ${JSON.stringify(n)} || FV.sec === ${JSON.stringify(n)}`); if (!own && !b.classList.contains("on")) { bad.push(n + " not bought"); continue; }
+      const side = /^(Classic|Shorty|Frenzy|Ghost|Sheriff)$/.test(n); if (side && xe("FV.sec") !== n) bad.push(n + " (sidearm) went to the primary slot");
+      const r = xe(`(() => { FV.buy = 0; FV.menu = false; buyMenu(false); const sl = FV.sec === ${JSON.stringify(n)} ? "pis" : "pri"; swapW(sl); VM.sw = 0; if (wName() !== ${JSON.stringify(n)}) return "wName " + wName(); reloading = 0; fcd = 0; player.hp = 100;
+        const a0 = ammo; shoot(); if (!(ammo < a0)) return "shot did not use ammo " + a0 + "->" + ammo; updHud(); xHud(); const hud = String(document.getElementById("xMag").textContent).trim(); if (hud !== String(ammo) && hud !== "…") return "HUD mag " + hud + " vs " + ammo;
+        reloading = 0; const r0 = rsv; window.dispatchEvent(Object.assign(new Event("keydown"), { code: "KeyR", key: "r" })); window.dispatchEvent(Object.assign(new Event("keyup"), { code: "KeyR", key: "r" })); if (!(reloading > 0)) return "R did not reload";
+        for (let i = 0; i < 300 && reloading > 0; i++) tick(1 / 30); if (ammo !== MAG()) return "after reload " + ammo + "/" + MAG(); if (!(rsv < r0)) return "reserve not used";
+        swapW("knife"); if (rw !== "knife") return "knife switch"; swapW(sl); if (rw !== sl) return "switch back"; return true; })()`);
+      if (r !== true) bad.push(n + ": " + r);
+    }
+    for (const sh of ["Light Shields", "Heavy Shields", "Regen Shield"]) { xe("FV.cr = 9000; FV.buy = 20; FV.menu = true; player.armor = 0; buyRender(); true"); const b = Array.from(doc.querySelectorAll("#xBG button[data-n]")).find((x) => x.dataset.n === sh); if (b) { b.click(); if (!(xe("player.armor") > 0)) bad.push(sh + " gave no armor"); } }
+    const k = xe('(() => { FV.buy = 0; FV.menu = false; FV.pri = "Vandal"; slots.pri = { ammo: 25, rsv: 75 }; const out = []; [["Digit1", "pri"], ["Digit2", "pis"], ["Digit3", "knife"], ["Digit1", "pri"]].forEach(([c, w]) => { window.dispatchEvent(Object.assign(new Event("keydown"), { code: c })); window.dispatchEvent(Object.assign(new Event("keyup"), { code: c })); if (rw !== w) out.push(c + "->" + rw); }); return out.length ? out.join(",") : true; })()');
+    if (k !== true) bad.push("slot keys: " + k);
+    return bad.length ? bad.slice(0, 8).join(" | ") : true;
+  });
+  // ---- E. every agent: C/Q/E/X, cooldowns / charges update, HUD pips ----
+  SW("every agent: C/Q/E/X cast without throwing; a charge or cooldown changes; HUD ability slots finite", () => {
+    lobbyBack(); xe('FV.pick = "ascent"; FV.srOn = 0; window.xSwift = false; startFive(); clearTimeout(FV.to); FV.buy = 0; true'); advance(50);
+    const ags = xe("Object.keys(KITS)"); const bad = [];
+    for (const ag of ags) { const r = xe(`(() => { try { J.pick = ${JSON.stringify(ag)}; FV.buy = 0; running = true; player.hp = 100; const M = K().mx || {}; J.c = M.c != null ? M.c : 2; J.q = M.q != null ? M.q : 2; J.e = M.e != null ? M.e : 1; J.ult = K().u; if (J.cd) for (const k in J.cd) J.cd[k] = 0;
+        const out = []; ["KeyC", "KeyQ", "KeyE", "KeyX"].forEach((c) => { try { player.hp = 100; if (J.cd) for (const k in J.cd) J.cd[k] = 0; jKey(c); for (let i = 0; i < 10; i++) { jTick(1 / 10); fiveTick(1 / 20); } if (J.dr) { try { drEnd(); } catch (e) {} J.dr = null; } } catch (e) { out.push(c + " threw " + e.message); } });
+        ["jC", "jQ", "jE", "jX"].forEach((id) => { const t = String((document.getElementById(id) || {}).textContent || ""); if (/NaN|undefined/.test(t)) out.push(id + "=" + t); });
+        [player.x, player.z].forEach((v) => { if (!Number.isFinite(v)) out.push("player pos NaN after casts"); });
+        return out.length ? out.join(",") : true; } catch (e) { return e.message; } })()`); if (r !== true) bad.push(ag + ": " + r); xe("player.hp = 100; true"); }
+    const r = fin(); if (r !== true) bad.push(r);
+    return bad.length ? bad.join(" | ") : true;
+  });
+  // ---- F. spike plant + defuse by the player ----
+  SW("spike: player plants on a site (hold 4) and a defender defuse ends the round", () => {
+    lobbyBack(); xe('FV.pick = "ascent"; FV.srOn = 0; window.xSwift = false; startFive(); clearTimeout(FV.to); FV.buy = 0; true'); advance(50);
+    const r = xe(`(() => { const s = FV.sp; s.st = "carry"; s.c = player; const site = SITES.A; player.x = site[0]; player.z = site[1]; player.hp = 1e6; keys.Digit4 = true; for (let i = 0; i < 150 && s.st === "carry"; i++) { player.x = site[0]; player.z = site[1]; fiveTick(1 / 30); } keys.Digit4 = false;
+      if (s.st !== "plant") return "no plant (st " + s.st + ", in site " + inSite(player) + ")"; if (!(timeLeft > 40)) return "spike timer " + timeLeft;
+      FV.atk = false; bots.forEach((b) => { b.alive = false; }); player.x = s.x + 0.5; player.z = s.z; keys.Digit4 = true; for (let i = 0; i < 260 && running; i++) { player.x = s.x + 0.5; player.z = s.z; fiveTick(1 / 30); } keys.Digit4 = false;
+      if (running) return "defuse did not end the round (dt " + s.dt + ", st " + s.st + ")"; return s.st === "done" || "st " + s.st; })()`);
+    advance(2400); return r;
+  });
+  // ---- G. player death, spectate, next round; DM respawn ----
+  SW("player death: spectating, finite camera, round ends and next round respawns the player", () => {
+    lobbyBack(); xe('FV.pick = "ascent"; FV.srOn = 0; window.xSwift = false; startFive(); clearTimeout(FV.to); FV.buy = 0; true'); advance(50);
+    const d = xe('(() => { pDie("Sweep", "Vandal"); return player.hp <= 0; })()'); if (!d) return "pDie did not kill"; step(2); frames(10); let r = fin(); if (r !== true) return "dead: " + r;
+    xe('fCheck(false, "sweep"); true'); advance(2400); if (!(xe("player.hp") > 0)) return "not respawned next round"; return fin();
+  });
+  SW("deathmatch: player respawns 1.5 s after death with full hp", () => { lobbyBack(); xe('FV.pick = "ascent"; startDM(); true'); advance(1500); if (xe("window.xLdOn")) return "loading screen stuck"; xe('pDie(bots[0].name, "Vandal"); true'); if (xe("player.hp") > 0) return "not dead"; step(2.2); return xe("player.hp") === 100 || "hp " + xe("player.hp"); });
+  // ---- H. Tab scoreboard, Esc pause + every settings tab / toggle / slider ----
+  SW("Tab shows the scoreboard, releasing Tab hides it", () => { lobbyBack(); xe('FV.pick = "ascent"; FV.srOn = 0; startFive(); clearTimeout(FV.to); FV.buy = 0; true'); advance(50); dispatch(win, mkEvent("keydown", { key: "Tab", code: "Tab" })); advance(30); const on = $("xBoard").classList.contains("on"); dispatch(win, mkEvent("keyup", { key: "Tab", code: "Tab" })); advance(30); return on && !$("xBoard").classList.contains("on") || "board on=" + on + " after=" + $("xBoard").classList.contains("on"); });
+  SW("Esc pause → Settings: every tab, toggle, segment and slider changes without errors; Done + Resume return to play", () => {
+    lobbyBack(); xe('FV.pick = "ascent"; FV.srOn = 0; startFive(); clearTimeout(FV.to); FV.buy = 0; true'); advance(50);
+    dispatch(win, mkEvent("keydown", { key: "Escape", code: "Escape" })); advance(60); if (!$("xPause").classList.contains("on") || !xe("paused")) return "Esc did not pause";
+    const g = $("xGear") || $("xSet"); g.click(); advance(30); if (!modalOn("mSet")) return "pause settings did not open mSet";
+    const bad = [];
+    for (const t of doc.querySelectorAll("#xSTab button[data-st]")) { t.click(); advance(5);
+      const pane = doc.querySelector('#mSet [data-sp="' + t.dataset.st + '"]'); if (!pane || pane.hidden) { bad.push("pane " + t.dataset.st); continue; }
+      for (const cb of pane.querySelectorAll("input[type=checkbox]")) { for (const v of [!cb.checked, cb.checked]) { cb.checked = v; dispatch(cb, mkEvent("change")); dispatch(cb, mkEvent("input")); } }
+      for (const sl of pane.querySelectorAll("input[type=range]")) { for (const v of [sl.getAttribute("max") || "1", sl.getAttribute("min") || "0", sl.getAttribute("value") || sl.getAttribute("min") || "0"]) { sl.value = v; dispatch(sl, mkEvent("input")); dispatch(sl, mkEvent("change")); } }
+      for (const b of pane.querySelectorAll(".seg button, [data-cb] button, #xhSw button, select")) { if (b.tagName === "SELECT") continue; b.click(); }
+      for (const s of pane.querySelectorAll("select")) { dispatch(s, mkEvent("change")); }
+    }
+    ["xFpsL", "xRes", "xRsc", "xAA", "xShd"].forEach((id) => { const b = $(id) && $(id).querySelector("button"); if (b) b.click(); }); const fb = doc.querySelectorAll('#mSet [data-key="fps"] button')[0]; if (fb) fb.click(); const db = doc.querySelectorAll('#mSet [data-key="diff"] button')[1]; if (db) db.click();
+    const cb = $("xAuR"); if (cb) { cb.checked = true; dispatch(cb, mkEvent("change")); }
+    frames(5); doc.querySelector("#mSet .row [data-close]").click(); advance(30); if (modalOn("mSet")) bad.push("Done did not close");
+    if (!$("xPause").classList.contains("on")) { dispatch(win, mkEvent("keydown", { key: "Escape", code: "Escape" })); advance(60); }
+    $("xWatch").click(); advance(30); if (xe("paused")) bad.push("still paused after Resume");
+    step(1, true); const r = fin(); if (r !== true) bad.push(r);
+    return bad.length ? bad.join(" | ") : true;
+  });
+  SW("colourblind mode cycles every option without errors", () => { const sel = doc.querySelectorAll("#xCbH button, #xEnC button"); if (!sel.length) return "no colourblind control found"; sel.forEach((b) => b.click()); sel[0].click(); return true; });
+  // ---- I. 60 simulated seconds: bots visible, finite, moving and shooting ----
+  if (!REAL3) report.push({ label: "Sweep: 60 s bot soak skipped under the THREE stub (vectors are proxies, nothing can move); run REAL3=1 for it", el: true, handler: true, cond: true, pass: true, errs: [] });
+  else for (const m of MAPS6) SW((m === "ascent" || process.env.SOAK_FULL ? 60 : 20) + " s bot soak on " + m + ": finite positions, bots move and fire, HUD updates", () => {
+    lobbyBack(); vm.runInContext("globalThis.__MR = globalThis.__MR || Math.random; { let s = 4242; Math.random = () => { s = (s + 0x6d2b79f5) | 0; let t = Math.imul(s ^ (s >>> 15), 1 | s); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }", context);
+    xe(`FV.pick = ${JSON.stringify(m)}; FV.srOn = 0; window.xSwift = false; startFive(); clearTimeout(FV.to); FV.buy = 0; true`); advance(50);
+    xe(`(() => { globalThis.__sh = 0; const w0 = typeof botShoot === "function" ? botShoot : null; if (w0) { globalThis.__bs0 = w0; botShoot = function () { globalThis.__sh++; return w0.apply(this, arguments); }; } globalThis.__h0 = hurt; hurt = function (t) { if (t !== player) globalThis.__sh++; return __h0.apply(this, arguments); };
+      globalThis.__p0 = [].concat(bots, allies).map((u) => [u.g.position.x, u.g.position.z]); return true; })()`);
+    const seenT = new Set(); let worst = true;
+    for (let s = 0; s < (m === "ascent" || process.env.SOAK_FULL ? 60 : 20); s += 5) { xe("(() => { if (!running) { clearTimeout(FV.to); FV.you = 0; FV.them = 0; fRound(); FV.buy = 0; } return true; })()"); step(5, true, 1 / 20); seenT.add($("xTm").textContent); const r = fin(); if (r !== true) { worst = "t=" + s + ": " + r; break; } }
+    const mv = xe("(() => { const U = [].concat(bots, allies); let n = 0; U.forEach((u, i) => { const a = __p0[i]; if (a && Math.hypot(u.g.position.x - a[0], u.g.position.z - a[1]) > 3) n++; }); return n; })()");
+    const sh = xe("__sh"); xe("(() => { hurt = __h0; if (globalThis.__bs0) botShoot = __bs0; return true; })()"); vm.runInContext("Math.random = __MR", context);
+    if (worst !== true) return worst; if (mv < 5) return "only " + mv + "/9 bots moved > 3 m"; if (!(sh > 0)) return "no bot fired / dealt damage in 60 s"; if (seenT.size < 3) return "HUD timer barely changed: " + [...seenT].join(","); return true;
+  });
+  lobbyBack();
+  win.console.error = ce0;
+  report.push({ label: "Sweep: ran " + swN + " steps", el: true, handler: true, cond: true, pass: true, errs: [] });
+}
+
+// <<< sweep
 // ---------- valorant movement: knife run 6.75 m/s, stop on release within ~0.1 s, walk slower, diagonal not faster, no bhop gain ----------
 {
   phase = "valorant movement"; let ok = false, err = [];

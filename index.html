@@ -61,6 +61,7 @@ button{font:inherit;text-transform:inherit;letter-spacing:inherit;cursor:pointer
 #defuse .bar::after{content:"";position:absolute;left:50%;top:-4px;bottom:-4px;width:2px;margin-left:-1px;background:#ece8e1}#defuse .bar.x-pl::after{display:none}
 #xSpk{left:50%;top:14px;transform:translateX(-50%);display:none;background:rgba(15,25,35,.8);padding:5px 18px;border-bottom:3px solid var(--red)}#xSpk svg{display:block;width:40px;height:34px;filter:drop-shadow(0 0 6px rgba(255,70,85,.9))}
 #hint{left:50%;bottom:24px;transform:translateX(-50%);font-size:12px;opacity:.7;text-align:center}
+#game #hint{bottom:112px;width:min(860px,92vw)} /* QA: sat under the HP / ability / ammo panels */
 #dmg{inset:0;box-shadow:inset 0 0 120px rgba(255,70,85,.8);opacity:0;transition:opacity .3s}
 #scope{inset:0;display:none;background:linear-gradient(#000,#000) 50% 50%/1px 92vmin no-repeat,linear-gradient(#000,#000) 50% 50%/92vmin 1px no-repeat,linear-gradient(#000,#000) 50% calc(50% - 31vmin)/3px 30vmin no-repeat,linear-gradient(#000,#000) 50% calc(50% + 31vmin)/3px 30vmin no-repeat,linear-gradient(#000,#000) calc(50% - 31vmin) 50%/30vmin 3px no-repeat,linear-gradient(#000,#000) calc(50% + 31vmin) 50%/30vmin 3px no-repeat,radial-gradient(circle at 50% 50%,transparent 0,transparent 45.2vmin,rgba(0,0,0,.75) 45.7vmin,#000 46vmin)} /* sniper lens: 92vmin circle, centred on any aspect ratio, thin cross + thick outer posts; first in #game so the HUD paints over it */
 #xAdsT{inset:0;opacity:0;pointer-events:none}
@@ -92,9 +93,9 @@ button{font:inherit;text-transform:inherit;letter-spacing:inherit;cursor:pointer
 .panel h3{font-size:22px;font-weight:800}.panel p{font-size:14px;opacity:.8;text-transform:none;letter-spacing:.02em;line-height:1.45}
 .lnk{align-self:flex-start;background:none;border:1px solid var(--bone);color:var(--bone);padding:10px 18px;font-size:14px;min-height:44px;transition:background .15s,color .15s}.lnk:hover{background:var(--bone);color:var(--ink)}
 .bottom{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
-.me{display:flex;align-items:center;gap:12px;background:rgba(15,25,35,.85);border:1px solid rgba(236,232,225,.25);padding:8px 18px 8px 8px}
+.me:not(tr):not(li){display:flex;align-items:center;gap:12px;background:rgba(15,25,35,.85);border:1px solid rgba(236,232,225,.25);padding:8px 18px 8px 8px}
 .me .av{width:36px;height:36px;background:var(--red);display:grid;place-items:center;color:var(--ink)}.me .av svg{width:22px;height:22px}
-.me b{font-size:16px}.me span{font-size:12px;opacity:.8;display:block;text-transform:none;letter-spacing:.02em}
+.me b{font-size:16px}.me:not(tr):not(li) span{font-size:12px;opacity:.8;display:block;text-transform:none;letter-spacing:.02em} /* QA: legacy chip style; tr.me / li.me are the "you" rows (Tab board, weekly board, DM board) */
 .modal{position:fixed;inset:0;background:rgba(10,16,22,.82);display:none;align-items:center;justify-content:center;z-index:40;padding:20px}
 .modal.on{display:flex}
 .x-tabs{display:flex;gap:6px;margin:10px 0 14px;flex-wrap:wrap}.x-tabs button{min-height:44px;padding:0 14px;background:transparent;border:1px solid rgba(236,232,225,.3);color:inherit;font:inherit;letter-spacing:.1em;cursor:pointer}.x-tabs button.on{background:var(--red);border-color:var(--red);color:#0f1923}
@@ -264,6 +265,10 @@ button{font:inherit;text-transform:inherit;letter-spacing:inherit;cursor:pointer
 #xBuy .x-bc h4{font-size:12px;letter-spacing:.18em;text-transform:uppercase;opacity:.6;padding:0 2px 6px;border-bottom:2px solid rgba(236,232,225,.12);margin:0 0 4px}
 #xBuy .x-bc.on h4{color:var(--bone);opacity:1;border-bottom-color:var(--red)}
 #xBuy .x-bc.x-sh{grid-column:7;border-left:1px solid rgba(236,232,225,.14);padding-left:10px}
+/* QA: #xBG also carries .x-bg (profile badges: every div boxed red, 10 px padding), the shields column .x-sh (surf HUD: display:none!important) and the abilities row .x-ab (HUD ability bar: translateX(-50%), half off-screen); undo those here */
+#xBG.x-bg div{border:0;padding:0;font-size:inherit}
+#xBuy .x-bc.x-sh{display:flex!important}
+#xBuy .x-bc.x-ab{transform:none;left:auto;bottom:auto;display:flex}
 #xBuy .x-bc.x-ab{grid-column:1/-1;flex-direction:row;flex-wrap:wrap}#xBuy .x-bc.x-ab h4{flex-basis:100%}#xBuy .x-bc.x-ab button{flex:0 1 200px}
 #xBuy .x-bc button{display:flex;flex-direction:column;align-items:flex-start;gap:6px;width:100%;min-height:96px;padding:10px 12px;text-align:left;font:inherit;font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--bone);background:rgba(22,30,40,.92);border:2px solid transparent;border-radius:2px;cursor:pointer;transition:background .12s,border-color .12s,opacity .12s;box-shadow:none}
 #xBuy .x-bc button:hover:not(:disabled),#xBuy .x-bc button:focus-visible{background:rgba(48,60,74,.96);border-color:rgba(236,232,225,.45)}
@@ -800,7 +805,7 @@ body.x-cbh #game{--ha:#3d8bff;--he:#ff9f1c}
     <p class="x-tag">Community</p>
     <h3>Join our Discord</h3>
     <p>Patch notes first, bug reports, tournaments, and people to play with in every online mode.</p>
-    <div class="x-row2"><button class="lnk" id="discBtn">Join Discord</button><span><span class="dotg"></span> — online · — members</span></div>
+    <div class="x-row2"><button class="lnk" id="discBtn">Join Discord</button><span hidden><span class="dotg"></span> — online · — members</span></div>
     <div class="x-row2"><span class="online"><i></i><span id="totOn">48</span>&nbsp;online</span><button class="x-get" data-open="mApp">Get app</button></div>
   </aside>
   <aside class="x-msc" aria-labelledby="hLobMs">
@@ -892,7 +897,7 @@ body.x-cbh #game{--ha:#3d8bff;--he:#ff9f1c}
         q.querySelectorAll(".x-qp").forEach(function (p) { var on = p.dataset.q === cur; p.classList.toggle("on", on); p.hidden = !on; });
       });
     });
-    function start() { if (qMap && (cur === "unrated" || cur === "swift")) { try { if (typeof FV !== "undefined" && FV) FV.map = qMap; } catch (e) {} } var b = document.getElementById(GO[cur]); swN = cur === "swift" ? 1 : 0; if (b) b.click(); }
+    function start() { window.xQPick = qMap && (cur === "unrated" || cur === "swift") ? qMap : null; var b = document.getElementById(GO[cur]); swN = cur === "swift" ? 1 : 0; if (b) b.click(); }
     // one PLAY flow: the top PLAY opens the panel when closed, otherwise starts the selected queue (same as the PLAY under the tabs)
     document.getElementById("xqPlay").addEventListener("click", start);
     document.getElementById("playBtn").addEventListener("click", function () {
@@ -1039,19 +1044,49 @@ body.x-cbh #game{--ha:#3d8bff;--he:#ff9f1c}
   #xPause .x-pane .ghost{background:transparent;border:1px solid rgba(236,232,225,.4);color:var(--bone)}
   #xPause .x-pane .ghost:hover{border-color:#ff4655;background:rgba(255,70,85,.12)}
   /* career / collection / news / app panels: same dark panel, red top accent, square close top-right */
-  #mProf .mbox,#mInv .mbox,#mPatch .mbox,#mApp .mbox{font-family:Geist,"Segoe UI",system-ui,-apple-system,Roboto,Helvetica,Arial,sans-serif;background:#0f1923;border:1px solid rgba(236,232,225,.12);border-top:4px solid #ff4655;padding:32px;gap:16px;max-width:720px}
-  #mProf .mbox *,#mInv .mbox *,#mPatch .mbox *,#mApp .mbox *{font-family:inherit}
-  #mProf .mbox h2,#mInv .mbox h2,#mPatch .mbox h2,#mApp .mbox h2{font-size:24px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;padding-right:48px}
-  #mProf .x,#mInv .x,#mPatch .x,#mApp .x{top:16px;right:16px;width:40px;height:40px;display:grid;place-items:center;border:1px solid rgba(236,232,225,.12);font-size:24px;line-height:1;cursor:pointer}
-  #mProf .x:hover,#mInv .x:hover,#mPatch .x:hover,#mApp .x:hover{border-color:#ff4655;background:rgba(255,70,85,.12)}
-  #mProf .row .play,#mInv .row .play,#mPatch .row .play,#mApp .row .play{min-height:48px;padding:0 32px;font-size:14px;font-weight:800;letter-spacing:.16em;border-radius:0}
+  #mProf .mbox,#mInv .mbox,#mPatch .mbox,#mApp .mbox,#mAg .mbox{font-family:Geist,"Segoe UI",system-ui,-apple-system,Roboto,Helvetica,Arial,sans-serif;background:#0f1923;border:1px solid rgba(236,232,225,.12);border-top:4px solid #ff4655;padding:32px;gap:16px;max-width:720px}
+  #mProf .mbox *,#mInv .mbox *,#mPatch .mbox *,#mApp .mbox *,#mAg .mbox *{font-family:inherit}
+  #mProf .mbox h2,#mInv .mbox h2,#mPatch .mbox h2,#mApp .mbox h2,#mAg .mbox h2{font-size:24px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;padding-right:48px}
+  #mProf .x,#mInv .x,#mPatch .x,#mApp .x,#mAg .x{z-index:3;top:16px;right:16px;width:40px;height:40px;display:grid;place-items:center;border:1px solid rgba(236,232,225,.12);font-size:24px;line-height:1;cursor:pointer}
+  #mProf .x:hover,#mInv .x:hover,#mPatch .x:hover,#mApp .x:hover,#mAg .x:hover{border-color:#ff4655;background:rgba(255,70,85,.12)}
+  #mProf .row .play,#mInv .row .play,#mPatch .row .play,#mApp .row .play,#mAg .row .play{min-height:48px;padding:0 32px;font-size:14px;font-weight:800;letter-spacing:.16em;border-radius:0}
   @media (max-width:820px){
     #xPause .x-pb{padding:48px 24px 24px;gap:16px}
-    #mProf,#mInv,#mPatch,#mApp{padding:0}
-    #mProf .mbox,#mInv .mbox,#mPatch .mbox,#mApp .mbox{max-width:none;min-height:100%;max-height:100vh;border-left:0;border-right:0;padding:24px 16px}
-    #mProf .x,#mInv .x,#mPatch .x,#mApp .x{top:8px;right:8px}
+    #mProf,#mInv,#mPatch,#mApp,#mAg{padding:0}
+    #mProf .mbox,#mInv .mbox,#mPatch .mbox,#mApp .mbox,#mAg .mbox{max-width:none;min-height:100%;max-height:100vh;border-left:0;border-right:0;padding:24px 16px}
+    #mProf .x,#mInv .x,#mPatch .x,#mApp .x,#mAg .x{top:8px;right:8px}
   }
   @media (prefers-reduced-motion:reduce){#mSet *{transition:none!important}}
+  /* QA: profile panes share the class .x-pp with the in-game team pips (position:absolute, bottom:4px, pointer-events:none) and .x-bg with the buy grid (5 columns),
+     so the panes sat at the bottom of the box under CLOSE and could overlap the header ×. Panes now scroll inside the box above a fixed footer. */
+  #mProf .mbox{display:flex;flex-direction:column;max-height:min(90vh,820px);overflow:hidden}
+  #mProf .mbox > *{flex-shrink:0}
+  #mProf .mbox > .x-pp{position:static;display:block;flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;pointer-events:auto;margin:0;padding:0 8px 16px 0;scrollbar-width:thin;scrollbar-color:rgba(236,232,225,.35) transparent}
+  #mProf .mbox > .x-pp[hidden]{display:none}
+  #mProf .x-bg{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+  #mProf .mbox > .x-ms{flex:0 1 auto;min-height:0;max-height:40%;overflow-y:auto}
+  #mProf .mbox > .row{margin-top:0;padding-top:16px;border-top:1px solid rgba(236,232,225,.12)}
+  /* collection list: visible scrollbar, bottom fade and room under the last row; weapon tags padded with ellipsis; selected swatch ringed red with a check */
+  #invList{padding-bottom:32px;scrollbar-width:thin;scrollbar-color:rgba(236,232,225,.45) rgba(236,232,225,.08);-webkit-mask-image:linear-gradient(to bottom,#000 calc(100% - 28px),transparent);mask-image:linear-gradient(to bottom,#000 calc(100% - 28px),transparent)}
+  #invList::-webkit-scrollbar{width:8px}#invList::-webkit-scrollbar-track{background:rgba(236,232,225,.08)}#invList::-webkit-scrollbar-thumb{background:rgba(236,232,225,.45)}
+  #invList .wrow{min-width:0}
+  #invList .wn{flex:1 1 auto;min-width:0;max-width:100%;padding:0 12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #invList .sw button{position:relative;cursor:pointer}
+  #invList .sw button.on{border-color:#ff4655;box-shadow:0 0 0 2px #ff4655,inset 0 0 0 3px #0f1923}
+  #invList .sw button.on::after{content:"\2713";position:absolute;inset:0;display:grid;place-items:center;font-size:14px;font-weight:900;color:#fff;text-shadow:0 0 3px #000,0 0 2px #000}
+  /* agent roster (AGENTS nav): plain DOM, works without WebGL */
+  #mAg .mbox{display:flex;flex-direction:column;max-height:min(90vh,820px);overflow:hidden}
+  #mAg .mbox > *{flex-shrink:0}
+  #agList{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;padding:0 8px 16px 0;scrollbar-width:thin}
+  #agList button{display:flex;flex-direction:column;align-items:flex-start;gap:4px;min-height:72px;padding:12px;text-align:left;background:rgba(236,232,225,.04);border:1px solid rgba(236,232,225,.16);border-left:4px solid var(--c,#4f8fb5);color:var(--bone);font:inherit;cursor:pointer}
+  #agList button b{font-size:15px;font-weight:800;letter-spacing:.12em;text-transform:uppercase}
+  #agList button small{font-size:12px;opacity:.7;text-transform:none;letter-spacing:0;line-height:1.35}
+  #agList button:hover,#agList button:focus-visible{border-color:#ff4655;background:rgba(255,70,85,.1)}
+  #agList button[aria-pressed=true]{border-color:#ff4655;background:rgba(255,70,85,.16);box-shadow:inset 0 0 0 1px #ff4655}
+  #mAg .mbox > .row{padding-top:16px;border-top:1px solid rgba(236,232,225,.12)}
+  /* lobby community card */
+  #lobby #discBtn{white-space:nowrap;flex:0 0 auto}
+  #lobby .x-row2 .online{min-height:44px;box-sizing:border-box;padding:0 14px}
 </style>
 <div class="modal" id="mSet"><div class="mbox" role="dialog" aria-labelledby="hSet"><button class="x" data-close aria-label="Close">×</button>
   <h2 id="hSet">Settings</h2>
@@ -1101,6 +1136,11 @@ body.x-cbh #game{--ha:#3d8bff;--he:#ff9f1c}
   <h2 id="hInv">Inventory</h2><p>Pick a skin collection for each weapon: Default, Arctic, Ember, Jade, Neon Pulse or Sandstorm. Every weapon and the knife has its own skin. Tap Vandal, Phantom, Operator or Classic to equip it for the retake.</p>
   <div id="invList" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;max-height:60vh;overflow-y:auto;overscroll-behavior:contain;padding-right:4px"></div>
   <div class="row"><button class="play" data-close>Done</button></div>
+</div></div>
+<div class="modal" id="mAg"><div class="mbox" role="dialog" aria-labelledby="hAgR"><button class="x" data-close aria-label="Close">×</button>
+  <p class="eyebrow">Agents</p><h2 id="hAgR">Agent roster</h2><p id="agHint">Pick your lobby agent. You choose who to play in agent select before each match.</p>
+  <div id="agList" role="group" aria-labelledby="hAgR"></div>
+  <div class="row"><button class="play" data-close>Close</button></div>
 </div></div>
 <div id="pre">
   <p class="mt" id="preMt">MATCH · First to 4 rounds · <b>CASUAL</b> on Ascent</p>
@@ -1202,7 +1242,7 @@ body.x-cbh #game{--ha:#3d8bff;--he:#ff9f1c}
 </div>
 <div id="xBoard" class="x-fr" aria-hidden="true"></div>
 <div id="xPick" class="x-fr" role="dialog" aria-label="Pick your rifle"><p>Round <b id="xPR">1</b> · Pick your rifle · auto in <b id="xPC">3</b></p><div class="x-pw"><button data-w="Vandal"><kbd>1</kbd>Vandal<small>25 rounds · 40 body / 160 head · heavy recoil</small></button><button data-w="Phantom"><kbd>2</kbd>Phantom<small>30 rounds · faster, softer, quieter · falloff past 15 m</small></button></div></div>
-<div id="xBuy" class="x-fr" role="dialog" aria-label="Buy menu"><div class="x-bh"><p>Buy Time Remaining <b id="xBT">00:20</b></p><p><b id="xBC">800</b> credits</p></div><div class="x-bg" id="xBG"></div><p id="xBL" hidden></p><p class="x-bf"><kbd>[1-5]</kbd>Category<kbd>[Right click]</kbd>Loadout<kbd>[Escape]</kbd>Back</p></div>
+<div id="xBuy" class="x-fr" role="dialog" aria-label="Buy menu"><div class="x-bh"><p>Buy Time Remaining <b id="xBT">00:20</b></p><p><b id="xBC">800</b> credits</p></div><div class="x-bg" id="xBG"></div><p id="xBL" hidden></p><p class="x-bf"><kbd>[1-7]</kbd>Category<kbd>[Right click]</kbd>Loadout<kbd>[Escape]</kbd>Back</p></div>
 <div id="xRg" class="x-rg" role="dialog" aria-modal="true" aria-labelledby="xRgT"><div class="x-rgb">
   <h2 id="xRgT">THE RANGE</h2>
   <p>Pick a drill. P opens this panel, B opens the free buy menu, Esc closes.</p>
@@ -1231,7 +1271,7 @@ body.x-cbh #game{--ha:#3d8bff;--he:#ff9f1c}
     <button id="xPow" aria-label="Quit to lobby"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v10"/><path d="M18.4 6.6a9 9 0 1 1-12.8 0"/></svg></button>
   </div>
   <div class="x-tabs" role="tablist"><button class="on" role="tab" data-t="c">Controls</button><button role="tab" data-t="p">Play</button><button role="tab" data-t="s">Settings</button></div>
-  <div class="x-pane on" data-p="c"><style>#xKb{display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;max-height:46vh;overflow:auto;margin:0 0 10px;text-align:left}#xKb button{display:flex;justify-content:space-between;align-items:center;gap:8px;min-height:var(--tap);padding:0 12px;border:1px solid rgba(255,255,255,.18);border-radius:var(--r-s);background:rgba(255,255,255,.04);color:inherit;font:var(--type-small);cursor:pointer}#xKb button b{font-weight:var(--weight-medium);font-family:"Geist Mono",monospace}#xKb button.on{border-color:currentColor;background:rgba(255,255,255,.14)}.x-kbf{font:var(--type-caption);opacity:.75;margin:0 0 8px}@media(max-width:520px){#xKb{grid-template-columns:1fr}}</style><p class="x-kbf" id="xKbHint">Click a row, then press a key. Esc cancels. Mouse: aim / fire, right mouse: scope, Esc: pause.</p><div class="x-kb" id="xKb" role="list"></div><button class="ghost" id="xKbReset">Reset to defaults</button></div>
+  <div class="x-pane on" data-p="c"><style>#xKb{display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;max-height:46vh;overflow:auto;margin:0 0 10px;text-align:left}#xKb.x-kb{position:static;left:auto;bottom:auto;z-index:auto;width:auto;transform:none;padding:0;background:none;border:0;color:inherit;font:inherit;opacity:1;clip-path:none;pointer-events:auto;transition:none;animation:none}/* QA: the keybind list carries .x-kb, the kill banner class (fixed, off-screen left, opacity 0, pointer-events none) */#xKb button{display:flex;justify-content:space-between;align-items:center;gap:8px;min-height:var(--tap);padding:0 12px;border:1px solid rgba(255,255,255,.18);border-radius:var(--r-s);background:rgba(255,255,255,.04);color:inherit;font:var(--type-small);cursor:pointer}#xKb button b{font-weight:var(--weight-medium);font-family:"Geist Mono",monospace}#xKb button.on{border-color:currentColor;background:rgba(255,255,255,.14)}.x-kbf{font:var(--type-caption);opacity:.75;margin:0 0 8px}@media(max-width:520px){#xKb{grid-template-columns:1fr}}</style><p class="x-kbf" id="xKbHint">Click a row, then press a key. Esc cancels. Mouse: aim / fire, right mouse: scope, Esc: pause.</p><div class="x-kb" id="xKb" role="list"></div><button class="ghost" id="xKbReset">Reset to defaults</button></div>
   <div class="x-pane" data-p="p"><button class="play" id="xResume">Resume</button><button class="ghost" id="xDrills" hidden>RANGE DRILLS</button></div>
   <div class="x-pane" data-p="s"><p>Sensitivity, volume, brightness, FPS, crosshair and bot difficulty.</p><button class="ghost" id="xSet">Open settings</button></div>
 </div></div>
@@ -1565,7 +1605,7 @@ function renderInv() {
     const sw = document.createElement("div"); sw.className = "sw";
     Object.keys(SKSET).forEach((c) => {
       const b = document.createElement("button"); b.style.background = skBg(c); b.title = c; b.setAttribute("aria-label", w + " skin " + c);
-      if (id === c) b.classList.add("on");
+      if (id === c) b.classList.add("on"); b.setAttribute("aria-pressed", id === c ? "true" : "false");
       b.onclick = () => { skinId[w] = c; skin[w] = SKSET[c].b; S.skins = skinId; renderInv(); onSkin(); }; sw.append(b);
     });
     row.append(n, sw); $("invList").append(row);
@@ -1599,6 +1639,19 @@ function xGo(fn) {
   try { fn(); } catch (e) { if (window.xErr) window.xErr(e); }
 }
 const failWith = (msg) => { xNoGL = true; xFailMsg = msg; };
+// AGENTS nav: roster from the agent-select tiles (static markup, so it works without WebGL); a pick sets the lobby agent, as locking in does
+function agRoster() {
+  const L = $("agList"); if (!L) return; let cur = "Jett"; try { cur = S.lastAg || cur; } catch (e) {}
+  L.innerHTML = "";
+  document.querySelectorAll("#xAg .x-ag[data-a]").forEach((t) => {
+    const a = t.dataset.a, b = document.createElement("button"), role = (t.querySelector("small") || {}).textContent || "";
+    let ab = ""; try { ab = KITS[a].n.join(" · "); } catch (e) {}
+    b.type = "button"; b.dataset.a = a; b.setAttribute("aria-pressed", a === cur ? "true" : "false"); b.style.setProperty("--c", t.style.getPropertyValue("--c") || "#4f8fb5");
+    b.innerHTML = "<b></b><small></small>"; b.querySelector("b").textContent = a; b.querySelector("small").textContent = role + (ab ? " · " + ab : "");
+    b.onclick = () => { try { S.lastAg = a; } catch (e) {} try { if (typeof xAAMem !== "undefined") xAAMem.lastAg = a; } catch (e) {} try { localStorage.setItem("vs.lastAg", a); } catch (e) {} agRoster(); say("Lobby agent: " + a, 1200); };
+    L.append(b);
+  });
+}
 function xLobbyInit() {
   const bind = (name, fn) => { try { fn(); } catch (e) { try { console.error("lobby binding failed: " + name, e); } catch (_) {} } };
   bind("init error capture", () => { const oe = window.onerror; window.onerror = function (m, s, l, c, e) { if (!xReady && !xInitErr) xInitErr = String((e && e.message) || m); return oe ? oe.apply(this, arguments) : false; }; });
@@ -1616,7 +1669,7 @@ function xLobbyInit() {
   bind("settings", () => $("setBtn").onclick = () => open("mSet"));
   bind("nav collection", () => $("navInv").onclick = () => { $("xQueue").hidden = true; open("mInv"); });
   bind("nav career", () => $("navCareer").onclick = () => { $("xQueue").hidden = true; try { if (window.xProfRender) window.xProfRender(); } catch (er) {} open("mProf"); });
-  bind("nav agents", () => $("navAg").onclick = () => { closeAll(); $("xQueue").hidden = true; const c = $("xAgent"); try { if (c) { c.setAttribute("tabindex", "-1"); c.focus(); } } catch (e) {} say("Your agent · drag to turn · pick agents in agent select"); });
+  bind("nav agents", () => $("navAg").onclick = () => { closeAll(); $("xQueue").hidden = true; agRoster(); open("mAg"); }); // was: focus the 3D lobby canvas only (blank without WebGL, no close)
   bind("profile chip", () => { const goProf = () => { try { if (window.xProfRender) window.xProfRender(); } catch (er) {} open("mProf"); };
     $("meBtn").addEventListener("click", goProf); $("meBtn").addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); goProf(); } }); });
   bind("profile fallback", () => window.xProfRender = () => { // replaced by the full profile once the game has loaded
@@ -2425,7 +2478,7 @@ function openPre(m) {
   }
   if (preMode === "five") {
     $("preMt").innerHTML = "5V5 VS BOTS · BETA · First to 13 · <b>CASUAL</b> on Ascent";
-    $("preMs").textContent = "5 VS 5 · YOU AND 4 BOTS"; mpSet(FV.pick);
+    $("preMs").textContent = "5 VS 5 · YOU AND 4 BOTS"; if (window.xQPick) { FV.pick = window.xQPick; window.xQPick = null; } mpSet(FV.pick); // queue panel map tile (Unrated / Swiftplay)
     $("preMp").textContent = "Attack first, sides swap after round 12. 20 s buy phase each round, press B to buy. Plant or defuse the Spike with 4.";
   }
   let t = 0; const found = preMode === "surf" || preMode === "aim" ? 1 : 2 + Math.floor(Math.random() * 3);
@@ -3985,7 +4038,7 @@ function fBuy(n) {
   if (a) { if ((player.armor || 0) >= a) return; player.armor = a; }
   else {
     if (n === FV.pri || n === FV.sec) return;
-    const sl = n === "Classic" || n === "Sheriff" || n === "Shorty" ? "pis" : "pri", m = WEAP[n].mag;
+    const sl = /^(Classic|Shorty|Frenzy|Ghost|Sheriff)$/.test(n) ? "pis" : "pri", m = WEAP[n].mag;
     if (sl === "pis") FV.sec = n; else FV.pri = n;
     slots[sl] = { ammo: m, rsv: m * 3 };
     if (rw === sl) { ammo = m; rsv = m * 3; reloading = 0; } else if (sl === "pri") swapW("pri");
@@ -4009,7 +4062,7 @@ const XWS = (() => {
     const cat = BUY.find((x) => x[1].some((i) => i[0] === n)), it = cat && cat[1].find((i) => i[0] === n), f = W.ff || [W.body, W.head, W.legs], pl = W.pel ? W.pel + "×" : "";
     if (path) path.setAttribute("d", BUY_SIL[n] || BUY_SIL.Vandal); if (h) h.textContent = n; if (c) c.textContent = cat ? cat[0] : ""; if (pr) pr.textContent = it ? it[1] : "";
     [W.head, f[1], W.body, f[0], W.legs, f[2]].forEach((v, i) => { if (td && td[i]) td[i].textContent = pl + v; });
-    const sec = n === "Classic" || n === "Sheriff" || n === "Shorty", rows = [["Fire rate", W.rate + " /s"], ["Magazine", W.mag + " / " + W.mag * 3]];
+    const sec = /^(Classic|Shorty|Frenzy|Ghost|Sheriff)$/.test(n), rows = [["Fire rate", W.rate + " /s"], ["Magazine", W.mag + " / " + W.mag * 3]];
     const pn = xPen(n); rows.push(["Wall pen", pn === XPN.H ? "High" : pn === XPN.M ? "Medium" : "Low"]);
     rows.push(["Run speed", (6.75 * vRunK(n)).toFixed(2) + " m/s"]);
     rows.push(["Equip", xEq(n) + " s"]);
@@ -7038,7 +7091,7 @@ function xHud() {
   const rf = mode === "rifle";
   const fv = mode === "five";
   setT("xSA", duel ? du.you : rf ? RF.you : fv ? FV.you : score.you); setT("xSE", duel ? du.them : rf ? RF.them : fv ? FV.them : score.bots);
-  setT("xSub", fv ? `5v5 · ${F_MAPN[FV.map] || "Ascent"} · Round ${FV.you + FV.them + 1} · ${FV.atk ? "Attack" : "Defense"} · ${FV.cr} cr${FV.buy > 0 ? " · Buy phase, press B" : fsTag()}` : duel ? "Operator Duel · first to " + DUEL_WIN : rf ? "Rifle 2v2 · first to " + RIFLE_WIN + (rSide() < 0 ? " · sides swapped" : "") : "Retake · Ascent B · first to 4");
+  setT("xSub", fv && FV.dm ? `${FV.esc ? "Escalation" : FV.tdm ? "Team Deathmatch" : "Deathmatch"} · ${F_MAPN[FV.map] || "Ascent"} · first to ${FV.esc ? "the last level" : (() => { try { return DM.win; } catch (e) { return 40; } })()}` : fv ? `${FV.sr ? "Spike Rush" : FV.sw ? "Swiftplay" : "5v5"} · ${F_MAPN[FV.map] || "Ascent"} · Round ${FV.you + FV.them + 1} · ${FV.atk ? "Attack" : "Defense"} · ${FV.cr} cr${FV.buy > 0 ? " · Buy phase, press B" : fsTag()}` : duel ? "Operator Duel · first to " + DUEL_WIN : mode === "aim" ? "Aim training · range · 60 s" : rf ? "Rifle 2v2 · first to " + RIFLE_WIN + (rSide() < 0 ? " · sides swapped" : "") : "Retake · Ascent B · first to 4");
   setT("xArm", Math.ceil(player.armor || 0)); setT("xHp", Math.max(0, Math.ceil(player.hp))); $("xHp").classList.toggle("lo", player.hp <= 30);
   const aim = mode === "aim", aw = aim ? aimW() : ""; // aim trainer keeps its own mag in AM.ammo (AM.rl reload), not the global ammo/rsv
   const knifeOut = duel ? du.w === "knife" : aim ? aw === "Knife" : rw === "knife";
@@ -7488,6 +7541,7 @@ function minimap() {
   if (g.classList.contains("x-mm") !== show) g.classList.toggle("x-mm", show);
   if (g.classList.contains("x-five") !== (mode === "five")) g.classList.toggle("x-five", mode === "five");
   XCALL.visible = show && mode === "five"; // floating callouts follow the minimap
+  if (XCALL.visible) for (const c of XCALL.children) c.visible = Math.hypot(c.position.x - camera.position.x, c.position.z - camera.position.z) > 6; // QA: a callout straight over the camera (Attacker Spawn at the spawn point) projected huge across the screen
   if (!show) return;
   const now = performance.now();
   if (now - (minimap.d || 0) < 50) return; minimap.d = now; // 20 Hz cap
@@ -7704,14 +7758,14 @@ addEventListener("keydown", (e) => { if (e.code === "KeyT" && !e.repeat) xSpray(
 
 try { // Sprays section in the Skins menu
   const cands = [...document.querySelectorAll('[id*="skin" i]')].filter((el) => /^(DIV|SECTION|DIALOG|ASIDE)$/.test(el.tagName));
-  const host = cands.sort((a, b) => b.querySelectorAll("*").length - a.querySelectorAll("*").length)[0] || document.getElementById("xPause");
+  const host = document.querySelector("#mInv .mbox") || cands.sort((a, b) => b.querySelectorAll("*").length - a.querySelectorAll("*").length)[0] || document.getElementById("xPause"); // QA: no element id contains "skin", so this fell back to #xPause and the panel spilled over the game behind the pause menu; the skins menu is Collection
   if (host) {
     const sec = document.createElement("div"); sec.className = "x-spray"; sec.innerHTML = '<h3>Sprays</h3><p class="fineprint">Press T in a match to spray on the wall or floor you aim at (5 m). One per round; 40 s cooldown in Deathmatch.</p><div class="x-spray__row" role="radiogroup" aria-label="Spray"></div>';
     const row = sec.querySelector(".x-spray__row");
     XSP.ids.forEach((id) => { const b = document.createElement("button"); b.type = "button"; b.dataset.sp = id; b.setAttribute("role", "radio"); b.setAttribute("aria-label", XSP.names[id]); b.appendChild(xSpDraw(id)); const s = document.createElement("span"); s.textContent = XSP.names[id]; b.appendChild(s); row.appendChild(b); });
     const sync = () => row.querySelectorAll("button").forEach((b) => { const on = b.dataset.sp === XSP.pick; b.classList.toggle("on", on); b.setAttribute("aria-checked", on); });
     row.addEventListener("click", (e) => { const b = e.target.closest("button[data-sp]"); if (!b) return; XSP.pick = b.dataset.sp; try { localStorage.setItem("vs.spray", XSP.pick); } catch (er) {} sync(); });
-    sync(); host.appendChild(sec);
+    sync(); const hr = host.querySelector(":scope > .row"); if (hr) host.insertBefore(sec, hr); else host.appendChild(sec);
   }
 } catch (e) {}
 // share identical opaque materials across static map pieces and weapons (cache by type + params); skips anything mutated at runtime
@@ -8652,6 +8706,10 @@ try {
   { const b0 = botAb; botAb = function (b, dt, see, tg, from) { const R = b && b.xm; if (R && R.xCp > 0) xCaBot(R, dt); XCA.bb = b; try { return b0(b, dt, see, tg, from); } finally { XCA.bb = null; } }; }
   { const f0 = feed; feed = function (t) { const b = XCA.bb; if (b && b.xm && !(b.xm.xCp > 0) && typeof t === "string" && t.indexOf("▸") > 0) { try { xCaBotGo(b.xm); } catch (e) {} } return f0.apply(this, arguments); }; }
 } catch (e) { console.warn("cast anims unavailable", e); }
+// loading screen: the loader script further down cannot reach this IIFE's functions (its agentSelect / window.startSR wraps were silent no-ops), so the match starts hand themselves to window.xMatchLoad here
+{ const xLd = (fn, name) => function () { const a = arguments, self = this, L = window.xMatchLoad; if (typeof L !== "function") return fn.apply(self, a); let r; L(() => { r = fn.apply(self, a); }, FV.pick === "random" ? "ascent" : FV.pick, name, true); return r; };
+  const ag0 = agentSelect; agentSelect = function (go) { return ag0(xLd(go)); };
+  startSR = xLd(startSR, "SPIKE RUSH"); startTDM = xLd(startTDM, "TEAM DEATHMATCH"); startDM = xLd(startDM, "DEATHMATCH"); }
 xReady = true; // every mode is initialised; lobby launches may now start them
 })();
 </script>
