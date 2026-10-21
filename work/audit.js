@@ -1030,7 +1030,7 @@ if (!NO3) {
         step(1); err.push(...look("buy phase r1"));
         step(xe("Math.ceil(FV.buy) + 1")); if (xe("FV.buy > 0")) err.push("buy phase did not end");
         step(2); err.push(...look("live r1"));
-        xe('(() => { player.hp = 1e6; fCheck(true, "audit round end"); return true; })()'); advance(2400); // FV.to fires the next round
+        xe('(() => { player.hp = 1e6; fCheck(true, "audit round end"); return true; })()'); advance(7400); // FV.to fires the next round (7 s post-round)
         if (xe("FV.you + FV.them") !== 1) err.push("round 2 did not start (score " + xe("FV.you + ':' + FV.them") + ")");
         xe("player.hp = 1e6; true"); step(1); err.push(...look("buy phase r2"));
         step(xe("Math.ceil(FV.buy) + 1")); xe("player.hp = 1e6; true"); step(2); err.push(...look("live r2"));
@@ -1170,7 +1170,7 @@ if (!NO3) {
       if (!(xe("FV.buy") > 0) && kind !== "sr") return "no buy phase"; step(0.5, true, 1 / 20); r = fin(); if (r !== true) return "buy: " + r;
       xe("FV.buy = Math.min(FV.buy, 0.5); true"); step(1, true); if (xe("FV.buy") > 0) return "buy phase did not end"; const t0 = xe("timeLeft"); step(2, true, 1 / 20); r = fin(); if (r !== true) return "live: " + r;
       if (!(xe("timeLeft") < t0)) return "round timer frozen " + t0 + " -> " + xe("timeLeft");
-      xe('fCheck(true, "sweep round end"); true'); advance(2400); if (xe("FV.you + FV.them") !== 1 || !xe("running")) return "round 2 did not start"; step(0.5, true, 1 / 20); r = fin(); if (r !== true) return "round 2: " + r;
+      xe('fCheck(true, "sweep round end"); true'); advance(7400); if (xe("FV.you + FV.them") !== 1 || !xe("running")) return "round 2 did not start"; step(0.5, true, 1 / 20); r = fin(); if (r !== true) return "round 2: " + r;
       const need = kind === "swift" ? 5 : kind === "sr" ? xe("FV.srWin || 4") : xe("FIVE_WIN");
       xe(`FV.you = ${need - 1}; FV.them = 0; FV.sp.st = "carry"; fCheck(true, "sweep match end"); true`); advance(2600);
       if (!shown("result")) return "results screen not shown (score " + xe("FV.you + ':' + FV.them") + ")"; if (!/Victory/.test($("resTitle").textContent)) return "result title " + $("resTitle").textContent;
@@ -1244,7 +1244,7 @@ if (!NO3) {
   SW("player death: spectating, finite camera, round ends and next round respawns the player", () => {
     lobbyBack(); xe('FV.pick = "ascent"; FV.srOn = 0; window.xSwift = false; startFive(); clearTimeout(FV.to); FV.buy = 0; true'); advance(50);
     const d = xe('(() => { pDie("Sweep", "Vandal"); return player.hp <= 0; })()'); if (!d) return "pDie did not kill"; step(2); frames(10); let r = fin(); if (r !== true) return "dead: " + r;
-    xe('fCheck(false, "sweep"); true'); advance(2400); if (!(xe("player.hp") > 0)) return "not respawned next round"; return fin();
+    xe('fCheck(false, "sweep"); true'); advance(7400); if (!(xe("player.hp") > 0)) return "not respawned next round"; return fin();
   });
   SW("deathmatch: player respawns 1.5 s after death with full hp", () => { lobbyBack(); xe('FV.pick = "ascent"; startDM(); true'); advance(1500); if (xe("window.xLdOn")) return "loading screen stuck"; xe('pDie(bots[0].name, "Vandal"); true'); if (xe("player.hp") > 0) return "not dead"; step(2.2); return xe("player.hp") === 100 || "hp " + xe("player.hp"); });
   // ---- H. Tab scoreboard, Esc pause + every settings tab / toggle / slider ----
@@ -1749,6 +1749,59 @@ if (!NO3) {
     mpOk("Single-player TDM after online play: no online state, 10 units with AI", inGame() && ev("!MP.on && !MP.cl && bots.length + allies.length === 9 && [].concat(bots, allies).every((u) => !u.nt && !u.hum)") === true);
     leave();
   } catch (e) { mpOk("online audit threw", false, String(e.stack || e)); }
+  try { toLobby(); } catch (e) {}
+}
+
+// ---------- fid2: Valorant round timing, ult orbs, gunplay numbers ----------
+if (!NO3) {
+  const xe = vm.runInContext("__xe", context);
+  const f2 = (label, code) => { let ok = false, err = []; try { const r = xe(`(() => { try { ${code} } catch (e) { return String(e.stack || e).slice(0, 300); } })()`); if (r === true) ok = true; else err.push(String(r)); } catch (e) { err.push(String(e).slice(0, 300)); } report.push({ label: "fid2: " + label, el: true, handler: true, cond: ok, pass: ok, errs: err }); return ok; };
+  const go5 = 'window.xLdOn = false; FV.pick = "ascent"; FV.srOn = 0; FV.dm = false; FV.tdm = false; window.xSwift = false; startFive(); clearTimeout(FV.to); window.xLdOn = false;';
+  const SRC_OK = ["s.pt >= 4", "prog = s.pt / 4", "s.t = 45", "s.dt >= 7", "s.dt = s.dt >= 3.5 ? 3.5 : 0", "over ? 2200 : 7000", "n >= 24", "s.cr = 5000", "? 45 : 30", "timeLeft = 100;"].every((t) => html.includes(t));
+  f2("timing constants (buy 45 first round of each half / 30, round 100, plant 4, fuse 45 w/ beep 4/s <10 s 8/s <7 s, defuse 7 / half 3.5, post-round 7 s, 13 to win, OT 5000)", go5 + `
+    const b0 = FV.buy, t0 = timeLeft; FV.you = 1; FV.them = 0; fRound(); clearTimeout(FV.to); const b1 = FV.buy; FV.you = 6; FV.them = 6; fRound(); clearTimeout(FV.to); const b12 = FV.buy;
+    const ok = b0 === 45 && t0 === 100 && b1 === 30 && b12 === 45 && FIVE_WIN === 13 && ${SRC_OK} && xSpHz(5) === 8 && xSpHz(9) === 4 && xSpHz(30) < 2 && xSpHz(11) > xSpHz(40);
+    return ok || JSON.stringify([b0, t0, b1, b12, FIVE_WIN]);`);
+  f2("player plant progresses only while stationary; moving or firing resets it", go5 + `
+    FV.buy = 0; player.hp = 100; running = true; paused = false; const s = FV.sp, k = Object.keys(SITES)[0]; s.st = "carry"; s.c = player; s.pt = 0; player.x = SITES[k][0]; player.z = SITES[k][1]; player.y = 0; player.vx = player.vz = 0; since = 1; keys.Digit4 = true;
+    try { s.pt = 1; fiveTick(0.05); const a = s.pt; player.vx = 6; player.vz = 0; fiveTick(0.02); const b = s.pt; player.vx = player.vz = 0; fiveTick(0.05); s.pt = 1; since = 1; fiveTick(0.03); const c = s.pt; since = 0; fiveTick(0.02); const d = s.pt;
+      return (a > 1 && b === 0 && c > 1 && d === 0) || JSON.stringify([a, b, c, d, s.st]); } finally { keys.Digit4 = false; }`);
+  f2("half-defuse (3.5 s) persists after letting go; earlier progress resets", go5 + `
+    FV.atk = false; fRound(); clearTimeout(FV.to); FV.buy = 0; player.hp = 100; running = true; paused = false; const s = FV.sp, k = Object.keys(SITES)[0]; player.x = SITES[k][0]; player.z = SITES[k][1]; player.vx = player.vz = 0;
+    s.st = "plant"; s.t = 45; s.x = player.x; s.z = player.z; s.dt = 0; s.du = null; allies.forEach((a) => { a.alive = false; }); keys.Digit4 = true;
+    try { fiveTick(0.05); const a = s.dt; keys.Digit4 = false; s.dt = 3.8; fiveTick(0.02); const b = s.dt; s.dt = 2; fiveTick(0.02); const c = s.dt;
+      return (a > 0 && b === 3.5 && c === 0) || JSON.stringify([a, b, c, s.st]); } finally { keys.Digit4 = false; FV.atk = true; }`);
+  // orb capture: stand on an orb and hold F for 3 s
+  let orbOk = false, orbErr = [];
+  try {
+    const r0 = xe(`(() => { try { ${go5} FV.buy = 0; player.hp = 100; running = true; paused = false; J.on = true; J.ult = 0;
+      const O = window.xOrbs; if (!O || O.length !== 2) return "no xOrbs"; const n = O.filter((o) => o.on).length; O[1].on = false; O[0].on = true; O[0].x = player.x; O[0].z = player.z; O[0].hold = 0;
+      bots.forEach((b) => { b.xOrb = null; }); allies.forEach((b) => { b.xOrb = null; }); return n === 2 || "orbs on at round start: " + n; } catch (e) { return String(e.stack || e).slice(0, 300); } })()`);
+    if (r0 !== true) orbErr.push(String(r0));
+    advance(100); dispatch(win, mkEvent("keydown", { key: "f", code: "KeyF" }));
+    xe("player.hp = 100; true"); advance(1600); xe("player.hp = 100; true"); advance(1700);
+    dispatch(win, mkEvent("keyup", { key: "f", code: "KeyF" }));
+    const r1 = xe("[J.ult, window.xOrbs[0].on, K().u]"); orbOk = r0 === true && r1[0] === 1 && r1[1] === false; if (!orbOk) orbErr.push(JSON.stringify(r1));
+  } catch (e) { orbErr.push(String(e).slice(0, 300)); }
+  report.push({ label: "fid2: 2 ult orbs spawn each round; holding F on one for 3 s grants +1 ult point and removes it", el: true, handler: true, cond: orbOk, pass: orbOk, errs: orbErr });
+  f2("moving rifle spread >> standing (counter-strafe to 0 = accurate first shot)", `
+    const s0 = { spray, ads, p: player }; try { player = { x: 0, z: 0, y: 0, hp: 100 }; spray = 0; ads = 0; xCU = 0; if (window.xAD) xAD.bs = 0;
+      const st = gSpread("Vandal", WEAP.Vandal); Object.assign(player, { mv: true, sf: 1 }); const run = gSpread("Vandal", WEAP.Vandal); Object.assign(player, { mv: true, sf: 0.2 }); const cs = gSpread("Vandal", WEAP.Vandal);
+      Object.assign(player, { mv: true, sf: 1 }); const smg = gSpread("Spectre", WEAP.Spectre);
+      return (run > 10 * Math.max(st, 0.001) && run > 0.07 && cs <= st + 1e-9 && st > 0 && st < 0.006 && smg < run) || JSON.stringify([st, run, cs, smg]); } finally { spray = s0.spray; ads = s0.ads; player = s0.p; }`);
+  f2("damage: Vandal head 160 at 40 m; Phantom head 156/140/124 by range; Sheriff 159 close; Guardian 195; Judge 12 pellets full-auto", `
+    const d = [wDmg(WEAP.Vandal, "head", 40), wDmg(WEAP.Phantom, "head", 10), wDmg(WEAP.Phantom, "head", 20), wDmg(WEAP.Phantom, "head", 40), wDmg(WEAP.Sheriff, "head", 10), wDmg(WEAP.Guardian, "head", 30)];
+    return (d.join() === "160,156,140,124,159,195" && WEAP.Judge.pel === 12 && !WEAP.Judge.semi && WEAP.Guardian.semi && XSZ.Operator[1] === 5) || JSON.stringify(d);`);
+  f2("tagging: a rifle hit slows movement to 28% for 0.5 s", go5 + `
+    FV.buy = 0; player.hp = 100; keys.KeyW = true; const sp = () => Math.hypot(player.vx || 0, player.vz || 0);
+    try { player.vx = player.vz = 0; player.tagT = 0; for (let i = 0; i < 6; i++) moveP(0.05, 6.75, false); const v0 = sp(); player.x = 0; player.z = xSpawn(FV.map).atk;
+      player.vx = player.vz = 0; xTag(player, 40); const tt = player.tagT, tk = player.tagK; for (let i = 0; i < 6; i++) moveP(0.05, 6.75, false); const v1 = sp(), left = player.tagT;
+      return (tt === 0.5 && tk === 0.28 && v1 < v0 * 0.35 && v1 > 0 && left > 0) || JSON.stringify([v0, v1, tt, tk, left]); } finally { keys.KeyW = false; player.tagT = 0; }`);
+  // Odin spin-up: the fire rate climbs over the first second of a spray
+  let odOk = false, odErr = [];
+  try { const a = xe("xSpL = -1e9; xRate(WEAP.Odin)"); let b = a; for (let i = 0; i < 12; i++) { advance(100); b = xe("xRate(WEAP.Odin)"); }
+    odOk = typeof a === "number" && b > a + 2; if (!odOk) odErr.push(JSON.stringify([a, b])); } catch (e) { odErr.push(String(e).slice(0, 300)); }
+  report.push({ label: "fid2: Odin spin-up raises the fire rate over a held spray", el: true, handler: true, cond: odOk, pass: odOk, errs: odErr });
   try { toLobby(); } catch (e) {}
 }
 

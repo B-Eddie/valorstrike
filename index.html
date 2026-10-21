@@ -1389,16 +1389,16 @@ document.querySelectorAll(".soon").forEach((b) => b.onclick = () => say("Coming 
 const S = { sens: 1.6, vol: 70, bright: 100, fps: false, xh: "#ffffff", diff: "normal", muted: true, weapon: "Vandal" };
 let mode = "retake";
 // rate = shots/s, body/head/legs = damage 0-30 m, ff = [body, head, legs] past 15 m, rec = recoil
-const WEAP = { Vandal: { mag: 25, rate: 9.75, body: 40, head: 160, legs: 34, rec: 1, vol: 0.3, f: 170 }, Phantom: { mag: 30, rate: 11, body: 39, head: 156, legs: 33, ff: [35, 140, 30], rec: 0.6, vol: 0.14, f: 230 },
-  Operator: { mag: 5, rate: 0.6, body: 150, head: 255, legs: 120, rec: 1.5, vol: 0.3, f: 90, semi: 1 }, Classic: { mag: 12, rate: 6.75, body: 26, head: 78, legs: 22, rec: 0.5, vol: 0.22, f: 260, semi: 1 },
-  Sheriff: { mag: 6, rate: 4, body: 55, head: 159, legs: 46, rec: 1.3, vol: 0.28, f: 140, semi: 1 }, Spectre: { mag: 30, rate: 13.3, body: 26, head: 78, legs: 22, ff: [22, 66, 18], ffd: 20, rec: 0.45, vol: 0.16, f: 280 },
+const WEAP = { Vandal: { mag: 25, rate: 9.75, body: 40, head: 160, legs: 34, rec: 1, vol: 0.3, f: 170 }, Phantom: { mag: 30, rate: 11, body: 39, head: 156, legs: 33, ff: [35, 140, 30], ff2: [31, 124, 26], ffd2: 30, rec: 0.6, vol: 0.14, f: 230 },
+  Operator: { mag: 5, rate: 0.75, body: 150, head: 255, legs: 120, rec: 1.5, vol: 0.3, f: 90, semi: 1 }, Classic: { mag: 12, rate: 6.75, body: 26, head: 78, legs: 22, rec: 0.5, vol: 0.22, f: 260, semi: 1 },
+  Sheriff: { mag: 6, rate: 4, body: 55, head: 159, legs: 46, ff: [50, 145, 43], ffd: 30, rec: 1.3, vol: 0.28, f: 140, semi: 1 }, Spectre: { mag: 30, rate: 13.3, body: 26, head: 78, legs: 22, ff: [22, 66, 18], ffd: 20, rec: 0.45, vol: 0.16, f: 280 },
   Guardian: { mag: 12, rate: 5.25, body: 65, head: 195, legs: 49, rec: 0.9, vol: 0.26, f: 150, semi: 1 },
   Marshal: { mag: 5, rate: 0.8, body: 101, head: 202, legs: 85, rec: 1.2, vol: 0.28, f: 110, semi: 1 }, Bulldog: { mag: 24, rate: 9.15, body: 35, head: 116, legs: 30, rec: 0.8, vol: 0.26, f: 190 },
   Stinger: { mag: 20, rate: 16, body: 27, head: 67, legs: 23, ff: [25, 62, 21], ffd: 15, rec: 0.55, vol: 0.15, f: 290 }, Frenzy: { mag: 13, rate: 10, body: 26, head: 78, legs: 22, ff: [21, 63, 17], ffd: 20, rec: 0.5, vol: 0.18, f: 270 },
   // shotguns: body/head/legs = per pellet, pel pellets per shell inside cone (rad); alt = Bucky ADS tight slug-ish spread
   Shorty: { mag: 2, rate: 3.33, pel: 12, cone: 0.09, body: 12, head: 36, legs: 10, ff: [5, 15, 4], ffd: 7, rec: 1.2, vol: 0.3, f: 120, semi: 1 },
   Bucky: { mag: 5, rate: 1.1, pel: 15, cone: 0.065, body: 20, head: 40, legs: 17, ff: [9, 18, 8], ffd: 8, rec: 1.4, vol: 0.32, f: 100, semi: 1, alt: { pel: 5, k: 0.28, body: 22, head: 44, legs: 19, ff: [14, 28, 12], ffd: 15 } },
-  Judge: { mag: 7, rate: 3.5, pel: 12, cone: 0.075, body: 17, head: 34, legs: 14, ff: [8, 16, 7], ffd: 10, rec: 1.1, vol: 0.3, f: 130, semi: 1 },
+  Judge: { mag: 7, rate: 3.5, pel: 12, cone: 0.075, body: 17, head: 34, legs: 14, ff: [8, 16, 7], ffd: 10, rec: 1.1, vol: 0.3, f: 130 }, // Judge: full auto
   // machine guns: spin = [start, full] rps over the first second of a spray (rate = bots' average); adsK = ADS spread mult; pen = wall penetration (3 high); rld = reload s; heavy = move x0.9
   Ares: { mag: 50, rate: 11.5, spin: [10, 13], body: 30, head: 72, legs: 25, rec: 0.7, vol: 0.3, f: 240, adsK: 0.75, pen: 2, rld: 3.25, heavy: 1 },
   Odin: { mag: 100, rate: 13.8, spin: [12, 15.6], body: 38, head: 95, legs: 32, rec: 0.75, vol: 0.32, f: 260, adsK: 0.55, pen: 3, rld: 5, heavy: 1 } };
@@ -1412,7 +1412,7 @@ const KNIFE = { light: 50, heavy: 75, heavyCrit: 150 }; let kHv = 0, kLg = 0, kL
 // bot yaw r is set as atan2(dx, dz) toward where it aims/moves, so its forward is (sin r, cos r); back-stab when forward · dir(attacker→target) > 0.5
 function kBack(r, ax, az, tx, tz) { const dx = tx - ax, dz = tz - az, l = Math.hypot(dx, dz) || 1; return (Math.sin(r) * dx + Math.cos(r) * dz) / l > 0.5; }
 var xPelOn = false; // true inside the player's pellet loop: wDmg returns one pellet; otherwise (bots) a shotgun shot = expected pellets landing
-function wDmg(W, zone, dist) { W = W || WEAP.Classic; const v = W.ff && dist > (W.ffd || 15) ? W.ff[["body", "head", "legs"].indexOf(zone)] : W[zone];
+function wDmg(W, zone, dist) { W = W || WEAP.Classic; const zi = ["body", "head", "legs"].indexOf(zone), v = W.ff2 && dist > W.ffd2 ? W.ff2[zi] : W.ff && dist > (W.ffd || 15) ? W.ff[zi] : W[zone]; // ff2: second falloff step (Phantom 156/140/124)
   return W.pel && !xPelOn ? Math.min(150, Math.round(v * W.pel * Math.max(0.08, Math.min(0.6, 0.75 - dist / (W.ffd * 3))))) : v; }
 const RF = { you: 0, them: 0, w: "Vandal", t: 0, to: 0 }; let picking = false;
 var score = { you: 0, bots: 0 }, matchOver = false; // declared up here: handlers wired before the WebGL check (openPre, lobbyBtn) touch it
@@ -2415,9 +2415,10 @@ function xSpec(dt) { if (!xKL.on) return xSpecPick(); xKL.st += dt; if (xKL.st <
 function xSpecPick() { let n = 0; for (const x of allies) if (x.alive) n++; if (!n) return null; let i = ((xKL.si % n) + n) % n; for (const x of allies) if (x.alive && i-- === 0) return x; return null; }
 addEventListener("mousedown", (e) => { if (xKL.sp && player && player.hp <= 0) { if (e.button === 0) xKL.si++; else if (e.button === 2) xKL.si--; } });
 // Valorant tagging: a bullet hit slows the target for 0.25 s; heavy (28%) for big hits, lighter (50%) for sidearm / SMG body shots
-function xTag(t, n) { if (!t) return; const k = n < 30 ? 0.5 : 0.28; if (!(t.tagT > 0) || k < t.tagK) t.tagK = k; t.tagT = 0.25; }
+function xTag(t, n) { if (!t) return; const k = n < 30 ? 0.5 : 0.28; if (!(t.tagT > 0) || k < t.tagK) t.tagK = k; t.tagT = 0.5; } // tagging: 0.5 s, rifle hits slow 72%
 function pDie(by, w) {
   if (jRib()) return; // Phoenix Run It Back
+  try { if (mode === "five") jUlt(); } catch (e) {} // +1 ult point per death
   fKC(by); player.hp = 0; defuseT = 0; reloading = 0; stats.d++; sbKill(by, "You", false); if (w) kfeed(by, "You", false, w); else feed(by + " ▸ You"); showStats(); setScope(false);
   if (!allies.some((a) => a.alive)) return end(false, "You were eliminated by " + by);
   say("You died · spectating your team", 1800);
@@ -2648,6 +2649,8 @@ let fcd = 0, spray = 0, since = 1, fireHeld = false;
 // gunplay: movement inaccuracy, pinpoint first shot, Vandal/Phantom spray patterns, camera kick (rcl/rclH), dynamic crosshair
 let rcl = 0, rclH = 0, sprW = "Vandal", xhG = -1;
 const PIN = { Vandal: 1, Phantom: 1, Guardian: 1, Sheriff: 1, Operator: 1, Marshal: 1, Bulldog: 1 };
+// fidelity 2: standing first-shot error (rad, ~Val degrees) and run-spread scale per gun (player); rifles fall apart on the run, SMGs hold up
+const FSA = { Vandal: 0.0044, Phantom: 0.0035, Guardian: 0.0017, Sheriff: 0.0044, Bulldog: 0.0052, Operator: 0, Marshal: 0 }, MVK = { Vandal: 1.6, Phantom: 1.6, Bulldog: 1.5, Guardian: 1.8, Ares: 1.3, Odin: 1.3, Spectre: 0.55, Stinger: 0.6, Frenzy: 0.7, Classic: 0.7, Ghost: 0.8 };
 $("xXhM").addEventListener("click", (e) => { const v = e.target.closest("button"); if (v) S.xhd = v.dataset.v !== "static"; });
 // concuss (enemy Breach stun on the player): slow (sgSlow), +spread, -20% fire rate, no ADS, camera wobble, HUD status
 var xCU = 0, xCD = 3000, xCOn = false;
@@ -2665,9 +2668,9 @@ function gSpread0(w, W, B) {
   const P = B || player || {}, sp = B ? B.n : spray, ad = B ? 0 : ads;
   const slow = P.mv && (P.cr || P.wk), fast = !slow && (B ? !!P.mv : (P.sf || 0) > 0.3); // running counts only above 30% of run speed (counter-strafe)
   const land = !B && (P.lp || 0) > 0, still = !P.air && !fast && !slow && !land;
-  let m = P.air ? 0.11 : fast || land ? 0.05 : slow ? 0.012 : 0; // run very inaccurate, walk moderate, air worst, landing 0.15 s penalty; scales the weapon tables below
+  let m = (P.air ? 0.11 : fast || land ? 0.05 : slow ? 0.012 : 0) * (B || !(P.air || fast || land) ? 1 : MVK[w] || 1); // run very inaccurate, walk moderate, air worst, landing 0.15 s penalty; scales the weapon tables below
   const snp = w === "Operator" || w === "Marshal" || w === "Outlaw";
-  if (still && !sp) m = PIN[w] && (!snp || ad === 2) ? 0 : ad === 1 ? 0.0015 : 0.004; // ADS: tighter first shot // first shot pinpoint
+  if (still && !sp) m = PIN[w] && (!snp || ad === 2) ? (B ? 0 : FSA[w] || 0) : ad === 1 ? 0.0015 : 0.004; // ADS: tighter first shot // first shot pinpoint
   const s = (m + (sp < 3 ? sp * 0.3 : Math.min(sp, 10)) * 0.0042 * W.rec) * (P.cr && still ? 0.85 : 1); // crouched + stationary: ~15% tighter
   return s * (ad === 2 ? 0.15 : ad === 1 ? 0.55 : 1) + (snp && ad !== 2 ? (w === "Operator" ? 0.09 + (fast || P.air ? 0.05 : 0) : 0.035 + (fast || P.air ? 0.06 : 0)) : 0); // unscoped snipers loose; unscoped Operator ~5° (very inaccurate)
 }
@@ -2685,8 +2688,8 @@ function gFire(d, w, W) {
   if (n < 1) { sprX = 0; sprD = Math.random() < 0.5 ? -1 : 1; } // fresh spray: new random drift side
   const pv = w === "Phantom" ? 0.8 : 1; // Phantom climbs a little less
   // rifles: shots 2-3 kick nearly straight up, then the climb flattens and the pattern wanders left/right
-  const vy = (r ? (Math.min(n, 3) * 0.009 + Math.max(0, Math.min(n, 9) - 3) * 0.0025) * pv : Math.min(n, 4) * 0.009 * W.rec) * am;
-  if (r && n > 3) { sprX += (sprD * 0.004 + (Math.random() - 0.5) * 0.012) * r; if (Math.abs(sprX) > 0.03 * r) sprD = -Math.sign(sprX); }
+  const vy = (r ? (Math.min(n, 6) * 0.0065 + Math.max(0, Math.min(n, 10) - 6) * 0.001) * pv : Math.min(n, 4) * 0.009 * W.rec) * am; // fidelity 2: first ~6 bullets climb, then the spray swings sideways
+  if (r && n > 5) { sprX += (sprD * 0.004 + (Math.random() - 0.5) * 0.012) * r; if (Math.abs(sprX) > 0.03 * r) sprD = -Math.sign(sprX); }
   const hx = (r ? sprX : 0) * am;
   const rx = Math.cos(yaw), rz = -Math.sin(yaw), h = hx - rclH; // aim from the un-kicked view
   d.x += (Math.random() - 0.5) * s * 2 + rx * h; d.y += (Math.random() - 0.5) * s * 2 + vy - rcl; d.z += (Math.random() - 0.5) * s * 2 + rz * h; d.normalize();
@@ -7814,7 +7817,7 @@ function fiveTick(dt) {
   const hold = alive4(), bar = $("defuse"); let show = "", prog = 0;
   if (s.st === "carry") {
     const c = s.c, p = fPos(c), site = inSite(p);
-    if (site && (c !== player || hold)) { s.pt += dt; s.pb = (s.pb || 0) - dt; if (s.pb <= 0) { s.pb = 0.5; SFX.plantBeep(c === player ? null : p); } if (c === player) { show = "Planting"; prog = s.pt / 4; } }
+    if (site && (c !== player || (hold && !player.mv && since > 0.15))) { s.pt += dt; s.pb = (s.pb || 0) - dt; if (s.pb <= 0) { s.pb = 0.5; SFX.plantBeep(c === player ? null : p); } if (c === player) { show = "Planting"; prog = s.pt / 4; } } // player plant: stationary; moving or firing cancels
     else { s.pt = 0; if (c === player && site) show = "Hold 4 to plant"; }
     if (s.pt >= 4) {
       s.st = "plant"; s.site = site; s.pn = fName(c); if (SB[s.pn]) SB[s.pn].pl = (SB[s.pn].pl || 0) + 1; s.t = 45; s.x = p.x; s.z = p.z; s.dt = 0; s.beep = 0;
@@ -7867,7 +7870,7 @@ function fCheck(win, text, title) {
     $("resText").textContent = `${FV.sr ? "Spike Rush" : FV.sw ? "SWIFTPLAY" : "5v5"} vs bots · You ${FV.you} · ${FV.them} Bots`;
     $("againBtn").textContent = "Play again"; $("result").style.display = "flex";
     if (window.xCareerRec) xCareerRec({ result: won ? "win" : FV.you === FV.them && !FV.surr ? "draw" : "loss", mode: "five", score: FV.you + " – " + FV.them });
-  }, 2200);
+  }, over ? 2200 : 7000); // post-round 7 s
 }
 // ---- Surf: glass ramps against the clock (Source-style air strafe + clip velocity) ----
 const SG = new THREE.Group(); SG.visible = false; scene.add(SG); MAPS.surf = { g: SG, solids: [], boxes: [] };
@@ -10110,10 +10113,7 @@ try {
   mpUI();
 } catch (e) { console.warn("online UI unavailable", e); }
 window.xMP = { quick: mpQuick, create: mpCreate, join: mpJoin, start: mpStart, leave: mpLeave, ui: mpUI, get S() { return MP; }, unit: mpUnit };
-xReady = true; // every mode is initialised; lobby launches may now start them
-})();
-</script>
-<script>
+// fidelity 2: the ult-orb block lives inside the game scope (as a separate <script> it could not see scene/FV and never ran)
 // feel pass: ultimate orbs (5v5). 2 contested orbs per round, hold F / Use 3 s for +1 ult point. Pooled meshes, shared materials, no per-frame allocs.
 (function () {
   if (typeof THREE === "undefined" || typeof scene === "undefined") return;
@@ -10187,6 +10187,10 @@ xReady = true; // every mode is initialised; lobby launches may now start them
   }
   (window.XHK = window.XHK || []).push(tick);
 })();
+xReady = true; // every mode is initialised; lobby launches may now start them
+})();
+</script>
+<script>
 // feel pass: Valorant ping (Z / PING). One raycast vs static meshes + bot hitboxes; 3 pooled sprites + labels, 0.5 s cooldown, 4 s life, no per-frame allocs.
 (function () {
   if (typeof THREE === "undefined" || typeof scene === "undefined" || !THREE.Sprite || !THREE.CanvasTexture) return;
