@@ -4866,6 +4866,7 @@ function xBuildHaven() {
   box(-11, -19, 4, HAV_WH, 14, FW); box(-11, -6.5, 4, HAV_WH, 5, FW); box(11, -19, 4, HAV_WH, 14, FW); box(11, -6.5, 4, HAV_WH, 5, FW); // buildings between the sites; A Link gap x -11 and C Link gap x 11, both z -12..-9, into B
   box(-7.25, 22, 9.5, HAV_WH, 1, FW); box(7.25, 22, 9.5, HAV_WH, 1, FW); // Mid Doors: attacker side into Mid Courtyard, door x -2.5..2.5
   box(0, 8.5, 3, 2, 3, FC); // Mid Courtyard central box
+  havCrate(-2.3, 8.5, 1.6, 2.2, 1.5); havCrate(2.3, 8.5, 1.6, 2.2, 1.5); // offering crates flush to both sides of the shrine box (sightline fix): cover x -3.1..3.1 so no spawn-to-spawn line slips through Mid Doors -> B
   box(-6, -8, 6, HAV_WH, 1, FW); box(6, -8, 6, HAV_WH, 1, FW); // B front: courtyard into B through x -3..3; B Site x -9..9, z -23.5..-8.5
   box(-6, -24, 6, HAV_WH, 1, FW); box(6, -24, 6, HAV_WH, 1, FW); // B Back: gap x -3..3 toward the back links and Defender Spawn
   box(-26.5, -27, 6, 1.4, 4, FC); // A Heaven ledge at the back of A Site (walkable top)
@@ -5144,7 +5145,8 @@ function xBuildSplit() {
     [[s * 43, -25, 1.5, 2], [s * 28, -24, 1.4, 2], [s * 44, 12, 1.4, 0], [s * 34, -2, 1.2, 0], [s * 26, 26, 1.4, 0], [s * 14, -46, 1.4, 0]]
       .forEach(([x, z, c, base]) => splCrate(x, z, c, c, c, base)); // vB: Valorant-scale crate cover (1.2-1.5 m cubes; site cover sits on the 2 m platform)
   }
-  splCrate(3, 6, 1.4, 1.4, 1.4); splCrate(-3, -22, 1.4, 1.4, 1.4); splCrate(-10, 31, 1.4, 1.4, 1.4); splCrate(10, 31, 1.4, 1.4, 1.4); // Mid Bottom, Mid Top, Attacker Side
+  splCrate(-4.5, 6.5, 1.4, 1.4, 1.4); splCrate(-3, -22, 1.4, 1.4, 1.4); splCrate(-10, 31, 1.4, 1.4, 1.4); splCrate(10, 31, 1.4, 1.4, 1.4); // Mid Bottom (west pocket of the chicane, off the bot line), Mid Top, Attacker Side
+  box(-2.25, 10, 7.5, SPL_WH, 1, W); box(2.25, 0, 7.5, SPL_WH, 1, W); // Mid chicane (sightline fix): west x -6..1.5 at z 10, east x -1.5..6 at z 0; no straight spawn-to-spawn line down Mid, 4.5 m lanes past each
   box(4, -26, 4, 2, 4, C); // Mid Top perch x 2..6, z -28..-24, top 2 m (rope up, drop off north)
   // site detail (heights include the 2 m platform): A default plant box, stacked crates, A Screens | B pillar, garage door, boxes
   splCrate(38, -33, 2.4, 1.0, 1.6, 2); splCrate(31.3, -27.3, 1.4, 2.8, 1.4, 2); box(25, -30, 0.5, 4.6, 4, 0x2c2f36); solids[solids.length - 1].material = splMats().glass; // A default plant box, double stack, frosted A Screens
@@ -5733,6 +5735,7 @@ function xBuildBreeze() {
   box(-48, -26, 3, 2.4, 3, C); box(-38, -38, 3, 2.4, 3, C); // A Pyramids (bases)
   [[4, 22, 1.6], [-4, 8, 1.6], [-5, -16, 1.6], [-54, 10, 1.6], [-46, -2, 2.4], [44, 24, 1.6], [50, 8, 2.4], [52, -28, 2.4], [-56, -30, 1.6]].forEach(([x, z, h], i) => xBrzCrate(x * BZK, z * BZK, h > 2, i)); // cover (vC: built frame, 1.5 m painted crates / 2.5 m double stacks)
   box(6, -20, 4, 2.4, 2, C); box(44, -44, 3, 1.6, 2, C); // Mid Nest, B back cover
+  box(-4, -6, 12, 5, 1, W); box(4, -12, 12, 5, 1, W); // Mid chicane (sightline fix), defender half of Mid below A Cave / Wood Doors so attacker routes keep their timing: west x -10..2 at z -6, east x -2..10 at z -12 (one sidestep toward A Hall); no straight spawn-to-spawn line, 8 m lanes past each
   { const wm = new THREE.MeshLambertMaterial({ color: BREEZE_TINT.water, transparent: true, opacity: 0.8 }), pad = (x, z, w, d) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(w, d), wm); m.rotation.x = -Math.PI / 2; m.position.set(x * BZK, 0.03, z * BZK); m.scale.set(BZK, BZK, 1); m.receiveShadow = true; m.raycast = () => {}; mapG.add(m); };
     pad(-62.5, -30, 4, 50); pad(62.5, -34, 4, 42); pad(0, -58.5, 40, 2); } // teal water edges: A shore, B shore, defender beach
   for (const k in BZSITES) xDecal(mapG, k, BZSITES[k][0], BZSITES[k][1] + 2, 7);
@@ -5992,8 +5995,8 @@ const XG_NODES = {
   bind: () => [[0, 35], [-20, 33], [20, 33], [13, 33], [-20, 20], [-23, 15.5], [-21, 17], [-27.5, 14], [-27.5, 8], [-27.5, 0], [-27.5, -9], [-27, -20], // spawn, A Lobby, A Short
     [-21, 9], [-21, 0], [-15, -1], [-15, -9], [-12, -20], [-11, -26], [-11, -32], [-11, -35], [0, -35], [13, -35], [13, -31.5], [13, -26], // Showers, Bath, A Site, U-Hall, Def Spawn, B Hall
     [13, 24], [13, 18], [13, 13], [13, 7], [13, -3], [13, -9], [13, -11.7], [13, -14.8], [13, -17], [24.5, 24], [25, 20], [24.5, 12], [24.5, 0], [27.5, -9], [23, -10], [23, -16], SITES.A, SITES.B, [-28, -24], [-16, -15], [-15, -17], [-20.5, -17], [-9.8, -27], [-9.8, -19], [-13, -17]], // Market, Hookah, B site, B Long, Garden, Elbow; last 5: A Bath → A Site and U-Hall → A Site (A Site was only reachable one-way via the A Short teleporter)
-  haven: () => XG_LANES.filter(([x, z]) => z !== 11 || x !== 0 && Math.abs(x) !== 20).concat([[0, 16], [-4, 11], [4, 11], [7, -10.5], [15, -10.5], [0, -26], [-25, -21], [-26.5, -27], [28, 22], [28, 4], [28, -8], [25, -11], [19, -2], [15, -7], [23.75, -26], [23.75, -31], [-26, 11], [-27, -4], [-20.5, 5.75], [-20.5, -3], [-15, -10.5], [-7, -10.5], [-21, -33], [0, -33], [21, -33], [-10, 5.5], [-15, 5.5], [10, 2], [14.5, 0.8], HSITES.A, HSITES.B, HSITES.C, [0, 35], [0, -35], [-28, 31]]), // last Bind 2 / Haven 1: reconnect A site + A Long after the layout rebuild (work/audit.js)
-  split: () => [[0, 35], [0, 24], [0, 10], [0, -4], [0, -9.5], [0, -22], [0, -35], [0, -42], [18, -4], [-18, -9.5], // spawns, Mid Bottom / Top, Mail, Vents
+  haven: () => XG_LANES.filter(([x, z]) => z !== 11 || x !== 0 && Math.abs(x) !== 20).concat([[0, 16], [-4, 11], [4, 11], [-4.4, 7], [4.4, 7], [7, -10.5], [15, -10.5], [0, -26], [-25, -21], [-26.5, -27], [28, 22], [28, 4], [28, -8], [25, -11], [19, -2], [15, -7], [23.75, -26], [23.75, -31], [-26, 11], [-27, -4], [-20.5, 5.75], [-20.5, -3], [-15, -10.5], [-7, -10.5], [-21, -33], [0, -33], [21, -33], [-10, 5.5], [-15, 5.5], [10, 2], [14.5, 0.8], HSITES.A, HSITES.B, HSITES.C, [0, 35], [0, -35], [-28, 31]]), // last Bind 2 / Haven 1: reconnect A site + A Long after the layout rebuild (work/audit.js)
+  split: () => [[0, 35], [0, 24], [3.8, 10], [-3.75, 0], [0, -4], [0, -9.5], [0, -22], [0, -35], [0, -42], [18, -4], [-18, -9.5], // spawns, Mid Bottom (the chicane gaps at (3.8, 10) / (-3.75, 0)) / Top, Mail, Vents
     [30, 24], [39, 24], [39, 10], [39, -4], [36, -14], [29, -17], [-30, 24], [-39, 24], [-39, 10], [-39, -9.5], [-36, -14], [-29, -17], // lobbies, mains, ramps
     [14, -50], [38, -50], [27, -44], [31, -44], [-14, -50], [-38, -50], [-27, -44], [-31, -44], // defender side to stairs
     SSITES.A, SSITES.B, [27, -34], [-27, -34], [45, -44], [-45, -44], // on the raised sites + Heaven tops (reached only by XG_SPEC stair links)
@@ -6003,7 +6006,7 @@ const XG_NODES = {
     LSITES.A, LSITES.B, LSITES.C, [0, -35], [0, -40], [0, -48], [25, -47], [36, -47], [-25, -47], [-36, -47], [47, -36], [-47, -36], // sites, B Upper, defender side, A Top
     [15, -28], [21, -28], [-15, -28], [-21, -28], [49.5, -6], [49.5, -16], [41, -6], [-49.5, -6], [-49.5, -16], [12, -22], [-12, -22], [28, -16], [-28, -16]], // doors, A Tree, breakable gap, C Waterfall
   breeze: () => [[0, 44.3], [0, 37.7], [-19.7, 37.7], [19.7, 37.7], [-41, 37.7], [41, 37.7], [-41, 24.6], [-41, 11.5], [-41, 4.1], [-41, -3.3], [-41, -13.1], [-27.9, 4.1], [-14.8, 4.1], [-3.3, 4.1], // spawn, A Lobby / Main, A Cave
-    [0, 24.6], [0, 11.5], [0, 0], [0, -9.8], [0, -20.1], [0, -27.9], [0, -37.7], [0, -44.3], [-6.6, -20.1], [-14.8, -20.1], [-24.6, -20.1], [6.6, -20.1], [14.8, -20.1], [24.6, -20.1], // Mid, A Hall, B Window
+    [0, 24.6], [0, 11.5], [0, 0], [4.9, -7.4], [-6.2, -7.4], [0, -20.1], [0, -27.9], [0, -37.7], [0, -44.3], [-6.6, -20.1], [-14.8, -20.1], [-24.6, -20.1], [6.6, -20.1], [14.8, -20.1], [24.6, -20.1], // Mid (the two z -7.4 nodes route the Mid chicane), A Hall, B Window
     BZSITES.A, BZSITES.B, [-45.9, -32.8], [-45.9, -16.4], [-24.6, -36.1], [-32.8, -42.6], [-14.8, -44.3], [45.9, -36.1], [45.9, -16.4], [26.2, -32.8], [32.8, -42.6], [14.8, -44.3], // sites + defender side
     [4.9, 0.8], [20.5, 0.8], [36.1, 0.8], [38.5, 24.6], [38.5, 11.5], [38.5, -3.3], [34.4, -8.2], [34.4, -14.8], [26.2, -9.8]], // Wood Doors, B Main, B Elbow
   retake: () => XG_GRID(-16, 16, -16, 16, 4),
