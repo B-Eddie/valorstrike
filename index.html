@@ -2118,6 +2118,7 @@ function xMG() { const g = new THREE.Group(), a = g.add; g.add = function (...o)
 let solids = [], boxes = [], mapG = xMG(); scene.add(mapG);
 const MAPS = { retake: { g: mapG, solids, boxes } };
 // walls (4 m+) get plaster + a terracotta cap (visual only); crates alternate metal / wood. Collision box unchanged.
+const xCrH = (h) => (h > 2.45 && h <= 3.2 ? 2.4 : h > 1.2 && h < 1.9 ? 1.2 : h); // Valorant crate scale: single crate 1.0-1.2 m (crouch cover), double stack 2.2-2.4 m
 let XMK = 1; // per-map layout scale: a builder authored at 1.0 sets XMK while it runs; centres scale, walls and footprints over 4 m scale, crates / steps keep their size
 function box(x, z, w, h, d, col) {
   if (XMK !== 1) { const wl = h >= 4; x *= XMK; z *= XMK; if (wl || w > 4) w *= XMK; if (wl || d > 4) d *= XMK; } // walls scale whole so faces stay where the scaled decoration expects them
@@ -2329,7 +2330,7 @@ function xSurfHit(hit, dir, far, from) {
     let ox, oy, oz, dx, dy, dz;
     if (from && num(from.x)) { ox = from.x; oy = from.y; oz = from.z; }
     else if (typeof camera !== "undefined" && num(camera.position.x)) { ox = camera.position.x; oy = camera.position.y; oz = camera.position.z; }
-    else { ox = +P.x || 0; oy = 1.5 - (+P.ch || 0) + (+P.y || 0); oz = +P.z || 0; }
+    else { ox = +P.x || 0; oy = 1.6 - (+P.ch || 0) + (+P.y || 0); oz = +P.z || 0; }
     if (dir && num(dir.x) && num(dir.y) && num(dir.z)) { dx = dir.x; dy = dir.y; dz = dir.z; }
     else { const yw = num(yaw) ? yaw : 0, pt = num(pitch) ? pitch : 0; dx = -Math.sin(yw) * Math.cos(pt); dy = Math.sin(pt); dz = -Math.cos(yw) * Math.cos(pt); }
     const dl = Math.hypot(dx, dy, dz) || 1; dx /= dl; dy /= dl; dz /= dl;
@@ -2579,11 +2580,11 @@ function moveP(dt, run, hold) {
   P.vy -= 22 * dt; P.y += P.vy * dt; if (P.y <= gY) { P.y = gY; P.vy = 0; } }
   const wasAir = P.air; P.air = P.y > gY + 0.001;
   if (wasAir && !P.air) { P.vx *= 0.7; P.vz *= 0.7; SFX.land(); P.st = 0.3; P.lp = 0.15; } // small landing slowdown + thud + 0.15 s accuracy penalty
-  { const ct = cr ? 0.55 : 0, cs = 0.55 / 0.1 * dt; P.ch = Math.abs(ct - P.ch) <= cs ? ct : P.ch + Math.sign(ct - P.ch) * cs; } // crouch eye drop 0.55 m in 0.1 s, linear (no float)
+  { const ct = cr ? 0.45 : 0, cs = 0.45 / 0.1 * dt; P.ch = Math.abs(ct - P.ch) <= cs ? ct : P.ch + Math.sign(ct - P.ch) * cs; } // crouch eye drop 0.45 m in 0.1 s (eye 1.6 -> 1.15 m), linear (no float)
   if (P.mv && gr && !cr && !wk) { P.st -= dt; if (P.st <= 0) { P.st = 0.36; SFX.selfStep(P.y > 0.4); } } else P.st = 0.12; // walk / crouch silent
 }
-const pEye = () => new THREE.Vector3(player.x, 1.5 - player.ch + player.y, player.z);
-const pEyeTo = (out) => out.set(player.x, 1.5 - player.ch + player.y, player.z); // no-alloc pEye for per-frame callers
+const pEye = () => new THREE.Vector3(player.x, 1.6 - player.ch + player.y, player.z);
+const pEyeTo = (out) => out.set(player.x, 1.6 - player.ch + player.y, player.z); // no-alloc pEye for per-frame callers
 const PE_V = new THREE.Vector3(); // pEyeTo scratch (read immediately, never stored)
 function feed(t) { // "A ▸ B" kill lines become kill-feed entries; anything else stays a plain note
   const m = typeof t === "string" && t.match(/^(.+?) ▸ (.+?)( ◎ Headshot)?$/);
@@ -3722,7 +3723,7 @@ function xVisB(b, dt, now, isAlly) {
     // aim pitch toward the target: enemies at the player's eye, allies at the nearest live enemy's head
     let ty = null, hz = 1;
     if (isAlly) { let bd2 = 1e9; for (let i = 0; i < bots.length; i++) { const e = bots[i]; if (!e || !e.alive || !e.g) continue; const q = e.g.position, d2 = (q.x - P.x) ** 2 + (q.z - P.z) ** 2; if (d2 < bd2) { bd2 = d2; ty = 1.6; hz = Math.sqrt(d2); } } }
-    else if (player) { ty = 1.5 - player.ch + player.y; hz = Math.hypot(player.x - P.x, player.z - P.z); } // pEye() inlined: no Vector3 per bot per frame
+    else if (player) { ty = 1.6 - player.ch + player.y; hz = Math.hypot(player.x - P.x, player.z - P.z); } // pEye() inlined: no Vector3 per bot per frame
     const tp = ty === null ? 0 : Math.max(-0.9, Math.min(0.9, Math.atan2(ty - 1.45, Math.max(0.5, hz))));
     b.xap = (b.xap || 0) + (tp - (b.xap || 0)) * Math.min(1, dt * 8);
     M.gun.rotation.x = -b.xap; if (M.hd) M.hd.rotation.x = -b.xap * 0.8;
@@ -4108,7 +4109,7 @@ function duelTick(dt) {
   if (du.reload > 0) { du.reload -= dt; if (du.reload <= 0) { const n = Math.min(OP_MAG - du.ammo, du.rsv); du.ammo += n; du.rsv -= n; } }
   const b = duelBot, p = b.g.position, dx = player.x - p.x, dz = player.z - p.z, d = Math.hypot(dx, dz) || 0.01;
   b.g.rotation.y = Math.atan2(dx, dz);
-  const from = DB_FROM.set(p.x, 1.7, p.z), eye = DB_EYE.set(player.x, 1.5 - player.ch + player.y, player.z);
+  const from = DB_FROM.set(p.x, 1.7, p.z), eye = DB_EYE.set(player.x, 1.6 - player.ch + player.y, player.z);
   const see = los(from, eye), R = DB[S.diff], D = DIFF[S.diff];
   b.flip -= dt; if (b.flip <= 0) { b.strafe *= -1; b.flip = 1 + Math.random() * 1.5; }
   let vx = 0, vz = 0;
@@ -4448,11 +4449,11 @@ function ascFloor(g, mat, x1, x2, z1, z2, T, y) { const m = xFloor(x2 - x1, z2 -
 function ascSolid(g, x, z, w, h, d, mat, T) { const m = new THREE.Mesh(ascUVBox(w, h, d, T || 2), mat); m.position.set(x, h / 2, z); m.castShadow = m.receiveShadow = true; g.add(m); solids.push(m); boxes.push({ x1: x - w / 2, x2: x + w / 2, z1: z - d / 2, z2: z + d / 2, h, vA: 1 }); return boxes[boxes.length - 1]; }
 // crates through box() (authored frame, XMK applies to centres only); stacks are two cubes in one geometry, collider is the whole stack
 function ascStackGeo(w, h, d, n) { const arr = [], hh = h / n; for (let i = 0; i < n; i++) { const m = new THREE.Mesh(new THREE.BoxGeometry(w, hh, d)); m.position.y = -h / 2 + hh * (i + 0.5); m.updateMatrixWorld(true); arr.push(m); } return xMergeGeo(arr, new THREE.Matrix4()); }
-function ascCrate(k, x, z, w, h, d, mat) { box(x, z, w, h, d, 0); const m = solids[solids.length - 1]; boxes[boxes.length - 1].crate = boxes[boxes.length - 1].vA = 1; m.material = mat; if (h > 2) m.geometry = ascStackGeo(w, h, d, 2); ASC_VIS[k].crates++; return m; }
+function ascCrate(k, x, z, w, h, d, mat) { h = xCrH(h); box(x, z, w, h, d, 0); const m = solids[solids.length - 1]; boxes[boxes.length - 1].crate = boxes[boxes.length - 1].vA = 1; m.material = mat; if (h > 2) m.geometry = ascStackGeo(w, h, d, 2); ASC_VIS[k].crates++; return m; }
 function ascCluster(k, x, z, kind, mw, mm) { // colliders stay inside the old crate footprint, so nav lines keep their clearance
   const s = 1.4;
-  if (kind === "s") ascCrate(k, x, z, s, s, s, mw); // standard 1.4 m crate: jumpable
-  else if (kind === "t") ascCrate(k, x, z, s, 2.8, s, mm); // double stack: not jumpable
+  if (kind === "s") ascCrate(k, x, z, s, s, s, mw); // standard crate (1.4 m footprint, xCrH makes it 1.2 m tall: crouch cover, jumpable)
+  else if (kind === "t") ascCrate(k, x, z, s, 2.8, s, mm); // double stack (xCrH: 2.4 m): not jumpable
   else if (kind === "L") { ascCrate(k, x - 0.75, z - 0.75, s, 2.8, s, mm); ascCrate(k, x + 0.75, z - 0.75, s, s, s, mw); ascCrate(k, x - 0.7, z + 0.8, 1.2, 1.2, 1.2, mw); }
   else if (kind === "P") { ascCrate(k, x - 0.75, z, s, s, s, mw); ascCrate(k, x + 0.75, z, s, 2.8, s, mm); }
 }
@@ -4523,6 +4524,33 @@ function ascGable(kit, roof, mass, cx, cz, w, d, y, rise) { const along = w >= d
 // fog per map while that map is on screen (useMap resets it for every other map)
 function ascFog(g, col, near, far) { const m = new THREE.Mesh(new THREE.PlaneGeometry(0.01, 0.01), new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false })); m.name = "xDeco"; m.frustumCulled = false; m.raycast = () => {}; m.position.set(0, -1, 0);
   m.onBeforeRender = () => { try { if (scene.fog && mode === "five") { scene.fog.color.setHex(col); scene.fog.near = near; scene.fog.far = far; } } catch (e) {} }; g.add(m); return m; }
+// ---- dims pass: Ascent closable site doors (the Valorant concept, our own geometry): steel shutters drop into the Market door (B side) and the Tree door (A side).
+// F within 2.5 m toggles one (3 s cooldown, never closes on someone), every round starts open, bots raise a closed shutter they walk into. Collider h 0 (open) / 3.1 (closed).
+const AD = { doors: [], pl: null, t0: 0, hk: false };
+function ascDoors(g) {
+  AD.doors.length = 0; const mat = ascMat("", 0x5b6168);
+  [[14.08, -7.04, 3.52, 0], [-22.88, -10.78, 3.08, Math.PI / 2]].forEach(([x, z, w, ry]) => {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(w, 3.1, 0.16), mat); m.name = "ascDoor"; m.position.set(x, 4.65, z); m.rotation.y = ry; m.castShadow = m.receiveShadow = true; g.add(m); solids.push(m);
+    const hx = ry ? 0.3 : w / 2, hz = ry ? w / 2 : 0.3, b = { x1: x - hx, x2: x + hx, z1: z - hz, z2: z + hz, h: 0 }; boxes.push(b);
+    AD.doors.push({ x, z, hx, hz, m, b, t: 1, tgt: 1, cd: 0 }); });
+  if (!AD.hk) { AD.hk = true; (window.XHK || (window.XHK = [])).push(ascDoorTick); }
+}
+function ascDoorOcc(d) { const inD = (x, z) => Math.abs(x - d.x) < d.hx + 0.5 && Math.abs(z - d.z) < d.hz + 0.5; if (player && player.hp > 0 && inD(player.x, player.z)) return true;
+  for (const L of [typeof bots !== "undefined" ? bots : null, typeof allies !== "undefined" ? allies : null]) if (L) for (let i = 0; i < L.length; i++) { const u = L[i]; if (u && u.alive && u.g && inD(u.g.position.x, u.g.position.z)) return true; } return false; }
+function ascDoorUse(d) { if (d.cd > 0 || (d.tgt === 1 && ascDoorOcc(d))) return false; d.tgt = d.tgt ? 0 : 1; d.cd = 3; try { xLSnd(d.x, d.z, 1.2, 420); } catch (e) {} return true; }
+function ascDoorTick() { // no allocations per frame
+  if (!AD.doors.length || mode !== "five" || FV.map !== "ascent") { AD.t0 = 0; return; }
+  const now = performance.now(), dt = AD.t0 ? Math.min(0.05, (now - AD.t0) / 1000) : 0; AD.t0 = now;
+  if (player !== AD.pl) { AD.pl = player; for (let i = 0; i < AD.doors.length; i++) { const d = AD.doors[i]; d.t = d.tgt = 1; d.cd = 0; d.b.h = 0; d.m.position.y = 4.65; } } // new round: open
+  if (paused || !dt) return;
+  for (let i = 0; i < AD.doors.length; i++) { const d = AD.doors[i]; if (d.cd > 0) d.cd -= dt;
+    if (d.tgt === 0 && d.cd <= 0 && (xLBotNear(typeof bots !== "undefined" ? bots : null, d) || xLBotNear(typeof allies !== "undefined" ? allies : null, d))) ascDoorUse(d); // bot path meets a closed shutter
+    if (d.t !== d.tgt) { d.t = d.tgt > d.t ? Math.min(1, d.t + dt / 1.2) : Math.max(0, d.t - dt / 1.2); d.m.position.y = 1.55 + 3.1 * d.t; d.b.h = d.t < 0.5 ? 3.1 : 0; } }
+}
+addEventListener("keydown", (e) => { // F at a shutter toggles it (captures before inspect / pick-up, like the Lotus doors)
+  if (xKbSkip(e) || e.code !== "KeyF" || e.repeat || mode !== "five" || FV.map !== "ascent" || !player || player.hp <= 0 || !running || paused) return;
+  for (let i = 0; i < AD.doors.length; i++) { const d = AD.doors[i]; if (Math.hypot(d.x - player.x, d.z - player.z) <= 2.5) { if (ascDoorUse(d)) e.stopImmediatePropagation(); return; } }
+}, true);
 // ---- Retake (Ascent-style B site) + Operator Duel arena visual rebuild: reuses the vA zone kit (textures, material cache, merged decoration, letters, plant paint, crates, ceilings, lintels, pools) ----
 // both maps were laid out at load time (floor + outer walls); these add the themed zones into MAPS.retake / MAPS.duel by swapping the builder globals
 ASC_VIS.retake = { letters: [], zones: [], crates: 0, adds: 0, ceil: 0, mats: 0 }; ASC_VIS.duel = { letters: [], zones: [], crates: 0, adds: 0, ceil: 0, mats: 0 };
@@ -4666,7 +4694,8 @@ function ascBuildAscentZones(s0) {
   [[-46.9, 51.4], [46.9, -51.4], [-44.1, 10], [44.1, 10], [9.9, -16.3]].forEach(([x, z]) => ascBarrels(g, kit, K, x, z, 3, brl, band));
   // ceilings: Market (indoor room) and Mid Bottom (covered passage), beams underneath
   const beam = ascMat("beam", 0x8a5a34), slab = ascMat("beam", 0xcfa77a);
-  ascCeil(g, kit, K, 9.24, 19.36, -17.16, -7.48, 4.2, slab, beam); ascCeil(g, kit, K, -7.04, 7.04, 26.9, 38.2, 4.6, slab, beam);
+  ascCeil(g, kit, K, 9.24, 19.36, -17.16, -7.48, 4.2, slab, beam); ascCeil(g, kit, K, -7.04, 7.04, 26.9, 38.2, 4.6, slab, beam); ascCeil(g, kit, K, -15.84, 15.84, -32.82, -30.18, 4, slab, beam); // + Defender Link (4 m)
+  ascDoors(g); // closable site doors: Market door (B) + Tree door (A)
   // doorways: headers make 3-3.5 m wide x 3.1 m openings; wide gates get 4.5 m arches; stone pilasters + cornice on both faces
   const trim = ascMat("stone", 0xfff1dc);
   ascLintel(g, kit, 14.08, -7.04, 3.52, 0.88, 0, 3.1, 7, zMat("mid", ZC.mid), trim); // Market door
@@ -4715,7 +4744,7 @@ function ascBuildBindZones(s0, b0) {
   for (let i = s0; i < solids.length; i++) { const m = solids[i]; if (!BMT || m.material !== BMT.wall) continue; const k = zoneOf(m.position.x, m.position.z); if (k !== "A") m.material = zMat(k, ZC[k]); }
   const wallAt = (x, z) => { const k = zoneOf(x, z); return k === "A" ? base : zMat(k, ZC[k]); };
   // floors per zone: spawn pavers, Market boards, Hookah + sites zellige, Showers / Bath tiles, A Short terracotta, B Long / Elbow pavers
-  const fA = ascFloor(g, ascMat("brick"), -29.5, 29.5, 28, 39.5, 4); ascFloor(g, ascMat("brick", 0xe8e0cc), -29.5, 29.5, -39.5, -29.5, 4);
+  const fA = ascFloor(g, ascMat("brick"), -29.5, 29.5, 28, 43.5, 4); ascFloor(g, ascMat("brick", 0xe8e0cc), -29.5, 29.5, -43.5, -29.5, 4);
   ascFloor(g, ascMat("plank", 0xd8b58c), 8, 18, 10.5, 28, 3); ascFloor(g, ascMat("brick", 0xf0d8b8), 8, 18, -5.5, 9.5, 4);
   ascFloor(g, ascMat("mosaic"), 11, 17, -12.5, -6.5, 3); ascFloor(g, ascMat("tileW"), -24, -18, 4, 14, 3); ascFloor(g, ascMat("tileW", 0xe8ddd0), -24, -8, -6, 4, 3); ascFloor(g, ascMat("tileW", 0xe8ddd0), -17, -13, -15, -6, 3);
   ascFloor(g, ascMat("terraT"), -29.5, -26.5, -15, 17, 4); ascFloor(g, ascMat("brick", 0xf0d8b8), 22.5, 26.5, 1.5, 22, 4); ascFloor(g, ascMat("brick", 0xf0d8b8), 21, 29.5, -12.5, -6.5, 4);
@@ -4756,7 +4785,7 @@ function ascBuildBindZones(s0, b0) {
   // callout plaques
   ascSigns(g, [["A LOBBY", -8.05, 2.6, 26.5, -HP], ["MARKET", 8.05, 2.6, 26.5, HP], ["A SHORT", -27, 2.6, 18.05, 0], ["SHOWERS", -13, 2.6, 14.05, 0], ["A BATH", -10.5, 2.6, -5.45, 0], ["A HEAVEN", -27.5, 2.6, -28.45, 0],
     ["U-HALL", -4, 2.6, -29.55, PI], ["B HALL", 19, 2.6, -29.55, PI], ["HOOKAH", 22.8, 2.6, -5.45, 0], ["B SHORT", 16.5, 2.6, 9.45, PI], ["B LONG", 22.55, 2.6, 6, HP], ["GARDEN", 21, 2.6, 0.45, PI],
-    ["ELBOW", 27.5, 2.6, -12.45, 0], ["ATTACKER SPAWN", 0, 2.6, 39.45, PI], ["DEFENDER SPAWN", 0, 2.6, -39.45, 0]], "#14605f", "#f4e9d0");
+    ["ELBOW", 27.5, 2.6, -12.45, 0], ["ATTACKER SPAWN", 0, 2.6, 43.45, PI], ["DEFENDER SPAWN", 0, 2.6, -43.45, 0]], "#14605f", "#f4e9d0");
   // backdrop: clay town blocks with crenellations and domes just past the boundary (fogged, merged)
   { let s = 33; const r = () => (s = (s * 16807) % 2147483647) / 2147483647, am = ascMat("adobe", 0xf2d2a8), am2 = ascMat("adobe", 0xe6b48a), win = ascMat("", 0x24343a), dm = ascMat("", 0x2f8f9d);
     const put = (x, z, w, d, h) => { const m = r() < 0.5 ? am : am2; kit.P(m, ascUVBox(w, h, d, 4), x, h / 2, z);
@@ -4800,14 +4829,14 @@ const CALLOUTS = [ // [name, x, z], for minimap labels
    [-34, 17, 12, 26, 7, FW], [34, 17, 12, 26, 7, FW], // A Main | Mid Courtyard | B Main
    [-18.5, 18, 19, 24, 7, FW], [19, 20.5, 18, 19, 7, FW], // courtyard blocks: the old 56 m open courtyard becomes a ~19 m Mid lane (west block ends at z 6 for the Catwalk, east at z 11 for Market Door)
    [-53, 26, 4, 36, 7, FW], [53, 26, 4, 36, 7, FW], // A / B Main outer fills: lanes 15 m -> 11 m (authored)
-   [0, -33, 36, 26, 7, FW], // building between the sites
-   [-29, -46, 22, 1, 7, FW], [29, -46, 22, 1, 7, FW], // defender spawn wall, exits west to A and east to the Defender Path
+   [0, -41.65, 36, 8.7, 7, FW], [0, -27.15, 36, 14.3, 7, FW], // building between the sites, cut by the Defender Link (authored z -37.3..-34.3, 2.6 m built, 4 m ceiling): defender rotation A <-> B ~14 s rifle
+   [-32, -46, 16, 1, 7, FW], [32, -46, 16, 1, 7, FW], // defender spawn wall: outer exits to A / the Defender Path, inner exits (x 18..24 authored) beside the building so defenders reach each site in ~9 s rifle
    [-26, -17, 1, 6, 7, FW], [-22, -10, 8, 1, 7, FW], // Tree room
    [-12, -13, 1, 8, 1.0, FW], // Catwalk rail (1.0 m: crouch cover)
    [16, -20, 12, 1, 7, FW], [10, -14, 1, 12, 7, FW], [12, -8, 4, 1, 7, FW], [20, -8, 4, 1, 7, FW], // Market, door to mid, open to B
    [44, -32, 1, 16, 7, FW], // B Lane wall
    [50, -10, 10, 12, 7, FW], // Boathouse corner
-   [-29, -40, 18, 8, 1.5, FH], // Heaven platform at the back of A (walkable top)
+   [-29.5, -40, 17, 8, 1.5, FH], // Heaven platform (x -38..-21: 2.6 m built lane past it to the inner A exit) at the back of A (walkable top)
    [-24, -33.25, 4, 0.5, 0.25, FH], [-24, -33.75, 4, 0.5, 0.5, FH], [-24, -34.25, 4, 0.5, 0.75, FH], [-24, -34.75, 4, 0.5, 1.0, FH], [-24, -35.25, 4, 0.5, 1.25, FH], [-24, -35.75, 4, 0.5, 1.5, FH], // Heaven stairs up from A Site, 0.25 m per step
    [-42, -27, 4, 3, 2.2, FG]] // Generator; crates are built by ascBuildAscentZones at Valorant scale (1.4 m / 2.8 m stacks)
     .forEach(([x, z, w, d, h, c]) => { box(x, z, w, h, d, c); if (h >= 5) ascCaps.push([x, z, w, d, h]); });
@@ -4904,13 +4933,13 @@ function xLazyMap(k, cap, build) {
 function xBuildMap(k) { if (k === "bind") xLazyMap("bind", BIND_CALL, xBuildBind); else if (k === "haven") xLazyMap("haven", HAVEN_CALL, xBuildHaven); else if (k === "split") xLazyMap("split", SPLIT_CALL, xBuildSplit); else if (k === "lotus") xLazyMap("lotus", LOTUS_CALL, xBuildLotus); else if (k === "breeze") xLazyMap("breeze", BREEZE_CALL, xBuildBreeze); }
 function xBuildBind() {
   const b0 = boxes.length, ascStop = ascCount(mapG), ascS0 = solids.length;
-  const fl = xFloor(60, 80, new THREE.MeshLambertMaterial({ map: BT.sand }), 4); fl.rotation.x = -Math.PI / 2; mapG.add(fl); solids.push(fl);
+  const fl = xFloor(60, 88, new THREE.MeshLambertMaterial({ map: BT.sand }), 4); fl.rotation.x = -Math.PI / 2; mapG.add(fl); solids.push(fl);
   const pad = (x, z, w, d, mat) => { const m = new THREE.Mesh(xUV(new THREE.PlaneGeometry(w, d), w, d, undefined, 2), mat); m.rotation.x = -Math.PI / 2; m.position.set(x, 0.02, z); m.receiveShadow = true; mapG.add(m); };
   const tm = new THREE.MeshLambertMaterial({ map: BT.teal, transparent: true, opacity: 0.45, depthWrite: false });
   // A and B sites: zellige floors, ring letters and plant-zone paint come from ascBuildBindZones
   xSign(mapG, "A", -29.48, 3, -21, Math.PI / 2); xSign(mapG, "B", 29.48, 3, -21, -Math.PI / 2);
   const FW = 0xe0bd86, FC = 0x8a6a45;
-  box(0, -40, 60, 7, 1, FW); box(0, 40, 60, 7, 1, FW); box(-30, 0, 1, 7, 80, FW); box(30, 0, 1, 7, 80, FW);
+  box(0, -44, 60, 7, 1, FW); box(0, 44, 60, 7, 1, FW); box(-30, 0, 1, 7, 88, FW); box(30, 0, 1, 7, 88, FW); // dims pass: boundary z ±44 (was ±40), spawns at ±39 so B is ~15 s rifle from attacker spawn
   box(0, 11, 16, 7, 34, FW); // solid block x -8..8, z -6..28: no mid
   box(0, -17, 16, 7, 22, FW); box(0, -29, 16, 7, 1, FW); // building between the sites
   // A side: A Short = 3 m L corridor (east-west leg z 14..17 from x -24, then south x -29.5..-26.5 to z -6) | Showers (x -24..-18, z 4..14) → A Bath (z -6..4) → site door x -17..-13
@@ -5042,13 +5071,13 @@ const HAVEN_CALLOUTS = [ // [name, x, z], for minimap labels + 3D pins
   ["Mid Doors", 0, 23.5], ["Mid Window", 10, 5.75], ["B Back", 0, -26.5]];
 function xBuildHaven() {
   const vbAdd = mapG.add; HAV_X.meshes = 0; HAV_X.mark.length = 0; mapG.add = function (...o) { o.forEach((x) => { HAV_X.meshes += 1 + (x && Array.isArray(x.children) ? x.children.length : 0); }); return vbAdd.apply(this, o); }; // vB audit: count objects this build adds
-  const fl = xFloor(60, 80, new THREE.MeshLambertMaterial({ map: HT.stone }), 4); fl.rotation.x = -Math.PI / 2; mapG.add(fl); solids.push(fl);
+  const fl = xFloor(60, 96, new THREE.MeshLambertMaterial({ map: HT.stone }), 4); fl.rotation.x = -Math.PI / 2; mapG.add(fl); solids.push(fl);
   const pad = (x, z, w, d, mat, T) => { const m = new THREE.Mesh(xUV(new THREE.PlaneGeometry(w, d), w, d, undefined, T || 2), mat); m.rotation.x = -Math.PI / 2; m.position.set(x, 0.02, z); m.receiveShadow = true; mapG.add(m); };
   const gm = new THREE.MeshLambertMaterial({ map: HT.gravel, transparent: true, opacity: 0.75, depthWrite: false });
   for (const k in HSITES) pad(HSITES[k][0], HSITES[k][1], 14, 12, gm, 3); // raked-gravel sites
   for (const k in HSITES) xDecal(mapG, k, HSITES[k][0], HSITES[k][1], 7);
   const FW = 0xe8e2d4, FC = 0x3a2a1e;
-  box(0, -40, 60, HAV_WB, 1, FW); box(0, 40, 60, HAV_WB, 1, FW); box(-30, 0, 1, HAV_WB, 80, FW); box(30, 0, 1, HAV_WB, 80, FW); // vB: boundary 9 m, buildings 8 m (was 5)
+  box(0, -48, 60, HAV_WB, 1, FW); box(0, 48, 60, HAV_WB, 1, FW); box(-30, 0, 1, HAV_WB, 96, FW); box(30, 0, 1, HAV_WB, 96, FW); // vB: boundary 9 m, buildings 8 m (was 5); dims pass: z ±48 (was ±40) with spawns at ±43 so attackers need ~15-16 s rifle to A / C
   box(-12, 0, 1, HAV_WH, 8, FW); box(-12, 16.5, 1, HAV_WH, 19, FW); // A side | Mid, gap z 4..7 = Sewer entrance from Mid Courtyard
   // A side: A Long lane along the outer wall (x -29.5..-24), Sewer tunnel west from mid then A Short south into the site front
   box(-18, 15.5, 12, HAV_WH, 16, FW); box(-23.5, 0.75, 1, HAV_WH, 13.5, FW); // block between A Long and Mid; A Long inner wall
@@ -5204,7 +5233,7 @@ function havKit(DM) { // merged decoration: P(k, geo, x, y, z, rx, ry, rz) → o
     return out; };
   return { P, done };
 }
-function havCrate(x, z, w, h, d) { box(x, z, w, h, d, 0x3a2a1e); const m = solids[solids.length - 1]; m.material = havMats().crate; xUV(m.geometry, w, h, d, Math.min(w, d)); return m; }
+function havCrate(x, z, w, h, d) { h = xCrH(h); box(x, z, w, h, d, 0x3a2a1e); const m = solids[solids.length - 1]; m.material = havMats().crate; xUV(m.geometry, w, h, d, Math.min(w, d)); return m; }
 function havSlab(x1, x2, z1, z2, y0, y1, mat) { // ceiling / lintel: solid for bullets + decals, not in boxes (overhead, nobody reaches it)
   const w = x2 - x1, h = y1 - y0, d = z2 - z1, m = new THREE.Mesh(xUV(new THREE.BoxGeometry(w, h, d), w, h, d, 4), mat); m.position.set((x1 + x2) / 2, y0 + h / 2, (z1 + z2) / 2); m.castShadow = m.receiveShadow = true; mapG.add(m); solids.push(m); return m;
 }
@@ -5271,7 +5300,7 @@ function havDress() {
       K.P("rf", BX(w + 1.6, 0.25, d + 1.6), x, h + 0.12, z, 0, ry); K.P("rf", pyr, x, h + 0.2, z, 0, ry).scale.set(w + 1.2, 1.5 + w * 0.12, d + 1.2); K.P("gd", xG("Cone", 0.4, 1.6, 8), x, h + 2.4 + w * 0.12, z);
       const lz = -d / 2 - 0.03; for (let r = 0; r < Math.floor(h / 4); r++) for (let c = -1; c <= 1; c++) { if (rnd() < 0.3) continue; const lx = c * w * 0.28; // windows on the face toward the map
         K.P("wn", BX(0.9, 1.3, 0.1), x + lx * Math.cos(ry) + lz * Math.sin(ry), 2.4 + r * 4, z - lx * Math.sin(ry) + lz * Math.cos(ry), 0, ry); } };
-    for (let i = 0; i < 22; i++) { const a = (i / 22) * Math.PI * 2 + rnd() * 0.12, R = 1 + rnd() * 0.4, x = Math.sin(a) * 44 * R, z = Math.cos(a) * 56 * R; if (Math.abs(x) < 34 && Math.abs(z) < 44) continue;
+    for (let i = 0; i < 22; i++) { const a = (i / 22) * Math.PI * 2 + rnd() * 0.12, R = 1 + rnd() * 0.4, x = Math.sin(a) * 44 * R, z = Math.cos(a) * 56 * R; if (Math.abs(x) < 34 && Math.abs(z) < 58) continue;
       bld(x, z, 7 + rnd() * 8, 6 + rnd() * 6, 9 + rnd() * 12, Math.atan2(x, z)); K.P("rock", BX(18, 6, 14), x * 1.05, -1.5, z * 1.05, 0, Math.atan2(x, z)); }
     bld(0, -64, 18, 10, 26, 0); bld(-13, -60, 8, 8, 18, 0); bld(13, -60, 8, 8, 18, 0); bld(0, 58, 10, 8, 14, Math.PI); // dzong behind the defenders, gatehouse behind the attackers
     const out = K.done(true);
@@ -5334,6 +5363,7 @@ function xBuildSplit() {
     box(s * 35.75, -29, 27.5, 2, 18, C); // raised site platform, x 22..49.5, z -38..-20, top 2 m
     for (let i = 0; i < 7; i++) box(s * 36, -19.65 + 0.7 * i, 8, 1.75 - 0.25 * i, 0.7, C); // south ramp stairs (from A/B Main): 7 x 0.25 m rises (vB, was 5 x 0.35)
     for (let i = 0; i < 7; i++) box(s * 27, -38.35 - 0.7 * i, 6, 1.75 - 0.25 * i, 0.7, C); // north stairs (from defender side): 7 x 0.25 m rises
+    for (let i = 0; i < 7; i++) box(s * (21.65 - 0.7 * i), -34.5, 0.7, 1.75 - 0.25 * i, 3, C); // inner stairs (dims pass): platform west face down toward Defender Side, z -36..-33; defender rotation A <-> B ~14 s rifle instead of ~17.5 via the north stairs
     box(s * 44.75, -42, 9.5, 2.8, 8, C); // Heaven ledge x 40..49.5, z -46..-38, top 2.8 m, overlooks the site
     for (let i = 1; i <= 11; i++) box(s * (32.5 + (i - 0.5) * 7 / 11), -44, 7 / 11, 0.25 * i, 4, C); // Heaven stairs west -> east, up from defender side: 11 x 0.25 m rises over x 32.5..39.5
     [[s * 43, -25, 1.5, 2], [s * 28, -24, 1.4, 2], [s * 44, 12, 1.4, 0], [s * 34, -2, 1.2, 0], [s * 26, 26, 1.4, 0], [s * 14, -46, 1.4, 0]]
@@ -5467,7 +5497,7 @@ function splKit(DM) { // merged decoration: P(k, geo, x, y, z, rx, ry, rz) → o
   return { P, done };
 }
 function splCrate(x, z, w, h, d, base, mat) { // crate sitting on `base` (0 = street, 2 = raised site): mesh only above the support, collider to the crate top
-  base = base || 0; const m = new THREE.Mesh(xUV(new THREE.BoxGeometry(w, h, d), w, h, d, Math.min(w, d)), mat || splMats().crate); m.position.set(x, base + h / 2, z); m.castShadow = m.receiveShadow = true; mapG.add(m); solids.push(m);
+  base = base || 0; h = xCrH(h); const m = new THREE.Mesh(xUV(new THREE.BoxGeometry(w, h, d), w, h, d, Math.min(w, d)), mat || splMats().crate); m.position.set(x, base + h / 2, z); m.castShadow = m.receiveShadow = true; mapG.add(m); solids.push(m);
   boxes.push({ x1: x - w / 2, x2: x + w / 2, z1: z - d / 2, z2: z + d / 2, h: base + h }); return m;
 }
 function splSlab(x1, x2, z1, z2, y0, y1, mat) { // ceiling / bridge deck: solid for bullets + decals, not in boxes (overhead, nobody reaches it)
@@ -5669,7 +5699,7 @@ function xLotMats() {
     paint: new THREE.MeshBasicMaterial({ color: 0xf3e3b0, polygonOffset: true, polygonOffsetFactor: -2 }), glow: new THREE.MeshBasicMaterial({ color: 0xffc56a }), water: new THREE.MeshBasicMaterial({ color: 0x5fd0d8 }) };
   return LOT_M;
 }
-function xLotCrate(x, z, tall, ry) { const M = xLotMats(), s = 1.5, h = tall ? 2.5 : 1.5; return xBLBox(tall ? M.tall : M.crate, x, z, s, h, s, 0, XBL_STAT.lotus); }
+function xLotCrate(x, z, tall, ry) { const M = xLotMats(), s = 1.5, h = tall ? 2.4 : 1.2; return xBLBox(tall ? M.tall : M.crate, x, z, s, h, s, 0, XBL_STAT.lotus); }
 function xLotBarrel(K, x, z) { const M = xLotMats(); xBLSolid(M.barrel, xG("Cylinder", 0.42, 0.42, 1.0, 12), x, 0.5, z); K.put(M.hoop, xG("Cylinder", 0.44, 0.44, 0.06, 12), x, 0.22, z); K.put(M.hoop, xG("Cylinder", 0.44, 0.44, 0.06, 12), x, 0.8, z); xBLCol(x, z, 0.9, 0.9, 1.0, XBL_STAT.lotus); }
 function xLotDress() { // themed zones + props on top of the Lotus blockout (authored = built frame)
   const M = xLotMats(), st = XBL_STAT.lotus, H = 7, K = xBLKit(mapG), S = xBLKit(mapG), wallSnap = boxes.slice();
@@ -5759,7 +5789,7 @@ function xBrzMats() {
     paint: new THREE.MeshBasicMaterial({ color: 0xfdf7e4, polygonOffset: true, polygonOffsetFactor: -2 }), sea: new THREE.MeshBasicMaterial({ color: 0x45c4c8 }) };
   return BRZ_M;
 }
-function xBrzCrate(x, z, tall, i) { const M = xBrzMats(), s = 1.5; return xBLBox(tall ? M.tall : i % 2 ? M.crateC : M.crateT, x, z, s, tall ? 2.5 : 1.5, s, 0, XBL_STAT.breeze); }
+function xBrzCrate(x, z, tall, i) { const M = xBrzMats(), s = 1.5; return xBLBox(tall ? M.tall : i % 2 ? M.crateC : M.crateT, x, z, s, tall ? 2.4 : 1.2, s, 0, XBL_STAT.breeze); }
 function xBrzBarrel(K, x, z) { const M = xBrzMats(); xBLSolid(M.barrel, xG("Cylinder", 0.4, 0.4, 1.05, 12), x, 0.525, z); K.put(M.hoop, xG("Cylinder", 0.42, 0.42, 0.06, 12), x, 0.25, z); K.put(M.hoop, xG("Cylinder", 0.42, 0.42, 0.06, 12), x, 0.82, z); xBLCol(x, z, 0.85, 0.85, 1.05, XBL_STAT.breeze); }
 function xBrzPalm(K, x, z, h, lean, solid) { const M = xBrzMats(), n = 5; // segmented curved trunk + fronds; solid palms get a planter that collides
   for (let k = 0; k < n; k++) { const t = (k + 0.5) / n; K.put(M.bark, xG("Cylinder", 0.17, 0.22, h / n + 0.05, 7), x + lean * t * t * 1.4, (h * (k + 0.5)) / n, z, 0, 0, -lean * t * 0.35); }
@@ -5840,11 +5870,12 @@ function xBuildLotus() {
     .forEach(([x, z], i) => xLotCrate(x, z, !(i % 3))); // cover (vC: 1.5 m teak crates, every third a 2.5 m double stack)
   box(36, -31, 2.4, 1.2, 1.6, C); box(-36, -31, 2.4, 1.2, 1.6, C); box(0, -25, 2.4, 1.2, 1.6, C); // default plant boxes
   { const wm = new THREE.MeshLambertMaterial({ color: LOTUS_TINT.water, transparent: true, opacity: 0.8 }), pad = (x, z, w, d) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(w, d), wm); m.rotation.x = -Math.PI / 2; m.position.set(x, 0.03, z); m.receiveShadow = true; m.raycast = () => {}; mapG.add(m); };
-    pad(-49.5, -6, 9, 10); pad(0, -46.5, 14, 3); pad(49.5, -47, 8, 3); } // water accents: Waterfall pool, B Upper channel, A Top channel
+    pad(-49.5, -6, 9, 10); pad(-4.5, -46.5, 5, 3); pad(49.5, -47, 8, 3); } // water accents: Waterfall pool, B Upper channel, A Top channel
   // pass 2 raised areas (walkable box tops), stairs as 0.25 m rises: [x, z] step i offset along (dx, dz)
   const stairs = (x, z, w, d, top, n, dx, dz) => { for (let i = 0; i < n; i++) box(x + dx * i, z + dz * i, w, top - 0.25 * (i + 1), d, C); };
   box(47, -40, 14, 1.5, 10, C); stairs(39.5, -38, 1, 4, 1.5, 5, -1, 0); // A Top: 1.5 m platform x 40..54, stairs west down into A Site
   box(0, -41, 24, 2, 6, C); stairs(0, -37.5, 4, 1, 2, 7, 0, 1); // B Upper: 2 m ledge x -12..12 over B, stairs south down to B Site
+  for (let i = 0; i < 7; i++) box(2.35 + 0.7 * i, -45, 0.7, 0.25 * (i + 1), 2, C); // dims pass: B Upper back stairs (x 2..6.9 along the north face, up east) so defenders reach B over the ledge in ~7 s rifle
   box(-38, -6, 8, 1, 6, C); stairs(-38, -2.5, 6, 1, 1, 3, 0, 1); stairs(-38, -9.5, 6, 1, 1, 3, 0, -1); // C Mound: 1 m mound, ramps north + south
   for (const k in LSITES) xDecal(mapG, k, LSITES[k][0], LSITES[k][1] + 2, 7);
   xLotusTint();
@@ -5903,9 +5934,9 @@ const BREEZE_CALLOUTS = [ // [name, x, z]
   ["Mid Bottom", 0, 16.4], ["Mid Top", 0, -9.8], ["Mid Nest", 4.9, -19.7], ["Mid Wood Doors", 20.5, 0.8], ["B Main", 38.5, 16.4], ["B Elbow", 34.4, -8.2], ["B Wall", 31.2, -32.8], ["B Window", 14.8, -20.1],
   ["Attacker Spawn", 0, 44.3], ["Defender Spawn", 0, -45.1]];
 const BREEZE_SPAWN = { atk: 44.3, def: -44.3, edge: 41 };
-// Bind / Haven / Split spawn barriers: each team spawns at z = ±35 (player, mates at x -8..8, enemies at x -8..8); the barrier sits 4 m beyond the
+// Bind / Haven / Split spawn barriers: each team spawns at z = ±atk (Split 35, Bind 39, Haven 43 after the dims pass; player, mates at x -8..8, enemies at x -8..8); the barrier sits 4 m beyond the
 // furthest spawn toward mid (z = ±31), spanning the spawn exits (w = the map's exit width, fit() narrows it to the free gap between walls)
-const XMAP_SPAWN = { bind: { atk: 35, def: -35, edge: 31, w: 30 }, haven: { atk: 35, def: -35, edge: 31, w: 34 }, split: { atk: 35, def: -35, edge: 31, w: 30 } };
+const XMAP_SPAWN = { bind: { atk: 39, def: -39, edge: 35, w: 30 }, haven: { atk: 43, def: -43, edge: 39, w: 34 }, split: { atk: 35, def: -35, edge: 31, w: 30 } };
 function xSpawn(m) { return m === "ascent" ? ASC_SPAWN : m === "lotus" ? LOTUS_SPAWN : m === "breeze" ? BREEZE_SPAWN : XMAP_SPAWN[m] || { atk: 35, def: -35, edge: 30 }; }
 const BREEZE_TINT = { wall: 0xf2ede0, stone: 0xd6c9a8, cap: 0x3fa7a0, floor: 0xe3cf9e, water: 0x2fb8b0 };
 let BZMT = null;
@@ -5925,10 +5956,10 @@ function xBuildBreeze() {
   for (const s of [1, -1]) { box(s * 18, -15, 16, 7, 14, W); box(s * 18, -38, 16, 7, 22, W); } // site dividers, gap z -27..-22 = A Hall / B Window
   box(55, -12, 20, 7, 1, W); // B Elbow wall: B Main turns west at z -12
   box(-61.5, 24, 7, 7, 32, W); // A Main west fill (authored x -65..-58, z 8..40): narrows A Lobby / A Main from 23 m to 16 m (13 m built)
-  box(38, -32, 1.2, 6, 10, W); // big B Wall across the site
+  box(38, -34.5, 1.2, 6, 5, W); // big B Wall across the site (dims pass: z -37..-32 authored, was -37..-27; the B Window -> site lane past its north end cuts the A <-> B rotation to ~14 s rifle)
   box(-48, -26, 3, 2.4, 3, C); box(-38, -38, 3, 2.4, 3, C); // A Pyramids (bases)
   [[4, 22, 1.6], [-4, 8, 1.6], [-5, -16, 1.6], [-54, 10, 1.6], [-46, -2, 2.4], [44, 24, 1.6], [50, 8, 2.4], [52, -28, 2.4], [-56, -30, 1.6]].forEach(([x, z, h], i) => xBrzCrate(x * BZK, z * BZK, h > 2, i)); // cover (vC: built frame, 1.5 m painted crates / 2.5 m double stacks)
-  box(6, -20, 4, 2.4, 2, C); box(44, -44, 3, 1.6, 2, C); // Mid Nest, B back cover
+  box(6, -20, 4, 2.4, 2, C); box(44, -44, 3, 1.2, 2, C); // Mid Nest, B back cover (1.2 m crouch cover, was a head-height 1.6 m)
   box(-4, -6, 12, 5, 1, W); box(4, -12, 12, 5, 1, W); // Mid chicane (sightline fix), defender half of Mid below A Cave / Wood Doors so attacker routes keep their timing: west x -10..2 at z -6, east x -2..10 at z -12 (one sidestep toward A Hall); no straight spawn-to-spawn line, 8 m lanes past each
   { const wm = new THREE.MeshLambertMaterial({ color: BREEZE_TINT.water, transparent: true, opacity: 0.8 }), pad = (x, z, w, d) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(w, d), wm); m.rotation.x = -Math.PI / 2; m.position.set(x * BZK, 0.03, z * BZK); m.scale.set(BZK, BZK, 1); m.receiveShadow = true; m.raycast = () => {}; mapG.add(m); };
     pad(-62.5, -30, 4, 50); pad(62.5, -34, 4, 42); pad(0, -58.5, 40, 2); } // teal water edges: A shore, B shore, defender beach
@@ -6159,12 +6190,14 @@ const LX = [-20, 0, 20], lane = (x, z) => (z > -4 && z < 26 ? (FV.map === "bind"
 const ASC_NODE = { "Attacker Spawn": [0, 46.6], "Spawn Gate": [0, 41.4], "A Lobby": [-41.4, 44], "A Main": [-38.7, 19.4], "A Main Exit": [-38.7, 0.9], "A Site": ASC_SITES.A,
   "Mid Bottom": [0, 32.6], "Mid Courtyard": [-3.5, 13.2], "Mid East": [4.4, 13.2], "Catwalk": [-8.8, -6.2], "A Garden": [-20.2, 0], "A Garden Exit": [-29, -7.9],
   "Market Door": [14.1, -3.5], "Market": [14.1, -12.3], "B Lobby": [41.4, 44], "B Main": [38.7, 19.4], "B Main Exit": [38.7, 0.9], "B Site": ASC_SITES.B,
-  "Defender Spawn": [0, -46.6], "Defender Gate": [0, -43.1], "Defender A": [-37.8, -44], "Defender B": [37.8, -44], "Defender Path": [42.2, -38.7], "B Lane": [43.1, -28.2], "B Lane Exit": [42.2, -17.6] };
+  "Defender Spawn": [0, -46.6], "Defender Gate": [0, -43.1], "Defender A": [-37.8, -44], "Defender B": [37.8, -44], "Defender Path": [42.2, -38.7], "B Lane": [43.1, -28.2], "B Lane Exit": [42.2, -17.6],
+  "Def Exit A": [-17.16, -42], "Def Exit B": [17.16, -42], "Def Link A": [-17.16, -31.5], "Def Link B": [17.16, -31.5], "A Back": [-17.16, -27], "B Back": [25, -31] };
 const ASC_EDGE = [["Attacker Spawn", "Spawn Gate"], ["Spawn Gate", "A Lobby"], ["A Lobby", "A Main"], ["A Main", "A Main Exit"], ["A Main Exit", "A Site"], // A Main -> A Site
   ["Spawn Gate", "Mid Bottom"], ["Mid Bottom", "Mid Courtyard"], ["Mid Courtyard", "Catwalk"], ["Catwalk", "A Garden"], ["A Garden", "A Garden Exit"], ["A Garden Exit", "A Site"], // Mid -> Courtyard -> Catwalk -> Garden -> A
   ["Mid Bottom", "Mid East"], ["Mid Courtyard", "Mid East"], ["Mid East", "Market Door"], ["Market Door", "Market"], ["Market", "B Site"], // Mid -> Market -> B
   ["Spawn Gate", "B Lobby"], ["B Lobby", "B Main"], ["B Main", "B Main Exit"], ["B Main Exit", "B Site"], // B Main -> B Site
-  ["Defender Spawn", "Defender Gate"], ["Defender Gate", "Defender A"], ["Defender A", "A Site"], ["Defender Gate", "Defender B"], ["Defender B", "Defender Path"], ["Defender Path", "B Lane"], ["B Lane", "B Lane Exit"], ["B Lane Exit", "B Site"]]; // defender rotates
+  ["Defender Spawn", "Defender Gate"], ["Defender Gate", "Defender A"], ["Defender A", "A Site"], ["Defender Gate", "Defender B"], ["Defender B", "Defender Path"], ["Defender Path", "B Lane"], ["B Lane", "B Lane Exit"], ["B Lane Exit", "B Site"], // defender rotates
+  ["Defender Gate", "Def Exit A"], ["Def Exit A", "Def Link A"], ["Def Link A", "A Back"], ["A Back", "A Site"], ["Defender Gate", "Def Exit B"], ["Def Exit B", "B Site"], ["Def Exit B", "Def Link B"], ["Def Link A", "Def Link B"], ["Def Link B", "B Back"], ["B Back", "B Site"]]; // inner spawn exits + Defender Link
 const ASC_ADJ = {}; ASC_EDGE.forEach(([a, b]) => { (ASC_ADJ[a] = ASC_ADJ[a] || []).push(b); (ASC_ADJ[b] = ASC_ADJ[b] || []).push(a); });
 function ascClear(ax, az, bx, bz) { const n = Math.ceil(Math.hypot(bx - ax, bz - az) / 0.5); for (let i = 1; i < n; i++) { const t = i / n; if (blocked(ax + (bx - ax) * t, az + (bz - az) * t, 0.45)) return false; } return true; }
 function ascNav(px, pz, tx, tz) {
@@ -6186,22 +6219,22 @@ function ascNav(px, pz, tx, tz) {
 const XG_GRID = (x1, x2, z1, z2, s) => { const o = []; for (let x = x1; x <= x2; x += s) for (let z = z1; z <= z2; z += s) o.push([x, z]); return o; };
 const XG_LANES = [-20, 0, 20].flatMap((x) => [[x, -8], [x, 11], [x, 30]]);
 const XG_NODES = {
-  bind: () => [[0, 35], [-20, 33], [20, 33], [13, 33], [-20, 20], [-23, 15.5], [-21, 17], [-27.5, 14], [-27.5, 8], [-27.5, 0], [-27.5, -9], [-27, -20], // spawn, A Lobby, A Short
+  bind: () => [[0, 39], [0, -39], [0, 35], [-20, 33], [20, 33], [13, 33], [-20, 20], [-23, 15.5], [-21, 17], [-27.5, 14], [-27.5, 8], [-27.5, 0], [-27.5, -9], [-27, -20], // spawn, A Lobby, A Short
     [-21, 9], [-21, 0], [-15, -1], [-15, -9], [-12, -20], [-11, -26], [-11, -32], [-11, -35], [0, -35], [13, -35], [13, -31.5], [13, -26], // Showers, Bath, A Site, U-Hall, Def Spawn, B Hall
     [13, 24], [13, 18], [13, 13], [13, 7], [13, -3], [13, -9], [13, -11.7], [13, -14.8], [13, -17], [24.5, 24], [25, 20], [24.5, 12], [24.5, 0], [27.5, -9], [23, -10], [23, -16], SITES.A, SITES.B, [-28, -24], [-16, -15], [-15, -17], [-20.5, -17], [-9.8, -27], [-9.8, -19], [-13, -17]], // Market, Hookah, B site, B Long, Garden, Elbow; last 5: A Bath → A Site and U-Hall → A Site (A Site was only reachable one-way via the A Short teleporter)
-  haven: () => XG_LANES.filter(([x, z]) => z !== 11 || x !== 0 && Math.abs(x) !== 20).concat([[0, 16], [-4, 11], [4, 11], [-4.4, 7], [4.4, 7], [7, -10.5], [15, -10.5], [0, -26], [-25, -21], [-26.5, -27], [28, 22], [28, 4], [28, -8], [25, -11], [19, -2], [15, -7], [23.75, -26], [23.75, -31], [-26, 11], [-27, -4], [-20.5, 5.75], [-20.5, -3], [-15, -10.5], [-7, -10.5], [-21, -33], [0, -33], [21, -33], [-10, 5.5], [-15, 5.5], [10, 2], [14.5, 0.8], HSITES.A, HSITES.B, HSITES.C, [0, 35], [0, -35], [-28, 31]]), // last Bind 2 / Haven 1: reconnect A site + A Long after the layout rebuild (work/audit.js)
+  haven: () => XG_LANES.filter(([x, z]) => z !== 11 || x !== 0 && Math.abs(x) !== 20).concat([[0, 16], [-4, 11], [4, 11], [-4.4, 7], [4.4, 7], [7, -10.5], [15, -10.5], [0, -26], [-25, -21], [-26.5, -27], [28, 22], [28, 4], [28, -8], [25, -11], [19, -2], [15, -7], [23.75, -26], [23.75, -31], [-26, 11], [-27, -4], [-20.5, 5.75], [-20.5, -3], [-15, -10.5], [-7, -10.5], [-21, -33], [0, -33], [21, -33], [-10, 5.5], [-15, 5.5], [10, 2], [14.5, 0.8], HSITES.A, HSITES.B, HSITES.C, [0, 35], [0, -35], [-28, 31], [0, 41], [0, -41], [0, 43], [0, -43]]), // last Bind 2 / Haven 1: reconnect A site + A Long after the layout rebuild (work/audit.js)
   split: () => [[0, 35], [0, 24], [3.8, 10], [-3.75, 0], [0, -4], [0, -9.5], [0, -22], [0, -35], [0, -42], [18, -4], [-18, -9.5], // spawns, Mid Bottom (the chicane gaps at (3.8, 10) / (-3.75, 0)) / Top, Mail, Vents
     [30, 24], [39, 24], [39, 10], [39, -4], [36, -14], [29, -17], [-30, 24], [-39, 24], [-39, 10], [-39, -9.5], [-36, -14], [-29, -17], // lobbies, mains, ramps
     [14, -50], [38, -50], [27, -44], [31, -44], [-14, -50], [-38, -50], [-27, -44], [-31, -44], // defender side to stairs
     SSITES.A, SSITES.B, [27, -34], [-27, -34], [45, -44], [-45, -44], // on the raised sites + Heaven tops (reached only by XG_SPEC stair links)
-    [47, -18.6], [47, -21.5], [-47, -18.6], [-47, -21.5], [45, -35], [-45, -35], [4, -22.6], [4, -26], [4, -29.5]], // rope bases / tops, Heaven drop landings, Mid perch
+    [47, -18.6], [47, -21.5], [-47, -18.6], [-47, -21.5], [45, -35], [-45, -35], [4, -22.6], [4, -26], [4, -29.5], [16.5, -34.5], [-16.5, -34.5]], // rope bases / tops, Heaven drop landings, Mid perch
   lotus: () => [[0, 50], [0, 44], [29, 44], [-29, 44], [0, -52], [34, -38], [0, -30], [-38, 1], [-38, -12], [0, 35], [0, 30], [37, 30], [-37, 30], [20, 30], [-20, 30], [37, 20], [37, 8], [37, -4], [37, -14], [-37, 20], [-37, 8], [-37, -4], [-37, -14], // spawn, A / C Main
     [0, 20], [0, 8], [0, -4], [0, -14], [-8, -4], [-20, -4], [-32, -4], [8, 2], [20, 2], [32, 2], // B Main, C Link, A Link
     LSITES.A, LSITES.B, LSITES.C, [0, -35], [0, -40], [0, -48], [25, -47], [36, -47], [-25, -47], [-36, -47], [47, -36], [-47, -36], // sites, B Upper, defender side, A Top
-    [15, -28], [21, -28], [-15, -28], [-21, -28], [49.5, -6], [49.5, -16], [41, -6], [-49.5, -6], [-49.5, -16], [12, -22], [-12, -22], [28, -16], [-28, -16]], // doors, A Tree, breakable gap, C Waterfall
+    [15, -28], [21, -28], [-15, -28], [-21, -28], [49.5, -6], [49.5, -16], [41, -6], [-49.5, -6], [-49.5, -16], [12, -22], [-12, -22], [28, -16], [-28, -16], [19.8, -41.6], [-19.8, -41.6], [1.2, -45], [6.6, -45], [6.6, -42.5], [-3.2, -26], [-3.2, -22]], // doors, A Tree, breakable gap, C Waterfall; dims: divider ends, B Upper back stairs + ledge
   breeze: () => [[0, 44.3], [0, 37.7], [-19.7, 37.7], [19.7, 37.7], [-41, 37.7], [41, 37.7], [-41, 24.6], [-41, 11.5], [-41, 4.1], [-41, -3.3], [-41, -13.1], [-27.9, 4.1], [-14.8, 4.1], [-3.3, 4.1], // spawn, A Lobby / Main, A Cave
     [0, 24.6], [0, 11.5], [0, 0], [4.9, -7.4], [-6.2, -7.4], [0, -20.1], [0, -27.9], [0, -37.7], [0, -44.3], [-6.6, -20.1], [-14.8, -20.1], [-24.6, -20.1], [6.6, -20.1], [14.8, -20.1], [24.6, -20.1], // Mid (the two z -7.4 nodes route the Mid chicane), A Hall, B Window
-    BZSITES.A, BZSITES.B, [-45.9, -32.8], [-45.9, -16.4], [-24.6, -36.1], [-32.8, -42.6], [-14.8, -44.3], [45.9, -36.1], [45.9, -16.4], [26.2, -32.8], [32.8, -42.6], [14.8, -44.3], // sites + defender side
+    BZSITES.A, BZSITES.B, [-45.9, -32.8], [-45.9, -16.4], [-24.6, -36.1], [-32.8, -42.6], [-14.8, -44.3], [45.9, -36.1], [45.9, -16.4], [26.2, -32.8], [32.8, -42.6], [14.8, -44.3], [23, -42], // sites + defender side (+ B back corner: defender spawn -> B ~8 s rifle)
     [4.9, 0.8], [20.5, 0.8], [36.1, 0.8], [38.5, 24.6], [38.5, 11.5], [38.5, -3.3], [34.4, -8.2], [34.4, -14.8], [26.2, -9.8]], // Wood Doors, B Main, B Elbow
   retake: () => XG_GRID(-16, 16, -16, 16, 4),
   duel: () => XG_GRID(-7.5, 7.5, -13.5, 13.5, 3),
@@ -6209,10 +6242,11 @@ const XG_NODES = {
 const XG_SPEC = { // special links, kept even if the 0.8 m check fails: Bind teleporters + Hookah window (one-way, run by xStep), Haven Sewer + Garage
   bind: [[[-27.5, 8], [13, 18], "tp"], [[25, 20], [-20, 20], "tp"], [[13, -11.7], [13, -14.8], "jump"]],
   haven: [[[-10, 5.5], [-15, 5.5]], [[10, 2], [14.5, 0.8]], [[-25, -21], [-26.5, -27]]], // + A Heaven stairs to ledge top
-  split: [1, -1].flatMap((s) => [[[s * 36, -14], [s * 36, -29]], [[s * 36, -29], [s * 27, -34]], [[s * 27, -34], [s * 27, -44]], [[s * 31, -44], [s * 45, -44]],
+  split: [1, -1].flatMap((s) => [[[s * 36, -14], [s * 36, -29]], [[s * 36, -29], [s * 27, -34]], [[s * 27, -34], [s * 27, -44]], [[s * 31, -44], [s * 45, -44]], [[s * 16.5, -34.5], [s * 27, -34]],
     [[s * 47, -18.6], [s * 47, -21.5], "rope"], [[s * 47, -21.5], [s * 36, -29]], [[s * 45, -44], [s * 45, -35], "drop"], [[s * 45, -35], [s * 36, -29]]])
     .concat([[[4, -22.6], [4, -26], "rope"], [[4, -26], [4, -29.5], "drop"]]), // ramp stairs, site, north stairs, Heaven stairs; one-way ropes up + Heaven / Mid perch drops
 };
+XG_SPEC.lotus = [[[1.2, -45], [6.6, -45]], [[6.6, -45], [6.6, -42.5]], [[6.6, -42.5], [0, -40]], [[0, -40], [0, -30]]]; // dims pass: B Upper back stairs -> ledge -> south stairs -> B
 const XG = {};
 function xgClear(ax, az, bx, bz, r) { // straight line clears every map box by r
   const n = Math.max(1, Math.ceil(Math.hypot(bx - ax, bz - az) / 0.25));
