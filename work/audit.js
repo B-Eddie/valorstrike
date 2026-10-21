@@ -1837,8 +1837,8 @@ if (!NO3) {
     if (!$("xObs").classList.contains("on")) return "panels not shown in buy phase";
     const cols = doc.querySelectorAll("#xObs .x-obc"); if (cols.length !== 2) return "columns " + cols.length; const bad = [];
     cols.forEach((c, ci) => { const rows = c.querySelectorAll(".x-obr").filter((r) => !r.hidden); if (rows.length !== 5) bad.push((ci ? "enemy" : "own") + " rows " + rows.length);
-      rows.forEach((r) => { const hp = parseFloat(r.querySelector(".hp").style.width) || 0; if (!(hp > 0)) bad.push("no hp bar " + r.querySelector(".x-obn").textContent); if (!r.querySelector(".x-oba").textContent || !r.querySelector(".x-oba").style.background) bad.push("no agent square");
-        if (!r.querySelector(".x-obw").textContent) bad.push("no weapon"); if (!r.querySelectorAll(".x-obu i").length) bad.push("no ult pips");
+      rows.forEach((r) => { const hp = parseFloat(r.querySelector(".hp").style.width) || 0; if (ci === 0 && !(hp > 0)) bad.push("no hp bar " + r.querySelector(".x-obn").textContent); /* enemy bars / weapons are masked in the buy phase (obs2) */ if (!r.querySelector(".x-oba").textContent || !r.querySelector(".x-oba").style.background) bad.push("no agent square");
+        if (ci === 0 && !r.querySelector(".x-obw").textContent) bad.push("no weapon"); if (!r.querySelectorAll(".x-obu i").length) bad.push("no ult pips");
         const cr = r.querySelector(".x-obcr").textContent; if (ci === 0 && !/^\d+$/.test(cr)) bad.push("own credits '" + cr + "'"); if (ci === 1 && cr) bad.push("enemy credits shown"); }); });
     const me = doc.querySelector("#xObs .x-obc.al .x-obr.me"); if (!me || !(parseFloat(me.querySelector(".sh").style.width) > 0)) bad.push("own shield segment missing");
     xe("FV.buy = 0; xObsTick(true); true"); if ($("xObs").classList.contains("on")) bad.push("panels still up after buy phase while alive");
@@ -1882,6 +1882,67 @@ if (!NO3) {
     if (!start5()) return "5v5 did not start"; xe("FV.buy = 0; true");
     dispatch(win, mkEvent("keydown", { key: "z", code: "KeyZ" })); advance(30);
     const n = xe("window.xPG.s.filter((q) => q.on).length"); return n >= 1 || "no ping marker after Z: " + n; });
+  OB("spectator hardening: first-person spectating hides the followed teammate's model (gun inside it), restores it on switch, third person and next round", () => {
+    if (!start5()) return "5v5 did not start"; xe("xLob0 = false; xResOn = false; true"); frames(2);
+    xe('(() => { window.__v0 = xVisB; window.__xr0 = [xResUp, xSetFull]; xResUp = () => false; xSetFull = () => false; /* the stub reads every screen as shown */ xVisB = function () {}; allies.forEach((a, i) => { a.hp = 100; a.alive = true; a.w = "Vandal"; a.xm = { m: { visible: true }, dead: 0, __fake: 1 }; }); player.hp = 0; pDie(bots[0].name, "Vandal"); xSpec(2.1); running = false; /* round logic paused: the camera loop alone */ return true; })()');
+    try { const vis = () => JSON.parse(xe("JSON.stringify(allies.map((a) => a.xm ? a.xm.m.visible : null))"));
+      xe("xLob0 = false; xResOn = false; xTP.on = false; true"); frames(2); const c0 = xe("allies.indexOf(xKL.cur)"); if (c0 < 0) return "no teammate spectated";
+      let v = vis(); if (v[c0] !== false || v.filter((x) => x === false).length !== 1) return "followed model not the only hidden one: " + JSON.stringify(v) + " cur " + c0 + " fp " + xe("!!XOB.fp");
+      dispatch(win, mkEvent("mousedown", { button: 0 })); xe("xLob0 = false; xResOn = false; true"); frames(2); const c1 = xe("allies.indexOf(xKL.cur)"); v = vis();
+      if (c1 === c0 || v[c0] !== true || v[c1] !== false) return "switch did not move the hidden model: " + JSON.stringify([c0, c1, v]);
+      xe("xTPToggle(); xLob0 = false; xResOn = false; true"); frames(2); v = vis(); if (v.some((x) => x === false) || xe("XOB.hm") !== null) return "third person still hides a model: " + JSON.stringify(v);
+      xe("xTPToggle(); xLob0 = false; xResOn = false; true"); frames(2); v = vis(); if (v[c1] !== false) return "back to first person did not hide again: " + JSON.stringify(v);
+      xe("allies[" + c1 + "].alive = false; allies[" + c1 + "].hp = 0; xLob0 = false; xResOn = false; true"); frames(2); v = vis(); if (v[c1] !== true) return "dead teammate's model (corpse) left hidden";
+      xe("running = false; fRound(); running = true; window.xLdOn = false; xLob0 = false; xResOn = false; true"); frames(2);
+      if (xe("XOB.hm === null && player.hp > 0") !== true) return "hidden model not cleared next round"; if (xe("[].concat(allies).every((a) => !a.xm || !a.xm.__fake || a.xm.m.visible !== false)") !== true) return "model left hidden after round end";
+      return true; } finally { xe("xVisB = window.__v0; xResUp = window.__xr0[0]; xSetFull = window.__xr0[1]; allies.forEach((a) => { if (a.xm && a.xm.__fake) a.xm = null; }); xTP.on = false; true"); } });
+  OB("spectator hardening: spike orbit camera is pulled in front of a wall between spike and camera, eases back out once clear, still faces the spike", () => {
+    if (!start5()) return "5v5 did not start";
+    const r = JSON.parse(xe(`(() => { const i0 = XLR.intersectObjects, b0 = xBoxHit, out = {}; try {
+      xBoxHit = () => false; XLR.intersectObjects = () => []; XOBC.k = 1; let o = xObsOrbit(0.016); out.L = o.dist; out.free = Math.hypot(o.x - o.cx, o.y - 1, o.z - o.cz);
+      XLR.intersectObjects = () => [{ distance: 6 }]; o = xObsOrbit(0.016); out.hit = o.dist; out.hd = Math.hypot(o.x - o.cx, o.y - 1, o.z - o.cz); out.yw = o.yw; out.want = Math.atan2(o.x - o.cx, o.z - o.cz); out.p = o.p;
+      XLR.intersectObjects = () => []; xBoxHit = (a, b) => Math.hypot(b.x - a.x, b.y - a.y, b.z - a.z) > 8; XOBC.k = 1; o = xObsOrbit(0.016); out.box = o.dist;
+      xBoxHit = () => false; o = xObsOrbit(0.05); out.ease1 = o.dist; for (let i = 0; i < 40; i++) o = xObsOrbit(0.1); out.ease2 = o.dist; } finally { XLR.intersectObjects = i0; xBoxHit = b0; XOBC.k = 1; } return JSON.stringify(out); })()`));
+    const bad = []; if (!(r.L > 15 && Math.abs(r.free - r.L) < 1e-6)) bad.push("free orbit distance " + r.L);
+    if (!(Math.abs(r.hit - 5.5) < 1e-6 && Math.abs(r.hd - 5.5) < 1e-6)) bad.push("wall at 6 m: camera at " + r.hit + " (want 5.5, in front of the hit)");
+    if (!(Math.abs(xe("xAng(" + r.yw + " - " + r.want + ")")) < 1e-6 && r.p < 0)) bad.push("not facing the spike after the pull-in");
+    if (!(r.box > 7 && r.box < 8)) bad.push("box fallback: camera at " + r.box + " (box wall at 8 m)");
+    if (!(r.ease1 > r.box && r.ease1 < r.L - 1)) bad.push("did not ease out gradually: " + r.ease1); if (!(Math.abs(r.ease2 - r.L) < 0.05)) bad.push("never returned to full orbit: " + r.ease2);
+    return bad.length ? bad.join(" | ") : true; });
+  OB("spectator hardening: enemy buys stay hidden in the buy phase (no weapon, shield, HP bar or credits), shown again once the round is live; own team credits only", () => {
+    if (!start5()) return "5v5 did not start";
+    xe("FV.buy = 20; running = true; player.hp = 100; bots.forEach((b) => { b.w = 'Vandal'; b.armor = 50; }); xObsTick(true); true"); const bad = [];
+    const rows = (c) => doc.querySelectorAll("#xObs .x-obc." + c + " .x-obr").filter((r) => !r.hidden);
+    rows("en").forEach((r) => { const n = r.querySelector(".x-obn").textContent; if (r.querySelector(".x-obw").textContent) bad.push("enemy weapon in buy " + n); if (parseFloat(r.querySelector(".sh").style.width) > 0) bad.push("enemy shield in buy " + n);
+      if (parseFloat(r.querySelector(".hp").style.width) > 0 || !r.classList.contains("nohp")) bad.push("enemy HP bar in buy " + n); if (r.querySelector(".x-obcr").textContent) bad.push("enemy credits " + n); });
+    rows("al").forEach((r) => { if (!/^\d+$/.test(r.querySelector(".x-obcr").textContent)) bad.push("ally credits missing " + r.querySelector(".x-obn").textContent); if (r.classList.contains("nohp")) bad.push("ally bar hidden"); });
+    xe("FV.buy = 0; player.hp = 0; pDie(bots[0].name, 'Vandal'); xSpec(2.1); xObsTick(true); true");
+    if (!$("xObs").classList.contains("on")) bad.push("panels not up while spectating");
+    rows("en").forEach((r) => { if (r.classList.contains("dead")) return; if (!r.querySelector(".x-obw").textContent || r.classList.contains("nohp")) bad.push("enemy row still masked in the live round"); if (r.querySelector(".x-obcr").textContent) bad.push("enemy credits live"); });
+    rows("al").forEach((r) => { if (r.querySelector(".x-obcr").textContent) bad.push("credits shown outside the buy phase"); });
+    if (!/\.x-obr\.nohp \.x-obh\{visibility:hidden/.test(html)) bad.push("nohp CSS missing");
+    return bad.length ? bad.slice(0, 5).join(" | ") : true; });
+  OB("spectator hardening: leaving the match while dead clears the KILLED BY card, SPECTATING label and grey filter; location callout follows the spectated mate", () => {
+    if (!start5()) return "5v5 did not start";
+    xe("player.hp = 0; pDie(bots[0].name, 'Vandal'); true"); if (xe("xKL.on") !== true) return "death flow not started";
+    xe("xSpec(2.1); true"); if (xe("xKL.sl.classList.contains('on')") !== true) return "SPECTATING label not shown";
+    $("game").style.display = "none"; frames(2); const r = xe("JSON.stringify([xKL.on, xKL.sp, xKL.sl.classList.contains('on'), xKL.el.classList.contains('on'), XOB.hm])"); $("game").style.display = "block";
+    if (r !== "[false,false,false,false,null]") return "stale spectator UI after leaving: " + r;
+    if (!/xKL\.sp && xKL\.cur && xKL\.cur\.alive && xKL\.cur\.g \? xKL\.cur\.g\.position : player/.test(html)) return "callout still keyed to the third-person target only";
+    return true; });
+  OB("HUD layout: side panels clear minimap + callout (top-left) and 5-row kill feed + voice line (top-right) at 1920x1080 / 1366x768, compact under 820 px, hidden on short landscape; FPS readout clears the minimap; buy menu scrolls", () => {
+    const bad = [], css = html, num = (re) => { const m = css.match(re); return m ? +m[1] : NaN; };
+    const top = num(/\.x-obs\{position:fixed;left:0;right:0;top:max\((\d+)px,calc\(50% - 91px\)\)/); if (!(top > 0)) bad.push("panel top not max(px, centred)");
+    const mmTop = num(/#xMap\{left:12px;top:(\d+)px/), mmH = num(/#xMap\{[^}]*height:(\d+)px/), callout = mmTop + mmH + 6 + 14; if (!(top >= callout + 8)) bad.push("panels " + top + " vs minimap + callout " + callout);
+    const fwTop = num(/#game \.hud\.x-fw\{top:(\d+)px/), kfH = num(/#game #feed \.kf\{[^}]*height:(\d+)px/), feed = fwTop + 5 * kfH + 4 * 4 + 8 + 30; if (!(top >= feed)) bad.push("panels " + top + " vs kill feed + voice " + feed);
+    [[1080, 1920], [768, 1366]].forEach(([h, w]) => { const t = Math.max(top, h / 2 - 91), b = t + 5 * 34 + 4 * 3; if (b > h - 16 - 64 - 8) bad.push(w + "x" + h + ": panels reach the bottom HUD"); if (2 * (w > 1366 ? 210 : 190) + 24 > w - 2 * 400) bad.push(w + ": panels too wide"); });
+    if (!/@media \(max-width:1366px\)\{\.x-obc\{width:190px\}/.test(css)) bad.push("no 1366 width rule");
+    const sm = css.match(/@media \(max-width:820px\)\{\.x-obs\{top:max\((\d+)px,calc\(50% - 70px\)\)[^\n]*\.x-obc\{width:(\d+)px/); if (!sm) bad.push("no compact <820 rule"); else { const ft = 48 + 5 * 24 + 16 + 8 + 30; if (+sm[1] < ft) bad.push("compact panels " + sm[1] + " vs mobile feed " + ft); }
+    if (!/@media \(max-height:560px\)\{\.x-obs\.on\{display:none\}\}/.test(css)) bad.push("short-landscape hide missing");
+    if (!/#game\.x-mm #fps\{left:184px\}/.test(css)) bad.push("FPS readout still under the minimap");
+    if (!/@media \(max-width:700px\)\{#xMap\{left:8px;top:8px;width:112px;height:112px\}/.test(css)) bad.push("narrow minimap rule missing");
+    if (!/#xBuy\{position:fixed;inset:0;[^}]*overflow:auto/.test(css)) bad.push("buy menu does not scroll");
+    return bad.length ? bad.join(" | ") : true; });
   try { xe("annClear(); running = false; true"); toLobby(); } catch (e) {}
 }
 

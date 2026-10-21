@@ -250,6 +250,8 @@ button{font:inherit;text-transform:inherit;letter-spacing:inherit;cursor:pointer
 /* 5v5 vs bots: minimap + buy menu */
 #xMap{left:12px;top:12px;width:160px;height:160px;display:none;padding:0;border:1px solid rgba(236,232,225,.18);background:rgba(10,16,22,.55)}
 #game.x-mm #xMap{display:block}
+#game.x-mm #fps{left:184px} /* observer hardening: FPS readout moves right of the 160 px minimap instead of covering it */
+@media (max-width:700px){#xMap{left:8px;top:8px;width:112px;height:112px}#game.x-mm #fps{left:128px;top:8px}} /* narrow: smaller minimap clears the centred score / timer bar */
 .x-brs{position:fixed;right:24px;bottom:22px;display:flex;flex-direction:column;align-items:flex-end;gap:8px;pointer-events:none}
 .x-brs>.hud{position:static}
 #xBuy{position:fixed;inset:0;z-index:25;display:none;flex-direction:column;gap:16px;padding:24px clamp(16px,3vw,40px);overflow:auto}
@@ -1310,7 +1312,7 @@ body.x-cbh #game{--ha:#3d8bff;--he:#ff9f1c}
     .x-ann.big .x-ant{font-size:clamp(44px,10vw,112px)}
     .x-ann.rnd{top:30%}.x-ann.rnd .x-ant{font-size:clamp(40px,8vw,88px);letter-spacing:.14em}.x-ann.rnd .x-ans{display:inline-block;margin-top:12px;padding:6px 18px;background:rgba(10,14,20,.6);border-top:2px solid currentColor;color:#ece8e1;letter-spacing:.32em}
     /* observer pass: team side panels (spectating / buy phase) */
-    .x-obs{position:fixed;left:0;right:0;top:184px;z-index:11;display:none;justify-content:space-between;padding:0 12px;pointer-events:none;font:600 12px/1.2 var(--f,var(--sans));color:#ece8e1}
+    .x-obs{position:fixed;left:0;right:0;top:max(244px,calc(50% - 91px));z-index:11;display:none;justify-content:space-between;padding:0 12px;pointer-events:none;font:600 12px/1.2 var(--f,var(--sans));color:#ece8e1}
     .x-obs.on{display:flex}.x-obc{display:flex;flex-direction:column;gap:3px;width:210px}
     .x-obr{display:flex;align-items:center;gap:6px;height:34px;padding:0 6px;background:linear-gradient(90deg,rgba(79,227,193,.22),rgba(10,16,22,.62));border-left:3px solid #4fe3c1}
     .x-obc.en .x-obr{flex-direction:row-reverse;text-align:right;background:linear-gradient(270deg,rgba(255,70,85,.22),rgba(10,16,22,.62));border-left:0;border-right:3px solid #ff4655}
@@ -1322,6 +1324,11 @@ body.x-cbh #game{--ha:#3d8bff;--he:#ff9f1c}
     @keyframes xObU{to{opacity:.45}}
     .x-obk{flex:none;width:16px;height:16px;display:none}.x-obr.dead{filter:grayscale(1);opacity:.5}.x-obr.dead .x-obk{display:block}.x-obr.dead .x-obh{visibility:hidden}.x-obr.me .x-obn{color:#ffd54a}
     @media (prefers-reduced-motion:reduce){.x-obu.rdy i{animation:none}}
+    /* observer hardening: panels sit below the minimap + callout (top-left, ends ~190px) and the 5-row kill feed + voice line (top-right, ends ~230px), centred vertically when there is room; enemy buy info stays hidden */
+    .x-obr.nohp .x-obh{visibility:hidden}
+    @media (max-width:1366px){.x-obc{width:190px}.x-obn{max-width:64px}}
+    @media (max-width:820px){.x-obs{top:max(232px,calc(50% - 70px));padding:0 8px;font-size:11px}.x-obc{width:148px;gap:2px}.x-obr{height:26px;gap:4px;padding:0 4px}.x-oba{width:18px;height:18px;font-size:11px}.x-obw,.x-obu{display:none}.x-obn{max-width:72px}.x-obm p{margin-bottom:2px}}
+    @media (max-height:560px){.x-obs.on{display:none}}
     .x-ann.pulse .x-ant{animation:xAnP .6s ease-in-out infinite alternate}
     @keyframes xAnP{to{opacity:.55;text-shadow:0 0 24px #ff4655}}
     @media (prefers-reduced-motion:reduce){.x-ann{transition:none;transform:none}.x-ann.pulse .x-ant{animation:none}}
@@ -2458,20 +2465,30 @@ function xKLDie(by, w) { if (!xKLm()) return; xKLui(); xKL.on = true; xKL.st = 0
   const e = xKLe(by) || { dd: 0, dh: 0, dhs: 0, td: 0, th: 0, ths: 0 };
   if (xKL.dd) xKL.dd.textContent = Math.round(e.dd) + " dmg · " + e.dh + " hits · " + e.dhs + " HS"; if (xKL.tk) xKL.tk.textContent = Math.round(e.td) + " dmg · " + e.th + " hits · " + e.ths + " HS";
   if (xKL.el) xKL.el.classList.add("on"); xKLfx(true); }
-function xKLReset() { xKL.p = player; xKL.n = 0; xKL.st = 0; xKL.on = false; xKL.sp = false; xKL.cur = null; xHS = false; if (xKL.el) { xKL.el.classList.remove("on"); xKL.sl.classList.remove("on"); xKLfx(false); } }
+function xKLReset() { try { if (typeof XOB !== "undefined" && XOB.hm) { XOB.hm.visible = true; XOB.hm = null; } } catch (e) {} xKL.p = player; xKL.n = 0; xKL.st = 0; xKL.on = false; xKL.sp = false; xKL.cur = null; xHS = false; if (xKL.el) { xKL.el.classList.remove("on"); xKL.sl.classList.remove("on"); xKLfx(false); } }
 function xSpec(dt) { if (!xKL.on) return xSpecPick(); xKL.st += dt; if (xKL.st < 2) return null;
   if (!xKL.sp) { xKL.sp = true; xKLfx(false); xKL.el.classList.remove("on"); xKL.sl.classList.add("on"); }
   const a = xSpecPick(); if (a !== xKL.cur) { xKL.cur = a; if (xKL.sn) xKL.sn.textContent = a ? "SPECTATING " + String(a.name).toUpperCase() : "NO TEAMMATES ALIVE · SPIKE CAM"; } return a; }
 function xSpecPick() { let n = 0; for (const x of allies) if (x.alive) n++; if (!n) return null; let i = ((xKL.si % n) + n) % n; for (const x of allies) if (x.alive && i-- === 0) return x; return null; }
 addEventListener("mousedown", (e) => { if (xKL.sp && player && player.hp <= 0) { if (e.button === 0) xKL.si++; else if (e.button === 2) xKL.si--; } });
 // observer pass: first-person spectating follows the teammate's own aim at eye height; Space cycles; nobody left = slow orbit over the spike / carrier
-const XOB = { fp: null, fpU: null, fpY: 0, fpP: -0.04, orb: null, oa: 0, e: { x: 0, y: 0, z: 0 }, o: { x: 0, y: 0, z: 0, yw: 0, p: 0, cx: 0, cz: 0 }, vy: null, vx: null, vz: null, mr: true, el: null, rows: [[], []], t: 0 };
+const XOB = { fp: null, fpU: null, fpY: 0, fpP: -0.04, orb: null, oa: 0, e: { x: 0, y: 0, z: 0 }, o: { x: 0, y: 0, z: 0, yw: 0, p: 0, cx: 0, cz: 0 }, vy: null, vx: null, vz: null, mr: true, el: null, rows: [[], []], t: 0, hm: null };
 addEventListener("keydown", (e) => { if (e.code === "Space" && !e.repeat && xKL.sp && player && player.hp <= 0) { xKL.si++; e.preventDefault(); } });
 function xObsEye(a, dt) { const q = a.g.position, ry = a.g.rotation.y, ty = ry + Math.PI; if (XOB.fpU !== a) { XOB.fpU = a; XOB.fpY = ty; }
   XOB.fpY += xAng(ty - XOB.fpY) * Math.min(1, (dt || 0) * 14); const e = XOB.e; e.x = q.x + Math.sin(ry) * 0.3; e.y = (q.y || 0) + 1.6; e.z = q.z + Math.cos(ry) * 0.3; return e; }
 function xObsOrbit(dt) { if (!player) return null; let x = player.x, z = player.z;
   try { const s = mode === "five" && FV.sp; if (s && s.st !== "plant" && s.c && s.c.g) { x = s.c.g.position.x; z = s.c.g.position.z; } else if (s && Number.isFinite(s.x) && Number.isFinite(s.z)) { x = s.x; z = s.z; } } catch (e) {}
-  XOB.oa += (dt || 0) * 0.22; const R = 15, H = 12, o = XOB.o; o.cx = x; o.cz = z; o.x = x + Math.sin(XOB.oa) * R; o.z = z + Math.cos(XOB.oa) * R; o.y = H; o.yw = Math.atan2(o.x - x, o.z - z); o.p = -Math.atan2(H - 1, R); return o; }
+  XOB.oa += (dt || 0) * 0.22; const R = 15, H = 12, o = XOB.o; o.cx = x; o.cz = z; o.x = x + Math.sin(XOB.oa) * R; o.z = z + Math.cos(XOB.oa) * R; o.y = H; xObsClip(o, x, z, dt); o.yw = Math.atan2(o.x - o.cx, o.z - o.cz); o.p = -Math.atan2(o.y - 1, Math.max(0.5, Math.hypot(o.x - o.cx, o.z - o.cz))); return o; }
+// observer hardening: spike orbit never passes through walls: ray from the spike (1 m up) to the orbit point against the static map (solids, then box fallback), camera pulled 0.5 m in front of the hit; pulls in at once, eases back out
+const XOBC = { o: new THREE.Vector3(), d: new THREE.Vector3(), a: { x: 0, y: 0, z: 0 }, b: { x: 0, y: 0, z: 0 }, k: 1 };
+function xObsClip(o, x, z, dt) { const dx = o.x - x, dy = o.y - 1, dz = o.z - z, L = Math.hypot(dx, dy, dz); if (!(L > 0.01)) return o; const ux = dx / L, uy = dy / L, uz = dz / L; let d = L;
+  try { XLR.set(XOBC.o.set(x, 1, z), XOBC.d.set(ux, uy, uz)); XLR.near = 0; XLR.far = L; XLH.length = 0; const h = typeof solids !== "undefined" && solids ? XLR.intersectObjects(solids, false, XLH) : null; if (Array.isArray(h) && h.length && typeof h[0].distance === "number" && h[0].distance < L) d = h[0].distance;
+    else if (typeof xBoxHit === "function") { const A = XOBC.a, B = XOBC.b, at = (t) => { B.x = x + ux * t; B.y = 1 + uy * t; B.z = z + uz * t; return B; }; A.x = x; A.y = 1; A.z = z;
+      if (xBoxHit(A, at(L))) { let lo = 0, hi = L; for (let i = 0; i < 7; i++) { const m = (lo + hi) / 2; if (xBoxHit(A, at(m))) hi = m; else lo = m; } d = lo < 0.3 ? L : lo; /* origin itself inside a box (spike against cover): no usable hit, keep the full orbit */ } } } catch (e) {}
+  const k = Math.max(0.12, Math.min(1, (d - 0.5) / L)); XOBC.k = k < XOBC.k ? k : XOBC.k + (k - XOBC.k) * Math.min(1, (dt || 0) * 2.5);
+  o.x = x + ux * L * XOBC.k; o.y = 1 + uy * L * XOBC.k; o.z = z + uz * L * XOBC.k; o.dist = L * XOBC.k; o.hit = d < L; return o; }
+// observer hardening: first-person spectating hides the followed teammate's own agent model (gun is parented inside it) so the eye never clips into it; restored on switch, third person, death, round end
+function xObsHide(a) { const m = a && a.alive !== false && a.xm && !a.xm.dead && a.xm.m ? a.xm.m : null; if (XOB.hm === m) return; if (XOB.hm) XOB.hm.visible = true; XOB.hm = m; if (m) m.visible = false; }
 { const b0 = bfxBot; bfxBot = function (p) { try { if (p && typeof allies !== "undefined") for (const u of allies) if (u.alive && Math.hypot(u.g.position.x - p.x, u.g.position.z - p.z) < 0.6) { const m = (WEAP[u.w || "Classic"] || {}).mag || 12; if (u.xAmW !== (u.w || "Classic") || !(u.xAm > 0)) { u.xAm = m; u.xAmW = u.w || "Classic"; } u.xAm--; break; } } catch (e) {} return b0.apply(this, arguments); }; } // spectated teammate's mag count (refills when empty)
 // Valorant tagging: a bullet hit slows the target for 0.25 s; heavy (28%) for big hits, lighter (50%) for sidearm / SMG body shots
 function xTag(t, n) { if (!t) return; const k = n < 30 ? 0.5 : 0.28; if (!(t.tagT > 0) || k < t.tagK) t.tagK = k; t.tagT = 0.5; } // tagging: 0.5 s, rifle hits slow 72%
@@ -3766,6 +3783,7 @@ function loop() {
       const rk = Math.min(1, dt * (since > 0.1 ? (sprW === "Phantom" ? 11 : 8) : 1.5)); rcl -= rcl * rk; rclH -= rclH * rk; // smooth recovery
       XOB.vx = cx; XOB.vz = cz; XOB.vy = J.dr ? yaw : xTP.cur ? xTP.yw : XOB.orb ? XOB.orb.yw : XOB.fp ? XOB.fpY : yaw - rclH;
       if (xTP.cur && !J.dr) camera.rotation.set(-0.12, xTP.yw, 0, "YXZ"); else if (XOB.orb && !J.dr) camera.rotation.set(XOB.orb.p, XOB.orb.yw, 0, "YXZ"); else if (XOB.fp && !J.dr) camera.rotation.set(XOB.fpP, XOB.fpY, 0, "YXZ"); else { const cq = xCU > 0 ? xCon() : 0; if (xCOn && cq <= 0) xConEnd(); camera.rotation.set(pitch + rcl, yaw - rclH, cq > 0 ? Math.sin(performance.now() * 0.0042) * 0.02618 * Math.min(1, cq * 4) : 0, "YXZ"); } camera.updateMatrixWorld(); sfxL();
+      try { xObsHide(XOB.fp && !xTP.cur && !J.dr ? XOB.fp : null); } catch (e) { xE(e); }
       const cw = mode === "aim" && typeof aimW === "function" ? aimW() : wName(), CW = WEAP[cw];
       const gt = S.xhd !== false && CW && running ? Math.min(40, gSpread(cw, CW) * 450) : 0;
       VM.xh = (VM.xh || 0) + (gt - (VM.xh || 0)) * Math.min(1, dt * (gt > (VM.xh || 0) ? 30 : 22)); // opens fast, closes fast
@@ -8740,7 +8758,7 @@ xLocEl.xT = ""; xLocEl.xK = "";
 setInterval(() => {
   const g = $("game"), on = !!(g && g.classList.contains("x-mm") && player && !g.hidden && g.offsetParent !== null);
   let t = "";
-  if (on) { const sp = player.hp <= 0 && xTP.tg && xTP.tg.g ? xTP.tg.g.position : player; t = xLoc(sp.x, sp.z); }
+  if (on) { const sp = player.hp <= 0 && xKL.sp && xKL.cur && xKL.cur.alive && xKL.cur.g ? xKL.cur.g.position : player; /* spectated mate (first or third person), else own spot */ t = xLoc(sp.x, sp.z); }
   if (xLocEl.xT !== t) { xLocEl.xT = t; xLocEl.textContent = t; }
   const vis = on && t ? "" : "none"; if (xLocEl.style.display !== vis) xLocEl.style.display = vis;
   if (vis === "" && MM) {
@@ -8762,14 +8780,16 @@ function xObsTick(force) { const on = xObsShow(); if (XOB.el.classList.contains(
   const now = performance.now(); if (!force && now - XOB.t < 120) return; XOB.t = now; const T = sbTeams(), buy = FV.buy > 0;
   T.forEach((L, ti) => XOB.rows[ti].forEach((R, i) => { const n = L[i]; R.r.hidden = !n; if (!n) return; const me = n === "You", u = me ? player : sbUnit(n);
     let ag = n; try { ag = me ? J.pick || "Jett" : (u && xAg(u)) || (typeof xAgOf === "function" ? xAgOf(n) : n); } catch (e) {}
-    const al = me ? player.hp > 0 : !!(u && u.alive && u.hp > 0), hp = al ? Math.max(0, Math.min(100, u.hp)) : 0, ar = al ? Math.max(0, Math.min(50, u.armor || 0)) : 0;
-    let w = "—"; try { w = me ? (rw === "knife" ? "Knife" : wName()) : (u && u.w) || "Classic"; } catch (e) {}
+    const al = me ? player.hp > 0 : !!(u && u.alive && u.hp > 0), eh = ti === 1 && buy, hp = al && !eh ? Math.max(0, Math.min(100, u.hp)) : 0, ar = al && !eh ? Math.max(0, Math.min(50, u.armor || 0)) : 0; // enemy buys (weapon, shield) hidden in the buy phase, as in Valorant
+    let w = "—"; try { w = me ? (rw === "knife" ? "Knife" : wName()) : (u && u.w) || "Classic"; } catch (e) {} if (eh) w = "";
     const ul = sbUlt(n), cr = ti === 0 && buy ? String(sbCred(n, SB[n] || {})) : "";
-    const k = [ag, n, al ? 1 : 0, Math.round(hp), Math.round(ar), w, ul[0], ul[1], cr].join("|"); if (k === R.k) return; R.k = k;
-    R.r.className = "x-obr" + (me ? " me" : "") + (al ? "" : " dead"); R.a.textContent = String(ag)[0].toUpperCase(); R.a.style.background = mmAgC(String(ag));
+    const k = [ag, n, al ? 1 : 0, Math.round(hp), Math.round(ar), w, ul[0], ul[1], cr, eh ? 1 : 0].join("|"); if (k === R.k) return; R.k = k;
+    R.r.className = "x-obr" + (me ? " me" : "") + (al ? "" : " dead") + (eh ? " nohp" : ""); R.a.textContent = String(ag)[0].toUpperCase(); R.a.style.background = mmAgC(String(ag));
     R.n.textContent = me ? "You" : n; R.w.textContent = al ? w : ""; R.cr.textContent = cr; R.hp.style.width = hp * 0.8 + "%"; R.sh.style.width = ar * 0.4 + "%"; // bar = 100 hp + 50 shield
     R.u.classList.toggle("rdy", ul[1] > 0 && ul[0] >= ul[1]); R.u.setAttribute("aria-label", "Ult " + ul[0] + " of " + ul[1]); R.u.innerHTML = Array.from({ length: ul[1] }, (_, j) => j < ul[0] ? '<i class="on"></i>' : "<i></i>").join(""); })); }
 (window.XHK || (window.XHK = [])).push(() => xObsTick(false));
+// observer hardening: leaving the match (lobby / result screen hides #game) while dead drops the KILLED BY card, SPECTATING label, grey filter and any hidden teammate model
+(window.XHK || (window.XHK = [])).push(() => { try { if ((xKL.on || XOB.hm) && $("game").style.display === "none") xKLReset(); } catch (e) {} });
 { const h0 = xHud; xHud = function () { const r = h0.apply(this, arguments); try { const a = player && player.hp <= 0 && xKL.sp ? xKL.cur : null; if (a && a.alive) { const w = a.w || "Classic", W = WEAP[w] || {}; setT("xWn", w); setT("xMag", a.xAmW === w && a.xAm > 0 ? a.xAm : W.mag || "—"); setT("xRs", W.mag ? W.mag * 3 : "—"); setT("xHp", Math.max(0, Math.ceil(a.hp))); setT("xArm", Math.ceil(a.armor || 0)); } } catch (e) {} return r; }; } // spectated teammate's weapon / ammo / health in the HUD
 // ---- Settings: FPS limit, resolution, render scale, anti-aliasing, aim assist, shadows ----
 const XS = { cap: "auto", res: "std", scale: xLowDev ? "0.8" : "auto", aa: xAA0, aim: "aim", shd: "off" }; // touch: low preset (AA off, 0.8 scale, 512 shadows)
