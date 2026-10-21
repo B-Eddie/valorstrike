@@ -963,6 +963,51 @@ if (!NO3) {
   try { toLobby(); } catch (e) {}
 }
 
+// ---------- SCOPE pass: Operator 2.5x/5x, sniper unscope on shot/reload/switch, lens only for snipers, FOV restored ----------
+{
+  phase = "scope pass"; let ok = false, err = [];
+  try {
+    const xe = vm.runInContext("__xe", context);
+    xe('FV.pick = "ascent"; FV.srOn = 0; FV.dm = false; FV.tdm = false; window.xSwift = false; startFive(); clearTimeout(FV.to); FV.buy = 0; FV.menu = false; player.hp = 100; paused = false; running = true; true'); advance(100);
+    const fz = (z) => +(2 * Math.atan(Math.tan(37.5 * Math.PI / 180) / z) * 180 / Math.PI).toFixed(2);
+    const st = () => JSON.parse(xe('JSON.stringify({ ads, fov: +camera.fov.toFixed(2), sc: document.getElementById("scope").style.display, cr: document.getElementById("cross").style.display, gun: !!gun.visible, lv: xSC.lv })'));
+    const arm = (w) => xe('xdArm("' + w + '"); player.hp = 100; reloading = 0; fcd = 0; VM.sw = 0; xCU = 0; running = true; paused = false; true');
+    const settle = () => { xe("xADu(0.5); true"); }; // finish the eased FOV transition
+    // Operator: right-click 2.5x, second right-click 5x, third off
+    arm("Operator"); xe("xScopeT(); true"); settle(); let a = st();
+    if (a.ads !== 2 || Math.abs(a.fov - fz(2.5)) > 0.05 || a.sc !== "block" || a.cr !== "none" || a.gun) err.push("op 2.5x: " + JSON.stringify(a));
+    xe("xScopeT(); true"); settle(); a = st();
+    if (a.ads !== 2 || a.lv !== 2 || Math.abs(a.fov - fz(5)) > 0.05) err.push("op 5x: " + JSON.stringify(a));
+    xe("xScopeT(); true"); settle(); a = st();
+    if (a.ads !== 0 || Math.abs(a.fov - 75) > 0.05 || a.sc !== "none" || a.cr === "none" || !a.gun) err.push("op off: " + JSON.stringify(a));
+    // eased in: mid-transition FOV sits between hip and target
+    xe("xScopeT(); xADu(0.04); true"); a = st(); if (!(a.fov < 74.9 && a.fov > fz(2.5) + 0.05)) err.push("no eased zoom: " + a.fov);
+    // sniper shot unscopes and restores FOV
+    settle(); xe("ammo = 5; fcd = 0; shoot(); true"); a = st(); if (a.ads !== 0 || Math.abs(a.fov - 75) > 0.05 || a.sc !== "none") err.push("shot did not unscope: " + JSON.stringify(a));
+    // bolt cycling blocks re-scope
+    xe("xScopeT(); true"); a = st(); if (a.ads !== 0) err.push("scoped during bolt");
+    // reload unscopes (frame safety net), FOV back
+    xe("fcd = 0; reloading = 0; xScopeT(); true"); settle(); xe("reloading = 2; for (const f of window.XHK) try { f(); } catch (e) {} true"); a = st();
+    if (a.ads !== 0 || Math.abs(a.fov - 75) > 0.05) err.push("reload did not unscope: " + JSON.stringify(a));
+    // weapon switch unscopes
+    xe("reloading = 0; fcd = 0; xScopeT(); true"); settle(); arm("Vandal"); a = st(); if (a.ads !== 0 || Math.abs(a.fov - 75) > 0.05 || a.sc !== "none") err.push("switch did not unscope: " + JSON.stringify(a));
+    // rifle ADS: light zoom, mini sight, no black lens; a rifle shot keeps ADS
+    xe("xScopeT(); true"); settle(); a = st();
+    if (a.ads !== 1 || Math.abs(a.fov - fz(1.25)) > 0.05 || a.sc !== "none" || !a.gun) err.push("vandal ads: " + JSON.stringify(a));
+    if (xe('document.getElementById("xAdsT").style.opacity') !== "1.00") err.push("mini sight not shown");
+    xe("ammo = 20; fcd = 0; shoot(); true"); if (st().ads !== 1) err.push("rifle shot dropped ADS");
+    xe("xScopeT(); true"); settle(); a = st(); if (a.ads !== 0 || Math.abs(a.fov - 75) > 0.05) err.push("vandal off: " + JSON.stringify(a));
+    // Marshal 3.5x lens; death snaps out; lobby leaves no scope
+    arm("Marshal"); xe("xScopeT(); true"); settle(); a = st(); if (a.ads !== 2 || Math.abs(a.fov - fz(3.5)) > 0.05 || a.sc !== "block") err.push("marshal: " + JSON.stringify(a));
+    xe("player.hp = 0; setScope(false); true"); a = st(); if (a.ads !== 0 || Math.abs(a.fov - 75) > 0.05 || a.sc !== "none") err.push("death: " + JSON.stringify(a));
+    arm("Operator"); xe("xScopeT(); true"); settle(); xe('document.getElementById("lobbyBtn").onclick(); true'); a = st();
+    if (a.ads !== 0 || Math.abs(a.fov - 75) > 0.05 || a.sc !== "none") err.push("lobby: " + JSON.stringify(a));
+    ok = !err.length;
+  } catch (e) { err.push(String(e.stack || e).slice(0, 300)); }
+  report.push({ label: "Scope pass: Operator 2.5x then 5x, eased FOV, unscope on sniper shot / reload / switch / death / lobby, lens only for snipers (rifles get a mini sight), FOV restored to 75", el: true, handler: true, cond: ok, pass: ok, errs: err });
+  try { toLobby(); } catch (e) {}
+}
+
 // ---------- print ----------
 const bad = report.filter((r) => !r.pass);
 console.log(`\n=== audit (${MID ? "THREE loads, 3D init throws" : NO3 ? "THREE missing" : "THREE stub loaded"}) — ${report.length} checks, ${bad.length} failing ===`);

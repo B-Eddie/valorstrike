@@ -62,10 +62,12 @@ button{font:inherit;text-transform:inherit;letter-spacing:inherit;cursor:pointer
 #xSpk{left:50%;top:14px;transform:translateX(-50%);display:none;background:rgba(15,25,35,.8);padding:5px 18px;border-bottom:3px solid var(--red)}#xSpk svg{display:block;width:40px;height:34px;filter:drop-shadow(0 0 6px rgba(255,70,85,.9))}
 #hint{left:50%;bottom:24px;transform:translateX(-50%);font-size:12px;opacity:.7;text-align:center}
 #dmg{inset:0;box-shadow:inset 0 0 120px rgba(255,70,85,.8);opacity:0;transition:opacity .3s}
-#scope{inset:0;display:none;background:radial-gradient(circle at 50% 50%,transparent 0,transparent 35vmin,rgba(0,0,0,.55) 35.4vmin,rgba(0,0,0,.92) 37vmin,#000 60vmin)}
-#scope:before,#scope:after{content:"";position:absolute;background:#000;left:50%;top:50%;transform:translate(-50%,-50%)}
-#scope:before{width:1px;height:70vmin}#scope:after{width:70vmin;height:1px}
-#xAdsT{inset:0;opacity:0;pointer-events:none;background:radial-gradient(ellipse at 50% 50%,transparent 0,transparent 58%,rgba(0,0,0,.28) 82%,rgba(0,0,0,.55) 100%)}
+#scope{inset:0;display:none;background:linear-gradient(#000,#000) 50% 50%/1px 92vmin no-repeat,linear-gradient(#000,#000) 50% 50%/92vmin 1px no-repeat,linear-gradient(#000,#000) 50% calc(50% - 31vmin)/3px 30vmin no-repeat,linear-gradient(#000,#000) 50% calc(50% + 31vmin)/3px 30vmin no-repeat,linear-gradient(#000,#000) calc(50% - 31vmin) 50%/30vmin 3px no-repeat,linear-gradient(#000,#000) calc(50% + 31vmin) 50%/30vmin 3px no-repeat,radial-gradient(circle at 50% 50%,transparent 0,transparent 45.2vmin,rgba(0,0,0,.75) 45.7vmin,#000 46vmin)} /* sniper lens: 92vmin circle, centred on any aspect ratio, thin cross + thick outer posts; first in #game so the HUD paints over it */
+#xAdsT{inset:0;opacity:0;pointer-events:none}
+#xAdsT.t{background:radial-gradient(ellipse at 50% 50%,transparent 0,transparent 58%,rgba(0,0,0,.28) 82%,rgba(0,0,0,.55) 100%)}
+#xAdsT:before,#xAdsT:after{content:"";position:absolute;left:50%;top:50%;border-radius:50%;transform:translate(-50%,-50%)}
+#xAdsT:before{width:22px;height:22px;box-sizing:border-box;border:1.5px solid rgba(236,232,225,.9);box-shadow:0 0 0 1px rgba(0,0,0,.45),inset 0 0 0 1px rgba(0,0,0,.35)}
+#xAdsT:after{width:4px;height:4px;background:#ff4655;box-shadow:0 0 0 1px rgba(0,0,0,.6)} /* rifle/SMG ADS mini sight (replaces the crosshair while ADS) */
 #result{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:rgba(15,25,35,.88);z-index:20;text-align:center}
 #result h2{font-size:clamp(48px,10vw,110px);font-weight:900}
 #result p{font-size:18px;opacity:.8}
@@ -2471,10 +2473,10 @@ let drag = false;
 const xMD = (e) => {
   if (!running || paused || (mode === "five" && FV.menu)) return;
   if (!document.pointerLockElement) { try { renderer.domElement.requestPointerLock(); } catch (er) {} drag = true; }
-  if (mode === "aim") { if (e.button === 2) { if (aimW() === "Knife") aimFire(true); else setScope(!ads); } else if (e.button === 0) { AM.fire = true; aimFire(); } return; }
+  if (mode === "aim") { if (e.button === 2) { if (aimW() === "Knife") aimFire(true); else xScopeT(); } else if (e.button === 0) { AM.fire = true; aimFire(); } return; }
   if (mode === "surf") { if (e.button === 0 && kSwing <= 0) { kSwing = 0.45; kick = 1; blip(520, 0.06, "triangle", 0.15); } return; }
   if (e.button === 2 && mode !== "duel" && rw === "knife" && !J.dr && !(jOn() && J.bs > 0)) return shoot(true);
-  if (e.button === 2) { if (mode === "duel") setScope(!du.scoped); else if (!J.dr) setScope(!ads); return; }
+  if (e.button === 2) { if (mode === "duel" || !J.dr) xScopeT(); return; }
   if (e.button !== 0) return;
   if (J.dr) return drDart();
   if (rsFire()) return;
@@ -2486,7 +2488,7 @@ xBind(renderer.domElement);
 addEventListener("mouseup", (e) => { drag = false; if (e.button === 0) fireHeld = false; });
 addEventListener("mousemove", (e) => {
   if (!running || paused || !(document.pointerLockElement || drag)) return;
-  const k = (document.pointerLockElement ? 0.0022 : 0.005) * (S.sens / 1.6) * (camera.fov / 75);
+  const k = (document.pointerLockElement ? 0.0022 : 0.005) * (S.sens / 1.6) * (Math.tan((camera.fov * Math.PI) / 360) / VM_T0); // scoped sens = 1 / zoom
   yaw -= e.movementX * k; pitch = Math.max(-1.4, Math.min(1.4, pitch - e.movementY * k));
 });
 
@@ -2512,10 +2514,10 @@ function gSpread0(w, W, B) {
   const slow = P.mv && (P.cr || P.wk), fast = !slow && (B ? !!P.mv : (P.sf || 0) > 0.3); // running counts only above 30% of run speed (counter-strafe)
   const land = !B && (P.lp || 0) > 0, still = !P.air && !fast && !slow && !land;
   let m = P.air ? 0.11 : fast || land ? 0.05 : slow ? 0.012 : 0; // run very inaccurate, walk moderate, air worst, landing 0.15 s penalty; scales the weapon tables below
-  const snp = w === "Operator" || w === "Marshal";
+  const snp = w === "Operator" || w === "Marshal" || w === "Outlaw";
   if (still && !sp) m = PIN[w] && (!snp || ad === 2) ? 0 : ad === 1 ? 0.0015 : 0.004; // ADS: tighter first shot // first shot pinpoint
   const s = (m + (sp < 3 ? sp * 0.3 : Math.min(sp, 10)) * 0.0042 * W.rec) * (P.cr && still ? 0.85 : 1); // crouched + stationary: ~15% tighter
-  return s * (ad === 2 ? 0.15 : ad === 1 ? 0.55 : 1) + (snp && ad !== 2 ? (w === "Marshal" ? 0.035 + (fast || P.air ? 0.06 : 0) : 0.05) : 0); // Marshal: unscoped + moving very loose
+  return s * (ad === 2 ? 0.15 : ad === 1 ? 0.55 : 1) + (snp && ad !== 2 ? (w === "Operator" ? 0.09 + (fast || P.air ? 0.05 : 0) : 0.035 + (fast || P.air ? 0.06 : 0)) : 0); // unscoped snipers loose; unscoped Operator ~5° (very inaccurate)
 }
 // bots: same spread + spray climb, scaled by difficulty aim error; spray resets after a 0.35 s pause
 function bSpread(b, w, W, dir, d, D) {
@@ -3728,8 +3730,8 @@ var ads = 0; // 0 hip, 1 light ADS (1.25x), 2 Operator scope; every mode but Sur
 function setScope(on) {
   du.scoped = !!on && running && mode === "duel" && du.w === "op" && du.reload <= 0 && du.wait <= 0;
   const gm = mode !== "duel" && mode !== "surf", w = gm && player ? wName() : "";
-  ads = du.scoped ? 2 : !!on && !(xCU > performance.now()) && running && gm && player && player.hp > 0 && rw !== "knife" && reloading <= 0 && !(mode === "five" && FV.buy > 0 && FV.menu) ? (w === "Operator" || w === "Marshal" ? 2 : { Vandal: 1, Phantom: 1, Spectre: 1, Stinger: 1, Sheriff: 1, Guardian: 1, Bulldog: 1, Bucky: 1, Ares: 1, Odin: 1 }[w] || 0) : 0;
-  camera.fov = ads === 2 ? (w === "Marshal" ? 34 : 22) : ads === 1 ? 63 : 75; // Marshal 2.5x (34°) camera.updateProjectionMatrix(); // 63° = 1.25x of 75°
+  ads = du.scoped ? 2 : !!on && !(xCU > performance.now()) && running && gm && player && player.hp > 0 && rw !== "knife" && reloading <= 0 && !(mode === "five" && FV.buy > 0 && FV.menu) ? (w === "Operator" || w === "Marshal" || w === "Outlaw" ? 2 : { Vandal: 1, Phantom: 1, Spectre: 1, Stinger: 1, Sheriff: 1, Guardian: 1, Bulldog: 1, Bucky: 1, Ares: 1, Odin: 1 }[w] || 0) : 0;
+  camera.fov = ads === 2 ? (w === "Operator" ? 33 : 24) : ads === 1 ? 63 : 75; camera.updateProjectionMatrix(); // fallback only: the SCOPE pass wrapper sets the real per-weapon zoom and eases it
   hudS($("scope"), "display", ads === 2 ? "block" : "none"); hudS($("cross"), "display", ads === 2 ? "none" : ""); // perf pass 145: diffed
   const dead = mode !== "duel" && player && player.hp <= 0;
   gun.visible = mode !== "duel" ? rw !== "knife" && !dead && ads !== 2 : du.w === "op" && !du.scoped;
@@ -7135,14 +7137,17 @@ skGroups();
 }; }
 // FEEL pass: Valorant ADS. Per-weapon zoom, 0.12 s eased FOV + viewmodel, Vandal/Phantom edge tint, ADS fire rate x0.9, move x0.76, kick x0.85; Classic alt = 3-round burst, Sheriff no alt; Operator unchanged
 var xAD = { k: 0, p: 0, z: 63, f: 75, tint: false, bs: 0, bt: 0 };
-const XZ = { Vandal: 1.25, Phantom: 1.25, Guardian: 1.5, Spectre: 1.15, Stinger: 1.15, Bucky: 1.15, Ares: 1.25, Odin: 1.25 };
+const XZ = { Vandal: 1.25, Phantom: 1.25, Bulldog: 1.25, Guardian: 1.5, Spectre: 1.15, Stinger: 1.15, Bucky: 1.15, Ares: 1.25, Odin: 1.25 };
+// SCOPE pass: one zoom state owns camera.fov. xSC.z = current zoom (1 = 75° hip), eased to xSC.tz in 0.12 s in / 0.09 s out; forced unscopes snap
+var XSZ = { Operator: [2.5, 5], Marshal: [3.5], Outlaw: [3.5] }, xSC = { lv: 0, z: 1, z0: 1, tz: 1, t: 1, soft: 0 };
+function xSCf(z) { return (2 * Math.atan(Math.tan((37.5 * Math.PI) / 180) / z) * 180) / Math.PI; } // zoom -> vertical FOV
+function xSCgo(z, snap) { if (snap) { xSC.z = xSC.z0 = xSC.tz = z; xSC.t = 1; camera.fov = xAD.f = xSCf(z); camera.updateProjectionMatrix(); } else { if (z !== xSC.tz) { xSC.z0 = xSC.z; xSC.tz = z; xSC.t = 0; } camera.fov = xAD.f = xSCf(xSC.z); camera.updateProjectionMatrix(); } } // the tween starts from where the lens is now (undoes the inner chain's instant FOV write)
 function xADu(dt) {
-  if (ads === 2) { xAD.p = xAD.k = 0; xAD.f = camera.fov; return; }
-  const t = ads === 1 ? 1 : 0; if (xAD.p === t && xAD.f === camera.fov) return;
-  xAD.p = t > xAD.p ? Math.min(1, xAD.p + dt / 0.12) : Math.max(0, xAD.p - dt / 0.12);
-  const p = xAD.p, k = t ? 1 - Math.pow(1 - p, 3) : p * p * (3 - 2 * p); xAD.k = k;
-  camera.fov = xAD.f = 75 + (xAD.z - 75) * k; camera.updateProjectionMatrix();
-  const el = $("xAdsT"); if (el) el.style.opacity = xAD.tint ? k.toFixed(2) : "0";
+  if (xSC.t < 1) { xSC.t = Math.min(1, xSC.t + dt / (xSC.tz > xSC.z0 ? 0.12 : 0.09)); const e = 1 - Math.pow(1 - xSC.t, 3); xSC.z = xSC.z0 + (xSC.tz - xSC.z0) * e; }
+  const f = xSCf(xSC.z); if (Math.abs(camera.fov - f) > 1e-4) { camera.fov = xAD.f = f; camera.updateProjectionMatrix(); } // also self-heals any stray FOV write
+  const t = ads === 1 ? 1 : 0;
+  if (xAD.p !== t) { xAD.p = t > xAD.p ? Math.min(1, xAD.p + dt / 0.12) : Math.max(0, xAD.p - dt / 0.09); const p = xAD.p; xAD.k = t ? 1 - Math.pow(1 - p, 3) : p * p * (3 - 2 * p); }
+  const el = $("xAdsT"); if (el) hudS(el, "opacity", xAD.k > 0.001 ? xAD.k.toFixed(2) : "0");
 }
 function xBurst() {
   if (xAD.bt > performance.now() || !running || paused) return; xAD.bt = performance.now() + 450;
@@ -7151,16 +7156,33 @@ function xBurst() {
 { const s1 = setScope; setScope = function (on) {
   const w = mode === "aim" ? aimW() : mode !== "duel" && mode !== "surf" && player ? wName() : "";
   if (on && !ads && w === "Classic" && player && player.hp > 0 && rw !== "knife") return xBurst();
-  const f = camera.fov, was = ads; s1(on);
+  const was = ads, sn = !!XSZ[mode === "duel" ? (du.w === "op" ? "Operator" : "") : w];
+  if (on && sn && was !== 2 && (mode === "duel" ? du.bolt > 0 : mode === "aim" ? AM.cd > 0 : fcd > 0)) return; // no scoping in while the bolt cycles
+  s1(on);
   if (ads === 1 && (w === "Sheriff" || w === "Classic" || w === "Frenzy")) ads = 0;
-  if (ads === 2) { xAD.k = xAD.p = 0; return; }
-  if (ads === 1) { xAD.z = 2 * Math.atan(Math.tan(37.5 * Math.PI / 180) / (XZ[w] || 1.25)) * 180 / Math.PI; xAD.tint = w === "Vandal" || w === "Phantom"; }
-  if (was === 2) { xAD.p = xAD.k = 0; camera.fov = xAD.f = 75; } else camera.fov = f; // out of a scope stays instant
-  camera.updateProjectionMatrix();
+  if (ads === 2 && !sn && mode !== "duel") ads = 1; // only real snipers get the lens
+  if (ads !== 2) xSC.lv = 0; else if (was !== 2 || !xSC.lv) xSC.lv = 1;
+  const zs = XSZ[mode === "duel" ? "Operator" : w], z = ads === 2 && zs ? zs[Math.min(zs.length, xSC.lv) - 1] : ads === 1 ? XZ[w] || 1.25 : 1;
+  xAD.z = xSCf(z); xAD.tint = ads === 1 && (w === "Vandal" || w === "Phantom");
+  xSCgo(z, !xSC.soft && !on); // right-click eases both ways; forced unscopes (reload, switch, death, round end, lobby) snap back to 75°
+  if (!xSC.soft && !on) xAD.p = xAD.k = 0;
+  const el = $("xAdsT"); if (el) { el.classList.toggle("t", xAD.tint); if (!xAD.k) hudS(el, "opacity", "0"); }
+  hudS($("scope"), "display", ads === 2 ? "block" : "none"); hudS($("cross"), "display", ads ? "none" : ""); // sniper lens or mini sight replaces the crosshair
+  const dead = mode !== "duel" && player && player.hp <= 0;
+  if (ads === 2) gun.visible = false; else if (mode !== "duel" && mode !== "aim") gun.visible = rw !== "knife" && !dead;
 }; }
+function xScopeT() { // right-click / zoom button: Operator 2.5x -> 5x -> off; everything else toggles
+  const sc = mode === "duel" ? du.scoped : ads === 2;
+  if (sc && (mode === "duel" || xSCw() === "Operator") && xSC.lv === 1) { xSC.lv = 2; xSCgo(XSZ.Operator[1], false); try { blip(900, 0.03, "square", 0.05); } catch (e) {} return; }
+  xSC.soft = 1; try { setScope(mode === "duel" ? !du.scoped : !ads); } finally { xSC.soft = 0; }
+}
+function xSCw() { try { return mode === "duel" ? (du.w === "op" ? "Operator" : "Knife") : mode === "aim" ? aimW() : mode !== "surf" && player ? wName() : ""; } catch (e) { return ""; } }
 { const g1 = gSpread; gSpread = function (w, W, B) { return g1(w, W, B) + (!B && xAD.bs ? 0.045 : 0); }; } // Classic burst: big spread
 { const m0 = moveP; moveP = function (dt, run, hold) { const W = rw === "pri" ? WEAP[wName()] : null; return m0(dt, W && W.heavy && mode !== "duel" ? run * 0.9 : run, hold); }; } // heavy weapons: move x0.9
-{ const m1 = moveP; moveP = function (dt, run, hold) { return m1(dt, ads === 1 && mode !== "duel" ? run * 0.76 : run, hold); }; }
+{ const m1 = moveP; moveP = function (dt, run, hold) { return m1(dt, mode === "duel" ? run : ads === 1 ? run * 0.76 : ads === 2 ? run * 0.4 : run, hold); }; } // ADS x0.76, sniper scoped x0.4 (~2.7 m/s)
+{ const sh0 = shoot; shoot = function (hv) { const a0 = ammo, sc = ads === 2, r = sh0.apply(this, arguments); if (sc && ads === 2 && ammo < a0 && XSZ[wName()]) setScope(false); return r; }; } // sniper shot unscopes (Operator / Marshal / Outlaw)
+{ const k1 = jKey; jKey = function (code) { const r = k1.apply(this, arguments); if (r && ads && mode !== "duel" && /^Key[CQEX]$/.test(code)) try { setScope(false); } catch (e) {} return r; }; } // ability cast unscopes
+(window.XHK = window.XHK || []).push(() => { if (ads && mode !== "duel" && (!running || $("game").style.display === "none" || (mode !== "aim" && (!player || player.hp <= 0 || reloading > 0)))) setScope(false); else if (!ads && !du.scoped && xSC.tz !== 1) xSCgo(1, true); }); // safety net: scope never survives a death, round end, reload or the lobby
 { const sh = shoot; shoot = function (hv) { const c = fcd, r = sh.apply(this, arguments); if (ads === 1 && fcd > c) { fcd /= 0.9; kick *= 0.85; } return r; }; }
 { const sh2 = shoot; shoot = function (hv) { // Bulldog ADS: 3-round burst (1.25x zoom from XZ default)
   if (!hv && !xAD.bb && ads === 1 && rw !== "knife" && player && wName() === "Bulldog") {
@@ -7940,7 +7962,7 @@ let xTGOn = false; const xTG = { inPlay: () => false, relAll: () => {} };
   const live = () => running && !paused && player;
   function aim(dx, dy) {
     if (!live()) return;
-    const k = 0.005 * S.tsens * (camera.fov / 75);
+    const k = 0.005 * S.tsens * (Math.tan((camera.fov * Math.PI) / 360) / Math.tan((37.5 * Math.PI) / 180)); // scoped sens = 1 / zoom
     yaw -= dx * k; pitch = Math.max(-1.4, Math.min(1.4, pitch - dy * k));
     VM.sx = Math.max(-1, Math.min(1, VM.sx + dx * 0.01)); VM.sy = Math.max(-1, Math.min(1, VM.sy + dy * 0.01));
   }
@@ -7966,7 +7988,7 @@ let xTGOn = false; const xTG = { inPlay: () => false, relAll: () => {} };
     if (k === "pause") return pause();
     if (k === "drills") return rgOpen("xRg");
     if (k === "ping") return kd("KeyZ");
-    if (k === "zoom") { if (mode === "duel") setScope(!du.scoped); else if (!J.dr) setScope(!ads); return; }
+    if (k === "zoom") { if (mode === "duel" || !J.dr) xScopeT(); return; }
     if (k === "swap") {
       if (mode === "duel") return setWeap(du.w === "op" ? "knife" : "op");
       if (mode === "surf" || player.hp <= 0) return;
