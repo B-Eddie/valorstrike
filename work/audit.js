@@ -2203,6 +2203,17 @@ if (!NO3) {
     toLobby(); return /bind\("modal hidden sync"/.test(html) || "no load-time hidden sync for closed modals"; });
 }
 
+// ---------- bot kits: bots use the player's KITS charges / credit costs / ult points, buy in the buy phase, cast like players, effects match the player's ----------
+if (!NO3) {
+  let R = null, err = [];
+  try { const xe = vm.runInContext("__xe", context); xe("J.pick = 'Jett'; startFive(); true"); advance(3000); R = JSON.parse(xe(fs.readFileSync(path.join(__dirname, "bk_game.js"), "utf8"))); } catch (e) { err.push(String((e && e.stack) || e).slice(0, 300)); }
+  for (const k in R || {}) report.push({ label: "bot kits: " + k, el: true, handler: true, pass: R[k] === true, cond: R[k] === true, errs: R[k] === true ? [] : [String(R[k])] });
+  if (!R) report.push({ label: "bot kits audit", el: true, handler: true, pass: false, cond: false, errs: err });
+  const src = [/XU\.b\[u\.name\] = 1\.3; return 1; \} \/\/ Empress/, /delete XU\.b\[b\.name\]/, /PTS\[a\] = KITS\[a\]\.u/, /try \{ xBBuy\(n, s\); \}/, /\(UC\[b\.name\] \|\| 0\) < KITS\.Chamber\.u/, /const def = !xBAtk\(al\)/].filter((r) => !r.test(html));
+  report.push({ label: "bot kits: source wiring (Empress until death, ult costs from KITS, bot ability buy, Chamber defence)", el: true, handler: true, pass: !src.length, cond: !src.length, errs: src.map(String) });
+  try { vm.runInContext("__xe", context)("running = false; true"); toLobby(); } catch (e) {}
+}
+
 // ---------- print ----------
 const bad = report.filter((r) => !r.pass);
 console.log(`\n=== audit (${MID ? "THREE loads, 3D init throws" : NO3 ? "THREE missing" : "THREE stub loaded"}) — ${report.length} checks, ${bad.length} failing ===`);
