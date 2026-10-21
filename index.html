@@ -252,45 +252,72 @@ button{font:inherit;text-transform:inherit;letter-spacing:inherit;cursor:pointer
 #game.x-mm #xMap{display:block}
 .x-brs{position:fixed;right:24px;bottom:22px;display:flex;flex-direction:column;align-items:flex-end;gap:8px;pointer-events:none}
 .x-brs>.hud{position:static}
-#xBuy{position:fixed;inset:0;z-index:25;display:none;flex-direction:column;gap:14px;padding:28px clamp(14px,3vw,40px);overflow:auto}
-/* look pass: Valorant-style buy menu (flat dark tiles, category columns, shields right) */
-#game #xBuy,#xBuy{background:rgba(8,12,18,.84);-webkit-backdrop-filter:none;backdrop-filter:none;border:0;border-radius:0;box-shadow:none;transform:none;width:auto;max-height:none;left:0;top:0}
-#xBuy .x-bh{border-bottom:1px solid rgba(236,232,225,.14);padding-bottom:12px}
-#xBuy .x-bh p:last-child{font-size:13px;letter-spacing:.14em;text-transform:uppercase;display:flex;align-items:center;gap:8px}
-#xBuy .x-bh p:last-child b{font-size:28px;color:var(--bone);letter-spacing:.02em;display:inline-flex;align-items:center;gap:8px}
-#xBuy .x-bh p:last-child b::before,.x-cg{content:"";display:inline-block;width:12px;height:12px;border:2px solid #5fffb0;transform:rotate(45deg);border-radius:2px;flex:none;box-sizing:border-box}
-#xBuy .x-bh p:last-child b::before{width:16px;height:16px}
-#xBG.x-bg{display:grid;grid-template-columns:repeat(6,minmax(120px,1fr)) minmax(130px,.9fr);gap:10px;align-items:start}
-#xBuy .x-bc{gap:6px;min-width:0}
-#xBuy .x-bc h4{font-size:12px;letter-spacing:.18em;text-transform:uppercase;opacity:.6;padding:0 2px 6px;border-bottom:2px solid rgba(236,232,225,.12);margin:0 0 4px}
-#xBuy .x-bc.on h4{color:var(--bone);opacity:1;border-bottom-color:var(--red)}
-#xBuy .x-bc.x-sh{grid-column:7;border-left:1px solid rgba(236,232,225,.14);padding-left:10px}
-/* QA: #xBG also carries .x-bg (profile badges: every div boxed red, 10 px padding), the shields column .x-sh (surf HUD: display:none!important) and the abilities row .x-ab (HUD ability bar: translateX(-50%), half off-screen); undo those here */
-#xBG.x-bg div{border:0;padding:0;font-size:inherit}
-#xBuy .x-bc.x-sh{display:flex!important}
-#xBuy .x-bc.x-ab{transform:none;left:auto;bottom:auto;display:flex}
-#xBuy .x-bc.x-ab{grid-column:1/-1;flex-direction:row;flex-wrap:wrap}#xBuy .x-bc.x-ab h4{flex-basis:100%}#xBuy .x-bc.x-ab button{flex:0 1 200px}
-#xBuy .x-bc button{display:flex;flex-direction:column;align-items:flex-start;gap:6px;width:100%;min-height:96px;padding:10px 12px;text-align:left;font:inherit;font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--bone);background:rgba(22,30,40,.92);border:2px solid transparent;border-radius:2px;cursor:pointer;transition:background .12s,border-color .12s,opacity .12s;box-shadow:none}
-#xBuy .x-bc button:hover:not(:disabled),#xBuy .x-bc button:focus-visible{background:rgba(48,60,74,.96);border-color:rgba(236,232,225,.45)}
-#xBuy .x-bc button.on{border-color:#19d3c5;background:rgba(18,52,56,.92)}
-#xBuy .x-bc button:disabled{opacity:.35;cursor:not-allowed}
-#xBuy .x-bc button svg{width:100%;height:30px;fill:#fff;align-self:center}
-#xBuy .x-bc button small{font-size:12px;letter-spacing:.06em;text-transform:none;opacity:.7}
-#xBuy .x-tp{display:inline-flex;align-items:center;gap:7px;font-size:14px;letter-spacing:.04em;color:var(--bone)}
-#xBuy .x-em{min-height:96px;border:1px dashed rgba(236,232,225,.14);border-radius:2px;display:grid;place-items:center;font-size:12px;letter-spacing:.12em;opacity:.45;text-transform:uppercase}
-@media (max-width:900px){#xBG.x-bg{grid-template-columns:repeat(2,minmax(0,1fr))}#xBuy .x-bc.x-sh{grid-column:auto;border-left:0;padding-left:0}#xBuy .x-em{min-height:40px}}
+#xBuy{position:fixed;inset:0;z-index:25;display:none;flex-direction:column;gap:16px;padding:24px clamp(16px,3vw,40px);overflow:auto}
+/* buy menu rebuild: Valorant-style layout (credits bar, six weapon columns, shields + abilities row, stats + team loadout on the right), original styling; one font, red accent, teal allies, 8 px scale */
+#game #xBuy,#xBuy{background:linear-gradient(180deg,rgba(8,12,18,.92),rgba(10,16,24,.84));-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);border:0;border-radius:0;box-shadow:none;transform:none;width:auto;max-height:none;left:0;top:0;font-family:var(--f);color:var(--bone);--xb-t:#19d3c5;--xb-c:#5fffb0;--xb-l:rgba(236,232,225,.14);--xb-d:rgba(236,232,225,.62)}
+#xBuy *{font-family:inherit;box-sizing:border-box}
 #xBuy.on{display:flex}
-#xBuy .x-ws{position:fixed;right:clamp(14px,3vw,40px);top:96px;z-index:2;width:300px;max-height:calc(100vh - 120px);overflow:auto;padding:16px 18px;background:rgba(14,20,28,.96);border:1px solid rgba(236,232,225,.18);border-left:3px solid var(--red);border-radius:2px;color:var(--bone);pointer-events:none}
+#xBuy .x-bh{display:flex;align-items:flex-end;gap:16px 40px;flex-wrap:wrap;border-bottom:1px solid var(--xb-l);padding-bottom:16px}
+#xBuy .x-bh p{margin:0;display:flex;flex-direction:column;gap:8px;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--xb-d)}
+#xBuy .x-bh p b{display:inline-flex;align-items:center;gap:8px;font-size:32px;line-height:1;font-weight:700;letter-spacing:.02em;color:var(--bone);font-variant-numeric:tabular-nums}
+#xBuy .x-bh .xb-lb b{font-size:24px;color:rgba(236,232,225,.86)}
+#xBuy .x-bh .xb-rd{margin-left:auto;align-self:center;font-size:14px;color:var(--bone)}
+#xBuy .x-bh .xb-tm{align-items:flex-end}#xBuy .x-bh .xb-tm b{font-size:24px;color:var(--red)}
+#xBuy .x-bh .xb-cr b::before,#xBuy .x-bh .xb-lb b::before,.x-cg{content:"";display:inline-block;width:12px;height:12px;border:2px solid #5fffb0;transform:rotate(45deg);border-radius:2px;flex:none;box-sizing:border-box}
+#xBuy .x-bh .xb-cr b::before{width:16px;height:16px}
+#xBuy .xb-main{display:grid;grid-template-columns:minmax(0,1fr) 296px;gap:24px;align-items:start;flex:1 0 auto}
+#xBG.x-bg{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:16px;align-items:start}
+#xBG div{border:0;padding:0;font-size:inherit}
+#xBuy .x-bc{display:flex;flex-direction:column;gap:8px;min-width:0}
+#xBuy .x-bc h4{display:flex;align-items:center;gap:8px;margin:0;padding:0 0 8px;font-size:12px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--xb-d);border-bottom:2px solid var(--xb-l)}
+#xBuy .x-bc.on h4{color:var(--bone);border-bottom-color:var(--red)}
+#xBuy kbd{display:inline-grid;place-items:center;min-width:16px;height:16px;padding:0 4px;font-size:10px;font-weight:700;letter-spacing:0;color:var(--bone);background:rgba(236,232,225,.1);border-radius:2px}
+#xBuy .x-bc.on h4 kbd{background:var(--red)}
+#xBuy .x-bc.xb-shc{grid-column:1/3}#xBuy .x-bc.xb-abc{grid-column:3/-1}
+#xBuy .xb-row{display:flex;flex-wrap:wrap;gap:8px}#xBuy .xb-row>.xb-card{flex:1 1 160px}
+#xBuy .xb-card{position:relative;min-width:0}
+#xBuy .xb-card>button[data-n]{display:flex;flex-direction:column;gap:8px;width:100%;min-height:96px;margin:0;padding:8px 8px 8px 16px;text-align:left;font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--bone);background:rgba(24,32,42,.94);border:0;border-left:2px solid transparent;border-radius:2px;box-shadow:inset 0 0 0 1px var(--xb-l);cursor:pointer;transition:background .12s,box-shadow .12s}
+#xBuy .xb-card>button[data-n]:hover,#xBuy .xb-card>button[data-n]:focus-visible{background:rgba(44,56,70,.98);box-shadow:inset 0 0 0 1px rgba(236,232,225,.5);outline:0}
+#xBuy .xb-card>button.on{border-left-color:var(--xb-t);background:rgba(16,48,52,.94);box-shadow:inset 0 0 0 1px rgba(25,211,197,.5)}
+#xBuy .xb-card>button.xb-no{opacity:.38;cursor:not-allowed}
+#xBuy .xb-card>button.xb-sell{border-left-color:var(--red)}
+#xBuy .xb-top{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%}
+#xBuy .xb-top b{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#xBuy .xb-card svg{width:100%;height:32px;fill:#fff;align-self:center;opacity:.92}
+#xBuy .xb-ft{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;margin-top:auto}
+#xBuy .xb-ft small{font-size:11px;font-weight:400;letter-spacing:.04em;text-transform:none;color:var(--xb-d)}
+#xBuy .xb-ft em{font-style:normal;font-size:10px;letter-spacing:.14em;padding:0 8px;line-height:16px;border-radius:2px;background:rgba(25,211,197,.2);color:var(--xb-t);white-space:nowrap}
+#xBuy .xb-sell .xb-ft em{background:rgba(255,70,85,.18);color:var(--red)}
+#xBuy .x-tp{display:inline-flex;align-items:center;gap:8px;font-size:14px;font-weight:700;letter-spacing:.04em;color:var(--bone);font-variant-numeric:tabular-nums}
+#xBuy .xb-rq{position:absolute;min-height:0;display:inline-flex;align-items:center;right:8px;bottom:8px;z-index:1;margin:0;padding:0 8px;height:24px;font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--xb-t);background:rgba(10,16,22,.9);border:1px solid rgba(25,211,197,.55);border-radius:2px;cursor:pointer}
+#xBuy .xb-rq:hover,#xBuy .xb-rq:focus-visible{background:rgba(25,211,197,.2);outline:0}
+#xBuy .xb-a .x-aic{width:24px;height:24px;margin:0;flex:none}#xBuy .xb-a .xb-top{justify-content:flex-start}#xBuy .xb-a .xb-top kbd{margin-left:auto}
+#xBuy .xb-pips{display:flex;gap:4px}#xBuy .xb-pips i{width:24px;height:8px;border-radius:1px;background:rgba(236,232,225,.16)}#xBuy .xb-pips i.on{background:var(--bone)}
+#xBuy .xb-side{display:flex;flex-direction:column;gap:16px;position:sticky;top:0}
+#xBuy .x-ws{position:static;width:auto;max-height:none;padding:16px;background:rgba(18,26,36,.96);border:0;box-shadow:inset 0 0 0 1px var(--xb-l);border-left:2px solid var(--red);border-radius:2px;color:var(--bone);pointer-events:none}
 #xBuy .x-ws[hidden]{display:none}
-#xBuy .x-ws svg{width:100%;height:64px;fill:none;stroke:#fff;stroke-width:.8;stroke-linejoin:round}
-#xBuy .x-ws h3{margin:8px 0 2px;font-size:22px;letter-spacing:.08em;text-transform:uppercase}
-#xBuy .x-ws .x-wsc{font-size:12px;letter-spacing:.16em;text-transform:uppercase;opacity:.65;margin:0}
-#xBuy .x-ws .x-wsp{display:flex;align-items:center;gap:8px;margin:8px 0 12px}#xBuy .x-ws .x-wsp b{font-size:18px;color:var(--bone)}
-#xBuy .x-ws table{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:10px}
-#xBuy .x-ws th,#xBuy .x-ws td{padding:6px 4px;border-bottom:1px solid rgba(236,232,225,.12);text-align:right;font-weight:500}
-#xBuy .x-ws th:first-child{text-align:left;opacity:.7;letter-spacing:.08em;text-transform:uppercase;font-size:12px}#xBuy .x-ws thead th{font-size:12px;opacity:.6}
-#xBuy .x-ws dl{margin:0;display:grid;gap:4px}#xBuy .x-ws dl div{display:flex;justify-content:space-between;font-size:13px;padding:4px 0;border-bottom:1px solid rgba(236,232,225,.08)}#xBuy .x-ws dt{opacity:.7;letter-spacing:.06em;text-transform:uppercase;font-size:12px}#xBuy .x-ws dd{margin:0}
-@media (max-width:900px){#xBuy .x-ws{top:auto;bottom:12px;right:12px;left:12px;width:auto;max-height:45vh}}
+#xBuy .x-ws svg{width:100%;height:56px;fill:#fff;stroke:none}
+#xBuy .x-ws h3{margin:8px 0 0;font-size:24px;letter-spacing:.08em;text-transform:uppercase}
+#xBuy .x-ws .x-wsc{margin:0;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--xb-d)}
+#xBuy .x-ws .x-wsp{display:flex;align-items:center;gap:8px;margin:8px 0 16px}#xBuy .x-ws .x-wsp b{font-size:16px;color:var(--bone)}
+#xBuy .x-ws table{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:8px}
+#xBuy .x-ws th,#xBuy .x-ws td{padding:4px;border-bottom:1px solid var(--xb-l);text-align:right;font-weight:500}
+#xBuy .x-ws th:first-child{text-align:left;color:var(--xb-d);letter-spacing:.08em;text-transform:uppercase;font-size:12px}#xBuy .x-ws thead th{font-size:11px;color:var(--xb-d)}
+#xBuy .x-ws dl{margin:0;display:grid;grid-template-columns:1fr 1fr;gap:0 16px}#xBuy .x-ws dl div{display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid rgba(236,232,225,.08)}#xBuy .x-ws dt{color:var(--xb-d);letter-spacing:.06em;text-transform:uppercase;font-size:11px}#xBuy .x-ws dd{margin:0}
+#xBuy .xb-team{padding:16px;background:rgba(18,26,36,.96);box-shadow:inset 0 0 0 1px var(--xb-l);border-left:2px solid var(--xb-t);border-radius:2px}
+#xBuy .xb-team h4{margin:0 0 8px;font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--xb-t)}
+#xBuy .xb-team ul{list-style:none;margin:0 0 16px;padding:0;display:flex;flex-direction:column}
+#xBuy .xb-team li{display:grid;grid-template-columns:1fr auto;grid-template-areas:"ag cr" "ld ld" "ex ex";gap:4px 8px;padding:8px 0;border-bottom:1px solid var(--xb-l)}
+#xBuy .xb-team li.xb-me .xb-ag b{color:#ffd166}
+#xBuy .xb-ag{grid-area:ag;display:flex;align-items:baseline;gap:8px;min-width:0}#xBuy .xb-ag b{font-size:13px;color:var(--xb-t);letter-spacing:.08em}#xBuy .xb-ag small{font-size:11px;color:var(--xb-d);text-transform:none;letter-spacing:.02em}
+#xBuy .xb-team .x-tp{grid-area:cr;font-size:13px}
+#xBuy .xb-ld{grid-area:ld;display:flex;align-items:center;gap:8px;min-width:0}#xBuy .xb-ld svg{width:48px;height:16px;fill:#fff;flex:none;opacity:.85}#xBuy .xb-ld small{font-size:11px;color:var(--xb-d);text-transform:none;letter-spacing:.02em}
+#xBuy .xb-team li em{grid-area:ex;font-style:normal;font-size:11px;letter-spacing:.06em;color:var(--xb-t)}
+#xBuy .xb-team li em.xb-wait{color:#ffd166}
+#xBuy .xb-rqb{width:100%;height:32px;margin:0;font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--bone);background:transparent;border:1px solid var(--xb-t);border-radius:2px;cursor:pointer}
+#xBuy .xb-rqb:hover:not(:disabled),#xBuy .xb-rqb:focus-visible{background:rgba(25,211,197,.2);outline:0}#xBuy .xb-rqb:disabled{opacity:.4;cursor:default;border-color:var(--xb-l)}
+@media (max-width:1180px){#xBG.x-bg{grid-template-columns:repeat(3,minmax(0,1fr))}#xBuy .x-bc.xb-shc{grid-column:1/-1}#xBuy .x-bc.xb-abc{grid-column:1/-1}}
+@media (max-width:820px){#xBuy{padding:16px;gap:16px}#xBuy .xb-main{grid-template-columns:minmax(0,1fr)}#xBuy .xb-side{position:static}#xBG.x-bg{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 8px}#xBuy .x-bh{gap:16px 24px}#xBuy .x-bh p b{font-size:24px}#xBuy .x-bh .xb-rd{margin-left:0}#xBuy .xb-card>button[data-n]{min-height:80px}#xBuy .x-ws dl{grid-template-columns:1fr}}
 /* agent select + Jett ability slots */
 #xAg{position:fixed;inset:0;z-index:31;display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:radial-gradient(circle at 50% 30%,#1f3346,#0f1923 70%);text-align:center;padding:20px}
 #xAg .mt{font-size:14px;letter-spacing:.16em;opacity:.85}#xAg .mt b{color:var(--red);font-variant-numeric:tabular-nums}
@@ -1242,7 +1269,7 @@ body.x-cbh #game{--ha:#3d8bff;--he:#ff9f1c}
 </div>
 <div id="xBoard" class="x-fr" aria-hidden="true"></div>
 <div id="xPick" class="x-fr" role="dialog" aria-label="Pick your rifle"><p>Round <b id="xPR">1</b> · Pick your rifle · auto in <b id="xPC">3</b></p><div class="x-pw"><button data-w="Vandal"><kbd>1</kbd>Vandal<small>25 rounds · 40 body / 160 head · heavy recoil</small></button><button data-w="Phantom"><kbd>2</kbd>Phantom<small>30 rounds · faster, softer, quieter · falloff past 15 m</small></button></div></div>
-<div id="xBuy" class="x-fr" role="dialog" aria-label="Buy menu"><div class="x-bh"><p>Buy Time Remaining <b id="xBT">00:20</b></p><p><b id="xBC">800</b> credits</p></div><div class="x-bg" id="xBG"></div><p id="xBL" hidden></p><p class="x-bf"><kbd>[1-7]</kbd>Category<kbd>[Right click]</kbd>Loadout<kbd>[Escape]</kbd>Back</p></div>
+<div id="xBuy" class="x-fr" role="dialog" aria-label="Buy menu"><div class="x-bh"><p class="xb-cr"><span>Credits</span><b id="xBC">800</b></p><p class="xb-lb"><span>Next round minimum</span><b id="xBLB">1900</b></p><p class="xb-rd"><span id="xBRd">Round 1</span></p><p class="xb-tm"><span>Buy Time Remaining</span><b id="xBT">00:20</b></p></div><div class="xb-main"><div class="x-bg" id="xBG"></div><div class="xb-side" id="xBSd"><section class="xb-team" id="xBTm" aria-label="Team loadout"></section></div></div><p id="xBL" hidden></p><p class="x-bf"><kbd>[1-7]</kbd>Category<kbd>[Click]</kbd>Buy<kbd>[Right click]</kbd>Sell back<kbd>[B / Escape]</kbd>Close</p></div>
 <div id="xRg" class="x-rg" role="dialog" aria-modal="true" aria-labelledby="xRgT"><div class="x-rgb">
   <h2 id="xRgT">THE RANGE</h2>
   <p>Pick a drill. P opens this panel, B opens the free buy menu, Esc closes.</p>
@@ -1321,6 +1348,8 @@ const WEAP = { Vandal: { mag: 25, rate: 9.75, body: 40, head: 160, legs: 34, rec
   // machine guns: spin = [start, full] rps over the first second of a spray (rate = bots' average); adsK = ADS spread mult; pen = wall penetration (3 high); rld = reload s; heavy = move x0.9
   Ares: { mag: 50, rate: 11.5, spin: [10, 13], body: 30, head: 72, legs: 25, rec: 0.7, vol: 0.3, f: 240, adsK: 0.75, pen: 2, rld: 3.25, heavy: 1 },
   Odin: { mag: 100, rate: 13.8, spin: [12, 15.6], body: 38, head: 95, legs: 32, rec: 0.75, vol: 0.32, f: 260, adsK: 0.55, pen: 3, rld: 5, heavy: 1 } };
+WEAP.Ghost = { mag: 15, rate: 6.75, body: 30, head: 105, legs: 25, ff: [25, 88, 21], ffd: 30, rec: 0.55, vol: 0.12, f: 250, semi: 1 }; // buy menu rebuild: suppressed sidearm
+WEAP.Outlaw = { mag: 2, rate: 1 / 0.75, body: 140, head: 238, legs: 119, rec: 1.4, vol: 0.3, f: 100, semi: 1, rld: 2.8 }; // double-barrel sniper, 0.75 s between shots, 3.5x scope via XSZ
 let xSpS = 0, xSpL = 0; // spin-up: start of the current spray, last shot (ms)
 function xRate(W) { if (!W.spin) return W.rate; const n = performance.now(); if (n - xSpL > 250) xSpS = n; xSpL = n; return W.spin[0] + (W.spin[1] - W.spin[0]) * Math.min(1, (n - xSpS) / 1000); }
 function xRT() { if (rw === "pis") return 1.2; const W = WEAP[wName()]; return (W && W.rld) || 1.6; } // reload anim duration; machine guns run it longer
@@ -3979,7 +4008,7 @@ function xBuildTeams() { let me = "Jett"; try { me = J.pick || "Jett"; } catch (
   let en = []; try { en = xDraw(5, F_MATES.slice()); } catch (e) {} if (!en || en.length !== 5 || new Set(en).size !== 5) en = xDraw(5, []); // no shared names with mates, so the scoreboard keeps 10 distinct rows
   F_EN.splice(0, F_EN.length, ...en); xTmLocked = false; }
 const FV = { you: 0, them: 0, atk: true, cr: 800, buy: 0, pri: null, sec: "Classic", menu: false, sp: { st: "", site: "" }, to: 0, cat: 0, bs: {}, alive: false, arm: 0 }; xFvOK = true;
-const BUY = [["Sidearms", [["Classic", 0], ["Shorty", 150], ["Frenzy", 450], ["Sheriff", 800]]], ["SMGs", [["Stinger", 950], ["Spectre", 1600]]], ["Rifles", [["Bulldog", 2050], ["Guardian", 2250], ["Phantom", 2900], ["Vandal", 2900]]], ["Snipers", [["Marshal", 950], ["Operator", 4700]]], ["Shields", [["Light Shields", 400, 25], ["Heavy Shields", 1000, 50]]], ["Shotguns", [["Bucky", 850], ["Judge", 1850]]], ["Machine guns", [["Ares", 1600], ["Odin", 3200]]]];
+const BUY = [["Sidearms", [["Classic", 0], ["Shorty", 150], ["Frenzy", 450], ["Ghost", 500], ["Sheriff", 800]]], ["SMGs", [["Stinger", 1100], ["Spectre", 1600]]], ["Rifles", [["Bulldog", 2050], ["Guardian", 2250], ["Phantom", 2900], ["Vandal", 2900]]], ["Snipers", [["Marshal", 950], ["Outlaw", 2400], ["Operator", 4700]]], ["Shields", [["Light Shields", 400, 25], ["Heavy Shields", 1000, 50]]], ["Shotguns", [["Bucky", 850], ["Judge", 1850]]], ["Machine guns", [["Ares", 1600], ["Odin", 3200]]]];
 const capC = (n) => Math.min(9000, n);
 const BUY_SIL = { // look pass: flat white gun silhouettes, viewBox 64 x 20
   Classic: "M20 5h22v4H32l-2 9h-6l2-9h-6z",
@@ -3987,11 +4016,13 @@ const BUY_SIL = { // look pass: flat white gun silhouettes, viewBox 64 x 20
   Spectre: "M6 6h42v5H36v3h-4l-1 5h-5l2-5h-6l-1 5h-5l2-5H6l-2-3h2z",
   Stinger: "M8 5h38v6H38v2h-4l-1 6h-5l2-6h-5l-1 3h-5l1-3h-7l-3-2H8z",
   Frenzy: "M18 5h26v4H35l-1 3h-2l-2 6h-6l2-6h-2l-1-3h-5z",
+  Ghost: "M4 6h16V5h26v4H35l-2 9h-6l2-9h-5l-1-1H20V8H4z",
   Guardian: "M0 7h12l2-2h40v3h10v2H50v2H36l-3 7h-5l2-7h-8l-2 4H6l3-4H0z",
   Phantom: "M0 7h10l2-2h32v2h8v1h12v3H44v2H34l-3 7h-5l2-7h-7l-2 2H5l3-3H0z",
   Vandal: "M0 7h12l2-2h34v3h14v2H48v2H34l-3 7h-5l2-7h-8l-2 4H4l3-4H0z",
   Operator: "M0 8h12v-1h6V3h18v4h-4v1h32v2H34v2H24l-2 6h-5l2-6H6l-4 3H0z",
   Marshal: "M0 8h14v-1h6V4h14v3h-3v1h33v2H34v1H22l-2 6h-5l2-6H6l-4 3H0z",
+  Outlaw: "M0 8h12l2-2h8V3h14v3h-6v1h34v1H30v1h34v1H30v2H22l-2 6h-5l2-6H6l-4 3H0z",
   Bulldog: "M0 7h12l2-2h30v3h16v2H46v2H34l-2 7h-5l1-7h-7l-2 4H4l3-4H0z",
   Shorty: "M14 5h28v3H34l-1 3h-2l-2 7h-6l2-7h-3l-2-3h-6z",
   Bucky: "M0 8h14l2-2h40v2h8v2H44l-2 3H30l-2-3h-6l-6 3H6l-3 3H0z",
@@ -4009,7 +4040,7 @@ function getLossBonus(team) { // credits `team` gets next round if it loses it: 
 window.getLossBonus = getLossBonus;
 function fKC(n) { if (mode === "five" && FV.bs[n]) FV.bs[n].cr = capC(FV.bs[n].cr + 200); }
 function fEco() { // match start and side swap: everyone back to 800 and a Classic
-  FV.cr = 800; FV.pri = null; FV.sec = "Classic"; FV.alive = false; FV.arm = 0; FV.bs = {};
+  FV.cr = 800; FV.pri = null; FV.sec = "Classic"; FV.alive = false; FV.arm = 0; FV.bs = {}; FV.bt = []; FV.req = null; FV.reqBy = null;
   F_EN.concat(F_MATES).forEach((n) => FV.bs[n] = { cr: 800, w: "Classic", arm: 0, alive: false });
 }
 function xChHH(n) { try { return (n === "Chamber" || (typeof xAgOf === "function" && xAgOf(n) === "Chamber")) && !!(KITS.Chamber && KITS.Chamber.n.includes("Headhunter")); } catch (e) { return false; } }
@@ -4030,7 +4061,7 @@ function fBotBuy(n) { // rifle + heavy shields at 3900+, else Spectre or Sheriff
   else if (!rifle() && s.cr >= 1350 && Math.random() < 0.06) { s.w = "Marshal"; s.cr -= 950; } // Marshal rarely
   if (prim()) { if (s.arm < 50 && s.cr >= 1000) { s.cr -= 1000; s.arm = 50; } }
   else if (s.cr >= 850 && s.cr < 2050 && Math.random() < 0.15) { s.cr -= 850; s.w = "Bucky"; } // eco: Bucky 15%
-  else if (!/^(Spectre|Stinger)$/.test(s.w) && s.cr >= 950 && s.cr < 3900 && Math.random() < 0.3) { s.cr -= 950; s.w = "Stinger"; } // force-buy: Stinger 30%
+  else if (!/^(Spectre|Stinger)$/.test(s.w) && s.cr >= 1100 && s.cr < 3900 && Math.random() < 0.3) { s.cr -= 1100; s.w = "Stinger"; } // force-buy: Stinger 30%
   else if (s.w !== "Spectre" && s.cr >= 1600) { s.cr -= 1600; s.w = "Spectre"; }
   else if (s.w === "Classic" && s.cr >= 450 && s.cr < 1600 && Math.random() < 0.3) { s.cr -= 450; s.w = "Frenzy"; } // pistol/eco: Frenzy 30%
   else if (s.w === "Classic" && xChHH(n)) { s.w = WEAP.Headhunter ? "Headhunter" : "Sheriff"; s.hh = 1; } // eco: bot Chamber takes his free Headhunter
@@ -4038,50 +4069,124 @@ function fBotBuy(n) { // rifle + heavy shields at 3900+, else Spectre or Sheriff
   sbSpend(n, c0 - s.cr);
   return s;
 }
+// buy menu rebuild: Valorant layout. Columns left to right (keys 1-6), shields (7) + abilities row, stats + team loadout on the right.
+// Every purchase this round goes in FV.bt, so right-click sells it back for the full price during the buy phase, and buying a
+// different weapon for the same slot (or heavy over light shields) refunds the one bought this round first, as in Valorant.
+const BUY_COLS = [[0, "Sidearms"], [1, "SMGs"], [5, "Shotguns"], [2, "Rifles"], [3, "Snipers"], [6, "Machine guns"]];
+const bItem = (n) => BUY.flatMap((c) => c[1]).find((x) => x[0] === n);
+const bSide = (n) => /^(Classic|Shorty|Frenzy|Ghost|Sheriff)$/.test(n);
+function bLog() { const r = FV.you + FV.them; if (!FV.bt || FV.btR !== r) { FV.bt = []; FV.btR = r; FV.req = null; FV.reqBy = null; FV.reqNo = false; } return FV.bt; }
+function bBack(n, c) { try { if (c > 0 && SB[n]) SB[n].sp = Math.max(0, (SB[n].sp || 0) - c); } catch (e) {} }
+function bMin() { const lb = [1900, 2400, 2900][Math.min((FV.lsY || 0) + 1, 3) - 1]; return capC((FV.sw ? 4000 : FV.cr) + lb); } // credits next round if this one is lost (loss bonus)
+function bCost(n) { const it = bItem(n); if (!it) return Infinity; const L = bLog(), e = it[2] ? L.find((x) => x.a) : L.find((x) => x.sl === (bSide(n) ? "pis" : "pri")); return it[1] - (e && !e.by ? e.p : 0); }
+function bEquip(n, sl) {
+  const m = WEAP[n].mag; if (sl === "pis") FV.sec = n; else FV.pri = n;
+  slots[sl] = { ammo: m, rsv: m * 3 };
+  if (rw === sl) { ammo = m; rsv = m * 3; reloading = 0; } else if (sl === "pri") swapW("pri");
+}
+function bUndo(e) { // weapon entry: slot back to what it held before, refund whoever paid
+  const sl = e.sl;
+  if (sl === "pis") FV.sec = e.prev || "Classic"; else FV.pri = e.prev || null;
+  if (sl === "pis" || e.prev) { const m = WEAP[sl === "pis" ? FV.sec : FV.pri].mag, pa = e.pa && e.pa.ammo !== undefined ? e.pa : { ammo: m, rsv: m * 3 }; slots[sl] = { ammo: pa.ammo, rsv: pa.rsv }; if (rw === sl) { ammo = pa.ammo; rsv = pa.rsv; reloading = 0; } }
+  else { if (rw === "pri") swapW("pis"); slots.pri = {}; }
+  if (e.by) { const s = FV.bs[e.by]; if (s) s.cr = capC(s.cr + e.dp); bBack(e.by, e.dp); if (FV.reqBy === e.by) { FV.req = null; FV.reqBy = null; } }
+  else { FV.cr += e.p; bBack("You", e.p); }
+}
+function bCard(n, p, a) {
+  const W = WEAP[n], L = bLog(), own = a ? (player.armor || 0) >= a : n === FV.pri || n === FV.sec;
+  const eq = a ? own : (n === FV.pri && rw === "pri") || (n === FV.sec && rw === "pis"), e = L.find((x) => x.n === n), sell = FV.buy > 0 && !!e && own, no = !own && FV.cr < bCost(n);
+  const meta = a ? "+" + a + " shields" : W.pel ? W.mag + " shells · " + W.pel + "×" + W.body : W.mag + " rds · " + W.body + " / " + W.head;
+  const st = !own ? "" : e && e.by ? "From " + e.by : eq ? "Equipped" : "Owned";
+  return `<div class="xb-card"><button type="button" data-n="${n}" class="xb-w${own ? " on" : ""}${no ? " xb-no" : ""}${sell ? " xb-sell" : ""}"${no ? ' aria-disabled="true"' : ""} aria-label="${n}, ${p} credits${own ? ", " + st : no ? ", not enough credits" : ""}${sell ? ", right-click to sell" : ""}"><span class="xb-top"><b>${n}</b><span class="x-tp"><i class="x-cg"></i>${p}</span></span><svg viewBox="0 0 64 20" aria-hidden="true"><path d="${BUY_SIL[a ? "sh" : n] || BUY_SIL.Vandal}"/></svg><span class="xb-ft"><small>${meta}</small>${st ? `<em>${st}</em>` : ""}</span></button>${no && !a ? `<button type="button" class="xb-rq" data-rq="${n}" title="Ask a teammate with spare credits to buy this">${FV.req === n ? "Requested" : "Request"}</button>` : ""}</div>`;
+}
+function bTeam() {
+  const ld = (w, arm) => `<span class="xb-ld"><svg viewBox="0 0 64 20" aria-hidden="true"><path d="${BUY_SIL[w] || BUY_SIL.Classic}"/></svg><small>${w}${arm ? " · " + arm + " shields" : ""}</small></span>`;
+  const rq = FV.req ? (FV.reqBy ? "" : `<em class="xb-wait">Requested ${FV.req}${FV.reqNo ? " · nobody has spare credits" : ""}</em>`) : "";
+  let ag = ""; try { ag = jOn() ? J.pick : ""; } catch (e) {}
+  const me = `<li class="xb-me"><span class="xb-ag"><b>You</b><small>${ag}</small></span><span class="x-tp"><i class="x-cg"></i>${FV.cr}</span>${ld(FV.pri || FV.sec, Math.ceil(player.armor || 0))}${rq}</li>`;
+  const mates = (typeof F_MATES !== "undefined" ? F_MATES : []).map((m) => { const s = FV.bs[m] || { cr: 0, w: "Classic", arm: 0 }; let a = m; try { a = xAgOf(m); } catch (e) {}
+    return `<li><span class="xb-ag"><b>${m}</b>${a !== m ? `<small>${a}</small>` : ""}</span><span class="x-tp"><i class="x-cg"></i>${s.cr}</span>${ld(s.w || "Classic", s.arm || 0)}${FV.reqBy === m && FV.req ? `<em>Bought your ${FV.req}</em>` : ""}</li>`; }).join("");
+  const sel = FV.sel && WEAP[FV.sel] && FV.sel !== FV.pri && FV.sel !== FV.sec && !(FV.req === FV.sel && FV.reqBy) ? FV.sel : "";
+  return `<h4>Team loadout</h4><ul>${me}${mates}</ul><button type="button" id="xBRq" class="xb-rqb" data-rq="${sel}"${sel ? "" : " disabled"}>${sel ? (FV.req === sel ? "Requested " : "Request ") + sel : "Hover a weapon to request it"}</button>`;
+}
 function buyRender() {
-  setT("xBC", FV.cr); setT("xBT", "00:" + String(Math.max(0, Math.ceil(FV.buy))).padStart(2, "0"));
+  bLog();
+  setT("xBC", FV.cr); setT("xBT", "00:" + String(Math.max(0, Math.ceil(FV.buy))).padStart(2, "0")); setT("xBLB", bMin()); setT("xBRd", "Round " + (FV.you + FV.them + 1) + (FV.buy > 0 ? " · Buy phase" : ""));
   // perf pass 21: grid only rebuilt when its markup actually changed
-  // look pass: Valorant layout, six weapon columns (empty ones shown as in the real menu), shields on the right
-  const col = (i, lab, k) => { const [, its] = BUY[i]; return `<div class="x-bc${FV.cat === i ? " on" : ""}${i === 4 ? " x-sh" : ""}"><h4>${k} · ${lab}</h4>` + its.map(([n, p, a]) => {
-    const own = a ? (player.armor || 0) >= a : n === FV.pri || n === FV.sec, W = WEAP[n];
-    return `<button data-n="${n}"${own ? ' class="on"' : ""}${!own && FV.cr < p ? " disabled" : ""}>${n}<svg viewBox="0 0 64 20" aria-hidden="true"><path d="${BUY_SIL[a ? "sh" : n] || BUY_SIL.Vandal}"/></svg><span class="x-tp"><i class="x-cg"></i>${p}</span><small>${a ? a + " shields" : W.pel ? W.mag + " shells · " + W.pel + "×" + W.body : W.mag + " rds · " + W.body + "/" + W.head}${own ? " · Owned" : ""}</small></button>`;
-  }).join("") + "</div>"; };
-  const bh = col(0, "Sidearms", 1) + col(1, "SMGs", 2) + col(5, "Shotguns", 3) + col(2, "Rifles", 4) + col(3, "Sniper rifles", 5) + col(6, "Machine guns", 6) + col(4, "Shields", 7) + jBuyHtml();
+  const col = (i, lab, k, cls) => `<div class="x-bc${cls || ""}${FV.cat === i ? " on" : ""}" data-cat="${BUY[i][0]}"><h4><kbd>${k}</kbd>${lab}</h4>` + (cls ? '<div class="xb-row">' : "") + BUY[i][1].map(([n, p, a]) => bCard(n, p, a)).join("") + (cls ? "</div>" : "") + "</div>";
+  const bh = BUY_COLS.map(([i, lab], j) => col(i, lab, j + 1)).join("") + col(4, "Shields", 7, " xb-shc") + jBuyHtml();
   if (buyRender.h !== bh) { buyRender.h = bh; $("xBG").innerHTML = bh; }
+  const th = bTeam(); if (buyRender.t !== th) { buyRender.t = th; $("xBTm").innerHTML = th; }
   $("xBL").textContent = "Loadout · " + (FV.pri || "No primary") + " · " + FV.sec + " · " + Math.ceil(player.armor || 0) + " shields";
 }
 function fBuy(n) {
   if (n.startsWith("ab:")) return jBuy(n.slice(3));
-  const it = BUY.flatMap((c) => c[1]).find((x) => x[0] === n); if (!it || FV.cr < it[1]) return;
-  const [, p, a] = it;
-  if (a) { if ((player.armor || 0) >= a) return; player.armor = a; }
-  else {
+  const it = bItem(n); if (!it) return;
+  const [, p, a] = it, L = bLog();
+  if (a) {
+    if ((player.armor || 0) >= a) return;
+    const i = L.findIndex((x) => x.a), e = L[i]; if (FV.cr + (e ? e.p : 0) < p) return;
+    let prev = player.armor || 0; if (e) { prev = e.prev; FV.cr += e.p; bBack("You", e.p); L.splice(i, 1); }
+    player.armor = a; L.push({ n, p, a, prev });
+  } else {
     if (n === FV.pri || n === FV.sec) return;
-    const sl = /^(Classic|Shorty|Frenzy|Ghost|Sheriff)$/.test(n) ? "pis" : "pri", m = WEAP[n].mag;
-    if (sl === "pis") FV.sec = n; else FV.pri = n;
-    slots[sl] = { ammo: m, rsv: m * 3 };
-    if (rw === sl) { ammo = m; rsv = m * 3; reloading = 0; } else if (sl === "pri") swapW("pri");
+    const sl = bSide(n) ? "pis" : "pri", i = L.findIndex((x) => x.sl === sl), e = L[i];
+    if (FV.cr + (e && !e.by ? e.p : 0) < p) return;
+    if (e) { bUndo(e); L.splice(i, 1); }
+    const prev = sl === "pis" ? FV.sec : FV.pri, pa = rw === sl ? { ammo, rsv } : Object.assign({}, slots[sl]);
+    bEquip(n, sl); L.push({ n, p, sl, prev, pa });
+    if (FV.req === n) FV.req = null;
   }
   FV.cr -= p; sbSpend("You", p); blip(700, 0.08, "triangle", 0.15); onSkin(); updHud(); buyRender(); xHud();
+}
+function fSell(n) { // right-click: full refund for anything bought this round, buy phase only
+  if (!n || !(mode === "five" && FV.buy > 0)) return false;
+  const L = bLog(), ab = n.startsWith("ab:") ? n.slice(3) : "";
+  let i = -1; for (let j = L.length - 1; j >= 0; j--) if (ab ? L[j].ab === ab : L[j].n === n) { i = j; break; }
+  if (i < 0) return false; const e = L[i];
+  if (ab) { if (!(J[ab] > 0)) return false; J[ab]--; FV.cr += e.p; bBack("You", e.p); }
+  else if (e.a) { if ((player.armor || 0) < e.a) { L.splice(i, 1); return false; } player.armor = e.prev; FV.cr += e.p; bBack("You", e.p); }
+  else { if ((e.sl === "pis" ? FV.sec : FV.pri) !== n) { L.splice(i, 1); return false; } bUndo(e); }
+  L.splice(i, 1); blip(420, 0.08, "triangle", 0.12); onSkin(); updHud(); buyRender(); xHud(); return true;
+}
+function fGive(n, by, dp) { // a teammate bought n for you (request): equip it, the teammate gets the refund if you sell it
+  const sl = bSide(n) ? "pis" : "pri", L = bLog(), i = L.findIndex((x) => x.sl === sl);
+  if (i >= 0) { bUndo(L[i]); L.splice(i, 1); }
+  const prev = sl === "pis" ? FV.sec : FV.pri, pa = rw === sl ? { ammo, rsv } : Object.assign({}, slots[sl]);
+  bEquip(n, sl); L.push({ n, p: 0, dp, by, sl, prev, pa }); onSkin(); updHud(); xHud();
+}
+function fReq(n) { // ask the team for n; a teammate with spare credits (price + 400 left over) buys it for you
+  if (!n || !WEAP[n] || !bItem(n) || !(mode === "five" && FV.buy > 0) || n === FV.pri || n === FV.sec) return false;
+  bLog(); if (FV.req === n && FV.reqBy) return false;
+  FV.req = n; FV.reqBy = null; FV.reqNo = false; try { say("Requested " + n, 900); } catch (e) {}
+  if (FV.menu) buyRender(); clearTimeout(fReq.t); fReq.t = setTimeout(() => xReqTry(n), 700); return true;
+}
+function xReqTry(n) {
+  if (FV.req !== n || FV.reqBy || !(FV.buy > 0) || !running || n === FV.pri || n === FV.sec) return;
+  const p = bItem(n)[1], m = (typeof F_MATES !== "undefined" ? F_MATES : []).filter((k) => FV.bs[k] && FV.bs[k].cr >= p + 400).sort((a, b) => FV.bs[b].cr - FV.bs[a].cr)[0];
+  if (!m) FV.reqNo = true;
+  else { const s = FV.bs[m]; s.cr -= p; sbSpend(m, p); FV.reqBy = m; fGive(n, m, p); try { say(m + " bought you a " + n, 1400); } catch (e) {} }
+  if (FV.menu) buyRender();
 }
 function buyMenu(on) {
   on = !!on && mode === "five" && running && FV.buy > 0 && player.hp > 0;
   FV.menu = on; FV.mt = performance.now(); $("xBuy").classList.toggle("on", on); fireHeld = false;
   if (on) { if (document.pointerLockElement) document.exitPointerLock(); buyRender(); } else if (running && !paused) relock();
 }
-// look pass: Valorant weapon stats panel, one pooled DOM node, filled on hover (or first tap on touch) from WEAP/BUY only
+// look pass: Valorant weapon stats panel, one pooled DOM node in the right column, filled on hover / focus (or first tap on touch) from WEAP/BUY only
 const XWS = (() => {
   const P = document.createElement("aside"); P.className = "x-ws"; P.setAttribute("aria-live", "polite"); P.hidden = true;
-  P.innerHTML = '<svg viewBox="0 0 64 20" aria-hidden="true"><path/></svg><h3></h3><p class="x-wsc"></p><p class="x-wsp"><i class="x-cg"></i><b></b></p><table><thead><tr><th></th><th>0–30 m</th><th>30–50 m</th></tr></thead><tbody><tr><th>Head</th><td></td><td></td></tr><tr><th>Body</th><td></td><td></td></tr><tr><th>Leg</th><td></td><td></td></tr></tbody></table><dl></dl>';
-  $("xBuy").appendChild(P);
-  const path = P.querySelector("path"), h = P.querySelector("h3"), c = P.querySelector(".x-wsc"), pr = P.querySelector(".x-wsp b"), td = P.querySelectorAll("td"), dl = P.querySelector("dl");
+  P.innerHTML = '<svg viewBox="0 0 64 20" aria-hidden="true"><path/></svg><h3></h3><p class="x-wsc"></p><p class="x-wsp"><i class="x-cg"></i><b></b></p><table><thead><tr><th>Damage</th><th></th><th></th></tr></thead><tbody><tr><th>Head</th><td></td><td></td></tr><tr><th>Body</th><td></td><td></td></tr><tr><th>Leg</th><td></td><td></td></tr></tbody></table><dl></dl>';
+  const sd = $("xBSd"); if (sd) sd.insertBefore(P, sd.firstChild); else $("xBuy").appendChild(P);
+  const path = P.querySelector("path"), h = P.querySelector("h3"), c = P.querySelector(".x-wsc"), pr = P.querySelector(".x-wsp b"), td = P.querySelectorAll("td"), thh = P.querySelectorAll("thead th"), dl = P.querySelector("dl");
   let cur = "";
   const show = (n) => {
-    const W = WEAP[n]; if (!W) return; P.hidden = false; if (cur === n) return; cur = n;
-    const cat = BUY.find((x) => x[1].some((i) => i[0] === n)), it = cat && cat[1].find((i) => i[0] === n), f = W.ff || [W.body, W.head, W.legs], pl = W.pel ? W.pel + "×" : "";
+    const W = WEAP[n]; if (!W) return; P.hidden = false; FV.sel = n; if (cur === n) return; cur = n;
+    const cat = BUY.find((x) => x[1].some((i) => i[0] === n)), it = cat && cat[1].find((i) => i[0] === n), f = W.ff || [W.body, W.head, W.legs], pl = W.pel ? W.pel + "×" : "", d = W.ff ? W.ffd || 15 : 0;
     if (path) path.setAttribute("d", BUY_SIL[n] || BUY_SIL.Vandal); if (h) h.textContent = n; if (c) c.textContent = cat ? cat[0] : ""; if (pr) pr.textContent = it ? it[1] : "";
-    [W.head, f[1], W.body, f[0], W.legs, f[2]].forEach((v, i) => { if (td && td[i]) td[i].textContent = pl + v; });
-    const sec = /^(Classic|Shorty|Frenzy|Ghost|Sheriff)$/.test(n), rows = [["Fire rate", W.rate + " /s"], ["Magazine", W.mag + " / " + W.mag * 3]];
+    if (thh && thh.length > 2) { thh[1].textContent = d ? "0–" + d + " m" : "All ranges"; thh[2].textContent = d ? d + " m +" : ""; }
+    [W.head, f[1], W.body, f[0], W.legs, f[2]].forEach((v, i) => { if (td && td[i]) td[i].textContent = i % 2 && !d ? "" : pl + v; });
+    const sec = bSide(n), rows = [["Fire rate", (W.spin ? W.spin[0] + "–" + W.spin[1] : +W.rate.toFixed(2)) + " /s"], ["Magazine", W.mag + " / " + W.mag * 3]];
     const pn = xPen(n); rows.push(["Wall pen", pn === XPN.H ? "High" : pn === XPN.M ? "Medium" : "Low"]);
     rows.push(["Run speed", (6.75 * vRunK(n)).toFixed(2) + " m/s"]);
     rows.push(["Equip", xEq(n) + " s"]);
@@ -4092,9 +4197,12 @@ const XWS = (() => {
 })();
 let xTap = false;
 $("xBG").addEventListener("pointerdown", (e) => { xTap = e.pointerType === "touch"; });
-$("xBG").addEventListener("pointerover", (e) => { if (e.pointerType === "touch") return; const b = e.target.closest("button"); if (b && WEAP[b.dataset.n]) XWS.show(b.dataset.n); });
-$("xBG").onclick = (e) => { const b = e.target.closest("button"); if (!b) return; if (xTap && WEAP[b.dataset.n] && XWS.cur !== b.dataset.n) { xTap = false; return XWS.show(b.dataset.n); } xTap = false; if (!b.disabled) fBuy(b.dataset.n); };
-$("xBuy").addEventListener("contextmenu", (e) => { e.preventDefault(); $("xBL").hidden = !$("xBL").hidden; });
+$("xBG").addEventListener("pointerover", (e) => { if (e.pointerType === "touch") return; const b = e.target.closest("button"); if (b && WEAP[b.dataset.n] && FV.sel !== b.dataset.n) { XWS.show(b.dataset.n); buyRender(); } });
+$("xBG").addEventListener("focusin", (e) => { const b = e.target.closest && e.target.closest("button"); if (b && WEAP[b.dataset.n] && FV.sel !== b.dataset.n) { XWS.show(b.dataset.n); buyRender(); } });
+$("xBG").onclick = (e) => { const b = e.target.closest("button"); if (!b) return; if (b.dataset.rq) { xTap = false; return fReq(b.dataset.rq); } if (!b.dataset.n) return;
+  if (xTap && WEAP[b.dataset.n] && XWS.cur !== b.dataset.n) { xTap = false; XWS.show(b.dataset.n); return buyRender(); } xTap = false; if (b.getAttribute("aria-disabled") !== "true") fBuy(b.dataset.n); };
+$("xBTm").onclick = (e) => { const b = e.target.closest("button"); if (b && b.dataset.rq) fReq(b.dataset.rq); };
+$("xBuy").addEventListener("contextmenu", (e) => { e.preventDefault(); const b = e.target.closest && e.target.closest("button"); if (b && b.dataset.n) { fSell(b.dataset.n); return; } $("xBL").hidden = !$("xBL").hidden; });
 mapG = xMG(); mapG.visible = false; scene.add(mapG); solids = []; boxes = [];
 MAPS.five = { g: mapG, solids, boxes };
 // ---- vA zone kit (Ascent + Bind only): own textures + material cache, merged decoration, site letters, plant-zone paint, sign atlas, light pools, crates, lintels, ceilings ----
@@ -7430,14 +7538,17 @@ function jThrow() {
 }
 function jBuyHtml() {
   if (!jOn()) return "";
-  return `<div class="x-bc x-ab"><h4>${J.pick} abilities</h4>` + K().buy.map(([k, n, p]) => {
-    const mx = K().mx[k], full = J[k] >= mx; return `<button data-n="ab:${k}"${full ? ' class="on"' : ""}${!full && FV.cr < p ? " disabled" : ""}>${abIco(J.pick, "cqex".indexOf(k))}${n} (${k.toUpperCase()})<small>${p} cr · ${J[k]}/${mx} charge${mx > 1 ? "s" : ""}${full ? " · Full" : ""}</small></button>`;
-  }).join("") + "</div>";
+  const L = bLog();
+  return `<div class="x-bc xb-abc"><h4>${J.pick} · Abilities</h4><div class="xb-row">` + K().buy.map(([k, n, p]) => {
+    const mx = K().mx[k], h = Math.max(0, J[k] | 0), full = h >= mx, no = !full && FV.cr < p, sb = FV.buy > 0 && L.some((x) => x.ab === k);
+    const pips = Array.from({ length: mx }, (_, i) => `<i${i < h ? ' class="on"' : ""}></i>`).join("");
+    return `<div class="xb-card"><button type="button" data-n="ab:${k}" class="xb-a${full ? " on" : ""}${no ? " xb-no" : ""}${sb ? " xb-sell" : ""}"${no ? ' aria-disabled="true"' : ""} aria-label="${n}, ${p} credits per charge, ${h} of ${mx}"><span class="xb-top">${abIco(J.pick, "cqex".indexOf(k))}<b>${n}</b><kbd>${k.toUpperCase()}</kbd></span><span class="xb-pips">${pips}</span><span class="xb-ft"><span class="x-tp"><i class="x-cg"></i>${p}</span><em>${full ? "Full" : h + " / " + mx}</em></span></button></div>`;
+  }).join("") + "</div></div>";
 }
 function jBuy(k) {
   const it = K().buy.find((x) => x[0] === k); if (!it) return;
   const p = it[2]; if (J[k] >= K().mx[k] || FV.cr < p) return;
-  J[k]++; FV.cr -= p; sbSpend("You", p); blip(700, 0.08, "triangle", 0.15); buyRender(); xHud();
+  J[k]++; FV.cr -= p; bLog().push({ ab: k, p }); sbSpend("You", p); blip(700, 0.08, "triangle", 0.15); buyRender(); xHud();
 }
 function jTick(dt) {
   const on = jOn() && running && $("game").style.display !== "none";
