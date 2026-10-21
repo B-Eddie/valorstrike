@@ -5127,6 +5127,268 @@ function splDress() {
   // 10. subtle zone lights (no shadows): cyan over A, rose over B, warm Mail, amber Mid, cool Vents
   [[0x6ff0ff, 40, 16, 36, 5.5, -29], [0xff6fc0, 40, 16, -36, 5.5, -29], [0xffc27a, 26, 12, 18, 3.4, -4], [0xffb050, 30, 16, 0, 5, 2], [0x9fc0ff, 18, 10, -18, 3, -9.5]].forEach(([c, i, dist, x, y, z]) => { const l = new THREE.PointLight(c, i, dist, 2); l.position.set(x, y, z); l.castShadow = false; mapG.add(l); });
 }
+
+// ---- Breeze + Lotus visual pass (vC): procedural canvas textures, themed zones, plant-zone paint, wall site letters, callout plaques,
+// corridor ceilings + arched mouths, wall trims / windows, crate + barrel clusters (all solid props collide), lights, per-map fog; built frame (XMK = 1)
+const XBL_STAT = {}; // per map, read by work/audit.js: { meshes added by the visual pass, letters: [[site, "wall" | "floor"]], crates: [box refs] }
+function xBLRng(s) { return () => (s = (s * 16807) % 2147483647) / 2147483647; }
+function xBLGrain(g, s, a, r) { const d = g.getImageData(0, 0, s, s), p = d.data; for (let i = 0; i < p.length; i += 4) { const n = (r() - 0.5) * a; p[i] += n; p[i + 1] += n; p[i + 2] += n; } g.putImageData(d, 0, 0); }
+function xBLTex(s, draw, rep) { // uncached canvas texture: parametrised draws (letters, plaques) must not share xTexMk's source-keyed cache
+  const c = document.createElement("canvas"); c.width = s; c.height = rep === "tall" ? s * 2 : s; const g = c.getContext("2d"); draw(g, s, c.height);
+  const t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding; if (rep === true) t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 4; return t;
+}
+function xBLMat(map, col, o) { return new THREE.MeshLambertMaterial(Object.assign({ map, color: col === undefined ? 0xffffff : col }, o || {})); }
+function xBLCount(g) { const a = g.add; let n = 0; g.add = function (...o) { n += o.length; return a.apply(this, o); }; return () => { g.add = a; return n; }; }
+function xBLKit(mg) { // decoration collected per material, merged into one mesh each on flush (no raycast, no collision)
+  const D = new Map();
+  const put = (mat, geo, x, y, z, ry, rx, rz, sc) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.rotation.order = "YXZ"; m.rotation.set(rx || 0, ry || 0, rz || 0); if (sc) m.scale.set(sc[0], sc[1], sc[2]); m.updateMatrixWorld(true); let a = D.get(mat); if (!a) D.set(mat, (a = [])); a.push(m); return m; };
+  const flush = (shadow) => { mg.updateMatrixWorld(true); const inv = new THREE.Matrix4().copy(mg.matrixWorld).invert();
+    D.forEach((arr, mat) => { const mm = new THREE.Mesh(xMergeGeo(arr, inv), mat); mm.name = "xDeco"; mm.raycast = () => {}; mm.castShadow = !!shadow; mm.receiveShadow = true; mm.updateMatrix(); mm.matrixAutoUpdate = false; mg.add(mm); }); D.clear(); };
+  return { put, flush };
+}
+function xBLSolid(mat, geo, x, y, z, ry) { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); if (ry) m.rotation.y = ry; m.castShadow = m.receiveShadow = true; mapG.add(m); solids.push(m); return m; } // static, bullet + decal target
+function xBLCol(x, z, w, d, h, st) { const b = { x1: x - w / 2, x2: x + w / 2, z1: z - d / 2, z2: z + d / 2, h }; boxes.push(b); if (st) st.crates.push(b); return b; }
+function xBLBox(mat, x, z, w, h, d, T, st, y0) { const m = xBLSolid(mat, T ? xUV(new THREE.BoxGeometry(w, h, d), w, h, d, T) : new THREE.BoxGeometry(w, h, d), x, (y0 || 0) + h / 2, z); if (!y0) xBLCol(x, z, w, d, h, st); return m; } // T: metres per texture (0 = one image per face)
+function xBLPad(mat, x, z, w, d, y, T) { const m = new THREE.Mesh(xUV(new THREE.PlaneGeometry(w, d), w, d, undefined, T), mat); m.rotation.x = -Math.PI / 2; m.position.set(x, y, z); m.receiveShadow = true; mapG.add(m); solids.push(m); return m; } // zone floor (decals land on it)
+function xBLLetter(ch, fill, edge) { // painted site letter, alpha-cut so it sits on a wall like paint
+  return xBLTex(256, (g, s) => { g.clearRect(0, 0, s, s); g.font = "900 230px Arial, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle"; g.lineJoin = "round";
+    g.lineWidth = 22; g.strokeStyle = edge; g.strokeText(ch, s / 2, s / 2 + 10); g.fillStyle = fill; g.fillText(ch, s / 2, s / 2 + 10);
+    g.globalCompositeOperation = "destination-out"; const r = xBLRng(ch.charCodeAt(0) * 97); for (let i = 0; i < 140; i++) { g.fillStyle = "rgba(0,0,0," + (0.25 + r() * 0.5) + ")"; g.fillRect(r() * s, r() * s, 2 + r() * 6, 1 + r() * 3); } g.globalCompositeOperation = "source-over"; }, false);
+}
+function xBLWallLetter(st, ch, x, y, z, ry, size, fill, edge) { const m = new THREE.Mesh(new THREE.PlaneGeometry(size, size), xBLMat(xBLLetter(ch, fill, edge), 0xffffff, { alphaTest: 0.5, polygonOffset: true, polygonOffsetFactor: -2 })); m.position.set(x, y, z); m.rotation.y = ry; m.raycast = () => {}; mapG.add(m); st.letters.push([ch, "wall"]); return m; }
+function xBLAtlas(names, bg, fg, rim) { // callout plaques: every name in one 512 x 1024 texture, 16 rows
+  const tex = xBLTex(512, (g, s, h) => { const rh = h / 16; names.forEach((n, i) => { const y = i * rh; g.fillStyle = bg; g.fillRect(0, y, s, rh); g.strokeStyle = rim; g.lineWidth = 6; g.strokeRect(6, y + 6, s - 12, rh - 12);
+    g.fillStyle = fg; g.font = "900 34px Arial, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(n.toUpperCase(), s / 2, y + rh / 2 + 2); }); }, "tall");
+  const mat = xBLMat(tex), geo = (i) => { const p = new THREE.PlaneGeometry(2.6, 0.62), uv = p.attributes.uv; for (let k = 0; k < uv.count; k++) uv.setY(k, (15 - i + uv.getY(k)) / 16); return p; };
+  return { mat, geo, idx: (n) => names.indexOf(n) };
+}
+function xBLArchGeo(span, yS, yT, th) { // spandrel panel of an arched doorway: full width span, from the spring line yS to yT, half-ellipse cut out
+  const s = new THREE.Shape(), hx = span / 2; s.moveTo(-hx, yS); s.lineTo(-hx, yT); s.lineTo(hx, yT); s.lineTo(hx, yS); s.absellipse(0, yS, hx, Math.max(0.3, yT - yS - 0.2), 0, Math.PI, false);
+  const g = new THREE.ExtrudeGeometry(s, { depth: th, bevelEnabled: false, curveSegments: 10 }); g.translate(0, 0, -th / 2); const uv = g.attributes.uv; if (uv) for (let k = 0; k < uv.count; k++) uv.setXY(k, uv.getX(k) / 4, uv.getY(k) / 4); return g;
+}
+// corridor with a 4 m ceiling, a lintel up to the roof line and an arched frame at both mouths. c = [x1, x2, z1, z2]; runs along x when x2 - x1 > z2 - z1
+function xBLCorridor(c, H, wallM, ceilM, floorM, K, trimM) {
+  const [x1, x2, z1, z2] = c, ax = x2 - x1 > z2 - z1, L = ax ? x2 - x1 : z2 - z1, gap = ax ? z2 - z1 : x2 - x1, cx = (x1 + x2) / 2, cz = (z1 + z2) / 2, yC = 4;
+  xBLSolid(ceilM, xUV(new THREE.BoxGeometry(ax ? L : gap, 0.4, ax ? gap : L), ax ? L : gap, 0.4, ax ? gap : L, 3), cx, yC + 0.2, cz);
+  if (floorM) xBLPad(floorM, cx, cz, ax ? L : gap, ax ? gap : L, 0.022, 2);
+  for (const e of [-1, 1]) {
+    const mx = ax ? (e < 0 ? x1 : x2) - e * 0.3 : cx, mz = ax ? cz : (e < 0 ? z1 : z2) - e * 0.3, ry = ax ? Math.PI / 2 : 0;
+    xBLSolid(wallM, xUV(new THREE.BoxGeometry(ax ? 0.6 : gap, H - yC, ax ? gap : 0.6), ax ? 0.6 : gap, H - yC, ax ? gap : 0.6, 4), mx, (H + yC) / 2, mz);
+    xBLSolid(wallM, xBLArchGeo(gap, 2.9, yC, 0.6), mx, 0, mz, ry);
+    if (K && trimM) { const t = new THREE.TorusGeometry(1, 0.09, 6, 16, Math.PI); K.put(trimM, t, mx + (ax ? e * 0.32 : 0), 2.9, mz + (ax ? 0 : e * 0.32), ry, 0, 0, [gap / 2, 0.9, 1]); }
+  }
+}
+function xBLWalls(K, bx, o) { // trims on every wall box: baseboard, painted band, cornice; windows on long exposed faces above head height
+  const walls = bx.filter((b) => b.h >= 4 && Math.min(b.x2 - b.x1, b.z2 - b.z1) >= 0.7), inW = (x, z) => walls.some((b) => x > b.x1 && x < b.x2 && z > b.z1 && z < b.z2); let nw = 0;
+  walls.forEach((b) => { const w = b.x2 - b.x1, d = b.z2 - b.z1, cx = (b.x1 + b.x2) / 2, cz = (b.z1 + b.z2) / 2;
+    K.put(o.base, xUV(new THREE.BoxGeometry(w + 0.14, 0.42, d + 0.14), w + 0.14, 0.42, d + 0.14, 2), cx, 0.21, cz);
+    if (o.band) K.put(o.band, new THREE.BoxGeometry(w + 0.06, 0.14, d + 0.06), cx, o.bandY, cz);
+    if (o.top) K.put(o.top, xUV(new THREE.BoxGeometry(w + 0.28, 0.5, d + 0.28), w + 0.28, 0.5, d + 0.28, 1), cx, b.h - 0.5, cz);
+    if (!o.win || b.h < 6) return;
+    [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(([nx, nz]) => { const Ln = nx ? d : w; if (Ln < 6) return; const n = Math.floor(Ln / o.step);
+      for (let i = 0; i < n && nw < o.max; i++) { const t = (i + 0.5) / n - 0.5, px = nx ? (nx > 0 ? b.x2 : b.x1) : cx + t * w, pz = nz ? (nz > 0 ? b.z2 : b.z1) : cz + t * d, ox = px + nx * 0.9, oz = pz + nz * 0.9;
+        if (inW(ox, oz) || Math.abs(ox) > o.lim[0] || Math.abs(oz) > o.lim[1] || (o.skip && o.skip(ox, oz))) continue; o.win(K, px + nx * 0.01, pz + nz * 0.01, Math.atan2(nx, nz)); nw++; } }); });
+}
+function xBLPlant(K, mat, x, z) { // painted plant-zone outline = inSite() rectangle (14 x 12 m) + corner chevrons
+  const L = new THREE.PlaneGeometry(1, 1), q = (px, pz, w, d, ry) => K.put(mat, L, px, 0.032, pz, ry || 0, -Math.PI / 2, 0, [w, d, 1]);
+  q(x, z - 6, 14, 0.18); q(x, z + 6, 14, 0.18); q(x - 7, z, 0.18, 12); q(x + 7, z, 0.18, 12);
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) for (let k = 0; k < 3; k++) { const o = 0.7 + k * 0.55; q(x + sx * (7 - o / 2), z + sz * (6 - o / 2), 0.14, o * 1.35, sx * sz * Math.PI / 4); }
+}
+function xBLLights(list, hemi) { const g = new THREE.Group(); g.name = "xBLLights"; if (hemi) g.add(new THREE.HemisphereLight(hemi[0], hemi[1], hemi[2])); list.forEach(([x, y, z, c, i, d]) => { const l = new THREE.PointLight(c, i, d, 2); l.position.set(x, y, z); g.add(l); }); mapG.add(g); }
+const XBL_FOG = { lotus: [0xcdd5c2, 30, 112], breeze: [0xdcecec, 42, 140] }; let xBLFogOn = false;
+(window.XHK || (window.XHK = [])).push(function xBLAtmo() { // per-map haze while a Breeze / Lotus match is on screen; useMap's values come back otherwise
+  const f = typeof scene !== "undefined" && scene.fog; if (!f) return;
+  const c = mode === "five" && typeof FV !== "undefined" ? XBL_FOG[FV.map] : null;
+  if (c) { if (f.near !== c[1] || f.far !== c[2]) { f.color.setHex(c[0]); f.near = c[1]; f.far = c[2]; } xBLFogOn = true; }
+  else if (xBLFogOn) { xBLFogOn = false; if (mode !== "surf") { f.color.setHex(FOG_C); f.near = 32; f.far = 90; } }
+});
+// ---- Lotus visual pass (vC): sandstone temple ruins. Textures are built once and shared by every Lotus build ----
+let LOT_M = null;
+function xLotMats() {
+  if (LOT_M) return LOT_M;
+  const mk = (s, draw) => xTexMk(s, draw, xTexRep);
+  const T = {
+    wall: mk(256, (g, s) => { const r = xBLRng(11); g.fillStyle = "#8a6a44"; g.fillRect(0, 0, s, s); // sandstone ashlar, 0.5 m courses
+      for (let y = 0; y < s; y += 32) { let x = (y / 32) % 2 ? -30 : 0; while (x < s) { const w = 44 + r() * 40; g.fillStyle = `hsl(${32 + r() * 7},${40 + r() * 12}%,${56 + r() * 10}%)`; g.fillRect(x + 1.5, y + 1.5, w - 3, 29); g.fillStyle = "rgba(255,240,210,.18)"; g.fillRect(x + 1.5, y + 1.5, w - 3, 3); g.fillStyle = "rgba(70,45,20,.16)"; g.fillRect(x + 1.5, y + 26, w - 3, 4); x += w; } }
+      for (let i = 0; i < 26; i++) { g.fillStyle = "rgba(90,62,34," + (0.06 + r() * 0.1) + ")"; g.fillRect(r() * s, r() * s, 1 + r() * 3, 10 + r() * 40); } xBLGrain(g, s, 18, r); }),
+    court: mk(256, (g, s) => { const r = xBLRng(23); g.fillStyle = "#7d6446"; g.fillRect(0, 0, s, s); // big worn flagstones
+      const c = [[0, 0, 128, 96], [128, 0, 128, 64], [0, 96, 80, 96], [80, 96, 96, 96], [176, 64, 80, 128], [0, 192, 128, 64], [128, 192, 128, 64]];
+      c.forEach(([x, y, w, h]) => { g.fillStyle = `hsl(${30 + r() * 8},${32 + r() * 12}%,${54 + r() * 10}%)`; g.fillRect(x + 2, y + 2, w - 4, h - 4); g.strokeStyle = "rgba(60,40,20,.25)"; g.lineWidth = 1; g.beginPath(); g.moveTo(x + r() * w, y + 2); g.lineTo(x + r() * w, y + h - 2); g.stroke(); });
+      xBLGrain(g, s, 16, r); }),
+    site: mk(256, (g, s) => { const r = xBLRng(31); g.fillStyle = "#cdb48a"; g.fillRect(0, 0, s, s); // polished temple tile with a lotus inlay per tile
+      for (let i = 0; i < 2; i++) for (let j = 0; j < 2; j++) { const x = i * 128 + 64, y = j * 128 + 64; g.strokeStyle = "#8c6a42"; g.lineWidth = 3; g.strokeRect(x - 62, y - 62, 124, 124);
+        g.fillStyle = "rgba(140,100,60,.25)"; for (let k = 0; k < 8; k++) { g.save(); g.translate(x, y); g.rotate((k * Math.PI) / 4); g.beginPath(); g.ellipse(0, -26, 9, 22, 0, 0, 7); g.fill(); g.restore(); }
+        g.fillStyle = "#a07a4a"; g.beginPath(); g.arc(x, y, 8, 0, 7); g.fill(); [[-62, -62], [62, -62], [-62, 62], [62, 62]].forEach(([a, b]) => { g.save(); g.translate(x + a, y + b); g.rotate(Math.PI / 4); g.fillRect(-6, -6, 12, 12); g.restore(); }); }
+      xBLGrain(g, s, 12, r); }),
+    path: mk(256, (g, s) => { const r = xBLRng(41); g.fillStyle = "#6f7f45"; g.fillRect(0, 0, s, s); // grass + packed earth with stepping stones
+      for (let i = 0; i < 260; i++) { g.fillStyle = ["#5f7a3a", "#7d8a4c", "#8a7a52", "#55703a"][i % 4]; g.fillRect(r() * s, r() * s, 2 + r() * 6, 2 + r() * 3); }
+      for (let i = 0; i < 9; i++) { const x = r() * s, y = r() * s, w = 26 + r() * 30; g.fillStyle = `hsl(34,${28 + r() * 10}%,${58 + r() * 8}%)`; g.beginPath(); g.ellipse(x, y, w / 2, w / 2.6, r() * 3, 0, 7); g.fill(); g.strokeStyle = "rgba(60,50,30,.35)"; g.stroke(); }
+      xBLGrain(g, s, 20, r); }),
+    inner: mk(128, (g, s) => { const r = xBLRng(53); for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) { g.fillStyle = (i + j) % 2 ? "#7a6450" : "#9a8264"; g.fillRect(i * 32, j * 32, 32, 32); } g.strokeStyle = "#4a3a2a"; g.lineWidth = 2; for (let k = 0; k <= s; k += 32) { g.beginPath(); g.moveTo(k, 0); g.lineTo(k, s); g.moveTo(0, k); g.lineTo(s, k); g.stroke(); } xBLGrain(g, s, 16, r); }),
+    carve: mk(128, (g, s) => { const r = xBLRng(61); g.fillStyle = "#c9a46e"; g.fillRect(0, 0, s, s); // carved frieze: petal arcs between dentil rows
+      g.fillStyle = "#8f6c40"; for (let x = 0; x < s; x += 16) { g.fillRect(x + 2, 4, 10, 10); g.fillRect(x + 2, s - 14, 10, 10); }
+      g.strokeStyle = "#7c5a32"; g.lineWidth = 4; for (let x = 0; x < s; x += 32) { g.beginPath(); g.arc(x + 16, 70, 15, Math.PI, 0); g.stroke(); g.beginPath(); g.moveTo(x + 16, 70); g.lineTo(x + 16, 90); g.stroke(); }
+      g.fillStyle = "rgba(255,235,200,.25)"; g.fillRect(0, 20, s, 6); xBLGrain(g, s, 14, r); }),
+    crate: mk(128, (g, s) => { const r = xBLRng(71); g.fillStyle = "#7a4e2a"; g.fillRect(0, 0, s, s); // teak crate, brass corners, lotus stamp
+      for (let y = 0; y < s; y += 21) { g.fillStyle = `hsl(25,${42 + r() * 10}%,${30 + r() * 8}%)`; g.fillRect(0, y + 1, s, 19); }
+      g.strokeStyle = "#4a2c14"; g.lineWidth = 10; g.strokeRect(5, 5, s - 10, s - 10); g.fillStyle = "#d1a443"; [[0, 0], [s - 18, 0], [0, s - 18], [s - 18, s - 18]].forEach(([x, y]) => g.fillRect(x, y, 18, 18));
+      g.strokeStyle = "rgba(230,190,110,.7)"; g.lineWidth = 3; for (let k = 0; k < 6; k++) { g.save(); g.translate(64, 66); g.rotate((k * Math.PI) / 3); g.beginPath(); g.ellipse(0, -12, 5, 12, 0, 0, 7); g.stroke(); g.restore(); } xBLGrain(g, s, 18, r); }),
+    tall: mk(128, (g, s) => { const r = xBLRng(73); g.fillStyle = "#6a4426"; g.fillRect(0, 0, s, s); // double stack: two crates, one image
+      for (const y0 of [0, 64]) { for (let y = y0; y < y0 + 64; y += 16) { g.fillStyle = `hsl(26,${40 + r() * 10}%,${28 + r() * 8}%)`; g.fillRect(0, y + 1, s, 14); } g.strokeStyle = "#3e2410"; g.lineWidth = 8; g.strokeRect(4, y0 + 4, s - 8, 56); g.fillStyle = "#c9993c"; g.fillRect(0, y0, 14, 14); g.fillRect(s - 14, y0, 14, 14); }
+      xBLGrain(g, s, 18, r); }),
+    block: mk(128, (g, s) => { const r = xBLRng(79); g.fillStyle = "#b89566"; g.fillRect(0, 0, s, s); g.strokeStyle = "#7c5c36"; g.lineWidth = 4; g.strokeRect(6, 6, s - 12, s - 12); g.strokeRect(20, 20, s - 40, s - 40); // carved stone block
+      g.fillStyle = "rgba(255,240,210,.2)"; g.fillRect(6, 6, s - 12, 6); xBLGrain(g, s, 16, r); }),
+    jali: mk(128, (g, s) => { g.fillStyle = "#2a1e14"; g.fillRect(0, 0, s, s); g.strokeStyle = "#c9a46e"; g.lineWidth = 5; // pierced-stone lattice window
+      for (let k = -s; k < 2 * s; k += 18) { g.beginPath(); g.moveTo(k, 0); g.lineTo(k + s, s); g.moveTo(k + s, 0); g.lineTo(k, s); g.stroke(); } g.lineWidth = 10; g.strokeRect(0, 0, s, s); }),
+    banner: mk(128, (g, s) => { g.fillStyle = "#d8782e"; g.fillRect(0, 0, s, s); g.fillStyle = "#f2c14e"; g.fillRect(0, 10, s, 8); g.fillRect(0, s - 18, s, 8); g.fillStyle = "#8a2a2a"; // saffron banner, lotus emblem
+      for (let k = 0; k < 8; k++) { g.save(); g.translate(64, 64); g.rotate((k * Math.PI) / 4); g.beginPath(); g.ellipse(0, -18, 7, 16, 0, 0, 7); g.fill(); g.restore(); } }),
+  };
+  const L = (c) => new THREE.MeshLambertMaterial({ color: c });
+  LOT_M = { T, wall: xBLMat(T.wall), cap: xBLMat(T.carve, 0x9fae7a), block: xBLMat(T.block), court: xBLMat(T.court, 0xf4e6cc), courtDef: xBLMat(T.court, 0xc8c0b4), path: xBLMat(T.path), inner: xBLMat(T.inner),
+    siteA: xBLMat(T.site, 0xd2ece4), siteB: xBLMat(T.site, 0xffe6b0), siteC: xBLMat(T.site, 0xf5cfc2), moss: xBLMat(T.path, 0x9fbf7a), carve: xBLMat(T.carve), crate: xBLMat(T.crate), tall: xBLMat(T.tall), jali: xBLMat(T.jali), banner: xBLMat(T.banner, 0xffffff, { side: THREE.DoubleSide }),
+    base: xBLMat(T.block, 0x8a7258), dark: L(0x3a2c20), gold: L(0xd8a83a), dome: L(0xd9b98a), roof: L(0xa0583a), leaf: L(0x3f6b34), leaf2: L(0x5a8a3e), bark: L(0x5a4030), barrel: L(0x7c4a26), hoop: L(0x3c3c3c),
+    paint: new THREE.MeshBasicMaterial({ color: 0xf3e3b0, polygonOffset: true, polygonOffsetFactor: -2 }), glow: new THREE.MeshBasicMaterial({ color: 0xffc56a }), water: new THREE.MeshBasicMaterial({ color: 0x5fd0d8 }) };
+  return LOT_M;
+}
+function xLotCrate(x, z, tall, ry) { const M = xLotMats(), s = 1.5, h = tall ? 2.5 : 1.5; return xBLBox(tall ? M.tall : M.crate, x, z, s, h, s, 0, XBL_STAT.lotus); }
+function xLotBarrel(K, x, z) { const M = xLotMats(); xBLSolid(M.barrel, xG("Cylinder", 0.42, 0.42, 1.0, 12), x, 0.5, z); K.put(M.hoop, xG("Cylinder", 0.44, 0.44, 0.06, 12), x, 0.22, z); K.put(M.hoop, xG("Cylinder", 0.44, 0.44, 0.06, 12), x, 0.8, z); xBLCol(x, z, 0.9, 0.9, 1.0, XBL_STAT.lotus); }
+function xLotDress() { // themed zones + props on top of the Lotus blockout (authored = built frame)
+  const M = xLotMats(), st = XBL_STAT.lotus, H = 7, K = xBLKit(mapG), S = xBLKit(mapG), wallSnap = boxes.slice();
+  // zone floors (y staggered so overlaps never z-fight)
+  xBLPad(M.court, 0, 46.5, 108, 17, 0.012, 3); // attacker spawn courtyard
+  xBLPad(M.path, 37, 9.5, 14, 43, 0.012, 4); xBLPad(M.path, -37, 9.5, 14, 43, 0.012, 4); // A / C Main jungle paths
+  xBLPad(M.court, 0, 9.5, 20, 43, 0.014, 3); // B Main processional court
+  xBLPad(M.siteA, 36.5, -28.5, 37, 33, 0.012, 2); xBLPad(M.siteB, 0, -25, 35, 26, 0.012, 2); xBLPad(M.siteC, -36.5, -28.5, 37, 33, 0.012, 2); // A / B / C site halls
+  xBLPad(M.courtDef, 0, -48.5, 108, 13, 0.016, 3); // defender sanctum
+  xBLPad(M.moss, 49.75, -6, 9.5, 12, 0.016, 3); xBLPad(M.moss, -49.75, -6, 9.5, 12, 0.016, 3); // A Tree / C Waterfall pockets
+  for (const k in LSITES) { xBLPlant(K, M.paint, LSITES[k][0], LSITES[k][1]); st.letters.push([k, "floor"]); } // floor letters are xDecal'd by the builder
+  // painted wall letters (boundary faces behind each site, above the platforms) + red site signs at the entries
+  xBLWallLetter(st, "A", 54.47, 4.4, -24, -Math.PI / 2, 4.6, "#f6efe0", "#2f8f8a"); xBLWallLetter(st, "B", 0, 5.2, -54.47, 0, 4.6, "#f6efe0", "#b8862e"); xBLWallLetter(st, "C", -54.47, 4.4, -24, Math.PI / 2, 4.6, "#f6efe0", "#b0503a");
+  xSign(mapG, "A", 30.02, 2.6, -11, Math.PI / 2); xSign(mapG, "C", -30.02, 2.6, -11, -Math.PI / 2); xSign(mapG, "B", 9.98, 2.6, -10, -Math.PI / 2); xSign(mapG, "A", 17.48, 2.6, -24, -Math.PI / 2); xSign(mapG, "C", -17.48, 2.6, -24, Math.PI / 2);
+  // corridor ceilings + arched mouths: A Link, C Link; lintels over the rotating doors and the breakable wall
+  xBLCorridor([10, 30, 0, 4], H, M.wall, M.block, M.inner, K, M.carve); xBLCorridor([-30, -10, -6, -2], H, M.wall, M.block, M.inner, K, M.carve);
+  for (const s of [1, -1]) xBLSolid(M.wall, xUV(new THREE.BoxGeometry(1, 2, 4), 1, 2, 4, 4), s * 18, 6, -28); xBLSolid(M.wall, xUV(new THREE.BoxGeometry(1, 2, 4), 1, 2, 4, 4), 44.5, 6, -6);
+  // rotating-door motif: carved stone wheels on both faces of each door lintel
+  for (const s of [1, -1]) for (const f of [-1, 1]) { const x = s * 18 + f * 0.53; K.put(M.carve, new THREE.TorusGeometry(1.0, 0.12, 6, 18), x, 6, -28, Math.PI / 2); K.put(M.gold, new THREE.CylinderGeometry(0.25, 0.25, 0.08, 10), x, 6, -28, 0, 0, Math.PI / 2); K.put(M.carve, new THREE.TorusGeometry(0.55, 0.07, 6, 14), x, 6, -28, Math.PI / 2); }
+  // trims, cornice friezes, jali windows with sunshades
+  const win = (K2, x, z, ry) => { const c = Math.cos(ry), s = Math.sin(ry), P = (mat, geo, o, y) => K.put(mat, geo, x + s * o, y, z + c * o, ry);
+    P(M.carve, new THREE.BoxGeometry(1.6, 2.2, 0.12), 0.06, 3.7); P(M.jali, new THREE.BoxGeometry(1.15, 1.75, 0.06), 0.13, 3.7); P(M.carve, new THREE.BoxGeometry(2.0, 0.14, 0.6), 0.3, 4.9); P(M.carve, new THREE.BoxGeometry(1.7, 0.12, 0.3), 0.15, 2.55); };
+  const doors = [[18, -28], [-18, -28], [44.5, -6]];
+  xBLWalls(K, wallSnap, { base: M.base, top: M.carve, band: M.carve, bandY: 1.2, win, step: 7, max: 46, lim: [54.6, 54.6], skip: (x, z) => (z > -1 && z < 5 && x > 9 && x < 31) || (z > -7 && z < -1 && x < -9 && x > -31) || doors.some(([a, b]) => Math.hypot(x - a, z - b) < 4) || (Math.abs(z + 24) < 4 && Math.abs(x) > 50) || (Math.abs(x) < 4 && z < -50) });
+  // carved temple pillars (solid, engaged against walls so lanes stay clear), with collision
+  const pil = (x, z) => { xBLSolid(M.carve, xG("Cylinder", 0.42, 0.48, 4.6, 10), x, 2.6, z); K.put(M.block, xG("Box", 1.1, 0.3, 1.1), x, 0.15, z); K.put(M.block, xG("Box", 1.15, 0.35, 1.15), x, 5.05, z); K.put(M.gold, xG("Cylinder", 0.5, 0.5, 0.12, 10), x, 1.2, z); xBLCol(x, z, 1.1, 1.1, 5.2); };
+  [[15, -14], [21, -14], [-15, -14], [-21, -14], [15, -39], [-15, -39], [8.6, -12.6], [-8.6, -12.6], [9.7, 24], [-9.7, 24], [9.7, 8], [-9.7, 14], [30.3, 20], [-30.3, 20], [43.7, 4], [-43.7, 4]].forEach(([x, z]) => pil(x, z));
+  // attacker + defender gateways (torana): beams over the spawn exits, banners
+  for (const zg of [37.5]) { K.put(M.carve, xUV(new THREE.BoxGeometry(17, 0.8, 1.0), 17, 0.8, 1, 1), 0, 5.6, zg); K.put(M.carve, xUV(new THREE.BoxGeometry(18.5, 0.4, 1.3), 18.5, 0.4, 1.3, 1), 0, 6.2, zg); for (const sx of [-6, -2, 2, 6]) K.put(M.gold, new THREE.SphereGeometry(0.28, 8, 6), sx, 6.6, zg); }
+  for (const sx of [-1, 1]) { S.put(M.carve, xG("Cylinder", 0.45, 0.5, 6.4, 10), sx * 8.55, 3.2, 37.5); } // posts sit inside the spawn lobby blocks (x ±8..26): no extra collision
+  [[-12, 38, 0], [12, 38, 0], [-20, 38, 0], [20, 38, 0], [-25, 53.9, Math.PI], [25, 53.9, Math.PI], [-25, -54.0, 0], [25, -54.0, 0]].forEach(([x, z, ry]) => { K.put(M.banner, new THREE.PlaneGeometry(1.3, 3.2), x, 3.6, z + (ry ? -0.05 : 0.05), ry); K.put(M.gold, xG("Cylinder", 0.05, 0.05, 1.6, 6), x, 5.25, z, 0, 0, Math.PI / 2); });
+  // spawn pavilions: roof slab on posts against the back walls (posts collide, roof is above reach)
+  for (const zs of [1, -1]) { const zb = zs * 53.7; for (const x of [-16, -6, 6, 16]) { xBLSolid(M.carve, xG("Cylinder", 0.32, 0.36, 4.2, 10), x, 2.1, zb); xBLCol(x, zb, 0.75, 0.75, 4.4); } xBLSolid(M.block, xUV(new THREE.BoxGeometry(36, 0.45, 2.8), 36, 0.45, 2.8, 3), 0, 4.42, zs * 54.0 - zs * 0.3); K.put(M.roof, new THREE.BoxGeometry(36.6, 0.22, 3.2), 0, 4.78, zs * 53.7); for (let x = -16; x <= 16; x += 4) K.put(M.glow, xG("Sphere", 0.16, 8, 6), x, 3.9, zs * 53.2); }
+  // crate + barrel clusters against walls (every prop collides)
+  [[43.1, 22, 0], [-43.1, 22, 0], [9.1, 24.5, 1], [53.5, -20, 0], [-53.5, -20, 1], [-16.6, -36, 0], [16.6, -36, 0], [50, 51.5, 1], [-50, 51.5, 0], [50, -51.5, 0]].forEach(([x, z, t]) => xLotCrate(x, z, !!t));
+  [[43.3, 20.4], [-43.3, 20.4], [53.6, -21.6], [-53.6, -21.6], [-16.4, -37.6], [16.4, -37.6], [48.4, 51.8]].forEach(([x, z]) => xLotCrate(x, z, false));
+  [[9.4, 22.6], [9.4, 21.6], [-9.4, 18], [-9.4, 17], [-48.4, 52], [-48.4, -52], [52.3, -51.8], [43.4, 18.9]].forEach(([x, z]) => xLotBarrel(S, x, z));
+  // planters with flowering shrubs (solid) along the mains, hanging lanterns, chhatri pavilions on the roof corners
+  const planter = (x, z) => { xBLBox(M.block, x, z, 1.4, 1.0, 1.4, 1, st); S.put(M.leaf2, new THREE.IcosahedronGeometry(0.75, 0), x, 1.45, z); S.put(M.leaf, new THREE.IcosahedronGeometry(0.5, 0), x + 0.25, 1.9, z - 0.15); K.put(M.gold, new THREE.IcosahedronGeometry(0.2, 0), x - 0.3, 1.8, z + 0.3); };
+  [[30.7, 12], [-30.7, 6], [30.7, -2.8], [-9.3, 6], [9.3, 14.5], [43.3, 10], [-43.3, 12]].forEach(([x, z]) => planter(x, z));
+  const chh = (x, z, y) => { for (const [a, b] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) S.put(M.carve, xG("Cylinder", 0.12, 0.12, 1.8, 6), x + a * 0.9, y + 0.9, z + b * 0.9); S.put(M.block, xG("Box", 2.6, 0.25, 2.6), x, y + 1.9, z); S.put(M.dome, new THREE.SphereGeometry(1.15, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2), x, y + 2.0, z); S.put(M.gold, new THREE.ConeGeometry(0.15, 0.7, 6), x, y + 3.45, z); S.put(M.block, xG("Box", 2.4, 0.3, 2.4), x, y + 0.15, z); };
+  [[11, 25], [-11, 25], [29, 5], [-29, -1], [11, -11], [-11, -11], [25, 37], [-25, 37]].forEach(([x, z]) => chh(x, z, H + 0.35));
+  [[20, 3.4, 2], [-20, 3.4, -4], [18.7, 3.6, -24], [-18.7, 3.6, -24]].forEach(([x, y, z]) => { K.put(M.hoop, xG("Cylinder", 0.02, 0.02, 0.6, 4), x, y + 0.45, z); K.put(M.glow, xG("Sphere", 0.2, 8, 6), x, y, z); K.put(M.gold, xG("Cone", 0.26, 0.2, 6), x, y + 0.2, z); });
+  // backdrop: temple spires (shikhara) beyond the walls, inside the fog band
+  for (let k = 0; k < 14; k++) { const a = (k / 14) * Math.PI * 2 + 0.2, r = 70 + (k % 3) * 9, x = Math.sin(a) * r, z = Math.cos(a) * r, sc = 1 + (k % 4) * 0.25;
+    K.put(M.wall, xUV(new THREE.BoxGeometry(9 * sc, 8 * sc, 9 * sc), 9 * sc, 8 * sc, 9 * sc, 4), x, 4 * sc, z, a); for (let t = 0; t < 4; t++) K.put(M.carve, new THREE.BoxGeometry((7 - t * 1.5) * sc, 2.4 * sc, (7 - t * 1.5) * sc), x, (8 + 1.2 + t * 2.4) * sc, z, a);
+    K.put(M.dome, new THREE.CylinderGeometry(1.2 * sc, 1.6 * sc, 0.9 * sc, 10), x, 17.9 * sc, z); K.put(M.gold, new THREE.ConeGeometry(0.4 * sc, 2 * sc, 6), x, 19.3 * sc, z); }
+  K.flush(false); S.flush(true);
+  xBLLights([[20, 3.5, 2, 0xffc06a, 30, 14], [-20, 3.5, -4, 0xffc06a, 30, 14], [0, 3.2, -30, 0xffd9a0, 20, 16], [0, 4, 52.5, 0xffc06a, 25, 18]], [0xd4e8c4, 0x8a6a44, 0.35]);
+}
+// ---- Breeze visual pass (vC): Caribbean island fort, white plaster + turquoise trim, docks, palms. Built (scaled) frame ----
+let BRZ_M = null;
+function xBrzMats() {
+  if (BRZ_M) return BRZ_M;
+  const mk = (s, draw) => xTexMk(s, draw, xTexRep);
+  const T = {
+    wall: mk(256, (g, s) => { const r = xBLRng(101); g.fillStyle = "#f1ece0"; g.fillRect(0, 0, s, s); // lime plaster: soft blotches, hairline cracks, a patch of exposed coral stone
+      for (let i = 0; i < 60; i++) { g.fillStyle = ["rgba(210,200,175,.16)", "rgba(255,255,250,.22)", "rgba(190,175,150,.1)"][i % 3]; g.beginPath(); g.arc(r() * s, r() * s, 6 + r() * 30, 0, 7); g.fill(); }
+      g.strokeStyle = "rgba(120,105,85,.35)"; g.lineWidth = 1; for (let i = 0; i < 5; i++) { let x = r() * s, y = r() * s; g.beginPath(); g.moveTo(x, y); for (let k = 0; k < 5; k++) { x += (r() - 0.5) * 22; y += 6 + r() * 10; g.lineTo(x, y); } g.stroke(); }
+      for (let i = 0; i < 18; i++) { g.fillStyle = "rgba(150,135,110," + (0.04 + r() * 0.06) + ")"; g.fillRect(r() * s, r() * s, 1 + r() * 2, 8 + r() * 30); } xBLGrain(g, s, 12, r); }),
+    deck: mk(256, (g, s) => { const r = xBLRng(103); g.fillStyle = "#4a3422"; g.fillRect(0, 0, s, s); // weathered dock planks
+      for (let y = 0; y < s; y += 16) { const off = r() * s; g.fillStyle = `hsl(${28 + r() * 6},${28 + r() * 12}%,${44 + r() * 12}%)`; g.fillRect(0, y + 1, s, 14); g.fillStyle = "rgba(40,25,10,.5)"; g.fillRect(off, y + 1, 2, 14); g.fillStyle = "#2c2c2c"; g.fillRect((off + 8) % s, y + 4, 2, 2); g.fillRect((off + 8) % s, y + 10, 2, 2); }
+      for (let i = 0; i < 40; i++) { g.fillStyle = "rgba(255,240,220,.07)"; g.fillRect(r() * s, r() * s, 20 + r() * 40, 1); } xBLGrain(g, s, 14, r); }),
+    paver: mk(256, (g, s) => { const r = xBLRng(107); g.fillStyle = "#b8ab90"; g.fillRect(0, 0, s, s); // cream limestone pavers, running bond
+      for (let y = 0; y < s; y += 42.67) { let x = (Math.round(y / 42.67) % 2) * -32; while (x < s) { g.fillStyle = `hsl(${40 + r() * 6},${26 + r() * 12}%,${78 + r() * 8}%)`; g.fillRect(x + 2, y + 2, 60, 38.67); x += 64; } } xBLGrain(g, s, 12, r); }),
+    sand: mk(256, (g, s) => { const r = xBLRng(109); g.fillStyle = "#e6d3a3"; g.fillRect(0, 0, s, s); // beach sand: ripples + specks
+      g.strokeStyle = "rgba(190,165,115,.3)"; g.lineWidth = 2; for (let y = 8; y < s; y += 14) { g.beginPath(); g.moveTo(0, y); for (let x = 0; x <= s; x += 16) g.lineTo(x, y + Math.sin(x / 20 + y) * 3); g.stroke(); }
+      for (let i = 0; i < 300; i++) { g.fillStyle = ["#c9b07a", "#f5e9c8", "#a8916a"][i % 3]; g.fillRect(r() * s, r() * s, 1.5, 1.5); } xBLGrain(g, s, 12, r); }),
+    terra: mk(256, (g, s) => { const r = xBLRng(113); g.fillStyle = "#e9dcc4"; g.fillRect(0, 0, s, s); // terracotta tiles with cream grout
+      for (let i = 0; i < 8; i++) for (let j = 0; j < 8; j++) { g.fillStyle = `hsl(${14 + r() * 8},${48 + r() * 12}%,${50 + r() * 10}%)`; g.fillRect(i * 32 + 2, j * 32 + 2, 28, 28); } xBLGrain(g, s, 12, r); }),
+    mosaic: mk(256, (g, s) => { const r = xBLRng(127); g.fillStyle = "#f2efe6"; g.fillRect(0, 0, s, s); // turquoise + white mosaic with a star rosette
+      for (let i = 0; i < 16; i++) for (let j = 0; j < 16; j++) { const q = (i + j) % 4 === 0 || (i * j) % 7 === 3; g.fillStyle = q ? `hsl(${176 + r() * 10},${50 + r() * 15}%,${42 + r() * 10}%)` : `hsl(40,${10 + r() * 10}%,${88 + r() * 6}%)`; g.fillRect(i * 16 + 1, j * 16 + 1, 14, 14); }
+      g.fillStyle = "#1f8a8a"; g.save(); g.translate(128, 128); for (let k = 0; k < 8; k++) { g.rotate(Math.PI / 4); g.fillRect(-6, 0, 12, 52); } g.restore(); xBLGrain(g, s, 10, r); }),
+    inner: mk(128, (g, s) => { const r = xBLRng(131); g.fillStyle = "#9aa3a0"; g.fillRect(0, 0, s, s); for (let i = 0; i < 90; i++) { g.fillStyle = "rgba(60,70,70," + r() * 0.15 + ")"; g.beginPath(); g.arc(r() * s, r() * s, 2 + r() * 10, 0, 7); g.fill(); } g.strokeStyle = "rgba(50,60,60,.4)"; g.strokeRect(0, 0, s, s); xBLGrain(g, s, 14, r); }),
+    crateT: mk(128, (g, s) => { const r = xBLRng(137); g.fillStyle = "#2a9d9a"; g.fillRect(0, 0, s, s); for (let y = 0; y < s; y += 16) { g.fillStyle = `hsl(178,${45 + r() * 15}%,${36 + r() * 8}%)`; g.fillRect(0, y + 1, s, 14); } // painted crate
+      g.strokeStyle = "#f2ede0"; g.lineWidth = 9; g.strokeRect(5, 5, s - 10, s - 10); g.beginPath(); g.moveTo(10, 10); g.lineTo(s - 10, s - 10); g.stroke(); for (let i = 0; i < 30; i++) { g.fillStyle = "rgba(120,90,60,.35)"; g.fillRect(r() * s, r() * s, 3 + r() * 8, 2); } xBLGrain(g, s, 16, r); }),
+    crateC: mk(128, (g, s) => { const r = xBLRng(139); g.fillStyle = "#e0745a"; g.fillRect(0, 0, s, s); for (let y = 0; y < s; y += 16) { g.fillStyle = `hsl(10,${55 + r() * 15}%,${56 + r() * 8}%)`; g.fillRect(0, y + 1, s, 14); }
+      g.strokeStyle = "#f6efe2"; g.lineWidth = 9; g.strokeRect(5, 5, s - 10, s - 10); g.fillStyle = "#3a2c22"; g.font = "900 30px Arial"; g.textAlign = "center"; g.fillText("RUM", 64, 76); xBLGrain(g, s, 16, r); }),
+    tall: mk(128, (g, s) => { const r = xBLRng(149); g.fillStyle = "#8a6a48"; g.fillRect(0, 0, s, s); for (const y0 of [0, 64]) { for (let y = y0; y < y0 + 64; y += 16) { g.fillStyle = `hsl(30,${30 + r() * 10}%,${40 + r() * 10}%)`; g.fillRect(0, y + 1, s, 14); } g.strokeStyle = y0 ? "#2a9d9a" : "#e0745a"; g.lineWidth = 8; g.strokeRect(4, y0 + 4, s - 8, 56); } xBLGrain(g, s, 16, r); }),
+    shutter: mk(128, (g, s) => { g.fillStyle = "#23918e"; g.fillRect(0, 0, s, s); g.fillStyle = "#1a6f6c"; for (let y = 8; y < s - 8; y += 8) g.fillRect(8, y, s - 16, 3); g.strokeStyle = "#e8f4f0"; g.lineWidth = 6; g.strokeRect(3, 3, s - 6, s - 6); }),
+    stone: mk(128, (g, s) => { const r = xBLRng(151); g.fillStyle = "#cdbf9c"; g.fillRect(0, 0, s, s); for (let i = 0; i < 12; i++) { g.fillStyle = `hsl(42,${18 + r() * 12}%,${66 + r() * 12}%)`; g.beginPath(); g.ellipse(r() * s, r() * s, 12 + r() * 20, 8 + r() * 14, r() * 3, 0, 7); g.fill(); } xBLGrain(g, s, 16, r); }),
+  };
+  const L = (c) => new THREE.MeshLambertMaterial({ color: c });
+  BRZ_M = { T, wall: xBLMat(T.wall), cap: xBLMat(T.terra, 0xd8a080), block: xBLMat(T.stone), deck: xBLMat(T.deck, 0xfff0e0), paver: xBLMat(T.paver, 0xfff0d6), paverW: xBLMat(T.paver, 0xffe4c4), sand: xBLMat(T.sand, 0xfff0d0), terra: xBLMat(T.terra), mosaic: xBLMat(T.mosaic), inner: xBLMat(T.inner),
+    crateT: xBLMat(T.crateT), crateC: xBLMat(T.crateC), tall: xBLMat(T.tall), shutter: xBLMat(T.shutter), teal: L(0x2a9d9a), white: L(0xf6f2e8), glass: L(0x2c4a58), wood: xBLMat(T.deck, 0xd8b890), rope: L(0x8a6a44), bark: L(0x8a6a48),
+    frond: new THREE.MeshLambertMaterial({ color: 0x4f9a3a, side: THREE.DoubleSide }), barrel: L(0x2f6fb0), hoop: L(0x26333c), tank: L(0x3a3f44), bulb: new THREE.MeshBasicMaterial({ color: 0xffe2a0 }),
+    paint: new THREE.MeshBasicMaterial({ color: 0xfdf7e4, polygonOffset: true, polygonOffsetFactor: -2 }), sea: new THREE.MeshBasicMaterial({ color: 0x45c4c8 }) };
+  return BRZ_M;
+}
+function xBrzCrate(x, z, tall, i) { const M = xBrzMats(), s = 1.5; return xBLBox(tall ? M.tall : i % 2 ? M.crateC : M.crateT, x, z, s, tall ? 2.5 : 1.5, s, 0, XBL_STAT.breeze); }
+function xBrzBarrel(K, x, z) { const M = xBrzMats(); xBLSolid(M.barrel, xG("Cylinder", 0.4, 0.4, 1.05, 12), x, 0.525, z); K.put(M.hoop, xG("Cylinder", 0.42, 0.42, 0.06, 12), x, 0.25, z); K.put(M.hoop, xG("Cylinder", 0.42, 0.42, 0.06, 12), x, 0.82, z); xBLCol(x, z, 0.85, 0.85, 1.05, XBL_STAT.breeze); }
+function xBrzPalm(K, x, z, h, lean, solid) { const M = xBrzMats(), n = 5; // segmented curved trunk + fronds; solid palms get a planter that collides
+  for (let k = 0; k < n; k++) { const t = (k + 0.5) / n; K.put(M.bark, xG("Cylinder", 0.17, 0.22, h / n + 0.05, 7), x + lean * t * t * 1.4, (h * (k + 0.5)) / n, z, 0, 0, -lean * t * 0.35); }
+  const tx = x + lean * 1.4, ty = h; for (let k = 0; k < 7; k++) { const a = (k / 7) * Math.PI * 2; K.put(M.frond, xG("Plane", 0.9, 3.2), tx + Math.cos(a) * 1.3, ty - 0.35, z + Math.sin(a) * 1.3, -a + Math.PI / 2, 1.1, 0); }
+  K.put(M.bark, xG("Sphere", 0.32, 6, 5), tx, ty, z);
+  if (solid) { xBLBox(M.block, x, z, 1.4, 1.0, 1.4, 1); xBLCol(x, z, 0.5, 0.5, 6); }
+}
+function xBrzDress() { // themed zones + props over the Breeze blockout; every coordinate here is in the built frame (authored x BZK)
+  const M = xBrzMats(), st = XBL_STAT.breeze, H = 7, K = xBLKit(mapG), S = xBLKit(mapG), wallSnap = boxes.slice(), k = BZK;
+  // zone floors
+  xBLPad(M.deck, 0, 40.8, 105.8, 16, 0.012, 4); // attacker dock
+  xBLPad(M.sand, -43.67, 9.4, 18.46, 46.8, 0.012, 4); // A Main beach path
+  xBLPad(M.paver, 0, -8, 16.4, 81.6, 0.014, 3); // Mid, Mid Top
+  xBLPad(M.paverW, 38.95, 11.5, 12.3, 42.6, 0.012, 3); // B Main
+  xBLPad(M.terra, -30.55, -31.4, 44.7, 34.8, 0.012, 2); // A site courtyard
+  xBLPad(M.mosaic, 30.55, -29.5, 44.7, 38.6, 0.012, 2); // B site plaza
+  xBLPad(M.deck, 0, -44.6, 16.4, 8.4, 0.018, 4); // defender jetty
+  for (const s in BZSITES) { xBLPlant(K, M.paint, BZSITES[s][0], BZSITES[s][1]); st.letters.push([s, "floor"]); }
+  xBLWallLetter(st, "A", -52.86, 4.6, -26.2, Math.PI / 2, 4.6, "#ffffff", "#1f8a8a"); xBLWallLetter(st, "B", 52.86, 4.6, -27.9, -Math.PI / 2, 4.6, "#ffffff", "#d0583e");
+  xSign(mapG, "A", -34.42, 2.6, 0, -Math.PI / 2); xSign(mapG, "B", 32.82, 2.6, -4, Math.PI / 2); xSign(mapG, "A", -8.18, 2.6, -16.5, Math.PI / 2); xSign(mapG, "B", 8.18, 2.6, -16.5, -Math.PI / 2);
+  // corridors: A Cave, Mid Wood Doors, A Hall, B Window (4 m ceilings, arched mouths)
+  const COR = [[-34.44, -8.2, 1.64, 6.56], [8.2, 32.8, -1.64, 3.28], [-21.32, -8.2, -22.14, -18.04], [8.2, 21.32, -22.14, -18.04]];
+  COR.forEach((c) => xBLCorridor(c, H, M.wall, M.wood, M.inner, K, M.teal));
+  // trims: stone baseboard, turquoise dado stripe, terracotta cornice; shuttered windows
+  const win = (K2, x, z, ry) => { const c = Math.cos(ry), s = Math.sin(ry), P = (mat, geo, o, y, a) => K.put(mat, geo, x + s * o + c * (a || 0), y, z + c * o - s * (a || 0), ry);
+    P(M.white, new THREE.BoxGeometry(1.5, 2.1, 0.1), 0.05, 3.8); P(M.glass, new THREE.BoxGeometry(1.1, 1.7, 0.06), 0.1, 3.8); P(M.shutter, new THREE.BoxGeometry(0.58, 1.75, 0.05), 0.14, 3.8, -0.95); P(M.shutter, new THREE.BoxGeometry(0.58, 1.75, 0.05), 0.14, 3.8, 0.95); P(M.teal, new THREE.BoxGeometry(1.7, 0.12, 0.28), 0.14, 2.7); };
+  const inC = (x, z) => COR.some(([a, b, c, d]) => x > a - 1 && x < b + 1 && z > c - 1 && z < d + 1);
+  xBLWalls(K, wallSnap, { base: M.block, top: M.cap, band: M.teal, bandY: 1.0, win, step: 7, max: 50, lim: [52.95, 48.85], skip: (x, z) => inC(x, z) || (Math.abs(z + 27) < 4.5 && Math.abs(x) > 50) });
+  // dock posts + rope rail along the attacker back wall, bollards on the defender jetty
+  xBLCol(0, 48.55, 101, 0.42, 1.4); for (let x = -50; x <= 50; x += 4) { S.put(M.wood, xG("Cylinder", 0.16, 0.18, 1.4, 7), x, 0.7, 48.55); if (x < 50) K.put(M.rope, xG("Cylinder", 0.035, 0.035, 4, 4), x + 2, 1.15, 48.55, 0, 0, Math.PI / 2); }
+  for (const x of [-7.4, -2.5, 2.5, 7.4]) S.put(M.tank, xG("Cylinder", 0.22, 0.26, 0.6, 8), x, 0.3, -48.5);
+  // palms in planters (solid) along the lanes; deco palms outside the walls show over the roofline
+  [[-7.5, 27, 5.8, 0.6, 1], [7.5, 14, 6.2, -0.6, 1], [44.3, 28, 6, -0.5, 1], [-46.8, 26, 5.6, 0.6, 1], [-46.7, 15.5, 6.4, 0.5, 1]].forEach(([x, z, h, l, sd]) => xBrzPalm(S, x, z, h, l, sd));
+  [-45, -25, -5, 15, 35].forEach((x, i) => { xBrzPalm(S, x, 54.5, 9 + (i % 3) * 1.5, 0.8, 0); xBrzPalm(S, -x, -54.5, 9.5 + (i % 2) * 1.5, -0.8, 0); }); [-35, -10, 15, 40].forEach((z, i) => { xBrzPalm(S, 58.5, z, 10 + (i % 2) * 1.5, -0.8, 0); xBrzPalm(S, -58.5, -z, 9 + (i % 3), 0.8, 0); }); // outside the walls
+  // crate + barrel clusters (solid), against walls and off the bot lanes
+  [[-46.7, 9.2, 0], [44.3, 8, 1], [-50.5, -47.4, 0], [50.5, -47.4, 1], [50, 46, 0], [-50, 46, 1], [-7.45, 31.6, 0]].forEach(([x, z, t], i) => xBrzCrate(x, z, !!t, i));
+  [[44.4, 6.4], [-48.9, -47.6], [48.9, -47.6], [48.4, 46.2]].forEach(([x, z], i) => xBrzCrate(x, z, false, i + 1));
+  [[7.6, 26.5], [7.6, 25.5], [-46.9, 11.0], [-51.5, 45.9], [-51.5, 44.9]].forEach(([x, z]) => xBrzBarrel(S, x, z));
+  // roof life: water tanks, string lights across Mid, flag
+  [[-21, 24], [21, 22], [-13, -32], [13, -32]].forEach(([x, z]) => { S.put(M.tank, xG("Cylinder", 1.0, 1.0, 1.8, 10), x, H + 1.25, z); S.put(M.tank, xG("Box", 1.8, 0.35, 1.8), x, H + 0.35 + 0.18, z); });
+  for (const z of [12, 20, 28]) { for (let i = 0; i <= 8; i++) { const t = i / 8, x = -8 + 16 * t, y = 6.4 - Math.sin(t * Math.PI) * 0.9; K.put(M.bulb, xG("Sphere", 0.09, 6, 4), x, y - 0.12, z); if (i < 8) K.put(M.hoop, xG("Cylinder", 0.015, 0.015, 2.05, 3), x + 1, y - Math.cos(t * Math.PI) * 0.15, z, 0, 0, Math.PI / 2); } }
+  K.put(M.white, xG("Cylinder", 0.06, 0.06, 5, 5), -21, H + 2.5 + 0.35, 30); K.put(M.teal, new THREE.PlaneGeometry(1.8, 1.1), -20.05, H + 4.4, 30);
+  // backdrop: lighthouse + fort tower on the islets beyond the walls
+  K.put(M.white, new THREE.CylinderGeometry(2.2, 3.2, 22, 12), -78, 11, -70); K.put(M.teal, new THREE.CylinderGeometry(2.6, 2.6, 0.6, 12), -78, 22.3, -70); K.put(M.bulb, new THREE.CylinderGeometry(1.4, 1.4, 2.2, 10), -78, 23.7, -70); K.put(M.cap, new THREE.ConeGeometry(2.2, 2.4, 12), -78, 26, -70);
+  K.put(M.block, new THREE.CylinderGeometry(7, 8, 12, 14), 82, 6, -40); for (let i = 0; i < 14; i++) { const a = (i / 14) * Math.PI * 2; K.put(M.block, xG("Box", 1.4, 1.4, 1.4), 82 + Math.cos(a) * 7, 12.7, -40 + Math.sin(a) * 7); }
+  K.flush(false); S.flush(true);
+  xBLLights(COR.map(([a, b, c, d]) => [(a + b) / 2, 3.5, (c + d) / 2, 0xffc98a, 26, 14]), [0xfff0d8, 0xe8d6a8, 0.35]);
+}
 // ---- Lotus (5v5), PASS 1 blockout: ~110 x 110 m, attackers south (+z), defenders north (-z); A east, B centre, C west ----
 // lanes: C Main | B Main | A Main split by two blocks with C Link (B↔C) and A Link (A↔B) gaps; A Tree + C Waterfall pockets;
 // doorway gaps left for later: A Door + C Door (site dividers x ±18), breakable wall (A Main ↔ A Tree, x 44.5)
@@ -5140,22 +5402,23 @@ const LOTUS_SPAWN = { atk: 50, def: -50, edge: 46 };
 const LOTUS_TINT = { wall: 0xd9b98a, stone: 0xb89566, moss: 0x6f8a4a, floor: 0xb59a72, water: 0x2f9fa8 };
 let LMT = null;
 function xLotusTint() {
-  LMT = LMT || { wall: new THREE.MeshLambertMaterial({ color: LOTUS_TINT.wall }), stone: new THREE.MeshLambertMaterial({ color: LOTUS_TINT.stone }), moss: new THREE.MeshLambertMaterial({ color: LOTUS_TINT.moss }) };
+  const VM = xLotMats(); LMT = LMT || { wall: VM.wall, stone: VM.block, moss: VM.cap }; // vC: sandstone ashlar walls, carved-stone blocks, mossy frieze caps
   mapG.traverse((o) => { const m = o.material; if (!m || !m.isMaterial) return;
-    if (m === XM.wall) o.material = LMT.wall; else if (m === XM.roof) o.material = LMT.moss; else if (m === XM.metal || m === XM.wood) o.material = LMT.stone; });
+    if (m === XM.wall) o.material = LMT.wall; else if (m === XM.roof) o.material = LMT.moss; else if (m === XM.metal || m === XM.wood) { o.material = LMT.stone; const p = o.geometry && o.geometry.parameters; if (p && Math.max(p.width, p.depth) > 3) xUV(o.geometry, p.width, p.height, p.depth, 2); } });
 }
 function xBuildLotus() {
-  const fl = xFloor(110, 110, new THREE.MeshLambertMaterial({ color: LOTUS_TINT.floor }), 4); fl.rotation.x = -Math.PI / 2; mapG.add(fl); solids.push(fl);
+  XBL_STAT.lotus = { meshes: 0, letters: [], crates: [] };
+  const fl = xFloor(110, 110, xBLMat(xLotMats().T.path, 0xd8c8a0), 4); fl.rotation.x = -Math.PI / 2; mapG.add(fl); solids.push(fl);
   const W = LOTUS_TINT.wall, C = LOTUS_TINT.stone;
-  box(0, -55, 110, 5, 1, W); box(0, 55, 110, 5, 1, W); box(-55, 0, 1, 5, 110, W); box(55, 0, 1, 5, 110, W); // boundary
-  box(17, 34.5, 18, 5, 7, W); box(-17, 34.5, 18, 5, 7, W); // spawn lobby blocks x ±8..26, z 31..38: the old 110 m wide open spawn plaza becomes a Mid exit between them and A / C Lobby lanes around them (north z 38..55, south z 26..31)
-  box(-20, 12, 20, 5, 28, W); box(-20, -9, 20, 5, 6, W); // west block (C Main | B Main), gap z -6..-2 = C Link
-  box(20, 15, 20, 5, 22, W); box(20, -6, 20, 5, 12, W); // east block (B Main | A Main), gap z 0..4 = A Link
-  box(-49.5, 13, 11, 5, 26, W); box(-44.5, -6, 1, 5, 12, W); // west fill + C Waterfall pocket wall (pocket opens north to C)
-  box(49.5, 13, 11, 5, 26, W); box(44.5, -10, 1, 5, 4, W); box(44.5, -2, 1, 5, 4, W); // east fill + A Tree wall, gap z -8..-4 = breakable wall (later)
-  for (const s of [1, -1]) { box(s * 18, -19, 1, 5, 14, W); box(s * 18, -35, 1, 5, 10, W); } // site dividers, gap z -30..-26 = A / C Door (rotating, later)
+  box(0, -55, 110, 8, 1, W); box(0, 55, 110, 8, 1, W); box(-55, 0, 1, 8, 110, W); box(55, 0, 1, 8, 110, W); // boundary (vC: 8 m temple walls, blocks 7 m)
+  box(17, 34.5, 18, 7, 7, W); box(-17, 34.5, 18, 7, 7, W); // spawn lobby blocks x ±8..26, z 31..38: the old 110 m wide open spawn plaza becomes a Mid exit between them and A / C Lobby lanes around them (north z 38..55, south z 26..31)
+  box(-20, 12, 20, 7, 28, W); box(-20, -9, 20, 7, 6, W); // west block (C Main | B Main), gap z -6..-2 = C Link
+  box(20, 15, 20, 7, 22, W); box(20, -6, 20, 7, 12, W); // east block (B Main | A Main), gap z 0..4 = A Link
+  box(-49.5, 13, 11, 7, 26, W); box(-44.5, -6, 1, 7, 12, W); // west fill + C Waterfall pocket wall (pocket opens north to C)
+  box(49.5, 13, 11, 7, 26, W); box(44.5, -10, 1, 7, 4, W); box(44.5, -2, 1, 7, 4, W); // east fill + A Tree wall, gap z -8..-4 = breakable wall (later)
+  for (const s of [1, -1]) { box(s * 18, -19, 1, 7, 14, W); box(s * 18, -35, 1, 7, 10, W); } // site dividers, gap z -30..-26 = A / C Door (rotating, later)
   [[31, -23], [42, -33], [40, -19], [-31, -23], [-42, -33], [-40, -19], [-6, -26], [6, -17], [5, -31], [33, 15], [-41, 15], [5, 15], [-5, -1], [-10, 41], [10, 41], [48, -40], [-48, -40]]
-    .forEach(([x, z], i) => box(x, z, 2, i % 3 ? 1.6 : 2.4, 2, C)); // cover
+    .forEach(([x, z], i) => xLotCrate(x, z, !(i % 3))); // cover (vC: 1.5 m teak crates, every third a 2.5 m double stack)
   box(36, -31, 2.4, 1.2, 1.6, C); box(-36, -31, 2.4, 1.2, 1.6, C); box(0, -25, 2.4, 1.2, 1.6, C); // default plant boxes
   { const wm = new THREE.MeshLambertMaterial({ color: LOTUS_TINT.water, transparent: true, opacity: 0.8 }), pad = (x, z, w, d) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(w, d), wm); m.rotation.x = -Math.PI / 2; m.position.set(x, 0.03, z); m.receiveShadow = true; m.raycast = () => {}; mapG.add(m); };
     pad(-49.5, -6, 9, 10); pad(0, -46.5, 14, 3); pad(49.5, -47, 8, 3); } // water accents: Waterfall pool, B Upper channel, A Top channel
@@ -5166,14 +5429,15 @@ function xBuildLotus() {
   box(-38, -6, 8, 1, 6, C); stairs(-38, -2.5, 6, 1, 1, 3, 0, 1); stairs(-38, -9.5, 6, 1, 1, 3, 0, -1); // C Mound: 1 m mound, ramps north + south
   for (const k in LSITES) xDecal(mapG, k, LSITES[k][0], LSITES[k][1] + 2, 7);
   xLotusTint();
+  { const n = xBLCount(mapG); try { xLotDress(); } finally { XBL_STAT.lotus.meshes = n(); } } // vC visual pass: zones, trims, corridors, props, lights
   // jungle-temple look (decoration only): moss caps on walls, carved pillars, trees; merged per material, no collision/shadows
   {
     const L = (c) => new THREE.MeshLambertMaterial({ color: c }), DM = { moss: L(LOTUS_TINT.moss), pillar: L(0xc9a46e), bark: L(0x5a4030), leaf: L(0x3f6b34), teal: new THREE.MeshBasicMaterial({ color: 0x5fd0d8 }) };
     const D = {}, G = [], P = (k, geo, x, y, z, ry = 0) => { const gg = new THREE.Group(); gg.position.set(x, y, z); gg.rotation.y = ry; G.push(gg); const m = new THREE.Mesh(geo, DM[k]); gg.add(m); (D[k] || (D[k] = [])).push(m); };
-    [[-20, 12, 20, 28], [-20, -9, 20, 6], [20, 15, 20, 22], [20, -6, 20, 12]].forEach(([x, z, w, d]) => P("moss", new THREE.BoxGeometry(w + 0.2, 0.25, d + 0.2), x, 5.12, z));
+    [[-20, 12, 20, 28], [-20, -9, 20, 6], [20, 15, 20, 22], [20, -6, 20, 12]].forEach(([x, z, w, d]) => P("moss", new THREE.BoxGeometry(w + 0.2, 0.25, d + 0.2), x, 7.47, z));
     const gP = new THREE.CylinderGeometry(0.45, 0.55, 4.6, 8), gT = new THREE.CylinderGeometry(0.25, 0.35, 4, 6), gC = new THREE.ConeGeometry(2.2, 3.6, 7), gG = new THREE.BoxGeometry(0.1, 1.2, 1.2);
-    [[15, -14], [21, -14], [-15, -14], [-21, -14], [15, -39], [-15, -39], [8, -12.6], [-8, -12.6]].forEach(([x, z]) => P("pillar", gP, x, 2.3, z));
-    [[52, -6], [-52, -2], [52, 40], [-52, 40], [30, 50], [-30, 50], [52, -50], [-52, -50], [25, -50]].forEach(([x, z]) => { P("bark", gT, x, 2, z); P("leaf", gC, x, 5.4, z); });
+    // (vC: the carved pillars are solid meshes with collision in xLotDress)
+    [[52, -6], [-52, -2], [52, 40], [-52, 40], [30, 50], [-30, 50], [52, -50], [-52, -50], [25, -50]].forEach(([x, z]) => { P("bark", gT, x, 2, z); P("leaf", gC, x, 5.4, z); boxes.push({ x1: x - 0.3, x2: x + 0.3, z1: z - 0.3, z2: z + 0.3, h: 6 }); }); // vC: trunks collide
     [[-54.4, -6, Math.PI / 2], [54.4, -44, -Math.PI / 2]].forEach(([x, z, ry]) => P("teal", gG, x, 2.8, z, ry)); // glowing lotus carvings by the water
     // pass 5 decoration: lotus reliefs, vines, moss, block statues, shrines, lilies
     DM.relief = L(0xe6cfa2); DM.vine = L(0x4c7a3a); DM.statue = L(0x9a8a74); DM.gold = L(0xd8a83a); DM.lily = L(0x5f9a48); DM.flower = L(0xf2b8c6);
@@ -5182,16 +5446,18 @@ function xBuildLotus() {
     [[-9.9, 20, 0], [9.9, 20, 0], [-30.1, 12, 0], [30.1, 10, 0], [0, -54.4, Math.PI / 2], [36, -54.4, Math.PI / 2], [-36, -54.4, Math.PI / 2], [-54.4, 30, Math.PI / 2], [54.4, 30, Math.PI / 2]].forEach(([x, z, ry]) => relief(x, z, ry));
     const gV = new THREE.BoxGeometry(0.08, 1, 0.12);
     [[-9.85, 5], [-9.85, 24], [9.85, 9], [9.85, 22], [-30.15, 3], [30.15, 18], [-54.35, 20], [54.35, 20], [-54.35, -30], [54.35, -24], [-44, -54.35], [44, -54.35], [-6, -54.35], [12, -54.35]].forEach(([x, z], i) => {
-      const n = 3 + (i % 3); for (let k = 0; k < n; k++) { const len = 1.6 + ((i * 7 + k * 3) % 5) * 0.4, ox = Math.abs(x) > 50 || Math.abs(x) < 31 && Math.abs(z) < 50 ? 0 : (k - n / 2) * 0.35, oz = ox ? 0 : (k - n / 2) * 0.35, gg = new THREE.Group(); gg.position.set(x + ox, 5 - len / 2, z + oz); G.push(gg); const m = new THREE.Mesh(gV, DM.vine); m.scale.y = len; gg.add(m); (D.vine || (D.vine = [])).push(m); } });
+      const n = 3 + (i % 3); for (let k = 0; k < n; k++) { const len = 1.6 + ((i * 7 + k * 3) % 5) * 0.4, ox = Math.abs(x) > 50 || Math.abs(x) < 31 && Math.abs(z) < 50 ? 0 : (k - n / 2) * 0.35, oz = ox ? 0 : (k - n / 2) * 0.35, gg = new THREE.Group(); gg.position.set(x + ox, 7 - len / 2, z + oz); G.push(gg); const m = new THREE.Mesh(gV, DM.vine); m.scale.y = len; gg.add(m); (D.vine || (D.vine = [])).push(m); } });
     const gMoss = new THREE.CylinderGeometry(1, 1.1, 0.04, 9);
     [[-46, -10], [-50, 2], [-34, 30], [34, 30], [46, -22], [-10, -44], [10, -48], [26, -46], [-26, -46], [0, 30], [-44, -44], [44, 4]].forEach(([x, z], i) => { const gg = new THREE.Group(); gg.position.set(x, 0.03, z); gg.scale.set(1 + (i % 3) * 0.6, 1, 1 + ((i + 1) % 3) * 0.5); G.push(gg); const m = new THREE.Mesh(gMoss, DM.moss); gg.add(m); (D.moss || (D.moss = [])).push(m); });
     const gBody = new THREE.BoxGeometry(1.4, 1, 2.2), gHead = new THREE.BoxGeometry(1, 0.9, 0.8), gLeg = new THREE.BoxGeometry(0.35, 0.6, 0.35), gTrunk = new THREE.BoxGeometry(0.25, 0.9, 0.25), gBase = new THREE.BoxGeometry(1.8, 0.4, 2.6);
     const statue = (x, z, ry, el) => { P("statue", gBase, x, 0.2, z, ry); const gg = new THREE.Group(); gg.position.set(x, 0, z); gg.rotation.y = ry; G.push(gg); const add = (geo, px, py, pz) => { const m = new THREE.Mesh(geo, DM.statue); m.position.set(px, py, pz); gg.add(m); D.statue.push(m); };
       add(gBody, 0, 1.2, 0); add(gHead, 0, 1.85, 1.2); [[-0.45, -0.8], [0.45, -0.8], [-0.45, 0.8], [0.45, 0.8]].forEach(([a, b]) => add(gLeg, a, 0.7, b)); if (el) add(gTrunk, 0, 1.3, 1.65); };
     D.statue = D.statue || [];
-    [[-8, 44, Math.PI, 1], [8, 44, Math.PI, 0], [-52, -24, Math.PI / 2, 1], [52, -30, -Math.PI / 2, 0], [-8, -52, 0, 0], [8, -52, 0, 1]].forEach(([x, z, ry, el]) => statue(x, z, ry, el));
+    [[-13, 52.5, Math.PI, 1], [13, 52.5, Math.PI, 0], [-52, -24, Math.PI / 2, 1], [52, -30, -Math.PI / 2, 0], [-13, -52.5, 0, 0], [13, -52.5, 0, 1]].forEach(([x, z, ry, el]) => { statue(x, z, ry, el); // vC: moved off the spawn lines, and solid
+      const sx = Math.round(Math.sin(ry)), sz = Math.round(Math.cos(ry)), w = sx ? 3.0 : 1.8, d = sx ? 1.8 : 3.0; XBL_STAT.lotus.crates.push(xBLCol(x + sx * 0.2, z + sz * 0.2, w, d, 2.3)); });
     const gSB = new THREE.BoxGeometry(1.2, 0.8, 0.9), gSR = new THREE.ConeGeometry(0.9, 0.9, 4), gSG = new THREE.CylinderGeometry(0.08, 0.14, 0.5, 6), gSO = new THREE.SphereGeometry(0.16, 8, 6), gSL = new THREE.BoxGeometry(1.25, 0.08, 0.95);
     [[-53.5, 8, Math.PI / 2], [53.5, -14, -Math.PI / 2], [-30, -53.5, 0], [30, -53.5, 0], [-28, 53.5, Math.PI], [28, 53.5, Math.PI]].forEach(([x, z, ry]) => {
+      if (Math.abs(x) < 53 || Math.abs(z) > 10) XBL_STAT.lotus.crates.push(xBLCol(x, z, Math.abs(ry) === Math.PI / 2 ? 1.0 : 1.25, Math.abs(ry) === Math.PI / 2 ? 1.25 : 1.0, 1.3)); // vC: shrines collide
       P("stone", gSB, x, 0.4, z, ry); P("stone", gSR, x, 1.25, z, ry + Math.PI / 4); P("gold", gSG, x, 1.95, z); P("gold", gSL, x, 0.82, z, ry); P("gold", gSO, x, 0.2, z + (Math.abs(ry) === Math.PI / 2 ? 0.7 : 0)); });
     DM.stone = L(LOTUS_TINT.stone);
     const gPad = new THREE.CylinderGeometry(0.42, 0.42, 0.03, 10), gFl = new THREE.ConeGeometry(0.15, 0.22, 6);
@@ -5225,23 +5491,24 @@ function xSpawn(m) { return m === "ascent" ? ASC_SPAWN : m === "lotus" ? LOTUS_S
 const BREEZE_TINT = { wall: 0xf2ede0, stone: 0xd6c9a8, cap: 0x3fa7a0, floor: 0xe3cf9e, water: 0x2fb8b0 };
 let BZMT = null;
 function xBreezeTint() {
-  BZMT = BZMT || { wall: new THREE.MeshLambertMaterial({ color: BREEZE_TINT.wall }), stone: new THREE.MeshLambertMaterial({ color: BREEZE_TINT.stone }), cap: new THREE.MeshLambertMaterial({ color: BREEZE_TINT.cap }) };
+  const VM = xBrzMats(); BZMT = BZMT || { wall: VM.wall, stone: VM.block, cap: VM.cap }; // vC: lime plaster walls, coral-stone blocks, terracotta caps
   mapG.traverse((o) => { const m = o.material; if (!m || !m.isMaterial) return;
-    if (m === XM.wall) o.material = BZMT.wall; else if (m === XM.roof) o.material = BZMT.cap; else if (m === XM.metal || m === XM.wood) o.material = BZMT.stone; });
+    if (m === XM.wall) o.material = BZMT.wall; else if (m === XM.roof) o.material = BZMT.cap; else if (m === XM.metal || m === XM.wood) { o.material = BZMT.stone; const p = o.geometry && o.geometry.parameters; if (p && Math.max(p.width, p.depth) > 3) xUV(o.geometry, p.width, p.height, p.depth, 2); } });
 }
 function xBuildBreeze() {
   XMK = BZK; // box() scales this builder's authored coordinates (reset before the callouts; xLazyMap's finally resets it too)
-  const fl = xFloor(130 * BZK, 120 * BZK, new THREE.MeshLambertMaterial({ color: BREEZE_TINT.floor }), 4); fl.rotation.x = -Math.PI / 2; mapG.add(fl); solids.push(fl);
+  XBL_STAT.breeze = { meshes: 0, letters: [], crates: [] };
+  const fl = xFloor(130 * BZK, 120 * BZK, xBLMat(xBrzMats().T.sand), 4); fl.rotation.x = -Math.PI / 2; mapG.add(fl); solids.push(fl);
   const W = BREEZE_TINT.wall, C = BREEZE_TINT.stone;
-  box(0, -60, 130, 5, 1, W); box(0, 60, 130, 5, 1, W); box(-65, 0, 1, 5, 120, W); box(65, 0, 1, 5, 120, W); // boundary
-  box(-26, 24, 32, 5, 32, W); box(-26, -3, 32, 5, 10, W); // west block (A Main | Mid), gap z 2..8 = A Cave
-  box(25, 22, 30, 5, 36, W); box(25, -5, 30, 5, 6, W); box(60, 20, 10, 5, 40, W); // east block (Mid | B Main), gap z -2..4 = Mid Wood Doors; east fill
-  for (const s of [1, -1]) { box(s * 18, -15, 16, 5, 14, W); box(s * 18, -38, 16, 5, 22, W); } // site dividers, gap z -27..-22 = A Hall / B Window
-  box(55, -12, 20, 5, 1, W); // B Elbow wall: B Main turns west at z -12
-  box(-61.5, 24, 7, 5, 32, W); // A Main west fill (authored x -65..-58, z 8..40): narrows A Lobby / A Main from 23 m to 16 m (13 m built)
-  box(38, -32, 1.2, 5, 10, W); // big B Wall across the site
+  box(0, -60, 130, 8, 1, W); box(0, 60, 130, 8, 1, W); box(-65, 0, 1, 8, 120, W); box(65, 0, 1, 8, 120, W); // boundary (vC: 8 m fort walls, buildings 7 m)
+  box(-26, 24, 32, 7, 32, W); box(-26, -3, 32, 7, 10, W); // west block (A Main | Mid), gap z 2..8 = A Cave
+  box(25, 22, 30, 7, 36, W); box(25, -5, 30, 7, 6, W); box(60, 20, 10, 7, 40, W); // east block (Mid | B Main), gap z -2..4 = Mid Wood Doors; east fill
+  for (const s of [1, -1]) { box(s * 18, -15, 16, 7, 14, W); box(s * 18, -38, 16, 7, 22, W); } // site dividers, gap z -27..-22 = A Hall / B Window
+  box(55, -12, 20, 7, 1, W); // B Elbow wall: B Main turns west at z -12
+  box(-61.5, 24, 7, 7, 32, W); // A Main west fill (authored x -65..-58, z 8..40): narrows A Lobby / A Main from 23 m to 16 m (13 m built)
+  box(38, -32, 1.2, 6, 10, W); // big B Wall across the site
   box(-48, -26, 3, 2.4, 3, C); box(-38, -38, 3, 2.4, 3, C); // A Pyramids (bases)
-  [[4, 22, 1.6], [-4, 8, 1.6], [-5, -16, 1.6], [-54, 10, 1.6], [-46, -2, 2.4], [44, 24, 1.6], [50, 8, 2.4], [52, -28, 2.4], [-56, -30, 1.6]].forEach(([x, z, h]) => box(x, z, 2, h, 2, C)); // cover
+  [[4, 22, 1.6], [-4, 8, 1.6], [-5, -16, 1.6], [-54, 10, 1.6], [-46, -2, 2.4], [44, 24, 1.6], [50, 8, 2.4], [52, -28, 2.4], [-56, -30, 1.6]].forEach(([x, z, h], i) => xBrzCrate(x * BZK, z * BZK, h > 2, i)); // cover (vC: built frame, 1.5 m painted crates / 2.5 m double stacks)
   box(6, -20, 4, 2.4, 2, C); box(44, -44, 3, 1.6, 2, C); // Mid Nest, B back cover
   { const wm = new THREE.MeshLambertMaterial({ color: BREEZE_TINT.water, transparent: true, opacity: 0.8 }), pad = (x, z, w, d) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(w, d), wm); m.rotation.x = -Math.PI / 2; m.position.set(x * BZK, 0.03, z * BZK); m.scale.set(BZK, BZK, 1); m.receiveShadow = true; m.raycast = () => {}; mapG.add(m); };
     pad(-62.5, -30, 4, 50); pad(62.5, -34, 4, 42); pad(0, -58.5, 40, 2); } // teal water edges: A shore, B shore, defender beach
@@ -5252,7 +5519,7 @@ function xBuildBreeze() {
     const L = (c) => new THREE.MeshLambertMaterial({ color: c }), DM = { cap: L(BREEZE_TINT.cap), lime: L(0xe8e0cc), bark: L(0x8a6a48), frond: new THREE.MeshLambertMaterial({ color: 0x4f8a3a, side: THREE.DoubleSide }), wood: L(0x7a5232),
       sea: new THREE.MeshBasicMaterial({ color: 0x5ccfd0, fog: false, transparent: true, opacity: 0.7, depthWrite: false }) };
     const D = {}, G = [], P = (k, geo, x, y, z, ry = 0, rx = 0) => { const gg = new THREE.Group(); gg.position.set(x, y, z); gg.rotation.set(rx, ry, 0); G.push(gg); const m = new THREE.Mesh(geo, DM[k]); gg.add(m); (D[k] || (D[k] = [])).push(m); };
-    [[-26, 24, 32, 32], [-26, -3, 32, 10], [25, 22, 30, 36], [25, -5, 30, 6], [18, -15, 16, 14], [-18, -15, 16, 14], [18, -38, 16, 22], [-18, -38, 16, 22]].forEach(([x, z, w, d]) => P("cap", new THREE.BoxGeometry(w + 0.2, 0.2, d + 0.2), x, 5.1, z));
+    [[-26, 24, 32, 32], [-26, -3, 32, 10], [25, 22, 30, 36], [25, -5, 30, 6], [18, -15, 16, 14], [-18, -15, 16, 14], [18, -38, 16, 22], [-18, -38, 16, 22]].forEach(([x, z, w, d]) => P("cap", new THREE.BoxGeometry(w + 0.2, 0.2, d + 0.2), x, 7.45, z));
     const gPy = new THREE.ConeGeometry(2.3, 2, 4); [[-48, -26], [-38, -38]].forEach(([x, z]) => P("lime", gPy, x, 3.4, z, Math.PI / 4));
     const gT = new THREE.CylinderGeometry(0.18, 0.3, 6, 6), gF = new THREE.ConeGeometry(2.6, 0.9, 7);
     // pass 2: palms sit by the boundary, all ≥1 m from nav lanes; each trunk gets a thin 0.6 m collision post in the box grid (no mesh)
@@ -5277,6 +5544,7 @@ function xBuildBreeze() {
     Object.keys(D).forEach((k) => { const mm = new THREE.Mesh(xMergeGeo(D[k], inv), DM[k]); mm.name = "xDeco"; mm.raycast = () => {}; mm.castShadow = mm.receiveShadow = false; mm.scale.set(BZK, 1, BZK); mm.updateMatrix(); mm.matrixAutoUpdate = false; mapG.add(mm); });
   }
   XMK = 1;
+  { const n = xBLCount(mapG); try { xBrzDress(); } finally { XBL_STAT.breeze.meshes = n(); } } // vC visual pass (built frame): zones, trims, corridors, props, lights
   BREEZE_CALLOUTS.forEach(([t, x, z]) => xCallout(t, x, z));
   try { xFitSun(mapG); } catch (e) {} // Breeze shadow-camera fit: ~107 x 98 m built incl. spawns at z ±44
 }

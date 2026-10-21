@@ -1459,6 +1459,32 @@ if (!NO3) {
   if (!R) report.push({ label: "vB map visuals audit", el: true, handler: true, pass: false, cond: false, errs: err });
 }
 
+// ---------- vC maps visual (Breeze + Lotus): wall + floor site letters, visual-pass mesh budget, crate-like collider heights, spawns clear of colliders, sites reachable ----------
+if (!NO3) {
+  for (const k of ["breeze", "lotus"]) {
+    let r = null, err = [];
+    try { r = JSON.parse(vm.runInContext("__xe", context)(`(() => { try {
+      xBuildMap("${k}"); const M = FMAP["${k}"], st = XBL_STAT["${k}"], bx = M.boxes, sp = xSpawn("${k}"), P = ${k === "lotus" ? "LSITES" : "BZSITES"}, bad = [];
+      if (!st) return JSON.stringify({ bad: ["no visual-pass stats"] });
+      for (const s in P) for (const kind of ["wall", "floor"]) if (!st.letters.some(([c, t]) => c === s && t === kind)) bad.push("site " + s + " missing " + kind + " letter");
+      if (!(st.meshes > 20 && st.meshes <= 400)) bad.push("visual-pass meshes " + st.meshes + " (budget 20-400)");
+      const crateLike = (b) => { const w = b.x2 - b.x1, d = b.z2 - b.z1, h = b.h; return h > 0.3 && h < 4 && Math.min(w, d) >= 0.8 && Math.max(w, d) <= 3.2 && Math.max(w, d) / Math.min(w, d) <= 2.5; };
+      let nc = 0; bx.forEach((b) => { if (!crateLike(b)) return; nc++; if (b.h < 1 || b.h > 3.2) bad.push("crate-like collider h " + b.h + " at " + ((b.x1 + b.x2) / 2).toFixed(1) + "," + ((b.z1 + b.z2) / 2).toFixed(1)); });
+      st.crates.forEach((b) => { if (bx.indexOf(b) < 0) bad.push("tracked prop collider missing from the collision list"); });
+      if (st.crates.length < 10) bad.push("only " + st.crates.length + " visual-pass props collide");
+      for (const z of [sp.atk, -sp.atk]) for (let x = -8; x <= 8; x += 2) bx.forEach((b) => { if (b.h > 0.3 && x > b.x1 - 0.4 && x < b.x2 + 0.4 && z > b.z1 - 0.4 && z < b.z2 + 0.4) bad.push("collider over spawn (" + x + "," + z + ")"); });
+      const keep = Object.assign({}, SITES); for (const s in SITES) delete SITES[s]; Object.assign(SITES, P);
+      const keepB = boxes; let G; boxes = bx; try { G = xgBuild("${k}"); } finally { boxes = keepB; for (const s in SITES) delete SITES[s]; Object.assign(SITES, keep); }
+      const near = (x, z) => { let bi = -1, bd = 1e9; G.N.forEach((p, i) => { const d = Math.hypot(p[0] - x, p[1] - z); if (d < bd) { bd = d; bi = i; } }); return bd < 8 ? bi : -1; };
+      const reach = (s) => { const seen = new Set([s]), q = [s]; while (q.length) { const u = q.pop(); G.adj[u].forEach(([v]) => { if (!seen.has(v)) { seen.add(v); q.push(v); } }); } return seen; };
+      for (const side of [sp.atk, -sp.atk]) { const s0 = near(0, side); if (s0 < 0) { bad.push("no nav node near spawn z " + side); continue; } const R = reach(s0); for (const s in P) { const e = near(P[s][0], P[s][1]); if (e < 0 || !R.has(e)) bad.push("site " + s + " unreachable from spawn z " + side); } }
+      return JSON.stringify({ bad, meshes: st.meshes, crates: nc, props: st.crates.length });
+    } catch (e) { return JSON.stringify({ bad: [String(e.stack || e).slice(0, 300)] }); } })()`)); } catch (e) { err.push(String(e).slice(0, 300)); }
+    const ok = !!r && !r.bad.length && !err.length;
+    report.push({ label: `vC map visual ${k}: wall + floor site letters, visual pass ${r ? r.meshes : "?"} meshes (budget 400), ${r ? r.crates : "?"} crate-like colliders all 1-3.2 m tall (${r ? r.props : "?"} solid props), spawns clear of colliders, every site reachable on the nav graph`, el: true, handler: true, cond: ok, pass: ok, errs: (r ? r.bad : []).concat(err) });
+  }
+}
+
 // ---------- print ----------
 const bad = report.filter((r) => !r.pass);
 console.log(`\n=== audit (${MID ? "THREE loads, 3D init throws" : NO3 ? "THREE missing" : "THREE stub loaded"}) — ${report.length} checks, ${bad.length} failing ===`);
