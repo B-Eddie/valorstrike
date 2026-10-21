@@ -1400,6 +1400,37 @@ if (!NO3) {
   if (!R) report.push({ label: "Map scale audit", el: true, handler: true, pass: false, cond: false, errs: err });
 }
 
+// ---------- vA maps visual (Ascent + Bind): site letters + plant paint, mesh budget, crate-like collider heights, spawns clear of colliders, sites reachable, Bind bot routes clear ----------
+if (!NO3) {
+  let R = null, err = [];
+  try { R = JSON.parse(vm.runInContext("__xe", context)(`(() => { const out = [], keepB = boxes, keepS = Object.assign({}, SITES);
+    try { xBuildMap("bind");
+      for (const k of ["ascent", "bind"]) {
+        const V = ASC_VIS[k], bx = FMAP[k].boxes, sp = xSpawn(k), P = k === "ascent" ? ASC_SITES : { A: [-20, -21], B: [20, -21] }, bad = [];
+        for (const s of ["A", "B"]) { if (!V.letters.some((l) => l.ch === s && l.at === "wall")) bad.push("no wall letter " + s); if (!V.letters.some((l) => l.ch === s && l.at === "floor")) bad.push("no floor letter " + s);
+          const z = V.zones.find((q) => q.site === s); if (!z || Math.abs(z.x - P[s][0]) > 0.01 || Math.abs(z.z - P[s][1]) > 0.01) bad.push("plant paint " + s + " missing or off the plant rect"); }
+        if (!(V.adds > 0 && V.adds <= 600)) bad.push("map meshes added " + V.adds + " (budget 600)");
+        if (!(V.crates >= 10)) bad.push("only " + V.crates + " crate props");
+        if (!(V.ceil >= 2)) bad.push("only " + V.ceil + " ceilings");
+        const crateLike = bx.filter((b) => b.crate || (!b.step && b.h > 0.3 && BH(b) < 4 && Math.max(b.x2 - b.x1, b.z2 - b.z1) <= 3.5));
+        crateLike.forEach((b) => { if (!(b.h >= 1 && b.h <= 3.2)) bad.push("crate-like collider " + b.h + " m tall at " + ((b.x1 + b.x2) / 2).toFixed(1) + "," + ((b.z1 + b.z2) / 2).toFixed(1)); });
+        for (const z of [sp.atk, -sp.atk]) for (let x = -8; x <= 8; x += 2) bx.forEach((b) => { if (b.h > 0 && x > b.x1 - 0.4 && x < b.x2 + 0.4 && z > b.z1 - 0.4 && z < b.z2 + 0.4) bad.push("collider over spawn (" + x + "," + z + ")"); });
+        let N, adj; boxes = bx;
+        if (k === "ascent") { const ks = Object.keys(ASC_NODE); N = ks.map((q) => ASC_NODE[q]); adj = N.map(() => []);
+          ASC_EDGE.forEach(([a, b]) => { const i = ks.indexOf(a), j = ks.indexOf(b); if (!ascClear(N[i][0], N[i][1], N[j][0], N[j][1])) bad.push("nav edge " + a + "-" + b + " blocked"); else { adj[i].push([j]); adj[j].push([i]); } }); }
+        else { for (const s in SITES) delete SITES[s]; Object.assign(SITES, P); const G = xgBuild(k); N = G.N; adj = G.adj;
+          boxes = bx.filter((b) => b.vA); for (const r of XA.bind.A.concat(XA.bind.B)) { const W = XR[r]; for (let i = 1; i < W.length; i++) if (!xgClear(W[i - 1][0], W[i - 1][1], W[i][0], W[i][1], 0.4)) bad.push("bot route " + r + " leg " + i + " blocked by a new prop"); } }
+        boxes = keepB;
+        const near = (x, z) => { let bi = -1, bd = 1e9; N.forEach((p, i) => { const d = Math.hypot(p[0] - x, p[1] - z); if (d < bd) { bd = d; bi = i; } }); return bi; };
+        const reach = (s) => { const seen = new Set([s]), st = [s]; while (st.length) { const u = st.pop(); adj[u].forEach(([v]) => { if (!seen.has(v)) { seen.add(v); st.push(v); } }); } return seen; };
+        for (const z of [sp.atk, -sp.atk]) { const S = reach(near(0, z)); for (const s in P) if (!S.has(near(P[s][0], P[s][1]))) bad.push("site " + s + " unreachable from spawn z " + z); }
+        out.push({ k, adds: V.adds, crates: crateLike.length, letters: V.letters.length, ceil: V.ceil, bad });
+      } } finally { boxes = keepB; for (const s in SITES) delete SITES[s]; Object.assign(SITES, keepS); }
+    return JSON.stringify(out); })()`)); } catch (e) { err.push(String(e.stack || e).slice(0, 400)); }
+  for (const m of R || []) report.push({ label: `vA maps visual ${m.k}: ${m.letters} site letters, plant paint on both sites, ${m.adds} meshes added (<= 600), ${m.crates} crate-like colliders all 1-3.2 m, ${m.ceil} ceilings, spawns clear, sites reachable` + (m.k === "bind" ? ", bot routes clear of new props" : ""), el: true, handler: true, cond: !m.bad.length, pass: !m.bad.length, errs: m.bad });
+  if (!R || R.length !== 2) report.push({ label: "vA maps visual audit (Ascent + Bind)", el: true, handler: true, pass: false, cond: false, errs: err });
+}
+
 // ---------- print ----------
 const bad = report.filter((r) => !r.pass);
 console.log(`\n=== audit (${MID ? "THREE loads, 3D init throws" : NO3 ? "THREE missing" : "THREE stub loaded"}) — ${report.length} checks, ${bad.length} failing ===`);
