@@ -1885,6 +1885,83 @@ if (!NO3) {
   try { xe("annClear(); running = false; true"); toLobby(); } catch (e) {}
 }
 
+// ---------- bug sweep 2 ----------
+if (!NO3) {
+  const xe = vm.runInContext("__xe", context);
+  const B2 = (label, f) => { phase = "bugs2 " + label; const e0 = errors.length; let r; try { r = f(); } catch (e) { r = "threw: " + String((e && e.stack) || e).split("\n").slice(0, 2).join(" | ").slice(0, 300); }
+    const errs = []; if (r !== true) errs.push(String(r).slice(0, 400)); errors.slice(e0).forEach((e) => errs.push(e.where + ": " + e.msg.slice(0, 200)));
+    report.push({ label: "bugs2: " + label, el: true, handler: true, cond: r === true, pass: !errs.length, errs }); lastErr = errors.length; lastX = xErrCalls.length; };
+  const f5 = '(() => { FV.pick = "ascent"; FV.srOn = 0; FV.dm = false; FV.tdm = false; FV.esc = false; window.xSwift = false; startFive(); clearTimeout(FV.to); FV.buy = 0; FV.menu = false; player.hp = 100; paused = false; running = true; window.xLdOn = false; return true; })()';
+  const start5 = () => { toLobby(); xe(f5); advance(60); xe("FV.buy = 0; FV.menu = false; player.hp = 100; running = true; paused = false; window.xLdOn = false; true"); return xe("mode === 'five' && running && allies.length === 4 && bots.length === 5"); };
+  const key = (t, code, k, tr) => dispatch(win, mkEvent(t, { code, key: k || "", isTrusted: tr !== false }));
+  B2("comms wheel runs in the game scope: holding Period in a live 5v5 opens the wheel, releasing closes it", () => {
+    if (!start5()) return "5v5 did not start"; key("keydown", "Period", ".");
+    if (!$("xCm").classList.contains("on")) return "wheel did not open (block could not see running / player)";
+    key("keyup", "Period", "."); return !$("xCm").classList.contains("on") || "wheel did not close"; });
+  B2("career record reads the game's scoreboard (kills / agent from SB and J, map from sbScore)", () => {
+    const st = {}; win.__ls = { getItem: (k) => (k in st ? st[k] : null), setItem: (k, v) => { st[k] = String(v); }, removeItem: (k) => { delete st[k]; } };
+    try { if (!start5()) return "5v5 did not start"; xe("SB.You.k = 7; SB.You.d = 3; SB.You.hs = 2; J.pick = 'Sova'; true");
+      win.xCareerRec({ result: "win", mode: "five", score: "13 – 5" }); const H = JSON.parse(st["vs.career"] || "[]"), r = H[0] || {};
+      if (r.k !== 7 || r.d !== 3) return "kills / deaths " + r.k + " / " + r.d; if (r.ag !== "Sova") return "agent " + r.ag; if (!r.mp || r.mp === "5v5") return "map " + r.mp; return true; }
+    finally { delete win.__ls; xe("J.pick = 'Jett'; true"); } });
+  B2("loading screen lists both rosters of the built match (window.xLdInfo bridge)", () => {
+    if (!start5()) return "5v5 did not start"; const I = win.xLdInfo && win.xLdInfo(); if (!I || I.A.length !== 4 || I.B.length !== 5) return "xLdInfo " + JSON.stringify(I && [I.A.length, I.B.length]);
+    win.xMatchLoad(() => {}, "ascent", "TEST", true); const nA = $("xLdA").querySelectorAll("li").length, nB = $("xLdB").querySelectorAll("li").length; advance(1500); xe("window.xLdOn = false; true");
+    return (nA === 5 && nB === 5) || "tiles " + nA + " / " + nB; });
+  B2("loading screen clears held keys and fire (bridge into the game scope)", () => {
+    if (!start5()) return "5v5 did not start"; xe("keys.KeyW = true; fireHeld = true; true"); win.xMatchLoad(() => {}, "ascent", "TEST", true);
+    const k = xe("JSON.stringify([!!keys.KeyW, fireHeld])"); advance(1500); xe("window.xLdOn = false; true"); return k === "[false,false]" || "still held " + k; });
+  B2("Esc while a keybind row waits cancels the rebind and keeps the game paused", () => {
+    if (!start5()) return "5v5 did not start"; xe("pause(); true"); advance(400); if (xe("paused") !== true) return "did not pause";
+    const b = doc.querySelector('#xKb button[data-a="ping"]'); if (!b) return "no ping row"; b.click(); if (xe("xKbWait") !== "ping") return "row not waiting";
+    key("keydown", "Escape", "Escape"); const r = xe("JSON.stringify([paused, xKbWait])"); xe("resume(); XS.keys = xKbDef(); xKbBuild(); true"); return r === "[true,null]" || "paused / wait " + r; });
+  B2("a rebound action's old physical key is ignored by early capture handlers (buy moved B → N)", () => {
+    if (!start5()) return "5v5 did not start"; xe("XS.keys.buy = 'KeyN'; xKbBuild(); FV.buy = 20; FV.menu = false; true");
+    try { key("keydown", "KeyB", "b"); key("keyup", "KeyB", "b"); if (xe("FV.menu")) return "physical B still opened the buy menu";
+      key("keydown", "KeyN", "n"); key("keyup", "KeyN", "n"); if (!xe("FV.menu")) return "N did not open the buy menu"; return true; }
+    finally { xe("buyMenu(false); FV.buy = 0; XS.keys = xKbDef(); xKbBuild(); true"); } });
+  B2("settings (sensitivity, difficulty) are saved to localStorage vs.set and loaded on start", () => {
+    const st = {}; win.__ls = { getItem: (k) => (k in st ? st[k] : null), setItem: (k, v) => { st[k] = String(v); }, removeItem: (k) => { delete st[k]; } };
+    try { const sl = $("sSens"); sl.value = "2.4"; dispatch(sl, mkEvent("input")); advance(20); const o = JSON.parse(st["vs.set"] || "{}"); if (o.sens !== 2.4) return "sens not saved: " + st["vs.set"];
+      const hb = doc.querySelector('.seg[data-key="diff"] button[data-v="hard"]'); hb.click(); advance(20); if (JSON.parse(st["vs.set"]).diff !== "hard") return "difficulty not saved";
+      doc.querySelector('.seg[data-key="diff"] button[data-v="normal"]').click(); sl.value = "1.6"; dispatch(sl, mkEvent("input"));
+      return /localStorage\.getItem\(K\)/.test(html) || "no load path"; } finally { delete win.__ls; } });
+  B2("leaving to the lobby with the buy menu open closes it (overlay is a child of body)", () => {
+    if (!start5()) return "5v5 did not start"; xe("FV.buy = 20; buyMenu(true); pause(); true"); if (!$("xBuy").classList.contains("on")) return "menu not open";
+    $("xHome").click(); advance(200); return (!$("xBuy").classList.contains("on") && xe("FV.menu") === false) || "buy overlay still up in the lobby"; });
+  B2("leaving to the lobby while dead hides the KILLED BY card", () => {
+    if (!start5()) return "5v5 did not start"; xe("player.hp = 0; pDie(bots[0].name, 'Vandal'); true"); advance(300); if (!xe("xKL.el.classList.contains('on')")) return "card not shown";
+    xe("pause(); true"); $("xHome").click(); advance(500); return !xe("xKL.el.classList.contains('on')") || "kill card still up in the lobby"; });
+  B2("touch FIRE in Aim Training fires the range gun (aimFire), not the bot-mode shoot()", () => {
+    toLobby(); xe("startAim(); aimKey('Digit2'); running = true; paused = false; window.xLdOn = false; kSwing = 0; AM.cd = 0; AM.rl = 0; AM.ammo = 6; true"); advance(20); xe("running = true; paused = false; window.xLdOn = false; AM.cd = 0; AM.rl = 0; true"); if ($("xT").classList.contains("ed") && $("xTok")) $("xTok").click(); /* the earlier Arrange-buttons check leaves the layout editor open */ const sh0 = xe("AM.sh"), b = doc.querySelector('#xT .tb[data-k="fire"]'); if (!b) return "no touch fire button";
+    dispatch(b, mkEvent("pointerdown", { pointerId: 7 })); dispatch(b, mkEvent("pointerup", { pointerId: 7 })); const sh1 = xe("AM.sh"); const st = xe("JSON.stringify([running, paused, !!window.xLdOn, mode, AM.cd, AM.rl, AM.ammo, aimW()])"); xe("AM.fire = false; true"); return sh1 > sh0 || "no shot (" + sh0 + " → " + sh1 + ") " + st; });
+  B2("unit hitboxes share one capsule geometry (no per-round allocation), duel head material reused", () => {
+    const r = xe("(() => { const n0 = XPGEO.size, a = mkGuy(0, 0, botMat, headMat), n1 = XPGEO.size, b = mkGuy(0, 0, botMat, headMat); scene.remove(a.g); scene.remove(b.g); return XPGEO.has('Capsule:0.4,1,4,10') && XPGEO.size === n1 && n1 - n0 <= 1; })()"); if (r !== true) return "capsule not from the shared geometry cache";
+    if (/new THREE\.CapsuleGeometry\(0\.4, 1, 4, 10\)/.test(html)) return "a per-spawn CapsuleGeometry remains";
+    toLobby(); xe("startDuel(); true"); const m1 = xe("duelSpawn.hm"); xe("duelSpawn(); true"); const m2 = xe("duelSpawn.hm"); xe("running = false; true");
+    return (!!m1 && m1 === m2) || "duel head material re-allocated"; });
+  B2("Team Deathmatch: the player's abilities work (J.on) and Q spends a charge", () => {
+    toLobby(); xe("J.pick = 'Jett'; FV.pick = 'ascent'; startTDM(); window.xLdOn = false; true"); advance(100);
+    if (xe("jOn()") !== true) return "abilities off in TDM"; const q0 = xe("J.q"); key("keydown", "KeyQ", "q"); key("keyup", "KeyQ", "q"); advance(50);
+    const q1 = xe("J.q"); xe("running = false; true"); return q1 < q0 || "Q did nothing (" + q0 + " → " + q1 + ")"; });
+  B2("picking up a gun / taking a free gun keeps the other slot's live mag", () => {
+    if (!start5()) return "5v5 did not start"; xe("FV.pri = null; FV.sec = 'Classic'; rw = 'pis'; ammo = 3; rsv = 10; slots.pis = { ammo: 12, rsv: 36 }; xdArm('Vandal'); true");
+    if (xe("slots.pis.ammo") !== 3 || xe("slots.pis.rsv") !== 10) return "pickup: sidearm mag " + xe("JSON.stringify(slots.pis)");
+    xe("rw = 'pis'; ammo = slots.pis.ammo; rsv = slots.pis.rsv; ammo = 4; dmGive('Phantom'); true"); return xe("slots.pis.ammo") === 4 || "free gun: sidearm mag " + xe("JSON.stringify(slots.pis)"); });
+  B2("resume with the buy menu still open keeps the cursor free (no pointer relock)", () => {
+    if (!start5()) return "5v5 did not start"; xe("FV.buy = 20; buyMenu(true); pause(); true"); advance(400); doc.pointerLockElement = null;
+    xe("resume(); true"); const ok = doc.pointerLockElement === null && xe("FV.menu") === true; xe("buyMenu(false); FV.buy = 0; true"); return ok || "pointer relocked under the open buy menu"; });
+  B2("corpses / Lockdowns are cleared between 5v5 rounds (no Sage resurrection of a unit from an earlier round)", () => {
+    if (!start5()) return "5v5 did not start"; xe("kill(bots[0], false); true"); if (!(xe("window.__xDead.length") > 0)) return "no corpse recorded";
+    xe("running = false; fRound(); running = true; window.xLdOn = false; true"); return xe("window.__xDead.length") === 0 || "corpses carried into the next round: " + xe("window.__xDead.length"); });
+  B2("floor guns from a 5v5 do not carry into the lobby / the next mode (DM, Surf, Aim, Duel)", () => {
+    if (!start5()) return "5v5 did not start"; xe("xdDrop('Vandal', player.x + 3, player.z); true"); if (!(xe("window.__xd.L.length") > 0)) return "no floor gun dropped";
+    $("lobbyBtn").onclick(); advance(50); if (xe("window.__xd.L.length") !== 0) return "floor gun left after lobby: " + xe("window.__xd.L.length");
+    if (!start5()) return "5v5 did not restart"; xe("xdDrop('Vandal', player.x + 3, player.z); FV.pick = 'ascent'; startTDM(); window.xLdOn = false; true"); advance(50);
+    const n = xe("window.__xd.L.length"); xe("running = false; true"); return n === 0 || "floor gun carried into TDM: " + n; });
+  try { xe("annClear(); running = false; true"); toLobby(); } catch (e) {}
+}
+
 // ---------- print ----------
 const bad = report.filter((r) => !r.pass);
 console.log(`\n=== audit (${MID ? "THREE loads, 3D init throws" : NO3 ? "THREE missing" : "THREE stub loaded"}) — ${report.length} checks, ${bad.length} failing ===`);
