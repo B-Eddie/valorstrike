@@ -1885,6 +1885,50 @@ if (!NO3) {
   try { xe("annClear(); running = false; true"); toLobby(); } catch (e) {}
 }
 
+// ---------- lobby polish (real-browser QA of the lobby) ----------
+{
+  const LP = (label, fn) => { let r; try { r = fn(); } catch (e) { r = String((e && e.stack) || e).split("\n")[0]; } report.push({ label: "lobby polish: " + label, el: true, handler: true, pass: r === true, cond: r === true, errs: r === true ? [] : [String(r)] }); };
+  const css = (sel) => { const m = html.match(new RegExp(sel.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\{([^}]*)\\}")); return m ? m[1] : ""; };
+  const xe = NO3 ? null : vm.runInContext("__xe", context);
+  LP("engine error shows Retry + a WebGL diagnostic line, sentence-case body; Retry relaunches the same mode", () => {
+    toLobby(); if (xe) xe("xReady = false; true");
+    try { $("dmBtn").click(); advance(30);
+      if (!failMsg()) return "error overlay not shown"; if ($("xRetry").hidden) return "no Retry button"; const d = $("xGlDiag");
+      if (d.hidden || !/^WebGL2: (yes|no) · WebGL: (yes|no) · reason: \S/.test(d.textContent)) return "diagnostic line '" + d.textContent + "'";
+      if (!$("result").classList.contains("x-glerr") || !/text-transform:none/.test(css("#result.x-glerr p"))) return "body text not sentence case";
+    } finally { if (xe) xe("xReady = true; true"); }
+    $("xRetry").click(); advance(60);
+    if (disp("result") !== "none" || !$("xRetry").hidden || $("result").classList.contains("x-glerr")) return "overlay not cleared by Retry";
+    if (xe && !inGame()) return "Retry did not start Deathmatch"; toLobby(); return true; });
+  LP("renderer creation retries once with low settings before the error", () => /catch \(e\) \{ xGlErr[^\n]*\n\s*try \{ renderer = new THREE\.WebGLRenderer\(\{ antialias: false, powerPreference: "default", failIfMajorPerformanceCaveat: false, precision: "mediump"/.test(html) || "fallback renderer attempt missing");
+  LP("Play panel mode description wraps to 2 lines (no single-line ellipsis)", () => { const c = css(".x-q .x-qcard p"); return (/white-space:normal/.test(c) && /line-clamp:2/.test(c) && !/text-overflow:ellipsis/.test(c)) || c; });
+  LP("helper text (map caption, peer-to-peer line, NAME label, mode captions) uses #c9cdd2", () => { const bad = [".x-qmaps>p", ".x-qon__h small", ".x-qon__nm", ".x-q .x-qcard small"].filter((s) => !/color:#c9cdd2/.test(css(s)) || /opacity:\.[0-7]/.test(css(s))); return bad.length ? "low contrast: " + bad.join(", ") : true; });
+  LP("room CODE / name placeholders readable; name input has 'Your name'", () => { const c = css(".x-qon input::placeholder"); if (!/color:#[a-f0-9]{6}/.test(c) || !/opacity:1/.test(c)) return "placeholder css '" + c + "'"; return $("xOnName").getAttribute("placeholder") === "Your name" || "name placeholder " + $("xOnName").getAttribute("placeholder"); });
+  LP("RANGE button height matches START (64px)", () => /height:64px/.test(css(".x-qplay")) && /height:64px/.test(css(".x-qgo #xqRange")) || "heights differ");
+  LP("Play panel: empty status line adds no extra bottom padding", () => /margin-top:-12px/.test(css(".x-qon__msg:empty")) && /min-height:0/.test(css(".x-qon__msg:empty")) || "no :empty rule");
+  LP("every map named in the Unrated description has a tile and is in the 5v5 random pool", () => {
+    const names = ($("xQueue").querySelector('.x-qp[data-q="unrated"] small').textContent.split("·")[1] || "").split(",").map((x) => x.trim().toLowerCase()).filter(Boolean);
+    const tiles = doc.querySelectorAll("#xQueue .x-qmap").map((b) => b.dataset.map), pool = (html.match(/FV\.pick === "random" \? \[([^\]]+)\]/) || ["", ""])[1];
+    const miss = names.filter((n) => tiles.indexOf(n) < 0 || pool.indexOf('"' + n + '"') < 0); return names.length >= 6 && !miss.length || "missing: " + miss.join(",") + " (names " + names.join(",") + ")"; });
+  LP("online counter: one source, cards are shares of the lobby total, moves by at most 1 per step", () => {
+    const tot = () => +$("totOn").textContent, cards = () => doc.querySelectorAll(".card .meta").map((m) => +m.dataset.on);
+    const t0 = tot(), c0 = cards(); if (!(t0 > 0) || c0.reduce((a, b) => a + b, 0) > t0) return "cards " + c0 + " exceed total " + t0;
+    if (!/setInterval\(\(\) => drift\(true\), 20000\)/.test(html)) return "drift not slow (20 s)";
+    if (xe) { let p = t0; for (let i = 0; i < 20; i++) { xe("window.xOnDrift(true); true"); const t = tot(); if (Math.abs(t - p) > 1) return "jumped " + p + " -> " + t; if (xe("xOnN") !== t) return "lobby total not the shared value"; p = t; } }
+    return true; });
+  LP("sound toggle: clear aria-label/title and icon state for off and on", () => {
+    toLobby(); const b = $("sndBtn"), off = () => b.getAttribute("aria-pressed") === "false";
+    if (!off()) b.click();
+    if (b.getAttribute("aria-label") !== "Sound off — click to enable" || b.getAttribute("title") !== "Sound off — click to enable") return "off label '" + b.getAttribute("aria-label") + "'";
+    b.click(); advance(10); const on = b.getAttribute("aria-label"), d = $("sndWave").getAttribute("d"); b.click(); advance(10);
+    if (on !== "Sound on — click to mute") return "on label '" + on + "'"; if (!/^M15\.5/.test(d)) return "on icon not waves";
+    return /#sndBtn\[aria-pressed=false\] #sndWave\{stroke:#ff4655\}/.test(html) || "muted icon style missing"; });
+  LP("closed modals (Settings sliders) carry the hidden attribute; open removes it", () => {
+    toLobby(); $("setBtn").click(); advance(10); if ($("mSet").hidden || !modalOn("mSet")) return "settings did not open un-hidden";
+    dispatch(win, mkEvent("keydown", { key: "Escape" })); advance(10); if (modalOn("mSet") || !$("mSet").hidden) return "settings not hidden after close";
+    toLobby(); return /bind\("modal hidden sync"/.test(html) || "no load-time hidden sync for closed modals"; });
+}
+
 // ---------- print ----------
 const bad = report.filter((r) => !r.pass);
 console.log(`\n=== audit (${MID ? "THREE loads, 3D init throws" : NO3 ? "THREE missing" : "THREE stub loaded"}) — ${report.length} checks, ${bad.length} failing ===`);
