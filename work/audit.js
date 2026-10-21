@@ -1074,6 +1074,125 @@ if (!NO3) {
   if (!R) report.push({ label: "Map scale audit", el: true, handler: true, pass: false, cond: false, errs: err });
 }
 
+// ---------- mp: online multiplayer over an in-memory PeerJS stub (host = this game + scripted client; then client = this game + scripted host) ----------
+if (!NO3) {
+  const xe = vm.runInContext("__xe", context), ev = (s) => { try { return xe(s); } catch (e) { return "ERR " + String(e).slice(0, 200); } };
+  const mpOk = (label, cond, info) => { if (process.env.MPDBG) process.stderr.write("mp " + label + " " + !!cond + "\n"); const e1 = errors.slice(lastErr), x1 = xErrCalls.slice(lastX); lastErr = errors.length; lastX = xErrCalls.length; const pass = !!cond && !e1.length && !x1.length;
+    report.push({ label: "mp: " + label, el: true, handler: true, cond: !!cond, pass, errs: (cond ? [] : [String(info === undefined ? "" : info).slice(0, 300)]).concat(e1.map((e) => e.where + ": " + e.msg), x1.map((x) => "xErr: " + x.msg)) }); };
+  const reg = new Map(); let pid = 0; const later = (f) => win.setTimeout(f, 1);
+  class Em { constructor() { this._h = {}; } on(e, f) { (this._h[e] = this._h[e] || []).push(f); return this; } emit(e, ...a) { (this._h[e] || []).slice().forEach((f) => { try { f(...a); } catch (x) { rec("fakepeer " + e, x); } }); } }
+  class FConn extends Em { constructor(other) { super(); this.peer = other; this.open = false; this.o = null; this.dead = false; }
+    send(d) { if (!this.open || !this.o) return; const o = this.o, j = JSON.stringify(d); later(() => { if (o.open) o.emit("data", JSON.parse(j)); }); }
+    close() { if (this.dead) return; this.dead = true; this.open = false; const o = this.o; later(() => this.emit("close")); if (o && !o.dead) { o.dead = true; o.open = false; later(() => o.emit("close")); } } }
+  class FPeer extends Em { constructor(id) { super(); if (id && typeof id === "object") id = undefined; this.id = id || "rnd-" + ++pid; this.cs = [];
+      later(() => { if (reg.has(this.id)) return this.emit("error", { type: "unavailable-id", message: "ID " + this.id + " is taken" }); reg.set(this.id, this); this.open = true; this.emit("open", this.id); }); }
+    connect(id) { const c = new FConn(id); this.cs.push(c); later(() => { const t = reg.get(id); if (!t || t.destroyed) return this.emit("error", { type: "peer-unavailable", message: "Could not connect to peer " + id });
+        const r = new FConn(this.id); t.cs.push(r); c.o = r; r.o = c; t.emit("connection", r); later(() => { if (c.dead || r.dead) return; c.open = r.open = true; r.emit("open"); c.emit("open"); }); }); return c; }
+    destroy() { if (this.destroyed) return; this.destroyed = true; if (reg.get(this.id) === this) reg.delete(this.id); this.cs.forEach((c) => c.close()); } reconnect() {} }
+  win.__mpPeer = FPeer;
+  const S = () => vm.runInContext("xMP.S", context);
+  try {
+    // --- A: this game hosts a private TDM room, a scripted client joins by code ---
+    toLobby(); phase = "mp host"; $("playBtn").click(); advance(30);
+    vm.runInContext("xMP.create(false, 'tdm')", context); advance(60);
+    const code = S().code;
+    mpOk("Create private room: 6-char code without 0/O/1/I, copy button, player list", /^[A-HJ-NP-Z2-9]{6}$/.test(code) && $("xOnCodeT").textContent === code && !$("xOnRoom").hidden && !$("xOnCopy").hidden && hasHandler($("xOnCopy"), "click") && /\(you\)/.test($("xOnList").textContent), code + " / " + $("xOnCodeT").textContent);
+    const cp = new FPeer(), inbox = []; advance(10);
+    const cc = cp.connect("valorstrike-priv-" + code); cc.on("data", (m) => inbox.push(m)); cc.on("open", () => cc.send({ t: "hi", v: 1, n: "Tester", ag: "Sova" })); advance(120);
+    mpOk("Join by code: host room lists both players (host sees the joiner, joiner gets the room)", inbox.some((m) => m.t === "room" && m.pl.length === 2 && m.pl.some((p) => p.n === "Tester")) && /Tester/.test($("xOnList").textContent), JSON.stringify(inbox.slice(-1)).slice(0, 200));
+    $("xOnStart").click(); advance(200);
+    const st = inbox.find((m) => m.t === "start");
+    mpOk("Host START: online TDM running, joiner seated in a bot slot (10 units total)", !!st && st.mode === "tdm" && inGame() && ev("FV.dm && FV.tdm && running && bots.length + allies.length === 9 && [].concat(bots, allies).filter((u) => u.hum && u.nt && u.name === 'Tester').length === 1 && FV.dmN === 0") === true, st ? ev("[running, FV.tdm, bots.length, allies.length]") : "no start msg");
+    if (st) {
+      const me = st.u.find((e) => e[0] === st.you), sq = me[14];
+      const dir = ev(`(() => { const x = ${me[4]}, z = ${me[6]}; for (const [dx, dz] of [[1,0],[-1,0],[0,1],[0,-1],[0.7,0.7],[-0.7,0.7],[0.7,-0.7],[-0.7,-0.7]]) { let ok = true; for (let k = 0; k <= 12; k++) if (blocked(x + dx * k * 0.1, z + dz * k * 0.1, 0.3, 0)) { ok = false; break; } if (ok) return [dx, dz]; } return [0, 0]; })()`);
+      let x = me[4], z = me[6];
+      for (let k = 1; k <= 10; k++) { x = me[4] + dir[0] * k * 0.1; z = me[6] + dir[1] * k * 0.1; cc.send({ t: "in", x, y: 0, z, r: 0.5, p: 0, w: "Phantom", sq }); advance(33); }
+      advance(300);
+      const hx = ev(`xMP.unit(${st.you}).g.position.x`), hz = ev(`xMP.unit(${st.you}).g.position.z`), snaps = inbox.filter((m) => m.t === "s"), lastS = snaps[snaps.length - 1], back = lastS && lastS.u.find((e) => e[0] === st.you);
+      mpOk("Client movement replicates to the host unit and comes back in 20 Hz snapshots", Math.hypot(hx - x, hz - z) < 0.05 && !!back && Math.hypot(back[4] - x, back[6] - z) < 0.05 && back[11] === "Phantom" && snaps.length >= 5, JSON.stringify({ hx, hz, x, z, back, n: snaps.length }));
+      ev("player.hp = 100; player.armor = 0; DM.pp = 0; true");
+      cc.send({ t: "hit", i: 0, n: 30, hs: 0, w: "Phantom" }); advance(60);
+      const hp1 = ev("player.hp");
+      mpOk("Client hit claim damages the host's player (host-validated)", hp1 === 70, hp1);
+      cc.send({ t: "hit", i: st.u.find((e) => e[1] === 1 && e[0] !== st.you)[0], n: 50, hs: 0, w: "Phantom" }); advance(60);
+      mpOk("Friendly-fire claim on a teammate is rejected", ev(`(() => { const t = xMP.unit(${st.u.find((e) => e[1] === 1 && e[0] !== st.you)[0]}); return t.hp === 100 || !t.alive; })()`) === true);
+      cc.send({ t: "hit", i: 0, n: 255, hs: 1, w: "Phantom" }); advance(200);
+      const kfSeen = inbox.some((m) => m.t === "s" && (m.ev || []).some((v) => v[0] === "k" && v[1] === "Tester" && v[2] === S().name));
+      mpOk("Kill by the client: host dies, kill feed event + K/D reach the client", ev("player.hp <= 0 && DM.k.Tester === 1") === true && kfSeen && inbox.filter((m) => m.t === "s").pop().k.Tester === 1, ev("[player.hp, JSON.stringify(DM.k)]"));
+      const bh = ev("board(); document.getElementById('xBoard').innerHTML");
+      mpOk("Tab scoreboard lists the host (You) and the remote player with ping, bots tagged", typeof bh === "string" && /class="nm">You /.test(bh) && /class="nm">Tester <small class="x-mpp">\d+ ms/.test(bh) && /BOT<\/small>/.test(bh), String(bh).slice(0, 300));
+      cc.send({ t: "sh", w: "Phantom" }); advance(120);
+      mpOk("Client gunshot is replayed on the host and relayed in snapshots", inbox.some((m) => m.t === "s" && (m.ev || []).some((v) => v[0] === "s" && v[1] === st.you)));
+      cc.close(); advance(150);
+      mpOk("Client disconnect: its slot returns to a bot, match keeps running", ev("running && [].concat(bots, allies).filter((u) => u.hum || u.nt).length === 0 && xMP.S.conns.size === 0") === true);
+      advance(1000); frames(60);
+      mpOk("Online TDM frames run clean after the disconnect", inGame());
+    }
+    phase = "mp host leave"; $("xPow").click(); advance(100);
+    mpOk("Host leaving closes the room (peer id released)", !S().on && !reg.has("valorstrike-priv-" + code) && disp("lobby") === "flex");
+    // --- B: this game joins a scripted host by code (DM) ---
+    toLobby(); phase = "mp client";
+    const hp = new FPeer("valorstrike-priv-ABCDEF"), hin = []; let hc = null; hp.on("connection", (c) => { hc = c; c.on("data", (m) => hin.push(m)); }); advance(10);
+    $("xOnCode").value = "abcdef"; $("xOnJoin").click(); advance(120);
+    const hi = hin.find((m) => m.t === "hi");
+    mpOk("Join by code (typed lowercase): connects and says hello with the lobby name", !!hi && hi.n === S().name && hi.v === 1, JSON.stringify(hin));
+    if (hc && hi) {
+      hc.send({ t: "room", v: 1, code: "ABCDEF", pub: false, mode: "dm", map: "ascent", st: "room", cd: 0, pl: [{ n: "Hosty", p: 0, h: 1 }, { n: hi.n, p: 20, h: 0 }] }); advance(40);
+      mpOk("Client room view: host listed, no START for the client", /Hosty/.test($("xOnList").textContent) && $("xOnStart").hidden && S().role === "client");
+      const row = (i, tm, n, ag, x, z, a, h, hpv, sq) => [i, tm, n, ag, x, 0, z, 0, hpv == null ? 100 : hpv, 50, a == null ? 1 : a, "Vandal", h || 0, 30, sq || 0];
+      const ros = (hx, mehp, sq) => [row(0, 0, "Hosty", "Phoenix", hx, 2, 1, 1), row(1, 1, "Jett", "Jett", 4, 4), row(2, 1, "Omen", "Omen", 6, 6), row(3, 1, hi.n, "Sova", 1, 1, 1, 0, mehp, sq)];
+      hc.send({ t: "start", v: 1, mode: "dm", map: "ascent", you: 3, team: 1, tl: 500, len: 540, win: 40, u: ros(2), k: {}, d: {} }); advance(120);
+      mpOk("Client builds the match from the host roster (all units network-driven, no local AI)", inGame() && ev("MP.cl && bots.length === 3 && allies.length === 0 && bots.every((b) => b.nt) && player.x === 1 && FV.dm && !FV.tdm") === true, ev("[MP.cl, bots.length, player.x]"));
+      for (let k = 1; k <= 6; k++) { hc.send({ t: "s", tl: 499, u: ros(2 + k * 0.2), k: { Hosty: 1 }, d: { Jett: 1 }, ev: k === 1 ? [["k", "Hosty", "Jett", 1, "Vandal"]] : [] }); advance(50); }
+      advance(250);
+      const hx2 = ev("bots.find((b) => b.nid === 0).g.position.x");
+      mpOk("Snapshots: remote host interpolates to its latest position, kill feed + K/D applied", Math.abs(hx2 - 3.2) < 0.05 && ev("DM.k.Hosty === 1 && SB.Hosty && SB.Hosty.k === 1") === true && /Hosty/.test($("feed").textContent), hx2);
+      ev("player.x = 1.5; true"); advance(120);
+      mpOk("Client sends its own (predicted) position at ~30 Hz", hin.some((m) => m.t === "in" && Math.abs(m.x - 1.5) < 0.01) && hin.filter((m) => m.t === "in").length >= 10);
+      ev("hurt(bots.find((b) => b.nid === 0), 40); true"); advance(60);
+      const hit = hin.find((m) => m.t === "hit");
+      mpOk("Client shot becomes a hit claim to the host; no local damage applied", !!hit && hit.i === 0 && hit.n === 40 && ev("bots.find((b) => b.nid === 0).hp") === 100, JSON.stringify(hit));
+      hc.send({ t: "s", tl: 498, u: ros(3.2, 60), k: { Hosty: 1 }, d: {}, ev: [] }); advance(60);
+      mpOk("Host snapshot damage applies to the client's own health", ev("player.hp") === 60);
+      hc.send({ t: "s", tl: 497, u: ros(3.2, 100, 1), k: { Hosty: 1 }, d: {}, ev: [] }); advance(60);
+      mpOk("Host respawn (spawn seq) teleports the client to its new spawn", ev("player.hp === 100 && player.x === 1 && MP.sq === 1") === true);
+      frames(60);
+      hc.close(); advance(150);
+      mpOk("Host leaving: client returns to the lobby with a clear message", disp("lobby") === "flex" && /host left/i.test($("xOnMsg").textContent) && !S().on && !$("xQueue").hidden, $("xOnMsg").textContent);
+    }
+    hp.destroy();
+    // --- C: quick match with no public lobby: claim slot 1 and host, a joiner is seated, auto start after ~15 s ---
+    toLobby(); phase = "mp quick host";
+    doc.querySelector('#xOn [data-om="dm"]').click(); $("xOnQuick").click(); advance(400);
+    mpOk("Quick Match with no public lobby: claims valorstrike-pub-dm-1 and hosts with bots", reg.has("valorstrike-pub-dm-1") && S().role === "host" && S().pub && S().mode === "dm" && /starts in \d+ s/.test($("xOnRoomM").textContent), [...reg.keys()].join(",") + " " + S().st);
+    const qp = new FPeer(), qin = []; advance(10); const qc = qp.connect("valorstrike-pub-dm-1"); qc.on("data", (m) => qin.push(m)); qc.on("open", () => qc.send({ t: "hi", v: 1, n: "You", ag: "Jett" })); advance(80);
+    ev("xMP.S.cdAt = performance.now() + 300; true"); advance(500);
+    const qs = qin.find((m) => m.t === "start");
+    mpOk("Public lobby auto-starts DM after the countdown, joiner seated (name de-duplicated)", inGame() && ev("FV.dm && !FV.tdm && running && bots.length === 9") === true && !!qs && qs.mode === "dm" && qs.u.find((e) => e[0] === qs.you)[2] !== "You", qs ? qs.u.find((e) => e[0] === qs.you)[2] : JSON.stringify(qin.map((m) => m.t)) + ev("[running, bots.length, xMP.S.conns.size, xMP.S.st]"));
+    const lp = new FPeer(), lin = []; advance(10); const lc = lp.connect("valorstrike-pub-dm-1"); lc.on("data", (m) => lin.push(m)); lc.on("open", () => lc.send({ t: "hi", v: 1, n: "Late", ag: "Omen" })); advance(150);
+    mpOk("Late join into a running DM gets a seat", lin.some((m) => m.t === "start") && ev("bots.filter((b) => b.hum).length") === 2);
+    frames(60); phase = "mp quick leave"; $("xPow").click(); advance(150);
+    mpOk("Leaving the public match closes it; joiners are told", !S().on && !reg.has("valorstrike-pub-dm-1"));
+    qp.destroy(); lp.destroy();
+    // --- D: quick match finds an open public lobby and joins it ---
+    toLobby(); phase = "mp quick join";
+    const ph = new FPeer("valorstrike-pub-tdm-1"), pin = []; ph.on("connection", (c) => c.on("data", (m) => { pin.push(m); if (m.t === "hi") c.send({ t: "room", v: 1, code: "", pub: true, mode: "tdm", map: "bind", st: "room", cd: 9, pl: [{ n: "PubHost", p: 0, h: 1 }, { n: m.n, p: 0, h: 0 }] }); })); advance(10);
+    doc.querySelector('#xOn [data-om="tdm"]').click(); $("xOnQuick").click(); advance(200);
+    mpOk("Quick Match joins an existing public lobby instead of hosting", S().role === "client" && S().pub && pin.some((m) => m.t === "hi") && !reg.has("valorstrike-pub-tdm-2") && /PubHost/.test($("xOnList").textContent), JSON.stringify([S().role, S().pub, S().st, pin.map((m) => m.t), [...reg.keys()], $("xOnList").textContent, $("xOnMsg").textContent]));
+    $("xOnLeave").click(); advance(60); ph.destroy();
+    // --- E: PeerJS unavailable → clear message, nothing breaks; single player untouched ---
+    win.__mpPeer = null; const oldPeer = win.Peer; win.Peer = undefined; toLobby(); phase = "mp no peerjs";
+    $("xOnCreate").click(); advance(50); { const sc = doc.head.querySelectorAll("script").find((x) => /peerjs@1\.5\.4/.test(x.src)); if (sc && sc.onerror) sc.onerror(); } advance(50);
+    mpOk("PeerJS blocked: Create shows a clear error and the lobby stays usable", /Couldn't load the online service/.test($("xOnMsg").textContent) && !S().on && !$("xOnCreate").disabled, $("xOnMsg").textContent);
+    win.Peer = oldPeer;
+    toLobby(); $("tdmBtn").click(); advance(1500); frames(60);
+    mpOk("Single-player TDM after online play: no online state, 10 units with AI", inGame() && ev("!MP.on && !MP.cl && bots.length + allies.length === 9 && [].concat(bots, allies).every((u) => !u.nt && !u.hum)") === true);
+    leave();
+  } catch (e) { mpOk("online audit threw", false, String(e.stack || e)); }
+  try { toLobby(); } catch (e) {}
+}
+
 // ---------- print ----------
 const bad = report.filter((r) => !r.pass);
 console.log(`\n=== audit (${MID ? "THREE loads, 3D init throws" : NO3 ? "THREE missing" : "THREE stub loaded"}) — ${report.length} checks, ${bad.length} failing ===`);
