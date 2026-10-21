@@ -1871,7 +1871,9 @@ function xMG() { const g = new THREE.Group(), a = g.add; g.add = function (...o)
 let solids = [], boxes = [], mapG = xMG(); scene.add(mapG);
 const MAPS = { retake: { g: mapG, solids, boxes } };
 // walls (4 m+) get plaster + a terracotta cap (visual only); crates alternate metal / wood. Collision box unchanged.
+let XMK = 1; // per-map layout scale: a builder authored at 1.0 sets XMK while it runs; centres scale, walls and footprints over 4 m scale, crates / steps keep their size
 function box(x, z, w, h, d, col) {
+  if (XMK !== 1) { const wl = h >= 4; x *= XMK; z *= XMK; if (wl || w > 4) w *= XMK; if (wl || d > 4) d *= XMK; } // walls scale whole so faces stay where the scaled decoration expects them
   const XQ = XMO || XM, wall = h >= 4, mat = wall ? XQ.wall : Math.round(Math.abs(x * 3 + z * 5)) % 3 === 0 ? XQ.metal : XQ.wood;
   const m = new THREE.Mesh(wall ? xUV(new THREE.BoxGeometry(w, h, d), w, h, d, 4) : new THREE.BoxGeometry(w, h, d), mat);
   m.position.set(x, h / 2, z); m.castShadow = m.receiveShadow = true; mapG.add(m); solids.push(m);
@@ -3277,7 +3279,7 @@ const AMB_C = { // f: wind filter type/freq/Q, l: wind level, h: hum Hz/level, p
   breeze: { t: "lowpass", f: 650, q: 0.6, l: 0.06, h: 0, hl: 0, p: 0.3, s: ["waves", "gulls"] }, // shore waves + seagull one-shots hook
 };
 const AMB_W = [[-49.5, -6, 4.5, 5], [0, -46.5, 7, 1.5], [49.5, -47, 4, 1.5]]; // Lotus pools: cx, cz, half-w, half-d
-const AMB_BW = [[-62.5, -30, 2, 25], [62.5, -34, 2, 21], [0, -58.5, 20, 1]]; // Breeze water strips: cx, cz, half-w, half-d
+const AMB_BW = [[-51.2, -24.6, 1.6, 20.5], [51.2, -27.9, 1.6, 17.2], [0, -48, 16.4, 0.8]]; // Breeze water strips: cx, cz, half-w, half-d
 function ambInit() {
   if (AMB.g) return true; if (!ac || !master) return false;
   AMB.g = ac.createGain(); AMB.g.gain.value = 0; AMB.g.connect(master);
@@ -4016,27 +4018,29 @@ $("xBG").onclick = (e) => { const b = e.target.closest("button"); if (!b) return
 $("xBuy").addEventListener("contextmenu", (e) => { e.preventDefault(); $("xBL").hidden = !$("xBL").hidden; });
 mapG = xMG(); mapG.visible = false; scene.add(mapG); solids = []; boxes = [];
 MAPS.five = { g: mapG, solids, boxes };
-// Ascent 5v5 layout, 110 x 120 (x -55..55, z -60..60): attackers south (+z), defenders north (-z)
-const ASC_SITES = { A: [-36, -22], B: [36, -22] }, ASC_SPAWN = { atk: 53, def: -53, edge: 48 };
+// Ascent 5v5 layout, authored 110 x 120 (x -55..55, z -60..60) and built at AK = 0.88 (~97 x 106 m): attackers south (+z), defenders north (-z)
+// ASC_SITES / ASC_SPAWN / CALLOUTS / ASC_NODE are in the built (scaled) frame; the builder block below is authored at 1.0 and box() scales it
+const AK = 0.88;
+const ASC_SITES = { A: [-31.7, -19.4], B: [31.7, -19.4] }, ASC_SPAWN = { atk: 46.6, def: -46.6, edge: 42.2 };
 const CALLOUTS = [ // [name, x, z], for minimap labels
-  ["Attacker Spawn", 0, 53], ["Defender Spawn", 0, -53], ["A Lobby", -47, 50], ["A Main", -47, 22], ["A Site", -36, -22],
-  ["Generator", -42, -27], ["Heaven", -29, -40], ["Tree", -22, -15], ["Wine", -51, -7], ["A Garden", -23, 0],
-  ["Mid Bottom", 0, 37], ["Mid Courtyard", 0, 12], ["Catwalk", -12, -12], ["Market", 16, -14], ["Pizza", 25, -2],
-  ["B Lobby", 47, 50], ["B Main", 47, 22], ["B Site", 36, -22], ["Boathouse", 50, -10], ["B Lane", 49, -32], ["Defender Path", 47, -45]];
+  ["Attacker Spawn", 0, 46.6], ["Defender Spawn", 0, -46.6], ["A Lobby", -41.4, 44], ["A Main", -41.4, 19.4], ["A Site", -31.7, -19.4],
+  ["Generator", -37, -23.8], ["Heaven", -25.5, -35.2], ["Tree", -19.4, -13.2], ["Wine", -44.9, -6.2], ["A Garden", -20.2, 0],
+  ["Mid Bottom", 0, 32.6], ["Mid Courtyard", 0, 10.6], ["Catwalk", -10.6, -10.6], ["Market", 14.1, -12.3], ["Pizza", 22, -1.8],
+  ["B Lobby", 41.4, 44], ["B Main", 41.4, 19.4], ["B Site", 31.7, -19.4], ["Boathouse", 44, -8.8], ["B Lane", 43.1, -28.2], ["Defender Path", 41.4, -39.6]];
 {
-  XMO = XMA;
-  const fl = xFloor(110, 120, XMA.tile, 4);
+  XMO = XMA; XMK = AK;
+  const fl = xFloor(110 * AK, 120 * AK, XMA.tile, 4);
   fl.rotation.x = -Math.PI / 2; mapG.add(fl); solids.push(fl);
   const pad = (x, z, w, d, col) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(w, d), new THREE.MeshLambertMaterial({ color: col, transparent: true, opacity: 0.35, depthWrite: false })); m.rotation.x = -Math.PI / 2; m.position.set(x, 0.02, z); m.receiveShadow = true; mapG.add(m); };
   const [ax, az] = ASC_SITES.A, [bx, bz] = ASC_SITES.B;
   pad(ax, az, 14, 12, 0x3fb8b0); pad(bx, bz, 14, 12, 0x3fb8b0); // A and B plant zones (tinted over the tiles)
-  pad(0, 53, 40, 12, 0x8fa7b8); pad(0, -53, 40, 12, 0x8fa7b8); // spawns
+  pad(0, ASC_SPAWN.atk, 40 * AK, 12 * AK, 0x8fa7b8); pad(0, ASC_SPAWN.def, 40 * AK, 12 * AK, 0x8fa7b8); // spawns
   // Mid Courtyard: darker cobblestone, open between the two side blocks
-  const cob = xFloor(56, 34, XMA.cobble, 2); cob.rotation.x = -Math.PI / 2; cob.position.set(0, 0.015, 13); mapG.add(cob);
+  const cob = xFloor(56 * AK, 34 * AK, XMA.cobble, 2); cob.rotation.x = -Math.PI / 2; cob.position.set(0, 0.015, 13 * AK); mapG.add(cob);
   // painted site letters + red wall signs
   xDecal(mapG, "A", ax, az, 7); xDecal(mapG, "B", bx, bz, 7);
-  xSign(mapG, "A", -54.48, 3, az, Math.PI / 2); xSign(mapG, "B", 54.48, 3, bz, -Math.PI / 2);
-  xSign(mapG, "A", -29, 3, -45.48, 0); xSign(mapG, "B", 29, 3, -45.48, 0);
+  xSign(mapG, "A", -54.48 * AK, 3, az, Math.PI / 2); xSign(mapG, "B", 54.48 * AK, 3, bz, -Math.PI / 2);
+  xSign(mapG, "A", -29 * AK, 3, -45.48 * AK, 0); xSign(mapG, "B", 29 * AK, 3, -45.48 * AK, 0);
   // faint floating callouts, shown together with the minimap
   CALLOUTS.forEach(([t, x, z]) => xCallout(t, x, z));
   mapG.add(XCALL);
@@ -4045,6 +4049,8 @@ const CALLOUTS = [ // [name, x, z], for minimap labels
   [[0, -60, 110, 1, 6, FW], [0, 60, 110, 1, 6, FW], [-55, 0, 1, 120, 6, FW], [55, 0, 1, 120, 6, FW], // outer walls
    [-24, 37, 32, 14, 5, FW], [24, 37, 32, 14, 5, FW], // spawn blocks: A Lobby | Mid Bottom | B Lobby
    [-34, 17, 12, 26, 5, FW], [34, 17, 12, 26, 5, FW], // A Main | Mid Courtyard | B Main
+   [-18.5, 18, 19, 24, 5, FW], [19, 20.5, 18, 19, 5, FW], // courtyard blocks: the old 56 m open courtyard becomes a ~19 m Mid lane (west block ends at z 6 for the Catwalk, east at z 11 for Market Door)
+   [-53, 26, 4, 36, 5, FW], [53, 26, 4, 36, 5, FW], // A / B Main outer fills: lanes 15 m -> 11 m (authored)
    [0, -33, 36, 26, 5, FW], // building between the sites
    [-29, -46, 22, 1, 5, FW], [29, -46, 22, 1, 5, FW], // defender spawn wall, exits west to A and east to the Defender Path
    [-26, -17, 1, 6, 5, FW], [-22, -10, 8, 1, 5, FW], // Tree room
@@ -4056,11 +4062,11 @@ const CALLOUTS = [ // [name, x, z], for minimap labels
    [-24, -33.5, 4, 1, 0.35, FH], [-24, -34.5, 4, 1, 0.7, FH], [-24, -35.5, 4, 1, 1.05, FH], // Heaven stairs up from A Site, 0.35 per step
    [-42, -27, 4, 3, 2.2, FG], [-31, -17, 2, 2, 1.6, FC], [-51, -7, 3, 3, 2, FC], [-47, 4, 2, 2, 1.6, FC], // Generator, A site, Wine, A Main exit
    [-47, 24, 2, 2, 1.6, FC], [-50, 36, 2, 2, 2, FC], // A Main
-   [0, 10, 3, 3, 2.2, FC], [-8, 20, 2, 2, 1.6, FC], [9, 2, 2, 2, 1.6, FC], [-4, 34, 2, 2, 1.6, FC], // Mid
+   [0, 10, 3, 3, 2.2, FC], [0.5, 25, 2, 2, 2.2, FC], [-8, 20, 2, 2, 1.6, FC], [9, 2, 2, 2, 1.6, FC], [-4, 34, 2, 2, 1.6, FC], // Mid
    [25, -2, 3, 2, 1.8, FC], // Pizza
    [30, -26, 3, 3, 2, FC], [41, -17, 2, 2, 1.6, FC], [36, -38, 2, 2, 1.6, FC], // B site
    [47, 24, 2, 2, 1.6, FC], [50, 36, 2, 2, 2, FC], // B Main
-   [-10, 52, 2, 2, 1.6, FC], [10, 52, 2, 2, 1.6, FC], [-10, -52, 2, 2, 1.6, FC], [10, -52, 2, 2, 1.6, FC]] // spawns
+   [-12, 52, 2, 2, 1.6, FC], [12, 52, 2, 2, 1.6, FC], [-12, -52, 2, 2, 1.6, FC], [12, -52, 2, 2, 1.6, FC]] // spawns (x ±12 authored: clear of the x -8..8 spawn line once scaled)
     .forEach(([x, z, w, d, h, c]) => { box(x, z, w, h, d, c); if (h >= 5) ascCaps.push([x, z, w, d, h]); });
   // Venice look pass: decoration only (no solids/boxes), merged into one mesh per material, no shadows
   {
@@ -4090,7 +4096,7 @@ const CALLOUTS = [ // [name, x, z], for minimap labels
     awn(-40.5, 2.8, 14, -HP, "orange", true); // A Main
     // potted trees: A Main and Mid Courtyard
     const gPot = new THREE.CylinderGeometry(0.42, 0.32, 0.7, 10), gSoil = new THREE.CylinderGeometry(0.37, 0.37, 0.05, 10), gTr = new THREE.CylinderGeometry(0.07, 0.09, 1.3, 6), gF1 = new THREE.IcosahedronGeometry(0.75, 0), gF2 = new THREE.IcosahedronGeometry(0.5, 0);
-    [[-53.6, 12], [-53.6, 28], [-41, 8], [-41, 22], [-26.9, 5.5], [26.9, 5.5], [-26.9, 28.5], [26.9, 28.5], [-9.5, 29.3], [9.5, 29.3]].forEach(([x, z]) => { const g = grp(x, 0, z); P(g, "terra", gPot, 0, 0.35, 0); P(g, "dark", gSoil, 0, 0.69, 0); P(g, "wood", gTr, 0, 1.3, 0); P(g, "leaf", gF1, 0, 2.2, 0); P(g, "leaf", gF2, 0.3, 2.75, 0.1); boxes.push({ x1: x - 0.42, x2: x + 0.42, z1: z - 0.42, z2: z + 0.42, h: 0.75 }); }); // pot collision (all pots are 2.5 m+ clear of nav edges)
+    [[-41, 8], [-41, 22], [-26.9, 5.5], [26.9, 5.5], [-8.4, 29.3], [9.5, 29.3]].forEach(([x, z]) => { const g = grp(x, 0, z); P(g, "terra", gPot, 0, 0.35, 0); P(g, "dark", gSoil, 0, 0.69, 0); P(g, "wood", gTr, 0, 1.3, 0); P(g, "leaf", gF1, 0, 2.2, 0); P(g, "leaf", gF2, 0.3, 2.75, 0.1); const X = x * AK, Z = z * AK; boxes.push({ x1: X - 0.42, x2: X + 0.42, z1: Z - 0.42, z2: Z + 0.42, h: 0.75 }); }); // deco authored at 1.0, scaled by AK below // pot collision (all pots are 2.5 m+ clear of nav edges)
     // slim bell tower with a pointed roof, on the building behind mid
     { const g = grp(6, 5, -40); P(g, "terra", BX(2.4, 16, 2.4), 0, 8, 0); P(g, "stone", BX(2.7, 0.3, 2.7), 0, 16, 0); P(g, "dark", BX(1.8, 2.6, 1.8), 0, 17.45, 0);
       [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([a, b]) => P(g, "stone", BX(0.45, 2.6, 0.45), a, 17.45, b));
@@ -4101,9 +4107,9 @@ const CALLOUTS = [ // [name, x, z], for minimap labels
         P(g, "sky", BX(w, h + 2, d), 0, h / 2 - 1, 0);
         const q = r(); if (q < 0.18) { const m = P(g, "sky", gDome, 0, h, 0); m.scale.setScalar(Math.min(w, d) * 0.45); } else if (q < 0.3) { P(g, "sky", BX(1.8, 14, 1.8), w * 0.3, h + 7, 0); P(g, "sky", new THREE.ConeGeometry(1.4, 4, 4), w * 0.3, h + 16, 0, 0, Math.PI / 4); } } }
     mapG.updateMatrixWorld(true); const inv = new THREE.Matrix4().copy(mapG.matrixWorld).invert(); G.forEach((g) => g.updateMatrixWorld(true));
-    Object.keys(D).forEach((k) => { const mm = new THREE.Mesh(xMergeGeo(D[k], inv), DM[k]); mm.name = "xDeco"; mm.raycast = () => {}; mm.updateMatrix(); mm.matrixAutoUpdate = false; mapG.add(mm); });
+    Object.keys(D).forEach((k) => { const mm = new THREE.Mesh(xMergeGeo(D[k], inv), DM[k]); mm.name = "xDeco"; mm.raycast = () => {}; mm.scale.set(AK, 1, AK); mm.updateMatrix(); mm.matrixAutoUpdate = false; mapG.add(mm); });
   }
-  XMO = null;
+  XMO = null; XMK = 1;
 }
 // ---- Bind (5v5): same box-list format; attackers south (+z), defenders north (-z), no mid, two one-way teleporters ----
 const ASC_CALL = XCALL.children.slice(); XCALL.clear();
@@ -4148,7 +4154,7 @@ const TPS = [{ x: -27.5, z: 8, tx: 13, tz: 18, n: "A Short → B Short (Market)"
 function xLazyMap(k, cap, build) {
   const M = FMAP[k]; if (M.built) return; M.built = 1;
   const sv = [mapG, solids, boxes], keep = XCALL.children.slice(); mapG = M.g; solids = M.solids; boxes = M.boxes; XCALL.clear();
-  try { build(); cap.push(...XCALL.children); } finally { XCALL.clear(); if (keep.length) XCALL.add(...keep); mapG = sv[0]; solids = sv[1]; boxes = sv[2]; }
+  try { build(); cap.push(...XCALL.children); } finally { XMK = 1; XCALL.clear(); if (keep.length) XCALL.add(...keep); mapG = sv[0]; solids = sv[1]; boxes = sv[2]; }
 }
 function xBuildMap(k) { if (k === "bind") xLazyMap("bind", BIND_CALL, xBuildBind); else if (k === "haven") xLazyMap("haven", HAVEN_CALL, xBuildHaven); else if (k === "split") xLazyMap("split", SPLIT_CALL, xBuildSplit); else if (k === "lotus") xLazyMap("lotus", LOTUS_CALL, xBuildLotus); else if (k === "breeze") xLazyMap("breeze", BREEZE_CALL, xBuildBreeze); }
 function xBuildBind() {
@@ -4428,13 +4434,14 @@ function xSplitTint() {
     if (m === XM.wall) o.material = SMT.wall; else if (m === XM.roof) o.material = SMT.cap; else if (m === XM.metal || m === XM.wood) o.material = SMT.concrete; });
 }
 function xBuildSplit() {
-  const fl = xFloor(100, 110, new THREE.MeshLambertMaterial({ color: SPLIT_TINT.floor }), 4); fl.rotation.x = -Math.PI / 2; mapG.add(fl); solids.push(fl);
+  const fl = xFloor(100, 99, new THREE.MeshLambertMaterial({ color: SPLIT_TINT.floor }), 4); fl.rotation.x = -Math.PI / 2; fl.position.z = -5.5; mapG.add(fl); solids.push(fl);
   const W = 0xf1f0ec, C = 0x8c8c8a;
-  box(0, -55, 100, 5, 1, W); box(0, 55, 100, 5, 1, W); box(-50, 0, 1, 5, 110, W); box(50, 0, 1, 5, 110, W); // boundary
+  box(0, -55, 100, 5, 1, W); box(0, 44, 100, 5, 1, W); box(-50, -5.5, 1, 5, 99, W); box(50, -5.5, 1, 5, 99, W); // boundary: z -55..44 (the attacker wall sits 9 m behind the z 35 spawn; it was 20 m of dead space)
   for (const s of [1, -1]) { // s = 1 builds the A (east) half, s = -1 mirrors it as B (west)
     if (s > 0) { box(18, -10, 24, 5, 8, W); box(18, 8, 24, 5, 20, W); } // building between Mid and A Main; gap z -6..-2 = Mail
     else { box(-18, -12.5, 24, 5, 3, W); box(-18, 5, 24, 5, 26, W); } // building between Mid and B Main; narrow gap z -11..-8 = Vents
     box(s * 14, -30.5, 16, 5, 1, W); // Mid Top | Defender Side wall, open x -6..6
+    box(s * 47, 4, 6, 5, 32, W); // A / B Main outer fill x 44..50, z -12..20: Main lane 20 m -> 14 m (rope base at z -19 stays open)
     box(s * 35.75, -29, 27.5, 2, 18, C); // raised site platform, x 22..49.5, z -38..-20, top 2 m
     [1.75, 1.4, 1.05, 0.7, 0.35].forEach((h, i) => box(s * 36, -19.5 + i, 8, h, 1, C)); // south ramp stairs (from A/B Main)
     [1.75, 1.4, 1.05, 0.7, 0.35].forEach((h, i) => box(s * 27, -38.5 - i, 6, h, 1, C)); // north stairs (from defender side)
@@ -4530,6 +4537,7 @@ function xBuildLotus() {
   const fl = xFloor(110, 110, new THREE.MeshLambertMaterial({ color: LOTUS_TINT.floor }), 4); fl.rotation.x = -Math.PI / 2; mapG.add(fl); solids.push(fl);
   const W = LOTUS_TINT.wall, C = LOTUS_TINT.stone;
   box(0, -55, 110, 5, 1, W); box(0, 55, 110, 5, 1, W); box(-55, 0, 1, 5, 110, W); box(55, 0, 1, 5, 110, W); // boundary
+  box(17, 34.5, 18, 5, 7, W); box(-17, 34.5, 18, 5, 7, W); // spawn lobby blocks x ±8..26, z 31..38: the old 110 m wide open spawn plaza becomes a Mid exit between them and A / C Lobby lanes around them (north z 38..55, south z 26..31)
   box(-20, 12, 20, 5, 28, W); box(-20, -9, 20, 5, 6, W); // west block (C Main | B Main), gap z -6..-2 = C Link
   box(20, 15, 20, 5, 22, W); box(20, -6, 20, 5, 12, W); // east block (B Main | A Main), gap z 0..4 = A Link
   box(-49.5, 13, 11, 5, 26, W); box(-44.5, -6, 1, 5, 12, W); // west fill + C Waterfall pocket wall (pocket opens north to C)
@@ -4592,12 +4600,13 @@ const LOTUS_CALL = [];
 // lanes: A Main (x -58..-42) | Mid (x -10..10, long sightline) | B Main (x 40..55); A Cave (Mid ↔ A Main, z 2..8), Mid Wood Doors (Mid ↔ B Main, z -2..4);
 // A Hall (Mid Top ↔ A, z -27..-22), B Window (Mid Top ↔ B), B Elbow (wall at z -12 turns B Main west), big B Wall on site, A Pyramids
 { const g = xMG(); g.visible = false; scene.add(g); FMAP.breeze = { g, solids: [], boxes: [] }; }
-const BZSITES = { A: [-44, -32], B: [46, -34] };
+const BZK = 0.82; // Breeze layout scale: xBuildBreeze is authored at 1.0 (130 x 120) and built at 0.82 (~107 x 98 m); every Breeze table below is in the built (scaled) frame
+const BZSITES = { A: [-36.1, -26.2], B: [37.7, -27.9] };
 const BREEZE_CALLOUTS = [ // [name, x, z]
-  ["A Site", -44, -29], ["B Site", 46, -31], ["A Lobby", -50, 44], ["A Main", -50, 20], ["A Cave", -26, 5], ["A Pyramids", -43, -38], ["A Hall", -18, -24.5],
-  ["Mid Bottom", 0, 20], ["Mid Top", 0, -12], ["Mid Nest", 6, -24], ["Mid Wood Doors", 25, 1], ["B Main", 47, 20], ["B Elbow", 42, -10], ["B Wall", 38, -40], ["B Window", 18, -24.5],
-  ["Attacker Spawn", 0, 54], ["Defender Spawn", 0, -55]];
-const BREEZE_SPAWN = { atk: 54, def: -54, edge: 50 };
+  ["A Site", -36.1, -23.8], ["B Site", 37.7, -25.4], ["A Lobby", -41, 36.1], ["A Main", -41, 16.4], ["A Cave", -21.3, 4.1], ["A Pyramids", -35.3, -31.2], ["A Hall", -14.8, -20.1],
+  ["Mid Bottom", 0, 16.4], ["Mid Top", 0, -9.8], ["Mid Nest", 4.9, -19.7], ["Mid Wood Doors", 20.5, 0.8], ["B Main", 38.5, 16.4], ["B Elbow", 34.4, -8.2], ["B Wall", 31.2, -32.8], ["B Window", 14.8, -20.1],
+  ["Attacker Spawn", 0, 44.3], ["Defender Spawn", 0, -45.1]];
+const BREEZE_SPAWN = { atk: 44.3, def: -44.3, edge: 41 };
 // Bind / Haven / Split spawn barriers: each team spawns at z = ±35 (player, mates at x -8..8, enemies at x -8..8); the barrier sits 4 m beyond the
 // furthest spawn toward mid (z = ±31), spanning the spawn exits (w = the map's exit width, fit() narrows it to the free gap between walls)
 const XMAP_SPAWN = { bind: { atk: 35, def: -35, edge: 31, w: 30 }, haven: { atk: 35, def: -35, edge: 31, w: 34 }, split: { atk: 35, def: -35, edge: 31, w: 30 } };
@@ -4610,18 +4619,20 @@ function xBreezeTint() {
     if (m === XM.wall) o.material = BZMT.wall; else if (m === XM.roof) o.material = BZMT.cap; else if (m === XM.metal || m === XM.wood) o.material = BZMT.stone; });
 }
 function xBuildBreeze() {
-  const fl = xFloor(130, 120, new THREE.MeshLambertMaterial({ color: BREEZE_TINT.floor }), 4); fl.rotation.x = -Math.PI / 2; mapG.add(fl); solids.push(fl);
+  XMK = BZK; // box() scales this builder's authored coordinates (reset before the callouts; xLazyMap's finally resets it too)
+  const fl = xFloor(130 * BZK, 120 * BZK, new THREE.MeshLambertMaterial({ color: BREEZE_TINT.floor }), 4); fl.rotation.x = -Math.PI / 2; mapG.add(fl); solids.push(fl);
   const W = BREEZE_TINT.wall, C = BREEZE_TINT.stone;
   box(0, -60, 130, 5, 1, W); box(0, 60, 130, 5, 1, W); box(-65, 0, 1, 5, 120, W); box(65, 0, 1, 5, 120, W); // boundary
   box(-26, 24, 32, 5, 32, W); box(-26, -3, 32, 5, 10, W); // west block (A Main | Mid), gap z 2..8 = A Cave
   box(25, 22, 30, 5, 36, W); box(25, -5, 30, 5, 6, W); box(60, 20, 10, 5, 40, W); // east block (Mid | B Main), gap z -2..4 = Mid Wood Doors; east fill
   for (const s of [1, -1]) { box(s * 18, -15, 16, 5, 14, W); box(s * 18, -38, 16, 5, 22, W); } // site dividers, gap z -27..-22 = A Hall / B Window
   box(55, -12, 20, 5, 1, W); // B Elbow wall: B Main turns west at z -12
+  box(-61.5, 24, 7, 5, 32, W); // A Main west fill (authored x -65..-58, z 8..40): narrows A Lobby / A Main from 23 m to 16 m (13 m built)
   box(38, -32, 1.2, 5, 10, W); // big B Wall across the site
   box(-48, -26, 3, 2.4, 3, C); box(-38, -38, 3, 2.4, 3, C); // A Pyramids (bases)
   [[4, 22, 1.6], [-4, 8, 1.6], [-5, -16, 1.6], [-54, 10, 1.6], [-46, -2, 2.4], [44, 24, 1.6], [50, 8, 2.4], [52, -28, 2.4], [-56, -30, 1.6]].forEach(([x, z, h]) => box(x, z, 2, h, 2, C)); // cover
   box(6, -20, 4, 2.4, 2, C); box(44, -44, 3, 1.6, 2, C); // Mid Nest, B back cover
-  { const wm = new THREE.MeshLambertMaterial({ color: BREEZE_TINT.water, transparent: true, opacity: 0.8 }), pad = (x, z, w, d) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(w, d), wm); m.rotation.x = -Math.PI / 2; m.position.set(x, 0.03, z); m.receiveShadow = true; m.raycast = () => {}; mapG.add(m); };
+  { const wm = new THREE.MeshLambertMaterial({ color: BREEZE_TINT.water, transparent: true, opacity: 0.8 }), pad = (x, z, w, d) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(w, d), wm); m.rotation.x = -Math.PI / 2; m.position.set(x * BZK, 0.03, z * BZK); m.scale.set(BZK, BZK, 1); m.receiveShadow = true; m.raycast = () => {}; mapG.add(m); };
     pad(-62.5, -30, 4, 50); pad(62.5, -34, 4, 42); pad(0, -58.5, 40, 2); } // teal water edges: A shore, B shore, defender beach
   for (const k in BZSITES) xDecal(mapG, k, BZSITES[k][0], BZSITES[k][1] + 2, 7);
   xBreezeTint();
@@ -4634,7 +4645,7 @@ function xBuildBreeze() {
     const gPy = new THREE.ConeGeometry(2.3, 2, 4); [[-48, -26], [-38, -38]].forEach(([x, z]) => P("lime", gPy, x, 3.4, z, Math.PI / 4));
     const gT = new THREE.CylinderGeometry(0.18, 0.3, 6, 6), gF = new THREE.ConeGeometry(2.6, 0.9, 7);
     // pass 2: palms sit by the boundary, all ≥1 m from nav lanes; each trunk gets a thin 0.6 m collision post in the box grid (no mesh)
-    [[-62, 50], [62, 50], [-62, -56], [62, -56], [-40, 57], [40, 57], [-14, -57], [14, -57], [-62, -6], [-30, 57], [30, 57], [62, -50]].forEach(([x, z], i) => { const lx = (i % 2 ? 0.12 : -0.12); P("bark", gT, x, 3, z, 0, lx); P("frond", gF, x, 6.2, z, i); boxes.push({ x1: x - 0.3, x2: x + 0.3, z1: z - 0.3, z2: z + 0.3, h: 6 }); });
+    [[-62, 50], [62, 50], [-62, -56], [62, -56], [-40, 57], [40, 57], [-14, -57], [14, -57], [-62, -6], [-30, 57], [30, 57], [62, -50]].forEach(([x, z], i) => { const lx = (i % 2 ? 0.12 : -0.12); P("bark", gT, x, 3, z, 0, lx); P("frond", gF, x, 6.2, z, i); const X = x * BZK, Z = z * BZK; boxes.push({ x1: X - 0.3, x2: X + 0.3, z1: Z - 0.3, z2: Z + 0.3, h: 6 }); }); // deco is authored at 1.0 and scaled by BZK below
     // pass 2 decoration (visual only, merged per material): ruin arches, broken pillars, scaffolding, rope bridge, boats, shrubs/ferns, sea horizon + islands
     Object.assign(DM, { ruin: L(0xb9ab8c), rope: L(0x5a4630), boat: L(0x9a6a3c), shrub: L(0x3f7a34),
       hor: new THREE.MeshBasicMaterial({ color: 0x8fd6da, fog: false, side: THREE.BackSide }), isle: new THREE.MeshBasicMaterial({ color: 0x4f8f86, fog: false }) });
@@ -4652,10 +4663,11 @@ function xBuildBreeze() {
     const gD = new THREE.BoxGeometry(0.15, 3, 2.8); [[10.1, -0.4], [10.1, 2.4], [39.9, -0.4], [39.9, 2.4]].forEach(([x, z]) => P("wood", gD, x, 1.5, z, 0)); // Mid Wood Doors (open leaves)
     for (let k = 0; k < 24; k++) { const a = (k / 24) * Math.PI * 2; P("sea", new THREE.PlaneGeometry(60, 60), Math.sin(a) * 120, -0.4, Math.cos(a) * 120, 0, -Math.PI / 2); }
     mapG.updateMatrixWorld(true); const inv = new THREE.Matrix4().copy(mapG.matrixWorld).invert(); G.forEach((gg) => gg.updateMatrixWorld(true));
-    Object.keys(D).forEach((k) => { const mm = new THREE.Mesh(xMergeGeo(D[k], inv), DM[k]); mm.name = "xDeco"; mm.raycast = () => {}; mm.castShadow = mm.receiveShadow = false; mm.updateMatrix(); mm.matrixAutoUpdate = false; mapG.add(mm); });
+    Object.keys(D).forEach((k) => { const mm = new THREE.Mesh(xMergeGeo(D[k], inv), DM[k]); mm.name = "xDeco"; mm.raycast = () => {}; mm.castShadow = mm.receiveShadow = false; mm.scale.set(BZK, 1, BZK); mm.updateMatrix(); mm.matrixAutoUpdate = false; mapG.add(mm); });
   }
+  XMK = 1;
   BREEZE_CALLOUTS.forEach(([t, x, z]) => xCallout(t, x, z));
-  try { xFitSun(mapG); } catch (e) {} // Breeze shadow-camera fit: 130 x 120 m incl. spawns at z ±54
+  try { xFitSun(mapG); } catch (e) {} // Breeze shadow-camera fit: ~107 x 98 m built incl. spawns at z ±44
 }
 const BREEZE_CALL = [];
 // ---- Lotus PASS 3 mechanics: doors are boxes entries whose h toggles 0 (open) / 5 (closed); nav edges through a gate cost 1e9 while it blocks ----
@@ -4845,10 +4857,10 @@ let tpT = 0, tpL = performance.now();
 // lane waypoints so bots route around the long walls instead of sticking to them
 const LX = [-20, 0, 20], lane = (x, z) => (z > -4 && z < 26 ? (FV.map === "bind" ? (x < 0 ? 0 : 2) : x < -12 ? 0 : x > 12 ? 2 : 1) : -1);
 // Ascent waypoint graph: nodes are CALLOUTS spots (nudged off boxes) plus a few corner nodes; every edge checked box-free
-const ASC_NODE = { "Attacker Spawn": [0, 53], "Spawn Gate": [0, 47], "A Lobby": [-47, 50], "A Main": [-44, 22], "A Main Exit": [-44, 1], "A Site": ASC_SITES.A,
-  "Mid Bottom": [0, 37], "Mid Courtyard": [-4, 15], "Mid East": [5, 15], "Catwalk": [-10, -7], "A Garden": [-23, 0], "A Garden Exit": [-33, -9],
-  "Market Door": [16, -4], "Market": [16, -14], "B Lobby": [47, 50], "B Main": [44, 22], "B Main Exit": [44, 1], "B Site": ASC_SITES.B,
-  "Defender Spawn": [0, -53], "Defender Gate": [0, -49], "Defender A": [-43, -50], "Defender B": [43, -50], "Defender Path": [48, -44], "B Lane": [49, -32], "B Lane Exit": [48, -20] };
+const ASC_NODE = { "Attacker Spawn": [0, 46.6], "Spawn Gate": [0, 41.4], "A Lobby": [-41.4, 44], "A Main": [-38.7, 19.4], "A Main Exit": [-38.7, 0.9], "A Site": ASC_SITES.A,
+  "Mid Bottom": [0, 32.6], "Mid Courtyard": [-3.5, 13.2], "Mid East": [4.4, 13.2], "Catwalk": [-8.8, -6.2], "A Garden": [-20.2, 0], "A Garden Exit": [-29, -7.9],
+  "Market Door": [14.1, -3.5], "Market": [14.1, -12.3], "B Lobby": [41.4, 44], "B Main": [38.7, 19.4], "B Main Exit": [38.7, 0.9], "B Site": ASC_SITES.B,
+  "Defender Spawn": [0, -46.6], "Defender Gate": [0, -43.1], "Defender A": [-37.8, -44], "Defender B": [37.8, -44], "Defender Path": [42.2, -38.7], "B Lane": [43.1, -28.2], "B Lane Exit": [42.2, -17.6] };
 const ASC_EDGE = [["Attacker Spawn", "Spawn Gate"], ["Spawn Gate", "A Lobby"], ["A Lobby", "A Main"], ["A Main", "A Main Exit"], ["A Main Exit", "A Site"], // A Main -> A Site
   ["Spawn Gate", "Mid Bottom"], ["Mid Bottom", "Mid Courtyard"], ["Mid Courtyard", "Catwalk"], ["Catwalk", "A Garden"], ["A Garden", "A Garden Exit"], ["A Garden Exit", "A Site"], // Mid -> Courtyard -> Catwalk -> Garden -> A
   ["Mid Bottom", "Mid East"], ["Mid Courtyard", "Mid East"], ["Mid East", "Market Door"], ["Market Door", "Market"], ["Market", "B Site"], // Mid -> Market -> B
@@ -4877,21 +4889,21 @@ const XG_LANES = [-20, 0, 20].flatMap((x) => [[x, -8], [x, 11], [x, 30]]);
 const XG_NODES = {
   bind: () => [[0, 35], [-20, 33], [20, 33], [13, 33], [-20, 20], [-23, 15.5], [-21, 17], [-27.5, 14], [-27.5, 8], [-27.5, 0], [-27.5, -9], [-27, -20], // spawn, A Lobby, A Short
     [-21, 9], [-21, 0], [-15, -1], [-15, -9], [-12, -20], [-11, -26], [-11, -32], [-11, -35], [0, -35], [13, -35], [13, -31.5], [13, -26], // Showers, Bath, A Site, U-Hall, Def Spawn, B Hall
-    [13, 24], [13, 18], [13, 13], [13, 7], [13, -3], [13, -9], [13, -11.7], [13, -14.8], [13, -17], [24.5, 24], [25, 20], [24.5, 12], [24.5, 0], [27.5, -9], [23, -10], [23, -16], SITES.A, SITES.B, [-28, -24], [-16, -15]], // Market, Hookah, B site, B Long, Garden, Elbow
+    [13, 24], [13, 18], [13, 13], [13, 7], [13, -3], [13, -9], [13, -11.7], [13, -14.8], [13, -17], [24.5, 24], [25, 20], [24.5, 12], [24.5, 0], [27.5, -9], [23, -10], [23, -16], SITES.A, SITES.B, [-28, -24], [-16, -15], [-15, -17], [-20.5, -17], [-9.8, -27], [-9.8, -19], [-13, -17]], // Market, Hookah, B site, B Long, Garden, Elbow; last 5: A Bath → A Site and U-Hall → A Site (A Site was only reachable one-way via the A Short teleporter)
   haven: () => XG_LANES.filter(([x, z]) => z !== 11 || x !== 0 && Math.abs(x) !== 20).concat([[0, 16], [-4, 11], [4, 11], [7, -10.5], [15, -10.5], [0, -26], [-25, -21], [-26.5, -27], [28, 22], [28, 4], [28, -8], [25, -11], [19, -2], [15, -7], [23.75, -26], [23.75, -31], [-27, 11], [-27, -4], [-20.5, 5.75], [-20.5, -3], [-15, -10.5], [-7, -10.5], [-21, -33], [0, -33], [21, -33], [-10, 5.5], [-15, 5.5], [10, 2], [14.5, 0.8], HSITES.A, HSITES.B, HSITES.C, [0, 35], [0, -35], [-28, 31]]), // last Bind 2 / Haven 1: reconnect A site + A Long after the layout rebuild (work/audit.js)
   split: () => [[0, 35], [0, 24], [0, 10], [0, -4], [0, -9.5], [0, -22], [0, -35], [0, -42], [18, -4], [-18, -9.5], // spawns, Mid Bottom / Top, Mail, Vents
     [30, 24], [39, 24], [39, 10], [39, -4], [36, -14], [29, -17], [-30, 24], [-39, 24], [-39, 10], [-39, -9.5], [-36, -14], [-29, -17], // lobbies, mains, ramps
     [14, -50], [38, -50], [27, -44], [31, -44], [-14, -50], [-38, -50], [-27, -44], [-31, -44], // defender side to stairs
     SSITES.A, SSITES.B, [27, -34], [-27, -34], [45, -44], [-45, -44], // on the raised sites + Heaven tops (reached only by XG_SPEC stair links)
     [47, -18.6], [47, -21.5], [-47, -18.6], [-47, -21.5], [45, -35], [-45, -35], [4, -22.6], [4, -26], [4, -29.5]], // rope bases / tops, Heaven drop landings, Mid perch
-  lotus: () => [[0, 50], [0, 44], [0, -52], [34, -38], [0, -30], [-38, 1], [-38, -12], [0, 35], [0, 30], [37, 30], [-37, 30], [20, 30], [-20, 30], [37, 20], [37, 8], [37, -4], [37, -14], [-37, 20], [-37, 8], [-37, -4], [-37, -14], // spawn, A / C Main
+  lotus: () => [[0, 50], [0, 44], [29, 44], [-29, 44], [0, -52], [34, -38], [0, -30], [-38, 1], [-38, -12], [0, 35], [0, 30], [37, 30], [-37, 30], [20, 30], [-20, 30], [37, 20], [37, 8], [37, -4], [37, -14], [-37, 20], [-37, 8], [-37, -4], [-37, -14], // spawn, A / C Main
     [0, 20], [0, 8], [0, -4], [0, -14], [-8, -4], [-20, -4], [-32, -4], [8, 2], [20, 2], [32, 2], // B Main, C Link, A Link
     LSITES.A, LSITES.B, LSITES.C, [0, -35], [0, -40], [0, -48], [25, -47], [36, -47], [-25, -47], [-36, -47], [47, -36], [-47, -36], // sites, B Upper, defender side, A Top
     [15, -28], [21, -28], [-15, -28], [-21, -28], [49.5, -6], [49.5, -16], [41, -6], [-49.5, -6], [-49.5, -16], [12, -22], [-12, -22], [28, -16], [-28, -16]], // doors, A Tree, breakable gap, C Waterfall
-  breeze: () => [[0, 54], [0, 46], [-24, 46], [24, 46], [-50, 46], [50, 46], [-50, 30], [-50, 14], [-50, 5], [-50, -4], [-50, -16], [-34, 5], [-18, 5], [-4, 5], // spawn, A Lobby / Main, A Cave
-    [0, 30], [0, 14], [0, 0], [0, -12], [0, -24.5], [0, -34], [0, -46], [0, -54], [-8, -24.5], [-18, -24.5], [-30, -24.5], [8, -24.5], [18, -24.5], [30, -24.5], // Mid, A Hall, B Window
-    BZSITES.A, BZSITES.B, [-56, -40], [-56, -20], [-30, -44], [-40, -52], [-18, -54], [56, -44], [56, -20], [32, -40], [40, -52], [18, -54], // sites + defender side
-    [6, 1], [25, 1], [44, 1], [47, 30], [47, 14], [47, -4], [42, -10], [42, -18], [32, -12]], // Wood Doors, B Main, B Elbow
+  breeze: () => [[0, 44.3], [0, 37.7], [-19.7, 37.7], [19.7, 37.7], [-41, 37.7], [41, 37.7], [-41, 24.6], [-41, 11.5], [-41, 4.1], [-41, -3.3], [-41, -13.1], [-27.9, 4.1], [-14.8, 4.1], [-3.3, 4.1], // spawn, A Lobby / Main, A Cave
+    [0, 24.6], [0, 11.5], [0, 0], [0, -9.8], [0, -20.1], [0, -27.9], [0, -37.7], [0, -44.3], [-6.6, -20.1], [-14.8, -20.1], [-24.6, -20.1], [6.6, -20.1], [14.8, -20.1], [24.6, -20.1], // Mid, A Hall, B Window
+    BZSITES.A, BZSITES.B, [-45.9, -32.8], [-45.9, -16.4], [-24.6, -36.1], [-32.8, -42.6], [-14.8, -44.3], [45.9, -36.1], [45.9, -16.4], [26.2, -32.8], [32.8, -42.6], [14.8, -44.3], // sites + defender side
+    [4.9, 0.8], [20.5, 0.8], [36.1, 0.8], [38.5, 24.6], [38.5, 11.5], [38.5, -3.3], [34.4, -8.2], [34.4, -14.8], [26.2, -9.8]], // Wood Doors, B Main, B Elbow
   retake: () => XG_GRID(-16, 16, -16, 16, 4),
   duel: () => XG_GRID(-7.5, 7.5, -13.5, 13.5, 3),
 };
@@ -4992,10 +5004,10 @@ Object.assign(XR, { lAm: [[37, 12], [37, 0], [36, -16]], lAt: [[37, 12], [41, -6
 const LOTUS_HOLD = [[47, -36], [22, -28], [0, -38], [-40, -18], [-20, -4]];
 const LOTUS_PLANT = { A: [38, -27], B: [1, -21], C: [-38, -27] };
 // Breeze pass 1: A Main / Mid→A Cave / Mid→A Hall, B Main→Elbow / Mid→Wood Doors; holds A back, A Hall, Mid Top, B Window, B back; default plants
-Object.assign(XR, { bAm: [[-50, 30], [-50, 5], [-50, -16]], bAc: [[0, 30], [0, 14], [-4, 5], [-34, 5], [-50, -4]], bAh: [[0, 14], [0, -12], [-8, -24.5], [-30, -24.5]],
-  bBm: [[47, 30], [47, -4], [42, -10], [42, -18]], bBd: [[0, 30], [0, 14], [6, 1], [25, 1], [44, 1], [42, -10]] });
-const BREEZE_HOLD = [[-56, -40], [-20, -25], [0, -30], [20, -25], [56, -44]];
-const BREEZE_PLANT = { A: [-44, -33], B: [46, -35] };
+Object.assign(XR, { bAm: [[-41, 24.6], [-41, 4.1], [-41, -13.1]], bAc: [[0, 24.6], [0, 11.5], [-3.3, 4.1], [-27.9, 4.1], [-41, -3.3]], bAh: [[0, 11.5], [0, -9.8], [-6.6, -20.1], [-24.6, -20.1]],
+  bBm: [[38.5, 24.6], [38.5, -3.3], [34.4, -8.2], [34.4, -14.8]], bBd: [[0, 24.6], [0, 11.5], [4.9, 0.8], [20.5, 0.8], [36.1, 0.8], [34.4, -8.2]] });
+const BREEZE_HOLD = [[-45.9, -32.8], [-16.4, -20.5], [0, -24.6], [16.4, -20.5], [45.9, -36.1]];
+const BREEZE_PLANT = { A: [-36.1, -27.1], B: [37.7, -28.7] };
 const xCrates = () => boxes.filter((b) => b.x2 - b.x1 <= 4 && b.z2 - b.z1 <= 4 && BH(b) >= 1 && BH(b) <= 2.6);
 function xCover(cx, cz, fx, fz, max) { // spot behind the nearest crate to (cx, cz), shielded from (fx, fz)
   let best = null, bd = max;
@@ -5625,7 +5637,7 @@ function okPlace(geo, c, dist) { const fx = -Math.sin(yaw), fz = -Math.cos(yaw);
 function okMMClick(e) {
   if (!J.ftp || !running || player.hp <= 0) return; e.stopPropagation();
   const r = MM.getBoundingClientRect(), W = MM.width, cx = (e.clientX - r.left) * W / r.width, cy = (e.clientY - r.top) * W / r.height;
-  const k = W / 160, P = 8 * k, bb = mode === "five" && FV.map === "ascent" ? { x1: -55, x2: 55, z1: -60, z2: 60 } : mmBounds(mode), bw = bb.x2 - bb.x1, bd = bb.z2 - bb.z1, s = (W - 2 * P) / Math.max(bw, bd), ox = P + (W - 2 * P - bw * s) / 2, oz = P + (W - 2 * P - bd * s) / 2;
+  const k = W / 160, P = 8 * k, bb = mode === "five" && FV.map === "ascent" ? { x1: -55 * AK, x2: 55 * AK, z1: -60 * AK, z2: 60 * AK } : mmBounds(mode), bw = bb.x2 - bb.x1, bd = bb.z2 - bb.z1, s = (W - 2 * P) / Math.max(bw, bd), ox = P + (W - 2 * P - bw * s) / 2, oz = P + (W - 2 * P - bd * s) / 2;
   const x = bb.x1 + (cx - ox) / s, z = bb.z1 + (cy - oz) / s;
   if (x < bb.x1 || x > bb.x2 || z < bb.z1 || z > bb.z2 || blocked(x, z, 0.45, 0)) return sgNo(), say("Can't go there · pick an open spot", 900);
   J.ftp = false; MM.style.pointerEvents = ""; J.ult = 0; J.fts = { t: 3, x, z, m: okMark(x, z, 0x6a4cff) };
@@ -6657,7 +6669,7 @@ const XBR = (() => {
   const st = { on: false, fade: 0, last: 0, cd: -1, hum: null, hv: -1, el: null };
   function edge() { return xSpawn(FV.map).edge; }
   // spawn-exit fit: the free gap around x=0 between the map's collision boxes that cross the barrier line, clamped to the map bounds; per-map widths as fallback
-  const FIT_W = { ascent: 40, bind: XMAP_SPAWN.bind.w, haven: XMAP_SPAWN.haven.w, split: XMAP_SPAWN.split.w, lotus: 38, breeze: 44 }, fitC = {};
+  const FIT_W = { ascent: 35, bind: XMAP_SPAWN.bind.w, haven: XMAP_SPAWN.haven.w, split: XMAP_SPAWN.split.w, lotus: 38, breeze: 36 }, fitC = {};
   function fit(z) {
     const k = FV.map + ":" + z; if (fitC[k]) return fitC[k];
     let r = null;
@@ -7452,7 +7464,7 @@ function minimap() {
   if (!show) return;
   const now = performance.now();
   if (now - (minimap.d || 0) < 50) return; minimap.d = now; // 20 Hz cap
-  const W = MM.width, k = W / 160, P = 8 * k, bb = mode === "five" && FV.map === "ascent" ? { x1: -55, x2: 55, z1: -60, z2: 60 } : mmBounds(mode), bw = bb.x2 - bb.x1, bd = bb.z2 - bb.z1;
+  const W = MM.width, k = W / 160, P = 8 * k, bb = mode === "five" && FV.map === "ascent" ? { x1: -55 * AK, x2: 55 * AK, z1: -60 * AK, z2: 60 * AK } : mmBounds(mode), bw = bb.x2 - bb.x1, bd = bb.z2 - bb.z1;
   const s = (W - 2 * P) / Math.max(bw, bd), ox = P + (W - 2 * P - bw * s) / 2, oz = P + (W - 2 * P - bd * s) / 2;
   const X = (x) => ox + (x - bb.x1) * s, Z = (z) => oz + (z - bb.z1) * s;
   if (now - mmT > 150) {

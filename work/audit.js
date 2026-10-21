@@ -963,6 +963,41 @@ if (!NO3) {
   try { toLobby(); } catch (e) {}
 }
 
+// ---------- map scale + layout: size, spawn→site run time on the bot nav graph, spawns clear, sites reachable (1 unit = 1 m: eye 1.5, run 6.75 m/s) ----------
+if (!NO3) {
+  let R = null, err = [];
+  try { R = JSON.parse(vm.runInContext("__xe", context)(`(() => { const RUN = 6.75, out = [], keepS = Object.assign({}, SITES), keepB = boxes;
+    const pads = { ascent: ASC_SITES, bind: { A: [-20, -21], B: [20, -21] }, haven: HSITES, split: SSITES, lotus: LSITES, breeze: BZSITES };
+    try { for (const k of ["ascent", "bind", "haven", "split", "lotus", "breeze"]) {
+      if (k !== "ascent") xBuildMap(k); const bx = FMAP[k].boxes, sp = xSpawn(k), P = pads[k], bad = [];
+      let x1 = 1e9, x2 = -1e9, z1 = 1e9, z2 = -1e9; bx.forEach((b) => { if (BH(b) < 4) return; x1 = Math.min(x1, b.x1); x2 = Math.max(x2, b.x2); z1 = Math.min(z1, b.z1); z2 = Math.max(z2, b.z2); });
+      const W = x2 - x1, D = z2 - z1, inBox = (x, z, r) => bx.some((b) => BH(b) > 0.5 && !(BH(b) < 4 && b.x2 - b.x1 > 6 && b.z2 - b.z1 > 6) /* raised walkable platforms (Split sites) are floor, not walls */ && x > b.x1 - r && x < b.x2 + r && z > b.z1 - r && z < b.z2 + r);
+      for (const z of [sp.atk, -sp.atk]) for (let x = -8; x <= 8; x += 2) if (inBox(x, z, 0.4)) bad.push("spawn (" + x + "," + z + ") in geometry");
+      for (const s in P) if (inBox(P[s][0], P[s][1], 0.3)) bad.push("site " + s + " centre in geometry");
+      let N, adj; boxes = bx;
+      if (k === "ascent") { const keys = Object.keys(ASC_NODE); N = keys.map((q) => ASC_NODE[q]); adj = N.map(() => []);
+        ASC_EDGE.forEach(([a, b]) => { const i = keys.indexOf(a), j = keys.indexOf(b), d = Math.hypot(N[i][0] - N[j][0], N[i][1] - N[j][1]); adj[i].push([j, d]); adj[j].push([i, d]); if (!ascClear(N[i][0], N[i][1], N[j][0], N[j][1])) bad.push("edge " + a + "-" + b + " blocked"); });
+        keys.forEach((q) => { if (blocked(ASC_NODE[q][0], ASC_NODE[q][1], 0.45)) bad.push("node " + q + " in geometry"); }); }
+      else { for (const s in SITES) delete SITES[s]; Object.assign(SITES, P); const G = xgBuild(k); N = G.N; adj = G.adj; }
+      boxes = keepB;
+      const near = (x, z) => { let bi = -1, bd = 1e9; N.forEach((p, i) => { const d = Math.hypot(p[0] - x, p[1] - z); if (d < bd) { bd = d; bi = i; } }); return [bi, bd]; };
+      const dj = (s) => { const Dd = N.map(() => 1e9), done = N.map(() => false); Dd[s] = 0; for (;;) { let u = -1; Dd.forEach((v, i) => { if (!done[i] && v < 1e9 && (u < 0 || v < Dd[u])) u = i; }); if (u < 0) break; done[u] = true; adj[u].forEach(([v, c]) => { if (Dd[u] + c < Dd[v]) Dd[v] = Dd[u] + c; }); } return Dd; };
+      const t = {};
+      for (const side of ["atk", "def"]) { const [s, sd] = near(0, side === "atk" ? sp.atk : -sp.atk), Dd = dj(s);
+        for (const q in P) { const [e, ed] = near(P[q][0], P[q][1]), d = Dd[e] + sd + ed; if (sd > 8 || ed > 8 || !(d < 1e8)) { bad.push(side + "→" + q + " unreachable"); t[side + q] = null; } else t[side + q] = +(d / RUN).toFixed(1); } }
+      out.push({ k, W: +W.toFixed(1), D: +D.toFixed(1), t, bad });
+    } } finally { boxes = keepB; for (const s in SITES) delete SITES[s]; Object.assign(SITES, keepS); }
+    return JSON.stringify(out); })()`)); } catch (e) { err.push(String(e).slice(0, 300)); }
+  for (const m of R || []) {
+    const big = Math.max(m.W, m.D), tA = Object.entries(m.t).filter(([q]) => q.startsWith("atk")), tD = Object.entries(m.t).filter(([q]) => q.startsWith("def"));
+    const sizeOk = big <= 150 && Math.min(m.W, m.D) >= 60; // Valorant-like 90-150 m; Bind / Haven are compact by design (61 x 81 m) and pass on run time
+    const runOk = tA.every(([, v]) => v != null && v >= 7.5 && v <= 16.5) && tD.every(([, v]) => v != null && v <= 16.5); // attacker spawn → each site ~8-16 s at 6.75 m/s; defenders no slower
+    const ok = sizeOk && runOk && !m.bad.length;
+    report.push({ label: `Map scale ${m.k}: ${m.W} x ${m.D} m; spawn→site run ${Object.entries(m.t).map(([q, v]) => q + " " + (v == null ? "—" : v + "s")).join(", ")}; spawns clear, sites reachable on the nav graph`, el: true, handler: true, cond: ok, pass: ok, errs: m.bad.concat(sizeOk ? [] : ["size out of 60-150 m"], runOk ? [] : ["run time out of 7.5-16.5 s"]) });
+  }
+  if (!R) report.push({ label: "Map scale audit", el: true, handler: true, pass: false, cond: false, errs: err });
+}
+
 // ---------- print ----------
 const bad = report.filter((r) => !r.pass);
 console.log(`\n=== audit (${MID ? "THREE loads, 3D init throws" : NO3 ? "THREE missing" : "THREE stub loaded"}) — ${report.length} checks, ${bad.length} failing ===`);
