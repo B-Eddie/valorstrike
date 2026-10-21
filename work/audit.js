@@ -1885,6 +1885,51 @@ if (!NO3) {
   try { xe("annClear(); running = false; true"); toLobby(); } catch (e) {}
 }
 
+// ---------- feel3: Valorant reference tables (weapons, reload, equip, crosshair / hit-feedback defaults, audio cues, kits) ----------
+{
+  const FE = (label, f) => { phase = "feel3 " + label; const e0 = errors.length; let r; try { r = f(); } catch (e) { r = "threw: " + String((e && e.stack) || e).split("\n").slice(0, 2).join(" | ").slice(0, 300); }
+    const ok = r === true && errors.length === e0; report.push({ label: "feel3: " + label, el: true, handler: true, cond: ok, pass: ok, errs: ok ? [] : [r === true ? "errors: " + errors.slice(e0).map((e) => e.msg).join(" ; ").slice(0, 300) : String(r)] }); };
+  const xe = vm.runInContext("__xe", context);
+  FE("weapon table: mags, body/head damage and reload times match Valorant", () => {
+    const MAGS = { Vandal: 25, Phantom: 30, Spectre: 30, Classic: 12, Ghost: 15, Sheriff: 6, Operator: 5, Marshal: 5, Judge: 7, Bucky: 5, Ares: 50, Odin: 100, Guardian: 12, Bulldog: 24, Stinger: 20, Frenzy: 13, Shorty: 2, Outlaw: 2 };
+    const DMG = { Vandal: [40, 160], Phantom: [39, 156], Sheriff: [55, 159], Classic: [26, 78], Ghost: [30, 105], Operator: [150, 255], Guardian: [65, 195], Spectre: [26, 78], Odin: [38, 95] };
+    const RLD = { Vandal: 2.5, Phantom: 2.5, Spectre: 2.25, Sheriff: 2.25, Classic: 1.75, Operator: 3.7, Odin: 5 };
+    const W = JSON.parse(xe("JSON.stringify(WEAP)")), bad = [];
+    for (const n in MAGS) if (!W[n] || W[n].mag !== MAGS[n]) bad.push(n + " mag " + (W[n] && W[n].mag) + " want " + MAGS[n]);
+    for (const n in DMG) if (!W[n] || W[n].body !== DMG[n][0] || W[n].head !== DMG[n][1]) bad.push(n + " dmg " + (W[n] && W[n].body + "/" + W[n].head) + " want " + DMG[n].join("/"));
+    for (const n in DMG) if (W[n] && W[n].legs != null && Math.abs(W[n].legs / W[n].body - 0.85) > 0.1) bad.push(n + " legs " + W[n].legs + " not ~0.85x body");
+    for (const n in RLD) if (!W[n] || W[n].rld !== RLD[n]) bad.push(n + " reload " + (W[n] && W[n].rld) + " want " + RLD[n]);
+    if (W.Vandal.ff) bad.push("Vandal has falloff"); if (!(W.Phantom.ff && xe('wDmg(WEAP.Phantom, "body", 10)') === 39 && xe('wDmg(WEAP.Phantom, "body", 20)') < 39)) bad.push("Phantom falloff past 15 m");
+    if (xe('wDmg(WEAP.Vandal, "head", 45)') !== 160) bad.push("Vandal head at 45 m " + xe('wDmg(WEAP.Vandal, "head", 45)'));
+    if (xe("OP_RELOAD") !== 3.7) bad.push("duel Operator reload " + xe("OP_RELOAD"));
+    return bad.length ? bad.slice(0, 6).join(" | ") : true; });
+  FE("reload uses the held gun's time (Classic 1.75 s, Sheriff 2.25 s, Vandal 2.5 s); equip Vandal 1.0, Operator 1.25, Sheriff 0.75 s", () => {
+    const r = xe(`(() => { const m0 = mode, rw0 = rw, w0 = S.weapon; try { mode = "x"; rw = "pis"; const c = xRT(); rw = "pri"; S.weapon = "Vandal"; const v = xRT(); S.weapon = "Operator"; const o = xRT(); return JSON.stringify([c, v, o, xEq("Vandal"), xEq("Operator"), xEq("Sheriff")]); } finally { mode = m0; rw = rw0; S.weapon = w0; } })()`);
+    return r === JSON.stringify([1.75, 2.5, 3.7, 1, 1.25, 0.75]) || "xRT/xEq " + r; });
+  FE("movement: knife 6.75 m/s run, walk x0.6 (silent), crouch x0.45, jump apex ~1 m, rifles 5.4 m/s", () => {
+    if (Math.abs(xe("6.75 * vRunK('Vandal')") - 5.4) > 0.01) return "rifle run " + xe("6.75 * vRunK('Vandal')"); if (xe("vRunK('knife')") !== 1) return "knife not full speed";
+    const src = html; if (!/sp = \(cr \? 0\.45 : wk \? 0\.6 : 1\)/.test(src)) return "walk / crouch multipliers changed"; if (!/if \(P\.mv && gr && !cr && !wk\)/.test(src)) return "footsteps not gated to running";
+    const apex = 6.6 * 6.6 / (2 * 22); return apex > 0.9 && apex < 1.1 || "jump apex " + apex; });
+  FE("feedback defaults: hit marker and damage numbers off (settings toggles exist), crosshair firing / movement error off", () => {
+    if (!/weapon: "Vandal", hm: false, dn: false \}/.test(html)) return "hm/dn not off in the S defaults"; // earlier checks click every .seg button, so read the shipped default from source
+    if (!/data-key="hm"><button data-v="0" class="on">/.test(html) || !/data-key="dn"><button data-v="0" class="on">/.test(html)) return "toggles not Off by default";
+    xe("S.hm = false; S.dn = false; true");
+    if (!doc.querySelector('.seg[data-key="hm"]') || !doc.querySelector('.seg[data-key="dn"]')) return "toggles missing";
+    if (!/off: 10 \}, me: false, fe: false \}/.test(html)) return "error lines default on";
+    const r = xe(`(() => { const hm = document.getElementById("xHm"); hm.classList.remove("on"); vmHit(new THREE.Vector3(0, 1, -5), 40, false, false); const off = hm.classList.contains("on"); S.hm = true; vmHit(new THREE.Vector3(0, 1, -5), 40, false, false); const on = hm.classList.contains("on"); S.hm = false; hm.classList.remove("on"); return JSON.stringify([off, on]); })()`);
+    return r === "[false,true]" || "hit marker off/on " + r; });
+  FE("audio: spike cadence speeds up (faster in last 10 s), low-time tick, round-start stinger, half-defuse chime exist", () => {
+    const h = [45, 20, 9, 5].map((f) => xe("xSpHz(" + f + ")")); if (!(h[0] < h[1] && h[1] < h[2] && h[2] < h[3])) return "cadence " + h.join(",");
+    for (const k of ["lowT", "roundStart", "defHalf", "plantBeep", "whir", "stinger"]) if (xe("typeof SFX." + k) !== "function") return "SFX." + k + " missing";
+    if (!/SFX\.roundStart\(\)/.test(html) || !/SFX\.lowT\(/.test(html) || !/SFX\.defHalf\(\)/.test(html)) return "cue not wired"; return true; });
+  FE("kits: 4 abilities each, Cypher Trapwire 2 charges / 200, Neural Theft 7 points", () => {
+    const K = JSON.parse(xe("JSON.stringify(KITS)")), bad = [];
+    for (const a in K) { if (!K[a].n || K[a].n.length !== 4) bad.push(a + " has " + (K[a].n && K[a].n.length) + " abilities"); if (!(K[a].u >= 6 && K[a].u <= 9)) bad.push(a + " ult " + K[a].u); }
+    const C = K.Cypher; if (C.mx.c !== 2 || C.u !== 7 || !C.buy.some((b) => b[0] === "c" && b[2] === 200)) bad.push("Cypher " + JSON.stringify([C.mx, C.u]));
+    return bad.length ? bad.join(" | ") : true; });
+  try { xe("running = false; true"); toLobby(); } catch (e) {}
+}
+
 // ---------- print ----------
 const bad = report.filter((r) => !r.pass);
 console.log(`\n=== audit (${MID ? "THREE loads, 3D init throws" : NO3 ? "THREE missing" : "THREE stub loaded"}) — ${report.length} checks, ${bad.length} failing ===`);
