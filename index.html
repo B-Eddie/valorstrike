@@ -6837,13 +6837,15 @@ function jFxTick(dt) {
   const P = player, alive = P.hp > 0, heal = () => { if (alive) P.hp = Math.min(100, P.hp + 15 * dt); };
   { const A = J.walls, n = A.length; let k = 0; // in-place compaction, no per-frame closures
     for (let i = 0; i < n; i++) { const w = A[i]; w.t -= dt; w.m.material.opacity = 0.7 * Math.min(1, w.t / 0.5);
-      for (let j = 0; j < bots.length; j++) { const b = bots[j]; if (b.alive && segD(b.g.position.x, b.g.position.z, w) < 1) jHit(b, 30 * dt, "Blaze"); }
-      if (segD(P.x, P.z, w) < 1) heal(); if (w.t > 0) A[k++] = w; else jRel(w.m); }
+      if (w.own) { if (!w.nd) { mpAreaHit(w, 0, 0, 1, 30 * dt, "Blaze", w); const o = w.own; if (o.alive && o.g && segD(o.g.position.x, o.g.position.z, w) < 1) o.hp = Math.min(100, o.hp + 15 * dt); } } // online remote cast: team-aware, host only
+      else { for (let j = 0; j < bots.length; j++) { const b = bots[j]; if (b.alive && segD(b.g.position.x, b.g.position.z, w) < 1) jHit(b, 30 * dt, "Blaze"); }
+      if (segD(P.x, P.z, w) < 1) heal(); } if (w.t > 0) A[k++] = w; else jRel(w.m); }
     A.length = k; }
   { const A = J.zones, n = A.length; let k = 0;
     for (let i = 0; i < n; i++) { const z = A[i]; z.t -= dt; z.m.material.opacity = 0.55 * Math.min(1, z.t / 0.5);
-      for (let j = 0; j < bots.length; j++) { const b = bots[j]; if (b.alive && Math.hypot(b.g.position.x - z.p.x, b.g.position.z - z.p.z) < 2.5) jHit(b, 30 * dt, "Hot Hands"); }
-      if (Math.hypot(P.x - z.p.x, P.z - z.p.z) < 2.5) heal(); if (z.t > 0) A[k++] = z; else jRel(z.m); }
+      if (z.own) { if (!z.nd) { mpAreaHit(z, z.p.x, z.p.z, 2.5, 30 * dt, "Hot Hands", null); const o = z.own; if (o.alive && o.g && Math.hypot(o.g.position.x - z.p.x, o.g.position.z - z.p.z) < 2.5) o.hp = Math.min(100, o.hp + 15 * dt); } }
+      else { for (let j = 0; j < bots.length; j++) { const b = bots[j]; if (b.alive && Math.hypot(b.g.position.x - z.p.x, b.g.position.z - z.p.z) < 2.5) jHit(b, 30 * dt, "Hot Hands"); }
+      if (Math.hypot(P.x - z.p.x, P.z - z.p.z) < 2.5) heal(); } if (z.t > 0) A[k++] = z; else jRel(z.m); }
     A.length = k; }
   { const A = J.orbs, n = A.length; let k = 0;
     for (let i = 0; i < n; i++) { const o = A[i]; o.t += dt; o.m.position.lerpVectors(o.a, o.b, Math.min(1, o.t / 0.5));
@@ -6855,7 +6857,7 @@ function jFxTick(dt) {
     if (a.kind === "dart") { if (a.tg && a.tg.alive) drTag(a.tg); }
     else if (a.kind === "erecon") enRecon(a.b);
     else if (a.kind === "recon") jReveal(a.b);
-    else { blip(160, 0.3, "square", 0.2); const m = jM(smokeGeo, fireMat(0x7fd8ff, 0.4)); m.scale.setScalar(0.75); m.position.copy(a.b); jFx(m, 0.35); bots.forEach((b) => b.alive && new THREE.Vector3(b.g.position.x, 1, b.g.position.z).distanceTo(a.b) < 3 && jHit(b, 75, "Shock Bolt")); }
+    else { blip(160, 0.3, "square", 0.2); const m = jM(smokeGeo, fireMat(0x7fd8ff, 0.4)); m.scale.setScalar(0.75); m.position.copy(a.b); jFx(m, 0.35); if (a.own) { if (!a.nd) mpAreaHit(a, a.b.x, a.b.z, 3, 75, "Shock Bolt", null); } else bots.forEach((b) => b.alive && new THREE.Vector3(b.g.position.x, 1, b.g.position.z).distanceTo(a.b) < 3 && jHit(b, 75, "Shock Bolt")); }
     return false;
   });
   J.fx = J.fx.filter((f) => { f.t -= dt; if (f.g) f.m.scale.setScalar(0.5 + f.g * (1 - Math.max(0, f.t / f.t0))); f.m.material.opacity = f.o * Math.max(0, f.t / f.t0); if (f.t > 0) return true; jRel(f.m); return false; });
@@ -10256,6 +10258,7 @@ function mpHostMsg(c, m) {
   }
   if (m.t === "sh") { if (u.alive && typeof m.w === "string") { try { SFX.at(u.g.position, WEAP[m.w] ? m.w : "Vandal"); } catch (e) {} } return; }
   if (m.t === "hit") return mpHostHit(c, u, m);
+  if (m.t === "ab") return mpCastIn(c, u, m);
 }
 function mpUnit(i) { if (i === 0) return player; return [].concat(bots, allies).find((u) => u && u.nid === i) || null; }
 function mpTeamOf(u) { return u === player ? 0 : allies.indexOf(u) >= 0 ? 0 : 1; }
@@ -10391,7 +10394,9 @@ function mpCliMsg(m) {
   if (m.t === "room") { MP.room = m; MP.mode = m.mode; MP.map = m.map; if (MP.st !== "game" && MP.st !== "post") MP.st = "room"; return mpUI(); }
   if (m.t === "start") return mpCliStart(m);
   if (m.t === "s") return mpCliSnap(m);
+  if (m.t === "ac") return mpCastFx(m);
   if (MP.m5 && mpCli5(m)) return;
+  if (m.t === "abn") { if (/^[cqe]$/.test(m.k)) J[m.k] = 0; return; }
   if (m.t === "end") { if (MP.st !== "game") return; mpCliSnap(Object.assign({ ev: [] }, m)); MP.st = "post"; DM.over = m.over == null ? null : m.over === "t" || m.over === "r" ? (MP.team === 0 ? m.over : m.over === "t" ? "r" : "t") : mpIn(m.over); try { dmEnd(); } catch (e) { xE(e); } MP.cl = false; return mpUI(); }
   if (m.t === "full") return mpLost("The room is full.");
 }
@@ -10399,7 +10404,7 @@ function mpCliMsg(m) {
 { const h0 = hurt; hurt = function (t, n, by) {
   if (MP.cl && MP.st === "game" && mode === "five" && (FV.dm || MP.m5)) {
     if (!t || t === player) return;
-    if (t.nt && t.nid != null && by === undefined && t.alive && n > 0) { const hs = xHS; xHS = false; mpSend(MP.hc, { t: "hit", i: t.nid, n: Math.round(n), hs: hs ? 1 : 0, w: rw === "knife" ? "Knife" : wName() }); }
+    if (t.nt && t.nid != null && by === undefined && t.alive && n > 0 && !MP.nc) { const hs = xHS; xHS = false; mpSend(MP.hc, { t: "hit", i: t.nid, n: Math.round(n), hs: hs ? 1 : 0, w: rw === "knife" ? "Knife" : wName() }); }
     return;
   }
   return h0.apply(this, arguments); }; }
@@ -10603,8 +10608,7 @@ function mpHost5(c, u, m) { // returns true when handled
   if (m.t === "drop") { const sp = FV.sp; if (FV.buy > 0 || !sp || sp.st !== "carry" || sp.c !== u || !u.alive) return true;
     const p = u.g.position, r = +m.r || 0; let x = p.x - Math.sin(r) * 2, z = p.z - Math.cos(r) * 2; try { if (!isFinite(x) || !isFinite(z) || blocked(x, z, 0.3)) { x = p.x; z = p.z; } } catch (e) { x = p.x; z = p.z; }
     sp.st = "drop"; sp.x = x; sp.z = z; sp.nd = u; sp.ndt = performance.now() + 1000; fsM.position.set(x, 0.4, z); fsM.visible = true; fsSet(); feed(u.name + " dropped the Spike"); return true; }
-  if (m.t === "ab") { const k = String(m.k || ""); if (!/^[cqe]$/.test(k) || !u.alive) return true; // cast: host keeps the charge count
-    if ((c.ab[k] | 0) > 0) c.ab[k]--; else mpSend(c.conn, { t: "abn", k, n: 0 }); return true; }
+  if (m.t === "ab") { mpCastIn(c, u, m); return true; } // cast: host keeps the charge count, spawns the effect and relays it
   return false;
 }
 { const d0 = mpDrop; mpDrop = function (c) { if (c && c.u && MP.m5) { const u = c.u; u.h4 = 0; } return d0.apply(this, arguments); }; }
@@ -10697,8 +10701,88 @@ function mpCli5(m) { // client 5v5 messages; true when handled
 { const s0 = fSell; fSell = function (n) { if (!mp5C()) return s0.apply(this, arguments); if (!n || !(FV.buy > 0)) return false; mpSend(MP.hc, { t: "sell", n: String(n) }); return true; }; }
 { const r0 = fReq; fReq = function () { if (mp5C()) return false; return r0.apply(this, arguments); }; }
 { const j0 = jBuy; jBuy = function (k) { if (!mp5C()) return j0.apply(this, arguments); if (FV.buy > 0) mpSend(MP.hc, { t: "buy", n: "ab:" + k }); }; }
-{ const k0 = jKey; jKey = function (code) { if (!mp5C() || !/^Key[CQE]$/.test(String(code))) return k0.apply(this, arguments);
-  const k = String(code)[3].toLowerCase(), n0 = J[k], r = k0.apply(this, arguments); if (typeof n0 === "number" && J[k] < n0) mpSend(MP.hc, { t: "ab", k }); return r; }; }
+// ---- online abilities: a client's cast goes to the host (agent, slot, eye, aim, time); the host checks the charge, spawns the effect in its own
+// world with the same fx entities as the kits (smokes block bot sight, flashes blind, mollies / shock bolts hurt, heals heal, recon reveals) and
+// relays a cast event; every other peer spawns it as a visual (o.nd: no damage, the host owns it). Host and bot casts are relayed the same way. ----
+const MPC = { e: new THREE.Vector3(), d: new THREE.Vector3(), hl: [], bb: null, bp: null, bpv: new THREE.Vector3() };
+const MP_SMK = { Jett: [14, 4.5], Omen: [40, 15], Cypher: [10, 7] }; // smoke range, duration
+const mpR3 = (v) => [+v.x.toFixed(2), +v.y.toFixed(2), +v.z.toFixed(2)];
+function mpV(a, def) { if (Array.isArray(a) && a.length === 3) { const x = +a[0], y = +a[1], z = +a[2]; if (isFinite(x) && isFinite(y) && isFinite(z)) return def.set(x, y, z); } return def; }
+function mpDir(a, u) { const v = mpV(a, new THREE.Vector3()); if (v.lengthSq() < 1e-6) { const r = u && u.g ? u.g.rotation.y : 0; v.set(Math.sin(r), 0, Math.cos(r)); } return v.normalize(); }
+function mpTgt(o, d, far, back) { ray.set(o, d); ray.far = far; const h = ray.intersectObjects(solids)[0]; return h ? MPC.e.copy(h.point).addScaledVector(d, -back) : MPC.e.copy(o).addScaledVector(d, far); }
+const mpDist = (px, pz, x, z, seg) => (seg ? segD(px, pz, seg) : Math.hypot(px - x, pz - z));
+function mpAreaHit(o, x, z, r, n, w, seg) { // host only: the remote caster's enemies (FFA: everyone else), credited to the caster
+  if (!(MP.role === "host" && MP.st === "game") || !o.own) return; const by = o.own.name, ffa = FV.dm && !FV.tdm;
+  if ((o.en || ffa) && player.hp > 0 && mpDist(player.x, player.z, x, z, seg) < r) { xBotDmg(player, n, by, w); try { updHud(); } catch (e) {} if (player.hp <= 0) pDie(by, w); }
+  const T = ffa || !o.en ? bots : allies;
+  for (let j = 0; j < T.length; j++) { const t = T[j]; if (t && t !== o.own && t.alive && t.g && mpDist(t.g.position.x, t.g.position.z, x, z, seg) < r) xBotDmg(t, n, by, w); }
+}
+function mpStun(u, en, x, z, r, s, auth) { // the local player on every peer (screen effect); units only on the host
+  const ffa = FV.dm && !FV.tdm; if ((en || ffa) && player.hp > 0 && Math.hypot(player.x - x, player.z - z) < r) { try { xConStart(s * 1000); } catch (e) {} }
+  if (!auth) return; const T = ffa || !en ? bots : allies;
+  for (let j = 0; j < T.length; j++) { const t = T[j]; if (t && t !== u && t.alive && t.g && Math.hypot(t.g.position.x - x, t.g.position.z - z) < r) bcDaze(t, s); }
+}
+function mpFx(u, ag, k, o, d, auth, p, quiet) { // u: caster unit, o/d: eye + aim, p: exact target (bot casts), auth: host world (damage / heal / daze)
+  const i = "cqex".indexOf(k); if (i < 0 || !u || !u.g) return; if (!KITS[ag]) ag = "Jett";
+  const ty = ABI_M[ag][i] || "ult", al = allies.indexOf(u) >= 0, en = !al, nd = !auth, nm = KITS[ag].n[i] || "Ability", up = u.g.position, col = al ? 0x3fb4ff : 0xff4655;
+  const tg = (far, back) => (p ? MPC.e.copy(p) : mpTgt(o, d, far, back));
+  if (ty === "smoke") { const S = MP_SMK[ag] || [14, 7], e = tg(S[0], 0.5); enSmoke(e.x, e.z, al, S[1]); }
+  else if (ty === "flash") { const e = tg(ag === "Phoenix" ? 6 : 12, 0.4).clone(), m = jM(orbGeo, jMat("orb", () => new THREE.MeshBasicMaterial({ color: 0xfff2b0 }))); m.position.copy(o); scene.add(m); J.orbs.push({ m, a: o.clone(), b: e, t: 0, en }); }
+  else if (ty === "fire") { const rz = ag === "Raze", e = rz ? tg(14, 0.4) : p ? tg() : mpTgt(new THREE.Vector3(up.x, 1, up.z), MPC.d.set(d.x, 0, d.z).normalize(), 5, 0.5);
+    const c = new THREE.Vector3(e.x, 0.05, e.z), m = jM(zoneGeo, fireMat(rz ? 0xff4fa0 : 0xff5a1a, 0.55)); m.rotation.x = -Math.PI / 2; m.position.copy(c); scene.add(m);
+    J.zones.push({ m, p: c, t: rz ? 1.5 : 4, own: u, en, nd: nd || rz }); } // Paint Shells damage stays with the caster's own claims
+  else if (ty === "wall") { const sg = ag === "Sage", f = MPC.d.set(d.x, 0, d.z); if (f.lengthSq() < 1e-6) f.set(Math.sin(up.y), 0, 1); f.normalize(); const yw = Math.atan2(-f.x, -f.z);
+    const w = { p: new THREE.Vector3(up.x + f.x * 3, 1.5, up.z + f.z * 3), ax: Math.cos(yw), az: -Math.sin(yw), t: sg ? 30 : 8, own: u, en, nd: nd || sg }; // Barrier Orb: sight blocker only
+    w.m = jM(sg ? sgWallGeo : blazeGeo, fireMat(sg ? 0x9fe8ff : 0xff7a1a, 0.7)); w.m.position.copy(w.p); w.m.rotation.y = yw; scene.add(w.m); J.walls.push(w); }
+  else if (ty === "heal") { if (auth && u.alive) MPC.hl.push({ u, l: 50, r: ag === "Sage" ? 10 : ag === "Reyna" ? 50 / 3 : 25 });
+    const m = jM(zoneGeo, fireMat(0x5fe0d0, 0.4)); m.rotation.x = -Math.PI / 2; m.scale.setScalar(0.5); m.position.set(up.x, 0.06, up.z); jFx(m, 3); }
+  else if (ty === "stun") {
+    if (ag === "Sova") { const e = tg(50, 0.2).clone(), a = o.clone(), m = jBolt(0x7fd8ff, a, e); J.arrows.push({ m, a, b: e, t: 0, dur: Math.max(0.05, a.distanceTo(e) / 45), kind: "shock", own: u, en, nd }); }
+    else { const e = tg(ag === "Breach" && k === "e" ? 20 : 12, 0.4), m = jM(smokeGeo, fireMat(ag === "Sage" ? 0x5fe0d0 : 0xff9a3a, 0.35)); m.position.set(e.x, 0.6, e.z); jFx(m, 0.8).g = 0.6; mpStun(u, en, e.x, e.z, 4.5, 2, auth); }
+  }
+  else if (ty === "eye") {
+    if (ag === "Sova") { const e = tg(50, 0.2).clone(), a = o.clone(), m = jBolt(al ? 0x45d0ff : 0xff4655, a, e); J.arrows.push({ m, a, b: e, t: 0, dur: Math.max(0.05, a.distanceTo(e) / 45), kind: al ? "recon" : "erecon" }); }
+    else { const ry = ag === "Reyna", e = tg(ry ? 15 : 10, 0.4), m = jM(orbGeo, fireMat(ry ? 0xc75cff : 0xd9d3c4, 0.9)); m.scale.setScalar(2); m.position.copy(e); jFx(m, ry ? 2 : 4);
+      if (ry && (en || (FV.dm && !FV.tdm)) && player.hp > 0 && Math.hypot(player.x - e.x, player.z - e.z) < 15) { pNs(2.5); say("Nearsighted by Leer", 900); } }
+  }
+  else if (ty !== "dash") { const e = ty === "ult" ? MPC.e.set(up.x, 0.06, up.z) : tg(8, 0.4), m = jM(ringGeo, fireMat(col, 0.85)); m.rotation.x = -Math.PI / 2; m.position.set(e.x, 0.06, e.z); m.scale.setScalar(ty === "ult" ? 3 : 1.5); jFx(m, 1.5); } // drones, traps, devices, ults: marker only
+  if (!quiet) { try { feed(ag + " ▸ " + nm); } catch (e) {} }
+}
+{ const c0 = jClear; jClear = function () { MPC.hl.length = 0; return c0.apply(this, arguments); }; } // round start: pending remote heals end
+function mpHealTick(dt) { const A = MPC.hl; let w = 0; for (let i = 0; i < A.length; i++) { const h = A[i], u = h.u; if (!u.alive) continue; const n = Math.min(h.r * dt, h.l); h.l -= n; u.hp = Math.min(100, u.hp + n); if (h.l > 0.01) A[w++] = h; } A.length = w; }
+function mpCastOut(m, ex) { MP.conns.forEach((c) => { if (c.u && c !== ex) mpSend(c.conn, m); }); }
+function mpCastIn(c, u, m) { // host: a client's cast
+  const k = String(m.k || ""); if (!/^[cqex]$/.test(k) || !u || !u.alive || !u.g || (MP.m5 && FV.buy > 0)) return;
+  const ag = KITS[c.ag] ? c.ag : xBAg(u) || "Jett", now = performance.now(), T = c.abT || (c.abT = {});
+  if (now - (T[k] || -1e9) < 250) return; // key spam: ignored, the charge stays
+  if (k === "x") { if (now - (c.xT || -1e9) < 8000) return; c.xT = now; } // ult points are not tracked on the host: one ult per 8 s at most
+  else { const ch = MP.m5 ? c.ab : xBCh(u); let pk = k; if (ag === "Reyna" && k !== "c" && ch && !((ch[k] | 0) > 0)) pk = k === "q" ? "e" : "q"; // Devour / Dismiss share charges
+    if (!ch || !((ch[pk] | 0) > 0)) return mpSend(c.conn, { t: "abn", k, n: 0 }); ch[pk]--; }
+  T[k] = now; const P = u.g.position, o = mpV(m.o, new THREE.Vector3(P.x, 1.6, P.z)); if (Math.hypot(o.x - P.x, o.z - P.z) > 3 || o.y < -1 || o.y > 12) o.set(P.x, 1.6, P.z);
+  const d = mpDir(m.d, u); mpFx(u, ag, k, o, d, true);
+  mpCastOut({ t: "ac", i: u.nid, ag, k, o: mpR3(o), d: mpR3(d), ts: +m.ts || 0 }, c);
+}
+function mpCastFx(m) { // client: someone else's cast, visual only
+  if (!MP.cl || MP.st !== "game" || m.i === MP.me || typeof m.k !== "string") return;
+  const u = bots.find((x) => x && x.nid === m.i) || allies.find((x) => x && x.nid === m.i); if (!u || !u.g) return;
+  const o = mpV(m.o, new THREE.Vector3(u.g.position.x, 1.6, u.g.position.z)), d = mpDir(m.d, u), p = Array.isArray(m.p) ? mpV(m.p, new THREE.Vector3()) : null;
+  mpFx(u, KITS[m.ag] ? m.ag : "Jett", m.k, o, d, false, p);
+}
+function mpCastSelf(k) { const m = { t: MP.role === "host" ? "ac" : "ab", k, ag: J.pick || "Jett", o: mpR3(pEye()), d: mpR3(jAim()), ts: Math.round(performance.now()) };
+  if (MP.role === "host") { m.i = 0; mpCastOut(m, null); } else mpSend(MP.hc, m); }
+{ const k0 = jKey; jKey = function (code) { // own cast (a charge or the ult spent): client asks the host, host relays
+  if (!(MP.on && MP.st === "game" && mode === "five" && (MP.role === "host" || MP.cl) && typeof code === "string" && /^Key[CQEX]$/.test(code))) return k0.apply(this, arguments);
+  const k = code[3].toLowerCase(), c0 = J.c, q0 = J.q, e0 = J.e, u0 = J.ult, r = k0.apply(this, arguments);
+  if (k === "x" ? J.ult < u0 : J.c < c0 || J.q < q0 || J.e < e0) { try { mpCastSelf(k); } catch (e) { xE(e); } }
+  return r; }; }
+{ const f0 = jFxTick; jFxTick = function (dt) { const cl = MP.cl && MP.st === "game"; if (cl) MP.nc = 1; try { f0(dt); } finally { MP.nc = 0; } if (MP.role === "host" && MPC.hl.length) mpHealTick(dt); }; } // client: own fx ticks make no hit claims (the host's copy deals the damage)
+{ const b0 = botAb; botAb = function (b) { if (!(MP.role === "host" && MP.st === "game")) return b0.apply(this, arguments); MPC.bb = b; MPC.bp = null; try { return b0.apply(this, arguments); } finally { MPC.bb = null; } }; }
+{ const s0 = enSmoke; enSmoke = function (x, z) { if (MPC.bb) MPC.bp = MPC.bpv.set(x, 1.8, z); return s0.apply(this, arguments); }; }
+{ const f0 = xBFlash; xBFlash = function () { const r = f0.apply(this, arguments); if (MPC.bb) { const q = J.orbs[J.orbs.length - 1]; if (q) MPC.bp = MPC.bpv.copy(q.b); } return r; }; }
+function mpBotCast(b, t) { const j = t.indexOf(" ▸ "), ag = t.slice(0, j), K2 = KITS[ag]; if (!K2 || b.nid == null || !b.g) return; const i = K2.n.indexOf(t.slice(j + 3)); if (i < 0) return;
+  const P = b.g.position, ry = b.g.rotation.y, m = { t: "ac", i: b.nid, ag, k: "cqex"[i], o: [+P.x.toFixed(2), 1.5, +P.z.toFixed(2)], d: [+Math.sin(ry).toFixed(2), 0, +Math.cos(ry).toFixed(2)], ts: Math.round(performance.now()) };
+  if (MPC.bp) m.p = mpR3(MPC.bp); MPC.bp = null; mpCastOut(m, null); }
+{ const f0 = feed; feed = function (t) { const b = MPC.bb; if (b && typeof t === "string" && t.indexOf(" ▸ ") > 0) { try { mpBotCast(b, t); } catch (e) {} } return f0.apply(this, arguments); }; } // bot casts announce themselves in the feed
 window.addEventListener("keydown", (e) => { // G with the Spike: ask the host to drop it
   if (e.code !== "KeyG" || !mp5C() || !running || FV.buy > 0) return; const s = FV.sp; if (!s || s.st !== "carry" || s.c !== player) return;
   e.stopImmediatePropagation(); mpSend(MP.hc, { t: "drop", r: +yaw.toFixed(3) });
