@@ -892,7 +892,7 @@ body.x-cbh #game{--ha:#3d8bff;--he:#ff9f1c}
     <h3 id="hLobMs">Daily missions</h3>
     <ul id="xLobMs"></ul>
   </aside>
-  <p class="x-foot">Fan project. Not made by, affiliated with or endorsed by Riot Games. VALORANT is a trademark of Riot Games, Inc. Gun models: Quaternius (Ultimate Guns Pack + Survival Pack, CC0 public domain, quaternius.com / poly.pizza).</p>
+  <p class="x-foot">Fan project. Not made by, affiliated with or endorsed by Riot Games. VALORANT is a trademark of Riot Games, Inc. Gun models: Quaternius (Ultimate Guns Pack + Survival Pack, CC0 public domain, quaternius.com / poly.pizza). Agent models + animations: Quaternius (Universal Base Characters, Universal Animation Library 1 + 2, CC0 public domain, quaternius.com).</p>
   </div>
   <section class="x-q" id="xQueue" aria-label="Queue" hidden>
   <button class="x-qx" id="xqClose" aria-label="Close play panel">×</button>
@@ -3330,7 +3330,9 @@ const XAG = {
 // rigged Soldier.glb (Idle/Walk/Run) replaces the primitive bodies once loaded; on any failure the primitives stay
 const XSOL = { g: null, s: 1.05, y: 0, up: [], mx: [], ck: new THREE.Clock() };
 function xSolLoad() {
-  if (XSOL.ld) return; XSOL.ld = true; // one download; every bot/agent is a SkeletonUtils clone sharing geometry + xSolKit materials
+  if (XSOL.ld) return; XSOL.ld = true;
+  if (!XSOL.ubT) { XSOL.ubT = 1; try { return xUbLoad(() => { XSOL.ld = false; xSolLoad(); }); } catch (e) { XSOL.ld = false; } return xSolLoad(); } // CC0 Quaternius rig first; Soldier.glb only when it fails
+  // one download; every bot/agent is a SkeletonUtils clone sharing geometry + xSolKit materials
   try {
     if (!THREE.GLTFLoader || !THREE.SkeletonUtils) return;
     new THREE.GLTFLoader().load("https://cdn.jsdelivr.net/gh/mrdoob/three.js@r149/examples/models/gltf/Soldier.glb", (gltf) => {
@@ -3345,6 +3347,7 @@ function xSolLoad() {
   } catch (e) { console.warn("GLTFLoader unavailable; keeping primitive agents", e); }
 }
 function xSol(M) {
+  if (XSOL.g && XSOL.g.ub) return xUb(M);
   const G = XSOL.g, A = XAG[xAgOf(M.nm)], tint = new THREE.Color(A ? A.t : M.rim), wht = new THREE.Color(0xffffff);
   const sc = THREE.SkeletonUtils.clone(G.scene), wr = new THREE.Group();
   wr.add(sc); wr.scale.setScalar(XSOL.s); wr.position.y = XSOL.y; wr.rotation.y = Math.PI; // Soldier faces -Z, the agents face +Z
@@ -3460,6 +3463,186 @@ function xSolAnim(M, sp) {
   if (n !== X.cur) { const o = X.acts[X.cur]; a.reset().setEffectiveWeight(1).play(); if (o) a.crossFadeFrom(o, 0.2, false); X.cur = n; }
   a.timeScale = n === "Walk" ? Math.max(0.6, Math.min(1.6, sp / 1.6)) : n === "Run" ? Math.max(0.7, Math.min(1.5, sp / 5)) : 1;
 }
+// ---- CC0 agent rig: Quaternius Universal Base Characters (male / female base bodies + hair) driven by Universal Animation Library 1 + 2 clips
+// (models/agent_m.glb, agent_f.glb, agent_anims.glb; see models/LICENSES.txt). Loaded on the first xGo; any failure falls back to Soldier.glb, then the primitives.
+// One AnimationMixer per agent, three layers: lower body (locomotion), upper body (weapon pose / reload / casts), full body (plant, deaths), plus additive fire recoil + hit flinch.
+var XUB = { F: { m: "models/agent_m.glb", f: "models/agent_f.glb", a: "models/agent_anims.glb" }, src: {}, ok: false, C: {}, L: {}, U: {}, A: {} };
+// game state -> clip in agent_anims.glb (all original Quaternius animations; strafe, backpedal, crouch depth and aim pitch are layered on top in code)
+const XUB_ST = { idle: "Idle_Loop", walk: "Walk_Loop", run: "Jog_Fwd_Loop", strafeL: "Walk_Loop", strafeR: "Walk_Loop", back: "Walk_Loop", crouch: "Crouch_Idle_Loop", crouchWalk: "Crouch_Fwd_Loop",
+  jump: "Jump_Start", fall: "Jump_Loop", land: "Jump_Land", aim: "Pistol_Aim_Neutral", fire: "Pistol_Shoot", reload: "Pistol_Reload", cast: "Spell_Simple_Shoot", throw: "OverhandThrow",
+  hit: "Hit_Chest", hitHead: "Hit_Head", plant: "Fixing_Kneeling", defuse: "Fixing_Kneeling", knife: "Sword_Idle", death1: "Death01", death2: "Death02" };
+// base body (m / f) + hair meshes kept per agent (hair takes the agent's XAG.h colour); hooded / hatted agents get short or no hair
+const XUB_AG = { Jett: ["f", "Hair_Buns"], Phoenix: ["m", "Hair_SimpleParted"], Sova: ["m", "Hair_Buzzed"], Sage: ["f", "Hair_Buns"], Reyna: ["f", "Hair_Long"], Raze: ["f", "Hair_BuzzedFemale"],
+  Killjoy: ["f", "Hair_BuzzedFemale"], Omen: ["m", ""], Skye: ["f", "Hair_Long"], Chamber: ["m", "Hair_SimpleParted"], Breach: ["m", "Hair_Buzzed Hair_Beard"], Cypher: ["m", "Hair_Buzzed"] };
+const XUB_UP = /^(spine_02|spine_03|neck_01|Head|clavicle|upperarm|lowerarm|hand|thumb|index|middle|ring|pinky)/; // upper-body layer bones; the rest (root, pelvis, spine_01, legs) is the lower layer
+const XUB_LO = ["idle", "walk", "run", "crouch", "crouchWalk", "fall", "jump", "land"], XUB_UPN = ["aim", "knife", "reload", "cast", "throw"], XUB_FU = ["plant", "death1", "death2"];
+function xUbLoad(fail) {
+  if (!THREE.GLTFLoader || !THREE.SkeletonUtils || !THREE.AnimationMixer) return fail();
+  const L = new THREE.GLTFLoader(), ks = Object.keys(XUB.F); let left = ks.length, bad = false;
+  const done = () => { if (--left > 0) return; if (bad) return fail(); try { xUbReady(); } catch (e) { console.warn("agent models unusable; Soldier fallback", e); XUB.ok = false; fail(); } };
+  ks.forEach((k) => { try { L.load(XUB.F[k], (g) => { XUB.src[k] = g; done(); }, undefined, (e) => { console.warn("agent model failed: " + k, e); bad = true; done(); }); } catch (e) { bad = true; done(); } });
+}
+function xUbReady() {
+  const A = XUB.src.a; if (!A || !A.animations || !XUB.src.m || !XUB.src.f) throw new Error("agent files incomplete");
+  A.animations.forEach((c) => (XUB.C[c.name] = c));
+  for (const k in XUB_ST) if (!XUB.C[XUB_ST[k]]) throw new Error("clip missing: " + XUB_ST[k]);
+  const part = (c, up) => new THREE.AnimationClip(c.name + (up ? "_U" : "_L"), c.duration, c.tracks.filter((t) => XUB_UP.test(t.name.split(".")[0]) === up));
+  for (const n in XUB.C) { XUB.L[n] = part(XUB.C[n], false); XUB.U[n] = part(XUB.C[n], true); }
+  const AU = THREE.AnimationUtils; // additive one-shots relative to their first frame (falls back to plain blending if unavailable)
+  ["Pistol_Shoot", "Hit_Chest", "Hit_Head"].forEach((n) => { try { if (AU && AU.makeClipAdditive) XUB.A[n] = AU.makeClipAdditive(XUB.U[n].clone()); } catch (e) {} });
+  ["m", "f"].forEach((k) => { const t = XUB.src[k].scene; t.updateMatrixWorld(true); const bx = new THREE.Box3().setFromObject(t), h = bx.max.y - bx.min.y, ok = h > 0.5 && h < 5;
+    XUB["s" + k] = ok ? 1.92 / h : 1; XUB["y" + k] = ok ? -bx.min.y * XUB["s" + k] : 0; }); // same 1.92 m normalisation as Soldier: head bone ~1.66 m, inside the 1.75 m head hitbox
+  XUB.up = new THREE.Vector3(0, 1, 0); XUB.rt = new THREE.Vector3(1, 0, 0);
+  XUB.ok = true; XSOL.g = { ub: true };
+  XSOL.up.splice(0).forEach((M) => { try { if (!M.dead && !M.sx) xSol(M); } catch (e) { console.warn("agent upgrade failed", e); } });
+}
+// per agent + team materials (Lambert like the scene; the body texture only on the face / neck zone), shared by every clone of that agent
+function xUbKit(nm, rim) {
+  const key = "ub|" + nm + "|" + rim; if (XSK[key]) return XSK[key];
+  const base = xSolKit(nm, rim), ag = xAgOf(nm), A = XAG[ag] || { t: rim, p: 0x2a2f38, h: 0x1a1a1a, s: 0xd9a382 }, S = XSA[ag] || {}, cache = new Map();
+  const col = { Suit: S.b != null ? S.b : A.t, Pants: A.p, Gloves: S.d != null ? S.d : 0x1c1e22, Boots: new THREE.Color(A.p).multiplyScalar(0.45).getHex(), Hair: A.h, Brow: A.h, Skin: A.s, Eyes: 0xffffff };
+  const mat = (m) => {
+    if (Array.isArray(m)) return m.map(mat);
+    if (!xIsMat(m)) return m;
+    if (cache.has(m)) return cache.get(m);
+    const n = m.name || "", c = new THREE.MeshLambertMaterial({ color: col[n] != null ? col[n] : 0x8a8f99, map: m.map || null, name: n });
+    if (n === "Skin") { c.color.multiplyScalar(1.12); c.color.r = Math.min(1, c.color.r); c.color.g = Math.min(1, c.color.g); c.color.b = Math.min(1, c.color.b); }
+    if (n === "Suit" && S.e) c.emissive.setHex(S.e).multiplyScalar(S.ei || 0.15);
+    if (n === "Hair" || n === "Brow") c.side = THREE.DoubleSide;
+    c.userData.agent = 1; xRimM(c, rim, null); cache.set(m, c); return c;
+  };
+  const belt = XLM(0x1a1b1f), bk = new THREE.MeshBasicMaterial({ color: A.t }); belt.side = THREE.DoubleSide; belt.userData.agent = 1; xRimM(belt, rim, null);
+  return (XSK[key] = { mat, head: base.head, band: base.band, att: base.att, belt, bk });
+}
+function xUb(M) {
+  const ag = xAgOf(M.nm), h = String(M.nm || "").length, cfg = XUB_AG[ag] || (h % 2 ? ["f", ["Hair_Long", "Hair_Buns", "Hair_BuzzedFemale"][h % 3]] : ["m", ["Hair_Buzzed", "Hair_SimpleParted"][h % 2]]);
+  const k = cfg[0], G = XUB.src[k], sc = THREE.SkeletonUtils.clone(G.scene), wr = new THREE.Group(), hair = cfg[1].split(" ");
+  wr.add(sc); wr.scale.setScalar(XUB["s" + k]); wr.position.y = XUB["y" + k]; // the rig faces +Z like the agents: no flip
+  const inGun = (o) => { for (let p = o; p; p = p.parent) if (p === M.gun) return true; return false; };
+  M.m.traverse((o) => { if (o.isMesh && o !== M.ring && !inGun(o)) o.visible = false; }); // primitive body off, ring and weapon stay
+  const K = xUbKit(M.nm, M.rim), drop = [];
+  sc.traverse((o) => {
+    if (!o.isMesh) return;
+    if (/^Hair_/.test(o.name) && hair.indexOf(o.name) < 0) { drop.push(o); return; }
+    o.castShadow = true; o.raycast = XNR;
+    { const g = o.geometry; if (g && !g.userData.xBS) { g.computeBoundingSphere(); g.boundingSphere.radius *= 1.25; g.userData.xBS = true; } o.frustumCulled = true; }
+    o.material = K.mat(o.material);
+  });
+  drop.forEach((o) => o.parent && o.parent.remove(o));
+  const mx = new THREE.AnimationMixer(sc), bone = (n) => sc.getObjectByName(n);
+  M.m.add(wr);
+  const pin = (b, obj, align) => { // obj authored in agent-frame meters; align also undoes the bone's rotation (idle pose)
+    if (!b || !obj) return null; const p = new THREE.Vector3(), q = new THREE.Quaternion(), s = new THREE.Vector3();
+    new THREE.Matrix4().copy(M.m.matrixWorld).invert().multiply(b.matrixWorld).decompose(p, q, s);
+    const g = new THREE.Group(); if (align) g.quaternion.copy(q.invert()); g.scale.set(1 / s.x, 1 / s.y, 1 / s.z); g.add(obj); b.add(g); return g;
+  };
+  // accessories pinned in the idle pose, the weapon in the aim pose (barrel along the agent's facing)
+  let ra = mx.clipAction(XUB.C.Idle_Loop); ra.play(); mx.update(0.01); M.m.updateMatrixWorld(true);
+  pin(bone("Head"), K.head && K.head.clone(), true);
+  pin(bone("upperarm_l"), K.band.clone(), false);
+  M.xAt = []; M.xAv = true;
+  if (K.att) [["head", "Head"], ["spine", "spine_03"], ["hips", "pelvis"], ["lfa", "lowerarm_l", 1], ["rfa", "lowerarm_r", 1], ["lul", "thigh_l"], ["rul", "thigh_r"]].forEach(([a, n, own]) => {
+    const src = K.att[a]; if (!src || !src.children.length) return; const g = pin(bone(n), src.clone(), !own); if (g) M.xAt.push(g);
+  });
+  { // belt over the suit / trousers seam (geometry shared per body), small buckle in the agent colour
+    const f = k === "f", bg = XUB.bg || (XUB.bg = new THREE.CylinderGeometry(1, 1, 0.09, 18, 1, true)), kg = XUB.kg || (XUB.kg = new THREE.BoxGeometry(0.05, 0.04, 0.012));
+    const g = new THREE.Group(), bl = new THREE.Mesh(bg, K.belt), bq = new THREE.Mesh(kg, K.bk); bl.scale.set(f ? 0.192 : 0.175, 1, f ? 0.145 : 0.142); bq.position.set(0, 0, (f ? 0.145 : 0.142) + 0.004);
+    g.add(bl, bq); g.position.set(0, f ? 0.128 : 0.122, f ? 0.01 : 0.025); g.traverse((o) => { if (o.isMesh) o.raycast = XNR; });
+    const pg = pin(bone("pelvis"), g, true); if (pg) M.xAt.push(pg);
+    ["foot_l", "foot_r"].forEach((n) => { const c = new THREE.Mesh(bg, K.belt); c.scale.set(f ? 0.06 : 0.066, 1.35, f ? 0.068 : 0.074); c.position.y = -0.005; c.raycast = XNR; const cg = pin(bone(n), c, true); if (cg) M.xAt.push(cg); }); // boot cuffs over the ankle seam
+  }
+  ra.stop(); ra = mx.clipAction(XUB.C.Pistol_Aim_Neutral); ra.play(); mx.update(0.05); M.m.updateMatrixWorld(true);
+  const hb = bone("hand_r");
+  if (hb && M.gun && M.gun.parent) { const hold = new THREE.Group(), p = new THREE.Vector3(), q = new THREE.Quaternion(), s = new THREE.Vector3();
+    new THREE.Matrix4().copy(M.m.matrixWorld).invert().multiply(hb.matrixWorld).decompose(p, q, s); hold.quaternion.copy(q.invert()); hold.scale.set(1 / s.x, 1 / s.y, 1 / s.z); hb.add(hold);
+    hold.add(M.gun); M.gun.position.set(0, 0.0, 0.03); M.gun.rotation.x = 0; }
+  ra.stop(); mx.stopAllAction();
+  const X = { mx, a: {}, w: {}, ub: 1, sc, b: { pelvis: bone("pelvis"), spine_01: bone("spine_01"), spine_02: bone("spine_02"), spine_03: bone("spine_03") },
+    cb: 0, yaw: 0, pit: 0, sn: 0, shots: 0, hp: null, uo: null, ut: 0, lo: null, lt: 0, air: false, py: null, px: null, pz: null, cur: "idle", acts: null };
+  const mk = (n, set, once) => { const c = (set === "L" ? XUB.L : set === "U" ? XUB.U : XUB.C)[XUB_ST[n]]; const a = mx.clipAction(c); if (once) { a.setLoop(THREE.LoopOnce, 1); a.clampWhenFinished = true; } X.a[n] = a; X.w[n] = 0; };
+  XUB_LO.forEach((n) => mk(n, "L", n === "jump" || n === "land")); XUB_UPN.forEach((n) => mk(n, "U", n === "reload" || n === "cast" || n === "throw")); XUB_FU.forEach((n) => mk(n, "F", n !== "plant"));
+  X.ad = {}; [["fire", "Pistol_Shoot"], ["hit", "Hit_Chest"], ["hitHead", "Hit_Head"]].forEach(([n, c]) => { if (!XUB.A[c]) return; const a = mx.clipAction(XUB.A[c]); a.blendMode = THREE.AdditiveAnimationBlendMode; a.setLoop(THREE.LoopOnce, 1); X.ad[n] = a; });
+  X.w.idle = X.w.aim = 1; X.a.idle.play(); X.a.aim.play(); mx.update(0); // standing rifle pose until the unit's state drives it (agent select previews keep this)
+  X.acts = X.a;
+  M.solOwn = () => { M.solOwn = null; wr.traverse((o) => { if (!o.isMesh || inGun(o)) return; o.material = xSolOwnM(o.material, M.mats); }); };
+  M.ub = 1; M.sx = X; XSOL.mx.push(M);
+}
+// one-shot triggers
+function xUbOnce(X, n, set, dur) { const a = X.a[n]; if (!a) return; a.reset(); a.timeScale = dur ? a.getClip().duration / dur : 1; a.play(); if (set === "U") { X.uo = n; X.ut = dur || a.getClip().duration; } else { X.lo = n; X.lt = dur || a.getClip().duration; } }
+function xUbAdd(X, n, w) { const a = X.ad && X.ad[n]; if (!a) return; a.reset(); a.setEffectiveWeight(w); a.play(); }
+// per-frame state -> layer weights; b is the bot / ally / remote unit, sp its ground speed (m/s)
+function xUbAnim(b, M, sp, dt) {
+  const X = M.sx, P = b.g.position; if (!dt) return;
+  const dx = X.px == null ? 0 : P.x - X.px, dz = X.pz == null ? 0 : P.z - X.pz, dy = X.py == null ? 0 : P.y - X.py; X.px = P.x; X.pz = P.z; X.py = P.y;
+  // airborne: only re-check the floor when the unit moved vertically (or is already in the air)
+  let air = X.air; if (Math.abs(dy) > 1e-3 || air) { try { air = typeof groundAt === "function" && P.y > groundAt(P.x, P.z, 0.3, P.y) + 0.2; } catch (e) { air = false; } }
+  if (air && !X.air && dy > 0) xUbOnce(X, "jump", "L", 0.35); else if (!air && X.air) xUbOnce(X, "land", "L", 0.3);
+  X.air = air;
+  let S = null; try { S = mode === "five" && xFvOK && FV.sp ? FV.sp : null; } catch (e) {}
+  const plant = !!S && ((S.st === "carry" && S.c === b && S.pt > 0) || (S.st === "plant" && S.du === b));
+  const cr = !!b.cr && !air && !plant; X.cb += ((cr ? 1 : 0) - X.cb) * Math.min(1, dt * 10);
+  // events: shots (SFX.at hook bumps b.xsh), hp loss, ability casts (xCaBotGo sets M.xCast)
+  const sn = b.xsh || 0; if (sn !== X.sn) { if (sn > X.sn) { xUbAdd(X, "fire", 0.9); X.shots++; } X.sn = sn; }
+  let mag = 25, rld = 2; try { const W = WEAP[M.w]; if (W) { mag = W.mag || mag; rld = W.rld || rld; } } catch (e) {}
+  if (X.shots >= mag && !X.ut) { X.shots = 0; xUbOnce(X, "reload", "U", Math.max(1, Math.min(3.2, rld))); } // bots have no magazine: a visual reload every magazine's worth of shots
+  if (X.hp != null && b.hp < X.hp) xUbAdd(X, Math.random() < 0.3 ? "hitHead" : "hit", 1); X.hp = b.hp;
+  if (M.xCast) { xUbOnce(X, M.xCast === "throw" ? "throw" : "cast", "U", M.xCast === "throw" ? 0.9 : 0.5); M.xCast = 0; }
+  X.ut = Math.max(0, X.ut - dt); X.lt = Math.max(0, X.lt - dt); if (!X.ut) X.uo = null; if (!X.lt) X.lo = null;
+  // locomotion relative to facing: +f forward, +sd toward the agent's left (local +X)
+  const ry = b.g.rotation.y, sy = Math.sin(ry), cy = Math.cos(ry), f = dx * sy + dz * cy, sd = dx * cy - dz * sy, mv = sp > 0.35;
+  const back = mv && f < -0.25 * Math.hypot(f, sd);
+  const yawT = mv && !air ? Math.max(-1.25, Math.min(1.25, back ? Math.atan2(-sd, -f) : Math.atan2(sd, Math.max(1e-4, f)))) : 0; // strafe: hips turn toward the move, torso counter-turns
+  X.yaw += (yawT - X.yaw) * Math.min(1, dt * 8); X.pit = M.xap || 0;
+  const T = {}, cw = X.cb * 0.62; // crouch blend capped so the head drops ~0.45 m, matching the crouch head hitbox drop
+  const st = air ? "fall" : !mv ? "idle" : sp < 3.4 ? "walk" : "run", cs = mv ? "crouchWalk" : "crouch";
+  T[st] = 1 - cw; T[cs] = (T[cs] || 0) + cw;
+  if (X.lo) { for (const n of XUB_LO) T[n] = 0; T[X.lo] = 1; }
+  T[X.uo || (M.w === "Knife" ? "knife" : "aim")] = 1;
+  const fw = X.w.plant || 0; if (plant) T.plant = 1;
+  for (const n of XUB_LO.concat(XUB_UPN)) if (T[n]) T[n] *= 1 - fw;
+  const ts = (a, v) => { if (a) a.timeScale = v; };
+  ts(X.a.walk, (back ? -1 : 1) * Math.max(0.6, Math.min(1.8, sp / 1.6))); ts(X.a.run, (back ? -1 : 1) * Math.max(0.7, Math.min(1.5, sp / 4.5))); ts(X.a.crouchWalk, (back ? -1 : 1) * Math.max(0.6, Math.min(1.6, sp / 1.4)));
+  xUbW(X, T, dt, 12);
+  // head hitbox follows the crouch (size unchanged); standing it stays at 1.75 m
+  if (b.head && b.head.position) b.head.position.y = 1.75 - 0.45 * (cw / 0.62);
+}
+function xUbW(X, T, dt, k) {
+  const r = Math.min(1, dt * k);
+  for (const n in X.a) { const a = X.a[n], t = T[n] || 0; let w = X.w[n] + (t - X.w[n]) * r; if (t === 0 && w < 0.002) w = 0;
+    if (w > 0 && !a.isScheduled()) a.play(); if (w === 0 && X.w[n] > 0) a.stop();
+    X.w[n] = w; a.setEffectiveWeight(w); }
+}
+// after the mixer: strafe hip yaw with torso counter-turn, aim pitch through the upper spine (bone rotations about agent-frame axes)
+function xUbRot(X, bone, axis, ang) {
+  if (!bone) return; const pq = XUB.pq || (XUB.pq = new THREE.Quaternion()), q = XUB.q || (XUB.q = new THREE.Quaternion()), v = XUB.v || (XUB.v = new THREE.Vector3());
+  pq.identity(); for (let p = bone.parent; p && p !== X.sc; p = p.parent) pq.premultiply(p.quaternion);
+  v.copy(axis).applyQuaternion(pq.invert()); q.setFromAxisAngle(v, ang); bone.quaternion.premultiply(q);
+}
+// the mixer skips bones whose clip value did not change since its last write, so the offsets are undone before every mixer update (xUbPre) instead of stacking
+function xUbPre(M) { const X = M.sx; if (!X || !X.sv) return; for (const k in X.sv) if (X.svOn[k]) { X.b[k].quaternion.copy(X.sv[k]); X.svOn[k] = 0; } }
+function xUbPost(M) {
+  const X = M.sx; if (!X || !X.ub || X.dd) return; const B = X.b;
+  if (!X.sv) { X.sv = {}; X.svOn = {}; for (const k in B) if (B[k]) { X.sv[k] = new THREE.Quaternion(); X.svOn[k] = 0; } }
+  for (const k in X.sv) { X.sv[k].copy(B[k].quaternion); X.svOn[k] = 1; }
+  if (Math.abs(X.yaw) > 0.01) { xUbRot(X, B.pelvis, XUB.up, X.yaw); xUbRot(X, B.spine_01, XUB.up, -X.yaw * 0.5); xUbRot(X, B.spine_02, XUB.up, -X.yaw * 0.5); }
+  if (Math.abs(X.pit) > 0.01) xUbRot(X, B.spine_03, XUB.rt, -X.pit * 0.8);
+}
+// death: one of two death clips (by name), others fade out over 0.15 s; keeps animating ~2.6 s, then the pose freezes for the corpse fade (XDEAD)
+function xUbDead(M, d) {
+  const X = M.sx; if (!X || !X.ub) return false;
+  if (!X.dd) { xUbPre(M); X.dd = 1; X.dt = 0; X.yaw = X.pit = 0; const n = String(M.nm || "").length % 2 ? "death2" : "death1"; X.dn = n; const a = X.a[n]; a.reset(); a.play(); X.w[n] = 0; }
+  X.dt += d; const T = {}; T[X.dn] = 1; xUbW(X, T, d, 14); X.mx.update(d);
+  return X.dt < 2.6;
+}
+// any weapon sound from a unit (bot / ally / remote player / duel bot) counts as its shot for the fire-recoil layer
+function xUbShot(p) {
+  if (!p) return; let best = null, bd = 0.6;
+  const scan = (u) => { if (!u || !u.g || best === u) return; const q = u.g.position; if (q === p) { best = u; bd = -1; return; } if (bd < 0) return; const d = Math.abs(q.x - p.x) + Math.abs(q.z - p.z); if (d < bd) { bd = d; best = u; } };
+  for (let i = 0; i < bots.length; i++) scan(bots[i]); for (let i = 0; i < allies.length; i++) scan(allies[i]);
+  try { if (xDbOK && duelBot) scan(duelBot); } catch (e) {}
+  if (best) best.xsh = (best.xsh || 0) + 1;
+}
+try { const a0 = SFX.at; if (typeof a0 === "function") SFX.at = function (p) { try { xUbShot(p); } catch (e) {} return a0.apply(this, arguments); }; } catch (e) {}
 (function xSolTick() {
   requestAnimationFrame(xSolTick);
   const d = Math.min(0.05, XSOL.ck.getDelta());
@@ -3469,7 +3652,7 @@ function xSolAnim(M, sp) {
   let cam = null; try { cam = camera; } catch (e) {}
   F.n++; if (cam) { cam.updateMatrixWorld(); F.m.multiplyMatrices(cam.projectionMatrix, cam.matrixWorldInverse); F.f.setFromProjectionMatrix(F.m); }
   for (let i = XSOL.mx.length - 1; i >= 0; i--) {
-    const M = XSOL.mx[i]; if (M.dead) { XSOL.mx.splice(i, 1); continue; } // death freezes the pose: no mixer once dead; the root falls in XDEAD
+    const M = XSOL.mx[i]; if (M.dead) { if (M.ub && xUbDead(M, d)) continue; XSOL.mx.splice(i, 1); continue; } // death freezes the pose: no mixer once dead; the root falls in XDEAD
     let r = M.m; while (r.parent) r = r.parent;
     if (!r.isScene) { if (XSOL.mx.length > 60) XSOL.mx.splice(i, 1); continue; }
     if (cam) {
@@ -3480,8 +3663,8 @@ function xSolAnim(M, sp) {
       if (cul) { M.acc = 0; continue; }
       M.acc = (M.acc || 0) + d;
       if (dd > lod / 2 && (F.n + i) & 1) continue;
-      M.sx.mx.update(Math.min(0.1, M.acc)); M.acc = 0;
-    } else M.sx.mx.update(d);
+      if (M.ub) xUbPre(M); M.sx.mx.update(Math.min(0.1, M.acc)); M.acc = 0; if (M.ub) xUbPost(M);
+    } else { if (M.ub) xUbPre(M); M.sx.mx.update(d); if (M.ub) xUbPost(M); }
   }
 })();
 // Soldier.glb is fetched on the first mode launch (xGo), not at startup; until then agents use the primitive bodies
@@ -3522,7 +3705,7 @@ function xAgent(name, rim, w) {
   const hd = new THREE.Group(); hd.position.set(0, 1.55, 0);
   bd.children.filter((o) => o.isMesh && o.position.y >= 1.6 && Math.abs(o.position.x) <= 0.2).forEach((o) => { o.position.y -= 1.55; hd.add(o); });
   bd.add(hd);
-  const R = { m, bd, hd, lL, lR, aL, aR, gun: g, ring, mats, nm: name, rim };
+  const R = { m, bd, hd, lL, lR, aL, aR, gun: g, ring, mats, nm: name, rim, w };
   try { if (XSOL.g) xSol(R); else if (XSOL.up.length < 60) XSOL.up.push(R); } catch (e) { console.warn("soldier clone failed; primitive kept", e); }
   return R;
 }
@@ -3778,7 +3961,7 @@ function xVis(dt) {
   if (xDbOK && duelBot) xVisB(duelBot, dt, now, false);
   for (let i = XDEAD.length - 1; i >= 0; i--) {
     const e = XDEAD[i]; e.t += dt; const f = Math.min(1, e.t / 0.7), c = e.c;
-    c.m.rotation.x = -1.48 * f * f; c.m.position.y = 0.12 * f;
+    if (!c.ub) { c.m.rotation.x = -1.48 * f * f; c.m.position.y = 0.12 * f; } // the CC0 rig plays a death clip instead of tipping the root
     c.aL.rotation.x = -1.25 - 1.4 * f; c.aR.rotation.x = -1.35 - 1.3 * f; c.lL.rotation.x = 0.25 * f; c.lR.rotation.x = -0.1 * f;
     if (e.t > 3) { const o = Math.max(0, 1 - (e.t - 3)); if (c.solOwn) c.solOwn(); for (let j = 0; j < c.mats.length; j++) { c.mats[j].transparent = true; c.mats[j].opacity = o; } if (o <= 0) { scene.remove(c.m); scene.remove(e.gn); xDisp(e.gn); XDEAD.splice(i, 1); } }
   }
@@ -3796,7 +3979,7 @@ function xVisB(b, dt, now, isAlly) {
     const P = b.g.position, sp = Math.min(8, Math.hypot(P.x - b.xp.x, P.z - b.xp.z) / dt); b.xp.x = P.x; b.xp.z = P.z;
     b.xwk += (Math.min(1, sp / 4) - b.xwk) * Math.min(1, dt * 8); b.xph += dt * (4 + sp * 1.6);
     const s = Math.sin(b.xph) * b.xwk, M = b.xm;
-    if (M.sx) xSolAnim(M, sp);
+    if (M.sx) { if (M.ub) xUbAnim(b, M, sp, dt); else xSolAnim(M, sp); }
     M.lL.rotation.x = s * 0.7; M.lR.rotation.x = -s * 0.7;
     // aim pitch toward the target: enemies at the player's eye, allies at the nearest live enemy's head
     let ty = null, hz = 1;
@@ -3804,7 +3987,7 @@ function xVisB(b, dt, now, isAlly) {
     else if (player) { ty = 1.6 - player.ch + player.y; hz = Math.hypot(player.x - P.x, player.z - P.z); } // pEye() inlined: no Vector3 per bot per frame
     const tp = ty === null ? 0 : Math.max(-0.9, Math.min(0.9, Math.atan2(ty - 1.45, Math.max(0.5, hz))));
     b.xap = (b.xap || 0) + (tp - (b.xap || 0)) * Math.min(1, dt * 8);
-    M.gun.rotation.x = -b.xap; if (M.hd) M.hd.rotation.x = -b.xap * 0.8;
+    M.xap = b.xap; M.gun.rotation.x = M.ub ? 0 : -b.xap; if (M.hd) M.hd.rotation.x = -b.xap * 0.8; // the CC0 rig pitches its upper spine instead (xUbPost)
     M.aL.rotation.x = -1.25 - s * 0.18 - b.xap; M.aR.rotation.x = -1.35 + s * 0.12 - b.xap;
     M.bd.position.y = Math.sin(now * 2.2) * 0.008 * (1 - b.xwk) + Math.abs(Math.cos(b.xph)) * 0.03 * b.xwk;
     M.bd.rotation.y = Math.sin(now * 0.7 + b.xph) * 0.04 * (1 - b.xwk);
@@ -10174,6 +10357,7 @@ function xCaSig() {
 }
 function xCaBotGo(R) {
   R.xCp = 0.4;
+  if (R.ub) { R.xCast = Math.random() < 0.5 ? "throw" : "cast"; return; } // CC0 rig: cast / throw clip on the upper-body layer
   if (R.sx) {
     if (R.xRA === undefined) { R.xRA = null; R.m.traverse((o) => { if (!R.xRA && o.isBone && /RightArm$/.test(o.name)) R.xRA = o; }); }
     if (!XCA.q) { XCA.q = new THREE.Quaternion(); XCA.ax = new THREE.Vector3(1, 0, 0); }

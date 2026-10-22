@@ -42,3 +42,40 @@ Pack: Survival Pack (Quaternius, CC0)
   knife.glb                Knife.glb                       Knife
 
 Author: Quaternius (@Quaternius). License: CC0 1.0. Retrieved 2026-10-22.
+
+
+3D agent models + animations (models/agent_*.glb)
+=================================================
+
+All by Quaternius (https://quaternius.com), released under CC0 1.0 Universal / Public Domain
+Dedication (https://creativecommons.org/publicdomain/zero/1.0/). Attribution is not required;
+credit is given in the lobby footer as a courtesy. Original, generic humanoid base bodies and
+animations; nothing here is derived from VALORANT / Riot Games characters or animations.
+
+Packs:
+  Universal Base Characters [Standard]   https://quaternius.com/packs/universalbasecharacters.html
+  Universal Animation Library [Standard]  https://quaternius.com/packs/universalanimationlibrary.html
+  Universal Animation Library 2 [Standard] https://quaternius.com/packs/universalanimationlibrary2.html
+  (each pack's License.txt: "CC0 1.0 Universal (CC0 1.0) Public Domain Dedication ... Models by @Quaternius")
+Files were fetched from a GitHub mirror of the unmodified free packs:
+  https://github.com/NafisRayan/Animate-Rigged-Humanoid-No-Blender
+  ("Universal Base Characters[Standard]/...", "Universal Animation Library[Standard]/...",
+   "Universal Animation Library 2[Standard]/..." folders, License files included)
+
+  file                 built from (pack file)                                               changes
+  agent_m.glb          Base Characters/Godot - UE/Superhero_Male_FullBody.gltf + .bin        body split into Skin/Suit/Pants/Gloves/Boots
+                       Textures/T_Superhero_Male_Ligh.png (512 px JPEG), T_Eye_Brown.png      primitives by skin weight (tinted per agent in
+                       Hairstyles/Rigged to Head Bone/glTF: Hair_SimpleParted, Hair_Buzzed,   code); normal / roughness maps dropped; hair
+                       Hair_Beard                                                             baked as rigid meshes under the Head bone
+  agent_f.glb          Superhero_Female_FullBody.gltf + .bin, T_Superhero_Female_Light_      same as above
+                       BaseColor.png, T_Eye_Brown.png; hair: Hair_Buns, Hair_Long,
+                       Hair_BuzzedFemale
+  agent_anims.glb      Unreal-Godot/UAL1_Standard.glb clips: Idle_Loop, Walk_Loop,          meshes removed (skeleton only); scale and
+                       Jog_Fwd_Loop, Crouch_Idle_Loop, Crouch_Fwd_Loop, Jump_Start,           non-pelvis translation tracks and leaf bones
+                       Jump_Loop, Jump_Land, Death01, Hit_Chest, Hit_Head,                    dropped; keys resampled; rotations stored as
+                       Pistol_Aim_Neutral, Pistol_Reload, Pistol_Shoot, Spell_Simple_Shoot,   normalized int16; "Death02" is UAL2 LayToIdle
+                       Fixing_Kneeling, Sword_Idle                                            played in reverse
+                       Unreal-Godot/UAL2_Standard.glb clips: OverhandThrow, LayToIdle
+
+Author: Quaternius (@Quaternius). License: CC0 1.0. Retrieved 2026-10-22.
+Build script (reproducible from the pack files): work/agent_build.mjs

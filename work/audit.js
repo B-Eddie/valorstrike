@@ -2400,6 +2400,47 @@ if (!NO3) {
   report.push({ label: "CC0 gun models: all weapons + knife map to existing models/*.glb listed in LICENSES.txt, credits present, procedural fallback with no GLTFLoader", el: true, handler: true, cond: ok, pass: ok, errs: err });
 }
 
+// CC0 agent rig (Quaternius Universal Base Characters + Universal Animation Library): files exist, are binary glTF and licensed, credits present,
+// every animation state maps to a clip in agent_anims.glb, every agent's body / hair exists, hitbox sizes untouched, and with no GLTFLoader the load
+// falls back (Soldier path, then primitives) while a broken rig still leaves xAgent a primitive agent
+{
+  const err = []; let ok = false;
+  try {
+    const xe = vm.runInContext("__xe", context), MD = path.join(__dirname, "..", "models");
+    const lic = fs.readFileSync(path.join(MD, "LICENSES.txt"), "utf8");
+    const glbJson = (f) => { const b = fs.readFileSync(path.join(MD, f)); if (b.slice(0, 4).toString() !== "glTF") throw new Error(f + " is not a binary glTF"); const n = b.readUInt32LE(12); return JSON.parse(b.slice(20, 20 + n).toString("utf8")); };
+    const F = JSON.parse(xe("JSON.stringify(typeof XUB !== 'undefined' && XUB ? XUB.F : null)")), ST = JSON.parse(xe("JSON.stringify(typeof XUB_ST !== 'undefined' ? XUB_ST : null)")), AG = JSON.parse(xe("JSON.stringify(typeof XUB_AG !== 'undefined' ? XUB_AG : null)"));
+    if (!F || !ST || !AG) err.push("XUB / XUB_ST / XUB_AG missing");
+    let tot = 0; const J = {};
+    for (const k in F || {}) { const u = F[k], f = u.replace(/^models\//, ""); if (!/^models\/[\w.-]+\.glb$/.test(u)) { err.push(k + ": not a relative models/ URL: " + u); continue; }
+      if (!fs.existsSync(path.join(MD, f))) { err.push(u + " missing"); continue; } tot += fs.statSync(path.join(MD, f)).size;
+      try { J[k] = glbJson(f); } catch (e) { err.push(String(e.message)); } if (!lic.includes(f)) err.push(f + " not in LICENSES.txt"); }
+    if (tot > 10e6) err.push("agent files are " + (tot / 1e6).toFixed(1) + " MB (> 10)");
+    if (!/Quaternius/.test(lic) || !/Universal Base Characters/.test(lic) || !/Universal Animation Library/.test(lic) || !/CC0/.test(lic.slice(lic.indexOf("agent_")))) err.push("agent license text missing");
+    if (!/Agent models \+ animations: Quaternius/.test(html)) err.push("lobby footer credit missing");
+    if (/valorant|riot/i.test(JSON.stringify((J.a && J.a.animations || []).map((a) => a.name)))) err.push("clip named after Riot content");
+    const clips = new Set(((J.a && J.a.animations) || []).map((a) => a.name)), want = ["idle", "walk", "run", "strafeL", "strafeR", "back", "crouch", "crouchWalk", "jump", "fall", "land", "aim", "fire", "reload", "cast", "throw", "hit", "plant", "defuse", "knife", "death1", "death2"];
+    for (const s of want) { if (!ST || !ST[s]) err.push("state " + s + " has no clip"); else if (!clips.has(ST[s])) err.push("state " + s + " -> " + ST[s] + " not in agent_anims.glb"); }
+    for (const a in AG || {}) { const [b, h] = AG[a], j = J[b]; if (!j) { err.push(a + ": body " + b + " missing"); continue; } const nn = new Set(j.nodes.map((n) => n.name));
+      for (const x of String(h).split(" ").filter(Boolean)) if (!nn.has(x)) err.push(a + ": hair " + x + " not in agent_" + b + ".glb"); if (!nn.has("hand_r") || !nn.has("Head")) err.push("agent_" + b + ".glb lacks hand_r / Head bones"); }
+    for (const k of ["m", "f"]) if (J[k]) { const mats = new Set((J[k].materials || []).map((m) => m.name)); ["Skin", "Suit", "Pants", "Gloves", "Boots", "Hair"].forEach((m) => { if (!mats.has(m)) err.push("agent_" + k + ".glb lacks material " + m); }); }
+    const mk = html.slice(html.indexOf("function mkGuy("), html.indexOf("function mkGuy(") + 600);
+    if (!/xG\("Capsule", 0\.4, 1, 4, 10\)/.test(mk) || !/xG\("Sphere", 0\.25, 12, 10\)/.test(mk) || !/head\.position\.y = 1\.75/.test(mk)) err.push("bot hitbox sizes changed");
+    if (!/xUbLoad\(/.test(html.slice(html.indexOf("function xSolLoad("), html.indexOf("function xSolLoad(") + 400)) || !/Soldier\.glb/.test(html)) err.push("Soldier.glb fallback chain missing");
+    if (!NO3) {
+      const r = xe(`(() => { const L0 = THREE.GLTFLoader, ld = XSOL.ld, ut = XSOL.ubT, g0 = XSOL.g, ok0 = XUB.ok, s0 = XUB.src; const bad = [];
+        try { THREE.GLTFLoader = undefined; let f = 0; xUbLoad(() => f++); if (f !== 1) bad.push("no loader: fallback called " + f + "x"); if (XUB.ok) bad.push("rig ready without a loader");
+          XSOL.ld = false; XSOL.ubT = 0; XSOL.g = null; xSolLoad(); if (XSOL.g) bad.push("model set without a loader");
+          const R = xAgent("Jett", 0xff4655, "Vandal"); if (!R || !R.m || R.ub || R.sx) bad.push("primitive agent not kept");
+          XSOL.g = { ub: true }; XUB.src = {}; const R2 = xAgent("Omen", 0x3d8bff, "Vandal"); if (!R2 || !R2.m || R2.ub) bad.push("broken rig did not leave a primitive agent");
+          return bad.length ? bad.join("; ") : true; } catch (e) { return "threw: " + e; } finally { THREE.GLTFLoader = L0; XSOL.ld = ld; XSOL.ubT = ut; XSOL.g = g0; XUB.ok = ok0; XUB.src = s0; } })()`);
+      if (r !== true) err.push("fallback: " + r);
+    }
+    ok = !err.length;
+  } catch (e) { err.push(String(e).slice(0, 300)); }
+  report.push({ label: "CC0 agent rig: agent_m / agent_f / agent_anims.glb exist, licensed + credited, every anim state maps to a clip, bodies + hair present, hitboxes unchanged, loader-missing / broken-rig fallback to Soldier + primitives", el: true, handler: true, cond: ok, pass: ok, errs: err });
+}
+
 // ---------- print ----------
 const bad = report.filter((r) => !r.pass);
 console.log(`\n=== audit (${MID ? "THREE loads, 3D init throws" : NO3 ? "THREE missing" : "THREE stub loaded"}) — ${report.length} checks, ${bad.length} failing ===`);
