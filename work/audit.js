@@ -2505,6 +2505,69 @@ if (!NO3) {
   { const ok = mb > 0 && mb < 8 && /CC0/.test(lic) && /decor\//.test(lic); report.push({ label: `Map dressing props: models/decor ${mb.toFixed(2)} MB (< 8 MB), CC0 licence block present in models/LICENSES.txt`, el: true, handler: true, cond: ok, pass: ok, errs: ok ? [] : ["decor models " + mb.toFixed(2) + " MB or licence block missing"] }); }
 }
 
+// ---------- map fill: in-play cover + set pieces with colliders on every 5v5 map + Retake: colliders match visuals (bullet-stopping mesh per collider), clear of spawns / plant sites / doors / teleporters / ropes / nav nodes, lanes >= 2.5 m, every site 4-8 cover pieces, largest empty floor area per map, flat ground variety, <= 4 draw calls ----------
+if (!NO3) {
+  const keys = ["ascent", "bind", "haven", "split", "lotus", "breeze", "retake"];
+  let R = null, err = [];
+  try { R = JSON.parse(vm.runInContext("__xe", context)(`(() => { const out = [], keepB = boxes, keepS = Object.assign({}, SITES);
+    const pads = { ascent: ASC_SITES, bind: { A: [-20, -21], B: [20, -21] }, haven: HSITES, split: SSITES, lotus: LSITES, breeze: BZSITES, retake: { B: [0, 0] } };
+    try { for (const k of ${JSON.stringify(keys)}) { const bad = []; try {
+      const five = k !== "retake"; if (five) xBuildMap(k); const M = five ? FMAP[k] : MAPS.retake, st = XF_STAT[k], bx = M.boxes, P = pads[k], sites = Object.keys(P).map((s) => P[s]), sp = five ? xSpawn(k) : null;
+      if (!st) { out.push({ k, bad: ["no fill stats"] }); continue; }
+      const fc = bx.filter((b) => b.fill), base = bx.filter((b) => !b.fill), plat = (b) => b.h < 4 && Math.min(b.x2 - b.x1, b.z2 - b.z1) >= 4;
+      const nMin = five ? 30 : 8; if (st.pieces.length < nMin) bad.push("only " + st.pieces.length + " fill pieces (min " + nMin + ")");
+      if (st.flats.length < (five ? 20 : 8)) bad.push("only " + st.flats.length + " ground-variety patches");
+      if (st.draws > 4) bad.push(st.draws + " fill draw calls (max 4)");
+      if (st.g !== M.g || !M.g.children.some((o) => o.name === "xFill")) bad.push("fill meshes not in this map's group (would not be freed with it)");
+      // colliders match visuals: every piece's collider union == its visual bounds (0.2 m), every collider in the collision list with one invisible bullet-stopping box mesh
+      let nc = 0; st.pieces.forEach((p) => { const v = p.vis, U = { x1: Math.min(...p.cols.map((b) => b.x1)), x2: Math.max(...p.cols.map((b) => b.x2)), z1: Math.min(...p.cols.map((b) => b.z1)), z2: Math.max(...p.cols.map((b) => b.z2)), h: Math.max(...p.cols.map((b) => b.h)) };
+        const e = [v[0] - U.x1, U.x2 - v[1], v[4] - U.z1, U.z2 - v[5], U.h - v[3]]; if (e.some((q) => Math.abs(q) > 0.2)) bad.push(p.t + " @" + p.x + "," + p.z + " visual off its collider by " + e.map((q) => q.toFixed(2)).join("/"));
+        p.cols.forEach((b) => { nc++; if (!bx.includes(b)) bad.push(p.t + " @" + p.x + "," + p.z + " collider missing from the collision list"); }); });
+      const hits = M.solids.filter((m) => m.name === "xFillHit").length; if (hits !== nc || fc.length !== nc) bad.push("fill colliders " + fc.length + " / pieces' colliders " + nc + " / hit meshes " + hits);
+      // keep-clear: spawn points, plant site centres (3 m), doors / teleporters / ropes (2.5 m), nav nodes (0.8 m square, the nav build's clearance: no node gets nudged)
+      const ov = (b, x, z, r) => x > b.x1 - r && x < b.x2 + r && z > b.z1 - r && z < b.z2 + r, keep = [];
+      try { if (k === "bind") TPS.forEach((t) => keep.push([t.x, t.z], [t.tx, t.tz])); if (k === "split") SROPES.forEach((q) => keep.push([q.x, q.z])); if (k === "ascent") AD.doors.forEach((d) => keep.push([(d.b.x1 + d.b.x2) / 2, (d.b.z1 + d.b.z2) / 2])); if (k === "lotus") LG.doors.forEach((d) => keep.push([(d.b.x1 + d.b.x2) / 2, (d.b.z1 + d.b.z2) / 2])); (XG_SPEC[k] || []).forEach(([a, b2]) => keep.push(a, b2)); } catch (e) { bad.push("keep list: " + e); }
+      let nodes = []; if (k === "ascent") nodes = Object.values(ASC_NODE); else if (five) { for (const s in SITES) delete SITES[s]; Object.assign(SITES, P); boxes = bx; nodes = xgBuild(k).N; boxes = keepB; }
+      const SPP = five ? [] : [[0, 17], [-1.5, 16], [1.5, 16], [-12, -15], [0, -16], [12, -12]];
+      fc.forEach((b) => { const c = ((b.x1 + b.x2) / 2).toFixed(1) + "," + ((b.z1 + b.z2) / 2).toFixed(1);
+        if (sp) for (const z of [sp.atk, -sp.atk]) for (let x = -8; x <= 8; x += 2) if (ov(b, x, z, 2)) bad.push("fill collider " + c + " on spawn " + x + "," + z);
+        SPP.forEach(([x, z]) => { if (ov(b, x, z, 1.5)) bad.push("fill collider " + c + " on spawn " + x + "," + z); });
+        sites.forEach((s) => { if (ov(b, s[0], s[1], 3)) bad.push("fill collider " + c + " on plant site " + s); });
+        keep.forEach((q) => { if (ov(b, q[0], q[1], 2)) bad.push("fill collider " + c + " blocks door / teleporter / rope " + q); });
+        nodes.forEach((n) => { if (ov(b, n[0], n[1], 0.8)) bad.push("fill collider " + c + " on nav node " + n); }); });
+      // routes stay >= 2.5 m wide: a piece is flush against a neighbour or >= 2.5 m from it
+      const uni = (L) => ({ x1: Math.min(...L.map((q) => q.x1)), x2: Math.max(...L.map((q) => q.x2)), z1: Math.min(...L.map((q) => q.z1)), z2: Math.max(...L.map((q) => q.z2)), h: Math.max(...L.map((q) => q.h)) }); // a piece's colliders tile one footprint
+      const PU = st.pieces.map((p) => Object.assign(uni(p.cols), { pp: p })), others = base.concat(PU);
+      PU.forEach((b) => { others.forEach((o) => { if (o === b || o.h <= 0.3) return;
+        const d = Math.hypot(Math.max(0, o.x1 - b.x2, b.x1 - o.x2), Math.max(0, o.z1 - b.z2, b.z1 - o.z2)); if (d > 0.03 && d < 2.5 && !(plat(o) && b.h > o.h - 0.01 && b.x1 >= o.x1 - 0.01 && b.x2 <= o.x2 + 0.01 && b.z1 >= o.z1 - 0.01 && b.z2 <= o.z2 + 0.01 && Math.min(b.x1 - o.x1, o.x2 - b.x2, b.z1 - o.z1, o.z2 - b.z2) >= 2.5 - 0.03))
+          bad.push("gap " + d.toFixed(2) + " m between fill " + ((b.x1 + b.x2) / 2).toFixed(1) + "," + ((b.z1 + b.z2) / 2).toFixed(1) + " and a collider (min 2.5)"); }); });
+      // cover per site: clusters of 0.9-3.3 m colliders (<= 4.2 m footprint) within 10 m of the plant centre, same floor level
+      const gnd = (x, z) => base.reduce((m, b) => (plat(b) && x > b.x1 && x < b.x2 && z > b.z1 && z < b.z2 ? Math.max(m, b.h) : m), 0);
+      const siteN = {}; for (const s in P) { const c = P[s], L = bx.filter((b) => !plat(b) && b.h >= 0.9 && b.h <= 3.3 + gnd(c[0], c[1]) && b.x2 - b.x1 <= 4.2 && b.z2 - b.z1 <= 4.2 && Math.hypot(Math.max(0, b.x1 - c[0], c[0] - b.x2), Math.max(0, b.z1 - c[1], c[1] - b.z2)) <= 10 && Math.abs(gnd((b.x1 + b.x2) / 2, (b.z1 + b.z2) / 2) - gnd(c[0], c[1])) < 0.5);
+        const g = L.map((_, i) => i), f = (i) => (g[i] === i ? i : (g[i] = f(g[i]))); for (let i = 0; i < L.length; i++) for (let j = i + 1; j < L.length; j++) { const a = L[i], b = L[j]; if (Math.max(a.x1 - b.x2, b.x1 - a.x2, a.z1 - b.z2, b.z1 - a.z2) < 0.05) g[f(i)] = f(j); }
+        siteN[s] = new Set(L.map((_, i) => f(i))).size; if (siteN[s] < 4 || siteN[s] > 8) bad.push("site " + s + " has " + siteN[s] + " cover pieces (4-8)"); }
+      // largest empty floor cell: 0.5 m grid of reachable floor, minus spawn rooms and the 3.5 m plant discs; largest object-free square and rectangle (both sides >= 3 m)
+      const walls = base.filter((b) => b.h >= 4); let X1 = 1e9, X2 = -1e9, Z1 = 1e9, Z2 = -1e9; walls.forEach((b) => { X1 = Math.min(X1, b.x1); X2 = Math.max(X2, b.x2); Z1 = Math.min(Z1, b.z1); Z2 = Math.max(Z2, b.z2); });
+      if (!five) { X1 = -20; X2 = 20; Z1 = -20; Z2 = 20; }
+      const G = 0.5, GX = Math.ceil((X2 - X1) / G), GZ = Math.ceil((Z2 - Z1) / G), obst = bx.filter((b) => b.h > 0.3 && !plat(b)), walk = new Uint8Array(GX * GZ), rc = new Uint8Array(GX * GZ);
+      const cellOf = (x, z) => { const i = Math.floor((x - X1) / G), j = Math.floor((z - Z1) / G); return i < 0 || j < 0 || i >= GX || j >= GZ ? -1 : i * GZ + j; };
+      obst.forEach((b) => { for (let i = Math.max(0, Math.floor((b.x1 - X1) / G)); i < Math.min(GX, Math.ceil((b.x2 - X1) / G)); i++) for (let j = Math.max(0, Math.floor((b.z1 - Z1) / G)); j < Math.min(GZ, Math.ceil((b.z2 - Z1) / G)); j++) walk[i * GZ + j] = 2; });
+      const stk = []; const seed = (x, z) => { const c = cellOf(x, z); if (c >= 0 && walk[c] !== 2 && !rc[c]) { rc[c] = 1; stk.push(c); } }; nodes.forEach((n) => seed(n[0], n[1])); sites.forEach((s) => seed(s[0], s[1])); if (sp) { seed(0, sp.atk); seed(0, -sp.atk); } else seed(0, 17);
+      while (stk.length) { const c = stk.pop(), i = (c / GZ) | 0, j = c % GZ; for (const [a, b2] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const ii = i + a, jj = j + b2; if (ii < 0 || jj < 0 || ii >= GX || jj >= GZ) continue; const q = ii * GZ + jj; if (walk[q] !== 2 && !rc[q]) { rc[q] = 1; stk.push(q); } } }
+      const excl = (x, z) => (sp && Math.abs(x) < 16 && (Math.abs(z - sp.atk) < 7 || Math.abs(z + sp.atk) < 7 || z > sp.atk || z < -sp.atk)) || sites.some((s) => Math.hypot(s[0] - x, s[1] - z) < 3.5);
+      const F = new Uint8Array(GX * GZ); for (let i = 0; i < GX; i++) for (let j = 0; j < GZ; j++) { const c = i * GZ + j; F[c] = rc[c] && !excl(X1 + (i + 0.5) * G, Z1 + (j + 0.5) * G) ? 1 : 0; }
+      let sq = 0, sqAt = null; const D = new Uint16Array(GX * GZ); for (let i = 0; i < GX; i++) for (let j = 0; j < GZ; j++) { const c = i * GZ + j; D[c] = !F[c] ? 0 : i && j ? 1 + Math.min(D[c - GZ], D[c - 1], D[c - GZ - 1]) : 1; if (D[c] > sq) { sq = D[c]; sqAt = [X1 + (i + 1 - sq / 2) * G, Z1 + (j + 1 - sq / 2) * G]; } }
+      let ra = 0, raW = null; const H = new Uint16Array(GZ), m = Math.round(3 / G);
+      for (let i = 0; i < GX; i++) { for (let j = 0; j < GZ; j++) H[j] = F[i * GZ + j] ? H[j] + 1 : 0; const S = []; for (let j = 0; j <= GZ; j++) { const h = j < GZ ? H[j] : 0; let s0 = j; while (S.length && S[S.length - 1][1] >= h) { const [a, hh] = S.pop(); const w = j - a; if (hh >= m && w >= m && hh * w > ra) { ra = hh * w; raW = [hh * G, w * G, X1 + (i + 1 - hh / 2) * G, Z1 + ((a + j) / 2) * G]; } s0 = a; } S.push([s0, h]); } }
+      const sqM = sq * G, raM = ra * G * G; if (sqM > 12.01) bad.push("empty floor square " + sqM + " m at " + sqAt.map((v) => v.toFixed(1)) + " (max 12 m)"); if (raM > 150) bad.push("empty floor rectangle " + raM + " m2 (max 150)");
+      out.push({ k, n: st.pieces.length, cols: nc, flats: st.flats.length, draws: st.draws, siteN, sq: sqM, sqAt, ra: raM, raW, kinds: st.pieces.reduce((o, p) => ((o[p.t] = (o[p.t] || 0) + 1), o), {}), bad });
+    } catch (e) { out.push({ k, bad: [String(e.stack || e).slice(0, 300)] }); } } } finally { boxes = keepB; for (const s in SITES) delete SITES[s]; Object.assign(SITES, keepS); }
+    return JSON.stringify(out); })()`)); } catch (e) { err.push(String(e).slice(0, 300)); }
+  for (const m of R || []) { const ok = !m.bad.length;
+    report.push({ label: `Map fill ${m.k}: ${m.n} in-play pieces (${m.cols} box colliders, each with a bullet-stopping mesh; visuals match colliders), ${m.flats} ground-variety patches, ${m.draws} draw calls, cover per site ${JSON.stringify(m.siteN)} (4-8), largest empty floor square ${m.sq} m (<= 12) / rectangle ${m.ra} m2 (<= 150), spawns / plant sites / doors / teleporters / ropes / nav nodes clear, lanes >= 2.5 m`, el: true, handler: true, cond: ok, pass: ok, errs: m.bad.slice(0, 5) }); }
+  if (!R || R.length !== keys.length) report.push({ label: "Map fill audit", el: true, handler: true, pass: false, cond: false, errs: err.concat(R ? R.filter((m) => !m.n).map((m) => m.k + ": " + m.bad[0]) : []) });
+}
+
 // ---------- print ----------
 const bad = report.filter((r) => !r.pass);
 console.log(`\n=== audit (${MID ? "THREE loads, 3D init throws" : NO3 ? "THREE missing" : "THREE stub loaded"}) — ${report.length} checks, ${bad.length} failing ===`);
