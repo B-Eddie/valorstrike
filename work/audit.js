@@ -1794,6 +1794,20 @@ if (!NO3) {
       const leak2 = D.box.filter((m) => m.t === "rs").some((m) => Object.keys(m.cr || {}).some((n) => t0.includes(n)));
       mpOk("Enemy credits are never sent to the client (whole match so far)", !leak2 && D.box.filter((m) => m.t === "rs").length > nD);
       ev("FV.buy = 0.01; fiveTick(0.05); true"); advance(100);
+      { // online abilities: client cast -> host spawns + relays; host cast relayed; cast without a charge refused
+        phase = "mp5 abilities"; const om = sb.you, oxz = ev(`[xMP.unit(${om}).g.position.x, xMP.unit(${om}).g.position.z, xMP.unit(${om}).alive]`);
+        const sm0 = ev("J.smokes.length"), nA = A5.box.length, nB = B5.box.length;
+        B5.c.send({ t: "ab", k: "e", ag: "Omen", o: [oxz[0], 1.6, oxz[1]], d: [0, 0, -1], ts: 1 }); advance(20);
+        const acA = A5.box.slice(nA).find((m) => m.t === "ac" && m.i === om);
+        mpOk("Ability: client smoke cast (Omen Dark Cover) spawns the smoke in the host world and is relayed to the other client (not echoed to the caster)", ev("J.smokes.length") === sm0 + 1 && !!acA && acA.ag === "Omen" && acA.k === "e" && acA.o.length === 3 && !B5.box.slice(nB).some((m) => m.t === "ac" && m.i === om), JSON.stringify([oxz, sm0, ev("J.smokes.length"), acA]));
+        const nA2 = A5.box.length, nB2 = B5.box.length; // Shrouded Step (C): never bought this match, so no charge (keep added sim time small: later timing-sensitive checks)
+        B5.c.send({ t: "ab", k: "c", ag: "Omen", o: [oxz[0], 1.6, oxz[1]], d: [0, 0, -1], ts: 2 }); advance(20);
+        mpOk("Ability: cast without a charge is refused (abn to the caster, no smoke, nothing relayed)", ev("J.smokes.length") === sm0 + 1 && B5.box.slice(nB2).some((m) => m.t === "abn" && m.k === "c") && !A5.box.slice(nA2).some((m) => m.t === "ac"), JSON.stringify(B5.box.slice(nB2).map((m) => m.t)));
+        const nA3 = A5.box.length, nB3 = B5.box.length;
+        const hf = ev(`(() => { const p0 = J.pick, o0 = J.on, h0 = player.hp; J.pick = "Phoenix"; J.on = true; player.hp = 100; J.e = 1; J.cd.e = 0; const n = J.orbs.length; jKey("KeyE"); const r = J.orbs.length - n; J.pick = p0; J.on = o0; player.hp = h0; return r; })()`); advance(20);
+        const hA = A5.box.slice(nA3).find((m) => m.t === "ac" && m.i === 0), hB = B5.box.slice(nB3).find((m) => m.t === "ac" && m.i === 0);
+        mpOk("Ability: host flash cast (Phoenix Curveball) is relayed to every client", hf === 1 && !!hA && !!hB && hA.ag === "Phoenix" && hA.k === "e" && hB.k === "e", JSON.stringify([hf, hA, hB]));
+      }
       D.c.close(); advance(150);
       mpOk("Disconnect mid-round: that player's unit becomes a bot, round keeps running", ev(`(() => { const u = [].concat(bots, allies).find((x) => x.name === ${JSON.stringify(dN)}); return !!u && !u.hum && !u.nt && running && xMP.S.conns.size === 2; })()`) === true, ev("[running, xMP.S.conns.size]"));
       frames(60);
@@ -1827,6 +1841,11 @@ if (!NO3) {
       const hin4 = gin.filter((m) => m.t === "in").pop();
       mpOk("Client defuse hold reaches the host (h4) and the defuse HUD shows", !!hin4 && hin4.h4 === 1 && /Defus/.test($("defuse").textContent), JSON.stringify(hin4) + " " + $("defuse").textContent);
       ev("keys.Digit4 = false; true");
+      { const cs0 = ev("J.smokes.length"); gc.send({ t: "ac", i: 0, ag: "Omen", k: "e", o: [-8, 1.6, 40], d: [0, 0, -1], ts: 1 }); advance(40);
+        mpOk("Ability: host-relayed smoke cast appears on the client (visual copy)", ev("J.smokes.length") === cs0 + 1, ev("J.smokes.length") + " vs " + cs0);
+        const ng = gin.length; ev(`(() => { const p0 = J.pick, o0 = J.on; J.pick = "Jett"; J.on = true; J.c = 1; J.cd.c = 0; jKey("KeyC"); J.pick = p0; J.on = o0; return true; })()`); advance(40);
+        const ab = gin.slice(ng).find((m) => m.t === "ab");
+        mpOk("Ability: client cast sends agent, slot, eye, aim and time to the host", !!ab && ab.k === "c" && ab.ag === "Jett" && ab.o.length === 3 && ab.d.length === 3 && typeof ab.ts === "number", JSON.stringify(ab)); }
       gc.send({ t: "re", w: 0, tx: "Hosty... B6 defused the Spike", ti: "SPIKE DEFUSED", o: 0, sc: [0, 1], u: ros(0), k: {}, d: {}, me: 3000 }); advance(60);
       mpOk("Round end from the host: client scores the round for its team, credits updated, round frozen", ev("FV.you === 1 && FV.them === 0 && FV.cr === 3000 && !running") === true, ev("[FV.you, FV.them, FV.cr, running]"));
       gc.send({ t: "rd", ld: [null, "Ghost"], cr: 3000, b: 30, atk: 1 }); gc.send({ t: "s", tl: 100, u: ros(1), k: {}, d: {}, ev: [] }); advance(80);
