@@ -1,6 +1,6 @@
 // runtime test: real three r149 + GLTFLoader/SkeletonUtils (examples/js), the game's own agent code extracted from index.html
 const fs = require('fs'), vm = require('vm');
-const html = fs.readFileSync('/workspace/work/par2/agents/index.html', 'utf8');
+const html = fs.readFileSync(require('path').join(__dirname, '../index.html'), 'utf8');
 const ctx = { console, performance, TextDecoder, TextEncoder, setTimeout, clearTimeout, URL, Blob, createImageBitmap: undefined, requestAnimationFrame: () => 0, Math, JSON, window: {}, self: {} }; ctx.window = ctx; ctx.self = ctx; vm.createContext(ctx);
 for (const f of ['three.min.js', 'GLTFLoader.js', 'SkeletonUtils.js']) vm.runInContext(fs.readFileSync('/workspace/work/qa/' + f, 'utf8'), ctx);
 const cut = (a, b) => { const i = html.indexOf(a), j = html.indexOf(b, i); if (i < 0 || j < 0) throw new Error('marker ' + a); return html.slice(i, j); };
@@ -13,7 +13,7 @@ const T = ctx.THREE, X = ctx.__x;
 const parse = (f) => new Promise((res, rej) => { const b = fs.readFileSync(f), ab = vm.runInContext('new ArrayBuffer(' + b.length + ')', ctx); new (vm.runInContext('Uint8Array', ctx))(ab).set(b); new T.GLTFLoader().parse(ab, '', res, rej); });
 module.exports = { ctx, T, X, parse };
 if (require.main === module) (async () => {
-  const D = '/workspace/work/par2/agents/models/';
+  const D = require('path').join(__dirname, '../models/') + '/';
   X.XUB.src = { m: await parse(D + 'agent_m.glb'), f: await parse(D + 'agent_f.glb'), a: await parse(D + 'agent_anims.glb') };
   X.xUbReady(); console.log('ready', X.XUB.ok, Object.keys(X.XUB.C).length, 'clips; additive', Object.keys(X.XUB.A));
   const mkM = (nm) => { const m = new T.Group(), gun = new T.Group(); gun.add(new T.Mesh(new T.BoxGeometry(0.06, 0.1, 0.8), new T.MeshBasicMaterial())); gun.children[0].position.z = 0.25; m.add(gun); const ring = new T.Mesh(new T.RingGeometry(0.4, 0.5, 8), new T.MeshBasicMaterial()); m.add(ring); return { m, gun, ring, mats: [], nm, rim: 0xff4655, w: 'Vandal' }; };

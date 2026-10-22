@@ -3447,7 +3447,10 @@ function xSolAtt(ag, rim) {
   if (ag === "Jett") { const s = L(0x9fd3f0); add("spine", box(0.08, 0.3, 0.02), s, 0.06, 0.05, -0.14, 0.25, 0, 0.15); add("spine", box(0.07, 0.22, 0.02), s, -0.02, 0.07, -0.145, 0.3, 0, -0.1); add("head", gg("pt", () => new T.ConeGeometry(0.03, 0.16, 6)), L(0xf2f4f7), 0, 0.03, -0.14, 2.6); }
   if (ag === "Phoenix") { const c = L(0x16141a, true); add("spine", cyl(0.12, 0.105, 0.12, 12, true), c, 0, 0.24, -0.01, -0.12); add("spine", box(0.05, 0.1, 0.012), L(0xff9a2a), 0.06, 0.25, 0.1, 0, 0.5); }
   if (ag === "Sova") { add("spine", gg("bow", () => new T.TorusGeometry(0.36, 0.014, 4, 18, Math.PI)), L(0xd8c49a), 0, 0.02, -0.17, 0, 0, Math.PI / 2 + 0.5); add("spine", box(0.006, 0.7, 0.006), L(0xeef0f4), 0, 0.02, -0.16, 0, 0, 0.5); }
-  if (ag === "Sage") { const r = L(0x2bb5a5, true), p = box(0.17, 0.4, 0.012); [["lul", 1], ["rul", -1]].forEach(([k, s]) => [[0.11, -0.16], [-0.11, 0.16]].forEach(([z, rx]) => add(k, p, s * 0.03, -0.19, z, rx, 0, s * 0.14))); } // four robe panels (front/back per leg), on the upper-leg bones, flared out
+  if (ag === "Sage") { const r = L(0x2bb5a5, true), p = gg("sgp", () => { const g = new T.PlaneGeometry(1, 0.42, 4, 4), q = g.attributes.position; // tapered cloth panel: 0.11 m at the hip to 0.18 m at the hem, wrapped around the leg, pointed hem
+      for (let i = 0; i < q.count; i++) { const x = q.getX(i), y = q.getY(i), t = 0.5 - y / 0.42, w = 0.11 + 0.07 * t, px = x * w; q.setXYZ(i, px, y - (0.5 - Math.abs(x)) * 0.05 * t, -px * px * 3.2); }
+      g.computeVertexNormals(); return g; });
+    [["lul", 1], ["rul", -1]].forEach(([k, s]) => [[0.19, -0.16, 0], [-0.16, 0.16, Math.PI]].forEach(([z, rx, ry]) => add(k, p, r, s * 0.03, -0.15, z, rx, ry, (ry ? -s : s) * 0.14))); } // four robe panels (front/back per leg), on the upper-leg bones, flared out
   if (ag === "Reyna") { const p = L(0x2a0e3a), g = Gl(0xff3ad8), sp = gg("sp", () => new T.SphereGeometry(0.075, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2)); [-1, 1].forEach((s) => { add("spine", sp, p, s * 0.19, 0.16, 0, 0, 0, -s * 0.35); add("spine", box(0.09, 0.012, 0.012), g, s * 0.2, 0.175, 0.05, 0, 0, -s * 0.35); }); }
   if (ag === "Omen") { const c = L(0x14151f, true); add("head", gg("oh", () => new T.SphereGeometry(0.17, 12, 8, Math.PI * 0.75, Math.PI * 1.5, 0, Math.PI * 0.7)), c, 0, 0.09, -0.02); [[-0.11, 0.62], [-0.04, 0.74], [0.03, 0.56], [0.1, 0.68]].forEach(([x, h]) => add("spine", box(0.07, h, 0.012), c, x, 0.12 - h / 2, -0.16, 0.08)); }
   if (ag === "Killjoy") { add("head", cyl(0.128, 0.128, 0.035, 14, true), L(0x1a1a1a, true), 0, 0.12, 0); add("head", gg("kb", () => new T.SphereGeometry(0.15, 12, 6, 0, Math.PI * 2, 0, Math.PI / 2)), L(0x2a6a4a), 0, 0.15, -0.005); }
@@ -3512,7 +3515,8 @@ function xUbKit(nm, rim) {
     c.userData.agent = 1; xRimM(c, rim, null); cache.set(m, c); return c;
   };
   const belt = XLM(0x1a1b1f), bk = new THREE.MeshBasicMaterial({ color: A.t }); belt.side = THREE.DoubleSide; belt.userData.agent = 1; xRimM(belt, rim, null);
-  return (XSK[key] = { mat, head: base.head, band: base.band, att: base.att, belt, bk });
+  const boot = XLM(col.Boots); boot.userData.agent = 1; xRimM(boot, rim, null); // procedural boots (the base body's Boots mesh is a bare foot with toes, so it is dropped)
+  return (XSK[key] = { mat, head: base.head, band: base.band, att: base.att, belt, bk, boot });
 }
 function xUb(M) {
   const ag = xAgOf(M.nm), h = String(M.nm || "").length, cfg = XUB_AG[ag] || (h % 2 ? ["f", ["Hair_Long", "Hair_Buns", "Hair_BuzzedFemale"][h % 3]] : ["m", ["Hair_Buzzed", "Hair_SimpleParted"][h % 2]]);
@@ -3523,7 +3527,7 @@ function xUb(M) {
   const K = xUbKit(M.nm, M.rim), drop = [];
   sc.traverse((o) => {
     if (!o.isMesh) return;
-    if (/^Hair_/.test(o.name) && hair.indexOf(o.name) < 0) { drop.push(o); return; }
+    if ((/^Hair_/.test(o.name) && hair.indexOf(o.name) < 0) || (o.material && o.material.name === "Boots")) { drop.push(o); return; } // bare-foot Boots mesh replaced by xUbBoot
     o.castShadow = true; o.raycast = XNR;
     { const g = o.geometry; if (g && !g.userData.xBS) { g.computeBoundingSphere(); g.boundingSphere.radius *= 1.25; g.userData.xBS = true; } o.frustumCulled = true; }
     o.material = K.mat(o.material);
@@ -3549,7 +3553,9 @@ function xUb(M) {
     const g = new THREE.Group(), bl = new THREE.Mesh(bg, K.belt), bq = new THREE.Mesh(kg, K.bk); bl.scale.set(f ? 0.192 : 0.175, 1, f ? 0.145 : 0.142); bq.position.set(0, 0, (f ? 0.145 : 0.142) + 0.004);
     g.add(bl, bq); g.position.set(0, f ? 0.128 : 0.122, f ? 0.01 : 0.025); g.traverse((o) => { if (o.isMesh) o.raycast = XNR; });
     const pg = pin(bone("pelvis"), g, true); if (pg) M.xAt.push(pg);
-    ["foot_l", "foot_r"].forEach((n) => { const c = new THREE.Mesh(bg, K.belt); c.scale.set(f ? 0.06 : 0.066, 1.35, f ? 0.068 : 0.074); c.position.y = -0.005; c.raycast = XNR; const cg = pin(bone(n), c, true); if (cg) M.xAt.push(cg); }); // boot cuffs over the ankle seam
+    ["foot_l", "foot_r"].forEach((n) => { const c = new THREE.Mesh(bg, K.boot); c.scale.set(f ? 0.06 : 0.066, 1.5, f ? 0.068 : 0.074); c.position.y = 0.002; c.raycast = XNR; const cg = pin(bone(n), c, true); if (cg) M.xAt.push(cg); }); // boot shafts (cuffs) over the ankle seam
+    const yw = (sd) => { const a = bone("foot_" + sd), b = bone("ball_" + sd); if (!a || !b) return 0; const iv = new THREE.Matrix4().copy(M.m.matrixWorld).invert(), p = new THREE.Vector3().setFromMatrixPosition(a.matrixWorld).applyMatrix4(iv), q = new THREE.Vector3().setFromMatrixPosition(b.matrixWorld).applyMatrix4(iv); return Math.atan2(q.x - p.x, q.z - p.z); }; // idle foot heading (the right foot turns out ~44 deg)
+    xUbBoot(K, yw).forEach(([n, o]) => { const g = pin(bone(n), o, true); if (g) M.xAt.push(g); }); // boot body on foot_*, toe cap on ball_* (bends with the toes)
   }
   ra.stop(); ra = mx.clipAction(XUB.C.Pistol_Aim_Neutral); ra.play(); mx.update(0.05); M.m.updateMatrixWorld(true);
   const hb = bone("hand_r");
@@ -3566,6 +3572,24 @@ function xUb(M) {
   X.acts = X.a;
   M.solOwn = () => { M.solOwn = null; wr.traverse((o) => { if (!o.isMesh || inGun(o)) return; o.material = xSolOwnM(o.material, M.mats); }); };
   M.ub = 1; M.sx = X; XSOL.mx.push(M);
+}
+// procedural boots, agent-frame meters relative to the foot / ball bones in the idle pose (measured from the base bodies' foot meshes); geometry shared by every agent
+function xUbBoot(K, yw) { // boot frame: origin at the foot bone, +Z along the idle foot heading (foot -> ball), +X toward the agent's left; the foot sits ~1.8 cm off-centre toward the big toe
+  const G = XUB.bt || (XUB.bt = (() => {
+    const rb = (sx, sy, sz) => { const g = new THREE.BoxGeometry(1, 1, 1, 4, 3, 6), p = g.attributes.position; // superellipse-rounded box
+      for (let i = 0; i < p.count; i++) { const x = p.getX(i), y = p.getY(i), z = p.getZ(i), m = Math.max(Math.abs(x), Math.abs(y), Math.abs(z)), k = m / Math.pow(x ** 6 + y ** 6 + z ** 6, 1 / 6); p.setXYZ(i, x * k * sx, y * k * sy, z * k * sz); }
+      g.computeVertexNormals(); return g; };
+    return { up: rb(0.136, 0.135, 0.25), cap: rb(0.136, 0.072, 0.15), sole: new THREE.BoxGeometry(0.14, 0.022, 0.24), ts: new THREE.BoxGeometry(0.14, 0.022, 0.135) };
+  })());
+  const out = [];
+  ["l", "r"].forEach((sd) => {
+    const mk = (geo, m, x, y, z) => { const o = new THREE.Mesh(geo, m); o.position.set(x, y, z); o.raycast = XNR; o.castShadow = true; return o; };
+    const a = new THREE.Group(), b = new THREE.Group(), xs = sd === "l" ? 1 : -1; a.rotation.y = b.rotation.y = yw(sd);
+    a.add(mk(G.up, K.boot, 0.018 * xs, -0.03, 0.05), mk(G.sole, K.belt, 0.018 * xs, -0.098, 0.04));
+    b.add(mk(G.cap, K.boot, 0.018 * xs, 0.0, 0.022), mk(G.ts, K.belt, 0.018 * xs, -0.035, 0.03));
+    out.push(["foot_" + sd, a], ["ball_" + sd, b]);
+  });
+  return out;
 }
 // one-shot triggers
 function xUbOnce(X, n, set, dur) { const a = X.a[n]; if (!a) return; a.reset(); a.timeScale = dur ? a.getClip().duration / dur : 1; a.play(); if (set === "U") { X.uo = n; X.ut = dur || a.getClip().duration; } else { X.lo = n; X.lt = dur || a.getClip().duration; } }

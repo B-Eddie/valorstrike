@@ -2441,6 +2441,26 @@ if (!NO3) {
   report.push({ label: "CC0 agent rig: agent_m / agent_f / agent_anims.glb exist, licensed + credited, every anim state maps to a clip, bodies + hair present, hitboxes unchanged, loader-missing / broken-rig fallback to Soldier + primitives", el: true, handler: true, cond: ok, pass: ok, errs: err });
 }
 
+// procedural boots replace the base bodies' bare-foot "Boots" mesh (toes were visible); Sage robe panels are tapered cloth with a real material.
+// Runtime part (real three + models via work/boots_check.js): every Boots-mesh vertex (toes included) lies inside a boot part in idle + mid-run poses
+{
+  const err = []; let ok = false, info = "";
+  try {
+    const kit = html.slice(html.indexOf("function xUb(M)"), html.indexOf("// one-shot triggers"));
+    if (!/function xUbBoot\(K, yw\)/.test(kit)) err.push("xUbBoot missing");
+    if (!/o\.material\.name === "Boots"\) \|\| /.test(html) && !/o\.material && o\.material\.name === "Boots"/.test(kit)) err.push("Boots mesh not dropped");
+    if (!/xUbBoot\(K, yw\)\.forEach/.test(kit)) err.push("boots not pinned in xUb");
+    if (!/boot = XLM\(col\.Boots\)/.test(html)) err.push("per-agent boot material missing");
+    const sg = html.slice(html.indexOf('if (ag === "Sage") { const r = L(0x2bb5a5'), html.indexOf('if (ag === "Sage") { const r = L(0x2bb5a5') + 900);
+    if (!/add\(k, p, r,/.test(sg)) err.push("Sage robe panels have no material argument");
+    const r = require("child_process").spawnSync(process.execPath, [path.join(__dirname, "boots_check.js")], { encoding: "utf8", timeout: 120000 });
+    const line = String(r.stdout || "").trim().split("\n").pop(); let J = null; try { J = JSON.parse(line); } catch (e) { err.push("boots_check output: " + line.slice(0, 200) + " " + String(r.stderr || "").slice(0, 200)); }
+    if (J) { info = J.pts + " foot vertices tested, " + J.out + " outside"; if (!J.ok) err.push(...J.err); if (!(J.pts > 3000)) err.push("too few foot vertices tested"); }
+    ok = !err.length;
+  } catch (e) { err.push(String(e).slice(0, 300)); }
+  report.push({ label: "agent boots: bare-foot Boots mesh dropped, shared procedural boots (foot + toe cap, per-agent colour) cover every foot/toe vertex in idle + run; Sage robe panels tapered with material" + (info ? " (" + info + ")" : ""), el: true, handler: true, cond: ok, pass: ok, errs: err });
+}
+
 // ---------- print ----------
 const bad = report.filter((r) => !r.pass);
 console.log(`\n=== audit (${MID ? "THREE loads, 3D init throws" : NO3 ? "THREE missing" : "THREE stub loaded"}) — ${report.length} checks, ${bad.length} failing ===`);

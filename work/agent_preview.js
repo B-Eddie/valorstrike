@@ -33,7 +33,7 @@ function draw(root, ox, oy, sc, yaw) {
   });
 }
 (async () => {
-  const D = '/workspace/work/par2/agents/models/';
+  const D = require('path').join(__dirname, '../models/') + '/';
   X.XUB.src = { m: await parse(D + 'agent_m.glb'), f: await parse(D + 'agent_f.glb'), a: await parse(D + 'agent_anims.glb') }; X.xUbReady();
   const gunG = await parse(D + 'rifle_ak.glb');
   const mkM = (nm) => { const m = new T.Group(), gun = new T.Group(), g = gunG.scene.clone(); g.rotation.y = -Math.PI / 2; g.scale.setScalar(0.8 / 5.5); g.position.z = 0.0; gun.add(g); gun.rotation.y = 0; m.add(gun); return { m, gun, ring: null, mats: [], nm, rim: 0xff4655, w: 'Vandal' }; };
