@@ -892,7 +892,7 @@ body.x-cbh #game{--ha:#3d8bff;--he:#ff9f1c}
     <h3 id="hLobMs">Daily missions</h3>
     <ul id="xLobMs"></ul>
   </aside>
-  <p class="x-foot">Fan project. Not made by, affiliated with or endorsed by Riot Games. VALORANT is a trademark of Riot Games, Inc.</p>
+  <p class="x-foot">Fan project. Not made by, affiliated with or endorsed by Riot Games. VALORANT is a trademark of Riot Games, Inc. Gun models: Quaternius (Ultimate Guns Pack + Survival Pack, CC0 public domain, quaternius.com / poly.pizza).</p>
   </div>
   <section class="x-q" id="xQueue" aria-label="Queue" hidden>
   <button class="x-qx" id="xqClose" aria-label="Close play panel">×</button>
@@ -1804,6 +1804,7 @@ function xFail() {
 function xGo(fn) {
   if (!xReady) { xRetryFn = fn; return xFail(); }
   try { if (typeof xSolLoad === "function") xSolLoad(); } catch (e) {}
+  try { if (typeof xGmLoad === "function") xGmLoad(); } catch (e) {} // CC0 gun models, same lazy first-launch fetch
   xLob0 = false; // perf pass 16: a mode launched, the first-load lobby no longer covers the game
   try { fn(); } catch (e) { if (window.xErr) window.xErr(e); }
 }
@@ -3129,7 +3130,9 @@ function xGun(w) {
   let T = XGC[k]; if (!T) { T = new THREE.Group(); T.userData.mz = XGB[k](T, XTN(k), gunDark); XGC[k] = T; }
   let g = null; try { g = T.clone(); } catch (e) { g = null; }
   if (!g || !g.traverse) { g = new THREE.Group(); g.userData.mz = XGB[k](g, XTN(k), gunDark); }
-  g.visible = true; g.userData.mz = T.userData.mz; return xNRall(g);
+  g.visible = true; g.userData.mz = T.userData.mz; xNRall(g);
+  try { if (typeof XGM !== "undefined" && XGM) { if (XGM.T[k]) xGmSwap(g, k); else if (!XGM.rdy) { XGM.live.push([g, k]); if (XGM.live.length > 400) XGM.live.shift(); } } } catch (e) {} // CC0 model once loaded, else swapped in when it arrives
+  return g;
 }
 // first-person: one model per weapon inside the old viewmodel group (old boxes hidden, muzzle follows the new barrel)
 const XGUNS = Object.keys(XGB).filter((w) => w !== "Knife");
@@ -3143,6 +3146,7 @@ function xVM() {
   for (const n in VMS) VMS[n].visible = n === k;
   gBarrel.position.z = VMS[k].userData.mz + 0.175 * gBarrel.scale.z;
   for (const n in XTN_) XTN_[n].color.set(skin[n] || SKINS[0]);
+  if (typeof XGM !== "undefined" && XGM) for (const n in XGM.sk) { const m = XGM.sk[n], c = skin[n]; if (c && c !== SKINS[0]) m.color.set(c); else if (m.userData.c0) m.color.copy(m.userData.c0); } // skins recolor the model's main material
 }
 { const o0 = onSkin; onSkin = function () { o0.apply(this, arguments); xVM(); }; onSkin(); }
 // keyframed procedural reload: per-class tracks of {t, pos, rot} (t = reload progress 0..1, so it always spans the gun's reload time), lerped with easeInOut
@@ -3199,6 +3203,80 @@ XGUNS.forEach((w) => {
   ["mag", "bolt", "cyl"].forEach((s) => { const o = P[s]; if (o) { o.userData.b0 = o.position.clone(); o.userData.r0 = o.rotation.clone(); } });
   XRP[w] = P;
 });
+// CC0 gun models (Quaternius, see models/LICENSES.txt): fetched once on the first mode launch (xGo), normalized to each procedural gun's
+// length / muzzle / bore so hands, muzzle flash and reload tracks still fit; any weapon whose file fails keeps the procedural XGB model
+var XGM = { ld: false, rdy: false, T: {}, src: {}, live: [], sk: {}, mats: {},
+  F: { Classic: "pistol_p226", Shorty: "shotgun_sawedoff", Frenzy: "pistol_auto", Ghost: "pistol_m1911", Sheriff: "revolver",
+    Stinger: "smg_m3", Spectre: "smg_mp5", Bucky: "shotgun_pump", Judge: "shotgun_tactical",
+    Bulldog: "rifle_carbine", Guardian: "dmr", Phantom: "rifle_carbine", Vandal: "rifle_ak",
+    Marshal: "sniper_bolt", Outlaw: "sniper_tactical", Operator: "sniper_heavy", Ares: "rifle_ak", Odin: "rifle_carbine", Knife: "knife" },
+  // per-weapon variants on a shared file: material tints (by glTF material name) and small add-ons (sup = suppressor, lmg = box mag + bipod)
+  V: { Bulldog: { tint: { Main: 0x8a7656, MainLight: 0x9c8a68 } }, Odin: { tint: { Main: 0x3f4a34, MainLight: 0x4d5a40 }, add: "lmg" },
+    Ares: { tint: { Wood: 0x2c2f33, DarkWood: 0x24272b }, add: "lmg" }, Ghost: { add: "sup" } } };
+function xGmFiles() { const o = {}; for (const w in XGM.F) o[XGM.F[w]] = "models/" + XGM.F[w] + ".glb"; return o; }
+function xGmLoad() {
+  if (XGM.ld) return; XGM.ld = true;
+  try {
+    if (!THREE.GLTFLoader || typeof THREE.GLTFLoader !== "function") return;
+    const fs = xGmFiles(), ks = Object.keys(fs); let left = ks.length;
+    const done = () => { if (--left > 0) return; try { xGmReady(); } catch (e) { console.warn("gun models unusable; keeping procedural guns", e); } };
+    const L = new THREE.GLTFLoader();
+    ks.forEach((k) => { try { L.load(fs[k], (g) => { XGM.src[k] = g && g.scene; done(); }, undefined, (e) => { console.warn("gun model failed: " + k, e); done(); }); } catch (e) { done(); } });
+  } catch (e) { console.warn("GLTFLoader unavailable; keeping procedural guns", e); }
+}
+// average height of the vertices in the front 4 % of the gun (the bore line), in root space; root must have no parent
+function xGmBore(root, minZ, len) {
+  let s = 0, n = 0; const v = new THREE.Vector3(); root.updateMatrixWorld(true);
+  root.traverse((o) => { const p = o.isMesh && o.geometry && o.geometry.attributes && o.geometry.attributes.position; if (!p || o.userData.xGmAdd) return;
+    for (let i = 0; i < p.count; i++) { v.fromBufferAttribute(p, i).applyMatrix4(o.matrixWorld); if (v.z < minZ + len * 0.04) { s += v.y; n++; } } });
+  return n ? s / n : 0;
+}
+function xGmMat(f, m, w) { // glTF PBR (metal 0.4, no env map: too dark here) -> Lambert like the rest of the scene; shared per file + material, cloned per tinted variant
+  const V = XGM.V[w], t = V && V.tint && V.tint[m.name], key = f + "/" + m.name + (t != null ? "/" + w : "");
+  if (!XGM.mats[key]) { const c = m.color ? m.color.clone().multiplyScalar(1.5) : new THREE.Color(0x333333); if (t != null) c.setHex(t); XGM.mats[key] = new THREE.MeshLambertMaterial({ color: c, name: m.name }); }
+  return XGM.mats[key];
+}
+function xGmTpl(w) {
+  const f = XGM.F[w], src = XGM.src[f]; if (!src) return null;
+  let P = XGC[w]; if (!P) { xGun(w); P = XGC[w]; } if (!P) return null;
+  P.updateMatrixWorld(true); const pb = new THREE.Box3().setFromObject(P), pl = pb.max.z - pb.min.z; if (!(pl > 0.05)) return null;
+  const inner = src.clone(true), rot = new THREE.Group(), T = new THREE.Group(); rot.add(inner); T.add(rot);
+  const cnt = new Map(); // triangles per material: the biggest one carries the weapon skin
+  inner.traverse((o) => { if (!o.isMesh) return; o.castShadow = o.receiveShadow = false; if (o.geometry) o.geometry.userData.shared = true; // xDisp keeps shared geometry o.material = Array.isArray(o.material) ? o.material.map((m) => xGmMat(f, m, w)) : xGmMat(f, o.material, w);
+    const m = o.material, c = o.geometry.index ? o.geometry.index.count : o.geometry.attributes.position.count; if (!Array.isArray(m)) cnt.set(m, (cnt.get(m) || 0) + c); });
+  if (w === "Knife") rot.rotation.set(-Math.PI / 2, 0, Math.PI / 2, "ZXY"); else rot.rotation.y = Math.PI / 2; // source guns point +X with +Y up; the knife blade points +Y
+  const V = XGM.V[w], A = V && V.add, tl = A === "sup" ? pl - 0.13 : pl, fz = pb.min.z + (pl - tl); // a suppressed gun leaves room for the can
+  T.updateMatrixWorld(true); let gb = new THREE.Box3().setFromObject(T);
+  rot.scale.setScalar(tl / Math.max(1e-6, gb.max.z - gb.min.z)); T.updateMatrixWorld(true); gb = new THREE.Box3().setFromObject(T);
+  const by = w === "Knife" ? (gb.min.y + gb.max.y) / 2 : xGmBore(T, gb.min.z, tl), py = w === "Knife" ? (pb.min.y + pb.max.y) / 2 : xGmBore(P, pb.min.z, pl);
+  rot.position.set((pb.min.x + pb.max.x) / 2 - (gb.min.x + gb.max.x) / 2, py - by, fz - gb.min.z);
+  T.userData.mz = pb.min.z; T.userData.my = py;
+  // weapon skin: own copy of the dominant material, recolored in xVM (default skin = the model's own color)
+  let big = null, bc = 0; cnt.forEach((c, m) => { if (c > bc) { bc = c; big = m; } });
+  if (big && w !== "Knife") { const sm = big.clone(); sm.userData.c0 = big.color.clone(); inner.traverse((o) => { if (o.isMesh && o.material === big) o.material = sm; }); XGM.sk[w] = sm; }
+  const dk = XGM.mats.__dk || (XGM.mats.__dk = new THREE.MeshLambertMaterial({ color: 0x1a1c20 }));
+  const add = (geo, m, x, y, z, rx) => { const o = new THREE.Mesh(geo, m); o.position.set(x, y, z); if (rx) o.rotation.x = rx; o.userData.xGmAdd = 1; T.add(o); return o; };
+  if (A === "sup") { const c = add(new THREE.CylinderGeometry(0.022, 0.022, 0.13, 12), dk, 0, py, pb.min.z + 0.065); c.rotation.x = Math.PI / 2; }
+  if (A === "lmg") { add(new THREE.BoxGeometry(0.07, 0.11, 0.12), dk, 0.012, py - 0.11, pb.min.z + pl * 0.55);
+    [-1, 1].forEach((s) => { const b = add(new THREE.BoxGeometry(0.01, 0.17, 0.01), dk, s * 0.03, py - 0.08, pb.min.z + pl * 0.16); b.rotation.set(0.35, 0, s * 0.2); }); }
+  T.traverse((o) => { if (o.isMesh) o.raycast = XNR; });
+  return T;
+}
+function xGmSwap(g, k) { // procedural children go into one hidden group (reload tracks still drive them, the mag drop still clones from them)
+  const T = XGM.T[k]; if (!T || !g || g.userData.xGm) return;
+  const hid = new THREE.Group(); hid.name = "xproc"; hid.visible = false;
+  g.children.slice().forEach((c) => hid.add(c)); g.add(hid);
+  const c = T.clone(); c.name = "xglb"; g.add(c); g.userData.xGm = 1; g.userData.mz = T.userData.mz; g.userData.my = T.userData.my;
+}
+function xGmReady() {
+  for (const w in XGM.F) { try { const T = xGmTpl(w); if (T) XGM.T[w] = T; } catch (e) { console.warn("gun model " + w + " skipped", e); } }
+  XGM.rdy = true;
+  XGM.live.forEach(([g, k]) => { try { xGmSwap(g, k); } catch (e) {} }); XGM.live.length = 0;
+  try { for (const n in VMS) xGmSwap(VMS[n], n); knife.children.forEach((c) => { if (c.userData && c.userData.mz != null && !c.userData.xGm && c !== kBlade && c !== kGrip) xGmSwap(c, "Knife"); }); } catch (e) {} // built before XGM existed
+  [gun, knife].forEach((v) => v.traverse((o) => { if (o.isMesh) { o.castShadow = false; o.receiveShadow = false; } }));
+  try { xVM(); } catch (e) {}
+}
+{ const f0 = vmFire; vmFire = function () { f0.apply(this, arguments); try { let w = mode === "duel" ? "Operator" : wName(); const g = VMS[w] || VMS.Vandal; if (g && g.userData.xGm) muzzle.position.y = g.userData.my; } catch (e) {} }; }
 const XRL = { k: null, last: -1, fx: [] };
 function xRst() { for (const n in XRP) ["mag", "bolt", "cyl"].forEach((s) => { const o = XRP[n][s]; if (o) { o.position.copy(o.userData.b0); o.rotation.copy(o.userData.r0); o.visible = true; } }); XRL.k = null; XRL.last = -1; }
 function xDrop(m) { // detached clone of the mag falls with gravity and fades out
@@ -8008,7 +8086,13 @@ function xdMesh() {
 function xdDrop(w, x, z, am) {
   if (!w || !xdOn()) return null; x = Number.isFinite(+x) ? +x : 0; z = Number.isFinite(+z) ? +z : 0;
   const m = xdMesh(); m.position.set(x, 0.08, z); m.rotation.set(0, Math.random() * 6.28, 0); scene.add(m);
+  try { xdModel(m, w); } catch (e) {}
   const d = { w, x, z, m, am: am || null }; XD.L.push(d); return d;
+}
+function xdModel(m, w) { // the real gun model lies on its side inside the (now invisible) pickup box; pooled boxes swap models per weapon
+  if (!m || typeof xGun !== "function") return; const o = m.userData.xdg; if (o && o.userData.w === w) return;
+  if (o) m.remove(o); const g = xGun(w); g.userData.w = w; g.rotation.set(0, Math.PI / 2, Math.PI / 2); g.position.set(0, -0.02, 0); m.add(g); m.userData.xdg = g;
+  if (XD.mat) XD.mat.visible = false;
 }
 function xdTake(d) { const i = XD.L.indexOf(d); if (i >= 0) XD.L.splice(i, 1); scene.remove(d.m); XD.P.push(d.m); }
 function xdClear() { while (XD.L.length) xdTake(XD.L[0]); }

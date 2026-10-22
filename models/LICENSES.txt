@@ -1,0 +1,44 @@
+3D gun models used by this game (models/*.glb)
+==============================================
+
+All files below are unmodified GLB files by Quaternius (https://quaternius.com),
+released under CC0 1.0 Universal / Public Domain Dedication
+(https://creativecommons.org/publicdomain/zero/1.0/). Attribution is not required;
+credit is given in the lobby footer as a courtesy. The game renames the files and,
+at runtime only, converts their materials to Lambert, tints a few variants and adds
+small primitive add-ons (suppressor, LMG box mag + bipod). None of these models are
+derived from VALORANT / Riot Games designs; they are generic real-world style guns.
+
+Pack: Ultimate Guns Pack (Quaternius, CC0)
+  Pack page: https://poly.pizza/bundle/Ultimate-Guns-Pack-cpgUfI4t2F
+             https://quaternius.com/packs/ultimategun.html
+  Files were fetched from a CC0 provenance mirror that records the original pack file
+  names and SHA-256 hashes: https://github.com/AetherRadar/operation-steel-tide/tree/main/assets/models/quaternius_ultimate_guns
+  (see its LICENSE.md and ../steel_tide_reloadable_weapons/LICENSE.md)
+
+  file                     original pack file              used for
+  pistol_p226.glb          Pistol-J3i9KDQ3kt.glb           Classic
+  pistol_m1911.glb         Pistol-Z7aOjJu583.glb           Ghost (+ runtime suppressor)
+  smg_m3.glb               Submachine Gun-nsP3JukU73.glb   Stinger
+  smg_mp5.glb              Submachine Gun.glb              Spectre
+  rifle_ak.glb             Assault Rifle-fpLucho45C.glb    Vandal, Ares (dark tint + box mag + bipod)
+  rifle_carbine.glb        Assault Rifle-Bgvuu4CUMV.glb    Phantom, Bulldog (tan tint), Odin (olive tint + box mag + bipod)
+  dmr.glb                  Sniper Rifle.glb                Guardian
+  sniper_bolt.glb          Sniper Rifle-ASOMZIErq3.glb     Marshal
+  sniper_tactical.glb      Sniper Rifle-TKaBjAEofL.glb     Outlaw
+  sniper_heavy.glb         Sniper Rifle-i65hEldsw6.glb     Operator
+
+Pack: Survival Pack (Quaternius, CC0)
+  Pack page: https://quaternius.com/packs/survival.html
+  Files were fetched from https://github.com/trebeljahr/quaternius-showcase/tree/main/public/glb/survival_pack
+  (its LICENSES.md lists the pack as CC0-1.0 by Quaternius; repo MIT covers its code only)
+
+  file                     original file                   used for
+  pistol_auto.glb          Pistol_1.glb                    Frenzy
+  revolver.glb             Revolver_1.glb                  Sheriff
+  shotgun_sawedoff.glb     Shotgun_SawedOff.glb            Shorty
+  shotgun_pump.glb         Shotgun_2.glb                   Bucky
+  shotgun_tactical.glb     Shotgun_1.glb                   Judge
+  knife.glb                Knife.glb                       Knife
+
+Author: Quaternius (@Quaternius). License: CC0 1.0. Retrieved 2026-10-22.
