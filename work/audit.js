@@ -2400,6 +2400,50 @@ if (!NO3) {
   report.push({ label: "CC0 gun models: all weapons + knife map to existing models/*.glb listed in LICENSES.txt, credits present, procedural fallback with no GLTFLoader", el: true, handler: true, cond: ok, pass: ok, errs: err });
 }
 
+// ---------- map dressing: every map dressed densely (>= 400 decor objects per 5v5 map, 250 Retake, 150 Duel), decor adds no colliders (nav / timings / sightlines untouched), low decor hugs a wall, the rest is above head / on the floor / beyond the walls, <= 400 extra draw calls, CC0 prop files present + licensed ----------
+if (!NO3) {
+  const XD_MIN = { ascent: 400, bind: 400, haven: 400, split: 400, lotus: 400, breeze: 400, retake: 250, duel: 150 }, keys = ["ascent", "bind", "haven", "split", "lotus", "breeze", "retake", "duel"];
+  let R = null, err = [];
+  try { R = JSON.parse(vm.runInContext("__xe", context)(`(() => { const out = [], keepB = boxes, keepS = Object.assign({}, SITES);
+    const pads = { ascent: ASC_SITES, bind: { A: [-20, -21], B: [20, -21] }, haven: HSITES, split: SSITES, lotus: LSITES, breeze: BZSITES, retake: { B: [0, 0] }, duel: {} };
+    try { for (const k of ${JSON.stringify(keys)}) { const bad = []; try {
+      const st = xDressMap(k), M = k === "retake" || k === "duel" ? MAPS[k] : FMAP[k]; if (!st) { out.push({ k, bad: ["no dressing stats"] }); continue; }
+      const bx = M.boxes, P = pads[k], sites = Object.keys(P).map((s) => P[s]), five = k !== "retake" && k !== "duel", sp = five ? xSpawn(k) : null;
+      const mn = ${JSON.stringify(XD_MIN)}[k]; if (st.n < mn) bad.push("only " + st.n + " decor objects (min " + mn + ")");
+      if (st.draws + st.glbDraws > 400) bad.push("draw calls " + (st.draws + st.glbDraws) + " > 400");
+      if (M.xd !== 1 || st.g !== M.g) bad.push("decor not attached to this map's group (would not be freed with it)");
+      // colliders: dressing must not add any; any it ever adds may not touch spawns, site centres or nav nodes
+      const cols = bx.slice(st.b0, st.b1); if (bx.length !== st.b1) bad.push("collider list changed after dressing");
+      let nodes = []; if (cols.length) { if (k === "ascent") nodes = Object.values(ASC_NODE); else if (five) { for (const s in SITES) delete SITES[s]; Object.assign(SITES, P); boxes = bx.slice(0, st.b0); nodes = xgBuild(k).N; boxes = keepB; } }
+      cols.forEach((b) => { const ov = (x, z, r) => x > b.x1 - r && x < b.x2 + r && z > b.z1 - r && z < b.z2 + r;
+        if (sp) for (const z of [sp.atk, -sp.atk]) for (let x = -8; x <= 8; x += 2) if (ov(x, z, 0.4)) bad.push("decor collider on spawn " + x + "," + z);
+        sites.forEach((s) => { if (ov(s[0], s[1], 2.5)) bad.push("decor collider on plant site " + s); }); nodes.forEach((n) => { if (ov(n[0], n[1], 0.45)) bad.push("decor collider on nav node " + n); }); });
+      // placement rules per decor object
+      const [X1, X2, Z1, Z2] = st.bounds, wl = bx.filter((b) => b.h >= 3), plat = (b) => b.h < 4 && Math.min(b.x2 - b.x1, b.z2 - b.z1) >= 4;
+      const gnd = (x, z) => bx.reduce((m, b) => (plat(b) && x > b.x1 && x < b.x2 && z > b.z1 && z < b.z2 ? Math.max(m, b.h) : m), 0);
+      const dW = (x, z) => wl.reduce((m, b) => Math.min(m, Math.hypot(Math.max(b.x1 - x, 0, x - b.x2), Math.max(b.z1 - z, 0, z - b.z2))), 1e9);
+      const cnt = { wall: 0, high: 0, floor: 0, top: 0, oob: 0 }; let worst = 0;
+      st.items.forEach((q) => { cnt[q.f] = (cnt[q.f] || 0) + 1; const g = gnd(q.x, q.z), tag = q.t + " @" + q.x.toFixed(1) + "," + q.z.toFixed(1);
+        if (q.f === "wall") { if (q.y0 < g + 3.4) { const e = dW(q.x, q.z) + q.r; worst = Math.max(worst, e); if (e > 0.8) bad.push(tag + " sticks " + e.toFixed(2) + " m out of the wall (max 0.8)"); }
+          if (q.y0 < g + 3.4 && q.r > 0.15 && sp) for (const z of [sp.atk, -sp.atk]) for (let x = -8; x <= 8; x += 2) if (Math.hypot(q.x - x, q.z - z) < q.r + 0.45) bad.push(tag + " on spawn point " + x + "," + z); }
+        else if (q.f === "high") { if (q.y0 < g + 3.35) bad.push(tag + " hangs down to " + (q.y0 - g).toFixed(2) + " m (min 3.4)"); }
+        else if (q.f === "floor") { if (q.y1 - q.y0 > 0.06) bad.push(tag + " floor decal " + (q.y1 - q.y0).toFixed(2) + " m tall"); if (/patch|debris|drain/.test(q.t) && sites.some((s) => Math.hypot(s[0] - q.x, s[1] - q.z) < 7)) bad.push(tag + " over the site paint"); }
+        else if (q.f === "top") { if (!bx.some((b) => b.h >= 4 && q.x > b.x1 && q.x < b.x2 && q.z > b.z1 && q.z < b.z2 && q.y0 >= b.h - 0.6)) bad.push(tag + " roof piece not on top of a building mass"); }
+        else if (q.f === "oob") { if (!(q.y1 <= 0 || q.x < X1 || q.x > X2 || q.z < Z1 || q.z > Z2)) bad.push(tag + " out-of-bounds piece inside the playable walls"); }
+        else bad.push(tag + " unknown placement class " + q.f); });
+      out.push({ k, n: st.n, draws: st.draws, glb: st.glbDraws, cols: cols.length, models: st.models, cnt, worst: +worst.toFixed(2), verts: st.verts, bad });
+    } catch (e) { out.push({ k, bad: [String(e.stack || e).slice(0, 300)] }); } } } finally { boxes = keepB; for (const s in SITES) delete SITES[s]; Object.assign(SITES, keepS); }
+    return JSON.stringify(out); })()`)); } catch (e) { err.push(String(e).slice(0, 300)); }
+  const lic = (() => { try { return fs.readFileSync(path.join(__dirname, "..", "models", "LICENSES.txt"), "utf8"); } catch (e) { return ""; } })(), ddir = path.join(__dirname, "..", "models", "decor");
+  let mb = 0; try { fs.readdirSync(ddir).forEach((f) => (mb += fs.statSync(path.join(ddir, f)).size)); } catch (e) {} mb /= 1048576;
+  for (const m of R || []) { const bad = (m.bad || []).slice();
+    for (const nm in m.models || {}) { if (!fs.existsSync(path.join(ddir, nm + ".glb"))) bad.push("missing models/decor/" + nm + ".glb"); if (!lic.includes("decor/" + nm + ".glb")) bad.push("decor/" + nm + ".glb not listed in models/LICENSES.txt"); }
+    const ok = !bad.length;
+    report.push({ label: `Map dressing ${m.k}: ${m.n} decor objects (min ${XD_MIN[m.k]}; ${m.cnt ? Object.entries(m.cnt).map(([a, b]) => b + " " + a).join(", ") : "?"}), ${m.cols} new colliders, ${m.draws}+${m.glb} draw calls (<= 400), low decor <= ${m.worst} m off a wall, CC0 props ${Object.keys(m.models || {}).length} licensed`, el: true, handler: true, cond: ok, pass: ok, errs: bad.slice(0, 5) }); }
+  if (!R || R.length !== keys.length) report.push({ label: "Map dressing audit", el: true, handler: true, pass: false, cond: false, errs: err });
+  { const ok = mb > 0 && mb < 8 && /CC0/.test(lic) && /decor\//.test(lic); report.push({ label: `Map dressing props: models/decor ${mb.toFixed(2)} MB (< 8 MB), CC0 licence block present in models/LICENSES.txt`, el: true, handler: true, cond: ok, pass: ok, errs: ok ? [] : ["decor models " + mb.toFixed(2) + " MB or licence block missing"] }); }
+}
+
 // ---------- print ----------
 const bad = report.filter((r) => !r.pass);
 console.log(`\n=== audit (${MID ? "THREE loads, 3D init throws" : NO3 ? "THREE missing" : "THREE stub loaded"}) — ${report.length} checks, ${bad.length} failing ===`);

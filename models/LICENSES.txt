@@ -42,3 +42,46 @@ Pack: Survival Pack (Quaternius, CC0)
   knife.glb                Knife.glb                       Knife
 
 Author: Quaternius (@Quaternius). License: CC0 1.0. Retrieved 2026-10-22.
+
+
+Map set dressing props (models/decor/*.glb)
+============================================
+
+All files below are unmodified GLB files by Quaternius (https://quaternius.com), released under
+CC0 1.0 Universal / Public Domain Dedication (https://creativecommons.org/publicdomain/zero/1.0/).
+Attribution is not required; credit is given in the lobby footer as a courtesy. They were fetched from
+the Quaternius Showcase mirror, which keeps each pack's upstream CC0 licence and source page:
+  https://github.com/trebeljahr/quaternius-showcase (public/glb/<pack>/<file>.glb, see its LICENSES.md)
+At runtime the game only re-centres / scales each model, converts materials to Lambert and draws it
+with InstancedMesh as background / wall-base set dressing (no colliders). None are derived from
+VALORANT / Riot Games assets; they are generic low-poly props and plants.
+
+  file                              pack (upstream page)                                      sha256 (first 16)  used for
+  decor/AC.glb                      cyberpunk_pack (https://quaternius.com/packs/cyberpunkgamekit.html) 2f5f6b5f4c1a048a  Split wall + rooftop AC units
+  decor/AC_Stacked.glb              cyberpunk_pack (https://quaternius.com/packs/cyberpunkgamekit.html) feb3799d187e0e98  Split wall AC units
+  decor/Bags.glb                    medieval_village_pack (https://quaternius.com/packs/medievalvillage.html) ad5ebf8f6c708266  Bind wall-base sacks
+  decor/Barrel.glb                  medieval_village_pack (https://quaternius.com/packs/medievalvillage.html) acf56e7eb64e37ea  wall-base barrels
+  decor/Bench_1.glb                 medieval_village_pack (https://quaternius.com/packs/medievalvillage.html) 9e923fef29388cca  Ascent / Retake wall benches
+  decor/BushBerries_1.glb           nature_pack (https://quaternius.com/packs/ultimatenature.html) bb61908a02052bc3  Lotus jungle bushes
+  decor/Bush_1.glb                  nature_pack (https://quaternius.com/packs/ultimatenature.html) a10307dcb7030d36  Lotus wall-base + jungle bushes
+  decor/CactusFlowers_5.glb         nature_pack (https://quaternius.com/packs/ultimatenature.html) 97469b29e54c4115  Bind wall-base pots
+  decor/Cactus_2.glb                nature_pack (https://quaternius.com/packs/ultimatenature.html) 4abf90cdb64d446b  Bind desert beyond the walls
+  decor/Cart.glb                    medieval_village_pack (https://quaternius.com/packs/medievalvillage.html) c98eee1d2a91a1a8  Ascent carts beyond the walls
+  decor/CommonTree_1.glb            nature_pack (https://quaternius.com/packs/ultimatenature.html) 61c05d351070fb5f  Ascent / Lotus / Retake trees beyond the walls
+  decor/CommonTree_3.glb            nature_pack (https://quaternius.com/packs/ultimatenature.html) 01ce29544f56c7f1  Ascent / Split trees beyond the walls
+  decor/Crate.glb                   medieval_village_pack (https://quaternius.com/packs/medievalvillage.html) 57031e1b6102dd9b  wall-base crates
+  decor/Light_Street_1.glb          cyberpunk_pack (https://quaternius.com/packs/cyberpunkgamekit.html) 5f733c872d67d773  Split street lamps beyond the walls
+  decor/MarketStand_1.glb           medieval_village_pack (https://quaternius.com/packs/medievalvillage.html) 19b9b99c84d41c0b  Bind market stalls beyond the walls
+  decor/PalmTree_1.glb              nature_pack (https://quaternius.com/packs/ultimatenature.html) d92c3e7dc2bf4482  Bind / Breeze palms beyond the walls
+  decor/PalmTree_3.glb              nature_pack (https://quaternius.com/packs/ultimatenature.html) a32a48b0f84efcb7  Bind / Breeze palms beyond the walls
+  decor/PineTree_2.glb              nature_pack (https://quaternius.com/packs/ultimatenature.html) de378bdc2d1faf7e  Haven pines beyond the walls
+  decor/Plant_3.glb                 nature_pack (https://quaternius.com/packs/ultimatenature.html) 17f5812b5037c4e9  potted plants at wall bases
+  decor/Plant_5.glb                 nature_pack (https://quaternius.com/packs/ultimatenature.html) fa427cd423c64199  Lotus ferns at wall bases
+  decor/Rock_4.glb                  nature_pack (https://quaternius.com/packs/ultimatenature.html) a54d0c4fa12d6227  Haven / Breeze rocks beyond the walls
+  decor/Rock_Moss_2.glb             nature_pack (https://quaternius.com/packs/ultimatenature.html) 96a18f619e980e28  Haven / Lotus wall-base stones
+  decor/Streetlight_Single.glb      street_pack (https://quaternius.com/packs/modularstreets.html)   4f1961684e00c8f3  Split street lamps beyond the walls
+  decor/Trashcan.glb                survival_pack (https://quaternius.com/packs/survival.html) 648e7e8ed89e8719  Split wall-base bins
+  decor/Willow_3.glb                nature_pack (https://quaternius.com/packs/ultimatenature.html) a86dc54cc1e44e62  Lotus jungle beyond the walls
+
+  Packs: nature_pack = Ultimate Nature Pack; medieval_village_pack = Medieval Village Pack; survival_pack = Survival Pack; cyberpunk_pack = Cyberpunk Game Kit; street_pack = Modular Streets Pack. All CC0 1.0.
+  Total size of models/decor: 1.29 MB.
