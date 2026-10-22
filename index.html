@@ -4950,6 +4950,7 @@ function xBuildBind() {
   // B side: Market (x 8..18, z 10..28) → B Short (z -5.5..9.5, door x 11..15) → Hookah door x 12..14 → Hookah; B Long (x 19..29.5) → Garden → Elbow → site
   box(18.5, 8, 1, 7, 28, FW); box(20.75, 11.75, 3.5, 7, 20.5, FW); box(28, 11.75, 3, 7, 20.5, FW); // B Long: 4 m straight lane x 22.5..26.5, z 1.5..22, open sightline into Garden
   box(9.5, 10, 3, 7, 1, FW); box(16.5, 10, 3, 7, 1, FW); box(21, 1, 4, 7, 1, FW);
+  box(11, 22, 6, 7, 1, FW); box(13.5, 28, 1, 7, 12, FW); // sites2 Market dogleg: Market mouth only x 14..18, behind a spur wall (x 13..14, z 22..34) so attackers swing east round its end (B ~15 s rifle)
   box(10, -6, 4, 7, 1, FW); box(19.5, -6, 11, 7, 1, FW); // z -6: Hookah door x 12..14, Garden → Elbow gap x 25..29.5
   // Hookah: enclosed 6 x 6 room (x 11..17, z -12.5..-6.5) on the attacker side of B Site
   box(9.5, -9.5, 3, 7, 6, FW); box(19, -9.5, 4, 7, 6, FW); // Hookah west fill | east fill (Hookah / Elbow)
@@ -5068,7 +5069,7 @@ const HAVEN_CALLOUTS = [ // [name, x, z], for minimap labels + 3D pins
   ["A Long", -27, 14], ["Sewer", -17, 5.75], ["A Short", -20.5, -1], ["A Heaven", -26.5, -27], ["A Link", -11, -10.5], ["Def Link", -20, -31],
   ["Mid Courtyard", 0, 11], ["Garage", 18, 1], ["C Long", 26.75, 8], ["A Site", -21, -18], ["B Site", 0, -12], ["C Site", 21, -18],
   ["C Cubby", 15, -7], ["C Back Link", 23.75, -31], ["Back Link", -11, -27.5], ["Back Link", 11, -27.5], ["C Link", 11, -10.5], ["Attacker Side", 0, 34], ["Defender Side", 0, -35],
-  ["Mid Doors", 0, 23.5], ["Mid Window", 10, 5.75], ["B Back", 0, -26.5]];
+  ["Mid Doors", 9.5, 23.5], ["Mid Window", 10, 5.75], ["B Back", 0, -26.5]];
 function xBuildHaven() {
   const vbAdd = mapG.add; HAV_X.meshes = 0; HAV_X.mark.length = 0; mapG.add = function (...o) { o.forEach((x) => { HAV_X.meshes += 1 + (x && Array.isArray(x.children) ? x.children.length : 0); }); return vbAdd.apply(this, o); }; // vB audit: count objects this build adds
   const fl = xFloor(60, 96, new THREE.MeshLambertMaterial({ map: HT.stone }), 4); fl.rotation.x = -Math.PI / 2; mapG.add(fl); solids.push(fl);
@@ -5087,7 +5088,7 @@ function xBuildHaven() {
   box(18.25, 14.75, 11.5, HAV_WH, 16.5, FW); box(23.5, -1.75, 1, HAV_WH, 16.5, FW); // block between C Long and Mid; C Long inner wall (= Garage east wall), ends z -10
   box(15.25, -4.5, 5.5, HAV_WH, 1, FW); box(17.5, -7, 1, HAV_WH, 3, FW); // Garage north wall (exit gap x 18..23 into C Site); C Cubby east wall (cubby x 13..17, z -8.5..-5)
   box(-11, -19, 4, HAV_WH, 14, FW); box(-11, -6.5, 4, HAV_WH, 5, FW); box(11, -19, 4, HAV_WH, 14, FW); box(11, -6.5, 4, HAV_WH, 5, FW); // buildings between the sites; A Link gap x -11 and C Link gap x 11, both z -12..-9, into B
-  box(-7.25, 22, 9.5, HAV_WH, 1, FW); box(7.25, 22, 9.5, HAV_WH, 1, FW); // Mid Doors: attacker side into Mid Courtyard, door x -2.5..2.5
+  box(-2.25, 22, 19.5, HAV_WH, 1, FW); box(2, 15, 19, HAV_WH, 1, FW); // Mid Doors: attacker side into Mid Courtyard, door x 7.5..11.5 (east); sites2: dogleg wall z 14.5..15.5 x -7.5..11.5 so B Main runs west then back (west gap x -11.5..-7.5)
   box(0, 8.5, 3, 2, 3, FC); // Mid Courtyard central box
   havCrate(-2.3, 8.5, 1.6, 2.2, 1.5); havCrate(2.3, 8.5, 1.6, 2.2, 1.5); // offering crates flush to both sides of the shrine box (sightline fix): cover x -3.1..3.1 so no spawn-to-spawn line slips through Mid Doors -> B
   box(-6, -8, 6, HAV_WH, 1, FW); box(6, -8, 6, HAV_WH, 1, FW); // B front: courtyard into B through x -3..3; B Site x -9..9, z -23.5..-8.5
@@ -5096,7 +5097,7 @@ function xBuildHaven() {
   for (let i = 0; i < 6; i++) box(-25, -22.25 - i * 0.5, 3, 0.2 * (i + 1), 0.5, FC); // A Heaven stairs up from A Site: 6 x 0.2 m rises over z -22..-25 (vB, was 3 x 0.35)
   box(-27, -29, 5, HAV_WH, 1, FW); box(-14.5, -29, 3, HAV_WH, 1, FW); box(-6.5, -29, 5, HAV_WH, 1, FW); box(6.5, -29, 5, HAV_WH, 1, FW); box(17.5, -29, 9, HAV_WH, 1, FW); box(27.5, -29, 4, HAV_WH, 1, FW); // site backs, links behind; C Back Link door x 22..25.5 toward Defender Spawn
   // vB: Valorant-scale crates (1.2-1.5 m cubes, 2.8-3 m double stacks), each inside its old footprint so no lane gets narrower
-  [[-6, 14, 1.4, 1.4, 1.4], [6, 6, 1.4, 1.4, 1.4], [-5, -1, 1.3, 1.3, 1.3], // Mid Courtyard
+  [[7, 12, 1.4, 1.4, 1.4], [6, 6, 1.4, 1.4, 1.4], [-5, -1, 1.3, 1.3, 1.3], // Mid Courtyard
    [-28, 10, 1.4, 1.4, 1.4], [-26, -1, 1.5, 2.9, 1.5], // A Long
    [25, 10, 1.4, 1.4, 1.4], [26, -1, 1.5, 2.9, 1.5], [16, 2, 1.3, 1.3, 1.3], // C Long + Garage
    [-26.25, -18.75, 1.5, 3, 1.5], [-24.75, -18.75, 1.5, 1.5, 1.5], [-26.25, -17.25, 1.5, 1.5, 1.5], [-16, -20, 1.4, 1.4, 1.4], // A site (open)
@@ -5263,13 +5264,13 @@ function havDress() {
     HAV_X.mark.push("floor" + k); });
   // 4. ceilings over the tunnels / links and lintels over doorways (y0 = clear height): solid for bullets, overhead only
   const SL = [[-23.5, -11.5, 4, 7.5, 4], [-23.5, -17.5, -5.5, 4, 4], [11.5, 23.5, -4.5, 6.5, 4.5], [-13, -9, -12, -9, 4], [9, 13, -12, -9, 4], // Sewer, A Short, Garage, A Link, C Link
-    [-2.5, 2.5, 21.5, 22.5, 3.4], [-3, 3, -8.5, -7.5, 4], [-3, 3, -24.5, -23.5, 4], [-13, -9, -29.5, -28.5, 3.4], [9, 13, -29.5, -28.5, 3.4], [22, 25.5, -29.5, -28.5, 3.4]]; // Mid Doors, B front, B back, back links
+    [7.5, 11.5, 21.5, 22.5, 3.4], [-3, 3, -8.5, -7.5, 4], [-3, 3, -24.5, -23.5, 4], [-13, -9, -29.5, -28.5, 3.4], [9, 13, -29.5, -28.5, 3.4], [22, 25.5, -29.5, -28.5, 3.4]]; // Mid Doors, B front, B back, back links
   SL.forEach(([x1, x2, z1, z2, y0]) => { havSlab(x1, x2, z1, z2, y0, HAV_WH, M.wallB);
     const w = x2 - x1, d = z2 - z1; P("lacq", BXU(w + 0.1, 0.4, d + 0.1, 0.4), (x1 + x2) / 2, y0 + 0.2, (z1 + z2) / 2); P("gold", BXU(w + 0.14, 0.1, d + 0.14, 0.1), (x1 + x2) / 2, y0 + 0.45, (z1 + z2) / 2);
     if (w > 3 && d > 3) for (let t = 1; t < (w > d ? w : d) - 0.5; t += 1.5) P("lacq", w > d ? BX(0.22, 0.3, d - 0.1) : BX(w - 0.1, 0.3, 0.22), w > d ? x1 + t : (x1 + x2) / 2, y0 - 0.15, w > d ? (z1 + z2) / 2 : z1 + t); }); // underside rafters
   havSlab(11.5, 12.5, 0, 4, 3.4, 4.5, M.wallC); havSlab(11.5, 12.5, 5, 6.5, 2.7, 4.5, M.wallC); havSlab(18, 23, -5, -4, 3.4, 4.5, M.wallC); // Garage door, Mid Window, Garage exit
   // door frames: lacquer pillars (inside the wall footprint) with gold capitals and stone bases; [wall along x?, wall line, gap start, gap end, height]
-  [[1, 22, -2.5, 2.5, 3.4], [1, -8, -3, 3, 4], [1, -24, -3, 3, 4], [1, -29, -13, -9, 3.4], [1, -29, 9, 13, 3.4], [1, -29, 22, 25.5, 3.4], [0, 12, 0, 4, 3.4], [0, -12, 4, 7, 4], [1, -4.5, 18, 23, 3.4]].forEach(([ax, c, a1, a2, h]) => {
+  [[1, 22, 7.5, 11.5, 3.4], [1, -8, -3, 3, 4], [1, -24, -3, 3, 4], [1, -29, -13, -9, 3.4], [1, -29, 9, 13, 3.4], [1, -29, 22, 25.5, 3.4], [0, 12, 0, 4, 3.4], [0, -12, 4, 7, 4], [1, -4.5, 18, 23, 3.4]].forEach(([ax, c, a1, a2, h]) => {
     for (const a of [a1 - 0.5, a2 + 0.5]) { const x = ax ? a : c, z = ax ? c : a; P("lacq", BXU(1.04, h, 1.04, 1), x, h / 2, z); P("gold", BX(1.2, 0.3, 1.2), x, h - 0.15, z); P("gold", BX(1.16, 0.25, 1.16), x, 0.125, z); } });
   // 5. baseboards + cornices on every wall: red lacquer skirting with a gold line, gold-and-red cornice under the cap
   boxes.filter((b) => b.h >= 4).forEach((b) => { const w = b.x2 - b.x1, d = b.z2 - b.z1, cx = (b.x1 + b.x2) / 2, cz = (b.z1 + b.z2) / 2, top = Math.min(b.h, HAV_WB);
@@ -5863,6 +5864,7 @@ function xBuildLotus() {
   box(17, 34.5, 18, 7, 7, W); box(-17, 34.5, 18, 7, 7, W); // spawn lobby blocks x ±8..26, z 31..38: the old 110 m wide open spawn plaza becomes a Mid exit between them and A / C Lobby lanes around them (north z 38..55, south z 26..31)
   box(-20, 12, 20, 7, 28, W); box(-20, -9, 20, 7, 6, W); // west block (C Main | B Main), gap z -6..-2 = C Link
   box(20, 15, 20, 7, 22, W); box(20, -6, 20, 7, 12, W); // east block (B Main | A Main), gap z 0..4 = A Link
+  box(-3, 31.5, 10, 7, 1, W); box(3, 26, 14, 7, 1, W); box(-4, -11.5, 12, 7, 1, W); // sites2 B Main dogleg: spawn Mid exit only x 2..8, B Main mouth only x -10..-4 (west), B Main foot only x 2..8 (east, up to the gate pillar) so the B approach crosses the lane diagonally (~15 s rifle)
   box(-49.5, 13, 11, 7, 26, W); box(-44.5, -6, 1, 7, 12, W); // west fill + C Waterfall pocket wall (pocket opens north to C)
   box(49.5, 13, 11, 7, 26, W); box(44.5, -10, 1, 7, 4, W); box(44.5, -2, 1, 7, 4, W); // east fill + A Tree wall, gap z -8..-4 = breakable wall (later)
   for (const s of [1, -1]) { box(s * 18, -19, 1, 7, 14, W); box(s * 18, -35, 1, 7, 10, W); } // site dividers, gap z -30..-26 = A / C Door (rotating, later)
@@ -6221,8 +6223,8 @@ const XG_LANES = [-20, 0, 20].flatMap((x) => [[x, -8], [x, 11], [x, 30]]);
 const XG_NODES = {
   bind: () => [[0, 39], [0, -39], [0, 35], [-20, 33], [20, 33], [13, 33], [-20, 20], [-23, 15.5], [-21, 17], [-27.5, 14], [-27.5, 8], [-27.5, 0], [-27.5, -9], [-27, -20], // spawn, A Lobby, A Short
     [-21, 9], [-21, 0], [-15, -1], [-15, -9], [-12, -20], [-11, -26], [-11, -32], [-11, -35], [0, -35], [13, -35], [13, -31.5], [13, -26], // Showers, Bath, A Site, U-Hall, Def Spawn, B Hall
-    [13, 24], [13, 18], [13, 13], [13, 7], [13, -3], [13, -9], [13, -11.7], [13, -14.8], [13, -17], [24.5, 24], [25, 20], [24.5, 12], [24.5, 0], [27.5, -9], [23, -10], [23, -16], SITES.A, SITES.B, [-28, -24], [-16, -15], [-15, -17], [-20.5, -17], [-9.8, -27], [-9.8, -19], [-13, -17]], // Market, Hookah, B site, B Long, Garden, Elbow; last 5: A Bath → A Site and U-Hall → A Site (A Site was only reachable one-way via the A Short teleporter)
-  haven: () => XG_LANES.filter(([x, z]) => z !== 11 || x !== 0 && Math.abs(x) !== 20).concat([[0, 16], [-4, 11], [4, 11], [-4.4, 7], [4.4, 7], [7, -10.5], [15, -10.5], [0, -26], [-25, -21], [-26.5, -27], [28, 22], [28, 4], [28, -8], [25, -11], [19, -2], [15, -7], [23.75, -26], [23.75, -31], [-26, 11], [-27, -4], [-20.5, 5.75], [-20.5, -3], [-15, -10.5], [-7, -10.5], [-21, -33], [0, -33], [21, -33], [-10, 5.5], [-15, 5.5], [10, 2], [14.5, 0.8], HSITES.A, HSITES.B, HSITES.C, [0, 35], [0, -35], [-28, 31], [0, 41], [0, -41], [0, 43], [0, -43]]), // last Bind 2 / Haven 1: reconnect A site + A Long after the layout rebuild (work/audit.js)
+    [13, 18], [13, 13], [13, 7], [13, -3], [13, -9], [13, -11.7], [13, -14.8], [13, -17], [24.5, 24], [25, 20], [24.5, 12], [24.5, 0], [27.5, -9], [23, -10], [23, -16], SITES.A, SITES.B, [-28, -24], [-16, -15], [-15, -17], [-20.5, -17], [-9.8, -27], [-9.8, -19], [-13, -17], [16, 35], [16, 28], [16, 20]], // Market, Hookah, B site, B Long, Garden, Elbow; last 5: A Bath → A Site and U-Hall → A Site (A Site was only reachable one-way via the A Short teleporter)
+  haven: () => XG_LANES.filter(([x, z]) => z !== 11 || x !== 0 && Math.abs(x) !== 20).concat([[0, 16], [-4, 11], [4, 11], [9.5, 24], [9.5, 20], [0, 18.5], [-9.5, 18], [-9.5, 12.5], [-4.4, 7], [4.4, 7], [7, -10.5], [15, -10.5], [0, -26], [-25, -21], [-26.5, -27], [28, 22], [28, 4], [28, -8], [25, -11], [19, -2], [15, -7], [23.75, -26], [23.75, -31], [-26, 11], [-27, -4], [-20.5, 5.75], [-20.5, -3], [-15, -10.5], [-7, -10.5], [-21, -33], [0, -33], [21, -33], [-10, 5.5], [-15, 5.5], [10, 2], [14.5, 0.8], HSITES.A, HSITES.B, HSITES.C, [0, 35], [0, -35], [-28, 31], [0, 41], [0, -41], [0, 43], [0, -43]]), // last Bind 2 / Haven 1: reconnect A site + A Long after the layout rebuild (work/audit.js)
   split: () => [[0, 35], [0, 24], [3.8, 10], [-3.75, 0], [0, -4], [0, -9.5], [0, -22], [0, -35], [0, -42], [18, -4], [-18, -9.5], // spawns, Mid Bottom (the chicane gaps at (3.8, 10) / (-3.75, 0)) / Top, Mail, Vents
     [30, 24], [39, 24], [39, 10], [39, -4], [36, -14], [29, -17], [-30, 24], [-39, 24], [-39, 10], [-39, -9.5], [-36, -14], [-29, -17], // lobbies, mains, ramps
     [14, -50], [38, -50], [27, -44], [31, -44], [-14, -50], [-38, -50], [-27, -44], [-31, -44], // defender side to stairs
@@ -6231,7 +6233,7 @@ const XG_NODES = {
   lotus: () => [[0, 50], [0, 44], [29, 44], [-29, 44], [0, -52], [34, -38], [0, -30], [-38, 1], [-38, -12], [0, 35], [0, 30], [37, 30], [-37, 30], [20, 30], [-20, 30], [37, 20], [37, 8], [37, -4], [37, -14], [-37, 20], [-37, 8], [-37, -4], [-37, -14], // spawn, A / C Main
     [0, 20], [0, 8], [0, -4], [0, -14], [-8, -4], [-20, -4], [-32, -4], [8, 2], [20, 2], [32, 2], // B Main, C Link, A Link
     LSITES.A, LSITES.B, LSITES.C, [0, -35], [0, -40], [0, -48], [25, -47], [36, -47], [-25, -47], [-36, -47], [47, -36], [-47, -36], // sites, B Upper, defender side, A Top
-    [15, -28], [21, -28], [-15, -28], [-21, -28], [49.5, -6], [49.5, -16], [41, -6], [-49.5, -6], [-49.5, -16], [12, -22], [-12, -22], [28, -16], [-28, -16], [19.8, -41.6], [-19.8, -41.6], [1.2, -45], [6.6, -45], [6.6, -42.5], [-3.2, -26], [-3.2, -22]], // doors, A Tree, breakable gap, C Waterfall; dims: divider ends, B Upper back stairs + ledge
+    [15, -28], [21, -28], [-15, -28], [-21, -28], [49.5, -6], [49.5, -16], [41, -6], [-49.5, -6], [-49.5, -16], [12, -22], [-12, -22], [28, -16], [-28, -16], [19.8, -41.6], [-19.8, -41.6], [1.2, -45], [6.6, -45], [6.6, -42.5], [-3.2, -26], [-3.2, -22], [5, 36], [5, 29], [-7, 29], [-7, 23], [5, -8], [5, -15]], // doors, A Tree, breakable gap, C Waterfall; dims: divider ends, B Upper back stairs + ledge
   breeze: () => [[0, 44.3], [0, 37.7], [-19.7, 37.7], [19.7, 37.7], [-41, 37.7], [41, 37.7], [-41, 24.6], [-41, 11.5], [-41, 4.1], [-41, -3.3], [-41, -13.1], [-27.9, 4.1], [-14.8, 4.1], [-3.3, 4.1], // spawn, A Lobby / Main, A Cave
     [0, 24.6], [0, 11.5], [0, 0], [4.9, -7.4], [-6.2, -7.4], [0, -20.1], [0, -27.9], [0, -37.7], [0, -44.3], [-6.6, -20.1], [-14.8, -20.1], [-24.6, -20.1], [6.6, -20.1], [14.8, -20.1], [24.6, -20.1], // Mid (the two z -7.4 nodes route the Mid chicane), A Hall, B Window
     BZSITES.A, BZSITES.B, [-45.9, -32.8], [-45.9, -16.4], [-24.6, -36.1], [-32.8, -42.6], [-14.8, -44.3], [45.9, -36.1], [45.9, -16.4], [26.2, -32.8], [32.8, -42.6], [14.8, -44.3], [23, -42], // sites + defender side (+ B back corner: defender spawn -> B ~8 s rifle)
@@ -6323,7 +6325,7 @@ function fNavLanes(px, pz, tx, tz) { // old lane routing, no longer called
   return near(LX[L], ez) ? (b === -1 ? [LX[L], 11] : [tx, tz]) : [LX[L], ez];
 }
 // ---- 5v5 bot tactics: roles, Bind routes (teleporters, Hookah window), rotations, post-plant, counter-strafe, cover ----
-const XR = { hookah: [[13, 24], [13, 13], [13, 7], [13, -3], [13, -9], [13, -11.7, "jump", -14.8]], tpA: [[20, 33], [24.5, 24], [25, 20, "tp"]], tpB: [[-20, 33], [-21, 17], [-27.5, 14], [-27.5, 8, "tp"]],
+const XR = { hookah: [[16, 35], [16, 22], [13, 13], [13, 7], [13, -3], [13, -9], [13, -11.7, "jump", -14.8]], tpA: [[20, 33], [24.5, 24], [25, 20, "tp"]], tpB: [[-20, 33], [-21, 17], [-27.5, 14], [-27.5, 8, "tp"]],
   laneA: [[-20, 33], [-20, 20], [-21, 17], [-21, 9], [-21, 0], [-15, -1], [-15, -9], [-16, -15], [-20, -18]], // Bind A Lobby → Showers → A Bath → A Site
   laneB: [[20, 33], [24.5, 24], [24.5, 12], [24.5, 0], [27.5, -9], [23, -10], [23, -16], [20, -18]], // Bind B Long → Garden → Elbow → B Site
   sAm: [[39, 4], [36, -16], [36, -29]], sAmid: [[0, 10], [0, 2], [18, -4]], sBm: [[-39, 4], [-36, -16], [-36, -29]], sBmid: [[0, 10], [0, 2], [-18, -9.5]] }; // Split: A Main / Mid→Mail, B Main / Mid→Vents; ropes taken by the nav graph's one-way links
@@ -6332,8 +6334,8 @@ const xaPick = (m, site) => { const L = ((XA[m] || {})[site] || []).filter((k) =
 window.__xa = () => ({ XA, XR }); // audit hook
 const SPLIT_HOLD = [[45, -44], [27, -34], [-45, -44], [-18, -9.5], [-27, -44]]; // Split defenders: A Heaven, A Screens, B Heaven, Mid Vents, B Back
 // Lotus pass 6: A Main / A Tree (wall broken), B Main, C Main→Mound / C Waterfall; holds A Top, A Door, B Upper, C Mound-facing, C Link; default plants
-Object.assign(XR, { lAm: [[37, 12], [37, 0], [36, -16]], lAt: [[37, 12], [41, -6], [49.5, -8], [46, -20]], lBm: [[0, 12], [0, 0], [0, -12]],
-  lCm: [[-37, 12], [-40, -4], [-36, -16]], lCw: [[-37, 12], [-46, 2], [-49.5, -8], [-44, -20]] });
+Object.assign(XR, { lAm: [[37, 12], [37, 0], [36, -16]], lAt: [[37, 12], [41, -6], [49.5, -8], [46, -20]], lBm: [[5, 36], [5, 29], [-7, 28.5], [-7, 23], [1, 8], [5, -8], [5, -14]],
+  lCm: [[-29, 44], [-37, 30], [-37, 12], [-40, -4], [-36, -16]], lCw: [[-29, 44], [-37, 30], [-37, 12], [-46, 2], [-49.5, -8], [-44, -20]] });
 const LOTUS_HOLD = [[47, -36], [22, -28], [0, -38], [-40, -18], [-20, -4]];
 const LOTUS_PLANT = { A: [38, -27], B: [1, -21], C: [-38, -27] };
 // Breeze pass 1: A Main / Mid→A Cave / Mid→A Hall, B Main→Elbow / Mid→Wood Doors; holds A back, A Hall, Mid Top, B Window, B back; default plants
@@ -6580,7 +6582,7 @@ function xPath(u, dt, gx, gz, out) { // re-path every 1.5 s, when blocked, on re
   const p = u.g.position; u.npT = (u.npT || 0) - dt;
   if (!u.np || u.npT <= 0 || u.blk || Math.hypot(u.np[0] - p.x, u.np[1] - p.z) < 1.2 || !u.ng || Math.hypot(u.ng[0] - gx, u.ng[1] - gz) > 3) {
     if (XNB.f !== XNF) { XNB.f = XNF; XNB.n = 0; }
-    if (!u.np || XNB.n < 2) { XNB.n++; u.np = fNav(p.x, p.z, gx, gz); u.npT = 1.5; u.blk = 0; u.ng = [gx, gz]; } } // max 2 replans per frame; the rest keep their path and retry next frame
+    if (!u.np || XNB.n < 2 || (u.npS || 0) > 0.25) { XNB.n++; u.np = fNav(p.x, p.z, gx, gz); u.npT = 1.5; u.blk = 0; u.ng = [gx, gz]; u.npS = 0; } else u.npS = (u.npS || 0) + dt; } // max 2 replans per frame; the rest keep their path and retry next frame (sites2: a bot starved > 0.25 s replans anyway, so one parked at a dogleg corner node never waits seconds)
   if (u.np[2] && mode === "five" && Math.hypot(u.np[0] - p.x, u.np[1] - p.z) < 0.6) { u.xr = [[u.np[0], u.np[1], u.np[2], u.np[3]]]; u.np = null; return x2(out, p.x, p.z); } // on a link start: hand to xStep
   return u.np;
 }

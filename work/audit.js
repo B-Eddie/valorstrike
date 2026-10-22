@@ -1395,9 +1395,8 @@ if (!NO3) {
     const big = Math.max(m.W, m.D), E = Object.entries(m.t), tA = E.filter(([q]) => q.startsWith("atk")), tD = E.filter(([q]) => q.startsWith("def")), tR = E.filter(([q]) => q.startsWith("rot"));
     const sizeOk = big <= 150 && Math.min(m.W, m.D) >= 60; // Valorant-like 90-150 m; Bind / Haven are narrower (61 m wide, ~90-97 m deep) and pass on run time
     // Valorant targets at rifle run 5.4 m/s (±0.5 s rounding slack): attacker spawn → each site 15-20 s, defender spawn → each site 5-10 s, longest defender rotation 10-15 s.
-    // Named exceptions (kept out of the band on purpose, see the dims pass notes): Haven B and Lotus B are the central site of three (attacker floor 10.5 / 12.5 s; a B Main chicane on Lotus left bots stuck at its walls);
-    // Bind B is also reached through the A Short teleporter + the Market / Hookah lane (attacker floor 13 s)
-    const atkLo = (q) => (q !== "atkB" ? 14.5 : m.k === "haven" ? 10.5 : m.k === "lotus" ? 12.5 : m.k === "bind" ? 13 : 14.5), rotMax = tR.reduce((a, [, v]) => Math.max(a, v == null ? 1e9 : v), 0);
+    // No per-site exceptions (sites2): Haven B (Mid Doors east + courtyard dogleg wall), Lotus B (offset spawn exit / B Main mouth / B Main foot) and Bind B (Market spur) were lengthened into the band
+    const atkLo = () => 14.5, rotMax = tR.reduce((a, [, v]) => Math.max(a, v == null ? 1e9 : v), 0);
     const errs = []; tA.forEach(([q, v]) => { if (!(v != null && v >= atkLo(q) && v <= 20.5)) errs.push(q + " " + v + " s out of " + atkLo(q) + "-20.5"); });
     tD.forEach(([q, v]) => { if (!(v != null && v >= 4.5 && v <= 10.5)) errs.push(q + " " + v + " s out of 4.5-10.5"); });
     if (!(rotMax >= 9.5 && rotMax <= 15.5)) errs.push("longest rotation " + rotMax + " s out of 9.5-15.5");
