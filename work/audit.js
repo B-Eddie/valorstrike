@@ -2372,6 +2372,34 @@ if (!NO3) {
   report.push({ label: "Ascent closable site doors: shutter collider closes (3.1 m) and reopens, bots raise a closed shutter, rounds start open", el: true, handler: true, cond: ok, pass: ok, errs: err });
 }
 
+// CC0 gun models: every weapon (WEAP + Knife) maps to a models/<name>.glb that exists on disk and is listed in LICENSES.txt; the footer credits Quaternius;
+// with no GLTFLoader the lazy load is a safe no-op and xGun keeps the procedural model
+{
+  const err = []; let ok = false;
+  try {
+    const xe = vm.runInContext("__xe", context);
+    const F = JSON.parse(xe("JSON.stringify(typeof XGM !== 'undefined' && XGM ? XGM.F : null)")), W = JSON.parse(xe("JSON.stringify(Object.keys(WEAP).concat(['Knife']))"));
+    const lic = fs.readFileSync(path.join(__dirname, "..", "models", "LICENSES.txt"), "utf8");
+    if (!F) err.push("XGM.F missing");
+    else for (const w of W) { const f = F[w]; if (!f) { err.push(w + " has no model file"); continue; } const fp = path.join(__dirname, "..", "models", f + ".glb");
+      if (!fs.existsSync(fp)) err.push(w + ": models/" + f + ".glb missing"); else if (fs.readFileSync(fp).slice(0, 4).toString() !== "glTF") err.push(f + ".glb is not a binary glTF");
+      if (!lic.includes(f + ".glb")) err.push(f + ".glb not in LICENSES.txt"); }
+    let tot = 0; for (const f of fs.readdirSync(path.join(__dirname, "..", "models"))) tot += fs.statSync(path.join(__dirname, "..", "models", f)).size; if (tot > 8e6) err.push("models/ is " + (tot / 1e6).toFixed(1) + " MB (> 8)");
+    if (!/Gun models: Quaternius/.test(html) || !/CC0/.test(lic)) err.push("credits / license text missing");
+    if (!/xGmLoad\(\)/.test(html.slice(html.indexOf("function xGo("), html.indexOf("function xGo(") + 600))) err.push("xGo does not start the lazy gun-model load");
+    if (!NO3) {
+      const r = xe(`(() => { const L0 = THREE.GLTFLoader, ld = XGM.ld, rdy = XGM.rdy, T0 = XGM.T; try { THREE.GLTFLoader = undefined; XGM.ld = false; XGM.rdy = false; XGM.T = {}; xGmLoad(); xGmLoad();
+          const g = xGun("Vandal"), k = xGun("Knife"); const bad = [];
+          if (XGM.rdy) bad.push("ready without a loader"); if (Object.keys(XGM.T).length) bad.push("templates without a loader"); if (!g || !k) bad.push("xGun returned nothing");
+          if (!XGB.Vandal || !XGC.Vandal) bad.push("procedural template missing");
+          return bad.length ? bad.join("; ") : true; } catch (e) { return "threw: " + e; } finally { THREE.GLTFLoader = L0; XGM.ld = ld; XGM.rdy = rdy; XGM.T = T0; } })()`);
+      if (r !== true) err.push("loader-missing fallback: " + r);
+    }
+    ok = !err.length;
+  } catch (e) { err.push(String(e).slice(0, 300)); }
+  report.push({ label: "CC0 gun models: all weapons + knife map to existing models/*.glb listed in LICENSES.txt, credits present, procedural fallback with no GLTFLoader", el: true, handler: true, cond: ok, pass: ok, errs: err });
+}
+
 // ---------- print ----------
 const bad = report.filter((r) => !r.pass);
 console.log(`\n=== audit (${MID ? "THREE loads, 3D init throws" : NO3 ? "THREE missing" : "THREE stub loaded"}) — ${report.length} checks, ${bad.length} failing ===`);
