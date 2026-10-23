@@ -50,6 +50,17 @@ const html = fs.readFileSync(path.join(__dirname, '../index.html'), 'utf8');
   { // reload: left hand leaves the handguard mid-reload and is back at the end
     F.setW('Vandal'); F.setR(0); F.fpaTick(); F.FPA.R.m.l.h.getWorldPosition(V); const v0 = V.clone(); F.setR(2.5 * (1 - 0.35)); F.fpaTick(); F.FPA.R.m.l.h.getWorldPosition(V2);
     if (V2.distanceTo(v0) < 0.08) err.push('reload: left hand stays on the handguard (' + V2.distanceTo(v0).toFixed(3) + ' m)'); F.setR(0); F.fpaTick(); }
+  { // reload in frame: gun posed like vmTick (VMP + per-class vmOff + the game's own XTR reload track), the left wrist stays inside the frame through the mag swap
+    const a2 = html.indexOf('const XEase'), b2 = html.indexOf('// named sub-meshes'); if (a2 < 0 || b2 < a2) throw new Error('XTR reload tracks not found');
+    vm.runInContext(html.slice(a2, b2) + '\nthis.__t = { XTR, xKf, vmOff };', ctx, { filename: 'xtr.js' }); const { XTR, xKf, vmOff } = ctx.__t, k0 = F.FPA.k;
+    ctx.XRP = { Classic: { cls: 'pistol' }, Sheriff: { cls: 'sheriff' }, Vandal: { cls: 'rifle' } }; info.rld = {};
+    const po = vmOff('Classic'), ro = vmOff('Vandal'); info.pisOff = [po.x, po.y]; if (!(po.x - ro.x >= 0.03 && po.y - ro.y <= -0.02)) err.push('sidearm rest not lower-right of the rifle rest');
+    for (const w of ['Vandal', 'Classic']) { F.setW(w); const cls = ctx.XRP[w].cls, vo = vmOff(w); let lo = 9, xm = 0;
+      for (let rp = 0.1; rp <= 0.9001; rp += 0.05) { const q = xKf(XTR[cls].gun, rp);
+        F.gun.position.set(F.VMP.x + vo.x + q.pos[0], F.VMP.y + vo.y + q.pos[1], F.VMP.z + vo.z + q.pos[2]); F.gun.rotation.set(q.rot[0], (F.VMP.ry || 0) + vo.ry + q.rot[1], q.rot[2]);
+        F.setR(2.5 * (1 - rp)); F.fpaTick(); F.cam.updateMatrixWorld(true); F.FPA.R[k0].sc.updateMatrixWorld(true); F.FPA.R[k0].l.h.getWorldPosition(V); V.project(F.cam); lo = Math.min(lo, V.y); xm = Math.max(xm, Math.abs(V.x)); }
+      info.rld[w] = [+lo.toFixed(3), +xm.toFixed(3)]; if (lo < -0.9 || xm > 0.95) err.push('reload ' + w + ': left wrist leaves the frame (min ndc y ' + lo.toFixed(2) + ', max |x| ' + xm.toFixed(2) + ')'); }
+    F.gun.position.set(F.VMP.x, F.VMP.y, F.VMP.z); F.gun.rotation.set(0, F.VMP.ry || 0, 0); F.setR(0); ctx.XRP = undefined; F.setW('Vandal'); F.fpaTick(); }
   { // cast: right hand follows the XCA hand pose
     const h = new T.Group(); h.position.set(0.2, -0.12, -0.62); h.rotation.set(-1.4, 0, 0.3); h.add(new T.Mesh(new T.BoxGeometry(0.08, 0.07, 0.1))); F.cam.add(h); F.XCA.h = h; F.XCA.on = true; h.visible = true; F.fpaTick();
     F.cam.updateMatrixWorld(true); const t = new T.Vector3(0, -0.05, 0).applyQuaternion(h.quaternion).add(h.position).applyMatrix4(F.cam.matrixWorld); wrist('cast', 'm', 'r', t); if (h.children[0].visible) err.push('cast: primitive hand still visible'); F.XCA.on = false; h.visible = false; F.fpaTick(); }

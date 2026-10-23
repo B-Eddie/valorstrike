@@ -2963,8 +2963,9 @@ function vmTick(dt) {
   const ta = VM.ins > 0 ? Math.max(0, Math.min(1, (ip - 0.3) / 0.2, (0.92 - ip) / 0.22)) : 0, tl = ta * ta * (3 - 2 * ta);
   const bx = Math.sin(VM.bob) * 0.014 * VM.bobA + idx, by = -Math.abs(Math.cos(VM.bob)) * 0.016 * VM.bobA + idy;
   if (P && P.hp > 0 && VMA.col !== P) { VMA.col = P; try { if (xVmAg((J && J.pick) || "Jett")) throw 0; const c = P.agentCol || P.col || P.color; if (c && c.length) xVmCol(c[0], c[1], c[2]); else if (c != null) xVmCol(null, null, c); } catch (e) {} }
-  gun.position.set(VMP.x + bx - VM.lx * 0.022 - ie * 0.1 - xAD.k * (VMP.x - 0.05), VMP.y + by + VM.ly * 0.018 - dip * 0.16 - sw * 0.3 + ie * 0.05 + xAD.k * 0.03, VMP.z + kick * 0.06 + ie * 0.05 + xAD.k * 0.03); // ADS: centred, slightly low
-  gun.rotation.set(kick * 0.12 - dip * 0.5 + sw * 0.6 + ie * 0.15 + tl * 0.3, VMP.ry * (1 - xAD.k) - VM.lx * 0.06 + ie * 1.25 - tl * 0.2, VM.lx * 0.04 + dip * 0.35 + bx * 2 + ie * 0.4 - tl * 0.6);
+  const vo = typeof vmOff === "function" ? vmOff() : { x: 0, y: 0, z: 0, ry: 0 }, vk = 1 - xAD.k; // per-class rest (sidearms lower-right), faded out by ADS
+  gun.position.set(vo.x * vk + VMP.x + bx - VM.lx * 0.022 - ie * 0.1 - xAD.k * (VMP.x - 0.05), vo.y * vk + VMP.y + by + VM.ly * 0.018 - dip * 0.16 - sw * 0.3 + ie * 0.05 + xAD.k * 0.03, vo.z * vk + VMP.z + kick * 0.06 + ie * 0.05 + xAD.k * 0.03); // ADS: centred, slightly low
+  gun.rotation.set(kick * 0.12 - dip * 0.5 + sw * 0.6 + ie * 0.15 + tl * 0.3, (VMP.ry + vo.ry) * (1 - xAD.k) - VM.lx * 0.06 + ie * 1.25 - tl * 0.2, VM.lx * 0.04 + dip * 0.35 + bx * 2 + ie * 0.4 - tl * 0.6);
   try { xRld(rp, dt); } catch (e) {}
   knife.position.x = 0.23 + bx - VM.sx * 0.025; knife.position.y = -0.2 + by - sw * 0.3;
   VM.fl -= dt; const f = VM.fl > 0 && gun.visible; muzzle.visible = f; mLight.intensity = f ? 2.5 : 0; if (f) { muzzle.updateWorldMatrix(true, false); muzzle.getWorldPosition(mLight.position); } if (XAGL) XAGL.intensity = AG.visible ? 0.6 : 0;
@@ -3163,13 +3164,15 @@ function xKf(kf, t) {
 }
 const XTR = {
   rifle: {
-    gun: [{ t: 0 }, { t: 0.12, pos: [0.02, -0.06, 0.02], rot: [-0.12, 0, -0.44] }, { t: 0.5, pos: [0.02, -0.06, 0.02], rot: [-0.12, 0, -0.44] }, { t: 0.6, pos: [0.02, -0.075, 0.02], rot: [-0.16, 0, -0.4] }, { t: 0.64, pos: [0.02, -0.03, 0.02], rot: [-0.02, 0, -0.4] }, { t: 0.74, pos: [0.01, -0.04, 0.02], rot: [-0.08, 0, -0.22] }, { t: 0.85, pos: [0.02, -0.04, 0.03], rot: [-0.06, 0, -0.26] }, { t: 0.94, pos: [0, 0.008, 0], rot: [0.04, 0, 0.04] }, { t: 1 }],
-    mag: [{ t: 0 }, { t: 0.14 }, { t: 0.2, pos: [0, -0.07, 0], hide: 1 }, { t: 0.42, pos: [0, -0.3, 0] }, { t: 0.6, pos: [0, 0.006, 0] }, { t: 0.66 }],
+    // mag phase: gun raised, muzzle tilted up and rolled toward the camera so the mag well, the swap and the left hand stay in frame (Valorant Vandal / Phantom reload)
+    gun: [{ t: 0 }, { t: 0.12, pos: [-0.02, 0.04, 0.05], rot: [0.2, 0.1, -0.45] }, { t: 0.5, pos: [-0.02, 0.04, 0.05], rot: [0.2, 0.1, -0.45] }, { t: 0.6, pos: [-0.02, 0.025, 0.05], rot: [0.16, 0.1, -0.42] }, { t: 0.64, pos: [-0.02, 0.055, 0.05], rot: [0.26, 0.1, -0.42] }, { t: 0.74, pos: [-0.01, 0.03, 0.04], rot: [0.12, 0.05, -0.24] }, { t: 0.85, pos: [0, 0.02, 0.04], rot: [0.1, 0.05, -0.26] }, { t: 0.94, pos: [0, 0.008, 0], rot: [0.04, 0, 0.04] }, { t: 1 }],
+    mag: [{ t: 0 }, { t: 0.14 }, { t: 0.2, pos: [0, -0.07, 0], hide: 1 }, { t: 0.42, pos: [0, -0.16, 0] }, { t: 0.6, pos: [0, 0.006, 0] }, { t: 0.66 }],
     bolt: [{ t: 0 }, { t: 0.78 }, { t: 0.84, pos: [0, 0, 0.06] }, { t: 0.88 }, { t: 1 }],
     snd: [[0.2, "out"], [0.6, "in"], [0.85, "bolt"]], drop: 0.2 },
   pistol: {
-    gun: [{ t: 0 }, { t: 0.1, pos: [0, -0.03, 0.02], rot: [0.25, 0, -0.35] }, { t: 0.18, pos: [0, -0.05, 0.02], rot: [0.1, 0, -0.3] }, { t: 0.5, pos: [0, -0.05, 0.02], rot: [0.1, 0, -0.3] }, { t: 0.6, pos: [0, -0.02, 0.02], rot: [0.18, 0, -0.3] }, { t: 0.66, pos: [0, -0.04, 0.02], rot: [0.08, 0, -0.2] }, { t: 0.85, pos: [-0.01, -0.03, 0.03], rot: [0.1, 0, -0.1] }, { t: 0.94, pos: [0, 0.006, 0], rot: [0.04, 0, 0.03] }, { t: 1 }],
-    mag: [{ t: 0 }, { t: 0.14 }, { t: 0.2, pos: [0, -0.05, 0], hide: 1 }, { t: 0.38, pos: [0, -0.22, 0] }, { t: 0.6, pos: [0, 0.004, 0] }, { t: 0.64 }],
+    // mag phase: pistol lifted in toward the centre (undoes most of the sidearm lower-right rest), muzzle up, so the mag well and the left hand stay in frame
+    gun: [{ t: 0 }, { t: 0.1, pos: [-0.05, 0.095, 0.03], rot: [0.37, 0.08, -0.35] }, { t: 0.18, pos: [-0.05, 0.085, 0.03], rot: [0.25, 0.08, -0.3] }, { t: 0.5, pos: [-0.05, 0.085, 0.03], rot: [0.25, 0.08, -0.3] }, { t: 0.6, pos: [-0.05, 0.1, 0.03], rot: [0.32, 0.08, -0.3] }, { t: 0.66, pos: [-0.04, 0.05, 0.03], rot: [0.2, 0.04, -0.2] }, { t: 0.85, pos: [-0.02, 0.02, 0.03], rot: [0.14, 0, -0.1] }, { t: 0.94, pos: [0, 0.006, 0], rot: [0.04, 0, 0.03] }, { t: 1 }],
+    mag: [{ t: 0 }, { t: 0.14 }, { t: 0.2, pos: [0, -0.05, 0], hide: 1 }, { t: 0.38, pos: [0, -0.12, 0] }, { t: 0.6, pos: [0, 0.004, 0] }, { t: 0.64 }],
     bolt: [{ t: 0 }, { t: 0.78 }, { t: 0.84, pos: [0, 0, 0.045] }, { t: 0.89 }, { t: 1 }],
     snd: [[0.2, "out"], [0.6, "in"], [0.85, "bolt"]], drop: 0.2 },
   sheriff: {
@@ -3177,9 +3180,9 @@ const XTR = {
     cyl: [{ t: 0 }, { t: 0.12 }, { t: 0.2, rot: [0, 0, 1.4] }, { t: 0.62, rot: [0, 0, 1.4] }, { t: 0.7, rot: [0, 0, -0.08] }, { t: 0.76 }],
     snd: [[0.2, "out"], [0.6, "in"], [0.85, "bolt"]] },
   op: {
-    gun: [{ t: 0 }, { t: 0.06, pos: [0.01, -0.03, 0.02], rot: [-0.05, 0, -0.2] }, { t: 0.3, pos: [0.01, -0.03, 0.02], rot: [-0.05, 0, -0.2] }, { t: 0.38, pos: [0.02, -0.06, 0.02], rot: [-0.12, 0, -0.4] }, { t: 0.58, pos: [0.02, -0.06, 0.02], rot: [-0.12, 0, -0.4] }, { t: 0.66, pos: [0.02, -0.03, 0.02], rot: [-0.02, 0, -0.36] }, { t: 0.74, pos: [0.01, -0.04, 0.02], rot: [-0.06, 0, -0.2] }, { t: 0.92, pos: [0, 0.008, 0], rot: [0.04, 0, 0.04] }, { t: 1 }],
+    gun: [{ t: 0 }, { t: 0.06, pos: [0.01, -0.03, 0.02], rot: [-0.05, 0, -0.2] }, { t: 0.3, pos: [0.01, -0.03, 0.02], rot: [-0.05, 0, -0.2] }, { t: 0.38, pos: [-0.01, 0.03, 0.05], rot: [0.14, 0.08, -0.4] }, { t: 0.58, pos: [-0.01, 0.03, 0.05], rot: [0.14, 0.08, -0.4] }, { t: 0.66, pos: [-0.01, 0.05, 0.05], rot: [0.2, 0.08, -0.36] }, { t: 0.74, pos: [0.01, -0.04, 0.02], rot: [-0.06, 0, -0.2] }, { t: 0.92, pos: [0, 0.008, 0], rot: [0.04, 0, 0.04] }, { t: 1 }],
     bolt: [{ t: 0 }, { t: 0.06, rot: [0, 0, 1.1] }, { t: 0.14, pos: [0, 0, 0.09], rot: [0, 0, 1.1] }, { t: 0.22, rot: [0, 0, 1.1] }, { t: 0.28 }, { t: 1 }],
-    mag: [{ t: 0 }, { t: 0.36 }, { t: 0.42, pos: [0, -0.07, 0], hide: 1 }, { t: 0.52, pos: [0, -0.25, 0] }, { t: 0.64, pos: [0, 0.006, 0] }, { t: 0.7 }],
+    mag: [{ t: 0 }, { t: 0.36 }, { t: 0.42, pos: [0, -0.07, 0], hide: 1 }, { t: 0.52, pos: [0, -0.15, 0] }, { t: 0.64, pos: [0, 0.006, 0] }, { t: 0.7 }],
     snd: [[0.12, "bolt"], [0.42, "out"], [0.64, "in"], [0.85, "bolt"]], drop: 0.42 },
 };
 // named sub-meshes ("mag", "bolt"/"slide", "cylinder") on each code-built viewmodel; reuse any the builder already named
@@ -4291,6 +4294,17 @@ function tick(dt) {
 }
 // ---- Operator Duel: 1v1 vs a bot, Operator + knife, first to 7 kills ----
 const RETAKE_HINT = $("hint").textContent;
+// controls hint: shown when a match starts (or its text changes), faded out after 8 s of live play so it never sits over the lower-right gun; back next time the game screen opens
+var XHN = { t0: 0, txt: "", off: false, MS: 8000 };
+function xHintTick(now) {
+  const h = $("hint"), g = $("game"); if (!h || !g) return;
+  if (g.style.display === "none") { if (XHN.t0 || XHN.off) { XHN.t0 = 0; XHN.txt = ""; XHN.off = false; h.style.opacity = ""; } return; }
+  if (!running) return; // between rounds: the timer holds
+  const t = now != null ? now : performance.now();
+  if (!XHN.t0 || h.textContent !== XHN.txt) { XHN.t0 = t; XHN.txt = h.textContent; if (XHN.off) { XHN.off = false; h.style.opacity = ""; } }
+  else if (!XHN.off && t - XHN.t0 >= XHN.MS) { XHN.off = true; h.style.transition = "opacity .6s ease"; h.style.opacity = "0"; }
+}
+(window.XHK || (window.XHK = [])).push(() => xHintTick());
 const DUEL_WIN = 7, OP_MAG = 5, BOLT = 1.2, OP_RELOAD = 3.7; // Valorant Operator reload
 const DB = { easy: { react: 1.3, acc: 0.35 }, normal: { react: 0.85, acc: 0.55 }, hard: { react: 0.55, acc: 0.75 } };
 const du = { you: 0, them: 0, w: "op", ammo: OP_MAG, bolt: 0, reload: 0, scoped: false, wait: 0, swing: 0 };
@@ -11133,6 +11147,10 @@ var FPG = {
   Bulldog: [0.011, -0.036, 0.067, -0.129, -0.267, -0.007, "r"], Phantom: [0.056, -0.05, 0.122, -0.179, -0.289, -0.029, "r"], Vandal: [0.078, -0.043, 0.122, -0.143, -0.278, -0.017, "r"],
   Guardian: [0.144, -0.036, 0.178, -0.086, -0.267, -0.047, "r"], Marshal: [0.089, -0.029, 0.144, -0.1, -0.267, -0.026, "r"], Outlaw: [0.116, -0.021, 0.138, -0.079, -0.222, -0.017, "r"],
   Operator: [0.122, -0.05, 0.189, -0.164, -0.311, -0.036, "r"], Ares: [0.067, -0.043, 0.1, -0.15, -0.311, -0.031, "r"], Odin: [0.044, -0.064, 0.133, -0.207, -0.4, 0.005, "r"] };
+// per-class viewmodel rest offset on top of VMP (camera space, metres; ry inward yaw): sidearms sit lower and further right than rifles, arm out toward the corner (Valorant's
+// Classic / Sheriff hold), ADS still centres them; vmTick moves the gun, fpaTick moves the shoulders with it
+var VMPC = { p: { x: 0.065, y: -0.04, z: 0.015, ry: 0.05 }, r: { x: 0, y: 0, z: 0, ry: 0 } };
+function vmOff(w) { if (w == null) { w = "Vandal"; try { w = mode === "duel" ? "Operator" : wName(); } catch (e) {} } const g = FPG[w]; return (g && g[6] === "p" ? VMPC.p : VMPC.r); }
 // finger curls (rad) per hand pose: thumb, index, middle, ring, pinky x 3 joints
 var FPA_C = { grip: [[0, -0.3, -0.3, 0.4], [0.1, 0.25, 0.15], [1.35, 1.25, 0.5], [1.35, 1.25, 0.5], [1.35, 1.25, 0.5]], // [3] = thumb swing in the palm plane
   hg: [[-0.2, -0.1, 0, 0.4], [0.8, 0.55, 0.35], [0.85, 0.6, 0.4], [0.9, 0.62, 0.42], [0.95, 0.65, 0.45]],
@@ -11250,14 +11268,15 @@ function fpaKnife() { // fist around the knife handle (knife model space: blade 
 }
 function fpaWeap() { let w = "Vandal"; try { w = mode === "duel" ? "Operator" : wName(); } catch (e) {} return FPG[w] ? w : "Vandal"; }
 // reload hand work, gun-local: left hand pulls the mag down and seats a new one (rifle / pistol / shotgun tracks), right hand works the Operator-class bolt
+var FPA_RD = { rifle: 0.12, pistol: 0.05, op: 0.11 }; // how far (gun-local m) the left hand drops below the mag well to fetch the new mag: matches each class's mag track, short enough to stay in frame
 function fpaRld(w) {
   let rp = -1; try { rp = mode === "duel" ? (du.reload > 0 ? 1 - du.reload / OP_RELOAD : -1) : reloading > 0 ? 1 - reloading / xRT() : -1; } catch (e) {}
   if (rp < 0 || rp > 1) return null; const g = FPG[w] || FPG.Vandal, P = typeof XRP !== "undefined" && XRP[w], cls = P ? P.cls : "rifle", sm = (a, b, t) => { const x = Math.max(0, Math.min(1, (t - a) / (b - a))); return x * x * (3 - 2 * x); };
   const o = {};
   if (cls === "op") { const k = sm(0.02, 0.07, rp) * (1 - sm(0.24, 0.32, rp)); if (k > 0) o.r = new THREE.Vector3(0.05 * k, 0.05 * k, -0.11 * k + 0.08 * k * sm(0.08, 0.15, rp) * (1 - sm(0.18, 0.24, rp))); }
-  if (cls !== "sheriff") { const t0 = cls === "op" ? 0.34 : 0.12, mw = new THREE.Vector3(0, g[1] - 0.07, g[6] === "p" ? g[2] : g[0] - 0.16);
+  if (cls !== "sheriff") { const t0 = cls === "op" ? 0.34 : 0.12, mw = new THREE.Vector3(0, g[1] - 0.07, g[6] === "p" ? g[2] : g[0] - 0.16), dd = FPA_RD[cls] || FPA_RD.rifle;
     const out = sm(t0, t0 + 0.08, rp), dn = sm(t0 + 0.1, t0 + 0.22, rp) * (1 - sm(t0 + 0.3, t0 + 0.44, rp)), back = sm(t0 + 0.5, t0 + 0.6, rp);
-    if (out > 0 && back < 1) { o.l = mw.clone().add(new THREE.Vector3(-0.02, -0.22 * dn, 0.04 * dn)); o.lk = out * (1 - back); } }
+    if (out > 0 && back < 1) { o.l = mw.clone().add(new THREE.Vector3(-0.02, -dd * dn, 0.04 * dn)); o.lk = out * (1 - back); } }
   return o;
 }
 function fpaTick() {
@@ -11277,7 +11296,7 @@ function fpaTick() {
   if (kn) { const c = knife.children.find((o) => o.userData && o.userData.xGm); knife.updateMatrix(); src = knife.matrix.clone(); srcQ = knife.quaternion.clone(); if (c) { c.updateMatrix(); src.multiply(c.matrix); srcQ.multiply(c.quaternion); } gr = fpaKnife(); }
   else { gun.updateMatrix(); src = gun.matrix.clone(); srcQ = gun.quaternion.clone(); fl = fpaRld(w); gr = fpaGrip(w, "r", fl); gl = fpaGrip(w, "l", fl); }
   const kc = kn ? knife.children.find((c) => c.userData && c.userData.xGm) || null : null;
-  rest = FPV.rest.compose(V[0].set(kn ? 0.23 : VMP.x, kn ? -0.2 : VMP.y, kn ? -0.38 : VMP.z), kn ? knife.quaternion : FPV.q[1].identity(), V[1].setScalar(kn ? knife.scale.x : ws));
+  const vo = vmOff(w); rest = FPV.rest.compose(V[0].set(kn ? 0.23 : VMP.x + vo.x, kn ? -0.2 : VMP.y + vo.y, kn ? -0.38 : VMP.z + vo.z), kn ? knife.quaternion : FPV.q[1].identity(), V[1].setScalar(kn ? knife.scale.x : ws));
   if (kc) rest.multiply(kc.matrix);
   const sh = (gp, dir, len) => gp.clone().applyMatrix4(rest).add(dir.clone().normalize().multiplyScalar(len)).applyMatrix4(CW);
   const reach = (R.r.a + R.r.b) * ws;

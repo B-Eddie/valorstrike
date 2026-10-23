@@ -2592,11 +2592,37 @@ if (!NO3) {
     }
     const rr = require("child_process").spawnSync(process.execPath, [path.join(__dirname, "fp_check.js")], { encoding: "utf8", timeout: 180000 });
     const line = String(rr.stdout || "").trim().split("\n").pop(); let J = null; try { J = JSON.parse(line); } catch (e) { err.push("fp_check output: " + line.slice(0, 200) + " " + String(rr.stderr || "").slice(0, 200)); }
-    if (J) { const I = J.info || {}; info = (I.weapons || 0) + " weapon poses, " + Object.entries(I.tris || {}).map(([k, v]) => k + " " + v).join(" / ") + " arm tris, wrist err " + ((I.maxWrist || 0) * 1000).toFixed(2) + " mm, max edge " + (I.maxEdge || 0).toFixed(3) + " m";
+    globalThis.__FPJ = J; if (J) { const I = J.info || {}; info = (I.weapons || 0) + " weapon poses, " + Object.entries(I.tris || {}).map(([k, v]) => k + " " + v).join(" / ") + " arm tris, wrist err " + ((I.maxWrist || 0) * 1000).toFixed(2) + " mm, max edge " + (I.maxEdge || 0).toFixed(3) + " m";
       if (!J.ok) err.push(...(J.err || ["fp_check failed"])); if (!(I.weapons >= 30)) err.push("too few weapon poses tested"); }
     ok = !err.length;
   } catch (e) { err.push(String(e).slice(0, 300)); }
   report.push({ label: "first-person arms: agent GLB arm/hand mesh (Suit sleeve, Gloves, wrist skin) on the viewmodel, IK grip per weapon (right grip + trigger finger, left handguard / foregrip / two-hand pistol, knife fist), reload + cast hands, primitive-arm fallback" + (info ? " (" + info + ")" : ""), el: true, handler: true, cond: ok, pass: ok, errs: err });
+}
+
+// fp hands polish: sidearms (Classic / Sheriff / ...) rest lower-right of the rifle rest via VMPC (gun + arm shoulders), reload tracks raise + tilt the gun up so the
+// mag swap and the left hand stay in frame (fp_check projects the left wrist through the Vandal + Classic mag phase), controls hint fades out after 8 s in a match.
+{
+  const err = []; let info = "";
+  try {
+    const xe = vm.runInContext("__xe", context);
+    if (!/vo\.x \* vk \+ VMP\.x/.test(html) || !/vo\.y \* vk \+ VMP\.y/.test(html)) err.push("vmTick does not apply the per-class rest offset");
+    if (!/const vo = vmOff\(w\); rest = FPV\.rest\.compose\(V\[0\]\.set\(kn \? 0\.23 : VMP\.x \+ vo\.x/.test(html)) err.push("arm shoulders do not follow the per-class rest");
+    const r = JSON.parse(xe(`(() => { try { const o = {};
+      const p = vmOff("Classic"), q = vmOff("Sheriff"), v = vmOff("Vandal"); o.off = [p.x - v.x, p.y - v.y, q.x - v.x, q.y - v.y];
+      o.trk = ["rifle", "pistol", "op"].map((c) => { const T = XTR[c], m = Math.min.apply(null, T.mag.map((k) => (k.pos || [0, 0, 0])[1])), h = xKf(T.gun, c === "op" ? 0.5 : 0.3); return [m, h.pos[1], h.rot[0]]; });
+      const h = $("hint"), g = $("game"), r0 = running, d0 = g.style.display, t0 = XHN.t0, f0 = XHN.off, x0 = XHN.txt; g.style.display = "block"; running = true; XHN.t0 = 0; XHN.off = false; h.style.opacity = "";
+      xHintTick(1000); const a = h.style.opacity; xHintTick(8900); const b = h.style.opacity; xHintTick(9100); const c = h.style.opacity; running = false; xHintTick(30000); const e = h.style.opacity; running = true;
+      g.style.display = "none"; xHintTick(40000); const d = h.style.opacity; g.style.display = d0; running = r0; XHN.t0 = t0; XHN.off = f0; XHN.txt = x0; h.style.opacity = "";
+      o.h = [a, b, c, e, d]; o.hk = (window.XHK || []).some((f) => /xHintTick/.test(String(f))); return JSON.stringify(o); } catch (e) { return JSON.stringify({ e: String(e.stack || e).slice(0, 300) }); } })()`));
+    if (r.e) err.push("probe threw: " + r.e);
+    else {
+      if (!(r.off[0] >= 0.03 && r.off[1] <= -0.02 && r.off[2] >= 0.03 && r.off[3] <= -0.02)) err.push("sidearm rest not lower-right of the rifle: " + JSON.stringify(r.off));
+      r.trk.forEach(([m, y, rx], i) => { const c = ["rifle", "pistol", "op"][i]; if (m < -0.17) err.push(c + " mag drops " + m + " m (max 0.17, leaves the frame)"); if (!(y > 0 && rx > 0)) err.push(c + " reload does not raise + tilt the gun up (" + y + ", " + rx + ")"); });
+      const [a, b, c, e, d] = r.h; if (a === "0" || b === "0") err.push("hint hidden before 8 s"); if (c !== "0") err.push("hint not faded after 8 s"); if (e !== "0") err.push("hint came back between rounds"); if (d === "0") err.push("hint not reset when the game screen closes"); if (!r.hk) err.push("xHintTick not on the frame hooks");
+      const J = globalThis.__FPJ, I = (J && J.info) || {}; if (!I.rld || !I.rld.Vandal || !I.rld.Classic) err.push("fp_check reload-in-frame probe missing"); else info = "sidearm offset " + r.off.slice(0, 2).map((x) => x.toFixed(3)).join(", ") + " m, reload left wrist min ndc y Vandal " + I.rld.Vandal[0] + " / Classic " + I.rld.Classic[0];
+    }
+  } catch (e) { err.push(String(e).slice(0, 300)); }
+  const ok = !err.length; report.push({ label: "fp hands polish: sidearms held lower-right (per-class rest, arms follow), reload keeps the mag swap + left hand in frame (gun raised / tilted up), controls hint fades after 8 s in a match" + (info ? " (" + info + ")" : ""), el: true, handler: true, cond: ok, pass: ok, errs: err });
 }
 
 // ---------- print ----------
