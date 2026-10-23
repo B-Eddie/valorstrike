@@ -2505,6 +2505,37 @@ if (!NO3) {
   { const ok = mb > 0 && mb < 8 && /CC0/.test(lic) && /decor\//.test(lic); report.push({ label: `Map dressing props: models/decor ${mb.toFixed(2)} MB (< 8 MB), CC0 licence block present in models/LICENSES.txt`, el: true, handler: true, cond: ok, pass: ok, errs: ok ? [] : ["decor models " + mb.toFixed(2) + " MB or licence block missing"] }); }
 }
 
+// first-person arms: the player's agent body (agent_m / agent_f.glb) cut to arm + hand triangles, posed per weapon by 2-bone IK + finger curls on the viewmodel camera.
+// Static: block present, a grip table entry for every gun model, built only once the agent rig + gun models are in, primitive arms kept otherwise.
+// Runtime (real three r149 + models via work/fp_check.js): every weapon + knife for a male and a female agent: arm/hand triangles only, wrists on their grip targets,
+// no stretched triangles, fingers curled, agent Suit / Gloves colours, reload moves the left hand, the right arm follows the cast hand, primitive arms hidden while on.
+{
+  const err = []; let ok = false, info = "";
+  try {
+    const xe = vm.runInContext("__xe", context);
+    const a = html.indexOf("// ---- FIRST-PERSON ARMS"), b = html.indexOf("// ---- end FIRST-PERSON ARMS"), blk = a >= 0 && b > a ? html.slice(a, b) : "";
+    if (!blk) err.push("FIRST-PERSON ARMS block missing");
+    if (!/XUB\.ok/.test(blk) || !/XGM\.rdy/.test(blk)) err.push("rig not gated on the agent rig + gun models being ready");
+    if (!/vmTick = function \(dt\) \{ v1\(dt\); try \{ fpaTick\(\); \}/.test(blk)) err.push("fpaTick not chained after vmTick");
+    if (!/\[VMA\.R, VMA\.L, KARM\]\.forEach\(\(o\) => o && \(o\.visible = !on\)\)/.test(blk)) err.push("primitive arms not swapped with the rig");
+    const F = JSON.parse(xe("JSON.stringify(typeof XGM !== 'undefined' && XGM ? XGM.F : null)")), G = JSON.parse(xe("JSON.stringify(typeof FPG !== 'undefined' ? FPG : null)"));
+    if (!G) err.push("FPG grip table missing");
+    else for (const w in F || {}) { if (w === "Knife") continue; const g = G[w]; if (!g) { err.push("no grip entry for " + w); continue; }
+      if (g.length < 7 || g.slice(0, 6).some((v) => typeof v !== "number" || Math.abs(v) > 0.6) || !/^[rpf]$/.test(g[6]) || (g[6] === "f" && g.length < 9)) err.push("bad grip entry for " + w);
+      if (!(g[3] < g[1])) err.push(w + ": grip bottom above grip top"); if (g[6] !== "p" && !(g[4] < g[0] - 0.1)) err.push(w + ": support hand not ahead of the grip"); }
+    if (!NO3) { // no loader in this harness: the rig never builds and the primitive arms stay on after a viewmodel tick
+      const r = JSON.parse(xe(`(() => { try { const r0 = running; running = true; try { vmTick(0.016); } catch (e) {} running = r0; return JSON.stringify({ st: FPA.st, on: FPA.on, vr: VMA.R.visible, vl: VMA.L.visible, k: KARM.visible }); } catch (e) { return JSON.stringify({ e: String(e) }); } })()`));
+      if (r.e) err.push("fallback probe threw: " + r.e); else { if (r.st === "ready" || r.on) err.push("rig built without a loader"); if (r.vr === false || r.vl === false || r.k === false) err.push("primitive arms hidden without the rig"); /* the THREE stub leaves .visible undefined until something sets it */ }
+    }
+    const rr = require("child_process").spawnSync(process.execPath, [path.join(__dirname, "fp_check.js")], { encoding: "utf8", timeout: 180000 });
+    const line = String(rr.stdout || "").trim().split("\n").pop(); let J = null; try { J = JSON.parse(line); } catch (e) { err.push("fp_check output: " + line.slice(0, 200) + " " + String(rr.stderr || "").slice(0, 200)); }
+    if (J) { const I = J.info || {}; info = (I.weapons || 0) + " weapon poses, " + Object.entries(I.tris || {}).map(([k, v]) => k + " " + v).join(" / ") + " arm tris, wrist err " + ((I.maxWrist || 0) * 1000).toFixed(2) + " mm, max edge " + (I.maxEdge || 0).toFixed(3) + " m";
+      if (!J.ok) err.push(...(J.err || ["fp_check failed"])); if (!(I.weapons >= 30)) err.push("too few weapon poses tested"); }
+    ok = !err.length;
+  } catch (e) { err.push(String(e).slice(0, 300)); }
+  report.push({ label: "first-person arms: agent GLB arm/hand mesh (Suit sleeve, Gloves, wrist skin) on the viewmodel, IK grip per weapon (right grip + trigger finger, left handguard / foregrip / two-hand pistol, knife fist), reload + cast hands, primitive-arm fallback" + (info ? " (" + info + ")" : ""), el: true, handler: true, cond: ok, pass: ok, errs: err });
+}
+
 // ---------- print ----------
 const bad = report.filter((r) => !r.pass);
 console.log(`\n=== audit (${MID ? "THREE loads, 3D init throws" : NO3 ? "THREE missing" : "THREE stub loaded"}) — ${report.length} checks, ${bad.length} failing ===`);
