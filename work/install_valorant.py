@@ -6,7 +6,9 @@ if a in s:s=s[:s.index(a)]+s[s.index(b)+len(b):]
 block=(root/'work/valorant_runtime.js').read_text();
 na='// ---- ORIGINAL VALORANT MAPS ----';nb='// ---- END ORIGINAL VALORANT MAPS ----'
 if na in s:s=s[:s.index(na)]+s[s.index(nb)+len(nb):]
-block+='\n'+(root/'work/native_maps_runtime.js').read_text();mark='xReady = true; // every mode is initialised; lobby launches may now start them';s=s.replace(mark,block+'\n'+mark)
+fa='// ---- VALORANT FEEL ----';fb='// ---- END VALORANT FEEL ----'
+if fa in s:s=s[:s.index(fa)]+s[s.index(fb)+len(fb):]
+block+='\n'+(root/'work/native_maps_runtime.js').read_text()+'\n'+(root/'work/feel_runtime.js').read_text();mark='xReady = true; // every mode is initialised; lobby launches may now start them';s=s.replace(mark,block+'\n'+mark)
 if '<script src="models/valorant/manifest.js"></script>' not in s:s=s.replace('<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>','<script src="models/valorant/manifest.js"></script>\n<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>')
 # Find the actual three script tag, which may use an onerror handler.
 if '<script src="models/valorant/manifest.js"></script>' not in s:s=s.replace('<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js"></script>','<script src="models/valorant/manifest.js"></script>\n<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js"></script>')
@@ -29,4 +31,7 @@ s=s.replace('const inSite = (p) => Object.keys(SITES).find((k) => Math.abs(p.x -
 for name in ['p','q']:
  for h in ['1.5','1.6','1.7','1.75']:
   s=s.replace('.set('+name+'.x, '+name+'.y + '+h+', '+name+'.z)', '.set('+name+'.x, ('+name+'.y || 0) + '+h+', '+name+'.z)')
+for src in ['models/valorant/weapon-calibration.js','vendor/valorant-feel.js']:
+ if '<script src="'+src+'"></script>' not in s:s=s.replace('<script src="models/valorant/manifest.js"></script>', '<script src="models/valorant/manifest.js"></script>\n<script src="'+src+'"></script>')
+s=re.sub(r'\n{3,}(?=// ---- VALORANT ASSET INTEGRATION ----)', '\n\n', s)
 p.write_text(s)

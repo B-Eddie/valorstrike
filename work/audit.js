@@ -273,7 +273,7 @@ vm.runInContext("Date.now = () => performance.now() + 1.7e12;", context);
 const scripts = [...html.matchAll(/<script([^>]*)>([\s\S]*?)<\/script>/g)];
 for (const s of scripts) {
   const src = (s[1].match(/src="([^"]+)"/) || [])[1];
-  if (src) { if (src === "vendor/three-mesh-bvh.umd.js") { continue; } if (src === "models/valorant/manifest.js") { vm.runInContext(fs.readFileSync(path.join(__dirname,"..",src),"utf8"),context,{filename:src}); continue; } if (/three/.test(src)) {
+  if (src) { if (src === "vendor/three-mesh-bvh.umd.js") { continue; } if (["models/valorant/manifest.js","models/valorant/weapon-calibration.js","vendor/valorant-feel.js"].includes(src)) { vm.runInContext(fs.readFileSync(path.join(__dirname,"..",src),"utf8"),context,{filename:src}); continue; } if (/three/.test(src)) {
       if (REAL3 && !NO3) { // REAL3=1: the real three.js r149 (+ GLTFLoader / SkeletonUtils) with only the WebGL renderers stubbed, so vector / matrix / scene-graph math is real
         const f = /three\.min/.test(src) ? "three.min.js" : /GLTFLoader/.test(src) ? "GLTFLoader.js" : "SkeletonUtils.js";
         try { vm.runInContext(fs.readFileSync(path.join(REAL3_DIR, f), "utf8"), context, { filename: f }); } catch (e) { rec("real three " + f, e); }
@@ -281,8 +281,9 @@ for (const s of scripts) {
       } else if (!NO3 || MID) win.THREE = stub("THREE"); } else rec("script", "unexpected external script " + src); continue; }
   // nav hook: the page lives in an IIFE, so expose the map boxes + graph builder to work/nav.js (audit-side only)
   // Native source scenes require a real renderer, binary geometry and BVH. They are covered by verify_native_maps.js.
-  // Keep this harness's deterministic legacy map fixture for its existing economy/input/ability regression checks.
-  const fixture = s[2].replace(/\/\/ ---- ORIGINAL VALORANT MAPS ----[\s\S]*?\/\/ ---- END ORIGINAL VALORANT MAPS ----/, "");
+  // Keep deterministic legacy maps and weapon tuning for the existing economy/input/ability fixtures.
+  // The replacement motor, calibrated guns, and native animation timers are covered by test_feel.js / verify_feel.js.
+  const fixture = s[2].replace(/\/\/ ---- VALORANT FEEL ----[\s\S]*?\/\/ ---- END VALORANT FEEL ----/, "").replace(/\/\/ ---- ORIGINAL VALORANT MAPS ----[\s\S]*?\/\/ ---- END ORIGINAL VALORANT MAPS ----/, "");
   const code = fixture.replace("function xgGet() {", "globalThis.__nav = { get FMAP() { return FMAP; }, get SITES() { return SITES; }, get HSITES() { return HSITES; }, get SSITES() { return SSITES; }, get LSITES() { return LSITES; }, get BZSITES() { return BZSITES; }, xgBuild, xgClear, setB: (b) => { boxes = b; }, getB: () => boxes }; function xgGet() {").replace("function srTick(dt) {", "globalThis.__xe = (s) => eval(s); globalThis.__st = () => ({ mode, FV, player, SR, running, srAll: typeof srAll === \"function\" ? srAll : null, fAtk: typeof fAtk === \"function\" ? fAtk : null, K: typeof K === \"function\" ? K : null, J: typeof J !== \"undefined\" ? J : null, wName: typeof wName === \"function\" ? wName : null, fRound: () => fRound() }); function srTick(dt) {");
   try { vm.runInContext(code, context, { filename: "index.html" }); } catch (e) { rec("top-level script", e); }
 }

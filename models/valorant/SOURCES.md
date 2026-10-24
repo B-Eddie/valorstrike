@@ -62,3 +62,7 @@ Importers require Python Pillow, NumPy, SciPy, gdown, curl, Blender 4.3+, and ne
 `SHA256SUMS` records the installed binary and texture file hashes. Download caches are excluded from version control.
 
 The existing `audit.js` uses its deterministic legacy map fixture for economy/input/ability regressions; it does not certify native map geometry. `verify_native_maps.js` uses real Chromium, the exported scenes and BVHs to check native routes, floor heights, capsule collision and full match initialization on all six maps.
+
+## Weapon calibration and game feel
+
+The weapon-stat snapshot comes from [Valorant API](https://valorant-api.com/v1/weapons), retrieved 2026-10-24. Movement/accuracy references, approximated controller and recoil parameters, native animation timing, and verification are documented in [GAME_FEEL.md](../../GAME_FEEL.md).
