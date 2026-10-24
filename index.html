@@ -3741,9 +3741,9 @@ const XDEAD = [];
 function xDie(b) {
   if (!b || !b.xm || b.xd) return; b.xd = 1;
   const c = b.xm, p = b.g.position, ry = b.g.rotation.y; c.dead = 1;
-  scene.add(c.m); c.m.position.set(p.x, 0, p.z); c.m.rotation.order = "YXZ"; c.m.rotation.set(0, ry, 0); c.ring.visible = false;
+  scene.add(c.m); c.m.position.set(p.x, p.y, p.z); c.m.rotation.order = "YXZ"; c.m.rotation.set(0, ry, 0); c.ring.visible = false;
   if (c.hd) c.hd.rotation.x = 0;
-  const gn = c.gun; gn.rotation.x = 0; scene.add(gn); gn.position.set(p.x + Math.sin(ry + 1.2) * 0.7, 0.05, p.z + Math.cos(ry + 1.2) * 0.7); gn.rotation.set(0, ry + 2, Math.PI / 2);
+  const gn = c.gun; gn.rotation.x = 0; scene.add(gn); gn.position.set(p.x + Math.sin(ry + 1.2) * 0.7, p.y + 0.05, p.z + Math.cos(ry + 1.2) * 0.7); gn.rotation.set(0, ry + 2, Math.PI / 2);
   XDEAD.push({ c, gn, t: 0 });
 }
 function xWeapOf(b) {
@@ -12317,7 +12317,7 @@ function xvAgent(M, kit) {
   XUB_LO.forEach((n) => mk(n,'L',n==='jump'||n==='land')); XUB_UPN.forEach((n) => mk(n,'U',n==='reload'||n==='cast'||n==='throw')); XUB_FU.forEach((n) => mk(n,'C',n!=='plant'));
   [['fire','Pistol_Shoot'],['hit','Hit_Chest'],['hitHead','Hit_Head']].forEach(([n,c]) => { const a=mx.clipAction(kit.A[c]); a.blendMode=THREE.AdditiveAnimationBlendMode; a.setLoop(THREE.LoopOnce,1); X.ad[n]=a; });
   X.a.idle.play(); X.a.aim.play(); X.w.idle = X.w.aim = 1; mx.update(.01); M.m.updateMatrixWorld(true);
-  const hand = bone('R_Hand'); if (hand && M.gun) { const hold = new THREE.Group(), p=new THREE.Vector3(),q=new THREE.Quaternion(),s=new THREE.Vector3(); new THREE.Matrix4().copy(M.m.matrixWorld).invert().multiply(hand.matrixWorld).decompose(p,q,s); hold.quaternion.copy(q.invert()); hold.scale.set(1/s.x,1/s.y,1/s.z); hand.add(hold); hold.add(M.gun); M.gun.position.set(0,0,.03); M.gun.rotation.x=0; }
+  const hand = bone('R_Hand'); if (hand && M.gun) { const hold = new THREE.Group(), p=new THREE.Vector3(),q=new THREE.Quaternion(),s=new THREE.Vector3(); new THREE.Matrix4().copy(M.m.matrixWorld).invert().multiply(hand.matrixWorld).decompose(p,q,s); hold.quaternion.copy(q.invert()); hold.scale.set(1/s.x,1/s.y,1/s.z); hand.add(hold); hold.add(M.gun); M.gun.position.set(0,0,.03); M.gun.rotation.set(0,0,0); M.weaponHolder=hold; }
   X.acts=X.a; M.ub=1; M.sx=X; M.valorant=1; M.xAt=[]; M.solOwn=()=>{M.solOwn=null;}; XSOL.mx.push(M);
 }
 { const base = xUb; xUb = function(M) { base(M); const ag=xvAgentName(M.nm); xvAgentLoad(ag).then((kit)=>xvAgent(M,kit)).catch(()=>{}); }; }
@@ -12339,7 +12339,7 @@ function xvFPLoad(ag,w) {
     const am=new THREE.AnimationMixer(sc),gm=new THREE.AnimationMixer(ws),ac={},gc={};const fclips=anims.filter((g,i)=>/^FP_/.test(files[i])).flatMap(g=>g.animations),gclips=weapon.animations.concat(anims.filter((g,i)=>/^GN_/.test(files[i])).flatMap(g=>g.animations));
     fclips.forEach(c=>ac[c.name]=am.clipAction(c));gclips.forEach(c=>gc[c.name]=gm.clipAction(c));
     const F={root,sc,ws,am,gm,ac,gc,entries,ag,w,kind:null,age:0};xvFPPlay(F,'idle');am.update(0);gm.update(0);sc.updateMatrixWorld(true);
-    const cam=sc.getObjectByName('Camera');const pos=cam?cam.getWorldPosition(new THREE.Vector3()):new THREE.Vector3(0,1.67,0);pos.applyAxisAngle(new THREE.Vector3(0,1,0),Math.PI/2);root.position.copy(pos).negate();F.origin=root.position.clone();xvFPPlay(F,'equip');return F;
+    const cam=sc.getObjectByName('Camera');const pos=cam?cam.getWorldPosition(new THREE.Vector3()):new THREE.Vector3(0,1.67,0);root.position.copy(pos).negate();F.origin=root.position.clone();xvFPPlay(F,'equip');return F;
   });
 }
 function xvFPClear(F){if(!F)return;camera.remove(F.root);F.am.stopAllAction();F.gm.stopAllAction();F.root.traverse(o=>{if(o.isMesh)[].concat(o.material||[]).forEach(m=>m.dispose());});}
@@ -12415,20 +12415,21 @@ async function nmEnsure(key){
   const head=new Uint32Array(bytes,0,2),positions=new Float32Array(bytes,8,head[0]*3),indices=new Uint32Array(bytes,8+head[0]*12,head[1]);const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.BufferAttribute(positions,3));geometry.setIndex(new THREE.BufferAttribute(indices,1));geometry.boundsTree=new MeshBVHLib.MeshBVH(geometry,{maxLeafTris:12,maxDepth:64,strategy:MeshBVHLib.CENTER});
   const collision=new THREE.Mesh(geometry,new THREE.MeshBasicMaterial({side:THREE.DoubleSide,visible:false}));collision.name='native-collision';collision.raycast=MeshBVHLib.acceleratedRaycast;
   const root=xMG();root.name='native-'+key;root.userData.nativeMap=key;root.visible=false;root.add(gl.scene,collision);const M={g:root,solids:[collision],boxes:[],built:1,native:true};
-  gl.scene.traverse(o=>{if(!o.isMesh)return;o.geometry.userData.shared=true;o.castShadow=false;o.receiveShadow=true;const convert=m=>{const out=new THREE.MeshLambertMaterial({name:m.name,color:m.color,map:m.map,side:THREE.DoubleSide,alphaTest:m.alphaTest||0,transparent:m.transparent,opacity:m.opacity});if(m.map)m.map.anisotropy=Math.min(4,renderer.capabilities.getMaxAnisotropy());return out;};o.material=Array.isArray(o.material)?o.material.map(convert):convert(o.material);});
+  gl.scene.traverse(o=>{if(!o.isMesh)return;o.geometry.userData.shared=true;o.castShadow=false;o.receiveShadow=false;const convert=m=>{const terrain=/Floor|Ground|(?:Stone|Brick|Dirt|Gravel|Tile|Grass|Jam|Stairs).*Grass|Grass.*Stone|Blendable.*Gravel/i.test(m.name)&&!/Cards|Decal|Floater/i.test(m.name);const out=new THREE.MeshLambertMaterial({name:m.name,color:m.color,map:m.map,side:THREE.DoubleSide,alphaTest:terrain?0:m.alphaTest||0,transparent:terrain?false:m.transparent,opacity:terrain?1:m.opacity});if(m.map)m.map.anisotropy=Math.min(4,renderer.capabilities.getMaxAnisotropy());return out;};o.material=Array.isArray(o.material)?o.material.map(convert):convert(o.material);});
   const C={key,meta,nav,plants,M,geometry,bvh:geometry.boundsTree,image:new Image(),cells:new Map(),cellSize:2};C.image.src=base+'minimap.png';nav.nodes.forEach((p,i)=>{if(nav.valid&&!nav.valid[i])return;const k=Math.floor(p[0]/2)+','+Math.floor(p[2]/2);if(!C.cells.has(k))C.cells.set(k,[]);C.cells.get(k).push(i);});
   // Only the original playable footprint defines navigation/minimap bounds; vista geometry is still rendered.
-  const X=nav.nodes.map(p=>p[0]),Z=nav.nodes.map(p=>p[2]);C.bounds={x1:Math.min(...X)-3,x2:Math.max(...X)+3,z1:Math.min(...Z)-3,z2:Math.max(...Z)+3};
+  const X=nav.nodes.filter((_,i)=>!nav.valid||nav.valid[i]).map(p=>p[0]),Z=nav.nodes.filter((_,i)=>!nav.valid||nav.valid[i]).map(p=>p[2]);C.bounds={x1:Math.min(...X)-3,x2:Math.max(...X)+3,z1:Math.min(...Z)-3,z2:Math.max(...Z)+3};
   const b=C.bounds;M.boxes.push({x1:b.x1,x2:b.x2,z1:b.z1,z2:b.z1,h:0},{x1:b.x1,x2:b.x2,z1:b.z2,z2:b.z2,h:0});
   if(NM.current){const old=NM.current;if(fsM.parent)fsM.parent.remove(fsM);if(spike.parent&&spike.parent===old.M.g)spike.parent.remove(spike);nmFree(old);for(const k in FMAP)if(FMAP[k]===old.M){const g=new THREE.Group();g.visible=false;FMAP[k]={g,solids:[],boxes:[],built:0};}}
   NM.current=C;NM.routeCache.clear();scene.add(root);nmOverlay(null);return C;
  })().catch(e=>{nmOverlay(key,true);console.error('Original map load failed',key,e);throw e;}).finally(()=>{if(NM.pending&&NM.pending.key===key)NM.pending=null;});NM.pending={key,promise};return promise;
 }
-function nmNear(C,x,z,y){let best=-1,bd=Infinity;const gx=Math.floor(x/2),gz=Math.floor(z/2);for(let ring=0;ring<=8;ring++){for(let dx=-ring;dx<=ring;dx++)for(let dz=-ring;dz<=ring;dz++){if(ring&&Math.abs(dx)!==ring&&Math.abs(dz)!==ring)continue;for(const i of C.cells.get((gx+dx)+','+(gz+dz))||[]){const p=C.nav.nodes[i],d=(p[0]-x)**2+(p[2]-z)**2+(Number.isFinite(y)?(p[1]-y)**2*2:0);if(d<bd){bd=d;best=i;}}}if(best>=0&&ring>1&&bd<(ring*2-2)**2)return best;}if(best<0)for(let i=0;i<C.nav.nodes.length;i++){const p=C.nav.nodes[i],d=(p[0]-x)**2+(p[2]-z)**2;if(d<bd){best=i;bd=d;}}return best;}
-function nmHeight(C,x,z,y){const top=Number.isFinite(y)&&y>1?y+.55:C.nav.nodes[nmNear(C,x,z,y>1?y:undefined)][1]+.55,ray=new THREE.Ray(new THREE.Vector3(x,top,z),new THREE.Vector3(0,-1,0));for(let i=0;i<8;i++){const hit=C.bvh.raycastFirst(ray,THREE.DoubleSide);if(!hit)break;if(Math.abs(hit.face.normal.y)>.45)return hit.point.y;ray.origin.y=hit.point.y-.02;}return C.nav.nodes[nmNear(C,x,z,y>1?y:undefined)][1];}
+function nmNear(C,x,z,y){let best=-1,bd=Infinity;const gx=Math.floor(x/2),gz=Math.floor(z/2);for(let ring=0;ring<=8;ring++){for(let dx=-ring;dx<=ring;dx++)for(let dz=-ring;dz<=ring;dz++){if(ring&&Math.abs(dx)!==ring&&Math.abs(dz)!==ring)continue;for(const i of C.cells.get((gx+dx)+','+(gz+dz))||[]){const p=C.nav.nodes[i],d=(p[0]-x)**2+(p[2]-z)**2+(Number.isFinite(y)?(p[1]-y)**2*2:0);if(d<bd){bd=d;best=i;}}}if(best>=0&&ring>1&&bd<(ring*2-2)**2)return best;}if(best<0)for(let i=0;i<C.nav.nodes.length;i++){if(C.nav.valid&&!C.nav.valid[i])continue;const p=C.nav.nodes[i],d=(p[0]-x)**2+(p[2]-z)**2;if(d<bd){best=i;bd=d;}}return best;}
+// Select only nearby upward support. Never snap a falling actor onto a roof above its feet.
+function nmHeight(C,x,z,y){const i=nmNear(C,x,z,Number.isFinite(y)?y:undefined);if(i<0)throw Error('No valid navigation floor');const reference=Number.isFinite(y)?y:C.nav.nodes[i][1],ray=new THREE.Ray(new THREE.Vector3(x,reference+.32,z),new THREE.Vector3(0,-1,0));for(let k=0;k<24;k++){const hit=C.bvh.raycastFirst(ray,THREE.DoubleSide);if(!hit)break;if(hit.face.normal.y>.45)return hit.point.y;ray.origin.y=hit.point.y-.005;}return Number.isFinite(y)?Math.min(reference,C.nav.nodes[i][1]):C.nav.nodes[i][1];}
 var NM_Q={box:new THREE.Box3(),line:new THREE.Line3(),p:new THREE.Vector3(),q:new THREE.Vector3(),normal:new THREE.Vector3()};
-function nmBlocked(C,x,z,r,y,height=1.8){if(!Number.isFinite(y)||y<1)y=nmHeight(C,x,z);const Q=NM_Q;Q.line.start.set(x,y+.65,z);Q.line.end.set(x,y+Math.max(.65,height-.45),z);Q.box.min.set(x-r,y+.2,z-r);Q.box.max.set(x+r,y+height,z+r);let blocked=false;
- C.bvh.shapecast({intersectsBounds:b=>b.intersectsBox(Q.box),intersectsTriangle:t=>{if(Math.max(t.a.y,t.b.y,t.c.y)<=y+.45)return false;t.getNormal(Q.normal);if(Math.abs(Q.normal.y)>.7)return false;const d=t.closestPointToSegment(Q.line,Q.p,Q.q);if(d<r-.012){blocked=true;return true;}return false;}});return blocked;
+function nmBlocked(C,x,z,r,y,height=1.8){if(!Number.isFinite(y))y=nmHeight(C,x,z);const Q=NM_Q,epsilon=.025;Q.line.start.set(x,y+r+epsilon,z);Q.line.end.set(x,y+Math.max(r+epsilon,height-r),z);Q.box.min.set(x-r,y+epsilon,z-r);Q.box.max.set(x+r,y+height,z+r);let blocked=false;
+ C.bvh.shapecast({intersectsBounds:b=>b.intersectsBox(Q.box),intersectsTriangle:t=>{if(Math.max(t.a.y,t.b.y,t.c.y)<=y+epsilon)return false;const d=t.closestPointToSegment(Q.line,Q.p,Q.q);if(d<r-.012){blocked=true;return true;}return false;}});return blocked;
 }
 {const b=blocked,g=groundAt;blocked=function(x,z,r,y){const C=nmActive();return C?(sgBlk(x,z,r,y)||nmBlocked(C,x,z,r,y)):b(x,z,r,y);};groundAt=function(x,z,r,y){const C=nmActive();return C?nmHeight(C,x,z,y):g(x,z,r,y);};}
 function nmPlant(C,x,z){const t=C.meta.transform,p=C.meta.apiProjection,ca=Math.cos(t.angle),sa=Math.sin(t.angle),sx=ca*x-sa*z+t.cx,sz=sa*x+ca*z+t.cz,u=Math.floor((sx*100*p.xMultiplier+p.xScalarToAdd)*1024),v=Math.floor((-sz*100*p.yMultiplier+p.yScalarToAdd)*1024);for(const row of C.plants.rows[v]||[])if(u>=row[0]&&u<row[1])return row[2];return undefined;}
@@ -12441,6 +12442,8 @@ function nmNext(C,u,gx,gz){const p=u.g.position,N=C.nav.nodes,s=nmNear(C,p.x,p.z
 {const p=xPath;xPath=function(u,dt,gx,gz,out){const C=nmActive();if(!C)return p.apply(this,arguments);u.xr=[];u.npT=(u.npT||0)-dt;if(!u.np||u.npT<=0||u.blk||Math.hypot(u.np[0]-u.g.position.x,u.np[1]-u.g.position.z)<.55||!u.ng||Math.hypot(u.ng[0]-gx,u.ng[1]-gz)>3){u.np=nmNext(C,u,gx,gz);u.ng=[gx,gz];u.npT=.4;u.blk=0;}return u.np;};}
 {const goal=xGoal;xGoal=function(u,team,atk,out){const C=nmActive();if(!C||mode!=='five')return goal.apply(this,arguments);const s=FV.sp;if(!s)return null;u.xr=[];s.xr='native';if(s.st==='plant')return x2(out,s.x,s.z);if(atk&&s.st==='drop')return x2(out,s.x,s.z);const names=Object.keys(C.meta.sites),name=atk?s.site:(s.seen||names[Math.max(0,team.indexOf(u))%names.length]),p=C.meta.sites[name]||C.meta.sites[names[0]];return x2(out,p[0],p[2]);};}
 {const step=xStep;xStep=function(){return nmActive()?false:step.apply(this,arguments);};const clear=xClear;xClear=function(x,z){const C=nmActive();if(!C)return clear(x,z);const p=C.nav.nodes[nmNear(C,x,z)];return [p[0],p[2]];};const nudge=xNudgeAll;xNudgeAll=function(){if(!nmActive())return nudge.apply(this,arguments);};}
+// Native scenes are already material-batched; legacy merging/shadow fitting is destructive and wasteful here.
+{const freeze=xFreeze;xFreeze=function(g){if(g&&g.userData.nativeMap){g.updateMatrixWorld(true);return;}return freeze(g);};}
 // Match startup waits for the complete scene and collisions. Failure keeps the map unstarted.
 function nmLaunch(fn,self,args,key){return nmEnsure(key).then(()=>{const result=fn.apply(self,args);nmOverlay(null);return result;}).catch(()=>{});}
 function nmWrap(fn,retake){return function(){let key=retake?'ascent':FV.pick||'ascent';if(key==='random')key=['ascent','bind','haven','split','lotus','breeze'][Math.floor(Math.random()*6)];if(!retake)FV.pick=key;const self=this,args=arguments;return nmLaunch(fn,self,args,key);};}
@@ -12450,10 +12453,19 @@ startFive=nmWrap(startFive);dmStart0=nmWrap(dmStart0);start=nmWrap(start,true);
 fUseMap=function(){const C=NM.current;if(!C||C.key!==FV.map)throw new Error('Original map has not loaded');for(const k in FMAP)if(FMAP[k].g)FMAP[k].g.visible=false;FMAP[FV.map]=C.M;MAPS.five=C.M;C.M.g.add(fsM,XCALL);XCALL.clear();for(const k in SITES)delete SITES[k];for(const [k,p]of Object.entries(C.meta.sites))SITES[k]=[p[0],p[2]];SROPES=null;LG.on=false;delete mmB.five;};
 {const use=useMap;useMap=function(n){const C=NM.current;if(C&&n==='retake'){MAPS.retake=C.M;C.M.g.add(spike);const p=C.meta.sites.B;spike.position.set(p[0],p[1]+.4,p[2]);}const result=use.apply(this,arguments);if(C&&(n==='five'||n==='retake')){C.M.g.visible=true;scene.fog.near=95;scene.fog.far=260;camera.far=500;camera.updateProjectionMatrix();C.M.g.updateMatrixWorld(true);}return result;};}
 {const spawn=xSpawn;xSpawn=function(k){const C=NM.current;if(C&&C.key===k){const a=C.meta.attacker,d=C.meta.defender;return {atk:a[2],def:d[2],edge:Math.min(Math.abs(a[2]),Math.abs(d[2]))-7,w:20};}return spawn(k);};}
-function nmPlace(u,C,point,index){const i=nmNear(C,point[0]+((index%3)-1)*1.2,point[2]+Math.floor(index/3)*1.1,point[1]),p=C.nav.nodes[i];if(u===player){u.x=p[0];u.z=p[2];u.y=p[1];u.vy=0;}else{u.g.position.set(p[0],p[1],p[2]);u.xr=[];u.np=null;}return p;}
+function nmPlace(u,C,point,index){
+ const occupied=[player].concat(allies,bots).filter(v=>v&&v!==u&&(v===player?v.hp>0:v.alive)).map(v=>v===player?[v.x,v.y,v.z]:[v.g.position.x,v.g.position.y,v.g.position.z]);
+ const anchor=nmNear(C,point[0],point[2],point[1]);if(anchor<0)throw Error('No valid spawn anchor');
+ const wanted=[point[0]+((index%3)-1)*1.2,point[1],point[2]+Math.floor(index/3)*1.1];
+ const candidates=C.nav.nodes.map((p,i)=>({p,i,d:(p[0]-wanted[0])**2+(p[2]-wanted[2])**2+4*(p[1]-point[1])**2})).filter(v=>(!C.nav.valid||C.nav.valid[v.i])&&Math.abs(v.p[1]-point[1])<1&&v.d<225).sort((a,b)=>a.d-b.d);
+ let position=null;
+ for(const {p,i}of candidates){if(occupied.some(o=>Math.abs(o[1]-p[1])<1.8&&Math.hypot(o[0]-p[0],o[2]-p[2])<.9))continue;const y=nmHeight(C,p[0],p[2],p[1]);if(Math.abs(y-p[1])>.15||nmBlocked(C,p[0],p[2],.43,y,1.92)||!nmPath(C,anchor,i).length)continue;position=[p[0],y,p[2]];break;}
+ if(!position)throw Error('No clear unoccupied spawn on '+C.key);
+ const p=position;if(u===player){Object.assign(u,{x:p[0],z:p[2],y:p[1],vy:0,vx:0,vz:0,air:false,ch:0,eyeOffset:0,jumpBuffer:0,jumpHeld:false});}else{u.g.position.set(...p);u.xr=[];u.np=null;u.xp={x:p[0],z:p[2]};u.kg=null;u.xk=u.xj=null;}return p;
+}
 {const spawn=fSpawn;fSpawn=function(){const r=spawn.apply(this,arguments),C=nmActive();if(C){const a=FV.atk?C.meta.attacker:C.meta.defender,b=FV.atk?C.meta.defender:C.meta.attacker;nmPlace(player,C,a,1);allies.forEach((u,i)=>nmPlace(u,C,a,i+2));bots.forEach((u,i)=>nmPlace(u,C,b,i));}return r;};}
 {const spawn=spawnBots;spawnBots=function(){const r=spawn.apply(this,arguments),C=nmActive();if(C&&mode==='retake'){const site=C.meta.sites.B,entry=C.meta.callouts.find(c=>/B (Main|Lobby)/.test(c.name));nmPlace(player,C,entry?entry.position:C.meta.attacker,1);allies.forEach((u,i)=>nmPlace(u,C,entry?entry.position:C.meta.attacker,i+2));bots.forEach((u,i)=>nmPlace(u,C,site,i));}return r;};}
-{const pts=dmPts;dmPts=function(){const C=nmActive();return C?C.nav.nodes.filter((_,i)=>i%Math.max(1,Math.floor(C.nav.nodes.length/150))===0).map(p=>[p[0],p[2]]):pts();};const spawnB=dmSpawnB,spawnP=dmSpawnP;dmSpawnB=function(b){const r=spawnB.apply(this,arguments),C=nmActive();if(C)nmPlace(b,C,C.nav.nodes[nmNear(C,b.g.position.x,b.g.position.z)],1);return r;};dmSpawnP=function(){const r=spawnP.apply(this,arguments),C=nmActive();if(C)nmPlace(player,C,C.nav.nodes[nmNear(C,player.x,player.z)],1);return r;};}
+{const pts=dmPts;dmPts=function(){const C=nmActive();return C?C.nav.nodes.filter((_,i)=>(!C.nav.valid||C.nav.valid[i])&&i%Math.max(1,Math.floor(C.nav.nodes.length/150))===0).map(p=>[p[0],p[2]]):pts();};const spawnB=dmSpawnB,spawnP=dmSpawnP;dmSpawnB=function(b){const r=spawnB.apply(this,arguments),C=nmActive();if(C)nmPlace(b,C,C.nav.nodes[nmNear(C,b.g.position.x,b.g.position.z)],1);return r;};dmSpawnP=function(){const r=spawnP.apply(this,arguments),C=nmActive();if(C)nmPlace(player,C,C.nav.nodes[nmNear(C,player.x,player.z)],1);return r;};}
 // Accurate map overview from Riot's minimap projection, rotated by exactly the scene's rigid transform.
 function nmMinimap(C){const g=$('game'),show=running&&player&&(mode==='five'||mode==='retake');g.classList.toggle('x-mm',!!show);g.classList.toggle('x-five',mode==='five');XCALL.visible=false;if(!show)return;const now=performance.now();if(now-(nmMinimap.last||0)<80)return;nmMinimap.last=now;const ctx=mmx,W=MM.width,H=MM.height,pad=8,b=C.bounds,s=(Math.min(W,H)-pad*2)/Math.max(b.x2-b.x1,b.z2-b.z1),ox=(W-(b.x2-b.x1)*s)/2,oz=(H-(b.z2-b.z1)*s)/2,X=x=>ox+(x-b.x1)*s,Z=z=>oz+(z-b.z1)*s;ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,W,H);ctx.fillStyle='#101c26';ctx.fillRect(0,0,W,H);
  if(C.image.complete&&C.image.naturalWidth){const t=C.meta.transform,p=C.meta.apiProjection,ca=Math.cos(t.angle),sa=Math.sin(t.angle),point=(u,v)=>{const x=(u/1024-p.xScalarToAdd)/(p.xMultiplier*100)-t.cx,z=-(v/1024-p.yScalarToAdd)/(p.yMultiplier*100)-t.cz;return [ca*x+sa*z,-sa*x+ca*z];},o=point(0,0),a=point(1,0),d=point(0,1);ctx.save();ctx.setTransform((a[0]-o[0])*s,(a[1]-o[1])*s,(d[0]-o[0])*s,(d[1]-o[1])*s,X(o[0]),Z(o[1]));ctx.drawImage(C.image,0,0,1024,1024);ctx.restore();}
@@ -12461,7 +12473,8 @@ function nmMinimap(C){const g=$('game'),show=running&&player&&(mode==='five'||mo
 }
 {const map=minimap;minimap=function(){const C=nmActive();return C?nmMinimap(C):map.apply(this,arguments);};const bounds=mmBounds;mmBounds=function(n){const C=nmActive();return C?C.bounds:bounds(n);};const loc=xLoc;xLoc=function(x,z){const C=nmActive();if(!C)return loc(x,z);let best='',d=Infinity;for(const c of C.meta.callouts){const r=Math.hypot(c.position[0]-x,c.position[2]-z);if(r<d){d=r;best=c.name;}}return best;};}
 // Existing hooks keep their original function references, so add the native minimap after them.
-(window.XHK||(window.XHK=[])).push(()=>{const C=nmActive();if(!C||!running)return;nmMinimap(C);if(fsM.visible)fsM.position.y=nmHeight(C,fsM.position.x,fsM.position.z)+.4;for(const d of XD.L)d.m.position.y=nmHeight(C,d.x,d.z)+.08;});
+{const hooks=window.XHK||[],original=hooks.findIndex(f=>f.name==='minimap');if(original>=0)hooks.splice(original,1);}
+(window.XHK||(window.XHK=[])).push(()=>{const C=nmActive();if(!C){minimap();return;}if(!running)return;nmMinimap(C);if(fsM.visible)fsM.position.y=nmHeight(C,fsM.position.x,fsM.position.z)+.4;for(const d of XD.L)d.m.position.y=nmHeight(C,d.x,d.z)+.08;});
 // Bind's source teleporter entrances/exits replace the legacy pads and their coordinates.
 function nmTeleports(C){if(C.key!=='bind'||!running||paused)return;const now=performance.now();if(!C.teleporters){const find=name=>C.meta.callouts.find(c=>c.name===name).position;C.teleporters=[['A Teleporter','B Exit'],['B Teleporter','A Exit']].map(([a,b])=>({entry:find(a),exit:find(b)}));}for(const u of [player].concat(bots,allies)){if(u!==player&&!u.alive)continue;if((u.nmTP||0)>now)continue;const p=u===player?[u.x,u.y,u.z]:u.g.position.toArray();const gate=C.teleporters.find(t=>Math.hypot(p[0]-t.entry[0],p[2]-t.entry[2])<2&&Math.abs(p[1]-nmHeight(C,t.entry[0],t.entry[2]))<1.5);if(!gate){u.nmTPStart=0;continue;}if(!u.nmTPStart){u.nmTPStart=now;continue;}if(now-u.nmTPStart<400)continue;nmPlace(u,C,gate.exit,1);u.nmTP=now+1800;u.nmTPStart=0;if(u===player){SFX.tp();say('Teleporter',700);}}}
 {const hooks=window.XHK||[],i=hooks.findIndex(f=>f.name==='tpLoop');if(i>=0){const legacy=hooks[i];hooks[i]=function(){const C=nmActive();return C?nmTeleports(C):legacy();};}}
@@ -12531,6 +12544,43 @@ xvFPClear=function(F){if(!F)return;if(F.root.parent)F.root.parent.remove(F.root)
 {const fire=duelShoot;duelShoot=function(){if(VM.sw>0)return;return fire.apply(this,arguments);};}
 window.xValorantFeel={state:VF,view:VF_VIEW,model:VF.model,weapon:vfWeapon,profile:vfProfile};
 // ---- END VALORANT FEEL ----
+
+// Repair pass: bone-following damage volumes and joint-constrained corpse physics.
+// Retargeted crouch clips barely lower the native head. Correct their vertical root motion
+// after the mixer, then undo it before the next mixer evaluation.
+{const pre=xUbPre,post=xUbPost;xUbPre=function(M){const X=M.sx;if(X&&X.crouchRestore){X.crouchBone.position.copy(X.crouchRestore);X.crouchRestore=null;}return pre(M);};xUbPost=function(M){post(M);const X=M.sx;if(!M.valorant||!X||X.dd||M.dead)return;const head=X.sc.getObjectByName('Head'),pelvis=X.sc.getObjectByName('Root');X.crouchBone=pelvis;if(!head||!pelvis)return;M.m.updateMatrixWorld(true);const hp=head.getWorldPosition(new THREE.Vector3());if(X.standHead==null)X.standHead=hp.y-M.m.getWorldPosition(new THREE.Vector3()).y;const cb=Math.max(0,Math.min(1,X.cb||0));if(cb<.001)return;const desired=M.m.getWorldPosition(new THREE.Vector3()).y+X.standHead-.45*cb,delta=desired-hp.y;X.crouchRestore=pelvis.position.clone();const p=pelvis.getWorldPosition(new THREE.Vector3());p.y+=delta;pelvis.position.copy(pelvis.parent.worldToLocal(p));pelvis.updateMatrix();M.m.updateMatrixWorld(true);};}
+function xrHitboxes(b,M){
+ if(!b||!b.body||!b.head||!M||!M.sx||M.dead)return;
+ const sc=M.sx.sc,head=sc.getObjectByName('Head'),pelvis=sc.getObjectByName(M.valorant?'Pelvis':'pelvis');
+ if(!head||!pelvis)return;M.m.updateMatrixWorld(true);b.g.updateMatrixWorld(true);
+ const h=b.g.worldToLocal(head.getWorldPosition(new THREE.Vector3())),p=b.g.worldToLocal(pelvis.getWorldPosition(new THREE.Vector3()));
+ b.head.position.copy(h);b.head.position.y+=.08;b.head.scale.setScalar(.78);
+ const top=Math.max(.65,h.y-.13),bottom=.06,height=top-bottom;
+ b.body.position.set(p.x,(top+bottom)/2,p.z);b.body.scale.set(.72,height/1.8,.72);b.body.updateMatrixWorld(true);b.head.updateMatrixWorld(true);
+}
+{const update=xVisB;xVisB=function(b){const r=update.apply(this,arguments);xrHitboxes(b,b&&b.xm);return r;};}
+function xrRagdoll(M){
+ M.m.updateMatrixWorld(true);const sc=M.sx.sc,points=[],by=new Map();
+ sc.traverse(b=>{if(!b.isBone)return;const p=b.getWorldPosition(new THREE.Vector3());const item={b,p,old:p.clone(),q:b.getWorldQuaternion(new THREE.Quaternion()),parent:null,length:0};points.push(item);by.set(b,item);});
+ for(const a of points){a.parent=by.get(a.b.parent)||null;if(a.parent)a.length=a.p.distanceTo(a.parent.p);a.children=points.filter(c=>c.b.parent===a.b);a.child=a.children.find(c=>!/Twst|Twist|Helper|Ndl|Weapon|Camera/.test(c.b.name))||a.children[0];if(a.child)a.dir=a.child.p.clone().sub(a.p).normalize();}
+ const floor=M.m.position.y;for(const a of points)a.old.x-=.025;return {points,floor,time:0};
+}
+function xrRagdollTick(M,dt){
+ if(!M.ragdoll){const pose=[];M.sx.sc.traverse(b=>{if(b.isBone)pose.push([b,b.position.clone(),b.quaternion.clone(),b.scale.clone()]);});M.sx.mx.stopAllAction();for(const [b,p,q,s]of pose){b.position.copy(p);b.quaternion.copy(q);b.scale.copy(s);}M.ragdoll=xrRagdoll(M);}
+ const R=M.ragdoll;R.time+=dt;const steps=Math.max(1,Math.ceil(Math.min(dt,.05)/(1/120))),h=Math.min(dt,.05)/steps;
+ for(let step=0;step<steps;step++){
+  for(const a of R.points){const v=a.p.clone().sub(a.old).multiplyScalar(.985);a.old.copy(a.p);a.p.add(v);a.p.y-=9.81*h*h;let floor=R.floor;try{floor=groundAt(a.p.x,a.p.z,.08,R.floor+.1);}catch(e){}a.floor=floor;}
+  for(let iteration=0;iteration<8;iteration++){
+   for(const a of R.points)if(a.parent&&a.length>1e-5){const d=a.p.clone().sub(a.parent.p),len=d.length();if(len>1e-8){d.multiplyScalar((len-a.length)/len*.5);a.p.sub(d);a.parent.p.add(d);}}
+   for(const a of R.points){const floor=a.floor;const radius=/Head|head/.test(a.b.name)?.12:.045;if(a.p.y<floor+radius){a.p.y=floor+radius;a.old.x+=(a.p.x-a.old.x)*.28;a.old.z+=(a.p.z-a.old.z)*.28;}}
+  }
+ }
+ // Rebuild each bone from the solved world-space joints, preserving its original roll.
+ for(const a of R.points){const parent=a.b.parent;parent.updateWorldMatrix(true,false);a.b.position.copy(parent.worldToLocal(a.p.clone()));let q=a.q.clone();if(a.child&&a.dir){const dir=a.child.p.clone().sub(a.p).normalize();q.premultiply(new THREE.Quaternion().setFromUnitVectors(a.dir,dir));}a.b.quaternion.copy(parent.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(q));a.b.updateMatrixWorld(true);}
+ return R.time<2.8;
+}
+{const death=xUbDead;xUbDead=function(M,dt){return M&&M.sx&&M.sx.sc?xrRagdollTick(M,dt):death(M,dt);};}
+// ---- END REPAIR PASS ----
 
 xReady = true; // every mode is initialised; lobby launches may now start them
 { let rb = null; try { rb = sessionStorage.getItem("vs.retry"); sessionStorage.removeItem("vs.retry"); } catch (e) {} // Retry on the engine error reloaded the page: relaunch the same mode

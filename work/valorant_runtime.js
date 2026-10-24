@@ -57,7 +57,7 @@ function xvAgent(M, kit) {
   XUB_LO.forEach((n) => mk(n,'L',n==='jump'||n==='land')); XUB_UPN.forEach((n) => mk(n,'U',n==='reload'||n==='cast'||n==='throw')); XUB_FU.forEach((n) => mk(n,'C',n!=='plant'));
   [['fire','Pistol_Shoot'],['hit','Hit_Chest'],['hitHead','Hit_Head']].forEach(([n,c]) => { const a=mx.clipAction(kit.A[c]); a.blendMode=THREE.AdditiveAnimationBlendMode; a.setLoop(THREE.LoopOnce,1); X.ad[n]=a; });
   X.a.idle.play(); X.a.aim.play(); X.w.idle = X.w.aim = 1; mx.update(.01); M.m.updateMatrixWorld(true);
-  const hand = bone('R_Hand'); if (hand && M.gun) { const hold = new THREE.Group(), p=new THREE.Vector3(),q=new THREE.Quaternion(),s=new THREE.Vector3(); new THREE.Matrix4().copy(M.m.matrixWorld).invert().multiply(hand.matrixWorld).decompose(p,q,s); hold.quaternion.copy(q.invert()); hold.scale.set(1/s.x,1/s.y,1/s.z); hand.add(hold); hold.add(M.gun); M.gun.position.set(0,0,.03); M.gun.rotation.x=0; }
+  const hand = bone('R_Hand'); if (hand && M.gun) { const hold = new THREE.Group(), p=new THREE.Vector3(),q=new THREE.Quaternion(),s=new THREE.Vector3(); new THREE.Matrix4().copy(M.m.matrixWorld).invert().multiply(hand.matrixWorld).decompose(p,q,s); hold.quaternion.copy(q.invert()); hold.scale.set(1/s.x,1/s.y,1/s.z); hand.add(hold); hold.add(M.gun); M.gun.position.set(0,0,.03); M.gun.rotation.set(0,0,0); M.weaponHolder=hold; }
   X.acts=X.a; M.ub=1; M.sx=X; M.valorant=1; M.xAt=[]; M.solOwn=()=>{M.solOwn=null;}; XSOL.mx.push(M);
 }
 { const base = xUb; xUb = function(M) { base(M); const ag=xvAgentName(M.nm); xvAgentLoad(ag).then((kit)=>xvAgent(M,kit)).catch(()=>{}); }; }
@@ -79,7 +79,7 @@ function xvFPLoad(ag,w) {
     const am=new THREE.AnimationMixer(sc),gm=new THREE.AnimationMixer(ws),ac={},gc={};const fclips=anims.filter((g,i)=>/^FP_/.test(files[i])).flatMap(g=>g.animations),gclips=weapon.animations.concat(anims.filter((g,i)=>/^GN_/.test(files[i])).flatMap(g=>g.animations));
     fclips.forEach(c=>ac[c.name]=am.clipAction(c));gclips.forEach(c=>gc[c.name]=gm.clipAction(c));
     const F={root,sc,ws,am,gm,ac,gc,entries,ag,w,kind:null,age:0};xvFPPlay(F,'idle');am.update(0);gm.update(0);sc.updateMatrixWorld(true);
-    const cam=sc.getObjectByName('Camera');const pos=cam?cam.getWorldPosition(new THREE.Vector3()):new THREE.Vector3(0,1.67,0);pos.applyAxisAngle(new THREE.Vector3(0,1,0),Math.PI/2);root.position.copy(pos).negate();F.origin=root.position.clone();xvFPPlay(F,'equip');return F;
+    const cam=sc.getObjectByName('Camera');const pos=cam?cam.getWorldPosition(new THREE.Vector3()):new THREE.Vector3(0,1.67,0);root.position.copy(pos).negate();F.origin=root.position.clone();xvFPPlay(F,'equip');return F;
   });
 }
 function xvFPClear(F){if(!F)return;camera.remove(F.root);F.am.stopAllAction();F.gm.stopAllAction();F.root.traverse(o=>{if(o.isMesh)[].concat(o.material||[]).forEach(m=>m.dispose());});}

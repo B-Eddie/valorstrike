@@ -8,7 +8,9 @@ na='// ---- ORIGINAL VALORANT MAPS ----';nb='// ---- END ORIGINAL VALORANT MAPS 
 if na in s:s=s[:s.index(na)]+s[s.index(nb)+len(nb):]
 fa='// ---- VALORANT FEEL ----';fb='// ---- END VALORANT FEEL ----'
 if fa in s:s=s[:s.index(fa)]+s[s.index(fb)+len(fb):]
-block+='\n'+(root/'work/native_maps_runtime.js').read_text()+'\n'+(root/'work/feel_runtime.js').read_text();mark='xReady = true; // every mode is initialised; lobby launches may now start them';s=s.replace(mark,block+'\n'+mark)
+block+='\n'+(root/'work/native_maps_runtime.js').read_text()+'\n'+(root/'work/feel_runtime.js').read_text();ra='// Repair pass: bone-following damage volumes and joint-constrained corpse physics.';rb='// ---- END REPAIR PASS ----'
+if ra in s:s=s[:s.index(ra)]+s[s.index(rb)+len(rb):]
+block+='\n'+(root/'work/repair_runtime.js').read_text();mark='xReady = true; // every mode is initialised; lobby launches may now start them';s=s.replace(mark,block+'\n'+mark)
 if '<script src="models/valorant/manifest.js"></script>' not in s:s=s.replace('<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>','<script src="models/valorant/manifest.js"></script>\n<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>')
 # Find the actual three script tag, which may use an onerror handler.
 if '<script src="models/valorant/manifest.js"></script>' not in s:s=s.replace('<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js"></script>','<script src="models/valorant/manifest.js"></script>\n<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js"></script>')
@@ -34,4 +36,7 @@ for name in ['p','q']:
 for src in ['models/valorant/weapon-calibration.js','vendor/valorant-feel.js']:
  if '<script src="'+src+'"></script>' not in s:s=s.replace('<script src="models/valorant/manifest.js"></script>', '<script src="models/valorant/manifest.js"></script>\n<script src="'+src+'"></script>')
 s=re.sub(r'\n{3,}(?=// ---- VALORANT ASSET INTEGRATION ----)', '\n\n', s)
+# Preserve elevation when handing the visible rig and weapon to corpse animation.
+s=s.replace('c.m.position.set(p.x, 0, p.z)', 'c.m.position.set(p.x, p.y, p.z)')
+s=s.replace('gn.position.set(p.x + Math.sin(ry + 1.2) * 0.7, 0.05, p.z + Math.cos(ry + 1.2) * 0.7)', 'gn.position.set(p.x + Math.sin(ry + 1.2) * 0.7, p.y + 0.05, p.z + Math.cos(ry + 1.2) * 0.7)')
 p.write_text(s)
