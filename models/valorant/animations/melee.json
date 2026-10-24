@@ -1,0 +1,167 @@
+{
+  "WEAPONS_ANIMS_JSON": {
+    "Animations": [
+      {
+        "Name": "FP_Core_Melee_S0_Tactical_IdleAdd",
+        "File": "FP_Melee",
+        "Translatable": "Idle",
+        "IsHeldDefault": true,
+        "WeaponAnimName": "Idle",
+        "Path": "../uploads/models/agents_fp/animations/weapons/melee/",
+        "Type": "External",
+        "SequenceLength": 2
+      },
+      {
+        "Name": "FP_Core_Melee_S0_Tactical_Equip",
+        "File": "FP_Melee",
+        "Translatable": "Equip",
+        "WeaponAnimName": "Idle",
+        "Path": "../uploads/models/agents_fp/animations/weapons/melee/",
+        "Type": "External",
+        "SequenceLength": 1.6666666
+      },
+      {
+        "Name": "FP_Core_Melee_S0_Tactical_Inspect",
+        "File": "FP_Melee",
+        "Translatable": "Inspect",
+        "WeaponAnimName": "Idle",
+        "Path": "../uploads/models/agents_fp/animations/weapons/melee/",
+        "Type": "External",
+        "SequenceLength": 3.2166667
+      },
+      {
+        "Name": "FP_Core_Melee_S0_Tactical_Attack1",
+        "File": "FP_Melee",
+        "Translatable": "Attack 1",
+        "WeaponAnimName": "Idle",
+        "Path": "../uploads/models/agents_fp/animations/weapons/melee/",
+        "Type": "External",
+        "SequenceLength": 1.9166666
+      },
+      {
+        "Name": "FP_Core_Melee_S0_Tactical_Attack2",
+        "File": "FP_Melee",
+        "Translatable": "Attack 2",
+        "WeaponAnimName": "Idle",
+        "Path": "../uploads/models/agents_fp/animations/weapons/melee/",
+        "Type": "External",
+        "SequenceLength": 1.9166666
+      },
+      {
+        "Name": "FP_Core_Melee_S0_Tactical_Attack3",
+        "File": "FP_Melee",
+        "Translatable": "Attack 3",
+        "WeaponAnimName": "Idle",
+        "Path": "../uploads/models/agents_fp/animations/weapons/melee/",
+        "Type": "External",
+        "SequenceLength": 1.9166666
+      },
+      {
+        "Name": "FP_Core_Melee_S0_Tactical_Attack4",
+        "File": "FP_Melee",
+        "Translatable": "Attack 4",
+        "WeaponAnimName": "Idle",
+        "Path": "../uploads/models/agents_fp/animations/weapons/melee/",
+        "Type": "External",
+        "SequenceLength": 1.9166666
+      },
+      {
+        "Name": "FP_Core_Melee_S0_Tactical_Attack5",
+        "File": "FP_Melee",
+        "Translatable": "Attack 5",
+        "WeaponAnimName": "Idle",
+        "Path": "../uploads/models/agents_fp/animations/weapons/melee/",
+        "Type": "External",
+        "SequenceLength": 1.9166666
+      },
+      {
+        "Name": "FP_Core_Melee_S0_Tactical_Attack_Alt",
+        "File": "FP_Melee",
+        "Translatable": "Alt Attack",
+        "WeaponAnimName": "Idle",
+        "Path": "../uploads/models/agents_fp/animations/weapons/melee/",
+        "Type": "External",
+        "SequenceLength": 2.1666667
+      }
+    ]
+  },
+  "MODEL_HELD_JSON": {
+    "Model": {
+      "Path": "../uploads/models/weapons/melee/standard/",
+      "Name": "melee.glb"
+    },
+    "Settings": {
+      "FOV": 12.5,
+      "FireRate": 2,
+      "FireRateAlt": 1,
+      "EquipLength": 0.6,
+      "ComboTime": 0.75,
+      "AutomaticWeapon": true,
+      "CameraPosition": {
+        "X": -0.10575,
+        "Y": 0,
+        "Z": 2
+      },
+      "OrbitTarget": {
+        "X": -0.10575,
+        "Y": 0,
+        "Z": 0
+      },
+      "ShadowHeight": -0.15,
+      "Shadows": false,
+      "FP": {
+        "Rotation": {
+          "X": 0,
+          "Y": 90,
+          "Z": -90
+        }
+      }
+    },
+    "Keybinds": [
+      {
+        "Type": "CLICK_MELEE",
+        "Translatable": "Attack",
+        "Sequence": [
+          "FP_Core_Melee_S0_Tactical_Attack1",
+          "FP_Core_Melee_S0_Tactical_Attack2",
+          "FP_Core_Melee_S0_Tactical_Attack3"
+        ]
+      },
+      {
+        "Type": "ALT_CLICK",
+        "Translatable": "Alt Attack",
+        "Animation": "FP_Core_Melee_S0_Tactical_Attack_Alt"
+      },
+      {
+        "Type": "KEYBOARD_EQUIP_MELEE",
+        "Translatable": "Equip",
+        "Animation": "FP_Core_Melee_S0_Tactical_Equip"
+      },
+      {
+        "Type": "KEYBOARD_INSPECT",
+        "Translatable": "Inspect",
+        "Animation": "FP_Core_Melee_S0_Tactical_Inspect"
+      }
+    ],
+    "Animations": [
+      {
+        "Name": "Idle",
+        "Translatable": "Idle",
+        "FP": true,
+        "Type": "Internal"
+      }
+    ],
+    "Materials": [
+      {
+        "Name": "EQ_Melee_S0_MI",
+        "Type": "PBR",
+        "DF": "../uploads/models/weapons/melee/standard/textures/df.png",
+        "ORM": "../uploads/models/weapons/melee/standard/textures/orm.png",
+        "EM": "../uploads/models/weapons/melee/standard/textures/em.png",
+        "NM": "../uploads/models/weapons/melee/standard/textures/nm.png",
+        "Metallic": 1,
+        "Roughness": 1
+      }
+    ]
+  }
+}

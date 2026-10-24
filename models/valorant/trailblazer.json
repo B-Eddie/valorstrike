@@ -1,0 +1,184 @@
+{
+  "Model": {
+    "Path": "../uploads/models/abilities/trailblazer/",
+    "Name": "trailblazer.glb"
+  },
+  "Settings": {
+    "FOV": 45,
+    "CameraPosition": {
+      "X": 0,
+      "Y": 0.6,
+      "Z": 2
+    },
+    "OrbitTarget": {
+      "X": 0,
+      "Y": 0.6,
+      "Z": 0
+    },
+    "ShadowHeight": -0.01
+  },
+  "Animations": [
+    {
+      "Name": "Idle",
+      "Translatable": "Default Pose",
+      "Type": "Internal"
+    },
+    {
+      "Name": "ABTP_Guide_S0_Q_Wolf_Idle",
+      "Translatable": "Idle",
+      "Type": "Internal"
+    },
+    {
+      "Name": "ABTP_Guide_S0_Q_Wolf_Jump",
+      "Translatable": "Jump",
+      "Type": "Internal"
+    },
+    {
+      "Name": "ABTP_Guide_S0_Q_Wolf_Jump_Loop",
+      "Translatable": "Jump Loop",
+      "Type": "Internal"
+    },
+    {
+      "Name": "ABTP_Guide_S0_Q_Wolf_Jump_Land_to_Idle",
+      "Translatable": "Land to idle",
+      "Type": "Internal"
+    },
+    {
+      "Name": "ABTP_Guide_S0_Q_Wolf_Jump_Land",
+      "Translatable": "Land",
+      "Type": "Internal"
+    },
+    {
+      "Name": "ABTP_Guide_S0_Q_Wolf_Attack_Intro",
+      "Translatable": "Attack Intro",
+      "Type": "Internal"
+    },
+    {
+      "Name": "ABTP_Guide_S0_Q_Wolf_Attack_Loop",
+      "Translatable": "Attack Loop",
+      "Type": "Internal"
+    },
+    {
+      "Name": "ABTP_Guide_S0_Q_Wolf_TurnW_45",
+      "Translatable": "Turn left 45 degrees",
+      "Type": "Internal"
+    },
+    {
+      "Name": "ABTP_Guide_S0_Q_Wolf_TurnW_90",
+      "Translatable": "Turn left 90 degrees",
+      "Type": "Internal"
+    },
+    {
+      "Name": "ABTP_Guide_S0_Q_Wolf_TurnW_135",
+      "Translatable": "Turn left 135 degrees",
+      "Type": "Internal"
+    },
+    {
+      "Name": "ABTP_Guide_S0_Q_Wolf_TurnE_45",
+      "Translatable": "Turn right 45 degrees",
+      "Type": "Internal"
+    },
+    {
+      "Name": "ABTP_Guide_S0_Q_Wolf_TurnE_90",
+      "Translatable": "Turn right 90 degrees",
+      "Type": "Internal"
+    },
+    {
+      "Name": "ABTP_Guide_S0_Q_Wolf_TurnE_135",
+      "Translatable": "Turn right 135 degrees",
+      "Type": "Internal"
+    },
+    {
+      "Name": "ABTP_Guide_S0_Q_Wolf_Walk_N",
+      "Translatable": "Walking facing North",
+      "Type": "Internal"
+    },
+    {
+      "Name": "ABTP_Guide_S0_Q_Wolf_Walk_NW",
+      "Translatable": "Walking facing North West",
+      "Type": "Internal"
+    },
+    {
+      "Name": "ABTP_Guide_S0_Q_Wolf_Walk_W",
+      "Translatable": "Walking facing West",
+      "Type": "Internal"
+    },
+    {
+      "Name": "ABTP_Guide_S0_Q_Wolf_Walk_SW",
+      "Translatable": "Walking backwards towards South West",
+      "Type": "Internal"
+    },
+    {
+      "Name": "ABTP_Guide_S0_Q_Wolf_Walk_S",
+      "Translatable": "Walking backwards towards South",
+      "Type": "Internal"
+    },
+    {
+      "Name": "ABTP_Guide_S0_Q_Wolf_Walk_SE",
+      "Translatable": "Walking backwards towards South East",
+      "Type": "Internal"
+    },
+    {
+      "Name": "ABTP_Guide_S0_Q_Wolf_Walk_E",
+      "Translatable": "Walking facing East",
+      "Type": "Internal"
+    },
+    {
+      "Name": "ABTP_Guide_S0_Q_Wolf_Walk_NE",
+      "Translatable": "Walking facing North East",
+      "Type": "Internal"
+    },
+    {
+      "Name": "ABTP_Guide_S0_Q_Wolf_Run_N",
+      "Translatable": "Running facing North",
+      "Type": "Internal"
+    },
+    {
+      "Name": "ABTP_Guide_S0_Q_Wolf_Run_NW",
+      "Translatable": "Running facing North West",
+      "Type": "Internal"
+    },
+    {
+      "Name": "ABTP_Guide_S0_Q_Wolf_Run_W",
+      "Translatable": "Running facing West",
+      "Type": "Internal"
+    },
+    {
+      "Name": "ABTP_Guide_S0_Q_Wolf_Run_SW",
+      "Translatable": "Running backwards towards South West",
+      "Type": "Internal"
+    },
+    {
+      "Name": "ABTP_Guide_S0_Q_Wolf_Run_S",
+      "Translatable": "Running backwards towards South",
+      "Type": "Internal"
+    },
+    {
+      "Name": "ABTP_Guide_S0_Q_Wolf_Run_SE",
+      "Translatable": "Running backwards towards South East",
+      "Type": "Internal"
+    },
+    {
+      "Name": "ABTP_Guide_S0_Q_Wolf_Run_E",
+      "Translatable": "Running facing East",
+      "Type": "Internal"
+    },
+    {
+      "Name": "ABTP_Guide_S0_Q_Wolf_Run_NE",
+      "Translatable": "Running facing North East",
+      "Type": "Internal"
+    }
+  ],
+  "Materials": [
+    {
+      "Name": "Uber_Guide_Wolf_AbilityQ_S0_MI",
+      "Type": "PBR",
+      "DF": "../uploads/models/abilities/trailblazer/textures/df.png",
+      "ORM": "../uploads/models/abilities/trailblazer/textures/orm.png",
+      "EM": "../uploads/models/abilities/trailblazer/textures/em.png",
+      "NM": "../uploads/models/abilities/trailblazer/textures/nm.png",
+      "Metallic": 1,
+      "Roughness": 1
+    }
+  ]
+}

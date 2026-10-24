@@ -1,0 +1,79 @@
+{
+  "Model": {
+    "Path": "../uploads/models/abilities/owl-drone/",
+    "Name": "owl-drone.glb"
+  },
+  "Settings": {
+    "FOV": 33,
+    "CameraPosition": {
+      "X": 0,
+      "Y": 1,
+      "Z": 0
+    },
+    "OrbitTarget": {
+      "X": 0,
+      "Y": 0,
+      "Z": 0
+    },
+    "FP": {
+      "Bone": "Gauntlet_Socket",
+      "Rotation": {
+        "X": 90,
+        "Y": 180,
+        "Z": 0
+      }
+    },
+    "ShadowHeight": -0.1,
+    "UseFPIdle": true
+  },
+  "Keybinds": [
+    {
+      "Type": "CLICK",
+      "Translatable": "Fire",
+      "Animation": "FP_Hunter_S0_E_Deploy"
+    },
+    {
+      "Type": "KEYBOARD_EQUIP_C",
+      "Translatable": "Equip",
+      "Animation": "FP_Hunter_S0_E_Equip"
+    }
+  ],
+  "Animations": [
+    {
+      "Name": "Idle",
+      "Translatable": "Default Pose",
+      "FP": true,
+      "Type": "Internal"
+    },
+    {
+      "Name": "AB_Hunter_S0_E_Equip",
+      "Translatable": "Equip",
+      "FP": true,
+      "Type": "Internal"
+    },
+    {
+      "Name": "AB_Hunter_S0_E_IdleAdd",
+      "Translatable": "Idle",
+      "FP": true,
+      "Type": "Internal"
+    },
+    {
+      "Name": "AB_Hunter_S0_E_Deploy",
+      "Translatable": "Cast",
+      "FP": true,
+      "Type": "Internal"
+    }
+  ],
+  "Materials": [
+    {
+      "Name": "AB_Hunter_E_DroneMode_S0_MI",
+      "Type": "PBR",
+      "DF": "../uploads/models/abilities/owl-drone/textures/df.png",
+      "ORM": "../uploads/models/abilities/owl-drone/textures/orm.png",
+      "EM": "../uploads/models/abilities/owl-drone/textures/em.png",
+      "NM": "../uploads/models/abilities/owl-drone/textures/nm.png",
+      "Metallic": 1,
+      "Roughness": 1
+    }
+  ]
+}

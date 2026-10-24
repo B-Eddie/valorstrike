@@ -1,0 +1,101 @@
+{
+  "Model": {
+    "Path": "../uploads/models/agents_fp/jett_fp/",
+    "Name": "jett_fp.glb"
+  },
+  "Settings": {
+    "Type": "1P",
+    "FOV": 43.383066656235656,
+    "CameraPosition": {
+      "X": 0,
+      "Y": 1,
+      "Z": 0
+    },
+    "OrbitTarget": {
+      "X": 0,
+      "Y": 1,
+      "Z": 0
+    },
+    "CameraParent": "Camera",
+    "ShadowHeight": 0
+  },
+  "Animations": [
+    {
+      "Name": "FP_Wushu_S0_X_Idle",
+      "Translatable": "Idle",
+      "HeldItem": "blade-storm",
+      "IsHeldDefault": true,
+      "WeaponAnimName": "AB_Wushu_S0_X_Idle",
+      "Type": "Internal",
+      "SequenceLength": 3.9833333
+    },
+    {
+      "Name": "FP_Wushu_S0_X_Equip",
+      "Translatable": "Equip",
+      "HeldItem": "blade-storm",
+      "WeaponAnimName": "AB_Wushu_S0_X_Equip",
+      "Type": "Internal",
+      "SequenceLength": 1.6666666
+    },
+    {
+      "Name": "FP_Wushu_S0_X_Attack01",
+      "Translatable": "Attack 1",
+      "HeldItem": "blade-storm",
+      "WeaponAnimName": "AB_Wushu_S0_X_Attack01",
+      "Type": "Internal",
+      "SequenceLength": 0.96666664
+    },
+    {
+      "Name": "FP_Wushu_S0_X_Attack02",
+      "Translatable": "Attack 2",
+      "HeldItem": "blade-storm",
+      "WeaponAnimName": "AB_Wushu_S0_X_Attack02",
+      "Type": "Internal",
+      "SequenceLength": 1.15
+    },
+    {
+      "Name": "FP_Wushu_S0_X_Attack03",
+      "Translatable": "Attack 3",
+      "HeldItem": "blade-storm",
+      "WeaponAnimName": "AB_Wushu_S0_X_Attack03",
+      "Type": "Internal",
+      "SequenceLength": 0.98333335
+    },
+    {
+      "Name": "FP_Wushu_S0_X_Attack04",
+      "Translatable": "Attack 4",
+      "HeldItem": "blade-storm",
+      "WeaponAnimName": "AB_Wushu_S0_X_Attack04",
+      "Type": "Internal",
+      "SequenceLength": 1.0666667
+    },
+    {
+      "Name": "FP_Wushu_S0_X_Attack05",
+      "Translatable": "Attack 5",
+      "HeldItem": "blade-storm",
+      "WeaponAnimName": "AB_Wushu_S0_X_Attack05",
+      "Type": "Internal",
+      "SequenceLength": 0.8666667
+    },
+    {
+      "Name": "FP_Wushu_S0_X_RightClickAttack",
+      "Translatable": "Alt Attack",
+      "HeldItem": "blade-storm",
+      "WeaponAnimName": "AB_Wushu_S0_X_Idle",
+      "Type": "Internal",
+      "SequenceLength": 1.3
+    }
+  ],
+  "Materials": [
+    {
+      "Name": "OverlayMaterialInstance_FP_Wushu_S0_MI",
+      "Type": "PBR",
+      "DF": "../uploads/models/agents_fp/jett_fp/textures/DF.png",
+      "ORM": "../uploads/models/agents_fp/jett_fp/textures/ORM.png",
+      "EM": "../uploads/models/agents_fp/jett_fp/textures/EM.png",
+      "NM": "../uploads/models/agents_fp/jett_fp/textures/NM.png",
+      "Metallic": 1,
+      "Roughness": 1
+    }
+  ]
+}

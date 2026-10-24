@@ -1,0 +1,89 @@
+{
+  "Model": {
+    "Path": "../uploads/models/abilities/showstopper/",
+    "Name": "showstopper.glb"
+  },
+  "Settings": {
+    "FOV": 33,
+    "FireRate": 1,
+    "EquipLength": 1.4,
+    "CameraPosition": {
+      "X": 0,
+      "Y": 0.2,
+      "Z": 2
+    },
+    "OrbitTarget": {
+      "X": 0,
+      "Y": 0.2,
+      "Z": 0
+    },
+    "ShadowHeight": -0.15,
+    "UseFPIdle": true
+  },
+  "Keybinds": [
+    {
+      "Type": "CLICK",
+      "Translatable": "Fire",
+      "Animation": "FP_Clay_S0_X_RocketLauncher_Fire"
+    },
+    {
+      "Type": "KEYBOARD_EQUIP_X",
+      "Translatable": "Equip",
+      "Animation": "FP_Clay_S0_X_RocketLauncher_Equip"
+    }
+  ],
+  "Animations": [
+    {
+      "Name": "Idle",
+      "Translatable": "Default Pose",
+      "FP": true,
+      "Type": "Internal"
+    },
+    {
+      "Name": "AB_Clay_S0_X_RocketLauncher_Idle",
+      "Translatable": "Idle",
+      "FP": true,
+      "Type": "Internal"
+    },
+    {
+      "Name": "AB_Clay_S0_X_RocketLauncher_Fire",
+      "Translatable": "Fire",
+      "FP": true,
+      "Type": "Internal"
+    },
+    {
+      "Name": "AB_Clay_S0_X_RocketLauncher_Equip",
+      "Translatable": "Equip",
+      "FP": true,
+      "Type": "Internal"
+    }
+  ],
+  "Materials": [
+    {
+      "Name": "AB_Clay_S0_X_MI",
+      "Type": "PBR",
+      "DF": "../uploads/models/abilities/showstopper/textures/df.png",
+      "ORM": "../uploads/models/abilities/showstopper/textures/orm.png",
+      "EM": "../uploads/models/abilities/showstopper/textures/em.png",
+      "NM": "../uploads/models/abilities/showstopper/textures/nm.png",
+      "Metallic": 1,
+      "Roughness": 1
+    },
+    {
+      "Name": "Display",
+      "Type": "RazeDisplay",
+      "DF": "../uploads/models/abilities/showstopper/textures/screen_df.png",
+      "EM": "../uploads/models/abilities/showstopper/textures/screen_em.png",
+      "Metallic": 1,
+      "Roughness": 1,
+      "Emissive": {
+        "Color": {
+          "R": 1,
+          "G": 0.3,
+          "B": 0
+        },
+        "Intensity": 3
+      }
+    }
+  ]
+}

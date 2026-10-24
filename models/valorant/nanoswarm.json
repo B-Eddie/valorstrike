@@ -1,0 +1,86 @@
+{
+  "Model": {
+    "Path": "../uploads/models/abilities/nanoswarm/",
+    "Name": "nanoswarm.glb"
+  },
+  "Settings": {
+    "FOV": 22.5,
+    "CameraPosition": {
+      "X": 0,
+      "Y": 0.1,
+      "Z": 1
+    },
+    "OrbitTarget": {
+      "X": 0,
+      "Y": 0.1,
+      "Z": 0
+    },
+    "FP": {
+      "Rotation": {
+        "X": 0,
+        "Y": 0,
+        "Z": 0
+      }
+    },
+    "ShadowHeight": -0.01,
+    "UseFPIdle": true
+  },
+  "Keybinds": [
+    {
+      "Type": "CLICK",
+      "Translatable": "Throw",
+      "Animation": "FP_Core_Grenade_OverhandThrow"
+    },
+    {
+      "Type": "ALT_CLICK",
+      "Translatable": "Short Throw",
+      "Animation": "FP_Killjoy_S0_4_Swarm_UnderhandThrow"
+    },
+    {
+      "Type": "KEYBOARD_EQUIP_C",
+      "Translatable": "Equip",
+      "Animation": "FP_Killjoy_S0_4_Grenade_Equip"
+    }
+  ],
+  "Animations": [
+    {
+      "Name": "Idle",
+      "Translatable": "Default Pose",
+      "Type": "Internal"
+    },
+    {
+      "Name": "ABTP_Killjoy_S0_4_SwarmGrenade_Deploy",
+      "Translatable": "Cast",
+      "Type": "Internal"
+    },
+    {
+      "Name": "ABTP_Killjoy_S0_4_SwarmGrenade_Activate",
+      "Translatable": "Activate",
+      "Type": "Internal"
+    },
+    {
+      "Name": "AB_Killjoy_S0_4_Swarm_Grenade_Equip",
+      "Translatable": "Equip",
+      "FP": true,
+      "Type": "Internal"
+    },
+    {
+      "Name": "AB_Killjoy_S0_4_Swarm_Grenade_IdlePose",
+      "Translatable": "Idle",
+      "FP": true,
+      "Type": "Internal"
+    }
+  ],
+  "Materials": [
+    {
+      "Name": "AB_Killjoy_S0_4_SwarmGrenade_MI",
+      "Type": "PBR",
+      "DF": "../uploads/models/abilities/nanoswarm/textures/df.png",
+      "ORM": "../uploads/models/abilities/nanoswarm/textures/orm.png",
+      "EM": "../uploads/models/abilities/nanoswarm/textures/em.png",
+      "NM": "../uploads/models/abilities/nanoswarm/textures/nm.png",
+      "Metallic": 1,
+      "Roughness": 1
+    }
+  ]
+}

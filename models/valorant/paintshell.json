@@ -1,0 +1,102 @@
+{
+  "Model": {
+    "Path": "../uploads/models/abilities/paintshell/",
+    "Name": "paintshell.glb"
+  },
+  "Settings": {
+    "FOV": 22.5,
+    "FireRate": 1,
+    "EquipLength": 0.8,
+    "CameraPosition": {
+      "X": 0,
+      "Y": 0,
+      "Z": 1
+    },
+    "OrbitTarget": {
+      "X": 0,
+      "Y": 0,
+      "Z": 0
+    },
+    "ShadowHeight": -0.09,
+    "UseFPIdle": true
+  },
+  "FPExclusiveObjects": [
+    "AB_Clay_S0_4_Pin_Staticmeshmo"
+  ],
+  "Keybinds": [
+    {
+      "Type": "CLICK",
+      "Translatable": "Throw",
+      "Animation": "FP_Core_Grenade_OverhandThrow"
+    },
+    {
+      "Type": "ALT_CLICK",
+      "Translatable": "Short Throw",
+      "Animation": "FP_Core_Grenade_UnderhandThrow"
+    },
+    {
+      "Type": "KEYBOARD_EQUIP_E",
+      "Translatable": "Equip",
+      "Animation": "FP_Clay_S0_4_Equip"
+    }
+  ],
+  "Constraints": [
+    {
+      "Type": "ObjectToBone",
+      "Bone": "Pin",
+      "TargetObject": "AB_Clay_S0_4_Skelmeshao",
+      "SourceObject": "AB_Clay_S0_4_Pin_Staticmeshmo",
+      "Offset": {
+        "X": 0,
+        "Y": 0,
+        "Z": 0
+      },
+      "Rotation": {
+        "X": 90,
+        "Y": 0,
+        "Z": 0
+      },
+      "Scale": {
+        "X": 0.75,
+        "Y": 0.75,
+        "Z": 0.5
+      }
+    }
+  ],
+  "Animations": [
+    {
+      "Name": "Idle",
+      "Translatable": "Idle",
+      "FP": true,
+      "Type": "Internal"
+    },
+    {
+      "Name": "AB_Clay_S0_4_Equip",
+      "Translatable": "Equip",
+      "FP": true,
+      "Type": "Internal"
+    }
+  ],
+  "Materials": [
+    {
+      "Name": "FP_Clay_S0_Granade_MI",
+      "Type": "PBR",
+      "DF": "../uploads/models/abilities/paintshell/textures/df.png",
+      "ORM": "../uploads/models/abilities/paintshell/textures/orm.png",
+      "EM": "../uploads/models/abilities/paintshell/textures/em.png",
+      "NM": "../uploads/models/abilities/paintshell/textures/nm.png",
+      "Metallic": 1,
+      "Roughness": 1
+    },
+    {
+      "Name": "Clay_S0_Granade_MI",
+      "Type": "PBR",
+      "DF": "../uploads/models/abilities/paintshell/textures/df.png",
+      "ORM": "../uploads/models/abilities/paintshell/textures/orm.png",
+      "EM": "../uploads/models/abilities/paintshell/textures/em.png",
+      "NM": "../uploads/models/abilities/paintshell/textures/nm.png",
+      "Metallic": 1,
+      "Roughness": 1
+    }
+  ]
+}

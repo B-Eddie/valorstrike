@@ -1,3 +1,12 @@
+VALORANT replacement assets (models/valorant/)
+=============================================
+
+The active replacement models and native animations are Riot Games assets,
+NOT CC0. Source URLs, processing details, limitations and hashes are recorded in
+models/valorant/SOURCES.md and models/valorant/SHA256SUMS.
+The CC0 descriptions below apply only to the retained fallback files at the
+legacy paths, and to the existing movement animation library.
+
 3D gun models used by this game (models/*.glb)
 ==============================================
 

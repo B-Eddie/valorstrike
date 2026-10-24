@@ -1,0 +1,32 @@
+{
+  "Model": {
+    "Path": "../uploads/models/abilities/trademark/",
+    "Name": "trademark.glb"
+  },
+  "Settings": {
+    "FOV": 10,
+    "CameraPosition": {
+      "X": 0,
+      "Y": 0,
+      "Z": 2
+    },
+    "OrbitTarget": {
+      "X": 0,
+      "Y": 0,
+      "Z": 0
+    },
+    "ShadowHeight": -0.05
+  },
+  "Materials": [
+    {
+      "Name": "AB_Deadeye_S0_Trap_MI",
+      "Type": "PBR",
+      "DF": "../uploads/models/abilities/trademark/textures/df.png",
+      "ORM": "../uploads/models/abilities/trademark/textures/orm.png",
+      "EM": "../uploads/models/abilities/trademark/textures/em.png",
+      "NM": "../uploads/models/abilities/trademark/textures/nm.png",
+      "Metallic": 1,
+      "Roughness": 1
+    }
+  ]
+}

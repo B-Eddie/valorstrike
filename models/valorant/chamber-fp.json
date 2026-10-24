@@ -1,0 +1,181 @@
+{
+  "Model": {
+    "Path": "../uploads/models/agents_fp/chamber_fp/",
+    "Name": "chamber_fp.glb"
+  },
+  "Settings": {
+    "Type": "1P",
+    "FOV": 43.383066656235656,
+    "CameraPosition": {
+      "X": 0,
+      "Y": 1,
+      "Z": 0
+    },
+    "CameraParent": "Camera",
+    "ShadowHeight": 0
+  },
+  "Animations": [
+    {
+      "Name": "FP_Deadeye_S0_X_Ultimate_Idle",
+      "Translatable": "Idle",
+      "HeldItem": "tour-de-force",
+      "IsHeldDefault": true,
+      "WeaponAnimName": "AB_Deadeye_S0_X_Ultimate_Idle",
+      "Type": "Internal",
+      "SequenceLength": 3
+    },
+    {
+      "Name": "FP_Deadeye_S0_X_Ultimate_Equip",
+      "Translatable": "Equip",
+      "HeldItem": "tour-de-force",
+      "WeaponAnimName": "AB_Deadeye_S0_X_Ultimate_Equip",
+      "Type": "Internal",
+      "SequenceLength": 3
+    },
+    {
+      "Name": "FP_Deadeye_S0_X_Ultimate_Fire",
+      "Translatable": "Fire",
+      "HeldItem": "tour-de-force",
+      "WeaponAnimName": "AB_Deadeye_S0_X_Ultimate_Fire",
+      "Type": "Internal",
+      "SequenceLength": 2.6166666
+    },
+    {
+      "Name": "FP_Deadeye_S0_X_Ultimate_Inspect",
+      "Translatable": "Inspect",
+      "HeldItem": "tour-de-force",
+      "WeaponAnimName": "AB_Deadeye_S0_X_Ultimate_Inspect",
+      "Type": "Internal",
+      "SequenceLength": 4.1666665
+    },
+    {
+      "Name": "FP_Deadeye_S0_Q_DestabilizePistol_Idle",
+      "Translatable": "Idle",
+      "HeldItem": "headhunter",
+      "IsHeldDefault": true,
+      "WeaponAnimName": "Idle",
+      "Type": "Internal",
+      "SequenceLength": 3
+    },
+    {
+      "Name": "FP_Deadeye_S0_Q_DestabilizePistol_Equip",
+      "Translatable": "Equip",
+      "HeldItem": "headhunter",
+      "WeaponAnimName": "AB_Deadeye_S0_Q_DestabilizePistol_Equip",
+      "Type": "Internal",
+      "SequenceLength": 1
+    },
+    {
+      "Name": "FP_Deadeye_S0_Q_DestabilizePistol_Fire",
+      "Translatable": "Fire",
+      "HeldItem": "headhunter",
+      "WeaponAnimName": "AB_Deadeye_S0_Q_DestabilizePistol_Fire",
+      "Type": "Internal",
+      "SequenceLength": 0.8333333
+    },
+    {
+      "Name": "FP_Deadeye_S0_Q_DestabilizePistol_Inspect",
+      "Translatable": "Inspect",
+      "HeldItem": "headhunter",
+      "WeaponAnimName": "AB_Deadeye_S0_Q_DestabilizePistol_Inspect",
+      "Type": "Internal",
+      "SequenceLength": 3.2
+    },
+    {
+      "Name": "FP_Deadeye_S0_4_WallTrap_Idle",
+      "Translatable": "Idle Trademark",
+      "HeldItem": "chamber-cards",
+      "Variant": "trademark-card",
+      "IsHeldDefault": true,
+      "WeaponAnimName": "Idle",
+      "Type": "Internal",
+      "SequenceLength": 3
+    },
+    {
+      "Name": "FP_Deadeye_S0_4_WallTrap_Equip",
+      "Translatable": "Equip Trademark",
+      "HeldItem": "chamber-cards",
+      "Variant": "trademark-card",
+      "WeaponAnimName": "Idle",
+      "Type": "Internal",
+      "SequenceLength": 1.1666666
+    },
+    {
+      "Name": "FP_Deadeye_S0_4_WallTrap_Place",
+      "Translatable": "Place Trademark",
+      "HeldItem": "chamber-cards",
+      "Variant": "trademark-card",
+      "WeaponAnimName": "AB_Deadeye_S0_4_WallTrap_Place",
+      "Type": "Internal",
+      "SequenceLength": 0.81666666
+    },
+    {
+      "Name": "FP_Deadeye_S0_E_TetherTP_TraptoTP",
+      "Translatable": "Trademark to Rendezvous",
+      "HeldItem": "chamber-cards",
+      "WeaponAnimName": "AB_Deadeye_S0_E_TetherTP_TraptoTP",
+      "Type": "Internal",
+      "SequenceLength": 1.3333334
+    },
+    {
+      "Name": "FP_Deadeye_S0_E_TetherTP_Idle",
+      "Translatable": "Idle Rendezvous",
+      "HeldItem": "chamber-cards",
+      "Variant": "rendezvous-card",
+      "IsHeldDefault": true,
+      "WeaponAnimName": "Idle",
+      "Type": "Internal",
+      "SequenceLength": 2
+    },
+    {
+      "Name": "FP_Deadeye_S0_E_TetherTP_Equip",
+      "Translatable": "Equip Rendezvous",
+      "HeldItem": "chamber-cards",
+      "Variant": "rendezvous-card",
+      "WeaponAnimName": "AB_Deadeye_S0_E_TetherTP_Equip",
+      "Type": "Internal",
+      "SequenceLength": 1.6666666
+    },
+    {
+      "Name": "FP_Deadeye_S0_E_First_Place_ArmsDown",
+      "Translatable": "Place Rendezvous",
+      "HeldItem": "chamber-cards",
+      "Variant": "rendezvous-card",
+      "WeaponAnimName": "AB_Deadeye_S0_E_TetherTP_First_Place",
+      "Type": "Internal",
+      "SequenceLength": 1.1666666
+    },
+    {
+      "Name": "FP_Deadeye_S0_4_TetherTP_TPtoTrap",
+      "Translatable": "Rendezvous to Trademark",
+      "HeldItem": "chamber-cards",
+      "WeaponAnimName": "AB_Deadeye_S0_4_TetherTP_TPtoTrap",
+      "Type": "Internal",
+      "SequenceLength": 1.3333334
+    }
+  ],
+  "Materials": [
+    {
+      "Name": "FP_Deadeye_S0_MI",
+      "Type": "PBR",
+      "DF": "../uploads/models/agents_fp/chamber_fp/textures/DF.png",
+      "ORM": "../uploads/models/agents_fp/chamber_fp/textures/ORM.png",
+      "EM": "../uploads/models/agents_fp/chamber_fp/textures/EM.png",
+      "NM": "../uploads/models/agents_fp/chamber_fp/textures/NM.png",
+      "Metallic": 1,
+      "Roughness": 1
+    },
+    {
+      "Name": "CS_Deadeye_S0_Glass_clear_MI",
+      "Type": "AgentGlass",
+      "Opacity": 0.1,
+      "Metallic": 1,
+      "Roughness": 1,
+      "Color": {
+        "R": 0,
+        "G": 0,
+        "B": 0
+      }
+    }
+  ]
+}

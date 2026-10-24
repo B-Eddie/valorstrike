@@ -1,0 +1,52 @@
+{
+  "Model": {
+    "Path": "../uploads/models/abilities/blast-pack/",
+    "Name": "blast-pack.glb"
+  },
+  "Settings": {
+    "FOV": 22.5,
+    "CameraPosition": {
+      "X": 0,
+      "Y": 1,
+      "Z": 0
+    },
+    "OrbitTarget": {
+      "X": 0,
+      "Y": 0,
+      "Z": 0
+    },
+    "ShadowHeight": -0.0275
+  },
+  "Materials": [
+    {
+      "Name": "AB_Clay_S0_Q_Satchel_MI",
+      "Type": "PBR",
+      "DF": "../uploads/models/abilities/blast-pack/textures/df.png",
+      "ORM": "../uploads/models/abilities/blast-pack/textures/orm.png",
+      "EM": "../uploads/models/abilities/blast-pack/textures/em.png",
+      "NM": "../uploads/models/abilities/blast-pack/textures/nm.png",
+      "Emissive": {
+        "Color": {
+          "R": 1,
+          "G": 0.350054,
+          "B": 0
+        },
+        "Intensity": 2
+      },
+      "Metallic": 1,
+      "Roughness": 1
+    },
+    {
+      "Name": "AB_Clay_S0_Q_SatchelGlass_MI",
+      "Type": "AgentGlass",
+      "Opacity": 0.75,
+      "Metallic": 1,
+      "Roughness": 0,
+      "Color": {
+        "R": 1,
+        "G": 0.948447,
+        "B": 0.341192
+      }
+    }
+  ]
+}

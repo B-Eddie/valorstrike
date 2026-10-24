@@ -1,0 +1,116 @@
+{
+  "Model": {
+    "Path": "../uploads/models/agents_fp/raze_fp/",
+    "Name": "raze_fp.glb"
+  },
+  "Settings": {
+    "Type": "1P",
+    "FOV": 43.383066656235656,
+    "CameraPosition": {
+      "X": 0,
+      "Y": 1,
+      "Z": 0
+    },
+    "CameraParent": "Camera",
+    "ShadowHeight": 0
+  },
+  "Animations": [
+    {
+      "Name": "FP_Clay_S0_4_Idle",
+      "Translatable": "Idle",
+      "HeldItem": "paintshell",
+      "IsHeldDefault": true,
+      "WeaponAnimName": "Idle",
+      "Type": "Internal",
+      "SequenceLength": 2.4833333
+    },
+    {
+      "Name": "FP_Clay_S0_4_Equip",
+      "Translatable": "Equip",
+      "HeldItem": "paintshell",
+      "WeaponAnimName": "AB_Clay_S0_4_Equip",
+      "Type": "Internal",
+      "SequenceLength": 4.5
+    },
+    {
+      "Name": "FP_Core_Grenade_OverhandThrow",
+      "Translatable": "Throw",
+      "HeldItem": "paintshell",
+      "WeaponAnimName": "Idle",
+      "HideFPExclusive": true,
+      "Type": "Internal",
+      "SequenceLength": 1.0666667
+    },
+    {
+      "Name": "FP_Core_Grenade_UnderhandThrow",
+      "Translatable": "Short Throw",
+      "HeldItem": "paintshell",
+      "WeaponAnimName": "Idle",
+      "HideFPExclusive": true,
+      "Type": "Internal",
+      "SequenceLength": 0.8333333
+    },
+    {
+      "Name": "FP_Clay_S0_E_Idle",
+      "Translatable": "Idle",
+      "HeldItem": "boom-bot",
+      "IsHeldDefault": true,
+      "WeaponAnimName": "AB_Clay_S0_E_Idle",
+      "Type": "Internal",
+      "SequenceLength": 0.96666664
+    },
+    {
+      "Name": "FP_Clay_S0_E_Equip",
+      "Translatable": "Equip",
+      "HeldItem": "boom-bot",
+      "WeaponAnimName": "AB_Clay_S0_E_Equip",
+      "Type": "Internal",
+      "SequenceLength": 1.1
+    },
+    {
+      "Name": "FP_Clay_S0_E_Cast",
+      "Translatable": "Cast",
+      "HeldItem": "boom-bot",
+      "WeaponAnimName": "AB_Clay_S0_E_Idle",
+      "Type": "Internal",
+      "SequenceLength": 0.46666667
+    },
+    {
+      "Name": "FP_Clay_S0_X_RocketLauncher_Idle",
+      "Translatable": "Idle",
+      "HeldItem": "showstopper",
+      "IsHeldDefault": true,
+      "WeaponAnimName": "AB_Clay_S0_X_RocketLauncher_Idle",
+      "Type": "Internal",
+      "SequenceLength": 3.1666667
+    },
+    {
+      "Name": "FP_Clay_S0_X_RocketLauncher_Equip",
+      "Translatable": "Equip",
+      "HeldItem": "showstopper",
+      "WeaponAnimName": "AB_Clay_S0_X_RocketLauncher_Equip",
+      "Type": "Internal",
+      "SequenceLength": 1.9166666
+    },
+    {
+      "Name": "FP_Clay_S0_X_RocketLauncher_Fire",
+      "Translatable": "Fire",
+      "HeldItem": "showstopper",
+      "WeaponAnimName": "AB_Clay_S0_X_RocketLauncher_Fire",
+      "Type": "Internal",
+      "SequenceLength": 0.8333333
+    }
+  ],
+  "Materials": [
+    {
+      "Name": "FP_Clay_S0_MI",
+      "Type": "PBR",
+      "DF": "../uploads/models/agents_fp/raze_fp/textures/DF.png",
+      "ORM": "../uploads/models/agents_fp/raze_fp/textures/ORM.png",
+      "EM": "../uploads/models/agents_fp/raze_fp/textures/EM.png",
+      "NM": "../uploads/models/agents_fp/raze_fp/textures/NM.png",
+      "Metallic": 1,
+      "Roughness": 1
+    }
+  ]
+}

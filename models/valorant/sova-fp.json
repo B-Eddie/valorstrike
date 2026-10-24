@@ -1,0 +1,91 @@
+{
+  "Model": {
+    "Path": "../uploads/models/agents_fp/sova_fp/",
+    "Name": "sova_fp.glb"
+  },
+  "Settings": {
+    "Type": "1P",
+    "FOV": 43.383066656235656,
+    "CameraPosition": {
+      "X": 0,
+      "Y": 1,
+      "Z": 0
+    },
+    "CameraParent": "Camera",
+    "ShadowHeight": 0
+  },
+  "Animations": [
+    {
+      "Name": "FP_Hunter_S0_E_IdleAdd",
+      "Translatable": "Idle",
+      "HeldItem": "owl-drone",
+      "IsHeldDefault": true,
+      "WeaponAnimName": "AB_Hunter_S0_E_IdleAdd",
+      "Type": "Internal",
+      "SequenceLength": 3.3333333
+    },
+    {
+      "Name": "FP_Hunter_S0_E_Equip",
+      "Translatable": "Equip",
+      "HeldItem": "owl-drone",
+      "WeaponAnimName": "AB_Hunter_S0_E_Equip",
+      "Type": "Internal",
+      "SequenceLength": 0.8333333
+    },
+    {
+      "Name": "FP_Hunter_S0_E_Deploy",
+      "Translatable": "Cast",
+      "HeldItem": "owl-drone",
+      "WeaponAnimName": "AB_Hunter_S0_E_Deploy",
+      "Type": "Internal",
+      "SequenceLength": 0.5
+    },
+    {
+      "Name": "FP_Hunter_S0_Q_Bow_IdleAdd",
+      "Translatable": "Idle",
+      "HeldItem": "recon-bolt",
+      "IsHeldDefault": true,
+      "WeaponAnimName": "AB_Hunter_S0_Q_Bow_IdleV2",
+      "Type": "Internal",
+      "SequenceLength": 3.2
+    },
+    {
+      "Name": "FP_Hunter_S0_Q_Bow_EquipV2",
+      "Translatable": "Equip",
+      "HeldItem": "recon-bolt",
+      "WeaponAnimName": "AB_Hunter_S0_Q_Bow_EquipV2",
+      "Type": "Internal",
+      "SequenceLength": 2
+    },
+    {
+      "Name": "FP_Hunter_S0_Q_Bow_Fire",
+      "Translatable": "Fire",
+      "HeldItem": "recon-bolt",
+      "WeaponAnimName": "AB_Hunter_S0_Q_Bow_Shoot",
+      "Type": "Internal",
+      "SequenceLength": 1
+    }
+  ],
+  "Materials": [
+    {
+      "Name": "FP_Hunter_S0_MI",
+      "Type": "PBR",
+      "DF": "../uploads/models/agents_fp/sova_fp/textures/DF.png",
+      "ORM": "../uploads/models/agents_fp/sova_fp/textures/ORM.png",
+      "EM": "../uploads/models/agents_fp/sova_fp/textures/EM.png",
+      "NM": "../uploads/models/agents_fp/sova_fp/textures/NM.png",
+      "Metallic": 1,
+      "Roughness": 1
+    },
+    {
+      "Name": "CS_Hunter_E_GauntletMode_S0_MI",
+      "Type": "PBR",
+      "DF": "../uploads/models/agents/sova/textures/drone_df.png",
+      "ORM": "../uploads/models/agents/sova/textures/drone_orm.png",
+      "EM": "../uploads/models/agents/sova/textures/drone_em.png",
+      "NM": "../uploads/models/agents/sova/textures/drone_nm.png",
+      "Metallic": 1,
+      "Roughness": 1
+    }
+  ]
+}

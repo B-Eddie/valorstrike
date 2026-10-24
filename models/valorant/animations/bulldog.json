@@ -1,0 +1,233 @@
+{
+  "WEAPONS_ANIMS_JSON": {
+    "Animations": [
+      {
+        "Name": "FP_Core_Burst_S0_IdleAdd",
+        "File": "FP_Bulldog",
+        "Translatable": "Idle",
+        "IsHeldDefault": true,
+        "WeaponAnimName": "Idle",
+        "Path": "../uploads/models/agents_fp/animations/weapons/bulldog/",
+        "Type": "External",
+        "SequenceLength": 2.7333333
+      },
+      {
+        "Name": "FP_Core_Burst_S0_Equip",
+        "File": "FP_Bulldog",
+        "Translatable": "Equip",
+        "WeaponAnimName": "GN_Core_Burst_S0_Equip",
+        "Path": "../uploads/models/agents_fp/animations/weapons/bulldog/",
+        "Type": "External",
+        "SequenceLength": 1.4166666
+      },
+      {
+        "Name": "FP_Core_Burst_S0_FireAdd",
+        "File": "FP_Bulldog",
+        "Translatable": "Fire",
+        "WeaponAnimName": "GN_Core_Burst_S0_Fire",
+        "Path": "../uploads/models/agents_fp/animations/weapons/bulldog/",
+        "Type": "External",
+        "SequenceLength": 0.16666667
+      },
+      {
+        "Name": "FP_Core_Burst_S0_Inspect",
+        "File": "FP_Bulldog",
+        "Translatable": "Inspect",
+        "WeaponAnimName": "Idle",
+        "Path": "../uploads/models/agents_fp/animations/weapons/bulldog/",
+        "Type": "External",
+        "SequenceLength": 4.1666665
+      },
+      {
+        "Name": "FP_Core_Burst_S0_Reload",
+        "File": "FP_Bulldog",
+        "Translatable": "Reload",
+        "WeaponAnimName": "GN_Core_Burst_S0_Reload",
+        "Path": "../uploads/models/agents_fp/animations/weapons/bulldog/",
+        "Type": "External",
+        "SequenceLength": 3
+      }
+    ]
+  },
+  "MODEL_HELD_JSON": {
+    "Model": {
+      "Path": "../uploads/models/weapons/bulldog/standard/",
+      "Name": "bulldog.glb"
+    },
+    "Settings": {
+      "FOV": 17.5,
+      "FireRate": 10,
+      "ReloadLength": 2.5,
+      "EquipLength": 1,
+      "AutomaticWeapon": true,
+      "CameraPosition": {
+        "X": -0.044693,
+        "Y": 0,
+        "Z": 2
+      },
+      "OrbitTarget": {
+        "X": -0.044693,
+        "Y": 0,
+        "Z": 0
+      },
+      "ShadowHeight": -0.115,
+      "Shadows": false
+    },
+    "Keybinds": [
+      {
+        "Type": "CLICK",
+        "Translatable": "Fire",
+        "Animation": "FP_Core_Burst_S0_FireAdd"
+      },
+      {
+        "Type": "KEYBOARD_EQUIP_PRIMARY",
+        "Translatable": "Equip",
+        "Animation": "FP_Core_Burst_S0_Equip"
+      },
+      {
+        "Type": "KEYBOARD_INSPECT",
+        "Translatable": "Inspect",
+        "Animation": "FP_Core_Burst_S0_Inspect"
+      },
+      {
+        "Type": "KEYBOARD_RELOAD",
+        "Translatable": "Reload",
+        "Animation": "FP_Core_Burst_S0_Reload"
+      }
+    ],
+    "Constraints": [
+      {
+        "Type": "ObjectToBone",
+        "Bone": "Magazine",
+        "TargetObject": "GN_Burst_S0_Skelmeshao",
+        "SourceObject": "GN_Burst_Magazine_S0_Staticmeshao",
+        "Offset": {
+          "X": 0.170245,
+          "Y": 0,
+          "Z": 0.012449
+        },
+        "Rotation": {
+          "X": 90,
+          "Y": 180,
+          "Z": 0
+        }
+      },
+      {
+        "Type": "ObjectToBone",
+        "Bone": "Reflex",
+        "TargetObject": "GN_Burst_S0_Skelmeshao",
+        "SourceObject": "GN_RedDot_S0_Skelmeshao",
+        "Offset": {
+          "X": 0,
+          "Y": 0,
+          "Z": 0
+        },
+        "Rotation": {
+          "X": 90,
+          "Y": 0,
+          "Z": 0
+        }
+      },
+      {
+        "Type": "ObjectToBone",
+        "Bone": "Bullet1",
+        "TargetObject": "GN_Burst_S0_Skelmeshao",
+        "SourceObject": "Bullet_556_StaticMeshmo",
+        "Offset": {
+          "X": 0,
+          "Y": 0,
+          "Z": 0
+        },
+        "Rotation": {
+          "X": 90,
+          "Y": 0,
+          "Z": 0
+        }
+      },
+      {
+        "Type": "ObjectToBone",
+        "Bone": "Bullet2",
+        "TargetObject": "GN_Burst_S0_Skelmeshao",
+        "SourceObject": "Bullet_556_StaticMeshmo001",
+        "Offset": {
+          "X": 0,
+          "Y": 0,
+          "Z": 0
+        },
+        "Rotation": {
+          "X": 90,
+          "Y": 0,
+          "Z": 0
+        }
+      }
+    ],
+    "Animations": [
+      {
+        "Name": "Idle",
+        "Translatable": "Idle",
+        "FP": true,
+        "Type": "Internal"
+      },
+      {
+        "Name": "GN_Core_Burst_S0_Equip",
+        "File": "GN_Bulldog",
+        "Translatable": "Equip",
+        "FP": true,
+        "Path": "../uploads/models/agents_fp/animations/weapons/bulldog/",
+        "Type": "External"
+      },
+      {
+        "Name": "GN_Core_Burst_S0_Fire",
+        "File": "GN_Bulldog",
+        "Translatable": "Fire",
+        "FP": true,
+        "Path": "../uploads/models/agents_fp/animations/weapons/bulldog/",
+        "Type": "External"
+      },
+      {
+        "Name": "GN_Core_Burst_S0_Reload",
+        "File": "GN_Bulldog",
+        "Translatable": "Reload",
+        "FP": true,
+        "Path": "../uploads/models/agents_fp/animations/weapons/bulldog/",
+        "Type": "External"
+      }
+    ],
+    "Materials": [
+      {
+        "Name": "Burst_S0_MI",
+        "Type": "PBR",
+        "DF": "../uploads/models/weapons/bulldog/standard/textures/df.png",
+        "ORM": "../uploads/models/weapons/bulldog/standard/textures/orm.png",
+        "EM": "../uploads/models/weapons/bulldog/standard/textures/em.png",
+        "NM": "../uploads/models/weapons/bulldog/standard/textures/nm.png",
+        "Metallic": 1,
+        "Roughness": 1
+      },
+      {
+        "Name": "Reddot_S0_MI",
+        "Type": "PBR",
+        "DF": "../uploads/models/weapons/attachments/reddot/reddot_df.png",
+        "ORM": "../uploads/models/weapons/attachments/reddot/reddot_orm.png",
+        "EM": "../uploads/models/weapons/attachments/reddot/reddot_em.png",
+        "NM": "../uploads/models/weapons/attachments/reddot/reddot_nm.png",
+        "Metallic": 1,
+        "Roughness": 1
+      },
+      {
+        "Name": "Tritium_MI",
+        "Type": "Tritium"
+      },
+      {
+        "Name": "Bullets_S0_MI",
+        "Type": "PBR",
+        "DF": "../uploads/models/weapons/attachments/bullets/bullets_df.png",
+        "ORM": "../uploads/models/weapons/attachments/bullets/bullets_orm.png",
+        "EM": "../uploads/models/weapons/attachments/bullets/bullets_em.png",
+        "NM": "../uploads/models/weapons/attachments/bullets/bullets_nm.png",
+        "Metallic": 1,
+        "Roughness": 1
+      }
+    ]
+  }
+}

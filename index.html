@@ -892,7 +892,7 @@ body.x-cbh #game{--ha:#3d8bff;--he:#ff9f1c}
     <h3 id="hLobMs">Daily missions</h3>
     <ul id="xLobMs"></ul>
   </aside>
-  <p class="x-foot">Fan project. Not made by, affiliated with or endorsed by Riot Games. VALORANT is a trademark of Riot Games, Inc. Gun models: Quaternius (Ultimate Guns Pack + Survival Pack, CC0 public domain, quaternius.com / poly.pizza). Agent models + animations: Quaternius (Universal Base Characters, Universal Animation Library 1 + 2, CC0 public domain, quaternius.com). Map props: Quaternius (Ultimate Nature, Medieval Village, Survival, Cyberpunk Game Kit, Modular Streets packs, CC0).</p>
+  <p class="x-foot">Fan project. Not affiliated with or endorsed by Riot Games. VALORANT models, textures and native animations © Riot Games, sourced via Kingdom Archives. Original map scenes from the community Blender ports by Cracker646. Movement animation retargeting and fallback assets: Quaternius (CC0). See models/valorant/SOURCES.md.</p>
   </div>
   <section class="x-q" id="xQueue" aria-label="Queue" hidden>
   <button class="x-qx" id="xqClose" aria-label="Close play panel">×</button>
@@ -1423,6 +1423,8 @@ body.x-cbh #game{--ha:#3d8bff;--he:#ff9f1c}
 <div class="x-cm" id="xCm" aria-hidden="true"><div class="x-cm__c">COMMS</div></div>
 <button type="button" class="x-cmb" id="xCmB" aria-label="Comms wheel: hold, slide, release">COMMS</button>
 <script src="https://unpkg.com/three@0.149.0/build/three.min.js"></script>
+<script src="models/valorant/manifest.js"></script>
+<script src="vendor/three-mesh-bvh.umd.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/utils/SkeletonUtils.js"></script>
 <script>
@@ -2421,9 +2423,9 @@ function xAoe(b, p, r, n, w) {
   const o = new THREE.Vector3(p.x, 0.5, p.z), en = typeof allies === "undefined" || allies.indexOf(b) < 0, by = b.name, e2 = new THREE.Vector3();
   if (en) {
     if (player.hp > 0 && Math.hypot(player.x - p.x, player.z - p.z) < r && los(o, pEye())) hurt(player, n, by);
-    for (const a of allies) { if (!a.alive || !running) continue; const q = a.g.position; if (Math.hypot(q.x - p.x, q.z - p.z) >= r || !los(o, e2.set(q.x, 1.5, q.z))) continue;
+    for (const a of allies) { if (!a.alive || !running) continue; const q = a.g.position; if (Math.hypot(q.x - p.x, q.z - p.z) >= r || !los(o, e2.set(q.x, (q.y || 0) + 1.5, q.z))) continue;
       hurt(a, n, by); if (a.hp <= 0) allyDie(a, by, w); }
-  } else for (const t of bots) { if (!t.alive) continue; const q = t.g.position; if (Math.hypot(q.x - p.x, q.z - p.z) >= r || !los(o, e2.set(q.x, 1.5, q.z))) continue;
+  } else for (const t of bots) { if (!t.alive) continue; const q = t.g.position; if (Math.hypot(q.x - p.x, q.z - p.z) >= r || !los(o, e2.set(q.x, (q.y || 0) + 1.5, q.z))) continue;
     hurt(t, n, by); if (t.hp <= 0.001) kill(t, false, by, w); }
 }
 // spectator follow cam: V (or tap SPECTATING) toggles first person / over-the-shoulder, 3 m back, 0.6 m right
@@ -2435,7 +2437,7 @@ function xTPCam(a, dt) {
   if (xTP.tg !== a) { xTP.tg = a; xTP.init = false; }
   xTP.t -= dt;
   if (xTP.t <= 0) { xTP.t = 0.1; // one raycast at 10 Hz pulls the camera in front of walls
-    const o = xTP.o.set(q.x, 1.75, q.z), dir = xTP.dir.set(-fx * 3 + rx * 0.6, 0.15, -fz * 3 + rz * 0.6), L = dir.length(); dir.normalize();
+    const o = xTP.o.set(q.x, (q.y || 0) + 1.75, q.z), dir = xTP.dir.set(-fx * 3 + rx * 0.6, 0.15, -fz * 3 + rz * 0.6), L = dir.length(); dir.normalize();
     XLR.set(o, dir); XLR.far = L; XLH.length = 0; let d = L; try { const h = XLR.intersectObjects(solids, false, XLH); if (h.length) d = Math.max(0.4, h[0].distance - 0.25); else if (xBoxHit(o, xTP.v.copy(dir).multiplyScalar(L).add(o))) d = 1; } catch (e) {}
     xTP.d = d / L * 3; }
   const k = xTP.d / 3, tx = q.x + (-fx * 3 + rx * 0.6) * k, ty = 1.75 + 0.15 * k, tz = q.z + (-fz * 3 + rz * 0.6) * k, yw = ry + Math.PI;
@@ -3211,13 +3213,8 @@ XGUNS.forEach((w) => {
 // CC0 gun models (Quaternius, see models/LICENSES.txt): fetched once on the first mode launch (xGo), normalized to each procedural gun's
 // length / muzzle / bore so hands, muzzle flash and reload tracks still fit; any weapon whose file fails keeps the procedural XGB model
 var XGM = { ld: false, rdy: false, T: {}, src: {}, live: [], sk: {}, mats: {},
-  F: { Classic: "pistol_p226", Shorty: "shotgun_sawedoff", Frenzy: "pistol_auto", Ghost: "pistol_m1911", Sheriff: "revolver",
-    Stinger: "smg_m3", Spectre: "smg_mp5", Bucky: "shotgun_pump", Judge: "shotgun_tactical",
-    Bulldog: "rifle_carbine", Guardian: "dmr", Phantom: "rifle_carbine", Vandal: "rifle_ak",
-    Marshal: "sniper_bolt", Outlaw: "sniper_tactical", Operator: "sniper_heavy", Ares: "rifle_ak", Odin: "rifle_carbine", Knife: "knife" },
-  // per-weapon variants on a shared file: material tints (by glTF material name) and small add-ons (sup = suppressor, lmg = box mag + bipod)
-  V: { Bulldog: { tint: { Main: 0x8a7656, MainLight: 0x9c8a68 } }, Odin: { tint: { Main: 0x3f4a34, MainLight: 0x4d5a40 }, add: "lmg" },
-    Ares: { tint: { Wood: 0x2c2f33, DarkWood: 0x24272b }, add: "lmg" }, Ghost: { add: "sup" } } };
+  F: { Classic: "valorant/classic", Shorty: "valorant/shorty", Frenzy: "valorant/frenzy", Ghost: "valorant/ghost", Sheriff: "valorant/sheriff", Stinger: "valorant/stinger", Spectre: "valorant/spectre", Bucky: "valorant/bucky", Judge: "valorant/judge", Bulldog: "valorant/bulldog", Guardian: "valorant/guardian", Phantom: "valorant/phantom", Vandal: "valorant/vandal", Marshal: "valorant/marshal", Outlaw: "valorant/outlaw", Operator: "valorant/operator", Ares: "valorant/ares", Odin: "valorant/odin", Knife: "valorant/melee" },
+  V: {} };
 function xGmFiles() { const o = {}; for (const w in XGM.F) o[XGM.F[w]] = "models/" + XGM.F[w] + ".glb"; return o; }
 function xGmLoad() {
   if (XGM.ld) return; XGM.ld = true;
@@ -3226,7 +3223,7 @@ function xGmLoad() {
     const fs = xGmFiles(), ks = Object.keys(fs); let left = ks.length;
     const done = () => { if (--left > 0) return; try { xGmReady(); } catch (e) { console.warn("gun models unusable; keeping procedural guns", e); } };
     const L = new THREE.GLTFLoader();
-    ks.forEach((k) => { try { L.load(fs[k], (g) => { XGM.src[k] = g && g.scene; done(); }, undefined, (e) => { console.warn("gun model failed: " + k, e); done(); }); } catch (e) { done(); } });
+    ks.forEach((k) => { try { L.load(fs[k], (g) => { XV.guns[k] = g; XGM.src[k] = g && xvStatic(g, XV.config[k.split("/").pop()]); done(); }, undefined, (e) => { console.warn("gun model failed: " + k, e); done(); }); } catch (e) { done(); } });
   } catch (e) { console.warn("GLTFLoader unavailable; keeping procedural guns", e); }
 }
 // average height of the vertices in the front 4 % of the gun (the bore line), in root space; root must have no parent
@@ -3249,7 +3246,7 @@ function xGmTpl(w) {
   const cnt = new Map(); // triangles per material: the biggest one carries the weapon skin
   inner.traverse((o) => { if (!o.isMesh) return; o.castShadow = o.receiveShadow = false; if (o.geometry) o.geometry.userData.shared = true; // xDisp keeps shared geometry o.material = Array.isArray(o.material) ? o.material.map((m) => xGmMat(f, m, w)) : xGmMat(f, o.material, w);
     const m = o.material, c = o.geometry.index ? o.geometry.index.count : o.geometry.attributes.position.count; if (!Array.isArray(m)) cnt.set(m, (cnt.get(m) || 0) + c); });
-  if (w === "Knife") rot.rotation.set(-Math.PI / 2, 0, Math.PI / 2, "ZXY"); else rot.rotation.y = Math.PI / 2; // source guns point +X with +Y up; the knife blade points +Y
+  if (w === "Knife") rot.rotation.set(0, -Math.PI / 2, 0); else rot.rotation.y = -Math.PI / 2; // native Valorant weapons point -X
   const V = XGM.V[w], A = V && V.add, tl = A === "sup" ? pl - 0.13 : pl, fz = pb.min.z + (pl - tl); // a suppressed gun leaves room for the can
   T.updateMatrixWorld(true); let gb = new THREE.Box3().setFromObject(T);
   rot.scale.setScalar(tl / Math.max(1e-6, gb.max.z - gb.min.z)); T.updateMatrixWorld(true); gb = new THREE.Box3().setFromObject(T);
@@ -4158,12 +4155,12 @@ function tick(dt) {
   if (mode === "five" && FV.map === "bind") xTpBots(dt);
   const V = THREE.Vector3, defs = XTK.defs; defs.length = 0; let di = 0; // perf pass 9: pooled defender entries, no per-frame objects
   if (alive && !(J.dis > 0)) pEyeTo(xDget(di++, player.x, player.z, player).eye);
-  for (const a of allies) if (a.alive) xDget(di++, a.g.position.x, a.g.position.z, a).eye.set(a.g.position.x, 1.5, a.g.position.z);
-  if (mode === "five" && FV.dm && !FV.tdm) for (const o of bots) if (o.alive) xDget(di++, o.g.position.x, o.g.position.z, o).eye.set(o.g.position.x, 1.5, o.g.position.z); // deathmatch: every bot is a target
+  for (const a of allies) if (a.alive) xDget(di++, a.g.position.x, a.g.position.z, a).eye.set(a.g.position.x, a.g.position.y + 1.5, a.g.position.z);
+  if (mode === "five" && FV.dm && !FV.tdm) for (const o of bots) if (o.alive) xDget(di++, o.g.position.x, o.g.position.z, o).eye.set(o.g.position.x, o.g.position.y + 1.5, o.g.position.z); // deathmatch: every bot is a target
   xTrade(defs);
   for (const b of bots) {
     if (!b.alive || !running || b.nt) continue; // b.nt: online-driven unit (remote player / client puppet), no AI
-    const p = b.g.position, from = b.xFr || (b.xFr = new V()); from.set(p.x, 1.7, p.z);
+    const p = b.g.position, from = b.xFr || (b.xFr = new V()); from.set(p.x, (p.y || 0) + 1.7, p.z);
     let tg = null, td = 1e9, see = false;
     b.xTh = (b.xTh == null ? Math.random() * 0.1 : b.xTh) - dt; // think (target choice + sight) ~10 Hz, staggered per bot
     if (b.xTh > 0 && b.xTt && b.xTt.hp > 0) for (const f of defs) if (f.t === b.xTt) { tg = f; see = b.xSe; td = Math.hypot(f.x - p.x, f.z - p.z); break; }
@@ -4227,7 +4224,7 @@ function tick(dt) {
   // blue teammates: push to B site, fight attackers they can see, defuse if you are dead
   for (const a of allies) {
     if (!a.alive || !running || a.nt) continue;
-    const p = a.g.position, from = a.xFr || (a.xFr = new V()); from.set(p.x, 1.6, p.z);
+    const p = a.g.position, from = a.xFr || (a.xFr = new V()); from.set(p.x, (p.y || 0) + 1.6, p.z);
     let tg = null, td = 1e9;
     a.xTh = (a.xTh == null ? Math.random() * 0.1 : a.xTh) - dt; // think ~10 Hz, staggered: sighted target + nearest enemy
     if (a.xTh <= 0 || (a.xTg && !a.xTg.alive) || (a.xNb && !a.xNb.alive)) {
@@ -4235,7 +4232,7 @@ function tick(dt) {
       for (const b of bots) {
         if (!b.alive) continue;
         const q = b.g.position, d = Math.hypot(q.x - p.x, q.z - p.z);
-        if (d < td && d < 30) { XTK.q.set(q.x, 1.5, q.z); if (los(from, XTK.q)) { a.xTg = b; td = d; } }
+        if (d < td && d < 30) { XTK.q.set(q.x, (q.y || 0) + 1.5, q.z); if (los(from, XTK.q)) { a.xTg = b; td = d; } }
         const d3 = q.distanceTo(p); if (d3 < nd) { nd = d3; a.xNb = b; }
       }
       a.xTh += 0.1; if (a.xTh <= 0) a.xTh = 0.1;
@@ -4410,7 +4407,7 @@ function duelTick(dt) {
   if (du.reload > 0) { du.reload -= dt; if (du.reload <= 0) { const n = Math.min(OP_MAG - du.ammo, du.rsv); du.ammo += n; du.rsv -= n; } }
   const b = duelBot, p = b.g.position, dx = player.x - p.x, dz = player.z - p.z, d = Math.hypot(dx, dz) || 0.01;
   b.g.rotation.y = Math.atan2(dx, dz);
-  const from = DB_FROM.set(p.x, 1.7, p.z), eye = DB_EYE.set(player.x, 1.6 - player.ch + player.y, player.z);
+  const from = DB_FROM.set(p.x, (p.y || 0) + 1.7, p.z), eye = DB_EYE.set(player.x, 1.6 - player.ch + player.y, player.z);
   const see = los(from, eye), R = DB[S.diff], D = DIFF[S.diff];
   b.flip -= dt; if (b.flip <= 0) { b.strafe *= -1; b.flip = 1 + Math.random() * 1.5; }
   let vx = 0, vz = 0;
@@ -4780,7 +4777,7 @@ function xdGlb(name, cb) {
   E = XD_GLB[name] = { wait: [cb] };
   try {
     if (!THREE.GLTFLoader || typeof THREE.GLTFLoader !== "function") { E.wait = null; return; }
-    new THREE.GLTFLoader().load("models/decor/" + name + ".glb", (gl) => { try {
+    new THREE.GLTFLoader().load("models/valorant/environment/" + name + ".glb", (gl) => { try {
       const sc = gl.scene; sc.updateMatrixWorld(true); const parts = [], bb = new THREE.Box3();
       sc.traverse((o) => { if (!o.isMesh) return; const ge = o.geometry.clone(); ge.applyMatrix4(o.matrixWorld); ge.computeBoundingBox(); bb.union(ge.boundingBox);
         const src = o.material, mt = new THREE.MeshLambertMaterial({ color: src.color ? src.color.clone() : 0xffffff, map: src.map || null, vertexColors: !!src.vertexColors, side: src.side, transparent: !!src.transparent, alphaTest: src.alphaTest || 0 });
@@ -8058,7 +8055,7 @@ function okKey(code) {
 const PF_A = new THREE.Vector3(), PF_B = new THREE.Vector3(), PF_C = new THREE.Vector3(); // perf pass 145: per-frame scratch (los does not keep them)
 function okHitBy(o, dt) { // enemies that see a placed device shoot it
   const e = PF_C.set(o.p.x, 0.6, o.p.z);
-  bots.forEach((b) => { if (!b.alive || b.blind > 0 || b.det > 0) return; const q = b.g.position; if (Math.hypot(q.x - e.x, q.z - e.z) < 30 && los(PF_A.set(q.x, 1.7, q.z), e)) o.hp -= 12 * dt; });
+  bots.forEach((b) => { if (!b.alive || b.blind > 0 || b.det > 0) return; const q = b.g.position; if (Math.hypot(q.x - e.x, q.z - e.z) < 30 && los(PF_A.set(q.x, (q.y || 0) + 1.7, q.z), e)) o.hp -= 12 * dt; });
 }
 function okTick(dt) {
   const P = player, alive = P.hp > 0, V = THREE.Vector3;
@@ -8552,7 +8549,7 @@ function cyKeep(W, dt) {
     let b = null; for (let i = 0; i < bots.length; i++) { const o = bots[i]; if (o.alive && o.g && cyD(W, o.g.position.x, o.g.position.z) < 0.5) { b = o; break; } }
     if (b) { b.cnc = Math.max(b.cnc || 0, 2); b.chs = Math.max(b.chs || 0, 2); cyReveal([b], 2); say("Trapwire · " + b.name + " revealed, tethered 2 s", 900); blip(300, 0.3, "square", 0.12); cyRm(W); return false; }
     W.ck -= dt; if (W.ck > 0) return true; W.ck = 0.25; // enemies that see an anchor shoot it (20 HP)
-    let n = 0; for (let i = 0; i < bots.length; i++) { const o = bots[i]; if (o.alive && o.g && Math.hypot(o.g.position.x - W.a.x, o.g.position.z - W.a.z) < 15 && los(cyTmpV.set(o.g.position.x, 1.5, o.g.position.z), W.an[0].position)) n++; }
+    let n = 0; for (let i = 0; i < bots.length; i++) { const o = bots[i]; if (o.alive && o.g && Math.hypot(o.g.position.x - W.a.x, o.g.position.z - W.a.z) < 15 && los(cyTmpV.set(o.g.position.x, o.g.position.y + 1.5, o.g.position.z), W.an[0].position)) n++; }
     if (n) { W.hp -= 5 * n; if (W.hp <= 0) { say("Trapwire anchor shot", 800); cyRm(W); return false; } }
     return true;
   }
@@ -8982,7 +8979,7 @@ const fPos = (u) => (u === player ? player : u.g.position);
 const fAlive = (u) => (u === player ? player.hp > 0 : u.alive);
 const fAtk = () => (FV.atk ? [player].concat(allies) : bots).filter(fAlive);
 const fDef = () => (FV.atk ? bots : [player].concat(allies)).filter(fAlive);
-const inSite = (p) => Object.keys(SITES).find((k) => Math.abs(p.x - SITES[k][0]) < 7 && Math.abs(p.z - SITES[k][1]) < 6);
+const inSite = (p) => { const C=typeof nmActive === "function" && nmActive(); if(C && C.plants) return nmPlant(C,p.x,p.z); return Object.keys(SITES).find((k) => Math.abs(p.x - SITES[k][0]) < 7 && Math.abs(p.z - SITES[k][1]) < 6); };
 const fName = (u) => (u === player ? "You" : u.name);
 const fsTag = () => { const s = FV.sp; return s.st === "plant" ? " · Spike planted " + s.site : s.st === "drop" ? " · Spike dropped" : s.st === "carry" && s.c === player ? " · ◆ YOU HAVE THE SPIKE · plant on " + fSiteTxt() : ""; };
 const fSiteTxt = () => (SITES.C ? "A, B or C" : "A or B");
@@ -9922,7 +9919,7 @@ function minimap() {
   if (now - mmT > 150) {
     mmT = now; mmVis = new Set(); const V3 = THREE.Vector3, eyes = [];
     if (player.hp > 0) eyes.push(new V3(player.x, 1.5, player.z));
-    allies.forEach((a) => a.alive && eyes.push(new V3(a.g.position.x, 1.5, a.g.position.z)));
+    allies.forEach((a) => a.alive && eyes.push(new V3(a.g.position.x, a.g.position.y + 1.5, a.g.position.z)));
     bots.forEach((b) => { if (!b.alive) return; const e = new V3(b.g.position.x, 1.4, b.g.position.z); if (eyes.some((y) => los(y, e))) mmVis.add(b); });
     if (J.rvT > 0) J.rv.forEach((b) => b.alive && mmVis.add(b)); // Sova Recon Bolt
     if (window.xPG) { const S = window.xPG.s; for (let i = 0; i < S.length; i++) { const q = S[i]; if (q.b && q.b.alive && now < q.rv) mmVis.add(q.b); } } // enemy ping: revealed 2 s
@@ -10624,7 +10621,7 @@ let xTGOn = false; const xTG = { inPlay: () => false, relAll: () => {} };
   // nearest enemy of u: sets TP + returns its unit (player object for the player); vis = needs line of sight
   let tU = null, tD = 0;
   function near(u, en, vis, max) {
-    const p = u.g.position; tU = null; tD = max; V1.set(p.x, 1.5, p.z);
+    const p = u.g.position; tU = null; tD = max; V1.set(p.x, (p.y || 0) + 1.5, p.z);
     if (en) { if (player && player.hp > 0) chk(player, player.x, player.z, vis); if (typeof allies !== "undefined") for (const a of allies) if (a.alive) chk(a, a.g.position.x, a.g.position.z, vis); }
     else for (const b of bots) if (b.alive) chk(b, b.g.position.x, b.g.position.z, vis);
     return tU;
@@ -12258,6 +12255,248 @@ window.xLdInfo = function () { const ag = (u) => { try { return xAg(u) || u.agen
   return { map: m, me: (J && J.pick) || "Jett", A: allies.map((a) => [ag(a), a.name]), B }; };
 window.xLdKeys = function (dt) { for (const k in keys) keys[k] = false; fireHeld = false; if (dt) try { clock.getDelta(); } catch (e) {} };
 try { applyBright(); } catch (e) {} // a saved brightness reaches the game canvas, which did not exist yet when settings loaded
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// ---- VALORANT ASSET INTEGRATION ----
+// Models and native clips: Riot Games via Kingdom Archives. Map props: public Ascent port.
+var XV = { config: window.VALORANT_ASSETS || {}, cache: {}, agents: {}, guns: {}, fp: null, fpLoad: null, event: null, failures: {} };
+function xvLoad(name) {
+  if (!XV.cache[name]) XV.cache[name] = new Promise((resolve, reject) => {
+    new THREE.GLTFLoader().load('models/valorant/' + name + '.glb', resolve, undefined, reject);
+  }).catch((e) => { XV.failures[name] = String(e); delete XV.cache[name]; throw e; });
+  return XV.cache[name];
+}
+function xvFind(root, name) { const clean = (s) => String(s).replace(/[^a-zA-Z0-9_]/g, ''); let found = null; root.traverse((o) => { if (!found && clean(o.name) === clean(name)) found = o; }); return found; }
+function xvConstraints(root, config, fp) {
+  for (const c of (config && config.Constraints) || []) {
+    const target = xvFind(root, c.TargetObject), object = xvFind(root, c.SourceObject), bone = target && xvFind(target, c.Bone);
+    if (!bone || !object || object === bone || c.Type !== 'ObjectToBone') continue;
+    bone.add(object); object.position.set(c.Offset.X, c.Offset.Y, c.Offset.Z); object.rotation.set(c.Rotation.X * Math.PI / 180, c.Rotation.Y * Math.PI / 180, c.Rotation.Z * Math.PI / 180);
+    if (c.Scale) object.scale.set(c.Scale.X, c.Scale.Y, c.Scale.Z);
+  }
+  if (!fp) for (const n of (config && config.FPExclusiveObjects) || []) { const o = xvFind(root, n); if (o) o.visible = false; }
+  root.updateMatrixWorld(true);
+}
+function xvStatic(gl, config) {
+  const sc = THREE.SkeletonUtils.clone(gl.scene); xvConstraints(sc, config, false);
+  const mx = new THREE.AnimationMixer(sc), idle = gl.animations.find((c) => c.name === 'Idle'); if (idle) { mx.clipAction(idle).play(); mx.update(0); }
+  sc.updateMatrixWorld(true); const out = new THREE.Group(), v = new THREE.Vector3();
+  sc.traverse((o) => {
+    if (!o.isMesh) return; for (let p = o; p; p = p.parent) if (!p.visible) return;
+    const geo = o.geometry.clone(), ps = geo.attributes.position;
+    if (o.isSkinnedMesh) { o.skeleton.update(); for (let i = 0; i < ps.count; i++) { v.fromBufferAttribute(ps, i); o.boneTransform(i, v); ps.setXYZ(i, v.x, v.y, v.z); } geo.deleteAttribute('skinIndex'); geo.deleteAttribute('skinWeight'); geo.computeVertexNormals(); }
+    geo.applyMatrix4(o.matrixWorld); geo.userData.shared = true; const mesh = new THREE.Mesh(geo, o.material); mesh.name = o.name; out.add(mesh);
+  }); mx.stopAllAction(); return out;
+}
+function xvAgentName(n) { const a = xAgOf(n); return XUB_AG[a] ? a : Object.keys(XUB_AG)[String(n || '').split('').reduce((s,c) => s + c.charCodeAt(0), 0) % 12]; }
+function xvAgentLoad(ag) {
+  if (XV.agents[ag]) return XV.agents[ag]; const slug = ag.toLowerCase();
+  return XV.agents[ag] = Promise.all([xvLoad(slug), fetch('models/valorant/' + slug + '-locomotion.json').then((r) => { if (!r.ok) throw new Error('locomotion ' + r.status); return r.json(); })]).then(([gl, data]) => {
+    const C = {}, L = {}, U = {}, A = {}, up = /^(Spine[234]|Neck|Head|[LR]_(Clavicle|Shoulder|Elbow|Hand|Thumb|Index|Middle|Ring|Pinky))/;
+    data.forEach((j) => { const c = THREE.AnimationClip.parse(j); C[c.name] = c; L[c.name] = new THREE.AnimationClip(c.name + '_L', c.duration, c.tracks.filter((t) => !up.test(t.name))); U[c.name] = new THREE.AnimationClip(c.name + '_U', c.duration, c.tracks.filter((t) => up.test(t.name))); });
+    ['Pistol_Shoot','Hit_Chest','Hit_Head'].forEach((n) => { A[n] = THREE.AnimationUtils.makeClipAdditive(U[n].clone()); });
+    return { gl, C, L, U, A };
+  }).catch((e) => { delete XV.agents[ag]; console.warn('Valorant agent unavailable: ' + ag, e); throw e; });
+}
+function xvAgent(M, kit) {
+  if (M.dead || M.valorant) return;
+  // Detach the held weapon before removing the previous rig.
+  if (M.gun && M.gun.parent) { M.m.add(M.gun); M.gun.position.set(-.1, 1.22, .32); }
+  if (M.sx && M.sx.sc && M.sx.sc.parent) M.m.remove(M.sx.sc.parent);
+  const old = XSOL.mx.indexOf(M); if (old >= 0) XSOL.mx.splice(old, 1);
+  const sc = THREE.SkeletonUtils.clone(kit.gl.scene), wr = new THREE.Group(); wr.name = 'valorant-agent'; wr.add(sc);
+  sc.updateMatrixWorld(true); const bx = new THREE.Box3().setFromObject(sc), scale = 1.92 / (bx.max.y - bx.min.y); wr.scale.setScalar(scale); wr.position.y = -bx.min.y * scale;
+  const inGun = (o) => { for (let p = o; p; p = p.parent) if (p === M.gun) return true; return false; };
+  M.m.traverse((o) => { if (o.isMesh && o !== M.ring && !inGun(o)) o.visible = false; });
+  const mats = new Map(); sc.traverse((o) => { if (!o.isMesh) return; o.castShadow = true; o.frustumCulled = false; o.raycast = XNR; o.geometry.userData.shared = true;
+    const mat = (s) => { if (!mats.has(s)) { const m = new THREE.MeshLambertMaterial({ name:s.name, color:s.color, map:s.map, side:THREE.DoubleSide, transparent:s.transparent, alphaTest:s.alphaTest }); m.userData.agent = 1; xRimM(m, M.rim, null); mats.set(s,m); M.mats.push(m); } return mats.get(s); }; o.material = Array.isArray(o.material) ? o.material.map(mat) : mat(o.material);
+  }); M.m.add(wr);
+  const mx = new THREE.AnimationMixer(sc), bone = (n) => sc.getObjectByName(n), X = {mx,a:{},w:{},ub:1,sc,b:{pelvis:bone('Pelvis'),spine_01:bone('Spine1'),spine_02:bone('Spine2'),spine_03:bone('Spine3')},cb:0,yaw:0,pit:0,sn:0,shots:0,hp:null,uo:null,ut:0,lo:null,lt:0,air:false,py:null,px:null,pz:null,cur:'idle',ad:{}};
+  const mk = (n,set,once) => { const c = kit[set][XUB_ST[n]], a = mx.clipAction(c); if (once) { a.setLoop(THREE.LoopOnce,1); a.clampWhenFinished = true; } X.a[n] = a; X.w[n] = 0; };
+  XUB_LO.forEach((n) => mk(n,'L',n==='jump'||n==='land')); XUB_UPN.forEach((n) => mk(n,'U',n==='reload'||n==='cast'||n==='throw')); XUB_FU.forEach((n) => mk(n,'C',n!=='plant'));
+  [['fire','Pistol_Shoot'],['hit','Hit_Chest'],['hitHead','Hit_Head']].forEach(([n,c]) => { const a=mx.clipAction(kit.A[c]); a.blendMode=THREE.AdditiveAnimationBlendMode; a.setLoop(THREE.LoopOnce,1); X.ad[n]=a; });
+  X.a.idle.play(); X.a.aim.play(); X.w.idle = X.w.aim = 1; mx.update(.01); M.m.updateMatrixWorld(true);
+  const hand = bone('R_Hand'); if (hand && M.gun) { const hold = new THREE.Group(), p=new THREE.Vector3(),q=new THREE.Quaternion(),s=new THREE.Vector3(); new THREE.Matrix4().copy(M.m.matrixWorld).invert().multiply(hand.matrixWorld).decompose(p,q,s); hold.quaternion.copy(q.invert()); hold.scale.set(1/s.x,1/s.y,1/s.z); hand.add(hold); hold.add(M.gun); M.gun.position.set(0,0,.03); M.gun.rotation.x=0; }
+  X.acts=X.a; M.ub=1; M.sx=X; M.valorant=1; M.xAt=[]; M.solOwn=()=>{M.solOwn=null;}; XSOL.mx.push(M);
+}
+{ const base = xUb; xUb = function(M) { base(M); const ag=xvAgentName(M.nm); xvAgentLoad(ag).then((kit)=>xvAgent(M,kit)).catch(()=>{}); }; }
+// Native first-person rigs and their matching weapon animation clips. The virtual source camera faces +X.
+function xvFPPlay(F, kind, time) {
+  const key = kind === 'idle' ? 'Idle' : kind.charAt(0).toUpperCase()+kind.slice(1), a = F.entries.find((e)=>e.Translatable === key) || F.entries.find((e)=>e.Translatable.startsWith(key));
+  if (!a) return;
+  if (F.kind !== kind) { F.am.stopAllAction(); F.gm.stopAllAction(); const ac=F.ac[a.Name],gc=F.gc[a.WeaponAnimName || 'Idle']; if(ac)ac.reset().play(); if(gc)gc.reset().play(); F.kind=kind; F.action=ac; F.gaction=gc; F.age=0; }
+  if (time != null) { if(F.action) F.action.time = Math.min(F.action.getClip().duration-.001,Math.max(0,time)*F.action.getClip().duration); if(F.gaction) F.gaction.time = Math.min(F.gaction.getClip().duration-.001,Math.max(0,time)*F.gaction.getClip().duration); F.am.update(0); F.gm.update(0); }
+}
+function xvFPLoad(ag,w) {
+  const slug=w==='Knife'?'melee':w.toLowerCase(), cfg=XV.config.weaponAnimations && XV.config.weaponAnimations[slug]; if(!cfg || !cfg.WEAPONS_ANIMS_JSON) return Promise.reject(new Error('No native animation set for '+w));
+  const entries=cfg.WEAPONS_ANIMS_JSON.Animations, files=[...new Set(entries.concat(cfg.MODEL_HELD_JSON.Animations||[]).filter(a=>a.File).map(a=>a.File))];
+  return Promise.all([xvLoad(ag.toLowerCase()+'-fp'),xvLoad(slug),...files.map(f=>xvLoad('animations/'+f))]).then(([arms,weapon,...anims])=>{
+    const sc=THREE.SkeletonUtils.clone(arms.scene), ws=THREE.SkeletonUtils.clone(weapon.scene), holder=sc.getObjectByName((cfg.MODEL_HELD_JSON.Settings.FP||{}).Bone||'R_WeaponMaster'); if(!holder)throw new Error('weapon attachment missing');
+    xvConstraints(ws,cfg.MODEL_HELD_JSON,true); holder.add(ws); const rot=(cfg.MODEL_HELD_JSON.Settings.FP||{}).Rotation||{X:0,Y:90,Z:0}; ws.rotation.set(rot.X*Math.PI/180,rot.Y*Math.PI/180,rot.Z*Math.PI/180);
+    const root=new THREE.Group();root.name='valorant-viewmodel';root.add(sc);root.rotation.y=Math.PI/2;
+    sc.traverse(o=>{if(o.isMesh){o.frustumCulled=false;o.castShadow=o.receiveShadow=false;o.raycast=XNR;o.renderOrder=10;const conv=m=>new THREE.MeshLambertMaterial({name:m.name,color:m.color,map:m.map,side:THREE.DoubleSide,depthTest:false,depthWrite:false});o.material=Array.isArray(o.material)?o.material.map(conv):conv(o.material);}});
+    const am=new THREE.AnimationMixer(sc),gm=new THREE.AnimationMixer(ws),ac={},gc={};const fclips=anims.filter((g,i)=>/^FP_/.test(files[i])).flatMap(g=>g.animations),gclips=weapon.animations.concat(anims.filter((g,i)=>/^GN_/.test(files[i])).flatMap(g=>g.animations));
+    fclips.forEach(c=>ac[c.name]=am.clipAction(c));gclips.forEach(c=>gc[c.name]=gm.clipAction(c));
+    const F={root,sc,ws,am,gm,ac,gc,entries,ag,w,kind:null,age:0};xvFPPlay(F,'idle');am.update(0);gm.update(0);sc.updateMatrixWorld(true);
+    const cam=sc.getObjectByName('Camera');const pos=cam?cam.getWorldPosition(new THREE.Vector3()):new THREE.Vector3(0,1.67,0);pos.applyAxisAngle(new THREE.Vector3(0,1,0),Math.PI/2);root.position.copy(pos).negate();F.origin=root.position.clone();xvFPPlay(F,'equip');return F;
+  });
+}
+function xvFPClear(F){if(!F)return;camera.remove(F.root);F.am.stopAllAction();F.gm.stopAllAction();F.root.traverse(o=>{if(o.isMesh)[].concat(o.material||[]).forEach(m=>m.dispose());});}
+function xvFPTick(dt) {
+  const kn=knife.visible, active=running && player && player.hp>0 && (gun.visible||kn) && !(typeof BC!=='undefined'&&(BC.vm||BC.cv)) && !J.dr && !(XCA.h&&XCA.h.visible&&XCA.on);
+  const ag=(J&&J.pick)||'Jett',w=kn?'Knife':fpaWeap(),key=ag+'|'+w;
+  if(active && (!XV.fp||XV.fp.ag!==ag||XV.fp.w!==w) && XV.fpLoad!==key){XV.fpLoad=key;xvFPLoad(ag,w).then(F=>{if(XV.fpLoad!==key){xvFPClear(F);return;}xvFPClear(XV.fp);XV.fp=F;camera.add(F.root);}).catch(e=>{XV.failures[key]=String(e);}).finally(()=>{if(XV.fpLoad===key)XV.fpLoad=null;});}
+  const F=XV.fp,on=active&&F&&F.ag===ag&&F.w===w;if(F)F.root.visible=!!on;if(!on)return;
+  const hide=o=>{if(!o)return;XV.hidden.push([o,o.visible]);o.visible=false;}; gun.children.forEach(c=>{if(c!==muzzle)hide(c);});knife.children.forEach(hide);hide(FPA.g);[VMA.R,VMA.L,KARM].forEach(hide);
+  if(kn&&kSwing>(F.lastSwing||0)+.05)XV.event=kHv?'alt Attack':'attack 1';F.lastSwing=kSwing;
+  const rp=mode==='duel'?(du.reload>0?1-du.reload/OP_RELOAD:-1):reloading>0?1-reloading/xRT():-1;
+  if(rp>=0)xvFPPlay(F,'reload',rp);else if(VM.ins>0&&F.kind!=='inspect')xvFPPlay(F,'inspect');else if(XV.event){F.kind=null;xvFPPlay(F,XV.event);XV.event=null;}else if(F.kind==='reload'||(F.kind!=='idle'&&F.age>(F.action?F.action.getClip().duration:.4)))xvFPPlay(F,'idle');
+  if(rp<0){F.am.update(dt);F.gm.update(dt);}F.age+=dt;
+  // Match the source's narrower viewmodel FOV while keeping the game's world-camera FOV.
+  const s=Math.tan(THREE.MathUtils.degToRad(camera.fov/2))/Math.tan(THREE.MathUtils.degToRad(43.383/2));F.root.scale.set(s,s,1);F.root.position.set(F.origin.x*s,F.origin.y*s,F.origin.z);F.root.position.y+=Math.sin(VM.bob||0)*.003;
+}
+{const fire=vmFire;vmFire=function(){const r=fire.apply(this,arguments);XV.event='fire';return r;};const tick=vmTick;vmTick=function(dt){(XV.hidden||[]).forEach(([o,v])=>o.visible=v);XV.hidden=[];tick(dt);try{xvFPTick(Math.min(.1,dt||.016));}catch(e){if(!XV.fpErr){XV.fpErr=String(e);console.warn('native viewmodel',e);}}};}
+// Replace generic imported map props and box cover while retaining the existing collision/navigation layout.
+function xvMapCover(g) {
+  if(!g||g.userData.nativeMap||g.userData.xvCover)return;g.userData.xvCover=true;
+  xvLoad('environment/cover').then(gl=>{
+    const src=xvStatic(gl,null),b=new THREE.Box3().setFromObject(src),sz=b.getSize(new THREE.Vector3());
+    const candidates=[];g.traverse(o=>{const p=o.geometry&&o.geometry.parameters;if(o.isMesh&&p&&p.width&&p.height&&p.depth&&p.height>=.8&&p.height<=3.3&&p.width>=.65&&p.depth>=.65&&p.width<=4&&p.depth<=4&&!xIsDyn(o,g))candidates.push(o);});
+    candidates.forEach(o=>{const p=o.geometry.parameters,root=src.clone(true);root.position.set(-b.min.x,-b.min.y,-b.min.z);const fit=new THREE.Group();fit.name='valorant-cover';fit.add(root);fit.scale.set(p.width/sz.x,p.height/sz.y,p.depth/sz.z);fit.position.set(-p.width/2,-p.height/2,-p.depth/2);o.add(fit);o.material=new THREE.MeshBasicMaterial({visible:false});});if(renderer.shadowMap.enabled)renderer.shadowMap.needsUpdate=true;
+  }).catch(e=>{XV.failures.cover=String(e);});
+}
+{const use=useMap;useMap=function(n){const r=use.apply(this,arguments);try{xvMapCover(MAPS[n]&&MAPS[n].g);}catch(e){}return r;};}
+window.xValorantAssets={state:XV,load:xvLoad,loadAgent:xvAgentLoad,loadFP:xvFPLoad,scene,camera,renderer,agents:()=>XSOL.mx,probe:()=>({running,mode,agent:J.pick,weapon:fpaWeap(),nativeAgents:XSOL.mx.filter(m=>m.valorant).length,nativeFP:XV.fp&&XV.fp.ag+' '+XV.fp.w,failures:XV.failures})};
+// Physical ability devices retain their gameplay roots, hit checks and timers.
+var XV_DEVICE = {};
+function xvDevice(m, slug, height, bottom) {
+  if(!m || m.userData.xvDevice)return;const token={};m.userData.xvDevice=token;
+  if(!XV_DEVICE[slug])XV_DEVICE[slug]=xvLoad(slug).then(gl=>xvStatic(gl,XV.config[slug])).catch(e=>{delete XV_DEVICE[slug];throw e;});
+  XV_DEVICE[slug].then(src=>{if(m.userData.xvDevice!==token)return;const b=new THREE.Box3().setFromObject(src),size=b.getSize(new THREE.Vector3()),root=new THREE.Group(),obj=src.clone(true),s=height/Math.max(.001,size.y);root.name='valorant-device';root.userData.dynamic=true;
+    obj.position.set(-(b.min.x+b.max.x)/2,-b.min.y,-(b.min.z+b.max.z)/2);root.add(obj);root.scale.setScalar(s);root.position.y=bottom?0:-height/2;
+    token.children=m.children.slice().map(o=>[o,o.visible]);token.children.forEach(([o])=>o.visible=false);if(m.material){token.material=m.material;const mat=m.material.clone();mat.visible=false;m.material=mat;}root.traverse(o=>{if(o.isMesh){o.raycast=XNR;o.castShadow=true;}});m.add(root);token.root=root;
+  }).catch(e=>{if(m.userData.xvDevice===token)delete m.userData.xvDevice;XV.failures[slug]=String(e);});
+}
+function xvDeviceReset(m){const t=m&&m.userData.xvDevice;if(!t)return;delete m.userData.xvDevice;if(t.root)m.remove(t.root);if(t.material){m.material.dispose();m.material=t.material;}if(t.children)t.children.forEach(([o,v])=>o.visible=v);}
+{const drop=xDrop;xDrop=function(){if(XV.fp&&XV.fp.root.visible)return;return drop.apply(this,arguments);};}
+{const rel=jRel;jRel=function(m){xvDeviceReset(m);return rel.apply(this,arguments);};}
+function xvDevicesTick(){
+  if(!running)return;
+  [[spike,'spike',.8],[fsM,'spike',.8],[fsIcon,'spike',.8],[J.tur&&J.tur.m,'turret',.9],[J.ab&&J.ab.m,'alarmbot',.45],[J.ld&&J.ld.m,'lockdown',.9],[TB,'trailblazer',.8,true]].forEach(a=>xvDevice(...a));
+  RS.bb.forEach(o=>xvDevice(o.m,'boom-bot',.5/Math.max(.01,o.m.scale.y)));RS.pk.forEach(o=>xvDevice(o.m,'blast-pack',.22/Math.max(.01,o.m.scale.y)));RS.pj.forEach(o=>xvDevice(o.m,o.kind==='rocket'?'showstopper':'paintshell',.24/Math.max(.01,o.m.scale.y)));if(RS.hk)xvDevice(RS.hk.m,'guiding-light',.35/Math.max(.01,RS.hk.m.scale.y));
+  BC.tm.forEach(o=>xvDevice(o.m,'trademark',.3));if(BC.an)xvDevice(BC.an.m,'rendezvous',.35);if(BC.cam)xvDevice(BC.cam.m,'spycam',.25);(BC.cw||[]).forEach(w=>w.an.forEach(m=>xvDevice(m,'trapwire',.2)));J.arrows.forEach(o=>xvDevice(o.m,o.kind==='shock'?'shock-dart':'recon-bolt',.12));
+}
+(window.XHK || (window.XHK=[])).push(xvDevicesTick);
+
+function xvSurfaces(){
+  const loader=new THREE.TextureLoader();for(const key of ['wall','tile','cobble','wood','metal','roof'])loader.load('models/valorant/surfaces/'+key+'.jpg',texture=>{texture.wrapS=texture.wrapT=THREE.RepeatWrapping;texture.encoding=THREE.sRGBEncoding;texture.anisotropy=Math.min(4,renderer.capabilities.getMaxAnisotropy());texture.userData.shared=true;
+    for(const set of [XM,XMA])if(set[key]){set[key].map=texture;set[key].needsUpdate=true;}
+  },undefined,e=>{XV.failures['surface/'+key]=String(e);});
+}
+{const go=xGo;xGo=function(){if(!XV.surfaces){XV.surfaces=true;xvSurfaces();}return go.apply(this,arguments);};}
+// ---- END VALORANT ASSET INTEGRATION ----
+
+// ---- ORIGINAL VALORANT MAPS ----
+// Entire source scenes, collisions and navigation replace the six legacy blockouts.
+var NM = { current:null, pending:null, ticket:0, enabled:true, progress:null, routeCache:new Map() };
+function nmActive(){return NM.current && MAPS[mode]===NM.current.M && solids===NM.current.M.solids ? NM.current : null;}
+function nmOverlay(name,error){let e=document.getElementById('nativeMapLoading');if(!e){e=document.createElement('div');e.id='nativeMapLoading';e.style.cssText='position:fixed;inset:0;z-index:500;background:#0f1923;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:20px;color:#ece8e1;font:600 20px Arial;text-align:center';e.innerHTML='<span></span><small style="font-size:14px;font-weight:400;max-width:480px"></small>';document.body.append(e);}e.style.display=name?'flex':'none';if(name){e.firstChild.textContent=error?'Could not load '+name:'Loading '+name;e.querySelector('small').textContent=error?'Check your connection and choose the map again.': 'Preparing the map…';}if(error&&!e.querySelector('button')){const back=document.createElement('button');back.textContent='Back';back.style.cssText='padding:12px 30px;background:#ff4655;color:white;border:0;cursor:pointer';back.onclick=()=>{e.style.display='none';closeAll();$('lobby').style.display='flex';};e.append(back);}if(e.querySelector('button'))e.querySelector('button').hidden=!error;NM.progress=e;}
+function nmFree(C){if(!C)return;scene.remove(C.M.g);const seen=new Set();C.M.g.traverse(o=>{if(o.geometry&&!seen.has(o.geometry)){seen.add(o.geometry);o.geometry.dispose();}for(const m of [].concat(o.material||[]))if(!seen.has(m)){seen.add(m);for(const k in m)if(m[k]&&m[k].isTexture&&!seen.has(m[k])){seen.add(m[k]);m[k].dispose();}m.dispose();}});if(C.geometry){C.geometry.dispose();C.geometry.boundsTree=null;}C.M.g.clear();}
+async function nmEnsure(key){
+ if(NM.current&&NM.current.key===key)return NM.current;
+ if(NM.pending&&NM.pending.key===key)return NM.pending.promise;
+ const ticket=++NM.ticket;nmOverlay(key.charAt(0).toUpperCase()+key.slice(1));
+ const promise=(async()=>{const base='models/valorant/maps/'+key+'/';const read=url=>fetch(base+url).then(r=>{if(!r.ok)throw new Error(url+' '+r.status);return r;});
+  const [meta,nav,bytes,gl,plants]=await Promise.all([read('map.json').then(r=>r.json()),read('navigation.json').then(r=>r.json()),read('collision.bin').then(r=>r.arrayBuffer()),new THREE.GLTFLoader().loadAsync(base+'scene.gltf'),read('plants.json').then(r=>r.json())]);
+  if(ticket!==NM.ticket)throw new Error('Map selection changed');
+  if(!nav.validation.attackerToDefender||Object.values(nav.validation.attackerToSites).some(v=>!v))throw new Error('Map navigation is incomplete');
+  NM.progress.querySelector('small').textContent='Preparing the map…';await new Promise(r=>setTimeout(r,20));
+  const head=new Uint32Array(bytes,0,2),positions=new Float32Array(bytes,8,head[0]*3),indices=new Uint32Array(bytes,8+head[0]*12,head[1]);const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.BufferAttribute(positions,3));geometry.setIndex(new THREE.BufferAttribute(indices,1));geometry.boundsTree=new MeshBVHLib.MeshBVH(geometry,{maxLeafTris:12,maxDepth:64,strategy:MeshBVHLib.CENTER});
+  const collision=new THREE.Mesh(geometry,new THREE.MeshBasicMaterial({side:THREE.DoubleSide,visible:false}));collision.name='native-collision';collision.raycast=MeshBVHLib.acceleratedRaycast;
+  const root=xMG();root.name='native-'+key;root.userData.nativeMap=key;root.visible=false;root.add(gl.scene,collision);const M={g:root,solids:[collision],boxes:[],built:1,native:true};
+  gl.scene.traverse(o=>{if(!o.isMesh)return;o.geometry.userData.shared=true;o.castShadow=false;o.receiveShadow=true;const convert=m=>{const out=new THREE.MeshLambertMaterial({name:m.name,color:m.color,map:m.map,side:THREE.DoubleSide,alphaTest:m.alphaTest||0,transparent:m.transparent,opacity:m.opacity});if(m.map)m.map.anisotropy=Math.min(4,renderer.capabilities.getMaxAnisotropy());return out;};o.material=Array.isArray(o.material)?o.material.map(convert):convert(o.material);});
+  const C={key,meta,nav,plants,M,geometry,bvh:geometry.boundsTree,image:new Image(),cells:new Map(),cellSize:2};C.image.src=base+'minimap.png';nav.nodes.forEach((p,i)=>{if(nav.valid&&!nav.valid[i])return;const k=Math.floor(p[0]/2)+','+Math.floor(p[2]/2);if(!C.cells.has(k))C.cells.set(k,[]);C.cells.get(k).push(i);});
+  // Only the original playable footprint defines navigation/minimap bounds; vista geometry is still rendered.
+  const X=nav.nodes.map(p=>p[0]),Z=nav.nodes.map(p=>p[2]);C.bounds={x1:Math.min(...X)-3,x2:Math.max(...X)+3,z1:Math.min(...Z)-3,z2:Math.max(...Z)+3};
+  const b=C.bounds;M.boxes.push({x1:b.x1,x2:b.x2,z1:b.z1,z2:b.z1,h:0},{x1:b.x1,x2:b.x2,z1:b.z2,z2:b.z2,h:0});
+  if(NM.current){const old=NM.current;if(fsM.parent)fsM.parent.remove(fsM);if(spike.parent&&spike.parent===old.M.g)spike.parent.remove(spike);nmFree(old);for(const k in FMAP)if(FMAP[k]===old.M){const g=new THREE.Group();g.visible=false;FMAP[k]={g,solids:[],boxes:[],built:0};}}
+  NM.current=C;NM.routeCache.clear();scene.add(root);nmOverlay(null);return C;
+ })().catch(e=>{nmOverlay(key,true);console.error('Original map load failed',key,e);throw e;}).finally(()=>{if(NM.pending&&NM.pending.key===key)NM.pending=null;});NM.pending={key,promise};return promise;
+}
+function nmNear(C,x,z,y){let best=-1,bd=Infinity;const gx=Math.floor(x/2),gz=Math.floor(z/2);for(let ring=0;ring<=8;ring++){for(let dx=-ring;dx<=ring;dx++)for(let dz=-ring;dz<=ring;dz++){if(ring&&Math.abs(dx)!==ring&&Math.abs(dz)!==ring)continue;for(const i of C.cells.get((gx+dx)+','+(gz+dz))||[]){const p=C.nav.nodes[i],d=(p[0]-x)**2+(p[2]-z)**2+(Number.isFinite(y)?(p[1]-y)**2*2:0);if(d<bd){bd=d;best=i;}}}if(best>=0&&ring>1&&bd<(ring*2-2)**2)return best;}if(best<0)for(let i=0;i<C.nav.nodes.length;i++){const p=C.nav.nodes[i],d=(p[0]-x)**2+(p[2]-z)**2;if(d<bd){best=i;bd=d;}}return best;}
+function nmHeight(C,x,z,y){const top=Number.isFinite(y)&&y>1?y+.55:C.nav.nodes[nmNear(C,x,z,y>1?y:undefined)][1]+.55,ray=new THREE.Ray(new THREE.Vector3(x,top,z),new THREE.Vector3(0,-1,0));for(let i=0;i<8;i++){const hit=C.bvh.raycastFirst(ray,THREE.DoubleSide);if(!hit)break;if(Math.abs(hit.face.normal.y)>.45)return hit.point.y;ray.origin.y=hit.point.y-.02;}return C.nav.nodes[nmNear(C,x,z,y>1?y:undefined)][1];}
+var NM_Q={box:new THREE.Box3(),line:new THREE.Line3(),p:new THREE.Vector3(),q:new THREE.Vector3(),normal:new THREE.Vector3()};
+function nmBlocked(C,x,z,r,y){if(!Number.isFinite(y)||y<1)y=nmHeight(C,x,z);const Q=NM_Q;Q.line.start.set(x,y+.65,z);Q.line.end.set(x,y+1.35,z);Q.box.min.set(x-r,y+.2,z-r);Q.box.max.set(x+r,y+1.8,z+r);let blocked=false;
+ C.bvh.shapecast({intersectsBounds:b=>b.intersectsBox(Q.box),intersectsTriangle:t=>{if(Math.max(t.a.y,t.b.y,t.c.y)<=y+.45)return false;t.getNormal(Q.normal);if(Math.abs(Q.normal.y)>.7)return false;const d=t.closestPointToSegment(Q.line,Q.p,Q.q);if(d<r-.012){blocked=true;return true;}return false;}});return blocked;
+}
+{const b=blocked,g=groundAt;blocked=function(x,z,r,y){const C=nmActive();return C?(sgBlk(x,z,r,y)||nmBlocked(C,x,z,r,y)):b(x,z,r,y);};groundAt=function(x,z,r,y){const C=nmActive();return C?nmHeight(C,x,z,y):g(x,z,r,y);};}
+function nmPlant(C,x,z){const t=C.meta.transform,p=C.meta.apiProjection,ca=Math.cos(t.angle),sa=Math.sin(t.angle),sx=ca*x-sa*z+t.cx,sz=sa*x+ca*z+t.cz,u=Math.floor((sx*100*p.xMultiplier+p.xScalarToAdd)*1024),v=Math.floor((-sz*100*p.yMultiplier+p.yScalarToAdd)*1024);for(const row of C.plants.rows[v]||[])if(u>=row[0]&&u<row[1])return row[2];return undefined;}
+// A* follows only edges sampled from the original walkable mesh. No legacy lane waypoints are used.
+function nmPath(C,start,end){const cacheKey=start+'>'+end;if(NM.routeCache.has(cacheKey))return NM.routeCache.get(cacheKey);const N=C.nav.nodes,A=C.nav.adj,cost=new Float32Array(N.length);cost.fill(Infinity);cost[start]=0;const prev=new Int32Array(N.length),closed=new Uint8Array(N.length);prev.fill(-1);const heap=[],push=(i,s)=>{let k=heap.length;heap.push([i,s]);while(k){const p=(k-1)>>1;if(heap[p][1]<=s)break;heap[k]=heap[p];k=p;}heap[k]=[i,s];},pop=()=>{const first=heap[0],last=heap.pop();if(heap.length){let k=0;while(k*2+1<heap.length){let c=k*2+1;if(c+1<heap.length&&heap[c+1][1]<heap[c][1])c++;if(heap[c][1]>=last[1])break;heap[k]=heap[c];k=c;}heap[k]=last;}return first[0];},heur=i=>Math.hypot(N[i][0]-N[end][0],N[i][2]-N[end][2]);push(start,heur(start));let found=false,steps=0;
+ while(heap.length&&steps++<N.length*12){const a=pop();if(closed[a])continue;closed[a]=1;if(a===end){found=true;break;}for(const b of A[a]){if(closed[b])continue;const d=cost[a]+Math.hypot(N[a][0]-N[b][0],N[a][2]-N[b][2])+Math.abs(N[a][1]-N[b][1])*.2;if(d<cost[b]){cost[b]=d;prev[b]=a;push(b,d+heur(b));}}}
+ const path=[];if(found)for(let i=end;i>=0;i=prev[i]){path.push(i);if(i===start)break;}path.reverse();if(NM.routeCache.size>200)NM.routeCache.clear();NM.routeCache.set(cacheKey,path);return path;
+}
+function nmNext(C,u,gx,gz){const p=u.g.position,N=C.nav.nodes,s=nmNear(C,p.x,p.z,p.y),e=nmNear(C,gx,gz),path=nmPath(C,s,e);if(!path.length)return [p.x,p.z];let target=N[path[Math.min(2,path.length-1)]];for(let i=2;i<Math.min(path.length,10);i++){const n=N[path[i]];if(Math.abs(n[1]-p.y)>.5)break;let ok=true;const d=Math.hypot(n[0]-p.x,n[2]-p.z),steps=Math.max(1,Math.ceil(d/.35));for(let k=1;k<=steps;k++)if(nmBlocked(C,p.x+(n[0]-p.x)*k/steps,p.z+(n[2]-p.z)*k/steps,.43,p.y)){ok=false;break;}if(!ok)break;target=n;}return [target[0],target[2]];}
+{const p=xPath;xPath=function(u,dt,gx,gz,out){const C=nmActive();if(!C)return p.apply(this,arguments);u.xr=[];u.npT=(u.npT||0)-dt;if(!u.np||u.npT<=0||u.blk||Math.hypot(u.np[0]-u.g.position.x,u.np[1]-u.g.position.z)<.55||!u.ng||Math.hypot(u.ng[0]-gx,u.ng[1]-gz)>3){u.np=nmNext(C,u,gx,gz);u.ng=[gx,gz];u.npT=.4;u.blk=0;}return u.np;};}
+{const goal=xGoal;xGoal=function(u,team,atk,out){const C=nmActive();if(!C||mode!=='five')return goal.apply(this,arguments);const s=FV.sp;if(!s)return null;u.xr=[];s.xr='native';if(s.st==='plant')return x2(out,s.x,s.z);if(atk&&s.st==='drop')return x2(out,s.x,s.z);const names=Object.keys(C.meta.sites),name=atk?s.site:(s.seen||names[Math.max(0,team.indexOf(u))%names.length]),p=C.meta.sites[name]||C.meta.sites[names[0]];return x2(out,p[0],p[2]);};}
+{const step=xStep;xStep=function(){return nmActive()?false:step.apply(this,arguments);};const clear=xClear;xClear=function(x,z){const C=nmActive();if(!C)return clear(x,z);const p=C.nav.nodes[nmNear(C,x,z)];return [p[0],p[2]];};const nudge=xNudgeAll;xNudgeAll=function(){if(!nmActive())return nudge.apply(this,arguments);};}
+// Match startup waits for the complete scene and collisions. Failure keeps the map unstarted.
+function nmLaunch(fn,self,args,key){return nmEnsure(key).then(()=>{const result=fn.apply(self,args);nmOverlay(null);return result;}).catch(()=>{});}
+function nmWrap(fn,retake){return function(){let key=retake?'ascent':FV.pick||'ascent';if(key==='random')key=['ascent','bind','haven','split','lotus','breeze'][Math.floor(Math.random()*6)];if(!retake)FV.pick=key;const self=this,args=arguments;return nmLaunch(fn,self,args,key);};}
+startFive=nmWrap(startFive);dmStart0=nmWrap(dmStart0);start=nmWrap(start,true);
+{const build=ensureMapBuilt;ensureMapBuilt=function(n){if(NM.current&&(n==='five'||n==='retake'))return;return build.apply(this,arguments);};}
+{const build=xBuildMap;xBuildMap=function(k){if(NM.current&&NM.current.key===k)return;return build.apply(this,arguments);};const dress=xDressMap;xDressMap=function(k){if(NM.current&&(k===NM.current.key||k==='retake'))return null;return dress.apply(this,arguments);};}
+fUseMap=function(){const C=NM.current;if(!C||C.key!==FV.map)throw new Error('Original map has not loaded');for(const k in FMAP)if(FMAP[k].g)FMAP[k].g.visible=false;FMAP[FV.map]=C.M;MAPS.five=C.M;C.M.g.add(fsM,XCALL);XCALL.clear();for(const k in SITES)delete SITES[k];for(const [k,p]of Object.entries(C.meta.sites))SITES[k]=[p[0],p[2]];SROPES=null;LG.on=false;delete mmB.five;};
+{const use=useMap;useMap=function(n){const C=NM.current;if(C&&n==='retake'){MAPS.retake=C.M;C.M.g.add(spike);const p=C.meta.sites.B;spike.position.set(p[0],p[1]+.4,p[2]);}const result=use.apply(this,arguments);if(C&&(n==='five'||n==='retake')){C.M.g.visible=true;scene.fog.near=95;scene.fog.far=260;camera.far=500;camera.updateProjectionMatrix();C.M.g.updateMatrixWorld(true);}return result;};}
+{const spawn=xSpawn;xSpawn=function(k){const C=NM.current;if(C&&C.key===k){const a=C.meta.attacker,d=C.meta.defender;return {atk:a[2],def:d[2],edge:Math.min(Math.abs(a[2]),Math.abs(d[2]))-7,w:20};}return spawn(k);};}
+function nmPlace(u,C,point,index){const i=nmNear(C,point[0]+((index%3)-1)*1.2,point[2]+Math.floor(index/3)*1.1,point[1]),p=C.nav.nodes[i];if(u===player){u.x=p[0];u.z=p[2];u.y=p[1];u.vy=0;}else{u.g.position.set(p[0],p[1],p[2]);u.xr=[];u.np=null;}return p;}
+{const spawn=fSpawn;fSpawn=function(){const r=spawn.apply(this,arguments),C=nmActive();if(C){const a=FV.atk?C.meta.attacker:C.meta.defender,b=FV.atk?C.meta.defender:C.meta.attacker;nmPlace(player,C,a,1);allies.forEach((u,i)=>nmPlace(u,C,a,i+2));bots.forEach((u,i)=>nmPlace(u,C,b,i));}return r;};}
+{const spawn=spawnBots;spawnBots=function(){const r=spawn.apply(this,arguments),C=nmActive();if(C&&mode==='retake'){const site=C.meta.sites.B,entry=C.meta.callouts.find(c=>/B (Main|Lobby)/.test(c.name));nmPlace(player,C,entry?entry.position:C.meta.attacker,1);allies.forEach((u,i)=>nmPlace(u,C,entry?entry.position:C.meta.attacker,i+2));bots.forEach((u,i)=>nmPlace(u,C,site,i));}return r;};}
+{const pts=dmPts;dmPts=function(){const C=nmActive();return C?C.nav.nodes.filter((_,i)=>i%Math.max(1,Math.floor(C.nav.nodes.length/150))===0).map(p=>[p[0],p[2]]):pts();};const spawnB=dmSpawnB,spawnP=dmSpawnP;dmSpawnB=function(b){const r=spawnB.apply(this,arguments),C=nmActive();if(C)nmPlace(b,C,C.nav.nodes[nmNear(C,b.g.position.x,b.g.position.z)],1);return r;};dmSpawnP=function(){const r=spawnP.apply(this,arguments),C=nmActive();if(C)nmPlace(player,C,C.nav.nodes[nmNear(C,player.x,player.z)],1);return r;};}
+// Accurate map overview from Riot's minimap projection, rotated by exactly the scene's rigid transform.
+function nmMinimap(C){const g=$('game'),show=running&&player&&(mode==='five'||mode==='retake');g.classList.toggle('x-mm',!!show);g.classList.toggle('x-five',mode==='five');XCALL.visible=false;if(!show)return;const now=performance.now();if(now-(nmMinimap.last||0)<80)return;nmMinimap.last=now;const ctx=mmx,W=MM.width,H=MM.height,pad=8,b=C.bounds,s=(Math.min(W,H)-pad*2)/Math.max(b.x2-b.x1,b.z2-b.z1),ox=(W-(b.x2-b.x1)*s)/2,oz=(H-(b.z2-b.z1)*s)/2,X=x=>ox+(x-b.x1)*s,Z=z=>oz+(z-b.z1)*s;ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,W,H);ctx.fillStyle='#101c26';ctx.fillRect(0,0,W,H);
+ if(C.image.complete&&C.image.naturalWidth){const t=C.meta.transform,p=C.meta.apiProjection,ca=Math.cos(t.angle),sa=Math.sin(t.angle),point=(u,v)=>{const x=(u/1024-p.xScalarToAdd)/(p.xMultiplier*100)-t.cx,z=-(v/1024-p.yScalarToAdd)/(p.yMultiplier*100)-t.cz;return [ca*x+sa*z,-sa*x+ca*z];},o=point(0,0),a=point(1,0),d=point(0,1);ctx.save();ctx.setTransform((a[0]-o[0])*s,(a[1]-o[1])*s,(d[0]-o[0])*s,(d[1]-o[1])*s,X(o[0]),Z(o[1]));ctx.drawImage(C.image,0,0,1024,1024);ctx.restore();}
+ ctx.font='bold '+Math.max(10,W/15)+'px Arial';ctx.textAlign='center';ctx.fillStyle='#f3efcf';for(const [k,p]of Object.entries(C.meta.sites))ctx.fillText(k,X(p[0]),Z(p[2]));const dot=(x,z,color,r)=>{ctx.beginPath();ctx.arc(X(x),Z(z),r,0,Math.PI*2);ctx.fillStyle=color;ctx.fill();};for(const u of allies)if(u.alive)dot(u.g.position.x,u.g.position.z,'#5fe4df',2.5);for(const u of bots)if(u.alive&&Math.hypot(u.g.position.x-player.x,u.g.position.z-player.z)<45&&los(pEye(),new THREE.Vector3(u.g.position.x,u.g.position.y+1.5,u.g.position.z)))dot(u.g.position.x,u.g.position.z,'#ff4655',2.5);dot(player.x,player.z,'#ffffff',3);ctx.strokeStyle='#fff';ctx.beginPath();ctx.moveTo(X(player.x),Z(player.z));ctx.lineTo(X(player.x-Math.sin(yaw)*4),Z(player.z-Math.cos(yaw)*4));ctx.stroke();if(mode==='five'&&FV.sp&&(FV.sp.st==='plant'||FV.sp.st==='drop'))dot(FV.sp.x,FV.sp.z,'#ffe269',3);
+}
+{const map=minimap;minimap=function(){const C=nmActive();return C?nmMinimap(C):map.apply(this,arguments);};const bounds=mmBounds;mmBounds=function(n){const C=nmActive();return C?C.bounds:bounds(n);};const loc=xLoc;xLoc=function(x,z){const C=nmActive();if(!C)return loc(x,z);let best='',d=Infinity;for(const c of C.meta.callouts){const r=Math.hypot(c.position[0]-x,c.position[2]-z);if(r<d){d=r;best=c.name;}}return best;};}
+// Existing hooks keep their original function references, so add the native minimap after them.
+(window.XHK||(window.XHK=[])).push(()=>{const C=nmActive();if(!C||!running)return;nmMinimap(C);if(fsM.visible)fsM.position.y=nmHeight(C,fsM.position.x,fsM.position.z)+.4;for(const d of XD.L)d.m.position.y=nmHeight(C,d.x,d.z)+.08;});
+// Bind's source teleporter entrances/exits replace the legacy pads and their coordinates.
+function nmTeleports(C){if(C.key!=='bind'||!running||paused)return;const now=performance.now();if(!C.teleporters){const find=name=>C.meta.callouts.find(c=>c.name===name).position;C.teleporters=[['A Teleporter','B Exit'],['B Teleporter','A Exit']].map(([a,b])=>({entry:find(a),exit:find(b)}));}for(const u of [player].concat(bots,allies)){if(u!==player&&!u.alive)continue;if((u.nmTP||0)>now)continue;const p=u===player?[u.x,u.y,u.z]:u.g.position.toArray();const gate=C.teleporters.find(t=>Math.hypot(p[0]-t.entry[0],p[2]-t.entry[2])<2&&Math.abs(p[1]-nmHeight(C,t.entry[0],t.entry[2]))<1.5);if(!gate){u.nmTPStart=0;continue;}if(!u.nmTPStart){u.nmTPStart=now;continue;}if(now-u.nmTPStart<400)continue;nmPlace(u,C,gate.exit,1);u.nmTP=now+1800;u.nmTPStart=0;if(u===player){SFX.tp();say('Teleporter',700);}}}
+{const hooks=window.XHK||[],i=hooks.findIndex(f=>f.name==='tpLoop');if(i>=0){const legacy=hooks[i];hooks[i]=function(){const C=nmActive();return C?nmTeleports(C):legacy();};}}
+window.xNativeMaps={state:NM,ensure:nmEnsure,near:nmNear,path:nmPath,height:nmHeight,blocked:nmBlocked,activate(key){FV.pick=FV.map=key;mode='five';fUseMap();useMap('five');return NM.current.meta;},probe(){const C=nmActive();return C?{key:C.key,objects:C.meta.objects,navigation:C.nav.validation,player:[player.x,player.y,player.z],sites:C.meta.sites}:null;}};
+// ---- END ORIGINAL VALORANT MAPS ----
+
 xReady = true; // every mode is initialised; lobby launches may now start them
 { let rb = null; try { rb = sessionStorage.getItem("vs.retry"); sessionStorage.removeItem("vs.retry"); } catch (e) {} // Retry on the engine error reloaded the page: relaunch the same mode
   if (rb) setTimeout(() => { const b = $(rb); if (b) b.click(); }, 300); }

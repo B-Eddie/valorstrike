@@ -1,0 +1,32 @@
+{
+  "Model": {
+    "Path": "../uploads/models/abilities/spycam/",
+    "Name": "spycam.glb"
+  },
+  "Settings": {
+    "FOV": 12,
+    "CameraPosition": {
+      "X": 0,
+      "Y": 0,
+      "Z": 2
+    },
+    "OrbitTarget": {
+      "X": 0,
+      "Y": 0,
+      "Z": 0
+    },
+    "ShadowHeight": -0.125
+  },
+  "Materials": [
+    {
+      "Name": "AB_Gumshoe_S0_MI",
+      "Type": "PBR",
+      "DF": "../uploads/models/abilities/spycam/textures/df.png",
+      "ORM": "../uploads/models/abilities/spycam/textures/orm.png",
+      "EM": "../uploads/models/abilities/spycam/textures/em.png",
+      "NM": "../uploads/models/abilities/spycam/textures/nm.png",
+      "Metallic": 1,
+      "Roughness": 1
+    }
+  ]
+}

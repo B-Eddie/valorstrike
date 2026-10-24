@@ -1,0 +1,231 @@
+{
+  "Model": {
+    "Path": "../uploads/models/weapons/spike/",
+    "Name": "spike.glb"
+  },
+  "Settings": {
+    "FOV": 30,
+    "CameraPosition": {
+      "X": 0,
+      "Y": 0.35,
+      "Z": 2
+    },
+    "OrbitTarget": {
+      "X": 0,
+      "Y": 0.35,
+      "Z": 0
+    },
+    "ShadowHeight": 0
+  },
+  "VFXModels": [
+    "EQ_Bomb_S0_Top_VFXmo",
+    "EQ_Bomb_S0_Bottom_Triangles_VFXmo"
+  ],
+  "Constraints": [
+    {
+      "Type": "ObjectToBone",
+      "Bone": "Top",
+      "TargetObject": "EQ_Bomb_S0_Skelmeshao",
+      "SourceObject": "EQ_Bomb_S0_Top_VFXmo",
+      "Offset": {
+        "X": 0,
+        "Y": 0,
+        "Z": 0
+      },
+      "Rotation": {
+        "X": 0,
+        "Y": 30,
+        "Z": 0
+      }
+    },
+    {
+      "Type": "ObjectToBone",
+      "Bone": "Root",
+      "TargetObject": "EQ_Bomb_S0_Skelmeshao",
+      "SourceObject": "EQ_Bomb_S0_Bottom_Triangles_VFXmo",
+      "Offset": {
+        "X": 0,
+        "Y": 0,
+        "Z": 0
+      },
+      "Rotation": {
+        "X": 0,
+        "Y": 30,
+        "Z": 0
+      }
+    }
+  ],
+  "Animations": [
+    {
+      "Name": "Idle",
+      "Translatable": "Default Pose",
+      "Type": "Internal",
+      "HideVFX": true
+    },
+    {
+      "Name": "Pose_Small",
+      "Translatable": "Dropped",
+      "Type": "Internal",
+      "HideVFX": true
+    },
+    {
+      "Name": "EQTP_Core_Bomb_S0_Plant_Outro",
+      "Translatable": "Defusing",
+      "Type": "Internal",
+      "HideVFX": true,
+      "SequenceLength": 3
+    },
+    {
+      "Name": "EQTP_Core_Bomb_S0_Plant_Intro",
+      "Translatable": "Planting",
+      "Type": "Internal",
+      "HideVFX": true,
+      "SequenceLength": 2.3333333
+    },
+    {
+      "Name": "EQTP_Core_Bomb_S0_Plant_Idle",
+      "Translatable": "Idle - Stage 1",
+      "Type": "Internal",
+      "HideVFX": false,
+      "SequenceLength": 6,
+      "Note": "2-25 seconds",
+      "Uniforms": [
+        {
+          "Material": "Bomb_S0_Temp_Emissive",
+          "Name": "float_freq",
+          "Value": 1
+        }
+      ]
+    },
+    {
+      "Name": "EQTP_Core_Bomb_S0_Plant_Idle.001",
+      "Translatable": "Idle - Stage 2",
+      "Type": "Internal",
+      "HideVFX": false,
+      "SequenceLength": 3,
+      "Note": "25-35 seconds",
+      "Uniforms": [
+        {
+          "Material": "Bomb_S0_Temp_Emissive",
+          "Name": "float_freq",
+          "Value": 0.5
+        }
+      ]
+    },
+    {
+      "Name": "EQTP_Core_Bomb_S0_Plant_Idle.002",
+      "Translatable": "Idle - Stage 3",
+      "Type": "Internal",
+      "HideVFX": false,
+      "SequenceLength": 3,
+      "Note": "35-38 seconds",
+      "Uniforms": [
+        {
+          "Material": "Bomb_S0_Temp_Emissive",
+          "Name": "float_freq",
+          "Value": 0.25
+        }
+      ]
+    },
+    {
+      "Name": "EQTP_Core_Bomb_S0_Plant_Idle.003",
+      "Translatable": "Idle - Stage 4",
+      "Type": "Internal",
+      "HideVFX": false,
+      "SequenceLength": 3,
+      "Note": "38-41 seconds",
+      "Uniforms": [
+        {
+          "Material": "Bomb_S0_Temp_Emissive",
+          "Name": "float_freq",
+          "Value": 0.15
+        }
+      ]
+    },
+    {
+      "Name": "EQTP_Core_Bomb_S0_Plant_Idle.004",
+      "Translatable": "Idle - Stage 5",
+      "Type": "Internal",
+      "HideVFX": false,
+      "SequenceLength": 3,
+      "Note": "41-45 seconds",
+      "Uniforms": [
+        {
+          "Material": "Bomb_S0_Temp_Emissive",
+          "Name": "float_freq",
+          "Value": 0.1
+        }
+      ]
+    },
+    {
+      "Name": "EQTP_Core_Bomb_S0_Defuse01_Idle",
+      "Translatable": "Half Defused",
+      "Type": "Internal",
+      "HideVFX": true
+    },
+    {
+      "Name": "EQTP_Core_Bomb_S0_Defuse02_Idle",
+      "Translatable": "Defused",
+      "Type": "Internal",
+      "HideVFX": true
+    }
+  ],
+  "Materials": [
+    {
+      "Name": "Bomb_S0_MI",
+      "Type": "PBR",
+      "DF": "../uploads/models/weapons/spike/textures/DF.png",
+      "ORM": "../uploads/models/weapons/spike/textures/ORM.png",
+      "EM": "../uploads/models/weapons/spike/textures/EM.png",
+      "NM": "../uploads/models/weapons/spike/textures/NM.png",
+      "Metallic": 1,
+      "Roughness": 1
+    },
+    {
+      "Name": "Bomb_S0_Temp_Core_Emissive",
+      "Type": "CustomShader",
+      "Vertex": "/uploads/models/weapons/spike/shaders/core.vert",
+      "Fragment": "/uploads/models/weapons/spike/shaders/core.frag"
+    },
+    {
+      "Name": "Disable",
+      "Type": "DisabledOnVFX"
+    },
+    {
+      "Name": "Bomb_S0_Temp_Emissive",
+      "Type": "CustomShader",
+      "Vertex": "/uploads/models/weapons/spike/shaders/blinking.vert",
+      "Fragment": "/uploads/models/weapons/spike/shaders/blinking.frag",
+      "Uniforms": [
+        {
+          "Type": "Float",
+          "Name": "float_freq",
+          "Value": 1
+        },
+        {
+          "Type": "Float",
+          "Name": "float_blink_override",
+          "Value": 0
+        },
+        {
+          "Type": "Color",
+          "Name": "vec3_colora",
+          "Value": {
+            "R": 0.75,
+            "G": 9.062499,
+            "B": 15
+          }
+        },
+        {
+          "Type": "Color",
+          "Name": "vec3_colorb",
+          "Value": {
+            "R": 0,
+            "G": 0,
+            "B": 0
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,107 @@
+{
+  "Model": {
+    "Path": "../uploads/models/abilities/alarmbot/",
+    "Name": "alarmbot.glb"
+  },
+  "Settings": {
+    "FOV": 20,
+    "CameraPosition": {
+      "X": 0,
+      "Y": 0.25,
+      "Z": 2
+    },
+    "OrbitTarget": {
+      "X": 0,
+      "Y": 0.25,
+      "Z": 0
+    },
+    "ShadowHeight": 0
+  },
+  "Animations": [
+    {
+      "Name": "Idle",
+      "Translatable": "Default Pose",
+      "Type": "Internal"
+    },
+    {
+      "Name": "ABTP_Killjoy_S0_Q_StealthDrone_Deploy",
+      "Translatable": "Cast",
+      "Type": "Internal"
+    },
+    {
+      "Name": "ABTP_Killjoy_S0_Q_StealthDrone_Deactivate",
+      "Translatable": "Disabling",
+      "Type": "Internal"
+    },
+    {
+      "Name": "ABTP_Killjoy_S0_Q_StealthDrone_Deactivate_idle",
+      "Translatable": "Disabled",
+      "Type": "Internal"
+    },
+    {
+      "Name": "ABTP_Killjoy_S0_Q_StealthDrone_Reactivate",
+      "Translatable": "Enabling",
+      "Type": "Internal"
+    },
+    {
+      "Name": "ABTP_Killjoy_S0_Q_StealthDrone_Idle",
+      "Translatable": "Hiding",
+      "Type": "Internal"
+    },
+    {
+      "Name": "ABTP_Killjoy_S0_Q_StealthDrone_Dog_Look",
+      "Translatable": "Look Around",
+      "Type": "Internal"
+    },
+    {
+      "Name": "ABTP_Killjoy_S0_Q_StealthDrone_Alert",
+      "Translatable": "Alert",
+      "Type": "Internal"
+    },
+    {
+      "Name": "ABTP_Killjoy_S0_Q_StealthDrone_Run_Intro",
+      "Translatable": "Run Intro",
+      "Type": "Internal"
+    },
+    {
+      "Name": "ABTP_Killjoy_S0_Q_StealthDrone_Run_loop",
+      "Translatable": "Run Loop",
+      "Type": "Internal"
+    },
+    {
+      "Name": "ABTP_Killjoy_S0_Q_StealthDrone_Detonate",
+      "Translatable": "Detonation",
+      "Type": "Internal"
+    }
+  ],
+  "Materials": [
+    {
+      "Name": "AB_Killjoy_S0_StealthDrone_MI",
+      "Type": "PBR",
+      "DF": "../uploads/models/abilities/alarmbot/textures/df.png",
+      "ORM": "../uploads/models/abilities/alarmbot/textures/orm.png",
+      "EM": "../uploads/models/abilities/alarmbot/textures/em.png",
+      "NM": "../uploads/models/abilities/alarmbot/textures/nm.png",
+      "Metallic": 1,
+      "Roughness": 1
+    },
+    {
+      "Name": "AB_Killjoy_S0_StealthDrone_Glass_MI",
+      "Type": "GlassWithNM",
+      "NM": "../uploads/models/weapons/attachments/glass/glass_nm.png",
+      "NormalScale": {
+        "X": 1,
+        "Y": 1
+      },
+      "RepeatNormal": false,
+      "Opacity": 0.4,
+      "Metallic": 1,
+      "Roughness": 0,
+      "Color": {
+        "R": 0,
+        "G": 0.795194,
+        "B": 1
+      }
+    }
+  ]
+}

@@ -1,0 +1,144 @@
+{
+  "Model": {
+    "Path": "../uploads/models/abilities/boom-bot/",
+    "Name": "boom-bot.glb"
+  },
+  "Settings": {
+    "FOV": 12.75,
+    "FireRate": 1,
+    "EquipLength": 1.1,
+    "FP": {
+      "Bone": "L_WeaponMaster",
+      "Rotation": {
+        "X": 0,
+        "Y": 0,
+        "Z": 0
+      }
+    },
+    "CameraPosition": {
+      "X": 0,
+      "Y": 0.125,
+      "Z": 1.5
+    },
+    "OrbitTarget": {
+      "X": 0,
+      "Y": 0.125,
+      "Z": 0
+    },
+    "ShadowHeight": 0
+  },
+  "Keybinds": [
+    {
+      "Type": "CLICK",
+      "Translatable": "Cast",
+      "Animation": "FP_Clay_S0_E_Cast"
+    },
+    {
+      "Type": "KEYBOARD_EQUIP_C",
+      "Translatable": "Equip",
+      "Animation": "FP_Clay_S0_E_Equip"
+    }
+  ],
+  "Animations": [
+    {
+      "Name": "Idle",
+      "Translatable": "Default Pose",
+      "Type": "Internal"
+    },
+    {
+      "Name": "AB_Clay_S0_E_Equip",
+      "Translatable": "Equip",
+      "Type": "Internal"
+    },
+    {
+      "Name": "AB_Clay_S0_E_Idle",
+      "Translatable": "Idle",
+      "Type": "Internal"
+    },
+    {
+      "Name": "AB_Clay_S0_E_Boomba_Equip",
+      "Translatable": "Cast",
+      "Type": "Internal"
+    },
+    {
+      "Name": "AB_Clay_S0_E_Boomba_Idle",
+      "Translatable": "Rolling",
+      "Type": "Internal"
+    },
+    {
+      "Name": "AB_Clay_S0_E_Boomba_Fall",
+      "Translatable": "Fall",
+      "Type": "Internal"
+    },
+    {
+      "Name": "AB_Clay_S0_E_Boomba_L_Turn",
+      "Translatable": "Turning Left",
+      "Type": "Internal"
+    },
+    {
+      "Name": "AB_Clay_S0_E_Boomba_R_Turn",
+      "Translatable": "Turning Right",
+      "Type": "Internal"
+    },
+    {
+      "Name": "AB_Clay_S0_E_Boomba_Alert_Equip",
+      "Translatable": "Following Enemy",
+      "Type": "Internal"
+    },
+    {
+      "Name": "AB_Clay_S0_E_Boomba_Alert_Idle",
+      "Translatable": "Charging",
+      "Type": "Internal"
+    },
+    {
+      "Name": "AB_Clay_S0_E_Boomba_Explode_Jump_Intro",
+      "Translatable": "Explode Jump Intro",
+      "Type": "Internal"
+    },
+    {
+      "Name": "AB_Clay_S0_E_Boomba_Explode_Jump",
+      "Translatable": "Explode Jump",
+      "Type": "Internal"
+    },
+    {
+      "Name": "AB_Clay_S0_E_Boomba_Explode_Jump_Death",
+      "Translatable": "Explode Jump Death",
+      "Type": "Internal"
+    },
+    {
+      "Name": "AB_Clay_S0_E_Boomba_Death",
+      "Translatable": "Death",
+      "Type": "Internal"
+    }
+  ],
+  "Materials": [
+    {
+      "Name": "Clay_S0_AbilityE_MI",
+      "Type": "PBR",
+      "DF": "../uploads/models/abilities/boom-bot/textures/df.png",
+      "ORM": "../uploads/models/abilities/boom-bot/textures/orm.png",
+      "EM": "../uploads/models/abilities/boom-bot/textures/em.png",
+      "NM": "../uploads/models/abilities/boom-bot/textures/nm.png",
+      "Metallic": 1,
+      "Roughness": 1
+    },
+    {
+      "Name": "Clay_S0_AbilityE_Emissive_MI",
+      "Type": "PBR",
+      "DF": "../uploads/models/abilities/boom-bot/textures/emissive_df.png",
+      "ORM": "../uploads/models/abilities/boom-bot/textures/emissive_orm.png",
+      "EM": "../uploads/models/abilities/boom-bot/textures/emissive_df.png",
+      "NM": "../uploads/models/abilities/boom-bot/textures/emissive_nm.png",
+      "Metallic": 1,
+      "Roughness": 1,
+      "Emissive": {
+        "Color": {
+          "R": 1,
+          "G": 0.309469,
+          "B": 0
+        },
+        "Intensity": 2
+      }
+    }
+  ]
+}

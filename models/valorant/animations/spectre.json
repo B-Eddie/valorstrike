@@ -1,0 +1,247 @@
+{
+  "WEAPONS_ANIMS_JSON": {
+    "Animations": [
+      {
+        "Name": "FP_Core_MP5_S0_IdlePose",
+        "File": "FP_Spectre",
+        "Translatable": "Idle",
+        "IsHeldDefault": true,
+        "WeaponAnimName": "Idle",
+        "Path": "../uploads/models/agents_fp/animations/weapons/spectre/",
+        "Type": "External",
+        "SequenceLength": 0.033333335
+      },
+      {
+        "Name": "FP_Core_MP5_S0_Equip",
+        "File": "FP_Spectre",
+        "Translatable": "Equip",
+        "WeaponAnimName": "GN_Core_MP5_S0_Equip",
+        "Path": "../uploads/models/agents_fp/animations/weapons/spectre/",
+        "Type": "External",
+        "SequenceLength": 1.5
+      },
+      {
+        "Name": "FP_Core_MP5_S0_Fire",
+        "File": "FP_Spectre",
+        "Translatable": "Fire",
+        "WeaponAnimName": "GN_Core_MP5_S0_Fire",
+        "Path": "../uploads/models/agents_fp/animations/weapons/spectre/",
+        "Type": "External",
+        "SequenceLength": 0.33333334
+      },
+      {
+        "Name": "FP_Core_MP5_S0_Inspect",
+        "File": "FP_Spectre",
+        "Translatable": "Inspect",
+        "WeaponAnimName": "Idle",
+        "Path": "../uploads/models/agents_fp/animations/weapons/spectre/",
+        "Type": "External",
+        "SequenceLength": 4.1666665
+      },
+      {
+        "Name": "FP_Core_MP5_S0_Reload",
+        "File": "FP_Spectre",
+        "Translatable": "Reload",
+        "WeaponAnimName": "GN_Core_MP5_S0_Reload",
+        "Path": "../uploads/models/agents_fp/animations/weapons/spectre/",
+        "Type": "External",
+        "SequenceLength": 2.5
+      }
+    ]
+  },
+  "MODEL_HELD_JSON": {
+    "Model": {
+      "Path": "../uploads/models/weapons/spectre/standard/",
+      "Name": "spectre.glb"
+    },
+    "Settings": {
+      "FOV": 17.5,
+      "FireRate": 13.333,
+      "ReloadLength": 2.25,
+      "EquipLength": 0.75,
+      "AutomaticWeapon": true,
+      "CameraPosition": {
+        "X": -0.229781,
+        "Y": -0.030915,
+        "Z": 2
+      },
+      "OrbitTarget": {
+        "X": -0.229781,
+        "Y": -0.030915,
+        "Z": 0
+      },
+      "ShadowHeight": -0.15,
+      "Shadows": false
+    },
+    "Keybinds": [
+      {
+        "Type": "CLICK",
+        "Translatable": "Fire",
+        "Animation": "FP_Core_MP5_S0_Fire"
+      },
+      {
+        "Type": "KEYBOARD_EQUIP_PRIMARY",
+        "Translatable": "Equip",
+        "Animation": "FP_Core_MP5_S0_Equip"
+      },
+      {
+        "Type": "KEYBOARD_INSPECT",
+        "Translatable": "Inspect",
+        "Animation": "FP_Core_MP5_S0_Inspect"
+      },
+      {
+        "Type": "KEYBOARD_RELOAD",
+        "Translatable": "Reload",
+        "Animation": "FP_Core_MP5_S0_Reload"
+      }
+    ],
+    "Constraints": [
+      {
+        "Type": "ObjectToBone",
+        "Bone": "Magazine",
+        "TargetObject": "GN_MP5_S0_Skelmeshao",
+        "SourceObject": "GN_MP5_Magazine_S0_Staticmeshao",
+        "Offset": {
+          "X": -0.203603,
+          "Y": 0,
+          "Z": 0.035623
+        },
+        "Rotation": {
+          "X": 90,
+          "Y": 180,
+          "Z": 0
+        }
+      },
+      {
+        "Type": "ObjectToBone",
+        "Bone": "Barrel",
+        "TargetObject": "GN_MP5_S0_Skelmeshao",
+        "SourceObject": "GN_Silencer_S0_Skelmeshao",
+        "Offset": {
+          "X": 0,
+          "Y": 0,
+          "Z": 0
+        },
+        "Rotation": {
+          "X": 90,
+          "Y": 0,
+          "Z": 0
+        }
+      },
+      {
+        "Type": "ObjectToBone",
+        "Bone": "Reflex",
+        "TargetObject": "GN_MP5_S0_Skelmeshao",
+        "SourceObject": "GN_RedDot_S0_Skelmeshao",
+        "Offset": {
+          "X": 0,
+          "Y": 0,
+          "Z": 0
+        },
+        "Rotation": {
+          "X": 90,
+          "Y": 0,
+          "Z": 0
+        }
+      },
+      {
+        "Type": "ObjectToBone",
+        "Bone": "Bullet1",
+        "TargetObject": "GN_MP5_S0_Skelmeshao",
+        "SourceObject": "Bullet_9mm_StaticMeshmo",
+        "Offset": {
+          "X": 0,
+          "Y": 0,
+          "Z": 0
+        },
+        "Rotation": {
+          "X": 90,
+          "Y": 0,
+          "Z": 0
+        }
+      }
+    ],
+    "Animations": [
+      {
+        "Name": "Idle",
+        "Translatable": "Idle",
+        "FP": true,
+        "Type": "Internal"
+      },
+      {
+        "Name": "GN_Core_MP5_S0_Equip",
+        "File": "GN_Spectre",
+        "Translatable": "Equip",
+        "FP": true,
+        "Path": "../uploads/models/agents_fp/animations/weapons/spectre/",
+        "Type": "External"
+      },
+      {
+        "Name": "GN_Core_MP5_S0_Reload",
+        "File": "GN_Spectre",
+        "Translatable": "Reload",
+        "FP": true,
+        "Path": "../uploads/models/agents_fp/animations/weapons/spectre/",
+        "Type": "External"
+      },
+      {
+        "Name": "GN_Core_MP5_S0_Fire",
+        "File": "GN_Spectre",
+        "Translatable": "Fire",
+        "FP": true,
+        "Path": "../uploads/models/agents_fp/animations/weapons/spectre/",
+        "Type": "External"
+      }
+    ],
+    "Materials": [
+      {
+        "Name": "MP5_S0_MI",
+        "Type": "PBR",
+        "DF": "../uploads/models/weapons/spectre/standard/textures/df.png",
+        "ORM": "../uploads/models/weapons/spectre/standard/textures/orm.png",
+        "EM": "../uploads/models/weapons/spectre/standard/textures/em.png",
+        "NM": "../uploads/models/weapons/spectre/standard/textures/nm.png",
+        "Metallic": 1,
+        "Roughness": 1
+      },
+      {
+        "Name": "Silencer_S0_MI",
+        "Type": "PBR",
+        "DF": "../uploads/models/weapons/attachments/silencer/silencer_df.png",
+        "ORM": "../uploads/models/weapons/attachments/silencer/silencer_orm.png",
+        "EM": "../uploads/models/weapons/attachments/silencer/silencer_em.png",
+        "NM": "../uploads/models/weapons/attachments/silencer/silencer_nm.png",
+        "Metallic": 1,
+        "Roughness": 1
+      },
+      {
+        "Name": "Reddot_S0_MI",
+        "Type": "PBR",
+        "DF": "../uploads/models/weapons/attachments/reddot/reddot_df.png",
+        "ORM": "../uploads/models/weapons/attachments/reddot/reddot_orm.png",
+        "EM": "../uploads/models/weapons/attachments/reddot/reddot_em.png",
+        "NM": "../uploads/models/weapons/attachments/reddot/reddot_nm.png",
+        "Metallic": 1,
+        "Roughness": 1
+      },
+      {
+        "Name": "Weapon_Holo_Translucent_Mi",
+        "Type": "Tritium"
+      },
+      {
+        "Name": "Tritium_MI",
+        "Type": "Tritium"
+      },
+      {
+        "Name": "Bullets_S0_MI",
+        "Type": "PBR",
+        "DF": "../uploads/models/weapons/attachments/bullets/bullets_df.png",
+        "ORM": "../uploads/models/weapons/attachments/bullets/bullets_orm.png",
+        "EM": "../uploads/models/weapons/attachments/bullets/bullets_em.png",
+        "NM": "../uploads/models/weapons/attachments/bullets/bullets_nm.png",
+        "Metallic": 1,
+        "Roughness": 1
+      }
+    ]
+  }
+}

@@ -1,0 +1,79 @@
+{
+  "Model": {
+    "Path": "../uploads/models/abilities/guiding-light/",
+    "Name": "guiding-light.glb"
+  },
+  "Settings": {
+    "FOV": 45,
+    "CameraPosition": {
+      "X": 0,
+      "Y": 2.5,
+      "Z": 0
+    },
+    "OrbitTarget": {
+      "X": 0,
+      "Y": 0,
+      "Z": 0
+    },
+    "ShadowHeight": 0
+  },
+  "Animations": [
+    {
+      "Name": "Idle",
+      "Translatable": "Default Pose",
+      "Type": "Internal"
+    },
+    {
+      "Name": "ABTP_Guide_S0_E_Hawk_Intro",
+      "Translatable": "Cast",
+      "Type": "Internal"
+    },
+    {
+      "Name": "ABTP_Guide_S0_E_Hawk_Run",
+      "Translatable": "Fly",
+      "Type": "Internal"
+    },
+    {
+      "Name": "ABTP_Guide_S0_E_Hawk_Bounce_L",
+      "Translatable": "Bounce Left",
+      "Type": "Internal"
+    },
+    {
+      "Name": "ABTP_Guide_S0_E_Hawk_Bounce_R",
+      "Translatable": "Bounce Right",
+      "Type": "Internal"
+    },
+    {
+      "Name": "ABTP_Guide_S0_E_Hawk_Bank_Up",
+      "Translatable": "Tilt Up",
+      "Type": "Internal"
+    },
+    {
+      "Name": "ABTP_Guide_S0_E_Hawk_Bank_East",
+      "Translatable": "Tilt East",
+      "Type": "Internal"
+    },
+    {
+      "Name": "ABTP_Guide_S0_E_Hawk_Bank_Down",
+      "Translatable": "Tilt Down",
+      "Type": "Internal"
+    },
+    {
+      "Name": "ABTP_Guide_S0_E_Hawk_Bank_West",
+      "Translatable": "Tilt West",
+      "Type": "Internal"
+    }
+  ],
+  "Materials": [
+    {
+      "Name": "Uber_Guide_Hawk_AbilityE_S0_MI",
+      "Type": "PBR",
+      "DF": "../uploads/models/abilities/guiding-light/textures/df.png",
+      "ORM": "../uploads/models/abilities/guiding-light/textures/orm.png",
+      "EM": "../uploads/models/abilities/guiding-light/textures/em.png",
+      "NM": "../uploads/models/abilities/guiding-light/textures/nm.png",
+      "Metallic": 1,
+      "Roughness": 1
+    }
+  ]
+}
