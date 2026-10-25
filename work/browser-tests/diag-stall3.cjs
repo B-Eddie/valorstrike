@@ -1,10 +1,11 @@
 const {serve, launch, boot} = require('./lib.cjs');
+const MAP = process.env.MAP || 'breeze';
 (async()=>{
   const srv = await serve();
   const {b, p, errors} = await launch({profile:'light', viewport:{width:320, height:180}});
   try {
     await boot(p);
-    await p.evaluate(() => { window.__vs.FV.pick = process.env.MAP || 'breeze'; window.__vs.light(true); window.__vs.agents(false); window.__vs.startTDM(); });
+    await p.evaluate((m) => { window.__vs.FV.pick = m; window.__vs.light(true); window.__vs.agents(false); window.__vs.startTDM(); }, MAP);
     await p.waitForFunction(() => window.__vs && window.__vs.state().running, {timeout: 60000});
     const lastPos = {}, still = {}, dumped = {};
     for (let i = 0; i < 40; i++) {

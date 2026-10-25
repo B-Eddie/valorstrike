@@ -20,6 +20,8 @@ function mk(blocked){
  return {ctx,nodes};}
 const me=()=>({g:{position:{x:0,y:0,z:0}}});
 {const t=mk(new Set());t.ctx.nmPath=()=>[0,1,2,3];assert.equal(JSON.stringify(t.ctx.api(me(),50,50)),JSON.stringify([3,0]),'all hops clear: farthest validated node wins');}
+{const t=mk(new Set());t.ctx.nmPath=()=>[0,1,2,3];t.ctx.nodes[1]=[0.4,0,0];assert.equal(JSON.stringify(t.ctx.api(me(),50,50)),JSON.stringify([3,0]),'node the unit stands on (<0.8u) is skipped, never targeted');}
+{const t=mk(new Set());t.ctx.nmPath=()=>[0,1];t.ctx.nodes[1]=[0.4,0,0];assert.equal(JSON.stringify(t.ctx.api(me(),50,50)),JSON.stringify([50,50]),'only reached-range nodes ahead: steer at the goal (planner/arrive-threshold deadlock fix)');}
 {const t=mk(new Set([1]));t.ctx.nmPath=()=>[0,1,2,3];assert.equal(JSON.stringify(t.ctx.api(me(),50,50)),JSON.stringify([3,0]),'blocked first hop skipped: next clear node targeted');}
 {const t=mk(new Set([1,2,3]));t.ctx.nmPath=()=>[0,1,2,3];assert.equal(JSON.stringify(t.ctx.api(me(),50,50)),JSON.stringify([50,50]),'every hop blocked: steer at the goal, never freeze on [p.x,p.z]');}
 {const t=mk(new Set());t.ctx.nmPath=()=>[];assert.equal(JSON.stringify(t.ctx.api(me(),50,50)),JSON.stringify([0,0]),'no path: hold position');}

@@ -70,9 +70,11 @@ function nmPath(C,start,end){const cacheKey=start+'>'+end;if(NM.routeCache.has(c
 function nmSegment(C,p,n){const d=Math.hypot(n[0]-p.x,n[2]-p.z),steps=Math.max(1,Math.ceil(d/.18));let y=p.y;for(let k=1;k<=steps;k++){const x=p.x+(n[0]-p.x)*k/steps,z=p.z+(n[2]-p.z)*k/steps,h=nmHeight(C,x,z,y);if(h-y>.321||y-h>.35||nmBlocked(C,x,z,.43,Math.max(y,h)+.32))return false;y=h;}return Math.abs(y-n[1])<.35;}
 // nmNext validates EVERY hop from the unit's actual position (breeze west edge: the nearest graph
 // edge sat behind a wall corner from off-mesh ground, parking the unit in a blocked 0.4 s re-plan
-// loop). With no clear hop onto the path it steers at the goal itself so collision sliding and
-// xUn re-approach instead of freezing on an unreachable node 1 u away.
-function nmNext(C,u,gx,gz){const p=u.g.position,N=C.nav.nodes,s=nmNear(C,p.x,p.z,p.y),e=nmNear(C,gx,gz),path=nmPath(C,s,e);if(!path.length)return [p.x,p.z];let target=null;for(let i=1;i<Math.min(path.length,10);i++){const n=N[path[i]];if(nmSegment(C,p,n))target=n;}return target?[target[0],target[2]]:[gx,gz];}
+// loop). It also never targets a node the unit already stands on: the movement floor (sd > 0.5)
+// and the planner's arrive threshold (dist < 0.55) deadlocked units 0.5 u short of their waypoint
+// on haven. With no clear hop onto the path it steers at the goal itself so collision sliding and
+// xUn re-approach instead of freezing on an unreachable or already-reached node.
+function nmNext(C,u,gx,gz){const p=u.g.position,N=C.nav.nodes,s=nmNear(C,p.x,p.z,p.y),e=nmNear(C,gx,gz),path=nmPath(C,s,e);if(!path.length)return [p.x,p.z];let target=null;for(let i=1;i<Math.min(path.length,10);i++){const n=N[path[i]];if(Math.hypot(n[0]-p.x,n[2]-p.z)<0.8)continue;if(nmSegment(C,p,n))target=n;}return target?[target[0],target[2]]:[gx,gz];}
 
 {const p=xPath;xPath=function(u,dt,gx,gz,out){const C=nmActive();if(!C)return p.apply(this,arguments);u.xr=[];u.npT=(u.npT||0)-dt;if(!u.np||u.npT<=0||u.blk||Math.hypot(u.np[0]-u.g.position.x,u.np[1]-u.g.position.z)<.55||!u.ng||Math.hypot(u.ng[0]-gx,u.ng[1]-gz)>3){u.np=nmNext(C,u,gx,gz);u.ng=[gx,gz];u.npT=.4;u.blk=0;}return u.np;};}
 {const goal=xGoal;xGoal=function(u,team,atk,out){const C=nmActive();if(!C||mode!=='five')return goal.apply(this,arguments);const s=FV.sp;if(!s)return null;u.xr=[];s.xr='native';if(s.st==='plant')return x2(out,s.x,s.z);if(atk&&s.st==='drop')return x2(out,s.x,s.z);const names=Object.keys(C.meta.sites),name=atk?s.site:(s.seen||names[Math.max(0,team.indexOf(u))%names.length]),p=C.meta.sites[name]||C.meta.sites[names[0]];return x2(out,p[0],p[2]);};}

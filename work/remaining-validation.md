@@ -76,3 +76,10 @@ Open `http://127.0.0.1:8876/`; localhost clients use the local game service on p
 ## Same stall class on haven (OPEN, 5:28 AM)
 - haven tdm-soak FAIL post-nmNext-fix: Breach stationary 16s, engaged=false, at (33.6,-38.8), t=550 (early match). Breeze is clean; the class persists on at least one other map, cause for the haven instance not yet captured (diag-stall3 now takes MAP env for the next probe).
 - Next: MAP=haven diag-stall3 until the engaged=false stall is caught with live nav state; check whether haven's case is the same unchecked-hop shape or a distinct one (e.g. nmNear y-misattach at spawn, e < 0, or s on a playable-but-locally-walled node).
+
+## Haven stall root cause + fix (5:36 AM)
+- diag-stall3 MAP=haven caught it (Omen AND Raze at (33.6,-38.8)): waypoint 0.54u away, path EXISTS (pl=132), blk=0, spd=0, fs=-7.15 (zero velocity 7s+), usT=0.02 (xUn only tickling on jitter). Distinct from breeze: nothing blocked them - they had ARRIVED.
+- Root cause: planner/motor threshold deadlock. The xPath wrapper re-plans on dist(np,p) < 0.55 ("not arrived"); the motor only walks when sd > 0.5 ("arrived, stop"). nmNext returned the node the unit stood on, sd settled at ~0.5-0.54, every re-plan re-targeted the same reached node: stable equilibrium, zero velocity forever.
+- Fix: nmNext skips path nodes within 0.8u of the unit when choosing a target (a reached node is never a waypoint); with no clear hop beyond 0.8u it steers at the goal (same fallback as the blocked-hop case).
+- Regression extended: work/test_tdm_native_routing.cjs pins "stands-on node skipped" and "reached-range only -> goal steer".
+- VERIFIED: haven tdm-soak PASS (12 deaths / 12 respawns, zero issues); breeze tdm-soak PASS (12/11) - no cross-map regression. 41/41 client suites green.
