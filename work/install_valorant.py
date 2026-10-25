@@ -12,7 +12,11 @@ block+='\n'+(root/'work/native_maps_runtime.js').read_text()+'\n'+(root/'work/fe
 if ra in s:s=s[:s.index(ra)]+s[s.index(rb)+len(rb):]
 block+='\n'+(root/'work/repair_runtime.js').read_text();sa='// ---- TRUSTED ONLINE SERVER ----';sb='// ---- END TRUSTED ONLINE SERVER ----'
 if sa in s:s=s[:s.index(sa)]+s[s.index(sb)+len(sb):]
-block+='\n'+(root/'work/server_runtime.js').read_text();mark='xReady = true; // every mode is initialised; lobby launches may now start them';s=s.replace(mark,block+'\n'+mark)
+block+='\n'+(root/'work/server_runtime.js').read_text();ga='// ---- WEAPON GRIP ----';gb='// ---- END WEAPON GRIP ----'
+if ga in s:s=s[:s.index(ga)]+s[s.index(gb)+len(gb):]
+block+='\n'+(root/'work/grip_runtime.js').read_text().rstrip('\n');ta='// ---- FOOT PLANTING ----';tb='// ---- END FOOT PLANTING ----'
+if ta in s:s=s[:s.index(ta)]+s[s.index(tb)+len(tb):]
+block+='\n'+(root/'work/feet_runtime.js').read_text().rstrip('\n');mark='xReady = true; // every mode is initialised; lobby launches may now start them';s=s.replace(mark,block+'\n'+mark)
 if '<script src="models/valorant/manifest.js"></script>' not in s:s=s.replace('<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>','<script src="models/valorant/manifest.js"></script>\n<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>')
 # Find the actual three script tag, which may use an onerror handler.
 if '<script src="models/valorant/manifest.js"></script>' not in s:s=s.replace('<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js"></script>','<script src="models/valorant/manifest.js"></script>\n<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js"></script>')

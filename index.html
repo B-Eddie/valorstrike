@@ -3407,7 +3407,7 @@ const XSA = {
 };
 // ---- Agent animation layers: one AnimationMixer per agent, three layers: lower body (locomotion), upper body (weapon pose / reload / casts),
 // full body (plant, deaths), plus additive fire recoil + hit flinch. Rigs and clips come from the native Valorant kits (valorant_runtime.js).
-var XUB = { src: {}, ok: false }; // no stand-in body downloads; FPA sees ok=false
+var XUB = { src: {}, ok: false }; // no stand-in body downloads
 // game state -> retargeted locomotion clip (strafe, backpedal, crouch depth and aim pitch are layered on top in code)
 const XUB_ST = { idle: "Idle_Loop", walk: "Walk_Loop", run: "Jog_Fwd_Loop", strafeL: "Walk_Loop", strafeR: "Walk_Loop", back: "Walk_Loop", crouch: "Crouch_Idle_Loop", crouchWalk: "Crouch_Fwd_Loop",
   jump: "Jump_Start", fall: "Jump_Loop", land: "Jump_Land", aim: "Pistol_Aim_Neutral", fire: "Pistol_Shoot", reload: "Pistol_Reload", cast: "Spell_Simple_Shoot", throw: "OverhandThrow",
@@ -10227,7 +10227,7 @@ let xTGOn = false; const xTG = { inPlay: () => false, relAll: () => {} };
 #xTE button.p{background:var(--red,#ff4655);border-color:var(--red,#ff4655)}
 #xTE button:disabled{opacity:.4}`;
   document.head.appendChild(st);
-  const DEF = { fire: [84, 66, 78, "FIRE", "Fire"], jump: [94, 48, 58, "JUMP", "Jump"], duck: [94, 82, 54, "DUCK", "Duck"], reload: [74, 84, 48, "R", "Reload"], zoom: [73, 50, 50, "ZOOM", "Zoom"], swap: [84, 40, 48, "⇄", "Switch weapon"], pause: [50, 7, 44, "II", "Pause"], c: [62, 18, 46, "C", "Ability C"], q: [69, 18, 46, "Q", "Ability Q"], e: [76, 18, 46, "E", "Ability E"], x: [83, 18, 46, "X", "Ultimate X"], plant: [8, 42, 54, "4", "Plant or defuse (hold)"], buy: [8, 26, 50, "B", "Buy"], inspect: [66, 88, 40, "INS", "Inspect weapon"], ping: [63, 70, 44, "PING", "Ping"], drills: [50, 18, 48, "DRL", "Range drills"] };
+  const DEF = { fire: [84, 66, 78, "FIRE", "Fire"], jump: [94, 48, 58, "JUMP", "Jump"], duck: [94, 82, 54, "DUCK", "Duck"], reload: [74, 84, 48, "R", "Reload"], zoom: [73, 50, 50, "ZOOM", "Zoom"], swap: [84, 40, 48, "⇄", "Switch weapon"], pause: [50, 7, 44, "II", "Pause"], c: [62, 18, 46, "C", "Ability C"], q: [69, 18, 46, "Q", "Ability Q"], e: [76, 18, 46, "E", "Ability E"], x: [83, 18, 46, "X", "Ultimate X"], plant: [8, 42, 54, "4", "Plant or defuse (hold)"], use: [8, 58, 48, "F", "Use, pick up or capture (hold)"], buy: [8, 26, 50, "B", "Buy"], inspect: [66, 88, 40, "INS", "Inspect weapon"], ping: [63, 70, 44, "PING", "Ping"], drills: [50, 18, 48, "DRL", "Range drills"] };
   let L = {};
   const reset = () => { L = {}; for (const k in DEF) L[k] = { x: DEF[k][0], y: DEF[k][1], s: DEF[k][2], off: false }; };
   reset();
@@ -10266,6 +10266,7 @@ let xTGOn = false; const xTG = { inPlay: () => false, relAll: () => {} };
     if (k === "jump") return kd("Space");
     if (k === "duck") return kd("ControlLeft");
     if (k === "plant") return kd("Digit4");
+    if (k === "use") return kd("KeyF"); // F held: floor guns, doors, orb capture (keyup on release)
     if (k === "reload") { kd("KeyR"); return ku("KeyR"); }
     if (k === "buy") { kd("KeyB"); return ku("KeyB"); }
     if (k === "inspect") { kd("KeyY"); return ku("KeyY"); }
@@ -10284,7 +10285,7 @@ let xTGOn = false; const xTG = { inPlay: () => false, relAll: () => {} };
   }
   function release(k) {
     if (k === "fire") { fireHeld = false; try { AM.fire = false; } catch (e) {} if (kLP) { clearTimeout(kLP); kLP = 0; shoot(); } }
-    if (k === "jump") ku("Space"); if (k === "duck") ku("ControlLeft"); if (k === "plant") ku("Digit4");
+    if (k === "jump") ku("Space"); if (k === "duck") ku("ControlLeft"); if (k === "plant") ku("Digit4"); if (k === "use") ku("KeyF");
   }
   const P = {};
   const joyOff = () => { ["KeyW", "KeyA", "KeyS", "KeyD", "ShiftLeft"].forEach((c) => keys[c] = false); Jb.style.display = "none"; };
@@ -10946,13 +10947,9 @@ try {
   { const b0 = botAb; botAb = function (b, dt, see, tg, from) { const R = b && b.xm; if (R && R.xCp > 0) xCaBot(R, dt); XCA.bb = b; try { return b0(b, dt, see, tg, from); } finally { XCA.bb = null; } }; }
   { const f0 = feed; feed = function (t) { const b = XCA.bb; if (b && b.xm && !(b.xm.xCp > 0) && typeof t === "string" && t.indexOf("▸") > 0) { try { xCaBotGo(b.xm); } catch (e) {} } return f0.apply(this, arguments); }; }
 } catch (e) { console.warn("cast anims unavailable", e); }
-// ---- FIRST-PERSON ARMS: the player's own agent body (Quaternius Universal Base Characters, models/agent_m|f.glb, CC0) cut down to its arm + hand triangles
-// (Suit sleeve, Gloves, a thin Skin band at the wrist; skin weights renormalised onto the arm bones), posed every frame: shoulders fixed in camera space,
-// 2-bone IK puts each wrist on the weapon (right grip, left handguard / foregrip / cupping the right hand on pistols; points per weapon model, gun-local),
-// hand frame + finger curls per grip type (trigger finger along the guard). Targets are read off the gun / knife group each frame, so bob, sway, recoil,
-// equip, inspect, ADS, reload (left hand fetches the mag, right hand works the bolt) and the cast lower all carry the arms; the right arm performs casts.
-// Not ready (no GLTFLoader, agent or gun models missing / failed, any build error) -> the old primitive arms (VMA / KARM / cast hand) stay.
-var FPA = { st: "off", R: {}, k: "", ag: "", on: false, M: null, err: "" };
+// ---- FIRST-PERSON WEAPON GEOMETRY: the player's arms are the native first-person rig (xvFPLoad in the Valorant
+// integration: authored hands, fingers, equip / fire / reload / inspect per weapon and the knife). The old procedural
+// Quaternius-body arms were removed with the stand-in rigs; only the per-weapon grip geometry and rest offsets remain.
 // per weapon, VMS model space (metres, barrel -Z, +Y up): right grip top z,y, grip bottom z,y, left support z,y, left type (r handguard, p cup the right hand, f vertical foregrip + its bottom z,y)
 var FPG = {
   Classic: [-0.007, -0.017, 0.004, -0.126, 0, 0, "p"], Sheriff: [0.022, -0.029, 0.089, -0.15, 0, 0, "p"], Ghost: [-0.033, -0.036, 0, -0.171, 0, 0, "p"],
@@ -10963,171 +10960,11 @@ var FPG = {
   Guardian: [0.144, -0.036, 0.178, -0.086, -0.267, -0.047, "r"], Marshal: [0.089, -0.029, 0.144, -0.1, -0.267, -0.026, "r"], Outlaw: [0.116, -0.021, 0.138, -0.079, -0.222, -0.017, "r"],
   Operator: [0.122, -0.05, 0.189, -0.164, -0.311, -0.036, "r"], Ares: [0.067, -0.043, 0.1, -0.15, -0.311, -0.031, "r"], Odin: [0.044, -0.064, 0.133, -0.207, -0.4, 0.005, "r"] };
 // per-class viewmodel rest offset on top of VMP (camera space, metres; ry inward yaw): sidearms sit lower and further right than rifles, arm out toward the corner (Valorant's
-// Classic / Sheriff hold), ADS still centres them; vmTick moves the gun, fpaTick moves the shoulders with it
+// Classic / Sheriff hold), ADS still centres them; vmTick moves the gun
 var VMPC = { p: { x: 0.065, y: -0.04, z: 0.015, ry: 0.05 }, r: { x: 0, y: 0, z: 0, ry: 0 } };
 function vmOff(w) { if (w == null) { w = "Vandal"; try { w = mode === "duel" ? "Operator" : wName(); } catch (e) {} } const g = FPG[w]; return (g && g[6] === "p" ? VMPC.p : VMPC.r); }
-// finger curls (rad) per hand pose: thumb, index, middle, ring, pinky x 3 joints
-var FPA_C = { grip: [[0, -0.3, -0.3, 0.4], [0.1, 0.25, 0.15], [1.35, 1.25, 0.5], [1.35, 1.25, 0.5], [1.35, 1.25, 0.5]], // [3] = thumb swing in the palm plane
-  hg: [[-0.2, -0.1, 0, 0.4], [0.8, 0.55, 0.35], [0.85, 0.6, 0.4], [0.9, 0.62, 0.42], [0.95, 0.65, 0.45]],
-  cup: [[-0.4, -0.2, -0.1, -0.3], [1.1, 1, 0.5], [1.1, 1, 0.5], [1.1, 1, 0.5], [1.1, 1, 0.5]],
-  fist: [[-0.6, 0.9, 0.7, 0.8], [1.35, 1.25, 0.6], [1.35, 1.25, 0.6], [1.35, 1.25, 0.6], [1.35, 1.25, 0.6]],
-  open: [[0.1, 0.1, 0.05], [0.15, 0.15, 0.1], [0.15, 0.15, 0.1], [0.2, 0.15, 0.1], [0.25, 0.2, 0.1]] };
-var FPA_SK = { Omen: 0.93, Sova: 0.93, Breach: 0.8, Raze: 0.78, Killjoy: 0.88, Chamber: 0.9, Cypher: 0.93 }; // where the sleeve ends (fpT); 0.93 = no skin gap
-// wrist offsets per hand pose [back along the fingers from the palm point, off the palm surface] (gun-local metres)
-var FPA_H = { grip: [0.095, 0.024], hg: [0.085, 0.026], cup: [0.085, 0.055], fg: [0.06, 0.032], knife: [0.075, 0.03] };
-var FPA_GC = (a, i, j) => (j === 0 ? a.getX(i) : j === 1 ? a.getY(i) : j === 2 ? a.getZ(i) : a.getW(i)); // works on interleaved glTF attributes too
-var FPA_P = [0.3, 0.3]; // pistol support hand: fingers dip / thumb lean forward
-var FPA_LH = { F: [0.7, -0.5, -0.3], Th: [0, 0.3, -1], G: [0.008, -0.008] }; // support hand on a handguard: frame (gun-local) + palm point offset (x, y)
-var FPA_SD = { r: [0.3, -0.7, 0.6], l: [-0.45, -0.75, 0.5], lp: [-0.35, -0.8, 0.5], k: [0.25, -0.9, 0.35], f: [0.88, 0.9] }; // shoulder = rest wrist + dir * reach * f (camera space): where each arm comes from
-var FPA_TW = 0.6; // forearm twist: how much of the elbow hinge frame the forearm keeps vs the hand (rest goes to the wrist); 0.25 with a pole-axis frame stretched the male left elbow 3-4x
-var FPA_ARM = /^(upperarm|lowerarm|hand|thumb|index|middle|ring|pinky)_/;
-function fpaMats() { // sleeve / cuff band / wrist skin / glove zones cut by the vertex's position along its forearm (fpT, 0 elbow .. 1 wrist joint .. ~1.9 fingertips), so the seams are clean rings;
-  // PBR (rough cloth sleeve, semi-matte tactical glove), a facing-ratio term so the tubes read round, a dark cuff band, a lighter glove strap, darker knuckle pads + fingertip caps
-  if (FPA.M) return FPA.M;
-  const U = { fpSuit: { value: new THREE.Color(0x9fd3f0) }, fpSkin: { value: new THREE.Color(0xf0d0b8) }, fpGlove: { value: new THREE.Color(0x1c1e22) }, fpCut: { value: new THREE.Vector2(0.84, 0.92) } };
-  const mk = (ro) => { const m = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: ro, metalness: 0 }); m.userData.fpa = 1;
-    m.onBeforeCompile = (sh) => { Object.assign(sh.uniforms, U);
-      sh.vertexShader = "attribute float fpT;\nvarying float vFpT;\n" + sh.vertexShader.replace("#include <begin_vertex>", "#include <begin_vertex>\nvFpT = fpT;");
-      sh.fragmentShader = "uniform vec3 fpSuit; uniform vec3 fpSkin; uniform vec3 fpGlove; uniform vec2 fpCut;\nvarying float vFpT;\n" +
-        sh.fragmentShader.replace("#include <color_fragment>", "#include <color_fragment>\nfloat t = vFpT; vec3 zc = t < fpCut.x - 0.08 ? fpSuit : t < fpCut.x ? fpSuit * 0.42 : t < fpCut.y ? fpSkin : fpGlove;\n" +
-          "if (t >= fpCut.y) zc *= (t < 1.03 ? 1.55 : 1.0) * (t > 1.4 && t < 1.5 ? 0.55 : 1.0) * (t > 1.78 ? 0.7 : 1.0);\ndiffuseColor.rgb *= zc;")
-          .replace("#include <normal_fragment_maps>", "#include <normal_fragment_maps>\ndiffuseColor.rgb *= 0.55 + 0.45 * clamp(dot(normal, normalize(vViewPosition)), 0.0, 1.0);"); };
-    m.customProgramCacheKey = () => "fparms2"; return m; };
-  FPA.M = { U, suit: mk(0.85), glove: mk(0.6) }; return FPA.M;
-}
-var FPA_GL = [0x1c1e22, 0.82, 0.85]; // glove = agent secondary pulled 82% toward tactical charcoal; sleeve = agent body x 0.85 (keeps white suits off the clip point)
-function fpaCol(ag) { // the agent's own third-person zone colours (as in xUbKit), toned for the viewmodel
-  const M = fpaMats(), A = (typeof XAG !== "undefined" && XAG[ag]) || { t: 0x9fd3f0, s: 0xd9a382 }, S = (typeof XSA !== "undefined" && XSA[ag]) || {};
-  M.U.fpSuit.value.setHex(S.b != null ? S.b : A.t).multiplyScalar(FPA_GL[2]); M.U.fpGlove.value.setHex(S.d != null ? S.d : FPA_GL[0]).lerp(new THREE.Color(FPA_GL[0]), FPA_GL[1]); M.U.fpSkin.value.setHex(A.s != null ? A.s : 0xd9a382).multiplyScalar(1.08);
-  M.U.fpCut.value.set(FPA_SK[ag] != null ? FPA_SK[ag] : 0.84, 0.93); // gloves with a bare-skin gap at the wrist; sleeve length per agent
-}
-function fpaBuild(k) {
-  const G = XUB.src[k]; if (!G || !G.scene || !THREE.SkeletonUtils) throw new Error("agent body " + k + " missing");
-  const sc = THREE.SkeletonUtils.clone(G.scene), B = (n) => sc.getObjectByName(n), M = fpaMats(), drop = [], keep = [];
-  sc.updateMatrixWorld(true);
-  sc.traverse((o) => { if (!o.isMesh) return; const n = o.material && o.material.name; if (o.isSkinnedMesh && (n === "Suit" || n === "Gloves")) keep.push(o); else drop.push(o); });
-  drop.forEach((o) => o.parent && o.parent.remove(o));
-  const wb = {}; ["l", "r"].forEach((s) => { const a = new THREE.Vector3().setFromMatrixPosition(B("lowerarm_" + s).matrixWorld), h = new THREE.Vector3().setFromMatrixPosition(B("hand_" + s).matrixWorld); wb[s] = [a, h.sub(a)]; });
-  let tris = 0; const v = new THREE.Vector3();
-  keep.forEach((o) => {
-    const g = o.geometry, si = g.attributes.skinIndex, sw = g.attributes.skinWeight, ps = g.attributes.position, bones = o.skeleton.bones, ix = g.index, suit = o.material.name === "Suit";
-    const n = si.count, arm = new Uint8Array(n), FT = new Float32Array(n), W = new Float32Array(n * 4), I = new Float32Array(n * 4);
-    for (let i = 0; i < n; i++) {
-      let bb = 0, bw = -1, t = 0; for (let j = 0; j < 4; j++) { const w = FPA_GC(sw, i, j), b = FPA_GC(si, i, j), ok = bones[b] && FPA_ARM.test(bones[b].name); I[i * 4 + j] = b; W[i * 4 + j] = ok ? w : 0; t += ok ? w : 0; if (w > bw) { bw = w; bb = b; } }
-      const nm = bones[bb] ? bones[bb].name : ""; arm[i] = FPA_ARM.test(nm) ? 1 : 0;
-      if (t > 1e-4) for (let j = 0; j < 4; j++) W[i * 4 + j] /= t; else { W[i * 4] = 1; I[i * 4] = bb; }
-      if (arm[i]) { v.fromBufferAttribute(ps, i).applyMatrix4(o.matrixWorld); const [a, d] = wb[v.x >= 0 ? "l" : "r"]; FT[i] = v.sub(a).dot(d) / d.lengthSq(); } // both meshes share the cut, so the Suit / Gloves triangle seam never shows
-    }
-    const A = [];
-    for (let t = 0; t < ix.count; t += 3) { const a = ix.getX(t), b = ix.getX(t + 1), c = ix.getX(t + 2); if (arm[a] && arm[b] && arm[c]) A.push(a, b, c); }
-    const ng = new THREE.BufferGeometry(); for (const nm in g.attributes) if (nm !== "skinWeight" && nm !== "skinIndex") ng.setAttribute(nm, g.attributes[nm]);
-    ng.setAttribute("skinWeight", new THREE.BufferAttribute(W, 4)); ng.setAttribute("skinIndex", new THREE.BufferAttribute(new Uint16Array(I), 4));
-    ng.setAttribute("fpT", new THREE.BufferAttribute(FT, 1)); ng.setIndex(A); tris += A.length / 3;
-    o.geometry = ng; o.material = suit ? M.suit : M.glove; o.frustumCulled = false; o.castShadow = o.receiveShadow = false; if (typeof XNR === "function") o.raycast = XNR;
-  });
-  const side = (s) => {
-    const u = B("upperarm_" + s), l = B("lowerarm_" + s), h = B("hand_" + s); if (!u || !l || !h) throw new Error("arm bones missing");
-    const palm = new THREE.Vector3(0, -1, 0), q = new THREE.Quaternion(), p0 = new THREE.Vector3(), p1 = new THREE.Vector3();
-    const fn = ["thumb", "index", "middle", "ring", "pinky"].map((f) => [1, 2, 3].map((j) => { const b = B(f + "_0" + j + "_" + s), c = b && b.children.find((x) => x.isBone); if (!b || !c) throw new Error("finger " + f + j + s);
-      b.getWorldPosition(p0); c.getWorldPosition(p1); b.getWorldQuaternion(q); const ax = p1.sub(p0).normalize().cross(palm).normalize().applyQuaternion(q.invert());
-      const a2 = palm.clone().applyQuaternion(q); return { b, q0: b.quaternion.clone(), ax: ax.clone(), a2 }; })); // a2: palm normal (thumb swing toward / away from the index)
-    return { u, l, h, c: u.parent, a: l.position.length(), b: h.position.length(), us: u.scale.clone(), fn };
-  };
-  const R = { sc, l: side("l"), r: side("r"), tris }; sc.rotation.y = Math.PI; sc.position.set(0, -1.5, 0.05);
-  return R;
-}
-function fpaReady() { // builds on first use once the agent rig + gun models are in; any failure leaves the primitive arms
-  if (FPA.st === "ready") return true; if (FPA.st === "fail") return false;
-  try {
-    if (typeof XUB === "undefined" || !XUB.ok || !XUB.src || !XUB.src.m || !XUB.src.f || typeof XGM === "undefined" || !XGM.rdy || !THREE.SkeletonUtils) return false;
-    FPA.g = new THREE.Group(); FPA.g.name = "fparms"; FPA.g.visible = false;
-    ["m", "f"].forEach((k) => { FPA.R[k] = fpaBuild(k); FPA.R[k].sc.visible = false; FPA.g.add(FPA.R[k].sc); });
-    camera.add(FPA.g); FPA.st = "ready"; return true;
-  } catch (e) { FPA.st = "fail"; FPA.err = String(e); console.warn("first-person arms unavailable; keeping primitive arms", e); try { if (FPA.g) camera.remove(FPA.g); } catch (e2) {} return false; }
-}
-var FPV = { v: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map(() => new THREE.Vector3()), q: [0, 1, 2, 3, 4].map(() => new THREE.Quaternion()), m: new THREE.Matrix4(), m2: new THREE.Matrix4(), rest: new THREE.Matrix4() };
-// hand frame: F = wrist -> knuckles (bone +Y), Th = thumb side (bone +Z); palm faces +X (left hand) / -X (right hand) of that frame
-function fpaBasis(F, Th, out) { const Y = F.clone().normalize(), Z = Th.clone().sub(Y.clone().multiplyScalar(Th.dot(Y))).normalize(), X = new THREE.Vector3().crossVectors(Y, Z); return out.setFromRotationMatrix(FPV.m2.makeBasis(X, Y, Z)); }
-// one arm: S shoulder, T wrist, P elbow pole (all world), Qh hand world quaternion, curls; ws = world scale of the rig
-function fpaArm(A, S, T, P, Qh, cu, ws) {
-  const a = A.a * ws, b = A.b * ws, d = T.clone().sub(S); let L = d.length(); const mx = (a + b) * 0.995, mn = Math.abs(a - b) + 0.01 * ws;
-  if (L > mx) { S = T.clone().sub(d.multiplyScalar(mx / L)); L = mx; d.copy(T).sub(S); } else if (L < mn) { L = mn; }
-  const n = d.normalize(), ca = Math.max(-1, Math.min(1, (a * a + L * L - b * b) / (2 * a * L))), sa = Math.sqrt(1 - ca * ca);
-  const p = P.clone().sub(n.clone().multiplyScalar(P.dot(n))); if (p.lengthSq() < 1e-8) p.set(0, -1, 0); p.normalize();
-  const E = S.clone().add(n.clone().multiplyScalar(a * ca)).add(p.clone().multiplyScalar(a * sa));
-  const Yu = E.clone().sub(S), Yl = T.clone().sub(E), np = p.clone().negate();
-  const hx = new THREE.Vector3().crossVectors(n, p), Qu = fpaBasis(Yu, hx, new THREE.Quaternion()), hz = new THREE.Vector3(0, 0, 1).applyQuaternion(Qh), Ql = fpaBasis(Yl, hx.clone().multiplyScalar(FPA_TW).add(hz), new THREE.Quaternion()); // the rig's elbows hinge about bone +Z (bind-pose crease), so +Z = the hinge axis n x pole
-  A.c.updateWorldMatrix(true, false); const Qc = new THREE.Quaternion(); A.c.matrixWorld.decompose(FPV.v[11], Qc, FPV.v[10]);
-  A.u.position.copy(S).applyMatrix4(FPV.m.copy(A.c.matrixWorld).invert());
-  A.u.quaternion.copy(Qc.invert()).multiply(Qu); A.l.quaternion.copy(Qu.clone().invert()).multiply(Ql); A.h.quaternion.copy(Ql.invert()).multiply(Qh);
-  if (cu) A.fn.forEach((ch, i) => ch.forEach((f, j) => { f.b.quaternion.copy(f.q0); if (j === 0 && cu[i][3]) f.b.quaternion.multiply(FPV.q[4].setFromAxisAngle(f.a2, cu[i][3])); f.b.quaternion.multiply(FPV.q[4].setFromAxisAngle(f.ax, cu[i][j])); }));
-  return E;
-}
-// hand targets for the current weapon in the space of `M` (gun-local -> parent), as {W wrist, Q hand quaternion (local), cu}; fl = reload / bolt offsets (gun-local)
-function fpaGrip(w, side, fl) {
-  const g = FPG[w] || FPG.Vandal, V3 = (x, y, z) => new THREE.Vector3(x, y, z), R = V3(0, g[1], g[0]), Rb = V3(0, g[3], g[2]), Q = new THREE.Quaternion();
-  let G, F, Th, cu, H = FPA_H.grip;
-  if (side === "r") { Th = R.clone().sub(Rb).normalize(); F = V3(-0.3, 0, -1); G = R.clone().lerp(Rb, 0.42); cu = FPA_C.grip; if (fl && fl.r) { G.add(fl.r); cu = FPA_C.fist; } }
-  else if (g[6] === "p") { G = R.clone().lerp(Rb, 0.6); Th = V3(0, 1, -FPA_P[1]); F = V3(0.15, -FPA_P[0], -1); cu = FPA_C.cup; H = FPA_H.cup; }
-  else if (g[6] === "f") { const T = V3(0, g[5], g[4]), B = V3(0, g[8], g[7]); G = T.clone().lerp(B, 0.42); Th = T.clone().sub(B).normalize(); F = V3(0.3, 0, -1); cu = FPA_C.grip.map((c, i) => (i === 1 ? FPA_C.grip[2] : c)); H = FPA_H.fg; }
-  else { G = V3(FPA_LH.G[0], g[5] + FPA_LH.G[1], g[4]); Th = V3().fromArray(FPA_LH.Th); F = V3().fromArray(FPA_LH.F); cu = FPA_C.hg; H = FPA_H.hg; }
-  if (side === "l" && fl && fl.l) { G.lerp(fl.l, fl.lk); }
-  fpaBasis(F, Th, Q); const Y = V3(0, 1, 0).applyQuaternion(Q), X = V3(1, 0, 0).applyQuaternion(Q), palm = side === "l" ? X : X.negate();
-  const W = G.clone().sub(Y.multiplyScalar(H[0])).sub(palm.multiplyScalar(H[1]));
-  return { W, Q, cu };
-}
-function fpaKnife() { // fist around the knife handle (knife model space: blade -Z), back of the hand to the camera
-  const Q = new THREE.Quaternion(); fpaBasis(new THREE.Vector3(0, 1, 0.15), new THREE.Vector3(0, 0.1, -1), Q);
-  const Y = new THREE.Vector3(0, 1, 0).applyQuaternion(Q), X = new THREE.Vector3(1, 0, 0).applyQuaternion(Q);
-  return { W: new THREE.Vector3(0, 0, 0.02).sub(Y.multiplyScalar(FPA_H.knife[0])).add(X.multiplyScalar(FPA_H.knife[1])), Q, cu: FPA_C.fist };
-}
 function fpaWeap() { let w = "Vandal"; try { w = mode === "duel" ? "Operator" : wName(); } catch (e) {} return FPG[w] ? w : "Vandal"; }
-// reload hand work, gun-local: left hand pulls the mag down and seats a new one (rifle / pistol / shotgun tracks), right hand works the Operator-class bolt
-var FPA_RD = { rifle: 0.12, pistol: 0.05, op: 0.11 }; // how far (gun-local m) the left hand drops below the mag well to fetch the new mag: matches each class's mag track, short enough to stay in frame
-function fpaRld(w) {
-  let rp = -1; try { rp = mode === "duel" ? (du.reload > 0 ? 1 - du.reload / OP_RELOAD : -1) : reloading > 0 ? 1 - reloading / xRT() : -1; } catch (e) {}
-  if (rp < 0 || rp > 1) return null; const g = FPG[w] || FPG.Vandal, P = typeof XRP !== "undefined" && XRP[w], cls = P ? P.cls : "rifle", sm = (a, b, t) => { const x = Math.max(0, Math.min(1, (t - a) / (b - a))); return x * x * (3 - 2 * x); };
-  const o = {};
-  if (cls === "op") { const k = sm(0.02, 0.07, rp) * (1 - sm(0.24, 0.32, rp)); if (k > 0) o.r = new THREE.Vector3(0.05 * k, 0.05 * k, -0.11 * k + 0.08 * k * sm(0.08, 0.15, rp) * (1 - sm(0.18, 0.24, rp))); }
-  if (cls !== "sheriff") { const t0 = cls === "op" ? 0.34 : 0.12, mw = new THREE.Vector3(0, g[1] - 0.07, g[6] === "p" ? g[2] : g[0] - 0.16), dd = FPA_RD[cls] || FPA_RD.rifle;
-    const out = sm(t0, t0 + 0.08, rp), dn = sm(t0 + 0.1, t0 + 0.22, rp) * (1 - sm(t0 + 0.3, t0 + 0.44, rp)), back = sm(t0 + 0.5, t0 + 0.6, rp);
-    if (out > 0 && back < 1) { o.l = mw.clone().add(new THREE.Vector3(-0.02, -dd * dn, 0.04 * dn)); o.lk = out * (1 - back); } }
-  return o;
-}
-function fpaTick() {
-  const kn = knife.visible, on = fpaReady() && running && player && player.hp > 0 && (gun.visible || kn) && !(typeof BC !== "undefined" && BC.vm);
-  if (FPA.on !== on) { FPA.on = on; [VMA.R, VMA.L, KARM].forEach((o) => o && (o.visible = !on)); if (FPA.g) FPA.g.visible = on; }
-  if (XCA.h) XCA.h.children.forEach((c) => { if (c !== XCA.gl) c.visible = !on; });
-  if (!on) return;
-  const ag = (J && J.pick) || "Jett", k = ((typeof XUB_AG !== "undefined" && XUB_AG[ag]) || ["m"])[0] === "f" ? "f" : "m";
-  if (FPA.ag !== ag) { FPA.ag = ag; fpaCol(ag); }
-  if (FPA.k !== k) { FPA.k = k; for (const n in FPA.R) FPA.R[n].sc.visible = n === k; }
-  const R = FPA.R[k], ws = gun.scale.x; FPA.g.scale.setScalar(ws);
-  camera.updateWorldMatrix(true, false); FPA.g.updateWorldMatrix(false, true);
-  const CW = camera.matrixWorld, cq = camera.getWorldQuaternion(FPV.q[0]), V = FPV.v;
-  const toW = (p, M) => p.clone().applyMatrix4(M).applyMatrix4(CW), qW = (q, mq) => cq.clone().multiply(mq).multiply(q);
-  const w = fpaWeap(), cast = XCA.h && XCA.h.visible && XCA.on;
-  let src, srcQ, rest, gr, gl, fl = null;
-  if (kn) { const c = knife.children.find((o) => o.userData && o.userData.xGm); knife.updateMatrix(); src = knife.matrix.clone(); srcQ = knife.quaternion.clone(); if (c) { c.updateMatrix(); src.multiply(c.matrix); srcQ.multiply(c.quaternion); } gr = fpaKnife(); }
-  else { gun.updateMatrix(); src = gun.matrix.clone(); srcQ = gun.quaternion.clone(); fl = fpaRld(w); gr = fpaGrip(w, "r", fl); gl = fpaGrip(w, "l", fl); }
-  const kc = kn ? knife.children.find((c) => c.userData && c.userData.xGm) || null : null;
-  const vo = vmOff(w); rest = FPV.rest.compose(V[0].set(kn ? 0.23 : VMP.x + vo.x, kn ? -0.2 : VMP.y + vo.y, kn ? -0.38 : VMP.z + vo.z), kn ? knife.quaternion : FPV.q[1].identity(), V[1].setScalar(kn ? knife.scale.x : ws));
-  if (kc) rest.multiply(kc.matrix);
-  const sh = (gp, dir, len) => gp.clone().applyMatrix4(rest).add(dir.clone().normalize().multiplyScalar(len)).applyMatrix4(CW);
-  const reach = (R.r.a + R.r.b) * ws;
-  // right arm: weapon grip, or the cast gesture (XCA.h pose: +Y fingers, wrist behind the glove box)
-  let TW, QW;
-  if (cast) { XCA.h.updateMatrix(); const hq = XCA.h.quaternion, F = new THREE.Vector3(0, 1, 0), Th = new THREE.Vector3(-1, 0, 0), Q = fpaBasis(F, Th, new THREE.Quaternion());
-    TW = XCA.h.position.clone().add(new THREE.Vector3(0, -0.05, 0).applyQuaternion(hq)).applyMatrix4(CW); QW = cq.clone().multiply(hq).multiply(Q); }
-  else { TW = toW(gr.W, src); QW = qW(gr.Q, srcQ); }
-  fpaArm(R.r, sh(kn ? gr.W : fpaGrip(w, "r", null).W, V[2].fromArray(kn ? FPA_SD.k : FPA_SD.r), reach * FPA_SD.f[0]), TW, V[3].set(1, -0.8, 0.2).applyQuaternion(cq), QW, cast ? FPA_C.open : gr.cu, ws);
-  // left arm: support hand, folded away (scaled to nothing behind the shoulder) for the knife
-  if (kn) { R.l.u.scale.setScalar(1e-3); }
-  else { R.l.u.scale.copy(R.l.us); const pis = (FPG[w] || FPG.Vandal)[6] === "p";
-    fpaArm(R.l, sh(fpaGrip(w, "l", null).W, V[2].fromArray(pis ? FPA_SD.lp : FPA_SD.l), reach * FPA_SD.f[1]), toW(gl.W, src), V[3].set(-1, -1, 0).applyQuaternion(cq), qW(gl.Q, srcQ), gl.cu, ws); }
-}
-try { const v1 = vmTick; vmTick = function (dt) { v1(dt); try { fpaTick(); } catch (e) { if (!FPA.e1) { FPA.e1 = 1; console.warn("first-person arms tick", e); } } }; } catch (e) {}
-// ---- end FIRST-PERSON ARMS ----
+// ---- end FIRST-PERSON WEAPON GEOMETRY ----
 // loading screen: the loader script further down cannot reach this IIFE's functions (its agentSelect / window.startSR wraps were silent no-ops), so the match starts hand themselves to window.xMatchLoad here
 { const xLd = (fn, name) => function () { const a = arguments, self = this, L = window.xMatchLoad; if (typeof L !== "function") return fn.apply(self, a); if(window.xQPick){FV.pick=window.xQPick;window.xQPick=null;}return L(() => fn.apply(self, a), FV.pick, name, true); };
   const ag0 = agentSelect; agentSelect = function (go) { return ag0(xLd(go)); };
@@ -12280,7 +12117,7 @@ function xvAgent(M, kit) {
   const mats = new Map(); sc.traverse((o) => { if (!o.isMesh) return; o.castShadow = true; o.frustumCulled = false; o.raycast = XNR; o.geometry.userData.shared = true;
     const mat = (s) => { if (!mats.has(s)) { const m = new THREE.MeshLambertMaterial({ name:s.name, color:s.color, map:s.map, side:THREE.DoubleSide, transparent:s.transparent, alphaTest:s.alphaTest }); m.userData.agent = 1; xRimM(m, M.rim, null); mats.set(s,m); M.mats.push(m); } return mats.get(s); }; o.material = Array.isArray(o.material) ? o.material.map(mat) : mat(o.material);
   }); M.m.add(wr);
-  const mx = new THREE.AnimationMixer(sc), bone = (n) => sc.getObjectByName(n), X = {mx,a:{},w:{},ub:1,nativeContact:true,sc,b:{pelvis:bone('Pelvis'),spine_01:bone('Spine1'),spine_02:bone('Spine2'),spine_03:bone('Spine3')},cb:0,yaw:0,pit:0,sn:0,shots:0,hp:null,uo:null,ut:0,lo:null,lt:0,air:false,py:null,px:null,pz:null,cur:'idle',ad:{}};
+  const mx = new THREE.AnimationMixer(sc), bone = (n) => sc.getObjectByName(n), X = {mx,a:{},w:{},ub:1,nativeContact:true,sc,b:{pelvis:bone('Pelvis'),spine_01:bone('Spine1'),spine_02:bone('Spine2'),spine_03:bone('Spine3')},cs:bone('Splitter'),cb:0,yaw:0,pit:0,sn:0,shots:0,hp:null,uo:null,ut:0,lo:null,lt:0,air:false,py:null,px:null,pz:null,cur:'idle',ad:{}};
   const mk = (n,set,once) => { const c = kit[set][XUB_ST[n]], a = mx.clipAction(c); if (once) { a.setLoop(THREE.LoopOnce,1); a.clampWhenFinished = true; } X.a[n] = a; X.w[n] = 0; };
   XUB_LO.forEach((n) => mk(n,'L',n==='jump'||n==='land')); XUB_UPN.forEach((n) => mk(n,'U',n==='reload'||n==='cast'||n==='throw')); XUB_FU.forEach((n) => mk(n,'C',n!=='plant'));
   [['fire','Pistol_Shoot'],['hit','Hit_Chest'],['hitHead','Hit_Head']].forEach(([n,c]) => { const a=mx.clipAction(kit.A[c]); a.blendMode=THREE.AdditiveAnimationBlendMode; a.setLoop(THREE.LoopOnce,1); X.ad[n]=a; });
@@ -12297,8 +12134,9 @@ function xvAttach(M) {
   M.xvWait = 1; if (M.gun) M.gun.visible = false; xvAgentLoad(ag).then((k) => xvAgent(M, k)).catch(() => {}); return M;
 }
 {const create=xAgent;xAgent=function(){return xvAttach(create.apply(this,arguments));};}
-// Correct only the blended support-foot height after the mixer. Authored jog flight remains airborne.
-{const pre=xUbPre,post=xUbPost;xUbPre=function(M){const X=M.sx;if(X&&X.contactRestore){X.b.pelvis.position.copy(X.contactRestore);X.contactRestore=null;}return pre(M);};xUbPost=function(M){post(M);const X=M.sx;if(!X||!X.nativeContact||X.dd||M.dead||X.air||X.lo||(X.w.plant||0)>.01||!X.contactProbes.length)return;M.m.updateMatrixWorld(true);const v=X.contactV,inv=X.contactInv.copy(X.sc.matrixWorld).invert();let low=Infinity;for(const {o,indices}of X.contactProbes){o.skeleton.update();for(const i of indices){v.fromBufferAttribute(o.geometry.attributes.position,i);o.boneTransform(i,v);v.applyMatrix4(o.matrixWorld).applyMatrix4(inv);low=Math.min(low,v.y);}}let lift=0;const c=X.contactLift,a=X.a.run;if(c&&a&&(X.w.run||0)>.001){const t=a.time%c.times[c.times.length-1];let i=0;while(i<c.times.length-2&&c.times[i+1]<t)i++;const f=(t-c.times[i])/Math.max(.00001,c.times[i+1]-c.times[i]);lift=(c.values[i]*(1-f)+c.values[i+1]*f)*(X.w.run||0);}const dy=X.contactFloor+lift-low;if(!Number.isFinite(dy)||Math.abs(dy)>.5)return;X.contactRestore=X.b.pelvis.position.clone();X.b.pelvis.getWorldPosition(v);const shift=X.contactShift.set(0,1,0).transformDirection(X.sc.matrixWorld).multiplyScalar(Math.abs(dy)*X.sc.getWorldScale(X.contactScale).y);if(dy<0)shift.negate();v.add(shift);X.b.pelvis.position.copy(X.b.pelvis.parent.worldToLocal(v));M.m.updateMatrixWorld(true);};}
+// Correct only the blended support-foot height after the mixer. Authored jog flight remains airborne. The shift moves
+// Splitter (legs and torso together) so the waist never separates; stub rigs without it shift the pelvis.
+{const pre=xUbPre,post=xUbPost;xUbPre=function(M){const X=M.sx;if(X&&X.contactRestore){(X.cs||X.b.pelvis).position.copy(X.contactRestore);X.contactRestore=null;}return pre(M);};xUbPost=function(M){post(M);const X=M.sx;if(!X||!X.nativeContact||X.dd||M.dead||X.air||X.lo||(X.w.plant||0)>.01||!X.contactProbes.length)return;M.m.updateMatrixWorld(true);const v=X.contactV,inv=X.contactInv.copy(X.sc.matrixWorld).invert();let low=Infinity;for(const {o,indices}of X.contactProbes){o.skeleton.update();for(const i of indices){v.fromBufferAttribute(o.geometry.attributes.position,i);o.boneTransform(i,v);v.applyMatrix4(o.matrixWorld).applyMatrix4(inv);low=Math.min(low,v.y);}}let lift=0;const c=X.contactLift,a=X.a.run;if(c&&a&&(X.w.run||0)>.001){const t=a.time%c.times[c.times.length-1];let i=0;while(i<c.times.length-2&&c.times[i+1]<t)i++;const f=(t-c.times[i])/Math.max(.00001,c.times[i+1]-c.times[i]);lift=(c.values[i]*(1-f)+c.values[i+1]*f)*(X.w.run||0);}const dy=X.contactFloor+lift-low;if(!Number.isFinite(dy)||Math.abs(dy)>.5)return;X.contactRestore=(X.cs||X.b.pelvis).position.clone();(X.cs||X.b.pelvis).getWorldPosition(v);const shift=X.contactShift.set(0,1,0).transformDirection(X.sc.matrixWorld).multiplyScalar(Math.abs(dy)*X.sc.getWorldScale(X.contactScale).y);if(dy<0)shift.negate();v.add(shift);(X.cs||X.b.pelvis).position.copy((X.cs||X.b.pelvis).parent.worldToLocal(v));M.m.updateMatrixWorld(true);};}
 // Native first-person rigs and their matching weapon animation clips. The virtual source camera faces +X.
 function xvFPPlay(F, kind, time) {
   const key = kind === 'idle' ? 'Idle' : kind.charAt(0).toUpperCase()+kind.slice(1), a = F.entries.find((e)=>e.Translatable === key) || F.entries.find((e)=>e.Translatable.startsWith(key));
@@ -12320,13 +12158,26 @@ function xvFPLoad(ag,w) {
     const cam=sc.getObjectByName('Camera');const pos=cam?cam.getWorldPosition(new THREE.Vector3()):new THREE.Vector3(0,1.67,0);root.position.copy(pos).negate();F.origin=root.position.clone();xvFPPlay(F,'equip');return F;
   });
 }
-function xvFPClear(F){if(!F)return;camera.remove(F.root);F.am.stopAllAction();F.gm.stopAllAction();F.root.traverse(o=>{if(o.isMesh)[].concat(o.material||[]).forEach(m=>m.dispose());});}
+function xvFPClear(F){if(!F)return;if(F.root.parent)F.root.parent.remove(F.root);F.am.stopAllAction();F.gm.stopAllAction();F.root.traverse(o=>{if(o.isMesh)[].concat(o.material||[]).forEach(m=>m.dispose());});}
+// Built viewmodels are kept per agent|weapon (a few, most recent last) so swapping back is instant and replays the
+// authored equip; the agent's knife, Classic and current weapon are warmed as soon as a match is running.
+var XVFP={max:6,c:new Map(),warm:''};
+function xvFPGet(ag,w){const key=ag+'|'+w,F=XVFP.c.get(key);if(F){XVFP.c.delete(key);XVFP.c.set(key,F);return Promise.resolve(F);}
+  if(XVFP.c.has(key+'#'))return XVFP.c.get(key+'#');
+  const P=xvFPLoad(ag,w).then(F=>{XVFP.c.delete(key+'#');for(const k of XVFP.c.keys())if(!k.endsWith('#')&&k.split('|')[0]!==ag&&XVFP.c.get(k)!==XV.fp){xvFPClear(XVFP.c.get(k));XVFP.c.delete(k);}
+    XVFP.c.set(key,F);const done=[...XVFP.c.keys()].filter(k=>!k.endsWith('#'));while(done.length>XVFP.max){const k=done.shift(),o=XVFP.c.get(k);if(o===XV.fp)continue;xvFPClear(o);XVFP.c.delete(k);}return F;},e=>{XVFP.c.delete(key+'#');throw e;});
+  XVFP.c.set(key+'#',P);return P;}
+function xvFPWarm(ag,w){const id=ag+'|'+w;if(XVFP.warm===id)return;XVFP.warm=id;for(const x of [w,'Knife','Classic'])if(!XV.failures[ag+'|'+x])xvFPGet(ag,x).catch(e=>{XV.failures[ag+'|'+x]=String(e);});}
 function xvFPTick(dt) {
   const kn=knife.visible, active=running && player && player.hp>0 && (gun.visible||kn) && !(typeof BC!=='undefined'&&(BC.vm||BC.cv)) && !J.dr && !(XCA.h&&XCA.h.visible&&XCA.on);
   const ag=(J&&J.pick)||'Jett',w=kn?'Knife':fpaWeap(),key=ag+'|'+w;
-  if(active && (!XV.fp||XV.fp.ag!==ag||XV.fp.w!==w) && XV.fpLoad!==key){XV.fpLoad=key;xvFPLoad(ag,w).then(F=>{if(XV.fpLoad!==key){xvFPClear(F);return;}xvFPClear(XV.fp);XV.fp=F;F.kind=null;camera.add(F.root);}).catch(e=>{XV.failures[key]=String(e);}).finally(()=>{if(XV.fpLoad===key)XV.fpLoad=null;});}
+  if(running)xvFPWarm(ag,kn?fpaWeap():w);
+  if(active && (!XV.fp||XV.fp.ag!==ag||XV.fp.w!==w) && XV.fpLoad!==key && !XV.failures[key]){XV.fpLoad=key;xvFPGet(ag,w).then(F=>{if(XV.fpLoad!==key)return;if(XV.fp&&XV.fp.root.parent)XV.fp.root.parent.remove(XV.fp.root);XV.fp=F;F.kind=null;F.age=0;xvFPPlay(F,'equip');camera.add(F.root);}).catch(e=>{XV.failures[key]=String(e);}).finally(()=>{if(XV.fpLoad===key)XV.fpLoad=null;});}
+  // Until the native rig for this agent|weapon is in, the primitive arms stay hidden (the native weapon model shows
+  // alone); only a failed native load falls back to them.
+  if(active&&!(XV.fp&&XV.fp.ag===ag&&XV.fp.w===w)&&!XV.failures[key]){XV.waitFP=key;[VMA.R,VMA.L,KARM].forEach(o=>{if(o){XV.hidden.push([o,o.visible]);o.visible=false;}});}else XV.waitFP=null;
   const F=XV.fp,on=active&&F&&F.ag===ag&&F.w===w;if(F)F.root.visible=!!on;if(!on)return;
-  const hide=o=>{if(!o)return;XV.hidden.push([o,o.visible]);o.visible=false;}; gun.children.forEach(c=>{if(c!==muzzle)hide(c);});knife.children.forEach(hide);hide(FPA.g);[VMA.R,VMA.L,KARM].forEach(hide);
+  const hide=o=>{if(!o)return;XV.hidden.push([o,o.visible]);o.visible=false;}; gun.children.forEach(c=>{if(c!==muzzle)hide(c);});knife.children.forEach(hide);[VMA.R,VMA.L,KARM].forEach(hide);
   if(kn&&kSwing>(F.lastSwing||0)+.05)XV.event=kHv?'alt Attack':'attack 1';F.lastSwing=kSwing;
   const rp=mode==='duel'?(du.reload>0?1-du.reload/OP_RELOAD:-1):mode==='aim'?(AM.rl>0?1-AM.rl/WEAP[aimW()].rld:-1):reloading>0?1-reloading/xRT():-1;
   if(rp>=0){XV.event=null;xvFPPlay(F,'reload',rp);}else if(VM.ins>0&&F.kind!=='inspect')xvFPPlay(F,'inspect');else if(XV.event){F.kind=null;xvFPPlay(F,XV.event);XV.event=null;}else if(F.kind==='reload'||(F.kind!=='idle'&&F.age>(F.duration||(F.action?F.action.getClip().duration:.4))))xvFPPlay(F,'idle');
@@ -12345,7 +12196,7 @@ function xvMapCover(g) {
   }).catch(e=>{XV.failures.cover=String(e);});
 }
 {const use=useMap;useMap=function(n){const r=use.apply(this,arguments);try{xvMapCover(MAPS[n]&&MAPS[n].g);}catch(e){}return r;};}
-window.xValorantAssets={state:XV,agentAssets:XVA,agentsReady:xvAgentsReady,agentProgress:xvAgentProgress,load:xvLoad,loadAgent:xvAgentLoad,loadFP:xvFPLoad,scene,camera,renderer,agents:()=>XSOL.mx,probe:()=>({running,mode,agent:J.pick,weapon:fpaWeap(),nativeAgents:XSOL.mx.filter(m=>m.valorant).length,agentKits:Object.keys(XVA.kits).length,nativeFP:XV.fp&&XV.fp.ag+' '+XV.fp.w,failures:XV.failures})};
+window.xValorantAssets={state:XV,agentAssets:XVA,agentsReady:xvAgentsReady,agentProgress:xvAgentProgress,load:xvLoad,loadAgent:xvAgentLoad,loadFP:xvFPLoad,fpCache:XVFP,scene,camera,renderer,agents:()=>XSOL.mx,probe:()=>({running,mode,agent:J.pick,weapon:fpaWeap(),nativeAgents:XSOL.mx.filter(m=>m.valorant).length,agentKits:Object.keys(XVA.kits).length,nativeFP:XV.fp&&XV.fp.ag+' '+XV.fp.w,failures:XV.failures})};
 window.xvAgentsReady=xvAgentsReady;
 // Start downloading every agent as soon as the lobby is up (idle slot right after first paint), last pick first.
 {const go=()=>{let a='Jett';try{a=(typeof S!=='undefined'&&S&&S.lastAg)||localStorage.getItem('vs.lastAg')||a;}catch(e){}try{xvPreloadAgents(xvAgentName(a));}catch(e){console.warn('agent preload',e);}};if(window.requestIdleCallback)requestIdleCallback(go,{timeout:300});else setTimeout(go,0);}
@@ -12735,6 +12586,159 @@ const netThrow0=jThrow;jThrow=function(){if(!(NET.socket&&MP.st==='game'&&MP.m5)
 
 // ---- END TRUSTED ONLINE SERVER ----
 
+// ---- WEAPON GRIP ----
+// Third-person two-handed grip (#9, ledger row 4). The native locomotion set only has pistol upper-body clips, so
+// after the mixer the arms are posed procedurally: the gun is placed from the aim (stock in the right shoulder
+// pocket for long guns, arms-extended isosceles for sidearms), the right hand is solved onto the gun's grip and
+// the left hand onto the weapon's own Left_Hand_Target socket with two-bone IK, hands are oriented to the gun,
+// and fingers curl from their bind pose (index finger along the trigger). One-shots that move the arms
+// (reload, cast, throw, plant), the knife and deaths fade the grip out to the authored clip.
+var XGRIP = { side: { Classic: 1, Shorty: 1, Frenzy: 1, Ghost: 1, Sheriff: 1 }, err: 0,
+  // curl angles (rad) for joints 1..3 per finger
+  curl: { rifleR: { Index: [0.25, 0.55, 0.35], Middle: [1.15, 1.25, 0.8], Ring: [1.2, 1.25, 0.8], Pinky: [1.25, 1.2, 0.8], Thumb: [0.15, 0.35, 0.3] },
+    rifleL: { Index: [0.85, 0.95, 0.6], Middle: [0.9, 1.0, 0.7], Ring: [0.95, 1.0, 0.7], Pinky: [1.0, 1.0, 0.7], Thumb: [0.3, 0.35, 0.25] },
+    pistolL: { Index: [1.0, 1.1, 0.7], Middle: [1.05, 1.15, 0.8], Ring: [1.1, 1.15, 0.8], Pinky: [1.15, 1.15, 0.8], Thumb: [0.2, 0.3, 0.3] } } };
+const XG_FINGERS = ['Index', 'Middle', 'Ring', 'Pinky', 'Thumb'];
+// --- weapon sockets: read once per gun from the posed native skeleton, carried into the third-person template ---
+function xgSockets(gl) {
+  const sc = THREE.SkeletonUtils.clone(gl.scene), mx = new THREE.AnimationMixer(sc), idle = gl.animations.find((c) => c.name === 'Idle'); if (idle) { mx.clipAction(idle).play(); mx.update(0); }
+  sc.updateMatrixWorld(true); const at = (n) => { const o = xvFind(sc, n); return o ? o.getWorldPosition(new THREE.Vector3()).toArray() : null; };
+  const s = { lh: at('Left_Hand_Target') || at('Left_Hand_TargetSocket'), tr: at('Trigger'), mz: at('MuzzlePoint') || at('Muzzle') }; mx.stopAllAction(); return s;
+}
+// Template space (the xGun group: muzzle toward -Z): right-hand grip just behind/below the trigger, left-hand socket, stock end.
+function xgTemplate(T, w) {
+  let inner = null; T.traverse((o) => { if (!inner && o.userData && o.userData.sock) inner = o; }); T.updateMatrixWorld(true);
+  const box = new THREE.Box3().setFromObject(inner ? inner.parent : T), v = new THREE.Vector3(), by = T.userData.my != null ? T.userData.my : (box.min.y + box.max.y) / 2, s = inner && inner.userData.sock;
+  const tp = (p) => (p ? v.fromArray(p).applyMatrix4(inner.matrixWorld).toArray().map((n) => +n.toFixed(4)) : null);
+  const len = box.max.z - box.min.z, tr = tp(s && s.tr) || [0, by - 0.03, box.min.z + len * (XGRIP.side[w] ? 0.62 : 0.6)];
+  const rh = [tr[0], tr[1] - 0.035, tr[2] + 0.04], lh = tp(s && s.lh);
+  T.userData.grip = { rh, lh: lh || (XGRIP.side[w] ? null : [0, by - 0.03, box.min.z + len * 0.3]), st: [0, by, box.max.z], side: !!XGRIP.side[w] };
+}
+{ const st = xvStatic; xvStatic = function (gl, config) { const out = st.apply(this, arguments); try { out.userData.sock = xgSockets(gl); } catch (e) {} return out; }; }
+{ const tp = xGmTpl; xGmTpl = function (w) { const T = tp.apply(this, arguments); if (T && w !== 'Knife') try { xgTemplate(T, w); } catch (e) {} return T; }; }
+{ const sw = xGmSwap; xGmSwap = function (g, k) { const r = sw.apply(this, arguments); try { const T = XGM.T[k]; if (g && T && T.userData.grip) g.userData.grip = T.userData.grip; } catch (e) {} return r; }; }
+// --- per-agent setup: bones, bind-pose finger rotations and hand axes ---
+function xgSetup(M) {
+  const X = M.sx, sc = X.sc, b = (n) => sc.getObjectByName(n), G = { ok: false, w: 0 }; X.grip = G;
+  const arm = (s) => ({ up: b(s + '_Shoulder'), lo: b(s + '_Elbow'), hand: b(s + '_Hand'), sh: b(s + '_Shoulder') });
+  G.R = arm('R'); G.L = arm('L'); if (!G.R.hand || !G.L.hand || !G.R.up || !G.L.up || !G.R.lo || !G.L.lo || !M.gun) return G;
+  let skin = null; sc.traverse((o) => { if (!skin && o.isSkinnedMesh && o.skeleton) skin = o.skeleton; });
+  const bindW = new Map(); if (skin) skin.bones.forEach((bn, i) => bindW.set(bn, new THREE.Matrix4().copy(skin.boneInverses[i]).invert()));
+  const bindLocal = (bn) => { const w = bindW.get(bn), pw = bindW.get(bn.parent); if (!w || !pw) return bn.quaternion.clone(); const m = new THREE.Matrix4().copy(pw).invert().multiply(w), p = new THREE.Vector3(), q = new THREE.Quaternion(), s = new THREE.Vector3(); m.decompose(p, q, s); return q; };
+  for (const [side, A] of [['R', G.R], ['L', G.L]]) {
+    const H = A.hand, mid = b(side + '_Middle1'), ix = b(side + '_Index1'), pk = b(side + '_Pinky1'); if (!mid || !ix || !pk) return G;
+    const k = mid.position.clone().normalize(), s = pk.position.clone().sub(ix.position).normalize(), n = side === 'R' ? new THREE.Vector3().crossVectors(k, s) : new THREE.Vector3().crossVectors(s, k);
+    n.addScaledVector(k, -n.dot(k)).normalize(); A.basis = new THREE.Matrix4().makeBasis(k, n, new THREE.Vector3().crossVectors(k, n)); A.basisT = A.basis.clone().transpose();
+    A.fingers = []; for (const f of XG_FINGERS) for (let j = 1; j <= 3; j++) { const bn = b(side + '_' + f + j); if (bn) A.fingers.push({ bn, f, j, rest: bindLocal(bn) }); }
+    A.bones = [A.up, A.lo, A.hand].concat(A.fingers.map((x) => x.bn));
+  }
+  // Arm and finger bones join the restore-before-mixer set so procedural rotations never stack.
+  let i = 0; for (const bn of G.R.bones.concat(G.L.bones)) { const key = 'grip' + i++; X.b[key] = bn; if (X.sv) { X.sv[key] = bn.quaternion.clone(); X.svOn[key] = 1; } }
+  G.gp = M.gun.position.clone(); G.gq = M.gun.quaternion.clone(); G.gs = M.gun.scale.clone();
+  G.v = Array.from({ length: 12 }, () => new THREE.Vector3()); G.ik = Array.from({ length: 9 }, () => new THREE.Vector3()); G.q = Array.from({ length: 6 }, () => new THREE.Quaternion()); G.m = Array.from({ length: 6 }, () => new THREE.Matrix4());
+  G.t1 = new THREE.Vector3(); G.t2 = new THREE.Vector3(); G.p1 = new THREE.Vector3(); G.p2 = new THREE.Vector3(); G.saved = new Map(); G.ok = true; return G;
+}
+function xgWorldQ(o, q) { o.updateWorldMatrix(true, false); const p = XGRIP.p || (XGRIP.p = new THREE.Vector3()), s = XGRIP.s || (XGRIP.s = new THREE.Vector3()); o.matrixWorld.decompose(p, q, s); return q; }
+// Set a bone's world rotation (parent's world rotation divided out).
+function xgSetWorldQ(bn, qw) { const pq = xgWorldQ(bn.parent, XGRIP.pq || (XGRIP.pq = new THREE.Quaternion())); bn.quaternion.copy(pq.invert().multiply(qw)); bn.updateMatrixWorld(true); }
+// Two-bone IK: upper/lower bones swing (minimal rotation) so the hand bone reaches target; pole bends the elbow.
+function xgIK(A, target, pole, G) {
+  const K = G.ik, [a, bb, c, d, e, t] = K, q = G.q[0], qw = G.q[1];
+  A.up.getWorldPosition(a); A.lo.getWorldPosition(bb); A.hand.getWorldPosition(c);
+  const L1 = a.distanceTo(bb), L2 = bb.distanceTo(c); d.subVectors(target, a); let dist = d.length(); if (dist < 1e-5) return; d.divideScalar(dist);
+  dist = Math.max(Math.abs(L1 - L2) + 1e-3, Math.min((L1 + L2) * 0.999, dist));
+  e.copy(pole).addScaledVector(d, -pole.dot(d)); if (e.lengthSq() < 1e-8) e.set(0, -1, 0); e.normalize();
+  const cosA = Math.max(-1, Math.min(1, (L1 * L1 + dist * dist - L2 * L2) / (2 * L1 * dist))), sinA = Math.sqrt(1 - cosA * cosA);
+  const elbow = K[6].copy(a).addScaledVector(d, L1 * cosA).addScaledVector(e, L1 * sinA); t.copy(a).addScaledVector(d, dist);
+  q.setFromUnitVectors(K[7].subVectors(bb, a).normalize(), K[8].subVectors(elbow, a).normalize()); xgSetWorldQ(A.up, xgWorldQ(A.up, qw).premultiply(q));
+  A.lo.getWorldPosition(bb); A.hand.getWorldPosition(c);
+  q.setFromUnitVectors(K[7].subVectors(c, bb).normalize(), K[8].subVectors(t, bb).normalize()); xgSetWorldQ(A.lo, xgWorldQ(A.lo, qw).premultiply(q));
+}
+// Desired hand world rotation from knuckle direction k and palm normal n (world, orthonormalised here).
+function xgHandQ(A, k, n, out) { const t = XGRIP.t || (XGRIP.t = new THREE.Vector3()), m = XGRIP.hm || (XGRIP.hm = new THREE.Matrix4()); n.addScaledVector(k, -n.dot(k)).normalize(); t.crossVectors(k, n); m.makeBasis(k, n, t).multiply(A.basisT); return out.setFromRotationMatrix(m); }
+function xgCurl(A, set, k, n) { const axis = XGRIP.ax || (XGRIP.ax = new THREE.Vector3()), pq = XGRIP.cq || (XGRIP.cq = new THREE.Quaternion()), q = XGRIP.cq2 || (XGRIP.cq2 = new THREE.Quaternion()), la = XGRIP.la || (XGRIP.la = new THREE.Vector3());
+  axis.crossVectors(k, n).normalize(); for (const F of A.fingers) { const ang = (set[F.f] || [0, 0, 0])[F.j - 1]; F.bn.quaternion.copy(F.rest); xgWorldQ(F.bn.parent, pq); la.copy(axis).applyQuaternion(pq.invert()); q.setFromAxisAngle(la, ang); F.bn.quaternion.premultiply(q); F.bn.updateMatrixWorld(true); } }
+function xgTarget(M) { const X = M.sx; if (M.dead || X.dd || M.w === 'Knife' || X.uo === 'reload' || X.uo === 'cast' || X.uo === 'throw' || (X.w && X.w.plant > 0.05)) return 0; return 1; }
+function xgGrip(M) { let g = null; M.gun.traverse((o) => { if (!g && o.userData && o.userData.grip) g = o.userData.grip; }); return g; }
+function xgPose(M, dt) {
+  const X = M.sx; if (!X || !X.sc || !M.gun || !M.valorant) return; const G = X.grip || xgSetup(M); if (!G.ok) return;
+  const want = xgTarget(M), grip = want ? xgGrip(M) : null; G.w += ((grip ? 1 : 0) - G.w) * Math.min(1, (dt || 1 / 60) * 12); if (G.w < 0.01) { G.w = 0; M.gun.position.copy(G.gp); M.gun.quaternion.copy(G.gq); return; }
+  const g = grip || G.last; if (!g) return; G.last = g;
+  for (const bn of G.R.bones.concat(G.L.bones)) { let s = G.saved.get(bn); if (!s) G.saved.set(bn, (s = new THREE.Quaternion())); s.copy(bn.quaternion); }
+  const V = G.v, root = M.m; root.updateWorldMatrix(true, false); const rq = xgWorldQ(root, G.q[2]);
+  const axis = (x, y, z, out) => out.set(x, y, z).applyQuaternion(rq); // agent frame (+Z forward, +X the agent's left) to world
+  const p = Math.max(-1.2, Math.min(1.2, X.pit || 0)), D = axis(0, Math.sin(p), Math.cos(p), V[9]).normalize(), up = axis(0, 1, 0, V[10]); up.addScaledVector(D, -up.dot(D)).normalize();
+  // gun frame: local -Z along the aim, +Y up
+  const zg = V[11].copy(D).negate(), xg = G.v[3].crossVectors(up, zg).normalize(), Rg = G.m[0].makeBasis(xg, up, zg), gq = G.q[3].setFromRotationMatrix(Rg);
+  const gp = G.v[4], tmp = G.v[5];
+  if (g.side) { // sidearm: arms extended, grip ahead of the shoulders' midpoint
+    G.R.up.getWorldPosition(gp); G.L.up.getWorldPosition(tmp); gp.add(tmp).multiplyScalar(0.5).addScaledVector(D, 0.44).addScaledVector(axis(0, -1, 0, tmp), 0.06).addScaledVector(axis(-1, 0, 0, tmp), 0.03);
+    gp.sub(tmp.fromArray(g.rh).applyQuaternion(gq));
+  } else { // long gun: stock in the right shoulder pocket
+    G.R.up.getWorldPosition(gp); gp.addScaledVector(axis(1, 0, 0, tmp), 0.06).addScaledVector(axis(0, -1, 0, tmp), 0.05).addScaledVector(axis(0, 0, 1, tmp), 0.1);
+    gp.sub(tmp.fromArray(g.st).applyQuaternion(gq));
+  }
+  const toW = (a, out) => out.fromArray(a).applyQuaternion(gq).add(gp), gl = (x, y, z, out) => out.set(x, y, z).applyQuaternion(gq);
+  // right hand: knuckles forward-down along the grip, palm facing the gun's left
+  const kR = gl(0, -0.45, -1, G.v[0]).normalize(), nR = gl(-1, 0, 0, G.v[1]), hq = G.q[4]; xgHandQ(G.R, kR, nR, hq);
+  const wt = toW(g.rh, G.v[2]).addScaledVector(kR, -0.06).addScaledVector(nR, -0.02);
+  xgIK(G.R, G.t1.copy(wt), axis(g.side ? -0.5 : -0.7, -1, g.side ? 0 : -0.2, G.p1).normalize(), G); xgSetWorldQ(G.R.hand, hq); xgCurl(G.R, XGRIP.curl.rifleR, kR, nR);
+  // the gun rides the solved right hand (unreachable targets keep the gun in the hand, not floating)
+  const hw = XGRIP.hw || (XGRIP.hw = new THREE.Vector3()); G.R.hand.getWorldPosition(hw); gp.add(hw.sub(wt));
+  M.gun.parent.updateWorldMatrix(true, false); const local = G.m[1].compose(gp, gq, XGRIP.one || (XGRIP.one = new THREE.Vector3(1, 1, 1))).premultiply(G.m[2].copy(M.gun.parent.matrixWorld).invert());
+  local.decompose(M.gun.position, M.gun.quaternion, tmp); M.gun.scale.copy(G.gs); M.gun.updateMatrixWorld(true);
+  // left hand: support under the handguard at the weapon's socket, or cupping the right hand on a sidearm
+  let kL, nL, lt;
+  if (g.side || !g.lh) { kL = gl(0, -0.6, -1, G.v[0]).normalize(); nL = gl(1, 0, 0, G.v[1]); lt = toW(g.rh, G.v[2]).addScaledVector(gl(-1, 0, 0, tmp), 0.035).addScaledVector(kL, -0.05); }
+  else { kL = gl(0.55, 0, -1, G.v[0]).normalize(); nL = gl(0.5, 1, 0, G.v[1]).normalize(); lt = toW(g.lh, G.v[2]).addScaledVector(kL, -0.06).addScaledVector(nL, -0.03); }
+  if (!g.side && g.lh) { // short arms / long guns: slide the support hand back along the handguard until the arm reaches
+    const sh = G.L.up.getWorldPosition(G.v[6]), reach = (G.reach || (G.reach = G.L.up.getWorldPosition(G.v[7]).distanceTo(G.L.lo.getWorldPosition(G.v[8])) + G.L.lo.getWorldPosition(G.v[8]).distanceTo(G.L.hand.getWorldPosition(G.v[7])))) * 0.985;
+    const ax = gl(0, 0, 1, G.v[7]), rel = G.v[8].subVectors(lt, sh), bq = rel.dot(ax), cq = rel.lengthSq() - reach * reach;
+    if (cq > 0) { const disc = bq * bq - cq, lim = Math.max(0, (g.rh[2] - g.lh[2]) - 0.1); const sl = disc >= 0 ? Math.min(lim, -bq - Math.sqrt(disc) > 0 ? -bq - Math.sqrt(disc) : -bq + Math.sqrt(disc)) : Math.min(lim, Math.max(0, -bq)); if (sl > 0) lt.addScaledVector(ax, sl); G.slide = sl > 0 ? sl : 0; } else G.slide = 0;
+  }
+  xgHandQ(G.L, kL, nL, hq); xgIK(G.L, G.t2.copy(lt), axis(g.side ? 0.5 : 0.4, -1, 0, G.p2).normalize(), G); xgSetWorldQ(G.L.hand, hq); xgCurl(G.L, g.side || !g.lh ? XGRIP.curl.pistolL : XGRIP.curl.rifleL, kL, nL);
+  if (G.w < 0.999) { for (const [bn, s] of G.saved) bn.quaternion.slerp(s, 1 - G.w); M.gun.position.lerp(G.gp, 1 - G.w); M.gun.quaternion.slerp(G.gq, 1 - G.w); }
+}
+{ const post = xUbPost; xUbPost = function (M) { post(M); if (M && M.valorant && M.sx && !M.dead) try { xgPose(M, 1 / 60); } catch (e) { if (!XGRIP.err++) console.warn('weapon grip disabled for a frame', e); } }; }
+// ---- END WEAPON GRIP ----
+// ---- FOOT PLANTING ----
+// Feet on terrain (ledger row 6). Native locomotion clips are authored on flat ground, so on stairs, slopes and
+// ledges one foot floated or sank. After the mixer (and the grip), each foot of a nearby third-person agent probes
+// the native collision mesh under it; the whole body (Splitter: legs and torso together) drops to the lower foot and
+// the other leg is bent with two-bone IK onto its own floor, keeping the foot's authored rotation. Offsets are
+// smoothed, clamped to a stair rise, skipped in the air, for the dead and beyond 22 m, and undone before the mixer.
+var XFT = { max: 0.42, lod: 22, rate: 14, err: 0, ray: null, cam: null };
+function xfGround(C, x, z, y0) {
+  const R = XFT.ray || (XFT.ray = new THREE.Ray(new THREE.Vector3(), new THREE.Vector3(0, -1, 0))); R.origin.set(x, y0 + XFT.max + 0.08, z);
+  for (let k = 0; k < 8; k++) { const hit = C.bvh.raycastFirst(R, THREE.DoubleSide); if (!hit) return null; if (hit.face && hit.face.normal.y > 0.45) return hit.point.y; R.origin.y = hit.point.y - 0.005; if (R.origin.y < y0 - XFT.max - 0.1) return null; }
+  return null;
+}
+function xfSetup(M) {
+  const X = M.sx, b = (n) => X.sc.getObjectByName(n), F = { ok: false, d: [0, 0], p: 0 }; X.ft = F;
+  F.split = b('Splitter'); F.legs = ['L', 'R'].map((s) => ({ up: b(s + '_Hip'), lo: b(s + '_Knee'), hand: b(s + '_Foot') }));
+  if (!F.split || F.legs.some((L) => !L.up || !L.lo || !L.hand)) return F;
+  let i = 0; for (const L of F.legs) for (const bn of [L.up, L.lo, L.hand]) { const key = 'ft' + i++; X.b[key] = bn; if (X.sv) { X.sv[key] = bn.quaternion.clone(); X.svOn[key] = 1; } }
+  F.rest = new THREE.Vector3(); F.v = Array.from({ length: 6 }, () => new THREE.Vector3()); F.q = new THREE.Quaternion();
+  F.G = { ik: Array.from({ length: 9 }, () => new THREE.Vector3()), q: Array.from({ length: 2 }, () => new THREE.Quaternion()) }; F.ok = true; return F;
+}
+function xfPose(M, dt, C) {
+  const X = M.sx; if (!X || !X.sc || !M.valorant || M.dead || X.dd) return; const F = X.ft || xfSetup(M); if (!F.ok) return;
+  M.m.updateWorldMatrix(true, false); const V = F.v, root = M.m.getWorldPosition(V[0]), y0 = root.y, k = Math.min(1, (dt || 1 / 60) * XFT.rate);
+  for (let i = 0; i < 2; i++) { let d = 0; if (!X.air) { const f = F.legs[i].hand.getWorldPosition(V[1]), g = xfGround(C, f.x, f.z, y0); if (g != null && Number.isFinite(g)) d = Math.max(-XFT.max, Math.min(XFT.max, g - y0)); } F.d[i] += (d - F.d[i]) * k; }
+  const p = Math.min(0, F.d[0], F.d[1]); F.p = p; if (Math.abs(F.d[0]) < 0.004 && Math.abs(F.d[1]) < 0.004) return;
+  // body down to the lower foot (vertical, in world), restored in xUbPre
+  F.rest.copy(F.split.position); X.ftRestore = true; const s = F.split.getWorldPosition(V[2]); s.y += p; F.split.parent.updateWorldMatrix(true, false); F.split.position.copy(F.split.parent.worldToLocal(s)); F.split.updateMatrixWorld(true);
+  for (let i = 0; i < 2; i++) { const L = F.legs[i], lift = F.d[i] - p; if (lift < 0.004) continue;
+    const hip = L.up.getWorldPosition(V[3]), knee = L.lo.getWorldPosition(V[4]), foot = L.hand.getWorldPosition(V[5]), fq = xgWorldQ(L.hand, F.q);
+    const dir = V[2].subVectors(foot, hip).normalize(), pole = knee.sub(hip); pole.addScaledVector(dir, -pole.dot(dir)); if (pole.lengthSq() < 1e-8) pole.copy(M.m.getWorldDirection(V[2]));
+    const target = (F.t || (F.t = new THREE.Vector3())).copy(foot); target.y += lift; xgIK(L, target, pole.normalize(), F.G); xgSetWorldQ(L.hand, fq);
+  }
+}
+{ const pre = xUbPre; xUbPre = function (M) { const X = M && M.sx; if (X && X.ftRestore && X.ft && X.ft.split) { X.ft.split.position.copy(X.ft.rest); X.ftRestore = false; } return pre.apply(this, arguments); }; }
+{ const post = xUbPost; xUbPost = function (M) { post.apply(this, arguments); if (!M || !M.valorant || !M.sx || M.dead) return; try { const C = typeof nmActive === 'function' && nmActive(); if (!C || !C.bvh) return;
+    let cam = null; try { cam = camera; } catch (e) {} if (cam) { const c = XFT.cam || (XFT.cam = new THREE.Vector3()); cam.getWorldPosition(c); M.m.getWorldPosition(XFT.p || (XFT.p = new THREE.Vector3())); if (XFT.p.distanceTo(c) > XFT.lod) { if (M.sx.ft) M.sx.ft.d[0] = M.sx.ft.d[1] = 0; return; } }
+    xfPose(M, 1 / 60, C); } catch (e) { if (!XFT.err++) console.warn('foot planting disabled for a frame', e); } }; }
+// ---- END FOOT PLANTING ----
 xReady = true; // every mode is initialised; lobby launches may now start them
 { let rb = null; try { rb = sessionStorage.getItem("vs.retry"); sessionStorage.removeItem("vs.retry"); } catch (e) {} // Retry on the engine error reloaded the page: relaunch the same mode
   if (rb) setTimeout(() => { const b = $(rb); if (b) b.click(); }, 300); }
@@ -12774,12 +12778,12 @@ xReady = true; // every mode is initialised; lobby launches may now start them
   var TIPS = ["Stop moving before you shoot: running bullets go wide.", "Check corners one at a time instead of peeking two angles.", "Buy as a team. A full save beats a half buy.", "Listen for footsteps; walk to stay silent.", "Crosshair at head height, always.", "After a plant, play for time, not kills."];
   var el = document.getElementById("xLd"), bar = document.getElementById("xLdBar"), tipEl = document.getElementById("xLdTip"), t0 = 0, tipT = 0, ti = 0, hideT = 0;
   function xLdSet(id, k, v) { var e = document.getElementById(id); if (e) e[k] = v; }
-  function show(map, mode) {
+  function show(map, mode, title) {
     clearTimeout(hideT); clearInterval(tipT);
     map = PAL[map] ? map : "ascent";
     var tab = document.querySelector("#xQueue [role=tab].on");
     xLdSet("xLdMode", "textContent", (mode || (tab ? tab.textContent : "UNRATED")).toUpperCase());
-    xLdSet("xLdMap", "textContent", String(map).toUpperCase());
+    xLdSet("xLdMap", "textContent", String(title || map).toUpperCase());
     el.style.setProperty("--x-ld-bg", 'url("models/valorant/maps/'+map+'/loading.jpg") center/cover, '+PAL[map]);
     xLdSet("xLdA", "innerHTML", ""); xLdSet("xLdB", "innerHTML", ""); xLdSet("xLdAg", "textContent", "");
     window.xLdOn = true; try { if (window.xLdKeys) window.xLdKeys(false); } catch (e) {}
@@ -12817,10 +12821,10 @@ xReady = true; // every mode is initialised; lobby launches may now start them
   var curMap = function () { try { return FV.map; } catch (e) { return "ascent"; } };
   var built = function (k) { try { return !FMAP[k] || FMAP[k].built; } catch (e) { return true; } };
   var loadId = 0;
-  var run = function (fn, map, mode, sync) {
-    var id = ++loadId;show(map, mode);
+  var run = function (fn, map, mode, sync, title) {
+    var id = ++loadId;show(map, mode, title);
     var wait = agents(id); if (wait) wait.catch(function () {});
-    var go = function () { return (wait ? wait.then(fn) : Promise.resolve().then(fn)).then(function(v){if(id===loadId){fill();ready();}return v;},function(err){if(id===loadId)failed();if(err&&err.name==='AbortError')return;throw err;}); };
+    var go = function () { return (wait ? wait.then(fn) : Promise.resolve().then(fn)).then(function(v){if(id===loadId){if(!title)fill();ready();}return v;},function(err){if(id===loadId)failed();if(err&&err.name==='AbortError')return;throw err;}); };
     return sync || built(map) ? go() : new Promise(function(resolve,reject){requestAnimationFrame(function(){requestAnimationFrame(function(){go().then(resolve,reject);});});});
   };
   window.xCancelMatchLoad = function(){++loadId;failed();};
@@ -12840,6 +12844,14 @@ xReady = true; // every mode is initialised; lobby launches may now start them
     [["startSR", "SPIKE RUSH"], ["startTDM", "TEAM DEATHMATCH"]].forEach(function (p) {
       var f = window[p[0]]; if (typeof f !== "function") return;
       window[p[0]] = function () { var a = arguments, self = this; return run(function () { return f.apply(self, a); }, curMap(), p[1], true); };
+    });
+    // Modes that skip agent select (duel, rifle 2v2, surf, aim, deathmatch) also never start on hidden agents: they
+    // start at once when every agent model is in memory, otherwise behind the agent-progress overlay.
+    [["startDuel", "OPERATOR DUEL"], ["startRifle", "RIFLE 2V2"], ["startSurf", "SURF"], ["startAim", "AIM TRAINING"], ["startDM", "DEATHMATCH"]].forEach(function (p) {
+      var f = window[p[0]]; if (typeof f !== "function") return;
+      window[p[0]] = function () { var a = arguments, self = this, call = function () { return f.apply(self, a); }, A = window.xValorantAssets;
+        var done = false; try { done = !A || !A.agentProgress || A.agentProgress().done; } catch (e) { done = true; }
+        return done ? call() : run(call, curMap(), p[1], true, "AGENTS"); };
     });
   });
 })();
