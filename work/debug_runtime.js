@@ -22,6 +22,7 @@ try {
       hurt(t, n, by) { return hurt(t, n, by); }, kill(b, hs, by, w) { return kill(b, hs, by, w); },
       die(by) { try { return pDie(by || "TestBot"); } catch (e) { return String(e); } },
       siteGoals() { try { const C = nmActive(); return C && C.siteGoals ? JSON.parse(JSON.stringify(C.siteGoals)) : null; } catch (e) { return null; } },
+      resetFirstBlood() { try { xFirstBlood.r = null; return true; } catch (e) { return false; } },
       net() { try { return { st: (typeof MP !== 'undefined') ? MP.st : null, on: (typeof MP !== 'undefined') ? !!MP.on : null,
           role: (typeof MP !== 'undefined') ? MP.role || null : null, host: (typeof NET !== 'undefined') ? !!NET.host : null,
           ws: (typeof NET !== 'undefined' && NET.socket) ? NET.socket.readyState : -1,
