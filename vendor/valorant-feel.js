@@ -107,13 +107,28 @@ function step(P,input,dt,world){
  }
  const speed=Math.hypot(P.vx||0,P.vz||0);P.mv=speed>.1;P.sf=speed/Math.max(.001,input.speed);P.speed=speed;P.fallY=P.y;P.fallDrop=landed?drop:0;return {landed,jumped,speed,drop};
 }
+// Published spread (degrees; wiki.playvalorant.com/en-us/<Weapon>, "Spread values"): first shot standing / crouched,
+// max (Ares: min) spread standing / crouched, then the movement penalties added on top, crouch-walking / walking / running /
+// airborne. Rows with an ADS (alt-fire) entry list its first / max standing / crouched; the movement penalties are shared.
+// Scoped snipers have 0 first-shot spread but keep the full movement / airborne penalty.
+const SPREAD={Classic:[.4,.3,1.8,1.35,.5,1.1,2.3,7],Shorty:[4,3.4,4,3.4,.5,1,2,4],Frenzy:[.65,.55,1.7,1.45,.5,.8,2,7],Ghost:[.3,.23,1.65,1.24,.5,1.1,2.3,7],Sheriff:[.25,.19,2.75,2.06,.5,1.2,3,7],
+ Stinger:[.65,.55,1.5,1.28,.15,1,2.5,10,.35,.26,2.74,2.06],Spectre:[.4,.34,1.4,1.19,.15,1,2.5,10,.25,.21,1.25,1.06],Bucky:[3,2.55,3,2.55,.5,1,2,4],Judge:[2.5,2.12,4,3.4,.5,1,2,4],
+ Bulldog:[.3,.26,1.25,1.06,.8,3,6,10,.1,.08,1.5,1.12],Guardian:[.1,.09,1.58,1.34,.8,3,6,10,0,0,1.48,1.25],Phantom:[.2,.17,.9,.76,.8,3,6,10,.11,.09,.91,.78],Vandal:[.25,.21,1,.85,.8,3,6,10,.157,.13,1.02,.87],
+ Marshal:[1,.9,1,.9,7.5,10,15,20,0,0,0,0],Outlaw:[3.5,3.15,3.5,3.15,7.5,10,15,20,0,0,0,0],Operator:[5,4.5,5,4.5,7.5,10,15,15,0,0,0,0],Ares:[1,.6,.7,.42,.4,3,6.5,10,.9,.54,.55,.33],Odin:[.8,.48,1.3,.78,.4,3,6.5,10,.79,.47,1.36,.82]};
+const rad=d=>Math.tan(d*Math.PI/180);
+function spreadRow(state,weapon,stats){const T=SPREAD[weapon];if(!T)return null;const ads=!!(state.ads&&stats&&stats.adsStats&&T.length>8),o=ads?8:0,cr=!!state.cr;return {first:T[o+(cr?1:0)],max:T[o+(cr?3:2)],T};}
 function spread(state,weapon,stats){
- const dead=weapon==='Operator'?C.operatorDeadzone:C.deadzone,speed=state.sf!=null?state.sf:(state.mv?1:0),moving=speed>dead,rifle=['Vandal','Phantom','Bulldog','Guardian'].includes(weapon),heavy=weapon==='Ares'||weapon==='Odin',smg=['Stinger','Spectre','Frenzy'].includes(weapon),snp=['Operator','Marshal','Outlaw'].includes(weapon);
+ const dead=weapon==='Operator'?C.operatorDeadzone:C.deadzone,speed=state.sf!=null?state.sf:(state.mv?1:0),moving=speed>dead,row=spreadRow(state,weapon,stats);
+ if(row){const T=row.T;let error=0;
+  // Airborne: the published airborne penalty for every gun (a jumping scoped Operator is +15 deg); the .2 s landing lock counts as running.
+  if(state.air)error=T[7];else if(state.lp>0)error=T[6];else if(moving){const walk=state.wk||speed<.65;error=state.cr?T[4]:walk?T[5]:T[6];}
+  return rad(row.first+error);}
  let base=Math.max(0,stats.firstBulletAccuracy||0),error=0;if(state.ads&&stats.adsStats)base=Math.max(0,stats.adsStats.firstBulletAccuracy||0);
- if(state.air)error=snp?10:smg?7:12;else if(state.lp>0)error=snp?7:5;else if(moving){const duck=state.cr,walk=state.wk||speed<.65;error=duck?(rifle?.8:.5):walk?(rifle||heavy?3:1.1):rifle?6:heavy?6.5:smg?3:2.3;}
- if(state.cr&&!moving&&!state.air&&!state.lp)base*=.8;
- return Math.tan((base+error)*Math.PI/180);
+ if(state.air)error=12;else if(state.lp>0)error=5;else if(moving)error=state.cr?.5:state.wk||speed<.65?1.1:2.3;
+ return rad(base+error);
 }
+// Spray error growth caps at the published max spread (Ares: shrinks to its min) over the first-shot spread.
+function bloomCap(state,weapon,stats){const row=spreadRow(state,weapon,stats);return row?rad(row.max)-rad(row.first):.024;}
 // Spray (client gFire = server fire): per-shooter state R {sequence, recoilX, recoilY, bloom, shot, lastWeapon, drift}.
 // Climb per shot (rifles .006 for the first 6 then .0015, others .008; cap .065 / .05) scaled by the gun's recoil weight
 // (REC, x.85 crouched, x.85 aiming), sideways drift from the 8th shot, bloom +.0015/shot (cap .024) that recovers over
@@ -122,10 +137,15 @@ function spread(state,weapon,stats){
 const REC={Vandal:1,Phantom:.6,Operator:1.5,Classic:.5,Sheriff:1.3,Spectre:.45,Guardian:.9,Marshal:1.2,Bulldog:.8,Stinger:.55,Frenzy:.5,Shorty:1.2,Bucky:1.4,Judge:1.1,Ares:.7,Odin:.75,Ghost:.55,Outlaw:1.4};
 const SPRAY_RIFLES=['Vandal','Phantom','Bulldog','Guardian'];
 function sprayReset(R,w,t){if(R.lastWeapon!==w||t-(R.shot||0)>.375){R.sequence=0;R.recoilX=R.recoilY=R.bloom=0;}R.lastWeapon=w;}
-function sprayBloom(R,w,t){const rec=w==='Vandal'?.375:w==='Phantom'?.35:.28,el=t-(R.shot||0);return el<rec?(R.bloom||0)*Math.max(0,1-el/rec):0;}
-function sprayStep(R,w,weight,t,random=Math.random){const n=R.sequence++,rifle=SPRAY_RIFLES.includes(w);
+// Gun recovery time (wiki update history: Vandal .375, Phantom / Bulldog / Guardian .35, Stinger .4; others keep .28).
+const RECOVERY={Vandal:.375,Phantom:.35,Bulldog:.35,Guardian:.35,Stinger:.4};
+function recoveryTime(w){return RECOVERY[w]||.28;}
+// Running / airborne recoil multiplier (patch 6.11: Vandal, Phantom, Spectre vertical x1.8; patch 4.0: Frenzy x1.5).
+function recoilMove(state,w){const k=w==='Frenzy'?1.5:['Vandal','Phantom','Spectre'].includes(w)?1.8:1;if(k===1)return 1;const sp=state.sf!=null?state.sf:(state.mv?1:0);return state.air||(sp>=.65&&!state.wk&&!state.cr)?k:1;}
+function sprayBloom(R,w,t){const rec=recoveryTime(w),el=t-(R.shot||0);return el<rec?(R.bloom||0)*Math.max(0,1-el/rec):0;}
+function sprayStep(R,w,weight,t,random=Math.random,cap=.024){const n=R.sequence++,rifle=SPRAY_RIFLES.includes(w);
  if(n===0){R.drift=random()<.5?-1:1;R.recoilX=0;R.recoilY=0;}else{R.recoilY=Math.min(rifle?.065:.05,R.recoilY+(rifle?(n<7?.006:.0015):.008)*weight);if(n>6){R.recoilX+=R.drift*.003*weight;if(Math.abs(R.recoilX)>.022){R.drift=-Math.sign(R.recoilX);}if(random()<.12)R.drift*=-1;}}
- R.bloom=Math.min(.024,(R.bloom||0)+.0015*weight);R.shot=t;return n;}
+ R.bloom=cap<0?Math.max(cap,(R.bloom||0)-.0015*weight):Math.min(cap,(R.bloom||0)+.0015*weight);R.shot=t;return n;}
 function disk(random=Math.random){const a=random()*Math.PI*2,r=Math.sqrt(random());return [Math.cos(a)*r,Math.sin(a)*r];}
-return {C,step,fallDamage,velocity,brake,groundMove,spread,disk,damp,approach,clipBlocked,CLIPS,REC,sprayReset,sprayBloom,sprayStep,leashGrid,leashOk};
+return {C,step,fallDamage,velocity,brake,groundMove,spread,bloomCap,SPREAD,recoveryTime,recoilMove,disk,damp,approach,clipBlocked,CLIPS,REC,sprayReset,sprayBloom,sprayStep,leashGrid,leashOk};
 });
