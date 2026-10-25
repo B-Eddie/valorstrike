@@ -2792,7 +2792,7 @@ function openPre(m) {
   }, 1000);
 }
 $("againBtn").onclick = () => (mode === "aim" ? startAim() : mode === "five" ? startFive() : mode === "surf" ? startSurf() : mode === "duel" ? startDuel() : mode === "rifle" ? startRifle() : start());
-$("lobbyBtn").onclick = () => { annClear(); clearTimeout(RF.to); clearTimeout(FV.to); clearInterval(RF.t); picking = false; fireHeld = false; $("xPick").classList.remove("on"); $("xBan").style.display = "none"; setScope(false); $("result").style.display = "none"; $("game").style.display = "none"; $("lobby").style.display = "flex"; score.you = 0; score.bots = 0; matchOver = false; };
+$("lobbyBtn").onclick = () => { annClear(); clearTimeout(RF.to); clearTimeout(FV.to); clearInterval(RF.t); picking = false; fireHeld = false; XSN.m.clear(); $("xPick").classList.remove("on"); $("xBan").style.display = "none"; setScope(false); $("result").style.display = "none"; $("game").style.display = "none"; $("lobby").style.display = "flex"; score.you = 0; score.bots = 0; matchOver = false; };
 
 // perf: HUD writes only when the value changed
 function hudT(e, v) { if (!e) return; v = String(v); if (e.textContent !== v) e.textContent = v; }
@@ -7417,7 +7417,10 @@ function fRound() {
   if (!FV.alive) { FV.pri = null; FV.sec = "Classic"; FV.arm = 0; } // died last round: back to a Classic
   const pz0 = FV.atk ? xSpawn(FV.map).atk : xSpawn(FV.map).def;
   player = { x: 0, z: pz0, hp: 100, armor: FV.arm, y: 0, vy: 0, ch: 0, st: 0 }; yaw = FV.atk ? 0 : Math.PI; pitch = 0;
-  timeLeft = 100; FV.buy = FV.you + FV.them === 0 || FV.you + FV.them === 12 ? 45 : 30; defuseT = 0; kSwing = 0; fSpawn(); $("feed").innerHTML = ""; $("defuse").style.display = "none";
+  timeLeft = 100; FV.buy = FV.you + FV.them === 0 || FV.you + FV.them === 12 ? 45 : 30; defuseT = 0; kSwing = 0;
+  // Sniper hold cache is per round by design: drop it so a new round never inherits stale spots.
+  XSN.m.clear();
+  fSpawn(); $("feed").innerHTML = ""; $("defuse").style.display = "none";
   const pm = FV.pri ? WEAP[FV.pri].mag : 0, sm = WEAP[FV.sec].mag;
   slots.pri = FV.pri ? { ammo: pm, rsv: pm * 3 } : {}; slots.pis = { ammo: sm, rsv: sm * 3 };
   rw = FV.pri ? "pri" : "pis"; ammo = slots[rw].ammo; rsv = slots[rw].rsv; reloading = 0; fcd = 0; spray = 0; fireHeld = false; try { XSP.used = false; } catch (e) {} // round start re-arms the one spray per round
