@@ -48,8 +48,14 @@ const CLIPS={ascent:[{name:'A ramp pit',y:[-60,15],p:[[42.55,-25.15],[42.62,-24.
 for(const k in CLIPS)for(const c of CLIPS[k]){let a=1e9,b=-1e9,e=1e9,f=-1e9;for(const [x,z]of c.p){a=Math.min(a,x);b=Math.max(b,x);e=Math.min(e,z);f=Math.max(f,z);}c.b=[a,b,e,f];}
 function polyDist(p,x,z){let inside=false,d=Infinity;for(let i=0,j=p.length-1;i<p.length;j=i++){const [ax,az]=p[j],[bx,bz]=p[i];if((bz>z)!==(az>z)&&x<(ax-bx)*(z-bz)/(az-bz)+bx)inside=!inside;const ex=bx-ax,ez=bz-az,t=Math.max(0,Math.min(1,((x-ax)*ex+(z-az)*ez)/(ex*ex+ez*ez||1)));d=Math.min(d,Math.hypot(ax+ex*t-x,az+ez*t-z));}return inside?0:d;}
 function clipBlocked(map,x,z,r,y,height=1.8){const L=CLIPS[map];if(!L)return false;const y0=y+.025,y1=y+height;for(const c of L){if(y1<=c.y[0]||y0>=c.y[1]||x<c.b[0]-r||x>c.b[1]+r||z<c.b[2]-r||z>c.b[3]+r)continue;if(polyDist(c.p,x,z)<r)return true;}return false;}
+// Fall damage (VALORANT: wiki.playvalorant.com/en-us/Unrated#Fall_damage): a fall of about 8 m deals 15, rising to the fatal
+// 100 at about 17 m; it hits health directly and ignores shields. Linear between the two published points (the wiki gives
+// only the end points). The drop is measured from the highest point of the airborne arc to the landing floor.
+function fallDamage(drop){return !(drop>=8)?0:Math.min(100,Math.round(15+(drop-8)*85/9));}
 function step(P,input,dt,world){
- const dt0=Math.max(0,Math.min(.1,dt)),parts=Math.max(1,Math.ceil(dt0*128)),h=dt0/parts;let landed=false,jumped=false;
+ const dt0=Math.max(0,Math.min(.1,dt)),parts=Math.max(1,Math.ceil(dt0*128)),h=dt0/parts;let landed=false,jumped=false,drop=0;
+ // Moved from outside the motor since the last step (a teleport, a rescue, a respawn): the fall starts over from here.
+ if(P.fallY==null||Math.abs(P.y-P.fallY)>1e-4)P.fallTop=P.y;
  const press=!!input.jump&&!P.jumpHeld;P.jumpHeld=!!input.jump;if(press)P.jumpBuffer=.07;
  for(let k=0;k<parts;k++){
   const floor=world.ground(P.x,P.z,P.y),grounded=(P.vy||0)<=0&&(P.y<=floor+.025||supported(P,world,P.y,1.8-(P.ch||0)));
@@ -77,14 +83,14 @@ function step(P,input,dt,world){
   if(vy>0&&world.ceiling&&world.ceiling(P.x,P.z,P.y+height,next+height)){vy=0;next=P.y;}
   // Rising into geometry beside the axis (an overhang, a wall lip) the centre ceiling ray misses: stop at the highest free height.
   if(next>oldY&&world.blocked(P.x,P.z,VR,next,height)&&!world.blocked(P.x,P.z,VR,oldY,height)){let lo=oldY,hi=next;for(let n=0;n<10;n++){const mid=(lo+hi)/2;if(world.blocked(P.x,P.z,VR,mid,height))hi=mid;else lo=mid;}next=lo;vy=Math.min(vy,0);}
-  if(next<=gy){next=gy;if(P.air&&vy<-.5){landed=true;P.lp=C.landingLock;P.landImpact=Math.min(1,-vy/10);}vy=0;}
+  if(next<=gy){next=gy;if(P.air&&vy<-.5){landed=true;P.lp=C.landingLock;P.landImpact=Math.min(1,-vy/10);drop=Math.max(drop,(P.fallTop??oldY)-gy);}vy=0;}
   // Descending beside a riser must not settle the capsule inside the stair face.
   // (Thin probe up the wall, full radius in the last 45 cm above the floor so a landing beside a nosing never ends inside it.)
   if(next<oldY&&!world.blocked(P.x,P.z,VR,oldY,height)&&(world.blocked(P.x,P.z,VR,next,height)||(next-gy<.45&&world.blocked(P.x,P.z,.4,next,height)))){let lo=next,hi=oldY;for(let n=0;n<10;n++){const mid=(lo+hi)/2;if(world.blocked(P.x,P.z,.4,mid,height))lo=mid;else hi=mid;}next=hi;vy=0;}
   if(grounded&&!jumped&&next>oldY&&next-oldY<.5)P.eyeOffset=(P.eyeOffset||0)-(next-oldY);
-  P.eyeOffset=damp(P.eyeOffset||0,0,18,h);P.y=next;P.vy=vy;P.air=vy>0||(next>gy+.00001&&!supported(P,world,next,height));
+  P.eyeOffset=damp(P.eyeOffset||0,0,18,h);P.y=next;P.vy=vy;P.air=vy>0||(next>gy+.00001&&!supported(P,world,next,height));P.fallTop=P.air?Math.max(P.fallTop??oldY,next):next;
  }
- const speed=Math.hypot(P.vx||0,P.vz||0);P.mv=speed>.1;P.sf=speed/Math.max(.001,input.speed);P.speed=speed;return {landed,jumped,speed};
+ const speed=Math.hypot(P.vx||0,P.vz||0);P.mv=speed>.1;P.sf=speed/Math.max(.001,input.speed);P.speed=speed;P.fallY=P.y;P.fallDrop=landed?drop:0;return {landed,jumped,speed,drop};
 }
 function spread(state,weapon,stats){
  const dead=weapon==='Operator'?C.operatorDeadzone:C.deadzone,speed=state.sf!=null?state.sf:(state.mv?1:0),moving=speed>dead,rifle=['Vandal','Phantom','Bulldog','Guardian'].includes(weapon),heavy=weapon==='Ares'||weapon==='Odin',smg=['Stinger','Spectre','Frenzy'].includes(weapon),snp=['Operator','Marshal','Outlaw'].includes(weapon);
@@ -106,5 +112,5 @@ function sprayStep(R,w,weight,t,random=Math.random){const n=R.sequence++,rifle=S
  if(n===0){R.drift=random()<.5?-1:1;R.recoilX=0;R.recoilY=0;}else{R.recoilY=Math.min(rifle?.065:.05,R.recoilY+(rifle?(n<7?.006:.0015):.008)*weight);if(n>6){R.recoilX+=R.drift*.003*weight;if(Math.abs(R.recoilX)>.022){R.drift=-Math.sign(R.recoilX);}if(random()<.12)R.drift*=-1;}}
  R.bloom=Math.min(.024,(R.bloom||0)+.0015*weight);R.shot=t;return n;}
 function disk(random=Math.random){const a=random()*Math.PI*2,r=Math.sqrt(random());return [Math.cos(a)*r,Math.sin(a)*r];}
-return {C,step,velocity,brake,groundMove,spread,disk,damp,approach,clipBlocked,CLIPS,REC,sprayReset,sprayBloom,sprayStep};
+return {C,step,fallDamage,velocity,brake,groundMove,spread,disk,damp,approach,clipBlocked,CLIPS,REC,sprayReset,sprayBloom,sprayStep};
 });

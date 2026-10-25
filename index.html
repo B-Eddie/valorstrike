@@ -12741,7 +12741,7 @@ moveP=function(dt,run,hold){
  P.tagT=Math.max(0,(P.tagT||0)-dt);let speed=6.75*(kn?1:p.runSpeedMultiplier||.8)*(ads&&p.adsStats?p.adsStats.runSpeedMultiplier:1);if(J.dis>0)speed*=1.6;if(typeof sgSlow==='function')speed*=sgSlow(P);
  const native=typeof nmActive==='function'&&nmActive(),world={ground:(x,z,y)=>groundAt(x,z,.3,y),blocked:(x,z,r,y,h)=>native?sgBlk(x,z,r,y)||nmBlocked(native,x,z,r,y,h):blocked(x,z,r,y),ceiling:native?(x,z,low,high)=>{const ray=new THREE.Ray(new THREE.Vector3(x,low+.01,z),new THREE.Vector3(0,1,0)),hit=native.bvh.raycastFirst(ray,THREE.DoubleSide);return !!hit&&hit.distance<high-low;}:null};
  const result=VF.model.step(P,{x,z,jump:!!kk.Space,duck:!!(kk.ControlLeft||kk.ControlRight),walk:!!(kk.ShiftLeft||kk.ShiftRight),speed,tag:P.tagT>0?P.tagK:1,hold:!!hold||!!J.dr},dt,world);
- if(result.landed){SFX.land();P.st=0;}
+ if(result.landed){SFX.land();P.st=0;const fd=VF.model.fallDamage(result.drop);if(fd>0&&running&&mode!=='aim'&&mode!=='duel'&&!(typeof MP!=='undefined'&&MP.on)&&P.hp>0){P.hp=Math.max(0,P.hp-fd);try{updHud();}catch(e){}if(P.hp<=0)pDie('Fall','Fall');}} // fall damage: health only (shields ignored); online the server applies it
  // Footfalls follow distance. Shift-walking and crouching stay silent.
  P.footDistance=(P.footDistance||0)+result.speed*dt;if(P.footDistance>1.85&&P.mv&&!P.air&&!P.wk&&!P.cr){P.footDistance%=1.85;SFX.selfStep(P.y>1);}
  // Preserve explicit ability impulses; ordinary air steering never creates a speed boost.
