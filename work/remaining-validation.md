@@ -1,6 +1,6 @@
 # Valorstrike acceptance ledger
 
-Updated 25 October 2026, second pass (branch `hark`, tip after this ledger commit) from the full [Instinct handoff](https://files.instinct.com/u6k7xnlbyeh0-valorstrike-shipped-and-still-open).
+Updated 25 October 2026, third pass (branch `hark`, tip after this ledger commit) from the full [Instinct handoff](https://files.instinct.com/u6k7xnlbyeh0-valorstrike-shipped-and-still-open).
 
 This is an implementation and evidence ledger, not a release sign-off. Source and browser checks below must not be represented as completion of the entire handoff.
 
@@ -41,6 +41,9 @@ Each commit passed both suites from `server/` at the time it landed; `index.html
 | b256a56 | Online Vulnerable / Trapwire tether status shown (announcement + chip with seconds) | `test_net_status.cjs` | Live online check |
 | 854d1ef | Tour de Force round reset online: client re-arms the round loadout (Operator slot/model no longer survive) | `test_tdf_round_reset.cjs`, `test-ults.js` round reset mid-ult | Live online check. Note: in this commit's own tree the helper sits inside `mpCli5` (runs, but the new test cannot slice it); placed correctly in b86efe2 |
 | 5f83f26 | `test_agent_preload.cjs` flake under load fixed (polls Cache Storage writes) | client suite | — |
+| b515533 | Native-map memory budget (rows 1/12): prepared maps keep normals as Int8x4 and indices as Uint16 (≤65535 vertices), textures capped at 256 px on LOW or ≤4 GB devices, attribute arrays and decoded images dropped once on the GPU, all map textures uploaded during loading; a new WebGL context (AA switch via xRemake, restored context) re-prepares the scene from the HTTP cache (`nmRehydrate`); `xNativeMaps.memory()` reports bytes and timings | `test_map_memory.cjs`; `work/bench_map_memory.cjs` → `map-memory.json`. **Headless model of map-owned bytes, not Chromium RSS.** Resident map MB before → after medium/high → after LOW: Ascent 1128 → 593 → 297, Bind 952 → 507 → 252, Breeze 1018 → 548 → 268, Haven 826 → 424 → 244, Lotus 554 → 271 → 164, Split 1068 → 558 → 281; geometry pack 81–138 ms per map | Real browser RSS before/after; AA-switch reload in a rendered page; constrained-device startup |
+| fe89e08 | TDM transitions (row 7): tier unlocks by match time (120 s rifles/shotguns, 300 s snipers/MGs, same rule as server `weaponAllowed`) now also run online, with call-outs and live re-render of an open loadout; late joiners adopt the tier. Spawn protection 2 s ends when the protected unit attacks; SPAWN PROTECTED chip; online mirrors the server window. Respawn clears crouch/velocity/air; DM/TDM death text; online self-damage closes the loadout | `test_tdm_transitions.cjs` (fails on old code): client tiers = server for every weapon 0–570 s, one call-out per unlock, protection rules, chip, offline/online respawn | Rendered chip check; bots/allies ended protection only on a landed attack (server: on any shot) — see below |
+| 74a5da4 | FP weapon timing parity (row 5): native FP clips ran ~2.5× slow (24 fps keys for 60 fps sequences) for idle/fire/knife; durations now from each clip's SequenceLength, bolt/pump fire (Operator, Marshal, Bucky) fits the fire interval; equip/reload keep weapons.json times. Fire-rate multipliers match the server (×0.8 concussed, ×1.15 Empress; offline Empress was +30 %). Knife light swing 0.45 → 0.5 s (server 2/s) | `test_fp_timing.cjs` (fails on old code): 144 cadence cases = server formula, equip/reload/magazine = weapons.json, knife, native clip playback; `test_fp_native.cjs` agent change mid-match | Browser timing feel; knife heavy swing has no server equivalent — see below |
 
 ### Browser findings this pass (headless Chromium, 640x360, Lotus, often ~1 fps alongside the combat soak)
 
@@ -69,7 +72,7 @@ QA work on `hark-combat` (rejoin keeps the team, fall recovery, unstick, freeNod
 ## Verification
 
 - Generated all six prebuilt collision worlds from original assets.
-- At the tip of this pass all 24 default server regression files pass (`npm test`) and all 48 client regression files pass (`npm run test:client`). (Earlier passes: 17 server / 35 client.) The client suite covers native contact/locomotion samples, loading/cancellation, renderer rebinding, identity/profile, maps, intents and new ability/HUD checks.
+- At the tip of this pass all 24 default server regression files pass (`npm test`) and all 51 client regression files pass (`npm run test:client`). (Earlier passes: 17 server / 35 client.) The client suite covers native contact/locomotion samples, loading/cancellation, renderer rebinding, identity/profile, maps, intents and new ability/HUD checks.
 - Regenerating `index.html` with `python3 work/install_valorant.py` is byte-identical; `git diff --check` passes.
 - Browser: all six original maps reached normal rendered matches. Ascent → Bind → Haven → Split → Breeze switched in one session without a page reload; Lotus also progressed to a later offline round. Saved and inspected the five map-start images and two online Lotus images. This establishes local launch/render coverage, not complete traversal or low-memory performance.
 - Browser: cancelled a normal Breeze load and immediately returned to the lobby.
