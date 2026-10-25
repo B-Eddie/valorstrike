@@ -51,7 +51,7 @@ function nmSkirt(spec){const g=new THREE.Group();g.name='native-skirt';const mat
  for(const m of [ground,ring]){m.renderOrder=-10;m.frustumCulled=false;m.raycast=()=>{};m.castShadow=m.receiveShadow=false;m.userData.skirt=true;g.add(m);}g.userData.spec=spec;return g;}
 // Disconnected decorative islands are not playable spawn or path targets.
 function nmConnected(C){const N=C.nav.nodes,A=C.nav.adj,seen=new Uint8Array(N.length);let largest=[];for(let i=0;i<N.length;i++){if(seen[i]||(C.nav.valid&&!C.nav.valid[i]))continue;const q=[i];seen[i]=1;for(let k=0;k<q.length;k++)for(const j of A[q[k]])if(!seen[j]&&(!C.nav.valid||C.nav.valid[j])){seen[j]=1;q.push(j);}if(q.length>largest.length)largest=q;}C.playable=new Uint8Array(N.length);for(const i of largest)C.playable[i]=1;}
-function nmNear(C,x,z,y){let best=-1,bd=Infinity;const gx=Math.floor(x/2),gz=Math.floor(z/2);for(let ring=0;ring<=8;ring++){for(let dx=-ring;dx<=ring;dx++)for(let dz=-ring;dz<=ring;dz++){if(ring&&Math.abs(dx)!==ring&&Math.abs(dz)!==ring)continue;for(const i of C.cells.get((gx+dx)+','+(gz+dz))||[]){const p=C.nav.nodes[i],d=(p[0]-x)**2+(p[2]-z)**2+(Number.isFinite(y)?(p[1]-y)**2*2:0);if(d<bd){bd=d;best=i;}}}if(best>=0&&ring>1&&bd<(ring*2-2)**2)return best;}if(best<0)for(let i=0;i<C.nav.nodes.length;i++){if(C.playable?!C.playable[i]:(C.nav.valid&&!C.nav.valid[i]))continue;const p=C.nav.nodes[i],d=(p[0]-x)**2+(p[2]-z)**2;if(d<bd){best=i;bd=d;}}return best;}
+function nmNear(C,x,z,y,yBand){let best=-1,bd=Infinity;const gx=Math.floor(x/2),gz=Math.floor(z/2);for(let ring=0;ring<=8;ring++){for(let dx=-ring;dx<=ring;dx++)for(let dz=-ring;dz<=ring;dz++){if(ring&&Math.abs(dx)!==ring&&Math.abs(dz)!==ring)continue;for(const i of C.cells.get((gx+dx)+','+(gz+dz))||[]){const p=C.nav.nodes[i];if(Number.isFinite(yBand)&&Number.isFinite(y)&&Math.abs(p[1]-y)>yBand)continue;const d=(p[0]-x)**2+(p[2]-z)**2+(Number.isFinite(y)?(p[1]-y)**2*2:0);if(d<bd){bd=d;best=i;}}}if(best>=0&&ring>1&&bd<(ring*2-2)**2)return best;}if(best<0)for(let i=0;i<C.nav.nodes.length;i++){if(C.playable?!C.playable[i]:(C.nav.valid&&!C.nav.valid[i]))continue;const p=C.nav.nodes[i],d=(p[0]-x)**2+(p[2]-z)**2;if(d<bd){best=i;bd=d;}}return best;}
 // Select only nearby upward support. Never snap a falling actor onto a roof above its feet.
 function nmHeight(C,x,z,y){const i=nmNear(C,x,z,Number.isFinite(y)?y:undefined);if(i<0)throw Error('No valid navigation floor');const reference=Number.isFinite(y)?y:C.nav.nodes[i][1],ray=new THREE.Ray(new THREE.Vector3(x,reference+.32,z),new THREE.Vector3(0,-1,0));for(let k=0;k<24;k++){const hit=C.bvh.raycastFirst(ray,THREE.DoubleSide);if(!hit)break;if(hit.face.normal.y>.45)return hit.point.y;ray.origin.y=hit.point.y-.005;}return Number.isFinite(y)?Math.min(reference,C.nav.nodes[i][1]):C.nav.nodes[i][1];}
 var NM_Q={box:new THREE.Box3(),line:new THREE.Line3(),p:new THREE.Vector3(),q:new THREE.Vector3(),normal:new THREE.Vector3()};
@@ -88,6 +88,11 @@ function nmSegDrop(C,p,n){const d=Math.hypot(n[0]-p.x,n[2]-p.z),st=Math.max(1,Ma
 // clears and the unit sits off its nearest node's corridor, it first steps back onto that node:
 // graph edges are walkable FROM the node, and goal-steering from off-corridor ground just grinds
 // walls (split west spawn, both allies blk=1 under xUn step-backs).
+// Anchor routing to the unit's own level: under a bridge or beside an overpass the plain
+// nearest node sits on the deck overhead (breeze B approach: units at y=7 anchored to the
+// y=7.45 walkway; every hop aimed 0.45 u up - unclimbable, park-forever). Band the start
+// anchor to the walkable step range and fall back to the plain nearest node only when no
+// on-level node exists nearby (mid-drop units resolve on landing).
 // Stall breaker: when the first hop fails validation on the same directed edge across
 // consecutive re-plans (A* + route cache otherwise re-serve it forever), blacklist that edge
 // for this unit and re-plan around it. Per-unit so shared chokepoints are unaffected; the
@@ -97,7 +102,7 @@ function nmSegDrop(C,p,n){const d=Math.hypot(n[0]-p.x,n[2]-p.z),st=Math.max(1,Ma
 // valid route for the rest of its life - a static failure simply re-bans after one retry.
 // If bans ever consume every route, they are all dropped and routing retries unfiltered:
 // blacklisting may never leave a unit more parked than the original graph.
-function nmNext(C,u,gx,gz){const p=u.g.position,N=C.nav.nodes,s=nmNear(C,p.x,p.z,p.y),e=nmNear(C,gx,gz);
+function nmNext(C,u,gx,gz){const p=u.g.position,N=C.nav.nodes;let s=nmNear(C,p.x,p.z,p.y,.35);if(s<0||Math.hypot(N[s][0]-p.x,N[s][2]-p.z)>6)s=nmNear(C,p.x,p.z,p.y);const e=nmNear(C,gx,gz);
  if(u.xb){const now=performance.now();for(const [k,t]of u.xb)if(t<now)u.xb.delete(k);}
  let path=nmPath(C,s,e,u.xb);if(!path.length){if(u.xb&&u.xb.size){u.xb.clear();path=nmPath(C,s,e);}if(!path.length)return [p.x,p.z];}
  u.xfe=path.length>1?path[0]+'>'+path[1]:null;
@@ -107,7 +112,10 @@ function nmNext(C,u,gx,gz){const p=u.g.position,N=C.nav.nodes,s=nmNear(C,p.x,p.z
 // axis-split motor still cannot walk it (breeze B-approach stall), so three consecutive
 // re-plans with no progress (<0.25 u) while blocked also ban the recorded first-hop edge.
 {const p=xPath;xPath=function(u,dt,gx,gz,out){const C=nmActive();if(!C)return p.apply(this,arguments);u.xr=[];u.npT=(u.npT||0)-dt;const replan=!u.np||u.npT<=0||u.blk||Math.hypot(u.np[0]-u.g.position.x,u.np[1]-u.g.position.z)<.55||!u.ng||Math.hypot(u.ng[0]-gx,u.ng[1]-gz)>3;
- if(replan&&u.np&&u.blk&&u.xfe){const moved=u.xpp?Math.hypot(u.g.position.x-u.xpp[0],u.g.position.z-u.xpp[1]):9;if(moved<.25){if(u.xfK===u.xfe)u.xfm=(u.xfm||0)+1;else{u.xfK=u.xfe;u.xfm=1;}if(u.xfm>=3){(u.xb=u.xb||new Map()).set(u.xfe,performance.now()+30000);u.xfm=0;u.xfK=null;}}else{u.xfm=0;u.xfK=null;}}
+ if(replan&&u.np&&u.xfe){const moved=u.xpp?Math.hypot(u.g.position.x-u.xpp[0],u.g.position.z-u.xpp[1]):9;
+  // Wiggle is not progress: only a real advance (>=0.75 u between re-plans) clears the streak,
+  // otherwise unstick strafing inside a pocket resets the count forever (breeze B approach).
+  if(moved<.75){if(u.xfK===u.xfe)u.xfm=(u.xfm||0)+1;else{u.xfK=u.xfe;u.xfm=1;}if(u.xfm>=3){(u.xb=u.xb||new Map()).set(u.xfe,performance.now()+30000);u.xfm=0;u.xfK=null;}}else{u.xfm=0;u.xfK=null;}}
  if(replan){u.xpp=[u.g.position.x,u.g.position.z];u.np=nmNext(C,u,gx,gz);u.ng=[gx,gz];u.npT=.4;u.blk=0;}return u.np;};}
 {const goal=xGoal;xGoal=function(u,team,atk,out){const C=nmActive();if(!C||mode!=='five')return goal.apply(this,arguments);const s=FV.sp;if(!s)return null;u.xr=[];s.xr='native';if(s.st==='plant')return x2(out,s.x,s.z);if(atk&&s.st==='drop')return x2(out,s.x,s.z);const names=Object.keys(C.meta.sites),name=atk?s.site:(s.seen||names[Math.max(0,team.indexOf(u))%names.length]),p=C.meta.sites[name]||C.meta.sites[names[0]],g=atk&&C.siteGoals&&(C.siteGoals[name]||C.siteGoals[names[0]]);return g?x2(out,g[0],g[1]):x2(out,p[0],p[2]);};}
 {const step=xStep;xStep=function(){return nmActive()?false:step.apply(this,arguments);};const clear=xClear;xClear=function(x,z){const C=nmActive();if(!C)return clear(x,z);const p=C.nav.nodes[nmNear(C,x,z)];return [p[0],p[2]];};const nudge=xNudgeAll;xNudgeAll=function(){if(!nmActive())return nudge.apply(this,arguments);};}
