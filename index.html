@@ -7908,6 +7908,8 @@ const xRcnGeo = new THREE.RingGeometry(0.9, 1, 64), xKjBand = new THREE.BoxGeome
 const xAdd = (k, c, o) => jMat(k, () => new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: o, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide }));
 function xKjAcc(m, s) { [0.18, -0.12].forEach((y, i) => { const b = new THREE.Mesh(xKjBand, xKjMat); b.scale.set(s * (1.06 - i * 0.02), 1, s * (1.06 - i * 0.02)); b.position.y = y * s * 2; b.raycast = () => {}; m.add(b); }); }
 const blazeGeo = new THREE.BoxGeometry(8, 3, 0.3), orbGeo = new THREE.SphereGeometry(0.25, 12, 8), zoneGeo = new THREE.CircleGeometry(2.5, 28);
+// Phoenix Hot Hands (wiki.playvalorant.com/en-us/Hot_Hands): 4 s, the fire spreads to 4.5 m over 0.75 s, then 3.25 s at full size. Server: devices.js DEV.hotHands.
+const XHOT = { r: 4.5, grow: 0.75, life: 4 };
 const ringGeo = new THREE.RingGeometry(0.5, 0.85, 24), arrowGeo = new THREE.BoxGeometry(0.07, 0.07, 0.7), beamGeo = new THREE.BoxGeometry(0.12, 0.12, 1);
 const rvMat = new THREE.MeshBasicMaterial({ color: 0xff2030, transparent: true, opacity: 0.5, depthTest: false, depthWrite: false, side: THREE.BackSide });
 // perf pass 11: ability fx reuse pooled meshes + materials (shared geometry), returned to the pool when the effect ends
@@ -7997,11 +7999,11 @@ function phKey(code) {
     const o = pEye(), side = typeof mpAltHeld !== "undefined" && mpAltHeld ? 1 : -1, c = phCurve(o, fx, fz, side);
     const m = jM(orbGeo, jMat("orb", () => new THREE.MeshBasicMaterial({ color: 0xfff2b0 }))); m.position.copy(o); scene.add(m); J.orbs.push({ m, a: o, c: c.mid, b: c.end, t: 0, w: xWf("curveball") }); blip(800, 0.1, "sine", 0.15);
   }
-  if (code === "KeyQ") { // Hot Hands (basic, Q in Valorant)
+  if (code === "KeyQ") { // Hot Hands (basic, Q in Valorant): the zone spreads to XHOT.r over XHOT.grow s (jFxTick)
     if (J.q < 1 || J.cd.q > 0) return no(); J.q--; J.cd.q = 0.6;
     ray.set(new THREE.Vector3(P.x, 1, P.z), new THREE.Vector3(fx, 0, fz)); ray.far = 5; const h = ray.intersectObjects(solids)[0];
     const dd = h ? Math.max(0, h.distance - 0.5) : 5, c = new THREE.Vector3(P.x + fx * dd, 0.05, P.z + fz * dd);
-    const m = jM(zoneGeo, fireMat(0xff5a1a, 0.55)); m.rotation.x = -Math.PI / 2; m.position.copy(c); scene.add(m); J.zones.push({ m, p: c, t: 4 }); blip(220, 0.3, "sawtooth", 0.1);
+    const m = jM(zoneGeo, fireMat(0xff5a1a, 0.55)); m.rotation.x = -Math.PI / 2; m.position.copy(c); m.scale.setScalar(0.01); scene.add(m); J.zones.push({ m, p: c, t: XHOT.life, R: XHOT.r, a: 0 }); blip(220, 0.3, "sawtooth", 0.1);
   }
   if (code === "KeyX") {
     if (J.rib > 0) return say("Run It Back · " + Math.ceil(J.rib) + " s", 700);
@@ -8038,9 +8040,10 @@ function jFxTick(dt) {
     A.length = k; }
   { const A = J.zones, n = A.length; let k = 0;
     for (let i = 0; i < n; i++) { const z = A[i]; z.t -= dt; z.m.material.opacity = 0.55 * Math.min(1, z.t / 0.5);
-      if (z.own) { if (!z.nd) { mpAreaHit(z, z.p.x, z.p.z, 2.5, 60 * dt, "Hot Hands", null); /* 60 dps (wiki.playvalorant.com/en-us/Phoenix) */ const o = z.own; if (o.alive && o.g && Math.hypot(o.g.position.x - z.p.x, o.g.position.z - z.p.z) < 2.5) o.hp = Math.min(100, o.hp + 15 * dt); } }
-      else { for (let j = 0; j < bots.length; j++) { const b = bots[j]; if (b.alive && Math.hypot(b.g.position.x - z.p.x, b.g.position.z - z.p.z) < 2.5) jHit(b, 60 * dt, "Hot Hands"); } xFFArea("You", false, "Hot Hands", 60 * dt, (x, q) => Math.hypot(x - z.p.x, q - z.p.z) < 2.5);
-      if (Math.hypot(P.x - z.p.x, P.z - z.p.z) < 2.5) heal(); } if (z.t > 0) A[k++] = z; else jRel(z.m); }
+      let r = 2.5; if (z.R) { z.a += dt; r = z.R * Math.min(1, z.a / XHOT.grow); z.m.scale.setScalar(Math.max(0.01, r / 2.5)); } // Hot Hands spreads (zoneGeo is 2.5 m); Paint Shells keep 2.5 m
+      if (z.own) { if (!z.nd) { mpAreaHit(z, z.p.x, z.p.z, r, 60 * dt, "Hot Hands", null); /* 60 dps (wiki.playvalorant.com/en-us/Phoenix) */ const o = z.own; if (o.alive && o.g && Math.hypot(o.g.position.x - z.p.x, o.g.position.z - z.p.z) < r) o.hp = Math.min(100, o.hp + 15 * dt); } }
+      else { for (let j = 0; j < bots.length; j++) { const b = bots[j]; if (b.alive && Math.hypot(b.g.position.x - z.p.x, b.g.position.z - z.p.z) < r) jHit(b, 60 * dt, "Hot Hands"); } xFFArea("You", false, "Hot Hands", 60 * dt, (x, q) => Math.hypot(x - z.p.x, q - z.p.z) < r);
+      if (Math.hypot(P.x - z.p.x, P.z - z.p.z) < r) heal(); } if (z.t > 0) A[k++] = z; else jRel(z.m); }
     A.length = k; }
   { const A = J.orbs, n = A.length; let k = 0;
     for (let i = 0; i < n; i++) { const o = A[i]; o.t += dt; const ow = o.w || 0.5, u = Math.min(1, o.t / ow); if (o.c) { const w = 1 - u; o.m.position.set(w * w * o.a.x + 2 * w * u * o.c.x + u * u * o.b.x, w * w * o.a.y + 2 * w * u * o.c.y + u * u * o.b.y, w * w * o.a.z + 2 * w * u * o.c.z + u * u * o.b.z); } else o.m.position.lerpVectors(o.a, o.b, u); // Curveball bends through its control point
@@ -8464,6 +8467,11 @@ function rsSl(u) {
 }
 // ---- Breach + Chamber kits (player), ability viewmodels, Trailblazer creature, nearsight, kill-feed names ----
 const BC = { as: [], tm: [], sf: [], an: null, td: 0, eq: "", cd: 0, vm: "", fq: [] }; // fq: Fault Line / Rolling Thunder waiting out their windup
+// Breach Fault Line (wiki.playvalorant.com/en-us/Fault_Line): HOLD FIRE charges it over 1 s; the area starts 8 m in front of Breach,
+// is 8 m wide and 8 -> 56 m long with the charge; 2.5 s concuss. Server: abilities.js FAULT / faultLen (asserted equal).
+const XFAULT = { near: 8, min: 8, max: 56, charge: 1, width: 8, concuss: 2.5 };
+function xFaultPw(pw) { pw = typeof pw === "number" ? pw : NaN; return Number.isFinite(pw) ? Math.max(0, Math.min(1, pw)) : 1; } // no charge (bots, older peers) = full
+function xFaultLen(pw) { return XFAULT.min + (XFAULT.max - XFAULT.min) * xFaultPw(pw); }
 const XVM = (() => { // primitive viewmodels: Showstopper launcher, Headhunter pistol, Tour De Force sniper
   const mk = (c) => new THREE.MeshLambertMaterial({ color: c });
   const box = (w, h, d, m, x, y, z) => { const o = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); o.position.set(x, y, z); return o; };
@@ -8509,11 +8517,11 @@ function pNs(t) { const o = $("xNs"); o.classList.add("on"); clearTimeout(pNs.h)
   const peek = see && A.bs; A.bs = !see;
   xBFl(b, A, see, peek, tg, from, "q", al, 0xfff2b0, "orb", "Breach ▸ Flashpoint", 800); // Flashpoint (Q) before a peek
   if (A.be > 0 && A.t > A.beT && !A.bw && xBCh(b).e >= 1) { /* Fault Line (E, free signature) toward the site */ const s = mode === "five" ? (FV.atk !== al ? (FV.map === "bind" ? [0, 30] : [0, 12]) : SITES[Math.random() < 0.5 ? "A" : "B"]) : [0, 6];
-    const dx = s[0] - from.x, dz = s[1] - from.z, l = Math.hypot(dx, dz) || 1; if (l < 34 && xBUse(b, "e")) { A.be = 0; A.bw = 1; A.bf = { x: from.x, z: from.z, fx: dx / l, fz: dz / l }; A.bwT = XAB_WIND.faultLine; blip(70, 0.9, "sawtooth", 0.12); try { XCUE.play("rumble", { x: from.x, y: 1, z: from.z }); } catch (e) {} } }
-  if (A.bw && (A.bwT -= dt) <= 0) { A.bw = 0; const F = A.bf, inS = (x, z) => { const vx = x - F.x, vz = z - F.z, a = vx * F.fx + vz * F.fz; return a > 0 && a < 30 && Math.abs(vx * F.fz - vz * F.fx) < 2; };
-    (al ? bots : allies).forEach((t) => { if (t && t.alive && t.g && inS(t.g.position.x, t.g.position.z)) bcDaze(t, 3); });
-    if (!al && player.hp > 0 && inS(player.x, player.z)) { BC.pst = performance.now() + 3000; xConStart(3000); say("Concussed by Fault Line", 900); }
-    const m = new THREE.Mesh(xG("Box", 4, 0.25, 30), fireMat(0xff9a3a, 0.45)); m.position.set(F.x + F.fx * 15, 0.15, F.z + F.fz * 15); m.rotation.y = Math.atan2(F.fx, F.fz); jFx(m, 0.9); feed("Breach ▸ Fault Line"); } }; }
+    const dx = s[0] - from.x, dz = s[1] - from.z, l = Math.hypot(dx, dz) || 1; if (l < 34 && xBUse(b, "e")) { A.be = 0; A.bw = 1; A.bf = { x: from.x, z: from.z, fx: dx / l, fz: dz / l, L: Math.round(Math.max(XFAULT.min, Math.min(XFAULT.max, l + 4 - XFAULT.near))) }; /* charged to reach just past the site */ A.bwT = XAB_WIND.faultLine; blip(70, 0.9, "sawtooth", 0.12); try { XCUE.play("rumble", { x: from.x, y: 1, z: from.z }); } catch (e) {} } }
+  if (A.bw && (A.bwT -= dt) <= 0) { A.bw = 0; const F = A.bf, L = F.L || XFAULT.max, N = XFAULT.near, inS = (x, z) => { const vx = x - F.x, vz = z - F.z, a = vx * F.fx + vz * F.fz; return a > N && a < N + L && Math.abs(vx * F.fz - vz * F.fx) < XFAULT.width / 2; }; // wiki strip (XFAULT)
+    (al ? bots : allies).forEach((t) => { if (t && t.alive && t.g && inS(t.g.position.x, t.g.position.z)) bcDaze(t, XFAULT.concuss); });
+    if (!al && player.hp > 0 && inS(player.x, player.z)) { BC.pst = performance.now() + XFAULT.concuss * 1000; xConStart(XFAULT.concuss * 1000); say("Concussed by Fault Line", 900); }
+    const m = new THREE.Mesh(xG("Box", XFAULT.width, 0.25, L), fireMat(0xff9a3a, 0.45)); m.position.set(F.x + F.fx * (N + L / 2), 0.15, F.z + F.fz * (N + L / 2)); m.rotation.y = Math.atan2(F.fx, F.fz); jFx(m, 0.9); feed("Breach ▸ Fault Line"); } }; }
 // bot Skye (team-agnostic): Guiding Light before a peek (2 charges), Regrowth from her 100 HP pool once a fight is over
 { const b0 = botAb; botAb = function (b, dt, see, tg, from) { b0(b, dt, see, tg, from);
   if (!jOn() || !running || !b.ab || (b.name !== "Skye" && xAgOf(b.name) !== "Skye")) return; const A = b.ab, al = allies.indexOf(b) >= 0;
@@ -8606,9 +8614,9 @@ function bcFlash(p) {
     if (l < 30 && (vx * Math.sin(ry) + vz * Math.cos(ry)) / l > 0.3 && los(bp, p)) { b.blind = Math.max(b.blind || 0, 2.25); n++; } });
   say("Flashpoint · " + n + " blinded", 800);
 }
-function bcLine(P, fx, fz, L, w, t, ry) {
-  let n = 0; bots.forEach((b) => { if (!b.alive) return; const vx = b.g.position.x - P.x, vz = b.g.position.z - P.z, a = vx * fx + vz * fz, s = Math.abs(vx * fz - vz * fx); if (a > 0 && a < L && s < w) { bcDaze(b, t); n++; } });
-  const m = new THREE.Mesh(new THREE.BoxGeometry(w * 2, 0.25, L), fireMat(0xff9a3a, 0.45)); m.position.set(P.x + fx * L / 2, 0.15, P.z + fz * L / 2); m.rotation.y = ry ?? yaw; jFx(m, 0.9);
+function bcLine(P, fx, fz, L, w, t, ry, nr) { // strip nr .. nr + L ahead of P along (fx, fz), w either side
+  nr = nr || 0; let n = 0; bots.forEach((b) => { if (!b.alive) return; const vx = b.g.position.x - P.x, vz = b.g.position.z - P.z, a = vx * fx + vz * fz, s = Math.abs(vx * fz - vz * fx); if (a > nr && a < nr + L && s < w) { bcDaze(b, t); n++; } });
+  const m = new THREE.Mesh(new THREE.BoxGeometry(w * 2, 0.25, L), fireMat(0xff9a3a, 0.45)); m.position.set(P.x + fx * (nr + L / 2), 0.15, P.z + fz * (nr + L / 2)); m.rotation.y = ry ?? yaw; jFx(m, 0.9);
   blip(90, 0.5, "sawtooth", 0.22); try { shk = 0.25; } catch (e) {} say("Fault Line · " + n + " dazed " + t + " s", 900);
 }
 function bcCone(at) { // at: { x, z, ry } where Breach cast it (after the windup); default: now
@@ -8646,7 +8654,7 @@ function bcKey(code) {
       if (J.q < 1 || J.cd.q > 0) return no(); const p = bcWall(8); if (!p) return no(), say("Aim at a wall", 800); J.q--; J.cd.q = 0.6; p.y = 1.8;
       setTimeout(() => { if (jOn()) bcFlash(p); }, xWf("flashpoint") * 1000); blip(900, 0.12, "square", 0.12);
     }
-    if (code === "KeyE") { if (J.cd.e > 0) return no(), say("Fault Line " + Math.ceil(J.cd.e) + " s", 700); J.cd.e = 50; BC.fq.push({ k: "fl", t: xWf("faultLine"), x: P.x, z: P.z, fx, fz, ry: yaw, L: 25 }); try { XCUE.play("rumble"); } catch (e) {} }
+    if (code === "KeyE") { if (J.cd.e > 0) return no(), say("Fault Line " + Math.ceil(J.cd.e) + " s", 700); J.cd.e = 50; BC.fq.push({ k: "fl", t: xWf("faultLine"), x: P.x, z: P.z, fx, fz, ry: yaw, L: xFaultLen(typeof XABT !== "undefined" && XABT.hold ? XABT.hold.pw : 1) }); /* HOLD FIRE charge (equip flow) */ try { XCUE.play("rumble"); } catch (e) {} }
     if (code === "KeyX") { if (J.ult < K().u) return no(), say("Rolling Thunder " + J.ult + "/" + K().u, 800); J.ult = 0; BC.fq.push({ k: "rt", t: xWf("rollingThunder"), x: P.x, z: P.z, ry: yaw }); say("Rolling Thunder", 600); }
     return;
   }
@@ -8682,7 +8690,7 @@ function bcVm() {
 }
 function bcTick(dt) {
   BC.cd = Math.max(0, BC.cd - dt); if (J.pick !== "Chamber") BC.eq = "";
-  if (BC.fq.length) BC.fq = BC.fq.filter((q) => { if ((q.t -= dt) > 0) return true; if (player.hp > 0 && J.pick === "Breach") { if (q.k === "fl") bcLine(q, q.fx, q.fz, q.L, 1.6, 2.5, q.ry); else bcCone(q); } return false; });
+  if (BC.fq.length) BC.fq = BC.fq.filter((q) => { if ((q.t -= dt) > 0) return true; if (q.k === "mfl") { mpFault(q); return false; } if (player.hp > 0 && J.pick === "Breach") { if (q.k === "fl") bcLine(q, q.fx, q.fz, q.L, XFAULT.width / 2, XFAULT.concuss, q.ry, XFAULT.near); else bcCone(q); } return false; });
   BC.as = BC.as.filter((a) => {
     a.t -= dt; if (a.t > 0) return true;
     const m = jM(smokeGeo, fireMat(0xff9a3a, 0.45)); m.scale.setScalar(0.75); m.position.set(a.p.x, 1, a.p.z); jFx(m, 0.35); blip(70, 0.3, "sawtooth", 0.2);
@@ -12089,6 +12097,12 @@ function mpStun(u, en, x, z, r, s, auth) { // the local player on every peer (sc
   if (!auth) return; const T = ffa || !en ? bots : allies;
   for (let j = 0; j < T.length; j++) { const t = T[j]; if (t && t !== u && t.alive && t.g && Math.hypot(t.g.position.x - x, t.g.position.z - z) < r) bcDaze(t, s); }
 }
+function mpFault(q) { // a relayed Fault Line quake (online): the local player concussed on every peer, units dazed only on the host (auth)
+  const N = XFAULT.near, W = XFAULT.width / 2, inS = (x, z) => { const vx = x - q.x, vz = z - q.z, a = vx * q.fx + vz * q.fz; return a > N && a < N + q.L && Math.abs(vx * q.fz - vz * q.fx) < W; }, ffa = FV.dm && !FV.tdm;
+  if ((q.en || ffa) && player.hp > 0 && inS(player.x, player.z)) { try { xConStart(XFAULT.concuss * 1000); } catch (e) {} }
+  if (q.auth && q.u && q.u.alive) { const T = ffa || !q.en ? bots : allies; for (let j = 0; j < T.length; j++) { const t = T[j]; if (t && t !== q.u && t.alive && t.g && inS(t.g.position.x, t.g.position.z)) bcDaze(t, XFAULT.concuss); } }
+  const m = new THREE.Mesh(xG("Box", XFAULT.width, 0.25, Math.round(q.L)), fireMat(0xff9a3a, 0.45)); m.position.set(q.x + q.fx * (N + q.L / 2), 0.15, q.z + q.fz * (N + q.L / 2)); m.rotation.y = q.ry; jFx(m, 0.9);
+}
 function mpFx(u, ag, k, o, d, auth, p, quiet) { // u: caster unit, o/d: eye + aim, p: exact target (bot casts), auth: host world (damage / heal / daze)
   const i = "cqex".indexOf(k); if (i < 0 || !u || !u.g) return; if (!Object.hasOwn(KITS, ag)) ag = "Jett";
   const ty = ABI_M[ag][i] || "ult", al = allies.indexOf(u) >= 0, en = !al, nd = !auth, nm = KITS[ag].n[i] || "Ability", up = u.g.position, col = al ? 0x3fb4ff : 0xff4655;
@@ -12097,7 +12111,7 @@ function mpFx(u, ag, k, o, d, auth, p, quiet) { // u: caster unit, o/d: eye + ai
   else if (ty === "flash") { const e = tg(ag === "Phoenix" ? 6 : 12, 0.4).clone(), m = jM(orbGeo, jMat("orb", () => new THREE.MeshBasicMaterial({ color: 0xfff2b0 }))); m.position.copy(o); scene.add(m); J.orbs.push({ m, a: o.clone(), b: e, t: 0, en }); }
   else if (ty === "fire") { const rz = ag === "Raze", e = rz ? tg(14, 0.4) : p ? tg() : mpTgt(new THREE.Vector3(up.x, 1, up.z), MPC.d.set(d.x, 0, d.z).normalize(), 5, 0.5);
     const c = new THREE.Vector3(e.x, 0.05, e.z), m = jM(zoneGeo, fireMat(rz ? 0xff4fa0 : 0xff5a1a, 0.55)); m.rotation.x = -Math.PI / 2; m.position.copy(c); scene.add(m);
-    J.zones.push({ m, p: c, t: rz ? 1.5 : 4, own: u, en, nd: nd || rz }); } // Paint Shells damage stays with the caster's own claims
+    const z = { m, p: c, t: rz ? 1.5 : XHOT.life, own: u, en, nd: nd || rz }; if (!rz) { z.R = XHOT.r; z.a = 0; m.scale.setScalar(0.01); } J.zones.push(z); } // Hot Hands spreads like the player's // Paint Shells damage stays with the caster's own claims
   else if (ty === "wall") { const sg = ag === "Sage", f = MPC.d.set(d.x, 0, d.z); if (f.lengthSq() < 1e-6) f.set(Math.sin(up.y), 0, 1); f.normalize(); const yw = Math.atan2(-f.x, -f.z);
     const w = { p: new THREE.Vector3(up.x + f.x * 3, 1.5, up.z + f.z * 3), ax: Math.cos(yw), az: -Math.sin(yw), t: sg ? 30 : 8, own: u, en, nd: nd || sg }; // Barrier Orb: sight blocker only
     w.m = jM(sg ? sgWallGeo : blazeGeo, fireMat(sg ? 0x9fe8ff : 0xff7a1a, 0.7)); w.m.position.copy(w.p); w.m.rotation.y = yw; scene.add(w.m); J.walls.push(w); }
@@ -12105,7 +12119,9 @@ function mpFx(u, ag, k, o, d, auth, p, quiet) { // u: caster unit, o/d: eye + ai
     const m = jM(zoneGeo, fireMat(0x5fe0d0, 0.4)); m.rotation.x = -Math.PI / 2; m.scale.setScalar(0.5); m.position.set(up.x, 0.06, up.z); jFx(m, 3); }
   else if (ty === "stun") {
     if (ag === "Sova") { const B = MPC.bolt, P = B && xBoltPath(o, d, B.pw, B.b), e = P ? (p ? p.clone() : new THREE.Vector3(P.end[0], P.end[1], P.end[2])) : tg(50, 0.2).clone(), a = o.clone(), m = jBolt(0x7fd8ff, a, e); if (P && p) P.tr[P.tr.length - 1] = [p.x, p.y, p.z, P.t]; J.arrows.push({ m, a, b: e, t: 0, dur: P ? Math.max(0.05, P.t) : Math.max(0.05, a.distanceTo(e) / 45), kind: "shock", own: u, en, nd, tr: P ? P.tr : null }); }
-    else { const e = tg(ag === "Breach" && k === "e" ? 20 : 12, 0.4), m = jM(smokeGeo, fireMat(ag === "Sage" ? 0x5fe0d0 : 0xff9a3a, 0.35)); m.position.set(e.x, 0.6, e.z); jFx(m, 0.8).g = 0.6; mpStun(u, en, e.x, e.z, 4.5, 2, auth); }
+    else if (ag === "Breach" && k === "e") { const f = MPC.d.set(d.x, 0, d.z); if (f.lengthSq() < 1e-6) f.set(0, 0, -1); f.normalize(); // Fault Line: the wiki strip (XFAULT) after its windup, charge from the cast message (pw)
+      BC.fq.push({ k: "mfl", t: xWf("faultLine"), x: up.x, z: up.z, fx: f.x, fz: f.z, ry: Math.atan2(-f.x, -f.z), L: xFaultLen(MPC.bolt ? MPC.bolt.pw : 1), u, en, auth }); }
+    else { const e = tg(12, 0.4), m = jM(smokeGeo, fireMat(ag === "Sage" ? 0x5fe0d0 : 0xff9a3a, 0.35)); m.position.set(e.x, 0.6, e.z); jFx(m, 0.8).g = 0.6; mpStun(u, en, e.x, e.z, 4.5, 2, auth); }
   }
   else if (ty === "eye") {
     if (ag === "Sova") { const B = MPC.bolt, P = B && xBoltPath(o, d, B.pw, B.b), e = P ? (p ? p.clone() : new THREE.Vector3(P.end[0], P.end[1], P.end[2])) : tg(50, 0.2).clone(), a = o.clone(), m = jBolt(al ? 0x45d0ff : 0xff4655, a, e); if (P && p) P.tr[P.tr.length - 1] = [p.x, p.y, p.z, P.t]; J.arrows.push({ m, a, b: e, t: 0, dur: P ? Math.max(0.05, P.t) : Math.max(0.05, a.distanceTo(e) / 45), kind: al ? "recon" : "erecon", tr: P ? P.tr : null }); }
@@ -12139,6 +12155,7 @@ function mpBolt(m) { const pw = +m.pw, b = +m.b; return Number.isFinite(pw) || N
 let mpAltHeld = false; addEventListener("mousedown", (e) => { if (e.button === 2) mpAltHeld = true; }, true); addEventListener("mouseup", (e) => { if (e.button === 2) mpAltHeld = false; }, true); addEventListener("blur", () => { mpAltHeld = false; });
 function mpCastSelf(k) { const m = { t: MP.role === "host" ? "ac" : "ab", k, ag: J.pick || "Jett", o: mpR3(pEye()), d: mpR3(jAim()), ts: Math.round(performance.now()) };
   if (J.pick === "Sova" && (k === "q" || k === "e") && typeof XABT !== "undefined" && XABT.bolt) { m.pw = +XABT.bolt.pw.toFixed(3); m.b = XABT.bolt.b; } // bolt HOLD charge + ALT FIRE bounces (server: vendor/sova-bolt.cjs)
+  if (J.pick === "Breach" && k === "e" && typeof XABT !== "undefined" && XABT.hold) m.pw = +XABT.hold.pw.toFixed(3); // Fault Line HOLD FIRE charge (server: abilities.js faultLen)
   if (J.pick === "Phoenix" && k === "e") m.l = mpAltHeld ? 0 : 1; // Curveball: FIRE curves left (default), ALT FIRE held curves right (Valorant); the server reads m.l
   if (MP.role === "host") { m.i = 0; mpCastOut(m, null); } else mpSend(MP.hc, m); }
 { const k0 = jKey; jKey = function (code) { // own cast (a charge or the ult spent): client asks the host, host relays
@@ -13387,7 +13404,7 @@ const netOmenClick0=okMMClick;okMMClick=function(e){if(!(NET.socket&&MP.st==='ga
 // Anchor placement/return have no local charge delta. Send intent before legacy optimistic movement.
 // Chamber Headhunter (Q) is the server's: each press takes one charge and swaps in a 1-round Sheriff (Q again puts it
 // away and refunds the round). The local overlay (BC.eq 'hp') only drew the HUD; online fire went to the held gun.
-const netAbilityKey0=jKey;jKey=function(code){if(NET.socket&&MP.st==='game'&&MP.m5&&(J.pick==='Reyna'&&['KeyC','KeyQ','KeyE','KeyX'].includes(code)||(J.pick==='Chamber'||J.pick==='Breach')&&code==='KeyE'||J.pick==='Chamber'&&code==='KeyQ'||J.pick==='Omen'&&code==='KeyC'||J.pick==='Jett'&&(code==='KeyQ'||code==='KeyE'||code==='KeyX')||J.pick==='Skye'&&code==='KeyC')){if(running&&player.hp>0&&FV.buy<=0)netSend({t:'ab',k:code[3].toLowerCase()});return;}return netAbilityKey0.apply(this,arguments);};
+const netAbilityKey0=jKey;jKey=function(code){if(NET.socket&&MP.st==='game'&&MP.m5&&(J.pick==='Reyna'&&['KeyC','KeyQ','KeyE','KeyX'].includes(code)||(J.pick==='Chamber'||J.pick==='Breach')&&code==='KeyE'||J.pick==='Chamber'&&code==='KeyQ'||J.pick==='Omen'&&code==='KeyC'||J.pick==='Jett'&&(code==='KeyQ'||code==='KeyE'||code==='KeyX')||J.pick==='Skye'&&code==='KeyC')){if(running&&player.hp>0&&FV.buy<=0){const m={t:'ab',k:code[3].toLowerCase()};if(J.pick==='Breach'&&code==='KeyE'&&typeof XABT!=='undefined'&&XABT.hold)m.pw=+XABT.hold.pw.toFixed(3);/* Fault Line HOLD FIRE charge */netSend(m);}return;}return netAbilityKey0.apply(this,arguments);};
 function netChamberAnchor(A,time){if(J.pick!=='Chamber')return;J.cd.e=Math.max(0,(A.cool?.e||0)-time);const a=A.anchor;if(!Array.isArray(a)){if(BC.an){scene.remove(BC.an.m);BC.an=null;}return;}if(!BC.an){const m=new THREE.Mesh(ringGeo,fireMat(0xd8b04a,.8));m.rotation.x=-Math.PI/2;scene.add(m);BC.an={m};}BC.an.x=a[0];BC.an.y=a[1];BC.an.z=a[2];BC.an.m.position.set(a[0],a[1]+.06,a[2]);}
 const netRS0=mpCliRS;mpCliRS=function(m){netRS0(m);if(NET.socket){netChannel=m.channel||null;if(J.pick==='Reyna')netReynaSync(m.reyna);}if(NET.socket&&Array.isArray(m.rv)){const t=performance.now();for(const r of m.rv){const b=Array.isArray(r)&&bots.find(x=>x.nid===r[0]);if(b)b.netRvUntil=t+400;}}if(NET.socket&&m.status){const st=m.status;if(st.detain>0&&!(netDetainAt>performance.now())){netDetainAt=performance.now()+st.detain*1000;say('Detained · '+Math.ceil(st.detain)+' s',1200);}if(st.concuss>0){if(xCU<=performance.now())xConStart(st.concuss*1000);else xCU=performance.now()+st.concuss*1000;player.tagT=Math.max(player.tagT||0,st.concuss);player.tagK=.35;}if(st.nearsight>0)pNs(Math.min(3,st.nearsight));netStatusChips(st);if(st.slow>0){player.tagT=Math.max(player.tagT||0,st.slow);player.tagK=.35;}const el=document.getElementById('netBlind')||document.body.appendChild(Object.assign(document.createElement('div'),{id:'netBlind'}));el.style.cssText='pointer-events:none;position:fixed;inset:0;z-index:110;background:#fff;opacity:'+Math.min(1,st.blind/1.5); }if(NET.socket&&m.ab){for(const k of ['c','q','e','ult'])if(Number.isFinite(m.ab[k]))J[k]=m.ab[k];netChamberAnchor(m.ab,m.tm||0);if(J.pick==='Jett'){const was=J.bsOn;J.bs=Math.max(0,m.ab.blades||0);J.bsOn=!!m.ab.bladesActive;if(J.bsOn&&!was)swapW('knife');if(was&&!J.bsOn&&rw==='knife')swapW(FV.pri?'pri':'pis');}if(J.pick==='Skye')netSkyeState={pool:Math.max(0,Math.min(100,m.ab.regrowthPool||0)),active:!!m.ab.regrowthActive,used:!!m.ab.regrowthUsed};if(J.pick==='Breach')J.cd.e=Math.max(0,(m.ab.cool?.e||0)-(m.tm||0),(m.ab.rechargeAt||0)-(m.tm||0));}};
 const netHud0=mpHud;mpHud=function(){netHud0();const h=mpEl('xMpHud');if(h&&NET.socket&&MP.st==='game')h.textContent='ONLINE · SERVER · '+MP.ping+' ms';};
@@ -13819,12 +13836,15 @@ const XAB_EQ = { // agent -> key -> ready-to-equip test (a charge to spend and n
 };
 // Hold abilities: FIRE pressed with the ability out starts a HOLD (st "hold", q.h s held), releasing FIRE throws.
 //  bow (Sova Shock Bolt / Recon Bolt): the hold charges the bolt (SovaBolt.power), ALT FIRE adds a bounce (0 -> 1 -> 2 -> 0).
-const XAB_HOLD = { Sova: { q: "bow", e: "bow" } };
+//  fault (Breach Fault Line): the hold extends the quake, XFAULT.min -> max m over XFAULT.charge s (xEqHoldPw); ALT FIRE does nothing.
+const XAB_HOLD = { Sova: { q: "bow", e: "bow" }, Breach: { e: "fault" } };
+function xEqHoldPw(q) { const h = q && q.st === "hold" ? q.h : 0; return xEqHold(q) === "fault" ? Math.max(0, Math.min(1, h / XFAULT.charge)) : SovaBolt.power(h); }
 function xEqHold(q) { const t = q && XAB_HOLD[J.pick]; return (t && t[q.k]) || ""; }
 // J.eq: null | { k, code, st: "draw" | "ready" | "hold" | "rel" | "rec", t, alt, buf, h (held s), bn (bounces) }
 function xEqMode(code) { const t = XAB_EQ[J.pick], k = code && code[3] && code[3].toLowerCase(), f = t && t[k]; try { return !!(f && f()); } catch (e) { return false; } }
 function xEqFire(alt) { // FIRE / ALT FIRE while an ability is out: true when the click belonged to the ability
   const q = J.eq; if (!q) return false; const hk = xEqHold(q);
+  if (hk === "fault" && alt) return true; // Fault Line has no alternate
   if (hk === "bow" && alt) { if (q.st !== "rel" && q.st !== "rec") { q.bn = ((q.bn | 0) + 1) % 3; try { blip(500 + q.bn * 180, 0.05, "triangle", 0.1); } catch (e) {} } return true; } // ALT FIRE: one more bounce
   if (hk && !alt) { if (q.st === "ready") { q.st = "hold"; q.h = 0; } else if (q.st === "draw") q.buf = 1; return true; } // FIRE down: start the hold
   if (q.st === "ready") { q.st = "rel"; q.t = XABT.rel; q.alt = !!alt; } else if (q.st === "draw") q.buf = alt ? 2 : 1; return true;
@@ -13832,7 +13852,8 @@ function xEqFire(alt) { // FIRE / ALT FIRE while an ability is out: true when th
 function xEqCast(q) { // the throw leaves the hand: the kit's own cast (offline / host relay / trusted server) with ALT FIRE held for an alternate
   const a0 = J.abAlt, m0 = typeof mpAltHeld !== "undefined" ? mpAltHeld : false, s0 = xCaSig(); J.abAlt = !!q.alt; try { if (q.alt) mpAltHeld = true; } catch (e) {}
   const hk = xEqHold(q); XABT.bolt = hk === "bow" ? { pw: SovaBolt.power(q.h), b: SovaBolt.bounces(q.bn) } : null; // read by jArrow and the cast message (mpCastSelf)
-  XABT.casting = true; try { xEqKey0(q.code); } catch (e) { xE(e); } finally { XABT.casting = false; XABT.bolt = null; J.abAlt = a0; try { mpAltHeld = m0; } catch (e) {} }
+  XABT.hold = hk === "fault" ? { pw: Math.max(0, Math.min(1, q.h / XFAULT.charge)) } : null; // Fault Line charge: read by bcKey, mpCastSelf and the server intent
+  XABT.casting = true; try { xEqKey0(q.code); } catch (e) { xE(e); } finally { XABT.casting = false; XABT.bolt = null; XABT.hold = null; J.abAlt = a0; try { mpAltHeld = m0; } catch (e) {} }
   try { xCaEnd(); } catch (e) {} // the equip viewmodel plays the release; the old one-shot cast gesture would replay it
   return xCaSig() !== s0 || !xEqMode(q.code); // false: the kit refused (no target / no room): Valorant keeps it in hand
 }
@@ -13865,12 +13886,12 @@ jKey = function (code) {
 // HUD: the equipped slot is outlined, as Valorant highlights the ability in hand
 try { const st = document.createElement("style"); st.textContent = ".x-as.x-eq,#game .x-as.x-eq{box-shadow:inset 0 0 0 2px #fff;border-bottom-color:#fff!important}"; document.head.appendChild(st); } catch (e) {}
 function xEqHud() { const k = J.eq && J.eq.st !== "rec" ? J.eq.k : ""; if (xEqHud.k === k) return; xEqHud.k = k; [["jC", "c"], ["jQ", "q"], ["jE", "e"], ["jX", "x"]].forEach(([id, a]) => { const el = $(id); if (el) el.classList.toggle("x-eq", a === k); }); }
-// Sova bow HUD under the crosshair while a bolt is out: charge bar (fills over SovaBolt.BOLT.charge s of HOLD FIRE) and the
+// Hold HUD (#xBow) under the crosshair while a hold ability is out (Fault Line: its length charge, no pips). Sova bow: charge bar (fills over SovaBolt.BOLT.charge s of HOLD FIRE) and the
 // two bounce pips ALT FIRE lights, as Valorant's bow reticle shows them.
 try { const st = document.createElement("style"); st.textContent = "#xBow{position:fixed;left:50%;top:calc(50% + 34px);transform:translateX(-50%);display:none;align-items:center;gap:6px;pointer-events:none;z-index:6;font:600 10px/1 sans-serif;color:#fff;text-shadow:0 0 2px #000}#xBow.on{display:flex}#xBow i{display:block;width:64px;height:4px;background:rgba(255,255,255,.25);box-shadow:0 0 0 1px rgba(0,0,0,.5)}#xBow i b{display:block;height:100%;width:0;background:#7fd8ff}#xBow u{display:block;width:7px;height:7px;transform:rotate(45deg);border:1px solid #fff;background:transparent}#xBow u.on{background:#7fd8ff}"; document.head.appendChild(st);
   const d = document.createElement("div"); d.id = "xBow"; d.innerHTML = "<u></u><i><b></b></i><u></u>"; (document.getElementById("game") || document.body).appendChild(d); } catch (e) {}
-function xBowHud() { const q = J.eq, on = !!(q && xEqHold(q) === "bow" && q.st !== "rec"), el = $("xBow"); if (!el) return; const k = on ? Math.round(SovaBolt.power(q.st === "hold" ? q.h : 0) * 20) + "|" + (q.bn | 0) : "";
-  if (xBowHud.k === k) return; xBowHud.k = k; el.classList.toggle("on", on); if (!on) return; el.querySelector("b").style.width = (SovaBolt.power(q.st === "hold" ? q.h : 0) * 100).toFixed(0) + "%"; el.querySelectorAll("u").forEach((u, i) => u.classList.toggle("on", (q.bn | 0) > i)); }
+function xBowHud() { const q = J.eq, hk = q && q.st !== "rec" ? xEqHold(q) : "", on = hk === "bow" || hk === "fault", el = $("xBow"); if (!el) return; const pw = on ? xEqHoldPw(q) : 0, k = on ? hk + Math.round(pw * 20) + "|" + (q.bn | 0) : "";
+  if (xBowHud.k === k) return; xBowHud.k = k; el.classList.toggle("on", on); if (!on) return; el.querySelector("b").style.width = (pw * 100).toFixed(0) + "%"; el.querySelectorAll("u").forEach((u, i) => { u.classList.toggle("on", (q.bn | 0) > i); u.style.display = hk === "fault" ? "none" : ""; }); } // Fault Line: the charge bar only (no bounces)
 { const t0 = jTick; jTick = function (dt) { const v = t0.apply(this, arguments); try { xEqTick(dt); xEqHud(); xBowHud(); } catch (e) { J.eq = null; } return v; }; }
 // ---- First-person ability viewmodel: the gun goes down and the hand holds the ability item ----
 // While an ability is equipped (J.eq) this owns the viewmodel after every other vmTick layer: the gun / knife and the

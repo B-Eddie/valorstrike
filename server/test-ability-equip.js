@@ -18,6 +18,11 @@ j.ability.c=1;j.fireAt=0;assert.equal(s.command(j,{t:'ab',k:'c'}),true,'Cloudbur
 {const e=s.effects.filter(e=>e.kind==='smoke').pop();assert(e,'Cloudburst smoke effect');assert(Math.abs(e.until-s.time-2.5)<1e-6,'Cloudburst lasts 2.5 s (got '+(e.until-s.time)+')');}
 assert.equal(DEV.hotHands.damage,60,'Hot Hands 60/s');assert.equal(DEV.nanoswarm.active,5,'Nanoswarm active 5 s');
 {const ph2=s.add('p2','Phoenix');ph2.alive=true;ph2.ability.q=1;ph2.fireAt=0;s.time+=1;assert.equal(s.command(ph2,{t:'ab',k:'q'}),true,'Hot Hands cast');const f=s.effects.filter(e=>e.kind==='fire').pop();assert(f&&f.rate===60,'Hot Hands zone burns 60/s');}
+{/* Hot Hands spreads (wiki Hot_Hands: 0.75 s to 4.5 m, 4 s total): radius 0 at detonation, 2.25 m at 0.375 s, 4.5 m from 0.75 s; a foe 4 m out burns only once the fire reaches him */
+ assert.deepEqual([DEV.hotHands.radius,DEV.hotHands.grow,DEV.hotHands.life],[4.5,.75,4]);const {tickAbilities}=await import('./src/abilities.js');
+ const t=new SpikeSimulation(W),ph=t.add('ph','Phoenix'),foe=t.add('foe');t.start(false);t.buy=0;Object.assign(ph,{x:0,y:0,z:0,look:0,pitch:-1.2});ph.ability.q=1;assert.equal(t.command(ph,{t:'ab',k:'q'}),true);const f=t.effects.find(e=>e.kind==='fire');assert(f,'zone');
+ Object.assign(foe,{x:f.p[0]+4,y:f.p[1],z:f.p[2],hp:100,armor:0});tickAbilities(t,0);assert.equal(f.radius,0,'nothing at detonation');t.time+=.375;tickAbilities(t,0);assert(Math.abs(f.radius-2.25)<1e-9,'half spread '+f.radius);assert.equal(foe.hp,100,'4 m out: not reached yet');
+ t.time+=.375;tickAbilities(t,.1);assert.equal(f.radius,4.5,'full size');assert(foe.hp<100,'4 m out burns once reached');const h=foe.hp;t.time=f.until+.01;tickAbilities(t,.1);assert.equal(foe.hp,h,'gone after 4 s');}
 // per-ability windups (wiki): FIRE -> effect = the client's 0.2 s hand release + the server fuse; arm / equip times from the cast
 assert.deepEqual(WINDUP,{aftershock:2.2,flashpoint:.5,faultLine:1.1,rollingThunder:1.2,curveball:.6,leer:.4,lockdown:13,trapwire:.7,trademark:2,blastPack:1.5,showstopper:1.4,tourDeForce:2.3});assert.equal(XAB_REL,.2);
 {const br=s.add('br','Breach');br.alive=true;Object.assign(br.ability,{c:1,q:1,e:1});br.cool={};s.time+=1;
@@ -39,4 +44,4 @@ assert(Math.abs(DEV.curveball.windup-.4)<1e-9&&Math.abs(ULT.quake.delay-1)<1e-9&
  const cl=shot('q',{pw:7,b:9});assert(cl.pw===1&&cl.b===2,'charge / bounces clamped');const bad=shot('q',{pw:'x',b:'2; drop'});assert(bad.pw===1&&bad.b===0,'junk -> full charge, no bounce');
  const leg=shot('q',{});assert(leg.pw===1&&leg.b===0,'an older client: full-charge, no-bounce bolt');
  const P=SB.path([0,1.6,0],[0,0,-1],1,2,W2.rayN,()=>0);assert.equal(P.pts.length,4,'two bounces recorded');}
-console.log('Ability equip (server): kit table matches the wiki, equip casts hold fire for '+XAB_REC+' s, quick-casts do not; Cloudburst 2.5 s, Hot Hands 60/s, Nanoswarm 5 s; wiki windups (Aftershock / Flashpoint / Fault Line / Leer / Curveball / Rolling Thunder / Trapwire / Trademark / Tour De Force); Sova bolt charge + 0-2 bounces');
+console.log('Ability equip (server): kit table matches the wiki, equip casts hold fire for '+XAB_REC+' s, quick-casts do not; Cloudburst 2.5 s, Hot Hands 60/s spreading to 4.5 m over 0.75 s, Nanoswarm 5 s; wiki windups (Aftershock / Flashpoint / Fault Line / Leer / Curveball / Rolling Thunder / Trapwire / Trademark / Tour De Force); Sova bolt charge + 0-2 bounces');
