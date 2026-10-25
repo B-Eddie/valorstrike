@@ -43,7 +43,29 @@
 - [x] #5 map holes: cherry-picked hark 614550e - backdrop skirt around native maps so no void shows past mesh edges + hole-evaluation tooling under server/tools. test_map_skirt.cjs.
 All 12 user-list items now have shipped fixes on instinct. Remaining: ledger 13-row long-term checklist + bounded visual/in-match verification of the visual items (ragdoll shape, grip pose, spectate button, pickup prompt, skirt, stairs) once a sandbox-viable boot exists.
 - [x] #5 acceptance evidence: ran the cherry-picked tooling. eval-visual-holes: raw below-horizon void rays 46-463/map drop to 0 with the skirt at both far distances; 0 nodes without render floor. eval-holes: 0 fall-throughs in ~1138-1184 random walks per map. eval-fall: breeze has 12/300 and bind 1/300 random walks ending GROUNDED outside nav coverage (no fall-through - collision exists there): players can walk out of the intended play area through boundary gaps; the game had no kill-floor/out-of-bounds mechanic, so they ended up stuck out-of-bounds on the skirt backdrop. Boundary gaps: breeze around x -8..12, z 53..64 and bind near (-1.6, 74).
-- [x] #5 boundary gaps: out-of-bounds kill watch (nmOobWatch, XHK per-frame hook): a grounded actor with no playable nav node within 4 units hears "Outside the map - get back!" and dies after 2 s; airborne, in-coverage, paused, pre-match and online (server-authoritative) states untouched; re-entry resets the clock. VM test test_oob_kill.cjs (7 scenario groups); oob-probe.cjs on Breeze: site-node control survives, skirt warp (0,90) dies in ~3 s wall. Note: the gap EXIT points themselves are within ~2u of nav nodes (only beyond-bounds skirt landings trip the watch) - per-edge blockers would still be tighter, but the stuck-out-of-bounds defect is closed.
+- [x] #5 boundary gaps, kill-watch track (separate from the fence-v2/skirt track above):
+  CLIENT nmOobWatch (XHK hook): a grounded actor with no playable nav node within 4 units hears
+  "Outside the map - get back!" and dies after 2 s; airborne, in-coverage, paused, pre-match
+  untouched; re-entry resets the clock. Coverage basis is the intended largest connected
+  component (same set spawns/minimap/bot pathing use), NOT all valid nodes: excluded valid
+  islands are decorative vista by nav-builder construction and count as out-of-play.
+  Scripted destinations verified within 1.5 of playable on all six maps
+  (test_oob_destinations.cjs) - teleporter entries/exits, sites, spawns can never be executed
+  by the watch. Attribution: hurt/kill/allyDie with by='Out of bounds' - display-only;
+  fKC credit is a no-op for unknown names (no score theft). Respawn: normal DM/five death paths.
+  VM test test_oob_kill.cjs; oob-probe.cjs on Breeze: site-node control survives, skirt warp
+  (0,90) dies in ~3 s wall.
+- [x] #5 boundary gaps, SERVER track (authoritative rooms): Simulation.oobKill mirrors the
+  client criterion (near-distance >4, motor-grounded, 2 s) and is called from both step loops.
+  dm/tdm: broadcast 'n' warning note, kill event ['k','Out of bounds',name,0,'Ability']
+  (no kill credit, clean feed label), respawnAt = +1.5 s as usual. five: death without
+  mid-round respawn, mirroring the existing void-fall rule (y<-20 unchanged as fall recovery).
+  Guarded for legacy stub worlds without near(). test-oob.js wired into npm test.
+- Per-mode acceptance limits: offline modes covered by the client watch; trusted-server rooms
+  by oobKill; legacy P2P covered only on the HOST (guest avatars are host-side units) - a P2P
+  GUEST's own out-of-bounds walk is still unwatched (host owns guest truth; a guest-local kill
+  would fight snapshots). The gap EXIT points sit within ~2u of nav nodes, so the watch trips
+  on beyond-bounds landings, not at the gap; per-edge blockers would be tighter.
 - [~] #10 gate cost measured: all 12 agent GLB+locomotion kits parse in ~0.65 s total (Node, desktop); the ~40 s the user saw is network (97 MB agents + 22 MB locomotion ≈ 38 s at 25 Mbps). Gate cost profile: cold first match = same ~40 s but on the loading screen with progress instead of mid-match fallback bodies; warm visits = sub-second (Cache Storage); desktop lobby dwell hides it via preload. Participant-scoped gating would save at most ~25% of the one-time cold cost for 5v5 (xAgSet hands out XAG keys in order, so ~9/12 kits are the real roster) at the price of mode-specific roster inference; kept the simple exact all-12 gate for now.
 
 ## Full-native headless crash investigation (2026-10-25, resolved as environment + gated)
