@@ -629,6 +629,10 @@ body.x-cbh #game{--ha:#3d8bff;--he:#ff9f1c}
   #game .hud.x-br{height:48px;padding:4px 8px;max-width:176px}
   #game .x-br #xMag{font-size:28px}#game .x-br .x-rs{font-size:14px}#game .x-br em{font-size:14px}
 }
+/* short landscape (640x360-class): the mode/map subtitle is centred between the minimap columns and ellipsised, so it
+   never runs under the minimap (8+112 px at <=700 px wide, 12+160 px above that; keep 8 px clear on each side) */
+@media (max-width:820px) and (orientation:landscape){#game #xSub{max-width:calc(100vw - 368px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:.06em}}
+@media (max-width:700px) and (orientation:landscape){#game #xSub{max-width:calc(100vw - 272px)}}
 /* touch devices (any width, incl. landscape phones wider than 820px): compact HUD, no desktop key hints, no duplicate ability bar */
 @media (pointer: coarse){
   #game #hint{display:none} /* keyboard hints are dead weight on touch; the touch buttons carry their own labels */
