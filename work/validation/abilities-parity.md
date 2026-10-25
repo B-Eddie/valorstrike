@@ -54,7 +54,7 @@ Equip vs quick-cast per agent (from each wiki description: "EQUIP ... FIRE" vs "
 | Cypher | C Trapwire, Q Cyber Cage, E Spycam (place), X Neural Theft | Spycam view / exit (recast) |
 | Chamber | C Trademark, E Rendezvous (place) | Q Headhunter and X Tour De Force (gun swaps), Rendezvous return (recast) |
 
-Not modelled at first: Breach Fault Line hold-to-extend, Sova arrow bounce / charge selection (now section 6).
+Not modelled at first: Breach Fault Line hold-to-extend (now section 7), Sova arrow bounce / charge selection (now section 6).
 Buying charges per round is the existing buy-menu ability row (`jBuyHtml` / server `buyAbility`); costs are checked below.
 
 ### Values checked against wiki.playvalorant.com (fetched 2026-10-25)
@@ -106,12 +106,10 @@ Changed on both sides (client index.html, server abilities.js / devices.js), tes
 - Killjoy Nanoswarm active time 4 s -> **5 s** (player, bot Killjoy, server `DEV.nanoswarm.active`).
 
 Still different (not cheap; each needs a client + server mechanic change):
-- Breach Fault Line: wiki is HOLD FIRE to extend the distance, RELEASE to fire (1.1 s windup); here FIRE casts at the
-  fixed length. Needs a hold state in the equip machine (`J.eq`) and a length field in the `ab` intent the server reads.
-- Hot Hands duration: wiki 3.25 s minimum at full size (grows first); here a 4 s full-size zone (kept: the total
-  lifetime is close and the growth phase is not modelled).
+- Breach Fault Line hold-to-extend: done, section 7.
+- Hot Hands growth: done, section 7.
 - Per-ability windups: done, section 5.
-- Sova arrow bounces / charge: done, section 6. Cloudburst hold-to-curve: section 7.
+- Sova arrow bounces / charge: done, section 6. Cloudburst hold-to-steer: done, section 7.
 
 ## 5. Per-ability windups (wiki)
 
@@ -131,7 +129,7 @@ client `XAB_WIND` (index.html, next to `ABI_M`) and server `WINDUP` (`server/src
 | Cypher Trapwire | 0.7 s | arm after placing | wire inert for 0.7 s | `armAt` 0.7 s |
 | Chamber Trademark | 2 s | arm after placing | inert for 2 s | `armAt` 2 s, then the 0.5 s sight check |
 | Raze Blast Pack | 1.5 s | damage arm | detonation deals 50 only after 1.5 s; knockback any time | server Blast Pack is a dash (no device) - not changed |
-| Raze Showstopper | 1.4 s | launcher equip | clicks before 1.4 s do nothing (`RS.ssd`) | not enforced (the rocket intent is sent on the click) |
+| Raze Showstopper | 1.4 s | launcher equip | clicks before 1.4 s do nothing (`RS.ssd`) | X equips `u.showstopper` (ready +1.4 s, 10 s window); FIRE before it does nothing, after it launches the rocket (section 7) |
 | Chamber Tour De Force | 2.3 s | Operator equip | `BC.cd` 2.3 s | `u.fireAt` +2.3 s |
 
 Equip times: each ability page's "Equip time" row (wiki.playvalorant.com/en-us/<Ability>, fetched 2026-10-25) is the
@@ -145,7 +143,7 @@ pages also list unequip times (mostly 0.7 s); the gun recovery stays the generic
 Thrown / cast abilities count the windup from the FIRE click: the equip flow's 0.2 s hand release (`XABT.rel` =
 `XAB_REL`) happens first, so the effect fuse after the cast is `windup - 0.2` (`xWf` / `wf`). Bots cast without the hand
 release and use the full windup. Not changed: Jett Tailwind 1 s (Tailwind keeps its instant dash), Sage Barrier 2 s
-fortification (the wall is full HP at once), Neural Theft 2 s / 4 s reveals (server keeps 1 s / 3 s).
+fortification (the wall is full HP at once), Neural Theft reveals: server now 2 s / 6 s (section 7); the offline client still pulses at 0 / 1.5 s.
 Tests: `server/test-ability-equip.js`, `server/test-abilities.js` (Fault Line), `server/test-ults.js` (Trapwire /
 Trademark arm), `work/test_ability_equip.cjs`.
 
@@ -172,3 +170,89 @@ bounces to this arrow." Both bolts now work that way on every path:
   clamping, legacy message), `server/test-ults.js` (recon device lands on the wall), `work/test_ability_equip.cjs`
   (hold state, ALT FIRE bounces + cycle, HUD, release throws a traced bolt, clamping of cast messages).
 - Bots keep a full-charge, no-bounce bolt.
+
+## 7. Wiki mechanics: Fault Line hold-to-extend, Hot Hands spread, Cloudburst flight
+
+### Breach Fault Line (wiki.playvalorant.com/en-us/Fault_Line, fetched 2026-10-25)
+
+Wiki stats: area 8 to 56 m long depending on charge time (estimated), 8 m wide (12.00), 8 m between Breach and the area
+(1.11), 1 s to fully charge (3.0), 1.1 s windup, 2.5 s concuss. Reading used here: the strip starts 8 m in front of Breach
+and runs `8 + 48 * charge` m from there (a tap covers 8..16 m ahead, a full charge 8..64 m), 4 m either side.
+
+- Shared values: server `FAULT` / `faultLen` / `faultPw` (`server/src/abilities.js`), client `XFAULT` / `xFaultLen`
+  (index.html, next to `BC`), asserted equal by `work/test_ability_equip.cjs`.
+- Client: `XAB_HOLD.Breach.e = "fault"`: with Fault Line out, FIRE down starts the hold (`st:"hold"`), releasing FIRE
+  casts after the 0.2 s release; ALT FIRE does nothing. Charge `min(1, held / 1 s)` (`XABT.hold.pw`) sets `L` of the
+  queued quake (`BC.fq`); the quake (`bcLine`, now with the 8 m offset) fires after the windup. The `#xBow` bar under the
+  crosshair shows the charge (no bounce pips).
+- Online: the cast carries `pw` - P2P (`mpCastSelf`, host relay `mpBolt` clamps it and relays it) and the trusted server
+  (`work/server_runtime.js` Breach E intent). Server: `u.fault.len = faultLen(m.pw)`, `tickFault` uses the strip; the `ac`
+  event echoes `pw`. Relayed casts draw / apply the same strip after the windup (`BC.fq` `"mfl"` -> `mpFault`: local
+  player concussed on every peer, units dazed on the host). Missing / junk charge = full (bots, older clients).
+- Bot Breach (offline): charged to reach just past the site (`L = clamp(dist + 4 - 8, 8, 56)`), same strip and 2.5 s.
+- Tests: `server/test-abilities.js` (tap / half / full lengths, width, the 8 m gap, clamping, junk = full, `pw` echoed),
+  `work/test_ability_equip.cjs` (hold state, no cast while held, ALT FIRE ignored, HUD bar, ~32 m at 0.5 s held, bot
+  dazed inside / not past the end, tap near 8 m, relayed strip from the message charge).
+
+### Phoenix Hot Hands (wiki.playvalorant.com/en-us/Hot_Hands, fetched 2026-10-25)
+
+Wiki: 4 s duration = 0.75 s spread time + 3.25 s at full size, radius 4.5 m (estimated), 60 ticks/s. Was a 4 s zone at
+full size from the start, 2.5 m on the client and 4 m on the server.
+
+- Server: `DEV.hotHands = {life:4, radius:4.5, grow:.75}`; the `fire` effect is pushed with radius 0 and `full` / `grow`
+  / `born`, and `tickAbilities` sets `radius = full * min(1, age / grow)` before picking targets (burn and self-heal).
+- Client: `XHOT` (index.html, next to `zoneGeo`); the player's zone and a relayed one (`mpFx` `fire`, not Raze's Paint
+  Shells) carry `R` / `a`; `jFxTick` grows the damage / heal radius and scales the 2.5 m `zoneGeo` disc with it.
+- Tests: `server/test-ability-equip.js` (radius 0 / 2.25 / 4.5 m at 0 / 0.375 / 0.75 s; a foe 4 m out burns only once
+  reached; gone after 4 s), `work/test_ability_equip.cjs` (XHOT == server, disc ~1.8 m at 0.3 s, 4.5 m by 1 s, relayed
+  Hot Hands grows, Paint Shells unchanged).
+
+### Jett Cloudburst (wiki.playvalorant.com/en-us/Cloudburst, fetched 2026-10-25)
+
+Wiki: cast INSTANTLY, throws a projectile forward; holding the key turns it into a missile that follows the crosshair; on
+release it falls (gravity) and cannot be steered again; it smokes on hitting a surface or after 2 s in the air; smoke 2.5 s
+(includes 0.6 s deployment), radius 3.35 m. Was an instant smoke at the aim point (14 m max).
+
+- Shared flight: `vendor/cloudburst.cjs` (UMD; inlined after the Sova bolt by `install_valorant.py` as
+  `window.Cloudburst`, imported by `server/src/abilities.js`). `start(o, d)`, `step(st, dt, aim | null, ray, ground)` ->
+  landing point or null, `centreY(y, floor)` (smoke centre between floor + 1.5 and + 4 m). Throw 18 m/s with 9 m/s^2
+  gravity (a flat tap lands ~10 m ahead), steered missile 14 m/s along the aim, 2 s cap: this project's values (not on
+  the wiki).
+- Client (offline / own cast online): C throws at once (`J.cbs`); `jCbTick` steers with `jAim()` while `keys.KeyC` is held
+  (the keymap layer maps a rebound key to KeyC), a release ends steering for good (a second press throws the second
+  charge); the landing makes the 2.5 s smoke (`jCbSmoke`). Round reset clears `J.cbs`.
+- Trusted server: the C intent starts a `cloudburst` effect at the server eye / aim; the `in` message carries `cb: 1` while
+  C is held (Jett only; `u.input.cb`, only fresh input steers); `tickCloudburst` flies it and turns the same effect into
+  the `smoke` (`e.cb`, centre `e.c`) where it lands. No `ac` cast event for it: the snapshot `fx` carries `{kind:'cb', id,
+  o: owner, p, s: 0}` while it flies and `{..., s: 1, tl}` for the smoke; other clients draw the projectile and add the
+  smoke once per id (`netSyncCb`), the caster's own is skipped (flown locally).
+- P2P (host relay): the caster flies it; the cast message goes out when it lands with `p` (the smoke centre); the host
+  accepts `p` within 45 m of the eye and relays it; peers smoke there (`enSmoke` takes a centre height). Peers' Jett
+  smoke duration in `MP_SMK` 4.5 -> 2.5 s.
+- Not changed: smoke radius stays 4 m on every smoke (client `smokeGeo` / `jBlock`, server `SMOKE.radius`, shared with
+  Omen / Cypher); offline bot Jett still places its smoke directly.
+- Tests: `server/test-ability-equip.js` (tap arc lands ~10 m ahead at floor + 1.5, held + turned steers for the full 2 s,
+  release ends steering, smoke at a wall, snapshot rows projectile -> smoke, no cast event at the throw, `cb` only from
+  `1`), `work/test_ability_equip.cjs` (instant throw, smoke on landing, held C follows a 90 degree turn, release stops
+  steering, second press throws the second charge, 2 s cap / 28 m held straight, smoke centre band, `netSyncEffects` cb
+  rows: projectile, one smoke at the server point, dropped rows, own skipped, junk ignored).
+
+### Raze Showstopper equip (wiki.playvalorant.com/en-us/Showstopper, fetched 2026-10-25)
+
+Wiki: equip time 1.4 s, max duration 10 s including the equip, one rocket. The trusted server used to launch the rocket
+the moment the X intent arrived (the client sends it when X spends the ult, i.e. at the equip), with the aim of that
+moment. Now `startUlt` Raze only sets `u.showstopper = {ready: +1.4 s (WINDUP.showstopper), until: +10 s}`;
+`spike.js fire()` hands the trigger to `showstopperFire` while it is set: before `ready` it does nothing (and never fires
+the gun), after it the rocket leaves along the server eye / aim of the FIRE tick and the launcher is gone; `tickUlts`
+drops an unfired launcher at 10 s or on death; round reset clears it; a second X while it is out is rejected; the seat
+bot inherits it (`takeOver`). Client: the click that launches the local rocket (`RS.ss` 1 -> 0) is one fire pulse in the
+`in` message (`NET.firePulse`), so a semi-auto sidearm (no held fire) still reaches the server's launcher.
+Tests: `server/test-ults.js` (no rocket on equip, nothing at 1.3 s and no gun shot, rocket at 1.4 s on the FIRE aim, gun
+again after, put away after 10 s, dropped on death; the rocket / seat-bot / joiner checks fire through the equip).
+
+### Cypher Neural Theft reveals (wiki.playvalorant.com/en-us/Neural_Theft, fetched 2026-10-25)
+
+Wiki: 1st reveal windup 2 s, 2nd reveal windup 4 s (v5.10: "4 s delay between reveals"), so the server reveals at 2 s and
+6 s after the cast (`ULT.theft.reveals` [1, 3] -> [2, 6]; the 1.6 s reveal length unchanged). Not changed: the 5 m corpse
+reach (wiki 18 m) and the offline client's 0 / 1.5 s pulses. Test: `server/test-ults.js` (nothing before 2 s, first
+reveal at 2 s, gone, nothing before 6 s, second at 6 s).

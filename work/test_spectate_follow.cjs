@@ -46,13 +46,13 @@ const adv=async ms=>{for(let t=0;t<ms;t+=50){H.advance(Math.min(50,ms-t));await 
 const through=async()=>{for(let t=0;t<30000;t+=100){if(xe('running')&&!xe('!!window.xLdOn')&&!H.shown('pre')&&!H.shown('xAg'))return true;
  if(H.shown('pre'))H.$('preGo').click();else if(H.shown('xAg')){const tiles=H.doc.querySelectorAll('#xAg .x-ag').filter(b=>!b.disabled);if(tiles.length)tiles[0].click();await adv(20);H.$('xAgL').click();}
  await adv(100);}return false;};
-const nmSrc=cut('const NM_NONE=[];function nmCellNum(C){','\n')/* nmNear's numeric cell map (merged origin/hark nav gc) */+'\n'+cut('function nmNear(C,x,z,y','\n')/* (C,x,z,y) or (C,x,z,y,yBand) */+'\n'+cut('function nmHeight(C,x,z,y){','\n');
+const nmSrc=cut('const NM_NONE=[];function nmCellNum(C){','\n')/* hark-perf 762e33c: nmNear reads the numeric cell index (nmCellNum, NM_NONE) */+'\n'+cut('function nmNear(C,x,z,y','\n')/* (C,x,z,y) or (C,x,z,y,yBand) */+'\n'+cut('function nmHeight(C,x,z,y){','\n');
 const FY=6.4,out=[];
 const camCheck=(tag,ry)=>JSON.parse(xe(`(()=>{const a=xKL.cur,C=nmActive(),cy=camera.position.y;if(a){const q=a.g.position,f=nmHeight(C,q.x,q.z,${ry==null?'q.y':ry}+.5);return JSON.stringify({tag:${JSON.stringify(tag)},who:a.name,enemy:bots.includes(a),alive:!!a.alive,cy,f,qy:q.y,ok:a.alive&&cy>=f+1.2-1e-6});}
  const o=XOB.orb;if(!o)return JSON.stringify({tag:${JSON.stringify(tag)},none:true,cy,hp:player.hp,on:xKL.on,sp:xKL.sp,st:xKL.st,mode,dm:FV.dm,m5:MP.m5,bots:bots.filter(b=>b.alive).length,running,al:allies.filter(b=>b.alive).length});const f=nmHeight(C,o.cx,o.cz,(o.cy||0)+.5);return JSON.stringify({tag:${JSON.stringify(tag)},orbit:true,cy,f,ok:cy>=f+1.2})})()`));
 (async()=>{
  H.$('pm5v5').click();await adv(50);assert.ok(await through(),'5v5 did not start');
- xe(`(()=>{${nmSrc};window.nmNear=nmNear;window.nmHeight=nmHeight;const FY=${FY},nodes=[],cells=new Map();
+ xe(`(()=>{${nmSrc};window.nmNear=nmNear;window.nmHeight=nmHeight;window.nmCellNum=nmCellNum;const FY=${FY},nodes=[],cells=new Map();
   for(let x=-60;x<=60;x+=2)for(let z=-60;z<=60;z+=2){const i=nodes.length;nodes.push([x,FY,z]);const k=Math.floor(x/2)+','+Math.floor(z/2);if(!cells.has(k))cells.set(k,[]);cells.get(k).push(i);}
   const slab=new THREE.Mesh(new THREE.BoxGeometry(400,.4,400),new THREE.MeshBasicMaterial());slab.position.set(0,FY-.2,0);slab.updateMatrixWorld(true);scene.add(slab);solids.push(slab);
   const top={y:FY},bvh={raycastFirst(r){const dy=r.direction.y,oy=r.origin.y;if(dy<0&&oy>FY)return {point:{x:r.origin.x,y:FY,z:r.origin.z},face:{normal:{x:0,y:1,z:0}}};if(dy>0&&oy<FY)return {point:{x:r.origin.x,y:FY,z:r.origin.z},face:{normal:{x:0,y:1,z:0}}};return null;}};

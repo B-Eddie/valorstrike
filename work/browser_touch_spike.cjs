@@ -12,7 +12,7 @@ const LOCAL={'three.min.js':QA+'three.min.js','GLTFLoader.js':QA+'GLTFLoader.js'
  await ctx.addInitScript(()=>{try{localStorage.setItem('vs.gq','low');localStorage.setItem('vs.aa','0');}catch(e){}});
  await ctx.route(/^https?:\/\/(unpkg\.com|cdn\.jsdelivr\.net)\//,r=>{const f=r.request().url().split('/').pop().split('?')[0];if(LOCAL[f])return r.fulfill({path:LOCAL[f],contentType:'application/javascript',headers:{'access-control-allow-origin':'*'}});return r.continue();});
  await ctx.route(/127\.0\.0\.1:8876\/(index\.html)?(\?.*)?$/,r=>{const h=fs.readFileSync(ROOT+'/index.html','utf8').replace('window.xValorantFeel={','window.__xe=s=>eval(s);window.xValorantFeel={');r.fulfill({body:h,contentType:'text/html'});});
- const page=await ctx.newPage();page.setDefaultTimeout(110000);page.on('pageerror',e=>R.errors.push('pageerror '+String(e).slice(0,300)));
+ const page=await ctx.newPage();await require('./pw_shot.cjs')(ctx,page);page.setDefaultTimeout(110000);page.on('pageerror',e=>R.errors.push('pageerror '+String(e).slice(0,300)));
  const X=s=>page.evaluate(s=>window.__xe(s),s);const cdp=await ctx.newCDPSession(page);
  const touch=async(type,pts)=>cdp.send('Input.dispatchTouchEvent',{type,touchPoints:pts.map((p,i)=>({x:p[0],y:p[1],id:p[2]??i}))});
  const drag=async(x0,y0,x1,y1,ms=600,id=1)=>{await touch('touchStart',[[x0,y0,id]]);const n=8;for(let i=1;i<=n;i++){await touch('touchMove',[[x0+(x1-x0)*i/n,y0+(y1-y0)*i/n,id]]);await page.waitForTimeout(ms/n);}};

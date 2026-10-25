@@ -13,7 +13,7 @@ import {initAbilities,buyAbility,castAbility,tickAbilities,smokeBlocks,sightClea
 export function survivorLoss(sim,u,text){if(!u.alive)return false;if(u.team===sim.atk)return text==='Time ran out';return text==='Spike detonated';}
 export const SPIKE_RADIUS=32.5;export const POST_ROUND=7;export function buyPhaseSeconds(round){return round===1||round===13||round===25?45:30;}
 const prices={Classic:0,Shorty:300,Frenzy:450,Ghost:500,Sheriff:800,Stinger:1100,Spectre:1600,Bucky:850,Judge:1850,Bulldog:2050,Guardian:2250,Phantom:2900,Vandal:2900,Marshal:950,Outlaw:2400,Operator:4700,Ares:1600,Odin:3200};
-import {revealedFor} from './ults.js';
+import {revealedFor,showstopperFire} from './ults.js';
 import {soulKill} from './reyna.js';
 export class SpikeSimulation extends Simulation{
  static LOAD_GRACE=15;
@@ -38,7 +38,7 @@ export class SpikeSimulation extends Simulation{
  if(m?.t==='pick')return this.phase==='game'&&floorPick(this,u,Number(m.id));
  if(m?.t==='dropw')return this.phase==='game'&&floorDropHeld(this,u);
  if(m?.t==='drop'&&this.spike.st==='carry'&&this.spike.carrier===u.id&&u.alive&&this.buy<=0){Object.assign(this.spike,{st:'drop',carrier:null,x:u.x,y:u.y,z:u.z,dropper:u.id,pickupAt:this.time+1});return true;}
- const r=super.command(u,m);if(r&&m.t==='in')u.input.interact=m.h4===1;return r;}
+ const r=super.command(u,m);if(r&&m.t==='in'){u.input.interact=m.h4===1;u.input.cb=m.cb===1;/* Jett: C held steers a Cloudburst in flight */}return r;}
  // A player leaving the room (worker drop) while carrying the spike: during the buy phase or between rounds another
  // attacker is handed it, otherwise it drops where the carrier stood. A leaving defuser stops defusing.
  release(u){const sp=this.spike;if(!sp||!u)return;if(sp.st==='carry'&&sp.carrier===u.id){const next=(this.buy>0||this.roundDelay>0)&&this.units.filter(v=>v!==u&&v.team===this.atk&&v.alive&&!v.loading).sort((a,b)=>a.id-b.id)[0];
@@ -64,7 +64,7 @@ export class SpikeSimulation extends Simulation{
  // A Phoenix killed inside Run It Back is not a kill or a death in VALORANT (no kill / death on the scoreboard, no ult point
  // either side, no signature recharge): the soul orb (Reyna, patch 1.02) and the Blade Storm refresh (Jett, patch 1.02) still trigger.
  // The 200 kill credits are kept: no source says they are withheld.
- fire(u){if(this.buy>0||this.roundDelay>0||u.detainUntil>this.time)return false;const before=u.kills,living=this.units.filter(v=>v.alive),r=super.fire(u);this.lastKills=0;if(u.kills>before){for(const v of living)if(!v.alive){this.lastKills++;if(v.runItBack){u.kills--;v.deaths--;this.scores[u.team]=(this.scores[u.team]||0)-1;u.credits=Math.min(9000,u.credits+200);soulKill(this,u,v);continue;}u.credits=Math.min(9000,u.credits+200);u.roundKills++;rewardAbilityKill(u,this,v);}}return r;}
+ fire(u){if(this.buy>0||this.roundDelay>0||u.detainUntil>this.time)return false;if(u.showstopper){const r=showstopperFire(this,u);if(r!==undefined)return r;}const before=u.kills,living=this.units.filter(v=>v.alive),r=super.fire(u);this.lastKills=0;if(u.kills>before){for(const v of living)if(!v.alive){this.lastKills++;if(v.runItBack){u.kills--;v.deaths--;this.scores[u.team]=(this.scores[u.team]||0)-1;u.credits=Math.min(9000,u.credits+200);soulKill(this,u,v);continue;}u.credits=Math.min(9000,u.credits+200);u.roundKills++;rewardAbilityKill(u,this,v);}}return r;}
  // A human leaving mid-round: the bot taking the seat takes over their body (alive where they stood, health, loadout,
  // credits, abilities) instead of sitting the round out dead, which cost the team a player for every disconnect.
  // The leaver's live utility (turret, Nanoswarm, Boom Bot, Lockdown windup, Showstopper rocket ...) now belongs to the seat
@@ -72,7 +72,7 @@ export class SpikeSimulation extends Simulation{
  // score, no credits or ult point). Active ult/device state (Tour de Force, Headhunter, Run It Back) and status effects
  // move with the body, so a disconnect neither strands a free Operator nor shakes off a detain.
  takeOver(b,u){if(!b||!u||b.team!==u.team)return false;for(const e of this.effects||[])if(e.owner===u.id)e.owner=b.id;
-  if(this.phase!=='game'||!u.alive||u.loading)return false;for(const k of ['x','y','z','look','pitch','hp','armor','rgn','rgnAt','weapon','ammo','reserve','primary','secondary','credits','ch','ultWeapon','headhunter','runItBack','detainUntil','slowUntil','concussUntil','blindUntil','nearsightUntil','vulnerableUntil','revealedUntil','tetheredUntil','tether','invulnerableUntil','tagUntil','tagSoft'])if(u[k]!==undefined)b[k]=u[k];
+  if(this.phase!=='game'||!u.alive||u.loading)return false;for(const k of ['x','y','z','look','pitch','hp','armor','rgn','rgnAt','weapon','ammo','reserve','primary','secondary','credits','ch','ultWeapon','showstopper','headhunter','runItBack','detainUntil','slowUntil','concussUntil','blindUntil','nearsightUntil','vulnerableUntil','revealedUntil','tetheredUntil','tether','invulnerableUntil','tagUntil','tagSoft'])if(u[k]!==undefined)b[k]=u[k];
   b.inventory={...u.inventory};b.reserves={...u.reserves};b.ability={...u.ability};b.purchases=[];b.vx=b.vy=b.vz=0;b.alive=true;b.reloadAt=0;b.route=null;b.safe=b.anchor=null;b.seq++;return true;}
  // A human still loading holds the buy phase only briefly: at most LOAD_GRACE s per player since their load began and
  // LOAD_GRACE s per round in total, and only while they are in the round (alive) and the round has not started. Joiners
@@ -112,6 +112,6 @@ export class SpikeSimulation extends Simulation{
   if(u.goalStuck>1||u.escapeUntil>this.time){if(u.goalStuck>1&&u.goalStuck<1.06){u.route=null;u.goalAt=0;}if(this.botEscape(u,u.goalStuck))u.goalAt=0;}this.botProgress(u);}
  // Utility on each bot's own timing and role: entries open with flashes/mobility, supports smoke/heal, anchors slow/trap.
  botUtility(u,target,dist,P,engaged){const A=u.ability;if(!A||this.buy>0||this.roundDelay>0||engaged<P.util||this.time<(u.utilAt||0))return;const ty=types[u.agent]||[],want=P.role==='entry'?['flash','dash','updraft']:P.role==='support'?['smoke','flash','slow','heal']:P.role==='anchor'?['slow','trap','fire','turret','smoke']:['flash','smoke','recon'];for(const w of want){const i=ty.indexOf(w);if(i<0)continue;const k='cqe'[i];if(A[k]>0&&this.command(u,{t:'ab',k})){u.utilAt=this.time+4+P.r()*6;return;}}u.utilAt=this.time+1+P.r();}
- snapshot(){return {...super.snapshot(),fw:floorRows(this),fx:this.effects.filter(e=>e.kind==='barrier'&&e.hp>0&&e.until>this.time).map(e=>({id:e.id,kind:e.kind,p:e.p,yaw:e.yaw,hp:e.hp}))};}
+ snapshot(){return {...super.snapshot(),fw:floorRows(this),fx:[...this.effects.filter(e=>e.kind==='barrier'&&e.hp>0&&e.until>this.time).map(e=>({id:e.id,kind:e.kind,p:e.p,yaw:e.yaw,hp:e.hp})),/* Jett Cloudburst: the projectile (s 0) then its smoke (s 1, p = centre, tl = seconds left) */...this.effects.filter(e=>(e.kind==='cloudburst'||e.kind==='smoke'&&e.cb)&&e.until>this.time).map(e=>e.kind==='cloudburst'?{id:e.id,kind:'cb',o:e.owner,p:e.p.map(n=>Math.round(n*100)/100),s:0}:{id:e.id,kind:'cb',o:e.owner,p:e.c.map(n=>Math.round(n*100)/100),s:1,tl:Math.round((e.until-this.time)*100)/100})]};}
  roundState(u){const s=this.spike,mine=u.team===this.atk,visible=mine||s.st==='plant';return {t:'rs',tm:this.time,b:this.buy,bl:this.buy>0&&Array.isArray(u.purchases)?u.purchases.map(p=>p.n):undefined,ld:[u.primary,u.secondary],tw:u.ultWeapon||u.headhunter?u.weapon:null,tl:this.remaining,sc:this.roundScores,atk:this.atk===0?1:0,me:u.credits,ab:u.ability,reyna:u.agent==='Reyna'?reynaState(this,u):null,channel:u.pendingTeleport?{kind:u.pendingTeleport.kind,remaining:Math.max(0,u.pendingTeleport.at-this.time)}:null,status:{concuss:Math.max(0,(u.concussUntil||0)-this.time),blind:Math.max(0,(u.blindUntil||0)-this.time),nearsight:Math.max(0,(u.nearsightUntil||0)-this.time),slow:Math.max(0,(u.slowUntil||0)-this.time),detain:Math.max(0,(u.detainUntil||0)-this.time),vulnerable:Math.max(0,(u.vulnerableUntil||0)-this.time),tether:Math.max(0,(u.tetheredUntil||0)-this.time)},rv:revealedFor(this,u),cr:Object.fromEntries(this.units.filter(v=>v.team===u.team).map(v=>[v.name,v.credits])),sp:[s.st,visible?s.carrier??-1:-1,visible?s.x:0,visible?s.z:0,s.t,s.dt,mine?s.pt:0,visible?s.site:'',s.st==='plant'?1:0]};}
 }
