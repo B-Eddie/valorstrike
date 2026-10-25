@@ -42,7 +42,12 @@ xvFPPlay=function(F,kind,phase){const label=kind==='idle'?'Idle':kind.charAt(0).
 // A separate lens keeps weapon proportions stable while the world camera zooms.
 var VF_VIEW={scene:new THREE.Scene(),camera:new THREE.PerspectiveCamera(55,1,.015,10),phase:0,lastAir:false,land:0,swayX:0,swayY:0,bob:0,ready:false};
 VF_VIEW.scene.add(new THREE.HemisphereLight(0xffffff,0x8a95a5,1.7));{const light=new THREE.DirectionalLight(0xffffff,.9);light.position.set(-1,3,2);VF_VIEW.scene.add(light);}
-const vfRender=renderer.render.bind(renderer);renderer.render=function(s,c){const r=vfRender(s,c);const F=XV.fp;if(s===scene&&c===camera&&F&&F.root.visible&&running&&player&&player.hp>0&&!paused){const auto=renderer.autoClear;renderer.autoClear=false;renderer.clearDepth();VF_VIEW.camera.aspect=camera.aspect;VF_VIEW.camera.updateProjectionMatrix();vfRender(VF_VIEW.scene,VF_VIEW.camera);renderer.autoClear=auto;}return r;};
+// Every renderer owns its own draw function. Rebind after AA/quality recreation;
+// retaining a function bound to a disposed renderer breaks the viewmodel layer.
+function vfBindRenderer(r){if(r.userData&&r.userData.vfBound)return;r.userData=r.userData||{};r.userData.vfBound=true;const draw=r.render.bind(r);r.render=function(s,c){const world=s===scene&&c===camera;if(world){r.info.autoReset=false;r.info.reset();}const result=draw(s,c),F=XV.fp;if(world){VF.worldDraw={...r.info.render};}if(s===scene&&c===camera&&F&&F.root.visible&&running&&player&&player.hp>0&&!paused){const auto=r.autoClear;r.autoClear=false;r.clearDepth();VF_VIEW.camera.aspect=camera.aspect;VF_VIEW.camera.updateProjectionMatrix();draw(VF_VIEW.scene,VF_VIEW.camera);r.autoClear=auto;}return result;};}
+vfBindRenderer(renderer);
+{const remake=xRemake;xRemake=function(){remake();vfBindRenderer(renderer);};}
+
 function vfViewTick(F,dt){const P=player,V=VF_VIEW;if(!F)return;
  if(F.root.parent!==V.scene){if(F.root.parent)F.root.parent.remove(F.root);V.scene.add(F.root);}if(V.lastAir&&!P.air)V.land=Math.min(1,P.landImpact||.5);V.lastAir=!!P.air;V.land=VF.model.damp(V.land,0,12,dt);const speed=Math.hypot(P.vx||0,P.vz||0),target=P.mv&&!P.air?Math.min(1,speed/5.4):0;V.bob=VF.model.damp(V.bob,target,16,dt);V.phase+=speed*dt*3.4;
  V.swayX=VF.model.damp(V.swayX,Math.max(-1,Math.min(1,VM.sx||0)),18,dt);V.swayY=VF.model.damp(V.swayY,Math.max(-1,Math.min(1,VM.sy||0)),18,dt);const k=xAD.k||0;

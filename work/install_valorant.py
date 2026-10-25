@@ -10,7 +10,9 @@ fa='// ---- VALORANT FEEL ----';fb='// ---- END VALORANT FEEL ----'
 if fa in s:s=s[:s.index(fa)]+s[s.index(fb)+len(fb):]
 block+='\n'+(root/'work/native_maps_runtime.js').read_text()+'\n'+(root/'work/feel_runtime.js').read_text();ra='// Repair pass: bone-following damage volumes and joint-constrained corpse physics.';rb='// ---- END REPAIR PASS ----'
 if ra in s:s=s[:s.index(ra)]+s[s.index(rb)+len(rb):]
-block+='\n'+(root/'work/repair_runtime.js').read_text();mark='xReady = true; // every mode is initialised; lobby launches may now start them';s=s.replace(mark,block+'\n'+mark)
+block+='\n'+(root/'work/repair_runtime.js').read_text();sa='// ---- TRUSTED ONLINE SERVER ----';sb='// ---- END TRUSTED ONLINE SERVER ----'
+if sa in s:s=s[:s.index(sa)]+s[s.index(sb)+len(sb):]
+block+='\n'+(root/'work/server_runtime.js').read_text();mark='xReady = true; // every mode is initialised; lobby launches may now start them';s=s.replace(mark,block+'\n'+mark)
 if '<script src="models/valorant/manifest.js"></script>' not in s:s=s.replace('<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>','<script src="models/valorant/manifest.js"></script>\n<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>')
 # Find the actual three script tag, which may use an onerror handler.
 if '<script src="models/valorant/manifest.js"></script>' not in s:s=s.replace('<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js"></script>','<script src="models/valorant/manifest.js"></script>\n<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js"></script>')

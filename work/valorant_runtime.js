@@ -34,13 +34,15 @@ function xvAgentLoad(ag) {
   if (XV.agents[ag]) return XV.agents[ag]; const slug = ag.toLowerCase();
   return XV.agents[ag] = Promise.all([xvLoad(slug), fetch('models/valorant/' + slug + '-locomotion.json').then((r) => { if (!r.ok) throw new Error('locomotion ' + r.status); return r.json(); })]).then(([gl, data]) => {
     const C = {}, L = {}, U = {}, A = {}, up = /^(Spine[234]|Neck|Head|[LR]_(Clavicle|Shoulder|Elbow|Hand|Thumb|Index|Middle|Ring|Pinky))/;
-    data.forEach((j) => { const c = THREE.AnimationClip.parse(j); C[c.name] = c; L[c.name] = new THREE.AnimationClip(c.name + '_L', c.duration, c.tracks.filter((t) => !up.test(t.name))); U[c.name] = new THREE.AnimationClip(c.name + '_U', c.duration, c.tracks.filter((t) => up.test(t.name))); });
+    data.forEach((j) => { const c = THREE.AnimationClip.parse(j); c.uuid=THREE.MathUtils.generateUUID(); C[c.name] = c; L[c.name] = new THREE.AnimationClip(c.name + '_L', c.duration, c.tracks.filter((t) => !up.test(t.name))); U[c.name] = new THREE.AnimationClip(c.name + '_U', c.duration, c.tracks.filter((t) => up.test(t.name))); });
     ['Pistol_Shoot','Hit_Chest','Hit_Head'].forEach((n) => { A[n] = THREE.AnimationUtils.makeClipAdditive(U[n].clone()); });
-    return { gl, C, L, U, A };
+    return { gl, C, L, U, A, contactProbes:data[0].contactProbes||[], contactLift:(data.find(c=>c.name==='Jog_Fwd_Loop')||{}).contactLift };
   }).catch((e) => { delete XV.agents[ag]; console.warn('Valorant agent unavailable: ' + ag, e); throw e; });
 }
 function xvAgent(M, kit) {
+  XUB.up ||= new THREE.Vector3(0,1,0); XUB.rt ||= new THREE.Vector3(1,0,0);
   if (M.dead || M.valorant) return;
+  const queued=XSOL.up.indexOf(M);if(queued>=0)XSOL.up.splice(queued,1);
   // Detach the held weapon before removing the previous rig.
   if (M.gun && M.gun.parent) { M.m.add(M.gun); M.gun.position.set(-.1, 1.22, .32); }
   if (M.sx && M.sx.sc && M.sx.sc.parent) M.m.remove(M.sx.sc.parent);
@@ -52,15 +54,19 @@ function xvAgent(M, kit) {
   const mats = new Map(); sc.traverse((o) => { if (!o.isMesh) return; o.castShadow = true; o.frustumCulled = false; o.raycast = XNR; o.geometry.userData.shared = true;
     const mat = (s) => { if (!mats.has(s)) { const m = new THREE.MeshLambertMaterial({ name:s.name, color:s.color, map:s.map, side:THREE.DoubleSide, transparent:s.transparent, alphaTest:s.alphaTest }); m.userData.agent = 1; xRimM(m, M.rim, null); mats.set(s,m); M.mats.push(m); } return mats.get(s); }; o.material = Array.isArray(o.material) ? o.material.map(mat) : mat(o.material);
   }); M.m.add(wr);
-  const mx = new THREE.AnimationMixer(sc), bone = (n) => sc.getObjectByName(n), X = {mx,a:{},w:{},ub:1,sc,b:{pelvis:bone('Pelvis'),spine_01:bone('Spine1'),spine_02:bone('Spine2'),spine_03:bone('Spine3')},cb:0,yaw:0,pit:0,sn:0,shots:0,hp:null,uo:null,ut:0,lo:null,lt:0,air:false,py:null,px:null,pz:null,cur:'idle',ad:{}};
+  const mx = new THREE.AnimationMixer(sc), bone = (n) => sc.getObjectByName(n), X = {mx,a:{},w:{},ub:1,nativeContact:true,sc,b:{pelvis:bone('Pelvis'),spine_01:bone('Spine1'),spine_02:bone('Spine2'),spine_03:bone('Spine3')},cb:0,yaw:0,pit:0,sn:0,shots:0,hp:null,uo:null,ut:0,lo:null,lt:0,air:false,py:null,px:null,pz:null,cur:'idle',ad:{}};
   const mk = (n,set,once) => { const c = kit[set][XUB_ST[n]], a = mx.clipAction(c); if (once) { a.setLoop(THREE.LoopOnce,1); a.clampWhenFinished = true; } X.a[n] = a; X.w[n] = 0; };
   XUB_LO.forEach((n) => mk(n,'L',n==='jump'||n==='land')); XUB_UPN.forEach((n) => mk(n,'U',n==='reload'||n==='cast'||n==='throw')); XUB_FU.forEach((n) => mk(n,'C',n!=='plant'));
   [['fire','Pistol_Shoot'],['hit','Hit_Chest'],['hitHead','Hit_Head']].forEach(([n,c]) => { const a=mx.clipAction(kit.A[c]); a.blendMode=THREE.AdditiveAnimationBlendMode; a.setLoop(THREE.LoopOnce,1); X.ad[n]=a; });
   X.a.idle.play(); X.a.aim.play(); X.w.idle = X.w.aim = 1; mx.update(.01); M.m.updateMatrixWorld(true);
-  const hand = bone('R_Hand'); if (hand && M.gun) { const hold = new THREE.Group(), p=new THREE.Vector3(),q=new THREE.Quaternion(),s=new THREE.Vector3(); new THREE.Matrix4().copy(M.m.matrixWorld).invert().multiply(hand.matrixWorld).decompose(p,q,s); hold.quaternion.copy(q.invert()); hold.scale.set(1/s.x,1/s.y,1/s.z); hand.add(hold); hold.add(M.gun); M.gun.position.set(0,0,.03); M.gun.rotation.set(0,0,0); M.weaponHolder=hold; }
-  X.acts=X.a; M.ub=1; M.sx=X; M.valorant=1; M.xAt=[]; M.solOwn=()=>{M.solOwn=null;}; XSOL.mx.push(M);
+  const hand = bone('R_Hand'); if (hand && M.gun) { const hold = new THREE.Group(), p=new THREE.Vector3(),q=new THREE.Quaternion(),s=new THREE.Vector3(); new THREE.Matrix4().copy(M.m.matrixWorld).invert().multiply(hand.matrixWorld).decompose(p,q,s); hold.quaternion.copy(q.invert()); hold.scale.set(1/s.x,1/s.y,1/s.z); hand.add(hold); hold.add(M.gun); M.gun.position.set(0,0,.03); M.gun.rotation.set(0,Math.PI,0); M.weaponHolder=hold; } // gun models are authored muzzle -Z: PI faces the muzzle the way the character looks
+  X.contactLift=kit.contactLift;X.contactProbes=kit.contactProbes.map(p=>({o:sc.getObjectByName(p.mesh),indices:p.indices})).filter(p=>p.o&&p.o.isSkinnedMesh);X.contactV=new THREE.Vector3();X.contactInv=new THREE.Matrix4();X.contactShift=new THREE.Vector3();X.contactScale=new THREE.Vector3();X.contactFloor=bx.min.y;X.acts=X.a; M.ub=1; M.sx=X; M.valorant=1; M.xAt=[]; M.solOwn=()=>{M.solOwn=null;}; XSOL.mx.push(M);
 }
-{ const base = xUb; xUb = function(M) { base(M); const ag=xvAgentName(M.nm); xvAgentLoad(ag).then((kit)=>xvAgent(M,kit)).catch(()=>{}); }; }
+{ const base = xUb; xUb = function(M) { if(M.dead||M.valorant)return; base(M); const ag=xvAgentName(M.nm); xvAgentLoad(ag).then((kit)=>xvAgent(M,kit)).catch(()=>{}); }; }
+// Native rigs do not depend on the legacy fallback download becoming ready.
+{const create=xAgent;xAgent=function(){const M=create.apply(this,arguments),ag=xvAgentName(M.nm);xvAgentLoad(ag).then(kit=>xvAgent(M,kit)).catch(()=>{});return M;};}
+// Correct only the blended support-foot height after the mixer. Authored jog flight remains airborne.
+{const pre=xUbPre,post=xUbPost;xUbPre=function(M){const X=M.sx;if(X&&X.contactRestore){X.b.pelvis.position.copy(X.contactRestore);X.contactRestore=null;}return pre(M);};xUbPost=function(M){post(M);const X=M.sx;if(!X||!X.nativeContact||X.dd||M.dead||X.air||X.lo||(X.w.plant||0)>.01||!X.contactProbes.length)return;M.m.updateMatrixWorld(true);const v=X.contactV,inv=X.contactInv.copy(X.sc.matrixWorld).invert();let low=Infinity;for(const {o,indices}of X.contactProbes){o.skeleton.update();for(const i of indices){v.fromBufferAttribute(o.geometry.attributes.position,i);o.boneTransform(i,v);v.applyMatrix4(o.matrixWorld).applyMatrix4(inv);low=Math.min(low,v.y);}}let lift=0;const c=X.contactLift,a=X.a.run;if(c&&a&&(X.w.run||0)>.001){const t=a.time%c.times[c.times.length-1];let i=0;while(i<c.times.length-2&&c.times[i+1]<t)i++;const f=(t-c.times[i])/Math.max(.00001,c.times[i+1]-c.times[i]);lift=(c.values[i]*(1-f)+c.values[i+1]*f)*(X.w.run||0);}const dy=X.contactFloor+lift-low;if(!Number.isFinite(dy)||Math.abs(dy)>.5)return;X.contactRestore=X.b.pelvis.position.clone();X.b.pelvis.getWorldPosition(v);const shift=X.contactShift.set(0,1,0).transformDirection(X.sc.matrixWorld).multiplyScalar(Math.abs(dy)*X.sc.getWorldScale(X.contactScale).y);if(dy<0)shift.negate();v.add(shift);X.b.pelvis.position.copy(X.b.pelvis.parent.worldToLocal(v));M.m.updateMatrixWorld(true);};}
 // Native first-person rigs and their matching weapon animation clips. The virtual source camera faces +X.
 function xvFPPlay(F, kind, time) {
   const key = kind === 'idle' ? 'Idle' : kind.charAt(0).toUpperCase()+kind.slice(1), a = F.entries.find((e)=>e.Translatable === key) || F.entries.find((e)=>e.Translatable.startsWith(key));
@@ -75,7 +81,7 @@ function xvFPLoad(ag,w) {
     const sc=THREE.SkeletonUtils.clone(arms.scene), ws=THREE.SkeletonUtils.clone(weapon.scene), holder=sc.getObjectByName((cfg.MODEL_HELD_JSON.Settings.FP||{}).Bone||'R_WeaponMaster'); if(!holder)throw new Error('weapon attachment missing');
     xvConstraints(ws,cfg.MODEL_HELD_JSON,true); holder.add(ws); const rot=(cfg.MODEL_HELD_JSON.Settings.FP||{}).Rotation||{X:0,Y:90,Z:0}; ws.rotation.set(rot.X*Math.PI/180,rot.Y*Math.PI/180,rot.Z*Math.PI/180);
     const root=new THREE.Group();root.name='valorant-viewmodel';root.add(sc);root.rotation.y=Math.PI/2;
-    sc.traverse(o=>{if(o.isMesh){o.frustumCulled=false;o.castShadow=o.receiveShadow=false;o.raycast=XNR;o.renderOrder=10;const conv=m=>new THREE.MeshLambertMaterial({name:m.name,color:m.color,map:m.map,side:THREE.DoubleSide,depthTest:false,depthWrite:false});o.material=Array.isArray(o.material)?o.material.map(conv):conv(o.material);}});
+    sc.traverse(o=>{if(o.isMesh){o.frustumCulled=false;o.castShadow=o.receiveShadow=false;o.raycast=XNR;o.renderOrder=10;const conv=m=>new THREE.MeshLambertMaterial({name:m.name,color:m.color,map:m.map,side:THREE.DoubleSide});o.material=Array.isArray(o.material)?o.material.map(conv):conv(o.material);}});
     const am=new THREE.AnimationMixer(sc),gm=new THREE.AnimationMixer(ws),ac={},gc={};const fclips=anims.filter((g,i)=>/^FP_/.test(files[i])).flatMap(g=>g.animations),gclips=weapon.animations.concat(anims.filter((g,i)=>/^GN_/.test(files[i])).flatMap(g=>g.animations));
     fclips.forEach(c=>ac[c.name]=am.clipAction(c));gclips.forEach(c=>gc[c.name]=gm.clipAction(c));
     const F={root,sc,ws,am,gm,ac,gc,entries,ag,w,kind:null,age:0};xvFPPlay(F,'idle');am.update(0);gm.update(0);sc.updateMatrixWorld(true);

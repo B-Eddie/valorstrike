@@ -66,3 +66,7 @@ The existing `audit.js` uses its deterministic legacy map fixture for economy/in
 ## Weapon calibration and game feel
 
 The weapon-stat snapshot comes from [Valorant API](https://valorant-api.com/v1/weapons), retrieved 2026-10-24. Movement/accuracy references, approximated controller and recoil parameters, native animation timing, and verification are documented in [GAME_FEEL.md](../../GAME_FEEL.md).
+
+## Map loading artwork
+
+Map-specific Riot splash images downloaded through the public Valorant API map records; per-map source URLs are recorded in maps/*/loading-source.json. Converted to1600x900 JPEG for loading screens and map tiles. Riot Games copyright; fan-project attribution above applies.

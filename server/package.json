@@ -1,0 +1,23 @@
+{
+  "name": "valorstrike-server",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "node test.js && node test-spike.js && node test-directory.cjs && node test-abilities.js && node test-spike-edges.js && node test-weapons.js && node test-prebuilt.cjs && node test-trigger.js && node test-protocol.cjs && node test-barriers.js && node test-buy-worlds.js",
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "build:worlds": "node build-all.cjs"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "three": "^0.160.1",
+    "three-mesh-bvh": "^0.7.8",
+    "wrangler": "^4.152.0",
+    "ws": "^8.22.0"
+  },
+  "type": "module",
+  "private": true
+}
