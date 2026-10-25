@@ -1609,6 +1609,848 @@
      ]
     }
    }
+  },
+  {
+   "id": "kuronami",
+   "name": "Kuronami",
+   "tier": "Exclusive",
+   "k": 5,
+   "desc": "Black lacquered steel cut by thin crimson seams.",
+   "pal": {
+    "a": "#121317",
+    "b": "#2a2c33",
+    "e": "#ff2b3a"
+   },
+   "cc": {
+    "Purple": {
+     "a": "#1b1030",
+     "b": "#6a2c9a",
+     "e": "#c66bff"
+    },
+    "White": {
+     "a": "#eceff2",
+     "b": "#b9c0c8",
+     "e": "#ff2b3a"
+    },
+    "Black": {
+     "a": "#0d0e10",
+     "b": "#24262b",
+     "e": "#ff2b3a"
+    }
+   },
+   "skins": {
+    "Ghost": {
+     "n": "Kuronami Ghost",
+     "ch": [
+      "Base",
+      "Purple",
+      "White",
+      "Black"
+     ]
+    },
+    "Sheriff": {
+     "n": "Kuronami Sheriff",
+     "ch": [
+      "Base",
+      "Purple",
+      "White",
+      "Black"
+     ]
+    },
+    "Spectre": {
+     "n": "Kuronami Spectre",
+     "ch": [
+      "Base",
+      "Purple",
+      "White",
+      "Black"
+     ]
+    },
+    "Guardian": {
+     "n": "Kuronami Guardian",
+     "ch": [
+      "Base",
+      "Purple",
+      "White",
+      "Black"
+     ]
+    },
+    "Phantom": {
+     "n": "Kuronami Phantom",
+     "ch": [
+      "Base",
+      "Purple",
+      "White",
+      "Black"
+     ]
+    },
+    "Vandal": {
+     "n": "Kuronami Vandal",
+     "ch": [
+      "Base",
+      "Purple",
+      "White",
+      "Black"
+     ]
+    },
+    "Marshal": {
+     "n": "Kuronami Marshal",
+     "ch": [
+      "Base",
+      "Purple",
+      "White",
+      "Black"
+     ]
+    },
+    "Operator": {
+     "n": "Kuronami Operator",
+     "ch": [
+      "Base",
+      "Purple",
+      "White",
+      "Black"
+     ]
+    },
+    "Knife": {
+     "n": "Kuronami Knife",
+     "ch": [
+      "Base",
+      "Purple",
+      "White",
+      "Black"
+     ]
+    }
+   }
+  },
+  {
+   "id": "araxys",
+   "name": "Araxys",
+   "tier": "Exclusive",
+   "k": 6,
+   "desc": "Alien bio-metal with a pulsing acid-green glow.",
+   "pal": {
+    "a": "#1a1f1c",
+    "b": "#5d6e2a",
+    "e": "#c6ff3a",
+    "p": 1
+   },
+   "cc": {
+    "Purple": {
+     "a": "#1b1030",
+     "b": "#6a2c9a",
+     "e": "#c66bff"
+    },
+    "Black": {
+     "a": "#0d0e10",
+     "b": "#24262b",
+     "e": "#c6ff3a"
+    },
+    "Silver": {
+     "a": "#c8cdd3",
+     "b": "#7d858f",
+     "e": "#c6ff3a"
+    }
+   },
+   "skins": {
+    "Shorty": {
+     "n": "Araxys Shorty",
+     "ch": [
+      "Base",
+      "Purple",
+      "Black",
+      "Silver"
+     ]
+    },
+    "Sheriff": {
+     "n": "Araxys Sheriff",
+     "ch": [
+      "Base",
+      "Purple",
+      "Black",
+      "Silver"
+     ]
+    },
+    "Bulldog": {
+     "n": "Araxys Bulldog",
+     "ch": [
+      "Base",
+      "Purple",
+      "Black",
+      "Silver"
+     ]
+    },
+    "Guardian": {
+     "n": "Araxys Guardian",
+     "ch": [
+      "Base",
+      "Purple",
+      "Black",
+      "Silver"
+     ]
+    },
+    "Phantom": {
+     "n": "Araxys Phantom",
+     "ch": [
+      "Base",
+      "Purple",
+      "Black",
+      "Silver"
+     ]
+    },
+    "Vandal": {
+     "n": "Araxys Vandal",
+     "ch": [
+      "Base",
+      "Purple",
+      "Black",
+      "Silver"
+     ]
+    },
+    "Outlaw": {
+     "n": "Araxys Outlaw",
+     "ch": [
+      "Base",
+      "Purple",
+      "Black",
+      "Silver"
+     ]
+    },
+    "Operator": {
+     "n": "Araxys Operator",
+     "ch": [
+      "Base",
+      "Purple",
+      "Black",
+      "Silver"
+     ]
+    },
+    "Knife": {
+     "n": "Araxys Knife",
+     "ch": [
+      "Base",
+      "Purple",
+      "Black",
+      "Silver"
+     ]
+    }
+   }
+  },
+  {
+   "id": "prelude",
+   "name": "Prelude to Chaos",
+   "tier": "Exclusive",
+   "k": 1,
+   "desc": "Void-black shell splintered by violet light.",
+   "pal": {
+    "a": "#14121c",
+    "b": "#3a2f66",
+    "e": "#8f7bff",
+    "p": 1
+   },
+   "cc": {
+    "Green": {
+     "a": "#10201a",
+     "b": "#2f8a5a",
+     "e": "#5fffb0"
+    },
+    "White": {
+     "a": "#eceff2",
+     "b": "#b9c0c8",
+     "e": "#8f7bff"
+    },
+    "Blue": {
+     "a": "#121a2c",
+     "b": "#2f5fa8",
+     "e": "#3fa9ff"
+    }
+   },
+   "skins": {
+    "Shorty": {
+     "n": "Prelude to Chaos Shorty",
+     "ch": [
+      "Base",
+      "Green",
+      "White",
+      "Blue"
+     ]
+    },
+    "Sheriff": {
+     "n": "Prelude to Chaos Sheriff",
+     "ch": [
+      "Base",
+      "Green",
+      "White",
+      "Blue"
+     ]
+    },
+    "Stinger": {
+     "n": "Prelude to Chaos Stinger",
+     "ch": [
+      "Base",
+      "Green",
+      "White",
+      "Blue"
+     ]
+    },
+    "Spectre": {
+     "n": "Prelude to Chaos Spectre",
+     "ch": [
+      "Base",
+      "Green",
+      "White",
+      "Blue"
+     ]
+    },
+    "Bulldog": {
+     "n": "Prelude to Chaos Bulldog",
+     "ch": [
+      "Base",
+      "Green",
+      "White",
+      "Blue"
+     ]
+    },
+    "Phantom": {
+     "n": "Prelude to Chaos Phantom",
+     "ch": [
+      "Base",
+      "Green",
+      "White",
+      "Blue"
+     ]
+    },
+    "Vandal": {
+     "n": "Prelude to Chaos Vandal",
+     "ch": [
+      "Base",
+      "Green",
+      "White",
+      "Blue"
+     ]
+    },
+    "Operator": {
+     "n": "Prelude to Chaos Operator",
+     "ch": [
+      "Base",
+      "Green",
+      "White",
+      "Blue"
+     ]
+    },
+    "Knife": {
+     "n": "Prelude to Chaos Knife",
+     "ch": [
+      "Base",
+      "Green",
+      "White",
+      "Blue"
+     ]
+    }
+   }
+  },
+  {
+   "id": "gaia",
+   "name": "Gaia's Vengeance",
+   "tier": "Premium",
+   "k": 5,
+   "desc": "Living bark and moss threaded with green light.",
+   "pal": {
+    "a": "#1e2b1c",
+    "b": "#4c7a3a",
+    "e": "#7dff8a"
+   },
+   "cc": {
+    "Blue": {
+     "a": "#121a2c",
+     "b": "#2f5fa8",
+     "e": "#3fa9ff"
+    },
+    "Green": {
+     "a": "#10201a",
+     "b": "#2f8a5a",
+     "e": "#5fffb0"
+    },
+    "Orange": {
+     "a": "#26170c",
+     "b": "#e8742a",
+     "e": "#ff9a2a"
+    }
+   },
+   "skins": {
+    "Shorty": {
+     "n": "Gaia's Vengeance Shorty",
+     "ch": [
+      "Base",
+      "Blue",
+      "Green",
+      "Orange"
+     ]
+    },
+    "Ghost": {
+     "n": "Gaia's Vengeance Ghost",
+     "ch": [
+      "Base",
+      "Blue",
+      "Green",
+      "Orange"
+     ]
+    },
+    "Bucky": {
+     "n": "Gaia's Vengeance Bucky",
+     "ch": [
+      "Base",
+      "Blue",
+      "Green",
+      "Orange"
+     ]
+    },
+    "Guardian": {
+     "n": "Gaia's Vengeance Guardian",
+     "ch": [
+      "Base",
+      "Blue",
+      "Green",
+      "Orange"
+     ]
+    },
+    "Phantom": {
+     "n": "Gaia's Vengeance Phantom",
+     "ch": [
+      "Base",
+      "Blue",
+      "Green",
+      "Orange"
+     ]
+    },
+    "Vandal": {
+     "n": "Gaia's Vengeance Vandal",
+     "ch": [
+      "Base",
+      "Blue",
+      "Green",
+      "Orange"
+     ]
+    },
+    "Marshal": {
+     "n": "Gaia's Vengeance Marshal",
+     "ch": [
+      "Base",
+      "Blue",
+      "Green",
+      "Orange"
+     ]
+    },
+    "Ares": {
+     "n": "Gaia's Vengeance Ares",
+     "ch": [
+      "Base",
+      "Blue",
+      "Green",
+      "Orange"
+     ]
+    },
+    "Knife": {
+     "n": "Gaia's Vengeance Knife",
+     "ch": [
+      "Base",
+      "Blue",
+      "Green",
+      "Orange"
+     ]
+    }
+   }
+  },
+  {
+   "id": "blastx",
+   "name": "BlastX",
+   "tier": "Exclusive",
+   "k": 2,
+   "desc": "Toy-blaster white with orange bands and a blue core.",
+   "pal": {
+    "a": "#f2f2ee",
+    "b": "#ff7a1a",
+    "e": "#34c3ff"
+   },
+   "cc": {
+    "Black": {
+     "a": "#0d0e10",
+     "b": "#24262b",
+     "e": "#34c3ff"
+    },
+    "Yellow": {
+     "a": "#24210f",
+     "b": "#e3c22a",
+     "e": "#fff04a"
+    },
+    "Pink": {
+     "a": "#2a1424",
+     "b": "#ff6fb5",
+     "e": "#ff8ad0"
+    }
+   },
+   "skins": {
+    "Frenzy": {
+     "n": "BlastX Frenzy",
+     "ch": [
+      "Base",
+      "Black",
+      "Yellow",
+      "Pink"
+     ]
+    },
+    "Spectre": {
+     "n": "BlastX Spectre",
+     "ch": [
+      "Base",
+      "Black",
+      "Yellow",
+      "Pink"
+     ]
+    },
+    "Phantom": {
+     "n": "BlastX Phantom",
+     "ch": [
+      "Base",
+      "Black",
+      "Yellow",
+      "Pink"
+     ]
+    },
+    "Odin": {
+     "n": "BlastX Odin",
+     "ch": [
+      "Base",
+      "Black",
+      "Yellow",
+      "Pink"
+     ]
+    },
+    "Knife": {
+     "n": "BlastX Knife",
+     "ch": [
+      "Base",
+      "Black",
+      "Yellow",
+      "Pink"
+     ]
+    }
+   }
+  },
+  {
+   "id": "protocol",
+   "name": "Protocol 781-A",
+   "tier": "Ultra",
+   "k": 4,
+   "desc": "Industrial white and grey with orange signal traces.",
+   "pal": {
+    "a": "#e4e6e8",
+    "b": "#4b5056",
+    "e": "#ff5a2a"
+   },
+   "cc": {
+    "White/Pink": {
+     "a": "#eceff2",
+     "b": "#ff6fb5",
+     "e": "#ff8ad0"
+    },
+    "Red/Blue": {
+     "a": "#1e1418",
+     "b": "#c4232f",
+     "e": "#3fa9ff"
+    },
+    "Green": {
+     "a": "#10201a",
+     "b": "#2f8a5a",
+     "e": "#5fffb0"
+    }
+   },
+   "skins": {
+    "Sheriff": {
+     "n": "Protocol 781-A Sheriff",
+     "ch": [
+      "Base",
+      "White/Pink",
+      "Red/Blue",
+      "Green"
+     ]
+    },
+    "Spectre": {
+     "n": "Protocol 781-A Spectre",
+     "ch": [
+      "Base",
+      "White/Pink",
+      "Red/Blue",
+      "Green"
+     ]
+    },
+    "Bulldog": {
+     "n": "Protocol 781-A Bulldog",
+     "ch": [
+      "Base",
+      "White/Pink",
+      "Red/Blue",
+      "Green"
+     ]
+    },
+    "Phantom": {
+     "n": "Protocol 781-A Phantom",
+     "ch": [
+      "Base",
+      "White/Pink",
+      "Red/Blue",
+      "Green"
+     ]
+    },
+    "Knife": {
+     "n": "Protocol 781-A Knife",
+     "ch": [
+      "Base",
+      "White/Pink",
+      "Red/Blue",
+      "Green"
+     ]
+    }
+   }
+  },
+  {
+   "id": "magepunk",
+   "name": "Magepunk",
+   "tier": "Premium",
+   "k": 4,
+   "desc": "Copper and brass machinery with crackling blue current.",
+   "pal": {
+    "a": "#2b2420",
+    "b": "#b87333",
+    "e": "#3fd0ff",
+    "p": 1
+   },
+   "cc": {
+    "Green": {
+     "a": "#10201a",
+     "b": "#2f8a5a",
+     "e": "#5fffb0"
+    },
+    "Pink": {
+     "a": "#2a1424",
+     "b": "#ff6fb5",
+     "e": "#ff8ad0"
+    },
+    "Orange": {
+     "a": "#26170c",
+     "b": "#e8742a",
+     "e": "#ff9a2a"
+    },
+    "Black/Red": {
+     "a": "#0d0e10",
+     "b": "#c4232f",
+     "e": "#ff3048"
+    },
+    "Yellow": {
+     "a": "#24210f",
+     "b": "#e3c22a",
+     "e": "#fff04a"
+    },
+    "Purple": {
+     "a": "#1b1030",
+     "b": "#6a2c9a",
+     "e": "#c66bff"
+    }
+   },
+   "skins": {
+    "Ghost": {
+     "n": "Magepunk Ghost",
+     "ch": [
+      "Base",
+      "Green",
+      "Purple",
+      "Orange"
+     ]
+    },
+    "Sheriff": {
+     "n": "Magepunk Sheriff",
+     "ch": [
+      "Base",
+      "Green",
+      "Pink",
+      "Orange"
+     ]
+    },
+    "Spectre": {
+     "n": "Magepunk Spectre",
+     "ch": [
+      "Base",
+      "Green",
+      "Purple",
+      "Orange"
+     ]
+    },
+    "Bucky": {
+     "n": "Magepunk Bucky",
+     "ch": [
+      "Base",
+      "Green",
+      "Purple",
+      "Orange"
+     ]
+    },
+    "Guardian": {
+     "n": "Magepunk Guardian",
+     "ch": [
+      "Base",
+      "Green",
+      "Pink",
+      "Orange"
+     ]
+    },
+    "Phantom": {
+     "n": "Magepunk Phantom",
+     "ch": [
+      "Base",
+      "Green",
+      "Black/Red",
+      "Yellow"
+     ]
+    },
+    "Vandal": {
+     "n": "Magepunk Vandal",
+     "ch": [
+      "Base",
+      "Green",
+      "Black/Red",
+      "Yellow"
+     ]
+    },
+    "Marshal": {
+     "n": "Magepunk Marshal",
+     "ch": [
+      "Base",
+      "Green",
+      "Purple",
+      "Orange"
+     ]
+    },
+    "Operator": {
+     "n": "Magepunk Operator",
+     "ch": [
+      "Base",
+      "Green",
+      "Pink",
+      "Orange"
+     ]
+    },
+    "Ares": {
+     "n": "Magepunk Ares",
+     "ch": [
+      "Base",
+      "Green",
+      "Pink",
+      "Orange"
+     ]
+    },
+    "Knife": {
+     "n": "Magepunk Knife",
+     "ch": [
+      "Base",
+      "Green",
+      "Purple",
+      "Orange"
+     ]
+    }
+   }
+  },
+  {
+   "id": "neofrontier",
+   "name": "Neo Frontier",
+   "tier": "Exclusive",
+   "k": 2,
+   "desc": "Frontier navy and brass with a cool cyan glow.",
+   "pal": {
+    "a": "#1e2a3a",
+    "b": "#c9a04a",
+    "e": "#5fd0ff"
+   },
+   "cc": {
+    "Gold": {
+     "a": "#1d1a12",
+     "b": "#d4af37",
+     "e": "#ffd23a"
+    },
+    "Silver": {
+     "a": "#c8cdd3",
+     "b": "#7d858f",
+     "e": "#5fd0ff"
+    },
+    "Copper": {
+     "a": "#3a2418",
+     "b": "#b87333",
+     "e": "#ffb06a"
+    }
+   },
+   "skins": {
+    "Shorty": {
+     "n": "Neo Frontier Shorty",
+     "ch": [
+      "Base",
+      "Gold",
+      "Silver",
+      "Copper"
+     ]
+    },
+    "Sheriff": {
+     "n": "Neo Frontier Sheriff",
+     "ch": [
+      "Base",
+      "Gold",
+      "Silver",
+      "Copper"
+     ]
+    },
+    "Phantom": {
+     "n": "Neo Frontier Phantom",
+     "ch": [
+      "Base",
+      "Gold",
+      "Silver",
+      "Copper"
+     ]
+    },
+    "Vandal": {
+     "n": "Neo Frontier Vandal",
+     "ch": [
+      "Base",
+      "Gold",
+      "Silver",
+      "Copper"
+     ]
+    },
+    "Marshal": {
+     "n": "Neo Frontier Marshal",
+     "ch": [
+      "Base",
+      "Gold",
+      "Silver",
+      "Copper"
+     ]
+    },
+    "Odin": {
+     "n": "Neo Frontier Odin",
+     "ch": [
+      "Base",
+      "Gold",
+      "Silver",
+      "Copper"
+     ]
+    },
+    "Knife": {
+     "n": "Neo Frontier Knife",
+     "ch": [
+      "Base",
+      "Gold",
+      "Silver",
+      "Copper"
+     ]
+    }
+   }
   }
  ]
 }

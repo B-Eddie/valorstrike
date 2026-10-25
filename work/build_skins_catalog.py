@@ -39,6 +39,14 @@ LINES = [
     ('sentinels', 'Sentinels of Light', 1, dict(a='#e8f0ff', b='#7a8cff', e='#9fd8ff'), 'Radiant white stone with shards of light.'),
     ('recon', 'Recon', 3, dict(a='#5a6a3c', b='#26301c'), 'Field camouflage.'),
     ('ruination', 'Ruination', 5, dict(a='#162520', b='#2f4a3e', e='#3fffb0', p=1), 'Ruined black-green metal with mist-green seams.'),
+    ('kuronami', 'Kuronami', 5, dict(a='#121317', b='#2a2c33', e='#ff2b3a'), 'Black lacquered steel cut by thin crimson seams.'),
+    ('araxys', 'Araxys', 6, dict(a='#1a1f1c', b='#5d6e2a', e='#c6ff3a', p=1), 'Alien bio-metal with a pulsing acid-green glow.'),
+    ('prelude', 'Prelude to Chaos', 1, dict(a='#14121c', b='#3a2f66', e='#8f7bff', p=1), 'Void-black shell splintered by violet light.'),
+    ('gaia', "Gaia's Vengeance", 5, dict(a='#1e2b1c', b='#4c7a3a', e='#7dff8a'), 'Living bark and moss threaded with green light.'),
+    ('blastx', 'BlastX', 2, dict(a='#f2f2ee', b='#ff7a1a', e='#34c3ff'), 'Toy-blaster white with orange bands and a blue core.'),
+    ('protocol', 'Protocol 781-A', 4, dict(a='#e4e6e8', b='#4b5056', e='#ff5a2a'), 'Industrial white and grey with orange signal traces.'),
+    ('magepunk', 'Magepunk', 4, dict(a='#2b2420', b='#b87333', e='#3fd0ff', p=1), 'Copper and brass machinery with crackling blue current.'),
+    ('neofrontier', 'Neo Frontier', 2, dict(a='#1e2a3a', b='#c9a04a', e='#5fd0ff'), 'Frontier navy and brass with a cool cyan glow.'),
 ]
 # variant colour names -> (base, secondary, accent); None keeps the line's own value
 COL = {'Red': ('#2a1214', '#c4232f', '#ff3048'), 'Blue': ('#121a2c', '#2f5fa8', '#3fa9ff'), 'Gold': ('#1d1a12', '#d4af37', '#ffd23a'), 'Yellow': ('#24210f', '#e3c22a', '#fff04a'),
@@ -46,6 +54,7 @@ COL = {'Red': ('#2a1214', '#c4232f', '#ff3048'), 'Blue': ('#121a2c', '#2f5fa8', 
        'Black': ('#0d0e10', '#24262b', None), 'White': ('#eceff2', '#b9c0c8', None), 'Silver': ('#c8cdd3', '#7d858f', None), 'Dark': ('#0d0e10', '#2a2228', None), 'Pink': ('#2a1424', '#ff6fb5', '#ff8ad0'),
        'Red/Green': ('#1e1414', '#c4232f', '#5fffb0'), 'Blue/Purple': ('#141433', '#2f5fa8', '#c66bff'), 'Purple/Pink': ('#1b1030', '#8a3ab9', '#ff6fd5'), 'Red/Yellow': ('#2a1410', '#c4402f', '#ffd23a'),
        'Red Camo': ('#6a3a32', '#2f1c18', None), 'Blue Camo': ('#3a4c66', '#1a2433', None), 'Green Camo': ('#4d5a35', '#26301c', None),
+       'White/Pink': ('#eceff2', '#ff6fb5', '#ff8ad0'), 'Red/Blue': ('#1e1418', '#c4232f', '#3fa9ff'), 'Black/Red': ('#0d0e10', '#c4232f', '#ff3048'), 'Copper': ('#3a2418', '#b87333', '#ffb06a'),
        'Kumo': ('#d9dde4', '#3b4a6b', '#9fc4ff'), 'Hana': ('#f0dde2', '#c4507a', '#ff8ab0'), 'Tsubame': ('#16171c', '#2f3a8a', '#6a7cff')}
 VAR = re.compile(r'\(Variant\s+\d+\s+([^)]+)\)')
 def chromas(skin):
