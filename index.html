@@ -2879,7 +2879,7 @@ function xTag(t, n) { if (!t) return; t.tagS = 0; const k = n < 30 ? 0.5 : 0.28;
 function pDie(by, w) {
   if (jRib()) return; // Phoenix Run It Back
   try { if (mode === "five" && !XTKILL && by !== "Fall" && by !== "Spike") jUlt(); } catch (e) {} // +1 ult point per death to an enemy (not a fall, the Spike or a teamkill)
-  fKC(by); player.hp = 0; defuseT = 0; reloading = 0; stats.d++; sbKill(by, "You", false); if (w) kfeed(by, "You", false, w); else feed(by + " ▸ You"); showStats(); setScope(false);
+  fKC(by); player.hp = 0; defuseT = 0; reloading = 0; if (by !== "Spike") stats.d++; /* the Spike is no KDA death (wiki Spike, patch 1.11) */ sbKill(by, "You", false); if (w) kfeed(by, "You", false, w); else feed(by + " ▸ You"); showStats(); setScope(false);
   if (!allies.some((a) => a.alive)) return end(false, "You were eliminated by " + by);
   say("You died · spectating your team", 1800);
 }
@@ -7707,7 +7707,7 @@ function fRound() {
   if (!FV.alive) { FV.pri = null; FV.sec = "Classic"; FV.arm = 0; FV.rgn = undefined; } // died last round: back to a Classic
   const pz0 = FV.atk ? xSpawn(FV.map).atk : xSpawn(FV.map).def;
   player = { x: 0, z: pz0, hp: 100, armor: FV.arm, rgn: FV.rgn, y: 0, vy: 0, ch: 0, st: 0 }; yaw = FV.atk ? 0 : Math.PI; pitch = 0;
-  timeLeft = 100; FV.buy = FV.you + FV.them === 0 || FV.you + FV.them === 12 ? 45 : 30; defuseT = 0; kSwing = 0; fSpawn(); $("feed").innerHTML = ""; $("defuse").style.display = "none";
+  timeLeft = 100; FV.buy = FV.you + FV.them === 0 || FV.you + FV.them === 12 || (FV.you + FV.them === 24 && !FV.sw && !FV.sr) ? 45 : 30; /* 45 s: first buy phase of each half and of overtime (rounds 1, 13, 25; wiki Unrated, = server buyPhaseSeconds) */ defuseT = 0; kSwing = 0; fSpawn(); $("feed").innerHTML = ""; $("defuse").style.display = "none";
   const pm = FV.pri ? WEAP[FV.pri].mag : 0, sm = WEAP[FV.sec].mag;
   slots.pri = FV.pri ? { ammo: pm, rsv: xRsv(FV.pri) } : {}; slots.pis = { ammo: sm, rsv: xRsv(WEAP[FV.sec] ? FV.sec : "Classic") };
   rw = FV.pri ? "pri" : "pis"; ammo = slots[rw].ammo; rsv = slots[rw].rsv; reloading = 0; fcd = 0; spray = 0; fireHeld = false; try { XSP.used = false; } catch (e) {} // round start re-arms the one spray per round
@@ -9685,7 +9685,7 @@ function sbDmg(by, v, n) { if (XTKILL || !(n > 0) || by === v || !SB[by]) return
 function sbAst(by, v) { const m = SBH[v]; if (!m) return; const now = performance.now(); for (const n in m) if (n !== by && SB[n] && m[n].d >= 50 && now - m[n].t <= 5000) SB[n].a = (SB[n].a || 0) + 1; delete SBH[v]; }
 function sbSpend(n, c) { if (c > 0 && SB[n]) SB[n].sp = (SB[n].sp || 0) + c; }
 function sbEcon(p) { return Math.round((p.dmg || 0) * 1000 / Math.max(1, p.sp || 0)); }
-function sbKill(by, victim, hs) { if (XTKILL) { if (SB[victim]) SB[victim].d++; try { delete SBH[victim]; } catch (e) {} return; } try { sbAst(by, victim); } catch (e) {} let r = 0; try { const s = sbScore(); r = s[0] + s[1]; } catch (e) {} if (SB[by]) { SB[by].k++; if (hs) SB[by].hs++; if (sbKill.r !== r) SB[by].fb = (SB[by].fb || 0) + 1; } sbKill.r = r; if (SB[victim]) SB[victim].d++; }
+function sbKill(by, victim, hs) { if (XTKILL) { if (SB[victim]) SB[victim].d++; try { delete SBH[victim]; } catch (e) {} return; } try { sbAst(by, victim); } catch (e) {} let r = 0; try { const s = sbScore(); r = s[0] + s[1]; } catch (e) {} if (SB[by]) { SB[by].k++; if (hs) SB[by].hs++; if (sbKill.r !== r) SB[by].fb = (SB[by].fb || 0) + 1; } sbKill.r = r; if (SB[victim] && by !== "Spike") SB[victim].d++; /* the Spike is no KDA death (wiki Spike, patch 1.11) */ }
 { const e0 = end; end = function (w, text) { try { const m = /^(.+?) defused the spike/i.exec(text || ""); const n = m ? m[1] : /defused/i.test(text || "") && w ? "You" : null; if (n && SB && SB[n]) SB[n].pd = (SB[n].pd || 0) + 1; } catch (e) {} return e0.apply(this, arguments); }; }
 const clk = (t) => { const s = Math.max(0, Math.ceil(t)); return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0"); };
 const setT = (id, v) => { const e = $(id); v = String(v); if (e.textContent !== v) e.textContent = v; };
