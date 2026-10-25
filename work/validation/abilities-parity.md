@@ -75,9 +75,7 @@ Already matching (charges x cost, signature, ult points): Jett (2x200, 1x150, fr
 (1x200, 2x250, 8), Cypher (2x200, 2x100, 7), Chamber (1x200, 8x100 Headhunter, Rendezvous 30 s, 8), Phoenix (1x150,
 1x200, 2x250 Curveball, 2-kill recharge).
 
-Differences NOT changed here (individual effect durations / damage live in each agent's effect code and in the server's
-devices.js / ults.js; each needs its own pass with both sides): e.g. Jett Cloudburst smoke 4.5 s in code vs 2.5 s on
-the wiki; Phoenix Hot Hands zone 4 s vs 3.25 s; Sova Recon / Breach windups. Listed for follow-up rather than changed blind.
+Effect values: see section 4 (Cloudburst, Hot Hands, Nanoswarm fixed on both sides; the rest listed there).
 
 ## 3. First- and third-person ability animations
 
@@ -97,3 +95,20 @@ Runtime: third section of `work/ability_equip_runtime.js` (`xEqView`, `xEqItem`,
   lower), hides the native rig when loaded, shows the hand + item, and that the cast / weapon key restores gun position,
   visibility and rig, with the hand down. The headless harness does not load the native FP rig, so rig hiding is
   browser-verify; the third-person relay pose (`mpFx` -> `xEqTpGo`) is browser-verify too.
+
+## 4. Effect values vs the wiki (cheap fixes)
+
+Changed on both sides (client index.html, server abilities.js / devices.js), tests in `server/test-ability-equip.js` and
+`work/test_ability_equip.cjs`:
+- Jett Cloudburst smoke 4.5 s -> **2.5 s** (player cast, bot Jett, server smoke effect).
+- Phoenix Hot Hands zone 30 dps (client) / 40 dps (server) -> **60 dps** both (wiki: 60/s).
+- Killjoy Nanoswarm active time 4 s -> **5 s** (player, bot Killjoy, server `DEV.nanoswarm.active`).
+
+Still different (not cheap; each needs a client + server mechanic change):
+- Breach Fault Line: wiki is HOLD FIRE to extend the distance, RELEASE to fire (1.1 s windup); here FIRE casts at the
+  fixed length. Needs a hold state in the equip machine (`J.eq`) and a length field in the `ab` intent the server reads.
+- Hot Hands duration: wiki 3.25 s minimum at full size (grows first); here a 4 s full-size zone (kept: the total
+  lifetime is close and the growth phase is not modelled).
+- Per-ability windups (Aftershock 2.2 s, Flashpoint 0.5 s, Curveball 0.6 vs server 0.5, Rolling Thunder 1.2 s, Trapwire
+  0.7 s, Leer 0.4 s, Showstopper 1.4 s, Lockdown 13 s): the equip flow uses a generic 0.2 s release.
+- Sova arrow bounces / charge, Cloudburst hold-to-curve.

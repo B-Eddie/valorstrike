@@ -42,6 +42,7 @@ const fails=[];const fail=s=>{fails.push(s);if(VERBOSE)console.log('FAIL',s);};c
  await adv(400);xe('fcd=0;reloading=0;ammo=Math.max(ammo,5);true');const a1=xe('ammo');await click(0);await adv(100);if(!(xe('ammo')<a1))fail('gun fires again after unequip');
  pick('Sage');xe('player.hp=60;true');await tap('KeyE');await adv(600);await click(2);await adv(500);eq(xe('!!(J.hl&&J.hl.tg===player)'),true,'Sage ALT FIRE heals herself');eq(xe('J.e'),0,'heal spent');
  pick('Jett');await tap('KeyQ');eq(xe('J.eq'),null,'Jett Updraft is INSTANT (no equip)');eq(xe('J.q'),0,'Updraft cast on press');
+ xe('J.cd.c=0;J.c=2;true');const ns=xe('J.smokes.length');await tap('KeyC');eq(xe('J.smokes.length'),ns+1,'Cloudburst INSTANT smoke');const st=xe('J.smokes[J.smokes.length-1].t');if(!(st<=2.5&&st>2.2))fail('Cloudburst lasts 2.5 s (wiki), timer '+st);
  // kit table: client KITS == wiki table == server kits.json (charges, costs, ult points)
  const fs=require('fs'),path=require('path'),wiki=JSON.parse(fs.readFileSync(path.join(__dirname,'validation/abilities-wiki.json'),'utf8')),srv=JSON.parse(fs.readFileSync(path.join(__dirname,'../server/src/kits.json'),'utf8'));
  const kits=xe('JSON.parse(JSON.stringify(KITS))');

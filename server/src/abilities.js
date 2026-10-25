@@ -21,7 +21,7 @@ function castAbility0(sim,u,m){const k=m.k,K=kits[u.agent]||kits.Jett,A=u.abilit
  else if(ty==='dismiss')u.invulnerableUntil=sim.time+2;
  else if(ty==='heal'&&u.agent==='Skye'){A.regrowthActive=true;push('regrowth',3600,18,{rate:20});}
  else if(ty==='heal'){const target=healTarget||u;p.splice(0,3,target.x,target.y,target.z);push('heal',u.agent==='Sage'?5:3,8,{target:u.agent==='Skye'?null:target.id,rate:u.agent==='Sage'?(target===u?10:20):20});}
- else if(ty==='wall'&&u.agent==='Sage'){const x=u.x-Math.sin(u.look)*2.5,z=u.z-Math.cos(u.look)*2.5;p[0]=x;p[1]=u.y;p[2]=z;push('barrier',40,3,{hp:600,yaw:u.look});}else if(ty==='smoke'||ty==='wall')push('smoke',u.agent==='Jett'?4.5:15,SMOKE.radius);
+ else if(ty==='wall'&&u.agent==='Sage'){const x=u.x-Math.sin(u.look)*2.5,z=u.z-Math.cos(u.look)*2.5;p[0]=x;p[1]=u.y;p[2]=z;push('barrier',40,3,{hp:600,yaw:u.look});}else if(ty==='smoke'||ty==='wall')push('smoke',u.agent==='Jett'?2.5:15,SMOKE.radius);
  else if(ty==='flash'||ty==='leer'){p[1]+=1.6;push(ty==='leer'?'leer':'flash',ty==='leer'?2.5:1,ty==='leer'?15:30,{at:sim.time+.35});}
  else if(ty==='shock'||ty==='grenade')push('blast',1.2,4,{damage:ty==='grenade'?100:75,at:sim.time+.65});
  else if(ty==='fire')push('fire',4,4,{rate:40});
