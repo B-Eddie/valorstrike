@@ -11,8 +11,10 @@ const nav=JSON.parse(fs.readFileSync(root+'navigation.json'));
 const nodes=nav.nodes,valid=nav.valid;
 // playable = largest connected component of the valid graph, same as server/src/world.js:
 // valid-but-disconnected islands are NOT coverage - walkers reach them with no nav and get flagged
-const seenC=new Set(),components=[];for(let i=0;i<nodes.length;i++){if(seenC.has(i)||!valid[i])continue;const c=[i];seenC.add(i);for(let k=0;k<c.length;k++)for(const j of nav.adj[c[k]]||[])if(!seenC.has(j)&&valid[j]){seenC.add(j);c.push(j);}components.push(c);}
-components.sort((a,b)=>b.length-a.length);const play=components[0];
+// coverage = every valid node. The nav graphs are fragmented into hundreds of components holding
+// named gameplay regions (B Short, Attacker Side Spawn, teleporter booths): those are intended space
+// with broken connectivity (a nav-data defect), never a reason to fence their boundaries.
+const play=[];for(let i=0;i<nodes.length;i++)if(valid[i])play.push(i);
 // collision BVH clipped to the playable bbox + 3 (same clip as build-world.cjs)
 const min=[0,1,2].map(a=>Math.min(...play.map(i=>nodes[i][a]))-3),max=[0,1,2].map(a=>Math.max(...play.map(i=>nodes[i][a]))+3);
 const P=[],idx=[],vm=new Map();const seen=new Set();
@@ -28,14 +30,19 @@ for(const i of play){const k=CK(nodes[i][0],nodes[i][2]);(cell.get(k)||cell.set(
 const near=(x,z,y,rad,dy)=>{for(let dx=-1;dx<=1;dx++)for(let dz=-1;dz<=1;dz++)for(const i of cell.get((Math.round(x/1.5)+dx)+','+(Math.round(z/1.5)+dz))||[]){const p=nodes[i];if((p[0]-x)**2+(p[2]-z)**2<=rad*rad&&Math.abs(p[1]-y)<=dy)return true;}return false;};
 const inset=new Set(play),edges=[];for(const i of play){for(const j of nav.adj[i]||[]){if(inset.has(j))edges.push([nodes[i],nodes[j]]);}}
 const dropEdges=edges.filter(([A,B])=>Math.abs(A[1]-B[1])>1.2);
-const ecell=new Map(),EK=(x,z)=>Math.round(x/2)+','+Math.round(z/2);
-edges.forEach((e,k)=>{const [[ax,az],[bx,bz]]=[[e[0][0],e[0][2]],[e[1][0],e[1][2]]];
- for(let x=Math.min(ax,bx)-1;x<=Math.max(ax,bx)+1;x+=2)for(let z=Math.min(az,bz)-1;z<=Math.max(az,bz)+1;z+=2){const key=EK(x,z);(ecell.get(key)||ecell.set(key,[]).get(key)).push(k);}});
+const effEdges=edges.filter(([A,B])=>{if(Math.abs(A[1]-B[1])>1.2)return true;
+ const mx=(A[0]+B[0])/2,mz=(A[2]+B[2])/2,g=ground(mx,mz,Math.max(A[1],B[1])+1.8);
+ return !(g<Math.min(A[1],B[1])-1.5&&!near(mx,mz,g,1.3,2.0));});
+const ecell=new Map(),EK=(x,z)=>Math.floor(x/4)+','+Math.floor(z/4);
+effEdges.forEach((e,k)=>{const ax=e[0][0],az=e[0][2],bx=e[1][0],bz=e[1][2];
+ for(let cx=Math.floor((Math.min(ax,bx)-1)/4);cx<=Math.floor((Math.max(ax,bx)+1)/4);cx++)for(let cz=Math.floor((Math.min(az,bz)-1)/4);cz<=Math.floor((Math.max(az,bz)+1)/4);cz++){const key=cx+','+cz;(ecell.get(key)||ecell.set(key,[]).get(key)).push(k);}});
 const nearEdge=(x1,z1,x2,z2,rad)=>{const seen=new Set();
- for(let x=Math.min(x1,x2)-rad;x<=Math.max(x1,x2)+rad;x+=2)for(let z=Math.min(z1,z2)-rad;z<=Math.max(z1,z2)+rad;z+=2)for(const k of ecell.get(EK(x,z))||[]){if(seen.has(k))continue;seen.add(k);const [A,B]=edges[k];if(segDist(A[0],A[2],B[0],B[2],x1,z1,x2,z2)<rad)return true;}return false;};
+ for(let cx=Math.floor((Math.min(x1,x2)-rad-1)/4);cx<=Math.floor((Math.max(x1,x2)+rad+1)/4);cx++)for(let cz=Math.floor((Math.min(z1,z2)-rad-1)/4);cz<=Math.floor((Math.max(z1,z2)+rad+1)/4);cz++)for(const k of ecell.get(cx+','+cz)||[]){if(seen.has(k))continue;seen.add(k);const [A,B]=effEdges[k];if(segDist(A[0],A[2],B[0],B[2],x1,z1,x2,z2)<rad)return true;}return false;};
 const nearDropLink=(x,z,rad)=>{for(const [A,B] of dropEdges)if(segDist(A[0],A[2],B[0],B[2],x,z,x,z)<rad)return true;return false;};
 const segDist=(ax,az,bx,bz,cx,cz,dx,dz)=>{const u=(x1,z1,x2,z2,px,pz)=>{const dx=x2-x1,dz=z2-z1,L=dx*dx+dz*dz||1e-9;let t=((px-x1)*dx+(pz-z1)*dz)/L;t=Math.max(0,Math.min(1,t));return Math.hypot(px-(x1+t*dx),pz-(z1+t*dz));};
  return Math.min(u(ax,az,bx,bz,cx,cz),u(ax,az,bx,bz,dx,dz),u(cx,cz,dx,dz,ax,az),u(cx,cz,dx,dz,bx,bz));};
+const TPLANES={bind:[[[-27.5,8],[13,18]],[[25,20],[-20,20]]]}; // entrance→exit, both ends kept clear
+const tpClear=(x,z)=>!(TPLANES[key]||[]).some(([[ax,az],[bx,bz]])=>Math.hypot(x-ax,z-az)<3||Math.hypot(x-bx,z-bz)<3);
 const fences=[],fcents=[];let porous=0,edgeCut=0;
 const dedupe=(x,z)=>{for(const [fx,fz] of fcents)if((fx-x)**2+(fz-x*0)**2<0.49&&(fz-z)**2<0.49)return true;return false;};
 for(const i of play){const n=nodes[i],y0=ground(n[0],n[2],n[1]+.1);
@@ -64,7 +71,8 @@ for(const i of play){const n=nodes[i],y0=ground(n[0],n[2],n[1]+.1);
    const p=nodes[j];if(Math.abs(p[1]-y0)>2.2)continue;
    if(segDist(e1[0],e1[1],e2[0],e2[1],p[0],p[2],p[0],p[2])<0.55){clash=true;break;}}
   if(clash)continue;
-  if(!drop&&nearEdge(e1[0],e1[1],e2[0],e2[1],0.9)){edgeCut++;continue;} // nav edges crossing a trap rim are the defect, not a reason to skip
+  if(nearEdge(e1[0],e1[1],e2[0],e2[1],0.5)){edgeCut++;continue;} // capsule radius + margin: a sound edge's walking capsule must never touch the fence
+  if(!tpClear(cx,cz2)||!tpClear(e1[0],e1[1])||!tpClear(e2[0],e2[1]))continue;
   if(dedupe(cx,cz2))continue;fcents.push([cx,cz2]);
   const g1=ground(e1[0],e1[1],y0+1.8),g2=ground(e2[0],e2[1],y0+1.8);
   const bot=Math.min(g1,g2,y0)-0.4,top=Math.max(g1,g2,y0)+2.6; // drop fences reach the lower ground so fallen walkers still stop
