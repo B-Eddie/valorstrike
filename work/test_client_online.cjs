@@ -72,9 +72,29 @@ const VERBOSE=!!process.env.VERBOSE,LONG=!!process.env.QA_LONG,T=LONG?{fight:[40
  H.setPhase('online drop');xe(`mpCreate(false,'tdm')`);await until(()=>xe('MP.st')==='room',8000,'room');const code=xe('MP.code');join(code,'FuzzD','Jett','PageQA');await until(()=>xe('(MP.room&&MP.room.pl||[]).length')===2,8000,'joined');xe('mpStart()');
  await until(()=>xe('MP.st')==='game'&&xe('NET.ready'),20000,'start');await step(5000);const room=cluster.room(code);const ws=[...room.sessions].find(([w,s])=>s.u&&s.u.name==='PageQA')[0];ws.close(1001,'Connection idle');room.drop(ws);
  await step(2000);assert.notEqual(xe('MP.st'),'game','page left the match after the server closed the socket');
+ // Slow match load: the page reports loading progress (lp) and keeps its seat past the server's load limit while the
+ // progress moves; when it stalls the server closes the seat as 'Load timed out' and the page says so plainly.
+ // (Limits shortened on the room class for the test; the real ones are 180 s / 120 s stall / 10 min.)
+ H.setPhase('online slow load');xe('try{toLobby()}catch(e){}');await step(200);xe(`mpCreate(false,'tdm')`);await until(()=>xe('MP.st')==='room',8000,'slow-load room');const code2=xe('MP.code');join(code2,'FuzzE','Sova','PageQA');
+ await until(()=>xe('(MP.room&&MP.room.pl||[]).length')===2,8000,'slow-load joined');const GR=cluster.room(code2).constructor,saved={I:GR.IDLE,L:GR.LOAD};GR.IDLE={...GR.IDLE,loading:20000};GR.LOAD={ping:20000,stall:15000,max:120000};
+ try{
+  xe('window.__hold=true;Object.defineProperty(window,"xLdOn",{get(){return window.__hold||window.__xLdOn;},set(v){window.__xLdOn=v;},configurable:true});window.xLdAgFrac=0;true');
+  xe('mpStart()');await until(()=>xe('NET.loadAt>0'),20000,'slow-load start');await step(1000);assert.equal(xe('NET.ready'),false,'page is still loading');
+  const sess=()=>[...cluster.room(code2).sessions.values()].find(s=>s.u&&s.u.name===xe('MP.name'));
+  for(let t=0;t<40000;t+=1000){xe('window.xLdAgFrac=Math.min(1,window.xLdAgFrac+.02);true');await step(1000);}
+  assert(sess(),'seat kept past the load limit while progress moves');assert(sess().loadPing>0&&sess().loadMoved>0,'progress reports reached the server');
+  for(let t=0;t<25000&&sess();t+=1000)await step(1000);
+  assert(!sess(),'stalled load closed');assert.notEqual(xe('MP.st'),'game','page left the match');assert.equal(xe('NET.loadAt'),0);assert(/Loading the match took too long/.test(xe('MP.msg')),'page explains the load timeout: '+xe('MP.msg'));
+ }finally{GR.IDLE=saved.I;GR.LOAD=saved.L;xe('window.__hold=false;delete window.xLdOn;window.xLdOn=window.__xLdOn||false;true');for(const h of humans.splice(0))try{h.leave();}catch(e){}}
+ // The page's own start wait (mpWaitStart) also gave up at 180 s however the load was going: it now waits while the
+ // progress moves and gives up (with the load-timeout message) 120 s after it stalls.
+ {xe('window.__hold=true;Object.defineProperty(window,"xLdOn",{get(){return window.__hold||window.__xLdOn;},set(v){window.__xLdOn=v;},configurable:true});MP.role="client";window.xLdAgFrac=0;window.__ok=0;window.__fail=null;mpWaitStart(()=>window.__ok++,l=>window.__fail=l);true');
+  try{for(let t=0;t<300000;t+=5000){xe('window.xLdAgFrac=Math.min(1,window.xLdAgFrac+.015);true');H.advance(5000);}assert.equal(xe('window.__fail'),null,'a progressing load is not given up at 180 s');
+   H.advance(100000);assert.equal(xe('window.__fail'),null,'not before 120 s of stall');H.advance(25000);assert.equal(xe('window.__fail'),true,'stalled load gives up as a load timeout');assert.equal(xe('window.__ok'),0);}
+  finally{xe('window.__hold=false;delete window.xLdOn;window.xLdOn=window.__xLdOn||false;MP.role=null;true');}}
  const errors=H.errors.slice(errs0),xerr=H.xErrCalls.slice(x0);
  if(errors.length||xerr.length){console.error(JSON.stringify({errors:errors.slice(0,8),xerr:xerr.slice(0,8)},null,1));process.exit(1);}
  if(VERBOSE)console.log(JSON.stringify(report));
- console.log(`Online client soak (page <-> in-process server): ${LONG?'long':'fast'} TDM/DM/Spike, piloted page player kills/deaths ${Object.values(report).map(r=>r.kills+'/'+r.deaths).join(', ')}, respawns, kills, leave/rejoin agent swaps, Spike rounds (${report.five.round}), match end, server disconnect; no page exceptions`);
+ console.log(`Online client soak (page <-> in-process server): ${LONG?'long':'fast'} TDM/DM/Spike, piloted page player kills/deaths ${Object.values(report).map(r=>r.kills+'/'+r.deaths).join(', ')}, respawns, kills, leave/rejoin agent swaps, Spike rounds (${report.five.round}), match end, server disconnect, slow load kept while progressing then closed with a clear message; no page exceptions`);
  process.exit(0);
 })().catch(e=>{console.error(e);console.error(JSON.stringify(H.errors.slice(0,8)));process.exit(1);});
