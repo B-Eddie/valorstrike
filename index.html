@@ -1478,6 +1478,9 @@ body.x-cbh #game{--ha:#3d8bff;--he:#ff9f1c}
 <button type="button" class="x-cmb" id="xCmB" aria-label="Comms wheel: hold, slide, release">COMMS</button>
 <script src="https://unpkg.com/three@0.149.0/build/three.min.js"></script>
 <script src="models/valorant/manifest.js"></script>
+<script src="vendor/game-assets.js"></script>
+<script src="vendor/character-grip.js"></script>
+<script src="models/valorant/grips.js"></script>
 <script src="vendor/valorant-feel.js"></script>
 <script src="models/valorant/weapon-calibration.js"></script>
 <script src="vendor/three-mesh-bvh.umd.js"></script>
@@ -2470,7 +2473,7 @@ function xAoe(b, p, r, n, w) {
 }
 // spectator follow cam: V (or tap SPECTATING) toggles first person / over-the-shoulder, 3 m back, 0.6 m right
 const xTP = { on: false, init: false, x: 0, y: 0, z: 0, yw: 0, d: 3, t: 0, tg: null, o: new THREE.Vector3(), v: new THREE.Vector3(), dir: new THREE.Vector3() };
-function xTPToggle() { xTP.on = !xTP.on; xTP.init = false; try { say(xTP.on ? "Third-person follow cam" : "First-person view", 700); } catch (e) {} }
+function xTPToggle() { xTP.on = !xTP.on; xTP.init = false;if(xKL.sl){xKL.sl.setAttribute("aria-pressed",String(xTP.on));const hint=xKL.sl.querySelector("small");if(hint)hint.textContent="Left / right click or Space to switch · V or tap for "+(xTP.on?"1st":"3rd")+" person";} try { say(xTP.on ? "Third-person follow cam" : "First-person view", 700); } catch (e) {} }
 addEventListener("keydown", (e) => { if (e.code === "KeyV" && !e.repeat && xKL.sp && player && player.hp <= 0) xTPToggle(); });
 function xTPCam(a, dt) {
   const q = a.g.position, ry = a.g.rotation.y, fx = Math.sin(ry), fz = Math.cos(ry), rx = -fz, rz = fx;
@@ -2480,7 +2483,7 @@ function xTPCam(a, dt) {
     const o = xTP.o.set(q.x, (q.y || 0) + 1.75, q.z), dir = xTP.dir.set(-fx * 3 + rx * 0.6, 0.15, -fz * 3 + rz * 0.6), L = dir.length(); dir.normalize();
     XLR.set(o, dir); XLR.far = L; XLH.length = 0; let d = L; try { const h = XLR.intersectObjects(solids, false, XLH); if (h.length) d = Math.max(0.4, h[0].distance - 0.25); else if (xBoxHit(o, xTP.v.copy(dir).multiplyScalar(L).add(o))) d = 1; } catch (e) {}
     xTP.d = d / L * 3; }
-  const k = xTP.d / 3, tx = q.x + (-fx * 3 + rx * 0.6) * k, ty = 1.75 + 0.15 * k, tz = q.z + (-fz * 3 + rz * 0.6) * k, yw = ry + Math.PI;
+  const k = xTP.d / 3, tx = q.x + (-fx * 3 + rx * 0.6) * k, ty = (q.y || 0) + 1.75 + 0.15 * k, tz = q.z + (-fz * 3 + rz * 0.6) * k, yw = ry + Math.PI;
   if (!xTP.init) { xTP.init = true; xTP.x = tx; xTP.y = ty; xTP.z = tz; xTP.yw = yw; }
   const s = Math.min(1, dt * 8); xTP.x += (tx - xTP.x) * s; xTP.y += (ty - xTP.y) * s; xTP.z += (tz - xTP.z) * s; xTP.yw += xAng(yw - xTP.yw) * s;
 }
@@ -2537,7 +2540,7 @@ function xKLog(t, by, d) { const hs = xHS; xHS = false; if (!(d > 0) || !player 
   else if (by === undefined && t !== player && t && t.name && player.hp > 0) { e = xKLe(t.name); if (e) { e.dd += d; e.dh++; if (hs) e.dhs++; } } }
 function xKLui() { if (xKL.el && xKL.el.parentNode && xKL.t && xKL.nm && xKL.w && xKL.dd && xKL.tk && xKL.sn) return; if (xKL.el && xKL.el.parentNode) xKL.el.parentNode.removeChild(xKL.el); if (xKL.sl && xKL.sl.parentNode) xKL.sl.parentNode.removeChild(xKL.sl); const c = document.createElement("div"); c.className = "x-kb"; c.setAttribute("aria-live", "polite");
   c.innerHTML = '<p class="x-kb__h">KILLED BY</p><div class="x-kb__r"><i></i><div><b></b><span></span></div></div><dl class="x-kb__d"><dt>DEALT</dt><dd></dd><dt>TAKEN</dt><dd></dd></dl>';
-  const s = document.createElement("div"); s.className = "x-sp"; s.innerHTML = "<span></span><small>Left / right click or Space to switch · V or tap for 3rd person</small>"; s.querySelector("span").addEventListener("click", (e) => { e.stopPropagation(); xTPToggle(); }); s.querySelector("span").addEventListener("mousedown", (e) => e.stopPropagation()); s.querySelector("span").style.cursor = "pointer"; s.querySelector("span").style.pointerEvents = "auto"; s.style.pointerEvents = "auto";
+  const s = document.createElement("div"); s.className = "x-sp"; s.innerHTML = "<span></span><small>Left / right click or Space to switch · V or tap for 3rd person</small>"; s.setAttribute("role","button");s.setAttribute("aria-label","Toggle third-person spectating");s.tabIndex=0;s.addEventListener("keydown",e=>{if(e.code==="Enter"||e.code==="Space"){e.preventDefault();e.stopPropagation();xTPToggle();}});s.addEventListener("click", (e) => { e.stopPropagation(); xTPToggle(); }); s.addEventListener("mousedown", (e) => e.stopPropagation()); s.querySelector("span").style.cursor = "pointer"; s.querySelector("span").style.pointerEvents = "auto"; s.style.pointerEvents = "auto";
   document.body.appendChild(c); document.body.appendChild(s); xKL.el = c; xKL.sl = s;
   const q = (k) => c.querySelector(k); xKL.t = q("i"); xKL.nm = q("b"); xKL.w = q(".x-kb__r span"); const dd = c.querySelectorAll("dd"); xKL.dd = dd[0]; xKL.tk = dd[1]; xKL.sn = s.querySelector("span"); }
 function xKLfx(on) { try { const cv = renderer.domElement; cv.style.transition = "filter .35s ease-out"; cv.style.filter = on ? "saturate(.12) brightness(.55)" : ""; } catch (e) {} }
@@ -2551,7 +2554,7 @@ function xKLDie(by, w) { if (!xKLm()) return; xKLui(); xKL.on = true; xKL.st = 0
   if (xKL.el) xKL.el.classList.add("on"); xKLfx(true); }
 function xKLReset() { try { if (typeof XOB !== "undefined" && XOB.hm) { XOB.hm.visible = true; XOB.hm = null; } } catch (e) {} xKL.p = player; xKL.n = 0; xKL.st = 0; xKL.on = false; xKL.sp = false; xKL.cur = null; xHS = false; if (xKL.el) { xKL.el.classList.remove("on"); xKL.sl.classList.remove("on"); xKLfx(false); } }
 function xSpec(dt) { if (!xKL.on) return xSpecPick(); xKL.st += dt; if (xKL.st < 2) return null;
-  if (!xKL.sp) { xKL.sp = true; xKLfx(false); xKL.el.classList.remove("on"); xKL.sl.classList.add("on"); }
+  if (!xKL.sp) { xKL.sp = true;if(document.pointerLockElement)document.exitPointerLock(); xKLfx(false); xKL.el.classList.remove("on"); xKL.sl.classList.add("on"); }
   const a = xSpecPick(); if (a !== xKL.cur) { xKL.cur = a; if (xKL.sn) xKL.sn.textContent = a ? "SPECTATING " + String(a.name).toUpperCase() : "NO TEAMMATES ALIVE · SPIKE CAM"; } return a; }
 function xSpecPick() { let n = 0; for (const x of allies) if (x.alive) n++; if (!n) return null; let i = ((xKL.si % n) + n) % n; for (const x of allies) if (x.alive && i-- === 0) return x; return null; }
 addEventListener("mousedown", (e) => { if (xKL.sp && player && player.hp <= 0) { if (e.button === 0) xKL.si++; else if (e.button === 2) xKL.si--; } });
@@ -2681,7 +2684,7 @@ const DIFF = { easy: { spread: 1.8, cd: 1.5, dmg: 0.6, speed: 0.8, rt: 400, ae: 
 const MAG = () => WEAP[wName()].mag;
 score = score || { you: 0, bots: 0 };
 function xPLock() { // touch devices have no mouse pointer to lock; skip, and swallow the async NotAllowedError so it never surfaces as an error toast
-  try { if (matchMedia("(pointer: coarse)").matches) return; const p = renderer.domElement.requestPointerLock(); if (p && p.catch) p.catch(() => {}); } catch (e) {} }
+  try { if (player&&player.hp<=0&&xKL.sp||matchMedia("(pointer: coarse)").matches) return; const p = renderer.domElement.requestPointerLock(); if (p && p.catch) p.catch(() => {}); } catch (e) {} }
 function start() {
   ensureMapBuilt("retake");
   $("pre").style.display = "none"; $("lobby").style.display = "none"; $("result").style.display = "none"; $("game").style.display = "block";
@@ -3019,13 +3022,14 @@ const xo = document.createElement("div"); xo.className = "x-fx";
 xo.innerHTML = '<div class="x-hm" id="xHm"><i></i><i></i><i></i><i></i></div><div class="x-kb" id="xKbn"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" aria-label="Headshot"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2" fill="#fff"/><path d="M12 1v5M12 18v5M1 12h5M18 12h5"/></svg><div><small>ELIMINATED</small><b id="xKn"></b></div><span class="x-kc" id="xKc"></span></div>';
 $("game").appendChild(xo);
 const XDN = []; // pooled damage-number spans (up to 40)
+const xPulses=new WeakMap();
+function xPulse(el,frames,duration){const old=xPulses.get(el);if(old)old.cancel();el.style.animation='none';if(el.animate)xPulses.set(el,el.animate(frames,{duration,easing:'ease-out',fill:'forwards'}));}
 function vmHit(p, dmg, hs, dead) {
-  const hm = $("xHm"); hm.classList.remove("on", "hs"); if (S.hm) { void hm.offsetWidth; hm.classList.add("on"); if (dead && hs) hm.classList.add("hs"); } // Valorant shows no hit marker: opt-in (Settings > Crosshair)
-  const v = p.clone().project(camera), R = renderer.domElement.getBoundingClientRect();
-  if (S.dn && v.z < 1) { // damage numbers: opt-in, off by default like Valorant // perf pass 9: pooled spans stay in the DOM; hidden when idle, display toggled to restart the animation
+  const hm = $("xHm"); if (S.hm) { hm.classList.toggle("hs",!!(dead&&hs));xPulse(hm,[{opacity:1},{opacity:0}],dead&&hs?450:220); } // Valorant shows no hit marker: opt-in (Settings > Crosshair)
+  if (S.dn) {const v = p.clone().project(camera), R = {left:0,top:0,width:innerWidth,height:innerHeight};if(v.z < 1) { // damage numbers: opt-in, off by default like Valorant // perf pass 9: pooled spans stay in the DOM; hidden when idle, display toggled to restart the animation
     let n = XDN.pop(); if (!n) { n = document.createElement("span"); n.style.display = "none"; xo.appendChild(n); }
-    n.className = "x-dn" + (hs ? " hs" : ""); n.textContent = Math.round(dmg); n.style.left = (R.left + (v.x + 1) / 2 * R.width + (Math.random() - 0.5) * 30) + "px"; n.style.top = (R.top + (1 - v.y) / 2 * R.height) + "px"; n.style.display = "none"; void n.offsetWidth; n.style.display = "";
-    const g = n.xG = (n.xG || 0) + 1; setTimeout(() => { if (n.xG !== g) return; n.style.display = "none"; if (XDN.length < 40) XDN.push(n); }, 800); }
+    n.className = "x-dn" + (hs ? " hs" : ""); n.textContent = Math.round(dmg); n.style.left = (R.left + (v.x + 1) / 2 * R.width + (Math.random() - 0.5) * 30) + "px"; n.style.top = (R.top + (1 - v.y) / 2 * R.height) + "px"; n.style.display = "";xPulse(n,[{opacity:1,transform:"translate(-50%,-50%)"},{opacity:0,transform:"translate(-50%,-100%)"}],800);
+    const g = n.xG = (n.xG || 0) + 1; setTimeout(() => { if (n.xG !== g) return; n.style.display = "none"; if (XDN.length < 40) XDN.push(n); }, 800); }}
   if (dead && hs) { blip(1568, 0.22, "sine", 0.22); setTimeout(() => blip(2093, 0.3, "sine", 0.16), 60); }
   else if (!dead) { if (hs) { blip(2637, 0.09, "triangle", 0.26); blip(3951, 0.05, "sine", 0.12); } else blip(1760, 0.03, "square", 0.07); } // body tick / headshot dink
 }
@@ -3041,8 +3045,8 @@ const XKI = { n: 0, t: 0, el: null, s: [], da: [], di: 0 };
   for (let i = 0; i < 4; i++) { const d = document.createElement("div"); d.className = "x-da"; d.setAttribute("aria-hidden", "true"); xo.appendChild(d); XKI.da.push(d); } }
 function xKiReset() { XKI.n = 0; XKI.el.classList.remove("on"); for (const s of XKI.s) s.classList.remove("on", "hs"); if (XKI.em) { XKI.em.classList.remove("hs"); XKI.nb.textContent = "0"; XKI.sg.forEach((g) => g.classList.remove("on", "last")); } }
 function xKiAdd(hs) {
-  if (XKI.n >= 5) xKiReset(); const i = XKI.n++, s = XKI.s[i]; s.classList.toggle("hs", !!hs); s.classList.remove("on"); void s.offsetWidth; s.classList.add("on"); XKI.el.classList.add("on");
-  if (XKI.em) { XKI.nb.textContent = String(XKI.n); XKI.em.classList.toggle("hs", !!hs); XKI.sg.forEach((g, j) => { g.classList.toggle("on", j < XKI.n); g.classList.toggle("last", j === i); }); XKI.el.classList.remove("pop"); void XKI.el.offsetWidth; XKI.el.classList.add("pop"); }
+  if (XKI.n >= 5) xKiReset(); const i = XKI.n++, s = XKI.s[i]; s.classList.toggle("hs", !!hs); s.classList.add("on");xPulse(s,[{transform:"scale(1.7)",opacity:0},{transform:"scale(1)",opacity:1}],220); XKI.el.classList.add("on");
+  if (XKI.em) { XKI.nb.textContent = String(XKI.n); XKI.em.classList.toggle("hs", !!hs); XKI.sg.forEach((g, j) => { g.classList.toggle("on", j < XKI.n); g.classList.toggle("last", j === i); }); xPulse(XKI.em,[{transform:"scale(1.7)",opacity:0},{transform:"scale(1)",opacity:1}],220); }
   clearTimeout(XKI.t); XKI.t = setTimeout(() => XKI.el.classList.remove("on"), 5000);
   const f = 880 * Math.pow(1.122, i); // whole-step rise per kill in the round
   if (hs) { blip(f * 1.5, 0.06, "square", 0.12); blip(f * 2, 0.18, "sine", 0.18); setTimeout(() => blip(f * 3, 0.16, "triangle", 0.12), 45); }
@@ -3056,7 +3060,7 @@ function xDeathFlash(b) {
 function xDmgArc(ax, az) { // screen angle toward the attacker; camera forward (-sin yaw, -cos yaw), right (cos yaw, -sin yaw)
   const dx = ax - camera.position.x, dz = az - camera.position.z, cy = Math.cos(yaw), sy = Math.sin(yaw);
   const a = Math.atan2(dx * cy - dz * sy, -dx * sy - dz * cy), d = XKI.da[XKI.di++ % XKI.da.length];
-  d.classList.remove("on"); d.style.transform = "rotate(" + a.toFixed(3) + "rad)"; void d.offsetWidth; d.classList.add("on");
+  d.style.transform = "rotate(" + a.toFixed(3) + "rad)";d.classList.add("on");xPulse(d,[{opacity:1},{opacity:0}],600);
 }
 { const s0 = start; start = function () { xKiReset(); return s0.apply(this, arguments); }; }
 { const r0 = fRound; fRound = function () { xKiReset(); return r0.apply(this, arguments); }; }
@@ -4069,7 +4073,7 @@ function xVisB(b, dt, now, isAlly) {
     else if (player) { ty = 1.6 - player.ch + player.y; hz = Math.hypot(player.x - P.x, player.z - P.z); } // pEye() inlined: no Vector3 per bot per frame
     const tp = ty === null ? 0 : Math.max(-0.9, Math.min(0.9, Math.atan2(ty - 1.45, Math.max(0.5, hz))));
     b.xap = (b.xap || 0) + (tp - (b.xap || 0)) * Math.min(1, dt * 8);
-    M.xap = b.xap; M.gun.rotation.x = M.ub ? 0 : -b.xap; if (M.hd) M.hd.rotation.x = -b.xap * 0.8; // the CC0 rig pitches its upper spine instead (xUbPost)
+    M.xap = b.xap; if(!M.sx?.grip?.active)M.gun.rotation.x = M.ub ? 0 : -b.xap; if (M.hd) M.hd.rotation.x = -b.xap * 0.8; // the CC0 rig pitches its upper spine instead (xUbPost)
     M.aL.rotation.x = -1.25 - s * 0.18 - b.xap; M.aR.rotation.x = -1.35 + s * 0.12 - b.xap;
     M.bd.position.y = Math.sin(now * 2.2) * 0.008 * (1 - b.xwk) + Math.abs(Math.cos(b.xph)) * 0.03 * b.xwk;
     M.bd.rotation.y = Math.sin(now * 0.7 + b.xph) * 0.04 * (1 - b.xwk);
@@ -9064,7 +9068,7 @@ window.addEventListener("keydown", (e) => { // G: throw the Spike 2 m forward
 // Weapon drops (5v5 / Swiftplay / Spike Rush): a death drops the primary (or sidearm) as a floor gun; pooled ≤16 meshes, cleared every round
 const XD = { L: [], P: [], n: 0, f: 0, geo: null, mat: null, SIDE: { Classic: 1, Shorty: 1, Frenzy: 1, Ghost: 1, Sheriff: 1 },
   R: { Classic: 0, Shorty: 1, Frenzy: 2, Ghost: 3, Sheriff: 4, Stinger: 5, Bucky: 6, Spectre: 7, Judge: 8, Bulldog: 9, Marshal: 10, Ares: 11, Guardian: 12, Odin: 13, Outlaw: 13, Phantom: 14, Vandal: 14, Operator: 15 } };
-const xdOn = () => mode === "five" && !FV.dm;
+const xdOn = () => mode === "five";
 const xdRank = (w) => (w ? (XD.R[w] != null ? XD.R[w] : 5) : -1);
 function xdMesh() {
   if (XD.P.length) return XD.P.pop();
@@ -9094,7 +9098,7 @@ function xdArm(w, am) { // give the player gun w (into the primary or sidearm sl
 }
 function xdLook() { // gun in the crosshair within 2 m
   let b = null, bd = 2.01; const fx = -Math.sin(yaw), fz = -Math.cos(yaw);
-  for (const d of XD.L) { const dx = d.x - player.x, dz = d.z - player.z, r = Math.hypot(dx, dz); if (r < bd && (r < 0.6 || (dx * fx + dz * fz) / r > 0.8)) { b = d; bd = r; } }
+  for (const d of XD.L) { const dx = d.x - player.x, dz = d.z - player.z, r = Math.hypot(dx, dz); if (Math.abs((d.m.position.y||0)-player.y)<1.5&&r < bd && (r < 0.6 || (dx * fx + dz * fz) / r > 0.8)) { b = d; bd = r; } }
   return b;
 }
 function xdUse() { // F: swap the looked-at gun with the one in that slot; yours drops where it lay
@@ -9108,12 +9112,13 @@ addEventListener("keydown", (e) => {
   if (xKbSkip(e) || e.repeat || !running || paused || !player || player.hp <= 0 || !xdOn() || FV.buy > 0) return;
   if (e.code === "KeyF") { if (xdUse()) e.stopImmediatePropagation(); return; }
   if (e.code !== "KeyG") return; const s = FV.sp; if (s && s.st === "carry" && s.c === player) return; // carrying the Spike: G keeps dropping the Spike
+  if(typeof NET!=='undefined'&&NET.socket)return;
   if (rw !== "pri" || !FV.pri) return;
   xdDrop(FV.pri, player.x - Math.sin(yaw) * 1.2, player.z - Math.cos(yaw) * 1.2, { ammo, rsv }); feed("You dropped your " + FV.pri);
   FV.pri = null; slots.pri = {}; rw = "pis"; ammo = slots.pis.ammo; rsv = slots.pis.rsv; reloading = 0; try { onSkin(); setScope(false); } catch (e2) {} updHud();
 }, true);
 function xdTick() {
-  if (!XD.L.length || FV.buy > 0) return;
+  if (!XD.L.length || FV.buy > 0 || typeof NET!=='undefined'&&NET.socket) return;
   if (player && player.hp > 0 && !FV.pri) { for (const d of XD.L) if (!XD.SIDE[d.w] && Math.hypot(d.x - player.x, d.z - player.z) < 0.9) { xdTake(d); xdArm(d.w, d.am); feed("Picked up " + d.w); break; } } // walk over: auto-pickup with no primary
   if (++XD.f % 6) return; // bots: every 6th step
   for (const u of bots.concat(typeof allies !== "undefined" ? allies : [])) {
@@ -9906,7 +9911,7 @@ function pause() {
 }
 function resume() { if (!paused) return; closeAll(); paused = false; $("xPause").classList.remove("on"); clock.getDelta(); if (!FV.menu) relock(); } // buy / free-gun menu still open (paused by alt-tab): keep the cursor free to click it
 function leave() { closeAll(); paused = false; $("xPause").classList.remove("on"); $("xBoard").classList.remove("on"); running = false; if (document.pointerLockElement) document.exitPointerLock(); $("lobbyBtn").onclick(); }
-document.addEventListener("pointerlockchange", () => { if (!document.pointerLockElement && inGame() && !paused && !FV.menu && performance.now() - (FV.mt || 0) > 700) pause(); });
+document.addEventListener("pointerlockchange", () => { if (!document.pointerLockElement && inGame() && player&&player.hp>0 && !paused && !FV.menu && performance.now() - (FV.mt || 0) > 700) pause(); });
 addEventListener("keydown", (e) => {
   if (xKbSkip(e)) return; // rebinding (Esc cancels the row, must not resume) or a key the keymap layer re-sends as its bound action
   if (e.key === "Escape" && FV.menu) { e.stopImmediatePropagation(); return buyMenu(false); }
@@ -10117,7 +10122,7 @@ function xObsTick(force) { const on = xObsShow(); if (XOB.el.classList.contains(
 (window.XHK || (window.XHK = [])).push(() => { try { if ((xKL.on || XOB.hm) && $("game").style.display === "none") xKLReset(); } catch (e) {} });
 { const h0 = xHud; xHud = function () { const r = h0.apply(this, arguments); try { const a = player && player.hp <= 0 && xKL.sp ? xKL.cur : null; if (a && a.alive) { const w = a.w || "Classic", W = WEAP[w] || {}; setT("xWn", w); setT("xMag", a.xAmW === w && a.xAm > 0 ? a.xAm : W.mag || "—"); setT("xRs", W.mag ? W.mag * 3 : "—"); setT("xHp", Math.max(0, Math.ceil(a.hp))); setT("xArm", Math.ceil(a.armor || 0)); } } catch (e) {} return r; }; } // spectated teammate's weapon / ammo / health in the HUD
 // ---- Settings: FPS limit, resolution, render scale, anti-aliasing, aim assist, shadows ----
-const XS = { cap: "auto", res: "std", scale: xLowDev ? "0.8" : "auto", aa: xAA0, aim: "aim", shd: "off" }; // touch: low preset (AA off, 0.8 scale, 512 shadows)
+const XS = { cap: "auto", res: "retina", scale: "1", aa: xAA0, aim: "aim", shd: "off" }; // touch: low preset (AA off, 0.8 scale, 512 shadows)
 // ---- Keybinds: XS.keys maps logical action -> physical code; one capture-phase lookup at the keydown entry translates to the game's default codes ----
 const XKB = [["fwd", "Move forward", "KeyW"], ["back", "Move back", "KeyS"], ["left", "Move left", "KeyA"], ["right", "Move right", "KeyD"], ["walk", "Walk", "ShiftLeft"], ["crouch", "Crouch", "ControlLeft"], ["jump", "Jump", "Space"], ["use", "Use / Interact", "KeyF"], ["abC", "Ability C", "KeyC"], ["abQ", "Ability Q", "KeyQ"], ["abE", "Ability E", "KeyE"], ["abX", "Ultimate X", "KeyX"], ["reload", "Reload", "KeyR"], ["inspect", "Inspect", "KeyY"], ["drop", "Drop Spike", "KeyG"], ["ping", "Ping", "KeyZ"], ["comms", "Comms", "Period"], ["board", "Scoreboard", "Tab"], ["buy", "Buy menu", "KeyB"], ["pri", "Primary", "Digit1"], ["sec", "Secondary", "Digit2"], ["melee", "Melee", "Digit3"]];
 XKB.push(["spray", "Spray", "KeyT"]);
@@ -10272,11 +10277,11 @@ let xAcc = 0;
 const xPRMax = () => { const d = devicePixelRatio || 1, p = Math.min((XS.res === "retina" ? d : 1) * (XS.scale === "auto" ? 1 : +XS.scale), XS.prc || 9); return XS.res !== "retina" && matchMedia("(pointer: coarse)").matches ? Math.min(p, d, 1.5) : p; };
 // adaptive resolution: the user's render scale is the ceiling; drop 0.1 (floor 0.7) under 50 fps, climb back over 58 fps, averaged over 2 s
 let xAdPR = Infinity, xAdT = performance.now(), xAdN = 0;
-const xPR = () => { const m = xPRMax(); return Math.max(Math.min(0.7, m), Math.min(m, xAdPR)); };
+const xPR = () => { const m = xPRMax(); if(XS.scale!=="auto")return m; return Math.max(Math.min(0.7, m), Math.min(m, xAdPR)); };
 function xAdapt() {
   const now = performance.now(); xAdN++; if (now - xAdT < 2000) return;
   const fps = xAdN * 1000 / (now - xAdT); xAdN = 0; xAdT = now;
-  if (!running || paused) return;
+  if (!running || paused || XS.scale !== "auto") { xAdPR = Infinity; return; }
   const m = xPRMax(), cur = xPR(), lo = Math.min(0.7, m);
   if (fps < 50 && cur > lo + 0.001) { xAdPR = Math.max(lo, Math.round((cur - 0.1) * 10) / 10); resize(); }
   else if (fps > 58 && cur < m - 0.001) { const nx = Math.round((cur + 0.1) * 10) / 10; xAdPR = nx >= m ? Infinity : nx; resize(); }
@@ -10383,7 +10388,7 @@ xSeg("xShd", (v) => { XS.shd = v; xApplyShadows(); });
 // VIDEO tab: graphics quality presets over the perf knobs; any individual change after shows CUSTOM
 const xGQP = {
   low: { scale: "0.8", res: "std", prc: 1, shd: "off", shm: 512, aa: false, sky: false, lod: 25 }, // = the existing mobile low preset
-  medium: { scale: "auto", res: "std", prc: 1.5, shd: "map", shm: 1024, aa: true, sky: true, lod: 40 },
+  medium: { scale: "1", res: "retina", prc: 2, shd: "map", shm: 1024, aa: true, sky: true, lod: 40 },
   high: { scale: "1", res: "retina", prc: 2, shd: "all", shm: 2048, aa: true, sky: true, lod: 60 },
 };
 function xSkyApply() { try { const on = XS.sky !== false; scene.traverse((o) => {
@@ -10418,7 +10423,7 @@ try { $("xSTab").querySelectorAll("button").forEach((b) => b.addEventListener("c
   document.querySelectorAll("#mSet [data-sp]").forEach((p) => { p.hidden = p.dataset.sp !== b.dataset.st; });
 })); } catch (e) {}
 XS.cap = (() => { try { const c = localStorage.getItem("vs.cap"); if (c) return c; } catch (e) {} return null; })() || (matchMedia("(pointer: coarse)").matches ? "auto" : "0"); // saved Limit FPS choice, else default: Auto on mobile (60 when still / in menus), Off on desktop
-try { let g = null; try { g = localStorage.getItem("vs.gq"); } catch (e) {} if (!g) g = xLowDev ? "low" : "medium"; if (g === "custom") { xGQUi(); xGQSync(); } else xGQApply(g); } catch (e) {}
+try { let g = null; try { g = localStorage.getItem("vs.gq"); } catch (e) {} if (!g) g = "medium"; if (g === "custom") { xGQUi(); xGQSync(); } else xGQApply(g); } catch (e) {}
 // Aim assist (touch only): slight pull toward the nearest visible enemy head; "Aim and fire" fires while the crosshair is on an enemy
 const xTouch = matchMedia("(pointer: coarse)").matches, xRay = new THREE.Raycaster(), xV = new THREE.Vector3(), xC = new THREE.Vector3(), xD = new THREE.Vector3(), xO = new THREE.Vector2(0, 0);
 let xAF = false;
@@ -12363,10 +12368,7 @@ try { applyBright(); } catch (e) {} // a saved brightness reaches the game canva
 // Models and native clips: Riot Games via Kingdom Archives. Map props: public Ascent port.
 var XV = { config: window.VALORANT_ASSETS || {}, cache: {}, agents: {}, guns: {}, fp: null, fpLoad: null, event: null, failures: {} };
 function xvLoad(name) {
-  if (!XV.cache[name]) XV.cache[name] = new Promise((resolve, reject) => {
-    new THREE.GLTFLoader().load('models/valorant/' + name + '.glb', resolve, undefined, reject);
-  }).catch((e) => { XV.failures[name] = String(e); delete XV.cache[name]; throw e; });
-  return XV.cache[name];
+ if(!XV.cache[name]){const path='models/valorant/'+name+'.glb',begin=performance.now();XV.cache[name]=(window.GameAssets?window.GameAssets.bytes(path).then(bytes=>new Promise((resolve,reject)=>new THREE.GLTFLoader().parse(bytes,'models/valorant/',resolve,reject))):new Promise((resolve,reject)=>new THREE.GLTFLoader().load(path,resolve,undefined,reject))).then(gl=>{(XV.timings||(XV.timings={}))[name]=Math.round(performance.now()-begin);return gl;}).catch(e=>{XV.failures[name]=String(e);delete XV.cache[name];throw e;});}return XV.cache[name];
 }
 function xvFind(root, name) { const clean = (s) => String(s).replace(/[^a-zA-Z0-9_]/g, ''); let found = null; root.traverse((o) => { if (!found && clean(o.name) === clean(name)) found = o; }); return found; }
 function xvConstraints(root, config, fp) {
@@ -12393,7 +12395,7 @@ function xvStatic(gl, config) {
 function xvAgentName(n) { const a = xAgOf(n); return XUB_AG[a] ? a : Object.keys(XUB_AG)[String(n || '').split('').reduce((s,c) => s + c.charCodeAt(0), 0) % 12]; }
 function xvAgentLoad(ag) {
   if (XV.agents[ag]) return XV.agents[ag]; const slug = ag.toLowerCase();
-  return XV.agents[ag] = Promise.all([xvLoad(slug), fetch('models/valorant/' + slug + '-locomotion.json').then((r) => { if (!r.ok) throw new Error('locomotion ' + r.status); return r.json(); })]).then(([gl, data]) => {
+  return XV.agents[ag] = Promise.all([xvLoad(slug), (window.GameAssets?window.GameAssets.json('models/valorant/'+slug+'-locomotion.json'):fetch('models/valorant/' + slug + '-locomotion.json').then((r) => { if (!r.ok) throw new Error('locomotion ' + r.status); return r.json(); }))]).then(([gl, data]) => {
     const C = {}, L = {}, U = {}, A = {}, up = /^(Spine[234]|Neck|Head|[LR]_(Clavicle|Shoulder|Elbow|Hand|Thumb|Index|Middle|Ring|Pinky))/;
     data.forEach((j) => { const c = THREE.AnimationClip.parse(j); c.uuid=THREE.MathUtils.generateUUID(); C[c.name] = c; L[c.name] = new THREE.AnimationClip(c.name + '_L', c.duration, c.tracks.filter((t) => !up.test(t.name))); U[c.name] = new THREE.AnimationClip(c.name + '_U', c.duration, c.tracks.filter((t) => up.test(t.name))); });
     ['Pistol_Shoot','Hit_Chest','Hit_Head'].forEach((n) => { A[n] = THREE.AnimationUtils.makeClipAdditive(U[n].clone()); });
@@ -12428,6 +12430,8 @@ function xvAgent(M, kit) {
 {const create=xAgent;xAgent=function(){const M=create.apply(this,arguments),ag=xvAgentName(M.nm);xvAgentLoad(ag).then(kit=>xvAgent(M,kit)).catch(()=>{});return M;};}
 // Correct only the blended support-foot height after the mixer. Authored jog flight remains airborne.
 {const pre=xUbPre,post=xUbPost;xUbPre=function(M){const X=M.sx;if(X&&X.contactRestore){X.b.pelvis.position.copy(X.contactRestore);X.contactRestore=null;}return pre(M);};xUbPost=function(M){post(M);const X=M.sx;if(!X||!X.nativeContact||X.dd||M.dead||X.air||X.lo||(X.w.plant||0)>.01||!X.contactProbes.length)return;M.m.updateMatrixWorld(true);const v=X.contactV,inv=X.contactInv.copy(X.sc.matrixWorld).invert();let low=Infinity;for(const {o,indices}of X.contactProbes){o.skeleton.update();for(const i of indices){v.fromBufferAttribute(o.geometry.attributes.position,i);o.boneTransform(i,v);v.applyMatrix4(o.matrixWorld).applyMatrix4(inv);low=Math.min(low,v.y);}}let lift=0;const c=X.contactLift,a=X.a.run;if(c&&a&&(X.w.run||0)>.001){const t=a.time%c.times[c.times.length-1];let i=0;while(i<c.times.length-2&&c.times[i+1]<t)i++;const f=(t-c.times[i])/Math.max(.00001,c.times[i+1]-c.times[i]);lift=(c.values[i]*(1-f)+c.values[i+1]*f)*(X.w.run||0);}const dy=X.contactFloor+lift-low;if(!Number.isFinite(dy)||Math.abs(dy)>.5)return;X.contactRestore=X.b.pelvis.position.clone();X.b.pelvis.getWorldPosition(v);const shift=X.contactShift.set(0,1,0).transformDirection(X.sc.matrixWorld).multiplyScalar(Math.abs(dy)*X.sc.getWorldScale(X.contactScale).y);if(dy<0)shift.negate();v.add(shift);X.b.pelvis.position.copy(X.b.pelvis.parent.worldToLocal(v));M.m.updateMatrixWorld(true);};}
+// Gun-specific native hand/finger poses constrain both arms after locomotion blending.
+{const pre=xUbPre,post=xUbPost;xUbPre=function(M){if(M.sx?.grip)M.sx.grip.restore();return pre(M);};xUbPost=function(M){post(M);if(!M.valorant||!window.CharacterGrip||!window.VALORANT_GRIPS)return;const X=M.sx;if(!X.grip)X.grip=new (window.CharacterGrip(THREE).Grip)(M,window.VALORANT_GRIPS[xvAgentName(M.nm)]);X.grip.apply();};}
 // Native first-person rigs and their matching weapon animation clips. The virtual source camera faces +X.
 function xvFPPlay(F, kind, time) {
   const key = kind === 'idle' ? 'Idle' : kind.charAt(0).toUpperCase()+kind.slice(1), a = F.entries.find((e)=>e.Translatable === key) || F.entries.find((e)=>e.Translatable.startsWith(key));
@@ -12502,6 +12506,11 @@ function xvSurfaces(){
   },undefined,e=>{XV.failures['surface/'+key]=String(e);});
 }
 {const go=xGo;xGo=function(){if(!XV.surfaces){XV.surfaces=true;xvSurfaces();}return go.apply(this,arguments);};}
+// Begin character downloads/decoding in the lobby, with only two background jobs.
+function xvWarmWeapon(ag,w){const slug=w==='Knife'?'melee':w.toLowerCase(),cfg=XV.config.weaponAnimations?.[slug],files=[...new Set((cfg?.WEAPONS_ANIMS_JSON?.Animations||[]).concat(cfg?.MODEL_HELD_JSON?.Animations||[]).filter(a=>a.File).map(a=>a.File))];return Promise.all([xvLoad(ag.toLowerCase()+'-fp'),xvLoad(slug),...files.map(f=>xvLoad('animations/'+f))]);}
+function xvWarmLobby(){if(XV.warming)return;XV.warming=true;const selected=J.pick||'Jett',queue=[selected,...Object.keys(XUB_AG).filter(a=>a!==selected)];xvWarmWeapon(selected,'Classic').catch(()=>{});let next=0;const work=async()=>{while(next<queue.length){if(running){await new Promise(r=>setTimeout(r,1000));continue;}const ag=queue[next++];try{await xvAgentLoad(ag);}catch{}await new Promise(r=>setTimeout(r,20));}};work();work();}
+setTimeout(xvWarmLobby,800);
+document.addEventListener('pointerover',e=>{const tile=e.target.closest?.('.x-ag[data-a]');if(tile&&XUB_AG[tile.dataset.a])xvAgentLoad(tile.dataset.a).catch(()=>{});},{passive:true});
 // ---- END VALORANT ASSET INTEGRATION ----
 
 // ---- ORIGINAL VALORANT MAPS ----
@@ -12531,7 +12540,7 @@ async function nmEnsure(key){
   NM.progress.querySelector('small').textContent='Preparing the map…';await new Promise(r=>setTimeout(r,20));if(ticket!==NM.ticket){release();throw new Error('Map selection changed');}
   const collision=new THREE.Mesh(geometry,new THREE.MeshBasicMaterial({side:THREE.DoubleSide,visible:false}));collision.name='native-collision';collision.raycast=MeshBVHLib.acceleratedRaycast;
   const root=xMG();root.name='native-'+key;root.userData.nativeMap=key;root.visible=false;root.add(gl.scene,collision);const M={g:root,solids:[collision],boxes:[],built:1,native:true};
-  gl.scene.traverse(o=>{if(!o.isMesh)return;o.geometry.userData.shared=true;o.castShadow=false;o.receiveShadow=false;const convert=m=>{const terrain=/Floor|Ground|(?:Stone|Brick|Dirt|Gravel|Tile|Grass|Jam|Stairs).*Grass|Grass.*Stone|Blendable.*Gravel/i.test(m.name)&&!/Cards|Decal|Floater/i.test(m.name);const out=new THREE.MeshLambertMaterial({name:m.name,color:m.color,map:m.map,side:THREE.DoubleSide,alphaTest:terrain?0:m.alphaTest||0,transparent:terrain?false:m.transparent,opacity:terrain?1:m.opacity});m.dispose();if(m.map)m.map.anisotropy=Math.min(4,renderer.capabilities.getMaxAnisotropy());return out;};o.material=Array.isArray(o.material)?o.material.map(convert):convert(o.material);});
+  gl.scene.traverse(o=>{if(!o.isMesh)return;o.geometry.userData.shared=true;o.castShadow=false;o.receiveShadow=false;const convert=m=>{const terrain=/Floor|Ground|(?:Stone|Brick|Dirt|Gravel|Tile|Grass|Jam|Stairs).*Grass|Grass.*Stone|Blendable.*Gravel/i.test(m.name)&&!/Cards|Decal|Floater/i.test(m.name);const out=new THREE.MeshLambertMaterial({name:m.name,color:m.color,map:m.map,side:THREE.DoubleSide,alphaTest:terrain?0:m.alphaTest||0,transparent:terrain?false:m.transparent,opacity:terrain?1:m.opacity});m.dispose();if(m.map)m.map.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());return out;};o.material=Array.isArray(o.material)?o.material.map(convert):convert(o.material);});
   const C={key,meta,nav,plants,M,geometry,bvh:geometry.boundsTree,image:new Image(),cells:new Map(),cellSize:2};C.image.src=base+'minimap.png';nmConnected(C);nav.nodes.forEach((p,i)=>{if(!C.playable[i])return;const k=Math.floor(p[0]/2)+','+Math.floor(p[2]/2);if(!C.cells.has(k))C.cells.set(k,[]);C.cells.get(k).push(i);});
   // Only the original playable footprint defines navigation/minimap bounds; vista geometry is still rendered.
   const X=nav.nodes.filter((_,i)=>C.playable[i]).map(p=>p[0]),Z=nav.nodes.filter((_,i)=>C.playable[i]).map(p=>p[2]);C.bounds={x1:Math.min(...X)-3,x2:Math.max(...X)+3,z1:Math.min(...Z)-3,z2:Math.max(...Z)+3};
@@ -12544,7 +12553,7 @@ async function nmEnsure(key){
 function nmConnected(C){const N=C.nav.nodes,A=C.nav.adj,seen=new Uint8Array(N.length);let largest=[];for(let i=0;i<N.length;i++){if(seen[i]||(C.nav.valid&&!C.nav.valid[i]))continue;const q=[i];seen[i]=1;for(let k=0;k<q.length;k++)for(const j of A[q[k]])if(!seen[j]&&(!C.nav.valid||C.nav.valid[j])){seen[j]=1;q.push(j);}if(q.length>largest.length)largest=q;}C.playable=new Uint8Array(N.length);for(const i of largest)C.playable[i]=1;}
 function nmNear(C,x,z,y){let best=-1,bd=Infinity;const gx=Math.floor(x/2),gz=Math.floor(z/2);for(let ring=0;ring<=8;ring++){for(let dx=-ring;dx<=ring;dx++)for(let dz=-ring;dz<=ring;dz++){if(ring&&Math.abs(dx)!==ring&&Math.abs(dz)!==ring)continue;for(const i of C.cells.get((gx+dx)+','+(gz+dz))||[]){const p=C.nav.nodes[i],d=(p[0]-x)**2+(p[2]-z)**2+(Number.isFinite(y)?(p[1]-y)**2*2:0);if(d<bd){bd=d;best=i;}}}if(best>=0&&ring>1&&bd<(ring*2-2)**2)return best;}if(best<0)for(let i=0;i<C.nav.nodes.length;i++){if(C.playable?!C.playable[i]:(C.nav.valid&&!C.nav.valid[i]))continue;const p=C.nav.nodes[i],d=(p[0]-x)**2+(p[2]-z)**2;if(d<bd){best=i;bd=d;}}return best;}
 // Select only nearby upward support. Never snap a falling actor onto a roof above its feet.
-function nmHeight(C,x,z,y){const i=nmNear(C,x,z,Number.isFinite(y)?y:undefined);if(i<0)throw Error('No valid navigation floor');const reference=Number.isFinite(y)?y:C.nav.nodes[i][1],ray=new THREE.Ray(new THREE.Vector3(x,reference+.32,z),new THREE.Vector3(0,-1,0));for(let k=0;k<24;k++){const hit=C.bvh.raycastFirst(ray,THREE.DoubleSide);if(!hit)break;if(hit.face.normal.y>.45)return hit.point.y;ray.origin.y=hit.point.y-.005;}return Number.isFinite(y)?Math.min(reference,C.nav.nodes[i][1]):C.nav.nodes[i][1];}
+function nmHeight(C,x,z,y){const i=nmNear(C,x,z,Number.isFinite(y)?y:undefined);if(i<0)throw Error('No valid navigation floor');const reference=Number.isFinite(y)?y:C.nav.nodes[i][1],ray=new THREE.Ray(new THREE.Vector3(x,reference+.32,z),new THREE.Vector3(0,-1,0));for(let k=0;k<24;k++){const hit=C.bvh.raycastFirst(ray,THREE.DoubleSide);if(!hit)break;if(Math.abs(hit.face.normal.y)>.45)return hit.point.y;ray.origin.y=hit.point.y-.005;}const n=C.nav.nodes[i];return Number.isFinite(y)?Math.hypot(n[0]-x,n[2]-z)<=.65&&n[1]<=reference+.32&&n[1]>=reference-.65?Math.min(reference,n[1]):reference-10:n[1];}
 var NM_Q={box:new THREE.Box3(),line:new THREE.Line3(),p:new THREE.Vector3(),q:new THREE.Vector3(),normal:new THREE.Vector3()};
 function nmBlocked(C,x,z,r,y,height=1.8){if(!Number.isFinite(y))y=nmHeight(C,x,z);const Q=NM_Q,epsilon=.025;Q.line.start.set(x,y+r+epsilon,z);Q.line.end.set(x,y+Math.max(r+epsilon,height-r),z);Q.box.min.set(x-r,y+epsilon,z-r);Q.box.max.set(x+r,y+height,z+r);let blocked=false;
  C.bvh.shapecast({intersectsBounds:b=>b.intersectsBox(Q.box),intersectsTriangle:t=>{if(Math.max(t.a.y,t.b.y,t.c.y)<=y+epsilon)return false;const d=t.closestPointToSegment(Q.line,Q.p,Q.q);if(d<r-.012){blocked=true;return true;}return false;}});return blocked;
@@ -12567,7 +12576,7 @@ function nmNext(C,u,gx,gz){const p=u.g.position,N=C.nav.nodes,s=nmNear(C,p.x,p.z
 // Native scenes are already material-batched; legacy merging/shadow fitting is destructive and wasteful here.
 {const freeze=xFreeze;xFreeze=function(g){if(g&&g.userData.nativeMap){g.updateMatrixWorld(true);return;}return freeze(g);};}
 // Match startup waits for the complete scene and collisions. Failure keeps the map unstarted.
-function nmLaunch(fn,self,args,key){return nmEnsure(key).then(()=>{const result=fn.apply(self,args);nmOverlay(null);return result;});}
+function nmLaunch(fn,self,args,key){return nmEnsure(key).then(()=>{if(typeof BFX!=='undefined'&&!BFX.ok)bfxInit();const result=fn.apply(self,args);nmOverlay(null);return result;});}
 function nmWrap(fn,retake){return function(){let key=retake?'ascent':FV.pick||'ascent';if(key==='random')key=['ascent','bind','haven','split','lotus','breeze'][Math.floor(Math.random()*6)];if(!retake)FV.pick=key;const self=this,args=arguments;return nmLaunch(fn,self,args,key);};}
 startFive=nmWrap(startFive);dmStart0=nmWrap(dmStart0);start=nmWrap(start,true);
 {const build=ensureMapBuilt;ensureMapBuilt=function(n){if(NM.current&&(n==='five'||n==='retake'))return;return build.apply(this,arguments);};}
@@ -12694,25 +12703,26 @@ function xrHitboxes(b,M){
 {const update=xVisB;xVisB=function(b){const r=update.apply(this,arguments);xrHitboxes(b,b&&b.xm);return r;};}
 function xrRagdoll(M){
  M.m.updateMatrixWorld(true);const sc=M.sx.sc,points=[],by=new Map();
- sc.traverse(b=>{if(!b.isBone)return;const p=b.getWorldPosition(new THREE.Vector3());const item={b,p,old:p.clone(),q:b.getWorldQuaternion(new THREE.Quaternion()),parent:null,length:0};points.push(item);by.set(b,item);});
+ sc.traverse(b=>{if(!b.isBone||!/^(Root|Pelvis|Spine[1-4]|Neck|Head|[LR]_(Clavicle|Shoulder|Elbow|Hand|Hip|Knee|Foot|Toe))$/.test(b.name))return;const p=b.getWorldPosition(new THREE.Vector3());const item={b,p,old:p.clone(),q:b.getWorldQuaternion(new THREE.Quaternion()),parent:null,length:0,safe:p.clone()};points.push(item);by.set(b,item);});
  for(const a of points){a.parent=by.get(a.b.parent)||null;if(a.parent)a.length=a.p.distanceTo(a.parent.p);a.children=points.filter(c=>c.b.parent===a.b);a.child=a.children.find(c=>!/Twst|Twist|Helper|Ndl|Weapon|Camera/.test(c.b.name))||a.children[0];if(a.child)a.dir=a.child.p.clone().sub(a.p).normalize();}
- const floor=M.m.position.y;for(const a of points)a.old.x-=.025;return {points,floor,time:0};
+ const floor=M.m.position.y,byName=new Map(points.map(a=>[a.b.name,a])),links=points.filter(a=>a.parent).map(a=>({a,b:a.parent,length:a.length}));for(const [x,y]of [['L_Shoulder','R_Shoulder'],['L_Hip','R_Hip'],['L_Shoulder','R_Hip'],['R_Shoulder','L_Hip'],['L_Clavicle','R_Clavicle'],['Spine4','Pelvis']]){const a=byName.get(x),b=byName.get(y);if(a&&b)links.push({a,b,length:a.p.distanceTo(b.p)});}for(const a of points)a.old.x-=.008;return {points,links,floor,time:0,v:new THREE.Vector3(),d:new THREE.Vector3(),q:new THREE.Quaternion(),tick:0};
 }
 function xrRagdollTick(M,dt){
  const now=performance.now();if(!M.ragStarted)M.ragStarted=now;if(now-M.ragStarted>2800)return false;
  // A slow display must not keep old corpses in physics for minutes.
 
  if(!M.ragdoll){const pose=[];M.sx.sc.traverse(b=>{if(b.isBone)pose.push([b,b.position.clone(),b.quaternion.clone(),b.scale.clone()]);});M.sx.mx.stopAllAction();for(const [b,p,q,s]of pose){b.position.copy(p);b.quaternion.copy(q);b.scale.copy(s);}M.ragdoll=xrRagdoll(M);}
- const R=M.ragdoll;R.time+=dt;const steps=Math.max(1,Math.ceil(Math.min(dt,.05)/(1/120))),h=Math.min(dt,.05)/steps;
+ const R=M.ragdoll;if(R.frozen)return false;for(const a of R.points)a.safe.copy(a.p);R.time+=dt;if((R.tick++%4)===0)for(const a of R.points){try{const floor=groundAt(a.p.x,a.p.z,.08,R.floor+.1);a.floor=Number.isFinite(floor)?floor:R.floor;}catch{a.floor=R.floor;}}const steps=Math.max(1,Math.ceil(Math.min(dt,.05)/(1/120))),h=Math.min(dt,.05)/steps;
  for(let step=0;step<steps;step++){
-  for(const a of R.points){const v=a.p.clone().sub(a.old).multiplyScalar(.985);a.old.copy(a.p);a.p.add(v);a.p.y-=9.81*h*h;let floor=R.floor;try{floor=groundAt(a.p.x,a.p.z,.08,R.floor+.1);}catch(e){}a.floor=floor;}
+  for(const a of R.points){const v=R.v.copy(a.p).sub(a.old).multiplyScalar(.985);if(v.length()>12*h)v.setLength(12*h);a.old.copy(a.p);a.p.add(v);a.p.y-=9.81*h*h;}
   for(let iteration=0;iteration<8;iteration++){
-   for(const a of R.points)if(a.parent&&a.length>1e-5){const d=a.p.clone().sub(a.parent.p),len=d.length();if(len>1e-8){d.multiplyScalar((len-a.length)/len*.5);a.p.sub(d);a.parent.p.add(d);}}
-   for(const a of R.points){const floor=a.floor;const radius=/Head|head/.test(a.b.name)?.12:.045;if(a.p.y<floor+radius){a.p.y=floor+radius;a.old.x+=(a.p.x-a.old.x)*.28;a.old.z+=(a.p.z-a.old.z)*.28;}}
+   for(const link of R.links){const d=R.d.copy(link.a.p).sub(link.b.p),len=d.length();if(len>1e-8){d.multiplyScalar((len-link.length)/len*.5);link.a.p.sub(d);link.b.p.add(d);}}
+   for(const a of R.points){const floor=a.floor??R.floor;const radius=/Head|head/.test(a.b.name)?.12:.045;if(a.p.y<floor+radius){a.p.y=floor+radius;a.old.x+=(a.p.x-a.old.x)*.28;a.old.z+=(a.p.z-a.old.z)*.28;}}
   }
  }
+ if(R.points.some(a=>![a.p.x,a.p.y,a.p.z].every(Number.isFinite)||a.p.distanceTo(a.safe)>2)){for(const a of R.points){a.p.copy(a.safe);a.old.copy(a.safe);}R.frozen=true;return false;}
  // Rebuild each bone from the solved world-space joints, preserving its original roll.
- for(const a of R.points){const parent=a.b.parent;parent.updateWorldMatrix(true,false);a.b.position.copy(parent.worldToLocal(a.p.clone()));let q=a.q.clone();if(a.child&&a.dir){const dir=a.child.p.clone().sub(a.p).normalize();q.premultiply(new THREE.Quaternion().setFromUnitVectors(a.dir,dir));}a.b.quaternion.copy(parent.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(q));a.b.updateMatrixWorld(true);}
+ for(const a of R.points){const parent=a.b.parent;parent.updateWorldMatrix(true,false);a.b.position.copy(parent.worldToLocal(R.v.copy(a.p)));let q=R.q.copy(a.q);if(a.child&&a.dir){const dir=R.d.copy(a.child.p).sub(a.p).normalize();q.premultiply(new THREE.Quaternion().setFromUnitVectors(a.dir,dir));}a.b.quaternion.copy(parent.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(q));a.b.updateMatrixWorld(true);}
  return R.time<2.8;
 }
 {const die=xDie;xDie=function(b){const r=die.apply(this,arguments);if(b&&b.xm&&b.xm.dead){b.xm.diedAt=b.xm.diedAt||performance.now();}return r;};}
@@ -12727,10 +12737,10 @@ var netSkyeState=null,netReyna=null,netChannel=null;
 var NET={url:['localhost','127.0.0.1','[::1]'].includes(location.hostname)?location.protocol+'//'+location.hostname+':8787':'https://valorstrike-game.itsmybirthdayim7.workers.dev',socket:null,host:false,seq:0,ready:false,latest:null};
 MP_V=2;
 function netSend(m){if(NET.socket&&NET.socket.readyState===1)NET.socket.send(JSON.stringify(m));}
-const netReset0=mpReset;mpReset=function(){const ws=NET.socket;NET.socket=null;NET.ready=false;NET.latest=null;netSkyeState=null;netReyna=null;netChannel=null;netReynaClear();netClearEffects();const hud=mpEl('xMpHud');if(hud)hud.style.display='none';netWeapon='';netReload=false;if(ws)try{ws.close();}catch(e){}return netReset0();};
+const netReset0=mpReset;mpReset=function(){const ws=NET.socket;NET.socket=null;NET.ready=false;NET.latest=null;netSkyeState=null;netReyna=null;netChannel=null;netReynaClear();netClearEffects();netSyncDrops([]);const hud=mpEl('xMpHud');if(hud)hud.style.display='none';netWeapon='';netReload=false;if(ws)try{ws.close();}catch(e){}return netReset0();};
 let netSessionToken=null,netTokenRequest=null,netTokenPersistent=true;
 async function netProfileToken(){if(netSessionToken)return netSessionToken;try{netSessionToken=localStorage.getItem('vs.serverToken');}catch(e){}if(netSessionToken)return netSessionToken;if(!netTokenRequest)netTokenRequest=(async()=>{try{const r=await fetch(NET.url+'/profile');if(!r.ok)return null;const p=await r.json();if(typeof p.token!=='string'||!p.token)return null;netSessionToken=p.token;try{localStorage.setItem('vs.serverToken',p.token);}catch(e){netTokenPersistent=false;}return p.token;}catch(e){return null;}finally{netTokenRequest=null;}})();return netTokenRequest;}
-function netConnect(create,code,publicRoom){if(create&&['ascent','bind','haven','split','lotus','breeze','random'].includes(window.xQMap))MP.map=window.xQMap;mpReset();MP.st='conn';mpMsg(create?'Creating server room…':'Joining server room…');mpUI();NET.host=create;const q=new URLSearchParams({code,create:create?'1':'0',mode:MP.mode,map:MP.map==='random'?['ascent','bind','haven','split','lotus','breeze'][Math.floor(Math.random()*6)]:MP.map,public:publicRoom?'1':'0'}),ws=new WebSocket(NET.url.replace('https:','wss:')+'/connect?'+q);NET.socket=ws;MP.code=code;MP.pub=!!publicRoom;MP.loadT=performance.now();ws.onopen=async()=>{const token=await netProfileToken();if(NET.socket===ws)netSend({t:'hi',n:MP.name,ag:J.pick||'Jett',token});};ws.onmessage=e=>{if(NET.socket!==ws)return;let m;try{m=JSON.parse(e.data);}catch(e){return;}MP.last=performance.now();if(m.t==='hello')return;if(m.t==='welcome'){MP.name=String(m.name);MP.me=m.you;const input=mpEl('xOnName');if(input)input.value=MP.name;return;}if(m.t==='room'){MP.on=true;MP.role='client';MP.room=m;MP.mode=m.mode;MP.map=m.map;if(MP.st!=='game'&&MP.st!=='post')MP.st='room';NET.host=!!m.pl.find(p=>p.n===MP.name&&p.h);mpMsg('Connected to game server');return mpUI();}if(m.t==='start'){NET.ready=false;NET.latest=null;MP.hc={open:true,send(m){if(m.t!=='hit'&&(m.t!=='in'||Number.isSafeInteger(m.seq)))netSend(m);}};return mpCliMsg(m);}if(m.t==='s'){NET.latest=m;NET.receivedAt=performance.now();NET.serverAge=Date.now()-m.serverTime;NET.tickMs=m.tickMs;if(NET.ready){mpCliMsg(m);netSyncEffects(m.fx||[]);}return;}if(m.t==='ac'&&m.ag==='Sage'&&m.k==='c')return;if(m.t==='ao'){if(m.rs)mpCliRS(m.rs);if(!m.ok){sgNo();say('Ability unavailable or target invalid',1000);}else if(J.pick==='Omen'&&(m.k==='x'||m.k==='c'))say(m.k==='x'?'From the Shadows · 3 s':'Shrouded Step · 1 s',1000);return;}if(m.t==='po'){MP.ping=Math.max(0,Math.round(performance.now()-m.c));return;}mpCliMsg(m);};ws.onclose=event=>{if(NET.socket!==ws)return;NET.lastClose={code:event.code,reason:event.reason,at:Date.now()};NET.socket=null;const was=MP.st==='game',room=MP.code;mpReset();mpMsg(event.reason==='Connection idle'?'Connection timed out while the client was inactive. Rejoin room '+room+' if another player is still connected.':event.code===1012?'The game server restarted. Join or create a room again.':'Connection to the game server was interrupted. Try rejoining room '+room+'.');if(was)mpExitGame();mpUI();};ws.onerror=()=>mpMsg('Could not reach the game server. Try again shortly.');}
+function netConnect(create,code,publicRoom){if(create&&['ascent','bind','haven','split','lotus','breeze','random'].includes(window.xQMap))MP.map=window.xQMap;mpReset();MP.st='conn';mpMsg(create?'Creating server room…':'Joining server room…');mpUI();NET.host=create;const q=new URLSearchParams({code,create:create?'1':'0',mode:MP.mode,map:MP.map==='random'?['ascent','bind','haven','split','lotus','breeze'][Math.floor(Math.random()*6)]:MP.map,public:publicRoom?'1':'0'}),ws=new WebSocket(NET.url.replace('https:','wss:')+'/connect?'+q);NET.socket=ws;MP.code=code;MP.pub=!!publicRoom;MP.loadT=performance.now();ws.onopen=async()=>{const token=await netProfileToken();if(NET.socket===ws)netSend({t:'hi',n:MP.name,ag:J.pick||'Jett',token});};ws.onmessage=e=>{if(NET.socket!==ws)return;let m;try{m=JSON.parse(e.data);}catch(e){return;}MP.last=performance.now();if(m.t==='hello')return;if(m.t==='welcome'){MP.name=String(m.name);MP.me=m.you;const input=mpEl('xOnName');if(input)input.value=MP.name;return;}if(m.t==='room'){MP.on=true;MP.role='client';MP.room=m;MP.mode=m.mode;MP.map=m.map;if(MP.st!=='game'&&MP.st!=='post')MP.st='room';NET.host=!!m.pl.find(p=>p.n===MP.name&&p.h);mpMsg('Connected to game server');return mpUI();}if(m.t==='start'){NET.ready=false;NET.latest=null;MP.hc={open:true,send(m){if(m.t!=='hit'&&(m.t!=='in'||Number.isSafeInteger(m.seq)))netSend(m);}};return mpCliMsg(m);}if(m.t==='s'){NET.latest=m;NET.receivedAt=performance.now();NET.serverAge=Date.now()-m.serverTime;NET.tickMs=m.tickMs;if(NET.ready){netSyncDrops(m.drops||[]);mpCliMsg(m);netSyncEffects(m.fx||[]);}return;}if(m.t==='ac'&&m.ag==='Sage'&&m.k==='c')return;if(m.t==='ao'){if(m.rs)mpCliRS(m.rs);if(!m.ok){sgNo();say('Ability unavailable or target invalid',1000);}else if(J.pick==='Omen'&&(m.k==='x'||m.k==='c'))say(m.k==='x'?'From the Shadows · 3 s':'Shrouded Step · 1 s',1000);return;}if(m.t==='pickup'){if(m.ok){xdArm(m.w,{ammo:m.ammo,rsv:m.reserve});netWeapon=m.w;}else say('Gun is no longer available or out of reach',900);return;}if(m.t==='po'){MP.ping=Math.max(0,Math.round(performance.now()-m.c));return;}mpCliMsg(m);};ws.onclose=event=>{if(NET.socket!==ws)return;NET.lastClose={code:event.code,reason:event.reason,at:Date.now()};NET.socket=null;const was=MP.st==='game',room=MP.code;mpReset();mpMsg(event.reason==='Connection idle'?'Connection timed out while the client was inactive. Rejoin room '+room+' if another player is still connected.':event.code===1012?'The game server restarted. Join or create a room again.':'Connection to the game server was interrupted. Try rejoining room '+room+'.');if(was)mpExitGame();mpUI();};ws.onerror=()=>mpMsg('Could not reach the game server. Try again shortly.');}
 mpCreate=function(pub,mode){MP.mode=mode||MP.mode;netConnect(true,mpCode(),pub);};
 mpJoin=function(code){code=String(code||'').toUpperCase();if(!/^[A-HJ-NP-Z2-9]{6}$/.test(code)){mpMsg('Enter the six-character room code.');return;}netConnect(false,code,false);};
 mpQuick=async function(mode){MP.mode=mode||MP.mode;mpMsg('Finding a live server room…');try{const r=await fetch(NET.url+'/rooms'),data=await r.json(),room=data.rooms.find(r=>r.mode===MP.mode&&r.players<10&&(window.xQMap==='random'||r.map===(window.xQMap||MP.map)));if(room)netConnect(false,room.code,true);else mpCreate(true,MP.mode);}catch(e){mpMsg('Room list unavailable. Try a private room.');}};
@@ -12775,6 +12785,16 @@ const netSgSl0=sgSl;sgSl=function(u,cq){if(!(NET.socket&&J.pick==='Reyna'&&netRe
 
 // Throw intent carries no damage, victim, position or remaining-knife claims.
 const netThrow0=jThrow;jThrow=function(){if(!(NET.socket&&MP.st==='game'&&MP.m5))return netThrow0.apply(this,arguments);if(!running||player.hp<=0||FV.buy>0||!J.bsOn||J.bs<1||J.cd.x>0)return;J.cd.x=.33;netSend({t:'blade'});kick=1;SFX.ab('bsThrow');};
+
+
+const netDrops=new Map();
+function netSyncDrops(rows){const ids=new Set(rows.map(d=>d.id));for(const [id,d]of netDrops)if(!ids.has(id)){xdTake(d);netDrops.delete(id);}for(const item of rows){let d=netDrops.get(item.id);if(!d){const m=xdMesh();scene.add(m);xdModel(m,item.w);d={id:item.id,w:item.w,m,x:item.p[0],z:item.p[2],am:{ammo:item.ammo,rsv:item.reserve}};XD.L.push(d);netDrops.set(item.id,d);}d.m.position.set(...item.p);}for(const [id,d]of netDrops)if(!ids.has(id)){xdTake(d);netDrops.delete(id);}}
+const netXdDrop0=xdDrop;xdDrop=function(){if(NET.socket)return null;return netXdDrop0.apply(this,arguments);};
+const netXdUse0=xdUse;xdUse=function(){if(!NET.socket)return netXdUse0();const d=xdLook();if(!d||!player||player.hp<=0)return false;netSend({t:'pickup',id:d.id});return true;};window.xdUse=xdUse;
+
+
+const pickupPrompt=document.createElement('button');pickupPrompt.id='gunPickup';pickupPrompt.type='button';pickupPrompt.hidden=true;pickupPrompt.style.cssText='position:fixed;left:50%;top:63%;transform:translateX(-50%);z-index:145;min-height:44px;padding:10px 18px;background:#0f1923e8;border:1px solid #c5e8e1;color:#fff;font:600 13px Arial;cursor:pointer';document.body.append(pickupPrompt);pickupPrompt.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();xdUse();});
+let pickupPromptAt=0;(window.XHK||(window.XHK=[])).push(function pickupHud(){if(performance.now()-pickupPromptAt<100)return;pickupPromptAt=performance.now();const d=running&&!paused&&player?.hp>0&&!(mode==='five'&&FV.menu)?xdLook():null;pickupPrompt.hidden=!d;if(d){const text=(matchMedia('(pointer: coarse)').matches?'PICK UP ':'[F] PICK UP ')+d.w;if(pickupPrompt.textContent!==text)pickupPrompt.textContent=text;}});
 
 // ---- END TRUSTED ONLINE SERVER ----
 

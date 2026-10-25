@@ -1,0 +1,9 @@
+const assert=require('node:assert/strict'),factory=require('../vendor/game-assets');
+(async()=>{const store=new Map(),cache={keys:async()=>[...store.keys()].map(url=>({url})),match:async k=>store.get(k)?.clone(),put:async(k,r)=>store.set(k,r.clone()),delete:async r=>store.delete(r.url)},manifest={'models/valorant/jett.glb':{hash:'one'}},calls=[];let revision=manifest;
+const env={base:'https://game.test/',caches:{open:async()=>cache},fetch:async url=>{calls.push(url);return url.endsWith('asset-cache.json')?Response.json(revision):new Response(new Uint8Array([1,2,3]));}};
+let assets=factory(env);const [a,b]=await Promise.all([assets.bytes('models/valorant/jett.glb'),assets.bytes('models/valorant/jett.glb')]);assert.equal(a.byteLength,3);assert.equal(b.byteLength,3);assert.equal(assets.stats.network,1);assert.equal(store.size,1);assert(calls.some(u=>u.endsWith('jett.glb?v=one')));
+assets=factory(env);await assets.bytes('models/valorant/jett.glb');assert.equal(assets.stats.network,0);assert.equal(assets.stats.hits,1);
+revision={'models/valorant/jett.glb':{hash:'two'}};assets=factory(env);await assets.bytes('models/valorant/jett.glb');assert.equal(store.size,1);assert([...store.keys()][0].endsWith('?v=two'));
+const denied=factory({...env,caches:{open:async()=>{throw Error('denied');}}});await denied.bytes('models/valorant/jett.glb');assert.equal(denied.stats.network,1);
+cache.put=async()=>{throw Error('quota');};revision={'models/valorant/jett.glb':{hash:'three'}};assets=factory(env);assert.equal((await assets.bytes('models/valorant/jett.glb')).byteLength,3);assert.equal(assets.stats.errors,1);
+console.log('Asset bytes: one concurrent download, persistent warm hit across page instances, changed revision invalidates old data, storage denial/quota preserve loading');})().catch(e=>{console.error(e);process.exitCode=1;});

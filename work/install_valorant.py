@@ -35,10 +35,12 @@ s=s.replace('const inSite = (p) => Object.keys(SITES).find((k) => Math.abs(p.x -
 for name in ['p','q']:
  for h in ['1.5','1.6','1.7','1.75']:
   s=s.replace('.set('+name+'.x, '+name+'.y + '+h+', '+name+'.z)', '.set('+name+'.x, ('+name+'.y || 0) + '+h+', '+name+'.z)')
-for src in ['models/valorant/weapon-calibration.js','vendor/valorant-feel.js']:
+for src in ['models/valorant/weapon-calibration.js','vendor/valorant-feel.js','models/valorant/grips.js','vendor/character-grip.js','vendor/game-assets.js']:
  if '<script src="'+src+'"></script>' not in s:s=s.replace('<script src="models/valorant/manifest.js"></script>', '<script src="models/valorant/manifest.js"></script>\n<script src="'+src+'"></script>')
 s=re.sub(r'\n{3,}(?=// ---- VALORANT ASSET INTEGRATION ----)', '\n\n', s)
 # Preserve elevation when handing the visible rig and weapon to corpse animation.
 s=s.replace('c.m.position.set(p.x, 0, p.z)', 'c.m.position.set(p.x, p.y, p.z)')
 s=s.replace('gn.position.set(p.x + Math.sin(ry + 1.2) * 0.7, 0.05, p.z + Math.cos(ry + 1.2) * 0.7)', 'gn.position.set(p.x + Math.sin(ry + 1.2) * 0.7, p.y + 0.05, p.z + Math.cos(ry + 1.2) * 0.7)')
 p.write_text(s)
+import runpy
+runpy.run_path(str(root/'work/build_asset_cache.py'))

@@ -2,10 +2,7 @@
 // Models and native clips: Riot Games via Kingdom Archives. Map props: public Ascent port.
 var XV = { config: window.VALORANT_ASSETS || {}, cache: {}, agents: {}, guns: {}, fp: null, fpLoad: null, event: null, failures: {} };
 function xvLoad(name) {
-  if (!XV.cache[name]) XV.cache[name] = new Promise((resolve, reject) => {
-    new THREE.GLTFLoader().load('models/valorant/' + name + '.glb', resolve, undefined, reject);
-  }).catch((e) => { XV.failures[name] = String(e); delete XV.cache[name]; throw e; });
-  return XV.cache[name];
+ if(!XV.cache[name]){const path='models/valorant/'+name+'.glb',begin=performance.now();XV.cache[name]=(window.GameAssets?window.GameAssets.bytes(path).then(bytes=>new Promise((resolve,reject)=>new THREE.GLTFLoader().parse(bytes,'models/valorant/',resolve,reject))):new Promise((resolve,reject)=>new THREE.GLTFLoader().load(path,resolve,undefined,reject))).then(gl=>{(XV.timings||(XV.timings={}))[name]=Math.round(performance.now()-begin);return gl;}).catch(e=>{XV.failures[name]=String(e);delete XV.cache[name];throw e;});}return XV.cache[name];
 }
 function xvFind(root, name) { const clean = (s) => String(s).replace(/[^a-zA-Z0-9_]/g, ''); let found = null; root.traverse((o) => { if (!found && clean(o.name) === clean(name)) found = o; }); return found; }
 function xvConstraints(root, config, fp) {
@@ -32,7 +29,7 @@ function xvStatic(gl, config) {
 function xvAgentName(n) { const a = xAgOf(n); return XUB_AG[a] ? a : Object.keys(XUB_AG)[String(n || '').split('').reduce((s,c) => s + c.charCodeAt(0), 0) % 12]; }
 function xvAgentLoad(ag) {
   if (XV.agents[ag]) return XV.agents[ag]; const slug = ag.toLowerCase();
-  return XV.agents[ag] = Promise.all([xvLoad(slug), fetch('models/valorant/' + slug + '-locomotion.json').then((r) => { if (!r.ok) throw new Error('locomotion ' + r.status); return r.json(); })]).then(([gl, data]) => {
+  return XV.agents[ag] = Promise.all([xvLoad(slug), (window.GameAssets?window.GameAssets.json('models/valorant/'+slug+'-locomotion.json'):fetch('models/valorant/' + slug + '-locomotion.json').then((r) => { if (!r.ok) throw new Error('locomotion ' + r.status); return r.json(); }))]).then(([gl, data]) => {
     const C = {}, L = {}, U = {}, A = {}, up = /^(Spine[234]|Neck|Head|[LR]_(Clavicle|Shoulder|Elbow|Hand|Thumb|Index|Middle|Ring|Pinky))/;
     data.forEach((j) => { const c = THREE.AnimationClip.parse(j); c.uuid=THREE.MathUtils.generateUUID(); C[c.name] = c; L[c.name] = new THREE.AnimationClip(c.name + '_L', c.duration, c.tracks.filter((t) => !up.test(t.name))); U[c.name] = new THREE.AnimationClip(c.name + '_U', c.duration, c.tracks.filter((t) => up.test(t.name))); });
     ['Pistol_Shoot','Hit_Chest','Hit_Head'].forEach((n) => { A[n] = THREE.AnimationUtils.makeClipAdditive(U[n].clone()); });
@@ -67,6 +64,8 @@ function xvAgent(M, kit) {
 {const create=xAgent;xAgent=function(){const M=create.apply(this,arguments),ag=xvAgentName(M.nm);xvAgentLoad(ag).then(kit=>xvAgent(M,kit)).catch(()=>{});return M;};}
 // Correct only the blended support-foot height after the mixer. Authored jog flight remains airborne.
 {const pre=xUbPre,post=xUbPost;xUbPre=function(M){const X=M.sx;if(X&&X.contactRestore){X.b.pelvis.position.copy(X.contactRestore);X.contactRestore=null;}return pre(M);};xUbPost=function(M){post(M);const X=M.sx;if(!X||!X.nativeContact||X.dd||M.dead||X.air||X.lo||(X.w.plant||0)>.01||!X.contactProbes.length)return;M.m.updateMatrixWorld(true);const v=X.contactV,inv=X.contactInv.copy(X.sc.matrixWorld).invert();let low=Infinity;for(const {o,indices}of X.contactProbes){o.skeleton.update();for(const i of indices){v.fromBufferAttribute(o.geometry.attributes.position,i);o.boneTransform(i,v);v.applyMatrix4(o.matrixWorld).applyMatrix4(inv);low=Math.min(low,v.y);}}let lift=0;const c=X.contactLift,a=X.a.run;if(c&&a&&(X.w.run||0)>.001){const t=a.time%c.times[c.times.length-1];let i=0;while(i<c.times.length-2&&c.times[i+1]<t)i++;const f=(t-c.times[i])/Math.max(.00001,c.times[i+1]-c.times[i]);lift=(c.values[i]*(1-f)+c.values[i+1]*f)*(X.w.run||0);}const dy=X.contactFloor+lift-low;if(!Number.isFinite(dy)||Math.abs(dy)>.5)return;X.contactRestore=X.b.pelvis.position.clone();X.b.pelvis.getWorldPosition(v);const shift=X.contactShift.set(0,1,0).transformDirection(X.sc.matrixWorld).multiplyScalar(Math.abs(dy)*X.sc.getWorldScale(X.contactScale).y);if(dy<0)shift.negate();v.add(shift);X.b.pelvis.position.copy(X.b.pelvis.parent.worldToLocal(v));M.m.updateMatrixWorld(true);};}
+// Gun-specific native hand/finger poses constrain both arms after locomotion blending.
+{const pre=xUbPre,post=xUbPost;xUbPre=function(M){if(M.sx?.grip)M.sx.grip.restore();return pre(M);};xUbPost=function(M){post(M);if(!M.valorant||!window.CharacterGrip||!window.VALORANT_GRIPS)return;const X=M.sx;if(!X.grip)X.grip=new (window.CharacterGrip(THREE).Grip)(M,window.VALORANT_GRIPS[xvAgentName(M.nm)]);X.grip.apply();};}
 // Native first-person rigs and their matching weapon animation clips. The virtual source camera faces +X.
 function xvFPPlay(F, kind, time) {
   const key = kind === 'idle' ? 'Idle' : kind.charAt(0).toUpperCase()+kind.slice(1), a = F.entries.find((e)=>e.Translatable === key) || F.entries.find((e)=>e.Translatable.startsWith(key));
@@ -141,4 +140,9 @@ function xvSurfaces(){
   },undefined,e=>{XV.failures['surface/'+key]=String(e);});
 }
 {const go=xGo;xGo=function(){if(!XV.surfaces){XV.surfaces=true;xvSurfaces();}return go.apply(this,arguments);};}
+// Begin character downloads/decoding in the lobby, with only two background jobs.
+function xvWarmWeapon(ag,w){const slug=w==='Knife'?'melee':w.toLowerCase(),cfg=XV.config.weaponAnimations?.[slug],files=[...new Set((cfg?.WEAPONS_ANIMS_JSON?.Animations||[]).concat(cfg?.MODEL_HELD_JSON?.Animations||[]).filter(a=>a.File).map(a=>a.File))];return Promise.all([xvLoad(ag.toLowerCase()+'-fp'),xvLoad(slug),...files.map(f=>xvLoad('animations/'+f))]);}
+function xvWarmLobby(){if(XV.warming)return;XV.warming=true;const selected=J.pick||'Jett',queue=[selected,...Object.keys(XUB_AG).filter(a=>a!==selected)];xvWarmWeapon(selected,'Classic').catch(()=>{});let next=0;const work=async()=>{while(next<queue.length){if(running){await new Promise(r=>setTimeout(r,1000));continue;}const ag=queue[next++];try{await xvAgentLoad(ag);}catch{}await new Promise(r=>setTimeout(r,20));}};work();work();}
+setTimeout(xvWarmLobby,800);
+document.addEventListener('pointerover',e=>{const tile=e.target.closest?.('.x-ag[data-a]');if(tile&&XUB_AG[tile.dataset.a])xvAgentLoad(tile.dataset.a).catch(()=>{});},{passive:true});
 // ---- END VALORANT ASSET INTEGRATION ----
