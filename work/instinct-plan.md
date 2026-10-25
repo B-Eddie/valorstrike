@@ -72,3 +72,14 @@ All 12 user-list items now have shipped fixes on instinct. Remaining: ledger 13-
   7 kits loaded for a 7-name DM roster, 5 non-participant kits skipped, 6s start, zero errors.
   texcap hook hardened + unit-tested (181e563): option/orientation/alpha preservation, probe
   closure, resize-failure fallback to full-size probe, Safari/Firefox no-cap path explicit.
+
+## Ability matrix anomaly under investigation (2026-10-25 ~03:08)
+- ability-matrix.cjs: 12-agent C/Q/E/X smoke in one 5v5. All 12 agents' abilities are wired
+  (okKey/rsKey/bcKey/cyKey dispatch exists) and fire individually (diag probes: Breach E,
+  Chamber E anchor, Killjoy C, Skye C, Cypher C all consume charges, zero errors).
+- ANOMALY: after Omen's full C/Q/E/X sequence (X leaves J.ftp minimap-targeting active,
+  ult unspent), subsequent agents' ability keys stop consuming charges - even after
+  clearing J.ftp/fts/dr/om/nano state via evaluate. Not yet explained: keydown reaches
+  jKey in earlier iterations; no page errors; charges read back at reset values.
+  Next: read keys{} capture or instrument whether jKey runs at all post-Omen-X;
+  check FV.menu / xDr overlay / minimap pointerEvents side effects.
