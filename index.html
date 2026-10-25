@@ -4547,7 +4547,7 @@ const X_ALL_AG = ["Jett", "Phoenix", "Sova", "Sage", "Reyna", "Omen", "Killjoy",
 const xDraw = (n, ex) => { const p = X_ALL_AG.filter((a) => a !== "Cypher" && !ex.includes(a)); for (let i = p.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [p[i], p[j]] = [p[j], p[i]]; }
   const r = p.slice(0, n), k = r.indexOf("Killjoy"); if (!ex.includes("Cypher") && k >= 0 && p.indexOf("Sage") >= n) r[k] = "Cypher"; return r; }; // Cypher shares the Killjoy slot (same random draws as the 11-agent pool)
 const FIVE_WIN = 13, F_MATES = xDraw(4, ["Jett"]), F_EN = xDraw(5, []);
-let xTmLocked = false, xTmPreDrawn = false;
+let xTmLocked = false, xTmPreDrawn = false, xSmPreDrawn = false;
 // match start: random unique agents per bot team; the player's agent never on the player's team (names = agent names)
 function xBuildTeams() { let me = "Jett"; try { me = J.pick || "Jett"; } catch (e) {}
   if (xTmPreDrawn) { xTmPreDrawn = false; if (F_MATES.length === 4 && !F_MATES.includes(me) && new Set(F_MATES).size === 4 && F_EN.length === 5 && new Set(F_EN).size === 5 && !F_EN.some((n) => n === me || F_MATES.includes(n))) return; } // readiness-gate pre-draw: this exact roster was kit-gated, keep it for the match
@@ -4594,6 +4594,7 @@ function fEco() { // match start and side swap: everyone back to 800 and a Class
 function xChHH(n) { try { return (n === "Chamber" || (typeof xAgOf === "function" && xAgOf(n) === "Chamber")) && !!(KITS.Chamber && KITS.Chamber.n.includes("Headhunter")); } catch (e) { return false; } }
 // Retake 3v3 / Rifle 2v2: random unique bot agents from the full list (same xDraw as 5v5); allies never the player's agent
 function xRollSmall() { let me = "Jett"; try { me = J.pick || "Jett"; } catch (e) {}
+  if (xSmPreDrawn) { xSmPreDrawn = false; if (names.length === 3 && new Set(names).size === 3 && !names.includes(me) && MATES.length === 2 && !MATES.includes(me) && MATES[0] !== MATES[1] && !MATES.some((n) => names.includes(n))) return; } // readiness-gate pre-draw: keep the kit-gated roster
   names.splice(0, names.length, ...xDraw(3, []));
   const ok = xTmLocked && MATES.length === 2 && !MATES.includes(me) && MATES[0] !== MATES[1];
   if (!ok) MATES.splice(0, MATES.length, ...xDraw(2, [me])); }
@@ -11411,7 +11412,7 @@ try { const v1 = vmTick; vmTick = function (dt) { v1(dt); try { fpaTick(); } cat
 // loading screen: the loader script further down cannot reach this IIFE's functions (its agentSelect / window.startSR wraps were silent no-ops), so the match starts hand themselves to window.xMatchLoad here
 { const xLd = (fn, name) => function () { const a = arguments, self = this, L = window.xMatchLoad; if (typeof L !== "function") return fn.apply(self, a); if(window.xQPick){FV.pick=window.xQPick;window.xQPick=null;}return L(() => fn.apply(self, a), FV.pick, name, true); };
   const ag0 = agentSelect; agentSelect = function (go) { return ag0(xLd(go)); };
-  startSR = xLd(startSR, "SPIKE RUSH"); startTDM = xLd(startTDM, "TEAM DEATHMATCH"); startDM = xLd(startDM, "DEATHMATCH"); startDuel = xLd(startDuel, "OPERATOR DUEL"); } // duel spawns a native agent too: it takes the same readiness gate
+  startSR = xLd(startSR, "SPIKE RUSH"); startTDM = xLd(startTDM, "TEAM DEATHMATCH"); startDM = xLd(startDM, "DEATHMATCH"); startDuel = xLd(startDuel, "OPERATOR DUEL"); startRifle = xLd(startRifle, "RIFLE 2V2"); startSurf = xLd(startSurf, "SURF"); startAim = xLd(startAim, "AIM PRACTICE"); start = xLd(start, "RETAKE"); } // every bot-spawning or player-kit start rides the readiness gate // duel spawns a native agent too: it takes the same readiness gate
 // ---- ONLINE MULTIPLAYER (P2P, PeerJS): host-authoritative DM / TDM. Host runs the sim (bots fill empty slots); clients send
 // inputs + shots at 30 Hz, get 20 Hz snapshots (100 ms interpolation) and predict their own movement. Inert unless MP.on. ----
 const MP = { on: false, role: null, st: "idle", pub: false, mode: "tdm", map: "ascent", code: "", peer: null, hc: null, conns: new Map(), name: "", me: -1, team: 0, sq: 0, ping: 0,
@@ -12488,13 +12489,24 @@ function xvReadyAgents(list) {
 // names from X_ALL_AG; anything else resolves through xvAgentName's deterministic hash), so
 // the gate loads the roster's kits instead of all 12. Online (MP.on) loads all 12: a late
 // join can bring any agent, and native opponents must never spawn invisible.
-function xvRoster() {
+function xvRoster(mode) {
   try {
-    if (typeof MP !== 'undefined' && MP && MP.on) return null;
+    if (typeof MP !== 'undefined' && MP && MP.on) return null; // online: a late join can bring any agent
+    const me = (window.J && J.pick) || 'Jett';
+    // Untagged starts come through agentSelect(go) and can be 5v5 OR retake: the roster
+    // kind is unknowable at the gate, so load all 12 rather than risk invisible opponents.
+    if (!mode) return null;
+    if (mode === 'SURF' || mode === 'AIM PRACTICE') return [me]; // no bots: player kit only
+    if (mode === 'OPERATOR DUEL') return [me, 'Chamber']; // duel's fixed opponent
+    if (mode === 'RETAKE' || mode === 'RIFLE 2V2') {
+      if (typeof xRollSmall !== 'function' || typeof names === 'undefined' || typeof MATES === 'undefined') return null;
+      xRollSmall(); // draws if needed; xSmPreDrawn makes the mode start keep this exact roster
+      try { xSmPreDrawn = true; } catch (e) {}
+      return [me].concat(names, MATES);
+    }
     if (typeof xBuildTeams !== 'function' || typeof F_EN === 'undefined' || typeof F_MATES === 'undefined') return null;
     xBuildTeams(); // draws if needed; xTmPreDrawn makes the mode start keep this exact roster
     try { xTmPreDrawn = true; } catch (e) {}
-    const me = (window.J && J.pick) || 'Jett';
     const set = new Set([me, 'Chamber']); // Chamber: Operator Duel's fixed opponent
     F_EN.forEach((n) => set.add(n)); F_MATES.forEach((n) => set.add(n));
     return [...set];
@@ -12684,7 +12696,7 @@ setTimeout(() => {
     const wrapped = function (fn, map, mode, sync) {
       return prev(function () {
         XV.preloading = 'abort';
-        return xvReadyAgents(xvRoster()).then(fn);
+        return xvReadyAgents(xvRoster(mode)).then(fn);
       }, map, mode, sync);
     };
     wrapped.xvWrapped = 1;

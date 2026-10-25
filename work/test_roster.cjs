@@ -11,8 +11,10 @@ function mk(env){
     XUB_AG, MP:env.mp?{on:true}:{on:false},
     F_EN:(env.en||['Phoenix','Sova','Sage','Reyna','Raze']).slice(),
     F_MATES:(env.mates||['Omen','Killjoy','Breach','Skye']).slice(),
-    xTmPreDrawn:false,
+    xTmPreDrawn:false, xSmPreDrawn:false,
     xBuildTeams(){ sb.xTmPreDrawn_called=(sb.xTmPreDrawn_called||0)+1; },
+    names:(env.names||[]).slice(), MATES:(env.mates2||[]).slice(),
+    xRollSmall(){ sb.xSm_called=(sb.xSm_called||0)+1; },
     xvAgentLoad(ag){ loaded.push(ag); return Promise.resolve({ag}); },
     xvAgentName(n){ return XUB_AG[n]?n:Object.keys(XUB_AG)[String(n||'').split('').reduce((t,c)=>t+c.charCodeAt(0),0)%12]; },
   };
@@ -24,14 +26,14 @@ function mk(env){
 (async()=>{
   // 1. roster = pick + Chamber + drawn teams, mapped+deduped; pre-draw flag raised
   { const {sb,loaded}=mk({});
-    const r=sb.__r.roster();
+    const r=sb.__r.roster('DEATHMATCH');
     assert.equal(sb.xTmPreDrawn,true); assert.equal(sb.xTmPreDrawn_called,1);
-    assert.deepEqual(new Set(r),new Set(['Jett','Chamber','Phoenix','Sova','Sage','Reyna','Raze','Omen','Killjoy','Breach','Skye']));
+    assert.deepEqual(new Set([...r]),new Set(['Jett','Chamber','Phoenix','Sova','Sage','Reyna','Raze','Omen','Killjoy','Breach','Skye']));
     await sb.__r.ready(r);
     assert.equal(loaded.length,11); assert(!loaded.includes('Cypher')); }
   // 2. MP.on -> null roster -> all 12 kits
   { const {sb,loaded}=mk({mp:true});
-    assert.equal(sb.__r.roster(),null);
+    assert.equal(sb.__r.roster('DEATHMATCH'),null);
     await sb.__r.ready(sb.__r.roster());
     assert.equal(loaded.length,12); }
   // 3. non-native names map through xvAgentName and dedupe
@@ -41,7 +43,16 @@ function mk(env){
   // 4. empty/invalid list falls back to all 12
   { const {sb,loaded}=mk({});
     await sb.__r.ready([]); assert.equal(loaded.length,12); }
-  // 5. readiness failure rejects after retry (gate aborts the start: no invisible opponents)
+  // 5. mode-aware rosters: untagged (agentSelect-routed) -> all 12; SURF/AIM -> player only; DUEL -> +Chamber; RETAKE/RIFLE -> small roster
+  { const {sb,loaded}=mk({names:['Phoenix','Sova','Sage'],mates2:['Skye','Omen']});
+    assert.equal(sb.__r.roster(undefined),null);
+    assert.deepEqual([...sb.__r.roster('SURF')],['Jett']);
+    assert.deepEqual(new Set([...sb.__r.roster('OPERATOR DUEL')]),new Set(['Jett','Chamber']));
+    const rr=[...sb.__r.roster('RETAKE')];
+    assert.deepEqual(new Set(rr),new Set(['Jett','Phoenix','Sova','Sage','Skye','Omen']));
+    assert.equal(sb.xSmPreDrawn,true);
+    await sb.__r.ready(rr); assert.equal(loaded.length,6); }
+  // 6. readiness failure rejects after retry (gate aborts the start: no invisible opponents)
   { const {sb}=mk({}); vm.runInContext('let __n=0; xvAgentLoad=()=>{__n++;globalThis.__n=__n;return Promise.reject(new Error("net"))};',sb);
     await assert.rejects(sb.__r.ready(['Jett'])); assert.equal(sb.__n,2); }
   console.log('participant roster: scoped set, MP all-12 fallback, name mapping/dedupe, retry-then-reject all pass');

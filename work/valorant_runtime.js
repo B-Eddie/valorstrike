@@ -92,13 +92,24 @@ function xvReadyAgents(list) {
 // names from X_ALL_AG; anything else resolves through xvAgentName's deterministic hash), so
 // the gate loads the roster's kits instead of all 12. Online (MP.on) loads all 12: a late
 // join can bring any agent, and native opponents must never spawn invisible.
-function xvRoster() {
+function xvRoster(mode) {
   try {
-    if (typeof MP !== 'undefined' && MP && MP.on) return null;
+    if (typeof MP !== 'undefined' && MP && MP.on) return null; // online: a late join can bring any agent
+    const me = (window.J && J.pick) || 'Jett';
+    // Untagged starts come through agentSelect(go) and can be 5v5 OR retake: the roster
+    // kind is unknowable at the gate, so load all 12 rather than risk invisible opponents.
+    if (!mode) return null;
+    if (mode === 'SURF' || mode === 'AIM PRACTICE') return [me]; // no bots: player kit only
+    if (mode === 'OPERATOR DUEL') return [me, 'Chamber']; // duel's fixed opponent
+    if (mode === 'RETAKE' || mode === 'RIFLE 2V2') {
+      if (typeof xRollSmall !== 'function' || typeof names === 'undefined' || typeof MATES === 'undefined') return null;
+      xRollSmall(); // draws if needed; xSmPreDrawn makes the mode start keep this exact roster
+      try { xSmPreDrawn = true; } catch (e) {}
+      return [me].concat(names, MATES);
+    }
     if (typeof xBuildTeams !== 'function' || typeof F_EN === 'undefined' || typeof F_MATES === 'undefined') return null;
     xBuildTeams(); // draws if needed; xTmPreDrawn makes the mode start keep this exact roster
     try { xTmPreDrawn = true; } catch (e) {}
-    const me = (window.J && J.pick) || 'Jett';
     const set = new Set([me, 'Chamber']); // Chamber: Operator Duel's fixed opponent
     F_EN.forEach((n) => set.add(n)); F_MATES.forEach((n) => set.add(n));
     return [...set];
@@ -288,7 +299,7 @@ setTimeout(() => {
     const wrapped = function (fn, map, mode, sync) {
       return prev(function () {
         XV.preloading = 'abort';
-        return xvReadyAgents(xvRoster()).then(fn);
+        return xvReadyAgents(xvRoster(mode)).then(fn);
       }, map, mode, sync);
     };
     wrapped.xvWrapped = 1;
