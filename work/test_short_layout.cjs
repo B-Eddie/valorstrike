@@ -20,7 +20,7 @@ assert(/<div id="pre">[\s\S]*?<div class="row"><button class="play" id="preGo">G
 // (b) agent select
 const ag=find('#xAg'),agm=find('#xAg>.x-agm'),agc=find('#xAg>.x-agc'),lk=find('#xAg>#xAgL');
 assert(ag&&agm&&agc&&lk,'#xAg short-screen rules missing');
-assert.equal(decl(ag,'overflow-y'),'auto');assert.equal(decl(ag,'justify-content'),'flex-start');assert.equal(decl(agm,'flex'),'none');assert.equal(decl(lk,'position'),'sticky');
+assert.equal(decl(ag,'overflow-y'),'auto');assert(+decl(agc,'order')<+decl(agm,'order')&&+decl(agm,'order')<+decl(lk,'order'),'cards must come before details on short screens');assert.equal(decl(ag,'justify-content'),'flex-start');assert.equal(decl(agm,'flex'),'none');assert.equal(decl(lk,'position'),'sticky');
 assert(/<div id="xAg"[\s\S]*?id="xAgL"/.test(html),'LOCK IN button #xAgL missing from #xAg');
 // Cascade: no later unconditional rule with the same selector may override a property the short rule sets.
 for(const r of short){for(const sel of r.sel.split(',').map(s=>s.trim())){if(!/^#(pre|xAg)/.test(sel))continue;

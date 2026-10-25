@@ -374,7 +374,7 @@ button{font:inherit;text-transform:inherit;letter-spacing:inherit;cursor:pointer
 .x-lk{align-self:center;background:#d8fff4;color:#0f1923;border-radius:0;padding:16px 0;width:min(320px,90%);font-size:22px;letter-spacing:.3em}
 .x-lk:hover:not(:disabled){background:#ffffff}
 @media(max-width:800px){.x-agp{grid-template-columns:1fr}.x-agc{max-width:100%}.x-agc .x-ag{width:68px;height:56px}.x-agc .x-ag i{font-size:20px}}
-@media (max-height:560px){#xAg{justify-content:flex-start;overflow-y:auto}#xAg>.x-agm{flex:none;min-height:auto}#xAg>.x-agc{flex:none}#xAg>#xAgL{position:sticky;bottom:0;z-index:2;flex:none;box-shadow:0 -10px 18px rgba(12,20,28,.85)}} /* agent select on short screens: details no longer overlap the cards and LOCK IN */
+@media (max-height:560px){#xAg{justify-content:flex-start;overflow-y:auto}#xAg>.x-agm{flex:none;min-height:auto;order:1}#xAg>.x-agc{flex:none;order:0}#xAg>#xAgL{position:sticky;bottom:0;z-index:2;flex:none;order:2;box-shadow:0 -10px 18px rgba(12,20,28,.85)}#xAg .x-agc .x-ag small{font-size:9px;overflow:hidden;text-overflow:clip;max-width:100%}} /* agent select on short screens: agent cards first, details scroll below them, LOCK IN stays reachable */
 .x-ab{left:50%;bottom:52px;transform:translateX(-50%);display:none;gap:8px}
 .x-ab.on{display:flex}
 #game #xWh{position:fixed;inset:0;background:radial-gradient(circle,#fff 0,#fff 45%,#f2f6ff 100%);opacity:0;pointer-events:none;z-index:6}
