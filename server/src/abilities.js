@@ -38,7 +38,9 @@ export function sightClear(sim,o,p){const q=p.map((n,i)=>n-o[i]),len=Math.hypot(
 function clearEffect(sim,e,v){const o=[e.p[0],e.p[1]+.4,e.p[2]],q=[v.x-o[0],v.y+1-o[1],v.z-o[2]],len=Math.hypot(...q);return sim.world.ray(o,q.map(n=>n/Math.max(.01,len)),Math.max(0,len-.4))===Infinity;}
 const eyeOf=v=>[v.x,v.y+1.6-(v.ch||0),v.z];
 
-export function rewardAbilityKill(u,sim,v){if(sim&&v)soulKill(sim,u,v);const A=u.ability;if(!A)return;A.ult=Math.min((kits[u.agent]||kits.Jett).u,A.ult+1);if(['Jett','Phoenix','Raze'].includes(u.agent)&&A.e<1&&++A.signatureKills>=2){A.e=1;A.signatureKills=0;}}
+// One ult point (capped at the kit's cost): a kill, a death, planting or defusing the Spike, as VALORANT and the offline jUlt.
+export function gainUlt(u,n=1){const A=u.ability;if(!A||!(n>0))return;A.ult=Math.min((kits[u.agent]||kits.Jett).u,(A.ult||0)+n);}
+export function rewardAbilityKill(u,sim,v){if(sim&&v)soulKill(sim,u,v);const A=u.ability;if(!A)return;gainUlt(u);if(['Jett','Phoenix','Raze'].includes(u.agent)&&A.e<1&&++A.signatureKills>=2){A.e=1;A.signatureKills=0;}}
 
 // Oriented Sage wall, matching the existing6x3x.4project barrier.
 export function barrierRay(e,o,d,max=Infinity){const c=Math.cos(e.yaw),s=Math.sin(e.yaw),q=[o[0]-e.p[0],o[1]-e.p[1],o[2]-e.p[2]],a=[c*q[0]-s*q[2],q[1],s*q[0]+c*q[2]],v=[c*d[0]-s*d[2],d[1],s*d[0]+c*d[2]],lo=[-3,0,-.2],hi=[3,3,.2];let enter=0,exit=max;for(let k=0;k<3;k++){if(Math.abs(v[k])<1e-8){if(a[k]<lo[k]||a[k]>hi[k])return Infinity;continue;}let t=(lo[k]-a[k])/v[k],u=(hi[k]-a[k])/v[k];if(t>u)[t,u]=[u,t];enter=Math.max(enter,t);exit=Math.min(exit,u);if(exit<enter)return Infinity;}return enter<max?enter:Infinity;}
