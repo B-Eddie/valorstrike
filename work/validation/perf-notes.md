@@ -93,3 +93,15 @@ vendor/bot-routes.cjs existed but was not wired in.
   "death forced after 30 s").
 - Browser-verify: attackers fan out (one lurker), hold distinct spots on site, defenders split across sites per
   round, no visible stacking/bumping in chokes; online (local server) bots do the same.
+
+
+## Lag: GC in native bot nav hot paths
+Cause: nmNear runs for every nmHeight sample (nmSegment probes every 0.18 m along each candidate hop, the ground
+snap runs per bot per frame) and built a fresh 'gx,gz' string per probed cell; nmPath allocated three node-sized
+typed arrays per uncached search and two [i,s] pairs per heap push; nmBlocked built two closures and a callback
+object per call (also per nmSegment sample).
+- nmNear: numeric cell keys (C.cn, built once from C.cells with the same per-cell order). nmPath: per-map scratch
+  cost/prev/closed arrays (filled per search) and an index/score two-array heap. nmBlocked: one reused callback object.
+- Test: work/test_nav_gc.cjs: the previous nmNear / nmPath / nmBlocked are embedded as the reference; real Ascent and
+  Bind graphs give identical nodes (4500 queries each: plain, height-weighted, y-banded) and identical routes (with and
+  without banned edges, unreachable ends); a 20000-query + 40-search workload runs with fewer young-gen GCs.
