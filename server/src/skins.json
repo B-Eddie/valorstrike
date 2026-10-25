@@ -1,6 +1,6 @@
 {
- "v": 2,
- "note": "Valorant collection, skin and variant names (valorant-api.com catalogue; names only). Visuals are Valorstrike procedural designs themed on each palette; no Riot textures or models. Every skin is free. A skin id is a collection id (Base) or collection.N for the weapon's Nth variant.",
+ "v": 3,
+ "note": "Original Riot Games weapon models, textures and native animation exports downloaded from Kingdom Archives. Local, on-demand assets; every listed nonstandard variant has an installed GLB. Fan project, not endorsed by Riot Games.",
  "categories": [
   [
    "Sidearms",
@@ -62,2000 +62,411 @@
    "id": "standard",
    "name": "Standard",
    "tier": "Standard",
-   "k": 0,
-   "desc": "The factory finish.",
+   "desc": "The original factory finish.",
    "pal": {},
    "cc": {},
+   "k": 0,
    "skins": {
     "Classic": {
      "n": "Classic",
      "ch": [
       "Base"
-     ]
+     ],
+     "icon": "models/valorant/skins/icons/6e236924d463ed12.png",
+     "iconSource": "https://media.valorant-api.com/weaponskins/24aee897-4cdc-b0fd-e596-1ba90fa6d1b2/displayicon.png"
     },
     "Shorty": {
      "n": "Shorty",
      "ch": [
       "Base"
-     ]
+     ],
+     "icon": "models/valorant/skins/icons/6e236924d463ed12.png",
+     "iconSource": "https://media.valorant-api.com/weaponskins/48ad078a-4dae-2b85-a945-f4b6d1efecbb/displayicon.png"
     },
     "Frenzy": {
      "n": "Frenzy",
      "ch": [
       "Base"
-     ]
+     ],
+     "icon": "models/valorant/skins/icons/6e236924d463ed12.png",
+     "iconSource": "https://media.valorant-api.com/weaponskins/f06657f3-48b6-6314-7235-a9a2749df5b9/displayicon.png"
     },
     "Ghost": {
      "n": "Ghost",
      "ch": [
       "Base"
-     ]
+     ],
+     "icon": "models/valorant/skins/icons/6e236924d463ed12.png",
+     "iconSource": "https://media.valorant-api.com/weaponskins/1c63b43b-43c4-04e4-01c9-7aa1bffa5ac1/displayicon.png"
     },
     "Sheriff": {
      "n": "Sheriff",
      "ch": [
       "Base"
-     ]
+     ],
+     "icon": "models/valorant/skins/icons/6e236924d463ed12.png",
+     "iconSource": "https://media.valorant-api.com/weaponskins/1ef6ba68-4dbe-30c7-6bc8-93a6c6f13f04/displayicon.png"
     },
     "Stinger": {
      "n": "Stinger",
      "ch": [
       "Base"
-     ]
+     ],
+     "icon": "models/valorant/skins/icons/6e236924d463ed12.png",
+     "iconSource": "https://media.valorant-api.com/weaponskins/940fb417-4a9c-3004-41f5-3e8f1f4178b2/displayicon.png"
     },
     "Spectre": {
      "n": "Spectre",
      "ch": [
       "Base"
-     ]
+     ],
+     "icon": "models/valorant/skins/icons/6e236924d463ed12.png",
+     "iconSource": "https://media.valorant-api.com/weaponskins/f01d1307-4299-42f5-2c5e-7dab7e69ab19/displayicon.png"
     },
     "Bucky": {
      "n": "Bucky",
      "ch": [
       "Base"
-     ]
+     ],
+     "icon": "models/valorant/skins/icons/6e236924d463ed12.png",
+     "iconSource": "https://media.valorant-api.com/weaponskins/70c97fb2-4d79-d4bb-5173-a1888cd4bfd9/displayicon.png"
     },
     "Judge": {
      "n": "Judge",
      "ch": [
       "Base"
-     ]
+     ],
+     "icon": "models/valorant/skins/icons/6e236924d463ed12.png",
+     "iconSource": "https://media.valorant-api.com/weaponskins/acd26127-48ff-8b9e-7ba6-b989af8a4b24/displayicon.png"
     },
     "Bulldog": {
      "n": "Bulldog",
      "ch": [
       "Base"
-     ]
+     ],
+     "icon": "models/valorant/skins/icons/6e236924d463ed12.png",
+     "iconSource": "https://media.valorant-api.com/weaponskins/724a7f42-4315-eccf-0e76-77bdd3ec2e09/displayicon.png"
     },
     "Guardian": {
      "n": "Guardian",
      "ch": [
       "Base"
-     ]
+     ],
+     "icon": "models/valorant/skins/icons/6e236924d463ed12.png",
+     "iconSource": "https://media.valorant-api.com/weaponskins/3bf1e8e0-47e8-f27a-6054-929575f41a54/displayicon.png"
     },
     "Phantom": {
      "n": "Phantom",
      "ch": [
       "Base"
-     ]
+     ],
+     "icon": "models/valorant/skins/icons/6e236924d463ed12.png",
+     "iconSource": "https://media.valorant-api.com/weaponskins/337cb216-4a6e-d85d-88c2-f29ab317784c/displayicon.png"
     },
     "Vandal": {
      "n": "Vandal",
      "ch": [
       "Base"
-     ]
+     ],
+     "icon": "models/valorant/skins/icons/6e236924d463ed12.png",
+     "iconSource": "https://media.valorant-api.com/weaponskins/27f21d97-4c4b-bd1c-1f08-31830ab0be84/displayicon.png"
     },
     "Marshal": {
      "n": "Marshal",
      "ch": [
       "Base"
-     ]
+     ],
+     "icon": "models/valorant/skins/icons/6e236924d463ed12.png",
+     "iconSource": "https://media.valorant-api.com/weaponskins/fd44b2d5-49ee-77ab-fa56-588f3ac0c268/displayicon.png"
     },
     "Outlaw": {
      "n": "Outlaw",
      "ch": [
       "Base"
-     ]
+     ],
+     "icon": "models/valorant/skins/icons/b71794394efdc88d.png",
+     "iconSource": "https://media.valorant-api.com/weaponskins/740b9572-44b1-57bf-767e-6aa01811f94d/displayicon.png"
     },
     "Operator": {
      "n": "Operator",
      "ch": [
       "Base"
-     ]
+     ],
+     "icon": "models/valorant/skins/icons/6e236924d463ed12.png",
+     "iconSource": "https://media.valorant-api.com/weaponskins/d1f2920f-469a-3431-ad96-96afbd0017f2/displayicon.png"
     },
     "Ares": {
      "n": "Ares",
      "ch": [
       "Base"
-     ]
+     ],
+     "icon": "models/valorant/skins/icons/6e236924d463ed12.png",
+     "iconSource": "https://media.valorant-api.com/weaponskins/5305d9c4-4f46-fbf4-9e9a-dea772c263b5/displayicon.png"
     },
     "Odin": {
      "n": "Odin",
      "ch": [
       "Base"
-     ]
+     ],
+     "icon": "models/valorant/skins/icons/6e236924d463ed12.png",
+     "iconSource": "https://media.valorant-api.com/weaponskins/f454efd1-49cb-372f-7096-d394df615308/displayicon.png"
     },
     "Knife": {
      "n": "Knife",
      "ch": [
       "Base"
-     ]
+     ],
+     "icon": "models/valorant/skins/icons/6e236924d463ed12.png",
+     "iconSource": "https://media.valorant-api.com/weaponskins/12cc9ed2-4430-d2fe-3064-f7a19b1ba7c7/displayicon.png"
     }
    }
   },
   {
-   "id": "prime",
-   "name": "Prime",
-   "tier": "Premium",
-   "k": 2,
-   "desc": "Ivory plating, gold trim and a blue energy core.",
-   "pal": {
-    "a": "#ece6d6",
-    "b": "#c9a24a",
-    "e": "#4fb6ff"
-   },
-   "cc": {
-    "Orange": {
-     "a": "#26170c",
-     "b": "#e8742a",
-     "e": "#ff9a2a"
-    },
-    "Blue": {
-     "a": "#121a2c",
-     "b": "#2f5fa8",
-     "e": "#3fa9ff"
-    },
-    "Yellow": {
-     "a": "#24210f",
-     "b": "#e3c22a",
-     "e": "#fff04a"
-    }
-   },
-   "skins": {
-    "Classic": {
-     "n": "Prime Classic",
-     "ch": [
-      "Base",
-      "Orange",
-      "Blue",
-      "Yellow"
-     ]
-    },
-    "Spectre": {
-     "n": "Prime Spectre",
-     "ch": [
-      "Base",
-      "Orange",
-      "Blue",
-      "Yellow"
-     ]
-    },
-    "Guardian": {
-     "n": "Prime Guardian",
-     "ch": [
-      "Base",
-      "Orange",
-      "Blue",
-      "Yellow"
-     ]
-    },
-    "Vandal": {
-     "n": "Prime Vandal",
-     "ch": [
-      "Base",
-      "Orange",
-      "Blue",
-      "Yellow"
-     ]
-    },
-    "Knife": {
-     "n": "Prime Knife",
-     "ch": [
-      "Base"
-     ]
-    }
-   }
-  },
-  {
-   "id": "prime2",
-   "name": "Prime//2.0",
-   "tier": "Premium",
-   "k": 2,
-   "desc": "Black alloy with gold bands and a warm core glow.",
-   "pal": {
-    "a": "#1c1f24",
-    "b": "#d4af37",
-    "e": "#ffcf4a"
-   },
-   "cc": {
-    "Gold": {
-     "a": "#1d1a12",
-     "b": "#d4af37",
-     "e": "#ffd23a"
-    },
-    "Green": {
-     "a": "#10201a",
-     "b": "#2f8a5a",
-     "e": "#5fffb0"
-    },
-    "Orange": {
-     "a": "#26170c",
-     "b": "#e8742a",
-     "e": "#ff9a2a"
-    }
-   },
-   "skins": {
-    "Frenzy": {
-     "n": "Prime//2.0 Frenzy",
-     "ch": [
-      "Base",
-      "Gold",
-      "Green",
-      "Orange"
-     ]
-    },
-    "Bucky": {
-     "n": "Prime//2.0 Bucky",
-     "ch": [
-      "Base",
-      "Gold",
-      "Green",
-      "Orange"
-     ]
-    },
-    "Phantom": {
-     "n": "Prime//2.0 Phantom",
-     "ch": [
-      "Base",
-      "Gold",
-      "Green",
-      "Orange"
-     ]
-    },
-    "Odin": {
-     "n": "Prime//2.0 Odin",
-     "ch": [
-      "Base",
-      "Gold",
-      "Green",
-      "Orange"
-     ]
-    },
-    "Knife": {
-     "n": "Prime//2.0 Knife",
-     "ch": [
-      "Base"
-     ]
-    }
-   }
-  },
-  {
-   "id": "reaver",
-   "name": "Reaver",
-   "tier": "Premium",
-   "k": 5,
-   "desc": "Gothic black metal split by violet soul-fire seams.",
-   "pal": {
-    "a": "#17131d",
-    "b": "#3a2a4a",
-    "e": "#a45cff"
-   },
-   "cc": {
-    "Red": {
-     "a": "#2a1214",
-     "b": "#c4232f",
-     "e": "#ff3048"
-    },
-    "Black": {
-     "a": "#0d0e10",
-     "b": "#24262b",
-     "e": "#a45cff"
-    },
-    "White": {
-     "a": "#eceff2",
-     "b": "#b9c0c8",
-     "e": "#a45cff"
-    }
-   },
-   "skins": {
-    "Ghost": {
-     "n": "Reaver Ghost",
-     "ch": [
-      "Base",
-      "Red",
-      "Black",
-      "White"
-     ]
-    },
-    "Sheriff": {
-     "n": "Reaver Sheriff",
-     "ch": [
-      "Base",
-      "Red",
-      "Black",
-      "White"
-     ]
-    },
-    "Spectre": {
-     "n": "Reaver Spectre",
-     "ch": [
-      "Base",
-      "Red",
-      "Black",
-      "White"
-     ]
-    },
-    "Guardian": {
-     "n": "Reaver Guardian",
-     "ch": [
-      "Base",
-      "Red",
-      "Black",
-      "White"
-     ]
-    },
-    "Phantom": {
-     "n": "Reaver Phantom",
-     "ch": [
-      "Base",
-      "Red",
-      "Black",
-      "White"
-     ]
-    },
-    "Vandal": {
-     "n": "Reaver Vandal",
-     "ch": [
-      "Base",
-      "Red",
-      "Black",
-      "White"
-     ]
-    },
-    "Operator": {
-     "n": "Reaver Operator",
-     "ch": [
-      "Base",
-      "Red",
-      "Black",
-      "White"
-     ]
-    },
-    "Odin": {
-     "n": "Reaver Odin",
-     "ch": [
-      "Base",
-      "Red",
-      "Black",
-      "White"
-     ]
-    },
-    "Knife": {
-     "n": "Reaver Knife",
-     "ch": [
-      "Base",
-      "Red",
-      "Black",
-      "White"
-     ]
-    }
-   }
-  },
-  {
-   "id": "glitchpop",
-   "name": "Glitchpop",
-   "tier": "Exclusive",
-   "k": 4,
-   "desc": "Hot-pink lacquer with live cyan circuit glitches.",
-   "pal": {
-    "a": "#2a1a4a",
-    "b": "#ff4fd8",
-    "e": "#3ff6ff",
-    "p": 1
-   },
-   "cc": {
-    "Blue": {
-     "a": "#121a2c",
-     "b": "#2f5fa8",
-     "e": "#3fa9ff"
-    },
-    "Red": {
-     "a": "#2a1214",
-     "b": "#c4232f",
-     "e": "#ff3048"
-    },
-    "Gold": {
-     "a": "#1d1a12",
-     "b": "#d4af37",
-     "e": "#ffd23a"
-    }
-   },
-   "skins": {
-    "Classic": {
-     "n": "Glitchpop Classic",
-     "ch": [
-      "Base",
-      "Blue",
-      "Red",
-      "Gold"
-     ]
-    },
-    "Frenzy": {
-     "n": "Glitchpop Frenzy",
-     "ch": [
-      "Base",
-      "Blue",
-      "Red",
-      "Gold"
-     ]
-    },
-    "Judge": {
-     "n": "Glitchpop Judge",
-     "ch": [
-      "Base",
-      "Blue",
-      "Red",
-      "Gold"
-     ]
-    },
-    "Bulldog": {
-     "n": "Glitchpop Bulldog",
-     "ch": [
-      "Base",
-      "Blue",
-      "Red",
-      "Gold"
-     ]
-    },
-    "Phantom": {
-     "n": "Glitchpop Phantom",
-     "ch": [
-      "Base",
-      "Blue",
-      "Red",
-      "Gold"
-     ]
-    },
-    "Vandal": {
-     "n": "Glitchpop Vandal",
-     "ch": [
-      "Base",
-      "Blue",
-      "Red",
-      "Gold"
-     ]
-    },
-    "Operator": {
-     "n": "Glitchpop Operator",
-     "ch": [
-      "Base",
-      "Blue",
-      "Red",
-      "Gold"
-     ]
-    },
-    "Odin": {
-     "n": "Glitchpop Odin",
-     "ch": [
-      "Base",
-      "Blue",
-      "Red",
-      "Gold"
-     ]
-    },
-    "Knife": {
-     "n": "Glitchpop Knife",
-     "ch": [
-      "Base"
-     ]
-    }
-   }
-  },
-  {
-   "id": "oni",
-   "name": "Oni",
-   "tier": "Premium",
-   "k": 2,
-   "desc": "Lacquered white with crimson bands of a demon mask.",
-   "pal": {
-    "a": "#e8e2d8",
-    "b": "#c4232f",
-    "e": "#ff3b3b"
-   },
-   "cc": {
-    "Kumo": {
-     "a": "#d9dde4",
-     "b": "#3b4a6b",
-     "e": "#9fc4ff"
-    },
-    "Hana": {
-     "a": "#f0dde2",
-     "b": "#c4507a",
-     "e": "#ff8ab0"
-    },
-    "Tsubame": {
-     "a": "#16171c",
-     "b": "#2f3a8a",
-     "e": "#6a7cff"
-    }
-   },
-   "skins": {
-    "Shorty": {
-     "n": "Oni Shorty",
-     "ch": [
-      "Base",
-      "Kumo",
-      "Hana",
-      "Tsubame"
-     ]
-    },
-    "Frenzy": {
-     "n": "Oni Frenzy",
-     "ch": [
-      "Base",
-      "Kumo",
-      "Hana",
-      "Tsubame"
-     ]
-    },
-    "Bucky": {
-     "n": "Oni Bucky",
-     "ch": [
-      "Base",
-      "Kumo",
-      "Hana",
-      "Tsubame"
-     ]
-    },
-    "Bulldog": {
-     "n": "Oni Bulldog",
-     "ch": [
-      "Base",
-      "Kumo",
-      "Hana",
-      "Tsubame"
-     ]
-    },
-    "Guardian": {
-     "n": "Oni Guardian",
-     "ch": [
-      "Base",
-      "Kumo",
-      "Hana",
-      "Tsubame"
-     ]
-    },
-    "Phantom": {
-     "n": "Oni Phantom",
-     "ch": [
-      "Base",
-      "Kumo",
-      "Hana",
-      "Tsubame"
-     ]
-    },
-    "Vandal": {
-     "n": "Oni Vandal",
-     "ch": [
-      "Base",
-      "Kumo",
-      "Hana",
-      "Tsubame"
-     ]
-    },
-    "Ares": {
-     "n": "Oni Ares",
-     "ch": [
-      "Base",
-      "Kumo",
-      "Hana",
-      "Tsubame"
-     ]
-    },
-    "Knife": {
-     "n": "Oni Knife",
-     "ch": [
-      "Base",
-      "Kumo",
-      "Hana",
-      "Tsubame"
-     ]
-    }
-   }
-  },
-  {
-   "id": "elderflame",
-   "name": "Elderflame",
-   "tier": "Ultra",
-   "k": 5,
-   "desc": "Dragon-scale bronze cracked with breathing fire.",
-   "pal": {
-    "a": "#2f1b12",
-    "b": "#a8521c",
-    "e": "#ff8a1f",
-    "p": 1
-   },
-   "cc": {
-    "Red": {
-     "a": "#2a1214",
-     "b": "#c4232f",
-     "e": "#ff3048"
-    },
-    "Blue": {
-     "a": "#121a2c",
-     "b": "#2f5fa8",
-     "e": "#3fa9ff"
-    },
-    "Dark": {
-     "a": "#0d0e10",
-     "b": "#2a2228",
-     "e": "#ff8a1f"
-    }
-   },
-   "skins": {
-    "Frenzy": {
-     "n": "Elderflame Frenzy",
-     "ch": [
-      "Base",
-      "Red",
-      "Blue",
-      "Dark"
-     ]
-    },
-    "Judge": {
-     "n": "Elderflame Judge",
-     "ch": [
-      "Base",
-      "Red",
-      "Blue",
-      "Dark"
-     ]
-    },
-    "Vandal": {
-     "n": "Elderflame Vandal",
-     "ch": [
-      "Base",
-      "Red",
-      "Blue",
-      "Dark"
-     ]
-    },
-    "Operator": {
-     "n": "Elderflame Operator",
-     "ch": [
-      "Base",
-      "Red",
-      "Blue",
-      "Dark"
-     ]
-    },
-    "Knife": {
-     "n": "Elderflame Knife",
-     "ch": [
-      "Base"
-     ]
-    }
-   }
-  },
-  {
-   "id": "ion",
-   "name": "Ion",
-   "tier": "Premium",
-   "k": 4,
-   "desc": "Clean white sci-fi panels with cyan energy traces.",
-   "pal": {
-    "a": "#eef2f5",
-    "b": "#9aa6b2",
-    "e": "#2fd8ff"
-   },
-   "cc": {
-    "Green": {
-     "a": "#10201a",
-     "b": "#2f8a5a",
-     "e": "#5fffb0"
-    },
-    "Yellow": {
-     "a": "#24210f",
-     "b": "#e3c22a",
-     "e": "#fff04a"
-    },
-    "Blue": {
-     "a": "#121a2c",
-     "b": "#2f5fa8",
-     "e": "#3fa9ff"
-    }
-   },
-   "skins": {
-    "Frenzy": {
-     "n": "Ion Frenzy",
-     "ch": [
-      "Base",
-      "Green",
-      "Yellow",
-      "Blue"
-     ]
-    },
-    "Sheriff": {
-     "n": "Ion Sheriff",
-     "ch": [
-      "Base"
-     ]
-    },
-    "Spectre": {
-     "n": "Ion Spectre",
-     "ch": [
-      "Base",
-      "Green",
-      "Yellow",
-      "Blue"
-     ]
-    },
-    "Bucky": {
-     "n": "Ion Bucky",
-     "ch": [
-      "Base"
-     ]
-    },
-    "Phantom": {
-     "n": "Ion Phantom",
-     "ch": [
-      "Base"
-     ]
-    },
-    "Vandal": {
-     "n": "Ion Vandal",
-     "ch": [
-      "Base",
-      "Green",
-      "Yellow",
-      "Blue"
-     ]
-    },
-    "Operator": {
-     "n": "Ion Operator",
-     "ch": [
-      "Base"
-     ]
-    },
-    "Ares": {
-     "n": "Ion Ares",
-     "ch": [
-      "Base",
-      "Green",
-      "Yellow",
-      "Blue"
-     ]
-    },
-    "Knife": {
-     "n": "Ion Knife",
-     "ch": [
-      "Base",
-      "Green",
-      "Yellow",
-      "Blue"
-     ]
-    }
-   }
-  },
-  {
-   "id": "sovereign",
-   "name": "Sovereign",
-   "tier": "Premium",
-   "k": 2,
-   "desc": "Royal white and gold with a jade glow.",
-   "pal": {
-    "a": "#f2efe6",
-    "b": "#d4af37",
-    "e": "#7fe6d0"
-   },
-   "cc": {
-    "Green": {
-     "a": "#10201a",
-     "b": "#2f8a5a",
-     "e": "#5fffb0"
-    },
-    "Teal": {
-     "a": "#0f2223",
-     "b": "#1f8a86",
-     "e": "#3ff0e0"
-    },
-    "Red": {
-     "a": "#2a1214",
-     "b": "#c4232f",
-     "e": "#ff3048"
-    },
-    "Silver": {
-     "a": "#c8cdd3",
-     "b": "#7d858f",
-     "e": "#7fe6d0"
-    },
-    "Purple": {
-     "a": "#1b1030",
-     "b": "#6a2c9a",
-     "e": "#c66bff"
-    }
-   },
-   "skins": {
-    "Frenzy": {
-     "n": "Sovereign Frenzy",
-     "ch": [
-      "Base",
-      "Green",
-      "Teal",
-      "Red"
-     ]
-    },
-    "Ghost": {
-     "n": "Sovereign Ghost",
-     "ch": [
-      "Base",
-      "Green",
-      "Silver",
-      "Purple"
-     ]
-    },
-    "Stinger": {
-     "n": "Sovereign Stinger",
-     "ch": [
-      "Base",
-      "Green",
-      "Silver",
-      "Purple"
-     ]
-    },
-    "Judge": {
-     "n": "Sovereign Judge",
-     "ch": [
-      "Base",
-      "Green",
-      "Teal",
-      "Red"
-     ]
-    },
-    "Guardian": {
-     "n": "Sovereign Guardian",
-     "ch": [
-      "Base",
-      "Green",
-      "Silver",
-      "Purple"
-     ]
-    },
-    "Phantom": {
-     "n": "Sovereign Phantom",
-     "ch": [
-      "Base",
-      "Green",
-      "Teal",
-      "Red"
-     ]
-    },
-    "Marshal": {
-     "n": "Sovereign Marshal",
-     "ch": [
-      "Base",
-      "Green",
-      "Silver",
-      "Purple"
-     ]
-    },
-    "Odin": {
-     "n": "Sovereign Odin",
-     "ch": [
-      "Base",
-      "Green",
-      "Teal",
-      "Red"
-     ]
-    },
-    "Knife": {
-     "n": "Sovereign Knife",
-     "ch": [
-      "Base",
-      "Green",
-      "Teal",
-      "Red"
-     ]
-    }
-   }
-  },
-  {
-   "id": "rgx",
-   "name": "RGX 11z Pro",
-   "tier": "Exclusive",
-   "k": 4,
-   "desc": "Matte black tech with programmable neon lines.",
-   "pal": {
-    "a": "#16181d",
-    "b": "#363b45",
-    "e": "#ff2a6d",
-    "p": 1
-   },
-   "cc": {
-    "Red": {
-     "a": "#2a1214",
-     "b": "#c4232f",
-     "e": "#ff3048"
-    },
-    "Blue": {
-     "a": "#121a2c",
-     "b": "#2f5fa8",
-     "e": "#3fa9ff"
-    },
-    "Yellow": {
-     "a": "#24210f",
-     "b": "#e3c22a",
-     "e": "#fff04a"
-    }
-   },
-   "skins": {
-    "Classic": {
-     "n": "RGX 11z Pro Classic",
-     "ch": [
-      "Base",
-      "Red",
-      "Blue",
-      "Yellow"
-     ]
-    },
-    "Frenzy": {
-     "n": "RGX 11z Pro Frenzy",
-     "ch": [
-      "Base",
-      "Red",
-      "Blue",
-      "Yellow"
-     ]
-    },
-    "Sheriff": {
-     "n": "RGX 11z Pro Sheriff",
-     "ch": [
-      "Base",
-      "Red",
-      "Blue",
-      "Yellow"
-     ]
-    },
-    "Stinger": {
-     "n": "RGX 11z Pro Stinger",
-     "ch": [
-      "Base",
-      "Red",
-      "Blue",
-      "Yellow"
-     ]
-    },
-    "Spectre": {
-     "n": "RGX 11z Pro Spectre",
-     "ch": [
-      "Base",
-      "Red",
-      "Blue",
-      "Yellow"
-     ]
-    },
-    "Guardian": {
-     "n": "RGX 11z Pro Guardian",
-     "ch": [
-      "Base",
-      "Red",
-      "Blue",
-      "Yellow"
-     ]
-    },
-    "Phantom": {
-     "n": "RGX 11z Pro Phantom",
-     "ch": [
-      "Base",
-      "Red",
-      "Blue",
-      "Yellow"
-     ]
-    },
-    "Vandal": {
-     "n": "RGX 11z Pro Vandal",
-     "ch": [
-      "Base",
-      "Red",
-      "Blue",
-      "Yellow"
-     ]
-    },
-    "Outlaw": {
-     "n": "RGX 11z Pro Outlaw",
-     "ch": [
-      "Base",
-      "Red",
-      "Blue",
-      "Yellow"
-     ]
-    },
-    "Operator": {
-     "n": "RGX 11z Pro Operator",
-     "ch": [
-      "Base",
-      "Red",
-      "Blue",
-      "Yellow"
-     ]
-    },
-    "Knife": {
-     "n": "RGX 11z Pro Knife",
-     "ch": [
-      "Base",
-      "Red",
-      "Blue",
-      "Yellow"
-     ]
-    }
-   }
-  },
-  {
-   "id": "singularity",
-   "name": "Singularity",
-   "tier": "Exclusive",
-   "k": 6,
-   "desc": "Collapsing-star purple with a pulsing event glow.",
-   "pal": {
-    "a": "#1b0f2e",
-    "b": "#5b2a9a",
-    "e": "#c76bff",
-    "p": 1
-   },
-   "cc": {
-    "Blue": {
-     "a": "#121a2c",
-     "b": "#2f5fa8",
-     "e": "#3fa9ff"
-    },
-    "Red": {
-     "a": "#2a1214",
-     "b": "#c4232f",
-     "e": "#ff3048"
-    },
-    "Purple": {
-     "a": "#1b1030",
-     "b": "#6a2c9a",
-     "e": "#c66bff"
-    },
-    "White": {
-     "a": "#eceff2",
-     "b": "#b9c0c8",
-     "e": "#c76bff"
-    }
-   },
-   "skins": {
-    "Ghost": {
-     "n": "Singularity Ghost",
-     "ch": [
-      "Base",
-      "Red",
-      "White",
-      "Blue"
-     ]
-    },
-    "Sheriff": {
-     "n": "Singularity Sheriff",
-     "ch": [
-      "Base",
-      "Blue",
-      "Red",
-      "Purple"
-     ]
-    },
-    "Spectre": {
-     "n": "Singularity Spectre",
-     "ch": [
-      "Base",
-      "Blue",
-      "Red",
-      "Purple"
-     ]
-    },
-    "Phantom": {
-     "n": "Singularity Phantom",
-     "ch": [
-      "Base",
-      "Blue",
-      "Red",
-      "Purple"
-     ]
-    },
-    "Vandal": {
-     "n": "Singularity Vandal",
-     "ch": [
-      "Base",
-      "Red",
-      "White",
-      "Blue"
-     ]
-    },
-    "Ares": {
-     "n": "Singularity Ares",
-     "ch": [
-      "Base",
-      "Blue",
-      "Red",
-      "Purple"
-     ]
-    },
-    "Knife": {
-     "n": "Singularity Knife",
-     "ch": [
-      "Base",
-      "Red",
-      "White",
-      "Blue"
-     ]
-    }
-   }
-  },
-  {
-   "id": "spectrum",
-   "name": "Spectrum",
-   "tier": "Exclusive",
-   "k": 6,
-   "desc": "Black chassis with a sound-reactive light bar.",
-   "pal": {
-    "a": "#121418",
-    "b": "#2b2f36",
-    "e": "#5fffb0",
-    "p": 1
-   },
-   "cc": {
-    "Black": {
-     "a": "#0d0e10",
-     "b": "#24262b",
-     "e": "#5fffb0"
-    },
-    "Red": {
-     "a": "#2a1214",
-     "b": "#c4232f",
-     "e": "#ff3048"
-    },
-    "Purple/Pink": {
-     "a": "#1b1030",
-     "b": "#8a3ab9",
-     "e": "#ff6fd5"
-    }
-   },
-   "skins": {
-    "Classic": {
-     "n": "Spectrum Classic",
-     "ch": [
-      "Base",
-      "Black",
-      "Red",
-      "Purple/Pink"
-     ]
-    },
-    "Bulldog": {
-     "n": "Spectrum Bulldog",
-     "ch": [
-      "Base",
-      "Black",
-      "Red",
-      "Purple/Pink"
-     ]
-    },
-    "Guardian": {
-     "n": "Spectrum Guardian",
-     "ch": [
-      "Base",
-      "Black",
-      "Red",
-      "Purple/Pink"
-     ]
-    },
-    "Phantom": {
-     "n": "Spectrum Phantom",
-     "ch": [
-      "Base",
-      "Black",
-      "Red",
-      "Purple/Pink"
-     ]
-    },
-    "Knife": {
-     "n": "Spectrum Knife",
-     "ch": [
-      "Base",
-      "Black",
-      "Red",
-      "Purple/Pink"
-     ]
-    }
-   }
-  },
-  {
-   "id": "champions21",
-   "name": "Champions 2021",
-   "tier": "Exclusive",
-   "k": 2,
-   "desc": "Champions black and gold.",
-   "pal": {
-    "a": "#141518",
-    "b": "#d4af37",
-    "e": "#ffd23a"
-   },
+   "id": "aerosol",
+   "name": "Aerosol",
+   "tier": "Select",
+   "desc": "Original VALORANT model and textures.",
+   "pal": {},
    "cc": {},
+   "k": 0,
    "skins": {
-    "Vandal": {
-     "n": "Champions 2021 Vandal",
+    "Shorty": {
+     "n": "Aerosol Shorty",
      "ch": [
       "Base"
-     ]
-    },
-    "Knife": {
-     "n": "Champions 2021 Knife",
-     "ch": [
-      "Base"
-     ]
-    }
-   }
-  },
-  {
-   "id": "forsaken",
-   "name": "Forsaken",
-   "tier": "Premium",
-   "k": 5,
-   "desc": "Weathered ritual steel with spectral blue seams.",
-   "pal": {
-    "a": "#1d2430",
-    "b": "#4a5a70",
-    "e": "#7fb8ff"
-   },
-   "cc": {
-    "Gold": {
-     "a": "#1d1a12",
-     "b": "#d4af37",
-     "e": "#ffd23a"
-    }
-   },
-   "skins": {
-    "Classic": {
-     "n": "Forsaken Classic",
-     "ch": [
-      "Base",
-      "Gold"
-     ]
-    },
-    "Spectre": {
-     "n": "Forsaken Spectre",
-     "ch": [
-      "Base",
-      "Gold"
-     ]
-    },
-    "Vandal": {
-     "n": "Forsaken Vandal",
-     "ch": [
-      "Base",
-      "Gold"
-     ]
-    },
-    "Operator": {
-     "n": "Forsaken Operator",
-     "ch": [
-      "Base",
-      "Gold"
-     ]
-    },
-    "Knife": {
-     "n": "Forsaken Knife",
-     "ch": [
-      "Base"
-     ]
-    }
-   }
-  },
-  {
-   "id": "sentinels",
-   "name": "Sentinels of Light",
-   "tier": "Exclusive",
-   "k": 1,
-   "desc": "Radiant white stone with shards of light.",
-   "pal": {
-    "a": "#e8f0ff",
-    "b": "#7a8cff",
-    "e": "#9fd8ff"
-   },
-   "cc": {
-    "Pink": {
-     "a": "#2a1424",
-     "b": "#ff6fb5",
-     "e": "#ff8ad0"
-    },
-    "Red/Green": {
-     "a": "#1e1414",
-     "b": "#c4232f",
-     "e": "#5fffb0"
-    },
-    "Blue/Purple": {
-     "a": "#141433",
-     "b": "#2f5fa8",
-     "e": "#c66bff"
-    }
-   },
-   "skins": {
-    "Shorty": {
-     "n": "Sentinels of Light Shorty",
-     "ch": [
-      "Base",
-      "Pink",
-      "Red/Green",
-      "Blue/Purple"
-     ]
-    },
-    "Sheriff": {
-     "n": "Sentinels of Light Sheriff",
-     "ch": [
-      "Base",
-      "Pink",
-      "Red/Green",
-      "Blue/Purple"
-     ]
-    },
-    "Spectre": {
-     "n": "Sentinels of Light Spectre",
-     "ch": [
-      "Base",
-      "Pink",
-      "Red/Green",
-      "Blue/Purple"
-     ]
-    },
-    "Phantom": {
-     "n": "Sentinels of Light Phantom",
-     "ch": [
-      "Base",
-      "Pink",
-      "Red/Green",
-      "Blue/Purple"
-     ]
-    },
-    "Vandal": {
-     "n": "Sentinels of Light Vandal",
-     "ch": [
-      "Base",
-      "Pink",
-      "Red/Green",
-      "Blue/Purple"
-     ]
-    },
-    "Operator": {
-     "n": "Sentinels of Light Operator",
-     "ch": [
-      "Base",
-      "Pink",
-      "Red/Green",
-      "Blue/Purple"
-     ]
-    },
-    "Ares": {
-     "n": "Sentinels of Light Ares",
-     "ch": [
-      "Base",
-      "Pink",
-      "Red/Green",
-      "Blue/Purple"
-     ]
-    },
-    "Odin": {
-     "n": "Sentinels of Light Odin",
-     "ch": [
-      "Base",
-      "Pink",
-      "Red/Green",
-      "Blue/Purple"
-     ]
-    },
-    "Knife": {
-     "n": "Sentinels of Light Knife",
-     "ch": [
-      "Base",
-      "Pink",
-      "Red/Green",
-      "Blue/Purple"
-     ]
-    }
-   }
-  },
-  {
-   "id": "recon",
-   "name": "Recon",
-   "tier": "Premium",
-   "k": 3,
-   "desc": "Field camouflage.",
-   "pal": {
-    "a": "#5a6a3c",
-    "b": "#26301c"
-   },
-   "cc": {
-    "Red Camo": {
-     "a": "#6a3a32",
-     "b": "#2f1c18"
-    },
-    "Blue Camo": {
-     "a": "#3a4c66",
-     "b": "#1a2433"
-    },
-    "Green Camo": {
-     "a": "#4d5a35",
-     "b": "#26301c"
-    }
-   },
-   "skins": {
-    "Ghost": {
-     "n": "Recon Ghost",
-     "ch": [
-      "Base",
-      "Red Camo",
-      "Blue Camo",
-      "Green Camo"
-     ]
-    },
-    "Spectre": {
-     "n": "Recon Spectre",
-     "ch": [
-      "Base",
-      "Red Camo",
-      "Blue Camo",
-      "Green Camo"
-     ]
-    },
-    "Guardian": {
-     "n": "Recon Guardian",
-     "ch": [
-      "Base",
-      "Red Camo",
-      "Blue Camo",
-      "Green Camo"
-     ]
-    },
-    "Phantom": {
-     "n": "Recon Phantom",
-     "ch": [
-      "Base",
-      "Red Camo",
-      "Blue Camo",
-      "Green Camo"
-     ]
-    },
-    "Knife": {
-     "n": "Recon Knife",
-     "ch": [
-      "Base",
-      "Red Camo",
-      "Blue Camo",
-      "Green Camo"
-     ]
-    }
-   }
-  },
-  {
-   "id": "ruination",
-   "name": "Ruination",
-   "tier": "Exclusive",
-   "k": 5,
-   "desc": "Ruined black-green metal with mist-green seams.",
-   "pal": {
-    "a": "#162520",
-    "b": "#2f4a3e",
-    "e": "#3fffb0",
-    "p": 1
-   },
-   "cc": {
-    "Purple": {
-     "a": "#1b1030",
-     "b": "#6a2c9a",
-     "e": "#c66bff"
-    },
-    "Red/Yellow": {
-     "a": "#2a1410",
-     "b": "#c4402f",
-     "e": "#ffd23a"
-    },
-    "Green": {
-     "a": "#10201a",
-     "b": "#2f8a5a",
-     "e": "#5fffb0"
-    }
-   },
-   "skins": {
-    "Ghost": {
-     "n": "Ruination Ghost",
-     "ch": [
-      "Base",
-      "Purple",
-      "Red/Yellow",
-      "Green"
-     ]
-    },
-    "Spectre": {
-     "n": "Ruination Spectre",
-     "ch": [
-      "Base",
-      "Purple",
-      "Red/Yellow",
-      "Green"
-     ]
-    },
-    "Guardian": {
-     "n": "Ruination Guardian",
-     "ch": [
-      "Base",
-      "Purple",
-      "Red/Yellow",
-      "Green"
-     ]
-    },
-    "Phantom": {
-     "n": "Ruination Phantom",
-     "ch": [
-      "Base",
-      "Purple",
-      "Red/Yellow",
-      "Green"
-     ]
-    },
-    "Knife": {
-     "n": "Ruination Knife",
-     "ch": [
-      "Base",
-      "Purple",
-      "Red/Yellow",
-      "Green"
-     ]
-    }
-   }
-  },
-  {
-   "id": "kuronami",
-   "name": "Kuronami",
-   "tier": "Exclusive",
-   "k": 5,
-   "desc": "Black lacquered steel cut by thin crimson seams.",
-   "pal": {
-    "a": "#121317",
-    "b": "#2a2c33",
-    "e": "#ff2b3a"
-   },
-   "cc": {
-    "Purple": {
-     "a": "#1b1030",
-     "b": "#6a2c9a",
-     "e": "#c66bff"
-    },
-    "White": {
-     "a": "#eceff2",
-     "b": "#b9c0c8",
-     "e": "#ff2b3a"
-    },
-    "Black": {
-     "a": "#0d0e10",
-     "b": "#24262b",
-     "e": "#ff2b3a"
-    }
-   },
-   "skins": {
-    "Ghost": {
-     "n": "Kuronami Ghost",
-     "ch": [
-      "Base",
-      "Purple",
-      "White",
-      "Black"
-     ]
-    },
-    "Sheriff": {
-     "n": "Kuronami Sheriff",
-     "ch": [
-      "Base",
-      "Purple",
-      "White",
-      "Black"
-     ]
-    },
-    "Spectre": {
-     "n": "Kuronami Spectre",
-     "ch": [
-      "Base",
-      "Purple",
-      "White",
-      "Black"
-     ]
-    },
-    "Guardian": {
-     "n": "Kuronami Guardian",
-     "ch": [
-      "Base",
-      "Purple",
-      "White",
-      "Black"
-     ]
-    },
-    "Phantom": {
-     "n": "Kuronami Phantom",
-     "ch": [
-      "Base",
-      "Purple",
-      "White",
-      "Black"
-     ]
-    },
-    "Vandal": {
-     "n": "Kuronami Vandal",
-     "ch": [
-      "Base",
-      "Purple",
-      "White",
-      "Black"
-     ]
-    },
-    "Marshal": {
-     "n": "Kuronami Marshal",
-     "ch": [
-      "Base",
-      "Purple",
-      "White",
-      "Black"
-     ]
-    },
-    "Operator": {
-     "n": "Kuronami Operator",
-     "ch": [
-      "Base",
-      "Purple",
-      "White",
-      "Black"
-     ]
-    },
-    "Knife": {
-     "n": "Kuronami Knife",
-     "ch": [
-      "Base",
-      "Purple",
-      "White",
-      "Black"
-     ]
-    }
-   }
-  },
-  {
-   "id": "araxys",
-   "name": "Araxys",
-   "tier": "Exclusive",
-   "k": 6,
-   "desc": "Alien bio-metal with a pulsing acid-green glow.",
-   "pal": {
-    "a": "#1a1f1c",
-    "b": "#5d6e2a",
-    "e": "#c6ff3a",
-    "p": 1
-   },
-   "cc": {
-    "Purple": {
-     "a": "#1b1030",
-     "b": "#6a2c9a",
-     "e": "#c66bff"
-    },
-    "Black": {
-     "a": "#0d0e10",
-     "b": "#24262b",
-     "e": "#c6ff3a"
-    },
-    "Silver": {
-     "a": "#c8cdd3",
-     "b": "#7d858f",
-     "e": "#c6ff3a"
-    }
-   },
-   "skins": {
-    "Shorty": {
-     "n": "Araxys Shorty",
-     "ch": [
-      "Base",
-      "Purple",
-      "Black",
-      "Silver"
-     ]
-    },
-    "Sheriff": {
-     "n": "Araxys Sheriff",
-     "ch": [
-      "Base",
-      "Purple",
-      "Black",
-      "Silver"
-     ]
-    },
-    "Bulldog": {
-     "n": "Araxys Bulldog",
-     "ch": [
-      "Base",
-      "Purple",
-      "Black",
-      "Silver"
-     ]
-    },
-    "Guardian": {
-     "n": "Araxys Guardian",
-     "ch": [
-      "Base",
-      "Purple",
-      "Black",
-      "Silver"
-     ]
-    },
-    "Phantom": {
-     "n": "Araxys Phantom",
-     "ch": [
-      "Base",
-      "Purple",
-      "Black",
-      "Silver"
-     ]
-    },
-    "Vandal": {
-     "n": "Araxys Vandal",
-     "ch": [
-      "Base",
-      "Purple",
-      "Black",
-      "Silver"
-     ]
-    },
-    "Outlaw": {
-     "n": "Araxys Outlaw",
-     "ch": [
-      "Base",
-      "Purple",
-      "Black",
-      "Silver"
-     ]
-    },
-    "Operator": {
-     "n": "Araxys Operator",
-     "ch": [
-      "Base",
-      "Purple",
-      "Black",
-      "Silver"
-     ]
-    },
-    "Knife": {
-     "n": "Araxys Knife",
-     "ch": [
-      "Base",
-      "Purple",
-      "Black",
-      "Silver"
-     ]
-    }
-   }
-  },
-  {
-   "id": "prelude",
-   "name": "Prelude to Chaos",
-   "tier": "Exclusive",
-   "k": 1,
-   "desc": "Void-black shell splintered by violet light.",
-   "pal": {
-    "a": "#14121c",
-    "b": "#3a2f66",
-    "e": "#8f7bff",
-    "p": 1
-   },
-   "cc": {
-    "Green": {
-     "a": "#10201a",
-     "b": "#2f8a5a",
-     "e": "#5fffb0"
-    },
-    "White": {
-     "a": "#eceff2",
-     "b": "#b9c0c8",
-     "e": "#8f7bff"
-    },
-    "Blue": {
-     "a": "#121a2c",
-     "b": "#2f5fa8",
-     "e": "#3fa9ff"
-    }
-   },
-   "skins": {
-    "Shorty": {
-     "n": "Prelude to Chaos Shorty",
-     "ch": [
-      "Base",
-      "Green",
-      "White",
-      "Blue"
-     ]
-    },
-    "Sheriff": {
-     "n": "Prelude to Chaos Sheriff",
-     "ch": [
-      "Base",
-      "Green",
-      "White",
-      "Blue"
-     ]
-    },
-    "Stinger": {
-     "n": "Prelude to Chaos Stinger",
-     "ch": [
-      "Base",
-      "Green",
-      "White",
-      "Blue"
-     ]
-    },
-    "Spectre": {
-     "n": "Prelude to Chaos Spectre",
-     "ch": [
-      "Base",
-      "Green",
-      "White",
-      "Blue"
-     ]
-    },
-    "Bulldog": {
-     "n": "Prelude to Chaos Bulldog",
-     "ch": [
-      "Base",
-      "Green",
-      "White",
-      "Blue"
-     ]
-    },
-    "Phantom": {
-     "n": "Prelude to Chaos Phantom",
-     "ch": [
-      "Base",
-      "Green",
-      "White",
-      "Blue"
-     ]
-    },
-    "Vandal": {
-     "n": "Prelude to Chaos Vandal",
-     "ch": [
-      "Base",
-      "Green",
-      "White",
-      "Blue"
-     ]
-    },
-    "Operator": {
-     "n": "Prelude to Chaos Operator",
-     "ch": [
-      "Base",
-      "Green",
-      "White",
-      "Blue"
-     ]
-    },
-    "Knife": {
-     "n": "Prelude to Chaos Knife",
-     "ch": [
-      "Base",
-      "Green",
-      "White",
-      "Blue"
-     ]
-    }
-   }
-  },
-  {
-   "id": "gaia",
-   "name": "Gaia's Vengeance",
-   "tier": "Premium",
-   "k": 5,
-   "desc": "Living bark and moss threaded with green light.",
-   "pal": {
-    "a": "#1e2b1c",
-    "b": "#4c7a3a",
-    "e": "#7dff8a"
-   },
-   "cc": {
-    "Blue": {
-     "a": "#121a2c",
-     "b": "#2f5fa8",
-     "e": "#3fa9ff"
-    },
-    "Green": {
-     "a": "#10201a",
-     "b": "#2f8a5a",
-     "e": "#5fffb0"
-    },
-    "Orange": {
-     "a": "#26170c",
-     "b": "#e8742a",
-     "e": "#ff9a2a"
-    }
-   },
-   "skins": {
-    "Shorty": {
-     "n": "Gaia's Vengeance Shorty",
-     "ch": [
-      "Base",
-      "Blue",
-      "Green",
-      "Orange"
-     ]
-    },
-    "Ghost": {
-     "n": "Gaia's Vengeance Ghost",
-     "ch": [
-      "Base",
-      "Blue",
-      "Green",
-      "Orange"
+     ],
+     "assets": [
+      {
+       "model": "skins/aerosol-shorty-default.ce5f815a0b4b",
+       "config": "models/valorant/skins/aerosol-shorty.f10d72c3542d.json",
+       "sha256": "ce5f815a0b4b711aa18d23fee2665cc2cbe9fe0be67231797e7ee096c0e59fa1",
+       "bytes": 2720964,
+       "source": "https://kingdomarchives.com/modelviewer/aerosol-shorty",
+       "variant": "default",
+       "icon": "models/valorant/skins/icons/447d856c7c888c22.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/acefbdfb-40e8-4d41-d879-d188dc6e01a1/displayicon.png"
+      }
      ]
     },
     "Bucky": {
-     "n": "Gaia's Vengeance Bucky",
+     "n": "Aerosol Bucky",
      "ch": [
-      "Base",
-      "Blue",
-      "Green",
-      "Orange"
+      "Base"
+     ],
+     "assets": [
+      {
+       "model": "skins/aerosol-bucky-default.9a57d1a594a1",
+       "config": "models/valorant/skins/aerosol-bucky.5e79ef36c323.json",
+       "sha256": "9a57d1a594a19a1e88e2e7fcd2d5c766fbfc625d0ecc13bced9a6b64e5815999",
+       "bytes": 3415956,
+       "source": "https://kingdomarchives.com/modelviewer/aerosol-bucky",
+       "variant": "default",
+       "icon": "models/valorant/skins/icons/72da7f292cc6adc4.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/0e383715-4dd6-4743-b69c-59aee968a865/displayicon.png"
+      }
      ]
     },
-    "Guardian": {
-     "n": "Gaia's Vengeance Guardian",
+    "Operator": {
+     "n": "Aerosol Operator",
      "ch": [
-      "Base",
-      "Blue",
-      "Green",
-      "Orange"
+      "Base"
+     ],
+     "assets": [
+      {
+       "model": "skins/aerosol-operator-default.d83366831987",
+       "config": "models/valorant/skins/aerosol-operator.d2007ff2b703.json",
+       "sha256": "d8336683198704012031b99f48997772b073e2a90445a55e0eba7322d2dbb682",
+       "bytes": 5102396,
+       "source": "https://kingdomarchives.com/modelviewer/aerosol-operator",
+       "variant": "default",
+       "icon": "models/valorant/skins/icons/c7e1706c4c5d024e.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/9d5173ed-4a57-eae5-fe88-159fa472aec9/displayicon.png"
+      }
      ]
     },
-    "Phantom": {
-     "n": "Gaia's Vengeance Phantom",
+    "Odin": {
+     "n": "Aerosol Odin",
      "ch": [
-      "Base",
-      "Blue",
-      "Green",
-      "Orange"
+      "Base"
+     ],
+     "assets": [
+      {
+       "model": "skins/aerosol-odin-default.70910fa51ecb",
+       "config": "models/valorant/skins/aerosol-odin.2e3e2224812e.json",
+       "sha256": "70910fa51ecba2a0e4da5303f0329f149d0669d592a04a3ad9cbaca592e89bbd",
+       "bytes": 4194728,
+       "source": "https://kingdomarchives.com/modelviewer/aerosol-odin",
+       "variant": "default",
+       "icon": "models/valorant/skins/icons/fa2ed7fcc84c2b4d.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/309941f1-48b5-edc2-5e07-eaa7a435fedc/displayicon.png"
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "blackmarket",
+   "name": "Black.Market",
+   "tier": "Select",
+   "desc": "Original VALORANT model and textures.",
+   "pal": {},
+   "cc": {},
+   "k": 0,
+   "skins": {
+    "Classic": {
+     "n": "Black.Market Classic",
+     "ch": [
+      "Attacker",
+      "Defender"
+     ],
+     "assets": [
+      {
+       "model": "skins/blackmarket-classic-attacker.7db9d082a93c",
+       "config": "models/valorant/skins/blackmarket-classic.5781fe12df6d.json",
+       "sha256": "7db9d082a93cd5c5e4d00b39b8687e8e6fc5cdf29008aa596c0c19a888b80172",
+       "bytes": 3084380,
+       "source": "https://kingdomarchives.com/modelviewer/blackmarket-classic",
+       "variant": "attacker",
+       "icon": "models/valorant/skins/icons/70be9b28aa23a12a.png",
+       "iconSource": "https://media.valorant-api.com/weaponskins/a6b46cef-4ed2-79e4-d49a-459180cdbd23/displayicon.png"
+      },
+      {
+       "model": "skins/blackmarket-classic-defender.876fd1cb6296",
+       "config": "models/valorant/skins/blackmarket-classic.5781fe12df6d.json",
+       "sha256": "876fd1cb6296dc4d3a44721f11ba8670ab7e523e632df43119187aa2c9e7df52",
+       "bytes": 2997392,
+       "source": "https://kingdomarchives.com/modelviewer/blackmarket-classic",
+       "variant": "defender",
+       "icon": "models/valorant/skins/icons/70be9b28aa23a12a.png",
+       "iconSource": "https://media.valorant-api.com/weaponskins/a6b46cef-4ed2-79e4-d49a-459180cdbd23/displayicon.png"
+      }
+     ]
+    },
+    "Bulldog": {
+     "n": "Black.Market Bulldog",
+     "ch": [
+      "Attacker",
+      "Defender"
+     ],
+     "assets": [
+      {
+       "model": "skins/blackmarket-bulldog-attacker.578217a4235b",
+       "config": "models/valorant/skins/blackmarket-bulldog.e122c391260e.json",
+       "sha256": "578217a4235b8493b2526ed372b1e116279525c7392bd98382062ef12abef175",
+       "bytes": 3670912,
+       "source": "https://kingdomarchives.com/modelviewer/blackmarket-bulldog",
+       "variant": "attacker",
+       "icon": "models/valorant/skins/icons/43b9db0900139b4b.png",
+       "iconSource": "https://media.valorant-api.com/weaponskins/1cbbdd73-4b22-4faa-acd0-0a9d6ea1963f/displayicon.png"
+      },
+      {
+       "model": "skins/blackmarket-bulldog-defender.66002a9e65da",
+       "config": "models/valorant/skins/blackmarket-bulldog.e122c391260e.json",
+       "sha256": "66002a9e65dadc19b05dd849cab25267736f6ce8a8fb54a62682a01d4cc53f2d",
+       "bytes": 3566992,
+       "source": "https://kingdomarchives.com/modelviewer/blackmarket-bulldog",
+       "variant": "defender",
+       "icon": "models/valorant/skins/icons/43b9db0900139b4b.png",
+       "iconSource": "https://media.valorant-api.com/weaponskins/1cbbdd73-4b22-4faa-acd0-0a9d6ea1963f/displayicon.png"
+      }
      ]
     },
     "Vandal": {
-     "n": "Gaia's Vengeance Vandal",
+     "n": "Black.Market Vandal",
      "ch": [
-      "Base",
-      "Blue",
-      "Green",
-      "Orange"
+      "Attacker",
+      "Defender"
+     ],
+     "assets": [
+      {
+       "model": "skins/blackmarket-vandal-attacker.6555ade40718",
+       "config": "models/valorant/skins/blackmarket-vandal.b1519e5c2436.json",
+       "sha256": "6555ade40718879c14c33c0c1d45187f04de490e42d47aa996453335e592609b",
+       "bytes": 4599852,
+       "source": "https://kingdomarchives.com/modelviewer/blackmarket-vandal",
+       "variant": "attacker",
+       "icon": "models/valorant/skins/icons/b4e7cf51142da0af.png",
+       "iconSource": "https://media.valorant-api.com/weaponskins/a810ec6b-46e7-767d-7186-2cbe49e7fe1b/displayicon.png"
+      },
+      {
+       "model": "skins/blackmarket-vandal-defender.b4bedb5e22c7",
+       "config": "models/valorant/skins/blackmarket-vandal.b1519e5c2436.json",
+       "sha256": "b4bedb5e22c7b44bce13b8302e2c78c89ff09556f8762b64a2e8d80e7c8a8f0b",
+       "bytes": 3970664,
+       "source": "https://kingdomarchives.com/modelviewer/blackmarket-vandal",
+       "variant": "defender",
+       "icon": "models/valorant/skins/icons/b4e7cf51142da0af.png",
+       "iconSource": "https://media.valorant-api.com/weaponskins/a810ec6b-46e7-767d-7186-2cbe49e7fe1b/displayicon.png"
+      }
      ]
     },
     "Marshal": {
-     "n": "Gaia's Vengeance Marshal",
+     "n": "Black.Market Marshal",
      "ch": [
-      "Base",
-      "Blue",
-      "Green",
-      "Orange"
-     ]
-    },
-    "Ares": {
-     "n": "Gaia's Vengeance Ares",
-     "ch": [
-      "Base",
-      "Blue",
-      "Green",
-      "Orange"
+      "Attacker",
+      "Defender"
+     ],
+     "assets": [
+      {
+       "model": "skins/blackmarket-marshal-attacker.e3564f0c0b09",
+       "config": "models/valorant/skins/blackmarket-marshal.00c63e899dcb.json",
+       "sha256": "e3564f0c0b0910b15e6f61719d273cefcecd608318c7b3bb63ed3346d7dbafbb",
+       "bytes": 5339660,
+       "source": "https://kingdomarchives.com/modelviewer/blackmarket-marshal",
+       "variant": "attacker",
+       "icon": "models/valorant/skins/icons/26dec592cdcfad4a.png",
+       "iconSource": "https://media.valorant-api.com/weaponskins/fe297733-4ada-d817-dd7e-17b9cd1d62d5/displayicon.png"
+      },
+      {
+       "model": "skins/blackmarket-marshal-defender.fc8da4d428ab",
+       "config": "models/valorant/skins/blackmarket-marshal.00c63e899dcb.json",
+       "sha256": "fc8da4d428abc71c232e57ed6a4e075bbd1014770bdcdc518f0860331223d16a",
+       "bytes": 4980772,
+       "source": "https://kingdomarchives.com/modelviewer/blackmarket-marshal",
+       "variant": "defender",
+       "icon": "models/valorant/skins/icons/26dec592cdcfad4a.png",
+       "iconSource": "https://media.valorant-api.com/weaponskins/fe297733-4ada-d817-dd7e-17b9cd1d62d5/displayicon.png"
+      }
      ]
     },
     "Knife": {
-     "n": "Gaia's Vengeance Knife",
+     "n": "Black.Market Butterfly Knife",
      "ch": [
       "Base",
-      "Blue",
-      "Green",
-      "Orange"
+      "Fade Variant",
+      "Sapphire"
+     ],
+     "assets": [
+      {
+       "model": "skins/blackmarket-melee-default.a4017c7ded84",
+       "config": "models/valorant/skins/blackmarket-melee.140ccc46cb3c.json",
+       "sha256": "a4017c7ded8424d316ebe00015aafdf614588e2b218842a282c898101610053c",
+       "bytes": 2257264,
+       "source": "https://kingdomarchives.com/modelviewer/blackmarket-melee",
+       "variant": "default",
+       "icon": "models/valorant/skins/icons/de6c62f6be18709e.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/f5851647-448e-a209-915f-4597df528522/fullrender.png"
+      },
+      {
+       "model": "skins/blackmarket-melee-fade-variant.c141720fed5e",
+       "config": "models/valorant/skins/blackmarket-melee.140ccc46cb3c.json",
+       "sha256": "c141720fed5e42da71df5d8f3882fc5989686bbdfb29e9c397747edd00247deb",
+       "bytes": 1834304,
+       "source": "https://kingdomarchives.com/modelviewer/blackmarket-melee",
+       "variant": "fade-variant",
+       "icon": "models/valorant/skins/icons/de6c62f6be18709e.png",
+       "iconSource": "https://media.valorant-api.com/weaponskins/9b6d0e3d-43eb-e9d5-4069-2194e02d6e6e/displayicon.png"
+      },
+      {
+       "model": "skins/blackmarket-melee-sapphire.7da76e00da66",
+       "config": "models/valorant/skins/blackmarket-melee.140ccc46cb3c.json",
+       "sha256": "7da76e00da66d59d413b52e1ede105794c49342d0409bb461de227b0a47f8f74",
+       "bytes": 1839332,
+       "source": "https://kingdomarchives.com/modelviewer/blackmarket-melee",
+       "variant": "sapphire",
+       "icon": "models/valorant/skins/icons/de6c62f6be18709e.png",
+       "iconSource": "https://media.valorant-api.com/weaponskins/9b6d0e3d-43eb-e9d5-4069-2194e02d6e6e/displayicon.png"
+      }
      ]
     }
    }
@@ -2063,31 +474,11 @@
   {
    "id": "blastx",
    "name": "BlastX",
-   "tier": "Exclusive",
-   "k": 2,
-   "desc": "Toy-blaster white with orange bands and a blue core.",
-   "pal": {
-    "a": "#f2f2ee",
-    "b": "#ff7a1a",
-    "e": "#34c3ff"
-   },
-   "cc": {
-    "Black": {
-     "a": "#0d0e10",
-     "b": "#24262b",
-     "e": "#34c3ff"
-    },
-    "Yellow": {
-     "a": "#24210f",
-     "b": "#e3c22a",
-     "e": "#fff04a"
-    },
-    "Pink": {
-     "a": "#2a1424",
-     "b": "#ff6fb5",
-     "e": "#ff8ad0"
-    }
-   },
+   "tier": "Premium",
+   "desc": "Original VALORANT model and textures.",
+   "pal": {},
+   "cc": {},
+   "k": 0,
    "skins": {
     "Frenzy": {
      "n": "BlastX Frenzy",
@@ -2096,6 +487,48 @@
       "Black",
       "Yellow",
       "Pink"
+     ],
+     "assets": [
+      {
+       "model": "skins/blastx-frenzy-default.ccb4f9b4c25d",
+       "config": "models/valorant/skins/blastx-frenzy.353cf1249330.json",
+       "sha256": "ccb4f9b4c25dbad68899d2f7806ab4ba93d02d8a7ced0037f5da24a4cdf93099",
+       "bytes": 2736460,
+       "source": "https://kingdomarchives.com/modelviewer/blastx-frenzy",
+       "variant": "default",
+       "icon": "models/valorant/skins/icons/1bc4cbb5f169c2d3.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/93b4ed9c-4e1d-2cb1-709e-c98d8e9e9e9c/displayicon.png"
+      },
+      {
+       "model": "skins/blastx-frenzy-black.28766cba54c8",
+       "config": "models/valorant/skins/blastx-frenzy.353cf1249330.json",
+       "sha256": "28766cba54c8847470ff60bc0d5f909888e21c4605c897cce308555093b10e38",
+       "bytes": 2660968,
+       "source": "https://kingdomarchives.com/modelviewer/blastx-frenzy",
+       "variant": "black",
+       "icon": "models/valorant/skins/icons/34efe98fee191b38.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/db8e1292-4fae-d1bd-b35e-a6b62884cad3/displayicon.png"
+      },
+      {
+       "model": "skins/blastx-frenzy-yellow.b2528f81f07f",
+       "config": "models/valorant/skins/blastx-frenzy.353cf1249330.json",
+       "sha256": "b2528f81f07f2c809790d211a412eb032b3a008bf7a44bd8879cb3a41ceec22f",
+       "bytes": 2757388,
+       "source": "https://kingdomarchives.com/modelviewer/blastx-frenzy",
+       "variant": "yellow",
+       "icon": "models/valorant/skins/icons/483123f1d932b185.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/54e09e83-46f8-b3ab-10ea-73bd242dfe37/displayicon.png"
+      },
+      {
+       "model": "skins/blastx-frenzy-pink.68f9218c1823",
+       "config": "models/valorant/skins/blastx-frenzy.353cf1249330.json",
+       "sha256": "68f9218c182358caa2666252614e999622c141aa3412f7314be86a66ade50ba3",
+       "bytes": 2714220,
+       "source": "https://kingdomarchives.com/modelviewer/blastx-frenzy",
+       "variant": "pink",
+       "icon": "models/valorant/skins/icons/803e9916bcb37478.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/5c2ad1f3-4a4a-6ae0-69f6-d082c3721162/displayicon.png"
+      }
      ]
     },
     "Spectre": {
@@ -2105,6 +538,48 @@
       "Black",
       "Yellow",
       "Pink"
+     ],
+     "assets": [
+      {
+       "model": "skins/blastx-spectre-default.4b540848aadc",
+       "config": "models/valorant/skins/blastx-spectre.830021cace14.json",
+       "sha256": "4b540848aadcd29b38678fdad6ffb9ba07c11c2636d91cf8a28555309b589a9f",
+       "bytes": 3481696,
+       "source": "https://kingdomarchives.com/modelviewer/blastx-spectre",
+       "variant": "default",
+       "icon": "models/valorant/skins/icons/ae48b0459736a1e6.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/1b2e57e5-454a-53f2-d62b-fd8690ae86c6/displayicon.png"
+      },
+      {
+       "model": "skins/blastx-spectre-black.bd7b44fcf8a1",
+       "config": "models/valorant/skins/blastx-spectre.830021cace14.json",
+       "sha256": "bd7b44fcf8a1ce3c7285d65faed3954326b77ed37a68b6b20feaeb110114d550",
+       "bytes": 3357968,
+       "source": "https://kingdomarchives.com/modelviewer/blastx-spectre",
+       "variant": "black",
+       "icon": "models/valorant/skins/icons/8132c1443aaec096.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/795e81ba-4abe-95a4-6b03-62be7fc4b9c3/displayicon.png"
+      },
+      {
+       "model": "skins/blastx-spectre-yellow.33a411081285",
+       "config": "models/valorant/skins/blastx-spectre.830021cace14.json",
+       "sha256": "33a41108128540771926eab5f066cf6c2ff63ac64040984a00f3896e5be3cc0c",
+       "bytes": 3517048,
+       "source": "https://kingdomarchives.com/modelviewer/blastx-spectre",
+       "variant": "yellow",
+       "icon": "models/valorant/skins/icons/83a73fc4600b31cf.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/db5f441d-41f1-abda-e761-bc9cf2e94cfc/displayicon.png"
+      },
+      {
+       "model": "skins/blastx-spectre-pink.a90f38a54752",
+       "config": "models/valorant/skins/blastx-spectre.830021cace14.json",
+       "sha256": "a90f38a54752b123c722eb0e556f85985534bbf6e12ead3284fbbf8c3eefe0de",
+       "bytes": 3447288,
+       "source": "https://kingdomarchives.com/modelviewer/blastx-spectre",
+       "variant": "pink",
+       "icon": "models/valorant/skins/icons/95ae17d12fdddfaf.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/59c2935a-446e-a30b-a52b-e98a409c7556/displayicon.png"
+      }
      ]
     },
     "Phantom": {
@@ -2114,6 +589,48 @@
       "Black",
       "Yellow",
       "Pink"
+     ],
+     "assets": [
+      {
+       "model": "skins/blastx-phantom-default.4252d61ffb4d",
+       "config": "models/valorant/skins/blastx-phantom.f52d7939a841.json",
+       "sha256": "4252d61ffb4d2dc95756f54bdb637729b3fd581aea2587923373d0c12e75cce2",
+       "bytes": 3559044,
+       "source": "https://kingdomarchives.com/modelviewer/blastx-phantom",
+       "variant": "default",
+       "icon": "models/valorant/skins/icons/c468f2b87396d623.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/0c6f30f3-4ed4-b113-6aaa-139e218f9dc6/displayicon.png"
+      },
+      {
+       "model": "skins/blastx-phantom-black.7704b596f8a1",
+       "config": "models/valorant/skins/blastx-phantom.f52d7939a841.json",
+       "sha256": "7704b596f8a14d1cccd4c5c92b373f511cc67987c78730e1adfe922e86aeb226",
+       "bytes": 3436976,
+       "source": "https://kingdomarchives.com/modelviewer/blastx-phantom",
+       "variant": "black",
+       "icon": "models/valorant/skins/icons/75d01bf4d29d8a99.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/02f4efed-4196-11c7-ffe7-bfb141e67e5b/displayicon.png"
+      },
+      {
+       "model": "skins/blastx-phantom-yellow.93a2922111de",
+       "config": "models/valorant/skins/blastx-phantom.f52d7939a841.json",
+       "sha256": "93a2922111dec11cd9b4b0750a080f3cb60248619dcd944c4e4eeecaf58c541e",
+       "bytes": 3540132,
+       "source": "https://kingdomarchives.com/modelviewer/blastx-phantom",
+       "variant": "yellow",
+       "icon": "models/valorant/skins/icons/bd0d9c157a87a5f0.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/2900a9c1-47f3-7201-b4d6-32a7868784a4/displayicon.png"
+      },
+      {
+       "model": "skins/blastx-phantom-pink.c7dd1e85a5da",
+       "config": "models/valorant/skins/blastx-phantom.f52d7939a841.json",
+       "sha256": "c7dd1e85a5da7e586b9506a415de05eb57a7a7180ac03d24dcf6b06c72e627fd",
+       "bytes": 3553848,
+       "source": "https://kingdomarchives.com/modelviewer/blastx-phantom",
+       "variant": "pink",
+       "icon": "models/valorant/skins/icons/538aa19e0464421c.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/68f38c2b-4c7e-7a2d-2cd1-118ccf7ed646/displayicon.png"
+      }
      ]
     },
     "Odin": {
@@ -2123,331 +640,1901 @@
       "Black",
       "Yellow",
       "Pink"
+     ],
+     "assets": [
+      {
+       "model": "skins/blastx-odin-default.88c93c3823b2",
+       "config": "models/valorant/skins/blastx-odin.5cd10b393cce.json",
+       "sha256": "88c93c3823b2fe61f2aa4d96f3e3fa6b43fa991d46415f994e3e2c2f57603d15",
+       "bytes": 3433208,
+       "source": "https://kingdomarchives.com/modelviewer/blastx-odin",
+       "variant": "default",
+       "icon": "models/valorant/skins/icons/b5d13e87f2fc68c0.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/f55aac92-4420-7038-634a-8fb3fc9a936d/displayicon.png"
+      },
+      {
+       "model": "skins/blastx-odin-black.b7fddfe43da1",
+       "config": "models/valorant/skins/blastx-odin.5cd10b393cce.json",
+       "sha256": "b7fddfe43da17de356ed58a2191323c1eb8c72237b668d4586fcc1f5efff9a3f",
+       "bytes": 3231104,
+       "source": "https://kingdomarchives.com/modelviewer/blastx-odin",
+       "variant": "black",
+       "icon": "models/valorant/skins/icons/cc07065c095d6e07.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/3b809ee0-4af3-b604-9ac4-a799241289e7/displayicon.png"
+      },
+      {
+       "model": "skins/blastx-odin-yellow.448971f70a6c",
+       "config": "models/valorant/skins/blastx-odin.5cd10b393cce.json",
+       "sha256": "448971f70a6c3e816b3243cf645d8e938b3081e961afc4539d367d9b3257ce5d",
+       "bytes": 3408496,
+       "source": "https://kingdomarchives.com/modelviewer/blastx-odin",
+       "variant": "yellow",
+       "icon": "models/valorant/skins/icons/1a461b413abbb1da.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/027dda2f-491d-e55e-1d32-acb7f55008f9/displayicon.png"
+      },
+      {
+       "model": "skins/blastx-odin-pink.34263d4d2824",
+       "config": "models/valorant/skins/blastx-odin.5cd10b393cce.json",
+       "sha256": "34263d4d28247e396bd55367bb4b67909a97e4dd762341868b0b74c347f3ba1a",
+       "bytes": 3328584,
+       "source": "https://kingdomarchives.com/modelviewer/blastx-odin",
+       "variant": "pink",
+       "icon": "models/valorant/skins/icons/8b900d6bf3f128f7.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/e2c992bc-4099-eeac-9e3f-2e9d6a6bf757/displayicon.png"
+      }
      ]
     },
     "Knife": {
-     "n": "BlastX Knife",
+     "n": "BlastX Polymer KnifeTech Coated Knife",
      "ch": [
       "Base",
       "Black",
       "Yellow",
       "Pink"
+     ],
+     "assets": [
+      {
+       "model": "skins/blastx-melee-default.6ac4e406ee9f",
+       "config": "models/valorant/skins/blastx-melee.95d98780b999.json",
+       "sha256": "6ac4e406ee9f0b4ada723a940da5d71362b8efdfe82d9d5bdeed50e3cb509b0e",
+       "bytes": 1397624,
+       "source": "https://kingdomarchives.com/modelviewer/blastx-melee",
+       "variant": "default",
+       "icon": "models/valorant/skins/icons/a44f063df2385d1b.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/4805ee17-4f88-b9b7-b009-8c9986bee2f3/displayicon.png"
+      },
+      {
+       "model": "skins/blastx-melee-black.2887ec572408",
+       "config": "models/valorant/skins/blastx-melee.95d98780b999.json",
+       "sha256": "2887ec5724088fe7db2ec9833d10d2549e05464f425eab87db437e3d81711f02",
+       "bytes": 1352780,
+       "source": "https://kingdomarchives.com/modelviewer/blastx-melee",
+       "variant": "black",
+       "icon": "models/valorant/skins/icons/e0102203c0061d11.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/82898e1f-420a-00a9-5a30-c299f632b383/displayicon.png"
+      },
+      {
+       "model": "skins/blastx-melee-yellow.e98e5148ec11",
+       "config": "models/valorant/skins/blastx-melee.95d98780b999.json",
+       "sha256": "e98e5148ec111eb31f93fec81c75fbe0976e275519e69fc9485b6284b752f873",
+       "bytes": 1361692,
+       "source": "https://kingdomarchives.com/modelviewer/blastx-melee",
+       "variant": "yellow",
+       "icon": "models/valorant/skins/icons/79f2cddee465486e.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/a56b9966-41cb-37ad-23d4-cb8329f11112/displayicon.png"
+      },
+      {
+       "model": "skins/blastx-melee-pink.ffa666caa7c8",
+       "config": "models/valorant/skins/blastx-melee.95d98780b999.json",
+       "sha256": "ffa666caa7c881353bcfc03307476b8172c60b0c8fd53e871f47b9c8e807bb96",
+       "bytes": 1393244,
+       "source": "https://kingdomarchives.com/modelviewer/blastx-melee",
+       "variant": "pink",
+       "icon": "models/valorant/skins/icons/e817b767a9fb8345.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/49b83035-4a5e-fcd9-43bf-598a79e76413/displayicon.png"
+      }
      ]
     }
    }
   },
   {
-   "id": "protocol",
-   "name": "Protocol 781-A",
-   "tier": "Ultra",
-   "k": 4,
-   "desc": "Industrial white and grey with orange signal traces.",
-   "pal": {
-    "a": "#e4e6e8",
-    "b": "#4b5056",
-    "e": "#ff5a2a"
-   },
-   "cc": {
-    "White/Pink": {
-     "a": "#eceff2",
-     "b": "#ff6fb5",
-     "e": "#ff8ad0"
-    },
-    "Red/Blue": {
-     "a": "#1e1418",
-     "b": "#c4232f",
-     "e": "#3fa9ff"
-    },
-    "Green": {
-     "a": "#10201a",
-     "b": "#2f8a5a",
-     "e": "#5fffb0"
-    }
-   },
-   "skins": {
-    "Sheriff": {
-     "n": "Protocol 781-A Sheriff",
-     "ch": [
-      "Base",
-      "White/Pink",
-      "Red/Blue",
-      "Green"
-     ]
-    },
-    "Spectre": {
-     "n": "Protocol 781-A Spectre",
-     "ch": [
-      "Base",
-      "White/Pink",
-      "Red/Blue",
-      "Green"
-     ]
-    },
-    "Bulldog": {
-     "n": "Protocol 781-A Bulldog",
-     "ch": [
-      "Base",
-      "White/Pink",
-      "Red/Blue",
-      "Green"
-     ]
-    },
-    "Phantom": {
-     "n": "Protocol 781-A Phantom",
-     "ch": [
-      "Base",
-      "White/Pink",
-      "Red/Blue",
-      "Green"
-     ]
-    },
-    "Knife": {
-     "n": "Protocol 781-A Knife",
-     "ch": [
-      "Base",
-      "White/Pink",
-      "Red/Blue",
-      "Green"
-     ]
-    }
-   }
-  },
-  {
-   "id": "magepunk",
-   "name": "Magepunk",
-   "tier": "Premium",
-   "k": 4,
-   "desc": "Copper and brass machinery with crackling blue current.",
-   "pal": {
-    "a": "#2b2420",
-    "b": "#b87333",
-    "e": "#3fd0ff",
-    "p": 1
-   },
-   "cc": {
-    "Green": {
-     "a": "#10201a",
-     "b": "#2f8a5a",
-     "e": "#5fffb0"
-    },
-    "Pink": {
-     "a": "#2a1424",
-     "b": "#ff6fb5",
-     "e": "#ff8ad0"
-    },
-    "Orange": {
-     "a": "#26170c",
-     "b": "#e8742a",
-     "e": "#ff9a2a"
-    },
-    "Black/Red": {
-     "a": "#0d0e10",
-     "b": "#c4232f",
-     "e": "#ff3048"
-    },
-    "Yellow": {
-     "a": "#24210f",
-     "b": "#e3c22a",
-     "e": "#fff04a"
-    },
-    "Purple": {
-     "a": "#1b1030",
-     "b": "#6a2c9a",
-     "e": "#c66bff"
-    }
-   },
+   "id": "dotexe",
+   "name": ".EXE",
+   "tier": "Select",
+   "desc": "Original VALORANT model and textures.",
+   "pal": {},
+   "cc": {},
+   "k": 0,
    "skins": {
     "Ghost": {
-     "n": "Magepunk Ghost",
+     "n": ".EXE Ghost",
      "ch": [
-      "Base",
-      "Green",
-      "Purple",
-      "Orange"
+      "Base"
+     ],
+     "assets": [
+      {
+       "model": "skins/dotexe-ghost-default.f094f93b74f3",
+       "config": "models/valorant/skins/dotexe-ghost.e4848f9045d9.json",
+       "sha256": "f094f93b74f3dea4536fc65d648ed737e37a646a81cef7710eff2ccb2fc6bb0e",
+       "bytes": 3118464,
+       "source": "https://kingdomarchives.com/modelviewer/dotexe-ghost",
+       "variant": "default",
+       "icon": "models/valorant/skins/icons/655e78743e8c4230.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/12966603-4cb3-03dd-bf2e-338fb15d144f/displayicon.png"
+      }
      ]
     },
-    "Sheriff": {
-     "n": "Magepunk Sheriff",
+    "Judge": {
+     "n": ".EXE Judge",
      "ch": [
-      "Base",
-      "Green",
-      "Pink",
-      "Orange"
-     ]
-    },
-    "Spectre": {
-     "n": "Magepunk Spectre",
-     "ch": [
-      "Base",
-      "Green",
-      "Purple",
-      "Orange"
-     ]
-    },
-    "Bucky": {
-     "n": "Magepunk Bucky",
-     "ch": [
-      "Base",
-      "Green",
-      "Purple",
-      "Orange"
-     ]
-    },
-    "Guardian": {
-     "n": "Magepunk Guardian",
-     "ch": [
-      "Base",
-      "Green",
-      "Pink",
-      "Orange"
-     ]
-    },
-    "Phantom": {
-     "n": "Magepunk Phantom",
-     "ch": [
-      "Base",
-      "Green",
-      "Black/Red",
-      "Yellow"
+      "Base"
+     ],
+     "assets": [
+      {
+       "model": "skins/dotexe-judge-default.0748ac09fbe6",
+       "config": "models/valorant/skins/dotexe-judge.5a0e86f45e46.json",
+       "sha256": "0748ac09fbe667cd8f1de055581fa050d35c1ae16a403a8c177061db2404d694",
+       "bytes": 3161308,
+       "source": "https://kingdomarchives.com/modelviewer/dotexe-judge",
+       "variant": "default",
+       "icon": "models/valorant/skins/icons/058c02d7dabe91db.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/066f07a2-42c5-4197-497a-f0a3fdbb4a6b/displayicon.png"
+      }
      ]
     },
     "Vandal": {
-     "n": "Magepunk Vandal",
+     "n": ".EXE Vandal",
      "ch": [
-      "Base",
-      "Green",
-      "Black/Red",
-      "Yellow"
-     ]
-    },
-    "Marshal": {
-     "n": "Magepunk Marshal",
-     "ch": [
-      "Base",
-      "Green",
-      "Purple",
-      "Orange"
-     ]
-    },
-    "Operator": {
-     "n": "Magepunk Operator",
-     "ch": [
-      "Base",
-      "Green",
-      "Pink",
-      "Orange"
-     ]
-    },
-    "Ares": {
-     "n": "Magepunk Ares",
-     "ch": [
-      "Base",
-      "Green",
-      "Pink",
-      "Orange"
-     ]
-    },
-    "Knife": {
-     "n": "Magepunk Knife",
-     "ch": [
-      "Base",
-      "Green",
-      "Purple",
-      "Orange"
-     ]
-    }
-   }
-  },
-  {
-   "id": "neofrontier",
-   "name": "Neo Frontier",
-   "tier": "Exclusive",
-   "k": 2,
-   "desc": "Frontier navy and brass with a cool cyan glow.",
-   "pal": {
-    "a": "#1e2a3a",
-    "b": "#c9a04a",
-    "e": "#5fd0ff"
-   },
-   "cc": {
-    "Gold": {
-     "a": "#1d1a12",
-     "b": "#d4af37",
-     "e": "#ffd23a"
-    },
-    "Silver": {
-     "a": "#c8cdd3",
-     "b": "#7d858f",
-     "e": "#5fd0ff"
-    },
-    "Copper": {
-     "a": "#3a2418",
-     "b": "#b87333",
-     "e": "#ffb06a"
-    }
-   },
-   "skins": {
-    "Shorty": {
-     "n": "Neo Frontier Shorty",
-     "ch": [
-      "Base",
-      "Gold",
-      "Silver",
-      "Copper"
-     ]
-    },
-    "Sheriff": {
-     "n": "Neo Frontier Sheriff",
-     "ch": [
-      "Base",
-      "Gold",
-      "Silver",
-      "Copper"
-     ]
-    },
-    "Phantom": {
-     "n": "Neo Frontier Phantom",
-     "ch": [
-      "Base",
-      "Gold",
-      "Silver",
-      "Copper"
-     ]
-    },
-    "Vandal": {
-     "n": "Neo Frontier Vandal",
-     "ch": [
-      "Base",
-      "Gold",
-      "Silver",
-      "Copper"
-     ]
-    },
-    "Marshal": {
-     "n": "Neo Frontier Marshal",
-     "ch": [
-      "Base",
-      "Gold",
-      "Silver",
-      "Copper"
+      "Base"
+     ],
+     "assets": [
+      {
+       "model": "skins/dotexe-vandal-default.33211b8ec6e3",
+       "config": "models/valorant/skins/dotexe-vandal.523eadae9e3b.json",
+       "sha256": "33211b8ec6e3bc0c6f52e7168f260488d74141e588d22e60b49009b3bf0b2fad",
+       "bytes": 3840976,
+       "source": "https://kingdomarchives.com/modelviewer/dotexe-vandal",
+       "variant": "default",
+       "icon": "models/valorant/skins/icons/d39bedebbcae7827.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/2be20a2a-4582-b689-f00e-a98dafad65eb/displayicon.png"
+      }
      ]
     },
     "Odin": {
-     "n": "Neo Frontier Odin",
+     "n": ".EXE Odin",
      "ch": [
-      "Base",
-      "Gold",
-      "Silver",
-      "Copper"
+      "Base"
+     ],
+     "assets": [
+      {
+       "model": "skins/dotexe-odin-default.07091c6df5c0",
+       "config": "models/valorant/skins/dotexe-odin.2f2b5db9aed2.json",
+       "sha256": "07091c6df5c083e89de91cc39385dd6b4eb8d34bbcf4ef5090736e2f6c1471ef",
+       "bytes": 3613324,
+       "source": "https://kingdomarchives.com/modelviewer/dotexe-odin",
+       "variant": "default",
+       "icon": "models/valorant/skins/icons/53226f7fb247c2d2.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/c1ed5bf3-4827-3e3a-ebbb-1ba42a226e59/displayicon.png"
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "galleria",
+   "name": "Galleria",
+   "tier": "Select",
+   "desc": "Original VALORANT model and textures.",
+   "pal": {},
+   "cc": {},
+   "k": 0,
+   "skins": {
+    "Classic": {
+     "n": "Galleria Classic",
+     "ch": [
+      "Base"
+     ],
+     "assets": [
+      {
+       "model": "skins/galleria-classic-default.1f3f144bf9f2",
+       "config": "models/valorant/skins/galleria-classic.524c92afd1cd.json",
+       "sha256": "1f3f144bf9f2f85f8513543dd964455ee4a3364be3c26752266249b1c78ba715",
+       "bytes": 3589032,
+       "source": "https://kingdomarchives.com/modelviewer/galleria-classic",
+       "variant": "default",
+       "icon": "models/valorant/skins/icons/4b877993a74dc5ca.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/ab72692d-4447-3cb0-e8a8-30ac11d82213/displayicon.png"
+      }
+     ]
+    },
+    "Bucky": {
+     "n": "Galleria Bucky",
+     "ch": [
+      "Base"
+     ],
+     "assets": [
+      {
+       "model": "skins/galleria-bucky-default.e13670f31560",
+       "config": "models/valorant/skins/galleria-bucky.98ddadc62b36.json",
+       "sha256": "e13670f31560ef20d3e27d415475fa5ce605c550b002bb620e84de4cf4aa0cec",
+       "bytes": 3085176,
+       "source": "https://kingdomarchives.com/modelviewer/galleria-bucky",
+       "variant": "default",
+       "icon": "models/valorant/skins/icons/985defd944f6078a.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/2b9aaf1d-492a-fcb7-b22b-4c8ba8d67efa/displayicon.png"
+      }
+     ]
+    },
+    "Guardian": {
+     "n": "Galleria Guardian",
+     "ch": [
+      "Base"
+     ],
+     "assets": [
+      {
+       "model": "skins/galleria-guardian-default.f429190b8485",
+       "config": "models/valorant/skins/galleria-guardian.a099aac5ee24.json",
+       "sha256": "f429190b8485563b70a4f7f6c02181545629feda0622def6d720ed95adb031de",
+       "bytes": 3414976,
+       "source": "https://kingdomarchives.com/modelviewer/galleria-guardian",
+       "variant": "default",
+       "icon": "models/valorant/skins/icons/fe6171965505dd01.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/fc0c6d41-496e-5ac5-6c8f-9787f4e71c0d/displayicon.png"
+      }
+     ]
+    },
+    "Phantom": {
+     "n": "Galleria Phantom",
+     "ch": [
+      "Base"
+     ],
+     "assets": [
+      {
+       "model": "skins/galleria-phantom-default.e4e0b03b7233",
+       "config": "models/valorant/skins/galleria-phantom.af9a7db5d5a9.json",
+       "sha256": "e4e0b03b7233da6031f2a7d6fe220b7f4b8f2c1a50c9be35c6a847cbae2b099d",
+       "bytes": 5719432,
+       "source": "https://kingdomarchives.com/modelviewer/galleria-phantom",
+       "variant": "default",
+       "icon": "models/valorant/skins/icons/87d8e8cc04d887c4.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/7a53dd42-48c0-ddf9-424d-d7bb478a24ad/displayicon.png"
+      }
+     ]
+    },
+    "Marshal": {
+     "n": "Galleria Marshal",
+     "ch": [
+      "Base"
+     ],
+     "assets": [
+      {
+       "model": "skins/galleria-marshal-default.7896133bfba7",
+       "config": "models/valorant/skins/galleria-marshal.d3aa28875e26.json",
+       "sha256": "7896133bfba7f243b005b9cd47c8bfdecd3010e0d98e477466febd60cd222214",
+       "bytes": 4822240,
+       "source": "https://kingdomarchives.com/modelviewer/galleria-marshal",
+       "variant": "default",
+       "icon": "models/valorant/skins/icons/97dc40b6b167f2d8.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/f9800505-4923-a557-494b-02bf4c47ec2b/displayicon.png"
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "kingdom",
+   "name": "Kingdom",
+   "tier": "Select",
+   "desc": "Original VALORANT model and textures.",
+   "pal": {},
+   "cc": {},
+   "k": 0,
+   "skins": {
+    "Classic": {
+     "n": "Kingdom Classic",
+     "ch": [
+      "Base"
+     ],
+     "assets": [
+      {
+       "model": "skins/kingdom-classic-default.76fe8b8a00a5",
+       "config": "models/valorant/skins/kingdom-classic.8e32d9f3ba2e.json",
+       "sha256": "76fe8b8a00a53768e942c7ed486809adc0c31b0937977b0920b04b03ae2094be",
+       "bytes": 2482572,
+       "source": "https://kingdomarchives.com/modelviewer/kingdom-classic",
+       "variant": "default",
+       "icon": "models/valorant/skins/icons/8d588f5af8f9ba9c.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/e7644f3c-42d3-8336-5135-17a4883032fd/displayicon.png"
+      }
+     ]
+    },
+    "Spectre": {
+     "n": "Kingdom Spectre",
+     "ch": [
+      "Base"
+     ],
+     "assets": [
+      {
+       "model": "skins/kingdom-spectre-default.0edfa9afa1be",
+       "config": "models/valorant/skins/kingdom-spectre.ca06d57f14fc.json",
+       "sha256": "0edfa9afa1be92872f34f3631a1b2cecb1b5ea3db5e05bc2de11cf3fbe0d73b9",
+       "bytes": 3609660,
+       "source": "https://kingdomarchives.com/modelviewer/kingdom-spectre",
+       "variant": "default",
+       "icon": "models/valorant/skins/icons/a533222676b88fe7.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/10da9310-479f-df03-8229-809a69115ff3/displayicon.png"
+      }
+     ]
+    },
+    "Bucky": {
+     "n": "Kingdom Bucky",
+     "ch": [
+      "Base"
+     ],
+     "assets": [
+      {
+       "model": "skins/kingdom-bucky-default.0477b02f1ee7",
+       "config": "models/valorant/skins/kingdom-bucky.0a0351d360e9.json",
+       "sha256": "0477b02f1ee7eb57175721a864b4feac6548e68a7aab56b11502a445d7156d22",
+       "bytes": 2646412,
+       "source": "https://kingdomarchives.com/modelviewer/kingdom-bucky",
+       "variant": "default",
+       "icon": "models/valorant/skins/icons/a3626d7157f5b06f.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/8bb9c93c-4f27-89f8-3bf7-06b9101daa85/displayicon.png"
+      }
+     ]
+    },
+    "Phantom": {
+     "n": "Kingdom Phantom",
+     "ch": [
+      "Base"
+     ],
+     "assets": [
+      {
+       "model": "skins/kingdom-phantom-default.d17992484691",
+       "config": "models/valorant/skins/kingdom-phantom.010155dca382.json",
+       "sha256": "d17992484691e5e0537c5a920558fb8ab93338f197c66323af00f3fd82080cfd",
+       "bytes": 3134756,
+       "source": "https://kingdomarchives.com/modelviewer/kingdom-phantom",
+       "variant": "default",
+       "icon": "models/valorant/skins/icons/8d12adbca19639b8.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/83697aaa-415d-3ec3-0205-fcab8de464d2/displayicon.png"
+      }
      ]
     },
     "Knife": {
-     "n": "Neo Frontier Knife",
+     "n": "Kingdom Knife",
+     "ch": [
+      "Base"
+     ],
+     "assets": [
+      {
+       "model": "skins/kingdom-melee-default.c6da759874ec",
+       "config": "models/valorant/skins/kingdom-melee.6ee7a8838a75.json",
+       "sha256": "c6da759874ecec0a49c1605d8db1823de9db300584e917828f6bf5e1fa44ed2d",
+       "bytes": 1677260,
+       "source": "https://kingdomarchives.com/modelviewer/kingdom-melee",
+       "variant": "default",
+       "icon": "models/valorant/skins/icons/f46869e895c2b80b.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/138ae294-4f2e-528a-6601-a69e931bb93f/displayicon.png"
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "mk-vii-liberty",
+   "name": "MK.VII Liberty",
+   "tier": "Select",
+   "desc": "Original VALORANT model and textures.",
+   "pal": {},
+   "cc": {},
+   "k": 0,
+   "skins": {
+    "Judge": {
+     "n": "MK.VII Liberty Judge",
      "ch": [
       "Base",
-      "Gold",
-      "Silver",
-      "Copper"
+      "Desert",
+      "Sea",
+      "Tundra"
+     ],
+     "assets": [
+      {
+       "model": "skins/mk-vii-liberty-judge-default.5dd41441b292",
+       "config": "models/valorant/skins/mk-vii-liberty-judge.45c92ae896aa.json",
+       "sha256": "5dd41441b2927805351c6a698fd49ce0804f8abf7dce327464c9f98f02b06b6c",
+       "bytes": 4572468,
+       "source": "https://kingdomarchives.com/modelviewer/mk-vii-liberty-judge",
+       "variant": "default",
+       "icon": "models/valorant/skins/icons/4e55f84fb4b05676.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/8b23f4fe-47bd-bfb4-e11c-5ea2defb5f03/displayicon.png"
+      },
+      {
+       "model": "skins/mk-vii-liberty-judge-desert.d9d77faf87fc",
+       "config": "models/valorant/skins/mk-vii-liberty-judge.45c92ae896aa.json",
+       "sha256": "d9d77faf87fca20969d116221ca1a21c10b630f3e9441ef31a2e1a0e951da1b8",
+       "bytes": 4379944,
+       "source": "https://kingdomarchives.com/modelviewer/mk-vii-liberty-judge",
+       "variant": "desert",
+       "icon": "models/valorant/skins/icons/75892efe690eb57c.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/c2bd0e6d-44db-1b06-cea6-9f838f2ebb87/displayicon.png"
+      },
+      {
+       "model": "skins/mk-vii-liberty-judge-sea.415f1c6c7dac",
+       "config": "models/valorant/skins/mk-vii-liberty-judge.45c92ae896aa.json",
+       "sha256": "415f1c6c7dacf8216b05feae4355f8cf7e4bc48445a8753dabfc15d18bc3d1ab",
+       "bytes": 4299024,
+       "source": "https://kingdomarchives.com/modelviewer/mk-vii-liberty-judge",
+       "variant": "sea",
+       "icon": "models/valorant/skins/icons/67ae90f5397ba48a.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/01fdc4de-44b8-9e9c-1787-c2898a8fdab3/displayicon.png"
+      },
+      {
+       "model": "skins/mk-vii-liberty-judge-tundra.6f42be81bb96",
+       "config": "models/valorant/skins/mk-vii-liberty-judge.45c92ae896aa.json",
+       "sha256": "6f42be81bb96973f48755e805b32ec289bcdfff8d4476b614cada31e97503d2b",
+       "bytes": 5079604,
+       "source": "https://kingdomarchives.com/modelviewer/mk-vii-liberty-judge",
+       "variant": "tundra",
+       "icon": "models/valorant/skins/icons/bed7a25f6af733d1.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/6aa9a0a5-49a9-1985-c71c-3788c09984b5/displayicon.png"
+      }
+     ]
+    },
+    "Guardian": {
+     "n": "MK.VII Liberty Guardian",
+     "ch": [
+      "Base",
+      "Desert",
+      "Sea",
+      "Tundra"
+     ],
+     "assets": [
+      {
+       "model": "skins/mk-vii-liberty-guardian-default.f57a5584182c",
+       "config": "models/valorant/skins/mk-vii-liberty-guardian.2bc3609723ef.json",
+       "sha256": "f57a5584182c6ef70a5d283c9d76374b44e7f0ca7420be852c91d08e490eb1fa",
+       "bytes": 5106392,
+       "source": "https://kingdomarchives.com/modelviewer/mk-vii-liberty-guardian",
+       "variant": "default",
+       "icon": "models/valorant/skins/icons/de64cc2b5408c11d.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/37a5e577-4fc6-bf1e-a229-58a881c54404/displayicon.png"
+      },
+      {
+       "model": "skins/mk-vii-liberty-guardian-desert.1de36f3cb970",
+       "config": "models/valorant/skins/mk-vii-liberty-guardian.2bc3609723ef.json",
+       "sha256": "1de36f3cb970c19fe62ef51686accdd0600e7f07314324bd9a8f7c2b427c393d",
+       "bytes": 4937428,
+       "source": "https://kingdomarchives.com/modelviewer/mk-vii-liberty-guardian",
+       "variant": "desert",
+       "icon": "models/valorant/skins/icons/7319747b6c72e5c2.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/d944e5ef-4fd5-1d0a-1522-2cb420c4f857/displayicon.png"
+      },
+      {
+       "model": "skins/mk-vii-liberty-guardian-sea.15c16dc135ed",
+       "config": "models/valorant/skins/mk-vii-liberty-guardian.2bc3609723ef.json",
+       "sha256": "15c16dc135edd3e4080c797c2f9dc2c6d13103cbf76ae1da6fb6ae59d6793d53",
+       "bytes": 4972964,
+       "source": "https://kingdomarchives.com/modelviewer/mk-vii-liberty-guardian",
+       "variant": "sea",
+       "icon": "models/valorant/skins/icons/42f88debb5d92fa7.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/efc5e5c2-440f-8c55-9736-dba9a36ce238/displayicon.png"
+      },
+      {
+       "model": "skins/mk-vii-liberty-guardian-tundra.b8e61231b9ea",
+       "config": "models/valorant/skins/mk-vii-liberty-guardian.2bc3609723ef.json",
+       "sha256": "b8e61231b9ea3660c86ca7f6bc7c75b17e4f091bb8fb70a95ded58ac81bba160",
+       "bytes": 5949388,
+       "source": "https://kingdomarchives.com/modelviewer/mk-vii-liberty-guardian",
+       "variant": "tundra",
+       "icon": "models/valorant/skins/icons/a993f1a186e418c9.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/e29b357d-4e38-1fd2-02c5-a1a65ba9d82b/displayicon.png"
+      }
+     ]
+    },
+    "Vandal": {
+     "n": "MK.VII Liberty Vandal",
+     "ch": [
+      "Base",
+      "Desert",
+      "Sea",
+      "Tundra"
+     ],
+     "assets": [
+      {
+       "model": "skins/mk-vii-liberty-vandal-default.683a743b0528",
+       "config": "models/valorant/skins/mk-vii-liberty-vandal.613ac616dad5.json",
+       "sha256": "683a743b05286febb26d17f160efbd524699057a3e39f868f5e770c93434baa3",
+       "bytes": 5169612,
+       "source": "https://kingdomarchives.com/modelviewer/mk-vii-liberty-vandal",
+       "variant": "default",
+       "icon": "models/valorant/skins/icons/11be06b2dd32b868.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/57d9895b-40db-7477-5009-6ea0137ac2f4/displayicon.png"
+      },
+      {
+       "model": "skins/mk-vii-liberty-vandal-desert.a4409f35343b",
+       "config": "models/valorant/skins/mk-vii-liberty-vandal.613ac616dad5.json",
+       "sha256": "a4409f35343bae20fbafe0b47675423ae6cf0d9993b7cbb5c6eaa387e91e371a",
+       "bytes": 4889296,
+       "source": "https://kingdomarchives.com/modelviewer/mk-vii-liberty-vandal",
+       "variant": "desert",
+       "icon": "models/valorant/skins/icons/72d3cf726a5d69d1.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/360cc9bf-40ad-bb06-6ddf-9f887c372d66/displayicon.png"
+      },
+      {
+       "model": "skins/mk-vii-liberty-vandal-sea.442209c38327",
+       "config": "models/valorant/skins/mk-vii-liberty-vandal.613ac616dad5.json",
+       "sha256": "442209c383271b2ce516cbabff9b9f5f219cb3a2ae28fccc361f23dbcd68143e",
+       "bytes": 4915388,
+       "source": "https://kingdomarchives.com/modelviewer/mk-vii-liberty-vandal",
+       "variant": "sea",
+       "icon": "models/valorant/skins/icons/0007f917d6434e3e.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/9f6b9a7f-4c49-e06c-3aa3-4aab4806318b/displayicon.png"
+      },
+      {
+       "model": "skins/mk-vii-liberty-vandal-tundra.f34b7fde32a5",
+       "config": "models/valorant/skins/mk-vii-liberty-vandal.613ac616dad5.json",
+       "sha256": "f34b7fde32a516428f137e82d5af95772863a9eeb3338c8390f331e8e90a940a",
+       "bytes": 6031256,
+       "source": "https://kingdomarchives.com/modelviewer/mk-vii-liberty-vandal",
+       "variant": "tundra",
+       "icon": "models/valorant/skins/icons/cfb501f92e895487.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/8b5c1760-4be7-ded8-16ee-df9383116f5f/displayicon.png"
+      }
+     ]
+    },
+    "Operator": {
+     "n": "MK.VII Liberty Operator",
+     "ch": [
+      "Base",
+      "Desert",
+      "Sea",
+      "Tundra"
+     ],
+     "assets": [
+      {
+       "model": "skins/mk-vii-liberty-operator-default.8f36cc9f5a99",
+       "config": "models/valorant/skins/mk-vii-liberty-operator.e5d4be33d06d.json",
+       "sha256": "8f36cc9f5a99990e3d7f78a199fc6d69fb61d1ece4b9fd082b2737bbe5d4074c",
+       "bytes": 6397228,
+       "source": "https://kingdomarchives.com/modelviewer/mk-vii-liberty-operator",
+       "variant": "default",
+       "icon": "models/valorant/skins/icons/f9de72499f5e338a.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/c59ac8f3-4c4f-8527-4c23-4cb836377f8a/displayicon.png"
+      },
+      {
+       "model": "skins/mk-vii-liberty-operator-desert.af6cdde889a3",
+       "config": "models/valorant/skins/mk-vii-liberty-operator.e5d4be33d06d.json",
+       "sha256": "af6cdde889a33bc623288ab1935fc16f976c7764fef3022f42651c0db51b1c99",
+       "bytes": 5979104,
+       "source": "https://kingdomarchives.com/modelviewer/mk-vii-liberty-operator",
+       "variant": "desert",
+       "icon": "models/valorant/skins/icons/fa393c7eefbe26d7.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/c794a868-4b30-e87e-e2c0-beb4c47892dc/displayicon.png"
+      },
+      {
+       "model": "skins/mk-vii-liberty-operator-sea.354bc8149ac5",
+       "config": "models/valorant/skins/mk-vii-liberty-operator.e5d4be33d06d.json",
+       "sha256": "354bc8149ac57ed27c83dfebc21b6165a945718d2e7269ee55c356b91a7bd9f5",
+       "bytes": 6055456,
+       "source": "https://kingdomarchives.com/modelviewer/mk-vii-liberty-operator",
+       "variant": "sea",
+       "icon": "models/valorant/skins/icons/d64621d2f3a54d8d.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/4b5b0b10-46d8-dc68-df7c-cfbe277b1f95/displayicon.png"
+      },
+      {
+       "model": "skins/mk-vii-liberty-operator-tundra.e4f06522a813",
+       "config": "models/valorant/skins/mk-vii-liberty-operator.e5d4be33d06d.json",
+       "sha256": "e4f06522a813ee116f965c84cf9a660e4cd0785c84533e938cb80e0cdeef46e6",
+       "bytes": 7713428,
+       "source": "https://kingdomarchives.com/modelviewer/mk-vii-liberty-operator",
+       "variant": "tundra",
+       "icon": "models/valorant/skins/icons/bd284720612c1e93.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/f0058fd7-4f4f-af54-a935-e381ea0ef863/displayicon.png"
+      }
+     ]
+    },
+    "Knife": {
+     "n": "MK.VII Liberty Combat Knife",
+     "ch": [
+      "Base",
+      "Desert",
+      "Sea",
+      "Tundra"
+     ],
+     "assets": [
+      {
+       "model": "skins/mk-vii-liberty-melee-default.1e50a342dc1d",
+       "config": "models/valorant/skins/mk-vii-liberty-melee.9845b7161ae7.json",
+       "sha256": "1e50a342dc1dc9102b9ad422fba6df309573dc6a62f87113d539d3b93d8588f1",
+       "bytes": 2769776,
+       "source": "https://kingdomarchives.com/modelviewer/mk-vii-liberty-melee",
+       "variant": "default",
+       "icon": "models/valorant/skins/icons/10924a62398d5233.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/63df320f-4c12-33dc-5d55-a78b06630033/displayicon.png"
+      },
+      {
+       "model": "skins/mk-vii-liberty-melee-desert.8b088ff9ed45",
+       "config": "models/valorant/skins/mk-vii-liberty-melee.9845b7161ae7.json",
+       "sha256": "8b088ff9ed456562916bfc0d385a84e2e137acb9868cace84325353d6b1d6eb6",
+       "bytes": 3034584,
+       "source": "https://kingdomarchives.com/modelviewer/mk-vii-liberty-melee",
+       "variant": "desert",
+       "icon": "models/valorant/skins/icons/1b3307d32f36569b.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/0c553a7d-4b58-0220-064d-b5af127e75ee/displayicon.png"
+      },
+      {
+       "model": "skins/mk-vii-liberty-melee-sea.2087010a9dac",
+       "config": "models/valorant/skins/mk-vii-liberty-melee.9845b7161ae7.json",
+       "sha256": "2087010a9dac3ee96f73c95cfd5d8cdca9f0b176836b7a42caa319394206eb10",
+       "bytes": 2935952,
+       "source": "https://kingdomarchives.com/modelviewer/mk-vii-liberty-melee",
+       "variant": "sea",
+       "icon": "models/valorant/skins/icons/eecda5b31e050702.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/d9b577c1-49a2-643a-167a-fd89576e6049/displayicon.png"
+      },
+      {
+       "model": "skins/mk-vii-liberty-melee-tundra.1cc501a6da5a",
+       "config": "models/valorant/skins/mk-vii-liberty-melee.9845b7161ae7.json",
+       "sha256": "1cc501a6da5a8f3b6cc3ab0a6e25c0275b331682ec30c371ea64673c3960970b",
+       "bytes": 3210972,
+       "source": "https://kingdomarchives.com/modelviewer/mk-vii-liberty-melee",
+       "variant": "tundra",
+       "icon": "models/valorant/skins/icons/b4d91a94e4df3e1e.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/02b61ed1-4b88-6f27-858c-ccbcf019daef/displayicon.png"
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "prime",
+   "name": "Prime",
+   "tier": "Premium",
+   "desc": "Original VALORANT model and textures.",
+   "pal": {},
+   "cc": {},
+   "k": 0,
+   "skins": {
+    "Classic": {
+     "n": "Prime Classic",
+     "ch": [
+      "Base",
+      "Orange",
+      "Blue",
+      "Yellow"
+     ],
+     "assets": [
+      {
+       "model": "skins/prime-classic-default.a8153736ef9e",
+       "config": "models/valorant/skins/prime-classic.aa1a0e50b675.json",
+       "sha256": "a8153736ef9e7020f32952f392f702bd2027b47c669bf5cf520b37d1e58fe005",
+       "bytes": 3153320,
+       "source": "https://kingdomarchives.com/modelviewer/prime-classic",
+       "variant": "default",
+       "icon": "models/valorant/skins/icons/86ad505799bfbf60.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/d9dce0ec-464c-df67-63a3-1f9a05d322ad/displayicon.png"
+      },
+      {
+       "model": "skins/prime-classic-orange.8ed18de359b0",
+       "config": "models/valorant/skins/prime-classic.aa1a0e50b675.json",
+       "sha256": "8ed18de359b0aadd0ce564fc618a65be61516bb5da49bc77daef581beafa419c",
+       "bytes": 3379428,
+       "source": "https://kingdomarchives.com/modelviewer/prime-classic",
+       "variant": "orange",
+       "icon": "models/valorant/skins/icons/d754004ddcc2d51b.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/42280760-422f-b5d1-4255-1e8993a817a4/displayicon.png"
+      },
+      {
+       "model": "skins/prime-classic-blue.9cff5170512d",
+       "config": "models/valorant/skins/prime-classic.aa1a0e50b675.json",
+       "sha256": "9cff5170512d8e626ce466da14030927e7d43aa9244ea186088f81968eefae24",
+       "bytes": 3155188,
+       "source": "https://kingdomarchives.com/modelviewer/prime-classic",
+       "variant": "blue",
+       "icon": "models/valorant/skins/icons/e184e55ea2a7e8ff.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/02390051-4309-22d4-b733-c09fbfcf2e7f/displayicon.png"
+      },
+      {
+       "model": "skins/prime-classic-yellow.1e9ce01cd6d6",
+       "config": "models/valorant/skins/prime-classic.aa1a0e50b675.json",
+       "sha256": "1e9ce01cd6d6b6005eea57c9e51e1f8bbc51f5ca6c511726c8f1942768baf11f",
+       "bytes": 3182912,
+       "source": "https://kingdomarchives.com/modelviewer/prime-classic",
+       "variant": "yellow",
+       "icon": "models/valorant/skins/icons/b9371b0361792bf3.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/9fcc46a1-42f8-6407-787d-cb9d3e0bb718/displayicon.png"
+      }
+     ]
+    },
+    "Spectre": {
+     "n": "Prime Spectre",
+     "ch": [
+      "Base",
+      "Orange",
+      "Blue",
+      "Yellow"
+     ],
+     "assets": [
+      {
+       "model": "skins/prime-spectre-default.6621f939fc1e",
+       "config": "models/valorant/skins/prime-spectre.1c168b88b248.json",
+       "sha256": "6621f939fc1e13fc25456bb3a9c5144cb54893ff032d574334f65e0567a58644",
+       "bytes": 3971480,
+       "source": "https://kingdomarchives.com/modelviewer/prime-spectre",
+       "variant": "default",
+       "icon": "models/valorant/skins/icons/bbb4ad7410978cfe.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/48b6e421-4f93-5a00-62b3-20a1d320b040/displayicon.png"
+      },
+      {
+       "model": "skins/prime-spectre-orange.2ed746a71bdb",
+       "config": "models/valorant/skins/prime-spectre.1c168b88b248.json",
+       "sha256": "2ed746a71bdb2b791bafb5494c844cb167effbf275089dbbb1db809e1572305b",
+       "bytes": 4152592,
+       "source": "https://kingdomarchives.com/modelviewer/prime-spectre",
+       "variant": "orange",
+       "icon": "models/valorant/skins/icons/c6c54b172b1da90a.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/e6586300-4434-2dee-8867-45b47980f7a5/displayicon.png"
+      },
+      {
+       "model": "skins/prime-spectre-blue.5a83070e8316",
+       "config": "models/valorant/skins/prime-spectre.1c168b88b248.json",
+       "sha256": "5a83070e8316e2e9778a2002571878b1d2afb0100f27c5bc5238820ce9ade3b1",
+       "bytes": 4214976,
+       "source": "https://kingdomarchives.com/modelviewer/prime-spectre",
+       "variant": "blue",
+       "icon": "models/valorant/skins/icons/e9c06a1866079c54.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/f55e732b-4798-2f21-c099-f7ba8facc0bf/displayicon.png"
+      },
+      {
+       "model": "skins/prime-spectre-yellow.1f89c721c98d",
+       "config": "models/valorant/skins/prime-spectre.1c168b88b248.json",
+       "sha256": "1f89c721c98dc89bf469c4dc8728516c0eb3f54cfe3c50fe3cb25c70b15d3a59",
+       "bytes": 3837852,
+       "source": "https://kingdomarchives.com/modelviewer/prime-spectre",
+       "variant": "yellow",
+       "icon": "models/valorant/skins/icons/0b528b34d10efbc3.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/4c67e98b-4e1f-9f53-3163-16b393849f9d/displayicon.png"
+      }
+     ]
+    },
+    "Guardian": {
+     "n": "Prime Guardian",
+     "ch": [
+      "Base",
+      "Orange",
+      "Blue",
+      "Yellow"
+     ],
+     "assets": [
+      {
+       "model": "skins/prime-guardian-default.828c306962a1",
+       "config": "models/valorant/skins/prime-guardian.f203e50a6c67.json",
+       "sha256": "828c306962a12ffb539ae88fd8709417d0ee4ae4db14d7b613ed90f462c4f161",
+       "bytes": 3548584,
+       "source": "https://kingdomarchives.com/modelviewer/prime-guardian",
+       "variant": "default",
+       "icon": "models/valorant/skins/icons/0b2522d4d0203494.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/e2f5a979-4e9a-f931-7f52-d99f0ec4a61b/displayicon.png"
+      },
+      {
+       "model": "skins/prime-guardian-orange.63d8744c45d1",
+       "config": "models/valorant/skins/prime-guardian.f203e50a6c67.json",
+       "sha256": "63d8744c45d1fcf8f6101b7862dbec4eb701d8f5b4309b0ce386c98692a54e9e",
+       "bytes": 3683372,
+       "source": "https://kingdomarchives.com/modelviewer/prime-guardian",
+       "variant": "orange",
+       "icon": "models/valorant/skins/icons/b2b4d020558e479a.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/4ca16478-40c7-2cf6-bdd2-099761921e61/displayicon.png"
+      },
+      {
+       "model": "skins/prime-guardian-blue.16be0a4cf87c",
+       "config": "models/valorant/skins/prime-guardian.f203e50a6c67.json",
+       "sha256": "16be0a4cf87c58b38d0d60903fd32a8be10499c7bf18ba7c52bd2dcd7633caf8",
+       "bytes": 3784808,
+       "source": "https://kingdomarchives.com/modelviewer/prime-guardian",
+       "variant": "blue",
+       "icon": "models/valorant/skins/icons/050c8286cecb0136.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/e866f273-4acc-806f-becd-56a6bef48fbc/displayicon.png"
+      },
+      {
+       "model": "skins/prime-guardian-yellow.f10bfcc08b4d",
+       "config": "models/valorant/skins/prime-guardian.f203e50a6c67.json",
+       "sha256": "f10bfcc08b4dda9def43fdd40c45f7595cf8fe033c94e32e2346df7cb64d6abc",
+       "bytes": 3532432,
+       "source": "https://kingdomarchives.com/modelviewer/prime-guardian",
+       "variant": "yellow",
+       "icon": "models/valorant/skins/icons/35f0fa74f6deb477.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/22f831db-4e55-6280-9078-d9b63ae93e4d/displayicon.png"
+      }
+     ]
+    },
+    "Vandal": {
+     "n": "Prime Vandal",
+     "ch": [
+      "Base",
+      "Orange",
+      "Blue",
+      "Yellow"
+     ],
+     "assets": [
+      {
+       "model": "skins/prime-vandal-default.33cc3bfe27f1",
+       "config": "models/valorant/skins/prime-vandal.df80aa420ae4.json",
+       "sha256": "33cc3bfe27f1bd49e63d8ad0b7b362d6fcf09507301541c9ad66aec6343fe90f",
+       "bytes": 3755356,
+       "source": "https://kingdomarchives.com/modelviewer/prime-vandal",
+       "variant": "default",
+       "icon": "models/valorant/skins/icons/becbab7eee11f910.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/a26e0d1d-4886-7d62-6b4f-1996e706463d/displayicon.png"
+      },
+      {
+       "model": "skins/prime-vandal-orange.cd28609ca310",
+       "config": "models/valorant/skins/prime-vandal.df80aa420ae4.json",
+       "sha256": "cd28609ca310985542d60a4c9bebd3a216f5e6c061a22246b703c9d6f0af331d",
+       "bytes": 4122124,
+       "source": "https://kingdomarchives.com/modelviewer/prime-vandal",
+       "variant": "orange",
+       "icon": "models/valorant/skins/icons/942dd7a8260b907f.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/ad2b0b8b-4da8-9c88-331a-028f2026ab66/displayicon.png"
+      },
+      {
+       "model": "skins/prime-vandal-blue.7281a4f500c6",
+       "config": "models/valorant/skins/prime-vandal.df80aa420ae4.json",
+       "sha256": "7281a4f500c602b99127de13e8aad36e61ca28476fca0f2fc7fcd86b58630d68",
+       "bytes": 3961844,
+       "source": "https://kingdomarchives.com/modelviewer/prime-vandal",
+       "variant": "blue",
+       "icon": "models/valorant/skins/icons/4e22acaea825691c.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/cd3ebdc1-4858-efda-6cee-c683726f8ca9/displayicon.png"
+      },
+      {
+       "model": "skins/prime-vandal-yellow.c265d10c48de",
+       "config": "models/valorant/skins/prime-vandal.df80aa420ae4.json",
+       "sha256": "c265d10c48dedd592be86b5dfcbef812367e7825e32123f826c0eb80a3c7f1e6",
+       "bytes": 3846016,
+       "source": "https://kingdomarchives.com/modelviewer/prime-vandal",
+       "variant": "yellow",
+       "icon": "models/valorant/skins/icons/2d447e077b9047d4.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/d43b8d21-4fb2-1224-1392-53ab6d829ed1/displayicon.png"
+      }
+     ]
+    },
+    "Knife": {
+     "n": "Prime Axe",
+     "ch": [
+      "Base"
+     ],
+     "assets": [
+      {
+       "model": "skins/prime-melee-default.4661ad8f5e36",
+       "config": "models/valorant/skins/prime-melee.7354bd0d8463.json",
+       "sha256": "4661ad8f5e3684fded713fd17f052b62d97b792c764c5de8bfb24367254bcc88",
+       "bytes": 1667560,
+       "source": "https://kingdomarchives.com/modelviewer/prime-melee",
+       "variant": "default",
+       "icon": "models/valorant/skins/icons/8da8d24a3f980311.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/d2e296d9-448e-c58f-2229-14a481906686/displayicon.png"
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "prism",
+   "name": "Prism",
+   "tier": "Select",
+   "desc": "Original VALORANT model and textures.",
+   "pal": {},
+   "cc": {},
+   "k": 0,
+   "skins": {
+    "Ghost": {
+     "n": "Prism Ghost",
+     "ch": [
+      "Base"
+     ],
+     "assets": [
+      {
+       "model": "skins/prism-ghost-default.d637b19f19f4",
+       "config": "models/valorant/skins/prism-ghost.c9cb5b63f7fa.json",
+       "sha256": "d637b19f19f4b69517982bc8c3f8dac74bb6bed06c2bf7984333ca718aeb4111",
+       "bytes": 2285068,
+       "source": "https://kingdomarchives.com/modelviewer/prism-ghost",
+       "variant": "default",
+       "icon": "models/valorant/skins/icons/c5ec12ca33298485.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/bea3e75c-4156-e05d-dd06-70acf06ccf96/displayicon.png"
+      }
+     ]
+    },
+    "Spectre": {
+     "n": "Prism Spectre",
+     "ch": [
+      "Base"
+     ],
+     "assets": [
+      {
+       "model": "skins/prism-spectre-default.bb4a42bd8077",
+       "config": "models/valorant/skins/prism-spectre.bd40d96697f5.json",
+       "sha256": "bb4a42bd80779857c928bf11fe65af8d0465f91a8d728eaa9d9df5b32949408b",
+       "bytes": 3227592,
+       "source": "https://kingdomarchives.com/modelviewer/prism-spectre",
+       "variant": "default",
+       "icon": "models/valorant/skins/icons/1fa7401b78cd9aa1.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/0b9bb062-41f3-5e60-91b7-ec91e0f22dbe/displayicon.png"
+      }
+     ]
+    },
+    "Phantom": {
+     "n": "Prism Phantom",
+     "ch": [
+      "Base"
+     ],
+     "assets": [
+      {
+       "model": "skins/prism-phantom-default.908bca8af187",
+       "config": "models/valorant/skins/prism-phantom.e06d459cdacc.json",
+       "sha256": "908bca8af187501b4fc955d544e4c697bf5e64fdb2ea757b6f24da2d4e3b7252",
+       "bytes": 3039276,
+       "source": "https://kingdomarchives.com/modelviewer/prism-phantom",
+       "variant": "default",
+       "icon": "models/valorant/skins/icons/10d8c97e7054d24a.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/940b7589-4f19-a242-b038-838e3bda51ac/displayicon.png"
+      }
+     ]
+    },
+    "Operator": {
+     "n": "Prism Operator",
+     "ch": [
+      "Base"
+     ],
+     "assets": [
+      {
+       "model": "skins/prism-operator-default.b058118655fb",
+       "config": "models/valorant/skins/prism-operator.29eb3bad682e.json",
+       "sha256": "b058118655fbf8caaff17909259db8b457d2337610aebd6a2a7bbc8853cd4c58",
+       "bytes": 3711052,
+       "source": "https://kingdomarchives.com/modelviewer/prism-operator",
+       "variant": "default",
+       "icon": "models/valorant/skins/icons/70c46910590a467b.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/1522aac3-4c78-b8f0-6a80-118b00d3b850/displayicon.png"
+      }
+     ]
+    },
+    "Ares": {
+     "n": "Prism Ares",
+     "ch": [
+      "Base"
+     ],
+     "assets": [
+      {
+       "model": "skins/prism-ares-default.dfbb67caceff",
+       "config": "models/valorant/skins/prism-ares.d4d2d1f2a5e6.json",
+       "sha256": "dfbb67caceff37e997cdfe2ee31cc6807642d9335de42f27cd65f2cf1d9ea702",
+       "bytes": 2700152,
+       "source": "https://kingdomarchives.com/modelviewer/prism-ares",
+       "variant": "default",
+       "icon": "models/valorant/skins/icons/e498e1cde7ae5018.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/8c464ead-4b0d-1590-9880-57a5b6407d4e/displayicon.png"
+      }
+     ]
+    },
+    "Knife": {
+     "n": "Prism Knife",
+     "ch": [
+      "Base"
+     ],
+     "assets": [
+      {
+       "model": "skins/prism-melee-default.7a95364a2ffa",
+       "config": "models/valorant/skins/prism-melee.b1be60ca7ac3.json",
+       "sha256": "7a95364a2ffa6e17c574b2242936d9b827ff7efa18939bdd1f5777b87071930d",
+       "bytes": 1176936,
+       "source": "https://kingdomarchives.com/modelviewer/prism-melee",
+       "variant": "default",
+       "icon": "models/valorant/skins/icons/cd391c8ec755b782.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/5b4270db-4d8b-7293-8b5c-cbb6aea9bd22/fullrender.png"
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "rush",
+   "name": "Rush",
+   "tier": "Select",
+   "desc": "Original VALORANT model and textures.",
+   "pal": {},
+   "cc": {},
+   "k": 0,
+   "skins": {
+    "Frenzy": {
+     "n": "Rush Frenzy",
+     "ch": [
+      "Base"
+     ],
+     "assets": [
+      {
+       "model": "skins/rush-frenzy-default.90bce23b680e",
+       "config": "models/valorant/skins/rush-frenzy.6cab11566e49.json",
+       "sha256": "90bce23b680ef726365d97c4cbe0feabd0fd592bb249f1805578c34f4a1b7b47",
+       "bytes": 2829452,
+       "source": "https://kingdomarchives.com/modelviewer/rush-frenzy",
+       "variant": "default",
+       "icon": "models/valorant/skins/icons/bd1067089836d4f1.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/1ee55fe2-49b9-67d3-13c3-6cbf7b8a23ef/displayicon.png"
+      }
+     ]
+    },
+    "Judge": {
+     "n": "Rush Judge",
+     "ch": [
+      "Base"
+     ],
+     "assets": [
+      {
+       "model": "skins/rush-judge-default.8bbbaf2dc1a6",
+       "config": "models/valorant/skins/rush-judge.323e9cc2d3d3.json",
+       "sha256": "8bbbaf2dc1a6cf3221652ddf4a0822f4f18c77209c1acc2e9938a85c4662fbf2",
+       "bytes": 3587828,
+       "source": "https://kingdomarchives.com/modelviewer/rush-judge",
+       "variant": "default",
+       "icon": "models/valorant/skins/icons/05dce76731a21994.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/d770df24-4aab-3377-a790-a2afd30010e7/displayicon.png"
+      }
+     ]
+    },
+    "Bulldog": {
+     "n": "Rush Bulldog",
+     "ch": [
+      "Base"
+     ],
+     "assets": [
+      {
+       "model": "skins/rush-bulldog-default.fc50b5df6c26",
+       "config": "models/valorant/skins/rush-bulldog.74fbdd87e6e1.json",
+       "sha256": "fc50b5df6c260733ed2cd56f270c3d588ce3e95c63ccde5ab033d2cf470937ed",
+       "bytes": 3146616,
+       "source": "https://kingdomarchives.com/modelviewer/rush-bulldog",
+       "variant": "default",
+       "icon": "models/valorant/skins/icons/615de850e9d828c2.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/f9ec80f9-498b-fab1-cc27-9c867aa1de49/displayicon.png"
+      }
+     ]
+    },
+    "Phantom": {
+     "n": "Rush Phantom",
+     "ch": [
+      "Base"
+     ],
+     "assets": [
+      {
+       "model": "skins/rush-phantom-default.8e12a8e78c01",
+       "config": "models/valorant/skins/rush-phantom.ff39e4556b77.json",
+       "sha256": "8e12a8e78c012f8a5db21b4a7a23e2e442b0febc77d8231ecf0fd95239d536b3",
+       "bytes": 3914016,
+       "source": "https://kingdomarchives.com/modelviewer/rush-phantom",
+       "variant": "default",
+       "icon": "models/valorant/skins/icons/ab842751f2b66b25.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/2e3b98b6-46e9-e233-1e1b-269ebd84598a/displayicon.png"
+      }
+     ]
+    },
+    "Ares": {
+     "n": "Rush Ares",
+     "ch": [
+      "Base"
+     ],
+     "assets": [
+      {
+       "model": "skins/rush-ares-default.eadf0d9ce7d1",
+       "config": "models/valorant/skins/rush-ares.9db86cb136df.json",
+       "sha256": "eadf0d9ce7d1e6536032b976e334753161789bad1ccd83fcb0e35597a78fc726",
+       "bytes": 3908832,
+       "source": "https://kingdomarchives.com/modelviewer/rush-ares",
+       "variant": "default",
+       "icon": "models/valorant/skins/icons/208f36fa885612ef.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/d2c1a05e-44ca-5bf9-21ad-48b989e164d2/displayicon.png"
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "sakura",
+   "name": "Sakura",
+   "tier": "Select",
+   "desc": "Original VALORANT model and textures.",
+   "pal": {},
+   "cc": {},
+   "k": 0,
+   "skins": {
+    "Classic": {
+     "n": "Sakura Classic",
+     "ch": [
+      "Base"
+     ],
+     "assets": [
+      {
+       "model": "skins/sakura-classic-default.519e3cbf4003",
+       "config": "models/valorant/skins/sakura-classic.f2e79cc42d4e.json",
+       "sha256": "519e3cbf400380befa29c09f50a21fcd2031a95a856a2e11530306c2abc1527b",
+       "bytes": 3448340,
+       "source": "https://kingdomarchives.com/modelviewer/sakura-classic",
+       "variant": "default",
+       "icon": "models/valorant/skins/icons/4374206c53d293c8.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/1bcfd66f-4eff-e119-387e-94868ad48a29/displayicon.png"
+      }
+     ]
+    },
+    "Sheriff": {
+     "n": "Sakura Sheriff",
+     "ch": [
+      "Base"
+     ],
+     "assets": [
+      {
+       "model": "skins/sakura-sheriff-default.1c9dc39704a3",
+       "config": "models/valorant/skins/sakura-sheriff.09021a9c3be0.json",
+       "sha256": "1c9dc39704a354c3e7a1541e7f6e9ab605cc4aa1167af426f64b56f5147fb629",
+       "bytes": 3155392,
+       "source": "https://kingdomarchives.com/modelviewer/sakura-sheriff",
+       "variant": "default",
+       "icon": "models/valorant/skins/icons/1a061544ed1095e1.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/d6f9ae74-45f0-b72a-593f-9b9d9a8cc929/displayicon.png"
+      }
+     ]
+    },
+    "Stinger": {
+     "n": "Sakura Stinger",
+     "ch": [
+      "Base"
+     ],
+     "assets": [
+      {
+       "model": "skins/sakura-stinger-default.f1c439f8c89e",
+       "config": "models/valorant/skins/sakura-stinger.5b9216e9f551.json",
+       "sha256": "f1c439f8c89e954a92ce5a38cb3815c1f9477b420182ad592bb216a9e338ff0a",
+       "bytes": 3748196,
+       "source": "https://kingdomarchives.com/modelviewer/sakura-stinger",
+       "variant": "default",
+       "icon": "models/valorant/skins/icons/e74323e6184be431.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/62c17d02-4adc-c1b4-612c-f2867fd4955a/displayicon.png"
+      }
+     ]
+    },
+    "Vandal": {
+     "n": "Sakura Vandal",
+     "ch": [
+      "Base"
+     ],
+     "assets": [
+      {
+       "model": "skins/sakura-vandal-default.5809afc0e6f0",
+       "config": "models/valorant/skins/sakura-vandal.1f9953217e03.json",
+       "sha256": "5809afc0e6f0968f4a823296620cef6ae3b964af7b968d468d9a4cd798b23b16",
+       "bytes": 4254380,
+       "source": "https://kingdomarchives.com/modelviewer/sakura-vandal",
+       "variant": "default",
+       "icon": "models/valorant/skins/icons/ec81b494adc142ae.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/40813a80-401b-5260-188a-0f9adf807ae4/displayicon.png"
+      }
+     ]
+    },
+    "Ares": {
+     "n": "Sakura Ares",
+     "ch": [
+      "Base"
+     ],
+     "assets": [
+      {
+       "model": "skins/sakura-ares-default.504f4114d99d",
+       "config": "models/valorant/skins/sakura-ares.67041a8a685d.json",
+       "sha256": "504f4114d99dfbc33cba34680bf89cadf5392db6b79bf3270d8cc7fe1c2ed6e2",
+       "bytes": 3902044,
+       "source": "https://kingdomarchives.com/modelviewer/sakura-ares",
+       "variant": "default",
+       "icon": "models/valorant/skins/icons/8112296ecfaf76bb.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/e6444ff5-4466-5468-be0a-aa997a688422/displayicon.png"
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "silkleaf",
+   "name": "SilkLeaf",
+   "tier": "Select",
+   "desc": "Original VALORANT model and textures.",
+   "pal": {},
+   "cc": {},
+   "k": 0,
+   "skins": {
+    "Stinger": {
+     "n": "SilkLeaf Stinger",
+     "ch": [
+      "Base"
+     ],
+     "assets": [
+      {
+       "model": "skins/silkleaf-stinger-default.5fe1a2a5a7cd",
+       "config": "models/valorant/skins/silkleaf-stinger.818a5ebd615d.json",
+       "sha256": "5fe1a2a5a7cd174d20d4293efaabdf3fd212630972592adef44a13ef1bf698c7",
+       "bytes": 4372884,
+       "source": "https://kingdomarchives.com/modelviewer/silkleaf-stinger",
+       "variant": "default",
+       "icon": "models/valorant/skins/icons/f6c6bc2ae9760edf.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/cd02a6de-430c-2ce0-375d-69965d74a445/displayicon.png"
+      }
+     ]
+    },
+    "Vandal": {
+     "n": "SilkLeaf Vandal",
+     "ch": [
+      "Base"
+     ],
+     "assets": [
+      {
+       "model": "skins/silkleaf-vandal-default.ca386bedb706",
+       "config": "models/valorant/skins/silkleaf-vandal.6db311bfb253.json",
+       "sha256": "ca386bedb7069944a40af287fc35659a85f28f7d47c53592ddcef0ddde1dbbde",
+       "bytes": 4821376,
+       "source": "https://kingdomarchives.com/modelviewer/silkleaf-vandal",
+       "variant": "default",
+       "icon": "models/valorant/skins/icons/87415ee9965cb189.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/e0b870a4-40f3-d2a5-6f41-a89518a895be/displayicon.png"
+      }
+     ]
+    },
+    "Marshal": {
+     "n": "SilkLeaf Marshal",
+     "ch": [
+      "Base"
+     ],
+     "assets": [
+      {
+       "model": "skins/silkleaf-marshal-default.844e9977db13",
+       "config": "models/valorant/skins/silkleaf-marshal.dd99d234d766.json",
+       "sha256": "844e9977db137c1f30e4451a1f2c3b4afb3510e6d400b1070c94f3ea4fe1825f",
+       "bytes": 6606432,
+       "source": "https://kingdomarchives.com/modelviewer/silkleaf-marshal",
+       "variant": "default",
+       "icon": "models/valorant/skins/icons/e445efc4bdd33c66.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/b4f6d49b-416d-2ae8-647d-9b88a52c5089/displayicon.png"
+      }
+     ]
+    },
+    "Knife": {
+     "n": "SilkLeaf Fan",
+     "ch": [
+      "Base"
+     ],
+     "assets": [
+      {
+       "model": "skins/silkleaf-melee-default.36aae4d0e1fc",
+       "config": "models/valorant/skins/silkleaf-melee.9a28d00e73da.json",
+       "sha256": "36aae4d0e1fc467bc070e20d9e755d2e4d24bf0ebf8165707d02d79fa5dbb5b4",
+       "bytes": 2583720,
+       "source": "https://kingdomarchives.com/modelviewer/silkleaf-melee",
+       "variant": "default",
+       "icon": "models/valorant/skins/icons/67639786b71c3e0d.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/c3b03f2a-40cd-d23c-489e-fa85314e42f7/displayicon.png"
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "smite",
+   "name": "Smite",
+   "tier": "Select",
+   "desc": "Original VALORANT model and textures.",
+   "pal": {},
+   "cc": {},
+   "k": 0,
+   "skins": {
+    "Classic": {
+     "n": "Smite Classic",
+     "ch": [
+      "Base"
+     ],
+     "assets": [
+      {
+       "model": "skins/smite-classic-default.9de1a5f7c925",
+       "config": "models/valorant/skins/smite-classic.e13799732835.json",
+       "sha256": "9de1a5f7c9254584e99a7ff61391f1d9a5dcdfc5ed72faee6f1d7a2e436b190d",
+       "bytes": 3049648,
+       "source": "https://kingdomarchives.com/modelviewer/smite-classic",
+       "variant": "default",
+       "icon": "models/valorant/skins/icons/26ae683e210f63da.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/6853e4e7-4241-a574-f4cd-0d9949008cfe/displayicon.png"
+      }
+     ]
+    },
+    "Ghost": {
+     "n": "Smite Ghost",
+     "ch": [
+      "Base",
+      "Gold"
+     ],
+     "assets": [
+      {
+       "model": "skins/smite-ghost-default.da501b50b201",
+       "config": "models/valorant/skins/smite-ghost.16eefca57b8c.json",
+       "sha256": "da501b50b201018d39bb535dc19c003c6a41bee8fb04b8cfadcbb2b54512747e",
+       "bytes": 3295372,
+       "source": "https://kingdomarchives.com/modelviewer/smite-ghost",
+       "variant": "default",
+       "icon": "models/valorant/skins/icons/9a13d2aac96c036c.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/6b9eb980-4b50-0e7b-92e6-2daecf371ff5/displayicon.png"
+      },
+      {
+       "model": "skins/smite-ghost-gold.243e5ad956fc",
+       "config": "models/valorant/skins/smite-ghost.16eefca57b8c.json",
+       "sha256": "243e5ad956fcd93a7bf607cf890c8f2413d10442434d4d50dc671c4d03a3cd9c",
+       "bytes": 1803996,
+       "source": "https://kingdomarchives.com/modelviewer/smite-ghost",
+       "variant": "gold",
+       "icon": "models/valorant/skins/icons/9a13d2aac96c036c.png",
+       "iconSource": "https://media.valorant-api.com/weaponskins/5a448204-40e8-9015-830f-cabad46edf05/displayicon.png"
+      }
+     ]
+    },
+    "Bucky": {
+     "n": "Smite Bucky",
+     "ch": [
+      "Base",
+      "Gold"
+     ],
+     "assets": [
+      {
+       "model": "skins/smite-bucky-default.7455b2c00788",
+       "config": "models/valorant/skins/smite-bucky.b9027ae4210e.json",
+       "sha256": "7455b2c007885ecf998119bdd8fa3573801fd237a1b858e839dc7d516ac3e8d9",
+       "bytes": 3244576,
+       "source": "https://kingdomarchives.com/modelviewer/smite-bucky",
+       "variant": "default",
+       "icon": "models/valorant/skins/icons/2da2248d7f2f3dc0.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/118986df-40d3-1c85-bb51-ffb919ff95f4/displayicon.png"
+      },
+      {
+       "model": "skins/smite-bucky-gold.b3e7c0e6e58b",
+       "config": "models/valorant/skins/smite-bucky.b9027ae4210e.json",
+       "sha256": "b3e7c0e6e58b8963c020f2a8aa156538f07059f4252f47582a1e2c4692dd0f30",
+       "bytes": 1691116,
+       "source": "https://kingdomarchives.com/modelviewer/smite-bucky",
+       "variant": "gold",
+       "icon": "models/valorant/skins/icons/2da2248d7f2f3dc0.png",
+       "iconSource": "https://media.valorant-api.com/weaponskins/e62c8fc3-4be4-a8e1-9b77-ba910e3389c7/displayicon.png"
+      }
+     ]
+    },
+    "Judge": {
+     "n": "Smite Judge",
+     "ch": [
+      "Base"
+     ],
+     "assets": [
+      {
+       "model": "skins/smite-judge-default.d3b55d8d111d",
+       "config": "models/valorant/skins/smite-judge.96717491da56.json",
+       "sha256": "d3b55d8d111d23b7fd9daf1fec533b37d42c50d95d81771b424683d1be69a54c",
+       "bytes": 3293980,
+       "source": "https://kingdomarchives.com/modelviewer/smite-judge",
+       "variant": "default",
+       "icon": "models/valorant/skins/icons/4503d819fe0f5fa9.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/b56dc59c-4b76-bee2-9896-a5b778041865/displayicon.png"
+      }
+     ]
+    },
+    "Phantom": {
+     "n": "Smite Phantom",
+     "ch": [
+      "Base"
+     ],
+     "assets": [
+      {
+       "model": "skins/smite-phantom-default.e1ace1814742",
+       "config": "models/valorant/skins/smite-phantom.090c3384d8a7.json",
+       "sha256": "e1ace181474228e368d6d6d83496d1a9009e4808a762b2a7a9787f269d2fb36c",
+       "bytes": 3852364,
+       "source": "https://kingdomarchives.com/modelviewer/smite-phantom",
+       "variant": "default",
+       "icon": "models/valorant/skins/icons/71109c5da92d7ebf.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/3af79e9d-4e55-425e-22da-dcab4985706a/displayicon.png"
+      }
+     ]
+    },
+    "Vandal": {
+     "n": "Smite Vandal",
+     "ch": [
+      "Base",
+      "Gold"
+     ],
+     "assets": [
+      {
+       "model": "skins/smite-vandal-default.ba6d952dd4cd",
+       "config": "models/valorant/skins/smite-vandal.febecc69be69.json",
+       "sha256": "ba6d952dd4cde78a8564258bb7051ed4d375ed6662bb9b70b40a56d1f875b5a1",
+       "bytes": 3756652,
+       "source": "https://kingdomarchives.com/modelviewer/smite-vandal",
+       "variant": "default",
+       "icon": "models/valorant/skins/icons/b63dd849e046dbf7.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/9c04032e-4c72-6840-0561-f0b75c75ec7d/displayicon.png"
+      },
+      {
+       "model": "skins/smite-vandal-gold.095e6ff51416",
+       "config": "models/valorant/skins/smite-vandal.febecc69be69.json",
+       "sha256": "095e6ff51416e5cc5f5872dc7ecf1ba46bfa4a62e591c8ae8ee4fa472700335c",
+       "bytes": 1937632,
+       "source": "https://kingdomarchives.com/modelviewer/smite-vandal",
+       "variant": "gold",
+       "icon": "models/valorant/skins/icons/b63dd849e046dbf7.png",
+       "iconSource": "https://media.valorant-api.com/weaponskins/aa687701-45af-5af3-b9c4-cda426334f6c/displayicon.png"
+      }
+     ]
+    },
+    "Outlaw": {
+     "n": "Smite Outlaw",
+     "ch": [
+      "Base",
+      "Gold"
+     ],
+     "assets": [
+      {
+       "model": "skins/smite-outlaw-default.96b04089ac55",
+       "config": "models/valorant/skins/smite-outlaw.d222a4f507de.json",
+       "sha256": "96b04089ac553453e2c7473b4ae1e0ffe6924b4b1c2d59e6cd920789a1ba41fd",
+       "bytes": 5405024,
+       "source": "https://kingdomarchives.com/modelviewer/smite-outlaw",
+       "variant": "default",
+       "icon": "models/valorant/skins/icons/fc33b421b0f3ca1e.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/8f3c1b5a-450b-f275-b9be-f2a558834079/displayicon.png"
+      },
+      {
+       "model": "skins/smite-outlaw-gold.b4e96cc85557",
+       "config": "models/valorant/skins/smite-outlaw.d222a4f507de.json",
+       "sha256": "b4e96cc855575f77cfe64021ab9d6e4d6ee1b28091ff2253a9d0cf38d83197c1",
+       "bytes": 3355732,
+       "source": "https://kingdomarchives.com/modelviewer/smite-outlaw",
+       "variant": "gold",
+       "icon": "models/valorant/skins/icons/fc33b421b0f3ca1e.png",
+       "iconSource": "https://media.valorant-api.com/weaponskins/4fdeaf87-406c-303e-a620-b1a06ebe05de/displayicon.png"
+      }
+     ]
+    },
+    "Odin": {
+     "n": "Smite Odin",
+     "ch": [
+      "Base"
+     ],
+     "assets": [
+      {
+       "model": "skins/smite-odin-default.cc58c2bb8c11",
+       "config": "models/valorant/skins/smite-odin.6f846ef9e8cc.json",
+       "sha256": "cc58c2bb8c11491807ea0bed3b45295a40f21235ca4f1b3df3834f22877a3b7a",
+       "bytes": 4072848,
+       "source": "https://kingdomarchives.com/modelviewer/smite-odin",
+       "variant": "default",
+       "icon": "models/valorant/skins/icons/baeba1f91cca340d.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/5da04039-4875-92ec-759f-5b9928d12b30/displayicon.png"
+      }
+     ]
+    },
+    "Knife": {
+     "n": "Smite Knife",
+     "ch": [
+      "Base"
+     ],
+     "assets": [
+      {
+       "model": "skins/smite-melee-default.fd3a6b096511",
+       "config": "models/valorant/skins/smite-melee.9a41b590add0.json",
+       "sha256": "fd3a6b0965116d4bd70e9b9673a26b5a13d0427b8306b67e6212f194aa45307c",
+       "bytes": 1809608,
+       "source": "https://kingdomarchives.com/modelviewer/smite-melee",
+       "variant": "default",
+       "icon": "models/valorant/skins/icons/86a07110392803e2.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/9c0fc8e8-4e36-86b7-8905-ee848916ea03/displayicon.png"
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "task-force-809",
+   "name": "Task Force 809",
+   "tier": "Select",
+   "desc": "Original VALORANT model and textures.",
+   "pal": {},
+   "cc": {},
+   "k": 0,
+   "skins": {
+    "Frenzy": {
+     "n": "Task Force 809 Frenzy",
+     "ch": [
+      "Base"
+     ],
+     "assets": [
+      {
+       "model": "skins/task-force-809-frenzy-default.ebf557c63684",
+       "config": "models/valorant/skins/task-force-809-frenzy.557c48aa717d.json",
+       "sha256": "ebf557c63684a0f65107abf6da64a9dd1cb832698358bdef9dc30a205d2bbaf7",
+       "bytes": 3906128,
+       "source": "https://kingdomarchives.com/modelviewer/task-force-809-frenzy",
+       "variant": "default",
+       "icon": "models/valorant/skins/icons/89fa1ae17ccf81ff.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/b8ddad9b-4622-3e0e-6821-56bf2e901bcf/displayicon.png"
+      }
+     ]
+    },
+    "Spectre": {
+     "n": "Task Force 809 Spectre",
+     "ch": [
+      "Base"
+     ],
+     "assets": [
+      {
+       "model": "skins/task-force-809-spectre-default.f35777f72f87",
+       "config": "models/valorant/skins/task-force-809-spectre.ef2546ae8a5a.json",
+       "sha256": "f35777f72f87dd1771a1279a560b1ffe409690c2d3056e0809c55f939b533b12",
+       "bytes": 4524012,
+       "source": "https://kingdomarchives.com/modelviewer/task-force-809-spectre",
+       "variant": "default",
+       "icon": "models/valorant/skins/icons/9015ce61da7ec213.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/7d3cb935-4301-e73f-ca90-ecbf58612c44/displayicon.png"
+      }
+     ]
+    },
+    "Phantom": {
+     "n": "Task Force 809 Phantom",
+     "ch": [
+      "Base"
+     ],
+     "assets": [
+      {
+       "model": "skins/task-force-809-phantom-default.83fa64275975",
+       "config": "models/valorant/skins/task-force-809-phantom.05153721db14.json",
+       "sha256": "83fa642759754aa6a1510340ff94a9fe0db4cde5275e0064cf184d927d1bacb3",
+       "bytes": 4645484,
+       "source": "https://kingdomarchives.com/modelviewer/task-force-809-phantom",
+       "variant": "default",
+       "icon": "models/valorant/skins/icons/efef1a0ef34765ef.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/b95ebb33-4051-077d-5482-aaa6cee20577/displayicon.png"
+      }
+     ]
+    },
+    "Marshal": {
+     "n": "Task Force 809 Marshal",
+     "ch": [
+      "Base"
+     ],
+     "assets": [
+      {
+       "model": "skins/task-force-809-marshal-default.797589462b2b",
+       "config": "models/valorant/skins/task-force-809-marshal.bcaabf2b26b3.json",
+       "sha256": "797589462b2ba5108ade79a7aacd589d0288d609024f4a5f1c333388340bd081",
+       "bytes": 5506364,
+       "source": "https://kingdomarchives.com/modelviewer/task-force-809-marshal",
+       "variant": "default",
+       "icon": "models/valorant/skins/icons/a303972b389dfb8c.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/c27a963f-4930-d471-a43e-4c9901add819/displayicon.png"
+      }
+     ]
+    },
+    "Knife": {
+     "n": "Task Force 809 Knife",
+     "ch": [
+      "Base"
+     ],
+     "assets": [
+      {
+       "model": "skins/task-force-809-melee-default.57ec374c78b8",
+       "config": "models/valorant/skins/task-force-809-melee.2bb1d28fe477.json",
+       "sha256": "57ec374c78b80fcee60690237ba3b387f9cd8f213ba222f39aa30a4fa4d892e5",
+       "bytes": 3029128,
+       "source": "https://kingdomarchives.com/modelviewer/task-force-809-melee",
+       "variant": "default",
+       "icon": "models/valorant/skins/icons/5176af8b71e9e292.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/5d5b1d55-4047-a5c6-b1d2-23a940d55fb0/displayicon.png"
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "varnish",
+   "name": "Varnish",
+   "tier": "Select",
+   "desc": "Original VALORANT model and textures.",
+   "pal": {},
+   "cc": {},
+   "k": 0,
+   "skins": {
+    "Sheriff": {
+     "n": "Varnish Sheriff",
+     "ch": [
+      "Base"
+     ],
+     "assets": [
+      {
+       "model": "skins/varnish-sheriff-default.4027307d2a22",
+       "config": "models/valorant/skins/varnish-sheriff.cfd555cbdeff.json",
+       "sha256": "4027307d2a22a53f086bdffdc2344e2eb1dfdd6a1d6829daef44cdaaa371819c",
+       "bytes": 3163728,
+       "source": "https://kingdomarchives.com/modelviewer/varnish-sheriff",
+       "variant": "default",
+       "icon": "models/valorant/skins/icons/7854da14f97e86a6.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/3c0a4650-4606-0e21-0e73-1aa54f514ec4/fullrender.png"
+      }
+     ]
+    },
+    "Stinger": {
+     "n": "Varnish Stinger",
+     "ch": [
+      "Base"
+     ],
+     "assets": [
+      {
+       "model": "skins/varnish-stinger-default.25922d7eb42c",
+       "config": "models/valorant/skins/varnish-stinger.f02ca7b671e7.json",
+       "sha256": "25922d7eb42c52eb10e2d1eb1c211c4a75fd0329277e267527417c1ca19807cf",
+       "bytes": 5369964,
+       "source": "https://kingdomarchives.com/modelviewer/varnish-stinger",
+       "variant": "default",
+       "icon": "models/valorant/skins/icons/045452c89abc6d52.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/b4c63d7e-448c-2c23-ad49-0f8b61f18b1d/fullrender.png"
+      }
+     ]
+    },
+    "Judge": {
+     "n": "Varnish Judge",
+     "ch": [
+      "Base"
+     ],
+     "assets": [
+      {
+       "model": "skins/varnish-judge-default.c76e6f0ba19f",
+       "config": "models/valorant/skins/varnish-judge.e4699ad607a5.json",
+       "sha256": "c76e6f0ba19f518bc7e454510ef6a55395cfe05c7e95bb3060a6d1b7e2935a30",
+       "bytes": 3735792,
+       "source": "https://kingdomarchives.com/modelviewer/varnish-judge",
+       "variant": "default",
+       "icon": "models/valorant/skins/icons/62c74e175b68a861.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/11f42c0a-4b6c-982e-8477-d5b55a329d43/fullrender.png"
+      }
+     ]
+    },
+    "Bulldog": {
+     "n": "Varnish Bulldog",
+     "ch": [
+      "Base"
+     ],
+     "assets": [
+      {
+       "model": "skins/varnish-bulldog-default.1a9d253bf159",
+       "config": "models/valorant/skins/varnish-bulldog.474976732d3f.json",
+       "sha256": "1a9d253bf1599479b07a48f28c0a03bce3b3c39665e9eab6b63e4084c67f63df",
+       "bytes": 5017264,
+       "source": "https://kingdomarchives.com/modelviewer/varnish-bulldog",
+       "variant": "default",
+       "icon": "models/valorant/skins/icons/9faa20f79b629f3f.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/97e3f19b-441e-4a98-a39f-fda730fa0bfd/fullrender.png"
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "wasteland",
+   "name": "Wasteland",
+   "tier": "Select",
+   "desc": "Original VALORANT model and textures.",
+   "pal": {},
+   "cc": {},
+   "k": 0,
+   "skins": {
+    "Shorty": {
+     "n": "Wasteland Shorty",
+     "ch": [
+      "Base"
+     ],
+     "assets": [
+      {
+       "model": "skins/wasteland-shorty-default.0e27dbcc451e",
+       "config": "models/valorant/skins/wasteland-shorty.9399b94823a0.json",
+       "sha256": "0e27dbcc451eb01c113f07f059cb9b84d39774a41e16771bcaa9de2c124adb8d",
+       "bytes": 4125436,
+       "source": "https://kingdomarchives.com/modelviewer/wasteland-shorty",
+       "variant": "default",
+       "icon": "models/valorant/skins/icons/15b64392f523f310.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/701655f9-43d8-1c72-f567-acac565fd353/displayicon.png"
+      }
+     ]
+    },
+    "Sheriff": {
+     "n": "Wasteland Sheriff",
+     "ch": [
+      "Base"
+     ],
+     "assets": [
+      {
+       "model": "skins/wasteland-sheriff-default.b4328d8512ca",
+       "config": "models/valorant/skins/wasteland-sheriff.f4cb9bc4ce54.json",
+       "sha256": "b4328d8512ca695c1ead493caf919ee144d6a9381b55c6b8ed27206fa9cd2000",
+       "bytes": 4387876,
+       "source": "https://kingdomarchives.com/modelviewer/wasteland-sheriff",
+       "variant": "default",
+       "icon": "models/valorant/skins/icons/2fb3b15cb0133bec.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/e75d09b4-4c8b-d9bf-f190-f9a844f3c474/displayicon.png"
+      }
+     ]
+    },
+    "Spectre": {
+     "n": "Wasteland Spectre",
+     "ch": [
+      "Base"
+     ],
+     "assets": [
+      {
+       "model": "skins/wasteland-spectre-default.8b756d936a98",
+       "config": "models/valorant/skins/wasteland-spectre.13a1b0aff380.json",
+       "sha256": "8b756d936a98c51622537937f2373b1bfd16f2869659f8ef8976e18d9da508e8",
+       "bytes": 5362904,
+       "source": "https://kingdomarchives.com/modelviewer/wasteland-spectre",
+       "variant": "default",
+       "icon": "models/valorant/skins/icons/9c54755208f113dc.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/967fc785-4b8e-0e3c-6232-07b20c01dc81/displayicon.png"
+      }
+     ]
+    },
+    "Vandal": {
+     "n": "Wasteland Vandal",
+     "ch": [
+      "Base"
+     ],
+     "assets": [
+      {
+       "model": "skins/wasteland-vandal-default.a9e6f3207e43",
+       "config": "models/valorant/skins/wasteland-vandal.6ccad28b48af.json",
+       "sha256": "a9e6f3207e43a5ea41332c7ac5ee8904e1a15d93cd9c4e7a860eef0f82de67f9",
+       "bytes": 5065580,
+       "source": "https://kingdomarchives.com/modelviewer/wasteland-vandal",
+       "variant": "default",
+       "icon": "models/valorant/skins/icons/590c5c3b3e17ace9.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/849b5754-47c2-38f2-f912-a796b0644307/displayicon.png"
+      }
+     ]
+    },
+    "Marshal": {
+     "n": "Wasteland Marshal",
+     "ch": [
+      "Base"
+     ],
+     "assets": [
+      {
+       "model": "skins/wasteland-marshal-default.c3db3b68573d",
+       "config": "models/valorant/skins/wasteland-marshal.70cde302fcd7.json",
+       "sha256": "c3db3b68573df6b2288c2d20c9ebb6bce754adffe099bfe560fbf1c95641fcf0",
+       "bytes": 6380628,
+       "source": "https://kingdomarchives.com/modelviewer/wasteland-marshal",
+       "variant": "default",
+       "icon": "models/valorant/skins/icons/84b0f2497514191d.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/6e4dceba-441b-2fc5-5992-80ab4d779922/displayicon.png"
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "wayfinder",
+   "name": "Wayfinder",
+   "tier": "Select",
+   "desc": "Original VALORANT model and textures.",
+   "pal": {},
+   "cc": {},
+   "k": 0,
+   "skins": {
+    "Shorty": {
+     "n": "Wayfinder Shorty",
+     "ch": [
+      "Base"
+     ],
+     "assets": [
+      {
+       "model": "skins/wayfinder-shorty-default.f2befb8a96bb",
+       "config": "models/valorant/skins/wayfinder-shorty.fecde8292597.json",
+       "sha256": "f2befb8a96bb82bedb61d405cc41e21f7620ad3cf862674da0aecf8b065fb3e1",
+       "bytes": 2647060,
+       "source": "https://kingdomarchives.com/modelviewer/wayfinder-shorty",
+       "variant": "default",
+       "icon": "models/valorant/skins/icons/62956485ce599da8.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/763d5a76-493f-4978-be73-c0a06d79a741/displayicon.png"
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "yoonseul",
+   "name": "Yoonseul",
+   "tier": "Select",
+   "desc": "Original VALORANT model and textures.",
+   "pal": {},
+   "cc": {},
+   "k": 0,
+   "skins": {
+    "Classic": {
+     "n": "Yoonseul Classic",
+     "ch": [
+      "Base"
+     ],
+     "assets": [
+      {
+       "model": "skins/yoonseul-classic-default.b42639f8a688",
+       "config": "models/valorant/skins/yoonseul-classic.2314877915b7.json",
+       "sha256": "b42639f8a6880d570df8045f6937f610e65e1147529a8af4ad655812901845fe",
+       "bytes": 3120156,
+       "source": "https://kingdomarchives.com/modelviewer/yoonseul-classic",
+       "variant": "default",
+       "icon": "models/valorant/skins/icons/0c832474b0e6d59f.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/e30f8ba2-4942-a618-7f3c-3cad110a58dc/displayicon.png"
+      }
+     ]
+    },
+    "Spectre": {
+     "n": "Yoonseul Spectre",
+     "ch": [
+      "Base"
+     ],
+     "assets": [
+      {
+       "model": "skins/yoonseul-spectre-default.fda4c98f414b",
+       "config": "models/valorant/skins/yoonseul-spectre.b55cd063f435.json",
+       "sha256": "fda4c98f414b03a89522a5397b7a2a9f01dac145fdd3071ad326f9424eba3dd4",
+       "bytes": 4332332,
+       "source": "https://kingdomarchives.com/modelviewer/yoonseul-spectre",
+       "variant": "default",
+       "icon": "models/valorant/skins/icons/0acd6b3c2e40f569.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/929e46e0-4fc3-9b83-2c00-88a5f33a0cf3/displayicon.png"
+      }
+     ]
+    },
+    "Guardian": {
+     "n": "Yoonseul Guardian",
+     "ch": [
+      "Base"
+     ],
+     "assets": [
+      {
+       "model": "skins/yoonseul-guardian-default.7b5eec1c9097",
+       "config": "models/valorant/skins/yoonseul-guardian.0f4c886a4f4e.json",
+       "sha256": "7b5eec1c9097b7ff16869c0caa2ccbc571f504895debba473570927a5819c4ab",
+       "bytes": 3917132,
+       "source": "https://kingdomarchives.com/modelviewer/yoonseul-guardian",
+       "variant": "default",
+       "icon": "models/valorant/skins/icons/58b39524b1b1e73c.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/bd8a65e3-49f0-c583-5676-01826902cb2c/displayicon.png"
+      }
+     ]
+    },
+    "Ares": {
+     "n": "Yoonseul Ares",
+     "ch": [
+      "Base"
+     ],
+     "assets": [
+      {
+       "model": "skins/yoonseul-ares-default.3fd7c034941e",
+       "config": "models/valorant/skins/yoonseul-ares.e32d7b7dacb2.json",
+       "sha256": "3fd7c034941ecfd5b87b63b2a9aceec2e5f05ccac0f4b97f24b808889160d182",
+       "bytes": 3970104,
+       "source": "https://kingdomarchives.com/modelviewer/yoonseul-ares",
+       "variant": "default",
+       "icon": "models/valorant/skins/icons/930c29f7c6279e02.png",
+       "iconSource": "https://media.valorant-api.com/weaponskinchromas/07a5f73d-47ea-415d-719f-44aaf6854a28/displayicon.png"
+      }
      ]
     }
    }

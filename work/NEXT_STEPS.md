@@ -108,3 +108,7 @@ No implementation should continue automatically while this pause is in effect.
 On 25 October 2026, the user resumed work and requested inspection/integration of `origin/hark` and `origin/instinct` before further independent implementation. The previous pause is lifted by that request. This document remains the scope record; implementation statuses above describe the pre-integration checkpoint.
 
 The checkpoint passed all 28 client regression files, the 16 default server regression files, and the separately run original-Lotus stair and floor-pickup tests. These are source/isolated checks; the unverified browser and release gates above remain open.
+
+## Latest branch + authentic-skins integration
+
+On 25 October 2026, merged newer Hark/Instinct updates and Hark's separate skins branch into main; details and verification are in `BRANCH_INTEGRATION.md`. Replaced generated finishes with actual installed weapon models/textures/native animation sets (86 skins, 138 variants). The collection offers only supported imports; custom finishers and skin-specific sounds are not implemented. The earlier broad acceptance checklist remains open unless a later validation record explicitly closes a case.

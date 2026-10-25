@@ -7,7 +7,8 @@ import {parse,render} from './grip-view.mjs';
 const ROOT=new URL('../../',import.meta.url).pathname,vr=fs.readFileSync(ROOT+'work/valorant_runtime.js','utf8');
 const cut=(s,a,b)=>{const i=s.indexOf(a),j=s.indexOf(b,i);if(i<0||j<0)throw Error('marker '+a);return s.slice(i,j);};
 const win={};vm.runInNewContext(fs.readFileSync(ROOT+'models/valorant/manifest.js','utf8'),{window:win});
-export function runtime(){const cache={};const ctx={THREE:{...THREE,SkeletonUtils},console,Math,Promise,Set,XNR:()=>{},XV:{config:win.VALORANT_ASSETS,failures:{}},
+export function runtime(skin=null){const cache={};const ctx={THREE:{...THREE,SkeletonUtils},console,Math,Promise,Set,XNR:()=>{},XV:{config:win.VALORANT_ASSETS,failures:{}},
+  ...(skin?{xskGet:()=>skin.id,xskAsset:()=>skin.asset,xskModelData:async()=>JSON.parse(fs.readFileSync(ROOT+skin.asset.config))}:{}),
   xvLoad:(n)=>cache[n]||(cache[n]=parse(ROOT+'models/valorant/'+n+'.glb'))};vm.createContext(ctx);
  vm.runInContext(cut(vr,'function xvFind(','function xvStatic(')+cut(vr,'function xvFPPlay(','function xvFPClear(')+';globalThis.api={xvFPLoad,xvFPPlay};',ctx);return ctx.api;}
 const wn=(w)=>w==='melee'?'Knife':w.charAt(0).toUpperCase()+w.slice(1);

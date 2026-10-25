@@ -1,0 +1,10 @@
+{
+  "retrieved": "2026-10-25",
+  "source": "https://kingdomarchives.com/models",
+  "errors": [],
+  "models": 86,
+  "variants": 138,
+  "excluded": {
+    "ego": "Requires an unported custom EgoPBR/text projection shader; no inaccurate substitute is offered."
+  }
+}

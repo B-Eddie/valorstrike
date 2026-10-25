@@ -46,7 +46,7 @@ const adv=async ms=>{for(let t=0;t<ms;t+=50){H.advance(Math.min(50,ms-t));await 
 const through=async()=>{for(let t=0;t<30000;t+=100){if(xe('running')&&!xe('!!window.xLdOn')&&!H.shown('pre')&&!H.shown('xAg'))return true;
  if(H.shown('pre'))H.$('preGo').click();else if(H.shown('xAg')){const tiles=H.doc.querySelectorAll('#xAg .x-ag').filter(b=>!b.disabled);if(tiles.length)tiles[0].click();await adv(20);H.$('xAgL').click();}
  await adv(100);}return false;};
-const nmSrc=cut('function nmNear(C,x,z,y){','\n')+'\n'+cut('function nmHeight(C,x,z,y){','\n');
+const nmSrc=cut('const NM_NONE=[];','\n')+'\n'+cut('function nmNear(C,x,z,y,yBand){','\n')+'\n'+cut('function nmHeight(C,x,z,y){','\n');
 const FY=6.4,out=[];
 const camCheck=(tag,ry)=>JSON.parse(xe(`(()=>{const a=xKL.cur,C=nmActive(),cy=camera.position.y;if(a){const q=a.g.position,f=nmHeight(C,q.x,q.z,${ry==null?'q.y':ry}+.5);return JSON.stringify({tag:${JSON.stringify(tag)},who:a.name,enemy:bots.includes(a),alive:!!a.alive,cy,f,qy:q.y,ok:a.alive&&cy>=f+1.2-1e-6});}
  const o=XOB.orb;if(!o)return JSON.stringify({tag:${JSON.stringify(tag)},none:true,cy,hp:player.hp,on:xKL.on,sp:xKL.sp,st:xKL.st,mode,dm:FV.dm,m5:MP.m5,bots:bots.filter(b=>b.alive).length,running,al:allies.filter(b=>b.alive).length});const f=nmHeight(C,o.cx,o.cz,(o.cy||0)+.5);return JSON.stringify({tag:${JSON.stringify(tag)},orbit:true,cy,f,ok:cy>=f+1.2})})()`));
