@@ -19,7 +19,7 @@ const {serve, launch, boot} = require('./lib.cjs');
       vis[q] = await p.evaluate((q) => {
         const pane = document.querySelector(`#xQueue .x-qp[data-q="${q}"]`);
         if (!pane || pane.hidden) return 'pane-hidden';
-        const card = pane.querySelector('button.x-qcard, .x-qcard button, .card');
+        const card = pane.querySelector(".x-qcard, .card, button");
         if (!card) return 'no-card';
         const r = card.getBoundingClientRect();
         const cs = getComputedStyle(card);

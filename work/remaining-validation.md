@@ -410,3 +410,19 @@ feature + countdown + GO) OVERLAPS the tab strip - playwright could not click th
 the ACTIVE custom pane itself overflows over .x-qtabs. Needs visual confirmation (screenshots
 /tmp/lobby_dm_tab.png, /tmp/lobby_fail.png - inspect next wake) and a viewport matrix
 (1280x800, 640x360 landscape, portrait) before fixing. DM start not reached this run.
+
+## 2026-10-25 ~12:41 EDT - Lobby tab-strip crush FIXED (flex:none on .x-qtabs)
+ROOT CAUSE (measured live): when #xQueue hits max-height:calc(100%-88px), the column flex shrinks
+children; .x-qtabs is a scroll container (overflow-x:auto) so its automatic min size is 0 and it
+was squeezed 44px -> 1px. The 44px tab buttons overflowed the 1px strip, got paint-clipped by
+overflow-y:hidden, and their hit area landed on .x-qmode's active pane ("custom pane intercepts
+pointer events"). Any tall tab content triggered it; custom (1081px) was the worst.
+FIX: flex:none on .x-qtabs (index.html; persists through install_valorant.py regen - md5 cdf754be).
+VERIFIED LIVE (diag-lobby-modes.cjs, updated selector): 1280x800 + 640x360 tabs h=45px, all 7 tab
+cards visible, DM tab clickable with custom previously active, full flow Play -> DEATHMATCH ->
+#dmBtn -> DM match running (mode=five+FV.dm per design), 0 page errors, in-game HUD sane
+(screenshots /tmp/lobby_custom_1280x800.png, _640x360.png, /tmp/lobby_dm_ingame.png).
+390x844 portrait: #rot "rotate your device" gate intentionally covers the lobby - UNSUPPORTED
+behavior per scope, labeled honestly, not a bug.
+Known non-blocker: at 1280x800 the Online section's CODE/JOIN row sits below the fold; panel
+scrolls (overflow:auto). Acceptable; flagged for the coordinated responsive-HUD pass.
