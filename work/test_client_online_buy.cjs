@@ -43,6 +43,7 @@ Math.random=mulberry(SEED*104729+1);require('vm').runInContext(`Math.random=(${m
  const step=async ms=>{for(let t=0;t<ms;t+=50){if(xe('MP.code'))codes.add(xe('MP.code'));await settle();await cluster.advance(50);H.advance(50);}};
  const until=async(cond,ms,what)=>{for(let t=0;t<ms;t+=50){if(cond())return true;await step(50);}fail('timed out: '+what);return false;};
  const humans=[];const join=(code,name,agent)=>{const h=new ScriptedHuman({name,agent,world,target:null});codes.add(code);pending++;let settled=false;const done=()=>{if(!settled){settled=true;pending--;}};const s=cluster.connect({code});h.attach(s);s.on('message',m=>h.receive(m));s.on('open',()=>{done();h.hello();});s.on('error',done);humans.push(h);return h;};
+ const sellable=(n,p,a)=>xe(`/xb-sell/.test(bCard(${JSON.stringify(n)},${p|0},${a|0}))`),abSellable=k=>xe(`/data-n="ab:${k}" class="[^"]*xb-sell/.test(jBuyHtml())`);
  const BUY=xe('BUY');const items=BUY.flatMap(([cat,l])=>l.map(([n,p,a])=>({n,p,a})));
  xe(`J.pick='Jett';MP.name='PageQA';window.xQMap='ascent';MP.map='ascent';mpCreate(false,'five')`);
  await until(()=>xe('MP.st')==='room',8000,'room');const code=xe('MP.code');
@@ -62,22 +63,22 @@ Math.random=mulberry(SEED*104729+1);require('vm').runInContext(`Math.random=(${m
   xe(`fBuy(${JSON.stringify(it.n)});true`);await step(250);
   const s=server();const owns=it.a?s.arm===it.a:(s.pri===it.n||s.sec===it.n);
   if(!owns)fail(`buy ${it.n}: server did not equip it (${JSON.stringify(s)})`);if(s.cr!==9000-it.p)fail(`buy ${it.n}: server credits ${s.cr}, want ${9000-it.p}`);
-  same('after buying '+it.n);
+  same('after buying '+it.n);if(owns&&!sellable(it.n,it.p,it.a))fail('buy '+it.n+': the menu card is not marked sellable (right-click to sell)');
   xe(`fSell(${JSON.stringify(it.n)});true`);await step(250);
   if(server().cr!==9000)fail(`sell ${it.n}: server credits ${server().cr}, want 9000 (full refund in the buy phase)`);
-  same('after selling '+it.n);
+  same('after selling '+it.n);if(sellable(it.n,it.p,it.a))fail('sell '+it.n+': the card is still marked sellable');
  }
  // over the credits
  {const u=me();u.credits=500;u.primary=null;await step(150);xe('fBuy("Vandal");true');await step(250);if(me().primary)fail('bought a Vandal with 500 credits');same('after a refused buy');}
  // ability charges
- {const u=me();u.credits=1000;u.ability.c=0;u.ability.q=0;await step(150);xe('jBuy("c");true');await step(250);if(me().ability.c!==1)fail('ability C not bought: '+me().ability.c);same('after buying C');
-  xe('fSell("ab:c");true');await step(250);if(me().ability.c!==0||me().credits!==1000)fail('ability C not sold back: c '+me().ability.c+' cr '+me().credits);same('after selling C');}
+ {const u=me();u.credits=1000;u.ability.c=0;u.ability.q=0;await step(150);xe('jBuy("c");true');await step(250);if(me().ability.c!==1)fail('ability C not bought: '+me().ability.c);same('after buying C');if(!abSellable('c'))fail('ability C card not marked sellable after buying a charge');
+  xe('fSell("ab:c");true');await step(250);if(me().ability.c!==0||me().credits!==1000)fail('ability C not sold back: c '+me().ability.c+' cr '+me().credits);same('after selling C');if(abSellable('c'))fail('ability C card still sellable after selling the charge');}
  // a second primary in the same round stacks on the server (full price; selling it gives the first one back, as
  // test-spike-edges.js pins); the page follows, and online its menu prices the second gun at full price (no local log)
  {const u=me();u.credits=9000;u.primary=null;await step(150);xe('fBuy("Vandal");true');await step(250);xe('buyMenu(true);true');await step(50);
   const aff=xe('(()=>{FV.cr=2000;const h=bCard("Phantom",2900);FV.cr='+me().credits+';return /xb-no/.test(h);})()');if(!aff)fail('online menu shows a Phantom affordable with 2000 credits over a Vandal (server charges full price)');
-  xe('fBuy("Phantom");true');await step(250);if(me().primary!=='Phantom'||me().credits!==3200)fail(`stacked buy: ${me().primary} ${me().credits}`);same('after the Vandal -> Phantom buy');
-  xe('fSell("Phantom");true');await step(250);if(me().primary!=='Vandal'||me().credits!==6100)fail(`unstack: ${me().primary} ${me().credits}`);same('after selling the Phantom');}
+  xe('fBuy("Phantom");true');await step(250);if(me().primary!=='Phantom'||me().credits!==3200)fail(`stacked buy: ${me().primary} ${me().credits}`);same('after the Vandal -> Phantom buy');if(!sellable('Phantom',2900))fail('stacked Phantom not marked sellable');
+  xe('fSell("Phantom");true');await step(250);if(me().primary!=='Vandal'||me().credits!==6100)fail(`unstack: ${me().primary} ${me().credits}`);same('after selling the Phantom');if(!sellable('Vandal',2900))fail('Vandal not sellable again after selling the Phantom bought over it');}
  // drop for a teammate (G, buy phase): the gun goes to the floor, the mate picks it up, the page loses it
  {xe('buyMenu(false);true');await step(100);xe('if(FV.pri)swapW("pri");true');await step(150);const carrier=sim.spike&&sim.spike.st==='carry'&&sim.spike.carrier===me().id;if(!carrier){/* the bug this pins: a Spike carrier's G did nothing in the buy phase */sim.spike.carrier=me().id;sim.spike.st='carry';await step(200);}if(!xe('FV.sp.st=="carry"&&FV.sp.c===player'))fail('page does not show itself carrying the Spike');key('KeyG',true);await step(60);key('KeyG',false);await step(300);
   const fl=(sim.floor||[]).find(g=>[g.weapon,g.w,g.n].includes('Vandal'));
@@ -87,7 +88,7 @@ Math.random=mulberry(SEED*104729+1);require('vm').runInContext(`Math.random=(${m
   same('after dropping the Vandal');if(xe('rw')==='pri'&&!xe('FV.pri'))fail('page holds an empty primary slot after the drop');}
  // sell after the buy phase is refused
  {const u=me();u.credits=5000;u.primary=null;await step(150);xe('fBuy("Spectre");true');await step(250);sim.buy=0;await step(300);const cr=me().credits;
-  xe('fSell("Spectre");true');await step(250);if(me().primary!=='Spectre'||me().credits!==cr)fail('sold after the buy phase');same('after a refused late sell');
+  xe('fSell("Spectre");true');await step(250);if(me().primary!=='Spectre'||me().credits!==cr)fail('sold after the buy phase');same('after a refused late sell');if(sellable('Spectre',1600))fail('Spectre card still marked sellable after the buy phase');
   xe('buyMenu(true);true');await step(50);if(xe('FV.menu'))fail('buy menu opens after the buy phase');}
  // round reset: page re-armed from the server's loadout and credits
  {const r0=sim.round;sim.roundDelay=0;sim.finishRound(0,'QA');await until(()=>sim.round>r0&&sim.phase==='game',30000,'next round');await step(500);same('after the round reset');}
@@ -102,6 +103,6 @@ Math.random=mulberry(SEED*104729+1);require('vm').runInContext(`Math.random=(${m
   xe('running=false;clearTimeout(FV.to);try{toLobby()}catch(e){}true');}
  const errors=H.errors.slice(errs0),xerr=H.xErrCalls.slice(x0);if(errors.length||xerr.length)fail('page exceptions '+JSON.stringify({errors:errors.slice(0,5),xerr:xerr.slice(0,5)}));
  if(fails.length){console.error(fails.slice(0,40).join('\n'));process.exit(1);}
- console.log(`Online buy menu (page <-> in-process server): ${n} items bought and sold back (credits / loadout / armor / menu credits equal the server's), over-credit buy refused, ability charge buy + sell, same-round second primary (server stack) and its sell-back, G drop picked up by a teammate, late sell refused, round reset re-armed; offline Spike carrier's buy-phase G drops the gun; no page exceptions`);
+ console.log(`Online buy menu (page <-> in-process server): ${n} items bought and sold back (cards marked sellable while the server would refund them; credits / loadout / armor / menu credits equal the server's), over-credit buy refused, ability charge buy + sell, same-round second primary (server stack) and its sell-back, G drop picked up by a teammate, late sell refused, round reset re-armed; offline Spike carrier's buy-phase G drops the gun; no page exceptions`);
  process.exit(0);
 })().catch(e=>{console.error(e);console.error(JSON.stringify(H.errors.slice(0,8)));process.exit(1);});

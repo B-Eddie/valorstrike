@@ -11634,6 +11634,8 @@ function mpRdArm(ld) {
 function mpCli5(m) { // client 5v5 messages; true when handled
   if (m.t === "rs") { if (MP.st === "game") mpCliRS(m); return true; }
   if (m.t === "bo") { if (MP.st !== "game") return true; FV.cr = m.cr | 0; mpCliLoad(m.ld, m.a); if (m.ab) { for (const k of ["c", "q"]) if (typeof m.ab[k] === "number") J[k] = m.ab[k]; }
+    if (Array.isArray(m.bl)) { // this round's purchases the server would refund (its log): the menu marks those cards sellable. p 0: the server charges a stacked buy in full, so no local discount
+      const L = bLog(); L.length = 0; for (const n of m.bl) { if (typeof n !== "string") continue; if (n.indexOf("ab:") === 0) { L.push({ n, ab: n.slice(3), p: 0 }); continue; } const it = bItem(n); if (!it) continue; L.push(it[2] ? { n, p: 0, a: it[2] } : { n, p: 0, sl: bSide(n) ? "pis" : "pri" }); } }
     if (m.ok) try { blip(m.n && m.n.indexOf("ab:") === 0 ? 700 : 700, 0.08, "triangle", 0.15); } catch (e) {}
     try { onSkin(); updHud(); if (FV.menu) { buyRender.h = null; buyRender(); } xHud(); } catch (e) {} return true; }
   if (m.t === "abn") { if (/^[cqe]$/.test(m.k)) J[m.k] = 0; return true; }
