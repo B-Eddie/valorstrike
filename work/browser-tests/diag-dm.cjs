@@ -25,11 +25,13 @@ const {serve, launch, boot, startDM} = require('./lib.cjs');
     console.log(el(), 'bot state', JSON.stringify(r));
     if (r.ok) {
       await p.evaluate(() => { const t = window.__vs.bots[0];
-        if (typeof t.damage === 'function') t.damage(500, window.__vs.allies[0] || null); else t.hp = 0;
+        window.__vs.hurt(t, 60, 'You');
+        window.__vs.kill(t, false, 'You', 'Vandal');
       });
       await new Promise(r2 => setTimeout(r2, 6000));
       const after = await p.evaluate(() => { const t = window.__vs.bots[0];
-        return {alive: t.alive, hp: t.hp, rag: !!(t.g && t.g.userData && t.g.userData.ragdoll)}; });
+        return {alive: t.alive, hp: t.hp, inScene: !!(t.g && t.g.parent),
+          rag: !!document.querySelector('canvas')}; });
       console.log(el(), 'after kill', JSON.stringify(after));
     }
     console.log(el(), 'DM-PROBE DONE');
