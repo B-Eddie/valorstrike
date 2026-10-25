@@ -91,6 +91,12 @@ const walk=(s,u,look,seconds,each=()=>{})=>{let low=Infinity;for(let k=0;k<secon
  assert(u.rescued>=2,'put back');assert(!s.offMesh(B,...p)&&s.offMesh(B,-30.51,3.77,-68.37),'pocket is off the graph, walkway is on it');
  const a=W.nav.nodes[W.playable[100]];assert(!s.offMesh(W,...a),'nav node on Ascent is on the graph');}
 
+// 6d. DM seat-taker (soak 13, DM): a human joining a full DM room took the replaced bot's team id, so it inherited that
+//     bot's score row (points it never scored; the row no longer matched its kills). Each DM unit now has its own row.
+{const s=new Simulation(W,'dm','ascent');s.add('host');s.start();const bot=s.units.find(u=>!u.human);s.scores[bot.team]=(s.scores[bot.team]||0)+4;bot.kills=4;
+ const j=s.add('joiner');assert.equal(s.units.length,10);assert(!s.units.includes(bot)||s.units.some(u=>u!==j&&!u.human),'a bot gave up its seat');
+ assert.equal(new Set(s.units.map(u=>u.team)).size,10,'every DM unit on its own side');assert.notEqual(j.team,bot.team);assert.equal(s.scores[j.team]||0,0,'no inherited points');}
+
 // 7. Short seeded soak through the real worker: fuzzing humans + bots, TDM and Spike, invariants every tick.
 for(const [mode,seconds] of [['tdm',50],['five',70]]){const r=await soakRun({map:'ascent',mode,seconds,humans:3,seed:3,stuckSeconds:10});
  assert.deepEqual(r.errors,[],mode+' errors');const bad=r.violations.filter(v=>v.kind!=='bot stuck');assert.deepEqual(bad.map(v=>v.kind+': '+v.detail.slice(0,200)),[],mode+' invariants');assert(r.stats.ticks>seconds*15);if(mode==='tdm')assert(r.stats.kills>0);}

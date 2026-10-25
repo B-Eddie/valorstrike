@@ -54,12 +54,18 @@ export async function soakRun({map='ascent',mode='dm',seconds=120,humans=3,seed=
   s.on('message',m=>receive(h,m));};
  const receive=(h,m)=>{if(m.t==='welcome'){h.id=m.you;h.name=m.name;}else if(m.t==='room')h.room=m;else if(m.t==='start'){h.started=true;h.rows=m.u;h.pendingReady=now()+h.loadDelay;}else if(m.t==='end')h.ended=m;else if(m.t==='rs')h.rs=m;else if(m.t==='s'&&h.ready){h.rows=m.u;if(m.fw)h.fw=m.fw;}};
  const now=()=>cluster.clock.now()-t0;
+ // A joiner's 'hi' is authenticated with real async crypto: hold the virtual clock until it settles, so the moment a
+ // (re)joiner gets its seat does not depend on machine speed (keeps seeded runs reproducible).
+ const authSettled=async()=>{const r=cluster.room(code);if(!r)return;for(let i=0;i<4000&&[...r.sessions.values()].some(s=>s.authenticating&&!s.u);i++)await new Promise(q=>setTimeout(q,1));};
  connect(fz[0],{create:1,code,mode,map});
- // World loading is real file I/O: under machine load it can outlast 5 virtual seconds, so wait in real time too.
- {const until=Date.now()+90000;for(let k=0;!fz[0].room&&(k<100||Date.now()<until)&&!fz[0].refused;k++){await cluster.advance(50);if(k>=20)await new Promise(r=>setTimeout(r,k<100?5:50));}}
+ // World loading is real file I/O inside the create request: wait for the socket in real time without moving the virtual
+ // clock (under machine load it outlasted 5 virtual seconds: 'room was not created'), so every run starts its virtual
+ // timeline at the same point and a seed replays the same match whatever the machine load.
+ {const until=Date.now()+120000;while(!fz[0].connected&&!fz[0].refused&&Date.now()<until)await new Promise(r=>setTimeout(r,5));}
+ for(let k=0;k<100&&!fz[0].room&&!fz[0].refused;k++){await authSettled();await cluster.advance(50);}
  if(!fz[0].room)throw Error('room was not created: '+fz[0].refused);
  for(const h of fz.slice(1))connect(h,{code});
- for(let k=0;k<100&&fz[0].room.pl.length<humans;k++)await cluster.advance(50);
+ for(let k=0;k<100&&fz[0].room.pl.length<humans;k++){await authSettled();await cluster.advance(50);}
  send(fz[0],{t:'start'});
  const room=cluster.room(code);
  // Hook every server tick: run the invariant checks right after the room's own tick.
@@ -94,6 +100,8 @@ export async function soakRun({map='ascent',mode='dm',seconds=120,humans=3,seed=
   for(const u of sim.units){let a=trail.get(u.id);if(!a)trail.set(u.id,a=[]);a.push([+u.x.toFixed(2),+u.y.toFixed(2),+u.z.toFixed(2),+(u.vy||0).toFixed(1),u.air?1:0,u.alive?1:0,+(u.ch||0).toFixed(2)]);if(a.length>40)a.shift();}
   // Scores consistent with kills.
   if(sim.mode!=='five'||sim.phase==='game'){const total=sim.scores.reduce((a,b)=>a+(b||0),0);if(sim.mode!=='five'&&total!==killEvents)flag('score/kill mismatch',`scores ${total} vs kill events ${killEvents}`,'score');}
+  // DM: each unit is its own side, so its score row is exactly its kills (a seat-taker used to inherit the bot's row).
+  if(sim.mode==='dm')for(const u of sim.units)if((sim.scores[u.team]||0)!==u.kills||sim.units.some(v=>v!==u&&v.team===u.team))flag('dm score row',`${u.name} team ${u.team} score ${sim.scores[u.team]} kills ${u.kills}`,'dmrow');
   if(sim.mode==='tdm'){const team=[0,1].map(t=>sim.units.filter(u=>u.team===t).reduce((a,u)=>a+u.kills,0));for(const t of [0,1])if(team[t]>(sim.scores[t]||0))flag('team kills exceed score',`team ${t} kills ${team[t]} > score ${sim.scores[t]}`,'teamscore'+t);
    const counts=[0,1].map(t=>sim.units.filter(u=>u.team===t).length);if(sim.phase==='game'&&sim.units.length===10&&Math.abs(counts[0]-counts[1])>0)flag('unbalanced teams',`teams ${counts}`,'unbalanced');}
   if(sim.mode==='five'&&sim.phase==='game'){const played=sim.roundScores[0]+sim.roundScores[1];if(played!==sim.round-(sim.roundDelay>0?0:1))flag('round score mismatch',`round ${sim.round} scores ${sim.roundScores} delay ${sim.roundDelay}`,'rscore');
@@ -118,7 +126,7 @@ export async function soakRun({map='ascent',mode='dm',seconds=120,humans=3,seed=
    p.n++;if(u.input?.forward&&!u.sawTarget)p.want++;
    if(Math.hypot(u.x-p.x,u.z-p.z)>1){p.x=u.x;p.z=u.z;p.y=u.y;p.at=t;p.want=0;p.n=0;p.flagged=false;}
    else if(!p.flagged&&!u.sawTarget&&t-p.at>stuckSeconds*1000&&p.want>p.n*.8){p.flagged=true;const near=W.near(u.x,u.z,u.y),key=`${map}:${Math.round(u.x)},${Math.round(u.z)}`;stats.stuck.push({bot:u.name,at:[+u.x.toFixed(2),+u.y.toFixed(2),+u.z.toFixed(2)],node:near,seconds:+((t-p.at)/1000).toFixed(1),route:u.route?.length??null});const head=u.route?.[0]!=null?W.nav.nodes[u.route[0]]:null;flag('bot stuck',`${u.name} at ${u.x.toFixed(2)},${u.y.toFixed(2)},${u.z.toFixed(2)} for ${((t-p.at)/1000).toFixed(0)} s (route ${u.route?.length}, head ${head?head.map(v=>v.toFixed(1)).join(','):'-'} d ${head?Math.hypot(head[0]-u.x,head[2]-u.z).toFixed(2):'-'}, input ${JSON.stringify(u.input)}, stuck ${u.stuck?.toFixed?.(2)}, air ${u.air}, via ${u.via}, goalOff ${u.goalOff}, look ${u.look?.toFixed(2)}, wedged ${u.wedged?.toFixed?.(2)} unwedged ${u.unwedged} blocked ${W.blocked(u.x,u.z,.4,u.y,1.8-(u.ch||0))} ch ${u.ch} rescued ${u.rescued} escapes ${u.escapes} unstuck ${u.unstuck} stuckVal ${u.stuck} goalStuck ${u.goalStuck})`,'stuck:'+key);}}
-  if(sim.phase==='post'&&!stats.phaseEnd)stats.phaseEnd={t:t/1000,scores:[...sim.scores],round:sim.round};
+  if(sim.phase==='post'&&!stats.phaseEnd)stats.phaseEnd={t:t/1000,scores:sim.mode==='dm'?Object.fromEntries(sim.units.map(u=>[u.name,sim.scores[u.team]||0])):[...sim.scores],round:sim.round};
  }
  // Fuzz driver, once per 50 ms.
  const R=(a,b)=>a+rng()*(b-a),pick=a=>a[Math.floor(rng()*a.length)],chance=p=>rng()<p;
@@ -162,11 +170,12 @@ export async function soakRun({map='ascent',mode='dm',seconds=120,humans=3,seed=
   if(scenario!=='base'&&room.sim.mode==='five'&&k%10===0)driveBots(room.sim,scenario,rng,stats);
   if(room.sim.mode==='five'&&k%400===0)for(const u of room.sim.units)if(!u.human&&u.ability&&chance(.3))room.sim.command(u,{t:'ab',k:'x',p:[u.x,u.z]});
   if(shorten&&room.sim.mode!=='five'&&k===40)room.sim.remaining=Math.min(room.sim.remaining,shorten);
+  await authSettled();
   try{await cluster.advance(50);}catch(e){errors.push('advance threw: '+(e.stack||e).split('\n').slice(0,4).join(' | '));}
   if(room.sim.phase==='post'||room.sim.phase==='closed')break;
   if(now()-lastGc>30000&&globalThis.gc){lastGc=now();globalThis.gc();heap.push(process.memoryUsage().heapUsed);}}
  if(room.sim.phase==='post'){await cluster.advance(1500);}
- stats.end={phase:room.sim.phase,remaining:room.sim.remaining,scores:room.sim.scores,round:room.sim.round,roundScores:room.sim.roundScores,virtualSeconds:now()/1000};stats.heapMB=heap.map(b=>+(b/1048576).toFixed(1));stats.timers=null;
+ stats.end={phase:room.sim.phase,remaining:room.sim.remaining,/* DM rows are indexed by unit id: report the live units' rows, not a sparse array */scores:room.sim.mode==='dm'?Object.fromEntries(room.sim.units.map(u=>[u.name,room.sim.scores[u.team]||0])):room.sim.scores,round:room.sim.round,roundScores:room.sim.roundScores,virtualSeconds:now()/1000};stats.heapMB=heap.map(b=>+(b/1048576).toFixed(1));stats.timers=null;
  for(const h of fz)if(h.socket&&h.connected)try{h.socket.close();}catch(e){}
  await cluster.advance(200);
  return {map,mode,seed,humans,violations:violations.map(v=>({...v,count:seen.get(v.key)})),counts:Object.fromEntries(seen),errors:[...new Set(errors)].slice(0,50),stats};
