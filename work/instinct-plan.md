@@ -208,3 +208,9 @@ All 12 user-list items now have shipped fixes on instinct. Remaining: ledger 13-
   teleports to the clicked point. Zero page errors. Probe notes: the intro modal must be
   dismissed (real users do) or it eats clicks; minimap px are ~0.5-0.9 world units coarse,
   so click targets need ~1u of open space - matches the intended "pick an open spot" UX.
+
+## DM kill-path + rig findings (2026-10-25 08:32)
+- kill() sets alive=false unconditionally; DM respawns dead bots after 1.5s via dmSpawnB (hp 100, armor 50). Earlier "kill didn't stick" was a probe artifact (hurt bot A, killed bots[0], re-sampled A). No DM kill bug.
+- Native rigs attach ASYNCHRONOUSLY ~12s after DM start (agent GLBs fetched 200 locally under mid profile + light(true) + agents(false)). rig:false at match start is normal.
+- __vs.light(true) sets __vsNoAgents=true; must call __vs.agents(false) AFTER light(true) to keep rigs.
+- diag-rag.cjs updated: waits for rig attach, kills rigged bot, measures Verlet drift + screenshots corpse at 1.2s/3.7s. NOT YET RUN to completion (run-limit cut; launch on next wake, keep bash alive ~110s for the probe to finish inside the call).
