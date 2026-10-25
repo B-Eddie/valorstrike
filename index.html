@@ -2781,7 +2781,7 @@ function openPre(m) {
   if (preMode === "five") {
     $("preMt").innerHTML = "5V5 VS BOTS · BETA · First to 13 · <b>CASUAL</b> on Ascent";
     $("preMs").textContent = "5 VS 5 · YOU AND 4 BOTS"; if (window.xQPick) { FV.pick = window.xQPick; window.xQPick = null; } mpSet(FV.pick); // queue panel map tile (Unrated / Swiftplay)
-    $("preMp").textContent = "Attack first, sides swap after round 12. 20 s buy phase each round, press B to buy. Plant or defuse the Spike with 4.";
+    $("preMp").textContent = "Attack first, sides swap after round 12. 30 s buy phase (45 s on the first round of each half), press B to buy. Plant or defuse the Spike with 4.";
   }
   let t = 0; const found = preMode === "surf" || preMode === "aim" ? 1 : 2 + Math.floor(Math.random() * 3);
   $("preT").textContent = "Searching for a match…"; $("preS").innerHTML = 'Searching for a match… <b id="preClock">00:00</b>';
