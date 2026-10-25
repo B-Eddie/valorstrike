@@ -12790,9 +12790,9 @@ function nmPath(C,start,end){const cacheKey=start+'>'+end;if(NM.routeCache.has(c
  const path=[];if(found)for(let i=end;i>=0;i=prev[i]){path.push(i);if(i===start)break;}path.reverse();if(NM.routeCache.size>200)NM.routeCache.clear();NM.routeCache.set(cacheKey,path);return path;
 }
 // Smoothing follows support height at every sample. Wall clearance alone would
-// cut corners across open drops and strand units beneath the intended path.
-function nmSegment(C,p,n){const d=Math.hypot(n[0]-p.x,n[2]-p.z),steps=Math.max(1,Math.ceil(d/.18));let y=p.y;for(let k=1;k<=steps;k++){const x=p.x+(n[0]-p.x)*k/steps,z=p.z+(n[2]-p.z)*k/steps,h=nmHeight(C,x,z,y);if(h-y>.321||y-h>.35||nmBlocked(C,x,z,.43,Math.max(y,h)+.32))return false;y=h;}return Math.abs(y-n[1])<.35;}
-function nmSegDrop(C,p,n){const d=Math.hypot(n[0]-p.x,n[2]-p.z),st=Math.max(1,Math.ceil(d/.18));let y=p.y;for(let k=1;k<=st;k++){const x=p.x+(n[0]-p.x)*k/st,z=p.z+(n[2]-p.z)*k/st,h=nmHeight(C,x,z,y);if(h-y>.321||nmBlocked(C,x,z,.43,Math.max(y,h)+.32))return false;y=h;}return true;}
+// cut corners across open drops and strand units beneath the intended path Validated at the motor's own collision radius (0.45): a 0.43 probe passed sub-0.9 u gaps the motor cannot traverse (haven C approach pocket).
+function nmSegment(C,p,n){const d=Math.hypot(n[0]-p.x,n[2]-p.z),steps=Math.max(1,Math.ceil(d/.18));let y=p.y;for(let k=1;k<=steps;k++){const x=p.x+(n[0]-p.x)*k/steps,z=p.z+(n[2]-p.z)*k/steps,h=nmHeight(C,x,z,y);if(h-y>.321||y-h>.35||nmBlocked(C,x,z,.45,Math.max(y,h)+.32))return false;y=h;}return Math.abs(y-n[1])<.35;}
+function nmSegDrop(C,p,n){const d=Math.hypot(n[0]-p.x,n[2]-p.z),st=Math.max(1,Math.ceil(d/.18));let y=p.y;for(let k=1;k<=st;k++){const x=p.x+(n[0]-p.x)*k/st,z=p.z+(n[2]-p.z)*k/st,h=nmHeight(C,x,z,y);if(h-y>.321||nmBlocked(C,x,z,.45,Math.max(y,h)+.32))return false;y=h;}return true;}
 // nmSegDrop is nmSegment without the descent rejection, used ONLY for the first graph edge:
 // adjacency across a ledge is traversable by falling, and rejecting it parked units on upper
 // levels (ascent east balcony, y 9.1). Skip-ahead past the first edge still uses strict

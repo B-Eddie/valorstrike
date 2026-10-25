@@ -105,3 +105,9 @@ Open `http://127.0.0.1:8876/`; localhost clients use the local game service on p
 - Verified LIVE (diag-plant.cjs, committed): breeze siteGoals B=[-78.5,-12.25] A=[25,-28.75] both in-zone; carrier teleported to the B goal plants in 4s (pt 1..4 -> st "plant"). Breeze five-soak PASS x2 (elimination + clock-end rounds, no stalls).
 - Regression: work/test_native_site_goals.cjs (behavioral: centroid snap, in-zone verification, rowless-site fallback + wrapper source pins). 42/42 client suites green.
 - Note: escorts waiting at site for a slow carrier remain flaggable by five-soak's 16s rule when the carrier genuinely parks - but the carrier parking was the defect just fixed; watching for residual false positives in the sweep.
+
+## Split five-mode stall -> nav-data defect class: trap nodes (OPEN, 6:31 AM)
+- diag-stall5 MAP=split caught the carrier + 2 escorts at (-46,6.6,2.6) goal-steering into a wall, xUn cycling, path "alive" (pl=32) per the graph.
+- diag-edges.cjs (committed): node 741 (-46.25,6.62,2.5) has adj=6 in the graph, but ALL SIX edges fail the capsule walkability check (nmBlocked at body height, both r=0.43 and r=0.45) within 0.2-0.3u of the node. Control: 6 random playable nodes have 0 bad edges. It is a POCKET: units can drop/be placed in (nmPlace validates the node point + graph path, not edges) but can never walk out.
+- Root: the nav builder's adjacency was not validated against the runtime capsule collision model, so nmPath (pure graph A*) routes through untraversable edges. Not fixable by steering recovery - prevention required.
+- Plan (next wake): full-map edge audit (count trap nodes + failing edges per map), then prune invalid edges at build time (preferred; check the builder) or at map load before nmConnected, regenerate/re-verify, re-run five-soak split + full sweep. Also make nmPlace reject nodes with zero walkable exit edges.

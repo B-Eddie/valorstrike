@@ -29,7 +29,7 @@ const MAP = process.env.MAP || 'breeze';
                    ps: C.playable ? C.playable[s] : -1, pe: (e >= 0 && C.playable) ? C.playable[e] : -1,
                    adj: C.nav.adj[s] ? C.nav.adj[s].length : -1};
           }
-          out.push({n: a.name, tg: !!a.xTg, car: !!(window.__vs.FV.sp && window.__vs.FV.sp.c === a), xr: a.xr && a.xr.length, xo: a.xo || null, xg0: window.__vs.FV.sp ? window.__vs.FV.sp.st : null, x: +q.x.toFixed(1), y: +q.y.toFixed(1), z: +q.z.toFixed(1),
+          out.push({n: a.name, buy: (window.__vs.FV.buy || 0) > 0, tg: !!a.xTg, car: !!(window.__vs.FV.sp && window.__vs.FV.sp.c === a), xr: a.xr && a.xr.length, xo: a.xo || null, xg0: window.__vs.FV.sp ? window.__vs.FV.sp.st : null, x: +q.x.toFixed(1), y: +q.y.toFixed(1), z: +q.z.toFixed(1),
                     np: a.np && a.np.map(v => +(+v).toFixed(1)), ng: a.ng && a.ng.map(v => +(+v).toFixed(1)),
                     nbx: a.xNb && a.xNb.alive ? 1 : 0, nav, scal});
         }
@@ -39,7 +39,7 @@ const MAP = process.env.MAP || 'breeze';
         const k = u.n;
         if (lastPos[k] && Math.hypot(u.x-lastPos[k][0], u.z-lastPos[k][1]) < 0.5) {
           still[k] = (still[k]||0)+1;
-          if (still[k] >= 3 && !dumped[k] && !u.tg && u.xg0 !== 'plant') { dumped[k] = 1; console.log('DUMP', JSON.stringify(u)); }
+          if (still[k] >= 3 && !dumped[k] && !u.tg && u.xg0 !== 'plant' && !u.buy) { dumped[k] = 1; console.log('DUMP', JSON.stringify(u)); }
         } else { still[k] = 0; }
         lastPos[k] = [u.x, u.z];
       }
