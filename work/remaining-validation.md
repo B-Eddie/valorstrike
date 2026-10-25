@@ -369,3 +369,11 @@ next step is A/B - same probe against pre-merge instinct (6facbc0~1 worktree, re
 ascent world artifacts) to confirm merge-introduced, then bisect the motor diff.
 Caveat: one PROBE-FAIL earlier this run was a Chrome tab crash under sandbox load
 (infra, not game).
+
+## 2026-10-25 ~12:07 EDT - TEXCAP restore committed (2d61646), full client sweep green
+- TEXCAP decode cap restored (valorant_runtime.js, before `var XV`); test_texcap.cjs green.
+- Obsolete pins removed: test_native_only.cjs (main xvAttach native-only tier covers), test_preload.cjs (main XVA hash-verified manifest covers).
+- FIX: __vsLightOn helper was defined outside the nmCancel..marker vm-slice region -> test_map_cancel + test_map_lifetime rejected with ReferenceError (loads=0). Moved helper inside region; both green.
+- Full client slice sweep 0-80 (80 files incl. main's test_agent_preload + test_bot_variety equivalents) PASS post-restore. index.html regen idempotent (md5 ce0b4bab...).
+- Restored dev tools agent_preview/agent_rt/boots_check/fp_check committed, NOT yet run.
+- NEXT (queued): re-run six-map stairs probe WITH restored light path (matched-rate A/B vs pre-merge pass) before any motor-regression claim; then lotus re-ground, mobile/perf, responsive-HUD pass, lobby offline-mode reachability, A-kills-B duel, final acceptance sweep.
