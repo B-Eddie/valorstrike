@@ -4681,6 +4681,8 @@ function bLog() { const r = FV.you + FV.them; if (!FV.bt || FV.btR !== r) { FV.b
 function bBack(n, c) { try { if (c > 0 && SB[n]) SB[n].sp = Math.max(0, (SB[n].sp || 0) - c); } catch (e) {} }
 function bMin() { const lb = [1900, 2400, 2900][Math.min((FV.lsY || 0) + 1, 3) - 1]; return capC((FV.sw ? 4000 : FV.cr) + lb); } // credits next round if this one is lost (loss bonus)
 function bCost(n) { const it = bItem(n); if (!it) return Infinity; const L = bLog(), e = it[2] ? L.find((x) => x.a) : L.find((x) => x.sl === (bSide(n) ? "pis" : "pri")); return it[1] - (e && !e.by ? e.p : 0); }
+// a weapon name from the network: own WEAP keys only ("__proto__" / "constructor" pass WEAP[n] and threw in the skin path)
+function xWOwn(n) { return typeof n === "string" && Object.prototype.hasOwnProperty.call(WEAP, n); }
 function bEquip(n, sl) {
   const m = WEAP[n].mag; if (sl === "pis") FV.sec = n; else FV.pri = n;
   slots[sl] = { ammo: m, rsv: m * 3 };
@@ -11523,7 +11525,7 @@ function mpHostMsg(c, m) {
   const u = c.u; if (!u || MP.st !== "game") return;
   if (MP.m5 && mpHost5(c, u, m)) return;
   if (m.t === "in") { // movement: client-predicted, host clamps teleports and wall clips
-    if (typeof m.w === "string" && WEAP[m.w]) u.w = m.w;
+    if (xWOwn(m.w)) u.w = m.w;
     if (m.sq !== u.sq || !u.alive) return;
     const x = +m.x, y = +m.y || 0, z = +m.z, now = performance.now(); if (!isFinite(x) || !isFinite(z) || !isFinite(y)) return;
     const L = u.nb && u.nb.length ? u.nb[u.nb.length - 1] : { t: now - 50, x: u.g.position.x, z: u.g.position.z };
@@ -11532,7 +11534,7 @@ function mpHostMsg(c, m) {
     if (!ok) return; (u.nb || (u.nb = [])).push({ t: now, x, y: Math.max(0, Math.min(8, y)), z, r: (+m.r || 0) + Math.PI }); if (u.nb.length > 12) u.nb.shift();
     return;
   }
-  if (m.t === "sh") { if (u.alive && typeof m.w === "string") { if (u.pp) dmFired(u); try { SFX.at(u.g.position, WEAP[m.w] ? m.w : "Vandal"); } catch (e) {} } return; }
+  if (m.t === "sh") { if (u.alive && typeof m.w === "string") { if (u.pp) dmFired(u); try { SFX.at(u.g.position, xWOwn(m.w) ? m.w : "Vandal"); } catch (e) {} } return; }
   if (m.t === "hit") return mpHostHit(c, u, m);
   if (m.t === "ab") return mpCastIn(c, u, m);
 }
@@ -11547,7 +11549,7 @@ function mpHostHit(c, u, m) { // a client's hit claim: target alive, enemy, in r
   const tx = t === player ? player.x : t.g.position.x, tz = t === player ? player.z : t.g.position.z;
   if (Math.hypot(tx - u.g.position.x, tz - u.g.position.z) > 120) return;
   if (now - c.nT > 1000) { c.nT = now; c.nH = 0; } if (++c.nH > 24) return;
-  const w = typeof m.w === "string" && WEAP[m.w] ? m.w : m.w === "Knife" ? "Knife" : u.w || "Vandal", dmg = Math.min(n, 255), hs = !!m.hs;
+  const w = xWOwn(m.w) ? m.w : m.w === "Knife" ? "Knife" : u.w || "Vandal", dmg = Math.min(n, 255), hs = !!m.hs;
   xHS = hs; hurt(t, dmg, u.name); try { xTag(t, dmg); } catch (e) {}
   if (t === player) { try { xDmgArc(u.g.position.x, u.g.position.z); xDmgFlash(); } catch (e) {} updHud(); if (player.hp <= 0) pDie(u.name, w); }
   else if (t.hp <= 0.001) { if (bots.indexOf(t) >= 0) kill(t, hs, u.name, w); else allyDie(t, u.name, w); }
@@ -11949,7 +11951,7 @@ function mpCliStart5(m) {
     FV.bs = {}; ma.forEach((n) => { FV.bs[n] = { cr: 0, w: "Classic", arm: 0 }; });
     try { sbReset(en, ma); } catch (e) {} mpCliKD(m.k, m.d);
     if (fsIcon.parent) fsIcon.parent.remove(fsIcon); fsM.visible = false; FV.sp = { st: "", c: null, site: "", t: 45, pt: 0, dt: 0, x: 0, z: 0 };
-    FV.atk = m.team === 0 ? !!m.atk : !m.atk; FV.pri = m.ld && m.ld[0] && WEAP[m.ld[0]] ? m.ld[0] : null; FV.sec = m.ld && WEAP[m.ld[1]] ? m.ld[1] : "Classic"; FV.cr = m.me | 0;
+    FV.atk = m.team === 0 ? !!m.atk : !m.atk; FV.pri = m.ld && xWOwn(m.ld[0]) ? m.ld[0] : null; FV.sec = m.ld && xWOwn(m.ld[1]) ? m.ld[1] : "Classic"; FV.cr = m.me | 0;
     mpCliRS(Object.assign({ me: m.me }, m.rs)); if (self) mpCliRound5(self);
     try { xHud(); updHud(); } catch (e) {}
     mpUI(); say("Online Unrated · " + (MP.pub ? "public match" : "room " + MP.code), 2200);
@@ -11964,7 +11966,7 @@ function mpCliRound5(e) { // round start: own unit back at spawn with this round
   try { onSkin(); setScope(false); xKLReset(); } catch (er) {} updHud();
 }
 function mpCliLoad(ld, a) {
-  const p = ld && ld[0] && WEAP[ld[0]] ? ld[0] : null, s = ld && ld[1] && WEAP[ld[1]] ? ld[1] : "Classic";
+  const p = ld && xWOwn(ld[0]) ? ld[0] : null, s = ld && xWOwn(ld[1]) ? ld[1] : "Classic";
   if (s !== FV.sec) bEquip(s, "pis");
   if (p !== FV.pri) { if (p) bEquip(p, "pri"); else { FV.pri = null; if (rw === "pri") swapW("pis"); slots.pri = {}; } }
   if (a != null) player.armor = a;
@@ -12005,7 +12007,7 @@ function mpCliTick5(dt) { // client: own movement + HUD; the host owns rounds, s
 // Headhunter) arrive in snapshots as the held weapon (bEquip'd into the slot), so after a round reset the Operator
 // model, its 5-round slot and, with no primary bought, a "pri" slot with nothing in it stayed until something else moved.
 function mpRdArm(ld) {
-  const p = ld && ld[0] && WEAP[ld[0]] ? ld[0] : null, s = ld && ld[1] && WEAP[ld[1]] ? ld[1] : "Classic";
+  const p = ld && xWOwn(ld[0]) ? ld[0] : null, s = ld && xWOwn(ld[1]) ? ld[1] : "Classic";
   FV.pri = p; FV.sec = s; const pm = p ? WEAP[p].mag : 0, sm = WEAP[s].mag;
   slots.pri = p ? { ammo: pm, rsv: pm * 3 } : {}; slots.pis = { ammo: sm, rsv: sm * 3 };
   rw = p ? "pri" : "pis"; ammo = slots[rw].ammo; rsv = slots[rw].rsv; reloading = 0; fireHeld = false;
@@ -13299,7 +13301,7 @@ function netClean(m){if(!m||typeof m!=='object'||Array.isArray(m)||typeof m.t!==
  // Snapshot-shaped frames ('s', and 'end' / 're', which the page replays through the snapshot path): everything iterated.
  const snap=m=>{m.u=rows(m.u);m.k=kd(m.k);m.d=kd(m.d);m.ev=arr(m.ev).filter(e=>Array.isArray(e)&&str(e[0]));if(m.fx!==undefined)m.fx=arr(m.fx).filter(e=>obj(e)&&vec(e.p));if(m.fw!==undefined)m.fw=arr(m.fw).filter(r=>Array.isArray(r)&&num(r[0])&&str(r[1])&&num(r[2])&&num(r[3])&&num(r[4]));if(m.tl!==undefined&&!num(m.tl))delete m.tl;};
  // Round state (alone, or inside 'start' / 'ao'): the spike row, and the per-agent state the page walks (Reyna souls, ability block, statuses).
- const rs=r=>{if(!obj(r)||!Array.isArray(r.sp)||r.sp.length<9)return null;if(r.ld!==undefined&&!Array.isArray(r.ld))r.ld=[null,'Classic'];if(r.tw!==undefined&&!(r.tw===null||typeof r.tw==='string'&&WEAP[r.tw]))r.tw=null;if(r.status!==undefined&&!obj(r.status))delete r.status;if(r.channel!==undefined&&!obj(r.channel))r.channel=null;
+ const rs=r=>{if(!obj(r)||!Array.isArray(r.sp)||r.sp.length<9)return null;const wk=v=>typeof v==='string'&&Object.prototype.hasOwnProperty.call(WEAP,v);/* own weapon keys only: '__proto__' / 'constructor' passed WEAP[n] and threw in the skin path (onSkin) */if(r.ld!==undefined){if(!Array.isArray(r.ld))r.ld=[null,'Classic'];else r.ld=[wk(r.ld[0])?r.ld[0]:null,wk(r.ld[1])?r.ld[1]:'Classic'];}if(r.tw!==undefined&&!(r.tw===null||wk(r.tw)))r.tw=null;if(r.status!==undefined&&!obj(r.status))delete r.status;if(r.channel!==undefined&&!obj(r.channel))r.channel=null;
   if(r.ab!==undefined){if(!obj(r.ab))delete r.ab;else{if(r.ab.cool!==undefined&&!obj(r.ab.cool))delete r.ab.cool;if(r.ab.anchor!=null&&!vec(r.ab.anchor))r.ab.anchor=null;}}
   if(r.reyna!==undefined&&r.reyna!==null){if(!obj(r.reyna))r.reyna=null;else r.reyna.souls=arr(r.reyna.souls).filter(o=>obj(o)&&(str(o.id)||num(o.id))&&vec(o.p));}
   r.rv=arr(r.rv).filter(x=>Array.isArray(x)&&x.length>=4&&x.every(num));if(r.cr!==undefined)r.cr=kd(r.cr);if(r.sc!==undefined&&!(Array.isArray(r.sc)&&r.sc.length===2&&r.sc.every(num)))return null;return r;};
@@ -13399,7 +13401,7 @@ const netFloorSnap0=mpCliSnap;mpCliSnap=function(m){const r=netFloorSnap0.apply(
 const netFloorRS0=mpCliRS;// The saved loadout (ld) is not the held gun while the server has swapped one in for an ult or device (Tour De Force's
 // Operator, Headhunter's Sheriff: rs.tw). Re-applying ld then took the swapped gun out of the page's hand and sent
 // 'equip' for the old one, which ended Tour De Force on the server the moment it started (ult points spent, no Operator).
-mpCliRS=function(m){const r=netFloorRS0.apply(this,arguments);if(NET.socket&&MP.m5&&Array.isArray(m.ld)&&player.hp>0){const tw=m.tw&&WEAP[m.tw]?m.tw:null,p=m.ld[0]&&WEAP[m.ld[0]]?m.ld[0]:null,sec=m.ld[1]&&WEAP[m.ld[1]]?m.ld[1]:null;if(!(tw&&(FV.pri===tw||FV.sec===tw))&&(p!==FV.pri||(sec&&sec!==FV.sec)))mpCliLoad(m.ld);}return r;};
+mpCliRS=function(m){const r=netFloorRS0.apply(this,arguments);if(NET.socket&&MP.m5&&Array.isArray(m.ld)&&player.hp>0){const tw=xWOwn(m.tw)?m.tw:null,p=xWOwn(m.ld[0])?m.ld[0]:null,sec=xWOwn(m.ld[1])?m.ld[1]:null;if(!(tw&&(FV.pri===tw||FV.sec===tw))&&(p!==FV.pri||(sec&&sec!==FV.sec)))mpCliLoad(m.ld);}return r;};
 const netFloorReset0=mpReset;mpReset=function(){netFloorClear();return netFloorReset0.apply(this,arguments);};
 addEventListener('keydown',e=>{if(!(NET.socket&&MP.st==='game'&&MP.m5)||xKbSkip(e)||e.repeat||!running||paused||player.hp<=0)return;
  if(e.code==='KeyF'){const d=xdLook([...netFloor.values()]);if(d){netSend({t:'pick',id:d.id});e.stopImmediatePropagation();}return;}
