@@ -47,8 +47,16 @@ All 12 user-list items now have shipped fixes on instinct. Remaining: ledger 13-
   CLIENT nmOobWatch (XHK hook): a grounded actor with no playable nav node within 4 units hears
   "Outside the map - get back!" and dies after 2 s; airborne, in-coverage, paused, pre-match
   untouched; re-entry resets the clock. Coverage basis is the intended largest connected
-  component (same set spawns/minimap/bot pathing use), NOT all valid nodes: excluded valid
-  islands are decorative vista by nav-builder construction and count as out-of-play.
+  with the fence-v2 evidence (ff1893d): the watch covers EVERY VALID node (nmNearV,
+  lazy valid-node cell index), not the largest connected component. The 01:44 island
+  inventory stands: fragmentation (73-236 components) is a nav-DATA defect and islands
+  hold named intended space - measured: bind B Fountain 118, Attacker Cave 60, B
+  Teleporter 28, B Long 22, A Cubby 19 nodes >4u from the largest component; breeze
+  Mid Hall 64 + A Pyramids 17; haven C Site 8; lotus C Bend 27; split B Tower 8. A
+  largest-component watch WOULD have killed players there (confirmed live pre-fix:
+  bind island node (-77.25,3.8,39.75) died at hp -9900); with valid coverage the same
+  warp survives (oob-probe bind section, hp 100 after 12 s). Only ground past ALL
+  valid coverage (skirt/vista landings like breeze (0,90), dv=28) stays lethal.
   Scripted destinations verified within 1.5 of playable on all six maps
   (test_oob_destinations.cjs) - teleporter entries/exits, sites, spawns can never be executed
   by the watch. Attribution: hurt/kill/allyDie with by='Out of bounds' - display-only;
@@ -56,11 +64,13 @@ All 12 user-list items now have shipped fixes on instinct. Remaining: ledger 13-
   VM test test_oob_kill.cjs; oob-probe.cjs on Breeze: site-node control survives, skirt warp
   (0,90) dies in ~3 s wall.
 - [x] #5 boundary gaps, SERVER track (authoritative rooms): Simulation.oobKill mirrors the
-  client criterion (near-distance >4, motor-grounded, 2 s) and is called from both step loops.
+  client criterion (nearValid-distance >4 over ALL valid nodes via world.nearValid, motor-grounded, 2 s) and is called from both step loops.
   dm/tdm: broadcast 'n' warning note, kill event ['k','Out of bounds',name,0,'Ability']
   (no kill credit, clean feed label), respawnAt = +1.5 s as usual. five: death without
   mid-round respawn, mirroring the existing void-fall rule (y<-20 unchanged as fall recovery).
   Guarded for legacy stub worlds without near(). test-oob.js wired into npm test.
+- Probe harness note: startFive reads FV.pick, NOT FV.map - oob-probe's first version silently
+  ran Ascent in both sections until fixed (map selection now asserted via site-node coordinates).
 - Per-mode acceptance limits: offline modes covered by the client watch; trusted-server rooms
   by oobKill; legacy P2P covered only on the HOST (guest avatars are host-side units) - a P2P
   GUEST's own out-of-bounds walk is still unwatched (host owns guest truth; a guest-local kill
