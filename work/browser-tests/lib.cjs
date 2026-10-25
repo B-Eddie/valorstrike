@@ -2,7 +2,7 @@
 // heavy=false blocks large binary assets so logic tests boot light.
 const {chromium} = require('playwright-core');
 const http = require('http'), fs = require('fs'), path = require('path');
-const ROOT = '/home/sandbox/valorstrike';
+const ROOT = process.env.VS_ROOT || '/home/sandbox/valorstrike'; // VS_ROOT: serve a worktree for A/B probes
 const MIME = {'.html':'text/html','.js':'application/javascript','.mjs':'application/javascript','.glb':'model/gltf-binary','.gltf':'model/gltf+json','.png':'image/png','.jpg':'image/jpeg','.css':'text/css','.json':'application/json','.txt':'text/plain','.bin':'application/octet-stream','.wasm':'application/wasm'};
 function serve(port = 8876) {
   const srv = http.createServer((req,res)=>{
