@@ -32,6 +32,8 @@ c.J.rvT=0;c.draw(C);assert.equal(count('#ff4655'),1);
 // Enemy ping reveals its target for the ping window and draws a ping diamond.
 c.window.xPG={s:[{on:true,x:30,z:30,a:1,en:true,b:far,rv:t+5000}]};const s0=strokes;c.draw(C);assert.equal(count('#ff4655'),2,'pinged enemy revealed');assert.ok(strokes>s0,'ping marker drawn');
 c.window.xPG.s[0].rv=0;c.window.xPG.s[0].on=false;
+// Online: enemies the server reports revealed by an ult (roundState rv -> netRvUntil) show while fresh.
+far.netRvUntil=t+1000;c.draw(C);assert.equal(count('#ff4655'),2,'server ult reveal shown');t+=1200;c.draw(C);assert.equal(count('#ff4655'),1,'server reveal expires');
 // Call-out rings fade over 4 s.
 c.window.xCMk=[{on:true,x:0,z:10,t:t+200,en:false}];c.draw(C);assert.equal(c.window.xCMk[0].on,true);t+=4200;c.draw(C);assert.equal(c.window.xCMk[0].on,false,'call-out ring expires');
 // Spike: attackers see the drop, seen/planted spikes show, an allied carrier carries a small marker, enemy carrier stays hidden.
@@ -39,4 +41,4 @@ c.FV.atk=true;c.draw(C);assert.equal(count('#ffe269'),1);c.FV.atk=false;c.FV.sp.
 c.FV.sp.st='carry';c.FV.sp.c=near;c.draw(C);assert.equal(count('#ffe269'),0,'enemy carrier hidden');c.FV.sp.c=ally;c.draw(C);assert.equal(count('#ffe269'),1,'allied carrier shown');
 // Spotting uses native floor height for the enemy chest (not a flat y=1.4).
 const ys={};blocked=(e,p)=>{ys[p.x]=p.y;return false};near.g.position.y=6;c.J.rv=[];c.draw(C);assert.ok(Math.abs(ys[10]-7.4)<1e-9,'chest height follows the floor: '+ys[10]);
-console.log('Native minimap dynamic tests: living allies, team-spotted enemies (teammate LOS, native heights), Recon/Cypher/Fade and ping reveals, fading last-seen markers (none for the dead), call-out ring expiry, ping icons, Spike drop/seen/plant/allied-carrier visibility without enemy leaks, safe label inset and mobile CSS sizing');
+console.log('Native minimap dynamic tests: living allies, team-spotted enemies (teammate LOS, native heights), Recon/Cypher/Fade, ping and online server-ult reveals, fading last-seen markers (none for the dead), call-out ring expiry, ping icons, Spike drop/seen/plant/allied-carrier visibility without enemy leaks, safe label inset and mobile CSS sizing');

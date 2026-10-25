@@ -25,7 +25,7 @@ async function nmEnsure(key){
   NM.progress.querySelector('small').textContent='Preparing the map…';await new Promise(r=>setTimeout(r,20));if(ticket!==NM.ticket){release();throw new Error('Map selection changed');}
   const collision=new THREE.Mesh(geometry,new THREE.MeshBasicMaterial({side:THREE.DoubleSide,visible:false}));collision.name='native-collision';collision.raycast=MeshBVHLib.acceleratedRaycast;
   const root=xMG();root.name='native-'+key;root.userData.nativeMap=key;root.visible=false;root.add(gl.scene,collision);const M={g:root,solids:[collision],boxes:[],built:1,native:true};
-  gl.scene.traverse(o=>{if(!o.isMesh)return;o.geometry.userData.shared=true;o.castShadow=false;o.receiveShadow=false;const convert=m=>{const terrain=/Floor|Ground|(?:Stone|Brick|Dirt|Gravel|Tile|Grass|Jam|Stairs).*Grass|Grass.*Stone|Blendable.*Gravel/i.test(m.name)&&!/Cards|Decal|Floater/i.test(m.name);const out=new THREE.MeshLambertMaterial({name:m.name,color:m.color,map:m.map,side:THREE.DoubleSide,alphaTest:terrain?0:m.alphaTest||0,transparent:terrain?false:m.transparent,opacity:terrain?1:m.opacity});m.dispose();if(m.map)m.map.anisotropy=Math.min(4,renderer.capabilities.getMaxAnisotropy());return out;};o.material=Array.isArray(o.material)?o.material.map(convert):convert(o.material);});
+  gl.scene.traverse(o=>{if(!o.isMesh)return;o.geometry.userData.shared=true;o.castShadow=false;o.receiveShadow=false;const convert=m=>{const terrain=/Floor|Ground|(?:Stone|Brick|Dirt|Gravel|Tile|Grass|Jam|Stairs).*Grass|Grass.*Stone|Blendable.*Gravel/i.test(m.name)&&!/Cards|Decal|Floater/i.test(m.name);const out=new THREE.MeshLambertMaterial({name:m.name,color:m.color,map:m.map,side:THREE.DoubleSide,alphaTest:terrain?0:m.alphaTest||0,transparent:terrain?false:m.transparent,opacity:terrain?1:m.opacity});m.dispose();if(m.map)m.map.anisotropy=Math.min(4,renderer.capabilities.getMaxAnisotropy());nmDecalApply(out,nmDecalStyle(m.name,m.map&&nmTexStats(m.map.image)));return out;};o.material=Array.isArray(o.material)?o.material.map(convert):convert(o.material);});
   const C={key,meta,nav,plants,M,geometry,bvh:geometry.boundsTree,image:new Image(),cells:new Map(),cellSize:2};C.image.src=base+'minimap.png';nmConnected(C);root.add(nmSkirt(nmSkirtSpec(nav.nodes,C.playable)));nav.nodes.forEach((p,i)=>{if(!C.playable[i])return;const k=Math.floor(p[0]/2)+','+Math.floor(p[2]/2);if(!C.cells.has(k))C.cells.set(k,[]);C.cells.get(k).push(i);});
   // Only the original playable footprint defines navigation/minimap bounds; vista geometry is still rendered.
   const X=nav.nodes.filter((_,i)=>C.playable[i]).map(p=>p[0]),Z=nav.nodes.filter((_,i)=>C.playable[i]).map(p=>p[2]);C.bounds={x1:Math.min(...X)-3,x2:Math.max(...X)+3,z1:Math.min(...Z)-3,z2:Math.max(...Z)+3};
@@ -34,6 +34,15 @@ async function nmEnsure(key){
   committed=true;loadedScene=loadedGeometry=null;NM.current=C;NM.routeCache.clear();scene.add(root);nmOverlay(null);return C;
  })().catch(e=>{failed=true;controller.abort(e);if(!committed)release();if(ticket===NM.ticket)nmOverlay(key,true);console.error('Original map load failed',key,e);throw e;}).finally(()=>{clearTimeout(timeout);if(NM.pending&&NM.pending.ticket===ticket)NM.pending=null;});NM.pending={key,ticket,promise,controller};return promise;
 }
+// Decals and floaters (#lotus-white): the ports export every Decal_/Floater_ material as OPAQUE although
+// their textures carry the cut-out in alpha, so murals drew as rectangles and destruction/edge-wear masks
+// (pure white RGB, the real shader only uses their alpha to reveal damage) drew as solid white jagged patches
+// on walls (Lotus spawn, Ascent/Bind/Breeze/Haven/Split brick edges). A decal whose texture really has alpha is
+// alpha-blended without depth writes, pulled toward the camera with polygon offset; a white mask floater is
+// tinted to a soft dark grime so it reads as wear instead of paint. Textures with no alpha stay opaque.
+function nmTexStats(img){try{if(!img||!(img.width>0))return null;const n=16,c=document.createElement('canvas');c.width=c.height=n;const x=c.getContext('2d',{willReadFrequently:true});x.drawImage(img,0,0,n,n);const d=x.getImageData(0,0,n,n).data;let lo=255,cover=0,white=0;for(let i=0;i<d.length;i+=4){const a=d[i+3];lo=Math.min(lo,a);if(a>32){cover++;if(Math.min(d[i],d[i+1],d[i+2])>220)white++;}}return {minAlpha:lo,white:cover?white/cover:0};}catch(e){return null;}}
+function nmDecalStyle(name,stats){if(!/Decal|Floater/i.test(name||'')||!stats||stats.minAlpha>=250)return null;return /Floater/i.test(name)&&stats.white>.9?'mask':'decal';}
+function nmDecalApply(mat,style){if(!style)return mat;mat.transparent=true;mat.depthWrite=false;mat.alphaTest=.02;mat.polygonOffset=true;mat.polygonOffsetFactor=-2;mat.polygonOffsetUnits=-2;mat.opacity=1;if(style==='mask'){mat.color.setHex(0x2e2924);mat.opacity=.45;}mat.userData.decal=style;return mat;}
 // Backdrop skirt (#5): the exported render meshes stop at the map edge, so looking out or down past
 // them showed the sky below the horizon. A ground disc 1.5 m under the lowest playable floor plus a ring
 // wall rising past the highest eye line fill those pixels. Both draw first without writing depth, so
@@ -110,6 +119,7 @@ function nmSpot(now){
  for(const b of bots){if(!b.alive)continue;const p=b.g.position,e=new V(p.x,p.y+1.4,p.z);for(const y of eyes){if(Math.hypot(y.x-p.x,y.z-p.z)<NM_SPOT_RANGE&&los(y,e)){vis.add(b);break;}}}
  if(typeof J!=='undefined'&&J.rvT>0&&J.rv)for(const b of J.rv)if(b&&b.alive)vis.add(b);
  if(window.xPG)for(const q of window.xPG.s)if(q.b&&q.b.alive&&now<q.rv)vis.add(q.b);
+ for(const b of bots)if(b.alive&&b.netRvUntil>now)vis.add(b); // online: server ult reveals (Hunter's Fury hits, Neural Theft)
  const seen=nmSpot.seen||(nmSpot.seen=new WeakMap());for(const b of mmPrev)if(!vis.has(b)&&b.alive&&b.g){const l=seen.get(b)||b.g.position;mmLost.set(b,{t:now,x:l.x,z:l.z});}for(const b of vis){mmLost.delete(b);const l=seen.get(b);if(l){l.x=b.g.position.x;l.z=b.g.position.z;}else seen.set(b,{x:b.g.position.x,z:b.g.position.z});}mmPrev=vis;mmVis=vis;
  return nmSpot.v=vis;
 }
