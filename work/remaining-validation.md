@@ -948,3 +948,20 @@ check hark-perf overlap first (it owns agent cull + nav GC).
 - Remaining mismatch groundwork owed (parent): intended player/server step semantics and
   actual online correction behavior for the 0.321 client vs 0.4 server climb band, BEFORE
   any design ask. Constants retained.
+
+### 19:02 parent calibration on pre-warm (carried, not resolved)
+- Do NOT claim real hardware is faster than the sandbox timings (phones may be slower);
+  cold-cost measurements are sandbox-local evidence only.
+- The pre-warm MOVES the known cold cost behind the loading overlay; it does not remove it -
+  the overlay/startup now carries up to ~102ms (sandbox) of route computation per map load.
+  Any route outside the spawn->site pre-warm set (drop-site goals, spike-carrier goals, chase
+  goals) still pays its lazy cold cost in-match. Both stay in the loading/startup acceptance row.
+
+## 19:20 - Sweep green + motor-semantics grounding (0.321 nav gate vs 0.4 motor) RESOLVED as non-issue
+- FULL sliced regression sweep after the nav/motor/probe commits: 85/85 rc=0, all 9 slices, SWEEP-ALL-DONE 19:18:04 (completion marker present; /tmp/sweep-results.log). No regressions.
+- Motor-semantics grounding (parent-directed, research before any design ask):
+  - INTENDED SEMANTICS: the shared motor (vendor/valorant-feel.js = server/src/motor.cjs, byte-identical) owns movement for client local player, offline bots AND server sim. stepHeight 0.4 is deliberate: 99f92a4 (10-25 07:03) "step height 0.36 -> 0.40 m so the Lotus 0.373 m riser is walkable". The nav 0.321 gate is older than the shared motor entirely: nmSegment created with it in e9fa9bc (10-24 21:43, pre-stepHeight), nmSegDrop inherited it in 8f88df6 (10-25 05:59, stepHeight then 0.36). It was never revisited after the 0.4 bump.
+  - ONLINE CORRECTION: no hazard. Remote players/bots are pure 20 Hz snapshot interpolation (100 ms delay), never re-simmed client-side. Local player predicts with the SAME shared motor as the host's authoritative sim (VF.model.step, index.html:12818), so a 0.373 lip is climbable identically on both sides - no reconciliation divergence. Server path.js carries no climb gate at all; host-simmed bots cross anything the 0.4 motor walks, and clients just draw it.
+  - PRACTICAL DIVERGENCE: ZERO on shipped maps. All 453,582 directed nav edges across six maps sampled per-0.18 m along chords: NONE rise in the (0.321, 0.4] band (ascent 73,409 / bind 86,988 / breeze 99,152 / haven 72,991 / lotus 64,996 / split 73,046 edges). Blocked-rejected edges (753-2,654/map) fail the motor's own capsule check too. The stricter nav gate rejects nothing the motor could walk; earlier "client motor can't climb what server bots cross" framing was wrong (0.321 is nav-only, not a motor).
+  - CONCLUSION: constants retained; no user design decision needed. Residual = latent maintenance hazard only: a FUTURE map with a nav chord rising 0.33-0.4 would make offline bots route around player-walkable geometry. Pinned by new work/test_nav_band.cjs (fails loudly if any band edge ever appears, forcing a deliberate constants call then).
+- Corrected the stale nmPath comment (claimed the lotus 0.39 lip is "a climb the motor cannot make" - false since 99f92a4). Regen idempotent (md5 twice identical); pins green: test_nav_directionality, test_nav_allmaps (all six maps, all spawn->site routes traversal-verified).
