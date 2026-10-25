@@ -443,8 +443,8 @@
   },
   "after": {
    "pairs": 142778,
-   "open": 697,
-   "openAreaM2": 41.892
+   "open": 673,
+   "openAreaM2": 24.355
   },
   "topBefore": [
    {
@@ -582,17 +582,6 @@
   ],
   "leftAfter": [
    {
-    "pair": "Puddle_2_M0_MI | Tile_M1_BrickPatternSlate_MI [overlay]",
-    "cls": "overlay",
-    "n": 20,
-    "area": 17.274,
-    "at": [
-     8.39,
-     7,
-     15.45
-    ]
-   },
-   {
     "pair": "Window_10_M1_LargeFill_MI | Wood_M15_OldSplinteredDark_MI1 [overlay]",
     "cls": "overlay",
     "n": 34,
@@ -712,6 +701,17 @@
      15.83,
      -18.59
     ]
+   },
+   {
+    "pair": "Brick_M0_LongBrickBlendBrickB1_MI | Window_7_M0_CommonWoodB_MI [overlay]",
+    "cls": "overlay",
+    "n": 12,
+    "area": 0.541,
+    "at": [
+     19.35,
+     9.42,
+     -13.94
+    ]
    }
   ]
  },
@@ -726,8 +726,8 @@
   },
   "after": {
    "pairs": 36642,
-   "open": 192,
-   "openAreaM2": 8.582
+   "open": 168,
+   "openAreaM2": 6.724
   },
   "topBefore": [
    {
@@ -876,17 +876,6 @@
     ]
    },
    {
-    "pair": "Concrete_M7_PouredConcreteWhiteChips_Dark_MI | Metal_M5_KingdomMetalTrimConstruction_MI [overlay]",
-    "cls": "overlay",
-    "n": 6,
-    "area": 0.996,
-    "at": [
-     25.62,
-     10.47,
-     8.67
-    ]
-   },
-   {
     "pair": "Asphalt_M1_WornStreet_MI | Gravel_0_M0_PebblesRocksGrey_MI [overlay]",
     "cls": "overlay",
     "n": 4,
@@ -942,17 +931,6 @@
     ]
    },
    {
-    "pair": "Metal_M5_KingdomMetalTrimConstruction_MI | Metal_M9_KingdomLargeSeamedPanel_MI [overlay]",
-    "cls": "overlay",
-    "n": 10,
-    "area": 0.453,
-    "at": [
-     8.04,
-     17.56,
-     -7.34
-    ]
-   },
-   {
     "pair": "Metal_M2_Trim_MI_UBER | Vent_0_TechKitA_M0 [overlay]",
     "cls": "overlay",
     "n": 12,
@@ -961,17 +939,6 @@
      -23.96,
      48.43,
      -20.52
-    ]
-   },
-   {
-    "pair": "Concrete_M4_BasicNew_MI | Metal_M5_KingdomMetalTrimConstruction_MI [overlay]",
-    "cls": "overlay",
-    "n": 7,
-    "area": 0.377,
-    "at": [
-     -22.45,
-     24.96,
-     -6.7
     ]
    },
    {
@@ -994,6 +961,39 @@
      35.99,
      21.7,
      -34.62
+    ]
+   },
+   {
+    "pair": "Plant_0_M0_Dead_MI | Stone_M8_StoneTileWalkway_MI [overlay]",
+    "cls": "overlay",
+    "n": 4,
+    "area": 0.148,
+    "at": [
+     -3.41,
+     7,
+     34.41
+    ]
+   },
+   {
+    "pair": "Metal_M7_LongPanelKingdom | Wood_M14_CleanSlattedOffsetDark_MI [overlay]",
+    "cls": "overlay",
+    "n": 5,
+    "area": 0.142,
+    "at": [
+     34.6,
+     8.8,
+     22.76
+    ]
+   },
+   {
+    "pair": "Plant_0_M0_Dead_MI | Stone_M2_StepsGrey_MI [overlay]",
+    "cls": "overlay",
+    "n": 5,
+    "area": 0.136,
+    "at": [
+     -30.05,
+     8,
+     -35.52
     ]
    }
   ]
