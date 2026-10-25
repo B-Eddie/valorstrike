@@ -650,3 +650,16 @@ on demand). Measured on breeze, same probe/machine/world, ACTIVE protocol (no se
 Meaningful reduction, not elimination - residual early-match work not yet attributed.
 Hark-overlap check: origin/hark-loading exists but has ZERO unique commits; hark-perf
 owns agent cull + nav GC only. Loading/preload space clear. Test: work/test_warm_shaders.cjs.
+
+## 2026-10-25 ~17:44 EDT - Consolidated HUD pass (97f903e, 3899b90) - parent review: 3 simultaneous-state gaps OPEN
+Parent inspected final 844/568/1280 captures: touch layouts materially clearer, 568 main panels
+separated, but whole-HUD is NOT complete. OPEN for the consolidated polish pass (no immediate
+capture loop):
+1. DESKTOP barrier countdown text overlaps the ann's SECONDARY line (e.g. "You > Sage") even
+   though 10px clear of the measured primary ann rect (3899b90 positions off getBoundingClientRect
+   bottom+8). Fix direction: position off the ann's actual glyph bounds (Range API on the ann's
+   text nodes) or a larger margin; verify glyph-vs-glyph, not container-vs-glyph.
+2. DESKTOP ELIMINATED banner overlaps the contextual control hint line (bottom-center hints).
+3. 568 DM: SPAWN PROTECTED chip/panel overlaps the ZOOM touch-button cluster.
+Status labels: all current captures are STATIC FORCED-END-STATE layout evidence only, not natural
+animation/timing behavior. Continue sweep triage + functional/performance queue next.
