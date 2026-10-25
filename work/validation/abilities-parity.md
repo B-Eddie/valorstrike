@@ -78,3 +78,22 @@ Already matching (charges x cost, signature, ult points): Jett (2x200, 1x150, fr
 Differences NOT changed here (individual effect durations / damage live in each agent's effect code and in the server's
 devices.js / ults.js; each needs its own pass with both sides): e.g. Jett Cloudburst smoke 4.5 s in code vs 2.5 s on
 the wiki; Phoenix Hot Hands zone 4 s vs 3.25 s; Sova Recon / Breach windups. Listed for follow-up rather than changed blind.
+
+## 3. First- and third-person ability animations
+
+Runtime: third section of `work/ability_equip_runtime.js` (`xEqView`, `xEqItem`, `xEqTpGo`). No new assets.
+
+- First person, while an ability is equipped: gun, knife and the native first-person rig (`XV.fp`) lower out of view
+  over the 0.5 s draw (the native rig is hidden once fully down); the existing procedural hand (`xCaHand`: glove / cuff /
+  sleeve) rises holding the ability item by type (`ABI_M` classification): throw -> grenade/orb with an agent-colour band,
+  place -> device with an emitter, cast/buff -> glowing energy orb. Ready: cocked pose with a slow sway. Release:
+  overhand swing (FIRE) or low underhand (ALT FIRE) for throws, reach-down for placed devices, push-forward for casts;
+  the item leaves the hand at 75% of the swing. Recovery: the hand drops out while the gun comes back up (0.45 s).
+  The older one-shot cast gesture (`XCA`) still plays for quick-casts and is cut when an equipped ability is thrown.
+- Third person: casts relayed for another unit (`mpFx`: online relay and trusted-server replay) now play the rig's
+  throw / cast one-shot (upper-body rigs) or the right-arm swing (skinned rigs), typed like the first person; bots keep
+  their existing cast pose (`xCaBotGo` from the kill feed).
+- Test: `work/test_ability_equip.cjs` (viewmodel section) checks that equipping drops the gun out of view (local y > 0.35
+  lower), hides the native rig when loaded, shows the hand + item, and that the cast / weapon key restores gun position,
+  visibility and rig, with the hand down. The headless harness does not load the native FP rig, so rig hiding is
+  browser-verify; the third-person relay pose (`mpFx` -> `xEqTpGo`) is browser-verify too.
