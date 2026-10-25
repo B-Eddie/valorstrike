@@ -44,3 +44,19 @@
 All 12 user-list items now have shipped fixes on instinct. Remaining: ledger 13-row long-term checklist + bounded visual/in-match verification of the visual items (ragdoll shape, grip pose, spectate button, pickup prompt, skirt, stairs) once a sandbox-viable boot exists.
 - [~] #5 acceptance evidence: ran the cherry-picked tooling. eval-visual-holes: raw below-horizon void rays 46-463/map drop to 0 with the skirt at both far distances; 0 nodes without render floor. eval-holes: 0 fall-throughs in ~1138-1184 random walks per map. eval-fall: breeze has 12/300 and bind 1/300 random walks ending GROUNDED outside nav coverage (no fall-through - collision exists there): players can walk out of the intended play area through boundary gaps; the game has no kill-floor/out-of-bounds mechanic, so they end up stuck out-of-bounds on the skirt backdrop. NEW DEFECT (boundary gaps, distinct from the visual void the skirt fixed): breeze around x -8..12, z 53..64 and bind near (-1.6, 74). Fix options: extend nav/boundary blockers at those edges, or add an out-of-bounds kill zone.
 - [~] #10 gate cost measured: all 12 agent GLB+locomotion kits parse in ~0.65 s total (Node, desktop); the ~40 s the user saw is network (97 MB agents + 22 MB locomotion ≈ 38 s at 25 Mbps). Gate cost profile: cold first match = same ~40 s but on the loading screen with progress instead of mid-match fallback bodies; warm visits = sub-second (Cache Storage); desktop lobby dwell hides it via preload. Participant-scoped gating would save at most ~25% of the one-time cold cost for 5v5 (xAgSet hands out XAG keys in order, so ~9/12 kits are the real roster) at the price of mode-specific roster inference; kept the simple exact all-12 gate for now.
+
+## Full-native headless crash investigation (2026-10-25, resolved as environment + gated)
+- Repro: heavy profile + DM start crashes the tab ~21s in. JS heap only ~96MB at crash;
+  the OOM is native-side. dmesg confirms the kernel OOM killer terminated chrome at
+  ~1.05GB anon RSS inside the 2GB sandbox container.
+- Quantified full-load demand: Ascent map = 169MB geometry buffers + 373 images ~295MB
+  decoded RGBA (+mipmaps); all native kits/weapons/abilities = ~339MB decoded textures;
+  SwiftShader framebuffers + Chrome overhead on top. Total comfortably >1.5GB.
+- Quality presets (low/medium/high) scale render cost (resolution/shadows/AA/sky/LOD)
+  but NOT asset memory: full-res textures decode and upload on every preset.
+- Fix shipped (b6ded52): xvPreload background loading now also skips when
+  navigator.deviceMemory <= 4 (alongside existing saveData/2g/touch gates). Match-start
+  readiness gate (xvReadyAgents) intentionally unchanged - loading guarantees preserved.
+- Residual: on-device acceptance on real low-RAM hardware stays on the long-term ledger
+  (row 1, full-map startup). Headless full-native rendered runs remain impossible in the
+  2GB sandbox; use mid profile + bounded rendered checks instead.
