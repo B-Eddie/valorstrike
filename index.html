@@ -9163,7 +9163,7 @@ function fCheck(win, text, title) {
   FV.to = setTimeout(() => {
     $("xBan").style.display = "none";
     if (!over) { if (swap) { FV.atk = !FV.atk; FV.lsY = FV.lsT = 0; if (!ot) fEco(); }
-      if (ot) { FV.cr = 5000; Object.values(FV.bs).forEach((s) => s.cr = 5000); } // overtime: 5000 each round, sides swap every round, win by 2
+      if (ot) { FV.cr = 5000; Object.values(FV.bs).forEach((s) => s.cr = 5000); try { if (jOn()) J.ult = Math.max(0, K().u - 3); const C = window.xBotUC; if (C) bots.concat(allies).forEach((u) => { C[u.name] = Math.max(0, (window.xBotUltCost ? window.xBotUltCost(xAg(u)) : 7) - 3); }); } catch (e) {} } // overtime also sets every ult 3 points short (VALORANT Competitive) // overtime: 5000 each round, sides swap every round, win by 2
       return fRound(); }
     const won = !FV.surr && FV.you > FV.them; if (won) stats.w++; showStats();
     if (document.pointerLockElement) document.exitPointerLock();
