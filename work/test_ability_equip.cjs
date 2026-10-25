@@ -43,6 +43,16 @@ const fails=[];const fail=s=>{fails.push(s);if(VERBOSE)console.log('FAIL',s);};c
  pick('Sage');xe('player.hp=60;true');await tap('KeyE');await adv(600);await click(2);await adv(500);eq(xe('!!(J.hl&&J.hl.tg===player)'),true,'Sage ALT FIRE heals herself');eq(xe('J.e'),0,'heal spent');
  pick('Jett');await tap('KeyQ');eq(xe('J.eq'),null,'Jett Updraft is INSTANT (no equip)');eq(xe('J.q'),0,'Updraft cast on press');
  xe('J.cd.c=0;J.c=2;true');const ns=xe('J.smokes.length');await tap('KeyC');eq(xe('J.smokes.length'),ns+1,'Cloudburst INSTANT smoke');const st=xe('J.smokes[J.smokes.length-1].t');if(!(st<=2.5&&st>2.2))fail('Cloudburst lasts 2.5 s (wiki), timer '+st);
+ // ---- per-ability windups (wiki): client XAB_WIND == server windups.js WINDUP; FIRE -> effect = hand release + fuse ----
+ {const src=require('fs').readFileSync(require('path').join(__dirname,'../server/src/windups.js'),'utf8'),sw=Function('return '+src.match(/WINDUP=(\{[^}]*\})/)[1])();
+  eq(xe('JSON.parse(JSON.stringify(XAB_WIND))'),sw,'client XAB_WIND == server WINDUP');eq(xe('XABT.rel'),0.2,'hand release 0.2 s');
+  pick('Breach');await tap('KeyE');await adv(600);await click(0);await adv(260);
+  const fq=xe('BC.fq.map(q=>[q.k,+q.t.toFixed(2)])');if(!(fq.length===1&&fq[0][0]==='fl'&&fq[0][1]>0.5&&fq[0][1]<=0.9))fail('Fault Line waits out its windup after the release: '+JSON.stringify(fq));
+  await adv(1000);eq(xe('BC.fq.length'),0,'Fault Line fired after 1.1 s');
+  xe('J.ult=K().u;J.eq=null;true');await tap('KeyX');await adv(600);await click(0);await adv(260);eq(xe('BC.fq.map(q=>q.k)'),['rt'],'Rolling Thunder waits out its 1.2 s windup');await adv(1100);eq(xe('BC.fq.length'),0,'Rolling Thunder fired');
+  pick('Phoenix');await tap('KeyE');await adv(600);await click(0);await adv(260);const ow=xe('J.orbs.length?+J.orbs[J.orbs.length-1].w.toFixed(2):null');eq(ow,0.4,'Curveball pops 0.4 s after the release (0.6 s windup)');
+  pick('Chamber');await tap('KeyX');await adv(100);if(!(xe('BC.cd')>2))fail('Tour De Force 2.3 s equip: BC.cd '+xe('BC.cd'));xe('BC.eq="";BC.td=0;BC.cd=0;true');
+  pick('Raze');await tap('KeyX');await adv(100);if(!(xe('RS.ssd')>1))fail('Showstopper 1.4 s equip: RS.ssd '+xe('RS.ssd'));xe('RS.ss=0;RS.ssd=0;true');}
  // kit table: client KITS == wiki table == server kits.json (charges, costs, ult points)
  const fs=require('fs'),path=require('path'),wiki=JSON.parse(fs.readFileSync(path.join(__dirname,'validation/abilities-wiki.json'),'utf8')),srv=JSON.parse(fs.readFileSync(path.join(__dirname,'../server/src/kits.json'),'utf8'));
  const kits=xe('JSON.parse(JSON.stringify(KITS))');
@@ -72,5 +82,5 @@ const fails=[];const fail=s=>{fails.push(s);if(VERBOSE)console.log('FAIL',s);};c
  await tap('KeyC');await adv(700);await tap('Digit2');await adv(900);const v3=xe(VM);if(Math.abs(v3.gl-v0.gl)>0.06||v3.hand)fail('weapon key did not bring the gun back '+JSON.stringify(v3));
  if(xe('XEQV.err||null'))fail('ability viewmodel error: '+xe('XEQV.err'));
  if(H.errors.length>errs0)fail('page errors: '+H.errors.slice(errs0).map(e=>String(e&&e.message||e)).join(' | '));
- if(fails.length){console.log(fails.join('\n'));process.exit(1);}console.log('ability equip: binds, migration, HUD labels, equip -> fire flow, first-person equip viewmodel, kit table ok');process.exit(0);
+ if(fails.length){console.log(fails.join('\n'));process.exit(1);}console.log('ability equip: binds, migration, HUD labels, equip -> fire flow, first-person equip viewmodel, wiki windups, kit table ok');process.exit(0);
 })().catch(e=>{console.error(e);process.exit(1);});

@@ -1,4 +1,5 @@
 import {abilityDamage} from './abilities.js';
+import {WINDUP,wf} from './windups.js';
 // Server-authoritative devices that used to be inert markers: recon pulses (Sova Recon Bolt / Owl Drone,
 // Cypher Spycam) now reveal, Raze's Boom Bot hunts and explodes, Skye's Trailblazer concusses.
 // Phoenix (Blaze, Hot Hands self-heal, Curveball), Killjoy (Nanoswarm, Alarmbot, Turret arc), Cypher (Trapwire,
@@ -9,13 +10,13 @@ export const DEV={
  recon:{pulses:[.9,2.5],radius:20,reveal:1.6},
  blaze:{life:8,length:12,width:.8,height:3,damage:30,heal:12.5},
  hotHands:{life:4,radius:4,damage:60,heal:12.5},
- curveball:{ahead:5,side:2.5,windup:.5,blind:1.1,radius:30},
+ curveball:{ahead:5,side:2.5,windup:wf('curveball'),blind:1.1,radius:30},
  nanoswarm:{life:120,active:5,radius:4,damage:45},
  alarmbot:{life:120,sight:5.5,speed:5,trigger:1.5,radius:3,vulnerable:4},
  turret:{life:20,range:30,arc:Math.PI/2,damage:12,interval:.7,tag:.5},
- trapwire:{life:120,reach:7.5,width:.4,tether:2.5,daze:2.5},
+ trapwire:{life:120,arm:WINDUP.trapwire,reach:7.5,width:.4,tether:2.5,daze:2.5},
  cage:{life:7.25},
- trademark:{life:120,sight:10,arm:.5,radius:6,field:9.5},
+ trademark:{life:120,sight:10,arm:.5,armDeploy:WINDUP.trademark,radius:6,field:9.5},
  headhunter:{weapon:'Sheriff',ammo:1},
  boombot:{life:5,speed:6,sight:10,trigger:1.2,damage:125,radius:3},
  trail:{life:3,speed:9,trigger:2,concuss:2.5,radius:4}
@@ -38,9 +39,9 @@ export function startDevice(sim,u,ty,p,push,m={}){
  if(u.agent==='Killjoy'&&ty==='trap'){push('alarmbot',DEV.alarmbot.life,DEV.alarmbot.radius,{chase:null});return true;}
  if(u.agent==='Killjoy'&&ty==='turret'){push('turret',DEV.turret.life,DEV.turret.range,{at:sim.time+DEV.turret.interval,yaw:u.look});return true;}
  // Cypher Trapwire: stretched across at the aim point, perpendicular to his view, to the walls either side.
- if(u.agent==='Cypher'&&ty==='trap'){const r=[-f[2],0,f[0]],o=[p[0],p[1]+.3,p[2]],span=d=>{const h=sim.world.ray(o,d,DEV.trapwire.reach);return Number.isFinite(h)?Math.max(.3,h-.05):DEV.trapwire.reach;},a=span(r),b=span(r.map(n=>-n));push('trapwire',DEV.trapwire.life,DEV.trapwire.width,{p:[p[0]-r[0]*b,p[1],p[2]-r[2]*b],q:[p[0]+r[0]*a,p[1],p[2]+r[2]*a]});return true;}
+ if(u.agent==='Cypher'&&ty==='trap'){const r=[-f[2],0,f[0]],o=[p[0],p[1]+.3,p[2]],span=d=>{const h=sim.world.ray(o,d,DEV.trapwire.reach);return Number.isFinite(h)?Math.max(.3,h-.05):DEV.trapwire.reach;},a=span(r),b=span(r.map(n=>-n));push('trapwire',DEV.trapwire.life,DEV.trapwire.width,{armAt:sim.time+DEV.trapwire.arm,p:[p[0]-r[0]*b,p[1],p[2]-r[2]*b],q:[p[0]+r[0]*a,p[1],p[2]+r[2]*a]});return true;}
  if(u.agent==='Cypher'&&ty==='smoke'){push('smoke',DEV.cage.life,4);return true;}
- if(u.agent==='Chamber'&&ty==='trap'){push('trademark',DEV.trademark.life,DEV.trademark.radius,{spotted:0});return true;}
+ if(u.agent==='Chamber'&&ty==='trap'){push('trademark',DEV.trademark.life,DEV.trademark.radius,{spotted:0,armAt:sim.time+DEV.trademark.armDeploy});return true;}
  // Chamber Headhunter: one round of the heavy pistol per charge; the previous gun comes back when it is spent,
  // put away (Q again), swapped off or Chamber dies.
  if(u.agent==='Chamber'&&ty==='headhun'){const H=DEV.headhunter;if(!u.inventory)u.inventory={};u.headhunter={saved:u.weapon,savedAmmo:u.ammo,savedReserve:u.reserve,savedSidearm:u.inventory[H.weapon]};u.inventory[u.weapon]=u.ammo;u.weapon=H.weapon;u.ammo=H.ammo;u.reserve=0;u.reloadAt=0;p.splice(0,3,u.x,u.y,u.z);return true;}
@@ -68,9 +69,9 @@ export function tickDevices(sim,dt){
   if(e.kind==='recon'){while(e.pulses&&e.pulses.length&&sim.time>=e.pulses[0]){e.pulses.shift();const o=[e.p[0],e.p[1]+.5,e.p[2]];for(const v of foes)if(Math.hypot(v.x-o[0],v.z-o[2])<e.radius&&losClear(sim,o,chest(v)))v.revealedUntil=Math.max(v.revealedUntil||0,sim.time+DEV.recon.reveal);}continue;}
   if(e.kind==='blaze'){const B=DEV.blaze,inWall=v=>Math.abs(v.y-e.p[1])<B.height&&segDist(e,v.x,v.z)<B.width;for(const v of foes)if(inWall(v))abilityDamage(sim,owner,v,B.damage*dt);if(owner?.alive&&inWall(owner)&&owner.hp<100)owner.hp=Math.min(100,owner.hp+B.heal*dt);continue;}
   if(e.kind==='nanoswarm'){if(!e.armed)continue;for(const v of foes)if(Math.hypot(v.x-e.p[0],v.z-e.p[2])<e.radius&&Math.abs(v.y-e.p[1])<3&&losClear(sim,[e.p[0],e.p[1]+.4,e.p[2]],chest(v)))abilityDamage(sim,owner,v,DEV.nanoswarm.damage*dt);continue;}
-  if(e.kind==='trapwire'){const T=DEV.trapwire;for(const v of foes)if(!v.tether&&Math.abs(v.y-e.p[1])<1.5&&segDist(e,v.x,v.z)<T.width){v.tether={at:sim.time+T.tether};v.tetheredUntil=sim.time+T.tether;v.revealedUntil=Math.max(v.revealedUntil||0,sim.time+T.tether);v.slowUntil=Math.max(v.slowUntil||0,sim.time+T.tether);e.until=sim.time;break;}continue;}
+  if(e.kind==='trapwire'){const T=DEV.trapwire;if(sim.time<(e.armAt||0))continue;/* 0.7 s arm (wiki windup) */for(const v of foes)if(!v.tether&&Math.abs(v.y-e.p[1])<1.5&&segDist(e,v.x,v.z)<T.width){v.tether={at:sim.time+T.tether};v.tetheredUntil=sim.time+T.tether;v.revealedUntil=Math.max(v.revealedUntil||0,sim.time+T.tether);v.slowUntil=Math.max(v.slowUntil||0,sim.time+T.tether);e.until=sim.time;break;}continue;}
   if(e.kind==='trademark'){const T=DEV.trademark,o=[e.p[0],e.p[1]+.3,e.p[2]];if(e.field){for(const v of foes)if(Math.hypot(v.x-o[0],v.z-o[2])<T.radius&&Math.abs(v.y-e.p[1])<3)v.slowUntil=Math.max(v.slowUntil||0,sim.time+.2);continue;}
-   const seen=foes.some(v=>Math.hypot(v.x-o[0],v.z-o[2])<T.sight&&Math.abs(v.y-e.p[1])<4&&losClear(sim,o,chest(v)));if(!seen){e.spotted=0;continue;}if(!e.spotted)e.spotted=sim.time;if(sim.time-e.spotted>=T.arm){e.field=true;e.until=sim.time+T.field;}continue;}
+   if(sim.time<(e.armAt||0))continue;/* 2 s arm after placement (wiki windup) */const seen=foes.some(v=>Math.hypot(v.x-o[0],v.z-o[2])<T.sight&&Math.abs(v.y-e.p[1])<4&&losClear(sim,o,chest(v)));if(!seen){e.spotted=0;continue;}if(!e.spotted)e.spotted=sim.time;if(sim.time-e.spotted>=T.arm){e.field=true;e.until=sim.time+T.field;}continue;}
   if(e.kind==='alarmbot'){const C=DEV.alarmbot,o=[e.p[0],e.p[1]+.3,e.p[2]];let v=e.chase!=null&&foes.find(f=>f.id===e.chase);if(!v||!losClear(sim,o,chest(v))||Math.hypot(v.x-o[0],v.z-o[2])>C.sight*2){v=foes.filter(f=>Math.hypot(f.x-o[0],f.z-o[2])<C.sight&&Math.abs(f.y-e.p[1])<3&&losClear(sim,o,chest(f))).sort((a,b)=>Math.hypot(a.x-o[0],a.z-o[2])-Math.hypot(b.x-o[0],b.z-o[2]))[0];e.chase=v?v.id:null;}
    if(!v)continue;if(Math.hypot(v.x-o[0],v.z-o[2])<C.trigger){sim.effects.splice(i,1);for(const w of foes)if(Math.hypot(w.x-o[0],w.z-o[2])<C.radius&&Math.abs(w.y-e.p[1])<2.5&&losClear(sim,o,chest(w)))w.vulnerableUntil=Math.max(w.vulnerableUntil||0,sim.time+C.vulnerable);continue;}
    e.yaw=Math.atan2(o[0]-v.x,o[2]-v.z);crawl(sim,e,dt,C.speed);continue;}

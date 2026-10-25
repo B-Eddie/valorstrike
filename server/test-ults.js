@@ -120,10 +120,10 @@ const ab=(s,u,k,m={})=>{s.time+=.5;return s.command(u,{t:'ab',k,...m});};
  front.z=-20;tick(s,1.5);assert.ok(front.hp<100&&front.tagUntil>s.time-.6,'in front');}
 // Trapwire: across the lane at the aim point; an enemy crossing is revealed and slowed, then dazed; one use.
 {const {s,u,list:[foe,mate]}=setup('Cypher',['foe'],['mate']);u.ability.c=1;Object.assign(foe,{x:3,y:0,z:-16});Object.assign(mate,{x:-3,y:0,z:-14});assert.equal(ab(s,u,'c'),true);const w=s.effects.find(e=>e.kind==='trapwire');assert.ok(Math.abs(w.p[0])>7&&Math.abs(w.q[0])>7,'wall to wall');
- tick(s,.1);assert.equal(mate.slowUntil||0,0,'allies pass');foe.z=-14;tick(s,.1);assert.ok(foe.revealedUntil>s.time&&foe.slowUntil>s.time&&s.roundState(foe).status.tether>2,'tethered');tick(s,2.5);assert.ok(foe.concussUntil>s.time,'dazed');assert.ok(!s.effects.some(e=>e.kind==='trapwire'),'consumed');}
+ tick(s,.1);assert.equal(mate.slowUntil||0,0,'allies pass');foe.z=-14;tick(s,.4);assert.ok(!foe.tether,'not armed before the 0.7 s windup');foe.z=-16;tick(s,.3);foe.z=-14;tick(s,.1);assert.ok(foe.revealedUntil>s.time&&foe.slowUntil>s.time&&s.roundState(foe).status.tether>2,'tethered');tick(s,2.5);assert.ok(foe.concussUntil>s.time,'dazed');assert.ok(!s.effects.some(e=>e.kind==='trapwire'),'consumed');}
 {const {s,u}=setup('Cypher',['foe']);u.ability.q=1;ab(s,u,'q');const c=s.effects.find(e=>e.kind==='smoke');assert.ok(Math.abs(c.until-s.time-7.25)<.01,'Cyber Cage 7.25 s');}
 // Trademark: spots a visible enemy within 10 m, then a 9.5 s slow field.
-{const {s,u,list:[foe]}=setup('Chamber',['foe']);u.ability.c=1;Object.assign(foe,{x:0,y:0,z:-19});assert.equal(ab(s,u,'c'),true);tick(s,.3);assert.ok(!s.effects.find(e=>e.kind==='trademark').field);tick(s,.4);
+{const {s,u,list:[foe]}=setup('Chamber',['foe']);u.ability.c=1;Object.assign(foe,{x:0,y:0,z:-19});assert.equal(ab(s,u,'c'),true);tick(s,1.9);assert.ok(!s.effects.find(e=>e.kind==='trademark').spotted,'Trademark arms 2 s after placement');tick(s,.2);tick(s,.3);assert.ok(!s.effects.find(e=>e.kind==='trademark').field);tick(s,.4);
  const t=s.effects.find(e=>e.kind==='trademark');assert.ok(t.field&&Math.abs(t.until-s.time-9.3)<.2&&foe.slowUntil>s.time,'slow field');}
 // Headhunter: was a one-way swap (previous gun never came back). Now restored when spent, put away, on death and on Tour de Force.
 {const {s,u,list:[foe]}=setup('Chamber',['foe']);Object.assign(foe,{x:0,y:0,z:-6,hp:1000});Object.assign(u,{weapon:'Spectre',ammo:17,reserve:60,inventory:{Spectre:17}});u.ability.q=3;

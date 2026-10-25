@@ -34,7 +34,8 @@ from equip until it is back up (offline: `shoot` wrapper; online: no fire input 
 `u.fireAt = now + XAB_REC` after an equip-type cast, so a modified client cannot shoot through the throw either). A weapon
 key / wheel (`swapW`) or the same ability key again puts it away with the charge kept; another ability key switches. If the
 kit refuses the cast (no target, e.g. Sage heal at full HP) the ability stays in hand, as in Valorant.
-The 0.5 / 0.2 / 0.45 s timings are generic (the wiki lists windups only for some abilities); per-ability windups are a follow-up.
+The 0.5 s draw and 0.45 s recovery are generic (the wiki lists no per-ability equip times); the 0.2 s hand release is shared
+with the per-ability wiki windups (section 5).
 
 Equip vs quick-cast per agent (from each wiki description: "EQUIP ... FIRE" vs "INSTANTLY" / "ACTIVATE"):
 
@@ -109,6 +110,33 @@ Still different (not cheap; each needs a client + server mechanic change):
   fixed length. Needs a hold state in the equip machine (`J.eq`) and a length field in the `ab` intent the server reads.
 - Hot Hands duration: wiki 3.25 s minimum at full size (grows first); here a 4 s full-size zone (kept: the total
   lifetime is close and the growth phase is not modelled).
-- Per-ability windups (Aftershock 2.2 s, Flashpoint 0.5 s, Curveball 0.6 vs server 0.5, Rolling Thunder 1.2 s, Trapwire
-  0.7 s, Leer 0.4 s, Showstopper 1.4 s, Lockdown 13 s): the equip flow uses a generic 0.2 s release.
+- Per-ability windups: done, section 5.
 - Sova arrow bounces / charge, Cloudburst hold-to-curve.
+
+## 5. Per-ability windups (wiki)
+
+Source: the "Windup" rows of the wiki.playvalorant.com agent pages (fetched 2026-10-25). One table on each side:
+client `XAB_WIND` (index.html, next to `ABI_M`) and server `WINDUP` (`server/src/windups.js`), asserted equal by
+`work/test_ability_equip.cjs`. The wiki's windup means three different things, applied as such:
+
+| Ability | Wiki windup | Meaning | Client (offline / host) | Server |
+|---|---|---|---|---|
+| Breach Aftershock | 2.2 s | FIRE -> first burst | player fuse `xWf` 2.0 s after the 0.2 s release; bot 2.2 s | blast `at` +2.0 s |
+| Breach Flashpoint | 0.5 s | FIRE -> pop | player 0.3 s after the release; bot orb 0.5 s | flash `at` +0.3 s |
+| Breach Fault Line | 1.1 s | FIRE -> quake | `BC.fq` 0.9 s after the release; bot 1.1 s | `u.fault` -> `tickFault` +0.9 s (was instant) |
+| Breach Rolling Thunder | 1.2 s | FIRE -> quake | `BC.fq` 1.0 s after the release (was instant) | `ULT.quake.delay` 1.0 s (was 0.9) |
+| Phoenix Curveball | 0.6 s | FIRE -> pop | orb 0.4 s after the release; bot orb 0.6 s (was 0.5) | `DEV.curveball.windup` 0.4 s (was 0.5) |
+| Reyna Leer | 0.4 s | FIRE -> nearsight | nearsight from 0.2 s after the release (was at once) | leer `at` +0.2 s (was 0.35) |
+| Killjoy Lockdown | 13 s | deploy -> detain | 13 s (unchanged) | 13 s (unchanged) |
+| Cypher Trapwire | 0.7 s | arm after placing | wire inert for 0.7 s | `armAt` 0.7 s |
+| Chamber Trademark | 2 s | arm after placing | inert for 2 s | `armAt` 2 s, then the 0.5 s sight check |
+| Raze Blast Pack | 1.5 s | damage arm | detonation deals 50 only after 1.5 s; knockback any time | server Blast Pack is a dash (no device) - not changed |
+| Raze Showstopper | 1.4 s | launcher equip | clicks before 1.4 s do nothing (`RS.ssd`) | not enforced (the rocket intent is sent on the click) |
+| Chamber Tour De Force | 2.3 s | Operator equip | `BC.cd` 2.3 s | `u.fireAt` +2.3 s |
+
+Thrown / cast abilities count the windup from the FIRE click: the equip flow's 0.2 s hand release (`XABT.rel` =
+`XAB_REL`) happens first, so the effect fuse after the cast is `windup - 0.2` (`xWf` / `wf`). Bots cast without the hand
+release and use the full windup. Not changed: Jett Tailwind 1 s (Tailwind keeps its instant dash), Sage Barrier 2 s
+fortification (the wall is full HP at once), Neural Theft 2 s / 4 s reveals (server keeps 1 s / 3 s).
+Tests: `server/test-ability-equip.js`, `server/test-abilities.js` (Fault Line), `server/test-ults.js` (Trapwire /
+Trademark arm), `work/test_ability_equip.cjs`.
