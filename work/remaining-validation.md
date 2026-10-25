@@ -680,3 +680,15 @@ leaves __vsNoAgents undefined -> the ~40s all-12 agent gate still runs, matching
 "retake sat at Preparing the map... 76s+". Alternative contributor: nmCollision BVH build +
 xGmLoad gun-model fetch contention under SwiftShader (unverified). HYPOTHESIS, not proven - verify
 with a retake probe launched via __vs.light(true) (not direct flag set) before any code change.
+
+## 2026-10-25 ~17:49 EDT - Sliced sweep COMPLETE + triage: all green after vm-realm guard
+ALL-SLICES-DONE 17:45:59 (9 slices, 80 files, aggregates excluded, per-test rc captured).
+9 rc!=0 lines triaged, ALL resolved:
+- 8x rc=1 (test_client_online{,_abilities,_buy,_rebind}, test_client_results, test_client_settings,
+  test_offline_realtime, test_touch_spike): root cause = 3899b90's MutationObserver ran unguarded at
+  load in node vm test realms ("MutationObserver is not defined", xerr phase=load). Fixed with a
+  typeof guard + try/catch (browsers unchanged; observer still installed there). All 8 re-run
+  individually GREEN post-fix.
+- test_client_lifecycle.cjs rc=124 (1031s): confirmed SIGSTOP-freeze artifact as suspected -
+  re-run green in 33s (24 matches, six maps, no per-match growth).
+Net: full 80-file sweep green with the guard fix.
