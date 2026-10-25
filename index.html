@@ -526,8 +526,8 @@ body.x-cbh .x-mvp.en{border-left-color:#ff9f1c}
 .x-pp i{width:24px;height:24px;border-radius:50%;box-sizing:border-box;border:2px solid #38bea0;background:radial-gradient(circle at 50% 38%,rgba(255,255,255,.75) 0 22%,transparent 23%),radial-gradient(ellipse at 50% 100%,rgba(255,255,255,.55) 0 42%,transparent 43%),rgba(56,190,160,.35)}
 .x-en .x-pp i{border-color:#e84052;background:radial-gradient(circle at 50% 38%,rgba(255,255,255,.75) 0 22%,transparent 23%),radial-gradient(ellipse at 50% 100%,rgba(255,255,255,.55) 0 42%,transparent 43%),rgba(232,64,82,.35)}
 .x-pp i.dead{opacity:.3;filter:grayscale(1)}
-.x-kb{position:fixed;left:24px;bottom:150px;z-index:60;width:260px;padding:12px 14px;background:rgba(15,25,35,.86);border-left:3px solid #ff4655;color:#ece8e1;font:500 13px/1.3 var(--sans);pointer-events:none;display:none}
-.x-kb.on{display:block;transform:none;animation:xkbIn .25s ease-out}
+.x-kbc{position:fixed;left:24px;bottom:150px;z-index:60;width:260px;padding:12px 14px;background:rgba(15,25,35,.86);border-left:3px solid #ff4655;color:#ece8e1;font:500 13px/1.3 var(--sans);pointer-events:none;display:none}
+.x-kbc.on{display:block;transform:none;animation:xkbIn .25s ease-out}
 @keyframes xkbIn{from{opacity:0;transform:translateX(-16px)}to{opacity:1;transform:none}}
 .x-kb__h{margin:0 0 8px;font-size:12px;letter-spacing:.18em;color:#ff4655}
 .x-kb__r{display:flex;gap:10px;align-items:center;margin-bottom:10px}
@@ -538,8 +538,8 @@ body.x-cbh .x-mvp.en{border-left-color:#ff9f1c}
    centered bar above the HP/weapon panels, and the toast sits above it - no overlap with
    the announcement (top 22%), minimap (top-left), or bottom-corner HUD. */
 @media (max-height:560px){
-  .x-kb{left:50%;bottom:60px;transform:translateX(-50%);width:auto;max-width:min(92vw,380px);padding:8px 14px;display:none;align-items:center;justify-content:center;flex-wrap:wrap;gap:4px 10px;border-left:0;border-top:3px solid #ff4655}
-  .x-kb.on{display:flex;transform:translateX(-50%);animation:none}
+  .x-kbc{left:50%;bottom:60px;transform:translateX(-50%);width:auto;max-width:min(92vw,380px);padding:8px 14px;display:none;align-items:center;justify-content:center;flex-wrap:wrap;gap:4px 10px;border-left:0;border-top:3px solid #ff4655}
+  .x-kbc.on{display:flex;transform:translateX(-50%);animation:none}
   .x-kb__h{margin:0;font-size:11px;white-space:nowrap}
   .x-kb__r{margin:0;gap:6px;white-space:nowrap}
   .x-kb__r i{width:26px;height:26px;font-size:12px}
@@ -746,7 +746,7 @@ body.x-cbh #game{--ha:#3d8bff;--he:#ff9f1c}
 @media (max-height:480px) and (orientation:landscape){
   #game #feed{margin-top:0;max-height:28px} /* one row at <=480h: the strip above the ability row only fits one */
   #xCmB{left:110px;top:124px;transform:none} /* docked right of the minimap column, between the ann band and the toast band */
-  #toast{top:260px;bottom:auto;left:140px;right:auto;margin:0;max-width:260px;background:#ece8e1;color:#0f1923;padding:8px 12px} /* #toast is a body child, not #game */ /* out of the left button column: bottom-center band above the vitals line, stacks under the death card */
+  #toast{top:260px;bottom:auto;left:152px;right:auto;margin:0;max-width:286px;background:#ece8e1;color:#0f1923;padding:8px 12px} /* #toast is a body child, not #game */ /* out of the left button column: bottom-center band above the vitals line, stacks under the death card */
   #game .hud.x-fw{top:64px}
   .x-dmlb{top:102px;bottom:auto;left:auto;right:8px;width:auto;max-width:44vw;padding:3px 8px} /* DM: leader + you ticker under the feed; the full table needs taller screens */
   .x-dmlb{pointer-events:auto;cursor:pointer}.x-dmlb li{display:none}.x-dmlb li:first-child,.x-dmlb li.me{display:flex}.x-dmlb.x-full li{display:flex}.x-dmlb__h{display:none}.x-dmlb.x-full .x-dmlb__h{display:block}
@@ -2610,7 +2610,7 @@ function xKLe(nm) { const L = xKL.log; for (let i = 0; i < xKL.n; i++) if (L[i].
 function xKLog(t, by, d) { const hs = xHS; xHS = false; if (!(d > 0) || !player || !xKLm()) return; let e;
   if (t === player && typeof by === "string") { e = xKLe(by); if (e) { e.td += d; e.th++; if (hs) e.ths++; } }
   else if (by === undefined && t !== player && t && t.name && player.hp > 0) { e = xKLe(t.name); if (e) { e.dd += d; e.dh++; if (hs) e.dhs++; } } }
-function xKLui() { if (xKL.el && xKL.el.parentNode && xKL.t && xKL.nm && xKL.w && xKL.dd && xKL.tk && xKL.sn) return; if (xKL.el && xKL.el.parentNode) xKL.el.parentNode.removeChild(xKL.el); if (xKL.sl && xKL.sl.parentNode) xKL.sl.parentNode.removeChild(xKL.sl); const c = document.createElement("div"); c.className = "x-kb"; c.setAttribute("aria-live", "polite");
+function xKLui() { if (xKL.el && xKL.el.parentNode && xKL.t && xKL.nm && xKL.w && xKL.dd && xKL.tk && xKL.sn) return; if (xKL.el && xKL.el.parentNode) xKL.el.parentNode.removeChild(xKL.el); if (xKL.sl && xKL.sl.parentNode) xKL.sl.parentNode.removeChild(xKL.sl); const c = document.createElement("div"); c.className = "x-kb x-kbc"; c.setAttribute("aria-live", "polite"); // x-kbc scopes the card rules below off the shared .x-kb (the ELIMINATED banner #xKbn carries .x-kb too)
   c.innerHTML = '<p class="x-kb__h">KILLED BY</p><div class="x-kb__r"><i></i><div><b></b><span></span></div></div><dl class="x-kb__d"><dt>DEALT</dt><dd></dd><dt>TAKEN</dt><dd></dd></dl>';
   const s = document.createElement("div"); s.className = "x-sp"; s.innerHTML = '<span></span><button type="button" class="x-sp__tp" aria-pressed="false">3RD PERSON <kbd>V</kbd></button><small>Click or Space to switch player · V or the button for 3rd person</small>'; const tp = s.querySelector(".x-sp__tp"); // spectating frees the mouse pointer (see xSpec), so this is a real clickable button
   tp.addEventListener("click", (e) => { e.preventDefault(); e.stopPropagation(); xTPToggle(); }); ["mousedown", "pointerdown", "touchstart"].forEach((k) => tp.addEventListener(k, (e) => e.stopPropagation(), { passive: k === "touchstart" })); s.querySelector("span").addEventListener("click", (e) => { e.stopPropagation(); xTPToggle(); }); s.querySelector("span").style.cursor = "pointer"; s.querySelector("span").style.pointerEvents = "auto"; s.style.pointerEvents = "auto"; xKL.tp = tp;
@@ -9059,6 +9059,7 @@ const XBR = (() => {
     if (n === st.cd) return; st.cd = n;
     if (!st.el) { const d = document.createElement("div"); d.id = "xBrCd"; d.style.cssText = "position:fixed;left:50%;top:22%;transform:translateX(-50%);font:600 13px/1 Geist,sans-serif;letter-spacing:.14em;color:#7fd4ff;text-shadow:0 1px 6px rgba(0,0,0,.7);pointer-events:none;z-index:40;display:none"; document.body.appendChild(d); st.el = d; }
     st.el.style.display = n > 0 ? "block" : "none"; if (n > 0) st.el.textContent = "BARRIER DROPS IN " + n;
+    try { const an = document.getElementById("xAnn"); if (an && an.classList.contains("on")) { const r = an.getBoundingClientRect(); if (r.height) st.el.style.top = Math.round(r.bottom + 8) + "px"; else st.el.style.top = "22%"; } else st.el.style.top = "22%"; } catch (e) {} // ann owns the top:22% band while it shows
   }
   function tick() {
     const now = performance.now(), dt = Math.min(0.1, (now - (st.last || now)) / 1000); st.last = now;
