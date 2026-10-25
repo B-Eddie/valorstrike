@@ -108,6 +108,6 @@ export class Simulation{
   free.sort((a,b)=>Math.hypot(a[0]-u.x,a[2]-u.z)-Math.hypot(b[0]-u.x,b[2]-u.z));return free[0];}
  // Utility hook; SpikeSimulation casts abilities on each bot's own timing.
  botUtility(){}
- rows(){return this.units.map(u=>[u.id,u.team,u.name,u.agent,+u.x.toFixed(3),+u.y.toFixed(3),+u.z.toFixed(3),u.look+Math.PI,Math.ceil(u.hp),Math.ceil(u.armor),u.alive?1:0,u.weapon,u.human?1:0,0,u.seq,u.ammo,u.reserve,+Math.min(1,(u.ch||0)/.45).toFixed(2),+(u.pitch||0).toFixed(3)]);}
+ rows(){return this.units.map(u=>[u.id,u.team,u.name,u.agent,+u.x.toFixed(3),+u.y.toFixed(3),+u.z.toFixed(3),u.look+Math.PI,Math.ceil(u.hp),Math.ceil(u.armor),u.alive?1:0,u.weapon,u.human?1:0,0,u.seq,u.ammo,u.reserve,+Math.min(1,(u.ch||0)/.45).toFixed(2),+(u.pitch||0).toFixed(3),u.human?Math.max(0,u.lastSeq|0):0,u.human?+Math.max(0,Math.min(1,this.time-(u.inputAt||0))).toFixed(3):0]);} // [19] last applied input seq, [20] seconds that input has been applied: the client reconciles against its own predicted path at that moment
  snapshot(){return {t:'s',tl:this.remaining,u:this.rows(),k:Object.fromEntries(this.units.map(u=>[u.name,u.kills])),d:Object.fromEntries(this.units.map(u=>[u.name,u.deaths])),ev:this.events.splice(0),phase:this.phase};}
 }
