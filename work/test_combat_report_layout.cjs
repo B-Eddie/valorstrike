@@ -24,4 +24,8 @@ for(const [vw,vh] of [[640,360],[844,390]]){
 const rt=fs.readFileSync(path.join(__dirname,'hit_feedback_runtime.js'),'utf8');
 assert(/C\.el\.classList\.toggle\('on',shown>0&&xKL\.on\);document\.body\.classList\.toggle\('x-cbt-on',shown>0&&xKL\.on\)/.test(rt),'x-cbt-on not toggled with the report');
 assert(/classList\.remove\('on'\);document\.body\.classList\.remove\('x-cbt-on'\)/.test(rt),'x-cbt-on not cleared on reset');
-console.log('combat report layout ok: bottom-right report and shifted death card do not overlap at 640x360 / 844x390');
+// Deathmatch: the FFA leaderboard (.x-dmlb, short screens bottom 100px right 16px) sat under the bottom-right report at 640x360
+// (browser-found, hitfx pass 2). While the report shows on a short landscape screen the leaderboard hides; it returns on respawn.
+assert.equal(decl(rule(short[1],'body.x-cbt-on .x-dmlb'),'visibility'),'hidden','DM leaderboard not hidden under the combat report');
+assert(/@media \(max-height:480px\)\{\.x-dmlb\{top:auto;bottom:100px;width:150px/.test(html),'short .x-dmlb rule changed; re-check this layout');
+console.log('combat report layout ok (DM leaderboard hidden under it): bottom-right report and shifted death card do not overlap at 640x360 / 844x390');
