@@ -94,17 +94,35 @@ frustum culling culled nothing: Ascent submitted ~300 draw calls and 2.85 M of i
 view, 3.32 M looking down the long axis. Map meshes already cast/receive no shadows (the sun's 1024/512 px map only
 draws characters; `shadowMap.autoUpdate=false`), and there was no per-frame map traversal.
 
-Runtime optimizer (`work/native_maps_runtime.js`, `nmOptimizeScene`, after `nmPrepareScene`, before `nmBudget`, also on
-rehydrate): identical converted materials share one instance; each material group is cut into quadtree chunks on the
-24 m ground grid (<= 12,000 triangles; foliage/decal groups <= 4,000 and <= 48 m squares); groups under 4,000 triangles
-stay one object; decals get a 45 m and foliage cut-outs a 70 m draw distance (past the chunk radius), re-tested only
-after the camera moves 2 m (`nmCull` from `scene.onBeforeRender`; one compare per frame otherwise). Textures used only
-by decals or by materials under 300 triangles are capped at 256 px on every tier (tiny props, grime).
+Runtime optimizer (`work/native_maps_runtime.js`, `nmOptimizeScene`, after `nmPrepareScene` and the z-fight fix,
+before `nmBudget`, also on rehydrate): identical converted materials share one instance (the key includes the z-fight
+polygon offset, so layers stay apart); `nmChunkPlan` gives the scene a draw-object budget of `NM_OPT.ratio` x the source
+mesh count (0.9) and spends it splitting the biggest material groups (pieces >= 8,000 triangles; decal/foliage groups
+weighted x2) by triangle-centroid median along the longer axis, so frustum culling has pieces to cull; every other
+group stays one object (a lone source mesh is reused as is, no copy). Decals get a 45 m and foliage cut-outs a 70 m
+draw distance (past the piece's radius), re-tested only after the camera moves 2 m (`nmCull` from
+`scene.onBeforeRender`; one compare per frame otherwise). Textures used only by decals or by materials under 300
+triangles are capped at 256 px on every tier (tiny props, grime). Ratio 1 cut more triangles (-20..-32%) but put Haven's
+worst view at 312 draw calls vs 310 source; 0.9 keeps every map at or under the source on both views.
 
-PERF_TABLE
+`tools/map-perf.mjs` (six maps, the runtime's own plan and NM_OPT; average view = 48 random nav nodes at eye height,
+8 yaws each; worst = the maximum over those 384 views; draw calls/triangles counted per object whose bounds intersect the
+frustum, detail distance applied). Optimize ms = `nmOptimizeScene` on the real scene in node (idle sandbox,
+`server/tools/.scratch/opt/realopt3.mjs`):
 
-Load cost: Lotus 247 meshes -> 629 chunks / 137 materials in 3.8 s on the shared (contended) sandbox CPU, +170 MB
-transient (source arrays freed right after); triangles preserved exactly (node run on the real scene).
+| map | draw calls avg view: source -> opt | worst view calls | triangles avg view | worst view triangles | objects | optimize ms |
+|---|---|---|---|---|---|---|
+| Ascent | 304 -> 279 | 476 -> 409 | 2.85 M -> 2.51 M (-12%) | 3.32 M -> 3.29 M (-1%) | 479 -> 431 | 974 |
+| Bind | 237 -> 204 | 379 -> 323 | 2.34 M -> 1.83 M (-22%) | 2.83 M -> 2.52 M (-11%) | 392 -> 352 | 881 |
+| Haven | 206 -> 188 | 310 -> 279 | 3.58 M -> 2.89 M (-19%) | 4.09 M -> 4.07 M (-1%) | 314 -> 282 | 1135 |
+| Split | 312 -> 271 | 485 -> 432 | 2.70 M -> 2.12 M (-21%) | 3.20 M -> 3.15 M (-2%) | 507 -> 456 | 1185 |
+| Lotus | 156 -> 140 | 243 -> 210 | 2.45 M -> 1.79 M (-27%) | 2.62 M -> 2.42 M (-7%) | 247 -> 222 | 1011 |
+| Breeze | 268 -> 238 | 462 -> 392 | 2.28 M -> 1.75 M (-23%) | 2.69 M -> 2.47 M (-8%) | 476 -> 428 | 1116 |
+
+Load cost: the build is one pass over each split group's triangles (vertex list recorded while indexing, then one
+typed-array copy per attribute), precomputed per-level bins in the split, typed-array part bucketing and a direct
+bounding-sphere pass: 1.8-2.0 s -> 0.9-1.2 s per map. Triangles are preserved exactly (`tris out` = source on all six;
+`work/test_map_optimizer.cjs` checks every corner's position/normal/uv). Raw numbers: `work/validation/map/perf.json`.
 
 Not done (measured or judged not worth it):
 - PVS occlusion culling: built and measured (24 m columns, 8 m viewer cells, conservative ray marching): it removed
@@ -163,7 +181,7 @@ What is left is where the overlap graph needs more than 5 levels; largest residu
 1. Every map: load, check FPS / `renderer.info.render.calls` / `renderer.info.render.triangles` before vs after at
    attacker spawn, mid and each site; confirm no missing geometry (chunks), no z-order change on decals, foliage
    popping at ~70 m and decals at ~45 m acceptable, small-prop textures (256 px) acceptable up close.
-2. Map load time on "Preparing the map…" (optimizer adds ~1.5-4 s).
+2. Map load time on "Preparing the map…" (optimizer adds ~1 s per map on the sandbox CPU).
 3. Leash feel: walk/strafe along Ascent attacker-spawn back edge (x 0..10, z 63..72), A site east edge (x 50..56,
    z -27..-25), Lotus west area (x -67..-45, z -10..6): stops at the edge without jitter; Jett updraft beside walls
    (Ascent B main x -37, z 12..25; Haven perimeter) cannot land on wall tops/roofs; crates/boxes the nav sampled are

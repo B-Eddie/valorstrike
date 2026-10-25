@@ -12,7 +12,7 @@ process.chdir(new URL('..',import.meta.url).pathname);
 export const MAPS=['ascent','bind','haven','split','lotus','breeze'];
 const VIEWS=+process.env.VIEWS||48;
 export function runtimeApi(){const src=fs.readFileSync(process.env.RUNTIME||new URL('../../work/native_maps_runtime.js',import.meta.url),'utf8'),pick=n=>{const i=src.indexOf('function '+n+'(');if(i<0)return '';return src.slice(i,src.indexOf('\n',i));};
- const names=['nmChunkPlan','nmDetailDistance'].filter(n=>pick(n));return new Function(names.map(pick).join('\n')+'\nreturn {'+names.join(',')+'};')();}
+ const names=['nmChunkPlan','nmDetailDistance'].filter(n=>pick(n)),opt=(src.match(/var NM_OPT=(\{[^}]*\})/)||[])[1];return new Function(names.map(pick).join('\n')+'\nreturn {'+names.join(',')+',NM_OPT:'+(opt||'undefined')+'};')();}
 function pngSize(file){const b=Buffer.alloc(24);const fd=fs.openSync(file,'r');fs.readSync(fd,b,0,24,0);fs.closeSync(fd);return [b.readUInt32BE(16),b.readUInt32BE(20)];}
 function rng(seed){return()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296;};}
 export function sphereOf(pos,index,tris){// tris: Uint32Array of triangle ids (or null = all); exact centre of the box, radius over vertices
@@ -32,7 +32,8 @@ export async function perf(key){const R=loadRender(key,{bvh:false}),V=views(key)
   // material equivalence offline: same texture + alpha mode (+ the runtime's name-based classes); colour factors ignored
   for(const it of items){const t=it.key.split('|');it.key=t[0]+'|'+t[1]+'|'+(api.nmDetailDistance(it.name)||0)+'|'+(/Floor|Ground/i.test(it.name)?1:0);}
   // CHUNK: the plan's options (JSON object, or an array of them to compare several in one load: out.variants)
-  const optsList=process.env.CHUNK?[].concat(JSON.parse(process.env.CHUNK)):[undefined];out.variants=[];for(const opts of optsList){const t0=Date.now();
+  const optsList=process.env.CHUNK?[].concat(JSON.parse(process.env.CHUNK)):[api.NM_OPT];// default: the runtime's shipped NM_OPT
+  out.variants=[];for(const opts of optsList){const t0=Date.now();
   const plan=api.nmChunkPlan(items,opts),planMs=Date.now()-t0,objs=plan.map(o=>{let n=0;for(const q of o.parts)n+=q.tris?q.tris.length:items[q.item].tris;const ids=new Uint32Array(n);let k=0;for(const q of o.parts){const it=items[q.item];if(q.tris)for(const t of q.tris)ids[k++]=it.tri0+t;else for(let t=0;t<it.tris;t++)ids[k++]=it.tri0+t;}const s=sphereOf(R.pos,R.index,ids);return {c:s.c,r:s.r,tris:n,maxDist:o.maxDist||0,cx:o.cx,cz:o.cz,span:o.span};});
   out.objects=objs.length;out.planMs=planMs;out.chunked=count(objs,V);out.chunkedNoDetailCull=count(objs.map(o=>Object.assign({},o,{maxDist:0})),V);out.variants.push({opts,objects:objs.length,planMs,chunked:out.chunked});}if(optsList.length===1)delete out.variants;}
  return out;}
