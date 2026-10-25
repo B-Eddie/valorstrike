@@ -26,9 +26,9 @@ button{font:inherit;text-transform:inherit;letter-spacing:inherit;cursor:pointer
 .card p{font-size:13px;opacity:.75;text-transform:none;letter-spacing:.02em}
 .card .new{position:absolute;top:12px;right:12px;background:var(--red);color:var(--ink);font-size:12px;font-weight:700;padding:3px 8px}
 .foot{font-size:12px;opacity:.75;text-transform:none;letter-spacing:.02em}
-#toast{position:fixed;left:50%;bottom:60px;transform:translateX(-50%);background:var(--bone);color:var(--ink);padding:12px 24px;font-weight:700;opacity:0;transition:opacity .25s;pointer-events:none;z-index:50}
+#toast{position:fixed;left:50%;bottom:172px;max-width:min(92vw,720px);text-align:center;transform:translateX(-50%);background:var(--bone);color:var(--ink);padding:12px 24px;font-weight:700;opacity:0;transition:opacity .25s;pointer-events:none;z-index:50}
 #toast.on{opacity:1}
-#xErr{position:fixed;left:16px;bottom:16px;max-width:min(520px,calc(100vw - 32px));background:rgba(15,25,35,.94);color:var(--bone);border-left:4px solid var(--red);padding:10px 16px;font-size:13px;font-weight:700;text-transform:none;letter-spacing:.02em;line-height:1.4;overflow-wrap:anywhere;opacity:0;transition:opacity .25s;pointer-events:none;z-index:9999}
+#xErr{position:fixed;left:16px;top:184px;bottom:auto;max-width:min(520px,calc(100vw - 32px));background:rgba(15,25,35,.94);color:var(--bone);border-left:4px solid var(--red);padding:10px 16px;font-size:13px;font-weight:700;text-transform:none;letter-spacing:.02em;line-height:1.4;overflow-wrap:anywhere;opacity:0;transition:opacity .25s;pointer-events:none;z-index:9999}
 #xErr.on{opacity:1}
 #game{position:fixed;inset:0;display:none}
 #game canvas{display:block}
