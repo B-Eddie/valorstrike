@@ -1,0 +1,25 @@
+// Shared node harness: builds a native Valorant agent the way xvAgent does (scaled wrapper, mixer),
+// evaluates runtime source sections in a vm with real three.js, and can rasterize skinned meshes to PNG.
+const fs=require('fs'),path=require('path'),vm=require('vm'),zlib=require('zlib'),{T,parse}=require('./valorant_rigs');
+const root=path.join(__dirname,'..');
+async function agent(slug,clip='Idle_Loop',time=.3){
+ const gl=await parse(path.join(root,'models/valorant',slug+'.glb')),sc=gl.scene,wr=new T.Group(),m=new T.Group();wr.add(sc);sc.updateMatrixWorld(true);
+ const bx=new T.Box3().setFromObject(sc),scale=1.92/(bx.max.y-bx.min.y);wr.scale.setScalar(scale);wr.position.y=-bx.min.y*scale;m.add(wr);
+ const mx=new T.AnimationMixer(sc),data=JSON.parse(fs.readFileSync(path.join(root,'models/valorant',slug+'-locomotion.json')));const clips={};for(const j of data){const c=T.AnimationClip.parse(j);c.uuid=T.MathUtils.generateUUID();clips[c.name]=c;}
+ if(clip&&clips[clip]){mx.clipAction(clips[clip]).play();mx.update(time);}m.updateMatrixWorld(true);
+ return {gl,sc,wr,m,mx,clips,M:{m,sx:{sc,mx,b:{}},nm:slug}};
+}
+function section(file,start,end){const s=fs.readFileSync(path.join(__dirname,file),'utf8'),a=s.indexOf(start);if(a<0)throw Error('missing '+start);const b=end?s.indexOf(end,a):s.length;if(b<0)throw Error('missing '+end);return s.slice(a,b);}
+function context(extra={}){const c=Object.assign({THREE:T,console,performance:{now:()=>Date.now()},Math,Number,Map,Set,Array,Object,JSON},extra);vm.createContext(c);return c;}
+function skinned(sc){const out=[],v=new T.Vector3();sc.updateMatrixWorld(true);sc.traverse(o=>{if(!o.isSkinnedMesh)return;o.skeleton.update();const ps=o.geometry.attributes.position;for(let i=0;i<ps.count;i++){v.fromBufferAttribute(ps,i);(o.applyBoneTransform||o.boneTransform).call(o,i,v);v.applyMatrix4(o.matrixWorld);out.push(v.x,v.y,v.z);}});return out;}
+// Tiny z-buffered flat-shaded rasterizer: enough to eyeball poses without WebGL.
+function render(objects,file,{w=480,h=640,eye=[2.2,1.4,2.6],target=[0,.9,0],fov=40,extra=[]}={}){
+ const cam=new T.PerspectiveCamera(fov,w/h,.05,50);cam.position.fromArray(eye);cam.lookAt(new T.Vector3().fromArray(target));cam.updateMatrixWorld(true);cam.updateProjectionMatrix();
+ const zb=new Float32Array(w*h).fill(Infinity),px=Buffer.alloc(w*h*3,235),light=new T.Vector3(.4,.8,.5).normalize(),a=new T.Vector3(),b=new T.Vector3(),c=new T.Vector3(),n=new T.Vector3(),pa=new T.Vector3(),pb=new T.Vector3(),pc=new T.Vector3();
+ const tri=(A,B,C,col)=>{n.subVectors(B,A).cross(c.subVectors(C,A)).normalize();const sh=.35+.65*Math.abs(n.dot(light));pa.copy(A).project(cam);pb.copy(B).project(cam);pc.copy(C).project(cam);if(pa.z>1||pb.z>1||pc.z>1)return;const X=[pa,pb,pc].map(p=>(p.x+1)/2*w),Y=[pa,pb,pc].map(p=>(1-p.y)/2*h),Z=[pa.z,pb.z,pc.z];const x0=Math.max(0,Math.floor(Math.min(...X))),x1=Math.min(w-1,Math.ceil(Math.max(...X))),y0=Math.max(0,Math.floor(Math.min(...Y))),y1=Math.min(h-1,Math.ceil(Math.max(...Y)));const d=(X[1]-X[0])*(Y[2]-Y[0])-(X[2]-X[0])*(Y[1]-Y[0]);if(Math.abs(d)<1e-9||x1-x0>w||y1-y0>h)return;for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++){const l1=((X[2]-X[0])*(y+.5-Y[0])-(x+.5-X[0])*(Y[2]-Y[0]))/-d,l2=((X[1]-X[0])*(y+.5-Y[0])-(x+.5-X[0])*(Y[1]-Y[0]))/d,l0=1-l1-l2;if(l0<0||l1<0||l2<0)continue;const z=l0*Z[0]+l1*Z[1]+l2*Z[2],k=y*w+x;if(z>=zb[k])continue;zb[k]=z;px[k*3]=col[0]*sh;px[k*3+1]=col[1]*sh;px[k*3+2]=col[2]*sh;}};
+ for(const {o,color}of objects){o.updateMatrixWorld(true);o.traverse(m=>{if(!m.isMesh||!m.visible)return;for(let p=m;p;p=p.parent)if(p.visible===false)return;const g=m.geometry,ps=g.attributes.position,idx=g.index,cnt=idx?idx.count:ps.count,get=(i,v)=>{v.fromBufferAttribute(ps,i);if(m.isSkinnedMesh)(m.applyBoneTransform||m.boneTransform).call(m,i,v);return v.applyMatrix4(m.matrixWorld);};if(m.isSkinnedMesh)m.skeleton.update();const cache=new Map(),at=i=>{let v=cache.get(i);if(!v){v=get(i,new T.Vector3());cache.set(i,v);}return v;};for(let i=0;i+2<cnt;i+=3){const i0=idx?idx.getX(i):i,i1=idx?idx.getX(i+1):i+1,i2=idx?idx.getX(i+2):i+2;tri(at(i0),at(i1),at(i2),color||[200,190,180]);}});}
+ for(const [A,B,C,col]of extra)tri(new T.Vector3(...A),new T.Vector3(...B),new T.Vector3(...C),col);
+ png(file,w,h,px);
+}
+function png(file,w,h,rgb){const raw=Buffer.alloc((w*3+1)*h);for(let y=0;y<h;y++){raw[y*(w*3+1)]=0;rgb.copy(raw,y*(w*3+1)+1,y*w*3,(y+1)*w*3);}const crcT=[];for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xedb88320^(c>>>1):c>>>1;crcT[n]=c>>>0;}const crc=b=>{let c=0xffffffff;for(const x of b)c=crcT[(c^x)&255]^(c>>>8);return (c^0xffffffff)>>>0;};const chunk=(t,d)=>{const l=Buffer.alloc(4);l.writeUInt32BE(d.length);const td=Buffer.concat([Buffer.from(t),d]),cr=Buffer.alloc(4);cr.writeUInt32BE(crc(td));return Buffer.concat([l,td,cr]);};const ih=Buffer.alloc(13);ih.writeUInt32BE(w,0);ih.writeUInt32BE(h,4);ih[8]=8;ih[9]=2;fs.writeFileSync(file,Buffer.concat([Buffer.from([137,80,78,71,13,10,26,10]),chunk('IHDR',ih),chunk('IDAT',zlib.deflateSync(raw)),chunk('IEND',Buffer.alloc(0))]));}
+module.exports={T,parse,agent,section,context,skinned,render,png,root};

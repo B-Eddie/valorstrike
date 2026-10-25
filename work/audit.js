@@ -2404,66 +2404,8 @@ if (!NO3) {
   report.push({ label: "VALORANT weapon models: all 19 arsenal slots map to local GLBs, native sources credited, procedural fallback with no GLTFLoader", el: true, handler: true, cond: ok, pass: ok, errs: err });
 }
 
-// CC0 agent rig (Quaternius Universal Base Characters + Universal Animation Library): files exist, are binary glTF and licensed, credits present,
-// every animation state maps to a clip in agent_anims.glb, every agent's body / hair exists, hitbox sizes untouched, and with no GLTFLoader the load
-// falls back (Soldier path, then primitives) while a broken rig still leaves xAgent a primitive agent
-{
-  const err = []; let ok = false;
-  try {
-    const xe = vm.runInContext("__xe", context), MD = path.join(__dirname, "..", "models");
-    const lic = fs.readFileSync(path.join(MD, "LICENSES.txt"), "utf8");
-    const glbJson = (f) => { const b = fs.readFileSync(path.join(MD, f)); if (b.slice(0, 4).toString() !== "glTF") throw new Error(f + " is not a binary glTF"); const n = b.readUInt32LE(12); return JSON.parse(b.slice(20, 20 + n).toString("utf8")); };
-    const F = JSON.parse(xe("JSON.stringify(typeof XUB !== 'undefined' && XUB ? XUB.F : null)")), ST = JSON.parse(xe("JSON.stringify(typeof XUB_ST !== 'undefined' ? XUB_ST : null)")), AG = JSON.parse(xe("JSON.stringify(typeof XUB_AG !== 'undefined' ? XUB_AG : null)"));
-    if (!F || !ST || !AG) err.push("XUB / XUB_ST / XUB_AG missing");
-    let tot = 0; const J = {};
-    for (const k in F || {}) { const u = F[k], f = u.replace(/^models\//, ""); if (!/^models\/[\w.-]+\.glb$/.test(u)) { err.push(k + ": not a relative models/ URL: " + u); continue; }
-      if (!fs.existsSync(path.join(MD, f))) { err.push(u + " missing"); continue; } tot += fs.statSync(path.join(MD, f)).size;
-      try { J[k] = glbJson(f); } catch (e) { err.push(String(e.message)); } if (!lic.includes(f)) err.push(f + " not in LICENSES.txt"); }
-    if (tot > 10e6) err.push("agent files are " + (tot / 1e6).toFixed(1) + " MB (> 10)");
-    if (!/Quaternius/.test(lic) || !/Universal Base Characters/.test(lic) || !/Universal Animation Library/.test(lic) || !/CC0/.test(lic.slice(lic.indexOf("agent_")))) err.push("agent license text missing");
-    if (!/Movement animation retargeting and fallback assets: Quaternius/.test(html)) err.push("lobby footer credit missing");
-    if (/valorant|riot/i.test(JSON.stringify((J.a && J.a.animations || []).map((a) => a.name)))) err.push("clip named after Riot content");
-    const clips = new Set(((J.a && J.a.animations) || []).map((a) => a.name)), want = ["idle", "walk", "run", "strafeL", "strafeR", "back", "crouch", "crouchWalk", "jump", "fall", "land", "aim", "fire", "reload", "cast", "throw", "hit", "plant", "defuse", "knife", "death1", "death2"];
-    for (const s of want) { if (!ST || !ST[s]) err.push("state " + s + " has no clip"); else if (!clips.has(ST[s])) err.push("state " + s + " -> " + ST[s] + " not in agent_anims.glb"); }
-    for (const a in AG || {}) { const [b, h] = AG[a], j = J[b]; if (!j) { err.push(a + ": body " + b + " missing"); continue; } const nn = new Set(j.nodes.map((n) => n.name));
-      for (const x of String(h).split(" ").filter(Boolean)) if (!nn.has(x)) err.push(a + ": hair " + x + " not in agent_" + b + ".glb"); if (!nn.has("hand_r") || !nn.has("Head")) err.push("agent_" + b + ".glb lacks hand_r / Head bones"); }
-    for (const k of ["m", "f"]) if (J[k]) { const mats = new Set((J[k].materials || []).map((m) => m.name)); ["Skin", "Suit", "Pants", "Gloves", "Boots", "Hair"].forEach((m) => { if (!mats.has(m)) err.push("agent_" + k + ".glb lacks material " + m); }); }
-    const mk = html.slice(html.indexOf("function mkGuy("), html.indexOf("function mkGuy(") + 600);
-    if (!/xG\("Capsule", 0\.4, 1, 4, 10\)/.test(mk) || !/xG\("Sphere", 0\.25, 12, 10\)/.test(mk) || !/head\.position\.y = 1\.75/.test(mk)) err.push("bot hitbox sizes changed");
-    if (!/xUbLoad\(/.test(html.slice(html.indexOf("function xSolLoad("), html.indexOf("function xSolLoad(") + 400)) || !/Soldier\.glb/.test(html)) err.push("Soldier.glb fallback chain missing");
-    if (!NO3) {
-      const r = xe(`(() => { const L0 = THREE.GLTFLoader, ld = XSOL.ld, ut = XSOL.ubT, g0 = XSOL.g, ok0 = XUB.ok, s0 = XUB.src; const bad = [];
-        try { THREE.GLTFLoader = undefined; let f = 0; xUbLoad(() => f++); if (f !== 1) bad.push("no loader: fallback called " + f + "x"); if (XUB.ok) bad.push("rig ready without a loader");
-          XSOL.ld = false; XSOL.ubT = 0; XSOL.g = null; xSolLoad(); if (XSOL.g) bad.push("model set without a loader");
-          const R = xAgent("Jett", 0xff4655, "Vandal"); if (!R || !R.m || R.ub || R.sx) bad.push("primitive agent not kept");
-          XSOL.g = { ub: true }; XUB.src = {}; const R2 = xAgent("Omen", 0x3d8bff, "Vandal"); if (!R2 || !R2.m || R2.ub) bad.push("broken rig did not leave a primitive agent");
-          return bad.length ? bad.join("; ") : true; } catch (e) { return "threw: " + e; } finally { THREE.GLTFLoader = L0; XSOL.ld = ld; XSOL.ubT = ut; XSOL.g = g0; XUB.ok = ok0; XUB.src = s0; } })()`);
-      if (r !== true) err.push("fallback: " + r);
-    }
-    ok = !err.length;
-  } catch (e) { err.push(String(e).slice(0, 300)); }
-  report.push({ label: "CC0 agent rig: agent_m / agent_f / agent_anims.glb exist, licensed + credited, every anim state maps to a clip, bodies + hair present, hitboxes unchanged, loader-missing / broken-rig fallback to Soldier + primitives", el: true, handler: true, cond: ok, pass: ok, errs: err });
-}
-
-// procedural boots replace the base bodies' bare-foot "Boots" mesh (toes were visible); Sage robe panels are tapered cloth with a real material.
-// Runtime part (real three + models via work/boots_check.js): every Boots-mesh vertex (toes included) lies inside a boot part in idle + mid-run poses
-{
-  const err = []; let ok = false, info = "";
-  try {
-    const kit = html.slice(html.indexOf("function xUb(M)"), html.indexOf("// one-shot triggers"));
-    if (!/function xUbBoot\(K, yw\)/.test(kit)) err.push("xUbBoot missing");
-    if (!/o\.material\.name === "Boots"\) \|\| /.test(html) && !/o\.material && o\.material\.name === "Boots"/.test(kit)) err.push("Boots mesh not dropped");
-    if (!/xUbBoot\(K, yw\)\.forEach/.test(kit)) err.push("boots not pinned in xUb");
-    if (!/boot = XLM\(col\.Boots\)/.test(html)) err.push("per-agent boot material missing");
-    const sg = html.slice(html.indexOf('if (ag === "Sage") { const r = L(0x2bb5a5'), html.indexOf('if (ag === "Sage") { const r = L(0x2bb5a5') + 900);
-    if (!/add\(k, p, r,/.test(sg)) err.push("Sage robe panels have no material argument");
-    const r = require("child_process").spawnSync(process.execPath, [path.join(__dirname, "boots_check.js")], { encoding: "utf8", timeout: 120000 });
-    const line = String(r.stdout || "").trim().split("\n").pop(); let J = null; try { J = JSON.parse(line); } catch (e) { err.push("boots_check output: " + line.slice(0, 200) + " " + String(r.stderr || "").slice(0, 200)); }
-    if (J) { info = J.pts + " foot vertices tested, " + J.out + " outside"; if (!J.ok) err.push(...J.err); if (!(J.pts > 3000)) err.push("too few foot vertices tested"); }
-    ok = !err.length;
-  } catch (e) { err.push(String(e).slice(0, 300)); }
-  report.push({ label: "agent boots: bare-foot Boots mesh dropped, shared procedural boots (foot + toe cap, per-agent colour) cover every foot/toe vertex in idle + run; Sage robe panels tapered with material" + (info ? " (" + info + ")" : ""), el: true, handler: true, cond: ok, pass: ok, errs: err });
-}
+// (The CC0 Quaternius stand-in agent rig, its procedural boots and the first-person arms cut from it were removed;
+// native agents and the native first-person rig are covered by work/test_grip.cjs, test_fp_native.cjs and test_loading_agents.cjs.)
 
 // ---------- map dressing: every map dressed densely (>= 400 decor objects per 5v5 map, 250 Retake, 150 Duel), decor adds no colliders (nav / timings / sightlines untouched), low decor hugs a wall, the rest is above head / on the floor / beyond the walls, <= 400 extra draw calls, CC0 prop files present + licensed ----------
 if (!NO3) {
@@ -2572,45 +2514,13 @@ if (!NO3) {
   if (!R || R.length !== keys.length) report.push({ label: "Map fill audit", el: true, handler: true, pass: false, cond: false, errs: err.concat(R ? R.filter((m) => !m.n).map((m) => m.k + ": " + m.bad[0]) : []) });
 }
 
-// first-person arms: the player's agent body (agent_m / agent_f.glb) cut to arm + hand triangles, posed per weapon by 2-bone IK + finger curls on the viewmodel camera.
-// Static: block present, a grip table entry for every gun model, built only once the agent rig + gun models are in, primitive arms kept otherwise.
-// Runtime (real three r149 + models via work/fp_check.js): every weapon + knife for a male and a female agent: arm/hand triangles only, wrists on their grip targets,
-// no stretched triangles, fingers curled, agent Suit / Gloves colours, reload moves the left hand, the right arm follows the cast hand, primitive arms hidden while on.
-{
-  const err = []; let ok = false, info = "";
-  try {
-    const xe = vm.runInContext("__xe", context);
-    const a = html.indexOf("// ---- FIRST-PERSON ARMS"), b = html.indexOf("// ---- end FIRST-PERSON ARMS"), blk = a >= 0 && b > a ? html.slice(a, b) : "";
-    if (!blk) err.push("FIRST-PERSON ARMS block missing");
-    if (!/XUB\.ok/.test(blk) || !/XGM\.rdy/.test(blk)) err.push("rig not gated on the agent rig + gun models being ready");
-    if (!/vmTick = function \(dt\) \{ v1\(dt\); try \{ fpaTick\(\); \}/.test(blk)) err.push("fpaTick not chained after vmTick");
-    if (!/\[VMA\.R, VMA\.L, KARM\]\.forEach\(\(o\) => o && \(o\.visible = !on\)\)/.test(blk)) err.push("primitive arms not swapped with the rig");
-    const F = JSON.parse(xe("JSON.stringify(typeof XGM !== 'undefined' && XGM ? XGM.F : null)")), G = JSON.parse(xe("JSON.stringify(typeof FPG !== 'undefined' ? FPG : null)"));
-    if (!G) err.push("FPG grip table missing");
-    else for (const w in F || {}) { if (w === "Knife") continue; const g = G[w]; if (!g) { err.push("no grip entry for " + w); continue; }
-      if (g.length < 7 || g.slice(0, 6).some((v) => typeof v !== "number" || Math.abs(v) > 0.6) || !/^[rpf]$/.test(g[6]) || (g[6] === "f" && g.length < 9)) err.push("bad grip entry for " + w);
-      if (!(g[3] < g[1])) err.push(w + ": grip bottom above grip top"); if (g[6] !== "p" && !(g[4] < g[0] - 0.1)) err.push(w + ": support hand not ahead of the grip"); }
-    if (!NO3) { // no loader in this harness: the rig never builds and the primitive arms stay on after a viewmodel tick
-      const r = JSON.parse(xe(`(() => { try { const r0 = running; running = true; try { vmTick(0.016); } catch (e) {} running = r0; return JSON.stringify({ st: FPA.st, on: FPA.on, vr: VMA.R.visible, vl: VMA.L.visible, k: KARM.visible }); } catch (e) { return JSON.stringify({ e: String(e) }); } })()`));
-      if (r.e) err.push("fallback probe threw: " + r.e); else { if (r.st === "ready" || r.on) err.push("rig built without a loader"); if (r.vr === false || r.vl === false || r.k === false) err.push("primitive arms hidden without the rig"); /* the THREE stub leaves .visible undefined until something sets it */ }
-    }
-    const rr = require("child_process").spawnSync(process.execPath, [path.join(__dirname, "fp_check.js")], { encoding: "utf8", timeout: 180000 });
-    const line = String(rr.stdout || "").trim().split("\n").pop(); let J = null; try { J = JSON.parse(line); } catch (e) { err.push("fp_check output: " + line.slice(0, 200) + " " + String(rr.stderr || "").slice(0, 200)); }
-    globalThis.__FPJ = J; if (J) { const I = J.info || {}; info = (I.weapons || 0) + " weapon poses, " + Object.entries(I.tris || {}).map(([k, v]) => k + " " + v).join(" / ") + " arm tris, wrist err " + ((I.maxWrist || 0) * 1000).toFixed(2) + " mm, max edge " + (I.maxEdge || 0).toFixed(3) + " m";
-      if (!J.ok) err.push(...(J.err || ["fp_check failed"])); if (!(I.weapons >= 30)) err.push("too few weapon poses tested"); }
-    ok = !err.length;
-  } catch (e) { err.push(String(e).slice(0, 300)); }
-  report.push({ label: "first-person arms: agent GLB arm/hand mesh (Suit sleeve, Gloves, wrist skin) on the viewmodel, IK grip per weapon (right grip + trigger finger, left handguard / foregrip / two-hand pistol, knife fist), reload + cast hands, primitive-arm fallback" + (info ? " (" + info + ")" : ""), el: true, handler: true, cond: ok, pass: ok, errs: err });
-}
-
 // fp hands polish: sidearms (Classic / Sheriff / ...) rest lower-right of the rifle rest via VMPC (gun + arm shoulders), reload tracks raise + tilt the gun up so the
-// mag swap and the left hand stay in frame (fp_check projects the left wrist through the Vandal + Classic mag phase), controls hint fades out after 8 s in a match.
+// mag swap and the left hand stay in frame controls hint fades out after 8 s in a match.
 {
   const err = []; let info = "";
   try {
     const xe = vm.runInContext("__xe", context);
     if (!/vo\.x \* vk \+ VMP\.x/.test(html) || !/vo\.y \* vk \+ VMP\.y/.test(html)) err.push("vmTick does not apply the per-class rest offset");
-    if (!/const vo = vmOff\(w\); rest = FPV\.rest\.compose\(V\[0\]\.set\(kn \? 0\.23 : VMP\.x \+ vo\.x/.test(html)) err.push("arm shoulders do not follow the per-class rest");
     const r = JSON.parse(xe(`(() => { try { const o = {};
       const p = vmOff("Classic"), q = vmOff("Sheriff"), v = vmOff("Vandal"); o.off = [p.x - v.x, p.y - v.y, q.x - v.x, q.y - v.y];
       o.trk = ["rifle", "pistol", "op"].map((c) => { const T = XTR[c], m = Math.min.apply(null, T.mag.map((k) => (k.pos || [0, 0, 0])[1])), h = xKf(T.gun, c === "op" ? 0.5 : 0.3); return [m, h.pos[1], h.rot[0]]; });
@@ -2623,10 +2533,10 @@ if (!NO3) {
       if (!(r.off[0] >= 0.03 && r.off[1] <= -0.02 && r.off[2] >= 0.03 && r.off[3] <= -0.02)) err.push("sidearm rest not lower-right of the rifle: " + JSON.stringify(r.off));
       r.trk.forEach(([m, y, rx], i) => { const c = ["rifle", "pistol", "op"][i]; if (m < -0.17) err.push(c + " mag drops " + m + " m (max 0.17, leaves the frame)"); if (!(y > 0 && rx > 0)) err.push(c + " reload does not raise + tilt the gun up (" + y + ", " + rx + ")"); });
       const [a, b, c, e, d] = r.h; if (a === "0" || b === "0") err.push("hint hidden before 8 s"); if (c !== "0") err.push("hint not faded after 8 s"); if (e !== "0") err.push("hint came back between rounds"); if (d === "0") err.push("hint not reset when the game screen closes"); if (!r.hk) err.push("xHintTick not on the frame hooks");
-      const J = globalThis.__FPJ, I = (J && J.info) || {}; if (!I.rld || !I.rld.Vandal || !I.rld.Classic) err.push("fp_check reload-in-frame probe missing"); else info = "sidearm offset " + r.off.slice(0, 2).map((x) => x.toFixed(3)).join(", ") + " m, reload left wrist min ndc y Vandal " + I.rld.Vandal[0] + " / Classic " + I.rld.Classic[0];
+      info = "sidearm offset " + r.off.slice(0, 2).map((x) => x.toFixed(3)).join(", ") + " m";
     }
   } catch (e) { err.push(String(e).slice(0, 300)); }
-  const ok = !err.length; report.push({ label: "fp hands polish: sidearms held lower-right (per-class rest, arms follow), reload keeps the mag swap + left hand in frame (gun raised / tilted up), controls hint fades after 8 s in a match" + (info ? " (" + info + ")" : ""), el: true, handler: true, cond: ok, pass: ok, errs: err });
+  const ok = !err.length; report.push({ label: "fp hands polish: sidearms held lower-right (per-class rest), reload keeps the mag swap in frame (gun raised / tilted up), controls hint fades after 8 s in a match" + (info ? " (" + info + ")" : ""), el: true, handler: true, cond: ok, pass: ok, errs: err });
 }
 
 // ---------- print ----------

@@ -1,0 +1,150 @@
+{
+ "_source": "work/build_hitbox_poses.cjs: rendered agent pose (lower clip blend + Pistol_Aim_Neutral upper layer), model frame: +Y up, +Z facing. Re-run after animation changes.",
+ "crouchWeight": 0.62,
+ "agents": [
+  "breach",
+  "chamber",
+  "cypher",
+  "jett",
+  "killjoy",
+  "omen",
+  "phoenix",
+  "raze",
+  "reyna",
+  "sage",
+  "skye",
+  "sova"
+ ],
+ "maxAgentDeviation": {
+  "stand.head": 0.057,
+  "stand.pelvis": 0.03,
+  "stand.neck": 0.052,
+  "crouch.head": 0.056,
+  "crouch.pelvis": 0.019,
+  "crouch.neck": 0.051,
+  "walk.head": 0.057,
+  "walk.pelvis": 0.035,
+  "walk.neck": 0.052,
+  "run.head": 0.057,
+  "run.pelvis": 0.04,
+  "run.neck": 0.051,
+  "crouchWalk.head": 0.055,
+  "crouchWalk.pelvis": 0.022,
+  "crouchWalk.neck": 0.052,
+  "air.head": 0.057,
+  "air.pelvis": 0.032,
+  "air.neck": 0.052
+ },
+ "poses": {
+  "stand": {
+   "head": [
+    -0.022,
+    1.735,
+    0.138
+   ],
+   "pelvis": [
+    0,
+    1.083,
+    0.054
+   ],
+   "neck": [
+    -0.012,
+    1.608,
+    0.106
+   ]
+  },
+  "crouch": {
+   "head": [
+    0.045,
+    1.693,
+    0.287
+   ],
+   "pelvis": [
+    0,
+    0.767,
+    0.054
+   ],
+   "neck": [
+    0.04,
+    1.578,
+    0.223
+   ]
+  },
+  "walk": {
+   "head": [
+    -0.003,
+    1.726,
+    0.189
+   ],
+   "pelvis": [
+    0,
+    1.091,
+    0.054
+   ],
+   "neck": [
+    0,
+    1.602,
+    0.146
+   ]
+  },
+  "run": {
+   "head": [
+    -0.003,
+    1.709,
+    0.247
+   ],
+   "pelvis": [
+    0,
+    1.044,
+    0.054
+   ],
+   "neck": [
+    -0.001,
+    1.589,
+    0.192
+   ]
+  },
+  "crouchWalk": {
+   "head": [
+    0.019,
+    1.685,
+    0.304
+   ],
+   "pelvis": [
+    0,
+    0.79,
+    0.054
+   ],
+   "neck": [
+    0.018,
+    1.573,
+    0.237
+   ]
+  },
+  "air": {
+   "head": [
+    0.014,
+    1.74,
+    0.037
+   ],
+   "pelvis": [
+    0,
+    1.022,
+    0.054
+   ],
+   "neck": [
+    0.016,
+    1.609,
+    0.027
+   ]
+  }
+ },
+ "volumes": {
+  "headOffsetY": 0.08,
+  "headRadius": 0.195,
+  "bodyRadius": 0.288,
+  "bodyBottom": 0.06,
+  "bodyTopBelowHead": 0.13,
+  "legsBelow": 0.9
+ }
+}

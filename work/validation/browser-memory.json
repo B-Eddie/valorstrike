@@ -1,0 +1,18 @@
+{
+  "what": "Real headless Chromium memory for an offline 5v5 match (Jett), before b515533 (index.html at 37c034e) vs after (tip bd76683). Sum over the Chromium process tree (browser process incl. in-process SwiftShader GPU, renderer, utilities, zygotes) from /proc/<pid>/smaps_rollup; RSS double-counts shared pages, PSS does not. Samples taken N seconds after the match was running (frame > 5, loading screen gone).",
+  "setup": "work/pw daemon (Playwright headless_shell, --use-angle=swiftshader --in-process-gpu --renderer-process-limit=1), viewport 640x360, graphics preset MEDIUM (vs.gq=medium), anti-aliasing off, 2 vCPU / 7.9 GB sandbox shared with the hark-combat soak runs (frame rate 13-18 fps). One run per cell; values fluctuate +-150 MB with GC.",
+  "date": "2026-10-25",
+  "runs": {
+    "lotus": {
+      "before_37c034e": {"lobby": {"rss_mb": 389, "pss_mb": 251}, "match_60s": {"rss_mb": 2431, "pss_mb": 2248}, "match_80s": {"rss_mb": 2426, "pss_mb": 2244}, "renderer_rss_mb": 1418, "browser_gpu_rss_mb": 828, "js_heap_mb": 415, "three_textures": 220, "three_geometries": 320},
+      "after_tip": {"lobby": {"rss_mb": 459, "pss_mb": 325}, "match_40s": {"rss_mb": 2045, "pss_mb": 1859}, "match_60s": {"rss_mb": 2285, "pss_mb": 2099}, "match_90s": {"rss_mb": 2102, "pss_mb": 1916}, "renderer_rss_mb": 1075, "browser_gpu_rss_mb": 834, "js_heap_mb": 290, "three_textures": 221, "three_geometries": 319,
+        "xNativeMaps.memory": {"cap": 0, "geometry_bytes": [137435512, 103916334], "texture_bytes": 148657546, "textures": 132, "meshes": 247, "prepareMs": 308, "loadMs": 5648, "collisionBytes": 49241532, "uploadMs": 220}}
+    },
+    "ascent": {
+      "before_37c034e": {"lobby": {"rss_mb": 456, "pss_mb": 284}, "match_40s": {"rss_mb": 3101, "pss_mb": 2915}, "match_60s": {"rss_mb": 3094, "pss_mb": 2908}, "match_90s": {"rss_mb": 3164, "pss_mb": 2978}, "renderer_rss_mb": 1759, "browser_gpu_rss_mb": 1209, "js_heap_mb": 468, "three_textures": 441, "three_geometries": 534},
+      "after_tip": {"lobby": {"rss_mb": 568, "pss_mb": 392}, "match_40s": {"rss_mb": 2593, "pss_mb": 2407}, "match_60s": {"rss_mb": 2332, "pss_mb": 2145}, "match_90s": {"rss_mb": 2496, "pss_mb": 2310}, "js_heap_mb": 290}
+    }
+  },
+  "summary": "Lotus settled ~2430 -> ~2100-2285 MB RSS (-150 to -330 MB; JS heap 415 -> 290 MB, renderer 1418 -> 1075 MB). Ascent ~3100-3160 -> ~2330-2590 MB RSS (-500 to -830 MB; JS heap 468 -> 290 MB). The browser process (in-process SwiftShader GPU, i.e. the GPU copy held in CPU RAM in this headless setup) did not shrink on Lotus; the savings are page-side (GLTF arrays, decoded images). Much smaller than the modeled map-owned before/after because the browser/GPU copy and the rest of the game (agents, weapons, audio, JS) dominate.",
+  "aa_switch": "Not established. First attempt (Ascent, tip, MEDIUM, in a running match): Chromium was OOM-killed (browser process anon-rss 3.47 GB, global OOM while the hark-combat soaks ran) during a page.screenshot before the switch; second attempt on Lotus was lost to a sandbox restart."
+}
