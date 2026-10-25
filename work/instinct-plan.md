@@ -113,6 +113,20 @@ All 12 user-list items now have shipped fixes on instinct. Remaining: ledger 13-
   within 2.5u of PLAYABLE nav, fallback keeps originals if <8 survive
   (test_dmpts_playable.cjs). Post-fix soak: the 4-ally park is gone, deaths/respawns flow
   10/8, real-time rate. 40 client suites green.
+- [x] Spawn-candidate redesign (parent scope check): dmPts' callout fallback used the OLD
+  ASCENT const CALLOUTS on EVERY native map (const, never reassigned) - on bind/haven/etc TDM
+  spawns came from ascent-frame coordinates. Native path now samples PLAYABLE nav nodes
+  directly (safe reachable sampling by construction; islands excluded). Measured all six
+  maps: 7803-11676 playable nodes each, decimated to ~157-160 candidates; the <8 fallback
+  can never trigger on native maps; legacy callout path (breeze 20/23, haven 19/21, lotus
+  26/28 survive the playable filter) stays >=8 everywhere, so unsafe originals are never
+  reintroduced. Live: bind TDM soak PASS (combat flowing, zero stalls).
+- [x] Server authoritative nav/spawn parity check (parent ask): NO CHANGE NEEDED. Server
+  spawns draw from W.playable near team anchors (simulation.js spawn()); bot path endpoints
+  come from W.near which is playable-only (world.js:16), and W.allowed equals the playable
+  set, so server A* endpoints always sit in the largest connected component - paths cannot
+  fail from fragmentation, bots cannot spawn on islands. A human on an island is hunted to
+  the closest playable approach (W.near(target)), which is the desired behavior.
 - Watch item (RESIDUAL): one unit (ally Reyna) still parked 16s at ascent (24,-26.7) - the
   SAME spot an enemy Killjoy stalled pre-fix. Not spawn-related; likely a pathing snag point
   (waypoint unreachable by straight line / collision pocket). Needs a focused probe of that

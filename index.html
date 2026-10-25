@@ -10914,10 +10914,11 @@ function dmGive(n) {
   slots[sec ? "pis" : "pri"] = { ammo: W.mag, rsv: W.mag * 3 }; rw = sec ? "pis" : "pri"; ammo = W.mag; rsv = W.mag * 3; reloading = 0; fcd = 0; spray = 0;
   onSkin(); setScope(false); updHud(); try { blip(700, 0.08, "triangle", 0.15); } catch (e) {}
 }
-function dmPts() { // spawn candidates: nav nodes, else callouts, pushed clear of boxes
+function dmPts() { // spawn candidates: playable nav nodes on native maps (safe reachable sampling - never disconnected islands), else callouts, pushed clear of boxes
   if (DM.pts && DM.pm === FV.map && DM.pb === boxes) return DM.pts;
   let L = [];
-  try { const g = xgGet(), a = g && (g.nodes || g.n || g.pts || g.p); if (Array.isArray(a)) a.forEach((q) => { const x = q && (q.x != null ? q.x : q[0]), z = q && (q.z != null ? q.z : q[1]); if (isFinite(x) && isFinite(z)) L.push([x, z]); }); } catch (e) {}
+  try { const C = nmActive(); if (C && C.playable && C.nav) { const N = C.nav.nodes; for (let i = 0; i < N.length; i++) { if (!C.playable[i]) continue; L.push([N[i][0], N[i][2]]); } } } catch (e) {}
+  if (L.length < 8) { L = []; try { const g = xgGet(), a = g && (g.nodes || g.n || g.pts || g.p); if (Array.isArray(a)) a.forEach((q) => { const x = q && (q.x != null ? q.x : q[0]), z = q && (q.z != null ? q.z : q[1]); if (isFinite(x) && isFinite(z)) L.push([x, z]); }); } catch (e) {} }
   if (L.length < 8) { L = []; try { CALLOUTS.forEach((c) => L.push([c[1], c[2]])); } catch (e) {} }
   if (L.length < 8) for (let i = 0; i < 24; i++) { const a = (i / 24) * 6.2832, r = 8 + (i % 3) * 10; L.push([Math.cos(a) * r, Math.sin(a) * r]); }
   if (L.length > 160) L = L.filter((_, i) => i % Math.ceil(L.length / 160) === 0);

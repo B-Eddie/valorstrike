@@ -23,4 +23,15 @@ vm.createContext(ctx2);
 vm.runInContext(body+';globalThis.out=dmPts();',ctx2);
 assert(ctx2.out.length>0,'tiny candidate sets still yield spawns (fallback kept the originals)');
 assert(ctx2.out.some(([x,z])=>Math.hypot(x-46.7,z+27.1)<0.5),'fallback keeps the island callout when filtering would leave too few');
+// NATIVE path: with a live native map, candidates ARE the playable nav node positions
+// (safe reachable sampling) - no callouts involved, islands excluded by construction.
+const nav2={nodes:[[0,0,0],[5,0,0],[2,0,3],[3,0,-2],[1,0,-3],[6,0,1],[4,0,-1],[2,0,1],[46.7,3,-27.1]],valid:[1,1,1,1,1,1,1,1,1]};
+const C2={nav:nav2,playable:[1,1,1,1,1,1,1,1,0]};
+const ctx3={DM:{},FV:{map:'ascent'},boxes:null,CALLOUTS:[['B Site',46.7,-27.1]],xgGet:()=>({}),nmActive:()=>C2,xClear:(x,z)=>[x,z],isFinite,Math};
+vm.createContext(ctx3);
+vm.runInContext(body+';globalThis.out=dmPts();',ctx3);
+const out3=ctx3.out.map(p=>[...p]);
+assert.equal(out3.length,8,'all 8 playable nodes are candidates');
+assert(out3.every(([x,z])=>!(Math.hypot(x-46.7,z+27.1)<0.5)),'island node never a candidate on the native path');
 console.log('dmPts: spawn candidates filtered to playable nav - island callouts excluded, main area kept, fallback safe');
+console.log('dmPts native path: candidates are playable nav nodes, islands excluded by construction');
