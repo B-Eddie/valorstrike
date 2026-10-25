@@ -389,3 +389,9 @@ in-process server; it keeps the VALORANT FEEL block the audit fixture strips, an
   pellet, so an offline bot Judge did 17 a shot instead of ~119. The override keeps the expected-pellet formula on the
   profile's floored rows, and a gun with no profile (the Bucky's alt fire) falls back to the base table with its falloff
   (it returned the flat near value). `test_combat_consistency.cjs` §6: 63 gun x range x part cases + Bucky alt.
+- **Kill feed over the subtitle at 640x360**: in landscape <=820 px the kill feed (right:8px) and `#xSub` both started at
+  top:48px; `#xSub` is bounded to the band between the minimap columns (136 / 184 px side margins, cdf12e3), so any
+  feed row wider than that margin, i.e. most once kills stacked, ran across the subtitle. The feed now starts at 66 px
+  (subtitle 48 + explicit 12 px line + 6 px); touch (top:100px) and portrait placements unchanged. Parse-rule test:
+  `test_short_layout.cjs` (e) (feed top vs subtitle line box per band, cascade order, no later override). Not rendered
+  in Chromium (owned by another agent): a browser check of the 640x360 feed with 4-5 stacked kills is still open.
