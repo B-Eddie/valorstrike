@@ -8151,7 +8151,7 @@ function sgTick(dt) {
   prune(J.so, (s) => { s.t -= dt; s.m.material.opacity = 0.9 * Math.min(1, s.t / 0.5); if (s.t > 0) return true; jRel(s.m); return false; });
   prune(J.leer, (l) => {
     l.t += dt; l.m.position.lerpVectors(l.a, l.b, Math.min(1, l.t / 0.4)); ryLeerLook(l); const p = l.m.position;
-    if (l.t >= xWf("leer")) bots.forEach((b) => { // wiki windup 0.4 s from FIRE if (!b.alive) return; const bp = PF_A.set(b.g.position.x, 1.6, b.g.position.z), ry = b.g.rotation.y, vx = p.x - bp.x, vz = p.z - bp.z, d = Math.hypot(vx, vz) || 0.01;
+    if (l.t >= xWf("leer")) bots.forEach((b) => { /* wiki windup 0.4 s from FIRE */ if (!b.alive) return; const bp = PF_A.set(b.g.position.x, 1.6, b.g.position.z), ry = b.g.rotation.y, vx = p.x - bp.x, vz = p.z - bp.z, d = Math.hypot(vx, vz) || 0.01;
       if (d < 30 && (vx * Math.sin(ry) + vz * Math.cos(ry)) / d > 0.3 && los(bp, PF_B.copy(p))) b.blind = Math.max(b.blind || 0, 2); });
     if (l.t < 2) return true; scene.remove(l.m); return false;
   });
