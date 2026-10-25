@@ -1,7 +1,7 @@
 // Native-map memory budget (rows 1/12): packed geometry (Int8x4 normals, Uint16 indices), texture cap per quality
 // tier, CPU copies dropped once the GPU holds them, eager texture upload during loading, and a scene reload when a new
 // WebGL context (anti-aliasing switch / restored context) would otherwise have nothing to upload from.
-const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
+const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),assert=require('node:assert/strict');
 const root=path.join(__dirname,'..'),src=fs.readFileSync(path.join(__dirname,'native_maps_runtime.js'),'utf8'),html=fs.readFileSync(path.join(root,'index.html'),'utf8');
 const THREE=require(require.resolve('three',{paths:[path.join(root,'server')]}));
 const pick=n=>{const i=src.indexOf('function '+n+'(');assert(i>=0,n+' missing');return src.slice(i,src.indexOf('\n',i));};
@@ -17,7 +17,7 @@ assert(!/gl\.scene\.traverse\(o=>\{if\(!o\.isMesh\)return;o\.geometry\.userData\
 assert(src.includes("const M={g:root,solids:[collision],boxes:[],built:1,native:true};"));
 const env={THREE,renderer:{initTexture(t){env.uploads.push(t);if(t.onUpdate)t.onUpdate(t);},capabilities:{getMaxAnisotropy:()=>8}},uploads:[],created:[],closed:0,NM:{current:null},
  createImageBitmap:async(img,o)=>{const b={width:o.resizeWidth,height:o.resizeHeight,close(){env.closed++;},resized:o};env.created.push(b);return b;},document:{createElement:()=>({getContext:()=>({drawImage(){}})})},
- nmFree:r=>env.freed.push(r.M.g),freed:[],nmTexStats:()=>null,nmDecalApply:m=>m,nmDecalStyle:()=>null,nmFoliageApply:m=>m,console:{error(){},warn(){}},localStorage:{getItem:()=>env.quality},quality:null,xLowDev:false,navigator:{}};
+ nmFree:r=>env.freed.push(r.M.g),freed:[],nmTexStats:()=>null,nmDecalApply:m=>m,nmDecalStyle:()=>null,nmFoliageApply:m=>m,console:{error(){},warn(){}},localStorage:{getItem:k=>k==='vs.gq'?env.quality:(env.ls[k]??null)},ls:{},quality:null,xLowDev:false,navigator:{}};
 const names=['nmNow','nmQuality','nmTexCap','nmBytes','nmTexBytes','nmDropArray','nmTexUploaded','nmWatchContext'],blocks=['nmPackGeometry','nmShrink','nmBudget','nmUpload','nmRehydrate'];
 const api=new Function('env','with(env){'+names.map(pick).join('\n')+'\n'+blocks.map(block).join('\n')+';return {'+names.concat(blocks).join(',')+'};}')(env);
 (async()=>{
@@ -25,6 +25,12 @@ const api=new Function('env','with(env){'+names.map(pick).join('\n')+'\n'+blocks
  assert.equal(api.nmTexCap('low',8),256);assert.equal(api.nmTexCap('medium',8),0);assert.equal(api.nmTexCap('high',undefined),0);assert.equal(api.nmTexCap('custom',8),0);
  assert.equal(api.nmTexCap('high',4),256);assert.equal(api.nmTexCap('medium',2),256);
  env.quality=null;env.xLowDev=true;assert.equal(api.nmQuality(),'low');env.xLowDev=false;assert.equal(api.nmQuality(),'medium');env.quality='high';assert.equal(api.nmQuality(),'high');
+ // A custom set keeps the cap of the preset it came from (browser: LOW + AA switch re-prepared Lotus with 149 MB instead of 41 MB of textures).
+ env.quality='custom';assert.equal(api.nmQuality(),'custom');assert.equal(api.nmTexCap(undefined,8),0);env.ls['vs.gqb']='low';assert.equal(api.nmQuality(),'low');assert.equal(api.nmTexCap(undefined,8),256);env.ls['vs.gqb']='medium';assert.equal(api.nmTexCap(undefined,8),0);env.ls={};env.quality='high';
+ {const H=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8'),i=H.indexOf('const xGQP = {'),j=H.indexOf('\nfunction xSkyApply',i),k=H.indexOf('function xGQSync() {'),l=H.indexOf('\nfunction xGQUi',k);assert(i>0&&j>i&&k>0&&l>k);
+  const L={},G={XS:{scale:'1',res:'std',shd:'off',aa:false,sky:false},localStorage:{setItem:(a,b)=>{L[a]=b;}},$:()=>({}),xSegOn(){}};vm.createContext(G);vm.runInContext(H.slice(i,j)+'\n'+H.slice(k,l)+';globalThis.sync=xGQSync;',G);
+  G.sync();assert.deepEqual(L,{'vs.gq':'low','vs.gqb':'low'});G.XS.aa=true;G.sync();assert.deepEqual(L,{'vs.gq':'custom','vs.gqb':'low'},'switching AA on LOW must remember LOW as the base preset');
+  Object.assign(G.XS,{res:'retina',shd:'map',aa:true,sky:true});G.sync();assert.deepEqual(L,{'vs.gq':'medium','vs.gqb':'medium'});}
  // Real Lotus geometry: normals within 0.7 deg, indices identical, bytes down, arrays dropped on upload with bounds/counts kept.
  const dir=path.join(root,'models/valorant/maps/lotus'),g=JSON.parse(fs.readFileSync(path.join(dir,'scene.gltf'),'utf8')),bufs=new Map();
  const T={5126:Float32Array,5125:Uint32Array,5123:Uint16Array},N={SCALAR:1,VEC2:2,VEC3:3};
