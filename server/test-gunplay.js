@@ -54,7 +54,7 @@ for(const Sim of [SpikeSimulation,Simulation]){const {s,a}=duel('Vandal',10,0,Si
  a.reloadAt=0;assert(s.command(a,{t:'reload'}));s.time=a.reloadAt;s.finishReload(a);assert.equal(a.ammo,20);assert.equal(a.reserve,0,'reload takes from the picked-up reserve');}
 {const s=new SpikeSimulation(world(),'five','ascent',()=>0),a=s.add('a');s.start(false);a.primary='Vandal';a.secondary='Sheriff';a.weapon='Vandal';a.ammo=3;a.reserve=10;a.inventory={Vandal:3,Sheriff:1};a.reserves={Vandal:10,Sheriff:0};
  const r0=s.round;s.finishRound(a.team===s.atk?0:1,'QA');for(let i=0;i<400&&s.round===r0;i++)s.step(.05);assert(s.round>r0,'next round');
- assert.equal(a.weapon,'Vandal');assert.equal(a.ammo,25);assert.equal(a.reserve,75);s.time=a.equipAt+.01;assert(s.command(a,{t:'equip',w:'Sheriff'}));assert.equal(a.ammo,6,'holstered sidearm refilled');}
+ assert.equal(a.weapon,'Vandal');assert.equal(a.ammo,25);assert.equal(a.reserve,50);s.time=a.equipAt+.01;assert(s.command(a,{t:'equip',w:'Sheriff'}));assert.equal(a.ammo,6,'holstered sidearm refilled');assert.equal(a.reserve,24,'Sheriff reserve 24 (wiki)');}
 // 7. Same-tick trades: both lethal, shots resolve after both moved; the dead one cannot fire back that tick, and the first
 // shooter rotates tick to tick (it was always the first unit in the list, i.e. the room creator).
 {const {s,a,b}=duel('Operator',10,0);const wins=[];

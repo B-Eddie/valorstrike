@@ -1,7 +1,7 @@
 // Floor weapons (5v5): deaths drop the best gun, G drops the held gun, F picks up the gun the player is
 // looking at and swaps it with the gun in that slot (the old one lands where the new one lay). Walking over a
 // gun with that slot empty picks it up. The server owns every floor gun, its ammo and every swap.
-import {weapons} from './simulation.js';
+import {weapons,reserveOf} from './simulation.js';
 export const SIDEARMS=new Set(['Classic','Shorty','Frenzy','Ghost','Sheriff']);
 const RANK={Classic:0,Shorty:1,Frenzy:2,Ghost:3,Sheriff:4,Stinger:5,Bucky:6,Spectre:7,Judge:8,Bulldog:9,Marshal:10,Ares:11,Guardian:12,Odin:13,Outlaw:13,Phantom:14,Vandal:14,Operator:15};
 export const FLOOR_LIMIT=24,PICK_RANGE=2.5,AUTO_RANGE=1,DROPPER_GRACE=1.5;
@@ -11,7 +11,7 @@ const slotOf=w=>SIDEARMS.has(w)?'secondary':'primary';
 export function floorReset(sim){sim.floor=[];sim.floorId=sim.floorId||1;for(const u of sim.units){u.floorDropped=false;if(!u.secondary)u.secondary='Classic';}}
 function settle(sim,x,y,z){const W=sim.world;try{const g=W.ground(x,z,y+.5);if(Number.isFinite(g)&&g>y-6&&g>-40)return g;}catch(e){}return y;}
 export function floorDrop(sim,w,x,y,z,ammo,reserve,dropper=null){if(!droppable(w))return null;sim.floor||=[];const mag=weapons[w].magazineSize;
- const d={id:sim.floorId=(sim.floorId||1)+1,w,x,y:settle(sim,x,y,z),z,ammo:Math.max(0,Math.min(mag,Number.isFinite(ammo)?ammo:mag)),reserve:Math.max(0,Number.isFinite(reserve)?reserve:mag*3),dropper,graceUntil:sim.time+DROPPER_GRACE};const own=dropper!=null&&(sim.units||[]).find(x=>x.id===dropper),sk=own&&own.skins&&Object.hasOwn(own.skins,w)?own.skins[w]:null;if(typeof sk==='string')d.sk=sk;// cosmetic: the dropper's skin rides with the gun
+ const d={id:sim.floorId=(sim.floorId||1)+1,w,x,y:settle(sim,x,y,z),z,ammo:Math.max(0,Math.min(mag,Number.isFinite(ammo)?ammo:mag)),reserve:Math.max(0,Number.isFinite(reserve)?reserve:reserveOf(w)),dropper,graceUntil:sim.time+DROPPER_GRACE};const own=dropper!=null&&(sim.units||[]).find(x=>x.id===dropper),sk=own&&own.skins&&Object.hasOwn(own.skins,w)?own.skins[w]:null;if(typeof sk==='string')d.sk=sk;// cosmetic: the dropper's skin rides with the gun
  sim.floor.push(d);while(sim.floor.length>FLOOR_LIMIT)sim.floor.shift();return d;}
 // Live ammo of a carried gun, whether it is in hand or holstered.
 function ammoOf(u,w){return u.weapon===w?[u.ammo,u.reserve]:[u.inventory?.[w],u.reserves?.[w]];}

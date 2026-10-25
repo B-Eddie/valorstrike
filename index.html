@@ -2966,6 +2966,9 @@ function kfPush(d) {
 // rt = reaction ms, ae = aim error, bu = burst size at range, hs = headshot bias
 const DIFF = { easy: { spread: 1.8, cd: 1.5, dmg: 0.6, speed: 0.8, rt: 400, ae: 2.2, bu: [2, 3], hs: 0.1 }, normal: { spread: 1, cd: 1, dmg: 1, speed: 1, rt: 260, ae: 1.3, bu: [3, 5], hs: 0.2 }, hard: { spread: 0.6, cd: 0.7, dmg: 1.3, speed: 1.15, rt: 160, ae: 0.8, bu: [3, 5], hs: 0.35 } };
 const MAG = () => WEAP[wName()].mag;
+// reserve ammo per gun (wiki.playvalorant.com/en-us/<Weapon> "Reserve"; = server RESERVE): was 3 magazines for every gun
+const XRSV = { Classic: 36, Shorty: 6, Frenzy: 45, Ghost: 39, Sheriff: 24, Stinger: 60, Spectre: 90, Bucky: 10, Judge: 15, Bulldog: 72, Guardian: 36, Phantom: 60, Vandal: 50, Marshal: 15, Outlaw: 10, Operator: 10, Ares: 100, Odin: 200 };
+const xRsv = (n) => XRSV[n] != null ? XRSV[n] : WEAP[n] && WEAP[n].mag ? WEAP[n].mag * 3 : 0;
 score = score || { you: 0, bots: 0 };
 function xPLock() { // touch devices have no mouse pointer to lock; skip, and swallow the async NotAllowedError so it never surfaces as an error toast
   try { if (matchMedia("(pointer: coarse)").matches) return; const p = renderer.domElement.requestPointerLock(); if (p && p.catch) p.catch(() => {}); } catch (e) {} }
@@ -2974,7 +2977,7 @@ function start() {
   $("pre").style.display = "none"; $("lobby").style.display = "none"; $("result").style.display = "none"; $("game").style.display = "block";
   if (matchOver) { score.you = 0; score.bots = 0; matchOver = false; }
   if (!score.you && !score.bots) sbReset(names, MATES);
-  rw = "pri"; slots.pis = { ammo: 12, rsv: 36 }; rsv = WEAP[S.weapon].mag * 3;
+  rw = "pri"; slots.pis = { ammo: 12, rsv: 36 }; rsv = xRsv(S.weapon);
   mode = "retake"; useMap("retake"); if (duelBot) { scene.remove(duelBot.g); duelBot = null; } xRollSmall();
   setScope(false); onSkin(); $("hint").textContent = RETAKE_HINT;
   player = { x: 0, z: 17, hp: 100, armor: 50, y: 0, vy: 0, ch: 0, st: 0 }; yaw = 0; pitch = 0; timeLeft = 45; defuseT = 0; ammo = MAG(); reloading = 0; kSwing = 0;
@@ -3067,7 +3070,7 @@ function swapW(s) {
   if (rw === s) return;
   if (rw !== "knife") slots[rw] = { ammo, rsv };
   rw = s; reloading = 0;
-  if (s !== "knife") { if (slots[s].ammo === undefined) slots[s] = { ammo: MAG(), rsv: MAG() * 3 }; ammo = slots[s].ammo; rsv = slots[s].rsv; }
+  if (s !== "knife") { if (slots[s].ammo === undefined) slots[s] = { ammo: MAG(), rsv: xRsv(wName()) }; ammo = slots[s].ammo; rsv = slots[s].rsv; }
   blip(420, 0.05, "square", 0.08); onSkin(); setScope(false); updHud();
 }
 addEventListener("keyup", (e) => keys[e.code] = false);
@@ -4593,7 +4596,7 @@ function rRound() {
 }
 function rGo(w) {
   if (!picking) return; picking = false; clearInterval(RF.t); RF.w = w; $("xPick").classList.remove("on");
-  rw = "pri"; slots.pri = {}; slots.pis = { ammo: 12, rsv: 36 }; ammo = MAG(); rsv = MAG() * 3; reloading = 0; fcd = 0; spray = 0; try { XSP.used = false; } catch (e) {} // round start re-arms the one spray per round
+  rw = "pri"; slots.pri = {}; slots.pis = { ammo: 12, rsv: 36 }; ammo = MAG(); rsv = xRsv(wName()); reloading = 0; fcd = 0; spray = 0; try { XSP.used = false; } catch (e) {} // round start re-arms the one spray per round
   onSkin(); setScope(false); running = true; clock.getDelta(); updHud(); SFX.buy(); relock();
 }
 document.querySelectorAll(".x-pw button").forEach((b) => b.onclick = () => rGo(b.dataset.w));
@@ -4705,13 +4708,13 @@ function bCost(n) { const it = bItem(n); if (!it) return Infinity; const L = bLo
 function xWOwn(n) { return typeof n === "string" && Object.prototype.hasOwnProperty.call(WEAP, n); }
 function bEquip(n, sl) {
   const m = WEAP[n].mag; if (sl === "pis") FV.sec = n; else FV.pri = n;
-  slots[sl] = { ammo: m, rsv: m * 3 };
-  if (rw === sl) { ammo = m; rsv = m * 3; reloading = 0; } else if (sl === "pri") swapW("pri");
+  slots[sl] = { ammo: m, rsv: xRsv(n) };
+  if (rw === sl) { ammo = m; rsv = xRsv(n); reloading = 0; } else if (sl === "pri") swapW("pri");
 }
 function bUndo(e) { // weapon entry: slot back to what it held before, refund whoever paid
   const sl = e.sl;
   if (sl === "pis") FV.sec = e.prev || "Classic"; else FV.pri = e.prev || null;
-  if (sl === "pis" || e.prev) { const m = WEAP[sl === "pis" ? FV.sec : FV.pri].mag, pa = e.pa && e.pa.ammo !== undefined ? e.pa : { ammo: m, rsv: m * 3 }; slots[sl] = { ammo: pa.ammo, rsv: pa.rsv }; if (rw === sl) { ammo = pa.ammo; rsv = pa.rsv; reloading = 0; } }
+  if (sl === "pis" || e.prev) { const m = WEAP[sl === "pis" ? FV.sec : FV.pri].mag, pa = e.pa && e.pa.ammo !== undefined ? e.pa : { ammo: m, rsv: xRsv(sl === "pis" ? FV.sec : FV.pri) }; slots[sl] = { ammo: pa.ammo, rsv: pa.rsv }; if (rw === sl) { ammo = pa.ammo; rsv = pa.rsv; reloading = 0; } }
   else { if (rw === "pri") swapW("pis"); slots.pri = {}; }
   if (e.by) { const s = FV.bs[e.by]; if (s) s.cr = capC(s.cr + e.dp); bBack(e.by, e.dp); if (FV.reqBy === e.by) { FV.req = null; FV.reqBy = null; } }
   else { FV.cr += e.p; bBack("You", e.p); }
@@ -4810,7 +4813,7 @@ const XWS = (() => {
     if (path) path.setAttribute("d", BUY_SIL[n] || BUY_SIL.Vandal); if (h) h.textContent = n; if (c) c.textContent = cat ? cat[0] : ""; if (pr) pr.textContent = it ? it[1] : "";
     if (thh && thh.length > 2) { thh[1].textContent = d ? "0–" + d + " m" : "All ranges"; thh[2].textContent = d ? d + " m +" : ""; }
     [W.head, f[1], W.body, f[0], W.legs, f[2]].forEach((v, i) => { if (td && td[i]) td[i].textContent = i % 2 && !d ? "" : pl + v; });
-    const sec = bSide(n), rows = [["Fire rate", (W.spin ? W.spin[0] + "–" + W.spin[1] : +W.rate.toFixed(2)) + " /s"], ["Magazine", W.mag + " / " + W.mag * 3]];
+    const sec = bSide(n), rows = [["Fire rate", (W.spin ? W.spin[0] + "–" + W.spin[1] : +W.rate.toFixed(2)) + " /s"], ["Magazine", W.mag + " / " + xRsv(n)]];
     const pn = xPen(n); rows.push(["Wall pen", pn === XPN.H ? "High" : pn === XPN.M ? "Medium" : "Low"]);
     rows.push(["Run speed", (6.75 * vRunK(n)).toFixed(2) + " m/s"]);
     rows.push(["Equip", xEq(n) + " s"]);
@@ -7691,7 +7694,7 @@ function fRound() {
   player = { x: 0, z: pz0, hp: 100, armor: FV.arm, y: 0, vy: 0, ch: 0, st: 0 }; yaw = FV.atk ? 0 : Math.PI; pitch = 0;
   timeLeft = 100; FV.buy = FV.you + FV.them === 0 || FV.you + FV.them === 12 ? 45 : 30; defuseT = 0; kSwing = 0; fSpawn(); $("feed").innerHTML = ""; $("defuse").style.display = "none";
   const pm = FV.pri ? WEAP[FV.pri].mag : 0, sm = WEAP[FV.sec].mag;
-  slots.pri = FV.pri ? { ammo: pm, rsv: pm * 3 } : {}; slots.pis = { ammo: sm, rsv: sm * 3 };
+  slots.pri = FV.pri ? { ammo: pm, rsv: xRsv(FV.pri) } : {}; slots.pis = { ammo: sm, rsv: xRsv(WEAP[FV.sec] ? FV.sec : "Classic") };
   rw = FV.pri ? "pri" : "pis"; ammo = slots[rw].ammo; rsv = slots[rw].rsv; reloading = 0; fcd = 0; spray = 0; fireHeld = false; try { XSP.used = false; } catch (e) {} // round start re-arms the one spray per round
   say("Buy phase · press B to buy", 1800); SFX.buy();
   fsRound(); onSkin(); setScope(false); running = true; clock.getDelta(); updHud(); relock(); jRound(FV.you + FV.them === 0);
@@ -9227,7 +9230,7 @@ function xdArm(w, am) { // give the player gun w (into the primary or sidearm sl
   const sl = XD.SIDE[w] ? "pis" : "pri", mg = WEAP[w] ? WEAP[w].mag : 20;
   if (sl === "pri") FV.pri = w; else FV.sec = w;
   if (rw !== "knife" && rw !== sl) slots[rw] = { ammo, rsv }; // keep the gun in hand's live mag: switching straight to the picked-up slot left a stale count (free refill / lost rounds)
-  slots[sl] = am && am.ammo != null ? { ammo: am.ammo, rsv: am.rsv } : { ammo: mg, rsv: mg * 3 };
+  slots[sl] = am && am.ammo != null ? { ammo: am.ammo, rsv: am.rsv } : { ammo: mg, rsv: xRsv(w) };
   rw = sl; ammo = slots[sl].ammo; rsv = slots[sl].rsv; reloading = 0; try { onSkin(); setScope(false); } catch (e) {} updHud();
 }
 function xdLook(list) { // the floor gun under the crosshair (Valorant: look at it) within 2 m, or the one at your feet
@@ -10278,7 +10281,7 @@ function xObsTick(force) { const on = xObsShow(); if (XOB.el.classList.contains(
 (window.XHK || (window.XHK = [])).push(() => xObsTick(false));
 // observer hardening: leaving the match (lobby / result screen hides #game) while dead drops the KILLED BY card, SPECTATING label, grey filter and any hidden teammate model
 (window.XHK || (window.XHK = [])).push(() => { try { if ((xKL.on || XOB.hm) && $("game").style.display === "none") xKLReset(); } catch (e) {} });
-{ const h0 = xHud; xHud = function () { const r = h0.apply(this, arguments); try { const a = player && player.hp <= 0 && xKL.sp ? xKL.cur : null; if (a && a.alive) { const w = a.w || "Classic", W = WEAP[w] || {}; setT("xWn", w); setT("xMag", a.xAmW === w && a.xAm > 0 ? a.xAm : W.mag || "—"); setT("xRs", W.mag ? W.mag * 3 : "—"); setT("xHp", Math.max(0, Math.ceil(a.hp))); setT("xArm", Math.ceil(a.armor || 0)); } } catch (e) {} return r; }; } // spectated teammate's weapon / ammo / health in the HUD
+{ const h0 = xHud; xHud = function () { const r = h0.apply(this, arguments); try { const a = player && player.hp <= 0 && xKL.sp ? xKL.cur : null; if (a && a.alive) { const w = a.w || "Classic", W = WEAP[w] || {}; setT("xWn", w); setT("xMag", a.xAmW === w && a.xAm > 0 ? a.xAm : W.mag || "—"); setT("xRs", W.mag ? xRsv(w) : "—"); setT("xHp", Math.max(0, Math.ceil(a.hp))); setT("xArm", Math.ceil(a.armor || 0)); } } catch (e) {} return r; }; } // spectated teammate's weapon / ammo / health in the HUD
 // ---- Settings: FPS limit, resolution, render scale, anti-aliasing, aim assist, shadows ----
 const XS = { cap: "auto", res: xLowDev ? "std" : "retina", scale: "1", aa: xAA0, aim: "aim", shd: "off" }; // sharp by default: native device pixels (desktop) and never below 1:1 CSS pixels
 // ---- Keybinds: XS.keys maps logical action -> physical code; one capture-phase lookup at the keydown entry translates to the game's default codes ----
@@ -11056,14 +11059,14 @@ function dmMenu(on) {
 }
 function dmAmmo() {
   const pm = FV.pri ? WEAP[FV.pri].mag : 0, sm = WEAP[FV.sec].mag;
-  slots.pri = FV.pri ? { ammo: pm, rsv: pm * 3 } : {}; slots.pis = { ammo: sm, rsv: sm * 3 };
+  slots.pri = FV.pri ? { ammo: pm, rsv: xRsv(FV.pri) } : {}; slots.pis = { ammo: sm, rsv: xRsv(WEAP[FV.sec] ? FV.sec : "Classic") };
   rw = FV.pri ? "pri" : "pis"; ammo = slots[rw].ammo; rsv = slots[rw].rsv; reloading = 0; fcd = 0; spray = 0; fireHeld = false; try { XSP.used = false; } catch (e) {} // round start re-arms the one spray per round onSkin();
 }
 function dmGive(n) {
   const W = Object.hasOwn(WEAP,n) && WEAP[n]; if (!W) return false; if (FV.tdm) { const category=Object.keys(TDM_C).find(k=>TDM_C[k].includes(n)); if (!category || TDM_T[category]>tdmTier()) return false; } const sec = DM_C.Sidearms.includes(n);
   if (sec) FV.sec = n; else FV.pri = n;
   if (rw !== "knife" && rw !== (sec ? "pis" : "pri")) slots[rw] = { ammo, rsv }; // the other slot keeps its live mag (was a stale count)
-  slots[sec ? "pis" : "pri"] = { ammo: W.mag, rsv: W.mag * 3 }; rw = sec ? "pis" : "pri"; ammo = W.mag; rsv = W.mag * 3; reloading = 0; fcd = 0; spray = 0;
+  slots[sec ? "pis" : "pri"] = { ammo: W.mag, rsv: xRsv(n) }; rw = sec ? "pis" : "pri"; ammo = W.mag; rsv = xRsv(n); reloading = 0; fcd = 0; spray = 0;
   onSkin(); setScope(false); updHud(); try { blip(700, 0.08, "triangle", 0.15); } catch (e) {}
 }
 function dmPts() { // spawn candidates: nav nodes, else callouts, pushed clear of boxes
@@ -11985,7 +11988,7 @@ function mpCliRound5(e) { // round start: own unit back at spawn with this round
   player.x = e[4]; player.z = e[6]; player.y = 0; player.vy = 0; player.vx = player.vz = 0; player.hp = e[10] ? Math.max(1, e[8]) : 0; player.armor = e[9]; player._xd = 0;
   yaw = FV.atk ? 0 : Math.PI; pitch = 0;
   const pm = FV.pri && WEAP[FV.pri] ? WEAP[FV.pri].mag : 0, sm = (WEAP[FV.sec] || WEAP.Classic).mag;
-  slots.pri = FV.pri ? { ammo: pm, rsv: pm * 3 } : {}; slots.pis = { ammo: sm, rsv: sm * 3 };
+  slots.pri = FV.pri ? { ammo: pm, rsv: xRsv(FV.pri) } : {}; slots.pis = { ammo: sm, rsv: xRsv(WEAP[FV.sec] ? FV.sec : "Classic") };
   rw = FV.pri ? "pri" : "pis"; ammo = slots[rw].ammo; rsv = slots[rw].rsv; reloading = 0; fcd = 0; spray = 0; fireHeld = false;
   try { onSkin(); setScope(false); xKLReset(); } catch (er) {} updHud();
 }
@@ -12033,7 +12036,7 @@ function mpCliTick5(dt) { // client: own movement + HUD; the host owns rounds, s
 function mpRdArm(ld) {
   const p = ld && xWOwn(ld[0]) ? ld[0] : null, s = ld && xWOwn(ld[1]) ? ld[1] : "Classic";
   FV.pri = p; FV.sec = s; const pm = p ? WEAP[p].mag : 0, sm = WEAP[s].mag;
-  slots.pri = p ? { ammo: pm, rsv: pm * 3 } : {}; slots.pis = { ammo: sm, rsv: sm * 3 };
+  slots.pri = p ? { ammo: pm, rsv: xRsv(p) } : {}; slots.pis = { ammo: sm, rsv: xRsv(s) };
   rw = p ? "pri" : "pis"; ammo = slots[rw].ammo; rsv = slots[rw].rsv; reloading = 0; fireHeld = false;
   try { onSkin(); setScope(false); } catch (e) {}
 }
