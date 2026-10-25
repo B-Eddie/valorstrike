@@ -109,7 +109,7 @@ export async function soakRun({map='ascent',mode='dm',seconds=120,humans=3,seed=
    if(sp.st==='carry'&&sim.roundDelay<=0&&sim.buy<=0){const c=sim.units.find(u=>u.id===sp.carrier);if(!c)flag('spike carrier missing',`carrier ${sp.carrier}`,'spcarrier');else if(c.team!==sim.atk)flag('spike carrier on defence',c.name,'spteam');}
    if(sp.dt>7.06||sp.t>45||sp.pt>4.06)flag('spike timers',JSON.stringify({t:sp.t,dt:sp.dt,pt:sp.pt}),'sptimer');
    const counts=[0,1].map(t=>sim.units.filter(u=>u.team===t).length);if(sim.units.length===10&&counts[0]!==counts[1])flag('unbalanced teams (five)',`teams ${counts}`,'unbalanced5');
-   if(sim.buy<0||sim.buy>20)flag('buy timer',sim.buy);}
+   if(sim.buy<0||sim.buy>45)flag('buy timer',sim.buy);}
   // Round / match progress.
   if(sim.phase==='game'){if(sim.mode==='five'){if(sim.round!==lastRound){if(lastRound)stats.rounds++;lastRound=sim.round;roundSince=t;}else if(t-roundSince>260000)flag('round stuck',`round ${sim.round} for ${((t-roundSince)/1000).toFixed(0)} s (buy ${sim.buy.toFixed(1)}, remaining ${sim.remaining.toFixed(1)}, delay ${sim.roundDelay}, spike ${sim.spike.st}, loading ${sim.units.filter(u=>u.loading).map(u=>u.name)})`,'roundstuck:'+sim.round);}
    else{if(lastRemaining===null||sim.remaining<lastRemaining-1e-9){lastRemaining=sim.remaining;remainingSince=t;}else if(t-remainingSince>20000&&[...room.sessions.values()].some(s=>s.ready&&s.u))flag('clock stuck',`remaining ${sim.remaining}`,'clock');

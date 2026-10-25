@@ -24,7 +24,7 @@ moveP=function(dt,run,hold){
  P.tagT=Math.max(0,(P.tagT||0)-dt);let speed=6.75*(kn?1:p.runSpeedMultiplier||.8)*(ads&&p.adsStats?p.adsStats.runSpeedMultiplier:1);if(J.dis>0)speed*=1.6;if(typeof sgSlow==='function')speed*=sgSlow(P);
  const native=typeof nmActive==='function'&&nmActive(),world={ground:(x,z,y)=>groundAt(x,z,.3,y),blocked:(x,z,r,y,h)=>native?sgBlk(x,z,r,y)||nmBlocked(native,x,z,r,y,h):blocked(x,z,r,y),ceiling:native?(x,z,low,high)=>{const ray=new THREE.Ray(new THREE.Vector3(x,low+.01,z),new THREE.Vector3(0,1,0)),hit=native.bvh.raycastFirst(ray,THREE.DoubleSide);return !!hit&&hit.distance<high-low;}:null};
  const result=VF.model.step(P,{x,z,jump:!!kk.Space,duck:!!(kk.ControlLeft||kk.ControlRight),walk:!!(kk.ShiftLeft||kk.ShiftRight),speed,tag:P.tagT>0?P.tagK:1,hold:!!hold||!!J.dr},dt,world);
- if(result.landed){SFX.land();P.st=0;}
+ if(result.landed){SFX.land();P.st=0;const fd=VF.model.fallDamage(result.drop);if(fd>0&&running&&mode!=='aim'&&mode!=='duel'&&!(typeof MP!=='undefined'&&MP.on)&&P.hp>0){P.hp=Math.max(0,P.hp-fd);try{updHud();}catch(e){}if(P.hp<=0)pDie('Fall','Fall');}} // fall damage: health only (shields ignored); online the server applies it
  // Footfalls follow distance. Shift-walking and crouching stay silent.
  P.footDistance=(P.footDistance||0)+result.speed*dt;if(P.footDistance>1.85&&P.mv&&!P.air&&!P.wk&&!P.cr){P.footDistance%=1.85;SFX.selfStep(P.y>1);}
  // Preserve explicit ability impulses; ordinary air steering never creates a speed boost.
@@ -57,6 +57,11 @@ xvFPPlay=function(F,kind,phase){const label=kind==='idle'?'Idle':kind.charAt(0).
  if(phase!=null){for(const action of [F.action,F.gaction])if(action)action.time=Math.min(action.getClip().duration-.0001,Math.max(0,phase)*action.getClip().duration);F.am.update(0);F.gm.update(0);}
 };
 // A separate lens keeps weapon proportions stable while the world camera zooms.
+// Landing view dip: VALORANT's view dips briefly on landing (the frame-by-frame captures in "VALORANT Physics: Explained"
+// time a jump to the crosshair's return "because of landing view bob"). A critically damped spring kicked by the landing
+// impact: about 2.5 cm at most, level again in ~0.3 s, never a step. No camera bob while running (VALORANT keeps it level).
+var VF_CAM={y:0,v:0,air:false};
+function vfCamDip(dt){const P=player,C=VF_CAM;if(!P||P.hp<=0){C.y=C.v=0;C.air=false;return 0;}if(C.air&&!P.air)C.v-=.9*Math.min(1,P.landImpact||.5);C.air=!!P.air;const w=13.4;let left=Math.min(.1,Math.max(0,dt));while(left>1e-6){const h=Math.min(left,1/240);C.v+=(-w*w*C.y-2*w*C.v)*h;C.y+=C.v*h;left-=h;}if(Math.abs(C.y)<1e-5&&Math.abs(C.v)<1e-4)C.y=C.v=0;return Math.max(-.04,Math.min(0,C.y));}
 var VF_VIEW={scene:new THREE.Scene(),camera:new THREE.PerspectiveCamera(55,1,.015,10),phase:0,lastAir:false,land:0,swayX:0,swayY:0,bob:0,ready:false};
 VF_VIEW.scene.add(new THREE.HemisphereLight(0xffffff,0x8a95a5,1.7));{const light=new THREE.DirectionalLight(0xffffff,.9);light.position.set(-1,3,2);VF_VIEW.scene.add(light);}
 // Every renderer owns its own draw function. Rebind after AA/quality recreation;
@@ -66,9 +71,9 @@ vfBindRenderer(renderer);
 {const remake=xRemake;xRemake=function(){remake();vfBindRenderer(renderer);};}
 
 function vfViewTick(F,dt){const P=player,V=VF_VIEW;if(!F)return;
- if(F.root.parent!==V.scene){if(F.root.parent)F.root.parent.remove(F.root);V.scene.add(F.root);}if(V.lastAir&&!P.air)V.land=Math.min(1,P.landImpact||.5);V.lastAir=!!P.air;V.land=VF.model.damp(V.land,0,12,dt);const speed=Math.hypot(P.vx||0,P.vz||0),target=P.mv&&!P.air?Math.min(1,speed/5.4):0;V.bob=VF.model.damp(V.bob,target,16,dt);V.phase+=speed*dt*3.4;
+ if(F.root.parent!==V.scene){if(F.root.parent)F.root.parent.remove(F.root);V.scene.add(F.root);}if(V.lastAir&&!P.air)V.landT=Math.min(1,P.landImpact||.5);V.lastAir=!!P.air;V.landT=VF.model.damp(V.landT||0,0,10,dt);V.land=VF.model.damp(V.land,V.landT,30,dt);V.vyo=VF.model.damp(V.vyo||0,Math.max(-.02,Math.min(.02,-(P.vy||0)*.002)),14,dt);const speed=Math.hypot(P.vx||0,P.vz||0),target=P.mv&&!P.air?Math.min(1,speed/5.4):0;V.bob=VF.model.damp(V.bob,target,16,dt);V.phase+=speed*dt*3.4;
  V.swayX=VF.model.damp(V.swayX,Math.max(-1,Math.min(1,VM.sx||0)),18,dt);V.swayY=VF.model.damp(V.swayY,Math.max(-1,Math.min(1,VM.sy||0)),18,dt);const k=xAD.k||0;
- F.root.scale.setScalar(1);F.root.position.copy(F.origin);F.root.position.x+=.045-V.swayX*.012+Math.sin(V.phase)*.006*V.bob;F.root.position.y-=.035+Math.abs(Math.cos(V.phase))*.008*V.bob+V.land*.025;F.root.position.y+=Math.max(-.02,Math.min(.02,-(P.vy||0)*.002));F.root.rotation.set(-V.swayY*.009,Math.PI/2-V.swayX*.01,-V.swayX*.012+Math.sin(V.phase)*.003*V.bob);
+ F.root.scale.setScalar(1);F.root.position.copy(F.origin);F.root.position.x+=.045-V.swayX*.012+Math.sin(V.phase)*.006*V.bob;F.root.position.y-=.035+Math.abs(Math.cos(V.phase))*.008*V.bob+V.land*.025;F.root.position.y+=V.vyo;F.root.rotation.set(-V.swayY*.009,Math.PI/2-V.swayX*.01,-V.swayX*.012+Math.sin(V.phase)*.003*V.bob);
  if(k>0){F.root.updateMatrixWorld(true);const optic=F.ws.getObjectByName('Reflex')||F.ws.getObjectByName('Scope');if(optic){const p=optic.getWorldPosition(new THREE.Vector3());F.root.position.x-=p.x*k;F.root.position.y-=(p.y+.025)*k;}else{F.root.position.x-=.12*k;F.root.position.y+=.045*k;}F.root.position.z+=.07*k;}
 }
 // Preload the selected loadout to reduce fallback frames during weapon switches.
@@ -81,5 +86,5 @@ xvFPClear=function(F){if(!F)return;if(F.root.parent)F.root.parent.remove(F.root)
 // Same-weapon equips (buying, respawning, draw cancellation) restart the native equip animation too.
 {const tick=vmTick;vmTick=function(dt){VF.time+=dt;const w=vfWeapon(),changed=VF.drawWeapon!==w,redraw=VM.sw>(VF.drawRemaining||0)+.001;if(changed){VF.drawWeapon=w;VM.sw=VM.swT=xEq(w);VF.sequence=VF.bloom=0;VF.shot=-10;}if((changed||redraw)&&XV.fp&&XV.fp.w===w){XV.fp.kind=null;xvFPPlay(XV.fp,'equip');}const prev=XV.fp;tick(dt);if(XV.fp&&XV.fp!==prev){XV.fp.kind=null;xvFPPlay(XV.fp,VM.sw>0?'equip':'idle',VM.sw>0?1-VM.sw/VM.swT:0);}if(XV.fp&&XV.fp.root.parent===camera)VF_VIEW.scene.add(XV.fp.root);VF.drawRemaining=VM.sw;};}
 {const fire=duelShoot;duelShoot=function(){if(VM.sw>0)return;return fire.apply(this,arguments);};}
-window.xValorantFeel={state:VF,view:VF_VIEW,model:VF.model,weapon:vfWeapon,profile:vfProfile};
+window.xValorantFeel={state:VF,view:VF_VIEW,cam:VF_CAM,camDip:vfCamDip,model:VF.model,weapon:vfWeapon,profile:vfProfile};
 // ---- END VALORANT FEEL ----

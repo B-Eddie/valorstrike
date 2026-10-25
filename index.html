@@ -2799,7 +2799,7 @@ function openPre(m) {
   if (preMode === "five") {
     $("preMt").innerHTML = "5V5 VS BOTS · BETA · First to 13 · <b>CASUAL</b> on Ascent";
     $("preMs").textContent = "5 VS 5 · YOU AND 4 BOTS"; if (window.xQPick) { FV.pick = window.xQPick; window.xQPick = null; } mpSet(FV.pick); // queue panel map tile (Unrated / Swiftplay)
-    $("preMp").textContent = "Attack first, sides swap after round 12. 20 s buy phase each round, press B to buy. Plant or defuse the Spike with 4.";
+    $("preMp").textContent = "Attack first, sides swap after round 12. 30 s buy phase (45 s on the first round of each half), press B to buy. Plant or defuse the Spike with 4.";
   }
   let t = 0; const found = preMode === "surf" || preMode === "aim" ? 1 : 2 + Math.floor(Math.random() * 3);
   $("preT").textContent = "Searching for a match…"; $("preS").innerHTML = 'Searching for a match… <b id="preClock">00:00</b>';
@@ -3487,6 +3487,22 @@ const XUB_AG = { Jett: ["f", "Hair_Buns"], Phoenix: ["m", "Hair_SimpleParted"], 
   Killjoy: ["f", "Hair_BuzzedFemale"], Omen: ["m", ""], Skye: ["f", "Hair_Long"], Chamber: ["m", "Hair_SimpleParted"], Breach: ["m", "Hair_Buzzed Hair_Beard"], Cypher: ["m", "Hair_Buzzed"] };
 const XUB_UP = /^(spine_02|spine_03|neck_01|Head|clavicle|upperarm|lowerarm|hand|thumb|index|middle|ring|pinky)/; // upper-body layer bones; the rest (root, pelvis, spine_01, legs) is the lower layer
 const XUB_LO = ["idle", "walk", "run", "crouch", "crouchWalk", "fall", "jump", "land"], XUB_UPN = ["aim", "knife", "reload", "cast", "throw"], XUB_FU = ["plant", "death1", "death2"];
+// Third-person locomotion (the clips are in place): each clip's natural ground speed, measured from its planted-foot travel
+// on the shipped retargeted data (work/test_tp_locomotion.cjs re-measures it). Playback rate = ground speed / natural speed,
+// so the planted foot moves with the ground instead of skating or moonwalking (the old rates, walk sp/1.6 capped 1.8x and
+// jog sp/4.5, left the feet at ~55-65 % of the ground speed at VALORANT's 3.2-6.75 m/s). Walk clip up to 1.5 m/s, jog from
+// 2.4 m/s (VALORANT's shift-walk is 3.2-4.1 m/s, a brisk jog cadence), crouch-walk clip whenever crouched.
+const XUB_NAT = { walk: 1.05, run: 2.9, crouchWalk: 0.75 };
+const XUB_RATE = { walk: [0.5, 1.6], run: [0.6, 2.35], crouchWalk: [0.5, 2.8] };
+function xUbLoco(sp, cw, back, air) {
+  const T = {}, R = {}, mv = sp > 0.35;
+  if (air) { T.fall = 1 - cw; T.crouch = cw; return { T, R, mv }; }
+  if (!mv) { T.idle = 1 - cw; T.crouch = cw; return { T, R, mv }; }
+  const run = Math.max(0, Math.min(1, (sp - 1.5) / 0.9)), dir = back ? -1 : 1;
+  T.walk = (1 - cw) * (1 - run); T.run = (1 - cw) * run; T.crouchWalk = cw;
+  for (const n of ["walk", "run", "crouchWalk"]) R[n] = dir * Math.max(XUB_RATE[n][0], Math.min(XUB_RATE[n][1], sp / XUB_NAT[n]));
+  return { T, R, mv };
+}
 // one-shot triggers
 function xUbOnce(X, n, set, dur) { const a = X.a[n]; if (!a) return; a.reset(); a.timeScale = dur ? a.getClip().duration / dur : 1; a.play(); if (set === "U") { X.uo = n; X.ut = dur || a.getClip().duration; } else { X.lo = n; X.lt = dur || a.getClip().duration; } }
 function xUbAdd(X, n, w) { const a = X.ad && X.ad[n]; if (!a) return; a.reset(); a.setEffectiveWeight(w); a.play(); }
@@ -3496,7 +3512,8 @@ function xUbAnim(b, M, sp, dt) {
   const dx = X.px == null ? 0 : P.x - X.px, dz = X.pz == null ? 0 : P.z - X.pz, dy = X.py == null ? 0 : P.y - X.py; X.px = P.x; X.pz = P.z; X.py = P.y;
   // airborne: only re-check the floor when the unit moved vertically (or is already in the air)
   let air = X.air; if (Math.abs(dy) > 1e-3 || air) { try { air = typeof groundAt === "function" && P.y > groundAt(P.x, P.z, 0.3, P.y) + 0.2; } catch (e) { air = false; } }
-  if (air && !X.air && dy > 0) xUbOnce(X, "jump", "L", 0.35); else if (!air && X.air) xUbOnce(X, "land", "L", 0.3);
+  X.spS = X.spS == null ? sp : X.spS + (sp - X.spS) * Math.min(1, dt * 20); sp = X.spS; // per-frame position deltas are noisy; ~0.1 s smoothing keeps VALORANT's near-instant stop
+  if (air && !X.air && dy > 0) xUbOnce(X, "jump", "L", 0.35); else if (!air && X.air && sp < 0.35) xUbOnce(X, "land", "L", 0.3); // moving landings go straight back to the stride (no knee-buckle mid-run)
   X.air = air;
   let S = null; try { S = mode === "five" && xFvOK && FV.sp ? FV.sp : null; } catch (e) {}
   const plant = !!S && ((S.st === "carry" && S.c === b && S.pt > 0) || (S.st === "plant" && S.du === b));
@@ -3513,15 +3530,13 @@ function xUbAnim(b, M, sp, dt) {
   const back = mv && f < -0.25 * Math.hypot(f, sd);
   const yawT = mv && !air ? Math.max(-1.25, Math.min(1.25, back ? Math.atan2(-sd, -f) : Math.atan2(sd, Math.max(1e-4, f)))) : 0; // strafe: hips turn toward the move, torso counter-turns
   X.yaw += (yawT - X.yaw) * Math.min(1, dt * 8); X.pit = M.xap || 0;
-  const T = {}, cw = X.cb * 0.62; // crouch blend capped so the head drops ~0.45 m, matching the crouch head hitbox drop
-  const st = air ? "fall" : !mv ? "idle" : sp < 3.4 ? "walk" : "run", cs = mv ? "crouchWalk" : "crouch";
-  if (!air && mv) { const run = Math.max(0, Math.min(1, (sp - 2.7) / 2.1)); T.walk = (1 - cw) * (1 - run); T.run = (1 - cw) * run; } else T[st] = 1 - cw; T[cs] = (T[cs] || 0) + cw;
+  const cw = X.cb * 0.62, L = xUbLoco(sp, cw, back, air), T = L.T; // crouch blend capped so the head drops ~0.45 m, matching the crouch head hitbox drop
   if (X.lo) { for (const n of XUB_LO) T[n] = 0; T[X.lo] = 1; }
   T[X.uo || (M.w === "Knife" ? "knife" : "aim")] = 1;
   const fw = X.w.plant || 0; if (plant) T.plant = 1;
   for (const n of XUB_LO.concat(XUB_UPN)) if (T[n]) T[n] *= 1 - fw;
   const ts = (a, v) => { if (a) a.timeScale = v; };
-  ts(X.a.walk, (back ? -1 : 1) * Math.max(0.6, Math.min(1.8, sp / 1.6))); ts(X.a.run, (back ? -1 : 1) * Math.max(0.7, Math.min(1.5, sp / 4.5))); ts(X.a.crouchWalk, (back ? -1 : 1) * Math.max(0.6, Math.min(1.6, sp / 1.4)));
+  for (const n in L.R) ts(X.a[n], L.R[n]);
   xUbW(X, T, dt, 12);
   // head hitbox follows the crouch (size unchanged); standing it stays at 1.75 m
   if (b.head && b.head.position) b.head.position.y = 1.75 - 0.45 * (cw / 0.62);
@@ -3623,8 +3638,9 @@ const spCore = new THREE.MeshBasicMaterial({ color: 0xff2030 });
 const spHalo = new THREE.Sprite(new THREE.SpriteMaterial({ map: flTex, color: 0xff2030, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
 // pulsing red light-ring round the core (emissive look only, no real light)
 const spRing = new THREE.Mesh(new THREE.TorusGeometry(0.36, 0.028, 6, 32), new THREE.MeshBasicMaterial({ color: 0xff2030, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
-// Val cadence: ~1 beep/s at plant, speeding up to 2/s by 10 s, 4/s last 10 s, 8/s last 7 s
-const xSpHz = (f) => (f > 10 ? 1 + (45 - Math.min(45, f)) / 35 : f > 7 ? 4 : 8);
+// VALORANT Spike cadence (game data, valorant.gs/rules): a beep every 1 s, every 0.5 s under 20 s left (the wiki's "double
+// beeping"), 0.25 s under 10 s ("triple beeping", wiki.playvalorant.com/en-us/Spike), 0.15 s under 5 s, 0.1 s in the last second.
+const xSpHz = (f) => (f > 20 ? 1 : f > 10 ? 2 : f > 5 ? 4 : f > 1 ? 1 / 0.15 : 10);
 let xSpPh = 0, xSpOn = false;
 { const sD = XLM(0x2b2f36), sM = XLM(0x5a616b), hx = (rt, rb, h, m, y) => { const o = new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, h, 6), m); o.position.y = y; spike.add(o); return o; };
   hx(0.34, 0.38, 0.22, sD, -0.29); hx(0.26, 0.32, 0.3, sM, -0.03); hx(0.18, 0.26, 0.1, sD, 0.17); hx(0.09, 0.09, 0.5, spCore, 0.05);
@@ -3990,7 +4006,7 @@ function loop() {
   try { if (S.fps) { fr++; const now = performance.now(); if (now - fpsT > 500) { $("fps").textContent = Math.round(fr * 1000 / (now - fpsT)) + " FPS · " + xPing() + " ms · " + renderer.info.render.calls + " calls"; fr = 0; fpsT = now; } } } catch (e) { xE(e); }
   try {
     if (player) {
-      let cx = player.x, cy = 1.6 - (player.ch || 0) + (player.y || 0) + (player.eyeOffset || 0), cz = player.z;
+      let cx = player.x, cy = 1.6 - (player.ch || 0) + (player.y || 0) + (player.eyeOffset || 0) + (typeof vfCamDip === "function" ? vfCamDip(running && !paused ? dt : 0) : 0), cz = player.z; // + VALORANT landing view dip (spring, <= 2.5 cm)
       if (player !== xKL.p || (xKL.on && player.hp > 0)) xKLReset(); // observer pass: alive again (next round / revive) = back to own view
       XOB.fp = XOB.orb = null;
       if (mode !== "duel" && player.hp <= 0) { const a = xSpec(rt); xTP.cur = null; if (a) { if (xTP.on && xKL.sp) { xTPCam(a, dt); xTP.cur = a; cx = xTP.x; cy = xTP.y; cz = xTP.z; } else { const e = xObsEye(a, dt); XOB.fp = a; cx = e.x; cy = e.y; cz = e.z; } } else if (xKL.sp) { const o = xObsOrbit(running && !paused ? dt : 0); if (o) { XOB.orb = o; cx = o.x; cy = o.y; cz = o.z; } } } else xTP.cur = null;
@@ -4380,7 +4396,7 @@ function xBuildTeams() { let me = "Jett"; try { me = J.pick || "Jett"; } catch (
   let en = []; try { en = xDraw(5, F_MATES.slice()); } catch (e) {} if (!en || en.length !== 5 || new Set(en).size !== 5) en = xDraw(5, []); // no shared names with mates, so the scoreboard keeps 10 distinct rows
   F_EN.splice(0, F_EN.length, ...en); xTmLocked = false; }
 const FV = { you: 0, them: 0, atk: true, cr: 800, buy: 0, pri: null, sec: "Classic", menu: false, sp: { st: "", site: "" }, to: 0, cat: 0, bs: {}, alive: false, arm: 0 }; xFvOK = true;
-const BUY = [["Sidearms", [["Classic", 0], ["Shorty", 150], ["Frenzy", 450], ["Ghost", 500], ["Sheriff", 800]]], ["SMGs", [["Stinger", 1100], ["Spectre", 1600]]], ["Rifles", [["Bulldog", 2050], ["Guardian", 2250], ["Phantom", 2900], ["Vandal", 2900]]], ["Snipers", [["Marshal", 950], ["Outlaw", 2400], ["Operator", 4700]]], ["Shields", [["Light Shields", 400, 25], ["Heavy Shields", 1000, 50]]], ["Shotguns", [["Bucky", 850], ["Judge", 1850]]], ["Machine guns", [["Ares", 1600], ["Odin", 3200]]]];
+const BUY = [["Sidearms", [["Classic", 0], ["Shorty", 300], ["Frenzy", 450], ["Ghost", 500], ["Sheriff", 800]]], ["SMGs", [["Stinger", 1100], ["Spectre", 1600]]], ["Rifles", [["Bulldog", 2050], ["Guardian", 2250], ["Phantom", 2900], ["Vandal", 2900]]], ["Snipers", [["Marshal", 950], ["Outlaw", 2400], ["Operator", 4700]]], ["Shields", [["Light Shields", 400, 25], ["Heavy Shields", 1000, 50]]], ["Shotguns", [["Bucky", 850], ["Judge", 1850]]], ["Machine guns", [["Ares", 1600], ["Odin", 3200]]]];
 const capC = (n) => Math.min(9000, n);
 const BUY_SIL = { // look pass: flat white gun silhouettes, viewBox 64 x 20
   Classic: "M20 5h22v4H32l-2 9h-6l2-9h-6z",
@@ -9083,7 +9099,7 @@ function fiveTick(dt) {
     return;
   }
   XNF++; // replan budget (xPath: 2 per step) follows the sim step, not only the render frame
-  if (s.st === "plant") { s.t -= dt; if (s.t <= 0) { timeLeft = 0; updHud(); SFX.boom(); fDef().forEach((u) => { const q = fPos(u); if (Math.hypot(q.x - s.x, q.z - s.z) < 18) kfeed(s.pn || "Spike", fName(u), false, "Spike"); }); return fCheck(FV.atk, "Attackers win", "SPIKE DETONATED"); } timeLeft = s.t + dt; }
+  if (s.st === "plant") { s.t -= dt; if (s.t <= 0) { timeLeft = 0; updHud(); SFX.boom(); fDetonate(s); return fCheck(FV.atk, "Attackers win", "SPIKE DETONATED"); } timeLeft = s.t + dt; }
   else if (timeLeft - dt <= 0) { timeLeft = 0; updHud(); return fCheck(!FV.atk, "Time ran out before the plant"); }
   tick(dt); if (!running) return;
   if (s.st === "plant" && !fDef().length) return fCheck(FV.atk, "All defenders eliminated after the plant");
@@ -9102,7 +9118,7 @@ function fiveTick(dt) {
     if (site && (c !== player ? !c.nt || c.h4 : (hold && !player.mv && since > 0.15))) { s.pt += dt; s.pb = (s.pb || 0) - dt; if (s.pb <= 0) { s.pb = 0.5; SFX.plantBeep(c === player ? null : p); } if (c === player) { show = "Planting"; prog = s.pt / 4; } } // player plant: stationary; moving or firing cancels
     else { s.pt = 0; if (c === player && site) show = "Hold 4 to plant"; }
     if (s.pt >= 4) {
-      s.st = "plant"; s.site = site; s.pn = fName(c); if (SB[s.pn]) SB[s.pn].pl = (SB[s.pn].pl || 0) + 1; s.t = 45; s.x = p.x; s.z = p.z; s.dt = 0; s.beep = 0;
+      s.st = "plant"; s.site = site; s.pn = fName(c); if (SB[s.pn]) SB[s.pn].pl = (SB[s.pn].pl || 0) + 1; s.t = 45; s.x = p.x; s.y = p.y || 0; s.z = p.z; s.dt = 0; s.beep = 0;
       fsM.position.set(p.x, 0.4, p.z); fsM.visible = true; fsSet(); timeLeft = 45;
       (FV.atk ? F_MATES : F_EN).forEach((n) => FV.bs[n].cr = capC(FV.bs[n].cr + 300)); if (FV.atk) FV.cr = capC(FV.cr + 300); // +300 plant bonus to the attacking team
       if (c === player) jUlt(); feed(fName(c) + " planted the Spike on " + site); say("Spike planted · " + site, 1500); SFX.planted();
@@ -9125,16 +9141,24 @@ function fiveTick(dt) {
   if (show) { if (bar.firstChild) bar.firstChild.textContent = show + (s.st === "plant" && s.dt >= 3.5 ? " · half" : ""); const bi = bar.querySelector("i"); if (bi) bi.style.width = Math.min(100, prog * 100) + "%"; }
 }
 const alive4 = () => player.hp > 0 && !!(keys.Digit4 || keys.Numpad4);
+// VALORANT 1.11: surviving a lost round pays 1000 instead of the loss bonus for an attacker who never planted (time ran out) or a
+// defender alive after the detonation (a defender alive at a loss can only have lost to the detonation).
+function fSurvLoss(atk, alive) { if (!alive || FV.sw || FV.sr) return false; return atk ? !FV.sp.pn : true; }
+// VALORANT: the detonation's expanding sphere instantly kills every player it reaches, either team (wiki.playvalorant.com/en-us/Spike);
+// outer radius 3250 uu = 32.5 m (valorant.gs/rules). No kill credit. FV.det holds off the elimination checks the deaths would
+// trigger, so the round is decided once, as a detonation, after everyone in range is dead.
+const SPIKE_R = 32.5;
+function fDetonate(s) { FV.det = 1; try { [player].concat(allies, bots).filter(fAlive).forEach((u) => { const q = fPos(u), dy = s.y == null ? 0 : (q.y || 0) - s.y; if (Math.hypot(q.x - s.x, dy, q.z - s.z) > SPIKE_R) return; if (u === player) pDie("Spike", "Spike"); else if (allies.includes(u)) allyDie(u, "Spike", "Spike"); else kill(u, false, "Spike", "Spike"); }); } catch (e) {} FV.det = 0; }
 function fCheck(win, text, title) {
-  if (!running) return;
+  if (!running || FV.det) return;
   if (!title && FV.sp.st === "plant" && win !== FV.atk) return; // attackers wiped after plant: the spike still has to be defused
   running = false; fireHeld = false; buyMenu(false);
   if (FV.surr) {} else if (win) FV.you++; else FV.them++; // surrender: final score stays as it stood
   FV.lsY = win ? 0 : (FV.lsY || 0) + 1; FV.lsT = win ? (FV.lsT || 0) + 1 : 0; // loss streaks: 1900 / 2400 / 2900
   const lb = (s) => LOSS_B[Math.min(s, 3) - 1];
   const swB = FV.sw ? 4000 : null; // Swiftplay: 4000 each round plus that round's economy, capped (pistol round 5 resets via fEco on the swap)
-  FV.cr = capC((swB ?? FV.cr) + (win ? 3000 : lb(FV.lsY))); FV.alive = player.hp > 0; FV.arm = FV.alive ? player.armor || 0 : 0;
-  bots.concat(allies).forEach((u) => { const st = FV.bs[u.name], w2 = allies.includes(u) ? win : !win; if (!st) return; st.cr = capC((swB ?? st.cr) + (w2 ? 3000 : lb(allies.includes(u) ? FV.lsY : FV.lsT))); st.alive = u.alive; st.arm = u.alive ? u.armor || 0 : 0; });
+  FV.cr = capC((swB ?? FV.cr) + (win ? 3000 : fSurvLoss(FV.atk, player.hp > 0) ? 1000 : lb(FV.lsY))); FV.alive = player.hp > 0; FV.arm = FV.alive ? player.armor || 0 : 0;
+  bots.concat(allies).forEach((u) => { const st = FV.bs[u.name], w2 = allies.includes(u) ? win : !win; if (!st) return; st.cr = capC((swB ?? st.cr) + (w2 ? 3000 : fSurvLoss(allies.includes(u) ? FV.atk : !FV.atk, !!u.alive) ? 1000 : lb(allies.includes(u) ? FV.lsY : FV.lsT))); st.alive = u.alive; st.arm = u.alive ? u.armor || 0 : 0; });
   const n = FV.you + FV.them, over = FV.surr ? true : FV.sw ? Math.max(FV.you, FV.them) >= 5 : FV.sr ? Math.max(FV.you, FV.them) >= (FV.srWin || 4) : Math.max(FV.you, FV.them) >= FIVE_WIN && Math.abs(FV.you - FV.them) >= 2, ot = !FV.sr && !FV.sw && !over && n >= 24, swap = !over && (FV.sw ? n === 4 : FV.sr ? n === 3 : n === 12 || ot);
   if (FV.sw && !over) { try { jUlt(); } catch (e) {} bots.concat(allies).forEach((u) => { try { if (window.xBotUltGain) window.xBotUltGain(u.name); } catch (e) {} }); } // +1 ult point per round
   xRes(win, text, over, !FV.surr && FV.you > FV.them, title);
@@ -9144,7 +9168,7 @@ function fCheck(win, text, title) {
   FV.to = setTimeout(() => {
     $("xBan").style.display = "none";
     if (!over) { if (swap) { FV.atk = !FV.atk; FV.lsY = FV.lsT = 0; if (!ot) fEco(); }
-      if (ot) { FV.cr = 5000; Object.values(FV.bs).forEach((s) => s.cr = 5000); } // overtime: 5000 each round, sides swap every round, win by 2
+      if (ot) { FV.cr = 5000; Object.values(FV.bs).forEach((s) => s.cr = 5000); try { if (jOn()) J.ult = Math.max(0, K().u - 3); const C = window.xBotUC; if (C) bots.concat(allies).forEach((u) => { C[u.name] = Math.max(0, (window.xBotUltCost ? window.xBotUltCost(xAg(u)) : 7) - 3); }); } catch (e) {} } // overtime also sets every ult 3 points short (VALORANT Competitive) // overtime: 5000 each round, sides swap every round, win by 2
       return fRound(); }
     const won = !FV.surr && FV.you > FV.them; if (won) stats.w++; showStats();
     if (document.pointerLockElement) document.exitPointerLock();
@@ -12729,7 +12753,7 @@ moveP=function(dt,run,hold){
  P.tagT=Math.max(0,(P.tagT||0)-dt);let speed=6.75*(kn?1:p.runSpeedMultiplier||.8)*(ads&&p.adsStats?p.adsStats.runSpeedMultiplier:1);if(J.dis>0)speed*=1.6;if(typeof sgSlow==='function')speed*=sgSlow(P);
  const native=typeof nmActive==='function'&&nmActive(),world={ground:(x,z,y)=>groundAt(x,z,.3,y),blocked:(x,z,r,y,h)=>native?sgBlk(x,z,r,y)||nmBlocked(native,x,z,r,y,h):blocked(x,z,r,y),ceiling:native?(x,z,low,high)=>{const ray=new THREE.Ray(new THREE.Vector3(x,low+.01,z),new THREE.Vector3(0,1,0)),hit=native.bvh.raycastFirst(ray,THREE.DoubleSide);return !!hit&&hit.distance<high-low;}:null};
  const result=VF.model.step(P,{x,z,jump:!!kk.Space,duck:!!(kk.ControlLeft||kk.ControlRight),walk:!!(kk.ShiftLeft||kk.ShiftRight),speed,tag:P.tagT>0?P.tagK:1,hold:!!hold||!!J.dr},dt,world);
- if(result.landed){SFX.land();P.st=0;}
+ if(result.landed){SFX.land();P.st=0;const fd=VF.model.fallDamage(result.drop);if(fd>0&&running&&mode!=='aim'&&mode!=='duel'&&!(typeof MP!=='undefined'&&MP.on)&&P.hp>0){P.hp=Math.max(0,P.hp-fd);try{updHud();}catch(e){}if(P.hp<=0)pDie('Fall','Fall');}} // fall damage: health only (shields ignored); online the server applies it
  // Footfalls follow distance. Shift-walking and crouching stay silent.
  P.footDistance=(P.footDistance||0)+result.speed*dt;if(P.footDistance>1.85&&P.mv&&!P.air&&!P.wk&&!P.cr){P.footDistance%=1.85;SFX.selfStep(P.y>1);}
  // Preserve explicit ability impulses; ordinary air steering never creates a speed boost.
@@ -12762,6 +12786,11 @@ xvFPPlay=function(F,kind,phase){const label=kind==='idle'?'Idle':kind.charAt(0).
  if(phase!=null){for(const action of [F.action,F.gaction])if(action)action.time=Math.min(action.getClip().duration-.0001,Math.max(0,phase)*action.getClip().duration);F.am.update(0);F.gm.update(0);}
 };
 // A separate lens keeps weapon proportions stable while the world camera zooms.
+// Landing view dip: VALORANT's view dips briefly on landing (the frame-by-frame captures in "VALORANT Physics: Explained"
+// time a jump to the crosshair's return "because of landing view bob"). A critically damped spring kicked by the landing
+// impact: about 2.5 cm at most, level again in ~0.3 s, never a step. No camera bob while running (VALORANT keeps it level).
+var VF_CAM={y:0,v:0,air:false};
+function vfCamDip(dt){const P=player,C=VF_CAM;if(!P||P.hp<=0){C.y=C.v=0;C.air=false;return 0;}if(C.air&&!P.air)C.v-=.9*Math.min(1,P.landImpact||.5);C.air=!!P.air;const w=13.4;let left=Math.min(.1,Math.max(0,dt));while(left>1e-6){const h=Math.min(left,1/240);C.v+=(-w*w*C.y-2*w*C.v)*h;C.y+=C.v*h;left-=h;}if(Math.abs(C.y)<1e-5&&Math.abs(C.v)<1e-4)C.y=C.v=0;return Math.max(-.04,Math.min(0,C.y));}
 var VF_VIEW={scene:new THREE.Scene(),camera:new THREE.PerspectiveCamera(55,1,.015,10),phase:0,lastAir:false,land:0,swayX:0,swayY:0,bob:0,ready:false};
 VF_VIEW.scene.add(new THREE.HemisphereLight(0xffffff,0x8a95a5,1.7));{const light=new THREE.DirectionalLight(0xffffff,.9);light.position.set(-1,3,2);VF_VIEW.scene.add(light);}
 // Every renderer owns its own draw function. Rebind after AA/quality recreation;
@@ -12771,9 +12800,9 @@ vfBindRenderer(renderer);
 {const remake=xRemake;xRemake=function(){remake();vfBindRenderer(renderer);};}
 
 function vfViewTick(F,dt){const P=player,V=VF_VIEW;if(!F)return;
- if(F.root.parent!==V.scene){if(F.root.parent)F.root.parent.remove(F.root);V.scene.add(F.root);}if(V.lastAir&&!P.air)V.land=Math.min(1,P.landImpact||.5);V.lastAir=!!P.air;V.land=VF.model.damp(V.land,0,12,dt);const speed=Math.hypot(P.vx||0,P.vz||0),target=P.mv&&!P.air?Math.min(1,speed/5.4):0;V.bob=VF.model.damp(V.bob,target,16,dt);V.phase+=speed*dt*3.4;
+ if(F.root.parent!==V.scene){if(F.root.parent)F.root.parent.remove(F.root);V.scene.add(F.root);}if(V.lastAir&&!P.air)V.landT=Math.min(1,P.landImpact||.5);V.lastAir=!!P.air;V.landT=VF.model.damp(V.landT||0,0,10,dt);V.land=VF.model.damp(V.land,V.landT,30,dt);V.vyo=VF.model.damp(V.vyo||0,Math.max(-.02,Math.min(.02,-(P.vy||0)*.002)),14,dt);const speed=Math.hypot(P.vx||0,P.vz||0),target=P.mv&&!P.air?Math.min(1,speed/5.4):0;V.bob=VF.model.damp(V.bob,target,16,dt);V.phase+=speed*dt*3.4;
  V.swayX=VF.model.damp(V.swayX,Math.max(-1,Math.min(1,VM.sx||0)),18,dt);V.swayY=VF.model.damp(V.swayY,Math.max(-1,Math.min(1,VM.sy||0)),18,dt);const k=xAD.k||0;
- F.root.scale.setScalar(1);F.root.position.copy(F.origin);F.root.position.x+=.045-V.swayX*.012+Math.sin(V.phase)*.006*V.bob;F.root.position.y-=.035+Math.abs(Math.cos(V.phase))*.008*V.bob+V.land*.025;F.root.position.y+=Math.max(-.02,Math.min(.02,-(P.vy||0)*.002));F.root.rotation.set(-V.swayY*.009,Math.PI/2-V.swayX*.01,-V.swayX*.012+Math.sin(V.phase)*.003*V.bob);
+ F.root.scale.setScalar(1);F.root.position.copy(F.origin);F.root.position.x+=.045-V.swayX*.012+Math.sin(V.phase)*.006*V.bob;F.root.position.y-=.035+Math.abs(Math.cos(V.phase))*.008*V.bob+V.land*.025;F.root.position.y+=V.vyo;F.root.rotation.set(-V.swayY*.009,Math.PI/2-V.swayX*.01,-V.swayX*.012+Math.sin(V.phase)*.003*V.bob);
  if(k>0){F.root.updateMatrixWorld(true);const optic=F.ws.getObjectByName('Reflex')||F.ws.getObjectByName('Scope');if(optic){const p=optic.getWorldPosition(new THREE.Vector3());F.root.position.x-=p.x*k;F.root.position.y-=(p.y+.025)*k;}else{F.root.position.x-=.12*k;F.root.position.y+=.045*k;}F.root.position.z+=.07*k;}
 }
 // Preload the selected loadout to reduce fallback frames during weapon switches.
@@ -12786,7 +12815,7 @@ xvFPClear=function(F){if(!F)return;if(F.root.parent)F.root.parent.remove(F.root)
 // Same-weapon equips (buying, respawning, draw cancellation) restart the native equip animation too.
 {const tick=vmTick;vmTick=function(dt){VF.time+=dt;const w=vfWeapon(),changed=VF.drawWeapon!==w,redraw=VM.sw>(VF.drawRemaining||0)+.001;if(changed){VF.drawWeapon=w;VM.sw=VM.swT=xEq(w);VF.sequence=VF.bloom=0;VF.shot=-10;}if((changed||redraw)&&XV.fp&&XV.fp.w===w){XV.fp.kind=null;xvFPPlay(XV.fp,'equip');}const prev=XV.fp;tick(dt);if(XV.fp&&XV.fp!==prev){XV.fp.kind=null;xvFPPlay(XV.fp,VM.sw>0?'equip':'idle',VM.sw>0?1-VM.sw/VM.swT:0);}if(XV.fp&&XV.fp.root.parent===camera)VF_VIEW.scene.add(XV.fp.root);VF.drawRemaining=VM.sw;};}
 {const fire=duelShoot;duelShoot=function(){if(VM.sw>0)return;return fire.apply(this,arguments);};}
-window.xValorantFeel={state:VF,view:VF_VIEW,model:VF.model,weapon:vfWeapon,profile:vfProfile};
+window.xValorantFeel={state:VF,view:VF_VIEW,cam:VF_CAM,camDip:vfCamDip,model:VF.model,weapon:vfWeapon,profile:vfProfile};
 // ---- END VALORANT FEEL ----
 
 // Repair pass: bone-following damage volumes and joint-constrained corpse physics.
@@ -12969,7 +12998,19 @@ mpJoin=function(code){code=String(code||'').toUpperCase();if(!/^[A-HJ-NP-Z2-9]{6
 mpQuick=async function(mode){MP.mode=mode||MP.mode;mpMsg('Finding a live server room…');try{const r=await fetch(NET.url+'/rooms'),data=await r.json(),room=data.rooms.find(r=>r.mode===MP.mode&&r.players<10&&(window.xQMap==='random'||r.map===(window.xQMap||MP.map)));if(room)netConnect(false,room.code,true);else mpCreate(true,MP.mode);}catch(e){mpMsg('Room list unavailable. Try a private room.');}};
 mpStart=function(){if(NET.host&&MP.st==='room')netSend({t:'start'});};
 const netUI0=mpUI;mpUI=function(){netUI0();const start=mpEl('xOnStart');if(start){start.hidden=!NET.host;start.disabled=MP.st!=='room';}const map=mpEl('xOnMap');if(map)map.disabled=!!MP.on;const wait=mpEl('xOnWait');if(wait&&NET.host)wait.textContent='Server room ready';document.querySelectorAll('#xOn [data-om]').forEach(b=>{b.disabled=MP.on;});};
-const netSelf0=mpCliSelf;mpCliSelf=function(e){const seq=MP.sq;netSelf0(e);if(!NET.socket)return;const err=Math.hypot(player.x-e[4],player.z-e[6]);if(seq!==e[14]||err>.75){player.x=e[4];player.y=e[5];player.z=e[6];}else{player.x+=(e[4]-player.x)*.25;player.z+=(e[6]-player.z)*.25;if(Math.abs(player.y-e[5])>.35)player.y=e[5];}if(netEquipWant&&(e[11]===netEquipWant||performance.now()>netEquipUntil))netEquipWant=null;const held=rw==='knife'?'Knife':wName();/* a swap the server has not applied yet: its snapshots still name the old gun (and its ammo) for a round trip; reverting to it lost the swap (netWeapon was reset, so the equip was never sent) */
+// Movement reconciliation: the server echoes the last input it applied (row[19]) and how long it has applied it (row[20]).
+// The page keeps its predicted path and the send time of every input, and compares the server position with where its own
+// prediction was at that moment, not with where it is now. The current position runs ahead of every snapshot by the round
+// trip, so the old comparison pulled a running player back 25 % toward the past each snapshot and snapped a jumping player
+// 0.3-0.7 m down whenever the gap passed 0.35 m (jumps looked jarring online). Small residuals (< 5 cm, < 15 cm vertical)
+// are left alone, larger ones are eased in by 20 % per snapshot, and > 1 m (teleport, wall clip, ability) snaps.
+NET.inLog=[];NET.path=[];
+function netPathAt(t){const P=NET.path;if(!P.length||t<P[0].t)return null;for(let i=P.length-1;i>=0;i--)if(P[i].t<=t){const a=P[i],b=P[i+1];if(!b)return a;const k=(t-a.t)/Math.max(1e-6,b.t-a.t);return {x:a.x+(b.x-a.x)*k,y:a.y+(b.y-a.y)*k,z:a.z+(b.z-a.z)*k};}return null;}
+function netPredicted(seq,age){if(!(seq>0)||!Number.isFinite(age))return null;let e=null;for(let i=NET.inLog.length-1;i>=0&&!e;i--)if(NET.inLog[i].seq===seq)e=NET.inLog[i];if(!e)return null;return netPathAt(Math.min(performance.now(),e.t+age*1000));}
+function netShiftPath(dx,dy,dz){for(const p of NET.path){p.x+=dx;p.y+=dy;p.z+=dz;}}
+{const move0=moveP;moveP=function(){const r=move0.apply(this,arguments);if(NET.socket&&player){const now=performance.now();NET.path.push({t:now,x:player.x,y:player.y||0,z:player.z});while(NET.path.length&&NET.path[0].t<now-1500)NET.path.shift();}return r;};}
+function netReconcile(e,ref){const ex=e[4]-ref.x,ey=e[5]-ref.y,ez=e[6]-ref.z,eh=Math.hypot(ex,ez);if(eh>1||Math.abs(ey)>1){player.x+=ex;player.y+=ey;player.z+=ez;netShiftPath(ex,ey,ez);return 'snap';}const k=eh<.05?0:.2,ky=Math.abs(ey)<.15?0:.2;if(!k&&!ky)return 'kept';player.x+=ex*k;player.z+=ez*k;player.y+=ey*ky;netShiftPath(ex*k,ey*ky,ez*k);return 'eased';}
+const netSelf0=mpCliSelf;mpCliSelf=function(e){const seq=MP.sq;netSelf0(e);if(!NET.socket)return;const ref=seq===e[14]?netPredicted(e[19],e[20]):null;if(seq!==e[14]){player.x=e[4];player.y=e[5];player.z=e[6];NET.path.length=0;}else if(ref)NET.lastFix=netReconcile(e,ref);else{const err=Math.hypot(player.x-e[4],player.z-e[6]);if(err>.75){player.x=e[4];player.y=e[5];player.z=e[6];}else{player.x+=(e[4]-player.x)*.25;player.z+=(e[6]-player.z)*.25;if(Math.abs(player.y-e[5])>.35)player.y=e[5];}}if(netEquipWant&&(e[11]===netEquipWant||performance.now()>netEquipUntil))netEquipWant=null;const held=rw==='knife'?'Knife':wName();/* a swap the server has not applied yet: its snapshots still name the old gun (and its ammo) for a round trip; reverting to it lost the swap (netWeapon was reset, so the equip was never sent) */
  if(!netEquipWant&&e[11]&&WEAP[e[11]]&&wName()!==e[11]&&rw!=='knife'){netRec=true;try{if(MP.m5){const slot=['Classic','Shorty','Frenzy','Ghost','Sheriff'].includes(e[11])?'pis':'pri';if((slot==='pri'?FV.pri:FV.sec)!==e[11])bEquip(e[11],slot);swapW(slot);}else bEquip(e[11],'pri');}finally{netRec=false;}netWeapon=e[11];}const same=(rw==='knife'?'Knife':wName())===e[11];/* ammo only for the gun the server holds: mid-swap it was the other gun's, written into this slot */if(same&&e[16]!=null&&MP.m5){rsv=e[16];if(slots[rw])slots[rw].rsv=rsv;}if(same&&e[15]!=null&&!(reloading>0)){/* reloading > 0, not truthiness: a finished reload can leave it a hair below 0 */if(rw!=='knife')ammo=e[15];if(slots[rw])slots[rw].ammo=ammo;}updHud();};
 const netWalls=new Map();
 function netClearEffects(){document.getElementById('netBlind')?.remove();for(const m of netWalls.values()){scene.remove(m);m.geometry.dispose();m.material.dispose();}netWalls.clear();}
@@ -12978,7 +13019,7 @@ const netSgBlk0=sgBlk;sgBlk=function(x,z,r,y=0){if(!NET.socket)return netSgBlk0(
 const netShoot0=shoot;shoot=function(){if(NET.socket&&(netReyna?.dismiss>0||netChannel?.remaining>0))return false;const before=ammo,k0=kSwing,r=netShoot0.apply(this,arguments);const swung=rw==='knife'&&kSwing!==k0;if(NET.socket&&MP.st==='game'&&(swung||(rw!=='knife'&&ammo<before))){NET.firePulse=performance.now()+80;NET.fireHeavy=swung&&kHv===1?NET.firePulse:0;}return r;}; // knife: one pulse per swing the client actually started (a click during a swing sent a pulse the server could turn into an extra hit); a heavy swing sends kh so the server applies the heavy cooldown/damage
 /* window, not document: the keymap layer re-sends a rebound key on window only (it never reaches document) */addEventListener('keydown',e=>{if(e.code!=='KeyR'||!(NET.socket&&MP.st==='game')||xKbSkip(e)||e.repeat)return;netSend({t:'reload'});if(reloading>0)netReload=true;/* the page's own R handler already started the local reload: the loop must not send it again */});
 // Camera, server shots and bots all treat positive pitch as looking up; send it unchanged.
-function netInputMsg(kk,w){return {t:'in',seq:++NET.seq,r:yaw,p:pitch,f:(kk.KeyW?1:0)-(kk.KeyS?1:0),s:(kk.KeyD?1:0)-(kk.KeyA?1:0),j:kk.Space?1:0,c:kk.ControlLeft||kk.ControlRight?1:0,w:kk.ShiftLeft||kk.ShiftRight?1:0,ads:ads?1:0,h4:kk.Digit4||kk.Numpad4?1:0,fire:(w!=='Knife'&&!WEAP[w]?.semi&&fireHeld)||NET.firePulse>performance.now()?1:0,kh:NET.fireHeavy>performance.now()?1:0};} // a held knife click is one swing on the client, so it is a pulse (not held fire) online
+function netInputMsg(kk,w){const seq=++NET.seq;const log=NET.inLog||(NET.inLog=[]);log.push({seq,t:performance.now()});if(log.length>60)log.shift();return {t:'in',seq,r:yaw,p:pitch,f:(kk.KeyW?1:0)-(kk.KeyS?1:0),s:(kk.KeyD?1:0)-(kk.KeyA?1:0),j:kk.Space?1:0,c:kk.ControlLeft||kk.ControlRight?1:0,w:kk.ShiftLeft||kk.ShiftRight?1:0,ads:ads?1:0,h4:kk.Digit4||kk.Numpad4?1:0,fire:(w!=='Knife'&&!WEAP[w]?.semi&&fireHeld)||NET.firePulse>performance.now()?1:0,kh:NET.fireHeavy>performance.now()?1:0};} // a held knife click is one swing on the client, so it is a pulse (not held fire) online
 let netWeapon='',netReload=false,netEquipWant=null,netEquipUntil=0,netRec=false;
 // A local swap sends its equip at once and holds the snapshot reconcile (above) until the server names that gun or 1 s passes.
 const netSwap0=swapW;swapW=function(s){const r=netSwap0.apply(this,arguments);if(!netRec&&NET.socket&&NET.socket.readyState===1&&MP.st==='game'&&NET.ready){const w=rw==='knife'?'Knife':wName();if(w!==netWeapon){netWeapon=w;netSend({t:'equip',w});netEquipWant=w;netEquipUntil=performance.now()+1000;}}return r;};
