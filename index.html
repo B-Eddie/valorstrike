@@ -12972,6 +12972,8 @@ try {
       state() {
         return { running: !!running, mode, dm: !!FV.dm, tdm: !!FV.tdm, map: FV.map,
           timeLeft: (typeof timeLeft !== 'undefined') ? timeLeft : null, paused: (typeof paused !== 'undefined') ? !!paused : null, xLdOn: !!window.xLdOn,
+          ammo: (typeof ammo !== 'undefined') ? ammo : null,
+          fcd: (typeof fcd !== 'undefined') ? fcd : null, fireHeld: (typeof fireHeld !== 'undefined') ? !!fireHeld : null, reloading: (typeof reloading !== 'undefined') ? reloading : null, vmsw: (typeof VM !== 'undefined') ? VM.sw : null,
           xnf: (typeof XNF !== 'undefined') ? XNF : null, cov: (typeof xCov === 'function') ? !!xCov() : null, gate: (typeof xGate === 'function') ? !!xGate() : null, lob0: (typeof xLob0 !== 'undefined') ? !!xLob0 : null, resUp: (typeof xResUp === 'function') ? !!xResUp() : null,
           bots: bots.length, alive: bots.filter((b) => b.alive).length,
           botsPos: bots.map((b) => [b.name, +b.g.position.x.toFixed(1), +b.g.position.y.toFixed(1), +b.g.position.z.toFixed(1), !!b.alive]),
