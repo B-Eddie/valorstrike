@@ -125,6 +125,15 @@ typed-array copy per attribute), precomputed per-level bins in the split, typed-
 bounding-sphere pass: 1.8-2.0 s -> 0.9-1.2 s per map. Triangles are preserved exactly (`tris out` = source on all six;
 `work/test_map_optimizer.cjs` checks every corner's position/normal/uv). Raw numbers: `work/validation/map/perf.json`.
 
+Load cost, pass C2 (profiled with `node --cpu-prof` on `server/tools/.scratch/opt/realopt3.mjs` / `realopt4.mjs`):
+`nmOptimizeScene` was one large function whose hot loops (triangle gather, attribute copy) ran mostly unoptimized - the
+engine recompiled it 4-5 times per map (100-190 ms each, "wrong map" deopts) - so its own time was ~0.9 s of Lotus's
+optimize. The loops are now small functions (`nmGather`, `nmOffset`, `nmCopy3/2/N`, `nmCentroids` for the plan's
+centroids) that optimize in a few ms; output is unchanged (triangles out = source on all six, `work/test_map_optimizer.cjs`).
+Optimize ms on the loaded sandbox (load ~15, same run, before -> after): Ascent 2050 -> 1327, Bind 1470 -> 1082, Haven
+2163 -> 1385, Split 1964 -> 1463, Lotus ~1990 -> ~1475, Breeze 1923 -> 1114 (-25..-42%; the idle-sandbox column above was
+measured before). Left: the plan's median split (~0.3 s Lotus, loaded) and GC.
+
 Not done (measured or judged not worth it):
 - PVS occlusion culling: built and measured (24 m columns, 8 m viewer cells, conservative ray marching): it removed
   only ~3% more triangles on Lotus (61% of columns visible from an average cell: open sightlines + vista), not worth
@@ -264,6 +273,31 @@ Two motor bugs (fixed in the shared motor, `server/src/motor.cjs` = `vendor/valo
 - Stuck (placed on a node, cannot walk or jump out): 0 on all six maps. Embedded nodes: Ascent 22 (17 inside the A ramp
   pit player clip, as intended), others 1-7; none is a spawn candidate (spawns test 0.43 m clearance) and the DM spawn
   test is the same.
+
+Re-sweep after C1/C2 (stride 2 + walk-in trap test on every sampled node, RENDER=1; `.scratch/sweepA-<map>.json`):
+<!--RESWEEP-->
+- Ascent (C1 motor; 4,772 nodes, 16,018 edges): 0 stuck, 1 refused edge (the visible `WiresDark` cable bundle at A,
+  `tall`, correct), 1 walk-in trap: walking -z from (30.25, 9.07, -9.25) wedged the capsule at (30.25, 9.2, -10.19) under
+  a 1.66 m soffit over bumpy floor - lifting 5 cm to clear the bump put the head into the soffit while 5 mm cleared it.
+  Fix (shared motor): the lean-wall step-up tries the lowest of 0.5 / 1.5 / 3 / 5 cm that clears ahead; it walks out in
+  4 directions. Fixture added (Ascent traps).
+- Bind (C2 motor; 4,988 nodes, 17,700 edges): 0 stuck, 0 refused edges, 1 walk-in trap: (-53.25, 7.56, 21) walking
+  (-0.71, 0.71) wedges the capsule at (-53.49, 7.41, 21.32) in a rock pocket between a mound and a wall leaning over at
+  head height; every standing move meets one of them within 2 mm at any lift, so it is not fixed in the motor. It walks
+  out crouched (225-315 deg, 1.2-1.4 m in 0.6 s) or with a jump toward (0.71, -0.71): left for the browser list.
+- Haven (C2 motor; 4,081 nodes, 14,575 edges): 0 stuck, 0 traps, 1 refused edge (9, 8, -58) -> (9, 7.99, -57.25): a 5 mm
+  paving bump under a low ceiling (1.8-2.2 m over the floor) - the step-up tested headroom for the full 40 cm step and
+  refused it. Fix (shared motor): headroom is tested for the lift actually used (full step, or the few cm of the lean-wall
+  lift). Fixture added (Haven edges).
+- Split (3,902 nodes, 13,421 edges): 0 stuck, 0 refused edges, 1 walk-in trap: walking (-0.71, 0.71) from (-3.5, 9.02, -47)
+  into a rounded prop by a wall (centre (-4.12, 9, -46.4), 0.5 m wide, 0.8 m tall, domed collision) stepped onto its lip
+  and climbed the curved side a few cm per sub-step - each lift cleared by contact at the capsule's rim, no single riser
+  over the step height - ending 0.8 m up, embedded 1.7 cm on its shoulder. A motor-wide slope rule (lift must end on
+  floor within 0.2 m of the axis) was tried and dropped: it also refuses ordinary stairs, whose first riser is met by the
+  rim 0.4 m ahead (`work/test_map_riser.cjs` failed). Fix: a player clip on the prop's footprint (`CLIPS.split`, octagon
+  r 0.27, feet band 9..9.85 m) makes it a post; it now stops beside it and walks off in 5 directions, jumping on top
+  still works. No playable node is clip-blocked (one non-playable node 0.64 m from the centre is). Fixture added (Split traps).
+- Lotus (4,348 nodes, 14,676 edges): 0 stuck, 0 traps, 0 refused edges.
 
 Spawns and plant sites (all six maps): attacker / defender spawn candidates 246-660 / 103-634 per map, none embedded or
 stuck, every candidate reaches every site on the navigation. Every site anchor lies in its own plant zone, its nearest
