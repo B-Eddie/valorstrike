@@ -497,3 +497,6 @@ in-process server; it keeps the VALORANT FEEL block the audit fixture strips, an
   TDM / DM loadouts, floor guns, buy-menu stat card). `work/test_reserve_ammo.cjs` (page table == server table, real page
   buys), `test-weapons.js`; `test_client_online_gunplay.cjs` next-round refill checks the table (Vandal 25 / 50).
   `test_floor_pickup.cjs` / `test_tdf_round_reset.cjs` cuts now include `xWOwn` (gate_m9 failures on a4c5e5d) and `xRsv`.
+- **Reyna Leer offline threw `d is not defined`** (gate_m9 on a4c5e5d, test_client_abilities ascent Reyna): the merged Leer
+  windup comment was a `//` line comment on a one-line `bots.forEach` body, so it swallowed the body's declarations. Now a
+  block comment (origin/hark 8dd8565 has the same fix).
