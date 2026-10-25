@@ -197,3 +197,18 @@ streaks now only reset on a real advance (>=0.75 u). 42/42 client suites.
 Six-map five-soak sweep, all PASS, no stalls observed in these sampled runs: breeze, haven,
 ascent, bind (this round) + split, lotus (previous). Rounds ended by combat/timer; natural
 push/plant was NOT observed this sweep (attackers wiped) - still owed.
+
+## A Sewer anatomy resolved + repair path (split) - 07:56 EDT
+Under the descent-kept prune, "A Sewer" = 249-node region x 6.3..40.8, y 3.0..8.5, z 10.8..21.3
+(the long east channel, descending to y=3; the (-46,2.5) grate area connects to main via kept
+drop edges - drop-in only, no walk-out; nmPlace guard + stall breaker cover it).
+The sewer's ONLY original links to the main component: flat edges at the west end
+(x 5.5-6.3, y 8.5, z 13-14.5). Doorway characterization: the entrance is crossed by a row of
+thin posts (railing/balusters, ~0.4-0.6 u gaps - impassable to a 0.45-radius capsule on the
+node-row chords), BUT fully clear standing lanes exist between node rows (z=13.1, 13.7, 14.3,
+14.9; vertical profile clear 8.5-10.8). Repair path (next): in-page connector builder - sweep
+capsule-valid lanes across the gate, insert verified waypoint node(s) + edges into
+navigation.json (bake-time, browser-verified), re-audit until A Sewer rejoins the main
+component honestly. No geometry edits; no fencing.
+Correction to prior wording: natural push->plant evidence DOES exist (haven five-soak, C site,
+earlier session); warp-plant was only the breeze-B targeted check. More natural samples owed.

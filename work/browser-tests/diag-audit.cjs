@@ -84,11 +84,27 @@ const {serve, launch, boot} = require('./lib.cjs');
         (artic[k] = artic[k] || {n: 0, samples: []}).n++;
         if (artic[k].samples.length < 3) artic[k].samples.push({a: N[a].map(v => +v.toFixed(1)), b: N[b].map(v => +v.toFixed(1))});
       }
+      const fragDetail = [];
+      { const byCid = {};
+        for (let i = 0; i < N.length; i++) { if (cid[i] > 0 && C.playable[i]) (byCid[cid[i]] = byCid[cid[i]] || []).push(i); }
+        for (const [c, ids] of Object.entries(byCid)) { if (ids.length < 4) continue;
+          const xs = ids.map(i => N[i][0]), ys = ids.map(i => N[i][1]), zs = ids.map(i => N[i][2]);
+          const inSet = new Set(ids);
+          const links = [];
+          for (const i of ids) for (const b of A[i]) if (C.playable[b] && !inSet.has(b) && cid[b] === 0 && links.length < 4)
+            links.push({a: N[i].map(v => +v.toFixed(1)), b: N[b].map(v => +v.toFixed(1)), dh: +(N[b][1]-N[i][1]).toFixed(2)});
+          const lost = callouts.filter(cl => ids.includes(cl.i)).map(cl => cl.name);
+          fragDetail.push({cid: +c, size: ids.length,
+            bounds: [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys), Math.min(...zs), Math.max(...zs)].map(v => +v.toFixed(1)),
+            callouts: lost, links});
+        }
+        fragDetail.sort((a, b) => b.size - a.size);
+      }
       const defI = near(C.meta.defender[0], C.meta.defender[2], C.meta.defender[1]);
       const spawnCids = (C.nav.spawnNodes || []).map(i => cid[i]);
       const before = measure(A), after = measure(pruned);
       return {map: C.key, nodes: N.length, playable: C.playable.reduce((n, v) => n + v, 0), eTotal,
-              r45: {eBad: r45.eBad, eBadKept: r45.eBadKept, trap: r45.trap, after: r45.after, frags: r45.frags}, r45bad: r45.bad, artic, compSize, mainCid, defCid: cid[defI], spawnCids,
+              r45: {eBad: r45.eBad, eBadKept: r45.eBadKept, trap: r45.trap, after: r45.after, frags: r45.frags}, r45bad: r45.bad, artic, compSize, mainCid, defCid: cid[defI], spawnCids, fragDetail,
               r40: {eBad: r40.eBad, trap: r40.trap, after: r40.after, frags: r40.frags},
               ms: +(performance.now() - t0).toFixed(0), before, after: r45.after, fragSizes: (() => { const seen = new Uint8Array(N.length); const out = [];
         for (let i = 0; i < N.length; i++) { if (seen[i] || !C.playable[i]) continue; const q = [i]; seen[i] = 1; let size = 0;
