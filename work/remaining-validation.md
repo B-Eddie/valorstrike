@@ -51,3 +51,10 @@ This is an implementation and evidence ledger, not a release sign-off. Source an
 From `server/`: `npm ci`, `npm run build:worlds`, `npm test`, `npm run test:client`, then `npm run dev`.
 From the repository root in a second terminal: `python3 -m http.server 8876 --bind 127.0.0.1`.
 Open `http://127.0.0.1:8876/`; localhost clients use the local game service on port 8787. Local dev intentionally enables the Spike prototype for QA. These instructions do not change production mode availability.
+
+## Breeze TDM ally stall (fixed, 5:12 AM)
+- Symptom: TDM allies parked at breeze west edge (-71,7,1) for the whole match, blk=1, npT=0.4 refreshing every tick.
+- Root cause: dmGo() runs TDM/DM as mode="five" with FV.dm set, so the ally hunt branch `mode !== "five"` never fired; gx,gz defaulted to the spawn anchor (a.ox/a.oz), and the xGoal wrapper returned null (no spike) so nothing replaced it. Bots pathed back toward their own spawn and parked on the first unreachable hop.
+- Also resolved the earlier np-matches-native-node mystery: xPath IS wrapped for native maps (index.html:12791, nmNext over native nav); npT=0.4 (not 1.5) proved the wrapper was live. So the gNav fixes do not route native-map bots; nmNext does.
+- Fix: hunt branch now `mode !== "five" || FV.dm`; the five-mode xGoal override is now guarded `!FV.dm` (matching the existing enemy-bot pattern at :4259).
+- Evidence: diag-stall2.cjs (new, committed) traced stalled units pre-fix (ng=(-74,-1.8)=spawn anchor while xNb=(-31,-29)); post-fix 70s breeze TDM shows zero units still 5s+. 40 client suites green.

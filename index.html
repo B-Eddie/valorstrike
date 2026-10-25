@@ -4313,9 +4313,9 @@ function tick(dt) {
     if (!running) return;
     let vx = 0, vz = 0, gx = a.ox, gz = a.oz == null ? 1.2 : a.oz;
     if (rf) { const nb = a.xNb; if (nb) { gx = nb.g.position.x; gz = nb.g.position.z; } }
-    else if (mode !== "five") { const nb = a.xNb; if (nb && nb.alive) { gx = nb.g.position.x; gz = nb.g.position.z; } } // TDM: hunt the nearest enemy like enemy bots do instead of idling at spawn
+    else if (mode !== "five" || FV.dm) { const nb = a.xNb; if (nb && nb.alive) { gx = nb.g.position.x; gz = nb.g.position.z; } } // TDM/DM run as mode "five" (dmGo sets FV.dm): hunt the nearest enemy like enemy bots do instead of idling at spawn
     if (mode === "five" && xStep(a, dt)) continue;
-    if (mode === "five") { const o = xGoal(a, allies, FV.atk, XG_V); if (o) [gx, gz] = o; }
+    if (mode === "five" && !FV.dm) { const o = xGoal(a, allies, FV.atk, XG_V); if (o) [gx, gz] = o; } // DM/TDM: no spike sites, keep the hunt goal
     if (!tg && a.trT > 0) { a.trT -= dt; [gx, gz] = a.tr; } // trade a fallen teammate
     if (!tg && !(a.xr && a.xr.length)) [gx, gz] = xPath(a, dt, gx, gz, XP_V);
     const sx = gx - p.x, sz = gz - p.z, sd = Math.hypot(sx, sz), f5 = mode === "five";
