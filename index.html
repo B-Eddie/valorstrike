@@ -2194,9 +2194,12 @@ const xTexMk = (s, draw, cfg) => {
 const xTexRep = (t) => { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.encoding = THREE.sRGBEncoding; };
 const xAASet = (on) => { xAAMem.v = on ? "1" : "0"; try { localStorage.setItem("vs.aa", xAAMem.v); } catch (e) {} };
 const xAA0 = xAAGet(); // saved AA, read before the first renderer
-try { renderer = new THREE.WebGLRenderer({ antialias: xAA0, powerPreference: "high-performance", stencil: false }); }
+// perf: three's renderer.debug.checkShaderErrors reads every program/shader info log after linking, which forces each
+// compile to finish synchronously (79 % of the first frames in the browser profile). Off unless ?shaderdebug is set.
+function xShChk(r) { try { if (r && r.debug) r.debug.checkShaderErrors = /[?&]shaderdebug\b/.test(location.search || ""); } catch (e) {} return r; }
+try { renderer = xShChk(new THREE.WebGLRenderer({ antialias: xAA0, powerPreference: "high-performance", stencil: false })); }
 catch (e) { xGlErr = String((e && e.message) || e); // second try with the lowest settings before giving up
-  try { renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: "default", failIfMajorPerformanceCaveat: false, precision: "mediump", stencil: false }); xGlErr = ""; }
+  try { renderer = xShChk(new THREE.WebGLRenderer({ antialias: false, powerPreference: "default", failIfMajorPerformanceCaveat: false, precision: "mediump", stencil: false })); xGlErr = ""; }
   catch (e2) { xGlErr = String((e2 && e2.message) || e2 || xGlErr); failWith("Your browser couldn't start WebGL. Try another browser or enable hardware acceleration."); return; } }
 renderer.outputEncoding = THREE.sRGBEncoding;
 renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.05; // look pass: filmic, sRGB out
@@ -2675,10 +2678,11 @@ function bfxBot(p) { // a bot's gunshot at p: ray along its facing with a little
   } catch (e) {}
 }
 const XLOS = new Map(), XLV = new THREE.Vector3(), XLR = new THREE.Raycaster(), XLH = [];
+const XLQ = (n) => Math.round(n * 4) + 2048, XLK = (p) => (XLQ(p.x) * 4096 + XLQ(p.y)) * 4096 + XLQ(p.z); let XLN = 0;
 function los(a, b) { // cached ~100 ms per eye/target cell (~10 Hz per bot); raycasts only hit the collision list
-  const q = (n) => Math.round(n * 4), k = q(a.x) + "," + q(a.y) + "," + q(a.z) + ">" + q(b.x) + "," + q(b.y) + "," + q(b.z), now = performance.now(), c = XLOS.get(k);
+  const ka = XLK(a), kb = XLK(b), now = performance.now(); let m = XLOS.get(ka); const c = m && m.get(kb); // perf: numeric 0.25 m cell keys, no string per query
   if (c && now - c.t < 100) return c.v;
-  const v = losRaw(a, b); if (c) { c.t = now; c.v = v; } else { if (XLOS.size > 800) XLOS.clear(); XLOS.set(k, { t: now, v }); } return v;
+  const v = losRaw(a, b); if (c) { c.t = now; c.v = v; } else { if (XLN > 800) { XLOS.clear(); XLN = 0; m = null; } if (!m) XLOS.set(ka, m = new Map()); m.set(kb, { t: now, v }); XLN++; } return v; // clears itself past 800 entries
 }
 function losRaw(a, b) {
   const dir = XLV.copy(b).sub(a); const dist = dir.length(); dir.normalize(); XLR.set(a, dir); XLR.far = dist;
@@ -3260,11 +3264,11 @@ const XDN = []; // pooled damage-number spans (up to 40)
 const XHV = new THREE.Vector3(); let xCR = null;
 function xCanvasRect() { if (!xCR) { const r = renderer.domElement.getBoundingClientRect(); xCR = { left: r.left, top: r.top, width: r.width, height: r.height }; } return xCR; }
 addEventListener("resize", () => { xCR = null; }); addEventListener("orientationchange", () => { xCR = null; });
-function xRestart(el, cls) { // restart a CSS animation without a reflow: Web Animations API when present
-  const run = el.getAnimations ? el.getAnimations() : null;
+function xRestart(el, cls, nf) { // restart a CSS animation without a reflow: Web Animations API when present
   if (cls && !el.classList.contains(cls)) { el.classList.add(cls); return; }
+  const run = !nf && el.getAnimations ? el.getAnimations() : null; // nf (kill icons): skip getAnimations, which flushes style; next-frame class toggle
   if (run && run.length) { for (const a of run) { a.cancel(); a.play(); } return; }
-  if (cls) { el.classList.remove(cls); requestAnimationFrame(() => el.classList.add(cls)); }
+  if (cls) { el.classList.remove(cls); requestAnimationFrame(() => nf ? requestAnimationFrame(() => el.classList.add(cls)) : el.classList.add(cls)); } // nf: re-added two frames on, so a style pass without the class always runs between (also when called outside the rAF loop, e.g. an online kill message)
 }
 function vmHit(p, dmg, hs, dead) {
   const hm = $("xHm"); hm.classList.toggle("hs", !!(dead && hs)); if (S.hm) xRestart(hm, "on"); else hm.classList.remove("on"); // Valorant shows no hit marker: opt-in (Settings > Crosshair)
@@ -3286,8 +3290,8 @@ const XKI = { n: 0, t: 0, el: null, s: [], da: [], di: 0 };
   for (let i = 0; i < 4; i++) { const d = document.createElement("div"); d.className = "x-da"; d.setAttribute("aria-hidden", "true"); xo.appendChild(d); XKI.da.push(d); } }
 function xKiReset() { XKI.n = 0; XKI.el.classList.remove("on"); for (const s of XKI.s) s.classList.remove("on", "hs"); if (XKI.em) { XKI.em.classList.remove("hs"); XKI.nb.textContent = "0"; XKI.sg.forEach((g) => g.classList.remove("on", "last")); } }
 function xKiAdd(hs) {
-  if (XKI.n >= 5) xKiReset(); const i = XKI.n++, s = XKI.s[i]; s.classList.toggle("hs", !!hs); xRestart(s, "on"); XKI.el.classList.add("on");
-  if (XKI.em) { XKI.nb.textContent = String(XKI.n); XKI.em.classList.toggle("hs", !!hs); XKI.sg.forEach((g, j) => { g.classList.toggle("on", j < XKI.n); g.classList.toggle("last", j === i); }); xRestart(XKI.el, "pop"); }
+  if (XKI.n >= 5) xKiReset(); const i = XKI.n++, s = XKI.s[i]; s.classList.toggle("hs", !!hs); xRestart(s, "on", 1); XKI.el.classList.add("on"); // kill cost: DOM writes only, no style/layout read
+  if (XKI.em) { XKI.nb.textContent = String(XKI.n); XKI.em.classList.toggle("hs", !!hs); XKI.sg.forEach((g, j) => { g.classList.toggle("on", j < XKI.n); g.classList.toggle("last", j === i); }); xRestart(XKI.el, "pop", 1); }
   clearTimeout(XKI.t); XKI.t = setTimeout(() => XKI.el.classList.remove("on"), 5000);
   const f = 880 * Math.pow(1.122, i); // whole-step rise per kill in the round
   if (typeof xHitKillSfx === "function") xHitKillSfx(i, hs); // pooled prerendered chime (LOCALIZED HIT FEEDBACK); rises a whole step per kill
@@ -3333,7 +3337,7 @@ function xVo(who, txt) { try { const now = performance.now(); if (now - xVoT < 1
 const xLobbyAgentIdle = window.requestIdleCallback ? (f) => requestIdleCallback(f, { timeout: 600 }) : (f) => setTimeout(f, 50);
 xLobbyAgentIdle(function () {
   const cv = $("xAgent"); if (!cv) return;
-  let r, tA0 = 0; try { r = new THREE.WebGLRenderer({ canvas: cv, alpha: true, antialias: true, powerPreference: "high-performance", stencil: false }); } catch (e) { cv.remove(); return; }
+  let r, tA0 = 0; try { r = xShChk(new THREE.WebGLRenderer({ canvas: cv, alpha: true, antialias: true, powerPreference: "high-performance", stencil: false })); } catch (e) { cv.remove(); return; }
   r.outputEncoding = THREE.sRGBEncoding; r.setPixelRatio(Math.min(devicePixelRatio || 1, 2)); r.setClearColor(0, 0);
   const sc = new THREE.Scene(), cam = new THREE.PerspectiveCamera(30, 1, 0.1, 50); cam.position.set(0, 1.05, 4.4); cam.lookAt(0, 0.95, 0);
   sc.add(new THREE.HemisphereLight(0xdfe8ff, 0x302020, 0.9));
@@ -8756,7 +8760,7 @@ function agView(a) { // big idle 3D preview of the hovered agent
   if (AGV.r === false) return;
   if (AGV.tV && !AGV.raf) { AGV.idle = 0; AGV.raf = requestAnimationFrame(AGV.tV); } // perf pass 36: restart the stopped viewer loop, never a second chain
   if (!AGV.r) {
-    const cv = $("xAgCv"); try { AGV.r = new THREE.WebGLRenderer({ canvas: cv, alpha: true, antialias: true }); } catch (e) { AGV.r = false; cv.remove(); return; }
+    const cv = $("xAgCv"); try { AGV.r = xShChk(new THREE.WebGLRenderer({ canvas: cv, alpha: true, antialias: true })); } catch (e) { AGV.r = false; cv.remove(); return; }
     const r = AGV.r; r.outputEncoding = THREE.sRGBEncoding; r.setPixelRatio(Math.min(devicePixelRatio || 1, 2)); r.setClearColor(0, 0);
     AGV.sc = new THREE.Scene(); AGV.cam = new THREE.PerspectiveCamera(30, 1, 0.1, 50); AGV.cam.position.set(0, 1.05, 4.2); AGV.cam.lookAt(0, 0.95, 0);
     AGV.sc.add(new THREE.HemisphereLight(0xdfe8ff, 0x302020, 0.9)); const kl = new THREE.DirectionalLight(0xffffff, 1.1); kl.position.set(2, 4, 3); AGV.sc.add(kl);
@@ -10437,7 +10441,7 @@ setInterval(() => { if (XS.shd === "all") xCastAll(); }, 1000);
 setInterval(() => { if (XS.shd === "all" && running && !paused && renderer.shadowMap.enabled) renderer.shadowMap.needsUpdate = true; }, 100);
 function xRemake() { // anti-aliasing can only be set when a renderer is made, so swap in a new one
   const old = renderer; let r;
-  try { r = new THREE.WebGLRenderer({ antialias: XS.aa, powerPreference: "high-performance", stencil: false }); } catch (e) { say("Couldn't switch anti-aliasing"); return; }
+  try { r = xShChk(new THREE.WebGLRenderer({ antialias: XS.aa, powerPreference: "high-performance", stencil: false })); } catch (e) { say("Couldn't switch anti-aliasing"); return; }
   r.outputEncoding = old.outputEncoding; r.physicallyCorrectLights = old.physicallyCorrectLights; r.toneMapping = old.toneMapping; r.toneMappingExposure = old.toneMappingExposure;
   const cc = new THREE.Color(); old.getClearColor(cc); r.setClearColor(cc, old.getClearAlpha());
   old.domElement.replaceWith(r.domElement); old.dispose(); try { old.forceContextLoss(); } catch (e) {}
@@ -12822,11 +12826,14 @@ function nmNext(C,u,gx,gz){const p=u.g.position,N=C.nav.nodes;let s=nmNear(C,p.x
 // axis-split motor still cannot walk it (breeze B-approach stall), so three consecutive
 // re-plans with no progress (<0.25 u) while blocked also ban the recorded first-hop edge.
 {const p=xPath;xPath=function(u,dt,gx,gz,out){const C=nmActive();if(!C)return p.apply(this,arguments);u.xr=[];u.npT=(u.npT||0)-dt;const replan=!u.np||u.npT<=0||u.blk||Math.hypot(u.np[0]-u.g.position.x,u.np[1]-u.g.position.z)<.55||!u.ng||Math.hypot(u.ng[0]-gx,u.ng[1]-gz)>3;
+ if(replan&&u.np&&!u.blk&&NM_RP.full()&&(u.npS||0)<=.25){u.npS=(u.npS||0)+dt;return u.np;}
  if(replan&&u.np&&u.xfe){const moved=u.xpp?Math.hypot(u.g.position.x-u.xpp[0],u.g.position.z-u.xpp[1]):9;
   // Wiggle is not progress: only a real advance (>=0.75 u between re-plans) clears the streak,
   // otherwise unstick strafing inside a pocket resets the count forever (breeze B approach).
   if(moved<.75){if(u.xfK===u.xfe)u.xfm=(u.xfm||0)+1;else{u.xfK=u.xfe;u.xfm=1;}if(u.xfm>=3){(u.xb=u.xb||new Map()).set(u.xfe,performance.now()+30000);u.xfm=0;u.xfK=null;}}else{u.xfm=0;u.xfK=null;}}
- if(replan){u.xpp=[u.g.position.x,u.g.position.z];u.np=nmNext(C,u,gx,gz);u.ng=[gx,gz];u.npT=.4;u.blk=0;}return u.np;};}
+ /* perf: native re-plans staggered per bot (0.35-0.45 s, from a per-bot phase) and at most 3 per frame (deferred before the wiggle-streak count above); a bot with no path, blocked, or starved > 0.25 s re-plans anyway */
+ if(replan){NM_RP.full();NM_RP.n++;u.npS=0;if(u.npPh==null)u.npPh=Math.random()*.1;u.xpp=[u.g.position.x,u.g.position.z];u.np=nmNext(C,u,gx,gz);u.ng=[gx,gz];u.npT=.35+u.npPh;u.blk=0;}return u.np;};}
+var NM_RP={f:-1,n:0,full(){const f=typeof XNF==='number'?XNF:null;if(f===null)return false;if(this.f!==f){this.f=f;this.n=0;}return this.n>=3;}};
 {const goal=xGoal;xGoal=function(u,team,atk,out){const C=nmActive();if(!C||mode!=='five')return goal.apply(this,arguments);const s=FV.sp;if(!s)return null;u.xr=[];s.xr='native';if(s.st==='plant')return x2(out,s.x,s.z);if(atk&&s.st==='drop')return x2(out,s.x,s.z);const names=Object.keys(C.meta.sites),name=atk?s.site:(s.seen||names[Math.max(0,team.indexOf(u))%names.length]),p=C.meta.sites[name]||C.meta.sites[names[0]],g=atk&&C.siteGoals&&(C.siteGoals[name]||C.siteGoals[names[0]]);return g?x2(out,g[0],g[1]):x2(out,p[0],p[2]);};}
 {const step=xStep;xStep=function(){return nmActive()?false:step.apply(this,arguments);};const clear=xClear;xClear=function(x,z){const C=nmActive();if(!C)return clear(x,z);const p=C.nav.nodes[nmNear(C,x,z)];return [p[0],p[2]];};const nudge=xNudgeAll;xNudgeAll=function(){if(!nmActive())return nudge.apply(this,arguments);};}
 // Native scenes are already material-batched; legacy merging/shadow fitting is destructive and wasteful here.
@@ -13072,14 +13079,28 @@ const XR_REACH=.32,XR_MAXCLEAR=.3,XR_SAMPLES=6000;
 // BufferAttribute.getComponent only exists from three r152; the page runs r149, where calling it threw inside
 // xrSupports and left null contact points that then threw in every solve (corpses froze upright). getX..getW exist in both.
 const XR_GC=(at,i,k)=>k===0?at.getX(i):k===1?at.getY(i):k===2?at.getZ(i):at.getW(i);
+// Every stride-th vertex of a geometry with its dominant bone and its four skin indices/weights, cached per geometry
+// (every corpse of an agent shares it).
+const XR_SL=new WeakMap();
+function xrSampleList(g,stride){let c=XR_SL.get(g);if(c&&c.stride===stride)return c;const ps=g.attributes.position,si=g.attributes.skinIndex,sw=g.attributes.skinWeight,n=Math.ceil(ps.count/stride);
+ c={stride,n,vi:new Int32Array(n),dom:new Int32Array(n),si:new Int32Array(n*4),sw:new Float32Array(n*4)};
+ for(let i=0,s=0;i<ps.count;i+=stride,s++){let best=-1,bi=0;c.vi[s]=i;for(let k=0;k<4;k++){const w=XR_GC(sw,i,k),j=XR_GC(si,i,k);c.si[s*4+k]=j;c.sw[s*4+k]=w;if(w>best){best=w;bi=j;}}c.dom[s]=bi;}
+ XR_SL.set(g,c);return c;}
 function xrSupports(R,sc,sim){
  const byBone=new Map(),J=new Map();for(const a of R.list)if(a.b)J.set(a.b,a);const owner=b=>{if(byBone.has(b))return byBone.get(b);let x=b;while(x&&!J.has(x))x=x.parent;const j=x?J.get(x):null;byBone.set(b,j);return j;};
  const inv=new Map();for(const a of R.list)if(a.b){a.b.updateWorldMatrix(true,false);inv.set(a,new THREE.Matrix4().copy(a.b.matrixWorld).invert());a.sup=XR_DIRS.map(()=>null);a.supD=XR_DIRS.map(()=>-Infinity);}
  const meshes=[];let total=0;sc.traverse(o=>{if(o.isSkinnedMesh&&o.visible!==false&&o.geometry&&o.geometry.attributes.skinIndex){meshes.push(o);total+=o.geometry.attributes.position.count;}});
- const stride=Math.max(1,Math.ceil(total/XR_SAMPLES)),v=new THREE.Vector3(),l=new THREE.Vector3(),jp=new THREE.Vector3();
- for(const o of meshes){o.updateMatrixWorld(true);o.skeleton.update();const ps=o.geometry.attributes.position,si=o.geometry.attributes.skinIndex,sw=o.geometry.attributes.skinWeight,bt=o.applyBoneTransform||o.boneTransform;if(!bt)continue;
-  for(let i=0;i<ps.count;i+=stride){let best=-1,bi=0;for(let k=0;k<4;k++){const w=XR_GC(sw,i,k);if(w>best){best=w;bi=XR_GC(si,i,k);}}const bone=o.skeleton.bones[bi];const a=bone&&owner(bone);if(!a||!a.sup)continue;
-   v.fromBufferAttribute(ps,i);bt.call(o,i,v);v.applyMatrix4(o.matrixWorld);if(!Number.isFinite(v.y))continue;a.b.getWorldPosition(jp);if(v.distanceTo(jp)>XR_REACH)continue;l.copy(v).applyMatrix4(inv.get(a));
+ const stride=Math.max(1,Math.ceil(total/XR_SAMPLES)),v=new THREE.Vector3(),l=new THREE.Vector3(),JP=new Map();for(const a of R.list)if(a.b)JP.set(a,a.b.getWorldPosition(new THREE.Vector3()));
+ // perf (kill cost): the sample list is cached per geometry, and each vertex is skinned with the same linear blend as
+ // three's boneTransform but from per-bone matrices built once per mesh (world * bindMatrixInverse * bone * boneInverse
+ // * bindMatrix), so the contact points are unchanged; joint positions are read once instead of per vertex.
+ for(const o of meshes){o.updateMatrixWorld(true);o.skeleton.update();const ps=o.geometry.attributes.position,bt=o.applyBoneTransform||o.boneTransform;if(!bt)continue;
+  const S=xrSampleList(o.geometry,stride),sk=o.skeleton,bm=new Map(),tmp=new THREE.Matrix4(),pre=new THREE.Matrix4().multiplyMatrices(o.matrixWorld,o.bindMatrixInverse),bnd=o.bindMatrix;
+  const boneM=bi=>{let m=bm.get(bi);if(m!==undefined)return m;const b=sk.bones[bi],ib=sk.boneInverses[bi];m=b&&ib?new THREE.Matrix4().multiplyMatrices(pre,tmp.multiplyMatrices(b.matrixWorld,ib)).multiply(bnd).elements:null;bm.set(bi,m);return m;};
+  for(let s=0;s<S.n;s++){const bone=sk.bones[S.dom[s]];const a=bone&&owner(bone);if(!a||!a.sup)continue;
+   const i=S.vi[s],px=ps.getX(i),py=ps.getY(i),pz=ps.getZ(i);let x=0,y=0,z=0,ok=true;
+   for(let k=0;k<4;k++){const w=S.sw[s*4+k];if(!w)continue;const e=boneM(S.si[s*4+k]);if(!e){ok=false;break;}x+=w*(e[0]*px+e[4]*py+e[8]*pz+e[12]);y+=w*(e[1]*px+e[5]*py+e[9]*pz+e[13]);z+=w*(e[2]*px+e[6]*py+e[10]*pz+e[14]);}
+   if(ok)v.set(x,y,z);else{v.set(px,py,pz);bt.call(o,i,v);v.applyMatrix4(o.matrixWorld);}if(!Number.isFinite(v.y))continue;if(v.distanceTo(JP.get(a))>XR_REACH)continue;l.copy(v).applyMatrix4(inv.get(a));
    for(let k=0;k<XR_DIRS.length;k++){const d=XR_DIRS[k],s=l.x*d[0]+l.y*d[1]+l.z*d[2];if(s>a.supD[k]){a.supD[k]=s;a.sup[k]=(a.sup[k]||new THREE.Vector3()).copy(l);}}}}
  for(const a of R.list)if(a.sup){a.sup=a.sup.filter(Boolean);delete a.supD;if(!a.sup.length)a.sup=null;}
 }
@@ -13138,7 +13159,15 @@ function xrRagdollTick(M,dt,wall){
 }
 {const die=xDie;xDie=function(b){const r=die.apply(this,arguments);if(b&&b.xm&&b.xm.dead){b.xm.diedAt=b.xm.diedAt||performance.now();}return r;};}
 {const visual=xVis;xVis=function(dt){const now=performance.now();for(let i=XDEAD.length-1;i>=0;i--){const e=XDEAD[i],age=(now-(e.c.diedAt||now))/1000;if(age>4){scene.remove(e.c.m);scene.remove(e.gn);xDisp(e.gn);const j=XSOL.mx.indexOf(e.c);if(j>=0)XSOL.mx.splice(j,1);XDEAD.splice(i,1);}else e.t=Math.max(e.t,age);}return visual(dt);};}
-{const death=xUbDead;xUbDead=function(M,dt){if(!(M&&M.sx&&M.sx.sc))return death(M,dt);const now=performance.now(),w=M.ragW!=null?(now-M.ragW)/1000:dt;M.ragW=now;return xrRagdollTick(M,dt,w);};}
+// perf (kill cost): a built corpse re-solves at most 30 times a second (15 beyond 35 m from the camera); the skipped
+// real time is passed on, so it falls exactly as fast. At most XR_ACT.max bodies simulate at once: when a fifth body
+// drops, the oldest one that has been falling for over a second freezes where it lies (settled bodies already stop).
+const XR_ACT=[];XR_ACT.max=4;
+{const death=xUbDead;xUbDead=function(M,dt){if(!(M&&M.sx&&M.sx.sc))return death(M,dt);const now=performance.now();
+ if(M.ragdoll&&M.ragW!=null){let iv=33;try{const p=M.m.position,c=camera.position;if(Math.hypot(p.x-c.x,p.z-c.z)>35)iv=66;}catch(e){}if(now-M.ragW<iv)return true;}
+ while(XR_ACT.length&&now-(XR_ACT[0].ragW||0)>1500)XR_ACT.shift();if(XR_ACT.indexOf(M)<0)XR_ACT.push(M);
+ if(XR_ACT.length>XR_ACT.max&&XR_ACT[0]===M&&M.ragdoll&&M.ragdoll.time>1){XR_ACT.shift();return false;}
+ const w=M.ragW!=null?(now-M.ragW)/1000:dt;M.ragW=now;const r=xrRagdollTick(M,dt,w);if(!r){const i=XR_ACT.indexOf(M);if(i>=0)XR_ACT.splice(i,1);}return r;};}
 // ---- END REPAIR PASS ----
 
 // ---- TRUSTED ONLINE SERVER ----

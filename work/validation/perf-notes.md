@@ -38,6 +38,37 @@ allocation / timer counts are the stable numbers):
   (was a second always-on requestAnimationFrame chain, also in the lobby).
 - DPR cap left at 2 (deliberately unchanged).
 
+## Kill cost A: ragdolls (browser profile: xrRagdollTick top per-frame cost after kills, ~250 ms build mostly xrSupports)
+- Corpse re-solve throttled to <=30 Hz (15 Hz beyond 35 m from the camera); the skipped real time is passed to the
+  solver, so bodies fall exactly as fast (xrRagdollTick already substeps large steps at 120 Hz).
+- At most 4 bodies simulate at once: when a fifth drops, the oldest one that has fallen > 1 s freezes where it lies
+  (settled bodies already stop on their own).
+- xrSupports: sample list (vertex, dominant bone, 4 skin indices/weights) cached per geometry (corpses of one agent
+  share it); each sample skinned by the same linear blend as three's boneTransform from per-bone matrices built once
+  per mesh. Contact points are identical to the old per-vertex boneTransform (test compares them on jett/reyna).
+- Tried fewer samples (3000/4000): sova's settled skin sinks under the floor (test_ragdoll fails), so the 6000-sample
+  budget stays.
+- Numbers (node rig harness, loaded machine, warm medians): xrSupports per corpse 38.2 -> 18.5 ms; corpse ticks per
+  second at 120 fps 120 -> ~30 (near) / ~15 (far). Test: work/test_ragdoll_perf.cjs.
+- Browser-verify: corpse fall smoothness at 30 Hz near the camera on a 120/144 Hz display; multi-kill (5+) freeze.
+
+## Kill cost B: kill icon, shader checks, LOS keys, native re-plans
+- xKiAdd: kill icons restart with DOM writes only (xRestart(.., nf): no getAnimations(), which flushes style, on the
+  kill path; the class is re-added two frames on so a style pass without it always runs, also for online kill
+  messages that arrive outside the rAF loop). The hit-marker path (vmHit) is unchanged. Audio blips untouched.
+- Every WebGLRenderer (main, fallback, rebuild, agent preview, menu) goes through xShChk: three's
+  renderer.debug.checkShaderErrors off (it read every program/shader info log after linking, forcing each compile to
+  finish synchronously: 79 % of the first frames in the rendered profile). `?shaderdebug` turns it back on.
+- Bot LOS cache keyed on numeric 0.25 m cells in a two-level Map (was a 6-number string per query), same 100 ms
+  reuse, still clears past 800 entries. Bot sight checks were already staggered per bot at ~10 Hz (xTh think timer).
+- Native-map bot re-plans: per-bot phase (0.35-0.45 s instead of everyone on 0.4 s) and at most 3 timed re-plans per
+  frame (deferral happens before the wiggle-streak count so it never blacklists edges); a bot with no path, blocked,
+  or starved > 0.25 s re-plans anyway.
+- Numbers: LOS cache-hit workload (784k queries) 92 -> 24 young-gen GCs; all-miss workload 77 -> 67. Test:
+  work/test_kill_perf.cjs.
+- Browser-verify: kill banner pop on 2nd..5th kill in a round (offline and online); first frames of a match on a real
+  GPU (no info-log stalls); `?shaderdebug` still reports a broken shader.
+
 ## Item 3: bot variety
 Cause: on native maps every attacker pathed to one identical site point along the same shortest A* path; the shared
 vendor/bot-routes.cjs existed but was not wired in.
