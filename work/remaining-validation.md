@@ -1,6 +1,6 @@
 # Valorstrike acceptance ledger
 
-Updated 25 October 2026 (branch `hark`) from the full [Instinct handoff](https://files.instinct.com/u6k7xnlbyeh0-valorstrike-shipped-and-still-open).
+Updated 25 October 2026, second pass (branch `hark`, tip after this ledger commit) from the full [Instinct handoff](https://files.instinct.com/u6k7xnlbyeh0-valorstrike-shipped-and-still-open).
 
 This is an implementation and evidence ledger, not a release sign-off. Source and browser checks below must not be represented as completion of the entire handoff.
 
@@ -23,6 +23,37 @@ Each commit passed both suites from `server/` at the time it landed; `index.html
 | 8a409eb | First-person arms (row 5): the native first-person rig is the only arm source; dead Quaternius-body arm code removed; primitive arms no longer flash while the native rig loads (only a failed native load falls back to them); built rigs cached per agent/weapon (instant swap, equip replays); knife/Classic/current weapon warmed when a match runs | `test_fp_native.cjs`: every weapon + knife on Jett (and Sheriff/Spectre/Vandal/knife on Breach) has native Idle/Equip/Fire/Reload/Inspect (knife: attacks) and both hands stay on the weapon in idle/fire; loading/caching/fallback behaviour. `server/tools/fp-view.mjs` renders/measures any agent/weapon/clip | Browser check of quality switches, timing feel, crowded combat; bolt-gun fire and reload clips move hands off the gun by design |
 | 3815f02 | Stale dev scripts for the removed stand-in rigs deleted (`agent_preview.js`, `agent_rt.js`, `boots_check.js`, `fp_check.js`) and their sections dropped from `audit.js`; duel, rifle 2v2, surf, aim and deathmatch now start only once every agent model is in memory (agent-progress overlay otherwise) | `test_loading_agents.cjs` | `audit.js` (legacy fixture, not part of the suites) runs out of memory (≈4.6 GB RSS) in its forced-target spike-carry soak, which precedes the removed sections; its remaining checks were therefore not re-run. No Chromium is available in this sandbox, so browser scripts (`verify_feel.js`, `bench_agent_load.js`) were not re-run for these commits |
 
+| 9c482cc, a4a1feb | Foot planting on stairs/slopes: per-foot ground probe, body drop, two-bone leg IK for nearby agents; Grip/feet IK no per-frame allocations | `test_feet.cjs` | Rendered multi-agent traversal on all maps (row 6) |
+| 1ba3773 | Touch: held Use (F) button for floor guns, doors and orbs | touch button regression | Real phone check |
+| c83c7b2 | Third-person grip: bot visual pass no longer overwrote the gripped gun's rotation (muzzle 30-60° off aim, browser-found) | `test_grip_frame.cjs`, `browser-grip-before-after.jpg` | Online remote players |
+| bea6ab4 | Ragdoll floor contact: per-joint contact volume sampled from the skinned surface at death; skin penetration 7-25 cm → ≤5 cm; dangling chains lifted | `test_ragdoll.cjs`, `ragdoll-settled-before-small.jpg` | Superseded in the browser by ebd0ca4 (sampling threw on r149, see below) |
+| 1c6b846 | Native minimap markers restored (teammate-spotted enemies at native floor heights, recon/ping reveals, last-seen '?', call-outs, orbs, Spike carrier); six-map orientation regression | `test_minimap_visibility.cjs` and orientation checks | Running-match visual on all six maps, mobile, Omen targeting (row 8) |
+| 2ee6a50 (merge of `hark-combat`: c18c35c, 24f197d, ab15921, 48446b4, 727807e, bf518dd, 13896ff, ee2cca0) | Online aim pitch sign fixed; pose-following server hit volumes (12 agents × stand/move/crouch/air, facing); official wall-penetration tiers; render-matched smoke blocks bot sight, flash LOS/facing; server-owned statuses; deterministic per-bot personalities; backgrounded tabs keep their seat (visibility signal, Worker heartbeat); two-player acceptance harness and DM spawn spread; crowded-combat hot paths (grid nearest-node, cached A*: ≈40% server tick cost); native crouch lowers the rendered head to the server head volume; worker bundle embeds hitboxes.json | Server `test-combat.js`, `test-bots.js`, `test-background.js`, `test-two-player.js`, `test-perf.js`, `test-bundle.cjs`; client `test_online_pitch.cjs`, `test_combat_consistency.cjs`; `native_crouch_before_after.png`; live two-player run (two rendered clients, local worker) passed 363 s per `combat-notes.md` | Natural-finish/persisted-record check in rendered clients repeated on more maps; aim-pitch upper-body and strafe hip yaw not modelled in hit volumes |
+| 9712016 | Ultimates server-authoritative: Hunter's Fury, Showstopper, Lockdown, Rolling Thunder, Seekers, Neural Theft, Tour de Force (5-round Operator, weapon restore), Run It Back | `test-ults.js` | Browser visuals of each ult; values follow the project's rules, not datamined |
+| 37a90be, 23f3bf7 | Devices: recon pulses reveal by LOS, Boom Bot, Trailblazer; Blaze, Hot Hands, Curveball, Nanoswarm, Alarmbot (Vulnerable), Turret arc, Trapwire tether, Cyber Cage, Trademark, Headhunter restore | `test-ults.js` device sections | **Values are interpreted from public descriptions, not datamined**; browser check of each device |
+| 337e87c, 1c1d394 | Short landscape 640x360: map pre-screen scrolls with GO sticky; agent cards first, details below, LOCK IN sticky | `test_short_layout.cjs`, `css-agent-640x360.jpg` | Real phone in landscape |
+| 4b8bac3 | Native map decals: opaque-exported Decal_/Floater_ materials with real alpha are alpha-blended; white Floater masks render as soft grime (white wall patches gone) | `test_map_decals.cjs` on real textures of six maps, `lotus-spawn-decals-before-after.jpg` | Visual pass on the other five maps |
+| b562314 | Spectate on native maps: third-person cam follows the target's floor height; spectate bar moves to the bottom at 640x360 | `test_tp_cam_height.cjs`, `test_short_layout.cjs`, `lotus-spectate-3p-640x360.jpg` | Other maps' upper floors |
+| ebd0ca4 | Ragdoll collapse in the browser: r149 has no `BufferAttribute.getComponent`, so contact sampling threw at death and every corpse froze upright until the fade; sampling uses getX..getW, failure clears contact points. Corpses also advance on real elapsed time (low fps no longer leaves them standing) | `test_ragdoll.cjs` (r149 attributes, 1/3/8 fps); `lotus-ragdoll-browser.json` (live page numbers: pelvis 1.08 m → 0.15 m, head 1.72 m → 0.13 m above the floor in 2 s at 1 fps) | Rendered screenshot of a collapsed corpse (Chromium OOM alongside the combat soak) |
+| 13fdfd6 | Floor pick-up allowed in the buy phase (prompt showed but F did nothing) | `test_floor_pickup.cjs` | Rendered buy-phase swap on Lotus |
+| de401e9, b86efe2 | Curveball direction: online cast sends `l` (FIRE left, ALT FIRE right); offline/local flare now curves on the server's path (5 m ahead then 2.5 m aside, wall-clipped) | `test_curveball_flag.cjs`, `test_curveball_offline.cjs` | Browser feel |
+| 908a0b5 | Native map foliage cut-outs: 71 foliage materials with real alpha get alpha test (vines/moss no longer solid sheets) | `test_map_decals.cjs` | Visual pass per map |
+| b256a56 | Online Vulnerable / Trapwire tether status shown (announcement + chip with seconds) | `test_net_status.cjs` | Live online check |
+| 854d1ef | Tour de Force round reset online: client re-arms the round loadout (Operator slot/model no longer survive) | `test_tdf_round_reset.cjs`, `test-ults.js` round reset mid-ult | Live online check. Note: in this commit's own tree the helper sits inside `mpCli5` (runs, but the new test cannot slice it); placed correctly in b86efe2 |
+| 5f83f26 | `test_agent_preload.cjs` flake under load fixed (polls Cache Storage writes) | client suite | — |
+
+### Browser findings this pass (headless Chromium, 640x360, Lotus, often ~1 fps alongside the combat soak)
+
+- Lotus stairs: walked up without jumping — **pass**.
+- Spectate: third-person button clickable, camera at the target's floor height — **pass** (after b562314).
+- Floor pick-up: the `[F] Pick up` prompt shows; during the buy phase F did nothing → fixed in 13fdfd6 (rendered swap not yet captured).
+- Ragdoll: corpses stood upright until the fade → fixed in ebd0ca4; collapse confirmed by live page numbers, **no rendered screenshot yet**.
+- Chromium was OOM-killed repeatedly while the `hark-combat` soak ran; browser coverage is therefore partial.
+
+### Coming via a later merge of `hark-combat`
+
+QA work on `hark-combat` (rejoin keeps the team, fall recovery, unstick, freeNode fallback below, soak harness) is not on `hark` yet; it lands via merge and is not counted here.
+
 ## Implemented in this working tree (before the `hark` branch)
 
 - Map loading: real asset-count progress; a working Cancel control; immediate rejection on cancellation or a 120-second timeout; abortable metadata/collision fetches; disposal of scene/collision siblings that complete after cancellation or failure; close decoded ImageBitmaps when disposing maps. Superseding a load does not cancel the new match-loading screen.
@@ -38,8 +69,7 @@ Each commit passed both suites from `server/` at the time it landed; `index.html
 ## Verification
 
 - Generated all six prebuilt collision worlds from original assets.
-- All 17 default server regression files pass (`npm test`), including Reyna, Blade Storm, interaction, release-gate, reconnect-record and floor-weapon cases.
-- All 35 client regression files pass (`npm run test:client`), including native contact/locomotion samples, loading/cancellation, renderer rebinding, identity/profile, maps, intents and new ability/HUD checks.
+- At the tip of this pass all 24 default server regression files pass (`npm test`) and all 48 client regression files pass (`npm run test:client`). (Earlier passes: 17 server / 35 client.) The client suite covers native contact/locomotion samples, loading/cancellation, renderer rebinding, identity/profile, maps, intents and new ability/HUD checks.
 - Regenerating `index.html` with `python3 work/install_valorant.py` is byte-identical; `git diff --check` passes.
 - Browser: all six original maps reached normal rendered matches. Ascent → Bind → Haven → Split → Breeze switched in one session without a page reload; Lotus also progressed to a later offline round. Saved and inspected the five map-start images and two online Lotus images. This establishes local launch/render coverage, not complete traversal or low-memory performance.
 - Browser: cancelled a normal Breeze load and immediately returned to the lobby.
@@ -59,8 +89,8 @@ Each commit passed both suites from `server/` at the time it landed; `index.html
 | 6 | Feet/terrain/AI | Complete live slopes/stairs/aim/transition and multiple-agent traversal checks. |
 | 7 | TDM/mobile | Complete tier unlock and respawn transitions plus portrait/landscape touch movement, aiming, HUD and Spike hold/release. |
 | 8 | Minimap/selection | Room-map selection and cancel defects fixed; still inspect running-match orientation/visibility/markers on all six maps, mobile and Omen targeting. |
-| 9 | Remaining abilities | Reyna and Blade Storm implementation added against the project's existing rules; integrated Spike visual acceptance remains. Other generic ults/devices/projectiles/channels still lack full parity. |
-| 10 | Combat consistency | Native animated authoritative hit volumes, wall penetration and comprehensive projectile/device/LOS/smoke/flash/status behavior remain open. |
+| 9 | Remaining abilities | Server-authoritative now: Reyna, Blade Storm, all eight non-Reyna/Jett ults (9712016) and the device set in 37a90be/23f3bf7, with Curveball direction online and offline. Values are interpreted from public descriptions and the project's rules, **not datamined**. Still open: browser/visual acceptance of each ult and device, integrated Spike visual acceptance, agents/abilities outside these kits, and the offline (non-server) versions of the device changes where they differ. |
+| 10 | Combat consistency | Landed via the `hark-combat` merge (2ee6a50): pose-following server hit volumes from the real rigs, official wall-penetration tiers, render-matched smoke/LOS for bot sight, flash LOS/facing, server-owned statuses (Vulnerable/tether now shown online, b256a56), native crouch render matching the head volume. Still open: upper-body aim pitch and strafe hip yaw in hit volumes, comprehensive projectile/device interaction coverage, and rendered two-client verification of hits through walls/smokes. |
 | 11 | Spike release gate | Interaction and explicit configuration gates improved; full round/economy/inventory/late-join/ability/browser acceptance remains. Do not enable production Spike yet. |
 | 12 | Reliability/performance | Loading lifetime and result-accounting defects fixed; still profile resource peaks, crowded combat, reconnects, concurrent rooms and Free-plan headroom. No billing changes authorized or made. |
 | 13 | Final release | Source suites pass; full visual/mobile/performance gates and deployment verification remain. Work is pushed only to the `hark` branch; nothing merged to main and no production deployment performed. |
