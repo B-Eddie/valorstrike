@@ -14,14 +14,29 @@ const {serve, launch, boot, startDM} = require('./lib.cjs');
     await p.waitForFunction(() => window.__vs && window.__vs.state().running, {timeout: 280000, polling: 2000});
     console.log(el(), 'DM RUNNING');
     // Rigs attach asynchronously after match start; wait for them before killing.
-    await p.waitForFunction(() => window.__vs.bots.some(t => t.alive && t.xm), {timeout: 180000, polling: 3000});
+    await p.waitForFunction(() => window.__vs.bots.some(t => t.alive && t.xm && t.xm.valorant), {timeout: 180000, polling: 3000});
     console.log(el(), 'rigs attached');
     // Find a bot with a native rig
-    const has = await p.evaluate(() => window.__vs.bots.map(t => ({n: t.name, rig: !!t.xm, alive: t.alive})));
+    const has = await p.evaluate(() => window.__vs.bots.map(t => { const M = t.xm;
+      return {n: t.name, rig: !!M, ub: !!(M && M.ub), sx: !!(M && M.sx), sc: !!(M && M.sx && M.sx.sc),
+              valorant: !!(M && M.valorant), inScene: !!(M && M.m && M.m.parent), alive: t.alive}; }));
     console.log(el(), 'bots', JSON.stringify(has));
-    await p.evaluate(() => { const t = window.__vs.bots.find(x => x.alive && x.xm) || window.__vs.bots[0];
-      window.__killTarget = t; window.__vs.kill(t, false, 'You', 'Vandal'); });
-    await new Promise(r => setTimeout(r, 1200));
+    await p.evaluate(() => { const t = window.__vs.bots.find(x => x.alive && x.xm && x.xm.valorant) || window.__vs.bots[0];
+      window.__killTarget = t;
+      // Stand 4u from the target and face it so the corpse is in view.
+      const p = t.g.position; const a = Math.random() * 6.283;
+      window.__vs.setPos(p.x + Math.sin(a) * 2.2, 0, p.z + Math.cos(a) * 2.2);
+      window.__vs.aimAt(p.x, p.y + 1, p.z);
+      window.__vs.kill(t, false, 'You', 'Vandal');
+      setTimeout(() => window.__vs.aimAt(p.x, p.y + 0.3, p.z), 300); });
+    for (let k = 0; k < 8; k++) {
+      await new Promise(r => setTimeout(r, 400));
+      const st = await p.evaluate(() => { const M = window.__killTarget && window.__killTarget.xm;
+        return M ? {rag: !!M.ragdoll, dead: M.dead, ub: !!M.ub, sx: !!M.sx, sc: !!(M.sx && M.sx.sc), inScene: !!(M.m && M.m.parent)} : {gone: true, xd: window.__killTarget.xd}; });
+      console.log(el(), 'sample' + k, JSON.stringify(st));
+      if (st.rag) break;
+    }
+    await new Promise(r => setTimeout(r, 400));
     const rag1 = await p.evaluate(() => { const M = window.__killTarget && window.__killTarget.xm;
       if (!M) return {ok: false, why: 'no xm'};
       const R = M.ragdoll; if (!R) return {ok: false, why: 'no ragdoll yet', dead: M.dead, xd: window.__killTarget.xd};
@@ -42,6 +57,31 @@ const {serve, launch, boot, startDM} = require('./lib.cjs');
     });
     console.log(el(), 'ragdoll@3.7s', JSON.stringify(rag2));
     await p.screenshot({path: '/downloads/ragdoll-2.png'});
+    // Second kill after the intro banner fades: tighter visual on the settled pose.
+    await new Promise(r => setTimeout(r, 5000));
+    const second = await p.evaluate(() => { const t = window.__vs.bots.find(x => x.alive && x.xm && x.xm.valorant);
+      if (!t) return false;
+      window.__killTarget = t;
+      const p = t.g.position; const a = Math.random() * 6.283;
+      window.__vs.setPos(p.x + Math.sin(a) * 2.4, 0, p.z + Math.cos(a) * 2.4);
+      window.__vs.aimAt(p.x, p.y + 0.6, p.z);
+      window.__vs.kill(t, false, 'You', 'Vandal');
+      setTimeout(() => window.__vs.aimAt(p.x, p.y + 0.2, p.z), 600);
+      setTimeout(() => window.__vs.aimAt(p.x, p.y + 0.15, p.z), 1400);
+      return true; });
+    if (second) {
+      await new Promise(r => setTimeout(r, 1000));
+      await p.screenshot({path: '/downloads/ragdoll-3.png'});
+      await new Promise(r => setTimeout(r, 1200));
+      await p.screenshot({path: '/downloads/ragdoll-4.png'});
+      const rag3 = await p.evaluate(() => { const M = window.__killTarget && window.__killTarget.xm;
+        const R = M && M.ragdoll; if (!R) return {ok: false};
+        let maxD = 0, nan = 0;
+        for (const pt of R.points) { const d = Math.hypot(pt.p.x - pt.p0.x, pt.p.y - pt.p0.y, pt.p.z - pt.p0.z);
+          if (!Number.isFinite(d)) nan++; else if (d > maxD) maxD = d; }
+        return {ok: true, points: R.points.length, maxDrift: +maxD.toFixed(2), nan}; });
+      console.log(el(), 'ragdoll-2nd', JSON.stringify(rag3));
+    } else console.log(el(), 'no second valorant-rigged bot available');
     console.log(el(), 'RAG-PROBE DONE');
   } catch (e) { console.log(el(), 'PROBE-FAIL', String(e).slice(0, 200)); }
   finally {

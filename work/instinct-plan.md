@@ -214,3 +214,9 @@ All 12 user-list items now have shipped fixes on instinct. Remaining: ledger 13-
 - Native rigs attach ASYNCHRONOUSLY ~12s after DM start (agent GLBs fetched 200 locally under mid profile + light(true) + agents(false)). rig:false at match start is normal.
 - __vs.light(true) sets __vsNoAgents=true; must call __vs.agents(false) AFTER light(true) to keep rigs.
 - diag-rag.cjs updated: waits for rig attach, kills rigged bot, measures Verlet drift + screenshots corpse at 1.2s/3.7s. NOT YET RUN to completion (run-limit cut; launch on next wake, keep bash alive ~110s for the probe to finish inside the call).
+
+## Ragdoll live verification (2026-10-25 08:37) - items #1+#2 bounded in-match evidence
+- diag-rag.cjs (DM ascent, mid profile, native rigs): 3 kills on valorant-rigged bots. Verlet stable: 146-272 sim points, max bone drift from captured pose 0.29-1.74u (bounded collapse), NaN count 0, zero page errors. No explosion/divergence (pre-fix bug diverged to 2.3e38).
+- Visual: corpse screenshot 2.2s post-kill shows coherent crumpled body on floor + dropped gun (ragdoll-4.png). Not boneless/spaghettified at this sample size.
+- Findings baked into probe: rigs attach asynchronously (agents load one at a time under SwiftShader; wait on xm.valorant, not xm); __vs.light(true) sets __vsNoAgents=true, so call agents(false) after; intro banner blocks center screen ~5s, screenshot after it fades; corpse removed at ragdoll 2.8s lifecycle + XDEAD age>4 splice.
+- Caveat: SwiftShader 640x360 sampled kills, logic/flow evidence - not full visual acceptance.
