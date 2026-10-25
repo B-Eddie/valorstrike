@@ -3896,27 +3896,44 @@ function xbReport() {
   d.textContent = "Benchmark · 5v5 " + R.map + " · 30 s\nAvg FPS  " + R.avgFps + "\n1% low   " + R.low1Fps + " FPS\nAvg frame " + R.avgFrameMs + " ms\nDraw calls " + R.drawCalls + "\nTriangles " + R.triangles.toLocaleString() + "\nJS heap  " + (hp === null ? "n/a" : hp + " MB");
   document.body.appendChild(d);
 }
+// Real-time offline simulation: game time (buy phase, round clock, Spike fuse, plant / defuse, respawns, ability timers)
+// follows the real clock at any frame rate. Each frame's real elapsed time is split into steps of at most 50 ms so
+// movement / physics still substep; a frame longer than XRT.max (a stall) counts as XRT.max, and the first frame back from
+// a hidden tab counts as one step. Online the server owns the clocks, so the client keeps one capped step per frame.
+const XRT = { step: 0.05, max: 2.5, skip: 0, n: 0 };
+function xRealDt() { const r = Math.max(0, clock.getDelta() || 0); if (XRT.skip) { XRT.skip = 0; return Math.min(r, XRT.step); } return Math.min(r, XRT.max); }
+function xSimStep(d) {
+  if (mode === "duel") { du.t += d; duelTick(d); } else if (mode === "surf") surfTick(d); else if (mode === "aim") aimTick(d); else if (mode === "five") fiveTick(d); else tick(d);
+  try { if (running && !paused) xBotYaw(d); } catch (e) { xE(e); }
+  try { jTick(running && !paused ? d : 0); } catch (e) { xE(e); }
+}
+function xSimRun(real, f) { // returns the game time advanced
+  let on = false; try { on = !!MP.on; } catch (e) {} // MP is declared further down the page
+  if (on || real <= XRT.step) { const d = Math.min(real, XRT.step); XRT.n = 1; f(d); return d; }
+  const n = Math.ceil(real / XRT.step - 1e-9), d = real / n; let t = 0; XRT.n = 0;
+  for (let i = 0; i < n && running && !paused; i++) { f(d); t += d; XRT.n++; }
+  return t;
+}
 function xCov() { if (xLob0 || xResUp() || xSetFull()) return true; for (const el of xCovEl) if (el.style.display === "flex") return true; return false; }
 function loop() {
   loop.id = requestAnimationFrame(loop); XNF++; SKU.value = 0.3 + 0.7 * (0.5 + 0.5 * Math.sin(performance.now() * 0.005)); // perf pass 36: id stored so loop() can never start a second chain
   { const hk = window.XHK; if (hk) for (let i = 0; i < hk.length; i++) try { hk[i](); } catch (e) { xE(e); } } // perf pass 37: screen-bound ticks (teleporters, minimap, blobs) driven from this one rAF; each early-returns when its screen is hidden
-  if (document.hidden) return; // paused while the tab is hidden
+  if (document.hidden) { XRT.skip = 1; return; } // paused while the tab is hidden; the hidden span is not game time
   try { xAdapt(); } catch (e) {}
   try { if (xGate()) return; } catch (e) { xE(e); }
-  if (window.xLdOn) { clock.getDelta(); return; } // loading screen up: player input, bots and round timer frozen; dt discarded so nothing jumps when it hides
+  if (window.xLdOn) { xRealDt(); return; } // loading screen up: player input, bots and round timer frozen; dt discarded so nothing jumps when it hides
   // perf pass 15: a full-screen overlay hides the scene, so skip render, bots and physics (only the round timers keep ticking)
   // perf pass 16: with no live round behind the cover (first-load lobby, results screen) bot movement/physics is skipped too
-  if (xCov()) { const cd = Math.min(clock.getDelta(), 0.05); try { if (running && !paused && !xLob0 && !xResUp() && mode !== "duel" && mode !== "surf" && mode !== "aim") (mode === "five" ? fiveTick : tick)(cd); } catch (e) { xE(e); } return; }
+  if (xCov()) { const cd = xRealDt(); try { if (running && !paused && !xLob0 && !xResUp() && mode !== "duel" && mode !== "surf" && mode !== "aim") xSimRun(cd, (d) => (mode === "five" ? fiveTick : tick)(d)); } catch (e) { xE(e); } return; }
   // perf pass 15: behind the Esc pause menu the frozen scene redraws at most 10 fps
   if (paused) { const pn = performance.now(); if (pn - xPzT < 98) return; xPzT = pn; }
-  const dt = Math.min(clock.getDelta(), 0.05);
-  try { if (running && !paused) { if (mode === "duel") { du.t += dt; duelTick(dt); } else if (mode === "surf") surfTick(dt); else if (mode === "aim") aimTick(dt); else if (mode === "five") fiveTick(dt); else tick(dt); } } catch (e) { xE(e); }
-  try { if (running && !paused) xBotYaw(dt); } catch (e) { xE(e); }
+  const rt0 = xRealDt(), dt = Math.min(rt0, XRT.step); // dt: render-side smoothing; game time below follows the real clock
+  let rt = 0; try { rt = running && !paused ? xSimRun(rt0, xSimStep) : 0; } catch (e) { xE(e); }
+  if (!(running && !paused)) try { jTick(0); } catch (e) { xE(e); }
   try { if (running) xHud(); } catch (e) { xE(e); }
   try { xAssist(dt); } catch (e) { xE(e); }
   try { if (ads && mode !== "duel" && (reloading > 0 || !running || !player || player.hp <= 0 || rw === "knife")) setScope(false); } catch (e) { xE(e); }
-  try { jTick(running && !paused ? dt : 0); } catch (e) { xE(e); }
-  try { vmTick(dt); } catch (e) { xE(e); }
+  try { vmTick(Math.max(dt, rt)); } catch (e) { xE(e); } // equip / inspect timers on real time
   try { if (kSwing <= 0) kHv = 0; const kk = kHv ? Math.sin(Math.PI * Math.max(0, kSwing)) : kick; knife.rotation.x = 0.15 - kk * 0.9; knife.position.z = -0.38 - kick * 0.12; } catch (e) { xE(e); }
   try { if (S.fps) { fr++; const now = performance.now(); if (now - fpsT > 500) { $("fps").textContent = Math.round(fr * 1000 / (now - fpsT)) + " FPS · " + xPing() + " ms · " + renderer.info.render.calls + " calls"; fr = 0; fpsT = now; } } } catch (e) { xE(e); }
   try {
@@ -3924,7 +3941,7 @@ function loop() {
       let cx = player.x, cy = 1.6 - (player.ch || 0) + (player.y || 0) + (player.eyeOffset || 0), cz = player.z;
       if (player !== xKL.p || (xKL.on && player.hp > 0)) xKLReset(); // observer pass: alive again (next round / revive) = back to own view
       XOB.fp = XOB.orb = null;
-      if (mode !== "duel" && player.hp <= 0) { const a = xSpec(running && !paused ? dt : 0); xTP.cur = null; if (a) { if (xTP.on && xKL.sp) { xTPCam(a, dt); xTP.cur = a; cx = xTP.x; cy = xTP.y; cz = xTP.z; } else { const e = xObsEye(a, dt); XOB.fp = a; cx = e.x; cy = e.y; cz = e.z; } } else if (xKL.sp) { const o = xObsOrbit(running && !paused ? dt : 0); if (o) { XOB.orb = o; cx = o.x; cy = o.y; cz = o.z; } } } else xTP.cur = null;
+      if (mode !== "duel" && player.hp <= 0) { const a = xSpec(rt); xTP.cur = null; if (a) { if (xTP.on && xKL.sp) { xTPCam(a, dt); xTP.cur = a; cx = xTP.x; cy = xTP.y; cz = xTP.z; } else { const e = xObsEye(a, dt); XOB.fp = a; cx = e.x; cy = e.y; cz = e.z; } } else if (xKL.sp) { const o = xObsOrbit(running && !paused ? dt : 0); if (o) { XOB.orb = o; cx = o.x; cy = o.y; cz = o.z; } } } else xTP.cur = null;
       if (J.dr) { const tb = J.dr.tb ? 1.3 : 0; cx = J.dr.x + Math.sin(yaw) * tb; cy = J.dr.y + tb * 0.35; cz = J.dr.z + Math.cos(yaw) * tb; gun.visible = false; knife.visible = false; }
       if (shk > 0) { shk = Math.max(0, shk - 0.015); cx += (Math.random() - 0.5) * shk; cy += (Math.random() - 0.5) * shk * 0.6; cz += (Math.random() - 0.5) * shk; }
       // no head bob: the camera stays level while moving, as in Valorant
@@ -3945,7 +3962,7 @@ function loop() {
     spike.rotation.y += dt * 1.5;
     spike.material.emissive.setHex(Math.sin(performance.now() / (timeLeft < 10 ? 80 : 250)) > 0 ? 0x880000 : 0x220000);
   } catch (e) { xE(e); }
-  try { xVis(running && !paused ? dt : 0); } catch (e) { xE(e); }
+  try { xVis(rt); } catch (e) { xE(e); }
   try { renderer.render(scene, camera); } catch (e) { xE(e); }
 }
 const XTK = { defs: [], pool: [], pt: new THREE.Vector3(), aim: new THREE.Vector3(), mv: new THREE.Vector3(), q: new THREE.Vector3() }; // perf pass 9: tick scratch

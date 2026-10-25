@@ -18,7 +18,7 @@ function boot({real3=false,seed=1}={}){
  const T=real3?threeDir():null,env={...process.env,REAL3:real3?'1':'',REAL3_DIR:T?T.dir:''};if(!real3)delete env.REAL3;
  const proc=Object.create(process,{env:{value:env},argv:{value:[process.argv[0],'audit']}});
  const log=console.log;console.log=()=>{};
- let H;try{H=new Function('require','__dirname','process','module',src+'\nreturn {win,doc,context,errors,xErrCalls,advance,frame,timers,listeners,rafLen:()=>rafQ.length,mkEvent,dispatch,setPhase:p=>{phase=p;}};')(require,__dirname,proc,module);}finally{console.log=log;}
+ let H;try{H=new Function('require','__dirname','process','module',src+'\nreturn {win,doc,context,errors,xErrCalls,advance,frame,timers,listeners,rafLen:()=>rafQ.length,mkEvent,dispatch,setPhase:p=>{phase=p;},frameMs:ms=>{runTimers(now+ms);const q=rafQ;rafQ=[];for(const r of q){try{r.f(now);}catch(e){rec("rAF",e);}}}};')(require,__dirname,proc,module);}finally{console.log=log;}
  H.three=T&&T.rev;H.xe=code=>vm.runInContext('__xe',H.context)(code);
  vm.runInContext(`Math.random=(${mulberry})(${seed*7919+3});`,H.context);
  H.win.fetch=()=>Promise.reject(new TypeError('Failed to fetch'));
