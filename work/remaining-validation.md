@@ -512,3 +512,7 @@ Open: complete B join mid-match + kill phase (60s window at 2.5fps); then label 
 - Screenshot /tmp/touch_dm.png inspected: touch buttons (FIRE/JUMP/DUCK/ZOOM/R/INS/PING/F/COMMS/C-Q-E-X), minimap, score, standings, ammo 21|75, hp 100+50 all render at 844x390.
 - Observed, deferred to the coordinated responsive-HUD pass (not chased piecemeal per plan): default ZOOM/FIRE button positions overlap the right-side standings list; the mode subtitle truncates under the top-right buttons.
 - NOTE: emulated touch, not a real phone (standing caveat from the ledger's touch row).
+
+## Tab-strip swipe + tab reach (844x390 touch) - PASS (14:42)
+- Probe work/browser-tests/lobby-tab-swipe.cjs: touch drag on .x-qtabs moves scrollLeft 0->186 (fade-mask affordance backed by real scrolling); after the swipe, ESCALATION rect fully inside the clip with elementFromPoint on the tab; tap activates it (class .on) and the visible pane switches to the Escalation card; CUSTOM tap activates; X closes the queue.
+- Note: the strip resets scrollLeft to 0 when a pane activates (reads after a tap are not the swipe measurement).
