@@ -2897,8 +2897,8 @@ const KF_AB = { // ability + spike icons for the kill feed (inner SVG, 40 x 14)
   "Hot Hands": '<circle cx="24" cy="7" r="5" fill="currentColor"/><path d="M2 7h14M5 4h10M5 10h10" stroke="currentColor" stroke-width="1.6"/>',
   "Spike": '<path d="M20 1l7 3v6l-7 3-7-3V4z" fill="currentColor"/><circle cx="20" cy="7" r="2" fill="#ff4655"/>'
 };
-function kfeed(k, v, hs, w) {
-  w = w || kfWeap(k); const wb = !!(k === "You" && xWB.on && performance.now() - xWB.t < 250); xWB.on = false; const d = kfGet("kf kf--k" + (k === "You" ? " kf--mine" : "") + (v === "You" ? " kf--died" : ""));
+function kfeed(k, v, hs, w, wbo) { // wbo: server wallbang flag (online kill event 6th field); offline uses xWB from shoot()
+  w = w || kfWeap(k); const wb = wbo != null ? !!wbo : !!(k === "You" && xWB.on && performance.now() - xWB.t < 250); xWB.on = false; const d = kfGet("kf kf--k" + (k === "You" ? " kf--mine" : "") + (v === "You" ? " kf--died" : ""));
   const nm = (s, n) => { s.className = "kf__n " + (kfBlue(n) ? "kf--blue" : "kf--red"); let ag = null; try { const u = n === "You" ? null : kfAll().find((x) => x && x.name === n); ag = u ? xAg(u) : null; } catch (e) {} s.textContent = ag && ag !== n && n !== "Bot " + ag ? n + " · " + ag : n; s.title = ag || ""; s.style.display = ""; const pa = n === "You" ? (J && J.pick) || "Jett" : ag; if (pa && kfKnown(n)) { s.dataset.a = String(pa)[0].toUpperCase(); s.style.setProperty("--c", mmAgC(String(pa))); } else { delete s.dataset.a; s.style.removeProperty("--c"); } };
   const wp = d.xW, key = w + (hs ? "|hs" : "") + (wb ? "|wb" : ""); wp.title = w + (wb ? " · wallbang" : ""); wp.style.display = "";
   if (wp.xK !== key) { wp.xK = key; wp.innerHTML = (KF_AB[w] ? '<svg viewBox="0 0 40 14" aria-hidden="true">' + KF_AB[w] + "</svg>" : /Knife|Blade/.test(w) ? KF_KNIFE : w === "Ability" ? "" : KF_GUN) + '<b></b>' + (wb ? KF_WB : "") + (hs ? KF_HS : ""); const wn = wp.querySelector("b"); if (wn) wn.textContent = w; }
@@ -11614,7 +11614,7 @@ function mpCliSnap(m) {
   for (const L of [bots, allies]) for (let i = L.length - 1; i >= 0; i--) if (!seen.has(L[i].nid)) { scene.remove(L[i].g); L.splice(i, 1); }
   mpCliKD(m.k, m.d);
   for (const v of m.ev || []) try {
-    if (v[0] === "k") { const k = mpIn(v[1] || v[4] || "Utility"), d = mpIn(v[2]); /* blank killer: ownerless utility from an older server */ kfeed(k, d, !!v[3], v[4]); if (d === "You") { try { xKLDie(k, v[4]); } catch (e) {} stats.d++; } if (k === "You") { stats.k++; if (v[3]) stats.hs = (stats.hs || 0) + 1; try { jKill(); } catch (e) {} } }
+    if (v[0] === "k") { const k = mpIn(v[1] || v[4] || "Utility"), d = mpIn(v[2]); /* blank killer: ownerless utility from an older server */ kfeed(k, d, !!v[3], v[4], v.length > 5 ? v[5] : null); if (d === "You") { try { xKLDie(k, v[4]); } catch (e) {} stats.d++; } if (k === "You") { stats.k++; if (v[3]) stats.hs = (stats.hs || 0) + 1; try { jKill(); } catch (e) {} } }
     else if (v[0] === "n") feed(v[1]);
     else if (v[0] === "sp") { feed(mpIn(v[2]) + " planted the Spike on " + v[3]); say("Spike planted · " + v[3], 1500); try { SFX.planted(); } catch (e) {} }
     else if (v[0] === "s" && v[1] !== MP.me) { const u = bots.concat(allies).find((x) => x.nid === v[1]); if (u && u.alive) SFX.at(u.g.position, WEAP[v[2]] ? v[2] : "Vandal"); }

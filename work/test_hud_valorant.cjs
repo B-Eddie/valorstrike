@@ -34,3 +34,6 @@ console.log('HUD v2: kill feed portraits, skull headshot, wallbang mark, own-kil
 assert(/annc\(win \? "ROUND WIN" : "ROUND LOSS"/.test(html),'Valorant banner wording');
 assert(/\.x-ann\.rnd \.x-ant,\.x-ann\.big \.x-ant\{position:relative;padding:4px 48px;background:linear-gradient/.test(css)&&/\.x-ann\.ace\{color:#f2dc8b\}/.test(css),'banner styles');
 console.log('HUD v2: round banners');
+// online: the server kill event's 6th field (wallbang) reaches the kill feed for every killer
+assert(/function kfeed\(k, v, hs, w, wbo\)/.test(html)&&/const wb = wbo != null \? !!wbo :/.test(html)&&/kfeed\(k, d, !!v\[3\], v\[4\], v\.length > 5 \? v\[5\] : null\)/.test(html),'online wallbang mark');
+console.log('HUD v2: online kill feed wallbang mark from the server kill event');
