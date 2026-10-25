@@ -73,13 +73,16 @@ All 12 user-list items now have shipped fixes on instinct. Remaining: ledger 13-
   texcap hook hardened + unit-tested (181e563): option/orientation/alpha preservation, probe
   closure, resize-failure fallback to full-size probe, Safari/Firefox no-cap path explicit.
 
-## Ability matrix anomaly under investigation (2026-10-25 ~03:08)
-- ability-matrix.cjs: 12-agent C/Q/E/X smoke in one 5v5. All 12 agents' abilities are wired
-  (okKey/rsKey/bcKey/cyKey dispatch exists) and fire individually (diag probes: Breach E,
-  Chamber E anchor, Killjoy C, Skye C, Cypher C all consume charges, zero errors).
-- ANOMALY: after Omen's full C/Q/E/X sequence (X leaves J.ftp minimap-targeting active,
-  ult unspent), subsequent agents' ability keys stop consuming charges - even after
-  clearing J.ftp/fts/dr/om/nano state via evaluate. Not yet explained: keydown reaches
-  jKey in earlier iterations; no page errors; charges read back at reset values.
-  Next: read keys{} capture or instrument whether jKey runs at all post-Omen-X;
-  check FV.menu / xDr overlay / minimap pointerEvents side effects.
+## Ability matrix anomaly RESOLVED (2026-10-25 ~03:12)
+- ability-matrix.cjs: 12-agent C/Q/E/X smoke in one 5v5. All 12 agents' abilities fire.
+- ROOT CAUSE: index.html:9945 pointerlockchange handler pauses the game on any pointer-lock
+  exit. Omen's X (From the Shadows) deliberately calls document.exitPointerLock() for minimap
+  targeting (J.ftp=true) -> pause() fired -> keydown listener's `if (paused) return;` swallowed
+  ALL keys, so no subsequent ability key did anything. Real-play impact: Omen ult would pop the
+  pause menu over the targeting UI on desktop. Same mechanism blocked Cypher/Killjoy/etc. in the
+  matrix because targeting left the game paused for the rest of the probe.
+- FIX: pointerlockchange guard now skips pause while J.ftp targeting is active
+  (`!J.ftp` added), mirroring the existing dead-spectating exemption.
+- VERIFIED: omen-pause-probe.cjs (mid profile): paused=false before X; after X ftp=true,
+  paused=false, lock released; ordinary unlock afterwards still pauses (regression guard).
+  ability-matrix rerun: 12/12 fired, zero page errors. 35 client suites green.

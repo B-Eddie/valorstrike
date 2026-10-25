@@ -9942,7 +9942,7 @@ function pause() {
 }
 function resume() { if (!paused) return; closeAll(); paused = false; $("xPause").classList.remove("on"); clock.getDelta(); if (!FV.menu) relock(); } // buy / free-gun menu still open (paused by alt-tab): keep the cursor free to click it
 function leave() { closeAll(); paused = false; $("xPause").classList.remove("on"); $("xBoard").classList.remove("on"); running = false; if (document.pointerLockElement) document.exitPointerLock(); $("lobbyBtn").onclick(); }
-document.addEventListener("pointerlockchange", () => { if (!document.pointerLockElement && inGame() && !paused && !FV.menu && !(player && player.hp <= 0 && xKL.sp) && performance.now() - (FV.mt || 0) > 700) pause(); });
+document.addEventListener("pointerlockchange", () => { if (!document.pointerLockElement && inGame() && !paused && !FV.menu && !J.ftp && !(player && player.hp <= 0 && xKL.sp) && performance.now() - (FV.mt || 0) > 700) pause(); });
 addEventListener("keydown", (e) => {
   if (xKbSkip(e)) return; // rebinding (Esc cancels the row, must not resume) or a key the keymap layer re-sends as its bound action
   if (e.key === "Escape" && FV.menu) { e.stopImmediatePropagation(); return buyMenu(false); }
