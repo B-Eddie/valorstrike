@@ -147,3 +147,20 @@ reference next run. Repair-vs-prune still open: if the only obstruction is one 0
 hand-authored nav connector (navigation.json is editable JSON, no Blender needed) could be
 tested against the real motor (jump-assisted traversal check) before accepting the isolation.
 Split bad-edge list exported: work/nav-prune/split-bad-edges.json (243 directed edges).
+
+## All-map bad-edge export progress - 06:58 EDT
+Exported (work/nav-prune/<map>-bad-edges.json), simulated-prune measurements:
+- split: 243 bad / 55,594; largest 7,505/7,803; defOK true; sites OK; loses "A Sewer"
+  (250-node region isolated at a 0.4u step - repair candidate, see doorway probe).
+- breeze: 328 bad; largest 11,587; defOK FALSE; loses "Defender Side Spawn" (64-node
+  fragment). BAKE BLOCKED pending articulation analysis: defender spawn anchor may itself
+  sit in the fragment, i.e. defenders may be spawn-trapped TODAY (breeze five-soak passes
+  are consistent with attackers planting unopposed - needs a defender-movement trace).
+  Do NOT bake breeze until spawn reachability is verified and, if real, a connector repair
+  is attempted.
+- haven: 188 bad; largest 8,142; defOK true; A/B/C sites OK; no callouts lost; fragments
+  all <=2 nodes. Safe bake candidate.
+- ascent, bind, lotus: export still owed.
+Bake rule (parent): apply only where before/after intended-area connectivity and spawn/site
+reachability are preserved; regions cut by pruning stay open as intended-space defects, no
+fencing/OOB changes.
