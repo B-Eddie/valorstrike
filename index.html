@@ -1272,8 +1272,8 @@ body.x-cbh #game{--ha:#3d8bff;--he:#ff9f1c}
   <div class="srow x-sr"><span class="st-l">Limit FPS</span><div class="seg" id="xFpsL"><button data-v="auto">Auto</button><button data-v="0" class="on">Off</button><button data-v="60">60</button><button data-v="120">120</button><button data-v="144">144</button></div></div>
   <div class="srow">Show FPS and ping<div class="seg" data-key="fps"><button data-v="0" class="on">Off</button><button data-v="1">On</button></div></div>
   <div class="st-sl"><div class="srow"><label for="sBri">Brightness</label><b id="vBri">1.00</b></div><input type="range" id="sBri" min="50" max="150" step="1" value="100" /></div>
-  <div class="srow x-sr"><span class="st-l">Resolution</span><div class="seg" id="xRes"><button data-v="std" class="on">Standard</button><button data-v="retina">Retina (sharper, much hotter)</button></div></div>
-  <div class="srow x-sr"><span class="st-l">Render scale</span><div class="seg" id="xRsc"><button data-v="auto" class="on">Auto (lower only to hold 60 FPS)</button><button data-v="1">100%</button><button data-v="0.85">85%</button><button data-v="0.8">80%</button><button data-v="0.7">70%</button><button data-v="0.5">50% (fastest)</button></div></div>
+  <div class="srow x-sr"><span class="st-l">Resolution</span><div class="seg" id="xRes"><button data-v="std">Standard</button><button data-v="retina" class="on">Native (sharp)</button></div></div>
+  <div class="srow x-sr"><span class="st-l">Render scale</span><div class="seg" id="xRsc"><button data-v="auto">Auto (may lower to hold 60 FPS)</button><button data-v="1" class="on">100%</button><button data-v="0.85">85%</button><button data-v="0.8">80%</button><button data-v="0.7">70%</button><button data-v="0.5">50% (fastest)</button></div></div>
   <div class="srow x-sr"><span class="st-l">Anti-aliasing</span><div class="seg" id="xAA"><button data-v="1" class="on">On</button><button data-v="0">Off (faster on weak graphics)</button></div></div>
   <div class="srow x-sr"><span class="st-l">Shadows</span><div class="seg" id="xShd"><button data-v="off" class="on">Off (coolest)</button><button data-v="map">Map only</button><button data-v="all">Everything (hotter)</button></div></div>
   <div class="srow x-sr"><span class="st-l">Skyline and far decor</span><div class="seg" id="xSky"><button data-v="1" class="on">On</button><button data-v="0">Off</button></div></div>
@@ -1964,7 +1964,7 @@ const THREE = window.THREE;
 if (THREE.ColorManagement) THREE.ColorManagement.legacyMode = false;
 let renderer;
 const xAAMem = { v: null }; // in-memory fallback when the sandbox blocks localStorage
-const xLowDev = (() => { try { return matchMedia("(pointer: coarse)").matches || "ontouchstart" in window; } catch (e) { return false; } })(); // touch/mobile: low preset on first load
+const xLowDev = (() => { try { return matchMedia("(pointer: coarse)").matches && !matchMedia("(any-pointer: fine)").matches; } catch (e) { return false; } })(); // phones/tablets only: a touch-screen laptop with a mouse/trackpad keeps the desktop (sharp) preset
 const xAAGet = () => { let v = null; try { v = localStorage.getItem("vs.aa"); } catch (e) {} if (v == null) v = xAAMem.v; if (v == null && xLowDev) return false; return v !== "0"; };
 // canvas textures: one cache for every generator, capped at 512 px, mipmapped, anisotropy <= 4
 const xTexC = new Map();
@@ -1985,7 +1985,7 @@ catch (e) { xGlErr = String((e && e.message) || e); // second try with the lowes
 renderer.outputEncoding = THREE.sRGBEncoding;
 renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.05; // look pass: filmic, sRGB out
 renderer.physicallyCorrectLights = true;
-renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 1.5));
+renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
 $("game").prepend(renderer.domElement);
 const scene = new THREE.Scene();
 // ---- Venice look: procedural canvas textures (no image files) ----
@@ -10127,7 +10127,7 @@ function xObsTick(force) { const on = xObsShow(); if (XOB.el.classList.contains(
 (window.XHK || (window.XHK = [])).push(() => { try { if ((xKL.on || XOB.hm) && $("game").style.display === "none") xKLReset(); } catch (e) {} });
 { const h0 = xHud; xHud = function () { const r = h0.apply(this, arguments); try { const a = player && player.hp <= 0 && xKL.sp ? xKL.cur : null; if (a && a.alive) { const w = a.w || "Classic", W = WEAP[w] || {}; setT("xWn", w); setT("xMag", a.xAmW === w && a.xAm > 0 ? a.xAm : W.mag || "—"); setT("xRs", W.mag ? W.mag * 3 : "—"); setT("xHp", Math.max(0, Math.ceil(a.hp))); setT("xArm", Math.ceil(a.armor || 0)); } } catch (e) {} return r; }; } // spectated teammate's weapon / ammo / health in the HUD
 // ---- Settings: FPS limit, resolution, render scale, anti-aliasing, aim assist, shadows ----
-const XS = { cap: "auto", res: "std", scale: xLowDev ? "0.8" : "auto", aa: xAA0, aim: "aim", shd: "off" }; // touch: low preset (AA off, 0.8 scale, 512 shadows)
+const XS = { cap: "auto", res: xLowDev ? "std" : "retina", scale: "1", aa: xAA0, aim: "aim", shd: "off" }; // sharp by default: native device pixels (desktop) and never below 1:1 CSS pixels
 // ---- Keybinds: XS.keys maps logical action -> physical code; one capture-phase lookup at the keydown entry translates to the game's default codes ----
 const XKB = [["fwd", "Move forward", "KeyW"], ["back", "Move back", "KeyS"], ["left", "Move left", "KeyA"], ["right", "Move right", "KeyD"], ["walk", "Walk", "ShiftLeft"], ["crouch", "Crouch", "ControlLeft"], ["jump", "Jump", "Space"], ["use", "Use / Interact", "KeyF"], ["abC", "Ability C", "KeyC"], ["abQ", "Ability Q", "KeyQ"], ["abE", "Ability E", "KeyE"], ["abX", "Ultimate X", "KeyX"], ["reload", "Reload", "KeyR"], ["inspect", "Inspect", "KeyY"], ["drop", "Drop Spike", "KeyG"], ["ping", "Ping", "KeyZ"], ["comms", "Comms", "Period"], ["board", "Scoreboard", "Tab"], ["buy", "Buy menu", "KeyB"], ["pri", "Primary", "Digit1"], ["sec", "Secondary", "Digit2"], ["melee", "Melee", "Digit3"]];
 XKB.push(["spray", "Spray", "KeyT"]);
@@ -10282,12 +10282,15 @@ let xAcc = 0;
 const xPRMax = () => { const d = devicePixelRatio || 1, p = Math.min((XS.res === "retina" ? d : 1) * (XS.scale === "auto" ? 1 : +XS.scale), XS.prc || 9); return XS.res !== "retina" && matchMedia("(pointer: coarse)").matches ? Math.min(p, d, 1.5) : p; };
 // adaptive resolution: the user's render scale is the ceiling; drop 0.1 (floor 0.7) under 50 fps, climb back over 58 fps, averaged over 2 s
 let xAdPR = Infinity, xAdT = performance.now(), xAdN = 0;
-const xPR = () => { const m = xPRMax(); return Math.max(Math.min(0.7, m), Math.min(m, xAdPR)); };
+// Adaptive resolution only runs when the user picks the "auto" render scale, and even then never drops below 1:1 CSS pixels (or 75% of native).
+const xPRFloor = (m) => Math.min(m, Math.max(1, m * 0.75));
+const xPR = () => { const m = xPRMax(); return XS.scale === "auto" ? Math.max(xPRFloor(m), Math.min(m, xAdPR)) : m; };
 function xAdapt() {
   const now = performance.now(); xAdN++; if (now - xAdT < 2000) return;
   const fps = xAdN * 1000 / (now - xAdT); xAdN = 0; xAdT = now;
   if (!running || paused) return;
-  const m = xPRMax(), cur = xPR(), lo = Math.min(0.7, m);
+  if (XS.scale !== "auto") return;
+  const m = xPRMax(), cur = xPR(), lo = xPRFloor(m);
   if (fps < 50 && cur > lo + 0.001) { xAdPR = Math.max(lo, Math.round((cur - 0.1) * 10) / 10); resize(); }
   else if (fps > 58 && cur < m - 0.001) { const nx = Math.round((cur + 0.1) * 10) / 10; xAdPR = nx >= m ? Infinity : nx; resize(); }
 }
@@ -10392,8 +10395,8 @@ xSeg("xAim", (v) => { XS.aim = v; });
 xSeg("xShd", (v) => { XS.shd = v; xApplyShadows(); });
 // VIDEO tab: graphics quality presets over the perf knobs; any individual change after shows CUSTOM
 const xGQP = {
-  low: { scale: "0.8", res: "std", prc: 1, shd: "off", shm: 512, aa: false, sky: false, lod: 25 }, // = the existing mobile low preset
-  medium: { scale: "auto", res: "std", prc: 1.5, shd: "map", shm: 1024, aa: true, sky: true, lod: 40 },
+  low: { scale: "1", res: "std", prc: 1, shd: "off", shm: 512, aa: false, sky: false, lod: 25 }, // mobile default: 1:1 CSS pixels (no blurry sub-native scale unless the user picks one)
+  medium: { scale: "1", res: "retina", prc: 2, shd: "map", shm: 1024, aa: true, sky: true, lod: 40 }, // desktop default: native device pixels up to 2x, MSAA
   high: { scale: "1", res: "retina", prc: 2, shd: "all", shm: 2048, aa: true, sky: true, lod: 60 },
 };
 function xSkyApply() { try { const on = XS.sky !== false; scene.traverse((o) => {
