@@ -62,7 +62,7 @@ const api=new Function('env','with(env){'+names.map(pick).join('\n')+'\n'+blocks
  let live=true;env.uploads.length=0;s=makeScene();mem=await api.nmBudget(s.scene,0);const many=[];for(let i=0;i<60;i++)many.push(mem.textures[i%4]);const pr=api.nmUpload(many,()=>live);live=false;await pr;assert(env.uploads.length<=24,'upload continues for a cancelled load');
  // New WebGL context: the scene is reloaded and prepared again, the old one hidden at once and freed; a map change mid-reload discards it.
  const key='lotus',mapRoot=new THREE.Group(),oldScene=new THREE.Group();mapRoot.add(oldScene);let next=makeScene(),loads=0;
- env.nmLoadScene=async()=>{loads++;await new Promise(r=>setTimeout(r,5));return {scene:next.scene};};env.nmPrepareScene=x=>x;env.quality='low';
+ env.nmLoadScene=async()=>{loads++;await new Promise(r=>setTimeout(r,5));return {scene:next.scene};};env.nmPrepareScene=x=>x;env.nmZFixApply=()=>0;/* z-fight fix and render optimizer run after prepare; stubbed here */env.nmOptimizeScene=()=>({meshes:0,chunks:0,materials:0});env.quality='low';
  const C0={key,M:{g:mapRoot},scene:oldScene,memory:{collisionBytes:7,textures:[]}};env.NM.current=C0;env.freed.length=0;
  const p1=api.nmRehydrate();assert.equal(oldScene.visible,false,'old scene (no CPU copies) must not draw in the new context');assert.equal(await api.nmRehydrate(),false,'second reload while one runs');
  assert.equal(await p1,true);assert.equal(loads,1);assert.equal(C0.scene,next.scene);assert(mapRoot.children.includes(next.scene)&&!mapRoot.children.includes(oldScene));assert(env.freed.includes(oldScene));assert.equal(C0.memory.rehydrated,1);assert.equal(C0.memory.cap,256);assert.equal(C0.memory.collisionBytes,7);

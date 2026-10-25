@@ -8,9 +8,9 @@ import {abilityDamage} from './abilities.js';
 export const DEV={
  recon:{pulses:[.9,2.5],radius:20,reveal:1.6},
  blaze:{life:8,length:12,width:.8,height:3,damage:30,heal:12.5},
- hotHands:{life:4,radius:4,damage:40,heal:12.5},
+ hotHands:{life:4,radius:4,damage:60,heal:12.5},
  curveball:{ahead:5,side:2.5,windup:.5,blind:1.1,radius:30},
- nanoswarm:{life:120,active:4,radius:4,damage:45},
+ nanoswarm:{life:120,active:5,radius:4,damage:45},
  alarmbot:{life:120,sight:5.5,speed:5,trigger:1.5,radius:3,vulnerable:4},
  turret:{life:20,range:30,arc:Math.PI/2,damage:12,interval:.7,tag:.5},
  trapwire:{life:120,reach:7.5,width:.4,tether:2.5,daze:2.5},
@@ -64,9 +64,9 @@ const KINDS=new Set(['recon','boombot','trail','blaze','nanoswarm','alarmbot','t
 export function tickDevices(sim,dt){
  for(const u of sim.units){if(u.headhunter&&(!u.alive||u.weapon!==DEV.headhunter.weapon||u.ammo<=0))endHeadhunter(u);
   if(u.tether&&sim.time>=u.tether.at){if(u.alive){u.concussUntil=Math.max(u.concussUntil||0,sim.time+DEV.trapwire.daze);u.slowUntil=Math.max(u.slowUntil||0,sim.time+DEV.trapwire.daze);}u.tether=null;}}
- for(let i=sim.effects.length-1;i>=0;i--){const e=sim.effects[i];if(!KINDS.has(e.kind))continue;if(e.until<sim.time)continue;const owner=sim.units.find(u=>u.id===e.owner),foes=sim.units.filter(v=>v.alive&&!v.loading&&v.team!==e.team);
+ for(let i=sim.effects.length-1;i>=0;i--){const e=sim.effects[i];if(!KINDS.has(e.kind))continue;if(e.until<sim.time)continue;sim.fxSrc=e;const owner=sim.units.find(u=>u.id===e.owner),foes=sim.units.filter(v=>v.alive&&!v.loading&&v.team!==e.team);
   if(e.kind==='recon'){while(e.pulses&&e.pulses.length&&sim.time>=e.pulses[0]){e.pulses.shift();const o=[e.p[0],e.p[1]+.5,e.p[2]];for(const v of foes)if(Math.hypot(v.x-o[0],v.z-o[2])<e.radius&&losClear(sim,o,chest(v)))v.revealedUntil=Math.max(v.revealedUntil||0,sim.time+DEV.recon.reveal);}continue;}
-  if(e.kind==='blaze'){const B=DEV.blaze,inWall=v=>Math.abs(v.y-e.p[1])<B.height&&segDist(e,v.x,v.z)<B.width;for(const v of foes)if(inWall(v))abilityDamage(sim,owner,v,B.damage*dt);if(owner?.alive&&inWall(owner))owner.hp=Math.min(100,owner.hp+B.heal*dt);continue;}
+  if(e.kind==='blaze'){const B=DEV.blaze,inWall=v=>Math.abs(v.y-e.p[1])<B.height&&segDist(e,v.x,v.z)<B.width;for(const v of foes)if(inWall(v))abilityDamage(sim,owner,v,B.damage*dt);if(owner?.alive&&inWall(owner)&&owner.hp<100)owner.hp=Math.min(100,owner.hp+B.heal*dt);continue;}
   if(e.kind==='nanoswarm'){if(!e.armed)continue;for(const v of foes)if(Math.hypot(v.x-e.p[0],v.z-e.p[2])<e.radius&&Math.abs(v.y-e.p[1])<3&&losClear(sim,[e.p[0],e.p[1]+.4,e.p[2]],chest(v)))abilityDamage(sim,owner,v,DEV.nanoswarm.damage*dt);continue;}
   if(e.kind==='trapwire'){const T=DEV.trapwire;for(const v of foes)if(!v.tether&&Math.abs(v.y-e.p[1])<1.5&&segDist(e,v.x,v.z)<T.width){v.tether={at:sim.time+T.tether};v.tetheredUntil=sim.time+T.tether;v.revealedUntil=Math.max(v.revealedUntil||0,sim.time+T.tether);v.slowUntil=Math.max(v.slowUntil||0,sim.time+T.tether);e.until=sim.time;break;}continue;}
   if(e.kind==='trademark'){const T=DEV.trademark,o=[e.p[0],e.p[1]+.3,e.p[2]];if(e.field){for(const v of foes)if(Math.hypot(v.x-o[0],v.z-o[2])<T.radius&&Math.abs(v.y-e.p[1])<3)v.slowUntil=Math.max(v.slowUntil||0,sim.time+.2);continue;}

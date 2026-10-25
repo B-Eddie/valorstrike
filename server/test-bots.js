@@ -5,7 +5,7 @@ const all=nodes.map((_,i)=>i),near=(x,z)=>{let b=0,d=Infinity;for(const i of all
 const W={map:{attacker:[-14,0,0],defender:[14,0,-28],sites:{A:[0,0,-14]}},nav:{nodes,adj},playable:all,allowed:new Set(all),near,ground:()=>0,blocked:()=>false,ray:(o,d,max=Infinity)=>max>12?1:Infinity};
 function run(botName,steps=240,sightSteps=0){const s=new Simulation(W,'tdm','ascent',()=>.5),t=s.add('Target','Jett',true),b=s.add(botName,'Sage',false);s.phase='game';s.remaining=570;
  Object.assign(t,{team:1,x:14,y:0,z:-28,hp:1e9,protectedUntil:1e9});Object.assign(b,{team:0,x:-14,y:0,z:0,look:0,vx:0,vz:0,protectedUntil:0});
- const track=[],acts=[];for(let i=0;i<steps;i++){s.step(.05);t.hp=1e9;t.x=14;t.z=-28;track.push([b.x,b.z]);acts.push([b.input.forward||0,b.input.side||0,b.input.duck?1:0,b.input.walk?1:0,b.input.fire?1:0].join(''));}
+ const track=[],acts=[];for(let i=0;i<steps;i++){s.step(.05);t.hp=1e9;t.x=14;t.z=-28;track.push([b.x,b.z]);acts.push([b.input.forward||0,b.input.side||0,b.input.duck?1:0,b.input.walk?1:0,b.input.fire?1:0,(+b.look).toFixed(1)].join(''));/* heading too: two bots can both hold forward the whole run and still steer differently */}
  return {track,acts,P:persona(s,b),b};}
 const dev=(A,B)=>Math.max(...A.track.map((p,i)=>Math.hypot(p[0]-B.track[i][0],p[1]-B.track[i][1])));
 // 1. Same name/id/map replays exactly (deterministic seeds, independent of the shared weapon RNG).
