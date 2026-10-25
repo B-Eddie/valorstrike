@@ -255,3 +255,14 @@ floor contact retained as NUMERIC evidence only (flat bg has no ground reference
   goes through the same #xdPrompt. So pickup availability = offline 5v5 + online m5. DM has no
   pickup list (free-guns mode: HUD "FREE GUNS (WHEN SAFE)") - consistent with Valorant DM rules
   but asserted from code + game-rules reasoning, not user-approved scope. No DM change made.
+
+## NEXT (queued 08:56 EDT)
+1. Online two-client PROTOCOL check (label: protocol evidence, not rendered two-human
+   acceptance): `npm run dev` (wrangler local :8787, ALLOW_LOCAL_ORIGIN) + a ws script in the
+   test-spike-socket.js pattern: client A creates (/connect?create=1&code=X&mode=five&map=...),
+   B joins same code; assert both receive rs snapshots with 2 human players; A kills B via
+   inputs -> B sees own hp/death; B drops gun -> A sees netFloor entry (online pickup path,
+   the corrected scope). Write as server/test-two-client.js standalone first; chain add later.
+2. Stairs live walk (find a stairs spot, scripted W-key walk, verify y rises smoothly).
+3. Skirt visual (numeric eval already green; light-profile screenshot at map edge).
+4. Mobile items + performance remain open.
