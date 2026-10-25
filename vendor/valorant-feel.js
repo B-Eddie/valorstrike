@@ -52,6 +52,21 @@ function clipBlocked(map,x,z,r,y,height=1.8){const L=CLIPS[map];if(!L)return fal
 // 100 at about 17 m; it hits health directly and ignores shields. Linear between the two published points (the wiki gives
 // only the end points). The drop is measured from the highest point of the airborne arc to the landing floor.
 function fallDamage(drop){return !(drop>=8)?0:Math.min(100,Math.round(15+(drop-8)*85/9));}
+// Playable leash (map boundary): the source collision has no player-blocking volumes, so a unit could walk, dash, satchel
+// or updraft off the map edge into the void, out past spawn backs, or onto roofs and wall tops. A horizontal move must end
+// on the navigation footprint: the playable nodes plus the other valid components no more than 4.6 m above the playable
+// floor (box tops, drop-only areas the nav sampled; roofs it sampled stay out):
+//  core: within .6 m of a node no more than 1 m above the feet and 7.5 m below them (updraft + jump reach) whose floor is
+//        no more than 1.6 m below the surface under the capsule (a railing or a low box may be vaulted, a wall top or a
+//        roof edge 2+ m above the street is not a place to stand unless the nav sampled it), or
+//  rim:  within 1.5 m of a node whose floor is within 1 m of the floor under the capsule (the same floor just past the
+//        nav's edge; never a void or a drop off the map).
+// Movement only (shots, sight and floor rays never see it); a unit already off the footprint may always move.
+function leashGrid(nodes,valid,adj){const keep=new Uint8Array(nodes.length);if(adj){const comp=new Int32Array(nodes.length).fill(-1),comps=[];for(let i=0;i<nodes.length;i++){if((valid&&!valid[i])||comp[i]>=0)continue;const q=[i];comp[i]=comps.length;for(let k=0;k<q.length;k++)for(const n of adj[q[k]])if((!valid||valid[n])&&comp[n]<0){comp[n]=comps.length;q.push(n);}comps.push(q);}let big=0;comps.forEach((c,k)=>{if(c.length>comps[big].length)big=k;});const pc=new Map();for(const i of comps[big]||[]){keep[i]=1;const p=nodes[i],k=Math.floor(p[0]/3)*4096+Math.floor(p[2]/3);let l=pc.get(k);if(!l)pc.set(k,l=[]);l.push(p);}
+ /* other components (box tops, drop-only areas) count when no node stands more than 4.6 m above the playable floor around it: roofs the nav sampled (Haven 8-11 m, Ascent 6-9 m) stay off the footprint */
+ comps.forEach((c,k)=>{if(k===big)return;let worst=-Infinity;for(const i of c){const p=nodes[i];let base=null,bd=Infinity;for(let r=1;r<=3&&base==null;r++)for(let a=-r;a<=r;a++)for(let b=-r;b<=r;b++)for(const q of pc.get((Math.floor(p[0]/3)+a)*4096+Math.floor(p[2]/3)+b)||[]){const d=(q[0]-p[0])**2+(q[2]-p[2])**2;if(d<bd){bd=d;base=q;}}const up=base?p[1]-base[1]:Infinity;if(up>worst)worst=up;if(worst>4.6)break;}if(worst<=4.6)for(const i of c)keep[i]=1;});}else for(let i=0;i<nodes.length;i++)keep[i]=valid?valid[i]:1;
+ const cells=new Map();for(let i=0;i<nodes.length;i++){if(!keep[i])continue;const p=nodes[i],k=Math.floor(p[0])*4096+Math.floor(p[2]);let l=cells.get(k);if(!l)cells.set(k,l=[]);l.push(p[0],p[1],p[2]);}return cells;}
+function leashOk(L,x,z,y,ground){if(!L)return true;let core=-Infinity;const rim=[],cx=Math.floor(x),cz=Math.floor(z);for(let dx=-2;dx<=2;dx++)for(let dz=-2;dz<=2;dz++){const l=L.get((cx+dx)*4096+cz+dz);if(!l)continue;for(let i=0;i<l.length;i+=3){const ny=l[i+1],d=(l[i]-x)**2+(l[i+2]-z)**2;if(d>2.25)continue;if(d<=.36&&ny<=y+1&&ny>=y-7.5){if(ny>=y-1.6)return true;if(ny>core)core=ny;}rim.push(ny);}}if(!rim.length||!ground)return false;const g=ground(x,z,y);if(core>-Infinity&&core>=g-1.6)return true;for(const ny of rim)if(Math.abs(ny-g)<=1)return true;return false;}
 function step(P,input,dt,world){
  const dt0=Math.max(0,Math.min(.1,dt)),parts=Math.max(1,Math.ceil(dt0*128)),h=dt0/parts;let landed=false,jumped=false,drop=0;
  // Moved from outside the motor since the last step (a teleport, a rescue, a respawn): the fall starts over from here.
@@ -68,7 +83,7 @@ function step(P,input,dt,world){
   let v;if(grounded){const ck=(P.ch||0)/C.crouchEye,accel=max/Math.max(1e-3,C.accelTime+(C.crouchAccelTime-C.accelTime)*ck);v=groundMove(P,tx,tz,Math.max(1e-3,accel),h);}
   else{if(!l){tx=P.vx||0;tz=P.vz||0;}const cap=Math.min(C.knifeSpeed*(input.tag||1),Math.max(P.takeoffSpeed||input.speed,.1)),s=Math.hypot(tx,tz);if(s>cap){tx*=cap/s;tz*=cap/s;}v=velocity(P.vx||0,P.vz||0,tx,tz,C.airAcceleration,h);P.vx=v.vx;P.vz=v.vz;}
   const height=1.8-(P.ch||0);
-  const moveAxis=(dx,dz)=>{const x=P.x+dx,z=P.z+dz;if(!world.blocked(x,z,.4,P.y,height)){P.x=x;P.z=z;return true;}
+  const moveAxis=(dx,dz)=>{const x=P.x+dx,z=P.z+dz;if(world.leash&&!world.leash(x,z,P.y)&&world.leash(P.x,P.z,P.y))return false;if(!world.blocked(x,z,.4,P.y,height)){P.x=x;P.z=z;return true;}
    // A grounded capsule may step onto a low stair, never teleport onto a tall box. The lifted capsule needs 1 cm of clearance
    // beyond its radius: a slanted wall lip that a .4 capsule only grazes is not a step (it sank into the lip, embedded).
    // Lift by the step height, move, then settle onto the lowest free height above the destination floor.
@@ -112,5 +127,5 @@ function sprayStep(R,w,weight,t,random=Math.random){const n=R.sequence++,rifle=S
  if(n===0){R.drift=random()<.5?-1:1;R.recoilX=0;R.recoilY=0;}else{R.recoilY=Math.min(rifle?.065:.05,R.recoilY+(rifle?(n<7?.006:.0015):.008)*weight);if(n>6){R.recoilX+=R.drift*.003*weight;if(Math.abs(R.recoilX)>.022){R.drift=-Math.sign(R.recoilX);}if(random()<.12)R.drift*=-1;}}
  R.bloom=Math.min(.024,(R.bloom||0)+.0015*weight);R.shot=t;return n;}
 function disk(random=Math.random){const a=random()*Math.PI*2,r=Math.sqrt(random());return [Math.cos(a)*r,Math.sin(a)*r];}
-return {C,step,fallDamage,velocity,brake,groundMove,spread,disk,damp,approach,clipBlocked,CLIPS,REC,sprayReset,sprayBloom,sprayStep};
+return {C,step,fallDamage,velocity,brake,groundMove,spread,disk,damp,approach,clipBlocked,CLIPS,REC,sprayReset,sprayBloom,sprayStep,leashGrid,leashOk};
 });

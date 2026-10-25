@@ -10,11 +10,17 @@ const walk=(s,u,look,seconds,each=()=>{})=>{let low=Infinity;for(let k=0;k<secon
 
 // 1. Open map edge behind the attacker spawn (no wall, no floor below): units fell out of the world. In DM/TDM they
 //    fell to y -20 and respawned elsewhere; in a Spike buy phase there was no check at all and they fell forever
-//    (y -3400 seen). Now a falling unit with no floor below is put back where it last stood.
+//    (y -3400 seen). Now a falling unit with no floor below is put back where it last stood. The playable leash (motor
+//    leashOk) now stops the walk at the edge first, so the rescue net is exercised with the leash lifted, and the
+//    leash itself is checked: the same walk keeps the unit on the floor with no rescue needed.
+{const s=new Simulation(W,'tdm','ascent');const u=s.add('Leashed');s.start(false);const p=node(-1.3,8.4,71.8);[u.x,u.y,u.z]=p;u.safe=null;
+ const low=walk(s,u,Math.PI,6);assert(low>p[1]-.6,'leash: walking at the open edge stays on the floor: '+low);assert.equal(u.rescued||0,0,'leash: no rescue needed');assert(Math.hypot(u.x-p[0],u.z-p[2])<6,'leash: stopped at the edge');}
+const LEASH=W.leash;delete W.leash;
 {const s=new Simulation(W,'tdm','ascent');const u=s.add('Edge');s.start(false);const p=node(-1.3,8.4,71.8);[u.x,u.y,u.z]=p;u.safe=null;
  const low=walk(s,u,Math.PI,6);assert(low>minNav-1,'never below the map: '+low);assert(u.rescued>=1,'rescued at the open edge');assert.equal(u.deaths,0);assert(Number.isFinite(u.x+u.y+u.z));assert(Math.hypot(u.x-p[0],u.z-p[2])<6,'kept near the edge');}
 {const s=new SpikeSimulation(W,'five','ascent');const u=s.add('Buyer');s.start(false);assert(s.buy>0);assert.equal(u.team,s.atk);const p=node(-1.3,8.4,71.8);[u.x,u.y,u.z]=p;
  const low=walk(s,u,Math.PI,6);assert(s.buy>0,'still the buy phase');assert(low>minNav-1,'buy phase: never below the map: '+low);assert(u.rescued>=1);assert(u.alive);}
+W.leash=LEASH;
 
 // 2. Wedged in collision: a bot settled where its capsule intersects a prop at A main (blocked where it stands) and every
 //    move was rejected for the rest of the match. It is now moved to the nearest free nav node.
@@ -83,13 +89,14 @@ const walk=(s,u,look,seconds,each=()=>{})=>{let low=Infinity;for(let k=0;k<secon
 
 // 6c. Off-map pockets: past the Breeze walkway edge near (-30, -68) there is collision 4.3 m down with no nav node and
 //     void around it; a bot walked off and stood there for the rest of the match (soak, seed 5). A unit standing over
-//     1.5 m below its last on-graph spot with no playable node near is put back on the walkway.
-{const B=await loadWorld(assets,'breeze');const s=new Simulation(B,'tdm','breeze');const u=s.add('Ledge');s.start(false);const p=B.nav.nodes[B.near(-29.75,-66.25,8.06)];
+//     1.5 m below its last on-graph spot with no playable node near is put back on the walkway. The playable leash
+//     now stops the walk at the walkway edge (no rescue needed); the rescue net is then checked with the leash lifted.
+{const B=await loadWorld(assets,'breeze');const BL=B.leash;for(const leashed of [true,false]){if(!leashed)delete B.leash;const s=new Simulation(B,'tdm','breeze');const u=s.add('Ledge');s.start(false);const p=B.nav.nodes[B.near(-29.75,-66.25,8.06)];
  for(const look of [Math.atan2(.76,2.12),Math.atan2(.76,2.12)-.5]){[u.x,u.y,u.z]=p;u.safe=u.anchor=null;u.vx=u.vy=u.vz=0;let low=Infinity;
   for(let k=0;k<60;k++){s.command(u,{t:'in',seq:++u.lastSeq+1,r:look,p:0,f:1,s:0});s.step(.05);if(!u.air)low=Math.min(low,u.y);}
   assert(low>7,'never stands in the pocket below the walkway: '+low.toFixed(2));}
- assert(u.rescued>=2,'put back');assert(!s.offMesh(B,...p)&&s.offMesh(B,-30.51,3.77,-68.37),'pocket is off the graph, walkway is on it');
- const a=W.nav.nodes[W.playable[100]];assert(!s.offMesh(W,...a),'nav node on Ascent is on the graph');}
+ if(leashed)assert.equal(u.rescued||0,0,'leash: stopped at the walkway edge, no rescue needed');else assert(u.rescued>=2,'put back');assert(!s.offMesh(B,...p)&&s.offMesh(B,-30.51,3.77,-68.37),'pocket is off the graph, walkway is on it');
+ const a=W.nav.nodes[W.playable[100]];assert(!s.offMesh(W,...a),'nav node on Ascent is on the graph');}B.leash=BL;}
 
 // 6d. DM seat-taker (soak 13, DM): a human joining a full DM room took the replaced bot's team id, so it inherited that
 //     bot's score row (points it never scored; the row no longer matched its kills). Each DM unit now has its own row.
