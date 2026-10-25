@@ -108,7 +108,7 @@ mpCliRS=function(m){const r=netFloorRS0.apply(this,arguments);if(NET.socket&&MP.
 const netFloorReset0=mpReset;mpReset=function(){netFloorClear();return netFloorReset0.apply(this,arguments);};
 document.addEventListener('keydown',e=>{if(!(NET.socket&&MP.st==='game'&&MP.m5)||xKbSkip(e)||e.repeat||!running||paused||player.hp<=0)return;
  if(e.code==='KeyF'){const d=xdLook([...netFloor.values()]);if(d){netSend({t:'pick',id:d.id});e.stopImmediatePropagation();}return;}
- if(e.code==='KeyG'){if(FV.sp&&FV.sp.st==='carry'&&FV.sp.c===player)return;if(rw==='pri'&&FV.pri){netSend({t:'dropw'});e.stopImmediatePropagation();}}},true);
+ if(e.code==='KeyG'){if(FV.sp&&FV.sp.st==='carry'&&FV.sp.c===player&&!(FV.buy>0))return;/* the Spike can't be dropped in the buy phase (server), so a carrier's G drops the held gun for a teammate then */if(rw==='pri'&&FV.pri){netSend({t:'dropw'});e.stopImmediatePropagation();}}},true);
 
 // Online soul resources and buff presentation follow private server round state.
 const netSouls=new Map();
