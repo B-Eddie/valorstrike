@@ -32,8 +32,8 @@ export class Simulation{
  start(fill=true){for(const name of ['Sage','Omen','Raze','Sova','Breach','Phoenix','Cypher','Skye','Killjoy']){if(!fill||this.units.length>=10)break;this.add('Bot '+name,name,false);}this.phase='game';this.remaining=570;for(const u of this.units)this.spawn(u);}
  step(dt){if(this.phase!=='game')return;dt=Math.min(.05,Math.max(0,dt));this.time+=dt;this.remaining-=dt;for(const u of this.units){if(u.loading)continue;if(!u.alive){if(this.time>=u.respawnAt)this.spawn(u);continue;}if(u.reloadAt&&this.time>=u.reloadAt){this.finishReload(u);}if(!u.human)this.bot(u);const i=this.time-(u.inputAt||0)<.3?u.input:{},f=i.forward||0,s=i.side||0,c=Math.cos(u.look),sn=Math.sin(u.look),ox=u.x,oz=u.z;Motor.step(u,{x:-sn*f+c*s,z:-c*f-sn*s,jump:i.jump,duck:i.duck,walk:i.walk,speed:6.75*weapons[u.weapon].runSpeedMultiplier*(i.ads&&!(u.concussUntil>this.time)&&weapons[u.weapon].adsStats?weapons[u.weapon].adsStats.runSpeedMultiplier:1),tag:u.tagUntil>this.time?.275:1},dt,this.world);this.guard(u);this.unwedge(u,ox,oz,f||s,dt);if(u.y<-20||!Number.isFinite(u.x)||!Number.isFinite(u.y)||!Number.isFinite(u.z)){this.spawn(u);continue;}this.teleport(u);if(i.fire)this.fire(u);}if(this.remaining<=0||this.scores.some(n=>n>=this.maxKills)||(this.mode==='dm'&&this.units.some(u=>u.kills>=this.maxKills)))this.phase='post';}
  // Falling out of the map. The native collision has open edges (e.g. behind spawns) and seams a capsule can slip
- // through; nothing in VALORANT kills by falling on these maps. A unit that is falling with no floor anywhere below it,
- // or that is already below the lowest playable floor, is put back where it last stood on solid ground (else the
+ // through; nothing in VALORANT kills by falling on these maps. A unit that is falling with no floor anywhere below any
+ // point of its footprint, or that is already below the lowest playable floor, is put back where it last stood on solid ground (else the
  // nearest nav node), velocity cleared. Grounded positions are remembered every tick.
  // Standing more than 1.5 m below the last spot on the nav graph, on a floor with no playable nav node near it at or below that height: outside the playable
  // map (e.g. Breeze's strip below the ledge at -30,-68, 4.3 m under the walkway, with void around it). Nothing leads
@@ -45,7 +45,7 @@ export class Simulation{
   if(this.floorY===undefined){const N=W.nav?.nodes,list=W.playable||[];let m=Infinity;for(const i of list)m=Math.min(m,N[i][1]);this.floorY=Number.isFinite(m)?m-3:-Infinity;}
   if(!u.air){const on=this.onMesh(W,u.x,u.y,u.z);if(on)u.anchor=[u.x,u.y,u.z];else if(u.anchor&&u.anchor[1]-u.y>1.5&&this.offMesh(W,u.x,u.y,u.z)){[u.x,u.y,u.z]=u.anchor;u.vx=u.vz=u.vy=0;u.seq++;u.rescued=(u.rescued||0)+1;u.pocket=(u.pocket||0)+1;u.safe=[...u.anchor];return true;}u.safe=[u.x,u.y,u.z];return false;}
   if(!((u.vy||0)<0))return false;
-  let lost=u.y<this.floorY;if(!lost&&typeof W.ground==='function'){const g=W.ground(u.x,u.z,u.y);lost=!(g>u.y-9.99);}
+  let lost=u.y<this.floorY;if(!lost&&typeof W.ground==='function'){/* the capsule's footprint, not one ray: a crack between two stair meshes (Haven C stairs from the defender side) has no floor under the centre, and the single-ray check rescued every unit walking down them back to the top step twice a second */let g=W.ground(u.x,u.z,u.y);for(let k=0;k<8&&!(g>u.y-9.99);k++){const a=k*Math.PI/4;g=Math.max(g,W.ground(u.x+Math.cos(a)*.3,u.z+Math.sin(a)*.3,u.y));}lost=!(g>u.y-9.99);}
   if(!lost)return false;
   const p=u.safe||(W.nav&&W.near?W.nav.nodes[W.near(u.x,u.z,u.y)]:null);if(!p)return false;[u.x,u.y,u.z]=p;u.vx=u.vz=u.vy=0;u.air=false;u.seq++;u.rescued=(u.rescued||0)+1;return true;}
  // Wedged in collision: some nav nodes and prop edges let the shared motor settle a capsule where it intersects

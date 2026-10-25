@@ -694,6 +694,8 @@ body.x-cbh #game{--ha:#3d8bff;--he:#ff9f1c}
 .x-dmlb ol,.x-dmr{list-style:none;margin:0;padding:0}
 .x-dmlb li,.x-dmr li{display:flex;gap:8px;padding:2px 0}.x-dmlb li b,.x-dmr li b{flex:1;font-weight:500}.x-dmlb li.me,.x-dmr li.me{color:#5fffb0}
 .x-dmlb li span,.x-dmr li span{width:16px;opacity:.6}.x-dmlb em,.x-dmr em{font-style:normal}
+/* short landscape (640x360): the 173 px board at top:180px covered the credits/weapon/ammo block (top 264 px); compact it and sit it just above that block */
+@media (max-height:480px){.x-dmlb{top:auto;bottom:100px;width:150px;padding:5px 8px;font-size:11px;line-height:1.3}.x-dmlb__h{margin:0 0 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.x-dmlb li{padding:0}}
 .x-dmr{margin:12px auto 0;max-width:280px;text-align:left}
 
 .x-dmg__in{width:min(1100px,96vw);max-width:none;border-radius:0;padding:24px;background:rgba(11,22,30,.98);display:flex;flex-direction:column;overflow:hidden}.x-dmg__c{overflow-y:auto;min-height:0}.x-dmg__head,.x-dmg__f{flex-shrink:0}
@@ -12461,6 +12463,10 @@ function nmMinimap(C){const g=$('game'),show=running&&player&&(mode==='five'||mo
 // Bind's source teleporter entrances/exits replace the legacy pads and their coordinates.
 function nmTeleports(C){if((typeof NET!=='undefined'&&NET.socket)||C.key!=='bind'||!running||paused)return;const now=performance.now();if(!C.teleporters){const find=name=>C.meta.callouts.find(c=>c.name===name).position;C.teleporters=[['A Teleporter','B Exit'],['B Teleporter','A Exit']].map(([a,b])=>({entry:find(a),exit:find(b)}));}for(const u of [player].concat(bots,allies)){if(u!==player&&!u.alive)continue;if((u.nmTP||0)>now)continue;const p=u===player?[u.x,u.y,u.z]:u.g.position.toArray();const gate=C.teleporters.find(t=>Math.hypot(p[0]-t.entry[0],p[2]-t.entry[2])<2&&Math.abs(p[1]-nmHeight(C,t.entry[0],t.entry[2]))<1.5);if(!gate){u.nmTPStart=0;continue;}if(!u.nmTPStart){u.nmTPStart=now;continue;}if(now-u.nmTPStart<400)continue;nmPlace(u,C,gate.exit,1);u.nmTP=now+1800;u.nmTPStart=0;if(u===player){SFX.tp();say('Teleporter',700);}}}
 {const hooks=window.XHK||[],i=hooks.findIndex(f=>f.name==='tpLoop');if(i>=0){const legacy=hooks[i];hooks[i]=function(){const C=nmActive();return C?nmTeleports(C):legacy();};}}
+// The legacy bot pad check (xTpBots) uses the blockout's pad coordinates: on native Bind those are ordinary floor (-27.5,8 and
+// 25,20), so a bot walking over either was thrown to 13,18 (5.8 m from any walkable node) or -20,20 at its old height.
+// Native pads (nmTeleports, above) move bots and the player; the legacy check only runs on the blockout.
+{const legacy=xTpBots;xTpBots=function(){if(nmActive())return;return legacy.apply(this,arguments);};}
 window.xNativeMaps={state:NM,ensure:nmEnsure,cancel:nmCancel,near:nmNear,path:nmPath,height:nmHeight,blocked:nmBlocked,activate(key){FV.pick=FV.map=key;mode='five';fUseMap();useMap('five');return NM.current.meta;},memory(){const C=NM.current;return C&&C.memory?Object.assign({},C.memory,{textures:C.memory.textures.length}):null;},probe(){const C=nmActive();return C?{key:C.key,objects:C.meta.objects,navigation:C.nav.validation,player:[player.x,player.y,player.z],sites:C.meta.sites}:null;}};
 {const remake=xRemake;xRemake=function(){const before=renderer,result=remake.apply(this,arguments);if(renderer!==before){nmWatchContext(renderer);nmRehydrate();}return result;};nmWatchContext(renderer);}
 {const precompile=xPrecompile;xPrecompile=function(){if(!nmActive())return precompile();xPC=true;try{renderer.compile(scene,camera);}catch(e){console.warn('Native shader warmup',e);}};}
@@ -12662,11 +12668,12 @@ function xrDrape(R){
 // dt is the animation step (the caller clamps it to 0.05 s); wall, when given, is the real time since the
 // previous corpse tick. Corpses advance on real time so a low-fps client (1-10 fps, where 0.05 s per frame
 // left bodies standing upright until the 4 s fade) still sees them collapse. Large steps are split into
-// 0.05 s chunks (each substepped at 120 Hz), never frozen; above 2 s (a pause or hidden tab) the clamped step is used.
+// 0.05 s chunks (each substepped at 120 Hz), never frozen, up to the 4 s corpse lifetime (browser: swiftshader at ~0.4 fps, 2.5 s
+// between frames, left every corpse upright until the fade under the old 2 s / 1 s limits); a longer gap (a pause or hidden tab) uses the clamped step.
 function xrRagdollTick(M,dt,wall){
  if(!M.ragdoll&&M.ragdoll!==null){const pose=[];M.sx.sc.traverse(b=>{if(b.isBone)pose.push([b,b.position.clone(),b.quaternion.clone(),b.scale.clone()]);});M.sx.mx.stopAllAction();for(const [b,p,q,s]of pose){b.position.copy(p);b.quaternion.copy(q);b.scale.copy(s);}let R=null;try{R=xrRagdoll(M);}catch(e){console.warn('ragdoll unavailable',e);}M.ragdoll=R;if(R)R.good=R.list.map(a=>a.p.clone());}
  const R=M.ragdoll;if(!R)return false;
- dt=Number.isFinite(dt)?Math.max(0,Math.min(dt,.05)):0;if(Number.isFinite(wall)&&wall>dt&&wall<=2)dt=Math.min(wall,1);if(!dt)return true;R.time+=dt;
+ dt=Number.isFinite(dt)?Math.max(0,Math.min(dt,.05)):0;if(Number.isFinite(wall)&&wall>dt&&wall<=4)dt=wall;if(!dt)return true;R.time+=dt;
  let ok=true;try{for(let left=dt;ok&&left>1e-6;left-=.05)ok=xrSolve(R,Math.min(.05,left));}catch(e){ok=false;}
  if(!ok){R.list.forEach((a,i)=>{a.p.copy(R.good[i]);a.old.copy(R.good[i]);});try{xrPose(R);}catch(e){}return false;}
  R.list.forEach((a,i)=>R.good[i].copy(a.p));
