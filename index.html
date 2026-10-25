@@ -62,7 +62,7 @@ button{font:inherit;text-transform:inherit;letter-spacing:inherit;cursor:pointer
 #xSpk{left:50%;top:14px;transform:translateX(-50%);display:none;background:rgba(15,25,35,.8);padding:5px 18px;border-bottom:3px solid var(--red)}#xSpk svg{display:block;width:40px;height:34px;filter:drop-shadow(0 0 6px rgba(255,70,85,.9))}
 #hint{left:50%;bottom:24px;transform:translateX(-50%);font-size:12px;opacity:.7;text-align:center}
 #game #hint{bottom:112px;width:min(860px,92vw)} /* QA: sat under the HP / ability / ammo panels */
-#dmg{inset:0;box-shadow:inset 0 0 120px rgba(255,70,85,.8);opacity:0;transition:opacity .3s}
+#dmg{inset:0;background:radial-gradient(ellipse at center,rgba(255,70,85,0) 52%,rgba(255,70,85,.32) 78%,rgba(255,70,85,.72) 100%);opacity:0;transition:opacity .3s;will-change:opacity;contain:strict;pointer-events:none} /* perf: a static gradient on its own layer; a full-screen blurred inset shadow repainted every frame of each hurt flash */
 #scope{inset:0;display:none;background:linear-gradient(#000,#000) 50% 50%/1px 92vmin no-repeat,linear-gradient(#000,#000) 50% 50%/92vmin 1px no-repeat,linear-gradient(#000,#000) 50% calc(50% - 31vmin)/3px 30vmin no-repeat,linear-gradient(#000,#000) 50% calc(50% + 31vmin)/3px 30vmin no-repeat,linear-gradient(#000,#000) calc(50% - 31vmin) 50%/30vmin 3px no-repeat,linear-gradient(#000,#000) calc(50% + 31vmin) 50%/30vmin 3px no-repeat,radial-gradient(circle at 50% 50%,transparent 0,transparent 45.2vmin,rgba(0,0,0,.75) 45.7vmin,#000 46vmin)} /* sniper lens: 92vmin circle, centred on any aspect ratio, thin cross + thick outer posts; first in #game so the HUD paints over it */
 #xAdsT{inset:0;opacity:0;pointer-events:none}
 #xAdsT.t{background:radial-gradient(ellipse at 50% 50%,transparent 0,transparent 58%,rgba(0,0,0,.28) 82%,rgba(0,0,0,.55) 100%)}
@@ -413,7 +413,7 @@ button{font:inherit;text-transform:inherit;letter-spacing:inherit;cursor:pointer
 @keyframes xHm{0%{opacity:1;transform:scale(1.35)}60%{opacity:1;transform:scale(1)}100%{opacity:0}}
 .x-dn{position:absolute;transform:translate(-50%,-50%);color:#fff;font-weight:700;font-size:16px;text-shadow:0 1px 3px #000;animation:xDn .8s ease-out forwards}
 .x-dn.hs{color:#ffd34d;font-size:19px}
-@keyframes xDn{from{opacity:1;margin-top:0}to{opacity:0;margin-top:-44px}}
+@keyframes xDn{from{opacity:1;transform:translate(-50%,-50%)}to{opacity:0;transform:translate(-50%,calc(-50% - 44px))}}
 .x-kb{position:absolute;left:50%;bottom:110px;transform:translate(-50%,12px);display:flex;align-items:center;gap:12px;padding:10px 24px 10px 18px;background:linear-gradient(90deg,rgba(255,70,85,.95),rgba(190,30,45,.92));color:#fff;opacity:0;transition:opacity .2s,transform .2s;clip-path:polygon(10px 0,100% 0,calc(100% - 10px) 100%,0 100%)}
 .x-kb.on{opacity:1;transform:translate(-50%,0)}
 .x-kb small{display:block;font-size:12px;letter-spacing:.22em;opacity:.9}
@@ -432,14 +432,14 @@ button{font:inherit;text-transform:inherit;letter-spacing:inherit;cursor:pointer
 .x-ki span.on{display:flex;animation:x-kipop .22s ease-out}
 .x-ki svg{width:16px;height:16px}.x-ki .x-sk{display:none}.x-ki span.hs .x-sk{display:block}.x-ki span.hs .x-kx{display:none}.x-ki span.hs{border-color:#ffd54a;background:rgba(120,20,30,.85)}
 @keyframes x-kipop{0%{transform:scale(1.7);opacity:0}100%{transform:scale(1);opacity:1}}
-.x-da{position:fixed;left:50%;top:50%;width:62vmin;height:62vmin;margin:-31vmin 0 0 -31vmin;border-radius:50%;border-top:7px solid rgba(255,40,55,.95);filter:drop-shadow(0 0 6px rgba(255,30,45,.8));pointer-events:none;display:none;-webkit-mask:linear-gradient(90deg,transparent 22%,#000 40%,#000 60%,transparent 78%);mask:linear-gradient(90deg,transparent 22%,#000 40%,#000 60%,transparent 78%)}
-.x-da{border-top-color:var(--x-enemy,#ff4655);filter:drop-shadow(0 0 6px var(--x-enemy,#ff4655))}
+.x-da{position:fixed;left:50%;top:50%;width:62vmin;height:62vmin;margin:-31vmin 0 0 -31vmin;border-radius:50%;border-top:7px solid rgba(255,40,55,.95);pointer-events:none;opacity:0;will-change:opacity,transform;contain:strict;-webkit-mask:linear-gradient(90deg,transparent 22%,#000 40%,#000 60%,transparent 78%);mask:linear-gradient(90deg,transparent 22%,#000 40%,#000 60%,transparent 78%)}
+.x-da{border-top-color:var(--x-enemy,#ff4655)}
 .x-hm.hs i{background:var(--x-enemy,#ff4655)}
 body.x-cbh .x-sbbar .tl,body.x-cbh .x-tdms .t,body.x-cbh .x-ann.win{color:#3d8bff}
 body.x-cbh .x-sbbar .rd,body.x-cbh .x-tdms .r,body.x-cbh .x-ann.loss,body.x-cbh #game .x-top .x-en b{color:#ff9f1c}
 body.x-cbh #xBoard .x-sbt.al{--sbc:#3d8bff}body.x-cbh #xBoard .x-sbt.en{--sbc:#ff9f1c}body.x-cbh #xBoard .x-sbsc .tl{color:#3d8bff}body.x-cbh #xBoard .x-sbsc .rd{color:#ff9f1c}
 body.x-cbh .x-mvp.en{border-left-color:#ff9f1c}
-.x-da.on{display:block;animation:x-dafade .6s ease-out forwards}
+.x-da.on{animation:x-dafade .6s ease-out forwards}
 @keyframes x-dafade{0%{opacity:1}100%{opacity:0}}
 .x-kc{font-weight:800;font-size:13px;letter-spacing:.12em;padding:4px 8px;background:rgba(0,0,0,.3)}.x-kc:empty{display:none}
 </style>
@@ -3021,12 +3021,22 @@ const xo = document.createElement("div"); xo.className = "x-fx";
 xo.innerHTML = '<div class="x-hm" id="xHm"><i></i><i></i><i></i><i></i></div><div class="x-kb" id="xKbn"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" aria-label="Headshot"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2" fill="#fff"/><path d="M12 1v5M12 18v5M1 12h5M18 12h5"/></svg><div><small>ELIMINATED</small><b id="xKn"></b></div><span class="x-kc" id="xKc"></span></div>';
 $("game").appendChild(xo);
 const XDN = []; // pooled damage-number spans (up to 40)
+// perf: hit feedback must not force a synchronous style/layout pass (offsetWidth / getBoundingClientRect) on every bullet.
+const XHV = new THREE.Vector3(); let xCR = null;
+function xCanvasRect() { if (!xCR) { const r = renderer.domElement.getBoundingClientRect(); xCR = { left: r.left, top: r.top, width: r.width, height: r.height }; } return xCR; }
+addEventListener("resize", () => { xCR = null; }); addEventListener("orientationchange", () => { xCR = null; });
+function xRestart(el, cls) { // restart a CSS animation without a reflow: Web Animations API when present
+  const run = el.getAnimations ? el.getAnimations() : null;
+  if (cls && !el.classList.contains(cls)) { el.classList.add(cls); return; }
+  if (run && run.length) { for (const a of run) { a.cancel(); a.play(); } return; }
+  if (cls) { el.classList.remove(cls); requestAnimationFrame(() => el.classList.add(cls)); }
+}
 function vmHit(p, dmg, hs, dead) {
-  const hm = $("xHm"); hm.classList.remove("on", "hs"); if (S.hm) { void hm.offsetWidth; hm.classList.add("on"); if (dead && hs) hm.classList.add("hs"); } // Valorant shows no hit marker: opt-in (Settings > Crosshair)
-  const v = p.clone().project(camera), R = renderer.domElement.getBoundingClientRect();
+  const hm = $("xHm"); hm.classList.toggle("hs", !!(dead && hs)); if (S.hm) xRestart(hm, "on"); else hm.classList.remove("on"); // Valorant shows no hit marker: opt-in (Settings > Crosshair)
+  const v = XHV.copy(p).project(camera), R = xCanvasRect();
   if (S.dn && v.z < 1) { // damage numbers: opt-in, off by default like Valorant // perf pass 9: pooled spans stay in the DOM; hidden when idle, display toggled to restart the animation
     let n = XDN.pop(); if (!n) { n = document.createElement("span"); n.style.display = "none"; xo.appendChild(n); }
-    n.className = "x-dn" + (hs ? " hs" : ""); n.textContent = Math.round(dmg); n.style.left = (R.left + (v.x + 1) / 2 * R.width + (Math.random() - 0.5) * 30) + "px"; n.style.top = (R.top + (1 - v.y) / 2 * R.height) + "px"; n.style.display = "none"; void n.offsetWidth; n.style.display = "";
+    n.className = "x-dn" + (hs ? " hs" : ""); n.textContent = Math.round(dmg); n.style.left = (R.left + (v.x + 1) / 2 * R.width + (Math.random() - 0.5) * 30) + "px"; n.style.top = (R.top + (1 - v.y) / 2 * R.height) + "px"; n.style.display = ""; xRestart(n, null);
     const g = n.xG = (n.xG || 0) + 1; setTimeout(() => { if (n.xG !== g) return; n.style.display = "none"; if (XDN.length < 40) XDN.push(n); }, 800); }
   if (dead && hs) { blip(1568, 0.22, "sine", 0.22); setTimeout(() => blip(2093, 0.3, "sine", 0.16), 60); }
   else if (!dead) { if (hs) { blip(2637, 0.09, "triangle", 0.26); blip(3951, 0.05, "sine", 0.12); } else blip(1760, 0.03, "square", 0.07); } // body tick / headshot dink
@@ -3058,7 +3068,7 @@ function xDeathFlash(b) {
 function xDmgArc(ax, az) { // screen angle toward the attacker; camera forward (-sin yaw, -cos yaw), right (cos yaw, -sin yaw)
   const dx = ax - camera.position.x, dz = az - camera.position.z, cy = Math.cos(yaw), sy = Math.sin(yaw);
   const a = Math.atan2(dx * cy - dz * sy, -dx * sy - dz * cy), d = XKI.da[XKI.di++ % XKI.da.length];
-  d.classList.remove("on"); d.style.transform = "rotate(" + a.toFixed(3) + "rad)"; void d.offsetWidth; d.classList.add("on");
+  d.style.transform = "rotate(" + a.toFixed(3) + "rad)"; xRestart(d, "on");
 }
 { const s0 = start; start = function () { xKiReset(); return s0.apply(this, arguments); }; }
 { const r0 = fRound; fRound = function () { xKiReset(); return r0.apply(this, arguments); }; }
