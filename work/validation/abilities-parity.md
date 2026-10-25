@@ -129,7 +129,7 @@ client `XAB_WIND` (index.html, next to `ABI_M`) and server `WINDUP` (`server/src
 | Cypher Trapwire | 0.7 s | arm after placing | wire inert for 0.7 s | `armAt` 0.7 s |
 | Chamber Trademark | 2 s | arm after placing | inert for 2 s | `armAt` 2 s, then the 0.5 s sight check |
 | Raze Blast Pack | 1.5 s | damage arm | detonation deals 50 only after 1.5 s; knockback any time | server Blast Pack is a dash (no device) - not changed |
-| Raze Showstopper | 1.4 s | launcher equip | clicks before 1.4 s do nothing (`RS.ssd`) | not enforced (the rocket intent is sent on the click) |
+| Raze Showstopper | 1.4 s | launcher equip | clicks before 1.4 s do nothing (`RS.ssd`) | X equips `u.showstopper` (ready +1.4 s, 10 s window); FIRE before it does nothing, after it launches the rocket (section 7) |
 | Chamber Tour De Force | 2.3 s | Operator equip | `BC.cd` 2.3 s | `u.fireAt` +2.3 s |
 
 Equip times: each ability page's "Equip time" row (wiki.playvalorant.com/en-us/<Ability>, fetched 2026-10-25) is the
@@ -143,7 +143,7 @@ pages also list unequip times (mostly 0.7 s); the gun recovery stays the generic
 Thrown / cast abilities count the windup from the FIRE click: the equip flow's 0.2 s hand release (`XABT.rel` =
 `XAB_REL`) happens first, so the effect fuse after the cast is `windup - 0.2` (`xWf` / `wf`). Bots cast without the hand
 release and use the full windup. Not changed: Jett Tailwind 1 s (Tailwind keeps its instant dash), Sage Barrier 2 s
-fortification (the wall is full HP at once), Neural Theft 2 s / 4 s reveals (server keeps 1 s / 3 s).
+fortification (the wall is full HP at once), Neural Theft reveals: server now 2 s / 6 s (section 7); the offline client still pulses at 0 / 1.5 s.
 Tests: `server/test-ability-equip.js`, `server/test-abilities.js` (Fault Line), `server/test-ults.js` (Trapwire /
 Trademark arm), `work/test_ability_equip.cjs`.
 
@@ -236,3 +236,23 @@ release it falls (gravity) and cannot be steered again; it smokes on hitting a s
   `1`), `work/test_ability_equip.cjs` (instant throw, smoke on landing, held C follows a 90 degree turn, release stops
   steering, second press throws the second charge, 2 s cap / 28 m held straight, smoke centre band, `netSyncEffects` cb
   rows: projectile, one smoke at the server point, dropped rows, own skipped, junk ignored).
+
+### Raze Showstopper equip (wiki.playvalorant.com/en-us/Showstopper, fetched 2026-10-25)
+
+Wiki: equip time 1.4 s, max duration 10 s including the equip, one rocket. The trusted server used to launch the rocket
+the moment the X intent arrived (the client sends it when X spends the ult, i.e. at the equip), with the aim of that
+moment. Now `startUlt` Raze only sets `u.showstopper = {ready: +1.4 s (WINDUP.showstopper), until: +10 s}`;
+`spike.js fire()` hands the trigger to `showstopperFire` while it is set: before `ready` it does nothing (and never fires
+the gun), after it the rocket leaves along the server eye / aim of the FIRE tick and the launcher is gone; `tickUlts`
+drops an unfired launcher at 10 s or on death; round reset clears it; a second X while it is out is rejected; the seat
+bot inherits it (`takeOver`). Client: the click that launches the local rocket (`RS.ss` 1 -> 0) is one fire pulse in the
+`in` message (`NET.firePulse`), so a semi-auto sidearm (no held fire) still reaches the server's launcher.
+Tests: `server/test-ults.js` (no rocket on equip, nothing at 1.3 s and no gun shot, rocket at 1.4 s on the FIRE aim, gun
+again after, put away after 10 s, dropped on death; the rocket / seat-bot / joiner checks fire through the equip).
+
+### Cypher Neural Theft reveals (wiki.playvalorant.com/en-us/Neural_Theft, fetched 2026-10-25)
+
+Wiki: 1st reveal windup 2 s, 2nd reveal windup 4 s (v5.10: "4 s delay between reveals"), so the server reveals at 2 s and
+6 s after the cast (`ULT.theft.reveals` [1, 3] -> [2, 6]; the 1.6 s reveal length unchanged). Not changed: the 5 m corpse
+reach (wiki 18 m) and the offline client's 0 / 1.5 s pulses. Test: `server/test-ults.js` (nothing before 2 s, first
+reveal at 2 s, gone, nothing before 6 s, second at 6 s).
