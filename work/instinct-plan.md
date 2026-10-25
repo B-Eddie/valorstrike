@@ -1,8 +1,8 @@
 # Valorstrike instinct-branch work plan (user bug list, ordered: crashes first)
 1. [ ] Bot-kill "explosion" crash (character explodes, crashes game)
 2. [ ] Ragdoll on kill looks boneless
-3. [ ] Spectate 3rd-person button broken
-4. [ ] Gun pickup off floor missing (+ needs indicator)
+3. [x] Spectate 3rd-person button broken
+4. [x] Gun pickup off floor missing (+ needs indicator)
 5. [ ] Holes in map
 6. [ ] Stairs require jumping step-by-step
 7. [ ] Lag on dealing/taking damage
@@ -35,3 +35,6 @@
 - [x] #11 native-only characters: primitive rig hidden at birth (ring+gun kept as indicators), CC0/Soldier clone tier removed from third person (XUB download stays for FP arms + clip tables), native failure retries twice then one error toast per agent. commit 65e7d3b. test_native_only.cjs.
 - [x] #9 grip pose: third-person weapon attach no longer cancels the hand's animated rotation; gun is rigidly seated in the R_Hand palm (offset measured on the shared rig convention) with a per-rig solved constant orientation aligning muzzle (-Z) to character forward in the authored aim stance. Rigid attach = gun tracks hand through run/aim. test_grip.cjs asserts muzzle-forward/upright/palm-seat/rigid tracking across jett/phoenix/raze.
 - [x] #10/#11 hardening after review: match-start readiness gate wraps window.xMatchLoad (loading screen covers the wait; persistent kit failure aborts the start with the error toast instead of spawning invisible opponents; startDuel added to the gate list since duel bots are native agents). Background preload aborts at match start so it never competes with the map burst. Cache staleness escape hatch: xValorantAssets.purgeCache() + XV_STORE bump convention documented in the code.
+- [x] #4 floor pickup: cherry-picked hark a4caf41 (author preserved, -x provenance) instead of duplicating: look-at [F] prompt under the crosshair, elevation-aware drops for raised native floors, aim-scored xdLook, server-authoritative online floor guns (server/src/floor.js + test-floor.js + test_floor_pickup.cjs). Applied cleanly; suites green.
+- [x] splice hygiene: trailing content in valorant_runtime.js had escaped the BEGIN..END strip markers, stacking duplicate inserts on every regen (7 copies). Moved END marker to file end, rebuilt index.html, verified install idempotence. commit 0310eda.
+- [x] #3 spectate 3P: cherry-picked hark 251e3ce (author preserved). Root cause matched my static suspicion: spectating kept the pointer locked, so the toggle span could never receive a click on desktop. Fix frees the cursor while spectating, makes the control a real button with state (aria-pressed/on), isolates its clicks from player switching, and stops canvas clicks while dead from re-locking/firing. test_spectate.cjs included. My earlier note about needing in-match repro is superseded by the identified mechanism.
