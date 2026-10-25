@@ -280,3 +280,9 @@ Harness: `server/tools/soak.mjs` (in-process worker, bots + fuzzing humans, inva
 - Flaky, not fixed: test_client_online.cjs fast TDM once failed "page player killed and died (0/5)" under heavy load
   (load average ~6 on 2 CPUs, another agent's suite running). It passed alone and on the retry. The piloted fight has a
   60 s virtual window and is not seeded end to end.
+- Merge of origin/hark (`9cf33ce` up to bd76683, then `ad18b9e` for 8da7b53): conflicts in simulation.js (kept
+  `safe:null` on spawn plus hark's knife heavy input `kh`), server_runtime.js (hark's knife pulse/heavy input plus the
+  lp progress loop), native_maps_runtime.js (hark's `nmLoadScene`; the `NM.loaded` progress report moved into it),
+  test-ults.js (both sets of blocks, one summary line), test_agent_preload.cjs (both sides fixed the same Cache Storage
+  flake; hark's kept). index.html took hark's side in its two conflicted runtime blocks and was then regenerated
+  (byte-identical on a second run). Suites on the merged tree: server 25 files, client 54 files, all passing.
