@@ -900,3 +900,34 @@ check hark-perf overlap first (it owns agent cull + nav GC).
   commit; use /* */ when patching minified lines. Regen md5-identical does NOT catch this class.
 - Lotus intent no longer needs a design ask: reachability evidence shows the one-way step is a
   shortcut drop with alternates preserved. Remaining lotus openness: none on directionality.
+
+## 2026-10-25 19:00 - Nav climb filter CORRECTED to traversal semantics (parent challenge was right)
+- Parent's challenge quantified and confirmed: the endpoint-dy filter in 5836648 was wrong.
+  Offline chord sampling against real collision geometry: endpoint-dy>0.321 edges that are
+  actually SMOOTH RAMPS (walkable): lotus 576, breeze 1285, ascent 807 (later: haven 1598,
+  bind 476, split 1230). True concentrated lips >0.321: only 19/24/6 on the three maps. The
+  endpoint filter mass-rejected walkable routes.
+- Fix (supersedes 5836648's criterion): nmClimbOk delegates to the game's own hop validator
+  nmSegDrop (per-0.18 m ground sampling + capsule blocked test at .45 radius) between the two
+  node positions, memoized per directed edge per map context, consulted only for dy>0.321
+  edges. Ground sampling alone was ALSO insufficient: nmHeight reads the lip as clear (ray
+  band) while the capsule's vertical segment catches the riser face - only the full hop
+  validator matches what nmNext does at walk time.
+- RETRACTED claims from earlier today: (1) "true one-way pocket" - false, it was an artifact
+  of the same endpoint fallacy; the lower band has a 36-hop traversal-verified climbable route
+  out (drops -0.31/-0.33, ramps 0.31-0.35). (2) "877 unclimbable lotus edges" - actually ~19
+  true lips; the rest are ramps. Undirected-source + alternate-route evidence is "consistent
+  with" one-way-drop design, not proof of intent (parent's wording preserved).
+- Authoritative server validation: server motor stepHeight is 0.4 (motor.cjs C.stepHeight),
+  NOT 0.321. Zero nav edges across ALL SIX maps have a concentrated rise >0.41, so the
+  authoritative sim can climb every nav edge - server path.js needs NO filter and server bots
+  were never stalled by these lips.
+- NEW finding (flagged, not changed): client climb limit 0.321 vs server stepHeight 0.4 -
+  a motor-semantics mismatch. Online, server-simmed bots traverse 0.33-0.40 lips the client
+  motor cannot climb; offline both use client semantics. Changing either constant is a
+  gameplay-feel decision - parent/design call, recorded here only.
+- test_nav_directionality.cjs now extracts nmNear/nmHeight/nmBlocked/nmSegDrop/nmClimbOk/
+  nmPath verbatim and runs them against the production prebuilt BVH: ramps kept (14->13,
+  35->54, 55->54 with endpoint dy 0.34-0.37), lips rejected (3713->3628, 3628->3627,
+  3712->3626), pocket routes around in 36 verified hops, spawns->sites green, cache
+  consistent. Lifecycle 24 matches green; regen byte-identical twice.
