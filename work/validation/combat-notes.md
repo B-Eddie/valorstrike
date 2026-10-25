@@ -441,3 +441,10 @@ in-process server; it keeps the VALORANT FEEL block the audit fixture strips, an
   left the unit holding no weapon; every later tick threw and the room's simulation stopped. Equip now takes only a real
   weapon name the unit holds (primary / secondary / Knife). `test-spike-edges.js`: null / undefined / '' / 0 / prototype
   names / unheld guns refused on a pistol round, the simulation keeps ticking, Classic <-> Knife still swaps.
+- **Crosshair = VALORANT's stock crosshair (profile code 0)**: white; outlines on .5 / 1; centre dot off (opacity 1, 2);
+  inner lines .8 / 6 / 2 / 3 with movement error off and firing error on; outer lines .35 / 2 / 2 / 10 with both on
+  (multipliers 1); fade with firing error on; sniper scope dot red .75 / 1 (senslab.pro/crosshair/valorant decoding code 0;
+  tracker.gg builder defaults; r/VALORANT "Crosshaircode reverse-engineered"). Movement and firing error are separate
+  (`xhErr`), each line set opens by the error it is set to show. Saved settings: a saved crosshair equal to one of the two
+  old shipped defaults (never changed) takes the new defaults; any other saved crosshair keeps every value, the old global
+  movement / firing toggles applying to both line sets. `work/test_crosshair_error.cjs`.

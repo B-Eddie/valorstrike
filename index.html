@@ -1359,7 +1359,7 @@ body.x-cbh #game{--ha:#3d8bff;--he:#ff9f1c}
 <div id="toast">Coming soon</div>
 <div id="xErr" role="alert" aria-live="assertive"></div>
 <div id="game">
-  <div class="hud" id="scope"></div>
+  <div class="hud" id="scope"><i id="xScD" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);border-radius:50%;background:#ff0000;width:2px;height:2px;opacity:.75"></i></div>
   <div class="hud" id="xAdsT"></div>
   <style>
     .x-cnv{position:fixed;inset:0;pointer-events:none;z-index:6;display:none;box-shadow:inset 0 0 90px 30px rgba(255,70,85,.28),inset 0 0 160px 60px rgba(79,179,255,.18);animation:x-cnw 1.3s ease-in-out infinite alternate}
@@ -1784,29 +1784,42 @@ const open = (id) => { const m = $(id); m.hidden = false; m.classList.add("on");
 const closeAll = () => document.querySelectorAll(".modal.on").forEach((m) => { m.classList.remove("on"); m.hidden = true; });
 // settings
 // crosshair (Valorant-style): state in S.xc; one canvas, redrawn only when settings or the spread gap change
-S.xc = { ol: true, olo: 0.5, dot: false, dt: 2, inr: { on: true, op: 0.8, len: 6, th: 2, off: 3 }, out: { on: true, op: 0.35, len: 2, th: 2, off: 10 }, me: false, fe: true }; // Valorant defaults: movement error off, firing error on (lines bloom while firing)
+S.xc = { ol: true, olo: 0.5, olt: 1, dot: false, dto: 1, dt: 2, fade: true, inr: { on: true, op: 0.8, len: 6, th: 2, off: 3, me: false, mm: 1, fe: true, fm: 1 }, out: { on: true, op: 0.35, len: 2, th: 2, off: 10, me: true, mm: 1, fe: true, fm: 1 }, sd: { on: true, op: 0.75, th: 1 } }; // VALORANT defaults (Settings > Crosshair, code 0): outlines .5 / 1, dot off (opacity 1, thickness 2), inner .8/6/2/3 with movement error off and firing error on, outer .35/2/2/10 with both on (multipliers 1), fade with firing error on, sniper scope dot red .75 / 1
 const XC_COL = { White: "#ffffff", Green: "#00ff00", "Yellow-Green": "#adff2f", "Green-Yellow": "#dfff00", Yellow: "#ffff00", Cyan: "#00ffff", Pink: "#ff00ff", Red: "#ff0000" };
-const XCF = [["Outlines", "ol"], ["Outline opacity", "olo", 0, 1, 0.05], ["Center dot", "dot"], ["Center dot thickness", "dt", 1, 6, 1],
-  ["Inner lines", "inr.on"], ["Inner opacity", "inr.op", 0, 1, 0.05], ["Inner length", "inr.len", 0, 20, 1], ["Inner thickness", "inr.th", 1, 10, 1], ["Inner offset", "inr.off", 0, 20, 1],
-  ["Outer lines", "out.on"], ["Outer opacity", "out.op", 0, 1, 0.05], ["Outer length", "out.len", 0, 20, 1], ["Outer thickness", "out.th", 1, 10, 1], ["Outer offset", "out.off", 0, 40, 1],
-  ["Movement error", "me"], ["Firing error", "fe"]];
-const xcGet = (p) => p.split(".").reduce((o, k) => o[k], S.xc);
+const XCF = [["Outlines", "ol"], ["Outline opacity", "olo", 0, 1, 0.05], ["Outline thickness", "olt", 1, 6, 1], ["Center dot", "dot"], ["Center dot opacity", "dto", 0, 1, 0.05], ["Center dot thickness", "dt", 1, 6, 1], ["Fade crosshair with firing error", "fade"],
+  ["Inner lines", "inr.on"], ["Inner opacity", "inr.op", 0, 1, 0.05], ["Inner length", "inr.len", 0, 20, 1], ["Inner thickness", "inr.th", 1, 10, 1], ["Inner offset", "inr.off", 0, 20, 1], ["Inner movement error", "inr.me"], ["Inner movement error multiplier", "inr.mm", 0, 3, 0.1], ["Inner firing error", "inr.fe"], ["Inner firing error multiplier", "inr.fm", 0, 3, 0.1],
+  ["Outer lines", "out.on"], ["Outer opacity", "out.op", 0, 1, 0.05], ["Outer length", "out.len", 0, 20, 1], ["Outer thickness", "out.th", 1, 10, 1], ["Outer offset", "out.off", 0, 40, 1], ["Outer movement error", "out.me"], ["Outer movement error multiplier", "out.mm", 0, 3, 0.1], ["Outer firing error", "out.fe"], ["Outer firing error multiplier", "out.fm", 0, 3, 0.1],
+  ["Sniper scope center dot", "sd.on"], ["Sniper dot opacity", "sd.op", 0, 1, 0.05], ["Sniper dot thickness", "sd.th", 1, 6, 1]];
+// Saved crosshairs from before the VALORANT-default update: the two old shipped defaults (global movement / firing error
+// toggles). A saved crosshair equal to one of them was never changed, so it takes the new defaults; anything else is the
+// player's own and is restored control by control (the old global toggles apply to both line sets).
+const XC_OLD = [{ ol: true, olo: 0.5, dot: false, dt: 2, inr: { on: true, op: 0.8, len: 6, th: 2, off: 3 }, out: { on: true, op: 0.35, len: 2, th: 2, off: 10 }, me: false, fe: true },
+  { ol: true, olo: 0.5, dot: false, dt: 2, inr: { on: true, op: 0.8, len: 6, th: 2, off: 3 }, out: { on: true, op: 0.35, len: 2, th: 2, off: 10 }, me: true, fe: true }];
+const xcEq = (a, b) => a === b || (!!a && !!b && typeof a === "object" && typeof b === "object" && Object.keys(a).length === Object.keys(b).length && Object.keys(a).every((k) => xcEq(a[k], b[k])));
+function xcRestore(x) { if (!x || typeof x !== "object" || XC_OLD.some((d) => xcEq(x, d))) return false; // untouched old default: keep the new (VALORANT) defaults
+  XCF.forEach(([, p, lo, hi]) => { const v = p.split(".").reduce((a, k) => (a && typeof a === "object" ? a[k] : undefined), x); if (lo == null ? typeof v === "boolean" : Number.isFinite(v) && v >= lo && v <= hi) xcSet(p, v); });
+  for (const k of ["me", "fe"]) if (typeof x[k] === "boolean" && !(x.inr && typeof x.inr[k] === "boolean")) S.xc.inr[k] = S.xc.out[k] = x[k]; // saved before per-line error toggles
+  return true; }
+const X0 = () => S.xc; const xcGet = (p) => p.split(".").reduce((o, k) => o[k], S.xc);
 const xcSet = (p, v) => { const k = p.split("."), o = k.length > 1 ? S.xc[k[0]] : S.xc; o[k[k.length - 1]] = v; };
 function xhDraw(cv, gap) {
   cv = cv || document.getElementById("xhC"); if (!cv) return;
-  if (gap == null) { try { gap = xhG; } catch (e) { gap = 0; } }
-  gap = Math.max(0, +gap || 0);
-  const X = S.xc, x = cv.getContext("2d"), cx = cv.width / 4, cy = cv.height / 4, R = [];
+  if (gap == null) { try { gap = xhE; } catch (e) { gap = 0; } }
+  const gm = Math.max(0, (gap && +gap.m) || 0), gf = Math.max(0, (gap && typeof gap === "object" ? +gap.f : +gap) || 0); // movement / firing error, px
+  const lg = (L) => (L.me ? gm * (+L.mm || 0) : 0) + (L.fe ? gf * (+L.fm || 0) : 0), fk = X0().fade ? Math.max(0.3, 1 - gf / 30) : 1; // each line set adds the error it is set to show; fade with firing error
+  const X = S.xc, x = cv.getContext("2d"), cx = cv.width / 4, cy = cv.height / 4, R = [], ot = Math.max(1, +X.olt || 1);
   x.setTransform(1, 0, 0, 1, 0, 0); x.clearRect(0, 0, cv.width, cv.height); x.setTransform(2, 0, 0, 2, 0, 0);
   const arms = (L, t, o, op) => { if (op <= 0 || L <= 0 || t <= 0) return; const h = t / 2;
     R.push([cx - h, cy - o - L, t, L, op], [cx - h, cy + o, t, L, op], [cx - o - L, cy - h, L, t, op], [cx + o, cy - h, L, t, op]); };
-  if (X.inr.on) arms(X.inr.len, X.inr.th, X.inr.off + gap, X.inr.op);
-  if (X.out.on) arms(X.out.len, X.out.th, X.out.off + gap, X.out.op);
-  if (X.dot) R.push([cx - X.dt / 2, cy - X.dt / 2, X.dt, X.dt, 1]);
-  if (X.ol && X.olo > 0) { x.fillStyle = "#000"; R.forEach((r) => { x.globalAlpha = X.olo * r[4]; x.fillRect(r[0] - 1, r[1] - 1, r[2] + 2, r[3] + 2); }); }
+  if (X.inr.on) arms(X.inr.len, X.inr.th, X.inr.off + lg(X.inr), X.inr.op * fk);
+  if (X.out.on) arms(X.out.len, X.out.th, X.out.off + lg(X.out), X.out.op * fk);
+  if (X.dot) R.push([cx - X.dt / 2, cy - X.dt / 2, X.dt, X.dt, X.dto == null ? 1 : +X.dto]);
+  if (X.ol && X.olo > 0) { x.fillStyle = "#000"; R.forEach((r) => { x.globalAlpha = X.olo * r[4]; x.fillRect(r[0] - ot, r[1] - ot, r[2] + 2 * ot, r[3] + 2 * ot); }); }
   x.fillStyle = S.xh; R.forEach((r) => { x.globalAlpha = r[4]; x.fillRect(r[0], r[1], r[2], r[3]); }); x.globalAlpha = 1;
 }
-const xhAll = () => { xhDraw(); xhDraw(document.getElementById("xhPrev"), 0); };
+// sniper scope centre dot (VALORANT default: on, red, opacity .75, thickness 1): drawn inside the scope overlay
+function xsdDraw() { const el = document.getElementById("xScD"), D = S.xc.sd || {}; if (!el) return; el.style.display = D.on === false ? "none" : "block"; const px = 2 * Math.max(1, +D.th || 1) + "px"; el.style.width = el.style.height = px; el.style.opacity = String(D.op == null ? 0.75 : +D.op); }
+const xhAll = () => { xhDraw(); xhDraw(document.getElementById("xhPrev"), 0); xsdDraw(); };
 function xcUI() {
   const box = $("xcSet"); box.innerHTML = "";
   XCF.forEach(([n, p, lo, hi, st]) => {
@@ -1958,8 +1971,8 @@ function xLobbyInit() {
       document.querySelectorAll(".seg").forEach((seg) => { const dk = seg.dataset.key, v = dk === "fps" ? (o.fps ? "1" : "0") : dk === "diff" ? o.diff : (dk === "hm" || dk === "dn") && typeof o[dk] === "boolean" ? (o[dk] ? "1" : "0") : seg.id === "xXhM" && typeof o.xhd === "boolean" ? (o.xhd ? "dynamic" : "static") : null; if (v == null) return;
         if (seg.id === "xXhM") S.xhd = o.xhd; // its own click listener (static / dynamic) is registered with the game, after this restore
         const b = seg.querySelector('button[data-v="' + v + '"]'); if (b && b.onclick) b.onclick(); });
-      if (o.xc && typeof o.xc === "object") { // crosshair options: each saved value checked against its control's range / type
-        XCF.forEach(([, p, lo, hi]) => { const v = p.split(".").reduce((a, k) => (a && typeof a === "object" ? a[k] : undefined), o.xc); if (lo == null ? typeof v === "boolean" : Number.isFinite(v) && v >= lo && v <= hi) xcSet(p, v); });
+      if (o.xc && typeof o.xc === "object") { // crosshair options: each saved value checked against its control's range / type (xcRestore)
+        xcRestore(o.xc);
         try { xcUI(); xhAll(); } catch (e) {} }
       if (typeof o.xh === "string") { const b = Array.from($("xhSw").querySelectorAll("button")).find((x) => XC_COL[x.title] === o.xh); if (b && b.onclick) b.onclick(); }
     }
@@ -2844,7 +2857,10 @@ addEventListener("mousemove", (e) => {
 
 let fcd = 0, spray = 0, since = 1, fireHeld = false;
 // gunplay: movement inaccuracy, pinpoint first shot, Vandal/Phantom spray patterns, camera kick (rcl/rclH), dynamic crosshair
-let rcl = 0, rclH = 0, sprW = "Vandal", xhG = -1;
+let rcl = 0, rclH = 0, sprW = "Vandal", xhG = -1; const xhE = { m: 0, f: 0 };
+// Crosshair error split as VALORANT draws it: movement error = the moving / airborne cone over the standing first shot, firing
+// error = the rest of the current cone (spray bloom, concussion); px = cone x 450, each capped at 40.
+function xhErr(w, W) { const all = gSpread(w, W); let still = all, moving = all; try { const M = VF.model, p = vfProfile(w), P = player || {}; still = M.spread({ sf: 0, cr: P.cr, ads }, w, p); moving = M.spread({ sf: P.sf, mv: P.mv, air: P.air, cr: P.cr, wk: P.wk, lp: P.lp || 0, ads }, w, p); } catch (e) {} return { m: Math.min(40, Math.max(0, moving - still) * 450), f: Math.min(40, Math.max(0, all - moving) * 450) }; }
 const PIN = { Vandal: 1, Phantom: 1, Guardian: 1, Sheriff: 1, Operator: 1, Marshal: 1, Bulldog: 1 };
 // fidelity 2: standing first-shot error (rad, ~Val degrees) and run-spread scale per gun (player); rifles fall apart on the run, SMGs hold up
 const FSA = { Vandal: 0.0044, Phantom: 0.0035, Guardian: 0.0017, Sheriff: 0.0044, Bulldog: 0.0052, Operator: 0, Marshal: 0 }, MVK = { Vandal: 1.6, Phantom: 1.6, Bulldog: 1.5, Guardian: 1.8, Ares: 1.3, Odin: 1.3, Spectre: 0.55, Stinger: 0.6, Frenzy: 0.7, Classic: 0.7, Ghost: 0.8 };
@@ -3971,10 +3987,10 @@ function loop() {
       if (xTP.cur && !J.dr) camera.rotation.set(-0.12, xTP.yw, 0, "YXZ"); else if (XOB.orb && !J.dr) camera.rotation.set(XOB.orb.p, XOB.orb.yw, 0, "YXZ"); else if (XOB.fp && !J.dr) camera.rotation.set(XOB.fpP, XOB.fpY, 0, "YXZ"); else { const cq = xCU > 0 ? xCon() : 0; if (xCOn && cq <= 0) xConEnd(); camera.rotation.set(pitch + rcl, yaw - rclH, cq > 0 ? Math.sin(performance.now() * 0.0042) * 0.02618 * Math.min(1, cq * 4) : 0, "YXZ"); } camera.updateMatrixWorld(); sfxL();
       try { xObsHide(XOB.fp && !xTP.cur && !J.dr ? XOB.fp : null); } catch (e) { xE(e); }
       const cw = mode === "aim" && typeof aimW === "function" ? aimW() : wName(), CW = WEAP[cw];
-      const gt = S.xhd !== false && CW && running ? Math.min(40, gSpread(cw, CW) * 450) : 0;
-      VM.xh = (VM.xh || 0) + (gt - (VM.xh || 0)) * Math.min(1, dt * (gt > (VM.xh || 0) ? 30 : 22)); // opens fast, closes fast
-      const g0 = Math.round(VM.xh), g = (spray > 0 ? S.xc.fe : S.xc.me) ? g0 : 0; // movement / firing error toggles
-      if (g !== xhG) { xhG = g; $("cross").style.setProperty("--g", g + "px"); xhDraw(); }
+      const xe = S.xhd !== false && CW && running ? xhErr(cw, CW) : null, tm = xe ? xe.m : 0, tf = xe ? xe.f : 0;
+      VM.xh = (VM.xh || 0) + (tm - (VM.xh || 0)) * Math.min(1, dt * (tm > (VM.xh || 0) ? 30 : 22)); VM.xf = (VM.xf || 0) + (tf - (VM.xf || 0)) * Math.min(1, dt * (tf > (VM.xf || 0) ? 30 : 22)); // opens fast, closes fast
+      const gm = Math.round(VM.xh), gf = Math.round(VM.xf), g = gm * 1000 + gf; // movement / firing error (px), each line set shows what it is set to (S.xc.inr / out .me .fe)
+      if (g !== xhG) { xhG = g; xhE.m = gm; xhE.f = gf; $("cross").style.setProperty("--g", Math.max(gm, gf) + "px"); xhDraw(); }
 
     }
   } catch (e) { xE(e); }
