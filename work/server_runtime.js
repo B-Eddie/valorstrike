@@ -39,6 +39,22 @@ const netBoardTab=document.querySelector('[data-pt="w"]');if(netBoardTab)netBoar
 const netProfile=mpEl('profBtn');document.addEventListener('click',e=>{if(e.target.closest('[data-pt="w"],#profBtn,[aria-label="Open your profile"]'))setTimeout(netLeaderboard,50);});
 const netHeader=document.querySelector('.x-qon__h small');if(netHeader)netHeader.textContent='Server-authoritative rooms · bots fill empty slots';
 
+// Floor weapons (#4): the server owns every floor gun (snapshot fw rows [id,weapon,x,y,z]) and every swap.
+// F asks for the gun under the crosshair by id, G asks to drop the gun in hand; the private round state's
+// ld [primary,secondary] keeps both slots in step after a pick-up, drop or death.
+const netFloor=new Map();
+function xdFloorList(){return NET.socket&&MP.st==='game'&&MP.m5?[...netFloor.values()]:(xdOn()?XD.L:null);}
+function netFloorClear(){for(const d of netFloor.values()){scene.remove(d.m);XD.P.push(d.m);}netFloor.clear();}
+function netFloorSync(rows){if(!Array.isArray(rows))return;const ids=new Set();for(const r of rows){if(!Array.isArray(r)||r.length<5||!WEAP[r[1]])continue;const [id,w,x,y,z]=r;if(![x,y,z].every(Number.isFinite))continue;ids.add(id);let d=netFloor.get(id);
+  if(!d){const m=xdMesh();m.rotation.set(0,(id*2.399)%6.283,0);scene.add(m);try{xdModel(m,w);}catch(e){}d={id,w,x,y,z,m};netFloor.set(id,d);}Object.assign(d,{w,x,y,z});d.m.position.set(x,y+.08,z);}
+ for(const [id,d]of netFloor)if(!ids.has(id)){scene.remove(d.m);XD.P.push(d.m);netFloor.delete(id);}}
+const netFloorSnap0=mpCliSnap;mpCliSnap=function(m){const r=netFloorSnap0.apply(this,arguments);if(NET.socket&&MP.m5&&m&&m.fw)netFloorSync(m.fw);return r;};
+const netFloorRS0=mpCliRS;mpCliRS=function(m){const r=netFloorRS0.apply(this,arguments);if(NET.socket&&MP.m5&&Array.isArray(m.ld)&&player.hp>0){const p=m.ld[0]&&WEAP[m.ld[0]]?m.ld[0]:null,sec=m.ld[1]&&WEAP[m.ld[1]]?m.ld[1]:null;if(p!==FV.pri||(sec&&sec!==FV.sec))mpCliLoad(m.ld);}return r;};
+const netFloorReset0=mpReset;mpReset=function(){netFloorClear();return netFloorReset0.apply(this,arguments);};
+document.addEventListener('keydown',e=>{if(!(NET.socket&&MP.st==='game'&&MP.m5)||xKbSkip(e)||e.repeat||!running||paused||player.hp<=0)return;
+ if(e.code==='KeyF'){const d=xdLook([...netFloor.values()]);if(d){netSend({t:'pick',id:d.id});e.stopImmediatePropagation();}return;}
+ if(e.code==='KeyG'){if(FV.sp&&FV.sp.st==='carry'&&FV.sp.c===player)return;if(rw==='pri'&&FV.pri){netSend({t:'dropw'});e.stopImmediatePropagation();}}},true);
+
 // Online soul resources and buff presentation follow private server round state.
 const netSouls=new Map();
 function netReynaClear(){for(const m of netSouls.values()){scene.remove(m);m.material.dispose();}netSouls.clear();}

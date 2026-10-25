@@ -9076,19 +9076,19 @@ window.addEventListener("keydown", (e) => { // G: throw the Spike 2 m forward
 // Weapon drops (5v5 / Swiftplay / Spike Rush): a death drops the primary (or sidearm) as a floor gun; pooled ≤16 meshes, cleared every round
 const XD = { L: [], P: [], n: 0, f: 0, geo: null, mat: null, SIDE: { Classic: 1, Shorty: 1, Frenzy: 1, Ghost: 1, Sheriff: 1 },
   R: { Classic: 0, Shorty: 1, Frenzy: 2, Ghost: 3, Sheriff: 4, Stinger: 5, Bucky: 6, Spectre: 7, Judge: 8, Bulldog: 9, Marshal: 10, Ares: 11, Guardian: 12, Odin: 13, Outlaw: 13, Phantom: 14, Vandal: 14, Operator: 15 } };
-const xdOn = () => mode === "five" && !FV.dm;
+const xdOn = () => mode === "five" && !FV.dm && !(typeof NET !== "undefined" && NET.socket); // online rooms: the server owns floor guns (netFloor in the online block)
 const xdRank = (w) => (w ? (XD.R[w] != null ? XD.R[w] : 5) : -1);
 function xdMesh() {
   if (XD.P.length) return XD.P.pop();
-  if (XD.n >= 16) { const o = XD.L.shift(); return o.m; } // pool full: recycle the oldest gun on the floor
+  if (XD.n >= 16 && XD.L.length) { const o = XD.L.shift(); return o.m; } // pool full: recycle the oldest gun on the floor (online floors are server-capped at 24)
   if (!XD.geo) { XD.geo = new THREE.BoxGeometry(0.9, 0.12, 0.2); XD.mat = new THREE.MeshStandardMaterial({ color: 0x2a2c30, roughness: 0.6 }); }
   XD.n++; const m = new THREE.Mesh(XD.geo, XD.mat); m.raycast = () => {}; return m;
 }
-function xdDrop(w, x, z, am) {
-  if (!w || !xdOn()) return null; x = Number.isFinite(+x) ? +x : 0; z = Number.isFinite(+z) ? +z : 0;
-  const m = xdMesh(); m.position.set(x, 0.08, z); m.rotation.set(0, Math.random() * 6.28, 0); scene.add(m);
+function xdDrop(w, x, z, am, y) {
+  if (!w || !xdOn()) return null; x = Number.isFinite(+x) ? +x : 0; z = Number.isFinite(+z) ? +z : 0; y = Number.isFinite(+y) ? +y : 0; // y: the floor it lies on (native maps are elevated)
+  const m = xdMesh(); m.position.set(x, y + 0.08, z); m.rotation.set(0, Math.random() * 6.28, 0); scene.add(m);
   try { xdModel(m, w); } catch (e) {}
-  const d = { w, x, z, m, am: am || null }; XD.L.push(d); return d;
+  const d = { w, x, y, z, m, am: am || null }; XD.L.push(d); return d;
 }
 function xdModel(m, w) { // the real gun model lies on its side inside the (now invisible) pickup box; pooled boxes swap models per weapon
   if (!m || typeof xGun !== "function") return; const o = m.userData.xdg; if (o && o.userData.w === w) return;
@@ -9104,15 +9104,25 @@ function xdArm(w, am) { // give the player gun w (into the primary or sidearm sl
   slots[sl] = am && am.ammo != null ? { ammo: am.ammo, rsv: am.rsv } : { ammo: mg, rsv: mg * 3 };
   rw = sl; ammo = slots[sl].ammo; rsv = slots[sl].rsv; reloading = 0; try { onSkin(); setScope(false); } catch (e) {} updHud();
 }
-function xdLook() { // gun in the crosshair within 2 m
-  let b = null, bd = 2.01; const fx = -Math.sin(yaw), fz = -Math.cos(yaw);
-  for (const d of XD.L) { const dx = d.x - player.x, dz = d.z - player.z, r = Math.hypot(dx, dz); if (r < bd && (r < 0.6 || (dx * fx + dz * fz) / r > 0.8)) { b = d; bd = r; } }
+function xdLook(list) { // the floor gun under the crosshair (Valorant: look at it) within 2 m, or the one at your feet
+  let b = null, bd = Infinity; const cp = Math.cos(pitch), fx = -Math.sin(yaw) * cp, fy = Math.sin(pitch), fz = -Math.cos(yaw) * cp, py = player.y || 0, ey = py + 1.6 - (player.ch || 0);
+  for (const d of list || XD.L) { const dy = (d.y || 0) - py; if (dy > 1.2 || dy < -1.6) continue; const dx = d.x - player.x, dz = d.z - player.z, r = Math.hypot(dx, dz); if (r > 2) continue;
+    const vx = dx, vy = (d.y || 0) + 0.1 - ey, vz = dz, l = Math.hypot(vx, vy, vz) || 1, aim = (vx * fx + vy * fy + vz * fz) / l, score = r < 0.6 ? r : aim > 0.9 ? 1 + (1 - aim) * 10 : Infinity;
+    if (score < bd) { b = d; bd = score; } }
   return b;
 }
+function xdPrompt() { // "[F] Pick up Vandal" under the crosshair while a floor gun is targeted
+  let el = document.getElementById("xdPrompt"); const list = typeof xdFloorList === "function" ? xdFloorList() : (xdOn() ? XD.L : null);
+  const d = list && list.length && running && !paused && player && player.hp > 0 && !(FV && FV.menu) ? xdLook(list) : null;
+  if (!d) { if (el && el.style.display !== "none") el.style.display = "none"; return null; }
+  if (!el) { el = document.createElement("div"); el.id = "xdPrompt"; el.setAttribute("role", "status"); el.style.cssText = "position:fixed;left:50%;top:calc(50% + 46px);transform:translateX(-50%);z-index:60;display:none;align-items:center;gap:8px;padding:6px 12px;background:rgba(15,25,35,.72);color:#ece8e1;font:600 14px/1 Arial,sans-serif;letter-spacing:.04em;pointer-events:none;white-space:nowrap"; el.innerHTML = '<b style="display:inline-grid;place-items:center;min-width:22px;height:22px;border:1px solid #ece8e1;font-size:12px">F</b><span></span>'; document.body.append(el); }
+  const text = "Pick up " + d.w; if (el.lastChild.textContent !== text) el.lastChild.textContent = text; if (el.style.display !== "flex") el.style.display = "flex"; return d;
+}
+(function xdPromptLoop() { try { xdPrompt(); } catch (e) {} requestAnimationFrame(xdPromptLoop); })();
 function xdUse() { // F: swap the looked-at gun with the one in that slot; yours drops where it lay
   if (!xdOn() || !player || player.hp <= 0) return false; const d = xdLook(); if (!d) return false;
   const side = !!XD.SIDE[d.w], old = side ? FV.sec : FV.pri, sl = side ? "pis" : "pri", am = rw === sl ? { ammo, rsv } : slots[sl];
-  xdTake(d); if (old) xdDrop(old, d.x, d.z, am && am.ammo != null ? { ammo: am.ammo, rsv: am.rsv } : null);
+  xdTake(d); if (old) xdDrop(old, d.x, d.z, am && am.ammo != null ? { ammo: am.ammo, rsv: am.rsv } : null, d.y);
   xdArm(d.w, d.am); feed("Picked up " + d.w); blip(520, 0.05, "square", 0.08); return true;
 }
 window.xdUse = xdUse; window.__xd = XD;
@@ -9121,24 +9131,24 @@ addEventListener("keydown", (e) => {
   if (e.code === "KeyF") { if (xdUse()) e.stopImmediatePropagation(); return; }
   if (e.code !== "KeyG") return; const s = FV.sp; if (s && s.st === "carry" && s.c === player) return; // carrying the Spike: G keeps dropping the Spike
   if (rw !== "pri" || !FV.pri) return;
-  xdDrop(FV.pri, player.x - Math.sin(yaw) * 1.2, player.z - Math.cos(yaw) * 1.2, { ammo, rsv }); feed("You dropped your " + FV.pri);
+  xdDrop(FV.pri, player.x - Math.sin(yaw) * 1.2, player.z - Math.cos(yaw) * 1.2, { ammo, rsv }, player.y); feed("You dropped your " + FV.pri);
   FV.pri = null; slots.pri = {}; rw = "pis"; ammo = slots.pis.ammo; rsv = slots.pis.rsv; reloading = 0; try { onSkin(); setScope(false); } catch (e2) {} updHud();
 }, true);
 function xdTick() {
   if (!XD.L.length || FV.buy > 0) return;
-  if (player && player.hp > 0 && !FV.pri) { for (const d of XD.L) if (!XD.SIDE[d.w] && Math.hypot(d.x - player.x, d.z - player.z) < 0.9) { xdTake(d); xdArm(d.w, d.am); feed("Picked up " + d.w); break; } } // walk over: auto-pickup with no primary
+  if (player && player.hp > 0 && !FV.pri) { for (const d of XD.L) if (!XD.SIDE[d.w] && Math.hypot(d.x - player.x, d.z - player.z) < 0.9 && Math.abs((d.y || 0) - (player.y || 0)) < 1.2) { xdTake(d); xdArm(d.w, d.am); feed("Picked up " + d.w); break; } } // walk over: auto-pickup with no primary
   if (++XD.f % 6) return; // bots: every 6th step
   for (const u of bots.concat(typeof allies !== "undefined" ? allies : [])) {
     if (!u || !u.alive || u.hp <= 0 || !u.g || u.nt) continue; const p = u.g.position;
-    const uw = xdBW(u); for (const d of XD.L) if (!XD.SIDE[d.w] && xdRank(d.w) > xdRank(uw) && Math.hypot(d.x - p.x, d.z - p.z) < 2) { xdTake(d); if (uw && !XD.SIDE[uw]) xdDrop(uw, p.x, p.z); xdSetBW(u, d.w); break; }
+    const uw = xdBW(u); for (const d of XD.L) if (!XD.SIDE[d.w] && xdRank(d.w) > xdRank(uw) && Math.hypot(d.x - p.x, d.z - p.z) < 2 && Math.abs((d.y || 0) - p.y) < 1.2) { xdTake(d); if (uw && !XD.SIDE[uw]) xdDrop(uw, p.x, p.z, null, p.y); xdSetBW(u, d.w); break; }
   }
 }
 function xdBS(u) { try { return u && u.name && FV.bs ? FV.bs[u.name] : null; } catch (e) { return null; } } // the bot's stored buy: what wallbang lookup and bot fire read
 function xdBW(u) { const s = xdBS(u), n = (s && s.w) || (u && u.w); return typeof n === "string" && WEAP[n] ? n : "Classic"; }
 function xdSetBW(u, w) { const s = xdBS(u); if (s) s.w = w; u.w = w; }
-{ const k0 = kill; kill = function (b, hs, by, w) { if (b && b.alive && b.g) xdDrop(xdBW(b), b.g.position.x, b.g.position.z); return k0.apply(this, arguments); }; // drop first: a later kill hook throwing can never lose the gun
-  const a0 = allyDie; allyDie = function (a, by, w) { const al = a && a.alive, dw = al ? xdBW(a) : null; a0.apply(this, arguments); if (al && a && !a.alive && a.g) xdDrop(dw, a.g.position.x, a.g.position.z); };
-  const p0 = pDie; pDie = function (by, w) { const al = player && !player._xd; p0.apply(this, arguments); if (al && player && player.hp <= 0) { player._xd = 1; xdDrop(FV.pri || FV.sec, player.x, player.z, rw !== "knife" ? { ammo, rsv } : null); } };
+{ const k0 = kill; kill = function (b, hs, by, w) { if (b && b.alive && b.g) xdDrop(xdBW(b), b.g.position.x, b.g.position.z, null, b.g.position.y); return k0.apply(this, arguments); }; // drop first: a later kill hook throwing can never lose the gun
+  const a0 = allyDie; allyDie = function (a, by, w) { const al = a && a.alive, dw = al ? xdBW(a) : null; a0.apply(this, arguments); if (al && a && !a.alive && a.g) xdDrop(dw, a.g.position.x, a.g.position.z, null, a.g.position.y); };
+  const p0 = pDie; pDie = function (by, w) { const al = player && !player._xd; p0.apply(this, arguments); if (al && player && player.hp <= 0) { player._xd = 1; xdDrop(FV.pri || FV.sec, player.x, player.z, rw !== "knife" ? { ammo, rsv } : null, player.y); } };
   const r0 = fRound; fRound = function () { xdClear(); return r0.apply(this, arguments); };
   const t0 = tick; tick = function (dt) { if (XD.L.length && mode !== "five") xdClear(); return t0.apply(this, arguments); }; }
 // look pass: Valorant-style spawn barriers on the buy-phase walls (both spawn edges, all maps). One shared ShaderMaterial + one geometry, two meshes made once;
@@ -12829,6 +12839,22 @@ const netPresence=document.createElement('small');netPresence.id='netPresence';n
 const netBoardTab=document.querySelector('[data-pt="w"]');if(netBoardTab)netBoardTab.textContent='Global board';
 const netProfile=mpEl('profBtn');document.addEventListener('click',e=>{if(e.target.closest('[data-pt="w"],#profBtn,[aria-label="Open your profile"]'))setTimeout(netLeaderboard,50);});
 const netHeader=document.querySelector('.x-qon__h small');if(netHeader)netHeader.textContent='Server-authoritative rooms · bots fill empty slots';
+
+// Floor weapons (#4): the server owns every floor gun (snapshot fw rows [id,weapon,x,y,z]) and every swap.
+// F asks for the gun under the crosshair by id, G asks to drop the gun in hand; the private round state's
+// ld [primary,secondary] keeps both slots in step after a pick-up, drop or death.
+const netFloor=new Map();
+function xdFloorList(){return NET.socket&&MP.st==='game'&&MP.m5?[...netFloor.values()]:(xdOn()?XD.L:null);}
+function netFloorClear(){for(const d of netFloor.values()){scene.remove(d.m);XD.P.push(d.m);}netFloor.clear();}
+function netFloorSync(rows){if(!Array.isArray(rows))return;const ids=new Set();for(const r of rows){if(!Array.isArray(r)||r.length<5||!WEAP[r[1]])continue;const [id,w,x,y,z]=r;if(![x,y,z].every(Number.isFinite))continue;ids.add(id);let d=netFloor.get(id);
+  if(!d){const m=xdMesh();m.rotation.set(0,(id*2.399)%6.283,0);scene.add(m);try{xdModel(m,w);}catch(e){}d={id,w,x,y,z,m};netFloor.set(id,d);}Object.assign(d,{w,x,y,z});d.m.position.set(x,y+.08,z);}
+ for(const [id,d]of netFloor)if(!ids.has(id)){scene.remove(d.m);XD.P.push(d.m);netFloor.delete(id);}}
+const netFloorSnap0=mpCliSnap;mpCliSnap=function(m){const r=netFloorSnap0.apply(this,arguments);if(NET.socket&&MP.m5&&m&&m.fw)netFloorSync(m.fw);return r;};
+const netFloorRS0=mpCliRS;mpCliRS=function(m){const r=netFloorRS0.apply(this,arguments);if(NET.socket&&MP.m5&&Array.isArray(m.ld)&&player.hp>0){const p=m.ld[0]&&WEAP[m.ld[0]]?m.ld[0]:null,sec=m.ld[1]&&WEAP[m.ld[1]]?m.ld[1]:null;if(p!==FV.pri||(sec&&sec!==FV.sec))mpCliLoad(m.ld);}return r;};
+const netFloorReset0=mpReset;mpReset=function(){netFloorClear();return netFloorReset0.apply(this,arguments);};
+document.addEventListener('keydown',e=>{if(!(NET.socket&&MP.st==='game'&&MP.m5)||xKbSkip(e)||e.repeat||!running||paused||player.hp<=0)return;
+ if(e.code==='KeyF'){const d=xdLook([...netFloor.values()]);if(d){netSend({t:'pick',id:d.id});e.stopImmediatePropagation();}return;}
+ if(e.code==='KeyG'){if(FV.sp&&FV.sp.st==='carry'&&FV.sp.c===player)return;if(rw==='pri'&&FV.pri){netSend({t:'dropw'});e.stopImmediatePropagation();}}},true);
 
 // Online soul resources and buff presentation follow private server round state.
 const netSouls=new Map();
