@@ -69,6 +69,9 @@ function mulberry(seed){let a=seed>>>0;return ()=>{a=a+0x6D2B79F5|0;let t=Math.i
   for(const t of seq){const r=rnd();let m=sample(t);if(r<p)m=mutate(m);else if(r<p+.06)m=junk();if(chance(.05))frame(m);frame(m);sent++;per[t]=(per[t]||0)+1;await adv(chance(.3)?250:40);}
   if(chance(.3)){try{ws.readyState=3;ws.onclose&&ws.onclose({code:pick([1000,1001,1006,1012,4002]),reason:pick(['Connection idle','Load timed out','Room full','',null])});}catch(e){thrown.push({phase:'onclose',msg:String(e)});}}
   await adv(300);}
+ // pinned: an 'ac' whose agent is an Object.prototype key ('__proto__', 'constructor') once passed the KITS[ag] check and threw
+ // reading KITS[ag].n[i] (caught only by the last-resort guard); mpFx / mpCastFx must fall back to Jett
+ {const r=xe(`(()=>{const out=[];const u={g:{position:new THREE.Vector3(0,0,0)},alive:true};for(const ag of ['__proto__','constructor','toString','hasOwnProperty','valueOf'])for(const k of 'cqex'){try{mpFx(u,ag,k,new THREE.Vector3(0,1.6,0),new THREE.Vector3(0,0,-1),false,null,true);}catch(e){out.push(ag+'/'+k+': '+e.message);}}try{jClear();}catch(e){}return out;})()`);if(r.length)thrown.push({phase:'mpFx prototype agent',msg:r.slice(0,4).join('; ')});}
  xe('mpReset();try{toLobby()}catch(e){}true');H.advance(500);
  const dropped=xe('NET.dropped||0'),drops=xe('JSON.stringify(NET.drops||[])');if(process.env.VERBOSE)console.log('handler fallbacks',dropped,drops);
  const errors=H.errors.slice(errs0),xerr=H.xErrCalls.slice(x0);
