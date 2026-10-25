@@ -274,6 +274,18 @@ Two motor bugs (fixed in the shared motor, `server/src/motor.cjs` = `vendor/valo
   pit player clip, as intended), others 1-7; none is a spawn candidate (spawns test 0.43 m clearance) and the DM spawn
   test is the same.
 
+Re-sweep after C1/C2 (stride 2 + walk-in trap test on every sampled node, RENDER=1; `.scratch/sweepA-<map>.json`):
+<!--RESWEEP-->
+- Ascent (C1 motor; 4,772 nodes, 16,018 edges): 0 stuck, 1 refused edge (the visible `WiresDark` cable bundle at A,
+  `tall`, correct), 1 walk-in trap: walking -z from (30.25, 9.07, -9.25) wedged the capsule at (30.25, 9.2, -10.19) under
+  a 1.66 m soffit over bumpy floor - lifting 5 cm to clear the bump put the head into the soffit while 5 mm cleared it.
+  Fix (shared motor): the lean-wall step-up tries the lowest of 0.5 / 1.5 / 3 / 5 cm that clears ahead; it walks out in
+  4 directions. Fixture added (Ascent traps).
+- Bind (C2 motor; 4,988 nodes, 17,700 edges): 0 stuck, 0 refused edges, 1 walk-in trap: (-53.25, 7.56, 21) walking
+  (-0.71, 0.71) wedges the capsule at (-53.49, 7.41, 21.32) in a rock pocket between a mound and a wall leaning over at
+  head height; every standing move meets one of them within 2 mm at any lift, so it is not fixed in the motor. It walks
+  out crouched (225-315 deg, 1.2-1.4 m in 0.6 s) or with a jump toward (0.71, -0.71): left for the browser list.
+
 Spawns and plant sites (all six maps): attacker / defender spawn candidates 246-660 / 103-634 per map, none embedded or
 stuck, every candidate reaches every site on the navigation. Every site anchor lies in its own plant zone, its nearest
 node too, and passes `siteAt`'s 2 m height test; plantable playable nodes per site 133-468. Zone cells at another floor

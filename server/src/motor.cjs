@@ -29,7 +29,7 @@ function groundMove(P,tx,tz,accel,h){const vx=P.vx||0,vz=P.vz||0,T=Math.hypot(tx
 // Vertical probes use a 2 cm thinner capsule than horizontal moves (.4): horizontal movement accepts a capsule grazing a
 // wall at its .388 tolerance, where a same-radius blocked() flips with float noise as the capsule moves up or down. That made
 // any wall corner read as a floor (hanging mid-air beside it and jumping again from there).
-const VR=.38;
+const VR=.38,LEAN_LIFTS=[.005,.015,.03,.05];
 // A grazed wall reads blocked at y-.03 as often as not, so contact alone is not support: there must also be a floor under
 // the capsule's footprint within a riser and a bit (a nosing's tread, a box edge), never a wall face mid-air.
 function supported(P,world,y,height){if(!world.blocked(P.x,P.z,.4,y-.03,height)||world.blocked(P.x,P.z,VR,y,height))return false;if(world.ground(P.x,P.z,y+.05)>y-.45)return true;for(let k=0;k<8;k++){const a=k*Math.PI/4;if(world.ground(P.x+Math.cos(a)*.34,P.z+Math.sin(a)*.34,y+.05)>y-.45)return true;}return false;}
@@ -105,10 +105,12 @@ function step(P,input,dt,world){
    // embedded). Ahead only: a wall beside or behind the capsule (pressed into a corner over a bumpy floor) is no lip, and an
    // all-round 1 cm margin pinned it there for good. Where the capsule lifted by the full step height still meets geometry
    // (a wall that leans in above the feet), only a lift of at most 5 cm (a bump or seam in the floor) may pass, tested at
-   // that height (Breeze: 44 walk-in traps against walls over uneven paving).
+   // that height (Breeze: 44 walk-in traps against walls over uneven paving). The lowest such lift that clears is used
+   // (0.5, 1.5, 3, 5 cm): under a low ceiling or a beam a 5 cm lift put the head into it while a few mm cleared the bump
+   // (Ascent (30.25, 9.2, -10.19): wedged under a 1.66 m soffit over bumpy floor).
    // Lift by the step height, move, then settle onto the lowest free height above the destination floor.
    if(grounded&&(P.vy||0)<=0){const top=P.y+C.stepHeight,support=world.ground(x,z,top),ax=x+Math.sign(dx)*.01,az=z+Math.sign(dz)*.01;let cap=top;if(support>top+.001||(world.ceiling&&world.ceiling(P.x,P.z,P.y+height,top+height)))return false;
-    if(world.blocked(ax,az,.4,top,height)){cap=Math.max(P.y,support)+.05;if(cap>=top||world.blocked(ax,az,.4,cap,height))return false;}
+    if(world.blocked(ax,az,.4,top,height)){const b0=Math.max(P.y,support);cap=0;for(const l of LEAN_LIFTS)if(b0+l<top&&!world.blocked(ax,az,.4,b0+l,height)){cap=b0+l;break;}if(!cap)return false;}
     // Riser test: sampled every 10 cm ahead, no single rise may exceed the step height (stairs pass, a 60 cm box does not).
     {const sx=Math.sign(dx),sz=Math.sign(dz);let prev=Math.max(world.ground(P.x,P.z,top),P.y-.2);for(let d=.1;d<.55;d+=.1){const g=world.ground(P.x+sx*d,P.z+sz*d,top);if(g<prev-1)continue;if(g-prev>C.stepHeight+.01)return false;prev=Math.max(prev,g);}} /* samples through seams between stair meshes are ignored; a dip (a crack between floor slabs, a gutter) never lowers the reference, so the far side of a crack is no riser */let lo=Math.max(P.y,support),hi=cap;if(!world.blocked(x,z,.4,lo,height))hi=lo;else for(let n=0;n<10;n++){const mid=(lo+hi)/2;if(world.blocked(x,z,.4,mid,height))lo=mid;else hi=mid;}const base=floorNear(world,P.x,P.z,P.y);if(hi-base>C.stepHeight+.12)return false;const rise=hi-P.y;P.x=x;P.z=z;P.y=hi;P.vy=0;if(rise>0)P.eyeOffset=(P.eyeOffset||0)-rise;return true;}return false;};
   if(!moveAxis(v.dx,0))P.vx=0;
