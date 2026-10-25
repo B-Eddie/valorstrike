@@ -30,3 +30,7 @@ assert(/const d = kfGet\("kf kf--k"/.test(html)&&/s\.dataset\.a = String\(pa\)\[
 assert(/const KF_WB = '<svg class="kf__wb"/.test(html)&&/\(wb \? KF_WB : ""\) \+ \(hs \? KF_HS : ""\)/.test(html)&&/if \(wk < 1\) \{ xWB\.on = true;/.test(html)&&/xWB\.on = false; const d = kfGet/.test(html),'wallbang mark wired (set on a wall-penetrating player shot, consumed by the next kill row)');
 assert(/#game #feed \.kf--k>\.kf__n:first-child::before,#game #feed \.kf--k>\.kf__n:nth-child\(3\)::after\{content:attr\(data-a\)/.test(css)&&/#game #feed \.kf--k\.kf--mine\{box-shadow:inset 0 0 0 2px #f2dc8b/.test(css),'kill feed styles');
 console.log('HUD v2: kill feed portraits, skull headshot, wallbang mark, own-kill outline');
+// round banners: Valorant wording (ROUND WIN / ROUND LOSS, ceremonies) in the title face on a dark centre band; ace gold
+assert(/annc\(win \? "ROUND WIN" : "ROUND LOSS"/.test(html),'Valorant banner wording');
+assert(/\.x-ann\.rnd \.x-ant,\.x-ann\.big \.x-ant\{position:relative;padding:4px 48px;background:linear-gradient/.test(css)&&/\.x-ann\.ace\{color:#f2dc8b\}/.test(css),'banner styles');
+console.log('HUD v2: round banners');
