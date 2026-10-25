@@ -62,6 +62,7 @@ button{font:inherit;text-transform:inherit;letter-spacing:inherit;cursor:pointer
 #xSpk{left:50%;top:14px;transform:translateX(-50%);display:none;background:rgba(15,25,35,.8);padding:5px 18px;border-bottom:3px solid var(--red)}#xSpk svg{display:block;width:40px;height:34px;filter:drop-shadow(0 0 6px rgba(255,70,85,.9))}
 #hint{left:50%;bottom:24px;transform:translateX(-50%);font-size:12px;opacity:.7;text-align:center}
 #game #hint{bottom:112px;width:min(860px,92vw)} /* QA: sat under the HP / ability / ammo panels */
+body:has(.x-kb.on .x-kb__h) #hint{display:none} /* QA: the KILLED BY card shares the hint band (bottom:60 + ~87px vs bottom:112px) at every viewport; a dead player cannot use the contextual controls */
 #dmg{inset:0;background:radial-gradient(ellipse at center,rgba(255,70,85,0) 52%,rgba(255,70,85,.32) 78%,rgba(255,70,85,.72) 100%);opacity:0;transition:opacity .3s;will-change:opacity;contain:strict;pointer-events:none} /* perf: a static gradient on its own layer; a full-screen blurred inset shadow repainted every frame of each hurt flash */
 #scope{inset:0;display:none;background:linear-gradient(#000,#000) 50% 50%/1px 92vmin no-repeat,linear-gradient(#000,#000) 50% 50%/92vmin 1px no-repeat,linear-gradient(#000,#000) 50% calc(50% - 31vmin)/3px 30vmin no-repeat,linear-gradient(#000,#000) 50% calc(50% + 31vmin)/3px 30vmin no-repeat,linear-gradient(#000,#000) calc(50% - 31vmin) 50%/30vmin 3px no-repeat,linear-gradient(#000,#000) calc(50% + 31vmin) 50%/30vmin 3px no-repeat,radial-gradient(circle at 50% 50%,transparent 0,transparent 45.2vmin,rgba(0,0,0,.75) 45.7vmin,#000 46vmin)} /* sniper lens: 92vmin circle, centred on any aspect ratio, thin cross + thick outer posts; first in #game so the HUD paints over it */
 #xAdsT{inset:0;opacity:0;pointer-events:none}
@@ -532,6 +533,20 @@ body.x-cbh .x-mvp.en{border-left-color:#ff9f1c}
 .x-kb__r i{width:44px;height:44px;display:grid;place-items:center;font-style:normal;font-weight:600;font-size:16px;color:#fff;border:1px solid rgba(236,232,225,.3)}
 .x-kb__r b{display:block;font-size:15px}.x-kb__r span{font-size:12px;opacity:.75}
 .x-kb__d{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;margin:0;font-size:12px}.x-kb__d dt{opacity:.7;letter-spacing:.08em}.x-kb__d dd{margin:0;text-align:right}
+/* short viewports (640x360 test, landscape phones): the death card becomes a compact
+   centered bar above the HP/weapon panels, and the toast sits above it - no overlap with
+   the announcement (top 22%), minimap (top-left), or bottom-corner HUD. */
+@media (max-height:560px){
+  .x-kb{left:50%;bottom:60px;transform:translateX(-50%);width:auto;max-width:min(92vw,380px);padding:8px 14px;display:none;align-items:center;justify-content:center;flex-wrap:wrap;gap:4px 10px;border-left:0;border-top:3px solid #ff4655}
+  .x-kb.on{display:flex;transform:translateX(-50%);animation:none}
+  .x-kb__h{margin:0;font-size:11px;white-space:nowrap}
+  .x-kb__r{margin:0;gap:6px;white-space:nowrap}
+  .x-kb__r i{width:26px;height:26px;font-size:12px}
+  .x-kb__d{display:grid;grid-template-columns:auto auto;gap:1px 8px;font-size:11px;white-space:nowrap}
+  #toast{bottom:150px;padding:10px 18px}
+  .x-ann{top:10%}
+  .x-ann.rnd{top:16%}
+}
 .x-sp{position:fixed;left:50%;bottom:120px;transform:translateX(-50%);z-index:60;padding:6px 14px;background:rgba(15,25,35,.75);color:#ece8e1;font:500 13px var(--sans);letter-spacing:.14em;pointer-events:none;display:none;text-align:center}
 .x-sp small{display:block;font-size:12px;letter-spacing:.04em;opacity:.7;margin-top:2px}.x-sp.on{display:block} .x-sp__tp{display:inline-flex;align-items:center;gap:6px;margin-left:12px;padding:4px 10px;min-height:28px;border:1px solid rgba(236,232,225,.45);background:rgba(15,25,35,.6);color:#ece8e1;font:600 12px var(--sans);letter-spacing:.12em;cursor:pointer;pointer-events:auto}.x-sp__tp:hover,.x-sp__tp:focus-visible{border-color:#ff4655;outline:0}.x-sp__tp.on{background:#ff4655;color:#0f1923;border-color:#ff4655}.x-sp__tp kbd{font:inherit;padding:0 4px;border:1px solid currentColor;border-radius:2px}
 </style>
