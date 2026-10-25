@@ -58,3 +58,9 @@ Open `http://127.0.0.1:8876/`; localhost clients use the local game service on p
 - Also resolved the earlier np-matches-native-node mystery: xPath IS wrapped for native maps (index.html:12791, nmNext over native nav); npT=0.4 (not 1.5) proved the wrapper was live. So the gNav fixes do not route native-map bots; nmNext does.
 - Fix: hunt branch now `mode !== "five" || FV.dm`; the five-mode xGoal override is now guarded `!FV.dm` (matching the existing enemy-bot pattern at :4259).
 - Evidence: diag-stall2.cjs (new, committed) traced stalled units pre-fix (ng=(-74,-1.8)=spawn anchor while xNb=(-31,-29)); post-fix 70s breeze TDM shows zero units still 5s+. 40 client suites green.
+
+## Residual TDM ally stall (OPEN, narrowed 5:20 AM)
+- Post-fix breeze TDM soak: combat now happens (8 deaths / 8 respawns in 84s vs 0 pre-fix), 3 of 4 allies hunt. One residual: Skye stationary 16s, engaged=false, at (-67.9,-19.1) — the same coordinates as a PRE-fix parked spot.
+- diag-stall3.cjs (committed) dumps full scalar state + live nav for any still ally. First catch was a different, LEGIT case: Omen holding combat stance (see=7.91, trT=4, path to goal exists pl=117, both endpoints playable) — not a bug, harness excludes engaged units.
+- Two candidate causes for the residual !tg stall: (a) nmNext returns [p.x,p.z] when nmPath is empty and xUn does not fire on zero velocity (no motion intent), parking the unit forever; (b) nmNext never segment-checks path[1] (skip-ahead loop starts at i=2), so an off-mesh first hop into a wall corner sets blk=1 in a re-plan loop with xUn's nearby-waypoint rescue insufficient.
+- Next probe: rerun diag-stall3 until it catches an engaged=false stall (need np, ng, nav.pl, adj for that exact case), then fix the matching branch.
