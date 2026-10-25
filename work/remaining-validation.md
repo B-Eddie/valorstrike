@@ -606,3 +606,18 @@ stall pattern on heavy maps is early-match boot/XVA-settling contention under Sw
 NOT a motor regression. Probe harness gained SETTLE env (/tmp/diag-stairs-settle.cjs;
 upstream into work/browser-tests/diag-stairs.cjs next pass). Haven + lotus settled
 confirmation runs queued behind it (one chrome at a time).
+
+## Lotus overhang RETRACTED (2026-10-25 ~17:17 EDT) - one-way drop lip, no slab, no nav change
+Live corroboration (lotus DM, doors open, /tmp/lotus-prop.cjs): nmBlocked (standing AND
+crouch capsule) TRUE at all five cluster nodes (3628-3631, 3712). Live bundle raycast
+(server/public/worlds/lotus position/index bins, /tmp/lotus-bundle-ray.cjs): UP rays from
+the nodes hit NO ceiling at all (open sky, rules out any slab in the served world); ground
+within capsule radius r=0.43 is 4.93 at the node but 5.32 on the -x/-z sides - a 0.39 m
+floor lip inside the capsule radius. nmBlocked's shapecast catches that lip below its line
+start (y+r), which reads blocked()=TRUE without any overhang. CLIPS has no lotus entry
+(server/src/motor.cjs:31), ruling out an invisible-wall clip. Stand test: teleported
+capsule settled at y=5.27 on the lip, consistent. CONCLUSION: the 2026-10-25 'slab
+overhang root cause' was a misread of blocked()=TRUE; the cluster is a one-way drop at a
+real terrain step (up impassable at 0.39 m > 0.321 climb limit, down fine). NO nav
+invalidation (bake would remove legitimate standing space; one-way drops are plausibly
+intentional; the runtime per-unit stall breaker covers bots attempting the up leg).
