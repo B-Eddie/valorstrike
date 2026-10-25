@@ -854,3 +854,20 @@ check hark-perf overlap first (it owns agent cull + nav GC).
 - Next diagnostic: sample nmHeight along the walked flight line from collision geometry and
   list actual riser heights; compare against the 0.32 climb limit. Then decide: raise step
   height (gameplay-feel change), smooth the collision, or accept as level intent.
+
+### 18:48 addendum - riser hypothesis REFUTED by offline collision measurement
+- Parsed models/valorant/maps/breeze/collision.bin directly and raycast-sampled ground height
+  every 0.1m along the exact walked flight line (-30.5,-50.5)->(-17.75,-48.25): NO risers
+  above 0.15m (max 0.000 above threshold; the flight collision is effectively a smooth ramp
+  along the walk line). The >0.32m geometry-riser hypothesis is refuted for breeze.
+- Re-read of wedge evidence: points are consistent within a run (1-2 clusters) but SPREAD along
+  the flight across runs (-28.55 / -26.36 / -23.58 / -22.78 / -20.09 / -19.2). Not one fixed
+  geometry feature. Remaining candidates: (a) lateral contact - the probe walks a BLIND
+  straight line with W held; clipping a rail/wall edge wedges the capsule until the axis-split
+  slide clears it, which is probe behavior, not necessarily a gameplay bug; (b) low-fps
+  ground-snap interaction (untested).
+- Next diagnostic: (1) lateral clearance check at wedge points (triangle distance to the
+  capsule segment above foot level) from collision.bin; (2) re-walk following nav edges with
+  steering instead of a straight line - if steering walks clean, the wedge is a probe artifact
+  and this investigation closes as no-gameplay-bug; if steering also wedges, it's a real
+  movement/collision issue. Player-motor substep hardening stays regardless (06e32f9).
