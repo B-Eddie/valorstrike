@@ -12,16 +12,25 @@ const audit=fs.readFileSync(path.join(__dirname,'audit.js'),'utf8'),boot=audit.s
 const log=console.log;console.log=()=>{};// the boot prints its own knife check; keep test output to one line
 const H=new Function('require','__dirname','process','module',boot+'\nreturn {win,context,errors,xErrCalls,advance,setPhase:p=>{phase=p;}};')(require,__dirname,process,module);
 console.log=log;
-const VERBOSE=!!process.env.VERBOSE,LONG=!!process.env.QA_LONG,T=LONG?{fight:[40000,20000,30000],rounds:3,until:240000}:{fight:[9000,4000,5000],rounds:2,until:60000};
+const VERBOSE=!!process.env.VERBOSE,SEED=+(process.env.SEED||7),LONG=!!process.env.QA_LONG,T=LONG?{fight:[40000,20000,30000],rounds:3,until:240000}:{fight:[9000,4000,5000],rounds:2,until:60000};
+// Determinism: the fight used to be decided by unseeded Math.random (server spawns / spread / bot AI in this realm, the
+// page's own in its vm realm) and by real async work (world loading on create, 'hi' crypto) racing the virtual clock,
+// so under machine load the piloted TDM fight once ended 0 kills / 5 deaths. Both realms are seeded and the virtual
+// clocks hold while a connection or an authentication is pending (as tools/soak.mjs does), so a seed replays.
+function mulberry(seed){let a=seed>>>0;return ()=>{a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return ((t^t>>>14)>>>0)/4294967296;};}
+Math.random=mulberry(SEED*104729+1);require('vm').runInContext(`Math.random=(${mulberry})(${SEED*7919+3});`,H.context);
 (async()=>{
  const xe=code=>require('vm').runInContext('__xe',H.context)(code);
  const {localCluster}=await import('../server/tools/local-cluster.mjs');const {ScriptedHuman}=await import('../server/tools/scripted-human.mjs');const {loadWorld}=await import('../server/src/world.js');
  const cluster=await localCluster({env:{ALLOW_LOCAL_ORIGIN:'true',ENABLE_SPIKE:'true'}});const world=await loadWorld(cluster.env.ASSETS,'ascent');
  // WebSocket bridge: the page's socket is a local-cluster connection.
- const sockets=[];
- class WS{constructor(url){const q=Object.fromEntries(new URL(url.replace(/^ws/,'http')).searchParams);this.readyState=0;this.sent=0;sockets.push(this);const api=cluster.connect(q);this.api=api;
-   api.on('open',()=>{this.readyState=1;this.onopen&&this.onopen({});});api.on('message',m=>{if(this.readyState===1&&this.onmessage)this.onmessage({data:JSON.stringify(m)});});
-   api.on('close',e=>{if(this.readyState===3)return;this.readyState=3;this.onclose&&this.onclose({code:e.code,reason:e.reason});});api.on('error',e=>{this.readyState=3;this.onerror&&this.onerror(e);this.onclose&&this.onclose({code:1006,reason:String(e.message)});});}
+ const sockets=[],codes=new Set();let pending=0;
+ // Hold both virtual clocks (real-time wait, up to 120 s) while a socket is connecting (create = real world file I/O)
+ // or any known room has a session still authenticating its 'hi' (real async crypto).
+ const settle=async()=>{const end=Date.now()+120000;const busy=()=>pending>0||[...codes].some(c=>{const r=cluster.room(c);return r&&[...r.sessions.values()].some(s=>s.authenticating&&!s.u);});while(busy()&&Date.now()<end)await new Promise(r=>setTimeout(r,2));};
+ class WS{constructor(url){const q=Object.fromEntries(new URL(url.replace(/^ws/,'http')).searchParams);this.readyState=0;this.sent=0;sockets.push(this);const api=cluster.connect(q);this.api=api;pending++;let settled=false;const done=()=>{if(!settled){settled=true;pending--;}};if(q.code)codes.add(q.code);
+   api.on('open',()=>{done();this.readyState=1;this.onopen&&this.onopen({});});api.on('message',m=>{if(this.readyState===1&&this.onmessage)this.onmessage({data:JSON.stringify(m)});});
+   api.on('close',e=>{if(this.readyState===3)return;this.readyState=3;this.onclose&&this.onclose({code:e.code,reason:e.reason});});api.on('error',e=>{done();this.readyState=3;this.onerror&&this.onerror(e);this.onclose&&this.onclose({code:1006,reason:String(e.message)});});}
   send(d){if(this.readyState!==1)throw Error('send on closed socket');this.sent++;if(VERBOSE)(this.types||(this.types={}))[JSON.parse(d).t]=1;this.api.send(d);}close(){if(this.readyState===3)return;this.readyState=3;this.api.close();}}
  WS.OPEN=1;H.win.WebSocket=WS;/* No fetch, as in the audit boot: the page plays as a guest (profile fetch fails) and skips asset downloads. */ const fetches=[];H.win.fetch=function(u){fetches.push(String(u)+' @ '+new Error().stack.split('\n').slice(2,5).join(' / '));return Promise.reject(new TypeError('Failed to fetch'));};
  H.win.__ls=new Map();H.win.__ls.getItem=k=>H.win.__ls.has(k)?H.win.__ls.get(k):null;H.win.__ls.setItem=(k,v)=>H.win.__ls.set(k,String(v));H.win.__ls.removeItem=k=>H.win.__ls.delete(k);
@@ -39,9 +48,9 @@ const VERBOSE=!!process.env.VERBOSE,LONG=!!process.env.QA_LONG,T=LONG?{fight:[40
   pilot.target=foes[0]?.name;pilot.foe=()=>pilot.rows.find(q=>q[2]===pilot.target&&q[10]===1)||null;const i=pilot.input(),fire=!!i.fire;if(fire)stats.fired++;
   xe(`yaw=${i.r||0};pitch=${i.p||0};keys.KeyW=${(i.f||0)>0};keys.KeyS=false;keys.KeyD=${(i.s||0)>0};keys.KeyA=${(i.s||0)<0};keys.Space=${!!i.j};fireHeld=${fire};if(${fire})NET.firePulse=performance.now()+40;true`);};
  const idle=()=>xe('["KeyW","KeyS","KeyA","KeyD","Space"].forEach(k=>keys[k]=false);fireHeld=false;true');
- const step=async ms=>{for(let t=0;t<ms;t+=50){await cluster.advance(50);H.advance(50);if(pilotCode&&(pilotTick+=50)>=100){pilotTick=0;drive();}}};
+ const step=async ms=>{for(let t=0;t<ms;t+=50){if(xe('MP.code'))codes.add(xe('MP.code'));await settle();await cluster.advance(50);H.advance(50);if(pilotCode&&(pilotTick+=50)>=100){pilotTick=0;drive();}}};
  const until=async(cond,ms,what)=>{for(let t=0;t<ms;t+=50){if(cond())return;await step(50);}throw Error('timed out: '+what+' (MP.st '+xe('MP.st')+' host '+xe('NET.host')+' room '+xe('JSON.stringify(MP.room)')+' sent '+sockets.map(s=>s.sent+JSON.stringify(s.types))+' server '+(()=>{const r=cluster.room(xe('MP.code'));return r?JSON.stringify({ph:r.sim?.phase,host:r.host,ses:[...r.sessions.values()].map(s=>[s.id,s.u&&s.u.name,s.ready])}):'none';})()+' dbg '+xe('JSON.stringify({role:MP.role,cl:MP.cl,m5:MP.m5,pick:FV.pick,mode:typeof mode!=="undefined"?mode:null,last:NET.lastClose,latest:!!NET.latest})')+' fetches '+JSON.stringify(fetches.slice(0,5))+' running '+xe('running')+' ld '+xe('window.xLdOn')+' ready '+xe('NET.ready')+', errors '+JSON.stringify(H.errors.slice(errs0,errs0+3))+' xerr '+JSON.stringify(H.xErrCalls.slice(x0,x0+3))+')');};
- const humans=[];const join=(code,name,agent,target)=>{const p={};const h=new ScriptedHuman({name,agent,world,target});const s=cluster.connect({code});h.attach(s);s.on('message',m=>h.receive(m));s.on('open',()=>h.hello());humans.push(h);return h;};
+ const humans=[];const join=(code,name,agent,target)=>{const p={};const h=new ScriptedHuman({name,agent,world,target});codes.add(code);pending++;let settled=false;const done=()=>{if(!settled){settled=true;pending--;}};const s=cluster.connect({code});h.attach(s);s.on('message',m=>h.receive(m));s.on('open',()=>{done();h.hello();});s.on('error',done);humans.push(h);return h;};
  const report={};
  const tBoot=Date.now();let vt=0;for(const mode of ['tdm','dm','five']){H.setPhase('online '+mode);const tm=Date.now(),v0=cluster.clock.now();
   xe(`MP.name='PageQA';window.xQMap='ascent';MP.map='ascent';mpCreate(false,'${mode}')`);
