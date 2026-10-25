@@ -35,7 +35,7 @@ Each commit passed both suites from `server/` at the time it landed; `index.html
 | 4b8bac3 | Native map decals: opaque-exported Decal_/Floater_ materials with real alpha are alpha-blended; white Floater masks render as soft grime (white wall patches gone) | `test_map_decals.cjs` on real textures of six maps, `lotus-spawn-decals-before-after.jpg` | Visual pass on the other five maps |
 | b562314 | Spectate on native maps: third-person cam follows the target's floor height; spectate bar moves to the bottom at 640x360 | `test_tp_cam_height.cjs`, `test_short_layout.cjs`, `lotus-spectate-3p-640x360.jpg` | Other maps' upper floors |
 | ebd0ca4 | Ragdoll collapse in the browser: r149 has no `BufferAttribute.getComponent`, so contact sampling threw at death and every corpse froze upright until the fade; sampling uses getX..getW, failure clears contact points. Corpses also advance on real elapsed time (low fps no longer leaves them standing) | `test_ragdoll.cjs` (r149 attributes, 1/3/8 fps); `lotus-ragdoll-browser.json` (live page numbers: pelvis 1.08 m → 0.15 m, head 1.72 m → 0.13 m above the floor in 2 s at 1 fps) | Rendered screenshot of a collapsed corpse (Chromium OOM alongside the combat soak) |
-| 13fdfd6 | Floor pick-up allowed in the buy phase (prompt showed but F did nothing) | `test_floor_pickup.cjs` | Rendered buy-phase swap on Lotus |
+| 13fdfd6 | Floor pick-up allowed in the buy phase (prompt showed but F did nothing) | `test_floor_pickup.cjs`; browser (Lotus, 640x360, buy phase 43 s left): prompt `[F] Pick up Frenzy`, F swapped Classic → Frenzy and left the Classic on the floor, `lotus-buyphase-pickup-before/after-640x360.jpg` (canvas only, HUD not in the capture) | Online two-client swap |
 | de401e9, b86efe2 | Curveball direction: online cast sends `l` (FIRE left, ALT FIRE right); offline/local flare now curves on the server's path (5 m ahead then 2.5 m aside, wall-clipped) | `test_curveball_flag.cjs`, `test_curveball_offline.cjs` | Browser feel |
 | 908a0b5 | Native map foliage cut-outs: 71 foliage materials with real alpha get alpha test (vines/moss no longer solid sheets) | `test_map_decals.cjs` | Visual pass per map |
 | b256a56 | Online Vulnerable / Trapwire tether status shown (announcement + chip with seconds) | `test_net_status.cjs` | Live online check |
@@ -46,8 +46,8 @@ Each commit passed both suites from `server/` at the time it landed; `index.html
 
 - Lotus stairs: walked up without jumping — **pass**.
 - Spectate: third-person button clickable, camera at the target's floor height — **pass** (after b562314).
-- Floor pick-up: the `[F] Pick up` prompt shows; during the buy phase F did nothing → fixed in 13fdfd6 (rendered swap not yet captured).
-- Ragdoll: corpses stood upright until the fade → fixed in ebd0ca4; collapse confirmed by live page numbers, **no rendered screenshot yet**.
+- Floor pick-up: the `[F] Pick up` prompt shows; during the buy phase F did nothing → fixed in 13fdfd6; after the fix a buy-phase swap on Lotus passed (Classic → Frenzy, Classic left on the floor; evidence jpgs).
+- Ragdoll: corpses stood upright until the fade → fixed in ebd0ca4; collapse confirmed by live page numbers, **no rendered screenshot yet**. Three capture attempts after the fix failed (corpse faded before the frame under load; one frame showed an upright figure that could not be confirmed as the corpse; Chromium then OOM-killed at 4.5 GB RSS alongside the combat climb runs). Recorded and skipped.
 - Chromium was OOM-killed repeatedly while the `hark-combat` soak ran; browser coverage is therefore partial.
 
 ### Coming via a later merge of `hark-combat`
