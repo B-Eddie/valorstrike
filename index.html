@@ -4392,7 +4392,7 @@ function xBuildTeams() { let me = "Jett"; try { me = J.pick || "Jett"; } catch (
   let en = []; try { en = xDraw(5, F_MATES.slice()); } catch (e) {} if (!en || en.length !== 5 || new Set(en).size !== 5) en = xDraw(5, []); // no shared names with mates, so the scoreboard keeps 10 distinct rows
   F_EN.splice(0, F_EN.length, ...en); xTmLocked = false; }
 const FV = { you: 0, them: 0, atk: true, cr: 800, buy: 0, pri: null, sec: "Classic", menu: false, sp: { st: "", site: "" }, to: 0, cat: 0, bs: {}, alive: false, arm: 0 }; xFvOK = true;
-const BUY = [["Sidearms", [["Classic", 0], ["Shorty", 150], ["Frenzy", 450], ["Ghost", 500], ["Sheriff", 800]]], ["SMGs", [["Stinger", 1100], ["Spectre", 1600]]], ["Rifles", [["Bulldog", 2050], ["Guardian", 2250], ["Phantom", 2900], ["Vandal", 2900]]], ["Snipers", [["Marshal", 950], ["Outlaw", 2400], ["Operator", 4700]]], ["Shields", [["Light Shields", 400, 25], ["Heavy Shields", 1000, 50]]], ["Shotguns", [["Bucky", 850], ["Judge", 1850]]], ["Machine guns", [["Ares", 1600], ["Odin", 3200]]]];
+const BUY = [["Sidearms", [["Classic", 0], ["Shorty", 300], ["Frenzy", 450], ["Ghost", 500], ["Sheriff", 800]]], ["SMGs", [["Stinger", 1100], ["Spectre", 1600]]], ["Rifles", [["Bulldog", 2050], ["Guardian", 2250], ["Phantom", 2900], ["Vandal", 2900]]], ["Snipers", [["Marshal", 950], ["Outlaw", 2400], ["Operator", 4700]]], ["Shields", [["Light Shields", 400, 25], ["Heavy Shields", 1000, 50]]], ["Shotguns", [["Bucky", 850], ["Judge", 1850]]], ["Machine guns", [["Ares", 1600], ["Odin", 3200]]]];
 const capC = (n) => Math.min(9000, n);
 const BUY_SIL = { // look pass: flat white gun silhouettes, viewBox 64 x 20
   Classic: "M20 5h22v4H32l-2 9h-6l2-9h-6z",
@@ -9136,6 +9136,9 @@ function fiveTick(dt) {
   if (show) { if (bar.firstChild) bar.firstChild.textContent = show + (s.st === "plant" && s.dt >= 3.5 ? " · half" : ""); const bi = bar.querySelector("i"); if (bi) bi.style.width = Math.min(100, prog * 100) + "%"; }
 }
 const alive4 = () => player.hp > 0 && !!(keys.Digit4 || keys.Numpad4);
+// VALORANT 1.11: surviving a lost round pays 1000 instead of the loss bonus for an attacker who never planted (time ran out) or a
+// defender alive after the detonation (a defender alive at a loss can only have lost to the detonation).
+function fSurvLoss(atk, alive) { if (!alive || FV.sw || FV.sr) return false; return atk ? !FV.sp.pn : true; }
 function fCheck(win, text, title) {
   if (!running) return;
   if (!title && FV.sp.st === "plant" && win !== FV.atk) return; // attackers wiped after plant: the spike still has to be defused
@@ -9144,8 +9147,8 @@ function fCheck(win, text, title) {
   FV.lsY = win ? 0 : (FV.lsY || 0) + 1; FV.lsT = win ? (FV.lsT || 0) + 1 : 0; // loss streaks: 1900 / 2400 / 2900
   const lb = (s) => LOSS_B[Math.min(s, 3) - 1];
   const swB = FV.sw ? 4000 : null; // Swiftplay: 4000 each round plus that round's economy, capped (pistol round 5 resets via fEco on the swap)
-  FV.cr = capC((swB ?? FV.cr) + (win ? 3000 : lb(FV.lsY))); FV.alive = player.hp > 0; FV.arm = FV.alive ? player.armor || 0 : 0;
-  bots.concat(allies).forEach((u) => { const st = FV.bs[u.name], w2 = allies.includes(u) ? win : !win; if (!st) return; st.cr = capC((swB ?? st.cr) + (w2 ? 3000 : lb(allies.includes(u) ? FV.lsY : FV.lsT))); st.alive = u.alive; st.arm = u.alive ? u.armor || 0 : 0; });
+  FV.cr = capC((swB ?? FV.cr) + (win ? 3000 : fSurvLoss(FV.atk, player.hp > 0) ? 1000 : lb(FV.lsY))); FV.alive = player.hp > 0; FV.arm = FV.alive ? player.armor || 0 : 0;
+  bots.concat(allies).forEach((u) => { const st = FV.bs[u.name], w2 = allies.includes(u) ? win : !win; if (!st) return; st.cr = capC((swB ?? st.cr) + (w2 ? 3000 : fSurvLoss(allies.includes(u) ? FV.atk : !FV.atk, !!u.alive) ? 1000 : lb(allies.includes(u) ? FV.lsY : FV.lsT))); st.alive = u.alive; st.arm = u.alive ? u.armor || 0 : 0; });
   const n = FV.you + FV.them, over = FV.surr ? true : FV.sw ? Math.max(FV.you, FV.them) >= 5 : FV.sr ? Math.max(FV.you, FV.them) >= (FV.srWin || 4) : Math.max(FV.you, FV.them) >= FIVE_WIN && Math.abs(FV.you - FV.them) >= 2, ot = !FV.sr && !FV.sw && !over && n >= 24, swap = !over && (FV.sw ? n === 4 : FV.sr ? n === 3 : n === 12 || ot);
   if (FV.sw && !over) { try { jUlt(); } catch (e) {} bots.concat(allies).forEach((u) => { try { if (window.xBotUltGain) window.xBotUltGain(u.name); } catch (e) {} }); } // +1 ult point per round
   xRes(win, text, over, !FV.surr && FV.you > FV.them, title);

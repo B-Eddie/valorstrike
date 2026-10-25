@@ -7,8 +7,11 @@ import {persona,flankNode} from './bots.js';
 import {initAbilities,buyAbility,castAbility,tickAbilities,smokeBlocks,sightClear,types,rewardAbilityKill,gainUlt,barrierBlocked,nearestBarrier} from './abilities.js';
 // VALORANT round phases (wiki.playvalorant.com/en-us/Unrated): buy phase 30 s, 45 s for the first buy phase of each half and
 // of overtime / endgame (rounds 1, 13, 25); post-round phase 7 s.
+// VALORANT 1.11 (wiki.playvalorant.com/en-us/Credits): a player who survives a lost round gets 1000 instead of the loss bonus when
+// they are an attacker who never planted (time ran out) or a defender alive after the Spike detonated.
+export function survivorLoss(sim,u,text){if(!u.alive)return false;if(u.team===sim.atk)return text==='Time ran out';return text==='Spike detonated';}
 export const POST_ROUND=7;export function buyPhaseSeconds(round){return round===1||round===13||round===25?45:30;}
-const prices={Classic:0,Shorty:150,Frenzy:450,Ghost:500,Sheriff:800,Stinger:1100,Spectre:1600,Bucky:850,Judge:1850,Bulldog:2050,Guardian:2250,Phantom:2900,Vandal:2900,Marshal:950,Outlaw:2400,Operator:4700,Ares:1600,Odin:3200};
+const prices={Classic:0,Shorty:300,Frenzy:450,Ghost:500,Sheriff:800,Stinger:1100,Spectre:1600,Bucky:850,Judge:1850,Bulldog:2050,Guardian:2250,Phantom:2900,Vandal:2900,Marshal:950,Outlaw:2400,Operator:4700,Ares:1600,Odin:3200};
 import {revealedFor} from './ults.js';
 export class SpikeSimulation extends Simulation{
  static LOAD_GRACE=15;
@@ -73,7 +76,7 @@ export class SpikeSimulation extends Simulation{
  // +1 ult point per death (every source: guns, utility, falls), once each, before a half-time reset can run: the server
  // counted kills only, so online ults charged slower than offline (where deaths, plants and defuses count too).
  deathUlts(){for(const u of this.units){const n=u.deaths||0;if(n>(u.ultDeaths??0))gainUlt(u,n-(u.ultDeaths??0));u.ultDeaths=n;}}
- finishRound(winner,text){if(this.roundDelay>0)return;this.roundScores[winner]++;this.losses[winner]=0;this.losses[1-winner]++;for(const u of this.units){u.credits=Math.min(9000,u.credits+(u.team===winner?3000:Math.min(2900,1900+(this.losses[u.team]-1)*500)));if(!u.alive&&!u.runItBack){/* a Phoenix inside Run It Back is coming back: he keeps his gear */u.primary=null;u.secondary='Classic';u.armor=0;}}this.roundDelay=POST_ROUND;this.roundEvents.push({t:'re',w:winner===0?1:0,tx:text,sc:[...this.roundScores],o:Math.max(...this.roundScores)>=13&&Math.abs(this.roundScores[0]-this.roundScores[1])>=2?1:0});}
+ finishRound(winner,text){if(this.roundDelay>0)return;this.roundScores[winner]++;this.losses[winner]=0;this.losses[1-winner]++;for(const u of this.units){u.credits=Math.min(9000,u.credits+(u.team===winner?3000:survivorLoss(this,u,text)?1000:Math.min(2900,1900+(this.losses[u.team]-1)*500)));if(!u.alive&&!u.runItBack){/* a Phoenix inside Run It Back is coming back: he keeps his gear */u.primary=null;u.secondary='Classic';u.armor=0;}}this.roundDelay=POST_ROUND;this.roundEvents.push({t:'re',w:winner===0?1:0,tx:text,sc:[...this.roundScores],o:Math.max(...this.roundScores)>=13&&Math.abs(this.roundScores[0]-this.roundScores[1])>=2?1:0});}
  bot(u){const sp=this.spike,W=this.world;let goal=null;if(u.team===this.atk){if(sp.st==='carry'&&sp.carrier===u.id){const p=W.map.sites[sp.site];goal=p;if(this.siteAt(u)){u.input={interact:true};u.inputAt=this.time;return;}}else if(sp.st==='drop')goal=[sp.x,sp.y,sp.z];else if(sp.st==='plant')goal=[sp.x+(u.id%3-1)*5,sp.y,sp.z+5];else goal=W.map.sites[sp.site];}else goal=sp.st==='plant'?[sp.x,sp.y,sp.z]:W.map.sites[Object.keys(W.map.sites)[u.id%Object.keys(W.map.sites).length]];
  if(u.team!==this.atk&&sp.st==='plant'&&Math.hypot(u.x-sp.x,u.z-sp.z)<2){u.input={interact:true};u.inputAt=this.time;return;}
  if(u.blindUntil>this.time||u.concussUntil>this.time){u.input={};u.inputAt=this.time;return;}const route=u.route,routeAt=u.routeAt;u.route=null;super.bot(u);const combat=u.input.fire||u.sawTarget;if(!combat){u.route=route;u.routeAt=routeAt;}if(combat)return;if(goal){const target={x:goal[0],y:goal[1],z:goal[2]};this.goalPath(u,target,!(sp.st==='drop'&&u.team===this.atk)&&!(sp.st==='carry'&&sp.carrier===u.id));} }
