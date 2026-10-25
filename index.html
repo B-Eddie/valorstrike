@@ -9094,7 +9094,7 @@ function fiveTick(dt) {
     return;
   }
   XNF++; // replan budget (xPath: 2 per step) follows the sim step, not only the render frame
-  if (s.st === "plant") { s.t -= dt; if (s.t <= 0) { timeLeft = 0; updHud(); SFX.boom(); fDef().forEach((u) => { const q = fPos(u); if (Math.hypot(q.x - s.x, q.z - s.z) < 18) kfeed(s.pn || "Spike", fName(u), false, "Spike"); }); return fCheck(FV.atk, "Attackers win", "SPIKE DETONATED"); } timeLeft = s.t + dt; }
+  if (s.st === "plant") { s.t -= dt; if (s.t <= 0) { timeLeft = 0; updHud(); SFX.boom(); fDetonate(s); return fCheck(FV.atk, "Attackers win", "SPIKE DETONATED"); } timeLeft = s.t + dt; }
   else if (timeLeft - dt <= 0) { timeLeft = 0; updHud(); return fCheck(!FV.atk, "Time ran out before the plant"); }
   tick(dt); if (!running) return;
   if (s.st === "plant" && !fDef().length) return fCheck(FV.atk, "All defenders eliminated after the plant");
@@ -9113,7 +9113,7 @@ function fiveTick(dt) {
     if (site && (c !== player ? !c.nt || c.h4 : (hold && !player.mv && since > 0.15))) { s.pt += dt; s.pb = (s.pb || 0) - dt; if (s.pb <= 0) { s.pb = 0.5; SFX.plantBeep(c === player ? null : p); } if (c === player) { show = "Planting"; prog = s.pt / 4; } } // player plant: stationary; moving or firing cancels
     else { s.pt = 0; if (c === player && site) show = "Hold 4 to plant"; }
     if (s.pt >= 4) {
-      s.st = "plant"; s.site = site; s.pn = fName(c); if (SB[s.pn]) SB[s.pn].pl = (SB[s.pn].pl || 0) + 1; s.t = 45; s.x = p.x; s.z = p.z; s.dt = 0; s.beep = 0;
+      s.st = "plant"; s.site = site; s.pn = fName(c); if (SB[s.pn]) SB[s.pn].pl = (SB[s.pn].pl || 0) + 1; s.t = 45; s.x = p.x; s.y = p.y || 0; s.z = p.z; s.dt = 0; s.beep = 0;
       fsM.position.set(p.x, 0.4, p.z); fsM.visible = true; fsSet(); timeLeft = 45;
       (FV.atk ? F_MATES : F_EN).forEach((n) => FV.bs[n].cr = capC(FV.bs[n].cr + 300)); if (FV.atk) FV.cr = capC(FV.cr + 300); // +300 plant bonus to the attacking team
       if (c === player) jUlt(); feed(fName(c) + " planted the Spike on " + site); say("Spike planted · " + site, 1500); SFX.planted();
@@ -9139,8 +9139,13 @@ const alive4 = () => player.hp > 0 && !!(keys.Digit4 || keys.Numpad4);
 // VALORANT 1.11: surviving a lost round pays 1000 instead of the loss bonus for an attacker who never planted (time ran out) or a
 // defender alive after the detonation (a defender alive at a loss can only have lost to the detonation).
 function fSurvLoss(atk, alive) { if (!alive || FV.sw || FV.sr) return false; return atk ? !FV.sp.pn : true; }
+// VALORANT: the detonation's expanding sphere instantly kills every player it reaches, either team (wiki.playvalorant.com/en-us/Spike);
+// outer radius 3250 uu = 32.5 m (valorant.gs/rules). No kill credit. FV.det holds off the elimination checks the deaths would
+// trigger, so the round is decided once, as a detonation, after everyone in range is dead.
+const SPIKE_R = 32.5;
+function fDetonate(s) { FV.det = 1; try { [player].concat(allies, bots).filter(fAlive).forEach((u) => { const q = fPos(u), dy = s.y == null ? 0 : (q.y || 0) - s.y; if (Math.hypot(q.x - s.x, dy, q.z - s.z) > SPIKE_R) return; if (u === player) pDie("Spike", "Spike"); else if (allies.includes(u)) allyDie(u, "Spike", "Spike"); else kill(u, false, "Spike", "Spike"); }); } catch (e) {} FV.det = 0; }
 function fCheck(win, text, title) {
-  if (!running) return;
+  if (!running || FV.det) return;
   if (!title && FV.sp.st === "plant" && win !== FV.atk) return; // attackers wiped after plant: the spike still has to be defused
   running = false; fireHeld = false; buyMenu(false);
   if (FV.surr) {} else if (win) FV.you++; else FV.them++; // surrender: final score stays as it stood

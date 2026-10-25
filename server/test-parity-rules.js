@@ -15,4 +15,11 @@ assert.equal(Motor.fallDamage(7.9),0);assert.equal(Motor.fallDamage(8),15);asser
  const P={x:0,y:0,z:0,vx:0,vz:0,vy:0};for(let i=0;i<200;i++){const r=Motor.step(P,{x:0,z:0,jump:i===0,speed:6.75},1/64,flat);if(i>0&&r.landed)break;}assert(P.fallDrop>1.1&&P.fallDrop<1.25,'a jump on flat ground lands from its ~1.17 m apex ('+P.fallDrop+')');assert.equal(Motor.fallDamage(P.fallDrop||0),0);
  const T={x:0,y:20,z:0,vx:0,vz:0,vy:0,air:true};Motor.step(T,{x:0,z:0,speed:6.75},1/64,flat);T.y=1;T.vy=0;let r;do{r=Motor.step(T,{x:0,z:0,speed:6.75},1/64,flat);}while(!r.landed);assert(T.fallDrop<1.1,'a teleport mid-air restarts the fall height');}
 {const {s,b}=mk();b.armor=50;b.hp=100;b.fallDrop=12;s.fall(b);assert.equal(b.hp,100-Motor.fallDamage(12));assert.equal(b.armor,50,'shields ignored');b.fallDrop=20;s.fall(b);assert.equal(b.alive,false,'fatal fall');assert(s.events.some(e=>e[0]==='k'&&e[1]===''&&e[2]===b.name&&e[4]==='Fall'),'kill feed: Fall, no killer');}
-console.log('Parity rules: lost-round survivors 1000 (attacker without plant at time-out, defender after detonation), Shorty 300; fall damage 15 at 8 m to 100 at 17 m (health only)');
+// 3. detonation (wiki.playvalorant.com/en-us/Spike; outer radius 3250 uu, valorant.gs/rules): kills everyone within 32.5 m, either team, no credit
+{const {s,a,a2,b,b2}=mk();for(const u of [a,a2,b,b2]){u.y=0;u.credits=0;u.kills=0;}Object.assign(s.spike,{st:'plant',site:'A',x:0,y:0,z:0,t:.01,dt:0,carrier:null});
+ [a.x,a.z]=[10,0];[a2.x,a2.z]=[40,0];[b.x,b.z]=[0,32];[b2.x,b2.z]=[0,33];const k0=s.events.length;s.step(.05);
+ assert.equal(a.alive,false,'attacker 10 m away dies too');assert.equal(b.alive,false,'defender at 32 m dies');assert.equal(a2.alive,true,'40 m: outside');assert.equal(b2.alive,true,'33 m: outside');
+ const ks=s.events.slice(k0).filter(e=>e[0]==='k');assert.deepEqual(ks.map(e=>[e[1],e[2],e[4]]).sort(),[['',a.name,'Spike'],['',b.name,'Spike']].sort(),'kill feed: Spike, no killer');
+ assert(s.units.every(u=>!u.kills),'no kill credit');assert.equal(s.roundScores[s.atk],1,'attackers win');
+ assert.equal(b.credits,1900,'dead defender: loss bonus');assert.equal(b2.credits,1000,'defender who outran the blast: 1000');assert.equal(a.credits,3000,'winners +3000, dead or alive');}
+console.log('Parity rules: lost-round survivors 1000 (attacker without plant at time-out, defender after detonation), Shorty 300; fall damage 15 at 8 m to 100 at 17 m (health only); detonation kills within 32.5 m, no credit');
