@@ -319,3 +319,25 @@ Harness: `server/tools/soak.mjs` (in-process worker, bots + fuzzing humans, inva
 - Remaining, not fixed: drawn-then-orphaned geometries rise 4 -> 6 -> 7 over 3 cycles (6 were created at boot before
   stack tagging, 1 is Spike Rush's persistent orb geometry); within tolerance and not tied to a match type. Legacy Bind /
   Haven callout textures (~45) count as orphaned while another map is up; they are kept for reuse and do not grow.
+
+## Gameplay QA pass 5 (online key rebinds, online buy sellable, settings persistence, results flows)
+
+- **Online F / G / R after a rebind**: the keymap layer re-sends a rebound key on `window` only, so the online pick-up /
+  drop / reload handlers registered on `document` never saw it. They now listen on `window`, honour `xKbSkip` / repeat,
+  and R no longer sends a second `reload` when the page's own R handler already started the local reload.
+  New: `test_client_online_rebind.cjs`; `test_floor_pickup.cjs` follows the window handler.
+- **Online buy cards sellable**: the page's purchase log stayed empty online, so bought cards never showed as sellable.
+  The server's `bo` reply carries the round's purchase list (`bl`) and the page rebuilds the log from it (`p: 0`, the
+  server charges a stacked buy in full). Round state (`rs`) also carries `bl` during the buy phase, so a reconnect /
+  page-log reset mid-buy gets the sellable cards back (rebuilt only when the list changes). Covered in
+  `test_client_online_buy.cjs`.
+- **Settings lost on reload**: aim assist, crosshair options, hit markers, damage numbers, dynamic/static crosshair and a
+  custom graphics set's resolution / shadows / skyline were not saved or not restored. Now persisted and validated on
+  load. `page_harness.cjs` gained `boot({ls})` / `lsStore()` (a localStorage present during the page's boot, i.e. a
+  reload). New: `test_client_settings.cjs`.
+- **Results flows**: the offline kill feed named "Classic" / the settings weapon instead of the gun in hand; it uses
+  `wName()`. Online, a finished server room refuses Start and new joins, so "Back to room" left a dead room: the button
+  reads "Leave room" and returns to the lobby. New: `test_client_results.cjs`.
+- **Ownerless utility kills**: a kill by utility whose owner left the match showed a blank killer. Effects record their
+  agent (`ag`) and the kill event credits it (e.g. "Raze" with the Ability icon); the page falls back to the weapon /
+  "Utility" for an older server's blank name. `test-ults.js` checks the credited name.
