@@ -65,31 +65,34 @@ const A = client('A', `create=1&code=${CODE}&mode=five&map=${MAP}`);
 A.ws.on('open', () => A.send({ t: 'hi', n: 'AlphaQA' }));
 const B = client('B', `code=${CODE}&mode=five&map=${MAP}`);
 B.ws.on('open', () => B.send({ t: 'hi', n: 'BravoQA' }));
+const C = client('C', `code=${CODE}&mode=five&map=${MAP}`);
+C.ws.on('open', () => C.send({ t: 'hi', n: 'CharlieQA' }));
 
-setTimeout(() => { console.error('GLOBAL TIMEOUT'); process.exit(1); }, 170000);
+setTimeout(() => { console.error('GLOBAL TIMEOUT'); process.exit(1); }, 300000);
 
 try {
-  await until(() => A.id !== null && B.id !== null, 'both welcomes', 15000);
+  await until(() => A.id !== null && B.id !== null && C.id !== null, 'all welcomes', 15000);
   const startInt = setInterval(() => { if (!A.started) A.send({ t: 'start' }); }, 500);
-  await until(() => A.started && B.started, 'both clients started', 15000);
+  await until(() => A.started && B.started && C.started, 'all clients started', 15000);
   clearInterval(startInt);
   // Keepalive: the server idle-closes ready sessions after 15s without a message; a dead B sends no inputs.
-  const pingInt = setInterval(() => { A.send({ t: 'pi', c: 0 }); B.send({ t: 'pi', c: 0 }); }, 4000);
+  const pingInt = setInterval(() => { A.send({ t: 'pi', c: 0 }); B.send({ t: 'pi', c: 0 }); C.send({ t: 'pi', c: 0 }); }, 4000);
 
   // Phase 1: both clients receive snapshots with 2 humans among 10 units.
   await until(() => A.snap && B.snap && A.snap.u.length === 10 && B.snap.u.length === 10, '10-unit snapshots on both', 20000);
-  for (const c of [A, B]) { const h = c.snap.u.filter((u) => u[12] === 1).map((u) => u[2]);
-    assert.deepEqual(h.sort(), ['AlphaQA', 'BravoQA'], c.name + ' sees 2 humans'); }
-  const aRow = A.row(A.id), bRow = A.row(B.id);
-  assert.ok(aRow && bRow, 'both human rows visible to A');
-  assert.notEqual(aRow[1], bRow[1], 'humans on opposite teams');
-  console.log('phase1 ok: both clients receive 10-unit snapshots with AlphaQA/BravoQA human, opposite teams');
+  for (const c of [A, B, C]) { const h = c.snap.u.filter((u) => u[12] === 1).map((u) => u[2]);
+    assert.deepEqual(h.sort(), ['AlphaQA', 'BravoQA', 'CharlieQA'], c.name + ' sees 3 humans'); }
+  const aRow = A.row(A.id), bRow = A.row(B.id), cRow = A.row(C.id);
+  assert.ok(aRow && bRow && cRow, 'all human rows visible to A');
+  assert.notEqual(aRow[1], bRow[1], 'A and B on opposite teams');
+  assert.equal(cRow[1], aRow[1], 'C is A teammate (join-order assignment)');
+  console.log('phase1 ok: all clients receive 10-unit snapshots; humans AlphaQA+CharlieQA vs BravoQA');
 
   // Buy phase: walk toward each other (spawn barrier clamps the approach).
   const walkInt = setInterval(() => { for (const [c, other] of [[A, B], [B, A]]) {
     const me = c.row(c.id), fo = c.row(other.id); if (!me || !fo) return;
     const a = aim(rowPos(me), rowPos(fo)); c.input(a.r, 0, 1, false); } }, 100);
-  const walker = new Walker(); const walkerB = new Walker();
+  const walker = new Walker(); const walkerB = new Walker(); const walkerC = new Walker();
   await until(() => A.rs && A.rs.b <= 0, 'buy phase over', 40000);
   clearInterval(walkInt);
 
@@ -107,11 +110,22 @@ try {
     const meB = B.row(B.id), aOnB = B.row(A.id);
     if (meB && aOnB && meB[10] === 1) { const wb = walkerB.step(B, rowPos(meB), rowPos(aOnB));
       if (wb && wb !== 'arrived') { const w2 = aim(rowPos(meB), wb); B.input(w2.r, 0, 1, false); } }
+    // C fights alongside A (perfect-aim self-defense) and follows A's push: the enemy team is
+    // eliminated quickly so the whole flow fits the 120s tool ceiling.
+    const meC = C.row(C.id);
+    if (meC && meC[10] === 1) { let cThreat = null, cd = 25;
+      for (const u of C.snap.u) { if (u[1] === meC[1] || u[10] === 0) continue;
+        const d = Math.hypot(u[4] - meC[4], u[6] - meC[6]); if (d < cd) { cd = d; cThreat = u; } }
+      if (cThreat) { const t = aim(rowPos(meC), { x: cThreat[4], y: cThreat[5] + 0.35, z: cThreat[6] });
+        C.input(t.r, t.p, 0, (fireToggle = !fireToggle)); walkerC.pts = null; walkerC.replanAt = 0; }
+      else { const wp = walkerC.step(C, rowPos(meC), rowPos(meA));
+        if (wp && wp !== 'arrived' && Math.hypot(meA[4] - meC[4], meA[6] - meC[6]) > 3) { const w3 = aim(rowPos(meC), wp); C.input(w3.r, 0, 1, false); }
+        else C.input(0, 0, 0, false); } }
     let threat = null, td = 25;
     for (const u of A.snap.u) { if (u[1] === meA[1] || u[10] === 0) continue;
       const d = Math.hypot(u[4] - meA[4], u[6] - meA[6]); if (d < td) { td = d; threat = u; } }
     if (threat) { const t = aim(rowPos(meA), { x: threat[4], y: threat[5] + 0.35, z: threat[6] });
-      fireToggle = !fireToggle; A.input(t.r, t.p, 0, fireToggle); }
+      fireToggle = !fireToggle; A.input(t.r, t.p, 0, fireToggle); walker.pts = null; walker.replanAt = 0; }
     else fireToggle = false;
     if (Date.now() - lastLog > 5000) { lastLog = Date.now();
       console.log('  combat', Math.round((Date.now()-t0)/1000) + 's', 'dist', a.d.toFixed(1), 'Bhp', bOnA[8], 'tl', A.snap.tl && A.snap.tl.toFixed(1), 'phase', A.snap.phase, 'A', JSON.stringify(rowPos(meA)), 'B', JSON.stringify(rowPos(bOnA))); }
@@ -129,22 +143,39 @@ try {
   await until(() => fwHas(B), 'death drop in B snapshot', 8000);
   console.log('phase3 ok: death drop fw id', dropA[0], dropA[1], 'visible to both clients');
 
-  // Phase 4 (online pickup path): A walks to the gun and picks it.
+  // Phase 4 (online pickup path, deterministic): C is A's teammate. In the round-2 buy phase
+  // C buys the cheapest affordable primary (buy auto-equips) and dropw's beside A in the shared
+  // spawn; A picks it (pick/bo). floorTick allows buy-phase handoffs between teammates.
+  await until(() => A.rs && A.rs.b > 0, 'round 2 buy phase', 150000);
+  await until(() => C.rs && C.row(C.id) && C.row(C.id)[10] === 1, 'C alive in round 2', 60000);
+  await until(() => A.row(A.id) && A.row(A.id)[10] === 1, 'A alive in round 2', 60000);
+  let bought = false;
+  for (const gun of ['Bucky', 'Stinger', 'Spectre']) { if (bought) break;
+    if ((C.rs.me || 0) < { Bucky: 850, Stinger: 1100, Spectre: 1600 }[gun]) continue;
+    C.send({ t: 'buy', n: gun });
+    bought = await until(() => C.bo.some((b) => b.n === gun && b.ok === true) && gun, 'C buys ' + gun, 8000).catch(() => false); }
+  assert.ok(bought, 'C bought a primary, credits ' + (C.rs && C.rs.me));
+  const gun = bought;
+  // C stands next to A (same spawn, both clamped inside the buy barrier), then drops it.
+  const tC = Date.now();
+  while (Date.now() - tC < 30000) { const meC = C.row(C.id), meA = C.row(A.id);
+    if (!meC || !meA) { await sleep(300); continue; }
+    const a = aim(rowPos(meC), rowPos(meA)); if (a.d <= 1.4) break;
+    const wp = walkerC.step(C, rowPos(meC), rowPos(meA));
+    if (wp && wp !== 'arrived') { const w = aim(rowPos(meC), wp); C.input(w.r, 0, 1, false); }
+    else C.input(a.r, 0, 1, false);
+    await sleep(100); }
+  C.send({ t: 'dropw' });
+  const cPos = rowPos(C.row(C.id));
+  const dropC = await until(() => (A.snap.fw || []).find((d) => d[1] === gun && Math.hypot(d[2] - cPos.x, d[4] - cPos.z) < 3), 'C drop in A snapshot', 8000);
+  console.log('phase4a ok: C dropw', gun, '-> fw id', dropC[0], 'in A snapshot (online drop path)');
   let picked = false; const t1 = Date.now();
-  while (Date.now() - t1 < 70000) {
+  while (Date.now() - t1 < 30000) {
     const meA = A.row(A.id); if (!meA || meA[10] === 0) throw new Error('A died before pickup');
-    const d = (A.snap.fw || []).find((x) => x[0] === dropA[0]); if (!d) break;
+    const d = (A.snap.fw || []).find((x) => x[0] === dropC[0]); if (!d) break;
     const dp = { x: d[2], y: d[3], z: d[4] };
     const a = aim(rowPos(meA), dp);
-    let threat = null, td = 20, aliveEnemies = 0;
-    for (const u of A.snap.u) { if (u[1] === meA[1] || u[10] === 0) continue; aliveEnemies++;
-      const dd = Math.hypot(u[4] - meA[4], u[6] - meA[6]); if (dd < td) { td = dd; threat = u; } }
-    // Camp until the bot war thins out (<=2 enemies left); the drop persists until round end.
-    const camp = aliveEnemies > 2 && a.d > 2.0;
-    if (threat && (camp || a.d > 2.0 && td < 12)) { const t = aim(rowPos(meA), { x: threat[4], y: threat[5] + 0.35, z: threat[6] });
-      fireToggle = !fireToggle; A.input(t.r, t.p, 0, fireToggle); walker.pts = null; walker.replanAt = 0; }
-    else if (camp) { fireToggle = false; A.input(0, 0, 0, false); }
-    else if (a.d > 2.0) { fireToggle = false; const wp = walker.step(A, rowPos(meA), dp);
+    if (a.d > 2.0) { const wp = walker.step(A, rowPos(meA), dp);
       if (wp && wp !== 'arrived') { const w = aim(rowPos(meA), wp); A.input(w.r, 0, 1, false); }
       else A.input(a.r, 0, 1, false); }
     else { A.input(a.r, -1.2, 0, false); A.send({ t: 'pick', id: d[0] }); }
@@ -152,8 +183,9 @@ try {
     await sleep(100);
   }
   assert.ok(picked, 'A picked the dropped gun (bo ok)');
-  await until(() => !(A.snap.fw || []).some((x) => x[0] === dropA[0]), 'fw entry consumed', 8000);
-  console.log('phase4 ok: online pick accepted (bo ok), floor entry consumed; swap drop is server-owned');
+  await until(() => !(A.snap.fw || []).some((x) => x[0] === dropC[0]), 'fw entry consumed', 8000);
+  assert.equal(A.bo[A.bo.length - 1].ld[0], gun, 'A primary slot now holds ' + gun);
+  console.log('phase4 ok: online pick accepted (bo ok), A loadout now [' + A.bo[A.bo.length - 1].ld + '], floor entry consumed');
   console.log('TWO-CLIENT PROTOCOL PASS (protocol evidence only, not rendered two-human acceptance)');
   process.exit(0);
 } catch (e) { console.error('FAIL', e.message); process.exit(1); }
