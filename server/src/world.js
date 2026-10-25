@@ -1,5 +1,6 @@
 import * as T from 'three';
 import {MeshBVH} from 'three-mesh-bvh';
+import Motor from './motor.cjs';
 export async function loadWorld(assets,key){
  const get=async f=>{const r=await assets.fetch(new Request('https://assets.local/worlds/'+key+'/'+f));if(!r.ok)throw Error('World asset missing: '+f);return r;};
  const meta=await (await get('meta.json')).json();const geometry=new T.BufferGeometry();
@@ -10,7 +11,8 @@ export async function loadWorld(assets,key){
  const plants=await(await get('plants.json')).json();const nav=await(await get('navigation.json')).json(),map=await(await get('map.json')).json();
  const line=new T.Line3(),box=new T.Box3(),q=new T.Vector3(),v=new T.Vector3();
  const ground=(x,z,y)=>{const ray=new T.Ray(new T.Vector3(x,y+.32,z),new T.Vector3(0,-1,0));for(let i=0;i<24;i++){const h=bvh.raycastFirst(ray,T.DoubleSide);if(!h)break;if(h.face.normal.y>.45)return h.point.y;ray.origin.y=h.point.y-.005;}return y-10;};
- const blocked=(x,z,r,y,height=1.8)=>{line.start.set(x,y+r+.025,z);line.end.set(x,y+Math.max(r+.025,height-r),z);box.min.set(x-r,y+.025,z-r);box.max.set(x+r,y+height,z+r);let hit=false;bvh.shapecast({intersectsBounds:b=>b.intersectsBox(box),intersectsTriangle:t=>{if(Math.max(t.a.y,t.b.y,t.c.y)<=y+.025)return false;/* cheap reject: triangle bounds outside the capsule box */if(Math.min(t.a.x,t.b.x,t.c.x)>box.max.x||Math.max(t.a.x,t.b.x,t.c.x)<box.min.x||Math.min(t.a.z,t.b.z,t.c.z)>box.max.z||Math.max(t.a.z,t.b.z,t.c.z)<box.min.z||Math.min(t.a.y,t.b.y,t.c.y)>box.max.y)return false;if(t.closestPointToSegment(line,q,v)<r-.012){hit=true;return true;}return false;}});return hit;};
+ // Player clips (shared motor, movement only) first: invisible walls over open edges such as Ascent's A ramp pit.
+ const blocked=(x,z,r,y,height=1.8)=>{if(Motor.clipBlocked(key,x,z,r,y,height))return true;line.start.set(x,y+r+.025,z);line.end.set(x,y+Math.max(r+.025,height-r),z);box.min.set(x-r,y+.025,z-r);box.max.set(x+r,y+height,z+r);let hit=false;bvh.shapecast({intersectsBounds:b=>b.intersectsBox(box),intersectsTriangle:t=>{if(Math.max(t.a.y,t.b.y,t.c.y)<=y+.025)return false;/* cheap reject: triangle bounds outside the capsule box */if(Math.min(t.a.x,t.b.x,t.c.x)>box.max.x||Math.max(t.a.x,t.b.x,t.c.x)<box.min.x||Math.min(t.a.z,t.b.z,t.c.z)>box.max.z||Math.max(t.a.z,t.b.z,t.c.z)<box.min.z||Math.min(t.a.y,t.b.y,t.c.y)>box.max.y)return false;if(t.closestPointToSegment(line,q,v)<r-.012){hit=true;return true;}return false;}});return hit;};
  const ray=(o,d,max=Infinity)=>{const h=bvh.raycastFirst(new T.Ray(new T.Vector3(...o),new T.Vector3(...d)),T.DoubleSide);return h&&h.distance<max?h.distance:Infinity;};
  const seen=new Set(),components=[];for(let i=0;i<nav.nodes.length;i++){if(seen.has(i)||!nav.valid[i])continue;const c=[i];seen.add(i);for(let k=0;k<c.length;k++)for(const j of nav.adj[c[k]])if(!seen.has(j)&&nav.valid[j]){seen.add(j);c.push(j);}components.push(c);}components.sort((a,b)=>b.length-a.length);const playable=components[0],allowed=new Set(playable);
  // Nearest playable node. A uniform grid over the playable nodes replaces the full scan (bots call this on every

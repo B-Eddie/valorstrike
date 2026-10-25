@@ -53,5 +53,15 @@ for(const key of MAPS){const w=await loadWorld(assets,key);const sites=Object.en
    assert(!w.blocked(u.x,u.z,.4,u.y,1.8),exit+' is clear');
    // and the far site is reachable on foot from the exit
    const site=entry==='A Teleporter'?w.map.sites.B:w.map.sites.A,r=walk(s,u,site,60);report.push([key,entry+'→'+exit+'→site',r]);assert(r.ok,'walk on from '+exit+': '+JSON.stringify(r));}}
+ // Ascent A ramp pit (task 3): a hole beside the A ramp with no floor below, open on every side, now closed by a player
+ // clip (shared motor CLIPS, movement only). A unit driven straight at it from each side (and jumping at it) never
+ // steps off: it stays on its floor, is never rescued by the fall guard and never has its capsule over the hole.
+ if(key==='ascent'){const Motor=(await import('./src/motor.cjs')).default;
+  for(const [name,from,to,jump] of [['south floor',[40,-21.4],[40,-23.6]],['north floor',[40.5,-25.8],[40,-23.6]],['east ramp',[44,-24],[39,-23.6]],['west ledge',[35.9,-23.1],[40,-23.6]],['south floor, jumping',[39,-21.4],[39,-23.6],1],['north-east corner',[42.3,-25.8],[40,-23]],['ramp, diagonal',[43.6,-22.6],[39.5,-24.4]]]){
+   const {s}=fresh(w,key);endBuy(s);const u=s.units.find(v=>v.team===s.atk);u.x=from[0];u.z=from[1];u.y=w.ground(from[0],from[1],12);u.vx=u.vz=u.vy=0;const y0=u.y;let minY=u.y,over=0;
+   for(let t=0;t<4;t+=.05){s.command(u,{t:'in',seq:seq++,r:yawTo(u,to[0],to[1]),p:0,f:1,s:0,j:jump&&Math.floor(t/.5)%2?1:0});s.step(.05);minY=Math.min(minY,u.y);if(Motor.clipBlocked(key,u.x,u.z,.05,u.y,1.6))over++;}
+   report.push([key,'A ramp pit, '+name,{ok:true,t:4}]);
+   assert.equal(s.rescues.length,0,'ascent A pit '+name+': rescued by the fall guard at '+JSON.stringify(s.rescues));
+   assert(minY>y0-.6,'ascent A pit '+name+': stepped off (y '+y0.toFixed(2)+' -> '+minY.toFixed(2)+')');assert.equal(over,0,'ascent A pit '+name+': capsule centre over the hole');}}
  console.log(key,'traversal pass',report.filter(r=>r[0]===key).map(r=>r[1]+' '+r[2].t.toFixed(1)+'s'+(r[2].unwedged?' unwedged '+r[2].unwedged:'')+(r[2].rescued?' rescued at known edge '+r[2].rescued:'')+(r[2].repaths?' repaths '+r[2].repaths:'')).join('; '));}
 console.log('Traversal: '+report.length+' human-driven walks (spawn→every site both teams, buy-wall release, Bind teleporters) on '+MAPS.length+' maps with the shared motor');
