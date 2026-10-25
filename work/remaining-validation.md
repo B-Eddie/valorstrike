@@ -663,3 +663,10 @@ capture loop):
 3. 568 DM: SPAWN PROTECTED chip/panel overlaps the ZOOM touch-button cluster.
 Status labels: all current captures are STATIC FORCED-END-STATE layout evidence only, not natural
 animation/timing behavior. Continue sweep triage + functional/performance queue next.
+
+## 2026-10-25 ~17:45 EDT - Sliced sweep in progress (SIGSTOP caveat for triage)
+/tmp/sliced-sweep.sh: 9 slices, 80 files, `timeout 600` per test, aggregates excluded, per-test
+RESULT rc lines + SLICE-DONE markers in /tmp/sweep-results.log.
+CAVEAT: sweep was SIGSTOPped ~17:26-17:43 for chrome probes. test_client_lifecycle.cjs rc=124
+(1031s wall) in slice 0 spans that freeze - LIKELY SIGSTOP-INDUCED, not a real failure. Re-run it
+individually before treating as a defect. Same lens for any rc=124 whose wall time overlaps a freeze.
