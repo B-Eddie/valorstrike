@@ -220,3 +220,11 @@ All 12 user-list items now have shipped fixes on instinct. Remaining: ledger 13-
 - Visual: corpse screenshot 2.2s post-kill shows coherent crumpled body on floor + dropped gun (ragdoll-4.png). Not boneless/spaghettified at this sample size.
 - Findings baked into probe: rigs attach asynchronously (agents load one at a time under SwiftShader; wait on xm.valorant, not xm); __vs.light(true) sets __vsNoAgents=true, so call agents(false) after; intro banner blocks center screen ~5s, screenshot after it fades; corpse removed at ragdoll 2.8s lifecycle + XDEAD age>4 splice.
 - Caveat: SwiftShader 640x360 sampled kills, logic/flow evidence - not full visual acceptance.
+
+## Split natural push/plant (post-repair) - 08:45 EDT
+Split five-soak (one sampled run, MAP=split): AI attackers pushed B and planted NATURALLY
+(sp carry -> plant at (-36.5,-21.5) site B, t~44s; round ended sp:done). No warp/teleport.
+ISSUES: none, PASS. This is the owed post-bake natural plant evidence on split.
+Ragdoll capture verdict (parent): ang0/ang1 stronger bounded evidence (connected limbs, no
+catastrophic stretching in these samples); ang2 excluded (artificially extended sim);
+floor contact retained as NUMERIC evidence only (flat bg has no ground reference).
