@@ -712,3 +712,22 @@ probe setting window.__vsLight=1 directly, leaving __vsNoAgents unset so the ~40
 still ran - exactly the 17:45 code-read hypothesis. The light gate itself is shared and works for
 retake. NO game-code change. Screenshot /tmp/retake_light.png. Closes the sibling item from the
 960x600 lobby reachability fix.
+
+## 2026-10-25 ~18:04 EDT - A-kills-B duel DEMONSTRATED (server/test-a-kills-b.js, PASS) + QA_BOTS hook
+The gap from the two-client protocol check (bots always intercepted B; kill credit went to bots) is
+closed deterministically:
+- New fail-closed QA hook QA_BOTS (0-9, gated by QA_TEST_HOOKS:'true', range/malformed-validated,
+  client-unreachable; test-qa-hooks.cjs extended, wrangler.jsonc still clean). simulation.start()
+  caps the bot fill at sim.qaBots when set.
+- server/test-a-kills-b.js (own wrangler on :8788 with QA_CREDITS:5000/QA_BUY_SECONDS:3/QA_BOTS:0):
+  1v1 room, exactly 2 humans, opposite teams (asserted in BOTH snapshots). A buys Spectre+shields,
+  nav-walks to B, fires via inputs. Assertions ALL PASS: B's hp drops in B's OWN snapshot (100->74),
+  B dead in both snapshots, server kills map {"AlphaQA":1,"BravoQA":0}, B's Classic death drop
+  visible to both clients at the death position.
+- Also fixed a test-two-client.js startup race: B connected before A's create finished -> 404
+  "Room not found" (hit 2 of 3 runs). B now connects after A's welcome. Two-client suite re-run
+  after the fix: FULL PASS (phases 1,2,2a,2b,3,4) - its phase 3 still credits a bot by design
+  (that suite asserts death visibility, not credit).
+- Regressions: test-qa-hooks, test-bots, test-spike, test-two-player all green. Wranglers cleaned up.
+Scope label: protocol evidence only - not rendered two-human gameplay acceptance (sandbox-blocked,
+previously acknowledged).
