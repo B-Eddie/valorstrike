@@ -1,7 +1,7 @@
 // Server-authoritative ultimates (ledger row 9): Hunter's Fury, Showstopper, Lockdown, Rolling Thunder,
 // Seekers, Neural Theft, Tour de Force and Run It Back replace the old shared 100-damage blast.
 // Intents carry no trusted origin/aim/target; everything comes from server state.
-import assert from 'node:assert/strict';import {SpikeSimulation} from './src/spike.js';import {tickAbilities} from './src/abilities.js';import {ULT} from './src/ults.js';
+import assert from 'node:assert/strict';import {SpikeSimulation} from './src/spike.js';import {tickAbilities} from './src/abilities.js';import {ULT} from './src/ults.js';import {floorTick} from './src/floor.js';
 let wall=Infinity;const W={map:{attacker:[0,0,0],defender:[0,0,-10],sites:{A:[0,0,0]}},nav:{nodes:[[0,0,0],[0,0,-10]],adj:[[1],[0]]},playable:[0,1],allowed:new Set([0,1]),near:(x,z)=>z<-5?1:0,ground:()=>0,blocked:()=>false,ray:(o,d,max=Infinity)=>{if(!(d[2]<0)||!Number.isFinite(wall))return Infinity;const t=(o[2]+wall)/-d[2];return t>=0&&t<=max?t:Infinity;}};// wall: a plane at z=-wall
 const setup=(agent,...others)=>{wall=Infinity;const s=new SpikeSimulation(W,'five','ascent',()=>.5),u=s.add(agent,agent),list=others.map(([n,team])=>{const v=s.add(n);return v;});s.start(false);s.buy=0;s.roundDelay=0;
  Object.assign(u,{x:0,y:0,z:0,look:0,pitch:0});for(const v of list){Object.assign(v,{armor:0,hp:100,protectedUntil:0});}
@@ -59,7 +59,25 @@ const cast=(s,u,m={})=>s.command(u,{t:'ab',k:'x',...m});
 {const {s,u,list:[foe]}=setup('Phoenix',['foe']);Object.assign(foe,{x:0,y:0,z:-30});u.hp=40;u.ability.ult=9;assert.equal(cast(s,u),true);assert.equal(cast(s,u),false);
  u.x=10;u.z=-10;u.hp=0;u.alive=false;s.step(.05);assert.equal(s.roundDelay,0,'round continues while Run It Back is pending');tick(s,.05);assert.equal(u.alive,true);assert.equal(u.hp,100);assert.deepEqual([u.x,u.z],[0,0]);assert.equal(u.runItBack,null);
  u.ability.ult=9;s.time+=.5;assert.equal(cast(s,u),true);u.x=7;u.hp=55;tick(s,ULT.rib.window+.1);assert.deepEqual([u.x,u.hp],[0,100],'window end returns to the mark');}
-console.log('Ultimates: Hunter\'s Fury (3 wall-piercing blasts, recast, reveal, death end), Showstopper (travelling rocket, falloff, LOS, wall detonation), Lockdown (windup, radius detain blocks guns/abilities, round reset), Rolling Thunder (cone through walls), Seekers (3 nearest), Neural Theft (corpse targeting, double reveal), Tour de Force (5-round Operator, weapon restore), Run It Back (death/expiry return, no elimination); server-side aim only');
+// Run It Back death drops nothing (soak, ults scenario): the death drop handed Phoenix's rifle to the floor and he came
+// back without it; a round that ends while he is down does not strip his gear either.
+{const {s,u,list:[foe]}=setup('Phoenix',['foe']);Object.assign(foe,{x:0,y:0,z:-30});Object.assign(u,{primary:'Vandal',weapon:'Vandal',ammo:25,armor:50});u.ability.ult=9;assert.equal(cast(s,u),true);
+ u.hp=0;u.alive=false;floorTick(s);/* as in a step: killed in the unit loop, floor drops after it */assert.equal((s.floor||[]).length,0,'no gun dropped for a returning Phoenix');s.step(.05);assert.equal(u.alive,true);assert.equal(u.primary,'Vandal','back with his rifle');
+ u.ability.ult=9;s.time+=.5;assert.equal(cast(s,u),true);u.hp=0;u.alive=false;s.finishRound(1-u.team,'QA');assert.equal(u.primary,'Vandal','round end keeps a pending Phoenix\'s gun');assert.equal(u.armor,50);}
+// A leaver's utility goes to the seat bot (soak, ults scenario): kills by a turret / rocket whose owner left were not
+// recorded (no kill event, score, credits or ult point). Tour de Force moves with the body instead of leaving a free Operator.
+{const {s,u,list:[foe]}=setup('Raze',['foe']);Object.assign(foe,{x:0,y:0,z:-12,hp:1,armor:0});u.ability.ult=9;assert.equal(cast(s,u),true);const rocket=s.effects.find(e=>e.kind==='rocket');assert(rocket);
+ const b=s.add('Bot Raze','Raze',false);b.team=u.team;s.units=s.units.filter(v=>v!==u);assert.equal(s.takeOver(b,u),true);assert.equal(rocket.owner,b.id,'rocket now the seat bot\'s');
+ const k0=b.kills,c0=b.credits;tick(s,1);assert.equal(foe.alive,false,'rocket kill');assert.equal(b.kills,k0+1,'kill credited to the seat bot');assert.equal(b.credits,c0+200);assert(s.events.some(e=>e[0]==='k'&&e[1]===b.name&&e[2]===foe.name),'kill event');}
+{const {s,u,list:[foe]}=setup('Chamber',['foe']);Object.assign(foe,{x:0,y:0,z:-30});Object.assign(u,{primary:'Spectre',weapon:'Spectre',ammo:30});u.ability.ult=9;assert.equal(cast(s,u),true);assert.equal(u.weapon,'Operator');
+ const b=s.add('Bot Chamber','Chamber',false);b.team=u.team;s.units=s.units.filter(v=>v!==u);s.takeOver(b,u);assert.equal(b.weapon,'Operator');assert(b.ultWeapon,'Tour de Force state moved');b.ammo=0;tick(s,.05);assert.equal(b.weapon,'Spectre','Operator spent: the Spectre comes back');}
+// Utility whose unit left with no seat bot: its kill still reaches the feed (no credit), and a joiner on that team takes it over.
+{const {s,u,list:[foe]}=setup('Raze',['foe']);Object.assign(foe,{x:0,y:0,z:-12,hp:1,armor:0});u.ability.ult=9;cast(s,u);const rocket=s.effects.find(e=>e.kind==='rocket');s.units=s.units.filter(v=>v!==u);
+ const j=s.add('Joiner');assert.equal(j.team,rocket.team);assert.equal(rocket.owner,j.id,'joiner owns the orphaned rocket');tick(s,1);assert.equal(foe.alive,false);assert(s.events.some(e=>e[0]==='k'&&e[1]===j.name&&e[2]===foe.name));}
+{const {s,u,list:[foe]}=setup('Raze',['foe']);Object.assign(foe,{x:0,y:0,z:-12,hp:1,armor:0});u.ability.ult=9;cast(s,u);s.units=s.units.filter(v=>v!==u);tick(s,1);assert.equal(foe.alive,false);assert(s.events.some(e=>e[0]==='k'&&e[1]===''&&e[2]===foe.name),'ownerless kill in the feed');}
+// Detain survives a disconnect: the seat bot inherits the leaver's statuses.
+{const {s,u}=setup('Jett',['foe']);u.detainUntil=s.time+5;const b=s.add('Bot Jett','Jett',false);b.team=u.team;s.takeOver(b,u);assert(b.detainUntil>s.time,'still detained');}
+console.log('Ultimates: Hunter\'s Fury (3 wall-piercing blasts, recast, reveal, death end), Showstopper (travelling rocket, falloff, LOS, wall detonation), Lockdown (windup, radius detain blocks guns/abilities, round reset), Rolling Thunder (cone through walls), Seekers (3 nearest), Neural Theft (corpse targeting, double reveal), Tour de Force (5-round Operator, weapon restore), Run It Back (death/expiry return, no elimination, no death drop, gear kept at round end); leaver utility/ult state moves to the seat bot; server-side aim only');
 // Devices that used to be inert markers: recon pulses reveal enemies in the bolt's sight (not through walls),
 // Boom Bot hunts the nearest visible enemy and explodes for 125, Trailblazer concusses on contact.
 import {DEV} from './src/devices.js';
