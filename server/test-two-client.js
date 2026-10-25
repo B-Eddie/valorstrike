@@ -65,13 +65,15 @@ const A = client('A', `create=1&code=${CODE}&mode=five&map=${MAP}`);
 A.ws.on('open', () => A.send({ t: 'hi', n: 'AlphaQA' }));
 const B = client('B', `code=${CODE}&mode=five&map=${MAP}`);
 B.ws.on('open', () => B.send({ t: 'hi', n: 'BravoQA' }));
-const C = client('C', `code=${CODE}&mode=five&map=${MAP}`);
-C.ws.on('open', () => C.send({ t: 'hi', n: 'CharlieQA' }));
+let C; // created after B's welcome: join order fixes team assignment (A=0, B=1, C=0)
 
 setTimeout(() => { console.error('GLOBAL TIMEOUT'); process.exit(1); }, 300000);
 
 try {
-  await until(() => A.id !== null && B.id !== null && C.id !== null, 'all welcomes', 15000);
+  await until(() => A.id !== null && B.id !== null, 'A+B welcomes', 15000);
+  C = client('C', `code=${CODE}&mode=five&map=${MAP}`);
+  C.ws.on('open', () => C.send({ t: 'hi', n: 'CharlieQA' }));
+  await until(() => C.id !== null, 'C welcome', 15000);
   const startInt = setInterval(() => { if (!A.started) A.send({ t: 'start' }); }, 500);
   await until(() => A.started && B.started && C.started, 'all clients started', 15000);
   clearInterval(startInt);
@@ -82,21 +84,86 @@ try {
   await until(() => A.snap && B.snap && A.snap.u.length === 10 && B.snap.u.length === 10, '10-unit snapshots on both', 20000);
   for (const c of [A, B, C]) { const h = c.snap.u.filter((u) => u[12] === 1).map((u) => u[2]);
     assert.deepEqual(h.sort(), ['AlphaQA', 'BravoQA', 'CharlieQA'], c.name + ' sees 3 humans'); }
+  console.log('  rows:', JSON.stringify(A.snap.u.filter((u) => u[12] === 1).map((u) => [u[0], u[1], u[2]])));
   const aRow = A.row(A.id), bRow = A.row(B.id), cRow = A.row(C.id);
   assert.ok(aRow && bRow && cRow, 'all human rows visible to A');
   assert.notEqual(aRow[1], bRow[1], 'A and B on opposite teams');
   assert.equal(cRow[1], aRow[1], 'C is A teammate (join-order assignment)');
   console.log('phase1 ok: all clients receive 10-unit snapshots; humans AlphaQA+CharlieQA vs BravoQA');
 
+  const walker = new Walker(); const walkerB = new Walker(); const walkerC = new Walker();
+
+  // Phase 2 (online pickup path, deterministic): C is A's teammate. In the round-1 buy phase
+  // C buys the cheapest affordable primary (buy auto-equips; credits are QA-overridden via the
+  // QA_CREDITS wrangler var - the protocol path is the production one) and dropw's beside A in
+  // the shared spawn; A picks it (pick/bo). floorTick allows buy-phase handoffs between teammates.
+  await until(() => A.rs && A.rs.b > 0 && C.rs && C.rs.me > 0, 'round 1 buy phase with credits', 20000);
+  let bought = false;
+  for (const gun of ['Bucky', 'Stinger', 'Spectre']) { if (bought) break;
+    if ((C.rs.me || 0) < { Bucky: 850, Stinger: 1100, Spectre: 1600 }[gun]) continue;
+    C.send({ t: 'buy', n: gun });
+    bought = await until(() => C.bo.some((b) => b.n === gun && b.ok === true) && gun, 'C buys ' + gun, 8000).catch(() => false); }
+  assert.ok(bought, 'C bought a primary, credits ' + (C.rs && C.rs.me));
+  const gun = bought;
+  // A also buys a primary: with A's slot filled, auto-pickup cannot consume C's drop before the
+  // explicit F-pick is exercised (auto-pickup already observed working: A swallowed C's first
+  // drop in a prior run - that path is noted, explicit pick is the assertion here).
+  let aGun = null;
+  for (const g of ['Stinger', 'Bucky', 'Spectre']) { if (aGun) break;
+    if ((A.rs.me || 0) < { Bucky: 850, Stinger: 1100, Spectre: 1600 }[g]) continue;
+    A.send({ t: 'buy', n: g });
+    aGun = await until(() => A.bo.some((b) => b.n === g && b.ok === true) && g, 'A buys ' + g, 8000).catch(() => null); }
+  assert.ok(aGun && aGun !== gun, 'A bought a different primary');
+  // C stands next to A (same spawn, both clamped inside the buy barrier), then drops it.
+  const tC = Date.now();
+  while (Date.now() - tC < 30000) { const meC = C.row(C.id), meA = C.row(A.id);
+    if (!meC || !meA) { await sleep(300); continue; }
+    const a = aim(rowPos(meC), rowPos(meA)); if (a.d <= 1.4) break;
+    const wp = walkerC.step(C, rowPos(meC), rowPos(meA));
+    if (wp && wp !== 'arrived') { const w = aim(rowPos(meC), wp); C.input(w.r, 0, 1, false); }
+    else C.input(a.r, 0, 1, false);
+    await sleep(100); }
+  { const r = C.row(C.id); console.log('  C pre-drop: alive', r[10], 'weapon', r[11], 'pos', JSON.stringify(rowPos(r)), 'dist-to-A', Math.hypot(r[4]-C.row(A.id)[4], r[6]-C.row(A.id)[6]).toFixed(1)); }
+  C.send({ t: 'dropw' });
+  const cPos = rowPos(C.row(C.id));
+  // C steps away so C cannot re-pick its own drop after the 1.5s grace.
+  { const meC = C.row(C.id), meA = C.row(A.id); const away = Math.atan2(-(meC[4]-meA[4]), -(meC[6]-meA[6]));
+    for (let k = 0; k < 30; k++) { C.input(away, 0, 1, false); await sleep(100); } }
+  const dropC = await until(() => (A.snap.fw || []).find((d) => d[1] === gun && Math.hypot(d[2] - cPos.x, d[4] - cPos.z) < 3), 'C drop in A snapshot', 8000);
+  console.log('phase2a ok: C dropw', gun, '-> fw id', dropC[0], 'in A snapshot (online drop path)');
+  let picked = false; const t1 = Date.now();
+  while (Date.now() - t1 < 30000) {
+    const meA = A.row(A.id); if (!meA || meA[10] === 0) throw new Error('A died before pickup');
+    const d = (A.snap.fw || []).find((x) => x[0] === dropC[0]); if (!d) break;
+    const dp = { x: d[2], y: d[3], z: d[4] };
+    const a = aim(rowPos(meA), dp);
+    if (a.d > 2.0) { const wp = walker.step(A, rowPos(meA), dp);
+      if (wp && wp !== 'arrived') { const w = aim(rowPos(meA), wp); A.input(w.r, 0, 1, false); }
+      else A.input(a.r, 0, 1, false); }
+    else { A.input(a.r, -1.2, 0, false); A.send({ t: 'pick', id: d[0] }); }
+    if (A.bo.some((b) => b.ok === true && Array.isArray(b.ld) && b.ld[0] === gun)) { picked = true; break; }
+    if (Date.now() - (globalThis.__pl || 0) > 2000) { globalThis.__pl = Date.now();
+      console.log('  pick loop: dist', a.d.toFixed(2), 'A', JSON.stringify(rowPos(meA)), 'gun', JSON.stringify(dp), 'lastBo', JSON.stringify(A.bo[A.bo.length-1])); }
+    await sleep(100);
+  }
+  // Success consumes the fw entry before the bo lands - check the reply after the loop too.
+  picked = picked || A.bo.some((b) => b.ok === true && Array.isArray(b.ld) && b.ld[0] === gun);
+  assert.ok(picked, 'A picked the dropped gun (bo ok with ' + gun + ' in primary slot)');
+  await until(() => !(A.snap.fw || []).some((x) => x[0] === dropC[0]), 'fw entry consumed', 8000);
+  assert.equal(A.bo[A.bo.length - 1].ld[0], gun, 'A primary slot now holds ' + gun);
+  console.log('phase2 ok: online pick accepted (bo ok), A loadout now [' + A.bo[A.bo.length - 1].ld + '], floor entry consumed');
+  await until(() => (A.snap.fw || []).some((x) => x[1] === aGun), 'swap drop (' + aGun + ') lands where the picked gun lay', 8000);
+  console.log('phase2b ok: swap drop visible in fw - server owns the full exchange');
+
+
   // Buy phase: walk toward each other (spawn barrier clamps the approach).
   const walkInt = setInterval(() => { for (const [c, other] of [[A, B], [B, A]]) {
     const me = c.row(c.id), fo = c.row(other.id); if (!me || !fo) return;
     const a = aim(rowPos(me), rowPos(fo)); c.input(a.r, 0, 1, false); } }, 100);
-  const walker = new Walker(); const walkerB = new Walker(); const walkerC = new Walker();
   await until(() => A.rs && A.rs.b <= 0, 'buy phase over', 40000);
   clearInterval(walkInt);
 
-  // Phase 2: A closes in, then fires at B until B is dead on BOTH clients.
+  // Phase 3: A closes in, then fires at B until B is dead on ALL clients.
   // Classic is semi-auto: the server only refires after a trigger release (fire:0 between shots).
   let killSeenA = false, killSeenB = false, fireToggle = false, lastLog = 0; const t0 = Date.now();
   while (Date.now() - t0 < 80000) {
@@ -133,7 +200,7 @@ try {
   }
   assert.ok(killSeenA && killSeenB, 'B death visible on both clients');
   const credited = (A.snap.k || {}).AlphaQA > 0;
-  console.log('phase2 ok: B dead in both clients\' snapshots; kill credit to AlphaQA:', credited);
+  console.log('phase3 ok: B dead in both clients\' snapshots; kill credit to AlphaQA:', credited);
 
   // Floor drop: B's best gun lands where B died; both clients' snapshots carry it in fw.
   const bDead = rowPos(B.row(B.id));
@@ -141,51 +208,8 @@ try {
   const fwHas = (c) => (c.snap.fw || []).find((d) => Math.hypot(d[2] - bDead.x, d[4] - bDead.z) < 8); // fw rows: [id,w,x,y,z]
   const dropA = await until(() => fwHas(A), 'death drop in A snapshot', 8000);
   await until(() => fwHas(B), 'death drop in B snapshot', 8000);
-  console.log('phase3 ok: death drop fw id', dropA[0], dropA[1], 'visible to both clients');
+  console.log('phase4 ok: death drop fw id', dropA[0], dropA[1], 'visible to all clients');
 
-  // Phase 4 (online pickup path, deterministic): C is A's teammate. In the round-2 buy phase
-  // C buys the cheapest affordable primary (buy auto-equips) and dropw's beside A in the shared
-  // spawn; A picks it (pick/bo). floorTick allows buy-phase handoffs between teammates.
-  await until(() => A.rs && A.rs.b > 0, 'round 2 buy phase', 150000);
-  await until(() => C.rs && C.row(C.id) && C.row(C.id)[10] === 1, 'C alive in round 2', 60000);
-  await until(() => A.row(A.id) && A.row(A.id)[10] === 1, 'A alive in round 2', 60000);
-  let bought = false;
-  for (const gun of ['Bucky', 'Stinger', 'Spectre']) { if (bought) break;
-    if ((C.rs.me || 0) < { Bucky: 850, Stinger: 1100, Spectre: 1600 }[gun]) continue;
-    C.send({ t: 'buy', n: gun });
-    bought = await until(() => C.bo.some((b) => b.n === gun && b.ok === true) && gun, 'C buys ' + gun, 8000).catch(() => false); }
-  assert.ok(bought, 'C bought a primary, credits ' + (C.rs && C.rs.me));
-  const gun = bought;
-  // C stands next to A (same spawn, both clamped inside the buy barrier), then drops it.
-  const tC = Date.now();
-  while (Date.now() - tC < 30000) { const meC = C.row(C.id), meA = C.row(A.id);
-    if (!meC || !meA) { await sleep(300); continue; }
-    const a = aim(rowPos(meC), rowPos(meA)); if (a.d <= 1.4) break;
-    const wp = walkerC.step(C, rowPos(meC), rowPos(meA));
-    if (wp && wp !== 'arrived') { const w = aim(rowPos(meC), wp); C.input(w.r, 0, 1, false); }
-    else C.input(a.r, 0, 1, false);
-    await sleep(100); }
-  C.send({ t: 'dropw' });
-  const cPos = rowPos(C.row(C.id));
-  const dropC = await until(() => (A.snap.fw || []).find((d) => d[1] === gun && Math.hypot(d[2] - cPos.x, d[4] - cPos.z) < 3), 'C drop in A snapshot', 8000);
-  console.log('phase4a ok: C dropw', gun, '-> fw id', dropC[0], 'in A snapshot (online drop path)');
-  let picked = false; const t1 = Date.now();
-  while (Date.now() - t1 < 30000) {
-    const meA = A.row(A.id); if (!meA || meA[10] === 0) throw new Error('A died before pickup');
-    const d = (A.snap.fw || []).find((x) => x[0] === dropC[0]); if (!d) break;
-    const dp = { x: d[2], y: d[3], z: d[4] };
-    const a = aim(rowPos(meA), dp);
-    if (a.d > 2.0) { const wp = walker.step(A, rowPos(meA), dp);
-      if (wp && wp !== 'arrived') { const w = aim(rowPos(meA), wp); A.input(w.r, 0, 1, false); }
-      else A.input(a.r, 0, 1, false); }
-    else { A.input(a.r, -1.2, 0, false); A.send({ t: 'pick', id: d[0] }); }
-    const bo = A.bo[A.bo.length - 1]; if (bo && bo.ok === true && A.bo.length > 0) { picked = true; break; }
-    await sleep(100);
-  }
-  assert.ok(picked, 'A picked the dropped gun (bo ok)');
-  await until(() => !(A.snap.fw || []).some((x) => x[0] === dropC[0]), 'fw entry consumed', 8000);
-  assert.equal(A.bo[A.bo.length - 1].ld[0], gun, 'A primary slot now holds ' + gun);
-  console.log('phase4 ok: online pick accepted (bo ok), A loadout now [' + A.bo[A.bo.length - 1].ld + '], floor entry consumed');
   console.log('TWO-CLIENT PROTOCOL PASS (protocol evidence only, not rendered two-human acceptance)');
   process.exit(0);
 } catch (e) { console.error('FAIL', e.message); process.exit(1); }
