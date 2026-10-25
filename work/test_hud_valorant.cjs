@@ -22,3 +22,6 @@ assert(/#game \.x-ab \.x-as\.x-eq,#game \.x-ab #jX\.x-eq\{box-shadow:inset 0 0 0
 assert(/#game \.x-ab \.x-as>span:not\(\.x-pp\):not\(#xPips\)\{position:absolute!important/.test(css),'only the name span is visually hidden (pips stay)');
 assert(/@media \(max-width:820px\),\(pointer:coarse\)\{[^}]*?\}?[\s\S]*?#game \.x-ab \.x-as \.x-pp\{bottom:14px;display:flex\}/.test(css),'compact screens show the charge pips (#xHudV hid every slot span)');
 console.log('HUD v2: shield states, ability slot hooks + equipped outline, charge pips on compact screens');
+// ammo + credits: no panels, credits glyph drawn (Oswald has no U+00A4), desktop ammo right of the abilities
+assert(/#game #xCr small::before\{content:"";[^}]*background:url\("data:image\/svg\+xml/.test(css)&&/#game \.hud\.x-br\{position:fixed;left:calc\(50% \+ 168px\)/.test(css),'ammo / credits');
+console.log('HUD v2: ammo beside the abilities on desktop, credits glyph');

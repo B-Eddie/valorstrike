@@ -813,6 +813,26 @@ body.x-cbh #game{--ha:#3d8bff;--he:#ff9f1c}
   #game .x-ab #xPips{bottom:14px!important}
   #game .x-bl #xArm{width:18px;height:22px;font-size:10px;margin-bottom:2px}
 }
+/* ---- ammo + credits ---- */
+#game .hud.x-br{background:none!important;filter:drop-shadow(0 1px 2px rgba(0,0,0,.75))}
+#game .x-br #xMag{font-family:var(--hf);font-weight:400;letter-spacing:0}
+#game .x-br em{font-size:0!important;opacity:1;align-self:center}
+#game .x-br em::before{content:"";display:inline-block;width:9px;height:16px;background:repeating-linear-gradient(90deg,rgba(236,232,225,.8) 0 2px,transparent 2px 3.5px)}
+#game .x-br .x-rs{font-family:var(--hf);font-weight:400;opacity:.85}
+#game .x-br small{font-family:var(--hf);font-weight:500}
+#game #xCr{background:none!important;border:0!important;box-shadow:none!important;height:auto;line-height:1;padding:0 2px;font:400 17px/1 var(--hf);letter-spacing:.04em;color:#ece8e1;text-shadow:0 1px 2px rgba(0,0,0,.8)}
+#game #xCr small{font-size:0}
+#game #xCr small::before{content:"";display:inline-block;width:12px;height:12px;margin-right:6px;vertical-align:-1px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Ccircle cx='6' cy='6' r='3.2' fill='none' stroke='%23ece8e1' stroke-width='1.4'/%3E%3Cpath d='M1.5 1.5l2 2M10.5 1.5l-2 2M1.5 10.5l2-2M10.5 10.5l-2-2' stroke='%23ece8e1' stroke-width='1.4'/%3E%3C/svg%3E") center/contain no-repeat}
+#game #xCr b{color:#ece8e1}
+@media (min-width:821px) and (pointer:fine){
+  #game .hud.x-br{position:fixed;left:calc(50% + 168px);right:auto;bottom:16px;height:58px;max-width:none;padding:0 4px 10px 26px;justify-content:flex-start;align-content:flex-end;column-gap:6px}
+  #game .x-br small{flex-basis:100%;order:-1;text-align:left;margin:0 0 2px;font-size:11px;opacity:.6}
+  #game .x-br #xMag{font-size:46px}
+  #game .x-br .x-rs{font-size:22px}
+  #game .x-br::before{content:"";position:absolute;left:0;bottom:4px;width:20px;height:20px;background:linear-gradient(to top right,transparent calc(50% - 1px),rgba(236,232,225,.55) 50%,transparent calc(50% + 1px))}
+  #game .x-br::after{content:"";position:absolute;left:18px;right:0;bottom:4px;height:2px;background:rgba(236,232,225,.3)}
+  #game .x-brs{bottom:20px;right:24px}
+}
 </style>
 <style>
   .x-tag { display: inline-block; margin-left: 8px; padding: 2px 10px; border-radius: var(--r-pill); background: rgba(255, 215, 106, 0.18); border: 1px solid rgba(255, 215, 106, 0.7); color: #ffd76a; font: var(--type-tag); letter-spacing: 0.12em; vertical-align: middle; }
