@@ -479,3 +479,13 @@ in-process server; it keeps the VALORANT FEEL block the audit fixture strips, an
   the view opens (it kept the previous death's text, e.g. the previous match's "SPECTATING <enemy> · ENEMY" over a TDM
   death with nobody to follow), and the respawn modes say "NO ONE ALIVE" (no Spike cam). `test_spectate_follow.cjs`: the
   nmNear cut takes the merged signature (C,x,z,y,yBand).
+- **Offline friendly fire = the server's rule** (`work/test_friendly_fire_offline.cjs`, the real page in an offline 5v5):
+  the offline game had none (the player's utility only hit enemy bots, each bot's only the other team). Now, per the wiki
+  ("abilities that damage allies deal 1/3 damage"; each ability's "Affects allies/self?"): Paint Shells, Showstopper, Shock
+  Bolt, Hot Hands, Blaze, Nanoswarm, Hunter's Fury, Aftershock (and Incendiary / Orbital Strike / Snake Bite / Mosh Pit /
+  FRAG/ment by name) hit the caster's teammates for a third, the player's casts and the bots' alike (and the P2P host's
+  remote casts); never the caster; Boom Bot, Blast Pack and Turret ("No") never hit allies. A teamkill is a death (victim's
+  deaths +1, kill feed) with no kill, kill credits, ult point (caster or victim), damage / assist credit, first blood or TDM
+  score. The player's death ult point is also no longer given for a fall or a Spike death (server step 7 rule). Found on
+  the way: the Alarmbot / Dismiss `hurt` wrapper dropped the attacker, so every bot's damage reached the scoreboard as the
+  player's (and the KILLED BY card logged bot-on-bot damage as the player's); it now passes the attacker through.

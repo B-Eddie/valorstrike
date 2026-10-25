@@ -2712,7 +2712,27 @@ function xAoe(b, p, r, n, w) {
       hurt(a, n, by); if (a.hp <= 0) allyDie(a, by, w); }
   } else for (const t of bots) { if (!t.alive) continue; const q = t.g.position; if (Math.hypot(q.x - p.x, q.z - p.z) >= r || !los(o, e2.set(q.x, (q.y || 0) + 1.5, q.z))) continue;
     hurt(t, n, by); if (t.hp <= 0.001) kill(t, false, by, w); }
+  xFFArea(b, en, w, n, (x, z, t) => Math.hypot(x - p.x, z - p.z) < r && los(o, t === player ? pEye() : e2.set(x, ((t.g && t.g.position.y) || 0) + 1.5, z)));
 }
+// Friendly fire, as the server's abilityDamage (wiki.playvalorant.com/en-us/Abilities: "abilities that damage allies deal 1/3
+// damage"; each ability's "Affects allies/self?": Yes (damage reduced) for the names in XFF; No for Boom Bot, Blast Pack,
+// Turret). An ally caught in the caster's damaging utility takes a third; the caster's own utility never hurts the caster;
+// a teamkill (XTKILL) is a death with no kill, credits, ult point, score or damage credit for the caster. FFA: no allies.
+const XFF = new Set(["Shock Bolt", "Hunter's Fury", "Paint Shells", "Showstopper", "Hot Hands", "Blaze", "Nanoswarm", "Aftershock", "Incendiary", "Orbital Strike", "Snake Bite", "Mosh Pit", "FRAG/ment"]);
+var XTKILL = false;
+function xFFOff() { return typeof mode !== "undefined" && mode === "five" && typeof FV !== "undefined" && FV.dm && !FV.tdm; }
+function xMates(c, en) { // the caster's living teammates, the caster excluded; c: "You" / player / a unit; en: enemy-side caster when c is not a unit
+  if (xFFOff()) return []; const al = typeof allies !== "undefined" ? allies : [], me = player && player.hp > 0 ? [player] : [];
+  if (c === "You" || c === player) return al.filter((a) => a && a.alive);
+  const side = c && typeof c === "object" ? (al.indexOf(c) >= 0 ? 0 : bots.indexOf(c) >= 0 ? 1 : en ? 1 : 0) : en ? 1 : 0;
+  return side ? bots.filter((b) => b && b.alive && b !== c) : me.concat(al.filter((a) => a && a.alive && a !== c));
+}
+function xFF(c, t, n, w, nm) { // ally t caught in c's utility w: a third of n; a death is a teamkill
+  if (!XFF.has(w) || !(n > 0) || !t || t === c || (t === player ? !(player.hp > 0) : !t.alive)) return;
+  const by = c === "You" || c === player ? "You" : (c && c.name) || nm || ""; XTKILL = true;
+  try { hurt(t, n / 3, by); if (t === player) { try { updHud(); } catch (e) {} if (player.hp <= 0) pDie(by, w); } else if (t.hp <= 0.001) { if (bots.indexOf(t) >= 0) kill(t, false, by, w); else allyDie(t, by, w); } } finally { XTKILL = false; }
+}
+function xFFArea(c, en, w, n, inside, nm) { if (!XFF.has(w)) return; for (const t of xMates(c, en)) { const q = t === player ? player : t.g && t.g.position; if (!q) continue; const k = inside(q.x, q.z, t); if (k) xFF(c, t, k === true ? n : n * k, w, nm); } } // inside: true, or a falloff factor
 // spectator follow cam: V (or tap SPECTATING) toggles first person / over-the-shoulder, 3 m back, 0.6 m right
 const xTP = { on: false, init: false, x: 0, y: 0, z: 0, yw: 0, d: 3, t: 0, tg: null, o: new THREE.Vector3(), v: new THREE.Vector3(), dir: new THREE.Vector3() };
 function xTPToggle() { xTP.on = !xTP.on; xTP.init = false; try { if (xKL.tp) { xKL.tp.setAttribute("aria-pressed", String(xTP.on)); xKL.tp.classList.toggle("on", xTP.on); xKL.tp.firstChild.textContent = xTP.on ? "1ST PERSON " : "3RD PERSON "; } } catch (e) {} try { say(xTP.on ? "Third-person follow cam" : "First-person view", 700); } catch (e) {} }
@@ -2843,7 +2863,7 @@ function xObsHide(a) { const m = a && a.alive !== false && a.xm && !a.xm.dead &&
 function xTag(t, n) { if (!t) return; const k = n < 30 ? 0.5 : 0.28; if (!(t.tagT > 0) || k < t.tagK) t.tagK = k; t.tagT = 0.5; } // tagging: 0.5 s, rifle hits slow 72%
 function pDie(by, w) {
   if (jRib()) return; // Phoenix Run It Back
-  try { if (mode === "five") jUlt(); } catch (e) {} // +1 ult point per death
+  try { if (mode === "five" && !XTKILL && by !== "Fall" && by !== "Spike") jUlt(); } catch (e) {} // +1 ult point per death to an enemy (not a fall, the Spike or a teamkill)
   fKC(by); player.hp = 0; defuseT = 0; reloading = 0; stats.d++; sbKill(by, "You", false); if (w) kfeed(by, "You", false, w); else feed(by + " ▸ You"); showStats(); setScope(false);
   if (!allies.some((a) => a.alive)) return end(false, "You were eliminated by " + by);
   say("You died · spectating your team", 1800);
@@ -4638,7 +4658,7 @@ function getLossBonus(team) { // credits `team` gets next round if it loses it: 
   const en = team === 1 || team === "enemy" || team === "them" || team === "bots" || (team === "atk" ? !FV.atk : team === "def" ? !!FV.atk : false);
   const st = (en ? FV.lsT : FV.lsY) || 0; return LOSS_B[Math.min(st + 1, 3) - 1]; }
 window.getLossBonus = getLossBonus;
-function fKC(n) { if (mode === "five" && FV.bs[n]) FV.bs[n].cr = capC(FV.bs[n].cr + 200); }
+function fKC(n) { if (XTKILL) return; if (mode === "five" && FV.bs[n]) FV.bs[n].cr = capC(FV.bs[n].cr + 200); }
 function fEco() { // match start and side swap: everyone back to 800 and a Classic
   FV.cr = 800; FV.pri = null; FV.sec = "Classic"; FV.alive = false; FV.arm = 0; FV.bs = {}; FV.bt = []; FV.req = null; FV.reqBy = null;
   F_EN.concat(F_MATES).forEach((n) => FV.bs[n] = { cr: 800, w: "Classic", arm: 0, alive: false });
@@ -7954,6 +7974,7 @@ function jBeam() {
   if (J.cd.x > 0 || J.hf < 1) return; J.cd.x = 0.9; J.hf--; kick = 1; blip(300, 0.4, "sawtooth", 0.2);
   const o = pEye(), d = jAim(), L = 80;
   bots.forEach((b) => { if (!b.alive) return; const v = new THREE.Vector3(b.g.position.x, 1.1, b.g.position.z).sub(o), t = v.dot(d); if (t > 0 && t < L && v.addScaledVector(d, -t).length() < 0.9) jHit(b, 80, "Hunter's Fury"); });
+  xFFArea("You", false, "Hunter's Fury", 80, (x, z) => { const v = new THREE.Vector3(x, 1.1, z).sub(o), t = v.dot(d); return t > 0 && t < L && v.addScaledVector(d, -t).length() < 0.9; }); // allies: a third, no reveal
   const m = jM(beamGeo, fireMat(0x45d0ff, 0.85)); m.scale.z = L; o.y -= 0.2; m.position.copy(o).addScaledVector(d, L / 2); m.lookAt(o.clone().addScaledVector(d, L)); jFx(m, 0.35);
 }
 function phCurve(o, fx, fz, side) { // Curveball path: mid = up to 5 m ahead (0.4 m short of a wall), end = up to 2.5 m to the side (side -1 left, 1 right)
@@ -8012,13 +8033,13 @@ function jFxTick(dt) {
   { const A = J.walls, n = A.length; let k = 0; // in-place compaction, no per-frame closures
     for (let i = 0; i < n; i++) { const w = A[i]; w.t -= dt; w.m.material.opacity = 0.7 * Math.min(1, w.t / 0.5);
       if (w.own) { if (!w.nd) { mpAreaHit(w, 0, 0, 1, 30 * dt, "Blaze", w); const o = w.own; if (o.alive && o.g && segD(o.g.position.x, o.g.position.z, w) < 1) o.hp = Math.min(100, o.hp + 15 * dt); } } // online remote cast: team-aware, host only
-      else { for (let j = 0; j < bots.length; j++) { const b = bots[j]; if (b.alive && segD(b.g.position.x, b.g.position.z, w) < 1) jHit(b, 30 * dt, "Blaze"); }
+      else { for (let j = 0; j < bots.length; j++) { const b = bots[j]; if (b.alive && segD(b.g.position.x, b.g.position.z, w) < 1) jHit(b, 30 * dt, "Blaze"); } xFFArea("You", false, "Blaze", 30 * dt, (x, z) => segD(x, z, w) < 1);
       if (segD(P.x, P.z, w) < 1) heal(); } if (w.t > 0) A[k++] = w; else jRel(w.m); }
     A.length = k; }
   { const A = J.zones, n = A.length; let k = 0;
     for (let i = 0; i < n; i++) { const z = A[i]; z.t -= dt; z.m.material.opacity = 0.55 * Math.min(1, z.t / 0.5);
       if (z.own) { if (!z.nd) { mpAreaHit(z, z.p.x, z.p.z, 2.5, 60 * dt, "Hot Hands", null); /* 60 dps (wiki.playvalorant.com/en-us/Phoenix) */ const o = z.own; if (o.alive && o.g && Math.hypot(o.g.position.x - z.p.x, o.g.position.z - z.p.z) < 2.5) o.hp = Math.min(100, o.hp + 15 * dt); } }
-      else { for (let j = 0; j < bots.length; j++) { const b = bots[j]; if (b.alive && Math.hypot(b.g.position.x - z.p.x, b.g.position.z - z.p.z) < 2.5) jHit(b, 60 * dt, "Hot Hands"); }
+      else { for (let j = 0; j < bots.length; j++) { const b = bots[j]; if (b.alive && Math.hypot(b.g.position.x - z.p.x, b.g.position.z - z.p.z) < 2.5) jHit(b, 60 * dt, "Hot Hands"); } xFFArea("You", false, "Hot Hands", 60 * dt, (x, q) => Math.hypot(x - z.p.x, q - z.p.z) < 2.5);
       if (Math.hypot(P.x - z.p.x, P.z - z.p.z) < 2.5) heal(); } if (z.t > 0) A[k++] = z; else jRel(z.m); }
     A.length = k; }
   { const A = J.orbs, n = A.length; let k = 0;
@@ -8031,7 +8052,7 @@ function jFxTick(dt) {
     if (a.kind === "dart") { if (a.tg && a.tg.alive) drTag(a.tg); }
     else if (a.kind === "erecon") enRecon(a.b);
     else if (a.kind === "recon") jReveal(a.b);
-    else { blip(160, 0.3, "square", 0.2); const m = jM(smokeGeo, fireMat(0x7fd8ff, 0.4)); m.scale.setScalar(0.75); m.position.copy(a.b); jFx(m, 0.35); if (a.own) { if (!a.nd) mpAreaHit(a, a.b.x, a.b.z, 3, 75, "Shock Bolt", null); } else bots.forEach((b) => b.alive && new THREE.Vector3(b.g.position.x, 1, b.g.position.z).distanceTo(a.b) < 3 && jHit(b, 75, "Shock Bolt")); }
+    else { blip(160, 0.3, "square", 0.2); const m = jM(smokeGeo, fireMat(0x7fd8ff, 0.4)); m.scale.setScalar(0.75); m.position.copy(a.b); jFx(m, 0.35); if (a.own) { if (!a.nd) mpAreaHit(a, a.b.x, a.b.z, 3, 75, "Shock Bolt", null); } else { bots.forEach((b) => b.alive && new THREE.Vector3(b.g.position.x, 1, b.g.position.z).distanceTo(a.b) < 3 && jHit(b, 75, "Shock Bolt")); xFFArea("You", false, "Shock Bolt", 75, (x, z) => new THREE.Vector3(x, 1, z).distanceTo(a.b) < 3); } }
     return false;
   });
   J.fx = J.fx.filter((f) => { f.t -= dt; if (f.g) f.m.scale.setScalar(0.5 + f.g * (1 - Math.max(0, f.t / f.t0))); f.m.material.opacity = f.o * Math.max(0, f.t / f.t0); if (f.t > 0) return true; jRel(f.m); return false; });
@@ -8138,7 +8159,7 @@ function sgTick(dt) {
   if (J.emp > 0 && !(P.hp > 0)) { J.emp = 0; $("xEmp").classList.remove("on"); } // Empress (current Valorant): lasts until death (round reset clears it in sgClear)
   okTick(dt);
 }
-{ const h0 = hurt; hurt = function (t, n) { if (t === player && J.dis > 0 && J.pick === "Reyna" && jOn()) return; return h0(t, t && t.vul > 0 && bots.includes(t) ? n * 2 : n); }; } // Killjoy Alarmbot: Vulnerable takes double · Reyna Dismiss: intangible, no damage // Killjoy Alarmbot: Vulnerable takes double
+{ const h0 = hurt; hurt = function (t, n, by) { if (t === player && J.dis > 0 && J.pick === "Reyna" && jOn()) return; return h0(t, t && t.vul > 0 && bots.includes(t) ? n * 2 : n, by); }; } // Killjoy Alarmbot: Vulnerable takes double · Reyna Dismiss: intangible, no damage // Killjoy Alarmbot: Vulnerable takes double
 function sgClear() {
   sgWallEnd(); (J.slz || []).concat(J.so || [], J.leer || []).forEach((s) => scene.remove(s.m));
   J.slz = []; J.so = []; J.leer = []; J.hl = null; J.dis = 0; J.emp = 0; $("xEmp").classList.remove("on", "dis");
@@ -8236,7 +8257,7 @@ function okTick(dt) {
   });
   prune(J.nano, (n) => {
     if (!n.on) return true; n.t -= dt; n.m.material.opacity = 0.55 * Math.min(1, n.t / 0.5);
-    bots.forEach((b) => b.alive && Math.hypot(b.g.position.x - n.p.x, b.g.position.z - n.p.z) < 2.5 && jHit(b, 45 * dt, "Nanoswarm"));
+    bots.forEach((b) => b.alive && Math.hypot(b.g.position.x - n.p.x, b.g.position.z - n.p.z) < 2.5 && jHit(b, 45 * dt, "Nanoswarm")); xFFArea("You", false, "Nanoswarm", 45 * dt, (x, z) => Math.hypot(x - n.p.x, z - n.p.z) < 2.5);
     if (n.t > 0) return true; scene.remove(n.m); return false;
   });
   if (J.ab) {
@@ -8295,6 +8316,7 @@ function rsBoom(p, r, dmg, w, c, direct, fall) {
   bots.forEach((b) => { if (!b.alive) return; const q = new RV(b.g.position.x, 1, b.g.position.z), d = q.distanceTo(e);
     if (!(dmg > 0)) {} else if (b === direct) jHit(b, dmg, w); else if (d < r && los(e, q)) jHit(b, fall ? dmg * Math.max(0.35, 1 - d / r) : dmg, w);
     if (b.alive && d < r) flash(b); });
+  xFFArea("You", false, w, dmg, (x, z, t) => { const q = new RV(x, 1, z), d = q.distanceTo(e); return d < r && los(e, q) ? (fall ? Math.max(0.35, 1 - d / r) : true) : false; }); // Paint Shells / Showstopper (Boom Bot, Blast Pack: not in XFF)
 }
 function rsPack() { // Blast Pack detonation: 50 to enemies, knocks everyone back
   const P = player;
@@ -8664,8 +8686,8 @@ function bcTick(dt) {
   BC.as = BC.as.filter((a) => {
     a.t -= dt; if (a.t > 0) return true;
     const m = jM(smokeGeo, fireMat(0xff9a3a, 0.45)); m.scale.setScalar(0.75); m.position.set(a.p.x, 1, a.p.z); jFx(m, 0.35); blip(70, 0.3, "sawtooth", 0.2);
-    if (a.own) xBbTg(a).forEach((t) => { const q = xBbPos(t); if (q && Math.hypot(q.x - a.p.x, q.z - a.p.z) < 3) { xBotDmg(t, 80, a.own.name, "Aftershock"); if (t.alive && bots.indexOf(t) >= 0) flash(t); } });
-    else bots.forEach((b) => { if (b.alive && Math.hypot(b.g.position.x - a.p.x, b.g.position.z - a.p.z) < 3) { jHit(b, 80, "Aftershock"); if (b.alive) flash(b); } });
+    if (a.own) { xBbTg(a).forEach((t) => { const q = xBbPos(t); if (q && Math.hypot(q.x - a.p.x, q.z - a.p.z) < 3) { xBotDmg(t, 80, a.own.name, "Aftershock"); if (t.alive && bots.indexOf(t) >= 0) flash(t); } }); xFFArea(a.own, a.en, "Aftershock", 80, (x, z) => Math.hypot(x - a.p.x, z - a.p.z) < 3); }
+    else { bots.forEach((b) => { if (b.alive && Math.hypot(b.g.position.x - a.p.x, b.g.position.z - a.p.z) < 3) { jHit(b, 80, "Aftershock"); if (b.alive) flash(b); } }); xFFArea("You", false, "Aftershock", 80, (x, z) => Math.hypot(x - a.p.x, z - a.p.z) < 3); }
     if (--a.n > 0) { a.t = 0.6; return true; } scene.remove(a.m); return false;
   });
   BC.tm = BC.tm.filter((t) => {
@@ -8811,6 +8833,7 @@ setInterval(function () { try { if (!running || !XKN.length) return; for (const 
   o.t -= 0.1; o.m.material.opacity = 0.55 * Math.min(1, o.t / 0.5); const nm = o.own && o.own.name || "Killjoy";
   if (en) { if (player.hp > 0 && xKnIn(o, player.x, player.z)) xBotDmg(player, 4.5, nm, "Nanoswarm"); for (const a of allies) if (a.alive && xKnIn(o, a.g.position.x, a.g.position.z)) xBotDmg(a, 4.5, nm, "Nanoswarm"); }
   else for (const b of bots) if (b.alive && xKnIn(o, b.g.position.x, b.g.position.z)) xBotDmg(b, 4.5, nm, "Nanoswarm");
+  xFFArea(o.own || null, en, "Nanoswarm", 4.5, (x, z) => xKnIn(o, x, z), nm); // allies: a third
   if (o.t <= 0) { o.on = false; jRel(o.m); o.m = null; } } } catch (e) {} }, 100);
 let agT, agBT = [];
 const AG_RC = { Duelist: "#ff4655", Initiator: "#3fd6a0", Controller: "#a48bff", Sentinel: "#4fb3ff" };
@@ -8964,8 +8987,8 @@ function xBBuy(n, s) { // after guns + shields: E (signature) 1 free, then each 
   s.kc = kc; }
 function xBKill(by) { if (!by || typeof by !== "string" || !jOn()) return; let u = null; for (const x of bots) if (x.name === by) u = x; if (!u) for (const x of allies) if (x.name === by) u = x;
   if (!u || !XBK_KR[xBAg(u)]) return; const c = xBCh(u); if (c.e >= 1) return; if (++c.tk >= 2) { c.e = 1; c.tk = 0; } }
-{ const k0 = kill; kill = function (b, hs, by) { const was = b && b.alive, r = k0.apply(this, arguments); if (was && b && !b.alive) try { xBKill(by); } catch (e) {} return r; };
-  const a0 = allyDie; allyDie = function (a, by) { const was = a && a.alive, r = a0.apply(this, arguments); if (was && a && !a.alive) try { xBKill(by); } catch (e) {} return r; }; }
+{ const k0 = kill; kill = function (b, hs, by) { const was = b && b.alive, r = k0.apply(this, arguments); if (was && b && !b.alive && !XTKILL) try { xBKill(by); } catch (e) {} return r; };
+  const a0 = allyDie; allyDie = function (a, by) { const was = a && a.alive, r = a0.apply(this, arguments); if (was && a && !a.alive && !XTKILL) try { xBKill(by); } catch (e) {} return r; }; }
 function xBPl() { return mode === "five" ? !!(FV.sp && FV.sp.st === "plant") : mode === "retake"; }
 function xBAtk(al) { return mode === "five" ? FV.atk === al : !!al; } // retake: enemy bots hold the planted site (utility like defenders), allies retake it
 function xBSite(b, al, from) { // the site this bot's team is heading for (attack) or holding (defence)
@@ -9619,11 +9642,11 @@ let SB = {};
 function sbReset(enemies, mates) { SB = {}; ["You"].concat(mates || [], enemies).forEach((n) => SB[n] = { k: 0, d: 0, a: 0, fb: 0, pd: 0, hs: 0, dmg: 0, pl: 0, sp: 0, ping: 10 + Math.floor(Math.random() * 31) }); sbKill.r = -1; SBH = {}; }
 // real stats: damage by attacker (from hurt), assists (>=50 dmg to the victim in the last 5 s), credits spent in buy phase
 let SBH = {};
-function sbDmg(by, v, n) { if (!(n > 0) || by === v || !SB[by]) return; SB[by].dmg = (SB[by].dmg || 0) + n; if (v == null) return; const m = SBH[v] || (SBH[v] = {}), now = performance.now(), e = m[by]; if (e && now - e.t <= 5000) { e.d += n; e.t = now; } else m[by] = { d: n, t: now }; }
+function sbDmg(by, v, n) { if (XTKILL || !(n > 0) || by === v || !SB[by]) return; SB[by].dmg = (SB[by].dmg || 0) + n; if (v == null) return; const m = SBH[v] || (SBH[v] = {}), now = performance.now(), e = m[by]; if (e && now - e.t <= 5000) { e.d += n; e.t = now; } else m[by] = { d: n, t: now }; }
 function sbAst(by, v) { const m = SBH[v]; if (!m) return; const now = performance.now(); for (const n in m) if (n !== by && SB[n] && m[n].d >= 50 && now - m[n].t <= 5000) SB[n].a = (SB[n].a || 0) + 1; delete SBH[v]; }
 function sbSpend(n, c) { if (c > 0 && SB[n]) SB[n].sp = (SB[n].sp || 0) + c; }
 function sbEcon(p) { return Math.round((p.dmg || 0) * 1000 / Math.max(1, p.sp || 0)); }
-function sbKill(by, victim, hs) { try { sbAst(by, victim); } catch (e) {} let r = 0; try { const s = sbScore(); r = s[0] + s[1]; } catch (e) {} if (SB[by]) { SB[by].k++; if (hs) SB[by].hs++; if (sbKill.r !== r) SB[by].fb = (SB[by].fb || 0) + 1; } sbKill.r = r; if (SB[victim]) SB[victim].d++; }
+function sbKill(by, victim, hs) { if (XTKILL) { if (SB[victim]) SB[victim].d++; try { delete SBH[victim]; } catch (e) {} return; } try { sbAst(by, victim); } catch (e) {} let r = 0; try { const s = sbScore(); r = s[0] + s[1]; } catch (e) {} if (SB[by]) { SB[by].k++; if (hs) SB[by].hs++; if (sbKill.r !== r) SB[by].fb = (SB[by].fb || 0) + 1; } sbKill.r = r; if (SB[victim]) SB[victim].d++; }
 { const e0 = end; end = function (w, text) { try { const m = /^(.+?) defused the spike/i.exec(text || ""); const n = m ? m[1] : /defused/i.test(text || "") && w ? "You" : null; if (n && SB && SB[n]) SB[n].pd = (SB[n].pd || 0) + 1; } catch (e) {} return e0.apply(this, arguments); }; }
 const clk = (t) => { const s = Math.max(0, Math.ceil(t)); return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0"); };
 const setT = (id, v) => { const e = $(id); v = String(v); if (e.textContent !== v) e.textContent = v; };
@@ -9688,7 +9711,7 @@ function sbTable(list, cls, alive) {
   if (eb.length === 1 && a >= 2 && !c.e) c.e = eb[0].name; } catch (e) {} return r; }; }
 // clear the round-history strip and clutch marks at every match start (sbReset runs once per match in all modes)
 { const r0 = sbReset; sbReset = function () { xRes.h = []; xRes.hh = ""; xRes.c = {}; xFirstBlood.r = null; return r0.apply(this, arguments); }; }
-{ const k1 = sbKill; sbKill = function (by, victim) { const r = k1.apply(this, arguments); xFirstBlood(by, victim); return r; }; }
+{ const k1 = sbKill; sbKill = function (by, victim) { const r = k1.apply(this, arguments); if (!XTKILL) xFirstBlood(by, victim); return r; }; }
 function board() {
   const alive = (n) => n === "You" ? player.hp > 0 || (mode === "duel" && du.wait <= 0) : mode === "duel" ? duelBot && duelBot.alive : bots.concat(allies).some((b) => b.name === n && b.alive);
   const s = sbScore(), t = sbTeams();
@@ -10837,9 +10860,9 @@ let xTGOn = false; const xTG = { inPlay: () => false, relAll: () => {} };
   window.xBotUltCost = (a) => (KITS[a] ? KITS[a].u : 0);
   window.xBotUC = XU.c; // shared bot ult charge (bot Chamber's Tour De Force reads it, cost 8)
   function gain(n) { const u = unit(n); if (!u) return; const a = xAg(u), m = (KITS[a] && KITS[a].u) || 7; XU.c[n] = Math.min(m, (XU.c[n] || 0) + 1); } // agents without a bot ult still charge (scoreboard pips); think1 only fires PTS agents
-  const k0 = kill; kill = function (b, hs, by, w) { const was = b && b.alive; const r = k0.apply(this, arguments); if (was && b && !b.alive) { try { if (mode === "five") gain(b.name); gain(by); delete XU.b[b.name]; ribEnd(b); } catch (e) {} } return r; };
-  const a0 = allyDie; allyDie = function (a, by, w) { const was = a && a.alive; const r = a0.apply(this, arguments); if (was) { try { if (mode === "five") gain(a.name); gain(by); delete XU.b[a.name]; ribEnd(a); } catch (e) {} } return r; };
-  const p0 = pDie; pDie = function (by, w) { try { if (!(jOn() && J.rib > 0 && J.ribP)) gain(by); } catch (e) {} return p0.apply(this, arguments); }; // killing the player inside Run It Back is no kill: no ult point for the bot
+  const k0 = kill; kill = function (b, hs, by, w) { const was = b && b.alive; const r = k0.apply(this, arguments); if (was && b && !b.alive) { try { const tk = XTKILL || by === "Spike" || by === "Fall"; if (mode === "five" && !tk) gain(b.name); if (!XTKILL) gain(by); delete XU.b[b.name]; ribEnd(b); } catch (e) {} } return r; };
+  const a0 = allyDie; allyDie = function (a, by, w) { const was = a && a.alive; const r = a0.apply(this, arguments); if (was) { try { const tk = XTKILL || by === "Spike" || by === "Fall"; if (mode === "five" && !tk) gain(a.name); if (!XTKILL) gain(by); delete XU.b[a.name]; ribEnd(a); } catch (e) {} } return r; };
+  const p0 = pDie; pDie = function (by, w) { try { if (!XTKILL && !(jOn() && J.rib > 0 && J.ribP)) gain(by); } catch (e) {} return p0.apply(this, arguments); }; // killing the player inside Run It Back is no kill: no ult point for the bot
   const f0 = feed; feed = function (t) { try { const m = typeof t === "string" && /^(.+?) planted the Spike/.exec(t); if (m) gain(m[1]); } catch (e) {} return f0.apply(this, arguments); };
   const e0 = end; end = function (w, text) { try { const m = /^(.+?) defused the spike/i.exec(text || ""); if (m) gain(m[1]); } catch (e) {} return e0.apply(this, arguments); };
   const h0 = hurt; hurt = function (t, n, by) { const m = by && XU.b[by]; return h0.call(this, t, m ? n * m : n, by); };
@@ -10865,6 +10888,7 @@ let xTGOn = false; const xTG = { inPlay: () => false, relAll: () => {} };
       const beam = (t, x, z) => { const q = (x - sx) * dx + (z - sz) * dz; if (q < 0 || q > 60) return; if (Math.abs((x - sx) * dz - (z - sz) * dx) < 1.1) hitU(t, 80, u.name, "Hunter's Fury"); };
       if (en) { if (player && player.hp > 0) beam(player, player.x, player.z); if (typeof allies !== "undefined") for (const a of allies) if (a.alive) beam(a, a.g.position.x, a.g.position.z); }
       else for (const b of bots) if (b.alive) beam(b, b.g.position.x, b.g.position.z);
+      xFFArea(u, en, "Hunter's Fury", 80, (x, z) => { const q = (x - sx) * dx + (z - sz) * dz; return q >= 0 && q <= 60 && Math.abs((x - sx) * dz - (z - sz) * dx) < 1.1; }); // allies: a third, no reveal
     }
   }
   function use(u, a, en) {
@@ -11171,9 +11195,9 @@ function dmFired(u) { if (u && u.pp) u.pp = 0; }
 function dmProtHud() { const on = running && mode === "five" && FV.dm && !!player && player.hp > 0 && DM.pp > performance.now(); let e = DM.prEl; if (!e) { if (!on) return; e = DM.prEl = document.createElement("div"); e.className = "x-dmprot"; e.setAttribute("role", "status"); e.textContent = "SPAWN PROTECTED"; e.style.cssText = "position:fixed;left:50%;top:62%;transform:translateX(-50%);padding:4px 12px;font:700 12px/1.4 Arial,sans-serif;letter-spacing:.12em;color:#9ffff0;background:rgba(15,25,35,.55);border:1px solid rgba(159,255,240,.45);pointer-events:none;z-index:40"; document.body.appendChild(e); } if (on !== !e.hidden) e.hidden = !on; }
 (window.XHK || (window.XHK = [])).push(dmProtHud);
 { const h0 = hurt; hurt = function (t, n, by) { if (mode === "five" && FV.dm && t) { const now = performance.now(); if ((t === player ? DM.pp : t.pp) > now) return; if (t === player) { DM.ph = now; if (DM.menu) dmMenu(false); } } return h0(t, n, by); }; }
-{ const k0 = kill; kill = function (b, hs, by, w) { const was = !!(b && b.alive); k0(b, hs, by, w); if (mode === "five" && FV.dm && was && !b.alive) { b.drt = 1.5; dmScore(by || "You", b.name); } }; }
-{ const p0 = pDie; pDie = function (by, w) { p0(by, w); if (mode === "five" && FV.dm && player && player.hp <= 0 && !(DM.prt > 0)) { DM.prt = 1.5; DM.pp = 0; if (DM.menu) dmMenu(false); dmScore(by, "You"); say("You died · respawning", 1400); } }; }
-{ const ad0 = allyDie; allyDie = function (a, by, w) { const was = !!(a && a.alive); ad0(a, by, w); if (mode === "five" && FV.dm && FV.tdm && was && !a.alive) { a.drt = 1.5; dmScore(by || "Enemy", a.name); } }; }
+{ const k0 = kill; kill = function (b, hs, by, w) { const was = !!(b && b.alive); k0(b, hs, by, w); if (mode === "five" && FV.dm && was && !b.alive) { b.drt = 1.5; if (!XTKILL) dmScore(by || "You", b.name); } }; }
+{ const p0 = pDie; pDie = function (by, w) { p0(by, w); if (mode === "five" && FV.dm && player && player.hp <= 0 && !(DM.prt > 0)) { DM.prt = 1.5; DM.pp = 0; if (DM.menu) dmMenu(false); if (!XTKILL) dmScore(by, "You"); say("You died · respawning", 1400); } }; }
+{ const ad0 = allyDie; allyDie = function (a, by, w) { const was = !!(a && a.alive); ad0(a, by, w); if (mode === "five" && FV.dm && FV.tdm && was && !a.alive) { a.drt = 1.5; if (!XTKILL) dmScore(by || "Enemy", a.name); } }; }
 { const e0 = end; end = function (win, text) { if (mode === "five" && FV.dm) return; return e0(win, text); }; }
 // guard: no 5v5 round reset in deathmatch (fSpawn would scene.remove every DM bot and spawn 5v5 teams)
 { const s0 = fSpawn, r0 = fRound, c0 = fCheck, dmOn = () => mode === "five" && FV.dm;
@@ -12058,6 +12082,7 @@ function mpAreaHit(o, x, z, r, n, w, seg) { // host only: the remote caster's en
   if ((o.en || ffa) && player.hp > 0 && mpDist(player.x, player.z, x, z, seg) < r) { xBotDmg(player, n, by, w); try { updHud(); } catch (e) {} if (player.hp <= 0) pDie(by, w); }
   const T = ffa || !o.en ? bots : allies;
   for (let j = 0; j < T.length; j++) { const t = T[j]; if (t && t !== o.own && t.alive && t.g && mpDist(t.g.position.x, t.g.position.z, x, z, seg) < r) xBotDmg(t, n, by, w); }
+  xFFArea(o.own, o.en, w, n, (px, pz) => mpDist(px, pz, x, z, seg) < r); // the caster's team: a third
 }
 function mpStun(u, en, x, z, r, s, auth) { // the local player on every peer (screen effect); units only on the host
   const ffa = FV.dm && !FV.tdm; if ((en || ffa) && player.hp > 0 && Math.hypot(player.x - x, player.z - z) < r) { try { xConStart(s * 1000); } catch (e) {} }
