@@ -753,3 +753,15 @@ previously acknowledged).
     vitals/COMMS/use/buy. Capture /tmp/hudmap_dm_568x320.png.
 Source invariants pinned: work/test_hud_polish.cjs. vm subset (settings/touch_spike/
 offline_realtime) green. Captures are static forced-end-state layout evidence, as labeled.
+
+## 2026-10-25 ~18:18 EDT - Lotus settled-stall residual LOCALIZED: stair-mouth plateau transition, variance 15->5->2
+Traced run (/tmp/diag-stairs-trace2.cjs logs stall sample positions; MAP=lotus SETTLE=60, dmN=0):
+STAIRS DONE - up y4.90->5.75 reached true, 2 stall samples BOTH at the same point
+(-32.19, 6.08, 19.1): the plateau-approach extension just past the flight top (top node
+-34.5,7.06,19.25), i.e. a ~1s pause at the stair-mouth/plateau step transition, then the capsule
+proceeded on its own. Down leg + backHome true, ERRORS [].
+Settled-run history on the identical flight: 15 -> 5 -> 2 stall samples (same probe, same world) -
+nondeterministic residual load/timing variance, not a fixed geometric trap: every settled run
+reaches the top unaided. Reframed: transient self-recovering stair-mouth pauses under SwiftShader;
+the runtime per-unit stall breaker already covers bots in real matches. Downgraded to a
+smoothness nit; kept open (a real step-up smoothing change needs a proven mechanism first).
