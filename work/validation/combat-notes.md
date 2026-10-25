@@ -174,3 +174,115 @@ means changing the shared motor or the BVH query and was left alone. The first t
   `// src/hitboxes.json` (`headOffsetY: 0.08`, pose values present) and no runtime JSON import. `wrangler dev --local` also served it:
   the live two-player run registered human-to-human damage through `rayHit` → `hitVolumes`.
 - Test: `server/test-bundle.cjs` (in `npm test`) bundles `src/worker.js` with esbuild like wrangler and asserts the table is embedded.
+
+## Gameplay QA pass 2 (soak, client online, Spike loading, Lotus step)
+
+Harness: `server/tools/soak.mjs` (in-process worker, bots + fuzzing humans, invariants every tick), `server/test-soak.js`.
+
+- Soak 5 (all maps x DM/TDM/Spike, 600 s, 4 humans, seed 5): one violation, a Breeze DM bot stuck 8 s at
+  (-30.5, 3.77, -68.4). Memory: 40-min Ascent Spike run (match ended 13-10 at 1696 s) heap 22.0 -> 24.8 MB, flattening;
+  six back-to-back fresh-cluster runs on one map stay flat after GC (20.3 MB), so no leak. The cross-run heap growth in
+  soak5's log is per-map world loading.
+- **Breeze off-map pocket** (`c17bef7`): past the walkway edge near (-30, -68) there is collision
+  4.3 m below the walkway with no nav node and void around it. Walking off landed there for good (old fall rescue only
+  covers "no floor below"). `Simulation.guard` keeps an anchor (last grounded spot on the nav graph); a grounded unit
+  more than 1.5 m below it with no playable node within 4 m at or below its height (`offMesh`) goes back to the anchor.
+  0 false positives over ~15k legit-floor samples on all six maps and 90 s of bots-only DM per map. Test: test-soak 6c.
+- **Bot progress check** (`c17bef7`): reset its 5 s window on any tick without forward input, so bots that paused a
+  tick now and then never qualified. Now counts forward ticks (>= 60%). Test: test-soak 6b2.
+- **Spike loading hold** (`e1fa9dd`): any loading human froze the round for everyone up to the 180 s load timeout,
+  including mid-match rejoiners (who are out for the round anyway). Now a loader holds the buy phase only while alive in
+  the round, at most 15 s per player and 15 s per round; still loading at round start = dead for that round (spike
+  handed to a teammate), spectating once loaded, back next round. Test: test-spike-edges.js (last block).
+- **Lotus step** (`99f92a4`): stairs near (-7, -5.5), floor 3.575 -> 3.948 -> 4.305 -> 4.616 m; the first riser is
+  0.373 m, above the motor's 0.36 m lift and its riser test, so every walker stopped there. Step height 0.40 m in the
+  shared motor (vendor/valorant-feel.js == server/src/motor.cjs); the wall-climb clamp scales with it (Bind wall test
+  holds), 0.45 / 0.6 m ledges still block. eval-stairs: 99.1% -> 99.5% of 588 rising nav edges walked, 0 big drops.
+  Test: work/test_stairs.cjs (0.375/0.39 risers, 0.45 ledge, real Lotus flight).
+- **Spike seat churn** (`f57f875`): soak seed 8 Spike rounds ended "Defenders eliminated" with almost no kills. A
+  mid-round leave put a seat bot in that sat the round out dead, and a rejoin into a full room removed the first bot on
+  the team even when alive, so disconnects alone eliminated teams. The seat bot now takes over the leaver's living body
+  (`SpikeSimulation.takeOver`: position, health, armor, loadout, credits, abilities) and `Simulation.add` gives up a dead
+  bot (preferred team first) before a living one. Haven seed-8 160 s: round 1 went from churn elimination at 60 s to a
+  played-out detonation. Test: test-spike-edges.js (last block).
+- Soak 8 (all maps x modes, 600 s, 4 humans, seed 8, after the fixes above except seats): 18/18 runs clean, no
+  violations or exceptions, heap per run +1 to 2 MB and flat.
+- **Wedged high on a prop** (`0951a69`): soak 9 (400 s, seed 9, at f57f875), Ascent DM, a seat bot sat inside a
+  prop at (-56, 6.53, -22.4), 2.5 m above the floor nodes (y 3.98) with no node at its height. `freeNode` only took nodes
+  within 1.5 m of the unit's height, so unwedge and the escape found nothing all match. It now falls back to the nearest
+  free node below (up to 4 m down). How the bot got up there was not determined (no nav node or spawn at that height).
+  Test: test-soak.js 2b.
+- **Online client test** (`f939f7b`): `work/test_client_online.cjs`, the real page in audit.js's fake DOM against the
+  in-process server. The page's own player is piloted through its input globals by ScriptedHuman's nav hunter, so it
+  kills and dies in TDM/DM/Spike (asserted), buys through the page in Spike, plus leave/rejoin swaps, round resets,
+  match end, server disconnect. Fast variant ~21 s in test_all; `QA_LONG=1` is the long soak tool. No page exceptions
+  found in either variant.
+- Soak 9 (all maps x modes, 400 s, seed 9, at f57f875): 17/18 clean; the one violation is the wedged-high bot above.
+- Merge of origin/hark (`7ce15da`, hark's ults/devices/layout work): conflicts in server/package.json (test list) and
+  server/src/spike.js (fire() detain check kept beside takeOver/loadHold). Soak 10 on the merged tree plus `0951a69`
+  (all maps x modes, 300 s, 4 humans, seed 10): 18/18 clean, no violations or exceptions.
+- Suites at the end: server `npm test` 25 files, client `npm run test:client` 45 files (41 + test_client_online.cjs +
+  hark's test_map_decals / test_short_layout / test_tp_cam_height), all passing.
+- Not covered / left: rendered browser (no Chromium on this branch); how the Ascent bot got wedged 2.5 m up is unknown;
+  the soak's Spike `kills` stat counts only snapshot kill events and reads low next to round outcomes. The room still
+  drops a client that has not finished loading after 180 s (it no longer holds the round).
+
+## Gameplay QA pass 3 (motor wall-climb, Spike ult ownership, slow loads, client frame checks, DM seats)
+
+- **Motor wall-climb** (`1284d13`): the bot found wedged 2.5 m up an Ascent building in pass 2 got there by jumping into
+  the corner at (-55.6, -22.1). The capsule crept to the wall at exactly `blocked()`'s .388 tolerance, the "descending
+  beside a riser" clamp held it mid-air, contact counted as support, and each new jump rose with no collision test.
+  Shared motor (server/src/motor.cjs == vendor/valorant-feel.js): rises stop at geometry, vertical probes use a 2 cm
+  thinner capsule, support needs a floor under the footprint and the unit not inside geometry. Jump-into-wall scan:
+  296 embedded samples -> 0. Test: test-soak.js 2c.
+- **Spike ultimate / utility ownership** (`7cc455c`, found by the ults scenario soak):
+  1. A leaver's live utility (Showstopper rocket, turret, Nanoswarm, Boom Bot, Lockdown windup ...) kept the removed
+     unit's id as owner, so its kills had no kill event, score, credits or ult point. `takeOver` now hands it to the
+     seat bot (alive or not) and carries Tour de Force / Headhunter / Run It Back and statuses (detain, slow, blind ...)
+     with the body. A joiner on that team adopts any orphaned utility; a kill with no owner left still reaches the
+     feed (`['k','',victim]`).
+  2. Run It Back: dying inside the window dropped Phoenix's gun on the floor (he came back without it), and a round
+     ending while he was down stripped his gear. Neither happens now.
+  Tests: test-ults.js (new blocks after Run It Back).
+- **Soak Spike invariants** (`bf6c3a0`): tools/soak-checks.mjs checks the economy at round end, carry-over at round
+  start (halftime reset included), that detained units never fire, Run It Back windows, owned weapons, and a kill event
+  or known cause for every death. New `abilities` / `ults` scenarios make bots and fuzzers spend utility and ults
+  constantly, aimed at enemies. test-soak.js runs a Bind ults and a Lotus abilities soak.
+- **Soak reproducibility / "room was not created" flake** (`bf6c3a0`, `648f270`): world loading (real file I/O) and
+  `hi` authentication (real async crypto) ran while the virtual clock advanced, so under machine load a create could
+  outlast the 5 virtual s wait, and a seed did not replay the same match (ability soak deaths varied 0 to 3 run to run).
+  The harness now holds the virtual clock while a create loads (up to 120 s real) and while any `hi` is authenticating.
+  Two parallel runs of the test-soak ability soaks now give identical stats.
+- **Slow match loads** (`ce0a726`): a client still loading after 180 s was dropped as 'Connection idle' even while it was
+  making progress. The page now reports progress (`lp`, every 5 s: agent-model and map-asset fractions) and the room
+  keeps the seat while reports arrive (within 20 s) and the progress moves (within 120 s), never past 10 min. A load
+  that does expire closes with 'Load timed out', and the page says so. The page's own start wait (`mpWaitStart`) uses the
+  same rule instead of a flat 180 s. Tests: test-background.js 4b, test_client_online.cjs (slow-load phase).
+- **Server frame checks on the client** (`ce0a726`): `netClean` in work/server_runtime.js shape-checks every server frame
+  before the page stores or replays it (the frame loop re-reads `NET.latest` and round state, so one malformed snapshot
+  threw on every frame). The handler has a last-resort try/catch that counts fallbacks. The long fuzz (seed 1) hit that
+  guard twice:
+  1. `end`: `ev` was a number; `mpCliMsg` replays `end` through `mpCliSnap` (`for (const v of m.ev)`). `end` and `re` now
+     get the full snapshot cleaning (u, k, d, ev, fx, fw, tl), and `end.over` must be a string or null.
+  2. `rs`: `reyna.souls` was not a list (or a soul had no `p`). `netReynaSync` maps the souls and spreads `p`. Round state
+     (alone or inside `start` / `ao`) now checks `reyna.souls` (objects with an id and a 3-number `p`), `channel`,
+     `ab.cool`, `ab.anchor`.
+  `QA_LONG=1 SEED=1 node work/test_client_fuzz.cjs`: 400 sequences, 13.6k messages, 298 reach a live match, 0 guard
+  fallbacks, no exceptions. The fast variant (70 sequences) runs in test_all.
+- **DM seat-taker** (`648f270`, soak 13): a human joining a full DM room took the replaced bot's team id, and with it that
+  bot's score row (points it never scored). Each DM unit now has its own side. The soak checks every DM unit's row
+  equals its kills, and reports DM scores by name (the "scores array with nulls" was the sparse per-unit-id array, not a
+  defect in itself). Test: test-soak.js 6d. The DM violations in the first soak-13 run were not kept (the log was
+  overwritten by the rerun). The rerun after the motor fix (all maps x modes, 300 s, 4 humans) was clean 18/18, and so
+  was DM on all maps after this fix.
+- Soak 12 (all maps, Spike, ults and abilities scenarios, 400 s, run on the working tree with the ownership and Run It
+  Back fixes): 12/12 clean.
+- Flaky, not fixed: test_client_online.cjs fast TDM once failed "page player killed and died (0/5)" under heavy load
+  (load average ~6 on 2 CPUs, another agent's suite running). It passed alone and on the retry. The piloted fight has a
+  60 s virtual window and is not seeded end to end.
+- Merge of origin/hark (`9cf33ce` up to bd76683, then `ad18b9e` for 8da7b53): conflicts in simulation.js (kept
+  `safe:null` on spawn plus hark's knife heavy input `kh`), server_runtime.js (hark's knife pulse/heavy input plus the
+  lp progress loop), native_maps_runtime.js (hark's `nmLoadScene`; the `NM.loaded` progress report moved into it),
+  test-ults.js (both sets of blocks, one summary line), test_agent_preload.cjs (both sides fixed the same Cache Storage
+  flake; hark's kept). index.html took hark's side in its two conflicted runtime blocks and was then regenerated
+  (byte-identical on a second run). Suites on the merged tree: server 25 files, client 54 files, all passing.
