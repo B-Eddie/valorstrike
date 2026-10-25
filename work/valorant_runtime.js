@@ -204,13 +204,26 @@ function xvFPLoad(ag,w) {
     const cam=sc.getObjectByName('Camera');const pos=cam?cam.getWorldPosition(new THREE.Vector3()):new THREE.Vector3(0,1.67,0);root.position.copy(pos).negate();F.origin=root.position.clone();xvFPPlay(F,'equip');return F;
   });
 }
-function xvFPClear(F){if(!F)return;camera.remove(F.root);F.am.stopAllAction();F.gm.stopAllAction();F.root.traverse(o=>{if(o.isMesh)[].concat(o.material||[]).forEach(m=>m.dispose());});}
+function xvFPClear(F){if(!F)return;if(F.root.parent)F.root.parent.remove(F.root);F.am.stopAllAction();F.gm.stopAllAction();F.root.traverse(o=>{if(o.isMesh)[].concat(o.material||[]).forEach(m=>m.dispose());});}
+// Built viewmodels are kept per agent|weapon (a few, most recent last) so swapping back is instant and replays the
+// authored equip; the agent's knife, Classic and current weapon are warmed as soon as a match is running.
+var XVFP={max:6,c:new Map(),warm:''};
+function xvFPGet(ag,w){const key=ag+'|'+w,F=XVFP.c.get(key);if(F){XVFP.c.delete(key);XVFP.c.set(key,F);return Promise.resolve(F);}
+  if(XVFP.c.has(key+'#'))return XVFP.c.get(key+'#');
+  const P=xvFPLoad(ag,w).then(F=>{XVFP.c.delete(key+'#');for(const k of XVFP.c.keys())if(!k.endsWith('#')&&k.split('|')[0]!==ag&&XVFP.c.get(k)!==XV.fp){xvFPClear(XVFP.c.get(k));XVFP.c.delete(k);}
+    XVFP.c.set(key,F);const done=[...XVFP.c.keys()].filter(k=>!k.endsWith('#'));while(done.length>XVFP.max){const k=done.shift(),o=XVFP.c.get(k);if(o===XV.fp)continue;xvFPClear(o);XVFP.c.delete(k);}return F;},e=>{XVFP.c.delete(key+'#');throw e;});
+  XVFP.c.set(key+'#',P);return P;}
+function xvFPWarm(ag,w){const id=ag+'|'+w;if(XVFP.warm===id)return;XVFP.warm=id;for(const x of [w,'Knife','Classic'])if(!XV.failures[ag+'|'+x])xvFPGet(ag,x).catch(e=>{XV.failures[ag+'|'+x]=String(e);});}
 function xvFPTick(dt) {
   const kn=knife.visible, active=running && player && player.hp>0 && (gun.visible||kn) && !(typeof BC!=='undefined'&&(BC.vm||BC.cv)) && !J.dr && !(XCA.h&&XCA.h.visible&&XCA.on);
   const ag=(J&&J.pick)||'Jett',w=kn?'Knife':fpaWeap(),key=ag+'|'+w;
-  if(active && (!XV.fp||XV.fp.ag!==ag||XV.fp.w!==w) && XV.fpLoad!==key){XV.fpLoad=key;xvFPLoad(ag,w).then(F=>{if(XV.fpLoad!==key){xvFPClear(F);return;}xvFPClear(XV.fp);XV.fp=F;F.kind=null;camera.add(F.root);}).catch(e=>{XV.failures[key]=String(e);}).finally(()=>{if(XV.fpLoad===key)XV.fpLoad=null;});}
+  if(running)xvFPWarm(ag,kn?fpaWeap():w);
+  if(active && (!XV.fp||XV.fp.ag!==ag||XV.fp.w!==w) && XV.fpLoad!==key && !XV.failures[key]){XV.fpLoad=key;xvFPGet(ag,w).then(F=>{if(XV.fpLoad!==key)return;if(XV.fp&&XV.fp.root.parent)XV.fp.root.parent.remove(XV.fp.root);XV.fp=F;F.kind=null;F.age=0;xvFPPlay(F,'equip');camera.add(F.root);}).catch(e=>{XV.failures[key]=String(e);}).finally(()=>{if(XV.fpLoad===key)XV.fpLoad=null;});}
+  // Until the native rig for this agent|weapon is in, the primitive arms stay hidden (the native weapon model shows
+  // alone); only a failed native load falls back to them.
+  if(active&&!(XV.fp&&XV.fp.ag===ag&&XV.fp.w===w)&&!XV.failures[key]){XV.waitFP=key;[VMA.R,VMA.L,KARM].forEach(o=>{if(o){XV.hidden.push([o,o.visible]);o.visible=false;}});}else XV.waitFP=null;
   const F=XV.fp,on=active&&F&&F.ag===ag&&F.w===w;if(F)F.root.visible=!!on;if(!on)return;
-  const hide=o=>{if(!o)return;XV.hidden.push([o,o.visible]);o.visible=false;}; gun.children.forEach(c=>{if(c!==muzzle)hide(c);});knife.children.forEach(hide);hide(FPA.g);[VMA.R,VMA.L,KARM].forEach(hide);
+  const hide=o=>{if(!o)return;XV.hidden.push([o,o.visible]);o.visible=false;}; gun.children.forEach(c=>{if(c!==muzzle)hide(c);});knife.children.forEach(hide);[VMA.R,VMA.L,KARM].forEach(hide);
   if(kn&&kSwing>(F.lastSwing||0)+.05)XV.event=kHv?'alt Attack':'attack 1';F.lastSwing=kSwing;
   const rp=mode==='duel'?(du.reload>0?1-du.reload/OP_RELOAD:-1):mode==='aim'?(AM.rl>0?1-AM.rl/WEAP[aimW()].rld:-1):reloading>0?1-reloading/xRT():-1;
   if(rp>=0){XV.event=null;xvFPPlay(F,'reload',rp);}else if(VM.ins>0&&F.kind!=='inspect')xvFPPlay(F,'inspect');else if(XV.event){F.kind=null;xvFPPlay(F,XV.event);XV.event=null;}else if(F.kind==='reload'||(F.kind!=='idle'&&F.age>(F.duration||(F.action?F.action.getClip().duration:.4))))xvFPPlay(F,'idle');
@@ -229,7 +242,7 @@ function xvMapCover(g) {
   }).catch(e=>{XV.failures.cover=String(e);});
 }
 {const use=useMap;useMap=function(n){const r=use.apply(this,arguments);try{xvMapCover(MAPS[n]&&MAPS[n].g);}catch(e){}return r;};}
-window.xValorantAssets={state:XV,agentAssets:XVA,agentsReady:xvAgentsReady,agentProgress:xvAgentProgress,load:xvLoad,loadAgent:xvAgentLoad,loadFP:xvFPLoad,scene,camera,renderer,agents:()=>XSOL.mx,probe:()=>({running,mode,agent:J.pick,weapon:fpaWeap(),nativeAgents:XSOL.mx.filter(m=>m.valorant).length,agentKits:Object.keys(XVA.kits).length,nativeFP:XV.fp&&XV.fp.ag+' '+XV.fp.w,failures:XV.failures})};
+window.xValorantAssets={state:XV,agentAssets:XVA,agentsReady:xvAgentsReady,agentProgress:xvAgentProgress,load:xvLoad,loadAgent:xvAgentLoad,loadFP:xvFPLoad,fpCache:XVFP,scene,camera,renderer,agents:()=>XSOL.mx,probe:()=>({running,mode,agent:J.pick,weapon:fpaWeap(),nativeAgents:XSOL.mx.filter(m=>m.valorant).length,agentKits:Object.keys(XVA.kits).length,nativeFP:XV.fp&&XV.fp.ag+' '+XV.fp.w,failures:XV.failures})};
 window.xvAgentsReady=xvAgentsReady;
 // Start downloading every agent as soon as the lobby is up (idle slot right after first paint), last pick first.
 {const go=()=>{let a='Jett';try{a=(typeof S!=='undefined'&&S&&S.lastAg)||localStorage.getItem('vs.lastAg')||a;}catch(e){}try{xvPreloadAgents(xvAgentName(a));}catch(e){console.warn('agent preload',e);}};if(window.requestIdleCallback)requestIdleCallback(go,{timeout:300});else setTimeout(go,0);}
