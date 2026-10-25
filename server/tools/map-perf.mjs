@@ -5,12 +5,13 @@
 //  layout 'source': one object per scene.gltf primitive (what ships before the optimizer)
 //  layout 'chunked': the runtime optimizer (work/native_maps_runtime.js nmChunkPlan), evaluated from the runtime source
 // Also reports materials, distinct textures, texture bytes at the medium (source) and LOW (256 px) caps.
-// Usage: node tools/map-perf.mjs [maps...]   (JSON=path writes the report)
+// Usage: node tools/map-perf.mjs [maps...]   (JSON=path writes the report; RUNTIME=path evaluates another runtime source;
+// CHUNK='{...}' or '[{...},...]' passes nmChunkPlan options)
 import fs from 'node:fs';import zlib from 'node:zlib';import * as T from 'three';import {loadRender,root} from './map-render.mjs';
 process.chdir(new URL('..',import.meta.url).pathname);
 export const MAPS=['ascent','bind','haven','split','lotus','breeze'];
 const VIEWS=+process.env.VIEWS||48;
-export function runtimeApi(){const src=fs.readFileSync(new URL('../../work/native_maps_runtime.js',import.meta.url),'utf8'),pick=n=>{const i=src.indexOf('function '+n+'(');if(i<0)return '';return src.slice(i,src.indexOf('\n',i));};
+export function runtimeApi(){const src=fs.readFileSync(process.env.RUNTIME||new URL('../../work/native_maps_runtime.js',import.meta.url),'utf8'),pick=n=>{const i=src.indexOf('function '+n+'(');if(i<0)return '';return src.slice(i,src.indexOf('\n',i));};
  const names=['nmChunkPlan','nmDetailDistance'].filter(n=>pick(n));return new Function(names.map(pick).join('\n')+'\nreturn {'+names.join(',')+'};')();}
 function pngSize(file){const b=Buffer.alloc(24);const fd=fs.openSync(file,'r');fs.readSync(fd,b,0,24,0);fs.closeSync(fd);return [b.readUInt32BE(16),b.readUInt32BE(20)];}
 function rng(seed){return()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296;};}
@@ -30,7 +31,9 @@ export async function perf(key){const R=loadRender(key,{bvh:false}),V=views(key)
  const api=runtimeApi();if(api.nmChunkPlan){const items=R.prims.map(p=>({key:[p.tex,p.alpha,p.name.replace(/_\d+$/,'')].join('|'),name:p.name,pos:R.pos,index:R.index,tri0:p.tri0,tris:p.tris}));
   // material equivalence offline: same texture + alpha mode (+ the runtime's name-based classes); colour factors ignored
   for(const it of items){const t=it.key.split('|');it.key=t[0]+'|'+t[1]+'|'+(api.nmDetailDistance(it.name)||0)+'|'+(/Floor|Ground/i.test(it.name)?1:0);}
-  const plan=api.nmChunkPlan(items,...(process.env.CHUNK?process.env.CHUNK.split(",").map(Number):[])),objs=plan.map(o=>{let n=0;for(const q of o.parts)n+=q.tris?q.tris.length:items[q.item].tris;const ids=new Uint32Array(n);let k=0;for(const q of o.parts){const it=items[q.item];if(q.tris)for(const t of q.tris)ids[k++]=it.tri0+t;else for(let t=0;t<it.tris;t++)ids[k++]=it.tri0+t;}const s=sphereOf(R.pos,R.index,ids);return {c:s.c,r:s.r,tris:n,maxDist:o.maxDist||0,cx:o.cx,cz:o.cz,span:o.span};});
-  out.objects=objs.length;out.chunked=count(objs,V);out.chunkedNoDetailCull=count(objs.map(o=>Object.assign({},o,{maxDist:0})),V);}
+  // CHUNK: the plan's options (JSON object, or an array of them to compare several in one load: out.variants)
+  const optsList=process.env.CHUNK?[].concat(JSON.parse(process.env.CHUNK)):[undefined];out.variants=[];for(const opts of optsList){const t0=Date.now();
+  const plan=api.nmChunkPlan(items,opts),planMs=Date.now()-t0,objs=plan.map(o=>{let n=0;for(const q of o.parts)n+=q.tris?q.tris.length:items[q.item].tris;const ids=new Uint32Array(n);let k=0;for(const q of o.parts){const it=items[q.item];if(q.tris)for(const t of q.tris)ids[k++]=it.tri0+t;else for(let t=0;t<it.tris;t++)ids[k++]=it.tri0+t;}const s=sphereOf(R.pos,R.index,ids);return {c:s.c,r:s.r,tris:n,maxDist:o.maxDist||0,cx:o.cx,cz:o.cz,span:o.span};});
+  out.objects=objs.length;out.planMs=planMs;out.chunked=count(objs,V);out.chunkedNoDetailCull=count(objs.map(o=>Object.assign({},o,{maxDist:0})),V);out.variants.push({opts,objects:objs.length,planMs,chunked:out.chunked});}if(optsList.length===1)delete out.variants;}
  return out;}
 if(import.meta.url===`file://${process.argv[1]}`){const maps=process.argv.slice(2).length?process.argv.slice(2):MAPS,all={};for(const k of maps){const t=Date.now();all[k]=await perf(k);console.log(JSON.stringify(all[k]),((Date.now()-t)/1000).toFixed(0)+'s');}if(process.env.JSON)fs.writeFileSync(process.env.JSON,JSON.stringify(all,null,1));}

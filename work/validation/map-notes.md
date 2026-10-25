@@ -103,6 +103,47 @@ Not done (measured or judged not worth it):
 - Worst-case views (looking down a map's long axis) still submit most triangles (frustum culling cannot help there);
   LOD/decimation of the dense meshes is the next step.
 
+## Z-fighting ("walls glitching, the texture")
+
+Cause: the render export has many coplanar layers of different materials (plaster patches on brick, trims on concrete,
+floor inlays, crates/scaffold planks flush with walls), and the runtime makes every converted map material
+double-sided (`nmPrepareScene`), so two overlapping coplanar faces of different meshes flicker against each other in
+either facing. A tiny near plane made it worse at range: the native maps draw to 500 m with the base 0.05 m near plane
+(24-bit depth steps ~1.1 cm at 100 m, ~4.5 cm at 200 m).
+
+Scan (`server/tools/map-zfight.mjs`, render meshes from scene.gltf, BVH): pairs of triangles of different primitives,
+all three corners of one within 1 cm of the other's plane, normals parallel (|dot| > 0.9995, either facing), overlap
+> 0.005 m2 (2D polygon clip). Classes: `dup` (same triangle twice), `overlay` (partial overlap of two layers), `decal`
+(Decal/Floater materials, already pulled forward by `nmDecalApply`).
+
+Fix (runtime, `NM_ZFIX` + `nmZFixApply` after `nmPrepareScene`, also on rehydrate; data `work/validation/map/zfight-fix.json`):
+- exact duplicate faces are dropped from the mesh that carries the hidden copy (blended or smaller-area material);
+- overlay layers get graded material `polygonOffset` (factor = units = -level, levels 1..4) from a weighted DSatur
+  colouring of the material overlap graph (5 levels incl. 0; the reported seams weigh 1000x so they are separated
+  first), so every overlapping pair sits on different depth levels and draws in a fixed order; decals keep their own
+  -2/-2;
+- native-map camera near plane 0.05 -> 0.1 m (`NM_NEAR`, restored to 0.05 on other maps; the capsule keeps the camera
+  >= 0.4 m from walls and the weapon has its own camera). `logarithmicDepthBuffer` not used: it writes gl_FragDepth in
+  every material (no early depth test), too costly on the software/low tiers.
+
+Coplanar overlapping pairs left on one depth level (whole map, before -> after; `work/validation/map/zfight-summary.json`):
+
+| map | triangles | coplanar pairs | open before (dup / overlay) | open after | area left |
+|---|---|---|---|---|---|
+| Ascent | 3,320,370 | 32,130 | 29,842 (57 / 29,785) | 59 | 4.1 m2 |
+| Bind | 2,841,334 | 24,472 | 19,315 (14 / 19,301) | 0 | 0 |
+| Haven | 4,094,074 | 142,830 | 129,897 (50 / 129,847) | 697 | 41.9 m2 |
+| Split | 3,210,903 | 36,726 | 34,519 (46 / 34,473) | 192 | 8.6 m2 |
+| Lotus | 2,622,530 | 16,864 | 12,968 (0 / 12,968) | 0 | 0 |
+| Breeze | 2,703,733 | 20,227 | 16,001 (752 / 15,249) | 9 | 0.2 m2 |
+
+(Ascent's "before" area is dominated by far vista cards beyond the 500 m far plane.) Reported seams, 6 m around each
+(`server/test-map-zfight.js`, in npm test): Ascent (-22, -18.75), (11.25, 2), (14.5, 20.5), (49, -39.75) 1,350 -> 0;
+Split (-35.75, 18.5), (15.75, -18) 970 -> 3 (0.025 m2); Breeze (-18.25, -70.25), (7.75, -48) 392 -> 0. Client:
+`work/test_map_zfight.cjs` (data = file, apply semantics, decals untouched, shared geometry cut once, wiring, near plane).
+What is left is where the overlap graph needs more than 5 levels; largest residues: Haven puddle on slate tiles
+(17 m2), window fill / wood trim, Meteor box / red beam (`leftAfter` in the summary).
+
 ## Needs a real-browser look (for the browser agent)
 
 1. Every map: load, check FPS / `renderer.info.render.calls` / `renderer.info.render.triangles` before vs after at
@@ -114,7 +155,10 @@ Not done (measured or judged not worth it):
    (Ascent B main x -37, z 12..25; Haven perimeter) cannot land on wall tops/roofs; crates/boxes the nav sampled are
    still reachable (Ascent A site boxes, mid boxes).
 4. Lotus patched floors (list above): bullets/decals/ragdolls now hit the floor there.
-5. Visual seams at the gap list above.
+5. Visual seams at the gap list above, and the z-fight seams (Ascent (-22,-18.75), (11.25,2), (14.5,20.5), (49,-39.75);
+   Split (-35.75,18.5), (15.75,-18); Breeze (-18.25,-70.25), (7.75,-48)): walls/floors should no longer flicker when
+   strafing or at range; check no layer now looks wrongly on top (a trim hidden by its wall), and no near-plane clipping
+   when hugging walls / crouching at corners (near 0.1 m).
 6. Online: the client fetches collision from the deployed worker (`/worlds`), so the collision patches reach online
    play and the offline client only after the worker's worlds are rebuilt and deployed (`npm run build:worlds` +
    deploy, owner's call; not done here). The leash, optimizer and texture cap ship with the page.
