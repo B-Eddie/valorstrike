@@ -228,3 +228,18 @@ ISSUES: none, PASS. This is the owed post-bake natural plant evidence on split.
 Ragdoll capture verdict (parent): ang0/ang1 stronger bounded evidence (connected limbs, no
 catastrophic stretching in these samples); ang2 excluded (artificially extended sim);
 floor contact retained as NUMERIC evidence only (flat bg has no ground reference).
+
+## Live bounded verification batch (2026-10-25 08:52 EDT)
+- #4 pickup prompt VERIFIED live (5v5 ascent): killed bot dropped Frenzy; aiming at the floor
+  gun -> #xdPrompt display:flex "F Pick up Frenzy"; look-away -> display:none. xdOn is
+  five-only (mode==="five" && !FV.dm && !NET.socket) - DM has no floor pickup by design.
+  diag-pickup.cjs. Gotcha: xdPrompt runs on rAF; sample promptly after aiming.
+- #3 spectate 3P VERIFIED live (5v5 ascent): died to bots (buy must be zeroed AFTER start -
+  fRound resets FV.buy=45), button appeared, click flipped aria-pressed false->true,
+  label 3RD->1ST PERSON, class .on; screenshot shows "SPECTATING BREACH" UI with toggle in
+  on-state. The original bug (pointer locked -> unclickable) path is what the cherry-pick
+  fixed; click now lands. diag-spectate.cjs.
+- #9 grip pose bounded visual: gun visibly tracks the bot's hand region through run-anim
+  frames (no detachment); fine aim-stance geometry not conclusively judgeable at this zoom -
+  numeric test_grip.cjs (muzzle-forward/upright/palm-seat/rigid, 3 agents) remains the
+  primary evidence. diag-grip.cjs.
