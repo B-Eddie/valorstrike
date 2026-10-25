@@ -1,0 +1,69 @@
+
+> valorstrike-server@1.0.0 test
+> node test.js && node test-spike.js && node test-directory.cjs && node test-abilities.js && node test-spike-edges.js && node test-weapons.js && node test-prebuilt.cjs && node test-trigger.js && node test-protocol.cjs && node test-barriers.js && node test-buy-worlds.js && node test-reyna.js && node test-interactions.js && node test-blades.js && node test-release-gate.cjs && node test-reconnect.js
+
+authority tests passed: ignored damage/teleport/credit claims, monotonic input, speed, server ray/damage/scoring, walls, reload and cadence
+Inherited prototype names cannot select a weapon
+Name collision suffix advances, including user-supplied numbered names
+TDM server enforces UI weapon tier unlocks at2and5minutes with Spectre start
+Spike tests passed: economy limits/refunds, owned equip, plant time, half defuse, defender win, delayed next round, elimination once
+Directory self-stats require bearer identity, expose no tokens/id; presence counts active connected human sessions including private rooms without exposing them
+Directory persistence/idempotency passed using in-memory storage double; live completed-match durability remains unverified
+Ability authority checks passed: buy cost/caps, buy-phase cast rejection, no unearned ult, server-derived origin/aim, limited dash, server area damage and once-only kill
+Signature recharge timers server owned; Reyna Devour/Dismiss share charge pool and free round charge
+Sage heal targets hurt aimed teammate; invalid casts keep charge; resurrection preserves corpse location with no freearmor/loadout reset
+Flash resolves once after delay, requires facing+LOS and sends server status instead of continuous arbitrary blind
+Chamber Rendezvous: first E places server-position anchor without teleport/spend, return within15m preserves elevation, cooldown30s, forged target ignored
+Breach Fault Line uses directional25m x3.2m strip, not generic area slow, rejects behind/outside/allies and recharges60s
+Concuss fire is server-limited to80%rate and disables ADS; normal fire resumes afterward
+Omen ult validates walkable minimap target, consumes earned points, waits3s, teleports with reconciliation, death cancels; never generic blast
+Omen Step uses server aim/15m/1schannel, walkable elevated target, no anchor/instant movement, blocks overlapping cast
+Jett Tailwind uses current server input direction/fallback,8m capsule collision limit, preserves elevation/reconciliation; Updraft matches project impulse, never client coordinates
+Sage selected heal follows moving target, never dead target; resurrection uses project5m aimed range and preserves points for invalid long-range corpse
+Skye Regrowth follows caster18m, excludes self/enemies, shares100HPpool, toggles/resumes without extra charge, stops spent
+Regrowth stops on caster death
+Spike motor honors current-input ADS weapon speed, concuss disables ADS, slow stacks, expired input cannot retain ADS
+Spike edge checks passed: finite reserve/reload, equip lock, armor exact name, halftime reset, balanced late seat waits for next round
+Spike refund regression: no free restored weapon/armor from out-of-order sells; loading/dead refund and post-round ability rejected
+Spike weapon rewards: each shotgun kill credited, agent ult cap respected
+Spike drop survives next tick without auto-pickup by sender; ability refund changes charge/credits exactly once
+Defenders do not receive hidden Spike carrier/site/coordinates before plant
+Buy-phase server boundary matches client/native visual zedge, not unrelated12m spawn circle; releases at phaseend
+Buy-boundary projection never places capsule into world solid
+Weapons: shotgun pellets use one round/shot event, kill credited once; knife range enforced without ammo depletion
+ascent app BVH reader deserialized prebuilt server collision, spawn/site floor rays match
+lotus app BVH reader deserialized prebuilt server collision, spawn/site floor rays match
+bind app BVH reader deserialized prebuilt server collision, spawn/site floor rays match
+haven app BVH reader deserialized prebuilt server collision, spawn/site floor rays match
+split app BVH reader deserialized prebuilt server collision, spawn/site floor rays match
+breeze app BVH reader deserialized prebuilt server collision, spawn/site floor rays match
+Semi-auto trigger requires release and respawn clears stale controls
+Protocol: null/primitives/arrays ignored; real agent selections preserved; invalid prototype names default; async late auth cannot exceed10humans; match clock/bots wait until first ready human
+Sage wall: server-derived placement, oriented collision, elevation, LOS/bullet block,600HP weapon damage and break
+Shot first hitting player in front of barrier does not also damage barrier
+ascent buyworld pass [
+  [ -0.5, 7.286896590102452, 45.60221485969354 ],
+  [ 0.25, 8.054900169372559, -42.75 ]
+]
+bind buyworld pass [
+  [ 0.75, 3.93870238021733, 64.25 ],
+  [ -6.9878148838191385e-15, 6.898940086364746, -64.25 ]
+]
+haven buyworld pass [
+  [ -0.75, 6.999427895651789, 45.58440235969348 ],
+  [ -6.986148917922653e-15, 7.103912129304847, -44.81644350359835 ]
+]
+split buyworld pass [
+  [ -0.5, 7.0000200271606445, 38.25 ],
+  [ 0.25, 9.000020027160645, -38.25 ]
+]
+lotus buyworld pass [
+  [ -0.75, 6.284329891204834, 34.5 ],
+  [ -6.9878148838191385e-15, 8.275155523995739, -34.5 ]
+]
+breeze buyworld pass [ [ -0.5, 4.002038052855203, 44.25 ], [ 2.5, 12, -46.97254441198948 ] ]
+Reyna authority: owned nearby unexpired souls, shared charges, +50 Devour/overheal expiry, Dismiss immunity/no attacks, Empress/free casts, gun and ability souls, private state and death/round reset
+Spike interaction interruption: moving, firing, airborne, loading and stale holds reject; half-defuse checkpoint retained; buy/end-phase attacks reject
+Blade Storm authority: earned activation, five accurate airborne knives, cadence, server hit/head damage, kill refill/rewards, no gun-ammo mutation, exhaustion/death reset, DM equip rejection
+Release gate: Spike requires explicit opt-in; loopback origins require local opt-in and reject lookalikes; loading sockets retain 180 s timeout
+Reconnect records: leave fills bot seat, host transfers, duplicate drop ignored; departed and rejoined human stats aggregate once per identity without bot credit

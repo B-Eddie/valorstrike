@@ -4,10 +4,11 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "node test.js && node test-spike.js && node test-directory.cjs && node test-abilities.js && node test-spike-edges.js && node test-weapons.js && node test-prebuilt.cjs && node test-trigger.js && node test-protocol.cjs && node test-barriers.js && node test-buy-worlds.js",
-    "dev": "wrangler dev",
+    "test": "node test.js && node test-spike.js && node test-directory.cjs && node test-abilities.js && node test-spike-edges.js && node test-weapons.js && node test-prebuilt.cjs && node test-trigger.js && node test-protocol.cjs && node test-barriers.js && node test-buy-worlds.js && node test-reyna.js && node test-interactions.js && node test-blades.js && node test-release-gate.cjs && node test-reconnect.js",
+    "dev": "wrangler dev --local --ip 127.0.0.1 --var ALLOW_LOCAL_ORIGIN:true --var ENABLE_SPIKE:true",
     "deploy": "wrangler deploy",
-    "build:worlds": "node build-all.cjs"
+    "build:worlds": "node build-all.cjs",
+    "test:client": "node ../work/test_all.cjs"
   },
   "keywords": [],
   "author": "",

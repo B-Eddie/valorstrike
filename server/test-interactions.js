@@ -1,0 +1,7 @@
+import assert from 'node:assert/strict';import {SpikeSimulation} from './src/spike.js';
+const W={map:{attacker:[0,0,0],defender:[0,0,-10],sites:{A:[0,0,0]}},nav:{nodes:[[0,0,0],[0,0,-10]],adj:[[1],[0]]},playable:[0,1],near:(x,z)=>z<-5?1:0,ground:()=>0,blocked:()=>false,ray:()=>Infinity};
+const s=new SpikeSimulation(W),a=s.add('a'),b=s.add('b');s.start(false);s.buy=0;s.motor=()=>{};Object.assign(a,{x:0,y:0,z:0,vx:0,vz:0,vy:0,input:{interact:true},inputAt:0});s.step(.05);assert.equal(s.spike.pt,.05);
+a.vx=1;s.step(.05);assert.equal(s.spike.pt,0);a.vx=0;a.input.fire=true;s.step(.05);assert.equal(s.spike.pt,0);a.input.fire=false;a.air=true;s.step(.05);assert.equal(s.spike.pt,0);a.air=false;a.loading=true;s.step(.05);assert.equal(s.spike.pt,0);a.loading=false;s.time=2;s.step(.05);assert.equal(s.spike.pt,0);
+s.spike.st='plant';s.spike.dt=3.7;s.spike.defuser=b.id;Object.assign(b,{x:0,y:0,z:0,input:{interact:true},inputAt:s.time,vx:1,vz:0,vy:0});s.step(.05);assert.equal(s.spike.dt,3.5);b.vx=0;b.inputAt=s.time;s.step(.05);assert.equal(s.spike.dt,3.55);b.input.fire=true;s.step(.05);assert.equal(s.spike.dt,3.5);b.loading=true;b.input.fire=false;s.step(.05);assert.equal(s.spike.dt,3.5);
+s.buy=10;assert.equal(s.fire(a),false);s.buy=0;s.roundDelay=2;assert.equal(s.fire(a),false);
+console.log('Spike interaction interruption: moving, firing, airborne, loading and stale holds reject; half-defuse checkpoint retained; buy/end-phase attacks reject');

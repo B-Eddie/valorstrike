@@ -1,0 +1,24 @@
+PASS test_anchor.cjs
+PASS test_blades_intent.cjs
+PASS test_jett_intent.cjs
+PASS test_loading.cjs
+PASS test_loadout.cjs
+PASS test_map_cancel.cjs
+PASS test_map_lifetime.cjs
+PASS test_minimap.cjs
+PASS test_minimap_visibility.cjs
+PASS test_native_contact.cjs
+PASS test_native_contact_runtime.cjs
+PASS test_native_startup.cjs
+PASS test_net_identity.cjs
+PASS test_omen_intent.cjs
+PASS test_online_rooms.cjs
+PASS test_online_startup.cjs
+PASS test_profile.cjs
+PASS test_renderer_rebind.cjs
+PASS test_reyna_hud.cjs
+PASS test_server_effects.cjs
+PASS test_skye_hud.cjs
+PASS test_weapon_resource.cjs
+PASS test_feel.js
+23 client regression files passed

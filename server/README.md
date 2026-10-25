@@ -13,8 +13,9 @@ multiple identities or denial of service.
 
 ```
 npm ci
-npm test
 npm run build:worlds
+npm test
+npm run test:client
 npm run dev
 ```
 
@@ -22,6 +23,10 @@ npm run dev
 collision files. It preserves source triangles inside the playable bounds and
 removes exact duplicate triangles. Raw source scenes are not loaded in a room.
 Generated world assets are not checked into git.
+
+The dev command runs locally, allows loopback browser origins and enables the local Spike prototype. Serve the repository root separately (for example, `python3 -m http.server 8876 --bind 127.0.0.1`). On localhost the browser uses port 8787 for rooms and prebuilt collision assets.
+
+Spike is disabled by default in deployed source. Only an explicit `ENABLE_SPIKE=true` binding enables it; keep that binding unset until its release gate passes. `ALLOW_LOCAL_ORIGIN=true` is a local development flag and must stay unset in production.
 
 Deploy only after tests, load checks and explicit plan verification. A prebuilt
 world consumes 19-51 MB of typed buffers, plus application/runtime overhead. Live
@@ -34,4 +39,4 @@ Open work: rendered gameplay performance/crash, full Spike browser regression, a
 identity/abuse limits, full browser two-client and map/weapon QA. Firebase remains
 locked. Never accept host/browser results as verified statistics.
 
-Full remaining acceptance checklist: ../work/remaining-validation.md. Browser barrier snapshots own client visual lifetime; isolated adapter tests do not establish integrated visual parity.
+Full remaining acceptance checklist: [../work/remaining-validation.md](../work/remaining-validation.md). Browser barrier snapshots own client visual lifetime; isolated adapter tests do not establish integrated visual parity.
