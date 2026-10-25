@@ -3,9 +3,9 @@
 2. [ ] Ragdoll on kill looks boneless
 3. [x] Spectate 3rd-person button broken
 4. [x] Gun pickup off floor missing (+ needs indicator)
-5. [ ] Holes in map
-6. [ ] Stairs require jumping step-by-step
-7. [ ] Lag on dealing/taking damage
+5. [x] Holes in map
+6. [x] Stairs require jumping step-by-step
+7. [x] Lag on dealing/taking damage
 8. [ ] Default quality fuzzy -> sharp
 9. [x] Character grip pose wrong
 10. [x] Agent models ~40s load -> background preload+cache at site entry
@@ -38,3 +38,7 @@
 - [x] #4 floor pickup: cherry-picked hark a4caf41 (author preserved, -x provenance) instead of duplicating: look-at [F] prompt under the crosshair, elevation-aware drops for raised native floors, aim-scored xdLook, server-authoritative online floor guns (server/src/floor.js + test-floor.js + test_floor_pickup.cjs). Applied cleanly; suites green.
 - [x] splice hygiene: trailing content in valorant_runtime.js had escaped the BEGIN..END strip markers, stacking duplicate inserts on every regen (7 copies). Moved END marker to file end, rebuilt index.html, verified install idempotence. commit 0310eda.
 - [x] #3 spectate 3P: cherry-picked hark 251e3ce (author preserved). Root cause matched my static suspicion: spectating kept the pointer locked, so the toggle span could never receive a click on desktop. Fix frees the cursor while spectating, makes the control a real button with state (aria-pressed/on), isolates its clicks from player switching, and stops canvas clicks while dead from re-locking/firing. test_spectate.cjs included. My earlier note about needing in-match repro is superseded by the identified mechanism.
+- [x] #7 damage lag: cherry-picked hark 3778dea - per-hit full-screen box-shadow flash + animated masked arc forced layout/repaint every hit; replaced with compositor-friendly feedback. test_hit_perf.cjs.
+- [x] #6 stairs: cherry-picked hark 191736f (walk up stairs in the shared client/server motor) + a6a0418 (step-up height clamped to nearby floor so walls can't be walked up).
+- [x] #5 map holes: cherry-picked hark 614550e - backdrop skirt around native maps so no void shows past mesh edges + hole-evaluation tooling under server/tools. test_map_skirt.cjs.
+All 12 user-list items now have shipped fixes on instinct. Remaining: ledger 13-row long-term checklist + bounded visual/in-match verification of the visual items (ragdoll shape, grip pose, spectate button, pickup prompt, skirt, stairs) once a sandbox-viable boot exists.
