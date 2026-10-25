@@ -3,7 +3,7 @@
 // 127.0.0.1:8876. Bots are held still through the bridge's /__qa hook so the round is decided by the page player:
 // round 1 the page (attacker, Spike carrier) is placed in A and holds 4 to plant; the 45 s fuse decides the round;
 // round 13 (sides swapped) a planted Spike is placed beside the page player, who holds 4 to defuse (release at the
-// half checkpoint, then completes). Screenshots and HUD readings (spike timer, plant/defuse bar, banners, credits).
+// half checkpoint with the server clock frozen there, then completes). Screenshots and HUD readings (spike timer, plant/defuse bar, banners, credits).
 //   node work/browser_online_spike.cjs <out.json>
 const PW='/workspace/work/pw/node_modules/playwright';process.env.PLAYWRIGHT_BROWSERS_PATH=process.env.PLAYWRIGHT_BROWSERS_PATH||'/workspace/work/pw/browsers';
 process.env.LD_LIBRARY_PATH=(process.env.LD_LIBRARY_PATH||'')+':/workspace/work/pw/libs';
@@ -56,11 +56,19 @@ const qa=async js=>{const r=await fetch('http://127.0.0.1:8787/__qa',{method:'PO
  log('server round 13',await qa(`const s=sim('${code}');const u=s.units.find(u=>u.human);return {round:s.round,atk:s.atk,team:u.team,credits:u.credits};`));
  await page.waitForTimeout(1500);log('hud round 13 buy',await hud());await shot('online-spike-halftime-640x360.jpg');
  await qa(`const s=sim('${code}');s.buy=Math.min(s.buy,.5);return 1;`);await page.waitForFunction(()=>window.__xe('FV.buy===0'),null,{timeout:1200000}).catch(()=>{});
- const sp=await qa(`const s=sim('${code}'),W=s.world,u=s.units.find(u=>u.human);let p=null;for(const i of W.playable){const q=W.nav.nodes[i];if(W.plantAt(q[0],q[2])==='B'&&!W.blocked(q[0],q[2],.45,q[1],1.8)&&!W.blocked(q[0]+.8,q[2],.45,q[1],1.8)){p=q;break;}}s.remaining=900;Object.assign(s.spike,{st:'plant',site:'B',t:45,dt:0,carrier:null,x:p[0],y:p[1],z:p[2]});[u.x,u.y,u.z]=[p[0]+.8,p[1],p[2]];u.vx=u.vy=u.vz=0;return {p,team:u.team,atk:s.atk};`);log('planted Spike beside the defender',sp);
- await page.waitForTimeout(2500);log('hud by the Spike',await hud());await shot('online-spike-defuse-prompt-640x360.jpg');
- await X('keys.Digit4=true;1');const d0=Date.now();await page.waitForFunction(()=>window.__xe('FV.sp.dt>=3.5'),null,{timeout:1200000}).catch(e=>log('half wait',String(e).slice(0,120)));
- log('half reached after real ms',Date.now()-d0);log('hud defusing',await hud());await shot('online-spike-defusing-640x360.jpg');
- await X('keys.Digit4=false;1');await page.waitForTimeout(1500);log('server after release',await qa(`const s=sim('${code}');return {dt:s.spike.dt,st:s.spike.st};`));log('hud released',await hud());
+ const sp=await qa(`const s=sim('${code}'),W=s.world,u=s.units.find(u=>u.human);let p=null;for(const i of W.playable){const q=W.nav.nodes[i];if(W.plantAt(q[0],q[2])==='B'&&!W.blocked(q[0],q[2],.45,q[1],1.8)&&!W.blocked(q[0]+.8,q[2],.45,q[1],1.8)){p=q;break;}}s.remaining=900;Object.assign(s.spike,{st:'plant',site:'B',t:600,dt:0,carrier:null,x:p[0],y:p[1],z:p[2]});[u.x,u.y,u.z]=[p[0]+.8,p[1],p[2]];u.vx=u.vy=u.vz=0;return {p,team:u.team,atk:s.atk};`);log('planted Spike beside the defender',sp);
+ await page.waitForFunction(()=>window.__xe('xSpOn'),null,{timeout:600000}).catch(e=>log('xSpOn wait',String(e).slice(0,120)));log('hud by the Spike',await hud());await shot('online-spike-defuse-prompt-640x360.jpg');
+ // interrupted defuse: the server clock is frozen (lockstep budget pinned at 0) the moment the defuse passes the 3.5 s
+ // checkpoint, so a long software-rendered frame cannot carry it to completion before the page releases 4
+ await qa(`if(!C.__hp){C.__hp=1;let b=C.budget;Object.defineProperty(C,'budget',{get(){return C.__hold?0:b;},set(v){b=v;},configurable:true});}C.__hold=0;return 1;`);
+ await X('keys.Digit4=true;1');const d0=Date.now();let half=null;
+ for(let i=0;i<12000&&!half;i++){half=await qa(`const s=sim('${code}');if(s.spike.st!=='plant')return {st:s.spike.st};if(s.spike.dt>=3.5){C.__hold=1;return {dt:s.spike.dt,t:s.spike.t};}return null;`);if(!half)await new Promise(r=>setTimeout(r,100));}
+ log('half reached after real ms (server clock frozen)',[Date.now()-d0,half]);
+ await X('keys.Digit4=false;1');await page.waitForFunction(()=>window.__xe('FV.sp.dt>=3.5'),null,{timeout:300000}).catch(()=>{});log('hud defusing',await hud());await shot('online-spike-defusing-640x360.jpg');
+ // let the page send its released input, then run the clock again
+ const f0=await X('renderer.info.render.frame');await page.waitForFunction(n=>window.__xe('renderer.info.render.frame')>n+1,f0,{timeout:600000}).catch(()=>{});
+ await qa(`C.__hold=0;return 1;`);await page.waitForTimeout(3000);
+ log('server after release',await qa(`const s=sim('${code}');const u=s.units.find(u=>u.human);return {dt:s.spike.dt,st:s.spike.st,t:s.spike.t,interact:!!(u.input&&u.input.interact)};`));log('hud released',await hud());
  const sc1=await X('FV.you+FV.them');await X('keys.Digit4=true;1');await page.waitForFunction(n=>window.__xe('FV.you+FV.them')>n,sc1,{timeout:1200000}).catch(e=>log('defuse wait',String(e).slice(0,120)));await X('keys.Digit4=false;1');
  await page.waitForTimeout(800);log('hud round end (defuse)',await hud());await shot('online-spike-defused-640x360.jpg');
  log('server after defuse',await qa(`const s=sim('${code}');return {scores:s.roundScores,credits:s.units.find(u=>u.human).credits};`));

@@ -18,4 +18,7 @@ function soul(s,u,p=[0,1.2,-4],until=s.time+3){s.effects.push({id:++s.effectSeq,
 {
  const {s,u,v}=fixture();u.weapon='Vandal';u.ammo=25;v.hp=1;assert(s.fire(u));assert.equal(s.effects.filter(e=>e.kind==='soul'&&e.owner===u.id).length,1);u.pendingTeleport={at:10,p:[0,0,0]};s.time=3;assert.equal(s.fire(u),false);
 }
-console.log('Reyna authority: owned nearby unexpired souls, shared charges, +50 Devour/overheal expiry, Dismiss immunity/no attacks, Empress/free casts, gun and ability souls, private state and death/round reset');
+// A heal on an overhealed Reyna (e.g. Sage's heal running when she Devours past 100) clamped her back to 100.
+{const {s,u}=fixture();u.hp=130;u.overhealUntil=s.time+10;s.effects.push({id:++s.effectSeq,kind:'heal',owner:u.id,team:u.team,target:u.id,p:[0,0,0],until:s.time+5,radius:8,rate:20});
+ for(let i=0;i<20;i++){s.time+=.05;tickAbilities(s,.05);}assert.equal(u.hp,130,'heal leaves an overheal alone');u.hp=60;u.overhealUntil=0;for(let i=0;i<20;i++){s.time+=.05;tickAbilities(s,.05);}assert(Math.abs(u.hp-80)<1e-6,'heal still heals below 100: '+u.hp);}
+console.log('Reyna authority: owned nearby unexpired souls, shared charges, +50 Devour/overheal expiry, Dismiss immunity/no attacks, Empress/free casts, gun and ability souls, private state and death/round reset, heals never clamp an overheal');

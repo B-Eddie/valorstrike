@@ -25,6 +25,15 @@ assert(/<div id="xAg"[\s\S]*?id="xAgL"/.test(html),'LOCK IN button #xAgL missing
 // (c) spectate bar leaves the centre of a 360 px screen
 const sp=find('.x-sp');assert(sp&&decl(sp,'bottom')==='6px','spectate bar not moved down on short screens');assert(find('.x-sp small')&&decl(find('.x-sp small'),'display')==='none');
 assert(R.findIndex(r=>r===sp)>R.findIndex(r=>!r.media&&r.sel==='.x-sp'),'short .x-sp rule must follow the base rule');
+// (g) Tab scoreboard on a 360 px tall screen: both teams fit (was: 44 px rows, own team only, enemies clipped by overflow:hidden).
+{const B=sel=>short.find(r=>r.sel===sel);const px=(sel,prop)=>parseFloat(decl(B(sel),prop));
+ for(const s of ['#xBoard','#xBoard .x-sbt td','#xBoard .x-sbt th','#xBoard .x-sbt','#xBoard .x-sbsc b','#xBoard .x-sbtop','#xBoard .x-ag'])assert(B(s),'short #xBoard rule missing: '+s);
+ const pad=decl(B('#xBoard'),'padding').split(/\s+/).map(parseFloat),top=decl(B('#xBoard .x-sbtop'),'padding').split(/\s+/).map(parseFloat);
+ const header=px('#xBoard .x-sbsc b','font-size')+top[2]+parseFloat(decl(B('#xBoard .x-sbtop'),'margin-bottom'))+1;
+ const table=px('#xBoard .x-sbt th','height')+5*px('#xBoard .x-sbt td','height')+parseFloat(decl(B('#xBoard .x-sbt'),'margin').split(/\s+/)[2]);
+ const need=pad[0]+pad[2]+header+2*table;assert(need<=360-24,'scoreboard needs '+need+' px on a 360 px screen');
+ assert(px('#xBoard .x-ag','height')<=px('#xBoard .x-sbt td','height'),'avatar taller than the compact row');
+ const last=R.filter(r=>!r.media&&r.sel.split(',').map(x=>x.trim()).includes('#xBoard .x-sbt td')).pop();assert(R.indexOf(B('#xBoard .x-sbt td'))>R.indexOf(last),'short #xBoard rows must follow the base rule');}
 // Cascade: no later unconditional rule with the same selector may override a property the short rule sets.
 for(const r of short){for(const sel of r.sel.split(',').map(s=>s.trim())){if(!/^#(pre|xAg)/.test(sel))continue;
  const props=r.body.split(';').map(d=>d.split(':')[0].trim()).filter(Boolean);
@@ -49,4 +58,17 @@ for(const r of short){for(const sel of r.sel.split(',').map(s=>s.trim())){if(!/^
  assert(R.indexOf(s820)>R.findIndex(r=>r.media&&/max-width:820px\)$/.test(r.media)&&r.sel.trim()==='#game #xSub')&&R.indexOf(s700)>R.indexOf(s820),'subtitle bounds must follow the 820 px rule and the 700 px band must follow the 820 px band');
  const coarse=R.filter(r=>r.media&&/pointer:\s*coarse/.test(r.media)&&r.sel.trim()==='#xMap').pop();if(coarse)assert(off(s700)>=parseFloat(decl(coarse,'left'))+parseFloat(decl(coarse,'width'))+2+8,'touch minimap');
  for(const later of R.filter(x=>x.pos>s700.pos&&x.sel.trim()==='#game #xSub'&&!(x.media&&/max-width:480px/.test(x.media))))assert(decl(later,'max-width')==null&&decl(later,'white-space')==null,'later #xSub rule overrides the subtitle bounds');}
-console.log('short layout ok:',short.length,'max-height:560px rules; in-match subtitle clears the minimap at 640x360-class landscape');
+// (e) Kill feed vs subtitle at 640x360-class landscape (fine pointer): the feed column (right:8px) and #xSub both started at
+// top:48px, so a stacked feed row wider than the subtitle's side margin ran across it. In each landscape band the feed's top
+// must sit below the subtitle's line box (top + line-height) + 4 px, the touch / portrait placements must not land on it,
+// and no later unconditional or landscape rule may pull the feed back up.
+{const land=R.filter(r=>r.media&&r.media.replace(/\s/g,'')==='@media(max-width:820px)and(orientation:landscape)');
+ const fw=land.filter(r=>r.sel.trim()==='#game .hud.x-fw').pop(),sub=land.filter(r=>r.sel.trim()==='#game #xSub').pop();assert(fw&&sub,'short-landscape feed / subtitle rules missing');
+ const subTop=parseFloat(decl(R.filter(r=>r.media&&/max-width:820px\)$/.test(r.media)&&r.sel.trim()==='#game #xSub').pop(),'top')),lh=parseFloat(decl(sub,'line-height'));
+ assert(subTop>0&&lh>0,'subtitle top / explicit line-height');const below=subTop+lh+4;
+ assert(parseFloat(decl(fw,'top'))>=below,`feed top ${decl(fw,'top')} must clear the subtitle (${subTop}+${lh}+4)`);
+ const narrowFw=R.filter(r=>r.media&&/max-width:820px\)$/.test(r.media)&&r.sel.trim()==='#game .hud.x-fw').pop();assert(narrowFw&&R.indexOf(fw)>R.indexOf(narrowFw),'feed rule must follow the 820 px rule');
+ const coarse=R.filter(r=>r.media&&/pointer:\s*coarse/.test(r.media)&&r.sel.trim()==='#game .hud.x-fw').pop();if(coarse)assert(parseFloat(decl(coarse,'top'))>=below,'touch feed top must clear the subtitle');
+ for(const later of R.filter(x=>x.pos>fw.pos&&x.sel.split(',').map(s=>s.trim()).includes('#game .hud.x-fw')&&!(x.media&&/pointer:\s*coarse|max-width:480px/.test(x.media))))assert(decl(later,'top')==null,'a later rule moves the feed back onto the subtitle row: '+(later.media||'(base)'));
+ const sizeFeed=R.filter(r=>r.media&&/max-width:820px\)$/.test(r.media)&&/#game #feed \.kf/.test(r.sel)).pop();assert(sizeFeed&&parseFloat(decl(sizeFeed,'height'))<=24,'compact feed rows');}
+console.log('short layout ok:',short.length,'max-height:560px rules; in-match subtitle clears the minimap and the kill feed starts below it at 640x360-class landscape');

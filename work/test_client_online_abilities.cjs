@@ -54,7 +54,7 @@ Math.random=mulberry(SEED*104729+1);require('vm').runInContext(`Math.random=(${m
  const NANJ=`(()=>{const bad=[],f=Number.isFinite;const walk=(o,p,d)=>{if(d>2||!o)return;for(const k in o){let v;try{v=o[k];}catch(e){continue;}
   if(typeof v==="number"){if(!f(v))bad.push(p+k+"="+v);}else if(v&&typeof v==="object"&&!v.isObject3D&&!v.isMaterial&&!v.isBufferGeometry&&!v.nodeType&&!(v instanceof Map))walk(v,p+k+".",d+1);}};
   walk(J,"J.",0);for(const k of ["x","y","z","hp"])if(!f(player[k]))bad.push("player."+k+"="+player[k]);return bad;/* camera: the THREE stub has no real vectors */})()`;
- const t0=Date.now();let casts=0,mismatch=0;
+ const t0=Date.now();let equips=0,casts=0,mismatch=0;
  for(const agent of AGENTS){H.setPhase('online '+agent);const tag=agent;
   xe(`J.pick=${JSON.stringify(agent)};MP.name='PageQA';window.xQMap=${JSON.stringify(MAP)};MP.map=${JSON.stringify(MAP)};mpCreate(false,'five')`);
   if(!await until(()=>xe('MP.st')==='room',8000,tag+' room'))break;const code=xe('MP.code');
@@ -73,6 +73,8 @@ Math.random=mulberry(SEED*104729+1);require('vm').runInContext(`Math.random=(${m
    const pg=()=>xe('({c:J.c|0,q:J.q|0,e:J.e|0,ult:J.ult|0})'),sv=()=>({c:A.c|0,q:A.q|0,e:A.e|0,ult:A.ult|0});
    {const p=pg(),s=sv();if(JSON.stringify(p)!==JSON.stringify(s))fail(`${tag} before ${k}: page ${JSON.stringify(p)} server ${JSON.stringify(s)}`);}
    const before=sv();await tap(k,100);casts++;await step(400);
+   // equip-then-fire abilities (work/ability_equip_runtime.js XAB_EQ): the press only draws the ability (nothing sent); FIRE throws it
+   if(xe('!!(J.eq&&J.eq.st!=="rec")')){equips++;if(JSON.stringify(sv())!==JSON.stringify(before))fail(`${tag} ${k}: equipping spent a server charge`);await step(250);await click(0);await step(800);}
    // server-swapped guns: Headhunter's 1-round Sheriff (one charge per press) and Tour De Force's Operator must reach the
    // server and stay in hand (the page once never sent Headhunter, and re-applied the saved loadout over the Operator)
    if(agent==='Chamber'&&k==='KeyQ'&&(u.weapon!=='Sheriff'||!u.headhunter||A.q!==before.q-1))fail(`Chamber Q: server holds ${u.weapon} (headhunter ${!!u.headhunter}), charges ${before.q} -> ${A.q}`);
@@ -97,7 +99,8 @@ Math.random=mulberry(SEED*104729+1);require('vm').runInContext(`Math.random=(${m
   for(const h of humans.splice(0))try{h.leave();}catch(e){}
   xe('mpReset()');await step(500);xe('try{toLobby()}catch(e){}');await step(200);
  }
+ if(!equips)fail('no ability press equipped (equip-then-fire flow missing)');
  if(fails.length){console.error(fails.slice(0,40).join('\n'));process.exit(1);}
- console.log(`Online client abilities (page <-> in-process server, ${MAP}): ${AGENTS.length} agents x C/Q/E/X (${casts} casts): page charges / ult equal the server's after every cast and after the round reset, HUD labels / pips consistent, no NaN, local effects cleared at round start, no page exceptions (${((Date.now()-t0)/1000).toFixed(0)} s)`);
+ console.log(`Online client abilities (page <-> in-process server, ${MAP}): ${AGENTS.length} agents x C/Q/E/X (${casts} casts, ${equips} equip -> FIRE): page charges / ult equal the server's after every cast and after the round reset, HUD labels / pips consistent, no NaN, local effects cleared at round start, no page exceptions (${((Date.now()-t0)/1000).toFixed(0)} s)`);
  process.exit(0);
 })().catch(e=>{console.error(e);console.error(JSON.stringify(H.errors.slice(0,8)));process.exit(1);});

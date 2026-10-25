@@ -18,7 +18,9 @@ block+='\n'+(root/'work/grip_runtime.js').read_text().rstrip('\n');ta='// ---- F
 if ta in s:s=s[:s.index(ta)]+s[s.index(tb)+len(tb):]
 block+='\n'+(root/'work/feet_runtime.js').read_text().rstrip('\n');ha='// ---- LOCALIZED HIT FEEDBACK ----';hb='// ---- END LOCALIZED HIT FEEDBACK ----'
 if ha in s:s=s[:s.index(ha)]+s[s.index(hb)+len(hb):]
-block+='\n'+(root/'work/hit_feedback_runtime.js').read_text().rstrip('\n');va='// ---- BOT VARIETY ----';vb='// ---- END BOT VARIETY ----'
+block+='\n'+(root/'work/hit_feedback_runtime.js').read_text().rstrip('\n');qa='// ---- ABILITY EQUIP ----';qb='// ---- END ABILITY EQUIP ----'
+if qa in s:s=s[:s.index(qa)]+s[s.index(qb)+len(qb):]
+block+='\n'+(root/'work/ability_equip_runtime.js').read_text().rstrip('\n');va='// ---- BOT VARIETY ----';vb='// ---- END BOT VARIETY ----'
 if va in s:s=s[:s.index(va)]+s[s.index(vb)+len(vb):]
 # Bot variety: the shared vendor/bot-routes.cjs (UMD, sets window.BotRoutes) is inlined at the head of the block.
 block+='\n'+(root/'work/bot_variety_runtime.js').read_text().rstrip('\n').replace(va,va+'\n'+(root/'vendor/bot-routes.cjs').read_text().rstrip('\n'),1);mark='xReady = true; // every mode is initialised; lobby launches may now start them';s=s.replace(mark,block+'\n'+mark)

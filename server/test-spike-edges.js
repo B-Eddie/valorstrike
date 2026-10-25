@@ -1,4 +1,4 @@
-import assert from 'node:assert/strict';import fs from 'node:fs';import {SpikeSimulation} from './src/spike.js';const W={map:{attacker:[0,0,0],defender:[0,0,-10],sites:{A:[0,0,0]}},nav:{nodes:[[0,0,0],[0,0,-10]],adj:[[1],[0]]},playable:[0,1],allowed:new Set([0,1]),near:(x,z)=>z<-5?1:0,ground:()=>0,blocked:()=>false,ray:()=>Infinity};const s=new SpikeSimulation(W),a=s.add('a'),b=s.add('b');s.start(false);s.buy=0;a.ammo=1;a.reserve=2;assert.equal(s.command(a,{t:'reload'}),true);s.time+=2;s.step(.05);assert.equal(a.ammo,3);assert.equal(a.reserve,0);assert.equal(s.command(a,{t:'reload'}),false);a.credits=9000;s.buy=10;assert.equal(s.command(a,{t:'buy',n:'Vandal'}),true);assert.equal(a.reserve,75);assert.equal(s.command(a,{t:'buy',n:'totally Heavy free'}),false);assert.equal(s.command(a,{t:'equip',w:'Classic'}),true);assert.equal(s.command(a,{t:'equip',w:'Vandal'}),false);s.time+=2;assert.equal(s.command(a,{t:'equip',w:'Vandal'}),true);assert.equal(a.reserve,75);for(let i=0;i<11;i++){s.finishRound(i%2,'test');s.roundDelay=0;s.newRound();}assert.equal(s.round,12);s.finishRound(0,'test');s.roundDelay=0;s.newRound();assert.equal(s.round,13);assert.equal(s.atk,1);assert.equal(a.credits,800);assert.equal(a.primary,null);assert.equal(a.armor,0);const t=new SpikeSimulation(W),h=t.add('one');t.start();const teams=t.units.reduce((a,u)=>(a[u.team]++,a),[0,0]);t.add('late');assert.deepEqual(t.units.reduce((a,u)=>(a[u.team]++,a),[0,0]),teams);assert.equal(t.units.find(u=>u.name==='late').alive,false);console.log('Spike edge checks passed: finite reserve/reload, equip lock, armor exact name, halftime reset, balanced late seat waits for next round');
+import assert from 'node:assert/strict';import fs from 'node:fs';import {SpikeSimulation} from './src/spike.js';const W={map:{attacker:[0,0,0],defender:[0,0,-10],sites:{A:[0,0,0]}},nav:{nodes:[[0,0,0],[0,0,-10]],adj:[[1],[0]]},playable:[0,1],allowed:new Set([0,1]),near:(x,z)=>z<-5?1:0,ground:()=>0,blocked:()=>false,ray:()=>Infinity};const s=new SpikeSimulation(W),a=s.add('a'),b=s.add('b');s.start(false);s.buy=0;a.ammo=1;a.reserve=2;assert.equal(s.command(a,{t:'reload'}),true);s.time+=2;s.step(.05);assert.equal(a.ammo,3);assert.equal(a.reserve,0);assert.equal(s.command(a,{t:'reload'}),false);a.credits=9000;s.buy=10;assert.equal(s.command(a,{t:'buy',n:'Vandal'}),true);assert.equal(a.reserve,75);assert.equal(s.command(a,{t:'buy',n:'totally Heavy free'}),false);assert.equal(s.command(a,{t:'equip',w:'Classic'}),true);/* a quick swap back during the Classic's equip time is taken (as the client swaps any time; refusing it left the server on another gun), and the Vandal's own equip time gates its first shot */assert.equal(s.command(a,{t:'equip',w:'Vandal'}),true);assert.equal(a.weapon,'Vandal');assert(a.fireAt>s.time+.5);assert.equal(s.command(a,{t:'equip',w:'Classic'}),true);s.time+=2;assert.equal(s.command(a,{t:'equip',w:'Vandal'}),true);assert.equal(a.reserve,75);for(let i=0;i<11;i++){s.finishRound(i%2,'test');s.roundDelay=0;s.newRound();}assert.equal(s.round,12);s.finishRound(0,'test');s.roundDelay=0;s.newRound();assert.equal(s.round,13);assert.equal(s.atk,1);assert.equal(a.credits,800);assert.equal(a.primary,null);assert.equal(a.armor,0);const t=new SpikeSimulation(W),h=t.add('one');t.start();const teams=t.units.reduce((a,u)=>(a[u.team]++,a),[0,0]);t.add('late');assert.deepEqual(t.units.reduce((a,u)=>(a[u.team]++,a),[0,0]),teams);assert.equal(t.units.find(u=>u.name==='late').alive,false);console.log('Spike edge checks passed: finite reserve/reload, equip lock, armor exact name, halftime reset, balanced late seat waits for next round');
 
 // Refunds may unwind a slot only in reverse order. Otherwise selling an older
 // purchase and then the newer one can restore a fully refunded weapon or armor.
@@ -16,9 +16,9 @@ r.buy=0;r.roundDelay=5;assert.equal(r.command(p,{t:'ab',k:'e'}),false);assert.eq
 console.log('Spike refund regression: no free restored weapon/armor from out-of-order sells; loading/dead refund and post-round ability rejected');
 
 const k=new SpikeSimulation(W,'five','ascent',()=>.5),killer=k.add('killer','Phoenix'),v1=k.add('v1'),v2=k.add('v2');k.start(false);k.buy=0;
-Object.assign(killer,{x:0,y:0,z:0,look:0,pitch:Math.atan2(-.6,2),weapon:'Bucky',ammo:5,fireAt:0,input:{},credits:0,roundKills:0});killer.ability.ult=5;
+Object.assign(killer,{x:0,y:0,z:0,look:0,pitch:Math.atan2(-.6,2),weapon:'Bucky',ammo:5,fireAt:0,input:{},credits:0,roundKills:0});killer.ability.ult=6;
 for(const v of [v1,v2])Object.assign(v,{team:1,x:0,y:0,z:-2,armor:0,hp:1,protectedUntil:0});
-assert.equal(k.fire(killer),true);assert.equal(killer.kills,2);assert.equal(killer.credits,400);assert.equal(killer.roundKills,2);assert.equal(killer.ability.ult,6);
+assert.equal(k.fire(killer),true);assert.equal(killer.kills,2);assert.equal(killer.credits,400);assert.equal(killer.roundKills,2);assert.equal(killer.ability.ult,7);
 console.log('Spike weapon rewards: each shotgun kill credited, agent ult cap respected');
 
 const dr=new SpikeSimulation(W),dropper=dr.add('dropper'),defender=dr.add('defender');dr.start(false);
@@ -36,11 +36,11 @@ const wb={...bw,blocked:(x,z)=>x===20&&z===43},bc=new SpikeSimulation(wb),bp=bc.
 {const s=new SpikeSimulation(W),h=s.add('loader','Jett',true),a2=s.add('mate'),d1=s.add('def1'),d2=s.add('def2');s.start(false);
  for(const u of [h,a2])u.team=s.atk;for(const u of [d1,d2])u.team=1-s.atk;s.spike.carrier=h.id;h.loading=true;
  const run=sec=>{for(let i=0;i<Math.round(sec/.05);i++)s.step(.05);};
- run(10);assert.equal(s.buy,20,'held while the loader is inside the grace');run(10);assert.ok(s.buy<20&&s.buy>14,'grace capped at 15 s: buy '+s.buy);
- run(16);assert.equal(s.buy,0);assert.equal(h.alive,false,'still loading at round start: out for the round');assert.equal(s.round,1);
+ run(10);assert.equal(s.buy,45,'held while the loader is inside the grace');run(10);assert.ok(s.buy<45&&s.buy>39,'grace capped at 15 s: buy '+s.buy);
+ run(41);assert.equal(s.buy,0);assert.equal(h.alive,false,'still loading at round start: out for the round');assert.equal(s.round,1);
  assert.ok(a2.alive&&s.spike.carrier===a2.id,'spike handed to a teammate who is in the round');
  h.loading=false;run(1);assert.equal(h.alive,false,'finishing the load mid-round spectates');
- s.finishRound(0,'QA');run(5.2);assert.equal(s.round,2);assert.equal(h.alive,true,'back next round');
+ s.finishRound(0,'QA');run(7.2);assert.equal(s.round,2);assert.equal(h.alive,true,'back next round');
  const late=s.add('late','Sage',true);late.loading=true;const b0=s.buy;run(2);assert.ok(s.buy<b0-1.9,'mid-game joiner does not hold the round');
  const bL=s.buy;h.loading=true;run(14);assert.equal(s.buy,bL,'a loader alive in the round holds within its grace');run(4);assert.ok(Math.abs(bL-s.buy-3)<.11,'released after 15 s: '+(bL-s.buy));
  h.loadSince=null;const bR=s.buy;run(2);assert.ok(bR-s.buy>1.9,'per-round budget (15 s) spent: no further hold this round');
@@ -58,3 +58,11 @@ const wb={...bw,blocked:(x,z)=>x===20&&z===43},bc=new SpikeSimulation(wb),bp=bc.
  const back=s.add('Leaver','Jett',true,team);assert.equal(back.team,team);assert(s.units.includes(mates[0])&&!s.units.includes(mates[1]),'rejoin replaced the dead bot, the living one keeps playing');
  const dead=s.units.find(u=>!u.alive&&u.human);assert(!s.takeOver(s.units.find(u=>!u.human),dead||back),'no take-over of a dead body');
  console.log('Spike seats: a leaver\'s seat bot takes over the living body; a rejoin gives up a dead bot before a living one');}
+// Sidearm-only round (pistol / eco): the empty primary slot is null, and equip {w:null} (or no w) matched it, so the unit was
+// left holding no weapon after a TypeError and every later tick threw (the room's simulation stopped). Malformed or empty-slot
+// equips are refused; a dropped sidearm's empty slot likewise; 1 / 2 / 3 on a pistol round still swap Classic <-> Knife.
+{const s=new SpikeSimulation(W,'five','ascent',()=>.5),a=s.add('a','Sova');s.add('b','Sage');s.start(false);s.buy=0;assert.equal(a.primary,null);assert.equal(a.weapon,'Classic');
+ for(const w of [null,undefined,'',0,'constructor','__proto__','Vandal',{}])assert.equal(s.command(a,{t:'equip',w}),false,'equip '+String(w)+' refused');assert.equal(a.weapon,'Classic');
+ for(let i=0;i<5;i++)s.step(.05);assert.equal(s.command(a,{t:'equip',w:'Knife'}),true);assert.equal(s.command(a,{t:'equip',w:'Classic'}),true);assert.equal(a.weapon,'Classic');
+ a.secondary=null;a.weapon='Knife';assert.equal(s.command(a,{t:'equip',w:null}),false,'dropped sidearm: empty slot refused');for(let i=0;i<5;i++)s.step(.05);assert.equal(a.weapon,'Knife');
+ console.log('Sidearm-only round: equip of an empty slot / malformed name refused, the simulation keeps ticking');}
