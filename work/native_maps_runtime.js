@@ -115,4 +115,11 @@ function nmTeleports(C){if((typeof NET!=='undefined'&&NET.socket)||C.key!=='bind
 {const hooks=window.XHK||[],i=hooks.findIndex(f=>f.name==='tpLoop');if(i>=0){const legacy=hooks[i];hooks[i]=function(){const C=nmActive();return C?nmTeleports(C):legacy();};}}
 window.xNativeMaps={state:NM,ensure:nmEnsure,cancel:nmCancel,near:nmNear,path:nmPath,height:nmHeight,blocked:nmBlocked,activate(key){FV.pick=FV.map=key;mode='five';fUseMap();useMap('five');return NM.current.meta;},probe(){const C=nmActive();return C?{key:C.key,objects:C.meta.objects,navigation:C.nav.validation,player:[player.x,player.y,player.z],sites:C.meta.sites}:null;}};
 {const precompile=xPrecompile;xPrecompile=function(){if(!nmActive())return precompile();xPC=true;try{renderer.compile(scene,camera);}catch(e){console.warn('Native shader warmup',e);}};}
+// Out-of-bounds watch: boundary gaps (eval-fall: breeze x -8..12 z 53..64, bind ~(-1.6,74)) let
+// actors walk out of the playable footprint and end up stuck grounded on collision past nav
+// coverage, with no way back. A grounded actor with no playable nav node within 4 units gets a
+// warning, then dies after 2 s - genre-standard kill-floor behavior. Back in coverage resets the
+// clock. Offline only: online damage is server-authoritative (no speculative local kills).
+function nmOobWatch(C){if((typeof NET!=='undefined'&&NET.socket)||!C||!running||paused)return;const now=performance.now();for(const u of [player].concat(bots,allies)){const pl=u===player;if(pl?u.hp<=0:!u.alive)continue;const p=pl?{x:u.x,y:u.y,z:u.z}:u.g.position;let out=false;try{const i=nmNear(C,p.x,p.z),n=i>=0?C.nav.nodes[i]:null;out=!n||Math.hypot(n[0]-p.x,n[2]-p.z)>4;if(out)out=Math.abs(p.y-nmHeight(C,p.x,p.z,p.y))<.5;}catch(e){out=false;}if(!out){u.nmOob=0;continue;}if(!u.nmOob){u.nmOob=now;if(pl)say('Outside the map - get back!',1600);continue;}if(now-u.nmOob<2000)continue;u.nmOob=0;if(pl)hurt(u,1e4,'Out of bounds');else if(bots.indexOf(u)>=0)kill(u,false,'Out of bounds');else allyDie(u,'Out of bounds');}}
+(window.XHK||(window.XHK=[])).push(()=>{const C=nmActive();if(C)nmOobWatch(C);});
 // ---- END ORIGINAL VALORANT MAPS ----
