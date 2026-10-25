@@ -30,7 +30,7 @@ const qa=async js=>{const r=await fetch('http://127.0.0.1:8787/__qa',{method:'PO
  const boot=async()=>{log('goto',1);await page.goto('http://127.0.0.1:8876/',{waitUntil:'domcontentloaded',timeout:300000});log('loaded',1);await page.waitForFunction(()=>window.__xe&&window.xValorantAssets,null,{timeout:300000,polling:1000});
   await page.getByRole('button',{name:'Got it',exact:true}).click({timeout:5000}).catch(()=>{});log('booted',await X('JSON.stringify({lobby:!!$("lobby").offsetParent,set:!!$("setBtn").offsetParent})').catch(e=>String(e).slice(0,100)));};
  const vis=sel=>X(`(()=>{const e=document.querySelector(${JSON.stringify(sel)});if(!e)return false;const r=e.getBoundingClientRect(),cs=getComputedStyle(e);return r.width>0&&r.height>0&&cs.visibility!=='hidden'&&cs.display!=='none'&&+cs.opacity>0;})()`);
- const board=()=>X(`JSON.stringify((()=>{const b=document.getElementById('xBoard');if(!b)return null;const r=b.getBoundingClientRect();const rows=[...b.querySelectorAll('tbody tr, .x-sbrow, tr')].filter(t=>t.offsetParent);return {w:Math.round(r.width),h:Math.round(r.height),x:Math.round(r.x),y:Math.round(r.y),rows:rows.length,names:rows.map(t=>t.textContent.replace(/\\s+/g,' ').trim().slice(0,40)).slice(0,12),inView:r.x>=0&&r.y>=0&&r.right<=innerWidth+1&&r.bottom<=innerHeight+1};})())`).then(JSON.parse);
+ const board=()=>X(`JSON.stringify((()=>{const b=document.getElementById('xBoard');if(!b)return null;const r=b.getBoundingClientRect();const rows=[...b.querySelectorAll('tbody tr, .x-sbrow, tr')].filter(t=>t.offsetParent);return {w:Math.round(r.width),h:Math.round(r.height),x:Math.round(r.x),y:Math.round(r.y),rows:rows.length,names:rows.map(t=>t.textContent.replace(/\\s+/g,' ').trim().slice(0,40)).slice(0,12),inView:r.x>=0&&r.y>=0&&r.right<=innerWidth+1&&r.bottom<=innerHeight+1,rowsShown:[...b.querySelectorAll('tbody tr')].filter(t=>{const q=t.getBoundingClientRect();return t.offsetParent&&q.height>0&&q.top>=r.top-1&&q.bottom<=r.bottom+1;}).length}; // rowsShown: player rows not clipped by the board's overflow:hidden})())`).then(JSON.parse);
  // real pointer click; if Playwright's actionability wait fails (something covering it), report what covers it and
  // fall back to a DOM click so the flow continues (logged)
  const click=async(sel,o={})=>{try{await page.click(sel,Object.assign({timeout:20000},o));}catch(e){const cov=await X(`(()=>{const el=document.querySelector(${JSON.stringify(sel)});if(!el)return 'missing';const r=el.getBoundingClientRect();const t=document.elementFromPoint(r.x+r.width/2,r.y+r.height/2);return t?(t.id||t.className||t.tagName)+'':'none';})()`).catch(()=>'?');log('click fallback '+sel,{err:String(e).split('\n')[0].slice(0,120),covered:cov});if(o.button==='right')await X(`document.querySelector(${JSON.stringify(sel)}).dispatchEvent(new MouseEvent('contextmenu',{bubbles:true,cancelable:true,button:2}));1`).catch(()=>{});else await X(`document.querySelector(${JSON.stringify(sel)}).click();1`).catch(()=>{});}};
@@ -61,11 +61,11 @@ const qa=async js=>{const r=await fetch('http://127.0.0.1:8787/__qa',{method:'PO
   await gate();await X('window.__nr=1;FV.buy=Math.min(FV.buy,0.2);1');await frames(3);
   log('match',await X(`JSON.stringify({mode,map:FV.map,bots:bots.length,allies:allies.length,buy:FV.buy,hp:player.hp})`));
   await page.keyboard.down('Tab');await frames(2);const b1=await board();log('board offline',b1);
-  check('scoreboard (Tab) offline shows ten players in view',!!b1&&b1.rows>=10&&b1.inView,JSON.stringify(b1));
+  check('scoreboard (Tab) offline shows ten players in view',!!b1&&b1.rowsShown>=10&&b1.inView,JSON.stringify(b1));
   await shot(`qa-scoreboard-offline-${SZ}.jpg`);await page.keyboard.up('Tab');await frames(2);
   check('scoreboard hides on Tab release (offline)',!(await vis('#xBoard')),'');
   // ---- death -> spectate
-  await X(`hurt(player,999,bots[0].name);1`);await frames(4);
+  await X(`hurt(player,999,bots[0].name);if(player.hp<=0)pDie(bots[0].name,xWeapOf(bots[0]));1`); // hurt() only applies damage; the bot fire path calls pDieawait frames(4);
   await page.waitForFunction(()=>window.__xe('!!document.querySelector(".x-sp")&&document.querySelector(".x-sp").offsetParent!==null'),null,{timeout:600000,polling:1000}).catch(e=>log('spectate wait',String(e).slice(0,120)));
   const sp=await X(`JSON.stringify((()=>{const e=document.querySelector('.x-sp');if(!e)return null;const r=e.getBoundingClientRect(),b=e.querySelector('.x-sp__tp');const br=b&&b.getBoundingClientRect();return {txt:e.textContent.replace(/\\s+/g,' ').trim().slice(0,80),y:Math.round(r.y),h:Math.round(r.height),btn:!!b,btnIn:br?br.x>=0&&br.right<=innerWidth&&br.y>=0&&br.bottom<=innerHeight:false};})())`);log('spectate offline',sp);
   const SP=JSON.parse(sp);check('spectate bar after death (offline) with an in-view third-person button',!!SP&&SP.btn&&SP.btnIn,sp);
@@ -103,7 +103,7 @@ const qa=async js=>{const r=await fetch('http://127.0.0.1:8787/__qa',{method:'PO
   await page.keyboard.press('b');await frames(2);
   // scoreboard online
   await page.keyboard.down('Tab');await frames(2);const b1=await board();log('board online',b1);
-  check('scoreboard (Tab) online shows ten players in view',!!b1&&b1.rows>=10&&b1.inView,JSON.stringify(b1));
+  check('scoreboard (Tab) online shows ten players in view',!!b1&&b1.rowsShown>=10&&b1.inView,JSON.stringify(b1));
   await shot(`qa-scoreboard-online-${SZ}.jpg`);await page.keyboard.up('Tab');await frames(2);
   check('scoreboard hides on Tab release (online)',!(await vis('#xBoard')),'');
   // death -> spectate (server kill by an enemy bot, as the server's shot code makes it)
