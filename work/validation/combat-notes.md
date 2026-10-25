@@ -286,3 +286,36 @@ Harness: `server/tools/soak.mjs` (in-process worker, bots + fuzzing humans, inva
   test-ults.js (both sets of blocks, one summary line), test_agent_preload.cjs (both sides fixed the same Cache Storage
   flake; hark's kept). index.html took hark's side in its two conflicted runtime blocks and was then regenerated
   (byte-identical on a second run). Suites on the merged tree: server 25 files, client 54 files, all passing.
+
+## Gameplay QA pass 4 (deterministic online fight, offline soak, client lifecycle leaks)
+
+- **Online client fight is seeded** (`7422bc0`): test_client_online.cjs seeds Math.random in both realms (SEED, default 7)
+  and holds both virtual clocks while a socket is connecting or a session is still authenticating, so the pass-3 flake
+  (TDM "0/5" under load) replays from its seed instead of depending on machine load.
+- **Offline DM / TDM / Escalation spawned on Ascent's callouts on every legacy map** (`0179fd6`): `dmPts` read the nav
+  graph from `nodes`, but `xgGet()` returns it as `N`, so it fell back to `CALLOUTS` (Ascent's): units spawned outside
+  Bind's walls, several stacked on one spot. It now reads `N` and falls back to the current map's own callouts
+  (`xgCallouts`). work/page_harness.cjs boots the real page in audit.js's fake DOM (optionally on real three.js);
+  test_client_offline_soak.cjs plays the offline modes on it.
+- **Map switch left GPU resources behind** (`2eaf3b6`): freeing a lazily built map (Split / Lotus / Breeze) disposed its
+  geometry only. `xFreeMap` also disposes its textures and materials (not ones the rest of the scene still draws or that
+  are flagged shared), the callout sprites (they live in XCALL, not the map group), and drops `XD_STAT[k]` / `XF_STAT[k]`,
+  which kept the old group reachable. The team ring under each unit uses one shared geometry (`xG("Ring", ...)`).
+- **Lotus breakable wall stayed in the gun raycast after leaving Lotus** (pass 4 leak commit): the wall mesh is pushed
+  into `XLDH` (extra player-raycast hitboxes) and was only removed when destroyed. On later maps a player shot through
+  the wall's old spot hit an invisible wall, and the list kept the whole freed Lotus map (and through a merged mesh's
+  closure, every deco source geometry) alive. `xLdh()` prunes parented entries whose map is hidden or detached at each
+  use; `xFreeMap("lotus")` also clears LG's doors / gates / wall / debris. Found with a heap snapshot retainer path
+  (XLDH -> wall -> old map group).
+- **Aim trainer bot targets** each built their own CapsuleGeometry, left on the GPU after `aimDrop` (the renderer uploads
+  geometry even under an invisible material). Now shared via `xG("Capsule", ...)`.
+- **test_client_lifecycle.cjs** (24 matches per run in one page session, every offline mode on all six maps) is in
+  test_all. Its earlier "~620 geometries per cycle" was mostly its own measurement: `__qaGpu()` kept every live geometry
+  in `window.__qaLiveG`, so the next `gc()` could never collect it (a self-perpetuating false leak); `measure()` now drops
+  those lists before collecting. The harness's `Request` now resolves relative URLs against a base, as a browser does;
+  Node's threw "Failed to parse URL" after three's FileLoader had marked the URL in flight, so every later
+  `xvLoad('environment/cover')` queued forever (harness-only; in a browser the fetch settles). After the fixes, 3 cycles
+  (36 matches): live geometries 2144 -> 2144 -> 2144, scene objects flat, listeners/timers flat, heap 64 -> 66 MB.
+- Remaining, not fixed: drawn-then-orphaned geometries rise 4 -> 6 -> 7 over 3 cycles (6 were created at boot before
+  stack tagging, 1 is Spike Rush's persistent orb geometry); within tolerance and not tied to a match type. Legacy Bind /
+  Haven callout textures (~45) count as orphaned while another map is up; they are kept for reuse and do not grow.
