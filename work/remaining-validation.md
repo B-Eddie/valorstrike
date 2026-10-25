@@ -775,3 +775,18 @@ geometric point -> consistent with residual early-match contention, not a motor/
 Post-warm active readings now 4 and 5 (noise band around the earlier 9). Open work unchanged:
 reduce ACTUAL startup contention (bounded decode/preload scheduling or readiness changes);
 check hark-perf overlap first (it owns agent cull + nav GC).
+
+## 2026-10-25 18:30 - Startup contention: checkShaderErrors off (hark-perf slice)
+- Applied ONLY the renderer checkShaderErrors slice of hark-perf 0e30df5 (xShChk wraps all 5
+  WebGLRenderer creations; ?shaderdebug restores). Kill-icon/LOS-cache/replan parts NOT taken
+  (different surface; hark owns combat-cost work).
+- Mechanism: three reads every program/shader info log after each link when checkShaderErrors is
+  on, forcing synchronous compiles during the startup burst. hark-perf's browser profile measured
+  this at 79% of first frames. That is the load-bearing evidence.
+- Local proxy (breeze active stairs, SwiftShader, 2-core): post-change samples {1, 5, 8} stall
+  samples vs pre-change 4-5 band -> INCONCLUSIVE, run-to-run variance dominates. Not evidence of
+  improvement; not evidence against (mechanism can only reduce main-thread startup work).
+- Test: work/test_shader_check.cjs pins all renderer sites wrapped + escape hatch. Regen
+  byte-identical. VM tests: lifecycle, settings, hud_polish, agent_preload pass.
+- Status: implementation landed; live-startup acceptance stays with the open live-combat
+  profiling row. Remaining on this item: bounded preload/decode scheduling investigation.

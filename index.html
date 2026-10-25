@@ -2055,9 +2055,12 @@ const xTexMk = (s, draw, cfg) => {
 const xTexRep = (t) => { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.encoding = THREE.sRGBEncoding; };
 const xAASet = (on) => { xAAMem.v = on ? "1" : "0"; try { localStorage.setItem("vs.aa", xAAMem.v); } catch (e) {} };
 const xAA0 = xAAGet(); // saved AA, read before the first renderer
-try { renderer = new THREE.WebGLRenderer({ antialias: xAA0, powerPreference: "high-performance", stencil: false }); }
+// perf: three's renderer.debug.checkShaderErrors reads every program/shader info log after linking, which forces each
+// compile to finish synchronously (hark-perf measured it at 79 % of the first frames). Off unless ?shaderdebug is set.
+function xShChk(r) { try { if (r && r.debug) r.debug.checkShaderErrors = /[?&]shaderdebug\b/.test(location.search || ""); } catch (e) {} return r; }
+try { renderer = xShChk(new THREE.WebGLRenderer({ antialias: xAA0, powerPreference: "high-performance", stencil: false })); }
 catch (e) { xGlErr = String((e && e.message) || e); // second try with the lowest settings before giving up
-  try { renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: "default", failIfMajorPerformanceCaveat: false, precision: "mediump", stencil: false }); xGlErr = ""; }
+  try { renderer = xShChk(new THREE.WebGLRenderer({ antialias: false, powerPreference: "default", failIfMajorPerformanceCaveat: false, precision: "mediump", stencil: false })); xGlErr = ""; }
   catch (e2) { xGlErr = String((e2 && e2.message) || e2 || xGlErr); failWith("Your browser couldn't start WebGL. Try another browser or enable hardware acceleration."); return; } }
 renderer.outputEncoding = THREE.sRGBEncoding;
 renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.05; // look pass: filmic, sRGB out
@@ -3185,7 +3188,7 @@ function xVo(who, txt) { try { const now = performance.now(); if (now - xVoT < 1
 const xLobbyAgentIdle = window.requestIdleCallback ? (f) => requestIdleCallback(f, { timeout: 600 }) : (f) => setTimeout(f, 50);
 xLobbyAgentIdle(function () {
   const cv = $("xAgent"); if (!cv) return;
-  let r, tA0 = 0; try { r = new THREE.WebGLRenderer({ canvas: cv, alpha: true, antialias: true, powerPreference: "high-performance", stencil: false }); } catch (e) { cv.remove(); return; }
+  let r, tA0 = 0; try { r = xShChk(new THREE.WebGLRenderer({ canvas: cv, alpha: true, antialias: true, powerPreference: "high-performance", stencil: false })); } catch (e) { cv.remove(); return; }
   r.outputEncoding = THREE.sRGBEncoding; r.setPixelRatio(Math.min(devicePixelRatio || 1, 2)); r.setClearColor(0, 0);
   const sc = new THREE.Scene(), cam = new THREE.PerspectiveCamera(30, 1, 0.1, 50); cam.position.set(0, 1.05, 4.4); cam.lookAt(0, 0.95, 0);
   sc.add(new THREE.HemisphereLight(0xdfe8ff, 0x302020, 0.9));
@@ -8594,7 +8597,7 @@ function agView(a) { // big idle 3D preview of the hovered agent
   if (AGV.r === false) return;
   if (AGV.tV && !AGV.raf) { AGV.idle = 0; AGV.raf = requestAnimationFrame(AGV.tV); } // perf pass 36: restart the stopped viewer loop, never a second chain
   if (!AGV.r) {
-    const cv = $("xAgCv"); try { AGV.r = new THREE.WebGLRenderer({ canvas: cv, alpha: true, antialias: true }); } catch (e) { AGV.r = false; cv.remove(); return; }
+    const cv = $("xAgCv"); try { AGV.r = xShChk(new THREE.WebGLRenderer({ canvas: cv, alpha: true, antialias: true })); } catch (e) { AGV.r = false; cv.remove(); return; }
     const r = AGV.r; r.outputEncoding = THREE.sRGBEncoding; r.setPixelRatio(Math.min(devicePixelRatio || 1, 2)); r.setClearColor(0, 0);
     AGV.sc = new THREE.Scene(); AGV.cam = new THREE.PerspectiveCamera(30, 1, 0.1, 50); AGV.cam.position.set(0, 1.05, 4.2); AGV.cam.lookAt(0, 0.95, 0);
     AGV.sc.add(new THREE.HemisphereLight(0xdfe8ff, 0x302020, 0.9)); const kl = new THREE.DirectionalLight(0xffffff, 1.1); kl.position.set(2, 4, 3); AGV.sc.add(kl);
@@ -10279,7 +10282,7 @@ setInterval(() => { if (XS.shd === "all") xCastAll(); }, 1000);
 setInterval(() => { if (XS.shd === "all" && running && !paused && renderer.shadowMap.enabled) renderer.shadowMap.needsUpdate = true; }, 100);
 function xRemake() { // anti-aliasing can only be set when a renderer is made, so swap in a new one
   const old = renderer; let r;
-  try { r = new THREE.WebGLRenderer({ antialias: XS.aa, powerPreference: "high-performance", stencil: false }); } catch (e) { say("Couldn't switch anti-aliasing"); return; }
+  try { r = xShChk(new THREE.WebGLRenderer({ antialias: XS.aa, powerPreference: "high-performance", stencil: false })); } catch (e) { say("Couldn't switch anti-aliasing"); return; }
   r.outputEncoding = old.outputEncoding; r.physicallyCorrectLights = old.physicallyCorrectLights; r.toneMapping = old.toneMapping; r.toneMappingExposure = old.toneMappingExposure;
   const cc = new THREE.Color(); old.getClearColor(cc); r.setClearColor(cc, old.getClearAlpha());
   old.domElement.replaceWith(r.domElement); old.dispose(); try { old.forceContextLoss(); } catch (e) {}
