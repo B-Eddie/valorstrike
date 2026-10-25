@@ -36,6 +36,12 @@ const walk=(s,u,look,seconds,each=()=>{})=>{let low=Infinity;for(let k=0;k<secon
  s.buy=0;next.x+=1;s.release(next);s.units=s.units.filter(u=>u!==next);assert.equal(s.spike.st,'drop');assert.equal(s.spike.carrier,null);assert.equal(s.spike.x,next.x);
  assert(fs.readFileSync(new URL('./src/worker.js',import.meta.url),'utf8').includes('this.sim.release?.(s.u);this.sim.units=this.sim.units.filter'),'room drop releases the spike');}
 
+// 4b. A human joining a full Spike room replaces a bot; when that bot carried the spike, the spike pointed at a removed
+//     unit. add() now releases it first.
+{const s=new SpikeSimulation(W,'five','ascent');s.add('Host');s.start();assert.equal(s.units.length,10);const carrier=s.units.find(u=>u.id===s.spike.carrier);
+ if(!carrier.human){const order=s.units.indexOf(carrier);s.units.splice(order,1);s.units.unshift(carrier);}else{const bot=s.units.find(u=>!u.human&&u.team===s.atk);s.spike.carrier=bot.id;s.units.splice(s.units.indexOf(bot),1);s.units.unshift(bot);}
+ const joined=s.add('Joiner');assert(s.units.some(u=>u.id===s.spike.carrier),'spike carrier still in the match after a join');assert(joined);}
+
 // 5. Spike bots computed a full A* hunt route to the nearest enemy every tick and threw it away (goalPath drives them),
 //    over half of Spike CPU. Non-fighting Spike bots no longer route in the base hunt.
 {const s=new SpikeSimulation(W,'five','ascent');s.add('Bot Jett','Jett',false);s.start();s.buy=0;let near=0;const n0=s.world.near;s.world.near=(...a)=>{near++;return n0(...a);};
@@ -47,8 +53,13 @@ const walk=(s,u,look,seconds,each=()=>{})=>{let low=Infinity;for(let k=0;k<secon
  assert(Math.hypot(n[0]-goal.x,n[2]-goal.z)>1.2,'goal is off the graph');[b.x,b.y,b.z]=n;b.goalOff=[0,0];b.route=null;s.goalPath(b,goal,true);assert.equal(b.input.forward,0,'arrived');
  b.route=null;s.goalPath(b,goal,false);assert.equal(b.input.forward,1,'exact goals (spike) still step toward the goal');}
 
+// 6b. Escape loops: on Lotus a bot facing a step the motor will not climb sidestepped and re-tried in place for the rest
+//     of the match (37 escapes, under 1 m of progress). Under 1.5 m in 5 s while walking now puts it on the route node.
+{const L=await loadWorld(assets,'lotus');const s=new Simulation(L,'dm','lotus');const t=s.add('Target'),b=s.add('Bot Cypher','Cypher',false);s.phase='game';const T=L.nav.nodes[L.near(-18.7,14.3,4)],start=[-6.39,3.88,-5.46];
+ [b.x,b.y,b.z]=start;let far=0;for(let k=0;k<200;k++){[t.x,t.y,t.z]=T;t.hp=100;t.alive=true;s.step(.05);far=Math.max(far,Math.hypot(b.x-start[0],b.z-start[2]));}assert(far>2,'bot got past the step: '+far.toFixed(2));}
+
 // 7. Short seeded soak through the real worker: fuzzing humans + bots, TDM and Spike, invariants every tick.
 for(const [mode,seconds] of [['tdm',50],['five',70]]){const r=await soakRun({map:'ascent',mode,seconds,humans:3,seed:3,stuckSeconds:10});
  assert.deepEqual(r.errors,[],mode+' errors');const bad=r.violations.filter(v=>v.kind!=='bot stuck');assert.deepEqual(bad.map(v=>v.kind+': '+v.detail.slice(0,200)),[],mode+' invariants');assert(r.stats.ticks>seconds*15);if(mode==='tdm')assert(r.stats.kills>0);}
-console.log('Gameplay QA: open-edge falls rescued (TDM + Spike buy phase), wedged bot freed, routes avoid prop-blocked nodes, leaving spike carrier hands over/drops, Spike bots skip discarded hunt routes, off-graph loose goal arrival, seeded worker soak (TDM, Spike) clean');
+console.log('Gameplay QA: open-edge falls rescued (TDM + Spike buy phase), wedged bot freed, routes avoid prop-blocked nodes, leaving or replaced spike carrier hands over/drops, stuck-in-place escape, Spike bots skip discarded hunt routes, off-graph loose goal arrival, seeded worker soak (TDM, Spike) clean');
 process.exit(0);
