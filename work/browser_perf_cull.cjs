@@ -14,7 +14,7 @@ const SIZES=(process.env.SIZES||'1280x720,640x360,390x844').split(',').map(s=>s.
 
 // hark-perf browser pass (762e33c agent frustum cull, d71a3f3 bot variety), headless Chromium (SwiftShader, LOW):
 // A. Ascent 5v5, a bot 1-3 m from a probe camera at eye height; the camera turns through 360 deg in 10 deg steps and renders
-//    with the real renderer and scene. Per step and per bot mesh: expected = any bone of the mesh projects inside the view
+//    with the real renderer and scene. Per step and per bot mesh: expected = any skinned vertex of the mesh (sampled, current pose) projects inside the view
 //    (in front of the camera, NDC within +-1.05); drawn = the mesh's onBeforeRender fired. A pop = expected but not drawn.
 // B. The bot is killed (real kill path): the ragdolling corpse, kept in view, must be drawn every frame until its fade.
 // C. Bot spread: Ascent and Bind, the attacking side's bots (allies when the player attacks, else the enemy bots), bot AI running, attacker positions sampled over ~30 s of game
@@ -39,17 +39,20 @@ const SIZES=(process.env.SIZES||'1280x720,640x360,390x844').split(',').map(s=>s.
  await X(`window.__pc=new THREE.PerspectiveCamera(camera.fov||70,640/360,.05,500);window.__drawn=new Set();
   window.__hook=b=>{const L=[];b.g.traverse(o=>{if(o.isSkinnedMesh&&!o.__hk){o.__hk=1;const f=o.onBeforeRender;o.onBeforeRender=function(){window.__drawn.add(this.uuid);if(f)return f.apply(this,arguments);};}if(o.isSkinnedMesh)L.push(o);});return L;};
   window.__shot=(b)=>{const L=window.__hook(b);window.__drawn.clear();window.__probe=1;try{renderer.render(scene,window.__pc);}finally{window.__probe=0;}const v=new THREE.Vector3(),r=[];
-   for(const m of L){if(!m.visible){r.push({hid:1});continue;}let exp=false;const bs=m.skeleton?m.skeleton.bones:[];for(const bn of bs){bn.getWorldPosition(v);const q=v.clone().project(window.__pc);const cs=v.clone().applyMatrix4(window.__pc.matrixWorldInverse);if(cs.z<-.05&&Math.abs(q.x)<=1.05&&Math.abs(q.y)<=1.05){exp=true;break;}}
-    r.push({exp,drawn:window.__drawn.has(m.uuid),fc:m.frustumCulled});}return r;};1`);
+   const inV=w=>{const cs=w.clone().applyMatrix4(window.__pc.matrixWorldInverse);if(cs.z>=-.05)return false;const q=w.clone().project(window.__pc);return Math.abs(q.x)<=1.05&&Math.abs(q.y)<=1.05;};
+   for(const m of L){if(!m.visible){r.push({hid:1});continue;}let expB=false;const bs=m.skeleton?m.skeleton.bones:[];for(const bn of bs){bn.getWorldPosition(v);if(inV(v)){expB=true;break;}}
+    // expected = a skinned vertex of this mesh in view (the skeleton is shared by every mesh of the rig, so a bone in view says nothing about this mesh's own vertices)
+    let exp=false;const pos=m.geometry&&m.geometry.attributes.position,bt=m.applyBoneTransform||m.boneTransform;if(pos&&bt){const n=pos.count,st=Math.max(1,Math.floor(n/600));for(let i=0;i<n&&!exp;i+=st){v.fromBufferAttribute(pos,i);bt.call(m,i,v);v.applyMatrix4(m.matrixWorld);if(Number.isFinite(v.x+v.y+v.z)&&inV(v))exp=true;}}
+    r.push({exp,expB,drawn:window.__drawn.has(m.uuid),fc:m.frustumCulled,nm:m.name||m.parent&&m.parent.name||''});}return r;};1`);
  // A. turn past bots at 1, 2, 3 m
  const A=[];
  for(const d of [1,2,3]){
   const r=JSON.parse(await X(`JSON.stringify((()=>{const b=bots.find(x=>x.alive)||bots[0];b.nt=true;b.alive=true;const p=player,y=(p.y||0);b.g.position.set(p.x+${d},b.g.position.y,p.z);b.g.updateMatrixWorld(true);
    const out=[];for(let a=0;a<360;a+=10){const t=a*Math.PI/180;window.__pc.position.set(p.x,b.g.position.y+1.6,p.z);window.__pc.rotation.set(0,t,0,'YXZ');window.__pc.updateMatrixWorld(true);
-    const s=window.__shot(b);out.push({a,pop:s.filter(x=>x.exp&&!x.drawn).length,exp:s.filter(x=>x.exp).length,drawn:s.filter(x=>x.drawn).length,n:s.length});}
+    const s=window.__shot(b);out.push({a,pop:s.filter(x=>x.exp&&!x.drawn).length,popNm:s.filter(x=>x.exp&&!x.drawn).map(x=>x.nm),boneOnly:s.filter(x=>x.expB&&!x.exp&&!x.drawn).length,exp:s.filter(x=>x.exp).length,drawn:s.filter(x=>x.drawn).length,n:s.length});}
    return {bot:b.name,d:${d},steps:out};})())`));
-  const pops=r.steps.filter(s=>s.pop>0);A.push({d,bot:r.bot,pops:pops.map(s=>s.a),visibleSteps:r.steps.filter(s=>s.exp>0).length,meshes:r.steps[0].n});log('turn '+d+' m',A[A.length-1]);
-  check(`turning past a bot at ${d} m: no culling pop (every mesh with a bone in view is drawn)`,!pops.length&&r.steps.some(s=>s.exp>0),JSON.stringify(A[A.length-1]));
+  const pops=r.steps.filter(s=>s.pop>0);A.push({d,bot:r.bot,pops:pops.map(s=>s.a+':'+s.popNm.join('/')),boneOnlyUndrawn:r.steps.filter(s=>s.boneOnly>0).map(s=>s.a),visibleSteps:r.steps.filter(s=>s.exp>0).length,meshes:r.steps[0].n});log('turn '+d+' m',A[A.length-1]);
+  check(`turning past a bot at ${d} m: no culling pop (every mesh with a skinned vertex in view is drawn)`,!pops.length&&r.steps.some(s=>s.exp>0),JSON.stringify(A[A.length-1]));
  }
  // a still of the closest case, camera facing the bot at its edge of view
  await X(`(()=>{const b=bots.find(x=>x.nt);const p=player;window.__pc.position.set(p.x,b.g.position.y+1.6,p.z);window.__pc.rotation.set(0,-Math.PI/2+0.9,0,'YXZ');window.__pc.updateMatrixWorld(true);window.__probe=1;renderer.render(scene,window.__pc);window.__probe=0;return 1})()`);
