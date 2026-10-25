@@ -38,6 +38,20 @@ allocation / timer counts are the stable numbers):
   (was a second always-on requestAnimationFrame chain, also in the lobby).
 - DPR cap left at 2 (deliberately unchanged).
 
+## Kill cost A: ragdolls (browser profile: xrRagdollTick top per-frame cost after kills, ~250 ms build mostly xrSupports)
+- Corpse re-solve throttled to <=30 Hz (15 Hz beyond 35 m from the camera); the skipped real time is passed to the
+  solver, so bodies fall exactly as fast (xrRagdollTick already substeps large steps at 120 Hz).
+- At most 4 bodies simulate at once: when a fifth drops, the oldest one that has fallen > 1 s freezes where it lies
+  (settled bodies already stop on their own).
+- xrSupports: sample list (vertex, dominant bone, 4 skin indices/weights) cached per geometry (corpses of one agent
+  share it); each sample skinned by the same linear blend as three's boneTransform from per-bone matrices built once
+  per mesh. Contact points are identical to the old per-vertex boneTransform (test compares them on jett/reyna).
+- Tried fewer samples (3000/4000): sova's settled skin sinks under the floor (test_ragdoll fails), so the 6000-sample
+  budget stays.
+- Numbers (node rig harness, loaded machine, warm medians): xrSupports per corpse 38.2 -> 18.5 ms; corpse ticks per
+  second at 120 fps 120 -> ~30 (near) / ~15 (far). Test: work/test_ragdoll_perf.cjs.
+- Browser-verify: corpse fall smoothness at 30 Hz near the camera on a 120/144 Hz display; multi-kill (5+) freeze.
+
 ## Item 3: bot variety
 Cause: on native maps every attacker pathed to one identical site point along the same shortest A* path; the shared
 vendor/bot-routes.cjs existed but was not wired in.
