@@ -547,10 +547,15 @@ body.x-cbh .x-mvp.en{border-left-color:#ff9f1c}
   .x-kb__r{margin:0;gap:6px;white-space:nowrap}
   .x-kb__r i{width:26px;height:26px;font-size:12px}
   .x-kb__d{display:grid;grid-template-columns:auto auto;gap:1px 8px;font-size:11px;white-space:nowrap}
-  #toast{bottom:150px;padding:10px 18px}
-  .x-ann{top:10%}
-  .x-ann.rnd{top:16%}
-  #game #feed{margin-top:26px} /* drop row 1 below the scoreboard sub-strip (ends ~59px) */
+  #toast{bottom:142px;left:0;right:240px;margin:0 auto;transform:none;padding:10px 18px} /* shares the ann's reserved column: left of the feed strip, above the KILLED BY card */
+  #game #feed{margin-top:26px;max-height:56px;overflow:hidden} /* drop row 1 below the scoreboard sub-strip (ends ~59px); cap at 2 rows (kfPush prepends: the cropped row is the oldest) */
+  #game .hud.x-top{left:auto;right:8px;transform:none} /* short landscape: dock the strip right, off the minimap's markers */
+  #game .x-top>*{height:32px;padding:0 6px}
+  #game .x-top .x-al{font-size:0;gap:3px}#game .x-top .x-al b{font-size:12px}
+  #game .x-top .x-pp i{width:13px;height:13px;border-width:1px}
+  #game .x-top .x-sc b{min-width:26px;height:32px;font-size:15px}
+  #game .x-top .x-tm{min-width:52px;font-size:15px}
+  #game #hint{display:none} /* short landscape: the bottom:112px hint crowds the ann/toast/card column; coarse pointers already hide it */
 }
 .x-sp{position:fixed;left:50%;bottom:120px;transform:translateX(-50%);z-index:60;padding:6px 14px;background:rgba(15,25,35,.75);color:#ece8e1;font:500 13px var(--sans);letter-spacing:.14em;pointer-events:none;display:none;text-align:center}
 .x-sp small{display:block;font-size:12px;letter-spacing:.04em;opacity:.7;margin-top:2px}.x-sp.on{display:block} .x-sp__tp{display:inline-flex;align-items:center;gap:6px;margin-left:12px;padding:4px 10px;min-height:28px;border:1px solid rgba(236,232,225,.45);background:rgba(15,25,35,.6);color:#ece8e1;font:600 12px var(--sans);letter-spacing:.12em;cursor:pointer;pointer-events:auto}.x-sp__tp:hover,.x-sp__tp:focus-visible{border-color:#ff4655;outline:0}.x-sp__tp.on{background:#ff4655;color:#0f1923;border-color:#ff4655}.x-sp__tp kbd{font:inherit;padding:0 4px;border:1px solid currentColor;border-radius:2px}
@@ -655,6 +660,14 @@ body.x-cbh #game{--ha:#3d8bff;--he:#ff9f1c}
 @media (max-width:820px) and (orientation:landscape){#game .hud.x-fw{top:66px}}
 @media (max-width:700px) and (orientation:landscape){#game #xSub{max-width:calc(100vw - 272px)}}
 /* touch devices (any width, incl. landscape phones wider than 820px): compact HUD, no desktop key hints, no duplicate ability bar */
+@media (max-height:560px){ /* after the max-width:820 block so these win when both match */
+  #game .hud.x-top{left:auto;right:8px;transform:none}
+  #game .x-top>*{height:32px;padding:0 6px}
+  #game .x-top .x-al{font-size:0;gap:3px}#game .x-top .x-al b{font-size:12px}
+  #game .x-top .x-pp i{width:13px;height:13px;border-width:1px}
+  #game .x-top .x-sc b{min-width:26px;height:32px;font-size:15px}
+  #game .x-top .x-tm{min-width:52px;font-size:15px}
+}
 @media (pointer: coarse){
   #game #hint{display:none} /* keyboard hints are dead weight on touch; the touch buttons carry their own labels */
   #xMap{left:8px;top:8px;width:96px;height:96px} /* was 160px desktop / 112px narrow: 160px is 40%+ of a landscape phone's height */
@@ -666,7 +679,7 @@ body.x-cbh #game{--ha:#3d8bff;--he:#ff9f1c}
   #game .x-top .x-sc b{min-width:32px;height:32px;font-size:18px}
   #game .x-top .x-tm{min-width:64px;font-size:18px}
   #game #xSub{top:48px;font-size:10px}
-  #game .hud.x-fw{top:100px;right:8px} /* below the C/Q/E/X touch row */#game #feed{font-size:11px}#game #feed .kf{height:24px;padding:0 8px}
+  #game .hud.x-fw{top:64px;right:8px} /* <=560h: under the scores strip + subtitle, above the touch ability row */#game #feed{font-size:11px}#game #feed .kf{height:24px;padding:0 8px}
   #game .hud.x-bl{left:8px;bottom:8px;transform:none;min-width:128px;height:48px;padding:0 8px 16px}
   #game .x-bl .x-hp{font-size:28px}#game .x-bl #xArm{font-size:16px}
   #game .x-vb{left:8px;right:8px}
@@ -900,6 +913,14 @@ body.x-cbh #game{--ha:#3d8bff;--he:#ff9f1c}
 .x-dmlb li span,.x-dmr li span{width:16px;opacity:.6}.x-dmlb em,.x-dmr em{font-style:normal}
 /* short landscape (640x360): the 173 px board at top:180px covered the credits/weapon/ammo block (top 264 px); compact it and sit it just above that block */
 @media (max-height:480px){.x-dmlb{top:auto;bottom:100px;width:150px;padding:5px 8px;font-size:11px;line-height:1.3}.x-dmlb__h{margin:0 0 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.x-dmlb li{padding:0}}
+@media (max-height:480px) and (orientation:landscape){
+  #game #feed{margin-top:0;max-height:28px} /* one row at <=480h: the strip above the ability row only fits one */
+  #xCmB{left:110px;top:124px;transform:none} /* docked right of the minimap column, between the ann band and the toast band */
+  #toast{top:260px;bottom:auto;left:140px;right:auto;margin:0;max-width:260px;background:#ece8e1;color:#0f1923;padding:8px 12px} /* #toast is a body child, not #game */ /* out of the left button column: bottom-center band above the vitals line, stacks under the death card */
+  #game .hud.x-fw{top:64px}
+  .x-dmlb{top:102px;bottom:auto;left:auto;right:8px;width:auto;max-width:44vw;padding:3px 8px} /* DM: leader + you ticker under the feed; the full table needs taller screens */
+  .x-dmlb{pointer-events:auto;cursor:pointer}.x-dmlb li{display:none}.x-dmlb li:first-child,.x-dmlb li.me{display:flex}.x-dmlb.x-full li{display:flex}.x-dmlb__h{display:none}.x-dmlb.x-full .x-dmlb__h{display:block}
+}
 .x-dmr{margin:12px auto 0;max-width:280px;text-align:left}
 
 .x-dmg__in{width:min(1100px,96vw);max-width:none;border-radius:0;padding:24px;background:rgba(11,22,30,.98);display:flex;flex-direction:column;overflow:hidden}.x-dmg__c{overflow-y:auto;min-height:0}.x-dmg__head,.x-dmg__f{flex-shrink:0}
@@ -950,7 +971,7 @@ body.x-cbh #game{--ha:#3d8bff;--he:#ff9f1c}
 .x-q[hidden]{display:none}
 .x-qx{position:absolute;top:16px;right:16px;z-index:2;width:44px;height:44px;display:grid;place-items:center;background:none;border:1px solid rgba(236,232,225,.18);color:#ece8e1;font-size:22px;line-height:1;cursor:pointer;opacity:.8}
 .x-qx:hover,.x-qx:focus-visible{opacity:1;border-color:#ff4655}
-.x-qtabs{display:flex;flex-wrap:nowrap;gap:0 28px;margin:-8px 56px 0 0;border-bottom:1px solid rgba(236,232,225,.14);overflow-x:auto;overflow-y:hidden;scrollbar-width:none}
+.x-qtabs{flex:none;display:flex;flex-wrap:nowrap;gap:0 28px;margin:-8px 56px 0 0;border-bottom:1px solid rgba(236,232,225,.14);overflow-x:auto;overflow-y:hidden;scrollbar-width:none}
 .x-qtabs::-webkit-scrollbar{display:none}
 .x-qtabs button{flex:none;min-height:44px;padding:0;background:none;border:0;border-bottom:2px solid transparent;color:rgba(255,255,255,.55);font:inherit;font-size:13px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;white-space:nowrap;cursor:pointer;transition:color .15s}
 .x-qtabs button:hover{color:rgba(255,255,255,.85)}
@@ -1009,7 +1030,7 @@ body.x-cbh #game{--ha:#3d8bff;--he:#ff9f1c}
 .x-qon__code small{font-size:11px;letter-spacing:.12em;text-transform:uppercase;opacity:1;color:#c9cdd2}
 .x-qon__code b{font-size:30px;letter-spacing:.24em;font-variant-numeric:tabular-nums;font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace}
 .x-qon__code span{font-size:13px;opacity:.8}
-.x-qon__list{margin:0;padding:0;list-style:none;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px}
+.x-qon__list{margin:0;padding:0;list-style:none;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px;max-height:min(28vh,180px);overflow-y:auto} /* roster scrolls internally so Map/Start/Leave keep a fixed, visible position as players join */
 .x-qon__list li{display:flex;justify-content:space-between;gap:8px;padding:8px 10px;background:rgba(15,25,35,.8);border:1px solid rgba(236,232,225,.14);font-size:13px;min-width:0}
 .x-qon__list li b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .x-qon__list li small{opacity:1;color:#c9cdd2;flex:none}
@@ -1022,6 +1043,7 @@ body.x-cbh #game{--ha:#3d8bff;--he:#ff9f1c}
 .x-mptag{position:absolute;left:0;top:0;padding:1px 6px;font:600 12px/1.3 system-ui,sans-serif;white-space:nowrap;text-shadow:0 1px 2px #000;background:rgba(15,25,35,.45)}
 .x-mptag.al{color:#7fe8ff}.x-mptag.en{color:#ff6b78}
 .x-mpp{margin-left:6px;font-size:10px;opacity:.6;letter-spacing:.06em}
+@media(max-width:1024px){.x-qtabs{-webkit-mask-image:linear-gradient(90deg,#000 90%,transparent 99%);mask-image:linear-gradient(90deg,#000 90%,transparent 99%)} /* affordance: faded right edge signals more tabs when the strip overflows */}
 @media(max-width:820px){.x-q{padding:16px}.x-qbody{grid-template-columns:minmax(0,1fr)}.x-qmode{max-height:none;overflow:visible}.x-q .x-qcard h3{font-size:36px}.x-q .x-qcard p{white-space:normal}.x-qplay{width:100%}}
 #lobby .card .new{border-radius:0;background:#ff4655;color:#0f1923;letter-spacing:.12em}
 #lobby .x-h{display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(236,232,225,.35);padding-bottom:8px}
@@ -1223,9 +1245,9 @@ body.x-cbh #game{--ha:#3d8bff;--he:#ff9f1c}
     </div>
     <div class="x-qon__room" id="xOnRoom" hidden>
       <div class="x-qon__code"><small>Room code</small><b id="xOnCodeT">—</b><button type="button" class="x-qrange" id="xOnCopy">Copy</button><span id="xOnRoomM"></span></div>
-      <ol class="x-qon__list" id="xOnList"></ol>
       <div class="x-qon__row"><label class="x-qon__nm">Map <select id="xOnMap"><option value="ascent">Ascent</option><option value="bind">Bind</option><option value="haven">Haven</option><option value="split">Split</option><option value="lotus">Lotus</option><option value="breeze">Breeze</option><option value="random">Random</option></select></label>
         <button type="button" class="x-qrange x-qon__go" id="xOnStart">Start</button><span id="xOnWait"></span><button type="button" class="x-qrange" id="xOnLeave">Leave</button></div>
+      <ol class="x-qon__list" id="xOnList"></ol>
     </div>
     <p class="x-qon__msg" id="xOnMsg" role="status" aria-live="polite"></p>
   </section>
@@ -1604,6 +1626,13 @@ body.x-cbh #game{--ha:#3d8bff;--he:#ff9f1c}
     .x-ann.pulse .x-ant{animation:xAnP .6s ease-in-out infinite alternate}
     @keyframes xAnP{to{opacity:.55;text-shadow:0 0 24px #ff4655}}
     @media (prefers-reduced-motion:reduce){.x-ann{transition:none;transform:none}.x-ann.pulse .x-ant{animation:none}}
+    @media (max-height:560px){ /* coordinated bands: ann owns the top band left of the feed strip; feed owns the right strip; toast/card stack below (must come after the .x-ann base rules - the earlier short-screen copy lost the cascade) */
+      .x-ann{top:64px;left:128px;right:248px} /* below the scoreboard strip (~59px), right of the minimap (~120px), left of the feed strip */
+      .x-ann.rnd{top:70px}
+      .x-ann .x-ant{font-size:clamp(16px,3.3vw,28px);gap:8px} /* keep banner glyphs inside the reserved band (nowrap; base gap 24px overflows it) */
+      .x-ann.rnd .x-ant{font-size:clamp(20px,4.4vw,36px)}
+      .x-ann.big .x-ant{font-size:clamp(22px,4.5vw,36px)}
+    }
     #xClu{position:fixed;top:calc(var(--x-top-b,calc(env(safe-area-inset-top,0px) + 54px)) + 8px);left:50%;transform:translateX(-50%);z-index:12;pointer-events:none;font:600 15px/1 var(--sans);letter-spacing:.14em;color:#ff4655;background:rgba(15,10,12,.6);border:1px solid rgba(255,70,85,.55);border-radius:4px;padding:6px 12px;text-shadow:0 1px 6px rgba(0,0,0,.6)}
   </style>
   <div class="hud" id="xClu" aria-live="polite" style="display:none">1 v 1</div>
@@ -3012,7 +3041,7 @@ function openPre(m) {
   }, 1000);
 }
 $("againBtn").onclick = () => (mode === "aim" ? startAim() : mode === "five" ? startFive() : mode === "surf" ? startSurf() : mode === "duel" ? startDuel() : mode === "rifle" ? startRifle() : start());
-$("lobbyBtn").onclick = () => { annClear(); clearTimeout(RF.to); clearTimeout(FV.to); clearInterval(RF.t); picking = false; fireHeld = false; $("xPick").classList.remove("on"); $("xBan").style.display = "none"; setScope(false); $("result").style.display = "none"; $("game").style.display = "none"; $("lobby").style.display = "flex"; score.you = 0; score.bots = 0; matchOver = false; };
+$("lobbyBtn").onclick = () => { annClear(); clearTimeout(RF.to); clearTimeout(FV.to); clearInterval(RF.t); picking = false; fireHeld = false; XSN.m.clear(); $("xPick").classList.remove("on"); $("xBan").style.display = "none"; setScope(false); $("result").style.display = "none"; $("game").style.display = "none"; $("lobby").style.display = "flex"; score.you = 0; score.bots = 0; matchOver = false; };
 
 // perf: HUD writes only when the value changed
 function hudT(e, v) { if (!e) return; v = String(v); if (e.textContent !== v) e.textContent = v; }
@@ -3357,7 +3386,8 @@ function vmKill(name, hs) {
   const now = performance.now(); VM.streak = now - VM.lastK < 4500 ? VM.streak + 1 : 1; VM.lastK = now;
   const kb = $("xKbn"), n = VM.streak, kn = $("xKn"), kc = $("xKc"); if (kn) kn.textContent = name || (mode === "duel" ? "Chamber" : "Enemy");
   if (kc) kc.textContent = n > 1 ? ["", "", "DOUBLE", "TRIPLE", "QUADRA", "ACE"][Math.min(n, 5)] + " ×" + n : "";
-  if (!kb) return; kb.classList.toggle("hs", !!hs); kb.classList.add("on"); clearTimeout(VM.kt); VM.kt = setTimeout(() => kb.classList.remove("on"), 2200);
+  if (!kb) return; if (typeof xKL !== "undefined" && xKL.on) return; if (typeof player !== "undefined" && player && player.hp <= 0) return;
+  kb.classList.toggle("hs", !!hs); kb.classList.add("on"); clearTimeout(VM.kt); VM.kt = setTimeout(() => kb.classList.remove("on"), 2200);
 }
 { const k0 = kill; kill = function (b, hs, by, w) { const was = b.alive; k0(b, hs, by, w); if (was && !b.alive) xDeathFlash(b); if (was && !b.alive && (!by || by === "You")) { vmKill(b.name, hs); xKiAdd(hs); } }; }
 // agent voice lines as text under the kill feed: 2.5 s each, at most one per 1.5 s
@@ -4631,7 +4661,7 @@ const BUY_SIL = { // look pass: flat white gun silhouettes, viewBox 64 x 20
   Odin: "M0 7h10l2-3h38v3h14v3H50v3H40v5h-8v-5h-2l-2 5h-5l2-5h-6l-2 3H5l3-3H0z",
   sh: "M32 1l12 4v6c0 4-5 7-12 9-7-2-12-5-12-9V5z",
 };
-function bpT() { return "BUY PHASE 0:" + String(Math.max(0, Math.ceil(FV.buy))).padStart(2, "0"); }
+function bpT() { const t = "0:" + String(Math.max(0, Math.ceil(FV.buy))).padStart(2, "0"); return (innerHeight <= 560 && innerWidth <= 900 ? "BUY " : "BUY PHASE ") + t; } /* short landscape: the long label kept the score strip on the minimap */
 // economy (Valorant): round win 3000 · loss 1900 / 2400 / 2900 by loss streak, streak resets on a win · kill 200 · plant +300 to every attacker
 const LOSS_B = [1900, 2400, 2900];
 function getLossBonus(team) { // credits `team` gets next round if it loses it: "you" / "ally" / 0 = your team, "enemy" / "bots" / 1 = theirs, "atk" / "def" by side
@@ -7667,7 +7697,10 @@ function fRound() {
   if (!FV.alive) { FV.pri = null; FV.sec = "Classic"; FV.arm = 0; } // died last round: back to a Classic
   const pz0 = FV.atk ? xSpawn(FV.map).atk : xSpawn(FV.map).def;
   player = { x: 0, z: pz0, hp: 100, armor: FV.arm, y: 0, vy: 0, ch: 0, st: 0 }; yaw = FV.atk ? 0 : Math.PI; pitch = 0;
-  timeLeft = 100; FV.buy = FV.you + FV.them === 0 || FV.you + FV.them === 12 ? 45 : 30; defuseT = 0; kSwing = 0; fSpawn(); $("feed").innerHTML = ""; $("defuse").style.display = "none";
+  timeLeft = 100; FV.buy = FV.you + FV.them === 0 || FV.you + FV.them === 12 ? 45 : 30; defuseT = 0; kSwing = 0;
+  // Sniper hold cache is per round by design: drop it so a new round never inherits stale spots.
+  XSN.m.clear();
+  fSpawn(); $("feed").innerHTML = ""; $("defuse").style.display = "none";
   const pm = FV.pri ? WEAP[FV.pri].mag : 0, sm = WEAP[FV.sec].mag;
   slots.pri = FV.pri ? { ammo: pm, rsv: pm * 3 } : {}; slots.pis = { ammo: sm, rsv: sm * 3 };
   rw = FV.pri ? "pri" : "pis"; ammo = slots[rw].ammo; rsv = slots[rw].rsv; reloading = 0; fcd = 0; spray = 0; fireHeld = false; try { XSP.used = false; } catch (e) {} // round start re-arms the one spray per round
@@ -10600,6 +10633,12 @@ let xTGOn = false; const xTG = { inPlay: () => false, relAll: () => {} };
   document.head.appendChild(st);
   const DEF = { fire: [84, 66, 78, "FIRE", "Fire"], jump: [94, 48, 58, "JUMP", "Jump"], duck: [94, 82, 54, "DUCK", "Duck"], reload: [74, 84, 48, "R", "Reload"], zoom: [73, 50, 50, "ZOOM", "Zoom"], swap: [84, 40, 48, "⇄", "Switch weapon"], pause: [50, 7, 44, "II", "Pause"], c: [62, 18, 46, "C", "Ability C"], q: [69, 18, 46, "Q", "Ability Q"], e: [76, 18, 46, "E", "Ability E"], x: [83, 18, 46, "X", "Ultimate X"], plant: [8, 42, 54, "4", "Plant or defuse (hold)"], use: [8, 58, 48, "F", "Use, pick up or capture (hold)"], buy: [8, 26, 50, "B", "Buy"], inspect: [66, 88, 40, "INS", "Inspect weapon"], ping: [63, 70, 44, "PING", "Ping"], drills: [50, 18, 48, "DRL", "Range drills"] };
   let L = {};
+  // Short landscape (<=480px tall: 568x320, 640x360, 844x390): grid measured against the real panel rects
+  // (hud-map probe): left column under the minimap (buy/plant/use), two 4-button rows right of the ann column
+  // (c/q/e + pause on top so pause stays off the death card, zoom/reload/jump/x below), fire right of them,
+  // duck/swap under, ping/inspect/drills default OFF (comms wheel covers callouts; re-enable in edit mode).
+  const DEFS = { fire: [94.2, 62, 58], jump: [77.6, 61.8, 38], duck: [60.7, 75.2, 38], reload: [69.2, 61.8, 38], zoom: [60.7, 61.8, 38], swap: [69.2, 75.2, 38], pause: [85.2, 48, 38], c: [60.7, 48, 38], q: [69.2, 48, 38], e: [77.6, 48, 38], x: [85.2, 61.8, 38], plant: [7.6, 57.6, 46], use: [7.6, 73.8, 46], buy: [7.6, 41.3, 46], inspect: [60.7, 93.5, 40], ping: [74.3, 93.5, 42], drills: [66.5, 93.5, 40] };
+  const DEFSOFF = { ping: 1, inspect: 1, drills: 1 };
   // Portrait (row 7, browser-placed at 360x740): thumb cluster at the bottom right between the abilities row (below the
   // buy-phase team panel) and the credits/ammo block, plant/use/buy down the left edge under COMMS, clear of the HP block.
   const DEFP = { fire: [76.4, 79.7, 72], jump: [91.7, 70.9, 52], duck: [93.1, 84.1, 50], reload: [54.2, 84.5, 44], zoom: [54.2, 73.6, 46], swap: [91.7, 62.2, 44], pause: [50.0, 12.2, 40], c: [34.7, 63.5, 44], q: [48.1, 63.5, 44], e: [61.4, 63.5, 44], x: [74.7, 63.5, 44], plant: [10.0, 77.0, 50], use: [10.0, 85.1, 46], buy: [10.0, 68.9, 46], inspect: [54.2, 96.2, 36], ping: [36.1, 73.0, 40], drills: [50.0, 20.3, 44] };
@@ -10614,7 +10653,7 @@ let xTGOn = false; const xTG = { inPlay: () => false, relAll: () => {} };
       P.forEach(clamp); if (!any) break; }
     if (moved) P.forEach((p) => { L[p.k].x = p.x / w * 100; L[p.k].y = p.y / h * 100; }); return moved; };
   let custom = false, lastWH = "";
-  const reset = () => { L = {}; const D = innerHeight > innerWidth ? DEFP : DEF; for (const k in DEF) { const d = D[k] || DEF[k]; L[k] = { x: d[0], y: d[1], s: d[2], off: false }; } fit(innerWidth, innerHeight); custom = false; lastWH = innerWidth + "x" + innerHeight; };
+  const reset = () => { L = {}; const D = innerHeight > innerWidth ? DEFP : (innerHeight <= 480 ? DEFS : DEF); for (const k in DEF) { const d = D[k] || DEF[k]; L[k] = { x: d[0], y: d[1], s: d[2], off: D === DEFS && !!DEFSOFF[k] }; } fit(innerWidth, innerHeight); custom = false; lastWH = innerWidth + "x" + innerHeight; };
   reset();
   const T = document.createElement("div"); T.id = "xT";
   T.innerHTML = '<div id="xJ"><i></i></div>' + Object.keys(DEF).map((k) => `<button class="tb" data-k="${k}" aria-label="${DEF[k][4]}">${DEF[k][3]}</button>`).join("") +
@@ -10994,7 +11033,7 @@ function dmUI() {
   const m = document.createElement("div"); m.className = "x-dmg"; m.setAttribute("role", "dialog"); m.setAttribute("aria-label", "Free guns");
   m.addEventListener("click", (e) => { const b = e.target.closest("button"); if (b && !b.disabled) { if (b.dataset.n) dmGive(b.dataset.n); dmMenu(false); } else if (e.target === m) dmMenu(false); });
   const l = document.createElement("div"); l.className = "x-dmlb"; l.setAttribute("aria-label", "Deathmatch leaderboard"); l.style.display = "none";
-  document.body.appendChild(m); document.body.appendChild(l); DM.el = m; DM.lb = l;
+  l.addEventListener("click", () => l.classList.toggle("x-full")); document.body.appendChild(m); document.body.appendChild(l); DM.el = m; DM.lb = l;
 }
 function dmMR() {
   const cur=[FV.pri,FV.sec],C=FV.tdm?TDM_C:DM_C,tr=FV.tdm?tdmTier():9;
@@ -11775,7 +11814,9 @@ function mpUI() {
   const box = mpEl("xOn"); if (!box) return;
   const inR = !!MP.role, R = MP.role === "host" ? mpRoomInfo() : MP.room || null, busy = mpBusy();
   ["xOnQuick", "xOnCreate", "xOnJoin"].forEach((id) => { const b = mpEl(id); if (b) b.disabled = busy || inR; });
-  const room = mpEl("xOnRoom"); if (room) room.hidden = !inR;
+  const room = mpEl("xOnRoom"); if (room) { const was = room.hidden; room.hidden = !inR;
+    if (was && inR) { // a room just appeared: bring it into the panel's scrollport so the Start/Leave controls are never clipped below the fold (960x600 queue panel overflow)
+      try { room.scrollIntoView({ block: "start" }); } catch (e) {} } }
   const set = (id, t) => { const e = mpEl(id); if (e && e.textContent !== t) e.textContent = t; };
   box.querySelectorAll("[data-om]").forEach((b) => { b.setAttribute("aria-pressed", b.dataset.om === MP.mode ? "true" : "false"); b.disabled = busy || (inR && !(MP.role === "host" && !MP.pub)); });
   if (!inR) { mpMsg(MP.msg); return; }
@@ -12382,6 +12423,41 @@ try { applyBright(); } catch (e) {} // a saved brightness reaches the game canva
 
 // ---- VALORANT ASSET INTEGRATION ----
 // Models and native clips: Riot Games via Kingdom Archives. Map props: public Ascent port.
+// Texture memory cap (quality-linked): a full native load decodes ~640MB of RGBA textures
+// (map ~295MB + kits/weapons ~339MB) regardless of the graphics preset, which OOMs
+// memory-constrained devices (observed: chrome killed at ~1GB RSS in a 2GB container).
+// The low preset (user-selected, or auto on touch devices) caps texture decode at 512px;
+// devices reporting navigator.deviceMemory <= 4 cap at 1024px whatever the preset.
+// Halving dimensions quarters decoded memory; models, geometry, animations and gameplay
+// are untouched - this is a deliberate, preset-linked quality/memory tradeoff, not a
+// fallback tier. Chrome/Edge decode GLTF textures via createImageBitmap; Safari/Firefox
+// use TextureLoader and are unaffected (full res, as before).
+const XV_TEXCAP = (() => {
+  try {
+    let gq = null; try { gq = localStorage.getItem('vs.gq'); } catch (e) {}
+    if (!gq) gq = (typeof xLowDev !== 'undefined' && xLowDev) ? 'low' : 'medium';
+    const lowMem = !!(navigator.deviceMemory && navigator.deviceMemory <= 4);
+    if (gq === 'low') return 512;
+    if (lowMem) return 1024;
+  } catch (e) {}
+  return 0; // 0 = no cap: high/medium on ordinary hardware keep full-resolution textures
+})();
+if (XV_TEXCAP && typeof createImageBitmap === 'function') {
+  const xvCIB = createImageBitmap.bind(window);
+  window.createImageBitmap = function (src, ...rest) {
+    // Only intercept the (blob, options) shape THREE.ImageBitmapLoader uses; pass everything else through.
+    if (rest.length !== 1 || !(src instanceof Blob) || !rest[0] || typeof rest[0] !== 'object') return xvCIB(src, ...rest);
+    const opts = rest[0];
+    return xvCIB(src, opts).then((probe) => {
+      const m = Math.max(probe.width, probe.height);
+      if (m <= XV_TEXCAP) return probe;
+      const f = XV_TEXCAP / m, rw = Math.max(1, Math.round(probe.width * f)), rh = Math.max(1, Math.round(probe.height * f));
+      // Resize decode failing must not break the texture: fall back to the full-size probe
+      // (correct rendering, no memory saved). The probe is closed only on success.
+      return xvCIB(src, Object.assign({}, opts, { resizeWidth: rw, resizeHeight: rh, resizeQuality: 'high' })).then((small) => { probe.close(); return small; }, () => probe);
+    });
+  };
+}
 var XV = { config: window.VALORANT_ASSETS || {}, cache: {}, agents: {}, guns: {}, fp: null, fpLoad: null, event: null, failures: {} };
 function xvLoad(name) {
   if (!XV.cache[name]) XV.cache[name] = new Promise((resolve, reject) => {
@@ -12713,6 +12789,7 @@ async function nmCollision(key,signal){
  const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.BufferAttribute(new Float32Array(positions),3));geometry.setIndex(new THREE.BufferAttribute(new Uint32Array(index),1));geometry.boundsTree=MeshBVHLib.MeshBVH.deserialize({index:geometry.index.array,roots},geometry,{setIndex:false});return geometry;
 }
 function nmCancel(interactive=true){const pending=NM.pending;++NM.ticket;NM.pending=null;if(pending?.controller)pending.controller.abort(Object.assign(new Error('Map selection changed'),{name:'AbortError'}));nmOverlay(null);if(interactive&&window.xCancelMatchLoad)window.xCancelMatchLoad();if(interactive&&typeof NET!=='undefined'&&NET.socket&&typeof mpLost==='function')mpLost('Map loading cancelled');}
+function __vsLightOn(){return /^(127\.|localhost|\[::1\])/.test(location.hostname)&&!!window.__vsLight;}
 async function nmEnsure(key){
  if(NM.current&&NM.current.key===key){if(NM.pending){nmCancel(false);}return NM.current;}
  if(NM.pending&&NM.pending.key===key)return NM.pending.promise;
@@ -12723,7 +12800,7 @@ async function nmEnsure(key){
  nmOverlay(key.charAt(0).toUpperCase()+key.slice(1));
  const promise=(async()=>{const base='models/valorant/maps/'+key+'/';const read=url=>fetch(base+url,{signal:controller.signal}).then(r=>{if(!r.ok)throw new Error(url+' '+r.status);return r;});
   const tLoad=nmNow(),aborted=new Promise((_,reject)=>controller.signal.addEventListener('abort',()=>reject(controller.signal.reason||new Error('Map selection changed')),{once:true}));
-  const [meta,nav,geometry,gl,plants]=await Promise.race([aborted,Promise.all([read('map.json').then(r=>r.json()),read('navigation.json').then(r=>r.json()),nmCollision(key,controller.signal).catch(async e=>{if(controller.signal.aborted)throw e;const bytes=await read('collision.bin').then(r=>r.arrayBuffer()),head=new Uint32Array(bytes,0,2),positions=new Float32Array(bytes,8,head[0]*3),indices=new Uint32Array(bytes,8+head[0]*12,head[1]),g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(positions,3));g.setIndex(new THREE.BufferAttribute(indices,1));g.boundsTree=new MeshBVHLib.MeshBVH(g,{maxLeafTris:12,maxDepth:64,strategy:MeshBVHLib.CENTER});return g;}).then(g=>{loadedGeometry=g;if(failed||controller.signal.aborted){release();throw controller.signal.reason||new Error('Map selection changed');}return g;}),nmLoadScene(base,ticket).then(gl=>{loadedScene=gl.scene;if(failed||controller.signal.aborted){release();throw controller.signal.reason||new Error('Map selection changed');}return gl;}),read('plants.json').then(r=>r.json())])]);
+  const [meta,nav,geometry,gl,plants]=await Promise.race([aborted,Promise.all([read('map.json').then(r=>r.json()),read('navigation.json').then(r=>r.json()),nmCollision(key,controller.signal).catch(async e=>{if(controller.signal.aborted)throw e;const bytes=await read('collision.bin').then(r=>r.arrayBuffer()),head=new Uint32Array(bytes,0,2),positions=new Float32Array(bytes,8,head[0]*3),indices=new Uint32Array(bytes,8+head[0]*12,head[1]),g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(positions,3));g.setIndex(new THREE.BufferAttribute(indices,1));const fence=await read('fence.bin').then(r=>r.arrayBuffer()).catch(()=>null);if(fence&&fence.byteLength>=8){const fh=new Uint32Array(fence,0,2),fp=new Float32Array(fence,8,fh[0]*3),fI=new Uint32Array(fence,8+fh[0]*12,fh[1]),base2=positions.length/3,mp=new Float32Array(positions.length+fp.length),mi=new Uint32Array(indices.length+fI.length);mp.set(positions);mp.set(fp,positions.length);mi.set(indices);for(let k=0;k<fI.length;k++)mi[indices.length+k]=base2+fI[k];g.setAttribute('position',new THREE.BufferAttribute(mp,3));g.setIndex(new THREE.BufferAttribute(mi,1));}g.boundsTree=new MeshBVHLib.MeshBVH(g,{maxLeafTris:12,maxDepth:64,strategy:MeshBVHLib.CENTER});return g;}).then(g=>{loadedGeometry=g;if(failed||controller.signal.aborted){release();throw controller.signal.reason||new Error('Map selection changed');}return g;}),((__vsLightOn())?Promise.resolve({scene:new THREE.Group()}):nmLoadScene(base,ticket)).then(gl=>{loadedScene=gl.scene;if(failed||controller.signal.aborted){release();throw controller.signal.reason||new Error('Map selection changed');}return gl;}),read('plants.json').then(r=>r.json())])]);
   if(ticket!==NM.ticket){release();throw new Error('Map selection changed');}
   if(!nav.validation.attackerToDefender||Object.values(nav.validation.attackerToSites).some(v=>!v))throw new Error('Map navigation is incomplete');
   NM.progress.querySelector('small').textContent='Preparing the map…';await new Promise(r=>setTimeout(r,20));if(ticket!==NM.ticket){release();throw new Error('Map selection changed');}
@@ -13004,6 +13081,12 @@ window.xNativeMaps={state:NM,ensure:nmEnsure,cancel:nmCancel,near:nmNear,path:nm
 // programs mid-fight. Only invisible leaf objects parented to the scene are flipped (never the hidden collision meshes
 // inside the map group, whose programs nothing ever draws).
 {const precompile=xPrecompile;xPrecompile=function(){if(!nmActive())return precompile();xPC=true;const hid=[];try{if(!BFX.ok)bfxInit();if(typeof xHitInit==='function')xHitInit();for(const o of scene.children)if(!o.visible&&(o.isMesh||o.isLine||o.isPoints||o.isSprite)){hid.push(o);o.visible=true;}renderer.compile(scene,camera);}catch(e){console.warn('Native shader warmup',e);}for(const o of hid)o.visible=false;};}
+function nmNearV(C,x,z){if(!C.cellsV){C.cellsV=new Map();C.nav.nodes.forEach((p,i)=>{if(C.nav.valid&&!C.nav.valid[i])return;const k=Math.floor(p[0]/2)+','+Math.floor(p[2]/2);if(!C.cellsV.has(k))C.cellsV.set(k,[]);C.cellsV.get(k).push(i);});}let best=-1,bd=Infinity;const gx=Math.floor(x/2),gz=Math.floor(z/2);for(let ring=0;ring<=8;ring++){for(let dx=-ring;dx<=ring;dx++)for(let dz=-ring;dz<=ring;dz++){if(ring&&Math.abs(dx)!==ring&&Math.abs(dz)!==ring)continue;for(const i of C.cellsV.get((gx+dx)+','+(gz+dz))||[]){const p=C.nav.nodes[i],d=(p[0]-x)**2+(p[2]-z)**2;if(d<bd){bd=d;best=i;}}}if(best>=0&&ring>1&&bd<(ring*2-2)**2)break;}if(best<0)for(let i=0;i<C.nav.nodes.length;i++){if(C.nav.valid&&!C.nav.valid[i])continue;const p=C.nav.nodes[i],d=(p[0]-x)**2+(p[2]-z)**2;if(d<bd){bd=d;best=i;}}return best;}
+// coverage, with no way back. A grounded actor with no playable nav node within 4 units gets a
+// warning, then dies after 2 s - genre-standard kill-floor behavior. Back in coverage resets the
+// clock. Offline only: online damage is server-authoritative (no speculative local kills).
+function nmOobWatch(C){if((typeof NET!=='undefined'&&NET.socket)||(typeof MP!=='undefined'&&MP.on&&MP.role==='client')||!C||!running||paused)return;const now=performance.now();for(const u of [player].concat(bots,allies)){const pl=u===player;if(pl?u.hp<=0:!u.alive)continue;const p=pl?{x:u.x,y:u.y,z:u.z}:u.g.position;let out=false;try{const i=nmNearV(C,p.x,p.z),n=i>=0?C.nav.nodes[i]:null;out=!n||Math.hypot(n[0]-p.x,n[2]-p.z)>4;if(out)out=Math.abs(p.y-nmHeight(C,p.x,p.z,p.y))<.5;}catch(e){out=false;}if(!out){u.nmOob=0;continue;}if(!u.nmOob){u.nmOob=now;if(pl)say('Outside the map - get back!',1600);continue;}if(now-u.nmOob<2000)continue;u.nmOob=0;if(pl)hurt(u,1e4,'Out of bounds');else if(bots.indexOf(u)>=0)kill(u,false,'Out of bounds');else allyDie(u,'Out of bounds');}}
+(window.XHK||(window.XHK=[])).push(()=>{const C=nmActive();if(C)nmOobWatch(C);});
 // ---- END ORIGINAL VALORANT MAPS ----
 
 // ---- VALORANT FEEL ----
@@ -13931,6 +14014,57 @@ if(typeof nmPath==='function'&&typeof nmNext==='function'){/* native maps presen
   if(o.length){const r=BotRoutes.steer(u.g.position,o,vx,vz,team.indexOf(u),1.8,XBV.sv);vx=r[0];vz=r[1];}}
  return sm.call(this,u,dt,vx,vz);};}
 // ---- END BOT VARIETY ----
+// ---- DEBUG HOOKS ----
+// Headless/manual testing hooks. Active only on localhost or with ?__vs=1.
+// window.__vsLight=1 (via __vs.light(true)) switches the native map load to a
+// collision+navigation-only path (no scene.gltf) and skips the agent-rig
+// readiness gate, so logic-level matches can start in constrained environments
+// (headless SwiftShader) without the full render burst.
+try {
+  const __vsOn = /^(127\.|localhost|\[::1\])/.test(location.hostname); // localhost only: no query/hash activation on any host
+    if (__vsOn) {
+    { const ra = xvReadyAgents; xvReadyAgents = function () { return window.__vsNoAgents ? Promise.resolve() : ra.apply(this, arguments); }; }
+    window.__vs = {
+      light(on) { window.__vsLight = !!on; if (on && window.__vsNoAgents === undefined) window.__vsNoAgents = true; return window.__vsLight; },
+      agents(off) { window.__vsNoAgents = !!off; return !window.__vsNoAgents; },
+      slowRender(ms) { if (!window.__vsOrigLoop) { window.__vsOrigLoop = loop; window.__vsLastRun = 0; window.__vsSlowMs = +ms || 400; loop = function () { const now = performance.now(); if (now - window.__vsLastRun >= window.__vsSlowMs) { window.__vsLastRun = now; window.__vsOrigLoop(); } else { loop.id = requestAnimationFrame(loop); } }; } else { window.__vsSlowMs = +ms || 400; } return window.__vsSlowMs; },
+      pauseRender(v) { if (v) { if (!window.__vsOrigLoop) { window.__vsOrigLoop = loop; loop = function () { loop.id = requestAnimationFrame(loop); }; } return true; } if (window.__vsOrigLoop) { loop = window.__vsOrigLoop; window.__vsOrigLoop = null; if (typeof XRT !== 'undefined') XRT.skip = 1; } return false; },
+      fire(on) { fireHeld = !!on; },
+      setTimeLeft(sec) { timeLeft = +sec; },
+      setPos(x, y, z) { player.x = +x; player.y = +y; player.z = +z; player.vy = 0; player.vx = 0; player.vz = 0; },
+      aimAt(x, y, z) { const e = pEye(); yaw = Math.atan2(-(x - e.x), -(z - e.z)); pitch = Math.atan2(y - e.y, Math.hypot(x - e.x, z - e.z)); },
+      startDM() { xLob0 = false; return startDM(); }, startTDM() { xLob0 = false; return startTDM(); }, startFive() { xLob0 = false; return startFive(); },
+      startRetake() { xLob0 = false; return start(); }, startDuel() { xLob0 = false; return startDuel(); }, startSurf() { xLob0 = false; return startSurf(); }, startAim() { xLob0 = false; return startAim(); }, startRifle() { xLob0 = false; return startRifle(); },
+      hurt(t, n, by) { return hurt(t, n, by); }, kill(b, hs, by, w) { return kill(b, hs, by, w); },
+      die(by) { try { return pDie(by || "TestBot"); } catch (e) { return String(e); } },
+      siteGoals() { try { const C = nmActive(); return C && C.siteGoals ? JSON.parse(JSON.stringify(C.siteGoals)) : null; } catch (e) { return null; } },
+      resetFirstBlood() { try { xFirstBlood.r = null; return true; } catch (e) { return false; } },
+      net() { try { return { st: (typeof MP !== 'undefined') ? MP.st : null, on: (typeof MP !== 'undefined') ? !!MP.on : null,
+          role: (typeof MP !== 'undefined') ? MP.role || null : null, host: (typeof NET !== 'undefined') ? !!NET.host : null,
+          ws: (typeof NET !== 'undefined' && NET.socket) ? NET.socket.readyState : -1,
+          drops: (typeof NET !== 'undefined' && NET.drops) ? NET.drops.slice() : [],
+          code: (typeof MP !== 'undefined') ? MP.code || null : null, mode: (typeof MP !== 'undefined') ? MP.mode : null,
+          name: (typeof MP !== 'undefined') ? MP.name || null : null,
+          xReady: (typeof xReady !== 'undefined') ? !!xReady : null,
+          nmPending: (typeof NM !== 'undefined') ? !!(NM.pending) : null, nmLoaded: (typeof NM !== 'undefined') ? NM.loaded : null,
+          nmTicket: (typeof NM !== 'undefined') ? NM.ticket : null,
+          loadAt: (typeof NET !== 'undefined') ? (NET.loadAt || 0) : null,
+          netReady: (typeof NET !== 'undefined') ? !!NET.ready : null }; } catch (e) { return { err: String(e) }; } },
+      state() {
+        return { running: !!running, mode, dm: !!FV.dm, tdm: !!FV.tdm, map: FV.map,
+          timeLeft: (typeof timeLeft !== 'undefined') ? timeLeft : null, paused: (typeof paused !== 'undefined') ? !!paused : null, xLdOn: !!window.xLdOn,
+          ammo: (typeof ammo !== 'undefined') ? ammo : null,
+          fcd: (typeof fcd !== 'undefined') ? fcd : null, fireHeld: (typeof fireHeld !== 'undefined') ? !!fireHeld : null, reloading: (typeof reloading !== 'undefined') ? reloading : null, vmsw: (typeof VM !== 'undefined') ? VM.sw : null,
+          xnf: (typeof XNF !== 'undefined') ? XNF : null, cov: (typeof xCov === 'function') ? !!xCov() : null, gate: (typeof xGate === 'function') ? !!xGate() : null, lob0: (typeof xLob0 !== 'undefined') ? !!xLob0 : null, resUp: (typeof xResUp === 'function') ? !!xResUp() : null,
+          bots: bots.length, alive: bots.filter((b) => b.alive).length,
+          botsPos: bots.map((b) => [b.name, +b.g.position.x.toFixed(1), +b.g.position.y.toFixed(1), +b.g.position.z.toFixed(1), !!b.alive]),
+          player: player && [player.x, player.y, player.z, player.hp] };
+      },
+      get bots() { return bots; }, get allies() { return allies; }, get player() { return player; },
+      FV, DM, J, scene, renderer, camera };
+  }
+} catch (e) { try { console.warn("__vs hooks failed", e); } catch (_) {} }
+// ---- END DEBUG HOOKS ----
 xReady = true; // every mode is initialised; lobby launches may now start them
 { let rb = null; try { rb = sessionStorage.getItem("vs.retry"); sessionStorage.removeItem("vs.retry"); } catch (e) {} // Retry on the engine error reloaded the page: relaunch the same mode
   if (rb) setTimeout(() => { const b = $(rb); if (b) b.click(); }, 300); }
