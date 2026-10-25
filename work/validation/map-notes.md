@@ -12,6 +12,7 @@ Areas owned by others were left alone (hit feedback, hit-path perf / bot routing
 | `map-collision-patch.mjs` | render floor (opaque, n.y > 0.7, not foliage/decal/glass/water) within 0.45 m of a playable node's floor where the collision has nothing within 0.3 m -> writes `models/valorant/maps/<key>/collision-patch.bin`; `build-world.cjs` appends it |
 | `map-boundary.mjs` | from every border cell (stride 3 in the sweeps): walk, crouch-jump, Jett dash (server: 32 x 0.25 m flat), updraft (vy = sqrt(2*18*6)), updraft + dash at the apex, Raze satchel (16 x 0.5 m) at a jump apex. `fall` = left the world, `out` = standing > 3 m from the footprint, `perch` = standing > 1.2 m up and > 1.5 m from the footprint, `ledge` = standing on a ledge/box beside the footprint (counted, not an escape) |
 | `map-render.mjs` | typed-array loader for scene.gltf + geometry bins (optional BVH) |
+| `map-seethrough.mjs` | sample-based visual-gap survey from 250 seeded playable nodes at eye height (4 elevations x 24 headings): `seeThrough` (collision hit within 30 m with no render face within 0.75 m: invisible wall), sky `cracks` (a ray at/above the horizon escapes the render meshes while the 4 rays 2 deg around it hit solid, non-foliage geometry within 30 m), `floating` props (node < 6 m across within 12 m of an eye, base > 0.25 m clear below at 5 points, nothing within 0.3 m beside/above) |
 | `map-perf.mjs` | headless render cost model: per view, objects whose bounding sphere meets the frustum (three's culling) = draw calls, their triangles; 48 nav nodes x 8 headings, 103 deg h-FOV 16:9, far 500; evaluates the runtime's own `nmChunkPlan`; texture MB per tier |
 
 ## Holes (collision, 0.25 m grid)
@@ -183,6 +184,32 @@ on every one of levels 0..4) -> whole-map open 697 -> 673, 41.9 -> 24.4 m2; Spli
 What is left is where the overlap graph needs more than 5 levels; largest residues: Haven window fill / wood trim
 (4.5 m2), Meteor box / red beam (3.6 m2); Split floor tiles / slatted wood (1.1 m2) (`leftAfter` in the summary).
 
+## Visual gaps (see-through walls, sky cracks, floating props)
+
+Every converted material is drawn double-sided (`nmPrepareScene`), so a missing backface cannot open a wall; below-horizon
+void is covered by `eval-visual-holes.mjs` + the backdrop skirt. `server/tools/map-seethrough.mjs` (250 nodes, 24,000
+sight rays per map; data `work/validation/map/visual-scan.json`):
+
+| map | see-through (collision without render) | sky cracks | floating candidates |
+|---|---|---|---|
+| Ascent | 0 | 1 | 2 |
+| Bind | 0 | 0 | 1 |
+| Haven | 0 | 0 | 0 |
+| Split | 0 | 0 | 1 |
+| Lotus | 0 | 0 | 1 |
+| Breeze | 0 | 0 | 1 |
+
+Each candidate was rendered from the nearest playable node (`view-map.mjs`, raw meshes): the Ascent crack
+(from (-23.75, 9.67, -25), 20 deg up, heading 334) is open sky between rooftops, not a hole. Floating candidates, verdicts
+from the rendered view and the down-ray hits (inferred, not confirmed in a browser): Ascent attacker well inner plate
+(-0.94, 8.25, 44.39; part of the well model), Ascent rowboat (-65.8, 7, -19.5; 0.4 m over the canal bed, on the water),
+Split hanging bunny sign (3.55, 12.86, -41.0; 3.9 m up, its wires are skipped by the scan), Lotus ruined wall
+(-54.4, 7.3, -6.6) and Breeze boat-shop storage (-58.4, 6.2, 43.3) outside the playable area with nothing under them;
+Bind adobe wall section (-37.07, 11.81, -30.99; 4.4 x 5.9 x 0.6 m, 0.9 m over the floor, nothing found within 0.3 m
+of its sides) looks like a lintel over an opening but is the one worth a browser look. Earlier passes of the scan with
+foliage/palms counted as closing geometry gave 9 "cracks" (Breeze palms, Haven trees), all open sky in the rendered
+views; foliage is excluded now. No data fix was needed: nothing in the survey is a real gap.
+
 ## Needs a real-browser look (for the browser agent)
 
 1. Every map: load, check FPS / `renderer.info.render.calls` / `renderer.info.render.triangles` before vs after at
@@ -198,6 +225,9 @@ What is left is where the overlap graph needs more than 5 levels; largest residu
    Split (-35.75,18.5), (15.75,-18); Breeze (-18.25,-70.25), (7.75,-48)): walls/floors should no longer flicker when
    strafing or at range; check no layer now looks wrongly on top (a trim hidden by its wall), and no near-plane clipping
    when hugging walls / crouching at corners (near 0.1 m).
-6. Online: the client fetches collision from the deployed worker (`/worlds`), so the collision patches reach online
+6. Visual-gap candidates (Visual gaps section): Bind adobe wall section at (-37.07, 11.81, -30.99) should sit on/in its
+   wall (no visible gap under or beside it); Ascent rowboat (-65.8, 7, -19.5) sits on the canal water; Split bunny sign
+   (3.55, 12.86, -41.0) hangs from its wires.
+7. Online: the client fetches collision from the deployed worker (`/worlds`), so the collision patches reach online
    play and the offline client only after the worker's worlds are rebuilt and deployed (`npm run build:worlds` +
    deploy, owner's call; not done here). The leash, optimizer and texture cap ship with the page.
