@@ -17,8 +17,12 @@ const VR=.38;
 // A grazed wall reads blocked at y-.03 as often as not, so contact alone is not support: there must also be a floor under
 // the capsule's footprint within a riser and a bit (a nosing's tread, a box edge), never a wall face mid-air.
 function supported(P,world,y,height){if(!world.blocked(P.x,P.z,.4,y-.03,height)||world.blocked(P.x,P.z,VR,y,height))return false;if(world.ground(P.x,P.z,y+.05)>y-.45)return true;for(let k=0;k<8;k++){const a=k*Math.PI/4;if(world.ground(P.x+Math.cos(a)*.34,P.z+Math.sin(a)*.34,y+.05)>y-.45)return true;}return false;}
-// Highest floor within 20 cm of the centre: seams between stair meshes read as deep holes at a single point.
-function floorNear(world,x,z,y){let f=world.ground(x,z,y+.05);for(const [ox,oz]of [[.2,0],[-.2,0],[0,.2],[0,-.2]])f=Math.max(f,world.ground(x+ox,z+oz,y+.05));return f;}
+// Highest floor within 20 cm of the centre: seams between stair meshes read as deep holes at a single point. Also the
+// footprint ring supported() stands on (.34 m): a capsule walking a stair's open side with its centre past the edge (Ascent
+// A stairs, west rim over the 8 m pit) stands on the tread under its rim, not on the pit floor; measuring the next riser
+// from the pit refused every step (10 m 'climb'), so it pressed into the riser corner until the unwedge moved it.
+// Only floors at or below the feet count, so a wall top beside the capsule never becomes its base.
+function floorNear(world,x,z,y){let f=world.ground(x,z,y+.05);for(const [ox,oz]of [[.2,0],[-.2,0],[0,.2],[0,-.2]])f=Math.max(f,world.ground(x+ox,z+oz,y+.05));if(f<y-.45)for(let k=0;k<8;k++){const a=k*Math.PI/4;f=Math.max(f,world.ground(x+Math.cos(a)*.34,z+Math.sin(a)*.34,y+.05));}return f;}
 function step(P,input,dt,world){
  const dt0=Math.max(0,Math.min(.1,dt)),parts=Math.max(1,Math.ceil(dt0*128)),h=dt0/parts;let landed=false,jumped=false;
  const press=!!input.jump&&!P.jumpHeld;P.jumpHeld=!!input.jump;if(press)P.jumpBuffer=.07;

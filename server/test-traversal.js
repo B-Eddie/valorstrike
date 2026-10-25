@@ -24,7 +24,11 @@ export function walk(s,u,goal,limit=120){const W=s.world,N=W.nav.nodes,dt=.05;le
  return {ok:false,t,why:'stuck',stuckAt:[+u.x.toFixed(2),+u.y.toFixed(2),+u.z.toFixed(2)],repaths};}
 // Open collision edges the fall guard is there for: the capsule centre goes past the rim and is put back where it stood
 // (a hitch, not a fall). Any rescue elsewhere fails the walk.
-const KNOWN_EDGES={ascent:[{x:[41,42.9],z:[-25.2,-23.1],what:'A ramp west rim (no collision past x 42.75, 8 m pit)'}]};
+// Ascent A stairs, west rim (no collision past x 42.75, 8 m pit) used to be whitelisted here: the defender walk to A cut the
+// corner with the capsule centre over the pit, the motor measured each riser from the pit floor and refused it, the unit
+// pressed into the riser corner and was unwedged twice (~0.5 m) and rescued once. Fixed in the motor (floorNear counts
+// the footprint tread), so no edge is whitelisted and no walk may need the unwedge either.
+const KNOWN_EDGES={};
 const fresh=(w,key)=>{const s=new SpikeSimulation(w,'five',key,()=>.5);s.rescues=[];{const g=s.guard.bind(s);s.guard=u=>{const b=[u.x,u.y,u.z],r=g(u);if(r)s.rescues.push(b);return r;};}const a=s.add('atk'),d=s.add('def');s.start(false);return {s,a,d};};
 const endBuy=s=>{for(let n=0;n<420&&s.buy>0;n++){for(const u of s.units)drive(s,u,u.look,0);s.step(.05);}assert.equal(s.buy,0);};
 const report=[];
@@ -39,7 +43,7 @@ for(const key of MAPS){const w=await loadWorld(assets,key);const sites=Object.en
   const r=walk(s,u,p,110);report.push([key,team+' spawn→'+name,r]);if(VERBOSE)console.log(key,team,name,JSON.stringify(r));
   assert(r.ok,key+' '+team+' spawn → site '+name+' walkable: '+JSON.stringify(r));
   // never yanked back by the fall-out-of-map guard on a normal walk (Haven C stairs: a crack under the capsule centre)
-  const odd=s.rescues.filter(([x,,z])=>!(KNOWN_EDGES[key]||[]).some(e=>x>=e.x[0]&&x<=e.x[1]&&z>=e.z[0]&&z<=e.z[1]));assert.equal(odd.length,0,key+' '+team+' → '+name+' rescued mid-walk at '+JSON.stringify(odd));}
+  const odd=s.rescues.filter(([x,,z])=>!(KNOWN_EDGES[key]||[]).some(e=>x>=e.x[0]&&x<=e.x[1]&&z>=e.z[0]&&z<=e.z[1]));assert.equal(odd.length,0,key+' '+team+' → '+name+' rescued mid-walk at '+JSON.stringify(odd));assert.equal(r.unwedged,0,key+' '+team+' → '+name+' needed the stuck-in-geometry unwedge '+r.unwedged+' times');}
  if(key==='bind'){const calls=w.map.callouts,find=n=>calls.find(c=>c.name===n).position;
   for(const [entry,exit] of [['A Teleporter','B Exit'],['B Teleporter','A Exit']]){const {s}=fresh(w,key);endBuy(s);const u=s.units.find(v=>v.team===s.atk),e=find(entry),x=find(exit);
    // walk onto the pad from the attacker spawn; the teleport fires on entry
