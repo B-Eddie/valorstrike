@@ -1,3 +1,5 @@
+import BotRoutes from '../../vendor/bot-routes.cjs';
+import {blockedNodes} from './path.js';
 // Server-authoritative bot personalities. Every bot gets a deterministic seed (its name, id and the map), its own
 // random stream, a role profile and per-bot jittered traits, so bots under identical conditions still move,
 // aim, peek, route and use utility differently, while the same bot replays identically (stable tests).
@@ -42,4 +44,44 @@ export function flankNode(sim,u,target){
  const list=W.playable||[];if(!list.length)return -1;
  for(let k=0;k<16;k++){const i=list[Math.floor(P.r()*list.length)],n=W.nav.nodes[i];if(!n)continue;const ox=n[0]-target.x,oz=n[2]-target.z,d=Math.hypot(ox,oz),lateral=(ox*dz-oz*dx)/len*side;if(d<6||d>24||lateral<2)continue;const s=Math.abs(d-14)-lateral*.3;if(s<score){score=s;best=i;}}
  return best;
+}
+
+// ---- Route variety and spacing (shared with the offline client through vendor/bot-routes.cjs) ----
+// Routes: the A* route is re-routed once per goal through BotRoutes.route (lanes seeded by bot, round and goal, cost
+// added where teammates already walk) and followed from that cache until the goal moves more than 6 m, the bot leaves
+// it, or the round changes. At most two re-routes per simulation tick; past that a bot keeps the plain route this tick.
+export function variedPath(sim,u,start,goal,find){
+ const W=sim.world,N=W.nav.nodes,round=sim.round||0,c=u.vroute;
+ if(c&&c.round===round&&c.team===u.team&&N[c.goal]&&N[goal]&&Math.hypot(N[c.goal][0]-N[goal][0],N[c.goal][2]-N[goal][2])<6&&Math.abs(N[c.goal][1]-N[goal][1])<2){
+  let k=c.path.indexOf(start,c.i);if(k<0){const q=N[start];for(let j=c.i;j<Math.min(c.path.length,c.i+14);j++){const n=N[c.path[j]];if(Math.hypot(n[0]-q[0],n[2]-q[2])<2.5&&Math.abs(n[1]-q[1])<1.2){k=j;break;}}}
+  if(k>=0&&k<c.path.length-1){c.i=k;return c.path.slice(k);}
+ }
+ const base=find(W,start,goal);if(base.length<4)return base;
+ if(sim._vrT!==sim.time){sim._vrT=sim.time;sim._vrN=0;}if(sim._vrN>=2)return base;sim._vrN++;
+ const bl=blockedNodes(W),inBase=new Set(base),allowed=W.allowed,peers=[];
+ for(const v of sim.units)if(v!==u&&v.alive&&v.team===u.team&&v.vroute&&v.vroute.round===round)peers.push({path:v.vroute.path.slice(v.vroute.i)});
+ const r=BotRoutes.route(W.nav,base,u.name+'|'+u.id+'|'+sim.map+'|'+round+'|'+goal,peers,i=>(!allowed||allowed.has(i))&&(!bl[i]||inBase.has(i)),null);
+ u.vroute={goal,round,team:u.team,path:r,i:0};sim.routeStats&&sim.routeStats.push(r);return r.slice();
+}
+// Spacing: while walking a route, a bot steers away from teammates closer than 1.8 m (soft, deterministic right of way).
+const SPACE_OUT=[0,0],SPACE_LIST=[];
+export function spaceLook(sim,u){SPACE_LIST.length=0;for(const v of sim.units)if(v!==u&&v.alive&&!v.loading&&v.team===u.team&&Math.abs(v.x-u.x)<1.8&&Math.abs(v.z-u.z)<1.8)SPACE_LIST.push(v);if(!SPACE_LIST.length)return;
+ const r=BotRoutes.steer(u,SPACE_LIST,-Math.sin(u.look),-Math.cos(u.look),u.id|0,1.8,SPACE_OUT);u.look=Math.atan2(-r[0],-r[1]);}
+// Per-round plans (Spike): an own standing spot inside the site for every bot, staggered starts by role, at most one
+// lurker holding the other site until late in the round, defenders spread round-robin over a per-round shuffled order.
+export function plan(sim,u){
+ const W=sim.world,round=sim.round||0;if(u.plan&&u.plan.round===round&&u.plan.team===u.team)return u.plan;
+ const P=persona(sim,u),sites=Object.keys(W.map.sites),key=sim.map+'|'+round+'|'+u.team,rand=BotRoutes.rng(BotRoutes.hash(u.name+'|'+u.id+'|'+key)),atk=u.team===sim.atk,sp=sim.spike||{};
+ const team=sim.units.filter(v=>!v.human&&v.team===u.team).sort((a,b)=>BotRoutes.hash(a.name+'|'+a.id+'|'+key)-BotRoutes.hash(b.name+'|'+b.id+'|'+key));
+ const out={round,team:u.team,rand,lurk:false,site:null,spot:-1,spotSite:null,post:-1,post0:null,delay:0};
+ if(atk){
+  out.delay=P.role==='entry'?0:P.role==='lurker'?1.2+rand()*1.6:.3+rand()*1.4;
+  const lurker=team.find(v=>v.id!==sp.carrier&&persona(sim,v).role==='lurker');
+  if(lurker===u&&sites.length>1&&team.length>=3){out.lurk=true;const other=sites.filter(n=>n!==sp.site);out.site=other[Math.floor(rand()*other.length)];out.lurkUntil=25+rand()*15;}else out.site=sp.site;
+ }else out.site=sites[(team.indexOf(u)+BotRoutes.hash(key)%sites.length)%sites.length];
+ return u.plan=out;
+}
+export function spotNear(sim,u,center,field,o){
+ const W=sim.world,bl=blockedNodes(W),taken=[];for(const v of sim.units)if(v!==u&&v.team===u.team&&v.plan&&v.plan.round===u.plan.round&&v.plan[field]>=0)taken.push(W.nav.nodes[v.plan[field]]);
+ return BotRoutes.spot(W.nav,center,taken,u.plan.rand,Object.assign({ok:i=>(!W.allowed||W.allowed.has(i))&&!bl[i]},o));
 }

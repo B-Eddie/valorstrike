@@ -38,6 +38,37 @@ allocation / timer counts are the stable numbers):
   (was a second always-on requestAnimationFrame chain, also in the lobby).
 - DPR cap left at 2 (deliberately unchanged).
 
+## Kill cost A: ragdolls (browser profile: xrRagdollTick top per-frame cost after kills, ~250 ms build mostly xrSupports)
+- Corpse re-solve throttled to <=30 Hz (15 Hz beyond 35 m from the camera); the skipped real time is passed to the
+  solver, so bodies fall exactly as fast (xrRagdollTick already substeps large steps at 120 Hz).
+- At most 4 bodies simulate at once: when a fifth drops, the oldest one that has fallen > 1 s freezes where it lies
+  (settled bodies already stop on their own).
+- xrSupports: sample list (vertex, dominant bone, 4 skin indices/weights) cached per geometry (corpses of one agent
+  share it); each sample skinned by the same linear blend as three's boneTransform from per-bone matrices built once
+  per mesh. Contact points are identical to the old per-vertex boneTransform (test compares them on jett/reyna).
+- Tried fewer samples (3000/4000): sova's settled skin sinks under the floor (test_ragdoll fails), so the 6000-sample
+  budget stays.
+- Numbers (node rig harness, loaded machine, warm medians): xrSupports per corpse 38.2 -> 18.5 ms; corpse ticks per
+  second at 120 fps 120 -> ~30 (near) / ~15 (far). Test: work/test_ragdoll_perf.cjs.
+- Browser-verify: corpse fall smoothness at 30 Hz near the camera on a 120/144 Hz display; multi-kill (5+) freeze.
+
+## Kill cost B: kill icon, shader checks, LOS keys, native re-plans
+- xKiAdd: kill icons restart with DOM writes only (xRestart(.., nf): no getAnimations(), which flushes style, on the
+  kill path; the class is re-added two frames on so a style pass without it always runs, also for online kill
+  messages that arrive outside the rAF loop). The hit-marker path (vmHit) is unchanged. Audio blips untouched.
+- Every WebGLRenderer (main, fallback, rebuild, agent preview, menu) goes through xShChk: three's
+  renderer.debug.checkShaderErrors off (it read every program/shader info log after linking, forcing each compile to
+  finish synchronously: 79 % of the first frames in the rendered profile). `?shaderdebug` turns it back on.
+- Bot LOS cache keyed on numeric 0.25 m cells in a two-level Map (was a 6-number string per query), same 100 ms
+  reuse, still clears past 800 entries. Bot sight checks were already staggered per bot at ~10 Hz (xTh think timer).
+- Native-map bot re-plans: per-bot phase (0.35-0.45 s instead of everyone on 0.4 s) and at most 3 timed re-plans per
+  frame (deferral happens before the wiggle-streak count so it never blacklists edges); a bot with no path, blocked,
+  or starved > 0.25 s re-plans anyway.
+- Numbers: LOS cache-hit workload (784k queries) 92 -> 24 young-gen GCs; all-miss workload 77 -> 67. Test:
+  work/test_kill_perf.cjs.
+- Browser-verify: kill banner pop on 2nd..5th kill in a round (offline and online); first frames of a match on a real
+  GPU (no info-log stalls); `?shaderdebug` still reports a broken shader.
+
 ## Item 3: bot variety
 Cause: on native maps every attacker pathed to one identical site point along the same shortest A* path; the shared
 vendor/bot-routes.cjs existed but was not wired in.
@@ -51,3 +82,14 @@ vendor/bot-routes.cjs existed but was not wired in.
 - Server (server/src/bots.js, spike.js, simulation.js): same plans (per-round, own spot, <=1 lurker, staggered starts,
   defender sites shuffled), variedPath routes (also TDM/DM hunting), 1.8 m spacing.
 - Tests: work/test_bot_variety_routes.cjs (offline, real Ascent/Bind nav), server/test-bot-variety.js (real worlds).
+- Numbers (deterministic, 6 rounds x 22 s, sight lines off). Server, before -> after: Ascent distinct attacker routes
+  14 -> 26 (per round 5/5/4/5/4/5 -> 5 every round), average moving teammate gap 4.52 -> 17.13 m, samples within
+  1.8 m of a teammate 41.9 % -> 5.0 %; Bind 11 -> 26 routes, gap 3.68 -> 14.42 m, within 1.8 m 24.8 % -> 10.0 %.
+  Offline native: Ascent 5 plain -> 27 varied routes, Bind 7 -> 30; site spots avg 5.3 / 5.6 m apart (min 3.35 m);
+  one lurker every round; 24 distinct start delays; defender site order differs every round.
+- work/test_client_online.cjs (fast Spike leg): on the default seed 7 the Vandal-armed pilot now goes 4/0 against pistol
+  bots for the whole window (seeds 2/3 still die naturally), so after 30 s without a death a living enemy bot finishes it
+  through the server's abilityDamage path and the page's death / round-reset handling still runs (reported as
+  "death forced after 30 s").
+- Browser-verify: attackers fan out (one lurker), hold distinct spots on site, defenders split across sites per
+  round, no visible stacking/bumping in chokes; online (local server) bots do the same.

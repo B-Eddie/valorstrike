@@ -1,0 +1,15 @@
+{
+  "_source": "wiki.playvalorant.com/en-us/<Agent> ability stats, fetched 2026-10-25 (raw text: work/validation/abilities-wiki.txt). c/q/e = [charges, credits per charge]; e cost 0 = free signature (1 charge each round); u = ultimate points; eRecharge = signature recharge (s, or 'kills2' = a charge back every 2 kills).",
+  "Jett":    {"c": [2, 200], "q": [1, 150], "e": [1, 0],   "u": 8, "eRecharge": "kills2"},
+  "Phoenix": {"c": [1, 150], "q": [1, 200], "e": [2, 250], "u": 7, "eRecharge": "kills2"},
+  "Sova":    {"c": [1, 400], "q": [2, 150], "e": [1, 0],   "u": 8, "eRecharge": 50},
+  "Sage":    {"c": [1, 300], "q": [2, 200], "e": [1, 0],   "u": 7, "eRecharge": 45},
+  "Reyna":   {"c": [2, 250], "q": [2, 200], "u": 7},
+  "Omen":    {"c": [2, 100], "q": [1, 250], "e": [2, 150], "u": 7, "eRecharge": 40},
+  "Killjoy": {"c": [2, 200], "q": [1, 200], "e": [1, 0],   "u": 9},
+  "Raze":    {"c": [1, 300], "q": [2, 200], "e": [1, 0],   "u": 8, "eRecharge": "kills2"},
+  "Skye":    {"c": [1, 150], "q": [1, 300], "e": [2, 250], "u": 8, "eRecharge": 50},
+  "Breach":  {"c": [1, 200], "q": [2, 250], "e": [1, 0],   "u": 8, "eRecharge": 50},
+  "Cypher":  {"c": [2, 200], "q": [2, 100], "e": [1, 0],   "u": 7},
+  "Chamber": {"c": [1, 200], "q": [8, 100], "e": [1, 0],   "u": 8, "eRecharge": 30}
+}

@@ -65,14 +65,28 @@ const XR_REACH=.32,XR_MAXCLEAR=.3,XR_SAMPLES=6000;
 // BufferAttribute.getComponent only exists from three r152; the page runs r149, where calling it threw inside
 // xrSupports and left null contact points that then threw in every solve (corpses froze upright). getX..getW exist in both.
 const XR_GC=(at,i,k)=>k===0?at.getX(i):k===1?at.getY(i):k===2?at.getZ(i):at.getW(i);
+// Every stride-th vertex of a geometry with its dominant bone and its four skin indices/weights, cached per geometry
+// (every corpse of an agent shares it).
+const XR_SL=new WeakMap();
+function xrSampleList(g,stride){let c=XR_SL.get(g);if(c&&c.stride===stride)return c;const ps=g.attributes.position,si=g.attributes.skinIndex,sw=g.attributes.skinWeight,n=Math.ceil(ps.count/stride);
+ c={stride,n,vi:new Int32Array(n),dom:new Int32Array(n),si:new Int32Array(n*4),sw:new Float32Array(n*4)};
+ for(let i=0,s=0;i<ps.count;i+=stride,s++){let best=-1,bi=0;c.vi[s]=i;for(let k=0;k<4;k++){const w=XR_GC(sw,i,k),j=XR_GC(si,i,k);c.si[s*4+k]=j;c.sw[s*4+k]=w;if(w>best){best=w;bi=j;}}c.dom[s]=bi;}
+ XR_SL.set(g,c);return c;}
 function xrSupports(R,sc,sim){
  const byBone=new Map(),J=new Map();for(const a of R.list)if(a.b)J.set(a.b,a);const owner=b=>{if(byBone.has(b))return byBone.get(b);let x=b;while(x&&!J.has(x))x=x.parent;const j=x?J.get(x):null;byBone.set(b,j);return j;};
  const inv=new Map();for(const a of R.list)if(a.b){a.b.updateWorldMatrix(true,false);inv.set(a,new THREE.Matrix4().copy(a.b.matrixWorld).invert());a.sup=XR_DIRS.map(()=>null);a.supD=XR_DIRS.map(()=>-Infinity);}
  const meshes=[];let total=0;sc.traverse(o=>{if(o.isSkinnedMesh&&o.visible!==false&&o.geometry&&o.geometry.attributes.skinIndex){meshes.push(o);total+=o.geometry.attributes.position.count;}});
- const stride=Math.max(1,Math.ceil(total/XR_SAMPLES)),v=new THREE.Vector3(),l=new THREE.Vector3(),jp=new THREE.Vector3();
- for(const o of meshes){o.updateMatrixWorld(true);o.skeleton.update();const ps=o.geometry.attributes.position,si=o.geometry.attributes.skinIndex,sw=o.geometry.attributes.skinWeight,bt=o.applyBoneTransform||o.boneTransform;if(!bt)continue;
-  for(let i=0;i<ps.count;i+=stride){let best=-1,bi=0;for(let k=0;k<4;k++){const w=XR_GC(sw,i,k);if(w>best){best=w;bi=XR_GC(si,i,k);}}const bone=o.skeleton.bones[bi];const a=bone&&owner(bone);if(!a||!a.sup)continue;
-   v.fromBufferAttribute(ps,i);bt.call(o,i,v);v.applyMatrix4(o.matrixWorld);if(!Number.isFinite(v.y))continue;a.b.getWorldPosition(jp);if(v.distanceTo(jp)>XR_REACH)continue;l.copy(v).applyMatrix4(inv.get(a));
+ const stride=Math.max(1,Math.ceil(total/XR_SAMPLES)),v=new THREE.Vector3(),l=new THREE.Vector3(),JP=new Map();for(const a of R.list)if(a.b)JP.set(a,a.b.getWorldPosition(new THREE.Vector3()));
+ // perf (kill cost): the sample list is cached per geometry, and each vertex is skinned with the same linear blend as
+ // three's boneTransform but from per-bone matrices built once per mesh (world * bindMatrixInverse * bone * boneInverse
+ // * bindMatrix), so the contact points are unchanged; joint positions are read once instead of per vertex.
+ for(const o of meshes){o.updateMatrixWorld(true);o.skeleton.update();const ps=o.geometry.attributes.position,bt=o.applyBoneTransform||o.boneTransform;if(!bt)continue;
+  const S=xrSampleList(o.geometry,stride),sk=o.skeleton,bm=new Map(),tmp=new THREE.Matrix4(),pre=new THREE.Matrix4().multiplyMatrices(o.matrixWorld,o.bindMatrixInverse),bnd=o.bindMatrix;
+  const boneM=bi=>{let m=bm.get(bi);if(m!==undefined)return m;const b=sk.bones[bi],ib=sk.boneInverses[bi];m=b&&ib?new THREE.Matrix4().multiplyMatrices(pre,tmp.multiplyMatrices(b.matrixWorld,ib)).multiply(bnd).elements:null;bm.set(bi,m);return m;};
+  for(let s=0;s<S.n;s++){const bone=sk.bones[S.dom[s]];const a=bone&&owner(bone);if(!a||!a.sup)continue;
+   const i=S.vi[s],px=ps.getX(i),py=ps.getY(i),pz=ps.getZ(i);let x=0,y=0,z=0,ok=true;
+   for(let k=0;k<4;k++){const w=S.sw[s*4+k];if(!w)continue;const e=boneM(S.si[s*4+k]);if(!e){ok=false;break;}x+=w*(e[0]*px+e[4]*py+e[8]*pz+e[12]);y+=w*(e[1]*px+e[5]*py+e[9]*pz+e[13]);z+=w*(e[2]*px+e[6]*py+e[10]*pz+e[14]);}
+   if(ok)v.set(x,y,z);else{v.set(px,py,pz);bt.call(o,i,v);v.applyMatrix4(o.matrixWorld);}if(!Number.isFinite(v.y))continue;if(v.distanceTo(JP.get(a))>XR_REACH)continue;l.copy(v).applyMatrix4(inv.get(a));
    for(let k=0;k<XR_DIRS.length;k++){const d=XR_DIRS[k],s=l.x*d[0]+l.y*d[1]+l.z*d[2];if(s>a.supD[k]){a.supD[k]=s;a.sup[k]=(a.sup[k]||new THREE.Vector3()).copy(l);}}}}
  for(const a of R.list)if(a.sup){a.sup=a.sup.filter(Boolean);delete a.supD;if(!a.sup.length)a.sup=null;}
 }
@@ -131,5 +145,13 @@ function xrRagdollTick(M,dt,wall){
 }
 {const die=xDie;xDie=function(b){const r=die.apply(this,arguments);if(b&&b.xm&&b.xm.dead){b.xm.diedAt=b.xm.diedAt||performance.now();}return r;};}
 {const visual=xVis;xVis=function(dt){const now=performance.now();for(let i=XDEAD.length-1;i>=0;i--){const e=XDEAD[i],age=(now-(e.c.diedAt||now))/1000;if(age>4){scene.remove(e.c.m);scene.remove(e.gn);xDisp(e.gn);const j=XSOL.mx.indexOf(e.c);if(j>=0)XSOL.mx.splice(j,1);XDEAD.splice(i,1);}else e.t=Math.max(e.t,age);}return visual(dt);};}
-{const death=xUbDead;xUbDead=function(M,dt){if(!(M&&M.sx&&M.sx.sc))return death(M,dt);const now=performance.now(),w=M.ragW!=null?(now-M.ragW)/1000:dt;M.ragW=now;return xrRagdollTick(M,dt,w);};}
+// perf (kill cost): a built corpse re-solves at most 30 times a second (15 beyond 35 m from the camera); the skipped
+// real time is passed on, so it falls exactly as fast. At most XR_ACT.max bodies simulate at once: when a fifth body
+// drops, the oldest one that has been falling for over a second freezes where it lies (settled bodies already stop).
+const XR_ACT=[];XR_ACT.max=4;
+{const death=xUbDead;xUbDead=function(M,dt){if(!(M&&M.sx&&M.sx.sc))return death(M,dt);const now=performance.now();
+ if(M.ragdoll&&M.ragW!=null){let iv=33;try{const p=M.m.position,c=camera.position;if(Math.hypot(p.x-c.x,p.z-c.z)>35)iv=66;}catch(e){}if(now-M.ragW<iv)return true;}
+ while(XR_ACT.length&&now-(XR_ACT[0].ragW||0)>1500)XR_ACT.shift();if(XR_ACT.indexOf(M)<0)XR_ACT.push(M);
+ if(XR_ACT.length>XR_ACT.max&&XR_ACT[0]===M&&M.ragdoll&&M.ragdoll.time>1){XR_ACT.shift();return false;}
+ const w=M.ragW!=null?(now-M.ragW)/1000:dt;M.ragW=now;const r=xrRagdollTick(M,dt,w);if(!r){const i=XR_ACT.indexOf(M);if(i>=0)XR_ACT.splice(i,1);}return r;};}
 // ---- END REPAIR PASS ----

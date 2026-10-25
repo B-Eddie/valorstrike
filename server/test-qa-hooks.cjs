@@ -31,7 +31,7 @@ const assert=require('assert/strict'),fs=require('fs'),path=require('path');
  for(const [credits,buy] of [[undefined,undefined],[0,1],[2000,15]]){
   const sim=new SpikeSimulation(world,'five','ascent',()=>.5);
   Object.assign(sim,qaOverrides(credits===undefined?{}:{QA_TEST_HOOKS:'true',QA_CREDITS:String(credits),QA_BUY_SECONDS:String(buy)}));
-  const u=sim.add('qa');assert.equal(u.credits,credits??800);sim.start(false);assert.equal(sim.buy,buy??20);
+  const u=sim.add('qa');assert.equal(u.credits,credits??800);sim.start(false);assert.equal(sim.buy,buy??45);
  }
  console.log('QA hooks: gate required, ranges validated, malformed ignored, production config clean, client input unreachable');
 })().catch(e=>{console.error(e);process.exit(1);});

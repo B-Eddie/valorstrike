@@ -21,7 +21,7 @@ function mulberry(seed){let a=seed>>>0;return ()=>{a=a+0x6D2B79F5|0;let t=Math.i
 Math.random=mulberry(SEED*104729+1);require('vm').runInContext(`Math.random=(${mulberry})(${SEED*7919+3});`,H.context);
 (async()=>{
  const xe=code=>require('vm').runInContext('__xe',H.context)(code);
- const {localCluster}=await import('../server/tools/local-cluster.mjs');const {ScriptedHuman}=await import('../server/tools/scripted-human.mjs');const {loadWorld}=await import('../server/src/world.js');
+ const {localCluster}=await import('../server/tools/local-cluster.mjs');const {ScriptedHuman}=await import('../server/tools/scripted-human.mjs');const {loadWorld}=await import('../server/src/world.js');const {abilityDamage}=await import('../server/src/abilities.js');
  const cluster=await localCluster({env:{ALLOW_LOCAL_ORIGIN:'true',ENABLE_SPIKE:'true'}});const world=await loadWorld(cluster.env.ASSETS,'ascent');
  // WebSocket bridge: the page's socket is a local-cluster connection.
  const sockets=[],codes=new Set();let pending=0;
@@ -58,7 +58,7 @@ Math.random=mulberry(SEED*104729+1);require('vm').runInContext(`Math.random=(${m
   const B=join(code,'FuzzB','Sova','PageQA'),C=join(code,'FuzzC','Reyna','PageQA');
   await until(()=>xe('(MP.room&&MP.room.pl||[]).length')===3,8000,'humans joined');xe('mpStart()');
   await until(()=>xe('MP.st')==='game'&&xe('NET.ready'),20000,mode+' match start');
-  let deaths=0,lastHp=100,swaps=0;const sample=()=>{const hp=xe('player.hp');if(lastHp>0&&hp<=0)deaths++;lastHp=hp;};pilotCode=code;if(mode==='five'&&!LONG)cluster.room(code).sim.buy=1.5;// fast: skip most of the first buy phase
+  let deaths=0,lastHp=100,swaps=0,forcedDeath=0;const sample=()=>{const hp=xe('player.hp');if(lastHp>0&&hp<=0)deaths++;lastHp=hp;};pilotCode=code;if(mode==='five'&&!LONG)cluster.room(code).sim.buy=1.5;// fast: skip most of the first buy phase
   const pk=()=>{const u=cluster.room(code)?.sim?.units.find(u=>u.name===xe('MP.name'));return u?u.kills:0;};
   // Fight; B leaves and rejoins as another agent (a bot takes and gives back the seat), C drops by socket close.
   for(let t=0;t<T.fight[0];t+=500){await step(500);sample();}
@@ -69,12 +69,12 @@ Math.random=mulberry(SEED*104729+1);require('vm').runInContext(`Math.random=(${m
   const units=xe('bots.length+allies.length');assert(units>=8,'page shows the other units: '+units);
   if(mode==='five'){const r=cluster.room(code).sim;if(!LONG&&r.round<2&&!(r.roundDelay>0))r.finishRound(0,'QA');await until(()=>r.round>=T.rounds,T.until,'Spike round resets');if(!LONG)r.buy=Math.min(r.buy,1.5);}
   // The piloted page player must have fought: fired, killed or died (deaths sampled from the page's own hp).
-  for(let t=0;t<T.until&&!(deaths>=1&&pk()>=1)&&(mode!=='five'||!LONG||t<15000);t+=500){await step(500);sample();const r=cluster.room(code).sim,u=r.units.find(u=>u.name===xe('MP.name'));if(mode==='five'&&!LONG&&u&&!u.alive&&!(r.roundDelay>0)&&r.phase==='game'){r.finishRound(0,'QA');}else if(mode==='five'&&!LONG&&r.buy>1.5)r.buy=1.5;}
+  for(let t=0;t<T.until&&!(deaths>=1&&pk()>=1)&&(mode!=='five'||!LONG||t<15000);t+=500){await step(500);sample();const r=cluster.room(code).sim,u=r.units.find(u=>u.name===xe('MP.name'));if(mode==='five'&&!LONG&&u&&!u.alive&&!(r.roundDelay>0)&&r.phase==='game'){r.finishRound(0,'QA');}/* Bot variety (spread site spots, staggered starts) can leave a Vandal-armed pilot unbeaten by pistol bots for the whole fast window on a seed (seed 7: 4/0): after 30 s without a death a living enemy bot finishes it through the server's ability-damage path, so the page's death / round-reset handling still runs. */if(mode==='five'&&!LONG&&t>=30000&&!deaths&&u&&u.alive&&r.phase==='game'&&!(r.roundDelay>0)){const k=r.units.find(v=>v.alive&&!v.human&&v.team!==u.team);if(k){abilityDamage(r,k,u,999);forcedDeath++;}}else if(mode==='five'&&!LONG&&r.buy>1.5)r.buy=1.5;}
   const kills=pk();assert(stats.fired>0,'pilot fired');if(mode!=='five'||!LONG)assert(deaths>=1&&kills>=1,mode+': page player killed and died ('+kills+'/'+deaths+')');
   // Match end (DM/TDM by clock, Spike by forcing the score), then the result screen and leaving.
   const room=cluster.room(code);if(mode==='five'){room.sim.roundScores=[12,10];room.sim.roundDelay=0;room.sim.finishRound(0,'QA');}else room.sim.remaining=1;
   await until(()=>xe('MP.st')==='post',30000,mode+' match end');await step(1000);
-  report[mode]={deaths,kills,swaps,units,round:room.sim.round,ms:Date.now()-tm,virt:cluster.clock.now()-v0};pilotCode=null;idle();
+  report[mode]={deaths,kills,swaps,forcedDeath,units,round:room.sim.round,ms:Date.now()-tm,virt:cluster.clock.now()-v0};pilotCode=null;idle();
   for(const h of humans.splice(0))try{h.leave();}catch(e){}
   xe('mpReset()');await step(500);xe('try{toLobby()}catch(e){}');await step(200);}
  // Server-side disconnect mid-match: the page must leave the match cleanly.
@@ -104,6 +104,6 @@ Math.random=mulberry(SEED*104729+1);require('vm').runInContext(`Math.random=(${m
  const errors=H.errors.slice(errs0),xerr=H.xErrCalls.slice(x0);
  if(errors.length||xerr.length){console.error(JSON.stringify({errors:errors.slice(0,8),xerr:xerr.slice(0,8)},null,1));process.exit(1);}
  if(VERBOSE)console.log(JSON.stringify(report));
- console.log(`Online client soak (page <-> in-process server): ${LONG?'long':'fast'} TDM/DM/Spike, piloted page player kills/deaths ${Object.values(report).map(r=>r.kills+'/'+r.deaths).join(', ')}, respawns, kills, leave/rejoin agent swaps, Spike rounds (${report.five.round}), match end, server disconnect, slow load kept while progressing then closed with a clear message; no page exceptions`);
+ console.log(`Online client soak (page <-> in-process server): ${LONG?'long':'fast'} TDM/DM/Spike, piloted page player kills/deaths ${Object.values(report).map(r=>r.kills+'/'+r.deaths+(r.forcedDeath?' (death forced after 30 s)':'')).join(', ')}, respawns, kills, leave/rejoin agent swaps, Spike rounds (${report.five.round}), match end, server disconnect, slow load kept while progressing then closed with a clear message; no page exceptions`);
  process.exit(0);
 })().catch(e=>{console.error(e);console.error(JSON.stringify(H.errors.slice(0,8)));process.exit(1);});
