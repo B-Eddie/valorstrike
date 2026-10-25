@@ -154,6 +154,7 @@ button{font:inherit;text-transform:inherit;letter-spacing:inherit;cursor:pointer
 .x-bl svg,.x-br svg{width:24px;height:24px;flex:none}.x-bl svg{color:#45d0ff}.x-br svg{color:var(--red)}
 .x-bl .x-sep{width:1px;align-self:stretch;background:rgba(236,232,225,.25)}
 .x-bl .x-hp.lo{color:var(--red)}
+.x-bl.x-rg svg{color:#5fe08a}#xArm[data-rg]::after{content:"+" attr(data-rg);margin-left:3px;font-size:.55em;color:#5fe08a;vertical-align:super}
 .x-br em{font-style:normal;opacity:.4;font-size:26px}.x-br .x-rs{font-size:22px;opacity:.75}
 .x-br small{font-size:12px;opacity:.7;letter-spacing:.12em;margin-right:4px}
 .x-sh{display:none!important}
@@ -2790,7 +2791,16 @@ function flash(b) {
   clearTimeout(b.xfT); b.xfT = setTimeout(() => ms.forEach((m) => m.emissive.setHex(m.userData.e0)), 90);
 }
 // Valorant-style shields: armour soaks 66% of each hit until it runs out (shared by bots and range dummies)
-function armAbs(t, n) { const a = Math.min(t.armor || 0, n * 0.66); t.armor = Math.round(((t.armor || 0) - a) * 1e6) / 1e6; return a; } // 1e-6 snap, as the server: no 54.00000000000001 hp read as 55
+// Armor (wiki.playvalorant.com/en-us/Armor_and_Shield; v9.10 renamed Light / Heavy Shields to Light / Heavy Armor and added the
+// Regen Shield): Light 25 / Heavy 50 absorb 66%; the Regen Shield holds 25, absorbs 100%, and refills from a 50 pool (t.rgn,
+// carried across rounds) XRGN.delay s after its last absorbed hit. = server RGN (delay 3 s per 9.10 coverage; rate inferred).
+const XRGN = { cap: 25, pool: 50, delay: 3, rate: 12.5 };
+function xArmOwn(t, n, a) { return n === "Regen Shield" ? t.rgn != null && (t.armor || 0) >= a && t.rgn >= XRGN.pool : t.rgn == null && (t.armor || 0) >= a; }
+function xRgnTick(t, dt) { if (!t || !(t.rgn > 0) || t.alive === false || !(t.hp > 0) || (t.armor || 0) >= XRGN.cap) return false; if ((t.rgnT || 0) > 0) { t.rgnT -= dt; return false; }
+  const g = Math.min(t.rgn, XRGN.cap - (t.armor || 0), XRGN.rate * dt); t.armor = Math.round(((t.armor || 0) + g) * 1e6) / 1e6; t.rgn = Math.round((t.rgn - g) * 1e6) / 1e6; return true; }
+function xRgHud() { const el = $("xArm"); if (!el) return; const r = player && player.rgn != null ? String(Math.ceil(player.rgn)) : ""; if (xRgHud.k === r) return; xRgHud.k = r;
+  if (r) el.setAttribute("data-rg", r); else el.removeAttribute("data-rg"); if (el.parentNode && el.parentNode.classList) el.parentNode.classList.toggle("x-rg", !!r); }
+function armAbs(t, n) { const rg = t.rgn != null, a = Math.min(t.armor || 0, n * (rg ? 1 : 0.66)); t.armor = Math.round(((t.armor || 0) - a) * 1e6) / 1e6; if (rg && a > 0) t.rgnT = XRGN.delay; return a; } // 1e-6 snap, as the server: no 54.00000000000001 hp read as 55
 function hurt(t, n, by) { const h0 = Math.max(0, t.hp), a = armAbs(t, n); t.hp = Math.round((t.hp - (n - a)) * 1e6) / 1e6; try { sbDmg(by === undefined ? "You" : by, t === player ? "You" : t.name, Math.min(h0, n - a)); } catch (e) {} try { xKLog(t, by, Math.min(h0, n - a)); } catch (e) {} }
 // death flow (5v5 / Retake / Rifle): per-life hit log (pooled entries), KILLED BY card, 2 s then spectate living teammates
 let xHS = false; const xKL = { p: null, log: [], n: 0, st: 0, on: false, sp: false, si: 0, cur: null, el: null, sl: null };
@@ -4631,7 +4641,7 @@ function xBuildTeams() { let me = "Jett"; try { me = J.pick || "Jett"; } catch (
   let en = []; try { en = xDraw(5, F_MATES.slice()); } catch (e) {} if (!en || en.length !== 5 || new Set(en).size !== 5) en = xDraw(5, []); // no shared names with mates, so the scoreboard keeps 10 distinct rows
   F_EN.splice(0, F_EN.length, ...en); xTmLocked = false; }
 const FV = { you: 0, them: 0, atk: true, cr: 800, buy: 0, pri: null, sec: "Classic", menu: false, sp: { st: "", site: "" }, to: 0, cat: 0, bs: {}, alive: false, arm: 0 }; xFvOK = true;
-const BUY = [["Sidearms", [["Classic", 0], ["Shorty", 300], ["Frenzy", 450], ["Ghost", 500], ["Sheriff", 800]]], ["SMGs", [["Stinger", 1100], ["Spectre", 1600]]], ["Rifles", [["Bulldog", 2050], ["Guardian", 2250], ["Phantom", 2900], ["Vandal", 2900]]], ["Snipers", [["Marshal", 950], ["Outlaw", 2400], ["Operator", 4700]]], ["Shields", [["Light Shields", 400, 25], ["Heavy Shields", 1000, 50]]], ["Shotguns", [["Bucky", 850], ["Judge", 1850]]], ["Machine guns", [["Ares", 1600], ["Odin", 3200]]]];
+const BUY = [["Sidearms", [["Classic", 0], ["Shorty", 300], ["Frenzy", 450], ["Ghost", 500], ["Sheriff", 800]]], ["SMGs", [["Stinger", 1100], ["Spectre", 1600]]], ["Rifles", [["Bulldog", 2050], ["Guardian", 2250], ["Phantom", 2900], ["Vandal", 2900]]], ["Snipers", [["Marshal", 950], ["Outlaw", 2400], ["Operator", 4700]]], ["Armor", [["Light Armor", 400, 25], ["Regen Shield", 650, 25], ["Heavy Armor", 1000, 50]]], ["Shotguns", [["Bucky", 850], ["Judge", 1850]]], ["Machine guns", [["Ares", 1600], ["Odin", 3200]]]];
 const capC = (n) => Math.min(9000, n);
 const BUY_SIL = { // look pass: flat white gun silhouettes, viewBox 64 x 20
   Classic: "M20 5h22v4H32l-2 9h-6l2-9h-6z",
@@ -4663,7 +4673,7 @@ function getLossBonus(team) { // credits `team` gets next round if it loses it: 
 window.getLossBonus = getLossBonus;
 function fKC(n) { if (XTKILL) return; if (mode === "five" && FV.bs[n]) FV.bs[n].cr = capC(FV.bs[n].cr + 200); }
 function fEco() { // match start and side swap: everyone back to 800 and a Classic
-  FV.cr = 800; FV.pri = null; FV.sec = "Classic"; FV.alive = false; FV.arm = 0; FV.bs = {}; FV.bt = []; FV.req = null; FV.reqBy = null;
+  FV.cr = 800; FV.pri = null; FV.sec = "Classic"; FV.alive = false; FV.arm = 0; FV.rgn = undefined; FV.bs = {}; FV.bt = []; FV.req = null; FV.reqBy = null;
   F_EN.concat(F_MATES).forEach((n) => FV.bs[n] = { cr: 800, w: "Classic", arm: 0, alive: false });
 }
 function xChHH(n) { try { return (n === "Chamber" || (typeof xAgOf === "function" && xAgOf(n) === "Chamber")) && !!(KITS.Chamber && KITS.Chamber.n.includes("Headhunter")); } catch (e) { return false; } }
@@ -4674,7 +4684,7 @@ function xRollSmall() { let me = "Jett"; try { me = J.pick || "Jett"; } catch (e
   const ok = xTmLocked && MATES.length === 2 && !MATES.includes(me) && MATES[0] !== MATES[1];
   if (!ok) MATES.splice(0, MATES.length, ...xDraw(2, [me])); }
 function fBotBuy(n) { // rifle + heavy shields at 3900+, else Spectre or Sheriff, else save
-  const s = FV.bs[n]; if (!s.alive) { s.w = "Classic"; s.arm = 0; } const c0 = s.cr;
+  const s = FV.bs[n]; if (!s.alive) { s.w = "Classic"; s.arm = 0; s.rgn = undefined; } const c0 = s.cr;
   const rifle = () => /^(Vandal|Phantom|Bulldog|Marshal|Operator|Odin)$/.test(s.w), prim = () => rifle() || /^(Judge|Bucky|Ares)$/.test(s.w);
   const def = F_MATES.includes(n) ? !FV.atk : FV.atk;
   if (!rifle() && def && s.cr >= 4200 && Math.random() < 0.08) { s.w = "Odin"; s.cr -= 3200; } // defence full buy: Odin rarely (8%)
@@ -4683,7 +4693,7 @@ function fBotBuy(n) { // rifle + heavy shields at 3900+, else Spectre or Sheriff
   else if (!prim() && def && s.cr >= 1850 && Math.random() < 0.25) { s.w = "Judge"; s.cr -= 1850; } // defence half-buy: Judge 25%
   else if (!rifle() && s.cr >= 2050 && Math.random() < 0.4) { s.w = "Bulldog"; s.cr -= 2050; } // half-buy: Bulldog sometimes
   else if (!rifle() && s.cr >= 1350 && Math.random() < 0.06) { s.w = "Marshal"; s.cr -= 950; } // Marshal rarely
-  if (prim()) { if (s.arm < 50 && s.cr >= 1000) { s.cr -= 1000; s.arm = 50; } }
+  if (prim()) { if (s.arm < 50 && s.cr >= 1000) { s.cr -= 1000; s.arm = 50; s.rgn = undefined; } }
   else if (s.cr >= 850 && s.cr < 2050 && Math.random() < 0.15) { s.cr -= 850; s.w = "Bucky"; } // eco: Bucky 15%
   else if (!/^(Spectre|Stinger)$/.test(s.w) && s.cr >= 1100 && s.cr < 3900 && Math.random() < 0.3) { s.cr -= 1100; s.w = "Stinger"; } // force-buy: Stinger 30%
   else if (s.w !== "Spectre" && s.cr >= 1600) { s.cr -= 1600; s.w = "Spectre"; }
@@ -4720,14 +4730,14 @@ function bUndo(e) { // weapon entry: slot back to what it held before, refund wh
   else { FV.cr += e.p; bBack("You", e.p); }
 }
 function bCard(n, p, a) {
-  const W = WEAP[n], L = bLog(), own = a ? (player.armor || 0) >= a : n === FV.pri || n === FV.sec;
+  const W = WEAP[n], L = bLog(), own = a ? xArmOwn(player, n, a) : n === FV.pri || n === FV.sec;
   const eq = a ? own : (n === FV.pri && rw === "pri") || (n === FV.sec && rw === "pis"), e = L.find((x) => x.n === n), sell = FV.buy > 0 && !!e && own, no = !own && FV.cr < bCost(n);
-  const meta = a ? "+" + a + " shields" : W.pel ? W.mag + " shells · " + W.pel + "×" + W.body : W.mag + " rds · " + W.body + " / " + W.head;
+  const meta = a ? (n === "Regen Shield" ? "+" + a + " · 100% · regen " + XRGN.pool : "+" + a + " armor · 66%") : W.pel ? W.mag + " shells · " + W.pel + "×" + W.body : W.mag + " rds · " + W.body + " / " + W.head;
   const st = !own ? "" : e && e.by ? "From " + e.by : eq ? "Equipped" : "Owned";
   return `<div class="xb-card"><button type="button" data-n="${n}" class="xb-w${own ? " on" : ""}${no ? " xb-no" : ""}${sell ? " xb-sell" : ""}"${no ? ' aria-disabled="true"' : ""} aria-label="${n}, ${p} credits${own ? ", " + st : no ? ", not enough credits" : ""}${sell ? ", right-click to sell" : ""}"><span class="xb-top"><b>${n}</b><span class="x-tp"><i class="x-cg"></i>${p}</span></span><svg viewBox="0 0 64 20" aria-hidden="true"><path d="${BUY_SIL[a ? "sh" : n] || BUY_SIL.Vandal}"/></svg><span class="xb-ft"><small>${meta}</small>${st ? `<em>${st}</em>` : ""}</span></button>${no && !a ? `<button type="button" class="xb-rq" data-rq="${n}" title="Ask a teammate with spare credits to buy this">${FV.req === n ? "Requested" : "Request"}</button>` : ""}</div>`;
 }
 function bTeam() {
-  const ld = (w, arm) => `<span class="xb-ld"><svg viewBox="0 0 64 20" aria-hidden="true"><path d="${BUY_SIL[w] || BUY_SIL.Classic}"/></svg><small>${w}${arm ? " · " + arm + " shields" : ""}</small></span>`;
+  const ld = (w, arm) => `<span class="xb-ld"><svg viewBox="0 0 64 20" aria-hidden="true"><path d="${BUY_SIL[w] || BUY_SIL.Classic}"/></svg><small>${w}${arm ? " · " + arm + " armor" : ""}</small></span>`;
   const rq = FV.req ? (FV.reqBy ? "" : `<em class="xb-wait">Requested ${FV.req}${FV.reqNo ? " · nobody has spare credits" : ""}</em>`) : "";
   let ag = ""; try { ag = jOn() ? J.pick : ""; } catch (e) {}
   const me = `<li class="xb-me"><span class="xb-ag"><b>You</b><small>${ag}</small></span><span class="x-tp"><i class="x-cg"></i>${FV.cr}</span>${ld(FV.pri || FV.sec, Math.ceil(player.armor || 0))}${rq}</li>`;
@@ -4741,20 +4751,20 @@ function buyRender() {
   setT("xBC", FV.cr); setT("xBT", "00:" + String(Math.max(0, Math.ceil(FV.buy))).padStart(2, "0")); setT("xBLB", bMin()); setT("xBRd", "Round " + (FV.you + FV.them + 1) + (FV.buy > 0 ? " · Buy phase" : ""));
   // perf pass 21: grid only rebuilt when its markup actually changed
   const col = (i, lab, k, cls) => `<div class="x-bc${cls || ""}${FV.cat === i ? " on" : ""}" data-cat="${BUY[i][0]}"><h4><kbd>${k}</kbd>${lab}</h4>` + (cls ? '<div class="xb-row">' : "") + BUY[i][1].map(([n, p, a]) => bCard(n, p, a)).join("") + (cls ? "</div>" : "") + "</div>";
-  const bh = BUY_COLS.map(([i, lab], j) => col(i, lab, j + 1)).join("") + col(4, "Shields", 7, " xb-shc") + jBuyHtml();
+  const bh = BUY_COLS.map(([i, lab], j) => col(i, lab, j + 1)).join("") + col(4, "Armor", 7, " xb-shc") + jBuyHtml();
   if (buyRender.h !== bh) { buyRender.h = bh; $("xBG").innerHTML = bh; }
   const th = bTeam(); if (buyRender.t !== th) { buyRender.t = th; $("xBTm").innerHTML = th; }
-  $("xBL").textContent = "Loadout · " + (FV.pri || "No primary") + " · " + FV.sec + " · " + Math.ceil(player.armor || 0) + " shields";
+  $("xBL").textContent = "Loadout · " + (FV.pri || "No primary") + " · " + FV.sec + " · " + Math.ceil(player.armor || 0) + " armor";
 }
 function fBuy(n) {
   if (n.startsWith("ab:")) return jBuy(n.slice(3));
   const it = bItem(n); if (!it) return;
   const [, p, a] = it, L = bLog();
   if (a) {
-    if ((player.armor || 0) >= a) return;
+    if (xArmOwn(player, n, a)) return;
     const i = L.findIndex((x) => x.a), e = L[i]; if (FV.cr + (e ? e.p : 0) < p) return;
-    let prev = player.armor || 0; if (e) { prev = e.prev; FV.cr += e.p; bBack("You", e.p); L.splice(i, 1); }
-    player.armor = a; L.push({ n, p, a, prev });
+    let prev = player.armor || 0, prg = player.rgn; if (e) { prev = e.prev; prg = e.prg; FV.cr += e.p; bBack("You", e.p); L.splice(i, 1); }
+    player.armor = a; player.rgn = n === "Regen Shield" ? XRGN.pool : undefined; player.rgnT = 0; L.push({ n, p, a, prev, prg });
   } else {
     if (n === FV.pri || n === FV.sec) return;
     const sl = bSide(n) ? "pis" : "pri", i = L.findIndex((x) => x.sl === sl), e = L[i];
@@ -4772,7 +4782,7 @@ function fSell(n) { // right-click: full refund for anything bought this round, 
   let i = -1; for (let j = L.length - 1; j >= 0; j--) if (ab ? L[j].ab === ab : L[j].n === n) { i = j; break; }
   if (i < 0) return false; const e = L[i];
   if (ab) { if (!(J[ab] > 0)) return false; J[ab]--; if (ab === "e" && J.pick === "Omen") J.oeM = J.e; FV.cr += e.p; bBack("You", e.p); }
-  else if (e.a) { if ((player.armor || 0) < e.a) { L.splice(i, 1); return false; } player.armor = e.prev; FV.cr += e.p; bBack("You", e.p); }
+  else if (e.a) { if ((player.armor || 0) < e.a) { L.splice(i, 1); return false; } player.armor = e.prev; player.rgn = e.prg; FV.cr += e.p; bBack("You", e.p); }
   else { if ((e.sl === "pis" ? FV.sec : FV.pri) !== n) { L.splice(i, 1); return false; } bUndo(e); }
   L.splice(i, 1); blip(420, 0.08, "triangle", 0.12); onSkin(); updHud(); buyRender(); xHud(); return true;
 }
@@ -7682,16 +7692,16 @@ function fSpawn() {
   const sz = xSpawn(FV.map).atk, mz = FV.atk ? sz : -sz, xs = [-8, -4, 4, 8];
   F_EN.forEach((n, i) => {
     const s = fBotBuy(n);
-    const b = Object.assign(mkGuy(i * 4 - 8, -mz, botMat, headMat), { hp: 100, armor: s.arm, w: s.w, alive: true, cd: 1 + Math.random() * 1.5, name: n, strafe: Math.random() < 0.5 ? 1 : -1, per: xPer() });
+    const b = Object.assign(mkGuy(i * 4 - 8, -mz, botMat, headMat), { hp: 100, armor: s.arm, rgn: s.rgn, w: s.w, alive: true, cd: 1 + Math.random() * 1.5, name: n, strafe: Math.random() < 0.5 ? 1 : -1, per: xPer() });
     b.body.userData.bot = b; b.head.userData.bot = b; b.head.userData.head = true; bots.push(b);
   });
-  F_MATES.forEach((n, i) => { const s = fBotBuy(n); allies.push(Object.assign(mkGuy(xs[i], mz, allyMat, allyHead), { hp: 100, armor: s.arm, w: s.w, alive: true, cd: 0.6, def: 0, ox: xs[i], name: n, strafe: i % 2 ? 1 : -1, flip: 1, per: xPer() })); });
+  F_MATES.forEach((n, i) => { const s = fBotBuy(n); allies.push(Object.assign(mkGuy(xs[i], mz, allyMat, allyHead), { hp: 100, armor: s.arm, rgn: s.rgn, w: s.w, alive: true, cd: 0.6, def: 0, ox: xs[i], name: n, strafe: i % 2 ? 1 : -1, flip: 1, per: xPer() })); });
   xAgSet(bots); xAgSet(allies);
 }
 function fRound() {
-  if (!FV.alive) { FV.pri = null; FV.sec = "Classic"; FV.arm = 0; } // died last round: back to a Classic
+  if (!FV.alive) { FV.pri = null; FV.sec = "Classic"; FV.arm = 0; FV.rgn = undefined; } // died last round: back to a Classic
   const pz0 = FV.atk ? xSpawn(FV.map).atk : xSpawn(FV.map).def;
-  player = { x: 0, z: pz0, hp: 100, armor: FV.arm, y: 0, vy: 0, ch: 0, st: 0 }; yaw = FV.atk ? 0 : Math.PI; pitch = 0;
+  player = { x: 0, z: pz0, hp: 100, armor: FV.arm, rgn: FV.rgn, y: 0, vy: 0, ch: 0, st: 0 }; yaw = FV.atk ? 0 : Math.PI; pitch = 0;
   timeLeft = 100; FV.buy = FV.you + FV.them === 0 || FV.you + FV.them === 12 ? 45 : 30; defuseT = 0; kSwing = 0; fSpawn(); $("feed").innerHTML = ""; $("defuse").style.display = "none";
   const pm = FV.pri ? WEAP[FV.pri].mag : 0, sm = WEAP[FV.sec].mag;
   slots.pri = FV.pri ? { ammo: pm, rsv: xRsv(FV.pri) } : {}; slots.pis = { ammo: sm, rsv: xRsv(WEAP[FV.sec] ? FV.sec : "Classic") };
@@ -7836,6 +7846,8 @@ function xHear(p) { // gunshots / footsteps within 25 m turn the other side towa
 if (typeof SFX !== "undefined") ["at", "step"].forEach((k) => { const f = SFX[k]; if (f) SFX[k] = function (p) { try { xHear(p); } catch (e) {} return f.apply(this, arguments); }; });
 if (typeof SFX !== "undefined" && SFX.at) { const f = SFX.at; SFX.at = function (p) { bfxBot(p); return f.apply(this, arguments); }; }
 { const t0 = tick; tick = function (dt) { try { bfxTick(dt); } catch (e) {} return t0.apply(this, arguments); }; }
+// Regen Shield refill (offline and the P2P host; the server runs it online): player, bots, allies
+{ const t0 = tick; tick = function (dt) { try { if (mode === "five" && !mp5C() && !(typeof NET !== "undefined" && NET.socket)) { if (xRgnTick(player, dt)) updHud(); for (const u of bots) xRgnTick(u, dt); for (const u of allies) xRgnTick(u, dt); } } catch (e) {} return t0.apply(this, arguments); }; }
 { const s0 = shoot; shoot = function () { try { xHear({ x: player.x, z: player.z }); } catch (e) {} return s0.apply(this, arguments); }; }
 const xTpU = []; // reused per frame by xTpBots (no allocations)
 function xTpBots(dt) { // a bot standing on a Bind pad 0.5 s teleports, scripted route or not
@@ -9417,8 +9429,8 @@ function fCheck(win, text, title) {
   FV.lsY = win ? 0 : (FV.lsY || 0) + 1; FV.lsT = win ? (FV.lsT || 0) + 1 : 0; // loss streaks: 1900 / 2400 / 2900
   const lb = (s) => LOSS_B[Math.min(s, 3) - 1];
   const swB = FV.sw ? 4000 : null; // Swiftplay: 4000 each round plus that round's economy, capped (pistol round 5 resets via fEco on the swap)
-  FV.cr = capC((swB ?? FV.cr) + (win ? 3000 : fSurvLoss(FV.atk, player.hp > 0) ? 1000 : lb(FV.lsY))); FV.alive = player.hp > 0; FV.arm = FV.alive ? player.armor || 0 : 0;
-  bots.concat(allies).forEach((u) => { const st = FV.bs[u.name], w2 = allies.includes(u) ? win : !win; if (!st) return; st.cr = capC((swB ?? st.cr) + (w2 ? 3000 : fSurvLoss(allies.includes(u) ? FV.atk : !FV.atk, !!u.alive) ? 1000 : lb(allies.includes(u) ? FV.lsY : FV.lsT))); st.alive = u.alive; st.arm = u.alive ? u.armor || 0 : 0; });
+  FV.cr = capC((swB ?? FV.cr) + (win ? 3000 : fSurvLoss(FV.atk, player.hp > 0) ? 1000 : lb(FV.lsY))); FV.alive = player.hp > 0; FV.arm = FV.alive ? player.armor || 0 : 0; FV.rgn = FV.alive ? player.rgn : undefined;
+  bots.concat(allies).forEach((u) => { const st = FV.bs[u.name], w2 = allies.includes(u) ? win : !win; if (!st) return; st.cr = capC((swB ?? st.cr) + (w2 ? 3000 : fSurvLoss(allies.includes(u) ? FV.atk : !FV.atk, !!u.alive) ? 1000 : lb(allies.includes(u) ? FV.lsY : FV.lsT))); st.alive = u.alive; st.arm = u.alive ? u.armor || 0 : 0; st.rgn = u.alive ? u.rgn : undefined; });
   const n = FV.you + FV.them, over = FV.surr ? true : FV.sw ? Math.max(FV.you, FV.them) >= 5 : FV.sr ? Math.max(FV.you, FV.them) >= (FV.srWin || 4) : Math.max(FV.you, FV.them) >= FIVE_WIN && Math.abs(FV.you - FV.them) >= 2, ot = !FV.sr && !FV.sw && !over && n >= 24, swap = !over && (FV.sw ? n === 4 : FV.sr ? n === 3 : n === 12 || ot);
   if (FV.sw && !over) { try { jUlt(); } catch (e) {} bots.concat(allies).forEach((u) => { try { if (window.xBotUltGain) window.xBotUltGain(u.name); } catch (e) {} }); } // +1 ult point per round
   xRes(win, text, over, !FV.surr && FV.you > FV.them, title);
@@ -9680,7 +9692,7 @@ function xHud() {
   const fv = mode === "five";
   setT("xSA", duel ? du.you : rf ? RF.you : fv ? FV.you : score.you); setT("xSE", duel ? du.them : rf ? RF.them : fv ? FV.them : score.bots);
   setT("xSub", fv && FV.dm ? `${FV.esc ? "Escalation" : FV.tdm ? "Team Deathmatch" : "Deathmatch"} · ${F_MAPN[FV.map] || "Ascent"} · first to ${FV.esc ? "the last level" : (() => { try { return DM.win; } catch (e) { return 40; } })()}` : fv ? `${FV.sr ? "Spike Rush" : FV.sw ? "Swiftplay" : "5v5"} · ${F_MAPN[FV.map] || "Ascent"} · Round ${FV.you + FV.them + 1} · ${FV.atk ? "Attack" : "Defense"} · ${FV.cr} cr${FV.buy > 0 ? " · Buy phase, press B" : fsTag()}` : duel ? "Operator Duel · first to " + DUEL_WIN : mode === "aim" ? "Aim training · range · 60 s" : rf ? "Rifle 2v2 · first to " + RIFLE_WIN + (rSide() < 0 ? " · sides swapped" : "") : "Retake · Ascent B · first to 4");
-  setT("xArm", Math.ceil(player.armor || 0)); setT("xHp", Math.max(0, Math.ceil(player.hp))); $("xHp").classList.toggle("lo", player.hp <= 30);
+  setT("xArm", Math.ceil(player.armor || 0)); xRgHud(); setT("xHp", Math.max(0, Math.ceil(player.hp))); $("xHp").classList.toggle("lo", player.hp <= 30);
   const aim = mode === "aim", aw = aim ? aimW() : ""; // aim trainer keeps its own mag in AM.ammo (AM.rl reload), not the global ammo/rsv
   const knifeOut = duel ? du.w === "knife" : aim ? aw === "Knife" : rw === "knife";
   setT("xWn", knifeOut ? "Knife" : duel ? "Operator" : aim ? aw : wName());
@@ -11715,7 +11727,7 @@ function mpCliSnap(m) {
 function mpCliSelf(e) {
   if (e[14] !== MP.sq && MP.m5) { MP.sq = e[14]; mpCliRound5(e); }
   else if (e[14] !== MP.sq) { const first = !MP.sq; MP.sq = e[14]; player.x = e[4]; player.z = e[6]; player.y = 0; player.vy = 0; player.vx = player.vz = 0; player.ch = 0; yaw = Math.atan2(e[4], e[6]); pitch = 0; player.hp = 100; player.armor = 50; if (!first && FV.dm) DM.pp = performance.now() + 2000; try { dmAmmo(); xKLReset(); setScope(false); } catch (er) {} updHud(); } // server spawn: 2 s protection until you fire
-  if (e[10]) { if (e[8] < player.hp - 0.5) { DM.ph = performance.now(); try { if (DM.menu) dmMenu(false); xDmgFlash(); } catch (er) {} } if (player.hp > 0 || e[8] > 0) { player.hp = e[8]; player.armor = e[9]; } }
+  if (e[10]) { if (e[8] < player.hp - 0.5) { DM.ph = performance.now(); try { if (DM.menu) dmMenu(false); xDmgFlash(); } catch (er) {} } if (player.hp > 0 || e[8] > 0) { player.hp = e[8]; player.armor = e[9]; if (e.length > 21) player.rgn = e[21] >= 0 ? e[21] : undefined; } }
   else if (player.hp > 0) { player.hp = 0; reloading = 0; fireHeld = false; DM.pp = 0; try { setScope(false); if (DM.menu) dmMenu(false); if (FV.dm) say("You died · respawning", 1400); } catch (er) {} }
   updHud();
 }
@@ -11873,8 +11885,8 @@ function mpSeat5(c, now) { // now=false: late join, seated at the next round sta
   mpRename5(u, c.name); const inf = MP.u5[u.name] || (MP.u5[u.name] = { nid: u.nid, ag: u.agent || "Jett", sq: 0 });
   if (c.ag && XAG[c.ag] && c.ag !== inf.ag) { inf.ag = c.ag; u.agent = c.ag; mpDropModel(u); } XBA[u.name] = inf.ag;
   const fresh = FV.you + FV.them === 0 && FV.buy > 0;
-  let s = FV.bs[u.name]; if (!s || fresh) { const sp = s ? 800 - s.cr : 0; s = FV.bs[u.name] = { cr: 800, w: "Classic", arm: 0, alive: false }; bBack(u.name, sp); u.armor = 0; }
-  if (!s.alive && !fresh) { s.w = "Classic"; s.arm = 0; }
+  let s = FV.bs[u.name]; if (!s || fresh) { const sp = s ? 800 - s.cr : 0; s = FV.bs[u.name] = { cr: 800, w: "Classic", arm: 0, alive: false }; bBack(u.name, sp); u.armor = 0; u.rgn = undefined; }
+  if (!s.alive && !fresh) { s.w = "Classic"; s.arm = 0; s.rgn = undefined; }
   c.nm = u.name; c.team = team; c.pend = 0; c.ab = { c: 0, q: 0, e: 1 }; c.bl = [];
   c.pri = s.w && !bSide(s.w) ? s.w : null; c.sec = s.w && bSide(s.w) ? s.w : "Classic"; u.w = c.pri || c.sec;
   Object.assign(u, { nt: 1, hum: 1, rp: c.id, nb: [], h4: 0, xTt: null, sq: inf.sq }); c.u = u;
@@ -11908,7 +11920,7 @@ function mpStart5() {
   MP.conns.forEach((c) => { if (!c.u) return; if (nw.indexOf(c) >= 0) mpSend(c.conn, mpStartMsg5(c)); else mpSend(c.conn, { t: "rd", ld: [c.pri, c.sec], cr: mpMe5(c), b: FV.buy, atk: FV.atk ? 1 : 0 }); });
   return r; }; }
 { const b0 = fBotBuy; fBotBuy = function (n) { const c = mp5H() ? mp5Seat(n) : null; if (!c) return b0.apply(this, arguments); // a human's slot: no bot shopping
-  const s = FV.bs[n]; if (!s.alive) { c.pri = null; c.sec = "Classic"; s.arm = 0; } s.w = c.pri || c.sec; return s; }; }
+  const s = FV.bs[n]; if (!s.alive) { c.pri = null; c.sec = "Classic"; s.arm = 0; s.rgn = undefined; } s.w = c.pri || c.sec; return s; }; }
 { const c0 = fCheck; fCheck = function (win, text, title) {
   if (mp5C()) return; // clients never score rounds
   const was = running, r = c0.apply(this, arguments);
@@ -11934,16 +11946,16 @@ function mpRSNet(now) {
 function mpHost5(c, u, m) { // returns true when handled
   if (m.t === "in") { u.h4 = m.h4 ? 1 : 0; if (m.w !== c.pri && m.w !== c.sec) delete m.w; return false; }
   const s = FV.bs[c.nm]; if (!s) return m.t === "buy" || m.t === "sell";
-  const no = (n) => { mpSend(c.conn, { t: "bo", ok: 0, n, cr: s.cr, ld: [c.pri, c.sec], a: s.arm, ab: c.ab }); return true; };
-  const ok = (n) => { s.w = c.pri || c.sec; u.w = s.w; mpSend(c.conn, { t: "bo", ok: 1, n, cr: s.cr, ld: [c.pri, c.sec], a: s.arm, ab: c.ab }); return true; };
+  const no = (n) => { mpSend(c.conn, { t: "bo", ok: 0, n, cr: s.cr, ld: [c.pri, c.sec], a: s.arm, rg: s.rgn != null ? s.rgn : null, ab: c.ab }); return true; };
+  const ok = (n) => { s.w = c.pri || c.sec; u.w = s.w; mpSend(c.conn, { t: "bo", ok: 1, n, cr: s.cr, ld: [c.pri, c.sec], a: s.arm, rg: s.rgn != null ? s.rgn : null, ab: c.ab }); return true; };
   if (m.t === "buy") { const n = String(m.n || "");
     if (!(FV.buy > 0) || !u.alive) return no(n);
     if (n.startsWith("ab:")) { const k = n.slice(3), K2 = KITS[u.agent] || KITS.Jett, it = K2 && K2.buy && K2.buy.find((x) => x[0] === k);
       if (!it || (c.ab[k] | 0) >= ((K2.mx || {})[k] || 0) || s.cr < it[2]) return no(n);
       c.ab[k] = (c.ab[k] | 0) + 1; s.cr -= it[2]; c.bl.push({ ab: k, p: it[2] }); sbSpend(c.nm, it[2]); return ok(n); }
     const it = bItem(n); if (!it || !(it[2] || WEAP[n])) return no(n); const p = it[1], a = it[2];
-    if (a) { if ((s.arm || 0) >= a) return no(n); const i = c.bl.findIndex((x) => x.a), e = c.bl[i]; if (s.cr + (e ? e.p : 0) < p) return no(n);
-      let prev = s.arm || 0; if (e) { prev = e.prev; s.cr += e.p; bBack(c.nm, e.p); c.bl.splice(i, 1); } s.arm = a; u.armor = a; c.bl.push({ n, p, a, prev }); }
+    if (a) { if (xArmOwn({ armor: s.arm, rgn: s.rgn }, n, a)) return no(n); const i = c.bl.findIndex((x) => x.a), e = c.bl[i]; if (s.cr + (e ? e.p : 0) < p) return no(n);
+      let prev = s.arm || 0, prg = s.rgn; if (e) { prev = e.prev; prg = e.prg; s.cr += e.p; bBack(c.nm, e.p); c.bl.splice(i, 1); } s.arm = a; u.armor = a; s.rgn = u.rgn = n === "Regen Shield" ? XRGN.pool : undefined; u.rgnT = 0; c.bl.push({ n, p, a, prev, prg }); }
     else { if (n === c.pri || n === c.sec) return no(n); const sl = bSide(n) ? "pis" : "pri", i = c.bl.findIndex((x) => x.sl === sl), e = c.bl[i];
       if (s.cr + (e ? e.p : 0) < p) return no(n);
       if (e) { s.cr += e.p; bBack(c.nm, e.p); if (sl === "pis") c.sec = e.prev; else c.pri = e.prev; c.bl.splice(i, 1); }
@@ -11951,7 +11963,7 @@ function mpHost5(c, u, m) { // returns true when handled
     s.cr = capC(s.cr - p); sbSpend(c.nm, p); return ok(n); }
   if (m.t === "sell") { const n = String(m.n || ""), ab = n.startsWith("ab:") ? n.slice(3) : ""; if (!(FV.buy > 0)) return no(n);
     let i = -1; for (let j = c.bl.length - 1; j >= 0; j--) if (ab ? c.bl[j].ab === ab : c.bl[j].n === n) { i = j; break; } if (i < 0) return no(n);
-    const e = c.bl[i]; if (ab) { if (!(c.ab[ab] > 0)) return no(n); c.ab[ab]--; } else if (e.a) { s.arm = e.prev; u.armor = e.prev; } else { if (e.sl === "pis") c.sec = e.prev || "Classic"; else c.pri = e.prev || null; }
+    const e = c.bl[i]; if (ab) { if (!(c.ab[ab] > 0)) return no(n); c.ab[ab]--; } else if (e.a) { s.arm = e.prev; u.armor = e.prev; s.rgn = u.rgn = e.prg; } else { if (e.sl === "pis") c.sec = e.prev || "Classic"; else c.pri = e.prev || null; }
     s.cr = capC(s.cr + e.p); bBack(c.nm, e.p); c.bl.splice(i, 1); return ok(n); }
   if (m.t === "drop") { const sp = FV.sp; if (FV.buy > 0 || !sp || sp.st !== "carry" || sp.c !== u || !u.alive) return true;
     const p = u.g.position, r = +m.r || 0; let x = p.x - Math.sin(r) * 2, z = p.z - Math.cos(r) * 2; try { if (!isFinite(x) || !isFinite(z) || blocked(x, z, 0.3)) { x = p.x; z = p.z; } } catch (e) { x = p.x; z = p.z; }
@@ -11985,18 +11997,18 @@ function mpCliStart5(m) {
   }, (late) => { if (MP.role === "client") mpLost(late ? "Loading the match took too long, so it was cancelled. Rejoin the room to try again; closing other tabs or apps can speed up loading." : "The match couldn't start."); });
 }
 function mpCliRound5(e) { // round start: own unit back at spawn with this round's loadout
-  player.x = e[4]; player.z = e[6]; player.y = 0; player.vy = 0; player.vx = player.vz = 0; player.hp = e[10] ? Math.max(1, e[8]) : 0; player.armor = e[9]; player._xd = 0;
+  player.x = e[4]; player.z = e[6]; player.y = 0; player.vy = 0; player.vx = player.vz = 0; player.hp = e[10] ? Math.max(1, e[8]) : 0; player.armor = e[9]; if (e.length > 21) player.rgn = e[21] >= 0 ? e[21] : undefined; player._xd = 0;
   yaw = FV.atk ? 0 : Math.PI; pitch = 0;
   const pm = FV.pri && WEAP[FV.pri] ? WEAP[FV.pri].mag : 0, sm = (WEAP[FV.sec] || WEAP.Classic).mag;
   slots.pri = FV.pri ? { ammo: pm, rsv: xRsv(FV.pri) } : {}; slots.pis = { ammo: sm, rsv: xRsv(WEAP[FV.sec] ? FV.sec : "Classic") };
   rw = FV.pri ? "pri" : "pis"; ammo = slots[rw].ammo; rsv = slots[rw].rsv; reloading = 0; fcd = 0; spray = 0; fireHeld = false;
   try { onSkin(); setScope(false); xKLReset(); } catch (er) {} updHud();
 }
-function mpCliLoad(ld, a) {
+function mpCliLoad(ld, a, rg) {
   const p = ld && xWOwn(ld[0]) ? ld[0] : null, s = ld && xWOwn(ld[1]) ? ld[1] : "Classic";
   if (s !== FV.sec) bEquip(s, "pis");
   if (p !== FV.pri) { if (p) bEquip(p, "pri"); else { FV.pri = null; if (rw === "pri") swapW("pis"); slots.pri = {}; } }
-  if (a != null) player.armor = a;
+  if (a != null) { player.armor = a; player.rgn = rg != null && rg >= 0 ? rg : undefined; }
 }
 function mpCliRS(r) {
   if (typeof r.b === "number") FV.buy = r.b; if (typeof r.tl === "number") timeLeft = r.tl;
@@ -12044,7 +12056,7 @@ function mpSetBL(bl) { // this round's purchases the server would refund (its lo
       const L = bLog(), key = JSON.stringify(bl); if (L.xK === key && L.length === L.xN) return; L.length = 0; L.xK = key; /* rs repeats it every tick in the buy phase: rebuilt only when it changed or the page's log was reset (a reconnect) */ for (const n of bl) { if (typeof n !== "string") continue; if (n.indexOf("ab:") === 0) { L.push({ n, ab: n.slice(3), p: 0 }); continue; } const it = bItem(n); if (!it) continue; L.push(it[2] ? { n, p: 0, a: it[2] } : { n, p: 0, sl: bSide(n) ? "pis" : "pri" }); } L.xN = L.length; }
 function mpCli5(m) { // client 5v5 messages; true when handled
   if (m.t === "rs") { if (MP.st === "game") mpCliRS(m); return true; }
-  if (m.t === "bo") { if (MP.st !== "game") return true; FV.cr = m.cr | 0; mpCliLoad(m.ld, m.a); if (m.ab) { for (const k of ["c", "q"]) if (typeof m.ab[k] === "number") J[k] = m.ab[k]; }
+  if (m.t === "bo") { if (MP.st !== "game") return true; FV.cr = m.cr | 0; mpCliLoad(m.ld, m.a, m.rg); if (m.ab) { for (const k of ["c", "q"]) if (typeof m.ab[k] === "number") J[k] = m.ab[k]; }
     if (Array.isArray(m.bl)) mpSetBL(m.bl);
     if (m.ok) try { blip(m.n && m.n.indexOf("ab:") === 0 ? 700 : 700, 0.08, "triangle", 0.15); } catch (e) {}
     try { onSkin(); updHud(); if (FV.menu) { buyRender.h = null; buyRender(); } xHud(); } catch (e) {} return true; }

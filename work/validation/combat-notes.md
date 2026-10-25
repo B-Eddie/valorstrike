@@ -500,3 +500,13 @@ in-process server; it keeps the VALORANT FEEL block the audit fixture strips, an
 - **Reyna Leer offline threw `d is not defined`** (gate_m9 on a4c5e5d, test_client_abilities ascent Reyna): the merged Leer
   windup comment was a `//` line comment on a one-line `bots.forEach` body, so it swallowed the body's declarations. Now a
   block comment (origin/hark 8dd8565 has the same fix).
+- **Armor v9.10** (wiki.playvalorant.com/en-us/Armor_and_Shield; playvalorant.com patch notes 9.10): Light / Heavy Shields
+  are now **Light Armor** (400, 25, 66%) / **Heavy Armor** (1000, 50, 66%) in the buy menu ("Armor" column), the server's
+  buy / sell / bot autobuy and the soak tool; old names are refused. **Regen Shield** added (650): holds 25, absorbs 100% of
+  a hit before health, refills from a 50 regeneration pool after a delay since its last absorbed hit, the pool carried into
+  the next round by a survivor (re-buying refills it); a death clears it; Heavy / Light replace it, selling restores it.
+  Delay 3 s (beebom.com / gameland.gg / 1v9.gg 9.10 coverage; Riot says "after a brief delay"); refill rate 12.5 / s is
+  inferred (no published figure). Server `ARMOR_BUY` / `RGN` / `armorOwned` / `regenTick` (gun and ability damage),
+  snapshot row [21] = pool (-1 none), `bo` carries `rg`; page `XRGN` (== server), `armAbs` 100% for a Regen Shield,
+  `xRgnTick` (player, bots, allies offline and on the P2P host), HUD green shield icon + pool superscript. TDM Stage 1's
+  Regen Shield (9.11) not modelled. `server/test-spike-edges.js` armor block, `work/test_regen_shield.cjs`, audit.js names.

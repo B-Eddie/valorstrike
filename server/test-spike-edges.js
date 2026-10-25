@@ -7,10 +7,10 @@ assert.equal(r.command(p,{t:'buy',n:'Vandal'}),true);assert.equal(r.command(p,{t
 assert.equal(r.command(p,{t:'sell',n:'Vandal'}),false);assert.equal(p.credits,3200);
 assert.equal(r.command(p,{t:'sell',n:'Phantom'}),true);assert.equal(p.primary,'Vandal');
 assert.equal(r.command(p,{t:'sell',n:'Vandal'}),true);assert.equal(p.primary,null);assert.equal(p.credits,9000);
-assert.equal(r.command(p,{t:'buy',n:'Light Shields'}),true);assert.equal(r.command(p,{t:'buy',n:'Heavy Shields'}),true);
-assert.equal(r.command(p,{t:'sell',n:'Light Shields'}),false);
-assert.equal(r.command(p,{t:'sell',n:'Heavy Shields'}),true);assert.equal(p.armor,25);
-assert.equal(r.command(p,{t:'sell',n:'Light Shields'}),true);assert.equal(p.armor,0);assert.equal(p.credits,9000);
+assert.equal(r.command(p,{t:'buy',n:'Light Armor'}),true);assert.equal(r.command(p,{t:'buy',n:'Heavy Armor'}),true);
+assert.equal(r.command(p,{t:'sell',n:'Light Armor'}),false);
+assert.equal(r.command(p,{t:'sell',n:'Heavy Armor'}),true);assert.equal(p.armor,25);
+assert.equal(r.command(p,{t:'sell',n:'Light Armor'}),true);assert.equal(p.armor,0);assert.equal(p.credits,9000);
 r.command(p,{t:'buy',n:'Ghost'});p.loading=true;assert.equal(r.command(p,{t:'sell',n:'Ghost'}),false);p.loading=false;p.alive=false;assert.equal(r.command(p,{t:'sell',n:'Ghost'}),false);p.alive=true;
 r.buy=0;r.roundDelay=5;assert.equal(r.command(p,{t:'ab',k:'e'}),false);assert.equal(p.ability.e,1);
 console.log('Spike refund regression: no free restored weapon/armor from out-of-order sells; loading/dead refund and post-round ability rejected');
@@ -66,3 +66,23 @@ const wb={...bw,blocked:(x,z)=>x===20&&z===43},bc=new SpikeSimulation(wb),bp=bc.
  for(let i=0;i<5;i++)s.step(.05);assert.equal(s.command(a,{t:'equip',w:'Knife'}),true);assert.equal(s.command(a,{t:'equip',w:'Classic'}),true);assert.equal(a.weapon,'Classic');
  a.secondary=null;a.weapon='Knife';assert.equal(s.command(a,{t:'equip',w:null}),false,'dropped sidearm: empty slot refused');for(let i=0;i<5;i++)s.step(.05);assert.equal(a.weapon,'Knife');
  console.log('Sidearm-only round: equip of an empty slot / malformed name refused, the simulation keeps ticking');}
+{// v9.10 armor (wiki.playvalorant.com/en-us/Armor_and_Shield): Light / Heavy Armor (renamed from Shields), Regen Shield 650:
+// holds 25, absorbs 100%, refills from a 50 pool RGN.delay s after its last absorbed hit; pool carried across rounds.
+const {RGN,ARMOR_BUY}=await import('./src/simulation.js');const {abilityDamage}=await import('./src/abilities.js');
+assert.deepEqual(JSON.parse(JSON.stringify(ARMOR_BUY)),{'Light Armor':{p:400,a:25},'Regen Shield':{p:650,a:25,rg:50},'Heavy Armor':{p:1000,a:50}});
+const s=new SpikeSimulation(W),a=s.add('a'),b=s.add('b');s.start(false);a.credits=9000;s.buy=10;
+for(const n of ['Light Shields','Heavy Shields','constructor','__proto__'])assert.equal(s.command(a,{t:'buy',n}),false,n+' refused');
+assert.equal(s.command(a,{t:'buy',n:'Regen Shield'}),true);assert.equal(a.credits,8350);assert.equal(a.armor,25);assert.equal(a.rgn,50);
+assert.equal(s.command(a,{t:'buy',n:'Regen Shield'}),false,'full Regen Shield owned');assert.equal(s.command(a,{t:'sell',n:'Regen Shield'}),true);assert.equal(a.armor,0);assert.equal(a.rgn,null);assert.equal(a.credits,9000);
+assert.equal(s.command(a,{t:'buy',n:'Regen Shield'}),true);assert.equal(s.command(a,{t:'buy',n:'Heavy Armor'}),true);assert.equal(a.armor,50);assert.equal(a.rgn,null,'heavy replaces regen');
+assert.equal(s.command(a,{t:'sell',n:'Heavy Armor'}),true);assert.equal(a.armor,25);assert.equal(a.rgn,50,'sell restores the Regen Shield');
+s.buy=0;s.roundDelay=0;Object.assign(a,{hp:100,alive:true,x:0,y:0,z:0,protectedUntil:0,invulnerableUntil:0});
+abilityDamage(s,b,a,20);assert.equal(a.hp,100,'100% absorbed');assert.equal(a.armor,5);assert.equal(a.rgnAt,s.time+RGN.delay);
+const run=t=>{for(let x=0;x<t-1e-9;x+=.05)s.step(.05);};run(2.9);assert.equal(a.armor,5,'no refill before the delay');assert.equal(s.rows().find(r=>r[0]===a.id)[21],50);
+run(2);assert.equal(a.armor,25);assert.equal(a.rgn,30);assert.equal(s.rows().find(r=>r[0]===a.id)[21],30);
+abilityDamage(s,b,a,40);assert.equal(a.armor,0);assert.equal(a.hp,85,'25 absorbed, 15 to health');run(5.5);assert.equal(a.armor,25);assert.equal(a.rgn,5);
+abilityDamage(s,b,a,25);run(5.5);assert.equal(a.armor,5);assert.equal(a.rgn,0,'pool empty: no more refill');
+const rg=s.rows().find(r=>r[0]===b.id)[21];assert.equal(rg,-1,'no Regen Shield = -1');
+a.rgn=20;a.armor=10;s.finishRound(0,'t');s.roundDelay=0;s.newRound();assert.equal(a.armor,10);assert.equal(a.rgn,20,'survivor keeps armor and pool');
+a.alive=false;s.finishRound(1,'t');assert.equal(a.armor,0);assert.equal(a.rgn,null,'death clears it');
+console.log('Armor v9.10: Light / Heavy Armor names (old Shields names refused), Regen Shield 650 = 25 at 100%, 3 s refill from a 50 pool, sell / replace restore, rows[21] pool, round carry, death clears');}
