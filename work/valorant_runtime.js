@@ -29,7 +29,9 @@ if (XV_TEXCAP && typeof createImageBitmap === 'function') {
       const m = Math.max(probe.width, probe.height);
       if (m <= XV_TEXCAP) return probe;
       const f = XV_TEXCAP / m, rw = Math.max(1, Math.round(probe.width * f)), rh = Math.max(1, Math.round(probe.height * f));
-      return xvCIB(src, Object.assign({}, opts, { resizeWidth: rw, resizeHeight: rh, resizeQuality: 'high' })).then((small) => { probe.close(); return small; });
+      // Resize decode failing must not break the texture: fall back to the full-size probe
+      // (correct rendering, no memory saved). The probe is closed only on success.
+      return xvCIB(src, Object.assign({}, opts, { resizeWidth: rw, resizeHeight: rh, resizeQuality: 'high' })).then((small) => { probe.close(); return small; }, () => probe);
     });
   };
 }
