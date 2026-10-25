@@ -183,3 +183,5 @@ FAIL from the node-741 pocket; one sampled run, no stalls observed, round comple
 attacker wipe - combat outcome, not a stall).
 Owed: ascent/bind/lotus exports, lotus five-soak, full sweep re-run, natural push/plant
 evidence on split.
+
+- lotus five-soak PASS (first lotus run; no stalls observed in this sampled run; round ended by attacker wipe)
