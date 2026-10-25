@@ -42,5 +42,13 @@ console.warn=((w)=>(...a)=>{if(!/boneTransform/.test(String(a[0])))w(...a);})(co
  c.cur='Sheriff';tick();assert(!c.VMA.R.visible,'still hidden while a new weapon loads');pending['Jett|Sheriff'].rej(new Error('404'));await flush();await flush();tick();tick();
  assert(c.XV.failures['Jett|Sheriff'],'failure recorded');assert(c.VMA.R.visible&&c.VMA.L.visible,'failed native load falls back to the primitive arms');
  c.player.hp=0;tick();assert.equal(vandal.root.visible,false,'dead: no viewmodel');
+ // Agent change mid-match (row 5): the other agent's rig loads for the held weapon (its knife/Classic warmed), the old
+ // agent's arms never show meanwhile and are detached once the new rig equips; the weapon stays the same.
+ c.player.hp=100;c.cur='Vandal';tick();assert.equal(c.XV.fp,vandal);c.J.pick='Breach';const before=loads.length;tick();
+ assert.deepEqual(loads.slice(before).sort(),['Breach|Classic','Breach|Knife','Breach|Vandal'],'new agent rig + warm set requested once');
+ assert.equal(vandal.root.visible,false,'previous agent arms hidden while the new rig loads');assert(!c.VMA.R.visible,'primitive arms stay hidden');
+ for(const k of ['Breach|Vandal','Breach|Knife','Breach|Classic'])pending[k].res();await flush();await flush();tick();
+ assert.equal(c.XV.fp.ag,'Breach');assert.equal(c.XV.fp.w,'Vandal');assert.deepEqual(c.XV.fp.played.slice(0,1),['equip'],'new agent rig equips');assert(!camera.children.includes(vandal.root)&&camera.children.includes(c.XV.fp.root),'old agent rig detached');
+ c.J.pick='Jett';tick();await flush();await flush();tick();assert.equal(c.XV.fp,vandal,'switching back reuses the cached Jett rig');
  console.log('native first-person arms ok');
 })().catch(e=>{console.error(e);process.exit(1);});

@@ -1,0 +1,5 @@
+{"date":"2026-10-25","page":"index.html at ebd0ca4, headless Chromium (three r149, swiftshader, 640x360), Lotus five-mode match, ~1 fps",
+ "before_fix":"real-time run: first corpse tick returned false at simTime 0.05 (xrSolve threw in xrClearance on null contact points: r149 has no BufferAttribute.getComponent); head 1.72 m / pelvis 1.08 m above the floor, i.e. standing, until the 4 s fade",
+ "after_fix":{"method":"kill a Raze bot 3.2 m in front of the camera on the Lotus floor (y 6.28), then call the real death hook xUbDead(M,0.05) with M.ragW set 1 s back per call (1 fps real frame time)",
+  "ticks":[["continue",1.0,"pelvis 0.22 m","head 0.11 m"],["settled (stop)",2.0,"pelvis 0.15 m","head 0.13 m"]],"contact_points_joints":19,"null_contact_points":false},
+ "not_captured":"rendered screenshot: Chromium was OOM-killed (6 times this session) while capturing frames with the concurrent hark-combat soak running; numbers above come from the live page state"}

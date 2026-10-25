@@ -29,12 +29,21 @@ gFire=function(d,w,W){if(VF.lastWeapon!==w||VF.time-VF.shot>.375){VF.sequence=0;
  d.addScaledVector(right,disc[0]*cone+VF.recoilX-rclH).addScaledVector(up,disc[1]*cone+VF.recoilY-rcl).normalize();spray=VF.sequence;sprW=w;VF.bloom=Math.min(.024,VF.bloom+.0015*weight);VF.shot=VF.time;rcl=VF.recoilY*.55+.0035*weight;rclH=VF.recoilX*.55;
 };
 // Aim range, matches and duels all respect the same equip lock and firing cadence.
-{const shoot0=shoot;shoot=function(){if(VM.sw>0)return;const before=ammo;const r=shoot0.apply(this,arguments);if(ammo<before&&rw!=='knife')fcd=1/xRate(WEAP[wName()]);return r;};const aim0=aimFire;aimFire=function(){if(VM.sw>0)return;const before=AM.ammo,r=aim0.apply(this,arguments);if(AM.ammo<before)AM.cd=1/xRate(WEAP[aimW()]);return r;};}
+{const shoot0=shoot;shoot=function(){if(VM.sw>0)return;const before=ammo;const r=shoot0.apply(this,arguments);if(ammo<before&&rw!=='knife')fcd=1/(xRate(WEAP[wName()])*vfRateK());return r;};const aim0=aimFire;aimFire=function(){if(VM.sw>0)return;const before=AM.ammo,r=aim0.apply(this,arguments);if(AM.ammo<before)AM.cd=1/xRate(WEAP[aimW()]);return r;};}
 {const key=aimKey;aimKey=function(c){const w=aimW();key(c);if(w!==aimW()){VM.sw=VM.swT=xEq(aimW());VF.drawWeapon=aimW();VF.sequence=VF.bloom=0;VF.shot=-10;}};}
 // Smooth native rig state transitions and normalized one-shot durations.
-function vfDuration(F,kind){const p=vfProfile(F.w);return kind==='equip'?xEq(F.w):kind==='reload'?p.reloadTimeSeconds:kind==='inspect'?2.2:null;}
+// The exported FP clips run ~2.5x slower than the source montages (keys at 24 fps for 60 fps sequences: Idle 6.83 s vs
+// SequenceLength 2.73 s, Operator Fire 4.5 s vs 1.8 s, knife Attack 4.79 s vs 1.92 s), so clips with no gameplay timer
+// played in slow motion: the Operator/Marshal/Bucky bolt or pump was still mid-cycle at the next allowed shot and knife
+// swings lasted ~4.8 s. Equip and reload follow the weapon's equip/reload times (weapons.json, as the server); inspect
+// the 2.2 s inspect window; every other clip its authored SequenceLength. A bolt/pump fire montage (cycle >= 0.5 s)
+// finishes within the fire interval, so the gun is ready in hand exactly when the next shot is allowed.
+function vfDuration(F,kind,entry){const p=vfProfile(F.w);if(kind==='equip')return xEq(F.w);if(kind==='reload')return p.reloadTimeSeconds;if(kind==='inspect')return 2.2;const seq=entry&&+entry.SequenceLength;if(!(seq>0))return null;if(kind==='fire'&&p.fireRate>0&&1/p.fireRate>=.5)return Math.min(seq,1/p.fireRate);return seq;}
+// Fire cadence multipliers the server applies (simulation.js: concussed x0.8, Empress x1.15). The shot wrapper below
+// replaced the base cadence with the plain profile rate, which dropped both.
+function vfRateK(){let k=1;try{if(typeof xCU!=='undefined'&&xCU>performance.now())k*=.8;const online=typeof NET!=='undefined'&&NET.socket;if(online?!!(typeof netReyna!=='undefined'&&netReyna&&netReyna.empress):(typeof jOn==='function'&&jOn()&&J.emp>0))k*=1.15;}catch(e){}return k;}
 xvFPPlay=function(F,kind,phase){const label=kind==='idle'?'Idle':kind.charAt(0).toUpperCase()+kind.slice(1),entry=F.entries.find(e=>e.Translatable===label)||F.entries.find(e=>e.Translatable.startsWith(label));if(!entry)return;
- if(F.kind!==kind){const prior=F.action,priorGun=F.gaction,arm=F.ac[entry.Name],gunAction=F.gc[entry.WeaponAnimName||'Idle'];F.kind=kind;F.action=arm;F.gaction=gunAction;F.age=0;const duration=vfDuration(F,kind);F.duration=duration||(arm?arm.getClip().duration:.2);
+ if(F.kind!==kind){const prior=F.action,priorGun=F.gaction,arm=F.ac[entry.Name],gunAction=F.gc[entry.WeaponAnimName||'Idle'];F.kind=kind;F.action=arm;F.gaction=gunAction;F.age=0;const duration=vfDuration(F,kind,entry);F.duration=duration||(arm?arm.getClip().duration:.2);
   for(const [action,previous]of [[arm,prior],[gunAction,priorGun]])if(action){action.enabled=true;action.reset().setEffectiveWeight(1).setEffectiveTimeScale(duration?action.getClip().duration/duration:1);action.setLoop(kind==='idle'?THREE.LoopRepeat:THREE.LoopOnce,kind==='idle'?Infinity:1);action.clampWhenFinished=kind!=='idle';action.play();if(previous&&previous!==action)action.crossFadeFrom(previous,kind==='fire'?.025:.065,false);}
  }
  if(phase!=null){for(const action of [F.action,F.gaction])if(action)action.time=Math.min(action.getClip().duration-.0001,Math.max(0,phase)*action.getClip().duration);F.am.update(0);F.gm.update(0);}

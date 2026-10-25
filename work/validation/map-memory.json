@@ -1,0 +1,234 @@
+{
+ "generated": "2026-10-25T08:15:16.495Z",
+ "note": "Headless model from real assets; page-process = typed arrays + decoded images + collision; GPU = buffers + textures with mips. Timings are sandbox CPU, sharp decode stands in for browser image decode.",
+ "maps": {
+  "lotus": {
+   "meshes": 247,
+   "vertices": 3311411,
+   "uint16IndexMeshes": 231,
+   "images": 132,
+   "bytesMB": {
+    "geometryBefore": 137.4,
+    "geometryAfter": 103.9,
+    "texturesGpuBefore": 148.7,
+    "texturesGpuLow": 41,
+    "decodedImagesBefore": 111.5,
+    "collision": 18.8
+   },
+   "residentMB": {
+    "before": {
+     "page": 267.7,
+     "gpu": 286.1,
+     "total": 553.8
+    },
+    "afterMediumHigh": {
+     "page": 18.8,
+     "gpu": 252.6,
+     "total": 271.4
+    },
+    "afterLow": {
+     "page": 18.8,
+     "gpu": 144.9,
+     "total": 163.7
+    }
+   },
+   "timingsMs": {
+    "readAndParse": 108,
+    "packGeometry": 100,
+    "decodeAllImages": 1044,
+    "resizeToLowCap": 1182,
+    "collisionDeserialize": 12
+   }
+  },
+  "ascent": {
+   "meshes": 479,
+   "vertices": 4299256,
+   "uint16IndexMeshes": 468,
+   "images": 373,
+   "bytesMB": {
+    "geometryBefore": 177.4,
+    "geometryAfter": 129.1,
+    "texturesGpuBefore": 413.1,
+    "texturesGpuLow": 117.6,
+    "decodedImagesBefore": 309.8,
+    "collision": 50.4
+   },
+   "residentMB": {
+    "before": {
+     "page": 537.7,
+     "gpu": 590.5,
+     "total": 1128.2
+    },
+    "afterMediumHigh": {
+     "page": 50.4,
+     "gpu": 542.1,
+     "total": 592.6
+    },
+    "afterLow": {
+     "page": 50.4,
+     "gpu": 246.7,
+     "total": 297.1
+    }
+   },
+   "timingsMs": {
+    "readAndParse": 2807,
+    "packGeometry": 138,
+    "decodeAllImages": 3084,
+    "resizeToLowCap": 3001,
+    "collisionDeserialize": 1074
+   }
+  },
+  "bind": {
+   "meshes": 392,
+   "vertices": 3409144,
+   "uint16IndexMeshes": 378,
+   "images": 312,
+   "bytesMB": {
+    "geometryBefore": 143.2,
+    "geometryAfter": 106.3,
+    "texturesGpuBefore": 353.7,
+    "texturesGpuLow": 98.6,
+    "decodedImagesBefore": 265.3,
+    "collision": 46.7
+   },
+   "residentMB": {
+    "before": {
+     "page": 455.2,
+     "gpu": 496.9,
+     "total": 952.1
+    },
+    "afterMediumHigh": {
+     "page": 46.7,
+     "gpu": 460,
+     "total": 506.7
+    },
+    "afterLow": {
+     "page": 46.7,
+     "gpu": 204.9,
+     "total": 251.6
+    }
+   },
+   "timingsMs": {
+    "readAndParse": 102,
+    "packGeometry": 81,
+    "decodeAllImages": 2107,
+    "resizeToLowCap": 2387,
+    "collisionDeserialize": 1062
+   }
+  },
+  "breeze": {
+   "meshes": 476,
+   "vertices": 3245431,
+   "uint16IndexMeshes": 470,
+   "images": 369,
+   "bytesMB": {
+    "geometryBefore": 136.3,
+    "geometryAfter": 99.6,
+    "texturesGpuBefore": 396.9,
+    "texturesGpuLow": 117.1,
+    "decodedImagesBefore": 297.7,
+    "collision": 51.2
+   },
+   "residentMB": {
+    "before": {
+     "page": 485.2,
+     "gpu": 533.2,
+     "total": 1018.4
+    },
+    "afterMediumHigh": {
+     "page": 51.2,
+     "gpu": 496.5,
+     "total": 547.7
+    },
+    "afterLow": {
+     "page": 51.2,
+     "gpu": 216.6,
+     "total": 267.9
+    }
+   },
+   "timingsMs": {
+    "readAndParse": 100,
+    "packGeometry": 86,
+    "decodeAllImages": 2738,
+    "resizeToLowCap": 2678,
+    "collisionDeserialize": 972
+   }
+  },
+  "haven": {
+   "meshes": 314,
+   "vertices": 3736426,
+   "uint16IndexMeshes": 299,
+   "images": 233,
+   "bytesMB": {
+    "geometryBefore": 168.7,
+    "geometryAfter": 124.5,
+    "texturesGpuBefore": 252.8,
+    "texturesGpuLow": 73.2,
+    "decodedImagesBefore": 189.6,
+    "collision": 46.2
+   },
+   "residentMB": {
+    "before": {
+     "page": 404.5,
+     "gpu": 421.5,
+     "total": 826.1
+    },
+    "afterMediumHigh": {
+     "page": 46.2,
+     "gpu": 377.3,
+     "total": 423.6
+    },
+    "afterLow": {
+     "page": 46.2,
+     "gpu": 197.8,
+     "total": 244
+    }
+   },
+   "timingsMs": {
+    "readAndParse": 127,
+    "packGeometry": 85,
+    "decodeAllImages": 1864,
+    "resizeToLowCap": 1771,
+    "collisionDeserialize": 878
+   }
+  },
+  "split": {
+   "meshes": 507,
+   "vertices": 4064881,
+   "uint16IndexMeshes": 496,
+   "images": 369,
+   "bytesMB": {
+    "geometryBefore": 168.6,
+    "geometryAfter": 122.6,
+    "texturesGpuBefore": 394,
+    "texturesGpuLow": 116.6,
+    "decodedImagesBefore": 295.5,
+    "collision": 41.7
+   },
+   "residentMB": {
+    "before": {
+     "page": 505.8,
+     "gpu": 562.6,
+     "total": 1068.3
+    },
+    "afterMediumHigh": {
+     "page": 41.7,
+     "gpu": 516.6,
+     "total": 558.3
+    },
+    "afterLow": {
+     "page": 41.7,
+     "gpu": 239.2,
+     "total": 280.9
+    }
+   },
+   "timingsMs": {
+    "readAndParse": 126,
+    "packGeometry": 98,
+    "decodeAllImages": 2939,
+    "resizeToLowCap": 2601,
+    "collisionDeserialize": 790
+   }
+  }
+ }
+}

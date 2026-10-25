@@ -12,9 +12,8 @@ function boot(store,opts={}){const log=[],gate={};const ctx={console:{warn(){}},
   fetch:async(u)=>{const f=u.split('/').pop().split('?')[0];log.push(f);if(opts.hold&&opts.hold(f))await new Promise(r=>gate[f]=r);if(opts.fail&&opts.fail(f))return {ok:false,status:503};const d=opts.tamper&&opts.tamper(f)?Buffer.from('tampered'):body(f);return {ok:true,body:null,arrayBuffer:async()=>d.buffer.slice(d.byteOffset,d.byteOffset+d.length)};}};
   vm.createContext(ctx);vm.runInContext(s.slice(a,b)+';xvaParse=(buf)=>Promise.resolve({bytes:buf.byteLength});xvaLoco=function(){return XVA.loco||(XVA.loco=Promise.all([xvaFetch("locomotion.json"),xvaFetch("locomotion.bin")]).then(()=>({})).catch(e=>{XVA.loco=null;throw e;}));};xvaKit=(gl,L,slug)=>({slug,gl});XVA.wait=1;',ctx);return {ctx,log,gate};}
 const flush=()=>new Promise(r=>setImmediate(r));
-// Cache writes finish after a SHA-256 digest on the libuv threadpool, so a fixed number of event-loop turns is not enough
-// under load (this line failed ~1 run in 10). Wait for the condition with a real-time bound instead.
-const until=async(cond,ms=10000)=>{const end=Date.now()+ms;while(!cond()){if(Date.now()>end)return false;await new Promise(r=>setTimeout(r,5));}for(let i=0;i<5;i++)await flush();return true;};
+// Cache writes wait on async hashing (thread pool); under a loaded machine two ticks are not always enough, so poll.
+const until=async(pred,ms=3000)=>{const end=Date.now()+ms;while(!pred()&&Date.now()<end)await new Promise(r=>setTimeout(r,5));};
 (async()=>{
   const store=makeStore();store.m.set('https://game.test/models/valorant/agents/jett.glb?v=0000000000000000',new ArrayBuffer(4)); // a superseded version
   const {ctx,log,gate}=boot(store,{hold:(f)=>f==='sage.glb'});
@@ -23,7 +22,7 @@ const until=async(cond,ms=10000)=>{const end=Date.now()+ms;while(!cond()){if(Dat
   const prog=[];const all=ctx.xvAgentsReady(null,(p)=>prog.push(p.frac));gate['sage.glb']();await all;
   assert.equal(log.length,14,'every file fetched exactly once: '+log.join());assert.equal(log.filter(f=>/^locomotion/.test(f)).length,2,'shared locomotion downloaded once for twelve agents');
   assert.equal(Object.keys(ctx.XVA.kits).length,12);for(let i=1;i<prog.length;i++)assert(prog[i]>=prog[i-1],'monotonic progress');assert.equal(prog[prog.length-1],1);
-  await until(()=>store.m.size===14&&![...store.m.keys()].some(k=>k.includes('v=0000')));const keys=[...store.m.keys()];assert.equal(keys.length,14,'all verified files stored, stale version pruned');assert(keys.every(k=>/\?v=[0-9a-f]{16}$/.test(k)&&!k.includes('v=0000')));
+  await until(()=>store.m.size===14&&![...store.m.keys()].some(k=>k.includes("v=0000")));const keys=[...store.m.keys()];assert.equal(keys.length,14,'all verified files stored, stale version pruned');assert(keys.every(k=>/\?v=[0-9a-f]{16}$/.test(k)&&!k.includes('v=0000')));
   // repeat visit: zero network
   const second=boot(store);await second.ctx.xvAgentsReady();assert.equal(second.log.length,0,'repeat visit served from Cache Storage');assert.equal(Object.keys(second.ctx.XVA.kits).length,12);
   // integrity: tampered bytes are used but never cached

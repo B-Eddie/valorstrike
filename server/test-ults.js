@@ -53,6 +53,10 @@ const cast=(s,u,m={})=>s.command(u,{t:'ab',k:'x',...m});
  assert.equal(cast(s,u),true);assert.equal(u.weapon,'Operator');assert.equal(u.ammo,5);assert.equal(cast(s,u),false,'no stacking');
  for(let i=0;i<5;i++){s.time+=2;u.fireAt=0;u.triggerHeld=false;u.input={ads:1};assert.equal(s.fire(u),true);}assert.ok(foe.hp<1000,'Operator hits');tick(s,.05);assert.equal(u.weapon,'Spectre');assert.equal(u.ammo,17);assert.equal(u.reserve,60);assert.equal(u.inventory.Operator,undefined);
  u.ability.ult=9;cast(s,u);u.alive=false;tick(s,.05);assert.equal(u.weapon,'Spectre','death returns the saved gun');}
+// Round reset mid-ult (native maps, online): the round's own loadout comes back, no Operator, ult state cleared.
+{const {s,u}=setup('Chamber',['foe']);u.primary='Spectre';u.weapon='Spectre';u.ammo=11;u.reserve=40;u.inventory={Spectre:11,Classic:12};u.ability.ult=9;
+ assert.equal(cast(s,u),true);assert.equal(u.weapon,'Operator');s.newRound();assert.equal(u.weapon,'Spectre','round start re-arms the primary');assert.equal(u.ammo,30,'full Spectre magazine');assert.equal(u.ultWeapon,null);assert.equal(u.inventory.Operator,undefined);
+ s.buy=0;u.primary=null;u.weapon='Classic';u.ammo=12;u.ability.ult=9;assert.equal(cast(s,u),true);s.newRound();assert.equal(u.weapon,'Classic','Classic-only Chamber gets the Classic back');assert.equal(u.ultWeapon,null);}
 
 // Run It Back: dying (or the 10 s window ending) returns Phoenix to the mark at full health; his team is not
 // eliminated by that death.
@@ -77,7 +81,7 @@ const cast=(s,u,m={})=>s.command(u,{t:'ab',k:'x',...m});
 {const {s,u,list:[foe]}=setup('Raze',['foe']);Object.assign(foe,{x:0,y:0,z:-12,hp:1,armor:0});u.ability.ult=9;cast(s,u);s.units=s.units.filter(v=>v!==u);tick(s,1);assert.equal(foe.alive,false);assert(s.events.some(e=>e[0]==='k'&&e[1]===''&&e[2]===foe.name),'ownerless kill in the feed');}
 // Detain survives a disconnect: the seat bot inherits the leaver's statuses.
 {const {s,u}=setup('Jett',['foe']);u.detainUntil=s.time+5;const b=s.add('Bot Jett','Jett',false);b.team=u.team;s.takeOver(b,u);assert(b.detainUntil>s.time,'still detained');}
-console.log('Ultimates: Hunter\'s Fury (3 wall-piercing blasts, recast, reveal, death end), Showstopper (travelling rocket, falloff, LOS, wall detonation), Lockdown (windup, radius detain blocks guns/abilities, round reset), Rolling Thunder (cone through walls), Seekers (3 nearest), Neural Theft (corpse targeting, double reveal), Tour de Force (5-round Operator, weapon restore), Run It Back (death/expiry return, no elimination, no death drop, gear kept at round end); leaver utility/ult state moves to the seat bot; server-side aim only');
+console.log('Ultimates: Hunter\'s Fury (3 wall-piercing blasts, recast, reveal, death end), Showstopper (travelling rocket, falloff, LOS, wall detonation), Lockdown (windup, radius detain blocks guns/abilities, round reset), Rolling Thunder (cone through walls), Seekers (3 nearest), Neural Theft (corpse targeting, double reveal), Tour de Force (5-round Operator, weapon restore, round reset), Run It Back (death/expiry return, no elimination, no death drop, gear kept at round end); leaver utility/ult state moves to the seat bot; server-side aim only');
 // Devices that used to be inert markers: recon pulses reveal enemies in the bolt's sight (not through walls),
 // Boom Bot hunts the nearest visible enemy and explodes for 125, Trailblazer concusses on contact.
 import {DEV} from './src/devices.js';
