@@ -7933,13 +7933,21 @@ function jPop(p) {
     if (l < 30 && c > 0.5 && los(e, p)) { const w = $("xWh"); w.style.background = "radial-gradient(circle, #fff 0, #fffaf0 40%, #ffd6a0 100%)"; w.style.transition = "none"; w.style.opacity = Math.min(1, 0.6 + 0.4 * (c - 0.5) / 0.5); setTimeout(() => { w.style.transition = "opacity 1.25s ease-out"; w.style.opacity = 0; setTimeout(() => (w.style.background = ""), 1300); }, 250); }
   }
 }
-function jArrow(kind) {
-  const o = pEye(), d = jAim(); ray.set(o, d); ray.far = 50; const h = ray.intersectObjects(solids)[0];
-  const e = h ? h.point.clone().addScaledVector(d, -0.2) : o.clone().addScaledVector(d, 50);
-  const m = jBolt(kind === "shock" ? 0x7fd8ff : 0x45d0ff, o, e);
-  J.arrows.push({ m, a: o, b: e, t: 0, dur: Math.max(0.05, o.distanceTo(e) / 45), kind }); SFX.ab("bow");
-  { const at = e.clone(); setTimeout(() => SFX.ab(kind === "shock" ? "shock" : "recon", at), 130 + Math.max(0.05, o.distanceTo(e) / 45) * 1000); }
+// Sova bolt flight on the client: the shared SovaBolt.path (vendor/sova-bolt.cjs, the server flies the same one) against
+// the map's solids (face normals for the bounces) and the floor. pw 0..1 = HOLD FIRE charge, nb 0..2 = ALT FIRE bounces.
+const xBoltV = [new THREE.Vector3(), new THREE.Vector3()];
+function xBoltRay(o, d, max) { ray.set(xBoltV[0].set(o[0], o[1], o[2]), xBoltV[1].set(d[0], d[1], d[2])); ray.far = max; const h = ray.intersectObjects(solids)[0]; if (!h) return null;
+  let n = null; if (h.face && h.object) { const w = h.face.normal.clone().transformDirection(h.object.matrixWorld); n = [w.x, w.y, w.z]; } return { distance: h.distance, normal: n }; }
+function xBoltPath(o, d, pw, nb) { return SovaBolt.path([o.x, o.y, o.z], [d.x, d.y, d.z], pw, nb, xBoltRay, (x, z, y) => groundAt(x, z, 0.05, y)); }
+function jArrow(kind) { // XABT.bolt: the charge / bounces of the equip-flow HOLD (none: a full-charge, no-bounce bolt)
+  const o = pEye(), d = jAim(), B = (typeof XABT !== "undefined" && XABT.bolt) || { pw: 1, b: 0 }, P = xBoltPath(o, d, B.pw, B.b);
+  const e = new THREE.Vector3(P.end[0], P.end[1], P.end[2]), m = jBolt(kind === "shock" ? 0x7fd8ff : 0x45d0ff, o, e);
+  J.arrows.push({ m, a: o, b: e, t: 0, dur: Math.max(0.05, P.t), kind, tr: P.tr, nb: B.b }); SFX.ab("bow");
+  { const at = e.clone(); setTimeout(() => SFX.ab(kind === "shock" ? "shock" : "recon", at), Math.max(0.05, P.t) * 1000); }
 }
+const xBoltQ = [0, 0, 0];
+function xBoltMove(a) { if (!a.tr) return void a.m.position.lerpVectors(a.a, a.b, Math.min(1, a.t / a.dur)); // flies the traced arc and bounces, nose along the flight
+  SovaBolt.at(a.tr, a.t, xBoltQ); a.m.position.set(xBoltQ[0], xBoltQ[1], xBoltQ[2]); SovaBolt.at(a.tr, a.t + 0.04, xBoltQ); if (Math.abs(xBoltQ[0] - a.m.position.x) + Math.abs(xBoltQ[1] - a.m.position.y) + Math.abs(xBoltQ[2] - a.m.position.z) > 1e-4) a.m.lookAt(xBoltQ[0], xBoltQ[1], xBoltQ[2]); }
 function jBeam() {
   if (J.cd.x > 0 || J.hf < 1) return; J.cd.x = 0.9; J.hf--; kick = 1; blip(300, 0.4, "sawtooth", 0.2);
   const o = pEye(), d = jAim(), L = 80;
@@ -8017,7 +8025,7 @@ function jFxTick(dt) {
     A.length = k; }
   if (J.dr) drTick(dt);
   J.arrows = J.arrows.filter((a) => {
-    a.t += dt; a.m.position.lerpVectors(a.a, a.b, Math.min(1, a.t / a.dur)); if (a.t < a.dur) return true; jRel(a.m);
+    a.t += dt; xBoltMove(a); if (a.t < a.dur) return true; jRel(a.m);
     if (a.kind === "dart") { if (a.tg && a.tg.alive) drTag(a.tg); }
     else if (a.kind === "erecon") enRecon(a.b);
     else if (a.kind === "recon") jReveal(a.b);
@@ -12069,11 +12077,11 @@ function mpFx(u, ag, k, o, d, auth, p, quiet) { // u: caster unit, o/d: eye + ai
   else if (ty === "heal") { if (auth && u.alive) MPC.hl.push({ u, l: 50, r: ag === "Sage" ? 10 : ag === "Reyna" ? 50 / 3 : 25 });
     const m = jM(zoneGeo, fireMat(0x5fe0d0, 0.4)); m.rotation.x = -Math.PI / 2; m.scale.setScalar(0.5); m.position.set(up.x, 0.06, up.z); jFx(m, 3); }
   else if (ty === "stun") {
-    if (ag === "Sova") { const e = tg(50, 0.2).clone(), a = o.clone(), m = jBolt(0x7fd8ff, a, e); J.arrows.push({ m, a, b: e, t: 0, dur: Math.max(0.05, a.distanceTo(e) / 45), kind: "shock", own: u, en, nd }); }
+    if (ag === "Sova") { const B = MPC.bolt, P = B && xBoltPath(o, d, B.pw, B.b), e = P ? (p ? p.clone() : new THREE.Vector3(P.end[0], P.end[1], P.end[2])) : tg(50, 0.2).clone(), a = o.clone(), m = jBolt(0x7fd8ff, a, e); if (P && p) P.tr[P.tr.length - 1] = [p.x, p.y, p.z, P.t]; J.arrows.push({ m, a, b: e, t: 0, dur: P ? Math.max(0.05, P.t) : Math.max(0.05, a.distanceTo(e) / 45), kind: "shock", own: u, en, nd, tr: P ? P.tr : null }); }
     else { const e = tg(ag === "Breach" && k === "e" ? 20 : 12, 0.4), m = jM(smokeGeo, fireMat(ag === "Sage" ? 0x5fe0d0 : 0xff9a3a, 0.35)); m.position.set(e.x, 0.6, e.z); jFx(m, 0.8).g = 0.6; mpStun(u, en, e.x, e.z, 4.5, 2, auth); }
   }
   else if (ty === "eye") {
-    if (ag === "Sova") { const e = tg(50, 0.2).clone(), a = o.clone(), m = jBolt(al ? 0x45d0ff : 0xff4655, a, e); J.arrows.push({ m, a, b: e, t: 0, dur: Math.max(0.05, a.distanceTo(e) / 45), kind: al ? "recon" : "erecon" }); }
+    if (ag === "Sova") { const B = MPC.bolt, P = B && xBoltPath(o, d, B.pw, B.b), e = P ? (p ? p.clone() : new THREE.Vector3(P.end[0], P.end[1], P.end[2])) : tg(50, 0.2).clone(), a = o.clone(), m = jBolt(al ? 0x45d0ff : 0xff4655, a, e); if (P && p) P.tr[P.tr.length - 1] = [p.x, p.y, p.z, P.t]; J.arrows.push({ m, a, b: e, t: 0, dur: P ? Math.max(0.05, P.t) : Math.max(0.05, a.distanceTo(e) / 45), kind: al ? "recon" : "erecon", tr: P ? P.tr : null }); }
     else { const ry = ag === "Reyna", e = tg(ry ? 15 : 10, 0.4), m = jM(orbGeo, fireMat(ry ? 0xc75cff : 0xd9d3c4, 0.9)); m.scale.setScalar(2); m.position.copy(e); jFx(m, ry ? 2 : 4);
       if (ry && (en || (FV.dm && !FV.tdm)) && player.hp > 0 && Math.hypot(player.x - e.x, player.z - e.z) < 15) { pNs(2.5); say("Nearsighted by Leer", 900); } }
   }
@@ -12091,17 +12099,19 @@ function mpCastIn(c, u, m) { // host: a client's cast
   else { const ch = MP.m5 ? c.ab : xBCh(u); let pk = k; if (ag === "Reyna" && k !== "c" && ch && !((ch[k] | 0) > 0)) pk = k === "q" ? "e" : "q"; // Devour / Dismiss share charges
     if (!ch || !((ch[pk] | 0) > 0)) return mpSend(c.conn, { t: "abn", k, n: 0 }); ch[pk]--; }
   T[k] = now; const P = u.g.position, o = mpV(m.o, new THREE.Vector3(P.x, 1.6, P.z)); if (Math.hypot(o.x - P.x, o.z - P.z) > 3 || o.y < -1 || o.y > 12) o.set(P.x, 1.6, P.z);
-  const d = mpDir(m.d, u); mpFx(u, ag, k, o, d, true);
-  mpCastOut({ t: "ac", i: u.nid, ag, k, o: mpR3(o), d: mpR3(d), ts: +m.ts || 0 }, c);
+  const d = mpDir(m.d, u), bo = mpBolt(m); MPC.bolt = bo; try { mpFx(u, ag, k, o, d, true); } finally { MPC.bolt = null; }
+  const out = { t: "ac", i: u.nid, ag, k, o: mpR3(o), d: mpR3(d), ts: +m.ts || 0 }; if (bo) { out.pw = bo.pw; out.b = bo.b; } mpCastOut(out, c);
 }
 function mpCastFx(m) { // client: someone else's cast, visual only
   if (!MP.cl || MP.st !== "game" || m.i === MP.me || typeof m.k !== "string") return;
   const u = bots.find((x) => x && x.nid === m.i) || allies.find((x) => x && x.nid === m.i); if (!u || !u.g) return;
   const o = mpV(m.o, new THREE.Vector3(u.g.position.x, 1.6, u.g.position.z)), d = mpDir(m.d, u), p = Array.isArray(m.p) ? mpV(m.p, new THREE.Vector3()) : null;
-  mpFx(u, Object.hasOwn(KITS, m.ag) ? m.ag : "Jett", m.k, o, d, false, p);
+  MPC.bolt = mpBolt(m); try { mpFx(u, Object.hasOwn(KITS, m.ag) ? m.ag : "Jett", m.k, o, d, false, p); } finally { MPC.bolt = null; }
 }
+function mpBolt(m) { const pw = +m.pw, b = +m.b; return Number.isFinite(pw) || Number.isFinite(b) ? { pw: Number.isFinite(pw) ? Math.max(0, Math.min(1, pw)) : 1, b: Number.isFinite(b) ? SovaBolt.bounces(b) : 0 } : null; } // a Sova bolt's charge / bounces from a cast message (clamped)
 let mpAltHeld = false; addEventListener("mousedown", (e) => { if (e.button === 2) mpAltHeld = true; }, true); addEventListener("mouseup", (e) => { if (e.button === 2) mpAltHeld = false; }, true); addEventListener("blur", () => { mpAltHeld = false; });
 function mpCastSelf(k) { const m = { t: MP.role === "host" ? "ac" : "ab", k, ag: J.pick || "Jett", o: mpR3(pEye()), d: mpR3(jAim()), ts: Math.round(performance.now()) };
+  if (J.pick === "Sova" && (k === "q" || k === "e") && typeof XABT !== "undefined" && XABT.bolt) { m.pw = +XABT.bolt.pw.toFixed(3); m.b = XABT.bolt.b; } // bolt HOLD charge + ALT FIRE bounces (server: vendor/sova-bolt.cjs)
   if (J.pick === "Phoenix" && k === "e") m.l = mpAltHeld ? 0 : 1; // Curveball: FIRE curves left (default), ALT FIRE held curves right (Valorant); the server reads m.l
   if (MP.role === "host") { m.i = 0; mpCastOut(m, null); } else mpSend(MP.hc, m); }
 { const k0 = jKey; jKey = function (code) { // own cast (a charge or the ult spent): client asks the host, host relays
@@ -13289,7 +13299,7 @@ function netClean(m){if(!m||typeof m!=='object'||Array.isArray(m)||typeof m.t!==
  else if(t==='re'){if(!(Array.isArray(m.sc)&&m.sc.length===2&&m.sc.every(num)))return null;snap(m);if(!str(m.tx))m.tx='';}
  else if(t==='end'){snap(m);if(m.over!=null&&!str(m.over))m.over=null;}
  else if(t==='rd'){if(m.ld!==undefined&&!Array.isArray(m.ld))m.ld=[null,'Classic'];}
- else if(t==='ac'){if(!num(m.i)||!str(m.ag)||!str(m.k))return null;for(const k of ['o','d','p'])if(m[k]!==undefined&&!vec(m[k]))return null;}
+ else if(t==='ac'){if(!num(m.i)||!str(m.ag)||!str(m.k))return null;for(const k of ['o','d','p'])if(m[k]!==undefined&&!vec(m[k]))return null;for(const k of ['pw','b'])if(m[k]!==undefined&&!num(m[k]))delete m[k];/* Sova bolt charge / bounces */}
  else if(t==='ao'){if(m.rs!==undefined&&!rs(m.rs))delete m.rs;}
  return m;}
 function netConnect(create,code,publicRoom){if(create&&['ascent','bind','haven','split','lotus','breeze','random'].includes(window.xQMap))MP.map=window.xQMap;mpReset();MP.st='conn';mpMsg(create?'Creating server room…':'Joining server room…');mpUI();NET.host=create;const q=new URLSearchParams({code,create:create?'1':'0',mode:MP.mode,map:MP.map==='random'?['ascent','bind','haven','split','lotus','breeze'][Math.floor(Math.random()*6)]:MP.map,public:publicRoom?'1':'0'}),ws=new WebSocket(NET.url.replace('https:','wss:')+'/connect?'+q);NET.socket=ws;MP.code=code;MP.pub=!!publicRoom;MP.loadT=performance.now();ws.onopen=async()=>{const token=await netProfileToken();if(NET.socket===ws)netSend({t:'hi',n:MP.name,ag:J.pick||'Jett',token});};ws.onmessage=e=>{if(NET.socket!==ws)return;let m;try{m=JSON.parse(e.data);}catch(e){return;}m=netClean(m);if(!m)return;MP.last=performance.now();try{netOnMsg(m);}catch(err){/* never let one bad server frame throw out of the socket handler; counted for the fuzz test */NET.dropped=(NET.dropped||0)+1;const w=String(err&&err.message||err).slice(0,160)+' @'+m.t;NET.drops=NET.drops||[];if(NET.drops.length<20&&!NET.drops.includes(w))NET.drops.push(w);}};const netOnMsg=m=>{if(m.t==='hello')return;if(m.t==='welcome'){MP.name=String(m.name);MP.me=m.you;const input=mpEl('xOnName');if(input)input.value=MP.name;return;}if(m.t==='room'){MP.on=true;MP.role='client';MP.room=m;MP.mode=m.mode;MP.map=m.map;if(MP.st!=='game'&&MP.st!=='post')MP.st='room';NET.host=!!m.pl.find(p=>p.n===MP.name&&p.h);mpMsg('Connected to game server');return mpUI();}if(m.t==='start'){NET.ready=false;NET.latest=null;NET.loadAt=performance.now();NET.lpAt=0;MP.hc={open:true,send(m){if(m.t!=='hit'&&(m.t!=='in'||Number.isSafeInteger(m.seq)))netSend(m);}};return mpCliMsg(m);}if(m.t==='s'){NET.latest=m;NET.receivedAt=performance.now();NET.serverAge=Date.now()-m.serverTime;NET.tickMs=m.tickMs;if(NET.ready){mpCliMsg(m);netSyncEffects(m.fx||[]);}return;}if(m.t==='ac'&&m.ag==='Sage'&&m.k==='c')return;if(m.t==='ao'){if(m.rs)mpCliRS(m.rs);if(!m.ok){sgNo();say('Ability unavailable or target invalid',1000);}else if(J.pick==='Omen'&&(m.k==='x'||m.k==='c'))say(m.k==='x'?'From the Shadows · 3 s':'Shrouded Step · 1 s',1000);return;}if(m.t==='po'){const c=Number(m.c);if(Number.isFinite(c))MP.ping=Math.max(0,Math.round(performance.now()-c));return;}mpCliMsg(m);};ws.onclose=event=>{if(NET.socket!==ws)return;NET.lastClose={code:event.code,reason:event.reason,at:Date.now()};NET.socket=null;const was=MP.st==='game',room=MP.code,loadingMatch=!!NET.loadAt&&!NET.ready;NET.loadAt=0;mpReset();mpMsg(event.reason==='Load timed out'?'Loading the match took too long, so the server closed your seat. Rejoin room '+room+' to try again; closing other tabs or apps can speed up loading.':event.reason==='Connection idle'&&loadingMatch?'Lost contact with the game server while the match was loading. Rejoin room '+room+' to try again.':event.reason==='Connection idle'?'Connection timed out while the client was inactive. Rejoin room '+room+' if another player is still connected.':event.code===1012?'The game server restarted. Join or create a room again.':'Connection to the game server was interrupted. Try rejoining room '+room+'.');if(was)mpExitGame();mpUI();};ws.onerror=()=>mpMsg('Could not reach the game server. Try again shortly.');}
@@ -13682,6 +13692,41 @@ XHF.pass=0;
 if(window.requestIdleCallback)requestIdleCallback(()=>{xHitInit();try{xCrUi();}catch(e){}},{timeout:1500});else setTimeout(()=>{xHitInit();try{xCrUi();}catch(e){}},0);
 // ---- END LOCALIZED HIT FEEDBACK ----
 // ---- ABILITY EQUIP ----
+// Sova Recon Bolt / Shock Bolt flight, shared by the offline client (inlined by work/install_valorant.py as window.SovaBolt)
+// and the trusted server (server/src/abilities.js). Valorant (wiki.playvalorant.com/en-us/Sova): HOLD FIRE to extend the
+// range of the bolt, ALT FIRE to add up to two bounces. The charge time, speeds, gravity and bounce loss are not on the
+// wiki; the values below are this project's (tap ~ 12 m on flat ground, full charge carries across a site).
+(function(root,factory){if(typeof module==='object'&&module.exports)module.exports=factory();else root.SovaBolt=factory();})(typeof globalThis!=='undefined'?globalThis:this,function(){
+ 'use strict';
+ const BOLT={charge:1,vMin:20,vMax:50,g:12,keep:.8,maxBounces:2,maxT:5,step:1/30};
+ // power 0..1 from the time FIRE was held (BOLT.charge s = full)
+ function power(held){return Math.max(0,Math.min(1,(+held||0)/BOLT.charge));}
+ function bounces(n){n=Math.floor(+n||0);return Math.max(0,Math.min(BOLT.maxBounces,n));}
+ function speed(pw){return BOLT.vMin+(BOLT.vMax-BOLT.vMin)*Math.max(0,Math.min(1,+pw||0));}
+ // o: start [x,y,z], d: unit aim, pw: 0..1, nb: bounces 0..2.
+ // rayN(o,d,max) -> {distance, normal:[x,y,z]} | null for the map; ground(x,z,y) -> floor height under y (or -Infinity).
+ // Returns {end:[x,y,z], t: flight time, pts:[[x,y,z,t],...] (start, every bounce, end), tr: the same plus a point every
+ // step (for drawing the arc), n: surface normal at the end}.
+ function path(o,d,pw,nb,rayN,ground){
+  const v0=speed(pw);let p=[o[0],o[1],o[2]],v=[d[0]*v0,d[1]*v0,d[2]*v0],t=0,left=bounces(nb);const pts=[[p[0],p[1],p[2],0]],tr=[[p[0],p[1],p[2],0]];let n=null;
+  while(t<BOLT.maxT){
+   const dt=BOLT.step,q=[p[0]+v[0]*dt,p[1]+v[1]*dt-BOLT.g*dt*dt/2,p[2]+v[2]*dt],s=[q[0]-p[0],q[1]-p[1],q[2]-p[2]],len=Math.hypot(s[0],s[1],s[2])||1e-9,u=[s[0]/len,s[1]/len,s[2]/len];
+   let hit=rayN?rayN(p,u,len):null;
+   if(!hit&&ground){const gy=ground(q[0],q[2],p[1]+.05);if(Number.isFinite(gy)&&q[1]<gy){const f=Math.max(0,Math.min(1,(p[1]-gy)/Math.max(1e-9,p[1]-q[1])));hit={distance:len*f,normal:[0,1,0]};}}
+   if(hit&&hit.distance<=len){
+    const f=hit.distance/len;t+=dt*f;let nn=hit.normal||[-u[0],-u[1],-u[2]];const nl=Math.hypot(nn[0],nn[1],nn[2])||1;nn=[nn[0]/nl,nn[1]/nl,nn[2]/nl];
+    if(nn[0]*u[0]+nn[1]*u[1]+nn[2]*u[2]>0)nn=[-nn[0],-nn[1],-nn[2]];// face the bolt
+    p=[p[0]+u[0]*hit.distance+nn[0]*.03,p[1]+u[1]*hit.distance+nn[1]*.03,p[2]+u[2]*hit.distance+nn[2]*.03];
+    v[1]-=BOLT.g*dt*f;
+    if(left>0){left--;const k=v[0]*nn[0]+v[1]*nn[1]+v[2]*nn[2];v=[(v[0]-2*k*nn[0])*BOLT.keep,(v[1]-2*k*nn[1])*BOLT.keep,(v[2]-2*k*nn[2])*BOLT.keep];pts.push([p[0],p[1],p[2],t]);tr.push([p[0],p[1],p[2],t]);continue;}
+    n=nn;break;}
+   p=q;v[1]-=BOLT.g*dt;t+=dt;tr.push([p[0],p[1],p[2],t]);}
+  const r=v=>Math.round(v*1000)/1000;p=p.map(r);t=Math.round(t*1000)/1000;pts.push([p[0],p[1],p[2],t]);tr.push([p[0],p[1],p[2],t]);
+  return {end:p,t,pts:pts.map(a=>a.map(r)),tr,n};
+ }
+ function at(tr,t,out){let i=1;while(i<tr.length-1&&tr[i][3]<t)i++;const a=tr[i-1],b=tr[i]||a,k=b[3]>a[3]?Math.max(0,Math.min(1,(t-a[3])/(b[3]-a[3]))):1;out[0]=a[0]+(b[0]-a[0])*k;out[1]=a[1]+(b[1]-a[1])*k;out[2]=a[2]+(b[2]-a[2])*k;return out;}
+ return {BOLT,power,bounces,speed,path,at};
+});
 // Valorant ability layer (work/ability_equip_runtime.js, installed by work/install_valorant.py).
 // Keys: Valorant's defaults are C (ability 1), Q (ability 2), E (signature), X (ultimate); crouch is Ctrl. The game listens
 // for those default codes and the keymap layer (XKB / xKbRev) translates a rebound physical key to them, so the HUD slot
@@ -13724,20 +13769,29 @@ const XAB_EQ = { // agent -> key -> ready-to-equip test (a charge to spend and n
   Cypher: { c: () => J.c >= 1 && J.cd.c <= 0, q: () => J.q >= 1 && J.cd.q <= 0, e: () => !BC.cam && !BC.cv, x: () => J.ult >= K().u },
   Chamber: { c: () => J.c >= 1 && J.cd.c <= 0 && !BC.tm.length, e: () => !BC.an && J.cd.e <= 0 },
 };
-// J.eq: null | { k, code, st: "draw" | "ready" | "rel" | "rec", t, alt, buf }
+// Hold abilities: FIRE pressed with the ability out starts a HOLD (st "hold", q.h s held), releasing FIRE throws.
+//  bow (Sova Shock Bolt / Recon Bolt): the hold charges the bolt (SovaBolt.power), ALT FIRE adds a bounce (0 -> 1 -> 2 -> 0).
+const XAB_HOLD = { Sova: { q: "bow", e: "bow" } };
+function xEqHold(q) { const t = q && XAB_HOLD[J.pick]; return (t && t[q.k]) || ""; }
+// J.eq: null | { k, code, st: "draw" | "ready" | "hold" | "rel" | "rec", t, alt, buf, h (held s), bn (bounces) }
 function xEqMode(code) { const t = XAB_EQ[J.pick], k = code && code[3] && code[3].toLowerCase(), f = t && t[k]; try { return !!(f && f()); } catch (e) { return false; } }
 function xEqFire(alt) { // FIRE / ALT FIRE while an ability is out: true when the click belonged to the ability
-  const q = J.eq; if (!q) return false; if (q.st === "ready") { q.st = "rel"; q.t = XABT.rel; q.alt = !!alt; } else if (q.st === "draw") q.buf = alt ? 2 : 1; return true;
+  const q = J.eq; if (!q) return false; const hk = xEqHold(q);
+  if (hk === "bow" && alt) { if (q.st !== "rel" && q.st !== "rec") { q.bn = ((q.bn | 0) + 1) % 3; try { blip(500 + q.bn * 180, 0.05, "triangle", 0.1); } catch (e) {} } return true; } // ALT FIRE: one more bounce
+  if (hk && !alt) { if (q.st === "ready") { q.st = "hold"; q.h = 0; } else if (q.st === "draw") q.buf = 1; return true; } // FIRE down: start the hold
+  if (q.st === "ready") { q.st = "rel"; q.t = XABT.rel; q.alt = !!alt; } else if (q.st === "draw") q.buf = alt ? 2 : 1; return true;
 }
 function xEqCast(q) { // the throw leaves the hand: the kit's own cast (offline / host relay / trusted server) with ALT FIRE held for an alternate
   const a0 = J.abAlt, m0 = typeof mpAltHeld !== "undefined" ? mpAltHeld : false, s0 = xCaSig(); J.abAlt = !!q.alt; try { if (q.alt) mpAltHeld = true; } catch (e) {}
-  XABT.casting = true; try { xEqKey0(q.code); } catch (e) { xE(e); } finally { XABT.casting = false; J.abAlt = a0; try { mpAltHeld = m0; } catch (e) {} }
+  const hk = xEqHold(q); XABT.bolt = hk === "bow" ? { pw: SovaBolt.power(q.h), b: SovaBolt.bounces(q.bn) } : null; // read by jArrow and the cast message (mpCastSelf)
+  XABT.casting = true; try { xEqKey0(q.code); } catch (e) { xE(e); } finally { XABT.casting = false; XABT.bolt = null; J.abAlt = a0; try { mpAltHeld = m0; } catch (e) {} }
   try { xCaEnd(); } catch (e) {} // the equip viewmodel plays the release; the old one-shot cast gesture would replay it
   return xCaSig() !== s0 || !xEqMode(q.code); // false: the kit refused (no target / no room): Valorant keeps it in hand
 }
 function xEqTick(dt) {
   const q = J.eq; if (!q) return;
   if (!jOn() || !running || !player || player.hp <= 0 || (mode === "five" && FV.buy > 0)) { J.eq = null; return; }
+  if (q.st === "hold") { q.h += dt; if (!fireHeld) { q.st = "rel"; q.t = XABT.rel; q.alt = false; } return; } // releasing FIRE throws
   q.t -= dt; if (q.t > 0) return;
   if (q.st === "draw") { q.st = "ready"; q.t = 0; if (q.buf) { const a = q.buf === 2; q.buf = 0; xEqFire(a); } }
   else if (q.st === "rel") { if (xEqCast(q)) { q.st = "rec"; q.t = XABT.rec; } else { q.st = "ready"; q.t = 0; } }
@@ -13746,14 +13800,15 @@ function xEqTick(dt) {
 const xEqKey0 = jKey;
 jKey = function (code) {
   if (XABT.casting || !jOn() || typeof code !== "string" || !/^Key[CQEX]$/.test(code) || (mode === "five" && FV.buy > 0)) return xEqKey0.apply(this, arguments);
-  if (J.eq && J.eq.code === code && J.eq.st !== "rec") { if (J.eq.st !== "rel") J.eq = null; return true; } // same key again: put it away
+  if (J.eq && J.eq.code === code && J.eq.st !== "rec") { if (J.eq.st !== "rel" && J.eq.st !== "hold") J.eq = null; return true; } // same key again: put it away
   if (J.eq && J.eq.st === "rel") return true; // mid-throw
-  if (player && player.hp > 0 && xEqMode(code)) { J.eq = { k: code[3].toLowerCase(), code, st: "draw", t: XABT.draw, alt: false, buf: 0 }; fireHeld = false; try { setScope(false); } catch (e) {} return true; }
+  if (J.eq && J.eq.st === "hold") return true; // drawing the bow / holding: finish it first
+  if (player && player.hp > 0 && xEqMode(code)) { J.eq = { k: code[3].toLowerCase(), code, st: "draw", t: XABT.draw, alt: false, buf: 0, h: 0, bn: 0 }; fireHeld = false; try { setScope(false); } catch (e) {} return true; }
   if (J.eq) J.eq = null; // a quick-cast / recast puts away whatever was out
   return xEqKey0.apply(this, arguments);
 };
 { const s0 = shoot; shoot = function (hv) { // the gun is down while an ability is out or coming back
-  if (jOn() && J.eq) { fireHeld = false; xEqFire(!!hv); return; } // knife ALT FIRE / touch long-press = ability ALT FIRE
+  if (jOn() && J.eq) { if (hv || !xEqHold(J.eq)) fireHeld = false; xEqFire(!!hv); return; } // knife ALT FIRE / touch long-press = ability ALT FIRE; a hold ability keeps fireHeld to see the release
   if (jOn() && J.pick === "Sova" && J.hf > 0 && !hv) { fireHeld = false; return void xEqKey0("KeyX"); } // Hunter's Fury: FIRE shoots the next blast
   return s0.apply(this, arguments); }; }
 { const z0 = xScopeT; xScopeT = function () { if (jOn() && J.eq) return void xEqFire(true); return z0.apply(this, arguments); }; }
@@ -13762,7 +13817,13 @@ jKey = function (code) {
 // HUD: the equipped slot is outlined, as Valorant highlights the ability in hand
 try { const st = document.createElement("style"); st.textContent = ".x-as.x-eq,#game .x-as.x-eq{box-shadow:inset 0 0 0 2px #fff;border-bottom-color:#fff!important}"; document.head.appendChild(st); } catch (e) {}
 function xEqHud() { const k = J.eq && J.eq.st !== "rec" ? J.eq.k : ""; if (xEqHud.k === k) return; xEqHud.k = k; [["jC", "c"], ["jQ", "q"], ["jE", "e"], ["jX", "x"]].forEach(([id, a]) => { const el = $(id); if (el) el.classList.toggle("x-eq", a === k); }); }
-{ const t0 = jTick; jTick = function (dt) { const v = t0.apply(this, arguments); try { xEqTick(dt); xEqHud(); } catch (e) { J.eq = null; } return v; }; }
+// Sova bow HUD under the crosshair while a bolt is out: charge bar (fills over SovaBolt.BOLT.charge s of HOLD FIRE) and the
+// two bounce pips ALT FIRE lights, as Valorant's bow reticle shows them.
+try { const st = document.createElement("style"); st.textContent = "#xBow{position:fixed;left:50%;top:calc(50% + 34px);transform:translateX(-50%);display:none;align-items:center;gap:6px;pointer-events:none;z-index:6;font:600 10px/1 sans-serif;color:#fff;text-shadow:0 0 2px #000}#xBow.on{display:flex}#xBow i{display:block;width:64px;height:4px;background:rgba(255,255,255,.25);box-shadow:0 0 0 1px rgba(0,0,0,.5)}#xBow i b{display:block;height:100%;width:0;background:#7fd8ff}#xBow u{display:block;width:7px;height:7px;transform:rotate(45deg);border:1px solid #fff;background:transparent}#xBow u.on{background:#7fd8ff}"; document.head.appendChild(st);
+  const d = document.createElement("div"); d.id = "xBow"; d.innerHTML = "<u></u><i><b></b></i><u></u>"; (document.getElementById("game") || document.body).appendChild(d); } catch (e) {}
+function xBowHud() { const q = J.eq, on = !!(q && xEqHold(q) === "bow" && q.st !== "rec"), el = $("xBow"); if (!el) return; const k = on ? Math.round(SovaBolt.power(q.st === "hold" ? q.h : 0) * 20) + "|" + (q.bn | 0) : "";
+  if (xBowHud.k === k) return; xBowHud.k = k; el.classList.toggle("on", on); if (!on) return; el.querySelector("b").style.width = (SovaBolt.power(q.st === "hold" ? q.h : 0) * 100).toFixed(0) + "%"; el.querySelectorAll("u").forEach((u, i) => u.classList.toggle("on", (q.bn | 0) > i)); }
+{ const t0 = jTick; jTick = function (dt) { const v = t0.apply(this, arguments); try { xEqTick(dt); xEqHud(); xBowHud(); } catch (e) { J.eq = null; } return v; }; }
 // ---- First-person ability viewmodel: the gun goes down and the hand holds the ability item ----
 // While an ability is equipped (J.eq) this owns the viewmodel after every other vmTick layer: the gun / knife and the
 // native first-person rig drop out of view (draw), the procedural hand (xCaHand: glove, cuff, sleeve) comes up holding

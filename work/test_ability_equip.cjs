@@ -53,6 +53,19 @@ const fails=[];const fail=s=>{fails.push(s);if(VERBOSE)console.log('FAIL',s);};c
   pick('Phoenix');await tap('KeyE');await adv(600);await click(0);await adv(260);const ow=xe('J.orbs.length?+J.orbs[J.orbs.length-1].w.toFixed(2):null');eq(ow,0.4,'Curveball pops 0.4 s after the release (0.6 s windup)');
   pick('Chamber');await tap('KeyX');await adv(100);if(!(xe('BC.cd')>2))fail('Tour De Force 2.3 s equip: BC.cd '+xe('BC.cd'));xe('BC.eq="";BC.td=0;BC.cd=0;true');
   pick('Raze');await tap('KeyX');await adv(100);if(!(xe('RS.ssd')>1))fail('Showstopper 1.4 s equip: RS.ssd '+xe('RS.ssd'));xe('RS.ss=0;RS.ssd=0;true');}
+ // ---- Sova bow: HOLD FIRE charges, ALT FIRE adds bounces (0..2), release throws; shared vendor/sova-bolt.cjs path ----
+ {pick('Sova');xe('J.q=2;J.cd.q=0;true');await tap('KeyQ');await adv(600);eq(xe('J.eq&&J.eq.st'),'ready','Shock Bolt drawn');
+  H.mouse(0,true);await adv(500);eq(xe('J.eq&&J.eq.st'),'hold','FIRE held: charging');const h=xe('J.eq.h');if(!(h>0.3&&h<0.7))fail('hold time '+h);eq(xe('J.q'),2,'nothing thrown while held');
+  await click(2);await click(2);eq(xe('J.eq.bn'),2,'ALT FIRE twice: two bounces');eq(xe('document.getElementById("xBow").classList.contains("on")'),true,'bow HUD shown');
+  eq(xe('[...document.querySelectorAll("#xBow u.on")].length'),2,'bow HUD: two bounce pips');const bw=xe('parseFloat(document.querySelector("#xBow b").style.width)');if(!(bw>30))fail('bow HUD charge bar '+bw);
+  await click(2);eq(xe('J.eq.bn'),0,'a third ALT FIRE cycles back to no bounce');await click(2);
+  const n0=xe('J.arrows.length');H.mouse(0,false);await adv(300);eq(xe('J.q'),1,'release throws the bolt');
+  const ar=xe('(a=>a&&{tr:!!a.tr,nb:a.nb,kind:a.kind,dur:a.dur})(J.arrows[J.arrows.length-1])');if(!ar||!ar.tr||ar.nb!==1||ar.kind!=='shock')fail('bolt flies the traced path with 1 bounce '+JSON.stringify(ar));
+  eq(xe('document.getElementById("xBow").classList.contains("on")'),false,'bow HUD hidden after the throw');await adv(1500);
+  // tap vs full charge from the same eye / aim: the held bolt goes further
+  const far=xe('(()=>{const o=[0,1.6,0],d=[0,0,-1],a=SovaBolt.path(o,d,0,0,null,()=>0),b=SovaBolt.path(o,d,1,0,null,()=>0);return [-a.end[2],-b.end[2]];})()');if(!(far[1]>far[0]))fail('full charge not further than a tap '+far);
+  eq(xe('JSON.stringify([mpBolt({pw:5,b:7}),mpBolt({}),mpBolt({pw:0.25})])'),JSON.stringify([{pw:1,b:2},null,{pw:0.25,b:0}]),'cast message charge / bounces clamped');
+  xe('J.eq=null;true');await adv(600);}
  // kit table: client KITS == wiki table == server kits.json (charges, costs, ult points)
  const fs=require('fs'),path=require('path'),wiki=JSON.parse(fs.readFileSync(path.join(__dirname,'validation/abilities-wiki.json'),'utf8')),srv=JSON.parse(fs.readFileSync(path.join(__dirname,'../server/src/kits.json'),'utf8'));
  const kits=xe('JSON.parse(JSON.stringify(KITS))');
@@ -82,5 +95,5 @@ const fails=[];const fail=s=>{fails.push(s);if(VERBOSE)console.log('FAIL',s);};c
  await tap('KeyC');await adv(700);await tap('Digit2');await adv(900);const v3=xe(VM);if(Math.abs(v3.gl-v0.gl)>0.06||v3.hand)fail('weapon key did not bring the gun back '+JSON.stringify(v3));
  if(xe('XEQV.err||null'))fail('ability viewmodel error: '+xe('XEQV.err'));
  if(H.errors.length>errs0)fail('page errors: '+H.errors.slice(errs0).map(e=>String(e&&e.message||e)).join(' | '));
- if(fails.length){console.log(fails.join('\n'));process.exit(1);}console.log('ability equip: binds, migration, HUD labels, equip -> fire flow, first-person equip viewmodel, wiki windups, kit table ok');process.exit(0);
+ if(fails.length){console.log(fails.join('\n'));process.exit(1);}console.log('ability equip: binds, migration, HUD labels, equip -> fire flow, first-person equip viewmodel, wiki windups, Sova bow charge + bounces, kit table ok');process.exit(0);
 })().catch(e=>{console.error(e);process.exit(1);});

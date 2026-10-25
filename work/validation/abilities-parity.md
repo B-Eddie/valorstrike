@@ -54,7 +54,7 @@ Equip vs quick-cast per agent (from each wiki description: "EQUIP ... FIRE" vs "
 | Cypher | C Trapwire, Q Cyber Cage, E Spycam (place), X Neural Theft | Spycam view / exit (recast) |
 | Chamber | C Trademark, E Rendezvous (place) | Q Headhunter and X Tour De Force (gun swaps), Rendezvous return (recast) |
 
-Not modelled: Breach Fault Line hold-to-extend (FIRE casts at the fixed length), Sova arrow bounce / charge selection.
+Not modelled at first: Breach Fault Line hold-to-extend, Sova arrow bounce / charge selection (now section 6).
 Buying charges per round is the existing buy-menu ability row (`jBuyHtml` / server `buyAbility`); costs are checked below.
 
 ### Values checked against wiki.playvalorant.com (fetched 2026-10-25)
@@ -111,7 +111,7 @@ Still different (not cheap; each needs a client + server mechanic change):
 - Hot Hands duration: wiki 3.25 s minimum at full size (grows first); here a 4 s full-size zone (kept: the total
   lifetime is close and the growth phase is not modelled).
 - Per-ability windups: done, section 5.
-- Sova arrow bounces / charge, Cloudburst hold-to-curve.
+- Sova arrow bounces / charge: done, section 6. Cloudburst hold-to-curve: section 7.
 
 ## 5. Per-ability windups (wiki)
 
@@ -140,3 +140,27 @@ release and use the full windup. Not changed: Jett Tailwind 1 s (Tailwind keeps 
 fortification (the wall is full HP at once), Neural Theft 2 s / 4 s reveals (server keeps 1 s / 3 s).
 Tests: `server/test-ability-equip.js`, `server/test-abilities.js` (Fault Line), `server/test-ults.js` (Trapwire /
 Trademark arm), `work/test_ability_equip.cjs`.
+
+## 6. Sova Shock Bolt / Recon Bolt: hold to charge, ALT FIRE bounces
+
+Wiki (wiki.playvalorant.com/en-us/Sova): "HOLD FIRE to extend the range of the projectile. ALT FIRE to add up to two
+bounces to this arrow." Both bolts now work that way on every path:
+
+- Flight: one shared module, `vendor/sova-bolt.cjs` (UMD; inlined at the head of the ABILITY EQUIP block by
+  `install_valorant.py` as `window.SovaBolt`, imported by `server/src/abilities.js`). Fixed-step (1/30 s) ballistic flight,
+  speed from the charge, gravity, reflection off the hit surface's normal for each bounce (80 % speed kept), floor hits via
+  the ground function, 5 s cap. Charge time (1 s to full), speeds (20 -> 50 m/s), gravity (12 m/s^2) and bounce loss are
+  not on the wiki: they are this project's values (a tap carries ~10 m on flat ground, a full charge crosses a site).
+- Client: with the bow out (`J.eq`, `XAB_HOLD.Sova` q / e = "bow"), FIRE down starts a HOLD (`st:"hold"`, `q.h` seconds),
+  ALT FIRE adds a bounce (0 -> 1 -> 2 -> 0), releasing FIRE throws after the 0.2 s release. HUD `#xBow` under the
+  crosshair: charge bar + two bounce pips. `jArrow` flies the traced path (`xBoltPath`: solids raycast with world face
+  normals + `groundAt`), the bolt follows the arc and bounces nose-first.
+- Online: the cast message carries `pw` (0..1) and `b` (0..2) (`mpCastSelf`); the host relay and the trusted server
+  clamp both, a missing / junk value is a full-charge, no-bounce bolt (older clients). Server: the bolt is flown from the
+  server's own eye / aim (`world.rayN` = BVH ray with the face normal); Shock Bolt detonates where and when it lands,
+  Recon Bolt pulses start after its flight; the `ac` event carries `pw` / `b` so other clients draw the same arc ending
+  at the server's landing point. `netClean` drops non-numeric `pw` / `b`.
+- Tests: `server/test-ability-equip.js` (tap vs held range, 0/1 bounce off a wall, Recon pulse after the flight,
+  clamping, legacy message), `server/test-ults.js` (recon device lands on the wall), `work/test_ability_equip.cjs`
+  (hold state, ALT FIRE bounces + cycle, HUD, release throws a traced bolt, clamping of cast messages).
+- Bots keep a full-charge, no-bounce bolt.
