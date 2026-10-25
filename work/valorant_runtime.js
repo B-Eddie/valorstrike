@@ -30,19 +30,129 @@ function xvStatic(gl, config) {
   }); mx.stopAllAction(); return out;
 }
 function xvAgentName(n) { const a = xAgOf(n); return XUB_AG[a] ? a : Object.keys(XUB_AG)[String(n || '').split('').reduce((s,c) => s + c.charCodeAt(0), 0) % 12]; }
+// Agent assets (#10): optimized third-person models plus one shared locomotion file (work/build_agent_assets.cjs).
+// Every file is fetched in parallel from the moment the page opens, kept in Cache Storage under its content hash so
+// repeat visits skip the network, and integrity-checked before it is stored. Kits are built in pick order.
+var XVA = { files: (window.VALORANT_AGENT_FILES || {}).files || {}, dir: 'models/valorant/agents/', buf: {}, got: {}, kits: {}, loco: null, cache: null, subs: [], tries: 4, wait: 800, started: false };
+function xvaUrl(f) { const m = XVA.files[f]; return XVA.dir + f + (m && m.sha256 ? '?v=' + m.sha256.slice(0, 16) : ''); }
+function xvaNotify() { XVA.subs.slice().forEach((f) => { try { f(); } catch (e) {} }); }
+function xvaHex(b) { return Array.from(new Uint8Array(b), (x) => x.toString(16).padStart(2, '0')).join(''); }
+function xvaCache() {
+  if (XVA.cache) return XVA.cache;
+  const C = typeof caches !== 'undefined' && caches && typeof caches.open === 'function' ? caches : null;
+  return XVA.cache = !C ? Promise.resolve(null) : C.open('valorstrike-agents').then((c) => {
+    const want = new Set(Object.keys(XVA.files).map((f) => new URL(xvaUrl(f), location.href).href)); // drop superseded versions
+    Promise.resolve(c.keys()).then((ks) => ks.forEach((k) => { if (!want.has(k.url)) c.delete(k); })).catch(() => {});
+    return c;
+  }).catch(() => null);
+}
+function xvaVerify(f, b) {
+  const m = XVA.files[f], S = typeof crypto !== 'undefined' && crypto && crypto.subtle;
+  if (!m || !m.sha256 || !S) return Promise.resolve(!!m);
+  return S.digest('SHA-256', b).then((h) => xvaHex(h) === m.sha256, () => false);
+}
+function xvaDownload(f, url) {
+  return fetch(url).then((r) => {
+    if (!r.ok) throw new Error(f + ' HTTP ' + r.status);
+    const rd = r.body && r.body.getReader && r.body.getReader(); if (!rd) return r.arrayBuffer();
+    const parts = []; let n = 0;
+    const pump = () => rd.read().then(({ done, value }) => { if (done) return; parts.push(value); n += value.byteLength; XVA.got[f] = n; xvaNotify(); return pump(); });
+    return pump().then(() => { const out = new Uint8Array(n); let o = 0; parts.forEach((p) => { out.set(p, o); o += p.byteLength; }); return out.buffer; });
+  });
+}
+// Bytes of one agent asset: Cache Storage first, then the network (stored only when the hash matches the manifest).
+function xvaFetch(f) {
+  if (XVA.buf[f]) return XVA.buf[f];
+  const url = xvaUrl(f);
+  return XVA.buf[f] = xvaCache().then((c) => Promise.resolve(c && c.match(url)).catch(() => null).then((hit) => hit ? hit.arrayBuffer() : xvaDownload(f, url).then((b) => {
+    if (c) xvaVerify(f, b).then((ok) => { if (ok) return c.put(url, new Response(b.slice(0), { headers: { 'content-type': 'application/octet-stream' } })); console.warn('agent asset hash mismatch, not cached: ' + f); }).catch(() => {});
+    return b;
+  }))).then((b) => { XVA.got[f] = b.byteLength; xvaNotify(); return b; }).catch((e) => { delete XVA.buf[f]; XVA.got[f] = 0; throw e; });
+}
+function xvaRetry(job, label) { let n = 0; const go = () => job().catch((e) => { if (++n >= XVA.tries) { XV.failures[label] = String(e); throw e; } return new Promise((r) => setTimeout(r, XVA.wait * n)).then(go); }); return go(); }
+function xvaLoco() {
+  if (XVA.loco) return XVA.loco;
+  return XVA.loco = Promise.all([xvaFetch('locomotion.json'), xvaFetch('locomotion.bin')]).then(([j, b]) => ({ h: JSON.parse(new TextDecoder().decode(j)), f: new Float32Array(b) })).catch((e) => { XVA.loco = null; throw e; });
+}
+// Rebuild one agent's retargeted locomotion clips: local = inverse(parent world) * shared bone world * agent offset.
+function xvaClips(L, slug, root) {
+  const H = L.h, F = L.f, A = H.agents[slug]; if (!A) throw new Error('no locomotion for ' + slug);
+  const Q = THREE.Quaternion, nodes = {}, idx = {}; root.traverse((o) => { if (!(o.name in nodes)) nodes[o.name] = o; });
+  H.bones.forEach((b, k) => { idx[b] = k; if (!nodes[b]) throw new Error(slug + ' bone missing: ' + b); });
+  const info = H.bones.map((b, k) => { const o = nodes[b], rest = new Q(); let p = o.parent; const chain = [];
+    while (p && p !== root && !(p.name in idx && nodes[p.name] === p)) { chain.unshift(p); p = p.parent; }
+    chain.forEach((c) => rest.multiply(c.quaternion));
+    let depth = 0; for (let q = o.parent; q && q !== root; q = q.parent) depth++;
+    return { k, anc: p && p !== root ? idx[p.name] : -1, rest, off: new Q().fromArray(A.offset[k]), depth };
+  }).sort((x, y) => x.depth - y.depth);
+  const W = H.bones.map(() => new Q()), pw = new Q(), loc = new Q(), I = new Q();
+  return H.clips.map((c, i) => {
+    const n = c.frames, times = F.slice(c.times, c.times + n), vals = H.bones.map(() => new Float32Array(n * 4));
+    for (let f = 0; f < n; f++) for (const b of info) {
+      const o = c.world + (b.k * n + f) * 4; W[b.k].set(F[o], F[o + 1], F[o + 2], F[o + 3]).multiply(b.off);
+      pw.copy(b.anc >= 0 ? W[b.anc] : I).multiply(b.rest); loc.copy(pw).invert().multiply(W[b.k]).normalize(); loc.toArray(vals[b.k], f * 4);
+    }
+    const tracks = A.order.map((name) => { const bone = name.slice(0, name.lastIndexOf('.'));
+      if (/\.position$/.test(name)) return new THREE.VectorKeyframeTrack(name, times, F.slice(A.pelvis[i], A.pelvis[i] + n * 3));
+      return new THREE.QuaternionKeyframeTrack(name, times, vals[idx[bone]]); });
+    return new THREE.AnimationClip(c.name, c.duration, tracks);
+  });
+}
+function xvaKit(gl, L, slug) {
+  const C = {}, Lo = {}, U = {}, A = {}, up = /^(Spine[234]|Neck|Head|[LR]_(Clavicle|Shoulder|Elbow|Hand|Thumb|Index|Middle|Ring|Pinky))/;
+  xvaClips(L, slug, gl.scene).forEach((c) => { c.uuid=THREE.MathUtils.generateUUID(); C[c.name] = c; Lo[c.name] = new THREE.AnimationClip(c.name + '_L', c.duration, c.tracks.filter((t) => !up.test(t.name))); U[c.name] = new THREE.AnimationClip(c.name + '_U', c.duration, c.tracks.filter((t) => up.test(t.name))); });
+  ['Pistol_Shoot','Hit_Chest','Hit_Head'].forEach((n) => { A[n] = THREE.AnimationUtils.makeClipAdditive(U[n].clone()); });
+  const S = L.h.agents[slug];
+  return { gl, C, L: Lo, U, A, contactProbes: S.contactProbes || [], contactLift: S.contactLift ? { times: S.contactLift.times, values: S.contactLift.values } : undefined };
+}
+function xvaParse(buf) { return new Promise((res, rej) => new THREE.GLTFLoader().parse(buf, XVA.dir, res, rej)); }
 function xvAgentLoad(ag) {
   if (XV.agents[ag]) return XV.agents[ag]; const slug = ag.toLowerCase();
-  return XV.agents[ag] = Promise.all([xvLoad(slug), fetch('models/valorant/' + slug + '-locomotion.json').then((r) => { if (!r.ok) throw new Error('locomotion ' + r.status); return r.json(); })]).then(([gl, data]) => {
-    const C = {}, L = {}, U = {}, A = {}, up = /^(Spine[234]|Neck|Head|[LR]_(Clavicle|Shoulder|Elbow|Hand|Thumb|Index|Middle|Ring|Pinky))/;
-    data.forEach((j) => { const c = THREE.AnimationClip.parse(j); c.uuid=THREE.MathUtils.generateUUID(); C[c.name] = c; L[c.name] = new THREE.AnimationClip(c.name + '_L', c.duration, c.tracks.filter((t) => !up.test(t.name))); U[c.name] = new THREE.AnimationClip(c.name + '_U', c.duration, c.tracks.filter((t) => up.test(t.name))); });
-    ['Pistol_Shoot','Hit_Chest','Hit_Head'].forEach((n) => { A[n] = THREE.AnimationUtils.makeClipAdditive(U[n].clone()); });
-    return { gl, C, L, U, A, contactProbes:data[0].contactProbes||[], contactLift:(data.find(c=>c.name==='Jog_Fwd_Loop')||{}).contactLift };
-  }).catch((e) => { delete XV.agents[ag]; console.warn('Valorant agent unavailable: ' + ag, e); throw e; });
+  return XV.agents[ag] = xvaRetry(() => Promise.all([xvaFetch(slug + '.glb').then(xvaParse), xvaLoco()]).then(([gl, L]) => xvaKit(gl, L, slug)), ag)
+    .then((kit) => { XVA.kits[ag] = kit; xvaNotify(); return kit; })
+    .catch((e) => { delete XV.agents[ag]; console.warn('Valorant agent unavailable: ' + ag, e); throw e; });
+}
+function xvaAll() { return Object.keys(XUB_AG); }
+function xvaFilesOf(ags) { return ags.map((a) => a.toLowerCase() + '.glb').concat(['locomotion.json', 'locomotion.bin']); }
+// Progress over a set of agents: kits built, and bytes in hand against the manifest sizes.
+function xvAgentProgress(ags) {
+  ags = ags || xvaAll(); const fs = xvaFilesOf(ags); let got = 0, total = 0;
+  fs.forEach((f) => { const t = (XVA.files[f] || {}).bytes || 0; total += t; got += Math.min(t || Infinity, XVA.got[f] || 0); });
+  const ready = ags.filter((a) => XVA.kits[a]).length;
+  return { ready, total: ags.length, bytes: got, totalBytes: total, done: ready === ags.length, frac: ags.length ? (ready === ags.length ? 1 : Math.min(.99, total ? got / total : ready / ags.length)) : 1 };
+}
+// Resolves once every listed agent (default: all twelve) has its real model; onProgress gets xvAgentProgress().
+function xvAgentsReady(ags, onProgress) {
+  ags = (ags && ags.length ? ags : xvaAll()).map((a) => xvAgentName(a)).filter((a, i, l) => l.indexOf(a) === i);
+  const tick = () => { if (onProgress) onProgress(xvAgentProgress(ags)); }; XVA.subs.push(tick); tick();
+  return Promise.all(ags.map(xvAgentLoad)).then(() => { tick(); return ags.map((a) => XVA.kits[a]); }).finally(() => { const i = XVA.subs.indexOf(tick); if (i >= 0) XVA.subs.splice(i, 1); });
+}
+// Lobby boot: every agent file downloads in parallel right away; kits are then built one at a time, the last pick first.
+function xvPreloadAgents(first) {
+  if (XVA.started) return; XVA.started = true;
+  const all = xvaAll(), lead = first && all.indexOf(first) >= 0 ? first : 'Jett', order = [lead].concat(all.filter((a) => a !== lead));
+  try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {}); } catch (e) {}
+  const head = xvaFilesOf([lead]), rest = xvaFilesOf(order.slice(1)).filter((f) => head.indexOf(f) < 0);
+  // The lobby's agent gets the whole pipe first; the other eleven then download in parallel while it is built.
+  Promise.all(head.map((f) => xvaFetch(f).catch(() => {}))).then(() => rest.forEach((f) => { xvaFetch(f).catch(() => {}); }));
+  order.reduce((p, a) => p.then(() => xvAgentLoad(a).catch(() => {})), Promise.resolve());
+}
+// Progress label over a preview canvas while its agent's real model is still on the way.
+function xvAgentWaitLabel(cv) {
+  if (!cv || !cv.parentNode) return () => {};
+  let el = cv.parentNode.querySelector(':scope > .xv-wait');
+  if (!el) { el = document.createElement('div'); el.className = 'xv-wait'; el.setAttribute('role', 'status'); el.style.cssText = 'position:absolute;left:0;right:0;bottom:12%;text-align:center;pointer-events:none;font:600 12px/1.4 system-ui,sans-serif;letter-spacing:.14em;color:rgba(236,232,225,.85);text-shadow:0 1px 3px #000'; if (getComputedStyle(cv.parentNode).position === 'static') cv.parentNode.style.position = 'relative'; cv.parentNode.appendChild(el); }
+  let sub = null;
+  return (ag) => {
+    if (sub) { const i = XVA.subs.indexOf(sub); if (i >= 0) XVA.subs.splice(i, 1); sub = null; }
+    if (!ag || XVA.kits[ag]) { el.style.display = 'none'; return; }
+    sub = () => { const p = xvAgentProgress([ag]); el.textContent = 'LOADING ' + String(ag).toUpperCase() + ' ' + Math.round(p.frac * 100) + '%'; if (p.done) el.style.display = 'none'; };
+    XVA.subs.push(sub); el.style.display = 'block'; sub();
+  };
 }
 function xvAgent(M, kit) {
   XUB.up ||= new THREE.Vector3(0,1,0); XUB.rt ||= new THREE.Vector3(1,0,0);
   if (M.dead || M.valorant) return;
-  const queued=XSOL.up.indexOf(M);if(queued>=0)XSOL.up.splice(queued,1);
   // Detach the held weapon before removing the previous rig.
   if (M.gun && M.gun.parent) { M.m.add(M.gun); M.gun.position.set(-.1, 1.22, .32); }
   if (M.sx && M.sx.sc && M.sx.sc.parent) M.m.remove(M.sx.sc.parent);
@@ -61,10 +171,16 @@ function xvAgent(M, kit) {
   X.a.idle.play(); X.a.aim.play(); X.w.idle = X.w.aim = 1; mx.update(.01); M.m.updateMatrixWorld(true);
   const hand = bone('R_Hand'); if (hand && M.gun) { const hold = new THREE.Group(), p=new THREE.Vector3(),q=new THREE.Quaternion(),s=new THREE.Vector3(); new THREE.Matrix4().copy(M.m.matrixWorld).invert().multiply(hand.matrixWorld).decompose(p,q,s); hold.quaternion.copy(q.invert()); hold.scale.set(1/s.x,1/s.y,1/s.z); hand.add(hold); hold.add(M.gun); M.gun.position.set(0,0,.03); M.gun.rotation.set(0,Math.PI,0); M.weaponHolder=hold; } // gun models are authored muzzle -Z: PI faces the muzzle the way the character looks
   X.contactLift=kit.contactLift;X.contactProbes=kit.contactProbes.map(p=>({o:sc.getObjectByName(p.mesh),indices:p.indices})).filter(p=>p.o&&p.o.isSkinnedMesh);X.contactV=new THREE.Vector3();X.contactInv=new THREE.Matrix4();X.contactShift=new THREE.Vector3();X.contactScale=new THREE.Vector3();X.contactFloor=bx.min.y;X.acts=X.a; M.ub=1; M.sx=X; M.valorant=1; M.xAt=[]; M.solOwn=()=>{M.solOwn=null;}; XSOL.mx.push(M);
+  if (M.xvWait) { M.xvWait = 0; if (M.gun) M.gun.visible = true; } // the weapon waited, hidden, for the body
 }
-{ const base = xUb; xUb = function(M) { if(M.dead||M.valorant)return; base(M); const ag=xvAgentName(M.nm); xvAgentLoad(ag).then((kit)=>xvAgent(M,kit)).catch(()=>{}); }; }
-// Native rigs do not depend on the legacy fallback download becoming ready.
-{const create=xAgent;xAgent=function(){const M=create.apply(this,arguments),ag=xvAgentName(M.nm);xvAgentLoad(ag).then(kit=>xvAgent(M,kit)).catch(()=>{});return M;};}
+// #11: no stand-in bodies. An agent whose kit is in memory gets its real rig immediately; otherwise it stays
+// invisible (weapon hidden too) until the kit arrives. Match loading waits on xvAgentsReady, so this is rare.
+function xvAttach(M) {
+  if (!M || M.valorant) return M; const ag = xvAgentName(M.nm), kit = XVA.kits[ag];
+  if (kit) { xvAgent(M, kit); return M; }
+  M.xvWait = 1; if (M.gun) M.gun.visible = false; xvAgentLoad(ag).then((k) => xvAgent(M, k)).catch(() => {}); return M;
+}
+{const create=xAgent;xAgent=function(){return xvAttach(create.apply(this,arguments));};}
 // Correct only the blended support-foot height after the mixer. Authored jog flight remains airborne.
 {const pre=xUbPre,post=xUbPost;xUbPre=function(M){const X=M.sx;if(X&&X.contactRestore){X.b.pelvis.position.copy(X.contactRestore);X.contactRestore=null;}return pre(M);};xUbPost=function(M){post(M);const X=M.sx;if(!X||!X.nativeContact||X.dd||M.dead||X.air||X.lo||(X.w.plant||0)>.01||!X.contactProbes.length)return;M.m.updateMatrixWorld(true);const v=X.contactV,inv=X.contactInv.copy(X.sc.matrixWorld).invert();let low=Infinity;for(const {o,indices}of X.contactProbes){o.skeleton.update();for(const i of indices){v.fromBufferAttribute(o.geometry.attributes.position,i);o.boneTransform(i,v);v.applyMatrix4(o.matrixWorld).applyMatrix4(inv);low=Math.min(low,v.y);}}let lift=0;const c=X.contactLift,a=X.a.run;if(c&&a&&(X.w.run||0)>.001){const t=a.time%c.times[c.times.length-1];let i=0;while(i<c.times.length-2&&c.times[i+1]<t)i++;const f=(t-c.times[i])/Math.max(.00001,c.times[i+1]-c.times[i]);lift=(c.values[i]*(1-f)+c.values[i+1]*f)*(X.w.run||0);}const dy=X.contactFloor+lift-low;if(!Number.isFinite(dy)||Math.abs(dy)>.5)return;X.contactRestore=X.b.pelvis.position.clone();X.b.pelvis.getWorldPosition(v);const shift=X.contactShift.set(0,1,0).transformDirection(X.sc.matrixWorld).multiplyScalar(Math.abs(dy)*X.sc.getWorldScale(X.contactScale).y);if(dy<0)shift.negate();v.add(shift);X.b.pelvis.position.copy(X.b.pelvis.parent.worldToLocal(v));M.m.updateMatrixWorld(true);};}
 // Native first-person rigs and their matching weapon animation clips. The virtual source camera faces +X.
@@ -113,7 +229,10 @@ function xvMapCover(g) {
   }).catch(e=>{XV.failures.cover=String(e);});
 }
 {const use=useMap;useMap=function(n){const r=use.apply(this,arguments);try{xvMapCover(MAPS[n]&&MAPS[n].g);}catch(e){}return r;};}
-window.xValorantAssets={state:XV,load:xvLoad,loadAgent:xvAgentLoad,loadFP:xvFPLoad,scene,camera,renderer,agents:()=>XSOL.mx,probe:()=>({running,mode,agent:J.pick,weapon:fpaWeap(),nativeAgents:XSOL.mx.filter(m=>m.valorant).length,nativeFP:XV.fp&&XV.fp.ag+' '+XV.fp.w,failures:XV.failures})};
+window.xValorantAssets={state:XV,agentAssets:XVA,agentsReady:xvAgentsReady,agentProgress:xvAgentProgress,load:xvLoad,loadAgent:xvAgentLoad,loadFP:xvFPLoad,scene,camera,renderer,agents:()=>XSOL.mx,probe:()=>({running,mode,agent:J.pick,weapon:fpaWeap(),nativeAgents:XSOL.mx.filter(m=>m.valorant).length,agentKits:Object.keys(XVA.kits).length,nativeFP:XV.fp&&XV.fp.ag+' '+XV.fp.w,failures:XV.failures})};
+window.xvAgentsReady=xvAgentsReady;
+// Start downloading every agent as soon as the lobby is up (idle slot right after first paint), last pick first.
+{const go=()=>{let a='Jett';try{a=(typeof S!=='undefined'&&S&&S.lastAg)||localStorage.getItem('vs.lastAg')||a;}catch(e){}try{xvPreloadAgents(xvAgentName(a));}catch(e){console.warn('agent preload',e);}};if(window.requestIdleCallback)requestIdleCallback(go,{timeout:300});else setTimeout(go,0);}
 // Physical ability devices retain their gameplay roots, hit checks and timers.
 var XV_DEVICE = {};
 function xvDevice(m, slug, height, bottom) {
