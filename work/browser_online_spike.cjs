@@ -49,7 +49,10 @@ const qa=async js=>{const r=await fetch('http://127.0.0.1:8787/__qa',{method:'PO
  const sc0=await X('FV.you+FV.them');await page.waitForFunction(n=>window.__xe('FV.you+FV.them')>n,sc0,{timeout:1200000}).catch(e=>log('round end wait',String(e).slice(0,120)));
  await page.waitForTimeout(800);log('hud round end (detonation)',await hud());await shot('online-spike-detonated-640x360.jpg');
  log('server round end',await qa(`const s=sim('${code}');return {scores:s.roundScores,credits:s.units.find(u=>u.human).credits,delay:s.roundDelay};`));
- await page.waitForFunction(()=>window.__xe('FV.buy>0'),null,{timeout:1200000}).catch(e=>log('round 13 wait',String(e).slice(0,120)));await qa(`const s=sim('${code}');s.remaining=900;return 1;`);
+ // hold round 13's clock from the server side as soon as it starts (waiting for the page first let the whole 100 s round
+ // expire at software-rendered frame rates, so the defuse ran in round 14)
+ for(let i=0;i<2400;i++){const r=await qa(`const s=sim('${code}');if(s.round>=13&&!(s.roundDelay>0)){s.remaining=900;s.buy=Math.max(s.buy,20);return s.round;}return 0;`);if(r)break;await new Promise(r=>setTimeout(r,250));}
+ await page.waitForFunction(()=>window.__xe('FV.buy>0'),null,{timeout:1200000}).catch(e=>log('round 13 wait',String(e).slice(0,120)));
  log('server round 13',await qa(`const s=sim('${code}');const u=s.units.find(u=>u.human);return {round:s.round,atk:s.atk,team:u.team,credits:u.credits};`));
  await page.waitForTimeout(1500);log('hud round 13 buy',await hud());await shot('online-spike-halftime-640x360.jpg');
  await qa(`const s=sim('${code}');s.buy=Math.min(s.buy,.5);return 1;`);await page.waitForFunction(()=>window.__xe('FV.buy===0'),null,{timeout:1200000}).catch(()=>{});
