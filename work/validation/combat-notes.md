@@ -341,3 +341,38 @@ Harness: `server/tools/soak.mjs` (in-process worker, bots + fuzzing humans, inva
 - **Ownerless utility kills**: a kill by utility whose owner left the match showed a blank killer. Effects record their
   agent (`ag`) and the kill event credits it (e.g. "Raze" with the Ability icon); the page falls back to the weapon /
   "Utility" for an older server's blank name. `test-ults.js` checks the credited name.
+
+## Gameplay QA pass 6 (two-human gunplay: armor boundaries, falloff, pellets, spray, swap / reload, ammo / pickup)
+
+New: `server/test-gunplay.js` (in `npm test`) and `work/test_client_online_gunplay.cjs` (page + scripted human on the
+in-process server; it keeps the VALORANT FEEL block the audit fixture strips, and drives the page's own `fiveTick` /
+`vmTick`, since the harness page sits behind a cover overlay and its rAF loop never runs the match tick).
+
+- **HP / armor float leftovers**: armor absorbs `damage * .66`, so e.g. Odin legs x3 at 50 armor left 54.00000000000001
+  hp, which rows (`Math.ceil`) showed as 55 (30 of 306 weapon x band x part x armor cases were off by one; 1.000000000000007
+  hp showed 2). Server `fire()` / `abilityDamage()` and the offline `hurt()` / `armAbs()` snap hp / armor to 1e-6. Shots
+  to kill already matched the exact model in every case.
+- **Falloff / headshots**: every weapon's head / body / leg damage per range band equals weapons.json (client
+  `weapon-calibration.js` is byte-equal in content). Remaining, not fixed: offline wallbang damage rounds
+  `Math.round(floor(raw) * k)` while the server floors `raw * k` (differs by 1 on fractional raws, e.g. 77.5 x .75).
+- **Spray recoil parity**: the server fired every bullet of a spray straight down the crosshair (first-shot spread only);
+  the client's bullets climb and drift. The climb / drift / bloom / reset (.375 s pause or weapon change) now live in the
+  shared motor (`sprayReset / sprayBloom / sprayStep`, `REC` weights = client `WEAP.rec`), used by both `gFire` and server
+  `fire()`; the vertical climb is identical shot for shot (the drift side is random on each side).
+- **Shotgun pellets**: the server spread pellets over `tan(firstBulletAccuracy)`; the client jittered the centre by that
+  cone and then spread pellets over a separate `W.cone` (wider; Judge .075 vs .044), and in world axes (facing along X
+  the horizontal spread was halved). Client pellets now use the shot's cone (incl. bloom) in the shot's own basis, centre
+  not jittered, as the server. Online, the Bucky's client-only alt fire is off (the server has no alt-fire mode).
+- **Swap mid-reload**: the server refused `equip` while reloading, so the page (whose swap cancels the reload) was snapped
+  back to the reloading gun, and a knife swap mid-reload left the gun in the server's hands, so the knife click fired it.
+  A swap now cancels the reload server-side, and is taken during the equip time too (the new gun's equip time gates its
+  first shot; test-spike-edges updated). Client: a local swap sends `equip` at once and holds the snapshot weapon
+  reconcile until the server names that gun (or 1 s): a snapshot landing before the 50 ms net loop used to revert the
+  swap and reset `netWeapon`, so the equip was never sent. Ammo from snapshots applies only to the gun the server holds.
+- **Reload timer left below 0**: a finished reload left `reloading` at e.g. -0.05; online code tested truthiness, so the
+  page counted as reloading forever after its first reload: ammo sync stopped and the next auto-reload (empty magazine)
+  was never sent, so the server stayed empty. Timer clamped to 0; online checks use `reloading > 0`.
+- **G mid-reload** was refused server-side (offline allows it); the gun now drops with its magazine.
+- Checked, no bug: enemy gun picked up off the floor keeps magazine / reserve and its reload draws from that reserve;
+  next round refills magazine and reserve; same-tick trades resolve in unit order (the first unit's lethal shot stops the
+  other firing that tick; pinned in test-gunplay).
