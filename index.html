@@ -7598,6 +7598,12 @@ function jBeam() {
   bots.forEach((b) => { if (!b.alive) return; const v = new THREE.Vector3(b.g.position.x, 1.1, b.g.position.z).sub(o), t = v.dot(d); if (t > 0 && t < L && v.addScaledVector(d, -t).length() < 0.9) jHit(b, 80, "Hunter's Fury"); });
   const m = jM(beamGeo, fireMat(0x45d0ff, 0.85)); m.scale.z = L; o.y -= 0.2; m.position.copy(o).addScaledVector(d, L / 2); m.lookAt(o.clone().addScaledVector(d, L)); jFx(m, 0.35);
 }
+function phCurve(o, fx, fz, side) { // Curveball path: mid = up to 5 m ahead (0.4 m short of a wall), end = up to 2.5 m to the side (side -1 left, 1 right)
+  const f = new THREE.Vector3(fx, 0, fz), r = new THREE.Vector3(-fz * side, 0, fx * side);
+  ray.set(o, f); ray.far = 5; let h = ray.intersectObjects(solids)[0]; const mid = o.clone().addScaledVector(f, h ? Math.max(0.5, h.distance - 0.4) : 5);
+  ray.set(mid, r); ray.far = 2.5; h = ray.intersectObjects(solids)[0]; const end = mid.clone().addScaledVector(r, h ? Math.max(0, h.distance - 0.4) : 2.5);
+  return { mid, end };
+}
 function phKey(code) {
   const P = player, no = () => blip(120, 0.08, "square", 0.1), fx = -Math.sin(yaw), fz = -Math.cos(yaw);
   if (code === "KeyC") {
@@ -7607,9 +7613,10 @@ function phKey(code) {
   }
   if (code === "KeyE") { // Curveball (signature, E in Valorant): 1 free + 1 bought, a charge back every 2 kills
     if (J.e < 1 || J.cd.e > 0) return no(); J.e--; J.tk = 0; J.cd.e = 0.6;
-    const o = pEye(), d = jAim(); ray.set(o, d); ray.far = 6; const h = ray.intersectObjects(solids)[0];
-    const e = h ? h.point.clone().addScaledVector(d, -0.4) : o.clone().addScaledVector(d, 6);
-    const m = jM(orbGeo, jMat("orb", () => new THREE.MeshBasicMaterial({ color: 0xfff2b0 }))); m.position.copy(o); scene.add(m); J.orbs.push({ m, a: o, b: e, t: 0 }); blip(800, 0.1, "sine", 0.15);
+    // Curves like the server's (devices.js DEV.curveball): 5 m ahead (short of a wall), then 2.5 m to the LEFT by default,
+    // to the RIGHT while ALT FIRE (right mouse) is held, as in Valorant; pops after the 0.5 s windup.
+    const o = pEye(), side = typeof mpAltHeld !== "undefined" && mpAltHeld ? 1 : -1, c = phCurve(o, fx, fz, side);
+    const m = jM(orbGeo, jMat("orb", () => new THREE.MeshBasicMaterial({ color: 0xfff2b0 }))); m.position.copy(o); scene.add(m); J.orbs.push({ m, a: o, c: c.mid, b: c.end, t: 0 }); blip(800, 0.1, "sine", 0.15);
   }
   if (code === "KeyQ") { // Hot Hands (basic, Q in Valorant)
     if (J.q < 1 || J.cd.q > 0) return no(); J.q--; J.cd.q = 0.6;
@@ -7657,7 +7664,7 @@ function jFxTick(dt) {
       if (Math.hypot(P.x - z.p.x, P.z - z.p.z) < 2.5) heal(); } if (z.t > 0) A[k++] = z; else jRel(z.m); }
     A.length = k; }
   { const A = J.orbs, n = A.length; let k = 0;
-    for (let i = 0; i < n; i++) { const o = A[i]; o.t += dt; o.m.position.lerpVectors(o.a, o.b, Math.min(1, o.t / 0.5));
+    for (let i = 0; i < n; i++) { const o = A[i]; o.t += dt; const u = Math.min(1, o.t / 0.5); if (o.c) { const w = 1 - u; o.m.position.set(w * w * o.a.x + 2 * w * u * o.c.x + u * u * o.b.x, w * w * o.a.y + 2 * w * u * o.c.y + u * u * o.b.y, w * w * o.a.z + 2 * w * u * o.c.z + u * u * o.b.z); } else o.m.position.lerpVectors(o.a, o.b, u); // Curveball bends through its control point
       if (o.t < 0.5) { A[k++] = o; continue; } jRel(o.m); o.en ? enPop(o.b) : jPop(o.b); }
     A.length = k; }
   if (J.dr) drTick(dt);
@@ -11570,13 +11577,6 @@ function mpCliTick5(dt) { // client: own movement + HUD; the host owns rounds, s
   bar.style.display = show ? "block" : "none";
   if (show) { if (bar.firstChild) bar.firstChild.textContent = show + (s.st === "plant" && s.dt >= 3.5 ? " · half" : ""); const bi = bar.querySelector("i"); if (bi) bi.style.width = Math.min(100, prog * 100) + "%"; }
 }
-function mpCli5(m) { // client 5v5 messages; true when handled
-  if (m.t === "rs") { if (MP.st === "game") mpCliRS(m); return true; }
-  if (m.t === "bo") { if (MP.st !== "game") return true; FV.cr = m.cr | 0; mpCliLoad(m.ld, m.a); if (m.ab) { for (const k of ["c", "q"]) if (typeof m.ab[k] === "number") J[k] = m.ab[k]; }
-    if (m.ok) try { blip(m.n && m.n.indexOf("ab:") === 0 ? 700 : 700, 0.08, "triangle", 0.15); } catch (e) {}
-    try { onSkin(); updHud(); if (FV.menu) { buyRender.h = null; buyRender(); } xHud(); } catch (e) {} return true; }
-  if (m.t === "abn") { if (/^[cqe]$/.test(m.k)) J[m.k] = 0; return true; }
-  if (m.t === "rd") { if (MP.st !== "game") return true;
 // Round start re-arms the round's own loadout, like offline fRound: full mags, primary (else sidearm) in hand, viewmodel
 // refreshed. Assigning FV.pri/FV.sec alone left a gun the server had swapped in mid-round in hand: Tour de Force (and
 // Headhunter) arrive in snapshots as the held weapon (bEquip'd into the slot), so after a round reset the Operator
@@ -11588,6 +11588,13 @@ function mpRdArm(ld) {
   rw = p ? "pri" : "pis"; ammo = slots[rw].ammo; rsv = slots[rw].rsv; reloading = 0; fireHeld = false;
   try { onSkin(); setScope(false); } catch (e) {}
 }
+function mpCli5(m) { // client 5v5 messages; true when handled
+  if (m.t === "rs") { if (MP.st === "game") mpCliRS(m); return true; }
+  if (m.t === "bo") { if (MP.st !== "game") return true; FV.cr = m.cr | 0; mpCliLoad(m.ld, m.a); if (m.ab) { for (const k of ["c", "q"]) if (typeof m.ab[k] === "number") J[k] = m.ab[k]; }
+    if (m.ok) try { blip(m.n && m.n.indexOf("ab:") === 0 ? 700 : 700, 0.08, "triangle", 0.15); } catch (e) {}
+    try { onSkin(); updHud(); if (FV.menu) { buyRender.h = null; buyRender(); } xHud(); } catch (e) {} return true; }
+  if (m.t === "abn") { if (/^[cqe]$/.test(m.k)) J[m.k] = 0; return true; }
+  if (m.t === "rd") { if (MP.st !== "game") return true;
     mpRdArm(m.ld); FV.cr = m.cr | 0; FV.buy = m.b || 0; FV.atk = MP.team === 0 ? !!m.atk : !m.atk;
     running = true; try { clock.getDelta(); } catch (e) {} try { $("feed").innerHTML = ""; $("defuse").style.display = "none"; $("xBan").style.display = "none"; } catch (e) {}
     try { jRound(false); } catch (e) {} say("Buy phase · press B to buy", 1800); try { SFX.buy(); } catch (e) {} updHud(); return true; }
