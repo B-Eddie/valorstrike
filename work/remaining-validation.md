@@ -460,3 +460,11 @@ then A-host start with B parked at about:blank (WebGL-contention mitigation), th
 - Suspects (unverified): main-thread block inside xGo path (xGmLoad gun-model fetch/parse + nmEnsure + BVH build contention under SwiftShader); possible nmEnsure ticket/cancel interplay if a room-message prefetch and startDM load race; server tick/begin frame behavior on long-lived workerd instance.
 - Labeling: host-client one-page success (12:58) != authoritative server-path acceptance; both stay open until the two-client rendered run completes.
 - Next: pre-freeze console/pageerror capture; bisect xGo by starting via __vs.startDM-equivalent online path; check whether room message handler triggers a map prefetch racing startDM.
+
+## Rendered two-client - stall root-caused to harness infra, not game code (13:22)
+- FRESH-wrangler ONE-mode run (room 3UR9E4): mpStart -> running=true, mode=five in ~12s, 9 bots, match still healthy at 97s. Online DM start path works end-to-end against a fresh local server.
+- Stall correlation: every stall/freeze run targeted the LONG-LIVED detached wrangler (started 12:55) that had accumulated rooms from many killed-browser probe runs. Server cleanup exists (drop() -> clearInterval when last session leaves; idle close 1001; load timeout 4002), but reaped Chrome leaves dead TCP sockets whose close events can linger, and tick() still builds a full snapshot every 50ms per open room even with zero ready sessions. Conditional attribution: accumulated rooms on the shared isolate degrade fetch/ws handling enough to stall client start. Not a production bug signal by itself (production Cloudflare DOs are per-room isolates), kept as harness-infra finding.
+- Harness rule now: probe always spawns a FRESH wrangler per run (no NO_WRANGLER reuse of a long-lived server).
+- Also confirmed live: /profile 429 still occurs on fresh wrangler and start works anyway (profile token is stats-only, fails soft) - cap theory stays dead.
+- Probe now logs page console errors/warnings live (console.error 404 + 429 seen at boot are the known favicon/profile noise).
+- Open: full TWO-client run (B joins mid-match, hunt/feed/death/respawn) against a fresh wrangler; then host-client vs authoritative labeling stays until that passes.

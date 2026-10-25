@@ -19,6 +19,8 @@ function waitHttp(url, ms) { const end = Date.now()+ms; return new Promise((res,
   const pA = await ctx.newPage({viewport:{width:960, height:600}});
   const ONE = !!process.env.ONE; const pB = ONE ? null : await ctx.newPage({viewport:{width:960, height:600}});
   const errsA = [], errsB = []; pA.on('pageerror', e => errsA.push(String(e))); if (pB) pB.on('pageerror', e => errsB.push(String(e)));
+  const con=(tag,m)=>{const t=m.type();if(t==='error'||t==='warning')console.log(el(),tag,'console.'+t,m.text().slice(0,220));};
+  pA.on('console',m=>con('A',m)); if(pB)pB.on('console',m=>con('B',m));
   const bootOne = async (p, name) => {
     await boot(p);
     await p.click('#mIntro [data-close]').catch(()=>{});
