@@ -23,13 +23,14 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     grab('feedRow', document.querySelector('#feed .kf'));
     grab('toast', document.querySelector('#toast.on'));
     grab('card', document.querySelector('.x-kb.on'));
+    grab('banner', document.querySelector('#xKbn.on'));
     grab('minimap', document.getElementById('xMap'));
     grab('scores', document.querySelector('#game .hud.x-top'));
     return out;
   });
   const inter = (A, B) => A && B && A[0] < B[2] && B[0] < A[2] && A[1] < B[3] && B[1] < A[3];
   const results = [];
-  for (const [w, h] of [[568, 320], [640, 360], [1280, 720]]) {
+  for (const [w, h] of (process.env.SIZES ? JSON.parse(process.env.SIZES) : [[568, 320], [640, 360], [1280, 720]])) {
     await p.setViewportSize({width: w, height: h});
     await wait(600);
     // clear leftovers from the previous round and re-arm the once-per-round FIRST BLOOD
@@ -41,6 +42,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     await p.waitForFunction(() => document.querySelector('#toast.on') && document.querySelector('#xAnn.on'), {timeout: 4000}).catch(() => console.log(el(), 'WARN toast/ann race'));
     await wait(150);
     const r1 = await rects();
+    await p.screenshot({path: '/tmp/hud_r1_' + w + 'x' + h + '.png'});
     r1.antOverflow = await p.evaluate(() => { const e = document.querySelector('#xAnn .x-ant'); return e ? e.scrollWidth - e.clientWidth : null; });
     r1.annGlyphs = await p.evaluate(() => { const e = document.querySelector('#xAnn .x-ant'); if (!e) return null; const r = document.createRange(); r.selectNodeContents(e); const q = r.getBoundingClientRect(); return [Math.round(q.left), Math.round(q.top), Math.round(q.right), Math.round(q.bottom)]; });
     if (r1.annGlyphs && r1.feed) { const g = r1.annGlyphs, f = r1.feed; if (g[0] < f[2] && f[0] < g[2] && g[1] < f[3] && f[1] < g[3]) r1.glyphHitFeed = { g, f }; }
@@ -63,7 +65,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     // next round state: revive for the next size's kill
     await p.evaluate(() => { const P = window.__vs.player; P.hp = 100; });
   }
-  const bad = results.filter(r => r.overlaps.length || r.r1.glyphHitFeed);
+  const bad = results.filter(r => r.overlaps.length || r.r1.glyphHitFeed || r.r2.banner); // r2 (dead): the ELIMINATED banner must be gone once the KILLED BY card is up
   console.log(el(), 'RESULT', JSON.stringify({pass: !bad.length, sizes: bad.map(r => r.size)}));
   await b.close(); srv.close(); process.exit(bad.length ? 1 : 0);
 })().catch(e => { console.log('HUD FAIL', e.message); process.exit(1); });

@@ -569,3 +569,11 @@ Open: complete B join mid-match + kill phase (60s window at 2.5fps); then label 
 - hud-map.cjs: added comms + toast to the grab list. Result: OVERLAPS [] at 844x390 five, 568x320 DM, 844x390 DM; 568x320 five has only minimap/scores (designed: translucent map under the no-background score strip; pixels verified legible). Pixel-inspected 568x320 five capture: clean.
 - KNOWN TRADEOFFS (parent can veto): feed 1-row at <=480h; DM standings = ticker not table at <=480h; ping default-off at <=480h; 2s sliver overlaps none (pause fully off the card).
 - Still open from 15:28 scope: pixel-check 844 captures + kill/death-scene captures (banner dedup verification), sweep rerun, performance A/B, Lotus.
+
+## 16:30 - whole-HUD acceptance round 2: ALL SIZES ZERO OVERLAPS + death-scene dedup verified
+- Scores strip at <=560h: right-docked + compacted (13px pips, 15px digits, 52px timer) and bpT() shortens to "BUY 0:43" (the nowrap "BUY PHASE 0:43" was the strip width driver). Rules placed after the max-width:820px block (cascade). 568x320: strip [135,8,560,40] clears the minimap markers fully (parent's 16:14 rejection fixed).
+- Toast at <=480h: bone bg + ink text (low-contrast fix), max-width:260 (clears credits), top:260 (stacks under the death card, off the button grid). #toast is a body child - selector fixed.
+- DM standings ticker: tap toggles .x-full (full table) - full standings access preserved on touch (no scoreboard button exists).
+- hud-coexist.cjs: added banner (#xKbn.on) grab, r1 screenshots, SIZES env, r2-banner-is-gone assertion. PASS at 568x320/640x360/1280x720: kill -> FIRST BLOOD + ELIMINATED banner + feed + toast coexist clean; die -> KILLED BY card with banner GONE (no bleed-through; pixels verified 568 + 1280).
+- 1280 coexist flake root-caused as PROBE artifact (waitForFunction TTL race: 900ms "Round start" toast vs ann poll under SwiftShader at 720p; card opacity transition delay > 300ms grab window). Fresh-state 1280 probe (/tmp/banner1280.cjs): banner:true ann:true feedRows:2 at +500ms - desktop banner confirmed working post-dedup.
+- xKLReset coverage verified thorough (render tick :4003, round flow, DM respawn, revive) - dedup's xKL.on gate clears on every real respawn path.
