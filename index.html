@@ -13927,7 +13927,7 @@ var XSK_CAT = {"v":2,"note":"Valorant collection, skin and variant names (valora
 // Vandal. Equipped id per weapon persists in localStorage (vs.skins) and syncs online ('sk' / 'sks': the server
 // validates the ids and only stores / relays them). Collection and Store pages follow the Valorant layout; every item
 // is FREE and "Get" adds it to the inventory: no currency, price or payment anywhere.
-var XSK = { cat: XSK_CAT, coll: {}, weapons: [], cats: [], eq: {}, owned: new Set(), net: {}, mc: new Map(), botSkins: false, ver: 0, tab: 'col', w: null, pick: null, sendT: 0, last: 0 };
+var XSK = { cat: XSK_CAT, coll: {}, weapons: [], cats: [], eq: {}, owned: new Set(), net: {}, mc: new Map(), botSkins: false, ver: 0, lv: {}, fire: 0, tab: 'col', w: null, pick: null, sendT: 0, last: 0 };
 XSK.cats = XSK.cat.categories; XSK.weapons = XSK.cats.flatMap((c) => c[1]);
 XSK.cat.collections.forEach((c) => { XSK.coll[c.id] = c; });
 const xskHas = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
@@ -13942,13 +13942,15 @@ function xskGet(w) { const id = XSK.eq[w]; return xskValidFor(w, id) ? id : 'sta
 function xskOwns(w, cid) { return cid === 'standard' || XSK.owned.has(cid + ':' + w); }
 function xskLoad() {
   let o = null; try { o = JSON.parse(localStorage.getItem('vs.skins') || 'null'); } catch (e) {}
-  XSK.eq = {}; XSK.owned = new Set();
+  XSK.eq = {}; XSK.owned = new Set(); XSK.lv = {};
   if (o && typeof o === 'object') {
     if (Array.isArray(o.owned)) o.owned.forEach((k) => { const [c, w] = String(k).split(':'); if (xskHas(XSK.coll, c) && c !== 'standard' && xskHas(XSK.coll[c].skins, w)) XSK.owned.add(c + ':' + w); });
     if (o.eq && typeof o.eq === 'object') for (const w of XSK.weapons) { const id = o.eq[w]; if (xskValidFor(w, id) && xskOwns(w, xskParse(id).cid)) XSK.eq[w] = id; }
+    if (o.lv && typeof o.lv === 'object' && !Array.isArray(o.lv)) for (const k in o.lv) { const v = o.lv[k], [c, w] = k.split(':');
+      if (XSK.owned.has(k) && Array.isArray(v) && Number.isInteger(v[0]) && v[0] >= 1 && v[0] <= 4 && Number.isInteger(v[1]) && v[1] >= 0 && v[1] <= 14 && !(v[1] & 1)) XSK.lv[c + ':' + w] = [v[0], v[1]]; }
   }
 }
-function xskSave() { try { localStorage.setItem('vs.skins', JSON.stringify({ v: 2, eq: XSK.eq, owned: [...XSK.owned] })); } catch (e) {} }
+function xskSave() { try { localStorage.setItem('vs.skins', JSON.stringify({ v: 2, eq: XSK.eq, owned: [...XSK.owned], lv: XSK.lv })); } catch (e) {} }
 function xskWire() { const out = {}; for (const w of XSK.weapons) { const id = xskGet(w); if (id !== 'standard') out[w] = id; } return out; }
 function xskChanged() { XSK.ver++; xskSave(); try { xskApplyAll(true); } catch (e) {}
   try { if (typeof NET !== 'undefined' && NET.socket && typeof netSend === 'function') { clearTimeout(XSK.sendT); XSK.sendT = setTimeout(() => netSend({ t: 'sk', s: xskWire() }), 250); } } catch (e) {} }
@@ -13971,7 +13973,7 @@ function xskBot(name, w) { let h = 7; const s = String(name) + '|' + w; for (let
 
 // ---- material patch: one shared program per base material type (cache key xsk), so swapping skins never recompiles
 const XSK_V = 'varying vec3 vXskP;\n';
-const XSK_F = 'uniform vec3 xskA;\nuniform vec3 xskB;\nuniform vec3 xskE;\nuniform float xskK;\nuniform float xskP;\nuniform float xskS;\nuniform float xskPu;\nvarying vec3 vXskP;\n' +
+const XSK_F = 'uniform vec3 xskA;\nuniform vec3 xskB;\nuniform vec3 xskE;\nuniform float xskK;\nuniform float xskP;\nuniform float xskS;\nuniform float xskPu;\nuniform float xskFl;\nvarying vec3 vXskP;\n' +
   'float xskH(vec3 p){p=fract(p*0.3183099+0.1);p*=17.0;return fract(p.x*p.y*p.z*(p.x+p.y+p.z));}\n' +
   'float xskN(vec3 x){vec3 i=floor(x),f=fract(x);f=f*f*(3.0-2.0*f);return mix(mix(mix(xskH(i),xskH(i+vec3(1.,0.,0.)),f.x),mix(xskH(i+vec3(0.,1.,0.)),xskH(i+vec3(1.,1.,0.)),f.x),f.y),mix(mix(xskH(i+vec3(0.,0.,1.)),xskH(i+vec3(1.,0.,1.)),f.x),mix(xskH(i+vec3(0.,1.,1.)),xskH(i+vec3(1.,1.,1.)),f.x),f.y),f.z);}\n';
 const XSK_MAP = '\nfloat xskLn=0.0;\nif(xskK>0.5){vec3 q=vXskP*xskS;float l=dot(diffuseColor.rgb,vec3(0.299,0.587,0.114));float pat=0.0,dk=0.0;\n' +
@@ -13982,10 +13984,10 @@ const XSK_MAP = '\nfloat xskLn=0.0;\nif(xskK>0.5){vec3 q=vXskP*xskS;float l=dot(
   ' else if(xskK<5.5){float n=xskN(q*3.0)+0.5*xskN(q*7.0);xskLn=1.0-smoothstep(0.0,0.035,abs(n-0.75));pat=smoothstep(0.4,0.9,xskN(q*1.5));}\n' +
   ' else {float s=fract(q.y*0.8+q.z*0.5);pat=smoothstep(0.2,0.8,s);xskLn=step(0.93,fract(q.z*2.5+q.y*0.3));}\n' +
   ' vec3 col=mix(xskA,xskB,clamp(pat,0.0,1.0))*(1.0-0.45*dk)*(0.38+1.2*l);diffuseColor.rgb=mix(diffuseColor.rgb,col,0.9);}\n';
-const XSK_EM = '\ntotalEmissiveRadiance+=xskE*xskLn*mix(1.0,xskPu,xskP)*1.6;\n';
+const XSK_EM = '\ntotalEmissiveRadiance+=xskE*(xskLn*mix(1.0,xskPu,xskP)*1.6+xskFl*(0.35+2.2*xskLn));\n';
 function xskPatch(m, d, scale) {
   const ch = d.col, U = { xskA: { value: new THREE.Color(ch.a || '#3a3f4a') }, xskB: { value: new THREE.Color(ch.b || ch.a || '#2c3038') }, xskE: { value: new THREE.Color(ch.e || '#000000') },
-    xskK: { value: d.c.k || 0 }, xskP: { value: ch.p ? 1 : 0 }, xskS: { value: scale }, xskPu: typeof SKU !== 'undefined' ? SKU : { value: 1 } };
+    xskK: { value: d.c.k || 0 }, xskP: { value: ch.p ? 1 : 0 }, xskS: { value: scale }, xskPu: typeof SKU !== 'undefined' ? SKU : { value: 1 }, xskFl: { value: 0 } };
   m.userData.xsk = { id: d.id, U };
   m.onBeforeCompile = function (sh) { Object.assign(sh.uniforms, U);
     sh.vertexShader = XSK_V + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n\tvXskP = position;');
@@ -14026,8 +14028,47 @@ function xskTP() { // third-person guns of every rig (each owner's own skin), fl
   try { if (typeof AGV !== 'undefined') for (const a in AGV.c) { const M = AGV.c[a]; if (M && M.gun) xskApply(M.gun, 'Vandal', xskGet('Vandal')); } } catch (e) {}
   try { if (typeof running !== 'undefined' && running && typeof skGroups === 'function') skGroups(); } catch (e) {} // a native model swapped in late keeps its skin
 }
+// ---- Skin levels (Valorant-style upgrades, all free; client-only cosmetics, not sent online)
+// Level 1 the finish, 2 firing VFX (muzzle flash and light in the skin's accent, emissive surge on the gun per shot),
+// 3 kill banner (the kill banner takes the skin's accent and name), 4 finisher (placeholder: an accent ring and light
+// column on the victim of the kill that ends the round). Every owned skin starts at Level 1; "Upgrade · FREE" unlocks
+// the next level; each unlocked level 2-4 has an on / off toggle. Stored per weapon skin as lv["<collection>:<weapon>"]
+// = [level, offMask] (bit n set = level n switched off); invalid / unowned entries are dropped at load.
+const XSK_LVN = ['', 'Base finish', 'Firing VFX', 'Kill banner', 'Finisher'];
+function xskLv(w, cid) { if (cid === 'standard' || !xskOwns(w, cid)) return 0; const v = XSK.lv[cid + ':' + w]; return v ? v[0] : 1; }
+function xskLvOn(w, cid, n) { if (n < 2 || xskLv(w, cid) < n) return false; const v = XSK.lv[cid + ':' + w]; return !(v && v[1] & (1 << n)); }
+function xskUpgrade(w, cid) { const l = xskLv(w, cid); if (!l || l >= 4) return false; const k = cid + ':' + w, v = XSK.lv[k] || [1, 0]; XSK.lv[k] = [l + 1, v[1]]; xskSave(); return true; }
+function xskLvToggle(w, cid, n) { n = +n; if (!(n >= 2 && n <= 4) || xskLv(w, cid) < n) return false; const k = cid + ':' + w, v = XSK.lv[k]; XSK.lv[k] = [v[0], v[1] ^ (1 << n)]; xskSave(); return true; }
+function xskHeld() { try { return rw === 'knife' ? 'Knife' : wName(); } catch (e) { return null; } }
+function xskFx(n) { const w = xskHeld(); if (!w) return null; const id = xskGet(w); if (id === 'standard') return null; const d = xskDef(w, id); return xskLvOn(w, d.cid, n) ? d : null; }
+const XSK_MZ = { mc: null, lc: null };
+function xskOnFire() { const d = xskFx(2); XSK.fire = d ? 1 : 0;
+  try { if (typeof muzzle === 'undefined' || !muzzle.material) return; if (!XSK_MZ.mc) { XSK_MZ.mc = muzzle.material.color.clone(); XSK_MZ.lc = mLight.color.clone(); }
+    const c = d && (d.col.e || d.col.b); if (c) { muzzle.material.color.set(c); mLight.color.set(c); } else { muzzle.material.color.copy(XSK_MZ.mc); mLight.color.copy(XSK_MZ.lc); } } catch (e) {} }
+try { const f0 = vmFire; vmFire = function () { const r = f0.apply(this, arguments); xskOnFire(); return r; }; } catch (e) {}
+function xskFlRoot() { const F = typeof XV !== 'undefined' && XV.fp; if (F && F.ws && F.ws.visible !== false) return F.ws; try { return rw === 'knife' ? knife : VMS[wName()]; } catch (e) { return null; } }
+function xskSetFl(root, v) { if (!root || typeof root.traverse !== 'function') return; root.traverse((o) => { const u = o.isMesh && o.material && o.material.userData && o.material.userData.xsk; if (u && u.U.xskFl) u.U.xskFl.value = v; }); }
+function xskFlTick(dt) { if (!(XSK.fire > 0) && !XSK.flOn) return; XSK.fire = Math.max(0, XSK.fire - dt * 9); XSK.flOn = XSK.fire > 0; xskSetFl(xskFlRoot(), XSK.fire); }
+// kill banner (level 3) and finisher (level 4): wrap the player's own kill banner (offline and online kills both call vmKill)
+function xskBanner(d) { const kb = typeof document !== 'undefined' && document.getElementById && document.getElementById('xKbn'); if (!kb) return;
+  let t = document.getElementById('xKbSk'); if (!d) { kb.classList.remove('xsk'); if (t) t.textContent = ''; return; }
+  if (!t) { t = document.createElement('b'); t.id = 'xKbSk'; kb.appendChild(t); } t.textContent = d.s.n; kb.classList.add('xsk'); kb.style.setProperty('--xskc', d.col.e || d.col.b || '#ff4655');
+  if (!document.getElementById('xKbSkCss')) { const st = document.createElement('style'); st.id = 'xKbSkCss'; st.textContent = '#xKbn.xsk{filter:drop-shadow(0 0 10px var(--xskc))}#xKbn.xsk svg{stroke:var(--xskc)}#xKbSk{display:block;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--xskc);text-align:center;margin-top:2px}#xKbn:not(.xsk) #xKbSk{display:none}'; document.head.appendChild(st); } }
+var XSK_FIN = { L: [], n: 0 };
+function xskFinisher(d, x, y, z) { if (typeof THREE === 'undefined' || typeof scene === 'undefined') return null; const c = new THREE.Color(d.col.e || d.col.b || '#ff4655');
+  let f = XSK_FIN.L.find((o) => !(o.t > 0)); if (!f) { const ring = new THREE.Mesh(new THREE.RingGeometry(0.8, 1, 48), new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide }));
+    ring.rotation.x = -Math.PI / 2; const col = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.6, 6, 24, 1, true), new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide }));
+    col.position.y = 3; const g = new THREE.Group(); g.add(ring, col); g.visible = false; scene.add(g); f = { g, ring, col, t: 0 }; XSK_FIN.L.push(f); }
+  f.ring.material.color.copy(c); f.col.material.color.copy(c); f.g.position.set(x, y, z); f.t = 1.4; f.g.visible = true; XSK_FIN.n++; return f; }
+function xskFinTick(dt) { for (const f of XSK_FIN.L) { if (!(f.t > 0)) continue; f.t -= dt; const k = 1 - Math.max(0, f.t) / 1.4; f.ring.scale.setScalar(0.3 + k * 4); f.ring.material.opacity = (1 - k) * 0.9; f.col.scale.set(1 - k * 0.6, 0.2 + Math.min(1, k * 3), 1 - k * 0.6); f.col.material.opacity = (1 - k) * 0.55; if (f.t <= 0) f.g.visible = false; } }
+function xskRoundEnd() { try { if (typeof mode === 'undefined' || !['five', 'retake', 'duel'].includes(mode)) return false; return mode === 'duel' || (Array.isArray(bots) && bots.length > 0 && bots.every((b) => !b.alive)); } catch (e) { return false; } } // the kill that ends a round (spike, retake, duel)
+function xskOnKill(name) { xskBanner(xskFx(3)); const d = xskFx(4); if (!d || !xskRoundEnd()) return;
+  let u = null; try { u = [...(bots || []), ...(allies || [])].find((b) => b && b.name === name); } catch (e) {}
+  const p = u && (u.g ? u.g.position : u); if (p && Number.isFinite(p.x)) return xskFinisher(d, p.x, (p.y || 0) + 0.02, p.z);
+  try { xskFinisher(d, player.x - Math.sin(yaw) * 3, (player.y || 0) + 0.02, player.z - Math.cos(yaw) * 3); } catch (e) {} }
+try { const k0 = vmKill; vmKill = function (name) { const r = k0.apply(this, arguments); try { xskOnKill(name); } catch (e) {} return r; }; } catch (e) {}
 function xskApplyAll(force) { try { if (typeof skGroups === 'function') skGroups(); } catch (e) {} xskFP(); xskTP(); }
-function xskTick() { xskFP(); const t = performance.now(); if (t - XSK.last < 250) return; XSK.last = t; xskTP(); }
+function xskTick() { xskFP(); const t = performance.now(), dt = Math.min(0.1, (t - (XSK.tt || t)) / 1000); XSK.tt = t; xskFlTick(dt); xskFinTick(dt); if (t - XSK.last < 250) return; XSK.last = t; xskTP(); }
 (window.XHK || (window.XHK = [])).push(xskTick);
 xskLoad();
 
@@ -14055,6 +14096,11 @@ function xskWpnHTML(w) {
     h += '<button class="xsk-sk' + (on ? ' on' : '') + (o ? '' : ' lock') + '" role="option" aria-selected="' + on + '" data-a="pick" data-id="' + col.id + '"><i style="background:' + xskSw(w, col.id) + '"></i><span><b>' + xskEsc(nm) + '</b><small>' + (eq ? 'Equipped' : o ? 'Owned' : 'Free · not in inventory') + '</small></span></button>'; }
   h += '</div><div class="xsk-pv"><canvas id="xskCv" aria-label="' + xskEsc(xskName(w, pick)) + ' preview, drag to rotate"></canvas><p class="xsk-pn"><b>' + xskEsc(c.id === 'standard' ? 'Standard ' + w : d.s.n) + '</b> <span style="color:' + (XSK_TIER[c.tier] || '#fff') + '">' + xskEsc(c.tier) + (c.id === 'standard' ? '' : ' · ' + xskEsc(c.name) + ' Collection') + '</span><small>' + xskEsc(c.desc) + (d.i ? ' Variant: ' + xskEsc(d.chn) + '.' : '') + '</small></p>';
   if (d.s.ch.length > 1) h += '<div class="xsk-ch" role="radiogroup" aria-label="Variants">' + d.s.ch.map((n, i) => { const id = i ? c.id + '.' + i : c.id; return '<button data-a="pick" data-id="' + id + '" role="radio" aria-checked="' + (id === pick) + '" aria-label="' + xskEsc(n) + '" title="' + xskEsc(n) + '" class="' + (id === pick ? 'on' : '') + '" style="background:' + xskSw(w, id) + '"></button>'; }).join('') + '</div>';
+  if (c.id !== 'standard') { const lv = xskLv(w, c.id); h += '<div class="xsk-lv" role="group" aria-label="Skin levels">';
+    for (let n = 1; n <= 4; n++) { const un = lv >= n, on = n === 1 ? un : xskLvOn(w, c.id, n);
+      h += '<div class="xsk-lr' + (un ? ' un' : '') + '"><span><b>Level ' + n + '</b><small>' + XSK_LVN[n] + '</small></span>' + (n === 1 ? '<em>' + (un ? 'Unlocked' : 'Locked') + '</em>' : un ? '<button class="xsk-tg' + (on ? ' on' : '') + '" data-a="fx" data-id="' + c.id + '" data-n="' + n + '" aria-pressed="' + on + '" aria-label="Level ' + n + ' ' + XSK_LVN[n] + '">' + (on ? 'On' : 'Off') + '</button>' : '<em>Locked</em>') + '</div>'; }
+    h += own ? (lv < 4 ? '<button class="xsk-up" data-a="up" data-id="' + c.id + '">Upgrade to Level ' + (lv + 1) + ' · FREE</button>' : '<small class="xsk-lvx">All levels unlocked</small>') : '<small class="xsk-lvx">Get the skin to unlock its levels</small>';
+    h += '</div>'; }
   h += '<div class="xsk-act">' + (!own ? '<button class="xsk-get" data-a="get" data-id="' + pick + '">Get · FREE</button>' : pick === cur ? '<button class="xsk-eq" disabled>Equipped</button>' : '<button class="xsk-eq" data-a="equip" data-id="' + pick + '">Equip</button>') + '</div></div></div>';
   return h;
 }
@@ -14080,7 +14126,7 @@ function xskRender() {
   if (XSK.tab === 'col' && XSK.w) xskPreview(); else xskPvStop();
 }
 // Actions (delegated clicks; also the test / QA entry point)
-function xskAct(a, w, id) {
+function xskAct(a, w, id, n) {
   if (a === 'tab') { XSK.tab = id === 'store' ? 'store' : 'col'; XSK.w = null; XSK.pick = null; }
   else if (a === 'weapon') { if (!XSK.weapons.includes(w)) return false; XSK.tab = 'col'; XSK.w = w; const cur = xskGet(w); XSK.pick = id && xskValidFor(w, id) ? (xskParse(cur).cid === xskParse(id).cid ? cur : id) : cur; }
   else if (a === 'back') { XSK.w = null; XSK.pick = null; }
@@ -14088,6 +14134,8 @@ function xskAct(a, w, id) {
   else if (a === 'equip') { if (!xskEquip(XSK.w, id)) return false; }
   else if (a === 'get') { const ww = w || XSK.w, p = xskParse(id); if (!p || !xskGive(ww, p.cid)) return false; if (!w) xskEquip(ww, xskValidFor(ww, id) ? id : p.cid); }
   else if (a === 'bundle') { if (!xskHas(XSK.coll, id) || !xskGiveBundle(id)) return false; }
+  else if (a === 'up') { if (!XSK.w || !xskUpgrade(XSK.w, id)) return false; }
+  else if (a === 'fx') { if (!XSK.w || !xskLvToggle(XSK.w, id, n)) return false; }
   else return false;
   xskRender(); return true;
 }
@@ -14120,7 +14168,7 @@ function xskBuild() {
   root.innerHTML = '<header class="xsk-top"><nav class="xsk-tabs" role="tablist"><button role="tab" data-tab="col" data-a="tab" data-id="col">Collection</button><button role="tab" data-tab="store" data-a="tab" data-id="store">Store</button></nav><button class="xsk-spr" data-a="sprays">Sprays</button><button class="xsk-x" data-a="close" aria-label="Close">×</button></header><div class="xsk-body"></div>';
   root.addEventListener('click', (e) => { const b = e.target && e.target.closest ? e.target.closest('[data-a]') : null; if (!b || b.disabled) return; const a = b.dataset.a;
     if (a === 'close') return xskClose(); if (a === 'sprays') { try { open('mInv'); } catch (er) {} return; }
-    xskAct(a, b.dataset.w, b.dataset.id); });
+    xskAct(a, b.dataset.w, b.dataset.id, b.dataset.n); });
   addEventListener('keydown', (e) => { if (e.code === 'Escape' && !root.hidden && !document.querySelector('.modal.on')) { e.stopImmediatePropagation(); xskClose(); } }, true);
   document.body.appendChild(root); return root;
 }
@@ -14138,6 +14186,8 @@ const XSK_CSS = '#xSk{position:fixed;inset:0;z-index:38;display:flex;flex-direct
   '#xSk .xsk-pv{position:relative;display:flex;flex-direction:column;min-height:0}#xSk #xskCv{flex:1;min-height:160px;width:100%;touch-action:none;cursor:grab}#xSk .xsk-pn{margin:0;display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}#xSk .xsk-pn b{font-size:18px;letter-spacing:.08em;text-transform:uppercase}#xSk .xsk-pn small{flex-basis:100%;color:rgba(236,232,225,.6)}' +
   '#xSk .xsk-ch{display:flex;gap:8px;margin:10px 0}#xSk .xsk-ch button{width:44px;height:44px;border:2px solid rgba(236,232,225,.2)}#xSk .xsk-ch button.on{border-color:#ece8e1;outline:2px solid #ff4655;outline-offset:2px}' +
   '#xSk .xsk-act{display:flex;gap:8px}#xSk .xsk-get,#xSk .xsk-eq{min-height:48px;padding:0 28px;border:0;font-weight:800;letter-spacing:.16em;text-transform:uppercase;font-size:13px}#xSk .xsk-get{background:#ff4655;color:#0f1923}#xSk .xsk-eq{background:#ece8e1;color:#0f1923}#xSk .xsk-eq[disabled]{opacity:.55;cursor:default}' +
+  '#xSk .xsk-lv{display:flex;flex-direction:column;gap:4px;margin:6px 0 10px;max-width:420px}#xSk .xsk-lr{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:4px 8px;background:rgba(236,232,225,.04);border-left:3px solid rgba(236,232,225,.15);opacity:.6}#xSk .xsk-lr.un{opacity:1;border-color:#5fffb0}#xSk .xsk-lr span{display:flex;gap:8px;align-items:baseline}#xSk .xsk-lr b{font-size:12px;letter-spacing:.14em;text-transform:uppercase}#xSk .xsk-lr small,#xSk .xsk-lvx{font-size:11px;color:rgba(236,232,225,.6)}#xSk .xsk-lr em{font-style:normal;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:rgba(236,232,225,.6)}' +
+  '#xSk .xsk-tg{min-height:44px;min-width:56px;border:1px solid rgba(236,232,225,.25);background:none;font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase}#xSk .xsk-tg.on{background:#5fffb0;color:#0f1923;border-color:#5fffb0}#xSk .xsk-up{min-height:44px;margin-top:4px;border:1px solid #5fffb0;background:rgba(95,255,176,.08);color:#5fffb0!important;font-weight:800;letter-spacing:.14em;text-transform:uppercase;font-size:12px}' +
   '#xSk .xsk-free{font-weight:800;letter-spacing:.14em;color:#5fffb0}' +
   '#xSk .xsk-feat{position:relative;padding:28px 24px;min-height:180px;background:linear-gradient(110deg,rgba(15,25,35,.95) 30%,rgba(15,25,35,.2)),linear-gradient(135deg,var(--a) 0 55%,var(--b) 55% 62%,var(--a) 62%);border:1px solid rgba(236,232,225,.14);display:flex;flex-direction:column;gap:8px;justify-content:flex-end}' +
   '#xSk .xsk-feat h2{margin:0;font-size:30px;letter-spacing:.1em;text-transform:uppercase}#xSk .xsk-feat p{margin:0;max-width:520px;color:rgba(236,232,225,.8)}#xSk .xsk-eb{font-size:12px;letter-spacing:.24em;text-transform:uppercase;color:#ff4655!important}#xSk .xsk-fb{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:6px}#xSk .xsk-fb small{color:rgba(236,232,225,.6)}' +
@@ -14146,7 +14196,7 @@ const XSK_CSS = '#xSk{position:fixed;inset:0;z-index:38;display:flex;flex-direct
   '#xSk .xsk-all .xsk-of i{height:40px}#xSk .xsk-fine{margin-top:16px;font-size:12px;color:rgba(236,232,225,.55)}' +
   '@media(max-width:820px){#xSk .xsk-offers{grid-template-columns:repeat(2,1fr)}}' +
   '@media(max-width:600px){#xSk .xsk-top{padding:6px 10px;gap:6px}#xSk .xsk-body{padding:10px 12px 18px}#xSk .xsk-wv{grid-template-columns:1fr;grid-template-rows:minmax(220px,42vh) auto;height:auto}#xSk .xsk-pv{grid-row:1}#xSk .xsk-wl{grid-row:2;overflow:visible}#xSk .xsk-grid{grid-template-columns:repeat(2,1fr)}#xSk .xsk-feat{padding:18px 14px;min-height:150px}#xSk .xsk-feat h2{font-size:22px}}' +
-  '@media(max-height:480px){#xSk .xsk-top{padding:2px 10px}#xSk .xsk-tabs button{padding:6px 10px;font-size:12px}#xSk .xsk-body{padding:8px 12px 12px}#xSk .xsk-wv{grid-template-columns:200px 1fr;height:100%}#xSk .xsk-wl h3{font-size:16px}#xSk .xsk-sk{min-height:44px;padding:4px 6px}#xSk .xsk-sk i{width:28px;height:28px}#xSk #xskCv{min-height:120px}#xSk .xsk-ch{margin:4px 0}#xSk .xsk-pn small{display:none}#xSk .xsk-feat{min-height:0;padding:12px 14px}#xSk .xsk-feat h2{font-size:20px}#xSk .xsk-daily h3{margin:10px 0 6px}#xSk .xsk-of i{height:36px}#xSk .xsk-cat h3{margin:8px 0 6px}}';
+  '@media(max-height:480px){#xSk .xsk-top{padding:2px 10px}#xSk .xsk-tabs button{padding:6px 10px;font-size:12px}#xSk .xsk-body{padding:8px 12px 12px}#xSk .xsk-wv{grid-template-columns:200px 1fr;height:100%}#xSk .xsk-wl h3{font-size:16px}#xSk .xsk-sk{min-height:44px;padding:4px 6px}#xSk .xsk-sk i{width:28px;height:28px}#xSk #xskCv{min-height:120px}#xSk .xsk-ch{margin:4px 0}#xSk .xsk-lr small{display:none}#xSk .xsk-lr{padding:2px 6px}#xSk .xsk-tg{min-height:34px}#xSk .xsk-pn small{display:none}#xSk .xsk-feat{min-height:0;padding:12px 14px}#xSk .xsk-feat h2{font-size:20px}#xSk .xsk-daily h3{margin:10px 0 6px}#xSk .xsk-of i{height:36px}#xSk .xsk-cat h3{margin:8px 0 6px}}';
 // Lobby wiring: Collection opens the Collection page (was the old swatch modal, which now holds Sprays only); a Store
 // button joins the lobby nav. The old modal's skin list is hidden (its picks were colour-only and never persisted).
 try { const inv = document.getElementById('navInv'); if (inv) inv.onclick = () => xskOpen('col');

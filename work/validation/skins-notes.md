@@ -78,3 +78,26 @@ no payments, no Riot skin art or names. Client-only cosmetics except the server 
    5v5 → B sees the skinned floor gun. Reload keeps A's choice.
 5. Visual quality of each line's procedural finish (palette feel); shader compiles on the real GPU (Lambert native
    materials) without console errors.
+
+## 5. More collections + skin levels (item 3, all free)
+- Catalogue grows to 24 lines / 173 weapon skins: + Kuronami, Araxys, Prelude to Chaos, Gaia's Vengeance, BlastX,
+  Protocol 781-A, Magepunk, Neo Frontier (names, weapons and variant names from valorant-api.com; palettes and
+  patterns our own in build_skins_catalog.py; new variant colours White/Pink, Red/Blue, Black/Red, Copper).
+  Page escapes names (Gaia&#39;s Vengeance) — test_skins compares escaped text.
+- Levels (Valorant-style, client-only, never on the wire): every owned skin starts at Level 1 (the finish).
+  "Upgrade to Level N · FREE" unlocks in order: 2 Firing VFX (muzzle sprite + muzzle light tinted to the skin accent;
+  per-shot emissive surge on the first-person weapon via per-material uniform xskFl in the shared program, decays in
+  ~0.1 s; other players' guns never surge), 3 Kill banner (#xKbn takes the skin accent glow + the skin name under it;
+  vmKill is called for offline and online own kills), 4 Finisher placeholder (pooled additive ring + light column in
+  the accent at the victim, 1.4 s, only on the kill that ends a round in spike / retake / duel; falls back 3 m in front
+  of the player when the victim has no position). Each unlocked level 2-4 has an On/Off toggle (44 px).
+- Storage: vs.skins lv {"<collection>:<weapon>": [level 1-4, offMask]}; invalid / unowned entries dropped at load.
+- Open: other players' level VFX online (would need levels on the wire); a real finisher animation.
+- Test: work/test_skin_levels.cjs.
+
+## Browser-verify list (item 3)
+6. Collection → Phantom → Magepunk: levels panel shows Level 1-4; Get, then Upgrade three times; toggles flip.
+7. Offline 5v5 with a Level 2+ skin held: muzzle flash + light take the accent colour, gun glows per shot; turn
+   Firing VFX off → default flash. Standard gun → default flash.
+8. Kill with a Level 3 skin: kill banner glows in the accent with the skin name; Level 4: last kill of the round
+   spawns the ring + column at the victim; no console errors, no frame hitch on first finisher (pooled mesh).
