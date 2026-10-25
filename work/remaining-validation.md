@@ -212,3 +212,21 @@ navigation.json (bake-time, browser-verified), re-audit until A Sewer rejoins th
 component honestly. No geometry edits; no fencing.
 Correction to prior wording: natural push->plant evidence DOES exist (haven five-soak, C site,
 earlier session); warp-plant was only the breeze-B targeted check. More natural samples owed.
+
+## A Sewer REPAIRED + drain-slot trap quarantined (split nav bake) - 08:18 EDT
+Bake to split navigation.json (both copies; original recoverable in git; valid[] mask must be
+extended when appending nodes - that masked the first attempt):
+1. A Sewer reconnected HONESTLY: 3 waypoint nodes (11726-8) with capsule-verified edges across
+   the railed west gate (lanes found by in-page motor-equivalent sweep between the railing
+   posts; each segment rise<=0.321, capsule-clear). Post-bake audit: calloutsLost [] at both
+   0.45 and 0.40 radii, largest pruned component 7507->7759 (249 sewer nodes + 3 waypoints
+   rejoin), defOK + A/B sites preserved. Route from attacker spawn to the deepest sewer node
+   (y=3.02) now exists (128 hops; A* prefers a route with 2 sweep-flagged hops - model-strict
+   edges, runtime breaker is the backstop).
+2. Drain-slot trap quarantined: the z=2.5 and z=-5 slots (1.5 u recesses 0.37-0.4 u below
+   street, no walk-out, no callouts) had their 6 nodes isolated (67 directed edges removed)
+   plus 4 sweep-bad street edges crossing the slots stripped - flat A* routes no longer dip
+   into them. Physical geometry untouched (jump-out for humans unaffected).
+Post-bake: split five-soak PASS (no stalls observed in this sampled run; was FAIL x2 from the
+slot); full audit: 0 trap nodes, no named area lost, spawns/sites preserved.
+This is nav-DATA repair via verified connectors/quarantine, not the deferred blanket prune.
