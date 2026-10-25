@@ -761,6 +761,58 @@ body.x-cbh #game{--ha:#3d8bff;--he:#ff9f1c}
   #game .x-top::after{display:none}
   #game .x-top.x-bpo::before{margin-top:26px;font-size:11px}
 }
+/* ---- bottom-centre vitals: shield icon + big health on a health underline ---- */
+#game .hud.x-bl{background:none!important;filter:drop-shadow(0 1px 2px rgba(0,0,0,.75))}
+#game .x-bl svg,#game .x-bl .x-sep{display:none}
+#game .x-bl #xArm{order:0;display:flex;align-items:center;justify-content:center;width:24px;height:28px;margin:0 0 4px;padding-top:1px;box-sizing:border-box;font:500 12px/1 var(--hf);opacity:1;color:#ece8e1;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 28'%3E%3Cpath d='M12 1.5l9.5 4v8c0 6-4.2 10.4-9.5 13-5.3-2.6-9.5-7-9.5-13v-8z' fill='rgba(236,232,225,.16)' stroke='%23ece8e1' stroke-width='1.6'/%3E%3C/svg%3E") center/contain no-repeat}
+#game .x-bl #xArm.x-lt{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 28'%3E%3Cpath d='M12 1.5l9.5 4v8c0 6-4.2 10.4-9.5 13-5.3-2.6-9.5-7-9.5-13v-8z' fill='none' stroke='%23ece8e1' stroke-width='1.6' stroke-dasharray='3 2'/%3E%3C/svg%3E")}
+#game .x-bl #xArm.x-z{visibility:hidden}
+#game .x-bl .x-hp{order:1;font-family:var(--hf);font-weight:400;letter-spacing:0}
+#game .x-bl .x-hp.lo{color:#ff6b77}
+#game .x-vb{left:0;right:18px;bottom:4px;gap:0}
+#game .x-vb i{height:2px!important;background:rgba(236,232,225,.3)}
+#game .x-vb i+i{display:none}
+#game .x-vb b{background:#ece8e1}
+#game .x-bl::after{content:"";position:absolute;right:0;bottom:4px;width:20px;height:20px;background:linear-gradient(to top left,transparent calc(50% - 1px),rgba(236,232,225,.55) 50%,transparent calc(50% + 1px));pointer-events:none}
+/* ---- abilities: borderless slots, icon, charge tabs, key letter under ---- */
+#game .hud.x-ab{background:none;filter:drop-shadow(0 1px 2px rgba(0,0,0,.75))}
+#game .x-ab .x-as{justify-content:flex-start;background:none!important;border:0!important;overflow:visible}
+#game .x-ab .x-as>span:not(.x-pp):not(#xPips){position:absolute!important;width:1px;height:1px;margin:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+#game .x-ab .x-as b{top:auto;bottom:0;left:0;right:0;text-align:center;font:500 11px/1 var(--hf);letter-spacing:.06em;opacity:.8}
+#game .x-ab .x-as em{top:2px;right:2px;font:500 11px/1 var(--hf);color:#ece8e1}
+#game .x-ab .x-as .x-pp{position:absolute;left:0;right:0;opacity:1}
+#game .x-ab .x-as .x-pp s{clip-path:polygon(0 0,100% 0,calc(100% - 3px) 100%,3px 100%);background:rgba(236,232,225,.22)}
+#game .x-ab .x-as .x-pp s.on{background:var(--ha);box-shadow:none}
+#game .x-ab .x-as i{left:50%!important;right:auto!important;border-radius:50%}
+#game .x-ab .x-as.x-empty .x-ai{opacity:.35}
+#game .x-ab #jX,#game .x-ab #jX.rdy{background:none!important;box-shadow:none!important}
+#game .x-ab #jX.rdy .x-ai{filter:drop-shadow(0 0 5px var(--ha)) drop-shadow(0 0 2px #fff)}
+#game .x-ab .x-as.x-eq,#game .x-ab #jX.x-eq{box-shadow:inset 0 0 0 2px rgba(255,255,255,.92)!important;background:rgba(255,255,255,.08)!important} /* hark-abil equipped slot (J.eq) stays outlined */
+#game .x-ab .x-as.x-eq .x-ai{filter:drop-shadow(0 0 4px rgba(255,255,255,.9))}
+#game .x-ab #jX .x-pip{transform:rotate(45deg)}
+#game .x-ab #jX .x-pip.on{background:#ece8e1!important;border-color:#ece8e1!important}
+#game .x-ab #jX.rdy .x-pip.on{background:var(--ha)!important;border-color:var(--ha)!important}
+@media (min-width:821px) and (pointer:fine){
+  #game .hud.x-bl{height:58px;min-width:0;padding:0 26px 10px 2px;gap:8px;transform:translateX(calc(-100% - 168px))}
+  #game .x-bl .x-hp{font-size:46px}
+  #game .hud.x-ab{bottom:12px;gap:6px;padding:0}
+  #game .x-ab .x-as{width:60px;height:70px;padding-top:4px}
+  #game .x-ab #jX{width:64px}
+  #game .x-ab .x-as .x-ai{width:30px;height:30px;margin:0}
+  #game .x-ab .x-as i{top:2px!important;width:36px;height:36px!important;margin-left:-18px;bottom:auto!important}
+  #game .x-ab .x-as .x-pp{bottom:17px;gap:3px}
+  #game .x-ab .x-as .x-pp s{width:15px;height:5px}
+  #game .x-ab #xPips{bottom:18px!important}
+  #game .x-ab #jX .x-pip{width:5px!important;height:5px!important}
+}
+@media (max-width:820px),(pointer:coarse){
+  #game .x-ab .x-as .x-ai{width:22px;height:22px;margin:0}
+  #game .x-ab .x-as i{width:28px;margin-left:-14px;height:28px!important;bottom:auto!important}
+  #game .x-ab .x-as .x-pp{bottom:14px;display:flex} /* #xHudV hid every slot span here (names), the charge pips with them */
+  #game .x-ab .x-as .x-pp s{width:10px;height:4px}
+  #game .x-ab #xPips{bottom:14px!important}
+  #game .x-bl #xArm{width:18px;height:22px;font-size:10px;margin-bottom:2px}
+}
 </style>
 <style>
   .x-tag { display: inline-block; margin-left: 8px; padding: 2px 10px; border-radius: var(--r-pill); background: rgba(255, 215, 106, 0.18); border: 1px solid rgba(255, 215, 106, 0.7); color: #ffd76a; font: var(--type-tag); letter-spacing: 0.12em; vertical-align: middle; }
@@ -1514,7 +1566,7 @@ body.x-cbh #game{--ha:#3d8bff;--he:#ff9f1c}
   (function () { var hp = document.getElementById("xHp"), ar = document.getElementById("xArm"), hb = document.getElementById("xHpB"), ab = document.getElementById("xArB"), vb = document.getElementById("xVb"), lh = "", la = "";
     if (!hp || !ar || !hb || !ab) return;
     setInterval(function () { var h = hp.textContent, a = ar.textContent; if (h !== lh) { lh = h; var n = Math.max(0, Math.min(100, parseFloat(h) || 0)); hb.style.setProperty("--w", n + "%"); if (vb) vb.classList.toggle("lo", n <= 30); }
-      if (a !== la) { la = a; ab.style.setProperty("--w", Math.max(0, Math.min(100, (parseFloat(a) || 0) * 2)) + "%"); } }, 100); })();</script>
+      if (a !== la) { la = a; const an = parseFloat(a) || 0; ab.style.setProperty("--w", Math.max(0, Math.min(100, an * 2)) + "%"); ar.classList.toggle("x-z", an <= 0); ar.classList.toggle("x-lt", an > 0 && an <= 25); } }, 100); })();</script>
 </div>
 <div id="xBoard" class="x-fr" aria-hidden="true"></div>
 <div id="xPick" class="x-fr" role="dialog" aria-label="Pick your rifle"><p>Round <b id="xPR">1</b> · Pick your rifle · auto in <b id="xPC">3</b></p><div class="x-pw"><button data-w="Vandal"><kbd>1</kbd>Vandal<small>25 rounds · 40 body / 160 head · heavy recoil</small></button><button data-w="Phantom"><kbd>2</kbd>Phantom<small>30 rounds · faster, softer, quieter · falloff past 15 m</small></button></div></div>

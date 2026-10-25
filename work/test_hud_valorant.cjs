@@ -14,3 +14,11 @@ assert(/setT\("xTm", duel \? clk\(du\.t\) : bp \? clk\(FV\.buy\) : clk\(timeLeft
 // the Spike icon still replaces the clock (.x-spk ::after) and is not clipped: the hex is drawn by ::before, not clip-path on #xTm
 assert(!/#game \.x-top \.x-tm\{[^}]*clip-path/.test(css)&&/#game \.x-top \.x-tm::before\{[^}]*clip-path/.test(css),'timer hex on ::before');
 console.log('HUD v2: xHudV2 after xHudV, bundled fonts (no network), portraits (agent / dead / ult), buy-phase timer + label, Spike slot intact');
+// vitals: shield icon state from the armour value (hidden at 0, dashed = light shield); health underline mirrors #xHp
+assert(/ar\.classList\.toggle\("x-z", an <= 0\); ar\.classList\.toggle\("x-lt", an > 0 && an <= 25\);/.test(html)&&/#game \.x-bl #xArm\.x-z\{visibility:hidden\}/.test(css),'shield icon states');
+// abilities: slot ids + children the game and hark-abil write (key label <b>, name <span>, charges <em>, pips .x-pp) unchanged
+assert(/<div class="x-as" id="jC"><i><\/i><b>C<\/b><span>Cloudburst<\/span><em><\/em><\/div>/.test(html),'ability slot markup');
+assert(/#game \.x-ab \.x-as\.x-eq,#game \.x-ab #jX\.x-eq\{box-shadow:inset 0 0 0 2px/.test(css),'hark-abil equipped-slot outline kept');
+assert(/#game \.x-ab \.x-as>span:not\(\.x-pp\):not\(#xPips\)\{position:absolute!important/.test(css),'only the name span is visually hidden (pips stay)');
+assert(/@media \(max-width:820px\),\(pointer:coarse\)\{[^}]*?\}?[\s\S]*?#game \.x-ab \.x-as \.x-pp\{bottom:14px;display:flex\}/.test(css),'compact screens show the charge pips (#xHudV hid every slot span)');
+console.log('HUD v2: shield states, ability slot hooks + equipped outline, charge pips on compact screens');
