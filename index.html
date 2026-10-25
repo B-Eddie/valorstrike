@@ -2658,7 +2658,7 @@ function kfAll() { const a = []; try { if (typeof bots !== "undefined") a.push(.
 function kfKnown(n) { return n === "You" || kfAll().some((x) => x && x.name === n); }
 function kfBlue(n) { if (n === "You") return true; try { return typeof allies !== "undefined" && allies.some((x) => x && x.name === n); } catch (e) { return false; } }
 function kfWeap(n) {
-  try { if (n === "You") { if (mode === "duel") return du.w === "knife" ? "Knife" : "Operator"; if (rw === "knife") return J && J.bsOn ? "Blade Storm" : "Knife"; return rw === "pis" ? "Classic" : S.weapon || "Vandal"; }
+  try { if (n === "You") { if (mode === "duel") return du.w === "knife" ? "Knife" : "Operator"; if (rw === "knife") return J && J.bsOn ? "Blade Storm" : "Knife"; return wName() || "Vandal"; } // the gun in hand (5v5: the bought primary / sidearm, not the retake inventory pick or always the Classic)
     const c = kfAll().find((x) => x && x.name === n); return (c && c.w) || "Vandal"; } catch (e) { return "Vandal"; }
 }
 const KF_GUN = '<svg viewBox="0 0 40 14" aria-hidden="true"><path d="M1 4h26l2-2h4v2h6v3h-9l-2 2h-6l-2 4h-4l1-4H8L6 7H1z" fill="currentColor"/></svg>';
@@ -11339,7 +11339,7 @@ function mpCliMsg(m) {
   if (m.t === "ac") return mpCastFx(m);
   if (MP.m5 && mpCli5(m)) return;
   if (m.t === "abn") { if (/^[cqe]$/.test(m.k)) J[m.k] = 0; return; }
-  if (m.t === "end") { if (MP.st !== "game") return; mpCliSnap(Object.assign({ ev: [] }, m)); MP.st = "post"; DM.over = m.over == null ? null : m.over === "t" || m.over === "r" ? (MP.team === 0 ? m.over : m.over === "t" ? "r" : "t") : mpIn(m.over); try { dmEnd(); } catch (e) { xE(e); } MP.cl = false; return mpUI(); }
+  if (m.t === "end") { if (MP.st !== "game") return; mpCliSnap(Object.assign({ ev: [] }, m)); MP.st = "post"; DM.over = m.over == null ? null : m.over === "t" || m.over === "r" ? (MP.team === 0 ? m.over : m.over === "t" ? "r" : "t") : mpIn(m.over); try { dmEnd(); } catch (e) { xE(e); } try { if (typeof NET !== "undefined" && NET.socket) $("againBtn").textContent = "Leave room"; } catch (e) {} MP.cl = false; return mpUI(); }
   if (m.t === "full") return mpLost("The room is full.");
 }
 // client: no local AI / scoring; own damage to others becomes a hit claim; damage to you comes only from the host
@@ -11368,7 +11368,7 @@ function mpCliMsg(m) {
   return h; }; }
 // result screen buttons: an online match returns to the room (still connected); leaving mid-match disconnects
 { const l0 = $("lobbyBtn").onclick; $("lobbyBtn").onclick = function () { const r = l0 && l0.apply(this, arguments);
-  if (!MP.closing && (MP.role || mpBusy())) { if (MP.st === "post") { MP.st = "room"; MP.cl = false; if (MP.role === "host" && MP.pub) MP.cdAt = performance.now() + 15000; try { const q = mpEl("xQueue"); if (q) q.hidden = false; } catch (e) {} if (MP.role === "host") mpRoomCast(); mpUI(); } else mpLeave(MP.role === "host" ? "You left · the room is closed" : "You left the online match"); }
+  if (!MP.closing && (MP.role || mpBusy())) { if (MP.st === "post" && typeof NET !== "undefined" && NET.socket) mpLeave("Match over · create a new room to play again"); /* a server room is closed once its match ends (it refuses a second start and new joins), so there is no room to go back to */ else if (MP.st === "post") { MP.st = "room"; MP.cl = false; if (MP.role === "host" && MP.pub) MP.cdAt = performance.now() + 15000; try { const q = mpEl("xQueue"); if (q) q.hidden = false; } catch (e) {} if (MP.role === "host") mpRoomCast(); mpUI(); } else mpLeave(MP.role === "host" ? "You left · the room is closed" : "You left the online match"); }
   return r; }; }
 { const a0 = $("againBtn").onclick; $("againBtn").onclick = function (e) { if (MP.role && MP.st === "post") return $("lobbyBtn").onclick(); return a0 && a0.call(this, e); }; }
 // interpolation (remote units, ~100 ms behind), name tags, paused-sim keep-alive
@@ -11662,7 +11662,7 @@ function mpCli5(m) { // client 5v5 messages; true when handled
     const won = FV.you > FV.them; setTimeout(() => { if (MP.st !== "post" || MP.role !== "client") return;
       try { if (won) stats.w++; showStats(); if (document.pointerLockElement) document.exitPointerLock(); SFX.fanfare(won); } catch (e) {}
       $("resTitle").textContent = won ? "Victory" : "Defeat"; $("resTitle").style.color = won ? "#5fffb0" : "#ff4655";
-      $("resText").textContent = "Online Unrated · You " + FV.you + " · " + FV.them; $("againBtn").textContent = "Back to room"; $("result").style.display = "flex"; }, 2200);
+      $("resText").textContent = "Online Unrated · You " + FV.you + " · " + FV.them; $("againBtn").textContent = typeof NET !== "undefined" && NET.socket ? "Leave room" : "Back to room"; $("result").style.display = "flex"; }, 2200);
     mpUI(); return true; }
   return false;
 }
