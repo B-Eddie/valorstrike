@@ -1,16 +1,19 @@
 // Shared deterministic character motor and accuracy model. Metres, seconds, radians.
 (function(root,factory){if(typeof module==='object'&&module.exports)module.exports=factory();else root.ValorantFeel=factory();})(typeof globalThis!=='undefined'?globalThis:this,function(){
 'use strict';
-const C={knifeSpeed:6.75,walk:.6,crouch:.45,groundAcceleration:56.25,groundBraking:80,airAcceleration:3.5,jumpSpeed:7.25,gravity:22,landingLock:.2,crouchEye:.45,crouchDown:.12,crouchUp:.18,deadzone:.275,operatorDeadzone:.15,eyeHeight:1.6,referenceAspect:16/9,horizontalFov:103};
+const C={stepHeight:.36,knifeSpeed:6.75,walk:.6,crouch:.45,groundAcceleration:56.25,groundBraking:80,airAcceleration:3.5,jumpSpeed:7.25,gravity:22,landingLock:.2,crouchEye:.45,crouchDown:.12,crouchUp:.18,deadzone:.275,operatorDeadzone:.15,eyeHeight:1.6,referenceAspect:16/9,horizontalFov:103};
 C.verticalFov=2*Math.atan(Math.tan(C.horizontalFov*Math.PI/360)/C.referenceAspect)*180/Math.PI;
 function approach(v,t,d){return v<t?Math.min(t,v+d):Math.max(t,v-d);}
 function damp(v,t,k,dt){return t+(v-t)*Math.exp(-k*dt);}
 function velocity(vx,vz,tx,tz,rate,dt){const dx=tx-vx,dz=tz-vz,d=Math.hypot(dx,dz);if(d<1e-8)return {vx:tx,vz:tz,dx:tx*dt,dz:tz*dt};const t=Math.min(dt,d/Math.max(1e-6,rate)),ax=dx/d*rate,az=dz/d*rate;return {vx:vx+ax*t,vz:vz+az*t,dx:vx*t+.5*ax*t*t+tx*(dt-t),dz:vz*t+.5*az*t*t+tz*(dt-t)};}
+// A capsule whose rounded base rests on a stair nosing cannot sink, so it is supported even though
+// the floor under its centre is lower; treating that as airborne stalled every staircase.
+function supported(P,world,y,height){return world.blocked(P.x,P.z,.4,y-.03,height);}
 function step(P,input,dt,world){
  const dt0=Math.max(0,Math.min(.1,dt)),parts=Math.max(1,Math.ceil(dt0*128)),h=dt0/parts;let landed=false,jumped=false;
  const press=!!input.jump&&!P.jumpHeld;P.jumpHeld=!!input.jump;if(press)P.jumpBuffer=.07;
  for(let k=0;k<parts;k++){
-  const floor=world.ground(P.x,P.z,P.y),grounded=P.y<=floor+.025&&(P.vy||0)<=0;
+  const floor=world.ground(P.x,P.z,P.y),grounded=(P.vy||0)<=0&&(P.y<=floor+.025||supported(P,world,P.y,1.8-(P.ch||0)));
   P.lp=Math.max(0,(P.lp||0)-h);P.jumpBuffer=Math.max(0,(P.jumpBuffer||0)-h);P.duckFatigue=Math.max(0,(P.duckFatigue||0)-h*.55);
   if(!!input.duck!==!!P.duckHeld){if(input.duck)P.duckFatigue=Math.min(.65,(P.duckFatigue||0)+.08);P.duckHeld=!!input.duck;}
   const chTarget=input.duck?C.crouchEye:0,allowed=chTarget>=(P.ch||0)||(!world.blocked(P.x,P.z,.4,P.y,C.eyeHeight+.2)&&(!world.ceiling||!world.ceiling(P.x,P.z,P.y+1.8-(P.ch||0),P.y+1.8)));if(allowed)P.ch=approach(P.ch||0,chTarget,C.crouchEye/((input.duck?C.crouchDown:C.crouchUp)*(1+(P.duckFatigue||0)))*h);
@@ -23,7 +26,10 @@ function step(P,input,dt,world){
   const v=velocity(P.vx||0,P.vz||0,tx,tz,rate,h),height=1.8-(P.ch||0);P.vx=v.vx;P.vz=v.vz;
   const moveAxis=(dx,dz)=>{const x=P.x+dx,z=P.z+dz;if(!world.blocked(x,z,.4,P.y,height)){P.x=x;P.z=z;return true;}
    // A grounded capsule may step onto a low stair, never teleport onto a tall box.
-   if(grounded&&(P.vy||0)<=0){const support=world.ground(x,z,P.y+.32),y=Math.max(P.y+.32,support),rise=y-P.y;if(rise>.025&&rise<=.320001&&!world.blocked(x,z,.4,y,height)&&(!world.ceiling||!world.ceiling(P.x,P.z,P.y+height,y+height))){P.x=x;P.z=z;P.y=y;P.eyeOffset=(P.eyeOffset||0)-rise;return true;}}return false;};
+   // Lift by the step height, move, then settle onto the lowest free height above the destination floor.
+   if(grounded&&(P.vy||0)<=0){const top=P.y+C.stepHeight,support=world.ground(x,z,top);if(support>top+.001||world.blocked(x,z,.4,top,height)||(world.ceiling&&world.ceiling(P.x,P.z,P.y+height,top+height)))return false;
+    // Riser test: sampled every 10 cm ahead, no single rise may exceed the step height (stairs pass, a 60 cm box does not).
+    {const sx=Math.sign(dx),sz=Math.sign(dz);let prev=Math.max(world.ground(P.x,P.z,top),P.y-.2);for(let d=.1;d<.55;d+=.1){const g=world.ground(P.x+sx*d,P.z+sz*d,top);if(g<prev-1)continue;if(g-prev>C.stepHeight+.01)return false;prev=g;}} /* samples through seams between stair meshes are ignored */let lo=Math.max(P.y,support),hi=top;if(!world.blocked(x,z,.4,lo,height))hi=lo;else for(let n=0;n<10;n++){const mid=(lo+hi)/2;if(world.blocked(x,z,.4,mid,height))lo=mid;else hi=mid;}const rise=hi-P.y;P.x=x;P.z=z;P.y=hi;P.vy=0;if(rise>0)P.eyeOffset=(P.eyeOffset||0)-rise;return true;}return false;};
   if(!moveAxis(v.dx,0))P.vx=0;
   if(!moveAxis(0,v.dz))P.vz=0;
   let gy=world.ground(P.x,P.z,P.y),vy=P.vy||0;
@@ -34,7 +40,7 @@ function step(P,input,dt,world){
   // Descending beside a riser must not settle the capsule inside the stair face.
   if(next<oldY&&world.blocked(P.x,P.z,.4,next,height)){let lo=next,hi=oldY;for(let n=0;n<10;n++){const mid=(lo+hi)/2;if(world.blocked(P.x,P.z,.4,mid,height))lo=mid;else hi=mid;}next=hi;vy=0;}
   if(grounded&&!jumped&&next>oldY&&next-oldY<.5)P.eyeOffset=(P.eyeOffset||0)-(next-oldY);
-  P.eyeOffset=damp(P.eyeOffset||0,0,18,h);P.y=next;P.vy=vy;P.air=next>gy+.00001||vy>0;
+  P.eyeOffset=damp(P.eyeOffset||0,0,18,h);P.y=next;P.vy=vy;P.air=vy>0||(next>gy+.00001&&!supported(P,world,next,height));
  }
  const speed=Math.hypot(P.vx||0,P.vz||0);P.mv=speed>.1;P.sf=speed/Math.max(.001,input.speed);P.speed=speed;return {landed,jumped,speed};
 }
