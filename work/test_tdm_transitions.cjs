@@ -33,9 +33,15 @@ const fn=name=>between('function '+name+'(','\nfunction ');
   E.dmScore('You','B1');assert.equal(E.DM.over,'t','one knife kill finishes Escalation');}
  // ---- Spawn protection: attacks end it, damage to a protected unit is ignored.
  const now=()=>P.performance.now();const P={performance:{t:1e6,now(){return this.t;}},mode:'five',FV:{dm:true,tdm:true},DM:{pp:0,ph:0,menu:false},player:{hp:100},bots:[],allies:[],fcd:0,kSwing:0,ammo:20,menuClosed:0,dmMenu(){P.menuClosed++;P.DM.menu=false;},hurt:(t,n)=>{t.hp-=n;},shoot(){},window:{},document:{},running:true,say(){}};
- vm.createContext(P);vm.runInContext(between('function dmUnprot(by)','\n{ const k0 = kill;')+';globalThis.api={hurt:(...a)=>hurt(...a),shoot:(...a)=>shoot(...a),dmProtHud}',P);
+ vm.createContext(P);vm.runInContext(between('function dmFired(u)','\n{ const k0 = kill;')+';globalThis.api={hurt:(...a)=>hurt(...a),shoot:(...a)=>shoot(...a),dmProtHud,dmFired}',P);
  const bot={name:'Bot Sova',hp:100,pp:now()+2000},ally={name:'Ally',hp:100,pp:now()+2000};P.bots.push(bot);P.allies.push(ally);P.DM.pp=now()+2000;
- P.api.hurt(P.player,30,'Bot Sova');assert.equal(P.player.hp,100,'protected player took damage');assert.equal(bot.pp,0,'a bot that attacks keeps its spawn protection');
+ P.api.hurt(P.player,30,'Bot Sova');assert.equal(P.player.hp,100,'protected player took damage');assert(bot.pp>now(),'damage alone (e.g. an ability) must not end the attacker\'s protection: the server clears it only in fire()');
+ P.api.dmFired(bot);assert.equal(bot.pp,0,'a bot that fires loses its spawn protection');
+ // Every bot / ally / remote-human shot ends protection, hit or miss (server fire(): protectedUntil = 0 before the hit test).
+ assert(h.includes('SFX.at(p, w); if (b.pp) dmFired(b);'),'enemy bot shots must end its protection');
+ assert(h.includes('SFX.at(p, a.w || "Vandal"); if (a.pp) dmFired(a);'),'ally shots must end its protection');
+ assert(h.includes('if (m.t === "sh") { if (u.alive && typeof m.w === "string") { if (u.pp) dmFired(u);'),'a remote human shot must end its protection');
+ {const i=h.indexOf('SFX.at(p, w); if (b.pp) dmFired(b);'),j=h.lastIndexOf('if (see && b.cd <= 0',i);assert(j>0&&i-j<900&&!h.slice(j,i).includes('hurt('),'bot protection must end on the shot, before any hit roll');}
  P.api.hurt(bot,30,'You');assert.equal(bot.hp,70);P.api.hurt(ally,40,'Bot Sova');assert.equal(ally.hp,100,'protected ally took damage');
  P.DM.menu=true;P.DM.pp=0;P.api.hurt(P.player,20,'Bot Sova');assert.equal(P.player.hp,80);assert.equal(P.menuClosed,1);assert.equal(P.DM.ph,now());
  // The player's own shot ends it (wrapper sees fcd/ammo/kSwing change), a blocked trigger pull does not.
