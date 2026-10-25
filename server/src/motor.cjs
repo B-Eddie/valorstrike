@@ -89,11 +89,16 @@ function step(P,input,dt,world){
   const height=1.8-(P.ch||0);
   const moveAxis=(dx,dz)=>{const x=P.x+dx,z=P.z+dz;if(world.leash&&!world.leash(x,z,P.y,P.x,P.z))return false;if(!world.blocked(x,z,.4,P.y,height)){P.x=x;P.z=z;return true;}
    // A grounded capsule may step onto a low stair, never teleport onto a tall box. The lifted capsule needs 1 cm of clearance
-   // beyond its radius: a slanted wall lip that a .4 capsule only grazes is not a step (it sank into the lip, embedded).
+   // ahead of it (along the move): a slanted wall lip that a .4 capsule only grazes is not a step (it sank into the lip,
+   // embedded). Ahead only: a wall beside or behind the capsule (pressed into a corner over a bumpy floor) is no lip, and an
+   // all-round 1 cm margin pinned it there for good. Where the capsule lifted by the full step height still meets geometry
+   // (a wall that leans in above the feet), only a lift of at most 5 cm (a bump or seam in the floor) may pass, tested at
+   // that height (Breeze: 44 walk-in traps against walls over uneven paving).
    // Lift by the step height, move, then settle onto the lowest free height above the destination floor.
-   if(grounded&&(P.vy||0)<=0){const top=P.y+C.stepHeight,support=world.ground(x,z,top);if(support>top+.001||world.blocked(x,z,.41,top,height)||(world.ceiling&&world.ceiling(P.x,P.z,P.y+height,top+height)))return false;
+   if(grounded&&(P.vy||0)<=0){const top=P.y+C.stepHeight,support=world.ground(x,z,top),ax=x+Math.sign(dx)*.01,az=z+Math.sign(dz)*.01;let cap=top;if(support>top+.001||(world.ceiling&&world.ceiling(P.x,P.z,P.y+height,top+height)))return false;
+    if(world.blocked(ax,az,.4,top,height)){cap=Math.max(P.y,support)+.05;if(cap>=top||world.blocked(ax,az,.4,cap,height))return false;}
     // Riser test: sampled every 10 cm ahead, no single rise may exceed the step height (stairs pass, a 60 cm box does not).
-    {const sx=Math.sign(dx),sz=Math.sign(dz);let prev=Math.max(world.ground(P.x,P.z,top),P.y-.2);for(let d=.1;d<.55;d+=.1){const g=world.ground(P.x+sx*d,P.z+sz*d,top);if(g<prev-1)continue;if(g-prev>C.stepHeight+.01)return false;prev=g;}} /* samples through seams between stair meshes are ignored */let lo=Math.max(P.y,support),hi=top;if(!world.blocked(x,z,.4,lo,height))hi=lo;else for(let n=0;n<10;n++){const mid=(lo+hi)/2;if(world.blocked(x,z,.4,mid,height))lo=mid;else hi=mid;}const base=floorNear(world,P.x,P.z,P.y);if(hi-base>C.stepHeight+.12)return false;const rise=hi-P.y;P.x=x;P.z=z;P.y=hi;P.vy=0;if(rise>0)P.eyeOffset=(P.eyeOffset||0)-rise;return true;}return false;};
+    {const sx=Math.sign(dx),sz=Math.sign(dz);let prev=Math.max(world.ground(P.x,P.z,top),P.y-.2);for(let d=.1;d<.55;d+=.1){const g=world.ground(P.x+sx*d,P.z+sz*d,top);if(g<prev-1)continue;if(g-prev>C.stepHeight+.01)return false;prev=Math.max(prev,g);}} /* samples through seams between stair meshes are ignored; a dip (a crack between floor slabs, a gutter) never lowers the reference, so the far side of a crack is no riser */let lo=Math.max(P.y,support),hi=cap;if(!world.blocked(x,z,.4,lo,height))hi=lo;else for(let n=0;n<10;n++){const mid=(lo+hi)/2;if(world.blocked(x,z,.4,mid,height))lo=mid;else hi=mid;}const base=floorNear(world,P.x,P.z,P.y);if(hi-base>C.stepHeight+.12)return false;const rise=hi-P.y;P.x=x;P.z=z;P.y=hi;P.vy=0;if(rise>0)P.eyeOffset=(P.eyeOffset||0)-rise;return true;}return false;};
   if(!moveAxis(v.dx,0))P.vx=0;
   if(!moveAxis(0,v.dz))P.vz=0;
   let gy=world.ground(P.x,P.z,P.y),vy=P.vy||0;
