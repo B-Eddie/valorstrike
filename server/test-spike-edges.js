@@ -16,7 +16,7 @@ r.buy=0;r.roundDelay=5;assert.equal(r.command(p,{t:'ab',k:'e'}),false);assert.eq
 console.log('Spike refund regression: no free restored weapon/armor from out-of-order sells; loading/dead refund and post-round ability rejected');
 
 const k=new SpikeSimulation(W,'five','ascent',()=>.5),killer=k.add('killer','Phoenix'),v1=k.add('v1'),v2=k.add('v2');k.start(false);k.buy=0;
-Object.assign(killer,{x:0,y:0,z:0,look:0,pitch:0,weapon:'Bucky',ammo:5,fireAt:0,input:{},credits:0,roundKills:0});killer.ability.ult=5;
+Object.assign(killer,{x:0,y:0,z:0,look:0,pitch:Math.atan2(-.6,2),weapon:'Bucky',ammo:5,fireAt:0,input:{},credits:0,roundKills:0});killer.ability.ult=5;
 for(const v of [v1,v2])Object.assign(v,{team:1,x:0,y:0,z:-2,armor:0,hp:1,protectedUntil:0});
 assert.equal(k.fire(killer),true);assert.equal(killer.kills,2);assert.equal(killer.credits,400);assert.equal(killer.roundKills,2);assert.equal(killer.ability.ult,6);
 console.log('Spike weapon rewards: each shotgun kill credited, agent ult cap respected');

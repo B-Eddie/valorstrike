@@ -41,6 +41,17 @@ const netBoardTab=document.querySelector('[data-pt="w"]');if(netBoardTab)netBoar
 const netProfile=mpEl('profBtn');document.addEventListener('click',e=>{if(e.target.closest('[data-pt="w"],#profBtn,[aria-label="Open your profile"]'))setTimeout(netLeaderboard,50);});
 const netHeader=document.querySelector('.x-qon__h small');if(netHeader)netHeader.textContent='Server-authoritative rooms · bots fill empty slots';
 
+// Combat consistency (#10). Rows carry [17] crouch fraction and [18] aim pitch so remote rigs crouch where the
+// server's hit volumes are crouched. Replayed enemy casts are visual only online: blind, nearsight and concussion
+// come from the server's private status (mpCliRS), never from the local replay's own range/facing guesses.
+const netPose0=mpCliSnap;mpCliSnap=function(m){const r=netPose0.apply(this,arguments);if(NET.socket&&m&&Array.isArray(m.u)){const all=bots.concat(allies);for(const e of m.u){if(!Array.isArray(e)||e[0]===MP.me)continue;const u=all.find(x=>x.nid===e[0]);if(!u)continue;if(Number.isFinite(e[17]))u.cr=e[17]>.5;if(Number.isFinite(e[18]))u.np=e[18];}}return r;};
+let netFxReplay=0,netFxPoint=null;
+const netMpFx0=mpFx;mpFx=function(u,ag,k,o,d,auth,p){if(!NET.socket)return netMpFx0.apply(this,arguments);netFxReplay++;netFxPoint=p&&Number.isFinite(p.y)?p.y:null;try{return netMpFx0.apply(this,arguments);}finally{netFxReplay--;netFxPoint=null;}};
+const netPNs0=pNs;pNs=function(){if(NET.socket&&netFxReplay)return;return netPNs0.apply(this,arguments);};
+const netCon0=xConStart;xConStart=function(){if(NET.socket&&netFxReplay)return;return netCon0.apply(this,arguments);};
+const netEnPop0=enPop;enPop=function(p){if(!NET.socket)return netEnPop0.apply(this,arguments);const hp=player.hp;player.hp=0;try{return netEnPop0.apply(this,arguments);}finally{player.hp=hp;}};
+// Server smokes sit on the floor they landed on (p[1] = floor + 0.1); keep the rendered sphere on that floor too.
+const netSmoke0=enSmoke;enSmoke=function(){const r=netSmoke0.apply(this,arguments);if(NET.socket&&netFxReplay&&netFxPoint!=null){const S=J.smokes[J.smokes.length-1];if(S&&S.m)S.m.position.y=netFxPoint-.1+1.8;}return r;};
 // Floor weapons (#4): the server owns every floor gun (snapshot fw rows [id,weapon,x,y,z]) and every swap.
 // F asks for the gun under the crosshair by id, G asks to drop the gun in hand; the private round state's
 // ld [primary,secondary] keeps both slots in step after a pick-up, drop or death.
