@@ -35,7 +35,7 @@ function waitHttp(url, ms) { const end = Date.now()+ms; return new Promise((res,
   let code = null;
   for (let i = 0; i < 15 && !code; i++) {
     await wait(2000);
-    const d = await pA.evaluate(() => ({msg: (document.getElementById('xOnMsg')||{}).textContent||'', codeT: (document.getElementById('xOnCodeT')||{}).textContent||'', roomHidden: (document.getElementById('xOnRoom')||{}).hidden, list: ((document.getElementById('xOnList')||{}).textContent||'').slice(0,60)}));
+    const d = await pA.evaluate(() => ({msg: (document.getElementById('xOnMsg')||{}).textContent||'', codeT: (document.getElementById('xOnCodeT')||{}).textContent||'', net: window.__vs && window.__vs.net ? window.__vs.net() : null}));
     console.log(el(), 'create-diag', JSON.stringify(d));
     if (/^[A-Z2-9]{6}$/.test(d.codeT)) code = d.codeT;
   }
@@ -50,7 +50,7 @@ function waitHttp(url, ms) { const end = Date.now()+ms; return new Promise((res,
     let ok = false;
     for (let i = 0; i < 90 && !ok; i++) {
       await wait(2000);
-      const d = await p.evaluate(() => { const s = window.__vs && window.__vs.state ? window.__vs.state() : null; const ld = document.querySelector('#xLoad, .x-load, [id*="Load"]'); return { vs: !!window.__vs, running: s ? s.running : null, xLdOn: s ? s.xLdOn : null, mode: s ? s.mode : null, load: ld ? (ld.textContent||'').slice(0,60) : null, body: document.body.className }; }).catch(e => ({err: String(e).slice(0,80)}));
+      const d = await p.evaluate(() => { const s = window.__vs && window.__vs.state ? window.__vs.state() : null; const ld = document.querySelector('#xLoad, .x-load, [id*="Load"]'); return { vs: !!window.__vs, running: s ? s.running : null, mode: s ? s.mode : null, load: ld ? (ld.textContent||'').slice(0,60) : null, msg: (document.getElementById('xOnMsg')||{}).textContent||'', net: window.__vs && window.__vs.net ? window.__vs.net() : null }; }).catch(e => ({err: String(e).slice(0,80)}));
       console.log(el(), tag, 'boot-diag', JSON.stringify(d));
       ok = !!d.running;
     }
