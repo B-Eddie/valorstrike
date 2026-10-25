@@ -24,7 +24,10 @@ if qa in s:s=s[:s.index(qa)]+s[s.index(qb)+len(qb):]
 block+='\n'+(root/'work/ability_equip_runtime.js').read_text().rstrip('\n').replace(qa,qa+'\n'+(root/'vendor/sova-bolt.cjs').read_text().rstrip('\n')+'\n'+(root/'vendor/cloudburst.cjs').read_text().rstrip('\n'),1);va='// ---- BOT VARIETY ----';vb='// ---- END BOT VARIETY ----'
 if va in s:s=s[:s.index(va)]+s[s.index(vb)+len(vb):]
 # Bot variety: the shared vendor/bot-routes.cjs (UMD, sets window.BotRoutes) is inlined at the head of the block.
-block+='\n'+(root/'work/bot_variety_runtime.js').read_text().rstrip('\n').replace(va,va+'\n'+(root/'vendor/bot-routes.cjs').read_text().rstrip('\n'),1);mark='xReady = true; // every mode is initialised; lobby launches may now start them';s=s.replace(mark,block+'\n'+mark)
+block+='\n'+(root/'work/bot_variety_runtime.js').read_text().rstrip('\n').replace(va,va+'\n'+(root/'vendor/bot-routes.cjs').read_text().rstrip('\n'),1);wa='// ---- WEAPON SKINS ----';wb='// ---- END WEAPON SKINS ----'
+if wa in s:s=s[:s.index(wa)]+s[s.index(wb)+len(wb):]
+import json
+block+='\n'+(root/'work/skins_runtime.js').read_text().rstrip('\n').replace('/*SKINS_JSON*/null',json.dumps(json.loads((root/'server/src/skins.json').read_text()),separators=(',',':'),ensure_ascii=False));mark='xReady = true; // every mode is initialised; lobby launches may now start them';s=s.replace(mark,block+'\n'+mark)
 if '<script src="models/valorant/manifest.js"></script>' not in s:s=s.replace('<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>','<script src="models/valorant/manifest.js"></script>\n<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>')
 # Find the actual three script tag, which may use an onerror handler.
 if '<script src="models/valorant/manifest.js"></script>' not in s:s=s.replace('<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js"></script>','<script src="models/valorant/manifest.js"></script>\n<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js"></script>')

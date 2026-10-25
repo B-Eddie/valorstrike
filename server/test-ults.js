@@ -16,8 +16,8 @@ const rocket=(s,u,m={})=>{const ok=cast(s,u,m);if(!ok)return ok;s.time+=ULT.rock
 // then every 2 s, recast early after 0.9 s); hit enemies are revealed to Sova's team; spoofed aim ignored.
 {const {s,u,list:[foe,side,mate]}=setup('Sova',['foe'],['foeSide'],['mate']);Object.assign(foe,{x:0,y:0,z:-40});Object.assign(side,{x:6,y:0,z:-20});Object.assign(mate,{x:0,y:0,z:-10});
  assert.equal(cast(s,u),false,'no unearned ult');u.ability.ult=9;wall=5;
- assert.equal(cast(s,u,{o:[0,0,-40],d:[1,0,0],p:[6,-20]}),true);assert.equal(u.ability.ult,0);assert.equal(foe.hp,20,'first blast pierces the wall');assert.equal(side.hp,100,'off-line enemy untouched');assert.equal(mate.hp,100,'no team damage');
- const rs=s.roundState(mate);assert.deepEqual(rs.rv.map(r=>r[0]),[foe.id],'hit enemy revealed to the team');assert.equal(s.roundState(foe).rv.length,0);
+ assert.equal(cast(s,u,{o:[0,0,-40],d:[1,0,0],p:[6,-20]}),true);assert.equal(u.ability.ult,0);assert.equal(foe.hp,20,'first blast pierces the wall');assert.equal(side.hp,100,'off-line enemy untouched');assert(Math.abs(mate.hp-(100-80/3))<1e-6,'ally on the line takes a third (VALORANT friendly fire 1/3): '+mate.hp);
+ const rs=s.roundState(mate);assert.deepEqual(rs.rv.map(r=>r[0]),[foe.id],'hit enemy revealed to the team (the hit ally is not)');assert.equal(mate.kills,0);assert.equal(u.kills,0);assert.equal(s.roundState(foe).rv.length,0);
  s.time+=.35;assert.equal(cast(s,u),true,'recast consumed');assert.equal(foe.hp,20,'recast too soon does not fire');tick(s,.7);assert.equal(cast(s,u),true);assert.equal(foe.alive,false,'second blast kills');
  assert.equal(u.ability.fury.left,1);u.look=Math.atan2(-6,20);foe.alive=true;foe.hp=100;tick(s,2.05);assert.equal(u.ability.fury,null,'channel ends after three blasts');assert.equal(side.hp,20,'auto blast follows the current aim');
  tick(s,10);assert.equal(cast(s,u),false,'no free blasts after the channel');}
@@ -33,10 +33,10 @@ const rocket=(s,u,m={})=>{const ok=cast(s,u,m);if(!ok)return ok;s.time+=ULT.rock
 {const {s,u,list:[foe]}=setup('Raze',['foe']);u.ability.ult=9;cast(s,u);tick(s,9.9);assert(u.showstopper,'launcher still out at 9.9 s');tick(s,.15);assert.equal(u.showstopper,null,'put away after 10 s');s.time+=.1;u.ammo=5;s.fire(u);assert.equal(s.effects.some(e=>e.kind==='rocket'),false,'no rocket after the window');}
 {const {s,u,list:[foe]}=setup('Raze',['foe']);u.ability.ult=9;cast(s,u);u.alive=false;tick(s,.05);assert.equal(u.showstopper,null,'death drops the launcher');}
 // Showstopper rocket: a travelling rocket; impact on a body deals 150 at the centre with falloff to 7 m and LOS;
-// a wall detonates it early; allies are unharmed.
+// a wall detonates it early; allies take a third (VALORANT friendly fire 1/3).
 {const {s,u,list:[foe,near,mate,hidden]}=setup('Raze',['foe'],['foeNear'],['mate'],['foeHidden']);Object.assign(foe,{x:0,y:.6,z:-15});Object.assign(near,{x:5.5,y:.6,z:-15});Object.assign(mate,{x:-1,y:.6,z:-15});Object.assign(hidden,{x:0,y:.6,z:-60});
  u.ability.ult=9;assert.equal(rocket(s,u,{d:[0,1,0]}),true);assert.equal(foe.hp,100,'rocket travels, no instant damage');tick(s,.25);assert.equal(foe.hp,100);tick(s,.4);
- assert.equal(foe.alive,false,'direct hit kills');assert.ok(near.hp>0&&near.hp<100,'splash falls off with distance: '+near.hp);assert.equal(mate.hp,100);assert.equal(hidden.hp,100);assert.equal(s.effects.some(e=>e.kind==='rocket'),false);}
+ assert.equal(foe.alive,false,'direct hit kills');assert.ok(near.hp>0&&near.hp<100,'splash falls off with distance: '+near.hp);assert.ok(mate.alive&&mate.hp<100&&mate.hp>=50,'ally beside the impact takes a third: '+mate.hp);assert.equal(hidden.hp,100);assert.equal(s.effects.some(e=>e.kind==='rocket'),false);}
 {const {s,u,list:[foe]}=setup('Raze',['foe']);Object.assign(foe,{x:0,y:.6,z:-20});u.ability.ult=9;wall=6;rocket(s,u);tick(s,.5);assert.equal(foe.hp,100,'wall stops the rocket short');assert.equal(s.effects.some(e=>e.kind==='rocket'),false);}
 
 // Lockdown: 13 s windup, then every enemy within 32.5 m is detained for 8 s (no guns, no abilities, slowed);
@@ -145,4 +145,16 @@ const ab=(s,u,k,m={})=>{s.time+=.5;return s.command(u,{t:'ab',k,...m});};
  ab(s,u,'q');u.alive=false;tick(s,.05);assert.equal(u.weapon,'Spectre','death returns the gun');u.alive=true;
  u.inventory.Sheriff=6;ab(s,u,'q');fire();tick(s,.05);assert.equal(u.inventory.Sheriff,6,'own Sheriff ammo untouched');
  ab(s,u,'q');u.ability.ult=9;assert.equal(cast(s,u),true);assert.equal(u.weapon,'Operator');assert.equal(u.headhunter,null);for(let i=0;i<5;i++)fire();tick(s,.05);assert.equal(u.weapon,'Spectre','Tour de Force over Headhunter returns the Spectre');}
+// Friendly fire (wiki.playvalorant.com/en-us/Abilities: "abilities that damage allies deal 1/3 damage"; per ability, Paint Shells /
+// Shock Bolt / Hot Hands / Blaze / Nanoswarm / Showstopper / Hunter's Fury: friendlyfire "Yes (damage reduced)", Turret / Boom
+// Bot: "No"): an ally in a damaging ability takes a third; a teamkill is the ally's death with no kill, credits, ult point or score
+// for the caster; the caster's own utility never hurts the caster.
+{const {s,u,list:[foe,mate]}=setup('Raze',['foe'],['mate']);for(const v of [foe,mate,u])Object.assign(v,{x:0,y:0,z:-5,armor:0,hp:100});
+ const fx=(kind,extra)=>s.effects.push({id:++s.effectSeq,kind,owner:u.id,ag:u.agent,team:u.team,p:[0,.1,-5],until:s.time+5,radius:4,...extra});
+ fx('blast',{damage:75,at:s.time});tick(s,.05);assert.equal(foe.hp,25,'enemy full 75');assert(Math.abs(mate.hp-75)<1e-9,'ally a third: '+mate.hp);assert.equal(u.hp,100,'caster untouched');s.effects.length=0;
+ for(const v of [foe,mate])v.hp=100;fx('fire',{rate:60});tick(s,1);assert(Math.abs(foe.hp-40)<1e-6,'enemy 60/s: '+foe.hp);assert(Math.abs(mate.hp-80)<1e-6,'ally 20/s: '+mate.hp);assert.equal(u.hp,100);s.effects.length=0;
+ Object.assign(foe,{z:-40,hp:100});const k0=[u.kills,u.credits,u.ability.ult,s.scores[u.team]||0],d0=mate.deaths;mate.hp=10;fx('blast',{damage:75,at:s.time});tick(s,.05);assert(!mate.alive,'teamkill');s.step(.05);
+ assert.deepEqual([u.kills,u.credits,u.ability.ult,s.scores[u.team]||0],k0,'no kill / credits / ult / score for a teamkill');assert.equal(mate.deaths,d0+1,'the ally still dies');
+ const t=new SpikeSimulation(W,'five','ascent',()=>.5),kj=t.add('kj','Killjoy'),m2=t.add('mate2'),f2=t.add('foe2');t.start(false);t.buy=0;m2.team=kj.team;f2.team=1-kj.team;Object.assign(m2,{x:1,y:0,z:-3,hp:100,armor:0});Object.assign(f2,{x:-1,y:0,z:-3,hp:100,armor:0});
+ t.effects.push({id:++t.effectSeq,kind:'turret',owner:kj.id,ag:'Killjoy',team:kj.team,p:[0,0,0],until:t.time+5,radius:30,at:t.time,yaw:0});tick(t,.05);assert(f2.hp<100,'turret shoots the enemy');assert.equal(m2.hp,100,'turret never shoots allies');}
 console.log('Devices row 9: Blaze (wall burn/heal/sight), Hot Hands self-heal, Curveball (curve, windup, 1.1 s), Nanoswarm (dormant, free trigger, 45/s), Alarmbot (Vulnerable x2), Turret 180° arc + tag, Trapwire (wall-to-wall tether, daze, one use), Cyber Cage 7.25 s, Trademark (spot, slow field), Headhunter weapon restore');

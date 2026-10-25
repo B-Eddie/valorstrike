@@ -579,7 +579,7 @@ body.x-cbh #game{--ha:#3d8bff;--he:#ff9f1c}
 #game .x-top .x-tm.lo{color:var(--he)} #game .x-top .x-tm.x-spk{position:relative;color:transparent!important} #game .x-top .x-tm.x-spk::after{content:"";position:absolute;inset:3px 0;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 34'%3E%3Cpath d='M20 2l14 7v16l-14 7-14-7V9z' fill='%23ff4655'/%3E%3Cpath d='M20 9l7 3.5v9L20 25l-7-3.5v-9z' fill='%231a0a0c'/%3E%3Ccircle cx='20' cy='17' r='3.2' fill='%23ff4655'/%3E%3C/svg%3E") center/contain no-repeat;opacity:var(--spo,1);filter:drop-shadow(0 0 5px rgba(255,70,85,.9))}
 #game #xSub{top:56px;font-size:11px;opacity:.65;letter-spacing:.16em}
 /* top-right killfeed */
-#game .hud.x-fw{top:16px;right:16px;gap:8px}
+#game .hud.x-fw{top:16px;right:16px;gap:8px}@media (min-width:821px) and (max-width:1440px) and (min-height:561px){#game .hud.x-fw{top:62px}}
 #game #feed{gap:4px;font-size:13px}
 #game #feed div{background:var(--hp);border-right:2px solid var(--he)}
 #game #feed .kf{gap:8px;height:32px;box-sizing:border-box;padding:0 8px;border:0;border-right:2px solid transparent;border-radius:2px;background:var(--hp);font-weight:500;letter-spacing:.04em}
@@ -1585,12 +1585,12 @@ body.x-cbh #game{--ha:#3d8bff;--he:#ff9f1c}
     .x-ann.rnd{top:30%}.x-ann.rnd .x-ant{font-size:clamp(40px,8vw,88px);letter-spacing:.14em}.x-ann.rnd .x-ans{display:inline-block;margin-top:12px;padding:6px 18px;background:rgba(10,14,20,.6);border-top:2px solid currentColor;color:#ece8e1;letter-spacing:.32em}
     /* observer pass: team side panels (spectating / buy phase) */
     .x-obs{position:fixed;left:0;right:0;top:max(244px,calc(50% - 91px));z-index:11;display:none;justify-content:space-between;padding:0 12px;pointer-events:none;font:600 12px/1.2 var(--f,var(--sans));color:#ece8e1}
-    .x-obs.on{display:flex}.x-obc{display:flex;flex-direction:column;gap:3px;width:210px}
+    .x-obs.on{display:flex}.x-obc{display:flex;flex-direction:column;gap:3px;width:240px}
     .x-obr{display:flex;align-items:center;gap:6px;height:34px;padding:0 6px;background:linear-gradient(90deg,rgba(79,227,193,.22),rgba(10,16,22,.62));border-left:3px solid #4fe3c1}
     .x-obc.en .x-obr{flex-direction:row-reverse;text-align:right;background:linear-gradient(270deg,rgba(255,70,85,.22),rgba(10,16,22,.62));border-left:0;border-right:3px solid #ff4655}
     .x-oba{flex:none;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font:800 13px/1 var(--f,var(--sans));color:#0b0f14}
     .x-obm{flex:1;min-width:0}.x-obm p{display:flex;gap:6px;margin:0 0 3px;white-space:nowrap}.x-obc.en .x-obm p{flex-direction:row-reverse}
-    .x-obn{flex:none;overflow:hidden;text-overflow:ellipsis;max-width:96px}.x-obw{flex:1 1 0;min-width:0;font-style:normal;opacity:.7;text-transform:uppercase;overflow:hidden;text-overflow:ellipsis}@media (min-width:1000px){.x-obc{width:240px}}.x-obcr{margin-left:auto;color:#ffd54a}.x-obc.en .x-obcr{margin:0 auto 0 0}
+    .x-obn{flex:none;overflow:hidden;text-overflow:ellipsis;max-width:96px}.x-obw{flex:1 1 0;min-width:0;font-style:normal;opacity:.7;text-transform:uppercase;overflow:hidden;text-overflow:ellipsis}.x-obcr{margin-left:auto;color:#ffd54a}.x-obc.en .x-obcr{margin:0 auto 0 0}
     .x-obh{position:relative;height:5px;background:rgba(236,232,225,.14);display:flex}.x-obc.en .x-obh{flex-direction:row-reverse}.x-obh .hp{display:block;height:100%;background:#ece8e1}.x-obh .sh{display:block;height:100%;background:#7fc8ff}
     .x-obu{display:flex;gap:2px;margin-top:3px}.x-obc.en .x-obu{justify-content:flex-end}.x-obu i{width:5px;height:5px;transform:rotate(45deg);background:rgba(236,232,225,.22)}.x-obu i.on{background:#ece8e1}.x-obu.rdy i{background:#ffd54a;animation:xObU .7s ease-in-out infinite alternate}
     @keyframes xObU{to{opacity:.45}}
@@ -1598,7 +1598,7 @@ body.x-cbh #game{--ha:#3d8bff;--he:#ff9f1c}
     @media (prefers-reduced-motion:reduce){.x-obu.rdy i{animation:none}}
     /* observer hardening: panels sit below the minimap + callout (top-left, ends ~190px) and the 5-row kill feed + voice line (top-right, ends ~230px), centred vertically when there is room; enemy buy info stays hidden */
     .x-obr.nohp .x-obh{visibility:hidden}
-    @media (max-width:1366px){.x-obc{width:190px}.x-obn{max-width:64px}}
+    @media (max-width:1366px){.x-obc{width:224px}.x-obn{max-width:88px}}
     @media (max-width:820px){.x-obs{top:max(232px,calc(50% - 70px));padding:0 8px;font-size:11px}.x-obc{width:148px;gap:2px}.x-obr{height:26px;gap:4px;padding:0 4px}.x-oba{width:18px;height:18px;font-size:11px}.x-obw,.x-obu{display:none}.x-obn{max-width:72px}.x-obm p{margin-bottom:2px}}
     @media (max-height:560px){.x-obs.on{display:none}}
     .x-ann.pulse .x-ant{animation:xAnP .6s ease-in-out infinite alternate}
@@ -2712,7 +2712,27 @@ function xAoe(b, p, r, n, w) {
       hurt(a, n, by); if (a.hp <= 0) allyDie(a, by, w); }
   } else for (const t of bots) { if (!t.alive) continue; const q = t.g.position; if (Math.hypot(q.x - p.x, q.z - p.z) >= r || !los(o, e2.set(q.x, (q.y || 0) + 1.5, q.z))) continue;
     hurt(t, n, by); if (t.hp <= 0.001) kill(t, false, by, w); }
+  xFFArea(b, en, w, n, (x, z, t) => Math.hypot(x - p.x, z - p.z) < r && los(o, t === player ? pEye() : e2.set(x, ((t.g && t.g.position.y) || 0) + 1.5, z)));
 }
+// Friendly fire, as the server's abilityDamage (wiki.playvalorant.com/en-us/Abilities: "abilities that damage allies deal 1/3
+// damage"; each ability's "Affects allies/self?": Yes (damage reduced) for the names in XFF; No for Boom Bot, Blast Pack,
+// Turret). An ally caught in the caster's damaging utility takes a third; the caster's own utility never hurts the caster;
+// a teamkill (XTKILL) is a death with no kill, credits, ult point, score or damage credit for the caster. FFA: no allies.
+const XFF = new Set(["Shock Bolt", "Hunter's Fury", "Paint Shells", "Showstopper", "Hot Hands", "Blaze", "Nanoswarm", "Aftershock", "Incendiary", "Orbital Strike", "Snake Bite", "Mosh Pit", "FRAG/ment"]);
+var XTKILL = false;
+function xFFOff() { return typeof mode !== "undefined" && mode === "five" && typeof FV !== "undefined" && FV.dm && !FV.tdm; }
+function xMates(c, en) { // the caster's living teammates, the caster excluded; c: "You" / player / a unit; en: enemy-side caster when c is not a unit
+  if (xFFOff()) return []; const al = typeof allies !== "undefined" ? allies : [], me = player && player.hp > 0 ? [player] : [];
+  if (c === "You" || c === player) return al.filter((a) => a && a.alive);
+  const side = c && typeof c === "object" ? (al.indexOf(c) >= 0 ? 0 : bots.indexOf(c) >= 0 ? 1 : en ? 1 : 0) : en ? 1 : 0;
+  return side ? bots.filter((b) => b && b.alive && b !== c) : me.concat(al.filter((a) => a && a.alive && a !== c));
+}
+function xFF(c, t, n, w, nm) { // ally t caught in c's utility w: a third of n; a death is a teamkill
+  if (!XFF.has(w) || !(n > 0) || !t || t === c || (t === player ? !(player.hp > 0) : !t.alive)) return;
+  const by = c === "You" || c === player ? "You" : (c && c.name) || nm || ""; XTKILL = true;
+  try { hurt(t, n / 3, by); if (t === player) { try { updHud(); } catch (e) {} if (player.hp <= 0) pDie(by, w); } else if (t.hp <= 0.001) { if (bots.indexOf(t) >= 0) kill(t, false, by, w); else allyDie(t, by, w); } } finally { XTKILL = false; }
+}
+function xFFArea(c, en, w, n, inside, nm) { if (!XFF.has(w)) return; for (const t of xMates(c, en)) { const q = t === player ? player : t.g && t.g.position; if (!q) continue; const k = inside(q.x, q.z, t); if (k) xFF(c, t, k === true ? n : n * k, w, nm); } } // inside: true, or a falloff factor
 // spectator follow cam: V (or tap SPECTATING) toggles first person / over-the-shoulder, 3 m back, 0.6 m right
 const xTP = { on: false, init: false, x: 0, y: 0, z: 0, yw: 0, d: 3, t: 0, tg: null, o: new THREE.Vector3(), v: new THREE.Vector3(), dir: new THREE.Vector3() };
 function xTPToggle() { xTP.on = !xTP.on; xTP.init = false; try { if (xKL.tp) { xKL.tp.setAttribute("aria-pressed", String(xTP.on)); xKL.tp.classList.toggle("on", xTP.on); xKL.tp.firstChild.textContent = xTP.on ? "1ST PERSON " : "3RD PERSON "; } } catch (e) {} try { say(xTP.on ? "Third-person follow cam" : "First-person view", 700); } catch (e) {} }
@@ -2797,8 +2817,8 @@ function xKLDie(by, w) { if (!xKLm()) return; xKLui(); xKL.on = true; xKL.st = 0
   if (xKL.el) xKL.el.classList.add("on"); xKLfx(true); }
 function xKLReset() { try { if (typeof XOB !== "undefined" && XOB.hm) { XOB.hm.visible = true; XOB.hm = null; } } catch (e) {} xKL.p = player; xKL.n = 0; xKL.st = 0; xKL.on = false; xKL.sp = false; xKL.cur = null; xHS = false; if (xKL.el) { xKL.el.classList.remove("on"); xKL.sl.classList.remove("on"); xKLfx(false); } }
 function xSpec(dt) { if (!xKL.on) return xSpecPick(); xKL.st += dt; if (xKL.st < 2) return null;
-  if (!xKL.sp) { xKL.sp = true; xKLfx(false); xKL.el.classList.remove("on"); xKL.sl.classList.add("on"); try { if (document.pointerLockElement) document.exitPointerLock(); } catch (e) {} } // free the cursor so the 3rd-person button can be clicked; pointerlockchange does not pause while spectating
-  const a = xSpecPick(); if (a !== xKL.cur) { xKL.cur = a; if (xKL.sn) xKL.sn.textContent = a ? "SPECTATING " + String(a.name).toUpperCase() + (!allies.includes(a) ? " · ENEMY" : "") : "NO ONE ALIVE · SPIKE CAM"; } return a; }
+  if (!xKL.sp) { xKL.sp = true; xKL.cur = undefined; /* write the label now: it kept the previous death's text */ xKLfx(false); xKL.el.classList.remove("on"); xKL.sl.classList.add("on"); try { if (document.pointerLockElement) document.exitPointerLock(); } catch (e) {} } // free the cursor so the 3rd-person button can be clicked; pointerlockchange does not pause while spectating
+  const a = xSpecPick(); if (a !== xKL.cur) { xKL.cur = a; if (xKL.sn) xKL.sn.textContent = a ? "SPECTATING " + String(a.name).toUpperCase() + (!allies.includes(a) ? " · ENEMY" : "") : (typeof FV !== "undefined" && FV.dm && !(typeof MP !== "undefined" && MP.m5)) ? "NO ONE ALIVE" : "NO ONE ALIVE · SPIKE CAM"; } return a; }
 // Spectating stays on the followed player until they die or the player cycles (click / Space step from them, as VALORANT):
 // picking by index alone jumped to another teammate whenever someone earlier in the list died. When the followed player
 // dies the cam moves to the next living one after them. Whole team dead (5v5 attackers wiped after a plant, the post-round,
@@ -2843,7 +2863,7 @@ function xObsHide(a) { const m = a && a.alive !== false && a.xm && !a.xm.dead &&
 function xTag(t, n) { if (!t) return; const k = n < 30 ? 0.5 : 0.28; if (!(t.tagT > 0) || k < t.tagK) t.tagK = k; t.tagT = 0.5; } // tagging: 0.5 s, rifle hits slow 72%
 function pDie(by, w) {
   if (jRib()) return; // Phoenix Run It Back
-  try { if (mode === "five") jUlt(); } catch (e) {} // +1 ult point per death
+  try { if (mode === "five" && !XTKILL && by !== "Fall" && by !== "Spike") jUlt(); } catch (e) {} // +1 ult point per death to an enemy (not a fall, the Spike or a teamkill)
   fKC(by); player.hp = 0; defuseT = 0; reloading = 0; stats.d++; sbKill(by, "You", false); if (w) kfeed(by, "You", false, w); else feed(by + " ▸ You"); showStats(); setScope(false);
   if (!allies.some((a) => a.alive)) return end(false, "You were eliminated by " + by);
   say("You died · spectating your team", 1800);
@@ -3080,7 +3100,7 @@ let fcd = 0, spray = 0, since = 1, fireHeld = false;
 let rcl = 0, rclH = 0, sprW = "Vandal", xhG = -1; const xhE = { m: 0, f: 0 };
 // Crosshair error split as VALORANT draws it: movement error = the moving / airborne cone over the standing first shot, firing
 // error = the rest of the current cone (spray bloom, concussion); px = cone x 450, each capped at 40.
-function xhErr(w, W) { const all = gSpread(w, W); let still = all, moving = all; try { const M = VF.model, p = vfProfile(w), P = player || {}; still = M.spread({ sf: 0, cr: P.cr, ads }, w, p); moving = M.spread({ sf: P.sf, mv: P.mv, air: P.air, cr: P.cr, wk: P.wk, lp: P.lp || 0, ads }, w, p); } catch (e) {} return { m: Math.min(40, Math.max(0, moving - still) * 450), f: Math.min(40, Math.max(0, all - moving) * 450) }; }
+function xhErr(w, W) { const all = gSpread(w, W); let still = all, moving = all; try { const M = VF.model, p = vfProfile(w), P = player || {}; still = M.spread({ sf: 0, cr: P.cr, ads }, w, p); moving = M.spread({ sf: P.sf, mv: P.mv, air: P.air, cr: P.cr, wk: P.wk, lp: P.lp || 0, ls: P.ls || 0, ads }, w, p); } catch (e) {} return { m: Math.min(40, Math.max(0, moving - still) * 450), f: Math.min(40, Math.max(0, all - moving) * 450) }; }
 const PIN = { Vandal: 1, Phantom: 1, Guardian: 1, Sheriff: 1, Operator: 1, Marshal: 1, Bulldog: 1 };
 // fidelity 2: standing first-shot error (rad, ~Val degrees) and run-spread scale per gun (player); rifles fall apart on the run, SMGs hold up
 const FSA = { Vandal: 0.0044, Phantom: 0.0035, Guardian: 0.0017, Sheriff: 0.0044, Bulldog: 0.0052, Operator: 0, Marshal: 0 }, MVK = { Vandal: 1.6, Phantom: 1.6, Bulldog: 1.5, Guardian: 1.8, Ares: 1.3, Odin: 1.3, Spectre: 0.55, Stinger: 0.6, Frenzy: 0.7, Classic: 0.7, Ghost: 0.8 };
@@ -3831,7 +3851,7 @@ function xAgent(name, rim, w) {
 const XDEAD = [];
 function xDie(b) {
   if (!b || !b.xm || b.xd) return; b.xd = 1;
-  const c = b.xm, p = b.g.position, ry = b.g.rotation.y; c.dead = 1;
+  const c = b.xm, p = b.g.position, ry = b.g.rotation.y; c.dead = 1; if (c.sx && c.sx.cull) for (const o of c.sx.cull) o.frustumCulled = false; // a ragdoll can leave the idle cull sphere
   scene.add(c.m); c.m.position.set(p.x, p.y, p.z); c.m.rotation.order = "YXZ"; c.m.rotation.set(0, ry, 0); c.ring.visible = false;
   if (c.hd) c.hd.rotation.x = 0;
   const gn = c.gun; gn.rotation.x = 0; scene.add(gn); gn.position.set(p.x + Math.sin(ry + 1.2) * 0.7, p.y + 0.05, p.z + Math.cos(ry + 1.2) * 0.7); gn.rotation.set(0, ry + 2, Math.PI / 2);
@@ -4638,7 +4658,7 @@ function getLossBonus(team) { // credits `team` gets next round if it loses it: 
   const en = team === 1 || team === "enemy" || team === "them" || team === "bots" || (team === "atk" ? !FV.atk : team === "def" ? !!FV.atk : false);
   const st = (en ? FV.lsT : FV.lsY) || 0; return LOSS_B[Math.min(st + 1, 3) - 1]; }
 window.getLossBonus = getLossBonus;
-function fKC(n) { if (mode === "five" && FV.bs[n]) FV.bs[n].cr = capC(FV.bs[n].cr + 200); }
+function fKC(n) { if (XTKILL) return; if (mode === "five" && FV.bs[n]) FV.bs[n].cr = capC(FV.bs[n].cr + 200); }
 function fEco() { // match start and side swap: everyone back to 800 and a Classic
   FV.cr = 800; FV.pri = null; FV.sec = "Classic"; FV.alive = false; FV.arm = 0; FV.bs = {}; FV.bt = []; FV.req = null; FV.reqBy = null;
   F_EN.concat(F_MATES).forEach((n) => FV.bs[n] = { cr: 800, w: "Classic", arm: 0, alive: false });
@@ -4681,6 +4701,8 @@ function bLog() { const r = FV.you + FV.them; if (!FV.bt || FV.btR !== r) { FV.b
 function bBack(n, c) { try { if (c > 0 && SB[n]) SB[n].sp = Math.max(0, (SB[n].sp || 0) - c); } catch (e) {} }
 function bMin() { const lb = [1900, 2400, 2900][Math.min((FV.lsY || 0) + 1, 3) - 1]; return capC((FV.sw ? 4000 : FV.cr) + lb); } // credits next round if this one is lost (loss bonus)
 function bCost(n) { const it = bItem(n); if (!it) return Infinity; const L = bLog(), e = it[2] ? L.find((x) => x.a) : L.find((x) => x.sl === (bSide(n) ? "pis" : "pri")); return it[1] - (e && !e.by ? e.p : 0); }
+// a weapon name from the network: own WEAP keys only ("__proto__" / "constructor" pass WEAP[n] and threw in the skin path)
+function xWOwn(n) { return typeof n === "string" && Object.prototype.hasOwnProperty.call(WEAP, n); }
 function bEquip(n, sl) {
   const m = WEAP[n].mag; if (sl === "pis") FV.sec = n; else FV.pri = n;
   slots[sl] = { ammo: m, rsv: m * 3 };
@@ -7954,6 +7976,7 @@ function jBeam() {
   if (J.cd.x > 0 || J.hf < 1) return; J.cd.x = 0.9; J.hf--; kick = 1; blip(300, 0.4, "sawtooth", 0.2);
   const o = pEye(), d = jAim(), L = 80;
   bots.forEach((b) => { if (!b.alive) return; const v = new THREE.Vector3(b.g.position.x, 1.1, b.g.position.z).sub(o), t = v.dot(d); if (t > 0 && t < L && v.addScaledVector(d, -t).length() < 0.9) jHit(b, 80, "Hunter's Fury"); });
+  xFFArea("You", false, "Hunter's Fury", 80, (x, z) => { const v = new THREE.Vector3(x, 1.1, z).sub(o), t = v.dot(d); return t > 0 && t < L && v.addScaledVector(d, -t).length() < 0.9; }); // allies: a third, no reveal
   const m = jM(beamGeo, fireMat(0x45d0ff, 0.85)); m.scale.z = L; o.y -= 0.2; m.position.copy(o).addScaledVector(d, L / 2); m.lookAt(o.clone().addScaledVector(d, L)); jFx(m, 0.35);
 }
 function phCurve(o, fx, fz, side) { // Curveball path: mid = up to 5 m ahead (0.4 m short of a wall), end = up to 2.5 m to the side (side -1 left, 1 right)
@@ -8012,14 +8035,14 @@ function jFxTick(dt) {
   { const A = J.walls, n = A.length; let k = 0; // in-place compaction, no per-frame closures
     for (let i = 0; i < n; i++) { const w = A[i]; w.t -= dt; w.m.material.opacity = 0.7 * Math.min(1, w.t / 0.5);
       if (w.own) { if (!w.nd) { mpAreaHit(w, 0, 0, 1, 30 * dt, "Blaze", w); const o = w.own; if (o.alive && o.g && segD(o.g.position.x, o.g.position.z, w) < 1) o.hp = Math.min(100, o.hp + 15 * dt); } } // online remote cast: team-aware, host only
-      else { for (let j = 0; j < bots.length; j++) { const b = bots[j]; if (b.alive && segD(b.g.position.x, b.g.position.z, w) < 1) jHit(b, 30 * dt, "Blaze"); }
+      else { for (let j = 0; j < bots.length; j++) { const b = bots[j]; if (b.alive && segD(b.g.position.x, b.g.position.z, w) < 1) jHit(b, 30 * dt, "Blaze"); } xFFArea("You", false, "Blaze", 30 * dt, (x, z) => segD(x, z, w) < 1);
       if (segD(P.x, P.z, w) < 1) heal(); } if (w.t > 0) A[k++] = w; else jRel(w.m); }
     A.length = k; }
   { const A = J.zones, n = A.length; let k = 0;
     for (let i = 0; i < n; i++) { const z = A[i]; z.t -= dt; z.m.material.opacity = 0.55 * Math.min(1, z.t / 0.5);
       let r = 2.5; if (z.R) { z.a += dt; r = z.R * Math.min(1, z.a / XHOT.grow); z.m.scale.setScalar(Math.max(0.01, r / 2.5)); } // Hot Hands spreads (zoneGeo is 2.5 m); Paint Shells keep 2.5 m
       if (z.own) { if (!z.nd) { mpAreaHit(z, z.p.x, z.p.z, r, 60 * dt, "Hot Hands", null); /* 60 dps (wiki.playvalorant.com/en-us/Phoenix) */ const o = z.own; if (o.alive && o.g && Math.hypot(o.g.position.x - z.p.x, o.g.position.z - z.p.z) < r) o.hp = Math.min(100, o.hp + 15 * dt); } }
-      else { for (let j = 0; j < bots.length; j++) { const b = bots[j]; if (b.alive && Math.hypot(b.g.position.x - z.p.x, b.g.position.z - z.p.z) < r) jHit(b, 60 * dt, "Hot Hands"); }
+      else { for (let j = 0; j < bots.length; j++) { const b = bots[j]; if (b.alive && Math.hypot(b.g.position.x - z.p.x, b.g.position.z - z.p.z) < r) jHit(b, 60 * dt, "Hot Hands"); } xFFArea("You", false, "Hot Hands", 60 * dt, (x, q) => Math.hypot(x - z.p.x, q - z.p.z) < r);
       if (Math.hypot(P.x - z.p.x, P.z - z.p.z) < r) heal(); } if (z.t > 0) A[k++] = z; else jRel(z.m); }
     A.length = k; }
   { const A = J.orbs, n = A.length; let k = 0;
@@ -8032,7 +8055,7 @@ function jFxTick(dt) {
     if (a.kind === "dart") { if (a.tg && a.tg.alive) drTag(a.tg); }
     else if (a.kind === "erecon") enRecon(a.b);
     else if (a.kind === "recon") jReveal(a.b);
-    else { blip(160, 0.3, "square", 0.2); const m = jM(smokeGeo, fireMat(0x7fd8ff, 0.4)); m.scale.setScalar(0.75); m.position.copy(a.b); jFx(m, 0.35); if (a.own) { if (!a.nd) mpAreaHit(a, a.b.x, a.b.z, 3, 75, "Shock Bolt", null); } else bots.forEach((b) => b.alive && new THREE.Vector3(b.g.position.x, 1, b.g.position.z).distanceTo(a.b) < 3 && jHit(b, 75, "Shock Bolt")); }
+    else { blip(160, 0.3, "square", 0.2); const m = jM(smokeGeo, fireMat(0x7fd8ff, 0.4)); m.scale.setScalar(0.75); m.position.copy(a.b); jFx(m, 0.35); if (a.own) { if (!a.nd) mpAreaHit(a, a.b.x, a.b.z, 3, 75, "Shock Bolt", null); } else { bots.forEach((b) => b.alive && new THREE.Vector3(b.g.position.x, 1, b.g.position.z).distanceTo(a.b) < 3 && jHit(b, 75, "Shock Bolt")); xFFArea("You", false, "Shock Bolt", 75, (x, z) => new THREE.Vector3(x, 1, z).distanceTo(a.b) < 3); } }
     return false;
   });
   J.fx = J.fx.filter((f) => { f.t -= dt; if (f.g) f.m.scale.setScalar(0.5 + f.g * (1 - Math.max(0, f.t / f.t0))); f.m.material.opacity = f.o * Math.max(0, f.t / f.t0); if (f.t > 0) return true; jRel(f.m); return false; });
@@ -8139,7 +8162,7 @@ function sgTick(dt) {
   if (J.emp > 0 && !(P.hp > 0)) { J.emp = 0; $("xEmp").classList.remove("on"); } // Empress (current Valorant): lasts until death (round reset clears it in sgClear)
   okTick(dt);
 }
-{ const h0 = hurt; hurt = function (t, n) { if (t === player && J.dis > 0 && J.pick === "Reyna" && jOn()) return; return h0(t, t && t.vul > 0 && bots.includes(t) ? n * 2 : n); }; } // Killjoy Alarmbot: Vulnerable takes double · Reyna Dismiss: intangible, no damage // Killjoy Alarmbot: Vulnerable takes double
+{ const h0 = hurt; hurt = function (t, n, by) { if (t === player && J.dis > 0 && J.pick === "Reyna" && jOn()) return; return h0(t, t && t.vul > 0 && bots.includes(t) ? n * 2 : n, by); }; } // Killjoy Alarmbot: Vulnerable takes double · Reyna Dismiss: intangible, no damage // Killjoy Alarmbot: Vulnerable takes double
 function sgClear() {
   sgWallEnd(); (J.slz || []).concat(J.so || [], J.leer || []).forEach((s) => scene.remove(s.m));
   J.slz = []; J.so = []; J.leer = []; J.hl = null; J.dis = 0; J.emp = 0; $("xEmp").classList.remove("on", "dis");
@@ -8237,7 +8260,7 @@ function okTick(dt) {
   });
   prune(J.nano, (n) => {
     if (!n.on) return true; n.t -= dt; n.m.material.opacity = 0.55 * Math.min(1, n.t / 0.5);
-    bots.forEach((b) => b.alive && Math.hypot(b.g.position.x - n.p.x, b.g.position.z - n.p.z) < 2.5 && jHit(b, 45 * dt, "Nanoswarm"));
+    bots.forEach((b) => b.alive && Math.hypot(b.g.position.x - n.p.x, b.g.position.z - n.p.z) < 2.5 && jHit(b, 45 * dt, "Nanoswarm")); xFFArea("You", false, "Nanoswarm", 45 * dt, (x, z) => Math.hypot(x - n.p.x, z - n.p.z) < 2.5);
     if (n.t > 0) return true; scene.remove(n.m); return false;
   });
   if (J.ab) {
@@ -8296,6 +8319,7 @@ function rsBoom(p, r, dmg, w, c, direct, fall) {
   bots.forEach((b) => { if (!b.alive) return; const q = new RV(b.g.position.x, 1, b.g.position.z), d = q.distanceTo(e);
     if (!(dmg > 0)) {} else if (b === direct) jHit(b, dmg, w); else if (d < r && los(e, q)) jHit(b, fall ? dmg * Math.max(0.35, 1 - d / r) : dmg, w);
     if (b.alive && d < r) flash(b); });
+  xFFArea("You", false, w, dmg, (x, z, t) => { const q = new RV(x, 1, z), d = q.distanceTo(e); return d < r && los(e, q) ? (fall ? Math.max(0.35, 1 - d / r) : true) : false; }); // Paint Shells / Showstopper (Boom Bot, Blast Pack: not in XFF)
 }
 function rsPack() { // Blast Pack detonation: 50 to enemies, knocks everyone back
   const P = player;
@@ -8670,8 +8694,8 @@ function bcTick(dt) {
   BC.as = BC.as.filter((a) => {
     a.t -= dt; if (a.t > 0) return true;
     const m = jM(smokeGeo, fireMat(0xff9a3a, 0.45)); m.scale.setScalar(0.75); m.position.set(a.p.x, 1, a.p.z); jFx(m, 0.35); blip(70, 0.3, "sawtooth", 0.2);
-    if (a.own) xBbTg(a).forEach((t) => { const q = xBbPos(t); if (q && Math.hypot(q.x - a.p.x, q.z - a.p.z) < 3) { xBotDmg(t, 80, a.own.name, "Aftershock"); if (t.alive && bots.indexOf(t) >= 0) flash(t); } });
-    else bots.forEach((b) => { if (b.alive && Math.hypot(b.g.position.x - a.p.x, b.g.position.z - a.p.z) < 3) { jHit(b, 80, "Aftershock"); if (b.alive) flash(b); } });
+    if (a.own) { xBbTg(a).forEach((t) => { const q = xBbPos(t); if (q && Math.hypot(q.x - a.p.x, q.z - a.p.z) < 3) { xBotDmg(t, 80, a.own.name, "Aftershock"); if (t.alive && bots.indexOf(t) >= 0) flash(t); } }); xFFArea(a.own, a.en, "Aftershock", 80, (x, z) => Math.hypot(x - a.p.x, z - a.p.z) < 3); }
+    else { bots.forEach((b) => { if (b.alive && Math.hypot(b.g.position.x - a.p.x, b.g.position.z - a.p.z) < 3) { jHit(b, 80, "Aftershock"); if (b.alive) flash(b); } }); xFFArea("You", false, "Aftershock", 80, (x, z) => Math.hypot(x - a.p.x, z - a.p.z) < 3); }
     if (--a.n > 0) { a.t = 0.6; return true; } scene.remove(a.m); return false;
   });
   BC.tm = BC.tm.filter((t) => {
@@ -8817,6 +8841,7 @@ setInterval(function () { try { if (!running || !XKN.length) return; for (const 
   o.t -= 0.1; o.m.material.opacity = 0.55 * Math.min(1, o.t / 0.5); const nm = o.own && o.own.name || "Killjoy";
   if (en) { if (player.hp > 0 && xKnIn(o, player.x, player.z)) xBotDmg(player, 4.5, nm, "Nanoswarm"); for (const a of allies) if (a.alive && xKnIn(o, a.g.position.x, a.g.position.z)) xBotDmg(a, 4.5, nm, "Nanoswarm"); }
   else for (const b of bots) if (b.alive && xKnIn(o, b.g.position.x, b.g.position.z)) xBotDmg(b, 4.5, nm, "Nanoswarm");
+  xFFArea(o.own || null, en, "Nanoswarm", 4.5, (x, z) => xKnIn(o, x, z), nm); // allies: a third
   if (o.t <= 0) { o.on = false; jRel(o.m); o.m = null; } } } catch (e) {} }, 100);
 let agT, agBT = [];
 const AG_RC = { Duelist: "#ff4655", Initiator: "#3fd6a0", Controller: "#a48bff", Sentinel: "#4fb3ff" };
@@ -8970,8 +8995,8 @@ function xBBuy(n, s) { // after guns + shields: E (signature) 1 free, then each 
   s.kc = kc; }
 function xBKill(by) { if (!by || typeof by !== "string" || !jOn()) return; let u = null; for (const x of bots) if (x.name === by) u = x; if (!u) for (const x of allies) if (x.name === by) u = x;
   if (!u || !XBK_KR[xBAg(u)]) return; const c = xBCh(u); if (c.e >= 1) return; if (++c.tk >= 2) { c.e = 1; c.tk = 0; } }
-{ const k0 = kill; kill = function (b, hs, by) { const was = b && b.alive, r = k0.apply(this, arguments); if (was && b && !b.alive) try { xBKill(by); } catch (e) {} return r; };
-  const a0 = allyDie; allyDie = function (a, by) { const was = a && a.alive, r = a0.apply(this, arguments); if (was && a && !a.alive) try { xBKill(by); } catch (e) {} return r; }; }
+{ const k0 = kill; kill = function (b, hs, by) { const was = b && b.alive, r = k0.apply(this, arguments); if (was && b && !b.alive && !XTKILL) try { xBKill(by); } catch (e) {} return r; };
+  const a0 = allyDie; allyDie = function (a, by) { const was = a && a.alive, r = a0.apply(this, arguments); if (was && a && !a.alive && !XTKILL) try { xBKill(by); } catch (e) {} return r; }; }
 function xBPl() { return mode === "five" ? !!(FV.sp && FV.sp.st === "plant") : mode === "retake"; }
 function xBAtk(al) { return mode === "five" ? FV.atk === al : !!al; } // retake: enemy bots hold the planted site (utility like defenders), allies retake it
 function xBSite(b, al, from) { // the site this bot's team is heading for (attack) or holding (defence)
@@ -9636,11 +9661,11 @@ let SB = {};
 function sbReset(enemies, mates) { SB = {}; ["You"].concat(mates || [], enemies).forEach((n) => SB[n] = { k: 0, d: 0, a: 0, fb: 0, pd: 0, hs: 0, dmg: 0, pl: 0, sp: 0, ping: 10 + Math.floor(Math.random() * 31) }); sbKill.r = -1; SBH = {}; }
 // real stats: damage by attacker (from hurt), assists (>=50 dmg to the victim in the last 5 s), credits spent in buy phase
 let SBH = {};
-function sbDmg(by, v, n) { if (!(n > 0) || by === v || !SB[by]) return; SB[by].dmg = (SB[by].dmg || 0) + n; if (v == null) return; const m = SBH[v] || (SBH[v] = {}), now = performance.now(), e = m[by]; if (e && now - e.t <= 5000) { e.d += n; e.t = now; } else m[by] = { d: n, t: now }; }
+function sbDmg(by, v, n) { if (XTKILL || !(n > 0) || by === v || !SB[by]) return; SB[by].dmg = (SB[by].dmg || 0) + n; if (v == null) return; const m = SBH[v] || (SBH[v] = {}), now = performance.now(), e = m[by]; if (e && now - e.t <= 5000) { e.d += n; e.t = now; } else m[by] = { d: n, t: now }; }
 function sbAst(by, v) { const m = SBH[v]; if (!m) return; const now = performance.now(); for (const n in m) if (n !== by && SB[n] && m[n].d >= 50 && now - m[n].t <= 5000) SB[n].a = (SB[n].a || 0) + 1; delete SBH[v]; }
 function sbSpend(n, c) { if (c > 0 && SB[n]) SB[n].sp = (SB[n].sp || 0) + c; }
 function sbEcon(p) { return Math.round((p.dmg || 0) * 1000 / Math.max(1, p.sp || 0)); }
-function sbKill(by, victim, hs) { try { sbAst(by, victim); } catch (e) {} let r = 0; try { const s = sbScore(); r = s[0] + s[1]; } catch (e) {} if (SB[by]) { SB[by].k++; if (hs) SB[by].hs++; if (sbKill.r !== r) SB[by].fb = (SB[by].fb || 0) + 1; } sbKill.r = r; if (SB[victim]) SB[victim].d++; }
+function sbKill(by, victim, hs) { if (XTKILL) { if (SB[victim]) SB[victim].d++; try { delete SBH[victim]; } catch (e) {} return; } try { sbAst(by, victim); } catch (e) {} let r = 0; try { const s = sbScore(); r = s[0] + s[1]; } catch (e) {} if (SB[by]) { SB[by].k++; if (hs) SB[by].hs++; if (sbKill.r !== r) SB[by].fb = (SB[by].fb || 0) + 1; } sbKill.r = r; if (SB[victim]) SB[victim].d++; }
 { const e0 = end; end = function (w, text) { try { const m = /^(.+?) defused the spike/i.exec(text || ""); const n = m ? m[1] : /defused/i.test(text || "") && w ? "You" : null; if (n && SB && SB[n]) SB[n].pd = (SB[n].pd || 0) + 1; } catch (e) {} return e0.apply(this, arguments); }; }
 const clk = (t) => { const s = Math.max(0, Math.ceil(t)); return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0"); };
 const setT = (id, v) => { const e = $(id); v = String(v); if (e.textContent !== v) e.textContent = v; };
@@ -9705,7 +9730,7 @@ function sbTable(list, cls, alive) {
   if (eb.length === 1 && a >= 2 && !c.e) c.e = eb[0].name; } catch (e) {} return r; }; }
 // clear the round-history strip and clutch marks at every match start (sbReset runs once per match in all modes)
 { const r0 = sbReset; sbReset = function () { xRes.h = []; xRes.hh = ""; xRes.c = {}; xFirstBlood.r = null; return r0.apply(this, arguments); }; }
-{ const k1 = sbKill; sbKill = function (by, victim) { const r = k1.apply(this, arguments); xFirstBlood(by, victim); return r; }; }
+{ const k1 = sbKill; sbKill = function (by, victim) { const r = k1.apply(this, arguments); if (!XTKILL) xFirstBlood(by, victim); return r; }; }
 function board() {
   const alive = (n) => n === "You" ? player.hp > 0 || (mode === "duel" && du.wait <= 0) : mode === "duel" ? duelBot && duelBot.alive : bots.concat(allies).some((b) => b.name === n && b.alive);
   const s = sbScore(), t = sbTeams();
@@ -10854,9 +10879,9 @@ let xTGOn = false; const xTG = { inPlay: () => false, relAll: () => {} };
   window.xBotUltCost = (a) => (KITS[a] ? KITS[a].u : 0);
   window.xBotUC = XU.c; // shared bot ult charge (bot Chamber's Tour De Force reads it, cost 8)
   function gain(n) { const u = unit(n); if (!u) return; const a = xAg(u), m = (KITS[a] && KITS[a].u) || 7; XU.c[n] = Math.min(m, (XU.c[n] || 0) + 1); } // agents without a bot ult still charge (scoreboard pips); think1 only fires PTS agents
-  const k0 = kill; kill = function (b, hs, by, w) { const was = b && b.alive; const r = k0.apply(this, arguments); if (was && b && !b.alive) { try { if (mode === "five") gain(b.name); gain(by); delete XU.b[b.name]; ribEnd(b); } catch (e) {} } return r; };
-  const a0 = allyDie; allyDie = function (a, by, w) { const was = a && a.alive; const r = a0.apply(this, arguments); if (was) { try { if (mode === "five") gain(a.name); gain(by); delete XU.b[a.name]; ribEnd(a); } catch (e) {} } return r; };
-  const p0 = pDie; pDie = function (by, w) { try { if (!(jOn() && J.rib > 0 && J.ribP)) gain(by); } catch (e) {} return p0.apply(this, arguments); }; // killing the player inside Run It Back is no kill: no ult point for the bot
+  const k0 = kill; kill = function (b, hs, by, w) { const was = b && b.alive; const r = k0.apply(this, arguments); if (was && b && !b.alive) { try { const tk = XTKILL || by === "Spike" || by === "Fall"; if (mode === "five" && !tk) gain(b.name); if (!XTKILL) gain(by); delete XU.b[b.name]; ribEnd(b); } catch (e) {} } return r; };
+  const a0 = allyDie; allyDie = function (a, by, w) { const was = a && a.alive; const r = a0.apply(this, arguments); if (was) { try { const tk = XTKILL || by === "Spike" || by === "Fall"; if (mode === "five" && !tk) gain(a.name); if (!XTKILL) gain(by); delete XU.b[a.name]; ribEnd(a); } catch (e) {} } return r; };
+  const p0 = pDie; pDie = function (by, w) { try { if (!XTKILL && !(jOn() && J.rib > 0 && J.ribP)) gain(by); } catch (e) {} return p0.apply(this, arguments); }; // killing the player inside Run It Back is no kill: no ult point for the bot
   const f0 = feed; feed = function (t) { try { const m = typeof t === "string" && /^(.+?) planted the Spike/.exec(t); if (m) gain(m[1]); } catch (e) {} return f0.apply(this, arguments); };
   const e0 = end; end = function (w, text) { try { const m = /^(.+?) defused the spike/i.exec(text || ""); if (m) gain(m[1]); } catch (e) {} return e0.apply(this, arguments); };
   const h0 = hurt; hurt = function (t, n, by) { const m = by && XU.b[by]; return h0.call(this, t, m ? n * m : n, by); };
@@ -10882,6 +10907,7 @@ let xTGOn = false; const xTG = { inPlay: () => false, relAll: () => {} };
       const beam = (t, x, z) => { const q = (x - sx) * dx + (z - sz) * dz; if (q < 0 || q > 60) return; if (Math.abs((x - sx) * dz - (z - sz) * dx) < 1.1) hitU(t, 80, u.name, "Hunter's Fury"); };
       if (en) { if (player && player.hp > 0) beam(player, player.x, player.z); if (typeof allies !== "undefined") for (const a of allies) if (a.alive) beam(a, a.g.position.x, a.g.position.z); }
       else for (const b of bots) if (b.alive) beam(b, b.g.position.x, b.g.position.z);
+      xFFArea(u, en, "Hunter's Fury", 80, (x, z) => { const q = (x - sx) * dx + (z - sz) * dz; return q >= 0 && q <= 60 && Math.abs((x - sx) * dz - (z - sz) * dx) < 1.1; }); // allies: a third, no reveal
     }
   }
   function use(u, a, en) {
@@ -11188,9 +11214,9 @@ function dmFired(u) { if (u && u.pp) u.pp = 0; }
 function dmProtHud() { const on = running && mode === "five" && FV.dm && !!player && player.hp > 0 && DM.pp > performance.now(); let e = DM.prEl; if (!e) { if (!on) return; e = DM.prEl = document.createElement("div"); e.className = "x-dmprot"; e.setAttribute("role", "status"); e.textContent = "SPAWN PROTECTED"; e.style.cssText = "position:fixed;left:50%;top:62%;transform:translateX(-50%);padding:4px 12px;font:700 12px/1.4 Arial,sans-serif;letter-spacing:.12em;color:#9ffff0;background:rgba(15,25,35,.55);border:1px solid rgba(159,255,240,.45);pointer-events:none;z-index:40"; document.body.appendChild(e); } if (on !== !e.hidden) e.hidden = !on; }
 (window.XHK || (window.XHK = [])).push(dmProtHud);
 { const h0 = hurt; hurt = function (t, n, by) { if (mode === "five" && FV.dm && t) { const now = performance.now(); if ((t === player ? DM.pp : t.pp) > now) return; if (t === player) { DM.ph = now; if (DM.menu) dmMenu(false); } } return h0(t, n, by); }; }
-{ const k0 = kill; kill = function (b, hs, by, w) { const was = !!(b && b.alive); k0(b, hs, by, w); if (mode === "five" && FV.dm && was && !b.alive) { b.drt = 1.5; dmScore(by || "You", b.name); } }; }
-{ const p0 = pDie; pDie = function (by, w) { p0(by, w); if (mode === "five" && FV.dm && player && player.hp <= 0 && !(DM.prt > 0)) { DM.prt = 1.5; DM.pp = 0; if (DM.menu) dmMenu(false); dmScore(by, "You"); say("You died · respawning", 1400); } }; }
-{ const ad0 = allyDie; allyDie = function (a, by, w) { const was = !!(a && a.alive); ad0(a, by, w); if (mode === "five" && FV.dm && FV.tdm && was && !a.alive) { a.drt = 1.5; dmScore(by || "Enemy", a.name); } }; }
+{ const k0 = kill; kill = function (b, hs, by, w) { const was = !!(b && b.alive); k0(b, hs, by, w); if (mode === "five" && FV.dm && was && !b.alive) { b.drt = 1.5; if (!XTKILL) dmScore(by || "You", b.name); } }; }
+{ const p0 = pDie; pDie = function (by, w) { p0(by, w); if (mode === "five" && FV.dm && player && player.hp <= 0 && !(DM.prt > 0)) { DM.prt = 1.5; DM.pp = 0; if (DM.menu) dmMenu(false); if (!XTKILL) dmScore(by, "You"); say("You died · respawning", 1400); } }; }
+{ const ad0 = allyDie; allyDie = function (a, by, w) { const was = !!(a && a.alive); ad0(a, by, w); if (mode === "five" && FV.dm && FV.tdm && was && !a.alive) { a.drt = 1.5; if (!XTKILL) dmScore(by || "Enemy", a.name); } }; }
 { const e0 = end; end = function (win, text) { if (mode === "five" && FV.dm) return; return e0(win, text); }; }
 // guard: no 5v5 round reset in deathmatch (fSpawn would scene.remove every DM bot and spawn 5v5 teams)
 { const s0 = fSpawn, r0 = fRound, c0 = fCheck, dmOn = () => mode === "five" && FV.dm;
@@ -11542,7 +11568,7 @@ function mpHostMsg(c, m) {
   const u = c.u; if (!u || MP.st !== "game") return;
   if (MP.m5 && mpHost5(c, u, m)) return;
   if (m.t === "in") { // movement: client-predicted, host clamps teleports and wall clips
-    if (typeof m.w === "string" && WEAP[m.w]) u.w = m.w;
+    if (xWOwn(m.w)) u.w = m.w;
     if (m.sq !== u.sq || !u.alive) return;
     const x = +m.x, y = +m.y || 0, z = +m.z, now = performance.now(); if (!isFinite(x) || !isFinite(z) || !isFinite(y)) return;
     const L = u.nb && u.nb.length ? u.nb[u.nb.length - 1] : { t: now - 50, x: u.g.position.x, z: u.g.position.z };
@@ -11551,7 +11577,7 @@ function mpHostMsg(c, m) {
     if (!ok) return; (u.nb || (u.nb = [])).push({ t: now, x, y: Math.max(0, Math.min(8, y)), z, r: (+m.r || 0) + Math.PI }); if (u.nb.length > 12) u.nb.shift();
     return;
   }
-  if (m.t === "sh") { if (u.alive && typeof m.w === "string") { if (u.pp) dmFired(u); try { SFX.at(u.g.position, WEAP[m.w] ? m.w : "Vandal"); } catch (e) {} } return; }
+  if (m.t === "sh") { if (u.alive && typeof m.w === "string") { if (u.pp) dmFired(u); try { SFX.at(u.g.position, xWOwn(m.w) ? m.w : "Vandal"); } catch (e) {} } return; }
   if (m.t === "hit") return mpHostHit(c, u, m);
   if (m.t === "ab") return mpCastIn(c, u, m);
 }
@@ -11566,7 +11592,7 @@ function mpHostHit(c, u, m) { // a client's hit claim: target alive, enemy, in r
   const tx = t === player ? player.x : t.g.position.x, tz = t === player ? player.z : t.g.position.z;
   if (Math.hypot(tx - u.g.position.x, tz - u.g.position.z) > 120) return;
   if (now - c.nT > 1000) { c.nT = now; c.nH = 0; } if (++c.nH > 24) return;
-  const w = typeof m.w === "string" && WEAP[m.w] ? m.w : m.w === "Knife" ? "Knife" : u.w || "Vandal", dmg = Math.min(n, 255), hs = !!m.hs;
+  const w = xWOwn(m.w) ? m.w : m.w === "Knife" ? "Knife" : u.w || "Vandal", dmg = Math.min(n, 255), hs = !!m.hs;
   xHS = hs; hurt(t, dmg, u.name); try { xTag(t, dmg); } catch (e) {}
   if (t === player) { try { xDmgArc(u.g.position.x, u.g.position.z); xDmgFlash(); } catch (e) {} updHud(); if (player.hp <= 0) pDie(u.name, w); }
   else if (t.hp <= 0.001) { if (bots.indexOf(t) >= 0) kill(t, hs, u.name, w); else allyDie(t, u.name, w); }
@@ -11968,7 +11994,7 @@ function mpCliStart5(m) {
     FV.bs = {}; ma.forEach((n) => { FV.bs[n] = { cr: 0, w: "Classic", arm: 0 }; });
     try { sbReset(en, ma); } catch (e) {} mpCliKD(m.k, m.d);
     if (fsIcon.parent) fsIcon.parent.remove(fsIcon); fsM.visible = false; FV.sp = { st: "", c: null, site: "", t: 45, pt: 0, dt: 0, x: 0, z: 0 };
-    FV.atk = m.team === 0 ? !!m.atk : !m.atk; FV.pri = m.ld && m.ld[0] && WEAP[m.ld[0]] ? m.ld[0] : null; FV.sec = m.ld && WEAP[m.ld[1]] ? m.ld[1] : "Classic"; FV.cr = m.me | 0;
+    FV.atk = m.team === 0 ? !!m.atk : !m.atk; FV.pri = m.ld && xWOwn(m.ld[0]) ? m.ld[0] : null; FV.sec = m.ld && xWOwn(m.ld[1]) ? m.ld[1] : "Classic"; FV.cr = m.me | 0;
     mpCliRS(Object.assign({ me: m.me }, m.rs)); if (self) mpCliRound5(self);
     try { xHud(); updHud(); } catch (e) {}
     mpUI(); say("Online Unrated · " + (MP.pub ? "public match" : "room " + MP.code), 2200);
@@ -11983,7 +12009,7 @@ function mpCliRound5(e) { // round start: own unit back at spawn with this round
   try { onSkin(); setScope(false); xKLReset(); } catch (er) {} updHud();
 }
 function mpCliLoad(ld, a) {
-  const p = ld && ld[0] && WEAP[ld[0]] ? ld[0] : null, s = ld && ld[1] && WEAP[ld[1]] ? ld[1] : "Classic";
+  const p = ld && xWOwn(ld[0]) ? ld[0] : null, s = ld && xWOwn(ld[1]) ? ld[1] : "Classic";
   if (s !== FV.sec) bEquip(s, "pis");
   if (p !== FV.pri) { if (p) bEquip(p, "pri"); else { FV.pri = null; if (rw === "pri") swapW("pis"); slots.pri = {}; } }
   if (a != null) player.armor = a;
@@ -12024,7 +12050,7 @@ function mpCliTick5(dt) { // client: own movement + HUD; the host owns rounds, s
 // Headhunter) arrive in snapshots as the held weapon (bEquip'd into the slot), so after a round reset the Operator
 // model, its 5-round slot and, with no primary bought, a "pri" slot with nothing in it stayed until something else moved.
 function mpRdArm(ld) {
-  const p = ld && ld[0] && WEAP[ld[0]] ? ld[0] : null, s = ld && ld[1] && WEAP[ld[1]] ? ld[1] : "Classic";
+  const p = ld && xWOwn(ld[0]) ? ld[0] : null, s = ld && xWOwn(ld[1]) ? ld[1] : "Classic";
   FV.pri = p; FV.sec = s; const pm = p ? WEAP[p].mag : 0, sm = WEAP[s].mag;
   slots.pri = p ? { ammo: pm, rsv: pm * 3 } : {}; slots.pis = { ammo: sm, rsv: sm * 3 };
   rw = p ? "pri" : "pis"; ammo = slots[rw].ammo; rsv = slots[rw].rsv; reloading = 0; fireHeld = false;
@@ -12075,6 +12101,7 @@ function mpAreaHit(o, x, z, r, n, w, seg) { // host only: the remote caster's en
   if ((o.en || ffa) && player.hp > 0 && mpDist(player.x, player.z, x, z, seg) < r) { xBotDmg(player, n, by, w); try { updHud(); } catch (e) {} if (player.hp <= 0) pDie(by, w); }
   const T = ffa || !o.en ? bots : allies;
   for (let j = 0; j < T.length; j++) { const t = T[j]; if (t && t !== o.own && t.alive && t.g && mpDist(t.g.position.x, t.g.position.z, x, z, seg) < r) xBotDmg(t, n, by, w); }
+  xFFArea(o.own, o.en, w, n, (px, pz) => mpDist(px, pz, x, z, seg) < r); // the caster's team: a third
 }
 function mpStun(u, en, x, z, r, s, auth) { // the local player on every peer (screen effect); units only on the host
   const ffa = FV.dm && !FV.tdm; if ((en || ffa) && player.hp > 0 && Math.hypot(player.x - x, player.z - z) < r) { try { xConStart(s * 1000); } catch (e) {} }
@@ -12617,6 +12644,16 @@ function xvAgentWaitLabel(cv) {
     XVA.subs.push(sub); el.style.display = 'block'; sub();
   };
 }
+// perf (character draw calls): agent meshes were frustumCulled=false, so every unit's 2-6 skinned meshes were drawn
+// even behind the camera. Each skinned geometry gets one cull sphere, measured once from its skinned idle pose in the
+// mesh's own space and padded to the full idle diagonal (covers crouch, aim, reach, a falling corpse); corpses turn
+// culling back off in xDie. Same sphere on the geometry (three r149) and on the mesh (r151+ SkinnedMesh.boundingSphere).
+function xvCull(list) { const v = new THREE.Vector3(), out = [];
+  for (const o of list) { if (!o.isSkinnedMesh) continue; const g = o.geometry, pos = g && g.attributes.position, bt = o.applyBoneTransform || o.boneTransform; if (!pos || !bt) continue;
+    let s = g.userData.xvCull; if (!s) { const b = new THREE.Box3(), n = pos.count, st = Math.max(1, Math.floor(n / 1500)); for (let i = 0; i < n; i += st) { v.fromBufferAttribute(pos, i); bt.call(o, i, v); if (Number.isFinite(v.x + v.y + v.z)) b.expandByPoint(v); }
+      if (b.isEmpty()) continue; s = g.userData.xvCull = new THREE.Sphere(b.getCenter(new THREE.Vector3()), b.getSize(new THREE.Vector3()).length()); }
+    g.boundingSphere = s.clone(); if ('boundingSphere' in o) o.boundingSphere = s.clone(); o.frustumCulled = true; out.push(o); }
+  return out; }
 function xvAgent(M, kit) {
   XUB.up ||= new THREE.Vector3(0,1,0); XUB.rt ||= new THREE.Vector3(1,0,0);
   if (M.dead || M.valorant) return;
@@ -12628,14 +12665,14 @@ function xvAgent(M, kit) {
   sc.updateMatrixWorld(true); const bx = new THREE.Box3().setFromObject(sc), scale = 1.92 / (bx.max.y - bx.min.y); wr.scale.setScalar(scale); wr.position.y = -bx.min.y * scale;
   const inGun = (o) => { for (let p = o; p; p = p.parent) if (p === M.gun) return true; return false; };
   M.m.traverse((o) => { if (o.isMesh && o !== M.ring && !inGun(o)) o.visible = false; });
-  const mats = new Map(); sc.traverse((o) => { if (!o.isMesh) return; o.castShadow = true; o.frustumCulled = false; o.raycast = XNR; o.geometry.userData.shared = true;
+  const mats = new Map(), cull = []; sc.traverse((o) => { if (!o.isMesh) return; o.castShadow = true; o.frustumCulled = false; cull.push(o); o.raycast = XNR; o.geometry.userData.shared = true;
     const mat = (s) => { if (!mats.has(s)) { const m = new THREE.MeshLambertMaterial({ name:s.name, color:s.color, map:s.map, side:THREE.DoubleSide, transparent:s.transparent, alphaTest:s.alphaTest }); m.userData.agent = 1; xRimM(m, M.rim, null); mats.set(s,m); M.mats.push(m); } return mats.get(s); }; o.material = Array.isArray(o.material) ? o.material.map(mat) : mat(o.material);
   }); M.m.add(wr);
   const mx = new THREE.AnimationMixer(sc), bone = (n) => sc.getObjectByName(n), X = {mx,a:{},w:{},ub:1,nativeContact:true,sc,b:{pelvis:bone('Pelvis'),spine_01:bone('Spine1'),spine_02:bone('Spine2'),spine_03:bone('Spine3')},cs:bone('Splitter'),cb:0,yaw:0,pit:0,sn:0,shots:0,hp:null,uo:null,ut:0,lo:null,lt:0,air:false,py:null,px:null,pz:null,cur:'idle',ad:{}};
   const mk = (n,set,once) => { const c = kit[set][XUB_ST[n]], a = mx.clipAction(c); if (once) { a.setLoop(THREE.LoopOnce,1); a.clampWhenFinished = true; } X.a[n] = a; X.w[n] = 0; };
   XUB_LO.forEach((n) => mk(n,'L',n==='jump'||n==='land')); XUB_UPN.forEach((n) => mk(n,'U',n==='reload'||n==='cast'||n==='throw')); XUB_FU.forEach((n) => mk(n,'C',n!=='plant'));
   [['fire','Pistol_Shoot'],['hit','Hit_Chest'],['hitHead','Hit_Head']].forEach(([n,c]) => { const a=mx.clipAction(kit.A[c]); a.blendMode=THREE.AdditiveAnimationBlendMode; a.setLoop(THREE.LoopOnce,1); X.ad[n]=a; });
-  X.a.idle.play(); X.a.aim.play(); X.w.idle = X.w.aim = 1; mx.update(.01); M.m.updateMatrixWorld(true);
+  X.a.idle.play(); X.a.aim.play(); X.w.idle = X.w.aim = 1; mx.update(.01); M.m.updateMatrixWorld(true); X.cull = xvCull(cull);
   const hand = bone('R_Hand'); if (hand && M.gun) { const hold = new THREE.Group(), p=new THREE.Vector3(),q=new THREE.Quaternion(),s=new THREE.Vector3(); new THREE.Matrix4().copy(M.m.matrixWorld).invert().multiply(hand.matrixWorld).decompose(p,q,s); hold.quaternion.copy(q.invert()); hold.scale.set(1/s.x,1/s.y,1/s.z); hand.add(hold); hold.add(M.gun); M.gun.position.set(0,0,.03); M.gun.rotation.set(0,Math.PI,0); M.weaponHolder=hold; } // gun models are authored muzzle -Z: PI faces the muzzle the way the character looks
   X.contactLift=kit.contactLift;X.contactProbes=kit.contactProbes.map(p=>({o:sc.getObjectByName(p.mesh),indices:p.indices})).filter(p=>p.o&&p.o.isSkinnedMesh);X.contactV=new THREE.Vector3();X.contactInv=new THREE.Matrix4();X.contactShift=new THREE.Vector3();X.contactScale=new THREE.Vector3();X.contactFloor=bx.min.y;X.acts=X.a; M.ub=1; M.sx=X; M.valorant=1; M.xAt=[]; M.solOwn=()=>{M.solOwn=null;}; XSOL.mx.push(M);
   if (M.xvWait) { M.xvWait = 0; if (M.gun) M.gun.visible = true; } // the weapon waited, hidden, for the body
@@ -12885,12 +12922,15 @@ async function nmRehydrate(){const C=NM.current;if(!C||!C.scene||C.rehydrating)r
 function nmWatchContext(r){const el=r&&r.domElement;if(!el||el.nmWatched)return;el.nmWatched=true;el.addEventListener('webglcontextrestored',()=>{if(renderer===r)nmRehydrate();});}
 // Disconnected decorative islands are not playable spawn or path targets.
 function nmConnected(C){const N=C.nav.nodes,A=C.nav.adj,seen=new Uint8Array(N.length);let largest=[];for(let i=0;i<N.length;i++){if(seen[i]||(C.nav.valid&&!C.nav.valid[i]))continue;const q=[i];seen[i]=1;for(let k=0;k<q.length;k++)for(const j of A[q[k]])if(!seen[j]&&(!C.nav.valid||C.nav.valid[j])){seen[j]=1;q.push(j);}if(q.length>largest.length)largest=q;}C.playable=new Uint8Array(N.length);for(const i of largest)C.playable[i]=1;}
-function nmNear(C,x,z,y,yBand){let best=-1,bd=Infinity;const gx=Math.floor(x/2),gz=Math.floor(z/2);for(let ring=0;ring<=8;ring++){for(let dx=-ring;dx<=ring;dx++)for(let dz=-ring;dz<=ring;dz++){if(ring&&Math.abs(dx)!==ring&&Math.abs(dz)!==ring)continue;for(const i of C.cells.get((gx+dx)+','+(gz+dz))||[]){const p=C.nav.nodes[i];if(Number.isFinite(yBand)&&Number.isFinite(y)&&Math.abs(p[1]-y)>yBand)continue;const d=(p[0]-x)**2+(p[2]-z)**2+(Number.isFinite(y)?(p[1]-y)**2*2:0);if(d<bd){bd=d;best=i;}}}if(best>=0&&ring>1&&bd<(ring*2-2)**2)return best;}if(best<0)for(let i=0;i<C.nav.nodes.length;i++){if(C.playable?!C.playable[i]:(C.nav.valid&&!C.nav.valid[i]))continue;const p=C.nav.nodes[i];if(Number.isFinite(yBand)&&Number.isFinite(y)&&Math.abs(p[1]-y)>yBand)continue;const d=(p[0]-x)**2+(p[2]-z)**2+(Number.isFinite(y)?(p[1]-y)**2*2:0);if(d<bd){best=i;bd=d;}}return best;}
+// perf: nmNear runs for every nmHeight sample (nmSegment probes every 0.18 m, ground snap every bot every frame); its
+// cell lookups were a fresh 'gx,gz' string per probed cell. Numeric keys over the same cell lists (same order, same answer).
+const NM_NONE=[];function nmCellNum(C){const m=new Map();for(const [k,v] of C.cells){const c=k.indexOf(',');m.set((+k.slice(0,c)+32768)*65536+(+k.slice(c+1))+32768,v);}return C.cn=m;}
+function nmNear(C,x,z,y,yBand){let best=-1,bd=Infinity;const gx=Math.floor(x/2),gz=Math.floor(z/2);for(let ring=0;ring<=8;ring++){for(let dx=-ring;dx<=ring;dx++)for(let dz=-ring;dz<=ring;dz++){if(ring&&Math.abs(dx)!==ring&&Math.abs(dz)!==ring)continue;for(const i of (C.cn||nmCellNum(C)).get((gx+dx+32768)*65536+gz+dz+32768)||NM_NONE){const p=C.nav.nodes[i];if(Number.isFinite(yBand)&&Number.isFinite(y)&&Math.abs(p[1]-y)>yBand)continue;const d=(p[0]-x)**2+(p[2]-z)**2+(Number.isFinite(y)?(p[1]-y)**2*2:0);if(d<bd){bd=d;best=i;}}}if(best>=0&&ring>1&&bd<(ring*2-2)**2)return best;}if(best<0)for(let i=0;i<C.nav.nodes.length;i++){if(C.playable?!C.playable[i]:(C.nav.valid&&!C.nav.valid[i]))continue;const p=C.nav.nodes[i];if(Number.isFinite(yBand)&&Number.isFinite(y)&&Math.abs(p[1]-y)>yBand)continue;const d=(p[0]-x)**2+(p[2]-z)**2+(Number.isFinite(y)?(p[1]-y)**2*2:0);if(d<bd){best=i;bd=d;}}return best;}
 // Select only nearby upward support. Never snap a falling actor onto a roof above its feet.
 function nmHeight(C,x,z,y){const i=nmNear(C,x,z,Number.isFinite(y)?y:undefined);if(i<0)throw Error('No valid navigation floor');const reference=Number.isFinite(y)?y:C.nav.nodes[i][1],ray=nmHeight.r||(nmHeight.r=new THREE.Ray(new THREE.Vector3(),new THREE.Vector3(0,-1,0)));ray.origin.set(x,reference+.32,z);ray.direction.set(0,-1,0);/* perf: one scratch ray (hit.point is read before the next cast) */for(let k=0;k<24;k++){const hit=C.bvh.raycastFirst(ray,THREE.DoubleSide);if(!hit)break;if(Math.abs(hit.face.normal.y)>.45)return hit.point.y;ray.origin.y=hit.point.y-.005;}const n=C.nav.nodes[i];return Number.isFinite(y)?Math.hypot(n[0]-x,n[2]-z)<=.65&&n[1]<=reference+.32&&n[1]>=reference-.65?Math.min(reference,n[1]):reference-10:n[1];}
 var NM_Q={box:new THREE.Box3(),line:new THREE.Line3(),p:new THREE.Vector3(),q:new THREE.Vector3(),normal:new THREE.Vector3()};
-function nmBlocked(C,x,z,r,y,height=1.8){if(!Number.isFinite(y))y=nmHeight(C,x,z);const VM_=window.ValorantFeel;if(VM_&&VM_.clipBlocked&&VM_.clipBlocked(C.key,x,z,r,y,height))return true;/* player clips: same invisible walls as the server world (shared motor) */const Q=NM_Q,epsilon=.025;Q.line.start.set(x,y+r+epsilon,z);Q.line.end.set(x,y+Math.max(r+epsilon,height-r),z);Q.box.min.set(x-r,y+epsilon,z-r);Q.box.max.set(x+r,y+height,z+r);let blocked=false;
- C.bvh.shapecast({intersectsBounds:b=>b.intersectsBox(Q.box),intersectsTriangle:t=>{if(Math.max(t.a.y,t.b.y,t.c.y)<=y+epsilon)return false;const d=t.closestPointToSegment(Q.line,Q.p,Q.q);if(d<r-.012){blocked=true;return true;}return false;}});return blocked;
+function nmBlocked(C,x,z,r,y,height=1.8){if(!Number.isFinite(y))y=nmHeight(C,x,z);const VM_=window.ValorantFeel;if(VM_&&VM_.clipBlocked&&VM_.clipBlocked(C.key,x,z,r,y,height))return true;/* player clips: same invisible walls as the server world (shared motor) */const Q=NM_Q,epsilon=.025;Q.line.start.set(x,y+r+epsilon,z);Q.line.end.set(x,y+Math.max(r+epsilon,height-r),z);Q.box.min.set(x-r,y+epsilon,z-r);Q.box.max.set(x+r,y+height,z+r);Q.y=y+epsilon;Q.r=r-.012;Q.hit=false;
+ C.bvh.shapecast(Q.cb||(Q.cb={intersectsBounds:b=>b.intersectsBox(Q.box),intersectsTriangle:t=>{if(Math.max(t.a.y,t.b.y,t.c.y)<=Q.y)return false;const d=t.closestPointToSegment(Q.line,Q.p,Q.q);if(d<Q.r){Q.hit=true;return true;}return false;}}));return Q.hit;/* perf: one callback object reused (no closures per call) */
 }
 // Playable leash (same rule as the server world, shared motor leashOk): horizontal moves stay on the navigation footprint.
 // The player motor asks it through world.leash (feel moveP); the page's own direct moves (offline dash, knife lunge,
@@ -12905,7 +12945,7 @@ function nmPlant(C,x,z){const t=C.meta.transform,p=C.meta.apiProjection,ca=Math.
 // falls back to the first qualifying cell, then to the meta anchor.
 function nmSiteGoals(C){if(!C.plants||!C.plants.rows)return;const t=C.meta.transform,p=C.meta.apiProjection,ca=Math.cos(t.angle),sa=Math.sin(t.angle),inv=(u,v)=>{const sx=((u+.5)/1024-p.xScalarToAdd)/(100*p.xMultiplier),sz=-(((v+.5)/1024-p.yScalarToAdd)/(100*p.yMultiplier)),X=sx-t.cx,Z=sz-t.cz;return [ca*X+sa*Z,-sa*X+ca*Z];},out={};for(const site of Object.keys(C.meta.sites)){let n=0,su=0,sv=0;for(const v of Object.keys(C.plants.rows))for(const r of C.plants.rows[v]){if(r[2]!==site)continue;n++;su+=(r[0]+r[1])/2;sv+=+v;}if(!n)continue;const put=(u,v)=>{const g=inv(u,v),i=nmNear(C,g[0],g[1]);if(i<0)return false;const q=C.nav.nodes[i];if(Math.hypot(q[0]-g[0],q[2]-g[1])>1.5||nmPlant(C,q[0],q[2])!==site)return false;out[site]=[q[0],q[2]];return true;};if(put(su/n,sv/n))continue;outer:for(const v of Object.keys(C.plants.rows))for(const r of C.plants.rows[v]){if(r[2]!==site)continue;for(let u=r[0];u<r[1];u+=2)if(put(u,+v))break outer;}}C.siteGoals=out;}
 // A* follows only edges sampled from the original walkable mesh. No legacy lane waypoints are used.
-function nmPath(C,start,end,banned){const cacheKey=start+'>'+end,noCache=banned&&banned.size>0;if(!noCache&&NM.routeCache.has(cacheKey))return NM.routeCache.get(cacheKey);const N=C.nav.nodes,A=C.nav.adj,cost=new Float32Array(N.length);cost.fill(Infinity);cost[start]=0;const prev=new Int32Array(N.length),closed=new Uint8Array(N.length);prev.fill(-1);const heap=[],push=(i,s)=>{let k=heap.length;heap.push([i,s]);while(k){const p=(k-1)>>1;if(heap[p][1]<=s)break;heap[k]=heap[p];k=p;}heap[k]=[i,s];},pop=()=>{const first=heap[0],last=heap.pop();if(heap.length){let k=0;while(k*2+1<heap.length){let c=k*2+1;if(c+1<heap.length&&heap[c+1][1]<heap[c][1])c++;if(heap[c][1]>=last[1])break;heap[k]=heap[c];k=c;}heap[k]=last;}return first[0];},heur=i=>Math.hypot(N[i][0]-N[end][0],N[i][2]-N[end][2]);push(start,heur(start));let found=false,steps=0;
+function nmPath(C,start,end,banned){const cacheKey=start+'>'+end,noCache=banned&&banned.size>0;if(!noCache&&NM.routeCache.has(cacheKey))return NM.routeCache.get(cacheKey);const N=C.nav.nodes,A=C.nav.adj,S=C.ps&&C.ps.n===N.length?C.ps:(C.ps={n:N.length,cost:new Float32Array(N.length),prev:new Int32Array(N.length),closed:new Uint8Array(N.length),hi:[],hs:[]}),cost=S.cost,prev=S.prev,closed=S.closed;cost.fill(Infinity);cost[start]=0;prev.fill(-1);closed.fill(0);/* perf: scratch arrays reused per map (one search at a time), heap as index/score arrays: same order as the old [i,s] pairs */const hi=S.hi,hs=S.hs;hi.length=0;hs.length=0;const heap=hi,push=(i,s)=>{let k=hi.length;hi.push(i);hs.push(s);while(k){const p=(k-1)>>1;if(hs[p]<=s)break;hi[k]=hi[p];hs[k]=hs[p];k=p;}hi[k]=i;hs[k]=s;},pop=()=>{const first=hi[0],li=hi.pop(),ls=hs.pop();if(hi.length){let k=0;while(k*2+1<hi.length){let c=k*2+1;if(c+1<hi.length&&hs[c+1]<hs[c])c++;if(hs[c]>=ls)break;hi[k]=hi[c];hs[k]=hs[c];k=c;}hi[k]=li;hs[k]=ls;}return first;},heur=i=>Math.hypot(N[i][0]-N[end][0],N[i][2]-N[end][2]);push(start,heur(start));let found=false,steps=0;
  while(heap.length&&steps++<N.length*12){const a=pop();if(closed[a])continue;closed[a]=1;if(a===end){found=true;break;}for(const b of A[a]){if(closed[b]||(banned&&banned.has(a+'>'+b)))continue;const d=cost[a]+Math.hypot(N[a][0]-N[b][0],N[a][2]-N[b][2])+Math.abs(N[a][1]-N[b][1])*.2;if(d<cost[b]){cost[b]=d;prev[b]=a;push(b,d+heur(b));}}}
  const path=[];if(found)for(let i=end;i>=0;i=prev[i]){path.push(i);if(i===start)break;}path.reverse();if(noCache)return path;if(NM.routeCache.size>200)NM.routeCache.clear();NM.routeCache.set(cacheKey,path);return path;
 }
@@ -13077,7 +13117,7 @@ moveP=function(dt,run,hold){
  // Preserve explicit ability impulses; ordinary air steering never creates a speed boost.
  if(kLg>0){const t=Math.min(dt,kLg);kLg-=t;const nx=P.x+kLx*8*t,nz=P.z+kLz*8*t;if(!world.blocked(nx,nz,.4,P.y,1.8-P.ch)&&!(world.leash&&!world.leash(nx,nz,P.y,P.x,P.z))){P.x=nx;P.z=nz;}}
 };
-gSpread=function(w,W,B){const p=vfProfile(w),P=B||player||{},state={sf:B?(B.sf!=null?B.sf:B.mv?1:0):P.sf,mv:P.mv,air:P.air,cr:P.cr,wk:P.wk,lp:P.lp||0,ads:B?0:ads};let cone=VF.model.spread(state,w,p);if(!B){const recovery=VF.model.recoveryTime(w),elapsed=VF.time-VF.shot,bloom=elapsed<recovery?VF.bloom*Math.max(0,1-elapsed/recovery):0;cone+=bloom;if(xCU>performance.now())cone+=.06;if(xAD.bs)cone+=.045;}else cone+=Math.min(B.n||0,10)*.0025*(W.rec||1);return cone;};
+gSpread=function(w,W,B){const p=vfProfile(w),P=B||player||{},state={sf:B?(B.sf!=null?B.sf:B.mv?1:0):P.sf,mv:P.mv,air:P.air,cr:P.cr,wk:P.wk,lp:P.lp||0,ls:P.ls||0,ads:B?0:ads};let cone=VF.model.spread(state,w,p);if(!B){const recovery=VF.model.recoveryTime(w),elapsed=VF.time-VF.shot,bloom=elapsed<recovery?VF.bloom*Math.max(0,1-elapsed/recovery):0;cone+=bloom;if(xCU>performance.now())cone+=.06;if(xAD.bs)cone+=.045;}else cone+=Math.min(B.n||0,10)*.0025*(W.rec||1);return cone;};
 // Circular angular spread in the shot's own basis, with a stable early climb and late directional drift.
 gFire=function(d,w,W){const M=VF.model;M.sprayReset(VF,w,VF.time);const cone=gSpread(w,W),disc=M.disk(),right=new THREE.Vector3().crossVectors(d,new THREE.Vector3(0,1,0)).normalize();if(right.lengthSq()<.5)right.set(1,0,0);const up=new THREE.Vector3().crossVectors(right,d).normalize(),weight=(W.rec||1)*(player.cr?.85:1)*(ads?.85:1)*M.recoilMove(player,w);
  M.sprayStep(VF,w,weight,VF.time,Math.random,M.bloomCap({cr:player.cr,ads},w,vfProfile(w)));const jit=W.pel?0:1;VF.pelCone=W.pel?cone:0;/* pellet guns: xPellets spreads every pellet over this cone */
@@ -13316,7 +13356,7 @@ function netClean(m){if(!m||typeof m!=='object'||Array.isArray(m)||typeof m.t!==
  // Snapshot-shaped frames ('s', and 'end' / 're', which the page replays through the snapshot path): everything iterated.
  const snap=m=>{m.u=rows(m.u);m.k=kd(m.k);m.d=kd(m.d);m.ev=arr(m.ev).filter(e=>Array.isArray(e)&&str(e[0]));if(m.fx!==undefined)m.fx=arr(m.fx).filter(e=>obj(e)&&vec(e.p));if(m.fw!==undefined)m.fw=arr(m.fw).filter(r=>Array.isArray(r)&&num(r[0])&&str(r[1])&&num(r[2])&&num(r[3])&&num(r[4]));if(m.tl!==undefined&&!num(m.tl))delete m.tl;};
  // Round state (alone, or inside 'start' / 'ao'): the spike row, and the per-agent state the page walks (Reyna souls, ability block, statuses).
- const rs=r=>{if(!obj(r)||!Array.isArray(r.sp)||r.sp.length<9)return null;if(r.ld!==undefined&&!Array.isArray(r.ld))r.ld=[null,'Classic'];if(r.tw!==undefined&&!(r.tw===null||typeof r.tw==='string'&&WEAP[r.tw]))r.tw=null;if(r.status!==undefined&&!obj(r.status))delete r.status;if(r.channel!==undefined&&!obj(r.channel))r.channel=null;
+ const rs=r=>{if(!obj(r)||!Array.isArray(r.sp)||r.sp.length<9)return null;const wk=v=>typeof v==='string'&&Object.prototype.hasOwnProperty.call(WEAP,v);/* own weapon keys only: '__proto__' / 'constructor' passed WEAP[n] and threw in the skin path (onSkin) */if(r.ld!==undefined){if(!Array.isArray(r.ld))r.ld=[null,'Classic'];else r.ld=[wk(r.ld[0])?r.ld[0]:null,wk(r.ld[1])?r.ld[1]:'Classic'];}if(r.tw!==undefined&&!(r.tw===null||wk(r.tw)))r.tw=null;if(r.status!==undefined&&!obj(r.status))delete r.status;if(r.channel!==undefined&&!obj(r.channel))r.channel=null;
   if(r.ab!==undefined){if(!obj(r.ab))delete r.ab;else{if(r.ab.cool!==undefined&&!obj(r.ab.cool))delete r.ab.cool;if(r.ab.anchor!=null&&!vec(r.ab.anchor))r.ab.anchor=null;}}
   if(r.reyna!==undefined&&r.reyna!==null){if(!obj(r.reyna))r.reyna=null;else r.reyna.souls=arr(r.reyna.souls).filter(o=>obj(o)&&(str(o.id)||num(o.id))&&vec(o.p));}
   r.rv=arr(r.rv).filter(x=>Array.isArray(x)&&x.length>=4&&x.every(num));if(r.cr!==undefined)r.cr=kd(r.cr);if(r.sc!==undefined&&!(Array.isArray(r.sc)&&r.sc.length===2&&r.sc.every(num)))return null;
@@ -13341,7 +13381,7 @@ function netClean(m){if(!m||typeof m!=='object'||Array.isArray(m)||typeof m.t!==
  else if(t==='ac'){if(!num(m.i)||!str(m.ag)||!str(m.k))return null;for(const k of ['o','d','p'])if(m[k]!==undefined&&!vec(m[k]))return null;for(const k of ['pw','b'])if(m[k]!==undefined&&!num(m[k]))delete m[k];/* Sova bolt charge / bounces */}
  else if(t==='ao'){if(m.rs!==undefined&&!rs(m.rs))delete m.rs;}
  return m;}
-function netConnect(create,code,publicRoom){if(create&&['ascent','bind','haven','split','lotus','breeze','random'].includes(window.xQMap))MP.map=window.xQMap;mpReset();MP.st='conn';mpMsg(create?'Creating server room…':'Joining server room…');mpUI();NET.host=create;const q=new URLSearchParams({code,create:create?'1':'0',mode:MP.mode,map:MP.map==='random'?['ascent','bind','haven','split','lotus','breeze'][Math.floor(Math.random()*6)]:MP.map,public:publicRoom?'1':'0'}),ws=new WebSocket(NET.url.replace('https:','wss:')+'/connect?'+q);NET.socket=ws;MP.code=code;MP.pub=!!publicRoom;MP.loadT=performance.now();ws.onopen=async()=>{const token=await netProfileToken();if(NET.socket===ws)netSend({t:'hi',n:MP.name,ag:J.pick||'Jett',token});};ws.onmessage=e=>{if(NET.socket!==ws)return;let m;try{m=JSON.parse(e.data);}catch(e){return;}m=netClean(m);if(!m)return;MP.last=performance.now();try{netOnMsg(m);}catch(err){/* never let one bad server frame throw out of the socket handler; counted for the fuzz test */NET.dropped=(NET.dropped||0)+1;const w=String(err&&err.message||err).slice(0,160)+' @'+m.t;NET.drops=NET.drops||[];if(NET.drops.length<20&&!NET.drops.includes(w))NET.drops.push(w);}};const netOnMsg=m=>{if(m.t==='hello')return;if(m.t==='welcome'){MP.name=String(m.name);MP.me=m.you;const input=mpEl('xOnName');if(input)input.value=MP.name;return;}if(m.t==='room'){MP.on=true;MP.role='client';MP.room=m;MP.mode=m.mode;MP.map=m.map;if(MP.st!=='game'&&MP.st!=='post')MP.st='room';NET.host=!!m.pl.find(p=>p.n===MP.name&&p.h);mpMsg('Connected to game server');return mpUI();}if(m.t==='start'){NET.ready=false;NET.latest=null;NET.loadAt=performance.now();NET.lpAt=0;MP.hc={open:true,send(m){if(m.t!=='hit'&&(m.t!=='in'||Number.isSafeInteger(m.seq)))netSend(m);}};return mpCliMsg(m);}if(m.t==='s'){NET.latest=m;NET.receivedAt=performance.now();NET.serverAge=Date.now()-m.serverTime;NET.tickMs=m.tickMs;if(NET.ready){mpCliMsg(m);netSyncEffects(m.fx||[]);}return;}if(m.t==='ac'&&m.ag==='Sage'&&m.k==='c')return;if(m.t==='ao'){if(m.rs)mpCliRS(m.rs);if(!m.ok){sgNo();say('Ability unavailable or target invalid',1000);}else if(J.pick==='Omen'&&(m.k==='x'||m.k==='c'))say(m.k==='x'?'From the Shadows · 3 s':'Shrouded Step · 1 s',1000);return;}if(m.t==='po'){const c=Number(m.c);if(Number.isFinite(c))MP.ping=Math.max(0,Math.round(performance.now()-c));return;}mpCliMsg(m);};ws.onclose=event=>{if(NET.socket!==ws)return;NET.lastClose={code:event.code,reason:event.reason,at:Date.now()};NET.socket=null;const was=MP.st==='game',room=MP.code,loadingMatch=!!NET.loadAt&&!NET.ready;NET.loadAt=0;mpReset();mpMsg(event.reason==='Load timed out'?'Loading the match took too long, so the server closed your seat. Rejoin room '+room+' to try again; closing other tabs or apps can speed up loading.':event.reason==='Connection idle'&&loadingMatch?'Lost contact with the game server while the match was loading. Rejoin room '+room+' to try again.':event.reason==='Connection idle'?'Connection timed out while the client was inactive. Rejoin room '+room+' if another player is still connected.':event.code===1012?'The game server restarted. Join or create a room again.':'Connection to the game server was interrupted. Try rejoining room '+room+'.');if(was)mpExitGame();mpUI();};ws.onerror=()=>mpMsg('Could not reach the game server. Try again shortly.');}
+function netConnect(create,code,publicRoom){if(create&&['ascent','bind','haven','split','lotus','breeze','random'].includes(window.xQMap))MP.map=window.xQMap;mpReset();MP.st='conn';mpMsg(create?'Creating server room…':'Joining server room…');mpUI();NET.host=create;const q=new URLSearchParams({code,create:create?'1':'0',mode:MP.mode,map:MP.map==='random'?['ascent','bind','haven','split','lotus','breeze'][Math.floor(Math.random()*6)]:MP.map,public:publicRoom?'1':'0'}),ws=new WebSocket(NET.url.replace('https:','wss:')+'/connect?'+q);NET.socket=ws;MP.code=code;MP.pub=!!publicRoom;MP.loadT=performance.now();ws.onopen=async()=>{const token=await netProfileToken();if(NET.socket===ws)netSend({t:'hi',n:MP.name,ag:J.pick||'Jett',token,sk:typeof xskWire==='function'?xskWire():undefined});};ws.onmessage=e=>{if(NET.socket!==ws)return;let m;try{m=JSON.parse(e.data);}catch(e){return;}m=netClean(m);if(!m)return;MP.last=performance.now();try{netOnMsg(m);}catch(err){/* never let one bad server frame throw out of the socket handler; counted for the fuzz test */NET.dropped=(NET.dropped||0)+1;const w=String(err&&err.message||err).slice(0,160)+' @'+m.t;NET.drops=NET.drops||[];if(NET.drops.length<20&&!NET.drops.includes(w))NET.drops.push(w);}};const netOnMsg=m=>{if(m.t==='hello')return;if((m.t==='sk'||m.t==='sks'||m.t==='skr')&&typeof xskNet==='function')return xskNet(m);if(m.t==='welcome'){MP.name=String(m.name);MP.me=m.you;const input=mpEl('xOnName');if(input)input.value=MP.name;return;}if(m.t==='room'){MP.on=true;MP.role='client';MP.room=m;MP.mode=m.mode;MP.map=m.map;if(MP.st!=='game'&&MP.st!=='post')MP.st='room';NET.host=!!m.pl.find(p=>p.n===MP.name&&p.h);mpMsg('Connected to game server');return mpUI();}if(m.t==='start'){NET.ready=false;NET.latest=null;NET.loadAt=performance.now();NET.lpAt=0;MP.hc={open:true,send(m){if(m.t!=='hit'&&(m.t!=='in'||Number.isSafeInteger(m.seq)))netSend(m);}};return mpCliMsg(m);}if(m.t==='s'){NET.latest=m;NET.receivedAt=performance.now();NET.serverAge=Date.now()-m.serverTime;NET.tickMs=m.tickMs;if(NET.ready){mpCliMsg(m);netSyncEffects(m.fx||[]);}return;}if(m.t==='ac'&&m.ag==='Sage'&&m.k==='c')return;if(m.t==='ao'){if(m.rs)mpCliRS(m.rs);if(!m.ok){sgNo();say('Ability unavailable or target invalid',1000);}else if(J.pick==='Omen'&&(m.k==='x'||m.k==='c'))say(m.k==='x'?'From the Shadows · 3 s':'Shrouded Step · 1 s',1000);return;}if(m.t==='po'){const c=Number(m.c);if(Number.isFinite(c))MP.ping=Math.max(0,Math.round(performance.now()-c));return;}mpCliMsg(m);};ws.onclose=event=>{if(NET.socket!==ws)return;NET.lastClose={code:event.code,reason:event.reason,at:Date.now()};NET.socket=null;const was=MP.st==='game',room=MP.code,loadingMatch=!!NET.loadAt&&!NET.ready;NET.loadAt=0;mpReset();mpMsg(event.reason==='Load timed out'?'Loading the match took too long, so the server closed your seat. Rejoin room '+room+' to try again; closing other tabs or apps can speed up loading.':event.reason==='Connection idle'&&loadingMatch?'Lost contact with the game server while the match was loading. Rejoin room '+room+' to try again.':event.reason==='Connection idle'?'Connection timed out while the client was inactive. Rejoin room '+room+' if another player is still connected.':event.code===1012?'The game server restarted. Join or create a room again.':'Connection to the game server was interrupted. Try rejoining room '+room+'.');if(was)mpExitGame();mpUI();};ws.onerror=()=>mpMsg('Could not reach the game server. Try again shortly.');}
 mpCreate=function(pub,mode){MP.mode=mode||MP.mode;netConnect(true,mpCode(),pub);};
 mpJoin=function(code){code=String(code||'').toUpperCase();if(!/^[A-HJ-NP-Z2-9]{6}$/.test(code)){mpMsg('Enter the six-character room code.');return;}netConnect(false,code,false);};
 mpQuick=async function(mode){MP.mode=mode||MP.mode;mpMsg('Finding a live server room…');try{const r=await fetch(NET.url+'/rooms'),data=await r.json(),room=data.rooms.find(r=>r.mode===MP.mode&&r.players<10&&(window.xQMap==='random'||r.map===(window.xQMap||MP.map)));if(room)netConnect(false,room.code,true);else mpCreate(true,MP.mode);}catch(e){mpMsg('Room list unavailable. Try a private room.');}};
@@ -13425,13 +13465,13 @@ const netFloor=new Map();
 function xdFloorList(){return NET.socket&&MP.st==='game'&&MP.m5?[...netFloor.values()]:(xdOn()?XD.L:null);}
 function netFloorClear(){for(const d of netFloor.values()){scene.remove(d.m);XD.P.push(d.m);}netFloor.clear();}
 function netFloorSync(rows){if(!Array.isArray(rows))return;const ids=new Set();for(const r of rows){if(!Array.isArray(r)||r.length<5||!WEAP[r[1]])continue;const [id,w,x,y,z]=r;if(![x,y,z].every(Number.isFinite))continue;ids.add(id);let d=netFloor.get(id);
-  if(!d){const m=xdMesh();m.rotation.set(0,(id*2.399)%6.283,0);scene.add(m);try{xdModel(m,w);}catch(e){}d={id,w,x,y,z,m};netFloor.set(id,d);}Object.assign(d,{w,x,y,z});d.m.position.set(x,y+.08,z);}
+  if(!d){const m=xdMesh();m.rotation.set(0,(id*2.399)%6.283,0);scene.add(m);try{xdModel(m,w);}catch(e){}d={id,w,x,y,z,m};netFloor.set(id,d);}Object.assign(d,{w,x,y,z});if(typeof r[5]==='string')d.sk=r[5];else delete d.sk;d.m.position.set(x,y+.08,z);}
  for(const [id,d]of netFloor)if(!ids.has(id)){scene.remove(d.m);XD.P.push(d.m);netFloor.delete(id);}}
 const netFloorSnap0=mpCliSnap;mpCliSnap=function(m){const r=netFloorSnap0.apply(this,arguments);if(NET.socket&&MP.m5&&m&&m.fw)netFloorSync(m.fw);return r;};
 const netFloorRS0=mpCliRS;// The saved loadout (ld) is not the held gun while the server has swapped one in for an ult or device (Tour De Force's
 // Operator, Headhunter's Sheriff: rs.tw). Re-applying ld then took the swapped gun out of the page's hand and sent
 // 'equip' for the old one, which ended Tour De Force on the server the moment it started (ult points spent, no Operator).
-mpCliRS=function(m){const r=netFloorRS0.apply(this,arguments);if(NET.socket&&MP.m5&&Array.isArray(m.ld)&&player.hp>0){const tw=m.tw&&WEAP[m.tw]?m.tw:null,p=m.ld[0]&&WEAP[m.ld[0]]?m.ld[0]:null,sec=m.ld[1]&&WEAP[m.ld[1]]?m.ld[1]:null;if(!(tw&&(FV.pri===tw||FV.sec===tw))&&(p!==FV.pri||(sec&&sec!==FV.sec)))mpCliLoad(m.ld);}return r;};
+mpCliRS=function(m){const r=netFloorRS0.apply(this,arguments);if(NET.socket&&MP.m5&&Array.isArray(m.ld)&&player.hp>0){const tw=xWOwn(m.tw)?m.tw:null,p=xWOwn(m.ld[0])?m.ld[0]:null,sec=xWOwn(m.ld[1])?m.ld[1]:null;if(!(tw&&(FV.pri===tw||FV.sec===tw))&&(p!==FV.pri||(sec&&sec!==FV.sec)))mpCliLoad(m.ld);}return r;};
 const netFloorReset0=mpReset;mpReset=function(){netFloorClear();return netFloorReset0.apply(this,arguments);};
 addEventListener('keydown',e=>{if(!(NET.socket&&MP.st==='game'&&MP.m5)||xKbSkip(e)||e.repeat||!running||paused||player.hp<=0)return;
  if(e.code==='KeyF'){const d=xdLook([...netFloor.values()]);if(d){netSend({t:'pick',id:d.id});e.stopImmediatePropagation();}return;}
@@ -14077,6 +14117,294 @@ if(typeof nmPath==='function'&&typeof nmNext==='function'){/* native maps presen
   if(o.length){const r=BotRoutes.steer(u.g.position,o,vx,vz,team.indexOf(u),1.8,XBV.sv);vx=r[0];vz=r[1];}}
  return sm.call(this,u,dt,vx,vz);};}
 // ---- END BOT VARIETY ----
+// ---- WEAPON SKINS ----
+var XSK_CAT = {"v":2,"note":"Valorant collection, skin and variant names (valorant-api.com catalogue; names only). Visuals are Valorstrike procedural designs themed on each palette; no Riot textures or models. Every skin is free. A skin id is a collection id (Base) or collection.N for the weapon's Nth variant.","categories":[["Sidearms",["Classic","Shorty","Frenzy","Ghost","Sheriff"]],["SMGs",["Stinger","Spectre"]],["Shotguns",["Bucky","Judge"]],["Rifles",["Bulldog","Guardian","Phantom","Vandal"]],["Sniper Rifles",["Marshal","Outlaw","Operator"]],["Heavy",["Ares","Odin"]],["Melee",["Knife"]]],"collections":[{"id":"standard","name":"Standard","tier":"Standard","k":0,"desc":"The factory finish.","pal":{},"cc":{},"skins":{"Classic":{"n":"Classic","ch":["Base"]},"Shorty":{"n":"Shorty","ch":["Base"]},"Frenzy":{"n":"Frenzy","ch":["Base"]},"Ghost":{"n":"Ghost","ch":["Base"]},"Sheriff":{"n":"Sheriff","ch":["Base"]},"Stinger":{"n":"Stinger","ch":["Base"]},"Spectre":{"n":"Spectre","ch":["Base"]},"Bucky":{"n":"Bucky","ch":["Base"]},"Judge":{"n":"Judge","ch":["Base"]},"Bulldog":{"n":"Bulldog","ch":["Base"]},"Guardian":{"n":"Guardian","ch":["Base"]},"Phantom":{"n":"Phantom","ch":["Base"]},"Vandal":{"n":"Vandal","ch":["Base"]},"Marshal":{"n":"Marshal","ch":["Base"]},"Outlaw":{"n":"Outlaw","ch":["Base"]},"Operator":{"n":"Operator","ch":["Base"]},"Ares":{"n":"Ares","ch":["Base"]},"Odin":{"n":"Odin","ch":["Base"]},"Knife":{"n":"Knife","ch":["Base"]}}},{"id":"prime","name":"Prime","tier":"Premium","k":2,"desc":"Ivory plating, gold trim and a blue energy core.","pal":{"a":"#ece6d6","b":"#c9a24a","e":"#4fb6ff"},"cc":{"Orange":{"a":"#26170c","b":"#e8742a","e":"#ff9a2a"},"Blue":{"a":"#121a2c","b":"#2f5fa8","e":"#3fa9ff"},"Yellow":{"a":"#24210f","b":"#e3c22a","e":"#fff04a"}},"skins":{"Classic":{"n":"Prime Classic","ch":["Base","Orange","Blue","Yellow"]},"Spectre":{"n":"Prime Spectre","ch":["Base","Orange","Blue","Yellow"]},"Guardian":{"n":"Prime Guardian","ch":["Base","Orange","Blue","Yellow"]},"Vandal":{"n":"Prime Vandal","ch":["Base","Orange","Blue","Yellow"]},"Knife":{"n":"Prime Knife","ch":["Base"]}}},{"id":"prime2","name":"Prime//2.0","tier":"Premium","k":2,"desc":"Black alloy with gold bands and a warm core glow.","pal":{"a":"#1c1f24","b":"#d4af37","e":"#ffcf4a"},"cc":{"Gold":{"a":"#1d1a12","b":"#d4af37","e":"#ffd23a"},"Green":{"a":"#10201a","b":"#2f8a5a","e":"#5fffb0"},"Orange":{"a":"#26170c","b":"#e8742a","e":"#ff9a2a"}},"skins":{"Frenzy":{"n":"Prime//2.0 Frenzy","ch":["Base","Gold","Green","Orange"]},"Bucky":{"n":"Prime//2.0 Bucky","ch":["Base","Gold","Green","Orange"]},"Phantom":{"n":"Prime//2.0 Phantom","ch":["Base","Gold","Green","Orange"]},"Odin":{"n":"Prime//2.0 Odin","ch":["Base","Gold","Green","Orange"]},"Knife":{"n":"Prime//2.0 Knife","ch":["Base"]}}},{"id":"reaver","name":"Reaver","tier":"Premium","k":5,"desc":"Gothic black metal split by violet soul-fire seams.","pal":{"a":"#17131d","b":"#3a2a4a","e":"#a45cff"},"cc":{"Red":{"a":"#2a1214","b":"#c4232f","e":"#ff3048"},"Black":{"a":"#0d0e10","b":"#24262b","e":"#a45cff"},"White":{"a":"#eceff2","b":"#b9c0c8","e":"#a45cff"}},"skins":{"Ghost":{"n":"Reaver Ghost","ch":["Base","Red","Black","White"]},"Sheriff":{"n":"Reaver Sheriff","ch":["Base","Red","Black","White"]},"Spectre":{"n":"Reaver Spectre","ch":["Base","Red","Black","White"]},"Guardian":{"n":"Reaver Guardian","ch":["Base","Red","Black","White"]},"Phantom":{"n":"Reaver Phantom","ch":["Base","Red","Black","White"]},"Vandal":{"n":"Reaver Vandal","ch":["Base","Red","Black","White"]},"Operator":{"n":"Reaver Operator","ch":["Base","Red","Black","White"]},"Odin":{"n":"Reaver Odin","ch":["Base","Red","Black","White"]},"Knife":{"n":"Reaver Knife","ch":["Base","Red","Black","White"]}}},{"id":"glitchpop","name":"Glitchpop","tier":"Exclusive","k":4,"desc":"Hot-pink lacquer with live cyan circuit glitches.","pal":{"a":"#2a1a4a","b":"#ff4fd8","e":"#3ff6ff","p":1},"cc":{"Blue":{"a":"#121a2c","b":"#2f5fa8","e":"#3fa9ff"},"Red":{"a":"#2a1214","b":"#c4232f","e":"#ff3048"},"Gold":{"a":"#1d1a12","b":"#d4af37","e":"#ffd23a"}},"skins":{"Classic":{"n":"Glitchpop Classic","ch":["Base","Blue","Red","Gold"]},"Frenzy":{"n":"Glitchpop Frenzy","ch":["Base","Blue","Red","Gold"]},"Judge":{"n":"Glitchpop Judge","ch":["Base","Blue","Red","Gold"]},"Bulldog":{"n":"Glitchpop Bulldog","ch":["Base","Blue","Red","Gold"]},"Phantom":{"n":"Glitchpop Phantom","ch":["Base","Blue","Red","Gold"]},"Vandal":{"n":"Glitchpop Vandal","ch":["Base","Blue","Red","Gold"]},"Operator":{"n":"Glitchpop Operator","ch":["Base","Blue","Red","Gold"]},"Odin":{"n":"Glitchpop Odin","ch":["Base","Blue","Red","Gold"]},"Knife":{"n":"Glitchpop Knife","ch":["Base"]}}},{"id":"oni","name":"Oni","tier":"Premium","k":2,"desc":"Lacquered white with crimson bands of a demon mask.","pal":{"a":"#e8e2d8","b":"#c4232f","e":"#ff3b3b"},"cc":{"Kumo":{"a":"#d9dde4","b":"#3b4a6b","e":"#9fc4ff"},"Hana":{"a":"#f0dde2","b":"#c4507a","e":"#ff8ab0"},"Tsubame":{"a":"#16171c","b":"#2f3a8a","e":"#6a7cff"}},"skins":{"Shorty":{"n":"Oni Shorty","ch":["Base","Kumo","Hana","Tsubame"]},"Frenzy":{"n":"Oni Frenzy","ch":["Base","Kumo","Hana","Tsubame"]},"Bucky":{"n":"Oni Bucky","ch":["Base","Kumo","Hana","Tsubame"]},"Bulldog":{"n":"Oni Bulldog","ch":["Base","Kumo","Hana","Tsubame"]},"Guardian":{"n":"Oni Guardian","ch":["Base","Kumo","Hana","Tsubame"]},"Phantom":{"n":"Oni Phantom","ch":["Base","Kumo","Hana","Tsubame"]},"Vandal":{"n":"Oni Vandal","ch":["Base","Kumo","Hana","Tsubame"]},"Ares":{"n":"Oni Ares","ch":["Base","Kumo","Hana","Tsubame"]},"Knife":{"n":"Oni Knife","ch":["Base","Kumo","Hana","Tsubame"]}}},{"id":"elderflame","name":"Elderflame","tier":"Ultra","k":5,"desc":"Dragon-scale bronze cracked with breathing fire.","pal":{"a":"#2f1b12","b":"#a8521c","e":"#ff8a1f","p":1},"cc":{"Red":{"a":"#2a1214","b":"#c4232f","e":"#ff3048"},"Blue":{"a":"#121a2c","b":"#2f5fa8","e":"#3fa9ff"},"Dark":{"a":"#0d0e10","b":"#2a2228","e":"#ff8a1f"}},"skins":{"Frenzy":{"n":"Elderflame Frenzy","ch":["Base","Red","Blue","Dark"]},"Judge":{"n":"Elderflame Judge","ch":["Base","Red","Blue","Dark"]},"Vandal":{"n":"Elderflame Vandal","ch":["Base","Red","Blue","Dark"]},"Operator":{"n":"Elderflame Operator","ch":["Base","Red","Blue","Dark"]},"Knife":{"n":"Elderflame Knife","ch":["Base"]}}},{"id":"ion","name":"Ion","tier":"Premium","k":4,"desc":"Clean white sci-fi panels with cyan energy traces.","pal":{"a":"#eef2f5","b":"#9aa6b2","e":"#2fd8ff"},"cc":{"Green":{"a":"#10201a","b":"#2f8a5a","e":"#5fffb0"},"Yellow":{"a":"#24210f","b":"#e3c22a","e":"#fff04a"},"Blue":{"a":"#121a2c","b":"#2f5fa8","e":"#3fa9ff"}},"skins":{"Frenzy":{"n":"Ion Frenzy","ch":["Base","Green","Yellow","Blue"]},"Sheriff":{"n":"Ion Sheriff","ch":["Base"]},"Spectre":{"n":"Ion Spectre","ch":["Base","Green","Yellow","Blue"]},"Bucky":{"n":"Ion Bucky","ch":["Base"]},"Phantom":{"n":"Ion Phantom","ch":["Base"]},"Vandal":{"n":"Ion Vandal","ch":["Base","Green","Yellow","Blue"]},"Operator":{"n":"Ion Operator","ch":["Base"]},"Ares":{"n":"Ion Ares","ch":["Base","Green","Yellow","Blue"]},"Knife":{"n":"Ion Knife","ch":["Base","Green","Yellow","Blue"]}}},{"id":"sovereign","name":"Sovereign","tier":"Premium","k":2,"desc":"Royal white and gold with a jade glow.","pal":{"a":"#f2efe6","b":"#d4af37","e":"#7fe6d0"},"cc":{"Green":{"a":"#10201a","b":"#2f8a5a","e":"#5fffb0"},"Teal":{"a":"#0f2223","b":"#1f8a86","e":"#3ff0e0"},"Red":{"a":"#2a1214","b":"#c4232f","e":"#ff3048"},"Silver":{"a":"#c8cdd3","b":"#7d858f","e":"#7fe6d0"},"Purple":{"a":"#1b1030","b":"#6a2c9a","e":"#c66bff"}},"skins":{"Frenzy":{"n":"Sovereign Frenzy","ch":["Base","Green","Teal","Red"]},"Ghost":{"n":"Sovereign Ghost","ch":["Base","Green","Silver","Purple"]},"Stinger":{"n":"Sovereign Stinger","ch":["Base","Green","Silver","Purple"]},"Judge":{"n":"Sovereign Judge","ch":["Base","Green","Teal","Red"]},"Guardian":{"n":"Sovereign Guardian","ch":["Base","Green","Silver","Purple"]},"Phantom":{"n":"Sovereign Phantom","ch":["Base","Green","Teal","Red"]},"Marshal":{"n":"Sovereign Marshal","ch":["Base","Green","Silver","Purple"]},"Odin":{"n":"Sovereign Odin","ch":["Base","Green","Teal","Red"]},"Knife":{"n":"Sovereign Knife","ch":["Base","Green","Teal","Red"]}}},{"id":"rgx","name":"RGX 11z Pro","tier":"Exclusive","k":4,"desc":"Matte black tech with programmable neon lines.","pal":{"a":"#16181d","b":"#363b45","e":"#ff2a6d","p":1},"cc":{"Red":{"a":"#2a1214","b":"#c4232f","e":"#ff3048"},"Blue":{"a":"#121a2c","b":"#2f5fa8","e":"#3fa9ff"},"Yellow":{"a":"#24210f","b":"#e3c22a","e":"#fff04a"}},"skins":{"Classic":{"n":"RGX 11z Pro Classic","ch":["Base","Red","Blue","Yellow"]},"Frenzy":{"n":"RGX 11z Pro Frenzy","ch":["Base","Red","Blue","Yellow"]},"Sheriff":{"n":"RGX 11z Pro Sheriff","ch":["Base","Red","Blue","Yellow"]},"Stinger":{"n":"RGX 11z Pro Stinger","ch":["Base","Red","Blue","Yellow"]},"Spectre":{"n":"RGX 11z Pro Spectre","ch":["Base","Red","Blue","Yellow"]},"Guardian":{"n":"RGX 11z Pro Guardian","ch":["Base","Red","Blue","Yellow"]},"Phantom":{"n":"RGX 11z Pro Phantom","ch":["Base","Red","Blue","Yellow"]},"Vandal":{"n":"RGX 11z Pro Vandal","ch":["Base","Red","Blue","Yellow"]},"Outlaw":{"n":"RGX 11z Pro Outlaw","ch":["Base","Red","Blue","Yellow"]},"Operator":{"n":"RGX 11z Pro Operator","ch":["Base","Red","Blue","Yellow"]},"Knife":{"n":"RGX 11z Pro Knife","ch":["Base","Red","Blue","Yellow"]}}},{"id":"singularity","name":"Singularity","tier":"Exclusive","k":6,"desc":"Collapsing-star purple with a pulsing event glow.","pal":{"a":"#1b0f2e","b":"#5b2a9a","e":"#c76bff","p":1},"cc":{"Blue":{"a":"#121a2c","b":"#2f5fa8","e":"#3fa9ff"},"Red":{"a":"#2a1214","b":"#c4232f","e":"#ff3048"},"Purple":{"a":"#1b1030","b":"#6a2c9a","e":"#c66bff"},"White":{"a":"#eceff2","b":"#b9c0c8","e":"#c76bff"}},"skins":{"Ghost":{"n":"Singularity Ghost","ch":["Base","Red","White","Blue"]},"Sheriff":{"n":"Singularity Sheriff","ch":["Base","Blue","Red","Purple"]},"Spectre":{"n":"Singularity Spectre","ch":["Base","Blue","Red","Purple"]},"Phantom":{"n":"Singularity Phantom","ch":["Base","Blue","Red","Purple"]},"Vandal":{"n":"Singularity Vandal","ch":["Base","Red","White","Blue"]},"Ares":{"n":"Singularity Ares","ch":["Base","Blue","Red","Purple"]},"Knife":{"n":"Singularity Knife","ch":["Base","Red","White","Blue"]}}},{"id":"spectrum","name":"Spectrum","tier":"Exclusive","k":6,"desc":"Black chassis with a sound-reactive light bar.","pal":{"a":"#121418","b":"#2b2f36","e":"#5fffb0","p":1},"cc":{"Black":{"a":"#0d0e10","b":"#24262b","e":"#5fffb0"},"Red":{"a":"#2a1214","b":"#c4232f","e":"#ff3048"},"Purple/Pink":{"a":"#1b1030","b":"#8a3ab9","e":"#ff6fd5"}},"skins":{"Classic":{"n":"Spectrum Classic","ch":["Base","Black","Red","Purple/Pink"]},"Bulldog":{"n":"Spectrum Bulldog","ch":["Base","Black","Red","Purple/Pink"]},"Guardian":{"n":"Spectrum Guardian","ch":["Base","Black","Red","Purple/Pink"]},"Phantom":{"n":"Spectrum Phantom","ch":["Base","Black","Red","Purple/Pink"]},"Knife":{"n":"Spectrum Knife","ch":["Base","Black","Red","Purple/Pink"]}}},{"id":"champions21","name":"Champions 2021","tier":"Exclusive","k":2,"desc":"Champions black and gold.","pal":{"a":"#141518","b":"#d4af37","e":"#ffd23a"},"cc":{},"skins":{"Vandal":{"n":"Champions 2021 Vandal","ch":["Base"]},"Knife":{"n":"Champions 2021 Knife","ch":["Base"]}}},{"id":"forsaken","name":"Forsaken","tier":"Premium","k":5,"desc":"Weathered ritual steel with spectral blue seams.","pal":{"a":"#1d2430","b":"#4a5a70","e":"#7fb8ff"},"cc":{"Gold":{"a":"#1d1a12","b":"#d4af37","e":"#ffd23a"}},"skins":{"Classic":{"n":"Forsaken Classic","ch":["Base","Gold"]},"Spectre":{"n":"Forsaken Spectre","ch":["Base","Gold"]},"Vandal":{"n":"Forsaken Vandal","ch":["Base","Gold"]},"Operator":{"n":"Forsaken Operator","ch":["Base","Gold"]},"Knife":{"n":"Forsaken Knife","ch":["Base"]}}},{"id":"sentinels","name":"Sentinels of Light","tier":"Exclusive","k":1,"desc":"Radiant white stone with shards of light.","pal":{"a":"#e8f0ff","b":"#7a8cff","e":"#9fd8ff"},"cc":{"Pink":{"a":"#2a1424","b":"#ff6fb5","e":"#ff8ad0"},"Red/Green":{"a":"#1e1414","b":"#c4232f","e":"#5fffb0"},"Blue/Purple":{"a":"#141433","b":"#2f5fa8","e":"#c66bff"}},"skins":{"Shorty":{"n":"Sentinels of Light Shorty","ch":["Base","Pink","Red/Green","Blue/Purple"]},"Sheriff":{"n":"Sentinels of Light Sheriff","ch":["Base","Pink","Red/Green","Blue/Purple"]},"Spectre":{"n":"Sentinels of Light Spectre","ch":["Base","Pink","Red/Green","Blue/Purple"]},"Phantom":{"n":"Sentinels of Light Phantom","ch":["Base","Pink","Red/Green","Blue/Purple"]},"Vandal":{"n":"Sentinels of Light Vandal","ch":["Base","Pink","Red/Green","Blue/Purple"]},"Operator":{"n":"Sentinels of Light Operator","ch":["Base","Pink","Red/Green","Blue/Purple"]},"Ares":{"n":"Sentinels of Light Ares","ch":["Base","Pink","Red/Green","Blue/Purple"]},"Odin":{"n":"Sentinels of Light Odin","ch":["Base","Pink","Red/Green","Blue/Purple"]},"Knife":{"n":"Sentinels of Light Knife","ch":["Base","Pink","Red/Green","Blue/Purple"]}}},{"id":"recon","name":"Recon","tier":"Premium","k":3,"desc":"Field camouflage.","pal":{"a":"#5a6a3c","b":"#26301c"},"cc":{"Red Camo":{"a":"#6a3a32","b":"#2f1c18"},"Blue Camo":{"a":"#3a4c66","b":"#1a2433"},"Green Camo":{"a":"#4d5a35","b":"#26301c"}},"skins":{"Ghost":{"n":"Recon Ghost","ch":["Base","Red Camo","Blue Camo","Green Camo"]},"Spectre":{"n":"Recon Spectre","ch":["Base","Red Camo","Blue Camo","Green Camo"]},"Guardian":{"n":"Recon Guardian","ch":["Base","Red Camo","Blue Camo","Green Camo"]},"Phantom":{"n":"Recon Phantom","ch":["Base","Red Camo","Blue Camo","Green Camo"]},"Knife":{"n":"Recon Knife","ch":["Base","Red Camo","Blue Camo","Green Camo"]}}},{"id":"ruination","name":"Ruination","tier":"Exclusive","k":5,"desc":"Ruined black-green metal with mist-green seams.","pal":{"a":"#162520","b":"#2f4a3e","e":"#3fffb0","p":1},"cc":{"Purple":{"a":"#1b1030","b":"#6a2c9a","e":"#c66bff"},"Red/Yellow":{"a":"#2a1410","b":"#c4402f","e":"#ffd23a"},"Green":{"a":"#10201a","b":"#2f8a5a","e":"#5fffb0"}},"skins":{"Ghost":{"n":"Ruination Ghost","ch":["Base","Purple","Red/Yellow","Green"]},"Spectre":{"n":"Ruination Spectre","ch":["Base","Purple","Red/Yellow","Green"]},"Guardian":{"n":"Ruination Guardian","ch":["Base","Purple","Red/Yellow","Green"]},"Phantom":{"n":"Ruination Phantom","ch":["Base","Purple","Red/Yellow","Green"]},"Knife":{"n":"Ruination Knife","ch":["Base","Purple","Red/Yellow","Green"]}}},{"id":"kuronami","name":"Kuronami","tier":"Exclusive","k":5,"desc":"Black lacquered steel cut by thin crimson seams.","pal":{"a":"#121317","b":"#2a2c33","e":"#ff2b3a"},"cc":{"Purple":{"a":"#1b1030","b":"#6a2c9a","e":"#c66bff"},"White":{"a":"#eceff2","b":"#b9c0c8","e":"#ff2b3a"},"Black":{"a":"#0d0e10","b":"#24262b","e":"#ff2b3a"}},"skins":{"Ghost":{"n":"Kuronami Ghost","ch":["Base","Purple","White","Black"]},"Sheriff":{"n":"Kuronami Sheriff","ch":["Base","Purple","White","Black"]},"Spectre":{"n":"Kuronami Spectre","ch":["Base","Purple","White","Black"]},"Guardian":{"n":"Kuronami Guardian","ch":["Base","Purple","White","Black"]},"Phantom":{"n":"Kuronami Phantom","ch":["Base","Purple","White","Black"]},"Vandal":{"n":"Kuronami Vandal","ch":["Base","Purple","White","Black"]},"Marshal":{"n":"Kuronami Marshal","ch":["Base","Purple","White","Black"]},"Operator":{"n":"Kuronami Operator","ch":["Base","Purple","White","Black"]},"Knife":{"n":"Kuronami Knife","ch":["Base","Purple","White","Black"]}}},{"id":"araxys","name":"Araxys","tier":"Exclusive","k":6,"desc":"Alien bio-metal with a pulsing acid-green glow.","pal":{"a":"#1a1f1c","b":"#5d6e2a","e":"#c6ff3a","p":1},"cc":{"Purple":{"a":"#1b1030","b":"#6a2c9a","e":"#c66bff"},"Black":{"a":"#0d0e10","b":"#24262b","e":"#c6ff3a"},"Silver":{"a":"#c8cdd3","b":"#7d858f","e":"#c6ff3a"}},"skins":{"Shorty":{"n":"Araxys Shorty","ch":["Base","Purple","Black","Silver"]},"Sheriff":{"n":"Araxys Sheriff","ch":["Base","Purple","Black","Silver"]},"Bulldog":{"n":"Araxys Bulldog","ch":["Base","Purple","Black","Silver"]},"Guardian":{"n":"Araxys Guardian","ch":["Base","Purple","Black","Silver"]},"Phantom":{"n":"Araxys Phantom","ch":["Base","Purple","Black","Silver"]},"Vandal":{"n":"Araxys Vandal","ch":["Base","Purple","Black","Silver"]},"Outlaw":{"n":"Araxys Outlaw","ch":["Base","Purple","Black","Silver"]},"Operator":{"n":"Araxys Operator","ch":["Base","Purple","Black","Silver"]},"Knife":{"n":"Araxys Knife","ch":["Base","Purple","Black","Silver"]}}},{"id":"prelude","name":"Prelude to Chaos","tier":"Exclusive","k":1,"desc":"Void-black shell splintered by violet light.","pal":{"a":"#14121c","b":"#3a2f66","e":"#8f7bff","p":1},"cc":{"Green":{"a":"#10201a","b":"#2f8a5a","e":"#5fffb0"},"White":{"a":"#eceff2","b":"#b9c0c8","e":"#8f7bff"},"Blue":{"a":"#121a2c","b":"#2f5fa8","e":"#3fa9ff"}},"skins":{"Shorty":{"n":"Prelude to Chaos Shorty","ch":["Base","Green","White","Blue"]},"Sheriff":{"n":"Prelude to Chaos Sheriff","ch":["Base","Green","White","Blue"]},"Stinger":{"n":"Prelude to Chaos Stinger","ch":["Base","Green","White","Blue"]},"Spectre":{"n":"Prelude to Chaos Spectre","ch":["Base","Green","White","Blue"]},"Bulldog":{"n":"Prelude to Chaos Bulldog","ch":["Base","Green","White","Blue"]},"Phantom":{"n":"Prelude to Chaos Phantom","ch":["Base","Green","White","Blue"]},"Vandal":{"n":"Prelude to Chaos Vandal","ch":["Base","Green","White","Blue"]},"Operator":{"n":"Prelude to Chaos Operator","ch":["Base","Green","White","Blue"]},"Knife":{"n":"Prelude to Chaos Knife","ch":["Base","Green","White","Blue"]}}},{"id":"gaia","name":"Gaia's Vengeance","tier":"Premium","k":5,"desc":"Living bark and moss threaded with green light.","pal":{"a":"#1e2b1c","b":"#4c7a3a","e":"#7dff8a"},"cc":{"Blue":{"a":"#121a2c","b":"#2f5fa8","e":"#3fa9ff"},"Green":{"a":"#10201a","b":"#2f8a5a","e":"#5fffb0"},"Orange":{"a":"#26170c","b":"#e8742a","e":"#ff9a2a"}},"skins":{"Shorty":{"n":"Gaia's Vengeance Shorty","ch":["Base","Blue","Green","Orange"]},"Ghost":{"n":"Gaia's Vengeance Ghost","ch":["Base","Blue","Green","Orange"]},"Bucky":{"n":"Gaia's Vengeance Bucky","ch":["Base","Blue","Green","Orange"]},"Guardian":{"n":"Gaia's Vengeance Guardian","ch":["Base","Blue","Green","Orange"]},"Phantom":{"n":"Gaia's Vengeance Phantom","ch":["Base","Blue","Green","Orange"]},"Vandal":{"n":"Gaia's Vengeance Vandal","ch":["Base","Blue","Green","Orange"]},"Marshal":{"n":"Gaia's Vengeance Marshal","ch":["Base","Blue","Green","Orange"]},"Ares":{"n":"Gaia's Vengeance Ares","ch":["Base","Blue","Green","Orange"]},"Knife":{"n":"Gaia's Vengeance Knife","ch":["Base","Blue","Green","Orange"]}}},{"id":"blastx","name":"BlastX","tier":"Exclusive","k":2,"desc":"Toy-blaster white with orange bands and a blue core.","pal":{"a":"#f2f2ee","b":"#ff7a1a","e":"#34c3ff"},"cc":{"Black":{"a":"#0d0e10","b":"#24262b","e":"#34c3ff"},"Yellow":{"a":"#24210f","b":"#e3c22a","e":"#fff04a"},"Pink":{"a":"#2a1424","b":"#ff6fb5","e":"#ff8ad0"}},"skins":{"Frenzy":{"n":"BlastX Frenzy","ch":["Base","Black","Yellow","Pink"]},"Spectre":{"n":"BlastX Spectre","ch":["Base","Black","Yellow","Pink"]},"Phantom":{"n":"BlastX Phantom","ch":["Base","Black","Yellow","Pink"]},"Odin":{"n":"BlastX Odin","ch":["Base","Black","Yellow","Pink"]},"Knife":{"n":"BlastX Knife","ch":["Base","Black","Yellow","Pink"]}}},{"id":"protocol","name":"Protocol 781-A","tier":"Ultra","k":4,"desc":"Industrial white and grey with orange signal traces.","pal":{"a":"#e4e6e8","b":"#4b5056","e":"#ff5a2a"},"cc":{"White/Pink":{"a":"#eceff2","b":"#ff6fb5","e":"#ff8ad0"},"Red/Blue":{"a":"#1e1418","b":"#c4232f","e":"#3fa9ff"},"Green":{"a":"#10201a","b":"#2f8a5a","e":"#5fffb0"}},"skins":{"Sheriff":{"n":"Protocol 781-A Sheriff","ch":["Base","White/Pink","Red/Blue","Green"]},"Spectre":{"n":"Protocol 781-A Spectre","ch":["Base","White/Pink","Red/Blue","Green"]},"Bulldog":{"n":"Protocol 781-A Bulldog","ch":["Base","White/Pink","Red/Blue","Green"]},"Phantom":{"n":"Protocol 781-A Phantom","ch":["Base","White/Pink","Red/Blue","Green"]},"Knife":{"n":"Protocol 781-A Knife","ch":["Base","White/Pink","Red/Blue","Green"]}}},{"id":"magepunk","name":"Magepunk","tier":"Premium","k":4,"desc":"Copper and brass machinery with crackling blue current.","pal":{"a":"#2b2420","b":"#b87333","e":"#3fd0ff","p":1},"cc":{"Green":{"a":"#10201a","b":"#2f8a5a","e":"#5fffb0"},"Pink":{"a":"#2a1424","b":"#ff6fb5","e":"#ff8ad0"},"Orange":{"a":"#26170c","b":"#e8742a","e":"#ff9a2a"},"Black/Red":{"a":"#0d0e10","b":"#c4232f","e":"#ff3048"},"Yellow":{"a":"#24210f","b":"#e3c22a","e":"#fff04a"},"Purple":{"a":"#1b1030","b":"#6a2c9a","e":"#c66bff"}},"skins":{"Ghost":{"n":"Magepunk Ghost","ch":["Base","Green","Purple","Orange"]},"Sheriff":{"n":"Magepunk Sheriff","ch":["Base","Green","Pink","Orange"]},"Spectre":{"n":"Magepunk Spectre","ch":["Base","Green","Purple","Orange"]},"Bucky":{"n":"Magepunk Bucky","ch":["Base","Green","Purple","Orange"]},"Guardian":{"n":"Magepunk Guardian","ch":["Base","Green","Pink","Orange"]},"Phantom":{"n":"Magepunk Phantom","ch":["Base","Green","Black/Red","Yellow"]},"Vandal":{"n":"Magepunk Vandal","ch":["Base","Green","Black/Red","Yellow"]},"Marshal":{"n":"Magepunk Marshal","ch":["Base","Green","Purple","Orange"]},"Operator":{"n":"Magepunk Operator","ch":["Base","Green","Pink","Orange"]},"Ares":{"n":"Magepunk Ares","ch":["Base","Green","Pink","Orange"]},"Knife":{"n":"Magepunk Knife","ch":["Base","Green","Purple","Orange"]}}},{"id":"neofrontier","name":"Neo Frontier","tier":"Exclusive","k":2,"desc":"Frontier navy and brass with a cool cyan glow.","pal":{"a":"#1e2a3a","b":"#c9a04a","e":"#5fd0ff"},"cc":{"Gold":{"a":"#1d1a12","b":"#d4af37","e":"#ffd23a"},"Silver":{"a":"#c8cdd3","b":"#7d858f","e":"#5fd0ff"},"Copper":{"a":"#3a2418","b":"#b87333","e":"#ffb06a"}},"skins":{"Shorty":{"n":"Neo Frontier Shorty","ch":["Base","Gold","Silver","Copper"]},"Sheriff":{"n":"Neo Frontier Sheriff","ch":["Base","Gold","Silver","Copper"]},"Phantom":{"n":"Neo Frontier Phantom","ch":["Base","Gold","Silver","Copper"]},"Vandal":{"n":"Neo Frontier Vandal","ch":["Base","Gold","Silver","Copper"]},"Marshal":{"n":"Neo Frontier Marshal","ch":["Base","Gold","Silver","Copper"]},"Odin":{"n":"Neo Frontier Odin","ch":["Base","Gold","Silver","Copper"]},"Knife":{"n":"Neo Frontier Knife","ch":["Base","Gold","Silver","Copper"]}}}]}; // replaced by work/install_valorant.py with server/src/skins.json
+// Weapon skins (all free). Collection, skin and variant names follow Valorant's (server/src/skins.json, generated by
+// work/build_skins_catalog.py from the public catalogue; names only). Every visual is our own procedural shader design
+// themed on the line's palette: a tint over the model's own shading, a generated pattern and emissive accents, applied
+// to the first-person native and fallback viewmodels, third-person world models, floor guns and the lobby agent's
+// Vandal. Equipped id per weapon persists in localStorage (vs.skins) and syncs online ('sk' / 'sks': the server
+// validates the ids and only stores / relays them). Collection and Store pages follow the Valorant layout; every item
+// is FREE and "Get" adds it to the inventory: no currency, price or payment anywhere.
+var XSK = { cat: XSK_CAT, coll: {}, weapons: [], cats: [], eq: {}, owned: new Set(), net: {}, mc: new Map(), botSkins: false, ver: 0, lv: {}, fire: 0, tab: 'col', w: null, pick: null, sendT: 0, last: 0 };
+XSK.cats = XSK.cat.categories; XSK.weapons = XSK.cats.flatMap((c) => c[1]);
+XSK.cat.collections.forEach((c) => { XSK.coll[c.id] = c; });
+const xskHas = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
+// id: "<collection>" (Base) or "<collection>.N" (variant N of that weapon's skin); "standard" is the factory finish.
+function xskParse(id) { if (typeof id !== 'string' || id.length > 24) return null; const m = /^([a-z0-9]+)(?:\.([1-9]))?$/.exec(id); if (!m || !xskHas(XSK.coll, m[1])) return null; return { cid: m[1], i: m[2] ? +m[2] : 0, c: XSK.coll[m[1]] }; }
+function xskValidFor(w, id) { const p = xskParse(id); return !!p && xskHas(p.c.skins, w) && p.i < p.c.skins[w].ch.length; }
+function xskDef(w, id) { if (!xskValidFor(w, id)) id = 'standard'; const p = xskParse(id), s = p.c.skins[w], chn = s.ch[p.i], base = p.c.pal || {};
+  const col = p.i ? Object.assign({}, base, (p.c.cc || {})[chn] || {}) : base; return { id, cid: p.cid, c: p.c, i: p.i, s, chn, col }; }
+function xskName(w, id) { const d = xskDef(w, id); return d.cid === 'standard' ? 'Standard' : d.s.n + (d.i ? ' · ' + d.chn : ''); }
+function xskGet(w) { const id = XSK.eq[w]; return xskValidFor(w, id) ? id : 'standard'; }
+// Ownership is per weapon skin (collection x weapon, every variant included); Standard is always owned.
+function xskOwns(w, cid) { return cid === 'standard' || XSK.owned.has(cid + ':' + w); }
+function xskLoad() {
+  let o = null; try { o = JSON.parse(localStorage.getItem('vs.skins') || 'null'); } catch (e) {}
+  XSK.eq = {}; XSK.owned = new Set(); XSK.lv = {};
+  if (o && typeof o === 'object') {
+    if (Array.isArray(o.owned)) o.owned.forEach((k) => { const [c, w] = String(k).split(':'); if (xskHas(XSK.coll, c) && c !== 'standard' && xskHas(XSK.coll[c].skins, w)) XSK.owned.add(c + ':' + w); });
+    if (o.eq && typeof o.eq === 'object') for (const w of XSK.weapons) { const id = o.eq[w]; if (xskValidFor(w, id) && xskOwns(w, xskParse(id).cid)) XSK.eq[w] = id; }
+    if (o.lv && typeof o.lv === 'object' && !Array.isArray(o.lv)) for (const k in o.lv) { const v = o.lv[k], [c, w] = k.split(':');
+      if (XSK.owned.has(k) && Array.isArray(v) && Number.isInteger(v[0]) && v[0] >= 1 && v[0] <= 4 && Number.isInteger(v[1]) && v[1] >= 0 && v[1] <= 14 && !(v[1] & 1)) XSK.lv[c + ':' + w] = [v[0], v[1]]; }
+  }
+}
+function xskSave() { try { localStorage.setItem('vs.skins', JSON.stringify({ v: 2, eq: XSK.eq, owned: [...XSK.owned], lv: XSK.lv })); } catch (e) {} }
+function xskWire() { const out = {}; for (const w of XSK.weapons) { const id = xskGet(w); if (id !== 'standard') out[w] = id; } return out; }
+function xskChanged() { XSK.ver++; xskSave(); try { xskApplyAll(true); } catch (e) {}
+  try { if (typeof NET !== 'undefined' && NET.socket && typeof netSend === 'function') { clearTimeout(XSK.sendT); XSK.sendT = setTimeout(() => netSend({ t: 'sk', s: xskWire() }), 250); } } catch (e) {} }
+function xskGive(w, cid) { if (!xskHas(XSK.coll, cid) || cid === 'standard' || !xskHas(XSK.coll[cid].skins, w)) return false; const k = cid + ':' + w; if (XSK.owned.has(k)) return false; XSK.owned.add(k); xskSave(); return true; }
+function xskGiveBundle(cid) { let n = 0; if (xskHas(XSK.coll, cid)) for (const w of Object.keys(XSK.coll[cid].skins)) if (xskGive(w, cid)) n++; return n; }
+function xskEquip(w, id) { if (!XSK.weapons.includes(w) || !xskValidFor(w, id)) return false; if (!xskOwns(w, xskParse(id).cid)) return false;
+  if (id === 'standard') delete XSK.eq[w]; else XSK.eq[w] = id; xskChanged(); return true; }
+// Online: other players' equipped skins by unit id. Ids are re-checked here (the server already rejects bad ones).
+function xskClean(m) { const out = {}; if (!m || typeof m !== 'object' || Array.isArray(m)) return out; for (const w of XSK.weapons) if (xskHas(m, w) && xskValidFor(w, m[w])) out[w] = m[w]; return out; }
+function xskNet(m) {
+  if (m.t === 'sks') { XSK.net = {}; if (m.m && typeof m.m === 'object') for (const id in m.m) XSK.net[id] = xskClean(m.m[id]); }
+  else if (m.t === 'sk') { if (m.id != null) XSK.net[m.id] = xskClean(m.s); }
+  else if (m.t === 'skr') XSK.rejected = (XSK.rejected || 0) + 1;
+  XSK.last = 0;
+}
+function xskNetGet(nid, w) { const s = XSK.net[nid]; return s && xskValidFor(w, s[w]) ? s[w] : 'standard'; }
+// deterministic showcase skins for offline bots (off by default; QA / preview: XSK.botSkins = true)
+function xskBot(name, w) { let h = 7; const s = String(name) + '|' + w; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  const ids = []; for (const c of XSK.cat.collections) if (xskHas(c.skins, w)) c.skins[w].ch.forEach((_, i) => ids.push(i ? c.id + '.' + i : c.id)); return ids[h % ids.length]; }
+
+// ---- material patch: one shared program per base material type (cache key xsk), so swapping skins never recompiles
+const XSK_V = 'varying vec3 vXskP;\n';
+const XSK_F = 'uniform vec3 xskA;\nuniform vec3 xskB;\nuniform vec3 xskE;\nuniform float xskK;\nuniform float xskP;\nuniform float xskS;\nuniform float xskPu;\nuniform float xskFl;\nvarying vec3 vXskP;\n' +
+  'float xskH(vec3 p){p=fract(p*0.3183099+0.1);p*=17.0;return fract(p.x*p.y*p.z*(p.x+p.y+p.z));}\n' +
+  'float xskN(vec3 x){vec3 i=floor(x),f=fract(x);f=f*f*(3.0-2.0*f);return mix(mix(mix(xskH(i),xskH(i+vec3(1.,0.,0.)),f.x),mix(xskH(i+vec3(0.,1.,0.)),xskH(i+vec3(1.,1.,0.)),f.x),f.y),mix(mix(xskH(i+vec3(0.,0.,1.)),xskH(i+vec3(1.,0.,1.)),f.x),mix(xskH(i+vec3(0.,1.,1.)),xskH(i+vec3(1.,1.,1.)),f.x),f.y),f.z);}\n';
+const XSK_MAP = '\nfloat xskLn=0.0;\nif(xskK>0.5){vec3 q=vXskP*xskS;float l=dot(diffuseColor.rgb,vec3(0.299,0.587,0.114));float pat=0.0,dk=0.0;\n' +
+  ' if(xskK<1.5){float s=fract((q.x*1.3+q.y*0.7+q.z*0.4)*2.2+xskN(q*3.0)*0.6);pat=smoothstep(0.35,0.42,s)*(1.0-smoothstep(0.62,0.7,s));xskLn=1.0-smoothstep(0.0,0.05,abs(s-0.4));}\n' +
+  ' else if(xskK<2.5){float s=fract(q.z*1.6+q.x*0.2);pat=max(step(0.86,s),step(0.965,fract(q.z*4.8)));xskLn=step(0.975,fract(q.z*1.6+q.x*0.2+0.07));}\n' +
+  ' else if(xskK<3.5){float n=xskN(q*2.2)+0.5*xskN(q*4.7);pat=smoothstep(0.7,0.74,n);dk=smoothstep(0.98,1.02,n);}\n' +
+  ' else if(xskK<4.5){vec3 g=abs(fract(q*4.0)-0.5);float e=min(g.x,min(g.y,g.z));xskLn=(1.0-smoothstep(0.015,0.045,e))*step(0.5,xskN(floor(q*4.0)*1.7));pat=0.35*step(0.55,xskN(q*1.4));}\n' +
+  ' else if(xskK<5.5){float n=xskN(q*3.0)+0.5*xskN(q*7.0);xskLn=1.0-smoothstep(0.0,0.035,abs(n-0.75));pat=smoothstep(0.4,0.9,xskN(q*1.5));}\n' +
+  ' else {float s=fract(q.y*0.8+q.z*0.5);pat=smoothstep(0.2,0.8,s);xskLn=step(0.93,fract(q.z*2.5+q.y*0.3));}\n' +
+  ' vec3 col=mix(xskA,xskB,clamp(pat,0.0,1.0))*(1.0-0.45*dk)*(0.38+1.2*l);diffuseColor.rgb=mix(diffuseColor.rgb,col,0.9);}\n';
+const XSK_EM = '\ntotalEmissiveRadiance+=xskE*(xskLn*mix(1.0,xskPu,xskP)*1.6+xskFl*(0.35+2.2*xskLn));\n';
+function xskPatch(m, d, scale) {
+  const ch = d.col, U = { xskA: { value: new THREE.Color(ch.a || '#3a3f4a') }, xskB: { value: new THREE.Color(ch.b || ch.a || '#2c3038') }, xskE: { value: new THREE.Color(ch.e || '#000000') },
+    xskK: { value: d.c.k || 0 }, xskP: { value: ch.p ? 1 : 0 }, xskS: { value: scale }, xskPu: typeof SKU !== 'undefined' ? SKU : { value: 1 }, xskFl: { value: 0 } };
+  m.userData.xsk = { id: d.id, U };
+  m.onBeforeCompile = function (sh) { Object.assign(sh.uniforms, U);
+    sh.vertexShader = XSK_V + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n\tvXskP = position;');
+    sh.fragmentShader = XSK_F + sh.fragmentShader.replace('#include <map_fragment>', '#include <map_fragment>' + XSK_MAP).replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>' + XSK_EM); };
+  m.customProgramCacheKey = function () { return 'xsk'; };
+  m.needsUpdate = true; return m;
+}
+const xskOk = (m) => m && !Array.isArray(m) && m.color && !m.isMeshBasicMaterial && !m.isShaderMaterial && !m.transparent && typeof m.clone === 'function';
+function xskMat(m0, d, o, w) { // cached clone per (original material, weapon, skin): a variant's colours can differ by weapon
+  const key = w + '|' + d.id; let c = XSK.mc.get(key); if (!c) XSK.mc.set(key, (c = new Map()));
+  let m = c.get(m0); if (m) return m;
+  let r = 1; try { const g = o.geometry; if (!g.boundingSphere) g.computeBoundingSphere(); r = g.boundingSphere.radius || 1; } catch (e) {}
+  let k; try { k = m0.clone(); } catch (e) { return m0; } m = xskPatch(k, d, 1.4 / Math.max(1e-4, r)); c.set(m0, m); return m;
+}
+// Swap every eligible mesh under root to the skin's cached clone of its own original material (Standard: the original).
+function xskApply(root, w, id) {
+  if (!root || typeof root.traverse !== 'function') return 0; const d = xskDef(w, id); let n = 0;
+  root.traverse((o) => { if (!o.isMesh) return; const m0 = o.userData.skM0 || (o.userData.skM0 = o.material); if (!xskOk(m0)) return;
+    const m = d.id === 'standard' ? m0 : xskMat(m0, d, o, w); if (o.material !== m) { o.material = m; n++; } });
+  root.userData.xskId = d.id; return n;
+}
+// The old colour-only skins are retired: their recolour paths stay neutral (Default) and their swap uses this one.
+try { if (typeof skinId !== 'undefined') for (const k in skinId) { skinId[k] = 'Default'; if (typeof skin !== 'undefined') skin[k] = SKINS[0]; } } catch (e) {}
+try { skSwap = function (root, id) { /* legacy id ignored: weapon skins live in XSK */ }; } catch (e) {}
+try { skGroups = function () { try { for (const n in VMS) xskApply(VMS[n], n, xskGet(n)); const kid = xskGet('Knife'); knife.children.forEach((c) => { if (c !== KARM) xskApply(c, 'Knife', kid); }); } catch (e) {} }; } catch (e) {} // the knife group also holds the arm (KARM): never skin it
+// Offline drops by the player carry the player's skin (online the server copies the dropper's skin into the floor row).
+try { const d0 = xdDrop; xdDrop = function (w, x, z) { const d = d0.apply(this, arguments);
+  try { if (d && running && player && typeof FV !== 'undefined' && (w === FV.pri || w === FV.sec) && Math.hypot(x - player.x, z - player.z) < 3) d.sk = xskGet(w); } catch (e) {} return d; }; } catch (e) {}
+function xskFP() { // native first-person rig (arms untouched: only the weapon scene)
+  const F = typeof XV !== 'undefined' && XV.fp; if (F && F.ws) { const id = xskGet(F.w); if (F.ws.userData.xskId !== id || F.ws.userData.xskV !== XSK.ver) { xskApply(F.ws, F.w, id); F.ws.userData.xskV = XSK.ver; } }
+}
+function xskTP() { // third-person guns of every rig (each owner's own skin), floor guns, the fallback viewmodel and the lobby agent's Vandal
+  const online = typeof NET !== 'undefined' && NET.socket && typeof MP !== 'undefined' && MP.st === 'game';
+  try { for (const L of [bots, allies]) for (const u of L || []) { const M = u && u.xm; if (!M || !M.gun) continue;
+    let w = u.w; try { if (!online && typeof xWeapOf === 'function') w = xWeapOf(u) || w; } catch (e) {}
+    xskApply(M.gun, w, online ? xskNetGet(u.nid, w) : XSK.botSkins ? xskBot(u.name, w) : 'standard'); } } catch (e) {}
+  try { const list = online && typeof netFloor !== 'undefined' ? netFloor.values() : (typeof XD !== 'undefined' ? XD.L : []); for (const d of list) { const g = d.m && d.m.userData.xdg; if (g) xskApply(g, d.w, d.sk); } } catch (e) {}
+  try { if (typeof AGV !== 'undefined') for (const a in AGV.c) { const M = AGV.c[a]; if (M && M.gun) xskApply(M.gun, 'Vandal', xskGet('Vandal')); } } catch (e) {}
+  try { if (typeof running !== 'undefined' && running && typeof skGroups === 'function') skGroups(); } catch (e) {} // a native model swapped in late keeps its skin
+}
+// ---- Skin levels (Valorant-style upgrades, all free; client-only cosmetics, not sent online)
+// Level 1 the finish, 2 firing VFX (muzzle flash and light in the skin's accent, emissive surge on the gun per shot),
+// 3 kill banner (the kill banner takes the skin's accent and name), 4 finisher (placeholder: an accent ring and light
+// column on the victim of the kill that ends the round). Every owned skin starts at Level 1; "Upgrade · FREE" unlocks
+// the next level; each unlocked level 2-4 has an on / off toggle. Stored per weapon skin as lv["<collection>:<weapon>"]
+// = [level, offMask] (bit n set = level n switched off); invalid / unowned entries are dropped at load.
+const XSK_LVN = ['', 'Base finish', 'Firing VFX', 'Kill banner', 'Finisher'];
+function xskLv(w, cid) { if (cid === 'standard' || !xskOwns(w, cid)) return 0; const v = XSK.lv[cid + ':' + w]; return v ? v[0] : 1; }
+function xskLvOn(w, cid, n) { if (n < 2 || xskLv(w, cid) < n) return false; const v = XSK.lv[cid + ':' + w]; return !(v && v[1] & (1 << n)); }
+function xskUpgrade(w, cid) { const l = xskLv(w, cid); if (!l || l >= 4) return false; const k = cid + ':' + w, v = XSK.lv[k] || [1, 0]; XSK.lv[k] = [l + 1, v[1]]; xskSave(); return true; }
+function xskLvToggle(w, cid, n) { n = +n; if (!(n >= 2 && n <= 4) || xskLv(w, cid) < n) return false; const k = cid + ':' + w, v = XSK.lv[k]; XSK.lv[k] = [v[0], v[1] ^ (1 << n)]; xskSave(); return true; }
+function xskHeld() { try { return rw === 'knife' ? 'Knife' : wName(); } catch (e) { return null; } }
+function xskFx(n) { const w = xskHeld(); if (!w) return null; const id = xskGet(w); if (id === 'standard') return null; const d = xskDef(w, id); return xskLvOn(w, d.cid, n) ? d : null; }
+const XSK_MZ = { mc: null, lc: null };
+function xskOnFire() { const d = xskFx(2); XSK.fire = d ? 1 : 0;
+  try { if (typeof muzzle === 'undefined' || !muzzle.material) return; if (!XSK_MZ.mc) { XSK_MZ.mc = muzzle.material.color.clone(); XSK_MZ.lc = mLight.color.clone(); }
+    const c = d && (d.col.e || d.col.b); if (c) { muzzle.material.color.set(c); mLight.color.set(c); } else { muzzle.material.color.copy(XSK_MZ.mc); mLight.color.copy(XSK_MZ.lc); } } catch (e) {} }
+try { const f0 = vmFire; vmFire = function () { const r = f0.apply(this, arguments); xskOnFire(); return r; }; } catch (e) {}
+function xskFlRoot() { const F = typeof XV !== 'undefined' && XV.fp; if (F && F.ws && F.ws.visible !== false) return F.ws; try { return rw === 'knife' ? knife : VMS[wName()]; } catch (e) { return null; } }
+function xskSetFl(root, v) { if (!root || typeof root.traverse !== 'function') return; root.traverse((o) => { const u = o.isMesh && o.material && o.material.userData && o.material.userData.xsk; if (u && u.U.xskFl) u.U.xskFl.value = v; }); }
+function xskFlTick(dt) { if (!(XSK.fire > 0) && !XSK.flOn) return; XSK.fire = Math.max(0, XSK.fire - dt * 9); XSK.flOn = XSK.fire > 0; xskSetFl(xskFlRoot(), XSK.fire); }
+// kill banner (level 3) and finisher (level 4): wrap the player's own kill banner (offline and online kills both call vmKill)
+function xskBanner(d) { const kb = typeof document !== 'undefined' && document.getElementById && document.getElementById('xKbn'); if (!kb) return;
+  let t = document.getElementById('xKbSk'); if (!d) { kb.classList.remove('xsk'); if (t) t.textContent = ''; return; }
+  if (!t) { t = document.createElement('b'); t.id = 'xKbSk'; kb.appendChild(t); } t.textContent = d.s.n; kb.classList.add('xsk'); kb.style.setProperty('--xskc', d.col.e || d.col.b || '#ff4655');
+  if (!document.getElementById('xKbSkCss')) { const st = document.createElement('style'); st.id = 'xKbSkCss'; st.textContent = '#xKbn.xsk{filter:drop-shadow(0 0 10px var(--xskc))}#xKbn.xsk svg{stroke:var(--xskc)}#xKbSk{display:block;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--xskc);text-align:center;margin-top:2px}#xKbn:not(.xsk) #xKbSk{display:none}'; document.head.appendChild(st); } }
+var XSK_FIN = { L: [], n: 0 };
+function xskFinisher(d, x, y, z) { if (typeof THREE === 'undefined' || typeof scene === 'undefined') return null; const c = new THREE.Color(d.col.e || d.col.b || '#ff4655');
+  let f = XSK_FIN.L.find((o) => !(o.t > 0)); if (!f) { const ring = new THREE.Mesh(new THREE.RingGeometry(0.8, 1, 48), new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide }));
+    ring.rotation.x = -Math.PI / 2; const col = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.6, 6, 24, 1, true), new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide }));
+    col.position.y = 3; const g = new THREE.Group(); g.add(ring, col); g.visible = false; scene.add(g); f = { g, ring, col, t: 0 }; XSK_FIN.L.push(f); }
+  f.ring.material.color.copy(c); f.col.material.color.copy(c); f.g.position.set(x, y, z); f.t = 1.4; f.g.visible = true; XSK_FIN.n++; return f; }
+function xskFinTick(dt) { for (const f of XSK_FIN.L) { if (!(f.t > 0)) continue; f.t -= dt; const k = 1 - Math.max(0, f.t) / 1.4; f.ring.scale.setScalar(0.3 + k * 4); f.ring.material.opacity = (1 - k) * 0.9; f.col.scale.set(1 - k * 0.6, 0.2 + Math.min(1, k * 3), 1 - k * 0.6); f.col.material.opacity = (1 - k) * 0.55; if (f.t <= 0) f.g.visible = false; } }
+function xskRoundEnd() { try { if (typeof mode === 'undefined' || !['five', 'retake', 'duel'].includes(mode)) return false; return mode === 'duel' || (Array.isArray(bots) && bots.length > 0 && bots.every((b) => !b.alive)); } catch (e) { return false; } } // the kill that ends a round (spike, retake, duel)
+function xskOnKill(name) { xskBanner(xskFx(3)); const d = xskFx(4); if (!d || !xskRoundEnd()) return;
+  let u = null; try { u = [...(bots || []), ...(allies || [])].find((b) => b && b.name === name); } catch (e) {}
+  const p = u && (u.g ? u.g.position : u); if (p && Number.isFinite(p.x)) return xskFinisher(d, p.x, (p.y || 0) + 0.02, p.z);
+  try { xskFinisher(d, player.x - Math.sin(yaw) * 3, (player.y || 0) + 0.02, player.z - Math.cos(yaw) * 3); } catch (e) {} }
+try { const k0 = vmKill; vmKill = function (name) { const r = k0.apply(this, arguments); try { xskOnKill(name); } catch (e) {} return r; }; } catch (e) {}
+function xskApplyAll(force) { try { if (typeof skGroups === 'function') skGroups(); } catch (e) {} xskFP(); xskTP(); }
+function xskTick() { xskFP(); const t = performance.now(), dt = Math.min(0.1, (t - (XSK.tt || t)) / 1000); XSK.tt = t; xskFlTick(dt); xskFinTick(dt); if (t - XSK.last < 250) return; XSK.last = t; xskTP(); }
+(window.XHK || (window.XHK = [])).push(xskTick);
+xskLoad();
+
+// ---- Collection / Store pages
+const XSK_TIER = { Standard: '#8b978f', Select: '#5a9fe2', Deluxe: '#009587', Premium: '#d1548d', Exclusive: '#f5955b', Ultra: '#fad663' };
+const xskEsc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+function xskSw(w, id) { const d = xskDef(w, id), ch = d.col; if (d.cid === 'standard') return 'linear-gradient(135deg,#3a3f4a,#22262d)'; return 'linear-gradient(135deg,' + (ch.a || '#333') + ' 0 48%,' + (ch.e || ch.b || '#555') + ' 48% 60%,' + (ch.b || ch.a || '#444') + ' 60%)'; }
+function xskDay(now) { const d = new Date(now || Date.now()); return d.getFullYear() * 1000 + Math.floor((d - new Date(d.getFullYear(), 0, 0)) / 864e5); }
+const xskLines = () => XSK.cat.collections.filter((c) => c.id !== 'standard');
+// Daily offers: four weapon skins picked from the date (same for everyone that day); the featured bundle rotates weekly.
+function xskOffers(now) { const day = xskDay(now), cols = xskLines(), out = []; let h = Math.imul(day, 2654435761) >>> 0;
+  for (let g = 0; out.length < 4 && g < 400; g++) { h = (Math.imul(h, 1103515245) + 12345) >>> 0; const c = cols[h % cols.length], ws = Object.keys(c.skins), w = ws[(h >>> 8) % ws.length]; if (!out.some((o) => o.w === w || o.c === c.id)) out.push({ c: c.id, w }); } return out; }
+function xskFeatured(now) { const cols = xskLines(); return cols[Math.floor(xskDay(now) / 7) % cols.length].id; }
+function xskColHTML() {
+  let h = '<div class="xsk-col">';
+  for (const [cat, list] of XSK.cats) { h += '<section class="xsk-cat"><h3>' + xskEsc(cat) + '</h3><div class="xsk-grid">';
+    for (const w of list) { const id = xskGet(w), nm = xskName(w, id); h += '<button class="xsk-wc" data-a="weapon" data-w="' + w + '" aria-label="' + w + ', ' + xskEsc(nm) + ' equipped"><i style="background:' + xskSw(w, id) + '"></i><b>' + w + '</b><small>' + xskEsc(nm) + '</small></button>'; }
+    h += '</div></section>'; }
+  return h + '</div>';
+}
+function xskWpnHTML(w) {
+  const cur = xskGet(w), pick = xskValidFor(w, XSK.pick) ? XSK.pick : cur, d = xskDef(w, pick), c = d.c, own = xskOwns(w, c.id), curC = xskParse(cur).cid;
+  let h = '<div class="xsk-wv"><div class="xsk-wl" role="listbox" aria-label="' + w + ' skins"><button class="xsk-back" data-a="back">‹ Collection</button><h3>' + w + '</h3>';
+  for (const col of XSK.cat.collections) { if (!xskHas(col.skins, w)) continue; const on = col.id === c.id, o = xskOwns(w, col.id), eq = curC === col.id, nm = col.id === 'standard' ? 'Standard' : col.skins[w].n;
+    h += '<button class="xsk-sk' + (on ? ' on' : '') + (o ? '' : ' lock') + '" role="option" aria-selected="' + on + '" data-a="pick" data-id="' + col.id + '"><i style="background:' + xskSw(w, col.id) + '"></i><span><b>' + xskEsc(nm) + '</b><small>' + (eq ? 'Equipped' : o ? 'Owned' : 'Free · not in inventory') + '</small></span></button>'; }
+  h += '</div><div class="xsk-pv"><canvas id="xskCv" aria-label="' + xskEsc(xskName(w, pick)) + ' preview, drag to rotate"></canvas><p class="xsk-pn"><b>' + xskEsc(c.id === 'standard' ? 'Standard ' + w : d.s.n) + '</b> <span style="color:' + (XSK_TIER[c.tier] || '#fff') + '">' + xskEsc(c.tier) + (c.id === 'standard' ? '' : ' · ' + xskEsc(c.name) + ' Collection') + '</span><small>' + xskEsc(c.desc) + (d.i ? ' Variant: ' + xskEsc(d.chn) + '.' : '') + '</small></p>';
+  if (d.s.ch.length > 1) h += '<div class="xsk-ch" role="radiogroup" aria-label="Variants">' + d.s.ch.map((n, i) => { const id = i ? c.id + '.' + i : c.id; return '<button data-a="pick" data-id="' + id + '" role="radio" aria-checked="' + (id === pick) + '" aria-label="' + xskEsc(n) + '" title="' + xskEsc(n) + '" class="' + (id === pick ? 'on' : '') + '" style="background:' + xskSw(w, id) + '"></button>'; }).join('') + '</div>';
+  if (c.id !== 'standard') { const lv = xskLv(w, c.id); h += '<div class="xsk-lv" role="group" aria-label="Skin levels">';
+    for (let n = 1; n <= 4; n++) { const un = lv >= n, on = n === 1 ? un : xskLvOn(w, c.id, n);
+      h += '<div class="xsk-lr' + (un ? ' un' : '') + '"><span><b>Level ' + n + '</b><small>' + XSK_LVN[n] + '</small></span>' + (n === 1 ? '<em>' + (un ? 'Unlocked' : 'Locked') + '</em>' : un ? '<button class="xsk-tg' + (on ? ' on' : '') + '" data-a="fx" data-id="' + c.id + '" data-n="' + n + '" aria-pressed="' + on + '" aria-label="Level ' + n + ' ' + XSK_LVN[n] + '">' + (on ? 'On' : 'Off') + '</button>' : '<em>Locked</em>') + '</div>'; }
+    h += own ? (lv < 4 ? '<button class="xsk-up" data-a="up" data-id="' + c.id + '">Upgrade to Level ' + (lv + 1) + ' · FREE</button>' : '<small class="xsk-lvx">All levels unlocked</small>') : '<small class="xsk-lvx">Get the skin to unlock its levels</small>';
+    h += '</div>'; }
+  h += '<div class="xsk-act">' + (!own ? '<button class="xsk-get" data-a="get" data-id="' + pick + '">Get · FREE</button>' : pick === cur ? '<button class="xsk-eq" disabled>Equipped</button>' : '<button class="xsk-eq" data-a="equip" data-id="' + pick + '">Equip</button>') + '</div></div></div>';
+  return h;
+}
+function xskStoreHTML(now) {
+  const f = XSK.coll[xskFeatured(now)], fw = Object.keys(f.skins), have = fw.filter((w) => xskOwns(w, f.id)).length, all = have === fw.length;
+  const t = new Date(now || Date.now()), next = new Date(t.getFullYear(), t.getMonth(), t.getDate() + 1), left = Math.max(0, next - t), hh = Math.floor(left / 36e5), mm = Math.floor(left / 6e4) % 60;
+  let h = '<div class="xsk-store"><section class="xsk-feat" style="--a:' + (f.pal.a || '#333') + ';--b:' + (f.pal.e || f.pal.b || '#555') + '"><p class="xsk-eb">Featured bundle</p><h2>' + xskEsc(f.name) + ' Collection</h2><p>' + xskEsc(f.desc) + ' ' + fw.map((w) => xskEsc(f.skins[w].n)).join(', ') + '.</p>';
+  h += '<div class="xsk-fb"><span class="xsk-free">FREE</span>' + (all ? '<button class="xsk-eq" disabled>Owned</button>' : '<button class="xsk-get" data-a="bundle" data-id="' + f.id + '">Get bundle · FREE</button>') + '<small>' + have + ' / ' + fw.length + ' in inventory</small></div></section>';
+  h += '<section class="xsk-daily"><h3>Daily offers <small>Refreshes in ' + hh + 'h ' + String(mm).padStart(2, '0') + 'm</small></h3><div class="xsk-offers">';
+  for (const o of xskOffers(now)) { const c = XSK.coll[o.c], own = xskOwns(o.w, o.c);
+    h += '<div class="xsk-of" style="--t:' + (XSK_TIER[c.tier] || '#fff') + '"><i style="background:' + xskSw(o.w, o.c) + '"></i><b>' + xskEsc(c.skins[o.w].n) + '</b><small>' + xskEsc(c.tier) + '</small><span class="xsk-free">FREE</span>' +
+      (own ? '<button class="xsk-eq" data-a="weapon" data-w="' + o.w + '" data-id="' + o.c + '">Owned · View</button>' : '<button class="xsk-get" data-a="get" data-w="' + o.w + '" data-id="' + o.c + '">Get</button>') + '</div>'; }
+  h += '</div></section><section class="xsk-daily"><h3>All collections</h3><div class="xsk-offers xsk-all">';
+  for (const c of xskLines()) { const ws = Object.keys(c.skins), n = ws.filter((w) => xskOwns(w, c.id)).length;
+    h += '<div class="xsk-of" style="--t:' + (XSK_TIER[c.tier] || '#fff') + '"><i style="background:' + xskSw(ws[0], c.id) + '"></i><b>' + xskEsc(c.name) + '</b><small>' + xskEsc(c.tier) + ' · ' + ws.length + ' skins</small><span class="xsk-free">FREE</span>' +
+      (n === ws.length ? '<button class="xsk-eq" disabled>Owned</button>' : '<button class="xsk-get" data-a="bundle" data-id="' + c.id + '">Get bundle</button>') + '</div>'; }
+  return h + '</div></section><p class="xsk-fine">Every skin is free: no currency, no payments. Fan project: Valorant collection names, original procedural finishes.</p></div>';
+}
+function xskRender() {
+  const root = document.getElementById('xSk'); if (!root) return; const body = root.querySelector('.xsk-body');
+  root.querySelectorAll('[data-tab]').forEach((b) => { const on = b.dataset.tab === XSK.tab; b.classList.toggle('on', on); b.setAttribute('aria-selected', String(on)); });
+  body.innerHTML = XSK.tab === 'store' ? xskStoreHTML() : XSK.w ? xskWpnHTML(XSK.w) : xskColHTML();
+  if (XSK.tab === 'col' && XSK.w) xskPreview(); else xskPvStop();
+}
+// Actions (delegated clicks; also the test / QA entry point)
+function xskAct(a, w, id, n) {
+  if (a === 'tab') { XSK.tab = id === 'store' ? 'store' : 'col'; XSK.w = null; XSK.pick = null; }
+  else if (a === 'weapon') { if (!XSK.weapons.includes(w)) return false; XSK.tab = 'col'; XSK.w = w; const cur = xskGet(w); XSK.pick = id && xskValidFor(w, id) ? (xskParse(cur).cid === xskParse(id).cid ? cur : id) : cur; }
+  else if (a === 'back') { XSK.w = null; XSK.pick = null; }
+  else if (a === 'pick') { if (!XSK.w || !xskValidFor(XSK.w, id)) return false; XSK.pick = id; }
+  else if (a === 'equip') { if (!xskEquip(XSK.w, id)) return false; }
+  else if (a === 'get') { const ww = w || XSK.w, p = xskParse(id); if (!p || !xskGive(ww, p.cid)) return false; if (!w) xskEquip(ww, xskValidFor(ww, id) ? id : p.cid); }
+  else if (a === 'bundle') { if (!xskHas(XSK.coll, id) || !xskGiveBundle(id)) return false; }
+  else if (a === 'up') { if (!XSK.w || !xskUpgrade(XSK.w, id)) return false; }
+  else if (a === 'fx') { if (!XSK.w || !xskLvToggle(XSK.w, id, n)) return false; }
+  else return false;
+  xskRender(); return true;
+}
+function xskOpen(tab) { const root = xskBuild(); if (!root) return; XSK.tab = tab === 'store' ? 'store' : 'col'; XSK.w = null; XSK.pick = null; root.hidden = false; try { $('xQueue').hidden = true; } catch (e) {} xskRender(); }
+function xskClose() { const root = document.getElementById('xSk'); if (root) root.hidden = true; XSK.w = null; xskPvStop(); }
+// 3D preview: its own small renderer, created on open and released on leave (one extra context only while visible).
+function xskPreview() {
+  const cv = document.getElementById('xskCv'); if (!cv || typeof THREE === 'undefined' || typeof xGun !== 'function') return; let P = XSK.pv;
+  if (!P || P.cv !== cv) { if (P) xskPvStop(); try { P = XSK.pv = { cv, r: new THREE.WebGLRenderer({ canvas: cv, alpha: true, antialias: true }), sc: new THREE.Scene(), cam: new THREE.PerspectiveCamera(30, 1, 0.01, 50), yaw: -0.5, pitch: 0.12, drag: null, w: 0, h: 0 }; } catch (e) { XSK.pv = null; return; }
+    P.r.setPixelRatio(Math.min(devicePixelRatio || 1, 2)); P.r.setClearColor(0, 0); if (THREE.sRGBEncoding) P.r.outputEncoding = THREE.sRGBEncoding;
+    P.sc.add(new THREE.HemisphereLight(0xeef3ff, 0x30343c, 1.1)); const k = new THREE.DirectionalLight(0xffffff, 1.2); k.position.set(2, 3, 4); P.sc.add(k); const rim = new THREE.DirectionalLight(0xff4655, 0.6); rim.position.set(-3, 1, -3); P.sc.add(rim);
+    P.piv = new THREE.Group(); P.sc.add(P.piv);
+    cv.onpointerdown = (e) => { P.drag = { x: e.clientX, y: e.clientY, yaw: P.yaw, pitch: P.pitch }; try { cv.setPointerCapture(e.pointerId); } catch (er) {} };
+    cv.onpointermove = (e) => { if (!P.drag) return; P.yaw = P.drag.yaw + (e.clientX - P.drag.x) * 0.012; P.pitch = Math.max(-0.9, Math.min(0.9, P.drag.pitch + (e.clientY - P.drag.y) * 0.008)); };
+    cv.onpointerup = cv.onpointercancel = () => { P.drag = null; P.t0 = performance.now(); };
+    const tick = () => { if (XSK.pv !== P) return; P.raf = requestAnimationFrame(tick); const w = cv.clientWidth, h = cv.clientHeight; if (!w || !h) return;
+      if (w !== P.w || h !== P.h) { P.w = w; P.h = h; P.r.setSize(w, h, false); P.cam.aspect = w / h; P.cam.updateProjectionMatrix(); }
+      if (!P.drag && performance.now() - (P.t0 || 0) > 2500) P.yaw += 0.006; P.piv.rotation.set(P.pitch, P.yaw, 0); P.r.render(P.sc, P.cam); };
+    P.raf = requestAnimationFrame(tick); }
+  const w = XSK.w, id = xskValidFor(w, XSK.pick) ? XSK.pick : xskGet(w);
+  if (P.key !== w) { if (P.obj) P.piv.remove(P.obj); const g = xGun(w), box = new THREE.Box3().setFromObject(g), c = box.getCenter(new THREE.Vector3()), s = box.getSize(new THREE.Vector3()), L = Math.max(s.x, s.y, s.z) || 1;
+    const hold = new THREE.Group(); g.position.sub(c); hold.add(g); hold.scale.setScalar(1 / L); if (w === 'Knife') hold.rotation.z = 0.5; P.obj = hold; P.piv.add(hold); P.key = w; P.cam.position.set(0, 0.05, 2.15); P.cam.lookAt(0, 0, 0); }
+  xskApply(P.obj, w, id);
+}
+function xskPvStop() { const P = XSK.pv; if (!P) return; XSK.pv = null; try { cancelAnimationFrame(P.raf); } catch (e) {} try { P.r.dispose(); if (P.r.forceContextLoss) P.r.forceContextLoss(); } catch (e) {} }
+function xskBuild() {
+  let root = document.getElementById('xSk'); if (root) return root; if (!document.body) return null;
+  const st = document.createElement('style'); st.id = 'xSkCss'; st.textContent = XSK_CSS; document.head.appendChild(st);
+  root = document.createElement('div'); root.id = 'xSk'; root.hidden = true; root.setAttribute('role', 'dialog'); root.setAttribute('aria-label', 'Collection and Store');
+  root.innerHTML = '<header class="xsk-top"><nav class="xsk-tabs" role="tablist"><button role="tab" data-tab="col" data-a="tab" data-id="col">Collection</button><button role="tab" data-tab="store" data-a="tab" data-id="store">Store</button></nav><button class="xsk-spr" data-a="sprays">Sprays</button><button class="xsk-x" data-a="close" aria-label="Close">×</button></header><div class="xsk-body"></div>';
+  root.addEventListener('click', (e) => { const b = e.target && e.target.closest ? e.target.closest('[data-a]') : null; if (!b || b.disabled) return; const a = b.dataset.a;
+    if (a === 'close') return xskClose(); if (a === 'sprays') { try { open('mInv'); } catch (er) {} return; }
+    xskAct(a, b.dataset.w, b.dataset.id, b.dataset.n); });
+  addEventListener('keydown', (e) => { if (e.code === 'Escape' && !root.hidden && !document.querySelector('.modal.on')) { e.stopImmediatePropagation(); xskClose(); } }, true);
+  document.body.appendChild(root); return root;
+}
+const XSK_CSS = '#xSk{position:fixed;inset:0;z-index:38;display:flex;flex-direction:column;background:radial-gradient(120% 90% at 70% 30%,#1b2a38 0,#0f1923 60%);color:#ece8e1;font-family:Geist,"Segoe UI",system-ui,-apple-system,Roboto,Helvetica,Arial,sans-serif;overflow:hidden}#xSk[hidden]{display:none}' +
+  '#xSk button{font:inherit;color:inherit;cursor:pointer}#xSk .xsk-top{display:flex;align-items:center;gap:12px;padding:12px 20px;border-bottom:1px solid rgba(236,232,225,.12);flex:none}' +
+  '#xSk .xsk-tabs{display:flex;gap:4px;flex:1}#xSk .xsk-tabs button{background:none;border:0;border-bottom:3px solid transparent;padding:10px 14px;min-height:44px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;font-size:14px;opacity:.6}#xSk .xsk-tabs button.on{opacity:1;border-color:#ff4655}' +
+  '#xSk .xsk-spr,#xSk .xsk-x{background:rgba(236,232,225,.06);border:1px solid rgba(236,232,225,.16);min-height:44px;min-width:44px;padding:0 12px;letter-spacing:.12em;text-transform:uppercase;font-size:12px;font-weight:700}#xSk .xsk-x{font-size:24px;padding:0}' +
+  '#xSk .xsk-body{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;padding:16px 20px 24px}' +
+  '#xSk .xsk-cat h3{margin:14px 0 8px;font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:rgba(236,232,225,.6)}#xSk .xsk-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}' +
+  '#xSk .xsk-wc{display:grid;grid-template-columns:44px 1fr;grid-template-rows:auto auto;column-gap:10px;text-align:left;align-items:center;background:rgba(236,232,225,.05);border:1px solid rgba(236,232,225,.12);padding:8px;min-height:56px}#xSk .xsk-wc:hover,#xSk .xsk-wc:focus-visible{border-color:#ff4655;background:rgba(255,70,85,.08)}' +
+  '#xSk .xsk-wc i{grid-row:span 2;width:44px;height:36px;display:block;clip-path:polygon(0 30%,70% 30%,70% 0,100% 0,100% 55%,40% 55%,30% 100%,8% 100%,14% 55%,0 55%)}#xSk .xsk-wc b{font-size:14px;letter-spacing:.06em;text-transform:uppercase}#xSk .xsk-wc small,#xSk .xsk-sk small{font-size:11px;color:rgba(236,232,225,.6)}' +
+  '#xSk .xsk-wv{display:grid;grid-template-columns:minmax(200px,260px) 1fr;gap:16px;height:100%;min-height:0}#xSk .xsk-wl{display:flex;flex-direction:column;gap:6px;overflow:auto;min-height:0}#xSk .xsk-wl h3{margin:4px 0;font-size:22px;letter-spacing:.14em;text-transform:uppercase}' +
+  '#xSk .xsk-back{align-self:flex-start;background:none;border:0;opacity:.7;min-height:44px;padding:0;letter-spacing:.1em;text-transform:uppercase;font-size:12px}' +
+  '#xSk .xsk-sk{display:flex;gap:10px;align-items:center;text-align:left;background:rgba(236,232,225,.05);border:1px solid rgba(236,232,225,.12);padding:6px 8px;min-height:48px}#xSk .xsk-sk.on{border-color:#ff4655;background:rgba(255,70,85,.1)}#xSk .xsk-sk.lock{opacity:.75}#xSk .xsk-sk i{width:34px;height:34px;flex:none}#xSk .xsk-sk span{display:flex;flex-direction:column}' +
+  '#xSk .xsk-pv{position:relative;display:flex;flex-direction:column;min-height:0}#xSk #xskCv{flex:1;min-height:160px;width:100%;touch-action:none;cursor:grab}#xSk .xsk-pn{margin:0;display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}#xSk .xsk-pn b{font-size:18px;letter-spacing:.08em;text-transform:uppercase}#xSk .xsk-pn small{flex-basis:100%;color:rgba(236,232,225,.6)}' +
+  '#xSk .xsk-ch{display:flex;gap:8px;margin:10px 0}#xSk .xsk-ch button{width:44px;height:44px;border:2px solid rgba(236,232,225,.2)}#xSk .xsk-ch button.on{border-color:#ece8e1;outline:2px solid #ff4655;outline-offset:2px}' +
+  '#xSk .xsk-act{display:flex;gap:8px}#xSk .xsk-get,#xSk .xsk-eq{min-height:48px;padding:0 28px;border:0;font-weight:800;letter-spacing:.16em;text-transform:uppercase;font-size:13px}#xSk .xsk-get{background:#ff4655;color:#0f1923}#xSk .xsk-eq{background:#ece8e1;color:#0f1923}#xSk .xsk-eq[disabled]{opacity:.55;cursor:default}' +
+  '#xSk .xsk-lv{display:flex;flex-direction:column;gap:4px;margin:6px 0 10px;max-width:420px}#xSk .xsk-lr{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:4px 8px;background:rgba(236,232,225,.04);border-left:3px solid rgba(236,232,225,.15);opacity:.6}#xSk .xsk-lr.un{opacity:1;border-color:#5fffb0}#xSk .xsk-lr span{display:flex;gap:8px;align-items:baseline}#xSk .xsk-lr b{font-size:12px;letter-spacing:.14em;text-transform:uppercase}#xSk .xsk-lr small,#xSk .xsk-lvx{font-size:11px;color:rgba(236,232,225,.6)}#xSk .xsk-lr em{font-style:normal;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:rgba(236,232,225,.6)}' +
+  '#xSk .xsk-tg{min-height:44px;min-width:56px;border:1px solid rgba(236,232,225,.25);background:none;font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase}#xSk .xsk-tg.on{background:#5fffb0;color:#0f1923;border-color:#5fffb0}#xSk .xsk-up{min-height:44px;margin-top:4px;border:1px solid #5fffb0;background:rgba(95,255,176,.08);color:#5fffb0!important;font-weight:800;letter-spacing:.14em;text-transform:uppercase;font-size:12px}' +
+  '#xSk .xsk-free{font-weight:800;letter-spacing:.14em;color:#5fffb0}' +
+  '#xSk .xsk-feat{position:relative;padding:28px 24px;min-height:180px;background:linear-gradient(110deg,rgba(15,25,35,.95) 30%,rgba(15,25,35,.2)),linear-gradient(135deg,var(--a) 0 55%,var(--b) 55% 62%,var(--a) 62%);border:1px solid rgba(236,232,225,.14);display:flex;flex-direction:column;gap:8px;justify-content:flex-end}' +
+  '#xSk .xsk-feat h2{margin:0;font-size:30px;letter-spacing:.1em;text-transform:uppercase}#xSk .xsk-feat p{margin:0;max-width:520px;color:rgba(236,232,225,.8)}#xSk .xsk-eb{font-size:12px;letter-spacing:.24em;text-transform:uppercase;color:#ff4655!important}#xSk .xsk-fb{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:6px}#xSk .xsk-fb small{color:rgba(236,232,225,.6)}' +
+  '#xSk .xsk-daily h3{margin:20px 0 10px;font-size:14px;letter-spacing:.18em;text-transform:uppercase;display:flex;gap:12px;align-items:baseline;flex-wrap:wrap}#xSk .xsk-daily h3 small{font-size:11px;color:rgba(236,232,225,.6);letter-spacing:.08em}' +
+  '#xSk .xsk-offers{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}#xSk .xsk-of{display:flex;flex-direction:column;gap:6px;padding:12px;background:rgba(236,232,225,.05);border:1px solid rgba(236,232,225,.12);border-top:3px solid var(--t)}#xSk .xsk-of i{height:64px;display:block}#xSk .xsk-of small{color:var(--t);letter-spacing:.12em;text-transform:uppercase;font-size:11px}#xSk .xsk-of .xsk-get,#xSk .xsk-of .xsk-eq{padding:0 12px;min-height:44px}' +
+  '#xSk .xsk-all .xsk-of i{height:40px}#xSk .xsk-fine{margin-top:16px;font-size:12px;color:rgba(236,232,225,.55)}' +
+  '@media(max-width:820px){#xSk .xsk-offers{grid-template-columns:repeat(2,1fr)}}' +
+  '@media(max-width:600px){#xSk .xsk-top{padding:6px 10px;gap:6px}#xSk .xsk-body{padding:10px 12px 18px}#xSk .xsk-wv{grid-template-columns:1fr;grid-template-rows:minmax(220px,42vh) auto;height:auto}#xSk .xsk-pv{grid-row:1}#xSk .xsk-wl{grid-row:2;overflow:visible}#xSk .xsk-grid{grid-template-columns:repeat(2,1fr)}#xSk .xsk-feat{padding:18px 14px;min-height:150px}#xSk .xsk-feat h2{font-size:22px}}' +
+  '@media(max-height:480px){#xSk .xsk-top{padding:2px 10px}#xSk .xsk-tabs button{padding:6px 10px;font-size:12px}#xSk .xsk-body{padding:8px 12px 12px}#xSk .xsk-wv{grid-template-columns:200px 1fr;height:100%}#xSk .xsk-wl h3{font-size:16px}#xSk .xsk-sk{min-height:44px;padding:4px 6px}#xSk .xsk-sk i{width:28px;height:28px}#xSk #xskCv{min-height:120px}#xSk .xsk-ch{margin:4px 0}#xSk .xsk-lr small{display:none}#xSk .xsk-lr{padding:2px 6px}#xSk .xsk-tg{min-height:34px}#xSk .xsk-pn small{display:none}#xSk .xsk-feat{min-height:0;padding:12px 14px}#xSk .xsk-feat h2{font-size:20px}#xSk .xsk-daily h3{margin:10px 0 6px}#xSk .xsk-of i{height:36px}#xSk .xsk-cat h3{margin:8px 0 6px}}';
+// Lobby wiring: Collection opens the Collection page (was the old swatch modal, which now holds Sprays only); a Store
+// button joins the lobby nav. The old modal's skin list is hidden (its picks were colour-only and never persisted).
+try { const inv = document.getElementById('navInv'); if (inv) inv.onclick = () => xskOpen('col');
+  const nav = inv && inv.parentNode; if (nav && !document.getElementById('navStore')) { const b = document.createElement('button'); b.id = 'navStore'; b.dataset.nav = 'store'; b.setAttribute('aria-label', 'Store');
+    b.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 9h16l-1.5 11h-13z"/><path d="M8 9V7a4 4 0 018 0v2"/></svg><span class="x-nl">Store</span>'; b.onclick = () => xskOpen('store'); nav.insertBefore(b, inv.nextSibling); }
+  const il = document.getElementById('invList'); if (il) { il.hidden = true; il.style.display = 'none'; const p = il.previousElementSibling; if (p && p.tagName === 'P') p.hidden = true; }
+  const hi = document.getElementById('hInv'); if (hi) hi.textContent = 'Sprays'; } catch (e) {}
+try { xskApplyAll(true); } catch (e) {}
+// ---- END WEAPON SKINS ----
 xReady = true; // every mode is initialised; lobby launches may now start them
 { let rb = null; try { rb = sessionStorage.getItem("vs.retry"); sessionStorage.removeItem("vs.retry"); } catch (e) {} // Retry on the engine error reloaded the page: relaunch the same mode
   if (rb) setTimeout(() => { const b = $(rb); if (b) b.click(); }, 300); }
