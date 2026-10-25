@@ -621,3 +621,17 @@ overhang root cause' was a misread of blocked()=TRUE; the cluster is a one-way d
 real terrain step (up impassable at 0.39 m > 0.321 climb limit, down fine). NO nav
 invalidation (bake would remove legitimate standing space; one-way drops are plausibly
 intentional; the runtime per-unit stall breaker covers bots attempting the up leg).
+
+## Parent calibration on stairs A/B + sweep methodology (2026-10-25 ~17:18 EDT)
+- A/B framing: settled-vs-unsettled SUPPORTS the startup-contention hypothesis, it is NOT
+  definitive no-motor-regression proof. Recorded: breeze 9->0, haven 12->1, lotus 15->5
+  stall samples (settled). Residual lotus stalls (5) stay an open bounded item.
+- SETTLE=60 is DIAGNOSTIC ONLY, not a user-facing fix for early-match hitching. Open work
+  item: reduce ACTUAL startup contention (bounded preload/decode scheduling or readiness
+  changes), no invisible agents, preserve main's newer loader/cache behavior, check hark
+  branch overlap FIRST.
+- Lotus terrain-step directionality: unresolved routing-quality limit, not proven
+  intentional. Open.
+- Sweep: a run without a completion marker is INCOMPLETE, not green. Replaced the single
+  long sweep with /tmp/sliced-sweep.sh: 9 deterministic slices, per-test RESULT lines with
+  exit codes + durations, SLICE-DONE markers, resumable via recorded results.
