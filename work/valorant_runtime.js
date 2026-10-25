@@ -217,7 +217,6 @@ function xvSurfaces(){
   },undefined,e=>{XV.failures['surface/'+key]=String(e);});
 }
 {const go=xGo;xGo=function(){if(!XV.surfaces){XV.surfaces=true;xvSurfaces();}return go.apply(this,arguments);};}
-// ---- END VALORANT ASSET INTEGRATION ----
 
 // xvPreload kickoff: this block is spliced just before `xReady = true`, so boot is complete
 // here. Delay briefly so first paint and lobby setup are not competing with the fetch burst.
@@ -248,4 +247,4 @@ setTimeout(() => {
 // store is keyed by URL only. After changing models, bump XV_STORE or run
 // xValorantAssets.purgeCache() once in the console to refetch.
 async function xvPurgeCache() { try { if (window.caches) await caches.delete(XV_STORE); } catch (e) {} }
-
+// ---- END VALORANT ASSET INTEGRATION ----

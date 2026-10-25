@@ -12369,97 +12369,6 @@ window.xLdInfo = function () { const ag = (u) => { try { return xAg(u) || u.agen
 window.xLdKeys = function (dt) { for (const k in keys) keys[k] = false; fireHeld = false; if (dt) try { clock.getDelta(); } catch (e) {} };
 try { applyBright(); } catch (e) {} // a saved brightness reaches the game canvas, which did not exist yet when settings loaded
 
-
-// xvPreload kickoff: this block is spliced just before `xReady = true`, so boot is complete
-// here. Delay briefly so first paint and lobby setup are not competing with the fetch burst.
-setTimeout(() => { try { xvPreload(); } catch (e) {} }, 1200);
-
-
-// xvPreload kickoff: this block is spliced just before `xReady = true`, so boot is complete
-// here. Delay briefly so first paint and lobby setup are not competing with the fetch burst.
-setTimeout(() => { try { xvPreload(); } catch (e) {} }, 1200);
-
-
-// xvPreload kickoff: this block is spliced just before `xReady = true`, so boot is complete
-// here. Delay briefly so first paint and lobby setup are not competing with the fetch burst.
-setTimeout(() => { try { xvPreload(); } catch (e) {} }, 1200);
-
-
-// xvPreload kickoff: this block is spliced just before `xReady = true`, so boot is complete
-// here. Delay briefly so first paint and lobby setup are not competing with the fetch burst.
-setTimeout(() => { try { xvPreload(); } catch (e) {} }, 1200);
-
-
-// xvPreload kickoff: this block is spliced just before `xReady = true`, so boot is complete
-// here. Delay briefly so first paint and lobby setup are not competing with the fetch burst.
-setTimeout(() => { try { xvPreload(); } catch (e) {} }, 1200);
-
-// Match-start readiness: characters render native-only, so a match must not begin
-// before every agent rig it can spawn is actually loaded (mobile skips the lobby
-// preload). The wait rides the existing match loading screen via xMatchLoad; a
-// persistent failure aborts the start with the error toast instead of spawning
-// invisible opponents. The background preload aborts so the match's own asset
-// burst (map chunks) is not competing with it.
-function xvReadyAgents() {
-  const one = (ag) => xvAgentLoad(ag).catch(() => xvAgentLoad(ag)); // one retry; a second failure rejects
-  return Promise.all(Object.keys(XUB_AG).map(one));
-}
-setTimeout(() => {
-  try {
-    const prev = window.xMatchLoad;
-    if (typeof prev !== 'function' || prev.xvWrapped) return;
-    const wrapped = function (fn, map, mode, sync) {
-      return prev(function () {
-        XV.preloading = 'abort';
-        return xvReadyAgents().then(fn);
-      }, map, mode, sync);
-    };
-    wrapped.xvWrapped = 1;
-    window.xMatchLoad = wrapped;
-  } catch (e) {}
-}, 0);
-
-// Developer escape hatch: model files are immutable per deploy, so the persistent
-// store is keyed by URL only. After changing models, bump XV_STORE or run
-// xValorantAssets.purgeCache() once in the console to refetch.
-async function xvPurgeCache() { try { if (window.caches) await caches.delete(XV_STORE); } catch (e) {} }
-
-
-function xvReadyAgents() {
-  const one = (ag) => xvAgentLoad(ag).catch(() => xvAgentLoad(ag)); // one retry; a second failure rejects
-  return Promise.all(Object.keys(XUB_AG).map(one));
-}
-
-// xvPreload kickoff: this block is spliced just before `xReady = true`, so boot is complete
-// here. Delay briefly so first paint and lobby setup are not competing with the fetch burst.
-setTimeout(() => { try { xvPreload(); } catch (e) {} }, 1200);
-
-// Match-start readiness: characters render native-only, so a match must not begin
-// before every agent rig it can spawn is actually loaded (mobile skips the lobby
-// preload). The wait rides the existing match loading screen via xMatchLoad; a
-// persistent failure aborts the start with the error toast instead of spawning
-// invisible opponents. The background preload aborts so the match's own asset
-// burst (map chunks) is not competing with it.
-setTimeout(() => {
-  try {
-    const prev = window.xMatchLoad;
-    if (typeof prev !== 'function' || prev.xvWrapped) return;
-    const wrapped = function (fn, map, mode, sync) {
-      return prev(function () {
-        XV.preloading = 'abort';
-        return xvReadyAgents().then(fn);
-      }, map, mode, sync);
-    };
-    wrapped.xvWrapped = 1;
-    window.xMatchLoad = wrapped;
-  } catch (e) {}
-}, 0);
-
-// Developer escape hatch: model files are immutable per deploy, so the persistent
-// store is keyed by URL only. After changing models, bump XV_STORE or run
-// xValorantAssets.purgeCache() once in the console to refetch.
-async function xvPurgeCache() { try { if (window.caches) await caches.delete(XV_STORE); } catch (e) {} }
-
 // ---- VALORANT ASSET INTEGRATION ----
 // Models and native clips: Riot Games via Kingdom Archives. Map props: public Ascent port.
 var XV = { config: window.VALORANT_ASSETS || {}, cache: {}, agents: {}, guns: {}, fp: null, fpLoad: null, event: null, failures: {}, preloading: false };
@@ -12679,7 +12588,6 @@ function xvSurfaces(){
   },undefined,e=>{XV.failures['surface/'+key]=String(e);});
 }
 {const go=xGo;xGo=function(){if(!XV.surfaces){XV.surfaces=true;xvSurfaces();}return go.apply(this,arguments);};}
-// ---- END VALORANT ASSET INTEGRATION ----
 
 // xvPreload kickoff: this block is spliced just before `xReady = true`, so boot is complete
 // here. Delay briefly so first paint and lobby setup are not competing with the fetch burst.
@@ -12710,7 +12618,7 @@ setTimeout(() => {
 // store is keyed by URL only. After changing models, bump XV_STORE or run
 // xValorantAssets.purgeCache() once in the console to refetch.
 async function xvPurgeCache() { try { if (window.caches) await caches.delete(XV_STORE); } catch (e) {} }
-
+// ---- END VALORANT ASSET INTEGRATION ----
 
 // ---- ORIGINAL VALORANT MAPS ----
 // Entire source scenes, collisions and navigation replace the six legacy blockouts.
