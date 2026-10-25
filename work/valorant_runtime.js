@@ -1,5 +1,38 @@
 // ---- VALORANT ASSET INTEGRATION ----
 // Models and native clips: Riot Games via Kingdom Archives. Map props: public Ascent port.
+// Texture memory cap (quality-linked): a full native load decodes ~640MB of RGBA textures
+// (map ~295MB + kits/weapons ~339MB) regardless of the graphics preset, which OOMs
+// memory-constrained devices (observed: chrome killed at ~1GB RSS in a 2GB container).
+// The low preset (user-selected, or auto on touch devices) caps texture decode at 512px;
+// devices reporting navigator.deviceMemory <= 4 cap at 1024px whatever the preset.
+// Halving dimensions quarters decoded memory; models, geometry, animations and gameplay
+// are untouched - this is a deliberate, preset-linked quality/memory tradeoff, not a
+// fallback tier. Chrome/Edge decode GLTF textures via createImageBitmap; Safari/Firefox
+// use TextureLoader and are unaffected (full res, as before).
+const XV_TEXCAP = (() => {
+  try {
+    let gq = null; try { gq = localStorage.getItem('vs.gq'); } catch (e) {}
+    if (!gq) gq = (typeof xLowDev !== 'undefined' && xLowDev) ? 'low' : 'medium';
+    const lowMem = !!(navigator.deviceMemory && navigator.deviceMemory <= 4);
+    if (gq === 'low') return 512;
+    if (lowMem) return 1024;
+  } catch (e) {}
+  return 0; // 0 = no cap: high/medium on ordinary hardware keep full-resolution textures
+})();
+if (XV_TEXCAP && typeof createImageBitmap === 'function') {
+  const xvCIB = createImageBitmap.bind(window);
+  window.createImageBitmap = function (src, ...rest) {
+    // Only intercept the (blob, options) shape THREE.ImageBitmapLoader uses; pass everything else through.
+    if (rest.length !== 1 || !(src instanceof Blob) || !rest[0] || typeof rest[0] !== 'object') return xvCIB(src, ...rest);
+    const opts = rest[0];
+    return xvCIB(src, opts).then((probe) => {
+      const m = Math.max(probe.width, probe.height);
+      if (m <= XV_TEXCAP) return probe;
+      const f = XV_TEXCAP / m, rw = Math.max(1, Math.round(probe.width * f)), rh = Math.max(1, Math.round(probe.height * f));
+      return xvCIB(src, Object.assign({}, opts, { resizeWidth: rw, resizeHeight: rh, resizeQuality: 'high' })).then((small) => { probe.close(); return small; });
+    });
+  };
+}
 var XV = { config: window.VALORANT_ASSETS || {}, cache: {}, agents: {}, guns: {}, fp: null, fpLoad: null, event: null, failures: {}, preloading: false };
 // Persistent asset cache (Cache Storage): agent/weapon GLBs and locomotion JSON are fetched
 // once per device, then served locally on later visits. Falls back to plain fetch when the
