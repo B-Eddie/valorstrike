@@ -101,7 +101,23 @@ All 12 user-list items now have shipped fixes on instinct. Remaining: ledger 13-
   PHYSICS: server Motor.step real-time substeps; offline client dilates uniformly (bots,
   timers, physics share the clamped dt) - internally coherent slow motion, quality issue only.
   VERDICT: authoritative-vs-client timing stays coherent at low client FPS; no code change.
-- Watch item (single sample, not yet a bug): one bind soak round ended with the last ally
+- [x] Gameplay soak #2 (tdm-soak.cjs, TDM on ascent, real-time): THREE stranded-unit defects
+  found and fixed. (a) TDM allies had no hunt goal: without a target they pathed back to
+  (spawnX, hardcoded z=1.2) and idled stacked at spawn - now they hunt their nearest enemy
+  like enemy bots do (origin z stored as a.oz for the fallback). (b) gNav parked units on
+  unreachable goals: A* exhaustion returned the unit's OWN nearest node N[s], so any goal on
+  another nav component froze the unit - now routes to the closest REACHABLE node
+  (test_gnav_unreachable.cjs). (c) dmPts spawn candidates came from map CALLOUTs with no
+  connectivity check - Ascent's "B Site" callout sits on a disconnected nav island and TDM
+  allies spawned there stranded (4 parked at (46.7,-27.1) live); candidates must now sit
+  within 2.5u of PLAYABLE nav, fallback keeps originals if <8 survive
+  (test_dmpts_playable.cjs). Post-fix soak: the 4-ally park is gone, deaths/respawns flow
+  10/8, real-time rate. 40 client suites green.
+- Watch item (RESIDUAL): one unit (ally Reyna) still parked 16s at ascent (24,-26.7) - the
+  SAME spot an enemy Killjoy stalled pre-fix. Not spawn-related; likely a pathing snag point
+  (waypoint unreachable by straight line / collision pocket). Needs a focused probe of that
+  coordinate: waypoint stream + collision probes around it.
+- Watch item (superseded by the three fixes above unless it recurs): one bind soak round ended with the last ally
   (Chamber) stationary 16s at (-47,10.3) mid-round while spike was player-carried; could be a
   hold personality or pathing stall - needs another sample before treating as a defect.
 - five-soak haven round (parameterized MAP): allies traded 3-for-1 then wiped, player-carried

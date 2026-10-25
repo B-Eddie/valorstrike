@@ -4311,8 +4311,9 @@ function tick(dt) {
     a.xTt = tg; a.xSe = !!tg; a.see = tg ? (a.see || 0) + dt : 0; // same LOS/target fields as the enemy bot AI (orb-run cancel reads xSe / see)
     if (tg) { const tp = a.xTp || (a.xTp = { x: 0, z: 0 }); tp.x = tg.g.position.x; tp.z = tg.g.position.z; botAb(a, dt, true, tp, from); } else botAb(a, dt, false, null, from); // allies share the enemy ability logic
     if (!running) return;
-    let vx = 0, vz = 0, gx = a.ox, gz = 1.2;
+    let vx = 0, vz = 0, gx = a.ox, gz = a.oz == null ? 1.2 : a.oz;
     if (rf) { const nb = a.xNb; if (nb) { gx = nb.g.position.x; gz = nb.g.position.z; } }
+    else if (mode !== "five") { const nb = a.xNb; if (nb && nb.alive) { gx = nb.g.position.x; gz = nb.g.position.z; } } // TDM: hunt the nearest enemy like enemy bots do instead of idling at spawn
     if (mode === "five" && xStep(a, dt)) continue;
     if (mode === "five") { const o = xGoal(a, allies, FV.atk, XG_V); if (o) [gx, gz] = o; }
     if (!tg && a.trT > 0) { a.trT -= dt; [gx, gz] = a.tr; } // trade a fallen teammate
@@ -7365,10 +7366,11 @@ function gNav(px, pz, tx, tz) {
   const s = near(px, pz), e = near(tx, tz); if (s < 0 || e < 0) return [tx, tz];
   const pc = G.pc || (G.pc = new Map()), pk = s * 65536 + e; let path = pc.get(pk); // A* result cached per (start, goal) node pair
   if (!path) {
-  const dist = { [s]: 0 }, prev = {}, open = new Set([s]), hh = (i) => Math.hypot(N[i][0] - N[e][0], N[i][1] - N[e][1]);
-  while (open.size) { let u = null; open.forEach((i) => { if (u === null || dist[i] + hh(i) < dist[u] + hh(u)) u = i; }); open.delete(u); if (u === e) break;
+  const dist = { [s]: 0 }, prev = {}, open = new Set([s]), hh = (i) => Math.hypot(N[i][0] - N[e][0], N[i][1] - N[e][1]); let best = s;
+  while (open.size) { let u = null; open.forEach((i) => { if (u === null || dist[i] + hh(i) < dist[u] + hh(u)) u = i; }); open.delete(u); if (hh(u) < hh(best)) best = u; if (u === e) break;
     G.adj[u].forEach(([v, c]) => { const d = dist[u] + c; if (dist[v] === undefined || d < dist[v]) { dist[v] = d; prev[v] = u; open.add(v); } }); }
-  path = [e]; while (path[0] !== s && prev[path[0]] !== undefined) path.unshift(prev[path[0]]);
+  const goal = e !== s && prev[e] === undefined ? best : e; // goal on another nav component (fragmented-island defect): route to the closest reachable node instead of parking on N[s]
+  path = [goal]; while (path[0] !== s && prev[path[0]] !== undefined) path.unshift(prev[path[0]]);
   pc.set(pk, path); }
   if (path[0] !== s) return N[s];
   for (let i = 0; i < path.length - 1; i++) { const t = G.ty[path[i] + ">" + path[i + 1]]; if (t) { // never look past a teleporter / window: walk onto its start, xStep runs it
@@ -10875,7 +10877,7 @@ function tdmAb() { // abilities: charges refill every 40 s, for you and every bo
 }
 function tdmTick(dt) {
   if (window.xLdOn) dt = 0; // loading screen up: clock frozen
-  for (const a of allies) if (!a.alive) { if (!a.drt) a.drt = 1.5; a.drt -= dt; if (a.drt <= 0) { dmSpawnB(a); a.ox = a.g.position.x; } }
+  for (const a of allies) if (!a.alive) { if (!a.drt) a.drt = 1.5; a.drt -= dt; if (a.drt <= 0) { dmSpawnB(a); a.ox = a.g.position.x; a.oz = a.g.position.z; } }
   const t = tdmTier(); if (t !== DM.tier) { DM.tier = t; say(t === 1 ? "Rifles & shotguns unlocked · B" : "Snipers & machine guns unlocked · B", 1600); if (DM.menu) dmMR(); }
   if ((DM.abT -= dt) <= 0) { tdmAb(); feed("Ability charges refilled"); }
 }
@@ -10919,6 +10921,9 @@ function dmPts() { // spawn candidates: nav nodes, else callouts, pushed clear o
   if (L.length < 8) { L = []; try { CALLOUTS.forEach((c) => L.push([c[1], c[2]])); } catch (e) {} }
   if (L.length < 8) for (let i = 0; i < 24; i++) { const a = (i / 24) * 6.2832, r = 8 + (i % 3) * 10; L.push([Math.cos(a) * r, Math.sin(a) * r]); }
   if (L.length > 160) L = L.filter((_, i) => i % Math.ceil(L.length / 160) === 0);
+  try { const C = nmActive(); if (C && C.playable && C.nav) { // no spawns stranded on disconnected nav islands (e.g. Ascent "B Site" callout): candidates must sit near PLAYABLE nav
+    const f = L.filter(([x, z]) => { let bd = 1e9; const N = C.nav.nodes; for (let i = 0; i < N.length; i++) { if (!C.playable[i]) continue; const n = N[i], d = Math.hypot(n[0] - x, n[2] - z); if (d < bd) bd = d; } return bd <= 2.5; });
+    if (f.length >= 8) L = f; } } catch (e) {}
   DM.pts = L.map(([x, z]) => xClear(x, z)); DM.pm = FV.map; DM.pb = boxes; return DM.pts;
 }
 function dmSpot(me) { // the candidate farthest from every living enemy (small jitter so spawns vary)
@@ -11018,7 +11023,7 @@ function dmStart0() {
     const b = Object.assign(mkGuy(0, 0, botMat, headMat), { hp: 100, armor: 50, w: dmBW(), alive: true, cd: 1 + Math.random() * 1.5, name: n, strafe: Math.random() < 0.5 ? 1 : -1, per: xPer() });
     b.body.userData.bot = b; b.head.userData.bot = b; b.head.userData.head = true; bots.push(b); dmSpawnB(b);
   });
-  mates.forEach((n, i) => { const a = Object.assign(mkGuy(0, 0, allyMat, allyHead), { hp: 100, armor: 50, w: "Spectre", alive: true, cd: 0.6, def: 0, ox: 0, name: n, strafe: i % 2 ? 1 : -1, flip: 1, per: xPer() }); allies.push(a); dmSpawnB(a); a.ox = a.g.position.x; });
+  mates.forEach((n, i) => { const a = Object.assign(mkGuy(0, 0, allyMat, allyHead), { hp: 100, armor: 50, w: "Spectre", alive: true, cd: 0.6, def: 0, ox: 0, name: n, strafe: i % 2 ? 1 : -1, flip: 1, per: xPer() }); allies.push(a); dmSpawnB(a); a.ox = a.g.position.x; a.oz = a.g.position.z; });
   xAgSet(bots);
   FV.pri = FV.tdm ? (WEAP.Spectre ? "Spectre" : null) : "Vandal"; FV.sec = "Classic"; dmSpawnP(); if (FV.tdm) { tdmAb(); tdmTS(); }
   timeLeft = DM.len; defuseT = 0; kSwing = 0; $("feed").innerHTML = ""; $("defuse").style.display = "none";
