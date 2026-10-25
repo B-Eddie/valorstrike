@@ -790,3 +790,19 @@ check hark-perf overlap first (it owns agent cull + nav GC).
   byte-identical. VM tests: lifecycle, settings, hud_polish, agent_preload pass.
 - Status: implementation landed; live-startup acceptance stays with the open live-combat
   profiling row. Remaining on this item: bounded preload/decode scheduling investigation.
+
+## 2026-10-25 18:34 - Match-start longtask profile (diagnostic, SwiftShader sandbox)
+- Probe /tmp/probe-longtasks.cjs (PerformanceObserver longtask, heavy profile, breeze DM,
+  __vs.light(true) + agents(false), 20s window from preDM):
+  marks booted 1948ms, preDM 1985ms, dmStarted 4965ms.
+- ONE discrete burst: a 1548ms monolithic longtask at +1.1s into the DM-start sequence
+  (before dmStarted). With light mode the map scene.gltf load is SKIPPED (nmLoadScene bypassed),
+  so this 1.5s is inside the match-start code path itself (world/nav build + first frames),
+  not asset parsing. This is the remaining startup-contention target.
+- The other 40 longtasks (50-390ms, ~5.9s total) are evenly spaced across the whole window:
+  consistent with SwiftShader software-rasterizer frame cost, a sandbox artifact, NOT
+  decode/parse bursts. Sandbox cannot resolve real-hardware decode contention; do not tune
+  against it.
+- Next concrete step: decompose the 1548ms task with lightweight timing marks around the
+  match-start sub-steps (roster gate, world build, nav activation, first compile) to find the
+  chunkable piece. Any scheduling change must preserve main's loader/cache behavior.
