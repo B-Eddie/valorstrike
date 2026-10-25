@@ -533,7 +533,7 @@ body.x-cbh .x-mvp.en{border-left-color:#ff9f1c}
 .x-kb__r b{display:block;font-size:15px}.x-kb__r span{font-size:12px;opacity:.75}
 .x-kb__d{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;margin:0;font-size:12px}.x-kb__d dt{opacity:.7;letter-spacing:.08em}.x-kb__d dd{margin:0;text-align:right}
 .x-sp{position:fixed;left:50%;bottom:120px;transform:translateX(-50%);z-index:60;padding:6px 14px;background:rgba(15,25,35,.75);color:#ece8e1;font:500 13px var(--sans);letter-spacing:.14em;pointer-events:none;display:none;text-align:center}
-.x-sp small{display:block;font-size:12px;letter-spacing:.04em;opacity:.7;margin-top:2px}.x-sp.on{display:block}
+.x-sp small{display:block;font-size:12px;letter-spacing:.04em;opacity:.7;margin-top:2px}.x-sp.on{display:block} .x-sp__tp{display:inline-flex;align-items:center;gap:6px;margin-left:12px;padding:4px 10px;min-height:28px;border:1px solid rgba(236,232,225,.45);background:rgba(15,25,35,.6);color:#ece8e1;font:600 12px var(--sans);letter-spacing:.12em;cursor:pointer;pointer-events:auto}.x-sp__tp:hover,.x-sp__tp:focus-visible{border-color:#ff4655;outline:0}.x-sp__tp.on{background:#ff4655;color:#0f1923;border-color:#ff4655}.x-sp__tp kbd{font:inherit;padding:0 4px;border:1px solid currentColor;border-radius:2px}
 </style>
 <style id="xHudV">
 /* HUD overhaul: Valorant-style in-match HUD. One font, 8px spacing scale, dark translucent panels, teal allies / red enemies */
@@ -2470,7 +2470,7 @@ function xAoe(b, p, r, n, w) {
 }
 // spectator follow cam: V (or tap SPECTATING) toggles first person / over-the-shoulder, 3 m back, 0.6 m right
 const xTP = { on: false, init: false, x: 0, y: 0, z: 0, yw: 0, d: 3, t: 0, tg: null, o: new THREE.Vector3(), v: new THREE.Vector3(), dir: new THREE.Vector3() };
-function xTPToggle() { xTP.on = !xTP.on; xTP.init = false; try { say(xTP.on ? "Third-person follow cam" : "First-person view", 700); } catch (e) {} }
+function xTPToggle() { xTP.on = !xTP.on; xTP.init = false; try { if (xKL.tp) { xKL.tp.setAttribute("aria-pressed", String(xTP.on)); xKL.tp.classList.toggle("on", xTP.on); xKL.tp.firstChild.textContent = xTP.on ? "1ST PERSON " : "3RD PERSON "; } } catch (e) {} try { say(xTP.on ? "Third-person follow cam" : "First-person view", 700); } catch (e) {} }
 addEventListener("keydown", (e) => { if (e.code === "KeyV" && !e.repeat && xKL.sp && player && player.hp <= 0) xTPToggle(); });
 function xTPCam(a, dt) {
   const q = a.g.position, ry = a.g.rotation.y, fx = Math.sin(ry), fz = Math.cos(ry), rx = -fz, rz = fx;
@@ -2537,7 +2537,8 @@ function xKLog(t, by, d) { const hs = xHS; xHS = false; if (!(d > 0) || !player 
   else if (by === undefined && t !== player && t && t.name && player.hp > 0) { e = xKLe(t.name); if (e) { e.dd += d; e.dh++; if (hs) e.dhs++; } } }
 function xKLui() { if (xKL.el && xKL.el.parentNode && xKL.t && xKL.nm && xKL.w && xKL.dd && xKL.tk && xKL.sn) return; if (xKL.el && xKL.el.parentNode) xKL.el.parentNode.removeChild(xKL.el); if (xKL.sl && xKL.sl.parentNode) xKL.sl.parentNode.removeChild(xKL.sl); const c = document.createElement("div"); c.className = "x-kb"; c.setAttribute("aria-live", "polite");
   c.innerHTML = '<p class="x-kb__h">KILLED BY</p><div class="x-kb__r"><i></i><div><b></b><span></span></div></div><dl class="x-kb__d"><dt>DEALT</dt><dd></dd><dt>TAKEN</dt><dd></dd></dl>';
-  const s = document.createElement("div"); s.className = "x-sp"; s.innerHTML = "<span></span><small>Left / right click or Space to switch · V or tap for 3rd person</small>"; s.querySelector("span").addEventListener("click", (e) => { e.stopPropagation(); xTPToggle(); }); s.querySelector("span").addEventListener("mousedown", (e) => e.stopPropagation()); s.querySelector("span").style.cursor = "pointer"; s.querySelector("span").style.pointerEvents = "auto"; s.style.pointerEvents = "auto";
+  const s = document.createElement("div"); s.className = "x-sp"; s.innerHTML = '<span></span><button type="button" class="x-sp__tp" aria-pressed="false">3RD PERSON <kbd>V</kbd></button><small>Click or Space to switch player · V or the button for 3rd person</small>'; const tp = s.querySelector(".x-sp__tp"); // spectating frees the mouse pointer (see xSpec), so this is a real clickable button
+  tp.addEventListener("click", (e) => { e.preventDefault(); e.stopPropagation(); xTPToggle(); }); ["mousedown", "pointerdown", "touchstart"].forEach((k) => tp.addEventListener(k, (e) => e.stopPropagation(), { passive: k === "touchstart" })); s.querySelector("span").addEventListener("click", (e) => { e.stopPropagation(); xTPToggle(); }); s.querySelector("span").style.cursor = "pointer"; s.querySelector("span").style.pointerEvents = "auto"; s.style.pointerEvents = "auto"; xKL.tp = tp;
   document.body.appendChild(c); document.body.appendChild(s); xKL.el = c; xKL.sl = s;
   const q = (k) => c.querySelector(k); xKL.t = q("i"); xKL.nm = q("b"); xKL.w = q(".x-kb__r span"); const dd = c.querySelectorAll("dd"); xKL.dd = dd[0]; xKL.tk = dd[1]; xKL.sn = s.querySelector("span"); }
 function xKLfx(on) { try { const cv = renderer.domElement; cv.style.transition = "filter .35s ease-out"; cv.style.filter = on ? "saturate(.12) brightness(.55)" : ""; } catch (e) {} }
@@ -2551,7 +2552,7 @@ function xKLDie(by, w) { if (!xKLm()) return; xKLui(); xKL.on = true; xKL.st = 0
   if (xKL.el) xKL.el.classList.add("on"); xKLfx(true); }
 function xKLReset() { try { if (typeof XOB !== "undefined" && XOB.hm) { XOB.hm.visible = true; XOB.hm = null; } } catch (e) {} xKL.p = player; xKL.n = 0; xKL.st = 0; xKL.on = false; xKL.sp = false; xKL.cur = null; xHS = false; if (xKL.el) { xKL.el.classList.remove("on"); xKL.sl.classList.remove("on"); xKLfx(false); } }
 function xSpec(dt) { if (!xKL.on) return xSpecPick(); xKL.st += dt; if (xKL.st < 2) return null;
-  if (!xKL.sp) { xKL.sp = true; xKLfx(false); xKL.el.classList.remove("on"); xKL.sl.classList.add("on"); }
+  if (!xKL.sp) { xKL.sp = true; xKLfx(false); xKL.el.classList.remove("on"); xKL.sl.classList.add("on"); try { if (document.pointerLockElement) document.exitPointerLock(); } catch (e) {} } // free the cursor so the 3rd-person button can be clicked; pointerlockchange does not pause while spectating
   const a = xSpecPick(); if (a !== xKL.cur) { xKL.cur = a; if (xKL.sn) xKL.sn.textContent = a ? "SPECTATING " + String(a.name).toUpperCase() : "NO TEAMMATES ALIVE · SPIKE CAM"; } return a; }
 function xSpecPick() { let n = 0; for (const x of allies) if (x.alive) n++; if (!n) return null; let i = ((xKL.si % n) + n) % n; for (const x of allies) if (x.alive && i-- === 0) return x; return null; }
 addEventListener("mousedown", (e) => { if (xKL.sp && player && player.hp <= 0) { if (e.button === 0) xKL.si++; else if (e.button === 2) xKL.si--; } });
@@ -2787,6 +2788,7 @@ addEventListener("keyup", (e) => keys[e.code] = false);
 let drag = false;
 const xMD = (e) => {
   if (!running || paused || (mode === "five" && FV.menu)) return;
+  if (player && player.hp <= 0 && xKL.sp) return; // spectating: clicks switch players (window handler) and must not re-lock the pointer
   if (!document.pointerLockElement) { xPLock(); drag = true; }
   if (mode === "aim") { if (e.button === 2) { if (aimW() === "Knife") aimFire(true); else xScopeT(); } else if (e.button === 0) { AM.fire = true; aimFire(); } return; }
   if (mode === "surf") { if (e.button === 0 && kSwing <= 0) { kSwing = 0.45; kick = 1; blip(520, 0.06, "triangle", 0.15); } return; }
@@ -9916,7 +9918,7 @@ function pause() {
 }
 function resume() { if (!paused) return; closeAll(); paused = false; $("xPause").classList.remove("on"); clock.getDelta(); if (!FV.menu) relock(); } // buy / free-gun menu still open (paused by alt-tab): keep the cursor free to click it
 function leave() { closeAll(); paused = false; $("xPause").classList.remove("on"); $("xBoard").classList.remove("on"); running = false; if (document.pointerLockElement) document.exitPointerLock(); $("lobbyBtn").onclick(); }
-document.addEventListener("pointerlockchange", () => { if (!document.pointerLockElement && inGame() && !paused && !FV.menu && performance.now() - (FV.mt || 0) > 700) pause(); });
+document.addEventListener("pointerlockchange", () => { if (!document.pointerLockElement && inGame() && !paused && !FV.menu && !(player && player.hp <= 0 && xKL.sp) && performance.now() - (FV.mt || 0) > 700) pause(); });
 addEventListener("keydown", (e) => {
   if (xKbSkip(e)) return; // rebinding (Esc cancels the row, must not resume) or a key the keymap layer re-sends as its bound action
   if (e.key === "Escape" && FV.menu) { e.stopImmediatePropagation(); return buyMenu(false); }
