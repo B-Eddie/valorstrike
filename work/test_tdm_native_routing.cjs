@@ -52,4 +52,6 @@ const me=()=>({g:{position:{x:0,y:0,z:0}}});
  assert(calls.length===2&&calls[0]===1&&calls[1]===0,'exhaustion retries once without bans');}
 assert(src.includes("banned.has(a+'>'+b)"),'nmPath skips banned directed edges');
 assert(src.includes('Never place a unit on a trap node'),'nmPlace rejects zero-exit trap nodes');
+assert(src.includes('nmNear(C,p.x,p.z,p.y,.35)'),'nmNext anchors routing to the unit level (under-bridge mis-anchor parks units)');
+assert(src.includes('yBand'),'nmNear supports the level band');
 console.log('TDM/DM hunt goal keys on FV.dm; native nmNext validates the first hop, skips blocked hops, and steers at the goal when no hop clears');

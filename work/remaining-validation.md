@@ -185,3 +185,15 @@ Owed: ascent/bind/lotus exports, lotus five-soak, full sweep re-run, natural pus
 evidence on split.
 
 - lotus five-soak PASS (first lotus run; no stalls observed in this sampled run; round ended by attacker wipe)
+
+## Under-bridge anchor defect + level-banded routing (3fa04b7) - 07:47 EDT
+Breeze B-approach stall root-caused (distinct from trap nodes): the four attackers parked at
+y=7.0 on the B-main lower road while nmNear anchored them to the upper walkway at y=7.45
+(0.85 u horizontal beats the lower road's nodes after the 2x y-weight). Every re-plan aimed
+0.45 u up an unclimbable face; validation + motor streaks reset on unstick wiggle (<0.75 u),
+so bans never triggered. Fixes: nmNear takes an optional level band (|dy|<=0.35, walkable
+step range) used for nmNext's start anchor with plain-nearest fallback; motor no-progress
+streaks now only reset on a real advance (>=0.75 u). 42/42 client suites.
+Six-map five-soak sweep, all PASS, no stalls observed in these sampled runs: breeze, haven,
+ascent, bind (this round) + split, lotus (previous). Rounds ended by combat/timer; natural
+push/plant was NOT observed this sweep (attackers wiped) - still owed.
