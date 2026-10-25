@@ -11664,7 +11664,9 @@ function mpCastFx(m) { // client: someone else's cast, visual only
   const o = mpV(m.o, new THREE.Vector3(u.g.position.x, 1.6, u.g.position.z)), d = mpDir(m.d, u), p = Array.isArray(m.p) ? mpV(m.p, new THREE.Vector3()) : null;
   mpFx(u, KITS[m.ag] ? m.ag : "Jett", m.k, o, d, false, p);
 }
+let mpAltHeld = false; addEventListener("mousedown", (e) => { if (e.button === 2) mpAltHeld = true; }, true); addEventListener("mouseup", (e) => { if (e.button === 2) mpAltHeld = false; }, true); addEventListener("blur", () => { mpAltHeld = false; });
 function mpCastSelf(k) { const m = { t: MP.role === "host" ? "ac" : "ab", k, ag: J.pick || "Jett", o: mpR3(pEye()), d: mpR3(jAim()), ts: Math.round(performance.now()) };
+  if (J.pick === "Phoenix" && k === "e") m.l = mpAltHeld ? 0 : 1; // Curveball: FIRE curves left (default), ALT FIRE held curves right (Valorant); the server reads m.l
   if (MP.role === "host") { m.i = 0; mpCastOut(m, null); } else mpSend(MP.hc, m); }
 { const k0 = jKey; jKey = function (code) { // own cast (a charge or the ult spent): client asks the host, host relays
   if (!(MP.on && MP.st === "game" && mode === "five" && (MP.role === "host" || MP.cl) && typeof code === "string" && /^Key[CQEX]$/.test(code))) return k0.apply(this, arguments);
