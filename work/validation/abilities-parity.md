@@ -107,8 +107,7 @@ Changed on both sides (client index.html, server abilities.js / devices.js), tes
 
 Still different (not cheap; each needs a client + server mechanic change):
 - Breach Fault Line hold-to-extend: done, section 7.
-- Hot Hands duration: wiki 3.25 s minimum at full size (grows first); here a 4 s full-size zone (kept: the total
-  lifetime is close and the growth phase is not modelled).
+- Hot Hands growth: done, section 7.
 - Per-ability windups: done, section 5.
 - Sova arrow bounces / charge: done, section 6. Cloudburst hold-to-curve: section 7.
 
@@ -172,7 +171,7 @@ bounces to this arrow." Both bolts now work that way on every path:
   (hold state, ALT FIRE bounces + cycle, HUD, release throws a traced bolt, clamping of cast messages).
 - Bots keep a full-charge, no-bounce bolt.
 
-## 7. Wiki mechanics: Fault Line hold-to-extend
+## 7. Wiki mechanics: Fault Line hold-to-extend, Hot Hands spread
 
 ### Breach Fault Line (wiki.playvalorant.com/en-us/Fault_Line, fetched 2026-10-25)
 
@@ -194,3 +193,16 @@ and runs `8 + 48 * charge` m from there (a tap covers 8..16 m ahead, a full char
 - Tests: `server/test-abilities.js` (tap / half / full lengths, width, the 8 m gap, clamping, junk = full, `pw` echoed),
   `work/test_ability_equip.cjs` (hold state, no cast while held, ALT FIRE ignored, HUD bar, ~32 m at 0.5 s held, bot
   dazed inside / not past the end, tap near 8 m, relayed strip from the message charge).
+
+### Phoenix Hot Hands (wiki.playvalorant.com/en-us/Hot_Hands, fetched 2026-10-25)
+
+Wiki: 4 s duration = 0.75 s spread time + 3.25 s at full size, radius 4.5 m (estimated), 60 ticks/s. Was a 4 s zone at
+full size from the start, 2.5 m on the client and 4 m on the server.
+
+- Server: `DEV.hotHands = {life:4, radius:4.5, grow:.75}`; the `fire` effect is pushed with radius 0 and `full` / `grow`
+  / `born`, and `tickAbilities` sets `radius = full * min(1, age / grow)` before picking targets (burn and self-heal).
+- Client: `XHOT` (index.html, next to `zoneGeo`); the player's zone and a relayed one (`mpFx` `fire`, not Raze's Paint
+  Shells) carry `R` / `a`; `jFxTick` grows the damage / heal radius and scales the 2.5 m `zoneGeo` disc with it.
+- Tests: `server/test-ability-equip.js` (radius 0 / 2.25 / 4.5 m at 0 / 0.375 / 0.75 s; a foe 4 m out burns only once
+  reached; gone after 4 s), `work/test_ability_equip.cjs` (XHOT == server, disc ~1.8 m at 0.3 s, 4.5 m by 1 s, relayed
+  Hot Hands grows, Paint Shells unchanged).

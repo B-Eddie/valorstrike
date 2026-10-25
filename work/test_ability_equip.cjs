@@ -84,6 +84,16 @@ const fails=[];const fail=s=>{fails.push(s);if(VERBOSE)console.log('FAIL',s);};c
   // online relay (mpCastFx / host mpCastIn): the cast message's charge sets the remote strip (missing = full)
   eq(xe('(()=>{const u=bots.find(b=>b.alive&&b.g);if(!u)return null;BC.fq=[];MPC.bolt=mpBolt({pw:0});try{mpFx(u,"Breach","e",new THREE.Vector3(u.g.position.x,1.6,u.g.position.z),new THREE.Vector3(0,0,-1),false,null,true);}finally{MPC.bolt=null;}mpFx(u,"Breach","e",new THREE.Vector3(u.g.position.x,1.6,u.g.position.z),new THREE.Vector3(0,0,-1),false,null,true);const r=BC.fq.map(q=>[q.k,q.L]);return r;})()'),[["mfl",8],["mfl",56]],'relayed Fault Line strip from the cast message charge');
   xe('J.cd.e=0;J.e=1;J.eq=null;player.hp=100;true');await adv(400);}
+ // ---- Phoenix Hot Hands spreads: 0 -> 4.5 m over 0.75 s, 4 s total (wiki); client XHOT == server DEV.hotHands ----
+ {const src=require('fs').readFileSync(require('path').join(__dirname,'../server/src/devices.js'),'utf8'),hh=src.match(/hotHands:\{life:([\d.]+),radius:([\d.]+),grow:([\d.]+)/);
+  eq(xe('[XHOT.life,XHOT.r,XHOT.grow]'),hh?[+hh[1],+hh[2],+hh[3]]:null,'client XHOT == server DEV.hotHands');
+  pick('Phoenix');xe('player.hp=100;J.q=1;J.cd.q=0;J.eq=null;true');await adv(300);const z0=xe('J.zones.length');xe('XABT.casting=true;try{xEqKey0("KeyQ")}finally{XABT.casting=false}true');
+  eq(xe('J.zones.length'),z0+1,'Hot Hands zone');eq(xe('(z=>[z.R,+z.t.toFixed(2),+z.m.scale.x.toFixed(2)])(J.zones[J.zones.length-1])'),[4.5,4,0.01],'zone starts at nothing');
+  await adv(300);const r1=xe('(z=>z.m.scale.x*2.5)(J.zones[J.zones.length-1])');if(!(r1>1.2&&r1<2.6))fail('Hot Hands ~1.8 m at 0.3 s: '+r1);
+  await adv(700);eq(xe('(z=>+(z.m.scale.x*2.5).toFixed(2))(J.zones[J.zones.length-1])'),4.5,'Hot Hands 4.5 m from 0.75 s');
+  // relayed (online) Hot Hands spreads the same; Paint Shells stay 2.5 m
+  eq(xe('(()=>{const u=bots.find(b=>b.alive&&b.g);if(!u)return null;const n=J.zones.length;mpFx(u,"Phoenix","q",new THREE.Vector3(u.g.position.x,1.6,u.g.position.z),new THREE.Vector3(0,0,-1),false,null,true);mpFx(u,"Raze","e",new THREE.Vector3(u.g.position.x,1.6,u.g.position.z),new THREE.Vector3(0,0,-1),false,null,true);return J.zones.slice(n).map(z=>[z.R||0,+z.m.scale.x.toFixed(2)]);})()'),[[4.5,0.01],[0,1]],'relayed Hot Hands spreads, Paint Shells do not');
+  await adv(200);}
  // kit table: client KITS == wiki table == server kits.json (charges, costs, ult points)
  const fs=require('fs'),path=require('path'),wiki=JSON.parse(fs.readFileSync(path.join(__dirname,'validation/abilities-wiki.json'),'utf8')),srv=JSON.parse(fs.readFileSync(path.join(__dirname,'../server/src/kits.json'),'utf8'));
  const kits=xe('JSON.parse(JSON.stringify(KITS))');
@@ -113,5 +123,5 @@ const fails=[];const fail=s=>{fails.push(s);if(VERBOSE)console.log('FAIL',s);};c
  await tap('KeyC');await adv(700);await tap('Digit2');await adv(900);const v3=xe(VM);if(Math.abs(v3.gl-v0.gl)>0.06||v3.hand)fail('weapon key did not bring the gun back '+JSON.stringify(v3));
  if(xe('XEQV.err||null'))fail('ability viewmodel error: '+xe('XEQV.err'));
  if(H.errors.length>errs0)fail('page errors: '+H.errors.slice(errs0).map(e=>String(e&&e.message||e)).join(' | '));
- if(fails.length){console.log(fails.join('\n'));process.exit(1);}console.log('ability equip: binds, migration, HUD labels, equip -> fire flow, first-person equip viewmodel, wiki equip times + windups, Sova bow charge + bounces, Fault Line hold-to-extend, kit table ok');process.exit(0);
+ if(fails.length){console.log(fails.join('\n'));process.exit(1);}console.log('ability equip: binds, migration, HUD labels, equip -> fire flow, first-person equip viewmodel, wiki equip times + windups, Sova bow charge + bounces, Fault Line hold-to-extend, Hot Hands spread, kit table ok');process.exit(0);
 })().catch(e=>{console.error(e);process.exit(1);});

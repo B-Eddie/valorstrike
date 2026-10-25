@@ -7886,6 +7886,8 @@ const xRcnGeo = new THREE.RingGeometry(0.9, 1, 64), xKjBand = new THREE.BoxGeome
 const xAdd = (k, c, o) => jMat(k, () => new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: o, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide }));
 function xKjAcc(m, s) { [0.18, -0.12].forEach((y, i) => { const b = new THREE.Mesh(xKjBand, xKjMat); b.scale.set(s * (1.06 - i * 0.02), 1, s * (1.06 - i * 0.02)); b.position.y = y * s * 2; b.raycast = () => {}; m.add(b); }); }
 const blazeGeo = new THREE.BoxGeometry(8, 3, 0.3), orbGeo = new THREE.SphereGeometry(0.25, 12, 8), zoneGeo = new THREE.CircleGeometry(2.5, 28);
+// Phoenix Hot Hands (wiki.playvalorant.com/en-us/Hot_Hands): 4 s, the fire spreads to 4.5 m over 0.75 s, then 3.25 s at full size. Server: devices.js DEV.hotHands.
+const XHOT = { r: 4.5, grow: 0.75, life: 4 };
 const ringGeo = new THREE.RingGeometry(0.5, 0.85, 24), arrowGeo = new THREE.BoxGeometry(0.07, 0.07, 0.7), beamGeo = new THREE.BoxGeometry(0.12, 0.12, 1);
 const rvMat = new THREE.MeshBasicMaterial({ color: 0xff2030, transparent: true, opacity: 0.5, depthTest: false, depthWrite: false, side: THREE.BackSide });
 // perf pass 11: ability fx reuse pooled meshes + materials (shared geometry), returned to the pool when the effect ends
@@ -7974,11 +7976,11 @@ function phKey(code) {
     const o = pEye(), side = typeof mpAltHeld !== "undefined" && mpAltHeld ? 1 : -1, c = phCurve(o, fx, fz, side);
     const m = jM(orbGeo, jMat("orb", () => new THREE.MeshBasicMaterial({ color: 0xfff2b0 }))); m.position.copy(o); scene.add(m); J.orbs.push({ m, a: o, c: c.mid, b: c.end, t: 0, w: xWf("curveball") }); blip(800, 0.1, "sine", 0.15);
   }
-  if (code === "KeyQ") { // Hot Hands (basic, Q in Valorant)
+  if (code === "KeyQ") { // Hot Hands (basic, Q in Valorant): the zone spreads to XHOT.r over XHOT.grow s (jFxTick)
     if (J.q < 1 || J.cd.q > 0) return no(); J.q--; J.cd.q = 0.6;
     ray.set(new THREE.Vector3(P.x, 1, P.z), new THREE.Vector3(fx, 0, fz)); ray.far = 5; const h = ray.intersectObjects(solids)[0];
     const dd = h ? Math.max(0, h.distance - 0.5) : 5, c = new THREE.Vector3(P.x + fx * dd, 0.05, P.z + fz * dd);
-    const m = jM(zoneGeo, fireMat(0xff5a1a, 0.55)); m.rotation.x = -Math.PI / 2; m.position.copy(c); scene.add(m); J.zones.push({ m, p: c, t: 4 }); blip(220, 0.3, "sawtooth", 0.1);
+    const m = jM(zoneGeo, fireMat(0xff5a1a, 0.55)); m.rotation.x = -Math.PI / 2; m.position.copy(c); m.scale.setScalar(0.01); scene.add(m); J.zones.push({ m, p: c, t: XHOT.life, R: XHOT.r, a: 0 }); blip(220, 0.3, "sawtooth", 0.1);
   }
   if (code === "KeyX") {
     if (J.rib > 0) return say("Run It Back · " + Math.ceil(J.rib) + " s", 700);
@@ -8015,9 +8017,10 @@ function jFxTick(dt) {
     A.length = k; }
   { const A = J.zones, n = A.length; let k = 0;
     for (let i = 0; i < n; i++) { const z = A[i]; z.t -= dt; z.m.material.opacity = 0.55 * Math.min(1, z.t / 0.5);
-      if (z.own) { if (!z.nd) { mpAreaHit(z, z.p.x, z.p.z, 2.5, 60 * dt, "Hot Hands", null); /* 60 dps (wiki.playvalorant.com/en-us/Phoenix) */ const o = z.own; if (o.alive && o.g && Math.hypot(o.g.position.x - z.p.x, o.g.position.z - z.p.z) < 2.5) o.hp = Math.min(100, o.hp + 15 * dt); } }
-      else { for (let j = 0; j < bots.length; j++) { const b = bots[j]; if (b.alive && Math.hypot(b.g.position.x - z.p.x, b.g.position.z - z.p.z) < 2.5) jHit(b, 60 * dt, "Hot Hands"); }
-      if (Math.hypot(P.x - z.p.x, P.z - z.p.z) < 2.5) heal(); } if (z.t > 0) A[k++] = z; else jRel(z.m); }
+      let r = 2.5; if (z.R) { z.a += dt; r = z.R * Math.min(1, z.a / XHOT.grow); z.m.scale.setScalar(Math.max(0.01, r / 2.5)); } // Hot Hands spreads (zoneGeo is 2.5 m); Paint Shells keep 2.5 m
+      if (z.own) { if (!z.nd) { mpAreaHit(z, z.p.x, z.p.z, r, 60 * dt, "Hot Hands", null); /* 60 dps (wiki.playvalorant.com/en-us/Phoenix) */ const o = z.own; if (o.alive && o.g && Math.hypot(o.g.position.x - z.p.x, o.g.position.z - z.p.z) < r) o.hp = Math.min(100, o.hp + 15 * dt); } }
+      else { for (let j = 0; j < bots.length; j++) { const b = bots[j]; if (b.alive && Math.hypot(b.g.position.x - z.p.x, b.g.position.z - z.p.z) < r) jHit(b, 60 * dt, "Hot Hands"); }
+      if (Math.hypot(P.x - z.p.x, P.z - z.p.z) < r) heal(); } if (z.t > 0) A[k++] = z; else jRel(z.m); }
     A.length = k; }
   { const A = J.orbs, n = A.length; let k = 0;
     for (let i = 0; i < n; i++) { const o = A[i]; o.t += dt; const ow = o.w || 0.5, u = Math.min(1, o.t / ow); if (o.c) { const w = 1 - u; o.m.position.set(w * w * o.a.x + 2 * w * u * o.c.x + u * u * o.b.x, w * w * o.a.y + 2 * w * u * o.c.y + u * u * o.b.y, w * w * o.a.z + 2 * w * u * o.c.z + u * u * o.b.z); } else o.m.position.lerpVectors(o.a, o.b, u); // Curveball bends through its control point
@@ -12081,7 +12084,7 @@ function mpFx(u, ag, k, o, d, auth, p, quiet) { // u: caster unit, o/d: eye + ai
   else if (ty === "flash") { const e = tg(ag === "Phoenix" ? 6 : 12, 0.4).clone(), m = jM(orbGeo, jMat("orb", () => new THREE.MeshBasicMaterial({ color: 0xfff2b0 }))); m.position.copy(o); scene.add(m); J.orbs.push({ m, a: o.clone(), b: e, t: 0, en }); }
   else if (ty === "fire") { const rz = ag === "Raze", e = rz ? tg(14, 0.4) : p ? tg() : mpTgt(new THREE.Vector3(up.x, 1, up.z), MPC.d.set(d.x, 0, d.z).normalize(), 5, 0.5);
     const c = new THREE.Vector3(e.x, 0.05, e.z), m = jM(zoneGeo, fireMat(rz ? 0xff4fa0 : 0xff5a1a, 0.55)); m.rotation.x = -Math.PI / 2; m.position.copy(c); scene.add(m);
-    J.zones.push({ m, p: c, t: rz ? 1.5 : 4, own: u, en, nd: nd || rz }); } // Paint Shells damage stays with the caster's own claims
+    const z = { m, p: c, t: rz ? 1.5 : XHOT.life, own: u, en, nd: nd || rz }; if (!rz) { z.R = XHOT.r; z.a = 0; m.scale.setScalar(0.01); } J.zones.push(z); } // Hot Hands spreads like the player's // Paint Shells damage stays with the caster's own claims
   else if (ty === "wall") { const sg = ag === "Sage", f = MPC.d.set(d.x, 0, d.z); if (f.lengthSq() < 1e-6) f.set(Math.sin(up.y), 0, 1); f.normalize(); const yw = Math.atan2(-f.x, -f.z);
     const w = { p: new THREE.Vector3(up.x + f.x * 3, 1.5, up.z + f.z * 3), ax: Math.cos(yw), az: -Math.sin(yw), t: sg ? 30 : 8, own: u, en, nd: nd || sg }; // Barrier Orb: sight blocker only
     w.m = jM(sg ? sgWallGeo : blazeGeo, fireMat(sg ? 0x9fe8ff : 0xff7a1a, 0.7)); w.m.position.copy(w.p); w.m.rotation.y = yw; scene.add(w.m); J.walls.push(w); }

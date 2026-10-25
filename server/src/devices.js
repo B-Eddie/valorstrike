@@ -9,7 +9,7 @@ import {WINDUP,wf} from './windups.js';
 export const DEV={
  recon:{pulses:[.9,2.5],radius:20,reveal:1.6},
  blaze:{life:8,length:12,width:.8,height:3,damage:30,heal:12.5},
- hotHands:{life:4,radius:4,damage:60,heal:12.5},
+ hotHands:{life:4,radius:4.5,grow:.75,damage:60,heal:12.5},/* wiki Hot_Hands: 4 s, spreads to 4.5 m over 0.75 s, then 3.25 s at full size */
  curveball:{ahead:5,side:2.5,windup:wf('curveball'),blind:1.1,radius:30},
  nanoswarm:{life:120,active:5,radius:4,damage:45},
  alarmbot:{life:120,sight:5.5,speed:5,trigger:1.5,radius:3,vulnerable:4},
@@ -31,7 +31,7 @@ export function startDevice(sim,u,ty,p,push,m={}){
  const f=fwd(u);
  // Phoenix Blaze: a straight wall of fire along his aim from his feet; blocks sight, burns enemies, heals him.
  if(u.agent==='Phoenix'&&ty==='wall'){let len=DEV.blaze.length;const hit=sim.world.ray([u.x,u.y+.5,u.z],f,len+1);if(Number.isFinite(hit))len=Math.max(1,hit-.3);push('blaze',DEV.blaze.life,DEV.blaze.width,{p:[u.x+f[0],u.y,u.z+f[2]],q:[u.x+f[0]*len,u.y,u.z+f[2]*len]});return true;}
- if(u.agent==='Phoenix'&&ty==='fire'){push('fire',DEV.hotHands.life,DEV.hotHands.radius,{rate:DEV.hotHands.damage,selfHeal:DEV.hotHands.heal});return true;}
+ if(u.agent==='Phoenix'&&ty==='fire'){const H=DEV.hotHands;push('fire',H.life,0,{full:H.radius,grow:H.grow,born:sim.time,rate:H.damage,selfHeal:H.heal});return true;}/* the zone spreads (radius grows, tickAbilities) */
  // Curveball bends right (m.l: left) and pops beside the corner, not at the crosshair.
  if(u.agent==='Phoenix'&&ty==='flash'){const C=DEV.curveball,side=m.l?-1:1,r=[-f[2]*side,0,f[0]*side],o=[u.x,u.y+1.6,u.z];let a=C.ahead;const h=sim.world.ray(o,f,a);if(Number.isFinite(h))a=Math.max(.5,h-.4);const mid=[o[0]+f[0]*a,o[1],o[2]+f[2]*a];let b=C.side;const h2=sim.world.ray(mid,r,b);if(Number.isFinite(h2))b=Math.max(0,h2-.4);push('flash',C.windup+.1,C.radius,{p:[mid[0]+r[0]*b,o[1],mid[2]+r[2]*b],at:sim.time+C.windup,blind:C.blind});return true;}
  // Killjoy Nanoswarm hides at the aim point until recast (C again); Alarmbot waits for an enemy to walk by.
