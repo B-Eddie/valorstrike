@@ -54,7 +54,7 @@ Equip vs quick-cast per agent (from each wiki description: "EQUIP ... FIRE" vs "
 | Cypher | C Trapwire, Q Cyber Cage, E Spycam (place), X Neural Theft | Spycam view / exit (recast) |
 | Chamber | C Trademark, E Rendezvous (place) | Q Headhunter and X Tour De Force (gun swaps), Rendezvous return (recast) |
 
-Not modelled at first: Breach Fault Line hold-to-extend, Sova arrow bounce / charge selection (now section 6).
+Not modelled at first: Breach Fault Line hold-to-extend (now section 7), Sova arrow bounce / charge selection (now section 6).
 Buying charges per round is the existing buy-menu ability row (`jBuyHtml` / server `buyAbility`); costs are checked below.
 
 ### Values checked against wiki.playvalorant.com (fetched 2026-10-25)
@@ -106,8 +106,7 @@ Changed on both sides (client index.html, server abilities.js / devices.js), tes
 - Killjoy Nanoswarm active time 4 s -> **5 s** (player, bot Killjoy, server `DEV.nanoswarm.active`).
 
 Still different (not cheap; each needs a client + server mechanic change):
-- Breach Fault Line: wiki is HOLD FIRE to extend the distance, RELEASE to fire (1.1 s windup); here FIRE casts at the
-  fixed length. Needs a hold state in the equip machine (`J.eq`) and a length field in the `ab` intent the server reads.
+- Breach Fault Line hold-to-extend: done, section 7.
 - Hot Hands duration: wiki 3.25 s minimum at full size (grows first); here a 4 s full-size zone (kept: the total
   lifetime is close and the growth phase is not modelled).
 - Per-ability windups: done, section 5.
@@ -172,3 +171,26 @@ bounces to this arrow." Both bolts now work that way on every path:
   clamping, legacy message), `server/test-ults.js` (recon device lands on the wall), `work/test_ability_equip.cjs`
   (hold state, ALT FIRE bounces + cycle, HUD, release throws a traced bolt, clamping of cast messages).
 - Bots keep a full-charge, no-bounce bolt.
+
+## 7. Wiki mechanics: Fault Line hold-to-extend
+
+### Breach Fault Line (wiki.playvalorant.com/en-us/Fault_Line, fetched 2026-10-25)
+
+Wiki stats: area 8 to 56 m long depending on charge time (estimated), 8 m wide (12.00), 8 m between Breach and the area
+(1.11), 1 s to fully charge (3.0), 1.1 s windup, 2.5 s concuss. Reading used here: the strip starts 8 m in front of Breach
+and runs `8 + 48 * charge` m from there (a tap covers 8..16 m ahead, a full charge 8..64 m), 4 m either side.
+
+- Shared values: server `FAULT` / `faultLen` / `faultPw` (`server/src/abilities.js`), client `XFAULT` / `xFaultLen`
+  (index.html, next to `BC`), asserted equal by `work/test_ability_equip.cjs`.
+- Client: `XAB_HOLD.Breach.e = "fault"`: with Fault Line out, FIRE down starts the hold (`st:"hold"`), releasing FIRE
+  casts after the 0.2 s release; ALT FIRE does nothing. Charge `min(1, held / 1 s)` (`XABT.hold.pw`) sets `L` of the
+  queued quake (`BC.fq`); the quake (`bcLine`, now with the 8 m offset) fires after the windup. The `#xBow` bar under the
+  crosshair shows the charge (no bounce pips).
+- Online: the cast carries `pw` - P2P (`mpCastSelf`, host relay `mpBolt` clamps it and relays it) and the trusted server
+  (`work/server_runtime.js` Breach E intent). Server: `u.fault.len = faultLen(m.pw)`, `tickFault` uses the strip; the `ac`
+  event echoes `pw`. Relayed casts draw / apply the same strip after the windup (`BC.fq` `"mfl"` -> `mpFault`: local
+  player concussed on every peer, units dazed on the host). Missing / junk charge = full (bots, older clients).
+- Bot Breach (offline): charged to reach just past the site (`L = clamp(dist + 4 - 8, 8, 56)`), same strip and 2.5 s.
+- Tests: `server/test-abilities.js` (tap / half / full lengths, width, the 8 m gap, clamping, junk = full, `pw` echoed),
+  `work/test_ability_equip.cjs` (hold state, no cast while held, ALT FIRE ignored, HUD bar, ~32 m at 0.5 s held, bot
+  dazed inside / not past the end, tap near 8 m, relayed strip from the message charge).

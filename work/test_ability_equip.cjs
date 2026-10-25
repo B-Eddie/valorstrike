@@ -68,6 +68,22 @@ const fails=[];const fail=s=>{fails.push(s);if(VERBOSE)console.log('FAIL',s);};c
   const far=xe('(()=>{const o=[0,1.6,0],d=[0,0,-1],a=SovaBolt.path(o,d,0,0,null,()=>0),b=SovaBolt.path(o,d,1,0,null,()=>0);return [-a.end[2],-b.end[2]];})()');if(!(far[1]>far[0]))fail('full charge not further than a tap '+far);
   eq(xe('JSON.stringify([mpBolt({pw:5,b:7}),mpBolt({}),mpBolt({pw:0.25})])'),JSON.stringify([{pw:1,b:2},null,{pw:0.25,b:0}]),'cast message charge / bounces clamped');
   xe('J.eq=null;true');await adv(600);}
+ // ---- Breach Fault Line: HOLD FIRE extends the strip (wiki 8 -> 56 m over 1 s, 8 m ahead, 8 m wide); client XFAULT == server FAULT ----
+ {const src=require('fs').readFileSync(require('path').join(__dirname,'../server/src/abilities.js'),'utf8'),sf=Function('return '+src.match(/const FAULT=(\{[^}]*\})/)[1])();
+  eq(xe('JSON.parse(JSON.stringify(XFAULT))'),sf,'client XFAULT == server FAULT');eq(xe('[xFaultLen(0),xFaultLen(0.5),xFaultLen(1),xFaultLen(9),xFaultLen(undefined),xFaultLen("x")]'),[8,32,56,56,56,56],'Fault Line length from the charge');
+  pick('Breach');xe('J.cd.e=0;J.e=1;BC.fq=[];player.hp=100;true');await tap('KeyE');await adv(1000);eq(xe('J.eq&&J.eq.st'),'ready','Fault Line drawn');
+  H.mouse(0,true);await adv(500);eq(xe('J.eq&&J.eq.st'),'hold','FIRE held: Fault Line charging');eq(xe('BC.fq.length'),0,'nothing cast while held');
+  eq(xe('document.getElementById("xBow").classList.contains("on")'),true,'charge bar shown');eq(xe('[...document.querySelectorAll("#xBow u")].every(u=>u.style.display==="none")'),true,'no bounce pips for Fault Line');
+  await click(2);eq(xe('J.eq&&J.eq.st'),'hold','ALT FIRE does nothing to the hold');
+  H.mouse(0,false);await adv(260);const fl=xe('BC.fq.map(q=>[q.k,q.L])');if(!(fl.length===1&&fl[0][0]==='fl'&&fl[0][1]>28&&fl[0][1]<40))fail('half-held Fault Line ~32 m long: '+JSON.stringify(fl));
+  // the quake hits a bot inside the charged strip, not one past its end (bots moved there just before it, then put back)
+  await adv(700);const q=xe('(()=>{const q=BC.fq[0],b=bots.filter(b=>b.alive);if(b.length<2)return null;window.__fb=b.slice(0,2).map(x=>[x,x.g.position.clone()]);b[0].blind=0;b[1].blind=0;b[0].g.position.set(q.x+q.fx*20,b[0].g.position.y,q.z+q.fz*20);const e=XFAULT.near+q.L+6;b[1].g.position.set(q.x+q.fx*e,b[1].g.position.y,q.z+q.fz*e);return 1;})()');
+  await adv(400);eq(xe('BC.fq.length'),0,'Fault Line fired after its windup');if(q){const bl=xe('(()=>{const r=__fb.map(([b])=>b.blind>0);__fb.forEach(([b,p])=>b.g.position.copy(p));return r;})()');eq(bl,[true,false],'charged strip: 20 m dazed, 6 m past its end not');}
+  // a tap is the shortest strip; the cast message carries the charge
+  xe('J.cd.e=0;J.e=1;J.eq=null;player.hp=100;true');await adv(400);await tap('KeyE');await adv(1000);await click(0);await adv(400);const tl=xe('BC.fq.map(q=>q.L)');if(!(tl.length===1&&tl[0]>=8&&tl[0]<13))fail('tapped Fault Line (60 ms click) near the 8 m minimum: '+JSON.stringify(tl));await adv(1000);
+  // online relay (mpCastFx / host mpCastIn): the cast message's charge sets the remote strip (missing = full)
+  eq(xe('(()=>{const u=bots.find(b=>b.alive&&b.g);if(!u)return null;BC.fq=[];MPC.bolt=mpBolt({pw:0});try{mpFx(u,"Breach","e",new THREE.Vector3(u.g.position.x,1.6,u.g.position.z),new THREE.Vector3(0,0,-1),false,null,true);}finally{MPC.bolt=null;}mpFx(u,"Breach","e",new THREE.Vector3(u.g.position.x,1.6,u.g.position.z),new THREE.Vector3(0,0,-1),false,null,true);const r=BC.fq.map(q=>[q.k,q.L]);return r;})()'),[["mfl",8],["mfl",56]],'relayed Fault Line strip from the cast message charge');
+  xe('J.cd.e=0;J.e=1;J.eq=null;player.hp=100;true');await adv(400);}
  // kit table: client KITS == wiki table == server kits.json (charges, costs, ult points)
  const fs=require('fs'),path=require('path'),wiki=JSON.parse(fs.readFileSync(path.join(__dirname,'validation/abilities-wiki.json'),'utf8')),srv=JSON.parse(fs.readFileSync(path.join(__dirname,'../server/src/kits.json'),'utf8'));
  const kits=xe('JSON.parse(JSON.stringify(KITS))');
@@ -97,5 +113,5 @@ const fails=[];const fail=s=>{fails.push(s);if(VERBOSE)console.log('FAIL',s);};c
  await tap('KeyC');await adv(700);await tap('Digit2');await adv(900);const v3=xe(VM);if(Math.abs(v3.gl-v0.gl)>0.06||v3.hand)fail('weapon key did not bring the gun back '+JSON.stringify(v3));
  if(xe('XEQV.err||null'))fail('ability viewmodel error: '+xe('XEQV.err'));
  if(H.errors.length>errs0)fail('page errors: '+H.errors.slice(errs0).map(e=>String(e&&e.message||e)).join(' | '));
- if(fails.length){console.log(fails.join('\n'));process.exit(1);}console.log('ability equip: binds, migration, HUD labels, equip -> fire flow, first-person equip viewmodel, wiki equip times + windups, Sova bow charge + bounces, kit table ok');process.exit(0);
+ if(fails.length){console.log(fails.join('\n'));process.exit(1);}console.log('ability equip: binds, migration, HUD labels, equip -> fire flow, first-person equip viewmodel, wiki equip times + windups, Sova bow charge + bounces, Fault Line hold-to-extend, kit table ok');process.exit(0);
 })().catch(e=>{console.error(e);process.exit(1);});
