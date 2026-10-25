@@ -15,4 +15,8 @@ assert(/xLdSet\("xLdAg", "textContent", "PREPARING/.test(s), 'status text shown 
 
 // unchanged behavior: xGate still fires xPrecompile when xPC is false (probe/direct-start path)
 assert(/if \(!running\) xPC = false; else if \(!xPC\) xPrecompile\(\);/.test(s), 'xGate fallback intact');
+// hardening: cancel during warm runs nothing (id re-check), hidden-tab rAF starvation cannot stick the overlay (timeout fallback)
+assert(/var done = false, fin = function \(\) \{ if \(done\) return; done = true;/.test(s), 'single-fire fin guard');
+assert(/if \(id === loadId\) \{ try \{ window\.xWarmShaders\(\); \} catch \(e\) \{\} \}/.test(s), 'load id re-checked at warm time');
+assert(/setTimeout\(fin, 4000\)/.test(s), 'timeout fallback when rAF starves (hidden tab)');
 console.log('test_warm_shaders PASS');

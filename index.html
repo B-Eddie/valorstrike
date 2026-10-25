@@ -13428,10 +13428,11 @@ xReady = true; // every mode is initialised; lobby launches may now start them
     var warm = function (v) { // compile shaders + upload textures behind the overlay, not on the first playable frame
       if (id !== loadId || typeof window.xWarmShaders !== "function") return v;
       xLdSet("xLdAg", "textContent", "PREPARING\u2026");
-      return new Promise(function (r) { requestAnimationFrame(function () { requestAnimationFrame(function () {
-        try { window.xWarmShaders(); } catch (e) {}
-        xLdSet("xLdAg", "textContent", ""); r(v);
-      }); }); });
+      return new Promise(function (r) { var done = false, fin = function () { if (done) return; done = true;
+        if (id === loadId) { try { window.xWarmShaders(); } catch (e) {} } // re-checked: a superseded/abandoned load warms nothing and never reaches ready()
+        xLdSet("xLdAg", "textContent", ""); r(v); };
+        setTimeout(fin, 4000); // rAF stops in a hidden tab: never leave the overlay stuck on the warm step
+        requestAnimationFrame(function () { requestAnimationFrame(fin); }); });
     };
     var go = function () { return (wait ? wait.then(fn) : Promise.resolve().then(fn)).then(warm).then(function(v){if(id===loadId){if(!title)fill();ready();}return v;},function(err){if(id===loadId)failed();if(err&&err.name==='AbortError')return;throw err;}); };
     return sync || built(map) ? go() : new Promise(function(resolve,reject){requestAnimationFrame(function(){requestAnimationFrame(function(){go().then(resolve,reject);});});});
