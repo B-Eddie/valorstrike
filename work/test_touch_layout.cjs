@@ -30,3 +30,21 @@ console.log('Touch layout: '+sizes.length+' screens (portrait 360x740-412x915, l
 {const i=html.indexOf('const relock = () =>'),line=html.slice(i,html.indexOf('\n',i));const calls=[];const c2={matchMedia:q=>({matches:c2.coarse}),renderer:{domElement:{requestPointerLock:()=>calls.push(1)}},coarse:true};vm.createContext(c2);vm.runInContext(line.replace('const relock','globalThis.relock')+'',c2);
  c2.relock();assert.equal(calls.length,0,'no pointer lock on touch');c2.coarse=false;c2.relock();assert.equal(calls.length,1,'mouse still locks');}
 console.log('Touch: relock() never takes pointer lock on a touch screen');
+// Portrait HUD (browser-found, offline 5v5 at 360x740): the top bar (alive pips + "BUY PHASE 0:45") measured 524 px and ran
+// off both edges, the 96 px minimap sat under the bar and the subtitle, the buy-phase team panel ended 10 px above the
+// C/Q/E/X row and COMMS reached across the C button. The max-width:480px block compacts the bar (browser after: 268 px,
+// x 46-314), gives the subtitle its own clipped line, stacks the minimap under it, the kill feed under the pause button and
+// lifts the team panel (rows 22 px: 118 px tall, browser x 0-360 y 280-398). Geometry below uses the sizes measured in
+// Chromium and the real portrait button layout from fit() at three phone sizes.
+{const k='@media (max-width:480px){\n  #game .x-top{',i=html.indexOf(k);assert(i>0,'portrait HUD block');const blk=html.slice(i,html.indexOf('\n}\n',i));
+ const rule=(sel,prop)=>{const m=blk.match(new RegExp(sel.replace(/[.#()+]/g,'\\$&')+'\\{([^}]*)\\}'));assert(m,'rule '+sel);const v=m[1].match(new RegExp('(?:^|;)'+prop+':([^;]+)'));assert(v,sel+' '+prop);return v[1].trim();};
+ assert.equal(rule('#game .x-top .x-pp','display'),'none','alive pips hidden in portrait');assert.equal(rule('#game .x-top .x-tm','min-width'),'0');assert(parseFloat(rule('#game .x-top .x-tm','font-size'))<=15);
+ assert.equal(rule('#game .x-top','max-width'),'calc(100vw - 8px)');assert.equal(rule('#game #xSub','text-overflow'),'ellipsis');assert.equal(rule('#game #xSub','left'),'8px');assert.equal(rule('#game #xSub','right'),'8px');
+ const subTop=parseFloat(rule('#game #xSub','top')),mapTop=parseFloat(rule('#game #xMap','top')),MAP=96,BAR_BOTTOM=40,SUB_H=11,PANEL_H=118,FEED_H=5*24+6,COMMS_W=83;
+ assert(subTop>=BAR_BOTTOM+4&&mapTop>=subTop+SUB_H+4,'bar / subtitle / minimap stacked');assert.equal(rule('#xObs .x-obr','height'),'22px');
+ assert.equal(rule('#game .hud.x-fw','top'),'calc(12.2vh + 28px)');assert.equal(rule('#xObs','top'),'calc(50% - 90px)');
+ for(const [w,h] of [[360,740],[390,844],[412,915]]){const L=check(w,h),px=(k,a)=>L[k][a]*(a==='x'?w:h)/100,pb=px('pause','y')+L.pause.s/2,feed=0.122*h+28,ob=h/2-90,ab=px('c','y')-L.c.s/2;
+  assert(px('pause','x')-L.pause.s/2>8+MAP+4,w+'x'+h+' pause clear of the minimap');assert(feed>=pb+4,w+'x'+h+' kill feed below pause');
+  assert(ob>=mapTop+MAP+8&&ob>=feed+FEED_H,w+'x'+h+' team panel below minimap and feed ('+ob+')');assert(ob+PANEL_H+16<=ab,w+'x'+h+' team panel clear of the ability row ('+(ob+PANEL_H)+' vs '+ab+')');
+  assert(12+COMMS_W+4<=px('c','x')-L.c.s/2,w+'x'+h+' COMMS clear of C');}}
+console.log('Touch: portrait HUD (top bar fits, subtitle/minimap/feed/team panel stacked clear of the touch buttons at 360x740, 390x844, 412x915)');

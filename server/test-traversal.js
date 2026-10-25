@@ -24,7 +24,11 @@ export function walk(s,u,goal,limit=120){const W=s.world,N=W.nav.nodes,dt=.05;le
  return {ok:false,t,why:'stuck',stuckAt:[+u.x.toFixed(2),+u.y.toFixed(2),+u.z.toFixed(2)],repaths};}
 // Open collision edges the fall guard is there for: the capsule centre goes past the rim and is put back where it stood
 // (a hitch, not a fall). Any rescue elsewhere fails the walk.
-const KNOWN_EDGES={ascent:[{x:[41,42.9],z:[-25.2,-23.1],what:'A ramp west rim (no collision past x 42.75, 8 m pit)'}]};
+// Ascent A stairs, west rim (no collision past x 42.75, 8 m pit) used to be whitelisted here: the defender walk to A cut the
+// corner with the capsule centre over the pit, the motor measured each riser from the pit floor and refused it, the unit
+// pressed into the riser corner and was unwedged twice (~0.5 m) and rescued once. Fixed in the motor (floorNear counts
+// the footprint tread), so no edge is whitelisted and no walk may need the unwedge either.
+const KNOWN_EDGES={};
 const fresh=(w,key)=>{const s=new SpikeSimulation(w,'five',key,()=>.5);s.rescues=[];{const g=s.guard.bind(s);s.guard=u=>{const b=[u.x,u.y,u.z],r=g(u);if(r)s.rescues.push(b);return r;};}const a=s.add('atk'),d=s.add('def');s.start(false);return {s,a,d};};
 const endBuy=s=>{for(let n=0;n<420&&s.buy>0;n++){for(const u of s.units)drive(s,u,u.look,0);s.step(.05);}assert.equal(s.buy,0);};
 const report=[];
@@ -39,7 +43,7 @@ for(const key of MAPS){const w=await loadWorld(assets,key);const sites=Object.en
   const r=walk(s,u,p,110);report.push([key,team+' spawn→'+name,r]);if(VERBOSE)console.log(key,team,name,JSON.stringify(r));
   assert(r.ok,key+' '+team+' spawn → site '+name+' walkable: '+JSON.stringify(r));
   // never yanked back by the fall-out-of-map guard on a normal walk (Haven C stairs: a crack under the capsule centre)
-  const odd=s.rescues.filter(([x,,z])=>!(KNOWN_EDGES[key]||[]).some(e=>x>=e.x[0]&&x<=e.x[1]&&z>=e.z[0]&&z<=e.z[1]));assert.equal(odd.length,0,key+' '+team+' → '+name+' rescued mid-walk at '+JSON.stringify(odd));}
+  const odd=s.rescues.filter(([x,,z])=>!(KNOWN_EDGES[key]||[]).some(e=>x>=e.x[0]&&x<=e.x[1]&&z>=e.z[0]&&z<=e.z[1]));assert.equal(odd.length,0,key+' '+team+' → '+name+' rescued mid-walk at '+JSON.stringify(odd));assert.equal(r.unwedged,0,key+' '+team+' → '+name+' needed the stuck-in-geometry unwedge '+r.unwedged+' times');}
  if(key==='bind'){const calls=w.map.callouts,find=n=>calls.find(c=>c.name===n).position;
   for(const [entry,exit] of [['A Teleporter','B Exit'],['B Teleporter','A Exit']]){const {s}=fresh(w,key);endBuy(s);const u=s.units.find(v=>v.team===s.atk),e=find(entry),x=find(exit);
    // walk onto the pad from the attacker spawn; the teleport fires on entry
@@ -49,5 +53,15 @@ for(const key of MAPS){const w=await loadWorld(assets,key);const sites=Object.en
    assert(!w.blocked(u.x,u.z,.4,u.y,1.8),exit+' is clear');
    // and the far site is reachable on foot from the exit
    const site=entry==='A Teleporter'?w.map.sites.B:w.map.sites.A,r=walk(s,u,site,60);report.push([key,entry+'→'+exit+'→site',r]);assert(r.ok,'walk on from '+exit+': '+JSON.stringify(r));}}
+ // Ascent A ramp pit (task 3): a hole beside the A ramp with no floor below, open on every side, now closed by a player
+ // clip (shared motor CLIPS, movement only). A unit driven straight at it from each side (and jumping at it) never
+ // steps off: it stays on its floor, is never rescued by the fall guard and never has its capsule over the hole.
+ if(key==='ascent'){const Motor=(await import('./src/motor.cjs')).default;
+  for(const [name,from,to,jump] of [['south floor',[40,-21.4],[40,-23.6]],['north floor',[40.5,-25.8],[40,-23.6]],['east ramp',[44,-24],[39,-23.6]],['west ledge',[35.9,-23.1],[40,-23.6]],['south floor, jumping',[39,-21.4],[39,-23.6],1],['north-east corner',[42.3,-25.8],[40,-23]],['ramp, diagonal',[43.6,-22.6],[39.5,-24.4]]]){
+   const {s}=fresh(w,key);endBuy(s);const u=s.units.find(v=>v.team===s.atk);u.x=from[0];u.z=from[1];u.y=w.ground(from[0],from[1],12);u.vx=u.vz=u.vy=0;const y0=u.y;let minY=u.y,over=0;
+   for(let t=0;t<4;t+=.05){s.command(u,{t:'in',seq:seq++,r:yawTo(u,to[0],to[1]),p:0,f:1,s:0,j:jump&&Math.floor(t/.5)%2?1:0});s.step(.05);minY=Math.min(minY,u.y);if(Motor.clipBlocked(key,u.x,u.z,.05,u.y,1.6))over++;}
+   report.push([key,'A ramp pit, '+name,{ok:true,t:4}]);
+   assert.equal(s.rescues.length,0,'ascent A pit '+name+': rescued by the fall guard at '+JSON.stringify(s.rescues));
+   assert(minY>y0-.6,'ascent A pit '+name+': stepped off (y '+y0.toFixed(2)+' -> '+minY.toFixed(2)+')');assert.equal(over,0,'ascent A pit '+name+': capsule centre over the hole');}}
  console.log(key,'traversal pass',report.filter(r=>r[0]===key).map(r=>r[1]+' '+r[2].t.toFixed(1)+'s'+(r[2].unwedged?' unwedged '+r[2].unwedged:'')+(r[2].rescued?' rescued at known edge '+r[2].rescued:'')+(r[2].repaths?' repaths '+r[2].repaths:'')).join('; '));}
 console.log('Traversal: '+report.length+' human-driven walks (spawn→every site both teams, buy-wall release, Bind teleporters) on '+MAPS.length+' maps with the shared motor');
