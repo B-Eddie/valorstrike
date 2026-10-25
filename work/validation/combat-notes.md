@@ -301,7 +301,7 @@ Harness: `server/tools/soak.mjs` (in-process worker, bots + fuzzing humans, inva
   geometry only. `xFreeMap` also disposes its textures and materials (not ones the rest of the scene still draws or that
   are flagged shared), the callout sprites (they live in XCALL, not the map group), and drops `XD_STAT[k]` / `XF_STAT[k]`,
   which kept the old group reachable. The team ring under each unit uses one shared geometry (`xG("Ring", ...)`).
-- **Lotus breakable wall stayed in the gun raycast after leaving Lotus** (pass 4 leak commit): the wall mesh is pushed
+- **Lotus breakable wall stayed in the gun raycast after leaving Lotus** (`822d7c6`): the wall mesh is pushed
   into `XLDH` (extra player-raycast hitboxes) and was only removed when destroyed. On later maps a player shot through
   the wall's old spot hit an invisible wall, and the list kept the whole freed Lotus map (and through a merged mesh's
   closure, every deco source geometry) alive. `xLdh()` prunes parented entries whose map is hidden or detached at each
