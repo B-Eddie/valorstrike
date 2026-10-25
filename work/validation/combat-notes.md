@@ -97,3 +97,28 @@ Tests: `server/test-combat.js` (in `npm test`), `work/test_combat_consistency.cj
   inputs and 200 s of heartbeats only, input released on hide, normal limit restored on show, hidden silent drop at 150 s, and the
   client block run in a VM (listener, key release, idle input + vis, one Worker, heartbeat only while hidden).
 - Not verified in a real backgrounded browser tab (no Chromium in this sandbox).
+
+## Two-player acceptance (ledger row 2, local)
+
+- Harness: `server/tools/scripted-human.mjs` is a scripted human client speaking the browser's protocol (hi/start/ready/in/bye),
+  reading only server snapshots, walking the nav graph to its opponent, aiming and tapping when it has a clear line.
+  `twoPlayerScenario` runs: two QA profiles join one room → human-to-human hits and kills both ways, deaths and respawns →
+  B leaves mid-match (a bot must take the seat) → B rejoins with the same profile and name → natural match end → both
+  profiles' persisted `/stats` must equal the match totals (B's two stints aggregated once).
+- Live local run: `npm run dev` + `node tools/two-player-local.mjs ascent dm` (real wrangler/workerd, real sockets, local
+  Directory storage). PASS in 363 s: first human-to-human kills both ways at 25 s (A→B 9 damaging hits, B→A 12), leave → 10 units /
+  1 human with a bot seat, rejoin as AcceptB, natural end at 360 s (Bot Sova 40 kills), records A 12/35, B 6/39 (1/3 + 5/36), 1 match each.
+- Automated: `server/test-two-player.js` (in `npm test`, ~25 s) runs the same scenario against the real worker module
+  (default fetch → GameRoom → Directory) in-process via `server/tools/local-cluster.mjs` (virtual clock, in-memory DO storage,
+  WebSocket pairs), with the clock shortened to 60 s after rejoin. Also asserts a finished room refuses new joins (409) and DM spawn spread.
+- Defects found and fixed:
+  1. **Deathmatch spawn churn.** DM used the team anchors (team 0 → attacker spawn, every other DM "team" → defender spawn),
+     so nine units respawned within 12 m of each other: 213 kills/min on Ascent, a bot hit the 40-kill limit in 59 s in the first
+     live run. Now `Simulation.dmSpawnPoint()` samples 48 walkable nav nodes map-wide and takes the farthest from living units
+     that no living unit can see (falls back to farthest). Ascent DM: 38 kills/min, spawn spread 126 × 133 m, 0/35 spawns in sight.
+  2. **DM win credit for rejoined players** used only the last stint's kills vs a best computed from current units. `saveResults`
+     now aggregates stints first and compares totals (bots included) for DM wins.
+- Not covered: rendered browser clients (no Chromium here), TDM rejoin team assignment (a rejoiner takes the first bot's team,
+  which can differ from their original team; records still aggregate by profile).
+- Flaky (not ours, from hark's loading work): `work/test_agent_preload.cjs` line 27 (`locomotion.bin` cached) failed 1 of ~10 runs
+  under load; passes on rerun. Looks like a flush-timing race in the test.
