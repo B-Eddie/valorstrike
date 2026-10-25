@@ -3,7 +3,9 @@
 // Boots the real page (work/page_harness.cjs) and drives its own rAF loop at 1, 5 and 20 fps:
 //  - buy phase, round clock, Spike fuse and player plant progress advance by the real elapsed time (+-3 %)
 //  - movement still substeps (a 1 s frame = 20 steps of 50 ms, never one 1 s physics step)
-//  - a hidden tab's span is not game time; a single stalled frame counts at most XRT.max (2.5 s)
+//  - a hidden tab's span is not game time; a single stalled frame counts at most XRT.max (4 s)
+//  - bounded catch-up: when a frame's steps use more than XRT.budget ms of compute, the rest carries into the next frames
+//    (total still capped at XRT.max), so expensive steps on a slow device neither lose real time nor spiral
 //  - deathmatch respawn and the death cam run on real time too
 const assert=require('assert/strict');
 const {boot}=require('./page_harness.cjs');
@@ -36,7 +38,20 @@ const freeze='for(const b of bots)b.nt=true;for(const a of allies)a.nt=true;play
  // hidden tab: 30 s hidden is not game time; first frame back counts one step
  {xe(`${freeze};FV.sp.t=45;true`);const t0=xe('FV.sp.t');H.doc.hidden=true;await run(1,30);H.doc.hidden=false;H.frameMs(1000);near('fuse across a 30 s hidden tab + 1 frame',t0-xe('FV.sp.t'),0.05,0.01);}
  // stall: one 10 s frame counts XRT.max
- {const t0=xe('FV.sp.t');H.frameMs(10000);near('fuse across one 10 s stalled frame',t0-xe('FV.sp.t'),2.5,0.01);}
+ {const t0=xe('FV.sp.t');H.frameMs(10000);near('fuse across one 10 s stalled frame',t0-xe('FV.sp.t'),4,0.01);}
+ // a 3.5 s frame (over the old 2.5 s cap) keeps all of its time
+ {xe(`${freeze};FV.sp.t=45;true`);const t0=xe('FV.sp.t');H.frameMs(3500);near('fuse across one 3.5 s frame',t0-xe('FV.sp.t'),3.5,0.01);}
+ // bounded catch-up: every clock read costs 20 ms of compute, so a frame stops after ~13 steps (> 250 ms) and carries the rest
+ {xe(`${freeze};FV.sp.t=45;XRT.debt=0;window.__c=0;XRT.now=()=>(window.__c+=20);true`);const t0=xe('FV.sp.t'),per=[];
+  for(let i=0;i<6;i++){H.frameMs(2000);per.push(xe('XRT.n'));}
+  const cap=Math.max(...per),debt=xe('XRT.debt');out.push('catch-up steps per 2 s frame '+per.join(',')+' debt '+debt.toFixed(2));
+  if(cap>14)fails.push('a frame ran '+cap+' steps past the compute budget');if(!(debt>0))fails.push('no catch-up debt carried');
+  near('game time after six 2 s frames of 13 budgeted steps',t0-xe('FV.sp.t'),6*13*0.05,0.01);near('carried debt at the 4 s cap (4 - one frame of work)',debt,4-13*0.05,0.01);
+  if(!(debt<=4+1e-6))fails.push('debt above XRT.max: '+debt);
+  xe('XRT.now=()=>performance.now();true');let left=0;for(let i=0;i<4;i++){H.frameMs(50);}left=xe('XRT.debt');if(left!==0)fails.push('debt not worked off with cheap steps: '+left);
+  xe('XRT.debt=3;true');H.doc.hidden=true;await run(1,2);H.doc.hidden=false;H.frameMs(1000);if(xe('XRT.debt')!==0)fails.push('debt survived a hidden tab');}
+ // cheap steps: carried debt is worked off and game time equals real time across a run of 3 s frames
+ {xe(`${freeze};FV.sp.t=45;XRT.debt=0;true`);const t0=xe('FV.sp.t');for(let i=0;i<4;i++)H.frameMs(3000);near('fuse across four 3 s frames',t0-xe('FV.sp.t'),12,0.02);}
  // deathmatch: respawn on real time at 1 fps
  H.dispatch(H.win,H.mkEvent('keydown',{key:'Escape',code:'Escape'}));await adv(100);H.$('xHome').click();await adv(300);
  xe('FV.pick="ascent";window.xQPick=null;true');H.$('dmBtn').click();await adv(50);assert.ok(await through(),'DM did not start');
@@ -48,6 +63,6 @@ const freeze='for(const b of bots)b.nt=true;for(const a of allies)a.nt=true;play
  {const e=H.errors.slice(errs0),x=H.xErrCalls.slice(x0);if(e.length||x.length)fails.push('page exceptions: '+JSON.stringify({e:e.slice(0,4),x:x.slice(0,4)}));}
  if(process.env.VERBOSE||fails.length)console.log(out.join('\n'));
  if(fails.length){console.error(fails.join('\n'));process.exit(1);}
- console.log('Offline real-time clocks (1/5/20 fps): buy phase, round clock, plant progress, Spike fuse and DM clock follow real time within 3 %; a 1 s frame = 20 physics steps; hidden tab / stalled frame guarded; DM respawn on real time at 1 fps');
+ console.log('Offline real-time clocks (1/5/20 fps): buy phase, round clock, plant progress, Spike fuse and DM clock follow real time within 3 %; a 1 s frame = 20 physics steps; hidden tab / stalled frame (4 s cap) guarded, bounded catch-up carries over; DM respawn on real time at 1 fps');
  process.exit(0);
 })().catch(e=>{console.error(e);process.exit(1);});

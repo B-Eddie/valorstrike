@@ -3898,10 +3898,13 @@ function xbReport() {
 }
 // Real-time offline simulation: game time (buy phase, round clock, Spike fuse, plant / defuse, respawns, ability timers)
 // follows the real clock at any frame rate. Each frame's real elapsed time is split into steps of at most 50 ms so
-// movement / physics still substep; a frame longer than XRT.max (a stall) counts as XRT.max, and the first frame back from
-// a hidden tab counts as one step. Online the server owns the clocks, so the client keeps one capped step per frame.
-const XRT = { step: 0.05, max: 2.5, skip: 0, n: 0 };
-function xRealDt() { const r = Math.max(0, clock.getDelta() || 0); if (XRT.skip) { XRT.skip = 0; return Math.min(r, XRT.step); } return Math.min(r, XRT.max); }
+// movement / physics still substep; the first frame back from a hidden tab counts as one step. Online the server owns the
+// clocks, so the client keeps one capped step per frame. Stalls: a frame counts at most XRT.max (4 s) of game time, and
+// the catch-up is bounded: once a frame's steps have used XRT.budget ms of compute the rest is carried as XRT.debt into
+// the next frames (still capped at XRT.max in total), so a slow device keeps real time without a spiral of ever-longer
+// frames. (2.5 s with no carry lost time on software rendering: 39 s of buy phase took 70 s at <0.3 fps.)
+const XRT = { step: 0.05, max: 4, budget: 250, debt: 0, skip: 0, n: 0, now: () => performance.now() };
+function xRealDt() { const r = Math.max(0, clock.getDelta() || 0); if (XRT.skip) { XRT.skip = 0; XRT.debt = 0; return Math.min(r, XRT.step); } return Math.min(r, XRT.max); }
 function xSimStep(d) {
   if (mode === "duel") { du.t += d; duelTick(d); } else if (mode === "surf") surfTick(d); else if (mode === "aim") aimTick(d); else if (mode === "five") fiveTick(d); else tick(d);
   try { if (running && !paused) xBotYaw(d); } catch (e) { xE(e); }
@@ -3909,9 +3912,10 @@ function xSimStep(d) {
 }
 function xSimRun(real, f) { // returns the game time advanced
   let on = false; try { on = !!MP.on; } catch (e) {} // MP is declared further down the page
+  if (on) XRT.debt = 0; else { real = Math.min(XRT.max, real + XRT.debt); XRT.debt = 0; }
   if (on || real <= XRT.step) { const d = Math.min(real, XRT.step); XRT.n = 1; f(d); return d; }
-  const n = Math.ceil(real / XRT.step - 1e-9), d = real / n; let t = 0; XRT.n = 0;
-  for (let i = 0; i < n && running && !paused; i++) { f(d); t += d; XRT.n++; }
+  const n = Math.ceil(real / XRT.step - 1e-9), d = real / n, t0 = XRT.now(); let t = 0; XRT.n = 0;
+  for (let i = 0; i < n && running && !paused; i++) { f(d); t += d; XRT.n++; if (i < n - 1 && XRT.now() - t0 > XRT.budget) { XRT.debt = real - t; break; } }
   return t;
 }
 function xCov() { if (xLob0 || xResUp() || xSetFull()) return true; for (const el of xCovEl) if (el.style.display === "flex") return true; return false; }
@@ -3921,14 +3925,14 @@ function loop() {
   if (document.hidden) { XRT.skip = 1; return; } // paused while the tab is hidden; the hidden span is not game time
   try { xAdapt(); } catch (e) {}
   try { if (xGate()) return; } catch (e) { xE(e); }
-  if (window.xLdOn) { xRealDt(); return; } // loading screen up: player input, bots and round timer frozen; dt discarded so nothing jumps when it hides
+  if (window.xLdOn) { xRealDt(); XRT.debt = 0; return; } // loading screen up: player input, bots and round timer frozen; dt discarded so nothing jumps when it hides
   // perf pass 15: a full-screen overlay hides the scene, so skip render, bots and physics (only the round timers keep ticking)
   // perf pass 16: with no live round behind the cover (first-load lobby, results screen) bot movement/physics is skipped too
   if (xCov()) { const cd = xRealDt(); try { if (running && !paused && !xLob0 && !xResUp() && mode !== "duel" && mode !== "surf" && mode !== "aim") xSimRun(cd, (d) => (mode === "five" ? fiveTick : tick)(d)); } catch (e) { xE(e); } return; }
   // perf pass 15: behind the Esc pause menu the frozen scene redraws at most 10 fps
   if (paused) { const pn = performance.now(); if (pn - xPzT < 98) return; xPzT = pn; }
   const rt0 = xRealDt(), dt = Math.min(rt0, XRT.step); // dt: render-side smoothing; game time below follows the real clock
-  let rt = 0; try { rt = running && !paused ? xSimRun(rt0, xSimStep) : 0; } catch (e) { xE(e); }
+  let rt = 0; try { rt = running && !paused ? xSimRun(rt0, xSimStep) : (XRT.debt = 0); } catch (e) { xE(e); }
   if (!(running && !paused)) try { jTick(0); } catch (e) { xE(e); }
   try { if (running) xHud(); } catch (e) { xE(e); }
   try { xAssist(dt); } catch (e) { xE(e); }
@@ -11427,8 +11431,14 @@ function mpHud() { let h = mpEl("xMpHud"); if (!h) { if (!MP.on) return; h = doc
   try { mpTags(); mpHud(); } catch (e) {}
 });
 // network clock: client inputs 30 Hz, host snapshots 20 Hz, pings 1 Hz, 10 s silence = disconnect
+// A main-thread stall (a long frame: software rendering, a map upload, GC) starves this timer and the socket handlers
+// alike; when the page wakes, this tick can run before the server messages queued during the stall, so the stalled span
+// is not counted as silence on either side (the server's own idle limit still catches a page that stops sending, and a
+// dead socket still fires close). Hidden tabs are throttled, not stalled, and keep the old rule.
 setInterval(function mpNet() {
-  if (!MP.on) return; const now = performance.now();
+  const now = performance.now(), gap = now - (MP.stallT || now); MP.stallT = now;
+  if (!MP.on) return;
+  if (gap > 2000 && !document.hidden) { const lost = gap - 33; MP.last = (MP.last || now) + lost; if (MP.conns) MP.conns.forEach((c) => { if (c.last) c.last += lost; }); }
   if (MP.role === "host") {
     if (MP.st === "game" && running && document.hidden) { try { let n = Math.min(20, Math.round((now - (MP.pt || now)) / 50)); MP.pt = now; while (n-- > 0) fiveTick(0.05); } catch (e) {} } // background tab: keep the sim stepping
     if (now - MP.piT > 1000) { MP.piT = now; MP.conns.forEach((c) => { mpSend(c.conn, { t: "pi", c: now }); const cLim = c.loadT && now - c.loadT < 300000 ? 300000 : 10000; if (!MP.starting && now - c.last > cLim) { try { c.conn.close(); } catch (e) {} mpDrop(c); } }); }
