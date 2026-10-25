@@ -110,6 +110,7 @@ function nmSpot(now){
  for(const b of bots){if(!b.alive)continue;const p=b.g.position,e=new V(p.x,p.y+1.4,p.z);for(const y of eyes){if(Math.hypot(y.x-p.x,y.z-p.z)<NM_SPOT_RANGE&&los(y,e)){vis.add(b);break;}}}
  if(typeof J!=='undefined'&&J.rvT>0&&J.rv)for(const b of J.rv)if(b&&b.alive)vis.add(b);
  if(window.xPG)for(const q of window.xPG.s)if(q.b&&q.b.alive&&now<q.rv)vis.add(q.b);
+ for(const b of bots)if(b.alive&&b.netRvUntil>now)vis.add(b); // online: server ult reveals (Hunter's Fury hits, Neural Theft)
  const seen=nmSpot.seen||(nmSpot.seen=new WeakMap());for(const b of mmPrev)if(!vis.has(b)&&b.alive&&b.g){const l=seen.get(b)||b.g.position;mmLost.set(b,{t:now,x:l.x,z:l.z});}for(const b of vis){mmLost.delete(b);const l=seen.get(b);if(l){l.x=b.g.position.x;l.z=b.g.position.z;}else seen.set(b,{x:b.g.position.x,z:b.g.position.z});}mmPrev=vis;mmVis=vis;
  return nmSpot.v=vis;
 }
