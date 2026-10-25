@@ -29,59 +29,27 @@ const {serve, launch, boot, startDM} = require('./lib.cjs');
       window.__vs.aimAt(p.x, p.y + 1, p.z);
       window.__vs.kill(t, false, 'You', 'Vandal');
       setTimeout(() => window.__vs.aimAt(p.x, p.y + 0.3, p.z), 300); });
-    for (let k = 0; k < 8; k++) {
-      await new Promise(r => setTimeout(r, 400));
-      const st = await p.evaluate(() => { const M = window.__killTarget && window.__killTarget.xm;
-        return M ? {rag: !!M.ragdoll, dead: M.dead, ub: !!M.ub, sx: !!M.sx, sc: !!(M.sx && M.sx.sc), inScene: !!(M.m && M.m.parent)} : {gone: true, xd: window.__killTarget.xd}; });
-      console.log(el(), 'sample' + k, JSON.stringify(st));
-      if (st.rag) break;
+    // Multi-angle capture within the corpse's visible window (~0.5-2.8s post-kill).
+    // Hide DOM HUD so only the WebGL scene shows; orbit the player around the corpse.
+    const cap = await p.evaluate(() => { const t = window.__killTarget; const M = t && t.xm;
+      if (!M || !M.m) return null; const p = M.m.position; return {x: p.x, y: p.y, z: p.z}; });
+    if (cap) {
+      await p.evaluate(() => {
+        for (const el of document.querySelectorAll('body *')) { if (el.tagName !== 'CANVAS' && !(el.querySelector && el.querySelector('canvas'))) el.style.visibility = 'hidden'; }
+        for (const c of document.querySelectorAll('canvas')) { const r = c.getBoundingClientRect(); if (r.width < 400) c.style.visibility = 'hidden'; }
+      });
+      const angles = [0.3, 2.4, 4.5];
+      for (let k = 0; k < angles.length; k++) {
+        await p.evaluate((c) => { const M = window.__killTarget && window.__killTarget.xm;
+          if (M) { const now = performance.now(); M.diedAt = now; M.ragStarted = now; if (M.ragdoll) M.ragdoll.time = 0; }
+          window.__vs.setPos(c.x + Math.sin(c.a) * 2.1, 0, c.z + Math.cos(c.a) * 2.1);
+          window.__vs.aimAt(c.x, c.y + 0.25, c.z); }, {x: cap.x, y: cap.y, z: cap.z, a: angles[k]});
+        await new Promise(r => setTimeout(r, 650));
+        await p.screenshot({path: '/downloads/ragdoll-ang' + k + '.png'});
+        const surv = await p.evaluate(() => { const st = window.__vs.state(); return st && st.running; });
+        console.log(el(), 'angle' + k, 'captured running=' + surv);
+      }
     }
-    await new Promise(r => setTimeout(r, 400));
-    const rag1 = await p.evaluate(() => { const M = window.__killTarget && window.__killTarget.xm;
-      if (!M) return {ok: false, why: 'no xm'};
-      const R = M.ragdoll; if (!R) return {ok: false, why: 'no ragdoll yet', dead: M.dead, xd: window.__killTarget.xd};
-      let maxD = 0, nan = 0;
-      for (const pt of R.points) { const d = Math.hypot(pt.p.x - pt.p0.x, pt.p.y - pt.p0.y, pt.p.z - pt.p0.z);
-        if (!Number.isFinite(d)) nan++; else if (d > maxD) maxD = d; }
-      return {ok: true, points: R.points.length, maxDrift: +maxD.toFixed(2), nan};
-    });
-    console.log(el(), 'ragdoll@1.2s', JSON.stringify(rag1));
-    await p.screenshot({path: '/downloads/ragdoll-1.png'});
-    await new Promise(r => setTimeout(r, 2500));
-    const rag2 = await p.evaluate(() => { const M = window.__killTarget && window.__killTarget.xm;
-      const R = M && M.ragdoll; if (!R) return {ok: false};
-      let maxD = 0, nan = 0;
-      for (const pt of R.points) { const d = Math.hypot(pt.p.x - pt.p0.x, pt.p.y - pt.p0.y, pt.p.z - pt.p0.z);
-        if (!Number.isFinite(d)) nan++; else if (d > maxD) maxD = d; }
-      return {ok: true, maxDrift: +maxD.toFixed(2), nan, alive: window.__killTarget.alive};
-    });
-    console.log(el(), 'ragdoll@3.7s', JSON.stringify(rag2));
-    await p.screenshot({path: '/downloads/ragdoll-2.png'});
-    // Second kill after the intro banner fades: tighter visual on the settled pose.
-    await new Promise(r => setTimeout(r, 5000));
-    const second = await p.evaluate(() => { const t = window.__vs.bots.find(x => x.alive && x.xm && x.xm.valorant);
-      if (!t) return false;
-      window.__killTarget = t;
-      const p = t.g.position; const a = Math.random() * 6.283;
-      window.__vs.setPos(p.x + Math.sin(a) * 2.4, 0, p.z + Math.cos(a) * 2.4);
-      window.__vs.aimAt(p.x, p.y + 0.6, p.z);
-      window.__vs.kill(t, false, 'You', 'Vandal');
-      setTimeout(() => window.__vs.aimAt(p.x, p.y + 0.2, p.z), 600);
-      setTimeout(() => window.__vs.aimAt(p.x, p.y + 0.15, p.z), 1400);
-      return true; });
-    if (second) {
-      await new Promise(r => setTimeout(r, 1000));
-      await p.screenshot({path: '/downloads/ragdoll-3.png'});
-      await new Promise(r => setTimeout(r, 1200));
-      await p.screenshot({path: '/downloads/ragdoll-4.png'});
-      const rag3 = await p.evaluate(() => { const M = window.__killTarget && window.__killTarget.xm;
-        const R = M && M.ragdoll; if (!R) return {ok: false};
-        let maxD = 0, nan = 0;
-        for (const pt of R.points) { const d = Math.hypot(pt.p.x - pt.p0.x, pt.p.y - pt.p0.y, pt.p.z - pt.p0.z);
-          if (!Number.isFinite(d)) nan++; else if (d > maxD) maxD = d; }
-        return {ok: true, points: R.points.length, maxDrift: +maxD.toFixed(2), nan}; });
-      console.log(el(), 'ragdoll-2nd', JSON.stringify(rag3));
-    } else console.log(el(), 'no second valorant-rigged bot available');
     console.log(el(), 'RAG-PROBE DONE');
   } catch (e) { console.log(el(), 'PROBE-FAIL', String(e).slice(0, 200)); }
   finally {
