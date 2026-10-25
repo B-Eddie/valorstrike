@@ -411,3 +411,27 @@ in-process server; it keeps the VALORANT FEEL block the audit fixture strips, an
 - **Heals clamped a Reyna overheal**: Sage's heal (and Phoenix's Blaze / Hot Hands self-heal) set
   `hp = min(100, hp + rate x dt)`, so a heal still running on a Reyna who had Devoured past 100 dropped her back to 100.
   Heals now only act below 100. `test-reyna.js`: 130 hp overheal untouched by a heal, 60 hp still healed 20 hp/s.
+
+## Gameplay QA pass 8 (spread / air inaccuracy, spray, crosshair) — user report "jump and the sniper is accurate"
+
+- **Movement / airborne spread was not per weapon**: `Motor.spread` (shared server + page) had one airborne value per class
+  (snipers 10, SMGs 7, everything else 12 deg) and, while moving, a rifle / heavy / SMG row with every other gun falling to
+  the pistol row: a running or crouch-walking scoped Operator / Marshal / Outlaw was +2.3 / +0.5 deg, walking +1.1, and a
+  jump-strafe shot right after landing (still moving fast) was near-accurate. Now the published table for all 18 guns
+  (wiki.playvalorant.com/en-us/<Weapon>, "Spread values"): first shot standing / crouched (hip and ADS), crouch-walk / walk /
+  run / airborne penalties (Operator 7.5 / 10 / 15 / 15, Marshal and Outlaw 7.5 / 10 / 15 / 20, rifles .8 / 3 / 6 / 10,
+  SMGs .15 / 1 / 2.5 / 10, pistols ~.5 / 1.1 / 2.3 / 7, shotguns .5 / 1 / 2 / 4). Scoped snipers are 0 only while still. The
+  .2 s landing lock uses the run penalty (inferred; no published landing value).
+- **Spray error cap per weapon**: bloom capped at .024 rad for every gun; now at the published max spread over the first
+  shot (Vandal 1.0, Phantom .9, Guardian 1.58 ...; crouched max when crouched; Ares shrinks to its .7 min). Gun recovery
+  time per weapon from the update history (Vandal .375, Phantom / Bulldog / Guardian .35, Stinger .4; others keep .28).
+- **Running recoil**: Vandal / Phantom / Spectre climb x1.8 running or airborne (patch 6.11), Frenzy x1.5 (patch 4.0).
+- Server and page use the same `Motor.spread / bloomCap / recoveryTime / recoilMove`; the hip crosshair gap
+  (`gSpread x 450`, 40 px cap) follows the new cone. Tests: `server/test-spread.js` (wiki table, online jumping scoped
+  Operator over the 15 deg cone, still = centre, spray caps, recovery, running recoil), `work/test_air_spread.cjs` (page
+  gSpread = server spread for 18 guns x 7 states x hip / ADS / scoped, offline jumping Operator, crosshair gap).
+- Not done: per-weapon recoil *patterns* — the wiki publishes no shot-by-shot recoil data, so the climb stays the shared
+  REC-weighted model.
+- `work/test_client_online_gunplay.cjs`: the harness page has no map floor and free-falls; with the airborne recoil
+  multiplier its Vandal spray climbed 1.8x the grounded server body. The spray check now stands the page on the server
+  body's floor (stubbed `groundAt`, restored after).
