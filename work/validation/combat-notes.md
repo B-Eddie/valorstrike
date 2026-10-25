@@ -463,3 +463,19 @@ in-process server; it keeps the VALORANT FEEL block the audit fixture strips, an
   side, no signature recharge), gun or utility; the Reyna soul orb and Jett's Blade Storm refresh still trigger (patch
   1.02), the kill feed still shows it, offline bots get no ult point for it. The 200 kill credits are kept: no source says
   they are withheld (the drafted withholding was dropped). `test-economy.js` section 6.
+- **Friendly fire 1/3** (wiki.playvalorant.com/en-us/Abilities; per ability "friendlyfire: Yes (damage reduced)"): Shock
+  Bolt / Paint Shells / Hot Hands / Blaze / Nanoswarm / Showstopper / Hunter's Fury deal a third to allies; a teamkill is a
+  death with no kill, credits, ult point or score for the caster; the caster's own utility never hurts the caster; Turret /
+  Boom Bot never target allies. `test-ults.js`.
+- **Spread corrections**: (1) landing adds 7 deg for 0.225 s on top of the movement penalty (wiki Weapons; patch 1.09
+  "jump land inaccuracy .2 -> .225 s, 5 -> 7"), replacing the inferred run-penalty landing lock; (2) the crouch-walk / walk
+  / run penalty ramps with speed, 0 at the deadzone (27.5%, Operator 15%) to the full value at the mode's top speed (wiki
+  Weapons: penalties "scale up ... as agents accelerate ... and fall off as agents decelerate"), instead of snapping to the
+  walk row below 65%; the crosshair movement error includes the landing spread. (3) The death ult point is only for a death
+  to an enemy (gun or utility): falls out of the map and teamkills give none. `test-spread.js` 1b, `test-economy.js` 7.
+- **Online spectate on the real server path** (`work/test_spectate_online.cjs`: the page on the real worker module, deaths from
+  the server's snapshot kill events -> mpCliSnap -> xKLDie): online 5v5 team wiped follows the killer, Space cycles the
+  living enemies; online TDM / Deathmatch with the team dead never follow an enemy. Fix: the spectate label is written when
+  the view opens (it kept the previous death's text, e.g. the previous match's "SPECTATING <enemy> · ENEMY" over a TDM
+  death with nobody to follow), and the respawn modes say "NO ONE ALIVE" (no Spike cam). `test_spectate_follow.cjs`: the
+  nmNear cut takes the merged signature (C,x,z,y,yBand).
