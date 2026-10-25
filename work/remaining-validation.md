@@ -468,3 +468,8 @@ then A-host start with B parked at about:blank (WebGL-contention mitigation), th
 - Also confirmed live: /profile 429 still occurs on fresh wrangler and start works anyway (profile token is stats-only, fails soft) - cap theory stays dead.
 - Probe now logs page console errors/warnings live (console.error 404 + 429 seen at boot are the known favicon/profile noise).
 - Open: full TWO-client run (B joins mid-match, hunt/feed/death/respawn) against a fresh wrangler; then host-client vs authoritative labeling stays until that passes.
+
+## Rendered two-client - case A re-diagnosed (13:25)
+- nmEnsure is only reached via nmWrap/nmLaunch: the mode-start fn (dmGo, which sets mode='five') runs AFTER nmEnsure resolves. So mode='retake' + nmPending=true + 'Loading Ascent / Preparing the map…' during an online start is the NORMAL in-flight state, not proof no start ran. Earlier 'no mode-start ran' reading corrected.
+- TWO-mode fresh-wrangler run (ZB4PNT): start frame path in flight at 35s, still in nmEnsure load phase ('Preparing the map…' = fetch/BVH phase). ONE-mode same server condition finished that phase in ~5s. Whether TWO-mode load is merely slower (CPU contention) or truly stuck is open; mpWaitStart tolerates slow loads by design (progress resets), the 119s sandbox window is the real limit.
+- Added NET.loadAt / NET.ready / NM.ticket to the net() hook to distinguish start-frame-received from load-in-progress on the next run.

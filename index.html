@@ -13269,7 +13269,10 @@ try {
           code: (typeof MP !== 'undefined') ? MP.code || null : null, mode: (typeof MP !== 'undefined') ? MP.mode : null,
           name: (typeof MP !== 'undefined') ? MP.name || null : null,
           xReady: (typeof xReady !== 'undefined') ? !!xReady : null,
-          nmPending: (typeof NM !== 'undefined') ? !!(NM.pending) : null, nmLoaded: (typeof NM !== 'undefined') ? NM.loaded : null }; } catch (e) { return { err: String(e) }; } },
+          nmPending: (typeof NM !== 'undefined') ? !!(NM.pending) : null, nmLoaded: (typeof NM !== 'undefined') ? NM.loaded : null,
+          nmTicket: (typeof NM !== 'undefined') ? NM.ticket : null,
+          loadAt: (typeof NET !== 'undefined') ? (NET.loadAt || 0) : null,
+          netReady: (typeof NET !== 'undefined') ? !!NET.ready : null }; } catch (e) { return { err: String(e) }; } },
       state() {
         return { running: !!running, mode, dm: !!FV.dm, tdm: !!FV.tdm, map: FV.map,
           timeLeft: (typeof timeLeft !== 'undefined') ? timeLeft : null, paused: (typeof paused !== 'undefined') ? !!paused : null, xLdOn: !!window.xLdOn,
