@@ -7,11 +7,11 @@ import {WINDUP,wf} from './windups.js';
 // Values follow the project's lightweight kit interpretation, scaled to the original agents' ults.
 export const ULT={
  fury:{blasts:3,interval:2,window:6.5,range:66,width:.9,damage:80,reveal:2,recast:.9},
- rocket:{speed:30,life:3,inner:3,outer:7,damage:150,arm:.05},
+ rocket:{speed:30,life:3,inner:3,outer:7,damage:150,arm:.05,equip:WINDUP.showstopper,window:10},/* wiki Showstopper: X equips the launcher (1.4 s), FIRE shoots the one rocket, 10 s max including the equip */
  lockdown:{windup:WINDUP.lockdown,radius:32.5,detain:8},
  quake:{delay:wf('rollingThunder'),length:18,halfAngle:Math.PI/6,concuss:6},
  seekers:{count:3,speed:12,maxTravel:4,nearsight:3},
- theft:{reach:5,reveals:[1,3],reveal:1.6},
+ theft:{reach:5,reveals:[2,6],reveal:1.6},/* wiki Neural_Theft: 1st reveal 2 s windup, 2nd reveal 4 s after it (v5.10 '4 s delay between reveals') */
  tdf:{weapon:'Operator',ammo:5},
  rib:{window:10,protect:.5}
 };
@@ -19,13 +19,14 @@ const eye=u=>[u.x,u.y+1.6-(u.ch||0),u.z];
 const aim=u=>[-Math.sin(u.look)*Math.cos(u.pitch||0),Math.sin(u.pitch||0),-Math.cos(u.look)*Math.cos(u.pitch||0)];
 const enemies=(sim,u)=>sim.units.filter(v=>v!==u&&v.team!==u.team&&v.alive&&!v.loading);
 const effect=(sim,u,kind,p,seconds,radius,extra={})=>{const e={id:++sim.effectSeq,kind,owner:u.id,ag:u.agent,team:u.team,p:[...p],until:sim.time+seconds,radius,...extra};sim.effects.push(e);return e;};
-export function resetUlts(u){u.detainUntil=0;u.revealedUntil=0;u.runItBack=null;if(u.ultWeapon){u.ultWeapon=null;}if(u.ability)u.ability.fury=null;}
+export function resetUlts(u){u.detainUntil=0;u.revealedUntil=0;u.runItBack=null;u.showstopper=null;if(u.ultWeapon){u.ultWeapon=null;}if(u.ability)u.ability.fury=null;}
 
 // Pre-cast checks that may reject the intent before the ult points are spent. Returns false to reject,
 // or a context object handed to startUlt.
 export function ultTarget(sim,u){
  if(u.agent==='Cypher'){const d=aim(u),o=eye(u);const corpse=sim.units.filter(v=>v.team!==u.team&&!v.alive&&!v.loading).find(v=>{const q=[v.x-u.x,v.y+.3-o[1],v.z-u.z],len=Math.hypot(...q);return len<ULT.theft.reach&&(len<.3||q.reduce((s,n,i)=>s+n*d[i],0)/len>.7)&&sim.world.ray(o,q.map(n=>n/Math.max(.01,len)),Math.max(0,len-.4))===Infinity;});return corpse?{corpse}:false;}
  if(u.agent==='Phoenix'&&u.runItBack)return false;
+ if(u.agent==='Raze'&&u.showstopper)return false;
  if(u.agent==='Chamber'&&u.ultWeapon)return false;
  if(u.agent==='Sova'&&u.ability?.fury)return false;
  return {};
@@ -37,7 +38,7 @@ export function startUlt(sim,u,ctx,p){
  const A=u.ability;
  switch(u.agent){
   case 'Sova':{A.fury={left:ULT.fury.blasts,next:sim.time+ULT.fury.interval,until:sim.time+ULT.fury.window,recastAt:sim.time+ULT.fury.recast};furyBlast(sim,u);break;}
-  case 'Raze':{const o=eye(u),d=aim(u);effect(sim,u,'rocket',o,ULT.rocket.life,ULT.rocket.outer,{d,born:sim.time});break;}
+  case 'Raze':{u.showstopper={ready:sim.time+ULT.rocket.equip,until:sim.time+ULT.rocket.window};p.splice(0,3,u.x,u.y,u.z);break;}/* the rocket leaves on FIRE (showstopperFire) */
   case 'Killjoy':{const d=aim(u),o=eye(u),hit=sim.world.ray(o,d,4),r=Number.isFinite(hit)?Math.max(0,hit-.5):4,x=o[0]+d[0]*r,z=o[2]+d[2]*r,y=sim.world.ground(x,z,u.y+.5);const pt=[x,Number.isFinite(y)?y:u.y,z];p.splice(0,3,...pt);effect(sim,u,'lockdown',pt,ULT.lockdown.windup+.05,ULT.lockdown.radius,{at:sim.time+ULT.lockdown.windup});break;}
   case 'Breach':{p.splice(0,3,u.x,u.y,u.z);effect(sim,u,'quake',[u.x,u.y,u.z],ULT.quake.delay+.05,ULT.quake.length,{at:sim.time+ULT.quake.delay,yaw:u.look});break;}
   case 'Skye':{const list=enemies(sim,u).sort((a,b)=>Math.hypot(a.x-u.x,a.z-u.z)-Math.hypot(b.x-u.x,b.z-u.z)).slice(0,ULT.seekers.count);for(const v of list){const t=Math.min(ULT.seekers.maxTravel,Math.hypot(v.x-u.x,v.y-u.y,v.z-u.z)/ULT.seekers.speed);effect(sim,u,'seeker',[u.x,u.y+1,u.z],t+.05,0,{target:v.id,at:sim.time+t});}break;}
@@ -46,6 +47,11 @@ export function startUlt(sim,u,ctx,p){
   case 'Phoenix':{u.runItBack={p:[u.x,u.y,u.z],until:sim.time+ULT.rib.window,hp:u.hp,armor:u.armor};p.splice(0,3,u.x,u.y,u.z);break;}
  }
 }
+
+// Showstopper FIRE (spike.js fire): while the launcher is out the trigger never fires the gun; before the 1.4 s equip it
+// does nothing, after it the one rocket leaves along the server's own eye / aim. undefined = no launcher (normal gun fire).
+export function showstopperFire(sim,u){const S=u.showstopper;if(!S)return undefined;if(sim.time<S.ready)return false;u.showstopper=null;u.triggerHeld=true;
+ effect(sim,u,'rocket',eye(u),ULT.rocket.life,ULT.rocket.outer,{d:aim(u),born:sim.time});return true;}
 
 // Recast of an active ult (Hunter's Fury fires its next blast early). Returns true when consumed.
 export function recastUlt(sim,u){const F=u.ability?.fury;if(u.agent==='Sova'&&F){if(sim.time<F.recastAt||F.left<1)return true;furyBlast(sim,u);return true;}return false;}
@@ -61,6 +67,7 @@ export function tickUlts(sim,dt){
  for(const u of sim.units){
   const F=u.ability?.fury;if(F){if(!u.alive||sim.time>=F.until)u.ability.fury=null;else if(sim.time>=F.next&&F.left>0)furyBlast(sim,u);}
   if(u.ultWeapon&&(!u.alive||u.weapon!==ULT.tdf.weapon||u.ammo<=0)){const W=u.ultWeapon;u.ultWeapon=null;if(u.weapon===ULT.tdf.weapon){u.weapon=W.saved;u.ammo=W.savedAmmo;u.reserve=W.savedReserve;}if(u.inventory)delete u.inventory[ULT.tdf.weapon];}
+  if(u.showstopper&&(!u.alive||sim.time>=u.showstopper.until))u.showstopper=null;/* unfired launcher put away after 10 s */
   const R=u.runItBack;if(R&&!u.loading&&(!u.alive||sim.time>=R.until)){u.runItBack=null;[u.x,u.y,u.z]=R.p;u.vx=u.vz=u.vy=0;u.hp=100;u.alive=true;u.respawnAt=0;u.input={};u.triggerHeld=false;u.seq++;u.invulnerableUntil=Math.max(u.invulnerableUntil||0,sim.time+ULT.rib.protect);sim.castEvents.push({t:'ac',i:u.id,ag:u.agent,k:'x',sub:'return',o:[...R.p],d:[0,0,-1],p:[...R.p],ts:Math.round(sim.time*1000)});}
  }
  for(let i=sim.effects.length-1;i>=0;i--){const e=sim.effects[i],owner=(sim.fxSrc=e,sim.units.find(u=>u.id===e.owner));

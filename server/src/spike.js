@@ -13,7 +13,7 @@ import {initAbilities,buyAbility,castAbility,tickAbilities,smokeBlocks,sightClea
 export function survivorLoss(sim,u,text){if(!u.alive)return false;if(u.team===sim.atk)return text==='Time ran out';return text==='Spike detonated';}
 export const SPIKE_RADIUS=32.5;export const POST_ROUND=7;export function buyPhaseSeconds(round){return round===1||round===13||round===25?45:30;}
 const prices={Classic:0,Shorty:300,Frenzy:450,Ghost:500,Sheriff:800,Stinger:1100,Spectre:1600,Bucky:850,Judge:1850,Bulldog:2050,Guardian:2250,Phantom:2900,Vandal:2900,Marshal:950,Outlaw:2400,Operator:4700,Ares:1600,Odin:3200};
-import {revealedFor} from './ults.js';
+import {revealedFor,showstopperFire} from './ults.js';
 import {soulKill} from './reyna.js';
 export class SpikeSimulation extends Simulation{
  static LOAD_GRACE=15;
@@ -64,7 +64,7 @@ export class SpikeSimulation extends Simulation{
  // A Phoenix killed inside Run It Back is not a kill or a death in VALORANT (no kill / death on the scoreboard, no ult point
  // either side, no signature recharge): the soul orb (Reyna, patch 1.02) and the Blade Storm refresh (Jett, patch 1.02) still trigger.
  // The 200 kill credits are kept: no source says they are withheld.
- fire(u){if(this.buy>0||this.roundDelay>0||u.detainUntil>this.time)return false;const before=u.kills,living=this.units.filter(v=>v.alive),r=super.fire(u);this.lastKills=0;if(u.kills>before){for(const v of living)if(!v.alive){this.lastKills++;if(v.runItBack){u.kills--;v.deaths--;this.scores[u.team]=(this.scores[u.team]||0)-1;u.credits=Math.min(9000,u.credits+200);soulKill(this,u,v);continue;}u.credits=Math.min(9000,u.credits+200);u.roundKills++;rewardAbilityKill(u,this,v);}}return r;}
+ fire(u){if(this.buy>0||this.roundDelay>0||u.detainUntil>this.time)return false;if(u.showstopper){const r=showstopperFire(this,u);if(r!==undefined)return r;}const before=u.kills,living=this.units.filter(v=>v.alive),r=super.fire(u);this.lastKills=0;if(u.kills>before){for(const v of living)if(!v.alive){this.lastKills++;if(v.runItBack){u.kills--;v.deaths--;this.scores[u.team]=(this.scores[u.team]||0)-1;u.credits=Math.min(9000,u.credits+200);soulKill(this,u,v);continue;}u.credits=Math.min(9000,u.credits+200);u.roundKills++;rewardAbilityKill(u,this,v);}}return r;}
  // A human leaving mid-round: the bot taking the seat takes over their body (alive where they stood, health, loadout,
  // credits, abilities) instead of sitting the round out dead, which cost the team a player for every disconnect.
  // The leaver's live utility (turret, Nanoswarm, Boom Bot, Lockdown windup, Showstopper rocket ...) now belongs to the seat
@@ -72,7 +72,7 @@ export class SpikeSimulation extends Simulation{
  // score, no credits or ult point). Active ult/device state (Tour de Force, Headhunter, Run It Back) and status effects
  // move with the body, so a disconnect neither strands a free Operator nor shakes off a detain.
  takeOver(b,u){if(!b||!u||b.team!==u.team)return false;for(const e of this.effects||[])if(e.owner===u.id)e.owner=b.id;
-  if(this.phase!=='game'||!u.alive||u.loading)return false;for(const k of ['x','y','z','look','pitch','hp','armor','weapon','ammo','reserve','primary','secondary','credits','ch','ultWeapon','headhunter','runItBack','detainUntil','slowUntil','concussUntil','blindUntil','nearsightUntil','vulnerableUntil','revealedUntil','tetheredUntil','tether','invulnerableUntil','tagUntil'])if(u[k]!==undefined)b[k]=u[k];
+  if(this.phase!=='game'||!u.alive||u.loading)return false;for(const k of ['x','y','z','look','pitch','hp','armor','weapon','ammo','reserve','primary','secondary','credits','ch','ultWeapon','showstopper','headhunter','runItBack','detainUntil','slowUntil','concussUntil','blindUntil','nearsightUntil','vulnerableUntil','revealedUntil','tetheredUntil','tether','invulnerableUntil','tagUntil'])if(u[k]!==undefined)b[k]=u[k];
   b.inventory={...u.inventory};b.reserves={...u.reserves};b.ability={...u.ability};b.purchases=[];b.vx=b.vy=b.vz=0;b.alive=true;b.reloadAt=0;b.route=null;b.safe=b.anchor=null;b.seq++;return true;}
  // A human still loading holds the buy phase only briefly: at most LOAD_GRACE s per player since their load began and
  // LOAD_GRACE s per round in total, and only while they are in the round (alive) and the round has not started. Joiners
