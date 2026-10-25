@@ -28,7 +28,7 @@ Findings and evidence for the combat/reliability items worked on `hark-combat`. 
 - Crouch lowers the head by `ch` (up to 0.45 m), the same as the first-person eye drop.
 - Rows now carry `[17]` crouch fraction and `[18]` aim pitch. The online client sets `u.cr` from `[17]`, so remote
   rigs play the crouch layer, and stores `u.np` for future aim-pitch rendering.
-- **Rendering defect for the animation owner (not changed here):** with native rigs (`nativeContact:true`) the
+- **Rendering defect (fixed later on this branch, see "Native crouch render" below):** with native rigs (`nativeContact:true`) the
   repair crouch correction (`standHead - .45*cb`) is skipped. With the aim upper layer the rendered crouched head drops
   only about 4 cm (1.735 → 1.693 m) even though the pelvis drops 0.32 m. The comment in `xUbAnim` says the
   intended drop is about 0.45 m, matching the hitbox. Until the third-person crouch pose lowers the head, a crouched
@@ -154,3 +154,16 @@ Changes:
 
 Remaining hot path: the shared Motor's 128 Hz substeps call `blocked`/`ground` ~200 and ~150 times per tick; making those cheaper
 means changing the shared motor or the BVH query and was left alone. The first tick is still ~45–55 ms (JIT/BVH cold start).
+
+## Native crouch render (follow-up to row 10)
+
+- Cause: in the native rigs `Spine1` is a sibling of `Pelvis` under `Splitter`; the retargeted crouch clips only translate
+  `Pelvis`, so the torso stayed at standing height and stretched (head 1.724 → 1.679 m crouched with the aim layer, pelvis 1.079 → 0.759).
+- Fix (`work/repair_runtime.js`, block "Native rigs (nativeContact)"): after the mixer and the foot-contact correction, and
+  before the weapon grip IK and foot planting, `Spine1` is lowered so the Head bone sits at the upright head height (tracked on
+  uncrouched frames) minus 0.45 × crouch blend, the same drop as the server head volume (`hitboxes.js`: upright head − ch).
+  Legs and feet are untouched; the offset is undone in `xUbPre` (Spine1 has no position track); skipped when dead.
+- Test: `work/test_native_crouch.cjs` (Jett, Breach, Sage real rigs): full-crouch head drop 0.04 → 0.45 m, half crouch 0.225,
+  drop equals the server's within 1.5 cm, feet unchanged, undone, stands back up. Before/after render:
+  `work/validation/native_crouch_before_after.png` (left: stretched torso before; right: corrected).
+- `hitboxes.json` unchanged: the server's head height is upright pose − ch, which this correction now matches; the table was not re-sampled.

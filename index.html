@@ -12418,6 +12418,18 @@ window.xValorantFeel={state:VF,view:VF_VIEW,model:VF.model,weapon:vfWeapon,profi
 // Retargeted crouch clips barely lower the native head. Correct their vertical root motion
 // after the mixer, then undo it before the next mixer evaluation.
 {const pre=xUbPre,post=xUbPost;xUbPre=function(M){const X=M.sx;if(X&&X.crouchRestore){X.crouchBone.position.copy(X.crouchRestore);X.crouchRestore=null;}return pre(M);};xUbPost=function(M){post(M);const X=M.sx;if(!M.valorant||!X||X.dd||M.dead||X.nativeContact)return;const head=X.sc.getObjectByName('Head'),pelvis=X.sc.getObjectByName('Root');X.crouchBone=pelvis;if(!head||!pelvis)return;M.m.updateMatrixWorld(true);const hp=head.getWorldPosition(new THREE.Vector3());if(X.standHead==null)X.standHead=hp.y-M.m.getWorldPosition(new THREE.Vector3()).y;const cb=Math.max(0,Math.min(1,X.cb||0));if(cb<.001)return;const desired=M.m.getWorldPosition(new THREE.Vector3()).y+X.standHead-.45*cb,delta=desired-hp.y;X.crouchRestore=pelvis.position.clone();const p=pelvis.getWorldPosition(new THREE.Vector3());p.y+=delta;pelvis.position.copy(pelvis.parent.worldToLocal(p));pelvis.updateMatrix();M.m.updateMatrixWorld(true);};}
+// Native rigs (nativeContact): the retargeted crouch clips move only the Pelvis bone, but Spine1 is the Pelvis's
+// sibling under Splitter, so the torso never follows it down; with the aim upper layer a full crouch dropped the head
+// ~4 cm while the authoritative head volume drops ch (0.45 m at full crouch, server/src/hitboxes.js). After the mixer
+// and contact correction, lower the torso chain (Spine1) so the Head bone sits at the upright head height minus
+// 0.45 * crouch blend, measured against the agent root; legs and feet are untouched. Undone before the next mixer pass.
+const XRC={drop:.45,stand:1.72};
+{const pre=xUbPre,post=xUbPost;xUbPre=function(M){const X=M&&M.sx;if(X&&X.ncRestore){X.ncBone.position.copy(X.ncRestore);X.ncRestore=null;}return pre(M);};xUbPost=function(M){post(M);const X=M.sx;if(!M.valorant||!X||!X.nativeContact||X.dd||M.dead||!X.sc)return;
+ if(X.ncBone===undefined){X.ncBone=X.sc.getObjectByName('Spine1')||null;X.ncHead=X.sc.getObjectByName('Head')||null;X.ncV=new THREE.Vector3();X.ncR=new THREE.Vector3();}
+ if(!X.ncBone||!X.ncHead||!X.ncBone.parent)return;M.m.updateMatrixWorld(true);const v=X.ncV,root=M.m.getWorldPosition(X.ncR).y,head=X.ncHead.getWorldPosition(v).y-root,cb=Math.max(0,Math.min(1,X.cb||0));
+ if(cb<.001){if(!X.air&&!X.lo&&Number.isFinite(head))X.ncStand=X.ncStand==null?head:X.ncStand+(head-X.ncStand)*.2;return;}
+ const want=(X.ncStand==null?XRC.stand:X.ncStand)-XRC.drop*cb,delta=want-head;if(!(delta<-.001)||delta<-.8)return;
+ X.ncRestore=X.ncBone.position.clone();X.ncBone.getWorldPosition(v);v.y+=delta;X.ncBone.position.copy(X.ncBone.parent.worldToLocal(v));X.ncBone.updateMatrix();M.m.updateMatrixWorld(true);};}
 function xrHitboxes(b,M){
  if(b&&b.nt)return;
  if(!b||!b.body||!b.head||!M||!M.sx||M.dead)return;
