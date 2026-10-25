@@ -127,10 +127,21 @@ All 12 user-list items now have shipped fixes on instinct. Remaining: ledger 13-
   set, so server A* endpoints always sit in the largest connected component - paths cannot
   fail from fragmentation, bots cannot spawn on islands. A human on an island is hunted to
   the closest playable approach (W.near(target)), which is the desired behavior.
-- Watch item (RESIDUAL): one unit (ally Reyna) still parked 16s at ascent (24,-26.7) - the
-  SAME spot an enemy Killjoy stalled pre-fix. Not spawn-related; likely a pathing snag point
-  (waypoint unreachable by straight line / collision pocket). Needs a focused probe of that
-  coordinate: waypoint stream + collision probes around it.
+- [x] Snag point (24,-26.7) root-caused and fixed: the spot is the BASE OF A 10m WALL FACE
+  under a raised platform (server-world probe: ground jumps 0 -> 10.1 between z=-27.7/-26.7;
+  platform nodes at y~10 playable/dense; node 8429 at the edge is isolated adj=[]). The wall
+  base at y~0 has NO nav nodes within 6u - nav-dark ground. Client gNav's near() attach is 2D:
+  a unit at the wall base attached to platform nodes 10m overhead and pushed the wall forever,
+  re-planning to the same nodes (both the pre-fix Killjoy and post-fix Reyna stalls). Fix:
+  y-aware attach - near() skips nodes whose ground differs from the unit's y by >2.5
+  (groundAt, uniform old/native); start AND goal attach in the unit's floor band; no same-floor
+  node -> direct steer (existing fallback). Threaded p.y through xPath -> fNav -> gNav (both
+  callers). Regression: test_gnav_unreachable.cjs height cases (y=0 never attaches overhead;
+  y=10 routes). Live: ascent TDM soak PASS, zero stalls (was flagged in 2 of 3 prior runs).
+- Residual topology (kept OPEN, not reclassified): the wall base at y~0 under the platform is
+  valid ground (OOB watch spares it via 2D valid coverage) but nav-dark - units that end up
+  there direct-steer and may hug the wall until they reach covered ground; full repair needs
+  the nav rebuild (fragmentation/islands track). Server W.near is already y-weighted.
 - Watch item (superseded by the three fixes above unless it recurs): one bind soak round ended with the last ally
   (Chamber) stationary 16s at (-47,10.3) mid-round while spike was player-carried; could be a
   hold personality or pathing stall - needs another sample before treating as a defect.

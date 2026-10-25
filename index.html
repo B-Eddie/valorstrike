@@ -7359,11 +7359,11 @@ function xgBuild(k) {
   return { N, adj, ty, nc, ok: cp.map((c) => c === main), bx: boxes }; // routing starts / ends only on the main component
 }
 function xgGet() { const k = mode === "five" ? FV.map : mode === "rifle" ? "duel" : "retake"; if (!XG[k] || XG[k].bx !== boxes) XG[k] = xgBuild(k); return XG[k]; }
-function gNav(px, pz, tx, tz) {
+function gNav(px, pz, tx, tz, py) {
   if (ascClear(px, pz, tx, tz)) return [tx, tz];
   const G = xgGet(), N = G.N;
-  const near = (x, z) => { const o = N.map((n, i) => [Math.hypot(n[0] - x, n[1] - z), i]).sort((a, b) => a[0] - b[0]); for (const [, i] of o) if (G.ok[i] && ascClear(x, z, N[i][0], N[i][1])) return i; return -1; };
-  const s = near(px, pz), e = near(tx, tz); if (s < 0 || e < 0) return [tx, tz];
+  const near = (x, z, y) => { const o = N.map((n, i) => [Math.hypot(n[0] - x, n[1] - z), i]).sort((a, b) => a[0] - b[0]); for (const [, i] of o) { if (!G.ok[i] || !ascClear(x, z, N[i][0], N[i][1])) continue; try { if (y != null && Math.abs(groundAt(N[i][0], N[i][1], 0.4, y + 0.5) - y) > 2.5) continue; } catch (err) {} return i; } return -1; }; // never attach to nodes on another floor: a 2D-nearest node 10m up a wall face routes the unit into the wall forever (ascent 24,-26.7 stall)
+  const s = near(px, pz, py), e = near(tx, tz, py); if (s < 0 || e < 0) return [tx, tz];
   const pc = G.pc || (G.pc = new Map()), pk = s * 65536 + e; let path = pc.get(pk); // A* result cached per (start, goal) node pair
   if (!path) {
   const dist = { [s]: 0 }, prev = {}, open = new Set([s]), hh = (i) => Math.hypot(N[i][0] - N[e][0], N[i][1] - N[e][1]); let best = s;
@@ -7379,9 +7379,9 @@ function gNav(px, pz, tx, tz) {
   for (const i of path) { const [nx, nz] = N[i]; if (Math.hypot(nx - px, nz - pz) > 2.5) return [nx, nz]; }
   return [tx, tz];
 }
-function fNav(px, pz, tx, tz) {
+function fNav(px, pz, tx, tz, py) {
   if (mode === "five" && FV.map === "ascent") return ascNav(px, pz, tx, tz);
-  return gNav(px, pz, tx, tz);
+  return gNav(px, pz, tx, tz, py);
 }
 function fNavLanes(px, pz, tx, tz) { // old lane routing, no longer called
   if (FV.map === "bind") return gNav(px, pz, tx, tz); // Bind lane end (20, -8) is inside the Hookah / Elbow wall now: use the nav graph
@@ -7675,7 +7675,7 @@ function xPath(u, dt, gx, gz, out) { // re-path every 1.5 s, when blocked, on re
   const p = u.g.position; u.npT = (u.npT || 0) - dt;
   if (!u.np || u.npT <= 0 || u.blk || Math.hypot(u.np[0] - p.x, u.np[1] - p.z) < 1.2 || !u.ng || Math.hypot(u.ng[0] - gx, u.ng[1] - gz) > 3) {
     if (XNB.f !== XNF) { XNB.f = XNF; XNB.n = 0; }
-    if (!u.np || XNB.n < 2 || (u.npS || 0) > 0.25) { XNB.n++; u.np = fNav(p.x, p.z, gx, gz); u.npT = 1.5; u.blk = 0; u.ng = [gx, gz]; u.npS = 0; } else u.npS = (u.npS || 0) + dt; } // max 2 replans per frame; the rest keep their path and retry next frame (sites2: a bot starved > 0.25 s replans anyway, so one parked at a dogleg corner node never waits seconds)
+    if (!u.np || XNB.n < 2 || (u.npS || 0) > 0.25) { XNB.n++; u.np = fNav(p.x, p.z, gx, gz, p.y); u.npT = 1.5; u.blk = 0; u.ng = [gx, gz]; u.npS = 0; } else u.npS = (u.npS || 0) + dt; } // max 2 replans per frame; the rest keep their path and retry next frame (sites2: a bot starved > 0.25 s replans anyway, so one parked at a dogleg corner node never waits seconds)
   if (u.np[2] && mode === "five" && Math.hypot(u.np[0] - p.x, u.np[1] - p.z) < 0.6) { u.xr = [[u.np[0], u.np[1], u.np[2], u.np[3]]]; u.np = null; return x2(out, p.x, p.z); } // on a link start: hand to xStep
   return u.np;
 }
@@ -9272,7 +9272,7 @@ function fiveTick(dt) {
   } else if (s.st === "plant") {
     // beep is synced to the spike's light pulse in xVis (Val cadence)
     if (FV.atk && !fAtk().length) bots.forEach((b) => { // attackers gone: defender bots walk to the spike
-      if (!b.alive || b.nt) return; const p = b.g.position, [gx, gz] = fNav(p.x, p.z, s.x, s.z), ex = gx - p.x, ez = gz - p.z, ed = Math.hypot(ex, ez), st = botRun(b, false) * dt;
+      if (!b.alive || b.nt) return; const p = b.g.position, [gx, gz] = fNav(p.x, p.z, s.x, s.z, p.y), ex = gx - p.x, ez = gz - p.z, ed = Math.hypot(ex, ez), st = botRun(b, false) * dt;
       if (ed > 1.5) { if (!blocked(p.x + (ex / ed) * st, p.z, 0.45)) p.x += (ex / ed) * st; if (!blocked(p.x, p.z + (ez / ed) * st, 0.45)) p.z += (ez / ed) * st; }
     });
     const near = fDef().filter((u) => { const p = fPos(u); return Math.hypot(p.x - s.x, p.z - s.z) < (u === player ? 2.5 : 3.2); });
