@@ -81,3 +81,19 @@ Tests: `server/test-combat.js` (in `npm test`), `work/test_combat_consistency.cj
 - Test: `server/test-bots.js`. The same seed replays exactly; four bots from identical starts diverge more than 1.5 m and
   act differently; engagement aim, strafe and first shot differ; filled matches mix roles; spike goal offsets work.
 - Sanity: 60 s Ascent TDM with 9 bots, 18 kills, everyone moved (`/tmp` bench, not committed).
+
+## Background-tab disconnect (task after bot personalities)
+
+- Defect: the room drops a ready session after 15 s without any message. The client's only traffic was a 50 ms
+  `setInterval` input loop, which browsers throttle in hidden tabs (about 1 Hz, then once a minute after ~5 min of
+  Chrome intensive throttling), so switching tabs could drop a player.
+- Client (`work/server_runtime.js`, "Background-tab liveness"): on `visibilitychange` it sends `{t:'vis',h}`. On hide it also releases
+  held keys/fire and sends one idle input. A dedicated Worker timer (Blob worker, 2 s) sends `{t:'hb'}` while the tab is hidden; worker timers
+  are not subject to the page timer throttling. The input loop also re-sends `vis` if the hidden state ever differs from what was last sent.
+- Server (`server/src/worker.js`): `GameRoom.IDLE = {ready:15000, hidden:150000, loading:180000}`. `hb` only refreshes
+  liveness (no input, no reply); `vis` sets `session.hidden` and clears the unit's input when hiding. A hidden client gets 150 s
+  (covers once-a-minute throttled timers even if the Worker is unavailable); a client that goes truly silent is still dropped.
+- Test: `server/test-background.js` (in `npm test`): visible silent drop at 16 s, hidden seat kept across 4 × 60 s throttled
+  inputs and 200 s of heartbeats only, input released on hide, normal limit restored on show, hidden silent drop at 150 s, and the
+  client block run in a VM (listener, key release, idle input + vis, one Worker, heartbeat only while hidden).
+- Not verified in a real backgrounded browser tab (no Chromium in this sandbox).
