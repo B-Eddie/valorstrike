@@ -25,3 +25,8 @@ console.log('HUD v2: shield states, ability slot hooks + equipped outline, charg
 // ammo + credits: no panels, credits glyph drawn (Oswald has no U+00A4), desktop ammo right of the abilities
 assert(/#game #xCr small::before\{content:"";[^}]*background:url\("data:image\/svg\+xml/.test(css)&&/#game \.hud\.x-br\{position:fixed;left:calc\(50% \+ 168px\)/.test(css),'ammo / credits');
 console.log('HUD v2: ammo beside the abilities on desktop, credits glyph');
+// kill feed: kill rows tagged kf--k with portrait initials (data-a / --c), Valorant skull headshot, wallbang mark from shoot()
+assert(/const d = kfGet\("kf kf--k"/.test(html)&&/s\.dataset\.a = String\(pa\)\[0\]\.toUpperCase\(\)/.test(html),'kill row class + portrait data');
+assert(/const KF_WB = '<svg class="kf__wb"/.test(html)&&/\(wb \? KF_WB : ""\) \+ \(hs \? KF_HS : ""\)/.test(html)&&/if \(wk < 1\) \{ xWB\.on = true;/.test(html)&&/xWB\.on = false; const d = kfGet/.test(html),'wallbang mark wired (set on a wall-penetrating player shot, consumed by the next kill row)');
+assert(/#game #feed \.kf--k>\.kf__n:first-child::before,#game #feed \.kf--k>\.kf__n:nth-child\(3\)::after\{content:attr\(data-a\)/.test(css)&&/#game #feed \.kf--k\.kf--mine\{box-shadow:inset 0 0 0 2px #f2dc8b/.test(css),'kill feed styles');
+console.log('HUD v2: kill feed portraits, skull headshot, wallbang mark, own-kill outline');
