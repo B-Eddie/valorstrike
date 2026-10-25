@@ -48,7 +48,7 @@ function xgSetup(M) {
   let i = 0; for (const bn of G.R.bones.concat(G.L.bones)) { const key = 'grip' + i++; X.b[key] = bn; if (X.sv) { X.sv[key] = bn.quaternion.clone(); X.svOn[key] = 1; } }
   G.gp = M.gun.position.clone(); G.gq = M.gun.quaternion.clone(); G.gs = M.gun.scale.clone();
   G.v = Array.from({ length: 12 }, () => new THREE.Vector3()); G.ik = Array.from({ length: 9 }, () => new THREE.Vector3()); G.q = Array.from({ length: 6 }, () => new THREE.Quaternion()); G.m = Array.from({ length: 6 }, () => new THREE.Matrix4());
-  G.saved = new Map(); G.ok = true; return G;
+  G.t1 = new THREE.Vector3(); G.t2 = new THREE.Vector3(); G.p1 = new THREE.Vector3(); G.p2 = new THREE.Vector3(); G.saved = new Map(); G.ok = true; return G;
 }
 function xgWorldQ(o, q) { o.updateWorldMatrix(true, false); const p = XGRIP.p || (XGRIP.p = new THREE.Vector3()), s = XGRIP.s || (XGRIP.s = new THREE.Vector3()); o.matrixWorld.decompose(p, q, s); return q; }
 // Set a bone's world rotation (parent's world rotation divided out).
@@ -94,7 +94,7 @@ function xgPose(M, dt) {
   // right hand: knuckles forward-down along the grip, palm facing the gun's left
   const kR = gl(0, -0.45, -1, G.v[0]).normalize(), nR = gl(-1, 0, 0, G.v[1]), hq = G.q[4]; xgHandQ(G.R, kR, nR, hq);
   const wt = toW(g.rh, G.v[2]).addScaledVector(kR, -0.06).addScaledVector(nR, -0.02);
-  xgIK(G.R, wt.clone(), axis(g.side ? -0.5 : -0.7, -1, g.side ? 0 : -0.2, new THREE.Vector3()).normalize(), G); xgSetWorldQ(G.R.hand, hq); xgCurl(G.R, XGRIP.curl.rifleR, kR, nR);
+  xgIK(G.R, G.t1.copy(wt), axis(g.side ? -0.5 : -0.7, -1, g.side ? 0 : -0.2, G.p1).normalize(), G); xgSetWorldQ(G.R.hand, hq); xgCurl(G.R, XGRIP.curl.rifleR, kR, nR);
   // the gun rides the solved right hand (unreachable targets keep the gun in the hand, not floating)
   const hw = XGRIP.hw || (XGRIP.hw = new THREE.Vector3()); G.R.hand.getWorldPosition(hw); gp.add(hw.sub(wt));
   M.gun.parent.updateWorldMatrix(true, false); const local = G.m[1].compose(gp, gq, XGRIP.one || (XGRIP.one = new THREE.Vector3(1, 1, 1))).premultiply(G.m[2].copy(M.gun.parent.matrixWorld).invert());
@@ -108,7 +108,7 @@ function xgPose(M, dt) {
     const ax = gl(0, 0, 1, G.v[7]), rel = G.v[8].subVectors(lt, sh), bq = rel.dot(ax), cq = rel.lengthSq() - reach * reach;
     if (cq > 0) { const disc = bq * bq - cq, lim = Math.max(0, (g.rh[2] - g.lh[2]) - 0.1); const sl = disc >= 0 ? Math.min(lim, -bq - Math.sqrt(disc) > 0 ? -bq - Math.sqrt(disc) : -bq + Math.sqrt(disc)) : Math.min(lim, Math.max(0, -bq)); if (sl > 0) lt.addScaledVector(ax, sl); G.slide = sl > 0 ? sl : 0; } else G.slide = 0;
   }
-  xgHandQ(G.L, kL, nL, hq); xgIK(G.L, lt.clone(), axis(g.side ? 0.5 : 0.4, -1, 0, new THREE.Vector3()).normalize(), G); xgSetWorldQ(G.L.hand, hq); xgCurl(G.L, g.side || !g.lh ? XGRIP.curl.pistolL : XGRIP.curl.rifleL, kL, nL);
+  xgHandQ(G.L, kL, nL, hq); xgIK(G.L, G.t2.copy(lt), axis(g.side ? 0.5 : 0.4, -1, 0, G.p2).normalize(), G); xgSetWorldQ(G.L.hand, hq); xgCurl(G.L, g.side || !g.lh ? XGRIP.curl.pistolL : XGRIP.curl.rifleL, kL, nL);
   if (G.w < 0.999) { for (const [bn, s] of G.saved) bn.quaternion.slerp(s, 1 - G.w); M.gun.position.lerp(G.gp, 1 - G.w); M.gun.quaternion.slerp(G.gq, 1 - G.w); }
 }
 { const post = xUbPost; xUbPost = function (M) { post(M); if (M && M.valorant && M.sx && !M.dead) try { xgPose(M, 1 / 60); } catch (e) { if (!XGRIP.err++) console.warn('weapon grip disabled for a frame', e); } }; }

@@ -26,9 +26,9 @@ function xfPose(M, dt, C) {
   // body down to the lower foot (vertical, in world), restored in xUbPre
   F.rest.copy(F.split.position); X.ftRestore = true; const s = F.split.getWorldPosition(V[2]); s.y += p; F.split.parent.updateWorldMatrix(true, false); F.split.position.copy(F.split.parent.worldToLocal(s)); F.split.updateMatrixWorld(true);
   for (let i = 0; i < 2; i++) { const L = F.legs[i], lift = F.d[i] - p; if (lift < 0.004) continue;
-    const hip = L.up.getWorldPosition(V[3]), knee = L.lo.getWorldPosition(V[4]), foot = L.hand.getWorldPosition(V[5]), fq = xgWorldQ(L.hand, F.q).clone();
+    const hip = L.up.getWorldPosition(V[3]), knee = L.lo.getWorldPosition(V[4]), foot = L.hand.getWorldPosition(V[5]), fq = xgWorldQ(L.hand, F.q);
     const dir = V[2].subVectors(foot, hip).normalize(), pole = knee.sub(hip); pole.addScaledVector(dir, -pole.dot(dir)); if (pole.lengthSq() < 1e-8) pole.copy(M.m.getWorldDirection(V[2]));
-    const target = foot.clone(); target.y += lift; xgIK(L, target, pole.normalize().clone(), F.G); xgSetWorldQ(L.hand, fq);
+    const target = (F.t || (F.t = new THREE.Vector3())).copy(foot); target.y += lift; xgIK(L, target, pole.normalize(), F.G); xgSetWorldQ(L.hand, fq);
   }
 }
 { const pre = xUbPre; xUbPre = function (M) { const X = M && M.sx; if (X && X.ftRestore && X.ft && X.ft.split) { X.ft.split.position.copy(X.ft.rest); X.ftRestore = false; } return pre.apply(this, arguments); }; }
