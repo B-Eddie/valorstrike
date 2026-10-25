@@ -22,10 +22,13 @@ function boot({real3=false,seed=1}={}){
  H.three=T&&T.rev;H.xe=code=>vm.runInContext('__xe',H.context)(code);
  vm.runInContext(`Math.random=(${mulberry})(${seed*7919+3});`,H.context);
  H.win.fetch=()=>Promise.reject(new TypeError('Failed to fetch'));
- // three r149's FileLoader builds a Request before fetching; without it the first load of a URL threw after registering
- // the URL as in flight, so every later load of that URL (GLTFLoader 'environment/cover' on each map build) waited forever
- // and its pending callbacks kept each old map group alive.
- Object.assign(H.win,{Request,Headers,Response});
+ // three r149's FileLoader builds a Request before fetching. It must exist, and it must resolve the page's relative URLs
+ // ('models/valorant/...') against a base as a browser does: Node's Request threw "Failed to parse URL" after the loader
+ // had registered the URL as in flight, so every later load of that URL (xvLoad 'environment/cover' on each map build)
+ // queued behind a request that never settled, and each queued callback kept its old map group alive (a harness-only
+ // leak; in a browser the fetch settles and xvLoad's cache entry resolves or is dropped on failure).
+ const BASE='http://localhost/';class PageRequest extends Request{constructor(u,o){super(typeof u==='string'||u instanceof URL?new URL(String(u),BASE).href:u,o);}}
+ Object.assign(H.win,{Request:PageRequest,Headers,Response});
  H.win.__ls=new Map();H.win.__ls.getItem=k=>H.win.__ls.has(k)?H.win.__ls.get(k):null;H.win.__ls.setItem=(k,v)=>H.win.__ls.set(k,String(v));H.win.__ls.removeItem=k=>H.win.__ls.delete(k);
  // No renderer / network: native maps fall back to the legacy blockout and agent models are skipped (as the audit's
  // fixtures and test_client_online.cjs do).

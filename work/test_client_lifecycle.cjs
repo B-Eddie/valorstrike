@@ -38,7 +38,9 @@ xe(`window.__qaNames=${JSON.stringify(NAMES)};window.__qaSizes=function(){const 
  if(v&&typeof v==="object"&&!v.isObject3D&&!v.isMaterial&&!v.nodeType){let k=0;for(const key in v){if(++k>200)break;let w;try{w=v[key];}catch(e){continue;}const t=sz(w);if(t>=0)o[n+"."+key]=t;}}}
  let sc=0,mesh=0;try{scene.traverse(o=>{sc++;if(o.isMesh)mesh++;});}catch(e){}o["scene.children"]=scene.children.length;o["scene.objects"]=sc;o["scene.meshes"]=mesh;return Object.assign(o,__qaGpu());};true`);
 const listenerCount=()=>{let n=0;for(const t of [H.win,H.doc]){const m=H.listeners.get(t)||{};for(const k in m)n+=m[k].length;}return n;};
-const measure=()=>{gc();return Object.assign(xe('__qaSizes()'),{'harness.timers':H.timers.size,'harness.raf':H.rafLen(),'window+document listeners':listenerCount(),'heap MB':Math.round(process.memoryUsage().heapUsed/1048576)});};
+// Drop the previous measurement's strong lists first: __qaLiveG / __qaOrphans held every geometry alive at the last
+// measurement, so gc() could never collect it and each one was counted live again (a self-perpetuating false leak).
+const measure=()=>{xe('window.__qaLiveG=null;window.__qaOrphans=null;true');gc();return Object.assign(xe('__qaSizes()'),{'harness.timers':H.timers.size,'harness.raf':H.rafLen(),'window+document listeners':listenerCount(),'heap MB':Math.round(process.memoryUsage().heapUsed/1048576)});};
 // how a match ends: forced last round / time-up (the page's own end flow follows) -> results -> Lobby button
 const END={duel:'du.you=Math.max(du.you,DUEL_WIN-1);duelKill(true," QA")',aim:'AM.t=Math.min(AM.t,0.5)',
  rifle:'if(picking)rGo(RF.w||"Vandal");if(!running)return false;RF.you=RIFLE_WIN-1;RF.them=Math.min(RF.them,RIFLE_WIN-1);rEnd(true,"QA")',
@@ -71,6 +73,9 @@ const fails=[],marks=[];const fail=s=>fails.push(s);
    if(!ok)fail(`match ${n} ${name}: results not reached (${xe('window.__qaEndErr||""')})`);await adv(300);H.$('lobbyBtn').click();}
   else{if(res()){H.$('lobbyBtn').click();}else{H.dispatch(H.win,H.mkEvent('keydown',{key:'Escape',code:'Escape'}));await adv(100);H.$('xHome').click();}}
   await adv(3000);if(H.$('lobby').style.display!=='flex'||xe('running'))fail(`match ${n} ${name}: not back in the lobby`);
+  // Lotus's breakable wall once stayed in the gun raycast's extra hitbox list after leaving Lotus (phantom wall on later maps,
+  // and the list kept the freed map alive): outside a Lotus match nothing parented may remain live in it.
+  if(xe('xLdh().filter(m=>m.parent).length'))fail(`match ${n} ${name}: gun raycast still lists ${xe('xLdh().filter(m=>m.parent).length')} map hitbox(es) in the lobby`);
   if(process.env.QA_STACKS&&n===CYCLE.length)xe('__qaGpu();for(const g of __qaLiveG)g.__c1=1;true');
   marks.push({n,name,map,cycle:c,via:viaResults?'results':'pause',m:measure()});}}
  if(process.env.QA_STACKS){// debug: where the orphans and the still-live geometries made in the last cycle come from

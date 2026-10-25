@@ -2889,7 +2889,7 @@ function shoot(hv) {
     ray.far = 200;
     if (W.pel) { xPellets(W, targets); updHud(); return; }
   }
-  XWH.length = 0; ray.intersectObjects(XLDH.length ? targets.concat(XLDH) : targets, true, XWH); let hit = XWH[0], wk = 1;
+  XWH.length = 0; ray.intersectObjects(xLdh().length ? targets.concat(XLDH) : targets, true, XWH); let hit = XWH[0], wk = 1;
   if (!kn) bFx(null, ray.ray.direction, xSurfHit(hit, ray.ray.direction, 200), 200);
   if (!kn && hit) { const wb = xWall(hit, ray.ray.direction, w); if (wb) { hit = wb; wk = xPen(w).k; } } // wallbang: first hitbox past a thin wall
   if (hit && hit.object.userData.sw) sgDmg(body);
@@ -2904,6 +2904,10 @@ function shoot(hv) {
   updHud();
 }
 var XLDH = []; // enemy Lockdown hitboxes, added to the player's gun raycast
+// Drop entries that left the world: an attached mesh (Lotus's breakable wall) whose map group was hidden or freed. The wall
+// stayed listed after leaving Lotus, so later matches on other maps took player shots on an invisible wall at its old spot
+// and the list kept the whole freed Lotus map alive. Free-standing hitboxes (Lockdown, never parented) are kept.
+function xLdh() { for (let i = XLDH.length - 1; i >= 0; i--) { const m = XLDH[i]; if (!m.parent) continue; let o = m, live = true; while (o.parent) { if (!o.visible) live = false; o = o.parent; } if (o !== scene || !live) XLDH.splice(i, 1); } return XLDH; }
 // wallbangs: pen tier per gun (max wall m, damage mult); one reverse raycast per shot measures the wall, the hit beyond comes from the shot's own sorted hit list
 const XPN = { H: { t: 0.6, k: 0.75 }, M: { t: 0.35, k: 0.5 }, L: { t: 0.15, k: 0.5 } }, XWR = new THREE.Raycaster(), XWV = new THREE.Vector3(), XWD = new THREE.Vector3(), XWA = [], XWH = [];
 function xPen(n) { return /^(Odin|Ares|Sheriff|Operator|Guardian|Outlaw)$/.test(n) ? XPN.H : /^(Vandal|Phantom|Bulldog|Ghost|Marshal)$/.test(n) ? XPN.M : XPN.L; } // official tiers, as the server (weapons.json wallPenetration)
@@ -2935,7 +2939,7 @@ function xBotWall(u, o, d, h) { // enemy bot sprays through a thin wall at a rec
 const XPB = new THREE.Vector3(), XPH = [], XPM = new Map(), XPP = new Map();
 function xPellets(W, targets) {
   const alt = W.alt && ads === 1 ? W.alt : null, D = alt || W, n = alt ? alt.pel : W.pel, sp = W.cone * (alt ? alt.k : 1), d = ray.ray.direction;
-  const objs = XLDH.length ? targets.concat(XLDH) : targets;
+  const objs = xLdh().length ? targets.concat(XLDH) : targets;
   XPB.copy(d); XPM.clear(); XPP.clear(); xPelOn = true;
   try {
     for (let i = 0; i < n; i++) {
@@ -6968,6 +6972,7 @@ function xFreeMap(k, call) {
       [].concat(m.material || []).forEach((mt) => { if (!mt || keepM.has(mt) || (mt.userData && mt.userData.xdShared)) return; texOf(mt, (t) => { if (!keepT.has(t) && !(t.userData && t.userData.shared)) t.dispose(); }); mt.dispose(); }); };
     o.g.traverse(free); for (const c of call) c.traverse(free); } catch (e) {}
   const g = xMG(); g.visible = false; scene.add(g); FMAP[k] = { g, solids: [], boxes: [] }; call.length = 0; try { delete XD_STAT[k]; delete XF_STAT[k]; } catch (e) {}
+  if (k === "lotus") { try { xLdh(); LG.on = false; LG.wall = null; LG.doors.length = LG.gates.length = LG.deb.length = LG.E.length = 0; LG.G = null; LG.pl = null; } catch (e) {} } // its doors / wall / debris (rebuilt by xLotusMech)
 }
 function fUseMap() { // point MAPS.five at the picked map, move the spike + callouts + sites over
   xBuildMap(FV.map); const fm = FMAP[FV.map]; for (const k in FMAP) if (k !== FV.map) FMAP[k].g.visible = false; MAPS.five = fm;
@@ -9469,7 +9474,7 @@ function aimSpawn() {
     m.position.set(x, 0.8 + Math.random() * 2.4, z); m.userData.aim = t; t.g = m; t.hit = [m];
   } else {
     const g = new THREE.Group(), inv = new THREE.MeshBasicMaterial({ visible: false });
-    const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.35, 0.8, 4, 10), inv); body.position.y = 0.85;
+    const body = new THREE.Mesh(xG("Capsule", 0.35, 0.8, 4, 10), inv); body.position.y = 0.85; // shared: a capsule per spawned target stayed on the GPU after aimDrop (uploaded even with an invisible material)
     const head = new THREE.Mesh(xG("Sphere", 0.25, 12, 10), inv); head.position.y = 1.75;
     g.add(body, head); g.position.set(x, 0, z); g.userData.tm = type === "head" ? 0xffd34d : 0xff4655;
     const b = { g, body, head, hp: 100, alive: true, name: ["Jett", "Reyna", "Phoenix", "Sage", "Sova"][Math.floor(Math.random() * 5)] };
