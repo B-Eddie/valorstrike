@@ -18,10 +18,10 @@ function serve(port = 8876) {
   });
   return new Promise(r => srv.listen(port, '127.0.0.1', () => r(srv)));
 }
-async function launch({heavy = false, profile = null, viewport = {width:960, height:600}, args = []} = {}) {
+async function launch({heavy = false, profile = null, viewport = {width:960, height:600}, args = [], touch = false} = {}) {
   const b = await chromium.launch({headless:true, executablePath:'/usr/bin/google-chrome',
     args:['--no-sandbox','--use-gl=angle','--use-angle=swiftshader','--disable-dev-shm-usage','--enable-unsafe-swiftshader','--mute-audio',...args]});
-  const p = await b.newPage({viewport});
+  const p = await b.newPage(touch ? {viewport, hasTouch:true, isMobile:true} : {viewport});
   const prof = profile || (heavy ? 'heavy' : 'light');
   if (prof === 'light') {
     // Allow map assets (needed for match start); block heavy agent/weapon GLBs and textures.

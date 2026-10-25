@@ -505,3 +505,10 @@ Open: complete B join mid-match + kill phase (60s window at 2.5fps); then label 
 - 640x360: TEAM DEATHMATCH clipped, ESCALATION+CUSTOM off-strip, START below fold - same pattern.
 - FIX: fade mask on .x-qtabs at <=1024px (linear-gradient 90%->99%) so an overflowing strip shows a fading right edge. Verified visually at 844x390 (ESCALATION edge fades before the close button).
 - Left as accepted-scroll behavior (recorded, not fixed): START card + online section below the initial fold at <=390px-tall viewports; strip remains scroll-only (chosen over wrapping in the earlier crush fix to protect vertical space).
+
+## Touch gameplay acceptance (offline DM, emulated touch, 844x390 landscape) - PASS (14:41)
+- Probe work/browser-tests/touch-dm.cjs (hasTouch+isMobile emulation, CDP dispatchTouchEvent, mid asset profile):
+  touch layer on (pointer:coarse true), floating joystick drag moved the player 5.9m in one drag (53m cumulative across directions), right-half drag aimed (camera dir delta 0.68), FIRE tap spent ammo (25->21), joystick visual appears during hold (hidden on release by design).
+- Screenshot /tmp/touch_dm.png inspected: touch buttons (FIRE/JUMP/DUCK/ZOOM/R/INS/PING/F/COMMS/C-Q-E-X), minimap, score, standings, ammo 21|75, hp 100+50 all render at 844x390.
+- Observed, deferred to the coordinated responsive-HUD pass (not chased piecemeal per plan): default ZOOM/FIRE button positions overlap the right-side standings list; the mode subtitle truncates under the top-right buttons.
+- NOTE: emulated touch, not a real phone (standing caveat from the ledger's touch row).
