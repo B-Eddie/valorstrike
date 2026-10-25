@@ -128,6 +128,7 @@ button{font:inherit;text-transform:inherit;letter-spacing:inherit;cursor:pointer
 .wn{background:none;border:0;color:var(--bone);font-size:18px;font-weight:800;text-align:left;min-height:44px}.wn.eq::after{content:" · Equipped";color:var(--red);font-size:12px}
 #pre{position:fixed;inset:0;z-index:30;display:none;flex-direction:column;align-items:center;justify-content:center;gap:18px;background:radial-gradient(circle at 50% 40%,#1d2d3b,#0f1923 70%);text-align:center;padding:20px}
 #pre .mt{font-size:14px;letter-spacing:.16em;opacity:.85}#pre .mt b{color:var(--red)}
+@media (max-height:560px){#pre{justify-content:flex-start;overflow-y:auto;gap:10px;padding:12px}#pre>.row{position:sticky;bottom:0;z-index:1;padding:8px 16px;background:linear-gradient(rgba(15,25,35,0),#0f1923 45%)}} /* short landscape phones (640x360): the map pre-screen scrolls and GO stays reachable */
 #pre h2{font-size:clamp(28px,5vw,48px);font-weight:900}
 #pre .srch{font-size:18px;text-transform:none;letter-spacing:.03em}#pre .srch b{font-variant-numeric:tabular-nums}
 .mapc{width:min(460px,100%);border:1px solid rgba(236,232,225,.25);background:linear-gradient(135deg,#2a3b4a,#16232f);padding:22px;text-align:left;display:flex;flex-direction:column;gap:8px;border-left:4px solid var(--red)}
@@ -373,6 +374,7 @@ button{font:inherit;text-transform:inherit;letter-spacing:inherit;cursor:pointer
 .x-lk{align-self:center;background:#d8fff4;color:#0f1923;border-radius:0;padding:16px 0;width:min(320px,90%);font-size:22px;letter-spacing:.3em}
 .x-lk:hover:not(:disabled){background:#ffffff}
 @media(max-width:800px){.x-agp{grid-template-columns:1fr}.x-agc{max-width:100%}.x-agc .x-ag{width:68px;height:56px}.x-agc .x-ag i{font-size:20px}}
+@media (max-height:560px){#xAg{justify-content:flex-start;overflow-y:auto}#xAg>.x-agm{flex:none;min-height:auto}#xAg>.x-agc{flex:none}#xAg>#xAgL{position:sticky;bottom:0;z-index:2;flex:none;box-shadow:0 -10px 18px rgba(12,20,28,.85)}} /* agent select on short screens: details no longer overlap the cards and LOCK IN */
 .x-ab{left:50%;bottom:52px;transform:translateX(-50%);display:none;gap:8px}
 .x-ab.on{display:flex}
 #game #xWh{position:fixed;inset:0;background:radial-gradient(circle,#fff 0,#fff 45%,#f2f6ff 100%);opacity:0;pointer-events:none;z-index:6}
