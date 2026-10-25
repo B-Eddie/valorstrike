@@ -29,3 +29,19 @@ console.log('Spike drop survives next tick without auto-pickup by sender; abilit
 const hidden=dr.roundState(defender).sp;assert.equal(hidden[1],-1);assert.equal(hidden[2],0);assert.equal(hidden[3],0);assert.equal(hidden[7],'');dr.spike.st='plant';assert.equal(dr.roundState(defender).sp[2],dr.spike.x);assert.equal(dr.roundState(defender).sp[8],1);console.log('Defenders do not receive hidden Spike carrier/site/coordinates before plant');
 const bw={...W,map:{...W.map,attacker:[0,0,50],defender:[0,0,-50]}},bs=new SpikeSimulation(bw),bu=bs.add('buy'),bd=bs.add('def');bs.start(false);bs.motorFn=(u)=>{u.z=u.team===bs.atk?40:-40;u.x=20;u.vz=6;};bs.step(.05);assert.equal(bu.z,43);assert.equal(bd.z,-43);assert.equal(bu.x,20);assert.equal(bu.vz,0);bs.buy=0;bs.motorFn=u=>{u.z=u.team===bs.atk?40:-40;};bs.step(.05);assert.equal(bu.z,40);assert.equal(bd.z,-40);console.log('Buy-phase server boundary matches client/native visual zedge, not unrelated12m spawn circle; releases at phaseend');
 const wb={...bw,blocked:(x,z)=>x===20&&z===43},bc=new SpikeSimulation(wb),bp=bc.add('p');bc.add('q');bc.start(false);const prior=[bp.x,bp.y,bp.z];bc.motorFn=u=>{u.x=20;u.z=40;u.vz=5;};bc.step(.05);assert.deepEqual([bp.x,bp.y,bp.z],prior);assert.equal(bp.vz,0);console.log('Buy-boundary projection never places capsule into world solid');
+
+// A loading human holds the Spike buy phase for at most LOAD_GRACE (15 s), not for everyone up to the 180 s load timeout.
+// Still loading when the buy phase ends: out for the round (dead, spike handed on), back next round. A joiner mid-game
+// (already out for the round) never holds it.
+{const s=new SpikeSimulation(W),h=s.add('loader','Jett',true),a2=s.add('mate'),d1=s.add('def1'),d2=s.add('def2');s.start(false);
+ for(const u of [h,a2])u.team=s.atk;for(const u of [d1,d2])u.team=1-s.atk;s.spike.carrier=h.id;h.loading=true;
+ const run=sec=>{for(let i=0;i<Math.round(sec/.05);i++)s.step(.05);};
+ run(10);assert.equal(s.buy,20,'held while the loader is inside the grace');run(10);assert.ok(s.buy<20&&s.buy>14,'grace capped at 15 s: buy '+s.buy);
+ run(16);assert.equal(s.buy,0);assert.equal(h.alive,false,'still loading at round start: out for the round');assert.equal(s.round,1);
+ assert.ok(a2.alive&&s.spike.carrier===a2.id,'spike handed to a teammate who is in the round');
+ h.loading=false;run(1);assert.equal(h.alive,false,'finishing the load mid-round spectates');
+ s.finishRound(0,'QA');run(5.2);assert.equal(s.round,2);assert.equal(h.alive,true,'back next round');
+ const late=s.add('late','Sage',true);late.loading=true;const b0=s.buy;run(2);assert.ok(s.buy<b0-1.9,'mid-game joiner does not hold the round');
+ const bL=s.buy;h.loading=true;run(14);assert.equal(s.buy,bL,'a loader alive in the round holds within its grace');run(4);assert.ok(Math.abs(bL-s.buy-3)<.11,'released after 15 s: '+(bL-s.buy));
+ h.loadSince=null;const bR=s.buy;run(2);assert.ok(bR-s.buy>1.9,'per-round budget (15 s) spent: no further hold this round');
+ console.log('Spike loading hold: capped at 15 s per player and per round, late loader sits the round out and returns next round');}
