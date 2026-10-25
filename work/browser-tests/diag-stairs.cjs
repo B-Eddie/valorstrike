@@ -29,7 +29,7 @@ function longestFlight() {
   const t0 = Date.now(); const el = () => ((Date.now()-t0)/1000).toFixed(0) + 's';
   try {
     await boot(p);
-    await p.evaluate((m) => { window.__vs.FV.pick = m; window.__vs.light(true); window.__vs.agents(false); }, MAP);
+    await p.evaluate((m) => { window.__vs.FV.pick = m; window.__vs.FV.dmN = 0; window.__vs.light(true); window.__vs.agents(false); }, MAP); // dmN=0: no bots, clean movement signal (bot body-blocks made the down leg flaky)
     await startDM(p);
     await p.waitForFunction(() => window.__vs && window.__vs.state().running, {timeout: 120000, polling: 1000});
     await p.evaluate(() => { window.__vs.player.hp = 1e9; window.__vs.DM.win = 1e9; window.__vs.DM.len = 9999; if (window.__vs.setTimeLeft) window.__vs.setTimeLeft(9999); }); // god-mode + no match end: cull-kills must never reach the win threshold

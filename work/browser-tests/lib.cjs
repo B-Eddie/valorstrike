@@ -34,7 +34,7 @@ async function launch({heavy = false, profile = null, viewport = {width:960, hei
     // map scene buffers still blocked (light map path never requests them).
     await p.route(/\.(png|jpg|jpeg|bin)(\?|$)/, r => {
       const u = r.request().url();
-      if (u.includes('/maps/')) return r.continue();
+      if (u.includes('/maps/') || u.includes('/models/valorant/')) return r.continue();
       return r.abort();
     });
   }
@@ -48,10 +48,9 @@ async function boot(page, url = 'http://127.0.0.1:8876/') {
   await page.waitForFunction(() => window.THREE && document.getElementById('playBtn'), null, {timeout:60000});
 }
 async function startDM(page) {
-  await page.click('#mIntro [data-close]');
-  await page.click('#playBtn');
-  await page.evaluate(() => document.querySelector('button[role="tab"][data-q="dm"]').click());
-  await page.waitForSelector('#dmBtn', {state:'visible', timeout:10000});
-  await page.click('#dmBtn');
+  // Main's lobby rework (Oct 25) routes #playBtn to the online quick-match menu; the legacy
+  // mode-tab strip is not shown. Probes exercise gameplay, not lobby UX, so launch via the hook.
+  await page.click('#mIntro [data-close]').catch(() => {});
+  await page.evaluate(() => window.__vs.startDM());
 }
 module.exports = {serve, launch, boot, startDM};
