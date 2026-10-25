@@ -839,7 +839,7 @@ body.x-cbh #game{--ha:#3d8bff;--he:#ff9f1c}
 .x-qon__code small{font-size:11px;letter-spacing:.12em;text-transform:uppercase;opacity:1;color:#c9cdd2}
 .x-qon__code b{font-size:30px;letter-spacing:.24em;font-variant-numeric:tabular-nums;font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace}
 .x-qon__code span{font-size:13px;opacity:.8}
-.x-qon__list{margin:0;padding:0;list-style:none;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px}
+.x-qon__list{margin:0;padding:0;list-style:none;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px;max-height:min(28vh,180px);overflow-y:auto} /* roster scrolls internally so Map/Start/Leave keep a fixed, visible position as players join */
 .x-qon__list li{display:flex;justify-content:space-between;gap:8px;padding:8px 10px;background:rgba(15,25,35,.8);border:1px solid rgba(236,232,225,.14);font-size:13px;min-width:0}
 .x-qon__list li b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .x-qon__list li small{opacity:1;color:#c9cdd2;flex:none}
@@ -1053,9 +1053,9 @@ body.x-cbh #game{--ha:#3d8bff;--he:#ff9f1c}
     </div>
     <div class="x-qon__room" id="xOnRoom" hidden>
       <div class="x-qon__code"><small>Room code</small><b id="xOnCodeT">—</b><button type="button" class="x-qrange" id="xOnCopy">Copy</button><span id="xOnRoomM"></span></div>
-      <ol class="x-qon__list" id="xOnList"></ol>
       <div class="x-qon__row"><label class="x-qon__nm">Map <select id="xOnMap"><option value="ascent">Ascent</option><option value="bind">Bind</option><option value="haven">Haven</option><option value="split">Split</option><option value="lotus">Lotus</option><option value="breeze">Breeze</option><option value="random">Random</option></select></label>
         <button type="button" class="x-qrange x-qon__go" id="xOnStart">Start</button><span id="xOnWait"></span><button type="button" class="x-qrange" id="xOnLeave">Leave</button></div>
+      <ol class="x-qon__list" id="xOnList"></ol>
     </div>
     <p class="x-qon__msg" id="xOnMsg" role="status" aria-live="polite"></p>
   </section>
@@ -11513,7 +11513,9 @@ function mpUI() {
   const box = mpEl("xOn"); if (!box) return;
   const inR = !!MP.role, R = MP.role === "host" ? mpRoomInfo() : MP.room || null, busy = mpBusy();
   ["xOnQuick", "xOnCreate", "xOnJoin"].forEach((id) => { const b = mpEl(id); if (b) b.disabled = busy || inR; });
-  const room = mpEl("xOnRoom"); if (room) room.hidden = !inR;
+  const room = mpEl("xOnRoom"); if (room) { const was = room.hidden; room.hidden = !inR;
+    if (was && inR) { // a room just appeared: bring it into the panel's scrollport so the Start/Leave controls are never clipped below the fold (960x600 queue panel overflow)
+      try { room.scrollIntoView({ block: "start" }); } catch (e) {} } }
   const set = (id, t) => { const e = mpEl(id); if (e && e.textContent !== t) e.textContent = t; };
   box.querySelectorAll("[data-om]").forEach((b) => { b.setAttribute("aria-pressed", b.dataset.om === MP.mode ? "true" : "false"); b.disabled = busy || (inR && !(MP.role === "host" && !MP.pub)); });
   if (!inR) { mpMsg(MP.msg); return; }
