@@ -26,6 +26,7 @@ function longestFlight() {
   console.log('flight:', flight.length, 'nodes, rise', rise.toFixed(2) + 'm', 'from', JSON.stringify(flight[0]), 'to', JSON.stringify(flight[flight.length-1]));
   const srv = await serve(); const wsrv = await serveWorlds();
   const {b, p, errors} = await launch({profile:'mid', viewport:{width:640, height:360}});
+  await p.addInitScript(() => { window.__fc = 0; const tick = () => { window.__fc++; requestAnimationFrame(tick); }; requestAnimationFrame(tick); });
   const t0 = Date.now(); const el = () => ((Date.now()-t0)/1000).toFixed(0) + 's';
   try {
     await boot(p);
@@ -44,7 +45,7 @@ function longestFlight() {
       const samples = [];
       let lastMove = Date.now(), dumped = false, lastPos = null;
       const tEnd = Date.now() + secs * 1000;
-      while (Date.now() < tEnd) { const s = await p.evaluate(() => { const q = window.__vs.state().player; try { window.__vs.bots.forEach((bb) => { if (bb.alive) window.__vs.kill(bb); }); } catch (e) {} return q && [q[0], q[1], q[2]]; });
+      while (Date.now() < tEnd) { const s = await p.evaluate(() => { const q = window.__vs.state().player; try { window.__vs.bots.forEach((bb) => { if (bb.alive) window.__vs.kill(bb); }); } catch (e) {} return q && [q[0], q[1], q[2], window.__fc | 0]; });
         if (s) { samples.push(s);
           if (!lastPos || Math.hypot(s[0] - lastPos[0], s[2] - lastPos[2]) > .05) { lastMove = Date.now(); lastPos = s; }
           if (!dumped && Date.now() - lastMove > 5000) { dumped = true;
@@ -78,7 +79,9 @@ function longestFlight() {
     }
     const upEnd = up[up.length - 1];
     let stall = 0; const stallPts = [];
-    for (let i = 5; i < up.length; i++) { if (Math.hypot(up[i][0] - up[i-5][0], up[i][2] - up[i-5][2]) < .15 && up[i][1] < flight[flight.length-1].y - .3) { stall++; stallPts.push([+up[i][0].toFixed(2), +up[i][1].toFixed(2), +up[i][2].toFixed(2)]); } }
+    for (let i = 5; i < up.length; i++) { if (Math.hypot(up[i][0] - up[i-5][0], up[i][2] - up[i-5][2]) < .15 && up[i][1] < flight[flight.length-1].y - .3) { stall++; const dfc = (up[i][3] || 0) - (up[i-5][3] || 0); stallPts.push([+up[i][0].toFixed(2), +up[i][1].toFixed(2), +up[i][2].toFixed(2), dfc]); } }
+    const wedges = stallPts.filter(q => q[3] > 2), starves = stallPts.filter(q => q[3] <= 2);
+    console.log(el(), 'stall classification: wedge(frames advanced)=' + wedges.length, 'starvation(frames frozen)=' + starves.length);
     const goal = flight[flight.length - 1];
     const reached = up.some((s) => Math.hypot(s[0] - goal.x, s[2] - goal.z) < 1.6 && Math.abs(s[1] - goal.y) < .5);
     const minY = Math.min(...up.map((s) => s[1]));

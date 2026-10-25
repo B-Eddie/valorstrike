@@ -54,7 +54,7 @@ async function launch({heavy = false, profile = null, viewport = {width:960, hei
     // map scene buffers still blocked (light map path never requests them).
     await p.route(/\.(png|jpg|jpeg|bin)(\?|$)/, r => {
       const u = r.request().url();
-      if (u.includes('/maps/') || u.includes('/models/valorant/')) return r.continue();
+      if (u.includes('/maps/') || u.includes('/models/valorant/') || u.includes('/worlds/')) return r.continue(); // /worlds/ = prebuilt collision/BVH from serveWorlds (production-faithful)
       return r.abort();
     });
   }
