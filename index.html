@@ -9056,10 +9056,12 @@ const XBR = (() => {
       st.hum.gain.setTargetAtTime(v && !S.muted ? 0.035 : 0, ac.currentTime, 0.15); } catch (e) {}
   }
   function cdText(n) {
-    if (n === st.cd) return; st.cd = n;
+    let an = null, aOn = false; try { an = document.getElementById("xAnn"); aOn = !!(an && an.classList.contains("on")); } catch (e) {}
+    if (n === st.cd && aOn === st.aOn) return; st.cd = n = n || 0; st.aOn = aOn; // per-frame calls: react to countdown AND ann-visibility changes
     if (!st.el) { const d = document.createElement("div"); d.id = "xBrCd"; d.style.cssText = "position:fixed;left:50%;top:22%;transform:translateX(-50%);font:600 13px/1 Geist,sans-serif;letter-spacing:.14em;color:#7fd4ff;text-shadow:0 1px 6px rgba(0,0,0,.7);pointer-events:none;z-index:40;display:none"; document.body.appendChild(d); st.el = d; }
+    if (!st.obs && an) { st.obs = new MutationObserver(() => { try { st.aOn = 2; cdText(st.cd); } catch (e) {} }); st.obs.observe(an, { attributes: true, attributeFilter: ["class"] }); } // reposition even when the game loop is starved (real browsers also self-correct via the per-frame call)
     st.el.style.display = n > 0 ? "block" : "none"; if (n > 0) st.el.textContent = "BARRIER DROPS IN " + n;
-    try { const an = document.getElementById("xAnn"); if (an && an.classList.contains("on")) { const r = an.getBoundingClientRect(); if (r.height) st.el.style.top = Math.round(r.bottom + 8) + "px"; else st.el.style.top = "22%"; } else st.el.style.top = "22%"; } catch (e) {} // ann owns the top:22% band while it shows
+    try { if (aOn) { const r = an.getBoundingClientRect(); st.el.style.top = r.height ? Math.round(r.bottom + 8) + "px" : "22%"; } else st.el.style.top = "22%"; } catch (e) {} // ann owns the top:22% band while it shows
   }
   function tick() {
     const now = performance.now(), dt = Math.min(0.1, (now - (st.last || now)) / 1000); st.last = now;
