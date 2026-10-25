@@ -7,6 +7,7 @@ const MIME = {'.html':'text/html','.js':'application/javascript','.mjs':'applica
 function serve(port = 8876) {
   const srv = http.createServer((req,res)=>{
     let p = decodeURIComponent(req.url.split('?')[0]); if (p === '/') p = '/index.html';
+    if (process.env.VS_SERVE_LOG) console.log('[serve]', new Date().toISOString().slice(17,23), p.slice(0,90));
     const f = path.join(ROOT, p);
     if (!f.startsWith(ROOT)) { res.writeHead(403); return res.end(); }
     fs.readFile(f, (err, data) => {
@@ -17,9 +18,9 @@ function serve(port = 8876) {
   });
   return new Promise(r => srv.listen(port, '127.0.0.1', () => r(srv)));
 }
-async function launch({heavy = false, profile = null, viewport = {width:960, height:600}} = {}) {
+async function launch({heavy = false, profile = null, viewport = {width:960, height:600}, args = []} = {}) {
   const b = await chromium.launch({headless:true, executablePath:'/usr/bin/google-chrome',
-    args:['--no-sandbox','--use-gl=angle','--use-angle=swiftshader','--disable-dev-shm-usage','--enable-unsafe-swiftshader','--mute-audio']});
+    args:['--no-sandbox','--use-gl=angle','--use-angle=swiftshader','--disable-dev-shm-usage','--enable-unsafe-swiftshader','--mute-audio',...args]});
   const p = await b.newPage({viewport});
   const prof = profile || (heavy ? 'heavy' : 'light');
   if (prof === 'light') {

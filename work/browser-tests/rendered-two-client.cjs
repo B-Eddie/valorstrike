@@ -13,12 +13,28 @@ function waitHttp(url, ms) { const end = Date.now()+ms; return new Promise((res,
   const wr = process.env.NO_WRANGLER ? {kill(){}} : spawn('node_modules/.bin/wrangler', ['dev','--local','--ip','127.0.0.1','--var','ALLOW_LOCAL_ORIGIN:true','--var','ENABLE_SPIKE:true'], {cwd: SERVER_DIR, stdio: ['ignore',require('fs').openSync('/tmp/wrangler_out.log','w'),require('fs').openSync('/tmp/wrangler_err.log','w')]});
   process.on('exit', () => { try { wr.kill(); } catch(e){} });
   await waitHttp('http://127.0.0.1:8787/profile?qa=1', 30000); console.log(el(), 'server up');
+  require('child_process').exec('pkill -f esbuild || true'); // wrangler's bundler idles between rebuilds; free its RAM on the 2 GB box
   const srv = await serve();
-  const {b} = await launch({profile:'light', viewport:{width:960, height:600}});
-  const ctx = b; // one browser; two pages
-  const pA = await ctx.newPage({viewport:{width:960, height:600}});
-  const ONE = !!process.env.ONE; const pB = ONE ? null : await ctx.newPage({viewport:{width:960, height:600}});
+  const {b, p: p0} = await launch({profile:'light', viewport:{width:320, height:180}, args:['--js-flags=--max-old-space-size=768']});
+  await p0.close().catch(()=>{}); // launch()'s own page is unused in this probe; free its renderer on a 2 GB box
+  // ONE context: same-site pages share a single renderer process (one V8, one THREE copy) - the
+  // 2 GB sandbox cannot hold two full renderers plus wrangler; pausing the idle page serializes main-thread use
+  const ctxA = await b.newContext({viewport:{width:320, height:180}}); const pA = await ctxA.newPage();
+  const ONE = !!process.env.ONE; const ctxB = ctxA; const pB = ONE ? null : await ctxA.newPage();
+  // light route on BOTH probe pages (launch() only routes its own unused page): allow map/world
+  // assets incl. prebuilt BVH, abort the heavy texture/GLB stream that otherwise saturates the
+  // probe's static file server and starves the second client's page load.
+  // mid-profile route on BOTH probe pages (launch() only routes its own unused page): agent/weapon
+  // rigs and map/world assets pass (XVA agent preload is on the online start path and retries forever
+  // when aborted); loose textures stay blocked. Matches lib.cjs's proven 'mid' profile.
+  // textures aborted wholesale (cosmetic, the big memory/IO stream); geometry + rigs pass
+  const midRoute = r => { const u = r.request().url();
+    if (/\.(png|jpg|jpeg)(\?|$)/.test(u)) return r.abort();
+    if (u.includes('/maps/') || u.includes('/worlds/') || u.includes('/models/valorant/')) return r.continue();
+    return r.abort(); };
+  await ctxA.route(/\.(png|jpg|jpeg|bin|glb)(\?|$)/, midRoute); if (ctxB) await ctxB.route(/\.(png|jpg|jpeg|bin|glb)(\?|$)/, midRoute);
   const errsA = [], errsB = []; pA.on('pageerror', e => errsA.push(String(e))); if (pB) pB.on('pageerror', e => errsB.push(String(e)));
+  if (pB) { pB.on('crash', () => console.log(el(), 'B PAGE CRASHED')); pB.on('requestfailed', r => console.log(el(), 'B reqfail', (r.url()||'').slice(0,80), r.failure() && r.failure().errorText)); }
   const con=(tag,m)=>{const t=m.type();if(t==='error'||t==='warning')console.log(el(),tag,'console.'+t,m.text().slice(0,220));};
   pA.on('console',m=>con('A',m)); if(pB)pB.on('console',m=>con('B',m));
   const bootOne = async (p, name) => {
@@ -29,8 +45,8 @@ function waitHttp(url, ms) { const end = Date.now()+ms; return new Promise((res,
     await p.waitForSelector('#xQueue:not([hidden])', {timeout: 15000});
     await p.fill('#xOnName', name);
   };
-  await bootOne(pA, 'RendA'); if (!ONE) await bootOne(pB, 'RendB');
-  console.log(el(), 'both booted, lobby open');
+  await bootOne(pA, 'RendA'); if (!ONE) { await bootOne(pB, 'RendB'); await pB.evaluate(() => window.__vs.pauseRender(true)); }
+  console.log(el(), 'both booted, B render paused (memory-only resident)');
   // A: DM mode, create private room (call the same functions the buttons call -
   // button hit-testing is covered by diag-lobby-modes; small viewports scroll-shift clicks)
   await pA.evaluate(() => { document.querySelector('#xOn [data-om="dm"]').click(); document.getElementById('xOnCreate').click(); });
@@ -43,12 +59,12 @@ function waitHttp(url, ms) { const end = Date.now()+ms; return new Promise((res,
   }
   if (!code) throw new Error('room code never appeared');
   console.log(el(), 'room code', code);
-  if (!ONE && pB) { await pB.goto('about:blank'); console.log(el(), 'B parked at about:blank'); }
+  if (!ONE && pB) { await pA.bringToFront().catch(()=>{}); }
 
   console.log(el(), 'starting via mpStart');
-  await pA.evaluate(() => document.getElementById('xOnStart').click());
-  console.log(el(), 'mpStart sent');
-  for (const [p, tag] of (ONE ? [[pA,'A']] : [[pA,'A'],[pB,'B']])) {
+  await pA.evaluate(() => { window.__vs.slowRender(400); document.getElementById('xOnStart').click(); });
+  console.log(el(), 'mpStart sent (A loop slowed to 2.5fps so probe evaluates interleave)');
+  for (const [p, tag] of [[pA,'A']]) { // host only; B is parked here and gets its own poll after joining mid-match
     let ok = false;
     for (let i = 0; i < 90 && !ok; i++) {
       await wait(2000);
@@ -66,7 +82,8 @@ function waitHttp(url, ms) { const end = Date.now()+ms; return new Promise((res,
   let killed = false, bSawDeath = false, bSawRespawn = false, bHp0 = null;
   if (ONE) { console.log(el(), 'ONE-client diag done'); await pA.screenshot({path:'/tmp/rend2_one.png'}); await b.close(); srv.close(); wr.kill(); process.exit(0); }
   // B re-enters the lobby fresh and joins the RUNNING match by code
-  await bootOne(pB, 'RendB');
+  await pA.evaluate(() => window.__vs.pauseRender(true)); console.log(el(), 'A render paused for B join');
+  if (!ONE) await pB.evaluate(() => window.__vs.pauseRender(false));
   await pB.evaluate((c) => { document.getElementById('xOnCode').value = c; document.getElementById('xOnJoin').click(); }, code);
   console.log(el(), 'B join clicked (mid-match)');
   for (let i = 0; i < 45; i++) {
@@ -75,7 +92,8 @@ function waitHttp(url, ms) { const end = Date.now()+ms; return new Promise((res,
     if (i % 3 === 0 || d.running) console.log(el(), 'B boot-diag', JSON.stringify(d));
     if (d.running) break;
   }
-  const killEnd = Date.now() + 20000;
+  await pA.evaluate(() => window.__vs.pauseRender(false)); console.log(el(), 'A render resumed');
+  const killEnd = Date.now() + 60000; // 2.5fps client: fewer frames to close distance and land the kill
   while (Date.now() < killEnd && !killed) {
     const posB = await pA.evaluate(() => { const r = (window.__vs.state().botsPos||[]).find(r => r[0] === 'RendB'); return r || null; });
     const bHp = await pB.evaluate(() => { const s = window.__vs.state(); return s.player ? s.player[3] : null; }).catch(() => null);

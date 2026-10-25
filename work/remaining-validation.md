@@ -473,3 +473,13 @@ then A-host start with B parked at about:blank (WebGL-contention mitigation), th
 - nmEnsure is only reached via nmWrap/nmLaunch: the mode-start fn (dmGo, which sets mode='five') runs AFTER nmEnsure resolves. So mode='retake' + nmPending=true + 'Loading Ascent / Preparing the map…' during an online start is the NORMAL in-flight state, not proof no start ran. Earlier 'no mode-start ran' reading corrected.
 - TWO-mode fresh-wrangler run (ZB4PNT): start frame path in flight at 35s, still in nmEnsure load phase ('Preparing the map…' = fetch/BVH phase). ONE-mode same server condition finished that phase in ~5s. Whether TWO-mode load is merely slower (CPU contention) or truly stuck is open; mpWaitStart tolerates slow loads by design (progress resets), the 119s sandbox window is the real limit.
 - Added NET.loadAt / NET.ready / NM.ticket to the net() hook to distinguish start-frame-received from load-in-progress on the next run.
+
+## Rendered two-client - harness engineering findings (14:12, uncommitted-run evidence)
+Root causes found this session (all conditional on this 2-core/2GB/no-sandbox-swap sandbox):
+1. TWO-client boot parse starves on RAM: box has 1982MB, no swap permitted (swapon EPERM); kswapd thrash (66% iowait) makes a second renderer's 3MB index.html parse take >60s. curl to the static server stays fast throughout - not a server or connection-pool issue.
+2. Separate contexts = separate renderers = worst memory. ONE context: same-site pages share one renderer process (one V8, one THREE copy) - both pages boot in ~9s total.
+3. Shared process = shared main thread: a running page's rAF loop starves DevTools evaluates. Fixes: __vs.pauseRender(v) (test-only, rebinds loop to an idle rAF re-armer) for the page that is waiting, __vs.slowRender(ms) (runs the real loop every N ms, leaves main-thread gaps) for the page under observation. Both localhost-gated debug hooks.
+4. mid-asset route on probe pages: all png/jpg aborted (textures are the big memory+IO stream), bin/glb allowed only under /maps/, /worlds/, /models/valorant/ (XVA agent preload is on the online start path and retries forever when aborted - blocking it hangs the start at nmTicket=0).
+5. Textures aborted + heap cap + pkill esbuild after wrangler ready = workable footprint.
+Best run so far (twoH): both boot 9s, A in-match 14s, evaluates 3s. twoI (slowRender added): load in flight, evaluates fast; run killed by the 119s sandbox window before B join phase completed.
+Open: complete B join mid-match + kill phase (60s window at 2.5fps); then label host-client vs authoritative-server acceptance separately.

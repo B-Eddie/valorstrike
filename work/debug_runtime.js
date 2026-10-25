@@ -11,6 +11,8 @@ try {
     window.__vs = {
       light(on) { window.__vsLight = !!on; if (on && window.__vsNoAgents === undefined) window.__vsNoAgents = true; return window.__vsLight; },
       agents(off) { window.__vsNoAgents = !!off; return !window.__vsNoAgents; },
+      slowRender(ms) { if (!window.__vsOrigLoop) { window.__vsOrigLoop = loop; window.__vsLastRun = 0; window.__vsSlowMs = +ms || 400; loop = function () { const now = performance.now(); if (now - window.__vsLastRun >= window.__vsSlowMs) { window.__vsLastRun = now; window.__vsOrigLoop(); } else { loop.id = requestAnimationFrame(loop); } }; } else { window.__vsSlowMs = +ms || 400; } return window.__vsSlowMs; },
+      pauseRender(v) { if (v) { if (!window.__vsOrigLoop) { window.__vsOrigLoop = loop; loop = function () { loop.id = requestAnimationFrame(loop); }; } return true; } if (window.__vsOrigLoop) { loop = window.__vsOrigLoop; window.__vsOrigLoop = null; if (typeof XRT !== 'undefined') XRT.skip = 1; } return false; },
       fire(on) { fireHeld = !!on; },
       setTimeLeft(sec) { timeLeft = +sec; },
       setPos(x, y, z) { player.x = +x; player.y = +y; player.z = +z; player.vy = 0; player.vx = 0; player.vz = 0; },
