@@ -1,0 +1,802 @@
+{
+ "label": "before",
+ "steps": [
+  [
+   "1.5",
+   "launch",
+   1
+  ],
+  [
+   "18.3",
+   "goto",
+   1
+  ],
+  [
+   "18.6",
+   "assets",
+   1
+  ],
+  [
+   "24.6",
+   "startDM called",
+   1
+  ],
+  [
+   "42.2",
+   "progress",
+   "{\"running\":false,\"ld\":true,\"bots\":0,\"ft\":28,\"vis\":[]}"
+  ],
+  [
+   "55.6",
+   "progress",
+   "{\"running\":false,\"ld\":true,\"bots\":0,\"ft\":31,\"vis\":[]}"
+  ],
+  [
+   "79.5",
+   "progress",
+   "{\"running\":false,\"ld\":true,\"bots\":0,\"ft\":32,\"vis\":[]}"
+  ],
+  [
+   "86.0",
+   "progress",
+   "{\"running\":false,\"ld\":true,\"bots\":0,\"ft\":36,\"vis\":[]}"
+  ],
+  [
+   "108.0",
+   "progress",
+   "{\"running\":true,\"ld\":false,\"bots\":7,\"ft\":47,\"calls\":479,\"vis\":[]}"
+  ],
+  [
+   "108.0",
+   "match started",
+   "{\"mode\":\"five\",\"dm\":true,\"map\":\"ascent\",\"bots\":7,\"w\":\"Vandal\"}"
+  ],
+  [
+   "119.0",
+   "idle before",
+   {
+    "rafFrames": 55,
+    "calls": 481,
+    "tris": 3306374,
+    "geo": 469,
+    "tex": 440,
+    "prog": 29,
+    "heap": 285,
+    "heapTotal": 294,
+    "dom": 1594,
+    "sceneObjs": 3790,
+    "hp": 100,
+    "shots": 0,
+    "taken": 0,
+    "dealt": 0,
+    "ammo": 25,
+    "rsv": 75
+   }
+  ],
+  [
+   "327.0",
+   "idle after",
+   {
+    "rafFrames": 60,
+    "calls": 477,
+    "tris": 3322500,
+    "geo": 481,
+    "tex": 452,
+    "prog": 32,
+    "heap": 275,
+    "heapTotal": 279,
+    "dom": 1583,
+    "sceneObjs": 3646,
+    "hp": 100,
+    "shots": 0,
+    "taken": 0,
+    "dealt": 0,
+    "ammo": 25,
+    "rsv": 75
+   }
+  ],
+  [
+   "327.0",
+   "idle frames",
+   {
+    "frames": 2,
+    "meanMs": 72480.4,
+    "p50": 113112.1,
+    "p95": 113112.1,
+    "max": 113112.1,
+    "longTasks": 9,
+    "longTaskMs": 152646,
+    "longTaskMax": 113079
+   }
+  ],
+  [
+   "327.0",
+   "idle hot (self %)",
+   {
+    "samples": 20679,
+    "top": [
+     [
+      "getProgramInfoLog :0",
+      61.4
+     ],
+     [
+      "(idle) :0",
+      19.6
+     ],
+     [
+      "getShaderInfoLog :0",
+      17.4
+     ],
+     [
+      "(program) :0",
+      1.1
+     ],
+     [
+      "(garbage collector) :0",
+      0.1
+     ],
+     [
+      "getProgramParameter :0",
+      0
+     ],
+     [
+      "xrSupports :12701",
+      0
+     ],
+     [
+      "us three.min.js:6",
+      0
+     ],
+     [
+      "traverse three.min.js:6",
+      0
+     ],
+     [
+      "fillText :0",
+      0
+     ],
+     [
+      "texSubImage2D :0",
+      0
+     ],
+     [
+      "updateWorldMatrix three.min.js:6",
+      0
+     ],
+     [
+      "boneTransform three.min.js:6",
+      0
+     ],
+     [
+      "xrRagdoll :12673",
+      0
+     ],
+     [
+      "xrClearance :12712",
+      0
+     ],
+     [
+      "shapecastTraverse three-mesh-bvh.umd.js:2789",
+      0
+     ],
+     [
+      "raycast three-mesh-bvh.umd.js:2651",
+      0
+     ],
+     [
+      "xUbAnim :3458",
+      0
+     ],
+     [
+      "Y three.min.js:6",
+      0
+     ],
+     [
+      "remove :0",
+      0
+     ],
+     [
+      "fetch :0",
+      0
+     ],
+     [
+      "(anon) :12036",
+      0
+     ],
+     [
+      "getWorldPosition three.min.js:6",
+      0
+     ],
+     [
+      "(anon) :10153",
+      0
+     ],
+     [
+      "getElementById :0",
+      0
+     ]
+    ]
+   }
+  ],
+  [
+   "327.1",
+   "placed bots",
+   3
+  ],
+  [
+   "327.2",
+   "fire before",
+   {
+    "rafFrames": 60,
+    "calls": 477,
+    "tris": 3322500,
+    "geo": 481,
+    "tex": 452,
+    "prog": 32,
+    "heap": 275,
+    "heapTotal": 279,
+    "dom": 1583,
+    "sceneObjs": 3646,
+    "hp": 100,
+    "shots": 0,
+    "taken": 0,
+    "dealt": 0,
+    "ammo": 25,
+    "rsv": 75
+   }
+  ],
+  [
+   "328.2",
+   "firing",
+   {
+    "rafFrames": 60,
+    "calls": 477,
+    "tris": 3322500,
+    "geo": 481,
+    "tex": 452,
+    "prog": 32,
+    "heap": 275,
+    "heapTotal": 279,
+    "dom": 1583,
+    "sceneObjs": 3646,
+    "hp": 100,
+    "shots": 0,
+    "taken": 0,
+    "dealt": 0,
+    "ammo": 25,
+    "rsv": 75
+   }
+  ],
+  [
+   "336.7",
+   "firing",
+   {
+    "rafFrames": 60,
+    "calls": 477,
+    "tris": 3322500,
+    "geo": 481,
+    "tex": 452,
+    "prog": 32,
+    "heap": 275,
+    "heapTotal": 277,
+    "dom": 1583,
+    "sceneObjs": 3646,
+    "hp": 100,
+    "shots": 0,
+    "taken": 0,
+    "dealt": 0,
+    "ammo": 25,
+    "rsv": 75
+   }
+  ],
+  [
+   "345.7",
+   "firing",
+   {
+    "rafFrames": 60,
+    "calls": 477,
+    "tris": 3322500,
+    "geo": 481,
+    "tex": 452,
+    "prog": 32,
+    "heap": 275,
+    "heapTotal": 277,
+    "dom": 1583,
+    "sceneObjs": 3646,
+    "hp": 100,
+    "shots": 0,
+    "taken": 0,
+    "dealt": 0,
+    "ammo": 25,
+    "rsv": 75
+   }
+  ],
+  [
+   "433.2",
+   "firing",
+   {
+    "rafFrames": 63,
+    "calls": 492,
+    "tris": 3338221,
+    "geo": 488,
+    "tex": 456,
+    "prog": 32,
+    "heap": 276,
+    "heapTotal": 278,
+    "dom": 1583,
+    "sceneObjs": 3646,
+    "hp": 70,
+    "shots": 5,
+    "taken": 30,
+    "dealt": 128,
+    "ammo": 20,
+    "rsv": 75
+   }
+  ],
+  [
+   "441.3",
+   "firing",
+   {
+    "rafFrames": 63,
+    "calls": 492,
+    "tris": 3338221,
+    "geo": 488,
+    "tex": 456,
+    "prog": 32,
+    "heap": 275,
+    "heapTotal": 278,
+    "dom": 1583,
+    "sceneObjs": 3646,
+    "hp": 70,
+    "shots": 5,
+    "taken": 30,
+    "dealt": 128,
+    "ammo": 20,
+    "rsv": 75
+   }
+  ],
+  [
+   "451.9",
+   "firing",
+   {
+    "rafFrames": 63,
+    "calls": 492,
+    "tris": 3338221,
+    "geo": 488,
+    "tex": 456,
+    "prog": 32,
+    "heap": 275,
+    "heapTotal": 278,
+    "dom": 1583,
+    "sceneObjs": 3646,
+    "hp": 70,
+    "shots": 5,
+    "taken": 30,
+    "dealt": 128,
+    "ammo": 20,
+    "rsv": 75
+   }
+  ],
+  [
+   "463.3",
+   "firing",
+   {
+    "rafFrames": 63,
+    "calls": 492,
+    "tris": 3338221,
+    "geo": 488,
+    "tex": 456,
+    "prog": 32,
+    "heap": 275,
+    "heapTotal": 278,
+    "dom": 1583,
+    "sceneObjs": 3646,
+    "hp": 70,
+    "shots": 5,
+    "taken": 30,
+    "dealt": 128,
+    "ammo": 20,
+    "rsv": 75
+   }
+  ],
+  [
+   "471.6",
+   "firing",
+   {
+    "rafFrames": 63,
+    "calls": 492,
+    "tris": 3338221,
+    "geo": 488,
+    "tex": 456,
+    "prog": 32,
+    "heap": 275,
+    "heapTotal": 278,
+    "dom": 1583,
+    "sceneObjs": 3646,
+    "hp": 70,
+    "shots": 5,
+    "taken": 30,
+    "dealt": 128,
+    "ammo": 20,
+    "rsv": 75
+   }
+  ],
+  [
+   "480.0",
+   "firing",
+   {
+    "rafFrames": 64,
+    "calls": 483,
+    "tris": 3310063,
+    "geo": 488,
+    "tex": 456,
+    "prog": 32,
+    "heap": 276,
+    "heapTotal": 278,
+    "dom": 1627,
+    "sceneObjs": 3640,
+    "hp": 0,
+    "shots": 7,
+    "taken": 100,
+    "dealt": 312,
+    "ammo": 18,
+    "rsv": 75
+   }
+  ],
+  [
+   "488.6",
+   "firing",
+   {
+    "rafFrames": 64,
+    "calls": 483,
+    "tris": 3310063,
+    "geo": 488,
+    "tex": 456,
+    "prog": 32,
+    "heap": 275,
+    "heapTotal": 278,
+    "dom": 1600,
+    "sceneObjs": 3640,
+    "hp": 0,
+    "shots": 7,
+    "taken": 100,
+    "dealt": 312,
+    "ammo": 18,
+    "rsv": 75
+   }
+  ],
+  [
+   "498.7",
+   "firing",
+   {
+    "rafFrames": 64,
+    "calls": 483,
+    "tris": 3310063,
+    "geo": 488,
+    "tex": 456,
+    "prog": 32,
+    "heap": 275,
+    "heapTotal": 277,
+    "dom": 1600,
+    "sceneObjs": 3640,
+    "hp": 0,
+    "shots": 7,
+    "taken": 100,
+    "dealt": 312,
+    "ammo": 18,
+    "rsv": 75
+   }
+  ],
+  [
+   "506.9",
+   "firing",
+   {
+    "rafFrames": 64,
+    "calls": 483,
+    "tris": 3310063,
+    "geo": 488,
+    "tex": 456,
+    "prog": 32,
+    "heap": 275,
+    "heapTotal": 277,
+    "dom": 1600,
+    "sceneObjs": 3640,
+    "hp": 0,
+    "shots": 7,
+    "taken": 100,
+    "dealt": 312,
+    "ammo": 18,
+    "rsv": 75
+   }
+  ],
+  [
+   "515.0",
+   "firing",
+   {
+    "rafFrames": 64,
+    "calls": 483,
+    "tris": 3310063,
+    "geo": 488,
+    "tex": 456,
+    "prog": 32,
+    "heap": 275,
+    "heapTotal": 278,
+    "dom": 1600,
+    "sceneObjs": 3640,
+    "hp": 0,
+    "shots": 7,
+    "taken": 100,
+    "dealt": 312,
+    "ammo": 18,
+    "rsv": 75
+   }
+  ],
+  [
+   "523.9",
+   "firing",
+   {
+    "rafFrames": 65,
+    "calls": 471,
+    "tris": 3229528,
+    "geo": 488,
+    "tex": 456,
+    "prog": 32,
+    "heap": 276,
+    "heapTotal": 280,
+    "dom": 1611,
+    "sceneObjs": 3142,
+    "hp": 0,
+    "shots": 7,
+    "taken": 100,
+    "dealt": 457,
+    "ammo": 18,
+    "rsv": 75
+   }
+  ],
+  [
+   "532.7",
+   "firing",
+   {
+    "rafFrames": 65,
+    "calls": 471,
+    "tris": 3229528,
+    "geo": 488,
+    "tex": 456,
+    "prog": 32,
+    "heap": 275,
+    "heapTotal": 279,
+    "dom": 1600,
+    "sceneObjs": 3142,
+    "hp": 0,
+    "shots": 7,
+    "taken": 100,
+    "dealt": 457,
+    "ammo": 18,
+    "rsv": 75
+   }
+  ],
+  [
+   "542.8",
+   "firing",
+   {
+    "rafFrames": 65,
+    "calls": 471,
+    "tris": 3229528,
+    "geo": 488,
+    "tex": 456,
+    "prog": 32,
+    "heap": 275,
+    "heapTotal": 278,
+    "dom": 1600,
+    "sceneObjs": 3142,
+    "hp": 0,
+    "shots": 7,
+    "taken": 100,
+    "dealt": 457,
+    "ammo": 18,
+    "rsv": 75
+   }
+  ],
+  [
+   "551.2",
+   "firing",
+   {
+    "rafFrames": 65,
+    "calls": 471,
+    "tris": 3229528,
+    "geo": 488,
+    "tex": 456,
+    "prog": 32,
+    "heap": 275,
+    "heapTotal": 278,
+    "dom": 1600,
+    "sceneObjs": 3142,
+    "hp": 0,
+    "shots": 7,
+    "taken": 100,
+    "dealt": 457,
+    "ammo": 18,
+    "rsv": 75
+   }
+  ],
+  [
+   "559.5",
+   "firing",
+   {
+    "rafFrames": 65,
+    "calls": 471,
+    "tris": 3229528,
+    "geo": 488,
+    "tex": 456,
+    "prog": 32,
+    "heap": 275,
+    "heapTotal": 278,
+    "dom": 1600,
+    "sceneObjs": 3142,
+    "hp": 0,
+    "shots": 7,
+    "taken": 100,
+    "dealt": 457,
+    "ammo": 18,
+    "rsv": 75
+   }
+  ],
+  [
+   "568.3",
+   "firing",
+   {
+    "rafFrames": 65,
+    "calls": 471,
+    "tris": 3229528,
+    "geo": 488,
+    "tex": 456,
+    "prog": 32,
+    "heap": 275,
+    "heapTotal": 278,
+    "dom": 1600,
+    "sceneObjs": 3142,
+    "hp": 0,
+    "shots": 7,
+    "taken": 100,
+    "dealt": 457,
+    "ammo": 18,
+    "rsv": 75
+   }
+  ],
+  [
+   "576.7",
+   "firing",
+   {
+    "rafFrames": 65,
+    "calls": 471,
+    "tris": 3229528,
+    "geo": 488,
+    "tex": 456,
+    "prog": 32,
+    "heap": 275,
+    "heapTotal": 278,
+    "dom": 1600,
+    "sceneObjs": 3142,
+    "hp": 0,
+    "shots": 7,
+    "taken": 100,
+    "dealt": 457,
+    "ammo": 18,
+    "rsv": 75
+   }
+  ],
+  [
+   "584.8",
+   "firing",
+   {
+    "rafFrames": 65,
+    "calls": 471,
+    "tris": 3229528,
+    "geo": 488,
+    "tex": 456,
+    "prog": 32,
+    "heap": 275,
+    "heapTotal": 278,
+    "dom": 1600,
+    "sceneObjs": 3142,
+    "hp": 0,
+    "shots": 7,
+    "taken": 100,
+    "dealt": 457,
+    "ammo": 18,
+    "rsv": 75
+   }
+  ],
+  [
+   "593.2",
+   "firing",
+   {
+    "rafFrames": 65,
+    "calls": 471,
+    "tris": 3229528,
+    "geo": 488,
+    "tex": 456,
+    "prog": 32,
+    "heap": 275,
+    "heapTotal": 278,
+    "dom": 1600,
+    "sceneObjs": 3142,
+    "hp": 0,
+    "shots": 7,
+    "taken": 100,
+    "dealt": 457,
+    "ammo": 18,
+    "rsv": 75
+   }
+  ],
+  [
+   "601.4",
+   "firing",
+   {
+    "rafFrames": 65,
+    "calls": 471,
+    "tris": 3229528,
+    "geo": 488,
+    "tex": 456,
+    "prog": 32,
+    "heap": 275,
+    "heapTotal": 278,
+    "dom": 1600,
+    "sceneObjs": 3142,
+    "hp": 0,
+    "shots": 7,
+    "taken": 100,
+    "dealt": 457,
+    "ammo": 18,
+    "rsv": 75
+   }
+  ],
+  [
+   "610.1",
+   "firing",
+   {
+    "rafFrames": 65,
+    "calls": 471,
+    "tris": 3229528,
+    "geo": 488,
+    "tex": 456,
+    "prog": 32,
+    "heap": 275,
+    "heapTotal": 278,
+    "dom": 1600,
+    "sceneObjs": 3142,
+    "hp": 0,
+    "shots": 7,
+    "taken": 100,
+    "dealt": 457,
+    "ammo": 18,
+    "rsv": 75
+   }
+  ],
+  [
+   "618.3",
+   "firing",
+   {
+    "rafFrames": 65,
+    "calls": 471,
+    "tris": 3229528,
+    "geo": 488,
+    "tex": 456,
+    "prog": 32,
+    "heap": 275,
+    "heapTotal": 278,
+    "dom": 1600,
+    "sceneObjs": 3142,
+    "hp": 0,
+    "shots": 7,
+    "taken": 100,
+    "dealt": 457,
+    "ammo": 18,
+    "rsv": 75
+   }
+  ]
+ ],
+ "errors": [
+  "Error: page.evaluate: Target page, context or browser has been closed"
+ ]
+}

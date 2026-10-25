@@ -93,6 +93,18 @@ function spread(state,weapon,stats){
  if(state.cr&&!moving&&!state.air&&!state.lp)base*=.8;
  return Math.tan((base+error)*Math.PI/180);
 }
+// Spray (client gFire = server fire): per-shooter state R {sequence, recoilX, recoilY, bloom, shot, lastWeapon, drift}.
+// Climb per shot (rifles .006 for the first 6 then .0015, others .008; cap .065 / .05) scaled by the gun's recoil weight
+// (REC, x.85 crouched, x.85 aiming), sideways drift from the 8th shot, bloom +.0015/shot (cap .024) that recovers over
+// .375 s (Vandal) / .35 s (Phantom) / .28 s; a pause over .375 s or a weapon change starts a fresh spray. Offsets are
+// tangent-plane radians in the shot's right / up basis; random only picks the drift side, so the climb is identical.
+const REC={Vandal:1,Phantom:.6,Operator:1.5,Classic:.5,Sheriff:1.3,Spectre:.45,Guardian:.9,Marshal:1.2,Bulldog:.8,Stinger:.55,Frenzy:.5,Shorty:1.2,Bucky:1.4,Judge:1.1,Ares:.7,Odin:.75,Ghost:.55,Outlaw:1.4};
+const SPRAY_RIFLES=['Vandal','Phantom','Bulldog','Guardian'];
+function sprayReset(R,w,t){if(R.lastWeapon!==w||t-(R.shot||0)>.375){R.sequence=0;R.recoilX=R.recoilY=R.bloom=0;}R.lastWeapon=w;}
+function sprayBloom(R,w,t){const rec=w==='Vandal'?.375:w==='Phantom'?.35:.28,el=t-(R.shot||0);return el<rec?(R.bloom||0)*Math.max(0,1-el/rec):0;}
+function sprayStep(R,w,weight,t,random=Math.random){const n=R.sequence++,rifle=SPRAY_RIFLES.includes(w);
+ if(n===0){R.drift=random()<.5?-1:1;R.recoilX=0;R.recoilY=0;}else{R.recoilY=Math.min(rifle?.065:.05,R.recoilY+(rifle?(n<7?.006:.0015):.008)*weight);if(n>6){R.recoilX+=R.drift*.003*weight;if(Math.abs(R.recoilX)>.022){R.drift=-Math.sign(R.recoilX);}if(random()<.12)R.drift*=-1;}}
+ R.bloom=Math.min(.024,(R.bloom||0)+.0015*weight);R.shot=t;return n;}
 function disk(random=Math.random){const a=random()*Math.PI*2,r=Math.sqrt(random());return [Math.cos(a)*r,Math.sin(a)*r];}
-return {C,step,velocity,brake,groundMove,spread,disk,damp,approach,clipBlocked,CLIPS};
+return {C,step,velocity,brake,groundMove,spread,disk,damp,approach,clipBlocked,CLIPS,REC,sprayReset,sprayBloom,sprayStep};
 });

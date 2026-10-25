@@ -17,7 +17,7 @@ export const ULT={
 const eye=u=>[u.x,u.y+1.6-(u.ch||0),u.z];
 const aim=u=>[-Math.sin(u.look)*Math.cos(u.pitch||0),Math.sin(u.pitch||0),-Math.cos(u.look)*Math.cos(u.pitch||0)];
 const enemies=(sim,u)=>sim.units.filter(v=>v!==u&&v.team!==u.team&&v.alive&&!v.loading);
-const effect=(sim,u,kind,p,seconds,radius,extra={})=>{const e={id:++sim.effectSeq,kind,owner:u.id,team:u.team,p:[...p],until:sim.time+seconds,radius,...extra};sim.effects.push(e);return e;};
+const effect=(sim,u,kind,p,seconds,radius,extra={})=>{const e={id:++sim.effectSeq,kind,owner:u.id,ag:u.agent,team:u.team,p:[...p],until:sim.time+seconds,radius,...extra};sim.effects.push(e);return e;};
 export function resetUlts(u){u.detainUntil=0;u.revealedUntil=0;u.runItBack=null;if(u.ultWeapon){u.ultWeapon=null;}if(u.ability)u.ability.fury=null;}
 
 // Pre-cast checks that may reject the intent before the ult points are spent. Returns false to reject,
@@ -62,7 +62,7 @@ export function tickUlts(sim,dt){
   if(u.ultWeapon&&(!u.alive||u.weapon!==ULT.tdf.weapon||u.ammo<=0)){const W=u.ultWeapon;u.ultWeapon=null;if(u.weapon===ULT.tdf.weapon){u.weapon=W.saved;u.ammo=W.savedAmmo;u.reserve=W.savedReserve;}if(u.inventory)delete u.inventory[ULT.tdf.weapon];}
   const R=u.runItBack;if(R&&!u.loading&&(!u.alive||sim.time>=R.until)){u.runItBack=null;[u.x,u.y,u.z]=R.p;u.vx=u.vz=u.vy=0;u.hp=100;u.alive=true;u.respawnAt=0;u.input={};u.triggerHeld=false;u.seq++;u.invulnerableUntil=Math.max(u.invulnerableUntil||0,sim.time+ULT.rib.protect);sim.castEvents.push({t:'ac',i:u.id,ag:u.agent,k:'x',sub:'return',o:[...R.p],d:[0,0,-1],p:[...R.p],ts:Math.round(sim.time*1000)});}
  }
- for(let i=sim.effects.length-1;i>=0;i--){const e=sim.effects[i],owner=sim.units.find(u=>u.id===e.owner);
+ for(let i=sim.effects.length-1;i>=0;i--){const e=sim.effects[i],owner=(sim.fxSrc=e,sim.units.find(u=>u.id===e.owner));
   if(e.kind==='rocket'){const C=ULT.rocket,step=C.speed*dt,d=e.d,hit=sim.world.ray(e.p,d,step);let at=Number.isFinite(hit)?hit:null;
    if(sim.time-e.born>C.arm)for(const v of sim.units){if(!v.alive||v.loading||v.id===e.owner)continue;const q=[v.x-e.p[0],v.y+1-e.p[1],v.z-e.p[2]],t=Math.max(0,Math.min(step,q.reduce((s,n,k)=>s+n*d[k],0)));if(q.reduce((s,n,k)=>s+(n-d[k]*t)**2,0)<.8*.8&&(at==null||t<at))at=t;}
    if(at==null&&sim.time+dt<e.until){for(let k=0;k<3;k++)e.p[k]+=d[k]*step;continue;}

@@ -1,0 +1,239 @@
+{
+ "totalMs": 228098,
+ "idleOrProgramMs": 200325,
+ "activeMs": 27773,
+ "topSelf": [
+  [
+   "(garbage collector) :0",
+   3805
+  ],
+  [
+   "raycast three-mesh-bvh.umd.js:2651",
+   1795
+  ],
+  [
+   "nmNear :12462",
+   1399
+  ],
+  [
+   "intersectBox three.min.js:6",
+   1264
+  ],
+  [
+   "xrSupports :12701",
+   1107
+  ],
+  [
+   "updateMatrixWorld three.min.js:6",
+   1097
+  ],
+  [
+   "xrSolve :12714",
+   1027
+  ],
+  [
+   "checkBufferGeometryIntersection three-mesh-bvh.umd.js:2310",
+   990
+  ],
+  [
+   "xKiAdd :3089",
+   929
+  ],
+  [
+   "fillText :0",
+   852
+  ],
+  [
+   "updateWorldMatrix three.min.js:6",
+   833
+  ],
+  [
+   "intersectTriangle three.min.js:6",
+   656
+  ],
+  [
+   "multiplyMatrices three.min.js:6",
+   639
+  ],
+  [
+   "nmPath :12472",
+   624
+  ],
+  [
+   "xrRagdollTick :12754",
+   459
+  ],
+  [
+   "raycastFirst three-mesh-bvh.umd.js:2683",
+   442
+  ],
+  [
+   "intersectTris three-mesh-bvh.umd.js:2371",
+   397
+  ],
+  [
+   "tick :3986",
+   380
+  ],
+  [
+   "traverse three.min.js:6",
+   273
+  ],
+  [
+   "shapecastTraverse three-mesh-bvh.umd.js:2789",
+   262
+  ]
+ ],
+ "topIncl": [
+  [
+   "loop :3934",
+   16403
+  ],
+  [
+   "xSimRun :3925",
+   12877
+  ],
+  [
+   "xSimStep :3920",
+   12869
+  ],
+  [
+   "fiveTick :9018",
+   12847
+  ],
+  [
+   "fiveTick :10919",
+   12847
+  ],
+  [
+   "fiveTick :11397",
+   12847
+  ],
+  [
+   "dmTick :10784",
+   12837
+  ],
+  [
+   "tick :7532",
+   12633
+  ],
+  [
+   "tick :3986",
+   12361
+  ],
+  [
+   "tick :8953",
+   10535
+  ],
+  [
+   "xSolTick :3530",
+   6667
+  ],
+  [
+   "xUbDead :12767",
+   4876
+  ],
+  [
+   "xrRagdollTick :12754",
+   4830
+  ],
+  [
+   "los :2480",
+   4817
+  ],
+  [
+   "THREE.Raycaster.intersectObjects :2362",
+   4703
+  ],
+  [
+   "losRaw :2485",
+   4667
+  ],
+  [
+   "acceleratedRaycast three-mesh-bvh.umd.js:4733",
+   4526
+  ],
+  [
+   "raycast three-mesh-bvh.umd.js:3506",
+   4511
+  ],
+  [
+   "raycast three-mesh-bvh.umd.js:2651",
+   4426
+  ],
+  [
+   "(garbage collector) :0",
+   3805
+  ],
+  [
+   "xPath :12481",
+   3718
+  ],
+  [
+   "nmNext :12479",
+   3595
+  ],
+  [
+   "nmHeight :12464",
+   2875
+  ],
+  [
+   "nmSegment :12478",
+   2686
+  ],
+  [
+   "xrRagdoll :12673",
+   2478
+  ]
+ ],
+ "named": [
+  [
+   "xrSupports",
+   2126
+  ],
+  [
+   "xrRagdoll",
+   2478
+  ],
+  [
+   "xrRagdollTick",
+   4830
+  ],
+  [
+   "xUbDead",
+   4876
+  ],
+  [
+   "los",
+   4817
+  ],
+  [
+   "xPath",
+   3718
+  ],
+  [
+   "xKiAdd",
+   929
+  ],
+  [
+   "updHud",
+   269
+  ],
+  [
+   "hurt",
+   142
+  ],
+  [
+   "xDmgArc",
+   147
+  ],
+  [
+   "nmMinimap",
+   1215
+  ],
+  [
+   "bfxTick",
+   160
+  ]
+ ]
+}

@@ -242,5 +242,9 @@ function nmTeleports(C){if((typeof NET!=='undefined'&&NET.socket)||C.key!=='bind
 {const legacy=xTpBots;xTpBots=function(){if(nmActive())return;return legacy.apply(this,arguments);};}
 window.xNativeMaps={state:NM,ensure:nmEnsure,cancel:nmCancel,near:nmNear,path:nmPath,height:nmHeight,blocked:nmBlocked,activate(key){FV.pick=FV.map=key;mode='five';fUseMap();useMap('five');return NM.current.meta;},memory(){const C=NM.current;return C&&C.memory?Object.assign({},C.memory,{textures:C.memory.textures.length}):null;},probe(){const C=nmActive();return C?{key:C.key,objects:C.meta.objects,navigation:C.nav.validation,player:[player.x,player.y,player.z],sites:C.meta.sites}:null;}};
 {const remake=xRemake;xRemake=function(){const before=renderer,result=remake.apply(this,arguments);if(renderer!==before){nmWatchContext(renderer);nmRehydrate();}return result;};nmWatchContext(renderer);}
-{const precompile=xPrecompile;xPrecompile=function(){if(!nmActive())return precompile();xPC=true;try{renderer.compile(scene,camera);}catch(e){console.warn('Native shader warmup',e);}};}
+// Native warmup compiles the visible scene plus the pooled hit-path effects that stay hidden until first use (tracer
+// lines, localized hit impacts, spark/decal pools): without them the first shot / first hit of a match compiled their
+// programs mid-fight. Only invisible leaf objects parented to the scene are flipped (never the hidden collision meshes
+// inside the map group, whose programs nothing ever draws).
+{const precompile=xPrecompile;xPrecompile=function(){if(!nmActive())return precompile();xPC=true;const hid=[];try{if(!BFX.ok)bfxInit();if(typeof xHitInit==='function')xHitInit();for(const o of scene.children)if(!o.visible&&(o.isMesh||o.isLine||o.isPoints||o.isSprite)){hid.push(o);o.visible=true;}renderer.compile(scene,camera);}catch(e){console.warn('Native shader warmup',e);}for(const o of hid)o.visible=false;};}
 // ---- END ORIGINAL VALORANT MAPS ----
