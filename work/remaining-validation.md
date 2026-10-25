@@ -595,3 +595,14 @@ Revised hypothesis for the descent-edge failures: one-way drop ledges (terrain s
 hypothesis in the descent-edge entry. NEXT: live probe at (-12,-9) lotus naming the prop +
 its open/closed state (door/debris), then decide: if a closed-door reading, no nav change;
 if a real static slab appears in the live world, capture its mesh name before any prune.
+
+## Stairs settled-vs-active A/B (2026-10-25 ~16:58 EDT) - contention CONFIRMED on breeze
+Same probe, same machine, same world, same flight (19 nodes +2.97m), live DM, dmN=0:
+- active (12:21 run, walk immediately after match start): 9 up-leg stall samples.
+- settled (new SETTLE=60 env: wait 60 s in-match before walking): 0 stall samples,
+  up leg y 8.16 -> 11.00 goal reached, down leg backHome true, ERRORS [].
+Pre-merge matched-rate baseline was 2 stall samples. Conclusion: the post-merge up-leg
+stall pattern on heavy maps is early-match boot/XVA-settling contention under SwiftShader,
+NOT a motor regression. Probe harness gained SETTLE env (/tmp/diag-stairs-settle.cjs;
+upstream into work/browser-tests/diag-stairs.cjs next pass). Haven + lotus settled
+confirmation runs queued behind it (one chrome at a time).
