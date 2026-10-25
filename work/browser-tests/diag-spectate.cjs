@@ -3,13 +3,15 @@ const MAP = process.env.MAP || 'ascent';
 const {serve, launch, boot} = require('./lib.cjs');
 (async()=>{
   const srv = await serve();
-  const {b, p, errors} = await launch({profile:'mid', viewport:{width:640, height:360}});
+  const {b, p, errors} = await launch({profile:'mid', viewport:{width:+(process.env.VW||640), height:+(process.env.VH||360)}});
   const t0 = Date.now(); const el = () => ((Date.now()-t0)/1000).toFixed(0) + 's';
   try {
     await boot(p);
     await p.evaluate((m) => { window.__vs.FV.pick = m; window.__vs.light(true); }, MAP);
-    await p.click('#mIntro [data-close]'); await p.click('#playBtn');
-    await p.evaluate(() => window.__vs.startFive());
+    try { await p.click('#mIntro [data-close]', {timeout: 4000}); } catch (e) {}
+    try { await p.click('#playBtn', {timeout: 4000}); } catch (e) {}
+    await p.evaluate(() => { try { document.getElementById('mIntro').style.display = 'none'; } catch (e) {}
+      window.__vs.startFive(); });
     await p.waitForFunction(() => window.__vs && window.__vs.state().running, {timeout: 280000, polling: 2000});
     console.log(el(), 'FIVE RUNNING');
     await p.evaluate(() => { window.__vs.FV.buy = 0.1; });
@@ -21,8 +23,10 @@ const {serve, launch, boot} = require('./lib.cjs');
         const hpEl = document.querySelector('#hp span');
         return {tp: !!document.querySelector('.x-sp__tp'), hp: hpEl && hpEl.textContent, t: window.__vs.state().timeLeft, buy: window.__vs.FV.buy}; }, k % 4 === 0);
       if (k % 4 === 0) console.log(el(), 'poll', JSON.stringify(st));
-      dead = st.tp;
-      await new Promise(r => setTimeout(r, 500));
+      const card = await p.evaluate(() => !!document.querySelector('.x-kb.on'));
+      if (card && !global.__cardShot) { global.__cardShot = 1; await p.screenshot({path: '/downloads/death-card-' + (process.env.VW||'640') + '.png'}); console.log(el(), 'death card captured'); }
+      dead = st.tp && card === false;
+      await new Promise(r => setTimeout(r, 450));
     }
     console.log(el(), 'spectate button present:', dead);
     if (!dead) throw new Error('player never died / no spectate UI');
