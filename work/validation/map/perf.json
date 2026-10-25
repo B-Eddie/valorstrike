@@ -1,0 +1,194 @@
+{
+ "ascent": {
+  "key": "ascent",
+  "primitives": 479,
+  "materials": 479,
+  "triangles": 3320370,
+  "vertices": 4299256,
+  "textures": 373,
+  "maxPx": 512,
+  "mediumMB": 393.9,
+  "mediumOptMB": 339.2,
+  "lowMB": 112.2,
+  "source": {
+   "calls": 304,
+   "tris": 2852667,
+   "worstTris": 3316450,
+   "worstCalls": 476
+  },
+  "objects": 431,
+  "planMs": 532,
+  "chunked": {
+   "calls": 279,
+   "tris": 2512946,
+   "worstTris": 3289616,
+   "worstCalls": 409
+  },
+  "chunkedNoDetailCull": {
+   "calls": 281,
+   "tris": 2518502,
+   "worstTris": 3319534,
+   "worstCalls": 429
+  }
+ },
+ "bind": {
+  "key": "bind",
+  "primitives": 392,
+  "materials": 392,
+  "triangles": 2841334,
+  "vertices": 3409144,
+  "textures": 312,
+  "maxPx": 512,
+  "mediumMB": 337.3,
+  "mediumOptMB": 291.1,
+  "lowMB": 94.1,
+  "source": {
+   "calls": 237,
+   "tris": 2343072,
+   "worstTris": 2832798,
+   "worstCalls": 379
+  },
+  "objects": 352,
+  "planMs": 423,
+  "chunked": {
+   "calls": 204,
+   "tris": 1834207,
+   "worstTris": 2518621,
+   "worstCalls": 323
+  },
+  "chunkedNoDetailCull": {
+   "calls": 210,
+   "tris": 1941348,
+   "worstTris": 2803670,
+   "worstCalls": 329
+  }
+ },
+ "haven": {
+  "key": "haven",
+  "primitives": 314,
+  "materials": 314,
+  "triangles": 4094074,
+  "vertices": 3736426,
+  "textures": 233,
+  "maxPx": 512,
+  "mediumMB": 241.1,
+  "mediumOptMB": 221.1,
+  "lowMB": 69.8,
+  "source": {
+   "calls": 206,
+   "tris": 3581319,
+   "worstTris": 4092350,
+   "worstCalls": 310
+  },
+  "objects": 282,
+  "planMs": 689,
+  "chunked": {
+   "calls": 188,
+   "tris": 2894822,
+   "worstTris": 4070742,
+   "worstCalls": 279
+  },
+  "chunkedNoDetailCull": {
+   "calls": 188,
+   "tris": 2904287,
+   "worstTris": 4093374,
+   "worstCalls": 281
+  }
+ },
+ "split": {
+  "key": "split",
+  "primitives": 507,
+  "materials": 507,
+  "triangles": 3210903,
+  "vertices": 4064881,
+  "textures": 369,
+  "maxPx": 512,
+  "mediumMB": 375.7,
+  "mediumOptMB": 315,
+  "lowMB": 111.2,
+  "source": {
+   "calls": 312,
+   "tris": 2698092,
+   "worstTris": 3197716,
+   "worstCalls": 485
+  },
+  "objects": 456,
+  "planMs": 643,
+  "chunked": {
+   "calls": 271,
+   "tris": 2119748,
+   "worstTris": 3145706,
+   "worstCalls": 432
+  },
+  "chunkedNoDetailCull": {
+   "calls": 273,
+   "tris": 2133268,
+   "worstTris": 3181503,
+   "worstCalls": 439
+  }
+ },
+ "lotus": {
+  "key": "lotus",
+  "primitives": 247,
+  "materials": 247,
+  "triangles": 2622530,
+  "vertices": 3311411,
+  "textures": 132,
+  "maxPx": 512,
+  "mediumMB": 141.8,
+  "mediumOptMB": 125.8,
+  "lowMB": 39.1,
+  "source": {
+   "calls": 156,
+   "tris": 2447779,
+   "worstTris": 2621216,
+   "worstCalls": 243
+  },
+  "objects": 222,
+  "planMs": 579,
+  "chunked": {
+   "calls": 140,
+   "tris": 1787676,
+   "worstTris": 2424668,
+   "worstCalls": 210
+  },
+  "chunkedNoDetailCull": {
+   "calls": 143,
+   "tris": 1826403,
+   "worstTris": 2588716,
+   "worstCalls": 217
+  }
+ },
+ "breeze": {
+  "key": "breeze",
+  "primitives": 476,
+  "materials": 476,
+  "triangles": 2703733,
+  "vertices": 3245431,
+  "textures": 369,
+  "maxPx": 512,
+  "mediumMB": 378.5,
+  "mediumOptMB": 324,
+  "lowMB": 111.6,
+  "source": {
+   "calls": 268,
+   "tris": 2279308,
+   "worstTris": 2691310,
+   "worstCalls": 462
+  },
+  "objects": 428,
+  "planMs": 437,
+  "chunked": {
+   "calls": 238,
+   "tris": 1749526,
+   "worstTris": 2466873,
+   "worstCalls": 392
+  },
+  "chunkedNoDetailCull": {
+   "calls": 242,
+   "tris": 1804209,
+   "worstTris": 2641130,
+   "worstCalls": 413
+  }
+ }
+}
