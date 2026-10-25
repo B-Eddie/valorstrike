@@ -72,3 +72,7 @@ Open `http://127.0.0.1:8876/`; localhost clients use the local game service on p
 - FIX: nmNext now nmSegment-validates every hop from the unit's actual position (loop from i=1, was seeded unchecked at path[1]), targets the farthest clear node, and when NO hop clears it steers at the goal itself so collision sliding + xUn re-approach. Edit lives in work/native_maps_runtime.js; index.html regenerated and idempotence-verified.
 - REGRESSION: work/test_tdm_native_routing.cjs — behavioral vm test of spliced nmNext (blocked first hop skipped, all-hops-blocked steers at goal never [p.x,p.z], no-path holds, 10-node cap) + source pins for the FV.dm hunt branch and !FV.dm goal guards. 41/41 client suites green.
 - VERIFIED: breeze tdm-soak PASS (12 deaths / 10 respawns in 84 s, zero issues, game-rate 1.00x wall); diag-stall3 80 s breeze trace caught zero engaged=false stalls.
+
+## Same stall class on haven (OPEN, 5:28 AM)
+- haven tdm-soak FAIL post-nmNext-fix: Breach stationary 16s, engaged=false, at (33.6,-38.8), t=550 (early match). Breeze is clean; the class persists on at least one other map, cause for the haven instance not yet captured (diag-stall3 now takes MAP env for the next probe).
+- Next: MAP=haven diag-stall3 until the engaged=false stall is caught with live nav state; check whether haven's case is the same unchecked-hop shape or a distinct one (e.g. nmNear y-misattach at spawn, e < 0, or s on a playable-but-locally-walled node).
