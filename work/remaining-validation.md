@@ -426,3 +426,28 @@ cards visible, DM tab clickable with custom previously active, full flow Play ->
 behavior per scope, labeled honestly, not a bug.
 Known non-blocker: at 1280x800 the Online section's CODE/JOIN row sits below the fold; panel
 scrolls (overflow:auto). Acceptable; flagged for the coordinated responsive-HUD pass.
+
+## 2026-10-25 ~13:07 EDT - Rendered two-client online acceptance (WIP probe, findings)
+Probe: work/browser-tests/rendered-two-client.cjs (one Chromium, two pages, real wrangler dev).
+SANDBOX ARCHITECTURE FACTS (cost several runs):
+- Detached node/wrangler processes SURVIVE between bash calls; google-chrome is REAPED when a
+  bash call ends. All browser work must fit one ~115s call; server can be external (NO_WRANGLER=1
+  + detached wrangler, or let the probe spawn its own).
+- Probe-spawned wrangler child correlated with >100s blackouts at match start; external detached
+  wrangler gave a clean 3s online start (ONE-client mode reached running=true, mode=five, 9 bots).
+  Cause of the difference UNVERIFIED (CPU contention vs wrangler child stdio) - conditional.
+- /profile?qa=1 now returns "Profile creation limit reached today" - daily cap; may affect fresh
+  browser profiles creating rooms late in a testing day. Room creation observed working after the
+  limit appeared, then failing later ("Creating server room..." stuck) - CORRELATION UNCONFIRMED.
+SUSPECTED REAL ISSUES (both conditional, queued for the responsive-HUD/lobby pass):
+- At 960x600 a Playwright coordinate click on #xOnStart started RETAKE (mode=retake observed),
+  i.e. the click landed on another element - possible occlusion/shift under the scrolled queue
+  panel. Probe now uses element.click() (DOM-level) since button hit-testing is covered by
+  diag-lobby-modes at 1280x800/640x360. NEEDS a 960x600 visual check.
+- The unintended retake start ignored __vsLight and sat at "Preparing the map..." 76s+ under
+  SwiftShader - check whether retake/custom starts respect the light gate (probe-perf relevance).
+NET MODEL NOTE: private rooms are client-HOSTED (host page runs bots/sim; "damage to you comes
+only from the host"); match start blocks the host main thread >10s by design ("heartbeat can
+black out").
+STATUS: not yet passing end-to-end. Next: verify room-create blocker (profile limit vs other),
+then A-host start with B parked at about:blank (WebGL-contention mitigation), then kill phase.
