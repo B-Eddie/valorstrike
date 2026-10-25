@@ -35,3 +35,13 @@ assert(html.includes('smokeGeo = new THREE.SphereGeometry(4, 22, 16)')&&html.inc
  c.mpCliSnap({u:[[2,1,'b','Jett',0,0,0,0,100,0,1,'Vandal',1,0,0,25,75,0,0]]});assert.equal(u.cr,false);
  c.NET.socket=null;c.mpFx({},'Reyna','q',{},{},false,null);assert.equal(calls.length,4,'offline replay keeps its local effects');c.enPop({});assert.equal(white.length,1);}
 console.log('Combat consistency: server hit volumes = client bone hitboxes, shared official penetration tiers, render-matched smoke, online statuses server-owned, remote crouch/pitch rows applied');
+// 5. Wallbang damage: the offline shot floors raw x k as the server's fire() (Math.floor(row * scale)); it rounded
+// floor(raw) x k, 1 off on fractional rows (Odin head 77.5 x .75: server 58, client 57.75 -> 58; Sheriff head 159.5 x .75).
+{assert(html.includes('xWkDmg(W, hs ? "head" : legs ? "legs" : "body", hit.distance, wk)'),'offline shot uses xWkDmg');
+ const feel=fs.readFileSync(path.join(__dirname,'feel_runtime.js'),'utf8'),a=feel.indexOf('const wRaw='),b=feel.indexOf('\n',feel.indexOf('xWkDmg=function',a));assert(a>0&&b>a,'feel wallbang block');
+ const W=JSON.parse(fs.readFileSync(path.join(root,'server/src/weapons.json'),'utf8')).weapons,WEAP={};for(const n of Object.keys(W))WEAP[n]={body:1};
+ const c={WEAP,VF:{profiles:W},Math,Object,xPelOn:false};vm.createContext(c);vm.runInContext('var wDmg,xWkDmg;'+feel.slice(a,b),c);
+ const sim=fs.readFileSync(path.join(root,'server/src/simulation.js'),'utf8');assert(sim.includes("damage=Math.floor((heavy?(part==='head'||knifeBack(target,u)?KNIFE_HEAVY.crit:KNIFE_HEAVY.body):range[part==='head'?'headDamage':part==='legs'?'legDamage':'bodyDamage'])*scale"),'server floors raw x scale');
+ let n=0,frac=0;for(const [name,w]of Object.entries(W)){if(w.shotgunPelletCount>1)continue;for(const r of w.damageRanges)for(const part of ['head','body','legs'])for(const k of [1,.75,.5]){const raw=r[part==='head'?'headDamage':part==='legs'?'legDamage':'bodyDamage'],d=(r.rangeStartMeters+Math.min(r.rangeEndMeters,r.rangeStartMeters+5))/2;
+  assert.equal(c.xWkDmg(WEAP[name],part,d,k),Math.floor(raw*k),`${name} ${part} @${d} m x${k}`);n++;if(Math.floor(raw*k)!==Math.round(Math.floor(raw)*k))frac++;}}
+ assert(frac>0,'the case set includes rows the old rounding got wrong');console.log(`Wallbang damage: ${n} weapon x band x part x k cases = server floor(raw x k) (${frac} differed under the old rounding)`);}

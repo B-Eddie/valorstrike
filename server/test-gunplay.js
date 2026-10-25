@@ -55,8 +55,11 @@ for(const Sim of [SpikeSimulation,Simulation]){const {s,a}=duel('Vandal',10,0,Si
 {const s=new SpikeSimulation(world(),'five','ascent',()=>0),a=s.add('a');s.start(false);a.primary='Vandal';a.secondary='Sheriff';a.weapon='Vandal';a.ammo=3;a.reserve=10;a.inventory={Vandal:3,Sheriff:1};a.reserves={Vandal:10,Sheriff:0};
  const r0=s.round;s.finishRound(a.team===s.atk?0:1,'QA');for(let i=0;i<400&&s.round===r0;i++)s.step(.05);assert(s.round>r0,'next round');
  assert.equal(a.weapon,'Vandal');assert.equal(a.ammo,25);assert.equal(a.reserve,75);s.time=a.equipAt+.01;assert(s.command(a,{t:'equip',w:'Sheriff'}));assert.equal(a.ammo,6,'holstered sidearm refilled');}
-// 7. Same-tick trade: both lethal, the first unit in the list shoots first and the dead one cannot fire back (sequential
-// resolution, as a server tick processes shots in arrival order).
-{const {s,a,b}=duel('Operator',10,0);Object.assign(b,{weapon:'Operator',ammo:5,fireAt:0,look:Math.PI,pitch:0,input:{}});Object.assign(a,aim([0,1.6,0],[0,1.2,-10]));Object.assign(b,aim([0,1.6,-10],[0,1.2,0]));a.input={fire:true};b.input={fire:true};a.inputAt=b.inputAt=s.time;a.human=b.human=true;
- s.step(.05);assert(!b.alive,'first unit kills');assert(a.alive,'the dead unit does not fire in the same tick');}
-console.log(`Gunplay: ${cases} weapon x band x part x armor cases (shots-to-kill and every shot's row HP / armor exact, headshot damage per band = weapons.json), shotgun pellet count / cone / round pattern at 3 facings, spray climb = shared motor (pause / weapon reset, crouch), swap and knife mid-reload cancel the reload, G mid-reload, enemy gun pickup keeps ammo, ammo refill next round, same-tick trade order`);
+// 7. Same-tick trades: both lethal, shots resolve after both moved; the dead one cannot fire back that tick, and the first
+// shooter rotates tick to tick (it was always the first unit in the list, i.e. the room creator).
+{const {s,a,b}=duel('Operator',10,0);const wins=[];
+ for(let n=0;n<4;n++){Object.assign(a,{alive:true,hp:100,armor:0,x:0,z:0,weapon:'Operator',ammo:5,fireAt:0,triggerHeld:false,protectedUntil:0,human:true,input:{fire:true},inputAt:s.time+.05,vx:0,vz:0},aim([0,1.6,0],[0,1.2,-10]));
+  Object.assign(b,{alive:true,hp:100,armor:0,x:0,z:-10,weapon:'Operator',ammo:5,fireAt:0,triggerHeld:false,protectedUntil:0,human:true,input:{fire:true},inputAt:s.time+.05,vx:0,vz:0},aim([0,1.6,-10],[0,1.2,0]));
+  s.step(.05);assert.equal(a.alive+b.alive,1,'exactly one survives a same-tick trade');wins.push(a.alive?'a':'b');}
+ assert(wins.includes('a')&&wins.includes('b'),'the first shooter rotates: '+wins.join(''));}
+console.log(`Gunplay: ${cases} weapon x band x part x armor cases (shots-to-kill and every shot's row HP / armor exact, headshot damage per band = weapons.json), shotgun pellet count / cone / round pattern at 3 facings, spray climb = shared motor (pause / weapon reset, crouch), swap and knife mid-reload cancel the reload, G mid-reload, enemy gun pickup keeps ammo, ammo refill next round, same-tick trades (one survivor, first shooter rotates)`);

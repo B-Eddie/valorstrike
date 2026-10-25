@@ -353,8 +353,7 @@ in-process server; it keeps the VALORANT FEEL block the audit fixture strips, an
   hp showed 2). Server `fire()` / `abilityDamage()` and the offline `hurt()` / `armAbs()` snap hp / armor to 1e-6. Shots
   to kill already matched the exact model in every case.
 - **Falloff / headshots**: every weapon's head / body / leg damage per range band equals weapons.json (client
-  `weapon-calibration.js` is byte-equal in content). Remaining, not fixed: offline wallbang damage rounds
-  `Math.round(floor(raw) * k)` while the server floors `raw * k` (differs by 1 on fractional raws, e.g. 77.5 x .75).
+  `weapon-calibration.js` is byte-equal in content). Offline wallbang rounding: fixed in pass 7.
 - **Spray recoil parity**: the server fired every bullet of a spray straight down the crosshair (first-shot spread only);
   the client's bullets climb and drift. The climb / drift / bloom / reset (.375 s pause or weapon change) now live in the
   shared motor (`sprayReset / sprayBloom / sprayStep`, `REC` weights = client `WEAP.rec`), used by both `gFire` and server
@@ -374,5 +373,14 @@ in-process server; it keeps the VALORANT FEEL block the audit fixture strips, an
   was never sent, so the server stayed empty. Timer clamped to 0; online checks use `reloading > 0`.
 - **G mid-reload** was refused server-side (offline allows it); the gun now drops with its magazine.
 - Checked, no bug: enemy gun picked up off the floor keeps magazine / reserve and its reload draws from that reserve;
-  next round refills magazine and reserve; same-tick trades resolve in unit order (the first unit's lethal shot stops the
-  other firing that tick; pinned in test-gunplay).
+  next round refills magazine and reserve. Same-tick trades: changed in pass 7.
+
+## Gameplay QA pass 7 (trade fairness, wallbang rounding, merges, shotguns, economy / ults / defuse edges)
+
+- **Same-tick trades**: a tick resolved each unit's shot inside its movement loop, so the first unit in the list (the room
+  creator) won every same-tick trade, and it shot at the others' previous-tick positions. Shots now resolve after every
+  unit has moved (`fireTick`, both `Simulation` and `SpikeSimulation`), first shooter rotating each tick; a unit killed
+  earlier in the tick still cannot fire back. `test-gunplay.js` §7: exactly one survivor, both sides win across ticks.
+- **Wallbang rounding**: offline damage was `round(floor(raw) x k)` vs the server's `floor(raw x k)` (70 of 225
+  weapon x band x part x k cases off by one, e.g. Odin head 77.5 x .75). The shot now calls `xWkDmg`; the feel layer
+  floors the unfloored row value x k. `test_combat_consistency.cjs` §5 checks every case against the server formula.

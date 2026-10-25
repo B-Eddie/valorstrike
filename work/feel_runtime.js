@@ -5,7 +5,11 @@ function vfWeapon(){return mode==='duel'?(du.w==='op'?'Operator':'Knife'):mode==
 function vfProfile(w){return VF.profiles[w]||{equipTimeSeconds:.75,reloadTimeSeconds:2.5,firstBulletAccuracy:0,runSpeedMultiplier:1};}
 for(const [w,p]of Object.entries(VF.profiles)){const W=WEAP[w];if(!W)continue;W.mag=p.magazineSize;W.rate=p.fireRate;W.rld=p.reloadTimeSeconds;W.equip=p.equipTimeSeconds;W.pel=p.shotgunPelletCount>1?p.shotgunPelletCount:W.pel;VRUN[w]=p.runSpeedMultiplier;FSA[w]=Math.tan(Math.max(0,p.firstBulletAccuracy)*Math.PI/180);const d=p.damageRanges[0];W.body=Math.floor(d.bodyDamage);W.head=Math.floor(d.headDamage);W.legs=Math.floor(d.legDamage);if(p.adsStats)XZ[w]=p.adsStats.zoomMultiplier;delete W.spin;}
 // Ranges and rates come from the same local snapshot in every mode.
-wDmg=function(W,part,distance){const w=Object.keys(WEAP).find(k=>WEAP[k]===W),p=VF.profiles[w];if(!p)return W[part]||W.body;const ranges=p.damageRanges,row=ranges.find(r=>distance>=r.rangeStartMeters&&distance<r.rangeEndMeters)||ranges[ranges.length-1];return Math.floor(row[part==='head'?'headDamage':part==='legs'?'legDamage':'bodyDamage']);};
+// wRaw: the row's unfloored value (null for a gun with no profile). A wallbanged bullet floors raw x k as the server
+// (Odin head 77.5 x .75 = 58, not round(77 x .75) = 58 / floor(77) x .75 = 57.75 -> 58 vs 57).
+const wRaw=function(W,part,distance){const w=Object.keys(WEAP).find(k=>WEAP[k]===W),p=VF.profiles[w];if(!p)return null;const ranges=p.damageRanges,row=ranges.find(r=>distance>=r.rangeStartMeters&&distance<r.rangeEndMeters)||ranges[ranges.length-1];return row[part==='head'?'headDamage':part==='legs'?'legDamage':'bodyDamage'];};
+wDmg=function(W,part,distance){const v=wRaw(W,part,distance);if(v==null)return W[part]||W.body;return Math.floor(v);};
+xWkDmg=function(W,part,distance,k){const v=wRaw(W,part,distance);return v==null?Math.round(wDmg(W,part,distance)*k):Math.floor(v*k);};
 xEq=function(w){return w==='Knife'?.75:vfProfile(w).equipTimeSeconds;};
 xRate=function(W){const w=Object.keys(WEAP).find(k=>WEAP[k]===W),p=VF.profiles[w];return ads&&p&&p.adsStats?p.adsStats.fireRate:W.rate;};
 xSCf=function(z){return 2*Math.atan(Math.tan(VF_C.verticalFov*Math.PI/360)/z)*180/Math.PI;};
