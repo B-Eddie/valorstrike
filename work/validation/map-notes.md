@@ -244,9 +244,19 @@ Two motor bugs (fixed in the shared motor, `server/src/motor.cjs` = `vendor/valo
   step (the wall it touches is within 0.41 m) nor stay grounded enough to move, so every direction was refused: stuck
   until a jump. 44 such spots on Breeze (sampled every 3rd node). Fix: the 1 cm margin is tested ahead of the move only,
   and where a wall leans in above the feet only a lift of at most 5 cm (a bump or seam) may pass, tested at that height.
-  41 of 44 now walk out; the other 3 (Breeze (6.56, 8.04, -34.75), (17.0, 4.25, 36.0) - capsule sits embedded a few mm
-  in a leaning wall; (9.25, 10.95, -24.4) - dropped 1 m onto a ledge off the footprint, the leash only lets it move
-  toward the playable floor above) still need one jump.
+  41 of 44 walked out after this fix; the other 3 (and one more the stride-5 re-sweep found) are fixed in the next pass:
+- **Embedded a few mm in a leaning wall (C2).** Breeze (6.56, 8.04, -34.75), (17.0, 4.25, 36.0), (17.8, 9.19, 7.59): the
+  capsule rests 1-3 mm inside a wall that leans in over the paving. A move's 0.5 mm sub-steps never clear it, so each
+  sub-step was refused and velocity zeroed: pinned until a jump. Fix (shared motor `moveAxis`): when the capsule is
+  already embedded (free radius 0.3-0.4 m, bisected to 0.1 mm), a move that strictly increases the free radius passes,
+  so it backs out; sliding along or deeper into the wall is still refused. All three walk out in every open direction.
+- **Ledge off the footprint (C2).** Breeze crate stack below the 12 m platform's south-east edge (x 7.3..10.45,
+  z -24.45..-21.4; blocks at 10.95, 9.96, 9.0 m down to the 8 m floor, no nav on them): walking off the platform edge
+  from (9.25, 12, -25) dropped 1 m onto the top block, where the leash only allowed moves back toward the platform (1 m
+  up, jump only). Fix: a player clip (`CLIPS.breeze`, feet band 11..14.5 m) over the stack, so the platform edge stops
+  the walk like a wall; capsules on the 8 m floor (even at a jump apex) are below the band and walk under it as before;
+  no nav node is clip-blocked; the platform's east edge (x > 10.45) still drops to the 8 m floor.
+  Fixtures: the 4 cases are appended to `map-walk-fixtures.json` Breeze traps (all 4 fail on the C1 motor).
 - Still refused and correct: the `tall` edges are posts, a pillar corner, a hanging cable bundle at Ascent A
   (46.3, 10.07, -32.1, collision on visible `WiresDark` cables) - the nav node sits 0.3-0.4 m from thin visible geometry
   the 0.4 m capsule meets; all have visible render surfaces (none `invisible`). The `base` edges (Haven C (-48, 6.01, -8.5), a 4 cm floor plate
@@ -301,3 +311,7 @@ refused with/without a crack and after a step down; 0.2 m stairs up and down; it
 8. Movement fixes (motor): walk across Ascent's attacker-spawn back paving (x 1..7, z 59..67) and Breeze's paved lanes
    without stopping on flat floor; run into walls over Breeze paving (e.g. (44.9, 8.06, -15.25), (-80, 7.1, 8.3)) and walk
    away without jumping; stairs and boxes still behave (0.6 m crates need a jump, stairs walk).
+9. Breeze (C2): press into the leaning walls at (6.56, 8.04, -34.75), (17.0, 4.25, 36.0), (17.8, 9.19, 7.59) and walk away
+   without a jump (no visible push-out pop); walk off the 12 m platform's south-east edge toward the crate stack
+   (x 7.3..10.45, z -24.45): stops at the edge like a wall, no visible invisible-wall gap feel worse than a railing; the
+   east edge (x > 10.45) still drops to the 8 m floor; walking on the 8 m floor under the stack is unaffected.
