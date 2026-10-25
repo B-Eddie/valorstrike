@@ -183,6 +183,16 @@ function xvAgentWaitLabel(cv) {
     XVA.subs.push(sub); el.style.display = 'block'; sub();
   };
 }
+// perf (character draw calls): agent meshes were frustumCulled=false, so every unit's 2-6 skinned meshes were drawn
+// even behind the camera. Each skinned geometry gets one cull sphere, measured once from its skinned idle pose in the
+// mesh's own space and padded to the full idle diagonal (covers crouch, aim, reach, a falling corpse); corpses turn
+// culling back off in xDie. Same sphere on the geometry (three r149) and on the mesh (r151+ SkinnedMesh.boundingSphere).
+function xvCull(list) { const v = new THREE.Vector3(), out = [];
+  for (const o of list) { if (!o.isSkinnedMesh) continue; const g = o.geometry, pos = g && g.attributes.position, bt = o.applyBoneTransform || o.boneTransform; if (!pos || !bt) continue;
+    let s = g.userData.xvCull; if (!s) { const b = new THREE.Box3(), n = pos.count, st = Math.max(1, Math.floor(n / 1500)); for (let i = 0; i < n; i += st) { v.fromBufferAttribute(pos, i); bt.call(o, i, v); if (Number.isFinite(v.x + v.y + v.z)) b.expandByPoint(v); }
+      if (b.isEmpty()) continue; s = g.userData.xvCull = new THREE.Sphere(b.getCenter(new THREE.Vector3()), b.getSize(new THREE.Vector3()).length()); }
+    g.boundingSphere = s.clone(); if ('boundingSphere' in o) o.boundingSphere = s.clone(); o.frustumCulled = true; out.push(o); }
+  return out; }
 function xvAgent(M, kit) {
   XUB.up ||= new THREE.Vector3(0,1,0); XUB.rt ||= new THREE.Vector3(1,0,0);
   if (M.dead || M.valorant) return;
@@ -194,14 +204,14 @@ function xvAgent(M, kit) {
   sc.updateMatrixWorld(true); const bx = new THREE.Box3().setFromObject(sc), scale = 1.92 / (bx.max.y - bx.min.y); wr.scale.setScalar(scale); wr.position.y = -bx.min.y * scale;
   const inGun = (o) => { for (let p = o; p; p = p.parent) if (p === M.gun) return true; return false; };
   M.m.traverse((o) => { if (o.isMesh && o !== M.ring && !inGun(o)) o.visible = false; });
-  const mats = new Map(); sc.traverse((o) => { if (!o.isMesh) return; o.castShadow = true; o.frustumCulled = false; o.raycast = XNR; o.geometry.userData.shared = true;
+  const mats = new Map(), cull = []; sc.traverse((o) => { if (!o.isMesh) return; o.castShadow = true; o.frustumCulled = false; cull.push(o); o.raycast = XNR; o.geometry.userData.shared = true;
     const mat = (s) => { if (!mats.has(s)) { const m = new THREE.MeshLambertMaterial({ name:s.name, color:s.color, map:s.map, side:THREE.DoubleSide, transparent:s.transparent, alphaTest:s.alphaTest }); m.userData.agent = 1; xRimM(m, M.rim, null); mats.set(s,m); M.mats.push(m); } return mats.get(s); }; o.material = Array.isArray(o.material) ? o.material.map(mat) : mat(o.material);
   }); M.m.add(wr);
   const mx = new THREE.AnimationMixer(sc), bone = (n) => sc.getObjectByName(n), X = {mx,a:{},w:{},ub:1,nativeContact:true,sc,b:{pelvis:bone('Pelvis'),spine_01:bone('Spine1'),spine_02:bone('Spine2'),spine_03:bone('Spine3')},cs:bone('Splitter'),cb:0,yaw:0,pit:0,sn:0,shots:0,hp:null,uo:null,ut:0,lo:null,lt:0,air:false,py:null,px:null,pz:null,cur:'idle',ad:{}};
   const mk = (n,set,once) => { const c = kit[set][XUB_ST[n]], a = mx.clipAction(c); if (once) { a.setLoop(THREE.LoopOnce,1); a.clampWhenFinished = true; } X.a[n] = a; X.w[n] = 0; };
   XUB_LO.forEach((n) => mk(n,'L',n==='jump'||n==='land')); XUB_UPN.forEach((n) => mk(n,'U',n==='reload'||n==='cast'||n==='throw')); XUB_FU.forEach((n) => mk(n,'C',n!=='plant'));
   [['fire','Pistol_Shoot'],['hit','Hit_Chest'],['hitHead','Hit_Head']].forEach(([n,c]) => { const a=mx.clipAction(kit.A[c]); a.blendMode=THREE.AdditiveAnimationBlendMode; a.setLoop(THREE.LoopOnce,1); X.ad[n]=a; });
-  X.a.idle.play(); X.a.aim.play(); X.w.idle = X.w.aim = 1; mx.update(.01); M.m.updateMatrixWorld(true);
+  X.a.idle.play(); X.a.aim.play(); X.w.idle = X.w.aim = 1; mx.update(.01); M.m.updateMatrixWorld(true); X.cull = xvCull(cull);
   const hand = bone('R_Hand'); if (hand && M.gun) { const hold = new THREE.Group(), p=new THREE.Vector3(),q=new THREE.Quaternion(),s=new THREE.Vector3(); new THREE.Matrix4().copy(M.m.matrixWorld).invert().multiply(hand.matrixWorld).decompose(p,q,s); hold.quaternion.copy(q.invert()); hold.scale.set(1/s.x,1/s.y,1/s.z); hand.add(hold); hold.add(M.gun); M.gun.position.set(0,0,.03); M.gun.rotation.set(0,Math.PI,0); M.weaponHolder=hold; } // gun models are authored muzzle -Z: PI faces the muzzle the way the character looks
   X.contactLift=kit.contactLift;X.contactProbes=kit.contactProbes.map(p=>({o:sc.getObjectByName(p.mesh),indices:p.indices})).filter(p=>p.o&&p.o.isSkinnedMesh);X.contactV=new THREE.Vector3();X.contactInv=new THREE.Matrix4();X.contactShift=new THREE.Vector3();X.contactScale=new THREE.Vector3();X.contactFloor=bx.min.y;X.acts=X.a; M.ub=1; M.sx=X; M.valorant=1; M.xAt=[]; M.solOwn=()=>{M.solOwn=null;}; XSOL.mx.push(M);
   if (M.xvWait) { M.xvWait = 0; if (M.gun) M.gun.visible = true; } // the weapon waited, hidden, for the body
