@@ -546,6 +546,7 @@ body.x-cbh .x-mvp.en{border-left-color:#ff9f1c}
   .x-kb__d{display:grid;grid-template-columns:auto auto;gap:1px 8px;font-size:11px;white-space:nowrap}
   #toast{bottom:142px;left:0;right:240px;margin:0 auto;transform:none;padding:10px 18px} /* shares the ann's reserved column: left of the feed strip, above the KILLED BY card */
   #game #feed{margin-top:26px;max-height:56px;overflow:hidden} /* drop row 1 below the scoreboard sub-strip (ends ~59px); cap at 2 rows (kfPush prepends: the cropped row is the oldest) */
+  #game #hint{display:none} /* short landscape: the bottom:112px hint crowds the ann/toast/card column; coarse pointers already hide it */
 }
 .x-sp{position:fixed;left:50%;bottom:120px;transform:translateX(-50%);z-index:60;padding:6px 14px;background:rgba(15,25,35,.75);color:#ece8e1;font:500 13px var(--sans);letter-spacing:.14em;pointer-events:none;display:none;text-align:center}
 .x-sp small{display:block;font-size:12px;letter-spacing:.04em;opacity:.7;margin-top:2px}.x-sp.on{display:block} .x-sp__tp{display:inline-flex;align-items:center;gap:6px;margin-left:12px;padding:4px 10px;min-height:28px;border:1px solid rgba(236,232,225,.45);background:rgba(15,25,35,.6);color:#ece8e1;font:600 12px var(--sans);letter-spacing:.12em;cursor:pointer;pointer-events:auto}.x-sp__tp:hover,.x-sp__tp:focus-visible{border-color:#ff4655;outline:0}.x-sp__tp.on{background:#ff4655;color:#0f1923;border-color:#ff4655}.x-sp__tp kbd{font:inherit;padding:0 4px;border:1px solid currentColor;border-radius:2px}
@@ -2594,7 +2595,7 @@ function xKLui() { if (xKL.el && xKL.el.parentNode && xKL.t && xKL.nm && xKL.w &
   document.body.appendChild(c); document.body.appendChild(s); xKL.el = c; xKL.sl = s;
   const q = (k) => c.querySelector(k); xKL.t = q("i"); xKL.nm = q("b"); xKL.w = q(".x-kb__r span"); const dd = c.querySelectorAll("dd"); xKL.dd = dd[0]; xKL.tk = dd[1]; xKL.sn = s.querySelector("span"); }
 function xKLfx(on) { try { const cv = renderer.domElement; cv.style.transition = "filter .35s ease-out"; cv.style.filter = on ? "saturate(.12) brightness(.55)" : ""; } catch (e) {} }
-function xKLDie(by, w) { if (!xKLm()) return; xKLui(); xKL.on = true; xKL.st = 0; xKL.sp = false; xKL.cur = null; xKL.si = 0;
+function xKLDie(by, w) { if (!xKLm()) return; try { const kb0 = $("xKbn"); if (kb0) kb0.classList.remove("on"); if (typeof VM !== "undefined") clearTimeout(VM.kt); } catch (e) {} xKLui(); xKL.on = true; xKL.st = 0; xKL.sp = false; xKL.cur = null; xKL.si = 0;
   let k = null; try { if (typeof bots !== "undefined") for (const b of bots) if (b.name === by) { k = b; break; } } catch (e) {}
   const ag = String((k && (xAg(k) || k.ag)) || by || "?"); let h = 0; for (let i = 0; i < ag.length; i++) h = (h * 31 + ag.charCodeAt(i)) % 360;
   if (xKL.t) { xKL.t.textContent = ag.slice(0, 2).toUpperCase(); xKL.t.style.background = "hsl(" + h + ",45%,32%)"; }
@@ -3131,7 +3132,8 @@ function vmKill(name, hs) {
   const now = performance.now(); VM.streak = now - VM.lastK < 4500 ? VM.streak + 1 : 1; VM.lastK = now;
   const kb = $("xKbn"), n = VM.streak, kn = $("xKn"), kc = $("xKc"); if (kn) kn.textContent = name || (mode === "duel" ? "Chamber" : "Enemy");
   if (kc) kc.textContent = n > 1 ? ["", "", "DOUBLE", "TRIPLE", "QUADRA", "ACE"][Math.min(n, 5)] + " ×" + n : "";
-  if (!kb) return; kb.classList.toggle("hs", !!hs); kb.classList.add("on"); clearTimeout(VM.kt); VM.kt = setTimeout(() => kb.classList.remove("on"), 2200);
+  if (!kb) return; if (typeof xKL !== "undefined" && xKL.on) return; if (typeof player !== "undefined" && player && player.hp <= 0) return;
+  kb.classList.toggle("hs", !!hs); kb.classList.add("on"); clearTimeout(VM.kt); VM.kt = setTimeout(() => kb.classList.remove("on"), 2200);
 }
 { const k0 = kill; kill = function (b, hs, by, w) { const was = b.alive; k0(b, hs, by, w); if (was && !b.alive) xDeathFlash(b); if (was && !b.alive && (!by || by === "You")) { vmKill(b.name, hs); xKiAdd(hs); } }; }
 // agent voice lines as text under the kill feed: 2.5 s each, at most one per 1.5 s
