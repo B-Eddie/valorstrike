@@ -9,6 +9,7 @@ async function nmCollision(key,signal){
  const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.BufferAttribute(new Float32Array(positions),3));geometry.setIndex(new THREE.BufferAttribute(new Uint32Array(index),1));geometry.boundsTree=MeshBVHLib.MeshBVH.deserialize({index:geometry.index.array,roots},geometry,{setIndex:false});return geometry;
 }
 function nmCancel(interactive=true){const pending=NM.pending;++NM.ticket;NM.pending=null;if(pending?.controller)pending.controller.abort(Object.assign(new Error('Map selection changed'),{name:'AbortError'}));nmOverlay(null);if(interactive&&window.xCancelMatchLoad)window.xCancelMatchLoad();if(interactive&&typeof NET!=='undefined'&&NET.socket&&typeof mpLost==='function')mpLost('Map loading cancelled');}
+function __vsLightOn(){return /^(127\.|localhost|\[::1\])/.test(location.hostname)&&!!window.__vsLight;}
 async function nmEnsure(key){
  if(NM.current&&NM.current.key===key){if(NM.pending){nmCancel(false);}return NM.current;}
  if(NM.pending&&NM.pending.key===key)return NM.pending.promise;
@@ -243,7 +244,6 @@ function nmTeleports(C){if((typeof NET!=='undefined'&&NET.socket)||C.key!=='bind
 window.xNativeMaps={state:NM,ensure:nmEnsure,cancel:nmCancel,near:nmNear,path:nmPath,height:nmHeight,blocked:nmBlocked,activate(key){FV.pick=FV.map=key;mode='five';fUseMap();useMap('five');return NM.current.meta;},memory(){const C=NM.current;return C&&C.memory?Object.assign({},C.memory,{textures:C.memory.textures.length}):null;},probe(){const C=nmActive();return C?{key:C.key,objects:C.meta.objects,navigation:C.nav.validation,player:[player.x,player.y,player.z],sites:C.meta.sites}:null;}};
 {const remake=xRemake;xRemake=function(){const before=renderer,result=remake.apply(this,arguments);if(renderer!==before){nmWatchContext(renderer);nmRehydrate();}return result;};nmWatchContext(renderer);}
 {const precompile=xPrecompile;xPrecompile=function(){if(!nmActive())return precompile();xPC=true;try{renderer.compile(scene,camera);}catch(e){console.warn('Native shader warmup',e);}};}
-function __vsLightOn(){return /^(127\.|localhost|\[::1\])/.test(location.hostname)&&!!window.__vsLight;}
 function nmNearV(C,x,z){if(!C.cellsV){C.cellsV=new Map();C.nav.nodes.forEach((p,i)=>{if(C.nav.valid&&!C.nav.valid[i])return;const k=Math.floor(p[0]/2)+','+Math.floor(p[2]/2);if(!C.cellsV.has(k))C.cellsV.set(k,[]);C.cellsV.get(k).push(i);});}let best=-1,bd=Infinity;const gx=Math.floor(x/2),gz=Math.floor(z/2);for(let ring=0;ring<=8;ring++){for(let dx=-ring;dx<=ring;dx++)for(let dz=-ring;dz<=ring;dz++){if(ring&&Math.abs(dx)!==ring&&Math.abs(dz)!==ring)continue;for(const i of C.cellsV.get((gx+dx)+','+(gz+dz))||[]){const p=C.nav.nodes[i],d=(p[0]-x)**2+(p[2]-z)**2;if(d<bd){bd=d;best=i;}}}if(best>=0&&ring>1&&bd<(ring*2-2)**2)break;}if(best<0)for(let i=0;i<C.nav.nodes.length;i++){if(C.nav.valid&&!C.nav.valid[i])continue;const p=C.nav.nodes[i],d=(p[0]-x)**2+(p[2]-z)**2;if(d<bd){bd=d;best=i;}}return best;}
 // coverage, with no way back. A grounded actor with no playable nav node within 4 units gets a
 // warning, then dies after 2 s - genre-standard kill-floor behavior. Back in coverage resets the
