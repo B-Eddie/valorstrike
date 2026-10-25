@@ -2,6 +2,7 @@
 // bind at real-time game speed (tiny viewport). Defenders holding site = normal; only
 // ATTACKING side stationary >16s mid-round is flagged. Tracks spike state/position, deaths
 // per team, round end. Detached run: logs to file, exits on round end or sample cap.
+const MAP = process.env.MAP || 'bind';
 const {serve, launch, boot} = require('./lib.cjs');
 (async()=>{
   const t0 = Date.now(), el = () => ((Date.now()-t0)/1000).toFixed(0)+'s';
@@ -10,11 +11,11 @@ const {serve, launch, boot} = require('./lib.cjs');
   const issues = [];
   try {
     await boot(p); console.log(el(), 'booted');
-    await p.evaluate(() => { window.__vs.FV.pick = 'bind'; window.__vs.light(true); window.__vs.agents(false); window.__vs.startFive(); });
+    await p.evaluate((m) => { window.__vs.FV.pick = m; window.__vs.light(true); window.__vs.agents(false); window.__vs.startFive(); }, MAP);
     await p.waitForFunction(() => window.__vs && window.__vs.state().running, {timeout: 60000});
     const setup = await p.evaluate(() => ({map: window.xNativeMaps.state.current.key, atk: window.__vs.FV.atk, nAllies: window.__vs.allies.length, nBots: window.__vs.bots.length}));
     console.log(el(), 'five on', JSON.stringify(setup));
-    if (setup.map !== 'bind') issues.push('map assertion failed: ' + setup.map);
+    if (setup.map !== MAP) issues.push('map assertion failed: got ' + setup.map);
     // player attacks or defends? attackers must move; defenders may hold.
     await p.evaluate(() => { window.__vs.FV.buy = 0.1; });
     await p.waitForTimeout(1500);

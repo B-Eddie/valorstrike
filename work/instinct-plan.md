@@ -84,8 +84,26 @@ All 12 user-list items now have shipped fixes on instinct. Remaining: ledger 13-
   2-for-4 then PLANTED and won via post-plant hold + detonation; third round enemies won 4-for-1
   - variance, not a one-sided program. 38 client suites green.
 - Sandbox timing note: game dt clamps at 50ms (index.html:4158), so under SwiftShader at ~2fps
-  the whole game runs ~10x slow-motion - environment artifact, not a bug; five-soak uses a
-  320x180 viewport to hold 1.00x real-time (asserted via timeLeft rate).
+  the whole game runs ~10x slow-motion; five-soak uses a 320x180 viewport to hold 1.00x
+  real-time (asserted via timeLeft rate). The 320x180 probe is logic/flow evidence only, NOT
+  intended-resolution performance acceptance.
+- Low-FPS timing coherence audit (parent-directed, code-level):
+  SERVER is real-time: worker.js tick() runs setInterval 50ms with dt=Math.min(.2, real
+  elapsed) and a catch-up loop stepping the sim in 0.05 substeps, so the sim clock tracks wall
+  time through jitter up to 200ms; the 0.05 clamp in sim.step is a substep size, not dilation.
+  Only DO starvation >200ms dilates, bounded and uniform across participants.
+  ONLINE CLIENT clock is server-anchored: every snapshot sets timeLeft=m.tl (dm/tdm 11669,
+  generic 11679) and five-mode roundState sets timeLeft=r.tl + FV.buy=r.b (11985) at 20Hz -
+  a dilated client cannot drift the round clock.
+  COOLDOWNS are server-enforced against the real-time sim clock (fireAt from this.time,
+  simulation.js fire()), so a dilated client fires SLOWER than allowed (disadvantaged, never
+  desynced, never exploitable); ability cooldowns likewise server-side this.time.
+  PHYSICS: server Motor.step real-time substeps; offline client dilates uniformly (bots,
+  timers, physics share the clamped dt) - internally coherent slow motion, quality issue only.
+  VERDICT: authoritative-vs-client timing stays coherent at low client FPS; no code change.
+- Watch item (single sample, not yet a bug): one bind soak round ended with the last ally
+  (Chamber) stationary 16s at (-47,10.3) mid-round while spike was player-carried; could be a
+  hold personality or pathing stall - needs another sample before treating as a defect.
 - Probe harness note: startFive reads FV.pick, NOT FV.map - oob-probe's first version silently
   ran Ascent in both sections until fixed (map selection now asserted via site-node coordinates).
 - Per-mode acceptance limits: offline modes covered by the client watch; trusted-server rooms
