@@ -834,3 +834,23 @@ check hark-perf overlap first (it owns agent cull + nav GC).
 - Startup-contention item status: mechanism-level slice landed (checkShaderErrors, 247fe1a);
   the only discrete burst found was a probe artifact, now fixed; no further scheduling change is
   justified by sandbox evidence. Remaining acceptance lives with the live-profiling ledger row.
+
+## 2026-10-25 18:45 - Stair wedge: player-motor substep hardening landed; wedge persists -> geometry class
+- Player motor (index.html ~2696) moved with ONE blocked() check at the full dt-displaced
+  target; at low fps a long frame jumps deep into stair risers. Substepped at 0.1m, mirroring the
+  existing kLg path precedent (same wall checks). Sound as tunneling hardening independent of
+  the wedge question; cost ~54 blocked checks/s at run speed, negligible.
+- A/B: breeze flight probe WITH the patch still wedged (13 stalls, 7 consecutive samples at
+  (-19.2,10.06,-50.17), then self-recovered, reached=true). The substep hypothesis is NOT
+  confirmed for this symptom. The wedge is NOT the horizontal dt-jump.
+- Wedge signature across runs: clusters at fixed flight positions (-28.5,8.7 / -23.x,9.4 /
+  -22.78,9.32 / -19.2,10.06), self-recovering after ~0.5-1s. Points sit mid-flight where nav
+  rises ~0.156m/edge but GEOMETRY risers may be non-uniform.
+- Current hypothesis (recorded, not proven): one or more breeze flight GEOMETRY risers exceed
+  the +0.32m step-up clearance in the blocked() wrapper (index.html ~12645:
+  floor<=y+.32 && !nmBlocked(...,y+.32)); the axis-split slide (X blocked, Z free) is what
+  eventually un-wedges. Same class as the lotus 0.39m one-way step. If measured risers >0.32m,
+  this is a level-design/step-height question -> parent/user call, not silent code change.
+- Next diagnostic: sample nmHeight along the walked flight line from collision geometry and
+  list actual riser heights; compare against the 0.32 climb limit. Then decide: raise step
+  height (gameplay-feel change), smooth the collision, or accept as level intent.

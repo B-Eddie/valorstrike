@@ -2693,9 +2693,15 @@ function moveP(dt, run, hold) {
   if (kLg > 0) { const s = Math.min(dt, kLg); kLg -= s; const n = Math.ceil(8 * s / 0.1), st = 8 * s / n; // 8 m/s, 0.1 m sub-steps, same wall checks
     for (let i = 0; i < n; i++) { const nx = P.x + kLx * st, nz = P.z + kLz * st; if (!blocked(nx, P.z, 0.4, P.y)) P.x = nx; if (!blocked(P.x, nz, 0.4, P.y)) P.z = nz; } }
   if (P.vx || P.vz) {
-    const nx = P.x + P.vx * dt, nz = P.z + P.vz * dt;
-    if (!blocked(nx, P.z, 0.4, P.y)) P.x = nx; else P.vx = 0;
-    if (!blocked(P.x, nz, 0.4, P.y)) P.z = nz; else P.vz = 0;
+    // Sub-step the wall checks (0.1 m, same as the kLg path above): one check at the full
+    // dt-displaced target lets a long frame (low fps) jump deep into stair risers, where the
+    // +0.32 m step-up clearance test fails and the capsule wedges (breeze flight probe).
+    const dx = P.vx * dt, dz = P.vz * dt, n = Math.max(1, Math.ceil(Math.max(Math.abs(dx), Math.abs(dz)) / 0.1)), st = 1 / n;
+    for (let i = 0; i < n; i++) {
+      const nx = P.x + P.vx * dt * st, nz = P.z + P.vz * dt * st;
+      if (!blocked(nx, P.z, 0.4, P.y)) P.x = nx; else P.vx = 0;
+      if (!blocked(P.x, nz, 0.4, P.y)) P.z = nz; else P.vz = 0;
+    }
   }
   const gY = groundAt(P.x, P.z, 0.3, P.y), gr = P.y <= gY + 0.001 && P.vy <= 0;
   const rp = mode === "five" && SROPES && FV.map === "split" && (kk.KeyW || kk.Space) ? SROPES.find((r) => Math.hypot(P.x - r.x, P.z - r.z) < 0.75 && P.y < r.top - 0.01) : null;
