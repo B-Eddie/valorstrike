@@ -558,7 +558,7 @@ body.x-cbh #game{--ha:#3d8bff;--he:#ff9f1c}
 #game .x-top .x-sc b:first-child{order:2;color:var(--ha)!important}
 #game .x-top .x-sc b:last-child{order:4;color:var(--he)!important;box-shadow:inset 0 -2px 0 var(--he)}
 #game .x-top .x-tm{order:3;min-width:88px;justify-content:center;font-size:24px;font-weight:600;background:rgba(10,16,22,.84)!important;border:0;border-left:1px solid var(--hl);border-right:1px solid var(--hl)}
-#game .x-top .x-tm.lo{color:var(--he)}
+#game .x-top .x-tm.lo{color:var(--he)} #game .x-top .x-tm.x-spk{position:relative;color:transparent!important} #game .x-top .x-tm.x-spk::after{content:"";position:absolute;inset:3px 0;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 34'%3E%3Cpath d='M20 2l14 7v16l-14 7-14-7V9z' fill='%23ff4655'/%3E%3Cpath d='M20 9l7 3.5v9L20 25l-7-3.5v-9z' fill='%231a0a0c'/%3E%3Ccircle cx='20' cy='17' r='3.2' fill='%23ff4655'/%3E%3C/svg%3E") center/contain no-repeat;opacity:var(--spo,1);filter:drop-shadow(0 0 5px rgba(255,70,85,.9))}
 #game #xSub{top:56px;font-size:11px;opacity:.65;letter-spacing:.16em}
 /* top-right killfeed */
 #game .hud.x-fw{top:16px;right:16px;gap:8px}
@@ -629,6 +629,10 @@ body.x-cbh #game{--ha:#3d8bff;--he:#ff9f1c}
   #game .hud.x-br{height:48px;padding:4px 8px;max-width:176px}
   #game .x-br #xMag{font-size:28px}#game .x-br .x-rs{font-size:14px}#game .x-br em{font-size:14px}
 }
+/* short landscape (640x360-class): the mode/map subtitle is centred between the minimap columns and ellipsised, so it
+   never runs under the minimap (8+112 px at <=700 px wide, 12+160 px above that; keep 8 px clear on each side) */
+@media (max-width:820px) and (orientation:landscape){#game #xSub{max-width:calc(100vw - 368px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:.06em}}
+@media (max-width:700px) and (orientation:landscape){#game #xSub{max-width:calc(100vw - 272px)}}
 /* touch devices (any width, incl. landscape phones wider than 820px): compact HUD, no desktop key hints, no duplicate ability bar */
 @media (pointer: coarse){
   #game #hint{display:none} /* keyboard hints are dead weight on touch; the touch buttons carry their own labels */
@@ -3806,9 +3810,12 @@ function xVis(dt) {
   const v = Math.pow(0.5 + 0.5 * Math.cos(xSpPh * Math.PI * 2), 3);
   spCore.color.setRGB(0.35 + 0.65 * v, 0.03, 0.05); spHalo.material.opacity = 0.2 + 0.7 * v; spHalo.scale.setScalar(0.7 + 0.5 * v);
   spRing.material.opacity = 0.25 + 0.75 * v; spRing.material.color.setRGB(0.4 + 0.6 * v, 0.04 + 0.2 * v * v, 0.06 + 0.2 * v * v); spRing.scale.setScalar(1 + 0.12 * v);
-  { const t = $("timer"), xs = $("xSpk"), on = planted && running && t.getClientRects().length > 0;
-    if (on !== xSpOn) { xSpOn = on; t.style.visibility = on ? "hidden" : ""; xs.style.display = on ? "block" : "none"; }
-    if (on) xs.style.opacity = 0.55 + 0.45 * v; }
+  // planted: the round clock gives way to the pulsing Spike. The visible clock is the top bar's #xTm (the legacy #timer is
+  // display:none!important in this HUD, so gating on its client rects kept the clock and never showed the Spike, online
+  // and offline alike); #xTm takes .x-spk (icon in the clock's slot), #xSpk stays for the legacy top-centre layout.
+  { const t = $("timer"), tm = $("xTm"), xs = $("xSpk"), on = planted && running;
+    if (on !== xSpOn) { xSpOn = on; t.style.visibility = on ? "hidden" : ""; if (tm) tm.classList.toggle("x-spk", on); xs.style.display = on && t.getClientRects().length > 0 ? "block" : "none"; }
+    if (on) { const o = (0.55 + 0.45 * v).toFixed(2); xs.style.opacity = o; if (tm) tm.style.setProperty("--spo", o); } }
   // agents
   for (let i = 0; i < bots.length; i++) xVisB(bots[i], dt, now, false);
   for (let i = 0; i < allies.length; i++) xVisB(allies[i], dt, now, true);
@@ -3904,10 +3911,13 @@ function xbReport() {
 }
 // Real-time offline simulation: game time (buy phase, round clock, Spike fuse, plant / defuse, respawns, ability timers)
 // follows the real clock at any frame rate. Each frame's real elapsed time is split into steps of at most 50 ms so
-// movement / physics still substep; a frame longer than XRT.max (a stall) counts as XRT.max, and the first frame back from
-// a hidden tab counts as one step. Online the server owns the clocks, so the client keeps one capped step per frame.
-const XRT = { step: 0.05, max: 2.5, skip: 0, n: 0 };
-function xRealDt() { const r = Math.max(0, clock.getDelta() || 0); if (XRT.skip) { XRT.skip = 0; return Math.min(r, XRT.step); } return Math.min(r, XRT.max); }
+// movement / physics still substep; the first frame back from a hidden tab counts as one step. Online the server owns the
+// clocks, so the client keeps one capped step per frame. Stalls: a frame counts at most XRT.max (4 s) of game time, and
+// the catch-up is bounded: once a frame's steps have used XRT.budget ms of compute the rest is carried as XRT.debt into
+// the next frames (still capped at XRT.max in total), so a slow device keeps real time without a spiral of ever-longer
+// frames. (2.5 s with no carry lost time on software rendering: 39 s of buy phase took 70 s at <0.3 fps.)
+const XRT = { step: 0.05, max: 4, budget: 250, debt: 0, skip: 0, n: 0, now: () => performance.now() };
+function xRealDt() { const r = Math.max(0, clock.getDelta() || 0); if (XRT.skip) { XRT.skip = 0; XRT.debt = 0; return Math.min(r, XRT.step); } return Math.min(r, XRT.max); }
 function xSimStep(d) {
   if (mode === "duel") { du.t += d; duelTick(d); } else if (mode === "surf") surfTick(d); else if (mode === "aim") aimTick(d); else if (mode === "five") fiveTick(d); else tick(d);
   try { if (running && !paused) xBotYaw(d); } catch (e) { xE(e); }
@@ -3915,9 +3925,10 @@ function xSimStep(d) {
 }
 function xSimRun(real, f) { // returns the game time advanced
   let on = false; try { on = !!MP.on; } catch (e) {} // MP is declared further down the page
+  if (on) XRT.debt = 0; else { real = Math.min(XRT.max, real + XRT.debt); XRT.debt = 0; }
   if (on || real <= XRT.step) { const d = Math.min(real, XRT.step); XRT.n = 1; f(d); return d; }
-  const n = Math.ceil(real / XRT.step - 1e-9), d = real / n; let t = 0; XRT.n = 0;
-  for (let i = 0; i < n && running && !paused; i++) { f(d); t += d; XRT.n++; }
+  const n = Math.ceil(real / XRT.step - 1e-9), d = real / n, t0 = XRT.now(); let t = 0; XRT.n = 0;
+  for (let i = 0; i < n && running && !paused; i++) { f(d); t += d; XRT.n++; if (i < n - 1 && XRT.now() - t0 > XRT.budget) { XRT.debt = real - t; break; } }
   return t;
 }
 function xCov() { if (xLob0 || xResUp() || xSetFull()) return true; for (const el of xCovEl) if (el.style.display === "flex") return true; return false; }
@@ -3927,14 +3938,14 @@ function loop() {
   if (document.hidden) { XRT.skip = 1; return; } // paused while the tab is hidden; the hidden span is not game time
   try { xAdapt(); } catch (e) {}
   try { if (xGate()) return; } catch (e) { xE(e); }
-  if (window.xLdOn) { xRealDt(); return; } // loading screen up: player input, bots and round timer frozen; dt discarded so nothing jumps when it hides
+  if (window.xLdOn) { xRealDt(); XRT.debt = 0; return; } // loading screen up: player input, bots and round timer frozen; dt discarded so nothing jumps when it hides
   // perf pass 15: a full-screen overlay hides the scene, so skip render, bots and physics (only the round timers keep ticking)
   // perf pass 16: with no live round behind the cover (first-load lobby, results screen) bot movement/physics is skipped too
   if (xCov()) { const cd = xRealDt(); try { if (running && !paused && !xLob0 && !xResUp() && mode !== "duel" && mode !== "surf" && mode !== "aim") xSimRun(cd, (d) => (mode === "five" ? fiveTick : tick)(d)); } catch (e) { xE(e); } return; }
   // perf pass 15: behind the Esc pause menu the frozen scene redraws at most 10 fps
   if (paused) { const pn = performance.now(); if (pn - xPzT < 98) return; xPzT = pn; }
   const rt0 = xRealDt(), dt = Math.min(rt0, XRT.step); // dt: render-side smoothing; game time below follows the real clock
-  let rt = 0; try { rt = running && !paused ? xSimRun(rt0, xSimStep) : 0; } catch (e) { xE(e); }
+  let rt = 0; try { rt = running && !paused ? xSimRun(rt0, xSimStep) : (XRT.debt = 0); } catch (e) { xE(e); }
   if (!(running && !paused)) try { jTick(0); } catch (e) { xE(e); }
   try { if (running) xHud(); } catch (e) { xE(e); }
   try { xAssist(dt); } catch (e) { xE(e); }
@@ -11438,8 +11449,14 @@ function mpHud() { let h = mpEl("xMpHud"); if (!h) { if (!MP.on) return; h = doc
   try { mpTags(); mpHud(); } catch (e) {}
 });
 // network clock: client inputs 30 Hz, host snapshots 20 Hz, pings 1 Hz, 10 s silence = disconnect
+// A main-thread stall (a long frame: software rendering, a map upload, GC) starves this timer and the socket handlers
+// alike; when the page wakes, this tick can run before the server messages queued during the stall, so the stalled span
+// is not counted as silence on either side (the server's own idle limit still catches a page that stops sending, and a
+// dead socket still fires close). Hidden tabs are throttled, not stalled, and keep the old rule.
 setInterval(function mpNet() {
-  if (!MP.on) return; const now = performance.now();
+  const now = performance.now(), gap = now - (MP.stallT || now); MP.stallT = now;
+  if (!MP.on) return;
+  if (gap > 2000 && !document.hidden) { const lost = gap - 33; MP.last = (MP.last || now) + lost; if (MP.conns) MP.conns.forEach((c) => { if (c.last) c.last += lost; }); }
   if (MP.role === "host") {
     if (MP.st === "game" && running && document.hidden) { try { let n = Math.min(20, Math.round((now - (MP.pt || now)) / 50)); MP.pt = now; while (n-- > 0) fiveTick(0.05); } catch (e) {} } // background tab: keep the sim stepping
     if (now - MP.piT > 1000) { MP.piT = now; MP.conns.forEach((c) => { mpSend(c.conn, { t: "pi", c: now }); const cLim = c.loadT && now - c.loadT < 300000 ? 300000 : 10000; if (!MP.starting && now - c.last > cLim) { try { c.conn.close(); } catch (e) {} mpDrop(c); } }); }

@@ -34,4 +34,19 @@ for(const r of short){for(const sel of r.sel.split(',').map(s=>s.trim())){if(!/^
 {const lb=R.find(r=>r.media&&/max-height:\s*480px/.test(r.media)&&r.sel.trim()==='.x-dmlb');assert(lb,'.x-dmlb short-screen rule missing');
  assert.equal(decl(lb,'top'),'auto');assert(parseInt(decl(lb,'bottom'))>=100,'leaderboard must clear the bottom-right weapon block');
  for(const later of R.filter(x=>x.pos>lb.pos&&!x.media&&x.sel.split(',').map(s=>s.trim()).includes('.x-dmlb')))assert(decl(later,'top')==null&&decl(later,'bottom')==null,'.x-dmlb short rule overridden by a later base rule');}
-console.log('short layout ok:',short.length,'max-height:560px rules');
+// (d) In-match subtitle (#xSub: "5V5 · ASCENT · ROUND 1 · ATTACK · 1100 CR · SPIKE PLANTED A") at 640x360 (browser-found):
+// centred and unbounded it ran under the minimap. Landscape ≤820/≤700 px rules bound it (nowrap + ellipsis) so its left edge
+// clears the minimap's right edge + 8 px at every width in each band; portrait keeps its own full-width rule.
+{const sub=(q)=>R.filter(r=>r.media&&r.media.replace(/\s/g,'')===q&&r.sel.trim()==='#game #xSub');
+ const s820=sub('@media(max-width:820px)and(orientation:landscape)')[0],s700=sub('@media(max-width:700px)and(orientation:landscape)')[0];
+ assert(s820&&s700,'#xSub short-landscape rules missing');
+ assert.equal(decl(s820,'white-space'),'nowrap');assert.equal(decl(s820,'overflow'),'hidden');assert.equal(decl(s820,'text-overflow'),'ellipsis');
+ const px=(r,sel,p)=>parseFloat(decl(R.filter(x=>x.sel.trim()===sel&&(r===null?!x.media:x.media&&x.media.replace(/\s/g,'')===r)).pop(),p));
+ const mm={base:px(null,'#xMap','left')+px(null,'#xMap','width')+2,narrow:px('@media(max-width:700px)','#xMap','left')+px('@media(max-width:700px)','#xMap','width')+2};
+ const off=r=>{const m=decl(r,'max-width').match(/^calc\(100vw - (\d+)px\)$/);assert(m,'max-width must be calc(100vw - Npx)');return +m[1]/2;};
+ assert(off(s820)>=mm.base+8,`701-820 px: subtitle left edge ${off(s820)} px must clear the ${mm.base} px minimap + 8`);
+ assert(off(s700)>=mm.narrow+8,`<=700 px: subtitle left edge ${off(s700)} px must clear the ${mm.narrow} px minimap + 8`);
+ assert(R.indexOf(s820)>R.findIndex(r=>r.media&&/max-width:820px\)$/.test(r.media)&&r.sel.trim()==='#game #xSub')&&R.indexOf(s700)>R.indexOf(s820),'subtitle bounds must follow the 820 px rule and the 700 px band must follow the 820 px band');
+ const coarse=R.filter(r=>r.media&&/pointer:\s*coarse/.test(r.media)&&r.sel.trim()==='#xMap').pop();if(coarse)assert(off(s700)>=parseFloat(decl(coarse,'left'))+parseFloat(decl(coarse,'width'))+2+8,'touch minimap');
+ for(const later of R.filter(x=>x.pos>s700.pos&&x.sel.trim()==='#game #xSub'&&!(x.media&&/max-width:480px/.test(x.media))))assert(decl(later,'max-width')==null&&decl(later,'white-space')==null,'later #xSub rule overrides the subtitle bounds');}
+console.log('short layout ok:',short.length,'max-height:560px rules; in-match subtitle clears the minimap at 640x360-class landscape');
