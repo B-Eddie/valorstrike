@@ -109,7 +109,7 @@ Still different (not cheap; each needs a client + server mechanic change):
 - Breach Fault Line hold-to-extend: done, section 7.
 - Hot Hands growth: done, section 7.
 - Per-ability windups: done, section 5.
-- Sova arrow bounces / charge: done, section 6. Cloudburst hold-to-curve: section 7.
+- Sova arrow bounces / charge: done, section 6. Cloudburst hold-to-steer: done, section 7.
 
 ## 5. Per-ability windups (wiki)
 
@@ -171,7 +171,7 @@ bounces to this arrow." Both bolts now work that way on every path:
   (hold state, ALT FIRE bounces + cycle, HUD, release throws a traced bolt, clamping of cast messages).
 - Bots keep a full-charge, no-bounce bolt.
 
-## 7. Wiki mechanics: Fault Line hold-to-extend, Hot Hands spread
+## 7. Wiki mechanics: Fault Line hold-to-extend, Hot Hands spread, Cloudburst flight
 
 ### Breach Fault Line (wiki.playvalorant.com/en-us/Fault_Line, fetched 2026-10-25)
 
@@ -206,3 +206,33 @@ full size from the start, 2.5 m on the client and 4 m on the server.
 - Tests: `server/test-ability-equip.js` (radius 0 / 2.25 / 4.5 m at 0 / 0.375 / 0.75 s; a foe 4 m out burns only once
   reached; gone after 4 s), `work/test_ability_equip.cjs` (XHOT == server, disc ~1.8 m at 0.3 s, 4.5 m by 1 s, relayed
   Hot Hands grows, Paint Shells unchanged).
+
+### Jett Cloudburst (wiki.playvalorant.com/en-us/Cloudburst, fetched 2026-10-25)
+
+Wiki: cast INSTANTLY, throws a projectile forward; holding the key turns it into a missile that follows the crosshair; on
+release it falls (gravity) and cannot be steered again; it smokes on hitting a surface or after 2 s in the air; smoke 2.5 s
+(includes 0.6 s deployment), radius 3.35 m. Was an instant smoke at the aim point (14 m max).
+
+- Shared flight: `vendor/cloudburst.cjs` (UMD; inlined after the Sova bolt by `install_valorant.py` as
+  `window.Cloudburst`, imported by `server/src/abilities.js`). `start(o, d)`, `step(st, dt, aim | null, ray, ground)` ->
+  landing point or null, `centreY(y, floor)` (smoke centre between floor + 1.5 and + 4 m). Throw 18 m/s with 9 m/s^2
+  gravity (a flat tap lands ~10 m ahead), steered missile 14 m/s along the aim, 2 s cap: this project's values (not on
+  the wiki).
+- Client (offline / own cast online): C throws at once (`J.cbs`); `jCbTick` steers with `jAim()` while `keys.KeyC` is held
+  (the keymap layer maps a rebound key to KeyC), a release ends steering for good (a second press throws the second
+  charge); the landing makes the 2.5 s smoke (`jCbSmoke`). Round reset clears `J.cbs`.
+- Trusted server: the C intent starts a `cloudburst` effect at the server eye / aim; the `in` message carries `cb: 1` while
+  C is held (Jett only; `u.input.cb`, only fresh input steers); `tickCloudburst` flies it and turns the same effect into
+  the `smoke` (`e.cb`, centre `e.c`) where it lands. No `ac` cast event for it: the snapshot `fx` carries `{kind:'cb', id,
+  o: owner, p, s: 0}` while it flies and `{..., s: 1, tl}` for the smoke; other clients draw the projectile and add the
+  smoke once per id (`netSyncCb`), the caster's own is skipped (flown locally).
+- P2P (host relay): the caster flies it; the cast message goes out when it lands with `p` (the smoke centre); the host
+  accepts `p` within 45 m of the eye and relays it; peers smoke there (`enSmoke` takes a centre height). Peers' Jett
+  smoke duration in `MP_SMK` 4.5 -> 2.5 s.
+- Not changed: smoke radius stays 4 m on every smoke (client `smokeGeo` / `jBlock`, server `SMOKE.radius`, shared with
+  Omen / Cypher); offline bot Jett still places its smoke directly.
+- Tests: `server/test-ability-equip.js` (tap arc lands ~10 m ahead at floor + 1.5, held + turned steers for the full 2 s,
+  release ends steering, smoke at a wall, snapshot rows projectile -> smoke, no cast event at the throw, `cb` only from
+  `1`), `work/test_ability_equip.cjs` (instant throw, smoke on landing, held C follows a 90 degree turn, release stops
+  steering, second press throws the second charge, 2 s cap / 28 m held straight, smoke centre band, `netSyncEffects` cb
+  rows: projectile, one smoke at the server point, dropped rows, own skipped, junk ignored).
