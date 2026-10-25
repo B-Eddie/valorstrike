@@ -2,7 +2,10 @@
 //
 // instrument(sim,flag,stats) wraps the live SpikeSimulation instance (never the prototype) so every round transition,
 // shot and tick is checked against the rules it is meant to follow:
-//   - economy at round end: winner +3000, loser 1900/2400/2900 by consecutive losses, capped at 9000; the dead lose
+//   - economy at round end: winner +3000, loser 1900/2400/2900 by consecutive losses, capped at 9000, except a loser who
+//     survives the round (alive at the round end; a Phoenix inside Run It Back is not alive) where VALORANT pays 1000
+//     instead (wiki.playvalorant.com/en-us/Credits): an attacker alive when time runs out without a plant, a defender
+//     alive after the Spike detonates (eliminations and defuses leave no loser alive by definition); the dead lose
 //     their guns and shields, survivors keep them; loss streaks reset for the winner;
 //   - carry-over at round start: survivors keep primary/secondary/shields/credits/ult points and charges, the floor and
 //     every effect are cleared, everyone is alive with a full magazine of the gun in hand; halftime (round 13) resets
@@ -17,20 +20,20 @@ import {weapons} from '../src/simulation.js';
 export const FOCUS=['Raze','Killjoy','Phoenix','Chamber','Cypher','Sova','Breach','Skye'];
 const lossBonus=n=>Math.min(2900,1900+(n-1)*500);
 
-export const fiveStats=stats=>stats.five||(stats.five={finishes:0,newRounds:0,deathsChecked:0,abilityKills:0,ribReturns:0,detainedShots:0,orphanEffects:0,ultCasts:{},abilityCasts:{}});
+export const fiveStats=stats=>stats.five||(stats.five={finishes:0,newRounds:0,deathsChecked:0,survivorLosses:0,abilityKills:0,ribReturns:0,detainedShots:0,orphanEffects:0,ultCasts:{},abilityCasts:{}});
 export function instrument(sim,flag,stats){
  if(sim.__soak)return;sim.__soak=true;
  const S=fiveStats(stats),tag=u=>`${u.name}(${u.agent}${u.human?',human':''})`;
  // Round end.
  const finish=sim.finishRound.bind(sim);
- sim.finishRound=function(winner,text){const already=this.roundDelay>0,before=new Map(this.units.map(u=>[u.id,{credits:u.credits,primary:u.primary,secondary:u.secondary,armor:u.armor,alive:u.alive||!!u.runItBack}])),losses=[...this.losses];
+ sim.finishRound=function(winner,text){const already=this.roundDelay>0,atk=this.atk,before=new Map(this.units.map(u=>[u.id,{credits:u.credits,primary:u.primary,secondary:u.secondary,armor:u.armor,alive:u.alive||!!u.runItBack,up:!!u.alive}])),losses=[...this.losses];
   const r=finish(winner,text);
   if(already){for(const u of this.units){const b=before.get(u.id);if(b&&b.credits!==u.credits)flag('economy: second round end paid',`${tag(u)} ${b.credits}->${u.credits}`,'econ2');}return r;}
   S.finishes++;
   if(this.losses[winner]!==0)flag('economy: winner loss streak',JSON.stringify(this.losses),'econwin');
   if(this.losses[1-winner]!==losses[1-winner]+1)flag('economy: loser streak',`${losses} -> ${this.losses}`,'econlose');
-  for(const u of this.units){const b=before.get(u.id);if(!b)continue;const want=Math.min(9000,b.credits+(u.team===winner?3000:lossBonus(this.losses[u.team])));
-   if(u.credits!==want)flag('economy: round reward',`${tag(u)} ${b.credits} -> ${u.credits}, expected ${want} (team ${u.team} winner ${winner} losses ${this.losses})`,'econreward');
+  for(const u of this.units){const b=before.get(u.id);if(!b)continue;const survived=u.team!==winner&&b.up&&(u.team===atk?text==='Time ran out':text==='Spike detonated'),want=Math.min(9000,b.credits+(u.team===winner?3000:survived?1000:lossBonus(this.losses[u.team])));if(survived)S.survivorLosses++;
+   if(u.credits!==want)flag('economy: round reward',`${tag(u)} ${b.credits} -> ${u.credits}, expected ${want} (team ${u.team} winner ${winner} losses ${this.losses} ${text}${survived?', survivor':''})`,'econreward');
    if(b.alive&&(u.primary!==b.primary||u.secondary!==b.secondary||u.armor!==b.armor))flag('carry-over: survivor lost gear at round end',`${tag(u)} ${b.primary}/${b.secondary}/${b.armor} -> ${u.primary}/${u.secondary}/${u.armor}`,'survgear');
    if(!b.alive&&(u.primary!=null||u.secondary!=='Classic'||u.armor!==0))flag('carry-over: dead kept gear',`${tag(u)} ${u.primary}/${u.secondary}/${u.armor}`,'deadgear');}
   return r;};

@@ -82,3 +82,14 @@ vendor/bot-routes.cjs existed but was not wired in.
 - Server (server/src/bots.js, spike.js, simulation.js): same plans (per-round, own spot, <=1 lurker, staggered starts,
   defender sites shuffled), variedPath routes (also TDM/DM hunting), 1.8 m spacing.
 - Tests: work/test_bot_variety_routes.cjs (offline, real Ascent/Bind nav), server/test-bot-variety.js (real worlds).
+- Numbers (deterministic, 6 rounds x 22 s, sight lines off). Server, before -> after: Ascent distinct attacker routes
+  14 -> 26 (per round 5/5/4/5/4/5 -> 5 every round), average moving teammate gap 4.52 -> 17.13 m, samples within
+  1.8 m of a teammate 41.9 % -> 5.0 %; Bind 11 -> 26 routes, gap 3.68 -> 14.42 m, within 1.8 m 24.8 % -> 10.0 %.
+  Offline native: Ascent 5 plain -> 27 varied routes, Bind 7 -> 30; site spots avg 5.3 / 5.6 m apart (min 3.35 m);
+  one lurker every round; 24 distinct start delays; defender site order differs every round.
+- work/test_client_online.cjs (fast Spike leg): on the default seed 7 the Vandal-armed pilot now goes 4/0 against pistol
+  bots for the whole window (seeds 2/3 still die naturally), so after 30 s without a death a living enemy bot finishes it
+  through the server's abilityDamage path and the page's death / round-reset handling still runs (reported as
+  "death forced after 30 s").
+- Browser-verify: attackers fan out (one lurker), hold distinct spots on site, defenders split across sites per
+  round, no visible stacking/bumping in chokes; online (local server) bots do the same.
