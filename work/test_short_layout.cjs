@@ -22,6 +22,9 @@ const ag=find('#xAg'),agm=find('#xAg>.x-agm'),agc=find('#xAg>.x-agc'),lk=find('#
 assert(ag&&agm&&agc&&lk,'#xAg short-screen rules missing');
 assert.equal(decl(ag,'overflow-y'),'auto');assert(+decl(agc,'order')<+decl(agm,'order')&&+decl(agm,'order')<+decl(lk,'order'),'cards must come before details on short screens');assert.equal(decl(ag,'justify-content'),'flex-start');assert.equal(decl(agm,'flex'),'none');assert.equal(decl(lk,'position'),'sticky');
 assert(/<div id="xAg"[\s\S]*?id="xAgL"/.test(html),'LOCK IN button #xAgL missing from #xAg');
+// (c) spectate bar leaves the centre of a 360 px screen
+const sp=find('.x-sp');assert(sp&&decl(sp,'bottom')==='6px','spectate bar not moved down on short screens');assert(find('.x-sp small')&&decl(find('.x-sp small'),'display')==='none');
+assert(R.findIndex(r=>r===sp)>R.findIndex(r=>!r.media&&r.sel==='.x-sp'),'short .x-sp rule must follow the base rule');
 // Cascade: no later unconditional rule with the same selector may override a property the short rule sets.
 for(const r of short){for(const sel of r.sel.split(',').map(s=>s.trim())){if(!/^#(pre|xAg)/.test(sel))continue;
  const props=r.body.split(';').map(d=>d.split(':')[0].trim()).filter(Boolean);
