@@ -670,3 +670,13 @@ RESULT rc lines + SLICE-DONE markers in /tmp/sweep-results.log.
 CAVEAT: sweep was SIGSTOPped ~17:26-17:43 for chrome probes. test_client_lifecycle.cjs rc=124
 (1031s wall) in slice 0 spans that freeze - LIKELY SIGSTOP-INDUCED, not a real failure. Re-run it
 individually before treating as a defect. Same lens for any rc=124 whose wall time overlaps a freeze.
+
+## 2026-10-25 ~17:45 EDT - Code read: retake "ignores light gate" suspicion (from 13:07 entry)
+The light gate is SHARED, not per-mode: the map loader applies `__vsLightOn()` at the nmLoadScene
+fork (index.html:12537) for every mode through nmEnsure, retake included. Agent loads are gated
+separately: xvReadyAgents honors `window.__vsNoAgents` (index.html:13303), and only the
+`__vs.light(true)` helper sets BOTH flags (13305). A probe that sets `window.__vsLight=1` directly
+leaves __vsNoAgents undefined -> the ~40s all-12 agent gate still runs, matching the observed
+"retake sat at Preparing the map... 76s+". Alternative contributor: nmCollision BVH build +
+xGmLoad gun-model fetch contention under SwiftShader (unverified). HYPOTHESIS, not proven - verify
+with a retake probe launched via __vs.light(true) (not direct flag set) before any code change.
