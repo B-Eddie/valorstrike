@@ -41,11 +41,12 @@ const {serve, launch, boot} = require('./lib.cjs');
         const c2 = [pa[0], H(C, pa[0], pb[2], pa[1]), pb[2]];
         if (sweepR(pa, c2, c2[1]-pa[1]) && sweepR(c2, pb, pb[1]-c2[1])) return true;
         return false; };
-      let eBad = 0; const pruned = A.map(() => []); let trap = 0; const bad = [];
+      let eBad = 0, eBadKept = 0; const pruned = A.map(() => []); let trap = 0; const bad = [];
       for (let a = 0; a < N.length; a++) { if (!C.playable[a]) continue; let good = 0;
-        for (const b of A[a]) { if (walkR(a, b)) { good++; pruned[a].push(b); } else { eBad++; bad.push([a, b]); } }
+        for (const b of A[a]) { const dh = N[b][1] - N[a][1];
+          if (walkR(a, b) || dh < -0.35) { good++; pruned[a].push(b); if (dh < -0.35 && !walkR(a, b)) eBadKept++; } else { eBad++; bad.push([a, b]); } }
         if (A[a].length && !good) trap++; }
-      return {eBad, trap, pruned, bad, after: measure(pruned), frags: (() => { const seen = new Uint8Array(N.length); const out = [];
+      return {eBad, eBadKept, trap, pruned, bad, after: measure(pruned), frags: (() => { const seen = new Uint8Array(N.length); const out = [];
         for (let i = 0; i < N.length; i++) { if (seen[i] || !C.playable[i]) continue; const q = [i]; seen[i] = 1; let size = 0;
           for (let k = 0; k < q.length; k++) { size++; for (const j of pruned[q[k]]) if (!seen[j] && C.playable[j]) { seen[j] = 1; q.push(j); } }
           out.push(size); } return out.sort((x, y) => y - x); })()}; };
@@ -71,23 +72,29 @@ const {serve, launch, boot} = require('./lib.cjs');
         return {comp, defOK: !!rs[def], sitesOK: Object.fromEntries(Object.entries(sites).map(([k, i]) => [k, !!rs[i]])),
                 calloutsLost: callouts.filter(c => !rs[c.i]).map(c => c.name)}; };
       r45 = auditR(.45); r40 = auditR(.4);
+      // Articulation: components on pruned graph, then bad edges crossing component lines.
+      const cid = new Int32Array(N.length).fill(-1); let nc = 0; const compSize = [];
+      for (let i = 0; i < N.length; i++) { if (cid[i] >= 0 || !C.playable[i]) continue; const q = [i]; cid[i] = nc; let sz = 0;
+        for (let k = 0; k < q.length; k++) { sz++; for (const j of r45.pruned[q[k]]) if (cid[j] < 0 && C.playable[j]) { cid[j] = nc; q.push(j); } }
+        compSize.push(sz); nc++; }
+      const mainCid = cid[near(C.meta.attacker[0], C.meta.attacker[2], C.meta.attacker[1])];
+      const artic = {};
+      for (const [a, b] of r45.bad) { if (cid[a] < 0 || cid[b] < 0 || cid[a] === cid[b]) continue;
+        const k = Math.min(cid[a], cid[b]) + '>' + Math.max(cid[a], cid[b]);
+        (artic[k] = artic[k] || {n: 0, samples: []}).n++;
+        if (artic[k].samples.length < 3) artic[k].samples.push({a: N[a].map(v => +v.toFixed(1)), b: N[b].map(v => +v.toFixed(1))});
+      }
+      const defI = near(C.meta.defender[0], C.meta.defender[2], C.meta.defender[1]);
+      const spawnCids = (C.nav.spawnNodes || []).map(i => cid[i]);
       const before = measure(A), after = measure(pruned);
-      // Component id per node on the pruned graph, then the bad edges that cross components.
-      const cid = new Int32Array(N.length).fill(-1); let nc = 0;
-      for (let i = 0; i < N.length; i++) { if (cid[i] >= 0 || !C.playable[i]) continue; const q = [i]; cid[i] = nc;
-        for (let k = 0; k < q.length; k++) for (const j of r45.pruned[q[k]]) if (cid[j] < 0 && C.playable[j]) { cid[j] = nc; q.push(j); } nc++; }
-      const big = cid[callouts.length ? near(C.meta.attacker[0], C.meta.attacker[2], C.meta.attacker[1]) : 0];
-      const cuts = [] /* cut detail captured in prior run */
-        .map(([a, b, why]) => ({a: N[a].map(v => +v.toFixed(1)), b: N[b].map(v => +v.toFixed(1)), why,
-          intoSewer: (cid[a] === big) !== (cid[b] === big) ? (cid[a] === big ? 'toFrag' : 'toMain') : 'frag'}));
       return {map: C.key, nodes: N.length, playable: C.playable.reduce((n, v) => n + v, 0), eTotal,
-              r45: {eBad: r45.eBad, trap: r45.trap, after: r45.after, frags: r45.frags}, r45bad: r45.bad,
+              r45: {eBad: r45.eBad, eBadKept: r45.eBadKept, trap: r45.trap, after: r45.after, frags: r45.frags}, r45bad: r45.bad, artic, compSize, mainCid, defCid: cid[defI], spawnCids,
               r40: {eBad: r40.eBad, trap: r40.trap, after: r40.after, frags: r40.frags},
               ms: +(performance.now() - t0).toFixed(0), before, after: r45.after, fragSizes: (() => { const seen = new Uint8Array(N.length); const out = [];
         for (let i = 0; i < N.length; i++) { if (seen[i] || !C.playable[i]) continue; const q = [i]; seen[i] = 1; let size = 0;
           for (let k = 0; k < q.length; k++) { size++; for (const j of pruned[q[k]]) if (!seen[j] && C.playable[j]) { seen[j] = 1; q.push(j); } }
           out.push(size); }
-        return out.sort((x, y) => y - x); })(), cuts: cuts.slice(0, 30), cutCount: cuts.length};
+        return out.sort((x, y) => y - x); })()};
     });
     console.log('AUDIT', JSON.stringify(r));
     console.log('BADEDGES', JSON.stringify(r.r45bad));
