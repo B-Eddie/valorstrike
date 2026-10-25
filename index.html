@@ -3466,6 +3466,22 @@ const XUB_AG = { Jett: ["f", "Hair_Buns"], Phoenix: ["m", "Hair_SimpleParted"], 
   Killjoy: ["f", "Hair_BuzzedFemale"], Omen: ["m", ""], Skye: ["f", "Hair_Long"], Chamber: ["m", "Hair_SimpleParted"], Breach: ["m", "Hair_Buzzed Hair_Beard"], Cypher: ["m", "Hair_Buzzed"] };
 const XUB_UP = /^(spine_02|spine_03|neck_01|Head|clavicle|upperarm|lowerarm|hand|thumb|index|middle|ring|pinky)/; // upper-body layer bones; the rest (root, pelvis, spine_01, legs) is the lower layer
 const XUB_LO = ["idle", "walk", "run", "crouch", "crouchWalk", "fall", "jump", "land"], XUB_UPN = ["aim", "knife", "reload", "cast", "throw"], XUB_FU = ["plant", "death1", "death2"];
+// Third-person locomotion (the clips are in place): each clip's natural ground speed, measured from its planted-foot travel
+// on the shipped retargeted data (work/test_tp_locomotion.cjs re-measures it). Playback rate = ground speed / natural speed,
+// so the planted foot moves with the ground instead of skating or moonwalking (the old rates, walk sp/1.6 capped 1.8x and
+// jog sp/4.5, left the feet at ~55-65 % of the ground speed at VALORANT's 3.2-6.75 m/s). Walk clip up to 1.5 m/s, jog from
+// 2.4 m/s (VALORANT's shift-walk is 3.2-4.1 m/s, a brisk jog cadence), crouch-walk clip whenever crouched.
+const XUB_NAT = { walk: 1.05, run: 2.9, crouchWalk: 0.75 };
+const XUB_RATE = { walk: [0.5, 1.6], run: [0.6, 2.35], crouchWalk: [0.5, 2.8] };
+function xUbLoco(sp, cw, back, air) {
+  const T = {}, R = {}, mv = sp > 0.35;
+  if (air) { T.fall = 1 - cw; T.crouch = cw; return { T, R, mv }; }
+  if (!mv) { T.idle = 1 - cw; T.crouch = cw; return { T, R, mv }; }
+  const run = Math.max(0, Math.min(1, (sp - 1.5) / 0.9)), dir = back ? -1 : 1;
+  T.walk = (1 - cw) * (1 - run); T.run = (1 - cw) * run; T.crouchWalk = cw;
+  for (const n of ["walk", "run", "crouchWalk"]) R[n] = dir * Math.max(XUB_RATE[n][0], Math.min(XUB_RATE[n][1], sp / XUB_NAT[n]));
+  return { T, R, mv };
+}
 // one-shot triggers
 function xUbOnce(X, n, set, dur) { const a = X.a[n]; if (!a) return; a.reset(); a.timeScale = dur ? a.getClip().duration / dur : 1; a.play(); if (set === "U") { X.uo = n; X.ut = dur || a.getClip().duration; } else { X.lo = n; X.lt = dur || a.getClip().duration; } }
 function xUbAdd(X, n, w) { const a = X.ad && X.ad[n]; if (!a) return; a.reset(); a.setEffectiveWeight(w); a.play(); }
@@ -3475,7 +3491,8 @@ function xUbAnim(b, M, sp, dt) {
   const dx = X.px == null ? 0 : P.x - X.px, dz = X.pz == null ? 0 : P.z - X.pz, dy = X.py == null ? 0 : P.y - X.py; X.px = P.x; X.pz = P.z; X.py = P.y;
   // airborne: only re-check the floor when the unit moved vertically (or is already in the air)
   let air = X.air; if (Math.abs(dy) > 1e-3 || air) { try { air = typeof groundAt === "function" && P.y > groundAt(P.x, P.z, 0.3, P.y) + 0.2; } catch (e) { air = false; } }
-  if (air && !X.air && dy > 0) xUbOnce(X, "jump", "L", 0.35); else if (!air && X.air) xUbOnce(X, "land", "L", 0.3);
+  X.spS = X.spS == null ? sp : X.spS + (sp - X.spS) * Math.min(1, dt * 20); sp = X.spS; // per-frame position deltas are noisy; ~0.1 s smoothing keeps VALORANT's near-instant stop
+  if (air && !X.air && dy > 0) xUbOnce(X, "jump", "L", 0.35); else if (!air && X.air && sp < 0.35) xUbOnce(X, "land", "L", 0.3); // moving landings go straight back to the stride (no knee-buckle mid-run)
   X.air = air;
   let S = null; try { S = mode === "five" && xFvOK && FV.sp ? FV.sp : null; } catch (e) {}
   const plant = !!S && ((S.st === "carry" && S.c === b && S.pt > 0) || (S.st === "plant" && S.du === b));
@@ -3492,15 +3509,13 @@ function xUbAnim(b, M, sp, dt) {
   const back = mv && f < -0.25 * Math.hypot(f, sd);
   const yawT = mv && !air ? Math.max(-1.25, Math.min(1.25, back ? Math.atan2(-sd, -f) : Math.atan2(sd, Math.max(1e-4, f)))) : 0; // strafe: hips turn toward the move, torso counter-turns
   X.yaw += (yawT - X.yaw) * Math.min(1, dt * 8); X.pit = M.xap || 0;
-  const T = {}, cw = X.cb * 0.62; // crouch blend capped so the head drops ~0.45 m, matching the crouch head hitbox drop
-  const st = air ? "fall" : !mv ? "idle" : sp < 3.4 ? "walk" : "run", cs = mv ? "crouchWalk" : "crouch";
-  if (!air && mv) { const run = Math.max(0, Math.min(1, (sp - 2.7) / 2.1)); T.walk = (1 - cw) * (1 - run); T.run = (1 - cw) * run; } else T[st] = 1 - cw; T[cs] = (T[cs] || 0) + cw;
+  const cw = X.cb * 0.62, L = xUbLoco(sp, cw, back, air), T = L.T; // crouch blend capped so the head drops ~0.45 m, matching the crouch head hitbox drop
   if (X.lo) { for (const n of XUB_LO) T[n] = 0; T[X.lo] = 1; }
   T[X.uo || (M.w === "Knife" ? "knife" : "aim")] = 1;
   const fw = X.w.plant || 0; if (plant) T.plant = 1;
   for (const n of XUB_LO.concat(XUB_UPN)) if (T[n]) T[n] *= 1 - fw;
   const ts = (a, v) => { if (a) a.timeScale = v; };
-  ts(X.a.walk, (back ? -1 : 1) * Math.max(0.6, Math.min(1.8, sp / 1.6))); ts(X.a.run, (back ? -1 : 1) * Math.max(0.7, Math.min(1.5, sp / 4.5))); ts(X.a.crouchWalk, (back ? -1 : 1) * Math.max(0.6, Math.min(1.6, sp / 1.4)));
+  for (const n in L.R) ts(X.a[n], L.R[n]);
   xUbW(X, T, dt, 12);
   // head hitbox follows the crouch (size unchanged); standing it stays at 1.75 m
   if (b.head && b.head.position) b.head.position.y = 1.75 - 0.45 * (cw / 0.62);
