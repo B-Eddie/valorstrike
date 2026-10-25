@@ -356,3 +356,16 @@ CAUTION: a naive "blocked at node" sweep is noisy - spawn-area round barriers ma
 read blocked on every map (x=-78 on bind, x=-89 on breeze etc.). Any pruning must discriminate
 mid-map low-clearance overhangs from barrier-sealed spawns (e.g. re-check with barriers open, or
 filter to ceiling clearance < 1.35 m far from spawn volumes).
+
+## Post-merge stairs re-run (Oct 25, commit c0cc5a6)
+Harness repaired for main's async init (mid profile allows /models/valorant/ bins;
+startDM via __vs hook; diag-stairs runs FV.dmN=0 - zero bots).
+ASCENT: PROBE-FAIL. Up leg reached the top (goal y 8.00) but logged 11 stall samples
+(>4 threshold) and ended at y 6.54 - a climb/slip yo-yo pattern with NO bots present.
+Down leg (no teleport) did not return to base either run (7.05 -> 6.80).
+Pre-merge the same probe passed this flight. Suspect a real stair-climb regression
+from main's motor changes (clipBlocked / CLIPS / floorNear ring). NOT yet proven:
+next step is A/B - same probe against pre-merge instinct (6facbc0~1 worktree, rebuild
+ascent world artifacts) to confirm merge-introduced, then bisect the motor diff.
+Caveat: one PROBE-FAIL earlier this run was a Chrome tab crash under sandbox load
+(infra, not game).
