@@ -7,9 +7,9 @@
 6. [ ] Stairs require jumping step-by-step
 7. [ ] Lag on dealing/taking damage
 8. [ ] Default quality fuzzy -> sharp
-9. [ ] Character grip pose wrong
-10. [ ] Agent models ~40s load -> background preload+cache at site entry
-11. [ ] Remove character fallbacks, always use main
+9. [x] Character grip pose wrong
+10. [x] Agent models ~40s load -> background preload+cache at site entry
+11. [x] Remove character fallbacks, always use main
 12. [ ] Ledger 13-row open checklist (long-term)
 
 ## Harness status (2026-10-24 late)
@@ -31,3 +31,6 @@
 - [x] #1+#2 ragdoll explosion/boneless: root cause shown - old Verlet solver diverges to 2.3e38 m under velocity spike (dt spikes from background tabs); added per-step velocity clamp (6 m/s), NaN point reset to captured pose, finite-floor guard, divergence reset, non-finite bone skip at capture. Regression test test_ragdoll.cjs with spike+NaN injection passes; old code fails. (uncommitted at first, then committed)
 - [~] #3 spectate 3P: static wiring looks correct (span click -> xTPToggle -> xTP.on -> xTPCam at ~4161; .x-sp pointer-events:none overridden inline). Needs in-match repro. Suspects: pointer-lock hiding cursor (desktop), listener loss if xKLui rebuilds, or V-key gating (requires xKL.sp && hp<=0). Verify in DM/5v5 browser run: die, wait 2s, click label + press V, confirm xTP.on flips and camera switches.
 - Next run priorities: get bounded in-match repro working (consider forcing custom/old map via FV.pick or a collision-only test page to avoid full native-scene boot), then #4 pickup indicator, #6 stairs, #7 damage lag, #10/#11 agent preload+fallback removal.
+- [x] #10 agent 40s loads: xvPreload() walks all 12 agent rigs + locomotion + all weapon GLBs sequentially with idle yields from 1.2s after boot, chosen agent first, skipped on mobile/data-saver; xvLoad/xvJson now go through Cache Storage 'vs-assets-v1' (plain-fetch fallback). commit 7b392b2. test_preload.cjs.
+- [x] #11 native-only characters: primitive rig hidden at birth (ring+gun kept as indicators), CC0/Soldier clone tier removed from third person (XUB download stays for FP arms + clip tables), native failure retries twice then one error toast per agent. commit 65e7d3b. test_native_only.cjs.
+- [x] #9 grip pose: third-person weapon attach no longer cancels the hand's animated rotation; gun is rigidly seated in the R_Hand palm (offset measured on the shared rig convention) with a per-rig solved constant orientation aligning muzzle (-Z) to character forward in the authored aim stance. Rigid attach = gun tracks hand through run/aim. test_grip.cjs asserts muzzle-forward/upright/palm-seat/rigid tracking across jett/phoenix/raze.

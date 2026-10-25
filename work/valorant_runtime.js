@@ -99,7 +99,20 @@ function xvAgent(M, kit) {
   XUB_LO.forEach((n) => mk(n,'L',n==='jump'||n==='land')); XUB_UPN.forEach((n) => mk(n,'U',n==='reload'||n==='cast'||n==='throw')); XUB_FU.forEach((n) => mk(n,'C',n!=='plant'));
   [['fire','Pistol_Shoot'],['hit','Hit_Chest'],['hitHead','Hit_Head']].forEach(([n,c]) => { const a=mx.clipAction(kit.A[c]); a.blendMode=THREE.AdditiveAnimationBlendMode; a.setLoop(THREE.LoopOnce,1); X.ad[n]=a; });
   X.a.idle.play(); X.a.aim.play(); X.w.idle = X.w.aim = 1; mx.update(.01); M.m.updateMatrixWorld(true);
-  const hand = bone('R_Hand'); if (hand && M.gun) { const hold = new THREE.Group(), p=new THREE.Vector3(),q=new THREE.Quaternion(),s=new THREE.Vector3(); new THREE.Matrix4().copy(M.m.matrixWorld).invert().multiply(hand.matrixWorld).decompose(p,q,s); hold.quaternion.copy(q.invert()); hold.scale.set(1/s.x,1/s.y,1/s.z); hand.add(hold); hold.add(M.gun); M.gun.position.set(0,0,.03); M.gun.rotation.set(0,Math.PI,0); M.weaponHolder=hold; } // gun models are authored muzzle -Z: PI faces the muzzle the way the character looks
+  const hand = bone('R_Hand'); if (hand && M.gun) {
+    const hold = new THREE.Group(), p=new THREE.Vector3(),q=new THREE.Quaternion(),s=new THREE.Vector3();
+    new THREE.Matrix4().copy(M.m.matrixWorld).invert().multiply(hand.matrixWorld).decompose(p,q,s);
+    hold.scale.set(1/s.x,1/s.y,1/s.z); // normalize rig scale only: keep the hand's animated rotation so the weapon tracks the grip through every clip
+    hand.add(hold); hold.add(M.gun);
+    // The setup pose is the authored aim stance: solve the gun's constant hand-local
+    // orientation so the muzzle (-Z, authored) faces the character's forward, and seat
+    // the grip in the palm. Solved per rig - bone roll differs between agents.
+    M.m.updateMatrixWorld(true);
+    const qDes = M.m.getWorldQuaternion(new THREE.Quaternion()).multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(0,Math.PI,0)));
+    M.gun.quaternion.copy(hand.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(qDes));
+    M.gun.position.set(-0.096,-0.005,-0.002); // palm centre in hand space (shared rig convention)
+    M.weaponHolder=hold;
+  }
   X.contactLift=kit.contactLift;X.contactProbes=kit.contactProbes.map(p=>({o:sc.getObjectByName(p.mesh),indices:p.indices})).filter(p=>p.o&&p.o.isSkinnedMesh);X.contactV=new THREE.Vector3();X.contactInv=new THREE.Matrix4();X.contactShift=new THREE.Vector3();X.contactScale=new THREE.Vector3();X.contactFloor=bx.min.y;X.acts=X.a; M.ub=1; M.sx=X; M.valorant=1; M.xAt=[]; M.solOwn=()=>{M.solOwn=null;}; XSOL.mx.push(M);
 }
 // No third-party fallback visuals on characters: the CC0/Soldier clone tier never
