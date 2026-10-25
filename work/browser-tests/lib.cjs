@@ -18,6 +18,25 @@ function serve(port = 8876) {
   });
   return new Promise(r => srv.listen(port, '127.0.0.1', () => r(srv)));
 }
+// The game resolves native-map collision/BVH from NET.url + '/worlds/' (127.0.0.1:8787 when
+// served locally). A probe without that endpoint silently falls back to a synchronous
+// multi-hundred-ms MeshBVH build at match start - a probe artifact no production user hits
+// (worker serves the prebuilt bvh*.bin). serveWorlds() makes local probes production-faithful;
+// CORS is required because the page origin differs (game :8876 vs worlds :8787).
+function serveWorlds(port = 8787) {
+  const WROOT = path.join(ROOT, 'server', 'public');
+  const srv = http.createServer((req,res)=>{
+    let p = decodeURIComponent(req.url.split('?')[0]);
+    const f = path.join(WROOT, p);
+    if (!f.startsWith(WROOT)) { res.writeHead(403); return res.end(); }
+    fs.readFile(f, (err, data) => {
+      if (err) { res.writeHead(404); return res.end('nf'); }
+      res.writeHead(200, {'Content-Type': MIME[path.extname(f).toLowerCase()] || 'application/octet-stream', 'Cache-Control':'no-store', 'Access-Control-Allow-Origin':'*'});
+      res.end(data);
+    });
+  });
+  return new Promise(r => srv.listen(port, '127.0.0.1', () => r(srv)));
+}
 async function launch({heavy = false, profile = null, viewport = {width:960, height:600}, args = [], touch = false} = {}) {
   const b = await chromium.launch({headless:true, executablePath:'/usr/bin/google-chrome',
     args:['--no-sandbox','--use-gl=angle','--use-angle=swiftshader','--disable-dev-shm-usage','--enable-unsafe-swiftshader','--mute-audio',...args]});
@@ -54,4 +73,4 @@ async function startDM(page) {
   await page.click('#mIntro [data-close]').catch(() => {});
   await page.evaluate(() => window.__vs.startDM());
 }
-module.exports = {serve, launch, boot, startDM};
+module.exports = {serve, serveWorlds, launch, boot, startDM};

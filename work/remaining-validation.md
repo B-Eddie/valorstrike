@@ -806,3 +806,31 @@ check hark-perf overlap first (it owns agent cull + nav GC).
 - Next concrete step: decompose the 1548ms task with lightweight timing marks around the
   match-start sub-steps (roster gate, world build, nav activation, first compile) to find the
   chunkable piece. Any scheduling change must preserve main's loader/cache behavior.
+
+## 2026-10-25 18:42 - Match-start monolith decomposed: fallback BVH build was a probe artifact
+- Probe-side instrumentation (GLTF parse/load, MeshBVH build/deserialize, renderer, cib wrapped
+  with timing; /tmp/probe-decompose.cjs) attributed the 1548ms DM-start longtask:
+  MeshBVHLib.MeshBVH CONSTRUCTOR 1445-1498ms + one cib whose wall time was inflated by the
+  blocked main thread. No other wrapped primitive contributed.
+- Cause: in local probes the game resolves collision from NET.url = 127.0.0.1:8787 (hardcoded
+  for localhost) and no worlds server runs there -> prebuilt bvh*.bin fetch fails -> nmCollision
+  catch path builds the BVH SYNCHRONOUSLY at match start. Production worker returns 200 for
+  /worlds/breeze/meta.json (verified), so real users get MeshBVH.deserialize, not the build.
+  Per parent's caution: the monolith was never evidence of a production start-path cost.
+- Durable fix: serveWorlds() added to work/browser-tests/lib.cjs (serves server/public on 8787
+  with CORS, required since page origin differs); diag-stairs-trace2.cjs moved into
+  work/browser-tests/ and now starts it. Future probes are production-faithful by default.
+- Stairs-stall metric re-read with the worlds server up: runs {9, 13} but 11 of 13 at ONE
+  identical point (-22.78,9.32,-50.41), run1 clustered at two points. Repeated identical stallPts
+  = the walker WEDGES at fixed flight positions, a different signature from spread contention
+  points. Combined with earlier {1,5,8}: this metric cannot resolve startup contention.
+- New hypothesis (recorded, NOT proven): the wedge events look frame-rate dependent - under
+  SwiftShader the effective fps is very low and dt-based step logic may fail to mount stair lips.
+  Same class as the lotus terrain-step routing limit (queue item 2): movement robustness at low
+  fps / stair-lip geometry, not startup scheduling. Folded into item 2's investigation.
+- Residual longtasks after the fix: 55-355ms, evenly spaced, uncovered by any wrapped interval -
+  consistent with (not conclusively) SwiftShader rasterization; THREE prototype wraps did not
+  record (suspected frozen namespace), so first-render compile attribution is still open.
+- Startup-contention item status: mechanism-level slice landed (checkShaderErrors, 247fe1a);
+  the only discrete burst found was a probe artifact, now fixed; no further scheduling change is
+  justified by sandbox evidence. Remaining acceptance lives with the live-profiling ledger row.
