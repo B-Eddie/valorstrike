@@ -43,9 +43,13 @@ async function xvPreload() {
     const first = (window.J && window.J.pick) || 'Jett';
     const agents = Object.keys(XUB_AG).sort((a, b) => (a === first ? -1 : b === first ? 1 : 0));
     const idle = () => new Promise((r) => (window.requestIdleCallback || setTimeout)(r, 120));
-    for (const ag of agents) { try { await xvAgentLoad(ag); } catch (e) {} await idle(); }
-    for (const k of Object.values(XGM.F)) { try { await xvLoad(k.split('/').pop()); } catch (e) {} await idle(); }
+    for (const ag of agents) { if (XV.preloading === 'abort') return; try { await xvAgentLoad(ag); } catch (e) {} await idle(); }
+    for (const k of Object.values(XGM.F)) { if (XV.preloading === 'abort') return; try { await xvLoad(k.split('/').pop()); } catch (e) {} await idle(); }
   } finally { XV.preloading = 'done'; }
+}
+function xvReadyAgents() {
+  const one = (ag) => xvAgentLoad(ag).catch(() => xvAgentLoad(ag)); // one retry; a second failure rejects
+  return Promise.all(Object.keys(XUB_AG).map(one));
 }
 function xvFind(root, name) { const clean = (s) => String(s).replace(/[^a-zA-Z0-9_]/g, ''); let found = null; root.traverse((o) => { if (!found && clean(o.name) === clean(name)) found = o; }); return found; }
 function xvConstraints(root, config, fp) {
@@ -185,7 +189,7 @@ function xvMapCover(g) {
   }).catch(e=>{XV.failures.cover=String(e);});
 }
 {const use=useMap;useMap=function(n){const r=use.apply(this,arguments);try{xvMapCover(MAPS[n]&&MAPS[n].g);}catch(e){}return r;};}
-window.xValorantAssets={state:XV,load:xvLoad,loadAgent:xvAgentLoad,loadFP:xvFPLoad,scene,camera,renderer,agents:()=>XSOL.mx,probe:()=>({running,mode,agent:J.pick,weapon:fpaWeap(),nativeAgents:XSOL.mx.filter(m=>m.valorant).length,nativeFP:XV.fp&&XV.fp.ag+' '+XV.fp.w,failures:XV.failures})};
+window.xValorantAssets={state:XV,load:xvLoad,loadAgent:xvAgentLoad,loadFP:xvFPLoad,purgeCache:xvPurgeCache,readyAgents:xvReadyAgents,scene,camera,renderer,agents:()=>XSOL.mx,probe:()=>({running,mode,agent:J.pick,weapon:fpaWeap(),nativeAgents:XSOL.mx.filter(m=>m.valorant).length,nativeFP:XV.fp&&XV.fp.ag+' '+XV.fp.w,failures:XV.failures})};
 // Physical ability devices retain their gameplay roots, hit checks and timers.
 var XV_DEVICE = {};
 function xvDevice(m, slug, height, bottom) {
@@ -214,7 +218,34 @@ function xvSurfaces(){
 }
 {const go=xGo;xGo=function(){if(!XV.surfaces){XV.surfaces=true;xvSurfaces();}return go.apply(this,arguments);};}
 // ---- END VALORANT ASSET INTEGRATION ----
+
 // xvPreload kickoff: this block is spliced just before `xReady = true`, so boot is complete
 // here. Delay briefly so first paint and lobby setup are not competing with the fetch burst.
 setTimeout(() => { try { xvPreload(); } catch (e) {} }, 1200);
+
+// Match-start readiness: characters render native-only, so a match must not begin
+// before every agent rig it can spawn is actually loaded (mobile skips the lobby
+// preload). The wait rides the existing match loading screen via xMatchLoad; a
+// persistent failure aborts the start with the error toast instead of spawning
+// invisible opponents. The background preload aborts so the match's own asset
+// burst (map chunks) is not competing with it.
+setTimeout(() => {
+  try {
+    const prev = window.xMatchLoad;
+    if (typeof prev !== 'function' || prev.xvWrapped) return;
+    const wrapped = function (fn, map, mode, sync) {
+      return prev(function () {
+        XV.preloading = 'abort';
+        return xvReadyAgents().then(fn);
+      }, map, mode, sync);
+    };
+    wrapped.xvWrapped = 1;
+    window.xMatchLoad = wrapped;
+  } catch (e) {}
+}, 0);
+
+// Developer escape hatch: model files are immutable per deploy, so the persistent
+// store is keyed by URL only. After changing models, bump XV_STORE or run
+// xValorantAssets.purgeCache() once in the console to refetch.
+async function xvPurgeCache() { try { if (window.caches) await caches.delete(XV_STORE); } catch (e) {} }
 

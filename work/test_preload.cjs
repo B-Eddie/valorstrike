@@ -7,7 +7,7 @@ const fs=require('fs'),path=require('path'),assert=require('assert/strict');
  assert(a>=0&&b>a,'asset pipeline source found');
  const slice=src.slice(a,b);
  const mk=(env)=>new Function('window','caches','fetch','THREE','navigator','matchMedia','requestIdleCallback','setTimeout','XUB_AG','XGM','xvAgentLoad',
-   slice+';return {XV,xvFetch,xvLoad,xvJson,xvPreload};')(
+   slice+';return {XV,xvFetch,xvLoad,xvJson,xvPreload,xvReadyAgents};')(
    env.window,env.caches,env.fetch,env.THREE,env.navigator,env.matchMedia,undefined,setTimeout,env.XUB_AG,env.XGM,env.xvAgentLoad);
  const THREE={GLTFLoader:class{parse(buf,path,ok,err){ok({scene:{bytes:buf.byteLength},animations:[]});}}};
  const AG={Jett:['f'],Phoenix:['m'],Sova:['m'],Sage:['f'],Reyna:['f'],Raze:['f'],Cypher:['m'],Omen:['m'],Brimstone:['m'],Viper:['f'],Killjoy:['f'],Skye:['f']};
@@ -66,5 +66,31 @@ const fs=require('fs'),path=require('path'),assert=require('assert/strict');
   await api3.xvPreload();
   assert.equal(agents2.length,0,'coarse pointer skips preload');
  }
- console.log('asset pipeline: cache hit, fetch fallback, load dedupe, full preload order, mobile skip');
+ // 5. Match start aborts the background trickle; readiness gate retries once then rejects.
+ {
+  const agents=[];
+  let release;const gate=new Promise(r=>release=r);
+  const api=mk({window:{J:{}},caches:undefined,fetch:async()=>resp(new ArrayBuffer(4)),THREE,
+    navigator:{connection:{}},matchMedia:()=>({matches:false}),XUB_AG:AG,XGM:GUN,
+    xvAgentLoad:async(ag)=>{agents.push(ag);await gate;}});
+  const p=api.xvPreload();
+  await new Promise(r=>setTimeout(r,10));
+  api.XV.preloading='abort';release();
+  await p;
+  assert.equal(agents.length,1,'abort stops the preload loop after the in-flight item, got '+agents.length);
+  let calls=0;
+  const flaky=mk({window:{},caches:undefined,fetch:async()=>resp(new ArrayBuffer(4)),THREE,
+    navigator:{},matchMedia:()=>({matches:false}),XUB_AG:{Jett:['f']},XGM:GUN,
+    xvAgentLoad:async()=>{calls++;if(calls<2)throw new Error('flaky');}});
+  assert(flaky.xvReadyAgents,'readiness gate exposed');
+  await flaky.xvReadyAgents();
+  assert.equal(calls,2,'one retry per failing kit, got '+calls);
+  calls=0;
+  const broken=mk({window:{},caches:undefined,fetch:async()=>resp(new ArrayBuffer(4)),THREE,
+    navigator:{},matchMedia:()=>({matches:false}),XUB_AG:{Jett:['f']},XGM:GUN,
+    xvAgentLoad:async()=>{calls++;throw new Error('down');}});
+  await assert.rejects(broken.xvReadyAgents(),'persistent failure rejects so the match start aborts');
+  assert.equal(calls,2,'exactly initial + one retry, got '+calls);
+ }
+ console.log('asset pipeline: cache hit, fetch fallback, load dedupe, full preload order, mobile skip, match-start abort, readiness retry');
 })().catch(e=>{console.error(e);process.exit(1)});
