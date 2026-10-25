@@ -28,6 +28,8 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     grab('abilities', document.querySelector('#game .x-ab'));
     grab('hint', document.getElementById('hint'));
     grab('standings', document.querySelector('.x-dmlb'));
+    grab('comms', document.getElementById('xCmB'));
+    grab('toast', document.getElementById('toast'));
     document.querySelectorAll('#xT .tb').forEach(t => grab('tb:' + t.dataset.k, t));
     return out;
   });

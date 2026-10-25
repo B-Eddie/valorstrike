@@ -659,7 +659,7 @@ body.x-cbh #game{--ha:#3d8bff;--he:#ff9f1c}
   #game .x-top .x-sc b{min-width:32px;height:32px;font-size:18px}
   #game .x-top .x-tm{min-width:64px;font-size:18px}
   #game #xSub{top:48px;font-size:10px}
-  #game .hud.x-fw{top:100px;right:8px} /* below the C/Q/E/X touch row */#game #feed{font-size:11px}#game #feed .kf{height:24px;padding:0 8px}
+  #game .hud.x-fw{top:64px;right:8px} /* <=560h: under the scores strip + subtitle, above the touch ability row */#game #feed{font-size:11px}#game #feed .kf{height:24px;padding:0 8px}
   #game .hud.x-bl{left:8px;bottom:8px;transform:none;min-width:128px;height:48px;padding:0 8px 16px}
   #game .x-bl .x-hp{font-size:28px}#game .x-bl #xArm{font-size:16px}
   #game .x-vb{left:8px;right:8px}
@@ -729,6 +729,14 @@ body.x-cbh #game{--ha:#3d8bff;--he:#ff9f1c}
 .x-dmlb li span,.x-dmr li span{width:16px;opacity:.6}.x-dmlb em,.x-dmr em{font-style:normal}
 /* short landscape (640x360): the 173 px board at top:180px covered the credits/weapon/ammo block (top 264 px); compact it and sit it just above that block */
 @media (max-height:480px){.x-dmlb{top:auto;bottom:100px;width:150px;padding:5px 8px;font-size:11px;line-height:1.3}.x-dmlb__h{margin:0 0 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.x-dmlb li{padding:0}}
+@media (max-height:480px) and (orientation:landscape){
+  #game #feed{margin-top:0;max-height:28px} /* one row at <=480h: the strip above the ability row only fits one */
+  #xCmB{left:110px;top:124px;transform:none} /* docked right of the minimap column, between the ann band and the toast band */
+  #toast{top:260px;bottom:auto;left:140px;right:auto;margin:0;max-width:300px} /* #toast is a body child, not #game */ /* out of the left button column: bottom-center band above the vitals line, stacks under the death card */
+  #game .hud.x-fw{top:64px}
+  .x-dmlb{top:102px;bottom:auto;left:auto;right:8px;width:auto;max-width:44vw;padding:3px 8px} /* DM: leader + you ticker under the feed; the full table needs taller screens */
+  .x-dmlb li{display:none}.x-dmlb li:first-child,.x-dmlb li.me{display:flex}.x-dmlb__h{display:none}
+}
 .x-dmr{margin:12px auto 0;max-width:280px;text-align:left}
 
 .x-dmg__in{width:min(1100px,96vw);max-width:none;border-radius:0;padding:24px;background:rgba(11,22,30,.98);display:flex;flex-direction:column;overflow:hidden}.x-dmg__c{overflow-y:auto;min-height:0}.x-dmg__head,.x-dmg__f{flex-shrink:0}
@@ -10346,6 +10354,12 @@ let xTGOn = false; const xTG = { inPlay: () => false, relAll: () => {} };
   document.head.appendChild(st);
   const DEF = { fire: [84, 66, 78, "FIRE", "Fire"], jump: [94, 48, 58, "JUMP", "Jump"], duck: [94, 82, 54, "DUCK", "Duck"], reload: [74, 84, 48, "R", "Reload"], zoom: [73, 50, 50, "ZOOM", "Zoom"], swap: [84, 40, 48, "⇄", "Switch weapon"], pause: [50, 7, 44, "II", "Pause"], c: [62, 18, 46, "C", "Ability C"], q: [69, 18, 46, "Q", "Ability Q"], e: [76, 18, 46, "E", "Ability E"], x: [83, 18, 46, "X", "Ultimate X"], plant: [8, 42, 54, "4", "Plant or defuse (hold)"], use: [8, 58, 48, "F", "Use, pick up or capture (hold)"], buy: [8, 26, 50, "B", "Buy"], inspect: [66, 88, 40, "INS", "Inspect weapon"], ping: [63, 70, 44, "PING", "Ping"], drills: [50, 18, 48, "DRL", "Range drills"] };
   let L = {};
+  // Short landscape (<=480px tall: 568x320, 640x360, 844x390): grid measured against the real panel rects
+  // (hud-map probe): left column under the minimap (buy/plant/use), two 4-button rows right of the ann column
+  // (c/q/e + pause on top so pause stays off the death card, zoom/reload/jump/x below), fire right of them,
+  // duck/swap under, ping/inspect/drills default OFF (comms wheel covers callouts; re-enable in edit mode).
+  const DEFS = { fire: [94.2, 62, 58], jump: [77.6, 61.8, 38], duck: [60.7, 75.2, 38], reload: [69.2, 61.8, 38], zoom: [60.7, 61.8, 38], swap: [69.2, 75.2, 38], pause: [85.2, 48, 38], c: [60.7, 48, 38], q: [69.2, 48, 38], e: [77.6, 48, 38], x: [85.2, 61.8, 38], plant: [7.6, 57.6, 46], use: [7.6, 73.8, 46], buy: [7.6, 41.3, 46], inspect: [60.7, 93.5, 40], ping: [74.3, 93.5, 42], drills: [66.5, 93.5, 40] };
+  const DEFSOFF = { ping: 1, inspect: 1, drills: 1 };
   // Portrait (row 7, browser-placed at 360x740): thumb cluster at the bottom right between the abilities row (below the
   // buy-phase team panel) and the credits/ammo block, plant/use/buy down the left edge under COMMS, clear of the HP block.
   const DEFP = { fire: [76.4, 79.7, 72], jump: [91.7, 70.9, 52], duck: [93.1, 84.1, 50], reload: [54.2, 84.5, 44], zoom: [54.2, 73.6, 46], swap: [91.7, 62.2, 44], pause: [50.0, 12.2, 40], c: [34.7, 63.5, 44], q: [48.1, 63.5, 44], e: [61.4, 63.5, 44], x: [74.7, 63.5, 44], plant: [10.0, 77.0, 50], use: [10.0, 85.1, 46], buy: [10.0, 68.9, 46], inspect: [54.2, 96.2, 36], ping: [36.1, 73.0, 40], drills: [50.0, 20.3, 44] };
@@ -10360,7 +10374,7 @@ let xTGOn = false; const xTG = { inPlay: () => false, relAll: () => {} };
       P.forEach(clamp); if (!any) break; }
     if (moved) P.forEach((p) => { L[p.k].x = p.x / w * 100; L[p.k].y = p.y / h * 100; }); return moved; };
   let custom = false, lastWH = "";
-  const reset = () => { L = {}; const D = innerHeight > innerWidth ? DEFP : DEF; for (const k in DEF) { const d = D[k] || DEF[k]; L[k] = { x: d[0], y: d[1], s: d[2], off: false }; } fit(innerWidth, innerHeight); custom = false; lastWH = innerWidth + "x" + innerHeight; };
+  const reset = () => { L = {}; const D = innerHeight > innerWidth ? DEFP : (innerHeight <= 480 ? DEFS : DEF); for (const k in DEF) { const d = D[k] || DEF[k]; L[k] = { x: d[0], y: d[1], s: d[2], off: D === DEFS && !!DEFSOFF[k] }; } fit(innerWidth, innerHeight); custom = false; lastWH = innerWidth + "x" + innerHeight; };
   reset();
   const T = document.createElement("div"); T.id = "xT";
   T.innerHTML = '<div id="xJ"><i></i></div>' + Object.keys(DEF).map((k) => `<button class="tb" data-k="${k}" aria-label="${DEF[k][4]}">${DEF[k][3]}</button>`).join("") +
