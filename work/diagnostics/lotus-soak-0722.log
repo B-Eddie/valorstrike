@@ -1,0 +1,13 @@
+2s booted
+5s five on {"map":"lotus","atk":true,"nAllies":4,"nBots":5}
+16s ally deaths/alive: 4 -> 2 t: 89 sp: carry
+18s ally deaths/alive: 2 -> 0 t: 87 sp: drop
+26s t: 79 enemies: 5 allies: 0 sp: {"st":"drop","x":-13.267666614090729,"z":-0.18531476397644586,"site":"B"}
+46s t: 59 enemies: 5 allies: 0 sp: {"st":"drop","x":-13.267666614090729,"z":-0.18531476397644586,"site":"B"}
+66s t: 39 enemies: 5 allies: 0 sp: {"st":"drop","x":-13.267666614090729,"z":-0.18531476397644586,"site":"B"}
+76s round clock shortened to 12s to observe round end
+86s t: 2 enemies: 5 allies: 0 sp: {"st":"drop","x":-13.267666614090729,"z":-0.18531476397644586,"site":"B"}
+88s match stopped, sp: {"st":"drop","x":-13.267666614090729,"z":-0.18531476397644586,"site":"B"}
+ISSUES: none
+FIVE-SOAK PASS
+ERRORS []

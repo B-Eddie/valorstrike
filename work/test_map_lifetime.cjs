@@ -2,7 +2,7 @@ const fs=require('fs'),vm=require('vm'),assert=require('assert/strict');
 const source=fs.readFileSync(__dirname+'/native_maps_runtime.js','utf8');
 const body=source.slice(source.indexOf('function nmCancel('),source.indexOf('// Disconnected decorative'));
 function fixture(){let resolveScene,resolveCollision,freed=[],timers=[],hidden=0;
- const c={window:{xCancelMatchLoad:()=>hidden++},NM:{ticket:0,current:null,pending:null},Promise,Error,AbortController,console:{error(){}},setTimeout:f=>(timers.push(f),timers.length),clearTimeout(){},nmOverlay(){},nmFree:r=>freed.push(r),nmCollision:()=>new Promise(r=>resolveCollision=r),THREE:{Group:class{},LoadingManager:class{},GLTFLoader:class{loadAsync(){return new Promise(r=>resolveScene=r);}}},fetch:async()=>({ok:true,json:async()=>({})})};
+ const c={location:{hostname:'127.0.0.1'},window:{xCancelMatchLoad:()=>hidden++},NM:{ticket:0,current:null,pending:null},Promise,Error,AbortController,console:{error(){}},setTimeout:f=>(timers.push(f),timers.length),clearTimeout(){},nmOverlay(){},nmFree:r=>freed.push(r),nmCollision:()=>new Promise(r=>resolveCollision=r),THREE:{Group:class{},LoadingManager:class{},GLTFLoader:class{loadAsync(){return new Promise(r=>resolveScene=r);}}},fetch:async()=>({ok:true,json:async()=>({})})};
  vm.createContext(c);vm.runInContext(body,c);return {c,freed,timers,scene:r=>resolveScene(r),geometry:r=>resolveCollision(r),get hidden(){return hidden;}};
 }
 (async()=>{
