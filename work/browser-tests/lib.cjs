@@ -17,13 +17,22 @@ function serve(port = 8876) {
   });
   return new Promise(r => srv.listen(port, '127.0.0.1', () => r(srv)));
 }
-async function launch({heavy = false, viewport = {width:960, height:600}} = {}) {
+async function launch({heavy = false, profile = null, viewport = {width:960, height:600}} = {}) {
   const b = await chromium.launch({headless:true, executablePath:'/usr/bin/google-chrome',
     args:['--no-sandbox','--use-gl=angle','--use-angle=swiftshader','--disable-dev-shm-usage','--enable-unsafe-swiftshader','--mute-audio']});
   const p = await b.newPage({viewport});
-  if (!heavy) {
+  const prof = profile || (heavy ? 'heavy' : 'light');
+  if (prof === 'light') {
     // Allow map assets (needed for match start); block heavy agent/weapon GLBs and textures.
     await p.route(/\.(glb|png|jpg|jpeg|bin)(\?|$)/, r => {
+      const u = r.request().url();
+      if (u.includes('/maps/')) return r.continue();
+      return r.abort();
+    });
+  } else if (prof === 'mid') {
+    // Native agent/weapon rigs allowed (local, parse-cheap); loose textures and
+    // map scene buffers still blocked (light map path never requests them).
+    await p.route(/\.(png|jpg|jpeg|bin)(\?|$)/, r => {
       const u = r.request().url();
       if (u.includes('/maps/')) return r.continue();
       return r.abort();
