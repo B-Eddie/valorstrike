@@ -256,6 +256,14 @@ floor contact retained as NUMERIC evidence only (flat bg has no ground reference
   pickup list (free-guns mode: HUD "FREE GUNS (WHEN SAFE)") - consistent with Valorant DM rules
   but asserted from code + game-rules reasoning, not user-approved scope. No DM change made.
 
+
+## 2026-10-25 09:26 - transient-overlay stacking (d80e8ff)
+- max-height:560px media block: compact centered death card, toast bottom:150/padding 10px 18px, .x-ann top:10% (rnd 16%).
+- Global: body:has(.x-kb.on .x-kb__h) #hint{display:none} - #hint (bottom:112) collided with the death card (bottom:60+87) at every viewport when dying early-round; card lives on document.body, not #game.
+- Probe: work/browser-tests/diag-boxes.cjs dumps overlay bounding boxes at death at any VW/VH.
+- Verified 568x320 + 640x360 captures (all layers co-visible, no collisions, hint hidden); 42/42 client suites green post-change. Reported to parent with both captures.
+- Known minor (deferred): kill-feed row 1 overlaps sub-strip right end at 568x320 for a few seconds (both transient).
+
 ## NEXT (queued 08:56 EDT)
 1. Online two-client PROTOCOL check (label: protocol evidence, not rendered two-human
    acceptance): `npm run dev` (wrangler local :8787, ALLOW_LOCAL_ORIGIN) + a ws script in the
