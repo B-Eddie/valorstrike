@@ -243,3 +243,15 @@ floor contact retained as NUMERIC evidence only (flat bg has no ground reference
   frames (no detachment); fine aim-stance geometry not conclusively judgeable at this zoom -
   numeric test_grip.cjs (muzzle-forward/upright/palm-seat/rigid, 3 agents) remains the
   primary evidence. diag-grip.cjs.
+
+## Spectate camera/target verification + pickup scope correction (08:55 EDT)
+- #3 extended: after death, 1P view shows observer panel for the target (Phoenix card, hp 0 me);
+  toggle click -> 3P on-state; spectate HUD tracks TARGET state (SPECTATING SOVA, hp 100,
+  Sheriff 6/18); Space switches target (SOVA -> RAZE). Target body-in-frame still NOT readable
+  in light profile (flat scene, target facing open ground; distant figures at horizon) - camera
+  follow proven at state level, not pixels. diag-spectate.cjs.
+- PICKUP SCOPE CORRECTION: xdOn gates only the OFFLINE 5v5 list; xdFloorList() returns the
+  server-authoritative netFloor when NET.socket && MP.st==='game' && MP.m5 - online pickup UI
+  goes through the same #xdPrompt. So pickup availability = offline 5v5 + online m5. DM has no
+  pickup list (free-guns mode: HUD "FREE GUNS (WHEN SAFE)") - consistent with Valorant DM rules
+  but asserted from code + game-rules reasoning, not user-approved scope. No DM change made.

@@ -27,16 +27,19 @@ const {serve, launch, boot} = require('./lib.cjs');
     console.log(el(), 'spectate button present:', dead);
     if (!dead) throw new Error('player never died / no spectate UI');
     await new Promise(r => setTimeout(r, 2500)); // past any death-cam delay
-    const before = await p.evaluate(() => { const el2 = document.querySelector('.x-sp__tp');
-      return el2 ? {aria: el2.getAttribute('aria-pressed'), text: el2.textContent.trim().slice(0,40), cls: el2.className} : null; });
-    console.log(el(), 'before click:', JSON.stringify(before));
-    await p.screenshot({path: '/downloads/spectate-before.png'});
+    const name = () => p.evaluate(() => { const els = [...document.querySelectorAll('body *')].filter(e => e.children.length === 0 && /SPECTATING/i.test(e.textContent || '')); return els.length ? els[0].textContent.trim() : null; });
+    await p.screenshot({path: '/downloads/spec-1p.png'});
+    console.log(el(), '1P:', JSON.stringify(await name()));
     await p.click('.x-sp__tp');
-    await new Promise(r => setTimeout(r, 1200));
+    await new Promise(r => setTimeout(r, 1500));
     const after = await p.evaluate(() => { const el2 = document.querySelector('.x-sp__tp');
-      return el2 ? {aria: el2.getAttribute('aria-pressed'), text: el2.textContent.trim().slice(0,40), cls: el2.className} : null; });
-    console.log(el(), 'after click:', JSON.stringify(after));
-    await p.screenshot({path: '/downloads/spectate-3p.png'});
+      return el2 ? {aria: el2.getAttribute('aria-pressed'), text: el2.textContent.trim().slice(0,40)} : null; });
+    console.log(el(), 'after toggle:', JSON.stringify(after));
+    await p.screenshot({path: '/downloads/spec-3p.png'});
+    await p.keyboard.press('Space'); // switch spectated player
+    await new Promise(r => setTimeout(r, 1500));
+    console.log(el(), 'after switch:', JSON.stringify(await name()));
+    await p.screenshot({path: '/downloads/spec-switch.png'});
     console.log(el(), 'SPECTATE DONE');
   } catch (e) { console.log(el(), 'PROBE-FAIL', String(e).slice(0, 200)); }
   finally { console.log('ERRORS', JSON.stringify(errors.slice(0,6))); await b.close(); srv.close(); }
