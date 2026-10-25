@@ -10431,7 +10431,7 @@ let xTGOn = false; const xTG = { inPlay: () => false, relAll: () => {} };
     B.buy.classList.toggle("hid", !(mode === "five" && (FV.buy > 0 || FV.dm)));
     B.zoom.classList.toggle("hid", mode === "surf");
     B.drills.classList.toggle("hid", mode !== "aim");
-    B.plant.classList.toggle("hid", !(mode === "retake" || mode === "five"));
+    B.plant.classList.toggle("hid", !(mode === "retake" || (mode === "five" && !FV.dm))); // no Spike in deathmatch / TDM / Escalation
     ["c", "q", "e", "x"].forEach((k) => B[k].classList.toggle("hid", !ab));
     B.swap.classList.toggle("hid", mode === "surf");
   })();
