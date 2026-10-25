@@ -226,3 +226,57 @@ Harness: `server/tools/soak.mjs` (in-process worker, bots + fuzzing humans, inva
 - Not covered / left: rendered browser (no Chromium on this branch); how the Ascent bot got wedged 2.5 m up is unknown;
   the soak's Spike `kills` stat counts only snapshot kill events and reads low next to round outcomes. The room still
   drops a client that has not finished loading after 180 s (it no longer holds the round).
+
+## Gameplay QA pass 3 (motor wall-climb, Spike ult ownership, slow loads, client frame checks, DM seats)
+
+- **Motor wall-climb** (`1284d13`): the bot found wedged 2.5 m up an Ascent building in pass 2 got there by jumping into
+  the corner at (-55.6, -22.1). The capsule crept to the wall at exactly `blocked()`'s .388 tolerance, the "descending
+  beside a riser" clamp held it mid-air, contact counted as support, and each new jump rose with no collision test.
+  Shared motor (server/src/motor.cjs == vendor/valorant-feel.js): rises stop at geometry, vertical probes use a 2 cm
+  thinner capsule, support needs a floor under the footprint and the unit not inside geometry. Jump-into-wall scan:
+  296 embedded samples -> 0. Test: test-soak.js 2c.
+- **Spike ultimate / utility ownership** (`7cc455c`, found by the ults scenario soak):
+  1. A leaver's live utility (Showstopper rocket, turret, Nanoswarm, Boom Bot, Lockdown windup ...) kept the removed
+     unit's id as owner, so its kills had no kill event, score, credits or ult point. `takeOver` now hands it to the
+     seat bot (alive or not) and carries Tour de Force / Headhunter / Run It Back and statuses (detain, slow, blind ...)
+     with the body. A joiner on that team adopts any orphaned utility; a kill with no owner left still reaches the
+     feed (`['k','',victim]`).
+  2. Run It Back: dying inside the window dropped Phoenix's gun on the floor (he came back without it), and a round
+     ending while he was down stripped his gear. Neither happens now.
+  Tests: test-ults.js (new blocks after Run It Back).
+- **Soak Spike invariants** (`bf6c3a0`): tools/soak-checks.mjs checks the economy at round end, carry-over at round
+  start (halftime reset included), that detained units never fire, Run It Back windows, owned weapons, and a kill event
+  or known cause for every death. New `abilities` / `ults` scenarios make bots and fuzzers spend utility and ults
+  constantly, aimed at enemies. test-soak.js runs a Bind ults and a Lotus abilities soak.
+- **Soak reproducibility / "room was not created" flake** (`bf6c3a0`, `648f270`): world loading (real file I/O) and
+  `hi` authentication (real async crypto) ran while the virtual clock advanced, so under machine load a create could
+  outlast the 5 virtual s wait, and a seed did not replay the same match (ability soak deaths varied 0 to 3 run to run).
+  The harness now holds the virtual clock while a create loads (up to 120 s real) and while any `hi` is authenticating.
+  Two parallel runs of the test-soak ability soaks now give identical stats.
+- **Slow match loads** (`ce0a726`): a client still loading after 180 s was dropped as 'Connection idle' even while it was
+  making progress. The page now reports progress (`lp`, every 5 s: agent-model and map-asset fractions) and the room
+  keeps the seat while reports arrive (within 20 s) and the progress moves (within 120 s), never past 10 min. A load
+  that does expire closes with 'Load timed out', and the page says so. The page's own start wait (`mpWaitStart`) uses the
+  same rule instead of a flat 180 s. Tests: test-background.js 4b, test_client_online.cjs (slow-load phase).
+- **Server frame checks on the client** (`ce0a726`): `netClean` in work/server_runtime.js shape-checks every server frame
+  before the page stores or replays it (the frame loop re-reads `NET.latest` and round state, so one malformed snapshot
+  threw on every frame). The handler has a last-resort try/catch that counts fallbacks. The long fuzz (seed 1) hit that
+  guard twice:
+  1. `end`: `ev` was a number; `mpCliMsg` replays `end` through `mpCliSnap` (`for (const v of m.ev)`). `end` and `re` now
+     get the full snapshot cleaning (u, k, d, ev, fx, fw, tl), and `end.over` must be a string or null.
+  2. `rs`: `reyna.souls` was not a list (or a soul had no `p`). `netReynaSync` maps the souls and spreads `p`. Round state
+     (alone or inside `start` / `ao`) now checks `reyna.souls` (objects with an id and a 3-number `p`), `channel`,
+     `ab.cool`, `ab.anchor`.
+  `QA_LONG=1 SEED=1 node work/test_client_fuzz.cjs`: 400 sequences, 13.6k messages, 298 reach a live match, 0 guard
+  fallbacks, no exceptions. The fast variant (70 sequences) runs in test_all.
+- **DM seat-taker** (`648f270`, soak 13): a human joining a full DM room took the replaced bot's team id, and with it that
+  bot's score row (points it never scored). Each DM unit now has its own side. The soak checks every DM unit's row
+  equals its kills, and reports DM scores by name (the "scores array with nulls" was the sparse per-unit-id array, not a
+  defect in itself). Test: test-soak.js 6d. The DM violations in the first soak-13 run were not kept (the log was
+  overwritten by the rerun). The rerun after the motor fix (all maps x modes, 300 s, 4 humans) was clean 18/18, and so
+  was DM on all maps after this fix.
+- Soak 12 (all maps, Spike, ults and abilities scenarios, 400 s, run on the working tree with the ownership and Run It
+  Back fixes): 12/12 clean.
+- Flaky, not fixed: test_client_online.cjs fast TDM once failed "page player killed and died (0/5)" under heavy load
+  (load average ~6 on 2 CPUs, another agent's suite running). It passed alone and on the retry. The piloted fight has a
+  60 s virtual window and is not seeded end to end.
