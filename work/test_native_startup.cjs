@@ -14,7 +14,7 @@ vm.createContext(c);vm.runInContext(s.slice(a,b),c);
   const html=fs.readFileSync(__dirname+'/../index.html','utf8');
   for(const gone of ['Soldier.glb','models/agent_m.glb','models/agent_f.glb','models/agent_anims.glb','function xSolLoad','function xUbLoad','function xSol(','function xUb(','function xSolKit','function xUbKit'])assert(!html.includes(gone),'removed: '+gone);
   const xa=html.slice(html.indexOf('function xAgent(name, rim, w) {'),html.indexOf('const XDEAD = [];'));assert(xa.length>100);
-  assert(!/new THREE\.Mesh\(/.test(xa.replace('new THREE.Mesh(new THREE.RingGeometry','')),'xAgent builds no body meshes (team ring only)');assert(!/\bgB\(/.test(xa),'no primitive boxes');
+  assert(!/new THREE\.Mesh\(/.test(xa.replace('new THREE.Mesh(new THREE.RingGeometry','').replace('new THREE.Mesh(xG("Ring"','')),'xAgent builds no body meshes (team ring only)');assert(!/\bgB\(/.test(xa),'no primitive boxes');
   const lobby=html.slice(html.indexOf('// lobby showcase:'),html.indexOf('// ---- visual models'));assert(!lobby.includes('xAgent('),'lobby shows no placeholder build');assert(lobby.includes('xvAgentWaitLabel'),'lobby shows load progress');
   console.log('Native agents attach synchronously from cache, wait hidden (no stand-in) otherwise; Soldier/Quaternius/primitive bodies and lobby placeholder removed');
 })().catch(e=>{console.error(e);process.exit(1)});

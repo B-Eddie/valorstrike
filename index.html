@@ -3529,7 +3529,7 @@ function xAgent(name, rim, w) {
   const lL = hip(0.12), lR = hip(-0.12);
   const arm = (x) => { const a = new THREE.Group(); a.position.set(x, 1.47, 0); bd.add(a); return a; };
   const aL = arm(0.31), aR = arm(-0.31);
-  const ring = new THREE.Mesh(new THREE.RingGeometry(0.42, 0.48, 24), rimM); ring.rotation.x = -Math.PI / 2; ring.position.y = 0.02; ring.raycast = XNR; m.add(ring);
+  const ring = new THREE.Mesh(xG("Ring", 0.42, 0.48, 24), rimM); ring.rotation.x = -Math.PI / 2; ring.position.y = 0.02; ring.raycast = XNR; m.add(ring); // shared geometry: a fresh ring per unit per round was orphaned on the GPU when the unit's model was dropped
   const g = xGun(w); g.rotation.y = Math.PI; g.position.set(-0.1, 1.22, 0.32); bd.add(g);
   aR.rotation.set(-1.35, 0, 0.15); aL.rotation.set(-1.25, 0, -0.55);
   const hd = new THREE.Group(); hd.position.set(0, 1.55, 0); bd.add(hd); // head pivot at the neck so the head can pitch with the aim
@@ -6954,21 +6954,25 @@ function xLotusTick() { // no allocations per frame
 const HAVEN_CALL = []; XCALL.clear(); XCALL.add(...ASC_CALL);
 FV.pick = "ascent"; FV.map = "ascent";
 const F_MAPN = { ascent: "Ascent", bind: "Bind", haven: "Haven", split: "Split", lotus: "Lotus", breeze: "Breeze" };
+// Free a lazily built map on switch (rebuilt next time it is picked). Freeing only its geometry left every switch's canvas
+// textures (callout labels, plaques, the map's own surfaces) and materials on the GPU, the callout sprites' too (they live in
+// XCALL, not the map group), and XD_STAT[k].g / XF_STAT[k].g kept the whole old group (and its source geometries) reachable.
+// Anything still drawn by the rest of the scene (shared materials / textures, Bind's BT) is kept.
+function xFreeMap(k, call) {
+  const o = FMAP[k], keepT = new Set(), keepM = new Set(), texOf = (m, f) => { for (const n in m) { const t = m[n]; if (t && t.isTexture) f(t); } };
+  try { scene.remove(o.g); for (const c of call) if (c.parent) c.parent.remove(c);
+    scene.traverse((m) => { [].concat(m.material || []).forEach((mt) => { keepM.add(mt); texOf(mt, (t) => keepT.add(t)); }); });
+    const free = (m) => { if (m.geometry && !m.geometry.userData.shared) m.geometry.dispose();
+      [].concat(m.material || []).forEach((mt) => { if (!mt || keepM.has(mt) || (mt.userData && mt.userData.xdShared)) return; texOf(mt, (t) => { if (!keepT.has(t) && !(t.userData && t.userData.shared)) t.dispose(); }); mt.dispose(); }); };
+    o.g.traverse(free); for (const c of call) c.traverse(free); } catch (e) {}
+  const g = xMG(); g.visible = false; scene.add(g); FMAP[k] = { g, solids: [], boxes: [] }; call.length = 0; try { delete XD_STAT[k]; delete XF_STAT[k]; } catch (e) {}
+}
 function fUseMap() { // point MAPS.five at the picked map, move the spike + callouts + sites over
   xBuildMap(FV.map); const fm = FMAP[FV.map]; for (const k in FMAP) if (k !== FV.map) FMAP[k].g.visible = false; MAPS.five = fm;
   fm.g.add(fsM); fm.g.add(XCALL); XCALL.clear(); XCALL.add(...(FV.map === "bind" ? BIND_CALL : FV.map === "haven" ? HAVEN_CALL : FV.map === "split" ? SPLIT_CALL : FV.map === "lotus" ? LOTUS_CALL : FV.map === "breeze" ? BREEZE_CALL : ASC_CALL)); delete mmB.five;
-  if (FV.map !== "breeze" && FMAP.breeze.built) { // perf: same as Split / Lotus, free Breeze GPU geometry on switch
-    const o = FMAP.breeze; try { scene.remove(o.g); o.g.traverse((m) => { if (m.geometry && !m.geometry.userData.shared) m.geometry.dispose(); }); } catch (e) {}
-    const g = xMG(); g.visible = false; scene.add(g); FMAP.breeze = { g, solids: [], boxes: [] }; BREEZE_CALL.length = 0;
-  }
-  if (FV.map !== "lotus" && FMAP.lotus.built) { // perf: same as Split, free Lotus GPU geometry on switch
-    const o = FMAP.lotus; try { scene.remove(o.g); o.g.traverse((m) => { if (m.geometry && !m.geometry.userData.shared) m.geometry.dispose(); }); } catch (e) {}
-    const g = xMG(); g.visible = false; scene.add(g); FMAP.lotus = { g, solids: [], boxes: [] }; LOTUS_CALL.length = 0;
-  }
-  if (FV.map !== "split" && FMAP.split.built) { // perf: Split is the largest map; free its GPU geometry on switch and rebuild lazily next time
-    const o = FMAP.split; try { scene.remove(o.g); o.g.traverse((m) => { if (m.geometry && !m.geometry.userData.shared) m.geometry.dispose(); }); } catch (e) {}
-    const g = xMG(); g.visible = false; scene.add(g); FMAP.split = { g, solids: [], boxes: [] }; SPLIT_CALL.length = 0; SROPES = null;
-  }
+  if (FV.map !== "breeze" && FMAP.breeze.built) { xFreeMap("breeze", BREEZE_CALL); } // perf: same as Split / Lotus, free Breeze on switch
+  if (FV.map !== "lotus" && FMAP.lotus.built) { xFreeMap("lotus", LOTUS_CALL); } // perf: same as Split, free Lotus on switch
+  if (FV.map !== "split" && FMAP.split.built) { xFreeMap("split", SPLIT_CALL); SROPES = null; } // perf: Split is the largest map; free it on switch and rebuild lazily next time
   if (FV.map === "lotus") { SITES.A = LSITES.A; SITES.B = LSITES.B; SITES.C = LSITES.C; } else if (FV.map === "breeze") { SITES.A = BZSITES.A; SITES.B = BZSITES.B; delete SITES.C; } else if (FV.map === "split") { SITES.A = SSITES.A; SITES.B = SSITES.B; delete SITES.C; } else if (FV.map === "haven") { SITES.A = HSITES.A; SITES.B = HSITES.B; SITES.C = HSITES.C; } else if (FV.map === "ascent") { SITES.A = ASC_SITES.A; SITES.B = ASC_SITES.B; delete SITES.C; } else { SITES.A = [-20, -21]; SITES.B = [20, -21]; delete SITES.C; }
 }
 function mpSet(m) {
