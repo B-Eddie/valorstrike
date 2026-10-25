@@ -10606,8 +10606,11 @@ function tdmAb() { // abilities: charges refill every 40 s, for you and every bo
 function tdmTick(dt) {
   if (window.xLdOn) dt = 0; // loading screen up: clock frozen
   for (const a of allies) if (!a.alive) { if (!a.drt) a.drt = 1.5; a.drt -= dt; if (a.drt <= 0) { dmSpawnB(a); a.ox = a.g.position.x; } }
-  const t = tdmTier(); if (t !== DM.tier) { DM.tier = t; say(t === 1 ? "Rifles & shotguns unlocked · B" : "Snipers & machine guns unlocked · B", 1600); if (DM.menu) dmMR(); }
+  tdmTierTick();
   if ((DM.abT -= dt) <= 0) { tdmAb(); feed("Ability charges refilled"); }
+}
+function tdmTierTick() { // tiers unlock by elapsed match time (120 s, 300 s), the same rule as the server's weaponAllowed
+  const t = tdmTier(); if (t !== DM.tier) { const up = t > (DM.tier || 0); DM.tier = t; if (up) say(t === 1 ? "Rifles & shotguns unlocked · B" : "Snipers & machine guns unlocked · B", 1600); if (DM.menu) dmMR(); }
 }
 function tdmTS() { if (!DM.ts) return; const T = tdmTot(), s = '<b class="t">' + T[0] + '</b><span>FIRST TO ' + DM.win + '</span><b class="r">' + T[1] + '</b>'; if (s !== DM.tsS) { DM.tsS = s; DM.ts.innerHTML = s; } }
 function dmUI() {
@@ -10674,7 +10677,7 @@ function dmLive(b) {
   b.g.visible = true;
 }
 function dmSpawnP() {
-  const [x, z] = dmSpot(player); Object.assign(player, { x, z, hp: 100, armor: 50, y: 0, vy: 0 }); yaw = Math.atan2(x, z); pitch = 0;
+  const [x, z] = dmSpot(player); Object.assign(player, { x, z, hp: 100, armor: 50, y: 0, vy: 0, vx: 0, vz: 0, ch: 0, st: 0, air: false }); yaw = Math.atan2(x, z); pitch = 0;
   DM.pp = performance.now() + 2000; DM.prt = 0; dmAmmo(); try { xKLReset(); } catch (e) {} setScope(false); updHud();
 }
 function dmScore(by, victim) {
@@ -10756,9 +10759,15 @@ function dmStart0() {
   resize(); setScope(false); running = true; clock.getDelta(); updHud(); relock(); dmUI(); dmLB();
   say((FV.tdm ? "Team Deathmatch · first team to " : "Deathmatch · first to ") + DM.win + " kills · B for guns", 2000);
 }
-{ const h0 = hurt; hurt = function (t, n, by) { if (mode === "five" && FV.dm && t) { const now = performance.now(); if ((t === player ? DM.pp : t.pp) > now) return; if (t === player) { DM.ph = now; if (DM.menu) dmMenu(false); } } return h0(t, n, by); }; }
+// Spawn protection (2 s, DM/TDM) ends when the protected unit attacks, as on the server (simulation.js: firing sets protectedUntil = 0):
+// the player on any shot or swing, a bot or ally when it lands an attack. Online the client mirrors the server's window for the HUD.
+function dmUnprot(by) { if (!by || by === "You") return; for (const L of [bots, allies]) for (const u of L) if (u && u.name === by) { if (u.pp) u.pp = 0; return; } }
+{ const s0 = shoot; shoot = function (hv) { const f = fcd, k = kSwing, a = ammo, r = s0.apply(this, arguments); if (mode === "five" && FV.dm && DM.pp && (fcd !== f || kSwing !== k || ammo !== a)) DM.pp = 0; return r; }; }
+function dmProtHud() { const on = running && mode === "five" && FV.dm && !!player && player.hp > 0 && DM.pp > performance.now(); let e = DM.prEl; if (!e) { if (!on) return; e = DM.prEl = document.createElement("div"); e.className = "x-dmprot"; e.setAttribute("role", "status"); e.textContent = "SPAWN PROTECTED"; e.style.cssText = "position:fixed;left:50%;top:62%;transform:translateX(-50%);padding:4px 12px;font:700 12px/1.4 Arial,sans-serif;letter-spacing:.12em;color:#9ffff0;background:rgba(15,25,35,.55);border:1px solid rgba(159,255,240,.45);pointer-events:none;z-index:40"; document.body.appendChild(e); } if (on !== !e.hidden) e.hidden = !on; }
+(window.XHK || (window.XHK = [])).push(dmProtHud);
+{ const h0 = hurt; hurt = function (t, n, by) { if (mode === "five" && FV.dm && t) { const now = performance.now(); dmUnprot(by); if ((t === player ? DM.pp : t.pp) > now) return; if (t === player) { DM.ph = now; if (DM.menu) dmMenu(false); } } return h0(t, n, by); }; }
 { const k0 = kill; kill = function (b, hs, by, w) { const was = !!(b && b.alive); k0(b, hs, by, w); if (mode === "five" && FV.dm && was && !b.alive) { b.drt = 1.5; dmScore(by || "You", b.name); } }; }
-{ const p0 = pDie; pDie = function (by, w) { p0(by, w); if (mode === "five" && FV.dm && player && player.hp <= 0 && !(DM.prt > 0)) { DM.prt = 1.5; if (DM.menu) dmMenu(false); dmScore(by, "You"); } }; }
+{ const p0 = pDie; pDie = function (by, w) { p0(by, w); if (mode === "five" && FV.dm && player && player.hp <= 0 && !(DM.prt > 0)) { DM.prt = 1.5; DM.pp = 0; if (DM.menu) dmMenu(false); dmScore(by, "You"); say("You died · respawning", 1400); } }; }
 { const ad0 = allyDie; allyDie = function (a, by, w) { const was = !!(a && a.alive); ad0(a, by, w); if (mode === "five" && FV.dm && FV.tdm && was && !a.alive) { a.drt = 1.5; dmScore(by || "Enemy", a.name); } }; }
 { const e0 = end; end = function (win, text) { if (mode === "five" && FV.dm) return; return e0(win, text); }; }
 // guard: no 5v5 round reset in deathmatch (fSpawn would scene.remove every DM bot and spawn 5v5 teams)
@@ -11232,7 +11241,7 @@ function mpCliStart(m) {
       const ally = tdm && e[1] === m.team, u = mpMkUnit(e, ally); (ally ? allies : bots).push(u); (ally ? ma : en).push(u.name);
     }
     try { sbReset(en, ma); } catch (e) {}
-    DM.k = {}; DM.d = {}; mpCliKD(m.k, m.d); timeLeft = m.tl; DM.len = m.len || DM.len; DM.win = m.win || DM.win; DM.over = null;
+    DM.k = {}; DM.d = {}; mpCliKD(m.k, m.d); timeLeft = m.tl; DM.len = m.len || DM.len; DM.win = m.win || DM.win; DM.over = null; DM.tier = tdm ? tdmTier() : 0; DM.pp = 0;
     try { dmLB(); if (tdm) tdmTS(); updHud(); } catch (e) {}
     mpUI(); say("Online " + (tdm ? "Team Deathmatch" : "Deathmatch") + " · " + (MP.pub ? "public match" : "room " + MP.code), 2200);
   }, () => { if (MP.role === "client") mpLost("The match couldn't start."); });
@@ -11269,9 +11278,9 @@ function mpCliSnap(m) {
 }
 function mpCliSelf(e) {
   if (e[14] !== MP.sq && MP.m5) { MP.sq = e[14]; mpCliRound5(e); }
-  else if (e[14] !== MP.sq) { MP.sq = e[14]; player.x = e[4]; player.z = e[6]; player.y = 0; player.vy = 0; player.vx = player.vz = 0; yaw = Math.atan2(e[4], e[6]); pitch = 0; player.hp = 100; player.armor = 50; try { dmAmmo(); xKLReset(); setScope(false); } catch (er) {} updHud(); }
-  if (e[10]) { if (e[8] < player.hp - 0.5) { try { $("dmg").style.opacity = 1; setTimeout(() => $("dmg").style.opacity = 0, 150); } catch (er) {} } if (player.hp > 0 || e[8] > 0) { player.hp = e[8]; player.armor = e[9]; } }
-  else if (player.hp > 0) { player.hp = 0; reloading = 0; fireHeld = false; try { setScope(false); } catch (er) {} }
+  else if (e[14] !== MP.sq) { const first = !MP.sq; MP.sq = e[14]; player.x = e[4]; player.z = e[6]; player.y = 0; player.vy = 0; player.vx = player.vz = 0; player.ch = 0; yaw = Math.atan2(e[4], e[6]); pitch = 0; player.hp = 100; player.armor = 50; if (!first && FV.dm) DM.pp = performance.now() + 2000; try { dmAmmo(); xKLReset(); setScope(false); } catch (er) {} updHud(); } // server spawn: 2 s protection until you fire
+  if (e[10]) { if (e[8] < player.hp - 0.5) { DM.ph = performance.now(); try { if (DM.menu) dmMenu(false); $("dmg").style.opacity = 1; setTimeout(() => $("dmg").style.opacity = 0, 150); } catch (er) {} } if (player.hp > 0 || e[8] > 0) { player.hp = e[8]; player.armor = e[9]; } }
+  else if (player.hp > 0) { player.hp = 0; reloading = 0; fireHeld = false; DM.pp = 0; try { setScope(false); if (DM.menu) dmMenu(false); if (FV.dm) say("You died · respawning", 1400); } catch (er) {} }
   updHud();
 }
 function mpCliMsg(m) {
@@ -11302,7 +11311,7 @@ function mpCliMsg(m) {
   if (MP.cl && MP.st === "game" && mode === "five" && MP.m5) return mpCliTick5(dt);
   if (MP.cl && MP.st === "game" && mode === "five" && FV.dm) { // client tick: own movement + gun only; the host owns everything else
     xdTick(); if (window.xLdOn) dt = 0; if (!running) return;
-    tick(dt); if ((DM.lbT -= dt) <= 0) { DM.lbT = 0.25; try { dmLB(); } catch (e) {} } return;
+    tick(dt); if (FV.tdm) try { tdmTierTick(); } catch (e) {} if ((DM.lbT -= dt) <= 0) { DM.lbT = 0.25; try { dmLB(); } catch (e) {} } return; // the client tick never ran tdmTick: no unlock call-out, an open loadout kept its locks
   }
   return t0.apply(this, arguments); }; }
 // scoreboard: team split by the live arrays; humans show ping, bots a BOT tag
