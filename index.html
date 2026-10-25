@@ -12668,7 +12668,7 @@ async function nmEnsure(key){
   const [meta,nav,geometry,gl,plants]=await Promise.race([aborted,Promise.all([read('map.json').then(r=>r.json()),read('navigation.json').then(r=>r.json()),nmCollision(key,controller.signal).catch(async e=>{if(controller.signal.aborted)throw e;const bytes=await read('collision.bin').then(r=>r.arrayBuffer()),head=new Uint32Array(bytes,0,2),positions=new Float32Array(bytes,8,head[0]*3),indices=new Uint32Array(bytes,8+head[0]*12,head[1]),g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(positions,3));g.setIndex(new THREE.BufferAttribute(indices,1));
  const fence=await read('fence.bin').then(r=>r.arrayBuffer()).catch(()=>null); // nav-boundary fence quads (server/tools/build-fence.mjs): stop walkers at porous nav edges
  if(fence&&fence.byteLength>=8){const fh=new Uint32Array(fence,0,2),fp=new Float32Array(fence,8,fh[0]*3),fI=new Uint32Array(fence,8+fh[0]*12,fh[1]),base2=positions.length/3,mp=new Float32Array(positions.length+fp.length),mi=new Uint32Array(indices.length+fI.length);mp.set(positions);mp.set(fp,positions.length);mi.set(indices);for(let k=0;k<fI.length;k++)mi[indices.length+k]=base2+fI[k];g.setAttribute('position',new THREE.BufferAttribute(mp,3));g.setIndex(new THREE.BufferAttribute(mi,1));}
- g.boundsTree=new MeshBVHLib.MeshBVH(g,{maxLeafTris:12,maxDepth:64,strategy:MeshBVHLib.CENTER});return g;}).then(g=>{loadedGeometry=g;if(failed||controller.signal.aborted){release();throw controller.signal.reason||new Error('Map selection changed');}return g;}),(window.__vsLight?Promise.resolve({scene:new THREE.Group()}):new THREE.GLTFLoader(new THREE.LoadingManager(()=>{},(url,done,total)=>{if(ticket===NM.ticket&&NM.progress)NM.progress.querySelector('small').textContent='Loading map assets '+done+' / '+total+'…';})).loadAsync(base+'scene.gltf')).then(gl=>{loadedScene=gl.scene;if(failed||controller.signal.aborted){release();throw controller.signal.reason||new Error('Map selection changed');}return gl;}),read('plants.json').then(r=>r.json())])]);
+ g.boundsTree=new MeshBVHLib.MeshBVH(g,{maxLeafTris:12,maxDepth:64,strategy:MeshBVHLib.CENTER});return g;}).then(g=>{loadedGeometry=g;if(failed||controller.signal.aborted){release();throw controller.signal.reason||new Error('Map selection changed');}return g;}),((/^(127\.|localhost|\[::1\])/.test(location.hostname)&&window.__vsLight)?Promise.resolve({scene:new THREE.Group()}):new THREE.GLTFLoader(new THREE.LoadingManager(()=>{},(url,done,total)=>{if(ticket===NM.ticket&&NM.progress)NM.progress.querySelector('small').textContent='Loading map assets '+done+' / '+total+'…';})).loadAsync(base+'scene.gltf')).then(gl=>{loadedScene=gl.scene;if(failed||controller.signal.aborted){release();throw controller.signal.reason||new Error('Map selection changed');}return gl;}),read('plants.json').then(r=>r.json())])]);
   if(ticket!==NM.ticket){release();throw new Error('Map selection changed');}
   if(!nav.validation.attackerToDefender||Object.values(nav.validation.attackerToSites).some(v=>!v))throw new Error('Map navigation is incomplete');
   NM.progress.querySelector('small').textContent='Preparing the map…';await new Promise(r=>setTimeout(r,20));if(ticket!==NM.ticket){release();throw new Error('Map selection changed');}
@@ -12958,11 +12958,15 @@ const netThrow0=jThrow;jThrow=function(){if(!(NET.socket&&MP.st==='game'&&MP.m5)
 // readiness gate, so logic-level matches can start in constrained environments
 // (headless SwiftShader) without the full render burst.
 try {
-  const __vsOn = /^(127\.|localhost|\[::1\])/.test(location.hostname) || /[?&]__vs=1/.test(location.search);
+  const __vsOn = /^(127\.|localhost|\[::1\])/.test(location.hostname); // localhost only: no query/hash activation on any host
     if (__vsOn) {
-    { const ra = xvReadyAgents; xvReadyAgents = function () { return window.__vsLight ? Promise.resolve() : ra.apply(this, arguments); }; }
+    { const ra = xvReadyAgents; xvReadyAgents = function () { return window.__vsNoAgents ? Promise.resolve() : ra.apply(this, arguments); }; }
     window.__vs = {
-      light(on) { window.__vsLight = !!on; return window.__vsLight; },
+      light(on) { window.__vsLight = !!on; if (on && window.__vsNoAgents === undefined) window.__vsNoAgents = true; return window.__vsLight; },
+      agents(off) { window.__vsNoAgents = !!off; return !window.__vsNoAgents; },
+      fire(on) { fireHeld = !!on; },
+      setTimeLeft(sec) { timeLeft = +sec; },
+      aimAt(x, y, z) { const e = pEye(); yaw = Math.atan2(-(x - e.x), -(z - e.z)); pitch = Math.atan2(y - e.y, Math.hypot(x - e.x, z - e.z)); },
       startDM() { xLob0 = false; return startDM(); }, startTDM() { xLob0 = false; return startTDM(); }, startFive() { xLob0 = false; return startFive(); },
       hurt(t, n, by) { return hurt(t, n, by); }, kill(b, hs, by, w) { return kill(b, hs, by, w); },
       state() {

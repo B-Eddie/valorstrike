@@ -5,11 +5,15 @@
 // readiness gate, so logic-level matches can start in constrained environments
 // (headless SwiftShader) without the full render burst.
 try {
-  const __vsOn = /^(127\.|localhost|\[::1\])/.test(location.hostname) || /[?&]__vs=1/.test(location.search);
+  const __vsOn = /^(127\.|localhost|\[::1\])/.test(location.hostname); // localhost only: no query/hash activation on any host
     if (__vsOn) {
-    { const ra = xvReadyAgents; xvReadyAgents = function () { return window.__vsLight ? Promise.resolve() : ra.apply(this, arguments); }; }
+    { const ra = xvReadyAgents; xvReadyAgents = function () { return window.__vsNoAgents ? Promise.resolve() : ra.apply(this, arguments); }; }
     window.__vs = {
-      light(on) { window.__vsLight = !!on; return window.__vsLight; },
+      light(on) { window.__vsLight = !!on; if (on && window.__vsNoAgents === undefined) window.__vsNoAgents = true; return window.__vsLight; },
+      agents(off) { window.__vsNoAgents = !!off; return !window.__vsNoAgents; },
+      fire(on) { fireHeld = !!on; },
+      setTimeLeft(sec) { timeLeft = +sec; },
+      aimAt(x, y, z) { const e = pEye(); yaw = Math.atan2(-(x - e.x), -(z - e.z)); pitch = Math.atan2(y - e.y, Math.hypot(x - e.x, z - e.z)); },
       startDM() { xLob0 = false; return startDM(); }, startTDM() { xLob0 = false; return startTDM(); }, startFive() { xLob0 = false; return startFive(); },
       hurt(t, n, by) { return hurt(t, n, by); }, kill(b, hs, by, w) { return kill(b, hs, by, w); },
       state() {
