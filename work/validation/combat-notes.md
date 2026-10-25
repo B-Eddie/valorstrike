@@ -473,3 +473,9 @@ in-process server; it keeps the VALORANT FEEL block the audit fixture strips, an
   Weapons: penalties "scale up ... as agents accelerate ... and fall off as agents decelerate"), instead of snapping to the
   walk row below 65%; the crosshair movement error includes the landing spread. (3) The death ult point is only for a death
   to an enemy (gun or utility): falls out of the map and teamkills give none. `test-spread.js` 1b, `test-economy.js` 7.
+- **Online spectate on the real server path** (`work/test_spectate_online.cjs`: the page on the real worker module, deaths from
+  the server's snapshot kill events -> mpCliSnap -> xKLDie): online 5v5 team wiped follows the killer, Space cycles the
+  living enemies; online TDM / Deathmatch with the team dead never follow an enemy. Fix: the spectate label is written when
+  the view opens (it kept the previous death's text, e.g. the previous match's "SPECTATING <enemy> · ENEMY" over a TDM
+  death with nobody to follow), and the respawn modes say "NO ONE ALIVE" (no Spike cam). `test_spectate_follow.cjs`: the
+  nmNear cut takes the merged signature (C,x,z,y,yBand).

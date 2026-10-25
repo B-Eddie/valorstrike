@@ -2797,8 +2797,8 @@ function xKLDie(by, w) { if (!xKLm()) return; xKLui(); xKL.on = true; xKL.st = 0
   if (xKL.el) xKL.el.classList.add("on"); xKLfx(true); }
 function xKLReset() { try { if (typeof XOB !== "undefined" && XOB.hm) { XOB.hm.visible = true; XOB.hm = null; } } catch (e) {} xKL.p = player; xKL.n = 0; xKL.st = 0; xKL.on = false; xKL.sp = false; xKL.cur = null; xHS = false; if (xKL.el) { xKL.el.classList.remove("on"); xKL.sl.classList.remove("on"); xKLfx(false); } }
 function xSpec(dt) { if (!xKL.on) return xSpecPick(); xKL.st += dt; if (xKL.st < 2) return null;
-  if (!xKL.sp) { xKL.sp = true; xKLfx(false); xKL.el.classList.remove("on"); xKL.sl.classList.add("on"); try { if (document.pointerLockElement) document.exitPointerLock(); } catch (e) {} } // free the cursor so the 3rd-person button can be clicked; pointerlockchange does not pause while spectating
-  const a = xSpecPick(); if (a !== xKL.cur) { xKL.cur = a; if (xKL.sn) xKL.sn.textContent = a ? "SPECTATING " + String(a.name).toUpperCase() + (!allies.includes(a) ? " · ENEMY" : "") : "NO ONE ALIVE · SPIKE CAM"; } return a; }
+  if (!xKL.sp) { xKL.sp = true; xKL.cur = undefined; /* write the label now: it kept the previous death's text */ xKLfx(false); xKL.el.classList.remove("on"); xKL.sl.classList.add("on"); try { if (document.pointerLockElement) document.exitPointerLock(); } catch (e) {} } // free the cursor so the 3rd-person button can be clicked; pointerlockchange does not pause while spectating
+  const a = xSpecPick(); if (a !== xKL.cur) { xKL.cur = a; if (xKL.sn) xKL.sn.textContent = a ? "SPECTATING " + String(a.name).toUpperCase() + (!allies.includes(a) ? " · ENEMY" : "") : (typeof FV !== "undefined" && FV.dm && !(typeof MP !== "undefined" && MP.m5)) ? "NO ONE ALIVE" : "NO ONE ALIVE · SPIKE CAM"; } return a; }
 // Spectating stays on the followed player until they die or the player cycles (click / Space step from them, as VALORANT):
 // picking by index alone jumped to another teammate whenever someone earlier in the list died. When the followed player
 // dies the cam moves to the next living one after them. Whole team dead (5v5 attackers wiped after a plant, the post-round,
