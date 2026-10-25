@@ -34,6 +34,20 @@ const src=H.section('repair_runtime.js','// Skeleton-preserving corpse physics.'
   assert(r.calls<=r.A.M.ragdoll.list.length*(r.frames/4+2),'ground queries bounded: '+r.calls+' over '+r.frames);
   if(out)H.render([{o:r.A.m}],path.join(out,'ragdoll-'+slug+'.png'),{eye:[2.6,1.8,2.2],target:[0,.2,0],extra:[[[-3,0,-3],[3,0,-3],[3,0,3],[120,130,140]],[[-3,0,-3],[3,0,3],[-3,0,3],[120,130,140]]]});
  }
+ // Settled skin rests on the floor: fingers, skirts, hair, heels and thick backs/cloaks no longer sink
+ // through it (Chamber's hand and feet, Reyna's skirt and Sova's cloak were 7-25 cm under), and the
+ // body is not propped above it either. Contact volume is sampled once at death within a bounded cost.
+ for(const slug of ['chamber','reyna','sova','jett']){
+  const A=await H.agent(slug);const c=H.context({groundAt:()=>0});require('vm').runInContext(src,c);
+  const t0=process.hrtime.bigint();c.xrRagdollTick(A.M,1/60);const build=Number(process.hrtime.bigint()-t0)/1e6;
+  let t=0,al=true;while(al&&t<5){al=c.xrRagdollTick(A.M,1/60);t+=1/60;}
+  const pts=H.skinned(A.sc);let lo=Infinity;for(let i=1;i<pts.length;i+=3)lo=Math.min(lo,pts[i]);
+  assert(lo>-.06,slug+' settled skin above the floor: '+lo.toFixed(3));
+  assert(lo<.04,slug+' settled skin touches the floor: '+lo.toFixed(3));
+  assert(A.M.ragdoll.drape.length>20,slug+' dangling chains are draped');
+  assert(A.M.ragdoll.list.filter(a=>a.sup).length>=15,slug+' joints carry contact volume');
+  assert(build<250,slug+' death-time contact sampling bounded: '+build.toFixed(1)+'ms');
+ }
  // Erratic frame pacing, NaN/negative/huge dt, poisoned hit vector, and a death on a ledge.
  const r2=await run('jett',{dts:[0,NaN,-1,1,1/30,1/240,.2],hit:{x:NaN,z:Infinity}});
  for(const a of r2.A.M.ragdoll.list)assert(Number.isFinite(a.p.y));
@@ -43,5 +57,5 @@ const src=H.section('repair_runtime.js','// Skeleton-preserving corpse physics.'
  assert(r4.P.Head.p.x>0.05,'killing-shot direction carries the body');
  // A rig missing a core joint simply skips physics (pose freezes) instead of throwing.
  const r5=await H.agent('jett');r5.sc.getObjectByName('L_Knee').name='renamed';const c=H.context({groundAt:()=>0});require('vm').runInContext(src,c);assert.equal(c.xrRagdollTick(r5.M,1/60),false);
- console.log('Ragdoll: skeleton-preserving joints on four agents, no stretched bones/exploding skin, joint limits, floor/ledge contact, hit direction, bounded ground queries, NaN/huge-dt safety, missing-joint fallback');
+ console.log('Ragdoll: skeleton-preserving joints on four agents, settled skin on (not under) the floor incl. fingers/skirt/cloak/heels, no stretched bones/exploding skin, joint limits, floor/ledge contact, hit direction, bounded ground queries, NaN/huge-dt safety, missing-joint fallback');
 })().catch(e=>{console.error(e);process.exit(1);});
