@@ -11577,7 +11577,18 @@ function mpCli5(m) { // client 5v5 messages; true when handled
     try { onSkin(); updHud(); if (FV.menu) { buyRender.h = null; buyRender(); } xHud(); } catch (e) {} return true; }
   if (m.t === "abn") { if (/^[cqe]$/.test(m.k)) J[m.k] = 0; return true; }
   if (m.t === "rd") { if (MP.st !== "game") return true;
-    FV.pri = m.ld && m.ld[0] && WEAP[m.ld[0]] ? m.ld[0] : null; FV.sec = m.ld && WEAP[m.ld[1]] ? m.ld[1] : "Classic"; FV.cr = m.cr | 0; FV.buy = m.b || 0; FV.atk = MP.team === 0 ? !!m.atk : !m.atk;
+// Round start re-arms the round's own loadout, like offline fRound: full mags, primary (else sidearm) in hand, viewmodel
+// refreshed. Assigning FV.pri/FV.sec alone left a gun the server had swapped in mid-round in hand: Tour de Force (and
+// Headhunter) arrive in snapshots as the held weapon (bEquip'd into the slot), so after a round reset the Operator
+// model, its 5-round slot and, with no primary bought, a "pri" slot with nothing in it stayed until something else moved.
+function mpRdArm(ld) {
+  const p = ld && ld[0] && WEAP[ld[0]] ? ld[0] : null, s = ld && ld[1] && WEAP[ld[1]] ? ld[1] : "Classic";
+  FV.pri = p; FV.sec = s; const pm = p ? WEAP[p].mag : 0, sm = WEAP[s].mag;
+  slots.pri = p ? { ammo: pm, rsv: pm * 3 } : {}; slots.pis = { ammo: sm, rsv: sm * 3 };
+  rw = p ? "pri" : "pis"; ammo = slots[rw].ammo; rsv = slots[rw].rsv; reloading = 0; fireHeld = false;
+  try { onSkin(); setScope(false); } catch (e) {}
+}
+    mpRdArm(m.ld); FV.cr = m.cr | 0; FV.buy = m.b || 0; FV.atk = MP.team === 0 ? !!m.atk : !m.atk;
     running = true; try { clock.getDelta(); } catch (e) {} try { $("feed").innerHTML = ""; $("defuse").style.display = "none"; $("xBan").style.display = "none"; } catch (e) {}
     try { jRound(false); } catch (e) {} say("Buy phase · press B to buy", 1800); try { SFX.buy(); } catch (e) {} updHud(); return true; }
   if (m.t === "re") { if (MP.st !== "game") return true;

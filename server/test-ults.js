@@ -53,13 +53,17 @@ const cast=(s,u,m={})=>s.command(u,{t:'ab',k:'x',...m});
  assert.equal(cast(s,u),true);assert.equal(u.weapon,'Operator');assert.equal(u.ammo,5);assert.equal(cast(s,u),false,'no stacking');
  for(let i=0;i<5;i++){s.time+=2;u.fireAt=0;u.triggerHeld=false;u.input={ads:1};assert.equal(s.fire(u),true);}assert.ok(foe.hp<1000,'Operator hits');tick(s,.05);assert.equal(u.weapon,'Spectre');assert.equal(u.ammo,17);assert.equal(u.reserve,60);assert.equal(u.inventory.Operator,undefined);
  u.ability.ult=9;cast(s,u);u.alive=false;tick(s,.05);assert.equal(u.weapon,'Spectre','death returns the saved gun');}
+// Round reset mid-ult (native maps, online): the round's own loadout comes back, no Operator, ult state cleared.
+{const {s,u}=setup('Chamber',['foe']);u.primary='Spectre';u.weapon='Spectre';u.ammo=11;u.reserve=40;u.inventory={Spectre:11,Classic:12};u.ability.ult=9;
+ assert.equal(cast(s,u),true);assert.equal(u.weapon,'Operator');s.newRound();assert.equal(u.weapon,'Spectre','round start re-arms the primary');assert.equal(u.ammo,30,'full Spectre magazine');assert.equal(u.ultWeapon,null);assert.equal(u.inventory.Operator,undefined);
+ s.buy=0;u.primary=null;u.weapon='Classic';u.ammo=12;u.ability.ult=9;assert.equal(cast(s,u),true);s.newRound();assert.equal(u.weapon,'Classic','Classic-only Chamber gets the Classic back');assert.equal(u.ultWeapon,null);}
 
 // Run It Back: dying (or the 10 s window ending) returns Phoenix to the mark at full health; his team is not
 // eliminated by that death.
 {const {s,u,list:[foe]}=setup('Phoenix',['foe']);Object.assign(foe,{x:0,y:0,z:-30});u.hp=40;u.ability.ult=9;assert.equal(cast(s,u),true);assert.equal(cast(s,u),false);
  u.x=10;u.z=-10;u.hp=0;u.alive=false;s.step(.05);assert.equal(s.roundDelay,0,'round continues while Run It Back is pending');tick(s,.05);assert.equal(u.alive,true);assert.equal(u.hp,100);assert.deepEqual([u.x,u.z],[0,0]);assert.equal(u.runItBack,null);
  u.ability.ult=9;s.time+=.5;assert.equal(cast(s,u),true);u.x=7;u.hp=55;tick(s,ULT.rib.window+.1);assert.deepEqual([u.x,u.hp],[0,100],'window end returns to the mark');}
-console.log('Ultimates: Hunter\'s Fury (3 wall-piercing blasts, recast, reveal, death end), Showstopper (travelling rocket, falloff, LOS, wall detonation), Lockdown (windup, radius detain blocks guns/abilities, round reset), Rolling Thunder (cone through walls), Seekers (3 nearest), Neural Theft (corpse targeting, double reveal), Tour de Force (5-round Operator, weapon restore), Run It Back (death/expiry return, no elimination); server-side aim only');
+console.log('Ultimates: Hunter\'s Fury (3 wall-piercing blasts, recast, reveal, death end), Showstopper (travelling rocket, falloff, LOS, wall detonation), Lockdown (windup, radius detain blocks guns/abilities, round reset), Rolling Thunder (cone through walls), Seekers (3 nearest), Neural Theft (corpse targeting, double reveal), Tour de Force (5-round Operator, weapon restore, round reset), Run It Back (death/expiry return, no elimination); server-side aim only');
 // Devices that used to be inert markers: recon pulses reveal enemies in the bolt's sight (not through walls),
 // Boom Bot hunts the nearest visible enemy and explodes for 125, Trailblazer concusses on contact.
 import {DEV} from './src/devices.js';
