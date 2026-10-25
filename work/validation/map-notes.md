@@ -210,6 +210,73 @@ of its sides) looks like a lintel over an opening but is the one worth a browser
 foliage/palms counted as closing geometry gave 9 "cracks" (Breeze palms, Haven trees), all open sky in the rendered
 views; foliage is excluded now. No data fix was needed: nothing in the survey is a real gap.
 
+## Remaining sweep: stuck spots, invisible walls, spawns, plant sites, ladders/ropes
+
+Tool `server/tools/map-sweep.mjs` (shared motor on the server collision world, all six maps): every playable node is
+placed and walked 0.4 s in 8 directions (`stuck`, `embedded`); from nodes walked into a spot, 8 more 0.3 s walks must get
+out (`trap`, a stuck spot a player can walk into); every cardinal nav edge between capsule-free playable nodes is walked
+(run, jump with a 2-frame run-up when > 0.42 m up, drops land beyond), and a refused edge is classified by the motor
+check that refused it (`leash`, `tall`, `riser`, `riserDip`, `base`) and by the collision triangles it met: `invisible`
+only when none of them has a render surface within 5 cm (RENDER=1). Also the server's team spawn candidates
+(`teamSpawnPoint`), site anchors vs plant zones (`plantAt`, `siteAt` height), and callouts. MOTOR=path runs another motor.
+
+Before (merged tree a2ac169, stride 1, every playable node and edge; Breeze also with the walk-in trap test):
+
+| map | nodes | edges walked | refused | of which crack (`riserDip`) | posts / pillar corners (`tall`, visible) | walk-in traps | stuck (walk + jump) |
+|---|---|---|---|---|---|---|---|
+| Ascent | 9,544 | 32,106 | 17 | 13 | 4 | - | 0 |
+| Bind | 9,975 | 35,440 | 4 | 4 | 0 | - | 0 |
+| Haven | 8,162 | 29,008 | 4 | 2 | 1 (+1 base) | - | 0 |
+| Split | 7,803 | 26,782 | 2 (+5 drop-edge artefacts of the first edge test) | 1 | 0 (+1 base) | - | 0 |
+| Lotus | 8,695 | 29,383 | 0 | 0 | 0 | - | 0 |
+| Breeze | 11,676 | 37,373 | 35 | 22 | 12 (+1 riser) | 44 | 0 |
+
+Two motor bugs (fixed in the shared motor, `server/src/motor.cjs` = `vendor/valorant-feel.js`, both sides):
+- **Crack read as a riser (invisible wall on flat floor).** A capsule blocked by a 2-6 cm slab lip lifts and runs the riser
+  look-ahead (10 cm samples, no rise > step height). A crack between two paving slabs dropped the reference into the
+  crack and the next slab, level with the player, then counted as a 0.46-1.2 m riser: the player stopped dead on flat
+  floor. Worst on Ascent's attacker-spawn back (x 1..7, z 59..67, 8 edges), also Ascent B link / market / A heaven,
+  Bind (-3, -3.75), (21, 48), (48, 13.5), Haven (-1.5, 34.5), (8.3, -57.3), Split (-35.75, 17.5) and 22 edges across
+  Breeze. Fix: a dip never lowers the reference (`prev=Math.max(prev,g)`); a box is still refused when the capsule
+  reaches it. 42 of 42 crack edges now walk.
+- **Pinned against a wall over uneven paving (walk-in trap).** The step-up required 1 cm clearance all round the lifted
+  capsule; a capsule that walked into a wall over a bumpy floor (resting a few cm up on the paving) could then neither
+  step (the wall it touches is within 0.41 m) nor stay grounded enough to move, so every direction was refused: stuck
+  until a jump. 44 such spots on Breeze (sampled every 3rd node). Fix: the 1 cm margin is tested ahead of the move only,
+  and where a wall leans in above the feet only a lift of at most 5 cm (a bump or seam) may pass, tested at that height.
+  41 of 44 now walk out; the other 3 (Breeze (6.56, 8.04, -34.75), (17.0, 4.25, 36.0) - capsule sits embedded a few mm
+  in a leaning wall; (9.25, 10.95, -24.4) - dropped 1 m onto a ledge off the footprint, the leash only lets it move
+  toward the playable floor above) still need one jump.
+- Still refused and correct: the `tall` edges are posts, a pillar corner, a hanging cable bundle at Ascent A
+  (46.3, 10.07, -32.1, collision on visible `WiresDark` cables) - the nav node sits 0.3-0.4 m from thin visible geometry
+  the 0.4 m capsule meets; all have visible render surfaces (none `invisible`). The `base` edges (Haven C (-48, 6.01, -8.5), a 4 cm floor plate
+  against a wall; Split (1.75, 10.52, 6.25) drop) walk after the fix.
+- Stuck (placed on a node, cannot walk or jump out): 0 on all six maps. Embedded nodes: Ascent 22 (17 inside the A ramp
+  pit player clip, as intended), others 1-7; none is a spawn candidate (spawns test 0.43 m clearance) and the DM spawn
+  test is the same.
+
+Spawns and plant sites (all six maps): attacker / defender spawn candidates 246-660 / 103-634 per map, none embedded or
+stuck, every candidate reaches every site on the navigation. Every site anchor lies in its own plant zone, its nearest
+node too, and passes `siteAt`'s 2 m height test; plantable playable nodes per site 133-468. Zone cells at another floor
+(refused by `siteAt`, correct): Ascent B 6 nodes on the 6.65 m ledge over B site (z -10..-11.5), Lotus B 7 nodes on the
+7.35 m walkway above the 3.35 m site. Callouts: every one has reachable playable floor within 8 m (labels are API
+points: Breeze's are all at one height and its A Lobby label sits 7.9 m off the minimap floor; overlaying the playable
+nav on Breeze's minimap shows it covers the whole drawn floor).
+
+Ladders / ropes: none is climbable in VALORANT on these maps and none is in the motor. The exports hold decorative
+`Prop_18_M0_LadderA_MI` ladders (Bind (15.5, 7.2-10.6, 29.3), Haven (-23.4, 5.0, 26.4) lying flat, Breeze four on
+rooftops at y 11-17 and (-0.6, 8-12, -65)) and rope props (Ascent, Breeze ship rigging); Split's ascender ropes are not
+in the export (only the 1.2 m `Ascender_0_M0_CableADark_MI` head unit at (-4.5, 9, 22.7) by mid bottom), so the spots
+they serve are reached on foot as everywhere else: every Split callout (A/B rafters, B tower, mid mail/vent) is
+reachable from the attacker spawn on the navigation (traversal test walks spawn -> every site). No ladder or rope blocks a
+path (the edge sweep found none of them among the refusals).
+
+Regression: `server/test-map-bounds.js` (npm test) sections 4-5 - spawns / sites / callouts on all six maps, and
+`server/map-walk-fixtures.json` (45 crack/step edges + 41 Breeze traps) walked with the current motor (the same cases
+failed before). Client: `work/test_map_riser.cjs` (synthetic floors: crack + 5 cm lip crossed both ways; 0.6 m box
+refused with/without a crack and after a step down; 0.2 m stairs up and down; it fails on the old motor). Stairs
+(`test-stairs.js`), traversal (43 walks) and `work/test_feel.js` pass on the new motor.
+
 ## Needs a real-browser look (for the browser agent)
 
 1. Every map: load, check FPS / `renderer.info.render.calls` / `renderer.info.render.triangles` before vs after at
@@ -231,3 +298,6 @@ views; foliage is excluded now. No data fix was needed: nothing in the survey is
 7. Online: the client fetches collision from the deployed worker (`/worlds`), so the collision patches reach online
    play and the offline client only after the worker's worlds are rebuilt and deployed (`npm run build:worlds` +
    deploy, owner's call; not done here). The leash, optimizer and texture cap ship with the page.
+8. Movement fixes (motor): walk across Ascent's attacker-spawn back paving (x 1..7, z 59..67) and Breeze's paved lanes
+   without stopping on flat floor; run into walls over Breeze paving (e.g. (44.9, 8.06, -15.25), (-80, 7.1, 8.3)) and walk
+   away without jumping; stairs and boxes still behave (0.6 m crates need a jump, stairs walk).
