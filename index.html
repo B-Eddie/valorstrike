@@ -7752,8 +7752,8 @@ function jFxTick(dt) {
     A.length = k; }
   { const A = J.zones, n = A.length; let k = 0;
     for (let i = 0; i < n; i++) { const z = A[i]; z.t -= dt; z.m.material.opacity = 0.55 * Math.min(1, z.t / 0.5);
-      if (z.own) { if (!z.nd) { mpAreaHit(z, z.p.x, z.p.z, 2.5, 30 * dt, "Hot Hands", null); const o = z.own; if (o.alive && o.g && Math.hypot(o.g.position.x - z.p.x, o.g.position.z - z.p.z) < 2.5) o.hp = Math.min(100, o.hp + 15 * dt); } }
-      else { for (let j = 0; j < bots.length; j++) { const b = bots[j]; if (b.alive && Math.hypot(b.g.position.x - z.p.x, b.g.position.z - z.p.z) < 2.5) jHit(b, 30 * dt, "Hot Hands"); }
+      if (z.own) { if (!z.nd) { mpAreaHit(z, z.p.x, z.p.z, 2.5, 60 * dt, "Hot Hands", null); /* 60 dps (wiki.playvalorant.com/en-us/Phoenix) */ const o = z.own; if (o.alive && o.g && Math.hypot(o.g.position.x - z.p.x, o.g.position.z - z.p.z) < 2.5) o.hp = Math.min(100, o.hp + 15 * dt); } }
+      else { for (let j = 0; j < bots.length; j++) { const b = bots[j]; if (b.alive && Math.hypot(b.g.position.x - z.p.x, b.g.position.z - z.p.z) < 2.5) jHit(b, 60 * dt, "Hot Hands"); }
       if (Math.hypot(P.x - z.p.x, P.z - z.p.z) < 2.5) heal(); } if (z.t > 0) A[k++] = z; else jRel(z.m); }
     A.length = k; }
   { const A = J.orbs, n = A.length; let k = 0;
@@ -7932,7 +7932,7 @@ function okKey(code) {
   }
   if (code === "KeyC") {
     const pend = J.nano.filter((n) => !n.on);
-    if (pend.length) { pend.forEach((n) => { n.on = true; n.t = 4; n.m.material.opacity = 0.55; n.m.scale.setScalar(1); }); say("Nanoswarm active", 700); SFX.ab("nano", pend[0].p); return blip(700, 0.3, "square", 0.12); }
+    if (pend.length) { pend.forEach((n) => { n.on = true; n.t = 5; n.m.material.opacity = 0.55; n.m.scale.setScalar(1); }); say("Nanoswarm active", 700); SFX.ab("nano", pend[0].p); return blip(700, 0.3, "square", 0.12); }
     if (J.c < 1 || J.cd.c > 0) return sgNo(); J.c--; J.cd.c = 0.6;
     const p = okGround(15); p.y = 0.05; const m = jM(zoneGeo, fireMat(0xc8d23a, 0.12)); m.rotation.x = -Math.PI / 2; m.position.copy(p); m.scale.setScalar(0.15); scene.add(m);
     J.nano.push({ m, p, on: false, t: 0 }); say("Nanoswarm hidden · C to trigger", 900); blip(420, 0.15, "triangle", 0.12); SFX.ab("nanoSet", p);
@@ -8523,7 +8523,7 @@ try { const r0 = renderer.render.bind(renderer), E = new THREE.Euler(0, 0, 0, "Y
     if (blocked(x, z, 0.3, 0)) { x = from.x + sd * 4; if (blocked(x, z, 0.3, 0)) x = from.x; }
     cyWire(x, z, 0, 1, b); feed("Cypher ▸ Trapwire"); } }; }
 // bot Killjoy (team-agnostic): on defence both Nanoswarm charges hidden on the held site (C, bought); each one triggers when an enemy steps within 2.5 m,
-// then the player's numbers: 45 dps in 2.5 m for 4 s, same mesh + colour. Pooled records, ticked at 10 Hz, cleared by jClear.
+// then the player's numbers: 45 dps in 2.5 m for 5 s, same mesh + colour. Pooled records, ticked at 10 Hz, cleared by jClear.
 const XKN = [];
 function xKnClr() { for (const o of XKN) if (o.on) { o.on = false; jRel(o.m); o.m = null; } }
 { const b0 = botAb; botAb = function (b, dt, see, tg, from) { b0(b, dt, see, tg, from);
@@ -8537,7 +8537,7 @@ function xKnClr() { for (const o of XKN) if (o.on) { o.on = false; jRel(o.m); o.
 function xKnIn(o, x, z) { return Math.hypot(x - o.p.x, z - o.p.z) < 2.5; }
 setInterval(function () { try { if (!running || !XKN.length) return; for (const o of XKN) { if (!o.on) continue; const en = o.en;
   if (!o.act) { let hit = false; if (en) { if (player.hp > 0 && xKnIn(o, player.x, player.z)) hit = true; for (const a of allies) if (a.alive && xKnIn(o, a.g.position.x, a.g.position.z)) hit = true; } else for (const b of bots) if (b.alive && xKnIn(o, b.g.position.x, b.g.position.z)) hit = true;
-    if (hit) { o.act = true; o.t = 4; o.m.material.opacity = 0.55; o.m.scale.setScalar(1); try { SFX.ab("nano", o.m.position); } catch (e) {} } continue; }
+    if (hit) { o.act = true; o.t = 5; o.m.material.opacity = 0.55; o.m.scale.setScalar(1); try { SFX.ab("nano", o.m.position); } catch (e) {} } continue; }
   o.t -= 0.1; o.m.material.opacity = 0.55 * Math.min(1, o.t / 0.5); const nm = o.own && o.own.name || "Killjoy";
   if (en) { if (player.hp > 0 && xKnIn(o, player.x, player.z)) xBotDmg(player, 4.5, nm, "Nanoswarm"); for (const a of allies) if (a.alive && xKnIn(o, a.g.position.x, a.g.position.z)) xBotDmg(a, 4.5, nm, "Nanoswarm"); }
   else for (const b of bots) if (b.alive && xKnIn(o, b.g.position.x, b.g.position.z)) xBotDmg(b, 4.5, nm, "Nanoswarm");
@@ -8724,10 +8724,10 @@ function botAb(b, dt, see, tg, from) {
   A.t += dt; const peek = see && !A.saw; A.saw = see; const al = allies.indexOf(b) >= 0, ag = xBAg(b), ch = xBCh(b); // team-agnostic: ally bots cast at enemy bots
   if (see && tg) { A.lkx = tg.x; A.lkz = tg.z; A.lkt = 0; } else if (A.lkt != null) A.lkt += dt;
   { const r = XBK_RC[ag]; if (!r || ch.e >= 1) A.rcT = 0; else if ((A.rcT = (A.rcT || 0) + dt) >= r) { ch.e = 1; A.rcT = 0; } } // timed signature recharge
-  if ((ag === "Jett" || ag === "Omen") && A.t > 1.2 && (A.smT || 0) < A.t) { // controller-style smokes: Jett Cloudburst (C) 4.5 s, Omen Dark Cover (E) 15 s, as the player's
+  if ((ag === "Jett" || ag === "Omen") && A.t > 1.2 && (A.smT || 0) < A.t) { // controller-style smokes: Jett Cloudburst (C) 2.5 s, Omen Dark Cover (E) 15 s, as the player's
     const k = ag === "Jett" ? "c" : "e"; let q = ch[k] >= 1 ? xBChoke(b, al, from, A) : null;
     if (!q && !al && mode === "retake" && !A.rsm) { A.rsm = 1; const P = [[-8, 8], [8, 8], [0, 10]][Math.floor(Math.random() * 3)]; XBK_P.x = P[0] + (Math.random() - 0.5) * 2; XBK_P.z = P[1]; q = XBK_P; } // retake hold: smoke a retake entrance
-    if (q && xBUse(b, k)) { A.smT = A.t + 5 + Math.random() * 3; enSmoke(q.x, q.z, al, ag === "Jett" ? 4.5 : 15); feed(ag === "Jett" ? "Jett ▸ Cloudburst" : "Omen ▸ Dark Cover"); }
+    if (q && xBUse(b, k)) { A.smT = A.t + 5 + Math.random() * 3; enSmoke(q.x, q.z, al, ag === "Jett" ? 2.5 : 15); feed(ag === "Jett" ? "Jett ▸ Cloudburst" : "Omen ▸ Dark Cover"); }
   }
   if (ag === "Phoenix") xBFl(b, A, see, peek, tg, from, "e", al, 0xfff2b0, "orb", "Phoenix ▸ Curveball", 800);
   if (ag === "Sova" && A.t > A.rbT && ch.e >= 1) { // Recon Bolt: attackers recon the site before entering, defenders the attackers' approach
@@ -8809,7 +8809,7 @@ function jKey(code) {
     ray.set(o, d); ray.far = 14; const h = ray.intersectObjects(solids)[0];
     const p = h ? h.point.addScaledVector(d, -0.5) : o.clone().addScaledVector(d, 14); p.y = Math.max(1.5, Math.min(p.y, 4));
     const m = jM(smokeGeo, xSmokeM("sjx", 0xdbe6f2, 0xa8dcff));
-    m.position.copy(p); scene.add(m); J.smokes.push({ m, p: m.position, t: 4.5 }); SFX.smoke();
+    m.position.copy(p); scene.add(m); J.smokes.push({ m, p: m.position, t: 2.5 }); SFX.smoke(); // Cloudburst 2.5 s (wiki.playvalorant.com/en-us/Jett)
   }
   if (code === "KeyE") {
     if (J.e < 1) return no(), true;
