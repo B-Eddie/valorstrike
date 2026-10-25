@@ -119,7 +119,7 @@ function nmBlocked(C,x,z,r,y,height=1.8){if(!Number.isFinite(y))y=nmHeight(C,x,z
 // Playable leash (same rule as the server world, shared motor leashOk): horizontal moves stay on the navigation footprint.
 // The player motor asks it through world.leash (feel moveP); the page's own direct moves (offline dash, knife lunge,
 // knock-back) probe the global blocked(), which reports a point off the footprint as blocked.
-function nmLeash(C,x,z,y){const VM_=window.ValorantFeel;if(!VM_||!VM_.leashOk||!C||!C.nav)return true;if(!C.leash)C.leash=VM_.leashGrid(C.nav.nodes,C.nav.valid,C.nav.adj);return VM_.leashOk(C.leash,x,z,y,(a,b,c)=>nmHeight(C,a,b,c));}
+function nmLeash(C,x,z,y,x0,z0){const VM_=window.ValorantFeel;if(!VM_||!VM_.leashOk||!C||!C.nav)return true;if(!C.leash)C.leash=VM_.leashGrid(C.nav.nodes,C.nav.valid,C.nav.adj);return VM_.leashOk(C.leash,x,z,y,(a,b,c)=>nmHeight(C,a,b,c),x0,z0);}
 {const b=blocked,g=groundAt;blocked=function(x,z,r,y){const C=nmActive();if(!C)return b(x,z,r,y);if(sgBlk(x,z,r,y))return true;if(Number.isFinite(y)&&!nmLeash(C,x,z,y))return true;if(!nmBlocked(C,x,z,r,y))return false;const floor=nmHeight(C,x,z,y+.32);return !(floor<=y+.32&&!nmBlocked(C,x,z,r,y+.32));};groundAt=function(x,z,r,y){const C=nmActive();return C?nmHeight(C,x,z,y):g(x,z,r,y);};}
 function nmPlant(C,x,z){const t=C.meta.transform,p=C.meta.apiProjection,ca=Math.cos(t.angle),sa=Math.sin(t.angle),sx=ca*x-sa*z+t.cx,sz=sa*x+ca*z+t.cz,u=Math.floor((sx*100*p.xMultiplier+p.xScalarToAdd)*1024),v=Math.floor((-sz*100*p.yMultiplier+p.yScalarToAdd)*1024);for(const row of C.plants.rows[v]||[])if(u>=row[0]&&u<row[1])return row[2];return undefined;}
 // Site anchors sit at the very edge of their plant zones (breeze B: anchor 0.15 u inside a 15 u

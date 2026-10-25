@@ -41,12 +41,16 @@ function clipBlocked(map,x,z,r,y,height=1.8){const L=CLIPS[map];if(!L)return fal
 //        roof edge 2+ m above the street is not a place to stand unless the nav sampled it), or
 //  rim:  within 1.5 m of a node whose floor is within 1 m of the floor under the capsule (the same floor just past the
 //        nav's edge; never a void or a drop off the map).
-// Movement only (shots, sight and floor rays never see it); a unit already off the footprint may always move.
+// Movement only (shots, sight and floor rays never see it). Given the move's origin (x0, z0), a unit already off the
+// footprint (it dropped straight down past a ledge after an updraft, or spawned outside) may move only toward the
+// nearest node at its height (core height band, 6 m search): never trapped, never further out (Bind/Split: a jump
+// up beside a box landed on the floor behind it, then walked off the map from there). Far from every node it is free.
 function leashGrid(nodes,valid,adj){const keep=new Uint8Array(nodes.length);if(adj){const comp=new Int32Array(nodes.length).fill(-1),comps=[];for(let i=0;i<nodes.length;i++){if((valid&&!valid[i])||comp[i]>=0)continue;const q=[i];comp[i]=comps.length;for(let k=0;k<q.length;k++)for(const n of adj[q[k]])if((!valid||valid[n])&&comp[n]<0){comp[n]=comps.length;q.push(n);}comps.push(q);}let big=0;comps.forEach((c,k)=>{if(c.length>comps[big].length)big=k;});const pc=new Map();for(const i of comps[big]||[]){keep[i]=1;const p=nodes[i],k=Math.floor(p[0]/3)*4096+Math.floor(p[2]/3);let l=pc.get(k);if(!l)pc.set(k,l=[]);l.push(p);}
  /* other components (box tops, drop-only areas) count when no node stands more than 4.6 m above the playable floor around it: roofs the nav sampled (Haven 8-11 m, Ascent 6-9 m) stay off the footprint */
  comps.forEach((c,k)=>{if(k===big)return;let worst=-Infinity;for(const i of c){const p=nodes[i];let base=null,bd=Infinity;for(let r=1;r<=3&&base==null;r++)for(let a=-r;a<=r;a++)for(let b=-r;b<=r;b++)for(const q of pc.get((Math.floor(p[0]/3)+a)*4096+Math.floor(p[2]/3)+b)||[]){const d=(q[0]-p[0])**2+(q[2]-p[2])**2;if(d<bd){bd=d;base=q;}}const up=base?p[1]-base[1]:Infinity;if(up>worst)worst=up;if(worst>4.6)break;}if(worst<=4.6)for(const i of c)keep[i]=1;});}else for(let i=0;i<nodes.length;i++)keep[i]=valid?valid[i]:1;
  const cells=new Map();for(let i=0;i<nodes.length;i++){if(!keep[i])continue;const p=nodes[i],k=Math.floor(p[0])*4096+Math.floor(p[2]);let l=cells.get(k);if(!l)cells.set(k,l=[]);l.push(p[0],p[1],p[2]);}return cells;}
-function leashOk(L,x,z,y,ground){if(!L)return true;let core=-Infinity;const rim=[],cx=Math.floor(x),cz=Math.floor(z);for(let dx=-2;dx<=2;dx++)for(let dz=-2;dz<=2;dz++){const l=L.get((cx+dx)*4096+cz+dz);if(!l)continue;for(let i=0;i<l.length;i+=3){const ny=l[i+1],d=(l[i]-x)**2+(l[i+2]-z)**2;if(d>2.25)continue;if(d<=.36&&ny<=y+1&&ny>=y-7.5){if(ny>=y-1.6)return true;if(ny>core)core=ny;}rim.push(ny);}}if(!rim.length||!ground)return false;const g=ground(x,z,y);if(core>-Infinity&&core>=g-1.6)return true;for(const ny of rim)if(Math.abs(ny-g)<=1)return true;return false;}
+function leashNear(L,x,z,y){let best=Infinity;const cx=Math.floor(x),cz=Math.floor(z);for(let dx=-6;dx<=6;dx++)for(let dz=-6;dz<=6;dz++){const l=L.get((cx+dx)*4096+cz+dz);if(!l)continue;for(let i=0;i<l.length;i+=3){const ny=l[i+1];if(ny>y+1||ny<y-7.5)continue;const d=(l[i]-x)**2+(l[i+2]-z)**2;if(d<best)best=d;}}return best>36?Infinity:best;}
+function leashOk(L,x,z,y,ground,x0,z0){if(!L)return true;if(x0!=null){if(leashOk(L,x,z,y,ground))return true;if(leashOk(L,x0,z0,y,ground))return false;const a=leashNear(L,x0,z0,y);return a===Infinity||leashNear(L,x,z,y)<=a+1e-9;}let core=-Infinity;const rim=[],cx=Math.floor(x),cz=Math.floor(z);for(let dx=-2;dx<=2;dx++)for(let dz=-2;dz<=2;dz++){const l=L.get((cx+dx)*4096+cz+dz);if(!l)continue;for(let i=0;i<l.length;i+=3){const ny=l[i+1],d=(l[i]-x)**2+(l[i+2]-z)**2;if(d>2.25)continue;if(d<=.36&&ny<=y+1&&ny>=y-7.5){if(ny>=y-1.6)return true;if(ny>core)core=ny;}rim.push(ny);}}if(!rim.length||!ground)return false;const g=ground(x,z,y);if(core>-Infinity&&core>=g-1.6)return true;for(const ny of rim)if(Math.abs(ny-g)<=1)return true;return false;}
 function step(P,input,dt,world){
  const dt0=Math.max(0,Math.min(.1,dt)),parts=Math.max(1,Math.ceil(dt0*128)),h=dt0/parts;let landed=false,jumped=false;
  const press=!!input.jump&&!P.jumpHeld;P.jumpHeld=!!input.jump;if(press)P.jumpBuffer=.07;
@@ -62,7 +66,7 @@ function step(P,input,dt,world){
   if(!grounded&&!l){tx=P.vx||0;tz=P.vz||0;}
   if(!grounded){const cap=Math.max(P.takeoffSpeed||input.speed,.1),v=Math.hypot(tx,tz);if(v>cap){tx*=cap/v;tz*=cap/v;}}
   const v=velocity(P.vx||0,P.vz||0,tx,tz,rate,h),height=1.8-(P.ch||0);P.vx=v.vx;P.vz=v.vz;
-  const moveAxis=(dx,dz)=>{const x=P.x+dx,z=P.z+dz;if(world.leash&&!world.leash(x,z,P.y)&&world.leash(P.x,P.z,P.y))return false;if(!world.blocked(x,z,.4,P.y,height)){P.x=x;P.z=z;return true;}
+  const moveAxis=(dx,dz)=>{const x=P.x+dx,z=P.z+dz;if(world.leash&&!world.leash(x,z,P.y,P.x,P.z))return false;if(!world.blocked(x,z,.4,P.y,height)){P.x=x;P.z=z;return true;}
    // A grounded capsule may step onto a low stair, never teleport onto a tall box.
    // Lift by the step height, move, then settle onto the lowest free height above the destination floor.
    if(grounded&&(P.vy||0)<=0){const top=P.y+C.stepHeight,support=world.ground(x,z,top);if(support>top+.001||world.blocked(x,z,.4,top,height)||(world.ceiling&&world.ceiling(P.x,P.z,P.y+height,top+height)))return false;
@@ -93,5 +97,5 @@ function spread(state,weapon,stats){
  return Math.tan((base+error)*Math.PI/180);
 }
 function disk(random=Math.random){const a=random()*Math.PI*2,r=Math.sqrt(random());return [Math.cos(a)*r,Math.sin(a)*r];}
-return {C,step,velocity,spread,disk,damp,approach,clipBlocked,CLIPS,leashGrid,leashOk};
+return {C,step,velocity,spread,disk,damp,approach,clipBlocked,CLIPS,leashGrid,leashOk,leashNear};
 });
