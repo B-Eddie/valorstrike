@@ -42,7 +42,7 @@ Sources used (opened, not search excerpts):
 | Landing accuracy: +7° for 0.225 s | W-Weapons | +5° (snipers 7°) for 0.2 s (`landingLock`) | differs — **owned** (gunplay: valorstrike-qa-11) |
 | Movement inaccuracy deadzone 27.5 %, tagging 72.5 % | P3.0 | same | matches |
 | Ladders / ropes / ziplines | W-Unrated | not audited this pass (map-native, no rope objects found in motor) | not audited |
-| Fall damage: 15 at ~8 m rising to 100 (fatal) at ~17 m, ignores armour | W-Unrated | none | **missing** → step 2 |
+| Fall damage: 15 at ~8 m rising to 100 (fatal) at ~17 m, ignores armour | W-Unrated | none | **fixed** (ef49bb0: shared motor measures apex→landing drop, linear 15→100 between the two published points; server + offline player; health only) |
 
 ## 2. Economy
 
@@ -51,10 +51,10 @@ Sources used (opened, not search excerpts):
 | Start 800 each half; cap 9000 | W-Credits | 800 / 9000 (offline + server) | matches |
 | Kill 200, plant 300 (attackers), win 3000 | W-Credits | same | matches |
 | Loss 1900 / 2400 / 2900 by streak | W-Credits | same | matches |
-| Survivors of a loss get only 1000 (attackers who lived without planting, or after a timed-out plant; defenders alive after detonation) | W-Credits (since 1.11) | full loss bonus | **missing** → step 2 |
+| Survivors of a loss get only 1000 (attackers who lived without planting, or after a timed-out plant; defenders alive after detonation) | W-Credits (since 1.11) | full loss bonus | **fixed** (66dd210: server `survivorLoss`, offline `fSurvLoss`) |
 | Reset at half; overtime/endgame 5000 | W-Credits, W-Comp | same (Spike acceptance test covers OT 5000) | matches |
-| Overtime: ult points set to 3 short of the ult | W-Comp | not set | **missing** → step 2 if time |
-| Prices: Shorty 300 (6.11), others per W-Credits | W-Credits, W-Shorty | Shorty 150 (offline + server), rest match | **differs** → step 2 |
+| Overtime: ult points set to 3 short of the ult | W-Comp | not set | **fixed** (006efdd: server round ≥ 25, offline overtime setup incl. bots) |
+| Prices: Shorty 300 (6.11), others per W-Credits | W-Credits, W-Shorty | Shorty 150 (offline + server), rest match | **fixed** (66dd210: 300) |
 | Bandit (600), Warden (2900) | W-Credits, W-Bandit | not in game (no models/stats) | missing (content; remains) |
 | Armour: Light 25 / 400, Heavy 50 / 1000, absorb 66 %; Regen Shield 650 (25, 100 % absorb, 50 pool) | W-Armor | Light/Heavy 25 / 50 at 400 / 1000; no Regen Shield; absorption model is gunplay | Light/Heavy matches; Regen missing (remains); absorption **owned** (qa-11) |
 
@@ -62,10 +62,10 @@ Sources used (opened, not search excerpts):
 
 | Rule | Source | ValorStrike | Verdict |
 |---|---|---|---|
-| Buy phase 30 s; 45 s for the first buy of a half / endgame | W-Unrated | offline 45 / 30 (matches); **online 20 s** every round | **differs (online)** → step 2 |
+| Buy phase 30 s; 45 s for the first buy of a half / endgame | W-Unrated | offline 45 / 30 (matches); **online 20 s** every round | **fixed** (05b2852: online 45 on rounds 1/13/25, else 30) |
 | Round 100 s; spike fuse 45 s | W-Unrated, W-Spike | 100 / 45 | matches |
 | Plant 4 s; defuse 7 s with 3.5 s checkpoint | W-Spike | 4 / 7 / 3.5 (offline + server) | matches |
-| Post-round phase 7 s | W-Unrated | server `roundDelay=5` | **differs (online)** → step 2 |
+| Post-round phase 7 s | W-Unrated | server `roundDelay=5` | **fixed** (05b2852: 7 s) |
 | First to 13, sides swap after 12, overtime win by 2 | W-Unrated, W-Comp | same (server `>=13 && diff>=2`) | matches |
 
 ## 4. Spike
@@ -73,8 +73,8 @@ Sources used (opened, not search excerpts):
 | Rule | Source | ValorStrike | Verdict |
 |---|---|---|---|
 | Carrier, drop on death, attackers-only pickup, hidden from defenders until seen/planted | W-Spike | implemented (server test "Defenders do not receive hidden Spike carrier…") | matches |
-| Beeps speed up; double at 20 s, triple at 10 s, 7 s final sphere | W-Spike | cadence ~1/s → 2/s → 4/s (10 s) → 8/s (7 s), pulse synced to the light | close (single beeps instead of double/triple) — differs, low impact |
-| Detonation kills within ~audio range | W-Spike | radius kill on detonation | matches (radius not re-measured) |
+| Beeps speed up; double at 20 s, triple at 10 s, 7 s final sphere | W-Spike | cadence ~1/s → 2/s → 4/s (10 s) → 8/s (7 s), pulse synced to the light | **fixed** (81a6514: game-data cadence 1 s / 0.5 s < 20 s / 0.25 s < 10 s / 0.15 s < 5 s / 0.1 s < 1 s, valorant.gs/rules; still one tone per beep) |
+| Detonation kills everyone (either team) within ~audio range; outer radius 3250 uu = 32.5 m (game data; players measure ~35 m) | W-Spike, valorant.gs/rules | online: nobody died (round just ended); offline: kill-feed lines for defenders within 18 m, nobody died | **fixed** (9de5744: online `detonate`, offline `fDetonate`, 3D 32.5 m, no kill credit; defenders who outran it get the 1000 survivor pay) |
 | Spike icon replaces the round clock after plant | W-Spike (0.50) | yes (commit 13cbb3e) | matches |
 
 ## 5. Ult points
@@ -147,4 +147,32 @@ step 2** are worked in order of gameplay impact; anything not reached stays list
 
 ## Remaining
 
-Filled in at the end of the pass.
+Not done on this branch, by reason. Retrieved 2026-10-25.
+
+- **Performance Score** (post-match, replaced ACS in 13.06): Riot has not published the formula, so ValorStrike keeps ACS.
+  Faking a 0–500 number would not be parity.
+- **Jett Drift** (passive: hold jump while falling to glide at a capped fall speed): not in the game (no "drift" in the
+  motor or `server/src`). Abilities are owned by hark-abil. Note for whoever adds it: fall damage is measured apex→landing,
+  so a drifting Jett would need its fall height handled while drifting (how VALORANT treats it is not documented on the wiki).
+- **Fall damage curve between 8 m and 17 m**: the wiki gives only the two end points ("about 8 m → 15", "about 17 m → 100");
+  linear in between is an assumption. Bots offline do not take fall damage (they do not use the shared motor); online
+  bots do. No fall damage during the online buy phase (players are behind the barriers).
+- **Ult point for dying to the Spike or a fall**: the wiki lists +1 per death; ValorStrike gives it for every death
+  (server `deathUlts`, offline `pDie` → `jUlt`), including detonation and fall deaths. Whether VALORANT counts those two
+  sources is not documented.
+- **Spike beeps as double/triple tones**: cadence matches the game data; each beep is still one tone.
+- **Bandit (600) / Warden (2900), Regen Shield (650)**: content not in the game (no models/stats).
+- **Landing accuracy (+7° for 0.225 s), armour absorption, gunplay**: owned by the combat branch (hark-combat).
+- **8-way third-person locomotion clips**: no strafe/backpedal clips in the free animation set (see section 7).
+- **Ladders / ropes / ziplines**: not audited.
+- **Kill feed weapon icons**: text weapon names, not icons.
+- **Unrated Endgame (sudden death at 12-12)**: ValorStrike plays Competitive overtime instead; Endgame not offered.
+
+### Browser checks still to do (no Chromium on this branch)
+
+1. Third-person locomotion visual list (section 7, items 1–11).
+2. Jump feel: 1.17 m apex / 0.675 s airtime, crouch-jump, no landing slowdown; bunny hop keeps but never adds speed.
+3. Landing: small view dip (≤ 2.5 cm) and viewmodel kick are smooth (no one-frame step); no knee buckle on moving landings.
+4. Fall damage: drop off the highest ledge a map offers (or a Jett Updraft + ledge) → HP falls, shields unchanged; > 17 m kills with "Fall" in the kill feed.
+5. Detonation: stand inside / just outside ~32 m of a planted Spike at 0 s (both offline and online) → inside dies with a "Spike" kill-feed line; outside lives; result banner says SPIKE DETONATED once.
+6. Beep cadence by ear: steady 1/s, doubling at 20 s, again at 10 s, faster at 5 s.
