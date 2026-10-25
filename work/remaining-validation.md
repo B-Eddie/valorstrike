@@ -635,3 +635,18 @@ intentional; the runtime per-unit stall breaker covers bots attempting the up le
 - Sweep: a run without a completion marker is INCOMPLETE, not green. Replaced the single
   long sweep with /tmp/sliced-sweep.sh: 9 deterministic slices, per-test RESULT lines with
   exit codes + durations, SLICE-DONE markers, resumable via recorded results.
+
+## Startup-contention readiness fix (2026-10-25 ~17:22 EDT, commit pending tests)
+Root cause found for early-match hitching: xGate() fires xPrecompile (full-scene
+synchronous renderer.compile + ability/effect meshes) on the first rAF where
+running && !xPC - under frame starvation (SwiftShader headless, weak devices) that
+multi-second main-thread block lands INSIDE the playable window. Fix (readiness, no
+loader/cache change): window.xWarmShaders bridge (same xPrecompile + one warm
+renderer.render for texture uploads, hidden by the opaque overlay) called from
+xMatchLoad's chain after the match build resolves and before fill()/ready(), with a
+PREPARING status line. xGate fallback unchanged (direct-start/probe paths still compile
+on demand). Measured on breeze, same probe/machine/world, ACTIVE protocol (no settle):
+9 stall samples before -> 4 after (60 s settle diagnostic: 0; pre-merge baseline: 2).
+Meaningful reduction, not elimination - residual early-match work not yet attributed.
+Hark-overlap check: origin/hark-loading exists but has ZERO unique commits; hark-perf
+owns agent cull + nav GC only. Loading/preload space clear. Test: work/test_warm_shaders.cjs.

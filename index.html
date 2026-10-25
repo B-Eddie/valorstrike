@@ -10138,6 +10138,14 @@ function xPrecompile() { // once per loaded map: build every shader program up f
   try { if (!BFX.ok) bfxInit(); scene.traverse((o) => { if (!o.visible && o !== scene) { hid.push(o); o.visible = true; } }); renderer.compile(scene, camera); } catch (e) {}
   hid.forEach((o) => { o.visible = false; }); // warm-up only: restore hidden ability/effect meshes
 }
+// Loading-gate bridge: run the same warm-up behind the loading screen instead of on the first
+// playable frame (xGate would otherwise fire it in-match = the early-match hitch). The extra
+// renderer.render uploads textures too; the opaque overlay hides the warm frame.
+window.xWarmShaders = function () {
+  if (!running || xPC) return;
+  try { xPrecompile(); } catch (e) {}
+  try { renderer.render(scene, camera); } catch (e) {}
+};
 const xSeg = (id, fn) => $(id).querySelectorAll("button").forEach((b) => b.addEventListener("click", () => fn(b.dataset.v)));
 function xStill() {
   const k = player && running ? [player.x, player.y, player.z, yaw, pitch].map((v) => (+v || 0).toFixed(3)).join() + fireHeld + Object.values(keys).some(Boolean) : "idle";
@@ -13417,7 +13425,15 @@ xReady = true; // every mode is initialised; lobby launches may now start them
   var run = function (fn, map, mode, sync, title) {
     var id = ++loadId;show(map, mode, title);
     var wait = agents(id, mode); if (wait) wait.catch(function () {});
-    var go = function () { return (wait ? wait.then(fn) : Promise.resolve().then(fn)).then(function(v){if(id===loadId){if(!title)fill();ready();}return v;},function(err){if(id===loadId)failed();if(err&&err.name==='AbortError')return;throw err;}); };
+    var warm = function (v) { // compile shaders + upload textures behind the overlay, not on the first playable frame
+      if (id !== loadId || typeof window.xWarmShaders !== "function") return v;
+      xLdSet("xLdAg", "textContent", "PREPARING\u2026");
+      return new Promise(function (r) { requestAnimationFrame(function () { requestAnimationFrame(function () {
+        try { window.xWarmShaders(); } catch (e) {}
+        xLdSet("xLdAg", "textContent", ""); r(v);
+      }); }); });
+    };
+    var go = function () { return (wait ? wait.then(fn) : Promise.resolve().then(fn)).then(warm).then(function(v){if(id===loadId){if(!title)fill();ready();}return v;},function(err){if(id===loadId)failed();if(err&&err.name==='AbortError')return;throw err;}); };
     return sync || built(map) ? go() : new Promise(function(resolve,reject){requestAnimationFrame(function(){requestAnimationFrame(function(){go().then(resolve,reject);});});});
   };
   window.xCancelMatchLoad = function(){++loadId;failed();};
