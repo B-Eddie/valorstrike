@@ -18,6 +18,8 @@ Seventh push without a full gate (same order): 6e42e24 = merge of hark-combat 92
 | Run | Script | Build | Result |
 |---|---|---|---|
 | spec_l1 | `browser_spectate_lotus.cjs` | fc50ded | **Invalid, stopped.** Lotus site floor raised (pass); team wiped after the plant -> camera follows the killer (Raze, enemy) at eye height above the 6.28 m site floor (pass). Space / V then FAILED with "NO ONE ALIVE · SPIKE CAM": the script's 45 s fuse ran out in real time (SwiftShader frames take minutes) and the detonation killed every enemy. Script fixed (fuse held); rerun is spec_l2. Not a game bug. |
+| seams_a1 | `browser_map_seams.cjs` (Ascent) | fc50ded | **No result: Chromium OOM-killed** (kernel log: headless_shell 1.4 GB RSS; the 7.9 GB box is shared with other branches' gates) after the Ascent load (wall 177.7 s, prepare 17.0 s, load 92.2 s, upload 24.2 s, 450 meshes, collision 49 MB). Rerun queued (seams_a2). Load timing above is one sample under heavy contention, not a load-time verdict. |
+| abil_dm1 | `browser_abil_dm.cjs` | fc50ded / 4705125 page | Phoenix Hot Hands: KeyQ equips (no instant cast, FP item shown) **pass**; left click casts it (charge spent, gun did not fire) and the gun comes back up **pass**. Then a screenshot timed out (300 s, SwiftShader under contention) and the run ended: the remaining ability checks and the **DM 640x360 leaderboard check were not reached** (still open). |
 
 # Valorstrike acceptance ledger
 
