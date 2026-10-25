@@ -2937,10 +2937,17 @@ function gFire(d, w, W) {
   rcl = W.semi ? Math.min(0.06, rcl + 0.014 * W.rec) : rcl + (Math.min(0.04, vy * 0.4 + 0.003) - rcl) * 0.6; rclH += (hx * 0.4 - rclH) * 0.5;
 }
 let sprX = 0, sprD = 1;
+const xTgtA = [], xTgtB = [], xSV2 = new THREE.Vector2(); // per-shot target lists, pooled (damage-lag pass: concat/filter/flatMap allocated 3+ arrays per bullet)
+function xShotTgts(base) { // base + live dropped-gun hitboxes, pooled scratch; never retained past the shot
+  const ldh = xLdh(); if (!ldh.length) return base;
+  const t = xTgtB; t.length = 0; for (let i = 0; i < base.length; i++) t.push(base[i]); for (let i = 0; i < ldh.length; i++) t.push(ldh[i]); return t;
+}
 function shoot(hv) {
   if (player.hp <= 0 || fcd > 0 || (mode === "five" && FV.buy > 0) || VM.sw > 0) return; // can't fire until equipped
-  ray.setFromCamera(new THREE.Vector2(0, 0), camera);
-  const targets = solids.concat(bots.filter((b) => b.alive).flatMap((b) => [b.body, b.head]));
+  ray.setFromCamera(xSV2.set(0, 0), camera);
+  const targets = xTgtA; targets.length = 0;
+  for (let i = 0; i < solids.length; i++) targets.push(solids[i]);
+  for (let i = 0; i < bots.length; i++) { const b = bots[i]; if (b.alive) { targets.push(b.body); targets.push(b.head); } }
   const w = wName(), W = WEAP[w], P = player, kn = rw === "knife";
   let body = KNIFE.light, head = KNIFE.light;
   if (kn) {
@@ -2959,7 +2966,7 @@ function shoot(hv) {
     ray.far = 200;
     if (W.pel) { xPellets(W, targets); updHud(); return; }
   }
-  XWH.length = 0; ray.intersectObjects(xLdh().length ? targets.concat(XLDH) : targets, true, XWH); let hit = XWH[0], wk = 1;
+  XWH.length = 0; ray.intersectObjects(xShotTgts(targets), true, XWH); let hit = XWH[0], wk = 1;
   if (!kn) bFx(null, ray.ray.direction, xSurfHit(hit, ray.ray.direction, 200), 200);
   if (!kn && hit) { const wb = xWall(hit, ray.ray.direction, w); if (wb) { hit = wb; wk = xPen(w).k; } } // wallbang: first hitbox past a thin wall
   if (hit && hit.object.userData.sw) sgDmg(body);
@@ -3009,7 +3016,7 @@ function xBotWall(u, o, d, h) { // enemy bot sprays through a thin wall at a rec
 const XPB = new THREE.Vector3(), XPH = [], XPM = new Map(), XPP = new Map();
 function xPellets(W, targets) {
   const alt = W.alt && ads === 1 ? W.alt : null, D = alt || W, n = alt ? alt.pel : W.pel, sp = W.cone * (alt ? alt.k : 1), d = ray.ray.direction;
-  const objs = xLdh().length ? targets.concat(XLDH) : targets;
+  const objs = xShotTgts(targets);
   XPB.copy(d); XPM.clear(); XPP.clear(); xPelOn = true;
   try {
     for (let i = 0; i < n; i++) {

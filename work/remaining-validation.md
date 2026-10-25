@@ -692,3 +692,14 @@ ALL-SLICES-DONE 17:45:59 (9 slices, 80 files, aggregates excluded, per-test rc c
 - test_client_lifecycle.cjs rc=124 (1031s): confirmed SIGSTOP-freeze artifact as suspected -
   re-run green in 33s (24 matches, six maps, no per-match growth).
 Net: full 80-file sweep green with the guard fix.
+
+## 2026-10-25 ~17:53 EDT - Damage-lag follow-up: per-shot array allocations pooled (test_shot_alloc.cjs)
+shoot() ran `solids.concat(bots.filter(alive).flatMap(body,head))` per bullet and a second
+`.concat(XLDH)` whenever dropped guns were live (xPellets the same) - 3+ arrays, length
+~solids+20, per shot at 9.75-14 rps. Now pooled: xTgtA/xTgtB scratch + xShotTgts() helper,
+scratch Vector2 for setFromCamera. Solids-first layout preserved (the patched
+Raycaster.intersectObjects spatial-cell fast path keys on objs[0]/objs[n-1] === solids ends).
+Regression: work/test_shot_alloc.cjs (source-level, house style). Behavioral: combat_consistency,
+knife_heavy, hit_perf, weapon_resource (from repo root - it reads relative index.html) all green.
+Not browser-profiled: frame-time capture under live combat remains the acceptance gap (sandbox
+SwiftShader saturation), same caveat as 3778dea.
