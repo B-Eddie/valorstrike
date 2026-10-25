@@ -22,6 +22,13 @@ const walk=(s,u,look,seconds,each=()=>{})=>{let low=Infinity;for(let k=0;k<secon
  [b.x,b.y,b.z]=[16.71,11.71,-32.99];assert(W.blocked(b.x,b.z,.4,b.y,1.8),'start is inside collision');const start=[b.x,b.z];
  for(let k=0;k<60;k++){[t.x,t.y,t.z]=T;t.hp=100;t.alive=true;s.step(.05);}assert(b.unwedged>=1,'unwedged');assert(Math.hypot(b.x-start[0],b.z-start[1])>1,'moving again');assert(!W.blocked(b.x,b.z,.4,b.y,1.8));}
 
+// 2b. Wedged high: a seat bot sat inside a prop at Ascent (-56, 6.53, -22.4), 2.5 m above the floor nodes (soak seed 9).
+//     freeNode only accepted nodes within 1.5 m of its height, so unwedge and the escape found nothing for the rest of
+//     the match. It now falls back to the nearest free node below (up to 4 m down).
+{const s=new Simulation(W,'dm','ascent');const t=s.add('Target'),b=s.add('Bot Phoenix','Phoenix',false);s.phase='game';const at=[-55.98,6.53,-22.44];
+ [b.x,b.y,b.z]=at;assert(W.blocked(b.x,b.z,.4,b.y,1.8),'start is inside collision');const p=s.freeNode(b);assert(p&&p[1]<at[1]-2,'free node below');
+ for(let k=0;k<80;k++){[t.x,t.y,t.z]=[0.25,8.07,-49.75];t.hp=100;t.alive=true;s.step(.05);}assert(Math.hypot(b.x-at[0],b.z-at[2],b.y-at[1])>1,'moving again');assert(!W.blocked(b.x,b.z,.4,b.y,1.8),'out of the prop');}
+
 // 3. About 5% of playable nav nodes sit inside props; routes now pay 8 m to enter one, so bots walk around obstacles
 //    (150 seeded routes: 5.7% of route nodes blocked before, 0.8% now).
 {const bl=blockedNodes(W);let n=0;for(const i of W.playable)n+=bl[i];assert(n>100,'blocked nodes found: '+n);
@@ -77,5 +84,5 @@ const walk=(s,u,look,seconds,each=()=>{})=>{let low=Infinity;for(let k=0;k<secon
 // 7. Short seeded soak through the real worker: fuzzing humans + bots, TDM and Spike, invariants every tick.
 for(const [mode,seconds] of [['tdm',50],['five',70]]){const r=await soakRun({map:'ascent',mode,seconds,humans:3,seed:3,stuckSeconds:10});
  assert.deepEqual(r.errors,[],mode+' errors');const bad=r.violations.filter(v=>v.kind!=='bot stuck');assert.deepEqual(bad.map(v=>v.kind+': '+v.detail.slice(0,200)),[],mode+' invariants');assert(r.stats.ticks>seconds*15);if(mode==='tdm')assert(r.stats.kills>0);}
-console.log('Gameplay QA: open-edge falls rescued (TDM + Spike buy phase), wedged bot freed, routes avoid prop-blocked nodes, leaving or replaced spike carrier hands over/drops, stuck-in-place escape, Spike bots skip discarded hunt routes, off-graph loose goal arrival, Breeze off-map pocket, seeded worker soak (TDM, Spike) clean');
+console.log('Gameplay QA: open-edge falls rescued (TDM + Spike buy phase), wedged bot freed (also high on a prop), routes avoid prop-blocked nodes, leaving or replaced spike carrier hands over/drops, stuck-in-place escape, Spike bots skip discarded hunt routes, off-graph loose goal arrival, Breeze off-map pocket, seeded worker soak (TDM, Spike) clean');
 process.exit(0);

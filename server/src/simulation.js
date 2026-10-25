@@ -100,7 +100,10 @@ export class Simulation{
  // Nearest nav node (breadth-first from the closest one) where a standing capsule fits, at least minDist away.
  freeNode(u,minDist=0){const W=this.world;if(!W.nav||!W.near)return null;const N=W.nav.nodes,start=W.near(u.x,u.z,u.y);if(start<0)return null;const seen=new Set([start]),queue=[start],free=[];
   for(let k=0;k<queue.length&&k<400;k++){const i=queue[k],p=N[i];if(Math.abs(p[1]-u.y)<1.5&&Math.hypot(p[0]-u.x,p[2]-u.z)>=minDist&&!W.blocked(p[0],p[2],.43,p[1],1.92))free.push(p);for(const j of W.nav.adj[i])if(!seen.has(j)&&(!W.allowed||W.allowed.has(j))){seen.add(j);queue.push(j);}}
-  if(!free.length)return null;free.sort((a,b)=>Math.hypot(a[0]-u.x,a[2]-u.z)-Math.hypot(b[0]-u.x,b[2]-u.z));return free[0];}
+  /* Wedged up on a prop (Ascent -56, 6.5, -22.4: 2.5 m above the floor nodes) no node is within 1.5 m of its height;
+     then take the nearest free node below it (up to 4 m down), never one above. */
+  if(!free.length){for(const i of queue){const p=N[i],dy=p[1]-u.y;if(dy<1.5&&dy>-4&&Math.hypot(p[0]-u.x,p[2]-u.z)>=minDist&&!W.blocked(p[0],p[2],.43,p[1],1.92))free.push(p);}if(!free.length)return null;free.sort((a,b)=>Math.hypot(a[0]-u.x,a[2]-u.z,a[1]-u.y)-Math.hypot(b[0]-u.x,b[2]-u.z,b[1]-u.y));return free[0];}
+  free.sort((a,b)=>Math.hypot(a[0]-u.x,a[2]-u.z)-Math.hypot(b[0]-u.x,b[2]-u.z));return free[0];}
  // Utility hook; SpikeSimulation casts abilities on each bot's own timing.
  botUtility(){}
  rows(){return this.units.map(u=>[u.id,u.team,u.name,u.agent,+u.x.toFixed(3),+u.y.toFixed(3),+u.z.toFixed(3),u.look+Math.PI,Math.ceil(u.hp),Math.ceil(u.armor),u.alive?1:0,u.weapon,u.human?1:0,0,u.seq,u.ammo,u.reserve,+Math.min(1,(u.ch||0)/.45).toFixed(2),+(u.pitch||0).toFixed(3)]);}
