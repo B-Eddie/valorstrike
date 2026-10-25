@@ -259,3 +259,16 @@ geometry inspection; if the edges are wrong, bots routing down them could stall 
 Probe notes: bots are culled each poll (kill()) because DM respawns wanderers that body-block the
 stair base (observed); one retry per leg guards residual interference. A fixed-yaw aim flaw in the
 probe itself was found via bind (straight flight, diagonal first node) and fixed by per-poll re-aim.
+
+## Lotus descent-edge cluster - root cause found (2026-10-25, second entry)
+The failing edges (3628-3631 row, 3712, around x=-12/-11.3, z -7..-11) are NOT one-way ledges:
+the nodes sit in a ~.37 m gap UNDER a slab overhang (ground at their (x,z) is ~4.93, the slab
+above at ~5.3). blocked() at capsule height there is TRUE - a player cannot stand at these nodes,
+yet they are valid[] with adjacency into the upper walk level (e.g. 3628<->3627). Bots pathed
+through them will grind on the overhang until the runtime breaker bans the edge.
+OPEN FIX (not yet applied): targeted invalidation of under-overhang nodes on lotus + a nav
+connectivity re-check, through the verified-bake pipeline (build-world.cjs lotus + copies).
+CAUTION: a naive "blocked at node" sweep is noisy - spawn-area round barriers make 2% of nodes
+read blocked on every map (x=-78 on bind, x=-89 on breeze etc.). Any pruning must discriminate
+mid-map low-clearance overhangs from barrier-sealed spawns (e.g. re-check with barriers open, or
+filter to ceiling clearance < 1.35 m far from spawn volumes).
