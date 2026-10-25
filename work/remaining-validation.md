@@ -83,3 +83,9 @@ Open `http://127.0.0.1:8876/`; localhost clients use the local game service on p
 - Fix: nmNext skips path nodes within 0.8u of the unit when choosing a target (a reached node is never a waypoint); with no clear hop beyond 0.8u it steers at the goal (same fallback as the blocked-hop case).
 - Regression extended: work/test_tdm_native_routing.cjs pins "stands-on node skipped" and "reached-range only -> goal steer".
 - VERIFIED: haven tdm-soak PASS (12 deaths / 12 respawns, zero issues); breeze tdm-soak PASS (12/11) - no cross-map regression. 41/41 client suites green.
+
+## Ascent + split stalls root-caused and fixed; TDM soak green on ALL SIX maps (5:57 AM)
+- ASCENT (Cypher, y=9.1 balcony, path alive pl=73, goal-steer grinding): nmSegment rejects descents >0.35u, so graph edges across ledges - traversable by falling - were untargetable. Fix: nmSegDrop (nmSegment without the descent rejection) applied ONLY to the first graph edge; skip-ahead past it stays strict (never cuts corners across open drops).
+- SPLIT (Breach + Jett at west spawn, path alive pl=51, goal-steer blk=1 under xUn step-backs): units pushed off their node's corridor by combat movement; every hop failed from off-corridor ground and goal-steer ground walls. Fix: with no clear hop and the unit >0.6u from its nearest node, nmNext steers back onto that mesh node first (graph edges are walkable FROM the node).
+- Regression extended: ledge-drop edge taken exactly; walled first hop skipped; off-corridor recovery targets the nearest node.
+- FULL SWEEP VERIFIED: tdm-soak PASS on all six native maps - breeze 12/11, haven 12/12, ascent 11/11, bind clean, split 18/16, lotus 15/15 (deaths/respawns), zero stall issues, game-rate 1.00x wall everywhere. 41/41 client suites green.
