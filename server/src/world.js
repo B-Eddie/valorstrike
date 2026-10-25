@@ -18,6 +18,8 @@ export async function loadWorld(assets,key){
  // move's origin (x0, z0) an outside unit may only move back toward it.
  const leashCells=Motor.leashGrid(nav.nodes,nav.valid,nav.adj),leash=(x,z,y,x0,z0)=>Motor.leashOk(leashCells,x,z,y,ground,x0,z0);
  const ray=(o,d,max=Infinity)=>{const h=bvh.raycastFirst(new T.Ray(new T.Vector3(...o),new T.Vector3(...d)),T.DoubleSide);return h&&h.distance<max?h.distance:Infinity;};
+ // ray with the surface normal (Sova bolt bounces): {distance, normal:[x,y,z]} | null
+ const rayN=(o,d,max=Infinity)=>{const h=bvh.raycastFirst(new T.Ray(new T.Vector3(...o),new T.Vector3(...d)),T.DoubleSide);if(!h||!(h.distance<=max))return null;const n=h.face&&h.face.normal;return {distance:h.distance,normal:n?[n.x,n.y,n.z]:null};};
  const seen=new Set(),components=[];for(let i=0;i<nav.nodes.length;i++){if(seen.has(i)||!nav.valid[i])continue;const c=[i];seen.add(i);for(let k=0;k<c.length;k++)for(const j of nav.adj[c[k]])if(!seen.has(j)&&nav.valid[j]){seen.add(j);c.push(j);}components.push(c);}components.sort((a,b)=>b.length-a.length);const playable=components[0],allowed=new Set(playable);
  // Nearest playable node. A uniform grid over the playable nodes replaces the full scan (bots call this on every
  // repath); rings are searched outward until no farther cell can beat the best, and ties keep the scan's order, so
@@ -32,5 +34,5 @@ export async function loadWorld(assets,key){
    for(let j=cz-r;j<=cz+r;j++){if(j<0||j>=GH)continue;const edge=j===cz-r||j===cz+r;for(let i=cx-r;i<=cx+r;i+=edge?1:2*r||1){if(i<0||i>=GW)continue;
     for(const k of cells[j*GW+i]){const p=nav.nodes[playable[k]],v=(p[0]-x)**2+(p[2]-z)**2+(fy?2*(p[1]-y)**2:0);if(v<d||(v===d&&k<bestK)){bestK=k;d=v;}}}}}
   return bestK<0?-1:playable[bestK];};
- const plantAt=(x,z)=>{const t=map.transform,p=map.apiProjection,ca=Math.cos(t.angle),sa=Math.sin(t.angle),sx=ca*x-sa*z+t.cx,sz=sa*x+ca*z+t.cz,u=Math.floor((sx*100*p.xMultiplier+p.xScalarToAdd)*1024),v=Math.floor((-sz*100*p.yMultiplier+p.yScalarToAdd)*1024);for(const row of plants.rows[v]||[])if(u>=row[0]&&u<row[1])return row[2];return '';};return {plantAt,ground,blocked,leash,ray,near,nearScan,nav,map,playable,allowed,bytes:geometry.attributes.position.array.byteLength+index.byteLength+roots.reduce((a,r)=>a+r.byteLength,0),ceiling:(x,z,l,h)=>ray([x,l+.01,z],[0,1,0],h-l)<Infinity};
+ const plantAt=(x,z)=>{const t=map.transform,p=map.apiProjection,ca=Math.cos(t.angle),sa=Math.sin(t.angle),sx=ca*x-sa*z+t.cx,sz=sa*x+ca*z+t.cz,u=Math.floor((sx*100*p.xMultiplier+p.xScalarToAdd)*1024),v=Math.floor((-sz*100*p.yMultiplier+p.yScalarToAdd)*1024);for(const row of plants.rows[v]||[])if(u>=row[0]&&u<row[1])return row[2];return '';};return {plantAt,ground,blocked,leash,ray,rayN,near,nearScan,nav,map,playable,allowed,bytes:geometry.attributes.position.array.byteLength+index.byteLength+roots.reduce((a,r)=>a+r.byteLength,0),ceiling:(x,z,l,h)=>ray([x,l+.01,z],[0,1,0],h-l)<Infinity};
 }

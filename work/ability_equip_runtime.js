@@ -20,14 +20,22 @@ try { if (xAbMigrate(XS.keys)) xKbSave(); } catch (e) {}
 { const r0 = xKbRender; xKbRender = function () { const v = r0.apply(this, arguments); try { xAbKeyLbl(); } catch (e) {} return v; }; }
 try { xAbKeyLbl(); } catch (e) {}
 // ---- Equip-then-fire (Valorant ability use flow) ----
-// Press an ability key -> the ability is EQUIPPED (gun lowered, ability item drawn, XABT.draw s). FIRE (left click) throws /
+// Press an ability key -> the ability is EQUIPPED (gun lowered, ability item drawn over its wiki equip time, XAB_EQT). FIRE (left click) throws /
 // places it, ALT FIRE (right click) casts its alternate (underhand / curve right / heal self ...). The throw leaves the hand
 // after XABT.rel s; the gun comes back over XABT.rec s. The gun cannot fire from equip until it is back up. A weapon key
 // (1 / 2 / 3, wheel) or the same ability key again puts it away; another ability key switches to that ability. Abilities
 // Valorant casts INSTANTLY (Jett Cloudburst / Updraft / Tailwind, Reyna Devour / Dismiss / Empress, Phoenix Run It Back ...)
 // and recasts of an ability already out (detonate, trigger, return, drone / camera control, the ult guns) keep the
 // immediate key press. A click during the draw is buffered; a cast the kit refuses (no target) stays in hand.
-const XABT = { draw: 0.5, rel: 0.2, rec: 0.45 };
+const XABT = { draw: 0.5, rel: XAB_REL, rec: 0.45 }; // rel: the hand release, shared with the wiki windups (XAB_WIND / xWf); draw: fallback equip time
+// Equip times (seconds from the key press until the ability is in hand and FIRE works), from each ability's wiki page
+// ("Equip time" row, wiki.playvalorant.com/en-us/<Ability>, fetched 2026-10-25). Not listed: Blast Pack, Cyber Cage,
+// Neural Theft -> XABT.draw (0.5 s).
+const XAB_EQT = {
+  Phoenix: { c: 0.8, q: 0.8, e: 0.8 }, Sova: { c: 0.9, q: 0.8, e: 0.8, x: 0.8 }, Sage: { c: 0.8, q: 0.5, e: 0.5, x: 0.8 }, Reyna: { c: 0.77 },
+  Omen: { c: 0.5, q: 1.1, e: 0.6 }, Killjoy: { c: 0.74, q: 0.85, e: 1.1, x: 0.8 }, Raze: { c: 1.1, e: 0.8 }, Skye: { e: 0.8, x: 0.8 },
+  Breach: { c: 0.9, q: 1.1, e: 0.8, x: 1.1 }, Cypher: { c: 0.8, e: 0.8 }, Chamber: { c: 1.0, e: 0.8 } };
+function xEqT(k) { const t = XAB_EQT[J.pick]; return (t && t[k]) || XABT.draw; }
 const XAB_EQ = { // agent -> key -> ready-to-equip test (a charge to spend and nothing of it out waiting for a recast); mirrors server ABILITY_EQUIP
   Phoenix: { c: () => J.c >= 1 && J.cd.c <= 0, q: () => J.q >= 1 && J.cd.q <= 0, e: () => J.e >= 1 && J.cd.e <= 0 },
   Sova: { c: () => J.c >= 1 && J.cd.c <= 0 && !J.dr, q: () => J.q >= 1 && J.cd.q <= 0 && !J.dr, e: () => J.e >= 1 && !J.dr, x: () => !(J.hf > 0) && J.ult >= K().u && !J.dr },
@@ -41,20 +49,29 @@ const XAB_EQ = { // agent -> key -> ready-to-equip test (a charge to spend and n
   Cypher: { c: () => J.c >= 1 && J.cd.c <= 0, q: () => J.q >= 1 && J.cd.q <= 0, e: () => !BC.cam && !BC.cv, x: () => J.ult >= K().u },
   Chamber: { c: () => J.c >= 1 && J.cd.c <= 0 && !BC.tm.length, e: () => !BC.an && J.cd.e <= 0 },
 };
-// J.eq: null | { k, code, st: "draw" | "ready" | "rel" | "rec", t, alt, buf }
+// Hold abilities: FIRE pressed with the ability out starts a HOLD (st "hold", q.h s held), releasing FIRE throws.
+//  bow (Sova Shock Bolt / Recon Bolt): the hold charges the bolt (SovaBolt.power), ALT FIRE adds a bounce (0 -> 1 -> 2 -> 0).
+const XAB_HOLD = { Sova: { q: "bow", e: "bow" } };
+function xEqHold(q) { const t = q && XAB_HOLD[J.pick]; return (t && t[q.k]) || ""; }
+// J.eq: null | { k, code, st: "draw" | "ready" | "hold" | "rel" | "rec", t, alt, buf, h (held s), bn (bounces) }
 function xEqMode(code) { const t = XAB_EQ[J.pick], k = code && code[3] && code[3].toLowerCase(), f = t && t[k]; try { return !!(f && f()); } catch (e) { return false; } }
 function xEqFire(alt) { // FIRE / ALT FIRE while an ability is out: true when the click belonged to the ability
-  const q = J.eq; if (!q) return false; if (q.st === "ready") { q.st = "rel"; q.t = XABT.rel; q.alt = !!alt; } else if (q.st === "draw") q.buf = alt ? 2 : 1; return true;
+  const q = J.eq; if (!q) return false; const hk = xEqHold(q);
+  if (hk === "bow" && alt) { if (q.st !== "rel" && q.st !== "rec") { q.bn = ((q.bn | 0) + 1) % 3; try { blip(500 + q.bn * 180, 0.05, "triangle", 0.1); } catch (e) {} } return true; } // ALT FIRE: one more bounce
+  if (hk && !alt) { if (q.st === "ready") { q.st = "hold"; q.h = 0; } else if (q.st === "draw") q.buf = 1; return true; } // FIRE down: start the hold
+  if (q.st === "ready") { q.st = "rel"; q.t = XABT.rel; q.alt = !!alt; } else if (q.st === "draw") q.buf = alt ? 2 : 1; return true;
 }
 function xEqCast(q) { // the throw leaves the hand: the kit's own cast (offline / host relay / trusted server) with ALT FIRE held for an alternate
   const a0 = J.abAlt, m0 = typeof mpAltHeld !== "undefined" ? mpAltHeld : false, s0 = xCaSig(); J.abAlt = !!q.alt; try { if (q.alt) mpAltHeld = true; } catch (e) {}
-  XABT.casting = true; try { xEqKey0(q.code); } catch (e) { xE(e); } finally { XABT.casting = false; J.abAlt = a0; try { mpAltHeld = m0; } catch (e) {} }
+  const hk = xEqHold(q); XABT.bolt = hk === "bow" ? { pw: SovaBolt.power(q.h), b: SovaBolt.bounces(q.bn) } : null; // read by jArrow and the cast message (mpCastSelf)
+  XABT.casting = true; try { xEqKey0(q.code); } catch (e) { xE(e); } finally { XABT.casting = false; XABT.bolt = null; J.abAlt = a0; try { mpAltHeld = m0; } catch (e) {} }
   try { xCaEnd(); } catch (e) {} // the equip viewmodel plays the release; the old one-shot cast gesture would replay it
   return xCaSig() !== s0 || !xEqMode(q.code); // false: the kit refused (no target / no room): Valorant keeps it in hand
 }
 function xEqTick(dt) {
   const q = J.eq; if (!q) return;
   if (!jOn() || !running || !player || player.hp <= 0 || (mode === "five" && FV.buy > 0)) { J.eq = null; return; }
+  if (q.st === "hold") { q.h += dt; if (!fireHeld) { q.st = "rel"; q.t = XABT.rel; q.alt = false; } return; } // releasing FIRE throws
   q.t -= dt; if (q.t > 0) return;
   if (q.st === "draw") { q.st = "ready"; q.t = 0; if (q.buf) { const a = q.buf === 2; q.buf = 0; xEqFire(a); } }
   else if (q.st === "rel") { if (xEqCast(q)) { q.st = "rec"; q.t = XABT.rec; } else { q.st = "ready"; q.t = 0; } }
@@ -63,14 +80,15 @@ function xEqTick(dt) {
 const xEqKey0 = jKey;
 jKey = function (code) {
   if (XABT.casting || !jOn() || typeof code !== "string" || !/^Key[CQEX]$/.test(code) || (mode === "five" && FV.buy > 0)) return xEqKey0.apply(this, arguments);
-  if (J.eq && J.eq.code === code && J.eq.st !== "rec") { if (J.eq.st !== "rel") J.eq = null; return true; } // same key again: put it away
+  if (J.eq && J.eq.code === code && J.eq.st !== "rec") { if (J.eq.st !== "rel" && J.eq.st !== "hold") J.eq = null; return true; } // same key again: put it away
   if (J.eq && J.eq.st === "rel") return true; // mid-throw
-  if (player && player.hp > 0 && xEqMode(code)) { J.eq = { k: code[3].toLowerCase(), code, st: "draw", t: XABT.draw, alt: false, buf: 0 }; fireHeld = false; try { setScope(false); } catch (e) {} return true; }
+  if (J.eq && J.eq.st === "hold") return true; // drawing the bow / holding: finish it first
+  if (player && player.hp > 0 && xEqMode(code)) { J.eq = { k: code[3].toLowerCase(), code, st: "draw", t: xEqT(code[3].toLowerCase()), d0: xEqT(code[3].toLowerCase()), alt: false, buf: 0, h: 0, bn: 0 }; fireHeld = false; try { setScope(false); } catch (e) {} return true; }
   if (J.eq) J.eq = null; // a quick-cast / recast puts away whatever was out
   return xEqKey0.apply(this, arguments);
 };
 { const s0 = shoot; shoot = function (hv) { // the gun is down while an ability is out or coming back
-  if (jOn() && J.eq) { fireHeld = false; xEqFire(!!hv); return; } // knife ALT FIRE / touch long-press = ability ALT FIRE
+  if (jOn() && J.eq) { if (hv || !xEqHold(J.eq)) fireHeld = false; xEqFire(!!hv); return; } // knife ALT FIRE / touch long-press = ability ALT FIRE; a hold ability keeps fireHeld to see the release
   if (jOn() && J.pick === "Sova" && J.hf > 0 && !hv) { fireHeld = false; return void xEqKey0("KeyX"); } // Hunter's Fury: FIRE shoots the next blast
   return s0.apply(this, arguments); }; }
 { const z0 = xScopeT; xScopeT = function () { if (jOn() && J.eq) return void xEqFire(true); return z0.apply(this, arguments); }; }
@@ -79,7 +97,13 @@ jKey = function (code) {
 // HUD: the equipped slot is outlined, as Valorant highlights the ability in hand
 try { const st = document.createElement("style"); st.textContent = ".x-as.x-eq,#game .x-as.x-eq{box-shadow:inset 0 0 0 2px #fff;border-bottom-color:#fff!important}"; document.head.appendChild(st); } catch (e) {}
 function xEqHud() { const k = J.eq && J.eq.st !== "rec" ? J.eq.k : ""; if (xEqHud.k === k) return; xEqHud.k = k; [["jC", "c"], ["jQ", "q"], ["jE", "e"], ["jX", "x"]].forEach(([id, a]) => { const el = $(id); if (el) el.classList.toggle("x-eq", a === k); }); }
-{ const t0 = jTick; jTick = function (dt) { const v = t0.apply(this, arguments); try { xEqTick(dt); xEqHud(); } catch (e) { J.eq = null; } return v; }; }
+// Sova bow HUD under the crosshair while a bolt is out: charge bar (fills over SovaBolt.BOLT.charge s of HOLD FIRE) and the
+// two bounce pips ALT FIRE lights, as Valorant's bow reticle shows them.
+try { const st = document.createElement("style"); st.textContent = "#xBow{position:fixed;left:50%;top:calc(50% + 34px);transform:translateX(-50%);display:none;align-items:center;gap:6px;pointer-events:none;z-index:6;font:600 10px/1 sans-serif;color:#fff;text-shadow:0 0 2px #000}#xBow.on{display:flex}#xBow i{display:block;width:64px;height:4px;background:rgba(255,255,255,.25);box-shadow:0 0 0 1px rgba(0,0,0,.5)}#xBow i b{display:block;height:100%;width:0;background:#7fd8ff}#xBow u{display:block;width:7px;height:7px;transform:rotate(45deg);border:1px solid #fff;background:transparent}#xBow u.on{background:#7fd8ff}"; document.head.appendChild(st);
+  const d = document.createElement("div"); d.id = "xBow"; d.innerHTML = "<u></u><i><b></b></i><u></u>"; (document.getElementById("game") || document.body).appendChild(d); } catch (e) {}
+function xBowHud() { const q = J.eq, on = !!(q && xEqHold(q) === "bow" && q.st !== "rec"), el = $("xBow"); if (!el) return; const k = on ? Math.round(SovaBolt.power(q.st === "hold" ? q.h : 0) * 20) + "|" + (q.bn | 0) : "";
+  if (xBowHud.k === k) return; xBowHud.k = k; el.classList.toggle("on", on); if (!on) return; el.querySelector("b").style.width = (SovaBolt.power(q.st === "hold" ? q.h : 0) * 100).toFixed(0) + "%"; el.querySelectorAll("u").forEach((u, i) => u.classList.toggle("on", (q.bn | 0) > i)); }
+{ const t0 = jTick; jTick = function (dt) { const v = t0.apply(this, arguments); try { xEqTick(dt); xEqHud(); xBowHud(); } catch (e) { J.eq = null; } return v; }; }
 // ---- First-person ability viewmodel: the gun goes down and the hand holds the ability item ----
 // While an ability is equipped (J.eq) this owns the viewmodel after every other vmTick layer: the gun / knife and the
 // native first-person rig drop out of view (draw), the procedural hand (xCaHand: glove, cuff, sleeve) comes up holding
@@ -111,11 +135,11 @@ function xEqView(dt) {
   const q = J.eq; XEQV.t += dt;
   if (!q || !running || !player || player.hp <= 0) { if (XEQV.on) { XEQV.on = false; if (XEQV.item) XEQV.item.visible = false; if (!XCA.on && XCA.h) XCA.h.visible = false; if (XCA.gl && !XCA.on) XCA.gl.material.opacity = 0; } return; }
   const sm = (x) => { x = Math.max(0, Math.min(1, x)); return x * x * (3 - 2 * x); }, ty = xEqType(q.k);
-  const g = sm(q.st === "draw" ? 1 - q.t / XABT.draw : q.st === "rec" ? q.t / XABT.rec : 1); // gun-down amount
+  const g = sm(q.st === "draw" ? 1 - q.t / (q.d0 || XABT.draw) : q.st === "rec" ? q.t / XABT.rec : 1); // gun-down amount
   gun.position.y -= g * 0.42; gun.position.x += g * 0.06; gun.rotation.x -= g * 0.8; gun.rotation.z += g * 0.45; knife.position.y -= g * 0.42; // vmTick sets these absolutely each frame
   const F = typeof XV !== "undefined" && XV.fp; if (F && F.root) { F.root.position.y -= g * 0.4; if (g > 0.9) F.root.visible = false; }
   const h = xCaHand(), it = xEqItem(ty); XEQV.on = true;
-  const up = sm(q.st === "draw" ? (1 - q.t / XABT.draw) * 1.4 - 0.4 : q.st === "rec" ? (q.t / XABT.rec) * 1.6 - 0.6 : 1); // hand rises behind the gun going down
+  const up = sm(q.st === "draw" ? (1 - q.t / (q.d0 || XABT.draw)) * 1.4 - 0.4 : q.st === "rec" ? (q.t / XABT.rec) * 1.6 - 0.6 : 1); // hand rises behind the gun going down
   const p = q.st === "rel" ? sm(1 - q.t / XABT.rel) : q.st === "rec" ? 1 : 0, sway = Math.sin(XEQV.t * 1.6) * 0.004;
   let x = 0.2, y = -0.2 + sway, z = -0.4, rx = -1.0; const rz = 0.3;
   if (ty === "throw") { if (q.alt) { y += -0.08 + 0.1 * p; z -= 0.22 * p; rx += 0.6 - 0.9 * p; } else { y += 0.05 - 0.09 * p; z += 0.08 - 0.32 * p; rx += 0.5 - 1.0 * p; } } // cocked overhand / low underhand, then the swing
