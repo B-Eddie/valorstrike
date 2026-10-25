@@ -36,11 +36,11 @@ const wb={...bw,blocked:(x,z)=>x===20&&z===43},bc=new SpikeSimulation(wb),bp=bc.
 {const s=new SpikeSimulation(W),h=s.add('loader','Jett',true),a2=s.add('mate'),d1=s.add('def1'),d2=s.add('def2');s.start(false);
  for(const u of [h,a2])u.team=s.atk;for(const u of [d1,d2])u.team=1-s.atk;s.spike.carrier=h.id;h.loading=true;
  const run=sec=>{for(let i=0;i<Math.round(sec/.05);i++)s.step(.05);};
- run(10);assert.equal(s.buy,20,'held while the loader is inside the grace');run(10);assert.ok(s.buy<20&&s.buy>14,'grace capped at 15 s: buy '+s.buy);
- run(16);assert.equal(s.buy,0);assert.equal(h.alive,false,'still loading at round start: out for the round');assert.equal(s.round,1);
+ run(10);assert.equal(s.buy,45,'held while the loader is inside the grace');run(10);assert.ok(s.buy<45&&s.buy>39,'grace capped at 15 s: buy '+s.buy);
+ run(41);assert.equal(s.buy,0);assert.equal(h.alive,false,'still loading at round start: out for the round');assert.equal(s.round,1);
  assert.ok(a2.alive&&s.spike.carrier===a2.id,'spike handed to a teammate who is in the round');
  h.loading=false;run(1);assert.equal(h.alive,false,'finishing the load mid-round spectates');
- s.finishRound(0,'QA');run(5.2);assert.equal(s.round,2);assert.equal(h.alive,true,'back next round');
+ s.finishRound(0,'QA');run(7.2);assert.equal(s.round,2);assert.equal(h.alive,true,'back next round');
  const late=s.add('late','Sage',true);late.loading=true;const b0=s.buy;run(2);assert.ok(s.buy<b0-1.9,'mid-game joiner does not hold the round');
  const bL=s.buy;h.loading=true;run(14);assert.equal(s.buy,bL,'a loader alive in the round holds within its grace');run(4);assert.ok(Math.abs(bL-s.buy-3)<.11,'released after 15 s: '+(bL-s.buy));
  h.loadSince=null;const bR=s.buy;run(2);assert.ok(bR-s.buy>1.9,'per-round budget (15 s) spent: no further hold this round');
@@ -58,3 +58,11 @@ const wb={...bw,blocked:(x,z)=>x===20&&z===43},bc=new SpikeSimulation(wb),bp=bc.
  const back=s.add('Leaver','Jett',true,team);assert.equal(back.team,team);assert(s.units.includes(mates[0])&&!s.units.includes(mates[1]),'rejoin replaced the dead bot, the living one keeps playing');
  const dead=s.units.find(u=>!u.alive&&u.human);assert(!s.takeOver(s.units.find(u=>!u.human),dead||back),'no take-over of a dead body');
  console.log('Spike seats: a leaver\'s seat bot takes over the living body; a rejoin gives up a dead bot before a living one');}
+// Sidearm-only round (pistol / eco): the empty primary slot is null, and equip {w:null} (or no w) matched it, so the unit was
+// left holding no weapon after a TypeError and every later tick threw (the room's simulation stopped). Malformed or empty-slot
+// equips are refused; a dropped sidearm's empty slot likewise; 1 / 2 / 3 on a pistol round still swap Classic <-> Knife.
+{const s=new SpikeSimulation(W,'five','ascent',()=>.5),a=s.add('a','Sova');s.add('b','Sage');s.start(false);s.buy=0;assert.equal(a.primary,null);assert.equal(a.weapon,'Classic');
+ for(const w of [null,undefined,'',0,'constructor','__proto__','Vandal',{}])assert.equal(s.command(a,{t:'equip',w}),false,'equip '+String(w)+' refused');assert.equal(a.weapon,'Classic');
+ for(let i=0;i<5;i++)s.step(.05);assert.equal(s.command(a,{t:'equip',w:'Knife'}),true);assert.equal(s.command(a,{t:'equip',w:'Classic'}),true);assert.equal(a.weapon,'Classic');
+ a.secondary=null;a.weapon='Knife';assert.equal(s.command(a,{t:'equip',w:null}),false,'dropped sidearm: empty slot refused');for(let i=0;i<5;i++)s.step(.05);assert.equal(a.weapon,'Knife');
+ console.log('Sidearm-only round: equip of an empty slot / malformed name refused, the simulation keeps ticking');}

@@ -30,7 +30,7 @@ export function walk(s,u,goal,limit=120){const W=s.world,N=W.nav.nodes,dt=.05;le
 // the footprint tread), so no edge is whitelisted and no walk may need the unwedge either.
 const KNOWN_EDGES={};
 const fresh=(w,key)=>{const s=new SpikeSimulation(w,'five',key,()=>.5);s.rescues=[];{const g=s.guard.bind(s);s.guard=u=>{const b=[u.x,u.y,u.z],r=g(u);if(r)s.rescues.push(b);return r;};}const a=s.add('atk'),d=s.add('def');s.start(false);return {s,a,d};};
-const endBuy=s=>{for(let n=0;n<420&&s.buy>0;n++){for(const u of s.units)drive(s,u,u.look,0);s.step(.05);}assert.equal(s.buy,0);};
+const endBuy=s=>{for(let n=0;n<960&&s.buy>0;n++){for(const u of s.units)drive(s,u,u.look,0);s.step(.05);}assert.equal(s.buy,0);};
 const report=[];
 for(const key of MAPS){const w=await loadWorld(assets,key);const sites=Object.entries(w.map.sites);
  // buy wall: held during the buy phase (test-buy-worlds), released after it: an attacker walking toward the

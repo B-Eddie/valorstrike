@@ -1581,7 +1581,7 @@ if (!NO3) {
   const rclick = (b) => dispatch(b, mkEvent("contextmenu", {}));
   let started = false;
   try { toLobby(); xe('(() => { FV.pick = "ascent"; FV.srOn = 0; window.xSwift = false; startFive(); clearTimeout(FV.to); return true; })()'); advance(60); started = xe("mode === 'five' && running"); } catch (e) {}
-  const EXP = [["Sidearms", [["Classic", 0], ["Shorty", 150], ["Frenzy", 450], ["Ghost", 500], ["Sheriff", 800]]], ["SMGs", [["Stinger", 1100], ["Spectre", 1600]]], ["Shotguns", [["Bucky", 850], ["Judge", 1850]]],
+  const EXP = [["Sidearms", [["Classic", 0], ["Shorty", 300], ["Frenzy", 450], ["Ghost", 500], ["Sheriff", 800]]], ["SMGs", [["Stinger", 1100], ["Spectre", 1600]]], ["Shotguns", [["Bucky", 850], ["Judge", 1850]]],
     ["Rifles", [["Bulldog", 2050], ["Guardian", 2250], ["Phantom", 2900], ["Vandal", 2900]]], ["Sniper", [["Marshal", 950], ["Outlaw", 2400], ["Operator", 4700]]], ["Machine guns", [["Ares", 1600], ["Odin", 3200]]], ["Shields", [["Light Shields", 400], ["Heavy Shields", 1000]]]];
   R("menu opens in a 5v5 buy phase with all 7 category columns in Valorant order and every card at the right price", () => {
     if (!started) return "5v5 did not start"; xe("FV.pri = null; FV.sec = 'Classic'; player.armor = 0; FV.bt = []; true"); open(9000); if (!$("xBuy").classList.contains("on")) return "menu not open";
@@ -1878,9 +1878,9 @@ if (!NO3) {
   const f2 = (label, code) => { let ok = false, err = []; try { const r = xe(`(() => { try { ${code} } catch (e) { return String(e.stack || e).slice(0, 300); } })()`); if (r === true) ok = true; else err.push(String(r)); } catch (e) { err.push(String(e).slice(0, 300)); } report.push({ label: "fid2: " + label, el: true, handler: true, cond: ok, pass: ok, errs: err }); return ok; };
   const go5 = 'window.xLdOn = false; FV.pick = "ascent"; FV.srOn = 0; FV.dm = false; FV.tdm = false; window.xSwift = false; startFive(); clearTimeout(FV.to); window.xLdOn = false;';
   const SRC_OK = ["s.pt >= 4", "prog = s.pt / 4", "s.t = 45", "s.dt >= 7", "s.dt = s.dt >= 3.5 ? 3.5 : 0", "over ? 2200 : 7000", "n >= 24", "s.cr = 5000", "? 45 : 30", "timeLeft = 100;"].every((t) => html.includes(t));
-  f2("timing constants (buy 45 first round of each half / 30, round 100, plant 4, fuse 45 w/ beep 4/s <10 s 8/s <7 s, defuse 7 / half 3.5, post-round 7 s, 13 to win, OT 5000)", go5 + `
+  f2("timing constants (buy 45 first round of each half / 30, round 100, plant 4, fuse 45 w/ beep 1/s, 2/s <20 s, 4/s <10 s, 6.7/s <5 s, 10/s <1 s, defuse 7 / half 3.5, post-round 7 s, 13 to win, OT 5000)", go5 + `
     const b0 = FV.buy, t0 = timeLeft; FV.you = 1; FV.them = 0; fRound(); clearTimeout(FV.to); const b1 = FV.buy; FV.you = 6; FV.them = 6; fRound(); clearTimeout(FV.to); const b12 = FV.buy;
-    const ok = b0 === 45 && t0 === 100 && b1 === 30 && b12 === 45 && FIVE_WIN === 13 && ${SRC_OK} && xSpHz(5) === 8 && xSpHz(9) === 4 && xSpHz(30) < 2 && xSpHz(11) > xSpHz(40);
+    const ok = b0 === 45 && t0 === 100 && b1 === 30 && b12 === 45 && FIVE_WIN === 13 && ${SRC_OK} && xSpHz(30) === 1 && xSpHz(15) === 2 && xSpHz(9) === 4 && xSpHz(4) > 6 && xSpHz(0.5) === 10;
     return ok || JSON.stringify([b0, t0, b1, b12, FIVE_WIN]);`);
   f2("player plant progresses only while stationary; moving or firing resets it", go5 + `
     FV.buy = 0; player.hp = 100; running = true; paused = false; const s = FV.sp, k = Object.keys(SITES)[0]; s.st = "carry"; s.c = player; s.pt = 0; player.x = SITES[k][0]; player.z = SITES[k][1]; player.y = 0; player.vx = player.vz = 0; since = 1; keys.Digit4 = true;

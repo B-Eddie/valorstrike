@@ -25,6 +25,15 @@ assert(/<div id="xAg"[\s\S]*?id="xAgL"/.test(html),'LOCK IN button #xAgL missing
 // (c) spectate bar leaves the centre of a 360 px screen
 const sp=find('.x-sp');assert(sp&&decl(sp,'bottom')==='6px','spectate bar not moved down on short screens');assert(find('.x-sp small')&&decl(find('.x-sp small'),'display')==='none');
 assert(R.findIndex(r=>r===sp)>R.findIndex(r=>!r.media&&r.sel==='.x-sp'),'short .x-sp rule must follow the base rule');
+// (g) Tab scoreboard on a 360 px tall screen: both teams fit (was: 44 px rows, own team only, enemies clipped by overflow:hidden).
+{const B=sel=>short.find(r=>r.sel===sel);const px=(sel,prop)=>parseFloat(decl(B(sel),prop));
+ for(const s of ['#xBoard','#xBoard .x-sbt td','#xBoard .x-sbt th','#xBoard .x-sbt','#xBoard .x-sbsc b','#xBoard .x-sbtop','#xBoard .x-ag'])assert(B(s),'short #xBoard rule missing: '+s);
+ const pad=decl(B('#xBoard'),'padding').split(/\s+/).map(parseFloat),top=decl(B('#xBoard .x-sbtop'),'padding').split(/\s+/).map(parseFloat);
+ const header=px('#xBoard .x-sbsc b','font-size')+top[2]+parseFloat(decl(B('#xBoard .x-sbtop'),'margin-bottom'))+1;
+ const table=px('#xBoard .x-sbt th','height')+5*px('#xBoard .x-sbt td','height')+parseFloat(decl(B('#xBoard .x-sbt'),'margin').split(/\s+/)[2]);
+ const need=pad[0]+pad[2]+header+2*table;assert(need<=360-24,'scoreboard needs '+need+' px on a 360 px screen');
+ assert(px('#xBoard .x-ag','height')<=px('#xBoard .x-sbt td','height'),'avatar taller than the compact row');
+ const last=R.filter(r=>!r.media&&r.sel.split(',').map(x=>x.trim()).includes('#xBoard .x-sbt td')).pop();assert(R.indexOf(B('#xBoard .x-sbt td'))>R.indexOf(last),'short #xBoard rows must follow the base rule');}
 // Cascade: no later unconditional rule with the same selector may override a property the short rule sets.
 for(const r of short){for(const sel of r.sel.split(',').map(s=>s.trim())){if(!/^#(pre|xAg)/.test(sel))continue;
  const props=r.body.split(';').map(d=>d.split(':')[0].trim()).filter(Boolean);

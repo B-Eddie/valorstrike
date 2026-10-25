@@ -1,0 +1,1324 @@
+{
+ "ascent": {
+  "triangles": 3320370,
+  "before": {
+   "pairs": 32130,
+   "open": 29842,
+   "dup": 57,
+   "overlay": 29785,
+   "decalHandled": 2288
+  },
+  "after": {
+   "pairs": 32026,
+   "open": 59,
+   "openAreaM2": 4.11
+  },
+  "topBefore": [
+   {
+    "pair": "Vista_1_M0_DefSpawnCard01_A_MI | Vista_1_M0_MarketCard01_B_MI [overlay]",
+    "cls": "overlay",
+    "n": 3,
+    "area": 296826.653,
+    "at": [
+     -818.68,
+     -353.45,
+     -246.05
+    ]
+   },
+   {
+    "pair": "Vista_1_M0_DefSpawnCard01_B_MI | Vista_1_M0_MarketCard01_C_MI [overlay]",
+    "cls": "overlay",
+    "n": 3,
+    "area": 117185.572,
+    "at": [
+     -1386.56,
+     -353.45,
+     -1059.96
+    ]
+   },
+   {
+    "pair": "Vista_1_M0_DefSpawnCard01_C_MI | Vista_1_M0_MarketCard01_A_MI [overlay]",
+    "cls": "overlay",
+    "n": 6,
+    "area": 49013.126,
+    "at": [
+     -317.81,
+     -353.45,
+     -12.83
+    ]
+   },
+   {
+    "pair": "Vista_1_M0_DefSpawnCard01_C_MI | Vista_1_M0_MarketCard01_B_MI [overlay]",
+    "cls": "overlay",
+    "n": 3,
+    "area": 26984.173,
+    "at": [
+     -317.81,
+     -353.45,
+     -12.83
+    ]
+   },
+   {
+    "pair": "Vista_1_M0_DefSpawnCard01_A_MI | Vista_1_M0_MarketCard01_C_MI [overlay]",
+    "cls": "overlay",
+    "n": 2,
+    "area": 15034.467,
+    "at": [
+     -818.68,
+     -353.45,
+     -246.05
+    ]
+   },
+   {
+    "pair": "Vista_1_M0_DefSpawnCard01_B_MI | Vista_1_M0_MarketCard01_B_MI [overlay]",
+    "cls": "overlay",
+    "n": 1,
+    "area": 7745.207,
+    "at": [
+     -1386.56,
+     -353.45,
+     -1059.96
+    ]
+   },
+   {
+    "pair": "Vista_1_M0_DefSpawnCard01_A_MI | Vista_1_M0_MarketCard01_A_MI [overlay]",
+    "cls": "overlay",
+    "n": 1,
+    "area": 7442.758,
+    "at": [
+     -818.68,
+     -353.45,
+     -246.05
+    ]
+   },
+   {
+    "pair": "Vista_1_M0_DefSpawnCard01_A_MI | Vista_1_M0_DefSpawnCard01_C_MI [overlay]",
+    "cls": "overlay",
+    "n": 6,
+    "area": 423.712,
+    "at": [
+     -508.81,
+     -353.45,
+     -603.74
+    ]
+   },
+   {
+    "pair": "Plaster_M0_WallPeelingBrickOldMid_MI | Terracotta_M0_RoofTileGrey_MI [overlay]",
+    "cls": "overlay",
+    "n": 9,
+    "area": 141.828,
+    "at": [
+     60.91,
+     20.54,
+     -39.41
+    ]
+   },
+   {
+    "pair": "Plaster_M0_WallPeelingBrickOld_MI | Wood_M3_Slats_MI [dup]",
+    "cls": "dup",
+    "n": 10,
+    "area": 87.048,
+    "at": [
+     -9.97,
+     19.1,
+     -34.92
+    ]
+   },
+   {
+    "pair": "Plaster_M0_SecondaryRed_MI | Terracotta_M0_RoofTile_MI [overlay]",
+    "cls": "overlay",
+    "n": 158,
+    "area": 77.029,
+    "at": [
+     -3.69,
+     7.36,
+     18.88
+    ]
+   },
+   {
+    "pair": "Brick_M1_ASiteBasicBrickOld_MI | Wood_M3_Slats_MI [overlay]",
+    "cls": "overlay",
+    "n": 62,
+    "area": 74.323,
+    "at": [
+     47.64,
+     17.8,
+     8.66
+    ]
+   }
+  ],
+  "leftAfter": [
+   {
+    "pair": "Plaster_M0_AccentBlue_MI | Terracotta_M0_RoofTileGrey_MI [overlay]",
+    "cls": "overlay",
+    "n": 10,
+    "area": 2.751,
+    "at": [
+     61.78,
+     20.71,
+     -35.17
+    ]
+   },
+   {
+    "pair": "StoneBrickCover_0_MI | Stone_M10_BrickWallRandomB_MI [overlay]",
+    "cls": "overlay",
+    "n": 6,
+    "area": 0.34,
+    "at": [
+     57.55,
+     10.8,
+     -18.02
+    ]
+   },
+   {
+    "pair": "ModernTech_3_M2_ElectricalBoxKitC_MI | ModernTech_6_M0_VentSystem_MI [overlay]",
+    "cls": "overlay",
+    "n": 6,
+    "area": 0.293,
+    "at": [
+     31.14,
+     17.46,
+     -0.2
+    ]
+   },
+   {
+    "pair": "AScaffold_7_M0_Planks_MI | Plaster_M0_WallPeelingLargeStone_MI [overlay]",
+    "cls": "overlay",
+    "n": 8,
+    "area": 0.158,
+    "at": [
+     39.61,
+     12.92,
+     -38.83
+    ]
+   },
+   {
+    "pair": "ABuilding_0_M0_TrimKitA_MI | Stone_M10_BrickWallRandom_MI [overlay]",
+    "cls": "overlay",
+    "n": 2,
+    "area": 0.14,
+    "at": [
+     56.31,
+     10.1,
+     -28.3
+    ]
+   },
+   {
+    "pair": "Plaster_M0_WallPeelingLargeStone_MI | Wires_0_M0_Box_MI [overlay]",
+    "cls": "overlay",
+    "n": 4,
+    "area": 0.119,
+    "at": [
+     30.13,
+     12.54,
+     -0.37
+    ]
+   },
+   {
+    "pair": "Brick_M1_ASiteBasicBrickOld_MI | Plaster_M0_WallPeelingBrickOldMid_MI [overlay]",
+    "cls": "overlay",
+    "n": 6,
+    "area": 0.106,
+    "at": [
+     28.34,
+     18.55,
+     -22.12
+    ]
+   },
+   {
+    "pair": "AScaffold_0_M0_Kit_MI | Wood_M2_SlattedWood_MI [overlay]",
+    "cls": "overlay",
+    "n": 7,
+    "area": 0.051,
+    "at": [
+     26.01,
+     13.05,
+     -35.9
+    ]
+   },
+   {
+    "pair": "Stone_M10_BrickWallRandom_MI | Wires_0_M0_Box_MI [overlay]",
+    "cls": "overlay",
+    "n": 2,
+    "area": 0.04,
+    "at": [
+     56.83,
+     10.95,
+     -25.66
+    ]
+   },
+   {
+    "pair": "StoneBrickWall_B_M0_MI | Stone_M2_Steps_MI [overlay]",
+    "cls": "overlay",
+    "n": 1,
+    "area": 0.033,
+    "at": [
+     8.91,
+     6.62,
+     50.49
+    ]
+   },
+   {
+    "pair": "Stone_M2_StepsGrey_MI | Wires_0_M0_Box_MI [overlay]",
+    "cls": "overlay",
+    "n": 2,
+    "area": 0.03,
+    "at": [
+     6.27,
+     18.29,
+     -12.99
+    ]
+   },
+   {
+    "pair": "Foliage_9_M0_Ivy_MI | StoneBrickWall_M1_BasicBrickOld_MI [overlay]",
+    "cls": "overlay",
+    "n": 1,
+    "area": 0.019,
+    "at": [
+     -6.57,
+     8.24,
+     -6.05
+    ]
+   }
+  ]
+ },
+ "bind": {
+  "triangles": 2841334,
+  "before": {
+   "pairs": 24472,
+   "open": 19315,
+   "dup": 14,
+   "overlay": 19301,
+   "decalHandled": 5157
+  },
+  "after": {
+   "pairs": 24458,
+   "open": 0,
+   "openAreaM2": 0
+  },
+  "topBefore": [
+   {
+    "pair": "Kingdom_M0_Concrete_MI | Metal_M5_KingdomMetalTrim_MI [overlay]",
+    "cls": "overlay",
+    "n": 662,
+    "area": 74.994,
+    "at": [
+     13.33,
+     8.03,
+     -51.13
+    ]
+   },
+   {
+    "pair": "Concrete_M2_LargeSquareTilesC_MI | CoverObject_5_M1_JerseyBarrier_MI [overlay]",
+    "cls": "overlay",
+    "n": 349,
+    "area": 48.843,
+    "at": [
+     -0.3,
+     6.9,
+     -87.87
+    ]
+   },
+   {
+    "pair": "Concrete_M2_LargeSquareTilesC_MI | Sand_M5_SandSkirts_MI [overlay]",
+    "cls": "overlay",
+    "n": 903,
+    "area": 45.521,
+    "at": [
+     -11.32,
+     6.9,
+     -57.57
+    ]
+   },
+   {
+    "pair": "Construction_M0_WalkwayFenceVent_MI | Glass_M0D_MI [dup]",
+    "cls": "dup",
+    "n": 14,
+    "area": 44.783,
+    "at": [
+     16.95,
+     6.87,
+     -40.84
+    ]
+   },
+   {
+    "pair": "Wood_M2_SlattedWood_MI | Wood_M3_Dark_MI [overlay]",
+    "cls": "overlay",
+    "n": 8,
+    "area": 29.05,
+    "at": [
+     28.77,
+     13.22,
+     11.99
+    ]
+   },
+   {
+    "pair": "Adobe_M0_AdobeFlatWallDark_MI1 | ModernTech_6_M5_GeneratorD_MI [overlay]",
+    "cls": "overlay",
+    "n": 144,
+    "area": 24.136,
+    "at": [
+     20.59,
+     24.06,
+     -10.34
+    ]
+   },
+   {
+    "pair": "Kingdom_0_M0_Metal_MI | Kingdom_M0_Concrete_MI [overlay]",
+    "cls": "overlay",
+    "n": 67,
+    "area": 23.963,
+    "at": [
+     -59.1,
+     19.11,
+     -75.65
+    ]
+   },
+   {
+    "pair": "Glass_M5_MI | KingdomTech_0_APC_M0_MI [overlay]",
+    "cls": "overlay",
+    "n": 348,
+    "area": 21.962,
+    "at": [
+     25.4,
+     10.57,
+     -30.38
+    ]
+   },
+   {
+    "pair": "ModernTech_6_M3_GeneratorB_MI | Sand_M2_SandWhispyBricks_MI1 [overlay]",
+    "cls": "overlay",
+    "n": 156,
+    "area": 21.386,
+    "at": [
+     65.79,
+     23.9,
+     -9.36
+    ]
+   },
+   {
+    "pair": "Tile_M6_MoroccanA_MI | TireTrack_0_M0_A_MI [overlay]",
+    "cls": "overlay",
+    "n": 204,
+    "area": 21.369,
+    "at": [
+     29.23,
+     6.9,
+     -34.7
+    ]
+   },
+   {
+    "pair": "Concrete_M3_PouredFlat_MI | GlassShardMint_0_MI [overlay]",
+    "cls": "overlay",
+    "n": 136,
+    "area": 21.233,
+    "at": [
+     -38.55,
+     -6.84,
+     -46.87
+    ]
+   },
+   {
+    "pair": "AtlasLogo_0_MI | Kingdom_0_M0_Metal_MI [overlay]",
+    "cls": "overlay",
+    "n": 28,
+    "area": 19.118,
+    "at": [
+     -43.89,
+     11.06,
+     -42.86
+    ]
+   }
+  ],
+  "leftAfter": []
+ },
+ "haven": {
+  "triangles": 4094074,
+  "before": {
+   "pairs": 142830,
+   "open": 129897,
+   "dup": 50,
+   "overlay": 129847,
+   "decalHandled": 12933
+  },
+  "after": {
+   "pairs": 142778,
+   "open": 697,
+   "openAreaM2": 41.892
+  },
+  "topBefore": [
+   {
+    "pair": "Wood_M0_DisheveledPlanks_MI | Wood_M9_LargeWoodBeamDark_MI [overlay]",
+    "cls": "overlay",
+    "n": 46,
+    "area": 267.502,
+    "at": [
+     -22.05,
+     22.02,
+     3.61
+    ]
+   },
+   {
+    "pair": "Paint_M0_AsphaltStreetB_MI | Tile_M2_TileDarkSand_MI [overlay]",
+    "cls": "overlay",
+    "n": 5928,
+    "area": 212.933,
+    "at": [
+     -43.14,
+     6,
+     -21.85
+    ]
+   },
+   {
+    "pair": "Ash_M0_AshPowderAlpha_MI | Tile_M1_BrickPatternSlate_MI [overlay]",
+    "cls": "overlay",
+    "n": 5064,
+    "area": 173.257,
+    "at": [
+     28.79,
+     7,
+     -13.05
+    ]
+   },
+   {
+    "pair": "Brick_M10_LongBrickBlendPlasterMoca_MI | Graffiti_M0_FloralPatternsA_MI [overlay]",
+    "cls": "overlay",
+    "n": 684,
+    "area": 122.183,
+    "at": [
+     37.12,
+     17.31,
+     -40.33
+    ]
+   },
+   {
+    "pair": "Ash_M0_AshPowderAlpha_MI | Ash_M1_PackedDirt_MI [overlay]",
+    "cls": "overlay",
+    "n": 5754,
+    "area": 115.59,
+    "at": [
+     -55.52,
+     6,
+     4.96
+    ]
+   },
+   {
+    "pair": "Brick_M0_LongBrickBlendPlasterC1_MI | Brick_M0_LongBrickBlendPlasterC3_MI [overlay]",
+    "cls": "overlay",
+    "n": 144,
+    "area": 115.338,
+    "at": [
+     -63.91,
+     9.38,
+     -5.66
+    ]
+   },
+   {
+    "pair": "Ash_M1_PackedDirt_MI | StoneBrickCover_0_MI [overlay]",
+    "cls": "overlay",
+    "n": 1152,
+    "area": 103.276,
+    "at": [
+     -37.46,
+     6,
+     -15.3
+    ]
+   },
+   {
+    "pair": "Ash_M0_AshPowderAlpha_MI | Dirt_M1_PackedDirtBlend_MI [overlay]",
+    "cls": "overlay",
+    "n": 4124,
+    "area": 102.502,
+    "at": [
+     20.3,
+     4,
+     -4.23
+    ]
+   },
+   {
+    "pair": "Meteor_0_M0_Box_MI | Wood_M15_OldSplinteredDark_MI1 [overlay]",
+    "cls": "overlay",
+    "n": 364,
+    "area": 97.621,
+    "at": [
+     29.14,
+     9.04,
+     -11.08
+    ]
+   },
+   {
+    "pair": "Ash_M0_AshPowderAlpha_MI | Tile_M2_TileDarkSand_MI [overlay]",
+    "cls": "overlay",
+    "n": 3936,
+    "area": 88.444,
+    "at": [
+     -44.38,
+     6,
+     -21.31
+    ]
+   },
+   {
+    "pair": "Brick_M10_LongBrickBlendPlasterWarmOrange_MI | Graffiti_M0_WallPaintingF_MI [overlay]",
+    "cls": "overlay",
+    "n": 184,
+    "area": 85.938,
+    "at": [
+     22.31,
+     9.07,
+     -20.37
+    ]
+   },
+   {
+    "pair": "Construction_M0_WalkwayFenceVent_MI | Elevator_M0_Details_MI [overlay]",
+    "cls": "overlay",
+    "n": 117,
+    "area": 79.907,
+    "at": [
+     -58.49,
+     8.02,
+     -7.93
+    ]
+   }
+  ],
+  "leftAfter": [
+   {
+    "pair": "Puddle_2_M0_MI | Tile_M1_BrickPatternSlate_MI [overlay]",
+    "cls": "overlay",
+    "n": 20,
+    "area": 17.274,
+    "at": [
+     8.39,
+     7,
+     15.45
+    ]
+   },
+   {
+    "pair": "Window_10_M1_LargeFill_MI | Wood_M15_OldSplinteredDark_MI1 [overlay]",
+    "cls": "overlay",
+    "n": 34,
+    "area": 4.491,
+    "at": [
+     -13.92,
+     17.65,
+     6.69
+    ]
+   },
+   {
+    "pair": "Meteor_0_M0_Box_MI | Wood_M9_LargeWoodBeamPaintRed_MI [overlay]",
+    "cls": "overlay",
+    "n": 108,
+    "area": 3.591,
+    "at": [
+     47.19,
+     9.51,
+     -30.85
+    ]
+   },
+   {
+    "pair": "Brick_M0_LongBrickBlendPlasterC1_MI | Wood_M15_OldSplinteredDark_MI1 [overlay]",
+    "cls": "overlay",
+    "n": 28,
+    "area": 2.604,
+    "at": [
+     -23.66,
+     12.26,
+     -47.83
+    ]
+   },
+   {
+    "pair": "Glass_M0D_MI | Metal_M3_Trim_MI [overlay]",
+    "cls": "overlay",
+    "n": 9,
+    "area": 2.507,
+    "at": [
+     -52.64,
+     8,
+     -20.45
+    ]
+   },
+   {
+    "pair": "Brick_M0_LongBrickBlendPlasterC2_MI | Window_10_M0_Windows_MI [overlay]",
+    "cls": "overlay",
+    "n": 16,
+    "area": 2.088,
+    "at": [
+     -14.16,
+     18.01,
+     -3.56
+    ]
+   },
+   {
+    "pair": "Metal_M5_KingdomMetalTrim_Light_Int_MI | Wood_M2_SlattedWood_MI [overlay]",
+    "cls": "overlay",
+    "n": 144,
+    "area": 1.624,
+    "at": [
+     38.46,
+     11.01,
+     -12.19
+    ]
+   },
+   {
+    "pair": "Brick_M10_LongBrickBlendPlaster_MI | Stone_M1_RoughStoneTilesGrassBlend_MI [overlay]",
+    "cls": "overlay",
+    "n": 12,
+    "area": 0.924,
+    "at": [
+     -16.98,
+     5.22,
+     46.99
+    ]
+   },
+   {
+    "pair": "Brick_M10_LongBrickBlendPlaster_MI | Wood_M10_WoodPlanks_MI [overlay]",
+    "cls": "overlay",
+    "n": 6,
+    "area": 0.848,
+    "at": [
+     3.81,
+     29.68,
+     -6.71
+    ]
+   },
+   {
+    "pair": "Metal_M4_Trim_MI | Wood_M15_OldSplinteredDark_MI1 [overlay]",
+    "cls": "overlay",
+    "n": 16,
+    "area": 0.791,
+    "at": [
+     44.78,
+     18,
+     -32.42
+    ]
+   },
+   {
+    "pair": "Box_7_M0_RebelMetalCrates_MI | Metal_M5_KingdomMetalTrim_Light_Int_MI [overlay]",
+    "cls": "overlay",
+    "n": 74,
+    "area": 0.777,
+    "at": [
+     7.87,
+     7.68,
+     13.95
+    ]
+   },
+   {
+    "pair": "Wood_M15_OldSplinteredBrownOrangePlain_MI | Wood_M9_WoodBeamAshBlend_MI [overlay]",
+    "cls": "overlay",
+    "n": 18,
+    "area": 0.549,
+    "at": [
+     -31.65,
+     15.83,
+     -18.59
+    ]
+   }
+  ]
+ },
+ "split": {
+  "triangles": 3210903,
+  "before": {
+   "pairs": 36726,
+   "open": 34519,
+   "dup": 46,
+   "overlay": 34473,
+   "decalHandled": 2207
+  },
+  "after": {
+   "pairs": 36642,
+   "open": 192,
+   "openAreaM2": 8.582
+  },
+  "topBefore": [
+   {
+    "pair": "Metal_M7_LongPanelKingdomLight | Wood_M14_CleanSlattedOffset_MI [overlay]",
+    "cls": "overlay",
+    "n": 225,
+    "area": 292.597,
+    "at": [
+     6.13,
+     9.3,
+     -43.96
+    ]
+   },
+   {
+    "pair": "Metal_M6_PanelMetalKingdom | Metal_M7_LongPanelKingdomLight [overlay]",
+    "cls": "overlay",
+    "n": 113,
+    "area": 270.752,
+    "at": [
+     19.31,
+     9.5,
+     6.58
+    ]
+   },
+   {
+    "pair": "Graffiti_1_M0_BtowerMural_MI | Plaster_M5_PaintedBuildingLargeSquare_MI [overlay]",
+    "cls": "overlay",
+    "n": 86,
+    "area": 180.82,
+    "at": [
+     -22.1,
+     24.49,
+     -13.93
+    ]
+   },
+   {
+    "pair": "Tree_3_M1_Conifer_MI | Tree_3_M2_Conifer_MI [overlay]",
+    "cls": "overlay",
+    "n": 4514,
+    "area": 173.252,
+    "at": [
+     62.98,
+     17.18,
+     -1.58
+    ]
+   },
+   {
+    "pair": "Metal_M7_LongPanelKingdom | Metal_M8_KingdomBuildingCommercial_MI [overlay]",
+    "cls": "overlay",
+    "n": 386,
+    "area": 76.833,
+    "at": [
+     45.87,
+     13.4,
+     -27.88
+    ]
+   },
+   {
+    "pair": "Concrete_M2_LargeSquareTilesB_MI_UBER | Plaster_M5_PaintedBuildingLargeSquare_MI [overlay]",
+    "cls": "overlay",
+    "n": 40,
+    "area": 74.895,
+    "at": [
+     -3.66,
+     12.17,
+     -16.52
+    ]
+   },
+   {
+    "pair": "Marble_M0_WhiteBlackStriationsDarkTile_MI | Metal_M6_PanelMetalKingdom [overlay]",
+    "cls": "overlay",
+    "n": 152,
+    "area": 74.756,
+    "at": [
+     24.34,
+     9.51,
+     -0.22
+    ]
+   },
+   {
+    "pair": "Metal_M8_KingdomBuildingCommercial_MI | Wood_M14_CleanSlattedOffset_MI [overlay]",
+    "cls": "overlay",
+    "n": 170,
+    "area": 71.499,
+    "at": [
+     51.88,
+     7.09,
+     -6.85
+    ]
+   },
+   {
+    "pair": "Concrete_M2_LargeSquareTilesB_MI_UBER | Marble_M0_WhiteBlackStriations_MI [overlay]",
+    "cls": "overlay",
+    "n": 14,
+    "area": 66.624,
+    "at": [
+     10.81,
+     16.01,
+     -33.24
+    ]
+   },
+   {
+    "pair": "Concrete_M1_BasicGrungeHorizontal_MI | Plaster_M5_PaintedBuildingLargeSquareB_MI [overlay]",
+    "cls": "overlay",
+    "n": 20,
+    "area": 63.93,
+    "at": [
+     -51.01,
+     74.21,
+     149.54
+    ]
+   },
+   {
+    "pair": "Asphalt_M1_WornStreet_MI | Paint_M0_AsphaltStreet_MI [overlay]",
+    "cls": "overlay",
+    "n": 1668,
+    "area": 41.786,
+    "at": [
+     3.33,
+     7,
+     44.26
+    ]
+   },
+   {
+    "pair": "Concrete_M2_LargeSquareTilesB_MI_UBER | Graffiti_0_M0_StreetArt_AtkPathB_MI [overlay]",
+    "cls": "overlay",
+    "n": 28,
+    "area": 41.432,
+    "at": [
+     -37.25,
+     8.89,
+     37.11
+    ]
+   }
+  ],
+  "leftAfter": [
+   {
+    "pair": "Concrete_M2_LargeSquareTiles_MI | Wood_M14_CleanSlattedOffset_MI [overlay]",
+    "cls": "overlay",
+    "n": 12,
+    "area": 1.121,
+    "at": [
+     63.91,
+     9.6,
+     -0.38
+    ]
+   },
+   {
+    "pair": "Concrete_M7_PouredConcreteWhiteChips_Dark_MI | Metal_M5_KingdomMetalTrimConstruction_MI [overlay]",
+    "cls": "overlay",
+    "n": 6,
+    "area": 0.996,
+    "at": [
+     25.62,
+     10.47,
+     8.67
+    ]
+   },
+   {
+    "pair": "Asphalt_M1_WornStreet_MI | Gravel_0_M0_PebblesRocksGrey_MI [overlay]",
+    "cls": "overlay",
+    "n": 4,
+    "area": 0.952,
+    "at": [
+     12.77,
+     7,
+     35.92
+    ]
+   },
+   {
+    "pair": "Construction_M0_WalkwayMat_MI | Metal_M10_GroundTrimVents_MI [overlay]",
+    "cls": "overlay",
+    "n": 16,
+    "area": 0.652,
+    "at": [
+     -25.52,
+     12.35,
+     -11.52
+    ]
+   },
+   {
+    "pair": "Metal_M6_PanelMetalKingdom | Metal_M8_KingdomBuildingCommercial_MI [overlay]",
+    "cls": "overlay",
+    "n": 12,
+    "area": 0.523,
+    "at": [
+     14.91,
+     14.45,
+     33.8
+    ]
+   },
+   {
+    "pair": "AScaffold_7_M0_Planks_MI | Marble_M0_WhiteBlackStriationsDarkTile_MI [overlay]",
+    "cls": "overlay",
+    "n": 6,
+    "area": 0.465,
+    "at": [
+     30.14,
+     9.49,
+     4.23
+    ]
+   },
+   {
+    "pair": "Marble_M0_WhiteBlackStriations_MI | Metal_M10_GroundTrimVents_MI [overlay]",
+    "cls": "overlay",
+    "n": 6,
+    "area": 0.454,
+    "at": [
+     10.81,
+     16.01,
+     -33.24
+    ]
+   },
+   {
+    "pair": "Metal_M5_KingdomMetalTrimConstruction_MI | Metal_M9_KingdomLargeSeamedPanel_MI [overlay]",
+    "cls": "overlay",
+    "n": 10,
+    "area": 0.453,
+    "at": [
+     8.04,
+     17.56,
+     -7.34
+    ]
+   },
+   {
+    "pair": "Metal_M2_Trim_MI_UBER | Vent_0_TechKitA_M0 [overlay]",
+    "cls": "overlay",
+    "n": 12,
+    "area": 0.436,
+    "at": [
+     -23.96,
+     48.43,
+     -20.52
+    ]
+   },
+   {
+    "pair": "Concrete_M4_BasicNew_MI | Metal_M5_KingdomMetalTrimConstruction_MI [overlay]",
+    "cls": "overlay",
+    "n": 7,
+    "area": 0.377,
+    "at": [
+     -22.45,
+     24.96,
+     -6.7
+    ]
+   },
+   {
+    "pair": "ColorPalette_M0_ASecondary_MI | Concrete_M8_PouredConcreteThreeSplit_MI [overlay]",
+    "cls": "overlay",
+    "n": 4,
+    "area": 0.3,
+    "at": [
+     11.95,
+     16.81,
+     -3.13
+    ]
+   },
+   {
+    "pair": "Foliage_9_M0_Ivy_MI | Marble_M0_WhiteBlackStriations_MI [overlay]",
+    "cls": "overlay",
+    "n": 5,
+    "area": 0.175,
+    "at": [
+     35.99,
+     21.7,
+     -34.62
+    ]
+   }
+  ]
+ },
+ "lotus": {
+  "triangles": 2622530,
+  "before": {
+   "pairs": 16864,
+   "open": 12968,
+   "dup": 0,
+   "overlay": 12968,
+   "decalHandled": 3896
+  },
+  "after": {
+   "pairs": 16864,
+   "open": 0,
+   "openAreaM2": 0
+  },
+  "topBefore": [
+   {
+    "pair": "Tree_3_M1_Conifer_MI | Tree_3_M2_Conifer_MI [overlay]",
+    "cls": "overlay",
+    "n": 3267,
+    "area": 100.458,
+    "at": [
+     -50.58,
+     16.12,
+     -43.05
+    ]
+   },
+   {
+    "pair": "Stone_M0_WallExteriorC_MI | Tile_M11_Temple_MI [overlay]",
+    "cls": "overlay",
+    "n": 80,
+    "area": 79.56,
+    "at": [
+     36.82,
+     -9.64,
+     -6.74
+    ]
+   },
+   {
+    "pair": "Sand_M8_SandJamWavy_MI | Tile_M11_Temple_MI [overlay]",
+    "cls": "overlay",
+    "n": 1979,
+    "area": 64.98,
+    "at": [
+     10.13,
+     8.31,
+     -42.62
+    ]
+   },
+   {
+    "pair": "Puddle_0_MudBrownJam_M0_MI | Wood_M15_OldSplinteredPlanksAJam_MI [overlay]",
+    "cls": "overlay",
+    "n": 283,
+    "area": 39.119,
+    "at": [
+     -58.85,
+     6.29,
+     -7.09
+    ]
+   },
+   {
+    "pair": "Mural_M0_BanyanTreeA_MI | Stone_M0_StoneBricks_MI [overlay]",
+    "cls": "overlay",
+    "n": 87,
+    "area": 29.383,
+    "at": [
+     -1.96,
+     11.88,
+     -33.46
+    ]
+   },
+   {
+    "pair": "Mural_PeacockA_MI | Plaster_M6_TempleWall_MI [overlay]",
+    "cls": "overlay",
+    "n": 12,
+    "area": 23.102,
+    "at": [
+     -23.22,
+     7.45,
+     -12.97
+    ]
+   },
+   {
+    "pair": "Prop_0_M0_StatueA_MI | Rock_8_M1_RockWallAMoss_Blue_MI [overlay]",
+    "cls": "overlay",
+    "n": 224,
+    "area": 16.364,
+    "at": [
+     -0.2,
+     13.98,
+     -12.82
+    ]
+   },
+   {
+    "pair": "Petals_M0_PetalsWall_Emissive_MI | Stone_M0_CutBlueBlendDarkA_MI [overlay]",
+    "cls": "overlay",
+    "n": 168,
+    "area": 15.74,
+    "at": [
+     -2.43,
+     13.26,
+     -19.57
+    ]
+   },
+   {
+    "pair": "Metal_TrimA_MI | Petals_M0_PetalsWall_EmissiveRed_MI [overlay]",
+    "cls": "overlay",
+    "n": 661,
+    "area": 15.293,
+    "at": [
+     -10.25,
+     13.19,
+     -12.07
+    ]
+   },
+   {
+    "pair": "Puddle_0_MudBrownJam_M0_MI | Tile_M11_Temple_MI [overlay]",
+    "cls": "overlay",
+    "n": 27,
+    "area": 12.606,
+    "at": [
+     -34.87,
+     4.78,
+     35.37
+    ]
+   },
+   {
+    "pair": "Gravel_0_M0_PebblesRocks_MI | Mud_M0_MI [overlay]",
+    "cls": "overlay",
+    "n": 186,
+    "area": 12.534,
+    "at": [
+     30.47,
+     6.28,
+     -20.77
+    ]
+   },
+   {
+    "pair": "Stone_M1_WallExteriorA_MI | TempleCrateA_MI [overlay]",
+    "cls": "overlay",
+    "n": 379,
+    "area": 11.167,
+    "at": [
+     38.04,
+     10.9,
+     -63.52
+    ]
+   }
+  ],
+  "leftAfter": []
+ },
+ "breeze": {
+  "triangles": 2703733,
+  "before": {
+   "pairs": 20227,
+   "open": 16001,
+   "dup": 752,
+   "overlay": 15249,
+   "decalHandled": 4226
+  },
+  "after": {
+   "pairs": 19468,
+   "open": 9,
+   "openAreaM2": 0.176
+  },
+  "topBefore": [
+   {
+    "pair": "EnvOceanShore_MAT | EnvOcean_MAT [dup]",
+    "cls": "dup",
+    "n": 503,
+    "area": 2806.193,
+    "at": [
+     -72.83,
+     3.79,
+     -71.17
+    ]
+   },
+   {
+    "pair": "Brick_M14_CastleWallBasicBlendDark_MI | Metal_M21_ScrapJunkShipHull_MI [overlay]",
+    "cls": "overlay",
+    "n": 145,
+    "area": 81.414,
+    "at": [
+     -63.79,
+     12.91,
+     27.27
+    ]
+   },
+   {
+    "pair": "Brick_M14_CastleWallStuccoBlend_MI1 | Mural_0_M0_B [overlay]",
+    "cls": "overlay",
+    "n": 71,
+    "area": 53.136,
+    "at": [
+     -38.43,
+     15.17,
+     -18.26
+    ]
+   },
+   {
+    "pair": "Crate_6_M0_KingdomA_MI | Metal_M14_PaintedKingdomTrim_MI [overlay]",
+    "cls": "overlay",
+    "n": 52,
+    "area": 32.929,
+    "at": [
+     35.11,
+     16.5,
+     -62.66
+    ]
+   },
+   {
+    "pair": "Sand_M6_BeachSandSkirt_MI | Sand_M6_BeachSand_MI [overlay]",
+    "cls": "overlay",
+    "n": 1029,
+    "area": 31.265,
+    "at": [
+     -34.41,
+     4,
+     45.53
+    ]
+   },
+   {
+    "pair": "Brick_M14_CastleWallBasicBlendDark_MI | CoolCat_0_M0_PosterA_MI [overlay]",
+    "cls": "overlay",
+    "n": 44,
+    "area": 26.801,
+    "at": [
+     -76.48,
+     12.08,
+     9.76
+    ]
+   },
+   {
+    "pair": "EnvOceanShore_MAT | EnvOcean_MAT [overlay]",
+    "cls": "overlay",
+    "n": 12,
+    "area": 25.47,
+    "at": [
+     -16.6,
+     3.76,
+     -96.97
+    ]
+   },
+   {
+    "pair": "Sand_M6_BeachSandBrickBlendB_MI | Sand_M6_BeachSandSkirt_MI [overlay]",
+    "cls": "overlay",
+    "n": 669,
+    "area": 21.477,
+    "at": [
+     -62.91,
+     8,
+     -23.29
+    ]
+   },
+   {
+    "pair": "Bricks_6_M0_GroundBreakupVert_MI | Stone_M0_LooseRoundStoneGrassBlendLight_MI [overlay]",
+    "cls": "overlay",
+    "n": 24,
+    "area": 20.894,
+    "at": [
+     -61.29,
+     3.97,
+     29.15
+    ]
+   },
+   {
+    "pair": "Brick_M14_CastleWallStuccoBlend_MI1 | Wood_M15_OldSplintered_MI [overlay]",
+    "cls": "overlay",
+    "n": 88,
+    "area": 20.889,
+    "at": [
+     -57.23,
+     9,
+     35.16
+    ]
+   },
+   {
+    "pair": "Rock_5_M1_DirtBlend_MI | Sand_M6_BeachSandSkirt_MI [overlay]",
+    "cls": "overlay",
+    "n": 611,
+    "area": 20.748,
+    "at": [
+     51.59,
+     8.25,
+     16.35
+    ]
+   },
+   {
+    "pair": "Floor_0_M0_GroundStrip_MI | Metal_M21_ScrapJunkTileAPaintedBlue_MI [overlay]",
+    "cls": "overlay",
+    "n": 230,
+    "area": 19.403,
+    "at": [
+     2.16,
+     14.38,
+     -44.76
+    ]
+   }
+  ],
+  "leftAfter": [
+   {
+    "pair": "Brick_M14_CastleWallBasicBlendDarkest_MI | Metal_M21_ScrapJunkTrimA_MI [overlay]",
+    "cls": "overlay",
+    "n": 6,
+    "area": 0.136,
+    "at": [
+     -34.98,
+     14.65,
+     -41.05
+    ]
+   },
+   {
+    "pair": "Brick_M14_CastleWallBasicBlendLight_MI | Metal_M21_ScrapJunkTrimABlend_MI [overlay]",
+    "cls": "overlay",
+    "n": 3,
+    "area": 0.04,
+    "at": [
+     -52.38,
+     17.04,
+     -21.97
+    ]
+   }
+  ]
+ }
+}
