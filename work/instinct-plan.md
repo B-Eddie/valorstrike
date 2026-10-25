@@ -25,3 +25,7 @@
 - Pickup: F pick up (hint 7602), xdModel 9081 dropped-gun visuals; need indicator + verify F path.
 - Stairs: XG_SPEC stair links for bots (7309); player step-up logic to find (groundAt / xStep).
 - Agent 40s loads: xvAgentLoad 12396, no preload at lobby; user wants background preload+cache at site entry; remove fallbacks (XUB/Soldier fallback at 3543).
+
+## Progress log
+- [x] #8 fuzzy default quality: medium preset now res:"retina" prc:2 (native dpr); adaptive floor 0.7->0.85. commit e04e925.
+- [x] #1+#2 ragdoll explosion/boneless: root cause shown - old Verlet solver diverges to 2.3e38 m under velocity spike (dt spikes from background tabs); added per-step velocity clamp (6 m/s), NaN point reset to captured pose, finite-floor guard, divergence reset, non-finite bone skip at capture. Regression test test_ragdoll.cjs with spike+NaN injection passes; old code fails. (uncommitted at first, then committed)
