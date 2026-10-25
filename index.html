@@ -8077,9 +8077,9 @@ function okPlace(geo, c, dist) { const fx = -Math.sin(yaw), fz = -Math.cos(yaw);
 function okMMClick(e) {
   if (!J.ftp || !running || player.hp <= 0) return; e.stopPropagation();
   const r = MM.getBoundingClientRect(), W = MM.width, cx = (e.clientX - r.left) * W / r.width, cy = (e.clientY - r.top) * W / r.height;
-  const k = W / 160, P = 8 * k, bb = mode === "five" && FV.map === "ascent" ? { x1: -55 * AK, x2: 55 * AK, z1: -60 * AK, z2: 60 * AK } : mmBounds(mode), bw = bb.x2 - bb.x1, bd = bb.z2 - bb.z1, s = (W - 2 * P) / Math.max(bw, bd), ox = P + (W - 2 * P - bw * s) / 2, oz = P + (W - 2 * P - bd * s) / 2;
-  const C = typeof nmActive === "function" && nmActive(), point = C ? nmMapProjection(C, W, MM.height).world(cx, cy) : [bb.x1 + (cx - ox) / s, bb.z1 + (cy - oz) / s], x = point[0], z = point[1], ni = C ? nmNear(C, x, z) : -1, ny = C && ni >= 0 ? nmHeight(C, x, z, C.nav.nodes[ni][1]) : 0;
-  if (x < bb.x1 || x > bb.x2 || z < bb.z1 || z > bb.z2 || C && (ni < 0 || Math.hypot(C.nav.nodes[ni][0] - x, C.nav.nodes[ni][2] - z) > 1.5) || blocked(x, z, 0.45, ny)) return sgNo(), say("Can't go there · pick an open spot", 900);
+  const C0 = typeof nmActive === "function" && nmActive(), k = W / 160, P = 8 * k, bb = !C0 && mode === "five" && FV.map === "ascent" ? { x1: -55 * AK, x2: 55 * AK, z1: -60 * AK, z2: 60 * AK } : mmBounds(mode), bw = bb.x2 - bb.x1, bd = bb.z2 - bb.z1, s = (W - 2 * P) / Math.max(bw, bd), ox = P + (W - 2 * P - bw * s) / 2, oz = P + (W - 2 * P - bd * s) / 2; // native maps: mmBounds returns C.bounds; the legacy Ascent box must not reject valid native spots
+  const C = C0, point = C ? nmMapProjection(C, W, MM.height).world(cx, cy) : [bb.x1 + (cx - ox) / s, bb.z1 + (cy - oz) / s], x = point[0], z = point[1], ni = C ? nmNear(C, x, z) : -1, ny = C && ni >= 0 ? nmHeight(C, x, z, C.nav.nodes[ni][1]) : 0;
+  { const _ob = x < bb.x1 || x > bb.x2 || z < bb.z1 || z > bb.z2, _on = C && (ni < 0 || Math.hypot(C.nav.nodes[ni][0] - x, C.nav.nodes[ni][2] - z) > 1.5), _obl = blocked(x, z, 0.45, ny); if (_ob || _on || _obl) { try { window.__omenRej = { x, z, bb: { x1: bb.x1, x2: bb.x2, z1: bb.z1, z2: bb.z2 }, outOfBounds: !!_ob, nearFail: !!_on, ni, ny, blk: !!_obl }; } catch (e) {} return sgNo(), say("Can't go there · pick an open spot", 900); } }
   J.ftp = false; MM.style.pointerEvents = ""; J.ult = 0; J.fts = { t: 3, x, z, y: ny, m: okMark(x, z, 0x6a4cff) }; J.fts.m.position.y = ny + 0.06;
   say("From the Shadows · 3 s", 1000); blip(300, 0.5, "sawtooth", 0.15); SFX.ab("shadows"); xPLock();
 }

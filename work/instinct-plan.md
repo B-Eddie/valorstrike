@@ -86,3 +86,11 @@ All 12 user-list items now have shipped fixes on instinct. Remaining: ledger 13-
 - VERIFIED: omen-pause-probe.cjs (mid profile): paused=false before X; after X ftp=true,
   paused=false, lock released; ordinary unlock afterwards still pauses (regression guard).
   ability-matrix rerun: 12/12 fired, zero page errors. 35 client suites green.
+- FOLLOW-UP FIX (same area): okMMClick validated clicks against the hardcoded legacy Ascent
+  box (+/-55 x, +/-60 z) even on native maps, rejecting valid displayed minimap spots near
+  map edges; mmBounds (native C.bounds) now wins whenever a native map is active.
+- VERIFIED END-TO-END: omen-ult-probe.cjs (real key + real minimap mouse click): X enters
+  targeting unpaused, click on B site (90u away) accepted, ult spent, 3s channel, player
+  teleports to the clicked point. Zero page errors. Probe notes: the intro modal must be
+  dismissed (real users do) or it eats clicks; minimap px are ~0.5-0.9 world units coarse,
+  so click targets need ~1u of open space - matches the intended "pick an open spot" UX.
