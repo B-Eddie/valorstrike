@@ -10,6 +10,12 @@ Second push without a full gate (same order): `origin/hark` c4df20c -> 58870fe =
 Third push without a full gate (same order): 7752ade = merge of hark-abil a552a01 (wiki timings: Cloudburst 2.5 s, Hot Hands 60 dps, Nanoswarm 5 s). Conflicts resolved to hark's side: `server/package.json` test list (keeps test-bot-variety.js), `simulation.js fire()` 6-field kill event (wallbang). Quick checks passed + server test-abilities.js. hark-map 4ed614c was already in 58870fe. The gate on 58870fe was stopped (superseded); a full gate was started on 7752ade (`hk_out/gate9_*`) and stopped (superseded).
 Fourth push without a full gate (same order): 5ee8a3a = merge of hark-perf 762e33c (nav GC de5f34f, agent frustum cull 762e33c) + HUD fix-forward (side panels truncating names at <=1366 px; kill feed overlapping the top bar at 821-1440 px, found by `browser_hud_valorant.cjs` run b3). Quick checks passed + test_short_layout / test_touch_layout. A full gate on 5ee8a3a (`hk_out/gate10_*`) passed the server suite (`npm test` EXIT=0) and 10 client files before it was stopped (superseded). Fifth push without a full gate (same order): fc50ded = merge of hark-skins b08947b (weapon skins, Collection/Store, 24 collections, skin levels 1-4, online skin sync; no conflicts). Quick checks passed + test_short_layout / test_hud_valorant. **Full gate in progress on fc50ded** (`hk_out/gate11_*`). Browser items added: culling pop when turning past bots at 1-3 m, corpses never vanish, bots spread on Ascent/Bind.
 
+## Browser runs on the pushed stack (headless Chromium, SwiftShader, one at a time; `hk_out/chain2.sh`, `chain3.sh`)
+
+| Run | Script | Build | Result |
+|---|---|---|---|
+| spec_l1 | `browser_spectate_lotus.cjs` | fc50ded | **Invalid, stopped.** Lotus site floor raised (pass); team wiped after the plant -> camera follows the killer (Raze, enemy) at eye height above the 6.28 m site floor (pass). Space / V then FAILED with "NO ONE ALIVE · SPIKE CAM": the script's 45 s fuse ran out in real time (SwiftShader frames take minutes) and the detonation killed every enemy. Script fixed (fuse held); rerun is spec_l2. Not a game bug. |
+
 # Valorstrike acceptance ledger
 
 Updated 25 October 2026, seventh pass (merges of `hark-combat`, `hark-perf`, `hark-hitfx`) (branch `hark`, tip after this ledger commit) from the full [Instinct handoff](https://files.instinct.com/u6k7xnlbyeh0-valorstrike-shipped-and-still-open).
