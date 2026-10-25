@@ -45,6 +45,10 @@ export class SpikeSimulation extends Simulation{
 
  fireBlade(u){const A=u.ability;if(this.phase!=='game'||this.buy>0||this.roundDelay>0||u.agent!=='Jett'||!A?.bladesActive||A.blades<1)return false;const weapon=u.weapon,ammo=u.ammo,kills=u.kills;u.weapon='Blade Storm';u.ammo=A.blades;try{const fired=this.fire(u);if(fired){A.blades=u.kills>kills?5:u.ammo;A.bladesActive=A.blades>0;}return fired;}finally{u.weapon=weapon;u.ammo=ammo;}}
  fire(u){if(this.buy>0||this.roundDelay>0)return false;const before=u.kills,living=this.units.filter(v=>v.alive),r=super.fire(u),kills=u.kills-before;if(kills>0){u.credits=Math.min(9000,u.credits+200*kills);u.roundKills+=kills;for(const v of living)if(!v.alive)rewardAbilityKill(u,this,v);}return r;}
+ // A human leaving mid-round: the bot taking the seat takes over their body (alive where they stood, health, loadout,
+ // credits, abilities) instead of sitting the round out dead, which cost the team a player for every disconnect.
+ takeOver(b,u){if(!b||!u||this.phase!=='game'||!u.alive||u.loading||b.team!==u.team)return false;for(const k of ['x','y','z','look','pitch','hp','armor','weapon','ammo','reserve','primary','secondary','credits','ch'])if(u[k]!==undefined)b[k]=u[k];
+  b.inventory={...u.inventory};b.reserves={...u.reserves};b.ability={...u.ability};b.purchases=[];b.vx=b.vy=b.vz=0;b.alive=true;b.reloadAt=0;b.route=null;b.safe=b.anchor=null;b.seq++;return true;}
  // A human still loading holds the buy phase only briefly: at most LOAD_GRACE s per player since their load began and
  // LOAD_GRACE s per round in total, and only while they are in the round (alive) and the round has not started. Joiners
  // mid-game are already out for the round (add), so they never hold it. When the buy phase ends with someone still
