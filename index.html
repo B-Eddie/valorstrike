@@ -128,7 +128,7 @@ button{font:inherit;text-transform:inherit;letter-spacing:inherit;cursor:pointer
 .wn{background:none;border:0;color:var(--bone);font-size:18px;font-weight:800;text-align:left;min-height:44px}.wn.eq::after{content:" · Equipped";color:var(--red);font-size:12px}
 #pre{position:fixed;inset:0;z-index:30;display:none;flex-direction:column;align-items:center;justify-content:center;gap:18px;background:radial-gradient(circle at 50% 40%,#1d2d3b,#0f1923 70%);text-align:center;padding:20px}
 #pre .mt{font-size:14px;letter-spacing:.16em;opacity:.85}#pre .mt b{color:var(--red)}
-@media (max-height:560px){#pre{justify-content:flex-start;overflow-y:auto;gap:10px;padding:12px}#pre>.row{position:sticky;bottom:0;z-index:1;padding:8px 16px;background:linear-gradient(rgba(15,25,35,0),#0f1923 45%)}} /* short landscape phones (640x360): the map pre-screen scrolls and GO stays reachable */
+@media (max-height:560px),(orientation:portrait) and (max-width:820px){#pre{justify-content:flex-start;overflow-y:auto;gap:10px;padding:12px}#pre>.row{position:sticky;bottom:0;z-index:1;padding:8px 16px;background:linear-gradient(rgba(15,25,35,0),#0f1923 45%)}} /* short landscape phones (640x360) and portrait phones (360x740: 878 px of map tiles, GO below the fold): the map pre-screen scrolls and GO stays reachable */
 #pre h2{font-size:clamp(28px,5vw,48px);font-weight:900}
 #pre .srch{font-size:18px;text-transform:none;letter-spacing:.03em}#pre .srch b{font-variant-numeric:tabular-nums}
 .mapc{width:min(460px,100%);border:1px solid rgba(236,232,225,.25);background:linear-gradient(135deg,#2a3b4a,#16232f);padding:22px;text-align:left;display:flex;flex-direction:column;gap:8px;border-left:4px solid var(--red)}
@@ -137,7 +137,7 @@ button{font:inherit;text-transform:inherit;letter-spacing:inherit;cursor:pointer
 #fps{left:12px;top:12px;font-size:12px;display:none;background:rgba(15,25,35,.7);padding:4px 8px}
 #rot{display:none;position:fixed;inset:0;z-index:100;background:var(--ink);flex-direction:column;align-items:center;justify-content:center;gap:16px;font-size:22px;font-weight:800;text-align:center;padding:30px}
 #rot svg{width:64px;height:64px}
-@media (orientation:portrait) and (max-width:820px){#rot{display:flex}}
+@media (orientation:portrait) and (max-width:820px){#rot{display:flex}}html.portrait-ok #rot{display:none!important} /* row 7: the player chose to play in portrait (touch layout fits portrait) */
 @media(max-width:800px){.modes{grid-template-columns:1fr 1fr}#lobby{padding:20px}.info{grid-template-columns:1fr}}
 /* shared HUD + pause (Retake, Operator Duel) */
 #timer,#score,#hp,#ammo{display:none!important}
@@ -1332,7 +1332,8 @@ body.x-cbh #game{--ha:#3d8bff;--he:#ff9f1c}
   <div class="x-agc"><button class="x-ag on" data-a="Jett" style="--c:#4f8fb5" aria-pressed="true"><i>J</i>JETT<small>Duelist</small></button><button class="x-ag" data-a="Phoenix" style="--c:#b5642f" aria-pressed="false"><i>P</i>PHOENIX<small>Duelist</small></button><button class="x-ag" data-a="Reyna" style="--c:#8a3fb5" aria-pressed="false"><i>R</i>REYNA<small>Duelist</small></button><button class="x-ag" data-a="Raze" style="--c:#c8701f" aria-pressed="false"><i>R</i>RAZE<small>Duelist</small></button><button class="x-ag" data-a="Sova" style="--c:#3a5f95" aria-pressed="false"><i>S</i>SOVA<small>Initiator</small></button><button class="x-ag" data-a="Skye" style="--c:#4f8a3a" aria-pressed="false"><i>S</i>SKYE<small>Initiator</small></button><button class="x-ag" data-a="Breach" style="--c:#b5532f" aria-pressed="false"><i>B</i>BREACH<small>Initiator</small></button><button class="x-ag" data-a="Omen" style="--c:#2a2d45" aria-pressed="false"><i>O</i>OMEN<small>Controller</small></button><button class="x-ag" data-a="Sage" style="--c:#3fa59a" aria-pressed="false"><i>S</i>SAGE<small>Sentinel</small></button><button class="x-ag" data-a="Killjoy" style="--c:#b59a2f" aria-pressed="false"><i>K</i>KILLJOY<small>Sentinel</small></button><button class="x-ag" data-a="Chamber" style="--c:#a8893a" aria-pressed="false"><i>C</i>CHAMBER<small>Sentinel</small></button><button class="x-ag" data-a="Cypher" style="--c:#8a9a98" aria-pressed="false"><i>C</i>CYPHER<small>Sentinel</small></button></div>
   <button class="x-lk" id="xAgL">LOCK IN</button>
 </div>
-<div id="rot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M2 14a8 8 0 0 0 6 7M22 10a8 8 0 0 0-6-7"/></svg>Rotate your phone to landscape</div>
+<div id="rot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M2 14a8 8 0 0 0 6 7M22 10a8 8 0 0 0-6-7"/></svg>Rotate your phone to landscape<button id="rotGo" type="button" style="min-height:44px;padding:0 18px;border:1px solid rgba(236,232,225,.5);background:transparent;color:inherit;font:800 14px var(--f,sans-serif);letter-spacing:.1em;text-transform:uppercase">Play in portrait</button></div>
+<script>(function(){var h=document.documentElement;try{if(localStorage.getItem("vs.portrait")==="1")h.classList.add("portrait-ok");}catch(e){}var b=document.getElementById("rotGo");if(b)b.onclick=function(){h.classList.add("portrait-ok");try{localStorage.setItem("vs.portrait", "1");}catch(e){}};})();</script>
 <div id="toast">Coming soon</div>
 <div id="xErr" role="alert" aria-live="assertive"></div>
 <div id="game">
@@ -9666,7 +9667,7 @@ $("xDrills").onclick = rgDrills;
 { const sa = startAim; startAim = function () { const r = sa.apply(this, arguments); if (AM.dr !== "free") rgSet(AM.dr); else rgPanel(); return r; }; }
 { const l1 = $("lobbyBtn").onclick; $("lobbyBtn").onclick = function () { $("xRT").classList.remove("on"); rgClose(); return l1.apply(this, arguments); }; }
 const inGame = () => running && $("game").style.display === "block";
-const relock = () => { try { const p = renderer.domElement.requestPointerLock(); if (p && p.catch) p.catch(() => {}); } catch (e) {} };
+const relock = () => { try { if (matchMedia("(pointer: coarse)").matches) return; /* row 7, browser-found: a touch screen holding pointer lock reports every touch at clientX 0, so the stick and aim drag did nothing (portrait 360x740) */ const p = renderer.domElement.requestPointerLock(); if (p && p.catch) p.catch(() => {}); } catch (e) {} };
 let pausedAt = 0;
 function pause() {
   if (!inGame() || paused) return;
@@ -10250,7 +10251,21 @@ let xTGOn = false; const xTG = { inPlay: () => false, relAll: () => {} };
   document.head.appendChild(st);
   const DEF = { fire: [84, 66, 78, "FIRE", "Fire"], jump: [94, 48, 58, "JUMP", "Jump"], duck: [94, 82, 54, "DUCK", "Duck"], reload: [74, 84, 48, "R", "Reload"], zoom: [73, 50, 50, "ZOOM", "Zoom"], swap: [84, 40, 48, "⇄", "Switch weapon"], pause: [50, 7, 44, "II", "Pause"], c: [62, 18, 46, "C", "Ability C"], q: [69, 18, 46, "Q", "Ability Q"], e: [76, 18, 46, "E", "Ability E"], x: [83, 18, 46, "X", "Ultimate X"], plant: [8, 42, 54, "4", "Plant or defuse (hold)"], use: [8, 58, 48, "F", "Use, pick up or capture (hold)"], buy: [8, 26, 50, "B", "Buy"], inspect: [66, 88, 40, "INS", "Inspect weapon"], ping: [63, 70, 44, "PING", "Ping"], drills: [50, 18, 48, "DRL", "Range drills"] };
   let L = {};
-  const reset = () => { L = {}; for (const k in DEF) L[k] = { x: DEF[k][0], y: DEF[k][1], s: DEF[k][2], off: false }; };
+  // Portrait (row 7, browser-placed at 360x740): thumb cluster at the bottom right between the abilities row (below the
+  // buy-phase team panel) and the credits/ammo block, plant/use/buy down the left edge under COMMS, clear of the HP block.
+  const DEFP = { fire: [76.4, 79.7, 72], jump: [91.7, 70.9, 52], duck: [93.1, 84.1, 50], reload: [54.2, 84.5, 44], zoom: [54.2, 73.6, 46], swap: [91.7, 62.2, 44], pause: [50.0, 12.2, 40], c: [34.7, 63.5, 44], q: [48.1, 63.5, 44], e: [61.4, 63.5, 44], x: [74.7, 63.5, 44], plant: [10.0, 77.0, 50], use: [10.0, 85.1, 46], buy: [10.0, 68.9, 46], inspect: [54.2, 96.2, 36], ping: [36.1, 73.0, 40], drills: [50.0, 20.3, 44] };
+  // Default layouts are percentages; on a small or narrow screen fixed-size buttons could overlap (abilities at 640x360,
+  // half the cluster in portrait) or hang off the edge. fit() pushes overlapping defaults apart (6 px gap) and clamps
+  // every button inside the screen; layouts that already fit are left exactly as designed. A layout the player arranged is kept.
+  const fit = (w, h) => { const ks = Object.keys(L), P = ks.map((k) => ({ k, x: L[k].x * w / 100, y: L[k].y * h / 100, r: L[k].s / 2 })); let moved = false;
+    const clamp = (p) => { const x = Math.max(p.r + 4, Math.min(w - p.r - 4, p.x)), y = Math.max(p.r + 4, Math.min(h - p.r - 4, p.y)); if (x !== p.x || y !== p.y) { p.x = x; p.y = y; moved = true; } };
+    P.forEach(clamp);
+    for (let it = 0; it < 60; it++) { let any = false;
+      for (let i = 0; i < P.length; i++) for (let j = i + 1; j < P.length; j++) { const a = P[i], b = P[j], dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy), need = a.r + b.r + 6; if (d >= need) continue; any = moved = true; const ux = d > 1e-6 ? dx / d : 1, uy = d > 1e-6 ? dy / d : 0, m = (need - d) / 2 + 0.01; a.x -= ux * m; a.y -= uy * m; b.x += ux * m; b.y += uy * m; }
+      P.forEach(clamp); if (!any) break; }
+    if (moved) P.forEach((p) => { L[p.k].x = p.x / w * 100; L[p.k].y = p.y / h * 100; }); return moved; };
+  let custom = false, lastWH = "";
+  const reset = () => { L = {}; const D = innerHeight > innerWidth ? DEFP : DEF; for (const k in DEF) { const d = D[k] || DEF[k]; L[k] = { x: d[0], y: d[1], s: d[2], off: false }; } fit(innerWidth, innerHeight); custom = false; lastWH = innerWidth + "x" + innerHeight; };
   reset();
   const T = document.createElement("div"); T.id = "xT";
   T.innerHTML = '<div id="xJ"><i></i></div>' + Object.keys(DEF).map((k) => `<button class="tb" data-k="${k}" aria-label="${DEF[k][4]}">${DEF[k][3]}</button>`).join("") +
@@ -10260,7 +10275,7 @@ let xTGOn = false; const xTG = { inPlay: () => false, relAll: () => {} };
   const B = {}; T.querySelectorAll(".tb").forEach((b) => B[b.dataset.k] = b);
   const Jb = $("xJ"), Jk = Jb.firstChild;
   let ed = false, sel = null;
-  function render() { for (const k in B) { const b = B[k], l = L[k] || (L[k] = { x: DEF[k][0], y: DEF[k][1], s: DEF[k][2], off: false }); b.style.left = l.x + "%"; b.style.top = l.y + "%"; b.style.width = b.style.height = l.s + "px"; b.classList.toggle("off", l.off); b.classList.toggle("sel", ed && sel === k); } }
+  function render() { if (!custom && lastWH !== innerWidth + "x" + innerHeight) reset(); /* rotation or resize: defaults re-fit; an arranged layout stays */ for (const k in B) { const b = B[k], l = L[k] || (L[k] = { x: DEF[k][0], y: DEF[k][1], s: DEF[k][2], off: false }); b.style.left = l.x + "%"; b.style.top = l.y + "%"; b.style.width = b.style.height = l.s + "px"; b.classList.toggle("off", l.off); b.classList.toggle("sel", ed && sel === k); } }
   render();
   const kd = (code) => dispatchEvent(new KeyboardEvent("keydown", { code, bubbles: true }));
   const ku = (code) => dispatchEvent(new KeyboardEvent("keyup", { code, bubbles: true }));
@@ -10331,7 +10346,7 @@ let xTGOn = false; const xTG = { inPlay: () => false, relAll: () => {} };
   });
   T.addEventListener("pointermove", (e) => {
     const p = P[e.pointerId]; if (!p) return;
-    if (p.t === "ed") { L[p.k].x = Math.max(2, Math.min(98, e.clientX / innerWidth * 100)); L[p.k].y = Math.max(2, Math.min(98, e.clientY / innerHeight * 100)); return render(); }
+    if (p.t === "ed") { custom = true; L[p.k].x = Math.max(2, Math.min(98, e.clientX / innerWidth * 100)); L[p.k].y = Math.max(2, Math.min(98, e.clientY / innerHeight * 100)); return render(); }
     if (p.t === "aim" || (p.t === "btn" && p.k === "fire")) { aim(e.clientX - p.x, e.clientY - p.y); p.x = e.clientX; p.y = e.clientY; return; }
     if (p.t === "joy") {
       const dx = e.clientX - p.ox, dy = e.clientY - p.oy, m = Math.hypot(dx, dy) || 1, c = Math.min(m, 60), n = c / 60, ux = dx / m, uy = dy / m;
@@ -10368,8 +10383,8 @@ let xTGOn = false; const xTG = { inPlay: () => false, relAll: () => {} };
     $("xTsv").textContent = on ? L[sel].s + " px" : "—";
     if (on) { $("xTsz").value = L[sel].s; $("xTrm").textContent = L[sel].off ? "Restore" : "Remove"; }
   }
-  $("xTsz").oninput = (e) => { if (sel) { L[sel].s = +e.target.value; edSync(); } };
-  $("xTrm").onclick = () => { if (sel) { L[sel].off = !L[sel].off; edSync(); } };
+  $("xTsz").oninput = (e) => { if (sel) { custom = true; L[sel].s = +e.target.value; edSync(); } };
+  $("xTrm").onclick = () => { if (sel) { custom = true; L[sel].off = !L[sel].off; edSync(); } };
   $("xTrs").onclick = () => { reset(); sel = null; edSync(); };
   $("xTok").onclick = () => { ed = false; sel = null; endAll(); T.classList.remove("ed", "on"); render(); open("mSet"); };
   $("xArr").onclick = () => { closeAll(); endAll(); ed = true; sel = null; T.classList.add("on", "ed"); edSync(); };
