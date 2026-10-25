@@ -395,3 +395,19 @@ in-process server; it keeps the VALORANT FEEL block the audit fixture strips, an
   (subtitle 48 + explicit 12 px line + 6 px); touch (top:100px) and portrait placements unchanged. Parse-rule test:
   `test_short_layout.cjs` (e) (feed top vs subtitle line box per band, cascade order, no later override). Not rendered
   in Chromium (owned by another agent): a browser check of the 640x360 feed with 4-5 stacked kills is still open.
+- **Online HUD at an armor boundary** (step 4): the earlier attempt's server shots never hit the page player because the
+  scripted foe was aimed with `look` 0, which faces -z, while the page player stood at +z (server `fire()` sends the shot
+  along (-sin look, ., -cos look)). Aimed with look PI the foe's shots land; `test_client_online_gunplay.cjs` §5 now
+  checks Odin legs x3 into 100 / 50 = exactly 54 / 0 on the server and "54" / "0" on the page HUD (`#xHp` / `#xArm`).
+- **Ult points online**: the server granted ult points for kills only; VALORANT (and the offline page, `jUlt`) also give
+  +1 for dying, for planting (the planter) and for defusing (the defuser). `SpikeSimulation` now counts deaths from the
+  units' death counters every tick (guns, utility, falls; once each, before the half-time reset), and the plant / defuse
+  credit their unit. New `server/test-economy.js` (in `npm test`): loss streak 1900 / 2400 / 2900 reset by a win and at
+  the half, win 3000, 9000 cap, half-time 800 + ult reset, kill 200, plant 300 to every attacker (dead too), overtime
+  5000 with a side swap each round, and the four ult sources. Open question, not changed: a Phoenix killed inside Run It
+  Back also gets the death point (his deaths counter rises); unverified against VALORANT.
+- Checked, no bug: loss bonus cap and streak reset, plant bonus to dead attackers, half-time / overtime credits, a defuse
+  taken over by another defender drops to the 3.5 s checkpoint, a dead defuser's progress drops to the checkpoint.
+- **Heals clamped a Reyna overheal**: Sage's heal (and Phoenix's Blaze / Hot Hands self-heal) set
+  `hp = min(100, hp + rate x dt)`, so a heal still running on a Reyna who had Devoured past 100 dropped her back to 100.
+  Heals now only act below 100. `test-reyna.js`: 130 hp overheal untouched by a heal, 60 hp still healed 20 hp/s.

@@ -94,13 +94,23 @@ Math.random=mulberry(SEED*104729+1);require('vm').runInContext(`Math.random=(${m
   const g=(sim.floor||[]).find(d=>d.w==='Phantom');if(!g||g.ammo!==7||g.reserve!==13)fail('dead enemy Phantom on the floor: '+JSON.stringify(sim.floor));
   else{g.x=u.x;g.z=u.z;g.y=u.y;g.graceUntil=0;await step(1800);const p=page();if(me().primary!=='Phantom'||me().ammo!==7||me().reserve!==13)fail(`pickup: server ${me().primary} ${me().ammo}/${me().reserve}`);if(p.w!=='Phantom'||p.ammo!==7||p.rsv!==13)fail('pickup: page '+JSON.stringify(p));
    await tap('KeyR');await step(3800);const q=page();if(me().ammo!==20||me().reserve!==0||q.ammo!==20||q.rsv!==0)fail(`reload of the picked-up Phantom: server ${me().ammo}/${me().reserve}, page ${q.ammo}/${q.rsv} (want 20/0)`);}}
- // (exact HP at armor boundaries: server/test-gunplay.js checks every case's snapshot row, which is what the page HUD shows)
+ // 5. HUD at an armor boundary: the scripted foe's Odin, three leg shots at 3 m into 100 hp / 50 armor (32 a shot, armor
+ // absorbs 21.12, 21.12, then the last 7.76) leaves exactly 54 hp / 0 armor on the server, and the page HUD reads 54 / 0
+ // (the float leftover 54.00000000000001 used to show 55). The foe is aimed from server state (look PI faces +z, toward the
+ // page player; an earlier attempt aimed down -z and every shot missed), one shot per tick, 0.45 s apart so no spray climb.
+ {await arm('Vandal',25,75);const m=me();m.hp=100;m.armor=50;await step(200);const shots=[];
+  for(let i=0;i<3;i++){const g=foe(),u=me();Object.assign(g,{alive:true,hp:100,weapon:'Odin',primary:'Odin',ammo:100,inventory:{Odin:100},fireAt:0,equipAt:0,reloadAt:0,triggerHeld:false,x:u.x,z:u.z-3,y:u.y,look:Math.PI,pitch:Math.atan2(.45-1.6,3),input:{fire:true},inputAt:sim.time,ch:0});
+   const h0=u.hp,f0=sim.fire.bind(sim);sim.fire=function(w){const r=f0(w);if(w===foe())w.input={};return r;};await step(50);sim.fire=f0;shots.push(+(h0-me().hp).toFixed(4));await step(450);}
+  xe('xHud();true');const hud=xe('[document.getElementById("xHp").textContent,document.getElementById("xArm").textContent]');
+  if(me().hp!==54||me().armor!==0)fail(`armor boundary: server ${me().hp} / ${me().armor} after leg shots ${JSON.stringify(shots)} (want 54 / 0)`);
+  if(hud[0]!=='54'||hud[1]!=='0')fail(`armor boundary HUD: ${hud[0]} / ${hud[1]} (server ${me().hp} / ${me().armor}, want 54 / 0)`);
+  Object.assign(foe(),{weapon:'Classic',primary:null,input:{}});me().hp=100;await step(300);}
  // 6. next round: magazine and reserve refilled on both
  {me().ammo=3;const r0=sim.round;sim.roundDelay=0;sim.finishRound(0,'QA');await until(()=>sim.round>r0&&sim.phase==='game',30000,'next round');sim.buy=0;await step(800);const p=page(),u=me(),W=xe('MAG()');
   if(u.ammo!==W||p.ammo!==W||p.rsv!==W*3||u.reserve!==W*3)fail(`next round: server ${u.weapon} ${u.ammo}/${u.reserve}, page ${p.w} ${p.ammo}/${p.rsv}`);}
  for(const h of humans.splice(0))try{h.leave();}catch(e){}xe('mpReset()');await step(300);
  const errors=H.errors.slice(errs0),xerr=H.xErrCalls.slice(x0);if(errors.length||xerr.length)fail('page exceptions '+JSON.stringify({errors:errors.slice(0,5),xerr:xerr.slice(0,5)}));
  if(fails.length){console.error(fails.slice(0,40).join('\n'));process.exit(1);}
- console.log('Online gunplay (page + scripted human <-> in-process server): spray climb identical page / server, swap mid-reload kept on both (no snap-back), knife swap mid-reload does not fire the gun, G mid-reload, dead enemy Phantom picked up with 7 / 13 and reloaded from it, next-round refill; no page exceptions');
+ console.log('Online gunplay (page + scripted human <-> in-process server): spray climb identical page / server, swap mid-reload kept on both (no snap-back), knife swap mid-reload does not fire the gun, G mid-reload, dead enemy Phantom picked up with 7 / 13 and reloaded from it, HUD exact at an armor boundary (Odin legs x3 into 50 armor = 54 / 0), next-round refill; no page exceptions');
  process.exit(0);
 })().catch(e=>{console.error(e);console.error(JSON.stringify(H.errors.slice(0,8)));process.exit(1);});
