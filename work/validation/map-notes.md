@@ -125,6 +125,15 @@ typed-array copy per attribute), precomputed per-level bins in the split, typed-
 bounding-sphere pass: 1.8-2.0 s -> 0.9-1.2 s per map. Triangles are preserved exactly (`tris out` = source on all six;
 `work/test_map_optimizer.cjs` checks every corner's position/normal/uv). Raw numbers: `work/validation/map/perf.json`.
 
+Load cost, pass C2 (profiled with `node --cpu-prof` on `server/tools/.scratch/opt/realopt3.mjs` / `realopt4.mjs`):
+`nmOptimizeScene` was one large function whose hot loops (triangle gather, attribute copy) ran mostly unoptimized - the
+engine recompiled it 4-5 times per map (100-190 ms each, "wrong map" deopts) - so its own time was ~0.9 s of Lotus's
+optimize. The loops are now small functions (`nmGather`, `nmOffset`, `nmCopy3/2/N`, `nmCentroids` for the plan's
+centroids) that optimize in a few ms; output is unchanged (triangles out = source on all six, `work/test_map_optimizer.cjs`).
+Optimize ms on the loaded sandbox (load ~15, same run, before -> after): Ascent 2050 -> 1327, Bind 1470 -> 1082, Haven
+2163 -> 1385, Split 1964 -> 1463, Lotus ~1990 -> ~1475, Breeze 1923 -> 1114 (-25..-42%; the idle-sandbox column above was
+measured before). Left: the plan's median split (~0.3 s Lotus, loaded) and GC.
+
 Not done (measured or judged not worth it):
 - PVS occlusion culling: built and measured (24 m columns, 8 m viewer cells, conservative ray marching): it removed
   only ~3% more triangles on Lotus (61% of columns visible from an average cell: open sightlines + vista), not worth
