@@ -28,10 +28,10 @@ const SIZES=(process.env.SIZES||'1280x720,640x360,390x844').split(',').map(s=>s.
  await X(`{window.__allow=3;const r0=renderer.render;renderer.render=function(sc,c){if(sc===scene){if(window.__allow<=0)return;window.__allow--;}return r0.call(this,sc,c);};}1`);
  log('match started',await X('JSON.stringify({mode,map:FV.map,bots:bots.length,allies:allies.length,buy:FV.buy,agent:J.pick})'));
  const fonts=await X(`JSON.stringify([document.fonts.check('20px "VS Hud"'),document.fonts.check('20px "VS Title"')])`);log('fonts',fonts);
- const SEL={top:'.x-top',vitals:'.x-bl',abil:'.x-ab',ammo:'.x-br',credits:'#xCr',feed:'#feed',map:'#xMap'};
+ const SEL={top:'.x-top',vitals:'.x-bl',abil:'.x-ab',ammo:'.x-br',credits:'#xCr',feed:'#feed',map:'#xMap',teamL:'.x-obc:not(.en)',teamR:'.x-obc.en'};
  const measure=()=>X(`JSON.stringify((()=>{const S=${JSON.stringify(SEL)},o={};for(const k in S){const e=document.querySelector(S[k]);if(!e)continue;const cs=getComputedStyle(e);if(cs.display==='none'||cs.visibility==='hidden'||!e.offsetParent&&cs.position!=='fixed')continue;const r=e.getBoundingClientRect();if(r.width<2||r.height<2)continue;o[k]=[r.left,r.top,r.right,r.bottom].map(Math.round);}
   o._pp=[...document.querySelectorAll('#xPA i,#xPE i')].map(i=>(i.dataset.a||'?')+(i.classList.contains('dead')?'-':'')+(i.classList.contains('ult')?'*':'')).join('');o._tm=document.getElementById('xTm').textContent;o._bp=document.querySelector('.x-top').classList.contains('x-bpo');
-  o._feed=[...document.querySelectorAll('#feed .kf--k')].map(d=>d.textContent+(d.querySelector('.kf__hs')?' [HS]':'')+(d.querySelector('.kf__wb')?' [WB]':''));o._hpFont=getComputedStyle(document.getElementById('xHp')).fontFamily.split(',')[0];return o;})())`);
+  o._feed=[...document.querySelectorAll('#feed .kf--k')].map(d=>d.textContent+(d.querySelector('.kf__hs')?' [HS]':'')+(d.querySelector('.kf__wb')?' [WB]':''));o._trunc=[...document.querySelectorAll('.x-obn')].filter(e=>e.offsetParent&&e.scrollWidth>e.clientWidth+1).map(e=>e.textContent);o._hpFont=getComputedStyle(document.getElementById('xHp')).fontFamily.split(',')[0];return o;})())`);
  const verify=(name,w,h,m)=>{const ks=Object.keys(m).filter(k=>k[0]!=='_'),bad=[];for(const k of ks){const r=m[k];if(r[0]<0||r[1]<0||r[2]>w||r[3]>h)bad.push(k+' off-screen '+r);}
   for(let i=0;i<ks.length;i++)for(let j=i+1;j<ks.length;j++){const a=m[ks[i]],b=m[ks[j]];if(a[0]<b[2]&&b[0]<a[2]&&a[1]<b[3]&&b[1]<a[3])bad.push(ks[i]+' overlaps '+ks[j]);}
   check(`${name} ${w}x${h}: HUD blocks inside the screen and not overlapping`,!bad.length,JSON.stringify(bad));};
@@ -41,6 +41,7 @@ const SIZES=(process.env.SIZES||'1280x720,640x360,390x844').split(',').map(s=>s.
  await X('FV.buy=Math.max(FV.buy,30);1');await frames(2);await capture('buy');
  // 2. action phase: end buy, real kills, ult ready
  await X('FV.buy=Math.min(FV.buy,0.2);1');await frames(3);
+ await X(`if(!window.__kfw){window.__kfw=1;const st=window.setTimeout;window.setTimeout=function(f,ms,...r){if(window.__kfHold&&(ms===4600||ms===5000||window.__kfHold>1&&ms>=1000))return 0;return st.call(window,f,ms,...r);};}window.__kfHold=1;bots.concat(allies).forEach(u=>u.nt=true);1`);
  const k=await X(`JSON.stringify((()=>{const v=bots.filter(b=>b.alive);const a=allies.filter(x=>x.alive);const out={};
   if(v[0]){v[0].hp=1;kill(v[0],true);out.hs=v[0].name;}            // player headshot kill (kill() is the real path from shoot())
   if(v[1]){xWB.on=true;xWB.t=performance.now();v[1].hp=1;kill(v[1],false);out.wb=v[1].name;} // wallbang kill (flag as shoot() sets it for a shot through a wall)
@@ -50,7 +51,10 @@ const SIZES=(process.env.SIZES||'1280x720,640x360,390x844').split(',').map(s=>s.
  const m=JSON.parse(await measure());check('kill feed: player headshot row has the headshot mark, wallbang row has the wallbang mark',m._feed.some(t=>/\[HS\]/.test(t))&&m._feed.some(t=>/\[WB\]/.test(t)),JSON.stringify(m._feed));
  check('portraits: ten agent tiles, dead ones marked, own ult ready marked gold',m._pp.replace(/[-*]/g,'').length===10&&/-/.test(m._pp)&&/\*/.test(m._pp),m._pp);
  check('bundled HUD fonts loaded (no network fonts)',JSON.parse(fonts).every(Boolean)&&/VS Hud/.test(m._hpFont),fonts+' '+m._hpFont);
- // 3. round end: the remaining bots die -> ROUND WIN banner
+ await X('window.__kfHold=0;1');
+ // 3. round end (banner, its hide timer and the next-round timer held for the three captures):
+ // the remaining bots die -> ROUND WIN banner
+ await X('window.__kfHold=2;1');
  await X(`bots.filter(b=>b.alive).forEach(b=>{b.hp=1;kill(b,false);});1`);
  await page.waitForFunction(()=>window.__xe('document.getElementById("xAnn").classList.contains("on")'),null,{timeout:300000,polling:300}).catch(e=>log('banner wait',String(e).slice(0,100)));
  log('banner',await X('document.querySelector("#xAnn .x-ant").textContent'));
