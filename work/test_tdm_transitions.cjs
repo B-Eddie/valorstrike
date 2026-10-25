@@ -56,7 +56,7 @@ const fn=name=>between('function '+name+'(','\nfunction ');
  // ---- Offline respawn resets movement state and starts protection; death says "respawning".
  {const R={player:{x:5,z:5,hp:0,armor:0,y:3,vy:-2,vx:4,vz:-3,ch:.45,st:2,air:true},DM:{prt:0},dmSpot:()=>[1,2],dmAmmo(){},xKLReset(){R.kl=1;},setScope(){},updHud(){},performance:{now:()=>5000},Math,yaw:0,pitch:0};vm.createContext(R);vm.runInContext(fn('dmSpawnP')+';dmSpawnP();',R);
   assert.deepEqual([R.player.x,R.player.z,R.player.hp,R.player.armor,R.player.vx,R.player.vz,R.player.ch,R.player.st,R.player.air],[1,2,100,50,0,0,0,0,false]);assert.equal(R.DM.pp,7000);assert.equal(R.kl,1);}
- assert(h.includes('DM.prt = 1.5; DM.pp = 0; if (DM.menu) dmMenu(false); dmScore(by, "You"); say("You died · respawning", 1400);'),'DM death does not announce the respawn');
+ assert(h.includes('DM.prt = 1.5; DM.pp = 0; if (DM.menu) dmMenu(false); if (!XTKILL) dmScore(by, "You"); say("You died · respawning", 1400);'),'DM death does not announce the respawn');
  // ---- Online client self rows: respawn mirrors protection, damage/death close the loadout.
  {const O={MP:{sq:1,m5:0},FV:{dm:true,tdm:true},DM:{pp:0,ph:0,menu:false},player:{x:0,z:0,y:0,hp:100,armor:50,ch:.3},performance:{now:()=>9000},said:[],menus:0,dmAmmo(){O.ammoed=1;},xKLReset(){O.kl=1;},setScope(){},updHud(){},dmMenu(){O.menus++;O.DM.menu=false;},$:()=>({style:{}}),setTimeout(){},Math,yaw:0,pitch:0,reloading:0,fireHeld:true};O.say=t=>O.said.push(t);
   vm.createContext(O);vm.runInContext(fn('mpCliSelf')+';globalThis.self=mpCliSelf;',O);
