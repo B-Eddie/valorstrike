@@ -510,3 +510,6 @@ in-process server; it keeps the VALORANT FEEL block the audit fixture strips, an
   snapshot row [21] = pool (-1 none), `bo` carries `rg`; page `XRGN` (== server), `armAbs` 100% for a Regen Shield,
   `xRgnTick` (player, bots, allies offline and on the P2P host), HUD green shield icon + pool superscript. TDM Stage 1's
   Regen Shield (9.11) not modelled. `server/test-spike-edges.js` armor block, `work/test_regen_shield.cjs`, audit.js names.
+- **gate_m9 fix-forwards (a4c5e5d, merged origin/hark)**: the skin preview's WebGLRenderer (work/skins_runtime.js) skipped
+  `xShChk` (test_kill_perf "every renderer goes through xShChk 5/6"); test_spectate_follow's nmNear cut now includes the
+  merged `nmCellNum` numeric cell map.
