@@ -1,6 +1,7 @@
 import Motor from './motor.cjs';
 import {path} from './path.js';
 import {rayHit} from './hitboxes.js';
+import {persona,aimError,strafe,flankNode} from './bots.js';
 import calibration from './weapons.json' with {type:'json'};
 export const weapons={...calibration.weapons,'Blade Storm':{abilityOnly:true,ignoreMovementSpread:true,fireRate:1/.33,magazineSize:5,runSpeedMultiplier:1,equipTimeSeconds:0,reloadTimeSeconds:0,firstBulletAccuracy:0,shotgunPelletCount:1,damageRanges:[{rangeStartMeters:0,rangeEndMeters:200,headDamage:150,bodyDamage:50,legDamage:50}]},Knife:{fireRate:2,magazineSize:1,runSpeedMultiplier:1,equipTimeSeconds:.75,reloadTimeSeconds:0,firstBulletAccuracy:0,shotgunPelletCount:1,damageRanges:[{rangeStartMeters:0,rangeEndMeters:3,headDamage:50,bodyDamage:50,legDamage:50}]}};
 export const PENETRATION={High:{t:.6,k:.75},Medium:{t:.35,k:.5},Low:{t:.15,k:.5}};
@@ -24,7 +25,27 @@ export class Simulation{
  canSee(u,v,o,p){const q=p.map((n,i)=>n-o[i]),len=Math.hypot(...q);return len<.01||this.world.ray(o,q.map(n=>n/len),len-.5)===Infinity;}
  traceShot(o,d,max){this.shotBlockedBy=null;return this.world.ray(o,d,max);}
  penetrate(o,d,wall,limit,p){const tier=PENETRATION[String(p.wallPenetration||'').split('::')[1]];if(!tier||!(wall<limit))return null;const t=tier.t,probe=o.map((n,k)=>n+d[k]*(wall+t)),back=this.world.ray(probe,d.map(n=>-n),t);if(!(back<Infinity)||t-back<=.001)return null;const exit=wall+t-back+.01;if(exit>=limit)return null;const next=this.world.ray(o.map((n,k)=>n+d[k]*exit),d,limit-exit);return {through:Math.min(limit,exit+next),exit,k:tier.k};}
- bot(u){const W=this.world,enemies=this.units.filter(v=>v!==u&&v.alive&&(this.mode==='dm'||v.team!==u.team));if(!enemies.length)return;const target=enemies.sort((a,b)=>Math.hypot(a.x-u.x,a.z-u.z)-Math.hypot(b.x-u.x,b.z-u.z))[0],dx=target.x-u.x,dz=target.z-u.z,dist=Math.hypot(dx,dz),dy=target.y+1.1-u.y-1.6,dir=[dx,dy,dz],len=Math.hypot(...dir);for(let k=0;k<3;k++)dir[k]/=len;const see=dist<55&&this.canSee(u,target,[u.x,u.y+1.6,u.z],[target.x,target.y+1.1,target.z]);u.sawTarget=see;u.inputAt=this.time;u.input={};if(see){u.look=Math.atan2(-dx,-dz);u.pitch=Math.atan2(dy,dist);u.input.fire=this.time>(u.reactionAt||0);if(weapons[u.weapon].fireMode==='EWeaponFireModeDisplayType::SemiAutomatic'&&this.time>=u.fireAt)u.triggerHeld=false;u.input.side=dist<15?Math.sin(this.time*1.7+u.id)>0?.4:-.4:0;u.route=null;if(u.ammo===0&&!u.reloadAt)this.command(u,{t:'reload'});return;}u.reactionAt=this.time+.2+(u.id%4)*.07;u.pitch=0;if(!u.route||u.routeAt<this.time||u.route.length<2){u.route=path(W,W.near(u.x,u.z,u.y),W.near(target.x,target.z,target.y));u.routeAt=this.time+1.1+u.id*.03;}while(u.route.length>1){const n=W.nav.nodes[u.route[0]];if(Math.hypot(n[0]-u.x,n[2]-u.z)<.5)u.route.shift();else break;}const n=W.nav.nodes[u.route[0]];if(n){u.look=Math.atan2(u.x-n[0],u.z-n[2]);u.input.forward=1;}if(u.lastPos&&Math.hypot(u.x-u.lastPos[0],u.z-u.lastPos[1])<.01)u.stuck=(u.stuck||0)+.05;else u.stuck=0;if(u.stuck>1){u.route=null;u.input.side=u.id%2?1:-1;if(u.stuck>2)u.input.jump=true;}u.lastPos=[u.x,u.z];}
+ bot(u){const W=this.world,P=persona(this,u),enemies=this.units.filter(v=>v!==u&&v.alive&&!v.loading&&(this.mode==='dm'||v.team!==u.team));u.inputAt=this.time;u.input={};if(!enemies.length)return;
+  const target=enemies.sort((a,b)=>Math.hypot(a.x-u.x,a.z-u.z)-Math.hypot(b.x-u.x,b.z-u.z))[0],dx=target.x-u.x,dz=target.z-u.z,dist=Math.hypot(dx,dz);
+  if(u.aimTarget!==target.id){u.aimTarget=target.id;u.aimHead=P.r()<P.head;}
+  const aimY=target.y+(u.aimHead?1.62-(target.ch||0):1.1-(target.ch||0)*.5),eye=u.y+1.6-(u.ch||0),dy=aimY-eye;
+  const see=dist<55&&this.canSee(u,target,[u.x,eye,u.z],[target.x,aimY,target.z]);u.sawTarget=see;
+  if(see){if(!u.engagedAt){u.engagedAt=this.time;if(!(u.reactionAt>0))u.reactionAt=this.time+P.react;}const engaged=this.time-u.engagedAt,[ey,ep]=aimError(P,this.time,engaged);u.look=Math.atan2(-dx,-dz)+ey;u.pitch=Math.atan2(dy,dist)+ep;
+   u.input.fire=this.time>(u.reactionAt||0);if(weapons[u.weapon].fireMode==='EWeaponFireModeDisplayType::SemiAutomatic'&&this.time>=u.fireAt)u.triggerHeld=false;
+   // Engagement range preference: entries close in, anchors hold, others keep their band.
+   u.input.forward=dist>P.range[1]?1:dist<P.range[0]?-.6:0;u.input.side=dist<30?strafe(this,u,P):0;
+   if(P.crouch&&dist<P.crouchRange&&engaged>.25&&u.input.fire)u.input.duck=true;
+   u.route=null;u.via=-1;if(u.ammo===0&&!u.reloadAt)this.command(u,{t:'reload'});this.botUtility(u,target,dist,P,engaged);return;}
+  u.engagedAt=0;u.reactionAt=this.time+P.react*(dist>30?1.25:1);u.pitch=0;
+  // Holders pause in place between pushes; the pause length and spacing come from the bot's own stream.
+  if(P.hold>0&&!(this.time<u.nextHoldAt)){u.nextHoldAt=this.time+2+P.r()*3.5;if(P.r()<P.hold)u.holdUntil=this.time+1+P.r()*1.8;}if(u.holdUntil>this.time)return;
+  if(!u.route||u.routeAt<this.time||u.route.length<2){const via=P.flank&&dist>12?(u.via>=0&&u.viaTarget===target.id?u.via:flankNode(this,u,target)):-1;u.via=via;u.viaTarget=target.id;const goal=via>=0?via:W.near(target.x,target.z,target.y);u.route=path(W,W.near(u.x,u.z,u.y),goal);u.routeAt=this.time+P.repath;}
+  while(u.route.length>1){const n=W.nav.nodes[u.route[0]];if(Math.hypot(n[0]-u.x,n[2]-u.z)<P.accept)u.route.shift();else break;}
+  if(u.via>=0&&u.route.length<=1){const n=W.nav.nodes[u.via];if(n&&Math.hypot(n[0]-u.x,n[2]-u.z)<1.2){u.via=-1;u.route=null;}}
+  const n=u.route&&W.nav.nodes[u.route[0]];if(n){const tx=n[0]-u.x,tz=n[2]-u.z,l=Math.hypot(tx,tz)||1,j=P.jitter*Math.sin((u.route[0]||0)*1.7+P.jitterPhase),gx=n[0]+(-tz/l)*j,gz=n[2]+(tx/l)*j;u.look=Math.atan2(u.x-gx,u.z-gz);u.input.forward=1;if(P.walk&&dist<20)u.input.walk=true;}
+  if(u.lastPos&&Math.hypot(u.x-u.lastPos[0],u.z-u.lastPos[1])<.01&&u.input.forward)u.stuck=(u.stuck||0)+.05;else u.stuck=0;if(u.stuck>1){u.route=null;u.via=-1;u.input.side=P.r()<.5?1:-1;if(u.stuck>2)u.input.jump=true;}u.lastPos=[u.x,u.z];}
+ // Utility hook; SpikeSimulation casts abilities on each bot's own timing.
+ botUtility(){}
  rows(){return this.units.map(u=>[u.id,u.team,u.name,u.agent,+u.x.toFixed(3),+u.y.toFixed(3),+u.z.toFixed(3),u.look+Math.PI,Math.ceil(u.hp),Math.ceil(u.armor),u.alive?1:0,u.weapon,u.human?1:0,0,u.seq,u.ammo,u.reserve,+Math.min(1,(u.ch||0)/.45).toFixed(2),+(u.pitch||0).toFixed(3)]);}
  snapshot(){return {t:'s',tl:this.remaining,u:this.rows(),k:Object.fromEntries(this.units.map(u=>[u.name,u.kills])),d:Object.fromEntries(this.units.map(u=>[u.name,u.deaths])),ev:this.events.splice(0),phase:this.phase};}
 }

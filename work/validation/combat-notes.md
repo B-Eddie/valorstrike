@@ -64,3 +64,20 @@ Findings and evidence for the combat/reliability items worked on `hark-combat`. 
   `mpCliRS` status.
 
 Tests: `server/test-combat.js` (in `npm test`), `work/test_combat_consistency.cjs` (in `test:client`).
+
+## Bot personalities (user request, after row 10)
+
+- Before: every bot ran the same code with the same constants (`reactionAt = .2 + (id%4)*.07`, same sine strafe,
+  exact aim, straight A* routes). Under the same conditions they moved identically.
+- Now: `server/src/bots.js`. Each bot gets a deterministic seed (`name|id|map`) and its own mulberry32 stream,
+  separate from the shared weapon-spread RNG. Roles (entry, anchor, lurker, support) rotate per team, seeded by map, so each
+  team mixes roles. Each bot also draws its own reaction time, aim error (smooth and settling during an engagement),
+  head-vs-body aim choice, strafe style (sine weave, random switch, jiggle peek), crouch-spray and its range,
+  engagement range band (entries close in, anchors hold), hold pauses, lurker flank waypoints, repath interval, node acceptance
+  radius, lateral path jitter, walking near targets, and utility delay.
+- Spike: each bot takes its own spot inside the site, and lurkers flank. Exact goals are kept for spike pickup and
+  carrying. Utility is cast by role on each bot's timing through the normal `ab` command (charges and cooldowns apply).
+- All of this runs on the server simulation, so online play is authoritative.
+- Test: `server/test-bots.js`. The same seed replays exactly; four bots from identical starts diverge more than 1.5 m and
+  act differently; engagement aim, strafe and first shot differ; filled matches mix roles; spike goal offsets work.
+- Sanity: 60 s Ascent TDM with 9 bots, 18 kills, everyone moved (`/tmp` bench, not committed).
