@@ -1,5 +1,6 @@
 import {abilityDamage} from './abilities.js';
 import {endHeadhunter} from './devices.js';
+import {WINDUP,wf} from './windups.js';
 // Server-authoritative ultimates for the agents that used to share one generic 100-damage blast.
 // Same authority pattern as Blade Storm / Empress (reyna.js): the client sends only the intent
 // ({t:'ab',k:'x'}); origin, aim, targets, timing, damage and status all come from server state.
@@ -7,8 +8,8 @@ import {endHeadhunter} from './devices.js';
 export const ULT={
  fury:{blasts:3,interval:2,window:6.5,range:66,width:.9,damage:80,reveal:2,recast:.9},
  rocket:{speed:30,life:3,inner:3,outer:7,damage:150,arm:.05},
- lockdown:{windup:13,radius:32.5,detain:8},
- quake:{delay:.9,length:18,halfAngle:Math.PI/6,concuss:6},
+ lockdown:{windup:WINDUP.lockdown,radius:32.5,detain:8},
+ quake:{delay:wf('rollingThunder'),length:18,halfAngle:Math.PI/6,concuss:6},
  seekers:{count:3,speed:12,maxTravel:4,nearsight:3},
  theft:{reach:5,reveals:[1,3],reveal:1.6},
  tdf:{weapon:'Operator',ammo:5},
@@ -41,7 +42,7 @@ export function startUlt(sim,u,ctx,p){
   case 'Breach':{p.splice(0,3,u.x,u.y,u.z);effect(sim,u,'quake',[u.x,u.y,u.z],ULT.quake.delay+.05,ULT.quake.length,{at:sim.time+ULT.quake.delay,yaw:u.look});break;}
   case 'Skye':{const list=enemies(sim,u).sort((a,b)=>Math.hypot(a.x-u.x,a.z-u.z)-Math.hypot(b.x-u.x,b.z-u.z)).slice(0,ULT.seekers.count);for(const v of list){const t=Math.min(ULT.seekers.maxTravel,Math.hypot(v.x-u.x,v.y-u.y,v.z-u.z)/ULT.seekers.speed);effect(sim,u,'seeker',[u.x,u.y+1,u.z],t+.05,0,{target:v.id,at:sim.time+t});}break;}
   case 'Cypher':{const c=ctx.corpse;p.splice(0,3,c.x,c.y,c.z);for(const dt of ULT.theft.reveals)effect(sim,u,'theft',[c.x,c.y,c.z],dt+.05,0,{at:sim.time+dt});break;}
-  case 'Chamber':{endHeadhunter(u);u.ultWeapon={saved:u.weapon,savedAmmo:u.ammo,savedReserve:u.reserve};u.inventory[u.weapon]=u.ammo;u.weapon=ULT.tdf.weapon;u.ammo=ULT.tdf.ammo;u.reserve=0;u.reloadAt=0;break;}
+  case 'Chamber':{endHeadhunter(u);u.ultWeapon={saved:u.weapon,savedAmmo:u.ammo,savedReserve:u.reserve};u.inventory[u.weapon]=u.ammo;u.weapon=ULT.tdf.weapon;u.ammo=ULT.tdf.ammo;u.reserve=0;u.reloadAt=0;u.fireAt=Math.max(u.fireAt||0,sim.time+WINDUP.tourDeForce);/* 2.3 s equip (wiki windup) */break;}
   case 'Phoenix':{u.runItBack={p:[u.x,u.y,u.z],until:sim.time+ULT.rib.window,hp:u.hp,armor:u.armor};p.splice(0,3,u.x,u.y,u.z);break;}
  }
 }
