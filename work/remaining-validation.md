@@ -703,3 +703,12 @@ Regression: work/test_shot_alloc.cjs (source-level, house style). Behavioral: co
 knife_heavy, hit_perf, weapon_resource (from repo root - it reads relative index.html) all green.
 Not browser-profiled: frame-time capture under live combat remains the acceptance gap (sandbox
 SwiftShader saturation), same caveat as 3778dea.
+
+## 2026-10-25 ~17:54 EDT - Retake light-gate VERIFIED: probe artifact, no game bug
+Probe /tmp/retake-light.cjs (offline, 960x600, mid profile): `__vs.light(true)` + FV.pick=ascent +
+`__vs.startRetake()` -> RUNNING mode=retake in 3.3s, xLdOn cleared, hp 100. Flags confirmed
+{light:true,noAgents:true}. The 13:07 "retake sat at Preparing the map... 76s+" observation was the
+probe setting window.__vsLight=1 directly, leaving __vsNoAgents unset so the ~40s all-12 agent gate
+still ran - exactly the 17:45 code-read hypothesis. The light gate itself is shared and works for
+retake. NO game-code change. Screenshot /tmp/retake_light.png. Closes the sibling item from the
+960x600 lobby reachability fix.
