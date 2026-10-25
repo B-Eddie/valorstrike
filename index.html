@@ -10227,7 +10227,7 @@ let xTGOn = false; const xTG = { inPlay: () => false, relAll: () => {} };
 #xTE button.p{background:var(--red,#ff4655);border-color:var(--red,#ff4655)}
 #xTE button:disabled{opacity:.4}`;
   document.head.appendChild(st);
-  const DEF = { fire: [84, 66, 78, "FIRE", "Fire"], jump: [94, 48, 58, "JUMP", "Jump"], duck: [94, 82, 54, "DUCK", "Duck"], reload: [74, 84, 48, "R", "Reload"], zoom: [73, 50, 50, "ZOOM", "Zoom"], swap: [84, 40, 48, "⇄", "Switch weapon"], pause: [50, 7, 44, "II", "Pause"], c: [62, 18, 46, "C", "Ability C"], q: [69, 18, 46, "Q", "Ability Q"], e: [76, 18, 46, "E", "Ability E"], x: [83, 18, 46, "X", "Ultimate X"], plant: [8, 42, 54, "4", "Plant or defuse (hold)"], buy: [8, 26, 50, "B", "Buy"], inspect: [66, 88, 40, "INS", "Inspect weapon"], ping: [63, 70, 44, "PING", "Ping"], drills: [50, 18, 48, "DRL", "Range drills"] };
+  const DEF = { fire: [84, 66, 78, "FIRE", "Fire"], jump: [94, 48, 58, "JUMP", "Jump"], duck: [94, 82, 54, "DUCK", "Duck"], reload: [74, 84, 48, "R", "Reload"], zoom: [73, 50, 50, "ZOOM", "Zoom"], swap: [84, 40, 48, "⇄", "Switch weapon"], pause: [50, 7, 44, "II", "Pause"], c: [62, 18, 46, "C", "Ability C"], q: [69, 18, 46, "Q", "Ability Q"], e: [76, 18, 46, "E", "Ability E"], x: [83, 18, 46, "X", "Ultimate X"], plant: [8, 42, 54, "4", "Plant or defuse (hold)"], use: [8, 58, 48, "F", "Use, pick up or capture (hold)"], buy: [8, 26, 50, "B", "Buy"], inspect: [66, 88, 40, "INS", "Inspect weapon"], ping: [63, 70, 44, "PING", "Ping"], drills: [50, 18, 48, "DRL", "Range drills"] };
   let L = {};
   const reset = () => { L = {}; for (const k in DEF) L[k] = { x: DEF[k][0], y: DEF[k][1], s: DEF[k][2], off: false }; };
   reset();
@@ -10266,6 +10266,7 @@ let xTGOn = false; const xTG = { inPlay: () => false, relAll: () => {} };
     if (k === "jump") return kd("Space");
     if (k === "duck") return kd("ControlLeft");
     if (k === "plant") return kd("Digit4");
+    if (k === "use") return kd("KeyF"); // F held: floor guns, doors, orb capture (keyup on release)
     if (k === "reload") { kd("KeyR"); return ku("KeyR"); }
     if (k === "buy") { kd("KeyB"); return ku("KeyB"); }
     if (k === "inspect") { kd("KeyY"); return ku("KeyY"); }
@@ -10284,7 +10285,7 @@ let xTGOn = false; const xTG = { inPlay: () => false, relAll: () => {} };
   }
   function release(k) {
     if (k === "fire") { fireHeld = false; try { AM.fire = false; } catch (e) {} if (kLP) { clearTimeout(kLP); kLP = 0; shoot(); } }
-    if (k === "jump") ku("Space"); if (k === "duck") ku("ControlLeft"); if (k === "plant") ku("Digit4");
+    if (k === "jump") ku("Space"); if (k === "duck") ku("ControlLeft"); if (k === "plant") ku("Digit4"); if (k === "use") ku("KeyF");
   }
   const P = {};
   const joyOff = () => { ["KeyW", "KeyA", "KeyS", "KeyD", "ShiftLeft"].forEach((c) => keys[c] = false); Jb.style.display = "none"; };
