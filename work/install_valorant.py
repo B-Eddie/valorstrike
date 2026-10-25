@@ -12,7 +12,9 @@ block+='\n'+(root/'work/native_maps_runtime.js').read_text()+'\n'+(root/'work/fe
 if ra in s:s=s[:s.index(ra)]+s[s.index(rb)+len(rb):]
 block+='\n'+(root/'work/repair_runtime.js').read_text();sa='// ---- TRUSTED ONLINE SERVER ----';sb='// ---- END TRUSTED ONLINE SERVER ----'
 if sa in s:s=s[:s.index(sa)]+s[s.index(sb)+len(sb):]
-block+='\n'+(root/'work/server_runtime.js').read_text();mark='xReady = true; // every mode is initialised; lobby launches may now start them';s=s.replace(mark,block+'\n'+mark)
+block+='\n'+(root/'work/server_runtime.js').read_text();da='// ---- DEBUG HOOKS ----';db='// ---- END DEBUG HOOKS ----'
+if da in s:s=s[:s.index(da)]+s[s.index(db)+len(db):]
+block+='\n'+(root/'work/debug_runtime.js').read_text();mark='xReady = true; // every mode is initialised; lobby launches may now start them';s=s.replace(mark,block+'\n'+mark)
 if '<script src="models/valorant/manifest.js"></script>' not in s:s=s.replace('<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>','<script src="models/valorant/manifest.js"></script>\n<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>')
 # Find the actual three script tag, which may use an onerror handler.
 if '<script src="models/valorant/manifest.js"></script>' not in s:s=s.replace('<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js"></script>','<script src="models/valorant/manifest.js"></script>\n<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js"></script>')

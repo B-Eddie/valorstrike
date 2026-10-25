@@ -12437,7 +12437,7 @@ async function xvPreload() {
     if (conn.saveData || /2g/.test(conn.effectiveType || '') || matchMedia('(pointer: coarse)').matches) return;
     const first = (window.J && window.J.pick) || 'Jett';
     const agents = Object.keys(XUB_AG).sort((a, b) => (a === first ? -1 : b === first ? 1 : 0));
-    const idle = () => new Promise((r) => (window.requestIdleCallback || setTimeout)(r, 120));
+    const idle = () => new Promise((r) => { if (window.requestIdleCallback) requestIdleCallback(r, { timeout: 120 }); else setTimeout(r, 120); });
     for (const ag of agents) { if (XV.preloading === 'abort') return; try { await xvAgentLoad(ag); } catch (e) {} await idle(); }
     for (const k of Object.values(XGM.F)) { if (XV.preloading === 'abort') return; try { await xvLoad(k.split('/').pop()); } catch (e) {} await idle(); }
   } finally { XV.preloading = 'done'; }
@@ -12668,7 +12668,7 @@ async function nmEnsure(key){
   const [meta,nav,geometry,gl,plants]=await Promise.race([aborted,Promise.all([read('map.json').then(r=>r.json()),read('navigation.json').then(r=>r.json()),nmCollision(key,controller.signal).catch(async e=>{if(controller.signal.aborted)throw e;const bytes=await read('collision.bin').then(r=>r.arrayBuffer()),head=new Uint32Array(bytes,0,2),positions=new Float32Array(bytes,8,head[0]*3),indices=new Uint32Array(bytes,8+head[0]*12,head[1]),g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(positions,3));g.setIndex(new THREE.BufferAttribute(indices,1));
  const fence=await read('fence.bin').then(r=>r.arrayBuffer()).catch(()=>null); // nav-boundary fence quads (server/tools/build-fence.mjs): stop walkers at porous nav edges
  if(fence&&fence.byteLength>=8){const fh=new Uint32Array(fence,0,2),fp=new Float32Array(fence,8,fh[0]*3),fI=new Uint32Array(fence,8+fh[0]*12,fh[1]),base2=positions.length/3,mp=new Float32Array(positions.length+fp.length),mi=new Uint32Array(indices.length+fI.length);mp.set(positions);mp.set(fp,positions.length);mi.set(indices);for(let k=0;k<fI.length;k++)mi[indices.length+k]=base2+fI[k];g.setAttribute('position',new THREE.BufferAttribute(mp,3));g.setIndex(new THREE.BufferAttribute(mi,1));}
- g.boundsTree=new MeshBVHLib.MeshBVH(g,{maxLeafTris:12,maxDepth:64,strategy:MeshBVHLib.CENTER});return g;}).then(g=>{loadedGeometry=g;if(failed||controller.signal.aborted){release();throw controller.signal.reason||new Error('Map selection changed');}return g;}),new THREE.GLTFLoader(new THREE.LoadingManager(()=>{},(url,done,total)=>{if(ticket===NM.ticket&&NM.progress)NM.progress.querySelector('small').textContent='Loading map assets '+done+' / '+total+'…';})).loadAsync(base+'scene.gltf').then(gl=>{loadedScene=gl.scene;if(failed||controller.signal.aborted){release();throw controller.signal.reason||new Error('Map selection changed');}return gl;}),read('plants.json').then(r=>r.json())])]);
+ g.boundsTree=new MeshBVHLib.MeshBVH(g,{maxLeafTris:12,maxDepth:64,strategy:MeshBVHLib.CENTER});return g;}).then(g=>{loadedGeometry=g;if(failed||controller.signal.aborted){release();throw controller.signal.reason||new Error('Map selection changed');}return g;}),(window.__vsLight?Promise.resolve({scene:new THREE.Group()}):new THREE.GLTFLoader(new THREE.LoadingManager(()=>{},(url,done,total)=>{if(ticket===NM.ticket&&NM.progress)NM.progress.querySelector('small').textContent='Loading map assets '+done+' / '+total+'…';})).loadAsync(base+'scene.gltf')).then(gl=>{loadedScene=gl.scene;if(failed||controller.signal.aborted){release();throw controller.signal.reason||new Error('Map selection changed');}return gl;}),read('plants.json').then(r=>r.json())])]);
   if(ticket!==NM.ticket){release();throw new Error('Map selection changed');}
   if(!nav.validation.attackerToDefender||Object.values(nav.validation.attackerToSites).some(v=>!v))throw new Error('Map navigation is incomplete');
   NM.progress.querySelector('small').textContent='Preparing the map…';await new Promise(r=>setTimeout(r,20));if(ticket!==NM.ticket){release();throw new Error('Map selection changed');}
@@ -12950,6 +12950,34 @@ const netSgSl0=sgSl;sgSl=function(u,cq){if(!(NET.socket&&J.pick==='Reyna'&&netRe
 const netThrow0=jThrow;jThrow=function(){if(!(NET.socket&&MP.st==='game'&&MP.m5))return netThrow0.apply(this,arguments);if(!running||player.hp<=0||FV.buy>0||!J.bsOn||J.bs<1||J.cd.x>0)return;J.cd.x=.33;netSend({t:'blade'});kick=1;SFX.ab('bsThrow');};
 
 // ---- END TRUSTED ONLINE SERVER ----
+
+// ---- DEBUG HOOKS ----
+// Headless/manual testing hooks. Active only on localhost or with ?__vs=1.
+// window.__vsLight=1 (via __vs.light(true)) switches the native map load to a
+// collision+navigation-only path (no scene.gltf) and skips the agent-rig
+// readiness gate, so logic-level matches can start in constrained environments
+// (headless SwiftShader) without the full render burst.
+try {
+  const __vsOn = /^(127\.|localhost|\[::1\])/.test(location.hostname) || /[?&]__vs=1/.test(location.search);
+    if (__vsOn) {
+    { const ra = xvReadyAgents; xvReadyAgents = function () { return window.__vsLight ? Promise.resolve() : ra.apply(this, arguments); }; }
+    window.__vs = {
+      light(on) { window.__vsLight = !!on; return window.__vsLight; },
+      startDM() { xLob0 = false; return startDM(); }, startTDM() { xLob0 = false; return startTDM(); }, startFive() { xLob0 = false; return startFive(); },
+      hurt(t, n, by) { return hurt(t, n, by); }, kill(b, hs, by, w) { return kill(b, hs, by, w); },
+      state() {
+        return { running: !!running, mode, dm: !!FV.dm, tdm: !!FV.tdm, map: FV.map,
+          timeLeft: (typeof timeLeft !== 'undefined') ? timeLeft : null, paused: (typeof paused !== 'undefined') ? !!paused : null, xLdOn: !!window.xLdOn,
+          xnf: (typeof XNF !== 'undefined') ? XNF : null, cov: (typeof xCov === 'function') ? !!xCov() : null, gate: (typeof xGate === 'function') ? !!xGate() : null, lob0: (typeof xLob0 !== 'undefined') ? !!xLob0 : null, resUp: (typeof xResUp === 'function') ? !!xResUp() : null,
+          bots: bots.length, alive: bots.filter((b) => b.alive).length,
+          botsPos: bots.map((b) => [b.name, +b.g.position.x.toFixed(1), +b.g.position.y.toFixed(1), +b.g.position.z.toFixed(1), !!b.alive]),
+          player: player && [player.x, player.y, player.z, player.hp] };
+      },
+      get bots() { return bots; }, get allies() { return allies; }, get player() { return player; },
+      FV, DM, scene, renderer, camera };
+  }
+} catch (e) { try { console.warn("__vs hooks failed", e); } catch (_) {} }
+// ---- END DEBUG HOOKS ----
 
 xReady = true; // every mode is initialised; lobby launches may now start them
 { let rb = null; try { rb = sessionStorage.getItem("vs.retry"); sessionStorage.removeItem("vs.retry"); } catch (e) {} // Retry on the engine error reloaded the page: relaunch the same mode

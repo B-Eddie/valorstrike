@@ -42,7 +42,7 @@ async function xvPreload() {
     if (conn.saveData || /2g/.test(conn.effectiveType || '') || matchMedia('(pointer: coarse)').matches) return;
     const first = (window.J && window.J.pick) || 'Jett';
     const agents = Object.keys(XUB_AG).sort((a, b) => (a === first ? -1 : b === first ? 1 : 0));
-    const idle = () => new Promise((r) => (window.requestIdleCallback || setTimeout)(r, 120));
+    const idle = () => new Promise((r) => { if (window.requestIdleCallback) requestIdleCallback(r, { timeout: 120 }); else setTimeout(r, 120); });
     for (const ag of agents) { if (XV.preloading === 'abort') return; try { await xvAgentLoad(ag); } catch (e) {} await idle(); }
     for (const k of Object.values(XGM.F)) { if (XV.preloading === 'abort') return; try { await xvLoad(k.split('/').pop()); } catch (e) {} await idle(); }
   } finally { XV.preloading = 'done'; }
