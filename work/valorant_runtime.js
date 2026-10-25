@@ -7,6 +7,39 @@ function xvLoad(name) {
   }).catch((e) => { XV.failures[name] = String(e); delete XV.cache[name]; throw e; });
   return XV.cache[name];
 }
+function xvReadyAgents(list) {
+  const one = (ag) => xvAgentLoad(ag).catch(() => xvAgentLoad(ag)); // one retry; a second failure rejects
+  let names = null;
+  try { if (Array.isArray(list) && list.length) names = [...new Set(list.map((n) => xvAgentName(n)))]; } catch (e) {}
+  return Promise.all((names && names.length ? names : Object.keys(XUB_AG)).map(one));
+}
+// Participant-scoped readiness: a match spawns only its drawn roster (bot names ARE agent
+// names from X_ALL_AG; anything else resolves through xvAgentName's deterministic hash), so
+// the gate loads the roster's kits instead of all 12. Online (MP.on) loads all 12: a late
+// join can bring any agent, and native opponents must never spawn invisible.
+function xvRoster(mode) {
+  try {
+    if (typeof MP !== 'undefined' && MP && MP.on) return null; // online: a late join can bring any agent
+    const me = (window.J && J.pick) || 'Jett';
+    // Untagged starts come through agentSelect(go) and can be 5v5 OR retake: the roster
+    // kind is unknowable at the gate, so load all 12 rather than risk invisible opponents.
+    if (!mode) return null;
+    if (mode === 'SURF' || mode === 'AIM PRACTICE' || mode === 'AIM TRAINING') return [me]; // no bots: player kit only
+    if (mode === 'OPERATOR DUEL') return [me, 'Chamber']; // duel's fixed opponent
+    if (mode === 'RETAKE' || mode === 'RIFLE 2V2') {
+      if (typeof xRollSmall !== 'function' || typeof names === 'undefined' || typeof MATES === 'undefined') return null;
+      xRollSmall(); // draws if needed; xSmPreDrawn makes the mode start keep this exact roster
+      try { xSmPreDrawn = true; } catch (e) {}
+      return [me].concat(names, MATES);
+    }
+    if (typeof xBuildTeams !== 'function' || typeof F_EN === 'undefined' || typeof F_MATES === 'undefined') return null;
+    xBuildTeams(); // draws if needed; xTmPreDrawn makes the mode start keep this exact roster
+    try { xTmPreDrawn = true; } catch (e) {}
+    const set = new Set([me, 'Chamber']); // Chamber: Operator Duel's fixed opponent
+    F_EN.forEach((n) => set.add(n)); F_MATES.forEach((n) => set.add(n));
+    return [...set];
+  } catch (e) { return null; }
+}
 function xvFind(root, name) { const clean = (s) => String(s).replace(/[^a-zA-Z0-9_]/g, ''); let found = null; root.traverse((o) => { if (!found && clean(o.name) === clean(name)) found = o; }); return found; }
 function xvConstraints(root, config, fp) {
   for (const c of (config && config.Constraints) || []) {
@@ -227,7 +260,7 @@ function xvFPTick(dt) {
   const hide=o=>{if(!o)return;XV.hidden.push([o,o.visible]);o.visible=false;}; gun.children.forEach(c=>{if(c!==muzzle)hide(c);});knife.children.forEach(hide);[VMA.R,VMA.L,KARM].forEach(hide);
   if(kn&&kSwing>(F.lastSwing||0)+.05)XV.event=kHv?'alt Attack':'attack 1';F.lastSwing=kSwing;
   const rp=mode==='duel'?(du.reload>0?1-du.reload/OP_RELOAD:-1):mode==='aim'?(AM.rl>0?1-AM.rl/WEAP[aimW()].rld:-1):reloading>0?1-reloading/xRT():-1;
-  if(rp>=0){XV.event=null;xvFPPlay(F,'reload',rp);}else if(VM.ins>0&&F.kind!=='inspect')xvFPPlay(F,'inspect');else if(XV.event){F.kind=null;xvFPPlay(F,XV.event);XV.event=null;}else if(F.kind==='reload'||(F.kind!=='idle'&&F.age>(F.duration||(F.action?F.action.getClip().duration:.4))))xvFPPlay(F,'idle');
+  if(rp>=0){XV.event=null;xvFPPlay(F,'reload',rp);}else if(VM.ins>0&&F.kind!=='inspect')xvFPPlay(F,'inspect');else if(XV.event){F.kind=null;xvFPPlay(F,XV.event);XV.event=null;}else if(F.kind==='inspect'&&VM.ins<=0)xvFPPlay(F,'idle');else if(F.kind==='reload'||(F.kind!=='idle'&&F.age>(F.duration||(F.action?F.action.getClip().duration:.4))))xvFPPlay(F,'idle');
   F.am.update(dt);F.gm.update(dt);if(rp>=0)xvFPPlay(F,'reload',rp);F.age+=dt;
   // Match the source's narrower viewmodel FOV while keeping the game's world-camera FOV.
   const s=Math.tan(THREE.MathUtils.degToRad(camera.fov/2))/Math.tan(THREE.MathUtils.degToRad(43.383/2));F.root.scale.set(s,s,1);F.root.position.set(F.origin.x*s,F.origin.y*s,F.origin.z);F.root.position.y+=Math.sin(VM.bob||0)*.003;
@@ -245,6 +278,7 @@ function xvMapCover(g) {
 {const use=useMap;useMap=function(n){const r=use.apply(this,arguments);try{xvMapCover(MAPS[n]&&MAPS[n].g);}catch(e){}return r;};}
 window.xValorantAssets={state:XV,agentAssets:XVA,agentsReady:xvAgentsReady,agentProgress:xvAgentProgress,load:xvLoad,loadAgent:xvAgentLoad,loadFP:xvFPLoad,fpCache:XVFP,scene,camera,renderer,agents:()=>XSOL.mx,probe:()=>({running,mode,agent:J.pick,weapon:fpaWeap(),nativeAgents:XSOL.mx.filter(m=>m.valorant).length,agentKits:Object.keys(XVA.kits).length,nativeFP:XV.fp&&XV.fp.ag+' '+XV.fp.w,failures:XV.failures})};
 window.xvAgentsReady=xvAgentsReady;
+window.xvRoster=xvRoster;
 // Start downloading every agent as soon as the lobby is up (idle slot right after first paint), last pick first.
 {const go=()=>{let a='Jett';try{a=(typeof S!=='undefined'&&S&&S.lastAg)||localStorage.getItem('vs.lastAg')||a;}catch(e){}try{xvPreloadAgents(xvAgentName(a));}catch(e){console.warn('agent preload',e);}};if(window.requestIdleCallback)requestIdleCallback(go,{timeout:300});else setTimeout(go,0);}
 // Physical ability devices retain their gameplay roots, hit checks and timers.

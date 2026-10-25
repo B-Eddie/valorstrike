@@ -111,7 +111,7 @@ const ab=(s,u,k,m={})=>{s.time+=.5;return s.command(u,{t:'ab',k,...m});};
  u.ability.e=1;ab(s,u,'e',{l:1});assert.ok(s.effects.find(e=>e.kind==='flash').p[0]<-2,'left curve');}
 // Nanoswarm: dormant until C again (no charge spent), then 45/s for 4 s.
 {const {s,u,list:[foe]}=setup('Killjoy',['foe']);u.ability.c=2;Object.assign(foe,{x:1,y:0,z:-14});assert.equal(ab(s,u,'c'),true);tick(s,1);assert.equal(foe.hp,100,'dormant');
- assert.equal(ab(s,u,'c'),true);assert.equal(u.ability.c,1,'trigger is free');tick(s,1);assert.ok(Math.abs(foe.hp-55)<1.5,'45/s: '+foe.hp);tick(s,3.2);assert.ok(!s.effects.some(e=>e.kind==='nanoswarm'),'4 s then gone');}
+ assert.equal(ab(s,u,'c'),true);assert.equal(u.ability.c,1,'trigger is free');tick(s,1);assert.ok(Math.abs(foe.hp-55)<1.5,'45/s: '+foe.hp);tick(s,3.8);assert.ok(s.effects.some(e=>e.kind==='nanoswarm'),'still burning at 4.8 s');tick(s,0.4);assert.ok(!s.effects.some(e=>e.kind==='nanoswarm'),'5 s then gone (wiki)');}
 // Alarmbot chases a nearby visible enemy and leaves it Vulnerable (double damage from guns and abilities).
 {const {s,u,list:[foe]}=setup('Killjoy',['foe']);u.ability.q=1;Object.assign(foe,{x:4,y:0,z:-14});assert.equal(ab(s,u,'q'),true);tick(s,1);
  assert.ok(foe.vulnerableUntil>s.time&&!s.effects.some(e=>e.kind==='alarmbot'),'Alarmbot pops');assert.ok(s.roundState(foe).status.vulnerable>3);const hp=foe.hp;abilityDamage(s,u,foe,10);assert.equal(hp-foe.hp,20,'vulnerable doubles damage');}

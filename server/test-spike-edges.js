@@ -16,9 +16,9 @@ r.buy=0;r.roundDelay=5;assert.equal(r.command(p,{t:'ab',k:'e'}),false);assert.eq
 console.log('Spike refund regression: no free restored weapon/armor from out-of-order sells; loading/dead refund and post-round ability rejected');
 
 const k=new SpikeSimulation(W,'five','ascent',()=>.5),killer=k.add('killer','Phoenix'),v1=k.add('v1'),v2=k.add('v2');k.start(false);k.buy=0;
-Object.assign(killer,{x:0,y:0,z:0,look:0,pitch:Math.atan2(-.6,2),weapon:'Bucky',ammo:5,fireAt:0,input:{},credits:0,roundKills:0});killer.ability.ult=5;
+Object.assign(killer,{x:0,y:0,z:0,look:0,pitch:Math.atan2(-.6,2),weapon:'Bucky',ammo:5,fireAt:0,input:{},credits:0,roundKills:0});killer.ability.ult=6;
 for(const v of [v1,v2])Object.assign(v,{team:1,x:0,y:0,z:-2,armor:0,hp:1,protectedUntil:0});
-assert.equal(k.fire(killer),true);assert.equal(killer.kills,2);assert.equal(killer.credits,400);assert.equal(killer.roundKills,2);assert.equal(killer.ability.ult,6);
+assert.equal(k.fire(killer),true);assert.equal(killer.kills,2);assert.equal(killer.credits,400);assert.equal(killer.roundKills,2);assert.equal(killer.ability.ult,7);
 console.log('Spike weapon rewards: each shotgun kill credited, agent ult cap respected');
 
 const dr=new SpikeSimulation(W),dropper=dr.add('dropper'),defender=dr.add('defender');dr.start(false);
@@ -36,11 +36,11 @@ const wb={...bw,blocked:(x,z)=>x===20&&z===43},bc=new SpikeSimulation(wb),bp=bc.
 {const s=new SpikeSimulation(W),h=s.add('loader','Jett',true),a2=s.add('mate'),d1=s.add('def1'),d2=s.add('def2');s.start(false);
  for(const u of [h,a2])u.team=s.atk;for(const u of [d1,d2])u.team=1-s.atk;s.spike.carrier=h.id;h.loading=true;
  const run=sec=>{for(let i=0;i<Math.round(sec/.05);i++)s.step(.05);};
- run(10);assert.equal(s.buy,20,'held while the loader is inside the grace');run(10);assert.ok(s.buy<20&&s.buy>14,'grace capped at 15 s: buy '+s.buy);
- run(16);assert.equal(s.buy,0);assert.equal(h.alive,false,'still loading at round start: out for the round');assert.equal(s.round,1);
+ run(10);assert.equal(s.buy,45,'held while the loader is inside the grace');run(10);assert.ok(s.buy<45&&s.buy>39,'grace capped at 15 s: buy '+s.buy);
+ run(41);assert.equal(s.buy,0);assert.equal(h.alive,false,'still loading at round start: out for the round');assert.equal(s.round,1);
  assert.ok(a2.alive&&s.spike.carrier===a2.id,'spike handed to a teammate who is in the round');
  h.loading=false;run(1);assert.equal(h.alive,false,'finishing the load mid-round spectates');
- s.finishRound(0,'QA');run(5.2);assert.equal(s.round,2);assert.equal(h.alive,true,'back next round');
+ s.finishRound(0,'QA');run(7.2);assert.equal(s.round,2);assert.equal(h.alive,true,'back next round');
  const late=s.add('late','Sage',true);late.loading=true;const b0=s.buy;run(2);assert.ok(s.buy<b0-1.9,'mid-game joiner does not hold the round');
  const bL=s.buy;h.loading=true;run(14);assert.equal(s.buy,bL,'a loader alive in the round holds within its grace');run(4);assert.ok(Math.abs(bL-s.buy-3)<.11,'released after 15 s: '+(bL-s.buy));
  h.loadSince=null;const bR=s.buy;run(2);assert.ok(bR-s.buy>1.9,'per-round budget (15 s) spent: no further hold this round');

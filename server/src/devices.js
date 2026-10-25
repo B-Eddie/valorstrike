@@ -8,9 +8,9 @@ import {abilityDamage} from './abilities.js';
 export const DEV={
  recon:{pulses:[.9,2.5],radius:20,reveal:1.6},
  blaze:{life:8,length:12,width:.8,height:3,damage:30,heal:12.5},
- hotHands:{life:4,radius:4,damage:40,heal:12.5},
+ hotHands:{life:4,radius:4,damage:60,heal:12.5},
  curveball:{ahead:5,side:2.5,windup:.5,blind:1.1,radius:30},
- nanoswarm:{life:120,active:4,radius:4,damage:45},
+ nanoswarm:{life:120,active:5,radius:4,damage:45},
  alarmbot:{life:120,sight:5.5,speed:5,trigger:1.5,radius:3,vulnerable:4},
  turret:{life:20,range:30,arc:Math.PI/2,damage:12,interval:.7,tag:.5},
  trapwire:{life:120,reach:7.5,width:.4,tether:2.5,daze:2.5},

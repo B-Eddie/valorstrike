@@ -1,0 +1,318 @@
+##### Breach
+Aftershock
+    EQUIP a fusion charge. FIRE the charge to set a slow-acting burst through the wall. The burst does heavy damage to anyone caught in its area.
+  Uses: 1
+  Cost: 200
+  Windup: 2.2 s
+  Damage: 80 per tick, 2 ticks within 0.6 s
+Flashpoint
+    EQUIP a blinding charge. FIRE the charge to set a fast-acting burst through the wall. The charge detonates to Blind all players looking at it.
+  Uses: 2
+  Cost: 250
+  Windup: 0.5 s
+  Debuff: 2.25 s Flash
+Fault Line
+    EQUIP a seismic blast. HOLD FIRE to increase the distance. RELEASE to set off the quake, Concussing all players in its zone and in a line up to the zone.
+  Uses: 1
+  Cost: Free
+  Windup: 1.1 s
+  Cooldown: 50 s
+  Debuff: 2.5 s Concuss
+Rolling Thunder
+    EQUIP a Seismic Charge. FIRE to send a cascading quake through all terrain in a large zone. The quake Concusses and knocks up anyone caught in it.
+  Ultimate Points: 8 ♦♦♦♦♦♦♦♦
+  Windup: 1.2 s
+  Debuff: 7 m Knockback + 4 s Concuss
+##### Chamber
+Trademark
+    EQUIP a trap that scans for enemies. FIRE to place it on the ground. When a visible enemy comes in range, the trap counts down and then destabilizes the terrain around them, creating a lingering field that Slows players caught inside of it. The trap can be picked up to be REDEPLOYED.
+  Uses: 1
+  Cost: 200
+  Windup: 2 s
+  Cooldown: 30 s (Recalled)
+  Health: 20 HP
+  Debuff: 4 s 50% Slow
+Headhunter
+    ACTIVATE to equip a heavy pistol. ALT FIRE with the pistol equipped to aim down sights.
+  Ammo: 8 bullets max.
+  Cost: 100 per bullet
+  Damage: 159 Head, 55 Body, 46 Legs
+Rendezvous
+    EQUIP a teleport anchor. FIRE to place it on the ground. While on the ground and in range of the anchor, REACTIVATE to quickly teleport to the anchor. The anchor can be picked up to be REDEPLOYED.
+  Uses: 1
+  Cost: Free
+  Duration: 1.3 s
+  Cooldown: 30 s (Used/Recalled)
+  Health: 50 HP
+Tour De Force
+    ACTIVATE to summon a powerful, custom sniper rifle that will kill an enemy with any direct hit to the upper body. ALT FIRE to aim down sights. Killing an enemy creates a lingering field that Slows players caught inside of it.
+  Ultimate Points: 8 ♦♦♦♦♦♦♦♦
+  Ammo: 5
+  Windup: 2.3 s
+  Damage: 255 Head, 150 Body, 127 Legs
+  Debuff: 4 s 50% Slow
+##### Cypher
+Trapwire
+    EQUIP a trapwire. FIRE to place a destructible and covert trapwire at the targeted location, creating a line that spans between the placed location and the wall opposite. Enemy players who cross a trapwire will be Slowed and Revealed after a short period if they do not destroy the device in time. This ability can be picked up to be REDEPLOYED.
+  Uses: 2
+  Cost: 200
+  Windup: 0.7 s
+  Health: 20 HP
+  Damage: 5 (if zap activated)
+  Debuff: 50% Slow, +1 s Slow if zap activated
+Cyber Cage
+    INSTANTLY toss the cyber cage in front of Cypher. ACTIVATE to create a zone that blocks vision and plays an audio cue when enemies pass through it.
+  Uses: 2
+  Cost: 100
+  Duration: 7.25 s
+Spycam
+    EQUIP a spycam. FIRE to place the spycam at the targeted location. RE-USE this ability to take control of the camera's view. While in control of the camera, FIRE to shoot a marking dart. This dart will Reveal the location of any player struck by the dart. This ability can be picked up to be REDEPLOYED.
+  Uses: 1
+  Cost: Free
+  Cooldown: Spycam: 15 s (Recalled)/60 s (Destroyed), Dart: 6 s
+  Health: 1 HP
+  Debuff: Still-image Reveal every 2 s until dart removed
+Neural Theft
+    INSTANTLY use on a targeted dead enemy to download information on their team. After a brief delay, the location of all living enemy players will be Revealed twice.
+  Ultimate Points: 7 ♦♦♦♦♦♦♦
+  Windup: 2 s (1st reveal), 4 s (2nd reveal)
+  Debuff: Still-image Reveal
+##### Jett
+Drift
+    Holding the jump button while falling allows you to glide through the air.
+Cloudburst
+    INSTANTLY throw a projectile that expands into a brief vision-blocking cloud on impact with a surface. HOLD the ability key to curve the smoke in the direction of your crosshair.
+  Uses: 2
+  Cost: 200
+  Duration: 2.5 s
+Updraft
+INSTANTLY propel Jett high into the air.
+  Uses: 1
+  Cost: 150
+  Duration: 0.6 s
+Tailwind
+    ACTIVATE to prepare a gust of wind for a limited time. RE-USE the wind to propel Jett in the direction she is moving. If Jett is standing still, she propels forward. Tailwind charge resets every two kills.
+  Uses: 1
+  Cost: Free
+  Windup: 1 s
+  Duration: 7.5 s (Charged), 0.45 s (Dash)
+  Cooldown: 2 kill recharge
+Blade Storm
+    EQUIP a set of highly accurate throwing knives. FIRE to throw a single knife and recharge knives on a kill. ALT FIRE to throw all remaining daggers but does not recharge on a kill.
+  Ultimate Points: 8 ♦♦♦♦♦♦♦♦
+  Damage: 150 Head, 50 Body, 42 Legs
+##### Killjoy
+Nanoswarm
+    EQUIP a Nanoswarm grenade. FIRE to throw the grenade. Upon landing, the Nanoswarm goes covert. ALT FIRE to lob. ACTIVATE the Nanoswarm to deploy a damaging swarm of nanobots.
+  Uses: 2
+  Cost: 200
+  Duration: 5 s
+  Health: 20 HP
+  Damage: 45/s
+Alarmbot
+    EQUIP a covert Alarmbot. FIRE to deploy a bot that hunts down enemies that get in range. After reaching its target, the bot explodes and applies Vulnerable to enemies in the area. HOLD EQUIP to recall a deployed bot.
+  Uses: 1
+  Cost: 200
+  Cooldown: 20 s (Recalled)
+  Health: 20 HP
+  Debuff: 4 s Vulnerable
+Turret
+    EQUIP a Turret. FIRE to deploy a turret that fires at enemies in a 100 degree cone. ALT FIRE to swap turret direction. HOLD EQUIP to recall the deployed turret.
+  Uses: 1
+  Cost: Free
+  Cooldown: 60 s (Destroyed), 20 s (Recalled)
+  Health: 100 HP
+  Damage: 0-20 m: 8, 20-35 m: 6, 35+ m: 4 (3 shots per burst)
+Lockdown
+    EQUIP the Lockdown device. FIRE to deploy the device. After a long windup, the device Detains all enemies caught in the radius. The device can be destroyed by enemies.
+  Ultimate Points: 9 ♦♦♦♦♦♦♦♦♦
+  Windup: 13 s
+  Health: 200 HP
+  Debuff: 8 s Detain
+##### Omen
+Shrouded Step
+    EQUIP a shrouded step ability and see its range indicator. FIRE to begin a brief channel, then teleport to the marked location.
+  Uses: 2
+  Cost: 100
+Paranoia
+    EQUIP a blinding orb. FIRE to throw it forward, briefly Nearsighting and Deafening all players it touches. This projectile can pass straight through walls.
+  Uses: 1
+  Cost: 250
+  Debuff: 2 s Nearsight
+Dark Cover
+    EQUIP a shadow orb, entering a phased world to place and target the orbs. PRESS the ability key to throw the shadow orb to the marked location, creating a long-lasting shadow sphere that blocks vision. HOLD FIRE while targeting to move the marker further away. HOLD ALT FIRE while targeting to move the marker closer. PRESS RELOAD to toggle normal targeting view.
+  Uses: 2
+  Cost: 150
+  Duration: 15 s
+  Cooldown: 40 s
+From the Shadows
+    EQUIP a tactical map. FIRE to begin teleporting to the selected location. While teleporting, Omen will appear as a Shade that can be destroyed by an enemy to cancel his teleport, or PRESS EQUIP for Omen to cancel his teleport.
+  Ultimate Points: 7 ♦♦♦♦♦♦♦
+  Duration: 4 s
+##### Phoenix
+Inner Fire
+    PASSIVELY Heal Phoenix instead of taking damage after standing in Phoenix's own fire.
+Healing
+50 HP total over full duration of each ability
+Blaze
+    EQUIP a flame wall. FIRE to create a line of flame that moves forward, passing through the world and creating a wall of fire that blocks vision and damages players passing through it. HOLD FIRE to bend the wall in the direction of your crosshair.
+  Uses: 1
+  Cost: 150
+  Duration: 8 s
+  Damage: 30/s
+Hot Hands
+    EQUIP a fireball. FIRE to throw a fireball that explodes after a set amount of time or upon hitting the ground, creating a lingering fire zone that damages enemies. ALT FIRE to lob.
+  Uses: 1
+  Cost: 200
+  Duration: 3.25 s (minimum at full size)
+  Damage: 60/s
+Curveball
+    EQUIP a flare orb that takes a curving path and detonates shortly after throwing. FIRE to curve the flare orb to the left, detonating and Blinding any player who sees the orb. ALT FIRE to curve the flare orb to the right. Curveball resets a charge every two kills.
+  Uses: 2
+  Cost: 250
+  Windup: 0.6 s
+  Cooldown: 2 kill recharge
+  Debuff: 1.5 s Flash
+Run it Back
+    INSTANTLY place a marker at Phoenix's location. While this ability is active, dying or allowing the timer to expire will end this ability and bring Phoenix back to this location with full health and the amount of armor he had when the ability was cast.
+  Ultimate Points: 7 ♦♦♦♦♦♦♦
+  Duration: 10 s
+##### Raze
+Boom Bot
+    EQUIP a Boom Bot. FIRE will deploy the bot, causing it to travel in a straight line on the ground, bouncing off walls. The Boom Bot will lock on to any enemies in its frontal cone and chase them, exploding for heavy damage if it reaches them.
+  Uses: 1
+  Cost: 300
+  Duration: 5 s
+  Health: 60 HP
+  Damage: 30-80 (Min. outer radius-Inner radius)
+Blast Pack
+    INSTANTLY throw a Blast Pack that will stick to surfaces. RE-USE the ability after deployment to detonate, moving anything hit and dealing damage if fully armed.
+  Uses: 2
+  Cost: 200
+  Windup: 1.5 s (Damage arm time)
+  Duration: 5 s
+  Health: 20 HP
+  Damage: 20-50 (After arming)
+Paint Shells
+    EQUIP a cluster grenade. FIRE to throw the grenade, which does damage and creates sub-munitions, each doing damage to anyone in their range. ALT FIRE to lob. Paint Shells charge resets every two kills.
+  Uses: 1
+  Cost: Free
+  Cooldown: 2 kill recharge
+  Damage: 1-55 (Min. outer radius-Inner radius)
+Showstopper
+    EQUIP a rocket launcher. FIRE to shoot a rocket that does massive area damage on contact with anything.
+  Ultimate Points: 8 ♦♦♦♦♦♦♦♦
+  Windup: 1.4 s
+  Duration: 10 s
+  Damage: 30-150 (Min. outer radius-Inner radius)
+##### Reyna
+Vitality
+    Enemies that die within 3 seconds of taking damage from Reyna leave behind Soul Orbs that last 3 seconds.
+  Duration: 3 s
+Leer
+    EQUIP an ethereal, destructible eye. ACTIVATE to cast the eye a short distance forward. The eye will Nearsight all enemies who look at it.
+  Uses: 2
+  Cost: 250
+  Windup: 0.4 s
+  Duration: 1.6 s
+  Health: 60 HP
+Devour
+    INSTANTLY consume a soul orb, rapidly gaining Temporary Health . If Empress is active then Devour automatically casts, does not consume the Soul Orb, and Healing is permanent.
+  Uses: 2
+  Cost: 200 (shared with Dismiss)
+  Duration: 3/2.5 s (Standard/Empress)
+Healing
+50 HP
+  Buff: 10 s Overheal (Permanent in Empress)
+Dismiss
+    INSTANTLY consume a nearby Soul Orb, becoming Intangible for a short duration. If Empress is active, also become Invisible.
+  Uses: 2
+  Cost: 200 (shared with Devour)
+  Duration: 1.5 s
+Empress
+    INSTANTLY enter a frenzy, gaining a Combat Stim that increases firing, equip and reload speed dramatically. Gain infinite charges of Vitality abilities.
+  Ultimate Points: 7 ♦♦♦♦♦♦♦
+  Buff: +10% Equip speed, +10% Fire rate, +10% Reload speed, +10% Recovery speed
+##### Sage
+Barrier Orb
+    EQUIP a barrier orb. FIRE places a wall that fortifies after a few seconds. ALT FIRE rotates the targeter.
+  Uses: 1
+  Cost: 300
+  Windup: 2 s for fortification
+  Duration: 40 s
+  Health: 400 HP, 600 HP when fortified
+Slow Orb
+    EQUIP a slowing orb. FIRE to throw a slowing orb forward that detonates upon landing, creating a lingering field that Slows and reduces the dash speed of players caught inside of it.
+  Uses: 2
+  Cost: 200
+  Duration: 7 s
+  Debuff: 50% Slow
+Healing Orb
+    EQUIP a healing orb. FIRE with your crosshairs over a damaged ally to activate a Heal -Over-Time on them. ALT FIRE while Sage is damaged to activate a self Heal-Over-Time.
+  Uses: 1
+  Cost: Free
+  Duration: 5 s
+  Cooldown: 45 s
+Healing
+100 HP
+Resurrection
+    EQUIP a resurrection ability. FIRE with your crosshairs placed over a dead ally to begin resurrecting them. After a brief channel, the ally will be brought back to life with full health.
+  Ultimate Points: 7 ♦♦♦♦♦♦♦
+  Duration: 3.3 s
+##### Skye
+Regrowth
+    EQUIP a healing trinket. HOLD FIRE to channel, Healing allies in range and line of sight. Can be reused until her healing pool is depleted. Skye cannot heal herself.
+  Uses: 1
+  Cost: 150
+  Health: 100 HP healing pool
+Healing
+20 HP/sec
+Trailblazer
+    EQUIP a Tasmanian tiger trinket. FIRE to send out and take control of the predator. While in control, FIRE to leap forward, exploding in a Concussive blast and damaging directly hit enemies.
+  Uses: 1
+  Cost: 300
+  Duration: 6 s
+  Health: 80 HP
+  Damage: 30 (Direct contact)
+  Debuff: 2.5-4 s Concuss (Edge-Center)
+Guiding Light
+    EQUIP a hawk trinket. FIRE to send it forward. HOLD FIRE to guide the hawk in the direction of your crosshair. RE-USE while the hawk is in flight to transform it into a flash . The flash reaches max potency after a short duration during the hawk's flight.
+  Uses: 2
+  Cost: 250
+  Duration: 2 s
+  Cooldown: 50 s
+  Debuff: 1-2.25 s Flash
+Seekers
+    EQUIP a Seeker trinket. FIRE to send out three Seekers to track down the three closest enemies. If a Seeker reaches its target, it Nearsights and slows them. Enemies can destroy the Seekers.
+  Ultimate Points: 8 ♦♦♦♦♦♦♦♦
+  Duration: 15 s
+  Health: 120 HP
+  Debuff: 3 s Nearsight, 5 s 60% Slow
+##### Sova
+Owl Drone
+    EQUIP an owl drone. FIRE to deploy and take control of movement of the drone. While in control of the drone, FIRE to shoot a marking dart. This dart will Reveal the location of any player struck by the dart. Enemies can destroy the Owl Drone.
+  Uses: 1
+  Cost: 400
+  Duration: 7 s
+  Cooldown: Dart: 5 s
+  Health: 100 HP
+  Debuff: 0.6 s real-time Reveals
+Shock Bolt
+    EQUIP a bow with a shock bolt. FIRE to send the explosive bolt forward, detonating upon collision and damaging players nearby. HOLD FIRE to extend the range of the projectile. ALT FIRE to add up to two bounces to this arrow.
+  Uses: 2
+  Cost: 150
+  Damage: 1-75 (Min. outer radius-Inner radius)
+Recon Bolt
+    EQUIP a bow with a recon bolt. FIRE to send the recon bolt forward, activating upon collision and Revealing the location of nearby enemies caught in the line of sight of the bolt. Enemies can destroy this bolt. HOLD FIRE to extend the range of the projectile. ALT FIRE to add up to two bounces to this arrow.
+  Uses: 1
+  Cost: Free
+  Duration: 3.2 s
+  Cooldown: 50 s
+  Health: 20 HP
+  Debuff: 0.75 s real-time Reveals
+Hunter's Fury
+    EQUIP a bow with three long-range, wall-piercing energy blasts. FIRE to release an energy blast in a line in front of Sova, dealing damage and Revealing the location of enemies caught in the line. This ability can be RE-USED up to two more times while the ability timer is active.
+  Ultimate Points: 8 ♦♦♦♦♦♦♦♦
+  Duration: 6 s
+  Damage: 80
+  Debuff: 1 s real-time Reveal

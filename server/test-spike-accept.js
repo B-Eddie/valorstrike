@@ -53,8 +53,9 @@ note('late join: SpikeB seated on team '+ub.team+' (attackers '+sim.atk+'), dead
 const s0=[...sim.roundScores],credits0=Object.fromEntries(sim.units.map(u=>[u.name,u.credits]));
 await until(()=>sim.roundDelay>0,47000,'detonation');assert(C.clock.now()-plantAt>=44000,'fuse ran ~45 s');
 await until(()=>A.re&&A.re.length===1&&B.re&&B.re.length===1,2000,'round end message');assert.equal(A.re[0].tx,'Spike detonated');assert.equal(B.re[0].tx,'Spike detonated');assert.equal(sim.roundScores[sim.atk],s0[sim.atk]+1);
-for(const u of sim.units)assert.equal(u.credits,Math.min(9000,credits0[u.name]+(u.team===sim.atk?3000:1900)),'round credits '+u.name);
-await until(()=>A.rs.sc[sim.atk===0?0:1]+A.rs.sc[sim.atk===0?1:0]===1,3000,'clients see the score');note('detonation: attackers win round 1 after the 45 s fuse; winners +3000, losers +1900');
+// VALORANT (wiki.playvalorant.com/en-us/Credits): a defender still alive after the detonation gets 1000 instead of the loss bonus
+for(const u of sim.units)assert.equal(u.credits,Math.min(9000,credits0[u.name]+(u.team===sim.atk?3000:u.alive?1000:1900)),'round credits '+u.name);
+await until(()=>A.rs.sc[sim.atk===0?0:1]+A.rs.sc[sim.atk===0?1:0]===1,3000,'clients see the score');note('detonation: attackers win round 1 after the 45 s fuse; winners +3000, losers +1900 (surviving defenders +1000)');
 // round 2: SpikeB plays (alive), defuses with the half checkpoint
 await until(()=>sim.round===2&&sim.buy>0,8000,'round 2');assert.equal(ub.alive,true,'joiner plays from the next round');
 await endBuy();const def=ub.team!==sim.atk?ub:null;assert(def,'SpikeB defends (took a defender bot seat)');

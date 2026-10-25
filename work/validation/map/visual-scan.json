@@ -1,0 +1,210 @@
+{
+ "ascent": {
+  "nodes": 250,
+  "sightRays": 24000,
+  "seeThrough": 0,
+  "skyCracks": 1,
+  "crackClusters": [
+   {
+    "at": [
+     -23.75,
+     9.67,
+     -25
+    ],
+    "n": 1,
+    "ex": [
+     {
+      "at": [
+       -23.75,
+       9.67,
+       -25
+      ],
+      "from": [
+       -23.75,
+       9.67,
+       -25
+      ],
+      "elev": 20,
+      "heading": 334
+     }
+    ]
+   }
+  ],
+  "floating": [
+   {
+    "at": [
+     -0.94,
+     8.25,
+     44.39
+    ],
+    "mesh": 92,
+    "materials": [
+     "AtkWell_1_M1_StairA_MI"
+    ],
+    "size": [
+     1.17,
+     0.04,
+     1.17
+    ],
+    "gap": 1.2
+   },
+   {
+    "at": [
+     -65.82,
+     7,
+     -19.53
+    ],
+    "mesh": 127,
+    "materials": [
+     "Boat_2_M0_DrakeRowboat_MI"
+    ],
+    "size": [
+     1.52,
+     0.76,
+     3.5
+    ],
+    "gap": 0.4
+   }
+  ],
+  "verdict": {
+   "cracks": "open sky between rooftops (rendered view: no gap in geometry)",
+   "floating": {
+    "AtkWell_1_M1_StairA_MI": "inner landing plate of the attacker-side well, 1.2 m above the well floor: part of the well model (inferred from the rendered view, not browser-confirmed)",
+    "Boat_2_M0_DrakeRowboat_MI": "rowboat 0.4 m above the canal bed: it floats on the canal water (inferred from the rendered view, not browser-confirmed)"
+   }
+  }
+ },
+ "bind": {
+  "nodes": 250,
+  "sightRays": 24000,
+  "seeThrough": 0,
+  "skyCracks": 0,
+  "crackClusters": [],
+  "floating": [
+   {
+    "at": [
+     -37.07,
+     11.81,
+     -30.99
+    ],
+    "mesh": 24,
+    "materials": [
+     "Adobe_M11_BrickBlendMasks_MI"
+    ],
+    "size": [
+     4.35,
+     5.86,
+     0.61
+    ],
+    "gap": 0.91
+   }
+  ],
+  "verdict": {
+   "floating": {
+    "Adobe_M11_BrickBlendMasks_MI": "wall section over an opening, 0.9 m above the floor; nothing within 0.3 m of its sides: needs a browser look"
+   }
+  }
+ },
+ "haven": {
+  "nodes": 250,
+  "sightRays": 24000,
+  "seeThrough": 0,
+  "skyCracks": 0,
+  "crackClusters": [],
+  "floating": [],
+  "verdict": {}
+ },
+ "split": {
+  "nodes": 250,
+  "sightRays": 24000,
+  "seeThrough": 0,
+  "skyCracks": 0,
+  "crackClusters": [],
+  "floating": [
+   {
+    "at": [
+     3.55,
+     12.86,
+     -41.01
+    ],
+    "mesh": 404,
+    "materials": [
+     "Sign_17_M0_BunnyA_MI"
+    ],
+    "size": [
+     0.19,
+     1.84,
+     1.96
+    ],
+    "gap": 3.86
+   }
+  ],
+  "verdict": {
+   "floating": {
+    "Sign_17_M0_BunnyA_MI": "hanging sign 3.9 m up; its wires are skipped by the scan (inferred from the rendered view, not browser-confirmed)"
+   }
+  }
+ },
+ "lotus": {
+  "nodes": 250,
+  "sightRays": 24000,
+  "seeThrough": 0,
+  "skyCracks": 0,
+  "crackClusters": [],
+  "floating": [
+   {
+    "at": [
+     -54.43,
+     7.29,
+     -6.59
+    ],
+    "mesh": 168,
+    "materials": [
+     "Prop_0_M0_CSiteRuinedWall01DU_MI"
+    ],
+    "size": [
+     2.43,
+     5.58,
+     4.19
+    ],
+    "gap": null
+   }
+  ],
+  "verdict": {
+   "floating": {
+    "Prop_0_M0_CSiteRuinedWall01DU_MI": "backdrop ruin outside the playable area (nothing below for 8 m+: beyond the map edge, behind the backdrop skirt) (inferred from the rendered view, not browser-confirmed)"
+   }
+  }
+ },
+ "breeze": {
+  "nodes": 250,
+  "sightRays": 24000,
+  "seeThrough": 0,
+  "skyCracks": 0,
+  "crackClusters": [],
+  "floating": [
+   {
+    "at": [
+     -58.44,
+     6.2,
+     43.28
+    ],
+    "mesh": 43,
+    "materials": [
+     "BoatShop_1_M0_WoodStorage_MI"
+    ],
+    "size": [
+     4.42,
+     0.74,
+     2.36
+    ],
+    "gap": null
+   }
+  ],
+  "verdict": {
+   "floating": {
+    "BoatShop_1_M0_WoodStorage_MI": "backdrop prop outside the playable area (nothing below for 8 m+) (inferred from the rendered view, not browser-confirmed)"
+   }
+  }
+ }
+}

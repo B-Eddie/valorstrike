@@ -26,7 +26,7 @@ const sizes=()=>Object.assign(xe('__qaSizes()'),{'harness.timers':H.timers.size,
 // Per-mode probes. prog: a number that must move while the mode is played; end: forces the last round / time-up when
 // random play has not finished the mode inside the soak (the forced path still runs the page's own end flow).
 const MODES0=[
- {n:'duel',btn:'duelBtn',prog:'du.you+du.them+du.t',end:'du.you=Math.max(du.you,DUEL_WIN-1);duelKill(true," QA")',results:true},
+ {n:'duel',btn:'duelBtn',prog:'du.you+du.them+du.t',end:'if(!running||du.wait>0)return false;du.you=Math.max(du.you,DUEL_WIN-1);duelKill(true," QA")',results:true},
  {n:'aim',btn:'aimBtn',prog:'AM.sh+AM.k+(60-AM.t)',end:'AM.t=Math.min(AM.t,0.5)',results:true},
  {n:'rifle',btn:'rifleBtn',prog:'RF.you+RF.them+(100-timeLeft)',end:'if(picking)rGo(RF.w||"Vandal");if(!running)return false;RF.you=RIFLE_WIN-1;RF.them=Math.min(RF.them,RIFLE_WIN-1);rEnd(true,"QA")',results:true},
  {n:'surf boreas',btn:'surfBtn',prog:'sv.t+sv.cp+sv.p.x+sv.p.y+sv.p.z',surf:true},
