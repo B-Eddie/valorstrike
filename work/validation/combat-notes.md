@@ -467,3 +467,9 @@ in-process server; it keeps the VALORANT FEEL block the audit fixture strips, an
   Bolt / Paint Shells / Hot Hands / Blaze / Nanoswarm / Showstopper / Hunter's Fury deal a third to allies; a teamkill is a
   death with no kill, credits, ult point or score for the caster; the caster's own utility never hurts the caster; Turret /
   Boom Bot never target allies. `test-ults.js`.
+- **Spread corrections**: (1) landing adds 7 deg for 0.225 s on top of the movement penalty (wiki Weapons; patch 1.09
+  "jump land inaccuracy .2 -> .225 s, 5 -> 7"), replacing the inferred run-penalty landing lock; (2) the crouch-walk / walk
+  / run penalty ramps with speed, 0 at the deadzone (27.5%, Operator 15%) to the full value at the mode's top speed (wiki
+  Weapons: penalties "scale up ... as agents accelerate ... and fall off as agents decelerate"), instead of snapping to the
+  walk row below 65%; the crosshair movement error includes the landing spread. (3) The death ult point is only for a death
+  to an enemy (gun or utility): falls out of the map and teamkills give none. `test-spread.js` 1b, `test-economy.js` 7.

@@ -1,7 +1,7 @@
 // Shared deterministic character motor and accuracy model. Metres, seconds, radians.
 (function(root,factory){if(typeof module==='object'&&module.exports)module.exports=factory();else root.ValorantFeel=factory();})(typeof globalThis!=='undefined'?globalThis:this,function(){
 'use strict';
-const C={stepHeight:.4,knifeSpeed:6.75,walk:.6,crouch:.45,groundAcceleration:56.25,groundBraking:80,airAcceleration:3.5,jumpSpeed:7.25,gravity:22,landingLock:.2,crouchEye:.45,crouchDown:.12,crouchUp:.18,deadzone:.275,operatorDeadzone:.15,eyeHeight:1.6,referenceAspect:16/9,horizontalFov:103};
+const C={stepHeight:.4,knifeSpeed:6.75,walk:.6,crouch:.45,groundAcceleration:56.25,groundBraking:80,airAcceleration:3.5,jumpSpeed:7.25,gravity:22,landingLock:.2,landSpreadTime:.225,landSpread:7,crouchEye:.45,crouchDown:.12,crouchUp:.18,deadzone:.275,operatorDeadzone:.15,eyeHeight:1.6,referenceAspect:16/9,horizontalFov:103};
 C.verticalFov=2*Math.atan(Math.tan(C.horizontalFov*Math.PI/360)/C.referenceAspect)*180/Math.PI;
 function approach(v,t,d){return v<t?Math.min(t,v+d):Math.max(t,v-d);}
 function damp(v,t,k,dt){return t+(v-t)*Math.exp(-k*dt);}
@@ -37,7 +37,7 @@ function step(P,input,dt,world){
  const press=!!input.jump&&!P.jumpHeld;P.jumpHeld=!!input.jump;if(press)P.jumpBuffer=.07;
  for(let k=0;k<parts;k++){
   const floor=world.ground(P.x,P.z,P.y),grounded=(P.vy||0)<=0&&(P.y<=floor+.025||supported(P,world,P.y,1.8-(P.ch||0)));
-  P.lp=Math.max(0,(P.lp||0)-h);P.jumpBuffer=Math.max(0,(P.jumpBuffer||0)-h);P.duckFatigue=Math.max(0,(P.duckFatigue||0)-h*.55);
+  P.lp=Math.max(0,(P.lp||0)-h);P.ls=Math.max(0,(P.ls||0)-h);P.jumpBuffer=Math.max(0,(P.jumpBuffer||0)-h);P.duckFatigue=Math.max(0,(P.duckFatigue||0)-h*.55);
   if(!!input.duck!==!!P.duckHeld){if(input.duck)P.duckFatigue=Math.min(.65,(P.duckFatigue||0)+.08);P.duckHeld=!!input.duck;}
   const chTarget=input.duck?C.crouchEye:0,allowed=chTarget>=(P.ch||0)||(!world.blocked(P.x,P.z,.4,P.y,C.eyeHeight+.2)&&(!world.ceiling||!world.ceiling(P.x,P.z,P.y+1.8-(P.ch||0),P.y+1.8)));if(allowed)P.ch=approach(P.ch||0,chTarget,C.crouchEye/((input.duck?C.crouchDown:C.crouchUp)*(1+(P.duckFatigue||0)))*h);
   P.cr=(P.ch||0)>C.crouchEye*.5;P.wk=!!input.walk;
@@ -61,7 +61,7 @@ function step(P,input,dt,world){
   if(vy>0&&world.ceiling&&world.ceiling(P.x,P.z,P.y+height,next+height)){vy=0;next=P.y;}
   // Rising into geometry beside the axis (an overhang, a wall lip) the centre ceiling ray misses: stop at the highest free height.
   if(next>oldY&&world.blocked(P.x,P.z,VR,next,height)&&!world.blocked(P.x,P.z,VR,oldY,height)){let lo=oldY,hi=next;for(let n=0;n<10;n++){const mid=(lo+hi)/2;if(world.blocked(P.x,P.z,VR,mid,height))hi=mid;else lo=mid;}next=lo;vy=Math.min(vy,0);}
-  if(next<=gy){next=gy;if(P.air&&vy<-.5){landed=true;P.lp=C.landingLock;P.landImpact=Math.min(1,-vy/10);P.vx*=.85;P.vz*=.85;}vy=0;}
+  if(next<=gy){next=gy;if(P.air&&vy<-.5){landed=true;P.lp=C.landingLock;P.ls=C.landSpreadTime;P.landImpact=Math.min(1,-vy/10);P.vx*=.85;P.vz*=.85;}vy=0;}
   // Descending beside a riser must not settle the capsule inside the stair face.
   // (Thin probe up the wall, full radius in the last 45 cm above the floor so a landing beside a nosing never ends inside it.)
   if(next<oldY&&!world.blocked(P.x,P.z,VR,oldY,height)&&(world.blocked(P.x,P.z,VR,next,height)||(next-gy<.45&&world.blocked(P.x,P.z,.4,next,height)))){let lo=next,hi=oldY;for(let n=0;n<10;n++){const mid=(lo+hi)/2;if(world.blocked(P.x,P.z,.4,mid,height))lo=mid;else hi=mid;}next=hi;vy=0;}
@@ -80,14 +80,19 @@ const SPREAD={Classic:[.4,.3,1.8,1.35,.5,1.1,2.3,7],Shorty:[4,3.4,4,3.4,.5,1,2,4
  Marshal:[1,.9,1,.9,7.5,10,15,20,0,0,0,0],Outlaw:[3.5,3.15,3.5,3.15,7.5,10,15,20,0,0,0,0],Operator:[5,4.5,5,4.5,7.5,10,15,15,0,0,0,0],Ares:[1,.6,.7,.42,.4,3,6.5,10,.9,.54,.55,.33],Odin:[.8,.48,1.3,.78,.4,3,6.5,10,.79,.47,1.36,.82]};
 const rad=d=>Math.tan(d*Math.PI/180);
 function spreadRow(state,weapon,stats){const T=SPREAD[weapon];if(!T)return null;const ads=!!(state.ads&&stats&&stats.adsStats&&T.length>8),o=ads?8:0,cr=!!state.cr;return {first:T[o+(cr?1:0)],max:T[o+(cr?3:2)],T};}
+function moveRamp(sf,dead){return Math.max(0,Math.min(1,(sf-dead)/(1-dead)));}
 function spread(state,weapon,stats){
  const dead=weapon==='Operator'?C.operatorDeadzone:C.deadzone,speed=state.sf!=null?state.sf:(state.mv?1:0),moving=speed>dead,row=spreadRow(state,weapon,stats);
  if(row){const T=row.T;let error=0;
-  // Airborne: the published airborne penalty for every gun (a jumping scoped Operator is +15 deg); the .2 s landing lock counts as running.
-  if(state.air)error=T[7];else if(state.lp>0)error=T[6];else if(moving){const walk=state.wk||speed<.65;error=state.cr?T[4]:walk?T[5]:T[6];}
+  // Airborne: the published airborne penalty for every gun (a jumping scoped Operator is +15 deg). On the ground the crouch-walk /
+  // walk / run penalty ramps with speed (wiki.playvalorant.com/en-us/Weapons: "Movement speed penalties scale up to their max value
+  // as agents accelerate ... and fall off as agents decelerate"), from 0 at the deadzone to the full value at the mode's top speed
+  // (sf = speed / the current mode's speed). Landing adds 7 deg for 0.225 s on top (Weapons: "an additional 7 deg spread upon
+  // landing ... lasting for 0.225 seconds"; patch 1.09).
+  if(state.air)error=T[7];else{if(moving)error=(state.cr?T[4]:state.wk?T[5]:T[6])*moveRamp(speed,dead);if(state.ls>0)error+=C.landSpread;}
   return rad(row.first+error);}
  let base=Math.max(0,stats.firstBulletAccuracy||0),error=0;if(state.ads&&stats.adsStats)base=Math.max(0,stats.adsStats.firstBulletAccuracy||0);
- if(state.air)error=12;else if(state.lp>0)error=5;else if(moving)error=state.cr?.5:state.wk||speed<.65?1.1:2.3;
+ if(state.air)error=12;else{if(moving)error=(state.cr?.5:state.wk?1.1:2.3)*moveRamp(speed,dead);if(state.ls>0)error+=C.landSpread;}
  return rad(base+error);
 }
 // Spray error growth caps at the published max spread (Ares: shrinks to its min) over the first-shot spread.
