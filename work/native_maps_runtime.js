@@ -163,11 +163,14 @@ function nmNext(C,u,gx,gz){const p=u.g.position,N=C.nav.nodes;let s=nmNear(C,p.x
 // axis-split motor still cannot walk it (breeze B-approach stall), so three consecutive
 // re-plans with no progress (<0.25 u) while blocked also ban the recorded first-hop edge.
 {const p=xPath;xPath=function(u,dt,gx,gz,out){const C=nmActive();if(!C)return p.apply(this,arguments);u.xr=[];u.npT=(u.npT||0)-dt;const replan=!u.np||u.npT<=0||u.blk||Math.hypot(u.np[0]-u.g.position.x,u.np[1]-u.g.position.z)<.55||!u.ng||Math.hypot(u.ng[0]-gx,u.ng[1]-gz)>3;
+ if(replan&&u.np&&!u.blk&&NM_RP.full()&&(u.npS||0)<=.25){u.npS=(u.npS||0)+dt;return u.np;}
  if(replan&&u.np&&u.xfe){const moved=u.xpp?Math.hypot(u.g.position.x-u.xpp[0],u.g.position.z-u.xpp[1]):9;
   // Wiggle is not progress: only a real advance (>=0.75 u between re-plans) clears the streak,
   // otherwise unstick strafing inside a pocket resets the count forever (breeze B approach).
   if(moved<.75){if(u.xfK===u.xfe)u.xfm=(u.xfm||0)+1;else{u.xfK=u.xfe;u.xfm=1;}if(u.xfm>=3){(u.xb=u.xb||new Map()).set(u.xfe,performance.now()+30000);u.xfm=0;u.xfK=null;}}else{u.xfm=0;u.xfK=null;}}
- if(replan){u.xpp=[u.g.position.x,u.g.position.z];u.np=nmNext(C,u,gx,gz);u.ng=[gx,gz];u.npT=.4;u.blk=0;}return u.np;};}
+ /* perf: native re-plans staggered per bot (0.35-0.45 s, from a per-bot phase) and at most 3 per frame (deferred before the wiggle-streak count above); a bot with no path, blocked, or starved > 0.25 s re-plans anyway */
+ if(replan){NM_RP.full();NM_RP.n++;u.npS=0;if(u.npPh==null)u.npPh=Math.random()*.1;u.xpp=[u.g.position.x,u.g.position.z];u.np=nmNext(C,u,gx,gz);u.ng=[gx,gz];u.npT=.35+u.npPh;u.blk=0;}return u.np;};}
+var NM_RP={f:-1,n:0,full(){const f=typeof XNF==='number'?XNF:null;if(f===null)return false;if(this.f!==f){this.f=f;this.n=0;}return this.n>=3;}};
 {const goal=xGoal;xGoal=function(u,team,atk,out){const C=nmActive();if(!C||mode!=='five')return goal.apply(this,arguments);const s=FV.sp;if(!s)return null;u.xr=[];s.xr='native';if(s.st==='plant')return x2(out,s.x,s.z);if(atk&&s.st==='drop')return x2(out,s.x,s.z);const names=Object.keys(C.meta.sites),name=atk?s.site:(s.seen||names[Math.max(0,team.indexOf(u))%names.length]),p=C.meta.sites[name]||C.meta.sites[names[0]],g=atk&&C.siteGoals&&(C.siteGoals[name]||C.siteGoals[names[0]]);return g?x2(out,g[0],g[1]):x2(out,p[0],p[2]);};}
 {const step=xStep;xStep=function(){return nmActive()?false:step.apply(this,arguments);};const clear=xClear;xClear=function(x,z){const C=nmActive();if(!C)return clear(x,z);const p=C.nav.nodes[nmNear(C,x,z)];return [p[0],p[2]];};const nudge=xNudgeAll;xNudgeAll=function(){if(!nmActive())return nudge.apply(this,arguments);};}
 // Native scenes are already material-batched; legacy merging/shadow fitting is destructive and wasteful here.

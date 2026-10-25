@@ -2024,9 +2024,12 @@ const xTexMk = (s, draw, cfg) => {
 const xTexRep = (t) => { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.encoding = THREE.sRGBEncoding; };
 const xAASet = (on) => { xAAMem.v = on ? "1" : "0"; try { localStorage.setItem("vs.aa", xAAMem.v); } catch (e) {} };
 const xAA0 = xAAGet(); // saved AA, read before the first renderer
-try { renderer = new THREE.WebGLRenderer({ antialias: xAA0, powerPreference: "high-performance", stencil: false }); }
+// perf: three's renderer.debug.checkShaderErrors reads every program/shader info log after linking, which forces each
+// compile to finish synchronously (79 % of the first frames in the browser profile). Off unless ?shaderdebug is set.
+function xShChk(r) { try { if (r && r.debug) r.debug.checkShaderErrors = /[?&]shaderdebug\b/.test(location.search || ""); } catch (e) {} return r; }
+try { renderer = xShChk(new THREE.WebGLRenderer({ antialias: xAA0, powerPreference: "high-performance", stencil: false })); }
 catch (e) { xGlErr = String((e && e.message) || e); // second try with the lowest settings before giving up
-  try { renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: "default", failIfMajorPerformanceCaveat: false, precision: "mediump", stencil: false }); xGlErr = ""; }
+  try { renderer = xShChk(new THREE.WebGLRenderer({ antialias: false, powerPreference: "default", failIfMajorPerformanceCaveat: false, precision: "mediump", stencil: false })); xGlErr = ""; }
   catch (e2) { xGlErr = String((e2 && e2.message) || e2 || xGlErr); failWith("Your browser couldn't start WebGL. Try another browser or enable hardware acceleration."); return; } }
 renderer.outputEncoding = THREE.sRGBEncoding;
 renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.05; // look pass: filmic, sRGB out
@@ -2505,10 +2508,11 @@ function bfxBot(p) { // a bot's gunshot at p: ray along its facing with a little
   } catch (e) {}
 }
 const XLOS = new Map(), XLV = new THREE.Vector3(), XLR = new THREE.Raycaster(), XLH = [];
+const XLQ = (n) => Math.round(n * 4) + 2048, XLK = (p) => (XLQ(p.x) * 4096 + XLQ(p.y)) * 4096 + XLQ(p.z); let XLN = 0;
 function los(a, b) { // cached ~100 ms per eye/target cell (~10 Hz per bot); raycasts only hit the collision list
-  const q = (n) => Math.round(n * 4), k = q(a.x) + "," + q(a.y) + "," + q(a.z) + ">" + q(b.x) + "," + q(b.y) + "," + q(b.z), now = performance.now(), c = XLOS.get(k);
+  const ka = XLK(a), kb = XLK(b), now = performance.now(); let m = XLOS.get(ka); const c = m && m.get(kb); // perf: numeric 0.25 m cell keys, no string per query
   if (c && now - c.t < 100) return c.v;
-  const v = losRaw(a, b); if (c) { c.t = now; c.v = v; } else { if (XLOS.size > 800) XLOS.clear(); XLOS.set(k, { t: now, v }); } return v;
+  const v = losRaw(a, b); if (c) { c.t = now; c.v = v; } else { if (XLN > 800) { XLOS.clear(); XLN = 0; m = null; } if (!m) XLOS.set(ka, m = new Map()); m.set(kb, { t: now, v }); XLN++; } return v; // clears itself past 800 entries
 }
 function losRaw(a, b) {
   const dir = XLV.copy(b).sub(a); const dist = dir.length(); dir.normalize(); XLR.set(a, dir); XLR.far = dist;
@@ -3087,11 +3091,11 @@ const XDN = []; // pooled damage-number spans (up to 40)
 const XHV = new THREE.Vector3(); let xCR = null;
 function xCanvasRect() { if (!xCR) { const r = renderer.domElement.getBoundingClientRect(); xCR = { left: r.left, top: r.top, width: r.width, height: r.height }; } return xCR; }
 addEventListener("resize", () => { xCR = null; }); addEventListener("orientationchange", () => { xCR = null; });
-function xRestart(el, cls) { // restart a CSS animation without a reflow: Web Animations API when present
-  const run = el.getAnimations ? el.getAnimations() : null;
+function xRestart(el, cls, nf) { // restart a CSS animation without a reflow: Web Animations API when present
   if (cls && !el.classList.contains(cls)) { el.classList.add(cls); return; }
+  const run = !nf && el.getAnimations ? el.getAnimations() : null; // nf (kill icons): skip getAnimations, which flushes style; next-frame class toggle
   if (run && run.length) { for (const a of run) { a.cancel(); a.play(); } return; }
-  if (cls) { el.classList.remove(cls); requestAnimationFrame(() => el.classList.add(cls)); }
+  if (cls) { el.classList.remove(cls); requestAnimationFrame(() => nf ? requestAnimationFrame(() => el.classList.add(cls)) : el.classList.add(cls)); } // nf: re-added two frames on, so a style pass without the class always runs between (also when called outside the rAF loop, e.g. an online kill message)
 }
 function vmHit(p, dmg, hs, dead) {
   const hm = $("xHm"); hm.classList.toggle("hs", !!(dead && hs)); if (S.hm) xRestart(hm, "on"); else hm.classList.remove("on"); // Valorant shows no hit marker: opt-in (Settings > Crosshair)
@@ -3114,8 +3118,8 @@ const XKI = { n: 0, t: 0, el: null, s: [], da: [], di: 0 };
   for (let i = 0; i < 4; i++) { const d = document.createElement("div"); d.className = "x-da"; d.setAttribute("aria-hidden", "true"); xo.appendChild(d); XKI.da.push(d); } }
 function xKiReset() { XKI.n = 0; XKI.el.classList.remove("on"); for (const s of XKI.s) s.classList.remove("on", "hs"); if (XKI.em) { XKI.em.classList.remove("hs"); XKI.nb.textContent = "0"; XKI.sg.forEach((g) => g.classList.remove("on", "last")); } }
 function xKiAdd(hs) {
-  if (XKI.n >= 5) xKiReset(); const i = XKI.n++, s = XKI.s[i]; s.classList.toggle("hs", !!hs); xRestart(s, "on"); XKI.el.classList.add("on");
-  if (XKI.em) { XKI.nb.textContent = String(XKI.n); XKI.em.classList.toggle("hs", !!hs); XKI.sg.forEach((g, j) => { g.classList.toggle("on", j < XKI.n); g.classList.toggle("last", j === i); }); xRestart(XKI.el, "pop"); }
+  if (XKI.n >= 5) xKiReset(); const i = XKI.n++, s = XKI.s[i]; s.classList.toggle("hs", !!hs); xRestart(s, "on", 1); XKI.el.classList.add("on"); // kill cost: DOM writes only, no style/layout read
+  if (XKI.em) { XKI.nb.textContent = String(XKI.n); XKI.em.classList.toggle("hs", !!hs); XKI.sg.forEach((g, j) => { g.classList.toggle("on", j < XKI.n); g.classList.toggle("last", j === i); }); xRestart(XKI.el, "pop", 1); }
   clearTimeout(XKI.t); XKI.t = setTimeout(() => XKI.el.classList.remove("on"), 5000);
   const f = 880 * Math.pow(1.122, i); // whole-step rise per kill in the round
   if (hs) { blip(f * 1.5, 0.06, "square", 0.12); blip(f * 2, 0.18, "sine", 0.18); setTimeout(() => blip(f * 3, 0.16, "triangle", 0.12), 45); }
@@ -3162,7 +3166,7 @@ function xVo(who, txt) { try { const now = performance.now(); if (now - xVoT < 1
 const xLobbyAgentIdle = window.requestIdleCallback ? (f) => requestIdleCallback(f, { timeout: 600 }) : (f) => setTimeout(f, 50);
 xLobbyAgentIdle(function () {
   const cv = $("xAgent"); if (!cv) return;
-  let r, tA0 = 0; try { r = new THREE.WebGLRenderer({ canvas: cv, alpha: true, antialias: true, powerPreference: "high-performance", stencil: false }); } catch (e) { cv.remove(); return; }
+  let r, tA0 = 0; try { r = xShChk(new THREE.WebGLRenderer({ canvas: cv, alpha: true, antialias: true, powerPreference: "high-performance", stencil: false })); } catch (e) { cv.remove(); return; }
   r.outputEncoding = THREE.sRGBEncoding; r.setPixelRatio(Math.min(devicePixelRatio || 1, 2)); r.setClearColor(0, 0);
   const sc = new THREE.Scene(), cam = new THREE.PerspectiveCamera(30, 1, 0.1, 50); cam.position.set(0, 1.05, 4.4); cam.lookAt(0, 0.95, 0);
   sc.add(new THREE.HemisphereLight(0xdfe8ff, 0x302020, 0.9));
@@ -8569,7 +8573,7 @@ function agView(a) { // big idle 3D preview of the hovered agent
   if (AGV.r === false) return;
   if (AGV.tV && !AGV.raf) { AGV.idle = 0; AGV.raf = requestAnimationFrame(AGV.tV); } // perf pass 36: restart the stopped viewer loop, never a second chain
   if (!AGV.r) {
-    const cv = $("xAgCv"); try { AGV.r = new THREE.WebGLRenderer({ canvas: cv, alpha: true, antialias: true }); } catch (e) { AGV.r = false; cv.remove(); return; }
+    const cv = $("xAgCv"); try { AGV.r = xShChk(new THREE.WebGLRenderer({ canvas: cv, alpha: true, antialias: true })); } catch (e) { AGV.r = false; cv.remove(); return; }
     const r = AGV.r; r.outputEncoding = THREE.sRGBEncoding; r.setPixelRatio(Math.min(devicePixelRatio || 1, 2)); r.setClearColor(0, 0);
     AGV.sc = new THREE.Scene(); AGV.cam = new THREE.PerspectiveCamera(30, 1, 0.1, 50); AGV.cam.position.set(0, 1.05, 4.2); AGV.cam.lookAt(0, 0.95, 0);
     AGV.sc.add(new THREE.HemisphereLight(0xdfe8ff, 0x302020, 0.9)); const kl = new THREE.DirectionalLight(0xffffff, 1.1); kl.position.set(2, 4, 3); AGV.sc.add(kl);
@@ -10238,7 +10242,7 @@ setInterval(() => { if (XS.shd === "all") xCastAll(); }, 1000);
 setInterval(() => { if (XS.shd === "all" && running && !paused && renderer.shadowMap.enabled) renderer.shadowMap.needsUpdate = true; }, 100);
 function xRemake() { // anti-aliasing can only be set when a renderer is made, so swap in a new one
   const old = renderer; let r;
-  try { r = new THREE.WebGLRenderer({ antialias: XS.aa, powerPreference: "high-performance", stencil: false }); } catch (e) { say("Couldn't switch anti-aliasing"); return; }
+  try { r = xShChk(new THREE.WebGLRenderer({ antialias: XS.aa, powerPreference: "high-performance", stencil: false })); } catch (e) { say("Couldn't switch anti-aliasing"); return; }
   r.outputEncoding = old.outputEncoding; r.physicallyCorrectLights = old.physicallyCorrectLights; r.toneMapping = old.toneMapping; r.toneMappingExposure = old.toneMappingExposure;
   const cc = new THREE.Color(); old.getClearColor(cc); r.setClearColor(cc, old.getClearAlpha());
   old.domElement.replaceWith(r.domElement); old.dispose(); try { old.forceContextLoss(); } catch (e) {}
@@ -12610,11 +12614,14 @@ function nmNext(C,u,gx,gz){const p=u.g.position,N=C.nav.nodes;let s=nmNear(C,p.x
 // axis-split motor still cannot walk it (breeze B-approach stall), so three consecutive
 // re-plans with no progress (<0.25 u) while blocked also ban the recorded first-hop edge.
 {const p=xPath;xPath=function(u,dt,gx,gz,out){const C=nmActive();if(!C)return p.apply(this,arguments);u.xr=[];u.npT=(u.npT||0)-dt;const replan=!u.np||u.npT<=0||u.blk||Math.hypot(u.np[0]-u.g.position.x,u.np[1]-u.g.position.z)<.55||!u.ng||Math.hypot(u.ng[0]-gx,u.ng[1]-gz)>3;
+ if(replan&&u.np&&!u.blk&&NM_RP.full()&&(u.npS||0)<=.25){u.npS=(u.npS||0)+dt;return u.np;}
  if(replan&&u.np&&u.xfe){const moved=u.xpp?Math.hypot(u.g.position.x-u.xpp[0],u.g.position.z-u.xpp[1]):9;
   // Wiggle is not progress: only a real advance (>=0.75 u between re-plans) clears the streak,
   // otherwise unstick strafing inside a pocket resets the count forever (breeze B approach).
   if(moved<.75){if(u.xfK===u.xfe)u.xfm=(u.xfm||0)+1;else{u.xfK=u.xfe;u.xfm=1;}if(u.xfm>=3){(u.xb=u.xb||new Map()).set(u.xfe,performance.now()+30000);u.xfm=0;u.xfK=null;}}else{u.xfm=0;u.xfK=null;}}
- if(replan){u.xpp=[u.g.position.x,u.g.position.z];u.np=nmNext(C,u,gx,gz);u.ng=[gx,gz];u.npT=.4;u.blk=0;}return u.np;};}
+ /* perf: native re-plans staggered per bot (0.35-0.45 s, from a per-bot phase) and at most 3 per frame (deferred before the wiggle-streak count above); a bot with no path, blocked, or starved > 0.25 s re-plans anyway */
+ if(replan){NM_RP.full();NM_RP.n++;u.npS=0;if(u.npPh==null)u.npPh=Math.random()*.1;u.xpp=[u.g.position.x,u.g.position.z];u.np=nmNext(C,u,gx,gz);u.ng=[gx,gz];u.npT=.35+u.npPh;u.blk=0;}return u.np;};}
+var NM_RP={f:-1,n:0,full(){const f=typeof XNF==='number'?XNF:null;if(f===null)return false;if(this.f!==f){this.f=f;this.n=0;}return this.n>=3;}};
 {const goal=xGoal;xGoal=function(u,team,atk,out){const C=nmActive();if(!C||mode!=='five')return goal.apply(this,arguments);const s=FV.sp;if(!s)return null;u.xr=[];s.xr='native';if(s.st==='plant')return x2(out,s.x,s.z);if(atk&&s.st==='drop')return x2(out,s.x,s.z);const names=Object.keys(C.meta.sites),name=atk?s.site:(s.seen||names[Math.max(0,team.indexOf(u))%names.length]),p=C.meta.sites[name]||C.meta.sites[names[0]],g=atk&&C.siteGoals&&(C.siteGoals[name]||C.siteGoals[names[0]]);return g?x2(out,g[0],g[1]):x2(out,p[0],p[2]);};}
 {const step=xStep;xStep=function(){return nmActive()?false:step.apply(this,arguments);};const clear=xClear;xClear=function(x,z){const C=nmActive();if(!C)return clear(x,z);const p=C.nav.nodes[nmNear(C,x,z)];return [p[0],p[2]];};const nudge=xNudgeAll;xNudgeAll=function(){if(!nmActive())return nudge.apply(this,arguments);};}
 // Native scenes are already material-batched; legacy merging/shadow fitting is destructive and wasteful here.
