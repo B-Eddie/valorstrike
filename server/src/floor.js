@@ -35,7 +35,8 @@ export function floorDropHeld(sim,u){if(!u.alive||u.loading||sim.roundDelay>0||!
  floorDrop(sim,w,u.x+f[0]*reach,u.y,u.z+f[2]*reach,u.ammo,u.reserve,u.id);delete u.inventory[w];delete u.reserves[w];lockSlot(u,slot);u[slot]=null;
  wield(sim,u,u.primary||u.secondary||'Knife');return true;}
 export function floorTick(sim){if(!sim.floor)floorReset(sim);
- for(const u of sim.units){if(u.alive||u.floorDropped||u.loading)continue;u.floorDropped=true;if(!(u.y>-20))continue;const w=u.primary||u.secondary;if(!w)continue;const [a,r]=ammoOf(u,w);floorDrop(sim,w,u.x,u.y,u.z,a,r,u.id);u[slotOf(w)]=null;}
+ // A Phoenix killed inside Run It Back comes back with his loadout: nothing drops (it used to drop his gun for the enemy).
+ for(const u of sim.units){if(u.alive||u.floorDropped||u.loading||u.runItBack)continue;u.floorDropped=true;if(!(u.y>-20))continue;const w=u.primary||u.secondary;if(!w)continue;const [a,r]=ammoOf(u,w);floorDrop(sim,w,u.x,u.y,u.z,a,r,u.id);u[slotOf(w)]=null;}
  if(!sim.floor.length)return; // buy phase included: teammates hand guns to each other
  for(const u of sim.units){if(!able(sim,u))continue;
   for(const d of sim.floor){if(Math.abs(d.y-u.y)>1.2)continue;const r=Math.hypot(d.x-u.x,d.z-u.z),slot=slotOf(d.w),mine=d.dropper===u.id&&sim.time<d.graceUntil;

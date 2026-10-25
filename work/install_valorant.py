@@ -12,9 +12,13 @@ block+='\n'+(root/'work/native_maps_runtime.js').read_text()+'\n'+(root/'work/fe
 if ra in s:s=s[:s.index(ra)]+s[s.index(rb)+len(rb):]
 block+='\n'+(root/'work/repair_runtime.js').read_text();sa='// ---- TRUSTED ONLINE SERVER ----';sb='// ---- END TRUSTED ONLINE SERVER ----'
 if sa in s:s=s[:s.index(sa)]+s[s.index(sb)+len(sb):]
-block+='\n'+(root/'work/server_runtime.js').read_text();da='// ---- DEBUG HOOKS ----';db='// ---- END DEBUG HOOKS ----'
-if da in s:s=s[:s.index(da)]+s[s.index(db)+len(db):]
-block+='\n'+(root/'work/debug_runtime.js').read_text();mark='xReady = true; // every mode is initialised; lobby launches may now start them';s=s.replace(mark,block+'\n'+mark)
+block+='\n'+(root/'work/server_runtime.js').read_text();ga='// ---- WEAPON GRIP ----';gb='// ---- END WEAPON GRIP ----'
+if ga in s:s=s[:s.index(ga)]+s[s.index(gb)+len(gb):]
+block+='\n'+(root/'work/grip_runtime.js').read_text().rstrip('\n');ta='// ---- FOOT PLANTING ----';tb='// ---- END FOOT PLANTING ----'
+if ta in s:s=s[:s.index(ta)]+s[s.index(tb)+len(tb):]
+block+='\n'+(root/'work/feet_runtime.js').read_text().rstrip('\n');ha='// ---- LOCALIZED HIT FEEDBACK ----';hb='// ---- END LOCALIZED HIT FEEDBACK ----'
+if ha in s:s=s[:s.index(ha)]+s[s.index(hb)+len(hb):]
+block+='\n'+(root/'work/hit_feedback_runtime.js').read_text().rstrip('\n');mark='xReady = true; // every mode is initialised; lobby launches may now start them';s=s.replace(mark,block+'\n'+mark)
 if '<script src="models/valorant/manifest.js"></script>' not in s:s=s.replace('<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>','<script src="models/valorant/manifest.js"></script>\n<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>')
 # Find the actual three script tag, which may use an onerror handler.
 if '<script src="models/valorant/manifest.js"></script>' not in s:s=s.replace('<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js"></script>','<script src="models/valorant/manifest.js"></script>\n<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js"></script>')
@@ -25,7 +29,7 @@ s=s.replace('XGM.src[k] = g && g.scene; done();','XV.guns[k] = g; XGM.src[k] = g
 s=s.replace('else rot.rotation.y = Math.PI / 2; // source guns point +X with +Y up; the knife blade points +Y','else rot.rotation.y = -Math.PI / 2; // native Valorant weapons point -X')
 s=s.replace('if (w === "Knife") rot.rotation.set(-Math.PI / 2, 0, Math.PI / 2, "ZXY");','if (w === "Knife") rot.rotation.set(0, -Math.PI / 2, 0);')
 s=s.replace('"models/decor/" + name + ".glb"','"models/valorant/environment/" + name + ".glb"')
-s=re.sub(r'<p class="x-foot">.*?</p>','<p class="x-foot">Fan project. Not affiliated with or endorsed by Riot Games. VALORANT models, textures and native animations © Riot Games, sourced via Kingdom Archives. Original map scenes from the community Blender ports by Cracker646. Movement animation retargeting and fallback assets: Quaternius (CC0). See models/valorant/SOURCES.md.</p>',s,count=1)
+s=re.sub(r'<p class="x-foot">.*?</p>','<p class="x-foot">Fan project. Not affiliated with or endorsed by Riot Games. VALORANT models, textures and native animations © Riot Games, sourced via Kingdom Archives. Original map scenes from the community Blender ports by Cracker646. Movement animations retargeted from Quaternius (CC0). See models/valorant/SOURCES.md.</p>',s,count=1)
 if '<script src="vendor/three-mesh-bvh.umd.js"></script>' not in s:s=s.replace('<script src="models/valorant/manifest.js"></script>','<script src="models/valorant/manifest.js"></script>\n<script src="vendor/three-mesh-bvh.umd.js"></script>')
 # Bot sight and fire origins must follow native map elevation.
 for owner in ['a','b','o']:
@@ -37,7 +41,7 @@ s=s.replace('const inSite = (p) => Object.keys(SITES).find((k) => Math.abs(p.x -
 for name in ['p','q']:
  for h in ['1.5','1.6','1.7','1.75']:
   s=s.replace('.set('+name+'.x, '+name+'.y + '+h+', '+name+'.z)', '.set('+name+'.x, ('+name+'.y || 0) + '+h+', '+name+'.z)')
-for src in ['models/valorant/weapon-calibration.js','vendor/valorant-feel.js']:
+for src in ['models/valorant/weapon-calibration.js','vendor/valorant-feel.js','models/valorant/agents/manifest.js','vendor/hit-impact.js']:
  if '<script src="'+src+'"></script>' not in s:s=s.replace('<script src="models/valorant/manifest.js"></script>', '<script src="models/valorant/manifest.js"></script>\n<script src="'+src+'"></script>')
 s=re.sub(r'\n{3,}(?=// ---- VALORANT ASSET INTEGRATION ----)', '\n\n', s)
 # Preserve elevation when handing the visible rig and weapon to corpse animation.

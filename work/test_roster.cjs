@@ -55,5 +55,11 @@ function mk(env){
   // 6. readiness failure rejects after retry (gate aborts the start: no invisible opponents)
   { const {sb}=mk({}); vm.runInContext('let __n=0; xvAgentLoad=()=>{__n++;globalThis.__n=__n;return Promise.reject(new Error("net"))};',sb);
     await assert.rejects(sb.__r.ready(['Jett'])); assert.equal(sb.__n,2); }
+  // The real start must consume the exact gated roster, including an enemy mirror of the player's agent.
+  { const html=fs.readFileSync('index.html','utf8'),a=html.indexOf('function xBuildTeams()'),b=html.indexOf('const FV =',a);
+    const mates=['Sova','Sage','Omen','Chamber'],en=['Jett','Phoenix','Reyna','Raze','Skye'];
+    const c={J:{pick:'Jett'},F_MATES:mates,F_EN:en,xTmPreDrawn:true,xTmLocked:false,Set,xDraw(){throw Error('gated roster redrawn');}};
+    vm.createContext(c);vm.runInContext(html.slice(a,b)+';xBuildTeams();',c);
+    assert.equal(c.xTmPreDrawn,false);assert.deepEqual(c.F_EN,en);assert.deepEqual(c.F_MATES,mates); }
   console.log('participant roster: scoped set, MP all-12 fallback, name mapping/dedupe, retry-then-reject all pass');
 })().catch(e=>{console.error(e);process.exit(1)});

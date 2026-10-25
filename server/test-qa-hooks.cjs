@@ -25,5 +25,13 @@ const assert=require('assert/strict'),fs=require('fs'),path=require('path');
  const src=fs.readFileSync(path.join(__dirname,'src','worker.js'),'utf8');
  const handler=src.slice(src.indexOf('async message(ws,data)'));
  assert(!/QA_(CREDITS|BUY_SECONDS)/.test(handler),'client messages must not reach QA overrides');
+ // Exercise the actual simulation consumers too: zero credits is a valid test override.
+ const {SpikeSimulation}=await import('./src/spike.js');
+ const world={map:{attacker:[0,0,0],defender:[0,0,-30],sites:{A:[20,0,20]}},nav:{nodes:[[0,0,0],[0,0,-30]],adj:[[1],[0]]},playable:[0,1],allowed:new Set([0,1]),near:()=>0,ground:()=>0,blocked:()=>false,ray:()=>Infinity};
+ for(const [credits,buy] of [[undefined,undefined],[0,1],[2000,15]]){
+  const sim=new SpikeSimulation(world,'five','ascent',()=>.5);
+  Object.assign(sim,qaOverrides(credits===undefined?{}:{QA_TEST_HOOKS:'true',QA_CREDITS:String(credits),QA_BUY_SECONDS:String(buy)}));
+  const u=sim.add('qa');assert.equal(u.credits,credits??800);sim.start(false);assert.equal(sim.buy,buy??20);
+ }
  console.log('QA hooks: gate required, ranges validated, malformed ignored, production config clean, client input unreachable');
 })().catch(e=>{console.error(e);process.exit(1);});
