@@ -489,3 +489,27 @@ in-process server; it keeps the VALORANT FEEL block the audit fixture strips, an
   score. The player's death ult point is also no longer given for a fall or a Spike death (server step 7 rule). Found on
   the way: the Alarmbot / Dismiss `hurt` wrapper dropped the attacker, so every bot's damage reached the scoreboard as the
   player's (and the KILLED BY card logged bot-on-bot damage as the player's); it now passes the attacker through.
+- **Reserve ammo per gun = the wiki** (wiki.playvalorant.com/en-us/<Weapon> infobox "Reserve", retrieved 2026-10-25): every
+  gun carried 3 magazines on the page and the server (valorant-api's weaponStats has no reserve field), e.g. Vandal 75,
+  Odin 300, Operator 15. Now Classic 36, Shorty 6, Frenzy 45, Ghost 39, Sheriff 24, Stinger 60, Spectre 90, Bucky 10,
+  Judge 15, Bulldog 72, Guardian 36, Phantom 60, Vandal 50 (75 -> 50 in v3.0), Marshal 15, Outlaw 10, Operator 10, Ares 100,
+  Odin 200: server `RESERVE` / `reserveOf` (spawn, buy, swap, floor-gun default), page `XRSV` / `xRsv` (buy, round reset,
+  TDM / DM loadouts, floor guns, buy-menu stat card). `work/test_reserve_ammo.cjs` (page table == server table, real page
+  buys), `test-weapons.js`; `test_client_online_gunplay.cjs` next-round refill checks the table (Vandal 25 / 50).
+  `test_floor_pickup.cjs` / `test_tdf_round_reset.cjs` cuts now include `xWOwn` (gate_m9 failures on a4c5e5d) and `xRsv`.
+- **Reyna Leer offline threw `d is not defined`** (gate_m9 on a4c5e5d, test_client_abilities ascent Reyna): the merged Leer
+  windup comment was a `//` line comment on a one-line `bots.forEach` body, so it swallowed the body's declarations. Now a
+  block comment (origin/hark 8dd8565 has the same fix).
+- **Armor v9.10** (wiki.playvalorant.com/en-us/Armor_and_Shield; playvalorant.com patch notes 9.10): Light / Heavy Shields
+  are now **Light Armor** (400, 25, 66%) / **Heavy Armor** (1000, 50, 66%) in the buy menu ("Armor" column), the server's
+  buy / sell / bot autobuy and the soak tool; old names are refused. **Regen Shield** added (650): holds 25, absorbs 100% of
+  a hit before health, refills from a 50 regeneration pool after a delay since its last absorbed hit, the pool carried into
+  the next round by a survivor (re-buying refills it); a death clears it; Heavy / Light replace it, selling restores it.
+  Delay 3 s (beebom.com / gameland.gg / 1v9.gg 9.10 coverage; Riot says "after a brief delay"); refill rate 12.5 / s is
+  inferred (no published figure). Server `ARMOR_BUY` / `RGN` / `armorOwned` / `regenTick` (gun and ability damage),
+  snapshot row [21] = pool (-1 none), `bo` carries `rg`; page `XRGN` (== server), `armAbs` 100% for a Regen Shield,
+  `xRgnTick` (player, bots, allies offline and on the P2P host), HUD green shield icon + pool superscript. TDM Stage 1's
+  Regen Shield (9.11) not modelled. `server/test-spike-edges.js` armor block, `work/test_regen_shield.cjs`, audit.js names.
+- **gate_m9 fix-forwards (a4c5e5d, merged origin/hark)**: the skin preview's WebGLRenderer (work/skins_runtime.js) skipped
+  `xShChk` (test_kill_perf "every renderer goes through xShChk 5/6"); test_spectate_follow's nmNear cut now includes the
+  merged `nmCellNum` numeric cell map.

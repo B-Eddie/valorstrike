@@ -26,7 +26,7 @@ W.leash=LEASH;
 //    move was rejected for the rest of the match. It is now moved to the nearest free nav node.
 {const s=new Simulation(W,'dm','ascent');const t=s.add('Target'),b=s.add('Bot Reyna','Reyna',false);s.phase='game';const T=[0.25,8.07,-49.75];
  [b.x,b.y,b.z]=[16.71,11.71,-32.99];assert(W.blocked(b.x,b.z,.4,b.y,1.8),'start is inside collision');const start=[b.x,b.z];
- for(let k=0;k<60;k++){[t.x,t.y,t.z]=T;t.hp=100;t.alive=true;s.step(.05);}assert(b.unwedged>=1,'unwedged');assert(Math.hypot(b.x-start[0],b.z-start[1])>1,'moving again');assert(!W.blocked(b.x,b.z,.4,b.y,1.8));}
+ /* since map pass C2 (55bb06a) the shared motor backs an embedded capsule out on its own (moveAxis takes a move that grows its free radius), so either path frees it */let freeAt=-1;for(let k=0;k<60;k++){[t.x,t.y,t.z]=T;t.hp=100;t.alive=true;s.step(.05);if(freeAt<0&&!W.blocked(b.x,b.z,.4,b.y,1.8))freeAt=k;}assert(b.unwedged>=1||(freeAt>=0&&freeAt<20),'unwedged or backed out by the motor within 1 s: '+freeAt);assert(Math.hypot(b.x-start[0],b.z-start[1])>1,'moving again');assert(!W.blocked(b.x,b.z,.4,b.y,1.8));}
 
 // 2b. Wedged high: a seat bot sat inside a prop at Ascent (-56, 6.53, -22.4), 2.5 m above the floor nodes (soak seed 9).
 //     freeNode only accepted nodes within 1.5 m of its height, so unwedge and the escape found nothing for the rest of

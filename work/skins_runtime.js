@@ -224,7 +224,7 @@ function xskClose() { const root = document.getElementById('xSk'); if (root) roo
 // 3D preview: its own small renderer, created on open and released on leave (one extra context only while visible).
 function xskPreview() {
   const cv = document.getElementById('xskCv'); if (!cv || typeof THREE === 'undefined' || typeof xGun !== 'function') return; let P = XSK.pv;
-  if (!P || P.cv !== cv) { if (P) xskPvStop(); try { P = XSK.pv = { cv, r: new THREE.WebGLRenderer({ canvas: cv, alpha: true, antialias: true }), sc: new THREE.Scene(), cam: new THREE.PerspectiveCamera(30, 1, 0.01, 50), yaw: -0.5, pitch: 0.12, drag: null, w: 0, h: 0 }; } catch (e) { XSK.pv = null; return; }
+  if (!P || P.cv !== cv) { if (P) xskPvStop(); try { P = XSK.pv = { cv, r: xShChk(new THREE.WebGLRenderer({ canvas: cv, alpha: true, antialias: true })), sc: new THREE.Scene(), cam: new THREE.PerspectiveCamera(30, 1, 0.01, 50), yaw: -0.5, pitch: 0.12, drag: null, w: 0, h: 0 }; } catch (e) { XSK.pv = null; return; }
     P.r.setPixelRatio(Math.min(devicePixelRatio || 1, 2)); P.r.setClearColor(0, 0); if (THREE.sRGBEncoding) P.r.outputEncoding = THREE.sRGBEncoding;
     P.sc.add(new THREE.HemisphereLight(0xeef3ff, 0x30343c, 1.1)); const k = new THREE.DirectionalLight(0xffffff, 1.2); k.position.set(2, 3, 4); P.sc.add(k); const rim = new THREE.DirectionalLight(0xff4655, 0.6); rim.position.set(-3, 1, -3); P.sc.add(rim);
     P.piv = new THREE.Group(); P.sc.add(P.piv);

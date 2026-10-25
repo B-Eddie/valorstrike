@@ -64,7 +64,7 @@ Math.random=mulberry(SEED*104729+1);require('vm').runInContext(`Math.random=(${m
  const arm=async(w,ammo,rsv)=>{const u=me();u.primary=w;u.weapon=w;u.ammo=ammo;u.reserve=rsv;u.inventory={[w]:ammo,Classic:12};u.reserves={[w]:rsv,Classic:36};u.secondary='Classic';u.reloadAt=0;u.equipAt=0;u.fireAt=0;
   xe(`FV.pri=${JSON.stringify(w)};slots.pri={ammo:${ammo},rsv:${rsv}};slots.pis={ammo:12,rsv:36};swapW("pis");swapW("pri");ammo=${ammo};rsv=${rsv};reloading=0;true`);await until(()=>page().w===w&&page().ammo===ammo,3000,'page armed with '+w);await step(1500);/* equip time */};
  // 1. spray parity: hold fire into the sky for ~1.3 s
- {await arm('Vandal',25,75);if(false)console.log('state',JSON.stringify(xe('({paused,running,menu:FV.menu,hp:player.hp,mode,dr:J.dr,buy:FV.buy,fcd,sw:VM.sw,locked:typeof xPL!=="undefined"})')));xe('pitch=0.6;true');const sv=[];const f0=sim.fire.bind(sim);sim.fire=function(u){const a=u.ammo,r=f0(u);if(u===me()&&r&&u.ammo<a)sv.push(u.spray?u.spray.recoilY:NaN);return r;};
+ {await arm('Vandal',25,50);if(false)console.log('state',JSON.stringify(xe('({paused,running,menu:FV.menu,hp:player.hp,mode,dr:J.dr,buy:FV.buy,fcd,sw:VM.sw,locked:typeof xPL!=="undefined"})')));xe('pitch=0.6;true');const sv=[];const f0=sim.fire.bind(sim);sim.fire=function(u){const a=u.ammo,r=f0(u);if(u===me()&&r&&u.ammo<a)sv.push(u.spray?u.spray.recoilY:NaN);return r;};
   /* the harness page has no map floor (it free-falls, and an airborne Vandal climbs x1.8, patch 6.11): stand it on the server body's floor for the spray */xe(`globalThis.__g0=groundAt;groundAt=function(){return ${me().y}};true`);await step(400);if(xe('player.air'))fail('spray: page player not grounded');const pv=[];let sq=xe('xValorantFeel.state.sequence');xe('fireHeld=true;true');for(let t=0;t<1300;t+=50){await step(50);const q=xe('[xValorantFeel.state.sequence,xValorantFeel.state.recoilY]');if(q[0]!==sq){if(q[0]<sq||q[0]-sq>1)fail('spray: page sequence jumped '+sq+' -> '+q[0]);sq=q[0];pv.push(q[1]);}}if(false)console.log('after',JSON.stringify(page()),xe('fireHeld'));xe('fireHeld=false;groundAt=globalThis.__g0;true');await step(600);sim.fire=f0;
   if(sv.length<8||pv.length<8)fail(`spray: too few shots (server ${sv.length}, page ${pv.length})`);
   const n=Math.min(sv.length,pv.length);for(let i=0;i<n;i++)if(!(Math.abs(sv[i]-pv[i])<1e-12)){fail(`spray shot ${i}: server climb ${sv[i]}, page ${pv[i]} (server ${JSON.stringify(sv.slice(0,n))} page ${JSON.stringify(pv.slice(0,n))})`);break;}
@@ -98,7 +98,7 @@ Math.random=mulberry(SEED*104729+1);require('vm').runInContext(`Math.random=(${m
  // absorbs 21.12, 21.12, then the last 7.76) leaves exactly 54 hp / 0 armor on the server, and the page HUD reads 54 / 0
  // (the float leftover 54.00000000000001 used to show 55). The foe is aimed from server state (look PI faces +z, toward the
  // page player; an earlier attempt aimed down -z and every shot missed), one shot per tick, 0.45 s apart so no spray climb.
- {await arm('Vandal',25,75);const m=me();m.hp=100;m.armor=50;await step(200);const shots=[];
+ {await arm('Vandal',25,50);const m=me();m.hp=100;m.armor=50;await step(200);const shots=[];
   for(let i=0;i<3;i++){const g=foe(),u=me();Object.assign(g,{alive:true,hp:100,weapon:'Odin',primary:'Odin',ammo:100,inventory:{Odin:100},fireAt:0,equipAt:0,reloadAt:0,triggerHeld:false,x:u.x,z:u.z-3,y:u.y,look:Math.PI,pitch:Math.atan2(.45-1.6,3),input:{fire:true},inputAt:sim.time,ch:0});
    const h0=u.hp,f0=sim.fire.bind(sim);sim.fire=function(w){const r=f0(w);if(w===foe())w.input={};return r;};await step(50);sim.fire=f0;shots.push(+(h0-me().hp).toFixed(4));await step(450);}
   xe('xHud();true');const hud=xe('[document.getElementById("xHp").textContent,document.getElementById("xArm").textContent]');
@@ -106,8 +106,8 @@ Math.random=mulberry(SEED*104729+1);require('vm').runInContext(`Math.random=(${m
   if(hud[0]!=='54'||hud[1]!=='0')fail(`armor boundary HUD: ${hud[0]} / ${hud[1]} (server ${me().hp} / ${me().armor}, want 54 / 0)`);
   Object.assign(foe(),{weapon:'Classic',primary:null,input:{}});me().hp=100;await step(300);}
  // 6. next round: magazine and reserve refilled on both
- {me().ammo=3;const r0=sim.round;sim.roundDelay=0;sim.finishRound(0,'QA');await until(()=>sim.round>r0&&sim.phase==='game',30000,'next round');sim.buy=0;await step(800);const p=page(),u=me(),W=xe('MAG()');
-  if(u.ammo!==W||p.ammo!==W||p.rsv!==W*3||u.reserve!==W*3)fail(`next round: server ${u.weapon} ${u.ammo}/${u.reserve}, page ${p.w} ${p.ammo}/${p.rsv}`);}
+ {me().ammo=3;const r0=sim.round;sim.roundDelay=0;sim.finishRound(0,'QA');await until(()=>sim.round>r0&&sim.phase==='game',30000,'next round');sim.buy=0;await step(800);const p=page(),u=me(),W=xe('MAG()'),R=xe('xRsv(wName())');/* the wiki reserve (Vandal 50), not 3 magazines */
+  if(u.ammo!==W||p.ammo!==W||p.rsv!==R||u.reserve!==R)fail(`next round: server ${u.weapon} ${u.ammo}/${u.reserve}, page ${p.w} ${p.ammo}/${p.rsv}`);}
  for(const h of humans.splice(0))try{h.leave();}catch(e){}xe('mpReset()');await step(300);
  const errors=H.errors.slice(errs0),xerr=H.xErrCalls.slice(x0);if(errors.length||xerr.length)fail('page exceptions '+JSON.stringify({errors:errors.slice(0,5),xerr:xerr.slice(0,5)}));
  if(fails.length){console.error(fails.slice(0,40).join('\n'));process.exit(1);}

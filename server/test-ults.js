@@ -9,6 +9,8 @@ const setup=(agent,...others)=>{wall=Infinity;const s=new SpikeSimulation(W,'fiv
  for(const v of list)v.team=v.name.startsWith('mate')?u.team:1-u.team;return {s,u,list};};
 const tick=(s,sec,step=.05)=>{for(let t=0;t<sec-1e-9;t+=step){s.time+=step;tickAbilities(s,step);}};
 const cast=(s,u,m={})=>s.command(u,{t:'ab',k:'x',...m});
+// Showstopper: X equips the launcher (wiki 1.4 s), FIRE shoots the rocket
+const rocket=(s,u,m={})=>{const ok=cast(s,u,m);if(!ok)return ok;s.time+=ULT.rocket.equip;return s.fire(u);};
 
 // Hunter's Fury: unearned ult rejected; three wall-piercing 80-damage blasts on the server aim (first now,
 // then every 2 s, recast early after 0.9 s); hit enemies are revealed to Sova's team; spoofed aim ignored.
@@ -21,12 +23,21 @@ const cast=(s,u,m={})=>s.command(u,{t:'ab',k:'x',...m});
  tick(s,10);assert.equal(cast(s,u),false,'no free blasts after the channel');}
 {const {s,u,list:[foe]}=setup('Sova',['foe']);Object.assign(foe,{x:0,y:0,z:-30});u.ability.ult=9;cast(s,u);u.alive=false;tick(s,.1);assert.equal(u.ability.fury,null,'death ends Hunter\'s Fury');tick(s,3);assert.equal(foe.hp,20);}
 
-// Showstopper: a travelling rocket; impact on a body deals 150 at the centre with falloff to 7 m and LOS;
+// Showstopper (wiki): X equips a launcher (1.4 s equip, 10 s max including it); FIRE before the equip does nothing and
+// never fires the gun; after it the one rocket leaves along the server aim; unfired, the launcher goes away after 10 s.
+{const {s,u,list:[foe]}=setup('Raze',['foe']);Object.assign(foe,{x:0,y:.6,z:-15});Object.assign(u,{weapon:'Vandal',ammo:25});u.ability.ult=9;
+ assert.equal(cast(s,u),true);assert.equal(u.ability.ult,0,'ult spent on equip');assert.equal(s.effects.some(e=>e.kind==='rocket'),false,'no rocket on equip');assert(u.showstopper);
+ assert.equal(cast(s,u),false,'second X while the launcher is out');s.time+=1.3;assert.equal(s.fire(u),false,'launcher still coming up at 1.3 s');assert.equal(u.ammo,25,'gun not fired');assert.equal(s.effects.some(e=>e.kind==='rocket'),false);
+ s.time+=.1;u.look=Math.PI/2;assert.equal(s.fire(u),true,'rocket at 1.4 s');const r=s.effects.find(e=>e.kind==='rocket');assert(r);assert(r.d[0]<-.99,'rocket follows the server aim at FIRE');assert.equal(u.showstopper,null);assert.equal(u.ammo,25);
+ u.triggerHeld=false;assert.equal(s.fire(u),true,'next FIRE is the gun again');assert.equal(u.ammo,24);assert.equal(s.effects.filter(e=>e.kind==='rocket').length,1);}
+{const {s,u,list:[foe]}=setup('Raze',['foe']);u.ability.ult=9;cast(s,u);tick(s,9.9);assert(u.showstopper,'launcher still out at 9.9 s');tick(s,.15);assert.equal(u.showstopper,null,'put away after 10 s');s.time+=.1;u.ammo=5;s.fire(u);assert.equal(s.effects.some(e=>e.kind==='rocket'),false,'no rocket after the window');}
+{const {s,u,list:[foe]}=setup('Raze',['foe']);u.ability.ult=9;cast(s,u);u.alive=false;tick(s,.05);assert.equal(u.showstopper,null,'death drops the launcher');}
+// Showstopper rocket: a travelling rocket; impact on a body deals 150 at the centre with falloff to 7 m and LOS;
 // a wall detonates it early; allies take a third (VALORANT friendly fire 1/3).
 {const {s,u,list:[foe,near,mate,hidden]}=setup('Raze',['foe'],['foeNear'],['mate'],['foeHidden']);Object.assign(foe,{x:0,y:.6,z:-15});Object.assign(near,{x:5.5,y:.6,z:-15});Object.assign(mate,{x:-1,y:.6,z:-15});Object.assign(hidden,{x:0,y:.6,z:-60});
- u.ability.ult=9;assert.equal(cast(s,u,{d:[0,1,0]}),true);assert.equal(foe.hp,100,'rocket travels, no instant damage');tick(s,.25);assert.equal(foe.hp,100);tick(s,.4);
+ u.ability.ult=9;assert.equal(rocket(s,u,{d:[0,1,0]}),true);assert.equal(foe.hp,100,'rocket travels, no instant damage');tick(s,.25);assert.equal(foe.hp,100);tick(s,.4);
  assert.equal(foe.alive,false,'direct hit kills');assert.ok(near.hp>0&&near.hp<100,'splash falls off with distance: '+near.hp);assert.ok(mate.alive&&mate.hp<100&&mate.hp>=50,'ally beside the impact takes a third: '+mate.hp);assert.equal(hidden.hp,100);assert.equal(s.effects.some(e=>e.kind==='rocket'),false);}
-{const {s,u,list:[foe]}=setup('Raze',['foe']);Object.assign(foe,{x:0,y:.6,z:-20});u.ability.ult=9;wall=6;cast(s,u);tick(s,.5);assert.equal(foe.hp,100,'wall stops the rocket short');assert.equal(s.effects.some(e=>e.kind==='rocket'),false);}
+{const {s,u,list:[foe]}=setup('Raze',['foe']);Object.assign(foe,{x:0,y:.6,z:-20});u.ability.ult=9;wall=6;rocket(s,u);tick(s,.5);assert.equal(foe.hp,100,'wall stops the rocket short');assert.equal(s.effects.some(e=>e.kind==='rocket'),false);}
 
 // Lockdown: 13 s windup, then every enemy within 32.5 m is detained for 8 s (no guns, no abilities, slowed);
 // it clears on the next round.
@@ -43,10 +54,11 @@ const cast=(s,u,m={})=>s.command(u,{t:'ab',k:'x',...m});
 {const {s,u,list}=setup('Skye',['foe1'],['foe2'],['foe3'],['foe4']);list.forEach((v,i)=>Object.assign(v,{x:0,y:0,z:-(6+i*10)}));u.ability.ult=9;assert.equal(cast(s,u),true);assert.equal(s.effects.filter(e=>e.kind==='seeker').length,3);
  tick(s,.4);assert.ok(!(list[0].nearsightUntil>s.time),'travel time');tick(s,3);for(const v of list.slice(0,3))assert.ok(v.nearsightUntil>s.time,'seeker hits '+v.name);assert.ok(!(list[3].nearsightUntil>s.time));}
 
-// Neural Theft: needs a visible enemy corpse within 5 m in front (ult points kept otherwise); reveals all living enemies twice.
+// Neural Theft: needs a visible enemy corpse within 5 m in front (ult points kept otherwise); reveals all living enemies twice
+// (wiki: 1st reveal after a 2 s windup, the 2nd 4 s after it).
 {const {s,u,list:[corpse,alive1,alive2]}=setup('Cypher',['foeDead'],['foeA'],['foeB']);Object.assign(corpse,{x:0,y:0,z:-3});Object.assign(alive1,{x:30,y:0,z:-30});Object.assign(alive2,{x:-30,y:0,z:-30});u.ability.ult=9;
  assert.equal(cast(s,u),false,'no corpse');assert.equal(u.ability.ult,9);corpse.alive=false;u.look=Math.PI;assert.equal(cast(s,u),false,'corpse behind');u.look=0;wall=1;assert.equal(cast(s,u),false,'corpse behind a wall');wall=Infinity;
- assert.equal(cast(s,u),true);assert.equal(u.ability.ult,0);tick(s,1.1);assert.equal(s.roundState(u).rv.length,2,'first reveal');tick(s,1.6);assert.equal(s.roundState(u).rv.length,0);tick(s,.5);assert.equal(s.roundState(u).rv.length,2,'second reveal');}
+ assert.equal(cast(s,u),true);assert.equal(u.ability.ult,0);tick(s,1.9);assert.equal(s.roundState(u).rv.length,0,'nothing before 2 s');tick(s,.2);assert.equal(s.roundState(u).rv.length,2,'first reveal at 2 s');tick(s,1.6);assert.equal(s.roundState(u).rv.length,0);tick(s,2.1);assert.equal(s.roundState(u).rv.length,0,'nothing before 6 s');tick(s,.25);assert.equal(s.roundState(u).rv.length,2,'second reveal at 6 s');}
 
 // Tour de Force: the gun becomes a 5-round Operator; spent, swapped away or dead, the previous weapon returns.
 {const {s,u,list:[foe]}=setup('Chamber',['foe']);Object.assign(foe,{x:0,y:0,z:-6,hp:1000,armor:0});u.weapon='Spectre';u.ammo=17;u.reserve=60;u.ability.ult=9;
@@ -70,18 +82,18 @@ const cast=(s,u,m={})=>s.command(u,{t:'ab',k:'x',...m});
  u.ability.ult=9;s.time+=.5;assert.equal(cast(s,u),true);u.hp=0;u.alive=false;s.finishRound(1-u.team,'QA');assert.equal(u.primary,'Vandal','round end keeps a pending Phoenix\'s gun');assert.equal(u.armor,50);}
 // A leaver's utility goes to the seat bot (soak, ults scenario): kills by a turret / rocket whose owner left were not
 // recorded (no kill event, score, credits or ult point). Tour de Force moves with the body instead of leaving a free Operator.
-{const {s,u,list:[foe]}=setup('Raze',['foe']);Object.assign(foe,{x:0,y:0,z:-12,hp:1,armor:0});u.ability.ult=9;assert.equal(cast(s,u),true);const rocket=s.effects.find(e=>e.kind==='rocket');assert(rocket);
- const b=s.add('Bot Raze','Raze',false);b.team=u.team;s.units=s.units.filter(v=>v!==u);assert.equal(s.takeOver(b,u),true);assert.equal(rocket.owner,b.id,'rocket now the seat bot\'s');
+{const {s,u,list:[foe]}=setup('Raze',['foe']);Object.assign(foe,{x:0,y:0,z:-12,hp:1,armor:0});u.ability.ult=9;assert.equal(rocket(s,u),true);const rk=s.effects.find(e=>e.kind==='rocket');assert(rk);
+ const b=s.add('Bot Raze','Raze',false);b.team=u.team;s.units=s.units.filter(v=>v!==u);assert.equal(s.takeOver(b,u),true);assert.equal(rk.owner,b.id,'rocket now the seat bot\'s');
  const k0=b.kills,c0=b.credits;tick(s,1);assert.equal(foe.alive,false,'rocket kill');assert.equal(b.kills,k0+1,'kill credited to the seat bot');assert.equal(b.credits,c0+200);assert(s.events.some(e=>e[0]==='k'&&e[1]===b.name&&e[2]===foe.name),'kill event');}
 {const {s,u,list:[foe]}=setup('Chamber',['foe']);Object.assign(foe,{x:0,y:0,z:-30});Object.assign(u,{primary:'Spectre',weapon:'Spectre',ammo:30});u.ability.ult=9;assert.equal(cast(s,u),true);assert.equal(u.weapon,'Operator');
  const b=s.add('Bot Chamber','Chamber',false);b.team=u.team;s.units=s.units.filter(v=>v!==u);s.takeOver(b,u);assert.equal(b.weapon,'Operator');assert(b.ultWeapon,'Tour de Force state moved');b.ammo=0;tick(s,.05);assert.equal(b.weapon,'Spectre','Operator spent: the Spectre comes back');}
 // Utility whose unit left with no seat bot: its kill still reaches the feed (no credit), and a joiner on that team takes it over.
-{const {s,u,list:[foe]}=setup('Raze',['foe']);Object.assign(foe,{x:0,y:0,z:-12,hp:1,armor:0});u.ability.ult=9;cast(s,u);const rocket=s.effects.find(e=>e.kind==='rocket');s.units=s.units.filter(v=>v!==u);
- const j=s.add('Joiner');assert.equal(j.team,rocket.team);assert.equal(rocket.owner,j.id,'joiner owns the orphaned rocket');tick(s,1);assert.equal(foe.alive,false);assert(s.events.some(e=>e[0]==='k'&&e[1]===j.name&&e[2]===foe.name));}
-{const {s,u,list:[foe]}=setup('Raze',['foe']);Object.assign(foe,{x:0,y:0,z:-12,hp:1,armor:0});u.ability.ult=9;cast(s,u);s.units=s.units.filter(v=>v!==u);tick(s,1);assert.equal(foe.alive,false);assert(s.events.some(e=>e[0]==='k'&&e[1]==='Raze'&&e[2]===foe.name&&e[4]==='Ability'),'ownerless kill in the feed, credited to the utility\'s agent');assert.equal(s.fxSrc,null,'no stale effect source after the tick (a later owner-less direct kill must not borrow it)');}
+{const {s,u,list:[foe]}=setup('Raze',['foe']);Object.assign(foe,{x:0,y:0,z:-12,hp:1,armor:0});u.ability.ult=9;rocket(s,u);const rk=s.effects.find(e=>e.kind==='rocket');s.units=s.units.filter(v=>v!==u);
+ const j=s.add('Joiner');assert.equal(j.team,rk.team);assert.equal(rk.owner,j.id,'joiner owns the orphaned rocket');tick(s,1);assert.equal(foe.alive,false);assert(s.events.some(e=>e[0]==='k'&&e[1]===j.name&&e[2]===foe.name));}
+{const {s,u,list:[foe]}=setup('Raze',['foe']);Object.assign(foe,{x:0,y:0,z:-12,hp:1,armor:0});u.ability.ult=9;rocket(s,u);s.units=s.units.filter(v=>v!==u);tick(s,1);assert.equal(foe.alive,false);assert(s.events.some(e=>e[0]==='k'&&e[1]==='Raze'&&e[2]===foe.name&&e[4]==='Ability'),'ownerless kill in the feed, credited to the utility\'s agent');assert.equal(s.fxSrc,null,'no stale effect source after the tick (a later owner-less direct kill must not borrow it)');}
 // Detain survives a disconnect: the seat bot inherits the leaver's statuses.
 {const {s,u}=setup('Jett',['foe']);u.detainUntil=s.time+5;const b=s.add('Bot Jett','Jett',false);b.team=u.team;s.takeOver(b,u);assert(b.detainUntil>s.time,'still detained');}
-console.log('Ultimates: Hunter\'s Fury (3 wall-piercing blasts, recast, reveal, death end), Showstopper (travelling rocket, falloff, LOS, wall detonation), Lockdown (windup, radius detain blocks guns/abilities, round reset), Rolling Thunder (cone through walls), Seekers (3 nearest), Neural Theft (corpse targeting, double reveal), Tour de Force (5-round Operator, weapon restore, round reset), Run It Back (death/expiry return, no elimination, no death drop, gear kept at round end); leaver utility/ult state moves to the seat bot; server-side aim only');
+console.log('Ultimates: Hunter\'s Fury (3 wall-piercing blasts, recast, reveal, death end), Showstopper (1.4 s launcher equip, FIRE shoots, 10 s window, travelling rocket, falloff, LOS, wall detonation), Lockdown (windup, radius detain blocks guns/abilities, round reset), Rolling Thunder (cone through walls), Seekers (3 nearest), Neural Theft (corpse targeting, reveals at 2 s and 6 s), Tour de Force (5-round Operator, weapon restore, round reset), Run It Back (death/expiry return, no elimination, no death drop, gear kept at round end); leaver utility/ult state moves to the seat bot; server-side aim only');
 // Devices that used to be inert markers: recon pulses reveal enemies in the bolt's sight (not through walls),
 // Boom Bot hunts the nearest visible enemy and explodes for 125, Trailblazer concusses on contact.
 import {DEV} from './src/devices.js';

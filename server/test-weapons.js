@@ -11,3 +11,14 @@ assert.equal(KNIFE_HEAVY.cooldown,1);
 let seq=50;k.command(a,{t:'in',seq:++seq,r:0,p:0,fire:1,kh:1});assert.equal(a.input.heavy,true);k.command(a,{t:'in',seq:++seq,r:0,p:0,fire:1});assert.equal(a.input.heavy,false);
 Object.assign(a,{weapon:'Vandal',ammo:25,fireAt:0,input:{fire:true,heavy:true}});k.spawn(b);Object.assign(b,{x:0,y:0,z:-1.2,look:Math.PI,protectedUntil:0,armor:0,hp:200,alive:true});a.pitch=-.3;k.fire(a);assert.equal(200-b.hp,40,'kh never changes a gun shot');
 console.log('Weapons: knife heavy swing (kh) 75 front / 150 head or back, 1 s cooldown; light 50 at 2/s; kh ignored for guns');}
+{// Reserve ammo per gun = the wiki infobox "Reserve" (wiki.playvalorant.com/en-us/<Weapon>, retrieved 2026-10-25; e.g. Vandal
+// 75 -> 50 in v3.0): spawn, buy, swap and the floor gun default all use it (was 3 magazines for every gun).
+const WIKI={Classic:36,Shorty:6,Frenzy:45,Ghost:39,Sheriff:24,Stinger:60,Spectre:90,Bucky:10,Judge:15,Bulldog:72,Guardian:36,Phantom:60,Vandal:50,Marshal:15,Outlaw:10,Operator:10,Ares:100,Odin:200};
+const {RESERVE,reserveOf,weapons:WS}=await import('./src/simulation.js');const {SpikeSimulation}=await import('./src/spike.js');
+assert.deepEqual({...RESERVE},WIKI);for(const w of Object.keys(WIKI)){assert.ok(WS[w],w);assert.equal(reserveOf(w),WIKI[w],w);}
+assert.equal(reserveOf('Knife'),WS.Knife.magazineSize*3,'not a gun: unchanged');
+const SW={map:{attacker:[0,0,0],defender:[0,0,-10],sites:{A:[0,0,0]}},nav:{nodes:[[0,0,0],[0,0,-10]],adj:[[1],[0]]},playable:[0,1],allowed:new Set([0,1]),near:(x,z)=>z<-5?1:0,ground:()=>0,blocked:()=>false,ray:()=>Infinity};
+const S=new SpikeSimulation(SW),a=S.add('a');S.start(false);a.credits=9000;S.buy=10;
+for(const w of ['Vandal','Operator','Odin','Outlaw','Phantom','Ares','Bucky']){assert.equal(S.command(a,{t:'buy',n:w}),true,w);assert.equal(a.reserve,WIKI[w],'bought '+w);S.command(a,{t:'sell',n:w});}
+assert.equal(S.command(a,{t:'buy',n:'Sheriff'}),true);assert.equal(a.reserve,24,'bought Sheriff');
+console.log('Weapons: reserve ammo per gun = wiki (18 guns), on buy');}
