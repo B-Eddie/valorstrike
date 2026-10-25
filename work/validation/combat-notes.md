@@ -341,3 +341,103 @@ Harness: `server/tools/soak.mjs` (in-process worker, bots + fuzzing humans, inva
 - **Ownerless utility kills**: a kill by utility whose owner left the match showed a blank killer. Effects record their
   agent (`ag`) and the kill event credits it (e.g. "Raze" with the Ability icon); the page falls back to the weapon /
   "Utility" for an older server's blank name. `test-ults.js` checks the credited name.
+
+## Gameplay QA pass 6 (two-human gunplay: armor boundaries, falloff, pellets, spray, swap / reload, ammo / pickup)
+
+New: `server/test-gunplay.js` (in `npm test`) and `work/test_client_online_gunplay.cjs` (page + scripted human on the
+in-process server; it keeps the VALORANT FEEL block the audit fixture strips, and drives the page's own `fiveTick` /
+`vmTick`, since the harness page sits behind a cover overlay and its rAF loop never runs the match tick).
+
+- **HP / armor float leftovers**: armor absorbs `damage * .66`, so e.g. Odin legs x3 at 50 armor left 54.00000000000001
+  hp, which rows (`Math.ceil`) showed as 55 (30 of 306 weapon x band x part x armor cases were off by one; 1.000000000000007
+  hp showed 2). Server `fire()` / `abilityDamage()` and the offline `hurt()` / `armAbs()` snap hp / armor to 1e-6. Shots
+  to kill already matched the exact model in every case.
+- **Falloff / headshots**: every weapon's head / body / leg damage per range band equals weapons.json (client
+  `weapon-calibration.js` is byte-equal in content). Offline wallbang rounding: fixed in pass 7.
+- **Spray recoil parity**: the server fired every bullet of a spray straight down the crosshair (first-shot spread only);
+  the client's bullets climb and drift. The climb / drift / bloom / reset (.375 s pause or weapon change) now live in the
+  shared motor (`sprayReset / sprayBloom / sprayStep`, `REC` weights = client `WEAP.rec`), used by both `gFire` and server
+  `fire()`; the vertical climb is identical shot for shot (the drift side is random on each side).
+- **Shotgun pellets**: the server spread pellets over `tan(firstBulletAccuracy)`; the client jittered the centre by that
+  cone and then spread pellets over a separate `W.cone` (wider; Judge .075 vs .044), and in world axes (facing along X
+  the horizontal spread was halved). Client pellets now use the shot's cone (incl. bloom) in the shot's own basis, centre
+  not jittered, as the server. Online, the Bucky's client-only alt fire is off (the server has no alt-fire mode).
+- **Swap mid-reload**: the server refused `equip` while reloading, so the page (whose swap cancels the reload) was snapped
+  back to the reloading gun, and a knife swap mid-reload left the gun in the server's hands, so the knife click fired it.
+  A swap now cancels the reload server-side, and is taken during the equip time too (the new gun's equip time gates its
+  first shot; test-spike-edges updated). Client: a local swap sends `equip` at once and holds the snapshot weapon
+  reconcile until the server names that gun (or 1 s): a snapshot landing before the 50 ms net loop used to revert the
+  swap and reset `netWeapon`, so the equip was never sent. Ammo from snapshots applies only to the gun the server holds.
+- **Reload timer left below 0**: a finished reload left `reloading` at e.g. -0.05; online code tested truthiness, so the
+  page counted as reloading forever after its first reload: ammo sync stopped and the next auto-reload (empty magazine)
+  was never sent, so the server stayed empty. Timer clamped to 0; online checks use `reloading > 0`.
+- **G mid-reload** was refused server-side (offline allows it); the gun now drops with its magazine.
+- Checked, no bug: enemy gun picked up off the floor keeps magazine / reserve and its reload draws from that reserve;
+  next round refills magazine and reserve. Same-tick trades: changed in pass 7.
+
+## Gameplay QA pass 7 (trade fairness, wallbang rounding, merges, shotguns, economy / ults / defuse edges)
+
+- **Same-tick trades**: a tick resolved each unit's shot inside its movement loop, so the first unit in the list (the room
+  creator) won every same-tick trade, and it shot at the others' previous-tick positions. Shots now resolve after every
+  unit has moved (`fireTick`, both `Simulation` and `SpikeSimulation`), first shooter rotating each tick; a unit killed
+  earlier in the tick still cannot fire back. `test-gunplay.js` §7: exactly one survivor, both sides win across ticks.
+- **Wallbang rounding**: offline damage was `round(floor(raw) x k)` vs the server's `floor(raw x k)` (70 of 225
+  weapon x band x part x k cases off by one, e.g. Odin head 77.5 x .75). The shot now calls `xWkDmg`; the feel layer
+  floors the unfloored row value x k. `test_combat_consistency.cjs` §5 checks every case against the server formula.
+- **Offline bot shotguns did one pellet**: the base `wDmg` returns a shotgun shot's expected pellets landing when called
+  outside the player's pellet loop (`xPelOn` false: the bots' shots), but the feel layer's override always returned one
+  pellet, so an offline bot Judge did 17 a shot instead of ~119. The override keeps the expected-pellet formula on the
+  profile's floored rows, and a gun with no profile (the Bucky's alt fire) falls back to the base table with its falloff
+  (it returned the flat near value). `test_combat_consistency.cjs` §6: 63 gun x range x part cases + Bucky alt.
+- **Kill feed over the subtitle at 640x360**: in landscape <=820 px the kill feed (right:8px) and `#xSub` both started at
+  top:48px; `#xSub` is bounded to the band between the minimap columns (136 / 184 px side margins, cdf12e3), so any
+  feed row wider than that margin, i.e. most once kills stacked, ran across the subtitle. The feed now starts at 66 px
+  (subtitle 48 + explicit 12 px line + 6 px); touch (top:100px) and portrait placements unchanged. Parse-rule test:
+  `test_short_layout.cjs` (e) (feed top vs subtitle line box per band, cascade order, no later override). Not rendered
+  in Chromium (owned by another agent): a browser check of the 640x360 feed with 4-5 stacked kills is still open.
+- **Online HUD at an armor boundary** (step 4): the earlier attempt's server shots never hit the page player because the
+  scripted foe was aimed with `look` 0, which faces -z, while the page player stood at +z (server `fire()` sends the shot
+  along (-sin look, ., -cos look)). Aimed with look PI the foe's shots land; `test_client_online_gunplay.cjs` §5 now
+  checks Odin legs x3 into 100 / 50 = exactly 54 / 0 on the server and "54" / "0" on the page HUD (`#xHp` / `#xArm`).
+- **Ult points online**: the server granted ult points for kills only; VALORANT (and the offline page, `jUlt`) also give
+  +1 for dying, for planting (the planter) and for defusing (the defuser). `SpikeSimulation` now counts deaths from the
+  units' death counters every tick (guns, utility, falls; once each, before the half-time reset), and the plant / defuse
+  credit their unit. New `server/test-economy.js` (in `npm test`): loss streak 1900 / 2400 / 2900 reset by a win and at
+  the half, win 3000, 9000 cap, half-time 800 + ult reset, kill 200, plant 300 to every attacker (dead too), overtime
+  5000 with a side swap each round, and the four ult sources. Open question, not changed: a Phoenix killed inside Run It
+  Back also gets the death point (his deaths counter rises); unverified against VALORANT.
+- Checked, no bug: loss bonus cap and streak reset, plant bonus to dead attackers, half-time / overtime credits, a defuse
+  taken over by another defender drops to the 3.5 s checkpoint, a dead defuser's progress drops to the checkpoint.
+- **Heals clamped a Reyna overheal**: Sage's heal (and Phoenix's Blaze / Hot Hands self-heal) set
+  `hp = min(100, hp + rate x dt)`, so a heal still running on a Reyna who had Devoured past 100 dropped her back to 100.
+  Heals now only act below 100. `test-reyna.js`: 130 hp overheal untouched by a heal, 60 hp still healed 20 hp/s.
+
+## Gameplay QA pass 8 (spread / air inaccuracy, spray, crosshair) — user report "jump and the sniper is accurate"
+
+- **Movement / airborne spread was not per weapon**: `Motor.spread` (shared server + page) had one airborne value per class
+  (snipers 10, SMGs 7, everything else 12 deg) and, while moving, a rifle / heavy / SMG row with every other gun falling to
+  the pistol row: a running or crouch-walking scoped Operator / Marshal / Outlaw was +2.3 / +0.5 deg, walking +1.1, and a
+  jump-strafe shot right after landing (still moving fast) was near-accurate. Now the published table for all 18 guns
+  (wiki.playvalorant.com/en-us/<Weapon>, "Spread values"): first shot standing / crouched (hip and ADS), crouch-walk / walk /
+  run / airborne penalties (Operator 7.5 / 10 / 15 / 15, Marshal and Outlaw 7.5 / 10 / 15 / 20, rifles .8 / 3 / 6 / 10,
+  SMGs .15 / 1 / 2.5 / 10, pistols ~.5 / 1.1 / 2.3 / 7, shotguns .5 / 1 / 2 / 4). Scoped snipers are 0 only while still. The
+  .2 s landing lock uses the run penalty (inferred; no published landing value).
+- **Spray error cap per weapon**: bloom capped at .024 rad for every gun; now at the published max spread over the first
+  shot (Vandal 1.0, Phantom .9, Guardian 1.58 ...; crouched max when crouched; Ares shrinks to its .7 min). Gun recovery
+  time per weapon from the update history (Vandal .375, Phantom / Bulldog / Guardian .35, Stinger .4; others keep .28).
+- **Running recoil**: Vandal / Phantom / Spectre climb x1.8 running or airborne (patch 6.11), Frenzy x1.5 (patch 4.0).
+- Server and page use the same `Motor.spread / bloomCap / recoveryTime / recoilMove`; the hip crosshair gap
+  (`gSpread x 450`, 40 px cap) follows the new cone. Tests: `server/test-spread.js` (wiki table, online jumping scoped
+  Operator over the 15 deg cone, still = centre, spray caps, recovery, running recoil), `work/test_air_spread.cjs` (page
+  gSpread = server spread for 18 guns x 7 states x hip / ADS / scoped, offline jumping Operator, crosshair gap).
+- Not done: per-weapon recoil *patterns* — the wiki publishes no shot-by-shot recoil data, so the climb stays the shared
+  REC-weighted model.
+- `work/test_client_online_gunplay.cjs`: the harness page has no map floor and free-falls; with the airborne recoil
+  multiplier its Vandal spray climbed 1.8x the grounded server body. The spray check now stands the page on the server
+  body's floor (stubbed `groundAt`, restored after).
+
+## Gameplay QA pass 9 (room crash, crosshair, spectator, Run It Back, friendly fire, spread corrections)
+- **Room halt on a sidearm-only round**: the empty primary slot is `null`, so an `equip {w:null}` (or no `w`) matched it and
+  left the unit holding no weapon; every later tick threw and the room's simulation stopped. Equip now takes only a real
+  weapon name the unit holds (primary / secondary / Knife). `test-spike-edges.js`: null / undefined / '' / 0 / prototype
+  names / unheld guns refused on a pistol round, the simulation keeps ticking, Classic <-> Knife still swaps.

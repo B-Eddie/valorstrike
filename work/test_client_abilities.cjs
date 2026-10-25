@@ -1,6 +1,7 @@
 // Every agent x every ability (C / Q / E / X) cast offline in a live 5v5 match on the real page (work/page_harness.cjs:
 // index.html in audit.js's fake DOM, real three.js scene graph). Per agent: pick the agent on the agent-select screen,
-// skip the buy phase, give every charge + a full ult, cast each key (press, follow-up click, recast / detonate press),
+// skip the buy phase, give every charge + a full ult, cast each key (press; FIRE for an equipped ability; follow-up
+// click, recast / detonate press),
 // let effects play, then end the round through the page's own fCheck -> fRound -> jRound flow.
 // Checked: no page exception / xErr; no NaN / Infinity in J (ability state) or player / camera; HUD ability slots show
 // the agent's own names and no NaN/undefined text, charge pips match J's charges; casting spends the charge; after the
@@ -37,7 +38,7 @@ const through=async agent=>{for(let t=0;t<20000;t+=100){if(xe('running')&&!xe('!
  if(H.shown('pre'))H.$('preGo').click();else if(H.shown('xAg')){const tile=H.doc.querySelectorAll('#xAg .x-ag').find(b=>b.dataset.a===agent);if(tile&&!tile.disabled)tile.click();await adv(20);H.$('xAgL').click();}
  await adv(100);}return false;};
 (async()=>{
- const t0=Date.now();let casts=0,matches=0;
+ const t0=Date.now();let casts=0,matches=0,equips=0;
  // fast variant (test_all): every agent once, maps alternating; QA_LONG / MAPS: every agent on every map
  const RUNS=LONG||process.env.MAPS?MAPS.flatMap(m=>AGENTS.map(a=>[m,a])):AGENTS.map((a,i)=>[MAPS[i%MAPS.length],a]);
  for(const [map,agent] of RUNS){const tag=`${map} ${agent}`;H.setPhase(tag);matches++;
@@ -59,6 +60,8 @@ const through=async agent=>{for(let t=0;t<20000;t+=100){if(xe('running')&&!xe('!
    for(const [id,key] of [['jC','c'],['jQ','q'],['jE','e']]){const h=hb[id],v=before[key];if(h&&h.on!==null&&typeof v==='number'&&h.on!==Math.min(4,Math.max(0,v|0)))fail(`${tag}: HUD ${id} pips ${h.on} for ${key}=${v}`);}
    H.look(Math.round((rnd()-.5)*60),Math.round((rnd()-.5)*10));
    await tap(k,80);casts++;await adv(250);
+   // equip-then-fire abilities (work/ability_equip_runtime.js XAB_EQ): the press only draws the ability; FIRE throws it
+   if(xe('!!(J.eq&&J.eq.st!=="rec")')){equips++;await adv(350);await click(0);await adv(700);}
    const after=xe(`({c:J.c,q:J.q,e:J.e,ult:J.ult,bsOn:!!J.bsOn,dr:!!J.dr,hf:J.hf|0})`);
    const spent=ab==='x'?after.ult<before.ult:(typeof before[ab]==='number'?after[ab]<before[ab]:after[ab]!==before[ab]);
    const pending=xe('JSON.stringify({dr:!!J.dr,om:!!J.om,bs:!!J.bsOn,hf:J.hf|0})');
@@ -90,7 +93,8 @@ const through=async agent=>{for(let t=0;t<20000;t+=100){if(xe('running')&&!xe('!
   if(xe('running'))fail(`${tag}: still running after leaving`);
  }
  const ns=xe('window.__qaNoSpend||[]');if(VERBOSE&&ns.length)console.log('casts that spent nothing on the first press:',ns.join(', '));const nv=xe('window.__qaNever||[]');if(VERBOSE&&nv.length)console.log('casts that never spent a charge (press, clicks, recast):',nv.join(', '));
+ if(!equips&&AGENTS.some(a=>a!=='Jett'))fail('no ability press equipped (equip-then-fire flow missing)');
  if(fails.length){console.error(fails.slice(0,30).join('\n'));process.exit(1);}
- console.log(`Client abilities (three r${H.three}): ${AGENTS.length} agents x C/Q/E/X on ${MAPS.join(' / ')} (${matches} matches, ${casts} casts): no exceptions, no NaN, HUD labels / pips consistent, all effects cleared and nothing left in the scene after the round reset (${((Date.now()-t0)/1000).toFixed(0)} s)`);
+ console.log(`Client abilities (three r${H.three}): ${AGENTS.length} agents x C/Q/E/X on ${MAPS.join(' / ')} (${matches} matches, ${casts} casts, ${equips} equip -> FIRE): no exceptions, no NaN, HUD labels / pips consistent, all effects cleared and nothing left in the scene after the round reset (${((Date.now()-t0)/1000).toFixed(0)} s)`);
  process.exit(0);
 })().catch(e=>{console.error(e);process.exit(1);});

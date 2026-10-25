@@ -1,11 +1,27 @@
 // Shared deterministic character motor and accuracy model. Metres, seconds, radians.
 (function(root,factory){if(typeof module==='object'&&module.exports)module.exports=factory();else root.ValorantFeel=factory();})(typeof globalThis!=='undefined'?globalThis:this,function(){
 'use strict';
-const C={stepHeight:.4,knifeSpeed:6.75,walk:.6,crouch:.45,groundAcceleration:56.25,groundBraking:80,airAcceleration:3.5,jumpSpeed:7.25,gravity:22,landingLock:.2,crouchEye:.45,crouchDown:.12,crouchUp:.18,deadzone:.275,operatorDeadzone:.15,eyeHeight:1.6,referenceAspect:16/9,horizontalFov:103};
+// Ground and jump physics follow frame-by-frame measurements of VALORANT ("VALORANT Physics: Explained", Stark, linked from
+// reddit.com/r/VALORANT/comments/utc7qf): every stance reaches its top speed in 0.288 s (acceleration scales with the speed
+// limit; crouched 0.472 s), releasing all keys decays speed by dv/dt = -(7.3625 v + 46.5) (stop from rifle speed in ~84 ms,
+// ~0.20 m), jump launch 6.902 m/s under 20.45 m/s^2 gravity (1.165 m apex, 0.675 s airtime), crouch-walk 2.5 m/s with the
+// knife (0.37x) and a 0.276 s crouch. Walk is 0.6x (Riot's 2020 weapon data: Classic run 5.73 / walk 3.43 m/s). Air speed
+// never exceeds melee speed (patch 12.09) and landing keeps momentum (no landing slowdown in VALORANT).
+const C={stepHeight:.4,knifeSpeed:6.75,walk:.6,crouch:2.5/6.75,accelTime:.288,crouchAccelTime:.472,frictionScale:7.3625,frictionFlat:46.5,airAcceleration:3.5,jumpSpeed:6.902,gravity:20.45,landingLock:.2,crouchEye:.45,crouchDown:.276,crouchUp:.276,deadzone:.275,operatorDeadzone:.15,eyeHeight:1.6,referenceAspect:16/9,horizontalFov:103};
 C.verticalFov=2*Math.atan(Math.tan(C.horizontalFov*Math.PI/360)/C.referenceAspect)*180/Math.PI;
 function approach(v,t,d){return v<t?Math.min(t,v+d):Math.max(t,v-d);}
 function damp(v,t,k,dt){return t+(v-t)*Math.exp(-k*dt);}
 function velocity(vx,vz,tx,tz,rate,dt){const dx=tx-vx,dz=tz-vz,d=Math.hypot(dx,dz);if(d<1e-8)return {vx:tx,vz:tz,dx:tx*dt,dz:tz*dt};const t=Math.min(dt,d/Math.max(1e-6,rate)),ax=dx/d*rate,az=dz/d*rate;return {vx:vx+ax*t,vz:vz+az*t,dx:vx*t+.5*ax*t*t+tx*(dt-t),dz:vz*t+.5*az*t*t+tz*(dt-t)};}
+// VALORANT ground friction: speed s decays as ds/dt = -(S s + F + extra) until it reaches floor (exact solution).
+// Returns the new speed, the distance covered and the time used (<= h).
+function brake(s,floor,h,extra){const S=C.frictionScale,K=(C.frictionFlat+(extra||0))/S;if(s<=floor)return {s,d:s*h,t:h};const tStop=Math.log((s+K)/(floor+K))/S;const t=Math.min(h,tStop),e=Math.exp(-S*t);const ns=t>=tStop?floor:Math.max(floor,(s+K)*e-K);return {s:ns,d:(s+K)*(1-e)/S-K*t,t};}
+// One grounded substep. Releasing every key brakes with the exact friction curve above. With a key held the velocity moves
+// toward the target velocity: at the acceleration while speeding up along the input, with friction while slowing to a
+// lower limit, and with friction plus acceleration while reversing (counter-strafing stops faster than releasing).
+function groundMove(P,tx,tz,accel,h){const vx=P.vx||0,vz=P.vz||0,T=Math.hypot(tx,tz),s=Math.hypot(vx,vz);
+ if(T<1e-6){if(s<1e-9){P.vx=P.vz=0;return {dx:0,dz:0};}const r=brake(s,0,h);P.vx=vx/s*r.s;P.vz=vz/s*r.s;return {dx:vx/s*r.d,dz:vz/s*r.d};}
+ const dot=tx*vx+tz*vz,rate=dot<0?C.frictionScale*s+C.frictionFlat+accel:T+1e-9<s?C.frictionScale*s+C.frictionFlat:accel;
+ const v=velocity(vx,vz,tx,tz,rate,h);P.vx=v.vx;P.vz=v.vz;return {dx:v.dx,dz:v.dz};}
 // A capsule whose rounded base rests on a stair nosing cannot sink, so it is supported even though
 // the floor under its centre is lower; treating that as airborne stalled every staircase.
 // A capsule already embedded in geometry where it stands is not supported by it (it would hang inside a wall and
@@ -32,6 +48,10 @@ const CLIPS={ascent:[{name:'A ramp pit',y:[-60,15],p:[[42.55,-25.15],[42.62,-24.
 for(const k in CLIPS)for(const c of CLIPS[k]){let a=1e9,b=-1e9,e=1e9,f=-1e9;for(const [x,z]of c.p){a=Math.min(a,x);b=Math.max(b,x);e=Math.min(e,z);f=Math.max(f,z);}c.b=[a,b,e,f];}
 function polyDist(p,x,z){let inside=false,d=Infinity;for(let i=0,j=p.length-1;i<p.length;j=i++){const [ax,az]=p[j],[bx,bz]=p[i];if((bz>z)!==(az>z)&&x<(ax-bx)*(z-bz)/(az-bz)+bx)inside=!inside;const ex=bx-ax,ez=bz-az,t=Math.max(0,Math.min(1,((x-ax)*ex+(z-az)*ez)/(ex*ex+ez*ez||1)));d=Math.min(d,Math.hypot(ax+ex*t-x,az+ez*t-z));}return inside?0:d;}
 function clipBlocked(map,x,z,r,y,height=1.8){const L=CLIPS[map];if(!L)return false;const y0=y+.025,y1=y+height;for(const c of L){if(y1<=c.y[0]||y0>=c.y[1]||x<c.b[0]-r||x>c.b[1]+r||z<c.b[2]-r||z>c.b[3]+r)continue;if(polyDist(c.p,x,z)<r)return true;}return false;}
+// Fall damage (VALORANT: wiki.playvalorant.com/en-us/Unrated#Fall_damage): a fall of about 8 m deals 15, rising to the fatal
+// 100 at about 17 m; it hits health directly and ignores shields. Linear between the two published points (the wiki gives
+// only the end points). The drop is measured from the highest point of the airborne arc to the landing floor.
+function fallDamage(drop){return !(drop>=8)?0:Math.min(100,Math.round(15+(drop-8)*85/9));}
 // Playable leash (map boundary): the source collision has no player-blocking volumes, so a unit could walk, dash, satchel
 // or updraft off the map edge into the void, out past spawn backs, or onto roofs and wall tops. A horizontal move must end
 // on the navigation footprint: the playable nodes plus the other valid components no more than 4.6 m above the playable
@@ -52,7 +72,9 @@ function leashGrid(nodes,valid,adj){const keep=new Uint8Array(nodes.length);if(a
 function leashNear(L,x,z,y){let best=Infinity;const cx=Math.floor(x),cz=Math.floor(z);for(let dx=-6;dx<=6;dx++)for(let dz=-6;dz<=6;dz++){const l=L.get((cx+dx)*4096+cz+dz);if(!l)continue;for(let i=0;i<l.length;i+=3){const ny=l[i+1];if(ny>y+1||ny<y-7.5)continue;const d=(l[i]-x)**2+(l[i+2]-z)**2;if(d<best)best=d;}}return best>36?Infinity:best;}
 function leashOk(L,x,z,y,ground,x0,z0){if(!L)return true;if(x0!=null){if(leashOk(L,x,z,y,ground))return true;if(leashOk(L,x0,z0,y,ground))return false;const a=leashNear(L,x0,z0,y);return a===Infinity||leashNear(L,x,z,y)<=a+1e-9;}let core=-Infinity;const rim=[],cx=Math.floor(x),cz=Math.floor(z);for(let dx=-2;dx<=2;dx++)for(let dz=-2;dz<=2;dz++){const l=L.get((cx+dx)*4096+cz+dz);if(!l)continue;for(let i=0;i<l.length;i+=3){const ny=l[i+1],d=(l[i]-x)**2+(l[i+2]-z)**2;if(d>2.25)continue;if(d<=.36&&ny<=y+1&&ny>=y-7.5){if(ny>=y-1.6)return true;if(ny>core)core=ny;}rim.push(ny);}}if(!rim.length||!ground)return false;const g=ground(x,z,y);if(core>-Infinity&&core>=g-1.6)return true;for(const ny of rim)if(Math.abs(ny-g)<=1)return true;return false;}
 function step(P,input,dt,world){
- const dt0=Math.max(0,Math.min(.1,dt)),parts=Math.max(1,Math.ceil(dt0*128)),h=dt0/parts;let landed=false,jumped=false;
+ const dt0=Math.max(0,Math.min(.1,dt)),parts=Math.max(1,Math.ceil(dt0*128)),h=dt0/parts;let landed=false,jumped=false,drop=0;
+ // Moved from outside the motor since the last step (a teleport, a rescue, a respawn): the fall starts over from here.
+ if(P.fallY==null||Math.abs(P.y-P.fallY)>1e-4)P.fallTop=P.y;
  const press=!!input.jump&&!P.jumpHeld;P.jumpHeld=!!input.jump;if(press)P.jumpBuffer=.07;
  for(let k=0;k<parts;k++){
   const floor=world.ground(P.x,P.z,P.y),grounded=(P.vy||0)<=0&&(P.y<=floor+.025||supported(P,world,P.y,1.8-(P.ch||0)));
@@ -62,40 +84,72 @@ function step(P,input,dt,world){
   P.cr=(P.ch||0)>C.crouchEye*.5;P.wk=!!input.walk;
   let mx=input.x||0,mz=input.z||0,l=Math.hypot(mx,mz);if(l>1){mx/=l;mz/=l;l=1;}
   const duckK=1-(1-C.crouch)*(P.ch||0)/C.crouchEye,max=input.speed*Math.min(duckK,input.walk?C.walk:1)*(input.tag||1);let tx=input.hold?0:mx*max,tz=input.hold?0:mz*max;
-  let rate=grounded?(Math.hypot(tx,tz)<Math.hypot(P.vx||0,P.vz||0)||tx*(P.vx||0)+tz*(P.vz||0)<0?C.groundBraking:C.groundAcceleration):C.airAcceleration;
-  if(!grounded&&!l){tx=P.vx||0;tz=P.vz||0;}
-  if(!grounded){const cap=Math.max(P.takeoffSpeed||input.speed,.1),v=Math.hypot(tx,tz);if(v>cap){tx*=cap/v;tz*=cap/v;}}
-  const v=velocity(P.vx||0,P.vz||0,tx,tz,rate,h),height=1.8-(P.ch||0);P.vx=v.vx;P.vz=v.vz;
+  let v;if(grounded){const ck=(P.ch||0)/C.crouchEye,accel=max/Math.max(1e-3,C.accelTime+(C.crouchAccelTime-C.accelTime)*ck);v=groundMove(P,tx,tz,Math.max(1e-3,accel),h);}
+  else{if(!l){tx=P.vx||0;tz=P.vz||0;}const cap=Math.min(C.knifeSpeed*(input.tag||1),Math.max(P.takeoffSpeed||input.speed,.1)),s=Math.hypot(tx,tz);if(s>cap){tx*=cap/s;tz*=cap/s;}v=velocity(P.vx||0,P.vz||0,tx,tz,C.airAcceleration,h);P.vx=v.vx;P.vz=v.vz;}
+  const height=1.8-(P.ch||0);
   const moveAxis=(dx,dz)=>{const x=P.x+dx,z=P.z+dz;if(world.leash&&!world.leash(x,z,P.y,P.x,P.z))return false;if(!world.blocked(x,z,.4,P.y,height)){P.x=x;P.z=z;return true;}
-   // A grounded capsule may step onto a low stair, never teleport onto a tall box.
+   // A grounded capsule may step onto a low stair, never teleport onto a tall box. The lifted capsule needs 1 cm of clearance
+   // beyond its radius: a slanted wall lip that a .4 capsule only grazes is not a step (it sank into the lip, embedded).
    // Lift by the step height, move, then settle onto the lowest free height above the destination floor.
-   if(grounded&&(P.vy||0)<=0){const top=P.y+C.stepHeight,support=world.ground(x,z,top);if(support>top+.001||world.blocked(x,z,.4,top,height)||(world.ceiling&&world.ceiling(P.x,P.z,P.y+height,top+height)))return false;
+   if(grounded&&(P.vy||0)<=0){const top=P.y+C.stepHeight,support=world.ground(x,z,top);if(support>top+.001||world.blocked(x,z,.41,top,height)||(world.ceiling&&world.ceiling(P.x,P.z,P.y+height,top+height)))return false;
     // Riser test: sampled every 10 cm ahead, no single rise may exceed the step height (stairs pass, a 60 cm box does not).
     {const sx=Math.sign(dx),sz=Math.sign(dz);let prev=Math.max(world.ground(P.x,P.z,top),P.y-.2);for(let d=.1;d<.55;d+=.1){const g=world.ground(P.x+sx*d,P.z+sz*d,top);if(g<prev-1)continue;if(g-prev>C.stepHeight+.01)return false;prev=g;}} /* samples through seams between stair meshes are ignored */let lo=Math.max(P.y,support),hi=top;if(!world.blocked(x,z,.4,lo,height))hi=lo;else for(let n=0;n<10;n++){const mid=(lo+hi)/2;if(world.blocked(x,z,.4,mid,height))lo=mid;else hi=mid;}const base=floorNear(world,P.x,P.z,P.y);if(hi-base>C.stepHeight+.12)return false;const rise=hi-P.y;P.x=x;P.z=z;P.y=hi;P.vy=0;if(rise>0)P.eyeOffset=(P.eyeOffset||0)-rise;return true;}return false;};
   if(!moveAxis(v.dx,0))P.vx=0;
   if(!moveAxis(0,v.dz))P.vz=0;
   let gy=world.ground(P.x,P.z,P.y),vy=P.vy||0;
-  if(grounded&&P.jumpBuffer>0&&!input.duck&&!input.hold){vy=C.jumpSpeed;P.jumpBuffer=0;P.takeoffSpeed=Math.hypot(P.vx,P.vz);P.air=true;jumped=true;}
+  if(grounded&&P.jumpBuffer>0&&!input.hold){vy=C.jumpSpeed;P.jumpBuffer=0;P.takeoffSpeed=Math.hypot(P.vx,P.vz);P.air=true;jumped=true;}
   const oldY=P.y;let next=P.y+vy*h-.5*C.gravity*h*h;vy-=C.gravity*h;
   if(vy>0&&world.ceiling&&world.ceiling(P.x,P.z,P.y+height,next+height)){vy=0;next=P.y;}
   // Rising into geometry beside the axis (an overhang, a wall lip) the centre ceiling ray misses: stop at the highest free height.
   if(next>oldY&&world.blocked(P.x,P.z,VR,next,height)&&!world.blocked(P.x,P.z,VR,oldY,height)){let lo=oldY,hi=next;for(let n=0;n<10;n++){const mid=(lo+hi)/2;if(world.blocked(P.x,P.z,VR,mid,height))hi=mid;else lo=mid;}next=lo;vy=Math.min(vy,0);}
-  if(next<=gy){next=gy;if(P.air&&vy<-.5){landed=true;P.lp=C.landingLock;P.landImpact=Math.min(1,-vy/10);P.vx*=.85;P.vz*=.85;}vy=0;}
+  if(next<=gy){next=gy;if(P.air&&vy<-.5){landed=true;P.lp=C.landingLock;P.landImpact=Math.min(1,-vy/10);drop=Math.max(drop,(P.fallTop??oldY)-gy);}vy=0;}
   // Descending beside a riser must not settle the capsule inside the stair face.
   // (Thin probe up the wall, full radius in the last 45 cm above the floor so a landing beside a nosing never ends inside it.)
   if(next<oldY&&!world.blocked(P.x,P.z,VR,oldY,height)&&(world.blocked(P.x,P.z,VR,next,height)||(next-gy<.45&&world.blocked(P.x,P.z,.4,next,height)))){let lo=next,hi=oldY;for(let n=0;n<10;n++){const mid=(lo+hi)/2;if(world.blocked(P.x,P.z,.4,mid,height))lo=mid;else hi=mid;}next=hi;vy=0;}
   if(grounded&&!jumped&&next>oldY&&next-oldY<.5)P.eyeOffset=(P.eyeOffset||0)-(next-oldY);
-  P.eyeOffset=damp(P.eyeOffset||0,0,18,h);P.y=next;P.vy=vy;P.air=vy>0||(next>gy+.00001&&!supported(P,world,next,height));
+  P.eyeOffset=damp(P.eyeOffset||0,0,18,h);P.y=next;P.vy=vy;P.air=vy>0||(next>gy+.00001&&!supported(P,world,next,height));P.fallTop=P.air?Math.max(P.fallTop??oldY,next):next;
  }
- const speed=Math.hypot(P.vx||0,P.vz||0);P.mv=speed>.1;P.sf=speed/Math.max(.001,input.speed);P.speed=speed;return {landed,jumped,speed};
+ const speed=Math.hypot(P.vx||0,P.vz||0);P.mv=speed>.1;P.sf=speed/Math.max(.001,input.speed);P.speed=speed;P.fallY=P.y;P.fallDrop=landed?drop:0;return {landed,jumped,speed,drop};
 }
+// Published spread (degrees; wiki.playvalorant.com/en-us/<Weapon>, "Spread values"): first shot standing / crouched,
+// max (Ares: min) spread standing / crouched, then the movement penalties added on top, crouch-walking / walking / running /
+// airborne. Rows with an ADS (alt-fire) entry list its first / max standing / crouched; the movement penalties are shared.
+// Scoped snipers have 0 first-shot spread but keep the full movement / airborne penalty.
+const SPREAD={Classic:[.4,.3,1.8,1.35,.5,1.1,2.3,7],Shorty:[4,3.4,4,3.4,.5,1,2,4],Frenzy:[.65,.55,1.7,1.45,.5,.8,2,7],Ghost:[.3,.23,1.65,1.24,.5,1.1,2.3,7],Sheriff:[.25,.19,2.75,2.06,.5,1.2,3,7],
+ Stinger:[.65,.55,1.5,1.28,.15,1,2.5,10,.35,.26,2.74,2.06],Spectre:[.4,.34,1.4,1.19,.15,1,2.5,10,.25,.21,1.25,1.06],Bucky:[3,2.55,3,2.55,.5,1,2,4],Judge:[2.5,2.12,4,3.4,.5,1,2,4],
+ Bulldog:[.3,.26,1.25,1.06,.8,3,6,10,.1,.08,1.5,1.12],Guardian:[.1,.09,1.58,1.34,.8,3,6,10,0,0,1.48,1.25],Phantom:[.2,.17,.9,.76,.8,3,6,10,.11,.09,.91,.78],Vandal:[.25,.21,1,.85,.8,3,6,10,.157,.13,1.02,.87],
+ Marshal:[1,.9,1,.9,7.5,10,15,20,0,0,0,0],Outlaw:[3.5,3.15,3.5,3.15,7.5,10,15,20,0,0,0,0],Operator:[5,4.5,5,4.5,7.5,10,15,15,0,0,0,0],Ares:[1,.6,.7,.42,.4,3,6.5,10,.9,.54,.55,.33],Odin:[.8,.48,1.3,.78,.4,3,6.5,10,.79,.47,1.36,.82]};
+const rad=d=>Math.tan(d*Math.PI/180);
+function spreadRow(state,weapon,stats){const T=SPREAD[weapon];if(!T)return null;const ads=!!(state.ads&&stats&&stats.adsStats&&T.length>8),o=ads?8:0,cr=!!state.cr;return {first:T[o+(cr?1:0)],max:T[o+(cr?3:2)],T};}
 function spread(state,weapon,stats){
- const dead=weapon==='Operator'?C.operatorDeadzone:C.deadzone,speed=state.sf!=null?state.sf:(state.mv?1:0),moving=speed>dead,rifle=['Vandal','Phantom','Bulldog','Guardian'].includes(weapon),heavy=weapon==='Ares'||weapon==='Odin',smg=['Stinger','Spectre','Frenzy'].includes(weapon),snp=['Operator','Marshal','Outlaw'].includes(weapon);
+ const dead=weapon==='Operator'?C.operatorDeadzone:C.deadzone,speed=state.sf!=null?state.sf:(state.mv?1:0),moving=speed>dead,row=spreadRow(state,weapon,stats);
+ if(row){const T=row.T;let error=0;
+  // Airborne: the published airborne penalty for every gun (a jumping scoped Operator is +15 deg); the .2 s landing lock counts as running.
+  if(state.air)error=T[7];else if(state.lp>0)error=T[6];else if(moving){const walk=state.wk||speed<.65;error=state.cr?T[4]:walk?T[5]:T[6];}
+  return rad(row.first+error);}
  let base=Math.max(0,stats.firstBulletAccuracy||0),error=0;if(state.ads&&stats.adsStats)base=Math.max(0,stats.adsStats.firstBulletAccuracy||0);
- if(state.air)error=snp?10:smg?7:12;else if(state.lp>0)error=snp?7:5;else if(moving){const duck=state.cr,walk=state.wk||speed<.65;error=duck?(rifle?.8:.5):walk?(rifle||heavy?3:1.1):rifle?6:heavy?6.5:smg?3:2.3;}
- if(state.cr&&!moving&&!state.air&&!state.lp)base*=.8;
- return Math.tan((base+error)*Math.PI/180);
+ if(state.air)error=12;else if(state.lp>0)error=5;else if(moving)error=state.cr?.5:state.wk||speed<.65?1.1:2.3;
+ return rad(base+error);
 }
+// Spray error growth caps at the published max spread (Ares: shrinks to its min) over the first-shot spread.
+function bloomCap(state,weapon,stats){const row=spreadRow(state,weapon,stats);return row?rad(row.max)-rad(row.first):.024;}
+// Spray (client gFire = server fire): per-shooter state R {sequence, recoilX, recoilY, bloom, shot, lastWeapon, drift}.
+// Climb per shot (rifles .006 for the first 6 then .0015, others .008; cap .065 / .05) scaled by the gun's recoil weight
+// (REC, x.85 crouched, x.85 aiming), sideways drift from the 8th shot, bloom +.0015/shot (cap .024) that recovers over
+// .375 s (Vandal) / .35 s (Phantom) / .28 s; a pause over .375 s or a weapon change starts a fresh spray. Offsets are
+// tangent-plane radians in the shot's right / up basis; random only picks the drift side, so the climb is identical.
+const REC={Vandal:1,Phantom:.6,Operator:1.5,Classic:.5,Sheriff:1.3,Spectre:.45,Guardian:.9,Marshal:1.2,Bulldog:.8,Stinger:.55,Frenzy:.5,Shorty:1.2,Bucky:1.4,Judge:1.1,Ares:.7,Odin:.75,Ghost:.55,Outlaw:1.4};
+const SPRAY_RIFLES=['Vandal','Phantom','Bulldog','Guardian'];
+function sprayReset(R,w,t){if(R.lastWeapon!==w||t-(R.shot||0)>.375){R.sequence=0;R.recoilX=R.recoilY=R.bloom=0;}R.lastWeapon=w;}
+// Gun recovery time (wiki update history: Vandal .375, Phantom / Bulldog / Guardian .35, Stinger .4; others keep .28).
+const RECOVERY={Vandal:.375,Phantom:.35,Bulldog:.35,Guardian:.35,Stinger:.4};
+function recoveryTime(w){return RECOVERY[w]||.28;}
+// Running / airborne recoil multiplier (patch 6.11: Vandal, Phantom, Spectre vertical x1.8; patch 4.0: Frenzy x1.5).
+function recoilMove(state,w){const k=w==='Frenzy'?1.5:['Vandal','Phantom','Spectre'].includes(w)?1.8:1;if(k===1)return 1;const sp=state.sf!=null?state.sf:(state.mv?1:0);return state.air||(sp>=.65&&!state.wk&&!state.cr)?k:1;}
+function sprayBloom(R,w,t){const rec=recoveryTime(w),el=t-(R.shot||0);return el<rec?(R.bloom||0)*Math.max(0,1-el/rec):0;}
+function sprayStep(R,w,weight,t,random=Math.random,cap=.024){const n=R.sequence++,rifle=SPRAY_RIFLES.includes(w);
+ if(n===0){R.drift=random()<.5?-1:1;R.recoilX=0;R.recoilY=0;}else{R.recoilY=Math.min(rifle?.065:.05,R.recoilY+(rifle?(n<7?.006:.0015):.008)*weight);if(n>6){R.recoilX+=R.drift*.003*weight;if(Math.abs(R.recoilX)>.022){R.drift=-Math.sign(R.recoilX);}if(random()<.12)R.drift*=-1;}}
+ R.bloom=cap<0?Math.max(cap,(R.bloom||0)-.0015*weight):Math.min(cap,(R.bloom||0)+.0015*weight);R.shot=t;return n;}
 function disk(random=Math.random){const a=random()*Math.PI*2,r=Math.sqrt(random());return [Math.cos(a)*r,Math.sin(a)*r];}
-return {C,step,velocity,spread,disk,damp,approach,clipBlocked,CLIPS,leashGrid,leashOk,leashNear};
+return {C,step,fallDamage,velocity,brake,groundMove,spread,bloomCap,SPREAD,recoveryTime,recoilMove,disk,damp,approach,clipBlocked,CLIPS,REC,sprayReset,sprayBloom,sprayStep,leashGrid,leashOk,leashNear};
 });

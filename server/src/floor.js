@@ -30,7 +30,7 @@ export function floorPick(sim,u,id){if(!able(sim,u))return false;const d=(sim.fl
  return take(sim,u,d);}
 // G: drop the primary in hand 1.2 m ahead (shortened at walls). Sidearms and the knife stay, so a living
 // player always holds a sidearm (sidearms still change hands through F swaps and death drops).
-export function floorDropHeld(sim,u){if(!u.alive||u.loading||sim.roundDelay>0||!droppable(u.weapon)||u.reloadAt)return false;const w=u.weapon,slot=slotOf(w);if(slot!=='primary'||u[slot]!==w)return false;
+export function floorDropHeld(sim,u){if(!u.alive||u.loading||sim.roundDelay>0||!droppable(u.weapon))return false;/* mid-reload too: the gun drops with the magazine it has, wield() ends the reload */const w=u.weapon,slot=slotOf(w);if(slot!=='primary'||u[slot]!==w)return false;
  const f=[-Math.sin(u.look),0,-Math.cos(u.look)],hit=sim.world.ray([u.x,u.y+1,u.z],f,1.2),reach=Math.max(0,Math.min(1.2,hit-.3));
  floorDrop(sim,w,u.x+f[0]*reach,u.y,u.z+f[2]*reach,u.ammo,u.reserve,u.id);delete u.inventory[w];delete u.reserves[w];lockSlot(u,slot);u[slot]=null;
  wield(sim,u,u.primary||u.secondary||'Knife');return true;}
