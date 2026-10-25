@@ -60,3 +60,13 @@ const cast=(s,u,m={})=>s.command(u,{t:'ab',k:'x',...m});
  u.x=10;u.z=-10;u.hp=0;u.alive=false;s.step(.05);assert.equal(s.roundDelay,0,'round continues while Run It Back is pending');tick(s,.05);assert.equal(u.alive,true);assert.equal(u.hp,100);assert.deepEqual([u.x,u.z],[0,0]);assert.equal(u.runItBack,null);
  u.ability.ult=9;s.time+=.5;assert.equal(cast(s,u),true);u.x=7;u.hp=55;tick(s,ULT.rib.window+.1);assert.deepEqual([u.x,u.hp],[0,100],'window end returns to the mark');}
 console.log('Ultimates: Hunter\'s Fury (3 wall-piercing blasts, recast, reveal, death end), Showstopper (travelling rocket, falloff, LOS, wall detonation), Lockdown (windup, radius detain blocks guns/abilities, round reset), Rolling Thunder (cone through walls), Seekers (3 nearest), Neural Theft (corpse targeting, double reveal), Tour de Force (5-round Operator, weapon restore), Run It Back (death/expiry return, no elimination); server-side aim only');
+// Devices that used to be inert markers: recon pulses reveal enemies in the bolt's sight (not through walls),
+// Boom Bot hunts the nearest visible enemy and explodes for 125, Trailblazer concusses on contact.
+import {DEV} from './src/devices.js';
+{const {s,u,list:[seen,hidden,far]}=setup('Sova',['foeSeen'],['foeHidden'],['foeFar']);u.ability.e=1;Object.assign(seen,{x:3,y:0,z:-14});Object.assign(hidden,{x:-3,y:0,z:-30});Object.assign(far,{x:0,y:0,z:-60});wall=20;
+ assert.equal(s.command(u,{t:'ab',k:'e'}),true);const bolt=s.effects.find(e=>e.kind==='recon');assert.ok(bolt&&Math.abs(bolt.p[2]+19.5)<.01,'bolt lands at the server aim');tick(s,.5);assert.equal(s.roundState(u).rv.length,0,'first pulse not yet');tick(s,.5);
+ assert.deepEqual(s.roundState(u).rv.map(r=>r[0]),[seen.id],'pulse reveals only what the bolt sees');const first=seen.revealedUntil;tick(s,1.6);assert.ok(seen.revealedUntil>first+1,'second pulse refreshes the reveal');assert.ok(!(hidden.revealedUntil>0)&&!(far.revealedUntil>0));}
+{const {s,u,list:[foe,mate]}=setup('Raze',['foe'],['mate']);u.ability.c=1;Object.assign(foe,{x:4,y:0,z:-7});Object.assign(mate,{x:-30,y:0,z:0});
+ assert.equal(s.command(u,{t:'ab',k:'c'}),true);assert.ok(s.effects.some(e=>e.kind==='boombot'));tick(s,2.5);assert.equal(foe.alive,false,'Boom Bot hunts and kills (125)');assert.equal(mate.hp,100);assert.ok(!s.effects.some(e=>e.kind==='boombot'));}
+{const {s,u,list:[foe]}=setup('Skye',['foe']);u.ability.q=1;Object.assign(foe,{x:0,y:0,z:-10});assert.equal(s.command(u,{t:'ab',k:'q'}),true);tick(s,1.5);assert.ok(foe.concussUntil>s.time,'Trailblazer concusses');assert.ok(!s.effects.some(e=>e.kind==='trail'));}
+console.log('Devices: recon pulses reveal by line of sight (two pulses), Boom Bot seeks and explodes, Trailblazer concusses');
