@@ -8,7 +8,7 @@ const {serve, launch, boot} = require('./lib.cjs');
   try {
     await boot(p);
     if (await p.$('#mIntro.on')) { await p.click('#mIntro [data-close]'); }
-    await p.evaluate(() => { window.__vs.FV.map = 'breeze'; window.__vs.light(true); window.__vs.agents(false); window.__vs.startFive(); });
+    await p.evaluate(() => { window.__vs.FV.pick = 'breeze'; window.__vs.light(true); window.__vs.agents(false); window.__vs.startFive(); });
     await p.waitForFunction(() => window.__vs && window.__vs.state().running, {timeout: 60000});
     await p.evaluate(() => { window.__vs.FV.buy = 0; });
     // control: warp to a site node, wait, must survive
@@ -23,10 +23,30 @@ const {serve, launch, boot} = require('./lib.cjs');
     const died = await p.waitForFunction(() => window.__vs.state().player[3] <= 0, {timeout: 40000}).then(()=>true).catch(()=>false);
     console.log('OOB death:', died, 'after', ((Date.now()-t0)/1000).toFixed(1)+'s wall');
     if (!died) fails.push('player survived out of bounds');
-    console.log(fails.length ? 'FAIL: '+fails.join(' | ') : 'OOB-PROBE PASS');
+    console.log('breeze section:', fails.length ? 'FAIL: '+fails.join(' | ') : 'PASS');
   } finally {
-    console.log('ERRORS', JSON.stringify(errors.slice(0,8)));
-    await b.close(); srv.close();
+    await b.close();
   }
+  // bind section: a valid island off the largest component (B Teleporter island node 25,
+  // 30.2u from playable) is intended space - the watch must spare it (fence-v2 conclusion).
+  { const r2 = await launch({profile:'mid'});
+    const b2 = r2.b, p2 = r2.p, errors2 = r2.errors;
+    try {
+      await boot(p2);
+      if (await p2.$('#mIntro.on')) { await p2.click('#mIntro [data-close]'); }
+      await p2.evaluate(() => { window.__vs.FV.pick = 'bind'; window.__vs.light(true); window.__vs.agents(false); window.__vs.startFive(); });
+      await p2.waitForFunction(() => window.__vs && window.__vs.state().running, {timeout: 60000});
+      await p2.evaluate(() => { window.__vs.FV.buy = 0; window.__vs.setPos(-77.25, 3.87, 39.75); });
+      await p2.waitForTimeout(12000); // well past the 2s kill clock even at SwiftShader slowdown
+      const hp = await p2.evaluate(() => window.__vs.state().player[3]);
+      console.log('bind island node (30.2u from playable) hp after 12s:', hp);
+      if (hp <= 0) fails.push('island player KILLED - valid coverage regression');
+      console.log('ERRORS2', JSON.stringify(errors2.slice(0,8)));
+    } finally {
+      await b2.close();
+    }
+  }
+  console.log(fails.length ? 'FAIL: '+fails.join(' | ') : 'OOB-PROBE PASS (breeze lethal + bind island spared)');
+  srv.close();
   process.exit(fails.length ? 1 : 0);
 })().catch(e => { console.error('FATAL', String(e && e.stack || e).slice(0,400)); process.exit(1); });
