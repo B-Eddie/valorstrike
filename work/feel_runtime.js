@@ -5,7 +5,15 @@ function vfWeapon(){return mode==='duel'?(du.w==='op'?'Operator':'Knife'):mode==
 function vfProfile(w){return VF.profiles[w]||{equipTimeSeconds:.75,reloadTimeSeconds:2.5,firstBulletAccuracy:0,runSpeedMultiplier:1};}
 for(const [w,p]of Object.entries(VF.profiles)){const W=WEAP[w];if(!W)continue;W.mag=p.magazineSize;W.rate=p.fireRate;W.rld=p.reloadTimeSeconds;W.equip=p.equipTimeSeconds;W.pel=p.shotgunPelletCount>1?p.shotgunPelletCount:W.pel;VRUN[w]=p.runSpeedMultiplier;FSA[w]=Math.tan(Math.max(0,p.firstBulletAccuracy)*Math.PI/180);const d=p.damageRanges[0];W.body=Math.floor(d.bodyDamage);W.head=Math.floor(d.headDamage);W.legs=Math.floor(d.legDamage);if(p.adsStats)XZ[w]=p.adsStats.zoomMultiplier;delete W.spin;}
 // Ranges and rates come from the same local snapshot in every mode.
-wDmg=function(W,part,distance){const w=Object.keys(WEAP).find(k=>WEAP[k]===W),p=VF.profiles[w];if(!p)return W[part]||W.body;const ranges=p.damageRanges,row=ranges.find(r=>distance>=r.rangeStartMeters&&distance<r.rangeEndMeters)||ranges[ranges.length-1];return Math.floor(row[part==='head'?'headDamage':part==='legs'?'legDamage':'bodyDamage']);};
+// wRaw: the row's unfloored value (null for a gun with no profile). A wallbanged bullet floors raw x k as the server
+// (Odin head 77.5 x .75 = 58, not round(77 x .75) = 58 / floor(77) x .75 = 57.75 -> 58 vs 57).
+const wRaw=function(W,part,distance){const w=Object.keys(WEAP).find(k=>WEAP[k]===W),p=VF.profiles[w];if(!p)return null;const ranges=p.damageRanges,row=ranges.find(r=>distance>=r.rangeStartMeters&&distance<r.rangeEndMeters)||ranges[ranges.length-1];return row[part==='head'?'headDamage':part==='legs'?'legDamage':'bodyDamage'];};
+// A shotgun outside the player's pellet loop (a bot's shot, xPelOn false) is the expected pellets landing, as the base
+// wDmg: the feel layer returned one pellet (a bot Judge did 17 a shot offline, the base ~119). A gun with no profile (the
+// Bucky's alt fire) keeps the base table and its falloff.
+const wDmg0=wDmg;
+wDmg=function(W,part,distance){const v=wRaw(W,part,distance);if(v==null)return wDmg0(W,part,distance);const d=Math.floor(v);return W.pel&&!xPelOn?Math.min(150,Math.round(d*W.pel*Math.max(.08,Math.min(.6,.75-distance/((W.ffd||15)*3))))):d;};
+xWkDmg=function(W,part,distance,k){const v=wRaw(W,part,distance);return v==null?Math.round(wDmg(W,part,distance)*k):Math.floor(v*k);};
 xEq=function(w){return w==='Knife'?.75:vfProfile(w).equipTimeSeconds;};
 xRate=function(W){const w=Object.keys(WEAP).find(k=>WEAP[k]===W),p=VF.profiles[w];return ads&&p&&p.adsStats?p.adsStats.fireRate:W.rate;};
 xSCf=function(z){return 2*Math.atan(Math.tan(VF_C.verticalFov*Math.PI/360)/z)*180/Math.PI;};
@@ -24,9 +32,9 @@ moveP=function(dt,run,hold){
 };
 gSpread=function(w,W,B){const p=vfProfile(w),P=B||player||{},state={sf:B?(B.sf!=null?B.sf:B.mv?1:0):P.sf,mv:P.mv,air:P.air,cr:P.cr,wk:P.wk,lp:P.lp||0,ads:B?0:ads};let cone=VF.model.spread(state,w,p);if(!B){const recovery=w==='Vandal'?.375:w==='Phantom'?.35:.28,elapsed=VF.time-VF.shot,bloom=elapsed<recovery?VF.bloom*Math.max(0,1-elapsed/recovery):0;cone+=bloom;if(xCU>performance.now())cone+=.06;if(xAD.bs)cone+=.045;}else cone+=Math.min(B.n||0,10)*.0025*(W.rec||1);return cone;};
 // Circular angular spread in the shot's own basis, with a stable early climb and late directional drift.
-gFire=function(d,w,W){if(VF.lastWeapon!==w||VF.time-VF.shot>.375){VF.sequence=0;VF.recoilX=VF.recoilY=VF.bloom=0;}VF.lastWeapon=w;const n=VF.sequence++,p=vfProfile(w),cone=gSpread(w,W),disc=VF.model.disk(),right=new THREE.Vector3().crossVectors(d,new THREE.Vector3(0,1,0)).normalize();if(right.lengthSq()<.5)right.set(1,0,0);const up=new THREE.Vector3().crossVectors(right,d).normalize(),rifle=['Vandal','Phantom','Bulldog','Guardian'].includes(w),weight=(W.rec||1)*(player.cr?.85:1)*(ads?.85:1);
- if(n===0){VF.drift=Math.random()<.5?-1:1;VF.recoilX=0;VF.recoilY=0;}else{VF.recoilY=Math.min(rifle?.065:.05,VF.recoilY+(rifle?(n<7?.006:.0015):.008)*weight);if(n>6){VF.recoilX+=VF.drift*.003*weight;if(Math.abs(VF.recoilX)>.022){VF.drift=-Math.sign(VF.recoilX);}if(Math.random()<.12)VF.drift*=-1;}}
- d.addScaledVector(right,disc[0]*cone+VF.recoilX-rclH).addScaledVector(up,disc[1]*cone+VF.recoilY-rcl).normalize();spray=VF.sequence;sprW=w;VF.bloom=Math.min(.024,VF.bloom+.0015*weight);VF.shot=VF.time;rcl=VF.recoilY*.55+.0035*weight;rclH=VF.recoilX*.55;
+gFire=function(d,w,W){const M=VF.model;M.sprayReset(VF,w,VF.time);const cone=gSpread(w,W),disc=M.disk(),right=new THREE.Vector3().crossVectors(d,new THREE.Vector3(0,1,0)).normalize();if(right.lengthSq()<.5)right.set(1,0,0);const up=new THREE.Vector3().crossVectors(right,d).normalize(),weight=(W.rec||1)*(player.cr?.85:1)*(ads?.85:1);
+ M.sprayStep(VF,w,weight,VF.time);const jit=W.pel?0:1;VF.pelCone=W.pel?cone:0;/* pellet guns: xPellets spreads every pellet over this cone */
+ d.addScaledVector(right,disc[0]*cone*jit+VF.recoilX-rclH).addScaledVector(up,disc[1]*cone*jit+VF.recoilY-rcl).normalize();spray=VF.sequence;sprW=w;rcl=VF.recoilY*.55+.0035*weight;rclH=VF.recoilX*.55;
 };
 // Aim range, matches and duels all respect the same equip lock and firing cadence.
 {const shoot0=shoot;shoot=function(){if(VM.sw>0)return;const before=ammo;const r=shoot0.apply(this,arguments);if(ammo<before&&rw!=='knife')fcd=1/(xRate(WEAP[wName()])*vfRateK());return r;};const aim0=aimFire;aimFire=function(){if(VM.sw>0)return;const before=AM.ammo,r=aim0.apply(this,arguments);if(AM.ammo<before)AM.cd=1/xRate(WEAP[aimW()]);return r;};}

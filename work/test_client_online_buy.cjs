@@ -91,7 +91,9 @@ Math.random=mulberry(SEED*104729+1);require('vm').runInContext(`Math.random=(${m
   xe('fSell("Spectre");true');await step(250);if(me().primary!=='Spectre'||me().credits!==cr)fail('sold after the buy phase');same('after a refused late sell');if(sellable('Spectre',1600))fail('Spectre card still marked sellable after the buy phase');
   xe('buyMenu(true);true');await step(50);if(xe('FV.menu'))fail('buy menu opens after the buy phase');}
  // round reset: page re-armed from the server's loadout and credits
- {const r0=sim.round;sim.roundDelay=0;sim.finishRound(0,'QA');await until(()=>sim.round>r0&&sim.phase==='game',30000,'next round');await step(500);same('after the round reset');}
+ {const r0=sim.round;sim.roundDelay=0;sim.finishRound(0,'QA');await until(()=>sim.round>r0&&sim.phase==='game',30000,'next round');await step(500);same('after the round reset');
+  // reconnect mid-buy: a fresh page log (no purchases) is rebuilt from round state, so the bought gun's card stays sellable
+  me().credits=5000;me().primary=null;await step(150);xe('fBuy("Spectre");true');await step(300);if(me().primary!=='Spectre')fail('round 2 Spectre buy: '+me().primary);xe('FV.bt=[];FV.btR=FV.you+FV.them;true');await step(300);if(!sellable('Spectre',1600))fail('after a page log reset mid-buy the Spectre card is not sellable again (round state carries no purchase list)');}
  // offline 5v5, same rule: a Spike carrier's G in the buy phase drops the held gun (the Spike can't be dropped then)
  {for(const h of humans.splice(0))try{h.leave();}catch(e){}xe('mpReset()');await step(300);xe('try{toLobby()}catch(e){}');await step(200);
   xe('FV.pick="ascent";FV.srOn=0;window.xSwift=false;startFive();true');await step(200);
@@ -103,6 +105,6 @@ Math.random=mulberry(SEED*104729+1);require('vm').runInContext(`Math.random=(${m
   xe('running=false;clearTimeout(FV.to);try{toLobby()}catch(e){}true');}
  const errors=H.errors.slice(errs0),xerr=H.xErrCalls.slice(x0);if(errors.length||xerr.length)fail('page exceptions '+JSON.stringify({errors:errors.slice(0,5),xerr:xerr.slice(0,5)}));
  if(fails.length){console.error(fails.slice(0,40).join('\n'));process.exit(1);}
- console.log(`Online buy menu (page <-> in-process server): ${n} items bought and sold back (cards marked sellable while the server would refund them; credits / loadout / armor / menu credits equal the server's), over-credit buy refused, ability charge buy + sell, same-round second primary (server stack) and its sell-back, G drop picked up by a teammate, late sell refused, round reset re-armed; offline Spike carrier's buy-phase G drops the gun; no page exceptions`);
+ console.log(`Online buy menu (page <-> in-process server): ${n} items bought and sold back (cards marked sellable while the server would refund them; credits / loadout / armor / menu credits equal the server's), over-credit buy refused, ability charge buy + sell, same-round second primary (server stack) and its sell-back, G drop picked up by a teammate, late sell refused, round reset re-armed, purchase list restored from round state after a mid-buy reset; offline Spike carrier's buy-phase G drops the gun; no page exceptions`);
  process.exit(0);
 })().catch(e=>{console.error(e);console.error(JSON.stringify(H.errors.slice(0,8)));process.exit(1);});
