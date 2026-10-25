@@ -463,3 +463,7 @@ in-process server; it keeps the VALORANT FEEL block the audit fixture strips, an
   side, no signature recharge), gun or utility; the Reyna soul orb and Jett's Blade Storm refresh still trigger (patch
   1.02), the kill feed still shows it, offline bots get no ult point for it. The 200 kill credits are kept: no source says
   they are withheld (the drafted withholding was dropped). `test-economy.js` section 6.
+- **Friendly fire 1/3** (wiki.playvalorant.com/en-us/Abilities; per ability "friendlyfire: Yes (damage reduced)"): Shock
+  Bolt / Paint Shells / Hot Hands / Blaze / Nanoswarm / Showstopper / Hunter's Fury deal a third to allies; a teamkill is a
+  death with no kill, credits, ult point or score for the caster; the caster's own utility never hurts the caster; Turret /
+  Boom Bot never target allies. `test-ults.js`.
