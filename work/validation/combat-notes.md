@@ -448,3 +448,18 @@ in-process server; it keeps the VALORANT FEEL block the audit fixture strips, an
   (`xhErr`), each line set opens by the error it is set to show. Saved settings: a saved crosshair equal to one of the two
   old shipped defaults (never changed) takes the new defaults; any other saved crosshair keeps every value, the old global
   movement / firing toggles applying to both line sets. `work/test_crosshair_error.cjs`.
+- **Spectator follow**: picking the spectated teammate by index jumped to another teammate whenever someone earlier in the
+  list died; the cam now stays on the followed player until they die or the player cycles, then moves to the next living
+  one after them.
+- **Team wiped = camera under the map** (user report): with every teammate dead the spectate cam fell to the spike / body
+  orbit, whose height was absolute (centre y 1, camera y 12), so on raised native floors (Lotus sites ~6 m) its origin sat
+  under the floor and the wall pull-in left the camera below the map (offline 5v5 attackers wiped after a plant, the
+  post-round, online 5v5). Now, as VALORANT: whole team dead -> follow the living enemies, killer first, Space / click
+  cycles them (label "· ENEMY"; respawn modes excluded); nobody alive -> the orbit is floor-relative (nav floor under the
+  spike / carrier / body). Repro on the old page (raised 6.4 m floor, online path): orbit camera y 5.7, under the floor. Floor guard: every spectate camera stays >= the followed player's nav floor + 1.2 m (a floor face
+  just above a sunk target counts). `work/test_spectate_follow.cjs` (follow logic + the real page on a raised native floor,
+  offline 5v5 after a plant and the online 5v5 path: killer / cycle / third person at eye height, sunk target, orbit).
+- **Run It Back**: a Phoenix killed inside his ult is no kill and no death (no scoreboard kill / death, no ult point either
+  side, no signature recharge), gun or utility; the Reyna soul orb and Jett's Blade Storm refresh still trigger (patch
+  1.02), the kill feed still shows it, offline bots get no ult point for it. The 200 kill credits are kept: no source says
+  they are withheld (the drafted withholding was dropped). `test-economy.js` section 6.

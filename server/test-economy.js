@@ -24,4 +24,23 @@ const next=s=>{const r=s.round;for(let i=0;i<200&&s.round===r;i++)s.step(.05);as
  a.input={};Object.assign(b,{x:0,y:0,z:0,input:{interact:true}});const ub=b.ability.ult;for(let i=0;i<150&&s.roundDelay<=0;i++){b.inputAt=s.time;s.step(.05);}assert.equal(s.roundScores[b.team],1,'defused');assert.equal(b.ability.ult,ub+1,'defuser +1');}
 // 5. overtime: 5000 every round from round 25, sides swap each round
 {const {s,a,b}=mk();for(let i=0;i<24;i++){s.finishRound(i%2?a.team:b.team,'QA');next(s);}assert.equal(s.round,25);for(const u of s.units)assert.equal(u.credits,5000);const atk=s.atk;s.finishRound(a.team,'QA');next(s);assert.equal(s.atk,1-atk);for(const u of s.units)assert.equal(u.credits,5000);}
-console.log('Economy: loss streak 1900/2400/2900 (reset by a win and at half), win 3000, cap 9000, half-time 800 + ult reset, kill 200, plant 300 to every attacker, overtime 5000; ult points for kill, death (once), plant (planter only) and defuse');
+// 6. A Phoenix killed inside Run It Back is no kill and no death in VALORANT (r/VALORANT: "When u kill clove it counts as a kill,
+// she gets a death and the killer gets an ulti charge. If you kill phoenix' ulti none of that happens"); the Reyna soul orb
+// still spawns (patch 1.02). Gun kill and ability kill: no kill / death count, no ult point either side; the 200 kill credits are
+// kept (no source withholds them); the
+// kill feed still shows it; Phoenix comes back. A Jett's Blade Storm still refreshes on it (patch 1.02).
+import {abilityDamage} from './src/abilities.js';
+for(const how of ['gun','ability']){const s=new SpikeSimulation(W,'five','ascent',()=>.5),r=s.add('r','Reyna'),p=s.add('p','Phoenix');s.start(false);s.buy=0;p.team=1-r.team;s.atk=r.team;s.add('x','Sage').team=r.team;s.add('y','Sage').team=p.team;
+ Object.assign(r,{x:0,y:0,z:0,look:0,pitch:Math.atan2(1.2-1.6,8),weapon:'Vandal',ammo:25,fireAt:0,triggerHeld:false,input:{},inventory:{Vandal:25}});Object.assign(p,{x:0,y:0,z:-8,armor:0,protectedUntil:0});
+ p.ability.ult=9;assert.equal(s.command(p,{t:'ab',k:'x'}),true,'Run It Back cast');p.hp=1;const k0=[r.kills,p.deaths,r.credits,r.ability.ult,p.ability.ult,s.scores[r.team]||0],ev=s.events.length;
+ if(how==='gun')assert(s.fire(r));else abilityDamage(s,r,p,50);assert(!p.alive,how+': killed inside Run It Back');
+ assert(s.events.slice(ev).some(e=>e[0]==='k'&&e[2]==='p'),how+': kill feed shows it');assert(s.effects.some(e=>e.kind==='soul'&&e.owner===r.id),how+': Reyna soul orb still spawns');
+ for(let i=0;i<4;i++)s.step(.05);assert(p.alive&&p.hp===100,how+': Phoenix back at the mark');
+ assert.deepEqual([r.kills,p.deaths,r.credits,r.ability.ult,p.ability.ult,s.scores[r.team]||0],[k0[0],k0[1],k0[2]+200,k0[3],k0[4],k0[5]],how+': no kill, death, ult point or score; kill credits kept');
+ // the second, real death counts as usual
+ p.hp=1;Object.assign(p,{x:0,y:0,z:-8,protectedUntil:0,invulnerableUntil:0});Object.assign(r,{fireAt:0,triggerHeld:false,spray:null,look:0,pitch:Math.atan2(1.2-1.6,8)});if(how==='gun')s.fire(r);else abilityDamage(s,r,p,50);assert(!p.alive);s.step(.05);
+ assert.deepEqual([r.kills-k0[0],p.deaths-k0[1],(r.credits-k0[2]-200)%3000,r.ability.ult-k0[3],p.ability.ult-k0[4]],[1,1,200,1,1],how+': the real death after it counts (credits: kill 200, plus the round win)');}
+{const s=new SpikeSimulation(W,'five','ascent',()=>.5),j=s.add('j','Jett'),p=s.add('p','Phoenix');s.start(false);s.buy=0;p.team=1-j.team;s.atk=j.team;s.add('x','Sage').team=j.team;s.add('y','Sage').team=p.team;
+ Object.assign(j,{x:0,y:0,z:0,look:0,pitch:Math.atan2(1.2-1.6,8),fireAt:0,triggerHeld:false,input:{}});Object.assign(p,{x:0,y:0,z:-8,armor:0,protectedUntil:0,hp:1});p.ability.ult=9;s.command(p,{t:'ab',k:'x'});p.hp=1;
+ Object.assign(j.ability,{blades:3,bladesActive:true});assert(s.fireBlade(j));assert(!p.alive,'blade kill inside Run It Back');assert.equal(j.ability.blades,5,'Blade Storm refreshes on a Run It Back kill');assert.equal(j.kills,0);}
+console.log('Economy: loss streak 1900/2400/2900 (reset by a win and at half), win 3000, cap 9000, half-time 800 + ult reset, kill 200, plant 300 to every attacker, overtime 5000; ult points for kill, death (once), plant (planter only) and defuse; a Phoenix killed inside Run It Back is no kill / death / ult point (credits, soul orb, Blade Storm refresh and kill feed kept)');

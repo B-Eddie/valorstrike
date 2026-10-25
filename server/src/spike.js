@@ -14,6 +14,7 @@ export function survivorLoss(sim,u,text){if(!u.alive)return false;if(u.team===si
 export const SPIKE_RADIUS=32.5;export const POST_ROUND=7;export function buyPhaseSeconds(round){return round===1||round===13||round===25?45:30;}
 const prices={Classic:0,Shorty:300,Frenzy:450,Ghost:500,Sheriff:800,Stinger:1100,Spectre:1600,Bucky:850,Judge:1850,Bulldog:2050,Guardian:2250,Phantom:2900,Vandal:2900,Marshal:950,Outlaw:2400,Operator:4700,Ares:1600,Odin:3200};
 import {revealedFor} from './ults.js';
+import {soulKill} from './reyna.js';
 export class SpikeSimulation extends Simulation{
  static LOAD_GRACE=15;
  constructor(...args){super(...args);this.objectiveRoutes=true;this.mode='five';this.round=0;this.atk=0;this.buy=0;this.roundScores=[0,0];this.spike={st:'',carrier:null,x:0,y:0,z:0,t:45,pt:0,dt:0,site:''};this.roundDelay=0;this.losses=[0,0];this.roundEvents=[];this.effects=[];this.effectSeq=0;this.castEvents=[];this.motorFn=Motor.step;this.findPath=path;const base=this.world;this.baseWorld=base;this.world={...base,blocked:(x,z,r,y,h=1.8)=>base.blocked(x,z,r,y,h)||this.effects.some(e=>e.kind==='barrier'&&e.hp>0&&e.until>this.time&&barrierBlocked(e,x,z,r,y,h)),ray:(o,d,max=Infinity)=>{const wall=base.ray(o,d,max),hit=nearestBarrier(this,o,d,Math.min(max,wall));return hit?hit.distance:wall;}};}
@@ -59,8 +60,11 @@ export class SpikeSimulation extends Simulation{
  traceShot(o,d,max){const wall=this.baseWorld.ray(o,d,max),barrier=nearestBarrier(this,o,d,Math.min(max,wall));this.shotBlockedBy=barrier?'barrier':null;return barrier?barrier.distance:wall;}
  shotImpact(o,d,distance,weapon){const barrier=nearestBarrier(this,o,d,distance+.001);if(!barrier||Math.abs(barrier.distance-distance)>.002)return;const range=weapon.damageRanges.find(r=>distance>=r.rangeStartMeters&&distance<r.rangeEndMeters)||weapon.damageRanges.at(-1);barrier.effect.hp-=range.bodyDamage;if(barrier.effect.hp<=0)barrier.effect.until=this.time;}
 
- fireBlade(u){const A=u.ability;if(this.phase!=='game'||this.buy>0||this.roundDelay>0||u.agent!=='Jett'||!A?.bladesActive||A.blades<1)return false;const weapon=u.weapon,ammo=u.ammo,kills=u.kills;u.weapon='Blade Storm';u.ammo=A.blades;try{const fired=this.fire(u);if(fired){A.blades=u.kills>kills?5:u.ammo;A.bladesActive=A.blades>0;}return fired;}finally{u.weapon=weapon;u.ammo=ammo;}}
- fire(u){if(this.buy>0||this.roundDelay>0||u.detainUntil>this.time)return false;const before=u.kills,living=this.units.filter(v=>v.alive),r=super.fire(u),kills=u.kills-before;if(kills>0){u.credits=Math.min(9000,u.credits+200*kills);u.roundKills+=kills;for(const v of living)if(!v.alive)rewardAbilityKill(u,this,v);}return r;}
+ fireBlade(u){const A=u.ability;if(this.phase!=='game'||this.buy>0||this.roundDelay>0||u.agent!=='Jett'||!A?.bladesActive||A.blades<1)return false;const weapon=u.weapon,ammo=u.ammo,kills=u.kills;u.weapon='Blade Storm';u.ammo=A.blades;try{const fired=this.fire(u);if(fired){A.blades=this.lastKills>0?5:u.ammo;A.bladesActive=A.blades>0;}return fired;}finally{u.weapon=weapon;u.ammo=ammo;}}
+ // A Phoenix killed inside Run It Back is not a kill or a death in VALORANT (no kill / death on the scoreboard, no ult point
+ // either side, no signature recharge): the soul orb (Reyna, patch 1.02) and the Blade Storm refresh (Jett, patch 1.02) still trigger.
+ // The 200 kill credits are kept: no source says they are withheld.
+ fire(u){if(this.buy>0||this.roundDelay>0||u.detainUntil>this.time)return false;const before=u.kills,living=this.units.filter(v=>v.alive),r=super.fire(u);this.lastKills=0;if(u.kills>before){for(const v of living)if(!v.alive){this.lastKills++;if(v.runItBack){u.kills--;v.deaths--;this.scores[u.team]=(this.scores[u.team]||0)-1;u.credits=Math.min(9000,u.credits+200);soulKill(this,u,v);continue;}u.credits=Math.min(9000,u.credits+200);u.roundKills++;rewardAbilityKill(u,this,v);}}return r;}
  // A human leaving mid-round: the bot taking the seat takes over their body (alive where they stood, health, loadout,
  // credits, abilities) instead of sitting the round out dead, which cost the team a player for every disconnect.
  // The leaver's live utility (turret, Nanoswarm, Boom Bot, Lockdown windup, Showstopper rocket ...) now belongs to the seat
