@@ -10646,14 +10646,17 @@ function dmGive(n) {
   onSkin(); setScope(false); updHud(); try { blip(700, 0.08, "triangle", 0.15); } catch (e) {}
 }
 function dmPts() { // spawn candidates: nav nodes, else callouts, pushed clear of boxes
+  // xgGet() returns its nodes as N (the lookup missed them, so every legacy map spawned DM / TDM / Escalation units at
+  // Ascent's callouts: outside Bind's walls, several bots stacked on one spot)
   if (DM.pts && DM.pm === FV.map && DM.pb === boxes) return DM.pts;
   let L = [];
-  try { const g = xgGet(), a = g && (g.nodes || g.n || g.pts || g.p); if (Array.isArray(a)) a.forEach((q) => { const x = q && (q.x != null ? q.x : q[0]), z = q && (q.z != null ? q.z : q[1]); if (isFinite(x) && isFinite(z)) L.push([x, z]); }); } catch (e) {}
-  if (L.length < 8) { L = []; try { CALLOUTS.forEach((c) => L.push([c[1], c[2]])); } catch (e) {} }
+  try { const g = xgGet(), a = g && (g.N || g.nodes || g.n || g.pts || g.p); if (Array.isArray(a)) a.forEach((q) => { const x = q && (q.x != null ? q.x : q[0]), z = q && (q.z != null ? q.z : q[1]); if (isFinite(x) && isFinite(z)) L.push([x, z]); }); } catch (e) {}
+  if (L.length < 8) { L = []; try { (xgCallouts() || []).forEach((c) => L.push([c[1], c[2]])); } catch (e) {} } // this map's callouts, never Ascent's
   if (L.length < 8) for (let i = 0; i < 24; i++) { const a = (i / 24) * 6.2832, r = 8 + (i % 3) * 10; L.push([Math.cos(a) * r, Math.sin(a) * r]); }
   if (L.length > 160) L = L.filter((_, i) => i % Math.ceil(L.length / 160) === 0);
   DM.pts = L.map(([x, z]) => xClear(x, z)); DM.pm = FV.map; DM.pb = boxes; return DM.pts;
 }
+function xgCallouts() { const m = FV.map; return m === "bind" ? BIND_CALLOUTS : m === "haven" ? HAVEN_CALLOUTS : m === "split" ? SPLIT_CALLOUTS : m === "lotus" ? LOTUS_CALLOUTS : m === "breeze" ? BREEZE_CALLOUTS : CALLOUTS; } // a legacy map's own callouts (dmPts fallback)
 function dmSpot(me) { // the candidate farthest from every living enemy (small jitter so spawns vary)
   if (FV.tdm) return tdmSpot(me);
   const P = dmPts(), E = [];
