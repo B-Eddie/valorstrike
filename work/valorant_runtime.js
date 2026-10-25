@@ -1,11 +1,51 @@
 // ---- VALORANT ASSET INTEGRATION ----
 // Models and native clips: Riot Games via Kingdom Archives. Map props: public Ascent port.
-var XV = { config: window.VALORANT_ASSETS || {}, cache: {}, agents: {}, guns: {}, fp: null, fpLoad: null, event: null, failures: {} };
+var XV = { config: window.VALORANT_ASSETS || {}, cache: {}, agents: {}, guns: {}, fp: null, fpLoad: null, event: null, failures: {}, preloading: false };
+// Persistent asset cache (Cache Storage): agent/weapon GLBs and locomotion JSON are fetched
+// once per device, then served locally on later visits. Falls back to plain fetch when the
+// Cache API is unavailable.
+const XV_STORE = 'vs-assets-v1';
+async function xvFetch(url) {
+  try {
+    if (window.caches && caches.open) {
+      const c = await caches.open(XV_STORE), hit = await c.match(url);
+      if (hit) return await hit.arrayBuffer();
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(url + ' ' + res.status);
+      try { await c.put(url, res.clone()); } catch (e) {}
+      return await res.arrayBuffer();
+    }
+  } catch (e) { if (e && e instanceof TypeError) throw e; }
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(url + ' ' + res.status);
+  return await res.arrayBuffer();
+}
 function xvLoad(name) {
   if (!XV.cache[name]) XV.cache[name] = new Promise((resolve, reject) => {
-    new THREE.GLTFLoader().load('models/valorant/' + name + '.glb', resolve, undefined, reject);
+    xvFetch('models/valorant/' + name + '.glb').then((buf) => {
+      try { new THREE.GLTFLoader().parse(buf, 'models/valorant/', resolve, reject); } catch (e) { reject(e); }
+    }, reject);
   }).catch((e) => { XV.failures[name] = String(e); delete XV.cache[name]; throw e; });
   return XV.cache[name];
+}
+function xvJson(url) {
+  return xvFetch(url).then((buf) => JSON.parse(new TextDecoder().decode(buf)));
+}
+// Background preload: while the player sits in the lobby, pull every native agent rig,
+// locomotion set and weapon model through the persistent cache so match start is not
+// gated on a 100 MB burst. Sequential with idle yields to keep the lobby responsive.
+// Skipped on mobile / data-saver connections.
+async function xvPreload() {
+  if (XV.preloading) return; XV.preloading = true;
+  try {
+    const conn = navigator.connection || {};
+    if (conn.saveData || /2g/.test(conn.effectiveType || '') || matchMedia('(pointer: coarse)').matches) return;
+    const first = (window.J && window.J.pick) || 'Jett';
+    const agents = Object.keys(XUB_AG).sort((a, b) => (a === first ? -1 : b === first ? 1 : 0));
+    const idle = () => new Promise((r) => (window.requestIdleCallback || setTimeout)(r, 120));
+    for (const ag of agents) { try { await xvAgentLoad(ag); } catch (e) {} await idle(); }
+    for (const k of Object.values(XGM.F)) { try { await xvLoad(k.split('/').pop()); } catch (e) {} await idle(); }
+  } finally { XV.preloading = 'done'; }
 }
 function xvFind(root, name) { const clean = (s) => String(s).replace(/[^a-zA-Z0-9_]/g, ''); let found = null; root.traverse((o) => { if (!found && clean(o.name) === clean(name)) found = o; }); return found; }
 function xvConstraints(root, config, fp) {
@@ -32,7 +72,7 @@ function xvStatic(gl, config) {
 function xvAgentName(n) { const a = xAgOf(n); return XUB_AG[a] ? a : Object.keys(XUB_AG)[String(n || '').split('').reduce((s,c) => s + c.charCodeAt(0), 0) % 12]; }
 function xvAgentLoad(ag) {
   if (XV.agents[ag]) return XV.agents[ag]; const slug = ag.toLowerCase();
-  return XV.agents[ag] = Promise.all([xvLoad(slug), fetch('models/valorant/' + slug + '-locomotion.json').then((r) => { if (!r.ok) throw new Error('locomotion ' + r.status); return r.json(); })]).then(([gl, data]) => {
+  return XV.agents[ag] = Promise.all([xvLoad(slug), xvJson('models/valorant/' + slug + '-locomotion.json')]).then(([gl, data]) => {
     const C = {}, L = {}, U = {}, A = {}, up = /^(Spine[234]|Neck|Head|[LR]_(Clavicle|Shoulder|Elbow|Hand|Thumb|Index|Middle|Ring|Pinky))/;
     data.forEach((j) => { const c = THREE.AnimationClip.parse(j); c.uuid=THREE.MathUtils.generateUUID(); C[c.name] = c; L[c.name] = new THREE.AnimationClip(c.name + '_L', c.duration, c.tracks.filter((t) => !up.test(t.name))); U[c.name] = new THREE.AnimationClip(c.name + '_U', c.duration, c.tracks.filter((t) => up.test(t.name))); });
     ['Pistol_Shoot','Hit_Chest','Hit_Head'].forEach((n) => { A[n] = THREE.AnimationUtils.makeClipAdditive(U[n].clone()); });
@@ -142,3 +182,7 @@ function xvSurfaces(){
 }
 {const go=xGo;xGo=function(){if(!XV.surfaces){XV.surfaces=true;xvSurfaces();}return go.apply(this,arguments);};}
 // ---- END VALORANT ASSET INTEGRATION ----
+// xvPreload kickoff: this block is spliced just before `xReady = true`, so boot is complete
+// here. Delay briefly so first paint and lobby setup are not competing with the fetch burst.
+setTimeout(() => { try { xvPreload(); } catch (e) {} }, 1200);
+
