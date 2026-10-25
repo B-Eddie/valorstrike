@@ -1,0 +1,13 @@
+  rows: [[0,0,"AlphaQA"],[1,1,"BravoQA"],[2,0,"CharlieQA"]]
+phase1 ok: all clients receive 10-unit snapshots; humans AlphaQA+CharlieQA vs BravoQA
+  C pre-drop: alive 1 weapon Bucky pos {"x":0.411,"y":6.326,"z":41.75} dist-to-A 1.2
+phase2a ok: C dropw Bucky -> fw id 2 in A snapshot (online drop path)
+  pick loop: dist 0.72 A {"x":-0.75,"y":6.326,"z":41.75} gun {"x":-1.47,"y":6.28,"z":41.75} lastBo {"t":"bo","ok":true,"n":"Stinger","cr":900,"ld":["Stinger","Classic"],"a":0,"ab":{"c":0,"q":0,"e":1,"ult":0,"cool":{},"anchor":null,"rechargeAt":0,"signatureKills":0,"regrowthPool":100,"regrowthActive":false,"blades":0,"bladesActive":false},"bl":["Stinger"]}
+phase2 ok: online pick accepted (bo ok), A loadout now [Bucky,Classic], floor entry consumed
+phase2b ok: swap drop visible in fw - server owns the full exchange
+  combat 0s dist 69.0 Bhp 100 tl 100.0 phase game A {"x":-0.459,"y":6.284,"z":34.494} B {"x":-0.33,"y":8.274,"z":-34.494}
+  combat 5s dist 43.9 Bhp 100 tl 95.0 phase game A {"x":-0.456,"y":6.284,"z":33.024} B {"x":-0.833,"y":7.334,"z":-10.854}
+phase3 ok: B dead in both clients' snapshots; kill credit to AlphaQA: false
+  B died at {"x":-13.44,"y":5.31,"z":0.018} fw now: [[3,"Stinger",-1.47,6.28,41.75],[4,"Classic",-13.44,5.31,0.02]] kills: {"AlphaQA":0,"BravoQA":0,"CharlieQA":0,"Bot Sage":0,"Bot Omen":1,"Bot Raze":0,"Bot Sova":0,"Bot Breach":0,"Bot Phoenix":0,"Bot Cypher":0}
+phase4 ok: death drop fw id 4 Classic visible to all clients
+TWO-CLIENT PROTOCOL PASS (protocol evidence only, not rendered two-human acceptance)
