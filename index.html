@@ -12657,11 +12657,12 @@ function xrDrape(R){
 // dt is the animation step (the caller clamps it to 0.05 s); wall, when given, is the real time since the
 // previous corpse tick. Corpses advance on real time so a low-fps client (1-10 fps, where 0.05 s per frame
 // left bodies standing upright until the 4 s fade) still sees them collapse. Large steps are split into
-// 0.05 s chunks (each substepped at 120 Hz), never frozen; above 2 s (a pause or hidden tab) the clamped step is used.
+// 0.05 s chunks (each substepped at 120 Hz), never frozen, up to the 4 s corpse lifetime (browser: swiftshader at ~0.4 fps, 2.5 s
+// between frames, left every corpse upright until the fade under the old 2 s / 1 s limits); a longer gap (a pause or hidden tab) uses the clamped step.
 function xrRagdollTick(M,dt,wall){
  if(!M.ragdoll&&M.ragdoll!==null){const pose=[];M.sx.sc.traverse(b=>{if(b.isBone)pose.push([b,b.position.clone(),b.quaternion.clone(),b.scale.clone()]);});M.sx.mx.stopAllAction();for(const [b,p,q,s]of pose){b.position.copy(p);b.quaternion.copy(q);b.scale.copy(s);}let R=null;try{R=xrRagdoll(M);}catch(e){console.warn('ragdoll unavailable',e);}M.ragdoll=R;if(R)R.good=R.list.map(a=>a.p.clone());}
  const R=M.ragdoll;if(!R)return false;
- dt=Number.isFinite(dt)?Math.max(0,Math.min(dt,.05)):0;if(Number.isFinite(wall)&&wall>dt&&wall<=2)dt=Math.min(wall,1);if(!dt)return true;R.time+=dt;
+ dt=Number.isFinite(dt)?Math.max(0,Math.min(dt,.05)):0;if(Number.isFinite(wall)&&wall>dt&&wall<=4)dt=wall;if(!dt)return true;R.time+=dt;
  let ok=true;try{for(let left=dt;ok&&left>1e-6;left-=.05)ok=xrSolve(R,Math.min(.05,left));}catch(e){ok=false;}
  if(!ok){R.list.forEach((a,i)=>{a.p.copy(R.good[i]);a.old.copy(R.good[i]);});try{xrPose(R);}catch(e){}return false;}
  R.list.forEach((a,i)=>R.good[i].copy(a.p));
