@@ -57,6 +57,14 @@ All 12 user-list items now have shipped fixes on instinct. Remaining: ledger 13-
 - Fix shipped (b6ded52): xvPreload background loading now also skips when
   navigator.deviceMemory <= 4 (alongside existing saveData/2g/touch gates). Match-start
   readiness gate (xvReadyAgents) intentionally unchanged - loading guarantees preserved.
-- Residual: on-device acceptance on real low-RAM hardware stays on the long-term ledger
-  (row 1, full-map startup). Headless full-native rendered runs remain impossible in the
-  2GB sandbox; use mid profile + bounded rendered checks instead.
+- Demand reduction shipped (713d987): texture decode cap linked to the quality preset -
+  low = 512px, plus navigator.deviceMemory <= 4 = 1024px at any preset. Intercepts only the
+  (blob, options) createImageBitmap shape THREE r147 ImageBitmapLoader uses for GLTF
+  textures; ~640MB decoded textures -> ~160MB at 512 cap. Models/geometry/animations/gameplay
+  untouched; Safari/Firefox (TextureLoader path) unaffected. 33/33 client suites green.
+- Residual: sandbox heavy+cap measurement attempted 4x (mem3-probe): boot succeeds, but the
+  match-start GLB parse pegs both cores (page main thread never yields to evaluate) and RSS
+  hits the 2GB ceiling before RUNNING. Sandbox saturation is CPU+memory, so full-native
+  acceptance needs a larger container or real hardware; stays on the long-term ledger (row 1).
+  Participant-scoped xvReadyAgents (load only the match's roster kits instead of all 12) is
+  the next identified demand-reduction lever, not yet implemented.

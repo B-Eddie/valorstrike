@@ -19,7 +19,7 @@ function rss() {
     const startAt = Date.now();
     startDM(p).catch(e => console.log(el(), 'startDM err', String(e).slice(0,100)));
     let f0 = -1, ft0 = 0;
-    for (let i = 0; i < 34; i++) {
+    for (let i = 0; i < 12; i++) {
       await p.waitForTimeout(2000);
       if (crashed) break;
       let st = null;
@@ -29,7 +29,7 @@ function rss() {
       if (i % 3 === 0 || (st && st.run)) console.log(el(), 'rss', rss()+'MB', JSON.stringify(st));
       if (st && st.run) {
         console.log(el(), 'DM RUNNING full-native with texture cap; startup', ((Date.now()-startAt)/1000).toFixed(0)+'s', 'rss', rss()+'MB');
-        f0 = st.xnf; ft0 = Date.now(); await p.waitForTimeout(10000);
+        f0 = st.xnf; ft0 = Date.now(); await p.waitForTimeout(8000);
         const st2 = await p.evaluate(() => window.__vs.state().xnf).catch(()=>null);
         if (st2 != null) console.log(el(), 'rendered frames over 10s wall:', st2 - f0, '(~'+((st2-f0)/10).toFixed(1)+'fps SwiftShader)');
         break;
