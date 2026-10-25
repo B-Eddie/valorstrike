@@ -29,4 +29,9 @@ assert(R.findIndex(r=>r===sp)>R.findIndex(r=>!r.media&&r.sel==='.x-sp'),'short .
 for(const r of short){for(const sel of r.sel.split(',').map(s=>s.trim())){if(!/^#(pre|xAg)/.test(sel))continue;
  const props=r.body.split(';').map(d=>d.split(':')[0].trim()).filter(Boolean);
  for(const later of R.filter(x=>x.pos>r.pos&&!x.media&&x.sel.split(',').map(s=>s.trim()).includes(sel)))for(const p of props)assert(decl(later,p)==null,`${sel}{${p}} short-screen rule is overridden by a later base rule`);}}
+// (c) DM/TDM leaderboard at 640x360 (browser-found): base top:180px + 173 px tall covered the credits/weapon/ammo block whose top is
+// 96 px above the bottom; the short rule sits it above that block (bottom >= 100px, top auto) and compacts it so 5 rows fit.
+{const lb=R.find(r=>r.media&&/max-height:\s*480px/.test(r.media)&&r.sel.trim()==='.x-dmlb');assert(lb,'.x-dmlb short-screen rule missing');
+ assert.equal(decl(lb,'top'),'auto');assert(parseInt(decl(lb,'bottom'))>=100,'leaderboard must clear the bottom-right weapon block');
+ for(const later of R.filter(x=>x.pos>lb.pos&&!x.media&&x.sel.split(',').map(s=>s.trim()).includes('.x-dmlb')))assert(decl(later,'top')==null&&decl(later,'bottom')==null,'.x-dmlb short rule overridden by a later base rule');}
 console.log('short layout ok:',short.length,'max-height:560px rules');
