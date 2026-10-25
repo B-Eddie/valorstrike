@@ -15,7 +15,7 @@ const SIZES=(process.env.SIZES||'1280x720,640x360,390x844').split(',').map(s=>s.
 // hark-perf browser pass (762e33c agent frustum cull, d71a3f3 bot variety), headless Chromium (SwiftShader, LOW):
 // A. Ascent 5v5, a bot 1-3 m from a probe camera at eye height; the camera turns through 360 deg in 10 deg steps and renders
 //    with the real renderer and scene. Per step and per bot mesh: expected = any skinned vertex of the mesh (sampled, current pose) projects inside the view
-//    (in front of the camera, NDC within +-1.05); drawn = the mesh's onBeforeRender fired. A pop = expected but not drawn.
+//    (in front of the camera, NDC within +-1; bones use the same test and are only reported); drawn = the mesh's onBeforeRender fired. A pop = expected but not drawn.
 // B. The bot is killed (real kill path): the ragdolling corpse, kept in view, must be drawn every frame until its fade.
 // C. Bot spread: Ascent and Bind, the attacking side's bots (allies when the player attacks, else the enemy bots), bot AI running, attacker positions sampled over ~30 s of game
 //    time; reports per-attacker paths, final pairwise distances and how many distinct sites/lanes they ended near.
@@ -39,7 +39,7 @@ const SIZES=(process.env.SIZES||'1280x720,640x360,390x844').split(',').map(s=>s.
  await X(`window.__pc=new THREE.PerspectiveCamera(camera.fov||70,640/360,.05,500);window.__drawn=new Set();
   window.__hook=b=>{const L=[];b.g.traverse(o=>{if(o.isSkinnedMesh&&!o.__hk){o.__hk=1;const f=o.onBeforeRender;o.onBeforeRender=function(){window.__drawn.add(this.uuid);if(f)return f.apply(this,arguments);};}if(o.isSkinnedMesh)L.push(o);});return L;};
   window.__shot=(b)=>{const L=window.__hook(b);window.__drawn.clear();window.__probe=1;try{renderer.render(scene,window.__pc);}finally{window.__probe=0;}const v=new THREE.Vector3(),r=[];
-   const inV=w=>{const cs=w.clone().applyMatrix4(window.__pc.matrixWorldInverse);if(cs.z>=-.05)return false;const q=w.clone().project(window.__pc);return Math.abs(q.x)<=1.05&&Math.abs(q.y)<=1.05;};
+   const inV=w=>{const cs=w.clone().applyMatrix4(window.__pc.matrixWorldInverse);if(cs.z>=-.05)return false;const q=w.clone().project(window.__pc);return Math.abs(q.x)<=1&&Math.abs(q.y)<=1;};
    for(const m of L){if(!m.visible){r.push({hid:1});continue;}let expB=false;const bs=m.skeleton?m.skeleton.bones:[];for(const bn of bs){bn.getWorldPosition(v);if(inV(v)){expB=true;break;}}
     // expected = a skinned vertex of this mesh in view (the skeleton is shared by every mesh of the rig, so a bone in view says nothing about this mesh's own vertices)
     let exp=false;const pos=m.geometry&&m.geometry.attributes.position,bt=m.applyBoneTransform||m.boneTransform;if(pos&&bt){const n=pos.count,st=Math.max(1,Math.floor(n/600));for(let i=0;i<n&&!exp;i+=st){v.fromBufferAttribute(pos,i);bt.call(m,i,v);v.applyMatrix4(m.matrixWorld);if(Number.isFinite(v.x+v.y+v.z)&&inV(v))exp=true;}}
