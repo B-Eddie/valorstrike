@@ -273,6 +273,29 @@ floor contact retained as NUMERIC evidence only (flat bg has no ground reference
   568x320, 640x360, AND a larger size (e.g. 1280x720). Do not chase single offsets.
 - Queue priority: protocol/stairs/skirt/mobile/performance FIRST.
 
+
+## 2026-10-25 09:47 - two-client protocol check: phases 1-3 GREEN, phase 4 open
+- server/test-two-client.js (standalone, not chained) against wrangler dev :8787, lotus five-mode.
+- PASS phase1: both ws clients receive 10-unit snapshots; exactly AlphaQA/BravoQA human; opposite teams.
+- PASS phase2: B (walking mid) died ~7s post-buy; death visible in BOTH clients' snapshots.
+  Kill credit went to a bot (Bot Raze/Cypher in samples), NOT AlphaQA - A-vs-B duel via inputs
+  not yet demonstrated; bots intercept B mid-map first.
+- PASS phase3: death drop [id 2 Classic] at B's death position in BOTH clients' fw
+  (server-owned online floor confirmed - the corrected pickup scope).
+- OPEN phase4 (A picks the drop via pick/bo): flaky - A must cross live bot war; round end
+  clears the floor (1v1 impossible: roundDelay blocks pick, newRound clears floor - teammate
+  bots required for the round to continue, exactly what makes the crossing dangerous).
+  Next-wake plan: THREE-client variant - A+C join team0 as teammates (join order assigns
+  teams 0,1,0), C buys a cheap primary round 2 and dropw's beside A in-spawn during buy
+  phase (floorTick: "buy phase included: teammates hand guns"); A picks deterministically.
+- FINDING (not a production bug): server idle-closes ready sessions after 15s without
+  messages; dead/spectating clients must keepalive. Real client sends inputs at 20Hz
+  unconditionally (index.html:13053), so production is unaffected; test client now pings.
+- Learnings: room code must match ^[A-HJ-NP-Z2-9]{6}$; fw rows are arrays [id,w,x,y,z];
+  Classic is semi-auto server-side (trigger release between shots); nav-graph waypoint
+  walking works for scripted clients (straight-line inputs snag on geometry).
+- PROTOCOL EVIDENCE ONLY - not rendered two-human gameplay acceptance (parent standing rule).
+
 ## NEXT (queued 08:56 EDT)
 1. Online two-client PROTOCOL check (label: protocol evidence, not rendered two-human
    acceptance): `npm run dev` (wrangler local :8787, ALLOW_LOCAL_ORIGIN) + a ws script in the
