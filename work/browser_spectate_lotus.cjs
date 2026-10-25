@@ -39,7 +39,7 @@ const SIZES=(process.env.SIZES||'1280x720,640x360,390x844').split(',').map(s=>s.
  // set up: attack side, Spike planted on the site with the highest floor, enemies placed on nav nodes on that site floor
  const st=JSON.parse(await X(`JSON.stringify((()=>{const C=nmActive();FV.buy=0;try{buyMenu(false)}catch(e){}timeLeft=999;
   let best=null;for(const k of Object.keys(SITES)){const x0=SITES[k][0],z0=SITES[k][1],f=nmHeight(C,x0,z0,30);if(Number.isFinite(f)&&(!best||f>best.f))best={k,x0,z0,f};}
-  const {k,x0,z0,f}=best;FV.sp.st="plant";FV.sp.site=k;FV.sp.x=x0;FV.sp.z=z0;FV.sp.c=null;FV.sp.t=45;spike.position.set(x0,f+.4,z0);
+  const {k,x0,z0,f}=best;FV.sp.st="plant";FV.sp.site=k;FV.sp.x=x0;FV.sp.z=z0;FV.sp.c=null;FV.sp.t=9999;/* fuse held: SwiftShader frames take minutes of real time and the offline clock is real time, a 45 s fuse detonated and killed the enemies before the Space check */spike.position.set(x0,f+.4,z0);
   const N=C.nav.nodes.filter(n=>Math.hypot(n[0]-x0,n[2]-z0)<9&&Math.abs(n[1]-f)<.8);
   bots.forEach((b,i)=>{const n=N[(i*7)%Math.max(1,N.length)]||[x0+i,f,z0];b.alive=true;b.hp=100;b.g.position.set(n[0],n[1],n[2]);if(b.pos&&b.pos.set)b.pos.set(n[0],n[1],n[2]);b.nt=true;});
   allies.forEach(a=>{a.nt=true;});return {site:k,x0,z0,floor:f,nodes:N.length,atk:FV.atk,running};})())`));

@@ -93,3 +93,31 @@ vendor/bot-routes.cjs existed but was not wired in.
   "death forced after 30 s").
 - Browser-verify: attackers fan out (one lurker), hold distinct spots on site, defenders split across sites per
   round, no visible stacking/bumping in chokes; online (local server) bots do the same.
+
+
+## Lag: GC in native bot nav hot paths
+Cause: nmNear runs for every nmHeight sample (nmSegment probes every 0.18 m along each candidate hop, the ground
+snap runs per bot per frame) and built a fresh 'gx,gz' string per probed cell; nmPath allocated three node-sized
+typed arrays per uncached search and two [i,s] pairs per heap push; nmBlocked built two closures and a callback
+object per call (also per nmSegment sample).
+- nmNear: numeric cell keys (C.cn, built once from C.cells with the same per-cell order). nmPath: per-map scratch
+  cost/prev/closed arrays (filled per search) and an index/score two-array heap. nmBlocked: one reused callback object.
+- Test: work/test_nav_gc.cjs: the previous nmNear / nmPath / nmBlocked are embedded as the reference; real Ascent and
+  Bind graphs give identical nodes (4500 queries each: plain, height-weighted, y-banded) and identical routes (with and
+  without banned edges, unreachable ends); a 20000-query + 40-search workload runs with fewer young-gen GCs.
+
+
+## Lag: character draw calls (agent culling)
+Cause: every VALORANT agent mesh was frustumCulled=false (skinned bounds are wrong once animated), so each bot's and
+ally's 2-6 skinned meshes (breach 5, chamber 6, jett 4, killjoy 5, omen 2 primitives) were drawn every frame even
+behind the camera. Weapons are 3-6 single-material, untextured primitives each (one draw per material already; merging
+them would need vertex colours and would break the per-material skin recolour), and per-unit agent materials are
+mutated per unit (hit flash emissive, corpse fade), so shared materials would not cut draw calls; culling does.
+- xvCull (work/valorant_runtime.js): each skinned geometry gets one cull sphere measured once from the skinned idle
+  pose in mesh space (r149 boneTransform / r151+ applyBoneTransform), radius = the full idle diagonal (about twice the
+  half-height); set on the geometry (r149 Frustum) and the mesh (r151+). xDie turns culling off for corpses (ragdolls).
+- Test: work/test_agent_cull.cjs (three r160 from server/node_modules; GLTF/FBX-style z-up cm rig under a rotated 0.01
+  armature): idle/crouch/lying/reach poses at three spots stay within 57 % of the radius, a unit behind the camera is
+  culled, one in view (and one hugging the camera) is drawn, one measurement per geometry.
+- Browser-verify: no agent popping at screen edges (turn quickly past bots at 1-3 m), corpses never vanish, Phoenix
+  Run It Back / ult rigs, spectator cam; draw calls (renderer.info.render.calls) drop when facing away from bots.
