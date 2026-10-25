@@ -16,7 +16,7 @@ function mk(blocked){
  const nodes=[[0,0,0],[1,0,0],[2,0,0],[3,0,0],[4,0,0],[5,0,0],[6,0,0],[7,0,0],[8,0,0],[9,0,0],[10,0,0],[11,0,0]];
  const ctx={nodes,nmNear:()=>0,nmPath:(C,s,e)=>C.path,nmSegment:(C,p,n)=>!blocked.has(n[0])};
  ctx.nmHeight=(C,x,z,y)=>ctx._drop&&x>0.5?y-2:y; ctx.nmBlocked=(C,x,z)=>!!(ctx._wall&&x>0.5);
- ctx.window=ctx;vm.createContext(ctx);
+ ctx.window=ctx;ctx._now=1000;ctx.performance={now:()=>ctx._now};vm.createContext(ctx);
  vm.runInContext(body+';globalThis.api=(u,gx,gz)=>nmNext({nav:{nodes}},u,gx,gz);',ctx);
  return {ctx,nodes};}
 const me=()=>({g:{position:{x:0,y:0,z:0}}});
@@ -41,6 +41,15 @@ const me=()=>({g:{position:{x:0,y:0,z:0}}});
  assert(seen&&seen.has('0>1'),'re-plan passes the blacklist to nmPath');}
 {const t=mk(new Set());t.ctx.nmPath=()=>[0,1,2,3];const u=me();u.xf=2;u.xfE='0>1';
  t.ctx.api(u,50,50);assert.equal(u.xf,0);assert.equal(u.xfE,null,'a validating first hop resets the failure streak');}
+{const t=mk(new Set([1,2,3]));t.ctx._wall=true;t.ctx.nmPath=()=>[0,1,2,3];
+ const u=me();t.ctx.api(u,50,50);t.ctx.api(u,50,50);t.ctx.api(u,50,50);
+ assert(u.xb&&u.xb.has('0>1'),'ban recorded');
+ t.ctx._now+=31000;t.ctx.api(u,50,50);
+ assert(!u.xb.has('0>1'),'expired ban is purged and the edge is retried');}
+{const t=mk(new Set([1,2,3]));t.ctx._wall=true;const calls=[];t.ctx.nmPath=(C,a,e,banned)=>{calls.push(banned?banned.size:0);return [];};
+ const u=me();u.xb=new Map([['0>1',t.ctx._now+60000]]);t.ctx.api(u,50,50);
+ assert.equal(u.xb.size,0,'bans that consume every route are dropped, never an all-paths-banned park');
+ assert(calls.length===2&&calls[0]===1&&calls[1]===0,'exhaustion retries once without bans');}
 assert(src.includes("banned.has(a+'>'+b)"),'nmPath skips banned directed edges');
 assert(src.includes('Never place a unit on a trap node'),'nmPlace rejects zero-exit trap nodes');
 console.log('TDM/DM hunt goal keys on FV.dm; native nmNext validates the first hop, skips blocked hops, and steers at the goal when no hop clears');
