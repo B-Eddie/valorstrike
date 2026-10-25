@@ -33,9 +33,9 @@ const fails=[];const fail=s=>{fails.push(s);if(VERBOSE)console.log('FAIL',s);};c
  await tap('KeyQ');eq(xe('J.eq&&[J.eq.k,J.eq.st]'),['q','draw'],'Q equips Hot Hands (no instant cast)');eq(xe('J.q'),1,'equip spends nothing');
  await adv(60);eq(xe('document.getElementById("jQ").classList.contains("x-eq")'),true,'HUD marks the equipped slot');
  const a0=xe('ammo');await click(0);eq(xe('ammo'),a0,'click during the draw does not fire the gun');
- await adv(900);eq(xe('J.q'),0,'buffered FIRE throws once the ability is out');eq(xe('ammo'),a0,'no gun fire through the cast');
+ await adv(1100);eq(xe('J.q'),0,'buffered FIRE throws once the ability is out (0.8 s equip + 0.2 s release)');eq(xe('ammo'),a0,'no gun fire through the cast');
  await adv(600);eq(xe('J.eq'),null,'gun back up after the recovery');
- await tap('KeyC');await adv(700);eq(xe('J.eq&&J.eq.st'),'ready','Blaze ready in hand');
+ await tap('KeyC');await adv(600);eq(xe('J.eq&&J.eq.st'),'draw','Blaze still coming out at 0.6 s (0.8 s wiki equip time)');await adv(400);eq(xe('J.eq&&J.eq.st'),'ready','Blaze ready in hand');
  await tap('Digit2');eq(xe('J.eq'),null,'weapon key unequips');eq(xe('J.c'),1,'unequip keeps the charge');
  await tap('KeyC');await adv(100);await tap('KeyE');eq(xe('J.eq&&J.eq.k'),'e','another ability key switches the equipped ability');
  await tap('KeyE');eq(xe('J.eq'),null,'same key again puts it away');
@@ -43,18 +43,20 @@ const fails=[];const fail=s=>{fails.push(s);if(VERBOSE)console.log('FAIL',s);};c
  pick('Sage');xe('player.hp=60;true');await tap('KeyE');await adv(600);await click(2);await adv(500);eq(xe('!!(J.hl&&J.hl.tg===player)'),true,'Sage ALT FIRE heals herself');eq(xe('J.e'),0,'heal spent');
  pick('Jett');await tap('KeyQ');eq(xe('J.eq'),null,'Jett Updraft is INSTANT (no equip)');eq(xe('J.q'),0,'Updraft cast on press');
  xe('J.cd.c=0;J.c=2;true');const ns=xe('J.smokes.length');await tap('KeyC');eq(xe('J.smokes.length'),ns+1,'Cloudburst INSTANT smoke');const st=xe('J.smokes[J.smokes.length-1].t');if(!(st<=2.5&&st>2.2))fail('Cloudburst lasts 2.5 s (wiki), timer '+st);
+ // ---- per-ability wiki equip times (XAB_EQT) ----
+ eq(xe('[XAB_EQT.Breach.q,XAB_EQT.Phoenix.q,XAB_EQT.Sage.e,XAB_EQT.Reyna.c,XAB_EQT.Killjoy.c,xEqT("zz")]'),[1.1,0.8,0.5,0.77,0.74,0.5],'equip times from the wiki ability pages');
  // ---- per-ability windups (wiki): client XAB_WIND == server windups.js WINDUP; FIRE -> effect = hand release + fuse ----
  {const src=require('fs').readFileSync(require('path').join(__dirname,'../server/src/windups.js'),'utf8'),sw=Function('return '+src.match(/WINDUP=(\{[^}]*\})/)[1])();
   eq(xe('JSON.parse(JSON.stringify(XAB_WIND))'),sw,'client XAB_WIND == server WINDUP');eq(xe('XABT.rel'),0.2,'hand release 0.2 s');
-  pick('Breach');await tap('KeyE');await adv(600);await click(0);await adv(260);
+  pick('Breach');await tap('KeyE');await adv(1000);await click(0);await adv(260);
   const fq=xe('BC.fq.map(q=>[q.k,+q.t.toFixed(2)])');if(!(fq.length===1&&fq[0][0]==='fl'&&fq[0][1]>0.5&&fq[0][1]<=0.9))fail('Fault Line waits out its windup after the release: '+JSON.stringify(fq));
   await adv(1000);eq(xe('BC.fq.length'),0,'Fault Line fired after 1.1 s');
-  xe('J.ult=K().u;J.eq=null;true');await tap('KeyX');await adv(600);await click(0);await adv(260);eq(xe('BC.fq.map(q=>q.k)'),['rt'],'Rolling Thunder waits out its 1.2 s windup');await adv(1100);eq(xe('BC.fq.length'),0,'Rolling Thunder fired');
-  pick('Phoenix');await tap('KeyE');await adv(600);await click(0);await adv(260);const ow=xe('J.orbs.length?+J.orbs[J.orbs.length-1].w.toFixed(2):null');eq(ow,0.4,'Curveball pops 0.4 s after the release (0.6 s windup)');
+  xe('J.ult=K().u;J.eq=null;true');await tap('KeyX');await adv(1300);await click(0);await adv(260);eq(xe('BC.fq.map(q=>q.k)'),['rt'],'Rolling Thunder waits out its 1.2 s windup');await adv(1100);eq(xe('BC.fq.length'),0,'Rolling Thunder fired');
+  pick('Phoenix');await tap('KeyE');await adv(1000);await click(0);await adv(260);const ow=xe('J.orbs.length?+J.orbs[J.orbs.length-1].w.toFixed(2):null');eq(ow,0.4,'Curveball pops 0.4 s after the release (0.6 s windup)');
   pick('Chamber');await tap('KeyX');await adv(100);if(!(xe('BC.cd')>2))fail('Tour De Force 2.3 s equip: BC.cd '+xe('BC.cd'));xe('BC.eq="";BC.td=0;BC.cd=0;true');
   pick('Raze');await tap('KeyX');await adv(100);if(!(xe('RS.ssd')>1))fail('Showstopper 1.4 s equip: RS.ssd '+xe('RS.ssd'));xe('RS.ss=0;RS.ssd=0;true');}
  // ---- Sova bow: HOLD FIRE charges, ALT FIRE adds bounces (0..2), release throws; shared vendor/sova-bolt.cjs path ----
- {pick('Sova');xe('J.q=2;J.cd.q=0;true');await tap('KeyQ');await adv(600);eq(xe('J.eq&&J.eq.st'),'ready','Shock Bolt drawn');
+ {pick('Sova');xe('J.q=2;J.cd.q=0;true');await tap('KeyQ');await adv(1000);eq(xe('J.eq&&J.eq.st'),'ready','Shock Bolt drawn');
   H.mouse(0,true);await adv(500);eq(xe('J.eq&&J.eq.st'),'hold','FIRE held: charging');const h=xe('J.eq.h');if(!(h>0.3&&h<0.7))fail('hold time '+h);eq(xe('J.q'),2,'nothing thrown while held');
   await click(2);await click(2);eq(xe('J.eq.bn'),2,'ALT FIRE twice: two bounces');eq(xe('document.getElementById("xBow").classList.contains("on")'),true,'bow HUD shown');
   eq(xe('[...document.querySelectorAll("#xBow u.on")].length'),2,'bow HUD: two bounce pips');const bw=xe('parseFloat(document.querySelector("#xBow b").style.width)');if(!(bw>30))fail('bow HUD charge bar '+bw);
@@ -79,7 +81,7 @@ const fails=[];const fail=s=>{fails.push(s);if(VERBOSE)console.log('FAIL',s);};c
   return {gy:+(w.y-c.y).toFixed(3),gl:+gun.position.y.toFixed(3),gv:cv(gun),fp:F&&F.root?cv(F.root):null,arms:[VMA.R,VMA.L].filter(Boolean).some(cv),hand:cv(h),item:cv(it),on:XEQV.on,eq:J.eq&&J.eq.st};})()`;
  const v0=xe(VM);if(VERBOSE)console.log('vm idle',v0);
  if(v0.hand||v0.item)fail('ability hand visible before equip '+JSON.stringify(v0));
- await tap('KeyQ');await adv(700);const v1=xe(VM);if(VERBOSE)console.log('vm equipped',v1);
+ await tap('KeyQ');await adv(1000);const v1=xe(VM);if(VERBOSE)console.log('vm equipped',v1);
  eq(v1.eq,'ready','Hot Hands in hand for the viewmodel check');
  if(!(v0.gl-v1.gl>0.35))fail(`gun not lowered out of view while equipped: local y ${v0.gl} -> ${v1.gl}`);
  if(v1.fp)fail('native first-person rig still visible while an ability is equipped');
@@ -95,5 +97,5 @@ const fails=[];const fail=s=>{fails.push(s);if(VERBOSE)console.log('FAIL',s);};c
  await tap('KeyC');await adv(700);await tap('Digit2');await adv(900);const v3=xe(VM);if(Math.abs(v3.gl-v0.gl)>0.06||v3.hand)fail('weapon key did not bring the gun back '+JSON.stringify(v3));
  if(xe('XEQV.err||null'))fail('ability viewmodel error: '+xe('XEQV.err'));
  if(H.errors.length>errs0)fail('page errors: '+H.errors.slice(errs0).map(e=>String(e&&e.message||e)).join(' | '));
- if(fails.length){console.log(fails.join('\n'));process.exit(1);}console.log('ability equip: binds, migration, HUD labels, equip -> fire flow, first-person equip viewmodel, wiki windups, Sova bow charge + bounces, kit table ok');process.exit(0);
+ if(fails.length){console.log(fails.join('\n'));process.exit(1);}console.log('ability equip: binds, migration, HUD labels, equip -> fire flow, first-person equip viewmodel, wiki equip times + windups, Sova bow charge + bounces, kit table ok');process.exit(0);
 })().catch(e=>{console.error(e);process.exit(1);});

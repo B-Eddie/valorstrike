@@ -134,6 +134,14 @@ client `XAB_WIND` (index.html, next to `ABI_M`) and server `WINDUP` (`server/src
 | Raze Showstopper | 1.4 s | launcher equip | clicks before 1.4 s do nothing (`RS.ssd`) | not enforced (the rocket intent is sent on the click) |
 | Chamber Tour De Force | 2.3 s | Operator equip | `BC.cd` 2.3 s | `u.fireAt` +2.3 s |
 
+Equip times: each ability page's "Equip time" row (wiki.playvalorant.com/en-us/<Ability>, fetched 2026-10-25) is the
+draw in `J.eq` (`XAB_EQT` / `xEqT`, the viewmodel's gun-down / hand-up follows it): Aftershock 0.9, Flashpoint 1.1,
+Fault Line 0.8, Rolling Thunder 1.1, Blaze / Hot Hands / Curveball 0.8, Owl Drone 0.9, Shock / Recon Bolt / Hunter's Fury
+0.8, Barrier Orb 0.8, Slow / Healing Orb 0.5, Resurrection 0.8, Leer 0.77, Shrouded Step 0.5, Paranoia 1.1, Dark Cover
+0.6, Nanoswarm 0.74, Alarmbot 0.85, Turret 1.1, Lockdown 0.8, Boom Bot 1.1, Paint Shells 0.8, Guiding Light / Seekers 0.8,
+Trapwire / Spycam 0.8, Trademark 1.0, Rendezvous 0.8 s (Blast Pack, Cyber Cage, Neural Theft list none: 0.5 s). The
+pages also list unequip times (mostly 0.7 s); the gun recovery stays the generic 0.45 s (`XABT.rec`, server `XAB_REC`).
+
 Thrown / cast abilities count the windup from the FIRE click: the equip flow's 0.2 s hand release (`XABT.rel` =
 `XAB_REL`) happens first, so the effect fuse after the cast is `windup - 0.2` (`xWf` / `wf`). Bots cast without the hand
 release and use the full windup. Not changed: Jett Tailwind 1 s (Tailwind keeps its instant dash), Sage Barrier 2 s

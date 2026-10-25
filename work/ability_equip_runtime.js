@@ -20,14 +20,22 @@ try { if (xAbMigrate(XS.keys)) xKbSave(); } catch (e) {}
 { const r0 = xKbRender; xKbRender = function () { const v = r0.apply(this, arguments); try { xAbKeyLbl(); } catch (e) {} return v; }; }
 try { xAbKeyLbl(); } catch (e) {}
 // ---- Equip-then-fire (Valorant ability use flow) ----
-// Press an ability key -> the ability is EQUIPPED (gun lowered, ability item drawn, XABT.draw s). FIRE (left click) throws /
+// Press an ability key -> the ability is EQUIPPED (gun lowered, ability item drawn over its wiki equip time, XAB_EQT). FIRE (left click) throws /
 // places it, ALT FIRE (right click) casts its alternate (underhand / curve right / heal self ...). The throw leaves the hand
 // after XABT.rel s; the gun comes back over XABT.rec s. The gun cannot fire from equip until it is back up. A weapon key
 // (1 / 2 / 3, wheel) or the same ability key again puts it away; another ability key switches to that ability. Abilities
 // Valorant casts INSTANTLY (Jett Cloudburst / Updraft / Tailwind, Reyna Devour / Dismiss / Empress, Phoenix Run It Back ...)
 // and recasts of an ability already out (detonate, trigger, return, drone / camera control, the ult guns) keep the
 // immediate key press. A click during the draw is buffered; a cast the kit refuses (no target) stays in hand.
-const XABT = { draw: 0.5, rel: XAB_REL, rec: 0.45 }; // rel: the hand release, shared with the wiki windups (XAB_WIND / xWf)
+const XABT = { draw: 0.5, rel: XAB_REL, rec: 0.45 }; // rel: the hand release, shared with the wiki windups (XAB_WIND / xWf); draw: fallback equip time
+// Equip times (seconds from the key press until the ability is in hand and FIRE works), from each ability's wiki page
+// ("Equip time" row, wiki.playvalorant.com/en-us/<Ability>, fetched 2026-10-25). Not listed: Blast Pack, Cyber Cage,
+// Neural Theft -> XABT.draw (0.5 s).
+const XAB_EQT = {
+  Phoenix: { c: 0.8, q: 0.8, e: 0.8 }, Sova: { c: 0.9, q: 0.8, e: 0.8, x: 0.8 }, Sage: { c: 0.8, q: 0.5, e: 0.5, x: 0.8 }, Reyna: { c: 0.77 },
+  Omen: { c: 0.5, q: 1.1, e: 0.6 }, Killjoy: { c: 0.74, q: 0.85, e: 1.1, x: 0.8 }, Raze: { c: 1.1, e: 0.8 }, Skye: { e: 0.8, x: 0.8 },
+  Breach: { c: 0.9, q: 1.1, e: 0.8, x: 1.1 }, Cypher: { c: 0.8, e: 0.8 }, Chamber: { c: 1.0, e: 0.8 } };
+function xEqT(k) { const t = XAB_EQT[J.pick]; return (t && t[k]) || XABT.draw; }
 const XAB_EQ = { // agent -> key -> ready-to-equip test (a charge to spend and nothing of it out waiting for a recast); mirrors server ABILITY_EQUIP
   Phoenix: { c: () => J.c >= 1 && J.cd.c <= 0, q: () => J.q >= 1 && J.cd.q <= 0, e: () => J.e >= 1 && J.cd.e <= 0 },
   Sova: { c: () => J.c >= 1 && J.cd.c <= 0 && !J.dr, q: () => J.q >= 1 && J.cd.q <= 0 && !J.dr, e: () => J.e >= 1 && !J.dr, x: () => !(J.hf > 0) && J.ult >= K().u && !J.dr },
@@ -75,7 +83,7 @@ jKey = function (code) {
   if (J.eq && J.eq.code === code && J.eq.st !== "rec") { if (J.eq.st !== "rel" && J.eq.st !== "hold") J.eq = null; return true; } // same key again: put it away
   if (J.eq && J.eq.st === "rel") return true; // mid-throw
   if (J.eq && J.eq.st === "hold") return true; // drawing the bow / holding: finish it first
-  if (player && player.hp > 0 && xEqMode(code)) { J.eq = { k: code[3].toLowerCase(), code, st: "draw", t: XABT.draw, alt: false, buf: 0, h: 0, bn: 0 }; fireHeld = false; try { setScope(false); } catch (e) {} return true; }
+  if (player && player.hp > 0 && xEqMode(code)) { J.eq = { k: code[3].toLowerCase(), code, st: "draw", t: xEqT(code[3].toLowerCase()), d0: xEqT(code[3].toLowerCase()), alt: false, buf: 0, h: 0, bn: 0 }; fireHeld = false; try { setScope(false); } catch (e) {} return true; }
   if (J.eq) J.eq = null; // a quick-cast / recast puts away whatever was out
   return xEqKey0.apply(this, arguments);
 };
@@ -127,11 +135,11 @@ function xEqView(dt) {
   const q = J.eq; XEQV.t += dt;
   if (!q || !running || !player || player.hp <= 0) { if (XEQV.on) { XEQV.on = false; if (XEQV.item) XEQV.item.visible = false; if (!XCA.on && XCA.h) XCA.h.visible = false; if (XCA.gl && !XCA.on) XCA.gl.material.opacity = 0; } return; }
   const sm = (x) => { x = Math.max(0, Math.min(1, x)); return x * x * (3 - 2 * x); }, ty = xEqType(q.k);
-  const g = sm(q.st === "draw" ? 1 - q.t / XABT.draw : q.st === "rec" ? q.t / XABT.rec : 1); // gun-down amount
+  const g = sm(q.st === "draw" ? 1 - q.t / (q.d0 || XABT.draw) : q.st === "rec" ? q.t / XABT.rec : 1); // gun-down amount
   gun.position.y -= g * 0.42; gun.position.x += g * 0.06; gun.rotation.x -= g * 0.8; gun.rotation.z += g * 0.45; knife.position.y -= g * 0.42; // vmTick sets these absolutely each frame
   const F = typeof XV !== "undefined" && XV.fp; if (F && F.root) { F.root.position.y -= g * 0.4; if (g > 0.9) F.root.visible = false; }
   const h = xCaHand(), it = xEqItem(ty); XEQV.on = true;
-  const up = sm(q.st === "draw" ? (1 - q.t / XABT.draw) * 1.4 - 0.4 : q.st === "rec" ? (q.t / XABT.rec) * 1.6 - 0.6 : 1); // hand rises behind the gun going down
+  const up = sm(q.st === "draw" ? (1 - q.t / (q.d0 || XABT.draw)) * 1.4 - 0.4 : q.st === "rec" ? (q.t / XABT.rec) * 1.6 - 0.6 : 1); // hand rises behind the gun going down
   const p = q.st === "rel" ? sm(1 - q.t / XABT.rel) : q.st === "rec" ? 1 : 0, sway = Math.sin(XEQV.t * 1.6) * 0.004;
   let x = 0.2, y = -0.2 + sway, z = -0.4, rx = -1.0; const rz = 0.3;
   if (ty === "throw") { if (q.alt) { y += -0.08 + 0.1 * p; z -= 0.22 * p; rx += 0.6 - 0.9 * p; } else { y += 0.05 - 0.09 * p; z += 0.08 - 0.32 * p; rx += 0.5 - 1.0 * p; } } // cocked overhand / low underhand, then the swing
