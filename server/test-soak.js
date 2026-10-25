@@ -29,6 +29,16 @@ const walk=(s,u,look,seconds,each=()=>{})=>{let low=Infinity;for(let k=0;k<secon
  [b.x,b.y,b.z]=at;assert(W.blocked(b.x,b.z,.4,b.y,1.8),'start is inside collision');const p=s.freeNode(b);assert(p&&p[1]<at[1]-2,'free node below');
  for(let k=0;k<80;k++){[t.x,t.y,t.z]=[0.25,8.07,-49.75];t.hp=100;t.alive=true;s.step(.05);}assert(Math.hypot(b.x-at[0],b.z-at[2],b.y-at[1])>1,'moving again');assert(!W.blocked(b.x,b.z,.4,b.y,1.8),'out of the prop');}
 
+// 2c. How that bot got up there: the shared motor climbed walls. Jumping into the corner of the building at Ascent
+//     (-55.6, -22.1), the capsule crept to the wall at exactly blocked()'s .388 tolerance, where the same-radius test
+//     flips with float noise; the "descending beside a riser" clamp then held it mid-air, contact counted as support,
+//     and each new jump rose with no collision test into the wall (2.5-4.7 m up, inside the building). Now rises stop
+//     at geometry, vertical probes use a 2 cm thinner capsule, and support needs a floor under the footprint.
+{const Motor=(await import('./src/motor.cjs')).default;let worst=0,inside=0;
+ for(const [x,y,z,a] of [[-55.25,3.98,-22.75,Math.PI],[-55.25,3.98,-22.75,2.75],[-57.5,4.01,-23.5,5.5],[-56.75,4.11,-19.75,4.71],[-54.5,4.15,-20.5,1.57]]){const u={x,y,z,vx:0,vy:0,vz:0};
+  for(let k=0;k<80;k++){Motor.step(u,{x:-Math.sin(a),z:-Math.cos(a),speed:6.75,jump:k%12<2},.05,W);if(!u.air)worst=Math.max(worst,u.y-W.ground(u.x,u.z,u.y+.05));if(W.blocked(u.x,u.z,.36,u.y,1.8))inside++;}}
+ assert(worst<.6,'no standing high up the wall: '+worst.toFixed(2));assert.equal(inside,0,'never inside the building');}
+
 // 3. About 5% of playable nav nodes sit inside props; routes now pay 8 m to enter one, so bots walk around obstacles
 //    (150 seeded routes: 5.7% of route nodes blocked before, 0.8% now).
 {const bl=blockedNodes(W);let n=0;for(const i of W.playable)n+=bl[i];assert(n>100,'blocked nodes found: '+n);
