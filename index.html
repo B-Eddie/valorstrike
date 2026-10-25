@@ -188,6 +188,9 @@ button{font:inherit;text-transform:inherit;letter-spacing:inherit;cursor:pointer
 #xBoard .x-sbp i{width:7px;height:7px;border-radius:50%;border:1px solid rgba(236,232,225,.45)}
 #xBoard .x-sbp i.on{background:#ffe14d;border-color:#ffe14d}
 @media(max-width:899px){#xBoard .x-sbt .w,#xBoard .x-sbt .ec{display:none}#xBoard .x-sbsc b{font-size:36px}}
+/* Short screens (640x360 landscape): the 44 px rows put the enemy table below the board's max-height (overflow hidden), so
+   only your own team showed. Compact rows so header + both five-row tables fit in 100vh - 24px (>= 336 px). */
+@media (max-height:560px){#xBoard{padding:8px 12px 2px}#xBoard .x-sbtop{gap:10px;padding:0 4px 4px;margin-bottom:4px}#xBoard .x-sbmap b{font-size:13px}#xBoard .x-sbmap small{font-size:10px}#xBoard .x-sbsc{gap:8px}#xBoard .x-sbsc b{font-size:22px}#xBoard .x-sbsc span{font-size:16px}#xBoard .x-sbt{margin:0 0 6px;font-size:12px}#xBoard .x-sbt th{height:18px;font-size:10px}#xBoard .x-sbt td{height:22px}#xBoard .x-ag{width:18px;height:18px;font-size:10px}}
 .x-sbbar{display:flex;align-items:baseline;justify-content:center;gap:14px;margin-bottom:12px;font-weight:900}
 .x-sbbar b{font-size:40px;line-height:1}.x-sbbar span{font-size:28px;opacity:.5}.x-sbbar .tl{color:#3ee6c1}.x-sbbar .rd{color:#ff4655}
 .x-sbbar small{font-size:12px;letter-spacing:.2em;text-transform:uppercase;opacity:.7;margin-left:10px}
