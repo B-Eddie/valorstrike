@@ -18,7 +18,10 @@ block+='\n'+(root/'work/grip_runtime.js').read_text().rstrip('\n');ta='// ---- F
 if ta in s:s=s[:s.index(ta)]+s[s.index(tb)+len(tb):]
 block+='\n'+(root/'work/feet_runtime.js').read_text().rstrip('\n');ha='// ---- LOCALIZED HIT FEEDBACK ----';hb='// ---- END LOCALIZED HIT FEEDBACK ----'
 if ha in s:s=s[:s.index(ha)]+s[s.index(hb)+len(hb):]
-block+='\n'+(root/'work/hit_feedback_runtime.js').read_text().rstrip('\n');mark='xReady = true; // every mode is initialised; lobby launches may now start them';s=s.replace(mark,block+'\n'+mark)
+block+='\n'+(root/'work/hit_feedback_runtime.js').read_text().rstrip('\n');wa='// ---- WEAPON SKINS ----';wb='// ---- END WEAPON SKINS ----'
+if wa in s:s=s[:s.index(wa)]+s[s.index(wb)+len(wb):]
+import json
+block+='\n'+(root/'work/skins_runtime.js').read_text().rstrip('\n').replace('/*SKINS_JSON*/null',json.dumps(json.loads((root/'server/src/skins.json').read_text()),separators=(',',':'),ensure_ascii=False));mark='xReady = true; // every mode is initialised; lobby launches may now start them';s=s.replace(mark,block+'\n'+mark)
 if '<script src="models/valorant/manifest.js"></script>' not in s:s=s.replace('<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>','<script src="models/valorant/manifest.js"></script>\n<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>')
 # Find the actual three script tag, which may use an onerror handler.
 if '<script src="models/valorant/manifest.js"></script>' not in s:s=s.replace('<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js"></script>','<script src="models/valorant/manifest.js"></script>\n<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js"></script>')
