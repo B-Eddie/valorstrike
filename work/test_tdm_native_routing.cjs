@@ -31,4 +31,16 @@ const me=()=>({g:{position:{x:0,y:0,z:0}}});
 {const t=mk(new Set([1,2,3]));t.ctx._drop=true;t.ctx.nmPath=()=>[0,1,2,3];assert.equal(JSON.stringify(t.ctx.api(me(),50,50)),JSON.stringify([1,0]),'ledge-drop first edge: taken exactly, no skip-ahead across the drop');}
 {const t=mk(new Set([1,2,3]));t.ctx._wall=true;t.ctx.nmPath=()=>[0,1,2,3];assert.equal(JSON.stringify(t.ctx.api(me(),50,50)),JSON.stringify([50,50]),'first edge blocked solid (wall, not a drop): goal steer, no parking');}
 {const t=mk(new Set([2,3]));t.ctx._wall=true;t.ctx.nmPath=()=>[0,1,2,3];const off={g:{position:{x:1.5,y:0,z:0}}};assert.equal(JSON.stringify(t.ctx.api(off,50,50)),JSON.stringify([0,0]),'no clear hop off-corridor: step back onto the nearest mesh node first');}
+// Stall breaker: a first hop that keeps failing validation is blacklisted per unit after
+// three consecutive failures and the re-plan carries the ban into nmPath.
+{const t=mk(new Set([1,2,3]));t.ctx._wall=true;let seen=null;t.ctx.nmPath=(C,a,e,banned)=>{seen=banned||null;return [0,1,2,3];};
+ const u=me();t.ctx.api(u,50,50);t.ctx.api(u,50,50);
+ assert(!u.xb,'two failures on the same edge: no blacklist yet');
+ t.ctx.api(u,50,50);
+ assert(u.xb&&u.xb.has('0>1'),'third consecutive failure blacklists the directed edge');
+ assert(seen&&seen.has('0>1'),'re-plan passes the blacklist to nmPath');}
+{const t=mk(new Set());t.ctx.nmPath=()=>[0,1,2,3];const u=me();u.xf=2;u.xfE='0>1';
+ t.ctx.api(u,50,50);assert.equal(u.xf,0);assert.equal(u.xfE,null,'a validating first hop resets the failure streak');}
+assert(src.includes("banned.has(a+'>'+b)"),'nmPath skips banned directed edges');
+assert(src.includes('Never place a unit on a trap node'),'nmPlace rejects zero-exit trap nodes');
 console.log('TDM/DM hunt goal keys on FV.dm; native nmNext validates the first hop, skips blocked hops, and steers at the goal when no hop clears');

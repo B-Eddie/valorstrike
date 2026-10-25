@@ -164,3 +164,22 @@ Exported (work/nav-prune/<map>-bad-edges.json), simulated-prune measurements:
 Bake rule (parent): apply only where before/after intended-area connectivity and spawn/site
 reachability are preserved; regions cut by pruning stay open as intended-space defects, no
 fencing/OOB changes.
+
+## Stall breaker + nmPlace trap guard (1ff0a4c + test) - 07:22 EDT
+Root cause of the recurring park-forever stalls: nmNext re-plans every 0.4s, but A* + route
+cache deterministically re-serve the same untraversable first hop, and xUn goal-steer alone
+cannot clear geometry. Fix (runtime, no nav-data mutation): a directed edge whose first hop
+fails nmSegment AND nmSegDrop three consecutive re-plans is blacklisted PER UNIT and nmPath
+re-plans around it (uncached while bans are active). nmPlace additionally rejects candidates
+with zero traversable exit edges (trap nodes) and resets the blacklist on placement.
+Why no static bake yet: the sweep model is stricter than the live motor - breeze defenders
+descend a spawn ledge the sweep calls impassable (4/5 left spawn, moved 11-42u, live trace),
+and baking there would disconnect Defender Side Spawn for real. Exported bad-edge lists stay
+in work/nav-prune/ pending per-edge live corroboration. A Sewer (split) remains an open
+intended-space defect (0.4u step; jump-range repair candidate).
+Verification: 42/42 client suites (extended test_tdm_native_routing.cjs pins the blacklist
+trigger, reset, nmPath ban plumbing, and the nmPlace guard); split five-soak PASS (previous
+FAIL from the node-741 pocket; one sampled run, no stalls observed, round completed by
+attacker wipe - combat outcome, not a stall).
+Owed: ascent/bind/lotus exports, lotus five-soak, full sweep re-run, natural push/plant
+evidence on split.
