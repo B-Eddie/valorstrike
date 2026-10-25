@@ -62,6 +62,7 @@ button{font:inherit;text-transform:inherit;letter-spacing:inherit;cursor:pointer
 #xSpk{left:50%;top:14px;transform:translateX(-50%);display:none;background:rgba(15,25,35,.8);padding:5px 18px;border-bottom:3px solid var(--red)}#xSpk svg{display:block;width:40px;height:34px;filter:drop-shadow(0 0 6px rgba(255,70,85,.9))}
 #hint{left:50%;bottom:24px;transform:translateX(-50%);font-size:12px;opacity:.7;text-align:center}
 #game #hint{bottom:112px;width:min(860px,92vw)} /* QA: sat under the HP / ability / ammo panels */
+#game:has(.x-kb.on) #hint{opacity:0} /* the ELIMINATED banner (bottom:110px) owns the bottom-center band while it shows; the hint sits at bottom:112px. No transition: a fade would freeze mid-value under starved frame clocks and leave the hint half-visible behind the banner */
 #dmg{inset:0;background:radial-gradient(ellipse at center,rgba(255,70,85,0) 52%,rgba(255,70,85,.32) 78%,rgba(255,70,85,.72) 100%);opacity:0;transition:opacity .3s;will-change:opacity;contain:strict;pointer-events:none} /* perf: a static gradient on its own layer; a full-screen blurred inset shadow repainted every frame of each hurt flash */
 #scope{inset:0;display:none;background:linear-gradient(#000,#000) 50% 50%/1px 92vmin no-repeat,linear-gradient(#000,#000) 50% 50%/92vmin 1px no-repeat,linear-gradient(#000,#000) 50% calc(50% - 31vmin)/3px 30vmin no-repeat,linear-gradient(#000,#000) 50% calc(50% + 31vmin)/3px 30vmin no-repeat,linear-gradient(#000,#000) calc(50% - 31vmin) 50%/30vmin 3px no-repeat,linear-gradient(#000,#000) calc(50% + 31vmin) 50%/30vmin 3px no-repeat,radial-gradient(circle at 50% 50%,transparent 0,transparent 45.2vmin,rgba(0,0,0,.75) 45.7vmin,#000 46vmin)} /* sniper lens: 92vmin circle, centred on any aspect ratio, thin cross + thick outer posts; first in #game so the HUD paints over it */
 #xAdsT{inset:0;opacity:0;pointer-events:none}
@@ -553,6 +554,7 @@ body.x-cbh .x-mvp.en{border-left-color:#ff9f1c}
   #game .x-top .x-sc b{min-width:26px;height:32px;font-size:15px}
   #game .x-top .x-tm{min-width:52px;font-size:15px}
   #game #hint{display:none} /* short landscape: the bottom:112px hint crowds the ann/toast/card column; coarse pointers already hide it */
+  .x-dmprot{left:36%!important} /* short landscape: centered (50%) the chip's top-right corner lands on the ZOOM/R touch row (e.g. 568x320: zoom x326-364 y178-216 vs chip ~197-371 x 198-223 y); the left-center band is empty */
 }
 .x-sp{position:fixed;left:50%;bottom:120px;transform:translateX(-50%);z-index:60;padding:6px 14px;background:rgba(15,25,35,.75);color:#ece8e1;font:500 13px var(--sans);letter-spacing:.14em;pointer-events:none;display:none;text-align:center}
 .x-sp small{display:block;font-size:12px;letter-spacing:.04em;opacity:.7;margin-top:2px}.x-sp.on{display:block} .x-sp__tp{display:inline-flex;align-items:center;gap:6px;margin-left:12px;padding:4px 10px;min-height:28px;border:1px solid rgba(236,232,225,.45);background:rgba(15,25,35,.6);color:#ece8e1;font:600 12px var(--sans);letter-spacing:.12em;cursor:pointer;pointer-events:auto}.x-sp__tp:hover,.x-sp__tp:focus-visible{border-color:#ff4655;outline:0}.x-sp__tp.on{background:#ff4655;color:#0f1923;border-color:#ff4655}.x-sp__tp kbd{font:inherit;padding:0 4px;border:1px solid currentColor;border-radius:2px}
@@ -9062,13 +9064,21 @@ const XBR = (() => {
     try { if (!st.hum) { if (!v || !sOk()) return; const o = ac.createOscillator(), o2 = ac.createOscillator(), lp = ac.createBiquadFilter(), g = ac.createGain(); o.type = "sawtooth"; o.frequency.value = 92; o2.type = "sine"; o2.frequency.value = 184.6; lp.type = "lowpass"; lp.frequency.value = 420; g.gain.value = 0; o.connect(lp); o2.connect(lp); lp.connect(g); g.connect(ac.destination); o.start(); o2.start(); st.hum = g; }
       st.hum.gain.setTargetAtTime(v && !S.muted ? 0.035 : 0, ac.currentTime, 0.15); } catch (e) {}
   }
+  function xAnnBottom(an) { // lowest GLYPH edge inside the ann (title + secondary line can overflow the container box); 0 when unmeasurable
+    try {
+      if (typeof document.createRange !== "function" || typeof document.createTreeWalker !== "function") return 0;
+      const tw = document.createTreeWalker(an, 4 /* SHOW_TEXT; NodeFilter is absent in node vm test realms */), rng = document.createRange();
+      let b = 0, nd; while ((nd = tw.nextNode())) { if (!nd.nodeValue || !nd.nodeValue.trim()) continue; rng.selectNodeContents(nd); const r = rng.getBoundingClientRect(); if (r.height && r.bottom > b) b = r.bottom; }
+      return b;
+    } catch (e) { return 0; }
+  }
   function cdText(n) {
     let an = null, aOn = false; try { an = document.getElementById("xAnn"); aOn = !!(an && an.classList.contains("on")); } catch (e) {}
     if (n === st.cd && aOn === st.aOn) return; st.cd = n = n || 0; st.aOn = aOn; // per-frame calls: react to countdown AND ann-visibility changes
     if (!st.el) { const d = document.createElement("div"); d.id = "xBrCd"; d.style.cssText = "position:fixed;left:50%;top:22%;transform:translateX(-50%);font:600 13px/1 Geist,sans-serif;letter-spacing:.14em;color:#7fd4ff;text-shadow:0 1px 6px rgba(0,0,0,.7);pointer-events:none;z-index:40;display:none"; document.body.appendChild(d); st.el = d; }
-    if (!st.obs && an && typeof MutationObserver !== "undefined") { try { st.obs = new MutationObserver(() => { try { st.aOn = 2; cdText(st.cd); } catch (e) {} }); st.obs.observe(an, { attributes: true, attributeFilter: ["class"] }); } catch (e) {} } // reposition even when the game loop is starved (real browsers also self-correct via the per-frame call); MutationObserver absent in node vm test realms
+    if (!st.obs && an && typeof MutationObserver !== "undefined") { try { st.obs = new MutationObserver(() => { try { st.aOn = 2; cdText(st.cd); clearTimeout(st.obsT); st.obsT = setTimeout(() => { try { st.aOn = 2; cdText(st.cd); } catch (e) {} }, 300); } catch (e) {} }); st.obs.observe(an, { attributes: true, attributeFilter: ["class"], childList: true, characterData: true, subtree: true }); } catch (e) {} } // reposition even when the game loop is starved (browsers also self-correct per frame); the 300 ms settle re-measures after the ann's 250 ms entry transition; MutationObserver absent in node vm test realms
     st.el.style.display = n > 0 ? "block" : "none"; if (n > 0) st.el.textContent = "BARRIER DROPS IN " + n;
-    try { if (aOn) { const r = an.getBoundingClientRect(); st.el.style.top = r.height ? Math.round(r.bottom + 8) + "px" : "22%"; } else st.el.style.top = "22%"; } catch (e) {} // ann owns the top:22% band while it shows
+    try { if (aOn) { const gb = xAnnBottom(an); if (gb) st.el.style.top = Math.round(gb + 12) + "px"; else { const r = an.getBoundingClientRect(); st.el.style.top = r.height ? Math.round(r.bottom + 12) + "px" : "22%"; } } else st.el.style.top = "22%"; } catch (e) {} // ann owns the top:22% band while it shows; barrier clears its lowest glyph, not its container box
   }
   function tick() {
     const now = performance.now(), dt = Math.min(0.1, (now - (st.last || now)) / 1000); st.last = now;

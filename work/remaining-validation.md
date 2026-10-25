@@ -731,3 +731,25 @@ closed deterministically:
 - Regressions: test-qa-hooks, test-bots, test-spike, test-two-player all green. Wranglers cleaned up.
 Scope label: protocol evidence only - not rendered two-human gameplay acceptance (sandbox-blocked,
 previously acknowledged).
+
+## 2026-10-25 ~18:13 EDT - Consolidated HUD polish: parent's 3 simultaneous-state gaps FIXED + pixel-verified
+(a) Barrier vs ann secondary line: measured the actual capture - the secondary "You > Sage" glyphs
+    OVERFLOW the ann container box (container bottom 223, glyph bottom ~230), which is why the
+    container-rect+8 fix read as overlapping. cdText now positions off xAnnBottom() - the lowest
+    text-node glyph edge via createTreeWalker(SHOW_TEXT)+createRange (guarded for node vm realms) -
+    with a 12px margin, and the MutationObserver now also covers childList/characterData subtree
+    (ann text swaps without a class toggle) plus a 300ms settle re-measure (entry transition is
+    250ms; xAnP pulse animates opacity/shadow only, glyph boxes static). VERIFIED 1280: secondary
+    glyph bottom ~230, barrier glyphs y251-259 = 21px clear. Capture /tmp/coexist_bar_1280x720.png.
+(b) ELIMINATED banner vs control hint: both anchored bottom-center (banner bottom:110px, hint
+    bottom:112px) - collision by construction. Fix: #game:has(.x-kb.on) #hint{opacity:0}, NO
+    transition (a fade freezes mid-value under starved frame clocks - first attempt with
+    transition .15s left the hint visible in the forced capture; instant hide is deterministic).
+    VERIFIED 1280: hint fully gone while the banner shows.
+(c) 568 DM SPAWN PROTECTED chip vs ZOOM cluster: at top:62%/left:50% the chip's top-right corner
+    (x197-371, y198-223) overlapped tb:zoom [326,178,364,216]. Fix: left:36%!important inside the
+    existing max-height:560px block (also fixes the same latent overlap at 844x390). VERIFIED
+    568x320 DM capture: chip x~128-288 y~201-216, 38px clear of zoom's left edge, clear of
+    vitals/COMMS/use/buy. Capture /tmp/hudmap_dm_568x320.png.
+Source invariants pinned: work/test_hud_polish.cjs. vm subset (settings/touch_spike/
+offline_realtime) green. Captures are static forced-end-state layout evidence, as labeled.
