@@ -22,13 +22,13 @@ xTag=function(t){if(!t)return;t.tagT=.5;t.tagK=.275;};
 moveP=function(dt,run,hold){
  const P=player;if(!P)return;const w=vfWeapon(),p=vfProfile(w),kn=w==='Knife',kk=J.dr?{}:keys,fx=-Math.sin(yaw),fz=-Math.cos(yaw);let x=0,z=0;if(kk.KeyW){x+=fx;z+=fz;}if(kk.KeyS){x-=fx;z-=fz;}if(kk.KeyA){x+=fz;z-=fx;}if(kk.KeyD){x-=fz;z+=fx;}
  P.tagT=Math.max(0,(P.tagT||0)-dt);let speed=6.75*(kn?1:p.runSpeedMultiplier||.8)*(ads&&p.adsStats?p.adsStats.runSpeedMultiplier:1);if(J.dis>0)speed*=1.6;if(typeof sgSlow==='function')speed*=sgSlow(P);
- const native=typeof nmActive==='function'&&nmActive(),world={ground:(x,z,y)=>groundAt(x,z,.3,y),blocked:(x,z,r,y,h)=>native?sgBlk(x,z,r,y)||nmBlocked(native,x,z,r,y,h):blocked(x,z,r,y),leash:native?(x,z,y)=>nmLeash(native,x,z,y):null,ceiling:native?(x,z,low,high)=>{const ray=new THREE.Ray(new THREE.Vector3(x,low+.01,z),new THREE.Vector3(0,1,0)),hit=native.bvh.raycastFirst(ray,THREE.DoubleSide);return !!hit&&hit.distance<high-low;}:null};
+ const native=typeof nmActive==='function'&&nmActive(),world={ground:(x,z,y)=>groundAt(x,z,.3,y),blocked:(x,z,r,y,h)=>native?sgBlk(x,z,r,y)||nmBlocked(native,x,z,r,y,h):blocked(x,z,r,y),leash:native?(x,z,y,x0,z0)=>nmLeash(native,x,z,y,x0,z0):null,ceiling:native?(x,z,low,high)=>{const ray=new THREE.Ray(new THREE.Vector3(x,low+.01,z),new THREE.Vector3(0,1,0)),hit=native.bvh.raycastFirst(ray,THREE.DoubleSide);return !!hit&&hit.distance<high-low;}:null};
  const result=VF.model.step(P,{x,z,jump:!!kk.Space,duck:!!(kk.ControlLeft||kk.ControlRight),walk:!!(kk.ShiftLeft||kk.ShiftRight),speed,tag:P.tagT>0?P.tagK:1,hold:!!hold||!!J.dr},dt,world);
  if(result.landed){SFX.land();P.st=0;const fd=VF.model.fallDamage(result.drop);if(fd>0&&running&&mode!=='aim'&&mode!=='duel'&&!(typeof MP!=='undefined'&&MP.on)&&P.hp>0){P.hp=Math.max(0,P.hp-fd);try{updHud();}catch(e){}if(P.hp<=0)pDie('Fall','Fall');}} // fall damage: health only (shields ignored); online the server applies it
  // Footfalls follow distance. Shift-walking and crouching stay silent.
  P.footDistance=(P.footDistance||0)+result.speed*dt;if(P.footDistance>1.85&&P.mv&&!P.air&&!P.wk&&!P.cr){P.footDistance%=1.85;SFX.selfStep(P.y>1);}
  // Preserve explicit ability impulses; ordinary air steering never creates a speed boost.
- if(kLg>0){const t=Math.min(dt,kLg);kLg-=t;const nx=P.x+kLx*8*t,nz=P.z+kLz*8*t;if(!world.blocked(nx,nz,.4,P.y,1.8-P.ch)&&!(world.leash&&!world.leash(nx,nz,P.y)&&world.leash(P.x,P.z,P.y))){P.x=nx;P.z=nz;}}
+ if(kLg>0){const t=Math.min(dt,kLg);kLg-=t;const nx=P.x+kLx*8*t,nz=P.z+kLz*8*t;if(!world.blocked(nx,nz,.4,P.y,1.8-P.ch)&&!(world.leash&&!world.leash(nx,nz,P.y,P.x,P.z))){P.x=nx;P.z=nz;}}
 };
 gSpread=function(w,W,B){const p=vfProfile(w),P=B||player||{},state={sf:B?(B.sf!=null?B.sf:B.mv?1:0):P.sf,mv:P.mv,air:P.air,cr:P.cr,wk:P.wk,lp:P.lp||0,ads:B?0:ads};let cone=VF.model.spread(state,w,p);if(!B){const recovery=VF.model.recoveryTime(w),elapsed=VF.time-VF.shot,bloom=elapsed<recovery?VF.bloom*Math.max(0,1-elapsed/recovery):0;cone+=bloom;if(xCU>performance.now())cone+=.06;if(xAD.bs)cone+=.045;}else cone+=Math.min(B.n||0,10)*.0025*(W.rec||1);return cone;};
 // Circular angular spread in the shot's own basis, with a stable early climb and late directional drift.
@@ -46,7 +46,7 @@ gFire=function(d,w,W){const M=VF.model;M.sprayReset(VF,w,VF.time);const cone=gSp
 // swings lasted ~4.8 s. Equip and reload follow the weapon's equip/reload times (weapons.json, as the server); inspect
 // the 2.2 s inspect window; every other clip its authored SequenceLength. A bolt/pump fire montage (cycle >= 0.5 s)
 // finishes within the fire interval, so the gun is ready in hand exactly when the next shot is allowed.
-function vfDuration(F,kind,entry){const p=vfProfile(F.w);if(kind==='equip')return xEq(F.w);if(kind==='reload')return p.reloadTimeSeconds;if(kind==='inspect')return 2.2;const seq=entry&&+entry.SequenceLength;if(!(seq>0))return null;if(kind==='fire'&&p.fireRate>0&&1/p.fireRate>=.5)return Math.min(seq,1/p.fireRate);return seq;}
+function vfDuration(F,kind,entry){const p=vfProfile(F.w);if(kind==='equip')return xEq(F.w);if(kind==='reload')return p.reloadTimeSeconds;if(kind==='inspect')return (typeof VM!=='undefined'&&VM.insT)||2.2;const seq=entry&&+entry.SequenceLength;if(!(seq>0))return null;if(kind==='fire'&&p.fireRate>0&&1/p.fireRate>=.5)return Math.min(seq,1/p.fireRate);return seq;}
 // Fire cadence multipliers the server applies (simulation.js: concussed x0.8, Empress x1.15). The shot wrapper below
 // replaced the base cadence with the plain profile rate, which dropped both.
 function vfRateK(){let k=1;try{if(typeof xCU!=='undefined'&&xCU>performance.now())k*=.8;const online=typeof NET!=='undefined'&&NET.socket;if(online?!!(typeof netReyna!=='undefined'&&netReyna&&netReyna.empress):(typeof jOn==='function'&&jOn()&&J.emp>0))k*=1.15;}catch(e){}return k;}

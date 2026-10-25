@@ -12,7 +12,10 @@ const THREE=require(require.resolve('three',{paths:[path.join(root,'server')]}))
 const line=re=>{const m=src.match(re);assert(m,'missing '+re);return m[0];};
 const data=JSON.parse(line(/^var NM_ZFIX=(.*);$/m).slice('var NM_ZFIX='.length,-1)),file=JSON.parse(fs.readFileSync(path.join(__dirname,'validation/map/zfight-fix.json'),'utf8'));
 assert.deepEqual(data,file,'runtime fix data matches work/validation/map/zfight-fix.json');
-for(const k of ['ascent','bind','haven','split','lotus','breeze']){assert(data[k]&&Array.isArray(data[k].o)&&data[k].o.length<=4,k+' fix present');assert(data[k].o.flat().length>0,k+' has offset layers');const all=data[k].o.flat();assert.equal(new Set(all).size,all.length,k+': a material sits on one level');}
+for(const k of ['ascent','bind','haven','split','lotus','breeze']){assert(data[k]&&Array.isArray(data[k].o)&&data[k].o.length<=5,k+' fix present');assert(data[k].o.flat().length>0,k+' has offset layers');const all=data[k].o.flat();assert.equal(new Set(all).size,all.length,k+': a material sits on one level');}
+// Hand-set level 5 (a level nothing else uses): Haven's puddle overlapped layers on all of levels 0..4; Split's trim
+// was the last seam pair (map-notes, z-fighting).
+assert.deepEqual(data.haven.o[4],['Puddle_2_M0_MI'],'Haven puddle on its own level 5');assert(data.split.o[4].includes('Metal_M5_KingdomMetalTrimConstruction_MI')&&!data.split.o[2].includes('Metal_M5_KingdomMetalTrimConstruction_MI'),'Split trim on level 5');
 const fnSrc=src.slice(src.indexOf('function nmZFixApply('),src.indexOf('\n',src.indexOf('function nmZFixApply(')));
 const api=new Function('THREE','NM_ZFIX',fnSrc+'\nreturn nmZFixApply;');
 const fix={t:{o:[['Trim_A'],['Trim_B']],d:{Wall_A:[1,3]}}},apply=api(THREE,fix);

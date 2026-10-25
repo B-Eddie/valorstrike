@@ -405,7 +405,10 @@
    "fall": 0,
    "out": 0,
    "perch": 0,
-   "ledge": 313
+   "ledge": 313,
+   "outAt": [],
+   "fallAt": [],
+   "perchAt": []
   }
  },
  "bind": {
@@ -629,7 +632,16 @@
     ]
    ]
   },
-  "after": null
+  "after": {
+   "probes": 4644,
+   "fall": 0,
+   "out": 0,
+   "perch": 0,
+   "ledge": 287,
+   "outAt": [],
+   "fallAt": [],
+   "perchAt": []
+  }
  },
  "haven": {
   "before": {
@@ -772,7 +784,16 @@
     ]
    ]
   },
-  "after": null
+  "after": {
+   "probes": 4278,
+   "fall": 0,
+   "out": 0,
+   "perch": 0,
+   "ledge": 292,
+   "outAt": [],
+   "fallAt": [],
+   "perchAt": []
+  }
  },
  "split": {
   "before": {
@@ -1135,7 +1156,16 @@
     ]
    ]
   },
-  "after": null
+  "after": {
+   "probes": 4158,
+   "fall": 0,
+   "out": 0,
+   "perch": 0,
+   "ledge": 336,
+   "outAt": [],
+   "fallAt": [],
+   "perchAt": []
+  }
  },
  "lotus": {
   "before": {
@@ -1603,7 +1633,10 @@
    "fall": 0,
    "out": 0,
    "perch": 0,
-   "ledge": 240
+   "ledge": 240,
+   "outAt": [],
+   "fallAt": [],
+   "perchAt": []
   }
  },
  "breeze": {
@@ -1882,6 +1915,15 @@
     ]
    ]
   },
-  "after": null
+  "after": {
+   "probes": 4338,
+   "fall": 0,
+   "out": 0,
+   "perch": 0,
+   "ledge": 175,
+   "outAt": [],
+   "fallAt": [],
+   "perchAt": []
+  }
  }
 }

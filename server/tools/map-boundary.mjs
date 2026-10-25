@@ -24,7 +24,7 @@ export function index(w){const N=w.nav.nodes,cells=new Map();let ymin=Infinity;f
 const DT=1/30;
 function sim(w,P,dir,plan,T,ymin){const out={maxUp:0};const y0=P.y;let still=0;for(let t=0;t<T;t+=DT){const inp={x:dir[0],z:dir[1],speed:6.75,jump:false,duck:false};plan(t,P,inp);Motor.step(P,inp,DT,w);out.maxUp=Math.max(out.maxUp,P.y-y0);if(P.y<y0-30||P.y<ymin-3.5)break;const g=!P.air&&Math.abs(P.vy||0)<.01;if(g&&t>.4&&Math.hypot(P.vx,P.vz)<.05){if((still+=DT)>.25)break;}else still=0;}return out;}
 // Server abilities (abilities.js): dash 32 x .25 m, satchel 16 x .5 m, both flat at the unit's height; updraft vy = sqrt(2*18*6).
-function flat(w,P,dir,n,s){for(let i=0;i<n;i++){const x=P.x+dir[0]*s,z=P.z+dir[1]*s;if(w.blocked(x,z,.4,P.y,1.8-(P.ch||0))||(w.leash&&!w.leash(x,z,P.y)&&w.leash(P.x,P.z,P.y)))break;P.x=x;P.z=z;}P.vx=P.vz=0;}
+function flat(w,P,dir,n,s){for(let i=0;i<n;i++){const x=P.x+dir[0]*s,z=P.z+dir[1]*s;if(w.blocked(x,z,.4,P.y,1.8-(P.ch||0))||(w.leash&&!w.leash(x,z,P.y,P.x,P.z)))break;P.x=x;P.z=z;}P.vx=P.vz=0;}
 export const PROBES={
  walk:{T:1,plan:()=>{}},
  jump:{T:1.3,plan:(t,P,i)=>{i.jump=t<.1;}},

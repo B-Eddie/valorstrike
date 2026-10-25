@@ -12,6 +12,7 @@ Areas owned by others were left alone (hit feedback, hit-path perf / bot routing
 | `map-collision-patch.mjs` | render floor (opaque, n.y > 0.7, not foliage/decal/glass/water) within 0.45 m of a playable node's floor where the collision has nothing within 0.3 m -> writes `models/valorant/maps/<key>/collision-patch.bin`; `build-world.cjs` appends it |
 | `map-boundary.mjs` | from every border cell (stride 3 in the sweeps): walk, crouch-jump, Jett dash (server: 32 x 0.25 m flat), updraft (vy = sqrt(2*18*6)), updraft + dash at the apex, Raze satchel (16 x 0.5 m) at a jump apex. `fall` = left the world, `out` = standing > 3 m from the footprint, `perch` = standing > 1.2 m up and > 1.5 m from the footprint, `ledge` = standing on a ledge/box beside the footprint (counted, not an escape) |
 | `map-render.mjs` | typed-array loader for scene.gltf + geometry bins (optional BVH) |
+| `map-seethrough.mjs` | sample-based visual-gap survey from 250 seeded playable nodes at eye height (4 elevations x 24 headings): `seeThrough` (collision hit within 30 m with no render face within 0.75 m: invisible wall), sky `cracks` (a ray at/above the horizon escapes the render meshes while the 4 rays 2 deg around it hit solid, non-foliage geometry within 30 m), `floating` props (node < 6 m across within 12 m of an eye, base > 0.25 m clear below at 5 points, nothing within 0.3 m beside/above) |
 | `map-perf.mjs` | headless render cost model: per view, objects whose bounding sphere meets the frustum (three's culling) = draw calls, their triangles; 48 nav nodes x 8 headings, 103 deg h-FOV 16:9, far 500; evaluates the runtime's own `nmChunkPlan`; texture MB per tier |
 
 ## Holes (collision, 0.25 m grid)
@@ -51,13 +52,27 @@ surface under the capsule: railings/low boxes can be vaulted, wall tops and roof
 nav sampled them) or within 1.5 m of one whose floor matches the floor under the capsule (rim). The footprint is the
 playable nav component plus the other valid components no more than 4.6 m above the playable floor (box tops,
 drop-only areas); roofs the nav sampled (Haven 8-11 m, Ascent 6-9 m, Breeze/Split 7-10 m) are excluded. Movement
-only: rays, shots, sight and floor probes never see it; a unit already off the footprint may always move (never
-trapped). Applied to the player motor (both sides), the server's Jett dash and Raze satchel loops, the offline knife
+only: rays, shots, sight and floor probes never see it. A unit already off the footprint (dropped straight down past
+a ledge after an updraft, or spawned outside) may only move toward the nearest footprint node at its height (6 m
+search, same height band): never trapped, never further out; more than 6 m from every node it is free. The first
+leash let such a unit move anywhere, and the stride-3 sweep found two escapes through that: Bind updraft from
+(6, 6.9, -84) landed beside a box at (8.5, 6.7, -88.2) and walked out, Split updraft + dash from (-29.75, 7, 35.5)
+to (-29.75, 6.5, 44). Applied to the player motor (both sides), the server's Jett dash and Raze satchel loops, the offline knife
 lunge and the page's global `blocked()` used by offline direct moves.
 
 Sweep (stride 3 border cells, 6 probes, one outward direction): before -> after
 
-BOUNDARY_TABLE
+| map | probes | fall before -> after | out before -> after | perch before -> after | ledge (after, not escapes) |
+|---|---|---|---|---|---|
+| Ascent | 4578 | 118 -> 0 | 34 -> 0 | 9 -> 0 | 313 |
+| Bind | 4644 | 14 -> 0 | 31 -> 0 | 12 -> 0 | 287 |
+| Haven | 4278 | 30 -> 0 | 2 -> 0 | 5 -> 0 | 292 |
+| Split | 4158 | 47 -> 0 | 39 -> 0 | 33 -> 0 | 336 |
+| Lotus | 3540 | 151 -> 0 | 43 -> 0 | 18 -> 0 | 240 |
+| Breeze | 4338 | 33 -> 0 | 100 -> 0 | 29 -> 0 | 175 |
+| all | 25536 | 393 -> 0 | 249 -> 0 | 106 -> 0 | |
+
+After = the outside-unit rule above (stride 3, all six maps, 0 fall / 0 out / 0 perch is the target).
 
 Before-escape locations (group centres, metres) are in `work/validation/map/boundary-summary.json`
 (`fallAt`/`outAt`/`perchAt`); the raw sweeps are `boundary-before-<map>.json`. Examples:
@@ -68,7 +83,7 @@ Before-escape locations (group centres, metres) are in `work/validation/map/boun
 - Bind/Haven/Split/Breeze: updraft and updraft+dash over perimeter walls (see summary JSON).
 
 Regression: `server/test-map-bounds.js` (in `npm test`): hole grid fallable = 0 on all six maps; 16 recorded escapes
-per map (`server/map-escapes.json`, mixed probes) replayed and contained, and replayed without the leash they must
+per map, 17 on Bind and Split (`server/map-escapes.json`, mixed probes; the two post-leash sweep escapes above) replayed and contained, and replayed without the leash they must
 still escape (fixture stays meaningful, fails on the old motor); sampled sweep (every 40th border cell, all 7 probes)
 with no fall and no out. Client: `work/test_map_leash.cjs` (rule semantics incl. roof-component exclusion, motor
 containment, never-trapped, client + server wiring). `test-traversal.js` (43 human-driven walks) passes with the leash.
@@ -80,17 +95,35 @@ frustum culling culled nothing: Ascent submitted ~300 draw calls and 2.85 M of i
 view, 3.32 M looking down the long axis. Map meshes already cast/receive no shadows (the sun's 1024/512 px map only
 draws characters; `shadowMap.autoUpdate=false`), and there was no per-frame map traversal.
 
-Runtime optimizer (`work/native_maps_runtime.js`, `nmOptimizeScene`, after `nmPrepareScene`, before `nmBudget`, also on
-rehydrate): identical converted materials share one instance; each material group is cut into quadtree chunks on the
-24 m ground grid (<= 12,000 triangles; foliage/decal groups <= 4,000 and <= 48 m squares); groups under 4,000 triangles
-stay one object; decals get a 45 m and foliage cut-outs a 70 m draw distance (past the chunk radius), re-tested only
-after the camera moves 2 m (`nmCull` from `scene.onBeforeRender`; one compare per frame otherwise). Textures used only
-by decals or by materials under 300 triangles are capped at 256 px on every tier (tiny props, grime).
+Runtime optimizer (`work/native_maps_runtime.js`, `nmOptimizeScene`, after `nmPrepareScene` and the z-fight fix,
+before `nmBudget`, also on rehydrate): identical converted materials share one instance (the key includes the z-fight
+polygon offset, so layers stay apart); `nmChunkPlan` gives the scene a draw-object budget of `NM_OPT.ratio` x the source
+mesh count (0.9) and spends it splitting the biggest material groups (pieces >= 8,000 triangles; decal/foliage groups
+weighted x2) by triangle-centroid median along the longer axis, so frustum culling has pieces to cull; every other
+group stays one object (a lone source mesh is reused as is, no copy). Decals get a 45 m and foliage cut-outs a 70 m
+draw distance (past the piece's radius), re-tested only after the camera moves 2 m (`nmCull` from
+`scene.onBeforeRender`; one compare per frame otherwise). Textures used only by decals or by materials under 300
+triangles are capped at 256 px on every tier (tiny props, grime). Ratio 1 cut more triangles (-20..-32%) but put Haven's
+worst view at 312 draw calls vs 310 source; 0.9 keeps every map at or under the source on both views.
 
-PERF_TABLE
+`tools/map-perf.mjs` (six maps, the runtime's own plan and NM_OPT; average view = 48 random nav nodes at eye height,
+8 yaws each; worst = the maximum over those 384 views; draw calls/triangles counted per object whose bounds intersect the
+frustum, detail distance applied). Optimize ms = `nmOptimizeScene` on the real scene in node (idle sandbox,
+`server/tools/.scratch/opt/realopt3.mjs`):
 
-Load cost: Lotus 247 meshes -> 629 chunks / 137 materials in 3.8 s on the shared (contended) sandbox CPU, +170 MB
-transient (source arrays freed right after); triangles preserved exactly (node run on the real scene).
+| map | draw calls avg view: source -> opt | worst view calls | triangles avg view | worst view triangles | objects | optimize ms |
+|---|---|---|---|---|---|---|
+| Ascent | 304 -> 279 | 476 -> 409 | 2.85 M -> 2.51 M (-12%) | 3.32 M -> 3.29 M (-1%) | 479 -> 431 | 974 |
+| Bind | 237 -> 204 | 379 -> 323 | 2.34 M -> 1.83 M (-22%) | 2.83 M -> 2.52 M (-11%) | 392 -> 352 | 881 |
+| Haven | 206 -> 188 | 310 -> 279 | 3.58 M -> 2.89 M (-19%) | 4.09 M -> 4.07 M (-1%) | 314 -> 282 | 1135 |
+| Split | 312 -> 271 | 485 -> 432 | 2.70 M -> 2.12 M (-21%) | 3.20 M -> 3.15 M (-2%) | 507 -> 456 | 1185 |
+| Lotus | 156 -> 140 | 243 -> 210 | 2.45 M -> 1.79 M (-27%) | 2.62 M -> 2.42 M (-7%) | 247 -> 222 | 1011 |
+| Breeze | 268 -> 238 | 462 -> 392 | 2.28 M -> 1.75 M (-23%) | 2.69 M -> 2.47 M (-8%) | 476 -> 428 | 1116 |
+
+Load cost: the build is one pass over each split group's triangles (vertex list recorded while indexing, then one
+typed-array copy per attribute), precomputed per-level bins in the split, typed-array part bucketing and a direct
+bounding-sphere pass: 1.8-2.0 s -> 0.9-1.2 s per map. Triangles are preserved exactly (`tris out` = source on all six;
+`work/test_map_optimizer.cjs` checks every corner's position/normal/uv). Raw numbers: `work/validation/map/perf.json`.
 
 Not done (measured or judged not worth it):
 - PVS occlusion culling: built and measured (24 m columns, 8 m viewer cells, conservative ray marching): it removed
@@ -118,7 +151,8 @@ all three corners of one within 1 cm of the other's plane, normals parallel (|do
 
 Fix (runtime, `NM_ZFIX` + `nmZFixApply` after `nmPrepareScene`, also on rehydrate; data `work/validation/map/zfight-fix.json`):
 - exact duplicate faces are dropped from the mesh that carries the hidden copy (blended or smaller-area material);
-- overlay layers get graded material `polygonOffset` (factor = units = -level, levels 1..4) from a weighted DSatur
+- overlay layers get graded material `polygonOffset` (factor = units = -level, levels 1..4, plus a hand-set level 5
+  on Haven and Split, below) from a weighted DSatur
   colouring of the material overlap graph (5 levels incl. 0; the reported seams weigh 1000x so they are separated
   first), so every overlapping pair sits on different depth levels and draws in a fixed order; decals keep their own
   -2/-2;
@@ -132,24 +166,56 @@ Coplanar overlapping pairs left on one depth level (whole map, before -> after; 
 |---|---|---|---|---|---|
 | Ascent | 3,320,370 | 32,130 | 29,842 (57 / 29,785) | 59 | 4.1 m2 |
 | Bind | 2,841,334 | 24,472 | 19,315 (14 / 19,301) | 0 | 0 |
-| Haven | 4,094,074 | 142,830 | 129,897 (50 / 129,847) | 697 | 41.9 m2 |
-| Split | 3,210,903 | 36,726 | 34,519 (46 / 34,473) | 192 | 8.6 m2 |
+| Haven | 4,094,074 | 142,830 | 129,897 (50 / 129,847) | 673 | 24.4 m2 |
+| Split | 3,210,903 | 36,726 | 34,519 (46 / 34,473) | 168 | 6.7 m2 |
 | Lotus | 2,622,530 | 16,864 | 12,968 (0 / 12,968) | 0 | 0 |
 | Breeze | 2,703,733 | 20,227 | 16,001 (752 / 15,249) | 9 | 0.2 m2 |
 
 (Ascent's "before" area is dominated by far vista cards beyond the 500 m far plane.) Reported seams, 6 m around each
 (`server/test-map-zfight.js`, in npm test): Ascent (-22, -18.75), (11.25, 2), (14.5, 20.5), (49, -39.75) 1,350 -> 0;
-Split (-35.75, 18.5), (15.75, -18) 970 -> 3 (0.025 m2); Breeze (-18.25, -70.25), (7.75, -48) 392 -> 0. Client:
+Split (-35.75, 18.5), (15.75, -18) 970 -> 0; Breeze (-18.25, -70.25), (7.75, -48) 392 -> 0. Client:
 `work/test_map_zfight.cjs` (data = file, apply semantics, decals untouched, shared geometry cut once, wiring, near plane).
-What is left is where the overlap graph needs more than 5 levels; largest residues: Haven puddle on slate tiles
-(17 m2), window fill / wood trim, Meteor box / red beam (`leftAfter` in the summary).
+Level 5 (hand-set, a level nothing else uses, so moving a material there can only separate pairs, never join
+them): Haven `Puddle_2_M0_MI` (the puddle on the slate tiles at (8.4, 7, 15.5), 17.3 m2 that overlapped layers
+on every one of levels 0..4) -> whole-map open 697 -> 673, 41.9 -> 24.4 m2; Split
+`Metal_M5_KingdomMetalTrimConstruction_MI` (level 3 -> 5; the last 3 seam pairs against the seamed panel at
+(11.3, 20.1, -14.2)) -> seams 3 -> 0, whole-map open 192 -> 168, 8.6 -> 6.7 m2. Re-scan with
+`FIX=work/validation/map/zfight-fix.json JSON=... node tools/map-zfight.mjs haven split` (FIX takes the per-map file).
+What is left is where the overlap graph needs more than 5 levels; largest residues: Haven window fill / wood trim
+(4.5 m2), Meteor box / red beam (3.6 m2); Split floor tiles / slatted wood (1.1 m2) (`leftAfter` in the summary).
+
+## Visual gaps (see-through walls, sky cracks, floating props)
+
+Every converted material is drawn double-sided (`nmPrepareScene`), so a missing backface cannot open a wall; below-horizon
+void is covered by `eval-visual-holes.mjs` + the backdrop skirt. `server/tools/map-seethrough.mjs` (250 nodes, 24,000
+sight rays per map; data `work/validation/map/visual-scan.json`):
+
+| map | see-through (collision without render) | sky cracks | floating candidates |
+|---|---|---|---|
+| Ascent | 0 | 1 | 2 |
+| Bind | 0 | 0 | 1 |
+| Haven | 0 | 0 | 0 |
+| Split | 0 | 0 | 1 |
+| Lotus | 0 | 0 | 1 |
+| Breeze | 0 | 0 | 1 |
+
+Each candidate was rendered from the nearest playable node (`view-map.mjs`, raw meshes): the Ascent crack
+(from (-23.75, 9.67, -25), 20 deg up, heading 334) is open sky between rooftops, not a hole. Floating candidates, verdicts
+from the rendered view and the down-ray hits (inferred, not confirmed in a browser): Ascent attacker well inner plate
+(-0.94, 8.25, 44.39; part of the well model), Ascent rowboat (-65.8, 7, -19.5; 0.4 m over the canal bed, on the water),
+Split hanging bunny sign (3.55, 12.86, -41.0; 3.9 m up, its wires are skipped by the scan), Lotus ruined wall
+(-54.4, 7.3, -6.6) and Breeze boat-shop storage (-58.4, 6.2, 43.3) outside the playable area with nothing under them;
+Bind adobe wall section (-37.07, 11.81, -30.99; 4.4 x 5.9 x 0.6 m, 0.9 m over the floor, nothing found within 0.3 m
+of its sides) looks like a lintel over an opening but is the one worth a browser look. Earlier passes of the scan with
+foliage/palms counted as closing geometry gave 9 "cracks" (Breeze palms, Haven trees), all open sky in the rendered
+views; foliage is excluded now. No data fix was needed: nothing in the survey is a real gap.
 
 ## Needs a real-browser look (for the browser agent)
 
 1. Every map: load, check FPS / `renderer.info.render.calls` / `renderer.info.render.triangles` before vs after at
    attacker spawn, mid and each site; confirm no missing geometry (chunks), no z-order change on decals, foliage
    popping at ~70 m and decals at ~45 m acceptable, small-prop textures (256 px) acceptable up close.
-2. Map load time on "Preparing the map…" (optimizer adds ~1.5-4 s).
+2. Map load time on "Preparing the map…" (optimizer adds ~1 s per map on the sandbox CPU).
 3. Leash feel: walk/strafe along Ascent attacker-spawn back edge (x 0..10, z 63..72), A site east edge (x 50..56,
    z -27..-25), Lotus west area (x -67..-45, z -10..6): stops at the edge without jitter; Jett updraft beside walls
    (Ascent B main x -37, z 12..25; Haven perimeter) cannot land on wall tops/roofs; crates/boxes the nav sampled are
@@ -159,6 +225,9 @@ What is left is where the overlap graph needs more than 5 levels; largest residu
    Split (-35.75,18.5), (15.75,-18); Breeze (-18.25,-70.25), (7.75,-48)): walls/floors should no longer flicker when
    strafing or at range; check no layer now looks wrongly on top (a trim hidden by its wall), and no near-plane clipping
    when hugging walls / crouching at corners (near 0.1 m).
-6. Online: the client fetches collision from the deployed worker (`/worlds`), so the collision patches reach online
+6. Visual-gap candidates (Visual gaps section): Bind adobe wall section at (-37.07, 11.81, -30.99) should sit on/in its
+   wall (no visible gap under or beside it); Ascent rowboat (-65.8, 7, -19.5) sits on the canal water; Split bunny sign
+   (3.55, 12.86, -41.0) hangs from its wires.
+7. Online: the client fetches collision from the deployed worker (`/worlds`), so the collision patches reach online
    play and the offline client only after the worker's worlds are rebuilt and deployed (`npm run build:worlds` +
    deploy, owner's call; not done here). The leash, optimizer and texture cap ship with the page.

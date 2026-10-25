@@ -21,6 +21,8 @@ const shootAt=(s,a,p)=>{Object.assign(a,aim([a.x,a.y+1.6-(a.ch||0),a.z],p),{fire
  const sp=duel(wall,'Spectre');shootAt(sp.s,sp.a,body);assert.equal(sp.b.hp,100,'Low tier (0.15 m) is stopped');
  const thick=slab(-4.5,-5.5),o=duel(thick,'Odin');shootAt(o.s,o.a,body);assert.equal(o.b.hp,100,'1 m wall stops everything');
  const mid=slab(-4.75,-5.25),od=duel(mid,'Odin');shootAt(od.s,od.a,body);assert.equal(od.b.hp,100-Math.floor(38*.75),'High tier passes 0.5 m at 75%');
+ {const wb=duel(wall,'Vandal');wb.b.hp=1;wb.b.armor=0;const k0=wb.s.events.length;shootAt(wb.s,wb.a,body);const k=wb.s.events.slice(k0).find(e=>e[0]==='k');assert.ok(k&&k[5]===1,'wallbang kill flagged in the kill event (6th field)');
+  const op=duel(undefined,'Vandal');op.b.hp=1;op.b.armor=0;const o0=op.s.events.length;shootAt(op.s,op.a,body);const ko=op.s.events.slice(o0).find(e=>e[0]==='k');assert.ok(ko&&ko[5]===0,'open kill not flagged');}
  const kn=duel(wall,'Knife');kn.b.z=-1.2;shootAt(kn.s,kn.a,[0,1,-1.2]);assert.ok(kn.b.hp<100,'knife unaffected');}
 // 4. Sage barrier stops bullets (no wallbang) and takes the damage instead.
 {const {s,a,b}=duel(undefined,'Odin',SpikeSimulation,'five');s.effects.push({id:9,kind:'barrier',p:[0,0,-5],yaw:0,hp:600,until:99});shootAt(s,a,[0,1,-10]);assert.equal(b.hp,100);assert.ok(s.effects[0].hp<600);}
