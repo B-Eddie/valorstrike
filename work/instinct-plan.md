@@ -66,5 +66,9 @@ All 12 user-list items now have shipped fixes on instinct. Remaining: ledger 13-
   match-start GLB parse pegs both cores (page main thread never yields to evaluate) and RSS
   hits the 2GB ceiling before RUNNING. Sandbox saturation is CPU+memory, so full-native
   acceptance needs a larger container or real hardware; stays on the long-term ledger (row 1).
-  Participant-scoped xvReadyAgents (load only the match's roster kits instead of all 12) is
-  the next identified demand-reduction lever, not yet implemented.
+  Participant-scoped xvReadyAgents shipped (fa03ea3): gate loads the match roster
+  (pick + Chamber + drawn teams via consumed-once xTmPreDrawn pre-draw; MP.on or unknown
+  state still loads all 12 for late joins). Live-verified via real UI path (roster-probe):
+  7 kits loaded for a 7-name DM roster, 5 non-participant kits skipped, 6s start, zero errors.
+  texcap hook hardened + unit-tested (181e563): option/orientation/alpha preservation, probe
+  closure, resize-failure fallback to full-size probe, Safari/Firefox no-cap path explicit.
