@@ -765,3 +765,13 @@ nondeterministic residual load/timing variance, not a fixed geometric trap: ever
 reaches the top unaided. Reframed: transient self-recovering stair-mouth pauses under SwiftShader;
 the runtime per-unit stall breaker already covers bots in real matches. Downgraded to a
 smoothness nit; kept open (a real step-up smoothing change needs a proven mechanism first).
+
+## 2026-10-25 ~18:21 EDT - Breeze ACTIVE (unsettled) re-measure with stall tracing: 5 samples
+Same traced probe, breeze, NO settle (walk immediately): 5 stall samples (earlier: 9 pre-warm,
+4 post-warm at 17:22), reached=true, down leg completed after retries but over threshold.
+StallPts: 2 at the flight BASE (-30.5,8.16,-50.5 - the start node, startup contention window),
+1 mid-flight (-27.65,9.06,-47.65), 2 at (-25.11,8.72,-50.85). Spread across the flight, not one
+geometric point -> consistent with residual early-match contention, not a motor/geometry trap.
+Post-warm active readings now 4 and 5 (noise band around the earlier 9). Open work unchanged:
+reduce ACTUAL startup contention (bounded decode/preload scheduling or readiness changes);
+check hark-perf overlap first (it owns agent cull + nav GC).
