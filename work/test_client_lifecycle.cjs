@@ -42,7 +42,7 @@ const listenerCount=()=>{let n=0;for(const t of [H.win,H.doc]){const m=H.listene
 // measurement, so gc() could never collect it and each one was counted live again (a self-perpetuating false leak).
 const measure=()=>{xe('window.__qaLiveG=null;window.__qaOrphans=null;true');gc();return Object.assign(xe('__qaSizes()'),{'harness.timers':H.timers.size,'harness.raf':H.rafLen(),'window+document listeners':listenerCount(),'heap MB':Math.round(process.memoryUsage().heapUsed/1048576)});};
 // how a match ends: forced last round / time-up (the page's own end flow follows) -> results -> Lobby button
-const END={duel:'du.you=Math.max(du.you,DUEL_WIN-1);duelKill(true," QA")',aim:'AM.t=Math.min(AM.t,0.5)',
+const END={duel:'if(!running||du.wait>0)return false;du.you=Math.max(du.you,DUEL_WIN-1);duelKill(true," QA")',aim:'AM.t=Math.min(AM.t,0.5)',
  rifle:'if(picking)rGo(RF.w||"Vandal");if(!running)return false;RF.you=RIFLE_WIN-1;RF.them=Math.min(RF.them,RIFLE_WIN-1);rEnd(true,"QA")',
  retake:'if(!running)return false;score.you=Math.max(score.you,3);end(true,"QA")',dm:'timeLeft=Math.min(timeLeft,0.05)',
  five:'if(!running)return false;FV.you=(FV.sr?(FV.srWin||4):FV.sw?5:FIVE_WIN)-1;FV.them=Math.min(FV.them,FV.you-1);FV.sp.st="carry";fCheck(true,"QA")'};
