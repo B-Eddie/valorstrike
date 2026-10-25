@@ -497,3 +497,11 @@ Open: complete B join mid-match + kill phase (60s window at 2.5fps); then label 
 - Fix (index.html, direct region): (1) room controls row (Map/Start/Leave) moved ABOVE the roster list in the DOM; (2) .x-qon__list capped (max-height:min(28vh,180px); overflow-y:auto) so roster growth scrolls internally and can never push the controls; (3) mpUI auto-scrolls the room block into view once, on the room-hidden->shown transition only (mpUI polls at 33ms, so transition-gated to never fight user scrolling).
 - Verified rendered, hit-target level: 960x600 real room AND stressed 10-player roster: Start at y463-507, elementFromPoint = #xOnStart, inViewport, position IDENTICAL across roster sizes. 640x360 (y247-291) and 1280x800 (y663-707) pass the same way. Screenshot /tmp/hittest_960x600.png visually inspected: room code, map select, red Start, Leave and the internally-scrolling roster all visible.
 - Closes the ledger's "NEEDS a 960x600 visual check" item. The sibling item (retake/custom start ignoring __vsLight, 76s+ "Preparing the map...") remains open for the perf pass.
+
+## Mobile lobby reachability pass (14:38) - measurements + tab affordance fix
+- Probe work/browser-tests/lobby-mobile-reach.cjs (offline lobby, no match): measures visibility + elementFromPoint hit targets per tab/START/online controls.
+- 390x844 portrait: #rot gate shown (ROTATE YOUR PHONE TO LANDSCAPE / PLAY IN PORTRAIT) - current unsupported behavior, labeled, not waived.
+- 844x390 landscape: rot gate correctly hidden. Tabs UNRATED..TEAM DEATHMATCH visible+hit-ok; ESCALATION clipped by the tab-strip scroll (rect pokes under the close-button zone) and CUSTOM off-strip - both reachable via strip scroll but with zero affordance (scrollbar-width:none). START card 377..441 below the 390 fold (page scrolls). Online section below fold (scrollable).
+- 640x360: TEAM DEATHMATCH clipped, ESCALATION+CUSTOM off-strip, START below fold - same pattern.
+- FIX: fade mask on .x-qtabs at <=1024px (linear-gradient 90%->99%) so an overflowing strip shows a fading right edge. Verified visually at 844x390 (ESCALATION edge fades before the close button).
+- Left as accepted-scroll behavior (recorded, not fixed): START card + online section below the initial fold at <=390px-tall viewports; strip remains scroll-only (chosen over wrapping in the earlier crush fix to protect vertical space).
