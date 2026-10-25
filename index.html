@@ -10561,7 +10561,7 @@ let xTGOn = false; const xTG = { inPlay: () => false, relAll: () => {} };
   function gain(n) { const u = unit(n); if (!u) return; const a = xAg(u), m = (KITS[a] && KITS[a].u) || 7; XU.c[n] = Math.min(m, (XU.c[n] || 0) + 1); } // agents without a bot ult still charge (scoreboard pips); think1 only fires PTS agents
   const k0 = kill; kill = function (b, hs, by, w) { const was = b && b.alive; const r = k0.apply(this, arguments); if (was && b && !b.alive) { try { if (mode === "five") gain(b.name); gain(by); delete XU.b[b.name]; ribEnd(b); } catch (e) {} } return r; };
   const a0 = allyDie; allyDie = function (a, by, w) { const was = a && a.alive; const r = a0.apply(this, arguments); if (was) { try { if (mode === "five") gain(a.name); gain(by); delete XU.b[a.name]; ribEnd(a); } catch (e) {} } return r; };
-  const p0 = pDie; pDie = function (by, w) { try { gain(by); } catch (e) {} return p0.apply(this, arguments); };
+  const p0 = pDie; pDie = function (by, w) { try { if (!(jOn() && J.rib > 0 && J.ribP)) gain(by); } catch (e) {} return p0.apply(this, arguments); }; // killing the player inside Run It Back is no kill: no ult point for the bot
   const f0 = feed; feed = function (t) { try { const m = typeof t === "string" && /^(.+?) planted the Spike/.exec(t); if (m) gain(m[1]); } catch (e) {} return f0.apply(this, arguments); };
   const e0 = end; end = function (w, text) { try { const m = /^(.+?) defused the spike/i.exec(text || ""); if (m) gain(m[1]); } catch (e) {} return e0.apply(this, arguments); };
   const h0 = hurt; hurt = function (t, n, by) { const m = by && XU.b[by]; return h0.call(this, t, m ? n * m : n, by); };

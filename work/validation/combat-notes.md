@@ -459,3 +459,7 @@ in-process server; it keeps the VALORANT FEEL block the audit fixture strips, an
   spike / carrier / body). Repro on the old page (raised 6.4 m floor, online path): orbit camera y 5.7, under the floor. Floor guard: every spectate camera stays >= the followed player's nav floor + 1.2 m (a floor face
   just above a sunk target counts). `work/test_spectate_follow.cjs` (follow logic + the real page on a raised native floor,
   offline 5v5 after a plant and the online 5v5 path: killer / cycle / third person at eye height, sunk target, orbit).
+- **Run It Back**: a Phoenix killed inside his ult is no kill and no death (no scoreboard kill / death, no ult point either
+  side, no signature recharge), gun or utility; the Reyna soul orb and Jett's Blade Storm refresh still trigger (patch
+  1.02), the kill feed still shows it, offline bots get no ult point for it. The 200 kill credits are kept: no source says
+  they are withheld (the drafted withholding was dropped). `test-economy.js` section 6.
