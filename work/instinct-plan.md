@@ -285,9 +285,16 @@ floor contact retained as NUMERIC evidence only (flat bg has no ground reference
 - OPEN phase4 (A picks the drop via pick/bo): flaky - A must cross live bot war; round end
   clears the floor (1v1 impossible: roundDelay blocks pick, newRound clears floor - teammate
   bots required for the round to continue, exactly what makes the crossing dangerous).
-  Next-wake plan: THREE-client variant - A+C join team0 as teammates (join order assigns
-  teams 0,1,0), C buys a cheap primary round 2 and dropw's beside A in-spawn during buy
-  phase (floorTick: "buy phase included: teammates hand guns"); A picks deterministically.
+  Three-client variant IMPLEMENTED (C joins third -> team0 with A; buy auto-equips; C dropw
+  beside A inside the shared buy barrier; A picks). Phases 1-3 re-verified green in the
+  three-client run. UNVERIFIED end-to-end: full flow needs ~150s+ but the bash tool caps at
+  120s and detached children are killed when the call returns, so wrangler cannot outlive
+  the call. Root slowness: after B dies, the combat loop exits and A+C idle while the bot
+  war finishes round 1 at its own pace. NEXT FIX: after phase 3, keep driving A+C to hunt
+  the nearest living enemy (self-defense aim + waypoint walk) so round 1 ends immediately;
+  then round-2 buy + handoff + pick fits ~110s. Fallback: split into two wrangler sessions
+  (phase 4-only room: C kills a bot round 1 for +200cr... still slow) or a local-only
+  ROUND_SECONDS wrangler var (touches sim - needs parent sign-off).
 - FINDING (not a production bug): server idle-closes ready sessions after 15s without
   messages; dead/spectating clients must keepalive. Real client sends inputs at 20Hz
   unconditionally (index.html:13053), so production is unaffected; test client now pings.
