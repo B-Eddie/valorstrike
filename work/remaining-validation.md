@@ -516,3 +516,14 @@ Open: complete B join mid-match + kill phase (60s window at 2.5fps); then label 
 ## Tab-strip swipe + tab reach (844x390 touch) - PASS (14:42)
 - Probe work/browser-tests/lobby-tab-swipe.cjs: touch drag on .x-qtabs moves scrollLeft 0->186 (fade-mask affordance backed by real scrolling); after the swipe, ESCALATION rect fully inside the clip with elementFromPoint on the tab; tap activates it (class .on) and the visible pane switches to the Escalation card; CUSTOM tap activates; X closes the queue.
 - Note: the strip resets scrollLeft to 0 when a pane activates (reads after a tap are not the swipe measurement).
+
+## TDM loadout/tier/respawn transitions (offline, 844x390 emulated touch) - PASS (14:59)
+- Probe work/browser-tests/tdm-transitions.cjs, 12/12 checks:
+  - Touch BUY opens the loadout (tap after the loading screen clears; elementFromPoint on the button).
+  - Tier 0 locks correct: Shotguns/Rifles locked "2:00", Snipers/MGs "5:00", all disabled; Sidearms/SMGs free.
+  - Loadout grid at 844x390 (351px dialog, overflow-y:auto): Spectre initially half-clipped; a touch drag on the grid scrolls it into reach (drag verified, not just programmatic), tap equips (pri=Spectre, ammo 30) and the menu auto-closes.
+  - Tier 1 at 2:00 elapsed: toast "Rifles & shotguns unlocked · B"; the OPEN loadout re-renders live (Rifles unlocked); Vandal tap equips (ammo 25).
+  - Tier 2 at 5:00: toast "Snipers & machine guns unlocked · B"; all weapons enabled (Operator tappable).
+  - Death: "You died · respawning" toast, DM.prt 1.5s timer set, loadout closed, death counted. (An earlier probe run read "spectating your team" because hurt and die were split across two evaluates and dmTick set DM.prt in between, gating the wrapper - probe artifact, not a game bug; the real path is one synchronous frame.)
+  - Respawn: hp 100, armor 50, vx/crouch/air reset, spawn protection armed (DM.pp ~1.7s remaining when polled).
+- Harness notes: __vs.die hook added to debug_runtime.js (localhost-gated test hook) to drive the same pDie path bots use; Vandal grid scroll used scrollIntoView after two real touch drags (grid touch-scroll proven on Spectre), tap itself was real.
