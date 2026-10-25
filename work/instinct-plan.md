@@ -104,6 +104,11 @@ All 12 user-list items now have shipped fixes on instinct. Remaining: ledger 13-
 - Watch item (single sample, not yet a bug): one bind soak round ended with the last ally
   (Chamber) stationary 16s at (-47,10.3) mid-round while spike was player-carried; could be a
   hold personality or pathing stall - needs another sample before treating as a defect.
+- five-soak haven round (parameterized MAP): allies traded 3-for-1 then wiped, player-carried
+  spike, no stuck attackers, no anomalies, zero page errors - PASS. Cumulative post-fix samples:
+  4 rounds (bind x3, haven), allies won 1 via plant+detonation, defenders won 3 with an idle
+  player; defenders SHOULD hold an edge and the probe player barely participates, so no
+  imbalance claim is made - only flow evidence.
 - Probe harness note: startFive reads FV.pick, NOT FV.map - oob-probe's first version silently
   ran Ascent in both sections until fixed (map selection now asserted via site-node coordinates).
 - Per-mode acceptance limits: offline modes covered by the client watch; trusted-server rooms
