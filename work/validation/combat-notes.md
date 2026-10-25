@@ -122,3 +122,35 @@ Tests: `server/test-combat.js` (in `npm test`), `work/test_combat_consistency.cj
   which can differ from their original team; records still aggregate by profile).
 - Flaky (not ours, from hark's loading work): `work/test_agent_preload.cjs` line 27 (`locomotion.bin` cached) failed 1 of ~10 runs
   under load; passes on rerun. Looks like a flush-timing race in the test.
+
+## Crowded-combat profiling (ledger row 12)
+
+Bench: `Simulation` on Ascent TDM, 1 human seat + 9 bots, 1200 steps of 50 ms (60 s) plus a snapshot per step, Node 22 in this
+sandbox, quiet machine, three runs each (bot RNG is `Math.random`, so runs differ slightly). Script kept out of the repo
+(`/tmp`); the same loop as `server/bench-sim.js` with per-step timing.
+
+| | avg tick | p99 | first tick | worst after 1 s |
+|---|---|---|---|---|
+| before (727807e) | 2.51–2.88 ms | 9.0–10.8 ms | 69–76 ms | 12–23 ms |
+| after | 1.52–2.20 ms | 6.5–8.9 ms | 44–56 ms | 11–15 ms |
+| Spike `five`, 40 s, before → after | 5.81 → 2.19 ms | 28.9 → 15.5 ms | | 92 → 58 ms |
+
+Profile (before): Motor collision 51% (`world.blocked` capsule shapecast 38%, `ground` raycasts 15%), `world.near` 8% (full scan of
+~9.5k playable nodes per call), A* 7% (three typed arrays allocated and filled per call), team spawn candidates 7.6% (full scan
++ capsule test of every nearby node on every respawn). The earlier 3.3 ms / 54 ms figure was measured under a different load;
+the table above is the like-for-like comparison.
+
+Changes:
+- `world.near`: 4 m uniform grid with outward ring search and a provable lower bound; ties keep scan order, so results are identical
+  (`nearScan` kept as the reference). ~45 µs → ~4.5 µs per call.
+- `path.js`: CSR adjacency with precomputed edge costs (same evaluation order), typed binary heap with the reference sift order,
+  generation-stamped buffers instead of per-call allocation, per-world LRU route cache (1024 entries, copies returned because bots
+  `shift()` routes). Built at `Simulation` construction (`prepare`) so the first tick does not pay for it. ~1.0 → ~0.6 ms uncached;
+  routes identical to the reference `search`.
+- `world.blocked`: triangles whose bounds miss the capsule box are rejected before the exact segment–triangle distance.
+- Team spawn candidates cached per anchor for static worlds (Spike's barrier-aware world view is not cached).
+- Test: `server/test-perf.js` (in `npm test`): 8000 grid-vs-scan lookups + exact-node ties, 500 fast-vs-reference routes on
+  Ascent and Split, cached-route copy safety, spawn cache.
+
+Remaining hot path: the shared Motor's 128 Hz substeps call `blocked`/`ground` ~200 and ~150 times per tick; making those cheaper
+means changing the shared motor or the BVH query and was left alone. The first tick is still ~45–55 ms (JIT/BVH cold start).
