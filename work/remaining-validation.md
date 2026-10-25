@@ -871,3 +871,32 @@ check hark-perf overlap first (it owns agent cull + nav GC).
   steering instead of a straight line - if steering walks clean, the wedge is a probe artifact
   and this investigation closes as no-gameplay-bug; if steering also wedges, it's a real
   movement/collision issue. Player-motor substep hardening stays regardless (06e32f9).
+
+## 2026-10-25 18:54 - Breeze wedge CLOSED (starvation artifact); lotus one-way step: nav directionality filter
+- Breeze wedge RESOLVED as probe artifact: frame counter added to the stairs probe - 10/10
+  stall samples had a FROZEN frame counter (dfc 0-1 over 5 samples), zero true wedges; every
+  completed run reached=true up and back. The "wedging" was SwiftShader main-thread starvation,
+  not movement or geometry. Lateral-clearance check (collision.bin, nmBlocked's exact rule):
+  11/12 wedge points clear, one marginal rail-brush (0.385 vs 0.388) at a starvation sample.
+  Player-motor substepping (06e32f9) stays as tunneling hardening, explicitly NOT the wedge fix.
+  Frame-cost bound, code-verified: n = max(1, ceil(max|d|/0.1)) = 1 at dt<=~37ms (identical work
+  at 60fps); substeps only appear in the low-fps case they protect.
+- Lotus one-way step INTENDED-REACHABILITY evidence (parent asked before any design ask):
+  nav-wide 877 up-impassable (dy>0.321) edges; the source navmesh is undirected (build-world.cjs
+  READS navigation.json), so one-way drop edges exist in both directions and A* planned climbs
+  the motor can never make. BFS: the upper band above the step is climbable-reachable from both
+  spawns via alternate routes (component 8636/9036) - the step is a shortcut drop, standard
+  one-way level design. The step's lower band is a TRUE one-way pocket (every exit climbs
+  >0.321): bots dropping in had a stall-ban loop; honest routing now returns no path.
+- Fix (work/native_maps_runtime.js nmPath expansion): skip edges with dy > 0.321 when PLANNING
+  (terrain untouched, players unaffected - a 0.39m lip is jumpable; bots do not jump-climb).
+  Down edges stay; runtime stall-breaker bans stay as backstop for dynamic geometry.
+- Test: work/test_nav_directionality.cjs EXECUTES the shipped nmPath (brace-matched extraction)
+  against real lotus navigation.json: pocket->upper = honest no-path, both spawns -> upper band
+  and -> all three sites route with every hop within the climb limit, down-across-step routes,
+  cache consistent. test_client_lifecycle 24 matches green. Regen byte-identical twice.
+- PROCESS BUG self-caught: the first version of this patch used a //-comment that swallowed the
+  rest of a minified line (for-body silently commented out). Caught by the functional test before
+  commit; use /* */ when patching minified lines. Regen md5-identical does NOT catch this class.
+- Lotus intent no longer needs a design ask: reachability evidence shows the one-way step is a
+  shortcut drop with alternates preserved. Remaining lotus openness: none on directionality.
