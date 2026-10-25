@@ -289,6 +289,15 @@ Re-sweep after C1/C2 (stride 2 + walk-in trap test on every sampled node, RENDER
   paving bump under a low ceiling (1.8-2.2 m over the floor) - the step-up tested headroom for the full 40 cm step and
   refused it. Fix (shared motor): headroom is tested for the lift actually used (full step, or the few cm of the lean-wall
   lift). Fixture added (Haven edges).
+- Split (3,902 nodes, 13,421 edges): 0 stuck, 0 refused edges, 1 walk-in trap: walking (-0.71, 0.71) from (-3.5, 9.02, -47)
+  into a rounded prop by a wall (centre (-4.12, 9, -46.4), 0.5 m wide, 0.8 m tall, domed collision) stepped onto its lip
+  and climbed the curved side a few cm per sub-step - each lift cleared by contact at the capsule's rim, no single riser
+  over the step height - ending 0.8 m up, embedded 1.7 cm on its shoulder. A motor-wide slope rule (lift must end on
+  floor within 0.2 m of the axis) was tried and dropped: it also refuses ordinary stairs, whose first riser is met by the
+  rim 0.4 m ahead (`work/test_map_riser.cjs` failed). Fix: a player clip on the prop's footprint (`CLIPS.split`, octagon
+  r 0.27, feet band 9..9.85 m) makes it a post; it now stops beside it and walks off in 5 directions, jumping on top
+  still works. No playable node is clip-blocked (one non-playable node 0.64 m from the centre is). Fixture added (Split traps).
+- Lotus (4,348 nodes, 14,676 edges): 0 stuck, 0 traps, 0 refused edges.
 
 Spawns and plant sites (all six maps): attacker / defender spawn candidates 246-660 / 103-634 per map, none embedded or
 stuck, every candidate reaches every site on the navigation. Every site anchor lies in its own plant zone, its nearest

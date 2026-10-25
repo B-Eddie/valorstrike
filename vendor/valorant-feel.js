@@ -46,11 +46,16 @@ function floorNear(world,x,z,y){let f=world.ground(x,z,y+.05);for(const [ox,oz]o
 // clipBlocked, while shots, sight and floor rays never see a clip. Each clip is a vertical prism: polygon p of [x,z]
 // (the void's outline, measured on the collision mesh) from y[0] to y[1]; a capsule (radius r, feet y, height) is blocked
 // when its footprint comes within r of the polygon and the heights overlap, exactly as a wall standing on the rim would.
+// Split (-4.12, 9, -46.4): a rounded 0.5 m wide, 0.8 m tall prop whose collision is a dome; walking into it the capsule
+// stepped onto its lip and climbed the curved side a few cm per sub-step (each lift cleared by contact at the capsule's
+// rim, no single riser over the step height) and ended 0.8 m up, embedded on its shoulder. The clip (an octagon on its
+// footprint, feet band 9..9.85 m) makes it a post; jumping on top still works.
 // Breeze (x 7.3..10.45, z -24.45..-21.4): crate blocks step down from the 12 m platform (10.95, 9.96, 9.0 m) to the 8 m floor
 // off the nav footprint; a capsule walked off the platform edge dropped 1 m onto the top block, where the leash only let
 // it move back toward the platform (1 m up: jump only). The clip spans the platform's height band only (feet 11..14.5 m;
 // capsules on the 8 m floor, even at a jump apex, top out below 11 m), so the platform edge stops a walk as a wall would.
 const CLIPS={ascent:[{name:'A ramp pit',y:[-60,15],p:[[42.55,-25.15],[42.62,-24.95],[42.78,-24.25],[42.98,-23.25],[42.5,-23.13],[41,-22.83],[39.5,-22.52],[38,-22.2],[37.3,-22.18],[37.22,-22.7],[37.12,-23.1],[37,-23.55],[36.97,-23.82],[37.45,-23.92],[37.95,-24.02],[38.15,-24.25],[38.75,-24.42],[39.65,-24.62],[40.7,-24.82],[41.7,-25.02]]}],
+ split:[{name:'rounded 0.8 m prop by a wall (domed: a capsule climbed it rim-first)',y:[9,9.85],p:[[-3.85,-46.4],[-3.93,-46.21],[-4.12,-46.13],[-4.31,-46.21],[-4.39,-46.4],[-4.31,-46.59],[-4.12,-46.67],[-3.93,-46.59]]}],
  breeze:[{name:'crate stack below the 12 m platform south-east edge',y:[11,14.5],p:[[8.6,-24.45],[10.45,-24.45],[10.45,-21.4],[7.3,-21.4],[7.3,-23.6],[8,-23.85],[8.35,-24.2]]}]};
 for(const k in CLIPS)for(const c of CLIPS[k]){let a=1e9,b=-1e9,e=1e9,f=-1e9;for(const [x,z]of c.p){a=Math.min(a,x);b=Math.max(b,x);e=Math.min(e,z);f=Math.max(f,z);}c.b=[a,b,e,f];}
 function polyDist(p,x,z){let inside=false,d=Infinity;for(let i=0,j=p.length-1;i<p.length;j=i++){const [ax,az]=p[j],[bx,bz]=p[i];if((bz>z)!==(az>z)&&x<(ax-bx)*(z-bz)/(az-bz)+bx)inside=!inside;const ex=bx-ax,ez=bz-az,t=Math.max(0,Math.min(1,((x-ax)*ex+(z-az)*ez)/(ex*ex+ez*ez||1)));d=Math.min(d,Math.hypot(ax+ex*t-x,az+ez*t-z));}return inside?0:d;}
