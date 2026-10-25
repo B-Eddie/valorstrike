@@ -285,6 +285,10 @@ Re-sweep after C1/C2 (stride 2 + walk-in trap test on every sampled node, RENDER
   (-0.71, 0.71) wedges the capsule at (-53.49, 7.41, 21.32) in a rock pocket between a mound and a wall leaning over at
   head height; every standing move meets one of them within 2 mm at any lift, so it is not fixed in the motor. It walks
   out crouched (225-315 deg, 1.2-1.4 m in 0.6 s) or with a jump toward (0.71, -0.71): left for the browser list.
+- Haven (C2 motor; 4,081 nodes, 14,575 edges): 0 stuck, 0 traps, 1 refused edge (9, 8, -58) -> (9, 7.99, -57.25): a 5 mm
+  paving bump under a low ceiling (1.8-2.2 m over the floor) - the step-up tested headroom for the full 40 cm step and
+  refused it. Fix (shared motor): headroom is tested for the lift actually used (full step, or the few cm of the lean-wall
+  lift). Fixture added (Haven edges).
 
 Spawns and plant sites (all six maps): attacker / defender spawn candidates 246-660 / 103-634 per map, none embedded or
 stuck, every candidate reaches every site on the navigation. Every site anchor lies in its own plant zone, its nearest

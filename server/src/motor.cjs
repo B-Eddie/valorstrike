@@ -109,8 +109,11 @@ function step(P,input,dt,world){
    // (0.5, 1.5, 3, 5 cm): under a low ceiling or a beam a 5 cm lift put the head into it while a few mm cleared the bump
    // (Ascent (30.25, 9.2, -10.19): wedged under a 1.66 m soffit over bumpy floor).
    // Lift by the step height, move, then settle onto the lowest free height above the destination floor.
-   if(grounded&&(P.vy||0)<=0){const top=P.y+C.stepHeight,support=world.ground(x,z,top),ax=x+Math.sign(dx)*.01,az=z+Math.sign(dz)*.01;let cap=top;if(support>top+.001||(world.ceiling&&world.ceiling(P.x,P.z,P.y+height,top+height)))return false;
+   if(grounded&&(P.vy||0)<=0){const top=P.y+C.stepHeight,support=world.ground(x,z,top),ax=x+Math.sign(dx)*.01,az=z+Math.sign(dz)*.01;let cap=top;if(support>top+.001)return false;
     if(world.blocked(ax,az,.4,top,height)){const b0=Math.max(P.y,support);cap=0;for(const l of LEAN_LIFTS)if(b0+l<top&&!world.blocked(ax,az,.4,b0+l,height)){cap=b0+l;break;}if(!cap)return false;}
+    // Headroom for the lift actually used (a full step, or the few cm of a bump under a lintel: Haven (9, 7.93, -57.7), a
+    // low ceiling 1.8-2.2 m over the floor refused a 5 mm lift because it was tested for the full 40 cm step).
+    if(world.ceiling&&world.ceiling(P.x,P.z,P.y+height,cap+height))return false;
     // Riser test: sampled every 10 cm ahead, no single rise may exceed the step height (stairs pass, a 60 cm box does not).
     {const sx=Math.sign(dx),sz=Math.sign(dz);let prev=Math.max(world.ground(P.x,P.z,top),P.y-.2);for(let d=.1;d<.55;d+=.1){const g=world.ground(P.x+sx*d,P.z+sz*d,top);if(g<prev-1)continue;if(g-prev>C.stepHeight+.01)return false;prev=Math.max(prev,g);}} /* samples through seams between stair meshes are ignored; a dip (a crack between floor slabs, a gutter) never lowers the reference, so the far side of a crack is no riser */let lo=Math.max(P.y,support),hi=cap;if(!world.blocked(x,z,.4,lo,height))hi=lo;else for(let n=0;n<10;n++){const mid=(lo+hi)/2;if(world.blocked(x,z,.4,mid,height))lo=mid;else hi=mid;}const base=floorNear(world,P.x,P.z,P.y);if(hi-base>C.stepHeight+.12)return false;const rise=hi-P.y;P.x=x;P.z=z;P.y=hi;P.vy=0;if(rise>0)P.eyeOffset=(P.eyeOffset||0)-rise;return true;}return false;};
   if(!moveAxis(v.dx,0))P.vx=0;
