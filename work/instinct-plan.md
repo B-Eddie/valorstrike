@@ -75,6 +75,17 @@ All 12 user-list items now have shipped fixes on instinct. Remaining: ledger 13-
   (no kill credit, clean feed label), respawnAt = +1.5 s as usual. five: death without
   mid-round respawn, mirroring the existing void-fall rule (y<-20 unchanged as fall recovery).
   Guarded for legacy stub worlds without near(). test-oob.js wired into npm test.
+- [x] Gameplay soak #1 (five-soak.cjs, natural round on bind, real-time rate after tiny-viewport
+  fix): found ALLY TARGET ACQUISITION was hard-capped at 30u (index.html ally think block)
+  while enemy bots acquire any LOS target at ANY range - defenders melted attackers who never
+  targeted back (live pre-fix round: allies died 4-for-1 in a 6s crossfire). Fix: cap removed,
+  LOS + nearest-sighted kept (index.html line ~4303). Regression: test_ally_acquire.cjs pins
+  sighted acquisition at 45u/80u + unsighted fallback. Live post-fix rounds: allies traded
+  2-for-4 then PLANTED and won via post-plant hold + detonation; third round enemies won 4-for-1
+  - variance, not a one-sided program. 38 client suites green.
+- Sandbox timing note: game dt clamps at 50ms (index.html:4158), so under SwiftShader at ~2fps
+  the whole game runs ~10x slow-motion - environment artifact, not a bug; five-soak uses a
+  320x180 viewport to hold 1.00x real-time (asserted via timeLeft rate).
 - Probe harness note: startFive reads FV.pick, NOT FV.map - oob-probe's first version silently
   ran Ascent in both sections until fixed (map selection now asserted via site-node coordinates).
 - Per-mode acceptance limits: offline modes covered by the client watch; trusted-server rooms

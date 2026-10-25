@@ -4300,7 +4300,7 @@ function tick(dt) {
       for (const b of bots) {
         if (!b.alive) continue;
         const q = b.g.position, d = Math.hypot(q.x - p.x, q.z - p.z);
-        if (d < td && d < 30) { XTK.q.set(q.x, (q.y || 0) + 1.5, q.z); if (los(from, XTK.q)) { a.xTg = b; td = d; } }
+        if (d < td) { XTK.q.set(q.x, (q.y || 0) + 1.5, q.z); if (los(from, XTK.q)) { a.xTg = b; td = d; } } // no range cap: enemy bots acquire with LOS at any range, allies must too (fair fights past 30u)
         const d3 = q.distanceTo(p); if (d3 < nd) { nd = d3; a.xNb = b; }
       }
       a.xTh += 0.1; if (a.xTh <= 0) a.xTh = 0.1;
