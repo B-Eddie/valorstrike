@@ -8860,7 +8860,7 @@ function xdUse() { // F: swap the looked-at gun with the one in that slot; yours
 }
 window.xdUse = xdUse; window.__xd = XD;
 addEventListener("keydown", (e) => {
-  if (xKbSkip(e) || e.repeat || !running || paused || !player || player.hp <= 0 || !xdOn() || FV.buy > 0) return;
+  if (xKbSkip(e) || e.repeat || !running || paused || !player || player.hp <= 0 || !xdOn()) return; // buy phase included (Valorant: drop/pick up guns for teammates; the server allows it too, and the prompt already showed)
   if (e.code === "KeyF") { if (xdUse()) e.stopImmediatePropagation(); return; }
   if (e.code !== "KeyG") return; const s = FV.sp; if (s && s.st === "carry" && s.c === player) return; // carrying the Spike: G keeps dropping the Spike
   if (rw !== "pri" || !FV.pri) return;
