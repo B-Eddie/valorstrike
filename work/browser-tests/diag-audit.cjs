@@ -41,11 +41,11 @@ const {serve, launch, boot} = require('./lib.cjs');
         const c2 = [pa[0], H(C, pa[0], pb[2], pa[1]), pb[2]];
         if (sweepR(pa, c2, c2[1]-pa[1]) && sweepR(c2, pb, pb[1]-c2[1])) return true;
         return false; };
-      let eBad = 0; const pruned = A.map(() => []); let trap = 0;
+      let eBad = 0; const pruned = A.map(() => []); let trap = 0; const bad = [];
       for (let a = 0; a < N.length; a++) { if (!C.playable[a]) continue; let good = 0;
-        for (const b of A[a]) { if (walkR(a, b)) { good++; pruned[a].push(b); } else eBad++; }
+        for (const b of A[a]) { if (walkR(a, b)) { good++; pruned[a].push(b); } else { eBad++; bad.push([a, b]); } }
         if (A[a].length && !good) trap++; }
-      return {eBad, trap, pruned, after: measure(pruned), frags: (() => { const seen = new Uint8Array(N.length); const out = [];
+      return {eBad, trap, pruned, bad, after: measure(pruned), frags: (() => { const seen = new Uint8Array(N.length); const out = [];
         for (let i = 0; i < N.length; i++) { if (seen[i] || !C.playable[i]) continue; const q = [i]; seen[i] = 1; let size = 0;
           for (let k = 0; k < q.length; k++) { size++; for (const j of pruned[q[k]]) if (!seen[j] && C.playable[j]) { seen[j] = 1; q.push(j); } }
           out.push(size); } return out.sort((x, y) => y - x); })()}; };
@@ -81,7 +81,7 @@ const {serve, launch, boot} = require('./lib.cjs');
         .map(([a, b, why]) => ({a: N[a].map(v => +v.toFixed(1)), b: N[b].map(v => +v.toFixed(1)), why,
           intoSewer: (cid[a] === big) !== (cid[b] === big) ? (cid[a] === big ? 'toFrag' : 'toMain') : 'frag'}));
       return {map: C.key, nodes: N.length, playable: C.playable.reduce((n, v) => n + v, 0), eTotal,
-              r45: {eBad: r45.eBad, trap: r45.trap, after: r45.after, frags: r45.frags},
+              r45: {eBad: r45.eBad, trap: r45.trap, after: r45.after, frags: r45.frags}, r45bad: r45.bad,
               r40: {eBad: r40.eBad, trap: r40.trap, after: r40.after, frags: r40.frags},
               ms: +(performance.now() - t0).toFixed(0), before, after: r45.after, fragSizes: (() => { const seen = new Uint8Array(N.length); const out = [];
         for (let i = 0; i < N.length; i++) { if (seen[i] || !C.playable[i]) continue; const q = [i]; seen[i] = 1; let size = 0;
@@ -90,6 +90,7 @@ const {serve, launch, boot} = require('./lib.cjs');
         return out.sort((x, y) => y - x); })(), cuts: cuts.slice(0, 30), cutCount: cuts.length};
     });
     console.log('AUDIT', JSON.stringify(r));
+    console.log('BADEDGES', JSON.stringify(r.r45bad));
   } finally {
     console.log('ERRORS', JSON.stringify(errors.slice(0,4)));
     await b.close(); srv.close();

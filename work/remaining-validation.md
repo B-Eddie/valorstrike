@@ -135,3 +135,15 @@ Planned bake: export bad-edge pairs per map (all six), strip from
 server/public/worlds/*/navigation.json + models/valorant/maps/*/navigation.json, keep
 nmConnected after; trap nodes then fall out of playable automatically. nmPlace zero-exit
 guard becomes redundant for these nodes but is still worth adding for robustness.
+
+## Doorway probe (split A-Sewer articulation, -46.5,2.5) - 06:53 EDT
+Vertical capsule profile at the cut point: blocked y 6.6-6.9, free 7.0+ with a 0.6u probe
+capsule -> a ~0.4u step/ledge at the doorway (floor 6.6 channel vs 7.0 surroundings; adjacent
+nodes sit at y=7.0). 0.4u exceeds the motor's 0.321u climb limit, so walking units cannot
+pass; a JUMP (or assisted step) might - untested, human jump/step dynamics differ from the
+walk capsule per parent guidance. The horizontal grid probe was flawed (forced floor
+reference 6.6 reports the whole 7.0-floor surround as blocked); needs a per-point floor
+reference next run. Repair-vs-prune still open: if the only obstruction is one 0.4u step, a
+hand-authored nav connector (navigation.json is editable JSON, no Blender needed) could be
+tested against the real motor (jump-assisted traversal check) before accepting the isolation.
+Split bad-edge list exported: work/nav-prune/split-bad-edges.json (243 directed edges).
