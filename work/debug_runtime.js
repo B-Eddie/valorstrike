@@ -15,6 +15,7 @@ try {
       setTimeLeft(sec) { timeLeft = +sec; },
       aimAt(x, y, z) { const e = pEye(); yaw = Math.atan2(-(x - e.x), -(z - e.z)); pitch = Math.atan2(y - e.y, Math.hypot(x - e.x, z - e.z)); },
       startDM() { xLob0 = false; return startDM(); }, startTDM() { xLob0 = false; return startTDM(); }, startFive() { xLob0 = false; return startFive(); },
+      startRetake() { xLob0 = false; return start(); }, startDuel() { xLob0 = false; return startDuel(); }, startSurf() { xLob0 = false; return startSurf(); }, startAim() { xLob0 = false; return startAim(); }, startRifle() { xLob0 = false; return startRifle(); },
       hurt(t, n, by) { return hurt(t, n, by); }, kill(b, hs, by, w) { return kill(b, hs, by, w); },
       state() {
         return { running: !!running, mode, dm: !!FV.dm, tdm: !!FV.tdm, map: FV.map,
