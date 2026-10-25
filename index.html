@@ -12725,12 +12725,12 @@ xReady = true; // every mode is initialised; lobby launches may now start them
   var TIPS = ["Stop moving before you shoot: running bullets go wide.", "Check corners one at a time instead of peeking two angles.", "Buy as a team. A full save beats a half buy.", "Listen for footsteps; walk to stay silent.", "Crosshair at head height, always.", "After a plant, play for time, not kills."];
   var el = document.getElementById("xLd"), bar = document.getElementById("xLdBar"), tipEl = document.getElementById("xLdTip"), t0 = 0, tipT = 0, ti = 0, hideT = 0;
   function xLdSet(id, k, v) { var e = document.getElementById(id); if (e) e[k] = v; }
-  function show(map, mode) {
+  function show(map, mode, title) {
     clearTimeout(hideT); clearInterval(tipT);
     map = PAL[map] ? map : "ascent";
     var tab = document.querySelector("#xQueue [role=tab].on");
     xLdSet("xLdMode", "textContent", (mode || (tab ? tab.textContent : "UNRATED")).toUpperCase());
-    xLdSet("xLdMap", "textContent", String(map).toUpperCase());
+    xLdSet("xLdMap", "textContent", String(title || map).toUpperCase());
     el.style.setProperty("--x-ld-bg", 'url("models/valorant/maps/'+map+'/loading.jpg") center/cover, '+PAL[map]);
     xLdSet("xLdA", "innerHTML", ""); xLdSet("xLdB", "innerHTML", ""); xLdSet("xLdAg", "textContent", "");
     window.xLdOn = true; try { if (window.xLdKeys) window.xLdKeys(false); } catch (e) {}
@@ -12768,10 +12768,10 @@ xReady = true; // every mode is initialised; lobby launches may now start them
   var curMap = function () { try { return FV.map; } catch (e) { return "ascent"; } };
   var built = function (k) { try { return !FMAP[k] || FMAP[k].built; } catch (e) { return true; } };
   var loadId = 0;
-  var run = function (fn, map, mode, sync) {
-    var id = ++loadId;show(map, mode);
+  var run = function (fn, map, mode, sync, title) {
+    var id = ++loadId;show(map, mode, title);
     var wait = agents(id); if (wait) wait.catch(function () {});
-    var go = function () { return (wait ? wait.then(fn) : Promise.resolve().then(fn)).then(function(v){if(id===loadId){fill();ready();}return v;},function(err){if(id===loadId)failed();if(err&&err.name==='AbortError')return;throw err;}); };
+    var go = function () { return (wait ? wait.then(fn) : Promise.resolve().then(fn)).then(function(v){if(id===loadId){if(!title)fill();ready();}return v;},function(err){if(id===loadId)failed();if(err&&err.name==='AbortError')return;throw err;}); };
     return sync || built(map) ? go() : new Promise(function(resolve,reject){requestAnimationFrame(function(){requestAnimationFrame(function(){go().then(resolve,reject);});});});
   };
   window.xCancelMatchLoad = function(){++loadId;failed();};
@@ -12791,6 +12791,14 @@ xReady = true; // every mode is initialised; lobby launches may now start them
     [["startSR", "SPIKE RUSH"], ["startTDM", "TEAM DEATHMATCH"]].forEach(function (p) {
       var f = window[p[0]]; if (typeof f !== "function") return;
       window[p[0]] = function () { var a = arguments, self = this; return run(function () { return f.apply(self, a); }, curMap(), p[1], true); };
+    });
+    // Modes that skip agent select (duel, rifle 2v2, surf, aim, deathmatch) also never start on hidden agents: they
+    // start at once when every agent model is in memory, otherwise behind the agent-progress overlay.
+    [["startDuel", "OPERATOR DUEL"], ["startRifle", "RIFLE 2V2"], ["startSurf", "SURF"], ["startAim", "AIM TRAINING"], ["startDM", "DEATHMATCH"]].forEach(function (p) {
+      var f = window[p[0]]; if (typeof f !== "function") return;
+      window[p[0]] = function () { var a = arguments, self = this, call = function () { return f.apply(self, a); }, A = window.xValorantAssets;
+        var done = false; try { done = !A || !A.agentProgress || A.agentProgress().done; } catch (e) { done = true; }
+        return done ? call() : run(call, curMap(), p[1], true, "AGENTS"); };
     });
   });
 })();
