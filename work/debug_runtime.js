@@ -15,6 +15,7 @@ try {
       pauseRender(v) { if (v) { if (!window.__vsOrigLoop) { window.__vsOrigLoop = loop; loop = function () { loop.id = requestAnimationFrame(loop); }; } return true; } if (window.__vsOrigLoop) { loop = window.__vsOrigLoop; window.__vsOrigLoop = null; if (typeof XRT !== 'undefined') XRT.skip = 1; } return false; },
       fire(on) { fireHeld = !!on; },
       setTimeLeft(sec) { timeLeft = +sec; },
+      rangeDrill(name) { if(mode!=='aim'||!running||!['free','spray','strafe','spike'].includes(name))return false;rgSet(name);return true; },
       setPos(x, y, z) { player.x = +x; player.y = +y; player.z = +z; player.vy = 0; player.vx = 0; player.vz = 0; },
       aimAt(x, y, z) { const e = pEye(); yaw = Math.atan2(-(x - e.x), -(z - e.z)); pitch = Math.atan2(y - e.y, Math.hypot(x - e.x, z - e.z)); },
       startDM() { xLob0 = false; return startDM(); }, startTDM() { xLob0 = false; return startTDM(); }, startFive() { xLob0 = false; return startFive(); },

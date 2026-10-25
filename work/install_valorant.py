@@ -27,7 +27,13 @@ block+='\n'+(root/'work/bot_variety_runtime.js').read_text().rstrip('\n').replac
 if da in s:s=s[:s.index(da)]+s[s.index(db)+len(db):]
 block+='\n'+(root/'work/debug_runtime.js').read_text().rstrip('\n');ka='// ---- WEAPON SKINS ----';kb='// ---- END WEAPON SKINS ----'
 if ka in s:s=s[:s.index(ka)]+s[s.index(kb)+len(kb):]
-block+='\n'+(root/'work/skins_runtime.js').read_text().rstrip('\n').replace('/*SKINS_JSON*/null',(root/'server/src/skins.json').read_text().strip());mark='xReady = true; // every mode is initialised; lobby launches may now start them';s=s.replace(mark,block+'\n'+mark)
+block+='\n'+(root/'work/skins_runtime.js').read_text().rstrip('\n').replace('/*SKINS_JSON*/null',(root/'server/src/skins.json').read_text().strip());
+aa='// ---- DOWNLOADED GAME AUDIO ----';ab='// ---- END DOWNLOADED GAME AUDIO ----'
+if aa in s:s=s[:s.index(aa)]+s[s.index(ab)+len(ab):]
+block+='\n'+(root/'work/audio_runtime.js').read_text().rstrip('\n').replace('/*GAME_AUDIO_JSON*/null',__import__('json').dumps(__import__('json').loads((root/'audio/manifest.json').read_text()),separators=(',',':')))
+za='// ---- SKIN FINISHERS ----';zb='// ---- END SKIN FINISHERS ----'
+if za in s:s=s[:s.index(za)]+s[s.index(zb)+len(zb):]
+block+='\n'+(root/'work/finishers_runtime.js').read_text().rstrip('\n');mark='xReady = true; // every mode is initialised; lobby launches may now start them';s=s.replace(mark,block+'\n'+mark)
 if '<script src="models/valorant/manifest.js"></script>' not in s:s=s.replace('<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>','<script src="models/valorant/manifest.js"></script>\n<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>')
 # Find the actual three script tag, which may use an onerror handler.
 if '<script src="models/valorant/manifest.js"></script>' not in s:s=s.replace('<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js"></script>','<script src="models/valorant/manifest.js"></script>\n<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js"></script>')

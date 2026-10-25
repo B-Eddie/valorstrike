@@ -1,3 +1,4 @@
+import {finisherEvent} from './finishers.js';
 import {reynaState} from './reyna.js';
 import {floorReset,floorTick,floorPick,floorDropHeld,floorRows} from './floor.js';
 import {Simulation,weapons} from './simulation.js';
@@ -60,6 +61,7 @@ export class SpikeSimulation extends Simulation{
  traceShot(o,d,max){const wall=this.baseWorld.ray(o,d,max),barrier=nearestBarrier(this,o,d,Math.min(max,wall));this.shotBlockedBy=barrier?'barrier':null;return barrier?barrier.distance:wall;}
  shotImpact(o,d,distance,weapon){const barrier=nearestBarrier(this,o,d,distance+.001);if(!barrier||Math.abs(barrier.distance-distance)>.002)return;const range=weapon.damageRanges.find(r=>distance>=r.rangeStartMeters&&distance<r.rangeEndMeters)||weapon.damageRanges.at(-1);barrier.effect.hp-=range.bodyDamage;if(barrier.effect.hp<=0)barrier.effect.until=this.time;}
 
+ onGunKill(killer,victim){finisherEvent(this,killer,victim);}
  fireBlade(u){const A=u.ability;if(this.phase!=='game'||this.buy>0||this.roundDelay>0||u.agent!=='Jett'||!A?.bladesActive||A.blades<1)return false;const weapon=u.weapon,ammo=u.ammo,kills=u.kills;u.weapon='Blade Storm';u.ammo=A.blades;try{const fired=this.fire(u);if(fired){A.blades=this.lastKills>0?5:u.ammo;A.bladesActive=A.blades>0;}return fired;}finally{u.weapon=weapon;u.ammo=ammo;}}
  // A Phoenix killed inside Run It Back is not a kill or a death in VALORANT (no kill / death on the scoreboard, no ult point
  // either side, no signature recharge): the soul orb (Reyna, patch 1.02) and the Blade Storm refresh (Jett, patch 1.02) still trigger.
