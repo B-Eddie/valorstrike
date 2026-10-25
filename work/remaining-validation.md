@@ -230,3 +230,22 @@ extended when appending nodes - that masked the first attempt):
 Post-bake: split five-soak PASS (no stalls observed in this sampled run; was FAIL x2 from the
 slot); full audit: 0 trap nodes, no named area lost, spawns/sites preserved.
 This is nav-DATA repair via verified connectors/quarantine, not the deferred blanket prune.
+
+## Stairs live walk (diag-stairs.cjs, headless DM, bots culled, god-mode player, 2026-10-25)
+Walks the longest rising nav-edge chain (>=5 nodes) per map with a held W key, re-aiming at the
+next node each 100ms poll; asserts: reach the top (any sample within 1.6m XZ, 0.5m y), no stalls,
+no falls, and a walk back down to the base.
+- ascent: PASS (15 nodes, +1.91m; 0 stalls)
+- bind:   PASS (17 nodes, +2.93m; 1 stall sample)
+- breeze: PASS (19 nodes, +2.97m; 0 stalls)
+- haven:  PASS (21 nodes, +5.97m; 1 stall sample)
+- lotus:  PASS (11 nodes, +2.26m; 0 stalls)
+- split:  ASCENT PASS (23 nodes, +4.02m; 4 stall samples) / DESCENT FAIL
+PROBE-FINDING (candidate real bug): on split, walking DOWN from the top of the flight at
+(19, 7.04, 21.25) the player cannot leave the top node: 2 runs x 2 attempts, 45s each, position
+unchanged (end [19, 7.1, 21.3]). Ascent up the same flight works. Not yet root-caused: could be a
+collision/railing mismatch at the stair mouth or a step-down bug. Needs targeted investigation
+(teleport 2 nodes down and descend; inspect collision vs nav at the mouth).
+Probe notes: bots are culled each poll (kill()) because DM respawns wanderers that body-block the
+stair base (observed); one retry per leg guards residual interference. A fixed-yaw aim flaw in the
+probe itself was found via bind (straight flight, diagonal first node) and fixed by per-poll re-aim.
