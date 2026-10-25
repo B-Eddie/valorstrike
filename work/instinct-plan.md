@@ -264,6 +264,15 @@ floor contact retained as NUMERIC evidence only (flat bg has no ground reference
 - Verified 568x320 + 640x360 captures (all layers co-visible, no collisions, hint hidden); 42/42 client suites green post-change. Reported to parent with both captures.
 - Known minor (deferred): kill-feed row 1 overlaps sub-strip right end at 568x320 for a few seconds (both transient).
 
+
+## 2026-10-25 09:28 - overlay issue REOPENED (parent)
+- Parent pixel check: at 568x320 FIRST BLOOD glyphs still collide with the kill-feed's right-side
+  text (feed moved into the ann band). Sub-strip overlap fixed but collision relocated.
+- OPEN ITEM for a future HUD pass: ONE coordinated responsive layout reserving non-overlapping
+  regions for simultaneous ann + feed + toast + card; verify glyph/rect intersections at
+  568x320, 640x360, AND a larger size (e.g. 1280x720). Do not chase single offsets.
+- Queue priority: protocol/stairs/skirt/mobile/performance FIRST.
+
 ## NEXT (queued 08:56 EDT)
 1. Online two-client PROTOCOL check (label: protocol evidence, not rendered two-human
    acceptance): `npm run dev` (wrangler local :8787, ALLOW_LOCAL_ORIGIN) + a ws script in the
