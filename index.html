@@ -4547,9 +4547,10 @@ const X_ALL_AG = ["Jett", "Phoenix", "Sova", "Sage", "Reyna", "Omen", "Killjoy",
 const xDraw = (n, ex) => { const p = X_ALL_AG.filter((a) => a !== "Cypher" && !ex.includes(a)); for (let i = p.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [p[i], p[j]] = [p[j], p[i]]; }
   const r = p.slice(0, n), k = r.indexOf("Killjoy"); if (!ex.includes("Cypher") && k >= 0 && p.indexOf("Sage") >= n) r[k] = "Cypher"; return r; }; // Cypher shares the Killjoy slot (same random draws as the 11-agent pool)
 const FIVE_WIN = 13, F_MATES = xDraw(4, ["Jett"]), F_EN = xDraw(5, []);
-let xTmLocked = false;
+let xTmLocked = false, xTmPreDrawn = false;
 // match start: random unique agents per bot team; the player's agent never on the player's team (names = agent names)
 function xBuildTeams() { let me = "Jett"; try { me = J.pick || "Jett"; } catch (e) {}
+  if (xTmPreDrawn) { xTmPreDrawn = false; if (F_MATES.length === 4 && !F_MATES.includes(me) && new Set(F_MATES).size === 4 && F_EN.length === 5 && new Set(F_EN).size === 5 && !F_EN.some((n) => n === me || F_MATES.includes(n))) return; } // readiness-gate pre-draw: this exact roster was kit-gated, keep it for the match
   const ok = xTmLocked && F_MATES.length === 4 && !F_MATES.includes(me) && new Set(F_MATES).size === 4;
   if (!ok) F_MATES.splice(0, F_MATES.length, ...xDraw(4, [me]));
   let en = []; try { en = xDraw(5, F_MATES.slice()); } catch (e) {} if (!en || en.length !== 5 || new Set(en).size !== 5) en = xDraw(5, []); // no shared names with mates, so the scoreboard keeps 10 distinct rows
@@ -12477,9 +12478,27 @@ async function xvPreload() {
     for (const k of Object.values(XGM.F)) { if (XV.preloading === 'abort') return; try { await xvLoad(k.split('/').pop()); } catch (e) {} await idle(); }
   } finally { XV.preloading = 'done'; }
 }
-function xvReadyAgents() {
+function xvReadyAgents(list) {
   const one = (ag) => xvAgentLoad(ag).catch(() => xvAgentLoad(ag)); // one retry; a second failure rejects
-  return Promise.all(Object.keys(XUB_AG).map(one));
+  let names = null;
+  try { if (Array.isArray(list) && list.length) names = [...new Set(list.map((n) => xvAgentName(n)))]; } catch (e) {}
+  return Promise.all((names && names.length ? names : Object.keys(XUB_AG)).map(one));
+}
+// Participant-scoped readiness: a match spawns only its drawn roster (bot names ARE agent
+// names from X_ALL_AG; anything else resolves through xvAgentName's deterministic hash), so
+// the gate loads the roster's kits instead of all 12. Online (MP.on) loads all 12: a late
+// join can bring any agent, and native opponents must never spawn invisible.
+function xvRoster() {
+  try {
+    if (typeof MP !== 'undefined' && MP && MP.on) return null;
+    if (typeof xBuildTeams !== 'function' || typeof F_EN === 'undefined' || typeof F_MATES === 'undefined') return null;
+    xBuildTeams(); // draws if needed; xTmPreDrawn makes the mode start keep this exact roster
+    try { xTmPreDrawn = true; } catch (e) {}
+    const me = (window.J && J.pick) || 'Jett';
+    const set = new Set([me, 'Chamber']); // Chamber: Operator Duel's fixed opponent
+    F_EN.forEach((n) => set.add(n)); F_MATES.forEach((n) => set.add(n));
+    return [...set];
+  } catch (e) { return null; }
 }
 function xvFind(root, name) { const clean = (s) => String(s).replace(/[^a-zA-Z0-9_]/g, ''); let found = null; root.traverse((o) => { if (!found && clean(o.name) === clean(name)) found = o; }); return found; }
 function xvConstraints(root, config, fp) {
@@ -12665,7 +12684,7 @@ setTimeout(() => {
     const wrapped = function (fn, map, mode, sync) {
       return prev(function () {
         XV.preloading = 'abort';
-        return xvReadyAgents().then(fn);
+        return xvReadyAgents(xvRoster()).then(fn);
       }, map, mode, sync);
     };
     wrapped.xvWrapped = 1;
