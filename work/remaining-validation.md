@@ -240,16 +240,22 @@ no falls, and a walk back down to the base.
 - breeze: PASS (19 nodes, +2.97m; 0 stalls)
 - haven:  PASS (21 nodes, +5.97m; 1 stall sample)
 - lotus:  PASS (11 nodes, +2.26m; 0 stalls)
-- split:  ASCENT PASS (23 nodes, +4.02m; 4 stall samples) / DESCENT under re-test
-CORRECTION (diag-split-top.cjs + diag-split-roundtrip.cjs): the descent "stuck at the top node"
-was a TELEPORT ARTIFACT, not a game bug. setPos exactly onto the top node (19, 7.04, 21.25) wedges
-the capsule into stair-mouth geometry (zero movement in any direction); a continuous walk from the
-base goes THROUGH the top node onto the plateau (reached 17.32, 7.02, 21.26) and a no-teleport
-descent from the plateau moves down the flight normally (y 7.03 -> 4.79 in the sampled window).
-descend-from-3-nodes-below also completes the full flight. Main probe updated: up leg extends past
-the top to a plateau node, down leg starts from where the up leg ended (no teleport). Split full
-re-run pending; the earlier roundtrip descent stopped at (28.27, 4.79) - unclear if budget or a
-mid-flight stall; the re-run decides.
+- split:  PASS (23 nodes, +4.02m; up 0 stalls; down returns to base) - all six maps now pass.
+ROOT CAUSE of the earlier split descent failures (probe artifacts, NO game bug):
+1. Teleport wedge: setPos exactly onto a stair nav node can settle the capsule sunk ~2 cm into
+   the step (nav y vs BVH surface differ slightly); the motor has no unstick, so it freezes.
+   Real spawns are protected: nmPlace rejects candidates whose BVH height differs >.15 m from
+   nav y or that are nmBlocked, and requires a traversable exit edge.
+2. Match end from probe culling (the main one): the probe culls wandering bots with kill() each
+   100 ms; those kills count toward the DM 40-kill win, so the match ended mid-walk
+   (FREEZE-STATE dump: running=false, player reset to hp 100, frozen mid-fall air:true vy<0).
+   Fixed by pinning DM.win=1e9/DM.len=9999 during the probe.
+3. Fixed-yaw aim drifted off straight flights (bind); fixed by per-poll re-aim along the path.
+NUMERIC DESCENT SWEEP (server motor, all rising edges walked b->a): split/haven 100%,
+ascent 99.7%, bind/breeze 99.9% (isolated prop edges), lotus 97.1% with a CLUSTER of descent
+failures around (-12, -7..-11, y ~5.0->5.3): the walker leaves the edge and lands ~3.5 m lower.
+Either one-way drop ledges (legitimate) or nav edges overstating connectivity - OPEN, needs
+geometry inspection; if the edges are wrong, bots routing down them could stall or fall.
 Probe notes: bots are culled each poll (kill()) because DM respawns wanderers that body-block the
 stair base (observed); one retry per leg guards residual interference. A fixed-yaw aim flaw in the
 probe itself was found via bind (straight flight, diagonal first node) and fixed by per-poll re-aim.
