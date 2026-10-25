@@ -11680,7 +11680,7 @@ function mpStun(u, en, x, z, r, s, auth) { // the local player on every peer (sc
   for (let j = 0; j < T.length; j++) { const t = T[j]; if (t && t !== u && t.alive && t.g && Math.hypot(t.g.position.x - x, t.g.position.z - z) < r) bcDaze(t, s); }
 }
 function mpFx(u, ag, k, o, d, auth, p, quiet) { // u: caster unit, o/d: eye + aim, p: exact target (bot casts), auth: host world (damage / heal / daze)
-  const i = "cqex".indexOf(k); if (i < 0 || !u || !u.g) return; if (!KITS[ag]) ag = "Jett";
+  const i = "cqex".indexOf(k); if (i < 0 || !u || !u.g) return; if (!Object.hasOwn(KITS, ag)) ag = "Jett";
   const ty = ABI_M[ag][i] || "ult", al = allies.indexOf(u) >= 0, en = !al, nd = !auth, nm = KITS[ag].n[i] || "Ability", up = u.g.position, col = al ? 0x3fb4ff : 0xff4655;
   const tg = (far, back) => (p ? MPC.e.copy(p) : mpTgt(o, d, far, back));
   if (ty === "smoke") { const S = MP_SMK[ag] || [14, 7], e = tg(S[0], 0.5); enSmoke(e.x, e.z, al, S[1]); }
@@ -11710,7 +11710,7 @@ function mpHealTick(dt) { const A = MPC.hl; let w = 0; for (let i = 0; i < A.len
 function mpCastOut(m, ex) { MP.conns.forEach((c) => { if (c.u && c !== ex) mpSend(c.conn, m); }); }
 function mpCastIn(c, u, m) { // host: a client's cast
   const k = String(m.k || ""); if (!/^[cqex]$/.test(k) || !u || !u.alive || !u.g || (MP.m5 && FV.buy > 0)) return;
-  const ag = KITS[c.ag] ? c.ag : xBAg(u) || "Jett", now = performance.now(), T = c.abT || (c.abT = {});
+  const ag = Object.hasOwn(KITS, c.ag) ? c.ag : xBAg(u) || "Jett", now = performance.now(), T = c.abT || (c.abT = {});
   if (now - (T[k] || -1e9) < 250) return; // key spam: ignored, the charge stays
   if (k === "x") { if (now - (c.xT || -1e9) < 8000) return; c.xT = now; } // ult points are not tracked on the host: one ult per 8 s at most
   else { const ch = MP.m5 ? c.ab : xBCh(u); let pk = k; if (ag === "Reyna" && k !== "c" && ch && !((ch[k] | 0) > 0)) pk = k === "q" ? "e" : "q"; // Devour / Dismiss share charges
@@ -11723,7 +11723,7 @@ function mpCastFx(m) { // client: someone else's cast, visual only
   if (!MP.cl || MP.st !== "game" || m.i === MP.me || typeof m.k !== "string") return;
   const u = bots.find((x) => x && x.nid === m.i) || allies.find((x) => x && x.nid === m.i); if (!u || !u.g) return;
   const o = mpV(m.o, new THREE.Vector3(u.g.position.x, 1.6, u.g.position.z)), d = mpDir(m.d, u), p = Array.isArray(m.p) ? mpV(m.p, new THREE.Vector3()) : null;
-  mpFx(u, KITS[m.ag] ? m.ag : "Jett", m.k, o, d, false, p);
+  mpFx(u, Object.hasOwn(KITS, m.ag) ? m.ag : "Jett", m.k, o, d, false, p);
 }
 let mpAltHeld = false; addEventListener("mousedown", (e) => { if (e.button === 2) mpAltHeld = true; }, true); addEventListener("mouseup", (e) => { if (e.button === 2) mpAltHeld = false; }, true); addEventListener("blur", () => { mpAltHeld = false; });
 function mpCastSelf(k) { const m = { t: MP.role === "host" ? "ac" : "ab", k, ag: J.pick || "Jett", o: mpR3(pEye()), d: mpR3(jAim()), ts: Math.round(performance.now()) };
