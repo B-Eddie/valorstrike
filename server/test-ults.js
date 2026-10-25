@@ -70,3 +70,45 @@ import {DEV} from './src/devices.js';
  assert.equal(s.command(u,{t:'ab',k:'c'}),true);assert.ok(s.effects.some(e=>e.kind==='boombot'));tick(s,2.5);assert.equal(foe.alive,false,'Boom Bot hunts and kills (125)');assert.equal(mate.hp,100);assert.ok(!s.effects.some(e=>e.kind==='boombot'));}
 {const {s,u,list:[foe]}=setup('Skye',['foe']);u.ability.q=1;Object.assign(foe,{x:0,y:0,z:-10});assert.equal(s.command(u,{t:'ab',k:'q'}),true);tick(s,1.5);assert.ok(foe.concussUntil>s.time,'Trailblazer concusses');assert.ok(!s.effects.some(e=>e.kind==='trail'));}
 console.log('Devices: recon pulses reveal by line of sight (two pulses), Boom Bot seeks and explodes, Trailblazer concusses');
+// Row 9 device parity: Phoenix (Blaze, Hot Hands, Curveball), Killjoy (Nanoswarm, Alarmbot, Turret arc),
+// Cypher (Trapwire, Cyber Cage), Chamber (Trademark, Headhunter weapon restore).
+import {sightClear,abilityDamage} from './src/abilities.js';
+const ab=(s,u,k,m={})=>{s.time+=.5;return s.command(u,{t:'ab',k,...m});};
+// Blaze: fire wall along the aim, cut short at walls; burns enemies, heals Phoenix inside it, blocks sight.
+{const {s,u,list:[foe]}=setup('Phoenix',['foe']);u.ability.c=1;Object.assign(foe,{x:.3,y:0,z:-6});
+ assert.equal(ab(s,u,'c'),true);const b=s.effects.find(e=>e.kind==='blaze');assert.ok(b&&Math.abs(b.q[2]+12)<.01,'12 m wall along the aim');
+ u.z=-3;u.hp=50;tick(s,1);assert.ok(Math.abs(foe.hp-70)<1,'30/s to enemies in the wall: '+foe.hp);assert.ok(Math.abs(u.hp-62.5)<1,'heals Phoenix 12.5/s: '+u.hp);
+ assert.equal(sightClear(s,[-3,1.6,-6],[3,1.6,-6]),false,'wall blocks sight');assert.equal(sightClear(s,[-3,4,-6],[3,4,-6]),true,'not above it');
+ wall=5;u.z=0;u.ability.c=1;s.effects=[];ab(s,u,'c');assert.ok(s.effects.find(e=>e.kind==='blaze').q[2]>-5,'stops at a wall');}
+// Hot Hands: burns enemies and heals Phoenix standing in his own fire.
+{const {s,u,list:[foe]}=setup('Phoenix',['foe']);u.ability.q=1;Object.assign(foe,{x:1,y:0,z:-14});assert.equal(ab(s,u,'q'),true);u.z=-14;u.hp=40;tick(s,1);
+ assert.ok(foe.hp<65,'Hot Hands burns: '+foe.hp);assert.ok(Math.abs(u.hp-52.5)<1,'self-heal: '+u.hp);}
+// Curveball: bends right (or left) and pops beside the corner after a windup, not at the crosshair.
+{const {s,u,list:[victim]}=setup('Phoenix',['foe']);Object.assign(victim,{x:2.5,y:0,z:-9,look:Math.PI});assert.equal(ab(s,u,'e'),true);const f=s.effects.find(e=>e.kind==='flash');assert.ok(f.p[0]>2&&Math.abs(f.p[2]+5)<.01,'right curve');
+ tick(s,.3);assert.ok(!(victim.blindUntil>s.time),'windup');tick(s,.3);assert.ok(victim.blindUntil>s.time&&victim.blindUntil-s.time<=1.1,'blinds 1.1 s');
+ u.ability.e=1;ab(s,u,'e',{l:1});assert.ok(s.effects.find(e=>e.kind==='flash').p[0]<-2,'left curve');}
+// Nanoswarm: dormant until C again (no charge spent), then 45/s for 4 s.
+{const {s,u,list:[foe]}=setup('Killjoy',['foe']);u.ability.c=2;Object.assign(foe,{x:1,y:0,z:-14});assert.equal(ab(s,u,'c'),true);tick(s,1);assert.equal(foe.hp,100,'dormant');
+ assert.equal(ab(s,u,'c'),true);assert.equal(u.ability.c,1,'trigger is free');tick(s,1);assert.ok(Math.abs(foe.hp-55)<1.5,'45/s: '+foe.hp);tick(s,3.2);assert.ok(!s.effects.some(e=>e.kind==='nanoswarm'),'4 s then gone');}
+// Alarmbot chases a nearby visible enemy and leaves it Vulnerable (double damage from guns and abilities).
+{const {s,u,list:[foe]}=setup('Killjoy',['foe']);u.ability.q=1;Object.assign(foe,{x:4,y:0,z:-14});assert.equal(ab(s,u,'q'),true);tick(s,1);
+ assert.ok(foe.vulnerableUntil>s.time&&!s.effects.some(e=>e.kind==='alarmbot'),'Alarmbot pops');assert.ok(s.roundState(foe).status.vulnerable>3);const hp=foe.hp;abilityDamage(s,u,foe,10);assert.equal(hp-foe.hp,20,'vulnerable doubles damage');}
+// Turret only covers the 180° in front of where Killjoy faced; hits tag.
+{const {s,u,list:[back,front]}=setup('Killjoy',['foeBack'],['foeFront']);Object.assign(back,{x:0,y:0,z:-8});Object.assign(front,{x:0,y:0,z:-200});assert.equal(ab(s,u,'e'),true);tick(s,2);assert.equal(back.hp,100,'behind the turret');
+ front.z=-20;tick(s,1.5);assert.ok(front.hp<100&&front.tagUntil>s.time-.6,'in front');}
+// Trapwire: across the lane at the aim point; an enemy crossing is revealed and slowed, then dazed; one use.
+{const {s,u,list:[foe,mate]}=setup('Cypher',['foe'],['mate']);u.ability.c=1;Object.assign(foe,{x:3,y:0,z:-16});Object.assign(mate,{x:-3,y:0,z:-14});assert.equal(ab(s,u,'c'),true);const w=s.effects.find(e=>e.kind==='trapwire');assert.ok(Math.abs(w.p[0])>7&&Math.abs(w.q[0])>7,'wall to wall');
+ tick(s,.1);assert.equal(mate.slowUntil||0,0,'allies pass');foe.z=-14;tick(s,.1);assert.ok(foe.revealedUntil>s.time&&foe.slowUntil>s.time&&s.roundState(foe).status.tether>2,'tethered');tick(s,2.5);assert.ok(foe.concussUntil>s.time,'dazed');assert.ok(!s.effects.some(e=>e.kind==='trapwire'),'consumed');}
+{const {s,u}=setup('Cypher',['foe']);u.ability.q=1;ab(s,u,'q');const c=s.effects.find(e=>e.kind==='smoke');assert.ok(Math.abs(c.until-s.time-7.25)<.01,'Cyber Cage 7.25 s');}
+// Trademark: spots a visible enemy within 10 m, then a 9.5 s slow field.
+{const {s,u,list:[foe]}=setup('Chamber',['foe']);u.ability.c=1;Object.assign(foe,{x:0,y:0,z:-19});assert.equal(ab(s,u,'c'),true);tick(s,.3);assert.ok(!s.effects.find(e=>e.kind==='trademark').field);tick(s,.4);
+ const t=s.effects.find(e=>e.kind==='trademark');assert.ok(t.field&&Math.abs(t.until-s.time-9.3)<.2&&foe.slowUntil>s.time,'slow field');}
+// Headhunter: was a one-way swap (previous gun never came back). Now restored when spent, put away, on death and on Tour de Force.
+{const {s,u,list:[foe]}=setup('Chamber',['foe']);Object.assign(foe,{x:0,y:0,z:-6,hp:1000});Object.assign(u,{weapon:'Spectre',ammo:17,reserve:60,inventory:{Spectre:17}});u.ability.q=3;
+ const fire=()=>{s.time+=1;u.fireAt=0;u.triggerHeld=false;return s.fire(u);};
+ assert.equal(ab(s,u,'q'),true);assert.deepEqual([u.weapon,u.ammo],['Sheriff',1]);assert.equal(fire(),true);assert.equal(fire(),false,'one round per charge');tick(s,.05);assert.deepEqual([u.weapon,u.ammo,u.reserve,u.inventory.Sheriff],['Spectre',17,60,undefined],'spent: Spectre back');
+ ab(s,u,'q');assert.equal(u.ability.q,1);ab(s,u,'q');assert.deepEqual([u.weapon,u.ability.q],['Spectre',2],'Q again puts it away and refunds the unfired round');
+ ab(s,u,'q');u.alive=false;tick(s,.05);assert.equal(u.weapon,'Spectre','death returns the gun');u.alive=true;
+ u.inventory.Sheriff=6;ab(s,u,'q');fire();tick(s,.05);assert.equal(u.inventory.Sheriff,6,'own Sheriff ammo untouched');
+ ab(s,u,'q');u.ability.ult=9;assert.equal(cast(s,u),true);assert.equal(u.weapon,'Operator');assert.equal(u.headhunter,null);for(let i=0;i<5;i++)fire();tick(s,.05);assert.equal(u.weapon,'Spectre','Tour de Force over Headhunter returns the Spectre');}
+console.log('Devices row 9: Blaze (wall burn/heal/sight), Hot Hands self-heal, Curveball (curve, windup, 1.1 s), Nanoswarm (dormant, free trigger, 45/s), Alarmbot (Vulnerable x2), Turret 180° arc + tag, Trapwire (wall-to-wall tether, daze, one use), Cyber Cage 7.25 s, Trademark (spot, slow field), Headhunter weapon restore');
