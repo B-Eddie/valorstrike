@@ -56,13 +56,13 @@ const SIZES=(process.env.SIZES||'1280x720,640x360,390x844').split(',').map(s=>s.
  }
  // a still of the closest case, camera facing the bot at its edge of view
  await X(`(()=>{const b=bots.find(x=>x.nt);const p=player;window.__pc.position.set(p.x,b.g.position.y+1.6,p.z);window.__pc.rotation.set(0,-Math.PI/2+0.9,0,'YXZ');window.__pc.updateMatrixWorld(true);window.__probe=1;renderer.render(scene,window.__pc);window.__probe=0;return 1})()`);
- await page.screenshot({path:SHOT+'perf-cull-edge-640x360.jpg',type:'jpeg',quality:82,timeout:300000});
+ await page.screenshot({path:SHOT+'perf-cull-edge-640x360.jpg',type:'jpeg',quality:82,timeout:150000}).catch(e=>log('shot perf-cull-edge failed (non-fatal)',String(e).slice(0,120)));
  // B. corpse stays drawn through the ragdoll
  const B=JSON.parse(await X(`JSON.stringify((()=>{const b=bots.find(x=>x.nt);b.hp=1;kill(b,false);window.__cb=b;return {name:b.name,alive:b.alive};})())`));log('killed',B);
  const C=[];for(let i=0;i<8;i++){await page.waitForTimeout(500);
   C.push(JSON.parse(await X(`JSON.stringify((()=>{const b=window.__cb,v=new THREE.Vector3();let sp=null;b.g.traverse(o=>{if(!sp&&o.isBone&&/pelvis|hips/i.test(o.name))sp=o;});(sp||b.g).getWorldPosition(v);const p=player;window.__pc.position.set(p.x-1.5,v.y+1.2,p.z);window.__pc.lookAt(v);window.__pc.updateMatrixWorld(true);
    const s=window.__shot(b);return {t:${i*0.5},inScene:!!b.g.parent,vis:b.g.visible,meshes:s.length,exp:s.filter(x=>x.exp).length,drawn:s.filter(x=>x.drawn).length,hid:s.filter(x=>x.hid).length,pelvisY:+v.y.toFixed(2)};})())`)));}
- log('corpse',C);await page.screenshot({path:SHOT+'perf-corpse-640x360.jpg',type:'jpeg',quality:82,timeout:300000});
+ log('corpse',C);await page.screenshot({path:SHOT+'perf-corpse-640x360.jpg',type:'jpeg',quality:82,timeout:150000}).catch(e=>log('shot perf-corpse failed (non-fatal)',String(e).slice(0,120)));
  check('corpse drawn every probe frame while it is in the scene and visible (no vanish from the cull sphere)',C.filter(c=>c.inScene&&c.vis).every(c=>c.drawn>=c.exp&&c.exp>0)&&C.slice(0,4).every(c=>c.inScene&&c.vis),JSON.stringify(C));
  // C. bot spread
  for(const map of ['ascent','bind']){
