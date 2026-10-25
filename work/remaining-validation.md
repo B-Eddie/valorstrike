@@ -111,3 +111,27 @@ Open `http://127.0.0.1:8876/`; localhost clients use the local game service on p
 - diag-edges.cjs (committed): node 741 (-46.25,6.62,2.5) has adj=6 in the graph, but ALL SIX edges fail the capsule walkability check (nmBlocked at body height, both r=0.43 and r=0.45) within 0.2-0.3u of the node. Control: 6 random playable nodes have 0 bad edges. It is a POCKET: units can drop/be placed in (nmPlace validates the node point + graph path, not edges) but can never walk out.
 - Root: the nav builder's adjacency was not validated against the runtime capsule collision model, so nmPath (pure graph A*) routes through untraversable edges. Not fixable by steering recovery - prevention required.
 - Plan (next wake): full-map edge audit (count trap nodes + failing edges per map), then prune invalid edges at build time (preferred; check the builder) or at map load before nmConnected, regenerate/re-verify, re-run five-soak split + full sweep. Also make nmPlace reject nodes with zero walkable exit edges.
+
+## Nav edge audit (split, full map, motor-equivalent) - 06:48 EDT
+Full-map audit of every playable directed edge (55,594) with the motor's own semantics
+(capsule r=0.45, foot +0.32, rise 0.321, drop-tolerant when total dh < -0.35, chord OR
+axis-split L-path acceptance, matching the motor's x-then-z slide):
+- 243/55,594 directed edges (0.44%) are not traversable by any 0.45-radius unit.
+- 6 trap nodes (zero walkable exit): 5 in the west pocket around (-47,6.6,0), 1 at (4.8,9.5,7).
+- Simulated prune: 7,803 playable -> largest component 7,505; 15 fragments split off
+  [249, 25, 7, 5, 2, +10 singletons]; attacker->defender and attacker->A/B sites preserved.
+- The 249-node fragment is the "A Sewer" callout region. Its ONLY graph articulation to the
+  main component is trap node 741 (-46.25,6.62,2.5); all 12 cut edges cross at that node and
+  fail `blocked` at z~2.5 (a doorway the builder's center ray at +0.85 cleared but a capsule
+  cannot). Re-running the audit at the PLAYER's motor radius (0.4) loses the same region
+  (250-node fragment): A Sewer is de-facto unreachable for players too in the current build.
+  It stays on the open intended-space list (bind B Short/B Teleporter, breeze Attacker Spawn,
+  ascent B Site islands, now split A Sewer): named space the imported collision does not let
+  any unit enter. Nav-data repair requires the Blender builder, unavailable in this sandbox.
+- Axis-split acceptance changed edge count (362->243) but not the fragment structure.
+- In-page audit cost 2.2s per radius on split -> prune must be baked into navigation.json
+  (bad-edge list exported per map, stripped offline), not run at load.
+Planned bake: export bad-edge pairs per map (all six), strip from
+server/public/worlds/*/navigation.json + models/valorant/maps/*/navigation.json, keep
+nmConnected after; trap nodes then fall out of playable automatically. nmPlace zero-exit
+guard becomes redundant for these nodes but is still worth adding for robustness.
