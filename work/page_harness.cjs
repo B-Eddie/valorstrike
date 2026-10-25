@@ -13,12 +13,15 @@ function threeDir(){
  fs.writeFileSync(path.join(dir,'SkeletonUtils.js'),'THREE.SkeletonUtils={clone:function(o){return o.clone(true);}};');
  return {dir,rev:'160'};
 }
-function boot({real3=false,seed=1}={}){
+function boot({real3=false,seed=1,ls=null}={}){
  const audit=fs.readFileSync(path.join(__dirname,'audit.js'),'utf8'),src=audit.slice(0,audit.indexOf('// ---------- audit ----------')).replace(/^"use strict";/,'');
  const T=real3?threeDir():null,env={...process.env,REAL3:real3?'1':'',REAL3_DIR:T?T.dir:''};if(!real3)delete env.REAL3;
  const proc=Object.create(process,{env:{value:env},argv:{value:[process.argv[0],'audit']}});
+ // ls: a localStorage store present while the page's scripts load (a reload: settings saved by an earlier session are
+ // read at startup). Without it localStorage throws during the boot, as in the audit, and is set up empty afterwards.
+ const LSD='Object.defineProperty(win, "localStorage"';if(ls&&!src.includes(LSD))throw Error('page_harness: audit.js localStorage hook moved');
  const log=console.log;console.log=()=>{};
- let H;try{H=new Function('require','__dirname','process','module',src+'\nreturn {win,doc,context,errors,xErrCalls,advance,frame,timers,listeners,rafLen:()=>rafQ.length,mkEvent,dispatch,setPhase:p=>{phase=p;}};')(require,__dirname,proc,module);}finally{console.log=log;}
+ let H;try{H=new Function('require','__dirname','process','module','__qaLS',(ls?src.replace(LSD,'win.__ls=__qaLS;'+LSD):src)+'\nreturn {win,doc,context,errors,xErrCalls,advance,frame,timers,listeners,rafLen:()=>rafQ.length,mkEvent,dispatch,setPhase:p=>{phase=p;}};')(require,__dirname,proc,module,ls);}finally{console.log=log;}
  H.three=T&&T.rev;H.xe=code=>vm.runInContext('__xe',H.context)(code);
  vm.runInContext(`Math.random=(${mulberry})(${seed*7919+3});`,H.context);
  H.win.fetch=()=>Promise.reject(new TypeError('Failed to fetch'));
@@ -29,7 +32,7 @@ function boot({real3=false,seed=1}={}){
  // leak; in a browser the fetch settles and xvLoad's cache entry resolves or is dropped on failure).
  const BASE='http://localhost/';class PageRequest extends Request{constructor(u,o){super(typeof u==='string'||u instanceof URL?new URL(String(u),BASE).href:u,o);}}
  Object.assign(H.win,{Request:PageRequest,Headers,Response});
- H.win.__ls=new Map();H.win.__ls.getItem=k=>H.win.__ls.has(k)?H.win.__ls.get(k):null;H.win.__ls.setItem=(k,v)=>H.win.__ls.set(k,String(v));H.win.__ls.removeItem=k=>H.win.__ls.delete(k);
+ if(!ls){H.win.__ls=new Map();H.win.__ls.getItem=k=>H.win.__ls.has(k)?H.win.__ls.get(k):null;H.win.__ls.setItem=(k,v)=>H.win.__ls.set(k,String(v));H.win.__ls.removeItem=k=>H.win.__ls.delete(k);}
  // No renderer / network: native maps fall back to the legacy blockout and agent models are skipped (as the audit's
  // fixtures and test_client_online.cjs do).
  H.xe('nmEnsure=function(){return Promise.resolve(null);};window.xvAgentsReady=xvAgentsReady=function(){return Promise.resolve([]);};xvPreloadAgents=function(){};true');
@@ -44,4 +47,6 @@ function boot({real3=false,seed=1}={}){
  H.$=id=>H.doc.getElementById(id);
  return H;
 }
-module.exports={boot,mulberry};
+// a localStorage store for boot({ls}): a Map with the Storage methods the page calls
+function lsStore(init){const m=new Map(init||[]);m.getItem=k=>m.has(k)?m.get(k):null;m.setItem=(k,v)=>m.set(k,String(v));m.removeItem=k=>m.delete(k);return m;}
+module.exports={boot,mulberry,lsStore};

@@ -1928,17 +1928,22 @@ function xLobbyInit() {
   bind("settings persistence", () => { // sensitivity, touch aim, volume, brightness, FPS, difficulty and crosshair colour were in memory only: lost on every reload
     const K = "vs.set", mem = window.xSetMem || (window.xSetMem = { v: null });
     const save = () => setTimeout(save0, 0); // after the inputs' own handlers have updated S
-    const save0 = () => { const v = JSON.stringify({ sens: S.sens, tsens: S.tsens, vol: S.vol, bright: S.bright, fps: !!S.fps, diff: S.diff, xh: S.xh }); mem.v = v; try { localStorage.setItem(K, v); } catch (e) {} };
+    const save0 = () => { const v = JSON.stringify({ sens: S.sens, tsens: S.tsens, vol: S.vol, bright: S.bright, fps: !!S.fps, diff: S.diff, xh: S.xh, hm: !!S.hm, dn: !!S.dn, xhd: S.xhd !== false, xc: S.xc }); mem.v = v; try { localStorage.setItem(K, v); } catch (e) {} };
     let o = null; try { o = JSON.parse(localStorage.getItem(K) || mem.v || "null"); } catch (e) { try { o = JSON.parse(mem.v || "null"); } catch (_) {} }
     if (o && typeof o === "object") {
       const rg = (id, v) => { const el = $(id); if (el && v != null && Number.isFinite(+v) && el.oninput) { el.value = String(v); try { el.oninput({ target: el }); } catch (e) {} } };
       rg("sSens", o.sens); rg("sTs", o.tsens); rg("sVol", o.vol); rg("sBri", o.bright);
-      document.querySelectorAll(".seg").forEach((seg) => { const v = seg.dataset.key === "fps" ? (o.fps ? "1" : "0") : seg.dataset.key === "diff" ? o.diff : null; if (v == null) return;
+      document.querySelectorAll(".seg").forEach((seg) => { const dk = seg.dataset.key, v = dk === "fps" ? (o.fps ? "1" : "0") : dk === "diff" ? o.diff : (dk === "hm" || dk === "dn") && typeof o[dk] === "boolean" ? (o[dk] ? "1" : "0") : seg.id === "xXhM" && typeof o.xhd === "boolean" ? (o.xhd ? "dynamic" : "static") : null; if (v == null) return;
+        if (seg.id === "xXhM") S.xhd = o.xhd; // its own click listener (static / dynamic) is registered with the game, after this restore
         const b = seg.querySelector('button[data-v="' + v + '"]'); if (b && b.onclick) b.onclick(); });
+      if (o.xc && typeof o.xc === "object") { // crosshair options: each saved value checked against its control's range / type
+        XCF.forEach(([, p, lo, hi]) => { const v = p.split(".").reduce((a, k) => (a && typeof a === "object" ? a[k] : undefined), o.xc); if (lo == null ? typeof v === "boolean" : Number.isFinite(v) && v >= lo && v <= hi) xcSet(p, v); });
+        try { xcUI(); xhAll(); } catch (e) {} }
       if (typeof o.xh === "string") { const b = Array.from($("xhSw").querySelectorAll("button")).find((x) => XC_COL[x.title] === o.xh); if (b && b.onclick) b.onclick(); }
     }
     ["sSens", "sTs", "sVol", "sBri"].forEach((id) => { const el = $(id); if (el) { el.addEventListener("change", save); el.addEventListener("input", save); } });
-    document.querySelectorAll(".seg").forEach((seg) => { if (seg.dataset.key === "fps" || seg.dataset.key === "diff") seg.addEventListener("click", save); });
+    document.querySelectorAll(".seg").forEach((seg) => { if (["fps", "diff", "hm", "dn"].includes(seg.dataset.key) || seg.id === "xXhM") seg.addEventListener("click", save); });
+    ["input", "change"].forEach((t) => $("xcSet").addEventListener(t, save)); // crosshair options (rows are rebuilt by xcUI; the box stays)
     $("xhSw").addEventListener("click", save);
     window.xSetSave = save0; });
   // modes
@@ -10146,7 +10151,7 @@ function xRemake() { // anti-aliasing can only be set when a renderer is made, s
   renderer = r; xBind(r.domElement); xApplyShadows(); resize(); applyBright(); xPC = false; // new context: precompile again
 }
 xSeg("xFpsL", (v) => { XS.cap = v; try { localStorage.setItem("vs.cap", v); } catch (e) {} });
-xSeg("xRes", (v) => { XS.res = v; resize(); });
+xSeg("xRes", (v) => { XS.res = v; xVidSave(); resize(); });
 xSeg("xRsc", (v) => { XS.scale = v; xAAMem.rs = v; try { localStorage.setItem("vs.rs", v); } catch (e) {} xRscSync(); resize(); });
 function xRscSync() { try { $("xRsc").querySelectorAll("button").forEach((b) => b.classList.toggle("on", b.dataset.v === XS.scale)); } catch (e) {} }
 try { let v = null; try { v = localStorage.getItem("vs.rs"); } catch (e) {} if (v == null) v = xAAMem.rs; if (v && $("xRsc").querySelector('[data-v="' + v + '"]')) XS.scale = v; } catch (e) {}
@@ -10155,8 +10160,10 @@ xSeg("xAA", (v) => { const on = v === "1"; xAASet(on); if (on !== XS.aa) { XS.aa
 function xAASync() { try { const on = xAAGet(); XS.aa = XS.aa === undefined ? on : XS.aa; $("xAA").querySelectorAll("button").forEach((b) => b.classList.toggle("on", (b.dataset.v === "1") === XS.aa)); } catch (e) {} }
 xAASync();
 ["xGear", "xSet"].forEach((id) => { try { $(id).addEventListener("click", xAASync); } catch (e) {} });
-xSeg("xAim", (v) => { XS.aim = v; });
-xSeg("xShd", (v) => { XS.shd = v; xApplyShadows(); });
+xSeg("xAim", (v) => { XS.aim = v; xAAMem.aim = v; try { localStorage.setItem("vs.aim", v); } catch (e) {} });
+try { let v = null; try { v = localStorage.getItem("vs.aim"); } catch (e) {} if (v == null) v = xAAMem.aim; if (["aim", "fire", "off"].includes(v)) XS.aim = v; } catch (e) {}
+xSegOn("xAim", XS.aim);
+xSeg("xShd", (v) => { XS.shd = v; xVidSave(); xApplyShadows(); });
 // VIDEO tab: graphics quality presets over the perf knobs; any individual change after shows CUSTOM
 const xGQP = {
   low: { scale: "1", res: "std", prc: 1, shd: "off", shm: 512, aa: false, sky: false, lod: 25 }, // mobile default: 1:1 CSS pixels (no blurry sub-native scale unless the user picks one)
@@ -10185,17 +10192,20 @@ function xGQApply(name) {
   try { xAAMem.rs = p.scale; localStorage.setItem("vs.rs", p.scale); } catch (e) {}
   try { xAASet(p.aa); } catch (e) {}
   if (aa !== p.aa) xRemake(); else { xApplyShadows(); resize(); }
-  xSkyApply(); xGQUi(); xGQSync();
+  xVidSave(); xSkyApply(); xGQUi(); xGQSync();
 }
+function xVidSave() { try { localStorage.setItem("vs.vid", JSON.stringify({ res: XS.res, shd: XS.shd, sky: XS.sky !== false })); } catch (e) {} } // resolution / shadows / skyline: a custom graphics set restores them
 xSeg("xGQ", (v) => xGQApply(v));
-xSeg("xSky", (v) => { XS.sky = v === "1"; xSkyApply(); });
+xSeg("xSky", (v) => { XS.sky = v === "1"; xVidSave(); xSkyApply(); });
 try { $("xVid").addEventListener("click", (e) => { const b = e.target && e.target.closest && e.target.closest("button"); if (b && !b.closest("#xGQ")) setTimeout(() => { xGQSync(); xApplyShadows(); resize(); }, 0); }); } catch (e) {}
 try { $("xSTab").querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
   $("xSTab").querySelectorAll("button").forEach((t) => t.classList.toggle("on", t === b));
   document.querySelectorAll("#mSet [data-sp]").forEach((p) => { p.hidden = p.dataset.sp !== b.dataset.st; });
 })); } catch (e) {}
 XS.cap = (() => { try { const c = localStorage.getItem("vs.cap"); if (c) return c; } catch (e) {} return null; })() || (matchMedia("(pointer: coarse)").matches ? "auto" : "0"); // saved Limit FPS choice, else default: Auto on mobile (60 when still / in menus), Off on desktop
-try { let g = null; try { g = localStorage.getItem("vs.gq"); } catch (e) {} if (!g) g = xLowDev ? "low" : "medium"; if (g === "custom") { xGQUi(); xGQSync(); } else xGQApply(g); } catch (e) {}
+try { let g = null; try { g = localStorage.getItem("vs.gq"); } catch (e) {} if (!g) g = xLowDev ? "low" : "medium"; if (g === "custom") { let o = null; try { o = JSON.parse(localStorage.getItem("vs.vid") || "null"); } catch (e) {}
+    if (o && typeof o === "object") { if (["std", "retina"].includes(o.res)) XS.res = o.res; if (["off", "map", "all"].includes(o.shd)) XS.shd = o.shd; if (typeof o.sky === "boolean") XS.sky = o.sky; }
+    xGQUi(); xGQSync(); xApplyShadows(); xSkyApply(); resize(); } else xGQApply(g); } catch (e) {}
 // Aim assist (touch only): slight pull toward the nearest visible enemy head; "Aim and fire" fires while the crosshair is on an enemy
 const xTouch = matchMedia("(pointer: coarse)").matches, xRay = new THREE.Raycaster(), xV = new THREE.Vector3(), xC = new THREE.Vector3(), xD = new THREE.Vector3(), xO = new THREE.Vector2(0, 0);
 let xAF = false;
