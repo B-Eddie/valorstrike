@@ -395,3 +395,18 @@ with a motor defect. Claim remains CONDITIONAL: not pinned to a commit. Next pin
 with XVA disabled or after preload settles; or per-sample trace for position-freeze vs slow-motion.
 Har harness note: worktree lib.cjs has ROOT hardcoded - run A/B from MAIN checkout with
 VS_ROOT=/tmp/vs-pre (worktree startDM clicks the legacy tab strip and fails on main's lobby).
+
+## 2026-10-25 ~12:26 EDT - Lobby mode reachability (diag-lobby-modes.cjs, NEW probe)
+Static: main's lobby Play button toggles #xQueue (tab strip: unrated/swift/sr/dm/tdm/esc/custom
+with offline bot cards + START/Range) AND an #xOn online section (Quick Match/Create private/Join,
+mode seg dm/tdm/five). The earlier "only online controls" observation was incomplete: the offline
+tabs exist in the same panel.
+LIVE (1280x800, light mode): tabs enumerate; per-tab cards visible (sr/dm/tdm/esc/custom "visible";
+unrated/swift "no-card" = probe selector artifact - those panes use div.x-qcard not button).
+REAL BUG FOUND: after activating the CUSTOM tab, its pane (.x-qp.on[data-q=custom], Retake 3v3
+feature + countdown + GO) OVERLAPS the tab strip - playwright could not click the DM tab
+("element intercepts pointer events"); .x-stage/.x-lb also intercepted on retry. CSS rule
+.x-qp[hidden]{display:none} exists and outranks .x-qp{display:flex}, so hidden panes are fine;
+the ACTIVE custom pane itself overflows over .x-qtabs. Needs visual confirmation (screenshots
+/tmp/lobby_dm_tab.png, /tmp/lobby_fail.png - inspect next wake) and a viewport matrix
+(1280x800, 640x360 landscape, portrait) before fixing. DM start not reached this run.
