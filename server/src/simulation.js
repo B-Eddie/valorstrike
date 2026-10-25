@@ -1,7 +1,7 @@
 import Motor from './motor.cjs';
 import {path,prepare} from './path.js';
 import {rayHit} from './hitboxes.js';
-import {persona,aimError,strafe,flankNode} from './bots.js';
+import {persona,aimError,strafe,flankNode,variedPath,spaceLook} from './bots.js';
 import calibration from './weapons.json' with {type:'json'};
 export const weapons={...calibration.weapons,'Blade Storm':{abilityOnly:true,ignoreMovementSpread:true,fireRate:1/.33,magazineSize:5,runSpeedMultiplier:1,equipTimeSeconds:0,reloadTimeSeconds:0,firstBulletAccuracy:0,shotgunPelletCount:1,damageRanges:[{rangeStartMeters:0,rangeEndMeters:200,headDamage:150,bodyDamage:50,legDamage:50}]},Knife:{fireRate:2,magazineSize:1,runSpeedMultiplier:1,equipTimeSeconds:.75,reloadTimeSeconds:0,firstBulletAccuracy:0,shotgunPelletCount:1,damageRanges:[{rangeStartMeters:0,rangeEndMeters:3,headDamage:50,bodyDamage:50,legDamage:50}]}};
 // Knife heavy swing (ALT FIRE, input kh:1): 1 s cooldown, 75 body, 150 to the head or the back (target facing away within 60 deg), the client's KNIFE table; light swings keep the Knife row above (50, 2/s).
@@ -78,10 +78,10 @@ export class Simulation{
   u.engagedAt=0;u.reactionAt=this.time+P.react*(dist>30?1.25:1);u.pitch=0;if(this.objectiveRoutes)return;/* Spike routes bots to the objective itself (goalPath); a hunt route to the nearest enemy every tick was thrown away */
   // Holders pause in place between pushes; the pause length and spacing come from the bot's own stream.
   if(P.hold>0&&!(this.time<u.nextHoldAt)){u.nextHoldAt=this.time+2+P.r()*3.5;if(P.r()<P.hold)u.holdUntil=this.time+1+P.r()*1.8;}if(u.holdUntil>this.time)return;
-  if(!u.route||u.routeAt<this.time||u.route.length<2){const via=P.flank&&dist>12?(u.via>=0&&u.viaTarget===target.id?u.via:flankNode(this,u,target)):-1;u.via=via;u.viaTarget=target.id;const goal=via>=0?via:W.near(target.x,target.z,target.y);u.route=path(W,W.near(u.x,u.z,u.y),goal);u.routeAt=this.time+P.repath;}
+  if(!u.route||u.routeAt<this.time||u.route.length<2){const via=P.flank&&dist>12?(u.via>=0&&u.viaTarget===target.id?u.via:flankNode(this,u,target)):-1;u.via=via;u.viaTarget=target.id;const goal=via>=0?via:W.near(target.x,target.z,target.y);u.route=variedPath(this,u,W.near(u.x,u.z,u.y),goal,path);u.routeAt=this.time+P.repath;}
   while(u.route.length>1){const n=W.nav.nodes[u.route[0]];if(Math.hypot(n[0]-u.x,n[2]-u.z)<P.accept)u.route.shift();else break;}
   if(u.via>=0&&u.route.length<=1){const n=W.nav.nodes[u.via];if(n&&Math.hypot(n[0]-u.x,n[2]-u.z)<1.2){u.via=-1;u.route=null;}}
-  const n=u.route&&W.nav.nodes[u.route[0]];if(n){const tx=n[0]-u.x,tz=n[2]-u.z,l=Math.hypot(tx,tz)||1,j=P.jitter*Math.sin((u.route[0]||0)*1.7+P.jitterPhase),gx=n[0]+(-tz/l)*j,gz=n[2]+(tx/l)*j;u.look=Math.atan2(u.x-gx,u.z-gz);u.input.forward=1;if(P.walk&&dist<20)u.input.walk=true;}
+  const n=u.route&&W.nav.nodes[u.route[0]];if(n){const tx=n[0]-u.x,tz=n[2]-u.z,l=Math.hypot(tx,tz)||1,j=P.jitter*Math.sin((u.route[0]||0)*1.7+P.jitterPhase),gx=n[0]+(-tz/l)*j,gz=n[2]+(tx/l)*j;u.look=Math.atan2(u.x-gx,u.z-gz);spaceLook(this,u);u.input.forward=1;if(P.walk&&dist<20)u.input.walk=true;}
   if(u.lastPos&&Math.hypot(u.x-u.lastPos[0],u.z-u.lastPos[1])<.01&&u.input.forward)u.stuck=(u.stuck||0)+.05;else u.stuck=0;if(u.stuck>1||u.escapeUntil>this.time){if(u.stuck>1){u.route=null;u.via=-1;}this.botEscape(u,u.stuck);}this.botProgress(u);u.lastPos=[u.x,u.z];}
  // Stuck bot (no progress for 1 s while walking): random sidestep and hop did not get bots out of corners and ledges
  // (soak: bots frozen for the rest of the match on every map). Probe eight directions with the real motor on a copy of

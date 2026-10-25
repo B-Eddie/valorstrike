@@ -13250,6 +13250,117 @@ function netHitFeedback(e){
 {const snap=mpCliSnap;mpCliSnap=function(m){const r=snap.apply(this,arguments);if(typeof NET!=='undefined'&&NET.socket&&running&&MP.st==='game')for(const e of m.ev||[]){if(e&&e[0]==='h')netHitFeedback(e);else if(e&&e[0]==='k'&&mpIn(e[1])==='You'){vmKill(mpIn(e[2]),!!e[3]);xKiAdd(!!e[3]);}}return r;};}
 if(window.requestIdleCallback)requestIdleCallback(()=>xHitInit(),{timeout:1500});else setTimeout(()=>xHitInit(),0);
 // ---- END LOCALIZED HIT FEEDBACK ----
+// ---- BOT VARIETY ----
+// Shared client/server routing and spacing. Costs are preferences, never permanent blockers.
+(function(root,factory){if(typeof module==='object'&&module.exports)module.exports=factory();else root.BotRoutes=factory();})(typeof globalThis!=='undefined'?globalThis:this,function(){
+ 'use strict';
+ const grids=new WeakMap();
+ function hash(s){let h=2166136261;for(const c of String(s)){h=Math.imul(h^c.charCodeAt(0),16777619);}return h>>>0;}
+ function grid(nav){let cells=grids.get(nav);if(cells)return cells;cells=new Map();nav.nodes.forEach((p,i)=>{const key=Math.floor(p[0]/3)+','+Math.floor(p[2]/3);if(!cells.has(key))cells.set(key,[]);cells.get(key).push(i);});grids.set(nav,cells);return cells;}
+ function length(nav,p){let d=0;for(let i=1;i<p.length;i++){const a=nav.nodes[p[i-1]],b=nav.nodes[p[i]];d+=Math.hypot(a[0]-b[0],a[2]-b[2]);}return d;}
+ function route(nav,base,seed,peers=[],allowed=null,banned=null){
+  if(base.length<3)return base;
+  const N=nav.nodes,start=base[0],end=base[base.length-1],cells=grid(nav),penalty=new Map();
+  for(const peer of peers){if(!peer||!peer.path)continue;for(let k=1;k<Math.min(24,peer.path.length);k+=3){const q=N[peer.path[k]];if(!q)continue;const cx=Math.floor(q[0]/3),cz=Math.floor(q[2]/3);
+   for(let x=cx-1;x<=cx+1;x++)for(let z=cz-1;z<=cz+1;z++)for(const i of cells.get(x+','+z)||[]){const p=N[i],d=Math.hypot(p[0]-q[0],p[2]-q[2]);if(d<2.4&&Math.abs(p[1]-q[1])<1)penalty.set(i,Math.min(5,(penalty.get(i)||0)+(2.4-d)*1.5));}
+  }}
+  const phase=(hash(seed)%65536)/65536*Math.PI*2,g=new Float64Array(N.length).fill(Infinity),prev=new Int32Array(N.length).fill(-1),closed=new Uint8Array(N.length),heap=[];
+  const h=i=>Math.hypot(N[i][0]-N[end][0],N[i][2]-N[end][2]);
+  const push=(i,s)=>{let k=heap.length;heap.push([i,s]);while(k){const p=(k-1)>>1;if(heap[p][1]<=s)break;heap[k]=heap[p];k=p;}heap[k]=[i,s];};
+  const pop=()=>{const first=heap[0],last=heap.pop();if(heap.length){let k=0;while(k*2+1<heap.length){let c=k*2+1;if(c+1<heap.length&&heap[c+1][1]<heap[c][1])c++;if(heap[c][1]>=last[1])break;heap[k]=heap[c];k=c;}heap[k]=last;}return first[0];};
+  g[start]=0;push(start,h(start));let steps=0;
+  while(heap.length&&steps++<N.length*6){const a=pop();if(closed[a])continue;if(a===end){const out=[];for(let i=end;i>=0;i=prev[i])out.push(i);out.reverse();return length(nav,out)<=length(nav,base)*1.5+2?out:base;}closed[a]=1;
+   for(const b of nav.adj[a]){if(closed[b]||(allowed&&!allowed(b))||(banned&&banned.has(a+'>'+b)))continue;const p=N[b],q=N[a],d=Math.hypot(p[0]-q[0],p[2]-q[2]),lane=.22*(1+Math.sin(p[0]*.17+p[2]*.13+phase));
+    const nearGoal=h(b)<2.5,c=g[a]+d*(1+lane+(nearGoal?0:penalty.get(b)||0))+Math.abs(p[1]-q[1])*.2;
+    if(c<g[b]){g[b]=c;prev[b]=a;push(b,c+h(b));}
+   }
+  }return base;
+ }
+ // Soft steering away from nearby bodies; deterministic right-of-way prevents mirror oscillation.
+ // radius (default 1.35 m body clearance) widens it into teammate spacing; out (optional [x,z]) avoids an allocation.
+ function steer(me,others,dx,dz,id=0,radius=1.35,out=null){let sx=0,sz=0;const R=radius,R0=R*(1.3/1.35);for(const o of others){if(!o||o===me||Math.abs((o.y||0)-(me.y||0))>1.5)continue;let x=me.x-o.x,z=me.z-o.z,d=Math.hypot(x,z);if(d>=R)continue;if(d<.001){x=(id&1)?1:-1;z=(id&2)?1:-1;d=Math.SQRT2;}
+  const k=Math.max(0,(R-Math.min(d,R0))/R);sx+=x/d*k;sz+=z/d*k;
+ }const o=out||[0,0],n=Math.hypot(dx,dz);if(!n){o[0]=dx;o[1]=dz;return o;}const x=dx/n+sx*.9,z=dz/n+sz*.9,l=Math.hypot(x,z)||1;o[0]=x/l*n;o[1]=z/l*n;return o;}
+ // Seeded stream (mulberry32): the same bot + round replays the same choices.
+ function rng(seed){let a=seed>>>0;return ()=>{a=(a+0x6D2B79F5)>>>0;let t=a;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return ((t^(t>>>14))>>>0)/4294967296;};}
+ // A standing spot near a goal for one unit: a nav node rMin..rMax from the centre on the centre's floor, at least gap
+ // metres from every spot already taken (teammates hold different angles instead of stacking on the goal). ok(i)
+ // filters nodes (reachable / playable). Falls back to the closest-gap candidate, then to the centre node.
+ function spot(nav,center,taken,rand,{rMin=2,rMax=8,gap=3,ok=null,tries=48}={}){
+  const N=nav.nodes,cells=grid(nav),cx=center[0],cy=center[1],cz=center[2];let best=-1,bestGap=-1;
+  for(let t=0;t<tries;t++){const a=rand()*Math.PI*2,r=rMin+(rMax-rMin)*Math.sqrt(rand()),x=cx+Math.cos(a)*r,z=cz+Math.sin(a)*r,list=cells.get(Math.floor(x/3)+','+Math.floor(z/3));if(!list||!list.length)continue;
+   const i=list[Math.floor(rand()*list.length)],p=N[i];if(Math.abs(p[1]-cy)>2.5||(ok&&!ok(i)))continue;const d=Math.hypot(p[0]-cx,p[2]-cz);if(d<rMin*.6||d>rMax*1.25)continue;
+   let g=Infinity;for(const q of taken)if(q)g=Math.min(g,Math.hypot(p[0]-q[0],p[2]-q[2]));if(g>=gap)return i;if(g>bestGap){bestGap=g;best=i;}}
+  return best;
+ }
+ return {route,steer,hash,length,rng,spot};
+});
+// Native-map 5v5 bots stop moving as one blob: per-round plans (own spot inside the site, one lurker on the other site,
+// staggered starts by personality, shuffled defender sites with spread holds), lane-varied routes from the shared
+// vendor/bot-routes.cjs (seeded per bot and round, penalised where teammates already walk) and teammate spacing while
+// moving. Combat, the carrier's plant goal, retakes/defuses and dropped-Spike pickups keep their exact goals.
+var XBV={k:'',plans:new Map(),oth:[],sv:[0,0],budget:{f:-1,n:0}};
+function xbvKey(){return FV.you+'|'+FV.them+'|'+FV.map+'|'+(FV.atk?1:0);}
+function xbvTeamTaken(team,u,field){const out=[];for(const v of team){if(v===u)continue;const q=XBV.plans.get(v);if(q&&q[field])out.push(q[field]);}return out;}
+// one spread standing spot near a site centre; null when the nav has nothing better than the centre itself
+function xbvSpot(C,center,taken,rand,o){const i=BotRoutes.spot(C.nav,center,taken,rand,Object.assign({ok:j=>!C.playable||!!C.playable[j]},o));if(i<0)return null;const p=C.nav.nodes[i];return [p[0],p[1],p[2]];}
+function xbvPlan(u,team,atk,C){
+ const k=xbvKey();if(XBV.k!==k){XBV.k=k;XBV.plans.clear();}
+ let P=XBV.plans.get(u);if(P)return P;
+ const per=u.per||{ag:.5,fl:.5,sd:.5},seed=BotRoutes.hash((u.name||'')+'|'+k),rand=BotRoutes.rng(seed),names=Object.keys(C.meta.sites),s=FV.sp;
+ P={seed,rand,go:0,lurk:false,site:null,spot:null,post:null,post0:null};XBV.plans.set(u,P);
+ if(atk){
+  // staggered start: entry-minded bots go at once, the rest leave spawn 0.4-3.2 s later
+  P.delay=per.ag>.75?0:(.4+(1-per.ag)*2.2+rand()*.6)*1000;
+  // one lurker per round: the most flank-minded non-carrier (fl > 0.6) on a team of four or more holds the other site
+  const cand=team.filter(v=>v.alive&&v!==s.c&&v.per&&v.per.fl>.6).sort((a,b)=>b.per.fl-a.per.fl)[0];
+  if(cand===u&&team.length>=4&&names.length>1){P.lurk=true;const other=names.filter(n=>n!==s.site);P.site=other[Math.floor(rand()*other.length)];P.lurkUntil=25+rand()*15;}
+  else P.site=s.site;
+ }else{
+  // defenders: a per-round shuffled seat order spread round-robin over the sites (who anchors where changes every round)
+  const order=team.slice().sort((a,b)=>BotRoutes.hash((a.name||'')+'|'+k)-BotRoutes.hash((b.name||'')+'|'+k)),rot=BotRoutes.hash(k)%names.length;
+  P.site=names[(order.indexOf(u)+rot)%names.length];P.delay=0;
+ }
+ return P;
+}
+function xbvSiteCenter(C,name,atk){const g=atk&&C.siteGoals&&C.siteGoals[name],p=C.meta.sites[name];return g?[g[0],p[1],g[1]]:[p[0],p[1],p[2]];}
+{const goal=xGoal;xGoal=function(u,team,atk,out){
+ const C=typeof nmActive==='function'&&nmActive(),s=FV.sp;
+ if(!C||mode!=='five'||FV.dm||!window.BotRoutes||!s||!u||!u.g||!C.meta||!C.meta.sites)return goal.apply(this,arguments);
+ if(atk&&s.st==='plant'){ // post-plant: spread spots around the Spike instead of one stack
+  const P=xbvPlan(u,team,atk,C);if(!P.post||P.post0!==s.x+','+s.z){P.post0=s.x+','+s.z;P.post=xbvSpot(C,[s.x,s.y||u.g.position.y,s.z],xbvTeamTaken(team,u,'post'),P.rand,{rMin:3,rMax:9,gap:3.5});}
+  return P.post?x2(out,P.post[0],P.post[2]):goal.apply(this,arguments);}
+ if(s.st==='plant'||s.st==='drop'||(atk&&(s.st!=='carry'||u===s.c)))return goal.apply(this,arguments); // retake/defuse, pickups, the carrier: exact goals
+ const P=xbvPlan(u,team,atk,C),now=performance.now(),p=u.g.position;
+ if(!P.go)P.go=now+(P.delay||0);if(now<P.go)return x2(out,p.x,p.z); // staggered start: hold at spawn
+ let site=atk?P.site:(s.seen||P.site);if(atk&&P.lurk&&(timeLeft<P.lurkUntil))site=s.site; // the lurker rotates in late
+ if(!C.meta.sites[site])return goal.apply(this,arguments);
+ if(P.spotSite!==site){P.spotSite=site;P.spot=xbvSpot(C,xbvSiteCenter(C,site,atk),xbvTeamTaken(team,u,'spot'),P.rand,atk?{rMin:1.5,rMax:7,gap:3}:{rMin:2,rMax:10,gap:4});}
+ return P.spot?x2(out,P.spot[0],P.spot[2]):goal.apply(this,arguments);
+};}
+// Lane-varied routes: nmNext's A* result is re-routed once per goal through BotRoutes.route (seeded per bot and round,
+// penalised along teammates' routes) and followed from the cache until the goal changes or the unit leaves it.
+function xbvPath(C,u,s,e,banned,base){
+ const now=performance.now(),N=C.nav.nodes,v=u.xvr;
+ if(v&&v.e===e&&v.C===C&&v.k===XBV.k&&now<v.until){
+  let k=v.path.indexOf(s,v.i);if(k<0){const q=N[s];for(let j=v.i;j<Math.min(v.path.length,v.i+14);j++){const n=N[v.path[j]];if(Math.hypot(n[0]-q[0],n[2]-q[2])<2.5&&Math.abs(n[1]-q[1])<1.2){k=j;break;}}}
+  if(k>=0&&(!banned||!banned.size||v.path.slice(k,k+2).length<2||!banned.has(v.path[k]+'>'+v.path[k+1]))){v.i=k;return v.path.slice(k);}
+ }
+ const path=base(C,s,e,banned);if(path.length<4)return path;
+ if(XBV.budget.f!==XNF){XBV.budget.f=XNF;XBV.budget.n=0;}if(XBV.budget.n>=2)return path;XBV.budget.n++; // at most two varied re-routes per frame
+ const team=bots.includes(u)?bots:allies,peers=[];for(const t of team)if(t!==u&&t.alive&&t.xvr&&t.xvr.k===XBV.k)peers.push({path:t.xvr.path.slice(t.xvr.i)});
+ const r=BotRoutes.route(C.nav,path,(u.name||'')+'|'+XBV.k+'|'+e,peers,null,banned);
+ u.xvr={e,C,k:XBV.k,path:r,i:0,until:now+12000};return r.slice();
+}
+if(typeof nmPath==='function'&&typeof nmNext==='function'){/* native maps present (page harnesses strip them) */const np=nmPath;let cur=null;nmPath=function(C,s,e,banned){return cur&&window.BotRoutes?xbvPath(C,cur,s,e,banned,np):np.apply(this,arguments);};
+ const nn=nmNext;nmNext=function(C,u,gx,gz){const prev=cur;cur=mode==='five'&&!FV.dm&&u&&u!==player&&!(u.see>0)?u:null;try{return nn.apply(this,arguments);}finally{cur=prev;}};}
+// Teammate spacing while walking (not while fighting): soft steer away from teammates closer than 1.8 m.
+{const sm=xSmV;xSmV=function(u,dt,vx,vz){
+ if((vx||vz)&&!(u.see>0)&&window.BotRoutes&&running&&mode==='five'&&typeof nmActive==='function'&&nmActive()){
+  const team=bots.indexOf(u)>=0?bots:allies,o=XBV.oth;o.length=0;for(const t of team)if(t!==u&&t.alive&&t.g)o.push(t.g.position);if(team===allies&&player&&player.hp>0)o.push(player);
+  if(o.length){const r=BotRoutes.steer(u.g.position,o,vx,vz,team.indexOf(u),1.8,XBV.sv);vx=r[0];vz=r[1];}}
+ return sm.call(this,u,dt,vx,vz);};}
+// ---- END BOT VARIETY ----
 xReady = true; // every mode is initialised; lobby launches may now start them
 { let rb = null; try { rb = sessionStorage.getItem("vs.retry"); sessionStorage.removeItem("vs.retry"); } catch (e) {} // Retry on the engine error reloaded the page: relaunch the same mode
   if (rb) setTimeout(() => { const b = $(rb); if (b) b.click(); }, 300); }
