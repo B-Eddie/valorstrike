@@ -548,6 +548,7 @@ body.x-cbh .x-mvp.en{border-left-color:#ff9f1c}
   .x-ann{top:10%}
   .x-ann.rnd{top:16%}
   #game #feed{margin-top:26px} /* drop row 1 below the scoreboard sub-strip (ends ~59px) */
+}
 .x-sp{position:fixed;left:50%;bottom:120px;transform:translateX(-50%);z-index:60;padding:6px 14px;background:rgba(15,25,35,.75);color:#ece8e1;font:500 13px var(--sans);letter-spacing:.14em;pointer-events:none;display:none;text-align:center}
 .x-sp small{display:block;font-size:12px;letter-spacing:.04em;opacity:.7;margin-top:2px}.x-sp.on{display:block} .x-sp__tp{display:inline-flex;align-items:center;gap:6px;margin-left:12px;padding:4px 10px;min-height:28px;border:1px solid rgba(236,232,225,.45);background:rgba(15,25,35,.6);color:#ece8e1;font:600 12px var(--sans);letter-spacing:.12em;cursor:pointer;pointer-events:auto}.x-sp__tp:hover,.x-sp__tp:focus-visible{border-color:#ff4655;outline:0}.x-sp__tp.on{background:#ff4655;color:#0f1923;border-color:#ff4655}.x-sp__tp kbd{font:inherit;padding:0 4px;border:1px solid currentColor;border-radius:2px}
 @media (max-height:560px){.x-sp{bottom:6px;padding:4px 10px;font-size:11px;letter-spacing:.1em;max-width:340px}.x-sp small{display:none}.x-sp__tp{margin-left:6px;min-height:24px;padding:2px 8px;font-size:11px}} /* short landscape: spectate bar sits at the bottom between health and ammo, off the spectated player */
@@ -10759,7 +10760,8 @@ function dmPts() { // spawn candidates: nav nodes, else callouts, pushed clear o
   // Ascent's callouts: outside Bind's walls, several bots stacked on one spot)
   if (DM.pts && DM.pm === FV.map && DM.pb === boxes) return DM.pts;
   let L = [];
-  try { const g = xgGet(), a = g && (g.N || g.nodes || g.n || g.pts || g.p); if (Array.isArray(a)) a.forEach((q) => { const x = q && (q.x != null ? q.x : q[0]), z = q && (q.z != null ? q.z : q[1]); if (isFinite(x) && isFinite(z)) L.push([x, z]); }); } catch (e) {}
+  try { const C = nmActive(); if (C && C.playable && C.nav) C.nav.nodes.forEach((p, i) => { if (C.playable[i]) L.push([p[0], p[2]]); }); } catch (e) {}
+  if (L.length < 8) { L = []; try { const g = xgGet(), a = g && (g.N || g.nodes || g.n || g.pts || g.p); if (Array.isArray(a)) a.forEach((q) => { const x = q && (q.x != null ? q.x : q[0]), z = q && (q.z != null ? q.z : q[1]); if (isFinite(x) && isFinite(z)) L.push([x, z]); }); } catch (e) {} }
   if (L.length < 8) { L = []; try { (xgCallouts() || []).forEach((c) => L.push([c[1], c[2]])); } catch (e) {} } // this map's callouts, never Ascent's
   if (L.length < 8) for (let i = 0; i < 24; i++) { const a = (i / 24) * 6.2832, r = 8 + (i % 3) * 10; L.push([Math.cos(a) * r, Math.sin(a) * r]); }
   if (L.length > 160) L = L.filter((_, i) => i % Math.ceil(L.length / 160) === 0);

@@ -1,8 +1,8 @@
-# Valorstrike — paused work and complete remaining plan
+# Valorstrike — active work and remaining validation plan
 
-Work is **paused at the user's request**. This checkpoint is unfinished. Resume implementation only when the user asks. Pushing this snapshot is not a release sign-off or a game-server deployment.
+Work resumed on 25 October at the user's request. `hark` and `instinct` have been reviewed and integrated into `main`; see [BRANCH_INTEGRATION.md](BRANCH_INTEGRATION.md) for the current implementation, conflict decisions and verification. The full acceptance checklist below remains active. A GitHub push is not a game-server deployment.
 
-## Current changes to review on resume
+## Historical checkpoint at `63176c0` (superseded implementations)
 
 | Area | Implemented in this checkpoint | Verification still needed |
 |---|---|---|
@@ -16,9 +16,9 @@ Work is **paused at the user's request**. This checkpoint is unfinished. Resume 
 | Third-person spectating | Whole spectator strip responds to click/tap and keyboard activation; camera height includes terrain elevation; pointer lock is released for spectating without auto-pausing; toggle text/pressed state reflects view. | Die in a running match, follow a living teammate, switch first/third person using button/V/touch, switch targets, wall clipping, elevated terrain and return to play on revive/respawn/next round. |
 | Lotus hole below A | User initially withdrew the general hole report, then supplied a specific minimap screenshot locating a gap in the right wall below A. | **Not fixed yet.** Reproduce this exact spot; determine whether the gap is source minimap artwork, visible geometry, collision, or an intended doorway. Fix the actual defect and verify both sides/elevations. Do not fill unrelated map openings. |
 
-## Order of work after resuming
+## Remaining acceptance order
 
-1. Review the unfinished snapshot for integration mistakes before expanding scope. Regenerate the page, run all suites and add the new server tests to the standard command. Keep client/server motor behavior identical.
+1. Complete integration verification and preserve one implementation per subsystem. The default server command now includes the original Lotus stair regressions; optimized asset, grip, floor-pickup and ragdoll regressions replace the earlier competing implementations. Keep client/server motor behavior identical.
 2. Complete visual gun-grip acceptance in the actual game: all agents and weapon classes, idle/walk/run/crouch, aiming, fire recoil, reload/equip/cast transitions and weapon changes. Correct any finger/shoulder/stock clipping rather than accepting only mathematical wrist contact.
 3. Measure and finish the loading/cache changes. Prioritize the selected agent and imminent roster/loadout; bound background work so it does not compete with match startup or combat; verify cache invalidation after asset changes and robust fallback under quota/storage failure.
 4. Finish sharp rendering defaults and measured hit/kill performance together. Profile first-use animation binding, shader compilation, texture upload, raycasts, UI/layout and corpse setup. Keep crisp defaults without concealing stalls through automatic blur.

@@ -1,3 +1,7 @@
+# Current main integration
+
+The historical branch ledger below describes evidence gathered before integration. `hark` through `5cd5e0b` and `instinct` through `857f318` are now integrated with conflict corrections. [BRANCH_INTEGRATION.md](BRANCH_INTEGRATION.md) is the current combined-code verification record; [NEXT_STEPS.md](NEXT_STEPS.md) carries the complete remaining acceptance plan. Branch-specific pass claims do not establish a pass on the combined build.
+
 # Valorstrike acceptance ledger
 
 Updated 25 October 2026, sixth pass (branch `hark`, tip after this ledger commit) from the full [Instinct handoff](https://files.instinct.com/u6k7xnlbyeh0-valorstrike-shipped-and-still-open).

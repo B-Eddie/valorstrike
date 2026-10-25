@@ -303,6 +303,26 @@ floor contact retained as NUMERIC evidence only (flat bg has no ground reference
   walking works for scripted clients (straight-line inputs snag on geometry).
 - PROTOCOL EVIDENCE ONLY - not rendered two-human gameplay acceptance (parent standing rule).
 
+
+## 2026-10-25 10:01 - two/three-client protocol check: FULL PASS
+- server/test-two-client.js + QA-only wrangler vars QA_CREDITS/QA_BUY_SECONDS (spike.js/worker.js;
+  defaults unchanged, local-dev only - parent's "bounded deterministic authorized test setup"
+  while protocol messages stay the production path). Full flow ~27s, fits the 120s tool cap.
+- phase1: all clients get 10-unit snapshots; humans AlphaQA+CharlieQA(team0)/BravoQA(team1).
+- phase2: ONLINE PICKUP VERIFIED - C buys Bucky (buy auto-equips), dropw beside A in shared
+  spawn; drop in A's fw; A's explicit pick accepted (bo ok, ld [Bucky,Classic]); swap drop
+  (Stinger) lands server-owned. Also observed in a prior run: walk-over auto-pickup works
+  online too (A swallowed C's unguarded drop instantly).
+- phase3: B death visible in all clients' snapshots (kill credit: bots pre-empt A's duel).
+- phase4: B's death drop in all clients' fw.
+- Determinism fixes: join order serialized (C connects after B's welcome) else team races;
+  room code regex ^[A-HJ-NP-Z2-9]{6}$; keepalive pings (server idle-closes ready sessions
+  after 15s silent; real client immune - sends inputs at 20Hz unconditionally).
+- Test-consumption bug worth remembering: a consumed fw entry breaks a find-loop BEFORE the
+  confirming bo lands - check the reply after the loop, not only inside it.
+- Remaining duel caveat: scripted "A kills B via inputs" still not demonstrated (bots
+  intercept B mid-map first); kill SYNC itself is proven. Low value vs remaining queue.
+
 ## NEXT (queued 08:56 EDT)
 1. Online two-client PROTOCOL check (label: protocol evidence, not rendered two-human
    acceptance): `npm run dev` (wrangler local :8787, ALLOW_LOCAL_ORIGIN) + a ws script in the
