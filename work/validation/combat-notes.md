@@ -435,3 +435,9 @@ in-process server; it keeps the VALORANT FEEL block the audit fixture strips, an
 - `work/test_client_online_gunplay.cjs`: the harness page has no map floor and free-falls; with the airborne recoil
   multiplier its Vandal spray climbed 1.8x the grounded server body. The spray check now stands the page on the server
   body's floor (stubbed `groundAt`, restored after).
+
+## Gameplay QA pass 9 (room crash, crosshair, spectator, Run It Back, friendly fire, spread corrections)
+- **Room halt on a sidearm-only round**: the empty primary slot is `null`, so an `equip {w:null}` (or no `w`) matched it and
+  left the unit holding no weapon; every later tick threw and the room's simulation stopped. Equip now takes only a real
+  weapon name the unit holds (primary / secondary / Knife). `test-spike-edges.js`: null / undefined / '' / 0 / prototype
+  names / unheld guns refused on a pistol round, the simulation keeps ticking, Classic <-> Knife still swaps.

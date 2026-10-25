@@ -58,3 +58,11 @@ const wb={...bw,blocked:(x,z)=>x===20&&z===43},bc=new SpikeSimulation(wb),bp=bc.
  const back=s.add('Leaver','Jett',true,team);assert.equal(back.team,team);assert(s.units.includes(mates[0])&&!s.units.includes(mates[1]),'rejoin replaced the dead bot, the living one keeps playing');
  const dead=s.units.find(u=>!u.alive&&u.human);assert(!s.takeOver(s.units.find(u=>!u.human),dead||back),'no take-over of a dead body');
  console.log('Spike seats: a leaver\'s seat bot takes over the living body; a rejoin gives up a dead bot before a living one');}
+// Sidearm-only round (pistol / eco): the empty primary slot is null, and equip {w:null} (or no w) matched it, so the unit was
+// left holding no weapon after a TypeError and every later tick threw (the room's simulation stopped). Malformed or empty-slot
+// equips are refused; a dropped sidearm's empty slot likewise; 1 / 2 / 3 on a pistol round still swap Classic <-> Knife.
+{const s=new SpikeSimulation(W,'five','ascent',()=>.5),a=s.add('a','Sova');s.add('b','Sage');s.start(false);s.buy=0;assert.equal(a.primary,null);assert.equal(a.weapon,'Classic');
+ for(const w of [null,undefined,'',0,'constructor','__proto__','Vandal',{}])assert.equal(s.command(a,{t:'equip',w}),false,'equip '+String(w)+' refused');assert.equal(a.weapon,'Classic');
+ for(let i=0;i<5;i++)s.step(.05);assert.equal(s.command(a,{t:'equip',w:'Knife'}),true);assert.equal(s.command(a,{t:'equip',w:'Classic'}),true);assert.equal(a.weapon,'Classic');
+ a.secondary=null;a.weapon='Knife';assert.equal(s.command(a,{t:'equip',w:null}),false,'dropped sidearm: empty slot refused');for(let i=0;i<5;i++)s.step(.05);assert.equal(a.weapon,'Knife');
+ console.log('Sidearm-only round: equip of an empty slot / malformed name refused, the simulation keeps ticking');}
