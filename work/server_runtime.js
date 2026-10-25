@@ -23,7 +23,16 @@ function netClean(m){if(!m||typeof m!=='object'||Array.isArray(m)||typeof m.t!==
  const rs=r=>{if(!obj(r)||!Array.isArray(r.sp)||r.sp.length<9)return null;if(r.ld!==undefined&&!Array.isArray(r.ld))r.ld=[null,'Classic'];if(r.tw!==undefined&&!(r.tw===null||typeof r.tw==='string'&&WEAP[r.tw]))r.tw=null;if(r.status!==undefined&&!obj(r.status))delete r.status;if(r.channel!==undefined&&!obj(r.channel))r.channel=null;
   if(r.ab!==undefined){if(!obj(r.ab))delete r.ab;else{if(r.ab.cool!==undefined&&!obj(r.ab.cool))delete r.ab.cool;if(r.ab.anchor!=null&&!vec(r.ab.anchor))r.ab.anchor=null;}}
   if(r.reyna!==undefined&&r.reyna!==null){if(!obj(r.reyna))r.reyna=null;else r.reyna.souls=arr(r.reyna.souls).filter(o=>obj(o)&&(str(o.id)||num(o.id))&&vec(o.p));}
-  r.rv=arr(r.rv).filter(x=>Array.isArray(x)&&x.length>=4&&x.every(num));if(r.cr!==undefined)r.cr=kd(r.cr);if(r.sc!==undefined&&!(Array.isArray(r.sc)&&r.sc.length===2&&r.sc.every(num)))return null;return r;};
+  r.rv=arr(r.rv).filter(x=>Array.isArray(x)&&x.length>=4&&x.every(num));if(r.cr!==undefined)r.cr=kd(r.cr);if(r.sc!==undefined&&!(Array.isArray(r.sc)&&r.sc.length===2&&r.sc.every(num)))return null;
+  // Values (JSON carries 1e999 = Infinity and any magnitude, and typeof checks let them through): every number the page
+  // reads is finite and clamped to its range, a junk one dropped (scalars) or zeroed (statuses, spike row).
+  const cl=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));for(const [k,lo,hi]of [['tm',0,1e7],['b',0,120],['tl',0,1e4],['me',0,99999]])if(r[k]!==undefined){if(num(r[k]))r[k]=cl(r[k],lo,hi);else delete r[k];}
+  if(r.atk!==undefined)r.atk=r.atk===1||r.atk===true?1:0;if(r.bl!==undefined)r.bl=arr(r.bl).filter(str);if(r.sc!==undefined)r.sc=r.sc.map(n=>cl(Math.floor(n),0,99));if(r.cr)for(const k in r.cr)r.cr[k]=cl(r.cr[k],0,99999);
+  if(r.status){const o={};for(const [k,v]of Object.entries(r.status))o[k]=num(v)?cl(v,0,60):0;r.status=o;}
+  if(r.channel)r.channel={kind:str(r.channel.kind)?r.channel.kind:'',remaining:num(r.channel.remaining)?cl(r.channel.remaining,0,30):0};
+  if(r.ab){const a=r.ab;for(const [k,lo,hi]of [['c',0,9],['q',0,9],['e',0,9],['ult',0,20],['blades',0,10],['regrowthPool',0,100],['rechargeAt',0,1e7],['signatureKills',0,99]])if(a[k]!==undefined&&!(typeof a[k]==='boolean')){if(num(a[k]))a[k]=cl(a[k],lo,hi);else delete a[k];}if(a.cool)for(const k of Object.keys(a.cool)){if(num(a.cool[k]))a.cool[k]=cl(a.cool[k],0,1e7);else delete a.cool[k];}}
+  {const p=r.sp;r.sp=[str(p[0])?p[0]:'',num(p[1])?Math.floor(p[1]):-1,num(p[2])?cl(p[2],-1e4,1e4):0,num(p[3])?cl(p[3],-1e4,1e4):0,num(p[4])?cl(p[4],0,1e4):0,num(p[5])?cl(p[5],0,1e4):0,num(p[6])?cl(p[6],0,1e4):0,str(p[7])?p[7]:'',p[8]===1||p[8]===true?1:0];}
+  return r;};
  const t=m.t;
  if(t==='room'){m.pl=arr(m.pl).filter(p=>obj(p)&&str(p.n));if(!str(m.code))m.code='';if(!str(m.mode))m.mode='tdm';if(!str(m.map))m.map='ascent';}
  else if(t==='welcome'){if(!str(m.name)&&!num(m.name))return null;}
