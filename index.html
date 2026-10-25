@@ -12429,12 +12429,12 @@ function xvJson(url) {
 // Background preload: while the player sits in the lobby, pull every native agent rig,
 // locomotion set and weapon model through the persistent cache so match start is not
 // gated on a 100 MB burst. Sequential with idle yields to keep the lobby responsive.
-// Skipped on mobile / data-saver connections.
+// Skipped on mobile / data-saver / low-memory (<=4GB) devices.
 async function xvPreload() {
   if (XV.preloading) return; XV.preloading = true;
   try {
     const conn = navigator.connection || {};
-    if (conn.saveData || /2g/.test(conn.effectiveType || '') || matchMedia('(pointer: coarse)').matches) return;
+    if (conn.saveData || /2g/.test(conn.effectiveType || '') || matchMedia('(pointer: coarse)').matches || (navigator.deviceMemory && navigator.deviceMemory <= 4)) return; // low-RAM devices: on-demand loads only (background preload decodes ~400MB of textures)
     const first = (window.J && window.J.pick) || 'Jett';
     const agents = Object.keys(XUB_AG).sort((a, b) => (a === first ? -1 : b === first ? 1 : 0));
     const idle = () => new Promise((r) => { if (window.requestIdleCallback) requestIdleCallback(r, { timeout: 120 }); else setTimeout(r, 120); });
