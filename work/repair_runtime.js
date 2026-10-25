@@ -49,17 +49,40 @@ function xrRagdoll(M,ground){
  const ry=M.m.getWorldQuaternion(new THREE.Quaternion()),fwd=new THREE.Vector3(0,0,1).applyQuaternion(ry);fwd.y=0;if(fwd.lengthSq()<1e-6)fwd.set(0,0,1);fwd.normalize();
  const push=(M.ragHit&&Number.isFinite(M.ragHit.x)&&Number.isFinite(M.ragHit.z))?new THREE.Vector3(M.ragHit.x,0,M.ragHit.z):fwd.clone().negate();if(push.lengthSq()<1e-6)push.copy(fwd).negate();push.normalize();
  const base=P.Pelvis.p.y,top=Math.max(.5,P.Head.p.y-base);for(const a of list){const k=Math.max(0,Math.min(1,(a.p.y-base)/top));a.old.addScaledVector(push,-(0.35+1.5*k)/120);}
- const R={P,list,links,aims,root,q0,hipQ,chest,c0,chestQ,ground,time:0,frame:0,refY:base,rest:0,fwd};xrGround(R,true);return R;
+ // Unsimulated chains below the root (fingers, hair, skirts, straps) keep their authored offsets, so a
+ // body lying flat pushes them through the floor. Each (bone -> child) pair whose child dips under the
+ // floor of its nearest simulated ancestor is swung up about the bone (xrDrape). Hands own their fingers.
+ const drape=[],sim=new Set(list.map(a=>a.b).filter(Boolean)),aimed=new Set(aims.map(A=>A.bone));
+ root.traverse(b=>{if(!b.isBone||b===root||sim.has(b)||aimed.has(b)||!b.parent||!b.parent.isBone)return;const par=b.parent;if(par!==P.L_Hand.b&&par!==P.R_Hand.b&&(sim.has(par)||aimed.has(par)||par===root))return;let a=par;while(a&&!sim.has(a))a=a.parent;const J=a&&list.find(j=>j.b===a);if(!J||b.position.lengthSq()<1e-8)return;drape.push({bone:par,child:b,J});});
+ const R={P,list,links,aims,drape,root,q0,hipQ,chest,c0,chestQ,ground,time:0,frame:0,refY:base,rest:0,fwd};try{xrSupports(R,sc,sim);}catch(e){}xrGround(R,true);return R;
 }
+// Contact volume: a joint particle is a point, but the skin around it (a thick back, a cloak, a heel)
+// reaches further. Once at death, sample the skinned surface near each simulated joint and keep its
+// extreme points (14 directions, bone-local). Each frame the lowest of them sets that joint's
+// clearance, so whatever side the body lands on rests on the floor instead of sinking into it.
+const XR_DIRS=[[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1],[1,1,1],[1,1,-1],[1,-1,1],[1,-1,-1],[-1,1,1],[-1,1,-1],[-1,-1,1],[-1,-1,-1]].map(d=>{const l=Math.hypot(...d);return d.map(x=>x/l);});
+const XR_REACH=.32,XR_MAXCLEAR=.3,XR_SAMPLES=6000;
+function xrSupports(R,sc,sim){
+ const byBone=new Map(),J=new Map();for(const a of R.list)if(a.b)J.set(a.b,a);const owner=b=>{if(byBone.has(b))return byBone.get(b);let x=b;while(x&&!J.has(x))x=x.parent;const j=x?J.get(x):null;byBone.set(b,j);return j;};
+ const inv=new Map();for(const a of R.list)if(a.b){a.b.updateWorldMatrix(true,false);inv.set(a,new THREE.Matrix4().copy(a.b.matrixWorld).invert());a.sup=XR_DIRS.map(()=>null);a.supD=XR_DIRS.map(()=>-Infinity);}
+ const meshes=[];let total=0;sc.traverse(o=>{if(o.isSkinnedMesh&&o.visible!==false&&o.geometry&&o.geometry.attributes.skinIndex){meshes.push(o);total+=o.geometry.attributes.position.count;}});
+ const stride=Math.max(1,Math.ceil(total/XR_SAMPLES)),v=new THREE.Vector3(),l=new THREE.Vector3(),jp=new THREE.Vector3();
+ for(const o of meshes){o.updateMatrixWorld(true);o.skeleton.update();const ps=o.geometry.attributes.position,si=o.geometry.attributes.skinIndex,sw=o.geometry.attributes.skinWeight,bt=o.applyBoneTransform||o.boneTransform;if(!bt)continue;
+  for(let i=0;i<ps.count;i+=stride){let best=-1,bi=0;for(let k=0;k<4;k++){const w=sw.getComponent(i,k);if(w>best){best=w;bi=si.getComponent(i,k);}}const bone=o.skeleton.bones[bi];const a=bone&&owner(bone);if(!a||!a.sup)continue;
+   v.fromBufferAttribute(ps,i);bt.call(o,i,v);v.applyMatrix4(o.matrixWorld);if(!Number.isFinite(v.y))continue;a.b.getWorldPosition(jp);if(v.distanceTo(jp)>XR_REACH)continue;l.copy(v).applyMatrix4(inv.get(a));
+   for(let k=0;k<XR_DIRS.length;k++){const d=XR_DIRS[k],s=l.x*d[0]+l.y*d[1]+l.z*d[2];if(s>a.supD[k]){a.supD[k]=s;a.sup[k]=(a.sup[k]||new THREE.Vector3()).copy(l);}}}}
+ for(const a of R.list)if(a.sup){a.sup=a.sup.filter(Boolean);delete a.supD;if(!a.sup.length)a.sup=null;}
+}
+function xrClearance(R){const v=XR_V[6]||(XR_V[6]=new THREE.Vector3()),jp=XR_V[7]||(XR_V[7]=new THREE.Vector3());for(const a of R.list){if(!a.sup){a.rd=a.r;continue;}a.b.updateWorldMatrix(true,false);a.b.getWorldPosition(jp);let lo=jp.y;for(const s of a.sup){v.copy(s).applyMatrix4(a.b.matrixWorld);if(v.y<lo)lo=v.y;}const c=jp.y-lo;a.rd=Number.isFinite(c)?Math.min(XR_MAXCLEAR,Math.max(a.r,c)):a.r;}}
 function xrGround(R,force){const g=R.ground||(typeof groundAt==='function'?groundAt:null);for(const a of R.list){if(!force&&(R.frame+a.n.length)%4)continue;let f=R.refY-.9;if(g)try{const v=g(a.p.x,a.p.z,.08,R.refY+.15);if(Number.isFinite(v))f=v;}catch(e){}a.floor=Math.max(f,R.refY-3);}}
 function xrSolve(R,dt){
- const steps=Math.max(1,Math.ceil(dt*120)),h=dt/steps,g=9.81*h*h,maxStep=.35;R.frame++;xrGround(R,false);
+ const steps=Math.max(1,Math.ceil(dt*120)),h=dt/steps,g=9.81*h*h,maxStep=.35;R.frame++;xrGround(R,false);xrClearance(R);
  for(let s=0;s<steps;s++){
   for(const a of R.list){let vx=(a.p.x-a.old.x)*.99,vy=(a.p.y-a.old.y)*.99,vz=(a.p.z-a.old.z)*.99;const m=Math.hypot(vx,vy,vz);if(m>maxStep){const k=maxStep/m;vx*=k;vy*=k;vz*=k;}a.old.copy(a.p);a.p.x+=vx;a.p.y+=vy-g;a.p.z+=vz;}
   for(let it=0;it<10;it++){
    for(const L of R.links){const A=L.A,B=L.B,dx=B.p.x-A.p.x,dy=B.p.y-A.p.y,dz=B.p.z-A.p.z,len=Math.sqrt(dx*dx+dy*dy+dz*dz);if(len<1e-7)continue;const t=len<L.lo?L.lo:len>L.hi?L.hi:len;if(t===len)continue;const k=(len-t)/len*.5;A.p.x+=dx*k;A.p.y+=dy*k;A.p.z+=dz*k;B.p.x-=dx*k;B.p.y-=dy*k;B.p.z-=dz*k;}
    xrKnees(R);
-   for(const a of R.list){const lim=a.floor+a.r;if(a.p.y<lim){a.p.y=lim;if(a.old.y<lim)a.old.y=lim+(a.old.y-lim)*.2;a.old.x+=(a.p.x-a.old.x)*.35;a.old.z+=(a.p.z-a.old.z)*.35;}}
+   for(const a of R.list){const lim=a.floor+(a.rd||a.r);if(a.p.y<lim){a.p.y=lim;if(a.old.y<lim)a.old.y=lim+(a.old.y-lim)*.2;a.old.x+=(a.p.x-a.old.x)*.35;a.old.z+=(a.p.z-a.old.z)*.35;}}
   }
  }
  for(const a of R.list)if(!Number.isFinite(a.p.x)||!Number.isFinite(a.p.y)||!Number.isFinite(a.p.z))return false;
@@ -77,7 +100,15 @@ function xrPose(R){
  root.updateMatrixWorld(true);const pel=P.Pelvis.b.getWorldPosition(v0),delta=v1.copy(P.Pelvis.p).sub(pel),rw=root.getWorldPosition(v2).add(delta);root.position.copy(root.parent.worldToLocal(rw));root.updateMatrixWorld(true);
  const aim=(A)=>{const b=A.bone;b.updateWorldMatrix(true,false);const bp=b.getWorldPosition(v0),cur=v1.copy(A.off).applyMatrix4(b.matrixWorld).sub(bp),want=v2.copy(A.T.p).sub(bp);if(cur.lengthSq()<1e-10||want.lengthSq()<1e-10)return;q.setFromUnitVectors(cur.normalize(),want.normalize());b.getWorldQuaternion(wq);setWorldQ(b,wq.premultiply(q));};
  for(const A of R.aims){if(A.bone===R.chest)continue;aim(A);if(A.bone.name==='Spine1'){xrBasis(P.Neck.p.clone().sub(P.Spine4.p),P.R_Shoulder.p.clone().sub(P.L_Shoulder.p),q).multiply(R.chestQ);setWorldQ(R.chest,wq.copy(q).multiply(R.c0));}}
- root.updateMatrixWorld(true);
+ root.updateMatrixWorld(true);xrDrape(R);
+}
+const XR_DRAPE_GAP=.03;
+function xrDrape(R){
+ if(!R.drape||!R.drape.length)return;const [p,c,d,w]=XR_V,[q,pq,wq]=XR_Q;
+ for(const D of R.drape){const b=D.bone,lim=D.J.floor+XR_DRAPE_GAP;D.child.getWorldPosition(c);if(!(c.y<lim))continue;b.getWorldPosition(p);d.copy(c).sub(p);const len=d.length();if(len<1e-6)continue;
+  let dy=Math.min(lim-p.y,len*.98);if(dy<=d.y)continue;const hx=d.x,hz=d.z,hl=Math.hypot(hx,hz),h=Math.sqrt(Math.max(0,len*len-dy*dy));
+  if(hl>1e-6)w.set(hx/hl*h,dy,hz/hl*h);else w.set(h,dy,0);q.setFromUnitVectors(d.multiplyScalar(1/len),w.multiplyScalar(1/len));
+  b.getWorldQuaternion(wq).premultiply(q);b.parent.getWorldQuaternion(pq);b.quaternion.copy(pq.invert().multiply(wq));b.updateMatrixWorld(true);}
 }
 function xrRagdollTick(M,dt){
  if(!M.ragdoll&&M.ragdoll!==null){const pose=[];M.sx.sc.traverse(b=>{if(b.isBone)pose.push([b,b.position.clone(),b.quaternion.clone(),b.scale.clone()]);});M.sx.mx.stopAllAction();for(const [b,p,q,s]of pose){b.position.copy(p);b.quaternion.copy(q);b.scale.copy(s);}let R=null;try{R=xrRagdoll(M);}catch(e){console.warn('ragdoll unavailable',e);}M.ragdoll=R;if(R)R.good=R.list.map(a=>a.p.clone());}
