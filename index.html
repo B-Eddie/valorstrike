@@ -12692,28 +12692,70 @@ function xrHitboxes(b,M){
  b.body.position.set(p.x,(top+bottom)/2,p.z);b.body.scale.set(.72,height/1.8,.72);b.body.updateMatrixWorld(true);b.head.updateMatrixWorld(true);
 }
 {const update=xVisB;xVisB=function(b){const r=update.apply(this,arguments);xrHitboxes(b,b&&b.xm);return r;};}
-function xrRagdoll(M){
- M.m.updateMatrixWorld(true);const sc=M.sx.sc,points=[],by=new Map();
- sc.traverse(b=>{if(!b.isBone)return;const p=b.getWorldPosition(new THREE.Vector3());const item={b,p,old:p.clone(),q:b.getWorldQuaternion(new THREE.Quaternion()),parent:null,length:0};points.push(item);by.set(b,item);});
- for(const a of points){a.parent=by.get(a.b.parent)||null;if(a.parent)a.length=a.p.distanceTo(a.parent.p);a.children=points.filter(c=>c.b.parent===a.b);a.child=a.children.find(c=>!/Twst|Twist|Helper|Ndl|Weapon|Camera/.test(c.b.name))||a.children[0];if(a.child)a.dir=a.child.p.clone().sub(a.p).normalize();}
- const floor=M.m.position.y;for(const a of points)a.old.x-=.025;return {points,floor,time:0};
+// Skeleton-preserving corpse physics. Only the major joints are simulated (Verlet particles with
+// distance, rigidity and joint-limit constraints); bones are then re-aimed, never stretched, so
+// face/twist/helper bones keep their authored offsets and the skin cannot explode.
+const XR_JOINTS=['Pelvis','Spine2','Spine4','Neck','Head','L_Shoulder','L_Elbow','L_Hand','R_Shoulder','R_Elbow','R_Hand','L_Hip','L_Knee','L_Foot','L_Toe','R_Hip','R_Knee','R_Foot','R_Toe'];
+const XR_LINKS=[['Pelvis','Spine2'],['Spine2','Spine4'],['Spine4','Neck'],['Neck','Head'],['Head','HeadEnd'],['Spine4','L_Shoulder'],['Spine4','R_Shoulder'],['L_Shoulder','L_Elbow'],['L_Elbow','L_Hand'],['R_Shoulder','R_Elbow'],['R_Elbow','R_Hand'],['Pelvis','L_Hip'],['Pelvis','R_Hip'],['L_Hip','L_Knee'],['L_Knee','L_Foot'],['L_Foot','L_Toe'],['R_Hip','R_Knee'],['R_Knee','R_Foot'],['R_Foot','R_Toe'],
+ // rigid pelvis and chest blocks
+ ['L_Hip','R_Hip'],['L_Hip','Spine2'],['R_Hip','Spine2'],['L_Shoulder','R_Shoulder'],['L_Shoulder','Spine2'],['R_Shoulder','Spine2'],['L_Shoulder','Neck'],['R_Shoulder','Neck'],['Neck','HeadEnd',.92,1.02],
+ // joint limits as distance ranges (fraction of the rest distance)
+ ['Pelvis','Spine4',.82,1.02],['Spine2','Neck',.86,1.02],['Spine4','Head',.84,1.03],['Spine4','HeadEnd',.8,1.04],['L_Shoulder','L_Hand',.32,1],['R_Shoulder','R_Hand',.32,1],['L_Hip','L_Foot',.45,1],['R_Hip','R_Foot',.45,1],['L_Knee','L_Toe',.86,1.08],['R_Knee','R_Toe',.86,1.08],['Spine4','L_Knee',.55,1.25],['Spine4','R_Knee',.55,1.25],['Spine2','L_Elbow',.45,1.6],['Spine2','R_Elbow',.45,1.6],['L_Knee','R_Knee',.35,2.2],['L_Foot','R_Foot',.25,3]];
+const XR_AIM=[['Spine1','Spine4'],['Neck','Head'],['Head','HeadEnd'],['L_Clavicle','L_Shoulder'],['L_Shoulder','L_Elbow'],['L_Elbow','L_Hand'],['R_Clavicle','R_Shoulder'],['R_Shoulder','R_Elbow'],['R_Elbow','R_Hand'],['L_Hip','L_Knee'],['L_Knee','L_Foot'],['L_Foot','L_Toe'],['R_Hip','R_Knee'],['R_Knee','R_Foot'],['R_Foot','R_Toe']];
+const XR_RADIUS={Head:.11,HeadEnd:.1,Pelvis:.12,Spine2:.12,Spine4:.12,Neck:.07,L_Hand:.04,R_Hand:.04,L_Toe:.03,R_Toe:.03,L_Foot:.05,R_Foot:.05};
+function xrBasis(up,right,q){const u=up.clone().normalize(),r=right.clone().sub(u.clone().multiplyScalar(right.dot(u))).normalize(),f=new THREE.Vector3().crossVectors(r,u);return q.setFromRotationMatrix(new THREE.Matrix4().makeBasis(r,u,f));}
+function xrRagdoll(M,ground){
+ M.m.updateMatrixWorld(true);const sc=M.sx.sc,P={},list=[],root=sc.getObjectByName('Splitter')||sc.getObjectByName('Pelvis');
+ for(const n of XR_JOINTS){const b=sc.getObjectByName(n);if(!b)return null;const p=b.getWorldPosition(new THREE.Vector3());P[n]={n,b,p,old:p.clone(),r:XR_RADIUS[n]||.05,floor:-Infinity};list.push(P[n]);}
+ {const h=P.Head.p,dir=h.clone().sub(P.Neck.p);if(dir.lengthSq()<1e-8)dir.set(0,1,0);dir.normalize();const p=h.clone().add(dir.multiplyScalar(.2));P.HeadEnd={n:'HeadEnd',b:null,p,old:p.clone(),r:.1,floor:-Infinity,local:P.Head.b.worldToLocal(p.clone())};list.push(P.HeadEnd);}
+ const links=[];for(const [a,b,lo=1,hi=1]of XR_LINKS){const A=P[a],B=P[b];if(!A||!B)continue;const rest=A.p.distanceTo(B.p);if(rest<1e-4)continue;links.push({A,B,lo:rest*lo,hi:rest*hi});}
+ const aims=[];for(const [bn,tn]of XR_AIM){const bone=sc.getObjectByName(bn),T=P[tn];if(!bone||!T)continue;bone.updateWorldMatrix(true,false);const off=T.b?bone.worldToLocal(T.b.getWorldPosition(new THREE.Vector3())):bone.worldToLocal(T.p.clone());aims.push({bone,T,off});}
+ const q0=root.getWorldQuaternion(new THREE.Quaternion()),hipQ=xrBasis(P.Spine2.p.clone().sub(P.Pelvis.p),P.R_Hip.p.clone().sub(P.L_Hip.p),new THREE.Quaternion()).invert();
+ const chest=sc.getObjectByName('Spine4'),c0=chest.getWorldQuaternion(new THREE.Quaternion()),chestQ=xrBasis(P.Neck.p.clone().sub(P.Spine4.p),P.R_Shoulder.p.clone().sub(P.L_Shoulder.p),new THREE.Quaternion()).invert();
+ // Fall away from the facing direction (or along the killing shot when known), capped so a bad hit vector cannot launch the body.
+ const ry=M.m.getWorldQuaternion(new THREE.Quaternion()),fwd=new THREE.Vector3(0,0,1).applyQuaternion(ry);fwd.y=0;if(fwd.lengthSq()<1e-6)fwd.set(0,0,1);fwd.normalize();
+ const push=(M.ragHit&&Number.isFinite(M.ragHit.x)&&Number.isFinite(M.ragHit.z))?new THREE.Vector3(M.ragHit.x,0,M.ragHit.z):fwd.clone().negate();if(push.lengthSq()<1e-6)push.copy(fwd).negate();push.normalize();
+ const base=P.Pelvis.p.y,top=Math.max(.5,P.Head.p.y-base);for(const a of list){const k=Math.max(0,Math.min(1,(a.p.y-base)/top));a.old.addScaledVector(push,-(0.35+1.5*k)/120);}
+ const R={P,list,links,aims,root,q0,hipQ,chest,c0,chestQ,ground,time:0,frame:0,refY:base,rest:0,fwd};xrGround(R,true);return R;
 }
-function xrRagdollTick(M,dt){
- const now=performance.now();if(!M.ragStarted)M.ragStarted=now;if(now-M.ragStarted>2800)return false;
- // A slow display must not keep old corpses in physics for minutes.
-
- if(!M.ragdoll){const pose=[];M.sx.sc.traverse(b=>{if(b.isBone)pose.push([b,b.position.clone(),b.quaternion.clone(),b.scale.clone()]);});M.sx.mx.stopAllAction();for(const [b,p,q,s]of pose){b.position.copy(p);b.quaternion.copy(q);b.scale.copy(s);}M.ragdoll=xrRagdoll(M);}
- const R=M.ragdoll;R.time+=dt;const steps=Math.max(1,Math.ceil(Math.min(dt,.05)/(1/120))),h=Math.min(dt,.05)/steps;
- for(let step=0;step<steps;step++){
-  for(const a of R.points){const v=a.p.clone().sub(a.old).multiplyScalar(.985);a.old.copy(a.p);a.p.add(v);a.p.y-=9.81*h*h;let floor=R.floor;try{floor=groundAt(a.p.x,a.p.z,.08,R.floor+.1);}catch(e){}a.floor=floor;}
-  for(let iteration=0;iteration<8;iteration++){
-   for(const a of R.points)if(a.parent&&a.length>1e-5){const d=a.p.clone().sub(a.parent.p),len=d.length();if(len>1e-8){d.multiplyScalar((len-a.length)/len*.5);a.p.sub(d);a.parent.p.add(d);}}
-   for(const a of R.points){const floor=a.floor;const radius=/Head|head/.test(a.b.name)?.12:.045;if(a.p.y<floor+radius){a.p.y=floor+radius;a.old.x+=(a.p.x-a.old.x)*.28;a.old.z+=(a.p.z-a.old.z)*.28;}}
+function xrGround(R,force){const g=R.ground||(typeof groundAt==='function'?groundAt:null);for(const a of R.list){if(!force&&(R.frame+a.n.length)%4)continue;let f=R.refY-.9;if(g)try{const v=g(a.p.x,a.p.z,.08,R.refY+.15);if(Number.isFinite(v))f=v;}catch(e){}a.floor=Math.max(f,R.refY-3);}}
+function xrSolve(R,dt){
+ const steps=Math.max(1,Math.ceil(dt*120)),h=dt/steps,g=9.81*h*h,maxStep=.35;R.frame++;xrGround(R,false);
+ for(let s=0;s<steps;s++){
+  for(const a of R.list){let vx=(a.p.x-a.old.x)*.99,vy=(a.p.y-a.old.y)*.99,vz=(a.p.z-a.old.z)*.99;const m=Math.hypot(vx,vy,vz);if(m>maxStep){const k=maxStep/m;vx*=k;vy*=k;vz*=k;}a.old.copy(a.p);a.p.x+=vx;a.p.y+=vy-g;a.p.z+=vz;}
+  for(let it=0;it<10;it++){
+   for(const L of R.links){const A=L.A,B=L.B,dx=B.p.x-A.p.x,dy=B.p.y-A.p.y,dz=B.p.z-A.p.z,len=Math.sqrt(dx*dx+dy*dy+dz*dz);if(len<1e-7)continue;const t=len<L.lo?L.lo:len>L.hi?L.hi:len;if(t===len)continue;const k=(len-t)/len*.5;A.p.x+=dx*k;A.p.y+=dy*k;A.p.z+=dz*k;B.p.x-=dx*k;B.p.y-=dy*k;B.p.z-=dz*k;}
+   xrKnees(R);
+   for(const a of R.list){const lim=a.floor+a.r;if(a.p.y<lim){a.p.y=lim;if(a.old.y<lim)a.old.y=lim+(a.old.y-lim)*.2;a.old.x+=(a.p.x-a.old.x)*.35;a.old.z+=(a.p.z-a.old.z)*.35;}}
   }
  }
- // Rebuild each bone from the solved world-space joints, preserving its original roll.
- for(const a of R.points){const parent=a.b.parent;parent.updateWorldMatrix(true,false);a.b.position.copy(parent.worldToLocal(a.p.clone()));let q=a.q.clone();if(a.child&&a.dir){const dir=a.child.p.clone().sub(a.p).normalize();q.premultiply(new THREE.Quaternion().setFromUnitVectors(a.dir,dir));}a.b.quaternion.copy(parent.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(q));a.b.updateMatrixWorld(true);}
- return R.time<2.8;
+ for(const a of R.list)if(!Number.isFinite(a.p.x)||!Number.isFinite(a.p.y)||!Number.isFinite(a.p.z))return false;
+ return true;
+}
+// Knees bend forward only: when a shin folds the wrong way about the pelvis axis, nudge the knee
+// (only the knee, by a bounded amount) toward the front of its hip-foot line.
+function xrKnees(R){const P=R.P,up=XR_V[0].copy(P.Spine2.p).sub(P.Pelvis.p),right=XR_V[1].copy(P.R_Hip.p).sub(P.L_Hip.p),fwd=XR_V[2].crossVectors(up,right);if(fwd.lengthSq()<1e-10||right.lengthSq()<1e-10)return;fwd.normalize();right.normalize();const t=XR_V[3],n=XR_V[4],ax=XR_V[5];for(const s of ['L_','R_']){const hip=P[s+'Hip'].p,K=P[s+'Knee'],knee=K.p,foot=P[s+'Foot'].p;t.copy(knee).sub(hip);n.copy(foot).sub(knee);if(t.cross(n).dot(right)<=0)continue;ax.copy(foot).sub(hip);const l=ax.length();if(l<1e-5)continue;ax.multiplyScalar(1/l);t.copy(fwd).addScaledVector(ax,-fwd.dot(ax));if(t.lengthSq()<1e-8)continue;t.normalize();knee.addScaledVector(t,.004);K.old.addScaledVector(t,.004);}}
+const XR_V=[0,1,2,3,4,5].map(()=>new THREE.Vector3()),XR_Q=[new THREE.Quaternion(),new THREE.Quaternion(),new THREE.Quaternion()];
+function xrPose(R){
+ const P=R.P,root=R.root,[v0,v1,v2,v3]=XR_V,[q,pq,wq]=XR_Q;
+ const setWorldQ=(b,w)=>{b.parent.updateWorldMatrix(true,false);b.parent.getWorldQuaternion(pq);b.quaternion.copy(pq.invert().multiply(w));b.updateMatrixWorld(false);};
+ // Root: orientation from the hip frame, position so the pelvis joint lands on its particle.
+ xrBasis(P.Spine2.p.clone().sub(P.Pelvis.p),P.R_Hip.p.clone().sub(P.L_Hip.p),q).multiply(R.hipQ);setWorldQ(root,wq.copy(q).multiply(R.q0));
+ root.updateMatrixWorld(true);const pel=P.Pelvis.b.getWorldPosition(v0),delta=v1.copy(P.Pelvis.p).sub(pel),rw=root.getWorldPosition(v2).add(delta);root.position.copy(root.parent.worldToLocal(rw));root.updateMatrixWorld(true);
+ const aim=(A)=>{const b=A.bone;b.updateWorldMatrix(true,false);const bp=b.getWorldPosition(v0),cur=v1.copy(A.off).applyMatrix4(b.matrixWorld).sub(bp),want=v2.copy(A.T.p).sub(bp);if(cur.lengthSq()<1e-10||want.lengthSq()<1e-10)return;q.setFromUnitVectors(cur.normalize(),want.normalize());b.getWorldQuaternion(wq);setWorldQ(b,wq.premultiply(q));};
+ for(const A of R.aims){if(A.bone===R.chest)continue;aim(A);if(A.bone.name==='Spine1'){xrBasis(P.Neck.p.clone().sub(P.Spine4.p),P.R_Shoulder.p.clone().sub(P.L_Shoulder.p),q).multiply(R.chestQ);setWorldQ(R.chest,wq.copy(q).multiply(R.c0));}}
+ root.updateMatrixWorld(true);
+}
+function xrRagdollTick(M,dt){
+ if(!M.ragdoll&&M.ragdoll!==null){const pose=[];M.sx.sc.traverse(b=>{if(b.isBone)pose.push([b,b.position.clone(),b.quaternion.clone(),b.scale.clone()]);});M.sx.mx.stopAllAction();for(const [b,p,q,s]of pose){b.position.copy(p);b.quaternion.copy(q);b.scale.copy(s);}let R=null;try{R=xrRagdoll(M);}catch(e){console.warn('ragdoll unavailable',e);}M.ragdoll=R;if(R)R.good=R.list.map(a=>a.p.clone());}
+ const R=M.ragdoll;if(!R)return false;
+ dt=Number.isFinite(dt)?Math.max(0,Math.min(dt,.05)):0;if(!dt)return true;R.time+=dt;
+ let ok=false;try{ok=xrSolve(R,dt);}catch(e){ok=false;}
+ if(!ok){R.list.forEach((a,i)=>{a.p.copy(R.good[i]);a.old.copy(R.good[i]);});try{xrPose(R);}catch(e){}return false;}
+ R.list.forEach((a,i)=>R.good[i].copy(a.p));
+ try{xrPose(R);}catch(e){return false;}
+ let e=0;for(const a of R.list)e+=a.p.distanceToSquared(a.old);R.rest=e<1e-7*R.list.length?R.rest+dt:0;
+ return R.time<3.2&&R.rest<.4;
 }
 {const die=xDie;xDie=function(b){const r=die.apply(this,arguments);if(b&&b.xm&&b.xm.dead){b.xm.diedAt=b.xm.diedAt||performance.now();}return r;};}
 {const visual=xVis;xVis=function(dt){const now=performance.now();for(let i=XDEAD.length-1;i>=0;i--){const e=XDEAD[i],age=(now-(e.c.diedAt||now))/1000;if(age>4){scene.remove(e.c.m);scene.remove(e.gn);xDisp(e.gn);const j=XSOL.mx.indexOf(e.c);if(j>=0)XSOL.mx.splice(j,1);XDEAD.splice(i,1);}else e.t=Math.max(e.t,age);}return visual(dt);};}
