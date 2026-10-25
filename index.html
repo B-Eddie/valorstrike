@@ -12566,7 +12566,11 @@ for(const [w,p]of Object.entries(VF.profiles)){const W=WEAP[w];if(!W)continue;W.
 // wRaw: the row's unfloored value (null for a gun with no profile). A wallbanged bullet floors raw x k as the server
 // (Odin head 77.5 x .75 = 58, not round(77 x .75) = 58 / floor(77) x .75 = 57.75 -> 58 vs 57).
 const wRaw=function(W,part,distance){const w=Object.keys(WEAP).find(k=>WEAP[k]===W),p=VF.profiles[w];if(!p)return null;const ranges=p.damageRanges,row=ranges.find(r=>distance>=r.rangeStartMeters&&distance<r.rangeEndMeters)||ranges[ranges.length-1];return row[part==='head'?'headDamage':part==='legs'?'legDamage':'bodyDamage'];};
-wDmg=function(W,part,distance){const v=wRaw(W,part,distance);if(v==null)return W[part]||W.body;return Math.floor(v);};
+// A shotgun outside the player's pellet loop (a bot's shot, xPelOn false) is the expected pellets landing, as the base
+// wDmg: the feel layer returned one pellet (a bot Judge did 17 a shot offline, the base ~119). A gun with no profile (the
+// Bucky's alt fire) keeps the base table and its falloff.
+const wDmg0=wDmg;
+wDmg=function(W,part,distance){const v=wRaw(W,part,distance);if(v==null)return wDmg0(W,part,distance);const d=Math.floor(v);return W.pel&&!xPelOn?Math.min(150,Math.round(d*W.pel*Math.max(.08,Math.min(.6,.75-distance/((W.ffd||15)*3))))):d;};
 xWkDmg=function(W,part,distance,k){const v=wRaw(W,part,distance);return v==null?Math.round(wDmg(W,part,distance)*k):Math.floor(v*k);};
 xEq=function(w){return w==='Knife'?.75:vfProfile(w).equipTimeSeconds;};
 xRate=function(W){const w=Object.keys(WEAP).find(k=>WEAP[k]===W),p=VF.profiles[w];return ads&&p&&p.adsStats?p.adsStats.fireRate:W.rate;};

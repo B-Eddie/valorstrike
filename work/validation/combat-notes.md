@@ -384,3 +384,8 @@ in-process server; it keeps the VALORANT FEEL block the audit fixture strips, an
 - **Wallbang rounding**: offline damage was `round(floor(raw) x k)` vs the server's `floor(raw x k)` (70 of 225
   weapon x band x part x k cases off by one, e.g. Odin head 77.5 x .75). The shot now calls `xWkDmg`; the feel layer
   floors the unfloored row value x k. `test_combat_consistency.cjs` §5 checks every case against the server formula.
+- **Offline bot shotguns did one pellet**: the base `wDmg` returns a shotgun shot's expected pellets landing when called
+  outside the player's pellet loop (`xPelOn` false: the bots' shots), but the feel layer's override always returned one
+  pellet, so an offline bot Judge did 17 a shot instead of ~119. The override keeps the expected-pellet formula on the
+  profile's floored rows, and a gun with no profile (the Bucky's alt fire) falls back to the base table with its falloff
+  (it returned the flat near value). `test_combat_consistency.cjs` §6: 63 gun x range x part cases + Bucky alt.

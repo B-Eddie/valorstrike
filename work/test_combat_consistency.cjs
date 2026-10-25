@@ -45,3 +45,20 @@ console.log('Combat consistency: server hit volumes = client bone hitboxes, shar
  let n=0,frac=0;for(const [name,w]of Object.entries(W)){if(w.shotgunPelletCount>1)continue;for(const r of w.damageRanges)for(const part of ['head','body','legs'])for(const k of [1,.75,.5]){const raw=r[part==='head'?'headDamage':part==='legs'?'legDamage':'bodyDamage'],d=(r.rangeStartMeters+Math.min(r.rangeEndMeters,r.rangeStartMeters+5))/2;
   assert.equal(c.xWkDmg(WEAP[name],part,d,k),Math.floor(raw*k),`${name} ${part} @${d} m x${k}`);n++;if(Math.floor(raw*k)!==Math.round(Math.floor(raw)*k))frac++;}}
  assert(frac>0,'the case set includes rows the old rounding got wrong');console.log(`Wallbang damage: ${n} weapon x band x part x k cases = server floor(raw x k) (${frac} differed under the old rounding)`);}
+// 6. Shotgun damage outside the player's pellet loop (offline bots): the feel layer's wDmg returned one pellet (a bot
+// Judge did 17 a shot, the base table's expected pellets ~119); the Bucky's alt fire (no profile) lost its falloff.
+{const feel=fs.readFileSync(path.join(__dirname,'feel_runtime.js'),'utf8'),W=JSON.parse(fs.readFileSync(path.join(root,'server/src/weapons.json'),'utf8')).weapons;
+ const cut=(s,a,b)=>{const i=s.indexOf(a),j=s.indexOf(b,i);assert(i>=0&&j>i,'slice '+a);return s.slice(i,j);};
+ const base=cut(html,'const WEAP = {','let xSpS')+cut(html,'var xPelOn','const RF =');
+ const prof=cut(feel,'for(const [w,p]of Object.entries(VF.profiles))','\n'),wb=feel.indexOf('const wRaw='),we=feel.indexOf('\n',feel.indexOf('xWkDmg=function',wb));
+ const c={VF:{profiles:W},VRUN:{},FSA:{},XZ:{},Math,Object,JSON};vm.createContext(c);
+ vm.runInContext(base.replace('const WEAP','var WEAP')+';'+prof+';var xWkDmg;'+feel.slice(wb,we)+';globalThis.T={WEAP,setPel:v=>{xPelOn=v;},wDmg0:typeof wDmg0!=="undefined"?wDmg0:null};',c);
+ const T=c.T,clamp=(d,ffd)=>Math.max(.08,Math.min(.6,.75-d/(ffd*3)));let n=0;
+ assert.equal(c.wDmg(T.WEAP.Judge,'body',5),119,'bot Judge body shot at 5 m = expected pellets (not one pellet)');
+ for(const g of ['Shorty','Bucky','Judge']){const w=W[g],X=T.WEAP[g];assert.equal(X.pel,w.shotgunPelletCount,g+' pellets from the profile');
+  for(const d of [2,6,9,11,14,20,40])for(const part of ['head','body','legs']){const r=w.damageRanges.find(r=>d>=r.rangeStartMeters&&d<r.rangeEndMeters)||w.damageRanges.at(-1),one=Math.floor(r[part==='head'?'headDamage':part==='legs'?'legDamage':'bodyDamage']);
+   T.setPel(true);assert.equal(c.wDmg(X,part,d),one,`${g} ${part} @${d} one pellet`);
+   T.setPel(false);assert.equal(c.wDmg(X,part,d),Math.min(150,Math.round(one*X.pel*clamp(d,X.ffd))),`${g} ${part} @${d} bot shot`);n++;}}
+ T.setPel(true);for(const d of [5,20])for(const part of ['head','body','legs'])assert.equal(c.wDmg(T.WEAP.Bucky.alt,part,d),T.wDmg0(T.WEAP.Bucky.alt,part,d),'Bucky alt keeps the base falloff');
+ assert.equal(c.wDmg(T.WEAP.Bucky.alt,'body',20),T.WEAP.Bucky.alt.ff[0]);
+ console.log(`Shotgun damage: ${n} gun x range x part cases (one pellet in the player's loop, expected pellets for a bot's shot), Bucky alt falloff kept`);}
