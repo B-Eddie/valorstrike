@@ -32,16 +32,22 @@ function longestFlight() {
     await p.evaluate((m) => { window.__vs.FV.pick = m; window.__vs.light(true); window.__vs.agents(false); }, MAP);
     await startDM(p);
     await p.waitForFunction(() => window.__vs && window.__vs.state().running, {timeout: 120000, polling: 1000});
-    await p.evaluate(() => { window.__vs.player.hp = 1e9; }); // god-mode: bot fire must not interrupt movement evidence
+    await p.evaluate(() => { window.__vs.player.hp = 1e9; window.__vs.DM.win = 1e9; window.__vs.DM.len = 9999; if (window.__vs.setTimeLeft) window.__vs.setTimeLeft(9999); }); // god-mode + no match end: cull-kills must never reach the win threshold
     // Walk a node path, re-aiming each poll at the node just ahead (how a player follows stairs).
     const legPath = async (nodes, secs, teleport) => {
       const f = nodes[0];
-      if (teleport !== false) await p.evaluate(([f, t]) => { window.__vs.setPos(f.x, f.y + .1, f.z); window.__vs.aimAt(t.x, t.y + 1, t.z); window.__vs.player.hp = 1e9; }, [f, nodes[1] || f]);
+      if (teleport !== false) await p.evaluate(([f, t]) => { window.__vs.setPos(f.x, f.y + .1, f.z); window.__vs.aimAt(t.x, t.y + 1, t.z); window.__vs.player.hp = 1e9; window.__vs.DM.win = 1e9; window.__vs.DM.len = 9999; if (window.__vs.setTimeLeft) window.__vs.setTimeLeft(9999); }, [f, nodes[1] || f]);
       await p.keyboard.down('KeyW');
       const samples = [];
+      let lastMove = Date.now(), dumped = false, lastPos = null;
       const tEnd = Date.now() + secs * 1000;
       while (Date.now() < tEnd) { const s = await p.evaluate(() => { const q = window.__vs.state().player; try { window.__vs.bots.forEach((bb) => { if (bb.alive) window.__vs.kill(bb); }); } catch (e) {} return q && [q[0], q[1], q[2]]; });
         if (s) { samples.push(s);
+          if (!lastPos || Math.hypot(s[0] - lastPos[0], s[2] - lastPos[2]) > .05) { lastMove = Date.now(); lastPos = s; }
+          if (!dumped && Date.now() - lastMove > 5000) { dumped = true;
+            const st = await p.evaluate(() => { const P = window.__vs.player; const D = window.__vs.state();
+              return { pos: [P.x, P.y, P.z], air: !!P.air, duck: !!P.duck, ch: P.ch, lp: P.lp, vx: P.vx, vy: P.vy, vz: P.vz, wk: !!P.wk, cr: !!P.cr, tagT: P.tagT, hp: P.hp, mv: !!P.mv, sf: P.sf, eyeOffset: P.eyeOffset, jumpHeld: !!P.jumpHeld, duckHeld: !!P.duckHeld, duckFatigue: P.duckFatigue, takeoffSpeed: P.takeoffSpeed, keyW: (typeof keys !== 'undefined') ? !!keys.KeyW : 'n/a', paused: D.paused, dmMenu: D.menu, running: D.running }; }).catch((e) => ({ err: String(e).slice(0, 120) }));
+            console.log('FREEZE-STATE', JSON.stringify(st)); }
           let ni = 0, nd = 1e9;
           for (let i = 0; i < nodes.length; i++) { const d = Math.hypot(s[0] - nodes[i].x, s[2] - nodes[i].z); if (d < nd) { nd = d; ni = i; } }
           const t = nodes[Math.min(ni + 1, nodes.length - 1)];
