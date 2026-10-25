@@ -167,3 +167,10 @@ means changing the shared motor or the BVH query and was left alone. The first t
   drop equals the server's within 1.5 cm, feet unchanged, undone, stands back up. Before/after render:
   `work/validation/native_crouch_before_after.png` (left: stretched torso before; right: corrected).
 - `hitboxes.json` unchanged: the server's head height is upright pose − ch, which this correction now matches; the table was not re-sampled.
+
+## Worker bundle carries hitboxes.json
+
+- `npx wrangler deploy --dry-run --outdir <dir>` (no deploy) produced `worker.js` (1.09 MB) with the table inlined under
+  `// src/hitboxes.json` (`headOffsetY: 0.08`, pose values present) and no runtime JSON import. `wrangler dev --local` also served it:
+  the live two-player run registered human-to-human damage through `rayHit` → `hitVolumes`.
+- Test: `server/test-bundle.cjs` (in `npm test`) bundles `src/worker.js` with esbuild like wrangler and asserts the table is embedded.
