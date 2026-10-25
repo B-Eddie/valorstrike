@@ -256,3 +256,15 @@ Wiki: 1st reveal windup 2 s, 2nd reveal windup 4 s (v5.10: "4 s delay between re
 6 s after the cast (`ULT.theft.reveals` [1, 3] -> [2, 6]; the 1.6 s reveal length unchanged). Not changed: the 5 m corpse
 reach (wiki 18 m) and the offline client's 0 / 1.5 s pulses. Test: `server/test-ults.js` (nothing before 2 s, first
 reveal at 2 s, gone, nothing before 6 s, second at 6 s).
+
+### Smoke radius per ability (wiki.playvalorant.com/en-us/Cloudburst, /Dark_Cover, /Cyber_Cage, fetched 2026-10-25)
+
+Wiki: Cloudburst radius 3.35 m, Dark Cover radius 4.1 m, Cyber Cage cylinder radius 3.72 m - each ability has its own, so
+the shared 4 m is gone for these three. Server: `abilities.js SMOKE.r = {Jett: 3.35, Omen: 4.1, Cypher: 3.72}` (Dark Cover
+push, Cloudburst landing `e.radius`, `devices.js` Cyber Cage); `smokeBlocks` already reads `e.radius`; any other smoke keeps
+`SMOKE.radius` 4. Client: `XSMR` (same table, asserted equal), every `J.smokes` entry carries `r` and its 4 m sphere is
+scaled to it (`xSmk`): the player's Dark Cover / Cyber Cage / Cloudburst, bot smokes and relayed casts (`enSmoke(..., r)`
+from `mpFx` / the bot kit / `netSyncCb`); `jBlock` (bot sight) and the minimap circle use `s.r` (4 m when absent).
+Cyber Cage stays a sphere (not a cylinder). Tests: `server/test-ults.js` (table, Dark Cover 4.1 / Cyber Cage 3.72 on the
+cast, `smokeBlocks` blocks inside the radius only), `server/test-ability-equip.js` (Cloudburst 3.35), `work/test_ability_equip.cjs`
+(XSMR == SMOKE.r, relayed radii and mesh scale, `jBlock` 3.6 m pass).

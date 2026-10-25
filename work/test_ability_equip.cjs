@@ -124,6 +124,12 @@ const fails=[];const fail=s=>{fails.push(s);if(VERBOSE)console.log('FAIL',s);};c
   // relayed (online) Hot Hands spreads the same; Paint Shells stay 2.5 m
   eq(xe('(()=>{const u=bots.find(b=>b.alive&&b.g);if(!u)return null;const n=J.zones.length;mpFx(u,"Phoenix","q",new THREE.Vector3(u.g.position.x,1.6,u.g.position.z),new THREE.Vector3(0,0,-1),false,null,true);mpFx(u,"Raze","e",new THREE.Vector3(u.g.position.x,1.6,u.g.position.z),new THREE.Vector3(0,0,-1),false,null,true);return J.zones.slice(n).map(z=>[z.R||0,+z.m.scale.x.toFixed(2)]);})()'),[[4.5,0.01],[0,1]],'relayed Hot Hands spreads, Paint Shells do not');
   await adv(200);}
+ // ---- smoke radius per ability (wiki: Cloudburst 3.35 m, Dark Cover 4.1 m, Cyber Cage 3.72 m); client XSMR == server SMOKE.r ----
+ {const src=require('fs').readFileSync(require('path').join(__dirname,'../server/src/abilities.js'),'utf8'),sr=Function('return '+src.match(/SMOKE=\{radius:4,lift:[\d.]+,r:(\{[^}]*\})\}/)[1])();
+  eq(xe('XSMR'),sr,'client XSMR == server SMOKE.r');eq(sr,{Jett:3.35,Omen:4.1,Cypher:3.72},'wiki smoke radii');
+  // relayed casts (online / bots) carry the caster's radius on the mesh and in sight checks
+  eq(xe('(()=>{const u=bots.find(b=>b.alive&&b.g);if(!u)return null;const n=J.smokes.length,o=new THREE.Vector3(u.g.position.x,1.6,u.g.position.z),d=new THREE.Vector3(0,0,-1);mpFx(u,"Jett","c",o,d,false,null,true);mpFx(u,"Omen","e",o,d,false,null,true);mpFx(u,"Cypher","q",o,d,false,null,true);const r=J.smokes.slice(n).map(s=>[s.r,+s.m.scale.x.toFixed(4)]);J.smokes.slice(n).forEach(s=>{s.t=0;});return r;})()'),[[3.35,0.8375],[4.1,1.025],[3.72,0.93]],'relayed Cloudburst / Dark Cover / Cyber Cage radii');
+  eq(xe('(()=>{const keep=J.smokes;try{const out=[];for(const r of [3.35,4.1]){J.smokes=[{p:new THREE.Vector3(0,1.8,-10),r,t:5}];out.push(jBlock(new THREE.Vector3(-20,1.8,-10+3.6),new THREE.Vector3(1,0,0),40));}J.smokes=[{p:new THREE.Vector3(0,1.8,-10),t:5}];out.push(jBlock(new THREE.Vector3(-20,1.8,-10+3.6),new THREE.Vector3(1,0,0),40));return out;}finally{J.smokes=keep;}})()'),[false,true,true],'sight blocked within the smoke radius only (3.6 m pass: Cloudburst no, Dark Cover yes, no r = 4 m)');}
  // ---- Jett Cloudburst: thrown INSTANTLY, steered with the crosshair while C is held, falls after release (vendor/cloudburst.cjs) ----
  await live();{pick('Jett');xe('player.hp=100;J.cd.c=0;J.c=2;J.cbs=[];J.eq=null;true');await adv(200);
   const P0=xe('[player.x,player.z,yaw]');H.key('KeyC',true);await adv(250);eq(xe('J.cbs.length'),1,'held C: projectile out');const s0=xe('(c=>c.st.held)(J.cbs[0])');eq(s0,true,'held: steering');
@@ -144,5 +150,5 @@ const fails=[];const fail=s=>{fails.push(s);if(VERBOSE)console.log('FAIL',s);};c
   xe('J.smokes.forEach(s=>s.t=0.01);true');await adv(200);}
  if(xe('XEQV.err||null'))fail('ability viewmodel error: '+xe('XEQV.err'));
  if(H.errors.length>errs0)fail('page errors: '+H.errors.slice(errs0).map(e=>String(e&&e.message||e)).join(' | '));
- if(fails.length){console.log(fails.join('\n'));process.exit(1);}console.log('ability equip: binds, migration, HUD labels, equip -> fire flow, first-person equip viewmodel, wiki equip times + windups, Sova bow charge + bounces, Fault Line hold-to-extend, Hot Hands spread, Cloudburst flight + steering, kit table ok');process.exit(0);
+ if(fails.length){console.log(fails.join('\n'));process.exit(1);}console.log('ability equip: binds, migration, HUD labels, equip -> fire flow, first-person equip viewmodel, wiki equip times + windups, Sova bow charge + bounces, Fault Line hold-to-extend, Hot Hands spread, Cloudburst flight + steering, per-ability smoke radii, kit table ok');process.exit(0);
 })().catch(e=>{console.error(e);process.exit(1);});
