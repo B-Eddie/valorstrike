@@ -1837,7 +1837,7 @@ function xcUI() {
   });
   xhAll();
 }
-const applyBright = () => { const c = document.querySelector("#game > canvas"); if (c) c.style.filter = `brightness(${S.bright / 100})`; };
+const applyBright = () => { const c = document.querySelector("#game > canvas"); if (c) c.style.filter = +S.bright === 100 ? "" : `brightness(${S.bright / 100})`; }; // default 100%: no filter at all (brightness(1) still made the WebGL canvas a filtered layer every frame)
 // inventory
 function renderInv() {
   $("invList").innerHTML = "";
@@ -2392,9 +2392,9 @@ function xBlkHit(b) { return xQx > b.x1 - xQr && xQx < b.x2 + xQr && xQz > b.z1 
 function xGndMax(b) { const h = BH(b); if (h <= xQy + 0.5 && h > xQg && xQx > b.x1 - xQr && xQx < b.x2 + xQr && xQz > b.z1 - xQr && xQz < b.z2 + xQr) xQg = h; }
 function blocked(x, z, r, y) { y = y || 0; if (sgBlk(x, z, r, y)) return true; const L = xbgArea(xbgBox(), x - r, x + r, z - r, z + r, xbgL); xQx = x; xQz = z; xQr = r; xQy = y; return L.some(xBlkHit); }
 function groundAt(x, z, r, y) { const L = xbgArea(xbgBox(), x - r, x + r, z - r, z + r, xbgL); xQx = x; xQz = z; xQr = r; xQy = y; xQg = 0; L.forEach(xGndMax); return xQg; }
-const ray = new THREE.Raycaster();
+const ray = new THREE.Raycaster(), XC0 = new THREE.Vector2(0, 0); // XC0: screen centre for every crosshair ray (hit-path perf: was a new Vector2 per shot)
 // ---- bullet impacts: pooled decals (64, 24 on low), spark puffs (0.2 s), tracers (~60 ms) ----
-const BFX = { low: (matchMedia && matchMedia("(pointer: coarse)").matches) || innerWidth < 820, d: [], di: 0, p: [], pi: 0, t: [], ti: 0, ok: false };
+const BFX = { low: (matchMedia && matchMedia("(pointer: coarse)").matches) || innerWidth < 820, d: [], di: 0, p: [], pi: 0, t: [], ti: 0, ok: false, fv: new THREE.Vector3(), ev: new THREE.Vector3() }; // fv / ev: per-shot muzzle / end scratch
 function bfxTex(stops, s) { const c = document.createElement("canvas"); c.width = c.height = s; const x = c.getContext("2d"), g = x.createRadialGradient(s / 2, s / 2, 0, s / 2, s / 2, s / 2); stops.forEach((q) => g.addColorStop(q[0], q[1])); x.fillStyle = g; x.fillRect(0, 0, s, s); return new THREE.CanvasTexture(c); }
 function bfxInit() {
   BFX.ok = true; const nD = BFX.low ? 24 : 64, nP = BFX.low ? 6 : 12;
@@ -2408,11 +2408,12 @@ function bfxInit() {
   pM.customProgramCacheKey = () => "bfx-spark";
   BFX.pm = im(new THREE.PlaneGeometry(1, 1), pM, nP);
   for (let i = 0; i < nP; i++) { BFX.pm.setColorAt(i, BFX.c.setScalar(0)); BFX.p.push({ v: new THREE.Vector3(), t: 0 }); }
-  for (let i = 0; i < (BFX.low ? 4 : 8); i++) { const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.BufferAttribute(new Float32Array(6), 3)); const l = new THREE.Line(g, new THREE.LineBasicMaterial({ color: 0xffe2a8, transparent: true, opacity: 0.35, depthWrite: false })); l.visible = false; l.frustumCulled = false; l.raycast = () => {}; scene.add(l); BFX.t.push({ l, t: 0 }); }
+  for (let i = 0; i < (BFX.low ? 4 : 8); i++) { const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.BufferAttribute(new Float32Array(6), 3)); g.boundingSphere = new THREE.Sphere(); const l = new THREE.Line(g, new THREE.LineBasicMaterial({ color: 0xffe2a8, transparent: true, opacity: 0.35, depthWrite: false })); l.visible = false; l.frustumCulled = false; l.raycast = () => {}; scene.add(l); BFX.t.push({ l, t: 0 }); }
 }
 const bfxV = new THREE.Vector3(), bfxN = new THREE.Vector3();
 // world surface hit for the player's shot: keeps a real mesh hit with a face, else tests the floor (y = 0) and the collision boxes and
 // synthesizes { point, face: { normal }, object, distance } so every wall/floor hit gets a decal + spark
+const XSH = { w: 1, p: [0, 0, 0], n: [0, 0, 0], distance: 0, point: new THREE.Vector3(), face: { normal: new THREE.Vector3() }, object: null, o: new WeakMap() }; // synthesized surface hit (one per parent group: decals keep their owner)
 function xSurfHit(hit, dir, far, from) {
   try {
     if (hit && hit.face && hit.object) return hit;
@@ -2427,27 +2428,33 @@ function xSurfHit(hit, dir, far, from) {
     let best = hit && num(hit.distance) ? hit.distance : far || 200, n = null;
     if (dy < -1e-6) { const t = -oy / dy; if (t > 0 && t < best) { best = t; n = [0, 1, 0]; } }
     const B = typeof boxes !== "undefined" && Array.isArray(boxes) ? boxes : [];
-    for (const b of B) {
-      let t0 = 0, t1 = best, ax = -1; const L = [[ox, dx, b.x1, b.x2], [oy, dy, 0, b.h], [oz, dz, b.z1, b.z2]];
-      for (let k = 0; k < 3; k++) { const [o, d, lo, hi] = L[k];
+    let na = -1, ns = 0; // hit-path perf: slab test on scalars (was three arrays per box per shot)
+    for (let bi = 0; bi < B.length; bi++) { const b = B[bi];
+      let t0 = 0, t1 = best, ax = -1, sg = 0;
+      for (let k = 0; k < 3; k++) { const o = k === 0 ? ox : k === 1 ? oy : oz, d = k === 0 ? dx : k === 1 ? dy : dz, lo = k === 0 ? b.x1 : k === 1 ? 0 : b.z1, hi = k === 0 ? b.x2 : k === 1 ? b.h : b.z2;
         if (Math.abs(d) < 1e-9) { if (o < lo || o > hi) { t0 = Infinity; break; } continue; }
         let a = (lo - o) / d, c = (hi - o) / d; if (a > c) { const s = a; a = c; c = s; }
-        if (a > t0) { t0 = a; ax = k; } if (c < t1) t1 = c; if (t0 > t1) break; }
+        if (a > t0) { t0 = a; ax = k; sg = d > 0 ? -1 : 1; } if (c < t1) t1 = c; if (t0 > t1) break; }
       if (ax < 0 || t0 > t1 || t0 <= 0 || t0 >= best) continue; // ax < 0: origin inside the box
-      best = t0; n = [0, 0, 0]; n[ax] = L[ax][1] > 0 ? -1 : 1;
+      best = t0; na = ax; ns = sg;
     }
+    if (na >= 0) { n = XSH.n; n[0] = n[1] = n[2] = 0; n[na] = ns; }
     if (!n) return hit;
-    const p = [ox + dx * best, oy + dy * best, oz + dz * best], par = (typeof solids !== "undefined" && solids[0] && solids[0].parent) || scene;
-    return { w: 1, p, n, distance: best, point: new THREE.Vector3(p[0], p[1], p[2]), face: { normal: new THREE.Vector3(n[0], n[1], n[2]) }, object: { userData: {}, visible: true, parent: par } };
+    const par = (typeof solids !== "undefined" && solids[0] && solids[0].parent) || scene, H = XSH;
+    if (n !== H.n) { H.n[0] = n[0]; H.n[1] = n[1]; H.n[2] = n[2]; } n = H.n; // one reused synthesized hit (bFx consumes it at once; decals keep only .object)
+    H.p[0] = ox + dx * best; H.p[1] = oy + dy * best; H.p[2] = oz + dz * best; H.distance = best; H.point.set(H.p[0], H.p[1], H.p[2]); H.face.normal.set(n[0], n[1], n[2]);
+    let ob = XSH.o.get(par); if (!ob) { ob = { userData: {}, visible: true, parent: par }; XSH.o.set(par, ob); } H.object = ob; return H;
   } catch (e) { return hit; }
 }
 function bFx(from, dir, hit, far) { // from: muzzle (or null = player muzzle); hit: raycast hit or undefined
   try {
     if (!BFX.ok) bfxInit();
     if (typeof scene !== "undefined") { [BFX.dm, BFX.pm].forEach((k) => { if (k && !k.parent) scene.add(k); }); BFX.t.forEach((q) => { if (!q.l.parent) scene.add(q.l); }); } // a map switch/dispose may have removed them
-    if (!from) { from = new THREE.Vector3(); if (typeof muzzle !== "undefined" && gun.visible) muzzle.getWorldPosition(from); else from.copy(camera.position).y -= 0.12; }
-    const end = hit ? hit.point.clone() : from.clone().addScaledVector(dir, far || 60);
-    const tr = BFX.t[BFX.ti++ % BFX.t.length], a = tr.l.geometry.attributes.position; a.setXYZ(0, from.x, from.y, from.z); a.setXYZ(1, end.x, end.y, end.z); a.needsUpdate = true; tr.l.geometry.computeBoundingSphere(); tr.l.visible = true; tr.t = 0.06;
+    if (!from) { from = BFX.fv; if (typeof muzzle !== "undefined" && gun.visible) muzzle.getWorldPosition(from); else from.copy(camera.position).y -= 0.12; } // hit-path perf: scratch muzzle / end points, no per-shot vectors
+    const end = BFX.ev.copy(hit ? hit.point : from); if (!hit) end.addScaledVector(dir, far || 60);
+    const tr = BFX.t[BFX.ti++ % BFX.t.length], tg = tr.l.geometry, a = tg.attributes.position; a.setXYZ(0, from.x, from.y, from.z); a.setXYZ(1, end.x, end.y, end.z); a.needsUpdate = true;
+    tg.boundingSphere.center.copy(from).add(end).multiplyScalar(0.5); tg.boundingSphere.radius = from.distanceTo(end) / 2; // transparent sort key only (frustumCulled off): no vertex scan per shot
+    tr.l.visible = true; tr.t = 0.06;
     if (hit && !hit.face && !(hit.object && hit.object.userData && (hit.object.userData.bot || hit.object.userData.aim))) hit = xSurfHit(hit, dir, far || 200, from);
     if (!hit || !hit.face || (hit.object.userData && (hit.object.userData.bot || hit.object.userData.aim))) return;
     if (hit.w) bfxN.set(hit.n[0], hit.n[1], hit.n[2]); else bfxN.copy(hit.face.normal).transformDirection(hit.object.matrixWorld);
@@ -2475,19 +2482,24 @@ function bfxTick(dt) {
     if (q.t <= 0) { BFX.pm.setMatrixAt(i, BFX.z); return; }
     h.position.copy(q.v); h.quaternion.copy(BFX.q); h.scale.setScalar(0.12 + (1 - k) * 0.18); h.updateMatrix(); BFX.pm.setMatrixAt(i, h.matrix); BFX.pm.setColorAt(i, BFX.c.setScalar(k)); } });
   if (pu) { BFX.pm.instanceMatrix.needsUpdate = true; BFX.pm.instanceColor.needsUpdate = true; }
+  if ((BFX.dw = (BFX.dw || 0) - dt) > 0) return; BFX.dw = 0.2; // hit-path perf: decal owner visibility walk (up to 64 decals x parent chain) at 5 Hz, not every frame
   BFX.d.forEach((q, i) => { if (q.o) { let o = q.o, v = true, dp = 0; while (o && dp++ < 64) { if (!o.visible && !(o === q.o && o.userData && o.userData.xCol)) { v = false; break; } o = o.parent; } if (!v || !q.o.parent) { BFX.dm.setMatrixAt(i, BFX.z); if (BFX.dmx) BFX.dmx[i] = null; q.o = null; du = true; } } }); // merged originals are hidden collision meshes: their decals stay
   if (du) BFX.dm.instanceMatrix.needsUpdate = true;
 }
 function bfxBot(p) { // a bot's gunshot at p: ray along its facing with a little spread
   try {
-    if (!p) return; const u = bots.concat(typeof allies !== "undefined" ? allies : []).find((x) => x.alive && Math.hypot(x.g.position.x - p.x, x.g.position.z - p.z) < 0.6); if (!u) return;
-    const ry = u.g.rotation.y, o = new THREE.Vector3(u.g.position.x + Math.sin(ry) * 0.4, u.g.position.y + 1.45, u.g.position.z + Math.cos(ry) * 0.4);
-    const d = new THREE.Vector3(Math.sin(ry) + (Math.random() - 0.5) * 0.06, (Math.random() - 0.5) * 0.05, Math.cos(ry) + (Math.random() - 0.5) * 0.06).normalize();
-    const rc = bfxBot.rc || (bfxBot.rc = new THREE.Raycaster()); rc.set(o, d); rc.near = 0; rc.far = 80; const h = rc.intersectObjects(solids)[0], len = h ? h.distance : 80;
-    const near = [{ x: player.x, z: player.z, a: player.hp > 0 }].concat(bots.concat(typeof allies !== "undefined" ? allies : []).filter((x) => x !== u).map((x) => ({ x: x.g.position.x, z: x.g.position.z, a: x.alive })));
-    const body = near.find((q) => { if (!q.a) return false; const t = (q.x - o.x) * d.x + (q.z - o.z) * d.z; if (t < 0 || t > len) return false; return Math.hypot(o.x + d.x * t - q.x, o.z + d.z * t - q.z) < 0.5; });
-    if (body && body === near[0]) u._xSeen = performance.now(); // clear shot at the player = seen
-    bFx(o, d, body ? undefined : h, body ? Math.hypot(body.x - o.x, body.z - o.z) : 80);
+    if (!p) return; const AL = typeof allies !== "undefined" ? allies : []; let u = null; // hit-path perf: scratch ray / hit list, no per-shot arrays or closures (runs for every bot shot)
+    for (let i = 0; i < bots.length + AL.length && !u; i++) { const x = i < bots.length ? bots[i] : AL[i - bots.length]; if (x.alive && Math.hypot(x.g.position.x - p.x, x.g.position.z - p.z) < 0.6) u = x; } if (!u) return;
+    const S = bfxBot.s || (bfxBot.s = { o: new THREE.Vector3(), d: new THREE.Vector3(), rc: new THREE.Raycaster(), hl: [] });
+    const ry = u.g.rotation.y, o = S.o.set(u.g.position.x + Math.sin(ry) * 0.4, u.g.position.y + 1.45, u.g.position.z + Math.cos(ry) * 0.4);
+    const d = S.d.set(Math.sin(ry) + (Math.random() - 0.5) * 0.06, (Math.random() - 0.5) * 0.05, Math.cos(ry) + (Math.random() - 0.5) * 0.06).normalize();
+    const rc = S.rc; rc.set(o, d); rc.near = 0; rc.far = 80; S.hl.length = 0; const h = rc.intersectObjects(solids, true, S.hl)[0], len = h ? h.distance : 80;
+    const hitAt = (x, z) => { const t = (x - o.x) * d.x + (z - o.z) * d.z; return t >= 0 && t <= len && Math.hypot(o.x + d.x * t - x, o.z + d.z * t - z) < 0.5; };
+    let bx = 0, bz = 0, body = 0; // 1 = the player, 2 = another unit (same order as before: player, bots, allies)
+    if (player.hp > 0 && hitAt(player.x, player.z)) { body = 1; bx = player.x; bz = player.z; }
+    for (let i = 0; i < bots.length + AL.length && !body; i++) { const x = i < bots.length ? bots[i] : AL[i - bots.length]; if (x === u || !x.alive) continue; const q = x.g.position; if (hitAt(q.x, q.z)) { body = 2; bx = q.x; bz = q.z; } }
+    if (body === 1) u._xSeen = performance.now(); // clear shot at the player = seen
+    bFx(o, d, body ? undefined : h, body ? Math.hypot(bx - o.x, bz - o.z) : 80);
     if (!body && h) xBotWall(u, o, d, h);
     if (typeof LG !== "undefined" && LG.on) xLBotWallDmg(o, d, body ? Math.hypot(body.x - o.x, body.z - o.z) : len, 30); // pass 4: bot fire breaks the Lotus wall
   } catch (e) {}
@@ -2910,7 +2922,7 @@ function gFire(d, w, W) {
 let sprX = 0, sprD = 1;
 function shoot(hv) {
   if (player.hp <= 0 || fcd > 0 || (mode === "five" && FV.buy > 0) || VM.sw > 0) return; // can't fire until equipped
-  ray.setFromCamera(new THREE.Vector2(0, 0), camera);
+  ray.setFromCamera(XC0, camera);
   const targets = solids.concat(bots.filter((b) => b.alive).flatMap((b) => [b.body, b.head]));
   const w = wName(), W = WEAP[w], P = player, kn = rw === "knife";
   let body = KNIFE.light, head = KNIFE.light;
@@ -2973,7 +2985,7 @@ function xBotWall(u, o, d, h) { // enemy bot sprays through a thin wall at a rec
   const ex = xThin(h.object, h.point, d, P.t); if (!ex) return;
   bFx(ex.point, XWD, ex); bFx(ex.point, d, undefined, t - h.distance);
   const dm = Math.round((WEAP[n].body || 40) * P.k); xHS = false; hurt(player, dm, u.name); try { xTag(player, dm); } catch (e) {}
-  try { xDmgArc(u.g.position.x, u.g.position.z); const g = $("dmg"); g.style.opacity = 1; setTimeout(() => g.style.opacity = 0, 150); updHud(); } catch (e) {}
+  try { xDmgArc(u.g.position.x, u.g.position.z); xDmgFlash(); updHud(); } catch (e) {}
   if (player.hp <= 0) pDie(u.name, n);
 }
 // shotgun pellets: one batched raycast loop, reused temps (base dir, hit array, per-bot damage map); damage applied once per bot
@@ -3113,6 +3125,10 @@ function xDeathFlash(b) {
   if (!b || !b.xm || !b.xm.mats) return; const ms = b.xm.mats.filter((m) => m.emissive);
   ms.forEach((m) => { if (m.userData.e0 === undefined) m.userData.e0 = m.emissive.getHex(); m.emissive.setHex(0xff1a2a); });
   clearTimeout(b.xfT); b.xfT = setTimeout(() => ms.forEach((m) => m.emissive.setHex(m.userData.e0)), 160);
+}
+function xDmgFlash() { // hurt overlay: on for 150 ms after the last hit; one pending timer and one style write per burst (was a timer + two writes per hit)
+  const g = xDmgFlash.el || (xDmgFlash.el = $("dmg")); if (g.style.opacity !== "1") g.style.opacity = 1; // inline-style read: no layout
+  clearTimeout(xDmgFlash.t); xDmgFlash.t = setTimeout(() => { g.style.opacity = 0; }, 150);
 }
 function xDmgArc(ax, az) { // screen angle toward the attacker; camera forward (-sin yaw, -cos yaw), right (cos yaw, -sin yaw)
   const dx = ax - camera.position.x, dz = az - camera.position.z, cy = Math.cos(yaw), sy = Math.sin(yaw);
@@ -4085,7 +4101,7 @@ function tick(dt) {
       if (miss < (b.hd ? 0.3 : 0.45)) {
         { const n = wDmg(W, head ? "head" : miss > 0.35 ? "legs" : "body", d); xHS = head; hurt(tg.t, n, b.name); xTag(tg.t, n); } // same table as the player; edge-of-hitbox hits land low
         if (tg.t === player) {
-          xDmgArc(b.g.position.x, b.g.position.z); $("dmg").style.opacity = 1; setTimeout(() => $("dmg").style.opacity = 0, 150); updHud();
+          xDmgArc(b.g.position.x, b.g.position.z); xDmgFlash(); updHud();
           if (player.hp <= 0) { pDie(b.name, xWeapOf(b)); if (!running) return; }
         } else if (tg.t.hp <= 0) { if (mode === "five" && FV.dm && bots.includes(tg.t)) kill(tg.t, head, b.name, xWeapOf(b)); else allyDie(tg.t, b.name, xWeapOf(b)); if (!running) return; }
       }
@@ -4245,7 +4261,7 @@ function duelKill(youWon, how) {
 }
 function duelShoot() {
   if (du.wait > 0 || !duelBot.alive) return;
-  ray.setFromCamera(new THREE.Vector2(0, 0), camera);
+  ray.setFromCamera(XC0, camera);
   const targets = solids.concat([duelBot.body, duelBot.head]);
   if (du.w === "knife") {
     if (du.swing > 0) return; du.swing = 0.45; kick = 1; SFX.knife();
@@ -7363,6 +7379,7 @@ const XF_V = [0, 0], XU_V = [0, 0], XS_V = [0, 0], XG_V = [0, 0], XP_V = [0, 0];
 const x2 = (o, x, z) => { if (!o) return [x, z]; o[0] = x; o[1] = z; return o; }; // write into out when given, else a fresh pair
 // bot polish: Operator / Marshal bots hold long angles. Defence: longest sightline among the hold's nearby nodes (cached per hold, once per round), scoped, swap spot after a kill. Attack: trail the team.
 const XSN = { k: "", m: new Map() };
+(window.XHK || (window.XHK = [])).push(() => { if (!running && XSN.m.size) { XSN.m.clear(); XSN.k = ""; } }); // per-round sniper-spot cache: dropped once the match is over (it held the last round's entries in the lobby)
 const xSnp = (u) => !!u && (u.w === "Operator" || u.w === "Marshal");
 function xSnLine(x, z) { let best = 0, ba = 0; for (let k = 0; k < 8; k++) { const a = (k * Math.PI) / 4, cx = Math.sin(a), cz = Math.cos(a); let L = 0; while (L < 40 && !blocked(x + cx * (L + 1), z + cz * (L + 1), 0.3)) L++; if (L > best) { best = L; ba = a; } } return [best, ba]; }
 function xSnSpots(hx, hz) {
@@ -8332,7 +8349,7 @@ function bcFire() {
   if (BC.cd > 0) return true; const sn = BC.eq === "sn";
   if (sn ? BC.td < 1 : J.q < 1) { BC.eq = ""; return false; }
   if (sn) BC.td--; else J.q--; BC.cd = sn ? 1.1 : 0.4; kick = 1; vmFire(); SFX.gun(sn ? "Operator" : "Sheriff");
-  ray.setFromCamera(new THREE.Vector2(0, 0), camera); ray.far = 200;
+  ray.setFromCamera(XC0, camera); ray.far = 200;
   const h = ray.intersectObjects(solids.concat(bots.filter((b) => b.alive).flatMap((b) => [b.body, b.head])))[0];
   if (h && h.object.userData.bot) {
     const b = h.object.userData.bot, hs = !!h.object.userData.head, w = sn ? "Tour De Force" : "Headhunter";
@@ -8639,7 +8656,7 @@ function drTag(b) {
 function drDart() {
   if (J.dr.tb) return tbLeap();
   const d = J.dr; if (!d.dart) return blip(120, 0.08, "square", 0.1); d.dart = 0;
-  ray.setFromCamera(new THREE.Vector2(0, 0), camera); ray.far = 40;
+  ray.setFromCamera(XC0, camera); ray.far = 40;
   const h = ray.intersectObjects(solids.concat(bots.filter((b) => b.alive).flatMap((b) => [b.body, b.head])))[0];
   const o = camera.position.clone(), dir = ray.ray.direction.clone(), e = h ? h.point.clone() : o.clone().addScaledVector(dir, 40);
   const m = jBolt(0x45d0ff, o, e);
@@ -8828,7 +8845,7 @@ function jKey(code) {
 function jThrow() {
   if (player.hp <= 0 || J.cd.x > 0 || (mode === "five" && FV.buy > 0)) return;
   J.cd.x = 0.33; J.bs--; kick = 1; SFX.ab("bsThrow");
-  ray.setFromCamera(new THREE.Vector2(0, 0), camera); ray.far = 200;
+  ray.setFromCamera(XC0, camera); ray.far = 200;
   const hit = ray.intersectObjects(solids.concat(bots.filter((b) => b.alive).flatMap((b) => [b.body, b.head])))[0];
   if (hit && hit.object.userData.bot) { const b = hit.object.userData.bot, hs = !!hit.object.userData.head; hurt(b, hs ? 150 : 50); if (b.hp <= 0.001) kill(b, hs, 0, "Blade Storm"); else flash(b); }
   if (J.bs <= 0 && J.bsOn) { J.bsOn = false; J.bs = 0; if (running) swapW(mode === "five" && !FV.pri ? "pis" : "pri"); }
@@ -9584,7 +9601,7 @@ function aimFire(hv) {
   if (!running || paused || AM.cd > 0 || AM.rl > 0) return;
   const w = aimW(), kn = w === "Knife", W = WEAP[w];
   if (!kn && AM.ammo <= 0) { SFX.empty(); AM.fire = false; fireHeld = false; if (S.autoReload !== false) aimReload(); return; } // empty-click parity with fire()
-  ray.setFromCamera(new THREE.Vector2(0, 0), camera);
+  ray.setFromCamera(XC0, camera);
   if (kn) { AM.cd = kSwing = hv ? 1 : 0.5; kHv = hv ? 1 : 0; kick = 1; SFX.knife(); AM.fire = false; ray.far = 2.2; }
   else {
     AM.ammo--; AM.cd = 1 / W.rate; since = 0; kick = Math.min(1, 0.45 + W.rec * 0.5); vmFire(); SFX.gun(w);
@@ -11264,7 +11281,7 @@ function mpHostHit(c, u, m) { // a client's hit claim: target alive, enemy, in r
   if (now - c.nT > 1000) { c.nT = now; c.nH = 0; } if (++c.nH > 24) return;
   const w = typeof m.w === "string" && WEAP[m.w] ? m.w : m.w === "Knife" ? "Knife" : u.w || "Vandal", dmg = Math.min(n, 255), hs = !!m.hs;
   xHS = hs; hurt(t, dmg, u.name); try { xTag(t, dmg); } catch (e) {}
-  if (t === player) { try { xDmgArc(u.g.position.x, u.g.position.z); $("dmg").style.opacity = 1; setTimeout(() => $("dmg").style.opacity = 0, 150); } catch (e) {} updHud(); if (player.hp <= 0) pDie(u.name, w); }
+  if (t === player) { try { xDmgArc(u.g.position.x, u.g.position.z); xDmgFlash(); } catch (e) {} updHud(); if (player.hp <= 0) pDie(u.name, w); }
   else if (t.hp <= 0.001) { if (bots.indexOf(t) >= 0) kill(t, hs, u.name, w); else allyDie(t, u.name, w); }
   else try { flash(t); } catch (e) {}
 }
@@ -11401,7 +11418,7 @@ function mpCliSnap(m) {
 function mpCliSelf(e) {
   if (e[14] !== MP.sq && MP.m5) { MP.sq = e[14]; mpCliRound5(e); }
   else if (e[14] !== MP.sq) { const first = !MP.sq; MP.sq = e[14]; player.x = e[4]; player.z = e[6]; player.y = 0; player.vy = 0; player.vx = player.vz = 0; player.ch = 0; yaw = Math.atan2(e[4], e[6]); pitch = 0; player.hp = 100; player.armor = 50; if (!first && FV.dm) DM.pp = performance.now() + 2000; try { dmAmmo(); xKLReset(); setScope(false); } catch (er) {} updHud(); } // server spawn: 2 s protection until you fire
-  if (e[10]) { if (e[8] < player.hp - 0.5) { DM.ph = performance.now(); try { if (DM.menu) dmMenu(false); $("dmg").style.opacity = 1; setTimeout(() => $("dmg").style.opacity = 0, 150); } catch (er) {} } if (player.hp > 0 || e[8] > 0) { player.hp = e[8]; player.armor = e[9]; } }
+  if (e[10]) { if (e[8] < player.hp - 0.5) { DM.ph = performance.now(); try { if (DM.menu) dmMenu(false); xDmgFlash(); } catch (er) {} } if (player.hp > 0 || e[8] > 0) { player.hp = e[8]; player.armor = e[9]; } }
   else if (player.hp > 0) { player.hp = 0; reloading = 0; fireHeld = false; DM.pp = 0; try { setScope(false); if (DM.menu) dmMenu(false); if (FV.dm) say("You died · respawning", 1400); } catch (er) {} }
   updHud();
 }
@@ -12669,7 +12686,11 @@ function nmTeleports(C){if((typeof NET!=='undefined'&&NET.socket)||C.key!=='bind
 {const legacy=xTpBots;xTpBots=function(){if(nmActive())return;return legacy.apply(this,arguments);};}
 window.xNativeMaps={state:NM,ensure:nmEnsure,cancel:nmCancel,near:nmNear,path:nmPath,height:nmHeight,blocked:nmBlocked,activate(key){FV.pick=FV.map=key;mode='five';fUseMap();useMap('five');return NM.current.meta;},memory(){const C=NM.current;return C&&C.memory?Object.assign({},C.memory,{textures:C.memory.textures.length}):null;},probe(){const C=nmActive();return C?{key:C.key,objects:C.meta.objects,navigation:C.nav.validation,player:[player.x,player.y,player.z],sites:C.meta.sites}:null;}};
 {const remake=xRemake;xRemake=function(){const before=renderer,result=remake.apply(this,arguments);if(renderer!==before){nmWatchContext(renderer);nmRehydrate();}return result;};nmWatchContext(renderer);}
-{const precompile=xPrecompile;xPrecompile=function(){if(!nmActive())return precompile();xPC=true;try{renderer.compile(scene,camera);}catch(e){console.warn('Native shader warmup',e);}};}
+// Native warmup compiles the visible scene plus the pooled hit-path effects that stay hidden until first use (tracer
+// lines, localized hit impacts, spark/decal pools): without them the first shot / first hit of a match compiled their
+// programs mid-fight. Only invisible leaf objects parented to the scene are flipped (never the hidden collision meshes
+// inside the map group, whose programs nothing ever draws).
+{const precompile=xPrecompile;xPrecompile=function(){if(!nmActive())return precompile();xPC=true;const hid=[];try{if(!BFX.ok)bfxInit();if(typeof xHitInit==='function')xHitInit();for(const o of scene.children)if(!o.visible&&(o.isMesh||o.isLine||o.isPoints||o.isSprite)){hid.push(o);o.visible=true;}renderer.compile(scene,camera);}catch(e){console.warn('Native shader warmup',e);}for(const o of hid)o.visible=false;};}
 // ---- END ORIGINAL VALORANT MAPS ----
 
 // ---- VALORANT FEEL ----

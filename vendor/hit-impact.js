@@ -16,11 +16,11 @@
     }
     emit(point,anchor,head=false,predicted=false){
       if(!point||![point.x,point.y,point.z].every(Number.isFinite))return false;
-      const e=this.items[this.cursor++%this.count];e.age=0;e.life=predicted?.07:head?.24:.18;e.head=!!head;e.predicted=!!predicted;e.seed=++this.serial;e.point.copy(point);e.anchor=anchor||null;
+      const e=this.items[this.cursor++%this.count];this.idle=false;e.age=0;e.life=predicted?.07:head?.24:.18;e.head=!!head;e.predicted=!!predicted;e.seed=++this.serial;e.point.copy(point);e.anchor=anchor||null;
       if(e.anchor){e.anchor.updateWorldMatrix(true,false);this.inv.copy(e.anchor.matrixWorld).invert();e.local.copy(point).applyMatrix4(this.inv);}return true;
     }
     tick(dt,camera){
-      if(!camera)return;dt=Number.isFinite(dt)?Math.max(0,Math.min(.1,dt)):0;
+      if(!camera||this.idle)return;dt=Number.isFinite(dt)?Math.max(0,Math.min(.1,dt)):0;
       camera.getWorldQuaternion(this.q);camera.getWorldPosition(this.eye);this.right.set(1,0,0).applyQuaternion(this.q);this.up.set(0,1,0).applyQuaternion(this.q);
       let active=0;
       for(let i=0;i<this.count;i++){
@@ -41,6 +41,7 @@
         }
       }
       for(const m of [this.cores,this.shards]){if(!m.parent)this.scene.add(m);m.visible=active>0;m.instanceMatrix.needsUpdate=true;m.instanceColor.needsUpdate=true;}
+      this.idle=active===0;
     }
     clear(){for(const e of this.items){e.age=e.life;e.anchor=null;}this.cores.visible=this.shards.visible=false;}
     dispose(){this.clear();for(const m of [this.cores,this.shards]){m.removeFromParent();m.geometry.dispose();m.material.dispose();}}
