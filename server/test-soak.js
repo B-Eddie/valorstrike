@@ -58,8 +58,24 @@ const walk=(s,u,look,seconds,each=()=>{})=>{let low=Infinity;for(let k=0;k<secon
 {const L=await loadWorld(assets,'lotus');const s=new Simulation(L,'dm','lotus');const t=s.add('Target'),b=s.add('Bot Cypher','Cypher',false);s.phase='game';const T=L.nav.nodes[L.near(-18.7,14.3,4)],start=[-6.39,3.88,-5.46];
  [b.x,b.y,b.z]=start;let far=0;for(let k=0;k<200;k++){[t.x,t.y,t.z]=T;t.hp=100;t.alive=true;s.step(.05);far=Math.max(far,Math.hypot(b.x-start[0],b.z-start[2]));}assert(far>2,'bot got past the step: '+far.toFixed(2));}
 
+// 6b2. The progress check reset on any tick without forward input, so a bot that paused a tick now and then (replans,
+//      escapes ending) never qualified; soak saw one held 8 s with 30 escapes and no reposition. Pauses no longer reset it.
+{const s=new Simulation(W,'dm','ascent');const b=s.add('Bot Sova','Sova',false);s.phase='game';const p=W.nav.nodes[W.playable[500]];[b.x,b.y,b.z]=[p[0]+.3,p[1],p[2]];b.route=null;let moved=false;
+ for(let k=0;k<140&&!moved;k++){s.time+=.05;b.input={forward:k%8===0?0:1};b.sawTarget=false;moved=s.botProgress(b);}assert(moved,'repositioned despite occasional idle ticks');
+ const c=s.add('Bot Omen','Omen',false);[c.x,c.y,c.z]=[p[0]+.3,p[1],p[2]];let m2=false;for(let k=0;k<140;k++){s.time+=.05;c.input={forward:k%3===0?1:0};m2=m2||s.botProgress(c);}assert(!m2,'a bot mostly standing still is left alone');}
+
+// 6c. Off-map pockets: past the Breeze walkway edge near (-30, -68) there is collision 4.3 m down with no nav node and
+//     void around it; a bot walked off and stood there for the rest of the match (soak, seed 5). A unit standing over
+//     1.5 m below its last on-graph spot with no playable node near is put back on the walkway.
+{const B=await loadWorld(assets,'breeze');const s=new Simulation(B,'tdm','breeze');const u=s.add('Ledge');s.start(false);const p=B.nav.nodes[B.near(-29.75,-66.25,8.06)];
+ for(const look of [Math.atan2(.76,2.12),Math.atan2(.76,2.12)-.5]){[u.x,u.y,u.z]=p;u.safe=u.anchor=null;u.vx=u.vy=u.vz=0;let low=Infinity;
+  for(let k=0;k<60;k++){s.command(u,{t:'in',seq:++u.lastSeq+1,r:look,p:0,f:1,s:0});s.step(.05);if(!u.air)low=Math.min(low,u.y);}
+  assert(low>7,'never stands in the pocket below the walkway: '+low.toFixed(2));}
+ assert(u.rescued>=2,'put back');assert(!s.offMesh(B,...p)&&s.offMesh(B,-30.51,3.77,-68.37),'pocket is off the graph, walkway is on it');
+ const a=W.nav.nodes[W.playable[100]];assert(!s.offMesh(W,...a),'nav node on Ascent is on the graph');}
+
 // 7. Short seeded soak through the real worker: fuzzing humans + bots, TDM and Spike, invariants every tick.
 for(const [mode,seconds] of [['tdm',50],['five',70]]){const r=await soakRun({map:'ascent',mode,seconds,humans:3,seed:3,stuckSeconds:10});
  assert.deepEqual(r.errors,[],mode+' errors');const bad=r.violations.filter(v=>v.kind!=='bot stuck');assert.deepEqual(bad.map(v=>v.kind+': '+v.detail.slice(0,200)),[],mode+' invariants');assert(r.stats.ticks>seconds*15);if(mode==='tdm')assert(r.stats.kills>0);}
-console.log('Gameplay QA: open-edge falls rescued (TDM + Spike buy phase), wedged bot freed, routes avoid prop-blocked nodes, leaving or replaced spike carrier hands over/drops, stuck-in-place escape, Spike bots skip discarded hunt routes, off-graph loose goal arrival, seeded worker soak (TDM, Spike) clean');
+console.log('Gameplay QA: open-edge falls rescued (TDM + Spike buy phase), wedged bot freed, routes avoid prop-blocked nodes, leaving or replaced spike carrier hands over/drops, stuck-in-place escape, Spike bots skip discarded hunt routes, off-graph loose goal arrival, Breeze off-map pocket, seeded worker soak (TDM, Spike) clean');
 process.exit(0);

@@ -33,9 +33,15 @@ export class Simulation{
  // through; nothing in VALORANT kills by falling on these maps. A unit that is falling with no floor anywhere below it,
  // or that is already below the lowest playable floor, is put back where it last stood on solid ground (else the
  // nearest nav node), velocity cleared. Grounded positions are remembered every tick.
+ // Standing more than 1.5 m below the last spot on the nav graph, on a floor with no playable nav node near it at or below that height: outside the playable
+ // map (e.g. Breeze's strip below the ledge at -30,-68, 4.3 m under the walkway, with void around it). Nothing leads
+ // back from there, so guard() returns the unit to where it last stood. A box top or a lower floor always has nodes.
+ onMesh(W,x,y,z){const N=W.nav?.nodes;if(!N||!W.near)return false;const n=N[W.near(x,z,y)];return !!n&&Math.abs(n[1]-y)<1.5&&Math.hypot(n[0]-x,n[2]-z)<3;}
+ offMesh(W,x,y,z){const N=W.nav?.nodes,list=W.playable;if(!N||!list?.length||this.onMesh(W,x,y,z))return false;
+  for(const i of list){const p=N[i];if(p[1]<=y+1.2&&p[1]>=y-4&&Math.abs(p[0]-x)<4&&Math.abs(p[2]-z)<4&&Math.hypot(p[0]-x,p[2]-z)<4)return false;}return true;}
  guard(u){const W=this.baseWorld||this.world;if(!Number.isFinite(u.x)||!Number.isFinite(u.y)||!Number.isFinite(u.z))return false;
   if(this.floorY===undefined){const N=W.nav?.nodes,list=W.playable||[];let m=Infinity;for(const i of list)m=Math.min(m,N[i][1]);this.floorY=Number.isFinite(m)?m-3:-Infinity;}
-  if(!u.air){u.safe=[u.x,u.y,u.z];return false;}
+  if(!u.air){const on=this.onMesh(W,u.x,u.y,u.z);if(on)u.anchor=[u.x,u.y,u.z];else if(u.anchor&&u.anchor[1]-u.y>1.5&&this.offMesh(W,u.x,u.y,u.z)){[u.x,u.y,u.z]=u.anchor;u.vx=u.vz=u.vy=0;u.seq++;u.rescued=(u.rescued||0)+1;u.pocket=(u.pocket||0)+1;u.safe=[...u.anchor];return true;}u.safe=[u.x,u.y,u.z];return false;}
   if(!((u.vy||0)<0))return false;
   let lost=u.y<this.floorY;if(!lost&&typeof W.ground==='function'){const g=W.ground(u.x,u.z,u.y);lost=!(g>u.y-9.99);}
   if(!lost)return false;
@@ -88,9 +94,9 @@ export class Simulation{
   if(!best){u.input.jump=true;return false;}u.escapeLook=best.a;u.escapeUntil=this.time+.6;u.look=best.a;u.input.forward=1;u.input.side=0;u.input.jump=false;u.route=null;u.escapes=(u.escapes||0)+1;return true;}
  // Escapes can oscillate in place (a step the motor will not climb, a ledge lip): under 1.5 m of progress in 5 s while
  // walking (not fighting) puts the bot on the route node it is trying to reach (else the nearest free node).
- botProgress(u){const g=u.progress;if(!u.input?.forward||u.sawTarget||!g||Math.hypot(u.x-g[0],u.z-g[1])>1.5){u.progress=[u.x,u.z,this.time];return false;}if(this.time-g[2]<5)return false;
-  const W=this.world,n=u.route?.[0]!=null?W.nav.nodes[u.route[0]]:null,p=n&&Math.hypot(n[0]-u.x,n[2]-u.z)<3&&!W.blocked(n[0],n[2],.43,n[1],1.92)?n:this.freeNode(u,.5);u.progress=[u.x,u.z,this.time];if(!p)return false;
-  [u.x,u.y,u.z]=p;u.vx=u.vz=u.vy=0;u.seq++;u.stuck=u.goalStuck=0;u.escapeUntil=0;if(u.route&&n===p)u.route.shift();u.unstuck=(u.unstuck||0)+1;u.progress=[u.x,u.z,this.time];return true;}
+ botProgress(u){const g=u.progress;if(u.sawTarget||!g||Math.hypot(u.x-g[0],u.z-g[1])>1.5){u.progress=[u.x,u.z,this.time,0,0];return false;}g[4]=(g[4]||0)+1;if(u.input?.forward)g[3]=(g[3]||0)+1;else return false;if(this.time-g[2]<5||g[3]<g[4]*.6)return false;
+  const W=this.world,n=u.route?.[0]!=null?W.nav.nodes[u.route[0]]:null,p=n&&Math.hypot(n[0]-u.x,n[2]-u.z)<3&&!W.blocked(n[0],n[2],.43,n[1],1.92)?n:this.freeNode(u,.5);u.progress=[u.x,u.z,this.time,0,0];if(!p)return false;
+  [u.x,u.y,u.z]=p;u.vx=u.vz=u.vy=0;u.seq++;u.stuck=u.goalStuck=0;u.escapeUntil=0;if(u.route&&n===p)u.route.shift();u.unstuck=(u.unstuck||0)+1;u.progress=[u.x,u.z,this.time,0,0];return true;}
  // Nearest nav node (breadth-first from the closest one) where a standing capsule fits, at least minDist away.
  freeNode(u,minDist=0){const W=this.world;if(!W.nav||!W.near)return null;const N=W.nav.nodes,start=W.near(u.x,u.z,u.y);if(start<0)return null;const seen=new Set([start]),queue=[start],free=[];
   for(let k=0;k<queue.length&&k<400;k++){const i=queue[k],p=N[i];if(Math.abs(p[1]-u.y)<1.5&&Math.hypot(p[0]-u.x,p[2]-u.z)>=minDist&&!W.blocked(p[0],p[2],.43,p[1],1.92))free.push(p);for(const j of W.nav.adj[i])if(!seen.has(j)&&(!W.allowed||W.allowed.has(j))){seen.add(j);queue.push(j);}}
