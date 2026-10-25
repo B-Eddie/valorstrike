@@ -2512,11 +2512,11 @@ function spawnBots() {
   allies.forEach((a) => scene.remove(a.g)); allies = [];
   const rf = mode === "rifle", sd = rSide();
   (rf ? [[-1.5, -13.5 * sd], [1.5, -13.5 * sd]] : [[-12, -15], [0, -16], [12, -12]]).forEach(([x, z], i) => {
-    const b = Object.assign(mkGuy(x, z, botMat, headMat), { hp: 100, armor: rf ? 50 : 0, alive: true, cd: 1 + Math.random() * 1.5, name: names[i], strafe: Math.random() < 0.5 ? 1 : -1 });
+    const b = Object.assign(mkGuy(x, z, botMat, headMat), { hp: 100, armor: rf ? 50 : 0, alive: true, cd: 1 + Math.random() * 1.5, name: names[i], strafe: Math.random() < 0.5 ? 1 : -1, per: xPer() });
     b.body.userData.bot = b; b.head.userData.bot = b; b.head.userData.head = true; bots.push(b);
   });
   (rf ? [[1.5, 13.5 * sd]] : [[-1.5, 16], [1.5, 16]]).forEach(([x, z], i) => {
-    allies.push(Object.assign(mkGuy(x, z, allyMat, allyHead), { hp: 100, armor: 50, alive: true, cd: 0.6, def: 0, ox: x * 0.8, name: MATES[i], strafe: i ? 1 : -1, flip: 1 }));
+    allies.push(Object.assign(mkGuy(x, z, allyMat, allyHead), { hp: 100, armor: 50, alive: true, cd: 0.6, def: 0, ox: x * 0.8, name: MATES[i], strafe: i ? 1 : -1, flip: 1, per: xPer() }));
   });
 }
 function flash(b) {
@@ -4406,7 +4406,7 @@ function duelSpawn() {
   const head = new THREE.Mesh(xG("Sphere", 0.25, 12, 10), duelSpawn.hm || (duelSpawn.hm = new THREE.MeshLambertMaterial({ color: 0xffb0b6 }))); head.position.y = 1.75;
   body.visible = head.visible = false; head.material.visible = false;
   g.add(body, head); g.position.set((Math.random() - 0.5) * 6, 0, -14); scene.add(g);
-  duelBot = { g, body, head, hp: 100, alive: true, name: "Chamber", strafe: Math.random() < 0.5 ? 1 : -1, aim: 0, bolt: 0.8, flip: 1.5, stab: 0 };
+  duelBot = { g, body, head, hp: 100, alive: true, name: "Chamber", strafe: Math.random() < 0.5 ? 1 : -1, aim: 0, bolt: 0.8, flip: 1.5, stab: 0, per: xPer() };
   body.userData.bot = duelBot; head.userData.bot = duelBot; head.userData.head = true;
   player = { x: (Math.random() - 0.5) * 6, z: 14, hp: 100, y: 0, vy: 0, ch: 0, st: 0 }; yaw = 0; pitch = 0;
   Object.assign(du, { t: 0, rsv: OP_MAG * 3, w: "op", ammo: OP_MAG, bolt: 0, reload: 0, wait: 0, swing: 0 });
@@ -11013,10 +11013,10 @@ function dmStart0() {
   DM.k = {}; DM.d = {}; DM.over = null; DM.prt = 0; DM.ph = 0; DM.lbS = ""; DM.menu = false; try { sbReset(names, mates); } catch (e) { sbReset(names, []); }
   player = { x: 0, z: 0, hp: 100, armor: 50, y: 0, vy: 0, ch: 0, st: 0 };
   names.forEach((n) => {
-    const b = Object.assign(mkGuy(0, 0, botMat, headMat), { hp: 100, armor: 50, w: dmBW(), alive: true, cd: 1 + Math.random() * 1.5, name: n, strafe: Math.random() < 0.5 ? 1 : -1 });
+    const b = Object.assign(mkGuy(0, 0, botMat, headMat), { hp: 100, armor: 50, w: dmBW(), alive: true, cd: 1 + Math.random() * 1.5, name: n, strafe: Math.random() < 0.5 ? 1 : -1, per: xPer() });
     b.body.userData.bot = b; b.head.userData.bot = b; b.head.userData.head = true; bots.push(b); dmSpawnB(b);
   });
-  mates.forEach((n, i) => { const a = Object.assign(mkGuy(0, 0, allyMat, allyHead), { hp: 100, armor: 50, w: "Spectre", alive: true, cd: 0.6, def: 0, ox: 0, name: n, strafe: i % 2 ? 1 : -1, flip: 1 }); allies.push(a); dmSpawnB(a); a.ox = a.g.position.x; });
+  mates.forEach((n, i) => { const a = Object.assign(mkGuy(0, 0, allyMat, allyHead), { hp: 100, armor: 50, w: "Spectre", alive: true, cd: 0.6, def: 0, ox: 0, name: n, strafe: i % 2 ? 1 : -1, flip: 1, per: xPer() }); allies.push(a); dmSpawnB(a); a.ox = a.g.position.x; });
   xAgSet(bots);
   FV.pri = FV.tdm ? (WEAP.Spectre ? "Spectre" : null) : "Vandal"; FV.sec = "Classic"; dmSpawnP(); if (FV.tdm) { tdmAb(); tdmTS(); }
   timeLeft = DM.len; defuseT = 0; kSwing = 0; $("feed").innerHTML = ""; $("defuse").style.display = "none";

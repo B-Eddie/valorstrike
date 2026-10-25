@@ -83,4 +83,10 @@ const unit=(x,z,per)=>({alive:true,g:{position:{x,z},rotation:{y:0}},per:per||nu
  const posts=team.map((u,i)=>JSON.stringify(A.xGoal(u,team,true,null)));
  assert(new Set(posts).size>1,'post-plant spots differ across bots');
 }
+// 8. every bot creation site rolls a personality (5v5, DM/TDM, drills/retake, duel)
+{
+ const sites=(src.match(/per: xPer\(\)/g)||[]).length;
+ assert.equal(sites,7,'all bot creation sites assign xPer(), found '+sites);
+ assert(/name: "Chamber"[^}]*per: xPer/.test(src),'duel bot has a personality');
+}
 console.log('test_bot_variety: OK');
