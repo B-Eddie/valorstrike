@@ -11,7 +11,7 @@ const slotOf=w=>SIDEARMS.has(w)?'secondary':'primary';
 export function floorReset(sim){sim.floor=[];sim.floorId=sim.floorId||1;for(const u of sim.units){u.floorDropped=false;if(!u.secondary)u.secondary='Classic';}}
 function settle(sim,x,y,z){const W=sim.world;try{const g=W.ground(x,z,y+.5);if(Number.isFinite(g)&&g>y-6&&g>-40)return g;}catch(e){}return y;}
 export function floorDrop(sim,w,x,y,z,ammo,reserve,dropper=null){if(!droppable(w))return null;sim.floor||=[];const mag=weapons[w].magazineSize;
- const d={id:sim.floorId=(sim.floorId||1)+1,w,x,y:settle(sim,x,y,z),z,ammo:Math.max(0,Math.min(mag,Number.isFinite(ammo)?ammo:mag)),reserve:Math.max(0,Number.isFinite(reserve)?reserve:mag*3),dropper,graceUntil:sim.time+DROPPER_GRACE};
+ const d={id:sim.floorId=(sim.floorId||1)+1,w,x,y:settle(sim,x,y,z),z,ammo:Math.max(0,Math.min(mag,Number.isFinite(ammo)?ammo:mag)),reserve:Math.max(0,Number.isFinite(reserve)?reserve:mag*3),dropper,graceUntil:sim.time+DROPPER_GRACE};const own=dropper!=null&&(sim.units||[]).find(x=>x.id===dropper),sk=own&&own.skins&&Object.hasOwn(own.skins,w)?own.skins[w]:null;if(typeof sk==='string')d.sk=sk;// cosmetic: the dropper's skin rides with the gun
  sim.floor.push(d);while(sim.floor.length>FLOOR_LIMIT)sim.floor.shift();return d;}
 // Live ammo of a carried gun, whether it is in hand or holstered.
 function ammoOf(u,w){return u.weapon===w?[u.ammo,u.reserve]:[u.inventory?.[w],u.reserves?.[w]];}
@@ -43,4 +43,4 @@ export function floorTick(sim){if(!sim.floor)floorReset(sim);
    // Empty slot: walk over to pick up (Valorant). Bots also trade up to a better primary they walk past.
    if(!mine&&r<AUTO_RANGE&&!u[slot]){take(sim,u,d);break;}
    if(!u.human&&!mine&&slot==='primary'&&r<1.5&&(RANK[d.w]??5)>(RANK[u.primary]??-1)){take(sim,u,d);break;}}}}
-export function floorRows(sim){return (sim.floor||[]).map(d=>[d.id,d.w,+d.x.toFixed(2),+d.y.toFixed(2),+d.z.toFixed(2)]);}
+export function floorRows(sim){return (sim.floor||[]).map(d=>d.sk?[d.id,d.w,+d.x.toFixed(2),+d.y.toFixed(2),+d.z.toFixed(2),d.sk]:[d.id,d.w,+d.x.toFixed(2),+d.y.toFixed(2),+d.z.toFixed(2)]);}
