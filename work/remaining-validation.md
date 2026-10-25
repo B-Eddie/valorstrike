@@ -377,3 +377,21 @@ Caveat: one PROBE-FAIL earlier this run was a Chrome tab crash under sandbox loa
 - Full client slice sweep 0-80 (80 files incl. main's test_agent_preload + test_bot_variety equivalents) PASS post-restore. index.html regen idempotent (md5 ce0b4bab...).
 - Restored dev tools agent_preview/agent_rt/boots_check/fp_check committed, NOT yet run.
 - NEXT (queued): re-run six-map stairs probe WITH restored light path (matched-rate A/B vs pre-merge pass) before any motor-regression claim; then lotus re-ground, mobile/perf, responsive-HUD pass, lobby offline-mode reachability, A-kills-B duel, final acceptance sweep.
+
+## 2026-10-25 ~12:21 EDT - Six-map stairs re-run WITH restored light path + breeze A/B
+Post-merge (2d61646, light path restored), one selected flight per map, live DM, bots off:
+- ascent: PASS (15n +1.91m; 0 stalls after 1 retry) / bind: PASS (17n +2.93m) / split: PASS (23n +4.02m)
+- breeze: PROBE-FAIL 9 up-leg stall samples; reached top, clean descent, backHome
+- haven:  PROBE-FAIL 12 up-leg stall samples; reached top, clean descent
+- lotus:  PROBE-FAIL 15 up-leg stall samples; reached top, clean descent
+Pre-merge ledger (same probe): all six PASS, <=1 stall sample.
+MATCHED-RATE A/B (breeze): pre-merge 87fe8bf worktree via VS_ROOT, same machine/probe/world
+(breeze nav/build inputs verified unchanged 87fe8bf..HEAD): PASS, 2 stall samples, up 40s down 40s.
+=> Real tree-side delta on 3 heavy maps: up-leg wall-clock stalls 9-15 vs 0-2 pre-merge. NO motor
+stuck: every flight completes up+down in both trees; ERRORS [] everywhere; descents all clean.
+Pattern (stalls concentrated on UP leg = early match phase, down legs clean) is consistent with
+main's XVA boot preload (80-file manifest decode) contending with the probe under SwiftShader, NOT
+with a motor defect. Claim remains CONDITIONAL: not pinned to a commit. Next pin option: re-run
+with XVA disabled or after preload settles; or per-sample trace for position-freeze vs slow-motion.
+Har harness note: worktree lib.cjs has ROOT hardcoded - run A/B from MAIN checkout with
+VS_ROOT=/tmp/vs-pre (worktree startDM clicks the legacy tab strip and fails on main's lobby).
