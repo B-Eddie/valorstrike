@@ -3810,7 +3810,7 @@ function xVisB(b, dt, now, isAlly) {
     else if (player) { ty = 1.6 - player.ch + player.y; hz = Math.hypot(player.x - P.x, player.z - P.z); } // pEye() inlined: no Vector3 per bot per frame
     const tp = ty === null ? 0 : Math.max(-0.9, Math.min(0.9, Math.atan2(ty - 1.45, Math.max(0.5, hz))));
     b.xap = (b.xap || 0) + (tp - (b.xap || 0)) * Math.min(1, dt * 8);
-    M.xap = b.xap; M.gun.rotation.x = M.ub ? 0 : -b.xap; if (M.hd) M.hd.rotation.x = -b.xap * 0.8; // the CC0 rig pitches its upper spine instead (xUbPost)
+    M.xap = b.xap; if (!M.ub) M.gun.rotation.x = -b.xap; if (M.hd) M.hd.rotation.x = -b.xap * 0.8; // the native rig pitches its upper spine instead (xUbPost) and the weapon grip owns its gun: writing rotation.x here re-derived the grip quaternion from Euler and flung the gun sideways each frame
     M.aL.rotation.x = -1.25 - s * 0.18 - b.xap; M.aR.rotation.x = -1.35 + s * 0.12 - b.xap;
     M.bd.position.y = Math.sin(now * 2.2) * 0.008 * (1 - b.xwk) + Math.abs(Math.cos(b.xph)) * 0.03 * b.xwk;
     M.bd.rotation.y = Math.sin(now * 0.7 + b.xph) * 0.04 * (1 - b.xwk);
