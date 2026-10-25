@@ -3635,8 +3635,9 @@ const spCore = new THREE.MeshBasicMaterial({ color: 0xff2030 });
 const spHalo = new THREE.Sprite(new THREE.SpriteMaterial({ map: flTex, color: 0xff2030, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
 // pulsing red light-ring round the core (emissive look only, no real light)
 const spRing = new THREE.Mesh(new THREE.TorusGeometry(0.36, 0.028, 6, 32), new THREE.MeshBasicMaterial({ color: 0xff2030, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
-// Val cadence: ~1 beep/s at plant, speeding up to 2/s by 10 s, 4/s last 10 s, 8/s last 7 s
-const xSpHz = (f) => (f > 10 ? 1 + (45 - Math.min(45, f)) / 35 : f > 7 ? 4 : 8);
+// VALORANT Spike cadence (game data, valorant.gs/rules): a beep every 1 s, every 0.5 s under 20 s left (the wiki's "double
+// beeping"), 0.25 s under 10 s ("triple beeping", wiki.playvalorant.com/en-us/Spike), 0.15 s under 5 s, 0.1 s in the last second.
+const xSpHz = (f) => (f > 20 ? 1 : f > 10 ? 2 : f > 5 ? 4 : f > 1 ? 1 / 0.15 : 10);
 let xSpPh = 0, xSpOn = false;
 { const sD = XLM(0x2b2f36), sM = XLM(0x5a616b), hx = (rt, rb, h, m, y) => { const o = new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, h, 6), m); o.position.y = y; spike.add(o); return o; };
   hx(0.34, 0.38, 0.22, sD, -0.29); hx(0.26, 0.32, 0.3, sM, -0.03); hx(0.18, 0.26, 0.1, sD, 0.17); hx(0.09, 0.09, 0.5, spCore, 0.05);
