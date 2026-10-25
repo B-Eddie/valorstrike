@@ -607,3 +607,32 @@ Open: complete B join mid-match + kill phase (60s window at 2.5fps); then label 
 - hud-coexist.cjs: added banner (#xKbn.on) grab, r1 screenshots, SIZES env, r2-banner-is-gone assertion. PASS at 568x320/640x360/1280x720: kill -> FIRST BLOOD + ELIMINATED banner + feed + toast coexist clean; die -> KILLED BY card with banner GONE (no bleed-through; pixels verified 568 + 1280).
 - 1280 coexist flake root-caused as PROBE artifact (waitForFunction TTL race: 900ms "Round start" toast vs ann poll under SwiftShader at 720p; card opacity transition delay > 300ms grab window). Fresh-state 1280 probe (/tmp/banner1280.cjs): banner:true ann:true feedRows:2 at +500ms - desktop banner confirmed working post-dedup.
 - xKLReset coverage verified thorough (render tick :4003, round flow, DM respawn, revive) - dedup's xKL.on gate clears on every real respawn path.
+
+## Lotus overhang re-ground (2026-10-25 ~16:50 EDT) - static source CONTRADICTS the slab reading
+BVH clearance audit (/tmp/lotus-clearance2.cjs: upward rays from every valid lotus nav node
+against collision.bin, floor-noise hits <0.12m ignored): ZERO nodes with ceiling clearance
+< 1.35 m. Spot-check at the ledger cluster (nodes 3628-3631, 3712-3717, x=-12/-11.25,
+z=-7..-11): first ceiling hit at +7.87 m; down-ray shows ONE surface (y 4.93) - no slab at
+~5.3 anywhere in the static source. collision.bin (10-24 23:31) predates the latest world
+bake (10-25 11:48), so build staleness cannot explain the live probe's blocked()=TRUE.
+Lotus runs dynamic props excluded from static collision (X_DYN_RE): xLotusMech rebuilds
+LG.doors / LG.wall / LG.deb (rotating doors, breakable wall, debris); doors open each round
+start, bots sometimes close them. A closed dynamic prop at that spot reads as a "slab" to a
+capsule blocked() probe but is NOT a permanent overhang, so static invalidation of the
+3628-3631/3712 cluster would be WRONG (nodes are walkable when the prop is open/gone).
+Revised hypothesis for the descent-edge failures: one-way drop ledges (terrain steps
+5.34->4.95->4.6->4.29, exceeding the 0.321 climb limit for up-travel only) - the ORIGINAL
+hypothesis in the descent-edge entry. NEXT: live probe at (-12,-9) lotus naming the prop +
+its open/closed state (door/debris), then decide: if a closed-door reading, no nav change;
+if a real static slab appears in the live world, capture its mesh name before any prune.
+
+## Stairs settled-vs-active A/B (2026-10-25 ~16:58 EDT) - contention CONFIRMED on breeze
+Same probe, same machine, same world, same flight (19 nodes +2.97m), live DM, dmN=0:
+- active (12:21 run, walk immediately after match start): 9 up-leg stall samples.
+- settled (new SETTLE=60 env: wait 60 s in-match before walking): 0 stall samples,
+  up leg y 8.16 -> 11.00 goal reached, down leg backHome true, ERRORS [].
+Pre-merge matched-rate baseline was 2 stall samples. Conclusion: the post-merge up-leg
+stall pattern on heavy maps is early-match boot/XVA-settling contention under SwiftShader,
+NOT a motor regression. Probe harness gained SETTLE env (/tmp/diag-stairs-settle.cjs;
+upstream into work/browser-tests/diag-stairs.cjs next pass). Haven + lotus settled
+confirmation runs queued behind it (one chrome at a time).
