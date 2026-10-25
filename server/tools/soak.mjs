@@ -4,7 +4,9 @@
 // pick up / drop guns, drop the spike, plant and defuse, hidden-tab signals, malformed messages, and disconnect /
 // rejoin (also mid-load and silent drops). After every server tick it asserts invariants on the authoritative state.
 //
-//   node --expose-gc tools/soak.mjs [maps=all] [modes=dm,tdm,five] [seconds=180] [humans=3] [seed=1]
+//   node --expose-gc tools/soak.mjs [maps=all] [modes=dm,tdm,five] [seconds=180] [humans=3] [seed=1] [scenario=base|abilities|ults]
+// Spike runs also check economy / carry-over / detain / Run It Back / kill-event invariants (tools/soak-checks.mjs);
+// the abilities and ults scenarios make every bot and fuzzer spend utility or ultimates constantly, aimed at enemies.
 //   e.g. node --expose-gc tools/soak.mjs ascent,bind five 600 4 7
 //
 // Exported soakRun() is used by test-soak.js (short run in npm test).
@@ -14,6 +16,7 @@ import {path} from '../src/path.js';
 import {weapons} from '../src/simulation.js';
 import {FLOOR_LIMIT} from '../src/floor.js';
 import kits from '../src/kits.json' with {type:'json'};
+import {instrument,checkFive,deathCheck,driveBots,fuzzCast,FOCUS} from './soak-checks.mjs';
 
 export const MAPS=['ascent','bind','haven','split','lotus','breeze'],MODES=['dm','tdm','five'];
 const BUYABLE=['Classic','Shorty','Frenzy','Ghost','Sheriff','Stinger','Spectre','Bucky','Judge','Bulldog','Guardian','Phantom','Vandal','Marshal','Outlaw','Operator','Ares','Odin','Light Shields','Heavy Shields'];
@@ -28,7 +31,7 @@ class Fuzzer{
  me(){return this.rows?.find(r=>r[0]===this.id)||null;}
 }
 
-export async function soakRun({map='ascent',mode='dm',seconds=120,humans=3,seed=1,log=()=>{},stuckSeconds=8,shorten=null,maxViolations=200}={}){
+export async function soakRun({map='ascent',mode='dm',seconds=120,humans=3,seed=1,log=()=>{},stuckSeconds=8,shorten=null,maxViolations=200,scenario='base'}={}){
  const realRandom=Math.random,rng=mulberry(seed*7919+MAPS.indexOf(map)*31+MODES.indexOf(mode));Math.random=mulberry(seed*104729+MAPS.indexOf(map)*131+MODES.indexOf(mode)*17);
  const violations=[],seen=new Map(),errors=[],stats={ticks:0,kills:0,rounds:0,plants:0,defuses:0,detonations:0,rejoins:0,disconnects:0,silentDrops:0,commands:{},ults:0,picks:0,drops:0,maxFloor:0,maxEffects:0,maxRoute:0,phaseEnd:null,stuck:[]};
  const flag=(kind,detail,key=kind)=>{const n=(seen.get(key)||0)+1;seen.set(key,n);if(n===1&&violations.length<maxViolations)violations.push({kind,detail,key,t:+(cluster.clock.now()-t0)/1000});};
@@ -39,6 +42,9 @@ export async function soakRun({map='ascent',mode='dm',seconds=120,humans=3,seed=
  // Bounds from the playable nav graph (every legal standing spot), with margin for jumps, knock-ups and Updraft.
  const P=W.playable.map(i=>W.nav.nodes[i]),bx=[Math.min(...P.map(p=>p[0]))-12,Math.max(...P.map(p=>p[0]))+12],bz=[Math.min(...P.map(p=>p[2]))-12,Math.max(...P.map(p=>p[2]))+12],by=[Math.min(...P.map(p=>p[1]))-3,Math.max(...P.map(p=>p[1]))+15];
  const fz=[];for(let i=0;i<humans;i++)fz.push(new Fuzzer(i,rng,W,mode));
+ // Ability/ult scenarios seat the agents whose kits they exercise (Showstopper, Lockdown, Run It Back, Tour de Force,
+ // Headhunter, Killjoy/Cypher/Phoenix devices, Boom Bot ...).
+ if(scenario!=='base')fz.forEach((h,i)=>{h.agent=FOCUS[(i+seed)%FOCUS.length];});
  for(const h of fz){const p=await cluster.profile();h.token=p.token;}
  const send=(h,m)=>{if(h.connected&&h.socket)h.socket.send(typeof m==='string'?m:JSON.stringify(m));};
  const connect=(h,q)=>{h.reset();const s=cluster.connect(q);h.socket=s;
@@ -49,7 +55,8 @@ export async function soakRun({map='ascent',mode='dm',seconds=120,humans=3,seed=
  const receive=(h,m)=>{if(m.t==='welcome'){h.id=m.you;h.name=m.name;}else if(m.t==='room')h.room=m;else if(m.t==='start'){h.started=true;h.rows=m.u;h.pendingReady=now()+h.loadDelay;}else if(m.t==='end')h.ended=m;else if(m.t==='rs')h.rs=m;else if(m.t==='s'&&h.ready){h.rows=m.u;if(m.fw)h.fw=m.fw;}};
  const now=()=>cluster.clock.now()-t0;
  connect(fz[0],{create:1,code,mode,map});
- for(let k=0;k<100&&!fz[0].room;k++)await cluster.advance(50);
+ // World loading is real file I/O: under machine load it can outlast 5 virtual seconds, so wait in real time too.
+ {const until=Date.now()+90000;for(let k=0;!fz[0].room&&(k<100||Date.now()<until)&&!fz[0].refused;k++){await cluster.advance(50);if(k>=20)await new Promise(r=>setTimeout(r,k<100?5:50));}}
  if(!fz[0].room)throw Error('room was not created: '+fz[0].refused);
  for(const h of fz.slice(1))connect(h,{code});
  for(let k=0;k<100&&fz[0].room.pl.length<humans;k++)await cluster.advance(50);
@@ -57,11 +64,11 @@ export async function soakRun({map='ascent',mode='dm',seconds=120,humans=3,seed=
  const room=cluster.room(code);
  // Hook every server tick: run the invariant checks right after the room's own tick.
  const tick=room.tick.bind(room);let lastRound=0,roundSince=0,lastRemaining=null,remainingSince=0,killEvents=0;const pos=new Map(),trail=new Map();
- room.tick=()=>{const sim=room.sim;const before=sim.events.length;let threw=null;
+ room.tick=()=>{const sim=room.sim;const before=sim.events.length;let threw=null;if(sim.mode==='five')instrument(sim,flag,stats);
   // count kill events before snapshot() drains them
-  const origSnap=sim.snapshot;sim.snapshot=function(){const s=origSnap.call(this);for(const e of s.ev||[]){if(e[0]==='k'){killEvents++;stats.kills++;}if(e[0]==='sp')stats.plants++;}return s;};
+  const tickEv=[];const origSnap=sim.snapshot;sim.snapshot=function(){const s=origSnap.call(this);for(const e of s.ev||[]){tickEv.push(e);if(e[0]==='k'){killEvents++;stats.kills++;}if(e[0]==='sp')stats.plants++;}return s;};
   try{tick();}catch(e){threw=e;errors.push('tick threw: '+(e.stack||e).split('\n').slice(0,4).join(' | '));}finally{sim.snapshot=origSnap;}
-  stats.ticks++;check(sim,threw);};
+  stats.ticks++;check(sim,threw);if(sim.mode==='five'){checkFive(sim,flag,stats);deathCheck(sim,flag,stats,tickEv);}};
  const valid=w=>typeof w==='string'&&Object.hasOwn(weapons,w);
  function check(sim){const t=now(),phases=['room','game','post','closed'];if(!phases.includes(sim.phase))flag('phase',sim.phase);
   if(sim.units.length>10)flag('units>10',sim.units.length);if(room.sessions.size>10)flag('sessions>10',room.sessions.size);
@@ -134,6 +141,7 @@ export async function soakRun({map='ascent',mode='dm',seconds=120,humans=3,seed=
      if(next)input={...input,r:Math.atan2(-(next[0]-me[4]),-(next[2]-me[6])),f:1,s:0,fire:0,h4:0,c:0,w:0,j:chance(.02)?1:0};}}}
   if(chance(.003))send(h,{t:'vis',h:chance(.5)?1:0});
   send(h,input);
+  if(scenario!=='base'&&sim.mode==='five'&&me&&me[10]&&chance(.08)){const u=sim.units.find(x=>x.id===h.id),c=fuzzCast(sim,u,scenario,rng,stats);if(c){if(c.aim)send(h,{t:'in',seq:++h.seq,r:c.aim.look,p:c.aim.pitch,f:0,s:0});cmd(h,c.m);if(u.ultWeapon||u.headhunter)send(h,{t:'in',seq:++h.seq,r:c.aim?.look??s.r,p:c.aim?.pitch??0,f:0,s:0,fire:1});}}
   // Commands (well under the 80 msg/s limit).
   if(chance(.04)&&me){const r=rng();
    if(r<.12)cmd(h,{t:'reload'});
@@ -151,6 +159,7 @@ export async function soakRun({map='ascent',mode='dm',seconds=120,humans=3,seed=
  // Occasionally give bots ultimate points so their ult paths run too (abilities are cast through the normal 'ab' command).
  const deadline=seconds*1000;let lastGc=0;const heap=[];
  for(let k=0;now()<deadline;k++){for(const h of fz)drive(h);
+  if(scenario!=='base'&&room.sim.mode==='five'&&k%10===0)driveBots(room.sim,scenario,rng,stats);
   if(room.sim.mode==='five'&&k%400===0)for(const u of room.sim.units)if(!u.human&&u.ability&&chance(.3))room.sim.command(u,{t:'ab',k:'x',p:[u.x,u.z]});
   if(shorten&&room.sim.mode!=='five'&&k===40)room.sim.remaining=Math.min(room.sim.remaining,shorten);
   try{await cluster.advance(50);}catch(e){errors.push('advance threw: '+(e.stack||e).split('\n').slice(0,4).join(' | '));}
@@ -165,9 +174,9 @@ export async function soakRun({map='ascent',mode='dm',seconds=120,humans=3,seed=
 }
 
 if(import.meta.url===`file://${process.argv[1]}`){
- const [maps='all',modes='dm,tdm,five',secs='180',humans='3',seed='1']=process.argv.slice(2);
+ const [maps='all',modes='dm,tdm,five',secs='180',humans='3',seed='1',scenario='base']=process.argv.slice(2);
  const list=(maps==='all'?MAPS:maps.split(','));const out=[];
- for(const map of list)for(const mode of modes.split(',')){const t=Date.now();const r=await soakRun({map,mode,seconds:+secs,humans:+humans,seed:+seed});out.push(r);
-  console.log(JSON.stringify({map,mode,ms:Date.now()-t,ticks:r.stats.ticks,kills:r.stats.kills,rounds:r.stats.rounds,plants:r.stats.plants,rejoins:r.stats.rejoins,end:r.stats.end,heapMB:r.stats.heapMB,maxFloor:r.stats.maxFloor,errors:r.errors,counts:r.counts,violations:r.violations.slice(0,25)}));}
+ for(const map of list)for(const mode of modes.split(',')){const t=Date.now();const r=await soakRun({map,mode,seconds:+secs,humans:+humans,seed:+seed,scenario});out.push(r);
+  console.log(JSON.stringify({map,mode,ms:Date.now()-t,ticks:r.stats.ticks,kills:r.stats.kills,rounds:r.stats.rounds,plants:r.stats.plants,rejoins:r.stats.rejoins,end:r.stats.end,heapMB:r.stats.heapMB,five:r.stats.five,maxFloor:r.stats.maxFloor,errors:r.errors,counts:r.counts,violations:r.violations.slice(0,25)}));}
  process.exit(out.some(r=>r.errors.length||r.violations.length)?1:0);
 }
