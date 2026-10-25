@@ -51,13 +51,27 @@ surface under the capsule: railings/low boxes can be vaulted, wall tops and roof
 nav sampled them) or within 1.5 m of one whose floor matches the floor under the capsule (rim). The footprint is the
 playable nav component plus the other valid components no more than 4.6 m above the playable floor (box tops,
 drop-only areas); roofs the nav sampled (Haven 8-11 m, Ascent 6-9 m, Breeze/Split 7-10 m) are excluded. Movement
-only: rays, shots, sight and floor probes never see it; a unit already off the footprint may always move (never
-trapped). Applied to the player motor (both sides), the server's Jett dash and Raze satchel loops, the offline knife
+only: rays, shots, sight and floor probes never see it. A unit already off the footprint (dropped straight down past
+a ledge after an updraft, or spawned outside) may only move toward the nearest footprint node at its height (6 m
+search, same height band): never trapped, never further out; more than 6 m from every node it is free. The first
+leash let such a unit move anywhere, and the stride-3 sweep found two escapes through that: Bind updraft from
+(6, 6.9, -84) landed beside a box at (8.5, 6.7, -88.2) and walked out, Split updraft + dash from (-29.75, 7, 35.5)
+to (-29.75, 6.5, 44). Applied to the player motor (both sides), the server's Jett dash and Raze satchel loops, the offline knife
 lunge and the page's global `blocked()` used by offline direct moves.
 
 Sweep (stride 3 border cells, 6 probes, one outward direction): before -> after
 
-BOUNDARY_TABLE
+| map | probes | fall before -> after | out before -> after | perch before -> after | ledge (after, not escapes) |
+|---|---|---|---|---|---|
+| Ascent | 4578 | 118 -> 0 | 34 -> 0 | 9 -> 0 | 313 |
+| Bind | 4644 | 14 -> 0 | 31 -> 0 | 12 -> 0 | 287 |
+| Haven | 4278 | 30 -> 0 | 2 -> 0 | 5 -> 0 | 292 |
+| Split | 4158 | 47 -> 0 | 39 -> 0 | 33 -> 0 | 336 |
+| Lotus | 3540 | 151 -> 0 | 43 -> 0 | 18 -> 0 | 240 |
+| Breeze | 4338 | 33 -> 0 | 100 -> 0 | 29 -> 0 | 175 |
+| all | 25536 | 393 -> 0 | 249 -> 0 | 106 -> 0 | |
+
+After = the outside-unit rule above (stride 3, all six maps, 0 fall / 0 out / 0 perch is the target).
 
 Before-escape locations (group centres, metres) are in `work/validation/map/boundary-summary.json`
 (`fallAt`/`outAt`/`perchAt`); the raw sweeps are `boundary-before-<map>.json`. Examples:
@@ -68,7 +82,7 @@ Before-escape locations (group centres, metres) are in `work/validation/map/boun
 - Bind/Haven/Split/Breeze: updraft and updraft+dash over perimeter walls (see summary JSON).
 
 Regression: `server/test-map-bounds.js` (in `npm test`): hole grid fallable = 0 on all six maps; 16 recorded escapes
-per map (`server/map-escapes.json`, mixed probes) replayed and contained, and replayed without the leash they must
+per map, 17 on Bind and Split (`server/map-escapes.json`, mixed probes; the two post-leash sweep escapes above) replayed and contained, and replayed without the leash they must
 still escape (fixture stays meaningful, fails on the old motor); sampled sweep (every 40th border cell, all 7 probes)
 with no fall and no out. Client: `work/test_map_leash.cjs` (rule semantics incl. roof-component exclusion, motor
 containment, never-trapped, client + server wiring). `test-traversal.js` (43 human-driven walks) passes with the leash.
