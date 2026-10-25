@@ -93,3 +93,8 @@ Open `http://127.0.0.1:8876/`; localhost clients use the local game service on p
 ## Scope/language corrections (per parent, 5:59 AM)
 - Soak results are "no stalls observed in these sampled runs", never proof the entire stall class is closed. Each fix is pinned to its caught mechanism with a behavioral regression.
 - Nav fragmentation remains OPEN as topology: nmConnected's largest-component "playable" set is the CURRENT IMPLEMENTATION, not validated design intent. Valid named intended areas (bind B Short 1113 nodes, B Teleporter 28, breeze Attacker Side Spawn 452, ascent B Site, per the fence-v2 inventory) remain unreachable from the fragmented graph. The recovery changes (nmSegDrop first-edge descent, return-to-mesh steering) do not resolve this; they must also not create traversal exploits or trap routes - verified so far only by the six-map TDM sweeps (no units stranded post-drop, no stalls) and the behavioral regression pins.
+
+## Five-mode breeze attacker stall (OPEN, 6:03 AM)
+- five-soak breeze FAIL: all 4 ATTACKING allies stationary 16s+ at the west spawn edge (-72..-74, 0 +/- 2), t=63-65 mid-round.
+- diag-stall5.cjs (committed, five-mode tracer) first catch was a LEGIT post-plant hold (spike planted at (41.5,-25.6), fs -6s, path alive): post-plant attackers holding site is correct; tracer now exempts xg0 === 'plant' like the soak.
+- The soak-flagged west-edge case remains UNCAUGHT: next wake reruns MAP=breeze diag-stall5 until it catches an attacking stall with xg0 !== 'plant' (watch whether the goal is the carrier's own position, i.e. xGoal returning spike-carrier coordinates).
