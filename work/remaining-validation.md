@@ -530,3 +530,8 @@ Open: complete B join mid-match + kill phase (60s window at 2.5fps); then label 
 
 ## Spike touch plant probe - IN PROGRESS (15:02)
 - work/browser-tests/spike-touch.cjs written (hold -> progress, release -> cancel, re-hold -> complete, via touch "4" button). Current blocker: inSite() consults the navmesh plant bitmap (nmPlant over C.plants.rows), not the static SITES table; neither the generic SITES A (-20,-21) nor ASC_SITES A (-31.7,-19.4) is in-zone, so the plant prompt never shows. Fix for next run: expose nmSiteGoals output (verified in-zone world points, already computed at runtime) via a localhost test hook and teleport to siteGoals.A. Touch plant button itself verified present/usable in five (54px, hit-tested).
+
+## Spike plant by touch "4" (offline five, 844x390 emulated touch) - PASS (15:04)
+- Probe work/browser-tests/spike-touch.cjs, 5/5: teleported to the navmesh-verified in-zone point (new __vs.siteGoals test hook; Ascent A goal [45.25,-32.5] - the static SITES/ASC_SITES anchors are NOT in the plant bitmap, which is why the first probe run never saw the prompt), "Hold 4 to plant" prompt shows; touch hold -> "Planting" with pt rising (1.34 at 1.3s); release -> pt resets to 0 and prompt returns (cancel); re-hold -> plant completes (st "plant", pt 4.03). Touch plant button 54px, hit-tested.
+- Screenshot /tmp/spike_planting.png inspected: PLANTING bar filling, "4" button lit while held, SPIKE drop hint, 5v5 HUD intact.
+- Harness: spike assigned to the player (production carrier is a random attacker) and buy phase skipped; the plant/hold/cancel path itself is the production one. Emulated touch, not a real phone.

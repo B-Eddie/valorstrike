@@ -18,7 +18,11 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
   await p.waitForFunction(() => !window.__vs.state().xLdOn, {timeout: 60000}).catch(() => console.log(el(), 'WARN xLd still visible'));
   const dtext = () => p.evaluate(() => { const d = document.getElementById('defuse'); return { shown: d && d.style.display !== 'none', text: d && d.firstChild ? d.firstChild.textContent : '', pt: window.__vs.FV.sp && +(+window.__vs.FV.sp.pt).toFixed(2), st: window.__vs.FV.sp && window.__vs.FV.sp.st }; });
   // harness: make the player the carrier, skip buy phase, stand on a site (try generic A then Ascent A)
-  await p.evaluate(() => { const FV = window.__vs.FV; FV.buy = 0; FV.sp.st = 'carry'; FV.sp.c = window.__vs.player; window.__vs.setPos(-20, 0, -21); });
+  const goals = await p.evaluate(() => window.__vs.siteGoals());
+  console.log(el(), 'siteGoals', JSON.stringify(goals));
+  const g = goals && (goals.A || goals.B || goals.C);
+  if (g) await p.evaluate((g) => { const FV = window.__vs.FV; FV.buy = 0; FV.sp.st = 'carry'; FV.sp.c = window.__vs.player; window.__vs.setPos(g[0], 0, g[1]); }, g);
+  else await p.evaluate(() => { const FV = window.__vs.FV; FV.buy = 0; FV.sp.st = 'carry'; FV.sp.c = window.__vs.player; window.__vs.setPos(-20, 0, -21); });
   await wait(800);
   let d0 = await dtext();
   if (!(d0.shown && d0.text.includes('Hold 4'))) { await p.evaluate(() => window.__vs.setPos(-31.7, 0, -19.4)); await wait(800); d0 = await dtext(); }
