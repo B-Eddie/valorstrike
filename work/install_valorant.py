@@ -20,8 +20,8 @@ block+='\n'+(root/'work/feet_runtime.js').read_text().rstrip('\n');ha='// ---- L
 if ha in s:s=s[:s.index(ha)]+s[s.index(hb)+len(hb):]
 block+='\n'+(root/'work/hit_feedback_runtime.js').read_text().rstrip('\n');qa='// ---- ABILITY EQUIP ----';qb='// ---- END ABILITY EQUIP ----'
 if qa in s:s=s[:s.index(qa)]+s[s.index(qb)+len(qb):]
-# Sova bolt flight: the shared vendor/sova-bolt.cjs (UMD, sets window.SovaBolt; the server imports the same file) heads the block.
-block+='\n'+(root/'work/ability_equip_runtime.js').read_text().rstrip('\n').replace(qa,qa+'\n'+(root/'vendor/sova-bolt.cjs').read_text().rstrip('\n'),1);va='// ---- BOT VARIETY ----';vb='// ---- END BOT VARIETY ----'
+# Sova bolt flight + Jett Cloudburst flight: the shared vendor/sova-bolt.cjs and vendor/cloudburst.cjs (UMD, set window.SovaBolt / window.Cloudburst; the server imports the same files) head the block.
+block+='\n'+(root/'work/ability_equip_runtime.js').read_text().rstrip('\n').replace(qa,qa+'\n'+(root/'vendor/sova-bolt.cjs').read_text().rstrip('\n')+'\n'+(root/'vendor/cloudburst.cjs').read_text().rstrip('\n'),1);va='// ---- BOT VARIETY ----';vb='// ---- END BOT VARIETY ----'
 if va in s:s=s[:s.index(va)]+s[s.index(vb)+len(vb):]
 # Bot variety: the shared vendor/bot-routes.cjs (UMD, sets window.BotRoutes) is inlined at the head of the block.
 block+='\n'+(root/'work/bot_variety_runtime.js').read_text().rstrip('\n').replace(va,va+'\n'+(root/'vendor/bot-routes.cjs').read_text().rstrip('\n'),1);mark='xReady = true; // every mode is initialised; lobby launches may now start them';s=s.replace(mark,block+'\n'+mark)

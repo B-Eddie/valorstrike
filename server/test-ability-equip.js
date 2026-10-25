@@ -15,7 +15,22 @@ assert(ph.fireAt>=s.time+XAB_REC-1e-9,'equip cast holds the gun down on the serv
 s.time+=XAB_REC+.01;ph.triggerHeld=false;assert.notEqual(s.fire(ph),false,'gun back after the recovery');
 j.ability.c=1;j.fireAt=0;assert.equal(s.command(j,{t:'ab',k:'c'}),true,'Cloudburst cast');assert(!(j.fireAt>s.time),'quick-cast keeps the gun up');
 // effect values checked against the wiki (work/validation/abilities-wiki.txt): Cloudburst 2.5 s, Hot Hands 60 dps, Nanoswarm 5 s
-{const e=s.effects.filter(e=>e.kind==='smoke').pop();assert(e,'Cloudburst smoke effect');assert(Math.abs(e.until-s.time-2.5)<1e-6,'Cloudburst lasts 2.5 s (got '+(e.until-s.time)+')');}
+{const {tickAbilities}=await import('./src/abilities.js'),cb=s.effects.filter(e=>e.kind==='cloudburst').pop();assert(cb,'Cloudburst projectile');let n=0;while(cb.kind==='cloudburst'&&n++<200){s.time+=.05;tickAbilities(s,.05);}
+ const e=cb;assert.equal(e.kind,'smoke','Cloudburst landed as a smoke');assert(e.cb);assert(Math.abs(e.until-s.time-2.5)<1e-6,'Cloudburst lasts 2.5 s (got '+(e.until-s.time)+')');}
+{/* Cloudburst flight (vendor/cloudburst.cjs; wiki: thrown INSTANTLY, HOLD steers it with the crosshair, release = gravity, smoke on contact or after 2 s in the air) */
+ const CBm=(await import('../vendor/cloudburst.cjs')).default,{tickAbilities}=await import('./src/abilities.js');assert.deepEqual([CBm.CB.maxT,CBm.CB.life],[2,2.5]);
+ const fly=(world,setup,each)=>{const t=new SpikeSimulation({...W,...world}),u=t.add('jt','Jett');t.add('foe');t.start(false);t.buy=0;Object.assign(u,{x:0,y:0,z:0,look:0,pitch:0});u.ability.c=2;setup&&setup(t,u);assert.equal(t.command(u,{t:'ab',k:'c'}),true);const e=t.effects.find(x=>x.kind==='cloudburst');assert(e,'projectile');assert.equal(t.castEvents.filter(c=>c.k==='c').length,0,'no cast event at the throw');
+  const rows=[];let k=0;while(e.kind==='cloudburst'&&k++<200){each&&each(t,u,k);t.time+=.05;tickAbilities(t,.05);rows.push(t.snapshot().fx.filter(f=>f.kind==='cb'));}return {e,t,u,rows,k};};
+ // tap (no cb input): a thrown arc that falls to the floor ~10 m ahead, then a 2.5 s smoke there
+ const a=fly({});assert.equal(a.e.kind,'smoke');assert(a.e.c[2]<-6&&a.e.c[2]>-14,'tap lands ~10 m ahead: '+a.e.c);assert(Math.abs(a.e.c[1]-1.5)<1e-9,'smoke centre floor + 1.5');assert(a.rows[0][0].s===0&&a.rows.at(-1)[0].s===1&&a.rows.at(-1)[0].tl>2.4,'snapshot fx: projectile then smoke '+JSON.stringify(a.rows.at(-1)));
+ // C held: steered by the aim (turned 90 degrees left, level) for the whole 2 s -> pops in the air off to the side, never falls
+ const b=fly({},(t,u)=>{t.command(u,{t:'in',seq:1,r:0,p:0,cb:1});},(t,u,k)=>{t.command(u,{t:'in',seq:k+1,r:k>4?Math.PI/2:0,p:0,cb:1});});assert(b.k>=39&&b.k<=41,'held: 2 s in the air ('+b.k+' steps)');assert(b.e.c[0]<-15,'steered left: '+b.e.c);assert(b.e.c[1]>1.4,'did not fall');
+ // held then released: steering ends for good (re-pressing does nothing), it falls
+ const c=fly({},(t,u)=>{t.command(u,{t:'in',seq:1,r:0,p:0,cb:1});},(t,u,k)=>{t.command(u,{t:'in',seq:k+1,r:k>6?Math.PI/2:0,p:0,cb:k<4||k>8?1:0});});assert(Math.abs(c.e.c[0])<1,'released before the turn: no steering after ('+c.e.c+')');assert(c.k<20,'falls after release');
+ // a wall 5 m ahead: smoke at the wall
+ const d=fly({ray:(o,dd,max)=>{const t=(o[2]+5)/-dd[2];return dd[2]<0&&t>=0&&t<=max?t:Infinity;}});assert(d.e.c[2]>-5&&d.e.c[2]<-4.5,'smoke at the wall: '+d.e.c);
+ // the steering input is only C (cb 1); stale input does not steer
+ {const t=new SpikeSimulation(W),u=t.add('jt','Jett');t.add('f');t.start(false);t.buy=0;t.command(u,{t:'in',seq:1,r:0,p:0,cb:'1'});assert.equal(u.input.cb,false);t.command(u,{t:'in',seq:2,r:0,p:0,cb:1});assert.equal(u.input.cb,true);}}
 assert.equal(DEV.hotHands.damage,60,'Hot Hands 60/s');assert.equal(DEV.nanoswarm.active,5,'Nanoswarm active 5 s');
 {const ph2=s.add('p2','Phoenix');ph2.alive=true;ph2.ability.q=1;ph2.fireAt=0;s.time+=1;assert.equal(s.command(ph2,{t:'ab',k:'q'}),true,'Hot Hands cast');const f=s.effects.filter(e=>e.kind==='fire').pop();assert(f&&f.rate===60,'Hot Hands zone burns 60/s');}
 {/* Hot Hands spreads (wiki Hot_Hands: 0.75 s to 4.5 m, 4 s total): radius 0 at detonation, 2.25 m at 0.375 s, 4.5 m from 0.75 s; a foe 4 m out burns only once the fire reaches him */
@@ -44,4 +59,4 @@ assert(Math.abs(DEV.curveball.windup-.4)<1e-9&&Math.abs(ULT.quake.delay-1)<1e-9&
  const cl=shot('q',{pw:7,b:9});assert(cl.pw===1&&cl.b===2,'charge / bounces clamped');const bad=shot('q',{pw:'x',b:'2; drop'});assert(bad.pw===1&&bad.b===0,'junk -> full charge, no bounce');
  const leg=shot('q',{});assert(leg.pw===1&&leg.b===0,'an older client: full-charge, no-bounce bolt');
  const P=SB.path([0,1.6,0],[0,0,-1],1,2,W2.rayN,()=>0);assert.equal(P.pts.length,4,'two bounces recorded');}
-console.log('Ability equip (server): kit table matches the wiki, equip casts hold fire for '+XAB_REC+' s, quick-casts do not; Cloudburst 2.5 s, Hot Hands 60/s spreading to 4.5 m over 0.75 s, Nanoswarm 5 s; wiki windups (Aftershock / Flashpoint / Fault Line / Leer / Curveball / Rolling Thunder / Trapwire / Trademark / Tour De Force); Sova bolt charge + 0-2 bounces');
+console.log('Ability equip (server): kit table matches the wiki, equip casts hold fire for '+XAB_REC+' s, quick-casts do not; Cloudburst projectile (tap arc / steered while C held / smoke on contact or after 2 s, 2.5 s), Hot Hands 60/s spreading to 4.5 m over 0.75 s, Nanoswarm 5 s; wiki windups (Aftershock / Flashpoint / Fault Line / Leer / Curveball / Rolling Thunder / Trapwire / Trademark / Tour De Force); Sova bolt charge + 0-2 bounces');
