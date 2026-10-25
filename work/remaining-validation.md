@@ -451,3 +451,12 @@ only from the host"); match start blocks the host main thread >10s by design ("h
 black out").
 STATUS: not yet passing end-to-end. Next: verify room-create blocker (profile limit vs other),
 then A-host start with B parked at about:blank (WebGL-contention mitigation), then kill phase.
+
+## Rendered two-client acceptance - stall root-cause WIP (13:18, commit 7d6a370)
+- net() debug hook (localhost-gated, read-only, in work/debug_runtime.js): exposes ws readyState, mp st/on/role/host/code/mode/name, xReady, nmPending/nmLoaded. Test-only; no production behavior change.
+- Create-phase is healthy: create-diag at 5s = {"msg":"Connected to game server","st":"room","on":true,"host":true,"ws":1,"drops":[],"mode":"dm","xReady":true,"nmPending":false}. Room create + join + ws all fine with the reused local QA token (no fresh profiles minted).
+- Failure is AFTER mpStart: latest ONE-mode run logged "5s mpStart sent" then nothing for 100s+ - page evaluate calls never return = renderer main-thread hard freeze (case B). Case A (other runs): page responsive, load overlay stuck "Loading Ascent...", mode stays "retake" (init default) = no mode-start fn completed.
+- Only success so far: 12:58 ONE run via real playwright click reached running=true in ~3s against the freshly started wrangler. All el.click() runs and all runs against the long-lived wrangler stall. Correlation unproven.
+- Suspects (unverified): main-thread block inside xGo path (xGmLoad gun-model fetch/parse + nmEnsure + BVH build contention under SwiftShader); possible nmEnsure ticket/cancel interplay if a room-message prefetch and startDM load race; server tick/begin frame behavior on long-lived workerd instance.
+- Labeling: host-client one-page success (12:58) != authoritative server-path acceptance; both stay open until the two-client rendered run completes.
+- Next: pre-freeze console/pageerror capture; bisect xGo by starting via __vs.startDM-equivalent online path; check whether room message handler triggers a map prefetch racing startDM.
