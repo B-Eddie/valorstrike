@@ -61,8 +61,14 @@ All 12 user-list items now have shipped fixes on instinct. Remaining: ledger 13-
   (test_oob_destinations.cjs) - teleporter entries/exits, sites, spawns can never be executed
   by the watch. Attribution: hurt/kill/allyDie with by='Out of bounds' - display-only;
   fKC credit is a no-op for unknown names (no score theft). Respawn: normal DM/five death paths.
-  VM test test_oob_kill.cjs; oob-probe.cjs on Breeze: site-node control survives, skirt warp
-  (0,90) dies in ~3 s wall.
+  VM test test_oob_kill.cjs. INVALIDATED first oob-probe run: it set FV.map instead of FV.pick,
+  so both sections silently ran Ascent (confirmed via map-state readout: key 'ascent', site
+  node (46.75,10.07,-27.25) is Ascent's). Its 'on Breeze' claims are void. Corrected rerun
+  (FV.pick + site-node map assertion): real breeze site control hp 100, breeze skirt (0,90)
+  dies in 3 s, bind island node spared (hp 100 after 12 s). Audit of every other probe:
+  bind-tp-probe used FV.pick from its first commit (bcbdb13); all remaining probes run the
+  default map with no map-specific claim; Node-side map tooling (eval-*) never touches the
+  browser harness. No other map-attributed claim is affected.
 - [x] #5 boundary gaps, SERVER track (authoritative rooms): Simulation.oobKill mirrors the
   client criterion (nearValid-distance >4 over ALL valid nodes via world.nearValid, motor-grounded, 2 s) and is called from both step loops.
   dm/tdm: broadcast 'n' warning note, kill event ['k','Out of bounds',name,0,'Ability']
