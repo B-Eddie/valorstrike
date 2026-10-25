@@ -102,9 +102,28 @@ function xvAgent(M, kit) {
   const hand = bone('R_Hand'); if (hand && M.gun) { const hold = new THREE.Group(), p=new THREE.Vector3(),q=new THREE.Quaternion(),s=new THREE.Vector3(); new THREE.Matrix4().copy(M.m.matrixWorld).invert().multiply(hand.matrixWorld).decompose(p,q,s); hold.quaternion.copy(q.invert()); hold.scale.set(1/s.x,1/s.y,1/s.z); hand.add(hold); hold.add(M.gun); M.gun.position.set(0,0,.03); M.gun.rotation.set(0,Math.PI,0); M.weaponHolder=hold; } // gun models are authored muzzle -Z: PI faces the muzzle the way the character looks
   X.contactLift=kit.contactLift;X.contactProbes=kit.contactProbes.map(p=>({o:sc.getObjectByName(p.mesh),indices:p.indices})).filter(p=>p.o&&p.o.isSkinnedMesh);X.contactV=new THREE.Vector3();X.contactInv=new THREE.Matrix4();X.contactShift=new THREE.Vector3();X.contactScale=new THREE.Vector3();X.contactFloor=bx.min.y;X.acts=X.a; M.ub=1; M.sx=X; M.valorant=1; M.xAt=[]; M.solOwn=()=>{M.solOwn=null;}; XSOL.mx.push(M);
 }
-{ const base = xUb; xUb = function(M) { if(M.dead||M.valorant)return; base(M); const ag=xvAgentName(M.nm); xvAgentLoad(ag).then((kit)=>xvAgent(M,kit)).catch(()=>{}); }; }
+// No third-party fallback visuals on characters: the CC0/Soldier clone tier never
+// renders. (The XUB download itself stays - first-person arms and the native clip
+// tables are built from it.)
+function xvNativeAgent(M, tries) {
+  const ag = xvAgentName(M.nm);
+  xvAgentLoad(ag).then((kit) => xvAgent(M, kit)).catch((e) => {
+    tries = (tries || 0) + 1;
+    if (tries <= 2) { setTimeout(() => { if (!M.valorant && !M.dead) xvNativeAgent(M, tries); }, 1500); return; }
+    if (!XV.failures['agent-toast:' + ag]) { XV.failures['agent-toast:' + ag] = 1; try { xE(new Error('agent model failed to load: ' + ag)); } catch (_) {} }
+  });
+}
+{ xUb = function(M) { if(M.dead||M.valorant)return; xvNativeAgent(M); }; }
 // Native rigs do not depend on the legacy fallback download becoming ready.
-{const create=xAgent;xAgent=function(){const M=create.apply(this,arguments),ag=xvAgentName(M.nm);xvAgentLoad(ag).then(kit=>xvAgent(M,kit)).catch(()=>{});return M;};}
+{const create=xAgent;xAgent=function(){
+  const M=create.apply(this,arguments);
+  // Hide the primitive placeholder from birth: characters render native-only,
+  // never as box-men. Ring and held gun stay visible as gameplay indicators.
+  const inGun=(o)=>{for(let p=o;p;p=p.parent)if(p===M.gun)return true;return false;};
+  M.m.traverse((o)=>{if(o.isMesh&&o!==M.ring&&!inGun(o))o.visible=false;});
+  xvNativeAgent(M);
+  return M;
+};}
 // Correct only the blended support-foot height after the mixer. Authored jog flight remains airborne.
 {const pre=xUbPre,post=xUbPost;xUbPre=function(M){const X=M.sx;if(X&&X.contactRestore){X.b.pelvis.position.copy(X.contactRestore);X.contactRestore=null;}return pre(M);};xUbPost=function(M){post(M);const X=M.sx;if(!X||!X.nativeContact||X.dd||M.dead||X.air||X.lo||(X.w.plant||0)>.01||!X.contactProbes.length)return;M.m.updateMatrixWorld(true);const v=X.contactV,inv=X.contactInv.copy(X.sc.matrixWorld).invert();let low=Infinity;for(const {o,indices}of X.contactProbes){o.skeleton.update();for(const i of indices){v.fromBufferAttribute(o.geometry.attributes.position,i);o.boneTransform(i,v);v.applyMatrix4(o.matrixWorld).applyMatrix4(inv);low=Math.min(low,v.y);}}let lift=0;const c=X.contactLift,a=X.a.run;if(c&&a&&(X.w.run||0)>.001){const t=a.time%c.times[c.times.length-1];let i=0;while(i<c.times.length-2&&c.times[i+1]<t)i++;const f=(t-c.times[i])/Math.max(.00001,c.times[i+1]-c.times[i]);lift=(c.values[i]*(1-f)+c.values[i+1]*f)*(X.w.run||0);}const dy=X.contactFloor+lift-low;if(!Number.isFinite(dy)||Math.abs(dy)>.5)return;X.contactRestore=X.b.pelvis.position.clone();X.b.pelvis.getWorldPosition(v);const shift=X.contactShift.set(0,1,0).transformDirection(X.sc.matrixWorld).multiplyScalar(Math.abs(dy)*X.sc.getWorldScale(X.contactScale).y);if(dy<0)shift.negate();v.add(shift);X.b.pelvis.position.copy(X.b.pelvis.parent.worldToLocal(v));M.m.updateMatrixWorld(true);};}
 // Native first-person rigs and their matching weapon animation clips. The virtual source camera faces +X.
