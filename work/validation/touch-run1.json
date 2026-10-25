@@ -1,0 +1,690 @@
+{
+ "steps": [
+  [
+   "touch device",
+   true
+  ],
+  [
+   "rotate notice visible (portrait)",
+   "flex"
+  ],
+  [
+   "rotate notice after Play in portrait",
+   "none"
+  ],
+  [
+   "pre-screen",
+   {
+    "pre": [
+     0,
+     0,
+     360,
+     740
+    ],
+    "go": [
+     1,
+     638,
+     178,
+     707
+    ],
+    "sw": 387,
+    "sh": 999,
+    "ch": 740,
+    "ov": "auto"
+   }
+  ],
+  [
+   "match start ms",
+   20477
+  ],
+  [
+   "layout portrait-360x740",
+   {
+    "vw": 360,
+    "vh": 740,
+    "btn": {
+     "fire": [
+      253,
+      549,
+      325,
+      621
+     ],
+     "jump": [
+      302,
+      485,
+      354,
+      537
+     ],
+     "duck": [
+      303,
+      634,
+      353,
+      684
+     ],
+     "reload": [
+      212,
+      644,
+      256,
+      688
+     ],
+     "zoom": [
+      214,
+      524,
+      260,
+      570
+     ],
+     "swap": [
+      266,
+      444,
+      310,
+      488
+     ],
+     "pause": [
+      160,
+      69,
+      200,
+      109
+     ],
+     "c": [
+      97,
+      363,
+      141,
+      407
+     ],
+     "q": [
+      147,
+      363,
+      191,
+      407
+     ],
+     "e": [
+      198,
+      363,
+      242,
+      407
+     ],
+     "x": [
+      248,
+      363,
+      292,
+      407
+     ],
+     "plant": [
+      11,
+      441,
+      61,
+      491
+     ],
+     "use": [
+      13,
+      517,
+      59,
+      563
+     ],
+     "buy": [
+      13,
+      369,
+      59,
+      415
+     ],
+     "inspect": [
+      162,
+      685,
+      198,
+      721
+     ],
+     "ping": [
+      214,
+      446,
+      254,
+      486
+     ]
+    },
+    "hud": [
+     [
+      "game",
+      [
+       0,
+       0,
+       360,
+       740
+      ],
+      ".x-cnv{position:fixed;inset:0;"
+     ],
+     [
+      "xCmB",
+      [
+       12,
+       459,
+       106,
+       480
+      ],
+      "COMMS"
+     ],
+     [
+      "xObs",
+      [
+       0,
+       300,
+       360,
+       438
+      ],
+      "JYouClassic800OOmenSheriff0SSa"
+     ]
+    ]
+   }
+  ],
+  [
+   "portrait-360x740 start",
+   {
+    "x": 0,
+    "z": 41.75,
+    "y": 6.33,
+    "yaw": 0,
+    "pitch": 0,
+    "keys": {
+     "W": false,
+     "A": false,
+     "S": false,
+     "D": false,
+     "Ctrl": false,
+     "Sp": false
+    },
+    "buy": 43.90290000000008,
+    "menu": false,
+    "on": true
+   }
+  ],
+  [
+   "portrait-360x740 stick up",
+   {
+    "during": {
+     "W": false,
+     "A": false,
+     "S": false,
+     "D": false,
+     "Ctrl": false,
+     "Sp": false
+    },
+    "moved": "0.00",
+    "released": {
+     "W": false,
+     "A": false,
+     "S": false,
+     "D": false,
+     "Ctrl": false,
+     "Sp": false
+    }
+   }
+  ],
+  [
+   "portrait-360x740 aim drag",
+   {
+    "dyaw": "0.000",
+    "dpitch": "0.000"
+   }
+  ],
+  [
+   "portrait-360x740 jump",
+   {
+    "events": [
+     "d:Space",
+     "u:Space"
+    ],
+    "menu": false,
+    "y": 6.94
+   }
+  ],
+  [
+   "portrait-360x740 duck",
+   {
+    "events": [
+     "d:ControlLeft",
+     "u:ControlLeft"
+    ],
+    "menu": false,
+    "y": 7.3
+   }
+  ],
+  [
+   "portrait-360x740 use",
+   {
+    "events": [
+     "d:KeyF",
+     "u:KeyF"
+    ],
+    "menu": false,
+    "y": 6.33
+   }
+  ],
+  [
+   "portrait-360x740 c",
+   {
+    "events": [
+     "d:KeyC",
+     "u:KeyC"
+    ],
+    "menu": false,
+    "y": 6.33
+   }
+  ],
+  [
+   "portrait-360x740 buy",
+   {
+    "events": [
+     "u:KeyB"
+    ],
+    "menu": true,
+    "y": 6.33
+   }
+  ],
+  [
+   "portrait-360x740 fire",
+   {
+    "before": [
+     null,
+     null,
+     "[]"
+    ],
+    "after": [
+     null,
+     null
+    ]
+   }
+  ],
+  [
+   "layout landscape-740x360",
+   {
+    "vw": 740,
+    "vh": 360,
+    "btn": {
+     "fire": [
+      558,
+      249,
+      630,
+      321
+     ],
+     "jump": [
+      647,
+      222,
+      699,
+      274
+     ],
+     "duck": [
+      648,
+      295,
+      698,
+      345
+     ],
+     "reload": [
+      459,
+      302,
+      503,
+      346
+     ],
+     "zoom": [
+      463,
+      243,
+      509,
+      289
+     ],
+     "swap": [
+      570,
+      205,
+      614,
+      249
+     ],
+     "pause": [
+      350,
+      23,
+      390,
+      63
+     ],
+     "c": [
+      222,
+      165,
+      266,
+      209
+     ],
+     "q": [
+      326,
+      165,
+      370,
+      209
+     ],
+     "e": [
+      429,
+      165,
+      473,
+      209
+     ],
+     "x": [
+      533,
+      165,
+      577,
+      209
+     ],
+     "plant": [
+      49,
+      202,
+      99,
+      252
+     ],
+     "use": [
+      51,
+      240,
+      97,
+      286
+     ],
+     "buy": [
+      51,
+      168,
+      97,
+      214
+     ],
+     "inspect": [
+      352,
+      324,
+      388,
+      360
+     ],
+     "ping": [
+      461,
+      207,
+      501,
+      247
+     ]
+    },
+    "hud": [
+     [
+      "game",
+      [
+       0,
+       0,
+       740,
+       360
+      ],
+      ".x-cnv{position:fixed;inset:0;"
+     ],
+     [
+      "xBuy",
+      [
+       0,
+       0,
+       740,
+       360
+      ],
+      "Credits800Next round minimum27"
+     ],
+     [
+      "xb-rq",
+      [
+       636,
+       194,
+       716,
+       218
+      ],
+      "Request"
+     ],
+     [
+      "xb-rq",
+      [
+       636,
+       299,
+       716,
+       323
+      ],
+      "Request"
+     ],
+     [
+      "xb-rq",
+      [
+       278,
+       764,
+       358,
+       788
+      ],
+      "Request"
+     ],
+     [
+      "xb-rq",
+      [
+       278,
+       869,
+       358,
+       893
+      ],
+      "Request"
+     ],
+     [
+      "xb-rq",
+      [
+       636,
+       764,
+       716,
+       788
+      ],
+      "Request"
+     ],
+     [
+      "xb-rq",
+      [
+       636,
+       869,
+       716,
+       893
+      ],
+      "Request"
+     ],
+     [
+      "xb-rq",
+      [
+       636,
+       974,
+       716,
+       998
+      ],
+      "Request"
+     ],
+     [
+      "xb-rq",
+      [
+       636,
+       1079,
+       716,
+       1103
+      ],
+      "Request"
+     ],
+     [
+      "xb-rq",
+      [
+       278,
+       1226,
+       358,
+       1250
+      ],
+      "Request"
+     ],
+     [
+      "xb-rq",
+      [
+       278,
+       1331,
+       358,
+       1355
+      ],
+      "Request"
+     ],
+     [
+      "xb-rq",
+      [
+       278,
+       1436,
+       358,
+       1460
+      ],
+      "Request"
+     ],
+     [
+      "xb-rq",
+      [
+       636,
+       1226,
+       716,
+       1250
+      ],
+      "Request"
+     ],
+     [
+      "xb-rq",
+      [
+       636,
+       1331,
+       716,
+       1355
+      ],
+      "Request"
+     ],
+     [
+      "xCmB",
+      [
+       12,
+       223,
+       106,
+       244
+      ],
+      "COMMS"
+     ]
+    ]
+   }
+  ],
+  [
+   "landscape-740x360 start",
+   {
+    "x": 0,
+    "z": 41.75,
+    "y": 6.33,
+    "yaw": 0,
+    "pitch": 0,
+    "keys": {
+     "W": false,
+     "A": false,
+     "S": false,
+     "D": false,
+     "Ctrl": false,
+     "Sp": false
+    },
+    "buy": 38.70790000000038,
+    "menu": null,
+    "on": true
+   }
+  ],
+  [
+   "landscape-740x360 stick up",
+   {
+    "during": {
+     "W": true,
+     "A": false,
+     "S": false,
+     "D": false,
+     "Ctrl": false,
+     "Sp": false
+    },
+    "moved": "3.74",
+    "released": {
+     "W": false,
+     "A": false,
+     "S": false,
+     "D": false,
+     "Ctrl": false,
+     "Sp": false
+    }
+   }
+  ],
+  [
+   "landscape-740x360 aim drag",
+   {
+    "dyaw": "-0.276",
+    "dpitch": "-0.092"
+   }
+  ],
+  [
+   "landscape-740x360 jump",
+   {
+    "events": [
+     "d:Space",
+     "u:Space"
+    ],
+    "menu": null,
+    "y": 6.9
+   }
+  ],
+  [
+   "landscape-740x360 duck",
+   {
+    "events": [
+     "d:ControlLeft",
+     "u:ControlLeft"
+    ],
+    "menu": null,
+    "y": 7.44
+   }
+  ],
+  [
+   "landscape-740x360 use",
+   {
+    "events": [
+     "d:KeyF",
+     "u:KeyF"
+    ],
+    "menu": null,
+    "y": 7.26
+   }
+  ],
+  [
+   "landscape-740x360 c",
+   {
+    "events": [
+     "d:KeyC",
+     "u:KeyC"
+    ],
+    "menu": null,
+    "y": 6.28
+   }
+  ],
+  [
+   "landscape-740x360 buy",
+   {
+    "events": [
+     "u:KeyB"
+    ],
+    "menu": true,
+    "y": 6.28
+   }
+  ],
+  [
+   "landscape-740x360 fire",
+   {
+    "before": [
+     null,
+     null,
+     "[]"
+    ],
+    "after": [
+     null,
+     null
+    ]
+   }
+  ],
+  [
+   "errors",
+   []
+  ],
+  [
+   "done",
+   true
+  ]
+ ],
+ "errors": []
+}
