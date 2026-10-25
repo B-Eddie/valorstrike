@@ -651,6 +651,21 @@ body.x-cbh #game{--ha:#3d8bff;--he:#ff9f1c}
   #game .x-br small{display:none} /* weapon-name row sat under the DUCK button; mag + reserve carry the info */
   #game .x-br #xMag{font-size:28px}#game .x-br .x-rs{font-size:14px}#game .x-br em{font-size:14px}
 }
+/* portrait phones (360x740): the 5v5 top bar (alive pips + BUY PHASE timer, 524 px) ran off both edges, the 96 px minimap sat under it and under the subtitle, and the buy-phase team panel ended 10 px above the C/Q/E/X row with COMMS across the C button. Compact the bar (alive counts without pips), put the subtitle on its own clipped line, the minimap below it, the kill feed below the pause button, and the team panel higher with shorter rows. */
+@media (max-width:480px){
+  #game .x-top{gap:2px;max-width:calc(100vw - 8px)}
+  #game .x-top>*{padding:0 6px}
+  #game .x-top .x-pp{display:none}
+  #game .x-top .x-al{font-size:0}#game .x-top .x-al b{font-size:14px}
+  #game .x-top .x-tm{min-width:0;font-size:15px;letter-spacing:.04em}
+  #game .x-top .x-sc b{min-width:28px;font-size:17px}
+  #game #xSub{top:46px;left:8px;right:8px;transform:none;text-align:center;overflow:hidden;text-overflow:ellipsis;font-size:10px;letter-spacing:.06em}
+  #game #xMap{top:64px}
+  #game.x-mm #fps{left:112px;top:64px}
+  #game .hud.x-fw{top:calc(12.2vh + 28px)} /* below the portrait pause button (12.2% centre, 40 px) */
+  #xObs{top:calc(50% - 90px)}#xObs .x-obr{height:22px}#xObs .x-oba{width:16px;height:16px;font-size:10px}
+  #xCmB{padding:0 8px;letter-spacing:.04em}
+}
 /* results screen on small or short screens: everything must fit and scroll instead of clipping offscreen */
 @media (max-width:820px),(max-height:560px){
   #result{gap:10px;padding:20px 12px;justify-content:flex-start;overflow-y:auto}
