@@ -931,3 +931,20 @@ check hark-perf overlap first (it owns agent cull + nav GC).
   35->54, 55->54 with endpoint dy 0.34-0.37), lips rejected (3713->3628, 3628->3627,
   3712->3626), pocket routes around in 36 verified hops, spawns->sites green, cache
   consistent. Lifecycle 24 matches green; regen byte-identical twice.
+
+## 2026-10-25 19:01 - All-six-map climb-filter coverage + first-route cost + pre-warm
+- work/test_nav_allmaps.cjs (new): shipped nmPath/nmClimbOk/nmSegDrop/etc. vs each map's
+  production prebuilt BVH: every spawn->site route on all six maps PASS, every dy>0.321 hop
+  traversal-verified. Cold-memo first-route cost measured per parent's ask: ascent 102ms
+  (223 climb checks), bind 32, breeze 30, haven 8, lotus 4, split 3 (2-core SwiftShader;
+  real hardware lower); warm routes ~0ms via NM.routeCache.
+- Pre-warm added at map commit (native_maps_runtime.js, behind the loading overlay, after
+  NM.routeCache.clear()): both spawns -> every site, so the one-time cold cost lands in the
+  existing "Preparing the map…" phase instead of the first in-match bot plan. Loader/cache
+  behavior unchanged (uses existing nmPath; the spawn->site set is the pre-warm set).
+  Regen byte-identical twice; lifecycle 24 matches green.
+- Confirmed while here: NM.routeCache IS cleared on map commit (line 36) - no cross-map
+  stale-route bug.
+- Remaining mismatch groundwork owed (parent): intended player/server step semantics and
+  actual online correction behavior for the 0.321 client vs 0.4 server climb band, BEFORE
+  any design ask. Constants retained.
