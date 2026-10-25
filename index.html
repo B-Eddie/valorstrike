@@ -933,7 +933,7 @@ body.x-cbh #game{--ha:#3d8bff;--he:#ff9f1c}
     <h3 id="hLobMs">Daily missions</h3>
     <ul id="xLobMs"></ul>
   </aside>
-  <p class="x-foot">Fan project. Not affiliated with or endorsed by Riot Games. VALORANT models, textures and native animations © Riot Games, sourced via Kingdom Archives. Original map scenes from the community Blender ports by Cracker646. Movement animation retargeting and fallback assets: Quaternius (CC0). See models/valorant/SOURCES.md.</p>
+  <p class="x-foot">Fan project. Not affiliated with or endorsed by Riot Games. VALORANT models, textures and native animations © Riot Games, sourced via Kingdom Archives. Original map scenes from the community Blender ports by Cracker646. Movement animations retargeted from Quaternius (CC0). See models/valorant/SOURCES.md.</p>
   </div>
   <section class="x-q" id="xQueue" aria-label="Queue" hidden>
   <button class="x-qx" id="xqClose" aria-label="Close play panel">×</button>
@@ -1478,6 +1478,7 @@ body.x-cbh #game{--ha:#3d8bff;--he:#ff9f1c}
 <button type="button" class="x-cmb" id="xCmB" aria-label="Comms wheel: hold, slide, release">COMMS</button>
 <script src="https://unpkg.com/three@0.149.0/build/three.min.js"></script>
 <script src="models/valorant/manifest.js"></script>
+<script src="models/valorant/agents/manifest.js"></script>
 <script src="vendor/valorant-feel.js"></script>
 <script src="models/valorant/weapon-calibration.js"></script>
 <script src="vendor/three-mesh-bvh.umd.js"></script>
@@ -1846,7 +1847,6 @@ function xFail() {
 }
 function xGo(fn) {
   if (!xReady) { xRetryFn = fn; return xFail(); }
-  try { if (typeof xSolLoad === "function") xSolLoad(); } catch (e) {}
   try { if (typeof xGmLoad === "function") xGmLoad(); } catch (e) {} // CC0 gun models, same lazy first-launch fetch
   xLob0 = false; // perf pass 16: a mode launched, the first-load lobby no longer covers the game
   try { const pending=fn();if(pending&&pending.catch)pending.catch(e=>{if(window.xErr)window.xErr(e);}); } catch (e) { if (window.xErr) window.xErr(e); }
@@ -3093,7 +3093,7 @@ function xVo(who, txt) { try { const now = performance.now(); if (now - xVoT < 1
   if (mode === "five" && bots.filter((x) => x && x.alive).length === 1) xVo(xVoMate(), "One left!"); } catch (e) {} }; }
 { const r1 = fRound; fRound = function () { xVoK = {}; const r = r1.apply(this, arguments); xVo(xVoMate(), "Let's go, team."); return r; }; }
 { const d0 = duelKill; duelKill = function (y, sfx) { if (y && duelBot) { const h = /Headshot/.test(sfx || ""); vmKill(duelBot.name || "Chamber", h); xKiAdd(h); } return d0.apply(this, arguments); }; }
-// lobby showcase: low-poly agent with a Vandal, breathing idle, drag to turn; its WebGL context is created after first paint
+// lobby showcase: the real in-game agent model in its idle, drag to turn; its WebGL context is created after first paint
 const xLobbyAgentIdle = window.requestIdleCallback ? (f) => requestIdleCallback(f, { timeout: 600 }) : (f) => setTimeout(f, 50);
 xLobbyAgentIdle(function () {
   const cv = $("xAgent"); if (!cv) return;
@@ -3105,8 +3105,8 @@ xLobbyAgentIdle(function () {
   const rim = new THREE.DirectionalLight(0xff4655, 1); rim.position.set(-3, 2, -2); sc.add(rim);
   const ag = new THREE.Group(); sc.add(ag);
   const sh = new THREE.Mesh(new THREE.CircleGeometry(0.5, 24), new THREE.MeshBasicMaterial({ color: 0, transparent: true, opacity: 0.35 })); sh.rotation.x = -Math.PI / 2; sh.position.y = 0.005; ag.add(sh);
-  let J = null, JA = "", look = 0, cx = 0; const JC = {}; // last-picked agent (settings, default Jett); the real in-game Valorant model replaces the placeholder blocky build once loaded, per-agent cache
-  const xLobbyReal = (want, c, ready) => { // ready(display) with {m,mx,real}; null keeps the placeholder
+  let J = null, JA = "", look = 0, cx = 0; const JC = {}, wait = xvAgentWaitLabel(cv); // last-picked agent (settings, default Jett); only the real in-game model is shown, cached per agent; a progress label covers the wait
+  const xLobbyReal = (want, c, ready) => { // ready(display) with {m,mx,real}; null when the kit could not be loaded
     try {
       const slug = xvAgentName(want);
       xvAgentLoad(slug).then((kit) => {
@@ -3132,17 +3132,15 @@ xLobbyAgentIdle(function () {
     const w = cv.clientWidth, h = cv.clientHeight; if (!w || !h) return;
     if (w !== w0 || h !== h0) { w0 = w; h0 = h; r.setSize(w, h, false); cam.aspect = w / h; cam.updateProjectionMatrix(); }
     { let want = "Jett"; try { want = (typeof S !== "undefined" && S && S.lastAg) || "Jett"; } catch (e) {}
-      if (!J || JA !== want) { try { const c = parseInt(agCol(want).slice(1), 16), m = JC[want] || (JC[want] = xAgent(want, c, "Vandal")); if (J) ag.remove(J.m); J = m; JA = want; ag.add(J.m); rim.color.setHex(c); rim.intensity = 0.7; // placeholder first so the stage is never empty
-        xLobbyReal(want, c, (rm) => { if (!rm || JA !== want) return; if (J) ag.remove(J.m); J = rm; ag.add(J.m); }); // swap to the actual in-game model when it arrives
-      } catch (e) { if (!J) return; JA = want; } } } // Vandal uses the shared skin material, recoloured on skin change
+      if (JA !== want) { JA = want; if (J) { ag.remove(J.m); J = null; } try { const c = parseInt(agCol(want).slice(1), 16); rim.color.setHex(c); rim.intensity = 0.7;
+        if (JC[want]) { J = JC[want]; ag.add(J.m); wait(null); }
+        else { wait(xvAgentName(want)); xLobbyReal(want, c, (rm) => { if (JA !== want) return; if (!rm) { setTimeout(() => { if (JA === want && !J) JA = ""; }, 3000); return; } JC[want] = rm; if (J) ag.remove(J.m); J = rm; ag.add(J.m); wait(null); }); } // nothing on stage until the real model is in
+      } catch (e) { JA = want; } } }
     const t = performance.now() / 1000, br = Math.sin(t * 1.6);
     if (dx === null) { rotY += vel; vel *= 0.93; rotY += (-0.4 - rotY) * 0.02; }
     { const hw = innerWidth / 2 || 1, nx = cx ? (cx - hw) / hw : 0, tg = Math.max(-0.349, Math.min(0.349, nx * 0.349)); look += (tg - look) * 0.06; } // slow eased turn toward the cursor, clamped ±20°
     ag.rotation.y = rotY + look; ag.rotation.z = Math.sin(t * 0.5) * 0.012;
-    if (J.real) { J.mx.update(0.033); } else { J.bd.scale.set(1 + br * 0.01, 1 + br * 0.012, 1 + br * 0.01); J.bd.position.y = br * 0.006;
-    J.bd.rotation.set(br * 0.01, Math.sin(t * 0.35) * 0.04, Math.sin(t * 0.6) * 0.015);
-    J.aL.rotation.x = -1.25 + br * 0.03; J.aR.rotation.x = -1.35 + br * 0.03;
-    J.hd.rotation.set(-br * 0.03, Math.sin(t * 0.45) * 0.18, 0); }
+    if (J) J.mx.update(0.033);
     r.render(sc, cam);
   })();
 });
@@ -3397,68 +3395,9 @@ const XAG = {
   Breach: { t: 0xe0702a, p: 0x8a5a2e, h: 0x34302c, s: 0xc8946a, x: "" },
   Cypher: { t: 0xeeeeea, p: 0x8a8c90, h: 0xdcdcd8, s: 0xe0b896, x: "", e: 0x3fd0c0 },
 };
-// rigged Soldier.glb (Idle/Walk/Run) replaces the primitive bodies once loaded; on any failure the primitives stay
-const XSOL = { g: null, s: 1.05, y: 0, up: [], mx: [], ck: new THREE.Clock() };
-function xSolLoad() {
-  if (XSOL.ld) return; XSOL.ld = true;
-  if (!XSOL.ubT) { XSOL.ubT = 1; try { return xUbLoad(() => { XSOL.ld = false; xSolLoad(); }); } catch (e) { XSOL.ld = false; } return xSolLoad(); } // CC0 Quaternius rig first; Soldier.glb only when it fails
-  // one download; every bot/agent is a SkeletonUtils clone sharing geometry + xSolKit materials
-  try {
-    if (!THREE.GLTFLoader || !THREE.SkeletonUtils) return;
-    new THREE.GLTFLoader().load("https://cdn.jsdelivr.net/gh/mrdoob/three.js@r149/examples/models/gltf/Soldier.glb", (gltf) => {
-      try {
-        const t = gltf.scene; t.updateMatrixWorld(true);
-        const bx = new THREE.Box3().setFromObject(t), h = bx.max.y - bx.min.y;
-        XSOL.s = h > 0.5 && h < 5 ? 1.92 / h : 1.05; XSOL.y = h > 0.5 && h < 5 ? -bx.min.y * XSOL.s : 0;
-        XSOL.g = gltf;
-        XSOL.up.splice(0).forEach((M) => { try { if (!M.dead && !M.sx) xSol(M); } catch (e) { console.warn("soldier upgrade failed", e); } });
-      } catch (e) { XSOL.g = null; console.warn("Soldier model unusable; keeping primitive agents", e); }
-    }, undefined, (e) => console.warn("Soldier model failed to load; keeping primitive agents", e));
-  } catch (e) { console.warn("GLTFLoader unavailable; keeping primitive agents", e); }
-}
-function xSol(M) {
-  if (XSOL.g && XSOL.g.ub) return xUb(M);
-  const G = XSOL.g, A = XAG[xAgOf(M.nm)], tint = new THREE.Color(A ? A.t : M.rim), wht = new THREE.Color(0xffffff);
-  const sc = THREE.SkeletonUtils.clone(G.scene), wr = new THREE.Group();
-  wr.add(sc); wr.scale.setScalar(XSOL.s); wr.position.y = XSOL.y; wr.rotation.y = Math.PI; // Soldier faces -Z, the agents face +Z
-  const inGun = (o) => { for (let p = o; p; p = p.parent) if (p === M.gun) return true; return false; };
-  M.m.traverse((o) => { if (o.isMesh && o !== M.ring && !inGun(o)) o.visible = false; }); // primitive body off, ring and weapon stay
-  const K = xSolKit(M.nm, M.rim); // shared per agent + team; an instance clones its own only when flashed or fading (solOwn)
-  sc.traverse((o) => {
-    if (!o.isMesh) return;
-    o.castShadow = true; o.raycast = XNR; // K.mat clones, tints and marks userData.agent + team rim per agent (cached)
-    { const g = o.geometry; if (g && !g.userData.xBS) { g.computeBoundingSphere(); g.boundingSphere.radius *= 1.25; g.userData.xBS = true; } o.frustumCulled = true; } // bind-pose sphere (~0.95 m) padded to ~1.2 m for animated limbs; computed once per shared geometry
-    o.material = Array.isArray(o.material) ? o.material.map((m) => K.mat(m, o)) : K.mat(o.material, o);
-  });
-  const mx = new THREE.AnimationMixer(sc), acts = {};
-  G.animations.forEach((c) => (acts[c.name] = mx.clipAction(c)));
-  if (acts.Idle) acts.Idle.play(); mx.update(0);
-  M.m.add(wr); M.m.updateMatrixWorld(true);
-  let hb = null; sc.traverse((o) => { if (!hb && o.isBone && /RightHand/.test(o.name)) hb = o; });
-  if (hb && M.gun && M.gun.parent) {
-    const rel = new THREE.Matrix4().copy(M.m.matrixWorld).invert().multiply(hb.matrixWorld), p = new THREE.Vector3(), q = new THREE.Quaternion(), s = new THREE.Vector3();
-    rel.decompose(p, q, s);
-    const hold = new THREE.Group(); hold.quaternion.copy(q.invert()); hold.scale.set(1 / s.x, 1 / s.y, 1 / s.z); // aligned to the agent's frame and scale in the idle pose
-    hb.add(hold); hold.add(M.gun); M.gun.position.set(0, 0.02, 0.06);
-  }
-  const bone = (re) => { let b = null; sc.traverse((o) => { if (!b && o.isBone && re.test(o.name)) b = o; }); return b; };
-  const pin = (b, obj, align) => { // obj authored in agent-frame meters; align also undoes the bone's rotation (idle pose)
-    if (!b || !obj) return; const p = new THREE.Vector3(), q = new THREE.Quaternion(), s = new THREE.Vector3();
-    new THREE.Matrix4().copy(M.m.matrixWorld).invert().multiply(b.matrixWorld).decompose(p, q, s);
-    const g = new THREE.Group(); if (align) g.quaternion.copy(q.invert()); g.scale.set(1 / s.x, 1 / s.y, 1 / s.z); g.add(obj); b.add(g);
-  };
-  pin(bone(/Head$/), K.head && K.head.clone(), true);
-  pin(bone(/LeftArm$/), K.band.clone(), false); // team armband, along the upper-arm bone
-  M.xAt = []; M.xAv = true; // LOOK pass: silhouette attachments per bone, hidden with the bot when culled
-  if (K.att) [["head", /Head$/], ["spine", /Spine2$/], ["hips", /Hips$/], ["lfa", /LeftForeArm$/, 1], ["rfa", /RightForeArm$/, 1], ["lul", /LeftUpLeg$/], ["rul", /RightUpLeg$/]].forEach(([k, re, own]) => {
-    const src = K.att[k]; if (!src || !src.children.length) return; const b = bone(re); if (!b) return;
-    const o = src.clone(); pin(b, o, !own); M.xAt.push(o.parent); // own: authored in the bone's frame (+Y runs along the bone), so it follows every arm pose
-  });
-  M.solOwn = () => { M.solOwn = null; wr.traverse((o) => { if (!o.isMesh || inGun(o)) return; o.material = xSolOwnM(o.material, M.mats); }); };
-  M.sx = { mx, acts, cur: "Idle" }; XSOL.mx.push(M);
-}
-// per-agent look on the shared Soldier body: tint + primitive accessories, built once per agent + team and cached
-const XSK = {};
+// every live agent rig; bodies are always the real Valorant models (valorant_runtime.js), never a stand-in
+const XSOL = { mx: [], ck: new THREE.Clock() };
+// per-agent accent colours (first-person arms)
 const XSA = {
   // b body tint, d secondary (dark texels), v visor, e/ei emissive accent
   Jett: { b: 0xeef6fb, d: 0x8cc4e8, v: 0x6fc4ff, k: 0.85 }, Phoenix: { b: 0xff6a1a, d: 0x16141a, v: 0xfff4e6, k: 0.9 }, Sova: { b: 0x1a2c5e, d: 0xeef0f4, v: 0x9fd0ff, k: 0.92 },
@@ -3466,81 +3405,10 @@ const XSA = {
   Omen: { b: 0x161b38, d: 0x0a0c1a, v: 0x6a7cff, k: 0.95, e: 0x5a50ff, ei: 0.2 }, Killjoy: { b: 0xf3cf2a, d: 0x2f9a42, v: 0x3fae4a, k: 0.85 },
   Raze: { b: 0xff8a1f, d: 0x3a5a2a, v: 0xc8e04a, k: 0.88 },
 };
-// safe material clone: arrays map element-wise; anything without .clone() comes back unchanged
-const xIsMat = (m) => !!m && typeof m.clone === "function";
-function xSolOwnM(m, out) {
-  if (Array.isArray(m)) return m.map((x) => xSolOwnM(x, out));
-  if (!xIsMat(m)) return m;
-  const n = m.clone(); if (!n) return m; if (n.userData) n.userData.agent = 1; try { xRimM(n, m._xrC, m._xsC); } catch (e) {} if (out) out.push(n); return n;
-}
-function xSolKit(nm, rim) {
-  const key = nm + "|" + rim; if (XSK[key]) return XSK[key];
-  const A = XAG[xAgOf(nm)], S = XSA[xAgOf(nm)] || { b: A ? A.t : rim, v: 0x8a8f99, k: 0.65 }, wht = new THREE.Color(0xffffff), cache = new Map();
-  const mat = (m, o) => {
-    if (Array.isArray(m)) return m.map((x) => mat(x, o));
-    if (!xIsMat(m)) return m;
-    if (cache.has(m)) return cache.get(m);
-    const c = m.clone(); if (!c) return m; c.userData = c.userData || {}; const vis = /visor|glass|eye/i.test((m.name || "") + " " + ((o && o.name) || ""));
-    if (c.color) c.color.copy(wht).lerp(new THREE.Color(vis ? S.v : S.b), vis ? 0.85 : S.k);
-    if (c.emissive) c.emissive.setHex(vis ? S.v : S.e || 0x000000).multiplyScalar(vis ? (S.e ? 0.6 : 0.3) : S.ei || 0);
-    c.userData.agent = 1; xRimM(c, rim, vis ? null : S.d); // team rim colour + agent two-tone, per cached material
-    cache.set(m, c); return c;
-  };
-  const H = new THREE.Group(), L = (c) => XLM(c), Gl = (c) => new THREE.MeshBasicMaterial({ color: c });
-  const add = (geo, m, x, y, z, rx, ry, rz) => { const o = new THREE.Mesh(geo, m); o.position.set(x, y, z); o.rotation.set(rx || 0, ry || 0, rz || 0); o.raycast = XNR; o.castShadow = true; m.userData.agent = 1; xRimM(m, rim); H.add(o); return o; };
-  const hood = (c) => { const m = L(c); m.side = THREE.DoubleSide; add(new THREE.SphereGeometry(0.155, 14, 8, Math.PI * 0.8, Math.PI * 1.4, 0, Math.PI * 0.64), m, 0, 0.1, -0.01); add(new THREE.BoxGeometry(0.2, 0.12, 0.05), m, 0, -0.02, -0.13, 0.3); };
-  if (nm === "Jett") { const sc = L(0x9fd3f0); add(new THREE.TorusGeometry(0.1, 0.035, 6, 14), sc, 0, -0.02, 0, Math.PI / 2); add(new THREE.BoxGeometry(0.07, 0.24, 0.02), sc, 0.05, -0.13, -0.1, 0.35, 0, 0.2); add(new THREE.CylinderGeometry(0.035, 0.012, 0.2, 6), L(0xf2f4f7), 0, 0.1, -0.16, 0.7); }
-  if (nm === "Phoenix") { add(new THREE.TorusGeometry(0.1, 0.03, 6, 14), L(0xfff4e6), 0, -0.02, 0, Math.PI / 2); add(new THREE.ConeGeometry(0.06, 0.13, 6), Gl(0xff9a2a), 0, 0.25, 0.02); }
-  if (nm === "Sova") hood(0x1e2f5a);
-  if (nm === "Sage") { add(new THREE.CylinderGeometry(0.04, 0.018, 0.5, 6), L(0x16181c), 0, -0.08, -0.16, 0.15); add(new THREE.SphereGeometry(0.03, 8, 6), L(0xf4f7f6), 0, 0.15, -0.15); }
-  if (nm === "Reyna") add(new THREE.BoxGeometry(0.17, 0.025, 0.02), Gl(0xc040ff), 0, 0.1, 0.125);
-  if (nm === "Omen") { hood(0x14151f); add(new THREE.BoxGeometry(0.14, 0.03, 0.02), Gl(0x45d0ff), 0, 0.1, 0.13); }
-  if (nm === "Killjoy") {
-    const bn = L(0x2a6a4a); add(new THREE.SphereGeometry(0.14, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2), bn, 0, 0.13, 0); add(new THREE.SphereGeometry(0.04, 8, 6), bn, 0, 0.28, 0);
-    const fr = L(0x1a1a1a), ln = Gl(0x7ff6ff); [-0.048, 0.048].forEach((x) => { add(new THREE.TorusGeometry(0.036, 0.011, 6, 14), fr, x, 0.12, 0.125); add(new THREE.CircleGeometry(0.03, 12), ln, x, 0.12, 0.127); });
-  }
-  const att = xSolAtt(xAgOf(nm), rim);
-  const bm = new THREE.MeshBasicMaterial({ color: rim, side: THREE.DoubleSide }), band = new THREE.Mesh(new THREE.CylinderGeometry(0.068, 0.068, 0.07, 12, 1, true), bm);
-  band.position.y = 0.12; band.raycast = XNR;
-  return (XSK[key] = { mat, head: H.children.length ? H : null, band, att });
-}
-// LOOK pass: original simple silhouette pieces per agent, in agent-frame meters (+Z forward) relative to each bone; geometries shared globally, materials per kit; no shadows, no randomness
-const XATG = {};
-function xSolAtt(ag, rim) {
-  const gg = (k, f) => XATG[k] || (XATG[k] = f()), T = THREE, mc = {};
-  const L = (c, ds) => { const k = c + (ds ? "d" : ""); if (mc[k]) return mc[k]; const m = XLM(c); if (ds) m.side = T.DoubleSide; m.userData.agent = 1; xRimM(m, rim); return (mc[k] = m); };
-  const Gl = (c) => mc["g" + c] || (mc["g" + c] = Object.assign(new T.MeshBasicMaterial({ color: c }), { userData: { agent: 1 } }));
-  const R = { head: new T.Group(), spine: new T.Group(), hips: new T.Group(), lfa: new T.Group(), rfa: new T.Group(), lul: new T.Group(), rul: new T.Group() };
-  const add = (g, geo, m, x, y, z, rx, ry, rz) => { const o = new T.Mesh(geo, m); o.position.set(x, y, z); o.rotation.set(rx || 0, ry || 0, rz || 0); o.raycast = XNR; o.castShadow = o.receiveShadow = false; R[g].add(o); return o; };
-  const box = (w, h, d) => gg("b" + w + "," + h + "," + d, () => new T.BoxGeometry(w, h, d));
-  const cyl = (a, b, h, s, open) => gg("c" + [a, b, h, s, open ? 1 : 0], () => new T.CylinderGeometry(a, b, h, s || 10, 1, !!open));
-  if (ag === "Jett") { const s = L(0x9fd3f0); add("spine", box(0.08, 0.3, 0.02), s, 0.06, 0.05, -0.14, 0.25, 0, 0.15); add("spine", box(0.07, 0.22, 0.02), s, -0.02, 0.07, -0.145, 0.3, 0, -0.1); add("head", gg("pt", () => new T.ConeGeometry(0.03, 0.16, 6)), L(0xf2f4f7), 0, 0.03, -0.14, 2.6); }
-  if (ag === "Phoenix") { const c = L(0x16141a, true); add("spine", cyl(0.12, 0.105, 0.12, 12, true), c, 0, 0.24, -0.01, -0.12); add("spine", box(0.05, 0.1, 0.012), L(0xff9a2a), 0.06, 0.25, 0.1, 0, 0.5); }
-  if (ag === "Sova") { add("spine", gg("bow", () => new T.TorusGeometry(0.36, 0.014, 4, 18, Math.PI)), L(0xd8c49a), 0, 0.02, -0.17, 0, 0, Math.PI / 2 + 0.5); add("spine", box(0.006, 0.7, 0.006), L(0xeef0f4), 0, 0.02, -0.16, 0, 0, 0.5); }
-  if (ag === "Sage") { const r = L(0x2bb5a5, true), p = gg("sgp", () => { const g = new T.PlaneGeometry(1, 0.42, 4, 4), q = g.attributes.position; // tapered cloth panel: 0.11 m at the hip to 0.18 m at the hem, wrapped around the leg, pointed hem
-      for (let i = 0; i < q.count; i++) { const x = q.getX(i), y = q.getY(i), t = 0.5 - y / 0.42, w = 0.11 + 0.07 * t, px = x * w; q.setXYZ(i, px, y - (0.5 - Math.abs(x)) * 0.05 * t, -px * px * 3.2); }
-      g.computeVertexNormals(); return g; });
-    [["lul", 1], ["rul", -1]].forEach(([k, s]) => [[0.19, -0.16, 0], [-0.16, 0.16, Math.PI]].forEach(([z, rx, ry]) => add(k, p, r, s * 0.03, -0.15, z, rx, ry, (ry ? -s : s) * 0.14))); } // four robe panels (front/back per leg), on the upper-leg bones, flared out
-  if (ag === "Reyna") { const p = L(0x2a0e3a), g = Gl(0xff3ad8), sp = gg("sp", () => new T.SphereGeometry(0.075, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2)); [-1, 1].forEach((s) => { add("spine", sp, p, s * 0.19, 0.16, 0, 0, 0, -s * 0.35); add("spine", box(0.09, 0.012, 0.012), g, s * 0.2, 0.175, 0.05, 0, 0, -s * 0.35); }); }
-  if (ag === "Omen") { const c = L(0x14151f, true); add("head", gg("oh", () => new T.SphereGeometry(0.17, 12, 8, Math.PI * 0.75, Math.PI * 1.5, 0, Math.PI * 0.7)), c, 0, 0.09, -0.02); [[-0.11, 0.62], [-0.04, 0.74], [0.03, 0.56], [0.1, 0.68]].forEach(([x, h]) => add("spine", box(0.07, h, 0.012), c, x, 0.12 - h / 2, -0.16, 0.08)); }
-  if (ag === "Killjoy") { add("head", cyl(0.128, 0.128, 0.035, 14, true), L(0x1a1a1a, true), 0, 0.12, 0); add("head", gg("kb", () => new T.SphereGeometry(0.15, 12, 6, 0, Math.PI * 2, 0, Math.PI / 2)), L(0x2a6a4a), 0, 0.15, -0.005); }
-  if (ag === "Raze") { const b = L(0x3a5a2a); add("spine", box(0.3, 0.34, 0.18), b, 0, -0.02, -0.22); add("spine", box(0.22, 0.12, 0.06), L(0xff8a1f), 0, -0.1, -0.33); add("spine", cyl(0.04, 0.04, 0.2, 8), L(0xc8e04a), 0.17, 0.1, -0.22); }
-  if (ag === "Breach") { const b = L(0x4a3a2a), g = L(0xff7a2a); ["lfa", "rfa"].forEach((k) => { add(k, box(0.15, 0.24, 0.15), b, 0, 0.13, 0); add(k, box(0.16, 0.04, 0.16), g, 0, 0.03, 0); }); } // bone frame: +Y runs from elbow to wrist
-  if (ag === "Skye") add("spine", box(0.4, 0.5, 0.015), L(0x3f7a3a, true), 0, -0.08, -0.17, 0.12);
-  if (ag === "Chamber") { const t = L(0x1c1a20); [-0.07, 0.07].forEach((x) => add("hips", box(0.13, 0.38, 0.02), t, x, -0.18, -0.13, 0.12, 0, x * 0.8)); add("hips", box(0.32, 0.06, 0.03), L(0xc8a24a), 0, 0.03, -0.12); }
-  if (ag === "Cypher") { const h = L(0xe8e2d6); add("head", cyl(0.25, 0.25, 0.014, 18), h, 0, 0.17, 0); add("head", cyl(0.1, 0.12, 0.13, 12), h, 0, 0.23, 0); add("head", cyl(0.122, 0.122, 0.025, 12), L(0x1a1a1a), 0, 0.185, 0); add("head", box(0.16, 0.1, 0.02), L(0xd8dde4), 0, 0.04, 0.13); add("head", box(0.1, 0.012, 0.012), Gl(0x6ff0ff), 0, 0.07, 0.142); }
-  return R;
-}
-function xSolAnim(M, sp) {
-  const X = M.sx, n = sp < 0.35 ? "Idle" : sp < 3.4 ? "Walk" : "Run", a = X.acts[n]; if (!a) return;
-  if (n !== X.cur) { const o = X.acts[X.cur]; a.reset().setEffectiveWeight(1).play(); if (o) a.crossFadeFrom(o, 0.2, false); X.cur = n; }
-  a.timeScale = n === "Walk" ? Math.max(0.6, Math.min(1.6, sp / 1.6)) : n === "Run" ? Math.max(0.7, Math.min(1.5, sp / 5)) : 1;
-}
-// ---- CC0 agent rig: Quaternius Universal Base Characters (male / female base bodies + hair) driven by Universal Animation Library 1 + 2 clips
-// (models/agent_m.glb, agent_f.glb, agent_anims.glb; see models/LICENSES.txt). Loaded on the first xGo; any failure falls back to Soldier.glb, then the primitives.
-// One AnimationMixer per agent, three layers: lower body (locomotion), upper body (weapon pose / reload / casts), full body (plant, deaths), plus additive fire recoil + hit flinch.
-var XUB = { F: { m: "models/agent_m.glb", f: "models/agent_f.glb", a: "models/agent_anims.glb" }, src: {}, ok: false, C: {}, L: {}, U: {}, A: {} };
-// game state -> clip in agent_anims.glb (all original Quaternius animations; strafe, backpedal, crouch depth and aim pitch are layered on top in code)
+// ---- Agent animation layers: one AnimationMixer per agent, three layers: lower body (locomotion), upper body (weapon pose / reload / casts),
+// full body (plant, deaths), plus additive fire recoil + hit flinch. Rigs and clips come from the native Valorant kits (valorant_runtime.js).
+var XUB = { src: {}, ok: false }; // no stand-in body downloads; FPA sees ok=false
+// game state -> retargeted locomotion clip (strafe, backpedal, crouch depth and aim pitch are layered on top in code)
 const XUB_ST = { idle: "Idle_Loop", walk: "Walk_Loop", run: "Jog_Fwd_Loop", strafeL: "Walk_Loop", strafeR: "Walk_Loop", back: "Walk_Loop", crouch: "Crouch_Idle_Loop", crouchWalk: "Crouch_Fwd_Loop",
   jump: "Jump_Start", fall: "Jump_Loop", land: "Jump_Land", aim: "Pistol_Aim_Neutral", fire: "Pistol_Shoot", reload: "Pistol_Reload", cast: "Spell_Simple_Shoot", throw: "OverhandThrow",
   hit: "Hit_Chest", hitHead: "Hit_Head", plant: "Fixing_Kneeling", defuse: "Fixing_Kneeling", knife: "Sword_Idle", death1: "Death01", death2: "Death02" };
@@ -3549,118 +3417,6 @@ const XUB_AG = { Jett: ["f", "Hair_Buns"], Phoenix: ["m", "Hair_SimpleParted"], 
   Killjoy: ["f", "Hair_BuzzedFemale"], Omen: ["m", ""], Skye: ["f", "Hair_Long"], Chamber: ["m", "Hair_SimpleParted"], Breach: ["m", "Hair_Buzzed Hair_Beard"], Cypher: ["m", "Hair_Buzzed"] };
 const XUB_UP = /^(spine_02|spine_03|neck_01|Head|clavicle|upperarm|lowerarm|hand|thumb|index|middle|ring|pinky)/; // upper-body layer bones; the rest (root, pelvis, spine_01, legs) is the lower layer
 const XUB_LO = ["idle", "walk", "run", "crouch", "crouchWalk", "fall", "jump", "land"], XUB_UPN = ["aim", "knife", "reload", "cast", "throw"], XUB_FU = ["plant", "death1", "death2"];
-function xUbLoad(fail) {
-  if (!THREE.GLTFLoader || !THREE.SkeletonUtils || !THREE.AnimationMixer) return fail();
-  const L = new THREE.GLTFLoader(), ks = Object.keys(XUB.F); let left = ks.length, bad = false;
-  const done = () => { if (--left > 0) return; if (bad) return fail(); try { xUbReady(); } catch (e) { console.warn("agent models unusable; Soldier fallback", e); XUB.ok = false; fail(); } };
-  ks.forEach((k) => { try { L.load(XUB.F[k], (g) => { XUB.src[k] = g; done(); }, undefined, (e) => { console.warn("agent model failed: " + k, e); bad = true; done(); }); } catch (e) { bad = true; done(); } });
-}
-function xUbReady() {
-  const A = XUB.src.a; if (!A || !A.animations || !XUB.src.m || !XUB.src.f) throw new Error("agent files incomplete");
-  A.animations.forEach((c) => (XUB.C[c.name] = c));
-  for (const k in XUB_ST) if (!XUB.C[XUB_ST[k]]) throw new Error("clip missing: " + XUB_ST[k]);
-  const part = (c, up) => new THREE.AnimationClip(c.name + (up ? "_U" : "_L"), c.duration, c.tracks.filter((t) => XUB_UP.test(t.name.split(".")[0]) === up));
-  for (const n in XUB.C) { XUB.L[n] = part(XUB.C[n], false); XUB.U[n] = part(XUB.C[n], true); }
-  const AU = THREE.AnimationUtils; // additive one-shots relative to their first frame (falls back to plain blending if unavailable)
-  ["Pistol_Shoot", "Hit_Chest", "Hit_Head"].forEach((n) => { try { if (AU && AU.makeClipAdditive) XUB.A[n] = AU.makeClipAdditive(XUB.U[n].clone()); } catch (e) {} });
-  ["m", "f"].forEach((k) => { const t = XUB.src[k].scene; t.updateMatrixWorld(true); const bx = new THREE.Box3().setFromObject(t), h = bx.max.y - bx.min.y, ok = h > 0.5 && h < 5;
-    XUB["s" + k] = ok ? 1.92 / h : 1; XUB["y" + k] = ok ? -bx.min.y * XUB["s" + k] : 0; }); // same 1.92 m normalisation as Soldier: head bone ~1.66 m, inside the 1.75 m head hitbox
-  XUB.up = new THREE.Vector3(0, 1, 0); XUB.rt = new THREE.Vector3(1, 0, 0);
-  XUB.ok = true; XSOL.g = { ub: true };
-  XSOL.up.splice(0).forEach((M) => { try { if (!M.dead && !M.sx) xSol(M); } catch (e) { console.warn("agent upgrade failed", e); } });
-}
-// per agent + team materials (Lambert like the scene; the body texture only on the face / neck zone), shared by every clone of that agent
-function xUbKit(nm, rim) {
-  const key = "ub|" + nm + "|" + rim; if (XSK[key]) return XSK[key];
-  const base = xSolKit(nm, rim), ag = xAgOf(nm), A = XAG[ag] || { t: rim, p: 0x2a2f38, h: 0x1a1a1a, s: 0xd9a382 }, S = XSA[ag] || {}, cache = new Map();
-  const col = { Suit: S.b != null ? S.b : A.t, Pants: A.p, Gloves: S.d != null ? S.d : 0x1c1e22, Boots: new THREE.Color(A.p).multiplyScalar(0.45).getHex(), Hair: A.h, Brow: A.h, Skin: A.s, Eyes: 0xffffff };
-  const mat = (m) => {
-    if (Array.isArray(m)) return m.map(mat);
-    if (!xIsMat(m)) return m;
-    if (cache.has(m)) return cache.get(m);
-    const n = m.name || "", c = new THREE.MeshLambertMaterial({ color: col[n] != null ? col[n] : 0x8a8f99, map: m.map || null, name: n });
-    if (n === "Skin") { c.color.multiplyScalar(1.12); c.color.r = Math.min(1, c.color.r); c.color.g = Math.min(1, c.color.g); c.color.b = Math.min(1, c.color.b); }
-    if (n === "Suit" && S.e) c.emissive.setHex(S.e).multiplyScalar(S.ei || 0.15);
-    if (n === "Hair" || n === "Brow") c.side = THREE.DoubleSide;
-    c.userData.agent = 1; xRimM(c, rim, null); cache.set(m, c); return c;
-  };
-  const belt = XLM(0x1a1b1f), bk = new THREE.MeshBasicMaterial({ color: A.t }); belt.side = THREE.DoubleSide; belt.userData.agent = 1; xRimM(belt, rim, null);
-  const boot = XLM(col.Boots); boot.userData.agent = 1; xRimM(boot, rim, null); // procedural boots (the base body's Boots mesh is a bare foot with toes, so it is dropped)
-  return (XSK[key] = { mat, head: base.head, band: base.band, att: base.att, belt, bk, boot });
-}
-function xUb(M) {
-  const ag = xAgOf(M.nm), h = String(M.nm || "").length, cfg = XUB_AG[ag] || (h % 2 ? ["f", ["Hair_Long", "Hair_Buns", "Hair_BuzzedFemale"][h % 3]] : ["m", ["Hair_Buzzed", "Hair_SimpleParted"][h % 2]]);
-  const k = cfg[0], G = XUB.src[k], sc = THREE.SkeletonUtils.clone(G.scene), wr = new THREE.Group(), hair = cfg[1].split(" ");
-  wr.add(sc); wr.scale.setScalar(XUB["s" + k]); wr.position.y = XUB["y" + k]; // the rig faces +Z like the agents: no flip
-  const inGun = (o) => { for (let p = o; p; p = p.parent) if (p === M.gun) return true; return false; };
-  M.m.traverse((o) => { if (o.isMesh && o !== M.ring && !inGun(o)) o.visible = false; }); // primitive body off, ring and weapon stay
-  const K = xUbKit(M.nm, M.rim), drop = [];
-  sc.traverse((o) => {
-    if (!o.isMesh) return;
-    if ((/^Hair_/.test(o.name) && hair.indexOf(o.name) < 0) || (o.material && o.material.name === "Boots")) { drop.push(o); return; } // bare-foot Boots mesh replaced by xUbBoot
-    o.castShadow = true; o.raycast = XNR;
-    { const g = o.geometry; if (g && !g.userData.xBS) { g.computeBoundingSphere(); g.boundingSphere.radius *= 1.25; g.userData.xBS = true; } o.frustumCulled = true; }
-    o.material = K.mat(o.material);
-  });
-  drop.forEach((o) => o.parent && o.parent.remove(o));
-  const mx = new THREE.AnimationMixer(sc), bone = (n) => sc.getObjectByName(n);
-  M.m.add(wr);
-  const pin = (b, obj, align) => { // obj authored in agent-frame meters; align also undoes the bone's rotation (idle pose)
-    if (!b || !obj) return null; const p = new THREE.Vector3(), q = new THREE.Quaternion(), s = new THREE.Vector3();
-    new THREE.Matrix4().copy(M.m.matrixWorld).invert().multiply(b.matrixWorld).decompose(p, q, s);
-    const g = new THREE.Group(); if (align) g.quaternion.copy(q.invert()); g.scale.set(1 / s.x, 1 / s.y, 1 / s.z); g.add(obj); b.add(g); return g;
-  };
-  // accessories pinned in the idle pose, the weapon in the aim pose (barrel along the agent's facing)
-  let ra = mx.clipAction(XUB.C.Idle_Loop); ra.play(); mx.update(0.01); M.m.updateMatrixWorld(true);
-  pin(bone("Head"), K.head && K.head.clone(), true);
-  pin(bone("upperarm_l"), K.band.clone(), false);
-  M.xAt = []; M.xAv = true;
-  if (K.att) [["head", "Head"], ["spine", "spine_03"], ["hips", "pelvis"], ["lfa", "lowerarm_l", 1], ["rfa", "lowerarm_r", 1], ["lul", "thigh_l"], ["rul", "thigh_r"]].forEach(([a, n, own]) => {
-    const src = K.att[a]; if (!src || !src.children.length) return; const g = pin(bone(n), src.clone(), !own); if (g) M.xAt.push(g);
-  });
-  { // belt over the suit / trousers seam (geometry shared per body), small buckle in the agent colour
-    const f = k === "f", bg = XUB.bg || (XUB.bg = new THREE.CylinderGeometry(1, 1, 0.09, 18, 1, true)), kg = XUB.kg || (XUB.kg = new THREE.BoxGeometry(0.05, 0.04, 0.012));
-    const g = new THREE.Group(), bl = new THREE.Mesh(bg, K.belt), bq = new THREE.Mesh(kg, K.bk); bl.scale.set(f ? 0.192 : 0.175, 1, f ? 0.145 : 0.142); bq.position.set(0, 0, (f ? 0.145 : 0.142) + 0.004);
-    g.add(bl, bq); g.position.set(0, f ? 0.128 : 0.122, f ? 0.01 : 0.025); g.traverse((o) => { if (o.isMesh) o.raycast = XNR; });
-    const pg = pin(bone("pelvis"), g, true); if (pg) M.xAt.push(pg);
-    ["foot_l", "foot_r"].forEach((n) => { const c = new THREE.Mesh(bg, K.boot); c.scale.set(f ? 0.06 : 0.066, 1.5, f ? 0.068 : 0.074); c.position.y = 0.002; c.raycast = XNR; const cg = pin(bone(n), c, true); if (cg) M.xAt.push(cg); }); // boot shafts (cuffs) over the ankle seam
-    const yw = (sd) => { const a = bone("foot_" + sd), b = bone("ball_" + sd); if (!a || !b) return 0; const iv = new THREE.Matrix4().copy(M.m.matrixWorld).invert(), p = new THREE.Vector3().setFromMatrixPosition(a.matrixWorld).applyMatrix4(iv), q = new THREE.Vector3().setFromMatrixPosition(b.matrixWorld).applyMatrix4(iv); return Math.atan2(q.x - p.x, q.z - p.z); }; // idle foot heading (the right foot turns out ~44 deg)
-    xUbBoot(K, yw).forEach(([n, o]) => { const g = pin(bone(n), o, true); if (g) M.xAt.push(g); }); // boot body on foot_*, toe cap on ball_* (bends with the toes)
-  }
-  ra.stop(); ra = mx.clipAction(XUB.C.Pistol_Aim_Neutral); ra.play(); mx.update(0.05); M.m.updateMatrixWorld(true);
-  const hb = bone("hand_r");
-  if (hb && M.gun && M.gun.parent) { const hold = new THREE.Group(), p = new THREE.Vector3(), q = new THREE.Quaternion(), s = new THREE.Vector3();
-    new THREE.Matrix4().copy(M.m.matrixWorld).invert().multiply(hb.matrixWorld).decompose(p, q, s); hold.quaternion.copy(q.invert()); hold.scale.set(1 / s.x, 1 / s.y, 1 / s.z); hb.add(hold);
-    hold.add(M.gun); M.gun.position.set(0, 0.0, 0.03); M.gun.rotation.x = 0; }
-  ra.stop(); mx.stopAllAction();
-  const X = { mx, a: {}, w: {}, ub: 1, sc, b: { pelvis: bone("pelvis"), spine_01: bone("spine_01"), spine_02: bone("spine_02"), spine_03: bone("spine_03") },
-    cb: 0, yaw: 0, pit: 0, sn: 0, shots: 0, hp: null, uo: null, ut: 0, lo: null, lt: 0, air: false, py: null, px: null, pz: null, cur: "idle", acts: null };
-  const mk = (n, set, once) => { const c = (set === "L" ? XUB.L : set === "U" ? XUB.U : XUB.C)[XUB_ST[n]]; const a = mx.clipAction(c); if (once) { a.setLoop(THREE.LoopOnce, 1); a.clampWhenFinished = true; } X.a[n] = a; X.w[n] = 0; };
-  XUB_LO.forEach((n) => mk(n, "L", n === "jump" || n === "land")); XUB_UPN.forEach((n) => mk(n, "U", n === "reload" || n === "cast" || n === "throw")); XUB_FU.forEach((n) => mk(n, "F", n !== "plant"));
-  X.ad = {}; [["fire", "Pistol_Shoot"], ["hit", "Hit_Chest"], ["hitHead", "Hit_Head"]].forEach(([n, c]) => { if (!XUB.A[c]) return; const a = mx.clipAction(XUB.A[c]); a.blendMode = THREE.AdditiveAnimationBlendMode; a.setLoop(THREE.LoopOnce, 1); X.ad[n] = a; });
-  X.w.idle = X.w.aim = 1; X.a.idle.play(); X.a.aim.play(); mx.update(0); // standing rifle pose until the unit's state drives it (agent select previews keep this)
-  X.acts = X.a;
-  M.solOwn = () => { M.solOwn = null; wr.traverse((o) => { if (!o.isMesh || inGun(o)) return; o.material = xSolOwnM(o.material, M.mats); }); };
-  M.ub = 1; M.sx = X; XSOL.mx.push(M);
-}
-// procedural boots, agent-frame meters relative to the foot / ball bones in the idle pose (measured from the base bodies' foot meshes); geometry shared by every agent
-function xUbBoot(K, yw) { // boot frame: origin at the foot bone, +Z along the idle foot heading (foot -> ball), +X toward the agent's left; the foot sits ~1.8 cm off-centre toward the big toe
-  const G = XUB.bt || (XUB.bt = (() => {
-    const rb = (sx, sy, sz) => { const g = new THREE.BoxGeometry(1, 1, 1, 4, 3, 6), p = g.attributes.position; // superellipse-rounded box
-      for (let i = 0; i < p.count; i++) { const x = p.getX(i), y = p.getY(i), z = p.getZ(i), m = Math.max(Math.abs(x), Math.abs(y), Math.abs(z)), k = m / Math.pow(x ** 6 + y ** 6 + z ** 6, 1 / 6); p.setXYZ(i, x * k * sx, y * k * sy, z * k * sz); }
-      g.computeVertexNormals(); return g; };
-    return { up: rb(0.136, 0.135, 0.25), cap: rb(0.136, 0.072, 0.15), sole: new THREE.BoxGeometry(0.14, 0.022, 0.24), ts: new THREE.BoxGeometry(0.14, 0.022, 0.135) };
-  })());
-  const out = [];
-  ["l", "r"].forEach((sd) => {
-    const mk = (geo, m, x, y, z) => { const o = new THREE.Mesh(geo, m); o.position.set(x, y, z); o.raycast = XNR; o.castShadow = true; return o; };
-    const a = new THREE.Group(), b = new THREE.Group(), xs = sd === "l" ? 1 : -1; a.rotation.y = b.rotation.y = yw(sd);
-    a.add(mk(G.up, K.boot, 0.018 * xs, -0.03, 0.05), mk(G.sole, K.belt, 0.018 * xs, -0.098, 0.04));
-    b.add(mk(G.cap, K.boot, 0.018 * xs, 0.0, 0.022), mk(G.ts, K.belt, 0.018 * xs, -0.035, 0.03));
-    out.push(["foot_" + sd, a], ["ball_" + sd, b]);
-  });
-  return out;
-}
 // one-shot triggers
 function xUbOnce(X, n, set, dur) { const a = X.a[n]; if (!a) return; a.reset(); a.timeScale = dur ? a.getClip().duration / dur : 1; a.play(); if (set === "U") { X.uo = n; X.ut = dur || a.getClip().duration; } else { X.lo = n; X.lt = dur || a.getClip().duration; } }
 function xUbAdd(X, n, w) { const a = X.ad && X.ad[n]; if (!a) return; a.reset(); a.setEffectiveWeight(w); a.play(); }
@@ -3761,47 +3517,20 @@ try { const a0 = SFX.at; if (typeof a0 === "function") SFX.at = function (p) { t
     } else { if (M.ub) xUbPre(M); M.sx.mx.update(d); if (M.ub) xUbPost(M); }
   }
 })();
-// Soldier.glb is fetched on the first mode launch (xGo), not at startup; until then agents use the primitive bodies
+// agent root: the pivots the game drives (body / head / limbs), the team ring and the held weapon. The visible body is always the
+// real Valorant rig, attached by xvAttach (valorant_runtime.js) as soon as that agent's kit is in memory; there is no stand-in body.
 function xAgent(name, rim, w) {
-  const A = XAG[xAgOf(name)] || { t: [0x8a6a45, 0x5a7a8a, 0x7a5a8a][String(name || "").length % 3], p: 0x2a2f38, h: 0x1a1a1a, s: 0xd9a382, x: "" };
-  const mats = [], L = (c) => { const m = XLM(c); mats.push(m); return m; };
-  const top = L(A.t), pants = L(A.p), hair = L(A.h), sk = L(A.s), white = L(0xf2f2f2), dark = L(0x121318);
-  top.emissive.setHex(rim).multiplyScalar(0.12);
-  const rimM = new THREE.MeshBasicMaterial({ color: rim, transparent: true }); mats.push(rimM);
+  const mats = [], rimM = new THREE.MeshBasicMaterial({ color: rim, transparent: true }); mats.push(rimM);
   const m = new THREE.Group(), bd = new THREE.Group(); m.add(bd);
-  const B = (p, w_, h, d, mt, x, y, z) => gB(p, w_, h, d, mt, x, y, z);
-  const hip = (x) => { const l = new THREE.Group(); l.position.set(x, 0.9, 0); B(l, 0.17, 0.86, 0.2, pants, 0, -0.43, 0); B(l, 0.18, 0.12, 0.26, dark, 0, -0.84, 0.03); m.add(l); return l; };
+  const hip = (x) => { const l = new THREE.Group(); l.position.set(x, 0.9, 0); m.add(l); return l; };
   const lL = hip(0.12), lR = hip(-0.12);
-  B(bd, 0.5, 0.62, 0.3, top, 0, 1.21, 0); B(bd, 0.52, 0.06, 0.32, rimM, 0, 0.93, 0);
-  B(bd, 0.14, 0.06, 0.2, rimM, 0.3, 1.53, 0); B(bd, 0.14, 0.06, 0.2, rimM, -0.3, 1.53, 0);
-  B(bd, 0.12, 0.08, 0.12, sk, 0, 1.55, 0); B(bd, 0.26, 0.28, 0.26, sk, 0, 1.72, 0);
-  const has = (k) => A.x.split(" ").includes(k);
-  if (!has("beanie") && !has("hood")) { B(bd, 0.28, 0.1, 0.28, hair, 0, 1.86, -0.01); B(bd, 0.28, 0.2, 0.06, hair, 0, 1.76, -0.13); }
-  const arm = (x) => { const a = new THREE.Group(); a.position.set(x, 1.47, 0); B(a, 0.13, 0.6, 0.15, top, 0, -0.28, 0); B(a, 0.11, 0.11, 0.11, sk, 0, -0.62, 0); bd.add(a); return a; };
+  const arm = (x) => { const a = new THREE.Group(); a.position.set(x, 1.47, 0); bd.add(a); return a; };
   const aL = arm(0.31), aR = arm(-0.31);
-  if (has("bun")) { const o = new THREE.Mesh(new THREE.IcosahedronGeometry(0.09, 0), hair); o.position.set(0, 1.86, -0.17); bd.add(o); }
-  if (has("stripe")) { B(bd, 0.08, 0.6, 0.02, white, 0.12, 1.21, 0.16); B(bd, 0.08, 0.6, 0.02, white, -0.12, 1.21, 0.16); B(bd, 0.4, 0.08, 0.32, white, 0, 1.5, 0); }
-  if (has("hood")) { B(bd, 0.34, 0.06, 0.32, top, 0, 1.89, -0.02); B(bd, 0.34, 0.38, 0.06, top, 0, 1.72, -0.16); B(bd, 0.04, 0.34, 0.3, top, 0.16, 1.73, -0.01); B(bd, 0.04, 0.34, 0.3, top, -0.16, 1.73, -0.01); }
-  if (has("bow")) { const bw = L(0x6a4a2a), o = new THREE.Mesh(new THREE.TorusGeometry(0.42, 0.018, 4, 16, Math.PI), bw); o.position.set(0.02, 1.2, -0.21); o.rotation.z = -Math.PI / 2 + 0.3; bd.add(o); const s = B(bd, 0.006, 0.82, 0.006, white, 0.02, 1.2, -0.21); s.rotation.z = 0.3; }
-  if (has("robe")) B(bd, 0.56, 0.45, 0.36, has("hood") ? top : white, 0, 0.75, 0);
-  if (has("long")) B(bd, 0.28, 0.45, 0.06, hair, 0, 1.6, -0.15);
-  if (has("eyes")) { const em = new THREE.MeshBasicMaterial({ color: A.e, transparent: true }); mats.push(em); B(bd, 0.06, 0.025, 0.01, em, 0.06, 1.74, 0.135); B(bd, 0.06, 0.025, 0.01, em, -0.06, 1.74, 0.135); }
-  if (has("pack")) { B(bd, 0.38, 0.44, 0.2, L(0x6a4a2a), 0, 1.18, -0.25); const tb = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.5, 8), dark); tb.position.set(0.16, 1.35, -0.3); bd.add(tb); mats.push(tb.material); }
-  if (has("beanie")) { const bn = L(0x2a6a4a); B(bd, 0.3, 0.14, 0.3, bn, 0, 1.9, 0); B(bd, 0.08, 0.08, 0.08, bn, 0, 2.0, 0); }
-  if (has("glasses")) B(bd, 0.24, 0.05, 0.02, dark, 0, 1.75, 0.135);
-  if (has("suit")) { B(bd, 0.12, 0.3, 0.02, white, 0, 1.36, 0.155); B(bd, 0.04, 0.26, 0.025, dark, 0, 1.33, 0.16); }
-  if (has("braid")) B(bd, 0.07, 0.4, 0.07, hair, 0, 1.55, -0.16);
-  const ring = new THREE.Mesh(new THREE.RingGeometry(0.42, 0.48, 24), rimM); ring.rotation.x = -Math.PI / 2; ring.position.y = 0.02; m.add(ring);
-  m.traverse((o) => { if (o.isMesh) o.raycast = XNR; });
+  const ring = new THREE.Mesh(new THREE.RingGeometry(0.42, 0.48, 24), rimM); ring.rotation.x = -Math.PI / 2; ring.position.y = 0.02; ring.raycast = XNR; m.add(ring);
   const g = xGun(w); g.rotation.y = Math.PI; g.position.set(-0.1, 1.22, 0.32); bd.add(g);
   aR.rotation.set(-1.35, 0, 0.15); aL.rotation.set(-1.25, 0, -0.55);
-  // head pivot at the neck so the head can pitch with the aim
-  const hd = new THREE.Group(); hd.position.set(0, 1.55, 0);
-  bd.children.filter((o) => o.isMesh && o.position.y >= 1.6 && Math.abs(o.position.x) <= 0.2).forEach((o) => { o.position.y -= 1.55; hd.add(o); });
-  bd.add(hd);
-  const R = { m, bd, hd, lL, lR, aL, aR, gun: g, ring, mats, nm: name, rim, w };
-  try { if (XSOL.g) xSol(R); else if (XSOL.up.length < 60) XSOL.up.push(R); } catch (e) { console.warn("soldier clone failed; primitive kept", e); }
-  return R;
+  const hd = new THREE.Group(); hd.position.set(0, 1.55, 0); bd.add(hd); // head pivot at the neck so the head can pitch with the aim
+  return { m, bd, hd, lL, lR, aL, aR, gun: g, ring, mats, nm: name, rim, w };
 }
 const XDEAD = [];
 function xDie(b) {
@@ -4073,7 +3802,7 @@ function xVisB(b, dt, now, isAlly) {
     const P = b.g.position, sp = Math.min(8, Math.hypot(P.x - b.xp.x, P.z - b.xp.z) / dt); b.xp.x = P.x; b.xp.z = P.z;
     b.xwk += (Math.min(1, sp / 4) - b.xwk) * Math.min(1, dt * 8); b.xph += dt * (4 + sp * 1.6);
     const s = Math.sin(b.xph) * b.xwk, M = b.xm;
-    if (M.sx) { if (M.ub) xUbAnim(b, M, sp, dt); else xSolAnim(M, sp); }
+    if (M.sx) xUbAnim(b, M, sp, dt);
     M.lL.rotation.x = s * 0.7; M.lR.rotation.x = -s * 0.7;
     // aim pitch toward the target: enemies at the player's eye, allies at the nearest live enemy's head
     let ty = null, hz = 1;
@@ -8744,6 +8473,7 @@ function agView(a) { // big idle 3D preview of the hovered agent
   }
   const c = parseInt(agCol(a).slice(1), 16);
   let m = AGV.c[a]; if (!m) { try { m = AGV.c[a] = xAgent(a, c, "Vandal"); } catch (e) { return; } }
+  try { AGV.wait = AGV.wait || xvAgentWaitLabel($("xAgCv")); AGV.wait(m.valorant ? null : xvAgentName(a)); } catch (e) {} // real model only: progress while its kit loads
   if (AGV.cur && AGV.cur !== m) AGV.g.remove(AGV.cur.m); AGV.cur = m; AGV.g.add(m.m); AGV.rim.color.setHex(c);
 }
 function agentSelect(go) {
@@ -12406,19 +12136,129 @@ function xvStatic(gl, config) {
   }); mx.stopAllAction(); return out;
 }
 function xvAgentName(n) { const a = xAgOf(n); return XUB_AG[a] ? a : Object.keys(XUB_AG)[String(n || '').split('').reduce((s,c) => s + c.charCodeAt(0), 0) % 12]; }
+// Agent assets (#10): optimized third-person models plus one shared locomotion file (work/build_agent_assets.cjs).
+// Every file is fetched in parallel from the moment the page opens, kept in Cache Storage under its content hash so
+// repeat visits skip the network, and integrity-checked before it is stored. Kits are built in pick order.
+var XVA = { files: (window.VALORANT_AGENT_FILES || {}).files || {}, dir: 'models/valorant/agents/', buf: {}, got: {}, kits: {}, loco: null, cache: null, subs: [], tries: 4, wait: 800, started: false };
+function xvaUrl(f) { const m = XVA.files[f]; return XVA.dir + f + (m && m.sha256 ? '?v=' + m.sha256.slice(0, 16) : ''); }
+function xvaNotify() { XVA.subs.slice().forEach((f) => { try { f(); } catch (e) {} }); }
+function xvaHex(b) { return Array.from(new Uint8Array(b), (x) => x.toString(16).padStart(2, '0')).join(''); }
+function xvaCache() {
+  if (XVA.cache) return XVA.cache;
+  const C = typeof caches !== 'undefined' && caches && typeof caches.open === 'function' ? caches : null;
+  return XVA.cache = !C ? Promise.resolve(null) : C.open('valorstrike-agents').then((c) => {
+    const want = new Set(Object.keys(XVA.files).map((f) => new URL(xvaUrl(f), location.href).href)); // drop superseded versions
+    Promise.resolve(c.keys()).then((ks) => ks.forEach((k) => { if (!want.has(k.url)) c.delete(k); })).catch(() => {});
+    return c;
+  }).catch(() => null);
+}
+function xvaVerify(f, b) {
+  const m = XVA.files[f], S = typeof crypto !== 'undefined' && crypto && crypto.subtle;
+  if (!m || !m.sha256 || !S) return Promise.resolve(!!m);
+  return S.digest('SHA-256', b).then((h) => xvaHex(h) === m.sha256, () => false);
+}
+function xvaDownload(f, url) {
+  return fetch(url).then((r) => {
+    if (!r.ok) throw new Error(f + ' HTTP ' + r.status);
+    const rd = r.body && r.body.getReader && r.body.getReader(); if (!rd) return r.arrayBuffer();
+    const parts = []; let n = 0;
+    const pump = () => rd.read().then(({ done, value }) => { if (done) return; parts.push(value); n += value.byteLength; XVA.got[f] = n; xvaNotify(); return pump(); });
+    return pump().then(() => { const out = new Uint8Array(n); let o = 0; parts.forEach((p) => { out.set(p, o); o += p.byteLength; }); return out.buffer; });
+  });
+}
+// Bytes of one agent asset: Cache Storage first, then the network (stored only when the hash matches the manifest).
+function xvaFetch(f) {
+  if (XVA.buf[f]) return XVA.buf[f];
+  const url = xvaUrl(f);
+  return XVA.buf[f] = xvaCache().then((c) => Promise.resolve(c && c.match(url)).catch(() => null).then((hit) => hit ? hit.arrayBuffer() : xvaDownload(f, url).then((b) => {
+    if (c) xvaVerify(f, b).then((ok) => { if (ok) return c.put(url, new Response(b.slice(0), { headers: { 'content-type': 'application/octet-stream' } })); console.warn('agent asset hash mismatch, not cached: ' + f); }).catch(() => {});
+    return b;
+  }))).then((b) => { XVA.got[f] = b.byteLength; xvaNotify(); return b; }).catch((e) => { delete XVA.buf[f]; XVA.got[f] = 0; throw e; });
+}
+function xvaRetry(job, label) { let n = 0; const go = () => job().catch((e) => { if (++n >= XVA.tries) { XV.failures[label] = String(e); throw e; } return new Promise((r) => setTimeout(r, XVA.wait * n)).then(go); }); return go(); }
+function xvaLoco() {
+  if (XVA.loco) return XVA.loco;
+  return XVA.loco = Promise.all([xvaFetch('locomotion.json'), xvaFetch('locomotion.bin')]).then(([j, b]) => ({ h: JSON.parse(new TextDecoder().decode(j)), f: new Float32Array(b) })).catch((e) => { XVA.loco = null; throw e; });
+}
+// Rebuild one agent's retargeted locomotion clips: local = inverse(parent world) * shared bone world * agent offset.
+function xvaClips(L, slug, root) {
+  const H = L.h, F = L.f, A = H.agents[slug]; if (!A) throw new Error('no locomotion for ' + slug);
+  const Q = THREE.Quaternion, nodes = {}, idx = {}; root.traverse((o) => { if (!(o.name in nodes)) nodes[o.name] = o; });
+  H.bones.forEach((b, k) => { idx[b] = k; if (!nodes[b]) throw new Error(slug + ' bone missing: ' + b); });
+  const info = H.bones.map((b, k) => { const o = nodes[b], rest = new Q(); let p = o.parent; const chain = [];
+    while (p && p !== root && !(p.name in idx && nodes[p.name] === p)) { chain.unshift(p); p = p.parent; }
+    chain.forEach((c) => rest.multiply(c.quaternion));
+    let depth = 0; for (let q = o.parent; q && q !== root; q = q.parent) depth++;
+    return { k, anc: p && p !== root ? idx[p.name] : -1, rest, off: new Q().fromArray(A.offset[k]), depth };
+  }).sort((x, y) => x.depth - y.depth);
+  const W = H.bones.map(() => new Q()), pw = new Q(), loc = new Q(), I = new Q();
+  return H.clips.map((c, i) => {
+    const n = c.frames, times = F.slice(c.times, c.times + n), vals = H.bones.map(() => new Float32Array(n * 4));
+    for (let f = 0; f < n; f++) for (const b of info) {
+      const o = c.world + (b.k * n + f) * 4; W[b.k].set(F[o], F[o + 1], F[o + 2], F[o + 3]).multiply(b.off);
+      pw.copy(b.anc >= 0 ? W[b.anc] : I).multiply(b.rest); loc.copy(pw).invert().multiply(W[b.k]).normalize(); loc.toArray(vals[b.k], f * 4);
+    }
+    const tracks = A.order.map((name) => { const bone = name.slice(0, name.lastIndexOf('.'));
+      if (/\.position$/.test(name)) return new THREE.VectorKeyframeTrack(name, times, F.slice(A.pelvis[i], A.pelvis[i] + n * 3));
+      return new THREE.QuaternionKeyframeTrack(name, times, vals[idx[bone]]); });
+    return new THREE.AnimationClip(c.name, c.duration, tracks);
+  });
+}
+function xvaKit(gl, L, slug) {
+  const C = {}, Lo = {}, U = {}, A = {}, up = /^(Spine[234]|Neck|Head|[LR]_(Clavicle|Shoulder|Elbow|Hand|Thumb|Index|Middle|Ring|Pinky))/;
+  xvaClips(L, slug, gl.scene).forEach((c) => { c.uuid=THREE.MathUtils.generateUUID(); C[c.name] = c; Lo[c.name] = new THREE.AnimationClip(c.name + '_L', c.duration, c.tracks.filter((t) => !up.test(t.name))); U[c.name] = new THREE.AnimationClip(c.name + '_U', c.duration, c.tracks.filter((t) => up.test(t.name))); });
+  ['Pistol_Shoot','Hit_Chest','Hit_Head'].forEach((n) => { A[n] = THREE.AnimationUtils.makeClipAdditive(U[n].clone()); });
+  const S = L.h.agents[slug];
+  return { gl, C, L: Lo, U, A, contactProbes: S.contactProbes || [], contactLift: S.contactLift ? { times: S.contactLift.times, values: S.contactLift.values } : undefined };
+}
+function xvaParse(buf) { return new Promise((res, rej) => new THREE.GLTFLoader().parse(buf, XVA.dir, res, rej)); }
 function xvAgentLoad(ag) {
   if (XV.agents[ag]) return XV.agents[ag]; const slug = ag.toLowerCase();
-  return XV.agents[ag] = Promise.all([xvLoad(slug), fetch('models/valorant/' + slug + '-locomotion.json').then((r) => { if (!r.ok) throw new Error('locomotion ' + r.status); return r.json(); })]).then(([gl, data]) => {
-    const C = {}, L = {}, U = {}, A = {}, up = /^(Spine[234]|Neck|Head|[LR]_(Clavicle|Shoulder|Elbow|Hand|Thumb|Index|Middle|Ring|Pinky))/;
-    data.forEach((j) => { const c = THREE.AnimationClip.parse(j); c.uuid=THREE.MathUtils.generateUUID(); C[c.name] = c; L[c.name] = new THREE.AnimationClip(c.name + '_L', c.duration, c.tracks.filter((t) => !up.test(t.name))); U[c.name] = new THREE.AnimationClip(c.name + '_U', c.duration, c.tracks.filter((t) => up.test(t.name))); });
-    ['Pistol_Shoot','Hit_Chest','Hit_Head'].forEach((n) => { A[n] = THREE.AnimationUtils.makeClipAdditive(U[n].clone()); });
-    return { gl, C, L, U, A, contactProbes:data[0].contactProbes||[], contactLift:(data.find(c=>c.name==='Jog_Fwd_Loop')||{}).contactLift };
-  }).catch((e) => { delete XV.agents[ag]; console.warn('Valorant agent unavailable: ' + ag, e); throw e; });
+  return XV.agents[ag] = xvaRetry(() => Promise.all([xvaFetch(slug + '.glb').then(xvaParse), xvaLoco()]).then(([gl, L]) => xvaKit(gl, L, slug)), ag)
+    .then((kit) => { XVA.kits[ag] = kit; xvaNotify(); return kit; })
+    .catch((e) => { delete XV.agents[ag]; console.warn('Valorant agent unavailable: ' + ag, e); throw e; });
+}
+function xvaAll() { return Object.keys(XUB_AG); }
+function xvaFilesOf(ags) { return ags.map((a) => a.toLowerCase() + '.glb').concat(['locomotion.json', 'locomotion.bin']); }
+// Progress over a set of agents: kits built, and bytes in hand against the manifest sizes.
+function xvAgentProgress(ags) {
+  ags = ags || xvaAll(); const fs = xvaFilesOf(ags); let got = 0, total = 0;
+  fs.forEach((f) => { const t = (XVA.files[f] || {}).bytes || 0; total += t; got += Math.min(t || Infinity, XVA.got[f] || 0); });
+  const ready = ags.filter((a) => XVA.kits[a]).length;
+  return { ready, total: ags.length, bytes: got, totalBytes: total, done: ready === ags.length, frac: ags.length ? (ready === ags.length ? 1 : Math.min(.99, total ? got / total : ready / ags.length)) : 1 };
+}
+// Resolves once every listed agent (default: all twelve) has its real model; onProgress gets xvAgentProgress().
+function xvAgentsReady(ags, onProgress) {
+  ags = (ags && ags.length ? ags : xvaAll()).map((a) => xvAgentName(a)).filter((a, i, l) => l.indexOf(a) === i);
+  const tick = () => { if (onProgress) onProgress(xvAgentProgress(ags)); }; XVA.subs.push(tick); tick();
+  return Promise.all(ags.map(xvAgentLoad)).then(() => { tick(); return ags.map((a) => XVA.kits[a]); }).finally(() => { const i = XVA.subs.indexOf(tick); if (i >= 0) XVA.subs.splice(i, 1); });
+}
+// Lobby boot: every agent file downloads in parallel right away; kits are then built one at a time, the last pick first.
+function xvPreloadAgents(first) {
+  if (XVA.started) return; XVA.started = true;
+  const all = xvaAll(), lead = first && all.indexOf(first) >= 0 ? first : 'Jett', order = [lead].concat(all.filter((a) => a !== lead));
+  try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {}); } catch (e) {}
+  const head = xvaFilesOf([lead]), rest = xvaFilesOf(order.slice(1)).filter((f) => head.indexOf(f) < 0);
+  // The lobby's agent gets the whole pipe first; the other eleven then download in parallel while it is built.
+  Promise.all(head.map((f) => xvaFetch(f).catch(() => {}))).then(() => rest.forEach((f) => { xvaFetch(f).catch(() => {}); }));
+  order.reduce((p, a) => p.then(() => xvAgentLoad(a).catch(() => {})), Promise.resolve());
+}
+// Progress label over a preview canvas while its agent's real model is still on the way.
+function xvAgentWaitLabel(cv) {
+  if (!cv || !cv.parentNode) return () => {};
+  let el = cv.parentNode.querySelector(':scope > .xv-wait');
+  if (!el) { el = document.createElement('div'); el.className = 'xv-wait'; el.setAttribute('role', 'status'); el.style.cssText = 'position:absolute;left:0;right:0;bottom:12%;text-align:center;pointer-events:none;font:600 12px/1.4 system-ui,sans-serif;letter-spacing:.14em;color:rgba(236,232,225,.85);text-shadow:0 1px 3px #000'; if (getComputedStyle(cv.parentNode).position === 'static') cv.parentNode.style.position = 'relative'; cv.parentNode.appendChild(el); }
+  let sub = null;
+  return (ag) => {
+    if (sub) { const i = XVA.subs.indexOf(sub); if (i >= 0) XVA.subs.splice(i, 1); sub = null; }
+    if (!ag || XVA.kits[ag]) { el.style.display = 'none'; return; }
+    sub = () => { const p = xvAgentProgress([ag]); el.textContent = 'LOADING ' + String(ag).toUpperCase() + ' ' + Math.round(p.frac * 100) + '%'; if (p.done) el.style.display = 'none'; };
+    XVA.subs.push(sub); el.style.display = 'block'; sub();
+  };
 }
 function xvAgent(M, kit) {
   XUB.up ||= new THREE.Vector3(0,1,0); XUB.rt ||= new THREE.Vector3(1,0,0);
   if (M.dead || M.valorant) return;
-  const queued=XSOL.up.indexOf(M);if(queued>=0)XSOL.up.splice(queued,1);
   // Detach the held weapon before removing the previous rig.
   if (M.gun && M.gun.parent) { M.m.add(M.gun); M.gun.position.set(-.1, 1.22, .32); }
   if (M.sx && M.sx.sc && M.sx.sc.parent) M.m.remove(M.sx.sc.parent);
@@ -12437,10 +12277,16 @@ function xvAgent(M, kit) {
   X.a.idle.play(); X.a.aim.play(); X.w.idle = X.w.aim = 1; mx.update(.01); M.m.updateMatrixWorld(true);
   const hand = bone('R_Hand'); if (hand && M.gun) { const hold = new THREE.Group(), p=new THREE.Vector3(),q=new THREE.Quaternion(),s=new THREE.Vector3(); new THREE.Matrix4().copy(M.m.matrixWorld).invert().multiply(hand.matrixWorld).decompose(p,q,s); hold.quaternion.copy(q.invert()); hold.scale.set(1/s.x,1/s.y,1/s.z); hand.add(hold); hold.add(M.gun); M.gun.position.set(0,0,.03); M.gun.rotation.set(0,Math.PI,0); M.weaponHolder=hold; } // gun models are authored muzzle -Z: PI faces the muzzle the way the character looks
   X.contactLift=kit.contactLift;X.contactProbes=kit.contactProbes.map(p=>({o:sc.getObjectByName(p.mesh),indices:p.indices})).filter(p=>p.o&&p.o.isSkinnedMesh);X.contactV=new THREE.Vector3();X.contactInv=new THREE.Matrix4();X.contactShift=new THREE.Vector3();X.contactScale=new THREE.Vector3();X.contactFloor=bx.min.y;X.acts=X.a; M.ub=1; M.sx=X; M.valorant=1; M.xAt=[]; M.solOwn=()=>{M.solOwn=null;}; XSOL.mx.push(M);
+  if (M.xvWait) { M.xvWait = 0; if (M.gun) M.gun.visible = true; } // the weapon waited, hidden, for the body
 }
-{ const base = xUb; xUb = function(M) { if(M.dead||M.valorant)return; base(M); const ag=xvAgentName(M.nm); xvAgentLoad(ag).then((kit)=>xvAgent(M,kit)).catch(()=>{}); }; }
-// Native rigs do not depend on the legacy fallback download becoming ready.
-{const create=xAgent;xAgent=function(){const M=create.apply(this,arguments),ag=xvAgentName(M.nm);xvAgentLoad(ag).then(kit=>xvAgent(M,kit)).catch(()=>{});return M;};}
+// #11: no stand-in bodies. An agent whose kit is in memory gets its real rig immediately; otherwise it stays
+// invisible (weapon hidden too) until the kit arrives. Match loading waits on xvAgentsReady, so this is rare.
+function xvAttach(M) {
+  if (!M || M.valorant) return M; const ag = xvAgentName(M.nm), kit = XVA.kits[ag];
+  if (kit) { xvAgent(M, kit); return M; }
+  M.xvWait = 1; if (M.gun) M.gun.visible = false; xvAgentLoad(ag).then((k) => xvAgent(M, k)).catch(() => {}); return M;
+}
+{const create=xAgent;xAgent=function(){return xvAttach(create.apply(this,arguments));};}
 // Correct only the blended support-foot height after the mixer. Authored jog flight remains airborne.
 {const pre=xUbPre,post=xUbPost;xUbPre=function(M){const X=M.sx;if(X&&X.contactRestore){X.b.pelvis.position.copy(X.contactRestore);X.contactRestore=null;}return pre(M);};xUbPost=function(M){post(M);const X=M.sx;if(!X||!X.nativeContact||X.dd||M.dead||X.air||X.lo||(X.w.plant||0)>.01||!X.contactProbes.length)return;M.m.updateMatrixWorld(true);const v=X.contactV,inv=X.contactInv.copy(X.sc.matrixWorld).invert();let low=Infinity;for(const {o,indices}of X.contactProbes){o.skeleton.update();for(const i of indices){v.fromBufferAttribute(o.geometry.attributes.position,i);o.boneTransform(i,v);v.applyMatrix4(o.matrixWorld).applyMatrix4(inv);low=Math.min(low,v.y);}}let lift=0;const c=X.contactLift,a=X.a.run;if(c&&a&&(X.w.run||0)>.001){const t=a.time%c.times[c.times.length-1];let i=0;while(i<c.times.length-2&&c.times[i+1]<t)i++;const f=(t-c.times[i])/Math.max(.00001,c.times[i+1]-c.times[i]);lift=(c.values[i]*(1-f)+c.values[i+1]*f)*(X.w.run||0);}const dy=X.contactFloor+lift-low;if(!Number.isFinite(dy)||Math.abs(dy)>.5)return;X.contactRestore=X.b.pelvis.position.clone();X.b.pelvis.getWorldPosition(v);const shift=X.contactShift.set(0,1,0).transformDirection(X.sc.matrixWorld).multiplyScalar(Math.abs(dy)*X.sc.getWorldScale(X.contactScale).y);if(dy<0)shift.negate();v.add(shift);X.b.pelvis.position.copy(X.b.pelvis.parent.worldToLocal(v));M.m.updateMatrixWorld(true);};}
 // Native first-person rigs and their matching weapon animation clips. The virtual source camera faces +X.
@@ -12489,7 +12335,10 @@ function xvMapCover(g) {
   }).catch(e=>{XV.failures.cover=String(e);});
 }
 {const use=useMap;useMap=function(n){const r=use.apply(this,arguments);try{xvMapCover(MAPS[n]&&MAPS[n].g);}catch(e){}return r;};}
-window.xValorantAssets={state:XV,load:xvLoad,loadAgent:xvAgentLoad,loadFP:xvFPLoad,scene,camera,renderer,agents:()=>XSOL.mx,probe:()=>({running,mode,agent:J.pick,weapon:fpaWeap(),nativeAgents:XSOL.mx.filter(m=>m.valorant).length,nativeFP:XV.fp&&XV.fp.ag+' '+XV.fp.w,failures:XV.failures})};
+window.xValorantAssets={state:XV,agentAssets:XVA,agentsReady:xvAgentsReady,agentProgress:xvAgentProgress,load:xvLoad,loadAgent:xvAgentLoad,loadFP:xvFPLoad,scene,camera,renderer,agents:()=>XSOL.mx,probe:()=>({running,mode,agent:J.pick,weapon:fpaWeap(),nativeAgents:XSOL.mx.filter(m=>m.valorant).length,agentKits:Object.keys(XVA.kits).length,nativeFP:XV.fp&&XV.fp.ag+' '+XV.fp.w,failures:XV.failures})};
+window.xvAgentsReady=xvAgentsReady;
+// Start downloading every agent as soon as the lobby is up (idle slot right after first paint), last pick first.
+{const go=()=>{let a='Jett';try{a=(typeof S!=='undefined'&&S&&S.lastAg)||localStorage.getItem('vs.lastAg')||a;}catch(e){}try{xvPreloadAgents(xvAgentName(a));}catch(e){console.warn('agent preload',e);}};if(window.requestIdleCallback)requestIdleCallback(go,{timeout:300});else setTimeout(go,0);}
 // Physical ability devices retain their gameplay roots, hit checks and timers.
 var XV_DEVICE = {};
 function xvDevice(m, slug, height, bottom) {
@@ -12855,6 +12704,7 @@ xReady = true; // every mode is initialised; lobby launches may now start them
 .x-ld__row b{display:block;font:var(--type-tag);letter-spacing:.06em}
 .x-ld__row small{display:block;font:var(--type-caption);opacity:.7;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .x-ld__row--a li{--c:#37d6c4}.x-ld__row--b li{--c:#ff4655}
+.x-ld__ag{margin:0;font:var(--type-label);letter-spacing:.18em;text-shadow:0 2px 8px #000}.x-ld__ag:empty{display:none}
 .x-ld__tip{position:absolute;bottom:36px;left:var(--gutter);right:var(--gutter);margin:0;text-align:center;font:var(--type-small);opacity:.85}
 .x-ld__bar{position:absolute;left:0;bottom:0;height:3px;width:100%;background:#ff4655;transform-origin:left;transform:scaleX(0)}
 .x-ld__bar.is-loading{animation:x-ld-wait 1.4s ease-in-out infinite}@keyframes x-ld-wait{0%{transform:translateX(-25%) scaleX(.25)}100%{transform:translateX(100%) scaleX(.25)}}
@@ -12863,6 +12713,7 @@ xReady = true; // every mode is initialised; lobby launches may now start them
   <p class="x-ld__mode" id="xLdMode">UNRATED</p>
   <h2 class="x-ld__map" id="xLdMap">ASCENT</h2>
   <div class="x-ld__teams"><ul class="x-ld__row x-ld__row--a" id="xLdA"></ul><ul class="x-ld__row x-ld__row--b" id="xLdB"></ul></div>
+  <p class="x-ld__ag" id="xLdAg"></p>
   <p class="x-ld__tip" id="xLdTip"></p>
   <div class="x-ld__bar" id="xLdBar"></div>
 </div>
@@ -12879,7 +12730,7 @@ xReady = true; // every mode is initialised; lobby launches may now start them
     xLdSet("xLdMode", "textContent", (mode || (tab ? tab.textContent : "UNRATED")).toUpperCase());
     xLdSet("xLdMap", "textContent", String(map).toUpperCase());
     el.style.setProperty("--x-ld-bg", 'url("models/valorant/maps/'+map+'/loading.jpg") center/cover, '+PAL[map]);
-    xLdSet("xLdA", "innerHTML", ""); xLdSet("xLdB", "innerHTML", "");
+    xLdSet("xLdA", "innerHTML", ""); xLdSet("xLdB", "innerHTML", ""); xLdSet("xLdAg", "textContent", "");
     window.xLdOn = true; try { if (window.xLdKeys) window.xLdKeys(false); } catch (e) {}
     ti = Math.random() * TIPS.length | 0; tipEl.textContent = TIPS[ti];
     tipT = setInterval(function () { ti = (ti + 1) % TIPS.length; tipEl.textContent = TIPS[ti]; }, 2500);
@@ -12917,10 +12768,18 @@ xReady = true; // every mode is initialised; lobby launches may now start them
   var loadId = 0;
   var run = function (fn, map, mode, sync) {
     var id = ++loadId;show(map, mode);
-    var go = function () { return Promise.resolve().then(fn).then(function(v){if(id===loadId){fill();ready();}return v;},function(err){if(id===loadId)failed();if(err&&err.name==='AbortError')return;throw err;}); };
+    var wait = agents(id); if (wait) wait.catch(function () {});
+    var go = function () { return (wait ? wait.then(fn) : Promise.resolve().then(fn)).then(function(v){if(id===loadId){fill();ready();}return v;},function(err){if(id===loadId)failed();if(err&&err.name==='AbortError')return;throw err;}); };
     return sync || built(map) ? go() : new Promise(function(resolve,reject){requestAnimationFrame(function(){requestAnimationFrame(function(){go().then(resolve,reject);});});});
   };
   window.xCancelMatchLoad = function(){++loadId;failed();};
+  // #11: a match never starts on stand-in bodies. Every agent's real model is in memory first (usually already
+  // preloaded from the lobby); the overlay shows agent progress meanwhile. A newer load supersedes this wait.
+  var agents = function (id) {
+    var wait = window.xvAgentsReady; if (typeof wait !== "function") return null;
+    return wait(null, function (p) { if (id === loadId) xLdSet("xLdAg", "textContent", p.done ? "" : "LOADING AGENTS " + p.ready + "/" + p.total + " \u00b7 " + Math.round(p.frac * 100) + "%"); })
+      .then(function () { xLdSet("xLdAg", "textContent", ""); if (id !== loadId) { var e = new Error("superseded"); e.name = "AbortError"; throw e; } });
+  };
   window.xMatchLoad = run;
   try {
     var _ag = agentSelect;
