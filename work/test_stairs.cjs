@@ -20,4 +20,10 @@ for(const rise of [.12,.18,.22,.26,.3,.35]){const n=8,tread=.3,boxes=[floor];for
 {const w=world(mesh([floor,[-2,2,0,.6,3,6]]));const P=run(w,{x:0,z:0,y:0,vx:0,vz:0,vy:0},{x:0,z:1,speed:5.4},2);assert(P.y<.01&&P.z<3,'a 0.6 m box still blocks walking');
  const Q=run(w,{x:0,z:-2,y:0,vx:0,vz:0,vy:0},{x:0,z:1,speed:5.4},.75);const J=run(w,Q,{x:0,z:1,speed:5.4,jump:true},.7);assert(Math.abs(J.y-.6)<.03&&J.z>3,'jumping onto the box still works');}
 {const w=world(mesh([floor,[1,1.2,0,6,-5,5]]));const P={x:.55,z:0,y:3,vx:0,vz:0,vy:0};let airborne=0;run(w,P,{x:1,z:0,speed:5.4},1,(P)=>{if(P.y>.05&&P.air)airborne++;});assert(airborne>20,'sliding down a wall is airborne, not grounded');assert(P.y<.01&&!P.air,'lands on the floor');}
-console.log('Stairs: walking climbs/descends 0.12-0.35 m risers at pace without stalls, 0.6 m boxes block, jumps land, wall contact stays airborne; client/server motors identical');
+// Real Bind geometry: walking into the wall near (-11.7, 48) used to chain step-ups up the face of the wall
+// (+9 m in 3 s). The motor now refuses a step that would leave it more than ~0.48 m above the nearby floor.
+(async()=>{const {loadWorld}=await import(require('url').pathToFileURL(path.join(__dirname,'../server/src/world.js')).href),pub=path.join(__dirname,'../server/public');
+ const w=await loadWorld({fetch:async r=>new Response(fs.readFileSync(pub+new URL(r.url).pathname))},'bind');const x=-10.2,z=46.5,y0=w.ground(x,z,10),P={x,z,y:y0,vx:0,vz:0,vy:0};let top=y0;
+ for(let t=0;t<3;t+=1/60){VF.step(P,{x:-Math.SQRT1_2,z:Math.SQRT1_2,speed:5.4},1/60,w);top=Math.max(top,P.y);}
+ assert(top-y0<.8,'Bind wall is not walkable ('+(top-y0).toFixed(2)+' m climbed)');
+ console.log('Stairs: walking climbs/descends 0.12-0.35 m risers at pace without stalls, 0.6 m boxes block, jumps land, wall contact stays airborne, Bind wall not climbable; client/server motors identical');})().catch(e=>{console.error(e);process.exit(1);});
