@@ -48,6 +48,28 @@ const fails=[];const fail=s=>{fails.push(s);if(VERBOSE)console.log('FAIL',s);};c
  for(const a in wiki){if(a[0]==='_')continue;const k=kits[a],w=wiki[a];if(!k){fail('no kit '+a);continue;}eq(k.u,w.u,a+' ult points');
   for(const s of ['c','q','e']){const ws=w[s];if(!ws||(s==='e'&&!ws[1]))continue;eq(k.mx[s],ws[0],a+' '+s+' charges');const b=k.buy.find(r=>r[0]===s);eq(b&&b[2],ws[1],a+' '+s+' cost');}
   eq(JSON.stringify({u:srv[a].u,mx:srv[a].mx,buy:srv[a].buy}),JSON.stringify({u:k.u,mx:k.mx,buy:k.buy}),a+' server kits.json agrees');}
+ // ---- first-person viewmodel: equipping lowers the gun / arms / native rig and shows the hand + item; the cast restores them ----
+ pick('Phoenix');xe('ammo=Math.max(ammo,5);reloading=0;true');await tap('Digit2');await adv(900);
+ const VM=`(()=>{const F=typeof XV!=="undefined"&&XV.fp,h=XCA.h,it=XEQV.item,w=new THREE.Vector3(),c=new THREE.Vector3();gun.updateWorldMatrix(true,false);gun.getWorldPosition(w);camera.updateWorldMatrix(true,false);camera.getWorldPosition(c);
+  const cv=o=>{let v=!!o;for(let x=o;x&&v;x=x.parent)v=x.visible;return v;};
+  return {gy:+(w.y-c.y).toFixed(3),gl:+gun.position.y.toFixed(3),gv:cv(gun),fp:F&&F.root?cv(F.root):null,arms:[VMA.R,VMA.L].filter(Boolean).some(cv),hand:cv(h),item:cv(it),on:XEQV.on,eq:J.eq&&J.eq.st};})()`;
+ const v0=xe(VM);if(VERBOSE)console.log('vm idle',v0);
+ if(v0.hand||v0.item)fail('ability hand visible before equip '+JSON.stringify(v0));
+ await tap('KeyQ');await adv(700);const v1=xe(VM);if(VERBOSE)console.log('vm equipped',v1);
+ eq(v1.eq,'ready','Hot Hands in hand for the viewmodel check');
+ if(!(v0.gl-v1.gl>0.35))fail(`gun not lowered out of view while equipped: local y ${v0.gl} -> ${v1.gl}`);
+ if(v1.fp)fail('native first-person rig still visible while an ability is equipped');
+ if(v1.arms&&v1.fp!==null)fail('primitive arms visible while equipped');
+ if(!v1.hand||!v1.item)fail('ability hand / item not shown while equipped '+JSON.stringify(v1));
+ await click(0);await adv(1300);const v2=xe(VM);if(VERBOSE)console.log('vm after cast',v2);
+ eq(v2.eq,null,'cast finished');
+ if(Math.abs(v2.gl-v0.gl)>0.06)fail(`gun not back after the cast: local y ${v0.gl} -> ${v2.gl}`);
+ if(v2.hand||v2.item||v2.on)fail('ability hand / item left up after the cast '+JSON.stringify(v2));
+ if(v0.fp!==null&&v2.fp!==v0.fp)fail(`native rig visibility not restored (${v0.fp} -> ${v2.fp})`);
+ if(v2.gv!==v0.gv)fail('gun visibility not restored');
+ // the weapon key of the gun in hand (the sidearm here, no primary bought) puts the ability away and brings the gun back
+ await tap('KeyC');await adv(700);await tap('Digit2');await adv(900);const v3=xe(VM);if(Math.abs(v3.gl-v0.gl)>0.06||v3.hand)fail('weapon key did not bring the gun back '+JSON.stringify(v3));
+ if(xe('XEQV.err||null'))fail('ability viewmodel error: '+xe('XEQV.err'));
  if(H.errors.length>errs0)fail('page errors: '+H.errors.slice(errs0).map(e=>String(e&&e.message||e)).join(' | '));
- if(fails.length){console.log(fails.join('\n'));process.exit(1);}console.log('ability equip: binds, migration, HUD labels, equip -> fire flow, kit table ok');process.exit(0);
+ if(fails.length){console.log(fails.join('\n'));process.exit(1);}console.log('ability equip: binds, migration, HUD labels, equip -> fire flow, first-person equip viewmodel, kit table ok');process.exit(0);
 })().catch(e=>{console.error(e);process.exit(1);});
