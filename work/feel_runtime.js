@@ -14,7 +14,7 @@ const wRaw=function(W,part,distance){const w=Object.keys(WEAP).find(k=>WEAP[k]==
 const wDmg0=wDmg;
 wDmg=function(W,part,distance){const v=wRaw(W,part,distance);if(v==null)return wDmg0(W,part,distance);const d=Math.floor(v);return W.pel&&!xPelOn?Math.min(150,Math.round(d*W.pel*Math.max(.08,Math.min(.6,.75-distance/((W.ffd||15)*3))))):d;};
 xWkDmg=function(W,part,distance,k){const v=wRaw(W,part,distance);return v==null?Math.round(wDmg(W,part,distance)*k):Math.floor(v*k);};
-xEq=function(w){return w==='Knife'?.75:vfProfile(w).equipTimeSeconds;};
+xEq=function(w){return w==='Knife'?.6:vfProfile(w).equipTimeSeconds;}; // knife: wiki Melee equip 0.6 s (normal)
 xRate=function(W){const w=Object.keys(WEAP).find(k=>WEAP[k]===W),p=VF.profiles[w];return ads&&p&&p.adsStats?p.adsStats.fireRate:W.rate;};
 xSCf=function(z){return 2*Math.atan(Math.tan(VF_C.verticalFov*Math.PI/360)/z)*180/Math.PI;};
 xTag=function(t){if(!t)return;t.tagT=.5;t.tagK=.275;t.tagS=0;};
@@ -46,12 +46,17 @@ gFire=function(d,w,W){const M=VF.model;M.sprayReset(VF,w,VF.time);const cone=gSp
 // swings lasted ~4.8 s. Equip and reload follow the weapon's equip/reload times (weapons.json, as the server); inspect
 // the 2.2 s inspect window; every other clip its authored SequenceLength. A bolt/pump fire montage (cycle >= 0.5 s)
 // finishes within the fire interval, so the gun is ready in hand exactly when the next shot is allowed.
+// Knife swing visual (authored montages, measured on FP_Melee.glb at their SequenceLength): the light slash peaks 0.2 s in and
+// is over by 0.28 s, the arm is back at idle (< 2 cm) by 1.0 s and the montage then pads to 1.92 s; the heavy jab is back by
+// ~1.75 s of 2.17 s. The montage ends there (crossfade to idle) instead of holding a near-idle pose to 1.92 / 2.17 s. chain: a
+// light swing within this many seconds of the previous one continues the three-swing combo (xvKnCombo).
+var XVK={light:1,heavy:1.75,chain:.65};
 function vfDuration(F,kind,entry){const p=vfProfile(F.w);if(kind==='equip')return xEq(F.w);if(kind==='reload')return p.reloadTimeSeconds;if(kind==='inspect')return (typeof VM!=='undefined'&&VM.insT)||2.2;const seq=entry&&+entry.SequenceLength;if(!(seq>0))return null;if(kind==='fire'&&p.fireRate>0&&1/p.fireRate>=.5)return Math.min(seq,1/p.fireRate);return seq;}
 // Fire cadence multipliers the server applies (simulation.js: concussed x0.8, Empress x1.15). The shot wrapper below
 // replaced the base cadence with the plain profile rate, which dropped both.
 function vfRateK(){let k=1;try{if(typeof xCU!=='undefined'&&xCU>performance.now())k*=.8;const online=typeof NET!=='undefined'&&NET.socket;if(online?!!(typeof netReyna!=='undefined'&&netReyna&&netReyna.empress):(typeof jOn==='function'&&jOn()&&J.emp>0))k*=1.15;}catch(e){}return k;}
 xvFPPlay=function(F,kind,phase){const label=kind==='idle'?'Idle':kind.charAt(0).toUpperCase()+kind.slice(1),entry=F.entries.find(e=>e.Translatable===label)||F.entries.find(e=>e.Translatable.startsWith(label));if(!entry)return;
- if(F.kind!==kind){const prior=F.action,priorGun=F.gaction,arm=F.ac[entry.Name],gunAction=F.gc[entry.WeaponAnimName||'Idle'];F.kind=kind;F.action=arm;F.gaction=gunAction;F.age=0;const duration=vfDuration(F,kind,entry);F.duration=duration||(arm?arm.getClip().duration:.2);
+ if(F.kind!==kind){const prior=F.action,priorGun=F.gaction,arm=F.ac[entry.Name],gunAction=F.gc[entry.WeaponAnimName||'Idle'];F.kind=kind;F.action=arm;F.gaction=gunAction;F.age=0;const duration=vfDuration(F,kind,entry);F.duration=duration||(arm?arm.getClip().duration:.2);if(F.w==='Knife'&&typeof XVK!=='undefined'&&/ttack/.test(kind))F.duration=Math.min(F.duration,kind==='alt Attack'?XVK.heavy:XVK.light);
   for(const [action,previous]of [[arm,prior],[gunAction,priorGun]])if(action){action.enabled=true;action.reset().setEffectiveWeight(1).setEffectiveTimeScale(duration?action.getClip().duration/duration:1);action.setLoop(kind==='idle'?THREE.LoopRepeat:THREE.LoopOnce,kind==='idle'?Infinity:1);action.clampWhenFinished=kind!=='idle';action.play();if(previous&&previous!==action)action.crossFadeFrom(previous,kind==='fire'?.025:.065,false);}
  }
  if(phase!=null){for(const action of [F.action,F.gaction])if(action)action.time=Math.min(action.getClip().duration-.0001,Math.max(0,phase)*action.getClip().duration);F.am.update(0);F.gm.update(0);}
