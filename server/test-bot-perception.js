@@ -71,8 +71,13 @@ function tick(s,b,dt=1/30){s.time+=dt;const L0=b.look;s.bot(b);botView(s,b,L0,dt
  out.push('glimpse 100 ms: '+g100+' shots; jiggle 250 ms x4: '+jDeaths+'/'+jN+' died, '+jShots+' shots');}
 // 7. fire-rate cap
 {let worst=0,total=0,span=0;for(let k=0;k<10;k++){const {s,t,b}=duo(k,{tz:-6});t.hp=1e9;const times=[];for(let i=0;i<240;i++){const r=tick(s,b,1/60);t.hp=1e9;b.ammo=1e9;if(r.shots)times.push(s.time);}
-  for(let i=0;i<times.length;i++){let n=0;for(let j=i;j<times.length&&times[j]-times[i]<1-1e-9;j++)n++;worst=Math.max(worst,n);}for(let i=1;i<times.length;i++){const g=times[i]-times[i-1];assert.ok(g>=1/9.75-1e-6,'Vandal gap '+g.toFixed(4)+' s');}total+=times.length;span+=4;}
- assert.ok(worst<=10,'at most 10 Vandal rounds in any 1 s window ('+worst+')');out.push('Vandal: '+worst+' rounds max in 1 s, min gap >= '+(1/9.75).toFixed(4)+' s');}
+  for(let i=0;i<times.length;i++){let n=0;for(let j=i;j<times.length&&times[j]-times[i]<1-1e-9;j++)n++;worst=Math.max(worst,n);}for(let i=1;i<times.length;i++){const g=times[i]-times[i-1];/* bots-tune-2: a shot lands on the first tick at or after it is due, so one gap may be up to a tick short of 1/rate while the cadence holds */assert.ok(g>=1/9.75-1/60-1e-6,'Vandal gap '+g.toFixed(4)+' s');}total+=times.length;span+=4;}
+ assert.ok(worst<=10,'at most 10 Vandal rounds in any 1 s window ('+worst+')');
+ // bots-tune-2: and the full cadence on the real 50 ms server tick (worker.js) and at 60 Hz: a held trigger fires 9.75/s
+ // (it was 6.67/s at 20 Hz - every 0.1026 s interval rounded up to 3 ticks - and 8.57/s at 60 Hz), never more
+ const rates=[];for(const dt of [.05,1/60]){const {s,t,b}=duo(0,{tz:-6});t.hp=1e9;b.ammo=1e9;b.input={fire:true};b.inputAt=1e9;const T=[];s.tickDt=dt;for(let i=0;i<Math.round(3/dt);i++){b.input={fire:true};b.ammo=1e9;s.fire(b);T.push(...(b.shotAt===s.time?[s.time]:[]));s.time+=dt;}
+  const r=(T.length-1)/(T[T.length-1]-T[0]);rates.push(r);assert.ok(r>9.5&&r<=9.75+1e-6,'held Vandal cadence at '+(1/dt).toFixed(0)+' Hz: '+r.toFixed(2)+'/s (9.75)');}
+ out.push('Vandal: '+worst+' rounds max in 1 s, min gap >= 1/9.75 - 1 tick, held cadence 20 / 60 Hz '+rates.map(r=>r.toFixed(2)).join(' / ')+'/s');}
 // 8. Spike-mode sound reactions on the shared hearing model (bots-tune-1; before: steps only < 16 m at > 4.5 m/s, no casts)
 {const SG={...G(),map:{attacker:[-20,0,20],defender:[20,0,-20],sites:{A:[-8,0,0],B:[8,0,0]}}};
  const react=(kind,d,{weapon='Vandal',walk=false}={})=>{const s=new SpikeSimulation(SG,'five','ascent',()=>.5),b=s.add('Bot Sage','Sage',false),e=s.add('Enemy','Jett',true);s.phase='game';s.round=2;s.atk=1;s.buy=0;

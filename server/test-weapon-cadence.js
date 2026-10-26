@@ -39,7 +39,7 @@ for(const [w,B] of Object.entries(C.burst)){
  // a reload mid-burst ends it
  const z=run(w,true,.2,t=>t<.004,1);assert.equal(z.shots.length,1,w+': one round left, no more shots');z.s.command(z.a,{t:'reload'});assert.equal(z.a.cad.left,0,w+': the reload ended the burst');
 }
-{const r=run('Odin',false,1.4),rate=r.gaps.map(g=>1/g);close(rate[0],12,.8,'Odin first gap ~12/s');assert.ok(rate.at(-1)>15,'Odin spun up past 15/s: '+rate.at(-1));for(let i=1;i<rate.length;i++)assert.ok(rate[i]>=rate[i-1]-.8,'Odin ramps up, never down while held');
+{const r=run('Odin',false,1.4),rate=r.gaps.map(g=>1/g);close(rate[0],12,.8,'Odin first gap ~12/s');assert.ok(rate.at(-1)>15,'Odin spun up past 15/s: '+rate.at(-1));for(let i=1;i<r.gaps.length;i++)assert.ok(r.gaps[i]<=r.gaps[i-1]+.0051,'Odin ramps up, never down while held (a gap at most one 5 ms tick longer than the last: the fire clock carries the part of a tick a round was already due, 79a1ee0)');
  const ad=run('Odin',true,.6);for(const x of ad.gaps)close(x,1/15.6,.0051,'Odin ADS 15.6 at once');
  const p=run('Odin',false,1.6,t=>t<.6||t>1.0),late=p.shots.filter(t=>t>1.0),g2=late[1]-late[0];close(1/g2,12,.8,'Odin: a pause past 0.25 s spins back down to 12');}
 {const r=run('Vandal',true,.6);for(const x of r.gaps)close(x,1/weapons.Vandal.adsStats.fireRate,.0051,'Vandal ADS unchanged');}
