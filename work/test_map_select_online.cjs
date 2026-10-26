@@ -11,7 +11,10 @@
 const fs=require('fs'),path=require('path'),assert=require('assert/strict');
 const {boot}=require('./page_harness.cjs');
 const selFix=H=>{const s=H.doc.getElementById('xOnMap');Object.defineProperty(s,'value',{configurable:true,get(){return this._value!=null?this._value:'ascent';},set(v){this._value=String(v);}});};// audit.js's fake DOM reads a <select>'s value from its attribute; give it a real one (the page sets it through .value)
-const MAPS=['ascent','bind','haven','split','lotus','breeze'],MODES=['dm','tdm','five'],QUICK=!!process.env.QUICK,VERBOSE=!!process.env.VERBOSE;
+// The full run takes one child process per mode: each in-process server room keeps its world in memory, and 18 of them
+// in one process ran a loaded machine out of memory.
+if(!process.env.QUICK&&!process.env.MODE){const {spawnSync}=require('child_process');let out=[];for(const m of ['dm','tdm','five']){const r=spawnSync(process.execPath,[...process.execArgv,__filename],{env:{...process.env,MODE:m},encoding:'utf8',stdio:['ignore','pipe','pipe']});if(r.status!==0){process.stdout.write(r.stdout||'');process.stderr.write(r.stderr||'');console.error('FAILED mode',m,r.status,r.signal||'');process.exit(r.status||1);}out.push(m+': '+String(r.stdout).trim());}console.log(out.join('\n'));process.exit(0);}
+const MAPS=['ascent','bind','haven','split','lotus','breeze'],MODES=process.env.MODE?[process.env.MODE]:['dm','tdm','five'],QUICK=!!process.env.QUICK,VERBOSE=!!process.env.VERBOSE;
 function mulberry(seed){let a=seed>>>0;return ()=>{a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return ((t^t>>>14)>>>0)/4294967296;};}
 Math.random=mulberry(11);const H=boot({real3:true,seed:23});selFix(H);
 (async()=>{
@@ -58,7 +61,7 @@ Math.random=mulberry(11);const H=boot({real3:true,seed:23});selFix(H);
   await play(what,m,code);await leave();
   if($('xOnMap').value!==m||$('xOnMap').disabled)fail(`${what}: after leaving the select shows ${$('xOnMap').value} (disabled ${$('xOnMap').disabled})`);}
  // Join by code: a friend's Split TDM room; the lobby says Bind and a START that never launched left a queue pick (Bind)
- {H.setPhase('join by code');const code='SPLTQA';codes.add(code);const host=raw({code,create:'1',mode:'tdm',map:'split',public:'0',name:'RoomHost',agent:'Jett'});await step(500);
+ if(!process.env.MODE||process.env.MODE==='tdm'){H.setPhase('join by code');const code='SPLTQA';codes.add(code);const host=raw({code,create:'1',mode:'tdm',map:'split',public:'0',name:'RoomHost',agent:'Jett'});await step(500);
   tile('bind');xe('window.xQPick="bind";true');$('xOnCode').value=code;$('xOnJoin').click();await until(()=>xe('MP.st')==='room',10000,'joined by code');
   if(xe('MP.map')!=='split')fail('join by code: page room map '+xe('MP.map'));
   host.send({t:'start'});await play('join by code','split',code,false);
