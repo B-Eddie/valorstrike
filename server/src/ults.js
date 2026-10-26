@@ -11,7 +11,7 @@ export const ULT={
  lockdown:{windup:WINDUP.lockdown,radius:32.5,detain:8},
  quake:{delay:wf('rollingThunder'),length:18,halfAngle:Math.PI/6,concuss:6},
  seekers:{count:3,speed:12,maxTravel:4,nearsight:3},
- theft:{reach:5,reveals:[2,6],reveal:1.6},/* wiki Neural_Theft: 1st reveal 2 s windup, 2nd reveal 4 s after it (v5.10 '4 s delay between reveals') */
+ theft:{reach:18,reveals:[2,6],reveal:1.6},/* wiki Neural_Theft: max cast distance 18 m (v5.10); 1st reveal 2 s windup, 2nd reveal windup 4 s counted from the 1st (v5.10 '4 s delay between reveals'), so 6 s after the cast; client CYNT matches */
  tdf:{weapon:'Operator',ammo:5},
  rib:{window:10,protect:.5}
 };
