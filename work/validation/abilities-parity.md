@@ -526,8 +526,74 @@ reveal at the tag, Spycam dart a flat 3 s reveal.
 - Client: `XOWL = {pings: [1.6, 3.4], reveal: 0.6}`, `XSPY = {every: 2, pings: 5, reveal: 1}` (asserted equal to the server);
   `xDartPings(b, at, rv)` schedules the pings through `xHfRv` (adds to a running reveal), keyed to the round token `XRCN.g`
   and skipped once the target is dead. `drTag` (Owl dart) and `cyDart` (Spycam dart) use it.
-- Not modelled: removing the Spycam dart (5 pings here, project value), the drone / camera flight itself on the server.
+- Not modelled: removing the Spycam dart (no 1.85 s removal channel: since qa-27 the dart pings every 2 s until its target
+  dies or the round ends, section 8; was 5 pings), the drone / camera flight itself on the server.
 - Tests: `server/test-ults.js` (tables; Owl: not before 1.6 s, on at 1.7, off at 2.35, on at 3.5, off at 4.1, far foe not tagged;
   Spycam: off at 1.05, on at 1.25, off at 2.3, on at 3.25 and 9.25, done by 10.5; ends with its target; misses behind a wall),
   `work/test_ability_equip.cjs` (XOWL / XSPY == server; Owl timeline false / true / false / true / false at 1.5 / 1.7 / 2.35 / 3.5 /
   4.15 s; Spycam pings at 0.1 / 2.1 / 8.1 s, off at 1.15 / 9.3 s; a round clear cancels pending pings).
+
+## 8. Full 12-agent parity table (qa-26 / qa-27 audit, 2026-10-26)
+
+Wiki truth: wiki.playvalorant.com/en-us/<Ability> Stats tables and the patch notes 12.00-13.08, saved by qa-26 in the project
+workspace (`qa/qa26/wiki/*.wiki`, digests `wiki-stats.txt`, `patches-digest.txt`). Server: `server/src/abilities.js` (PARITY,
+SMOKE, SLOW_ORB, BARRIER, PAINT, PARANOIA, GUIDING, FAULT, LEER, FLASH_BLIND), `devices.js` (DEV, SHOOT), `ults.js` (ULT),
+`windups.js` (WINDUP), `reyna.js` (DEVOUR, DISMISS), `simulation.js` (Blade Storm, ABILITY_GUNS). Page (offline game): `index.html`
+tables named in the Page column. "=" means the page asserts the server value in a test (`work/test_ability_parity.cjs`,
+`work/test_ability_equip.cjs`, `server/test-ults.js`, `server/test-abilities.js`, `server/test-ability-equip.js`).
+Status: **OK** = wiki on both sides; **stand-in** = the mechanic is simplified on purpose (named); **gap** = still differs.
+
+| Agent | Ability | Wiki (key stats) | Server | Page (offline) | Status |
+|---|---|---|---|---|---|
+| Jett | C Cloudburst | 2 x 200, 3.35 m radius, 2 s max flight, 2.5 s smoke, hold to steer | SMOKE.r.Jett 3.35, vendor/cloudburst.cjs flight + steer | same cloudburst.cjs, smoke 2.5 s | OK |
+| Jett | Q Updraft | 1 x 150, 0.6 s lift | vy launch (abilities.js 'updraft') | J.up | OK (height tuned, not on the wiki) |
+| Jett | E Tailwind | free, 1 s windup, 7.5 s empowered, 0.45 s / 11 m dash, 2-kill recharge | PARITY.tail 11, signatureKills 2 | XPAR2.tail 11 | stand-in: instant dash (no 1 s windup / 7.5 s window) |
+| Jett | X Blade Storm | 8 pts, 5 blades, 50 body x3 head x0.85 legs, Single Fire 6 / s, regen on kill | weapons['Blade Storm'] fireRate 6, 150 / 50 / 42.5 | jThrow J.cd.x 1/6, 150 / 50 | OK (qa-26 / 0b21ca6); page has no leg zone for blades |
+| Phoenix | C Blaze | 1 x 150, 8 s wall, 1-21 m, 30 / s, heals Phoenix 12.5 / s | DEV.blaze 8 s, 12 m, 30 / s, heal 12.5 | = (fd7297c) | OK (length capped 12 m, project value) |
+| Phoenix | Q Curveball | 2 x 250, 0.6 s windup (v11.00), 1.5 s max blind | WINDUP.curveball 0.6 (hand-release 0.2 -> 0.4 fuse), DEV.curveball.blind 1.5 | jPop 1.5, XAB_WIND | OK |
+| Phoenix | E Hot Hands | free, 4 s, 4.5 m, spreads 0.75 s, 60 / s, heals 12.5 / s | DEV.hotHands | XHOT | OK |
+| Phoenix | X Run it Back | 7 pts, 10 s incl. 1 s activation | ULT.rib.window 10 | = | OK |
+| Sova | C Owl Drone | 1 x 400, 7 s, 100 HP, dart 2 pings (1.6 s, +1.2 s after the 0.6 s ping) | DEV.owl, SHOOT.owl 100 HP body | XOWL = | stand-in: dart tags nearest visible enemy within 20 m of the aim (no flying drone) |
+| Sova | Q Shock Bolt | 2 x 150, 75 -> 1 over 1.5-4 m, 2 bounces, charge | PARITY.shock, vendor/sova-bolt.cjs | XPAR2.shock = | OK |
+| Sova | E Recon Bolt | free, 30 m, 2 pulses 1.6 s apart, 50 s recharge (v13.00) | DEV.reconBolt pulses 0.9 / 2.5, 30 m; recharge 50 | XBK_RC Sova 50 (0b21ca6) | OK |
+| Sova | X Hunter's Fury | 8 pts, 3 x 80, 66 m x 1.76 m, 2.125 s cycle, 6 s, 1 s reveal | ULT.fury | = | OK |
+| Sage | C Barrier Orb | 1 x 300, 4 x 2.6 m segments, fortify at 2 s (v11.08), 40 s | BARRIER 400 + 200 at 2 s | = (ac168f0) | OK (segment HP: project value, not in the saved wiki table) |
+| Sage | Q Slow Orb | 2 x 200, 7 s, 50 %, allies / self too | SLOW_ORB 7 s, 3.5 m, 0.5 | = | OK |
+| Sage | E Healing Orb | free, 100 over 5 s ally or self (v13.00), 45 s | PARITY.heal 100 / 5 | XPAR2.heal 100 | OK |
+| Sage | X Resurrection | 7 pts, 12 m (v11.04), 2 s windup + 1.3 s revive | PARITY.rez {windup 2, revive 1.3, reach 12}: reviveAt, tickAbilities (qa-27) | XPAR2.rez =, J.rz rising crystal, bot Sage 3.3 s | OK (qa-27; was instant, 5 m) |
+| Reyna | C Leer | 2 x 250, 0.4 s windup, 1.6 s nearsight | WINDUP.leer 0.4, LEER.active 1.6 | = | OK |
+| Reyna | Q Devour | 50 HP over 3 s, 2.5 s in Empress (v12.02), 150 cap | DEVOUR | XDEV = (b30c524) | OK |
+| Reyna | E Dismiss | 1.5 s (v8.11), 12 m/s | DISMISS | = (1bbacdc) | OK |
+| Reyna | X Empress | 7 pts, +10 % fire / reload / equip (v11.08) | STIM 1.1 | xStimK (bbbff2b) | OK |
+| Omen | C Shrouded Step | 2 x 100, 15 m, 1.2 s (0.7 + 0.5) | PARITY.step | XPAR2.step = | OK |
+| Omen | Q Paranoia | 1 x 250, 25 m at 20 m/s, 4.3 m, 2 s nearsight | PARANOIA | = | OK |
+| Omen | E Dark Cover | 2 charges, 40 s recharge, 4.1 m, 15 s | SMOKE.r.Omen 4.1, recharge 40 | = | OK |
+| Omen | X From the Shadows | 7 pts, 4 s (1.5 + 2.5) | PARITY.shadows 4 | = | OK |
+| Killjoy | C Nanoswarm | 2 x 200, 1 s activation, 4.5 m, 45 / s for 5 s (180) | DEV.nanoswarm | XNANO | OK |
+| Killjoy | Q Alarmbot | 1 x 200, 5.5 m detect, 0.5 s alert, 22.5 m/s, 2 m trigger, 0.5 s windup, 4 s Vulnerable | DEV.alarmbot (0b21ca6) | XALB = | OK; not modelled: 1.85 s deploy, 40 m proximity |
+| Killjoy | E Turret | free, 2.7 s deploy, 100 deg cone, 0.75 s windup, 3-shot bursts 8 / 6 / 4, 40 m proximity | DEV.turret | XTUR | OK |
+| Killjoy | X Lockdown | 9 pts, 13 s windup, 32.5 m, 8 s detain | ULT.lockdown | XPAR2.ld = | OK |
+| Raze | C Boom Bot | 1 x 300, 5 s, 15 m, 2.5 m trigger, 0.6 s windup, 2 / 6 m, 60 HP | DEV.boombot | = | OK |
+| Raze | Q Blast Pack | 2 x 200, 5 s, 1.5 s arm (v7.09), 50 -> 20 (2-5 m) | DEV.blastPack | = (ac168f0) | OK |
+| Raze | E Paint Shells | free, 2.25 s fuse, 4 subs 0.667 s, 55 -> 1 over 2.5-5.5 / 5.25 m | PAINT | XPS = | OK |
+| Raze | X Showstopper | 8 pts, 1.4 s equip, 10 s window, 150 -> 30 over 4-7 m | ULT.rocket | = | OK |
+| Skye | C Regrowth | 100 pool, 20 HP/s, 18 m | regrowth 20 / s | XPAR2.regrow 20 | OK |
+| Skye | Q Trailblazer | 1 x 300, 6 s, 3.5 m, 30 damage, concuss 2.5-4 s | DEV.trail | = | OK |
+| Skye | E Guiding Light | free, 18 m/s, 0.3 s activation, 0.75 s max windup, 2.25 s max flash, 50 s recharge (v13.00) | GUIDING, recharge 50 | XBK_RC Skye 50 (0b21ca6) | OK |
+| Skye | X Seekers | 8 pts, 3 seekers, 15 s lifespan, 3 s Nearsight, 5 s 60 % Slow | ULT.seekers (0b21ca6), status sslow | rsTick sks 0.4 x 5 s | OK; seeker speed 12 m/s is a project value |
+| Breach | C Aftershock | 1 x 200, 2.2 s windup, 2 x 80 0.6 s apart, 3 m | PARITY.aftershock | XPAR2.ash = | OK |
+| Breach | Q Flashpoint | 2 x 250, 0.5 s windup, 2.25 s blind | WINDUP.flashpoint, FLASH_BLIND.Breach | = | OK |
+| Breach | E Fault Line | free, 8-56 m by 1 s charge, 8 m wide (v12.00), 1.1 s windup | FAULT | xFaultLen = | OK |
+| Breach | X Rolling Thunder | 8 pts, 32 x 18 m from 8 m ahead | ULT.quake | XRT2 | OK |
+| Cypher | C Trapwire | 2 x 200, 1.5 s deploy, 15 m wire, 50 % slow, 0.7 s windup, 5 damage + Reveal while within 4 m, 1.25 s slow after, re-arm | DEV.trapwire (0b21ca6) | XTRAP = | OK (wire reach 7.5 m each side = 15 m) |
+| Cypher | Q Cyber Cage | 2 x 100, 3.72 m cylinder, 7.25 s | SMOKE.r.Cypher, DEV.cage | = | OK |
+| Cypher | E Spycam | free, 1.15 s deploy, 20 m, 1 HP, dart pings every 2 s until removed (1.85 s channel) | DEV.spycam every 2, dart pings until the target dies / round ends (qa-27) | XSPY =, xDartLoop | stand-in: no possession view server-side; no removal channel (pings until death / round end) |
+| Cypher | X Neural Theft | 7 pts, 18 m, reveals at 2 s and 6 s | ULT.theft | CYNT = | OK |
+| Chamber | C Trademark | 1 x 200, 2 s deploy, 10 m search, 0.9 s windup, 6 m 50 % field 4 s | DEV.trademark | XTMK = | OK |
+| Chamber | Q Headhunter | 100 / round (8 max), 0.3 s equip, 159 / 55 / 46 no falloff, 4 / s | ABILITY_GUNS.Headhunter, DEV.headhunter.equip 0.3, next round chambered after each shot (qa-27) | XHH =, BC.cd 0.3 / 0.25 | OK (qa-27; was Sheriff 145 / 50 past 30 m, no equip) |
+| Chamber | E Rendezvous | free, 18 m anchor radius, 1.3 s teleport (0.1 + 1.2), 30 s | PARITY.rendezvous 18, rdvTime 1.3: pendingTeleport 'rendezvous' (qa-27) | XPAR2.rdvT =, BC.rdv | OK (qa-27; was instant) |
+| Chamber | X Tour De Force | 8 pts, 2.3 s summon, 5 rounds, 0.9 / s (v8.03), 150 x1.7 x0.85, 6 m 4 s slow field on kill (allies too) | ABILITY_GUNS['Tour De Force'], ULT.tdf, tdfKill -> Trademark-style field (qa-27) | XTDF =, bcTdfField; bot Chamber 5 rounds at 0.9 / s | OK (qa-27; was Operator 0.6 / s, no field online, any hit killed offline) |
+
+Not modelled anywhere (listed for the next pass): equip / unequip times of most abilities beyond the per-ability windups
+(section 5), Alarmbot / Trapwire / Turret proximity-to-remain-active radii, Spycam dart removal channel, Jett Tailwind 1 s
+windup + 7.5 s empowered window.
