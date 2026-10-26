@@ -1311,6 +1311,7 @@ body:has(#game .x-top.x-bpo) #xAnn.buy{display:none!important}
     <button role="tab" aria-selected="false" data-q="dm">DEATHMATCH</button>
     <button role="tab" aria-selected="false" data-q="tdm">TEAM DEATHMATCH</button>
     <button role="tab" aria-selected="false" data-q="esc">ESCALATION</button>
+    <button role="tab" aria-selected="false" data-q="rep">REPLICATION</button>
     <button role="tab" aria-selected="false" data-q="custom">CUSTOM</button>
   </div>
   <div class="x-qbody">
@@ -1321,6 +1322,7 @@ body:has(#game .x-top.x-bpo) #xAnn.buy{display:none!important}
   <div class="x-qp" data-q="dm" hidden><button class="card x-qcard" id="dmBtn"><h3>Deathmatch</h3><p>Free for all. First to 40 kills.</p><span class="x-qchips"><span>8 players</span><span>First to 40</span></span><small>NEW</small></button></div>
   <div class="x-qp" data-q="tdm" hidden><button class="card x-qcard" id="tdmBtn"><h3>Team Deathmatch</h3><p>First to 100 kills, abilities on.</p><span class="x-qchips"><span>5 vs 5</span><span>9:30</span></span><small>NEW</small></button></div>
   <div class="x-qp" data-q="esc" hidden><button class="card x-qcard" id="escBtn"><h3>Escalation</h3><p>12 team weapon levels, Odin to Knife.</p><span class="x-qchips"><span>5 vs 5</span><span>10:00</span></span><small>NEW · 7 kills per level · no buy, no abilities</small></button></div>
+  <div class="x-qp" data-q="rep" hidden><button class="card x-qcard" id="repBtn"><h3>Replication</h3><p>Your team all plays your agent; the bots all play one.</p><span class="x-qchips"><span>5 vs 5</span><span>First to 5</span></span><small>NEW · Spike · credits 900 / 2400 / 3900 / 6000 each round · gear resets every round</small></button></div>
   <div class="x-qp" data-q="custom" hidden>
   <div class="feat">
     <div><small>MINI-GAME · 3 vs 3 · Ascent, B site</small><h2>Retake 3v3</h2></div>
@@ -1394,7 +1396,7 @@ body:has(#game .x-top.x-bpo) #xAnn.buy{display:none!important}
     var q = document.getElementById("xQueue"), cur = "unrated";
     var swN = 0; window.xSwift = 0;
     document.addEventListener("click", function (e) { if (e.target && e.target.closest && e.target.closest("#pm5v5")) { window.xSwift = swN; swN = 0; } }, true); // Swiftplay flag for the shared 5v5 flow (#pm5v5 is defined later in the page)
-    var GO = { unrated: "pm5v5", swift: "pm5v5", sr: "srBtn", dm: "dmBtn", tdm: "tdmBtn", esc: "escBtn", custom: "goBtn" };
+    var GO = { unrated: "pm5v5", swift: "pm5v5", sr: "srBtn", dm: "dmBtn", tdm: "tdmBtn", esc: "escBtn", rep: "repBtn", custom: "goBtn" };
     q.querySelectorAll(".x-qtabs [data-q]").forEach(function (t) {
       t.addEventListener("click", function () {
         cur = t.dataset.q;
@@ -1428,7 +1430,7 @@ body:has(#game .x-top.x-bpo) #xAnn.buy{display:none!important}
     setQ(qMap, false);
     q.querySelectorAll(".x-qmap").forEach(function (m) { m.addEventListener("click", function () { setQ(m.dataset.map, true); }); });
     (function () { var os = document.getElementById("xOnMap"); if (os) os.addEventListener("change", function () { if (!os.disabled) setQ(os.value, true); }); })();
-    document.addEventListener("click", function (e) { if (e.target && e.target.closest && e.target.closest("#dmBtn,#tdmBtn,#srBtn,#escBtn,#pm5v5")) window.xQPick = qMap; }, true);
+    document.addEventListener("click", function (e) { if (e.target && e.target.closest && e.target.closest("#dmBtn,#tdmBtn,#srBtn,#escBtn,#repBtn,#pm5v5")) window.xQPick = qMap; }, true);
     document.getElementById("xqRange").addEventListener("click", function () { var a = document.getElementById("aimBtn"); if (a) a.click(); });
   })();
   </script>
@@ -4985,7 +4987,7 @@ const bItem = (n) => BUY.flatMap((c) => c[1]).find((x) => x[0] === n);
 const bSide = (n) => /^(Classic|Shorty|Frenzy|Ghost|Sheriff)$/.test(n);
 function bLog() { const r = FV.you + FV.them; if (!FV.bt || FV.btR !== r) { FV.bt = []; FV.btR = r; FV.req = null; FV.reqBy = null; FV.reqNo = false; } return FV.bt; }
 function bBack(n, c) { try { if (c > 0 && SB[n]) SB[n].sp = Math.max(0, (SB[n].sp || 0) - c); } catch (e) {} }
-function bMin() { const lb = [1900, 2400, 2900][Math.min((FV.lsY || 0) + 1, 3) - 1]; return capC((FV.sw ? 4000 : FV.cr) + lb); } // credits next round if this one is lost (loss bonus)
+function bMin() { if (FV.rep) return repCr(FV.you + FV.them + 1); const lb = [1900, 2400, 2900][Math.min((FV.lsY || 0) + 1, 3) - 1]; return capC((FV.sw ? 4000 : FV.cr) + lb); } // credits next round if this one is lost (loss bonus)
 function bCost(n) { const it = bItem(n); if (!it) return Infinity; const L = bLog(), e = it[2] ? L.find((x) => x.a) : L.find((x) => x.sl === (bSide(n) ? "pis" : "pri")); return it[1] - (e && !e.by ? e.p : 0); }
 // a weapon name from the network: own WEAP keys only ("__proto__" / "constructor" pass WEAP[n] and threw in the skin path)
 function xWOwn(n) { return typeof n === "string" && Object.prototype.hasOwnProperty.call(WEAP, n); }
@@ -7973,13 +7975,15 @@ function fSpawn() {
     b.body.userData.bot = b; b.head.userData.bot = b; b.head.userData.head = true; bots.push(b);
   });
   F_MATES.forEach((n, i) => { const s = fBotBuy(n); allies.push(Object.assign(mkGuy(xs[i], mz, allyMat, allyHead), { hp: 100, armor: s.arm, rgn: s.rgn, w: s.w, alive: true, cd: 0.6, def: 0, ox: xs[i], name: n, strafe: i % 2 ? 1 : -1, flip: 1, per: xPer() })); });
+  if (FV.rep) repAgents();
   xAgSet(bots); xAgSet(allies);
 }
 function fRound() {
+  if (FV.rep) repRound();
   if (!FV.alive) { FV.pri = null; FV.sec = "Classic"; FV.arm = 0; FV.rgn = undefined; } // died last round: back to a Classic
   const pz0 = FV.atk ? xSpawn(FV.map).atk : xSpawn(FV.map).def;
   player = { x: 0, z: pz0, hp: 100, armor: FV.arm, rgn: FV.rgn, y: 0, vy: 0, ch: 0, st: 0 }; yaw = FV.atk ? 0 : Math.PI; pitch = 0;
-  timeLeft = 100; FV.buy = FV.you + FV.them === 0 || FV.you + FV.them === 12 || (FV.you + FV.them === 24 && !FV.sw && !FV.sr) ? 45 : 30; /* 45 s: first buy phase of each half and of overtime (rounds 1, 13, 25; wiki Unrated, = server buyPhaseSeconds) */ defuseT = 0; kSwing = 0;
+  timeLeft = 100; FV.buy = FV.you + FV.them === 0 || (FV.rep && FV.you + FV.them === 4) || FV.you + FV.them === 12 || (FV.you + FV.them === 24 && !FV.sw && !FV.sr) ? 45 : 30; if (FV.rep) timeLeft = 80; /* Replication rounds 80 s */ /* 45 s: first buy phase of each half and of overtime (rounds 1, 13, 25; wiki Unrated, = server buyPhaseSeconds) */ defuseT = 0; kSwing = 0;
   // Sniper hold cache is per round by design: drop it so a new round never inherits stale spots.
   XSN.m.clear();
   fSpawn(); $("feed").innerHTML = ""; $("defuse").style.display = "none";
@@ -7987,15 +7991,16 @@ function fRound() {
   slots.pri = FV.pri ? { ammo: pm, rsv: xRsv(FV.pri) } : {}; slots.pis = { ammo: sm, rsv: xRsv(WEAP[FV.sec] ? FV.sec : "Classic") };
   rw = FV.pri ? "pri" : "pis"; ammo = slots[rw].ammo; rsv = slots[rw].rsv; reloading = 0; fcd = 0; spray = 0; fireHeld = false; try { XSP.used = false; } catch (e) {} // round start re-arms the one spray per round
   say("Buy phase · press B to buy", 1800); SFX.buy();
-  fsRound(); onSkin(); setScope(false); running = true; clock.getDelta(); updHud(); relock(); jRound(FV.you + FV.them === 0);
+  fsRound(); onSkin(); setScope(false); running = true; clock.getDelta(); updHud(); relock(); jRound(FV.you + FV.them === 0); if (FV.rep) repKit();
 }
 function startFive() {
   FV.sr = !!FV.srOn; FV.srOn = 0; if (!FV.sr) try { srOrbs(false); } catch (e) {}
-  FV.sw = !FV.sr && !!window.xSwift; // Swiftplay: first to 5, swap after 4, no overtime
+  FV.rep = !FV.sr && !!FV.repOn; FV.repOn = 0; // Replication: Swiftplay's structure (first to 5, swap after 4, +1 ult a round) with its own economy and one agent per team
+  FV.sw = !FV.sr && (FV.rep || !!window.xSwift); // Swiftplay: first to 5, swap after 4, no overtime
   FV.surr = false; FV.svH = -1; FV.svOn = false; try { document.getElementById("xSv").classList.remove("on"); } catch (e) {}
-  try { const gd = $("game").dataset; gd.xMode = FV.sw ? "swift" : FV.sr ? "sr" : "five"; gd.xWin = String(FV.sw ? 5 : FV.sr ? FV.srWin || 4 : FIVE_WIN); } catch (e) {}
-  if (FV.sw) try { say("SWIFTPLAY", 1600); } catch (e) {}
-  ensureMapBuilt("five"); xBuildTeams();
+  try { const gd = $("game").dataset; gd.xMode = FV.rep ? "rep" : FV.sw ? "swift" : FV.sr ? "sr" : "five"; gd.xWin = String(FV.sw ? 5 : FV.sr ? FV.srWin || 4 : FIVE_WIN); } catch (e) {}
+  if (FV.sw) try { say(FV.rep ? "REPLICATION" : "SWIFTPLAY", 1600); } catch (e) {}
+  ensureMapBuilt("five"); xBuildTeams(); if (FV.rep) repTeams();
   clearTimeout(FV.to); mode = "five"; FV.map = FV.pick === "random" ? ["ascent", "bind", "haven", "split", "lotus", "breeze"][Math.floor(Math.random() * 6)] : FV.pick || "ascent"; fUseMap(); useMap("five"); if (duelBot) { scene.remove(duelBot.g); duelBot = null; }
   $("pre").style.display = "none"; $("lobby").style.display = "none"; $("result").style.display = "none"; $("xBan").style.display = "none"; $("game").style.display = "block";
   FV.you = 0; FV.them = 0; FV.lsY = FV.lsT = 0; FV.atk = true; fEco(); sbReset(F_EN, F_MATES);
@@ -10112,7 +10117,7 @@ function fCheck(win, text, title) {
     const won = !FV.surr && FV.you > FV.them; if (won) stats.w++; showStats();
     if (document.pointerLockElement) document.exitPointerLock();
     SFX.fanfare(won); $("resTitle").textContent = won ? "Victory" : "Defeat"; $("resTitle").style.color = won ? "#5fffb0" : "#ff4655";
-    $("resText").textContent = `${FV.sr ? "Spike Rush" : FV.sw ? "SWIFTPLAY" : "5v5"} vs bots · You ${FV.you} · ${FV.them} Bots`;
+    $("resText").textContent = `${FV.sr ? "Spike Rush" : FV.rep ? "REPLICATION" : FV.sw ? "SWIFTPLAY" : "5v5"} vs bots · You ${FV.you} · ${FV.them} Bots`;
     $("againBtn").textContent = "Play again"; $("result").style.display = "flex";
     if (window.xCareerRec) xCareerRec({ result: won ? "win" : FV.you === FV.them && !FV.surr ? "draw" : "loss", mode: "five", score: FV.you + " – " + FV.them });
   }, over ? 2200 : 7000); // post-round 7 s
@@ -10358,7 +10363,7 @@ function xHud() {
   const rf = mode === "rifle";
   const fv = mode === "five";
   setT("xSA", duel ? du.you : rf ? RF.you : fv ? FV.you : score.you); setT("xSE", duel ? du.them : rf ? RF.them : fv ? FV.them : score.bots);
-  setT("xSub", fv && FV.dm ? `${FV.esc ? "Escalation" : FV.tdm ? "Team Deathmatch" : "Deathmatch"} · ${F_MAPN[FV.map] || "Ascent"} · first to ${FV.esc ? "the last level" : (() => { try { return DM.win; } catch (e) { return 40; } })()}` : fv ? `${FV.sr ? "Spike Rush" : FV.sw ? "Swiftplay" : "5v5"} · ${F_MAPN[FV.map] || "Ascent"} · Round ${FV.you + FV.them + 1} · ${FV.atk ? "Attack" : "Defense"} · ${FV.cr} cr${FV.buy > 0 ? " · Buy phase, press B" : fsTag()}` : duel ? "Operator Duel · first to " + DUEL_WIN : mode === "aim" ? "Aim training · range · 60 s" : rf ? "Rifle 2v2 · first to " + RIFLE_WIN + (rSide() < 0 ? " · sides swapped" : "") : "Retake · Ascent B · first to 4");
+  setT("xSub", fv && FV.dm ? `${FV.esc ? "Escalation" : FV.tdm ? "Team Deathmatch" : "Deathmatch"} · ${F_MAPN[FV.map] || "Ascent"} · first to ${FV.esc ? "the last level" : (() => { try { return DM.win; } catch (e) { return 40; } })()}` : fv ? `${FV.sr ? "Spike Rush" : FV.rep ? "Replication · all " + (FV.repA ? FV.repA[0] : "") : FV.sw ? "Swiftplay" : "5v5"} · ${F_MAPN[FV.map] || "Ascent"} · Round ${FV.you + FV.them + 1} · ${FV.atk ? "Attack" : "Defense"} · ${FV.cr} cr${FV.buy > 0 ? " · Buy phase, press B" : fsTag()}` : duel ? "Operator Duel · first to " + DUEL_WIN : mode === "aim" ? "Aim training · range · 60 s" : rf ? "Rifle 2v2 · first to " + RIFLE_WIN + (rSide() < 0 ? " · sides swapped" : "") : "Retake · Ascent B · first to 4");
   setT("xArm", Math.ceil(player.armor || 0)); xRgHud(); setT("xHp", Math.max(0, Math.ceil(player.hp))); $("xHp").classList.toggle("lo", player.hp <= 30);
   const aim = mode === "aim", aw = aim ? aimW() : ""; // aim trainer keeps its own mag in AM.ammo (AM.rl reload), not the global ammo/rsv
   const knifeOut = duel ? du.w === "knife" : aim ? aw === "Knife" : rw === "knife";
@@ -12116,6 +12121,32 @@ function srTick(dt) {
 { const t0 = fiveTick; fiveTick = function (dt) { if (srOn() && running && FV.buy <= 0) srTick(dt); return t0.apply(this, arguments); }; }
 { const g0 = xGo; xGo = function (fn) { if (fn !== startSR) try { srOrbs(false); } catch (e) {} return g0.apply(this, arguments); }; }
 { const ag1 = $("againBtn").onclick; $("againBtn").onclick = function (e) { return srOn() ? startSR() : ag1 && ag1.call(this, e); }; }
+// Replication (offline; wiki.playvalorant.com/en-us/Replication, same rules as the server's VARIANT_RULES.rep): first to 5,
+// 4-round halves, 80 s rounds, your team all plays your agent and the enemy team one agent drawn from its kit-gated roster
+// (never yours, so the 10 names stay distinct). Weapons and armour reset every round; credits are SET each round of a half
+// regardless of the result: 900 / 2400 / 3900 / 6000 (round 4 and the 4-4 decider 6000); basic and signature abilities
+// refilled every round, +1 ult point a round (Swiftplay's). Bots are named "<Agent> <n>" and mapped through XBA, so every
+// xAgOf / xAg reader (models, kits, bot abilities, portraits) sees the replicated agent. FLASHGUARD is server only.
+const REP_CR = [900, 2400, 3900, 6000];
+const repCr = (n) => REP_CR[n >= 8 ? 3 : n % 4]; // n: rounds already played
+function startREP() { FV.repOn = 1; startFive(); }
+function repTeams() { let me = "Jett"; try { me = J.pick || "Jett"; } catch (e) {}
+  FV.repSave = [F_MATES.slice(), F_EN.slice()];
+  const pool = F_EN.filter((n) => n !== me && KITS[n]), en = pool[Math.floor(Math.random() * pool.length)] || (me === "Omen" ? "Sage" : "Omen");
+  FV.repA = [me, en];
+  F_MATES.splice(0, F_MATES.length, ...[2, 3, 4, 5].map((k) => me + " " + k)); F_EN.splice(0, F_EN.length, ...[1, 2, 3, 4, 5].map((k) => en + " " + k));
+  F_MATES.forEach((n) => { XBA[n] = me; }); F_EN.forEach((n) => { XBA[n] = en; }); }
+function repAgents() { try { allies.forEach((b) => { b.agent = FV.repA[0]; XBA[b.name] = FV.repA[0]; }); bots.forEach((b) => { b.agent = FV.repA[1]; XBA[b.name] = FV.repA[1]; }); } catch (e) {} }
+function repRound() { const c = repCr(FV.you + FV.them);
+  FV.cr = c; FV.pri = null; FV.sec = "Classic"; FV.arm = 0; FV.rgn = undefined; FV.alive = false;
+  Object.keys(FV.bs || {}).forEach((n) => { const b = FV.bs[n]; b.cr = c; b.w = "Classic"; b.arm = 0; b.rgn = undefined; b.alive = false; }); }
+function repKit() { try { const M = K().mx || {}; J.c = M.c || 0; J.q = M.q || 0; if (M.e) J.e = M.e; } catch (e) {} } // basic + signature charges full every round
+function repRestore() { if (!FV.repSave) return; const [m, e] = FV.repSave; FV.repSave = null; FV.rep = false; F_MATES.splice(0, F_MATES.length, ...m); F_EN.splice(0, F_EN.length, ...e); }
+{ const g1 = xGo; xGo = function (fn) { if (fn !== startREP) repRestore(); return g1.apply(this, arguments); }; } // any other start gets the agent-named roster back
+{ const ag2 = $("againBtn").onclick; $("againBtn").onclick = function (e) { return mode === "five" && FV.rep && !FV.dm ? (repRestore(), startREP()) : ag2 && ag2.call(this, e); }; }
+const repBind = () => { try { const b = document.getElementById("repBtn"); if (b) b.onclick = (e) => { if (e) e.stopPropagation(); xGo(startREP); }; } catch (e) {} };
+repBind(); addEventListener("load", repBind); setTimeout(repBind, 1500);
+window.startREP = startREP; window.xRep = { cr: repCr, CR: REP_CR };
 const srBind = () => { try { const b = document.getElementById("srBtn"); if (b) b.onclick = (e) => { if (e) e.stopPropagation(); xGo(startSR); }; } catch (e) {} };
 srBind(); addEventListener("load", srBind); setTimeout(srBind, 1500);
 const dmBind = () => { try { const b = document.getElementById("dmBtn"); if (b) b.onclick = (e) => { if (e) e.stopPropagation(); xGo(startDM); }; } catch (e) {} };
@@ -12243,7 +12274,7 @@ function fpaWeap() { let w = "Vandal"; try { w = mode === "duel" ? "Operator" : 
 // loading screen: the loader script further down cannot reach this IIFE's functions (its agentSelect / window.startSR wraps were silent no-ops), so the match starts hand themselves to window.xMatchLoad here
 { const xLd = (fn, name) => function () { const a = arguments, self = this, L = window.xMatchLoad; if (typeof L !== "function") return fn.apply(self, a); if(window.xQPick){FV.pick=window.xQPick;window.xQPick=null;}return L(() => fn.apply(self, a), FV.pick, name, true); };
   const ag0 = agentSelect; agentSelect = function (go) { return ag0(xLd(go)); };
-  startSR = xLd(startSR, "SPIKE RUSH"); startTDM = xLd(startTDM, "TEAM DEATHMATCH"); startDM = xLd(startDM, "DEATHMATCH"); startDuel = xLd(startDuel, "OPERATOR DUEL"); startRifle = xLd(startRifle, "RIFLE 2V2"); startSurf = xLd(startSurf, "SURF"); startAim = xLd(startAim, "AIM PRACTICE"); start = xLd(start, "RETAKE"); startESC = xLd(startESC, "ESCALATION"); } // every bot-spawning or player-kit start rides the readiness gate // duel spawns a native agent too: it takes the same readiness gate
+  startSR = xLd(startSR, "SPIKE RUSH"); startREP = xLd(startREP, "REPLICATION"); startTDM = xLd(startTDM, "TEAM DEATHMATCH"); startDM = xLd(startDM, "DEATHMATCH"); startDuel = xLd(startDuel, "OPERATOR DUEL"); startRifle = xLd(startRifle, "RIFLE 2V2"); startSurf = xLd(startSurf, "SURF"); startAim = xLd(startAim, "AIM PRACTICE"); start = xLd(start, "RETAKE"); startESC = xLd(startESC, "ESCALATION"); } // every bot-spawning or player-kit start rides the readiness gate // duel spawns a native agent too: it takes the same readiness gate
 // ---- ONLINE MULTIPLAYER (P2P, PeerJS): host-authoritative DM / TDM. Host runs the sim (bots fill empty slots); clients send
 // inputs + shots at 30 Hz, get 20 Hz snapshots (100 ms interpolation) and predict their own movement. Inert unless MP.on. ----
 const MP = { on: false, role: null, st: "idle", pub: false, mode: "tdm", map: "ascent", code: "", peer: null, hc: null, conns: new Map(), name: "", me: -1, team: 0, sq: 0, ping: 0,
