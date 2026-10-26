@@ -1,7 +1,7 @@
 // #11: agents only ever get the real Valorant rig. A cached kit attaches synchronously at creation; a missing kit
 // leaves the agent hidden (weapon too) until it arrives. No legacy fallback queue or stand-in rig remains.
 const fs=require('fs'),vm=require('vm'),assert=require('assert'),s=fs.readFileSync(__dirname+'/valorant_runtime.js','utf8');
-const a=s.indexOf('// #11: no stand-in bodies.'),b=s.indexOf('// Correct only',a);assert(a>0&&b>a,'attach block present');
+const a=s.indexOf('// #11: no stand-in bodies.'),b=s.indexOf('// Correct the blended support-foot height',a);assert(a>0&&b>a,'attach block present');
 let resolveLoad;const attached=[],loads=[];
 const c={XVA:{kits:{Sage:{name:'Sage'}}},xAgent:(nm)=>({nm,gun:{visible:true}}),xvAgentName:n=>n,
   xvAgentLoad:n=>{loads.push(n);return new Promise(r=>resolveLoad=r);},xvAgent:(m,k)=>{attached.push([m,k]);m.valorant=1;if(m.xvWait){m.xvWait=0;m.gun.visible=true;}}};
