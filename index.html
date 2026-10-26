@@ -9607,12 +9607,13 @@ function jKey(code) {
   }
   return true;
 }
+var XBSD = { head: 150, body: 50, legs: 42.5 }; // Blade Storm per knife (wiki: 50 body, x3 head, x0.85 legs; = server weapons["Blade Storm"].damageRanges[0])
 function jThrow() {
   if (player.hp <= 0 || J.cd.x > 0 || (mode === "five" && FV.buy > 0)) return;
   J.cd.x = 1 / 6; J.bs--; kick = 1; SFX.ab("bsThrow"); // wiki Blade_Storm: Single Fire 6 per second (= server weapons["Blade Storm"].fireRate)
   ray.setFromCamera(XC0, camera); ray.far = 200;
   const hit = ray.intersectObjects(solids.concat(bots.filter((b) => b.alive).flatMap((b) => [b.body, b.head])))[0];
-  if (hit && hit.object.userData.bot) { const b = hit.object.userData.bot, hs = !!hit.object.userData.head; hurt(b, hs ? 150 : 50); if (b.hp <= 0.001) kill(b, hs, 0, "Blade Storm"); else flash(b); }
+  if (hit && hit.object.userData.bot) { const b = hit.object.userData.bot, hs = !!hit.object.userData.head, legs = !hs && b.g && hit.point.y - b.g.position.y < 0.9; hurt(b, Math.floor(hs ? XBSD.head : legs ? XBSD.legs : XBSD.body)); if (b.hp <= 0.001) kill(b, hs, 0, "Blade Storm"); else flash(b); } // legs: below hip height, as the guns (floored like the server: 42.5 -> 42)
   if (J.bs <= 0 && J.bsOn) { J.bsOn = false; J.bs = 0; if (running) swapW(mode === "five" && !FV.pri ? "pis" : "pri"); }
 }
 function jBuyHtml() {
