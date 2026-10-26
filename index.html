@@ -2868,7 +2868,7 @@ function losRaw(a, b) {
 }
 // bot area damage (molly / explosive / turret splash): hits the other team, player and bots alike, credited to the caster
 function xAoe(b, p, r, n, w, fall) { // fall(d): damage by distance (Paint Shells xPsFall), else a flat n
-  const o = new THREE.Vector3(p.x, 0.5, p.z), en = typeof allies === "undefined" || allies.indexOf(b) < 0, by = b.name, e2 = new THREE.Vector3(), dn = (x, z) => (fall ? fall(Math.hypot(x - p.x, z - p.z)) : n);
+  const o = new THREE.Vector3(p.x, xFy(p.x, p.z, Math.max(Number.isFinite(p.y) ? p.y : -Infinity, b && b.g ? b.g.position.y : -Infinity, -1e9) + 0.5) + 0.5, p.z), en = typeof allies === "undefined" || allies.indexOf(b) < 0, /* hk-34: 0.5 over the floor there (native maps: y 0.5 was under the floor, so los to the player always failed) */ by = b.name, e2 = new THREE.Vector3(), dn = (x, z) => (fall ? fall(Math.hypot(x - p.x, z - p.z)) : n);
   if (en) {
     if (player.hp > 0 && Math.hypot(player.x - p.x, player.z - p.z) < r && los(o, pEye())) hurt(player, dn(player.x, player.z), by);
     for (const a of allies) { if (!a.alive || !running) continue; const q = a.g.position; if (Math.hypot(q.x - p.x, q.z - p.z) >= r || !los(o, e2.set(q.x, (q.y || 0) + 1.5, q.z))) continue;
@@ -8476,16 +8476,21 @@ const okMat = (c) => new THREE.MeshLambertMaterial({ color: c, emissive: c, emis
 // Omen Paranoia (wiki.playvalorant.com/en-us/Paranoia): 20 m/s for 25 m, 4.3 m radius, nearsight 2 s; server PARANOIA.
 const XPAR = { speed: 20, range: 25, r: 4.3, ns: 2 };
 const parGeo = new THREE.BoxGeometry(5, 2.4, 1.2), kjBox = new THREE.BoxGeometry(0.45, 0.45, 0.45), kjTur = new THREE.BoxGeometry(0.5, 0.9, 0.5), kjLd = new THREE.CylinderGeometry(0.4, 0.55, 0.9, 10), ldRing = new THREE.RingGeometry(31.6, 32, 72);
+// hk-34: the floor under (x, z) near height y. Old maps: y 0. Native maps (Ascent's floor is 7.05): the nav floor (nmHeight).
+// Offline kit devices, marks and their sight probes used literal heights (0.06 .. 1.2 = over the old y 0 floor), so on a native
+// map they sat / looked 6+ m under the floor: Alarmbot / Turret / Lockdown / Boom Bot / Trademark / slow fields drawn under the
+// map, Alarmbot / Turret / Boom Bot / Trademark sight rays run under it. They now add the same offsets to xFy.
+function xFy(x, z, y) { let C = null; try { C = typeof nmActive === "function" ? nmActive() : null; } catch (e) {} if (!C) return 0; try { return nmHeight(C, x, z, Number.isFinite(y) ? y : player ? player.y : undefined); } catch (e) { return Number.isFinite(y) ? y : 0; } }
 function okGround(far) {
   const o = pEye(), d = jAim(); ray.set(o, d); ray.far = far; const h = ray.intersectObjects(solids)[0];
-  let t = h ? h.distance - 0.5 : far; if (d.y < -0.01) t = Math.min(t, o.y / -d.y);
+  let t = h ? h.distance - 0.5 : far; if (d.y < -0.01) t = Math.min(t, (o.y - xFy(o.x, o.z, player.y)) / -d.y);
   const p = o.clone().addScaledVector(d, Math.max(0, t)); p.y = 0;
   for (let i = 0; i < 30 && blocked(p.x, p.z, 0.45, 0); i++) { const vx = player.x - p.x, vz = player.z - p.z, l = Math.hypot(vx, vz) || 1; p.x += (vx / l) * 0.5; p.z += (vz / l) * 0.5; }
   return p;
 }
-function okMark(x, z, c) { const m = new THREE.Mesh(ringGeo, fireMat(c, 0.9)); m.rotation.x = -Math.PI / 2; m.position.set(x, 0.06, z); m.scale.setScalar(1.4); scene.add(m); return m; }
+function okMark(x, z, c) { const m = new THREE.Mesh(ringGeo, fireMat(c, 0.9)); m.rotation.x = -Math.PI / 2; m.position.set(x, xFy(x, z) + 0.06, z); m.scale.setScalar(1.4); scene.add(m); return m; }
 function okRm(o) { if (o && o.m) scene.remove(o.m); if (o && o.r) scene.remove(o.r); }
-function okPlace(geo, c, dist) { const fx = -Math.sin(yaw), fz = -Math.cos(yaw); let d = dist; while (d > 0 && blocked(player.x + fx * d, player.z + fz * d, 0.3, 0)) d -= 0.25; const m = new THREE.Mesh(geo, okMat(c)); m.position.set(player.x + fx * d, geo.parameters.height / 2, player.z + fz * d); m.rotation.y = yaw; scene.add(m); return m; }
+function okPlace(geo, c, dist) { const fx = -Math.sin(yaw), fz = -Math.cos(yaw); let d = dist; while (d > 0 && blocked(player.x + fx * d, player.z + fz * d, 0.3, 0)) d -= 0.25; const m = new THREE.Mesh(geo, okMat(c)); m.position.set(player.x + fx * d, xFy(player.x + fx * d, player.z + fz * d) + geo.parameters.height / 2, player.z + fz * d); m.rotation.y = yaw; scene.add(m); return m; }
 function okMMClick(e) {
   if (!J.ftp || !running || player.hp <= 0) return; e.stopPropagation();
   const r = MM.getBoundingClientRect(), W = MM.width, cx = (e.clientX - r.left) * W / r.width, cy = (e.clientY - r.top) * W / r.height;
@@ -8500,7 +8505,7 @@ function okKey(code) {
   if (om) {
     if (code === "KeyC") {
       if (J.om || J.c < 1 || J.cd.c > 0) return sgNo(); J.c--; J.cd.c = 0.6;
-      const p = okGround(15); J.om = { t: XPAR2.step, x: p.x, z: p.z, m: okMark(p.x, p.z, 0x6a4cff) }; say("Shrouded Step · " + XPAR2.step + " s", 700); blip(260, 0.4, "sine", 0.15); SFX.ab("omenStep");
+      const p = okGround(15); J.om = { t: XPAR2.step, x: p.x, z: p.z, y: xFy(p.x, p.z), m: okMark(p.x, p.z, 0x6a4cff) }; say("Shrouded Step · " + XPAR2.step + " s", 700); blip(260, 0.4, "sine", 0.15); SFX.ab("omenStep");
     }
     if (code === "KeyQ") {
       if (J.q < 1 || J.cd.q > 0) return sgNo(); J.q--; J.cd.q = 0.6;
@@ -8528,7 +8533,7 @@ function okKey(code) {
     const pend = J.nano.filter((n) => !n.on);
     if (pend.length) { pend.forEach((n) => { n.on = true; n.t = XNANO.active; n.m.material.opacity = 0.55; n.m.scale.setScalar(XNANO.r / 2.5); }); say("Nanoswarm active", 700); SFX.ab("nano", pend[0].p); return blip(700, 0.3, "square", 0.12); }
     if (J.c < 1 || J.cd.c > 0) return sgNo(); J.c--; J.cd.c = 0.6;
-    const p = okGround(15); p.y = 0.05; const m = jM(zoneGeo, fireMat(0xc8d23a, 0.12)); m.rotation.x = -Math.PI / 2; m.position.copy(p); m.scale.setScalar(0.15); scene.add(m);
+    const p = okGround(15); p.y = xFy(p.x, p.z) + 0.05; const m = jM(zoneGeo, fireMat(0xc8d23a, 0.12)); m.rotation.x = -Math.PI / 2; m.position.copy(p); m.scale.setScalar(0.15); scene.add(m);
     J.nano.push({ m, p, on: false, t: 0 }); say("Nanoswarm hidden · C to trigger", 900); blip(420, 0.15, "triangle", 0.12); SFX.ab("nanoSet", p);
   }
   if (code === "KeyQ") {
@@ -8542,19 +8547,19 @@ function okKey(code) {
   if (code === "KeyX") {
     if (J.ld) return say("Lockdown · " + Math.ceil(J.ld.t) + " s", 700);
     if (J.ult < K().u) return sgNo(), say("Lockdown " + J.ult + "/" + K().u, 800);
-    J.ult = 0; const m = okPlace(kjLd, 0xf2c230, 1), r = new THREE.Mesh(ldRing, fireMat(0xf2c230, 0.5)); r.rotation.x = -Math.PI / 2; r.position.set(m.position.x, 0.07, m.position.z); scene.add(r);
+    J.ult = 0; const m = okPlace(kjLd, 0xf2c230, 1), r = new THREE.Mesh(ldRing, fireMat(0xf2c230, 0.5)); r.rotation.x = -Math.PI / 2; r.position.set(m.position.x, m.position.y - 0.45 + 0.07, m.position.z); scene.add(r);
     J.ld = { m, r, p: m.position, t: 13, hp: 200 }; say("Lockdown · 13 s windup", 1100); blip(220, 0.6, "sawtooth", 0.15); SFX.ab("lockdown", m.position); feed("Killjoy ▸ Lockdown");
   }
 }
 const PF_A = new THREE.Vector3(), PF_B = new THREE.Vector3(), PF_C = new THREE.Vector3(); // perf pass 145: per-frame scratch (los does not keep them)
 function okHitBy(o, dt) { // enemies that see a placed device shoot it
-  const e = PF_C.set(o.p.x, 0.6, o.p.z);
+  const e = PF_C.set(o.p.x, xFy(o.p.x, o.p.z, o.p.y) + 0.6, o.p.z);
   bots.forEach((b) => { if (!b.alive || b.blind > 0 || b.det > 0) return; const q = b.g.position; if (Math.hypot(q.x - e.x, q.z - e.z) < 30 && los(PF_A.set(q.x, (q.y || 0) + 1.7, q.z), e)) o.hp -= 12 * dt; });
 }
 function okTick(dt) {
   const P = player, alive = P.hp > 0, V = THREE.Vector3;
   bots.forEach((b) => { if (b.vul > 0) b.vul -= dt; if (b.det > 0) b.det -= dt; });
-  if (J.om) { J.om.t -= dt; if (J.om.t <= 0) { if (alive) { P.x = J.om.x; P.z = J.om.z; P.y = 0; P.vy = 0; SFX.tp(); } okRm(J.om); J.om = null; } }
+  if (J.om) { J.om.t -= dt; if (J.om.t <= 0) { if (alive) { P.x = J.om.x; P.z = J.om.z; P.y = J.om.y || 0; P.vy = 0; SFX.tp(); } okRm(J.om); J.om = null; } }
   if (J.fts) { J.fts.t -= dt; if (!alive) { okRm(J.fts); J.fts = null; } else if (J.fts.t <= 0) { P.x = J.fts.x; P.z = J.fts.z; P.y = J.fts.y || 0; P.vy = 0; okRm(J.fts); J.fts = null; say("From the Shadows", 700); SFX.tp(); SFX.ab("shadows"); } }
   if (J.ftp && !alive) { J.ftp = false; MM.style.pointerEvents = ""; }
   if (J.pick === "Omen" && J.e < (J.oeM || 1)) { J.oe = (J.oe || 0) + dt; if (J.oe >= 40) { J.e++; J.oe = 0; say("Dark Cover charge ready", 700); } } // 40 s recharge, back up to the charges owned this round
@@ -8574,22 +8579,22 @@ function okTick(dt) {
     if (n.t > 0) return true; scene.remove(n.m); return false;
   });
   if (J.ab) { // XALB (= server DEV.alarmbot, wiki v13.00): 5.5 m detection, 0.5 s alert, runs at 22.5 m/s, 0.5 s windup within 2 m, Vulnerable 4 s in 3 m
-    const A = J.ab, e = new V(A.p.x, 0.5, A.p.z), off = A.dep > 1e-9 ? (A.dep -= dt) > 1e-9 : player.hp <= 0 || Math.hypot(player.x - A.p.x, player.z - A.p.z) > XALB.active; // deploying 1.85 s / Killjoy dead or past 40 m: inactive (= server)
-    const sees = (b) => b.alive && Math.hypot(b.g.position.x - e.x, b.g.position.z - e.z) < XALB.sight && los(e, new V(b.g.position.x, 1, b.g.position.z));
+    const A = J.ab, e = new V(A.p.x, xFy(A.p.x, A.p.z, A.p.y) + 0.5, A.p.z), off = A.dep > 1e-9 ? (A.dep -= dt) > 1e-9 : player.hp <= 0 || Math.hypot(player.x - A.p.x, player.z - A.p.z) > XALB.active; // deploying 1.85 s / Killjoy dead or past 40 m: inactive (= server)
+    const sees = (b) => b.alive && Math.hypot(b.g.position.x - e.x, b.g.position.z - e.z) < XALB.sight && los(e, new V(b.g.position.x, (b.g.position.y || 0) + 1, b.g.position.z));
     if (off) { A.tg = null; A.wu = null; } else if (A.wu == null) { if (!A.tg || !A.tg.alive) { A.tg = bots.filter(sees).sort((a, b) => Math.hypot(a.g.position.x - e.x, a.g.position.z - e.z) - Math.hypot(b.g.position.x - e.x, b.g.position.z - e.z))[0] || null; A.al = XALB.alert; }
       if (A.tg) { if (A.al > 1e-9) A.al -= dt; else { const dx = A.tg.g.position.x - A.p.x, dz = A.tg.g.position.z - A.p.z, d = Math.hypot(dx, dz);
-        if (d < XALB.trig) A.wu = XALB.windup; else { const st = Math.min(d, XALB.speed * dt); A.p.x += (dx / d) * st; A.p.z += (dz / d) * st; } } } }
+        if (d < XALB.trig) A.wu = XALB.windup; else { const st = Math.min(d, XALB.speed * dt); A.p.x += (dx / d) * st; A.p.z += (dz / d) * st; const fy = xFy(A.p.x, A.p.z, A.p.y); if (fy !== 0) A.p.y = fy + 0.225; } } } }
     else A.wu -= dt;
-    const hit = A.wu != null && A.wu <= 1e-9 ? bots.filter((b) => b.alive && Math.hypot(b.g.position.x - e.x, b.g.position.z - e.z) < XALB.r && los(e, new V(b.g.position.x, 1, b.g.position.z))) : [];
+    const hit = A.wu != null && A.wu <= 1e-9 ? bots.filter((b) => b.alive && Math.hypot(b.g.position.x - e.x, b.g.position.z - e.z) < XALB.r && los(e, new V(b.g.position.x, (b.g.position.y || 0) + 1, b.g.position.z))) : [];
     if (A.wu != null && A.wu <= 1e-9) { hit.forEach((b) => { b.vul = XALB.vul; drTag(b); }); if (hit.length) say("Alarmbot · " + hit.length + " Vulnerable 4 s", 900); blip(1000, 0.3, "square", 0.15); SFX.ab("alarm", e); const m = jM(smokeGeo, fireMat(0xf2c230, 0.25)); m.scale.setScalar(1.5); m.position.copy(e); jFx(m, 0.5); okRm(J.ab); J.ab = null; }
   }
   if (J.tur) {
     const T = J.tur; if (T.hp <= 0) { okRm(T); J.tur = null; say("Turret destroyed", 800); blip(200, 0.3, "square", 0.12); }
     else if ((T.cd -= dt) <= 0) for (let n = 0; n < 4 && T.cd <= 0; n++) { // XTUR: 100 degree cone, off while Killjoy is dead or beyond 40 m; lock windup, then 3-shot bursts every 1.25 s; losing the target re-arms the windup
-      const e = new V(T.p.x, 0.8, T.p.z), on = player.hp > 0 && Math.hypot(player.x - T.p.x, player.z - T.p.z) <= XTUR.active, ca = Math.cos(XTUR.cone / 2 * Math.PI / 180), tg = on && bots.filter((b) => { if (!b.alive) return false; const q = b.g.position, vx = q.x - e.x, vz = q.z - e.z, d = Math.hypot(vx, vz); return d < XTUR.range && vx * T.fx + vz * T.fz >= d * ca - 1e-6 && los(e, new V(q.x, 1.2, q.z)); }).sort((a, b) => a.g.position.distanceTo(e) - b.g.position.distanceTo(e))[0];
+      const e = new V(T.p.x, xFy(T.p.x, T.p.z, T.p.y) + 0.8, T.p.z), on = player.hp > 0 && Math.hypot(player.x - T.p.x, player.z - T.p.z) <= XTUR.active, ca = Math.cos(XTUR.cone / 2 * Math.PI / 180), tg = on && bots.filter((b) => { if (!b.alive) return false; const q = b.g.position, vx = q.x - e.x, vz = q.z - e.z, d = Math.hypot(vx, vz); return d < XTUR.range && vx * T.fx + vz * T.fz >= d * ca - 1e-6 && los(e, new V(q.x, (q.y || 0) + 1.2, q.z)); }).sort((a, b) => a.g.position.distanceTo(e) - b.g.position.distanceTo(e))[0];
       if (!tg) { T.lock = 0; T.shot = 0; T.cd = 0.15; break; }
       if (!T.lock) { T.lock = 1; T.shot = 0; T.cd = XTUR.windup; break; }
-      const q = new V(tg.g.position.x, 1.2, tg.g.position.z); T.m.rotation.y = Math.atan2(q.x - e.x, q.z - e.z);
+      const q = new V(tg.g.position.x, (tg.g.position.y || 0) + 1.2, tg.g.position.z); T.m.rotation.y = Math.atan2(q.x - e.x, q.z - e.z);
       const m = new THREE.Mesh(beamGeo, fireMat(0xffd23a, 0.85)); m.scale.set(0.3, 0.3, e.distanceTo(q)); m.position.lerpVectors(e, q, 0.5); m.lookAt(q); jFx(m, 0.08);
       jHit(tg, xTurDmg(Math.hypot(q.x - e.x, q.z - e.z)), "Turret"); if (tg.alive) flash(tg); SFX.ab("tShot", T.p);
       if (++T.shot >= XTUR.shots) { T.shot = 0; T.cd += XTUR.cycle - (XTUR.shots - 1) * XTUR.gap; } else T.cd += XTUR.gap;
@@ -8637,10 +8642,10 @@ function xSsDmg(d) { return d <= XSS.inner ? XSS.max : d < XSS.outer ? XSS.max -
 function rsBoom(p, r, dmg, w, c, direct, fall) { // fall: true = Showstopper falloff (xSsDmg), a function = damage by distance (Paint Shells xPsFall)
   const e = new RV(p.x, Math.max(0.5, p.y), p.z), m = jM(smokeGeo, fireMat(c, 0.45)); m.scale.setScalar(r / 4); m.position.copy(e); jFx(m, 0.4); const fd = fall === true ? xSsDmg : typeof fall === "function" ? fall : null;
   blip(70 + Math.random() * 30, 0.45, "sawtooth", 0.22);
-  bots.forEach((b) => { if (!b.alive) return; const q = new RV(b.g.position.x, 1, b.g.position.z), d = q.distanceTo(e);
+  bots.forEach((b) => { if (!b.alive) return; const q = new RV(b.g.position.x, (b.g.position.y || 0) + 1, b.g.position.z), d = q.distanceTo(e);
     if (!(dmg > 0)) {} else if (b === direct) jHit(b, dmg, w); else if (d < r && los(e, q)) jHit(b, fd ? fd(d) : dmg, w);
     if (b.alive && d < r) flash(b); });
-  xFFArea("You", false, w, dmg, (x, z, t) => { const q = new RV(x, 1, z), d = q.distanceTo(e); return d < r && los(e, q) ? (fd ? fd(d) / dmg : true) : false; }); // Paint Shells / Showstopper (Boom Bot, Blast Pack: not in XFF)
+  xFFArea("You", false, w, dmg, (x, z, t) => { const q = new RV(x, ((t === player ? player.y : t && t.g ? t.g.position.y : 0) || 0) + 1, z), d = q.distanceTo(e); return d < r && los(e, q) ? (fd ? fd(d) / dmg : true) : false; }); // Paint Shells / Showstopper (Boom Bot, Blast Pack: not in XFF)
 }
 // Raze Blast Pack (wiki Blast_Pack Stats; server devices.js DEV.blastPack / packDamage): sticks where it lands, Q again or 5 s detonates, knocks
 // everyone in 5 m back; armed after 1.5 s: 50 inside 2 m -> 20 at the 5 m edge, enemies only (not in XFF).
@@ -8681,7 +8686,7 @@ function xTbCnc(d) { return XTB.max - Math.min(1, Math.max(0, d / XTB.r)) * (XTB
 function tbLeap() { // Trailblazer leap: concusses enemies near the landing spot (can't shoot 2.5 to 4 s by distance)
   const d = J.dr; if (!d.dart) return sgNo(); d.dart = 0; const fx = -Math.sin(yaw), fz = -Math.cos(yaw);
   for (let i = 0; i < 16; i++) { const nx = d.x + fx * 0.25, nz = d.z + fz * 0.25; if (blocked(nx, nz, 0.25, 0)) break; d.x = nx; d.z = nz; }
-  const e = new RV(d.x, 0.8, d.z), hit = bots.filter((b) => b.alive && Math.hypot(b.g.position.x - d.x, b.g.position.z - d.z) < XTB.r && los(e, new RV(b.g.position.x, 1, b.g.position.z)));
+  const e = new RV(d.x, xFy(d.x, d.z) + 0.8, d.z), hit = bots.filter((b) => b.alive && Math.hypot(b.g.position.x - d.x, b.g.position.z - d.z) < XTB.r && los(e, new RV(b.g.position.x, (b.g.position.y || 0) + 1, b.g.position.z)));
   hit.forEach((b) => { const c = xTbCnc(Math.hypot(b.g.position.x - d.x, b.g.position.z - d.z)); b.blind = Math.max(b.blind || 0, c); b.cnc = Math.max(b.cnc || 0, c); });
   let bt = null, bd = XTB.br; bots.forEach((b) => { if (!b.alive || !b.g) return; const q = Math.hypot(b.g.position.x - d.x, b.g.position.z - d.z); if (q < bd) { bd = q; bt = b; } }); if (bt) jHit(bt, XTB.bite, "Trailblazer"); // wiki: the tiger bites the enemy it lands on
   const m = jM(smokeGeo, fireMat(0x7fd84a, 0.35)); m.scale.setScalar(XTB.r / 4); m.position.copy(e); jFx(m, 0.4); blip(180, 0.35, "square", 0.18);
@@ -8698,7 +8703,7 @@ function rsKey(code) {
   if (J.pick === "Raze") {
     if (code === "KeyC") {
       if (J.c < 1 || J.cd.c > 0) return no(); J.c--; J.cd.c = 0.6; let d = 1.2; while (d > 0 && blocked(P.x + fx * d, P.z + fz * d, 0.3, 0)) d -= 0.3;
-      RS.bb.push({ m: rsMesh(0xff8a1f, 1.6, new RV(P.x + fx * d, 0.4, P.z + fz * d)), dx: fx, dz: fz, t: XBB.life, hp: XBB.hp }); say("Boom Bot · seeking", 700); blip(520, 0.15, "square", 0.12); try { XCUE.play("whir"); } catch (e) {}
+      RS.bb.push({ m: rsMesh(0xff8a1f, 1.6, new RV(P.x + fx * d, xFy(P.x + fx * d, P.z + fz * d) + 0.4, P.z + fz * d)), dx: fx, dz: fz, t: XBB.life, hp: XBB.hp }); say("Boom Bot · seeking", 700); blip(520, 0.15, "square", 0.12); try { XCUE.play("whir"); } catch (e) {}
     }
     if (code === "KeyQ") {
       if (RS.pk.length) return rsPack();
@@ -8761,11 +8766,12 @@ function rsTick(dt) {
     if (!(o.hp > 0) && o.hp != null) { xBbGone(o); say("Boom Bot destroyed", 700); blip(160, 0.2, "square", 0.12); return false; } // 60 HP: shot down by the player (enemy bots)
     const p = o.m.position; if (o.wu != null) { o.m.rotation.y += dt * 20; if ((o.wu -= dt) > 0) return true; xBbBlast(p, o, o.tg); xBbGone(o); return false; } // 0.6 s windup: stopped, then the blast
     o.t -= dt; let tg = null, bd = XBB.sight;
-    xBbTg(o).forEach((b) => { const q = xBbPos(b); if (!q) return; const d = Math.hypot(q.x - p.x, q.z - p.z); if (d < bd && (d < XBB.trig || los(new RV(p.x, 0.5, p.z), new RV(q.x, 1, q.z)))) { bd = d; tg = b; } });
+    xBbTg(o).forEach((b) => { const q = xBbPos(b); if (!q) return; const d = Math.hypot(q.x - p.x, q.z - p.z); if (d < bd && (d < XBB.trig || los(new RV(p.x, p.y + 0.1, p.z), new RV(q.x, (q.y || 0) + 1, q.z)))) { bd = d; tg = b; } });
     if (tg) { const q = xBbPos(tg), l = bd || 1, k = Math.min(1, 6 * dt); o.dx += ((q.x - p.x) / l - o.dx) * k; o.dz += ((q.z - p.z) / l - o.dz) * k; const n = Math.hypot(o.dx, o.dz) || 1; o.dx /= n; o.dz /= n; }
     const sp = (tg ? 8 : 6) * dt, nx = p.x + o.dx * sp, nz = p.z + o.dz * sp;
     if (blocked(nx, p.z, 0.3, 0)) o.dx = -o.dx; else p.x = nx;
     if (blocked(p.x, nz, 0.3, 0)) o.dz = -o.dz; else p.z = nz;
+    { const fy = xFy(p.x, p.z, p.y); if (fy !== 0) p.y = fy + 0.4; } // native maps: rolls on the nav floor (old maps: xFy 0, unchanged)
     o.m.rotation.y += dt * 8;
     if (tg && bd < XBB.trig) { o.wu = XBB.wu; o.tg = tg; blip(1200, 0.3, "square", 0.08); return true; }
     if (o.t > 0) return true; xBbGone(o); return false;
@@ -8870,7 +8876,7 @@ function xBbDmg(d) { return d <= XBB.inner ? XBB.max : d >= XBB.out ? 0 : XBB.ma
 // the blast (player's or a bot Raze's): every target of the bot's owner within 6 m with line of sight (the locked one needs none), falloff damage by distance; never allies
 function xBbBlast(p, o, tg) { const e = new RV(p.x, Math.max(0.5, p.y), p.z), m = jM(smokeGeo, fireMat(0xff8a1f, 0.45)); m.scale.setScalar(XBB.out / 4); m.position.copy(e); jFx(m, 0.4);
   if (o.own) { try { XCUE.play("bbPop", { x: e.x, y: e.y, z: e.z }); } catch (er) {} } else blip(70 + Math.random() * 30, 0.45, "sawtooth", 0.22);
-  xBbTg(o).forEach((t) => { const q = xBbPos(t); if (!q) return; const d = Math.hypot(q.x - e.x, q.z - e.z), n = xBbDmg(d); if (!(n > 0) || (t !== tg && !los(e, new RV(q.x, 1, q.z)))) return;
+  xBbTg(o).forEach((t) => { const q = xBbPos(t); if (!q) return; const d = Math.hypot(q.x - e.x, q.z - e.z), n = xBbDmg(d); if (!(n > 0) || (t !== tg && !los(e, new RV(q.x, (q.y || 0) + 1, q.z)))) return;
     if (o.own) xBotDmg(t, n, o.own.name, "Boom Bot"); else { jHit(t, n, "Boom Bot"); if (t.alive) flash(t); } }); }
 function xBbPos(t) { return t === player ? (player.hp > 0 ? player : null) : t && t.alive && t.g ? t.g.position : null; }
 function xBbTg(o) { return o.own ? (o.en ? [player].concat(typeof allies !== "undefined" ? allies : []) : bots) : bots; }
@@ -8882,7 +8888,7 @@ function xBotDmg(t, n, by, w) { try { if (t === player) { hurt(player, n, by); r
   if (see && tg) { A.rlk = { x: tg.x, z: tg.z, t: 0 }; return; }
   if (!A.rzb || !A.rlk || (A.rlk.t += dt) > 6) return;
   const dx = A.rlk.x - from.x, dz = A.rlk.z - from.z, l = Math.hypot(dx, dz) || 1; if (l < 4 || l > 28 || Math.random() > dt * 1.5) return;
-  if (!xBUse(b, "c")) { A.rzb = 0; return; } A.rzb = 0; const fx = dx / l, fz = dz / l, p = new RV(from.x + fx, 0.4, from.z + fz); /* Boom Bot (C) bought */ if (blocked(p.x, p.z, 0.3, 0)) p.set(from.x, 0.4, from.z);
+  if (!xBUse(b, "c")) { A.rzb = 0; return; } A.rzb = 0; const fx = dx / l, fz = dz / l, p = new RV(from.x + fx, xFy(from.x + fx, from.z + fz, from.y) + 0.4, from.z + fz); /* Boom Bot (C) bought */ if (blocked(p.x, p.z, 0.3, 0)) p.set(from.x, xFy(from.x, from.z, from.y) + 0.4, from.z);
   RS.bb.push(xBbShootable({ m: rsMesh(0xff8a1f, 1.6, p), dx: fx, dz: fz, t: XBB.life, hp: XBB.hp, own: b, en: !al })); feed("Raze ▸ Boom Bot"); try { XCUE.play("bbGo", { x: p.x, y: 0.4, z: p.z }); } catch (e) {} }; }
 // bot Breach (team-agnostic): Aftershock once per round, through the wall onto an enemy who just ducked behind cover, or onto the Spike once the other team has planted
 { const b0 = botAb; botAb = function (b, dt, see, tg, from) { b0(b, dt, see, tg, from);
@@ -8917,18 +8923,18 @@ function xBotDmg(t, n, by, w) { try { if (t === player) { hurt(player, n, by); r
     const def = !xBAtk(al); // defending team (5v5: FV.atk is the player's side attacking)
     if (def && xBUse(b, "c")) { const sd = Math.random() < 0.5 ? -1 : 1; let x = from.x + sd * 12, z = from.z;
       if (blocked(x, z, 0.3, 0)) { x = from.x + sd * 5; if (blocked(x, z, 0.3, 0)) x = from.x; }
-      const m = new THREE.Mesh(xG("Box", 0.5, 0.3, 0.5), fireMat(0xd4a640, 0.8)); m.position.set(x, 0.15, z); const f = jFx(m, 120);
+      const m = new THREE.Mesh(xG("Box", 0.5, 0.3, 0.5), fireMat(0xd4a640, 0.8)); m.position.set(x, xFy(x, z, from.y) + 0.15, z); const f = jFx(m, 120);
       A.tm = { x, z, m, f }; feed("Chamber ▸ Trademark"); } }
-  if (A.tm) { const T = A.tm; if (!T.p) { T.p = { x: T.x, z: T.z }; T.arm = XAB_WIND.trademark; } // as the player's: 2 s deploy, 10 m scan, 0.9 s windup, 6 m 50 % field for 4 s
+  if (A.tm) { const T = A.tm; if (!T.p) { T.p = { x: T.x, y: T.m.position.y, z: T.z }; T.arm = XAB_WIND.trademark; } // as the player's: 2 s deploy, 10 m scan, 0.9 s windup, 6 m 50 % field for 4 s
     if ((T.arm -= dt) <= 0) { const cands = (al ? bots : allies).filter((t) => t && t.alive && t.g).map((t) => [t.g.position.x, t.g.position.z, t]); if (!al && player.hp > 0) cands.push([player.x, player.z, player]);
-      const c = bcTmScan(T, cands, dt); if (c) { bcTmField(c[0], c[1]); if (c[2] === player) say("Slowed by Trademark", 900); T.f.t = 0.01; A.tm = null; feed("Chamber ▸ Trademark triggered"); blip(300, 0.3, "square", 0.12); } } }
+      const c = bcTmScan(T, cands, dt); if (c) { bcTmField(c[0], c[1], c[2] === player ? player.y : c[2].g.position.y); if (c[2] === player) say("Slowed by Trademark", 900); T.f.t = 0.01; A.tm = null; feed("Chamber ▸ Trademark triggered"); blip(300, 0.3, "square", 0.12); } } }
   // Tour De Force (= server ULT.tdf / page XTDF): 5 rounds, 2.3 s summon, then 0.9 shots / s at enemies in sight; a kill leaves the 6 m, 4 s, 50 % field
   const UC = window.xBotUC; if (!A.tdf && UC && (UC[b.name] || 0) >= KITS.Chamber.u && see && tg && tg.x !== undefined && Math.hypot(tg.x - from.x, tg.z - from.z) > 20 && Math.random() < dt * 2) { UC[b.name] = 0; A.tdf = XTDF.rounds; A.tdT = XAB_WIND.tourDeForce; feed("Chamber ▸ Tour De Force"); }
   if (!A.tdf) return; A.tdT -= dt; if (A.tdT > 0 || !see || !tg || tg.x === undefined) return;
-  A.tdf--; A.tdT = 1 / XTDF.rate; const o = from.clone(), e = new THREE.Vector3(tg.x, 1.4, tg.z); jFx(jBolt(0xd4a640, o, e), 0.25); blip(120, 0.4, "sawtooth", 0.2);
+  A.tdf--; A.tdT = 1 / XTDF.rate; const o = from.clone(), e = new THREE.Vector3(tg.x, (tg.y || 0) + 1.4, tg.z); jFx(jBolt(0xd4a640, o, e), 0.25); blip(120, 0.4, "sawtooth", 0.2);
   xAoe(b, e, 0.9, XTDF.body, "Tour De Force");
   const v = tg.t, dead = v === player ? player.hp <= 0 : v && !v.alive;
-  if (dead) bcTdfField(e.x, e.z); }; }
+  if (dead) bcTdfField(e.x, e.z, tg.y); }; }
 { const s1 = sgSlow; sgSlow = function (p) { const k = s1(p); return p === player && BC.pst > performance.now() ? k * 0.5 : k; }; }
 function bcWall(max) { // a point just past the wall under the crosshair, or null
   const o = pEye(), d = jAim(); ray.set(o, d); ray.far = max; const h = ray.intersectObjects(solids)[0]; if (!h) return null;
@@ -8964,12 +8970,12 @@ var XTMK = { sight: 10, windup: 0.9, r: 6, life: 4, slow: 0.5 };
 // Tour De Force (wiki; = server ULT.tdf + simulation.js ABILITY_GUNS): 5 rounds, 0.9 shots / s, 150 body, x1.7 head (255), x0.85 legs (127),
 // a kill leaves a 6 m slow field under the victim for 4 s, 50 % for everyone in it. Headhunter (wiki): 159 / 55 / 46, no falloff, 4 / s, 0.3 s equip.
 var XTDF = { rounds: 5, rate: 0.9, body: 150, head: 255, legs: 127, r: 6, life: 4 }, XHH = { rate: 4, equip: 0.3, body: 55, head: 159, legs: 46 };
-function bcTdfField(x, z) { const m = new THREE.Mesh(slowGeo, fireMat(0xd8b04a, 0.35)); m.rotation.x = -Math.PI / 2; m.scale.setScalar(XTDF.r / 3.5); m.position.set(x, 0.06, z); scene.add(m); BC.sf.push({ m, p: new RV(x, 0, z), t: XTDF.life, r: XTDF.r, tm: 1 }); try { SFX.ab("slow", new RV(x, 0.5, z)); } catch (e) {} }
-function bcTmField(x, z) { const m = new THREE.Mesh(slowGeo, fireMat(0xd4a640, 0.35)); m.rotation.x = -Math.PI / 2; m.scale.setScalar(XTMK.r / 3.5); m.position.set(x, 0.06, z); scene.add(m); BC.sf.push({ m, p: new RV(x, 0, z), t: XTMK.life, r: XTMK.r, tm: 1 }); try { SFX.ab("slow", new RV(x, 0.5, z)); } catch (e) {} }
+function bcTdfField(x, z, y) { const m = new THREE.Mesh(slowGeo, fireMat(0xd8b04a, 0.35)); m.rotation.x = -Math.PI / 2; m.scale.setScalar(XTDF.r / 3.5); m.position.set(x, xFy(x, z, y) + 0.06, z); scene.add(m); BC.sf.push({ m, p: new RV(x, 0, z), t: XTDF.life, r: XTDF.r, tm: 1 }); try { SFX.ab("slow", new RV(x, 0.5, z)); } catch (e) {} }
+function bcTmField(x, z, y) { const m = new THREE.Mesh(slowGeo, fireMat(0xd4a640, 0.35)); m.rotation.x = -Math.PI / 2; m.scale.setScalar(XTMK.r / 3.5); m.position.set(x, xFy(x, z, y) + 0.06, z); scene.add(m); BC.sf.push({ m, p: new RV(x, 0, z), t: XTMK.life, r: XTMK.r, tm: 1 }); try { SFX.ab("slow", new RV(x, 0.5, z)); } catch (e) {} }
 function bcTmScan(T, cands, dt) { // T: { p, wu }; cands: [x, z, unit]; returns the target once it has stayed in sight for the windup
-  let best = null, bd = XTMK.sight; for (const c of cands) { const d = Math.hypot(c[0] - T.p.x, c[1] - T.p.z); if (d < bd && los(new RV(T.p.x, 0.5, T.p.z), new RV(c[0], 1, c[1]))) { bd = d; best = c; } }
+  let best = null, bd = XTMK.sight; for (const c of cands) { const d = Math.hypot(c[0] - T.p.x, c[1] - T.p.z); if (d < bd && los(new RV(T.p.x, xFy(T.p.x, T.p.z, T.p.y) + 0.5, T.p.z), new RV(c[0], xFy(c[0], c[1], c[2] === player ? player.y : c[2] && c[2].g ? c[2].g.position.y : T.p.y) + 1, c[1]))) { bd = d; best = c; } }
   if (!best) { T.wu = 0; return null; } T.wu = (T.wu || 0) + dt; return T.wu >= XTMK.windup ? best : null; }
-function bcField(q) { bcTdfField(q.x, q.z); } // Tour De Force kill field (XTDF)
+function bcField(q) { bcTdfField(q.x, q.z, q.y); } // Tour De Force kill field (XTDF)
 function bcFire() {
   if (!jOn() || J.pick !== "Chamber" || !BC.eq || player.hp <= 0 || (mode === "five" && FV.buy > 0)) return false;
   if (BC.cd > 0) return true; const sn = BC.eq === "sn";
@@ -9004,8 +9010,8 @@ function bcKey(code) {
   }
   if (code === "KeyC") {
     if (J.c < 1 || J.cd.c > 0) return no(); J.c--; J.cd.c = 0.6;
-    const m = new THREE.Mesh(orbGeo, okMat(0xd8b04a)); m.scale.set(1.6, 0.5, 1.6); m.position.set(P.x, 0.12, P.z); scene.add(m);
-    BC.tm.push({ m, p: new RV(P.x, 0.5, P.z), arm: XAB_WIND.trademark, wu: 0 }); say("Trademark set · scans 10 m, slows 50 % in 6 m", 900); blip(620, 0.12, "triangle", 0.12);
+    const m = new THREE.Mesh(orbGeo, okMat(0xd8b04a)); m.scale.set(1.6, 0.5, 1.6); m.position.set(P.x, xFy(P.x, P.z) + 0.12, P.z); scene.add(m);
+    BC.tm.push({ m, p: new RV(P.x, xFy(P.x, P.z) + 0.5, P.z), arm: XAB_WIND.trademark, wu: 0 }); say("Trademark set · scans 10 m, slows 50 % in 6 m", 900); blip(620, 0.12, "triangle", 0.12);
   }
   if (code === "KeyQ") {
     if (BC.eq === "hp") { BC.eq = ""; return say("Headhunter holstered", 600); }
@@ -9045,7 +9051,7 @@ function bcTick(dt) {
   BC.tm = BC.tm.filter((t) => {
     if (t.arm > 0) { t.arm -= dt; return true; } // wiki windup: 2 s arm after placement
     const c = bcTmScan(t, bots.filter((b) => b.alive && b.g).map((b) => [b.g.position.x, b.g.position.z, b]), dt);
-    if (!c) return true; bcTmField(c[0], c[1]); scene.remove(t.m); say("Trademark · " + c[2].name + " · slow field 4 s", 900); return false;
+    if (!c) return true; bcTmField(c[0], c[1], c[2] === player ? player.y : c[2].g.position.y); scene.remove(t.m); say("Trademark · " + c[2].name + " · slow field 4 s", 900); return false;
   });
   BC.sf = BC.sf.filter((f) => { f.t -= dt; if (f.tm && player.hp > 0 && Math.hypot(player.x - f.p.x, player.z - f.p.z) < f.r) BC.pst = Math.max(BC.pst || 0, performance.now() + 200); /* Trademark field: the player too */ f.m.material.opacity = 0.35 * Math.min(1, f.t); if (f.t > 0) return true; jRel(f.m); return false; });
   bots.concat(allies.filter(Boolean)).forEach((b) => { if (b.chs > 0) b.chs -= dt; if (b.sks > 0) b.sks -= dt; if (b.ku > 0) { b.ku -= dt; b.kg = b.kg != null ? b.kg : b.g.position.y; b.g.position.y = b.ku > 0 ? b.kg + Math.sin((1 - b.ku / 0.7) * Math.PI) * 1.5 : b.kg; if (b.ku <= 0) b.kg = null; } else if (b.g && b.xk == null && b.xj == null) { const q = b.g.position; q.y = groundAt(q.x, q.z, 0.3, q.y + 0.01); } }); // bots stand on box tops / ledges like the player (same floor lookup)
