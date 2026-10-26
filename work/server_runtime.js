@@ -229,5 +229,6 @@ const netSgSl0=sgSl;sgSl=function(u,cq){if(!(NET.socket&&J.pick==='Reyna'&&netRe
 
 // Throw intent carries no damage, victim, position or remaining-knife claims.
 const netThrow0=jThrow;jThrow=function(){if(!(NET.socket&&MP.st==='game'&&MP.m5))return netThrow0.apply(this,arguments);if(!running||player.hp<=0||FV.buy>0||!J.bsOn||J.bs<1||J.cd.x>0)return;J.cd.x=1/6;/* server Blade Storm fireRate 6 (wiki) */netSend({t:'blade'});kick=1;SFX.ab('bsThrow');};
+const netBurst0=jBurst;jBurst=function(){if(!(NET.socket&&MP.st==='game'&&MP.m5))return netBurst0.apply(this,arguments);if(!running||player.hp<=0||FV.buy>0||!J.bsOn||J.bs<1||J.cd.x>0)return;J.cd.x=XBSD.un;J.bsU=XBSD.un;/* server fireBladeBurst: 0.45 s burst unequip */netSend({t:'blade',alt:1});kick=1;SFX.ab('bsThrow');};
 
 // ---- END TRUSTED ONLINE SERVER ----

@@ -238,8 +238,8 @@ function xAfGunKey() { // the held ult / ability gun right now ("" none): Showst
   if (J.pick === "Jett" && J.bsOn && J.bs > 0 && typeof rw !== "undefined" && rw === "knife") return "bs"; // Blade Storm: the knives replace the knife viewmodel
   const s = XAF.gs; return s && s.tail > 0 ? s.k : "";
 }
-function xAfGunFire(k, tail) { let s = XAF.gs; if (!s || s.k !== k) s = XAF.gs = { k, t: 99, f: -1, n: 0, fired: 0, tail: 0 };
-  s.f = 0; s.n++; s.fired = 1; s.alt = false; if (tail) { const G = XAF_GUN[k]; s.tail = Math.min(0.6, G.L.fire[(s.n - 1) % G.fire.length]); } }
+function xAfGunFire(k, tail, alt) { let s = XAF.gs; if (!s || s.k !== k) s = XAF.gs = { k, t: 99, f: -1, n: 0, fired: 0, tail: 0 };
+  s.f = 0; s.n++; s.fired = 1; const G = XAF_GUN[k]; s.alt = !!(alt && G.alt); if (tail) s.tail = Math.min(0.6, s.alt ? G.L.alt : G.L.fire[(s.n - 1) % G.fire.length]); }
 function xAfGunTick(dt, k, ag) {
   let s = XAF.gs; if (!s || s.k !== k) s = XAF.gs = { k, t: 0, f: -1, n: 0, fired: 0, tail: 0 };
   s.t += dt; if (s.f >= 0) s.f += dt; if (s.tail > 0) s.tail -= dt;
@@ -288,6 +288,8 @@ function xAfTick(dt) {
   try { if (ss && !RS.ss && J.pick === "Raze") xAfGunFire("rk", true); else if ((k === "hp" || k === "sn") && (J.q | 0) + (BC.td | 0) < n) xAfGunFire(k, !BC.eq); } catch (e) {} return r; }; }
 // Blade Storm throw (offline jThrow, or the online wrapper sending 'blade'): each throw starts J.cd.x
 { const t0 = jThrow; jThrow = function () { const c = J.cd.x; const r = t0.apply(this, arguments); try { if (J.pick === "Jett" && !(c > 0) && J.cd.x > 0) xAfGunFire("bs", !(J.bsOn && J.bs > 0)); } catch (e) {} return r; }; }
+// Blade Storm ALT FIRE (jBurst offline / 'blade' alt:1 online): the two-handed RightClickAttack clip, the rig stays for its tail while the gun comes back
+{ const b0 = jBurst; jBurst = function () { const c = J.cd.x; const r = b0.apply(this, arguments); try { if (J.pick === "Jett" && !(c > 0) && J.cd.x > 0) xAfGunFire("bs", true, true); } catch (e) {} return r; }; }
 { const v2 = vmTick; vmTick = function (dt) { v2.apply(this, arguments); try { xAfTick(dt); } catch (e) { if (!XAF.err) { XAF.err = String(e); console.warn("ability viewmodel", e); } } }; }
 { const s1 = xCaStart; xCaStart = function () { try { XAF.qk = XAF.nk || "c"; } catch (e) {} return s1.apply(this, arguments); }; }
 { const k1 = jKey; jKey = function (code) { if (typeof code === "string" && /^Key[CQEX]$/.test(code)) XAF.nk = code[3].toLowerCase(); return k1.apply(this, arguments); }; }

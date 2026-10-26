@@ -3271,11 +3271,13 @@ const xMD = (e) => {
   if (mode === "aim") { if (e.button === 2) { if (aimW() === "Knife") aimFire(true); else xScopeT(); } else if (e.button === 0) { AM.fire = true; aimFire(); } return; }
   if (mode === "surf") { if (e.button === 0 && kSwing <= 0) { kSwing = 0.45; kick = 1; blip(520, 0.06, "triangle", 0.15); } return; }
   if (e.button === 2 && mode !== "duel" && rw === "knife" && !J.dr && !(jOn() && J.bs > 0)) return shoot(true);
+  if (e.button === 2 && mode !== "duel" && !J.dr && jOn() && J.bs > 0 && rw === "knife") return jBurst(); // Blade Storm ALT FIRE: all remaining knives
   if (e.button === 2) { if (mode === "duel" || !J.dr) xScopeT(); return; }
   if (e.button !== 0) return;
   if (J.dr) return drDart();
   if (rsFire()) return;
   if (jOn() && J.bs > 0 && rw === "knife") return jThrow();
+  if (jOn() && J.bsU > 0 && rw === "knife") return; // Blade Storm burst unequip: no knife swing before the gun is back
   if (mode === "duel") duelShoot(); else { fireHeld = true; shoot(); }
 };
 function xBind(cv) { cv.addEventListener("mousedown", xMD); cv.addEventListener("contextmenu", (e) => e.preventDefault()); }
@@ -9664,7 +9666,7 @@ function jRound(match) { // each round start in Retake and 5v5
   resetBotRoundAbilities();
   if (mode === "five" && typeof FV !== "undefined" && FV.map === "lotus" && LG.on) { xLotusReset(); LG.pl = player; } // doors open + wall intact every round start
   J.on = !!KITS[J.pick] && (mode === "retake" || mode === "five"); jClear();
-  J.prevE = J.e; J.bs = 0; J.bsOn = false; J.e = 1; J.tk = 0; J.tw = null; J.dash = null; J.cd = { c: 0, q: 0, e: 0, x: 0 };
+  J.prevE = J.e; J.bs = 0; J.bsOn = false; J.bsU = 0; J.e = 1; J.tk = 0; J.tw = null; J.dash = null; J.cd = { c: 0, q: 0, e: 0, x: 0 };
   const M = K().mx;
   if (match) { J.ult = 0; J.c = mode === "five" ? 0 : M.c; J.q = mode === "five" ? 0 : M.q; }
   if (mode === "retake") { J.c = M.c; J.q = M.q; }
@@ -9715,7 +9717,7 @@ function jKey(code) {
   }
   return true;
 }
-var XBSD = { head: 150, body: 50, legs: 42.5 }; // Blade Storm per knife (wiki: 50 body, x3 head, x0.85 legs; = server weapons["Blade Storm"].damageRanges[0])
+var XBSD = { head: 150, body: 50, legs: 42.5, fan: 2.5, un: 0.45 }; // Blade Storm per knife (wiki: 50 body, x3 head, x0.85 legs; = server weapons["Blade Storm"].damageRanges[0]); ALT FIRE fan 2.5 deg apart + 0.45 s burst unequip (= server BLADE_FAN_DEG / BLADE_BURST_UNEQUIP)
 function jThrow() {
   if (player.hp <= 0 || J.cd.x > 0 || (mode === "five" && FV.buy > 0)) return;
   J.cd.x = 1 / 6; J.bs--; kick = 1; SFX.ab("bsThrow"); // wiki Blade_Storm: Single Fire 6 per second (= server weapons["Blade Storm"].fireRate)
@@ -9723,6 +9725,17 @@ function jThrow() {
   const hit = ray.intersectObjects(solids.concat(bots.filter((b) => b.alive).flatMap((b) => [b.body, b.head])))[0];
   if (hit && hit.object.userData.bot) { const b = hit.object.userData.bot, hs = !!hit.object.userData.head, legs = !hs && b.g && hit.point.y - b.g.position.y < 0.9; hurt(b, Math.floor(hs ? XBSD.head : legs ? XBSD.legs : XBSD.body)); if (b.hp <= 0.001) kill(b, hs, 0, "Blade Storm"); else flash(b); } // legs: below hip height, as the guns (floored like the server: 42.5 -> 42)
   if (J.bs <= 0 && J.bsOn) { J.bsOn = false; J.bs = 0; if (running) swapW(mode === "five" && !FV.pri ? "pis" : "pri"); }
+}
+// Blade Storm ALT FIRE (wiki Blade_Storm, v3.06): throws every remaining knife at once, fanned XBSD.fan deg apart across the aim (= server fireBladeBurst / bladeFan),
+// single-fire damage; kills from the burst never refill the knives; the gun comes back after the 0.45 s burst unequip (jTick, J.bsU).
+function jBurstDirs(n) { const o = []; for (let i = 0; i < n; i++) o.push((i - (n - 1) / 2) * XBSD.fan * Math.PI / 180); return o; }
+function jBurst() {
+  if (player.hp <= 0 || J.cd.x > 0 || !J.bsOn || J.bs < 1 || (mode === "five" && FV.buy > 0)) return;
+  const n = J.bs; J.bs = 0; J.bsOn = false; J.cd.x = XBSD.un; J.bsU = XBSD.un; kick = 1; SFX.ab("bsThrow"); // off before the hits: a burst kill (jKill) cannot refill
+  const tg = solids.concat(bots.filter((b) => b.alive).flatMap((b) => [b.body, b.head])), o = camera.getWorldPosition(new THREE.Vector3()), f = camera.getWorldDirection(new THREE.Vector3()), up = new THREE.Vector3(0, 1, 0); ray.far = 200;
+  for (const a of jBurstDirs(n)) { ray.set(o, f.clone().applyAxisAngle(up, a)); // the server's fan: the crosshair ray turned by a about the vertical (look + a, pitch kept)
+    const hit = ray.intersectObjects(tg)[0];
+    if (hit && hit.object.userData.bot) { const b = hit.object.userData.bot; if (!b.alive) continue; const hs = !!hit.object.userData.head, legs = !hs && b.g && hit.point.y - b.g.position.y < 0.9; hurt(b, Math.floor(hs ? XBSD.head : legs ? XBSD.legs : XBSD.body)); if (b.hp <= 0.001) kill(b, hs, 0, "Blade Storm"); else flash(b); } }
 }
 function jBuyHtml() {
   if (!jOn()) return "";
@@ -9755,6 +9768,7 @@ function jTick(dt) {
   const on = jOn() && running && $("game").style.display !== "none";
   $("xAb").classList.toggle("on", on); if (!on) return;
   for (const k in J.cd) J.cd[k] = Math.max(0, J.cd[k] - dt);
+  if (J.bsU > 0 && (J.bsU -= dt) <= 0) { J.bsU = 0; if (rw === "knife" && !J.bsOn && player.hp > 0 && !(typeof NET !== "undefined" && NET.socket)) swapW(mode === "five" && !FV.pri ? "pis" : "pri"); } // Blade Storm burst unequip done: the gun comes back (online: the server state swaps)
   if (J.dash && player.hp <= 0) J.dash = null; // a Tailwind dash ends with Jett
   if (J.tw) { J.tw.arm -= dt; if ((J.tw.t -= dt) <= 0 || player.hp <= 0) { J.tw = null; if (player.hp > 0) say("Tailwind faded", 700); } } // the 7.5 s window ran out (or Jett died): the charge is gone
   XSU.value += dt;
@@ -11399,6 +11413,7 @@ html.xt-nocm .x-cmb{display:none!important}
       if (J.dr) return drDart();
       if (rsFire()) return;
       if (jOn() && J.bs > 0 && rw === "knife") return jThrow();
+      if (jOn() && J.bsU > 0 && rw === "knife") return; // Blade Storm burst unequip
       if (rw === "knife") { clearTimeout(kLP); kLP = setTimeout(() => { kLP = 0; shoot(true); }, 400); return; } // long-press = heavy
       fireHeld = true; shoot(); return;
     }
@@ -11414,7 +11429,7 @@ html.xt-nocm .x-cmb{display:none!important}
     if (k === "drills") return rgOpen("xRg");
     if (k === "ping") { kd("KeyZ"); return ku("KeyZ"); }
     if (k === "drop") { kd("KeyG"); return ku("KeyG"); }
-    if (k === "zoom") { if (mode === "duel" || !J.dr) xScopeT(); return; }
+    if (k === "zoom") { if (mode !== "duel" && !J.dr && jOn() && J.bs > 0 && rw === "knife") return jBurst(); if (mode === "duel" || !J.dr) xScopeT(); return; } // Blade Storm out: the scope button is ALT FIRE (all remaining knives), as right-click
     if (k === "swap") {
       if (mode === "duel") return setWeap(du.w === "op" ? "knife" : "op");
       if (mode === "surf" || player.hp <= 0) return;
@@ -14499,6 +14514,7 @@ const netSgSl0=sgSl;sgSl=function(u,cq){if(!(NET.socket&&J.pick==='Reyna'&&netRe
 
 // Throw intent carries no damage, victim, position or remaining-knife claims.
 const netThrow0=jThrow;jThrow=function(){if(!(NET.socket&&MP.st==='game'&&MP.m5))return netThrow0.apply(this,arguments);if(!running||player.hp<=0||FV.buy>0||!J.bsOn||J.bs<1||J.cd.x>0)return;J.cd.x=1/6;/* server Blade Storm fireRate 6 (wiki) */netSend({t:'blade'});kick=1;SFX.ab('bsThrow');};
+const netBurst0=jBurst;jBurst=function(){if(!(NET.socket&&MP.st==='game'&&MP.m5))return netBurst0.apply(this,arguments);if(!running||player.hp<=0||FV.buy>0||!J.bsOn||J.bs<1||J.cd.x>0)return;J.cd.x=XBSD.un;J.bsU=XBSD.un;/* server fireBladeBurst: 0.45 s burst unequip */netSend({t:'blade',alt:1});kick=1;SFX.ab('bsThrow');};
 
 // ---- END TRUSTED ONLINE SERVER ----
 
@@ -15210,8 +15226,8 @@ function xAfGunKey() { // the held ult / ability gun right now ("" none): Showst
   if (J.pick === "Jett" && J.bsOn && J.bs > 0 && typeof rw !== "undefined" && rw === "knife") return "bs"; // Blade Storm: the knives replace the knife viewmodel
   const s = XAF.gs; return s && s.tail > 0 ? s.k : "";
 }
-function xAfGunFire(k, tail) { let s = XAF.gs; if (!s || s.k !== k) s = XAF.gs = { k, t: 99, f: -1, n: 0, fired: 0, tail: 0 };
-  s.f = 0; s.n++; s.fired = 1; s.alt = false; if (tail) { const G = XAF_GUN[k]; s.tail = Math.min(0.6, G.L.fire[(s.n - 1) % G.fire.length]); } }
+function xAfGunFire(k, tail, alt) { let s = XAF.gs; if (!s || s.k !== k) s = XAF.gs = { k, t: 99, f: -1, n: 0, fired: 0, tail: 0 };
+  s.f = 0; s.n++; s.fired = 1; const G = XAF_GUN[k]; s.alt = !!(alt && G.alt); if (tail) s.tail = Math.min(0.6, s.alt ? G.L.alt : G.L.fire[(s.n - 1) % G.fire.length]); }
 function xAfGunTick(dt, k, ag) {
   let s = XAF.gs; if (!s || s.k !== k) s = XAF.gs = { k, t: 0, f: -1, n: 0, fired: 0, tail: 0 };
   s.t += dt; if (s.f >= 0) s.f += dt; if (s.tail > 0) s.tail -= dt;
@@ -15260,6 +15276,8 @@ function xAfTick(dt) {
   try { if (ss && !RS.ss && J.pick === "Raze") xAfGunFire("rk", true); else if ((k === "hp" || k === "sn") && (J.q | 0) + (BC.td | 0) < n) xAfGunFire(k, !BC.eq); } catch (e) {} return r; }; }
 // Blade Storm throw (offline jThrow, or the online wrapper sending 'blade'): each throw starts J.cd.x
 { const t0 = jThrow; jThrow = function () { const c = J.cd.x; const r = t0.apply(this, arguments); try { if (J.pick === "Jett" && !(c > 0) && J.cd.x > 0) xAfGunFire("bs", !(J.bsOn && J.bs > 0)); } catch (e) {} return r; }; }
+// Blade Storm ALT FIRE (jBurst offline / 'blade' alt:1 online): the two-handed RightClickAttack clip, the rig stays for its tail while the gun comes back
+{ const b0 = jBurst; jBurst = function () { const c = J.cd.x; const r = b0.apply(this, arguments); try { if (J.pick === "Jett" && !(c > 0) && J.cd.x > 0) xAfGunFire("bs", true, true); } catch (e) {} return r; }; }
 { const v2 = vmTick; vmTick = function (dt) { v2.apply(this, arguments); try { xAfTick(dt); } catch (e) { if (!XAF.err) { XAF.err = String(e); console.warn("ability viewmodel", e); } } }; }
 { const s1 = xCaStart; xCaStart = function () { try { XAF.qk = XAF.nk || "c"; } catch (e) {} return s1.apply(this, arguments); }; }
 { const k1 = jKey; jKey = function (code) { if (typeof code === "string" && /^Key[CQEX]$/.test(code)) XAF.nk = code[3].toLowerCase(); return k1.apply(this, arguments); }; }

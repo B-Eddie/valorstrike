@@ -56,9 +56,10 @@ console.warn=((w)=>(...a)=>{if(!/boneTransform/.test(String(a[0])))w(...a);})(co
  // and up in camera space), not drawn raw through the 70.5 deg world camera.
  assert(/J\.bsOn && J\.bs > 0 && typeof rw !== "undefined" && rw === "knife"\) return "bs"/.test(html),'Blade Storm drawn by the ability FP layer');
  assert(/jThrow = function \(\) \{ const c = J\.cd\.x;/.test(html),'Blade Storm throws drive the throw clips');
+ assert(/jBurst = function \(\) \{ const c = J\.cd\.x; const r = b0\.apply\(this, arguments\); try \{ if \(J\.pick === "Jett" && !\(c > 0\) && J\.cd\.x > 0\) xAfGunFire\("bs", true, true\);/.test(html),'Blade Storm ALT FIRE plays the RightClickAttack clip');
  assert(html.includes('camera.add(R.root); R.root.visible = true; XAF.on = true; xAfFov(R, camera.fov); }'),'every shown ability rig is FOV-matched');
  {const G=api.XAF_GUN.bs;const J_=x=>JSON.parse(JSON.stringify(x));assert.deepEqual(J_(G.hand),['R','L','R','L','R']);
-  const f=n=>api.xAfGunPhase(G,{t:5,f:.01,n,fired:1});assert.deepEqual([1,2,3,4,5,6].map(n=>f(n).clip),J_([...G.fire,G.fire[0]]),'throws cycle Attack01-05');
+  const f=n=>api.xAfGunPhase(G,{t:5,f:.01,n,fired:1});assert.deepEqual([1,2,3,4,5,6].map(n=>f(n).clip),J_([...G.fire,G.fire[0]]),'throws cycle Attack01-05');const fa=api.xAfGunPhase(G,{t:5,f:.1,n:1,fired:1,alt:true});assert.equal(fa.clip,'FP_Wushu_S0_X_RightClickAttack','alt fire clip');assert.equal(fa.alt,true);
   // ring layout (pure): one slot per dagger left, all on screen at 16:9 and 844x390, left ones point right, right ones left, bottom one up
   for(const asp of [16/9,844/390]){const r=api.xAfKnifeRing(5,asp,70.53,0),tv=Math.tan(70.53*Math.PI/360);assert.equal(r.length,5);
    for(const k of r){const sx=k.p[0]/(-k.p[2])/(tv*asp),sy=k.p[1]/(-k.p[2])/tv;assert.ok(Math.abs(sx)<0.9&&Math.abs(sy)<0.9,'dagger on screen '+sx.toFixed(2)+','+sy.toFixed(2));assert.ok(Math.abs(Math.hypot(...k.d)-1)<1e-9);}

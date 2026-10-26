@@ -14,7 +14,7 @@ const root=path.join(__dirname,'..'),h=fs.readFileSync(path.join(root,'index.htm
 const line=(src,key)=>{const i=src.indexOf(key);assert(i>=0,key+' missing');return src.slice(i,src.indexOf('\n',i));};
 for(const s of [h,rt])for(const k of ['function netShowstopperSync(st){','{const netRsFire0=rsFire;','const netShoot0=shoot;','function netInputMsg(','if(J.pick===\'Raze\'&&m.status)netShowstopperSync(m.status);'])assert(s.includes(k),k+' missing');
 // the click paths really bypass shoot(): mouse (xMD) and touch FIRE call rsFire first
-assert(h.includes('  if (rsFire()) return;\n  if (jOn() && J.bs > 0 && rw === "knife") return jThrow();\n  if (mode === "duel") duelShoot(); else { fireHeld = true; shoot(); }'),'mouse click path');
+assert(h.includes('  if (rsFire()) return;\n  if (jOn() && J.bs > 0 && rw === "knife") return jThrow();\n  if (jOn() && J.bsU > 0 && rw === "knife") return; // Blade Storm burst unequip: no knife swing before the gun is back\n  if (mode === "duel") duelShoot(); else { fireHeld = true; shoot(); }'),'mouse click path');
 const src=[line(h,'function netShowstopperSync(st){'),line(h,'{const netRsFire0=rsFire;'),line(h,'const netShoot0=shoot;'),line(h,'function netInputMsg(')].join('\n');
 const T={NET:{socket:{},seq:0,firePulse:0,fireHeavy:0},MP:{st:'game'},J:{pick:'Raze'},RS:{ss:0,ssd:0,sst:0},rw:'pis',ammo:12,kSwing:0,kHv:0,netReyna:null,netChannel:null,ads:0,fireHeld:false,yaw:0,pitch:0,
  WEAP:{Classic:{semi:true},Vandal:{}},performance:{t:1000,now(){return this.t;}},rockets:0,
