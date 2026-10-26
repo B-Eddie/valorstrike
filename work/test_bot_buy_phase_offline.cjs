@@ -52,13 +52,15 @@ for(const map of MAPS){
   const SB=ctx.SpawnBarriers,units=ctx.bots.concat(ctx.allies),walls=u=>SB.pieces(map).filter(q=>q.side===((ctx.bots.includes(u)?!atkSide:atkSide)?'atk':'def'));
   // signed metres to the nearest wall of the bot's spawn (negative: past it)
   const sd=u=>{const p=u.g.position,n=ctx.BotBrain.buyNear(walls(u),p.x,p.z);return n.inside||n.d>=1.5?n.d:-n.d;};/* the far side of a wall line only counts next to the wall (deep in spawn a bot can sit past the extension of a doorway line) */
-  const p0=new Map(units.map(u=>[u,[u.g.position.x,u.g.position.z]])),walked=new Map(units.map(u=>[u,0])),prev=new Map(units.map(u=>[u,[u.g.position.x,u.g.position.z]])),modes=new Map();let closest=Infinity,steps=0;
-  while(ctx.FV.buy>0&&steps<2000){ctx.fiveTick(1/30);steps++;for(const u of units){const p=u.g.position;closest=Math.min(closest,sd(u));const q=prev.get(u);walked.set(u,walked.get(u)+Math.hypot(p.x-q[0],p.z-q[1]));prev.set(u,[p.x,p.z]);if(u.xbb)modes.set(u,u.xbb.st.mode);}}
+  const p0=new Map(units.map(u=>[u,[u.g.position.x,u.g.position.z]])),walked=new Map(units.map(u=>[u,0])),prev=new Map(units.map(u=>[u,[u.g.position.x,u.g.position.z]])),modes=new Map(),holds=new Map();let closest=Infinity,steps=0;
+  while(ctx.FV.buy>0&&steps<2000){ctx.fiveTick(1/30);steps++;for(const u of units){const p=u.g.position;closest=Math.min(closest,sd(u));const q=prev.get(u);walked.set(u,walked.get(u)+Math.hypot(p.x-q[0],p.z-q[1]));prev.set(u,[p.x,p.z]);if(u.xbb){modes.set(u,u.xbb.st.mode);if(u.xbb.hold)holds.set(u,u.xbb.spot);}}}
   const tag=map+(atkSide?' (allies attack)':' (allies defend)');let pair=Infinity;for(const team of [ctx.bots,ctx.allies])for(const a of team)for(const b of team)if(a!==b)pair=Math.min(pair,Math.hypot(a.g.position.x-b.g.position.x,a.g.position.z-b.g.position.z));
   const ds=units.map(sd),lined=units.filter(u=>/^(wait|peek|hold)$/.test(modes.get(u))).length;
-  out.push(`${tag}: walked ${Math.min(...walked.values()).toFixed(1)}-${Math.max(...walked.values()).toFixed(1)} m, end ${Math.min(...ds).toFixed(2)}-${Math.max(...ds).toFixed(2)} m inside, closest ${closest.toFixed(2)} m, lined up ${lined}/${units.length}, teammate gap ${pair.toFixed(2)} m`);
+  out.push(`${tag}: walked ${Math.min(...walked.values()).toFixed(1)}-${Math.max(...walked.values()).toFixed(1)} m, end ${Math.min(...ds).toFixed(2)}-${Math.max(...ds).toFixed(2)} m inside, closest ${closest.toFixed(2)} m, lined up ${lined}/${units.length} (${holds.size} holding in-zone spots), teammate gap ${pair.toFixed(2)} m`);
   for(const u of units){const p=u.g.position,d=sd(u),id=tag+' '+u.name;ok(walked.get(u)>4,id+' walked '+walked.get(u).toFixed(2)+' m');ok(Math.hypot(p.x-p0.get(u)[0],p.z-p0.get(u)[1])>2,id+' ended near its spawn spot');
-   ok(d>=.42-1e-9&&d<=2.45,id+' ends '+d.toFixed(2)+' m inside the barrier (want 0.42-2.45) at '+[p.x,p.y,p.z].map(v=>v.toFixed(2)));ok(!ctx.nmBlocked(C,p.x,p.z,.38,p.y),id+' stands in collision');}
+   const hs=holds.get(u);/* a goal inside its own zone (a defender's own site): it holds there, 1 m or less from its spot */
+   if(hs)ok(Math.hypot(p.x-hs[0],p.z-hs[2])<=1,id+' holds '+Math.hypot(p.x-hs[0],p.z-hs[2]).toFixed(2)+' m from its in-zone spot '+hs.map(v=>v.toFixed(2))+' at '+[p.x,p.y,p.z].map(v=>v.toFixed(2)));
+   else ok(d>=.42-1e-9&&d<=2.45,id+' ends '+d.toFixed(2)+' m inside the barrier (want 0.42-2.45) at '+[p.x,p.y,p.z].map(v=>v.toFixed(2)));ok(!ctx.nmBlocked(C,p.x,p.z,.38,p.y),id+' stands in collision at '+[p.x,p.y,p.z].map(v=>v.toFixed(2)));}
   ok(closest>=.4-1e-9,tag+': a bot came '+closest.toFixed(3)+' m from the barrier');ok(pair>.8,tag+': teammates overlap at the drop ('+pair.toFixed(2)+' m)');ok(lined>=units.length-1,tag+': lined up '+lined+'/'+units.length);
   ok(units.every(u=>u.xbb===null),tag+': buy-phase state cleared when the barrier drops');
  }

@@ -15889,8 +15889,8 @@ window.xAbilityFP = { XAF, XAF_SET, XAF_K, XAF_GUN, phase: xAfPhase, gunPhase: x
  function buyOri(ax,az,bx,bz,cx,cz){return Math.sign((bx-ax)*(cz-az)-(bz-az)*(cx-ax));}
  // nearest wall to (x, z) -> {w: the piece, d: metres, t: metres along it, inside: on its spawn side} | null
  function buyNear(walls,x,z){let best=null;for(const w of walls||[]){const t=Math.max(0,Math.min(w.len,(x-w.ax)*w.tx+(z-w.az)*w.tz)),d=Math.hypot(w.ax+w.tx*t-x,w.az+w.tz*t-z);if(!best||d<best.d)best={w,d,t,inside:(x-w.ax)*w.nx+(z-w.az)*w.nz>=0};}return best;}
- // the step a -> b crosses a wall -> the piece | null
- function buyCross(walls,ax,az,bx,bz){for(const w of walls||[])if(buyOri(ax,az,bx,bz,w.ax,w.az)*buyOri(ax,az,bx,bz,w.bx,w.bz)<0&&buyOri(w.ax,w.az,w.bx,w.bz,ax,az)*buyOri(w.ax,w.az,w.bx,w.bz,bx,bz)<0)return w;return null;}
+ // the step a -> b crosses (or touches) a wall -> the piece | null
+ function buyCross(walls,ax,az,bx,bz){for(const w of walls||[]){const p=buyOri(w.ax,w.az,w.bx,w.bz,ax,az),q=buyOri(w.ax,w.az,w.bx,w.bz,bx,bz);if((p||q)&&p*q<=0&&buyOri(ax,az,bx,bz,w.ax,w.az)*buyOri(ax,az,bx,bz,w.bx,w.bz)<=0)return w;}return null;}/* a step that ends or starts on the wall line counts (nav nodes can sit exactly on it) */
  // ok(i): the node is playable. -> {f: Uint8Array flags, list: node ids} (empty when start is not inside)
  function buyArea(nodes,adj,start,walls,ok){
   const f=new Uint8Array(nodes.length),list=[],inside=i=>{const n=buyNear(walls,nodes[i][0],nodes[i][2]);return (!n||n.d>=BUY.margin)&&(!ok||ok(i));};
@@ -15935,10 +15935,20 @@ window.xAbilityFP = { XAF, XAF_SET, XAF_K, XAF_GUN, phase: xAfPhase, gunPhase: x
  // A short wander target inside spawn: an area node BUY.wander m away, 1.2 m+ from every wall, clear of the points
  // teammates stand on or walk to (avoid), ok(i) when given (not a node inside a prop). -> node id or -1.
  function buyWander(nodes,area,from,rand,avoid,walls,ok){
-  const L=area.list;if(!L.length)return -1;
-  for(let k=0;k<24;k++){const i=L[Math.floor(rand()*L.length)],n=nodes[i],d=Math.hypot(n[0]-from[0],n[2]-from[1]);
-   if(d<BUY.wander[0]||d>BUY.wander[1])continue;const nr=buyNear(walls,n[0],n[2]);if(nr&&nr.d<1.2)continue;if((ok&&!ok(i))||avoid.some(a=>Math.hypot(a[0]-n[0],a[1]-n[2])<1.4))continue;return i;}
+  /* the area can be a whole buy-phase zone (Valorant's, thousands of nodes): draw from the nodes in wander range */
+  const L=area.list.filter(i=>{const d=Math.hypot(nodes[i][0]-from[0],nodes[i][2]-from[1]);return d>=BUY.wander[0]&&d<=BUY.wander[1];});if(!L.length)return -1;
+  for(let k=0;k<24;k++){const i=L[Math.floor(rand()*L.length)],n=nodes[i];const nr=buyNear(walls,n[0],n[2]);if(nr&&nr.d<1.2)continue;if((ok&&!ok(i))||avoid.some(a=>Math.hypot(a[0]-n[0],a[1]-n[2])<1.4))continue;return i;}
   return -1;}
+ // When the bot's first goal lies inside its own buy-phase area (a defender's own site: Valorant's defender zone covers
+ // the sites), it does not line up at a wall: it walks there and holds. path: node ids from spawn toward the goal; the
+ // hold spot = the goal (the path's last node, which must be inside the area), stepped back along the path until okAt(x, z, y)
+ // -> [floorY, node] and BUY.gap from every taken spot, never past a node bad(i) on the way. -> {p: [x, y, z], node, face: [dx, dz] along the path} | null.
+ function buyHold(nodes,path,area,walls,taken,okAt,bad){
+  if(!path||!path.length||!area.f[path[0]]||!area.f[path[path.length-1]])return null;/* only a goal inside the area */let k=0;while(k+1<path.length&&area.f[path[k+1]]&&!(bad&&bad(path[k+1])))k++;/* not past a node a capsule cannot stand on (bad: a prop / door corner) */
+  for(let m=k;m>=0;m--){const n=nodes[path[m]];if(taken.some(q=>Math.hypot(q[0]-n[0],q[2]-n[2])<BUY.gap*1.4))continue;const nr=buyNear(walls,n[0],n[2]);if(nr&&nr.d<1.2)continue;const r=okAt(n[0],n[2],n[1]);if(!r)continue;
+   const a=nodes[path[Math.max(0,m-3)]],b=nodes[path[Math.min(path.length-1,m+3)]];let dx=b[0]-a[0],dz=b[2]-a[2],l=Math.hypot(dx,dz);if(l<.3){dx=0;dz=-1;l=1;}
+   return {p:[n[0],r[0],n[2]],node:r[1],face:[dx/l,dz/l]};}
+  return null;}
  // One bot's buy-phase schedule (seeded): it stands at its spawn spot (the buy menu), walks a few short legs around spawn
  // with pauses and look-arounds (more for patient players), then walks to its barrier spot, timed so it arrives with a
  // margin (cautious players earlier), faces out along its route and makes small peeks along the barrier until it drops.
@@ -15949,7 +15959,7 @@ window.xAbilityFP = { XAF, XAF_SET, XAF_K, XAF_GUN, phase: xAfPhase, gunPhase: x
  //     wander(): [x, y, z] | null, free(x, z): a peek target is clear}. -> {goal: [x, y, z] | null, walk, face: [fx, fz] | null
  // (null: face along the walk)}. Modes: shop -> mill <-> pause -> go -> wait <-> peek / hold.
  function buyTick(st,c){
-  st.t+=c.dt;const r=st.rand,px=c.pos[0],pz=c.pos[1],sp=c.spot,dS=sp?Math.hypot(sp[0]-px,sp[2]-pz):0,eta=dS/BUY.run+.8,late=!!sp&&c.left<=eta+st.margin;
+  st.t+=c.dt;const r=st.rand,px=c.pos[0],pz=c.pos[1],sp=c.spot,dS=sp?Math.hypot(sp[0]-px,sp[2]-pz):0,eta=dS*(dS>8?1.8:1)/BUY.run+.8/* a far spot (a whole zone away, around corners): the route is up to ~1.8x the straight line */,late=!!sp&&c.left<=eta+st.margin;
   const around=()=>{if(st.t>=st.lookAt||!st.look){const a=(r()-.5)*Math.PI*1.6,f=c.face||[0,-1],b=Math.atan2(f[0],f[1])+a;st.look=[Math.sin(b),Math.cos(b)];st.lookAt=st.t+.7+r()*1.4;}return st.look;};
   if(st.mode==='shop'){if(st.t>=st.until||late)st.mode='mill';else return {goal:null,walk:false,face:around()};}
   if((st.mode==='mill'||st.mode==='pause')&&(late||st.leg>=st.legs)){st.mode=sp?'go':'idle';st.goal=null;}
@@ -16008,16 +16018,17 @@ window.xAbilityFP = { XAF, XAF_SET, XAF_K, XAF_GUN, phase: xAfPhase, gunPhase: x
  function mayFire(visibleFor,reactionS,losNow){return !!losNow&&visibleFor>=Math.max(REACT[0],reactionS||0);}
  // Fire-rate cap: never faster than the gun (Vandal 9.75 rounds/s). Returns the earliest next shot time.
  function nextShot(t,rate){return t+1/Math.max(.1,rate||1);}
- return {hash,rng,clamp,pickW,REACT,personality,reaction,crosshair,crosshairAt,firePattern,peek,attackPlan,defensePlan,roles,teamBuy,buyFor,onMateDeath,onSound,ATTACK,DEFENSE,utility,UTIL,turnStep,trackLag,wrapA,SPIKE,plantSpot,postPlant,retake,postPlay,SHOOT_UTIL,shootUtility,TAILWIND,tailwindDash,tailwindKeys,LEVEL,level,aimTraits,AIM_H,aimHeight,halfWidth,aimPlan,aimAt,readyToFire,planFire,idlePitch,recoilPull,discipline,hitPart,BUY,buyArea,buyRoute,buyExit,buySpot,buyWander,buyNew,buyTick,buyNext,buySep,SENS,cm360,sensOf,turnRate,SENSE,inView,audible,earSpot,memNew,memNote,memForget,memBest,repeek,mayFire,nextShot,areas,DFORM,GAP,midPoint,RESPOND,nearest,tradeSpot,follow,buyNear,buyCross};
+ return {hash,rng,clamp,pickW,REACT,personality,reaction,crosshair,crosshairAt,firePattern,peek,attackPlan,defensePlan,roles,teamBuy,buyFor,onMateDeath,onSound,ATTACK,DEFENSE,utility,UTIL,turnStep,trackLag,wrapA,SPIKE,plantSpot,postPlant,retake,postPlay,SHOOT_UTIL,shootUtility,TAILWIND,tailwindDash,tailwindKeys,LEVEL,level,aimTraits,AIM_H,aimHeight,halfWidth,aimPlan,aimAt,readyToFire,planFire,idlePitch,recoilPull,discipline,hitPart,BUY,buyArea,buyRoute,buyExit,buySpot,buyWander,buyHold,buyNew,buyTick,buyNext,buySep,SENS,cm360,sensOf,turnRate,SENSE,inView,audible,earSpot,memNew,memNote,memForget,memBest,repeek,mayFire,nextShot,areas,DFORM,GAP,midPoint,RESPOND,nearest,tradeSpot,follow,buyNear,buyCross};
 });
 // Spawn barriers (Valorant's buy-phase walls), shared by the server (spike.js world, bots.js) and the page (UMD:
 // index.html inlines it in the BOT VARIETY block and reads window.SpawnBarriers; native_maps_runtime nmBlocked and the
-// offline / online buy phase use it). Each spawn's walls stand in its real exits: per map and side a list of panels,
+// offline / online buy phase use it). Each team's walls stand where Valorant has them, on the boundary of that team's
+// buy-phase area (tracker.gg's map overlays -> server/tools/spawn-zones.json): per map and side a list of panels,
 // p = a polyline [[x, z], ...] across one doorway (wall to wall), y = [bottom, top] in world metres, in = +1 when the
 // left normal (-dz, dx) of each piece faces into the spawn (-1: the right normal). Generated from the native map's
-// navigation by server/tools/spawn-barriers-gen.mjs (minimum vertex cut between the spawn core and the rest of the map
-// = the narrowest doorways, extended to the walls) and checked by server/test-spawn-barriers.js (no leak from any
-// spawn node, capsule collision, bot staging). While the buy phase runs every panel is solid for every player and bot
+// navigation by server/tools/spawn-barriers-gen.mjs (minimum vertex cut between the team's zone and the neutral area +
+// the other team's = the narrowest point of each boundary crossing, extended to the walls) and checked by
+// server/test-spawn-barriers.js (on the zone boundary, no leak from any spawn node, capsule collision, bot staging). While the buy phase runs every panel is solid for every player and bot
 // (movement: a 0.1 m-thick vertical slab; shots / sight / thrown utility: a vertical quad) and drawn as a translucent
 // team-tinted hex wall; at round start the walls drop (no collision) and dissolve.
 (function(root,factory){if(typeof module==='object'&&module.exports)module.exports=factory();else root.SpawnBarriers=factory();})(typeof globalThis!=='undefined'?globalThis:this,function(){
@@ -16025,12 +16036,12 @@ window.xAbilityFP = { XAF, XAF_SET, XAF_K, XAF_GUN, phase: xAfPhase, gunPhase: x
  const HALF=.05;/* half the slab thickness */
  // ---- DATA (server/tools/spawn-barriers-gen.mjs --write) ----
  const DATA={
-  ascent:{atk:[{p:[[-18,38.75],[-11.5,38.75]],y:[6.67,10.07],in:1},{p:[[12.45,36.42],[15.15,40.91]],y:[7.67,14.07],in:1},{p:[[15.15,40.91],[15.25,48.75]],y:[7.67,11.07],in:1}],def:[{p:[[-17.75,-45.09],[-17.75,-39.75]],y:[6,9.4],in:-1},{p:[[-6.7,-31.75],[-2.24,-31.75]],y:[7.67,14.07],in:-1},{p:[[10.89,-40.75],[17.3,-40.75]],y:[8.67,14.2],in:-1},{p:[[16,-52.08],[16,-46.5]],y:[8.85,12.79],in:1}]},
-  bind:{atk:[{p:[[-7.53,54.75],[-0.41,54.75]],y:[3.67,7.07],in:1},{p:[[5.75,57.75],[13.63,57.75]],y:[3.82,7.22],in:1}],def:[{p:[[-11.02,-59.25],[-5.05,-59.25]],y:[6.51,11.05],in:-1},{p:[[5.31,-57.75],[10.28,-57.75]],y:[6.51,11.05],in:-1}]},
-  breeze:{atk:[{p:[[-10.64,38],[-5.75,38],[-5.75,36.4]],y:[3.54,9.94],in:1},{p:[[4.97,31.25],[12.39,31.5]],y:[3.64,10.04],in:1},{p:[[12.39,31.5],[13,36.75]],y:[3.61,9.29],in:1}],def:[{p:[[-12.5,-44.75],[-12.5,-39.41]],y:[10.76,17.16],in:-1},{p:[[-3.27,-31],[-0.25,-31]],y:[11.62,15.89],in:-1}]},
-  haven:{atk:[{p:[[-17.55,44.75],[-12.92,44.75]],y:[5.86,10.47],in:1},{p:[[-0.64,38.75],[3.48,38.75]],y:[6.61,12.77],in:1}],def:[{p:[[-21,-38.31],[-21,-32.65]],y:[6.61,10.02],in:-1},{p:[[13,-36.21],[18.34,-36.63]],y:[6.61,13.02],in:-1},{p:[[18,-42.95],[18.34,-36.63]],y:[6.61,13.02],in:1}]},
-  lotus:{atk:[{p:[[-12,39.78],[-12,47.21]],y:[5.4,9.91],in:-1},{p:[[-5.11,29],[0.04,29]],y:[5.9,9.3],in:1},{p:[[10.5,29.29],[10.5,35.57]],y:[5.9,12.3],in:1}],def:[{p:[[-16.5,-37.25],[-16.5,-29.27]],y:[5.9,12.3],in:-1},{p:[[1.5,-23],[1.5,-17.55]],y:[7.86,14.26],in:-1},{p:[[13.5,-36.69],[13.5,-31.81]],y:[7.07,10.47],in:1}]},
-  split:{atk:[{p:[[-16.25,35.82],[-16.25,41.12]],y:[6.61,10.02],in:-1},{p:[[12.25,34.62],[12.25,39.67]],y:[6.61,10.02],in:1}],def:[{p:[[-4.25,-32.27],[-4.25,-27.21]],y:[8.62,12.02],in:-1},{p:[[10.75,-40.03],[10.75,-35.63]],y:[8.62,15.02],in:1}]}
+  ascent:{atk:[{p:[[-38.75,8],[-33.04,8]],y:[5.67,11.79],in:1},{p:[[-17,7.25],[-17,12.3]],y:[6.67,13.07],in:1},{p:[[24.25,18.84],[24.25,26.57]],y:[8.67,15.07],in:-1},{p:[[32.6,8.16],[41.7,7.14]],y:[8.67,12.07],in:1}],def:[{p:[[-27.5,-10.75],[-22.49,-10.75]],y:[5.67,11.25],in:-1},{p:[[-5.63,-15.25],[2.11,-15.25]],y:[6.79,13.19],in:-1},{p:[[19.64,-12.25],[24.1,-12.25]],y:[8.67,12.07],in:-1},{p:[[45.99,-14.5],[51.68,-14.5]],y:[8.67,14.22],in:-1}]},
+  bind:{atk:[{p:[[-41.25,15.65],[-41.25,22.31]],y:[6.52,11.37],in:-1},{p:[[-28.5,5.25],[-23.82,5.25]],y:[8.52,12.62],in:1},{p:[[3.75,-3.38],[3.75,0.07]],y:[7.55,13.95],in:1},{p:[[18.55,12],[24.75,12]],y:[6.53,12.93],in:1},{p:[[38.25,12.54],[38.25,21.26]],y:[6.54,12.94],in:1}],def:[{p:[[-52.15,-27.75],[-45.77,-27.75]],y:[8.54,14.94],in:-1},{p:[[-33.75,-19.88],[-33.75,-15.27]],y:[10.51,16.91],in:1},{p:[[10.5,-15],[15.75,-15]],y:[7.51,13.91],in:-1},{p:[[36.02,-18.75],[40.5,-18.75]],y:[6.51,12.91],in:-1}]},
+  breeze:{atk:[{p:[[-47.11,18.69],[-39.51,15.65]],y:[3.6,7],in:1},{p:[[-42.16,31.25],[-40.25,31.25],[-40.25,37.28]],y:[3.61,10.02],in:-1},{p:[[-12.78,17.75],[-8.75,17.75],[-5.75,15.5],[-2.28,15.5]],y:[3.7,10.1],in:1},{p:[[25,14],[28,14],[28,16.25]],y:[5.61,9.49],in:1}],def:[{p:[[-68,7.25],[-60.43,7.25]],y:[6.18,12.58],in:-1},{p:[[-41.75,-25.49],[-41.75,-21.25],[-41,-21.25],[-39.93,-18.03]],y:[7.59,13.99],in:1},{p:[[-32.75,-41.22],[-32.75,-36.25]],y:[10.62,17.02],in:-1},{p:[[-8.95,-37.75],[-2,-37.75]],y:[11.62,16.62],in:-1},{p:[[9.25,-18.66],[9.25,-13]],y:[7.46,12.02],in:-1},{p:[[28.08,-14.03],[31.75,-15.25],[31.75,-16],[34,-16],[37,-18.25],[46.41,-18.25]],y:[7.62,12.68],in:-1}]},
+  haven:{atk:[{p:[[-36,25.93],[-36,31.55]],y:[4.59,7.99],in:-1},{p:[[-14.44,28.25],[-9.96,28.25]],y:[4.61,8.02],in:1},{p:[[3,17.79],[3,22.92]],y:[6.61,11.56],in:-1},{p:[[8.41,26],[17.25,26]],y:[6.61,10.02],in:1}],def:[{p:[[-27.79,1.25],[-18.07,1.25]],y:[4.61,8.99],in:-1},{p:[[-9,-5.5],[-3.82,-5.5]],y:[6.61,13.02],in:-1},{p:[[27,-10.81],[27,-6.14]],y:[6.03,12.43],in:-1},{p:[[41,-4.75],[46.62,-4.75]],y:[4.88,8.28],in:-1}]},
+  lotus:{atk:[{p:[[-18.75,29.25],[-18.75,33.5]],y:[5.4,11.33],in:-1},{p:[[-17.25,40.24],[-17.25,46.94]],y:[4.9,9.59],in:-1},{p:[[-5.26,29],[0.19,29]],y:[5.9,9.3],in:1},{p:[[15.01,19.25],[19.48,19.25]],y:[5.94,12.34],in:1}],def:[{p:[[-17.73,0.5],[-12.1,0.5]],y:[4.92,11.32],in:-1},{p:[[13.5,-12.87],[13.5,-8.5]],y:[5.9,10.38],in:1},{p:[[23.36,-14.5],[30.37,-14.5]],y:[5.9,9.3],in:-1},{p:[[45.75,-19],[51.67,-19]],y:[5.91,12.31],in:-1}]},
+  split:{atk:[{p:[[-37.9,16.75],[-35,16.75],[-33.5,18.25],[-25.44,18.25]],y:[6.61,11.4],in:1},{p:[[-18,14.52],[-16.87,21.27]],y:[7.12,11.07],in:1},{p:[[16,11.81],[16,16.41]],y:[6.64,10.95],in:-1},{p:[[47.62,9.25],[55.75,9.25]],y:[6.61,10.77],in:1}],def:[{p:[[-51.67,-5],[-45.07,-5]],y:[6.58,11.99],in:-1},{p:[[-12.5,-3.91],[-12.5,0.63]],y:[11.86,18.26],in:1},{p:[[0.29,-7.25],[4.39,-7.25]],y:[10.12,15.98],in:-1},{p:[[19.25,-8.75],[28.37,-8.75]],y:[10.13,16.53],in:-1},{p:[[38.5,-12.5],[43.76,-12.5]],y:[5.36,11.76],in:-1}]}
  };
  // ---- END DATA ----
  const CACHE={};
@@ -16434,8 +16445,10 @@ function xbbOk(C,T,y0){return (x,z)=>{{const nr=BotBrain.buyNear(T.walls,x,z);if
 function xbbInit(C,u,team,atk){const T=xbbTeam(C,atk),key=XBYM.k+'|'+(atk?1:0);if(u.xbb&&u.xbb.key===key)return u.xbb;u.smMotor=null;u.svx=u.svz=0;/* a new buy phase starts from rest (the round reset put it in spawn) */const p=u.g.position,N=C.nav.nodes;
  const rand=BotRoutes.rng(BotRoutes.hash('buy|'+(u.name||'')+'|'+key+'|'+xbvSeed())),start=nmNear(C,p.x,p.z,p.y),B={key,st:BotBrain.buyNew(xbBrain(u),rand),spot:null,face:[0,atk?-1:1],route:[],rg:null,stuck:0,last:[p.x,p.z],fails:0,bad:null,esc:null,off:!(start>=0&&T.area.f[start])||!T.walls.length};
  if(!B.off){let site=null;try{const P=xbvPlan(u,team,atk,C),g=P.stages&&P.stages[0]?P.stages[0].site:atk?FV.sp.site:P.site;site=(g==='mid'?xbvMid(C):C.meta.sites[g])||C.meta.sites[Object.keys(C.meta.sites)[0]];}catch(e){}/* a mid player lines up at the exit toward mid (= server sitePoint) */
-  let exit=site?BotBrain.buyExit(N,nmPath(C,start,nmNear(C,site[0],site[2],site[1])),T.walls):null;
-  if(!exit){/* no route out through a wall: the wall nearest the bot */const nr=BotBrain.buyNear(T.walls,p.x,p.z),w=nr.w;exit={x:w.ax+w.tx*nr.t,y:p.y,z:w.az+w.tz*nr.t,dx:-w.nx,dz:-w.nz,w};}
+  const path=site?nmPath(C,start,nmNear(C,site[0],site[2],site[1])):null;let exit=site?BotBrain.buyExit(N,path,T.walls):null;
+  /* its goal inside its own area (a defender's own site): it walks there and holds instead of lining up */
+  const h=!exit&&BotBrain.buyHold(N,path,T.area,T.walls,T.spots,(x,z,y)=>xbbOk(C,T,y)(x,z),i=>xbbBl(C,i));if(h){B.spot=h.p;B.hold=true;T.spots.push(h.p);B.face=h.face;return u.xbb=B;}
+  if(!exit){/* no route out through a wall: the wall nearest the bot */const nr=BotBrain.buyNear(T.walls,p.x,p.z),w=nr.w;exit={x:w.ax+w.tx*nr.t,y:w.y0!=null?w.y0+.4:p.y,z:w.az+w.tz*nr.t,dx:-w.nx,dz:-w.nz,w};/* the wall's floor, not the bot's (a far wall can sit on another level) */}
   const sp=BotBrain.buySpot(exit,T.walls,T.spots,rand,xbbOk(C,T,exit.y));if(sp){B.spot=sp.p;T.spots.push(sp.p);B.face=[exit.dx,exit.dz];}}
  return u.xbb=B;}
 function xbbStep(C,u,team,atk,dt){
@@ -16452,7 +16465,7 @@ function xbbStep(C,u,team,atk,dt){
   if(Math.hypot(p.x-B.last[0],p.z-B.last[1])>.25){B.last=[p.x,p.z];B.stuck=0;}else if((B.stuck+=dt)>.6){B.stuck=0;if(B.route.length)(B.bad||(B.bad=new Set())).add(B.route[0]);B.rg=null;B.fails++;if(B.st.mode==='mill'&&B.fails>1)B.st.legT=99;
    const gx=g[0]-p.x,gz=g[2]-p.z,gl=Math.hypot(gx,gz)||1;let best=null,bd=-2;for(let k=0;k<16;k++){const a=k*Math.PI/8,ex=Math.sin(a),ez=Math.cos(a);if(blocked(p.x+ex*.3,p.z+ez*.3,.45,p.y)||xbbClose(T,p.x+ex*.3,p.z+ez*.3))continue;const dot=(ex*gx+ez*gz)/gl;if(dot>bd){bd=dot;best=[ex,ez];}}
    if(best)B.esc={v:best,until:FV.buy-.3};
-   if(B.st.mode==='go'&&B.fails>=2&&B.spot){const k=T.spots.indexOf(B.spot),nr=BotBrain.buyNear(T.walls,p.x,p.z),sp=nr&&BotBrain.buySpot({x:nr.w.ax+nr.w.tx*nr.t,z:nr.w.az+nr.w.tz*nr.t,w:nr.w},T.walls,T.spots.filter(q=>q!==B.spot),B.st.rand,ok);if(sp&&Math.hypot(sp.p[0]-p.x,sp.p[2]-p.z)<Math.hypot(B.spot[0]-p.x,B.spot[2]-p.z)){if(k>=0)T.spots[k]=sp.p;B.spot=sp.p;B.fails=0;}}}
+   if(B.st.mode==='go'&&B.fails>=2&&B.spot&&!B.hold){const k=T.spots.indexOf(B.spot),nr=BotBrain.buyNear(T.walls,p.x,p.z),sp=nr&&BotBrain.buySpot({x:nr.w.ax+nr.w.tx*nr.t,z:nr.w.az+nr.w.tz*nr.t,w:nr.w},T.walls,T.spots.filter(q=>q!==B.spot),B.st.rand,ok);if(sp&&Math.hypot(sp.p[0]-p.x,sp.p[2]-p.z)<Math.hypot(B.spot[0]-p.x,B.spot[2]-p.z)){if(k>=0)T.spots[k]=sp.p;B.spot=sp.p;B.fails=0;}}}
   if(B.esc&&FV.buy>B.esc.until){vx=B.esc.v[0];vz=B.esc.v[1];walk=false;}
   else{const t=BotBrain.buyNext(N,B.route,p.x,p.z,g[0],g[2],XBYM.V),l0=Math.hypot(t[0]-p.x,t[1]-p.z)||1,v=BotBrain.buySep(p.x,p.z,mates.map(m=>[m.x,m.z]),(t[0]-p.x)/l0,(t[1]-p.z)/l0,XBYM.V);vx=v[0];vz=v[1];}
   if(!d.face&&(vx||vz))turn(vx,vz,8);}

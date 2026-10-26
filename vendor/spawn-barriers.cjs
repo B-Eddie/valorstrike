@@ -1,11 +1,12 @@
 // Spawn barriers (Valorant's buy-phase walls), shared by the server (spike.js world, bots.js) and the page (UMD:
 // index.html inlines it in the BOT VARIETY block and reads window.SpawnBarriers; native_maps_runtime nmBlocked and the
-// offline / online buy phase use it). Each spawn's walls stand in its real exits: per map and side a list of panels,
+// offline / online buy phase use it). Each team's walls stand where Valorant has them, on the boundary of that team's
+// buy-phase area (tracker.gg's map overlays -> server/tools/spawn-zones.json): per map and side a list of panels,
 // p = a polyline [[x, z], ...] across one doorway (wall to wall), y = [bottom, top] in world metres, in = +1 when the
 // left normal (-dz, dx) of each piece faces into the spawn (-1: the right normal). Generated from the native map's
-// navigation by server/tools/spawn-barriers-gen.mjs (minimum vertex cut between the spawn core and the rest of the map
-// = the narrowest doorways, extended to the walls) and checked by server/test-spawn-barriers.js (no leak from any
-// spawn node, capsule collision, bot staging). While the buy phase runs every panel is solid for every player and bot
+// navigation by server/tools/spawn-barriers-gen.mjs (minimum vertex cut between the team's zone and the neutral area +
+// the other team's = the narrowest point of each boundary crossing, extended to the walls) and checked by
+// server/test-spawn-barriers.js (on the zone boundary, no leak from any spawn node, capsule collision, bot staging). While the buy phase runs every panel is solid for every player and bot
 // (movement: a 0.1 m-thick vertical slab; shots / sight / thrown utility: a vertical quad) and drawn as a translucent
 // team-tinted hex wall; at round start the walls drop (no collision) and dissolve.
 (function(root,factory){if(typeof module==='object'&&module.exports)module.exports=factory();else root.SpawnBarriers=factory();})(typeof globalThis!=='undefined'?globalThis:this,function(){
@@ -13,12 +14,12 @@
  const HALF=.05;/* half the slab thickness */
  // ---- DATA (server/tools/spawn-barriers-gen.mjs --write) ----
  const DATA={
-  ascent:{atk:[{p:[[-18,38.75],[-11.5,38.75]],y:[6.67,10.07],in:1},{p:[[12.45,36.42],[15.15,40.91]],y:[7.67,14.07],in:1},{p:[[15.15,40.91],[15.25,48.75]],y:[7.67,11.07],in:1}],def:[{p:[[-17.75,-45.09],[-17.75,-39.75]],y:[6,9.4],in:-1},{p:[[-6.7,-31.75],[-2.24,-31.75]],y:[7.67,14.07],in:-1},{p:[[10.89,-40.75],[17.3,-40.75]],y:[8.67,14.2],in:-1},{p:[[16,-52.08],[16,-46.5]],y:[8.85,12.79],in:1}]},
-  bind:{atk:[{p:[[-7.53,54.75],[-0.41,54.75]],y:[3.67,7.07],in:1},{p:[[5.75,57.75],[13.63,57.75]],y:[3.82,7.22],in:1}],def:[{p:[[-11.02,-59.25],[-5.05,-59.25]],y:[6.51,11.05],in:-1},{p:[[5.31,-57.75],[10.28,-57.75]],y:[6.51,11.05],in:-1}]},
-  breeze:{atk:[{p:[[-10.64,38],[-5.75,38],[-5.75,36.4]],y:[3.54,9.94],in:1},{p:[[4.97,31.25],[12.39,31.5]],y:[3.64,10.04],in:1},{p:[[12.39,31.5],[13,36.75]],y:[3.61,9.29],in:1}],def:[{p:[[-12.5,-44.75],[-12.5,-39.41]],y:[10.76,17.16],in:-1},{p:[[-3.27,-31],[-0.25,-31]],y:[11.62,15.89],in:-1}]},
-  haven:{atk:[{p:[[-17.55,44.75],[-12.92,44.75]],y:[5.86,10.47],in:1},{p:[[-0.64,38.75],[3.48,38.75]],y:[6.61,12.77],in:1}],def:[{p:[[-21,-38.31],[-21,-32.65]],y:[6.61,10.02],in:-1},{p:[[13,-36.21],[18.34,-36.63]],y:[6.61,13.02],in:-1},{p:[[18,-42.95],[18.34,-36.63]],y:[6.61,13.02],in:1}]},
-  lotus:{atk:[{p:[[-12,39.78],[-12,47.21]],y:[5.4,9.91],in:-1},{p:[[-5.11,29],[0.04,29]],y:[5.9,9.3],in:1},{p:[[10.5,29.29],[10.5,35.57]],y:[5.9,12.3],in:1}],def:[{p:[[-16.5,-37.25],[-16.5,-29.27]],y:[5.9,12.3],in:-1},{p:[[1.5,-23],[1.5,-17.55]],y:[7.86,14.26],in:-1},{p:[[13.5,-36.69],[13.5,-31.81]],y:[7.07,10.47],in:1}]},
-  split:{atk:[{p:[[-16.25,35.82],[-16.25,41.12]],y:[6.61,10.02],in:-1},{p:[[12.25,34.62],[12.25,39.67]],y:[6.61,10.02],in:1}],def:[{p:[[-4.25,-32.27],[-4.25,-27.21]],y:[8.62,12.02],in:-1},{p:[[10.75,-40.03],[10.75,-35.63]],y:[8.62,15.02],in:1}]}
+  ascent:{atk:[{p:[[-38.75,8],[-33.04,8]],y:[5.67,11.79],in:1},{p:[[-17,7.25],[-17,12.3]],y:[6.67,13.07],in:1},{p:[[24.25,18.84],[24.25,26.57]],y:[8.67,15.07],in:-1},{p:[[32.6,8.16],[41.7,7.14]],y:[8.67,12.07],in:1}],def:[{p:[[-27.5,-10.75],[-22.49,-10.75]],y:[5.67,11.25],in:-1},{p:[[-5.63,-15.25],[2.11,-15.25]],y:[6.79,13.19],in:-1},{p:[[19.64,-12.25],[24.1,-12.25]],y:[8.67,12.07],in:-1},{p:[[45.99,-14.5],[51.68,-14.5]],y:[8.67,14.22],in:-1}]},
+  bind:{atk:[{p:[[-41.25,15.65],[-41.25,22.31]],y:[6.52,11.37],in:-1},{p:[[-28.5,5.25],[-23.82,5.25]],y:[8.52,12.62],in:1},{p:[[3.75,-3.38],[3.75,0.07]],y:[7.55,13.95],in:1},{p:[[18.55,12],[24.75,12]],y:[6.53,12.93],in:1},{p:[[38.25,12.54],[38.25,21.26]],y:[6.54,12.94],in:1}],def:[{p:[[-52.15,-27.75],[-45.77,-27.75]],y:[8.54,14.94],in:-1},{p:[[-33.75,-19.88],[-33.75,-15.27]],y:[10.51,16.91],in:1},{p:[[10.5,-15],[15.75,-15]],y:[7.51,13.91],in:-1},{p:[[36.02,-18.75],[40.5,-18.75]],y:[6.51,12.91],in:-1}]},
+  breeze:{atk:[{p:[[-47.11,18.69],[-39.51,15.65]],y:[3.6,7],in:1},{p:[[-42.16,31.25],[-40.25,31.25],[-40.25,37.28]],y:[3.61,10.02],in:-1},{p:[[-12.78,17.75],[-8.75,17.75],[-5.75,15.5],[-2.28,15.5]],y:[3.7,10.1],in:1},{p:[[25,14],[28,14],[28,16.25]],y:[5.61,9.49],in:1}],def:[{p:[[-68,7.25],[-60.43,7.25]],y:[6.18,12.58],in:-1},{p:[[-41.75,-25.49],[-41.75,-21.25],[-41,-21.25],[-39.93,-18.03]],y:[7.59,13.99],in:1},{p:[[-32.75,-41.22],[-32.75,-36.25]],y:[10.62,17.02],in:-1},{p:[[-8.95,-37.75],[-2,-37.75]],y:[11.62,16.62],in:-1},{p:[[9.25,-18.66],[9.25,-13]],y:[7.46,12.02],in:-1},{p:[[28.08,-14.03],[31.75,-15.25],[31.75,-16],[34,-16],[37,-18.25],[46.41,-18.25]],y:[7.62,12.68],in:-1}]},
+  haven:{atk:[{p:[[-36,25.93],[-36,31.55]],y:[4.59,7.99],in:-1},{p:[[-14.44,28.25],[-9.96,28.25]],y:[4.61,8.02],in:1},{p:[[3,17.79],[3,22.92]],y:[6.61,11.56],in:-1},{p:[[8.41,26],[17.25,26]],y:[6.61,10.02],in:1}],def:[{p:[[-27.79,1.25],[-18.07,1.25]],y:[4.61,8.99],in:-1},{p:[[-9,-5.5],[-3.82,-5.5]],y:[6.61,13.02],in:-1},{p:[[27,-10.81],[27,-6.14]],y:[6.03,12.43],in:-1},{p:[[41,-4.75],[46.62,-4.75]],y:[4.88,8.28],in:-1}]},
+  lotus:{atk:[{p:[[-18.75,29.25],[-18.75,33.5]],y:[5.4,11.33],in:-1},{p:[[-17.25,40.24],[-17.25,46.94]],y:[4.9,9.59],in:-1},{p:[[-5.26,29],[0.19,29]],y:[5.9,9.3],in:1},{p:[[15.01,19.25],[19.48,19.25]],y:[5.94,12.34],in:1}],def:[{p:[[-17.73,0.5],[-12.1,0.5]],y:[4.92,11.32],in:-1},{p:[[13.5,-12.87],[13.5,-8.5]],y:[5.9,10.38],in:1},{p:[[23.36,-14.5],[30.37,-14.5]],y:[5.9,9.3],in:-1},{p:[[45.75,-19],[51.67,-19]],y:[5.91,12.31],in:-1}]},
+  split:{atk:[{p:[[-37.9,16.75],[-35,16.75],[-33.5,18.25],[-25.44,18.25]],y:[6.61,11.4],in:1},{p:[[-18,14.52],[-16.87,21.27]],y:[7.12,11.07],in:1},{p:[[16,11.81],[16,16.41]],y:[6.64,10.95],in:-1},{p:[[47.62,9.25],[55.75,9.25]],y:[6.61,10.77],in:1}],def:[{p:[[-51.67,-5],[-45.07,-5]],y:[6.58,11.99],in:-1},{p:[[-12.5,-3.91],[-12.5,0.63]],y:[11.86,18.26],in:1},{p:[[0.29,-7.25],[4.39,-7.25]],y:[10.12,15.98],in:-1},{p:[[19.25,-8.75],[28.37,-8.75]],y:[10.13,16.53],in:-1},{p:[[38.5,-12.5],[43.76,-12.5]],y:[5.36,11.76],in:-1}]}
  };
  // ---- END DATA ----
  const CACHE={};

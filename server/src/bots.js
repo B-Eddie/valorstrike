@@ -164,8 +164,10 @@ function buyInit(sim,u){
  if(!out.off){
   // the bot's first round goal: the strategy's first staged position (its site) or its site; the full-map route there
   const L=plan(sim,u),atk=u.team===sim.atk,g=L.stages&&L.stages[0]?L.stages[0].site:atk?(sim.spike||{}).site:L.site,site=(g==='mid'?sitePoint(sim,'mid'):W.map.sites[g])||W.map.sites[Object.keys(W.map.sites)[0]];/* a mid player lines up at the exit toward mid */
-  let ex=site?BotBrain.buyExit(N,sim.findPath(W,start,W.near(site[0],site[2],site[1])),A.walls):null;
-  if(!ex){/* no route out through a wall: the wall nearest the bot */const nr=BotBrain.buyNear(A.walls,u.x,u.z),w=nr.w;ex={x:w.ax+w.tx*nr.t,y:u.y,z:w.az+w.tz*nr.t,dx:-w.nx,dz:-w.nz,w};}
+  const path=site?sim.findPath(W,start,W.near(site[0],site[2],site[1])):null;let ex=site?BotBrain.buyExit(N,path,A.walls):null;
+  /* its goal inside its own area (a defender's own site): it walks there and holds instead of lining up */
+  const h=!ex&&BotBrain.buyHold(N,path,A.area,A.walls,A.spots,(x,z,y)=>buyOk(W,A,y)(x,z),i=>!!A.bl[i]);if(h){out.spot=h.p;out.node=h.node;out.hold=true;A.spots.push(h.p);out.face=h.face;return u.buyMill=out;}
+  if(!ex){/* no route out through a wall: the wall nearest the bot */const nr=BotBrain.buyNear(A.walls,u.x,u.z),w=nr.w;ex={x:w.ax+w.tx*nr.t,y:w.y0!=null?w.y0+.4:u.y,z:w.az+w.tz*nr.t,dx:-w.nx,dz:-w.nz,w};/* the wall's floor, not the bot's (a far wall can sit on another level) */}
   const sp=BotBrain.buySpot(ex,A.walls,A.spots,rand,buyOk(W,A,ex.y));
   if(sp){out.spot=sp.p;out.node=sp.node;A.spots.push(sp.p);out.face=[ex.dx,ex.dz];}
  }
@@ -190,7 +192,7 @@ export function buyMill(sim,u,dt){
   const gx=g[0]-u.x,gz=g[2]-u.z,gl=Math.hypot(gx,gz)||1;let best=null,bd=-2;for(let k=0;k<16;k++){const a=k*Math.PI/8,ex=Math.sin(a),ez=Math.cos(a);if(W.blocked(u.x+ex*.3,u.z+ez*.3,.4,u.y,1.8)||buyTooClose(A.walls,u.x+ex*.3,u.z+ez*.3))continue;const dot=(ex*gx+ez*gz)/gl;if(dot>bd){bd=dot;best=[ex,ez];}}
   if(best)B.esc={v:best,until:sim.time+.3};
   // the way to its barrier spot is shut (a one-wide corridor of teammates): it takes the nearest free spot from here instead
-  if(B.st.mode==='go'&&B.fails>=2&&B.spot){const k=A.spots.indexOf(B.spot),rest=A.spots.filter(p=>p!==B.spot),nr=BotBrain.buyNear(A.walls,u.x,u.z),sp=nr&&BotBrain.buySpot({x:nr.w.ax+nr.w.tx*nr.t,z:nr.w.az+nr.w.tz*nr.t,w:nr.w},A.walls,rest,B.st.rand,buyOk(W,A,u.y));if(sp&&Math.hypot(sp.p[0]-u.x,sp.p[2]-u.z)<Math.hypot(B.spot[0]-u.x,B.spot[2]-u.z)){if(k>=0)A.spots[k]=sp.p;B.spot=sp.p;B.node=sp.node;B.fails=0;}}}
+  if(B.st.mode==='go'&&B.fails>=2&&B.spot&&!B.hold){const k=A.spots.indexOf(B.spot),rest=A.spots.filter(p=>p!==B.spot),nr=BotBrain.buyNear(A.walls,u.x,u.z),sp=nr&&BotBrain.buySpot({x:nr.w.ax+nr.w.tx*nr.t,z:nr.w.az+nr.w.tz*nr.t,w:nr.w},A.walls,rest,B.st.rand,buyOk(W,A,u.y));if(sp&&Math.hypot(sp.p[0]-u.x,sp.p[2]-u.z)<Math.hypot(B.spot[0]-u.x,B.spot[2]-u.z)){if(k>=0)A.spots[k]=sp.p;B.spot=sp.p;B.node=sp.node;B.fails=0;}}}
  if(B.esc&&sim.time<B.esc.until){u.input={forward:1,walk:false};return {x:B.esc.v[0],z:B.esc.v[1],walk:false};}
  const t=BotBrain.buyNext(N,B.route,u.x,u.z,g[0],g[2],BUY_V),l0=Math.hypot(t[0]-u.x,t[1]-u.z)||1,v=BotBrain.buySep(u.x,u.z,mates.map(m=>[m.x,m.z]),(t[0]-u.x)/l0,(t[1]-u.z)/l0,BUY_V),dx=v[0],dz=v[1],l=Math.hypot(dx,dz)||1;
  if(!d.face)u.look=BotBrain.turnStep(persona(sim,u).brain,u.look||0,Math.atan2(-dx,-dz),dt).yaw;
