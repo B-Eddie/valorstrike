@@ -21,9 +21,10 @@ export const DEV={
  turret:{life:20,range:30,arc:50*Math.PI/180,interval:.7,deploy:2.7,active:40,windup:.75,shots:3,gap:.083,cycle:1.25,near:20,mid:35,dmg:[8,6,4],tag:.5},/* wiki Turret: 100 degree detection cone (arc = half-angle), 2.7 s deploy, active only while Killjoy is alive within 40 m, 0.75 s lock windup, bursts of 3 shots 0.083 s apart every 1.25 s, 8 / 6 / 4 per shot to 20 / 35 / beyond m; client XTUR */
  trapwire:{life:120,arm:WINDUP.trapwire,reach:7.5,width:.4,tether:2.5,daze:2.5},
  cage:{life:7.25,h:5},/* wiki Cyber_Cage: 7.25 s, hollow open-ended cylinder r 3.72 m centred on the cage; h: half-height (not on the wiki; client CYCAGE.h) */
- trademark:{life:120,sight:10,arm:.5,armDeploy:WINDUP.trademark,radius:6,field:9.5},
+ trademark:{life:120,sight:10,arm:.9,armDeploy:WINDUP.trademark,radius:6,field:4},/* wiki Trademark: 2 s deploy, 10 m search radius, 0.9 s windup on a visible enemy, then a 6 m slow field under that enemy for 4 s, 50 % (Chamber page: '4 s 50% Slow'), everyone in it (allies / self too); the trap is used up; client XTMK */
  headhunter:{weapon:'Sheriff',ammo:1},
  boombot:{life:5,speed:6,sight:15,trigger:2.5,windup:.6,hp:60,damage:80,min:30,inner:2,radius:6},/* wiki Boom_Bot: 5 s, 15 m detection, explodes 0.6 s after closing within 2.5 m (it stops), 60 HP (enemy fire destroys it), 80 inside 2 m falling to 30 at 6 m; client XBB */
+ blastPack:{life:5,arm:WINDUP.blastPack,inner:2,outer:5,max:50,min:20,speed:16,up:2,g:16,vy:11,push:14},/* wiki Blast_Pack: thrown, sticks to the first thing it hits, recast (Q) or 5 s detonates; knocks everyone in 5 m back (Raze too); 1.5 s to arm, then 50 inside 2 m -> 20 at 5 m to enemies only; 20 HP; client XBP */
  trail:{life:6,speed:9,trigger:2,concuss:4,minConcuss:2.5,radius:3.5,bite:30}/* wiki Trailblazer: 6 s, 3.5 m explosion, concuss 4 s at the centre falling to 2.5 s at the edge; client XTB */
 };
 // Boom Bot damage at d m from the blast: 80 inside the 2 m inner radius, linear to 30 at the 6 m outer radius (wiki Boom_Bot).
@@ -33,7 +34,7 @@ export const DEV={
 // Alarmbot 20, Trademark 20, Nanoswarm 20, Trapwire 20 (either anchor: e.p and e.q). The Sage Barrier is abilities.js
 // (barrierRay, 600 HP). Owl Drone / Spycam are 'dart' stand-ins with no body here: not shootable. Bots shoot these down
 // (spike.js shootUtility, vendor/bot-brain.cjs shootUtility); the offline game uses the same HP (index.html XSHOOT).
-export const SHOOT={boombot:{hp:60,y:.2,r:.4},turret:{hp:100,y:.45,r:.45},alarmbot:{hp:20,y:.3,r:.35},trademark:{hp:20,y:.2,r:.3},nanoswarm:{hp:20,y:.1,r:.3},trapwire:{hp:20,y:.3,r:.2,ends:true}};
+export const SHOOT={boombot:{hp:60,y:.2,r:.4},turret:{hp:100,y:.45,r:.45},alarmbot:{hp:20,y:.3,r:.35},trademark:{hp:20,y:.2,r:.3},nanoswarm:{hp:20,y:.1,r:.3},trapwire:{hp:20,y:.3,r:.2,ends:true},blastpack:{hp:20,y:0,r:.25}};
 export function deviceHp(e){const S=SHOOT[e.kind];return S?(e.hp??S.hp):0;}
 // The points a shot or a bot aims at: the device, or both Trapwire anchors.
 export function devicePoints(e){const S=SHOOT[e.kind];if(!S)return [];const a=[e.p[0],e.p[1]+S.y,e.p[2]];return S.ends&&e.q?[a,[e.q[0],e.q[1]+S.y,e.q[2]]]:[a];}
@@ -48,6 +49,7 @@ export const tbConcuss=d=>{const T=DEV.trail;return T.concuss-Math.min(1,Math.ma
 const losClear=(sim,o,p)=>{const q=p.map((n,i)=>n-o[i]),len=Math.hypot(...q);if(len<.05)return true;return sim.world.ray(o,q.map(n=>n/len),Math.max(0,len-.4))===Infinity;};
 const chest=v=>[v.x,v.y+1.2-(v.ch||0)*.5,v.z];
 const fwd=u=>[-Math.sin(u.look),0,-Math.cos(u.look)];
+const f3=u=>{const c=Math.cos(u.pitch||0);return [-Math.sin(u.look)*c,Math.sin(u.pitch||0),-Math.cos(u.look)*c];};
 export function startDevice(sim,u,ty,p,push,m={}){
  if(ty==='drone'&&u.agent==='Raze'){push('boombot',DEV.boombot.life,DEV.boombot.radius,{p:[u.x,u.y+.2,u.z],yaw:u.look,hp:DEV.boombot.hp});return true;}
  if(ty==='drone'&&u.agent==='Skye'){push('trail',DEV.trail.life,DEV.trail.radius,{p:[u.x,u.y+.2,u.z],yaw:u.look});return true;}
@@ -67,6 +69,7 @@ export function startDevice(sim,u,ty,p,push,m={}){
  // Cypher Trapwire: stretched across at the aim point, perpendicular to his view, to the walls either side.
  if(u.agent==='Cypher'&&ty==='trap'){const r=[-f[2],0,f[0]],o=[p[0],p[1]+.3,p[2]],span=d=>{const h=sim.world.ray(o,d,DEV.trapwire.reach);return Number.isFinite(h)?Math.max(.3,h-.05):DEV.trapwire.reach;},a=span(r),b=span(r.map(n=>-n));push('trapwire',DEV.trapwire.life,DEV.trapwire.width,{armAt:sim.time+DEV.trapwire.arm,hp:SHOOT.trapwire.hp,p:[p[0]-r[0]*b,p[1],p[2]-r[2]*b],q:[p[0]+r[0]*a,p[1],p[2]+r[2]*a]});return true;}
  if(u.agent==='Cypher'&&ty==='smoke'){push('smoke',DEV.cage.life,SMOKE.r.Cypher,{cyl:DEV.cage.h});return true;}
+ if(u.agent==='Raze'&&ty==='satchel'){const B=DEV.blastPack,s=packStick(sim,[u.x,u.y+1.6,u.z],f3(u));p.splice(0,3,...s);push('blastpack',B.life+.1,B.outer,{p:s,boomAt:sim.time+B.life,armAt:sim.time+B.arm,hp:SHOOT.blastpack.hp});return true;}/* Blast Pack: thrown, sticks where it lands (packStick), recast or 5 s */
  if(u.agent==='Chamber'&&ty==='trap'){push('trademark',DEV.trademark.life,DEV.trademark.radius,{spotted:0,armAt:sim.time+DEV.trademark.armDeploy,hp:SHOOT.trademark.hp});return true;}
  // Chamber Headhunter: one round of the heavy pistol per charge; the previous gun comes back when it is spent,
  // put away (Q again), swapped off or Chamber dies.
@@ -77,6 +80,7 @@ export function startDevice(sim,u,ty,p,push,m={}){
 export function preCastDevice(sim,u,k){
  const A=u.ability;
  if(u.agent==='Killjoy'&&k==='c'){const dormant=sim.effects.filter(e=>e.kind==='nanoswarm'&&e.owner===u.id&&!e.armed);if(dormant.length){for(const e of dormant){e.armed=true;e.until=sim.time+DEV.nanoswarm.active;e.dmgAt=sim.time+DEV.nanoswarm.delay;e.radius=DEV.nanoswarm.radius;}A.cool.c=sim.time+.3;sim.castEvents.push({t:'ac',i:u.id,ag:u.agent,k,o:[u.x,u.y+1.6,u.z],d:fwd(u),p:dormant[0].p,ts:Math.round(sim.time*1000)});return true;}}
+ if(u.agent==='Raze'&&k==='q'){const own=sim.effects.filter(e=>e.kind==='blastpack'&&e.owner===u.id&&e.until>sim.time);if(own.length){for(const e of own)packBoom(sim,e);A.cool.q=sim.time+.3;sim.castEvents.push({t:'ac',i:u.id,ag:u.agent,k,o:[u.x,u.y+1.6,u.z],d:fwd(u),p:own[0].p,bp:1,ts:Math.round(sim.time*1000)});return true;}}/* Blast Pack recast: detonate (no charge) */
  if(u.agent==='Chamber'&&k==='q'){if(u.headhunter){if(u.weapon===DEV.headhunter.weapon&&u.ammo>0)A.q=Math.min(8,(A.q||0)+u.ammo);endHeadhunter(u);A.cool.q=sim.time+.3;return true;}if(u.ultWeapon)return false;}
  return undefined;
 }
@@ -87,11 +91,24 @@ const segDist=(e,x,z)=>{const ax=e.p[0],az=e.p[2],dx=e.q[0]-ax,dz=e.q[2]-az,l2=d
 export function blazeBlocks(sim,o,d,max){for(const e of sim.effects){if(e.kind!=='blaze'||e.until<sim.time)continue;const n=24;for(let i=0;i<=n;i++){const t=max*i/n,x=o[0]+d[0]*t,y=o[1]+d[1]*t,z=o[2]+d[2]*t;if(y>=e.p[1]-.1&&y<=e.p[1]+DEV.blaze.height&&segDist(e,x,z)<DEV.blaze.width)return true;}}return false;}
 // Moves a ground device one step along yaw; returns false when blocked.
 function crawl(sim,e,dt,speed){const x=e.p[0]-Math.sin(e.yaw)*speed*dt,z=e.p[2]-Math.cos(e.yaw)*speed*dt;if(sim.world.blocked(x,z,.25,e.p[1]-.2,.5))return false;const y=sim.world.ground(x,z,e.p[1]+.5);if(!Number.isFinite(y)||Math.abs(y+.2-e.p[1])>.6)return false;e.p=[x,y+.2,z];return true;}
-const KINDS=new Set(['recon','dart','boombot','trail','blaze','nanoswarm','alarmbot','trapwire','trademark']);
+const KINDS=new Set(['blastpack','recon','dart','boombot','trail','blaze','nanoswarm','alarmbot','trapwire','trademark']);
+// Blast Pack flight: from the eye along the aim at 16 m/s (+2 up), gravity 16; sticks to the first wall / floor it meets (as the offline rsFly pack).
+export function packStick(sim,o,d){const B=DEV.blastPack;let p=o.map((n,i)=>n+d[i]*.6);const v=[d[0]*B.speed,d[1]*B.speed+B.up,d[2]*B.speed],dt=.02;
+ for(let t=0;t<3;t+=dt){v[1]-=B.g*dt;const st=v.map(n=>n*dt),l=Math.hypot(...st),h=l>1e-6?sim.world.ray(p,st.map(n=>n/l),l):Infinity;if(Number.isFinite(h))return p.map((n,i)=>n+st[i]*Math.max(0,h-.05)/l);
+  p=p.map((n,i)=>n+st[i]);const g=sim.world.ground(p[0],p[2],p[1]+.5);if(Number.isFinite(g)&&p[1]<=g+.1){p[1]=g+.1;return p;}}return p;}
+// Blast Pack damage by distance once armed: 50 inside 2 m, linear to 20 at the 5 m edge (wiki).
+export function packDamage(d){const B=DEV.blastPack;return d<=B.inner?B.max:d>=B.outer?0:B.max-(d-B.inner)/(B.outer-B.inner)*(B.max-B.min);}
+// Detonation: everyone within 5 m (Raze and allies too) is launched away from the pack (vy 11, 14 m/s out, as the offline rsPack);
+// enemies take packDamage once it has armed (1.5 s), never allies or Raze.
+export function packBoom(sim,e){const B=DEV.blastPack,owner=sim.units.find(u=>u.id===e.owner),armed=sim.time>=e.armAt;e.until=sim.time-1e-9;sim.fxSrc=e;
+ for(const v of sim.units){if(!v.alive||v.loading)continue;const dx=v.x-e.p[0],dz=v.z-e.p[2],dy=v.y+1-e.p[1],d=Math.hypot(dx,dy,dz);if(d>=B.outer||Math.abs(v.y-e.p[1])>3)continue;
+  const h=Math.hypot(dx,dz);let nx=dx/h,nz=dz/h;if(!(h>.3)){const f=fwd(v);nx=f[0];nz=f[2];}v.vx=nx*B.push;v.vz=nz*B.push;v.vy=B.vy;v.air=true;v.seq=(v.seq||0)+1;
+  if(armed&&owner&&v.team!==e.team&&losClear(sim,[e.p[0],e.p[1]+.3,e.p[2]],chest(v)))abilityDamage(sim,owner,v,packDamage(d));}}
 export function tickDevices(sim,dt){
  for(const u of sim.units){if(u.headhunter&&(!u.alive||u.weapon!==DEV.headhunter.weapon||u.ammo<=0))endHeadhunter(u);
   if(u.tether&&sim.time>=u.tether.at){if(u.alive){u.concussUntil=Math.max(u.concussUntil||0,sim.time+DEV.trapwire.daze);u.slowUntil=Math.max(u.slowUntil||0,sim.time+DEV.trapwire.daze);}u.tether=null;}}
  for(let i=sim.effects.length-1;i>=0;i--){const e=sim.effects[i];if(!KINDS.has(e.kind))continue;if(e.until<sim.time)continue;sim.fxSrc=e;const owner=sim.units.find(u=>u.id===e.owner),foes=sim.units.filter(v=>v.alive&&!v.loading&&v.team!==e.team);
+  if(e.kind==='blastpack'){if(sim.time>=e.boomAt||!owner?.alive)packBoom(sim,e);continue;}/* 5 s fuse; Raze dead: it goes off */
   if(e.kind==='dart'){/* Owl Drone / Spycam stand-in: tag one enemy, then reveal it on each ping (a tag: no line of sight needed) */if(e.tgt==null){if(sim.time<e.pickAt)continue;const o=[e.p[0],e.p[1]+.5,e.p[2]],v=foes.filter(v=>Math.hypot(v.x-o[0],v.z-o[2])<e.radius&&losClear(sim,o,chest(v))).sort((a,b)=>Math.hypot(a.x-o[0],a.z-o[2])-Math.hypot(b.x-o[0],b.z-o[2]))[0];if(!v){e.until=sim.time-1;continue;}e.tgt=v.id;}
    const v=sim.units.find(x=>x.id===e.tgt);if(!v||!v.alive){e.until=sim.time-1;continue;}while(e.pings.length&&sim.time>=e.pings[0]){e.pings.shift();v.revealedUntil=Math.max(v.revealedUntil||0,sim.time+e.reveal);}if(!e.pings.length)e.until=sim.time-1;continue;}
   if(e.kind==='recon'){while(e.pulses&&e.pulses.length&&sim.time>=e.pulses[0]){e.pulses.shift();const o=[e.p[0],e.p[1]+.5,e.p[2]];for(const v of foes)if(Math.hypot(v.x-o[0],v.z-o[2])<e.radius&&losClear(sim,o,chest(v)))v.revealedUntil=Math.max(v.revealedUntil||0,sim.time+(e.reveal||DEV.recon.reveal));}continue;}
@@ -99,8 +116,8 @@ export function tickDevices(sim,dt){
   if(e.kind==='nanoswarm'){if(!e.armed||sim.time<(e.dmgAt||0))continue;/* 1 s activation windup */for(const v of sim.units)if(v.alive&&!v.loading&&v.id!==e.owner&&Math.hypot(v.x-e.p[0],v.z-e.p[2])<e.radius&&Math.abs(v.y-e.p[1])<3&&losClear(sim,[e.p[0],e.p[1]+.4,e.p[2]],chest(v)))abilityDamage(sim,owner,v,DEV.nanoswarm.damage*dt);continue;}
   if(e.kind==='trapwire'){const T=DEV.trapwire;if(sim.time<(e.armAt||0))continue;/* 0.7 s arm (wiki windup) */for(const v of foes)if(!v.tether&&Math.abs(v.y-e.p[1])<1.5&&segDist(e,v.x,v.z)<T.width){v.tether={at:sim.time+T.tether};v.tetheredUntil=sim.time+T.tether;v.revealedUntil=Math.max(v.revealedUntil||0,sim.time+T.tether);v.slowUntil=Math.max(v.slowUntil||0,sim.time+T.tether);e.until=sim.time;break;}continue;}
 
-  if(e.kind==='trademark'){const T=DEV.trademark,o=[e.p[0],e.p[1]+.3,e.p[2]];if(e.field){for(const v of foes)if(Math.hypot(v.x-o[0],v.z-o[2])<T.radius&&Math.abs(v.y-e.p[1])<3)v.slowUntil=Math.max(v.slowUntil||0,sim.time+.2);continue;}
-   if(sim.time<(e.armAt||0))continue;/* 2 s arm after placement (wiki windup) */const seen=foes.some(v=>Math.hypot(v.x-o[0],v.z-o[2])<T.sight&&Math.abs(v.y-e.p[1])<4&&losClear(sim,o,chest(v)));if(!seen){e.spotted=0;continue;}if(!e.spotted)e.spotted=sim.time;if(sim.time-e.spotted>=T.arm){e.field=true;e.until=sim.time+T.field;}continue;}
+  if(e.kind==='trademark'){const T=DEV.trademark,o=[e.p[0],e.p[1]+.3,e.p[2]];if(e.field){const f=e.fp;for(const v of sim.units)if(v.alive&&!v.loading&&Math.hypot(v.x-f[0],v.z-f[2])<T.radius&&Math.abs(v.y-f[1])<3)v.orbSlowUntil=Math.max(v.orbSlowUntil||0,sim.time+.2);/* 50 % (the Slow Orb's half speed: status oslow) */continue;}
+   if(sim.time<(e.armAt||0))continue;/* 2 s arm after placement (wiki windup) */const seen=foes.some(v=>Math.hypot(v.x-o[0],v.z-o[2])<T.sight&&Math.abs(v.y-e.p[1])<4&&losClear(sim,o,chest(v)));if(!seen){e.spotted=0;continue;}if(!e.spotted)e.spotted=sim.time;if(sim.time-e.spotted>=T.arm){const v=foes.filter(v=>Math.hypot(v.x-o[0],v.z-o[2])<T.sight&&Math.abs(v.y-e.p[1])<4&&losClear(sim,o,chest(v))).sort((a,b)=>Math.hypot(a.x-o[0],a.z-o[2])-Math.hypot(b.x-o[0],b.z-o[2]))[0];e.field=true;e.fp=[v.x,v.y,v.z];e.hp=0;/* the trap is spent: nothing left to shoot */e.until=sim.time+T.field;}continue;}
   if(e.kind==='alarmbot'){const C=DEV.alarmbot,o=[e.p[0],e.p[1]+.3,e.p[2]];let v=e.chase!=null&&foes.find(f=>f.id===e.chase);if(!v||!losClear(sim,o,chest(v))||Math.hypot(v.x-o[0],v.z-o[2])>C.sight*2){v=foes.filter(f=>Math.hypot(f.x-o[0],f.z-o[2])<C.sight&&Math.abs(f.y-e.p[1])<3&&losClear(sim,o,chest(f))).sort((a,b)=>Math.hypot(a.x-o[0],a.z-o[2])-Math.hypot(b.x-o[0],b.z-o[2]))[0];e.chase=v?v.id:null;}
    if(!v)continue;if(Math.hypot(v.x-o[0],v.z-o[2])<C.trigger){sim.effects.splice(i,1);for(const w of foes)if(Math.hypot(w.x-o[0],w.z-o[2])<C.radius&&Math.abs(w.y-e.p[1])<2.5&&losClear(sim,o,chest(w)))w.vulnerableUntil=Math.max(w.vulnerableUntil||0,sim.time+C.vulnerable);continue;}
    e.yaw=Math.atan2(o[0]-v.x,o[2]-v.z);crawl(sim,e,dt,C.speed);continue;}

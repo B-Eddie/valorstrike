@@ -27,16 +27,17 @@ const fails=[];const fail=s=>fails.push(s);const eq=(a,b,m)=>{if(JSON.stringify(
   const n=xe('bots[0].xUsN');ok(n>=3&&n<=8,'bullets fired at it: '+n+' (100 HP / Vandal body 40 at 10 m = 3)');
   xe('bots[0].det=1e9;bots[0].g.position.x+=300;__S.t=null;true');
   // ---- 2. the player's Barrier: shot only when across the bot's way ----
-  xe(`(()=>{const o=__S.o,b=bots[0];b.det=0;b.g.position.set(o.x,b.g.position.y,o.z);b.xUsN=0;b.cd=0;sgWallEnd();
-   const m=new THREE.Mesh(sgWallGeo,new THREE.MeshBasicMaterial({transparent:true}));const p=new THREE.Vector3(o.x,1.5,o.z-6);m.position.copy(p);scene.add(m);solids.push(m);m.userData.sw=true;
-   J.sw={m,p,ax:1,az:0,t:40,hp:600,arr:solids};__S.t=p;b.xUg=[o.x+20,o.z];return true;})()`);
+  // the wiki wall (XBAR: 4 x 2.6 m segments), fortified (600 each); the bot stands in front of segment 2 (local x 1.3)
+  xe(`(()=>{const o=__S.o,b=bots[0];b.det=0;b.g.position.set(o.x+1.3,b.g.position.y,o.z);b.xUsN=0;b.cd=0;sgWallEnd();
+   const p=new THREE.Vector3(o.x,1.5,o.z-6);J.sw=xBarMake(p,0,new THREE.MeshBasicMaterial({transparent:true}),true,{arr:solids,ft:0});J.sw.seg=[600,600,600,600];J.sw.hp=2400;__S.t=p;b.xUg=[o.x+20,o.z];return true;})()`);
   const from='new THREE.Vector3(bots[0].g.position.x,(bots[0].g.position.y||0)+1.7,bots[0].g.position.z)';
-  eq(xe(`[xUtilAcross(bots[0],J.sw),xUtilShoot(bots[0],0.05,${from},true),J.sw.hp]`),[false,false,600],'heading off to the side: the barrier is left alone');
-  xe('bots[0].xUg=[__S.o.x,__S.o.z-25];true');eq(xe('xUtilAcross(bots[0],J.sw)'),true,'heading through it: across its way');
-  xe(`(()=>{for(let i=0;i<200&&J.sw;i++){bots[0].xywT=0;xUtilShoot(bots[0],0.05,${from},true);}return true;})()`);
-  ok(xe('J.sw===null'),'barrier across the way shot down (600 HP)');const nb=xe('bots[0].xUsN');ok(nb>=15&&nb<=17,'Vandal bullets to break it: '+nb+' (600 / 40 = 15)');
+  eq(xe(`[xUtilAcross(bots[0],J.sw),xUtilShoot(bots[0],0.05,${from},true),J.sw.hp]`),[false,false,2400],'heading off to the side: the barrier is left alone');
+  xe('bots[0].xUg=[__S.o.x+1.3,__S.o.z-25];true');eq(xe('xUtilAcross(bots[0],J.sw)'),true,'heading through it: across its way');
+  xe(`(()=>{for(let i=0;i<200&&J.sw&&xUtilAcross(bots[0],J.sw);i++){bots[0].xywT=0;xUtilShoot(bots[0],0.05,${from},true);}return true;})()`);
+  eq(xe('J.sw&&J.sw.seg'),[600,600,0,600],'the segment across its way shot open (600 HP), the rest stand');const nb=xe('bots[0].xUsN');ok(nb>=15&&nb<=17,'Vandal bullets to break it: '+nb+' (600 / 40 = 15)');
+  eq(xe(`[xUtilAcross(bots[0],J.sw),xUtilShoot(bots[0],0.05,${from},true)]`),[false,false],'a gap on its way: no more shooting');
   xe('bots[0].xUg=[__S.o.x+0.2,__S.o.z-25];bots[0].g.position.z=__S.o.z-15;true');
-  xe(`(()=>{const m=new THREE.Mesh(sgWallGeo,new THREE.MeshBasicMaterial({transparent:true}));const p=new THREE.Vector3(__S.o.x,1.5,__S.o.z-6);m.position.copy(p);scene.add(m);solids.push(m);J.sw={m,p,ax:1,az:0,t:40,hp:600,arr:solids};return true;})()`);
+  xe(`(()=>{sgWallEnd();const p=new THREE.Vector3(__S.o.x,1.5,__S.o.z-6);J.sw=xBarMake(p,0,new THREE.MeshBasicMaterial({transparent:true}),true,{arr:solids,ft:0});return true;})()`);
   eq(xe(`[xUtilAcross(bots[0],J.sw),xUtilShoot(bots[0],0.05,${from},true)]`),[false,false],'barrier behind the bot (heading away): not shot');xe('sgWallEnd();bots[0].det=1e9;bots[0].g.position.x+=300;true');
   // ---- 3. ally bot shoots an enemy bot's Turret, Boom Bot and Barrier; never its own team's ----
   xe(`(()=>{const o=__S.o,a=allies[0];a.det=0;a.alive=true;a.hp=100;a.w="Phantom";a.g.position.set(o.x,a.g.position.y,o.z);a.xUsN=0;a.cd=0;window.__af=new THREE.Vector3(o.x,(a.g.position.y||0)+1.7,o.z);
@@ -51,7 +52,7 @@ const fails=[];const fail=s=>fails.push(s);const eq=(a,b,m)=>{if(JSON.stringify(
   xe(`(()=>{for(let i=0;i<40&&__B.hp>0;i++){allies[0].xywT=0;xUtilShoot(allies[0],0.05,__af,false);}return true;})()`);ok(xe('__B.hp<=0'),'enemy Boom Bot shot down (60 HP)');xe('RS.bb.forEach(xBbGone);RS.bb.length=0;true');
   xe(`(()=>{const o=__S.o,w=xBBarrier(bots[0],false,new THREE.Vector3(o.x,0,o.z-8.5),o.x,o.z);allies[0].xUg=[o.x,o.z-30];window.__W=w;return true;})()`);
   eq(xe('[__W.en,xUtilAcross(allies[0],__W)]'),[true,true],'enemy bot barrier across the ally\'s way');
-  xe(`(()=>{for(let i=0;i<200&&XBSW.includes(__W);i++){allies[0].xywT=0;xUtilShoot(allies[0],0.05,__af,false);}return true;})()`);ok(xe('!XBSW.includes(__W)'),'ally broke the enemy barrier');
+  xe(`(()=>{for(let i=0;i<200&&XBSW.includes(__W)&&xUtilAcross(allies[0],__W);i++){allies[0].xywT=0;xUtilShoot(allies[0],0.05,__af,false);}return true;})()`);ok(xe('!XBSW.includes(__W)||(__W.seg.some(h=>h<=0)&&!xUtilAcross(allies[0],__W))'),'ally shot the enemy barrier open on its way: '+JSON.stringify(xe('__W.seg')));xe('XBSW.includes(__W)&&xBSwGone(__W);true');
   // ---- 4. the player's Alarmbot (20 HP) ----
   xe(`(()=>{const o=__S.o,b=bots[0];b.det=0;b.g.position.set(o.x,b.g.position.y,o.z);b.cd=0;const m=new THREE.Mesh(kjBox,new THREE.MeshBasicMaterial());m.position.set(o.x,0.3,o.z-6);scene.add(m);J.ab={m,p:m.position};return true;})()`);
   xe(`(()=>{for(let i=0;i<20&&J.ab;i++){bots[0].xywT=0;xUtilShoot(bots[0],0.05,${from},true);}return true;})()`);ok(xe('J.ab===null'),'enemy bot shot the player\'s Alarmbot (20 HP)');

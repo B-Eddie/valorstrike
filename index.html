@@ -2860,15 +2860,15 @@ function losRaw(a, b) {
   XLH.length = 0; return XLR.intersectObjects(solids, false, XLH).length === 0;
 }
 // bot area damage (molly / explosive / turret splash): hits the other team, player and bots alike, credited to the caster
-function xAoe(b, p, r, n, w) {
-  const o = new THREE.Vector3(p.x, 0.5, p.z), en = typeof allies === "undefined" || allies.indexOf(b) < 0, by = b.name, e2 = new THREE.Vector3();
+function xAoe(b, p, r, n, w, fall) { // fall(d): damage by distance (Paint Shells xPsFall), else a flat n
+  const o = new THREE.Vector3(p.x, 0.5, p.z), en = typeof allies === "undefined" || allies.indexOf(b) < 0, by = b.name, e2 = new THREE.Vector3(), dn = (x, z) => (fall ? fall(Math.hypot(x - p.x, z - p.z)) : n);
   if (en) {
-    if (player.hp > 0 && Math.hypot(player.x - p.x, player.z - p.z) < r && los(o, pEye())) hurt(player, n, by);
+    if (player.hp > 0 && Math.hypot(player.x - p.x, player.z - p.z) < r && los(o, pEye())) hurt(player, dn(player.x, player.z), by);
     for (const a of allies) { if (!a.alive || !running) continue; const q = a.g.position; if (Math.hypot(q.x - p.x, q.z - p.z) >= r || !los(o, e2.set(q.x, (q.y || 0) + 1.5, q.z))) continue;
-      hurt(a, n, by); if (a.hp <= 0) allyDie(a, by, w); }
+      hurt(a, dn(q.x, q.z), by); if (a.hp <= 0) allyDie(a, by, w); }
   } else for (const t of bots) { if (!t.alive) continue; const q = t.g.position; if (Math.hypot(q.x - p.x, q.z - p.z) >= r || !los(o, e2.set(q.x, (q.y || 0) + 1.5, q.z))) continue;
-    hurt(t, n, by); if (t.hp <= 0.001) kill(t, false, by, w); }
-  xFFArea(b, en, w, n, (x, z, t) => Math.hypot(x - p.x, z - p.z) < r && los(o, t === player ? pEye() : e2.set(x, ((t.g && t.g.position.y) || 0) + 1.5, z)));
+    hurt(t, dn(q.x, q.z), by); if (t.hp <= 0.001) kill(t, false, by, w); }
+  xFFArea(b, en, w, n, (x, z, t) => Math.hypot(x - p.x, z - p.z) < r && los(o, t === player ? pEye() : e2.set(x, ((t.g && t.g.position.y) || 0) + 1.5, z)) && (fall ? dn(x, z) / n : true));
 }
 // Friendly fire, as the server's abilityDamage (wiki.playvalorant.com/en-us/Abilities: "abilities that damage allies deal 1/3
 // damage"; each ability's "Affects allies/self?": Yes (damage reduced) for the names in XFF; No for Boom Bot, Blast Pack,
@@ -3360,7 +3360,7 @@ function shoot(hv) {
   XWH.length = 0; ray.intersectObjects(xShotTgts(targets), true, XWH); let hit = XWH[0], wk = 1;
   if (!kn) bFx(null, ray.ray.direction, xSurfHit(hit, ray.ray.direction, 200), 200);
   if (!kn && hit) { const wb = xWall(hit, ray.ray.direction, w); if (wb) { hit = wb; wk = xPen(w).k; } } // wallbang: first hitbox past a thin wall
-  if (hit && hit.object.userData.sw) sgDmg(body, hit.object.userData.sw);
+  if (hit && hit.object.userData.sw) sgDmg(body, hit.object.userData.sw, hit.object.userData.si);
   if (hit && hit.object.userData.ld) { const o = hit.object.userData.ld, n = kn ? body : wDmg(W, "body", hit.distance); o.hp -= n; vmHit(hit.point, n, false, o.hp <= 0); }
   if (hit && hit.object.userData.bot) {
     const b = hit.object.userData.bot, hs = !!hit.object.userData.head;
@@ -3418,7 +3418,7 @@ function xPellets(W, targets) {
       if (i < 4) bFx(null, d, xSurfHit(hit, d, 200), 200); // a few tracers only
       if (!hit) continue;
       const u = hit.object.userData;
-      if (u.sw) sgDmg(wDmg(D, "body", hit.distance), u.sw);
+      if (u.sw) sgDmg(wDmg(D, "body", hit.distance), u.sw, u.si);
       if (u.ld) u.ld.hp -= wDmg(D, "body", hit.distance);
       if (u.bot) { const b = u.bot, hs = !!u.head, legs = !hs && b.g && hit.point.y - b.g.position.y < 0.9;
         XPM.set(b, (XPM.get(b) || 0) + wDmg(D, hs ? "head" : legs ? "legs" : "body", hit.distance)); if (hs || !XPP.has(b)) XPP.set(b, hs ? -1 : 1); if (hs) b._pp = hit.point; else if (!b._pp) b._pp = hit.point; }
@@ -8333,12 +8333,32 @@ function jFxTick(dt) {
 }
 // ---- Sage + Reyna kits (player) ----
 const sgWallGeo = new THREE.BoxGeometry(6, 3, 0.4), slowGeo = new THREE.CircleGeometry(3.5, 32);
+// Sage Barrier Orb (wiki Barrier_Orb Stats; server abilities.js BARRIER): 4 segments of 2.6 m (10.4 m), 3 m tall, 0.4 m thick; each 400 HP,
+// +200 (to 600) 2 s after the cast; 40 s. A broken segment leaves a gap; the wall ends when all are down. Used by the player's (J.sw) and the
+// bots' (XBSW) barriers: w.m is the group, w.sm the segment meshes (in solids, userData.sw = owner tag, userData.si = index), w.seg their HP.
+var XBAR = { len: 10.4, segs: 4, h: 3, th: 0.4, hp: 400, fort: 200, fortAt: 2, life: 40 };
+const sgSegGeo = new THREE.BoxGeometry(XBAR.len / XBAR.segs + 0.02, XBAR.h, XBAR.th); // 1 cm overlap: no seam a ray can slip through
+function xBarMake(p, yaw, mat, tag, extra) { const g = new THREE.Group(), w = Object.assign({ m: g, sm: [], seg: [], p, ax: Math.cos(yaw), az: -Math.sin(yaw), t: XBAR.life, ft: XBAR.fortAt, hp: XBAR.hp * XBAR.segs }, extra || {}), sw = XBAR.len / XBAR.segs;
+  for (let i = 0; i < XBAR.segs; i++) { const m = new THREE.Mesh(sgSegGeo, mat.clone()); m.position.set(-XBAR.len / 2 + (i + 0.5) * sw, 0, 0); m.userData.sw = tag === undefined ? w : tag; m.userData.si = i;
+    const h = [3.15, 3.55, 3.3, 3.6][i % 4], sh = new THREE.Mesh(sgShard, m.material); sh.scale.y = h; sh.position.set(0, -XBAR.h / 2 + h / 2, 0); sh.rotation.set(0.04 * (i % 2 ? -1 : 1), 0, 0.04); sh.raycast = () => {}; m.add(sh);
+    g.add(m); w.sm.push(m); w.seg.push(XBAR.hp); solids.push(m); }
+  g.position.copy(p); g.rotation.y = yaw; scene.add(g); g.updateMatrixWorld(true); return w; }
+function xBarD(w, x, z) { const dx = x - w.p.x, dz = z - w.p.z, t = dx * w.ax + dz * w.az, q = Math.hypot(dx - w.ax * t, dz - w.az * t), sw = XBAR.len / XBAR.segs; let best = Infinity;
+  for (let i = 0; i < w.seg.length; i++) { if (!(w.seg[i] > 0)) continue; const x0 = -XBAR.len / 2 + i * sw, x1 = x0 + sw; best = Math.min(best, Math.hypot(Math.max(0, x0 - t, t - x1), q)); } return best; }
+function xBarAim(w, x, z) { const t = (x - w.p.x) * w.ax + (z - w.p.z) * w.az, sw = XBAR.len / XBAR.segs; let best = null; // the nearest live segment's point to x, z: [t along the wall, segment]
+  for (let i = 0; i < w.seg.length; i++) { if (!(w.seg[i] > 0)) continue; const x0 = -XBAR.len / 2 + i * sw + 0.1, x1 = x0 + sw - 0.2, c = Math.max(x0, Math.min(x1, t)); if (!best || Math.abs(c - t) < Math.abs(best[0] - t)) best = [c, i]; } return best || [0, -1]; }
+function xBarGone(w) { scene.remove(w.m); for (const m of w.sm) { const i = solids.indexOf(m); if (i >= 0) solids.splice(i, 1); try { m.material.dispose(); } catch (e) {} } w.seg = w.seg.map(() => 0); w.hp = 0; }
+function xBarHit(w, si, n) { // damage segment si (none given: the live one nearest the middle); true once every segment is down
+  if (!(si >= 0 && w.seg[si] > 0)) { let b = -1, bd = 9; w.seg.forEach((h, i) => { const d = Math.abs(i - (w.seg.length - 1) / 2); if (h > 0 && d < bd) { bd = d; b = i; } }); si = b; } if (si < 0) return true;
+  w.seg[si] = Math.max(0, w.seg[si] - n); const m = w.sm[si]; if (w.seg[si] <= 0) { w.m.remove(m); const i = solids.indexOf(m); if (i >= 0) solids.splice(i, 1); } else m.material.opacity = 0.55 + 0.35 * Math.min(1, w.seg[si] / (XBAR.hp + XBAR.fort));
+  w.hp = w.seg.reduce((a, b) => a + b, 0); return !(w.hp > 0); }
+function xBarTick(w, dt) { if (w.ft > 0 && (w.ft -= dt) <= 0) { w.seg = w.seg.map((h) => (h > 0 ? h + XBAR.fort : 0)); w.hp = w.seg.reduce((a, b) => a + b, 0); } return (w.t -= dt) <= 0; } // fortify at 2 s; true when the 40 s are up
 const sgNo = () => blip(120, 0.08, "square", 0.1);
-function sgWallD(x, z) { const w = J.sw, dx = x - w.p.x, dz = z - w.p.z, t = Math.max(-3, Math.min(3, dx * w.ax + dz * w.az)); return Math.hypot(dx - w.ax * t, dz - w.az * t); }
+function sgWallD(x, z) { return xBarD(J.sw, x, z); }
 function sgBlk(x, z, r, y) { try { return !!(J.sw && J.sw.m && (y || 0) + 0.5 < 3 && sgWallD(x, z) < r + 0.2) || (XBSW.length > 0 && xBSwBlk(x, z, r, y)); } catch (e) { return false; } return !!(J.sw && (y || 0) + 0.5 < 3 && sgWallD(x, z) < r + 0.2); }
-function sgWallEnd(msg) { const w = J.sw; if (!w) return; scene.remove(w.m); const i = w.arr.indexOf(w.m); if (i >= 0) w.arr.splice(i, 1); J.sw = null; if (msg) { say(msg, 900); blip(300, 0.25, "square", 0.12); } }
-function sgDmg(n, w) { if (w && w !== true) return xBSwDmg(w, n); if (!J.sw) return; // w: the hit mesh's userData.sw (true: the player's barrier, else a bot barrier)
-  J.sw.hp -= n; J.sw.m.material.opacity = 0.55 + 0.35 * Math.max(0, J.sw.hp / 600); if (J.sw.hp <= 0) sgWallEnd("Barrier broken"); }
+function sgWallEnd(msg) { const w = J.sw; if (!w) return; xBarGone(w); J.sw = null; if (msg) { say(msg, 900); blip(300, 0.25, "square", 0.12); } }
+function sgDmg(n, w, si) { if (w && w !== true) return xBSwDmg(w, n, si); if (!J.sw) return; // w: the hit mesh's userData.sw (true: the player's barrier, else a bot barrier); si: the segment (userData.si)
+  if (xBarHit(J.sw, si, n)) sgWallEnd("Barrier broken"); }
 function sgSlow(p) { return (J.slz || []).some((z) => Math.hypot(p.x - z.p.x, p.z - z.p.z) < 3.5) ? 0.5 : 1; }
 function sgLook(list, far, cos) { const e = pEyeTo(PE_V), d = jAim(); return list.find((a) => { const v = new THREE.Vector3(a.g.position.x, 1, a.g.position.z).sub(e), l = v.length() || 0.01; return l < far && v.dot(d) / l > cos; }); }
 function sgKey(code) {
@@ -8346,10 +8366,8 @@ function sgKey(code) {
   if (code === "KeyC") {
     if (J.c < 1 || J.cd.c > 0) return sgNo(); sgWallEnd(); J.c--; J.cd.c = 0.6;
     const ice = sgKey.ice || (sgKey.ice = new THREE.MeshPhongMaterial({ color: 0xc8f6ff, emissive: 0x1f6f95, specular: 0xffffff, shininess: 120, flatShading: true, transparent: true, opacity: 0.9 })); ice.opacity = 0.9;
-    const p = new THREE.Vector3(P.x + fx * 2.5, 1.5, P.z + fz * 2.5), m = new THREE.Mesh(sgWallGeo, ice);
-    [[-2.25, 3.15, 0.04], [-0.75, 3.55, -0.03], [0.75, 3.3, 0.02], [2.25, 3.6, -0.04]].forEach(([x, h, r]) => { const s = new THREE.Mesh(sgShard, ice); s.scale.y = h; s.position.set(x, -1.5 + h / 2, 0); s.rotation.set(r, 0, r); s.raycast = () => {}; m.add(s); });
-    m.position.copy(p); m.rotation.y = yaw; m.userData.sw = true; scene.add(m); solids.push(m);
-    J.sw = { m, p, ax: Math.cos(yaw), az: -Math.sin(yaw), t: 40, hp: 600, arr: solids }; SFX.wall(); say("Barrier Orb · 600 HP (fortified) · 40 s", 900);
+    const p = new THREE.Vector3(P.x + fx * 2.5, 1.5, P.z + fz * 2.5);
+    J.sw = xBarMake(p, yaw, ice, true, { arr: solids }); SFX.wall(); say("Barrier Orb · 4 x 400 HP, 600 once fortified (2 s) · 40 s", 900);
   }
   if (code === "KeyQ") {
     if (J.q < 1 || J.cd.q > 0) return sgNo(); J.q--; J.cd.q = 0.6;
@@ -8414,7 +8432,7 @@ function ryKey(code) {
 }
 function sgTick(dt) {
   const P = player;
-  if (J.sw) { J.sw.t -= dt; if (J.sw.t <= 0) sgWallEnd(); }
+  if (J.sw && xBarTick(J.sw, dt)) sgWallEnd();
   prune(J.slz, (z) => { z.t -= dt; z.m.material.opacity = 0.45 * Math.min(1, z.t / 0.5); if (z.t > 0) return true; jRel(z.m); return false; });
   if (J.pick === "Sage" && J.e < 1 && J.cd.e <= 0) { J.e = 1; say("Healing Orb ready", 700); }
   if ((J.pick === "Sova" || J.pick === "Skye") && J.e < 1 && J.cd.e <= 0) { J.e = 1; say(J.pick === "Sova" ? "Recon Bolt ready" : "Guiding Light ready", 700); }
@@ -8594,25 +8612,30 @@ function rsFly(o, dt, g) { // simple bouncing projectile; true on contact
 // 4 m, linear to 30 at the 7 m edge. Same values as the server (ULT.rocket / ssDamage).
 const XSS = { inner: 4, outer: 7, max: 150, min: 30 };
 function xSsDmg(d) { return d <= XSS.inner ? XSS.max : d < XSS.outer ? XSS.max - (XSS.max - XSS.min) * (d - XSS.inner) / (XSS.outer - XSS.inner) : 0; }
-function rsBoom(p, r, dmg, w, c, direct, fall) { // fall: Showstopper falloff (xSsDmg)
-  const e = new RV(p.x, Math.max(0.5, p.y), p.z), m = jM(smokeGeo, fireMat(c, 0.45)); m.scale.setScalar(r / 4); m.position.copy(e); jFx(m, 0.4);
+function rsBoom(p, r, dmg, w, c, direct, fall) { // fall: true = Showstopper falloff (xSsDmg), a function = damage by distance (Paint Shells xPsFall)
+  const e = new RV(p.x, Math.max(0.5, p.y), p.z), m = jM(smokeGeo, fireMat(c, 0.45)); m.scale.setScalar(r / 4); m.position.copy(e); jFx(m, 0.4); const fd = fall === true ? xSsDmg : typeof fall === "function" ? fall : null;
   blip(70 + Math.random() * 30, 0.45, "sawtooth", 0.22);
   bots.forEach((b) => { if (!b.alive) return; const q = new RV(b.g.position.x, 1, b.g.position.z), d = q.distanceTo(e);
-    if (!(dmg > 0)) {} else if (b === direct) jHit(b, dmg, w); else if (d < r && los(e, q)) jHit(b, fall ? dmg * xSsDmg(d) / XSS.max : dmg, w);
+    if (!(dmg > 0)) {} else if (b === direct) jHit(b, dmg, w); else if (d < r && los(e, q)) jHit(b, fd ? fd(d) : dmg, w);
     if (b.alive && d < r) flash(b); });
-  xFFArea("You", false, w, dmg, (x, z, t) => { const q = new RV(x, 1, z), d = q.distanceTo(e); return d < r && los(e, q) ? (fall ? xSsDmg(d) / XSS.max : true) : false; }); // Paint Shells / Showstopper (Boom Bot, Blast Pack: not in XFF)
+  xFFArea("You", false, w, dmg, (x, z, t) => { const q = new RV(x, 1, z), d = q.distanceTo(e); return d < r && los(e, q) ? (fd ? fd(d) / dmg : true) : false; }); // Paint Shells / Showstopper (Boom Bot, Blast Pack: not in XFF)
 }
-function rsPack() { // Blast Pack detonation: 50 to enemies, knocks everyone back
+// Raze Blast Pack (wiki Blast_Pack Stats; server devices.js DEV.blastPack / packDamage): sticks where it lands, Q again or 5 s detonates, knocks
+// everyone in 5 m back; armed after 1.5 s: 50 inside 2 m -> 20 at the 5 m edge, enemies only (not in XFF).
+var XBP = { life: 5, inner: 2, outer: 5, max: 50, min: 20, vy: 11, push: 14 };
+function xBpDmg(d) { return d <= XBP.inner ? XBP.max : d >= XBP.outer ? 0 : XBP.max - (d - XBP.inner) / (XBP.outer - XBP.inner) * (XBP.max - XBP.min); }
+function rsPack(only) { // Blast Pack detonation (all packs, or only the one that ran out its 5 s): damage once armed, knocks everyone back
   const P = player;
   RS.pk.forEach((o) => {
-    const p = o.m.position; rsBoom(p, 4.5, o.t >= XAB_WIND.blastPack ? 50 : 0, "Blast Pack", 0xffb21f); // wiki: 1.5 s damage arm
-    bots.forEach((b) => { if (!b.alive) return; const q = b.g.position, dx = q.x - p.x, dz = q.z - p.z, d = Math.hypot(dx, dz); if (d >= 4.5 || d < 0.01) return;
+    if (only && o !== only) return;
+    const p = o.m.position; rsBoom(p, XBP.outer, o.t >= XAB_WIND.blastPack ? XBP.max : 0, "Blast Pack", 0xffb21f, null, xBpDmg); // wiki: 1.5 s damage arm, 50 -> 20 by distance
+    bots.forEach((b) => { if (!b.alive) return; const q = b.g.position, dx = q.x - p.x, dz = q.z - p.z, d = Math.hypot(dx, dz); if (d >= XBP.outer || d < 0.01) return;
       for (let i = 0; i < 12; i++) { const nx = q.x + (dx / d) * 0.25, nz = q.z + (dz / d) * 0.25; if (blocked(nx, nz, 0.45, 0)) break; q.x = nx; q.z = nz; } });
     const dx = P.x - p.x, dz = P.z - p.z, d = Math.hypot(dx, dz);
-    if (P.hp > 0 && d < 4.5 && Math.abs((P.y || 0) - p.y) < 3) { P.vy = 11; P.y = Math.max(P.y, 0.01); RS.kb = d > 0.3 ? { x: dx / d, z: dz / d, t: 0.4 } : { x: -Math.sin(yaw), z: -Math.cos(yaw), t: 0.4 }; }
+    if (P.hp > 0 && d < XBP.outer && Math.abs((P.y || 0) - p.y) < 3) { P.vy = XBP.vy; P.y = Math.max(P.y, 0.01); RS.kb = d > 0.3 ? { x: dx / d, z: dz / d, t: 0.4 } : { x: -Math.sin(yaw), z: -Math.cos(yaw), t: 0.4 }; }
     scene.remove(o.m);
   });
-  RS.pk = []; J.cd.q = 0.3;
+  RS.pk = only ? RS.pk.filter((o) => o !== only) : []; J.cd.q = 0.3;
 }
 function rgEnd(msg) { if (!RS.rg) return; scene.remove(RS.rg.m); RS.rg = null; if (msg) say(msg, 800); }
 // Skye Guiding Light (wiki.playvalorant.com/en-us/Guiding_Light): the hawk flies 18 m/s for 2 s and flashes on E or at the end
@@ -8661,7 +8684,7 @@ function rsKey(code) {
     }
     if (code === "KeyE") {
       if (J.e < 1) return no(), say("Paint Shells · " + J.tk + "/2 kills", 700); J.e = 0; J.tk = 0; J.cd.e = 0.4;
-      RS.pj.push(Object.assign(rsObj("nade", 0xffb21f, 1.3, 14, 3), { fuse: 1.6 })); say("Paint Shells", 600); blip(300, 0.1, "triangle", 0.12);
+      RS.pj.push(Object.assign(rsObj("nade", 0xffb21f, 1.3, 14, 3), { fuse: XPS.fuse })); say("Paint Shells", 600); blip(300, 0.1, "triangle", 0.12);
     }
     if (code === "KeyX") {
       if (RS.ss) return say("Showstopper · click to fire", 700);
@@ -8705,13 +8728,13 @@ function rsTick(dt) {
       const wall = rsFly(o, dt, 0), tg = bots.find((b) => b.alive && Math.hypot(b.g.position.x - p.x, b.g.position.z - p.z) < 0.8 && p.y < 2.1);
       if (!wall && !tg && o.t < 3) return true; rsBoom(p, XSS.outer, XSS.max, "Showstopper", 0xff8a1f, tg, true); scene.remove(o.m); return false;
     }
-    rsFly(o, dt, 16); if (o.t < o.fuse) return true;
-    const sub = o.kind === "sub"; rsBoom(p, sub ? 3.5 : 4, 55, "Paint Shells", sub ? 0xff4fa0 : 0xffb21f);
-    if (!sub) for (let i = 0; i < 4; i++) { const a = (i * Math.PI) / 2 + Math.random() * 0.6; add.push({ m: rsMesh(0xff4fa0, 0.7, p), v: new RV(Math.cos(a) * 5, 5, Math.sin(a) * 5), t: 0, fuse: 0.9 + i * 0.12, kind: "sub" }); }
+    if (o.kind === "sub") { const u = Math.min(1, o.t / o.fuse); p.set(o.a.x + (o.b.x - o.a.x) * u, o.b.y + (o.a.y - o.b.y) * (1 - u) + 1.6 * Math.sin(u * Math.PI), o.a.z + (o.b.z - o.a.z) * u); } else rsFly(o, dt, 16); if (o.t < o.fuse) return true; // sub-munitions arc to their spots (XPS.spread) and burst on landing
+    const sub = o.kind === "sub"; rsBoom(p, sub ? XPS.subOuter : XPS.outer, XPS.max, "Paint Shells", sub ? 0xff4fa0 : 0xffb21f, null, xPsFall(sub)); // wiki: 55 -> 1 by distance
+    if (!sub) xPsSubs(p.x, p.z, groundAt(p.x, p.z, 0.2, p.y + 1) || 0).forEach((q) => { const sm = rsMesh(0xff4fa0, 0.7, p); add.push({ m: sm, a: p.clone(), b: q, v: new RV(0, 0, 0), t: 0, fuse: XPS.subFuse, kind: "sub" }); }); // 4 sub-munitions, 0.667 s
     scene.remove(o.m); return false;
   });
   for (let i = 0; i < add.length; i++) RS.pj.push(add[i]);
-  RS.pk.forEach((o) => { o.t += dt; if (!o.stuck && rsFly(o, dt, 16)) o.stuck = true; });
+  RS.pk.forEach((o) => { o.t += dt; if (!o.stuck && rsFly(o, dt, 16)) o.stuck = true; }); { const o = RS.pk.find((o) => o.t >= XBP.life); if (o) rsPack(o); } // wiki: 5 s max, then it goes off
   prune(RS.bb, (o) => {
     if (!(o.hp > 0) && o.hp != null) { xBbGone(o); say("Boom Bot destroyed", 700); blip(160, 0.2, "square", 0.12); return false; } // 60 HP: shot down by the player (enemy bots)
     const p = o.m.position; if (o.wu != null) { o.m.rotation.y += dt * 20; if ((o.wu -= dt) > 0) return true; xBbBlast(p, o, o.tg); xBbGone(o); return false; } // 0.6 s windup: stopped, then the blast
@@ -8725,7 +8748,7 @@ function rsTick(dt) {
     if (tg && bd < XBB.trig) { o.wu = XBB.wu; o.tg = tg; blip(1200, 0.3, "square", 0.08); return true; }
     if (o.t > 0) return true; xBbGone(o); return false;
   });
-  if (RS.kb) { const s = 14 * dt, nx = P.x + RS.kb.x * s, nz = P.z + RS.kb.z * s; if (!blocked(nx, P.z, 0.4, P.y)) P.x = nx; if (!blocked(P.x, nz, 0.4, P.y)) P.z = nz; if ((RS.kb.t -= dt) <= 0) RS.kb = null; }
+  if (RS.kb) { const s = XBP.push * dt, nx = P.x + RS.kb.x * s, nz = P.z + RS.kb.z * s; if (!blocked(nx, P.z, 0.4, P.y)) P.x = nx; if (!blocked(P.x, nz, 0.4, P.y)) P.z = nz; if ((RS.kb.t -= dt) <= 0) RS.kb = null; }
   if (RS.ssd > 0) RS.ssd -= dt;
   if (RS.ss && (RS.sst -= dt) <= 0) { RS.ss = 0; say("Showstopper holstered", 700); }
   if (RS.rg) {
@@ -8781,7 +8804,7 @@ const XAB = ["Boom Bot", "Blast Pack", "Paint Shells", "Showstopper", "Trailblaz
 { const k0 = kfeed; kfeed = function (k, v, hs, w) { k0(k, v, hs, w); if (XAB.includes(w)) { const d = $("feed").firstElementChild, s = d && d.querySelector(".kf__w"); if (s) s.classList.add("x-abn"); } }; }
 { const f0 = rsFire; rsFire = function () { return bcFire() || f0(); }; }
 { const s0 = sgSlow; sgSlow = function (p) { let k = s0(p); if (p === player) return k;
-  if (BC.sf.some((f) => Math.hypot(p.x - f.p.x, p.z - f.p.z) < 3.5)) k *= 0.5; if (bots.some((b) => b.g.position === p && b.chs > 0)) k *= 0.5; return k; }; }
+  if (BC.sf.some((f) => Math.hypot(p.x - f.p.x, p.z - f.p.z) < (f.r || 3.5))) k *= 0.5; if (bots.some((b) => b.g.position === p && b.chs > 0)) k *= 0.5; return k; }; }
 // one shared status gate for bot movement and shooting: slow zones/Trademark (sgSlow), daze, knock-up, blind, detain
 function botK(b) { if (!b || b.det > 0) return 0; let k = sgSlow(b.g.position); if (b.cnc > 0) k *= 0.6; if (b.ku > 0) k *= 0.3; if (b.blind > 0) k *= 0.75; return k; }
 function botCanShoot(b) { return !(b.blind > 0) && !(b.det > 0) && !(b.cnc > 0) && !(b.ku > 0); }
@@ -8874,11 +8897,9 @@ function xBotDmg(t, n, by, w) { try { if (t === player) { hurt(player, n, by); r
       if (blocked(x, z, 0.3, 0)) { x = from.x + sd * 5; if (blocked(x, z, 0.3, 0)) x = from.x; }
       const m = new THREE.Mesh(xG("Box", 0.5, 0.3, 0.5), fireMat(0xd4a640, 0.8)); m.position.set(x, 0.15, z); const f = jFx(m, 120);
       A.tm = { x, z, m, f }; feed("Chamber ▸ Trademark"); } }
-  if (A.tm) { const T = A.tm, en = (al ? bots : allies).filter((t) => t && t.alive && t.g && Math.hypot(t.g.position.x - T.x, t.g.position.z - T.z) < 4);
-    const pHit = !al && player.hp > 0 && Math.hypot(player.x - T.x, player.z - T.z) < 4;
-    if (en.length || pHit) { en.forEach((t) => { t.cnc = Math.max(t.cnc || 0, 3); });
-      if (pHit) { BC.pst = performance.now() + 3000; say("Slowed by Trademark", 900); }
-      const z = new THREE.Mesh(xG("Box", 8, 0.05, 8), fireMat(0xd4a640, 0.35)); z.position.set(T.x, 0.05, T.z); jFx(z, 1.2); T.f.t = 0.01; A.tm = null; feed("Chamber ▸ Trademark triggered"); blip(300, 0.3, "square", 0.12); } }
+  if (A.tm) { const T = A.tm; if (!T.p) { T.p = { x: T.x, z: T.z }; T.arm = XAB_WIND.trademark; } // as the player's: 2 s deploy, 10 m scan, 0.9 s windup, 6 m 50 % field for 4 s
+    if ((T.arm -= dt) <= 0) { const cands = (al ? bots : allies).filter((t) => t && t.alive && t.g).map((t) => [t.g.position.x, t.g.position.z, t]); if (!al && player.hp > 0) cands.push([player.x, player.z, player]);
+      const c = bcTmScan(T, cands, dt); if (c) { bcTmField(c[0], c[1]); if (c[2] === player) say("Slowed by Trademark", 900); T.f.t = 0.01; A.tm = null; feed("Chamber ▸ Trademark triggered"); blip(300, 0.3, "square", 0.12); } } }
   const UC = window.xBotUC; if (!UC || (UC[b.name] || 0) < KITS.Chamber.u || !see || !tg || tg.x === undefined) return;
   if (Math.hypot(tg.x - from.x, tg.z - from.z) <= 20 || Math.random() > dt * 2) return;
   UC[b.name] = 0; const o = from.clone(), e = new THREE.Vector3(tg.x, 1.4, tg.z); jFx(jBolt(0xd4a640, o, e), 0.25); blip(120, 0.4, "sawtooth", 0.2); feed("Chamber ▸ Tour De Force");
@@ -8916,6 +8937,13 @@ function bcCone(at) { // at: { x, z, ry } where Breach cast it (after the windup
   const m = new THREE.Mesh(new THREE.BoxGeometry(R2.w, 0.25, R2.len), fireMat(0xff9a3a, 0.35)); m.position.set(P.x + fx * (R2.near + R2.len / 2), 0.1, P.z + fz * (R2.near + R2.len / 2)); m.rotation.y = ry; jFx(m, 1.2);
   try { shk = 0.45; } catch (e) {} blip(60, 0.8, "sawtooth", 0.28); say("Rolling Thunder · " + n + " knocked up", 1100); feed("Breach ▸ Rolling Thunder");
 }
+// Chamber Trademark (wiki Trademark Stats; server devices.js DEV.trademark): 2 s deploy, then it scans 10 m; an enemy in sight for the 0.9 s
+// windup gets a 6 m slow field under them for 4 s that slows everyone in it 50 % (the player too); the trap is used up.
+var XTMK = { sight: 10, windup: 0.9, r: 6, life: 4, slow: 0.5 };
+function bcTmField(x, z) { const m = new THREE.Mesh(slowGeo, fireMat(0xd4a640, 0.35)); m.rotation.x = -Math.PI / 2; m.scale.setScalar(XTMK.r / 3.5); m.position.set(x, 0.06, z); scene.add(m); BC.sf.push({ m, p: new RV(x, 0, z), t: XTMK.life, r: XTMK.r, tm: 1 }); try { SFX.ab("slow", new RV(x, 0.5, z)); } catch (e) {} }
+function bcTmScan(T, cands, dt) { // T: { p, wu }; cands: [x, z, unit]; returns the target once it has stayed in sight for the windup
+  let best = null, bd = XTMK.sight; for (const c of cands) { const d = Math.hypot(c[0] - T.p.x, c[1] - T.p.z); if (d < bd && los(new RV(T.p.x, 0.5, T.p.z), new RV(c[0], 1, c[1]))) { bd = d; best = c; } }
+  if (!best) { T.wu = 0; return null; } T.wu = (T.wu || 0) + dt; return T.wu >= XTMK.windup ? best : null; }
 function bcField(q) { const m = new THREE.Mesh(slowGeo, fireMat(0xd8b04a, 0.35)); m.rotation.x = -Math.PI / 2; m.position.set(q.x, 0.06, q.z); scene.add(m); BC.sf.push({ m, p: new RV(q.x, 0, q.z), t: 6 }); }
 function bcFire() {
   if (!jOn() || J.pick !== "Chamber" || !BC.eq || player.hp <= 0 || (mode === "five" && FV.buy > 0)) return false;
@@ -8952,7 +8980,7 @@ function bcKey(code) {
   if (code === "KeyC") {
     if (J.c < 1 || J.cd.c > 0) return no(); J.c--; J.cd.c = 0.6;
     const m = new THREE.Mesh(orbGeo, okMat(0xd8b04a)); m.scale.set(1.6, 0.5, 1.6); m.position.set(P.x, 0.12, P.z); scene.add(m);
-    BC.tm.push({ m, p: new RV(P.x, 0.5, P.z), arm: XAB_WIND.trademark }); say("Trademark set · slows the first enemy in 6 m", 900); blip(620, 0.12, "triangle", 0.12);
+    BC.tm.push({ m, p: new RV(P.x, 0.5, P.z), arm: XAB_WIND.trademark, wu: 0 }); say("Trademark set · scans 10 m, slows 50 % in 6 m", 900); blip(620, 0.12, "triangle", 0.12);
   }
   if (code === "KeyQ") {
     if (BC.eq === "hp") { BC.eq = ""; return say("Headhunter holstered", 600); }
@@ -8990,10 +9018,10 @@ function bcTick(dt) {
   });
   BC.tm = BC.tm.filter((t) => {
     if (t.arm > 0) { t.arm -= dt; return true; } // wiki windup: 2 s arm after placement
-    const b = bots.find((b) => b.alive && Math.hypot(b.g.position.x - t.p.x, b.g.position.z - t.p.z) < 6 && los(t.p, new RV(b.g.position.x, 1, b.g.position.z)));
-    if (!b) return true; b.chs = 4; scene.remove(t.m); SFX.ab("slow", t.p); say("Trademark · " + b.name + " slowed 4 s", 900); return false;
+    const c = bcTmScan(t, bots.filter((b) => b.alive && b.g).map((b) => [b.g.position.x, b.g.position.z, b]), dt);
+    if (!c) return true; bcTmField(c[0], c[1]); scene.remove(t.m); say("Trademark · " + c[2].name + " · slow field 4 s", 900); return false;
   });
-  BC.sf = BC.sf.filter((f) => { f.t -= dt; f.m.material.opacity = 0.35 * Math.min(1, f.t); if (f.t > 0) return true; jRel(f.m); return false; });
+  BC.sf = BC.sf.filter((f) => { f.t -= dt; if (f.tm && player.hp > 0 && Math.hypot(player.x - f.p.x, player.z - f.p.z) < f.r) BC.pst = Math.max(BC.pst || 0, performance.now() + 200); /* Trademark field: the player too */ f.m.material.opacity = 0.35 * Math.min(1, f.t); if (f.t > 0) return true; jRel(f.m); return false; });
   bots.concat(allies.filter(Boolean)).forEach((b) => { if (b.chs > 0) b.chs -= dt; if (b.ku > 0) { b.ku -= dt; b.kg = b.kg != null ? b.kg : b.g.position.y; b.g.position.y = b.ku > 0 ? b.kg + Math.sin((1 - b.ku / 0.7) * Math.PI) * 1.5 : b.kg; if (b.ku <= 0) b.kg = null; } else if (b.g && b.xk == null && b.xj == null) { const q = b.g.position; q.y = groundAt(q.x, q.z, 0.3, q.y + 0.01); } }); // bots stand on box tops / ledges like the player (same floor lookup)
   const tb = !!(J.dr && J.dr.tb); TB.visible = tb; $("xDr").classList.toggle("tb", tb);
   if (tb) { TB.position.set(J.dr.x, 0, J.dr.z); TB.rotation.y = yaw; const s = performance.now() / 70; TB.userData.legs.forEach((l, i) => l.rotation.x = Math.sin(s + (i % 3 ? Math.PI : 0)) * 0.6); }
@@ -9327,9 +9355,9 @@ function xBFl(b, A, see, peek, tg, from, k, al, col, key, nm, hz) { // flash bef
   if ((A.flT || 0) > A.t) return false; let tx, tz;
   if (!see && xBPre(A, from) && Math.random() < 0.06) { tx = A.lkx; tz = A.lkz; } else if (peek && tg && Math.random() < 0.25) { tx = tg.x; tz = tg.z; } else return false;
   if (!xBUse(b, k)) return false; A.flT = A.t + 3; xBFlash(b, al, from, tx, tz, col, key, nm, hz); return true; }
-function xRzShells(A, x, z) { // Raze Paint Shells (E, charge already spent) landing at x, z: 55 + 4 sub-bombs of 55, as the player's
-  if (!A.pq) A.pq = []; A.ps = 0; const c = new THREE.Vector3(x, 0.3, z); A.pq.push({ p: c, t: 0.9, r: 4, c: 0xffb21f });
-  for (let i = 0; i < 4; i++) { const a = (i * Math.PI) / 2 + Math.random() * 0.6; A.pq.push({ p: new THREE.Vector3(c.x + Math.cos(a) * 2.2, 0.3, c.z + Math.sin(a) * 2.2), t: 1.8 + i * 0.12, r: 3.5, c: 0xff4fa0 }); }
+function xRzShells(A, x, z) { // Raze Paint Shells (E, charge already spent) landing at x, z: as the player's (XPS: 2.25 s fuse, 55 -> 1 by distance, 4 sub-munitions 0.667 s later)
+  if (!A.pq) A.pq = []; A.ps = 0; const c = new THREE.Vector3(x, 0.3, z); A.pq.push({ p: c, t: XPS.fuse, r: XPS.outer, c: 0xffb21f, f: xPsFall(false) });
+  xPsSubs(x, z, 0).forEach((q) => A.pq.push({ p: q, t: XPS.fuse + XPS.subFuse, r: XPS.subOuter, c: 0xff4fa0, f: xPsFall(true) }));
   feed("Raze ▸ Paint Shells"); blip(500, 0.12, "square", 0.1); }
 // ---- offline bot utility casts (team-agnostic; the charge is already spent): the abilities bots had no offline path for, with the
 // player's values. Each lands on the bot's own line toward tx, tz, short of the first wall and within reach. Damage goes through
@@ -9386,15 +9414,14 @@ function xBWallAt(from, tx, tz, out) { const dx = tx - from.x, dz = tz - from.z,
   while (d > 1 && blocked(from.x + fx * d, from.z + fz * d, 0.3, y)) d -= 0.25; return { x: from.x + fx * d, z: from.z + fz * d, y, yaw: Math.atan2(-fx, -fz) }; }
 function xBBlaze(b, al, from, tx, tz) { const w = blazeWall(from.x, from.y || 0, from.z, tx - from.x, tz - from.z, { own: b, en: !al, loc: 1 }); try { SFX.wall(); SFX.ab("blaze", w.p); } catch (er) {} feed("Phoenix ▸ Blaze"); return w; }
 var XBSW = []; // bot Sage barriers (var: sgBlk may run before this line)
-function xBSwD(w, x, z) { const dx = x - w.p.x, dz = z - w.p.z, t = Math.max(-3, Math.min(3, dx * w.ax + dz * w.az)); return Math.hypot(dx - w.ax * t, dz - w.az * t); }
+function xBSwD(w, x, z) { return xBarD(w, x, z); }
 function xBSwBlk(x, z, r, y) { y = y || 0; for (let i = 0; i < XBSW.length; i++) { const w = XBSW[i], low = w.p.y - 1.5; if (y >= low + 2.5 || y + 1.8 <= low) continue; if (xBSwD(w, x, z) < r + 0.2) return true; } return false; }
 function xBBarrier(b, al, from, tx, tz) { for (let i = XBSW.length - 1; i >= 0; i--) if (XBSW[i].own === b) xBSwGone(XBSW[i]); // one barrier per Sage
   const P = xBWallAt(from, tx, tz, 2.5), ice = xBBarrier.ice || (xBBarrier.ice = new THREE.MeshPhongMaterial({ color: 0xc8f6ff, emissive: 0x1f6f95, specular: 0xffffff, shininess: 120, flatShading: true, transparent: true, opacity: 0.9 }));
-  const m = new THREE.Mesh(sgWallGeo, ice.clone()), w = { m, p: new THREE.Vector3(P.x, P.y + 1.5, P.z), ax: Math.cos(P.yaw), az: -Math.sin(P.yaw), t: 40, hp: 600, own: b, en: !al };
-  m.position.copy(w.p); m.rotation.y = P.yaw; m.userData.sw = w; scene.add(m); solids.push(m); XBSW.push(w); try { SFX.wall(); } catch (er) {} feed("Sage ▸ Barrier Orb"); return w; }
-function xBSwGone(w) { scene.remove(w.m); const i = solids.indexOf(w.m); if (i >= 0) solids.splice(i, 1); const j = XBSW.indexOf(w); if (j >= 0) XBSW.splice(j, 1); try { w.m.material.dispose(); } catch (er) {} }
-function xBSwDmg(w, n) { if (XBSW.indexOf(w) < 0) return; w.hp -= n; w.m.material.opacity = 0.55 + 0.35 * Math.max(0, w.hp / 600); if (w.hp <= 0) { xBSwGone(w); feed("Sage ▸ Barrier broken"); blip(300, 0.25, "square", 0.12); } }
-function xBSwTick(dt) { for (let i = XBSW.length - 1; i >= 0; i--) { const w = XBSW[i]; if ((w.t -= dt) <= 0) xBSwGone(w); } }
+  const w = xBarMake(new THREE.Vector3(P.x, P.y + 1.5, P.z), P.yaw, ice, undefined, { own: b, en: !al }); XBSW.push(w); try { SFX.wall(); } catch (er) {} feed("Sage ▸ Barrier Orb"); return w; }
+function xBSwGone(w) { xBarGone(w); const j = XBSW.indexOf(w); if (j >= 0) XBSW.splice(j, 1); }
+function xBSwDmg(w, n, si) { if (XBSW.indexOf(w) < 0) return; if (xBarHit(w, si, n)) { xBSwGone(w); feed("Sage ▸ Barrier broken"); blip(300, 0.25, "square", 0.12); } }
+function xBSwTick(dt) { for (let i = XBSW.length - 1; i >= 0; i--) { const w = XBSW[i]; if (xBarTick(w, dt)) xBSwGone(w); } }
 function xBSwClr() { while (XBSW.length) xBSwGone(XBSW[XBSW.length - 1]); }
 // ---- Bots shoot down destroyable enemy utility (offline twin of server spike.js shootUtility; the choice is the shared
 // vendor/bot-brain.cjs shootUtility: an incoming Boom Bot, then a Turret, then an Alarmbot near it, a Sage Barrier only when
@@ -9405,8 +9432,8 @@ function xBSwClr() { while (XBSW.length) xBSwGone(XBSW[XBSW.length - 1]); }
 // for Lockdown). en: the shooter is on the enemy team (shoots the player's team's utility), else an ally (enemy utility).
 const XSHOOT = { boombot: 60, turret: 100, alarmbot: 20, barrier: 600 };
 function xUtilCands(en) { const L = xUtilCands.L || (xUtilCands.L = []); L.length = 0; const add = (kind, o, q, hit) => L.push({ kind, o, x: q.x, y: q.y || 0, z: q.z, hit, d: 0, los: false, blocking: false });
-  if (en && J.sw && J.sw.hp > 0) add("barrier", J.sw, J.sw.p, (n) => sgDmg(n, true));
-  for (const w of XBSW) if (!w.en === en && w.hp > 0) add("barrier", w, w.p, (n) => xBSwDmg(w, n));
+  if (en && J.sw && J.sw.hp > 0) add("barrier", J.sw, J.sw.p, (n, si) => sgDmg(n, true, si));
+  for (const w of XBSW) if (!w.en === en && w.hp > 0) add("barrier", w, w.p, (n, si) => xBSwDmg(w, n, si));
   if (en && J.tur && J.tur.hp > 0) add("turret", J.tur, J.tur.p, (n) => { J.tur.hp -= n; });
   for (const T of XBTU) if (!T.en === en && T.hp > 0) add("turret", T, T.p, (n) => { T.hp -= n; });
   if (en && J.ab && J.ab.p) { if (J.ab.hp == null) J.ab.hp = XSHOOT.alarmbot; add("alarmbot", J.ab, J.ab.p, (n) => { const A = J.ab; if (!A) return; A.hp -= n; if (A.hp <= 0) { okRm(A); J.ab = null; say("Alarmbot destroyed", 800); } }); }
@@ -9418,7 +9445,7 @@ function xUtilAcross(b, w) { const p = b.g.position; if (xBSwD(w, p.x, p.z) < 1.
 const XUS_V = new THREE.Vector3(), XUS_D = new THREE.Vector3();
 function xUtilShoot(b, dt, from, en) { if (!running || !b.g || !botCanShoot(b) || typeof BotBrain === "undefined" || !BotBrain.shootUtility) { b.xUs = null; return false; }
   const w = b.w || "Classic"; if (w === "Knife") { b.xUs = null; return false; } const p = b.g.position, C = xUtilCands(en); if (!C.length) { b.xUs = null; return false; }
-  for (const c of C) { let ax = c.x, az = c.z, ay = c.y; if (c.kind === "barrier") { const o = c.o, t = Math.max(-3, Math.min(3, (p.x - o.p.x) * o.ax + (p.z - o.p.z) * o.az)); ax = o.p.x + o.ax * t; az = o.p.z + o.az * t; ay = Math.min(o.p.y + 1, (p.y || 0) + 1.4); c.blocking = xUtilAcross(b, o); }
+  for (const c of C) { let ax = c.x, az = c.z, ay = c.y; if (c.kind === "barrier") { const o = c.o, A = xBarAim(o, p.x, p.z), t = A[0]; c.si = A[1]; ax = o.p.x + o.ax * t; az = o.p.z + o.az * t; /* the nearest live segment (XBAR) */ ay = Math.min(o.p.y + 1, (p.y || 0) + 1.4); c.blocking = xUtilAcross(b, o); }
     const dx = ax - p.x, dz = az - p.z, d = Math.hypot(dx, dz) || 0.01; c.d = d; c.ax = ax; c.ay = ay; c.az = az; if (d > 32) { c.los = false; continue; }
     const k = Math.min(0.35, d * 0.5) / d; c.los = los(from, XUS_V.set(ax - dx * k, ay, az - dz * k)); } // a point just short of it (the barrier mesh is in the solids)
   const pick = BotBrain.shootUtility(C); if (!pick) { b.xUs = null; return false; }
@@ -9426,7 +9453,7 @@ function xUtilShoot(b, dt, from, en) { if (!running || !b.g || !botCanShoot(b) |
   b.cd = (b.cd || 0) - dt; if (b.cd > 0) return true; const W = WEAP[w] || WEAP.Classic; b.cd = 1 / (W.rate || 4);
   XUS_D.set(pick.ax - from.x, pick.ay - from.y, pick.az - from.z); const L = XUS_D.length() || 0.01; XUS_D.multiplyScalar(1 / L);
   try { SFX.at(p, w); } catch (e) {} try { bFx(from, XUS_D, null, L); } catch (e) {}
-  pick.hit(wDmg(W, "body", pick.d)); b.xUsN = (b.xUsN || 0) + 1; return true; }
+  pick.hit(wDmg(W, "body", pick.d), pick.si); b.xUsN = (b.xUsN || 0) + 1; return true; }
 function botAb(b, dt, see, tg, from) {
   if (!jOn()) return; // abilities live with the agent kit (Retake + 5v5)
   const A = b.ab || (b.ab = { t: 0, smk: true, cb: 2, rb: true, rbT: 2 + Math.random() * 6, saw: false });
@@ -9452,7 +9479,7 @@ function botAb(b, dt, see, tg, from) {
       if ((near || (peek && Math.random() < 0.25)) && xBUse(b, "e")) xRzShells(A, tp.x, tp.z);
     }
     if (A.pq.length) { let w = 0; for (let i = 0; i < A.pq.length; i++) { const s = A.pq[i]; if ((s.t -= dt) > 0) { A.pq[w++] = s; continue; }
-      const m = jM(smokeGeo, fireMat(s.c, 0.45)); m.scale.setScalar(s.r / 4); m.position.set(s.p.x, 0.5, s.p.z); jFx(m, 0.4); blip(80, 0.35, "sawtooth", 0.18); xAoe(b, s.p, s.r, 55, "Paint Shells"); } A.pq.length = w; }
+      const m = jM(smokeGeo, fireMat(s.c, 0.45)); m.scale.setScalar(s.r / 4); m.position.set(s.p.x, 0.5, s.p.z); jFx(m, 0.4); blip(80, 0.35, "sawtooth", 0.18); xAoe(b, s.p, s.r, XPS.max, "Paint Shells", s.f); } A.pq.length = w; }
   }
 }
 function jClear() {
@@ -12650,7 +12677,10 @@ function mpCli5(m) { // client 5v5 messages; true when handled
 // ---- online abilities: a client's cast goes to the host (agent, slot, eye, aim, time); the host checks the charge, spawns the effect in its own
 // world with the same fx entities as the kits (smokes block bot sight, flashes blind, mollies / shock bolts hurt, heals heal, recon reveals) and
 // relays a cast event; every other peer spawns it as a visual (o.nd: no damage, the host owns it). Host and bot casts are relayed the same way. ----
-const MPC = { e: new THREE.Vector3(), d: new THREE.Vector3(), hl: [], bb: null, bp: null, bpv: new THREE.Vector3() };
+const MPC = { e: new THREE.Vector3(), d: new THREE.Vector3(), hl: [], bb: null, bp: null, bpv: new THREE.Vector3(), ps: [] };
+// remote Paint Shells (display only): the grenade bursts XPS.fuse after the cast, its 4 sub-munitions XPS.subFuse later at xPsSubs (the server's paintSubs spots)
+function mpPaint(x, z, y) { MPC.ps.push({ p: new THREE.Vector3(x, y + 0.3, z), t: XPS.fuse, r: XPS.outer, c: 0xffb21f }); xPsSubs(x, z, y).forEach((q) => MPC.ps.push({ p: q, t: XPS.fuse + XPS.subFuse, r: XPS.subOuter, c: 0xff4fa0 })); }
+function mpPaintTick(dt) { const A = MPC.ps; let w = 0; for (let i = 0; i < A.length; i++) { const s = A[i]; if ((s.t -= dt) > 0) { A[w++] = s; continue; } const m = jM(smokeGeo, fireMat(s.c, 0.45)); m.scale.setScalar(s.r / 4); m.position.set(s.p.x, s.p.y + 0.2, s.p.z); jFx(m, 0.4); try { blip(80, 0.35, "sawtooth", 0.18); } catch (e) {} } A.length = w; }
 const MP_SMK = { Jett: [14, 2.5], Omen: [40, 15], Cypher: [10, 7] }; // smoke range, duration (Cloudburst 2.5 s, wiki)
 const mpR3 = (v) => [+v.x.toFixed(2), +v.y.toFixed(2), +v.z.toFixed(2)];
 function mpV(a, def) { if (Array.isArray(a) && a.length === 3) { const x = +a[0], y = +a[1], z = +a[2]; if (isFinite(x) && isFinite(y) && isFinite(z)) return def.set(x, y, z); } return def; }
@@ -12661,6 +12691,11 @@ const mpDist = (px, pz, x, z, seg) => (seg ? segD(px, pz, seg) : Math.hypot(px -
 // 3 m; Healing Orb 100 HP over 5 s (ally or self); Regrowth 20 HP/s; Shrouded Step 1.2 s; From the Shadows 4 s; Rendezvous 18 m; Lockdown 32.5 m;
 // Tailwind dash 11 m (server ty 'dash').
 var XPAR2 = { shock: { inner: 1.5, outer: 4, max: 75, min: 1 }, ash: { dmg: 80, n: 2, gap: 0.6, r: 3 }, heal: 100, regrow: 20, step: 1.2, shadows: 4, rdv: 18, ld: 32.5, tail: 11 };
+// Raze Paint Shells (wiki Paint_Shells Stats; server abilities.js PAINT / paintSubs): 2.25 s fuse, 55 inside 2.5 m -> 1 at the 5.5 m edge, then
+// 4 sub-munitions 0.667 s later (5.25 m edge) 2.5 m out on the diagonals. xPsFall(sub): the damage by distance.
+var XPS = { inner: 2.5, outer: 5.5, subOuter: 5.25, max: 55, min: 1, fuse: 2.25, subFuse: 0.667, subs: 4, spread: 2.5 };
+function xPsFall(sub) { const F = { inner: XPS.inner, outer: sub ? XPS.subOuter : XPS.outer, max: XPS.max, min: XPS.min }; return (d) => xAoeFall(d, F); }
+function xPsSubs(x, z, y) { const out = []; for (let i = 0; i < XPS.subs; i++) { const a = i * Math.PI / 2 + Math.PI / 4, dx = Math.cos(a), dz = Math.sin(a); let l = 0; while (l < XPS.spread && !blocked(x + dx * Math.min(XPS.spread, l + 0.25), z + dz * Math.min(XPS.spread, l + 0.25), 0.15, y || 0)) l = Math.min(XPS.spread, l + 0.25); out.push(new THREE.Vector3(x + dx * l, (y || 0) + 0.3, z + dz * l)); } return out; }
 function xAoeFall(d, F) { return d <= F.inner ? F.max : d >= F.outer ? 0 : F.max - (d - F.inner) / (F.outer - F.inner) * (F.max - F.min); }
 function mpAreaHit(o, x, z, r, n, w, seg, fall) { // host only: the remote caster's enemies (FFA: everyone else), credited to the caster; fall(d): damage by distance (else n)
   if (!o.own || !(o.loc || (MP.role === "host" && MP.st === "game"))) return; const by = o.own.name, ffa = FV.dm && !FV.tdm; // o.loc: an offline bot cast (this client is the authority)
@@ -12687,13 +12722,14 @@ function mpFx(u, ag, k, o, d, auth, p, quiet) { // u: caster unit, o/d: eye + ai
   const tg = (far, back) => (p ? MPC.e.copy(p) : mpTgt(o, d, far, back));
   if (ty === "smoke") { const S = MP_SMK[ag] || [14, 7], e = tg(S[0], 0.5), cg = ag === "Cypher"; enSmoke(e.x, e.z, al, S[1], cg ? groundAt(e.x, e.z, 0.2, (up.y || 0) + 1) : ag === "Jett" && p ? e.y : undefined, XSMR[ag], cg); } // Jett: at the Cloudburst's landing point
   else if (ty === "flash") { const e = tg(ag === "Phoenix" ? 6 : 12, 0.4).clone(), m = jM(orbGeo, jMat("orb", () => new THREE.MeshBasicMaterial({ color: 0xfff2b0 }))); m.position.copy(o); scene.add(m); J.orbs.push({ m, a: o.clone(), b: e, t: 0, en }); }
-  else if (ty === "fire") { const rz = ag === "Raze", e = rz ? tg(14, 0.4) : p ? tg() : mpTgt(new THREE.Vector3(up.x, 1, up.z), MPC.d.set(d.x, 0, d.z).normalize(), 5, 0.5);
+  else if (ty === "fire" && ag === "Raze") { const e = tg(14, 0.4); mpPaint(e.x, e.z, groundAt(e.x, e.z, 0.2, (up.y || 0) + 1) || 0); } // Paint Shells: the bursts as they land (damage stays with the caster's own claims / the server)
+  else if (ty === "fire") { const rz = false, e = p ? tg() : mpTgt(new THREE.Vector3(up.x, 1, up.z), MPC.d.set(d.x, 0, d.z).normalize(), 5, 0.5);
     const c = new THREE.Vector3(e.x, 0.05, e.z), m = jM(zoneGeo, fireMat(rz ? 0xff4fa0 : 0xff5a1a, 0.55)); m.rotation.x = -Math.PI / 2; m.position.copy(c); scene.add(m);
     const z = { m, p: c, t: rz ? 1.5 : XHOT.life, own: u, en, nd: nd || rz }; if (!rz) { z.R = XHOT.r; z.a = 0; m.scale.setScalar(0.01); } J.zones.push(z); } // Hot Hands spreads like the player's // Paint Shells damage stays with the caster's own claims
   else if (ty === "wall") { const sg = ag === "Sage", f = MPC.d.set(d.x, 0, d.z); if (f.lengthSq() < 1e-6) f.set(Math.sin(up.y), 0, 1); f.normalize(); const yw = Math.atan2(-f.x, -f.z);
     if (!sg) blazeWall(up.x, up.y || 0, up.z, f.x, f.z, { own: u, en, nd }); // Blaze along the aim (XBLZ)
-    else { const w = { p: new THREE.Vector3(up.x + f.x * 3, (up.y || 0) + 1.5, up.z + f.z * 3), ax: Math.cos(yw), az: -Math.sin(yw), h: 3, t: 30, own: u, en, nd: true }; // Barrier Orb: sight blocker only
-      w.m = jM(sgWallGeo, fireMat(0x9fe8ff, 0.7)); w.m.position.copy(w.p); w.m.rotation.y = yw; scene.add(w.m); J.walls.push(w); } }
+    else { const w = { p: new THREE.Vector3(up.x + f.x * 3, (up.y || 0) + 1.5, up.z + f.z * 3), ax: Math.cos(yw), az: -Math.sin(yw), h: XBAR.len / 2, t: 30, own: u, en, nd: true }; // Barrier Orb: sight blocker only (10.4 m, XBAR)
+      w.m = jM(sgWallGeo, fireMat(0x9fe8ff, 0.7)); w.m.position.copy(w.p); w.m.rotation.y = yw; w.m.scale.x = XBAR.len / 6; scene.add(w.m); J.walls.push(w); } }
   else if (ty === "heal") { if (auth && u.alive) MPC.hl.push({ u, l: ag === "Sage" ? XPAR2.heal : 50, r: ag === "Sage" ? XPAR2.heal / 5 : ag === "Reyna" ? 50 / 3 : XPAR2.regrow });
     const m = jM(zoneGeo, fireMat(0x5fe0d0, 0.4)); m.rotation.x = -Math.PI / 2; m.scale.setScalar(0.5); m.position.set(up.x, 0.06, up.z); jFx(m, 3); }
   else if (ty === "stun") {
@@ -12710,7 +12746,7 @@ function mpFx(u, ag, k, o, d, auth, p, quiet) { // u: caster unit, o/d: eye + ai
   else if (ty !== "dash") { const e = ty === "ult" ? MPC.e.set(up.x, 0.06, up.z) : tg(8, 0.4), m = jM(ringGeo, fireMat(col, 0.85)); m.rotation.x = -Math.PI / 2; m.position.set(e.x, 0.06, e.z); m.scale.setScalar(ty === "ult" ? 3 : 1.5); jFx(m, 1.5); } // drones, traps, devices, ults: marker only
   if (!quiet) { try { feed(ag + " ▸ " + nm); } catch (e) {} }
 }
-{ const c0 = jClear; jClear = function () { MPC.hl.length = 0; return c0.apply(this, arguments); }; } // round start: pending remote heals end
+{ const c0 = jClear; jClear = function () { MPC.hl.length = 0; MPC.ps.length = 0; return c0.apply(this, arguments); }; } // round start: pending remote heals / Paint Shells end
 function mpHealTick(dt) { const A = MPC.hl; let w = 0; for (let i = 0; i < A.length; i++) { const h = A[i], u = h.u; if (!u.alive) continue; const n = Math.min(h.r * dt, h.l); h.l -= n; u.hp = Math.min(100, u.hp + n); if (h.l > 0.01) A[w++] = h; } A.length = w; }
 function mpCastOut(m, ex) { MP.conns.forEach((c) => { if (c.u && c !== ex) mpSend(c.conn, m); }); }
 function mpCastIn(c, u, m) { // host: a client's cast
@@ -12744,7 +12780,7 @@ function mpCastSelf(k, p) { const m = { t: MP.role === "host" ? "ac" : "ab", k, 
   if (k === "x" ? J.ult < u0 : J.c < c0 || J.q < q0 || J.e < e0) { const cb = k === "c" && J.pick === "Jett" && !(typeof NET !== "undefined" && NET.socket) && J.cbs[J.cbs.length - 1]; // P2P Cloudburst: sent where it lands (jCbSmoke); the trusted server flies its own
     if (cb) cb.net = 1; else { try { mpCastSelf(k); } catch (e) { xE(e); } } }
   return r; }; }
-{ const f0 = jFxTick; jFxTick = function (dt) { const cl = MP.cl && MP.st === "game"; if (cl) MP.nc = 1; try { f0(dt); } finally { MP.nc = 0; } if (MP.role === "host" && MPC.hl.length) mpHealTick(dt); }; } // client: own fx ticks make no hit claims (the host's copy deals the damage)
+{ const f0 = jFxTick; jFxTick = function (dt) { const cl = MP.cl && MP.st === "game"; if (cl) MP.nc = 1; try { f0(dt); } finally { MP.nc = 0; } if (MP.role === "host" && MPC.hl.length) mpHealTick(dt); if (MPC.ps.length) mpPaintTick(dt); }; } // client: own fx ticks make no hit claims (the host's copy deals the damage)
 { const b0 = botAb; botAb = function (b) { if (!(MP.role === "host" && MP.st === "game")) return b0.apply(this, arguments); MPC.bb = b; MPC.bp = null; try { return b0.apply(this, arguments); } finally { MPC.bb = null; } }; }
 { const s0 = enSmoke; enSmoke = function (x, z) { if (MPC.bb) MPC.bp = MPC.bpv.set(x, 1.8, z); return s0.apply(this, arguments); }; }
 { const f0 = xBFlash; xBFlash = function () { const r = f0.apply(this, arguments); if (MPC.bb) { const q = J.orbs[J.orbs.length - 1]; if (q) MPC.bp = MPC.bpv.copy(q.b); } return r; }; }
@@ -14097,15 +14133,16 @@ function netReconcile(e,ref){const ex=e[4]-ref.x,ey=e[5]-ref.y,ez=e[6]-ref.z,eh=
 const netSelf0=mpCliSelf;mpCliSelf=function(e){const seq=MP.sq;netSelf0(e);if(!NET.socket)return;const ref=seq===e[14]?netPredicted(e[19],e[20]):null;if(seq!==e[14]){player.x=e[4];player.y=e[5];player.z=e[6];NET.path.length=0;}else if(ref)NET.lastFix=netReconcile(e,ref);else{const err=Math.hypot(player.x-e[4],player.z-e[6]);if(err>.75){player.x=e[4];player.y=e[5];player.z=e[6];}else{player.x+=(e[4]-player.x)*.25;player.z+=(e[6]-player.z)*.25;if(Math.abs(player.y-e[5])>.35)player.y=e[5];}}if(netEquipWant&&(e[11]===netEquipWant||performance.now()>netEquipUntil))netEquipWant=null;const held=rw==='knife'?'Knife':wName();/* a swap the server has not applied yet: its snapshots still name the old gun (and its ammo) for a round trip; reverting to it lost the swap (netWeapon was reset, so the equip was never sent) */
  if(!netEquipWant&&e[11]&&WEAP[e[11]]&&wName()!==e[11]&&rw!=='knife'){netRec=true;try{if(MP.m5){const slot=['Classic','Shorty','Frenzy','Ghost','Sheriff'].includes(e[11])?'pis':'pri';if((slot==='pri'?FV.pri:FV.sec)!==e[11])bEquip(e[11],slot);swapW(slot);}else bEquip(e[11],'pri');}finally{netRec=false;}netWeapon=e[11];}const same=(rw==='knife'?'Knife':wName())===e[11];/* ammo only for the gun the server holds: mid-swap it was the other gun's, written into this slot */if(same&&e[16]!=null&&MP.m5){rsv=e[16];if(slots[rw])slots[rw].rsv=rsv;}if(same&&e[15]!=null&&!(reloading>0)){/* reloading > 0, not truthiness: a finished reload can leave it a hair below 0 */if(rw!=='knife')ammo=e[15];if(slots[rw])slots[rw].ammo=ammo;}updHud();};
 const netWalls=new Map(),netCbs=new Map();/* Jett Cloudburst rows (fx kind 'cb'): id -> {m: projectile mesh, s: smoked} */
-function netClearEffects(){document.getElementById('netBlind')?.remove();for(const m of netWalls.values()){scene.remove(m);m.geometry.dispose();m.material.dispose();}netWalls.clear();}
+function netClearEffects(){document.getElementById('netBlind')?.remove();for(const m of netWalls.values()){scene.remove(m);m.children.forEach(q=>{q.geometry.dispose();q.material.dispose();});}netWalls.clear();}/* a barrier is a Group of segment meshes (no geometry of its own) */
 // Others' Cloudbursts from the snapshot: the projectile while it flies (s 0), then the smoke where the server landed it (s 1,
 // once per id, tl seconds left). Our own Cloudburst flies locally (jCbTick) and is skipped here.
 function netSyncCb(rows){const seen=new Set();for(const e of rows){if(e.kind!=='cb'||!Number.isFinite(e.id)||e.o===MP.me||!Array.isArray(e.p)||e.p.length!==3||!e.p.every(Number.isFinite))continue;seen.add(e.id);let c=netCbs.get(e.id);if(!c){c={m:null,s:false};netCbs.set(e.id,c);}
  if(e.s!==1){if(!c.m){c.m=jM(orbGeo,jMat('cbp',()=>new THREE.MeshBasicMaterial({color:0xdbe6f2})));c.m.scale.setScalar(.8);scene.add(c.m);}c.m.position.set(e.p[0],e.p[1],e.p[2]);continue;}
  if(c.m){jRel(c.m);c.m=null;}if(!c.s){c.s=true;const u=allies.find(x=>x&&x.nid===e.o),al=!!u;enSmoke(e.p[0],e.p[2],al,Math.max(.1,Math.min(Cloudburst.CB.life,Number.isFinite(e.tl)?e.tl:Cloudburst.CB.life)),e.p[1],XSMR.Jett);try{feed('Jett ▸ Cloudburst');}catch(err){}}}
  for(const [id,c]of netCbs)if(!seen.has(id)){if(c.m)jRel(c.m);netCbs.delete(id);}}
-function netSyncEffects(rows){if(J.sw)sgWallEnd();const ids=new Set();netSyncCb(rows);for(const e of rows){if(e.kind!=='barrier'||!Array.isArray(e.p)||e.p.length!==3)continue;ids.add(e.id);let m=netWalls.get(e.id);if(!m){m=new THREE.Mesh(new THREE.BoxGeometry(6,3,.4),new THREE.MeshLambertMaterial({color:0xb5f1fa,transparent:true,opacity:.85}));m.userData.netBarrier=true;scene.add(m);netWalls.set(e.id,m);}m.position.set(e.p[0],e.p[1]+1.5,e.p[2]);m.rotation.y=e.yaw;m.material.opacity=.55+.3*Math.max(0,Math.min(1,e.hp/600));}for(const [id,m]of netWalls)if(!ids.has(id)){scene.remove(m);m.geometry.dispose();m.material.dispose();netWalls.delete(id);}}
-const netSgBlk0=sgBlk;sgBlk=function(x,z,r,y=0){if(!NET.socket)return netSgBlk0(x,z,r,y);for(const m of netWalls.values()){const low=m.position.y-1.5;if(y>=low+3||y+1.8<=low)continue;const c=Math.cos(m.rotation.y),s=Math.sin(m.rotation.y),dx=x-m.position.x,dz=z-m.position.z,a=c*dx-s*dz,b=s*dx+c*dz;if(Math.hypot(Math.max(0,Math.abs(a)-3),Math.max(0,Math.abs(b)-.2))<r)return true;}return false;};
+function netSyncEffects(rows){if(J.sw)sgWallEnd();const ids=new Set();netSyncCb(rows);for(const e of rows){if(e.kind!=='barrier'||!Array.isArray(e.p)||e.p.length!==3)continue;ids.add(e.id);let m=netWalls.get(e.id);if(!m){/* Barrier Orb: the server's 4 segments (abilities.js BARRIER = XBAR), each hidden once its HP is gone */m=new THREE.Group();m.userData.netBarrier=true;m.userData.seg=[];const W=XBAR.len/XBAR.segs;for(let i=0;i<XBAR.segs;i++){const q=new THREE.Mesh(new THREE.BoxGeometry(W,XBAR.h,XBAR.th),new THREE.MeshLambertMaterial({color:0xb5f1fa,transparent:true,opacity:.85}));q.position.x=-XBAR.len/2+(i+.5)*W;q.userData.netBarrier=true;m.add(q);}scene.add(m);netWalls.set(e.id,m);}
+ m.position.set(e.p[0],e.p[1]+1.5,e.p[2]);m.rotation.y=e.yaw;const S=Array.isArray(e.seg)&&e.seg.length===m.children.length?e.seg:m.children.map(()=>e.hp/m.children.length);m.userData.seg=S.map(Number);m.children.forEach((q,i)=>{const h=+S[i]||0;q.visible=h>0;q.material.opacity=.55+.3*Math.max(0,Math.min(1,h/(XBAR.hp+XBAR.fort)));});}for(const [id,m]of netWalls)if(!ids.has(id)){scene.remove(m);m.children.forEach(q=>{q.geometry.dispose();q.material.dispose();});netWalls.delete(id);}}
+const netSgBlk0=sgBlk;sgBlk=function(x,z,r,y=0){if(!NET.socket)return netSgBlk0(x,z,r,y);for(const m of netWalls.values()){const low=m.position.y-1.5;if(y>=low+3||y+1.8<=low)continue;const c=Math.cos(m.rotation.y),s=Math.sin(m.rotation.y),dx=x-m.position.x,dz=z-m.position.z,a=c*dx-s*dz,b=s*dx+c*dz,W=XBAR.len/XBAR.segs;for(let i=0;i<m.children.length;i++){if(!(m.userData.seg[i]>0))continue;const mid=-XBAR.len/2+(i+.5)*W;if(Math.hypot(Math.max(0,Math.abs(a-mid)-W/2),Math.max(0,Math.abs(b)-XBAR.th/2))<r)return true;}}return false;};/* live segments only (a broken one is a gap) */
 const netShoot0=shoot;shoot=function(){if(NET.socket&&(netReyna?.dismiss>0||netChannel?.remaining>0))return false;const before=ammo,k0=kSwing,ss=typeof RS!=='undefined'&&RS.ss,r=netShoot0.apply(this,arguments);const swung=rw==='knife'&&kSwing!==k0,rocket=ss&&!RS.ss;/* Showstopper: the click that launched the rocket is one fire pulse (the server's launcher fires on it; a semi-auto gun sends no held fire) */if(NET.socket&&MP.st==='game'&&(swung||rocket||(rw!=='knife'&&ammo<before))){NET.firePulse=performance.now()+80;NET.fireHeavy=swung&&kHv===1?NET.firePulse:0;/* ...and stays pending until an input message carried it: on a slow page the next 50 ms input tick runs after the frame, past the 80 ms window (online Showstopper launched no rocket) */NET.firePend=1;NET.firePendH=NET.fireHeavy?1:0;if(rocket)NET.ssFiredAt=performance.now();}return r;}; // knife: one pulse per swing the client actually started (a click during a swing sent a pulse the server could turn into an extra hit); a heavy swing sends kh so the server applies the heavy cooldown/damage
 /* window, not document: the keymap layer re-sends a rebound key on window only (it never reaches document) */addEventListener('keydown',e=>{if(e.code!=='KeyR'||!(NET.socket&&MP.st==='game')||xKbSkip(e)||e.repeat)return;netSend({t:'reload'});if(reloading>0)netReload=true;/* the page's own R handler already started the local reload: the loop must not send it again */});
 // Camera, server shots and bots all treat positive pitch as looking up; send it unchanged.
