@@ -13284,13 +13284,20 @@ function xvAgentWaitLabel(cv) {
   };
 }
 // perf (character draw calls): agent meshes were frustumCulled=false, so every unit's 2-6 skinned meshes were drawn
-// even behind the camera. Each skinned geometry gets one cull sphere, measured once from its skinned idle pose in the
-// mesh's own space and padded to the full idle diagonal (covers crouch, aim, reach, a falling corpse); corpses turn
-// culling back off in xDie. Same sphere on the geometry (three r149) and on the mesh (r151+ SkinnedMesh.boundingSphere).
-function xvCull(list) { const v = new THREE.Vector3(), out = [];
-  for (const o of list) { if (!o.isSkinnedMesh) continue; const g = o.geometry, pos = g && g.attributes.position, bt = o.applyBoneTransform || o.boneTransform; if (!pos || !bt) continue;
-    let s = g.userData.xvCull; if (!s) { const b = new THREE.Box3(), n = pos.count, st = Math.max(1, Math.floor(n / 1500)); for (let i = 0; i < n; i += st) { v.fromBufferAttribute(pos, i); bt.call(o, i, v); if (Number.isFinite(v.x + v.y + v.z)) b.expandByPoint(v); }
-      if (b.isEmpty()) continue; s = g.userData.xvCull = new THREE.Sphere(b.getCenter(new THREE.Vector3()), b.getSize(new THREE.Vector3()).length()); }
+// even behind the camera. Each skinned geometry gets one cull sphere, measured once from the skinned idle pose and
+// padded to the full idle diagonal OF THE WHOLE RIG (covers crouch, aim, reach, a falling corpse); corpses turn culling
+// back off in xDie. Same sphere on the geometry (three r149) and on the mesh (r151+ SkinnedMesh.boundingSphere).
+// hk-30: the sphere was per mesh, padded only to that mesh's own diagonal, so a small piece that rides on a limb (Reyna's
+// CS_Vampire_S0_Skelmeshmd, r 0.11 m) left it by 1.7x its radius while running / reloading and was culled while on screen
+// (browser perf_cull4: pop at 3 m). Every mesh of the rig now shares the rig's idle box: centre and full diagonal, mapped
+// into each mesh's own space.
+function xvCull(list) { const v = new THREE.Vector3(), out = [], sk = [];
+  for (const o of list) { if (!o.isSkinnedMesh) continue; const g = o.geometry, pos = g && g.attributes.position, bt = o.applyBoneTransform || o.boneTransform; if (!pos || !bt) continue; sk.push([o, g, pos, bt]); }
+  if (sk.some(([, g]) => !g.userData.xvCull)) { const W = new THREE.Box3();
+    for (const [o, , pos, bt] of sk) { const n = pos.count, st = Math.max(1, Math.floor(n / 1500)); for (let i = 0; i < n; i += st) { v.fromBufferAttribute(pos, i); bt.call(o, i, v); v.applyMatrix4(o.matrixWorld); if (Number.isFinite(v.x + v.y + v.z)) W.expandByPoint(v); } }
+    if (!W.isEmpty()) { const c = W.getCenter(new THREE.Vector3()), r = W.getSize(new THREE.Vector3()).length(), inv = new THREE.Matrix4();
+      for (const [o, g] of sk) if (!g.userData.xvCull) { inv.copy(o.matrixWorld).invert(); const k = Math.max(1e-9, o.matrixWorld.getMaxScaleOnAxis()); g.userData.xvCull = new THREE.Sphere(c.clone().applyMatrix4(inv), r / k); } } }
+  for (const [o, g] of sk) { const s = g.userData.xvCull; if (!s) continue;
     g.boundingSphere = s.clone(); if ('boundingSphere' in o) o.boundingSphere = s.clone(); o.frustumCulled = true; out.push(o); }
   return out; }
 function xvAgent(M, kit) {
