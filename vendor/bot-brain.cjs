@@ -199,5 +199,15 @@
  // blocks the bot's route (blocking) and is close: a barrier off to the side is walked around, not shot.
  const SHOOT_UTIL={boombot:{range:15,pri:6},lockdown:{range:30,pri:5},turret:{range:30,pri:4},alarmbot:{range:12,pri:3},trademark:{range:12,pri:3},trapwire:{range:12,pri:3},spycam:{range:20,pri:2},owl:{range:20,pri:2},nanoswarm:{range:8,pri:1},barrier:{range:14,pri:0,block:true}};
  function shootUtility(c){let best=null,bs=-Infinity;for(const x of c||[]){const S=SHOOT_UTIL[x&&x.kind];if(!S||!x.los||!(x.d<=S.range)||(S.block&&!x.blocking))continue;const sc=S.pri*100-x.d;if(sc>bs){bs=sc;best=x;}}return best;}
- return {hash,rng,clamp,pickW,REACT,personality,reaction,crosshair,crosshairAt,firePattern,peek,attackPlan,defensePlan,roles,teamBuy,buyFor,onMateDeath,onSound,ATTACK,DEFENSE,utility,UTIL,turnStep,trackLag,wrapA,SPIKE,plantSpot,postPlant,retake,postPlay,SHOOT_UTIL,shootUtility};
+
+ // Jett Tailwind for bots (server spike.js botUtility and the offline index.html xBJett share it). The first E arms it at
+ // the entry (an entry bot's utility when a fight starts, wiki Tailwind v7.04: 1 s windup, 7.5 s window); the armed dash is
+ // kept to get OUT of the fight, not spent at once: after a kill in the window (the entry is done), when hurt (under 50 HP
+ // or 30+ lost since arming), or with under 0.6 s of the window left while still fighting (the charge is lost unused).
+ // c = {armed: windup over, hp, hp0: hp when armed, kills: kills since arming, left: window seconds left} -> reason or null.
+ // tailwindKeys: dash keys relative to a look at the enemy: backwards and to one side (out of its line of fire).
+ const TAILWIND={hp:50,lost:30,last:.6};
+ function tailwindDash(c){if(!c||!c.armed)return null;if(c.kills>0)return 'kill';if(c.hp<TAILWIND.hp||c.hp0-c.hp>=TAILWIND.lost)return 'hurt';if(c.left<TAILWIND.last)return 'expiring';return null;}
+ function tailwindKeys(rand){return {f:-1,s:rand()<.5?-1:1};}
+ return {hash,rng,clamp,pickW,REACT,personality,reaction,crosshair,crosshairAt,firePattern,peek,attackPlan,defensePlan,roles,teamBuy,buyFor,onMateDeath,onSound,ATTACK,DEFENSE,utility,UTIL,turnStep,trackLag,wrapA,SPIKE,plantSpot,postPlant,retake,postPlay,SHOOT_UTIL,shootUtility,TAILWIND,tailwindDash,tailwindKeys};
 });

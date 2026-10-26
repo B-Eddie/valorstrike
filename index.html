@@ -4644,7 +4644,7 @@ function tick(dt) {
     if (!blocked(p.x + vx * bs, p.z, 0.45, p.y)) p.x += vx * bs; else { a.strafe *= -1; a.blk = 1; } // p.y: steps / ramps climb (Split B stairs, soak)
     if (!blocked(p.x, p.z + vz * bs, 0.45, p.y)) p.z += vz * bs; else { a.strafe *= -1; a.blk = 1; }
     a.spd = dt > 0 ? Math.hypot(p.x - ax0, p.z - az0) / dt : 0;
-    if (a.xk == null && a.xj == null) p.y = groundAt(p.x, p.z, 0.3, p.y + 0.01); // allies climb steps like bots (Split B stairs: carrier stuck on step 1 at y 0)
+    if (a.xk == null && a.xj == null && !a.xup) p.y = groundAt(p.x, p.z, 0.3, p.y + 0.01); // allies climb steps like bots (Split B stairs: carrier stuck on step 1 at y 0)
     a.fs = (a.fs || 0) - dt; if ((vx || vz) && a.fs <= 0) { a.fs = 0.4; if (!a.cr && !a.wk) SFX.step(p); } // ally footsteps: same pooled step voices
     a.cd -= dt;
     if (tg && a.cd <= 0 && a.xs && !(a.pk === 3 && a.mv) && (a.spd || 0) <= BOT_STOP && !(a.rtE && typeof xbRt === "function" && a.ts * 1000 < xbRt(a, null)) && (typeof xbTurned !== "function" || xbTurned(a))) { // no shot mid-swing (BOT VARIETY turn rate) // allies react like enemy bots (no instant first shot) // tight peek: fully stopped first
@@ -8838,7 +8838,7 @@ const XAB = ["Boom Bot", "Blast Pack", "Paint Shells", "Showstopper", "Trailblaz
 { const s0 = sgSlow; sgSlow = function (p) { let k = s0(p); if (p === player) return k;
   if (BC.sf.some((f) => Math.hypot(p.x - f.p.x, p.z - f.p.z) < (f.r || 3.5))) k *= 0.5; if (bots.some((b) => b.g.position === p && b.chs > 0)) k *= 0.5; if (bots.some((b) => b.g.position === p && b.sks > 0)) k *= 0.4; return k; }; }
 // one shared status gate for bot movement and shooting: slow zones/Trademark (sgSlow), daze, knock-up, blind, detain
-function botK(b) { if (!b || b.det > 0 || b.xdrm) return 0; let k = sgSlow(b.g.position); if (b.cnc > 0) k *= 0.6; if (b.ku > 0) k *= 0.3; if (b.blind > 0) k *= 0.75; return k; }
+function botK(b) { if (!b || b.det > 0 || b.xdrm || b.xdash) return 0; let k = sgSlow(b.g.position); if (b.cnc > 0) k *= 0.6; if (b.ku > 0) k *= 0.3; if (b.blind > 0) k *= 0.75; return k; }
 function botCanShoot(b) { return !(b.blind > 0) && !(b.det > 0) && !(b.cnc > 0) && !(b.ku > 0); }
 function pNs(t) { const o = $("xNs"); o.classList.add("on"); clearTimeout(pNs.h); pNs.h = setTimeout(() => o.classList.remove("on"), t * 1000); }
 { const b0 = botAb; botAb = function (b, dt, see, tg, from) { b0(b, dt, see, tg, from);
@@ -9062,7 +9062,7 @@ function bcTick(dt) {
     if (!c) return true; bcTmField(c[0], c[1], c[2] === player ? player.y : c[2].g.position.y); scene.remove(t.m); say("Trademark · " + c[2].name + " · slow field 4 s", 900); return false;
   });
   BC.sf = BC.sf.filter((f) => { f.t -= dt; if (f.tm && player.hp > 0 && Math.hypot(player.x - f.p.x, player.z - f.p.z) < f.r) BC.pst = Math.max(BC.pst || 0, performance.now() + 200); /* Trademark field: the player too */ f.m.material.opacity = 0.35 * Math.min(1, f.t); if (f.t > 0) return true; jRel(f.m); return false; });
-  bots.concat(allies.filter(Boolean)).forEach((b) => { if (b.chs > 0) b.chs -= dt; if (b.sks > 0) b.sks -= dt; if (b.ku > 0) { b.ku -= dt; b.kg = b.kg != null ? b.kg : b.g.position.y; b.g.position.y = b.ku > 0 ? b.kg + Math.sin((1 - b.ku / 0.7) * Math.PI) * 1.5 : b.kg; if (b.ku <= 0) b.kg = null; } else if (b.g && b.xk == null && b.xj == null) { const q = b.g.position; q.y = groundAt(q.x, q.z, 0.3, q.y + 0.01); } }); // bots stand on box tops / ledges like the player (same floor lookup)
+  bots.concat(allies.filter(Boolean)).forEach((b) => { if (b.chs > 0) b.chs -= dt; if (b.sks > 0) b.sks -= dt; if (b.ku > 0) { b.ku -= dt; b.kg = b.kg != null ? b.kg : b.g.position.y; b.g.position.y = b.ku > 0 ? b.kg + Math.sin((1 - b.ku / 0.7) * Math.PI) * 1.5 : b.kg; if (b.ku <= 0) b.kg = null; } else if (b.g && b.xk == null && b.xj == null && !b.xup) { const q = b.g.position; q.y = groundAt(q.x, q.z, 0.3, q.y + 0.01); } }); // bots stand on box tops / ledges like the player (same floor lookup)
   const tb = !!(J.dr && J.dr.tb); TB.visible = tb; $("xDr").classList.toggle("tb", tb);
   if (tb) { TB.position.set(J.dr.x, 0, J.dr.z); TB.rotation.y = yaw; const s = performance.now() / 70; TB.userData.legs.forEach((l, i) => l.rotation.x = Math.sin(s + (i % 3 ? Math.PI : 0)) * 0.6); }
   bcVm();
@@ -9387,6 +9387,7 @@ function xBBuy(n, s) { // after guns + shields: E (signature) 1 free, then each 
   for (let r = 0, got = 1; got && r < 10; r++) { got = 0; for (let i = 0; i < K.buy.length; i++) { const k = K.buy[i][0], p = K.buy[i][2]; if ((kc[k] | 0) < (K.mx[k] || 0) && s.cr >= p && (r === 0 || s.cr - p >= 400)) { kc[k] = (kc[k] | 0) + 1; s.cr -= p; got = 1; } } }
   s.kc = kc; }
 function xBKill(by) { if (!by || typeof by !== "string" || !jOn()) return; let u = null; for (const x of bots) if (x.name === by) u = x; if (!u) for (const x of allies) if (x.name === by) u = x;
+  if (u && u.ab && u.ab.tw) u.ab.tw.k = (u.ab.tw.k || 0) + 1; // a kill while Tailwind is armed: the entry is done, dash out (xBJett)
   if (!u || !XBK_KR[xBAg(u)]) return; const c = xBCh(u); if (c.e >= 1) return; if (++c.tk >= 2) { c.e = 1; c.tk = 0; } }
 { const k0 = kill; kill = function (b, hs, by) { const was = b && b.alive, r = k0.apply(this, arguments); if (was && b && !b.alive && !XTKILL) try { xBKill(by); } catch (e) {} return r; };
   const a0 = allyDie; allyDie = function (a, by) { const was = a && a.alive, r = a0.apply(this, arguments); if (was && a && !a.alive && !XTKILL) try { xBKill(by); } catch (e) {} return r; }; }
@@ -9511,12 +9512,46 @@ function xUtilShoot(b, dt, from, en) { if (!running || !b.g || !botCanShoot(b) |
   XUS_D.set(pick.ax - from.x, pick.ay - from.y, pick.az - from.z); const L = XUS_D.length() || 0.01; XUS_D.multiplyScalar(1 / L);
   try { SFX.at(p, w); } catch (e) {} try { bFx(from, XUS_D, null, L); } catch (e) {}
   pick.hit(wDmg(W, "body", pick.d), pick.si); b.xUsN = (b.xUsN || 0) + 1; return true; }
+// Jett Tailwind / Updraft for bots (= server spike.js botUtility): an entry-minded bot (BotBrain aggression >= 0.6, the
+// server's entry profile is 0.65-1) 0.15-0.6 s into a fight spends its E to arm Tailwind (XTW: 1 s windup, 7.5 s window) or,
+// with no E, its Q for an Updraft (the player's / server's jump, vy sqrt(2*18*6), motor gravity); then 4-10 s before its
+// next one. Armed, BotBrain.tailwindDash (shared with the server) keeps the dash to get out: after a kill in the window,
+// when hurt (under 50 HP or 30 lost since arming), or as the window runs out in a fight; the dash (XPAR2 11 m / 0.45 s
+// through the shared motor dashStep, stopped by walls) goes backwards + a side from the enemy (tailwindKeys). Bot movement
+// waits while it runs (botK 0); an Updraft is flown by xBJettMove (the floor snaps skip b.xup).
+const XBJ_P = { x: 0, y: 0, z: 0, ch: 0 }, XBJ_W = { blocked: (x, z, r, y) => blocked(x, z, r, y) };
+function xBJett(b, A, dt, see, tg, ch) {
+  A.jsee = see && tg ? (A.jsee || 0) + dt : 0;
+  if (A.tw) { const T = A.tw; T.arm -= dt; T.t -= dt;
+    if (T.t <= 0 || !b.alive) A.tw = null;
+    else if (T.arm <= 0 && see && tg && window.BotBrain && window.ValorantFeel) { const why = BotBrain.tailwindDash({ armed: true, hp: b.hp, hp0: T.hp0, kills: T.k || 0, left: T.t });
+      if (why) { const k = BotBrain.tailwindKeys(Math.random), q = b.g.position; b.xdash = window.ValorantFeel.dash(k.f, k.s, Math.atan2(-(tg.x - q.x), -(tg.z - q.z)), XPAR2.tail, XPAR2.dashTime); A.tw = null; A.twOut = why; feed("Jett ▸ Tailwind"); } }
+    return; }
+  if (!see || !tg || !b.alive || b.xdash || b.xup) return;
+  const B = typeof xbBrain === "function" ? xbBrain(b) : null; if (!B || !(B.aggression >= 0.6)) return;
+  if (A.jU == null) A.jU = 0.15 + Math.random() * 0.45;
+  if (A.jsee < A.jU || A.t < (A.jT || 0)) return;
+  if (ch.e >= 1 && xBUse(b, "e")) { A.tw = { arm: XTW.windup, t: XTW.windup + XTW.window, hp0: b.hp, k: 0 }; A.jT = A.t + 4 + Math.random() * 6; return; }
+  if (ch.q >= 1 && xBUse(b, "q")) { b.xup = { vy: Math.sqrt(2 * 18 * 6), y0: b.g.position.y }; A.jT = A.t + 4 + Math.random() * 6; feed("Jett ▸ Updraft"); return; }
+  A.jT = A.t + 1 + Math.random();
+}
+function xBJettMove(b, dt) { // per frame for every bot: the Tailwind dash and the Updraft flight
+  if (!b || !b.g) return; const q = b.g.position;
+  if (b.xdash) { if (!b.alive || !window.ValorantFeel) b.xdash = null; else { const P = XBJ_P; P.x = q.x; P.y = q.y; P.z = q.z; P.ch = 0; if (!window.ValorantFeel.dashStep(P, b.xdash, dt, XBJ_W)) b.xdash = null; q.x = P.x; q.z = P.z; } }
+  if (b.xup) { const U = b.xup; if (!b.alive) { b.xup = null; return; }
+    const g = (window.ValorantFeel && window.ValorantFeel.C && window.ValorantFeel.C.gravity) || 20.45, dy = U.vy * dt;
+    if (dy > 0 && blocked(q.x, q.z, 0.3, q.y + dy)) U.vy = 0; else q.y += dy; // head bump: stop rising under a ceiling
+    U.vy -= g * dt; if (U.vy > 0) return;
+    let f = NaN; try { const C = typeof nmActive === "function" && nmActive(); f = C ? nmHeight(C, q.x, q.z, q.y + 0.01) : groundAt(q.x, q.z, 0.3, q.y + 0.01); } catch (e) {}
+    if (!Number.isFinite(f) || f < U.y0 - 12) f = U.y0; if (q.y <= f) { q.y = f; b.xup = null; } }
+}
 function botAb(b, dt, see, tg, from) {
   if (!jOn()) return; // abilities live with the agent kit (Retake + 5v5)
   const A = b.ab || (b.ab = { t: 0, smk: true, cb: 2, rb: true, rbT: 2 + Math.random() * 6, saw: false });
   A.t += dt; const peek = see && !A.saw; A.saw = see; const al = allies.indexOf(b) >= 0, ag = xBAg(b), ch = xBCh(b); // team-agnostic: ally bots cast at enemy bots
   if (see && tg) { A.lkx = tg.x; A.lkz = tg.z; A.lkt = 0; } else if (A.lkt != null) A.lkt += dt;
   { const r = XBK_RC[ag]; if (!r || ch.e >= 1) A.rcT = 0; else if ((A.rcT = (A.rcT || 0) + dt) >= r) { ch.e = 1; A.rcT = 0; } } // timed signature recharge
+  if (ag === "Jett") xBJett(b, A, dt, see, tg, ch); // Tailwind (dash out) / Updraft, as the server's bots
   if ((ag === "Jett" || ag === "Omen") && A.t > 1.2 && (A.smT || 0) < A.t) { // controller-style smokes: Jett Cloudburst (C) 2.5 s, Omen Dark Cover (E) 15 s, as the player's
     const k = ag === "Jett" ? "c" : "e"; let q = ch[k] >= 1 ? xBChoke(b, al, from, A) : null;
     if (!q && !al && mode === "retake" && !A.rsm) { A.rsm = 1; const P = [[-8, 8], [8, 8], [0, 10]][Math.floor(Math.random() * 3)]; XBK_P.x = P[0] + (Math.random() - 0.5) * 2; XBK_P.z = P[1]; q = XBK_P; } // retake hold: smoke a retake entrance
@@ -9553,7 +9588,7 @@ function resetBotRoundAbilities() { // per-round bot ability state; each kit re-
     A.bas = null; A.rzb = null; // Breach Aftershock, Raze Boom Bot (once per round)
     A.ps = undefined; A.pq = []; // Raze Paint Shells
     A.cy = null; // Cypher Trapwire (wires themselves cleared by bcClear)
-    A.kc = null; A.rsm = 0; A.smT = 0; A.flT = 0; A.lkt = null; A.rcT = 0; A.srgB = 0; A.knS = null; // kit charges (non-economy modes refill to full), smokes, flashes
+    A.kc = null; A.tw = null; A.jT = 0; b.xdash = null; b.xup = null; A.rsm = 0; A.smT = 0; A.flT = 0; A.lkt = null; A.rcT = 0; A.srgB = 0; A.knS = null; // kit charges (non-economy modes refill to full), smokes, flashes
   }); } catch (e) {}
 }
 function jRound(match) { // each round start in Retake and 5v5
@@ -9655,7 +9690,7 @@ function jTick(dt) {
   if (J.tw) { J.tw.arm -= dt; if ((J.tw.t -= dt) <= 0 || player.hp <= 0) { J.tw = null; if (player.hp > 0) say("Tailwind faded", 700); } } // the 7.5 s window ran out (or Jett died): the charge is gone
   XSU.value += dt;
   J.smokes = J.smokes.filter((s) => { s.t -= dt; s.m.material.opacity = 0.6 * Math.min(1, s.t / 0.5); const sm = s.m.material.uniforms; if (sm) { sm.uO.value = s.m.material.opacity / 0.6; s.a = (s.a || 0) + dt; const k = Math.min(1, s.a / 0.3); const g = 0.3 + 0.7 * (1 - (1 - k) ** 3), sx = (s.r || 4) / 4; if (s.cyl) s.m.scale.set(sx, g, sx); else s.m.scale.setScalar(sx * g); } if (s.t > 0) return true; jRel(s.m); return false; });
-  jCbTick(dt); jFxTick(dt); sgTick(dt); rsTick(dt); bcTick(dt); xDartRmTick(dt); xBTurTick(dt); xBSwTick(dt);
+  jCbTick(dt); jFxTick(dt); sgTick(dt); rsTick(dt); for (const b of bots) xBJettMove(b, dt); for (const a of allies) xBJettMove(a, dt); bcTick(dt); xDartRmTick(dt); xBTurTick(dt); xBSwTick(dt);
   const hn = $("hint"); if (hn && J.pick !== "Jett" && hn.textContent.includes(KITS.Jett.h)) hn.textContent = hn.textContent.replace(KITS.Jett.h, K().h);
   const u = K().u, cq = ["jQ", J.q, J.q + "", J.cd.q / 0.6], ce = ["jE", J.e, J.e ? "1" : "Used", J.cd.e / 0.4];
   const sl = J.pick === "Breach" || J.pick === "Chamber" ? bcSl(u) : J.pick === "Cypher" ? cySl(u) : J.pick === "Raze" || J.pick === "Skye" ? rsSl(u) : J.pick === "Omen" || J.pick === "Killjoy" ? okSl(u) : J.pick === "Sage" || J.pick === "Reyna" ? sgSl(u, cq) : J.pick === "Phoenix" ? [["jC", J.c, J.c + "", J.cd.c / 0.6], cq, ["jE", J.e, J.e > 0 ? J.e + "" : J.tk + "/2 kills", J.cd.e / 0.6], ["jX", J.rib > 0 || J.ult >= u, J.rib > 0 ? Math.ceil(J.rib) + " s" : J.ult + "/" + u, J.rib > 0 ? 1 - J.rib / 10 : 1 - J.ult / u]]
@@ -13803,7 +13838,7 @@ function nmPlace(u,C,point,index){
 {const pts=dmPts;dmPts=function(){const C=nmActive();return C?C.nav.nodes.filter((_,i)=>(C.playable?C.playable[i]:(!C.nav.valid||C.nav.valid[i]))&&i%Math.max(1,Math.floor(C.nav.nodes.length/150))===0).map(p=>[p[0],p[2]]):pts();};const spawnB=dmSpawnB,spawnP=dmSpawnP;dmSpawnB=function(b){const r=spawnB.apply(this,arguments),C=nmActive();if(C)nmPlace(b,C,C.nav.nodes[nmNear(C,b.g.position.x,b.g.position.z)],1);return r;};dmSpawnP=function(){const r=spawnP.apply(this,arguments),C=nmActive();if(C)nmPlace(player,C,C.nav.nodes[nmNear(C,player.x,player.z)],1);return r;};}
 // DM bypasses the agent ability tick that formerly grounded bots. Ground every live
 // native-map unit independently, preserving explicit knock-up/rope animations.
-(window.XHK||(window.XHK=[])).push(function nmGroundUnits(){const C=nmActive();if(!C||!running||paused)return;for(const b of bots.concat(allies)){if(b.nt||!b.alive||!b.g||b.ku>0||b.xk!=null||b.xj!=null)continue;const p=b.g.position;p.y=nmHeight(C,p.x,p.z,p.y+.01);}});
+(window.XHK||(window.XHK=[])).push(function nmGroundUnits(){const C=nmActive();if(!C||!running||paused)return;for(const b of bots.concat(allies)){if(b.nt||!b.alive||!b.g||b.ku>0||b.xk!=null||b.xj!=null||b.xup)continue;const p=b.g.position;p.y=nmHeight(C,p.x,p.z,p.y+.01);}});
 // Accurate map overview from Riot's minimap projection, rotated by exactly the scene's rigid transform.
 function nmMapProjection(C,W,H){const pad=8,b=C.bounds,s=(Math.min(W,H)-pad*2)/Math.max(b.x2-b.x1,b.z2-b.z1),ox=(W-(b.x2-b.x1)*s)/2,oz=(H-(b.z2-b.z1)*s)/2;return {s,ox,oz,X:x=>ox+(x-b.x1)*s,Z:z=>oz+(z-b.z1)*s,world:(x,z)=>[b.x1+(x-ox)/s,b.z1+(z-oz)/s]};}
 // Team spotting for the native minimap (legacy parity): an enemy shows while any living teammate or the
@@ -15360,7 +15395,17 @@ window.xAbilityFP = { XAF, XAF_SET, XAF_K, XAF_GUN, phase: xAfPhase, gunPhase: x
  // blocks the bot's route (blocking) and is close: a barrier off to the side is walked around, not shot.
  const SHOOT_UTIL={boombot:{range:15,pri:6},lockdown:{range:30,pri:5},turret:{range:30,pri:4},alarmbot:{range:12,pri:3},trademark:{range:12,pri:3},trapwire:{range:12,pri:3},spycam:{range:20,pri:2},owl:{range:20,pri:2},nanoswarm:{range:8,pri:1},barrier:{range:14,pri:0,block:true}};
  function shootUtility(c){let best=null,bs=-Infinity;for(const x of c||[]){const S=SHOOT_UTIL[x&&x.kind];if(!S||!x.los||!(x.d<=S.range)||(S.block&&!x.blocking))continue;const sc=S.pri*100-x.d;if(sc>bs){bs=sc;best=x;}}return best;}
- return {hash,rng,clamp,pickW,REACT,personality,reaction,crosshair,crosshairAt,firePattern,peek,attackPlan,defensePlan,roles,teamBuy,buyFor,onMateDeath,onSound,ATTACK,DEFENSE,utility,UTIL,turnStep,trackLag,wrapA,SPIKE,plantSpot,postPlant,retake,postPlay,SHOOT_UTIL,shootUtility};
+
+ // Jett Tailwind for bots (server spike.js botUtility and the offline index.html xBJett share it). The first E arms it at
+ // the entry (an entry bot's utility when a fight starts, wiki Tailwind v7.04: 1 s windup, 7.5 s window); the armed dash is
+ // kept to get OUT of the fight, not spent at once: after a kill in the window (the entry is done), when hurt (under 50 HP
+ // or 30+ lost since arming), or with under 0.6 s of the window left while still fighting (the charge is lost unused).
+ // c = {armed: windup over, hp, hp0: hp when armed, kills: kills since arming, left: window seconds left} -> reason or null.
+ // tailwindKeys: dash keys relative to a look at the enemy: backwards and to one side (out of its line of fire).
+ const TAILWIND={hp:50,lost:30,last:.6};
+ function tailwindDash(c){if(!c||!c.armed)return null;if(c.kills>0)return 'kill';if(c.hp<TAILWIND.hp||c.hp0-c.hp>=TAILWIND.lost)return 'hurt';if(c.left<TAILWIND.last)return 'expiring';return null;}
+ function tailwindKeys(rand){return {f:-1,s:rand()<.5?-1:1};}
+ return {hash,rng,clamp,pickW,REACT,personality,reaction,crosshair,crosshairAt,firePattern,peek,attackPlan,defensePlan,roles,teamBuy,buyFor,onMateDeath,onSound,ATTACK,DEFENSE,utility,UTIL,turnStep,trackLag,wrapA,SPIKE,plantSpot,postPlant,retake,postPlay,SHOOT_UTIL,shootUtility,TAILWIND,tailwindDash,tailwindKeys};
 });
 // Native-map 5v5 bots stop moving as one blob: per-round plans (own spot inside the site, one lurker on the other site,
 // staggered starts by personality, shuffled defender sites with spread holds), lane-varied routes from the shared
