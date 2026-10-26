@@ -294,11 +294,11 @@ button{font:inherit;text-transform:inherit;letter-spacing:inherit;cursor:pointer
 #xBuy .xb-card>button.on{border-left-color:var(--xb-t);background:rgba(16,48,52,.94);box-shadow:inset 0 0 0 1px rgba(25,211,197,.5)}
 #xBuy .xb-card>button.xb-no{opacity:.38;cursor:not-allowed}
 #xBuy .xb-card>button.xb-sell{border-left-color:var(--red)}
-#xBuy .xb-top{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%}
-#xBuy .xb-top b{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#xBuy .xb-top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:2px 8px;width:100%}
+#xBuy .xb-top b{font-weight:700;min-width:0;max-width:100%;overflow-wrap:anywhere}/* a narrow card puts the price under the name instead of cutting the name ('CLASS…' / 'VA…' at 1280x720, buy1) */
 #xBuy .xb-card svg{width:100%;height:32px;fill:#fff;align-self:center;opacity:.92}
-#xBuy .xb-ft{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;margin-top:auto}
-#xBuy .xb-ft small{font-size:11px;font-weight:400;letter-spacing:.04em;text-transform:none;color:var(--xb-d)}
+#xBuy .xb-ft{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:4px 8px;width:100%;margin-top:auto}
+#xBuy .xb-ft small{white-space:nowrap;font-size:11px;font-weight:400;letter-spacing:.04em;text-transform:none;color:var(--xb-d)}
 #xBuy .xb-ft em{font-style:normal;font-size:10px;letter-spacing:.14em;padding:0 8px;line-height:16px;border-radius:2px;background:rgba(25,211,197,.2);color:var(--xb-t);white-space:nowrap}
 #xBuy .xb-sell .xb-ft em{background:rgba(255,70,85,.18);color:var(--red)}
 #xBuy .x-tp{display:inline-flex;align-items:center;gap:8px;font-size:14px;font-weight:700;letter-spacing:.04em;color:var(--bone);font-variant-numeric:tabular-nums}
