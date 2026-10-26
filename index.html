@@ -1936,10 +1936,29 @@ const showStats = () => $("meStats").textContent = `${stats.k} kills · ${stats.
 let onSkin = () => {};
 // audio
 let ac, master;
-function audio() {
-  if (!ac) { const A = window.AudioContext || window.webkitAudioContext; if (!A) return; ac = new A(); master = ac.createGain(); master.connect(ac.destination); }
-  master.gain.value = S.muted ? 0 : S.vol / 100; if (ac.state === "suspended" && !document.hidden) ac.resume();
+// One AudioContext for the whole page. Browsers (iOS Safari above all) only let it start / resume inside a user gesture,
+// and iOS can stop it at any time ('interrupted': a call, Siri, another app, the screen lock; 'suspended' after the page
+// was hidden). So: never let a refused start throw (WebKit rejects resume() with "Failed to start the audio device",
+// which surfaced as the "Something broke" toast and left the context dead), and retry on EVERY gesture until it runs.
+const AUD = { err: "", fails: 0, lastTry: 0, gest: 0, unlocked: null };
+function audKick(gesture) { // resume a context that is not running; outside a gesture at most every 1.5 s (a browser refuses it anyway)
+  if (!ac || ac.state === "running" || ac.state === "closed" || document.hidden) return;
+  const now = performance.now(); if (!gesture && now - AUD.lastTry < 1500) return; AUD.lastTry = now;
+  try { const p = ac.resume(); if (p && p.then) p.then(() => { AUD.err = ""; }, (e) => { AUD.fails++; AUD.err = String((e && e.message) || e); }); }
+  catch (e) { AUD.fails++; AUD.err = String((e && e.message) || e); }
 }
+function audio() {
+  if (!ac) { const A = window.AudioContext || window.webkitAudioContext; if (!A) return;
+    try { ac = new A(); master = ac.createGain(); master.connect(ac.destination); } catch (e) { ac = undefined; master = undefined; AUD.fails++; AUD.err = String((e && e.message) || e); return; } // retried on the next call / gesture
+    try { ac.addEventListener("statechange", () => { if (ac && ac.state !== "running" && !document.hidden) audKick(false); }); } catch (e) {} }
+  master.gain.value = S.muted ? 0 : S.vol / 100; audKick(AUD.gest > 0);
+}
+function audGesture() { // every gesture while sound is on: create / resume the context; iOS also needs a sound started inside the gesture
+  if (S.muted) return; AUD.gest++;
+  try { audio(); if (ac && (ac.state !== "running" || AUD.unlocked !== ac)) { AUD.unlocked = ac; const b = ac.createBuffer(1, 1, ac.sampleRate), s = ac.createBufferSource(); s.buffer = b; s.connect(ac.destination); s.start(0); } } catch (e) { AUD.err = String((e && e.message) || e); }
+  finally { AUD.gest--; }
+}
+for (const t of ["pointerdown", "pointerup", "touchstart", "touchend", "mousedown", "keydown", "click"]) window.addEventListener(t, audGesture, { capture: true, passive: true });
 // perf: free one-shot nodes when their source ends so the graph never grows
 function sEnd(src, ...nodes) { src.onended = () => { src.disconnect(); for (const n of nodes) n.disconnect(); }; }
 // perf: one cached 2 s white-noise buffer shared by every noise sound
@@ -2282,7 +2301,7 @@ function xLobbyInit() {
   const bind = (name, fn) => { try { fn(); } catch (e) { try { console.error("lobby binding failed: " + name, e); } catch (_) {} } };
   bind("init error capture", () => { const oe = window.onerror; window.onerror = function (m, s, l, c, e) { if (!xReady && !xInitErr) xInitErr = String((e && e.message) || m); return oe ? oe.apply(this, arguments) : false; }; });
   bind("sound toggle", () => $("sndBtn").onclick = () => {
-    S.muted = !S.muted; audio();
+    S.muted = !S.muted; audio(); audGesture(); // inside this click: create / resume the context now (the capture-phase gesture hook ran while still muted)
     $("sndBtn").setAttribute("aria-pressed", String(!S.muted));
     xQ("sndBtn", "span").textContent = S.muted ? "Tap for sound" : "Sound on · tap to mute";
     { const l = S.muted ? "Sound off — click to enable" : "Sound on — click to mute"; $("sndBtn").setAttribute("aria-label", l); $("sndBtn").title = l; }
@@ -7524,7 +7543,7 @@ function xLNavSync() { if (!LG.G) return; for (let i = 0; i < LG.E.length; i++) 
   try { xLNavBind(G); } catch (e) {} return G; }; }
 function xLSnd(x, z, dur, f) { // grinding synth: quiet map-wide, loud near
   try {
-    const M = xLMain(); if (!M) return; const ac = M[0], out = M[1]; if (ac.state === "suspended") ac.resume(); // pass 4: shared context, through the master / SFX gain
+    const M = xLMain(); if (!M) return; const ac = M[0], out = M[1]; audKick(false); // pass 4: shared context, through the master / SFX gain
     if (!LG.nb || LG.nbAc !== ac) { LG.nbAc = ac; const n = ac.sampleRate; LG.nb = ac.createBuffer(1, n, ac.sampleRate); const ch = LG.nb.getChannelData(0); for (let i = 0; i < n; i++) ch[i] = Math.random() * 2 - 1; }
     const dd = player ? Math.hypot(player.x - x, player.z - z) : 60, v = 0.035 + 0.4 * Math.max(0, 1 - dd / 30), t = ac.currentTime;
     const g = ac.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(v, t + 0.12); g.gain.setValueAtTime(v, t + Math.max(0.15, dur - 0.3)); g.gain.linearRampToValueAtTime(0.0001, t + dur); g.connect(out);
@@ -11161,7 +11180,7 @@ function xAdapt() {
   else if (fps > 58 && cur < m - 0.001) { const nx = Math.round((cur + 0.1) * 10) / 10; xAdPR = nx >= m ? Infinity : nx; resize(); }
 }
 document.addEventListener("visibilitychange", () => {
-  try { if (typeof ac !== "undefined" && ac) { if (document.hidden) ac.suspend(); else ac.resume(); } } catch (e) {}
+  try { if (typeof ac !== "undefined" && ac) { if (document.hidden) { const p = ac.suspend(); if (p && p.catch) p.catch(() => {}); } else audKick(true); } } catch (e) {} // a refused resume (iOS) is retried on the next tap, never thrown
   if (!document.hidden) { xAdT = performance.now(); xAdN = 0; try { clock.getDelta(); } catch (e) {} }
 });
 function xPing() { let p = 18; try { if (SB && SB.You) p = SB.You.ping; } catch (e) {} return p + Math.round(Math.random() * 4); }
@@ -19733,7 +19752,7 @@ function gaWarm(key){if(!gaFile(key))return;gaFetch(key).then(()=>{if(typeof ac!
 function gaPool(){if(GA.slots.length||typeof ac==='undefined'||!ac||!master)return;for(let i=0;i<24;i++){const gain=ac.createGain(),pan=ac.createPanner();pan.panningModel='HRTF';pan.distanceModel='inverse';pan.refDistance=3;pan.maxDistance=90;pan.rolloffFactor=1.3;pan.connect(master);GA.slots.push({gain,pan,source:null,group:null,time:0});}}
 function gaRelease(slot){if(slot.source){slot.source.onended=null;try{slot.source.stop();}catch(e){}slot.source.disconnect();slot.source=null;}slot.gain.disconnect();slot.group=null;}
 function gaStop(group){for(const slot of GA.slots)if(slot.source&&(!group||slot.group===group))gaRelease(slot);}
-function gaPlay(key,group='ui',options={}){if(!gaFile(key))return false;if(S.muted||document.hidden||GA.muting)return true;try{audio();if(typeof ac==='undefined'||!ac)return false;gaPool();
+function gaPlay(key,group='ui',options={}){if(!gaFile(key))return false;if(S.muted||document.hidden||GA.muting)return true;try{audio();if(typeof ac==='undefined'||!ac)return false;if(ac.state&&ac.state!=='running'){GA.held=(GA.held||0)+1;return true;}/* context not running (not unlocked yet / iOS interrupted / hidden): a source started now would only queue and burst out on resume; the next gesture resumes it */gaPool();
  const b=GA.buffers.get(key);if(!b){gaWarm(key);return false;}let count=0,free=null;for(const slot of GA.slots){if(slot.source&&slot.group===group)count++;if(!slot.source&&!free)free=slot;}if(options.unique&&GA.slots.some(s=>s.source&&s.key===key))return true;if(count>=(GA_LIMIT[group]||3))return true;if(!free&&['feedback','kill','voice','finisher'].includes(group)){free=GA.slots.find(s=>s.source&&(s.group==='ambient'||s.group==='step'))||GA.slots.find(s=>s.source&&s.group==='gun');if(free)gaRelease(free);}if(!free)return true;
  const slot=free,source=ac.createBufferSource();slot.source=source;slot.group=group;slot.key=key;slot.time=ac.currentTime;source.buffer=b;source.loop=!!options.loop;source.playbackRate.value=options.rate||1;slot.gain.gain.value=options.gain==null?.65:options.gain;
  if(options.position){const p=options.position;if(!Number.isFinite(p.x)||!Number.isFinite(p.z)){gaRelease(slot);return true;}sPos(slot.pan,p);slot.gain.connect(slot.pan);}else slot.gain.connect(master);
@@ -19779,7 +19798,7 @@ function gaTick(){const live=typeof running!=='undefined'&&running,w=gaHeld(),al
 (window.XHK||(window.XHK=[])).push(gaTick);
 {const f=xskChanged;xskChanged=function(){GA.lastWeapon=null;const r=f.apply(this,arguments);gaWarmLoadout();return r;};}
 const gaUnlock=()=>{if(S.muted)return;try{audio();if(GA.unlockedContext===ac)return;GA.unlockedContext=ac;gaPool();for(const key of GA.raw.keys())gaDecode(key).catch(()=>{});}catch(e){}};
-addEventListener('pointerdown',gaUnlock,{passive:true});addEventListener('keydown',gaUnlock,{passive:true});document.addEventListener('visibilitychange',()=>{if(document.hidden)gaStop();});
+for(const t of ['pointerdown','touchend','click','keydown'])addEventListener(t,gaUnlock,{passive:true});document.addEventListener('visibilitychange',()=>{if(document.hidden)gaStop();});
 if(window.requestIdleCallback)requestIdleCallback(gaWarmLoadout,{timeout:1500});else setTimeout(gaWarmLoadout,250);
 window.xGameAudio={state:GA,play:gaPlay,warm:gaWarm,stop:gaStop,loadout:gaWarmLoadout,unlock:gaUnlock,isMuted:()=>S.muted,weapon:gaWeapon};
 // ---- END DOWNLOADED GAME AUDIO ----

@@ -19,7 +19,7 @@ function gaWarm(key){if(!gaFile(key))return;gaFetch(key).then(()=>{if(typeof ac!
 function gaPool(){if(GA.slots.length||typeof ac==='undefined'||!ac||!master)return;for(let i=0;i<24;i++){const gain=ac.createGain(),pan=ac.createPanner();pan.panningModel='HRTF';pan.distanceModel='inverse';pan.refDistance=3;pan.maxDistance=90;pan.rolloffFactor=1.3;pan.connect(master);GA.slots.push({gain,pan,source:null,group:null,time:0});}}
 function gaRelease(slot){if(slot.source){slot.source.onended=null;try{slot.source.stop();}catch(e){}slot.source.disconnect();slot.source=null;}slot.gain.disconnect();slot.group=null;}
 function gaStop(group){for(const slot of GA.slots)if(slot.source&&(!group||slot.group===group))gaRelease(slot);}
-function gaPlay(key,group='ui',options={}){if(!gaFile(key))return false;if(S.muted||document.hidden||GA.muting)return true;try{audio();if(typeof ac==='undefined'||!ac)return false;gaPool();
+function gaPlay(key,group='ui',options={}){if(!gaFile(key))return false;if(S.muted||document.hidden||GA.muting)return true;try{audio();if(typeof ac==='undefined'||!ac)return false;if(ac.state&&ac.state!=='running'){GA.held=(GA.held||0)+1;return true;}/* context not running (not unlocked yet / iOS interrupted / hidden): a source started now would only queue and burst out on resume; the next gesture resumes it */gaPool();
  const b=GA.buffers.get(key);if(!b){gaWarm(key);return false;}let count=0,free=null;for(const slot of GA.slots){if(slot.source&&slot.group===group)count++;if(!slot.source&&!free)free=slot;}if(options.unique&&GA.slots.some(s=>s.source&&s.key===key))return true;if(count>=(GA_LIMIT[group]||3))return true;if(!free&&['feedback','kill','voice','finisher'].includes(group)){free=GA.slots.find(s=>s.source&&(s.group==='ambient'||s.group==='step'))||GA.slots.find(s=>s.source&&s.group==='gun');if(free)gaRelease(free);}if(!free)return true;
  const slot=free,source=ac.createBufferSource();slot.source=source;slot.group=group;slot.key=key;slot.time=ac.currentTime;source.buffer=b;source.loop=!!options.loop;source.playbackRate.value=options.rate||1;slot.gain.gain.value=options.gain==null?.65:options.gain;
  if(options.position){const p=options.position;if(!Number.isFinite(p.x)||!Number.isFinite(p.z)){gaRelease(slot);return true;}sPos(slot.pan,p);slot.gain.connect(slot.pan);}else slot.gain.connect(master);
@@ -65,7 +65,7 @@ function gaTick(){const live=typeof running!=='undefined'&&running,w=gaHeld(),al
 (window.XHK||(window.XHK=[])).push(gaTick);
 {const f=xskChanged;xskChanged=function(){GA.lastWeapon=null;const r=f.apply(this,arguments);gaWarmLoadout();return r;};}
 const gaUnlock=()=>{if(S.muted)return;try{audio();if(GA.unlockedContext===ac)return;GA.unlockedContext=ac;gaPool();for(const key of GA.raw.keys())gaDecode(key).catch(()=>{});}catch(e){}};
-addEventListener('pointerdown',gaUnlock,{passive:true});addEventListener('keydown',gaUnlock,{passive:true});document.addEventListener('visibilitychange',()=>{if(document.hidden)gaStop();});
+for(const t of ['pointerdown','touchend','click','keydown'])addEventListener(t,gaUnlock,{passive:true});document.addEventListener('visibilitychange',()=>{if(document.hidden)gaStop();});
 if(window.requestIdleCallback)requestIdleCallback(gaWarmLoadout,{timeout:1500});else setTimeout(gaWarmLoadout,250);
 window.xGameAudio={state:GA,play:gaPlay,warm:gaWarm,stop:gaStop,loadout:gaWarmLoadout,unlock:gaUnlock,isMuted:()=>S.muted,weapon:gaWeapon};
 // ---- END DOWNLOADED GAME AUDIO ----
