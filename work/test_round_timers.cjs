@@ -31,3 +31,12 @@ const has=(s,t,m)=>assert.ok(s.includes(t),m+' ('+t+')');
  const km=html.match(/const KITS = (\{[\s\S]*?\n\});/);assert.ok(km,'offline KITS');const K=vm.runInNewContext('('+km[1]+')');
  for(const [a,u] of Object.entries(want))assert.equal(K[a].u,u,'offline ult points '+a);
  console.log('Round timers / Spike / economy / ult points: offline page and server match the wiki (buy 45 s on rounds 1, 13, 25)');})().catch(e=>{console.error(e);process.exit(1);});
+// round end keeps the world on screen (hud_b6 / diag_hud1-2, 2026-10-26): fCheck sets running=false and its post-round timer
+// starts the next round; loop() must still render the scene while running is false (no early return on !running before the render).
+{const a=html.indexOf('\nfunction loop() {'),b=html.indexOf('\n}\n',a);assert.ok(a>0&&b>a,'loop() found');const L=html.slice(a,b);
+ const r=L.indexOf('renderer.render(scene, camera)');assert.ok(r>0,'loop() renders the scene');
+ const pre=L.slice(0,r).split('\n').filter(l=>/\breturn\b/.test(l));
+ for(const l of pre)assert.ok(!/!\s*running|running\s*\)\s*return|\(running\s*&&[^)]*\)\s*return/.test(l.replace(/try \{ rt = running[^}]*\}/,'')),'loop() returns before the render only for hidden tab / frame cap / loading / overlay / pause throttle, never for !running: '+l.trim().slice(0,120));
+ const f=html.slice(html.indexOf('function fCheck(win, text, title) {'));const fc=f.slice(0,f.indexOf('\n}\n'));
+ assert.ok(/running = false;/.test(fc)&&/FV\.to = setTimeout\(\(\) => \{[\s\S]*if \(!over\) \{[\s\S]*return fRound\(\); \}/.test(fc),'fCheck: running=false, then the post-round timer starts the next round (fRound)');}
+console.log('round end: loop() renders while running=false; post-round timer -> fRound');
