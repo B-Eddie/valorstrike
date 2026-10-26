@@ -298,6 +298,29 @@ Re-sweep after C1/C2 (stride 2 + walk-in trap test on every sampled node, RENDER
   r 0.27, feet band 9..9.85 m) makes it a post; it now stops beside it and walks off in 5 directions, jumping on top
   still works. No playable node is clip-blocked (one non-playable node 0.64 m from the centre is). Fixture added (Split traps).
 - Lotus (4,348 nodes, 14,676 edges): 0 stuck, 0 traps, 0 refused edges.
+- Breeze (C2 motor + crate-stack clip; 5,838 nodes sampled, 18,683 edges): the first re-sweep (`sweepA-breeze.json`) ran
+  while the motor-wide slope rule was being tried (see Split; inferred - it started before 79a9b48 and its findings do not
+  reproduce on the committed motor) and is void: its 8 jump-only nodes (the ramp up to the 12 m
+  platform at x 3..6, z -35..-31 among them) and 2 of its 3 traps walk out on the committed motor (replayed node by node).
+  The third is real: from (-33.5, 8.05, -60.25) walking (-0.71, -0.71) (and from (-33.5, 8.08, -61.75) toward (-0.71, 0.71))
+  the capsule left the 8 m floor's west edge - no railing, a 5.2 m drop that is off the footprint - because the leash's
+  0.6 m core lets the centre 0.3 m past the edge; it settled 26 cm down on the edge lip at (-34.09, 7.79, -61.1), could
+  not drop (leash) and met the edge at every lift back: 0.2 m of travel in 1 s in any of 16 directions, crouched too.
+  The sweep's own trap test (0.1 m in 0.3 s) passes it, so the walk fixtures now require 0.3 m within 0.5 s.
+  Fix: player clip `CLIPS.breeze` '8 m floor west edge' following the edge 0.3 m out from z -66 to -58.4 (where the
+  floor turns west), body band 8.4..9.5 m; the edge now stops a walk like a railing. A clip on the trap spot alone left a
+  corner pocket against the edge either side of it (found by `.scratch/rscan.mjs`, 16 directions x 0.2/0.4/0.8 s from
+  every node within 5.5 m, trapped = no 1 s walk gets 0.5 m away); with the full-length clip: 0 traps, no playable node
+  clip-blocked (the x -33.5 nav row stays 0.42 m clear). Fixtures: both walks added to Breeze traps (fail before).
+  Full re-sweep on the committed motor before that clip (`sweepC-breeze.json`, 5,838 nodes, 18,683 edges): 0 stuck, 0
+  jump-only, 3 embedded nodes (as before: (4, 4.01, 44), (10, 4.07, 47.75), (45.25, 7.01, -25.75)), 8 refused edges, all
+  `tall` against visible collision (posts / pillar corners, as before), 1 walk-in trap: from (-10.25, 6.02, 0.5) toward
+  (-0.71, -0.71) the capsule climbed the rim of a 0.55 m wide, 0.7 m tall prop against the low railing over the mid-west
+  drop (centre (-11.24, -0.98); its collision reads as an open lattice) 0.6 m in three frames and perched at (-11.21, 6.61,
+  -0.66), no floor under its axis, 0.06 m of travel in any direction. Fix: player clip (octagon r 0.3, feet band
+  6.05..6.75 m), a post as on Split; local scan 0 traps from playable nodes, none clip-blocked (a non-playable node
+  (-12.5, 6.14, -2.5) outside the railing is leash-held as before - unreachable on foot). Fixture added (Breeze traps).
+  A post-clip full Breeze sweep is queued (`sweepD-breeze.json`).
 
 Spawns and plant sites (all six maps): attacker / defender spawn candidates 246-660 / 103-634 per map, none embedded or
 stuck, every candidate reaches every site on the navigation. Every site anchor lies in its own plant zone, its nearest
@@ -349,3 +372,8 @@ refused with/without a crack and after a step down; 0.2 m stairs up and down; it
    without a jump (no visible push-out pop); walk off the 12 m platform's south-east edge toward the crate stack
    (x 7.3..10.45, z -24.45): stops at the edge like a wall, no visible invisible-wall gap feel worse than a railing; the
    east edge (x > 10.45) still drops to the 8 m floor; walking on the 8 m floor under the stack is unaffected.
+10. Breeze west edge of the 8 m floor (x -33.6..-33.9, z -66..-58.4, above the 5.2 m drop): walk and strafe along and
+    diagonally off it - stops at the edge like a railing (no hang on the lip, no visible pop); the floor corner at
+    z -58..-57.5 where it turns west still walks.
+11. Breeze prop by the mid-west railing (-11.24, 6, -0.98): walking into it stops beside it like a post (no climb onto it);
+    the railing line beside it is unchanged.

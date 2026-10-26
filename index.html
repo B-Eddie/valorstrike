@@ -7985,6 +7985,14 @@ const smokeGeo = new THREE.SphereGeometry(4, 22, 16);
 // server abilities.js SMOKE.r is the same table. The 4 m sphere is scaled to it; sight (jBlock) and the minimap read s.r.
 const XSMR = { Jett: 3.35, Omen: 4.1, Cypher: 3.72 };
 function xSmk(m, r) { m.scale.setScalar(r / 4); return r; }
+// Cyber Cage (wiki.playvalorant.com/en-us/Cyber_Cage): a hollow, open-ended vertical cylinder, radius 3.72 m (XSMR.Cypher), centred on the
+// cage so its walls reach above and below it. Half-height CYCAGE.h (wiki gives none; 5 m, server DEV.cage.h). Sight is blocked where a line
+// crosses the wall (xCageHit, server abilities.js cageBlocks): inside-to-inside and down through the open top stay clear.
+const CYCAGE = { h: 5 }, cageGeo = new THREE.CylinderGeometry(4, 4, 2 * CYCAGE.h, 40, 4, true);
+function xCage(m, r) { m.scale.set(r / 4, 1, r / 4); return r; }
+function xCageHit(s, a, d, max) { const r = s.r || XSMR.Cypher, ox = a.x - s.p.x, oz = a.z - s.p.z, A = d.x * d.x + d.z * d.z; if (A < 1e-9) return false;
+  const b = ox * d.x + oz * d.z, D = b * b - A * (ox * ox + oz * oz - r * r); if (D < 0) return false; const q = Math.sqrt(D), t1 = (-b - q) / A, t2 = (-b + q) / A;
+  return (t1 >= 0 && t1 <= max && Math.abs(a.y + d.y * t1 - s.p.y) <= s.cyl) || (t2 >= 0 && t2 <= max && Math.abs(a.y + d.y * t2 - s.p.y) <= s.cyl); }
 // look pass: Valorant-style ability VFX — own shaders/geometry, pooled via jMat, no extra lights or shadows
 const XSU = { value: 0 }; // shared smoke clock
 function xSmokeM(k, c, r) { return jMat(k, () => { const m = new THREE.ShaderMaterial({ uniforms: { uT: XSU, uO: { value: 1 }, uC: { value: new THREE.Color(c) }, uR: { value: new THREE.Color(r) } }, transparent: true, depthWrite: false, side: THREE.DoubleSide,
@@ -8013,7 +8021,7 @@ function jFx(m, t) { scene.add(m); const f = { m, t, t0: t, o: m.material.opacit
 function segD(x, z, w) { const qx = w.p.x - w.ax * 4, qz = w.p.z - w.az * 4, t = Math.max(0, Math.min(8, (x - qx) * w.ax + (z - qz) * w.az)); return Math.hypot(x - qx - w.ax * t, z - qz - w.az * t); }
 function jBlock(a, dir, dist) { // shared sight check for every bot, all modes
   const tv = jBlock.v || (jBlock.v = new THREE.Vector3());
-  if (J.smokes.some((s) => { const t = Math.max(0, Math.min(dist, tv.copy(s.p).sub(a).dot(dir))); return tv.copy(a).addScaledVector(dir, t).distanceTo(s.p) < (s.r || 4); })) return true;
+  if (J.smokes.some((s) => { if (s.cyl) return xCageHit(s, a, dir, dist); const t = Math.max(0, Math.min(dist, tv.copy(s.p).sub(a).dot(dir))); return tv.copy(a).addScaledVector(dir, t).distanceTo(s.p) < (s.r || 4); })) return true;
   const rx = dir.x * dist, rz = dir.z * dist;
   return J.walls.some((w) => { const sx = w.ax * 8, sz = w.az * 8, qx = w.p.x - w.ax * 4 - a.x, qz = w.p.z - w.az * 4 - a.z, den = rx * sz - rz * sx; if (Math.abs(den) < 1e-6) return false; const t = (qx * sz - qz * sx) / den, u = (qx * rz - qz * rx) / den; return t >= 0 && t <= 1 && u >= 0 && u <= 1; });
 }
@@ -8023,13 +8031,21 @@ function jRib() {
   feed("Run It Back ▸ You"); say("Run It Back · back at the marker", 1400); SFX.tp(); SFX.ab("rewindBack"); return true;
 }
 function jUnreveal() { J.rv.forEach((b) => (b.rvO || []).forEach((o) => o.parent && o.parent.remove(o))); J.rv = []; J.rvT = 0; }
-function jReveal(p) {
-  jUnreveal(); J.rvT = 3;
-  J.rv = bots.filter((b) => b.alive && Math.hypot(b.g.position.x - p.x, b.g.position.z - p.z) < 15);
+// Sova Recon Bolt (wiki.playvalorant.com/en-us/Recon_Bolt): after the bolt lands it sends 2 sonar pulses 1.6 s apart; each
+// reveals enemies within 30 m that the bolt can see for 0.75 s. Same table as the server (DEV.reconBolt); XRCN.g changes on
+// every round clear so pulses of a bolt from an earlier round never fire.
+const XRCN = { pulses: [0.9, 2.5], radius: 30, reveal: 0.75, g: 0 }, XRCN_V = [new THREE.Vector3(), new THREE.Vector3()];
+function xRcnSees(p, x, y, z) { return Math.hypot(x - p.x, z - p.z) < XRCN.radius && los(XRCN_V[0].set(p.x, p.y + 0.5, p.z), XRCN_V[1].set(x, y, z)); }
+function xRcnRings(p, en) { [[15, 0.9], [9, 0.6]].forEach(([g, t], i) => { const m = jM(xRcnGeo, xAdd((en ? "ercn" : "rcn") + i, en ? 0xff5a2a : 0x3fb4ff, 0.85 - i * 0.25)); m.rotation.x = -Math.PI / 2; m.position.set(p.x, 0.12 + i * 0.02, p.z); jFx(m, t).g = g; }); }
+function jReveal(p) { const g = XRCN.g; p = p.clone(); XRCN.pulses.forEach((t) => setTimeout(() => { if (g === XRCN.g) jRcnPulse(p); }, t * 1000)); }
+function jRcnPulse(p) {
+  jUnreveal(); J.rvT = XRCN.reveal;
+  J.rv = bots.filter((b) => b.alive && b.g && xRcnSees(p, b.g.position.x, b.g.position.y + 1.2, b.g.position.z));
   J.rv.forEach((b) => { b.rvO = [b.body, b.head].map((s) => { const o = new THREE.Mesh(s.geometry, rvMat); o.scale.setScalar(1.15); o.renderOrder = 999; o.raycast = () => {}; s.add(o); return o; }); });
-  [[15, 0.9], [9, 0.6]].forEach(([g, t], i) => { const m = jM(xRcnGeo, xAdd("rcn" + i, 0x3fb4ff, 0.85 - i * 0.25)); m.rotation.x = -Math.PI / 2; m.position.set(p.x, 0.12 + i * 0.02, p.z); jFx(m, t).g = g; });
+  xRcnRings(p, false);
   say(J.rv.length + " enem" + (J.rv.length === 1 ? "y" : "ies") + " revealed", 900);
 }
+const XLEER = 1.6; // Leer nearsights for 1.6 s once it arrives (wiki.playvalorant.com/en-us/Leer); server LEER.active
 function jPop(p) {
   SFX.flash(); const m = jM(orbGeo, xAdd("pcore", 0xfff6e8, 1)); m.scale.setScalar(4); m.position.copy(p); jFx(m, 0.3);
   const hm = jM(smokeGeo, xAdd("phalo", 0xff9a40, 0.45)); hm.scale.setScalar(0.3); hm.position.copy(p); jFx(hm, 0.3).g = 0.25;
@@ -8242,7 +8258,7 @@ function sgTick(dt) {
     l.t += dt; l.m.position.lerpVectors(l.a, l.b, Math.min(1, l.t / 0.4)); ryLeerLook(l); const p = l.m.position;
     if (l.t >= xWf("leer")) bots.forEach((b) => { /* wiki windup 0.4 s from FIRE */ if (!b.alive) return; const bp = PF_A.set(b.g.position.x, 1.6, b.g.position.z), ry = b.g.rotation.y, vx = p.x - bp.x, vz = p.z - bp.z, d = Math.hypot(vx, vz) || 0.01;
       if (d < 30 && (vx * Math.sin(ry) + vz * Math.cos(ry)) / d > 0.3 && los(bp, PF_B.copy(p))) b.blind = Math.max(b.blind || 0, 2); });
-    if (l.t < 2) return true; scene.remove(l.m); return false;
+    if (l.t < xWf("leer") + XLEER) return true; scene.remove(l.m); return false;
   });
   if (J.dis > 0) { J.dis -= dt; if (J.dis <= 0) { J.dis = 0; $("xEmp").classList.remove("dis"); } }
   if (J.emp > 0 && !(P.hp > 0)) { J.emp = 0; $("xEmp").classList.remove("on"); } // Empress (current Valorant): lasts until death (round reset clears it in sgClear)
@@ -8867,7 +8883,7 @@ function cyKey(code) {
   }
   if (code === "KeyQ") {
     if (J.q < 1 || J.cd.q > 0) return no(); J.q--; J.cd.q = 0.6;
-    const p = okGround(15), m = jM(smokeGeo, xSmokeM("cyq", 0x5a6a6c, 0x3fd0c0)); m.position.set(p.x, 1.2, p.z); scene.add(m); J.smokes.push({ m, p: m.position, t: 7.25, r: xSmk(m, XSMR.Cypher) }); SFX.smoke(); say("Cyber Cage · 7 s", 600);
+    const p = okGround(15), m = jM(cageGeo, xSmokeM("cyq", 0x5a6a6c, 0x3fd0c0)); m.position.set(p.x, groundAt(p.x, p.z, 0.2, (P.y || 0) + 1), p.z); scene.add(m); J.smokes.push({ m, p: m.position, t: 7.25, r: xCage(m, XSMR.Cypher), cyl: CYCAGE.h }); SFX.smoke(); say("Cyber Cage · 7 s", 600);
   }
   if (code === "KeyE") {
     if (!BC.cam) {
@@ -9038,9 +9054,9 @@ function drDart() {
   J.arrows.push({ m, a: o, b: e, t: 0, dur: Math.max(0.05, o.distanceTo(e) / 45), kind: "dart", tg: h && h.object.userData.bot }); blip(700, 0.08, "triangle", 0.15);
 }
 // ---- enemy bot abilities: light and probabilistic ----
-function enSmoke(x, z, al, dur, y, r) { // y: smoke centre (default 1.8), r: radius (XSMR, default 4)
-  const m = jM(smokeGeo, al ? xSmokeM("s9a", 0x7fa6c2, 0xb8dcf2) : xSmokeM("s9x", 0x8a929a, 0xc9d2da)); // ally smokes take the team blue
-  m.position.set(x, 1.8, z); scene.add(m); J.smokes.push({ m, p: m.position, t: dur || 7, r: xSmk(m, r || 4) }); SFX.smoke(); if (Number.isFinite(y)) m.position.y = y;
+function enSmoke(x, z, al, dur, y, r, cyl) { // y: smoke centre (default 1.8; a cage: its floor), r: radius (XSMR, default 4), cyl: Cyber Cage cylinder
+  const m = jM(cyl ? cageGeo : smokeGeo, al ? xSmokeM("s9a", 0x7fa6c2, 0xb8dcf2) : xSmokeM("s9x", 0x8a929a, 0xc9d2da)); // ally smokes take the team blue
+  m.position.set(x, 1.8, z); scene.add(m); J.smokes.push({ m, p: m.position, t: dur || 7, r: cyl ? xCage(m, r || XSMR.Cypher) : xSmk(m, r || 4), cyl: cyl ? CYCAGE.h : 0 }); SFX.smoke(); if (Number.isFinite(y)) m.position.y = y; else if (cyl) m.position.y = 0;
 }
 function enPop(p) {
   SFX.flash(); const m = jM(orbGeo, xAdd("pcore", 0xfff6e8, 1)); m.scale.setScalar(4); m.position.copy(p); jFx(m, 0.3);
@@ -9048,11 +9064,11 @@ function enPop(p) {
   if (player.hp <= 0 || J.dr) return; const e = pEyeTo(PE_V), v = p.clone().sub(e), l = v.length() || 0.01;
   if (l < 30 && v.dot(jAim()) / l > 0.5 && los(e, p)) { const w = $("xWh"); w.style.transition = "none"; w.style.opacity = 1; setTimeout(() => { w.style.transition = "opacity .8s"; w.style.opacity = 0; }, 450); }
 }
-function enRecon(p) {
-  // same pooled two-ring pulse as the player's recon (pass 117), tinted red-orange for enemies
-  [[15, 0.9], [9, 0.6]].forEach(([g, t], i) => { const m = jM(xRcnGeo, xAdd("ercn" + i, 0xff5a2a, 0.85 - i * 0.25)); m.rotation.x = -Math.PI / 2; m.position.set(p.x, 0.12 + i * 0.02, p.z); jFx(m, t).g = g; });
+function enRecon(p) { const g = XRCN.g; p = p.clone(); XRCN.pulses.forEach((t) => setTimeout(() => { if (g === XRCN.g) enRcnPulse(p); }, t * 1000)); }
+function enRcnPulse(p) { // an enemy bolt's pulse: same rings (tinted red-orange), 30 m and the bolt's line of sight to the player's eye
+  xRcnRings(p, true);
   blip(500, 0.2, "sine", 0.12);
-  if (player.hp > 0 && Math.hypot(player.x - p.x, player.z - p.z) < 15) { say("Revealed by Sova's Recon Bolt", 1100); enRvFx(); bots.forEach((b) => { if (b.alive) b.cd = Math.min(b.cd, 0.3); }); }
+  if (player.hp > 0 && xRcnSees(p, player.x, pEyeTo(PE_V).y, player.z)) { say("Revealed by Sova's Recon Bolt", 1100); enRvFx(); bots.forEach((b) => { if (b.alive) b.cd = Math.min(b.cd, 0.3); }); }
 }
 function enRvFx() { // brief red outline/vignette pulse + REVEALED warning under the crosshair (one reused overlay)
   let o = enRvFx.o;
@@ -9143,7 +9159,7 @@ function botAb(b, dt, see, tg, from) {
 function jClear() {
   drEnd();
   J.smokes.concat(J.walls, J.zones, J.orbs, J.arrows, J.fx, J.cbs).forEach((s) => jRel(s.m)); J.smokes = []; J.walls = []; J.zones = []; J.orbs = []; J.arrows = []; J.fx = []; J.cbs = [];
-  if (J.ribM) scene.remove(J.ribM); J.rib = 0; J.hf = 0; jUnreveal(); $("xWh").style.opacity = 0; sgClear(); rsClear(); bcClear(); try { xKnClr(); } catch (e) {}
+  if (J.ribM) scene.remove(J.ribM); J.rib = 0; J.hf = 0; XRCN.g++; jUnreveal(); $("xWh").style.opacity = 0; sgClear(); rsClear(); bcClear(); try { xKnClr(); } catch (e) {}
 }
 function resetBotRoundAbilities() { // per-round bot ability state; each kit re-inits lazily when its key is null
   try { [].concat(bots || [], allies || []).forEach((b) => { const A = b && b.ab; if (!A) return;
@@ -9255,7 +9271,7 @@ function jTick(dt) {
   $("xAb").classList.toggle("on", on); if (!on) return;
   for (const k in J.cd) J.cd[k] = Math.max(0, J.cd[k] - dt);
   XSU.value += dt;
-  J.smokes = J.smokes.filter((s) => { s.t -= dt; s.m.material.opacity = 0.6 * Math.min(1, s.t / 0.5); const sm = s.m.material.uniforms; if (sm) { sm.uO.value = s.m.material.opacity / 0.6; s.a = (s.a || 0) + dt; const k = Math.min(1, s.a / 0.3); s.m.scale.setScalar(0.3 + 0.7 * (1 - (1 - k) ** 3)); } if (s.t > 0) return true; jRel(s.m); return false; });
+  J.smokes = J.smokes.filter((s) => { s.t -= dt; s.m.material.opacity = 0.6 * Math.min(1, s.t / 0.5); const sm = s.m.material.uniforms; if (sm) { sm.uO.value = s.m.material.opacity / 0.6; s.a = (s.a || 0) + dt; const k = Math.min(1, s.a / 0.3); const g = 0.3 + 0.7 * (1 - (1 - k) ** 3), sx = (s.r || 4) / 4; if (s.cyl) s.m.scale.set(sx, g, sx); else s.m.scale.setScalar(sx * g); } if (s.t > 0) return true; jRel(s.m); return false; });
   jCbTick(dt); jFxTick(dt); sgTick(dt); rsTick(dt); bcTick(dt);
   const hn = $("hint"); if (hn && J.pick !== "Jett" && hn.textContent.includes(KITS.Jett.h)) hn.textContent = hn.textContent.replace(KITS.Jett.h, K().h);
   const u = K().u, cq = ["jQ", J.q, J.q + "", J.cd.q / 0.6], ce = ["jE", J.e, J.e ? "1" : "Used", J.cd.e / 0.4];
@@ -12234,7 +12250,7 @@ function mpFx(u, ag, k, o, d, auth, p, quiet) { // u: caster unit, o/d: eye + ai
   const i = "cqex".indexOf(k); if (i < 0 || !u || !u.g) return; if (!Object.hasOwn(KITS, ag)) ag = "Jett";
   const ty = ABI_M[ag][i] || "ult", al = allies.indexOf(u) >= 0, en = !al, nd = !auth, nm = KITS[ag].n[i] || "Ability", up = u.g.position, col = al ? 0x3fb4ff : 0xff4655;
   const tg = (far, back) => (p ? MPC.e.copy(p) : mpTgt(o, d, far, back));
-  if (ty === "smoke") { const S = MP_SMK[ag] || [14, 7], e = tg(S[0], 0.5); enSmoke(e.x, e.z, al, S[1], ag === "Jett" && p ? e.y : undefined, XSMR[ag]); } // Jett: at the Cloudburst's landing point
+  if (ty === "smoke") { const S = MP_SMK[ag] || [14, 7], e = tg(S[0], 0.5), cg = ag === "Cypher"; enSmoke(e.x, e.z, al, S[1], cg ? groundAt(e.x, e.z, 0.2, (up.y || 0) + 1) : ag === "Jett" && p ? e.y : undefined, XSMR[ag], cg); } // Jett: at the Cloudburst's landing point
   else if (ty === "flash") { const e = tg(ag === "Phoenix" ? 6 : 12, 0.4).clone(), m = jM(orbGeo, jMat("orb", () => new THREE.MeshBasicMaterial({ color: 0xfff2b0 }))); m.position.copy(o); scene.add(m); J.orbs.push({ m, a: o.clone(), b: e, t: 0, en }); }
   else if (ty === "fire") { const rz = ag === "Raze", e = rz ? tg(14, 0.4) : p ? tg() : mpTgt(new THREE.Vector3(up.x, 1, up.z), MPC.d.set(d.x, 0, d.z).normalize(), 5, 0.5);
     const c = new THREE.Vector3(e.x, 0.05, e.z), m = jM(zoneGeo, fireMat(rz ? 0xff4fa0 : 0xff5a1a, 0.55)); m.rotation.x = -Math.PI / 2; m.position.copy(c); scene.add(m);
@@ -13638,8 +13654,9 @@ const netMpFx0=mpFx;mpFx=function(u,ag,k,o,d,auth,p){if(!NET.socket)return netMp
 const netPNs0=pNs;pNs=function(){if(NET.socket&&netFxReplay)return;return netPNs0.apply(this,arguments);};
 const netCon0=xConStart;xConStart=function(){if(NET.socket&&netFxReplay)return;return netCon0.apply(this,arguments);};
 const netEnPop0=enPop;enPop=function(p){if(!NET.socket)return netEnPop0.apply(this,arguments);const hp=player.hp;player.hp=0;try{return netEnPop0.apply(this,arguments);}finally{player.hp=hp;}};
-// Server smokes sit on the floor they landed on (p[1] = floor + 0.1); keep the rendered sphere on that floor too.
-const netSmoke0=enSmoke;enSmoke=function(){const r=netSmoke0.apply(this,arguments);if(NET.socket&&netFxReplay&&netFxPoint!=null){const S=J.smokes[J.smokes.length-1];if(S&&S.m)S.m.position.y=netFxPoint-.1+1.8;}return r;};
+// Server smokes sit on the floor they landed on (p[1] = floor + 0.1); keep the rendered sphere on that floor too (a Cyber Cage
+// cylinder is centred on the floor itself, as the server's cageBlocks).
+const netSmoke0=enSmoke;enSmoke=function(){const r=netSmoke0.apply(this,arguments);if(NET.socket&&netFxReplay&&netFxPoint!=null){const S=J.smokes[J.smokes.length-1];if(S&&S.m)S.m.position.y=netFxPoint-.1+(S.cyl?0:1.8);}return r;};
 // Floor weapons (#4): the server owns every floor gun (snapshot fw rows [id,weapon,x,y,z]) and every swap.
 // F asks for the gun under the crosshair by id, G asks to drop the gun in hand; the private round state's
 // ld [primary,secondary] keeps both slots in step after a pick-up, drop or death.

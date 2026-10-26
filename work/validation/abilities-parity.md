@@ -273,6 +273,60 @@ push, Cloudburst landing `e.radius`, `devices.js` Cyber Cage); `smokeBlocks` alr
 `SMOKE.radius` 4. Client: `XSMR` (same table, asserted equal), every `J.smokes` entry carries `r` and its 4 m sphere is
 scaled to it (`xSmk`): the player's Dark Cover / Cyber Cage / Cloudburst, bot smokes and relayed casts (`enSmoke(..., r)`
 from `mpFx` / the bot kit / `netSyncCb`); `jBlock` (bot sight) and the minimap circle use `s.r` (4 m when absent).
-Cyber Cage stays a sphere (not a cylinder). Tests: `server/test-ults.js` (table, Dark Cover 4.1 / Cyber Cage 3.72 on the
+Cyber Cage: cylinder since the next entry. Tests: `server/test-ults.js` (table, Dark Cover 4.1 / Cyber Cage 3.72 on the
 cast, `smokeBlocks` blocks inside the radius only), `server/test-ability-equip.js` (Cloudburst 3.35), `work/test_ability_equip.cjs`
 (XSMR == SMOKE.r, relayed radii and mesh scale, `jBlock` 3.6 m pass).
+
+### Cyber Cage cylinder (wiki.playvalorant.com/en-us/Cyber_Cage, fetched 2026-10-25)
+
+Wiki: "a white, hollow, open-ended cylinder", radius 3.72 m, "the cylinder's center is positioned at the location where the
+cage was activated" (its walls reach above and below it), 7.25 s. No height is given: half-height 5 m (top 5 m above the
+cage, as tall as the sphere smokes) on both sides (server `DEV.cage.h`, client `CYCAGE.h`, asserted equal). Server: the Cyber
+Cage effect carries `cyl: 5`; `smokeBlocks` hands it to `cageBlocks`, which blocks a segment only where it crosses the side
+wall inside the height band - inside-to-inside and straight down through the open top stay clear, inside-to-outside and
+through are blocked. Client: `cageGeo` (open-ended `CylinderGeometry`, radius 4 scaled to 3.72 in x / z, 10 m tall)
+centred on the floor under the cage for the player's cast (`groundAt`), relayed casts (`mpFx` -> `enSmoke(..., cyl)`, floor
+from the caster's height; online `netFxPoint` floor) and the same `xCageHit` test in `jBlock` (bot sight). The smoke tick's
+0.3 s bloom used to reset every smoke mesh to scale 1 (the 4 m sphere) after `xSmk` sized it; it now keeps the
+per-ability radius (sphere: radius / 4 x bloom; cage: radius / 4 in x / z, bloom in height). Tests: `server/test-ults.js`
+(cast carries `cyl` 5; through / 3.6 m / 3.8 m off / inside-inside / inside-out / over the top / down the top / ends
+short of the wall / walls below the centre; wall at 16.28 m), `work/test_ability_equip.cjs` (CYCAGE.h == DEV.cage.h,
+open-ended cylinder mesh, player cast scale 0.93 / 1 / 0.93 on the floor after the bloom, Dark Cover stays 1.025 after the
+bloom, relayed cage is the cylinder, `jBlock` cases as the server).
+
+### Sova Recon Bolt pulses (wiki.playvalorant.com/en-us/Recon_Bolt, fetched 2026-10-25)
+
+Wiki stats: radius 30 m; sonar pulses 1 every 1.6 s, 2 pulses (v7.04); reveal duration 0.75 s; windup 0.667 s. Enemies are
+revealed only in the bolt's line of sight. Was: server 20 m with a 1.6 s reveal per pulse (pulses 0.9 / 2.5 s after landing,
+line of sight already checked); offline client one instant 3 s reveal of every bot within 15 m (no line of sight), bot Sova's
+bolt on the player the same 15 m.
+
+- Server: `DEV.reconBolt = {pulses: [.9, 2.5], radius: 30, reveal: .75}` for the bolt-flown Sova E (the effect carries
+  `reveal`; `tickDevices` reads `e.reveal`). `DEV.recon` (20 m / 1.6 s) still serves the Owl Drone / Spycam stand-ins,
+  which are not the Recon Bolt.
+- Client: `XRCN` (same table, asserted equal). `jReveal` (player / ally bot / relayed ally bolt) and `enRecon` (enemy bolt
+  on the player) now schedule the two pulses from the landing; each pulse reveals what is within 30 m and in the bolt's sight
+  (`los` from 0.5 m above the bolt to the chest / the player's eye) for 0.75 s and draws the sonar rings. Pulses carry a round
+  token (`XRCN.g`, bumped by `jClear`) so a bolt from the previous round never pulses.
+- Timing: the 1.6 s spacing is the wiki's; the first pulse stays 0.9 s after landing (the wiki's 0.667 s "windup" does not
+  say what it counts from, so the existing value is kept).
+- Tests: `server/test-ults.js` (table; 10 m and 28 m from the bolt revealed, 31 m not; 0.75 s reveal; gone after the last
+  pulse), `work/test_ability_equip.cjs` (XRCN == DEV.reconBolt; nothing at 0.85 s, 28 m revealed / 33 m not at 0.95 s,
+  over by 1.7 s, second pulse at 2.5 s, no reveal without line of sight, a round clear cancels pending pulses).
+
+### Flash blind durations and Leer (wiki /Flashpoint, /Guiding_Light, /Curveball, /Paranoia, /Leer, fetched 2026-10-25)
+
+Wiki: Flashpoint max blind 2.25 s, Guiding Light max blind 1 - 2.25 s (with its flight time), Curveball max blind 1.5 s,
+Paranoia nearsight 2 s; Leer applies nearsight for 1.6 s once it arrives (0.4 s windup). The offline client already used
+2.25 / 2.25 / 1.5 / 2 s; the trusted server blinded every generic flash for 1.5 s and Curveball for 1.1 s, and kept Leer
+up for 2.5 s from the cast (2.3 s of nearsight after its 0.2 s fuse).
+
+- Server: `abilities.js FLASH_BLIND = {Breach: 2.25, Skye: 2.25, Omen: 2}` on the flash effect (`e.blind`, the tick already
+  read it; anyone else stays 1.5 s), `DEV.curveball.blind` 1.1 -> 1.5, Leer effect life `wf('leer') + LEER.active` (1.6 s
+  of nearsight after its fuse).
+- Client: the player's Leer now ends `xWf('leer') + XLEER` (1.6 s) after the release (was 2 s, i.e. 1.8 s of nearsight).
+- Guiding Light: both sides use the 2.25 s maximum (the wiki's flight-time scaling is not modelled).
+- Not changed (needs a mechanic on both sides): Paranoia is a point flash with a facing check on the server and a 14 m/s
+  strip on the client; the wiki's is a 25 m, 20 m/s, 4.3 m radius orb that nearsights through walls regardless of facing.
+- Tests: `server/test-abilities.js` (Flashpoint 2.25, Guiding Light 2.25, Paranoia 2 s; Leer `until - at` = 1.6 s),
+  `server/test-ults.js` (Curveball blind > 1.1 and <= 1.5 s).
