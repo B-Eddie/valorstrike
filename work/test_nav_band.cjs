@@ -8,6 +8,8 @@ global.THREE = THREE; global.NM = { routeCache: new Map() }; global.window = {};
 const src = fs.readFileSync('work/native_maps_runtime.js', 'utf8');
 function extract(name){const s=src.indexOf('function '+name+'(');let d=0,e=-1;for(let i=s;i<src.length;i++){const c=src[i];if(c==='{')d++;else if(c==='}'&&--d===0){e=i+1;break;}}return src.slice(s,e);}
 const nmQi = src.indexOf('var NM_Q='); eval(src.slice(nmQi, src.indexOf('\n', nmQi)));
+// hark-perf 762e33c: nmNear reads the numeric cell index (NM_NONE + nmCellNum, same line in the runtime)
+const nmNi = src.indexOf('const NM_NONE=[];function nmCellNum('); eval(src.slice(nmNi, src.indexOf('\n', nmNi)).replace('const NM_NONE=','var NM_NONE='));
 for (const fn of ['nmNear','nmHeight','nmBlocked']) eval(extract(fn));
 function loadMap(map){
   const W='server/public/worlds/'+map+'/';

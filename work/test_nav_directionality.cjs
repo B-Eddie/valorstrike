@@ -18,6 +18,8 @@ function extract(name) {
 }
 global.window = {}; // nmBlocked reads window.ValorantFeel (absent here: no clips in test scope)
 const nmQi = src.indexOf('var NM_Q='); const nmQe = src.indexOf('\n', nmQi); eval(src.slice(nmQi, nmQe));
+// hark-perf 762e33c: nmNear reads the numeric cell index (NM_NONE + nmCellNum, same line in the runtime)
+const nmNi = src.indexOf('const NM_NONE=[];function nmCellNum('); eval(src.slice(nmNi, src.indexOf('\n', nmNi)).replace('const NM_NONE=','var NM_NONE='));
 for (const fn of ['nmNear', 'nmHeight', 'nmBlocked', 'nmSegDrop', 'nmClimbOk', 'nmPath']) eval(extract(fn));
 // production prebuilt collision + BVH (same files nmCollision fetches)
 const W = 'server/public/worlds/lotus/';

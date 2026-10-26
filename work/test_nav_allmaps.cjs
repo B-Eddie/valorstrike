@@ -16,6 +16,8 @@ function extract(name) {
   return src.slice(start, endI);
 }
 const nmQi = src.indexOf('var NM_Q='); eval(src.slice(nmQi, src.indexOf('\n', nmQi)));
+// hark-perf 762e33c: nmNear reads the numeric cell index (NM_NONE + nmCellNum, same line in the runtime)
+const nmNi = src.indexOf('const NM_NONE=[];function nmCellNum('); eval(src.slice(nmNi, src.indexOf('\n', nmNi)).replace('const NM_NONE=','var NM_NONE='));
 for (const fn of ['nmNear', 'nmHeight', 'nmBlocked', 'nmSegDrop', 'nmClimbOk', 'nmPath']) eval(extract(fn));
 function loadMap(map) {
   const W = 'server/public/worlds/' + map + '/';
