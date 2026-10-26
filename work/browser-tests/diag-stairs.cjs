@@ -33,6 +33,11 @@ function longestFlight() {
     await startDM(p);
     await p.waitForFunction(() => window.__vs && window.__vs.state().running, {timeout: 120000, polling: 1000});
     await p.evaluate(() => { window.__vs.player.hp = 1e9; window.__vs.DM.win = 1e9; window.__vs.DM.len = 9999; if (window.__vs.setTimeLeft) window.__vs.setTimeLeft(9999); }); // god-mode + no match end: cull-kills must never reach the win threshold
+    // SETTLE=<secs>: wait in-match before walking - separates early-match boot/preload contention
+    // (SwiftShader) from real motor stalls. Active-protocol stalls on heavy maps read 9-15; settled 0-1.
+    const SETTLE = +(process.env.SETTLE || 0);
+    if (SETTLE) { console.log('settling', SETTLE + 's in-match before walking'); await new Promise(r => setTimeout(r, SETTLE * 1000)); console.log('settled, walking now'); }
+
     // Walk a node path, re-aiming each poll at the node just ahead (how a player follows stairs).
     const legPath = async (nodes, secs, teleport) => {
       const f = nodes[0];

@@ -63,14 +63,15 @@ class Walker { constructor() { this.pts = null; this.i = 0; this.replanAt = 0; }
 
 const A = client('A', `create=1&code=${CODE}&mode=five&map=${MAP}`);
 A.ws.on('open', () => A.send({ t: 'hi', n: 'AlphaQA' }));
-const B = client('B', `code=${CODE}&mode=five&map=${MAP}`);
-B.ws.on('open', () => B.send({ t: 'hi', n: 'BravoQA' }));
-let C; // created after B's welcome: join order fixes team assignment (A=0, B=1, C=0)
+let B, C; // B and C connect only after A's welcome: B racing A's create gets a 404 "Room not found" (join order also fixes team assignment A=0, B=1, C=0)
 
 setTimeout(() => { console.error('GLOBAL TIMEOUT'); process.exit(1); }, 300000);
 
 try {
-  await until(() => A.id !== null && B.id !== null, 'A+B welcomes', 15000);
+  await until(() => A.id !== null, 'A welcome (room created)', 15000);
+  B = client('B', `code=${CODE}&mode=five&map=${MAP}`);
+  B.ws.on('open', () => B.send({ t: 'hi', n: 'BravoQA' }));
+  await until(() => B.id !== null, 'B welcome', 15000);
   C = client('C', `code=${CODE}&mode=five&map=${MAP}`);
   C.ws.on('open', () => C.send({ t: 'hi', n: 'CharlieQA' }));
   await until(() => C.id !== null, 'C welcome', 15000);

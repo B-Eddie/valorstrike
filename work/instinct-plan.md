@@ -1,12 +1,12 @@
 # Valorstrike instinct-branch work plan (user bug list, ordered: crashes first)
-1. [ ] Bot-kill "explosion" crash (character explodes, crashes game)
-2. [ ] Ragdoll on kill looks boneless
+1. [x] Bot-kill "explosion" crash (character explodes, crashes game) - aee2309 rebuilt ragdoll; NaN/huge-dt safe per test_ragdoll.cjs + live page numbers; rendered screenshot acceptance sandbox-blocked (ledger)
+2. [x] Ragdoll on kill looks boneless - aee2309/bea6ab4/ebd0ca4/2964e6d; same acceptance caveat
 3. [x] Spectate 3rd-person button broken
 4. [x] Gun pickup off floor missing (+ needs indicator)
 5. [x] Holes in map
 6. [x] Stairs require jumping step-by-step
-7. [x] Lag on dealing/taking damage
-8. [ ] Default quality fuzzy -> sharp
+7. [x] Lag on dealing/taking damage - 3778dea repaint fix + 5dd6834 per-shot alloc pooling; browser frame-time profile under live combat still open (sandbox)
+8. [x] Default quality fuzzy -> sharp - c0ede5e native DPR; low-end/mobile frame-rate impact unmeasured
 9. [x] Character grip pose wrong
 10. [x] Agent models ~40s load -> background preload+cache at site entry
 11. [x] Remove character fallbacks, always use main

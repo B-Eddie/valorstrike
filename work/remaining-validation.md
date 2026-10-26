@@ -653,3 +653,362 @@ stall pattern on heavy maps is early-match boot/XVA-settling contention under Sw
 NOT a motor regression. Probe harness gained SETTLE env (/tmp/diag-stairs-settle.cjs;
 upstream into work/browser-tests/diag-stairs.cjs next pass). Haven + lotus settled
 confirmation runs queued behind it (one chrome at a time).
+
+## Lotus overhang RETRACTED (2026-10-25 ~17:17 EDT) - one-way drop lip, no slab, no nav change
+Live corroboration (lotus DM, doors open, /tmp/lotus-prop.cjs): nmBlocked (standing AND
+crouch capsule) TRUE at all five cluster nodes (3628-3631, 3712). Live bundle raycast
+(server/public/worlds/lotus position/index bins, /tmp/lotus-bundle-ray.cjs): UP rays from
+the nodes hit NO ceiling at all (open sky, rules out any slab in the served world); ground
+within capsule radius r=0.43 is 4.93 at the node but 5.32 on the -x/-z sides - a 0.39 m
+floor lip inside the capsule radius. nmBlocked's shapecast catches that lip below its line
+start (y+r), which reads blocked()=TRUE without any overhang. CLIPS has no lotus entry
+(server/src/motor.cjs:31), ruling out an invisible-wall clip. Stand test: teleported
+capsule settled at y=5.27 on the lip, consistent. CONCLUSION: the 2026-10-25 'slab
+overhang root cause' was a misread of blocked()=TRUE; the cluster is a one-way drop at a
+real terrain step (up impassable at 0.39 m > 0.321 climb limit, down fine). NO nav
+invalidation (bake would remove legitimate standing space; one-way drops are plausibly
+intentional; the runtime per-unit stall breaker covers bots attempting the up leg).
+
+## Parent calibration on stairs A/B + sweep methodology (2026-10-25 ~17:18 EDT)
+- A/B framing: settled-vs-unsettled SUPPORTS the startup-contention hypothesis, it is NOT
+  definitive no-motor-regression proof. Recorded: breeze 9->0, haven 12->1, lotus 15->5
+  stall samples (settled). Residual lotus stalls (5) stay an open bounded item.
+- SETTLE=60 is DIAGNOSTIC ONLY, not a user-facing fix for early-match hitching. Open work
+  item: reduce ACTUAL startup contention (bounded preload/decode scheduling or readiness
+  changes), no invisible agents, preserve main's newer loader/cache behavior, check hark
+  branch overlap FIRST.
+- Lotus terrain-step directionality: unresolved routing-quality limit, not proven
+  intentional. Open.
+- Sweep: a run without a completion marker is INCOMPLETE, not green. Replaced the single
+  long sweep with /tmp/sliced-sweep.sh: 9 deterministic slices, per-test RESULT lines with
+  exit codes + durations, SLICE-DONE markers, resumable via recorded results.
+
+## Startup-contention readiness fix (2026-10-25 ~17:22 EDT, commit pending tests)
+Root cause found for early-match hitching: xGate() fires xPrecompile (full-scene
+synchronous renderer.compile + ability/effect meshes) on the first rAF where
+running && !xPC - under frame starvation (SwiftShader headless, weak devices) that
+multi-second main-thread block lands INSIDE the playable window. Fix (readiness, no
+loader/cache change): window.xWarmShaders bridge (same xPrecompile + one warm
+renderer.render for texture uploads, hidden by the opaque overlay) called from
+xMatchLoad's chain after the match build resolves and before fill()/ready(), with a
+PREPARING status line. xGate fallback unchanged (direct-start/probe paths still compile
+on demand). Measured on breeze, same probe/machine/world, ACTIVE protocol (no settle):
+9 stall samples before -> 4 after (60 s settle diagnostic: 0; pre-merge baseline: 2).
+Meaningful reduction, not elimination - residual early-match work not yet attributed.
+Hark-overlap check: origin/hark-loading exists but has ZERO unique commits; hark-perf
+owns agent cull + nav GC only. Loading/preload space clear. Test: work/test_warm_shaders.cjs.
+
+## 2026-10-25 ~17:44 EDT - Consolidated HUD pass (97f903e, 3899b90) - parent review: 3 simultaneous-state gaps OPEN
+Parent inspected final 844/568/1280 captures: touch layouts materially clearer, 568 main panels
+separated, but whole-HUD is NOT complete. OPEN for the consolidated polish pass (no immediate
+capture loop):
+1. DESKTOP barrier countdown text overlaps the ann's SECONDARY line (e.g. "You > Sage") even
+   though 10px clear of the measured primary ann rect (3899b90 positions off getBoundingClientRect
+   bottom+8). Fix direction: position off the ann's actual glyph bounds (Range API on the ann's
+   text nodes) or a larger margin; verify glyph-vs-glyph, not container-vs-glyph.
+2. DESKTOP ELIMINATED banner overlaps the contextual control hint line (bottom-center hints).
+3. 568 DM: SPAWN PROTECTED chip/panel overlaps the ZOOM touch-button cluster.
+Status labels: all current captures are STATIC FORCED-END-STATE layout evidence only, not natural
+animation/timing behavior. Continue sweep triage + functional/performance queue next.
+
+## 2026-10-25 ~17:45 EDT - Sliced sweep in progress (SIGSTOP caveat for triage)
+/tmp/sliced-sweep.sh: 9 slices, 80 files, `timeout 600` per test, aggregates excluded, per-test
+RESULT rc lines + SLICE-DONE markers in /tmp/sweep-results.log.
+CAVEAT: sweep was SIGSTOPped ~17:26-17:43 for chrome probes. test_client_lifecycle.cjs rc=124
+(1031s wall) in slice 0 spans that freeze - LIKELY SIGSTOP-INDUCED, not a real failure. Re-run it
+individually before treating as a defect. Same lens for any rc=124 whose wall time overlaps a freeze.
+
+## 2026-10-25 ~17:45 EDT - Code read: retake "ignores light gate" suspicion (from 13:07 entry)
+The light gate is SHARED, not per-mode: the map loader applies `__vsLightOn()` at the nmLoadScene
+fork (index.html:12537) for every mode through nmEnsure, retake included. Agent loads are gated
+separately: xvReadyAgents honors `window.__vsNoAgents` (index.html:13303), and only the
+`__vs.light(true)` helper sets BOTH flags (13305). A probe that sets `window.__vsLight=1` directly
+leaves __vsNoAgents undefined -> the ~40s all-12 agent gate still runs, matching the observed
+"retake sat at Preparing the map... 76s+". Alternative contributor: nmCollision BVH build +
+xGmLoad gun-model fetch contention under SwiftShader (unverified). HYPOTHESIS, not proven - verify
+with a retake probe launched via __vs.light(true) (not direct flag set) before any code change.
+
+## 2026-10-25 ~17:49 EDT - Sliced sweep COMPLETE + triage: all green after vm-realm guard
+ALL-SLICES-DONE 17:45:59 (9 slices, 80 files, aggregates excluded, per-test rc captured).
+9 rc!=0 lines triaged, ALL resolved:
+- 8x rc=1 (test_client_online{,_abilities,_buy,_rebind}, test_client_results, test_client_settings,
+  test_offline_realtime, test_touch_spike): root cause = 3899b90's MutationObserver ran unguarded at
+  load in node vm test realms ("MutationObserver is not defined", xerr phase=load). Fixed with a
+  typeof guard + try/catch (browsers unchanged; observer still installed there). All 8 re-run
+  individually GREEN post-fix.
+- test_client_lifecycle.cjs rc=124 (1031s): confirmed SIGSTOP-freeze artifact as suspected -
+  re-run green in 33s (24 matches, six maps, no per-match growth).
+Net: full 80-file sweep green with the guard fix.
+
+## 2026-10-25 ~17:53 EDT - Damage-lag follow-up: per-shot array allocations pooled (test_shot_alloc.cjs)
+shoot() ran `solids.concat(bots.filter(alive).flatMap(body,head))` per bullet and a second
+`.concat(XLDH)` whenever dropped guns were live (xPellets the same) - 3+ arrays, length
+~solids+20, per shot at 9.75-14 rps. Now pooled: xTgtA/xTgtB scratch + xShotTgts() helper,
+scratch Vector2 for setFromCamera. Solids-first layout preserved (the patched
+Raycaster.intersectObjects spatial-cell fast path keys on objs[0]/objs[n-1] === solids ends).
+Regression: work/test_shot_alloc.cjs (source-level, house style). Behavioral: combat_consistency,
+knife_heavy, hit_perf, weapon_resource (from repo root - it reads relative index.html) all green.
+Not browser-profiled: frame-time capture under live combat remains the acceptance gap (sandbox
+SwiftShader saturation), same caveat as 3778dea.
+
+## 2026-10-25 ~17:54 EDT - Retake light-gate VERIFIED: probe artifact, no game bug
+Probe /tmp/retake-light.cjs (offline, 960x600, mid profile): `__vs.light(true)` + FV.pick=ascent +
+`__vs.startRetake()` -> RUNNING mode=retake in 3.3s, xLdOn cleared, hp 100. Flags confirmed
+{light:true,noAgents:true}. The 13:07 "retake sat at Preparing the map... 76s+" observation was the
+probe setting window.__vsLight=1 directly, leaving __vsNoAgents unset so the ~40s all-12 agent gate
+still ran - exactly the 17:45 code-read hypothesis. The light gate itself is shared and works for
+retake. NO game-code change. Screenshot /tmp/retake_light.png. Closes the sibling item from the
+960x600 lobby reachability fix.
+
+## 2026-10-25 ~18:04 EDT - A-kills-B duel DEMONSTRATED (server/test-a-kills-b.js, PASS) + QA_BOTS hook
+The gap from the two-client protocol check (bots always intercepted B; kill credit went to bots) is
+closed deterministically:
+- New fail-closed QA hook QA_BOTS (0-9, gated by QA_TEST_HOOKS:'true', range/malformed-validated,
+  client-unreachable; test-qa-hooks.cjs extended, wrangler.jsonc still clean). simulation.start()
+  caps the bot fill at sim.qaBots when set.
+- server/test-a-kills-b.js (own wrangler on :8788 with QA_CREDITS:5000/QA_BUY_SECONDS:3/QA_BOTS:0):
+  1v1 room, exactly 2 humans, opposite teams (asserted in BOTH snapshots). A buys Spectre+shields,
+  nav-walks to B, fires via inputs. Assertions ALL PASS: B's hp drops in B's OWN snapshot (100->74),
+  B dead in both snapshots, server kills map {"AlphaQA":1,"BravoQA":0}, B's Classic death drop
+  visible to both clients at the death position.
+- Also fixed a test-two-client.js startup race: B connected before A's create finished -> 404
+  "Room not found" (hit 2 of 3 runs). B now connects after A's welcome. Two-client suite re-run
+  after the fix: FULL PASS (phases 1,2,2a,2b,3,4) - its phase 3 still credits a bot by design
+  (that suite asserts death visibility, not credit).
+- Regressions: test-qa-hooks, test-bots, test-spike, test-two-player all green. Wranglers cleaned up.
+Scope label: protocol evidence only - not rendered two-human gameplay acceptance (sandbox-blocked,
+previously acknowledged).
+
+## 2026-10-25 ~18:13 EDT - Consolidated HUD polish: parent's 3 simultaneous-state gaps FIXED + pixel-verified
+(a) Barrier vs ann secondary line: measured the actual capture - the secondary "You > Sage" glyphs
+    OVERFLOW the ann container box (container bottom 223, glyph bottom ~230), which is why the
+    container-rect+8 fix read as overlapping. cdText now positions off xAnnBottom() - the lowest
+    text-node glyph edge via createTreeWalker(SHOW_TEXT)+createRange (guarded for node vm realms) -
+    with a 12px margin, and the MutationObserver now also covers childList/characterData subtree
+    (ann text swaps without a class toggle) plus a 300ms settle re-measure (entry transition is
+    250ms; xAnP pulse animates opacity/shadow only, glyph boxes static). VERIFIED 1280: secondary
+    glyph bottom ~230, barrier glyphs y251-259 = 21px clear. Capture /tmp/coexist_bar_1280x720.png.
+(b) ELIMINATED banner vs control hint: both anchored bottom-center (banner bottom:110px, hint
+    bottom:112px) - collision by construction. Fix: #game:has(.x-kb.on) #hint{opacity:0}, NO
+    transition (a fade freezes mid-value under starved frame clocks - first attempt with
+    transition .15s left the hint visible in the forced capture; instant hide is deterministic).
+    VERIFIED 1280: hint fully gone while the banner shows.
+(c) 568 DM SPAWN PROTECTED chip vs ZOOM cluster: at top:62%/left:50% the chip's top-right corner
+    (x197-371, y198-223) overlapped tb:zoom [326,178,364,216]. Fix: left:36%!important inside the
+    existing max-height:560px block (also fixes the same latent overlap at 844x390). VERIFIED
+    568x320 DM capture: chip x~128-288 y~201-216, 38px clear of zoom's left edge, clear of
+    vitals/COMMS/use/buy. Capture /tmp/hudmap_dm_568x320.png.
+Source invariants pinned: work/test_hud_polish.cjs. vm subset (settings/touch_spike/
+offline_realtime) green. Captures are static forced-end-state layout evidence, as labeled.
+
+## 2026-10-25 ~18:18 EDT - Lotus settled-stall residual LOCALIZED: stair-mouth plateau transition, variance 15->5->2
+Traced run (/tmp/diag-stairs-trace2.cjs logs stall sample positions; MAP=lotus SETTLE=60, dmN=0):
+STAIRS DONE - up y4.90->5.75 reached true, 2 stall samples BOTH at the same point
+(-32.19, 6.08, 19.1): the plateau-approach extension just past the flight top (top node
+-34.5,7.06,19.25), i.e. a ~1s pause at the stair-mouth/plateau step transition, then the capsule
+proceeded on its own. Down leg + backHome true, ERRORS [].
+Settled-run history on the identical flight: 15 -> 5 -> 2 stall samples (same probe, same world) -
+nondeterministic residual load/timing variance, not a fixed geometric trap: every settled run
+reaches the top unaided. Reframed: transient self-recovering stair-mouth pauses under SwiftShader;
+the runtime per-unit stall breaker already covers bots in real matches. Downgraded to a
+smoothness nit; kept open (a real step-up smoothing change needs a proven mechanism first).
+
+## 2026-10-25 ~18:21 EDT - Breeze ACTIVE (unsettled) re-measure with stall tracing: 5 samples
+Same traced probe, breeze, NO settle (walk immediately): 5 stall samples (earlier: 9 pre-warm,
+4 post-warm at 17:22), reached=true, down leg completed after retries but over threshold.
+StallPts: 2 at the flight BASE (-30.5,8.16,-50.5 - the start node, startup contention window),
+1 mid-flight (-27.65,9.06,-47.65), 2 at (-25.11,8.72,-50.85). Spread across the flight, not one
+geometric point -> consistent with residual early-match contention, not a motor/geometry trap.
+Post-warm active readings now 4 and 5 (noise band around the earlier 9). Open work unchanged:
+reduce ACTUAL startup contention (bounded decode/preload scheduling or readiness changes);
+check hark-perf overlap first (it owns agent cull + nav GC).
+
+## 2026-10-25 18:30 - Startup contention: checkShaderErrors off (hark-perf slice)
+- Applied ONLY the renderer checkShaderErrors slice of hark-perf 0e30df5 (xShChk wraps all 5
+  WebGLRenderer creations; ?shaderdebug restores). Kill-icon/LOS-cache/replan parts NOT taken
+  (different surface; hark owns combat-cost work).
+- Mechanism: three reads every program/shader info log after each link when checkShaderErrors is
+  on, forcing synchronous compiles during the startup burst. hark-perf's browser profile measured
+  this at 79% of first frames. That is the load-bearing evidence.
+- Local proxy (breeze active stairs, SwiftShader, 2-core): post-change samples {1, 5, 8} stall
+  samples vs pre-change 4-5 band -> INCONCLUSIVE, run-to-run variance dominates. Not evidence of
+  improvement; not evidence against (mechanism can only reduce main-thread startup work).
+- Test: work/test_shader_check.cjs pins all renderer sites wrapped + escape hatch. Regen
+  byte-identical. VM tests: lifecycle, settings, hud_polish, agent_preload pass.
+- Status: implementation landed; live-startup acceptance stays with the open live-combat
+  profiling row. Remaining on this item: bounded preload/decode scheduling investigation.
+
+## 2026-10-25 18:34 - Match-start longtask profile (diagnostic, SwiftShader sandbox)
+- Probe /tmp/probe-longtasks.cjs (PerformanceObserver longtask, heavy profile, breeze DM,
+  __vs.light(true) + agents(false), 20s window from preDM):
+  marks booted 1948ms, preDM 1985ms, dmStarted 4965ms.
+- ONE discrete burst: a 1548ms monolithic longtask at +1.1s into the DM-start sequence
+  (before dmStarted). With light mode the map scene.gltf load is SKIPPED (nmLoadScene bypassed),
+  so this 1.5s is inside the match-start code path itself (world/nav build + first frames),
+  not asset parsing. This is the remaining startup-contention target.
+- The other 40 longtasks (50-390ms, ~5.9s total) are evenly spaced across the whole window:
+  consistent with SwiftShader software-rasterizer frame cost, a sandbox artifact, NOT
+  decode/parse bursts. Sandbox cannot resolve real-hardware decode contention; do not tune
+  against it.
+- Next concrete step: decompose the 1548ms task with lightweight timing marks around the
+  match-start sub-steps (roster gate, world build, nav activation, first compile) to find the
+  chunkable piece. Any scheduling change must preserve main's loader/cache behavior.
+
+## 2026-10-25 18:42 - Match-start monolith decomposed: fallback BVH build was a probe artifact
+- Probe-side instrumentation (GLTF parse/load, MeshBVH build/deserialize, renderer, cib wrapped
+  with timing; /tmp/probe-decompose.cjs) attributed the 1548ms DM-start longtask:
+  MeshBVHLib.MeshBVH CONSTRUCTOR 1445-1498ms + one cib whose wall time was inflated by the
+  blocked main thread. No other wrapped primitive contributed.
+- Cause: in local probes the game resolves collision from NET.url = 127.0.0.1:8787 (hardcoded
+  for localhost) and no worlds server runs there -> prebuilt bvh*.bin fetch fails -> nmCollision
+  catch path builds the BVH SYNCHRONOUSLY at match start. Production worker returns 200 for
+  /worlds/breeze/meta.json (verified), so real users get MeshBVH.deserialize, not the build.
+  Per parent's caution: the monolith was never evidence of a production start-path cost.
+- Durable fix: serveWorlds() added to work/browser-tests/lib.cjs (serves server/public on 8787
+  with CORS, required since page origin differs); diag-stairs-trace2.cjs moved into
+  work/browser-tests/ and now starts it. Future probes are production-faithful by default.
+- Stairs-stall metric re-read with the worlds server up: runs {9, 13} but 11 of 13 at ONE
+  identical point (-22.78,9.32,-50.41), run1 clustered at two points. Repeated identical stallPts
+  = the walker WEDGES at fixed flight positions, a different signature from spread contention
+  points. Combined with earlier {1,5,8}: this metric cannot resolve startup contention.
+- New hypothesis (recorded, NOT proven): the wedge events look frame-rate dependent - under
+  SwiftShader the effective fps is very low and dt-based step logic may fail to mount stair lips.
+  Same class as the lotus terrain-step routing limit (queue item 2): movement robustness at low
+  fps / stair-lip geometry, not startup scheduling. Folded into item 2's investigation.
+- Residual longtasks after the fix: 55-355ms, evenly spaced, uncovered by any wrapped interval -
+  consistent with (not conclusively) SwiftShader rasterization; THREE prototype wraps did not
+  record (suspected frozen namespace), so first-render compile attribution is still open.
+- Startup-contention item status: mechanism-level slice landed (checkShaderErrors, 247fe1a);
+  the only discrete burst found was a probe artifact, now fixed; no further scheduling change is
+  justified by sandbox evidence. Remaining acceptance lives with the live-profiling ledger row.
+
+## 2026-10-25 18:45 - Stair wedge: player-motor substep hardening landed; wedge persists -> geometry class
+- Player motor (index.html ~2696) moved with ONE blocked() check at the full dt-displaced
+  target; at low fps a long frame jumps deep into stair risers. Substepped at 0.1m, mirroring the
+  existing kLg path precedent (same wall checks). Sound as tunneling hardening independent of
+  the wedge question; cost ~54 blocked checks/s at run speed, negligible.
+- A/B: breeze flight probe WITH the patch still wedged (13 stalls, 7 consecutive samples at
+  (-19.2,10.06,-50.17), then self-recovered, reached=true). The substep hypothesis is NOT
+  confirmed for this symptom. The wedge is NOT the horizontal dt-jump.
+- Wedge signature across runs: clusters at fixed flight positions (-28.5,8.7 / -23.x,9.4 /
+  -22.78,9.32 / -19.2,10.06), self-recovering after ~0.5-1s. Points sit mid-flight where nav
+  rises ~0.156m/edge but GEOMETRY risers may be non-uniform.
+- Current hypothesis (recorded, not proven): one or more breeze flight GEOMETRY risers exceed
+  the +0.32m step-up clearance in the blocked() wrapper (index.html ~12645:
+  floor<=y+.32 && !nmBlocked(...,y+.32)); the axis-split slide (X blocked, Z free) is what
+  eventually un-wedges. Same class as the lotus 0.39m one-way step. If measured risers >0.32m,
+  this is a level-design/step-height question -> parent/user call, not silent code change.
+- Next diagnostic: sample nmHeight along the walked flight line from collision geometry and
+  list actual riser heights; compare against the 0.32 climb limit. Then decide: raise step
+  height (gameplay-feel change), smooth the collision, or accept as level intent.
+
+### 18:48 addendum - riser hypothesis REFUTED by offline collision measurement
+- Parsed models/valorant/maps/breeze/collision.bin directly and raycast-sampled ground height
+  every 0.1m along the exact walked flight line (-30.5,-50.5)->(-17.75,-48.25): NO risers
+  above 0.15m (max 0.000 above threshold; the flight collision is effectively a smooth ramp
+  along the walk line). The >0.32m geometry-riser hypothesis is refuted for breeze.
+- Re-read of wedge evidence: points are consistent within a run (1-2 clusters) but SPREAD along
+  the flight across runs (-28.55 / -26.36 / -23.58 / -22.78 / -20.09 / -19.2). Not one fixed
+  geometry feature. Remaining candidates: (a) lateral contact - the probe walks a BLIND
+  straight line with W held; clipping a rail/wall edge wedges the capsule until the axis-split
+  slide clears it, which is probe behavior, not necessarily a gameplay bug; (b) low-fps
+  ground-snap interaction (untested).
+- Next diagnostic: (1) lateral clearance check at wedge points (triangle distance to the
+  capsule segment above foot level) from collision.bin; (2) re-walk following nav edges with
+  steering instead of a straight line - if steering walks clean, the wedge is a probe artifact
+  and this investigation closes as no-gameplay-bug; if steering also wedges, it's a real
+  movement/collision issue. Player-motor substep hardening stays regardless (06e32f9).
+
+## 2026-10-25 18:54 - Breeze wedge CLOSED (starvation artifact); lotus one-way step: nav directionality filter
+- Breeze wedge RESOLVED as probe artifact: frame counter added to the stairs probe - 10/10
+  stall samples had a FROZEN frame counter (dfc 0-1 over 5 samples), zero true wedges; every
+  completed run reached=true up and back. The "wedging" was SwiftShader main-thread starvation,
+  not movement or geometry. Lateral-clearance check (collision.bin, nmBlocked's exact rule):
+  11/12 wedge points clear, one marginal rail-brush (0.385 vs 0.388) at a starvation sample.
+  Player-motor substepping (06e32f9) stays as tunneling hardening, explicitly NOT the wedge fix.
+  Frame-cost bound, code-verified: n = max(1, ceil(max|d|/0.1)) = 1 at dt<=~37ms (identical work
+  at 60fps); substeps only appear in the low-fps case they protect.
+- Lotus one-way step INTENDED-REACHABILITY evidence (parent asked before any design ask):
+  nav-wide 877 up-impassable (dy>0.321) edges; the source navmesh is undirected (build-world.cjs
+  READS navigation.json), so one-way drop edges exist in both directions and A* planned climbs
+  the motor can never make. BFS: the upper band above the step is climbable-reachable from both
+  spawns via alternate routes (component 8636/9036) - the step is a shortcut drop, standard
+  one-way level design. The step's lower band is a TRUE one-way pocket (every exit climbs
+  >0.321): bots dropping in had a stall-ban loop; honest routing now returns no path.
+- Fix (work/native_maps_runtime.js nmPath expansion): skip edges with dy > 0.321 when PLANNING
+  (terrain untouched, players unaffected - a 0.39m lip is jumpable; bots do not jump-climb).
+  Down edges stay; runtime stall-breaker bans stay as backstop for dynamic geometry.
+- Test: work/test_nav_directionality.cjs EXECUTES the shipped nmPath (brace-matched extraction)
+  against real lotus navigation.json: pocket->upper = honest no-path, both spawns -> upper band
+  and -> all three sites route with every hop within the climb limit, down-across-step routes,
+  cache consistent. test_client_lifecycle 24 matches green. Regen byte-identical twice.
+- PROCESS BUG self-caught: the first version of this patch used a //-comment that swallowed the
+  rest of a minified line (for-body silently commented out). Caught by the functional test before
+  commit; use /* */ when patching minified lines. Regen md5-identical does NOT catch this class.
+- Lotus intent no longer needs a design ask: reachability evidence shows the one-way step is a
+  shortcut drop with alternates preserved. Remaining lotus openness: none on directionality.
+
+## 2026-10-25 19:00 - Nav climb filter CORRECTED to traversal semantics (parent challenge was right)
+- Parent's challenge quantified and confirmed: the endpoint-dy filter in 5836648 was wrong.
+  Offline chord sampling against real collision geometry: endpoint-dy>0.321 edges that are
+  actually SMOOTH RAMPS (walkable): lotus 576, breeze 1285, ascent 807 (later: haven 1598,
+  bind 476, split 1230). True concentrated lips >0.321: only 19/24/6 on the three maps. The
+  endpoint filter mass-rejected walkable routes.
+- Fix (supersedes 5836648's criterion): nmClimbOk delegates to the game's own hop validator
+  nmSegDrop (per-0.18 m ground sampling + capsule blocked test at .45 radius) between the two
+  node positions, memoized per directed edge per map context, consulted only for dy>0.321
+  edges. Ground sampling alone was ALSO insufficient: nmHeight reads the lip as clear (ray
+  band) while the capsule's vertical segment catches the riser face - only the full hop
+  validator matches what nmNext does at walk time.
+- RETRACTED claims from earlier today: (1) "true one-way pocket" - false, it was an artifact
+  of the same endpoint fallacy; the lower band has a 36-hop traversal-verified climbable route
+  out (drops -0.31/-0.33, ramps 0.31-0.35). (2) "877 unclimbable lotus edges" - actually ~19
+  true lips; the rest are ramps. Undirected-source + alternate-route evidence is "consistent
+  with" one-way-drop design, not proof of intent (parent's wording preserved).
+- Authoritative server validation: server motor stepHeight is 0.4 (motor.cjs C.stepHeight),
+  NOT 0.321. Zero nav edges across ALL SIX maps have a concentrated rise >0.41, so the
+  authoritative sim can climb every nav edge - server path.js needs NO filter and server bots
+  were never stalled by these lips.
+- NEW finding (flagged, not changed): client climb limit 0.321 vs server stepHeight 0.4 -
+  a motor-semantics mismatch. Online, server-simmed bots traverse 0.33-0.40 lips the client
+  motor cannot climb; offline both use client semantics. Changing either constant is a
+  gameplay-feel decision - parent/design call, recorded here only.
+- test_nav_directionality.cjs now extracts nmNear/nmHeight/nmBlocked/nmSegDrop/nmClimbOk/
+  nmPath verbatim and runs them against the production prebuilt BVH: ramps kept (14->13,
+  35->54, 55->54 with endpoint dy 0.34-0.37), lips rejected (3713->3628, 3628->3627,
+  3712->3626), pocket routes around in 36 verified hops, spawns->sites green, cache
+  consistent. Lifecycle 24 matches green; regen byte-identical twice.
+
+## 2026-10-25 19:01 - All-six-map climb-filter coverage + first-route cost + pre-warm
+- work/test_nav_allmaps.cjs (new): shipped nmPath/nmClimbOk/nmSegDrop/etc. vs each map's
+  production prebuilt BVH: every spawn->site route on all six maps PASS, every dy>0.321 hop
+  traversal-verified. Cold-memo first-route cost measured per parent's ask: ascent 102ms
+  (223 climb checks), bind 32, breeze 30, haven 8, lotus 4, split 3 (2-core SwiftShader;
+  real hardware lower); warm routes ~0ms via NM.routeCache.
+- Pre-warm added at map commit (native_maps_runtime.js, behind the loading overlay, after
+  NM.routeCache.clear()): both spawns -> every site, so the one-time cold cost lands in the
+  existing "Preparing the map…" phase instead of the first in-match bot plan. Loader/cache
+  behavior unchanged (uses existing nmPath; the spawn->site set is the pre-warm set).
+  Regen byte-identical twice; lifecycle 24 matches green.
+- Confirmed while here: NM.routeCache IS cleared on map commit (line 36) - no cross-map
+  stale-route bug.
+- Remaining mismatch groundwork owed (parent): intended player/server step semantics and
+  actual online correction behavior for the 0.321 client vs 0.4 server climb band, BEFORE
+  any design ask. Constants retained.
+
+### 19:02 parent calibration on pre-warm (carried, not resolved)
+- Do NOT claim real hardware is faster than the sandbox timings (phones may be slower);
+  cold-cost measurements are sandbox-local evidence only.
+- The pre-warm MOVES the known cold cost behind the loading overlay; it does not remove it -
+  the overlay/startup now carries up to ~102ms (sandbox) of route computation per map load.
+  Any route outside the spawn->site pre-warm set (drop-site goals, spike-carrier goals, chase
+  goals) still pays its lazy cold cost in-match. Both stay in the loading/startup acceptance row.
+
+## 19:20 - Sweep green + motor-semantics grounding (0.321 nav gate vs 0.4 motor) RESOLVED as non-issue
+- FULL sliced regression sweep after the nav/motor/probe commits: 85/85 rc=0, all 9 slices, SWEEP-ALL-DONE 19:18:04 (completion marker present; /tmp/sweep-results.log). No regressions.
+- Motor-semantics grounding (parent-directed, research before any design ask):
+  - INTENDED SEMANTICS: the shared motor (vendor/valorant-feel.js = server/src/motor.cjs, byte-identical) owns movement for client local player, offline bots AND server sim. stepHeight 0.4 is deliberate: 99f92a4 (10-25 07:03) "step height 0.36 -> 0.40 m so the Lotus 0.373 m riser is walkable". The nav 0.321 gate is older than the shared motor entirely: nmSegment created with it in e9fa9bc (10-24 21:43, pre-stepHeight), nmSegDrop inherited it in 8f88df6 (10-25 05:59, stepHeight then 0.36). It was never revisited after the 0.4 bump.
+  - ONLINE CORRECTION: no hazard. Remote players/bots are pure 20 Hz snapshot interpolation (100 ms delay), never re-simmed client-side. Local player predicts with the SAME shared motor as the host's authoritative sim (VF.model.step, index.html:12818), so a 0.373 lip is climbable identically on both sides - no reconciliation divergence. Server path.js carries no climb gate at all; host-simmed bots cross anything the 0.4 motor walks, and clients just draw it.
+  - PRACTICAL DIVERGENCE: ZERO on shipped maps. All 453,582 directed nav edges across six maps sampled per-0.18 m along chords: NONE rise in the (0.321, 0.4] band (ascent 73,409 / bind 86,988 / breeze 99,152 / haven 72,991 / lotus 64,996 / split 73,046 edges). Blocked-rejected edges (753-2,654/map) fail the motor's own capsule check too. The stricter nav gate rejects nothing the motor could walk; earlier "client motor can't climb what server bots cross" framing was wrong (0.321 is nav-only, not a motor).
+  - CONCLUSION: constants retained; no user design decision needed. Residual = latent maintenance hazard only: a FUTURE map with a nav chord rising 0.33-0.4 would make offline bots route around player-walkable geometry. Pinned by new work/test_nav_band.cjs (fails loudly if any band edge ever appears, forcing a deliberate constants call then).
+- Corrected the stale nmPath comment (claimed the lotus 0.39 lip is "a climb the motor cannot make" - false since 99f92a4). Regen idempotent (md5 twice identical); pins green: test_nav_directionality, test_nav_allmaps (all six maps, all spawn->site routes traversal-verified).

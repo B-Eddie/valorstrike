@@ -62,6 +62,7 @@ button{font:inherit;text-transform:inherit;letter-spacing:inherit;cursor:pointer
 #xSpk{left:50%;top:14px;transform:translateX(-50%);display:none;background:rgba(15,25,35,.8);padding:5px 18px;border-bottom:3px solid var(--red)}#xSpk svg{display:block;width:40px;height:34px;filter:drop-shadow(0 0 6px rgba(255,70,85,.9))}
 #hint{left:50%;bottom:24px;transform:translateX(-50%);font-size:12px;opacity:.7;text-align:center}
 #game #hint{bottom:112px;width:min(860px,92vw)} /* QA: sat under the HP / ability / ammo panels */
+#game:has(.x-kb.on) #hint{opacity:0} /* the ELIMINATED banner (bottom:110px) owns the bottom-center band while it shows; the hint sits at bottom:112px. No transition: a fade would freeze mid-value under starved frame clocks and leave the hint half-visible behind the banner */
 #dmg{inset:0;background:radial-gradient(ellipse at center,rgba(255,70,85,0) 52%,rgba(255,70,85,.32) 78%,rgba(255,70,85,.72) 100%);opacity:0;transition:opacity .3s;will-change:opacity;contain:strict;pointer-events:none} /* perf: a static gradient on its own layer; a full-screen blurred inset shadow repainted every frame of each hurt flash */
 #scope{inset:0;display:none;background:linear-gradient(#000,#000) 50% 50%/1px 92vmin no-repeat,linear-gradient(#000,#000) 50% 50%/92vmin 1px no-repeat,linear-gradient(#000,#000) 50% calc(50% - 31vmin)/3px 30vmin no-repeat,linear-gradient(#000,#000) 50% calc(50% + 31vmin)/3px 30vmin no-repeat,linear-gradient(#000,#000) calc(50% - 31vmin) 50%/30vmin 3px no-repeat,linear-gradient(#000,#000) calc(50% + 31vmin) 50%/30vmin 3px no-repeat,radial-gradient(circle at 50% 50%,transparent 0,transparent 45.2vmin,rgba(0,0,0,.75) 45.7vmin,#000 46vmin)} /* sniper lens: 92vmin circle, centred on any aspect ratio, thin cross + thick outer posts; first in #game so the HUD paints over it */
 #xAdsT{inset:0;opacity:0;pointer-events:none}
@@ -530,8 +531,8 @@ body.x-cbh .x-mvp.en{border-left-color:#ff9f1c}
 .x-pp i{width:24px;height:24px;border-radius:50%;box-sizing:border-box;border:2px solid #38bea0;background:radial-gradient(circle at 50% 38%,rgba(255,255,255,.75) 0 22%,transparent 23%),radial-gradient(ellipse at 50% 100%,rgba(255,255,255,.55) 0 42%,transparent 43%),rgba(56,190,160,.35)}
 .x-en .x-pp i{border-color:#e84052;background:radial-gradient(circle at 50% 38%,rgba(255,255,255,.75) 0 22%,transparent 23%),radial-gradient(ellipse at 50% 100%,rgba(255,255,255,.55) 0 42%,transparent 43%),rgba(232,64,82,.35)}
 .x-pp i.dead{opacity:.3;filter:grayscale(1)}
-.x-kb{position:fixed;left:24px;bottom:150px;z-index:60;width:260px;padding:12px 14px;background:rgba(15,25,35,.86);border-left:3px solid #ff4655;color:#ece8e1;font:500 13px/1.3 var(--sans);pointer-events:none;display:none}
-.x-kb.on{display:block;transform:none;animation:xkbIn .25s ease-out}
+.x-kbc{position:fixed;left:24px;bottom:150px;z-index:60;width:260px;padding:12px 14px;background:rgba(15,25,35,.86);border-left:3px solid #ff4655;color:#ece8e1;font:500 13px/1.3 var(--sans);pointer-events:none;display:none}
+.x-kbc.on{display:block;transform:none;animation:xkbIn .25s ease-out}
 @keyframes xkbIn{from{opacity:0;transform:translateX(-16px)}to{opacity:1;transform:none}}
 .x-kb__h{margin:0 0 8px;font-size:12px;letter-spacing:.18em;color:#ff4655}
 .x-kb__r{display:flex;gap:10px;align-items:center;margin-bottom:10px}
@@ -542,8 +543,8 @@ body.x-cbh .x-mvp.en{border-left-color:#ff9f1c}
    centered bar above the HP/weapon panels, and the toast sits above it - no overlap with
    the announcement (top 22%), minimap (top-left), or bottom-corner HUD. */
 @media (max-height:560px){
-  .x-kb{left:50%;bottom:60px;transform:translateX(-50%);width:auto;max-width:min(92vw,380px);padding:8px 14px;display:none;align-items:center;justify-content:center;flex-wrap:wrap;gap:4px 10px;border-left:0;border-top:3px solid #ff4655}
-  .x-kb.on{display:flex;transform:translateX(-50%);animation:none}
+  .x-kbc{left:50%;bottom:60px;transform:translateX(-50%);width:auto;max-width:min(92vw,380px);padding:8px 14px;display:none;align-items:center;justify-content:center;flex-wrap:wrap;gap:4px 10px;border-left:0;border-top:3px solid #ff4655}
+  .x-kbc.on{display:flex;transform:translateX(-50%);animation:none}
   .x-kb__h{margin:0;font-size:11px;white-space:nowrap}
   .x-kb__r{margin:0;gap:6px;white-space:nowrap}
   .x-kb__r i{width:26px;height:26px;font-size:12px}
@@ -557,6 +558,7 @@ body.x-cbh .x-mvp.en{border-left-color:#ff9f1c}
   #game .x-top .x-sc b{min-width:26px;height:32px;font-size:15px}
   #game .x-top .x-tm{min-width:52px;font-size:15px}
   #game #hint{display:none} /* short landscape: the bottom:112px hint crowds the ann/toast/card column; coarse pointers already hide it */
+  .x-dmprot{left:36%!important} /* short landscape: centered (50%) the chip's top-right corner lands on the ZOOM/R touch row (e.g. 568x320: zoom x326-364 y178-216 vs chip ~197-371 x 198-223 y); the left-center band is empty */
 }
 .x-sp{position:fixed;left:50%;bottom:120px;transform:translateX(-50%);z-index:60;padding:6px 14px;background:rgba(15,25,35,.75);color:#ece8e1;font:500 13px var(--sans);letter-spacing:.14em;pointer-events:none;display:none;text-align:center}
 .x-sp small{display:block;font-size:12px;letter-spacing:.04em;opacity:.7;margin-top:2px}.x-sp.on{display:block} .x-sp__tp{display:inline-flex;align-items:center;gap:6px;margin-left:12px;padding:4px 10px;min-height:28px;border:1px solid rgba(236,232,225,.45);background:rgba(15,25,35,.6);color:#ece8e1;font:600 12px var(--sans);letter-spacing:.12em;cursor:pointer;pointer-events:auto}.x-sp__tp:hover,.x-sp__tp:focus-visible{border-color:#ff4655;outline:0}.x-sp__tp.on{background:#ff4655;color:#0f1923;border-color:#ff4655}.x-sp__tp kbd{font:inherit;padding:0 4px;border:1px solid currentColor;border-radius:2px}
@@ -917,7 +919,7 @@ body.x-cbh #game{--ha:#3d8bff;--he:#ff9f1c}
 @media (max-height:480px) and (orientation:landscape){
   #game #feed{margin-top:0;max-height:28px} /* one row at <=480h: the strip above the ability row only fits one */
   #xCmB{left:110px;top:124px;transform:none} /* docked right of the minimap column, between the ann band and the toast band */
-  #toast{top:260px;bottom:auto;left:140px;right:auto;margin:0;max-width:260px;background:#ece8e1;color:#0f1923;padding:8px 12px} /* #toast is a body child, not #game */ /* out of the left button column: bottom-center band above the vitals line, stacks under the death card */
+  #toast{top:262px;bottom:auto;left:152px;right:auto;margin:0;max-width:286px;background:#ece8e1;color:#0f1923;padding:8px 12px} /* #toast is a body child, not #game */ /* out of the left button column: bottom-center band above the vitals line, stacks under the death card */
   #game .hud.x-fw{top:64px}
   .x-dmlb{top:102px;bottom:auto;left:auto;right:8px;width:auto;max-width:44vw;padding:3px 8px} /* DM: leader + you ticker under the feed; the full table needs taller screens */
   .x-dmlb{pointer-events:auto;cursor:pointer}.x-dmlb li{display:none}.x-dmlb li:first-child,.x-dmlb li.me{display:flex}.x-dmlb.x-full li{display:flex}.x-dmlb__h{display:none}.x-dmlb.x-full .x-dmlb__h{display:block}
@@ -2238,7 +2240,7 @@ const xTexRep = (t) => { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.encoding = 
 const xAASet = (on) => { xAAMem.v = on ? "1" : "0"; try { localStorage.setItem("vs.aa", xAAMem.v); } catch (e) {} };
 const xAA0 = xAAGet(); // saved AA, read before the first renderer
 // perf: three's renderer.debug.checkShaderErrors reads every program/shader info log after linking, which forces each
-// compile to finish synchronously (79 % of the first frames in the browser profile). Off unless ?shaderdebug is set.
+// compile to finish synchronously (hark-perf measured it at 79 % of the first frames). Off unless ?shaderdebug is set.
 function xShChk(r) { try { if (r && r.debug) r.debug.checkShaderErrors = /[?&]shaderdebug\b/.test(location.search || ""); } catch (e) {} return r; }
 try { renderer = xShChk(new THREE.WebGLRenderer({ antialias: xAA0, powerPreference: "high-performance", stencil: false })); }
 catch (e) { xGlErr = String((e && e.message) || e); // second try with the lowest settings before giving up
@@ -2839,7 +2841,7 @@ function xKLe(nm) { const L = xKL.log; for (let i = 0; i < xKL.n; i++) if (L[i].
 function xKLog(t, by, d) { const hs = xHS; xHS = false; if (!(d > 0) || !player || !xKLm()) return; let e;
   if (t === player && typeof by === "string") { e = xKLe(by); if (e) { e.td += d; e.th++; if (hs) e.ths++; } }
   else if (by === undefined && t !== player && t && t.name && player.hp > 0) { e = xKLe(t.name); if (e) { e.dd += d; e.dh++; if (hs) e.dhs++; } } }
-function xKLui() { if (xKL.el && xKL.el.parentNode && xKL.t && xKL.nm && xKL.w && xKL.dd && xKL.tk && xKL.sn) return; if (xKL.el && xKL.el.parentNode) xKL.el.parentNode.removeChild(xKL.el); if (xKL.sl && xKL.sl.parentNode) xKL.sl.parentNode.removeChild(xKL.sl); const c = document.createElement("div"); c.className = "x-kb"; c.setAttribute("aria-live", "polite");
+function xKLui() { if (xKL.el && xKL.el.parentNode && xKL.t && xKL.nm && xKL.w && xKL.dd && xKL.tk && xKL.sn) return; if (xKL.el && xKL.el.parentNode) xKL.el.parentNode.removeChild(xKL.el); if (xKL.sl && xKL.sl.parentNode) xKL.sl.parentNode.removeChild(xKL.sl); const c = document.createElement("div"); c.className = "x-kb x-kbc"; c.setAttribute("aria-live", "polite"); // x-kbc scopes the card rules below off the shared .x-kb (the ELIMINATED banner #xKbn carries .x-kb too)
   c.innerHTML = '<p class="x-kb__h">KILLED BY</p><div class="x-kb__r"><i></i><div><b></b><span></span></div></div><dl class="x-kb__d"><dt>DEALT</dt><dd></dd><dt>TAKEN</dt><dd></dd></dl>';
   const s = document.createElement("div"); s.className = "x-sp"; s.innerHTML = '<span></span><button type="button" class="x-sp__tp" aria-pressed="false">3RD PERSON <kbd>V</kbd></button><small>Click or Space to switch player · V or the button for 3rd person</small>'; const tp = s.querySelector(".x-sp__tp"); // spectating frees the mouse pointer (see xSpec), so this is a real clickable button
   tp.addEventListener("click", (e) => { e.preventDefault(); e.stopPropagation(); xTPToggle(); }); ["mousedown", "pointerdown", "touchstart"].forEach((k) => tp.addEventListener(k, (e) => e.stopPropagation(), { passive: k === "touchstart" })); s.querySelector("span").addEventListener("click", (e) => { e.stopPropagation(); xTPToggle(); }); s.querySelector("span").style.cursor = "pointer"; s.querySelector("span").style.pointerEvents = "auto"; s.style.pointerEvents = "auto"; xKL.tp = tp;
@@ -2936,9 +2938,15 @@ function moveP(dt, run, hold) {
   if (kLg > 0) { const s = Math.min(dt, kLg); kLg -= s; const n = Math.ceil(8 * s / 0.1), st = 8 * s / n; // 8 m/s, 0.1 m sub-steps, same wall checks
     for (let i = 0; i < n; i++) { const nx = P.x + kLx * st, nz = P.z + kLz * st; if (!blocked(nx, P.z, 0.4, P.y)) P.x = nx; if (!blocked(P.x, nz, 0.4, P.y)) P.z = nz; } }
   if (P.vx || P.vz) {
-    const nx = P.x + P.vx * dt, nz = P.z + P.vz * dt;
-    if (!blocked(nx, P.z, 0.4, P.y)) P.x = nx; else P.vx = 0;
-    if (!blocked(P.x, nz, 0.4, P.y)) P.z = nz; else P.vz = 0;
+    // Sub-step the wall checks (0.1 m, same as the kLg path above): one check at the full
+    // dt-displaced target lets a long frame (low fps) jump deep into stair risers, where the
+    // +0.32 m step-up clearance test fails and the capsule wedges (breeze flight probe).
+    const dx = P.vx * dt, dz = P.vz * dt, n = Math.max(1, Math.ceil(Math.max(Math.abs(dx), Math.abs(dz)) / 0.1)), st = 1 / n;
+    for (let i = 0; i < n; i++) {
+      const nx = P.x + P.vx * dt * st, nz = P.z + P.vz * dt * st;
+      if (!blocked(nx, P.z, 0.4, P.y)) P.x = nx; else P.vx = 0;
+      if (!blocked(P.x, nz, 0.4, P.y)) P.z = nz; else P.vz = 0;
+    }
   }
   const gY = groundAt(P.x, P.z, 0.3, P.y), gr = P.y <= gY + 0.001 && P.vy <= 0;
   const rp = mode === "five" && SROPES && FV.map === "split" && (kk.KeyW || kk.Space) ? SROPES.find((r) => Math.hypot(P.x - r.x, P.z - r.z) < 0.75 && P.y < r.top - 0.01) : null;
@@ -3193,10 +3201,17 @@ function gFire(d, w, W) {
   rcl = W.semi ? Math.min(0.06, rcl + 0.014 * W.rec) : rcl + (Math.min(0.04, vy * 0.4 + 0.003) - rcl) * 0.6; rclH += (hx * 0.4 - rclH) * 0.5;
 }
 let sprX = 0, sprD = 1;
+const xTgtA = [], xTgtB = [], xSV2 = new THREE.Vector2(); // per-shot target lists, pooled (damage-lag pass: concat/filter/flatMap allocated 3+ arrays per bullet)
+function xShotTgts(base) { // base + live dropped-gun hitboxes, pooled scratch; never retained past the shot
+  const ldh = xLdh(); if (!ldh.length) return base;
+  const t = xTgtB; t.length = 0; for (let i = 0; i < base.length; i++) t.push(base[i]); for (let i = 0; i < ldh.length; i++) t.push(ldh[i]); return t;
+}
 function shoot(hv) {
   if (player.hp <= 0 || fcd > 0 || (mode === "five" && FV.buy > 0) || VM.sw > 0) return; // can't fire until equipped
   ray.setFromCamera(XC0, camera);
-  const targets = solids.concat(bots.filter((b) => b.alive).flatMap((b) => [b.body, b.head]));
+  const targets = xTgtA; targets.length = 0;
+  for (let i = 0; i < solids.length; i++) targets.push(solids[i]);
+  for (let i = 0; i < bots.length; i++) { const b = bots[i]; if (b.alive) { targets.push(b.body); targets.push(b.head); } }
   const w = wName(), W = WEAP[w], P = player, kn = rw === "knife";
   let body = KNIFE.light, head = KNIFE.light;
   if (kn) {
@@ -3215,7 +3230,7 @@ function shoot(hv) {
     ray.far = 200;
     if (W.pel) { xPellets(W, targets); updHud(); return; }
   }
-  XWH.length = 0; ray.intersectObjects(xLdh().length ? targets.concat(XLDH) : targets, true, XWH); let hit = XWH[0], wk = 1;
+  XWH.length = 0; ray.intersectObjects(xShotTgts(targets), true, XWH); let hit = XWH[0], wk = 1;
   if (!kn) bFx(null, ray.ray.direction, xSurfHit(hit, ray.ray.direction, 200), 200);
   if (!kn && hit) { const wb = xWall(hit, ray.ray.direction, w); if (wb) { hit = wb; wk = xPen(w).k; } } // wallbang: first hitbox past a thin wall
   if (hit && hit.object.userData.sw) sgDmg(body);
@@ -3266,7 +3281,7 @@ function xBotWall(u, o, d, h) { // enemy bot sprays through a thin wall at a rec
 const XPB = new THREE.Vector3(), XPR = new THREE.Vector3(), XPU = new THREE.Vector3(), XPY = new THREE.Vector3(0, 1, 0), XPH = [], XPM = new Map(), XPP = new Map();
 function xPellets(W, targets) {
   const online = typeof NET !== "undefined" && NET.socket && MP.st === "game", alt = W.alt && ads === 1 && !online ? W.alt : null, D = alt || W, n = alt ? alt.pel : W.pel, sp = ((typeof VF !== "undefined" && VF.pelCone) || W.cone) * (alt ? alt.k : 1), d = ray.ray.direction;
-  const objs = xLdh().length ? targets.concat(XLDH) : targets;
+  const objs = xShotTgts(targets);
   XPB.copy(d); XPM.clear(); XPP.clear(); xPelOn = true; XPR.crossVectors(XPB, XPY).normalize(); if (XPR.lengthSq() < 0.5) XPR.set(1, 0, 0); XPU.crossVectors(XPR, XPB).normalize();
   try {
     for (let i = 0; i < n; i++) {
@@ -9389,10 +9404,21 @@ const XBR = (() => {
     try { if (!st.hum) { if (!v || !sOk()) return; const o = ac.createOscillator(), o2 = ac.createOscillator(), lp = ac.createBiquadFilter(), g = ac.createGain(); o.type = "sawtooth"; o.frequency.value = 92; o2.type = "sine"; o2.frequency.value = 184.6; lp.type = "lowpass"; lp.frequency.value = 420; g.gain.value = 0; o.connect(lp); o2.connect(lp); lp.connect(g); g.connect(ac.destination); o.start(); o2.start(); st.hum = g; }
       st.hum.gain.setTargetAtTime(v && !S.muted ? 0.035 : 0, ac.currentTime, 0.15); } catch (e) {}
   }
+  function xAnnBottom(an) { // lowest GLYPH edge inside the ann (title + secondary line can overflow the container box); 0 when unmeasurable
+    try {
+      if (typeof document.createRange !== "function" || typeof document.createTreeWalker !== "function") return 0;
+      const tw = document.createTreeWalker(an, 4 /* SHOW_TEXT; NodeFilter is absent in node vm test realms */), rng = document.createRange();
+      let b = 0, nd; while ((nd = tw.nextNode())) { if (!nd.nodeValue || !nd.nodeValue.trim()) continue; rng.selectNodeContents(nd); const r = rng.getBoundingClientRect(); if (r.height && r.bottom > b) b = r.bottom; }
+      return b;
+    } catch (e) { return 0; }
+  }
   function cdText(n) {
-    if (n === st.cd) return; st.cd = n;
+    let an = null, aOn = false; try { an = document.getElementById("xAnn"); aOn = !!(an && an.classList.contains("on")); } catch (e) {}
+    if (n === st.cd && aOn === st.aOn) return; st.cd = n = n || 0; st.aOn = aOn; // per-frame calls: react to countdown AND ann-visibility changes
     if (!st.el) { const d = document.createElement("div"); d.id = "xBrCd"; d.style.cssText = "position:fixed;left:50%;top:22%;transform:translateX(-50%);font:600 13px/1 Geist,sans-serif;letter-spacing:.14em;color:#7fd4ff;text-shadow:0 1px 6px rgba(0,0,0,.7);pointer-events:none;z-index:40;display:none"; document.body.appendChild(d); st.el = d; }
+    if (!st.obs && an && typeof MutationObserver !== "undefined") { try { st.obs = new MutationObserver(() => { try { st.aOn = 2; cdText(st.cd); clearTimeout(st.obsT); st.obsT = setTimeout(() => { try { st.aOn = 2; cdText(st.cd); } catch (e) {} }, 300); } catch (e) {} }); st.obs.observe(an, { attributes: true, attributeFilter: ["class"], childList: true, characterData: true, subtree: true }); } catch (e) {} } // reposition even when the game loop is starved (browsers also self-correct per frame); the 300 ms settle re-measures after the ann's 250 ms entry transition; MutationObserver absent in node vm test realms
     st.el.style.display = n > 0 ? "block" : "none"; if (n > 0) st.el.textContent = "BARRIER DROPS IN " + n;
+    try { if (aOn) { const gb = xAnnBottom(an); if (gb) st.el.style.top = Math.round(gb + 12) + "px"; else { const r = an.getBoundingClientRect(); st.el.style.top = r.height ? Math.round(r.bottom + 12) + "px" : "22%"; } } else st.el.style.top = "22%"; } catch (e) {} // ann owns the top:22% band while it shows; barrier clears its lowest glyph, not its container box
   }
   function tick() {
     const now = performance.now(), dt = Math.min(0.1, (now - (st.last || now)) / 1000); st.last = now;
@@ -10486,6 +10512,14 @@ function xPrecompile() { // once per loaded map: build every shader program up f
   try { if (!BFX.ok) bfxInit(); scene.traverse((o) => { if (!o.visible && o !== scene) { hid.push(o); o.visible = true; } }); renderer.compile(scene, camera); } catch (e) {}
   hid.forEach((o) => { o.visible = false; }); // warm-up only: restore hidden ability/effect meshes
 }
+// Loading-gate bridge: run the same warm-up behind the loading screen instead of on the first
+// playable frame (xGate would otherwise fire it in-match = the early-match hitch). The extra
+// renderer.render uploads textures too; the opaque overlay hides the warm frame.
+window.xWarmShaders = function () {
+  if (!running || xPC) return;
+  try { xPrecompile(); } catch (e) {}
+  try { renderer.render(scene, camera); } catch (e) {}
+};
 const xSeg = (id, fn) => $(id).querySelectorAll("button").forEach((b) => b.addEventListener("click", () => fn(b.dataset.v)));
 function xStill() {
   const k = player && running ? [player.x, player.y, player.z, yaw, pitch].map((v) => (+v || 0).toFixed(3)).join() + fireHeld + Object.values(keys).some(Boolean) : "idle";
@@ -12915,7 +12949,7 @@ async function nmEnsure(key){
   const X=nav.nodes.filter((_,i)=>C.playable[i]).map(p=>p[0]),Z=nav.nodes.filter((_,i)=>C.playable[i]).map(p=>p[2]);C.bounds={x1:Math.min(...X)-3,x2:Math.max(...X)+3,z1:Math.min(...Z)-3,z2:Math.max(...Z)+3};
   const b=C.bounds;M.boxes.push({x1:b.x1,x2:b.x2,z1:b.z1,z2:b.z1,h:0},{x1:b.x1,x2:b.x2,z1:b.z2,z2:b.z2,h:0});
   if(NM.current){const old=NM.current;if(fsM.parent)fsM.parent.remove(fsM);if(spike.parent&&spike.parent===old.M.g)spike.parent.remove(spike);nmFree(old);for(const k in FMAP)if(FMAP[k]===old.M){const g=new THREE.Group();g.visible=false;FMAP[k]={g,solids:[],boxes:[],built:0};}}
-  committed=true;loadedScene=loadedGeometry=null;NM.current=C;NM.routeCache.clear();scene.add(root);NM.progress.querySelector('small').textContent='Uploading map textures…';const t1=nmNow();await nmUpload(mem.textures,()=>ticket===NM.ticket);mem.uploadMs=Math.round(nmNow()-t1);if(ticket===NM.ticket)nmOverlay(null);return C;
+  committed=true;loadedScene=loadedGeometry=null;NM.current=C;NM.routeCache.clear();try{for(const sp of nav.spawnNodes||[])for(const st of Object.values(nav.siteNodes||{}))nmPath(C,sp,st);}catch(e){} /* pre-warm routes + climb memo behind the loading overlay (measured up to 102ms cold on ascent under SwiftShader); the map list is the pre-warm set, loader/cache behavior unchanged */scene.add(root);NM.progress.querySelector('small').textContent='Uploading map textures…';const t1=nmNow();await nmUpload(mem.textures,()=>ticket===NM.ticket);mem.uploadMs=Math.round(nmNow()-t1);if(ticket===NM.ticket)nmOverlay(null);return C;
  })().catch(e=>{failed=true;controller.abort(e);if(!committed)release();if(ticket===NM.ticket)nmOverlay(key,true);console.error('Original map load failed',key,e);throw e;}).finally(()=>{clearTimeout(timeout);if(NM.pending&&NM.pending.ticket===ticket)NM.pending=null;});NM.pending={key,ticket,promise,controller};return promise;
 }
 // Decals and floaters (#lotus-white): the ports export every Decal_/Floater_ material as OPAQUE although
@@ -13054,8 +13088,14 @@ function nmPlant(C,x,z){const t=C.meta.transform,p=C.meta.apiProjection,ca=Math.
 // falls back to the first qualifying cell, then to the meta anchor.
 function nmSiteGoals(C){if(!C.plants||!C.plants.rows)return;const t=C.meta.transform,p=C.meta.apiProjection,ca=Math.cos(t.angle),sa=Math.sin(t.angle),inv=(u,v)=>{const sx=((u+.5)/1024-p.xScalarToAdd)/(100*p.xMultiplier),sz=-(((v+.5)/1024-p.yScalarToAdd)/(100*p.yMultiplier)),X=sx-t.cx,Z=sz-t.cz;return [ca*X+sa*Z,-sa*X+ca*Z];},out={};for(const site of Object.keys(C.meta.sites)){let n=0,su=0,sv=0;for(const v of Object.keys(C.plants.rows))for(const r of C.plants.rows[v]){if(r[2]!==site)continue;n++;su+=(r[0]+r[1])/2;sv+=+v;}if(!n)continue;const put=(u,v)=>{const g=inv(u,v),i=nmNear(C,g[0],g[1]);if(i<0)return false;const q=C.nav.nodes[i];if(Math.hypot(q[0]-g[0],q[2]-g[1])>1.5||nmPlant(C,q[0],q[2])!==site)return false;out[site]=[q[0],q[2]];return true;};if(put(su/n,sv/n))continue;outer:for(const v of Object.keys(C.plants.rows))for(const r of C.plants.rows[v]){if(r[2]!==site)continue;for(let u=r[0];u<r[1];u+=2)if(put(u,+v))break outer;}}C.siteGoals=out;}
 // A* follows only edges sampled from the original walkable mesh. No legacy lane waypoints are used.
+// Edge climbability with traversal semantics: the game's own hop validator nmSegDrop (per-0.18 m
+// ground sampling + capsule blocked test) between the two node positions. Endpoint dy alone would
+// false-reject smooth ramps (offline: lotus 576, breeze 1285, ascent 807) and ground sampling alone
+// misses riser faces inside the capsule radius (lotus lip reads clear to nmHeight but blocks the
+// capsule). Memoized per directed edge for the life of the map context; only called for dy>0.321.
+function nmClimbOk(C,a,b){let M=C.climbMemo;if(!M)M=C.climbMemo=new Map();const k=a+'>'+b;let v=M.get(k);if(v!==undefined)return v;const N=C.nav.nodes;v=nmSegDrop(C,{x:N[a][0],y:N[a][1],z:N[a][2]},N[b]);M.set(k,v);return v;}
 function nmPath(C,start,end,banned){const cacheKey=start+'>'+end,noCache=banned&&banned.size>0;if(!noCache&&NM.routeCache.has(cacheKey))return NM.routeCache.get(cacheKey);const N=C.nav.nodes,A=C.nav.adj,S=C.ps&&C.ps.n===N.length?C.ps:(C.ps={n:N.length,cost:new Float32Array(N.length),prev:new Int32Array(N.length),closed:new Uint8Array(N.length),hi:[],hs:[]}),cost=S.cost,prev=S.prev,closed=S.closed;cost.fill(Infinity);cost[start]=0;prev.fill(-1);closed.fill(0);/* perf: scratch arrays reused per map (one search at a time), heap as index/score arrays: same order as the old [i,s] pairs */const hi=S.hi,hs=S.hs;hi.length=0;hs.length=0;const heap=hi,push=(i,s)=>{let k=hi.length;hi.push(i);hs.push(s);while(k){const p=(k-1)>>1;if(hs[p]<=s)break;hi[k]=hi[p];hs[k]=hs[p];k=p;}hi[k]=i;hs[k]=s;},pop=()=>{const first=hi[0],li=hi.pop(),ls=hs.pop();if(hi.length){let k=0;while(k*2+1<hi.length){let c=k*2+1;if(c+1<hi.length&&hs[c+1]<hs[c])c++;if(hs[c]>=ls)break;hi[k]=hi[c];hs[k]=hs[c];k=c;}hi[k]=li;hs[k]=ls;}return first;},heur=i=>Math.hypot(N[i][0]-N[end][0],N[i][2]-N[end][2]);push(start,heur(start));let found=false,steps=0;
- while(heap.length&&steps++<N.length*12){const a=pop();if(closed[a])continue;closed[a]=1;if(a===end){found=true;break;}for(const b of A[a]){if(closed[b]||(banned&&banned.has(a+'>'+b)))continue;const d=cost[a]+Math.hypot(N[a][0]-N[b][0],N[a][2]-N[b][2])+Math.abs(N[a][1]-N[b][1])*.2;if(d<cost[b]){cost[b]=d;prev[b]=a;push(b,d+heur(b));}}}
+ while(heap.length&&steps++<N.length*12){const a=pop();if(closed[a])continue;closed[a]=1;if(a===end){found=true;break;}for(const b of A[a]){if(closed[b]||(banned&&banned.has(a+'>'+b)))continue;if(N[b][1]-N[a][1]>.321&&!nmClimbOk(C,a,b))continue; /* one-way drops: never PLAN a climb the traversal validator rejects (the source navmesh is undirected). The 0.321 gate predates the shared motor and is stricter than its stepHeight 0.4 (99f92a4 made the lotus 0.373 riser walkable); all six maps verified to have zero nav chords rising in the 0.321-0.4 band (453,582 directed edges sampled offline), so the stricter gate rejects nothing the motor could walk. Endpoint dy alone would false-reject smooth ramps (lotus 576, breeze 1285, ascent 807 measured offline), so borderline edges pay one memoized chord sampling that matches nmSegment's per-0.18 m climb leg. Down-travel and the stall-breaker ban stay as backstop. */const d=cost[a]+Math.hypot(N[a][0]-N[b][0],N[a][2]-N[b][2])+Math.abs(N[a][1]-N[b][1])*.2;if(d<cost[b]){cost[b]=d;prev[b]=a;push(b,d+heur(b));}}}
  const path=[];if(found)for(let i=end;i>=0;i=prev[i]){path.push(i);if(i===start)break;}path.reverse();if(noCache)return path;if(NM.routeCache.size>200)NM.routeCache.clear();NM.routeCache.set(cacheKey,path);return path;
 }
 // Smoothing follows support height at every sample. Wall clearance alone would
@@ -17285,7 +17325,16 @@ xReady = true; // every mode is initialised; lobby launches may now start them
   var run = function (fn, map, mode, sync, title) {
     var id = ++loadId;show(map, mode, title);
     var wait = agents(id, mode); if (wait) wait.catch(function () {});
-    var go = function () { return (wait ? wait.then(fn) : Promise.resolve().then(fn)).then(function(v){if(id===loadId){if(!title)fill();ready();}return v;},function(err){if(id===loadId)failed();if(err&&err.name==='AbortError')return;throw err;}); };
+    var warm = function (v) { // compile shaders + upload textures behind the overlay, not on the first playable frame
+      if (id !== loadId || typeof window.xWarmShaders !== "function") return v;
+      xLdSet("xLdAg", "textContent", "PREPARING\u2026");
+      return new Promise(function (r) { var done = false, fin = function () { if (done) return; done = true;
+        if (id === loadId) { try { window.xWarmShaders(); } catch (e) {} } // re-checked: a superseded/abandoned load warms nothing and never reaches ready()
+        xLdSet("xLdAg", "textContent", ""); r(v); };
+        setTimeout(fin, 4000); // rAF stops in a hidden tab: never leave the overlay stuck on the warm step
+        requestAnimationFrame(function () { requestAnimationFrame(fin); }); });
+    };
+    var go = function () { return (wait ? wait.then(fn) : Promise.resolve().then(fn)).then(warm).then(function(v){if(id===loadId){if(!title)fill();ready();}return v;},function(err){if(id===loadId)failed();if(err&&err.name==='AbortError')return;throw err;}); };
     return sync || built(map) ? go() : new Promise(function(resolve,reject){requestAnimationFrame(function(){requestAnimationFrame(function(){go().then(resolve,reject);});});});
   };
   window.xCancelMatchLoad = function(){++loadId;failed();};
