@@ -18,6 +18,11 @@ steps.length=0;c.snap({u:[row(7,0),row(2,1,1)]});run(1000);assert.deepEqual(step
 c.snap({u:[row(7,1)]});c.bots[0].fog=1;run(1000);assert.deepEqual(steps,[],'fogged');c.bots[0].fog=0;c.bots[0].alive=false;run(1000);assert.deepEqual(steps,[],'dead');c.bots[0].alive=true;c.bots[0].g.parent=null;run(1000);assert.deepEqual(steps,[],'not in the scene');c.bots[0].g.parent=scene;
 // 3. offline / not in a match: nothing
 c.NET.socket=null;run(1000);assert.deepEqual(steps,[]);c.NET.socket={};c.MP.st='post';run(1000);assert.deepEqual(steps,[]);c.MP.st='game';run(1000);assert.ok(steps.includes(5),'back in game: steps again');
+// 3b. hk-35: a slow page (frames 1 s / 4.5 s apart: browser fog5 ran ~0.2 fps) still hears the runner - one step per frame,
+// cadence on real time (the old 0.1 s per-frame cap needed 3 frames for the first step and 4 per step after)
+{steps.length=0;const slow=ms=>{c.t+=ms;c.tick();};c.snap({u:[row(7,0)]});c.tick();c.snap({u:[row(7,1)]});slow(1000);slow(1000);slow(1000);assert.equal(steps.filter(x=>x===5).length,3,'1 s frames: a step each frame '+JSON.stringify(steps));
+ steps.length=0;slow(4500);slow(4500);assert.equal(steps.filter(x=>x===5).length,2,'4.5 s frames: one step per frame (no burst)');
+ steps.length=0;for(let i=0;i<10;i++)slow(100);{const n=steps.filter(x=>x===5).length;assert.ok(n>=2&&n<=3,'back at 10 fps: every 0.4 s over 1 s ('+n+')');}}
 // 4. end to end: real server rows (running vs shift-walking unit)
 (async()=>{const {Simulation}=await import(path.join(root,'server/src/simulation.js'));
  const W={map:{attacker:[0,0,0],defender:[0,0,-10]},nav:{nodes:[[0,0,0],[0,0,-10]],adj:[[1],[0]]},playable:[0,1],allowed:new Set([0,1]),near:()=>0,ground:()=>0,blocked:()=>false,ray:()=>Infinity};
