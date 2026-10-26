@@ -3931,6 +3931,24 @@ function xUbLoco(sp, cw, back, air) {
   for (const n of ["walk", "run", "crouchWalk"]) R[n] = dir * Math.max(XUB_RATE[n][0], Math.min(XUB_RATE[n][1], sp / XUB_NAT[n]));
   return { T, R, mv };
 }
+// Landing knee give: peak weight of the Jump_Land layer (its pelvis dip is 0.53 m at weight 1 -> ~7 cm standing after a normal
+// jump, ~4 cm in a run), scaled by the landing speed (a normal jump lands at 6.9 m/s, a 3 m drop at ~11 m/s), over 0.3 s.
+const XUB_LAND = { dur: 0.3, still: 0.4, moving: 0.22, clip: 0.8, ref: 6.9 };
+function xUbLandStart(vyMin, sp) {
+  const k = Math.max(0.5, Math.min(1.6, -vyMin / XUB_LAND.ref)), w = (sp > 1.5 ? XUB_LAND.moving : XUB_LAND.still) * k;
+  return { dur: XUB_LAND.dur, w: Math.min(0.9, w) };
+}
+// Envelope 0..1 over the landing (u = elapsed / duration): fast attack (first 15 %), then a linear release.
+function xUbLandEnv(u) { return u <= 0 || u >= 1 ? 0 : Math.min(1, u / 0.15) * (1 - u) / 0.85; }
+function xUbLand(X, dt) {
+  const a = X.a.land; if (!a) return;
+  if (!(X.lnd > 0)) { if (X.lndOn) { X.lndOn = 0; a.setEffectiveWeight(0); a.stop(); X.w.land = 0; } return; }
+  X.lnd = Math.max(0, X.lnd - dt); const u = 1 - X.lnd / (X.lndD || XUB_LAND.dur), w = X.lndW * xUbLandEnv(u);
+  if (!X.lndOn) { X.lndOn = 1; a.reset(); }
+  if (!a.isScheduled()) a.play(); a.paused = true;
+  a.time = u * XUB_LAND.clip; X.w.land = w; a.setEffectiveWeight(w);
+  for (const n of XUB_LO) if (n !== "land" && X.w[n]) X.a[n].setEffectiveWeight(X.w[n] * (1 - w)); // the dip replaces part of the stance; weights still sum to 1
+}
 // one-shot triggers
 function xUbOnce(X, n, set, dur) { const a = X.a[n]; if (!a) return; a.reset(); a.timeScale = dur ? a.getClip().duration / dur : 1; a.play(); if (set === "U") { X.uo = n; X.ut = dur || a.getClip().duration; } else { X.lo = n; X.lt = dur || a.getClip().duration; } }
 function xUbAdd(X, n, w) { const a = X.ad && X.ad[n]; if (!a) return; a.reset(); a.setEffectiveWeight(w); a.play(); }
@@ -3939,10 +3957,18 @@ function xUbAnim(b, M, sp, dt) {
   const X = M.sx, P = b.g.position; if (!dt) return;
   const dx = X.px == null ? 0 : P.x - X.px, dz = X.pz == null ? 0 : P.z - X.pz, dy = X.py == null ? 0 : P.y - X.py; X.px = P.x; X.pz = P.z; X.py = P.y;
   // airborne: only re-check the floor when the unit moved vertically (or is already in the air)
-  let air = X.air; if (Math.abs(dy) > 1e-3 || air) { try { air = typeof groundAt === "function" && P.y > groundAt(P.x, P.z, 0.3, P.y) + 0.2; } catch (e) { air = false; } }
+  let air = X.air; if (Math.abs(dy) > 1e-3 || air) { try { air = typeof groundAt === "function" && P.y > groundAt(P.x, P.z, 0.3, P.y) + (air ? 0.04 : 0.2); } catch (e) { air = false; } } // leaves the air 4 cm over the floor (was 20 cm: the tuck snapped onto the floor a frame early and popped the body up 14 cm)
   X.spS = X.spS == null ? sp : X.spS + (sp - X.spS) * (1 - Math.exp(-dt * 30)); sp = X.spS; // per-frame position deltas are noisy; ~0.1 s smoothing keeps VALORANT's near-instant stop
-  if (air && !X.air && dy > 0) xUbOnce(X, "jump", "L", 0.35); else if (!air && X.air && sp < 0.35) xUbOnce(X, "land", "L", 0.3); // moving landings go straight back to the stride (no knee-buckle mid-run)
-  X.air = air;
+  // Jump / land (VALORANT third person: the legs tuck as soon as the feet leave the floor, the body rides the physics arc, and a
+  // landing is a brief knee give, never a squat). The retargeted Jump_Start is a crouch wind-up -> pop -> second crouch -> tuck
+  // (pelvis 0.66 / 1.22 / 0.66 / 1.19 m over 1.3 s): squeezed into 0.35 s it bounced the body down twice mid-air, so takeoff now
+  // blends straight into the airborne tuck (Jump_Loop), the body riding the capsule.
+  // Landing: the Jump_Land dip (pelvis -0.53 m at full weight) layered at a small weight scaled by the fall speed (xUbLand).
+  try { X.airH = air ? Math.max(0, P.y - groundAt(P.x, P.z, 0.3, P.y)) : 0; } catch (e) { X.airH = 0; }
+  X.vy = dt > 0 ? dy / dt : 0; if (air) X.vyMin = Math.min(X.vyMin || 0, X.vy);
+  if (air && !X.air) { X.lnd = 0; if (X.lo === "jump" || X.lo === "land") { X.lo = null; X.lt = 0; } }
+  else if (!air && X.air) { const L = xUbLandStart(X.vyMin || 0, sp); X.lnd = L.dur; X.lndD = L.dur; X.lndW = L.w; }
+  if (!air) X.vyMin = 0; X.air = air;
   let S = null; try { S = mode === "five" && xFvOK && FV.sp ? FV.sp : null; } catch (e) {}
   const plant = !!S && ((S.st === "carry" && S.c === b && S.pt > 0) || (S.st === "plant" && S.du === b));
   const cr = !!b.cr && !air && !plant; X.cb += ((cr ? 1 : 0) - X.cb) * (1 - Math.exp(-dt * 10));
@@ -3966,6 +3992,7 @@ function xUbAnim(b, M, sp, dt) {
   const ts = (a, v) => { if (a) a.timeScale = v; };
   for (const n in L.R) ts(X.a[n], L.R[n]);
   xUbW(X, T, dt, 12);
+  xUbLand(X, dt);
   // head hitbox follows the crouch (size unchanged); standing it stays at 1.75 m
   if (b.head && b.head.position) b.head.position.y = 1.75 - 0.45 * (cw / 0.62);
 }
@@ -13469,10 +13496,12 @@ function xvAttach(M) {
 {const create=xAgent;xAgent=function(){return xvAttach(create.apply(this,arguments));};}
 // Correct the blended support-foot height after the mixer. The retargeted jog has a pronounced flight
 // (over 8 cm), which looks like repeated hopping at tactical run speeds. Keep at most 2 cm of
-// grounded stride lift; actual airborne movement bypasses this correction. The shift moves
+// grounded stride lift. Airborne it only keeps the feet out of the floor: the Jump_Loop tuck hangs one foot ~12 cm below
+// the capsule bottom, which snapped the body up that much on the landing frame; in the last few cm of a fall (X.airH: height
+// over the floor, from xUbAnim) the body is lifted just enough that its lowest point meets the floor. Higher, no correction. The shift moves
 // the rig wrapper (all skin influences together) so helper-bone weights cannot leave a foot floating;
 // older stub rigs fall back to Splitter or pelvis.
-{const pre=xUbPre,post=xUbPost;xUbPre=function(M){const X=M.sx;if(X&&X.contactRestore){(X.contactRoot||X.cs||X.b.pelvis).position.copy(X.contactRestore);X.contactRestore=null;}return pre(M);};xUbPost=function(M){post(M);const X=M.sx;if(!X||!X.nativeContact||X.dd||M.dead||X.air||X.lo||(X.w.plant||0)>.01||!X.contactProbes.length)return;M.m.updateMatrixWorld(true);const v=X.contactV,inv=X.contactInv.copy(X.sc.matrixWorld).invert();let low=Infinity;for(const {o,indices}of X.contactProbes){o.skeleton.update();for(const i of indices){v.fromBufferAttribute(o.geometry.attributes.position,i);o.boneTransform(i,v);v.applyMatrix4(o.matrixWorld).applyMatrix4(inv);low=Math.min(low,v.y);}}let lift=0;const c=X.contactLift,a=X.a.run;if(c&&a&&(X.w.run||0)>.001){const t=a.time%c.times[c.times.length-1];let i=0;while(i<c.times.length-2&&c.times[i+1]<t)i++;const f=(t-c.times[i])/Math.max(.00001,c.times[i+1]-c.times[i]);lift=Math.min(.02,Math.max(0,(c.values[i]*(1-f)+c.values[i+1]*f)*.15))*(X.w.run||0);}const dy=X.contactFloor+lift-low;if(!Number.isFinite(dy)||Math.abs(dy)>.5)return;X.contactRestore=(X.contactRoot||X.cs||X.b.pelvis).position.clone();(X.contactRoot||X.cs||X.b.pelvis).getWorldPosition(v);const shift=X.contactShift.set(0,1,0).transformDirection(X.sc.matrixWorld).multiplyScalar(Math.abs(dy)*X.sc.getWorldScale(X.contactScale).y);if(dy<0)shift.negate();v.add(shift);(X.contactRoot||X.cs||X.b.pelvis).position.copy((X.contactRoot||X.cs||X.b.pelvis).parent.worldToLocal(v));M.m.updateMatrixWorld(true);};}
+{const pre=xUbPre,post=xUbPost;xUbPre=function(M){const X=M.sx;if(X&&X.contactRestore){(X.contactRoot||X.cs||X.b.pelvis).position.copy(X.contactRestore);X.contactRestore=null;}return pre(M);};xUbPost=function(M){post(M);const X=M.sx;if(!X||!X.nativeContact||X.dd||M.dead||X.lo||(X.w.plant||0)>.01||!X.contactProbes.length)return;M.m.updateMatrixWorld(true);const v=X.contactV,inv=X.contactInv.copy(X.sc.matrixWorld).invert();let low=Infinity;for(const {o,indices}of X.contactProbes){o.skeleton.update();for(const i of indices){v.fromBufferAttribute(o.geometry.attributes.position,i);o.boneTransform(i,v);v.applyMatrix4(o.matrixWorld).applyMatrix4(inv);low=Math.min(low,v.y);}}let lift=0;const c=X.contactLift,a=X.a.run;if(c&&a&&(X.w.run||0)>.001){const t=a.time%c.times[c.times.length-1];let i=0;while(i<c.times.length-2&&c.times[i+1]<t)i++;const f=(t-c.times[i])/Math.max(.00001,c.times[i+1]-c.times[i]);lift=Math.min(.02,Math.max(0,(c.values[i]*(1-f)+c.values[i+1]*f)*.15))*(X.w.run||0);}let dy=X.contactFloor+lift-low;if(X.air)dy-=(X.airH||0)/Math.max(1e-6,X.sc.getWorldScale(X.contactScale).y);if(!Number.isFinite(dy)||Math.abs(dy)>.5||X.air&&dy<=0)return;X.contactRestore=(X.contactRoot||X.cs||X.b.pelvis).position.clone();(X.contactRoot||X.cs||X.b.pelvis).getWorldPosition(v);const shift=X.contactShift.set(0,1,0).transformDirection(X.sc.matrixWorld).multiplyScalar(Math.abs(dy)*X.sc.getWorldScale(X.contactScale).y);if(dy<0)shift.negate();v.add(shift);(X.contactRoot||X.cs||X.b.pelvis).position.copy((X.contactRoot||X.cs||X.b.pelvis).parent.worldToLocal(v));M.m.updateMatrixWorld(true);};}
 // Native first-person rigs and their matching weapon animation clips. The virtual source camera faces +X.
 function xvFPPlay(F, kind, time) {
   const key = kind === 'idle' ? 'Idle' : kind.charAt(0).toUpperCase()+kind.slice(1), a = F.entries.find((e)=>e.Translatable === key) || F.entries.find((e)=>e.Translatable.startsWith(key));
