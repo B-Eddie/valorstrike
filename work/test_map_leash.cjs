@@ -38,5 +38,9 @@ assert(html.includes('if(!world.blocked(nx,nz,.4,P.y,1.8-P.ch)&&!(world.leash&&!
 const wsrc=fs.readFileSync(path.join(root,'server/src/world.js'),'utf8'),asrc=fs.readFileSync(path.join(root,'server/src/abilities.js'),'utf8');
 assert(wsrc.includes('leash=(x,z,y,x0,z0)=>Motor.leashOk(leashCells,x,z,y,ground,x0,z0)')&&/return \{plantAt,ground,blocked,leash,/.test(wsrc),'server world exposes the leash');
 assert(asrc.includes("if(sim.world.blocked(x,z,.4,u.y,1.8-(u.ch||0))||(sim.world.leash&&!sim.world.leash(x,z,u.y,u.x,u.z)))break;"),'server Jett dash respects the leash');
-assert(asrc.includes("if(sim.world.blocked(u.x+dx*.5,u.z+dz*.5,.4,u.y,1.8)||(sim.world.leash&&!sim.world.leash(u.x+dx*.5,u.z+dz*.5,u.y,u.x,u.z)))break;"),'server satchel respects the leash');
+// Blast Pack (ac168f0 moved it to devices.js): no direct position step any more - the detonation launches by velocity, so
+// the motor's moveAxis (leash-checked, the shared file above) carries every unit it moves
+const dsrc=fs.readFileSync(path.join(root,'server/src/devices.js'),'utf8'),msrc=fs.readFileSync(path.join(root,'server/src/motor.cjs'),'utf8');
+assert(dsrc.includes('v.vx=nx*B.push;v.vz=nz*B.push;v.vy=B.vy;v.air=true;')&&!/function packBoom[^\n]*\n[^\n]*v\.x=/.test(dsrc),'server Blast Pack launches by velocity (no direct move past the leash)');
+assert(msrc.includes('const moveAxis=(dx,dz)=>{const x=P.x+dx,z=P.z+dz;if(world.leash&&!world.leash(x,z,P.y,P.x,P.z))return false;'),'server satchel respects the leash (motor moveAxis)');
 console.log('map leash: shared rule (core/rim/void/wall top/updraft), motor containment, client + server wiring');
