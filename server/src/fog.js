@@ -35,6 +35,7 @@ export function fogPass(sim,snap){const F=sim.fog||(sim.fog={t:-1,n:0,pairs:new 
  for(const e of sim.castEvents||[]){if(e&&e.t==='ac'&&e.sub!=='boom'){const u=U.find(v=>v.id===e.i);if(u)u.fogCastAt=now;}}/* a cast is heard like a gunshot (FOG.cast m) */
  for(const e of (snap&&snap.ev)||[]){if(!Array.isArray(e))continue;if(e[0]==='s'){const u=U.find(v=>v.id===e[1]);if(u)u.fogShotAt=now;}else if(e[0]==='k'){const k=byName.get(e[1]),v=byName.get(e[2]);if(k&&v&&k!==v)v.fogKiller={id:k.id,until:now+FOG.killer};}}
  const groups=new Set(U.map(u=>fogGroup(sim,u)));for(const g of groups){if(!F.rel.has(g))F.rel.set(g,new Map());}const rel=F.rel,mark=(g,id,t=now+FOG.grace)=>{const m=rel.get(g);if(m&&!(m.get(id)>=t))m.set(id,t);};
+ for(const u of U){if(u.alive)u.fogDeadAt=undefined;else if(u.fogDeadAt===undefined)u.fogDeadAt=now;}/* death time: a dead enemy row is sent only to a group it was relevant to when it died */
  const L=U.filter(live);
  for(let i=0;i<L.length;i++)for(let j=i+1;j<L.length;j++){const a=L[i],b=L[j],ga=fogGroup(sim,a),gb=fogGroup(sim,b);if(ga===gb)continue;
   const key=a.id<b.id?a.id+':'+b.id:b.id+':'+a.id,last=F.pairs.get(key)??-1e9;let seen=false;
@@ -52,13 +53,19 @@ export function fogPass(sim,snap){const F=sim.fog||(sim.fog={t:-1,n:0,pairs:new 
  // forget pair stamps of departed units
  if(F.n%200===0){const ids=new Set(U.map(u=>u.id));for(const k of F.pairs.keys()){const [x,y]=k.split(':').map(Number);if(!ids.has(x)||!ids.has(y))F.pairs.delete(k);}for(const m of rel.values())for(const id of m.keys())if(!ids.has(id))m.delete(id);}
  return F;}
+// A team with nobody left in the round (Spike mode: every member dead, no Phoenix inside Run It Back - spike.js's own
+// elimination test) has no one to give an edge to: it gets the whole frame, so its spectator camera can follow the
+// enemies (VALORANT's post-elimination spectate). Not in Deathmatch / TDM, where the dead respawn in 1.5 s.
+export function fogEliminated(sim,g){if(sim.mode!=='five')return false;let any=false;for(const u of sim.units){if(fogGroup(sim,u)!==g)continue;any=true;if(u.alive||u.runItBack)return false;}return any;}
 // A hidden enemy row: identity, team, alive, weapon (for the shot sound) and input seq stay; position, aim, HP, armour,
 // ammo, crouch, Regen pool and input timing go; [22] = 1.
 export function fogRow(r){const o=r.slice();o[4]=o[5]=o[6]=o[7]=0;o[8]=o[10]?100:0;o[9]=0;o[15]=o[16]=0;o[17]=o[18]=0;o[19]=o[20]=0;o[21]=-1;o[22]=1;if(o.length>23)o[23]=0;return o;}
 // The snapshot (or any frame with unit rows u and effect rows fx) as viewer may receive it.
-export function fogView(sim,snap,viewer){if(!snap||!viewer||sim.phase!=='game'||sim.fogOff)return snap;const F=fogPass(sim,snap),g=fogGroup(sim,viewer),rel=F.rel.get(g),now=sim.time,kill=viewer.fogKiller&&viewer.fogKiller.until>=now?viewer.fogKiller.id:-1,hide=F.hide.get(g);
- const out={...snap};if(Array.isArray(snap.u))out.u=snap.u.map(r=>!Array.isArray(r)||r[0]===viewer.id||rowGroup(sim,r)===g||!r[10]||r[0]===kill||(rel&&rel.get(r[0])>=now)?r:fogRow(r));
- if(Array.isArray(snap.ev)&&Array.isArray(out.u)){const hid=new Set(out.u.filter(r=>Array.isArray(r)&&r[22]===1).map(r=>r[0]));if(hid.size){const grp=new Map(snap.u.filter(Array.isArray).map(r=>[r[0],rowGroup(sim,r)]));/* a hit on a hidden enemy by someone outside our group: its damage would give away the HP the row hides, and its blood would land at a stale spot */out.ev=snap.ev.filter(e=>!(Array.isArray(e)&&e[0]==='h'&&hid.has(e[2])&&e[1]!==viewer.id&&grp.get(e[1])!==g));}}
+export function fogView(sim,snap,viewer){if(!snap||!viewer||sim.phase!=='game'||sim.fogOff)return snap;const F=fogPass(sim,snap),g=fogGroup(sim,viewer),rel=F.rel.get(g),now=sim.time,kill=viewer.fogKiller&&viewer.fogKiller.until>=now?viewer.fogKiller.id:-1,hide=F.hide.get(g);if(fogEliminated(sim,g))return snap;
+ const byId=new Map(sim.units.map(u=>[u.id,u])),seen=r=>{if(r[10])return rel&&rel.get(r[0])>=now;const u=byId.get(r[0]),d=u&&u.fogDeadAt;/* dead: only if it was relevant to us when it died (its corpse / death spot) */return d!==undefined&&rel&&rel.get(r[0])>=d;};
+ const out={...snap};if(Array.isArray(snap.u))out.u=snap.u.map(r=>!Array.isArray(r)||r[0]===viewer.id||rowGroup(sim,r)===g||r[0]===kill||seen(r)?r:fogRow(r));
+ if(Array.isArray(snap.ev)&&Array.isArray(out.u)){const hid=new Set(out.u.filter(r=>Array.isArray(r)&&r[22]===1).map(r=>r[0]));if(hid.size){const grp=new Map(snap.u.filter(Array.isArray).map(r=>[r[0],rowGroup(sim,r)]));/* a hit on a hidden enemy by someone outside our group: its damage would give away the HP the row hides, and its blood would land at a stale spot */const outsider=id=>id!==viewer.id&&grp.get(id)!==g;
+  out.ev=snap.ev.filter(e=>!(Array.isArray(e)&&(e[0]==='h'&&hid.has(e[2])&&outsider(e[1])/* a gunshot ('s') of a hidden enemy: it is out of hearing range (a shot within FOG.shot m makes the shooter relevant this very pass), so no cue at all */||e[0]==='s'&&hid.has(e[1])&&outsider(e[1])/* a finisher ('fin') carries the victim's death spot */||e[0]==='fin'&&hid.has(e[3])&&outsider(e[3])&&e[2]!==viewer.id)));}}
  if(Array.isArray(snap.fx)&&hide&&hide.size)out.fx=snap.fx.filter(r=>!(r&&hide.has(r.id)&&(r.kind==='dev'||r.kind==='barrier'||r.kind==='cb'&&r.s===0)));return out;}
 // A cast event ('ac': caster id, agent, key, eye o, aim d, effect point p) as viewer may receive it. The caster's own team
 // (or the caster, in Deathmatch), and a group the caster is relevant to (seen, heard - a cast is heard within FOG.cast m
@@ -66,7 +73,7 @@ export function fogView(sim,snap,viewer){if(!snap||!viewer||sim.phase!=='game'||
 // point p is in sight of one of the group's live members (a smoke landing on site, a wall going up) the event keeps p
 // only, flagged fog:1 (the page draws the effect there, server_runtime.js netCastFog); otherwise it is cut to
 // {t,i,ag,k,ts,fog:1} - no position at all.
-export function fogCast(sim,ev,viewer){if(!ev||ev.t!=='ac'||!viewer||sim.phase!=='game'||sim.fogOff)return ev;const c=sim.units.find(u=>u.id===ev.i);if(!c||c===viewer)return ev;const g=fogGroup(sim,viewer);if(fogGroup(sim,c)===g)return ev;
+export function fogCast(sim,ev,viewer){if(!ev||ev.t!=='ac'||!viewer||sim.phase!=='game'||sim.fogOff)return ev;const c=sim.units.find(u=>u.id===ev.i);if(!c||c===viewer)return ev;const g=fogGroup(sim,viewer);if(fogGroup(sim,c)===g||fogEliminated(sim,g))return ev;
  const F=fogPass(sim,{ev:[]}),now=sim.time,rel=F.rel.get(g),kill=viewer.fogKiller&&viewer.fogKiller.until>=now?viewer.fogKiller.id:-1;if(c.id===kill||(rel&&rel.get(c.id)>=now))return ev;
  const out={t:'ac',i:ev.i,ag:ev.ag,k:ev.k,ts:ev.ts,fog:1};if(ev.sub)out.sub=ev.sub;const p=ev.p;
  if(Array.isArray(p)&&p.length===3&&p.every(Number.isFinite)){const q=[p[0],p[1]+1,p[2]];if(sim.units.some(a=>live(a)&&fogGroup(sim,a)===g&&(near3(a,{x:p[0],y:p[1],z:p[2]},FOG.devNear)||eyes(a).some(e=>segClear(sim,e,q)))))out.p=p.slice();}
