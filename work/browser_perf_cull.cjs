@@ -49,7 +49,7 @@ const SIZES=(process.env.SIZES||'1280x720,640x360,390x844').split(',').map(s=>s.
  // hk-30: after placing the bot, two game loop frames run (XNF) before the sweep, as in play: per-frame agent state (xSolTick near-camera
  // culling, mixer pose) is set from where the bot now stands. Without them the probe rendered the previous frame's state.
  const loopFrames=async n=>{const f=+(await X('XNF'));await page.waitForFunction(f=>window.__xe('XNF')>=f,f+n,{timeout:900000,polling:200});};
- for(const d of [1,2,3,4,5,8]){
+ for(const d of (process.env.DISTS||"1,2,3,4,5,8").split(",").map(Number)){ // hk-32: DISTS (perf_cull5 OOM-closed after 4 m; perf_cull6 runs 5,8)
   await X(`(()=>{const b=bots.find(x=>x.alive)||bots[0];b.nt=true;b.alive=true;const p=player;b.g.position.set(p.x+${d},b.g.position.y,p.z);b.g.updateMatrixWorld(true);return 1})()`);await loopFrames(2);
   const r=JSON.parse(await X(`JSON.stringify((()=>{const b=bots.find(x=>x.nt)||bots[0];b.alive=true;const p=player,y=(p.y||0);b.g.position.set(p.x+${d},b.g.position.y,p.z);b.g.updateMatrixWorld(true);
    const out=[];for(let a=0;a<360;a+=10){const t=a*Math.PI/180;window.__pc.position.set(p.x,b.g.position.y+1.6,p.z);window.__pc.rotation.set(0,t,0,'YXZ');window.__pc.updateMatrixWorld(true);

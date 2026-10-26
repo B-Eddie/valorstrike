@@ -21,6 +21,7 @@ const SIZES=(process.env.SIZES||'1280x720,640x360,390x844').split(',').map(s=>s.
 (async()=>{
  const browser=await chromium.launch({headless:true,args:['--no-sandbox','--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader','--disable-dev-shm-usage','--ignore-gpu-blocklist','--in-process-gpu','--renderer-process-limit=1']});
  const ctx=await browser.newContext({viewport:{width:1280,height:720},deviceScaleFactor:1});
+ await ctx.addInitScript(()=>{const pn=performance.now.bind(performance);let r0=pn(),v0=r0,sc=1;Object.defineProperty(window,'__ts',{get:()=>sc,set:v=>{const r=pn();v0+=(r-r0)*sc;r0=r;sc=v;}});performance.now=()=>v0+(pn()-r0)*sc;}); // hk-32 time dilation (browser_newmain2.cjs)
  await ctx.addInitScript(()=>{try{localStorage.setItem('vs.gq','low');localStorage.setItem('vs.aa','0');localStorage.setItem('vs.portrait','1');}catch(e){}});
  await ctx.route(/^https?:\/\/(unpkg\.com|cdn\.jsdelivr\.net)\//,r=>{const f=r.request().url().split('/').pop().split('?')[0];if(LOCAL[f])return r.fulfill({path:LOCAL[f],contentType:'application/javascript',headers:{'access-control-allow-origin':'*'}});return r.continue();});
  await ctx.route(/127\.0\.0\.1:8876\/(index\.html)?(\?.*)?$/,r=>{const h=fs.readFileSync(ROOT+'/index.html','utf8').replace('window.xValorantFeel={','window.__xe=s=>eval(s);window.xValorantFeel={');r.fulfill({body:h,contentType:'text/html'});});
@@ -56,9 +57,15 @@ const SIZES=(process.env.SIZES||'1280x720,640x360,390x844').split(',').map(s=>s.
  const lb=()=>X(`JSON.stringify((()=>{const e=document.querySelector('.x-dmlb'),c=document.querySelector('.x-cbt');const vis=el=>!!el&&getComputedStyle(el).display!=='none'&&getComputedStyle(el).visibility!=='hidden'&&el.getBoundingClientRect().width>2;const r=el=>el?[...Object.values(el.getBoundingClientRect().toJSON())].slice(0,4).map(Math.round):null;return {lb:vis(e),lbR:r(e),cbt:vis(c),cbtR:r(c),on:document.body.classList.contains('x-cbt-on'),hp:player.hp};})())`).then(JSON.parse);
  let l=await lb();log('dm alive',l);check('DM 640x360 alive: leaderboard shown',l.lb,JSON.stringify(l));await shot('dm-lb-alive',640,360);
  await X(`window.__god=0;{const b=bots[0];hurt(player,500,b.name);if(player.hp>0)pDie(b.name,"Vandal");}1`);
- await simWait(1.5,'dm dead');await frames(1);l=await lb();log('dm dead',l);
+ // hk-32: abil_dm3 sampled 1.5 s after the kill - DM respawns within that, so 'dead' read the respawned player (hp 100) and, with
+ // __god off, a bot killed the player again before the 'respawned' sample (hp 0, report up). Time is slowed (__ts) and each
+ // phase waits for its own state: dead = hp <= 0 with the report class on; then __god back on and respawned = hp > 0.
+ await page.waitForFunction(()=>window.__xe('player.hp<=0'),null,{timeout:120000,polling:50}).catch(e=>log('dead wait',String(e).slice(0,80)));
+ await X('window.__god=1;window.__ts=0.05;1');await frames(1);
+ await page.waitForFunction(()=>window.__xe("player.hp>0||document.body.classList.contains('x-cbt-on')"),null,{timeout:300000,polling:100}).catch(e=>log('report wait',String(e).slice(0,80)));
+ await frames(1);l=await lb();log('dm dead',l);
  check('DM 640x360 dead: combat report shown, leaderboard hidden (not covered)',l.cbt&&!l.lb,JSON.stringify(l));await shot('dm-lb-dead',640,360);
- for(let i=0;i<20&&(await X('player.hp'))<=0;i++){await simWait(1,'respawn');}
+ await X('window.__ts=1;1');for(let i=0;i<20&&(await X('player.hp'))<=0;i++){await simWait(1,'respawn');}
  await frames(2);l=await lb();log('dm respawn',l);check('DM 640x360 respawned: leaderboard back, report gone',l.hp>0&&l.lb&&!l.on,JSON.stringify(l));await shot('dm-lb-respawn',640,360);
  log('errors',R.errors);await browser.close();
 })().catch(e=>{R.errors.push(String(e).slice(0,400));fs.writeFileSync(OUT,JSON.stringify(R,null,1));process.exit(1);});

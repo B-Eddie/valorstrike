@@ -14,7 +14,11 @@ const SIZES=(process.env.SIZES||'1280x720,640x360,390x844').split(',').map(s=>s.
 (async()=>{
  const browser=await chromium.launch({headless:true,args:['--no-sandbox','--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader','--disable-dev-shm-usage','--ignore-gpu-blocklist','--in-process-gpu','--renderer-process-limit=1']});
  const ctx=await browser.newContext({viewport:{width:SIZES[0][0],height:SIZES[0][1]},deviceScaleFactor:1});
- await ctx.addInitScript(()=>{try{localStorage.setItem('vs.gq','low');localStorage.setItem('vs.aa','0');localStorage.setItem('vs.portrait','1');}catch(e){}});
+ // hk-32: harness time dilation (browser_newmain2.cjs): window.__ts scales performance.now. The bow's hold timer (J.eq.h += the tick's
+// real-clock dt, capped by XRT.max) advanced 5.25 s in the first ~1 s SwiftShader frame of ca2 while the script's game-time wait counted
+// 0.3 s of sim steps, so the charge bar read 100% at both samples (harness, not game: at 60 fps the two clocks agree).
+await ctx.addInitScript(()=>{const pn=performance.now.bind(performance);let r0=pn(),v0=r0,sc=1;Object.defineProperty(window,'__ts',{get:()=>sc,set:v=>{const r=pn();v0+=(r-r0)*sc;r0=r;sc=v;}});performance.now=()=>v0+(pn()-r0)*sc;});
+await ctx.addInitScript(()=>{try{localStorage.setItem('vs.gq','low');localStorage.setItem('vs.aa','0');localStorage.setItem('vs.portrait','1');}catch(e){}});
  await ctx.route(/^https?:\/\/(unpkg\.com|cdn\.jsdelivr\.net)\//,r=>{const f=r.request().url().split('/').pop().split('?')[0];if(LOCAL[f])return r.fulfill({path:LOCAL[f],contentType:'application/javascript',headers:{'access-control-allow-origin':'*'}});return r.continue();});
  await ctx.route(/127\.0\.0\.1:8876\/(index\.html)?(\?.*)?$/,r=>{const h=fs.readFileSync(ROOT+'/index.html','utf8').replace('window.xValorantFeel={','window.__xe=s=>eval(s);window.xValorantFeel={');r.fulfill({body:h,contentType:'text/html'});});
  const page=await ctx.newPage();await require('./pw_shot.cjs')(ctx,page);page.setDefaultTimeout(600000);page.on('pageerror',e=>R.errors.push('pageerror '+String(e).slice(0,300)));
@@ -50,11 +54,12 @@ const SIZES=(process.env.SIZES||'1280x720,640x360,390x844').split(',').map(s=>s.
  await page.keyboard.down('KeyQ');await simWait(0.1,'KeyQ');await page.keyboard.up('KeyQ');
  log('equip',await X('JSON.stringify(J.eq&&{k:J.eq.k,st:J.eq.st,d0:J.eq.d0})'));
  await page.waitForFunction(()=>window.__xe('J.eq&&J.eq.st==="ready"'),null,{timeout:60000,polling:100}).catch(e=>log('ready wait',String(e).slice(0,80)));
+ await X('window.__ts=0.05;1');await frames(1);/* the frame after the switch still carries 1x time */
  await X('fireHeld=true;xEqFire(false);1');await simWait(0.3,'bow hold');
  const h1=JSON.parse(await X(`JSON.stringify({st:J.eq&&J.eq.st,h:J.eq&&J.eq.h,on:$('xBow').classList.contains('on'),w:$('xBow').querySelector('b').style.width})`));
  await X('xEqFire(true);1');await simWait(0.15,'alt 1');await X('xEqFire(true);1');await simWait(0.7,'bow hold 2');
  const h2=JSON.parse(await X(`JSON.stringify({st:J.eq&&J.eq.st,h:J.eq&&J.eq.h,bn:J.eq&&J.eq.bn,on:$('xBow').classList.contains('on'),w:$('xBow').querySelector('b').style.width,pips:[...$('xBow').querySelectorAll('u')].map(u=>u.className)})`));
- log('bow',{h1,h2});
+ await X('window.__ts=1;1');log('bow',{h1,h2});
  for(const [w,h] of SIZES){await page.setViewportSize({width:w,height:h});await page.waitForTimeout(300);await frames(1);await page.screenshot({path:`${SHOT}sova-bow-hud-${w}x${h}.jpg`,type:'jpeg',quality:82,timeout:300000});}
  await page.setViewportSize({width:SIZES[0][0],height:SIZES[0][1]});
  check('Sova Q held: #xBow shown, charge bar grows while FIRE is held',h1.on&&h2.on&&parseFloat(h2.w)>parseFloat(h1.w),JSON.stringify({h1:h1.w,h2:h2.w}));
