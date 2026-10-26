@@ -1,7 +1,8 @@
 // Server side of the Valorant ability flow (work/ability_equip_runtime.js): kit charges / costs / ult points / signature
 // recharge match the wiki table (work/validation/abilities-wiki.json), and an equip-then-fire cast keeps the gun down
-// for XAB_REC s on the server too (fire() refuses until u.fireAt), while a quick-cast (Jett Cloudburst) does not.
-import assert from 'node:assert/strict';import fs from 'node:fs';import {SpikeSimulation} from './src/spike.js';import {ABILITY_EQUIP,XAB_REC} from './src/abilities.js';import {DEV} from './src/devices.js';import {WINDUP,XAB_REL,wf} from './src/windups.js';import {ULT} from './src/ults.js';
+// for the ability's unequip + the weapon's re-equip time on the server too (recoverTime: fire() refuses until u.fireAt),
+// while a quick-cast (Jett Cloudburst) does not.
+import assert from 'node:assert/strict';import fs from 'node:fs';import {SpikeSimulation} from './src/spike.js';import {ABILITY_EQUIP,abilityRecover} from './src/abilities.js';import {UNEQUIP,REEQUIP,REEQ_INSTANT,recoverTime} from './src/windups.js';import {DEV} from './src/devices.js';import {WINDUP,XAB_REL,wf} from './src/windups.js';import {ULT} from './src/ults.js';
 const kits=JSON.parse(fs.readFileSync(new URL('./src/kits.json',import.meta.url),'utf8')),wiki=JSON.parse(fs.readFileSync(new URL('../work/validation/abilities-wiki.json',import.meta.url),'utf8'));
 for(const [a,w] of Object.entries(wiki)){if(a[0]==='_')continue;const k=kits[a];assert(k,a+' kit');assert.equal(k.u,w.u,a+' ult points');
  for(const s of ['c','q']){assert.equal(k.mx[s],w[s][0],a+' '+s+' charges');assert.equal(k.buy.find(r=>r[0]===s)[2],w[s][1],a+' '+s+' cost');}
@@ -11,8 +12,15 @@ for(const [a,w] of Object.entries(wiki))if(typeof w.eRecharge==='number'&&a!=='O
 const W={map:{attacker:[0,0,0],defender:[0,0,-10],sites:{A:[0,0,0]}},nav:{nodes:[[0,0,0],[0,0,-10]],adj:[[1],[0]]},playable:[0,1],allowed:new Set([0,1]),near:(x,z)=>z<-5?1:0,ground:()=>0,blocked:()=>false,ray:()=>Infinity};
 const s=new SpikeSimulation(W),ph=s.add('p','Phoenix'),j=s.add('j','Jett');s.start(false);s.buy=0;s.time=3;
 ph.ability.c=1;ph.fireAt=0;assert.equal(s.command(ph,{t:'ab',k:'c'}),true,'Blaze cast');assert.equal(ph.ability.c,0);assert(ABILITY_EQUIP.Phoenix.includes('c'));
-assert(ph.fireAt>=s.time+XAB_REC-1e-9,'equip cast holds the gun down on the server');assert.equal(s.fire(ph),false,'no gun fire mid-cast');
-s.time+=XAB_REC+.01;ph.triggerHeld=false;assert.notEqual(s.fire(ph),false,'gun back after the recovery');
+const XAB_REC=recoverTime('Phoenix','c',ph.weapon);assert.equal(XAB_REC,ph.weapon==='Classic'?.95:XAB_REC,'Blaze: 0.5 s unequip + Classic fast 0.45 s');
+assert(Math.abs(ph.fireAt-(s.time+XAB_REC))<1e-9,'equip cast holds the gun down on the server for unequip + re-equip');assert.equal(s.fire(ph),false,'no gun fire mid-cast');
+s.time+=XAB_REC-.02;ph.triggerHeld=false;assert.equal(s.fire(ph),false,'still re-equipping 20 ms before');s.time+=.03;ph.triggerHeld=false;assert.notEqual(s.fire(ph),false,'gun back after the recovery');
+// qa-34: per-ability unequip (wiki) + per-weapon fast / instant re-equip (wiki weapon pages), Empress +10 % equip speed
+for(const [a,ks] of Object.entries(ABILITY_EQUIP))for(const k of ks)assert(Number.isFinite(UNEQUIP[a]&&UNEQUIP[a][k]),a+' '+k+' has a wiki unequip time');
+assert.equal(recoverTime('Phoenix','q','Vandal'),1.3,'Hot Hands + Vandal: 0.7 + 0.6');assert.equal(recoverTime('Phoenix','e','Vandal'),.68,'Curveball instant re-equip: 0.48 + 0.2');assert.equal(recoverTime('Raze','c','Operator'),.9,'Boom Bot 0 s + Operator fast 0.9');
+assert.equal(recoverTime('Killjoy','x','Knife'),.45,'Lockdown 0.15 + knife fast 0.3');assert.equal(recoverTime('Reyna','c','Phantom'),.7,'Leer instant: 0.5 + 0.2');assert.equal(recoverTime('Sage','q','Vandal',1.1),Math.round((.4+.6/1.1)*1e6)/1e6,'stim');
+{const u={agent:'Breach',weapon:'Odin',empress:false};assert.equal(abilityRecover(u)('x'),1.15,'Rolling Thunder + Odin 0.4 + 0.75');}
+for(const w of Object.keys(REEQUIP))if(w!=='Knife')assert(REEQUIP[w][1]<REEQUIP[w][0],w+' instant < fast');
 j.ability.c=1;j.fireAt=0;assert.equal(s.command(j,{t:'ab',k:'c'}),true,'Cloudburst cast');assert(!(j.fireAt>s.time),'quick-cast keeps the gun up');
 // effect values checked against the wiki (work/validation/abilities-wiki.txt): Cloudburst 2.5 s, Hot Hands 60 dps, Nanoswarm 5 s
 {const {tickAbilities}=await import('./src/abilities.js'),cb=s.effects.filter(e=>e.kind==='cloudburst').pop();assert(cb,'Cloudburst projectile');let n=0;while(cb.kind==='cloudburst'&&n++<200){s.time+=.05;tickAbilities(s,.05);}
@@ -59,4 +67,4 @@ assert(Math.abs(DEV.curveball.windup-.4)<1e-9&&Math.abs(ULT.quake.delay-1)<1e-9&
  const cl=shot('q',{pw:7,b:9});assert(cl.pw===1&&cl.b===2,'charge / bounces clamped');const bad=shot('q',{pw:'x',b:'2; drop'});assert(bad.pw===1&&bad.b===0,'junk -> full charge, no bounce');
  const leg=shot('q',{});assert(leg.pw===1&&leg.b===0,'an older client: full-charge, no-bounce bolt');
  const P=SB.path([0,1.6,0],[0,0,-1],1,2,W2.rayN,()=>0);assert.equal(P.pts.length,4,'two bounces recorded');}
-console.log('Ability equip (server): kit table matches the wiki, equip casts hold fire for '+XAB_REC+' s, quick-casts do not; Cloudburst projectile (tap arc / steered while C held / smoke on contact or after 2 s, 2.5 s), Hot Hands 60/s spreading to 4.5 m over 0.75 s, Nanoswarm 5 s; wiki windups (Aftershock / Flashpoint / Fault Line / Leer / Curveball / Rolling Thunder / Trapwire / Trademark / Tour De Force); Sova bolt charge + 0-2 bounces');
+console.log('Ability equip (server): kit table matches the wiki, equip casts hold fire for the ability unequip + weapon re-equip (Blaze + Classic '+recoverTime('Phoenix','c','Classic')+' s), quick-casts do not; Cloudburst projectile (tap arc / steered while C held / smoke on contact or after 2 s, 2.5 s), Hot Hands 60/s spreading to 4.5 m over 0.75 s, Nanoswarm 5 s; wiki windups (Aftershock / Flashpoint / Fault Line / Leer / Curveball / Rolling Thunder / Trapwire / Trademark / Tour De Force); Sova bolt charge + 0-2 bounces');

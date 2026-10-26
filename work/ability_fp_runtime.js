@@ -6,7 +6,8 @@
 // models/valorant/animations/FP_Abilities.glb (work/build_ability_anims.py), exactly as the shared weapon clips work.
 // Phases follow the equip flow (J.eq, work/ability_equip_runtime.js): draw = equip clip over the wiki equip time
 // (XAB_EQT / q.d0), ready / hold = idle loop, rel = clip start -> release frame over XABT.rel, rec = release frame -> end
-// over XABT.rec, then the gun's native equip replays. Instant casts (no equip in Valorant) play the cast clip over the
+// over the ability's wiki unequip time (q.rec, xUneqT), then the gun's native equip replays over its fast / instant
+// re-equip time (VM.sw, xReeqT). Instant casts (no equip in Valorant) play the cast clip over the
 // XCA window. The ability item (a native prop glb or an energy orb) is held in the hand bone and leaves it at release.
 // Archetype clip sets: eq / idle / cast (FIRE) / alt (ALT FIRE), the hand that holds the item, the release fraction of
 // each cast clip (peak palm speed measured on the clips, work/qa/abilfx/NOTES.md) and the idle play rate.
@@ -310,7 +311,7 @@ function xAfTick(dt) {
   if (XAF.cur && XAF.cur.guns) for (const x in XAF.cur.guns) { XAF.cur.guns[x].g.visible = false; if (XAF.cur.guns[x].l) XAF.cur.guns[x].l.visible = false; }
   const k = q ? q.k : XAF.qk || "c", sp = xAfSpec(ag, k), set = XAF_SET[sp.s] || XAF_SET.nade;
   let P;
-  if (q) P = xAfPhase(set, q, XABT.rel, XABT.rec);
+  if (q) P = xAfPhase(set, q, XABT.rel, q.rec || XABT.rec); // rec: this ability's wiki unequip time (xUneqT)
   else { const T = XCA.D + XCA.G + XCA.U, u = Math.min(1, XCA.t / T); P = { ph: "quick", clip: set.cast, u, item: u < set.rel }; }
   XAF.on = true; XAF.mode = P.ph;
   const R = xAfReady(ag); if (!R) { if (XAF.cur) XAF.cur.root.visible = false; XAF.last = { ag, k, set: sp.s, ph: P.ph, clip: P.clip, u: P.u, item: false, rig: false }; return; } // still loading (or failed): no hands, never the old primitives
