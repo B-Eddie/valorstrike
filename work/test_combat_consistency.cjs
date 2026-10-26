@@ -62,5 +62,5 @@ console.log('Combat consistency: server hit volumes = client bone hitboxes, shar
    T.setPel(true);assert.equal(c.wDmg(X,part,d),one,`${g} ${part} @${d} one pellet`);
    T.setPel(false);assert.equal(c.wDmg(X,part,d),Math.min(150,Math.round(one*X.pel*clamp(d,X.ffd))),`${g} ${part} @${d} bot shot`);n++;}}
  T.setPel(true);for(const d of [5,20])for(const part of ['head','body','legs'])assert.equal(c.wDmg(T.WEAP.Bucky.alt,part,d),T.wDmg0(T.WEAP.Bucky.alt,part,d),'Bucky alt keeps the base falloff');
- assert.equal(c.wDmg(T.WEAP.Bucky.alt,'body',20),T.WEAP.Bucky.alt.ff[0]);
+ assert.equal(c.wDmg(T.WEAP.Bucky.alt,'body',10),T.WEAP.Bucky.alt.ff[0]);assert.equal(c.wDmg(T.WEAP.Bucky.alt,'body',20),T.WEAP.Bucky.alt.ff2[0]);/* qa-36: e8e1030 gave the alt pellets the primary's 3-step table (8 / 12 m): past 12 m = ff2 (9) */
  console.log(`Shotgun damage: ${n} gun x range x part cases (one pellet in the player's loop, expected pellets for a bot's shot), Bucky alt falloff kept`);}
