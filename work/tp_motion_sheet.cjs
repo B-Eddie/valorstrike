@@ -2,7 +2,7 @@
 //   node work/tp_motion_sheet.cjs <scenario> <out.png> [agent] [cells] [view side|front|back|q]
 // scenarios: jump (standing jump), runjump (5.4 m/s run + jump), run (5.4 m/s), walk (3.24 m/s shift-walk), strafe (A at 5.4),
 // diag (W+A), back (S), stop (run then release), jiggle (A/D peek), crouch (crouch-walk 2.0), turn (turn in place 90 deg).
-// Also prints foot-slide numbers: planted-foot world drift (cm) per contact.
+// Also prints foot-slide numbers: world drift (cm) of each foot contact (foot bone within 1.2 cm of its standing height).
 const {sim,T}=require('./tp_anim_sim.cjs'),{render}=require('./rig_harness.cjs'),fs=require('fs'),cp=require('child_process');
 const SC={
  jump:{T:.9,pre:.4,f:(t)=>({x:0,z:0,y:arc(t-.4)})},
@@ -24,9 +24,9 @@ function jig(t){ // 0.15 s out at full accel, 0.15 back, 0.2 hold, repeated (the
 (async()=>{const [name='run',out='/tmp/tp.png',agent='jett',nc='8',view='side']=process.argv.slice(2),S=SC[name],n=+nc;if(!S)throw Error('scenario '+name);
  const sm=await sim(agent),dt=1/60,frames=Math.round(S.T/dt)+Math.round(S.pre/dt);const shots=[],files=[];const every=Math.max(1,Math.floor((frames-Math.round(S.pre/dt))/n));
  const stats={contacts:[],maxSlide:0};let plant=[null,null];
- for(let i=0;i<60;i++)sm.frame(dt,0,0,0,0,{cr:S.cr});
+ for(let i=0;i<60;i++)sm.frame(dt,0,0,0,0,{cr:S.cr});const fy0=Math.min(sm.at('L_Foot').y,sm.at('R_Foot').y);
  for(let i=1;i<=frames;i++){const t=i*dt,p=S.f(t);sm.frame(dt,p.x,p.y,p.z,p.yaw||0,{cr:S.cr});
-  ['L_Foot','R_Foot'].forEach((bn,k)=>{const f=sm.at(bn);const low=f.y-p.y<.16&&p.y<.01;if(low){if(!plant[k])plant[k]={x:f.x,z:f.z,d:0};else plant[k].d=Math.max(plant[k].d,Math.hypot(f.x-plant[k].x,f.z-plant[k].z));}else if(plant[k]){stats.contacts.push(+(plant[k].d*100).toFixed(1));plant[k]=null;}});
+  ['L_Foot','R_Foot'].forEach((bn,k)=>{const f=sm.at(bn);const low=f.y-p.y<fy0+.012&&p.y<.01;if(low){if(!plant[k])plant[k]={x:f.x,z:f.z,d:0};else plant[k].d=Math.max(plant[k].d,Math.hypot(f.x-plant[k].x,f.z-plant[k].z));}else if(plant[k]){stats.contacts.push(+(plant[k].d*100).toFixed(1));plant[k]=null;}});
   if(i>=Math.round(S.pre/dt)&&(i-Math.round(S.pre/dt))%every===0&&shots.length<n){const f=`/tmp/tpms-${shots.length}.png`;const cx=p.x,cz=p.z;
    const eye=view==='front'?[cx,1.0,cz+3.6]:view==='back'?[cx,1.3,cz-3.6]:view==='q'?[cx+2.6,1.4,cz+2.6]:[cx+3.6,1.0,cz];
    const g=[];for(let gx=-3;gx<3;gx++)for(let gz=Math.floor(cz)-3;gz<Math.floor(cz)+3;gz++){const c=(gx+gz)&1?[105,105,105]:[135,135,135];g.push([[gx,0,gz],[gx+1,0,gz+1],[gx+1,0,gz],c],[[gx,0,gz],[gx,0,gz+1],[gx+1,0,gz+1],c]);}
