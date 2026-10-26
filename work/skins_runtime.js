@@ -160,28 +160,78 @@ function xskAct(a, w, id, n) {
   xskRender(); return true;
 }
 function xskOpen(tab) { const root = xskBuild(); if (!root) return; XSK.tab = tab === 'store' ? 'store' : 'col'; XSK.w = null; XSK.pick = null; root.hidden = false; try { $('xQueue').hidden = true; } catch (e) {} xskRender(); }
-function xskClose() { const root = document.getElementById('xSk'); if (root) root.hidden = true; XSK.w = null; xskPvStop(); }
+function xskClose() { const root = document.getElementById('xSk'); if (root) root.hidden = true; XSK.w = null; xskPvStop(); XSK_PV.clear(); } // the preview's templates go with the page
+// 3D preview model (user, 2026-10-26: "when choosing skins in the collection, the 3D model isn't right - it's the blocky
+// version"): the preview used to clone xGun(w), the procedural placeholder, and only swap the native model in through
+// XGM / xskApply, which wait for xGmLoad - a fetch that starts on the first mode launch - so in the lobby every weapon and
+// skin showed the blocky gun. It now loads the authentic model the game draws for that weapon + skin variant on its own:
+// a skin = its own glb + descriptor (the same pair the third-person template xskTemplate builds from), Standard = the
+// native weapon glb + its manifest config (as xGmLoad builds XGM from), posed by xvStatic like both. Nothing is shown
+// until it is in (status line "Loading original model..."); the procedural mesh is never built here.
+var XSK_PV = new Map(); // "<weapon>|<id>" -> Promise(template); a few kept so flicking between variants is instant
+function xskPvSrc(w, id) { const a = xskAsset(w, id); if (a) return { model: a.model, skin: true, cfg: () => xskModelData(a).then((m) => m && m.descriptor) };
+  const f = (typeof XGM !== 'undefined' && XGM && XGM.F && XGM.F[w] && !/^skin\//.test(XGM.F[w]) ? XGM.F[w] : 'valorant/' + (w === 'Knife' ? 'melee' : w.toLowerCase())).split('/').pop();
+  return { model: f, skin: false, cfg: () => (XV.config || {})[f] }; }
+function xskPvTpl(w, id) {
+  id = xskDef(w, id).id; const key = w + '|' + id;
+  if (!XSK_PV.has(key)) { while (XSK_PV.size >= 4) XSK_PV.delete(XSK_PV.keys().next().value); const S = xskPvSrc(w, id);
+    XSK_PV.set(key, Promise.all([Promise.resolve().then(() => xvLoad(S.model)), Promise.resolve().then(S.cfg)]).then(([gl, cfg]) => {
+      try { if (!gl || !gl.scene) throw Error('Model unavailable: ' + S.model);
+        const inner = xvStatic(gl, cfg), rot = new THREE.Group(), T = new THREE.Group(); rot.add(inner); T.add(rot);
+        rot.rotation.y = -Math.PI / 2; // native Valorant weapons point -X (as xGmTpl): the muzzle ends up toward -Z
+        inner.traverse((o) => { if (o.isMesh) { o.castShadow = o.receiveShadow = false; o.frustumCulled = false; } });
+        T.name = 'xsk-preview'; T.userData.xskPv = { w, id, model: S.model }; return T; }
+      finally { if (S.skin) delete XV.cache[S.model]; } // as xskTemplate: skin glbs are not kept in the shared cache
+    }).catch((e) => { XSK_PV.delete(key); throw e; })); }
+  return XSK_PV.get(key);
+}
+// A soft studio environment for the preview only: the skins' PBR metal (metallicFactor 1 + ORM maps) renders near black
+// with direct lights alone. Built once per preview renderer from a tiny gradient room (like three's RoomEnvironment).
+function xskPvEnv(r) {
+  try { if (typeof THREE.PMREMGenerator !== 'function') return null; const es = new THREE.Scene(), g = new THREE.SphereGeometry(10, 24, 12), cols = [], c = new THREE.Color(), pos = g.attributes.position;
+    for (let i = 0; i < pos.count; i++) { const y = pos.getY(i) / 10; c.setRGB(0.18, 0.2, 0.24).lerp(new THREE.Color(0.85, 0.88, 0.95), Math.max(0, y) * 0.9 + 0.1); cols.push(c.r, c.g, c.b); }
+    g.setAttribute('color', new THREE.Float32BufferAttribute(cols, 3)); es.add(new THREE.Mesh(g, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.BackSide })));
+    const panel = (x, y, z, k) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(4, 2.5), new THREE.MeshBasicMaterial({ color: new THREE.Color(k, k, k), side: THREE.DoubleSide })); m.position.set(x, y, z); m.lookAt(0, 0, 0); es.add(m); };
+    panel(4, 5, 6, 3); panel(-6, 2, 2, 1.6); panel(0, -4, -6, 0.8);
+    const pm = new THREE.PMREMGenerator(r), t = pm.fromScene(es, 0.04).texture; pm.dispose(); es.traverse((o) => { if (o.geometry) o.geometry.dispose(); if (o.material) o.material.dispose(); }); return t;
+  } catch (e) { return null; }
+}
 // 3D preview: its own small renderer, created on open and released on leave (one extra context only while visible).
 function xskPreview() {
-  const cv = document.getElementById('xskCv'); if (!cv || typeof THREE === 'undefined' || typeof xGun !== 'function') return; let P = XSK.pv;
-  if (!P || P.cv !== cv) { if (P) xskPvStop(); try { P = XSK.pv = { cv, r: xShChk(new THREE.WebGLRenderer({ canvas: cv, alpha: true, antialias: true })), sc: new THREE.Scene(), cam: new THREE.PerspectiveCamera(30, 1, 0.01, 50), yaw: 1.05, pitch: 0.12, drag: null, w: 0, h: 0 }; } catch (e) { XSK.pv = null; return; }
+  const cv = document.getElementById('xskCv'); if (!cv || typeof THREE === 'undefined') return; let P = XSK.pv;
+  if (!P || P.cv !== cv) { if (P) xskPvStop(); try { P = XSK.pv = { cv, r: xShChk(new THREE.WebGLRenderer({ canvas: cv, alpha: true, antialias: true })), sc: new THREE.Scene(), cam: new THREE.PerspectiveCamera(30, 1, 0.01, 50), yaw: 1.05, pitch: 0.12, drag: null, w: 0, h: 0, key: null, state: 'idle' }; } catch (e) { XSK.pv = null; return; }
     P.r.setPixelRatio(Math.min(devicePixelRatio || 1, 2)); P.r.setClearColor(0, 0); if (THREE.sRGBEncoding) P.r.outputEncoding = THREE.sRGBEncoding;
-    P.sc.add(new THREE.HemisphereLight(0xeef3ff, 0x30343c, 1.1)); const k = new THREE.DirectionalLight(0xffffff, 1.2); k.position.set(2, 3, 4); P.sc.add(k); const rim = new THREE.DirectionalLight(0xff4655, 0.6); rim.position.set(-3, 1, -3); P.sc.add(rim);
+    if (THREE.ACESFilmicToneMapping) { P.r.toneMapping = THREE.ACESFilmicToneMapping; P.r.toneMappingExposure = 1.15; } // the game renderer's curve
+    P.env = xskPvEnv(P.r); if (P.env) P.sc.environment = P.env;
+    P.sc.add(new THREE.HemisphereLight(0xeef3ff, 0x30343c, P.env ? 0.5 : 1.1)); const k = new THREE.DirectionalLight(0xffffff, P.env ? 1.4 : 1.2); k.position.set(2, 3, 4); P.sc.add(k); const rim = new THREE.DirectionalLight(0xff4655, 0.6); rim.position.set(-3, 1, -3); P.sc.add(rim);
     P.piv = new THREE.Group(); P.sc.add(P.piv);
     cv.onpointerdown = (e) => { P.drag = { x: e.clientX, y: e.clientY, yaw: P.yaw, pitch: P.pitch }; try { cv.setPointerCapture(e.pointerId); } catch (er) {} };
     cv.onpointermove = (e) => { if (!P.drag) return; P.yaw = P.drag.yaw + (e.clientX - P.drag.x) * 0.012; P.pitch = Math.max(-0.9, Math.min(0.9, P.drag.pitch + (e.clientY - P.drag.y) * 0.008)); };
     cv.onpointerup = cv.onpointercancel = () => { P.drag = null; P.t0 = performance.now(); };
-    const tick = () => { if (XSK.pv !== P) return; P.raf = requestAnimationFrame(tick); const w = cv.clientWidth, h = cv.clientHeight; if (!w || !h) return;
-      if (w !== P.w || h !== P.h) { P.w = w; P.h = h; P.r.setSize(w, h, false); P.cam.aspect = w / h; P.cam.updateProjectionMatrix(); }
-      const status=document.getElementById('xskStatus'),u=P.gun&&P.gun.userData;if(status&&u)status.textContent=u.xskPending?'Loading original skin…':u.xskError?'Skin failed to load. Select it again to retry.':'';
+    const tick = () => { if (XSK.pv !== P) return; P.raf = requestAnimationFrame(tick); const w = cv.clientWidth, h = cv.clientHeight;
+      const status = document.getElementById('xskStatus'); if (status) { const t = xskPvStatus(P); if (status.textContent !== t) status.textContent = t; }
+      if (!w || !h) return;
+      if (w !== P.w || h !== P.h) { P.w = w; P.h = h; P.r.setSize(w, h, false); P.cam.aspect = w / h; P.cam.updateProjectionMatrix(); xskPvFrame(P); }
       if (!P.drag && performance.now() - (P.t0 || 0) > 2500) P.yaw += 0.006; P.piv.rotation.set(P.pitch, P.yaw, 0); P.r.render(P.sc, P.cam); };
-    P.raf = requestAnimationFrame(tick); }
-  const w = XSK.w, id = xskValidFor(w, XSK.pick) ? XSK.pick : xskGet(w);
-  if (P.key !== w) { if (P.obj) P.piv.remove(P.obj); const g = xGun(w), box = new THREE.Box3().setFromObject(g), c = box.getCenter(new THREE.Vector3()), s = box.getSize(new THREE.Vector3()), L = Math.max(s.x, s.y, s.z) || 1;
-    const hold = new THREE.Group(); g.position.sub(c); hold.add(g); hold.scale.setScalar(1 / L); if (w === 'Knife') hold.rotation.z = 0.5; P.gun = g; P.obj = hold; P.piv.add(hold); P.key = w; P.cam.position.set(0, 0.05, 1.65); P.cam.lookAt(0, 0, 0); }
-  xskApply(P.gun, w, id);
+    xskPvFrame(P); P.raf = requestAnimationFrame(tick); }
+  const w = XSK.w, id = xskDef(w, xskValidFor(w, XSK.pick) ? XSK.pick : xskGet(w)).id, key = w + '|' + id;
+  if (P.key === key && P.state !== 'error') return;
+  if (P.obj) { P.piv.remove(P.obj); P.obj = null; } P.gun = null; P.key = key; P.skin = id !== 'standard'; P.state = 'loading'; P.err = null;
+  xskPvTpl(w, id).then((T) => {
+    if (XSK.pv !== P || P.key !== key) return; // a newer pick (or leaving the page) wins over a late download
+    const g = T.clone(true); g.updateMatrixWorld(true); // skin knives are authored upright (long axis Y; Standard melee lies along Z): lay them down like the rest
+    { const b0 = new THREE.Box3().setFromObject(g), s0 = b0.getSize(new THREE.Vector3()); if (s0.y > s0.z && s0.y > s0.x) { g.rotation.x = -Math.PI / 2; g.updateMatrixWorld(true); } }
+    const box = new THREE.Box3().setFromObject(g), c = box.getCenter(new THREE.Vector3()), s = box.getSize(new THREE.Vector3()), L = Math.max(s.x, s.y, s.z) || 1;
+    const hold = new THREE.Group(); g.position.sub(c); hold.add(g); hold.scale.setScalar(1 / L); if (w === 'Knife') hold.rotation.z = 0.5;
+    P.gun = g; P.obj = hold; P.piv.add(hold); P.state = 'ready'; P.t0 = performance.now(); xskPvFrame(P);
+  }, (e) => { if (XSK.pv !== P || P.key !== key) return; P.state = 'error'; P.err = String(e); try { console.warn('Skin preview failed', w, id, e); } catch (er) {} });
 }
-function xskPvStop() { const P = XSK.pv; if (!P) return; XSK.pv = null; try { cancelAnimationFrame(P.raf); } catch (e) {} try { P.r.dispose(); if (P.r.forceContextLoss) P.r.forceContextLoss(); } catch (e) {} }
+function xskPvStatus(P) { return P.state === 'loading' ? (P.skin ? 'Loading original skin…' : 'Loading original model…') : P.state === 'error' ? 'Model failed to load. Select it again to retry.' : ''; }
+// Camera distance: the model is scaled to length 1 and turns on the turntable, so keep its length inside the width at any
+// aspect (narrow phone previews included) and never closer than the original 1.65 m framing.
+function xskPvFrame(P) { const vf = P.cam.fov * Math.PI / 360, hf = Math.atan(Math.tan(vf) * (P.cam.aspect || 1)), d = Math.max(1.65, 0.56 / Math.tan(hf));
+  P.cam.position.set(0, 0.05 * d / 1.65, d); P.cam.lookAt(0, 0, 0); }
+function xskPvStop() { const P = XSK.pv; if (!P) return; XSK.pv = null; try { cancelAnimationFrame(P.raf); } catch (e) {} try { if (P.env) P.env.dispose(); } catch (e) {} try { P.r.dispose(); if (P.r.forceContextLoss) P.r.forceContextLoss(); } catch (e) {} }
 function xskBuild() {
   let root = document.getElementById('xSk'); if (root) return root; if (!document.body) return null;
   const st = document.createElement('style'); st.id = 'xSkCss'; st.textContent = XSK_CSS; document.head.appendChild(st);
@@ -204,7 +254,7 @@ const XSK_CSS = '#xSk{position:fixed;inset:0;z-index:38;display:flex;flex-direct
   '#xSk .xsk-wv{display:grid;grid-template-columns:minmax(200px,260px) 1fr;gap:16px;height:100%;min-height:0}#xSk .xsk-wl{display:flex;flex-direction:column;gap:6px;overflow:auto;min-height:0}#xSk .xsk-wl h3{margin:4px 0;font-size:22px;letter-spacing:.14em;text-transform:uppercase}' +
   '#xSk .xsk-back{align-self:flex-start;background:none;border:0;opacity:.7;min-height:44px;padding:0;letter-spacing:.1em;text-transform:uppercase;font-size:12px}' +
   '#xSk .xsk-sk{display:flex;gap:10px;align-items:center;text-align:left;background:rgba(236,232,225,.05);border:1px solid rgba(236,232,225,.12);padding:6px 8px;min-height:48px}#xSk .xsk-sk.on{border-color:#ff4655;background:rgba(255,70,85,.1)}#xSk .xsk-sk.lock{opacity:.75}#xSk .xsk-sk i{width:34px;height:34px;flex:none}#xSk .xsk-sk span{display:flex;flex-direction:column}' +
-  '#xSk .xsk-pv{position:relative;display:flex;flex-direction:column;min-height:0}#xSk #xskCv{flex:1;min-height:160px;width:100%;touch-action:none;cursor:grab}#xSk .xsk-pn{margin:0;display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}#xSk .xsk-pn b{font-size:18px;letter-spacing:.08em;text-transform:uppercase}#xSk .xsk-pn small{flex-basis:100%;color:rgba(236,232,225,.6)}' +
+  '#xSk .xsk-pv{position:relative;display:flex;flex-direction:column;min-height:0}#xSk #xskCv{flex:1;min-height:160px;width:100%;touch-action:none;cursor:grab}#xSk #xskStatus{position:absolute;left:0;right:0;top:38%;text-align:center;pointer-events:none;font-size:12px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:rgba(236,232,225,.72)}#xSk .xsk-pn{margin:0;display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}#xSk .xsk-pn b{font-size:18px;letter-spacing:.08em;text-transform:uppercase}#xSk .xsk-pn small{flex-basis:100%;color:rgba(236,232,225,.6)}' +
   '#xSk .xsk-ch{display:flex;gap:8px;margin:10px 0}#xSk .xsk-ch button{width:44px;height:44px;border:2px solid rgba(236,232,225,.2)}#xSk .xsk-ch button.on{border-color:#ece8e1;outline:2px solid #ff4655;outline-offset:2px}' +
   '#xSk .xsk-act{display:flex;gap:8px}#xSk .xsk-get,#xSk .xsk-eq{min-height:48px;padding:0 28px;border:0;font-weight:800;letter-spacing:.16em;text-transform:uppercase;font-size:13px}#xSk .xsk-get{background:#ff4655;color:#0f1923}#xSk .xsk-eq{background:#ece8e1;color:#0f1923}#xSk .xsk-eq[disabled]{opacity:.55;cursor:default}' +
   '#xSk .xsk-free{font-weight:800;letter-spacing:.14em;color:#5fffb0}' +
@@ -224,5 +274,5 @@ try { const inv = document.getElementById('navInv'); if (inv) inv.onclick = () =
   const il = document.getElementById('invList'); if (il) { il.hidden = true; il.style.display = 'none'; const p = il.previousElementSibling; if (p && p.tagName === 'P') p.hidden = true; }
   const hi = document.getElementById('hInv'); if (hi) hi.textContent = 'Sprays'; } catch (e) {}
 try { xskApplyAll(true); } catch (e) {}
-window.xValorantSkins={state:XSK,open:xskOpen,equip:xskEquip,give:xskGive,apply:xskApply,template:xskTemplate};
+window.xValorantSkins={state:XSK,open:xskOpen,equip:xskEquip,give:xskGive,apply:xskApply,template:xskTemplate,previewTemplate:xskPvTpl};
 // ---- END WEAPON SKINS ----
