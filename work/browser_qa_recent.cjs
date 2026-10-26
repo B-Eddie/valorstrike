@@ -39,12 +39,14 @@ const ONLY=(process.env.PARTS||'A,B,C,D').split(',');
  const click=async(hold)=>{await X('window.__ts=0.05;1');await frames(1);await page.mouse.down();await simWait(hold||0.05,'click');await page.mouse.up();await X('window.__ts=1;1');};
  await page.goto('http://127.0.0.1:8876/',{waitUntil:'domcontentloaded'});await page.waitForFunction(()=>window.__xe&&window.xValorantAssets,null,{timeout:180000,polling:1000});log('assets',1);
  await page.getByRole('button',{name:'Got it',exact:true}).click({timeout:5000}).catch(()=>{});
+ await page.mouse.move(320,180); // hk-35: the mouse sits at the centre, so a pointer-lock / drag movement event on the first click carries no delta (qa_recent4: pitch 0.30 by the TDF and Resurrection casts, the crosshair above the target)
  const go=async(agent)=>{await X(`try{leave()}catch(e){}1`);await page.waitForTimeout(1500);
   await X(`FV.pick='ascent';J.pick=${JSON.stringify(agent)};window.xSwift=false;setTimeout(()=>xGo(startFive),0);1`);
   await page.waitForFunction(()=>window.__xe('running&&!window.xLdOn&&bots.length>0'),null,{timeout:1200000,polling:2000});
   await X(`[...document.querySelectorAll('button')].filter(b=>/^got it$/i.test(b.textContent.trim())&&b.offsetParent).forEach(b=>b.click());if(!window.__gd){window.__gd=1;const h=hurt;hurt=function(t){if(t===player&&window.__god)return;return h.apply(this,arguments);};}1`);
   await X(`if(!window.__rp){window.__rp=1;window.__allow=3;const r0=renderer.render;renderer.render=function(sc,c){if(sc===scene){if(window.__allow<=0)return;window.__allow--;}return r0.call(this,sc,c);};}if(!window.__simH){window.__simH=1;window.__sim=0;const s0=xSimStep;xSimStep=function(d){const r=s0.apply(this,arguments);window.__sim+=d;return r;};}1`);
   await X('window.__god=1;bots.concat(allies).forEach(u=>u.nt=true);FV.buy=Math.min(FV.buy,0.2);1');
+  await X(`if(!window.__sayH){window.__sayH=1;window.__say=[];const f=say;say=function(t){try{window.__say.push(String(t).slice(0,90));if(window.__say.length>30)window.__say.shift();}catch(e){}return f.apply(this,arguments);};}1`);
   await page.waitForFunction(()=>window.__xe('FV.buy<=0'),null,{timeout:900000,polling:1000}).catch(e=>log('buy end wait',String(e).slice(0,80)));
   // everyone else far away, the player on open floor facing its own forward
   await X(`bots.concat(allies).forEach((u,i)=>{u.g.position.set(player.x+200+i*3,player.y-50,player.z+200);});J.cd={c:0,q:0,e:0,x:0};1`);
@@ -52,6 +54,8 @@ const ONLY=(process.env.PARTS||'A,B,C,D').split(',');
  // a spot d m straight ahead of the camera on the player's floor (null when a wall is in between)
  const ahead=d=>XJ(`(()=>{const fx=-Math.sin(yaw),fz=-Math.cos(yaw),x=player.x+fx*${d},z=player.z+fz*${d};let ok=true;for(let r=.5;r<=${d};r+=.5)if(blocked(player.x+fx*r,player.z+fz*r,.3,player.y))ok=false;return {x,z,ok};})()`);
  const faceOpen=async d=>{for(let k=0;k<16;k++){const a=await ahead(d);if(a.ok)return a;await X(`yaw+=Math.PI/8;1`);}return await ahead(d);};
+ // hk-35: point the crosshair at a world point (yaw / pitch from the eye) right before a shot or a cast
+ const aimAt=(x,y,z)=>XJ(`(()=>{const e=pEyeTo(new THREE.Vector3());yaw=Math.atan2(-((${x})-e.x),-((${z})-e.z));pitch=Math.atan2((${y})-e.y,Math.hypot((${x})-e.x,(${z})-e.z));return {yaw:+yaw.toFixed(3),pitch:+pitch.toFixed(3)};})()`);
 
  if(ONLY.includes('A'))try{
   await go('Cypher');await X('J.c=2;1');const sp=await faceOpen(7);log('A open lane',sp);
@@ -78,15 +82,23 @@ const ONLY=(process.env.PARTS||'A,B,C,D').split(',');
  if(ONLY.includes('B'))try{
   await go('Chamber');const sp=await faceOpen(10);log('B open lane',sp);
   const place=async(hp)=>X(`(()=>{const b=bots.filter(b=>b.alive)[0];window.__cb=b;b.hp=${hp};b.armor=0;b.g.position.set(${sp.x},player.y,${sp.z});if(b.g.updateMatrixWorld)b.g.updateMatrixWorld(true);return 1;})()`);
-  await X('J.q=2;BC.eq="";BC.cd=0;1');await key('KeyQ');const e=await XJ(`{eq:BC.eq,cd:+BC.cd.toFixed(2),q:J.q}`);log('B Headhunter equip',e);
-  check('Headhunter: Q holds it (BC.eq hp; equip cd logged, <= 0.3 s)',e.eq==='hp'&&e.cd<=0.3,e);await simWait(0.4,'hh equip');
+  // hk-35: qa_recent3/4 read cd 0 after the key (one full-speed frame after __ts went back to 1 ran the 0.3 s out). Now the key
+  // goes down at __ts 0.05, the equip is read in the same dilated stretch: cd left + game time since the press = the equip time.
+  await X('J.q=2;BC.eq="";BC.cd=0;window.__ts=0.05;1');await page.keyboard.down('KeyQ');await page.waitForFunction(()=>window.__xe('BC.eq==="hp"'),null,{timeout:300000,polling:100}).catch(()=>{});
+  const e=await XJ(`{eq:BC.eq,cd:+BC.cd.toFixed(3),q:J.q,s0:window.__sim}`);await simWait(0.02,'hh key');await page.keyboard.up('KeyQ');
+  const e2=await XJ(`{cd:+BC.cd.toFixed(3),s1:window.__sim}`);await X('window.__ts=1;1');e.equip=+(e2.cd+(e2.s1-e.s0)+0).toFixed(3);e.cd2=e2.cd;
+  // a click inside the equip does not fire (still at __ts 0.05)
+  log('B Headhunter equip',e);
+  check('Headhunter: Q holds it (BC.eq hp) with a 0.3 s equip (cd at the press 0.3 +- one 0.05-dilated frame, gone by 0.3 s of game time)',e.eq==='hp'&&e.cd>0.2&&e.cd<=0.3&&e2.cd>0,e);await simWait(0.4,'hh equip');
+  const e3=await XJ(`{cd:+BC.cd.toFixed(3)}`);log('B Headhunter equip done',e3);check('Headhunter: the equip is over after 0.4 s of game time (cd 0)',e3.cd===0,e3);
   await place(300);await shot('headhunter-held');await click(0.05);await simWait(0.1,'shot');
   const h=await XJ(`{hp:window.__cb.hp,q:J.q,eq:BC.eq}`);log('B Headhunter shot',h);
   check('Headhunter: one click fires one round (Q charge spent) for 159 head / 55 body / 46 legs, no falloff at 10 m',h.q===1&&[159,55,46].includes(300-h.hp),h);
   await X('BC.eq="";J.ult=K().u;BC.td=0;BC.cd=0;BC.sf.length=0;1');await key('KeyX');const u=await XJ(`{eq:BC.eq,td:BC.td,cd:+BC.cd.toFixed(2)}`);log('B TDF equip',u);
   check('Tour De Force: X holds it (5 rounds, 2.3 s equip)',u.eq==='sn'&&u.td===5&&u.cd>2&&u.cd<=2.31,u);await simWait(2.5,'tdf equip');
   const aim=()=>XJ(`(()=>{ray.setFromCamera(XC0,camera);ray.far=200;const h=ray.intersectObjects(solids.concat(bots.filter(b=>b.alive).flatMap(b=>[b.body,b.head])))[0];return {pitch:typeof pitch!=='undefined'?+pitch.toFixed(3):null,hit:h?(h.object.userData.bot?(h.object.userData.head?'head':'body'):'solid'):null,d:h?+h.distance.toFixed(2):null,cd:+BC.cd.toFixed(2),eq:BC.eq};})()`);
-  await place(100);await frames(1);log('B TDF aim (hk-34: qa_recent3 TDF missed the bot the Headhunter hit)',await aim());await X('window.__h0=window.__cb.hp;1');await click(0.05);await simWait(0.15,'tdf shot');
+  await place(100);await frames(1);log('B TDF aim before (hk-34: qa_recent3 TDF missed the bot the Headhunter hit; qa_recent4 pitch 0.302)',await aim());
+  await aimAt(sp.x,'player.y+1.1',sp.z);await frames(1);log('B TDF aim (hk-35: crosshair put on the chest)',await aim());await X('window.__h0=window.__cb.hp;1');await click(0.05);await simWait(0.15,'tdf shot');
   const f=await XJ(`(()=>{const b=window.__cb,s=BC.sf[BC.sf.length-1];return {alive:b.alive,hp:b.hp,pos:[b.g.position.x,b.g.position.y,b.g.position.z].map(v=>+v.toFixed(2)),scope:typeof ads!=='undefined'?ads:null,td:BC.td,n:BC.sf.length,r:s&&s.r,t:s&&+s.t.toFixed(2),drawn:!!(s&&s.m.parent===scene&&s.m.visible),d:s?+Math.hypot(s.p.x-b.g.position.x,s.p.z-b.g.position.z).toFixed(2):null,slowIn:s?sgSlow(new THREE.Vector3(s.p.x+2,0,s.p.z)):null,slowOut:s?sgSlow(new THREE.Vector3(s.p.x+7,0,s.p.z)):null};})()`);
   log('B TDF kill',f);await shot('tdf-field');
   check('Tour De Force: a kill leaves a 6 m slow field drawn under the victim (50 % inside, none outside)',!f.alive&&f.td===4&&f.n>=1&&f.r===6&&f.drawn&&f.d<1.5&&f.slowIn===0.5&&f.slowOut===1,f);
@@ -102,11 +114,13 @@ const ONLY=(process.env.PARTS||'A,B,C,D').split(',');
   // Resurrection: a dead ally 5 m in front
   const sp=await faceOpen(5);await X(`(()=>{const a=allies.filter(a=>a.alive)[0];window.__ra=a;a.g.position.set(${sp.x},player.y,${sp.z});allyDie(a,'QA','Vandal');J.ult=K().u;J.rz=null;})();1`);
   log('C rez look (hk-34: qa_recent3 no channel after 62eca0a)',await XJ(`(()=>{const a=window.__ra,e=pEyeTo(new THREE.Vector3()),d=jAim(),v=new THREE.Vector3(a.g.position.x,a.g.position.y+1,a.g.position.z).sub(e),l=v.length();return {alive:a.alive,idx:allies.indexOf(a),dead:allies.filter(x=>!x.alive).length,e:[e.x,e.y,e.z].map(x=>+x.toFixed(2)),d:[d.x,d.y,d.z].map(x=>+x.toFixed(2)),a:[a.g.position.x,a.g.position.y,a.g.position.z].map(x=>+x.toFixed(2)),l:+l.toFixed(2),cos:+(v.dot(d)/l).toFixed(3),reach:XPAR2.rez.reach,found:!!sgLook(allies.filter(x=>!x.alive),XPAR2.rez.reach,0.8),ult:J.ult,u:K().u};})()`));
-  await simWait(0.6,'corpse');await cast('KeyX',0.8);const r0=await XJ(`{rz:!!J.rz,t:J.rz?+J.rz.t.toFixed(2):null,crystal:!!(J.rz&&J.rz.m.parent===scene),alive:window.__ra.alive}`);log('C rez cast',r0);
+  await simWait(0.6,'corpse');await aimAt('window.__ra.g.position.x','window.__ra.g.position.y+1','window.__ra.g.position.z');await X('window.__say.length=0;1');
+  await cast('KeyX',0.8);const r0=await XJ(`{rz:!!J.rz,t:J.rz?+J.rz.t.toFixed(2):null,crystal:!!(J.rz&&J.rz.m.parent===scene),cy:J.rz?+J.rz.m.position.y.toFixed(2):null,floor:+window.__ra.g.position.y.toFixed(2),alive:window.__ra.alive,pitch:+pitch.toFixed(3),ult:J.ult,eq:J.eq?{k:J.eq.k,st:J.eq.st}:null,say:window.__say.slice(-4)}`);log('C rez cast',r0);
   check('Resurrection: X (equip + click) on a dead ally in front starts the 3.3 s channel with the crystal drawn',r0.rz&&r0.t>2.2&&r0.t<=3.3&&r0.crystal&&!r0.alive,r0);
-  await X('window.__rzT=J.rz?J.rz.t:0;1');await simWait(Math.max(0,(r0.t||3.3)-1.45),'windup');const r1=await XJ(`{alive:window.__ra.alive,cy:J.rz?+J.rz.m.position.y.toFixed(2):null}`);log('C rez at 2 s',r1);await shot('resurrection-rise');
+  await X('window.__rzT=J.rz?J.rz.t:0;1');await simWait(Math.max(0,(r0.t||3.3)-1.45),'windup');const r1=await XJ(`{alive:window.__ra.alive,cy:J.rz?+J.rz.m.position.y.toFixed(2):null,floor:+window.__ra.g.position.y.toFixed(2)}`);log('C rez at 2 s',r1);await shot('resurrection-rise');
   await simWait(1.5,'rise');const r2=await XJ(`{alive:window.__ra.alive,hp:window.__ra.hp,rz:!!J.rz}`);log('C rez at 3.5 s',r2);
   check('Resurrection: the ally is still down after the 2 s windup and stands (100 HP) by 3.5 s',!r1.alive&&r2.alive&&r2.hp===100&&!r2.rz,{r1,r2});
+  check('Resurrection: the crystal is drawn at the corpse (over its floor, not under the native map) while it rises',r0.cy!=null&&r0.cy>=r0.floor-1.05&&r1.cy!=null&&r1.cy>=r0.floor-1.05&&r1.cy<=r0.floor+1,{r0,r1});
  }catch(e){R.errors.push('part C '+String(e).slice(0,300));log('part C error',String(e).slice(0,300));}
  if(ONLY.includes('D'))try{
   await go('Raze');await X('J.q=1;J.cd.q=0;RS.pk.length=0;1');await faceOpen(8);await cast('KeyQ',0.8);await X('window.__ts=0.1;1');await frames(1);/* hk-34: qa_recent3 read the pack at t 1.48 and 5.03 (gone): the whole part runs at __ts 0.1 and follows the pack's own clock */
