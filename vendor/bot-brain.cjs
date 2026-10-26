@@ -366,19 +366,22 @@
  function tailwindDash(c){if(!c||!c.armed)return null;if(c.kills>0)return 'kill';if(c.hp<TAILWIND.hp||c.hp0-c.hp>=TAILWIND.lost)return 'hurt';if(c.left<TAILWIND.last)return 'expiring';return null;}
  function tailwindKeys(rand){return {f:-1,s:rand()<.5?-1:1};}
  // ---- Buy phase: bots mill around spawn, then line up at the spawn barrier (server bots.js buyMill, offline
- // work/bot_variety_runtime.js xbbTick). The barrier is the plane both builds already clamp players to during the buy
- // phase: z = s*edge with edge = min(|attacker z|, |defender z|) - 7 (map.json spawns) and s the side's sign (attackers +z);
- // inside = s*z >= edge. Bots walk only on BUY_AREA: the spawn's own connected nav region with every node at least
- // BUY.margin inside the barrier, so a route can never lead through it; standing spots sit BUY.depth inside (a 0.4 m
- // capsule never touches the wall) and BUY.gap apart.
+ // work/bot_variety_runtime.js xbbTick). The barrier = the side's spawn walls (vendor/spawn-barriers.cjs pieces: vertical
+ // panels in the spawn's real exits, {ax, az, bx, bz, nx, nz: unit normal into spawn, tx, tz: unit along, len}); every
+ // player and bot collides with them while the buy phase runs. Bots walk only on BUY_AREA: the spawn's own connected nav
+ // region reached without crossing a wall, every node BUY.margin+ from every wall, so a route can never lead through one;
+ // standing spots sit BUY.depth inside the wall on its spawn side (a 0.4 m capsule never touches it) and BUY.gap apart.
  const BUY={margin:.5,depth:[.55,.7],gap:.9,peek:[.3,.55],wander:[1.5,6],run:4.6};
- function buyEdge(atk,def){return Math.min(Math.abs(atk[2]),Math.abs(def[2]))-7;}
- function buySide(anchor){return anchor[2]<0?-1:1;}
+ function buyOri(ax,az,bx,bz,cx,cz){return Math.sign((bx-ax)*(cz-az)-(bz-az)*(cx-ax));}
+ // nearest wall to (x, z) -> {w: the piece, d: metres, t: metres along it, inside: on its spawn side} | null
+ function buyNear(walls,x,z){let best=null;for(const w of walls||[]){const t=Math.max(0,Math.min(w.len,(x-w.ax)*w.tx+(z-w.az)*w.tz)),d=Math.hypot(w.ax+w.tx*t-x,w.az+w.tz*t-z);if(!best||d<best.d)best={w,d,t,inside:(x-w.ax)*w.nx+(z-w.az)*w.nz>=0};}return best;}
+ // the step a -> b crosses a wall -> the piece | null
+ function buyCross(walls,ax,az,bx,bz){for(const w of walls||[])if(buyOri(ax,az,bx,bz,w.ax,w.az)*buyOri(ax,az,bx,bz,w.bx,w.bz)<0&&buyOri(w.ax,w.az,w.bx,w.bz,ax,az)*buyOri(w.ax,w.az,w.bx,w.bz,bx,bz)<0)return w;return null;}
  // ok(i): the node is playable. -> {f: Uint8Array flags, list: node ids} (empty when start is not inside)
- function buyArea(nodes,adj,start,s,edge,ok){
-  const f=new Uint8Array(nodes.length),list=[],inside=i=>s*nodes[i][2]>=edge+BUY.margin&&(!ok||ok(i));
+ function buyArea(nodes,adj,start,walls,ok){
+  const f=new Uint8Array(nodes.length),list=[],inside=i=>{const n=buyNear(walls,nodes[i][0],nodes[i][2]);return (!n||n.d>=BUY.margin)&&(!ok||ok(i));};
   if(start==null||start<0||!inside(start))return {f,list};f[start]=1;list.push(start);
-  for(let k=0;k<list.length;k++)for(const j of adj[list[k]])if(!f[j]&&inside(j)){f[j]=1;list.push(j);}
+  for(let k=0;k<list.length;k++){const a=nodes[list[k]];for(const j of adj[list[k]])if(!f[j]&&inside(j)&&!buyCross(walls,a[0],a[2],nodes[j][0],nodes[j][2])){f[j]=1;list.push(j);}}
   return {f,list};}
  // A* inside the area; cost(i): extra metres for entering node i (a node whose capsule touches a prop), may be omitted.
  function buyRoute(nodes,adj,area,a,b,cost){
@@ -391,33 +394,36 @@
    for(const j of adj[i]){if(!area.f[j]||done.has(j))continue;const c=g.get(i)+Math.hypot(nodes[i][0]-nodes[j][0],nodes[i][2]-nodes[j][2])+Math.abs(nodes[i][1]-nodes[j][1])*.2+(cost?cost(j):0);
     if(!(g.get(j)<=c)){g.set(j,c);prev.set(j,i);push(j,c+h(j));}}}
   return [];}
- // Where a planned route (node ids from spawn toward the bot's first round goal) leaves spawn: the first crossing of the
- // barrier plane -> {x, y, z, dx, dz} with (dx, dz) the unit heading out along the route (always some way out through the
- // barrier, never back into spawn), or null when the route does not start inside / never crosses.
- function buyExit(nodes,path,s,edge){
-  if(!path||path.length<2||s*nodes[path[0]][2]<edge)return null;
-  for(let k=1;k<path.length;k++){const a=nodes[path[k-1]],b=nodes[path[k]];if(s*b[2]>=edge)continue;
-   const t=(s*a[2]-edge)/((s*a[2]-s*b[2])||1),x=a[0]+(b[0]-a[0])*t,y=a[1]+(b[1]-a[1])*t;
+ // Where a planned route (node ids from spawn toward the bot's first round goal) leaves spawn: the first step that
+ // crosses one of the walls -> {x, y, z, dx, dz, w} with (x, z) the crossing, w the wall and (dx, dz) the unit heading
+ // out along the route (always some way out through the wall, never back into spawn), or null when it never crosses.
+ function buyExit(nodes,path,walls){
+  if(!path||path.length<2)return null;
+  for(let k=1;k<path.length;k++){const a=nodes[path[k-1]],b=nodes[path[k]],w=buyCross(walls,a[0],a[2],b[0],b[2]);if(!w)continue;
+   const da=(a[0]-w.ax)*w.nx+(a[2]-w.az)*w.nz,db=(b[0]-w.ax)*w.nx+(b[2]-w.az)*w.nz,t=da/((da-db)||1),x=a[0]+(b[0]-a[0])*t,z=a[2]+(b[2]-a[2])*t,y=a[1]+(b[1]-a[1])*t;
    let m=k,acc=0;while(m+1<path.length&&acc<5){const p=nodes[path[m]],q=nodes[path[m+1]];acc+=Math.hypot(q[0]-p[0],q[2]-p[2]);m++;}
-   const f=nodes[path[m]];let dx=f[0]-x,dz=s*(s*edge-f[2]),l=Math.hypot(dx,dz);/* dz here: metres out past the barrier */
-   if(l<.5){dx=0;dz=1;l=1;}dx/=l;dz/=l;if(dz<.4){dz=.4;dx=Math.sign(dx||1)*Math.sqrt(1-.16);}
-   return {x,y,z:s*edge,dx,dz:-s*dz};}
+   const f=nodes[path[m]];let dx=f[0]-x,dz=f[2]-z,l=Math.hypot(dx,dz);if(l<.5){dx=-w.nx;dz=-w.nz;l=1;}dx/=l;dz/=l;
+   // at least 0.4 of the heading points out through the wall (-n)
+   let o=-(dx*w.nx+dz*w.nz);if(o<.4){const al=dx*w.tx+dz*w.tz,s=Math.sign(al||1)*Math.sqrt(1-.16);dx=-w.nx*.4+w.tx*s;dz=-w.nz*.4+w.tz*s;}
+   return {x,y,z,dx,dz,w};}
   return null;}
- // A standing spot just inside the barrier at that exit: BUY.depth inside, shifted along the barrier in 0.5 m steps
+ // A standing spot just inside that wall: BUY.depth in from it on its spawn side, shifted along it in 0.5 m steps
  // (alternating sides, seeded) until it is free and BUY.gap from every spot a teammate took: the front row within 2.25 m of
- // the exit, a second row 0.75 m behind it (staggered half a step, like players stacking in a doorway), then wider. ok(x, z) -> [floorY, node] where a capsule may stand and walk to from its area node, else null.
- function buySpot(exit,s,edge,taken,rand,ok){
-  const depth=BUY.depth[0]+rand()*(BUY.depth[1]-BUY.depth[0]),side=rand()<.5?-1:1;
-  for(const [row,reach] of [[0,9],[1,9],[0,40],[1,40],[2,40],[3,40]]){const z=s*(edge+depth+row*.75);
-   for(let i=0;i<=reach;i++){const x=exit.x+(i?Math.ceil(i/2)*(i%2?side:-side):0)*.5+(row%2)*.25*side;
-    if(taken.some(t=>Math.hypot(t[0]-x,t[2]-z)<BUY.gap))continue;const r=ok(x,z);if(!r)continue;return {p:[x,r[0],z],node:r[1]};}}
+ // the exit, a second row 0.75 m behind it (staggered half a step, like players stacking in a doorway), then wider; a
+ // spot whose nearest wall is nearer than BUY.depth (a corner where two walls meet) is skipped. ok(x, z) -> [floorY,
+ // node] where a capsule may stand and walk to from its area node, else null.
+ function buySpot(exit,walls,taken,rand,ok){
+  const w=exit.w,depth=BUY.depth[0]+rand()*(BUY.depth[1]-BUY.depth[0]),side=rand()<.5?-1:1,t0=(exit.x-w.ax)*w.tx+(exit.z-w.az)*w.tz;
+  for(const [row,reach] of [[0,9],[1,9],[0,40],[1,40],[2,40],[3,40]]){const dn=depth+row*.75;
+   for(let i=0;i<=reach;i++){const t=t0+(i?Math.ceil(i/2)*(i%2?side:-side):0)*.5+(row%2)*.25*side;if(t<-.5||t>w.len+.5)continue;const x=w.ax+w.tx*t+w.nx*dn,z=w.az+w.tz*t+w.nz*dn;
+    if(taken.some(q=>Math.hypot(q[0]-x,q[2]-z)<BUY.gap))continue;const nr=buyNear(walls,x,z);if(nr&&(nr.d<depth-1e-6||!nr.inside&&nr.d<1.5))continue;const r=ok(x,z);if(!r)continue;return {p:[x,r[0],z],node:r[1]};}}
   return null;}
- // A short wander target inside spawn: an area node BUY.wander m away, 1.2 m+ inside the barrier, clear of the points
+ // A short wander target inside spawn: an area node BUY.wander m away, 1.2 m+ from every wall, clear of the points
  // teammates stand on or walk to (avoid), ok(i) when given (not a node inside a prop). -> node id or -1.
- function buyWander(nodes,area,from,rand,avoid,s,edge,ok){
+ function buyWander(nodes,area,from,rand,avoid,walls,ok){
   const L=area.list;if(!L.length)return -1;
   for(let k=0;k<24;k++){const i=L[Math.floor(rand()*L.length)],n=nodes[i],d=Math.hypot(n[0]-from[0],n[2]-from[1]);
-   if(d<BUY.wander[0]||d>BUY.wander[1]||s*n[2]<edge+1.2)continue;if((ok&&!ok(i))||avoid.some(a=>Math.hypot(a[0]-n[0],a[1]-n[2])<1.4))continue;return i;}
+   if(d<BUY.wander[0]||d>BUY.wander[1])continue;const nr=buyNear(walls,n[0],n[2]);if(nr&&nr.d<1.2)continue;if((ok&&!ok(i))||avoid.some(a=>Math.hypot(a[0]-n[0],a[1]-n[2])<1.4))continue;return i;}
   return -1;}
  // One bot's buy-phase schedule (seeded): it stands at its spawn spot (the buy menu), walks a few short legs around spawn
  // with pauses and look-arounds (more for patient players), then walks to its barrier spot, timed so it arrives with a
@@ -488,5 +494,5 @@
  function mayFire(visibleFor,reactionS,losNow){return !!losNow&&visibleFor>=Math.max(REACT[0],reactionS||0);}
  // Fire-rate cap: never faster than the gun (Vandal 9.75 rounds/s). Returns the earliest next shot time.
  function nextShot(t,rate){return t+1/Math.max(.1,rate||1);}
- return {hash,rng,clamp,pickW,REACT,personality,reaction,crosshair,crosshairAt,firePattern,peek,attackPlan,defensePlan,roles,teamBuy,buyFor,onMateDeath,onSound,ATTACK,DEFENSE,utility,UTIL,turnStep,trackLag,wrapA,SPIKE,plantSpot,postPlant,retake,postPlay,SHOOT_UTIL,shootUtility,TAILWIND,tailwindDash,tailwindKeys,LEVEL,level,aimTraits,AIM_H,aimHeight,halfWidth,aimPlan,aimAt,readyToFire,planFire,idlePitch,recoilPull,discipline,hitPart,BUY,buyEdge,buySide,buyArea,buyRoute,buyExit,buySpot,buyWander,buyNew,buyTick,buyNext,buySep,SENS,cm360,sensOf,turnRate,SENSE,inView,audible,earSpot,memNew,memNote,memForget,memBest,repeek,mayFire,nextShot,areas,DFORM,GAP,midPoint,RESPOND,nearest,tradeSpot,follow};
+ return {hash,rng,clamp,pickW,REACT,personality,reaction,crosshair,crosshairAt,firePattern,peek,attackPlan,defensePlan,roles,teamBuy,buyFor,onMateDeath,onSound,ATTACK,DEFENSE,utility,UTIL,turnStep,trackLag,wrapA,SPIKE,plantSpot,postPlant,retake,postPlay,SHOOT_UTIL,shootUtility,TAILWIND,tailwindDash,tailwindKeys,LEVEL,level,aimTraits,AIM_H,aimHeight,halfWidth,aimPlan,aimAt,readyToFire,planFire,idlePitch,recoilPull,discipline,hitPart,BUY,buyArea,buyRoute,buyExit,buySpot,buyWander,buyNew,buyTick,buyNext,buySep,SENS,cm360,sensOf,turnRate,SENSE,inView,audible,earSpot,memNew,memNote,memForget,memBest,repeek,mayFire,nextShot,areas,DFORM,GAP,midPoint,RESPOND,nearest,tradeSpot,follow,buyNear,buyCross};
 });

@@ -184,9 +184,11 @@ function nmNear(C,x,z,y,yBand){let best=-1,bd=Infinity;const gx=Math.floor(x/2),
 // Select only nearby upward support. Never snap a falling actor onto a roof above its feet.
 function nmHeight(C,x,z,y){const i=nmNear(C,x,z,Number.isFinite(y)?y:undefined);if(i<0)throw Error('No valid navigation floor');const reference=Number.isFinite(y)?y:C.nav.nodes[i][1],ray=nmHeight.r||(nmHeight.r=new THREE.Ray(new THREE.Vector3(),new THREE.Vector3(0,-1,0)));ray.origin.set(x,reference+.32,z);ray.direction.set(0,-1,0);/* perf: one scratch ray (hit.point is read before the next cast) */for(let k=0;k<24;k++){const hit=C.bvh.raycastFirst(ray,THREE.DoubleSide);if(!hit)break;if(Math.abs(hit.face.normal.y)>.45)return hit.point.y;ray.origin.y=hit.point.y-.005;}const n=C.nav.nodes[i];return Number.isFinite(y)?Math.hypot(n[0]-x,n[2]-z)<=.65&&n[1]<=reference+.32&&n[1]>=reference-.65?Math.min(reference,n[1]):reference-10:n[1];}
 var NM_Q={box:new THREE.Box3(),line:new THREE.Line3(),p:new THREE.Vector3(),q:new THREE.Vector3(),normal:new THREE.Vector3()};
-function nmBlocked(C,x,z,r,y,height=1.8){if(!Number.isFinite(y))y=nmHeight(C,x,z);const VM_=window.ValorantFeel;if(VM_&&VM_.clipBlocked&&VM_.clipBlocked(C.key,x,z,r,y,height))return true;/* player clips: same invisible walls as the server world (shared motor) */const Q=NM_Q,epsilon=.025;Q.line.start.set(x,y+r+epsilon,z);Q.line.end.set(x,y+Math.max(r+epsilon,height-r),z);Q.box.min.set(x-r,y+epsilon,z-r);Q.box.max.set(x+r,y+height,z+r);Q.y=y+epsilon;Q.r=r-.012;Q.hit=false;
+function nmBlocked(C,x,z,r,y,height=1.8){if(!Number.isFinite(y))y=nmHeight(C,x,z);const SB_=window.SpawnBarriers;if(SB_&&typeof FV!=='undefined'&&FV&&FV.buy>0&&!FV.dm&&running&&mode==='five'&&SB_.blocked(C.key,x,z,r,y,height))return true;/* Valorant spawn walls in each spawn's real exits while the buy phase runs (vendor/spawn-barriers.cjs, the server's spike.js world.blocked: same walls, same buy clock), so the player motor (feel moveP), bots and the online prediction slide along them */const VM_=window.ValorantFeel;if(VM_&&VM_.clipBlocked&&VM_.clipBlocked(C.key,x,z,r,y,height))return true;/* player clips: same invisible walls as the server world (shared motor) */const Q=NM_Q,epsilon=.025;Q.line.start.set(x,y+r+epsilon,z);Q.line.end.set(x,y+Math.max(r+epsilon,height-r),z);Q.box.min.set(x-r,y+epsilon,z-r);Q.box.max.set(x+r,y+height,z+r);Q.y=y+epsilon;Q.r=r-.012;Q.hit=false;
  C.bvh.shapecast(Q.cb||(Q.cb={intersectsBounds:b=>b.intersectsBox(Q.box),intersectsTriangle:t=>{if(Math.max(t.a.y,t.b.y,t.c.y)<=Q.y)return false;const d=t.closestPointToSegment(Q.line,Q.p,Q.q);if(d<Q.r){Q.hit=true;return true;}return false;}}));return Q.hit;/* perf: one callback object reused (no closures per call) */
 }
+// The native map's spawn walls stand (the buy-phase plane clamp in fiveTick / mpCliTick5 is only the legacy maps' fallback).
+function xSbOn(){const C=typeof nmActive==='function'&&nmActive();return !!(C&&window.SpawnBarriers&&SpawnBarriers.has(C.key));}
 // Playable leash (same rule as the server world, shared motor leashOk): horizontal moves stay on the navigation footprint.
 // The player motor asks it through world.leash (feel moveP); the page's own direct moves (offline dash, knife lunge,
 // knock-back) probe the global blocked(), which reports a point off the footprint as blocked.
@@ -353,4 +355,37 @@ function nmNearV(C,x,z){if(!C.cellsV){C.cellsV=new Map();C.nav.nodes.forEach((p,
 // clock. Offline only: online damage is server-authoritative (no speculative local kills).
 function nmOobWatch(C){if((typeof NET!=='undefined'&&NET.socket)||(typeof MP!=='undefined'&&MP.on&&MP.role==='client')||!C||!running||paused)return;const now=performance.now();for(const u of [player].concat(bots,allies)){const pl=u===player;if(pl?u.hp<=0:!u.alive)continue;const p=pl?{x:u.x,y:u.y,z:u.z}:u.g.position;let out=false;try{const i=nmNearV(C,p.x,p.z),n=i>=0?C.nav.nodes[i]:null;out=!n||Math.hypot(n[0]-p.x,n[2]-p.z)>4;if(out)out=Math.abs(p.y-nmHeight(C,p.x,p.z,p.y))<.5;}catch(e){out=false;}if(!out){u.nmOob=0;continue;}if(!u.nmOob){u.nmOob=now;if(pl)say('Outside the map - get back!',1600);continue;}if(now-u.nmOob<2000)continue;u.nmOob=0;if(pl)hurt(u,1e4,'Out of bounds');else if(bots.indexOf(u)>=0)kill(u,false,'Out of bounds');else allyDie(u,'Out of bounds');}}
 (window.XHK||(window.XHK=[])).push(()=>{const C=nmActive();if(C)nmOobWatch(C);});
+// Spawn barrier walls as Valorant draws them (vendor/spawn-barriers.cjs pieces, both spawns): one translucent panel per
+// piece, the spawn's real doorway, wall to wall and floor to ceiling (or 6 m). A hex energy lattice in world metres with
+// a scan line drifting up, brighter rim along every edge and a glow line on the floor, team tinted (your spawn teal, the
+// enemy's red), drawn from both sides without writing depth (it never hides a wall behind it). While the buy phase runs
+// they stand; at round start (the SFX.roundStart stinger) they flash, sink into the floor and fade out in
+// SpawnBarriers.DROP s (drop(t): alpha, sink, glow), then hide. Meshes are built once per map and reused every round.
+var XSBV={key:'',g:null,list:[],on:false,t:0,last:0,mat:null};
+function xSbMat(){if(XSBV.mat)return XSBV.mat;const fs='uniform float uT;uniform float uA;uniform float uG;uniform vec3 uC;varying vec2 vU;varying vec2 vM;'+
+ 'float hx(vec2 p){p=abs(p);return max(dot(p,vec2(0.5,0.866025)),p.x);}'+
+ 'void main(){vec2 p=vM*vec2(1.6,1.6);vec2 r=vec2(1.0,1.732);vec2 h=r*0.5;vec2 a=mod(p,r)-h;vec2 b=mod(p-h,r)-h;vec2 g=dot(a,a)<dot(b,b)?a:b;'+
+ 'float e=smoothstep(0.43,0.49,hx(g));float scan=smoothstep(0.0,0.35,fract(vM.y*0.18-uT*0.35))*(1.0-smoothstep(0.35,0.42,fract(vM.y*0.18-uT*0.35)));'+
+ 'float ex=min(vU.x,1.0-vU.x)*uLen;float rim=1.0-smoothstep(0.0,0.18,ex);float top=1.0-smoothstep(0.0,0.25,(1.0-vU.y)*uH);float floorL=1.0-smoothstep(0.0,0.35,vU.y*uH-0.4);'+
+ 'float s=0.10+0.30*e+0.16*scan+0.55*rim+0.35*top+0.65*max(floorL,0.0)+0.04*sin(uT*2.3+vM.x*1.7);'+
+ 'vec3 c=mix(uC*0.7,mix(uC,vec3(1.0),0.55),clamp(e*0.6+rim+floorL*0.5,0.0,1.0))*(1.0+uG*0.8);gl_FragColor=vec4(c,clamp(s*uA*(0.55+uG*0.25),0.0,0.9));}';
+ return XSBV.mat=fs;}
+function xSbBuild(C){for(const m of XSBV.list){if(m.parent)m.parent.remove(m);m.geometry.dispose();m.material.dispose();}XSBV.list=[];XSBV.key=C.key;
+ for(const P of SpawnBarriers.pieces(C.key)){const h=P.y1-P.y0,geo=new THREE.PlaneGeometry(P.len,h),u={uT:{value:0},uA:{value:0},uG:{value:0},uC:{value:new THREE.Color(0x35e0c8)},uLen:{value:P.len},uH:{value:h}};
+  const mat=new THREE.ShaderMaterial({transparent:true,depthWrite:false,side:THREE.DoubleSide,blending:THREE.AdditiveBlending,uniforms:u,
+   vertexShader:'uniform float uLen;uniform float uH;varying vec2 vU;varying vec2 vM;void main(){vU=uv;vM=vec2(uv.x*uLen,uv.y*uH);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',
+   fragmentShader:'uniform float uLen;uniform float uH;'+xSbMat()});
+  const m=new THREE.Mesh(geo,mat);m.position.set((P.ax+P.bx)/2,P.y0+h/2,(P.az+P.bz)/2);m.rotation.y=-Math.atan2(P.tz,P.tx);m.renderOrder=6;m.frustumCulled=false;m.visible=false;m.raycast=()=>{};m.userData.xNoMerge=1;m.userData.sb={side:P.side,y:P.y0+h/2};XSBV.list.push(m);}
+ return XSBV.list;}
+// tint by team: the walls of your own spawn teal, the enemy's red
+function xSbTint(){const own=FV.atk?'atk':'def';for(const m of XSBV.list)m.material.uniforms.uC.value.set(m.userData.sb.side===own?0x35e0c8:0xff4655);}
+function xSbTick(){const now=performance.now(),dt=Math.min(.1,(now-(XSBV.last||now))/1000);XSBV.last=now;let C=null,on=false;
+ try{C=nmActive();on=!!(C&&running&&mode==='five'&&!FV.dm&&FV.buy>0&&window.SpawnBarriers&&SpawnBarriers.has(C.key));}catch(e){return;}
+ if(on){if(XSBV.key!==C.key||!XSBV.list.length)xSbBuild(C);if(!XSBV.on)xSbTint();XSBV.on=true;XSBV.t=-1;for(const m of XSBV.list){if(m.parent!==scene)scene.add(m);m.visible=true;m.position.y=m.userData.sb.y;const U=m.material.uniforms;U.uA.value=1;U.uG.value=0;U.uT.value=now*.001;}return;}
+ if(XSBV.on){XSBV.on=false;XSBV.t=0;}/* the round started: the walls drop */
+ if(XSBV.t>=0&&XSBV.list.length){let ok=false;try{ok=running&&mode==='five';}catch(e){}XSBV.t+=dt;const d=SpawnBarriers.drop(XSBV.t);
+  if(!ok||XSBV.t>=SpawnBarriers.DROP){for(const m of XSBV.list)m.visible=false;XSBV.t=-1;return;}
+  for(const m of XSBV.list){m.position.y=m.userData.sb.y-d.sink;const U=m.material.uniforms;U.uA.value=d.alpha;U.uG.value=d.glow;U.uT.value=now*.001;}}}
+(window.XHK||(window.XHK=[])).push(xSbTick);
+window.xSbVis=XSBV;
 // ---- END ORIGINAL VALORANT MAPS ----

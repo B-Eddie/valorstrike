@@ -9973,9 +9973,10 @@ const XBR = (() => {
       if (A.parent !== scene) { scene.add(A); scene.add(B); }
       const e = edge(), fa = fit(e), fb = fit(-e); A.scale.x = fa.w / 160; B.scale.x = fb.w / 160;
       const gy = (x, z) => { try { return groundAt(x, z, 2, 30) + 3; } catch (e2) { return 3; } }; // ground-follow: spawn plateaus sit well above y=0 (Ascent ~7 m), a fixed y=3 wall was buried
-      A.position.set(fa.c, gy(fa.c, e), e); B.position.set(fb.c, gy(fb.c, -e), -e); A.visible = B.visible = true; mat.uniforms.uA.value = 1; st.fade = 0.5; st.on = true;
+      const nat = typeof xSbOn === "function" && xSbOn(); // a native map draws its real spawn walls (native_maps_runtime xSbVis); this straight plane is the legacy maps' barrier
+      A.position.set(fa.c, gy(fa.c, e), e); B.position.set(fb.c, gy(fb.c, -e), -e); A.visible = B.visible = !nat; mat.uniforms.uA.value = 1; st.fade = 0.5; st.on = true;
       cdText(FV.buy <= 3 ? Math.max(1, Math.ceil(FV.buy)) : 0);
-      const z = player ? player.z : 999; hum(Math.min(Math.abs(z - e), Math.abs(z + e)) < 3 ? 1 : 0);
+      let near = false; if (nat) { try { const C = nmActive(), n = player && SpawnBarriers.nearest(C.key, null, player.x, player.z); near = !!n && n.d < 3; } catch (e2) {} } else { const z = player ? player.z : 999; near = Math.min(Math.abs(z - e), Math.abs(z + e)) < 3; } hum(near ? 1 : 0);
     } else if (st.on) {
       cdText(0); hum(0); st.fade -= dt; let ok = false; try { ok = running && mode === "five"; } catch (e) {}
       if (st.fade <= 0 || !ok) { st.on = false; A.visible = B.visible = false; mat.uniforms.uA.value = 0; } else mat.uniforms.uA.value = st.fade / 0.5;
@@ -9993,7 +9994,7 @@ function fiveTick(dt) {
   if (FV.buy > 0) { // 20 s buy phase: everyone frozen in spawn, invisible barrier at the spawn edge
     FV.buy -= dt;
     if (player.hp > 0 && !FV.menu) moveP(dt, 6.75, false);
-    { const e = xSpawn(FV.map).edge; player.z = FV.atk ? Math.max(e, player.z) : Math.min(-e, player.z); }
+    if (!(typeof xSbOn === "function" && xSbOn())) { const e = xSpawn(FV.map).edge; player.z = FV.atk ? Math.max(e, player.z) : Math.min(-e, player.z); } // native maps: the spawn walls (nmBlocked) hold the player; this plane is the legacy maps' fallback
     $("timer").textContent = bpT(); if (FV.menu) $("xBT").textContent = "00:" + String(Math.max(0, Math.ceil(FV.buy))).padStart(2, "0");
     if (FV.buy <= 0) { FV.buy = 0; buyMenu(false); say("Round start", 900); SFX.roundStart(); updHud(); }
     return;
@@ -12850,7 +12851,7 @@ function mpCliTick5(dt) { // client: own movement + HUD; the host owns rounds, s
   if (FV.buy > 0) {
     FV.buy = Math.max(0, FV.buy - dt);
     if (player.hp > 0 && !FV.menu) moveP(dt, 6.75, false);
-    { const e = xSpawn(FV.map).edge; player.z = FV.atk ? Math.max(e, player.z) : Math.min(-e, player.z); }
+    if (!(typeof xSbOn === "function" && xSbOn())) { const e = xSpawn(FV.map).edge; player.z = FV.atk ? Math.max(e, player.z) : Math.min(-e, player.z); } // native maps: the spawn walls (nmBlocked) hold the player; this plane is the legacy maps' fallback
     $("timer").textContent = bpT(); if (FV.menu) $("xBT").textContent = "00:" + String(Math.max(0, Math.ceil(FV.buy))).padStart(2, "0");
     if (FV.buy <= 0) { buyMenu(false); say("Round start", 900); try { SFX.roundStart(); } catch (e) {} updHud(); }
     return;
@@ -13863,9 +13864,11 @@ function nmNear(C,x,z,y,yBand){let best=-1,bd=Infinity;const gx=Math.floor(x/2),
 // Select only nearby upward support. Never snap a falling actor onto a roof above its feet.
 function nmHeight(C,x,z,y){const i=nmNear(C,x,z,Number.isFinite(y)?y:undefined);if(i<0)throw Error('No valid navigation floor');const reference=Number.isFinite(y)?y:C.nav.nodes[i][1],ray=nmHeight.r||(nmHeight.r=new THREE.Ray(new THREE.Vector3(),new THREE.Vector3(0,-1,0)));ray.origin.set(x,reference+.32,z);ray.direction.set(0,-1,0);/* perf: one scratch ray (hit.point is read before the next cast) */for(let k=0;k<24;k++){const hit=C.bvh.raycastFirst(ray,THREE.DoubleSide);if(!hit)break;if(Math.abs(hit.face.normal.y)>.45)return hit.point.y;ray.origin.y=hit.point.y-.005;}const n=C.nav.nodes[i];return Number.isFinite(y)?Math.hypot(n[0]-x,n[2]-z)<=.65&&n[1]<=reference+.32&&n[1]>=reference-.65?Math.min(reference,n[1]):reference-10:n[1];}
 var NM_Q={box:new THREE.Box3(),line:new THREE.Line3(),p:new THREE.Vector3(),q:new THREE.Vector3(),normal:new THREE.Vector3()};
-function nmBlocked(C,x,z,r,y,height=1.8){if(!Number.isFinite(y))y=nmHeight(C,x,z);const VM_=window.ValorantFeel;if(VM_&&VM_.clipBlocked&&VM_.clipBlocked(C.key,x,z,r,y,height))return true;/* player clips: same invisible walls as the server world (shared motor) */const Q=NM_Q,epsilon=.025;Q.line.start.set(x,y+r+epsilon,z);Q.line.end.set(x,y+Math.max(r+epsilon,height-r),z);Q.box.min.set(x-r,y+epsilon,z-r);Q.box.max.set(x+r,y+height,z+r);Q.y=y+epsilon;Q.r=r-.012;Q.hit=false;
+function nmBlocked(C,x,z,r,y,height=1.8){if(!Number.isFinite(y))y=nmHeight(C,x,z);const SB_=window.SpawnBarriers;if(SB_&&typeof FV!=='undefined'&&FV&&FV.buy>0&&!FV.dm&&running&&mode==='five'&&SB_.blocked(C.key,x,z,r,y,height))return true;/* Valorant spawn walls in each spawn's real exits while the buy phase runs (vendor/spawn-barriers.cjs, the server's spike.js world.blocked: same walls, same buy clock), so the player motor (feel moveP), bots and the online prediction slide along them */const VM_=window.ValorantFeel;if(VM_&&VM_.clipBlocked&&VM_.clipBlocked(C.key,x,z,r,y,height))return true;/* player clips: same invisible walls as the server world (shared motor) */const Q=NM_Q,epsilon=.025;Q.line.start.set(x,y+r+epsilon,z);Q.line.end.set(x,y+Math.max(r+epsilon,height-r),z);Q.box.min.set(x-r,y+epsilon,z-r);Q.box.max.set(x+r,y+height,z+r);Q.y=y+epsilon;Q.r=r-.012;Q.hit=false;
  C.bvh.shapecast(Q.cb||(Q.cb={intersectsBounds:b=>b.intersectsBox(Q.box),intersectsTriangle:t=>{if(Math.max(t.a.y,t.b.y,t.c.y)<=Q.y)return false;const d=t.closestPointToSegment(Q.line,Q.p,Q.q);if(d<Q.r){Q.hit=true;return true;}return false;}}));return Q.hit;/* perf: one callback object reused (no closures per call) */
 }
+// The native map's spawn walls stand (the buy-phase plane clamp in fiveTick / mpCliTick5 is only the legacy maps' fallback).
+function xSbOn(){const C=typeof nmActive==='function'&&nmActive();return !!(C&&window.SpawnBarriers&&SpawnBarriers.has(C.key));}
 // Playable leash (same rule as the server world, shared motor leashOk): horizontal moves stay on the navigation footprint.
 // The player motor asks it through world.leash (feel moveP); the page's own direct moves (offline dash, knife lunge,
 // knock-back) probe the global blocked(), which reports a point off the footprint as blocked.
@@ -14032,6 +14035,39 @@ function nmNearV(C,x,z){if(!C.cellsV){C.cellsV=new Map();C.nav.nodes.forEach((p,
 // clock. Offline only: online damage is server-authoritative (no speculative local kills).
 function nmOobWatch(C){if((typeof NET!=='undefined'&&NET.socket)||(typeof MP!=='undefined'&&MP.on&&MP.role==='client')||!C||!running||paused)return;const now=performance.now();for(const u of [player].concat(bots,allies)){const pl=u===player;if(pl?u.hp<=0:!u.alive)continue;const p=pl?{x:u.x,y:u.y,z:u.z}:u.g.position;let out=false;try{const i=nmNearV(C,p.x,p.z),n=i>=0?C.nav.nodes[i]:null;out=!n||Math.hypot(n[0]-p.x,n[2]-p.z)>4;if(out)out=Math.abs(p.y-nmHeight(C,p.x,p.z,p.y))<.5;}catch(e){out=false;}if(!out){u.nmOob=0;continue;}if(!u.nmOob){u.nmOob=now;if(pl)say('Outside the map - get back!',1600);continue;}if(now-u.nmOob<2000)continue;u.nmOob=0;if(pl)hurt(u,1e4,'Out of bounds');else if(bots.indexOf(u)>=0)kill(u,false,'Out of bounds');else allyDie(u,'Out of bounds');}}
 (window.XHK||(window.XHK=[])).push(()=>{const C=nmActive();if(C)nmOobWatch(C);});
+// Spawn barrier walls as Valorant draws them (vendor/spawn-barriers.cjs pieces, both spawns): one translucent panel per
+// piece, the spawn's real doorway, wall to wall and floor to ceiling (or 6 m). A hex energy lattice in world metres with
+// a scan line drifting up, brighter rim along every edge and a glow line on the floor, team tinted (your spawn teal, the
+// enemy's red), drawn from both sides without writing depth (it never hides a wall behind it). While the buy phase runs
+// they stand; at round start (the SFX.roundStart stinger) they flash, sink into the floor and fade out in
+// SpawnBarriers.DROP s (drop(t): alpha, sink, glow), then hide. Meshes are built once per map and reused every round.
+var XSBV={key:'',g:null,list:[],on:false,t:0,last:0,mat:null};
+function xSbMat(){if(XSBV.mat)return XSBV.mat;const fs='uniform float uT;uniform float uA;uniform float uG;uniform vec3 uC;varying vec2 vU;varying vec2 vM;'+
+ 'float hx(vec2 p){p=abs(p);return max(dot(p,vec2(0.5,0.866025)),p.x);}'+
+ 'void main(){vec2 p=vM*vec2(1.6,1.6);vec2 r=vec2(1.0,1.732);vec2 h=r*0.5;vec2 a=mod(p,r)-h;vec2 b=mod(p-h,r)-h;vec2 g=dot(a,a)<dot(b,b)?a:b;'+
+ 'float e=smoothstep(0.43,0.49,hx(g));float scan=smoothstep(0.0,0.35,fract(vM.y*0.18-uT*0.35))*(1.0-smoothstep(0.35,0.42,fract(vM.y*0.18-uT*0.35)));'+
+ 'float ex=min(vU.x,1.0-vU.x)*uLen;float rim=1.0-smoothstep(0.0,0.18,ex);float top=1.0-smoothstep(0.0,0.25,(1.0-vU.y)*uH);float floorL=1.0-smoothstep(0.0,0.35,vU.y*uH-0.4);'+
+ 'float s=0.10+0.30*e+0.16*scan+0.55*rim+0.35*top+0.65*max(floorL,0.0)+0.04*sin(uT*2.3+vM.x*1.7);'+
+ 'vec3 c=mix(uC*0.7,mix(uC,vec3(1.0),0.55),clamp(e*0.6+rim+floorL*0.5,0.0,1.0))*(1.0+uG*0.8);gl_FragColor=vec4(c,clamp(s*uA*(0.55+uG*0.25),0.0,0.9));}';
+ return XSBV.mat=fs;}
+function xSbBuild(C){for(const m of XSBV.list){if(m.parent)m.parent.remove(m);m.geometry.dispose();m.material.dispose();}XSBV.list=[];XSBV.key=C.key;
+ for(const P of SpawnBarriers.pieces(C.key)){const h=P.y1-P.y0,geo=new THREE.PlaneGeometry(P.len,h),u={uT:{value:0},uA:{value:0},uG:{value:0},uC:{value:new THREE.Color(0x35e0c8)},uLen:{value:P.len},uH:{value:h}};
+  const mat=new THREE.ShaderMaterial({transparent:true,depthWrite:false,side:THREE.DoubleSide,blending:THREE.AdditiveBlending,uniforms:u,
+   vertexShader:'uniform float uLen;uniform float uH;varying vec2 vU;varying vec2 vM;void main(){vU=uv;vM=vec2(uv.x*uLen,uv.y*uH);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',
+   fragmentShader:'uniform float uLen;uniform float uH;'+xSbMat()});
+  const m=new THREE.Mesh(geo,mat);m.position.set((P.ax+P.bx)/2,P.y0+h/2,(P.az+P.bz)/2);m.rotation.y=-Math.atan2(P.tz,P.tx);m.renderOrder=6;m.frustumCulled=false;m.visible=false;m.raycast=()=>{};m.userData.xNoMerge=1;m.userData.sb={side:P.side,y:P.y0+h/2};XSBV.list.push(m);}
+ return XSBV.list;}
+// tint by team: the walls of your own spawn teal, the enemy's red
+function xSbTint(){const own=FV.atk?'atk':'def';for(const m of XSBV.list)m.material.uniforms.uC.value.set(m.userData.sb.side===own?0x35e0c8:0xff4655);}
+function xSbTick(){const now=performance.now(),dt=Math.min(.1,(now-(XSBV.last||now))/1000);XSBV.last=now;let C=null,on=false;
+ try{C=nmActive();on=!!(C&&running&&mode==='five'&&!FV.dm&&FV.buy>0&&window.SpawnBarriers&&SpawnBarriers.has(C.key));}catch(e){return;}
+ if(on){if(XSBV.key!==C.key||!XSBV.list.length)xSbBuild(C);if(!XSBV.on)xSbTint();XSBV.on=true;XSBV.t=-1;for(const m of XSBV.list){if(m.parent!==scene)scene.add(m);m.visible=true;m.position.y=m.userData.sb.y;const U=m.material.uniforms;U.uA.value=1;U.uG.value=0;U.uT.value=now*.001;}return;}
+ if(XSBV.on){XSBV.on=false;XSBV.t=0;}/* the round started: the walls drop */
+ if(XSBV.t>=0&&XSBV.list.length){let ok=false;try{ok=running&&mode==='five';}catch(e){}XSBV.t+=dt;const d=SpawnBarriers.drop(XSBV.t);
+  if(!ok||XSBV.t>=SpawnBarriers.DROP){for(const m of XSBV.list)m.visible=false;XSBV.t=-1;return;}
+  for(const m of XSBV.list){m.position.y=m.userData.sb.y-d.sink;const U=m.material.uniforms;U.uA.value=d.alpha;U.uG.value=d.glow;U.uT.value=now*.001;}}}
+(window.XHK||(window.XHK=[])).push(xSbTick);
+window.xSbVis=XSBV;
 // ---- END ORIGINAL VALORANT MAPS ----
 
 // ---- VALORANT FEEL ----
@@ -15844,19 +15880,22 @@ window.xAbilityFP = { XAF, XAF_SET, XAF_K, XAF_GUN, phase: xAfPhase, gunPhase: x
  function tailwindDash(c){if(!c||!c.armed)return null;if(c.kills>0)return 'kill';if(c.hp<TAILWIND.hp||c.hp0-c.hp>=TAILWIND.lost)return 'hurt';if(c.left<TAILWIND.last)return 'expiring';return null;}
  function tailwindKeys(rand){return {f:-1,s:rand()<.5?-1:1};}
  // ---- Buy phase: bots mill around spawn, then line up at the spawn barrier (server bots.js buyMill, offline
- // work/bot_variety_runtime.js xbbTick). The barrier is the plane both builds already clamp players to during the buy
- // phase: z = s*edge with edge = min(|attacker z|, |defender z|) - 7 (map.json spawns) and s the side's sign (attackers +z);
- // inside = s*z >= edge. Bots walk only on BUY_AREA: the spawn's own connected nav region with every node at least
- // BUY.margin inside the barrier, so a route can never lead through it; standing spots sit BUY.depth inside (a 0.4 m
- // capsule never touches the wall) and BUY.gap apart.
+ // work/bot_variety_runtime.js xbbTick). The barrier = the side's spawn walls (vendor/spawn-barriers.cjs pieces: vertical
+ // panels in the spawn's real exits, {ax, az, bx, bz, nx, nz: unit normal into spawn, tx, tz: unit along, len}); every
+ // player and bot collides with them while the buy phase runs. Bots walk only on BUY_AREA: the spawn's own connected nav
+ // region reached without crossing a wall, every node BUY.margin+ from every wall, so a route can never lead through one;
+ // standing spots sit BUY.depth inside the wall on its spawn side (a 0.4 m capsule never touches it) and BUY.gap apart.
  const BUY={margin:.5,depth:[.55,.7],gap:.9,peek:[.3,.55],wander:[1.5,6],run:4.6};
- function buyEdge(atk,def){return Math.min(Math.abs(atk[2]),Math.abs(def[2]))-7;}
- function buySide(anchor){return anchor[2]<0?-1:1;}
+ function buyOri(ax,az,bx,bz,cx,cz){return Math.sign((bx-ax)*(cz-az)-(bz-az)*(cx-ax));}
+ // nearest wall to (x, z) -> {w: the piece, d: metres, t: metres along it, inside: on its spawn side} | null
+ function buyNear(walls,x,z){let best=null;for(const w of walls||[]){const t=Math.max(0,Math.min(w.len,(x-w.ax)*w.tx+(z-w.az)*w.tz)),d=Math.hypot(w.ax+w.tx*t-x,w.az+w.tz*t-z);if(!best||d<best.d)best={w,d,t,inside:(x-w.ax)*w.nx+(z-w.az)*w.nz>=0};}return best;}
+ // the step a -> b crosses a wall -> the piece | null
+ function buyCross(walls,ax,az,bx,bz){for(const w of walls||[])if(buyOri(ax,az,bx,bz,w.ax,w.az)*buyOri(ax,az,bx,bz,w.bx,w.bz)<0&&buyOri(w.ax,w.az,w.bx,w.bz,ax,az)*buyOri(w.ax,w.az,w.bx,w.bz,bx,bz)<0)return w;return null;}
  // ok(i): the node is playable. -> {f: Uint8Array flags, list: node ids} (empty when start is not inside)
- function buyArea(nodes,adj,start,s,edge,ok){
-  const f=new Uint8Array(nodes.length),list=[],inside=i=>s*nodes[i][2]>=edge+BUY.margin&&(!ok||ok(i));
+ function buyArea(nodes,adj,start,walls,ok){
+  const f=new Uint8Array(nodes.length),list=[],inside=i=>{const n=buyNear(walls,nodes[i][0],nodes[i][2]);return (!n||n.d>=BUY.margin)&&(!ok||ok(i));};
   if(start==null||start<0||!inside(start))return {f,list};f[start]=1;list.push(start);
-  for(let k=0;k<list.length;k++)for(const j of adj[list[k]])if(!f[j]&&inside(j)){f[j]=1;list.push(j);}
+  for(let k=0;k<list.length;k++){const a=nodes[list[k]];for(const j of adj[list[k]])if(!f[j]&&inside(j)&&!buyCross(walls,a[0],a[2],nodes[j][0],nodes[j][2])){f[j]=1;list.push(j);}}
   return {f,list};}
  // A* inside the area; cost(i): extra metres for entering node i (a node whose capsule touches a prop), may be omitted.
  function buyRoute(nodes,adj,area,a,b,cost){
@@ -15869,33 +15908,36 @@ window.xAbilityFP = { XAF, XAF_SET, XAF_K, XAF_GUN, phase: xAfPhase, gunPhase: x
    for(const j of adj[i]){if(!area.f[j]||done.has(j))continue;const c=g.get(i)+Math.hypot(nodes[i][0]-nodes[j][0],nodes[i][2]-nodes[j][2])+Math.abs(nodes[i][1]-nodes[j][1])*.2+(cost?cost(j):0);
     if(!(g.get(j)<=c)){g.set(j,c);prev.set(j,i);push(j,c+h(j));}}}
   return [];}
- // Where a planned route (node ids from spawn toward the bot's first round goal) leaves spawn: the first crossing of the
- // barrier plane -> {x, y, z, dx, dz} with (dx, dz) the unit heading out along the route (always some way out through the
- // barrier, never back into spawn), or null when the route does not start inside / never crosses.
- function buyExit(nodes,path,s,edge){
-  if(!path||path.length<2||s*nodes[path[0]][2]<edge)return null;
-  for(let k=1;k<path.length;k++){const a=nodes[path[k-1]],b=nodes[path[k]];if(s*b[2]>=edge)continue;
-   const t=(s*a[2]-edge)/((s*a[2]-s*b[2])||1),x=a[0]+(b[0]-a[0])*t,y=a[1]+(b[1]-a[1])*t;
+ // Where a planned route (node ids from spawn toward the bot's first round goal) leaves spawn: the first step that
+ // crosses one of the walls -> {x, y, z, dx, dz, w} with (x, z) the crossing, w the wall and (dx, dz) the unit heading
+ // out along the route (always some way out through the wall, never back into spawn), or null when it never crosses.
+ function buyExit(nodes,path,walls){
+  if(!path||path.length<2)return null;
+  for(let k=1;k<path.length;k++){const a=nodes[path[k-1]],b=nodes[path[k]],w=buyCross(walls,a[0],a[2],b[0],b[2]);if(!w)continue;
+   const da=(a[0]-w.ax)*w.nx+(a[2]-w.az)*w.nz,db=(b[0]-w.ax)*w.nx+(b[2]-w.az)*w.nz,t=da/((da-db)||1),x=a[0]+(b[0]-a[0])*t,z=a[2]+(b[2]-a[2])*t,y=a[1]+(b[1]-a[1])*t;
    let m=k,acc=0;while(m+1<path.length&&acc<5){const p=nodes[path[m]],q=nodes[path[m+1]];acc+=Math.hypot(q[0]-p[0],q[2]-p[2]);m++;}
-   const f=nodes[path[m]];let dx=f[0]-x,dz=s*(s*edge-f[2]),l=Math.hypot(dx,dz);/* dz here: metres out past the barrier */
-   if(l<.5){dx=0;dz=1;l=1;}dx/=l;dz/=l;if(dz<.4){dz=.4;dx=Math.sign(dx||1)*Math.sqrt(1-.16);}
-   return {x,y,z:s*edge,dx,dz:-s*dz};}
+   const f=nodes[path[m]];let dx=f[0]-x,dz=f[2]-z,l=Math.hypot(dx,dz);if(l<.5){dx=-w.nx;dz=-w.nz;l=1;}dx/=l;dz/=l;
+   // at least 0.4 of the heading points out through the wall (-n)
+   let o=-(dx*w.nx+dz*w.nz);if(o<.4){const al=dx*w.tx+dz*w.tz,s=Math.sign(al||1)*Math.sqrt(1-.16);dx=-w.nx*.4+w.tx*s;dz=-w.nz*.4+w.tz*s;}
+   return {x,y,z,dx,dz,w};}
   return null;}
- // A standing spot just inside the barrier at that exit: BUY.depth inside, shifted along the barrier in 0.5 m steps
+ // A standing spot just inside that wall: BUY.depth in from it on its spawn side, shifted along it in 0.5 m steps
  // (alternating sides, seeded) until it is free and BUY.gap from every spot a teammate took: the front row within 2.25 m of
- // the exit, a second row 0.75 m behind it (staggered half a step, like players stacking in a doorway), then wider. ok(x, z) -> [floorY, node] where a capsule may stand and walk to from its area node, else null.
- function buySpot(exit,s,edge,taken,rand,ok){
-  const depth=BUY.depth[0]+rand()*(BUY.depth[1]-BUY.depth[0]),side=rand()<.5?-1:1;
-  for(const [row,reach] of [[0,9],[1,9],[0,40],[1,40],[2,40],[3,40]]){const z=s*(edge+depth+row*.75);
-   for(let i=0;i<=reach;i++){const x=exit.x+(i?Math.ceil(i/2)*(i%2?side:-side):0)*.5+(row%2)*.25*side;
-    if(taken.some(t=>Math.hypot(t[0]-x,t[2]-z)<BUY.gap))continue;const r=ok(x,z);if(!r)continue;return {p:[x,r[0],z],node:r[1]};}}
+ // the exit, a second row 0.75 m behind it (staggered half a step, like players stacking in a doorway), then wider; a
+ // spot whose nearest wall is nearer than BUY.depth (a corner where two walls meet) is skipped. ok(x, z) -> [floorY,
+ // node] where a capsule may stand and walk to from its area node, else null.
+ function buySpot(exit,walls,taken,rand,ok){
+  const w=exit.w,depth=BUY.depth[0]+rand()*(BUY.depth[1]-BUY.depth[0]),side=rand()<.5?-1:1,t0=(exit.x-w.ax)*w.tx+(exit.z-w.az)*w.tz;
+  for(const [row,reach] of [[0,9],[1,9],[0,40],[1,40],[2,40],[3,40]]){const dn=depth+row*.75;
+   for(let i=0;i<=reach;i++){const t=t0+(i?Math.ceil(i/2)*(i%2?side:-side):0)*.5+(row%2)*.25*side;if(t<-.5||t>w.len+.5)continue;const x=w.ax+w.tx*t+w.nx*dn,z=w.az+w.tz*t+w.nz*dn;
+    if(taken.some(q=>Math.hypot(q[0]-x,q[2]-z)<BUY.gap))continue;const nr=buyNear(walls,x,z);if(nr&&(nr.d<depth-1e-6||!nr.inside&&nr.d<1.5))continue;const r=ok(x,z);if(!r)continue;return {p:[x,r[0],z],node:r[1]};}}
   return null;}
- // A short wander target inside spawn: an area node BUY.wander m away, 1.2 m+ inside the barrier, clear of the points
+ // A short wander target inside spawn: an area node BUY.wander m away, 1.2 m+ from every wall, clear of the points
  // teammates stand on or walk to (avoid), ok(i) when given (not a node inside a prop). -> node id or -1.
- function buyWander(nodes,area,from,rand,avoid,s,edge,ok){
+ function buyWander(nodes,area,from,rand,avoid,walls,ok){
   const L=area.list;if(!L.length)return -1;
   for(let k=0;k<24;k++){const i=L[Math.floor(rand()*L.length)],n=nodes[i],d=Math.hypot(n[0]-from[0],n[2]-from[1]);
-   if(d<BUY.wander[0]||d>BUY.wander[1]||s*n[2]<edge+1.2)continue;if((ok&&!ok(i))||avoid.some(a=>Math.hypot(a[0]-n[0],a[1]-n[2])<1.4))continue;return i;}
+   if(d<BUY.wander[0]||d>BUY.wander[1])continue;const nr=buyNear(walls,n[0],n[2]);if(nr&&nr.d<1.2)continue;if((ok&&!ok(i))||avoid.some(a=>Math.hypot(a[0]-n[0],a[1]-n[2])<1.4))continue;return i;}
   return -1;}
  // One bot's buy-phase schedule (seeded): it stands at its spawn spot (the buy menu), walks a few short legs around spawn
  // with pauses and look-arounds (more for patient players), then walks to its barrier spot, timed so it arrives with a
@@ -15966,7 +16008,60 @@ window.xAbilityFP = { XAF, XAF_SET, XAF_K, XAF_GUN, phase: xAfPhase, gunPhase: x
  function mayFire(visibleFor,reactionS,losNow){return !!losNow&&visibleFor>=Math.max(REACT[0],reactionS||0);}
  // Fire-rate cap: never faster than the gun (Vandal 9.75 rounds/s). Returns the earliest next shot time.
  function nextShot(t,rate){return t+1/Math.max(.1,rate||1);}
- return {hash,rng,clamp,pickW,REACT,personality,reaction,crosshair,crosshairAt,firePattern,peek,attackPlan,defensePlan,roles,teamBuy,buyFor,onMateDeath,onSound,ATTACK,DEFENSE,utility,UTIL,turnStep,trackLag,wrapA,SPIKE,plantSpot,postPlant,retake,postPlay,SHOOT_UTIL,shootUtility,TAILWIND,tailwindDash,tailwindKeys,LEVEL,level,aimTraits,AIM_H,aimHeight,halfWidth,aimPlan,aimAt,readyToFire,planFire,idlePitch,recoilPull,discipline,hitPart,BUY,buyEdge,buySide,buyArea,buyRoute,buyExit,buySpot,buyWander,buyNew,buyTick,buyNext,buySep,SENS,cm360,sensOf,turnRate,SENSE,inView,audible,earSpot,memNew,memNote,memForget,memBest,repeek,mayFire,nextShot,areas,DFORM,GAP,midPoint,RESPOND,nearest,tradeSpot,follow};
+ return {hash,rng,clamp,pickW,REACT,personality,reaction,crosshair,crosshairAt,firePattern,peek,attackPlan,defensePlan,roles,teamBuy,buyFor,onMateDeath,onSound,ATTACK,DEFENSE,utility,UTIL,turnStep,trackLag,wrapA,SPIKE,plantSpot,postPlant,retake,postPlay,SHOOT_UTIL,shootUtility,TAILWIND,tailwindDash,tailwindKeys,LEVEL,level,aimTraits,AIM_H,aimHeight,halfWidth,aimPlan,aimAt,readyToFire,planFire,idlePitch,recoilPull,discipline,hitPart,BUY,buyArea,buyRoute,buyExit,buySpot,buyWander,buyNew,buyTick,buyNext,buySep,SENS,cm360,sensOf,turnRate,SENSE,inView,audible,earSpot,memNew,memNote,memForget,memBest,repeek,mayFire,nextShot,areas,DFORM,GAP,midPoint,RESPOND,nearest,tradeSpot,follow,buyNear,buyCross};
+});
+// Spawn barriers (Valorant's buy-phase walls), shared by the server (spike.js world, bots.js) and the page (UMD:
+// index.html inlines it in the BOT VARIETY block and reads window.SpawnBarriers; native_maps_runtime nmBlocked and the
+// offline / online buy phase use it). Each spawn's walls stand in its real exits: per map and side a list of panels,
+// p = a polyline [[x, z], ...] across one doorway (wall to wall), y = [bottom, top] in world metres, in = +1 when the
+// left normal (-dz, dx) of each piece faces into the spawn (-1: the right normal). Generated from the native map's
+// navigation by server/tools/spawn-barriers-gen.mjs (minimum vertex cut between the spawn core and the rest of the map
+// = the narrowest doorways, extended to the walls) and checked by server/test-spawn-barriers.js (no leak from any
+// spawn node, capsule collision, bot staging). While the buy phase runs every panel is solid for every player and bot
+// (movement: a 0.1 m-thick vertical slab; shots / sight / thrown utility: a vertical quad) and drawn as a translucent
+// team-tinted hex wall; at round start the walls drop (no collision) and dissolve.
+(function(root,factory){if(typeof module==='object'&&module.exports)module.exports=factory();else root.SpawnBarriers=factory();})(typeof globalThis!=='undefined'?globalThis:this,function(){
+ 'use strict';
+ const HALF=.05;/* half the slab thickness */
+ // ---- DATA (server/tools/spawn-barriers-gen.mjs --write) ----
+ const DATA={
+  ascent:{atk:[{p:[[-18,38.75],[-11.5,38.75]],y:[6.67,10.07],in:1},{p:[[12.45,36.42],[15.15,40.91]],y:[7.67,14.07],in:1},{p:[[15.15,40.91],[15.25,48.75]],y:[7.67,11.07],in:1}],def:[{p:[[-17.75,-45.09],[-17.75,-39.75]],y:[6,9.4],in:-1},{p:[[-6.7,-31.75],[-2.24,-31.75]],y:[7.67,14.07],in:-1},{p:[[10.89,-40.75],[17.3,-40.75]],y:[8.67,14.2],in:-1},{p:[[16,-52.08],[16,-46.5]],y:[8.85,12.79],in:1}]},
+  bind:{atk:[{p:[[-7.53,54.75],[-0.41,54.75]],y:[3.67,7.07],in:1},{p:[[5.75,57.75],[13.63,57.75]],y:[3.82,7.22],in:1}],def:[{p:[[-11.02,-59.25],[-5.05,-59.25]],y:[6.51,11.05],in:-1},{p:[[5.31,-57.75],[10.28,-57.75]],y:[6.51,11.05],in:-1}]},
+  breeze:{atk:[{p:[[-10.64,38],[-5.75,38],[-5.75,36.4]],y:[3.54,9.94],in:1},{p:[[4.97,31.25],[12.39,31.5]],y:[3.64,10.04],in:1},{p:[[12.39,31.5],[13,36.75]],y:[3.61,9.29],in:1}],def:[{p:[[-12.5,-44.75],[-12.5,-39.41]],y:[10.76,17.16],in:-1},{p:[[-3.27,-31],[-0.25,-31]],y:[11.62,15.89],in:-1}]},
+  haven:{atk:[{p:[[-17.55,44.75],[-12.92,44.75]],y:[5.86,10.47],in:1},{p:[[-0.64,38.75],[3.48,38.75]],y:[6.61,12.77],in:1}],def:[{p:[[-21,-38.31],[-21,-32.65]],y:[6.61,10.02],in:-1},{p:[[13,-36.21],[18.34,-36.63]],y:[6.61,13.02],in:-1},{p:[[18,-42.95],[18.34,-36.63]],y:[6.61,13.02],in:1}]},
+  lotus:{atk:[{p:[[-12,39.78],[-12,47.21]],y:[5.4,9.91],in:-1},{p:[[-5.11,29],[0.04,29]],y:[5.9,9.3],in:1},{p:[[10.5,29.29],[10.5,35.57]],y:[5.9,12.3],in:1}],def:[{p:[[-16.5,-37.25],[-16.5,-29.27]],y:[5.9,12.3],in:-1},{p:[[1.5,-23],[1.5,-17.55]],y:[7.86,14.26],in:-1},{p:[[13.5,-36.69],[13.5,-31.81]],y:[7.07,10.47],in:1}]},
+  split:{atk:[{p:[[-16.25,35.82],[-16.25,41.12]],y:[6.61,10.02],in:-1},{p:[[12.25,34.62],[12.25,39.67]],y:[6.61,10.02],in:1}],def:[{p:[[-4.25,-32.27],[-4.25,-27.21]],y:[8.62,12.02],in:-1},{p:[[10.75,-40.03],[10.75,-35.63]],y:[8.62,15.02],in:1}]}
+ };
+ // ---- END DATA ----
+ const CACHE={};
+ // flat pieces for a map: {ax, az, bx, bz, y0, y1, side: 'atk' | 'def', nx, nz: unit normal into that spawn, len, tx, tz: unit along}
+ function pieces(map){if(CACHE[map])return CACHE[map];const M=DATA[map],L=[];if(M)for(const side of ['atk','def'])for(const P of M[side]||[])for(let i=1;i<P.p.length;i++){
+   const [ax,az]=P.p[i-1],[bx,bz]=P.p[i],len=Math.hypot(bx-ax,bz-az);if(len<1e-6)continue;const tx=(bx-ax)/len,tz=(bz-az)/len;L.push({ax,az,bx,bz,y0:P.y[0],y1:P.y[1],side,nx:-tz*P.in,nz:tx*P.in,len,tx,tz});}
+  return CACHE[map]=L;}
+ function has(map){return !!DATA[map];}
+ function dist2(s,x,z){const t=Math.max(0,Math.min(s.len,(x-s.ax)*s.tx+(z-s.az)*s.tz)),px=s.ax+s.tx*t-x,pz=s.az+s.tz*t-z;return px*px+pz*pz;}
+ // a capsule of radius r standing at (x, y, z), height h, touches a wall (the motor's world.blocked contract)
+ function blocked(map,x,z,r,y,h){const L=pieces(map);if(!L.length)return false;if(h==null)h=1.8;const y0=y+.025,y1=y+h,R=(r||0)+HALF;
+  for(const s of L){if(y1<=s.y0||y0>=s.y1)continue;if(dist2(s,x,z)<R*R)return true;}return false;}
+ // first wall a ray o + d t (d unit) meets before max -> {distance, piece} | null (shots, sight, thrown utility)
+ function ray(map,o,d,max){const L=pieces(map);let best=null,bt=max==null?Infinity:max;
+  for(const s of L){const den=d[0]*s.nx+d[2]*s.nz;/* d . n */if(Math.abs(den)<1e-9)continue;const t=((s.ax-o[0])*s.nx+(s.az-o[2])*s.nz)/den;if(!(t>0&&t<bt))continue;
+   const px=o[0]+d[0]*t,pz=o[2]+d[2]*t,u=(px-s.ax)*s.tx+(pz-s.az)*s.tz,py=o[1]+d[1]*t;if(u<0||u>s.len||py<s.y0||py>s.y1)continue;bt=t;best={distance:t,piece:s};}
+  return best;}
+ // the 2-D segment a -> b crosses (or passes within r of) a wall whose height span holds y -> the piece | null
+ function crossing(map,ax,az,bx,bz,y,r){const L=pieces(map);r=r||0;for(const s of L){if(y!=null&&(y<s.y0-.5||y>s.y1))continue;if(segSeg(ax,az,bx,bz,s.ax,s.az,s.bx,s.bz)||(r>0&&(dist2(s,ax,az)<r*r||dist2(s,bx,bz)<r*r||segDist2(ax,az,bx,bz,s)<r*r)))return s;}return null;}
+ function segSeg(ax,az,bx,bz,cx,cz,dx,dz){const o=(px,pz,qx,qz,rx,rz)=>Math.sign((qx-px)*(rz-pz)-(qz-pz)*(rx-px));const a=o(ax,az,bx,bz,cx,cz),b=o(ax,az,bx,bz,dx,dz),c=o(cx,cz,dx,dz,ax,az),d=o(cx,cz,dx,dz,bx,bz);return a*b<0&&c*d<0;}
+ function segDist2(ax,az,bx,bz,s){let m=Infinity;const l=Math.hypot(bx-ax,bz-az);if(l<1e-9)return dist2(s,ax,az);for(let k=0;k<=8;k++){const t=k/8;m=Math.min(m,dist2(s,ax+(bx-ax)*t,az+(bz-az)*t));}
+  // end points of the wall against a -> b
+  for(const [px,pz] of [[s.ax,s.az],[s.bx,s.bz]]){const t=Math.max(0,Math.min(1,((px-ax)*(bx-ax)+(pz-az)*(bz-az))/(l*l))),qx=ax+(bx-ax)*t-px,qz=az+(bz-az)*t-pz;m=Math.min(m,qx*qx+qz*qz);}return m;}
+ // nearest wall of a side to (x, z) -> {piece, d: horizontal distance, t: metres along it, inside: on the spawn side}
+ function nearest(map,side,x,z){let best=null;for(const s of pieces(map)){if(side&&s.side!==side)continue;const d=Math.sqrt(dist2(s,x,z));if(!best||d<best.d){const t=Math.max(0,Math.min(s.len,(x-s.ax)*s.tx+(z-s.az)*s.tz));best={piece:s,d,t,inside:(x-s.ax)*s.nx+(z-s.az)*s.nz>=0};}}return best;}
+ // drop animation (round start): 0..1 progress -> {alpha, sink: metres the wall has sunk, glow}; the wall flashes, then
+ // sinks into the floor and fades in DROP s (Valorant: a bright pulse and the walls dissolve as the round starts)
+ const DROP=.6;function drop(t){const k=Math.max(0,Math.min(1,t/DROP));return {alpha:(1-k)*(1-k),sink:k*k*2.5,glow:k<.25?1+k*4:Math.max(0,2-(k-.25)*2.6)};}
+ // replace one map's panels (generator / tests)
+ function set(map,v){if(v)DATA[map]=v;else delete DATA[map];delete CACHE[map];}
+ return {DATA,set,HALF,DROP,has,pieces,blocked,ray,crossing,nearest,drop,segSeg};
 });
 // Native-map 5v5 bots stop moving as one blob: per-round plans (own spot inside the site, one lurker on the other site,
 // staggered starts by personality, shuffled defender sites with spread holds), lane-varied routes from the shared
@@ -16318,34 +16413,36 @@ if(typeof xDefOk==='function'){const do0=xDefOk;xDefOk=function(x,safe){if(!xbvS
  return sg0.apply(this,arguments);};}
 // Buy phase (native-map 5v5, as the server's bots.js buyMill; shared logic vendor/bot-brain.cjs buy*): after their buy
 // (fBotBuy, unchanged) the bots stand a moment, walk a few short legs around spawn with pauses and look-arounds, then walk
-// to a spot 0.55-0.7 m inside the spawn barrier (the plane fiveTick clamps the player to: z = +-xSpawn().edge) where
-// their planned route (xbvPlan: stage / site) leaves spawn, staggered from their teammates' spots (a second row 0.75 m
-// back in a full doorway), face out along that route and peek a little along the barrier until it drops. They walk only
-// on the spawn's own nav region 0.5 m+ inside the barrier and every step keeps them 0.42 m inside, so they never touch or
-// cross it; the round's own logic (xGoal, staggered starts, utility) takes over from there when it drops.
+// to a spot 0.55-0.7 m inside the spawn wall (vendor/spawn-barriers.cjs: Valorant's barrier panels in the spawn's real
+// exits, solid in the buy phase through nmBlocked) their planned route (xbvPlan: stage / site) crosses, staggered from
+// their teammates' spots (a second row 0.75 m back in a full doorway), face out along that route and peek a little along
+// the wall until it drops. They walk only on the spawn's own nav region (never across a wall, 0.5 m+ from every wall)
+// and every step keeps them 0.42 m from the walls, so they never touch or cross one; the round's own logic (xGoal, staggered starts, utility) takes over from there when it drops.
 var XBYM={k:'',T:{},bl:null,blC:null,V:[0,0]};
 const XBYM_IN=.42;
 function xbbOn(){return !!(window.BotBrain&&window.xBuyMill!==false&&running&&mode==='five'&&!FV.dm&&FV.buy>0&&typeof nmActive==='function'&&nmActive()&&!(typeof srOn==='function'&&srOn())&&!(typeof MP!=='undefined'&&MP&&MP.cl));}/* an online client draws the host's / server's bots */
 function xbbBl(C,i){if(XBYM.blC!==C){XBYM.blC=C;XBYM.bl=new Map();}let v=XBYM.bl.get(i);if(v===undefined){const n=C.nav.nodes[i];v=nmBlocked(C,n[0],n[2],.3,n[1])?1:0;XBYM.bl.set(i,v);}return v;}
 function xbbTeam(C,atk){const k=xbvKey()+'|'+(atk?1:0);if(XBYM.k!==xbvKey()){XBYM.k=xbvKey();XBYM.T={};}let T=XBYM.T[k];if(T)return T;
- const M=C.meta,a=atk?M.attacker:M.defender,s=BotBrain.buySide(a),edge=BotBrain.buyEdge(M.attacker,M.defender);
- return XBYM.T[k]={s,edge,area:BotBrain.buyArea(C.nav.nodes,C.nav.adj,nmNear(C,a[0],a[2],a[1]),s,edge,i=>!C.playable||!!C.playable[i]),spots:[]};}
+ const M=C.meta,a=atk?M.attacker:M.defender,walls=window.SpawnBarriers?SpawnBarriers.pieces(C.key).filter(q=>q.side===(atk?'atk':'def')):[];
+ return XBYM.T[k]={walls,area:BotBrain.buyArea(C.nav.nodes,C.nav.adj,nmNear(C,a[0],a[2],a[1]),walls,i=>!C.playable||!!C.playable[i]),spots:[]};}
 const XBB_RING=[[.15,0],[-.15,0],[0,.15],[0,-.15]];
-function xbbOk(C,T,y0){return (x,z)=>{if(T.s*z<T.edge+XBYM_IN+.05)return null;const i=nmNear(C,x,z,y0);if(i<0||!T.area.f[i])return null;const n=C.nav.nodes[i];if(Math.hypot(n[0]-x,n[2]-z)>.9||Math.abs(n[1]-y0)>2.5)return null;
+function xbbClose(T,x,z){const nr=BotBrain.buyNear(T.walls,x,z);return !!nr&&(nr.d<XBYM_IN||!nr.inside&&nr.d<1.5);}
+function xbbOk(C,T,y0){return (x,z)=>{{const nr=BotBrain.buyNear(T.walls,x,z);if(nr&&(nr.d<XBYM_IN+.05||!nr.inside&&nr.d<1.5))return null;}const i=nmNear(C,x,z,y0);if(i<0||!T.area.f[i])return null;const n=C.nav.nodes[i];if(Math.hypot(n[0]-x,n[2]-z)>.9||Math.abs(n[1]-y0)>2.5)return null;
  let y;try{y=nmHeight(C,x,z,n[1]+.3);}catch(e){return null;}if(!(Math.abs(y-n[1])<.45)||nmBlocked(C,x,z,.5,y)||!nmLeash(C,x,z,y,n[0],n[2]))return null;
  for(let k=0;k<4;k++)if(nmBlocked(C,x+XBB_RING[k][0],z+XBB_RING[k][1],.4,y))return null;/* no step lip within the arrival slack: a .5 capsule can clear a low step that a body stopping .15 m off the spot stands in */
  for(let k=1;k<4;k++){const t=k/4;if(nmBlocked(C,n[0]+(x-n[0])*t,n[2]+(z-n[2])*t,.4,y))return null;}return [y,i];};}
-function xbbInit(C,u,team,atk){const T=xbbTeam(C,atk),key=XBYM.k+'|'+(atk?1:0);if(u.xbb&&u.xbb.key===key)return u.xbb;u.smMotor=null;u.svx=u.svz=0;/* a new buy phase starts from rest (the round reset put it in spawn) */const p=u.g.position,N=C.nav.nodes,s=T.s,edge=T.edge;
- const rand=BotRoutes.rng(BotRoutes.hash('buy|'+(u.name||'')+'|'+key+'|'+xbvSeed())),start=nmNear(C,p.x,p.z,p.y),B={key,st:BotBrain.buyNew(xbBrain(u),rand),spot:null,face:[0,-s],route:[],rg:null,stuck:0,last:[p.x,p.z],fails:0,bad:null,esc:null,off:!(start>=0&&T.area.f[start])};
+function xbbInit(C,u,team,atk){const T=xbbTeam(C,atk),key=XBYM.k+'|'+(atk?1:0);if(u.xbb&&u.xbb.key===key)return u.xbb;u.smMotor=null;u.svx=u.svz=0;/* a new buy phase starts from rest (the round reset put it in spawn) */const p=u.g.position,N=C.nav.nodes;
+ const rand=BotRoutes.rng(BotRoutes.hash('buy|'+(u.name||'')+'|'+key+'|'+xbvSeed())),start=nmNear(C,p.x,p.z,p.y),B={key,st:BotBrain.buyNew(xbBrain(u),rand),spot:null,face:[0,atk?-1:1],route:[],rg:null,stuck:0,last:[p.x,p.z],fails:0,bad:null,esc:null,off:!(start>=0&&T.area.f[start])||!T.walls.length};
  if(!B.off){let site=null;try{const P=xbvPlan(u,team,atk,C),g=P.stages&&P.stages[0]?P.stages[0].site:atk?FV.sp.site:P.site;site=(g==='mid'?xbvMid(C):C.meta.sites[g])||C.meta.sites[Object.keys(C.meta.sites)[0]];}catch(e){}/* a mid player lines up at the exit toward mid (= server sitePoint) */
-  const ex=site?BotBrain.buyExit(N,nmPath(C,start,nmNear(C,site[0],site[2],site[1])),s,edge):null,exit=ex||{x:p.x,y:p.y,z:s*edge,dx:0,dz:-s};
-  const sp=BotBrain.buySpot(exit,s,edge,T.spots,rand,xbbOk(C,T,exit.y));if(sp){B.spot=sp.p;T.spots.push(sp.p);B.face=[exit.dx,exit.dz];}}
+  let exit=site?BotBrain.buyExit(N,nmPath(C,start,nmNear(C,site[0],site[2],site[1])),T.walls):null;
+  if(!exit){/* no route out through a wall: the wall nearest the bot */const nr=BotBrain.buyNear(T.walls,p.x,p.z),w=nr.w;exit={x:w.ax+w.tx*nr.t,y:p.y,z:w.az+w.tz*nr.t,dx:-w.nx,dz:-w.nz,w};}
+  const sp=BotBrain.buySpot(exit,T.walls,T.spots,rand,xbbOk(C,T,exit.y));if(sp){B.spot=sp.p;T.spots.push(sp.p);B.face=[exit.dx,exit.dz];}}
  return u.xbb=B;}
 function xbbStep(C,u,team,atk,dt){
- const B=xbbInit(C,u,team,atk),p=u.g.position;if(B.off||!dt)return;const T=xbbTeam(C,atk),N=C.nav.nodes,s=T.s,edge=T.edge;
+ const B=xbbInit(C,u,team,atk),p=u.g.position;if(B.off||!dt)return;const T=xbbTeam(C,atk),N=C.nav.nodes;
  const mates=team.filter(v=>v!==u&&v.alive&&v.g).map(v=>({x:v.g.position.x,z:v.g.position.z,m:v.xbb}));if(team===allies&&player&&player.hp>0)mates.push({x:player.x,z:player.z,m:null});
  const ok=xbbOk(C,T,p.y),c={dt,left:FV.buy,pos:[p.x,p.z],spot:B.spot,face:B.face,
-  wander:()=>{const av=mates.map(v=>[v.x,v.z]);for(const v of mates){const g=v.m&&v.m.st.goal;if(g)av.push([g[0],g[2]]);}const i=BotBrain.buyWander(N,T.area,[p.x,p.z],B.st.rand,av,s,edge,j=>!xbbBl(C,j));return i>=0?N[i]:null;},
+  wander:()=>{const av=mates.map(v=>[v.x,v.z]);for(const v of mates){const g=v.m&&v.m.st.goal;if(g)av.push([g[0],g[2]]);}const i=BotBrain.buyWander(N,T.area,[p.x,p.z],B.st.rand,av,T.walls,j=>!xbbBl(C,j));return i>=0?N[i]:null;},
   free:(x,z)=>!!ok(x,z)&&mates.every(v=>{const q=v.m&&v.m.spot,g=v.m&&v.m.st.goal;return Math.hypot(v.x-x,v.z-z)>1.05&&!(q&&Math.hypot(q[0]-x,q[2]-z)<1.05)&&!(g&&Math.hypot(g[0]-x,g[2]-z)<1.05);})};
  const d=BotBrain.buyTick(B.st,c),turn=(fx,fz,k)=>{const t=Math.atan2(fx,fz);u.g.rotation.y+=xAng(t-u.g.rotation.y)*Math.min(1,dt*k);};
  if(d.face)turn(d.face[0],d.face[1],3.5);
@@ -16353,14 +16450,14 @@ function xbbStep(C,u,team,atk,dt){
  if(d.goal){const g=d.goal;if(B.rg!==g){B.rg=g;const occ=[];for(const v of mates){occ.push([v.x,v.z]);if(v.m&&v.m.spot)occ.push([v.m.spot[0],v.m.spot[2]]);}
    B.route=BotBrain.buyRoute(N,C.nav.adj,T.area,nmNear(C,p.x,p.z,p.y),nmNear(C,g[0],g[2],g[1]),i=>(xbbBl(C,i)?8:0)+(B.bad&&B.bad.has(i)?6:0)+(occ.some(o=>Math.abs(o[0]-N[i][0])<1.1&&Math.abs(o[1]-N[i][2])<1.1)?5:0));B.stuck=0;B.last=[p.x,p.z];}
   if(Math.hypot(p.x-B.last[0],p.z-B.last[1])>.25){B.last=[p.x,p.z];B.stuck=0;}else if((B.stuck+=dt)>.6){B.stuck=0;if(B.route.length)(B.bad||(B.bad=new Set())).add(B.route[0]);B.rg=null;B.fails++;if(B.st.mode==='mill'&&B.fails>1)B.st.legT=99;
-   const gx=g[0]-p.x,gz=g[2]-p.z,gl=Math.hypot(gx,gz)||1;let best=null,bd=-2;for(let k=0;k<16;k++){const a=k*Math.PI/8,ex=Math.sin(a),ez=Math.cos(a);if(blocked(p.x+ex*.3,p.z+ez*.3,.45,p.y)||s*(p.z+ez*.3)<edge+XBYM_IN)continue;const dot=(ex*gx+ez*gz)/gl;if(dot>bd){bd=dot;best=[ex,ez];}}
+   const gx=g[0]-p.x,gz=g[2]-p.z,gl=Math.hypot(gx,gz)||1;let best=null,bd=-2;for(let k=0;k<16;k++){const a=k*Math.PI/8,ex=Math.sin(a),ez=Math.cos(a);if(blocked(p.x+ex*.3,p.z+ez*.3,.45,p.y)||xbbClose(T,p.x+ex*.3,p.z+ez*.3))continue;const dot=(ex*gx+ez*gz)/gl;if(dot>bd){bd=dot;best=[ex,ez];}}
    if(best)B.esc={v:best,until:FV.buy-.3};
-   if(B.st.mode==='go'&&B.fails>=2&&B.spot){const k=T.spots.indexOf(B.spot),sp=BotBrain.buySpot({x:p.x},s,edge,T.spots.filter(q=>q!==B.spot),B.st.rand,ok);if(sp&&Math.hypot(sp.p[0]-p.x,sp.p[2]-p.z)<Math.hypot(B.spot[0]-p.x,B.spot[2]-p.z)){if(k>=0)T.spots[k]=sp.p;B.spot=sp.p;B.fails=0;}}}
+   if(B.st.mode==='go'&&B.fails>=2&&B.spot){const k=T.spots.indexOf(B.spot),nr=BotBrain.buyNear(T.walls,p.x,p.z),sp=nr&&BotBrain.buySpot({x:nr.w.ax+nr.w.tx*nr.t,z:nr.w.az+nr.w.tz*nr.t,w:nr.w},T.walls,T.spots.filter(q=>q!==B.spot),B.st.rand,ok);if(sp&&Math.hypot(sp.p[0]-p.x,sp.p[2]-p.z)<Math.hypot(B.spot[0]-p.x,B.spot[2]-p.z)){if(k>=0)T.spots[k]=sp.p;B.spot=sp.p;B.fails=0;}}}
   if(B.esc&&FV.buy>B.esc.until){vx=B.esc.v[0];vz=B.esc.v[1];walk=false;}
   else{const t=BotBrain.buyNext(N,B.route,p.x,p.z,g[0],g[2],XBYM.V),l0=Math.hypot(t[0]-p.x,t[1]-p.z)||1,v=BotBrain.buySep(p.x,p.z,mates.map(m=>[m.x,m.z]),(t[0]-p.x)/l0,(t[1]-p.z)/l0,XBYM.V);vx=v[0];vz=v[1];}
   if(!d.face&&(vx||vz))turn(vx,vz,8);}
  else{B.rg=null;B.route.length=0;B.stuck=0;}
- // move like the round's bots (weapon run speed, walk x0.6, axis-separated against blocked()), never within XBYM_IN of the barrier.
+ // move like the round's bots (weapon run speed, walk x0.6, axis-separated against blocked()), never within XBYM_IN of a spawn wall.
  // Acceleration / stop through the shared motor like the round's bots (83b0d90 xSmV: groundMove on u.smMotor in m/s, 128 Hz
  // sub-steps), without xSmV's teammate spacing steer (the line-up stands 0.75 m apart on purpose); a blocked axis stops it.
  const D=typeof DIFF!=='undefined'&&DIFF[S.diff]||{speed:1},run=botRun(u,walk)*Math.min(1,D.speed||1),bs=run*dt,x0=p.x,z0=p.z,VFm=window.ValorantFeel,Pm=VFm&&VFm.groundMove&&run>1e-6?(u.smMotor||(u.smMotor={vx:0,vz:0})):null;
@@ -16371,8 +16468,8 @@ function xbbStep(C,u,team,atk,dt){
  // a lip) moves as the round's bots do until it is clear.
  const strict=!nmBlocked(C,p.x,p.z,.4,p.y),floor=(x,z)=>{let y=nmHeight(C,x,z,p.y+.01);if(y<p.y-.05)for(let k=0;k<8;k++){const a=k*Math.PI/4;let q;try{q=nmHeight(C,x+Math.cos(a)*.42,z+Math.sin(a)*.42,p.y+.01);}catch(e){continue;}if(q<=p.y+.05&&q>y)y=q;}return y;};
  const step=(x,z)=>{if(blocked(x,z,.45,p.y))return false;let y;try{y=floor(x,z);}catch(e){return false;}if(!(y>p.y-1.2)||(strict&&nmBlocked(C,x,z,.4,y)&&nmBlocked(C,x,z,.4,y+.32)))return false;p.x=x;p.z=z;p.y=y;return true;};
- if(vx&&!step(p.x+vx*bs,p.z)&&Pm)Pm.vx=0;
- if(vz){const z=p.z+vz*bs;if(!(s*z>=edge+XBYM_IN&&step(p.x,z))&&Pm)Pm.vz=0;}
+ if(vx){const x=p.x+vx*bs;if(!(!xbbClose(T,x,p.z)&&step(x,p.z))&&Pm)Pm.vx=0;}
+ if(vz){const z=p.z+vz*bs;if(!(!xbbClose(T,p.x,z)&&step(p.x,z))&&Pm)Pm.vz=0;}
  u.spd=Pm?Math.hypot(Pm.vx,Pm.vz):Math.hypot(p.x-x0,p.z-z0)/dt;u.sf=u.spd/botRun(u,false);u.mv=u.spd>.05;u.wk=walk?1:0;u.fs=(u.fs||0)-dt;if(u.mv&&!walk&&u.fs<=0){u.fs=.4;try{SFX.step(p);}catch(e){}}}
 function xbbTick(dt){const C=nmActive();if(!C||!C.nav||!C.meta||!C.meta.attacker)return;
  for(const [team,atk] of [[bots,!FV.atk],[allies,!!FV.atk]])for(const u of team){if(!u||!u.alive||!u.g||u.nt||u.det>0)continue;try{xbbStep(C,u,team,atk,dt);}catch(e){u.xbb=Object.assign(u.xbb||{},{off:true});}}}
