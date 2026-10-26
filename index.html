@@ -8891,7 +8891,7 @@ function rsTick(dt) {
   }
   if (RS.hk) {
     const h = RS.hk, p = h.m.position;
-    if (h.w != null) { if ((h.w -= dt) <= 0) hkFlash(); } else { const n = p.clone().addScaledVector(h.d, XGL.speed * dt); h.t -= dt;
+    if (h.w != null) { if ((h.w -= dt) <= 1e-9) hkFlash(); } /* qa-36: epsilon - 18 frames of 1/60 s leave ~2.7e-15 of the 0.3 s windup, which flashed a frame late */ else { const n = p.clone().addScaledVector(h.d, XGL.speed * dt); h.t -= dt;
     if (n.y > 0.3 && !blocked(n.x, n.z, 0.2, n.y - 0.2)) p.copy(n);
     if (h.t <= 0) { h.t = 0; hkPop(); } } // wiki: the hawk flashes at the end of its flight (was: faded without a flash)
   }
