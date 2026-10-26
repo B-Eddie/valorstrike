@@ -8461,7 +8461,7 @@ function okKey(code) {
   }
   if (code === "KeyE") {
     if (J.e < 1) return sgNo(); J.e = 0; okRm(J.tur);
-    const m = okPlace(kjTur, 0xf2c230, 1.5); xKjAcc(m, 0.5); J.tur = { m, p: m.position, fx: -Math.sin(yaw), fz: -Math.cos(yaw), hp: 100, cd: 0.5 }; say("Turret placed · 100 HP", 800); blip(500, 0.2, "square", 0.12); SFX.ab("turret", m.position);
+    const m = okPlace(kjTur, 0xf2c230, 1.5); xKjAcc(m, 0.5); J.tur = { m, p: m.position, fx: -Math.sin(yaw), fz: -Math.cos(yaw), hp: 100, cd: XTUR.deploy }; say("Turret deploying · 100 HP", 800); // wiki: 2.7 s deploy blip(500, 0.2, "square", 0.12); SFX.ab("turret", m.position);
   }
   if (code === "KeyX") {
     if (J.ld) return say("Lockdown · " + Math.ceil(J.ld.t) + " s", 700);
@@ -8501,8 +8501,8 @@ function okTick(dt) {
   }
   if (J.tur) {
     const T = J.tur; okHitBy(T, dt); if (T.hp <= 0) { okRm(T); J.tur = null; say("Turret destroyed", 800); blip(200, 0.3, "square", 0.12); }
-    else if ((T.cd -= dt) <= 0) for (let n = 0; n < 4 && T.cd <= 0; n++) { // XTUR: lock windup, then 3-shot bursts every 1.25 s; losing the target re-arms the windup
-      const e = new V(T.p.x, 0.8, T.p.z), tg = bots.filter((b) => { if (!b.alive) return false; const q = b.g.position, vx = q.x - e.x, vz = q.z - e.z, d = Math.hypot(vx, vz); return d < XTUR.range && vx * T.fx + vz * T.fz >= 0 && los(e, new V(q.x, 1.2, q.z)); }).sort((a, b) => a.g.position.distanceTo(e) - b.g.position.distanceTo(e))[0];
+    else if ((T.cd -= dt) <= 0) for (let n = 0; n < 4 && T.cd <= 0; n++) { // XTUR: 100 degree cone, off while Killjoy is dead or beyond 40 m; lock windup, then 3-shot bursts every 1.25 s; losing the target re-arms the windup
+      const e = new V(T.p.x, 0.8, T.p.z), on = player.hp > 0 && Math.hypot(player.x - T.p.x, player.z - T.p.z) <= XTUR.active, ca = Math.cos(XTUR.cone / 2 * Math.PI / 180), tg = on && bots.filter((b) => { if (!b.alive) return false; const q = b.g.position, vx = q.x - e.x, vz = q.z - e.z, d = Math.hypot(vx, vz); return d < XTUR.range && vx * T.fx + vz * T.fz >= d * ca - 1e-6 && los(e, new V(q.x, 1.2, q.z)); }).sort((a, b) => a.g.position.distanceTo(e) - b.g.position.distanceTo(e))[0];
       if (!tg) { T.lock = 0; T.shot = 0; T.cd = 0.15; break; }
       if (!T.lock) { T.lock = 1; T.shot = 0; T.cd = XTUR.windup; break; }
       const q = new V(tg.g.position.x, 1.2, tg.g.position.z); T.m.rotation.y = Math.atan2(q.x - e.x, q.z - e.z);
@@ -8573,10 +8573,13 @@ function rsPack() { // Blast Pack detonation: 50 to enemies, knocks everyone bac
 function rgEnd(msg) { if (!RS.rg) return; scene.remove(RS.rg.m); RS.rg = null; if (msg) say(msg, 800); }
 // Skye Guiding Light (wiki.playvalorant.com/en-us/Guiding_Light): the hawk flies 18 m/s for 2 s and flashes on E or at the end
 // of its flight; max blind 1 s on an instant pop, growing to 2.25 s at 0.75 s of flight. Same values as the server (GUIDING).
-const XGL = { speed: 18, life: 2, min: 1, max: 2.25, ramp: 0.75 };
+const XGL = { speed: 18, life: 2, min: 1, max: 2.25, ramp: 0.75, act: 0.3 }; // act: wiki 0.3 s activation windup between the pop (E / end of flight) and the flash
 function xGlBlind(t) { return XGL.min + (XGL.max - XGL.min) * Math.min(1, Math.max(0, t) / XGL.ramp); }
-function hkPop() { // Guiding Light flash at the hawk
-  const p = RS.hk.m.position.clone(), bl = xGlBlind(XGL.life - RS.hk.t); scene.remove(RS.hk.m); RS.hk = null; SFX.flash();
+function hkPop() { // Guiding Light: E / end of flight stops the hawk; it flashes XGL.act s later, blinding by its flight time
+  const h = RS.hk; if (h.w != null) return; h.w = XGL.act; h.bl = xGlBlind(XGL.life - h.t); blip(1500, 0.1, "sine", 0.08);
+}
+function hkFlash() { // the Guiding Light flash at the stopped hawk
+  const p = RS.hk.m.position.clone(), bl = RS.hk.bl; scene.remove(RS.hk.m); RS.hk = null; SFX.flash();
   const m = new THREE.Mesh(orbGeo, fireMat(0xfff2b0, 1)); m.scale.setScalar(4); m.position.copy(p); jFx(m, 0.3); let n = 0;
   bots.forEach((b) => { if (!b.alive) return; const bp = new RV(b.g.position.x, 1.6, b.g.position.z), ry = b.g.rotation.y, vx = p.x - bp.x, vz = p.z - bp.z, l = Math.hypot(vx, vz) || 0.01;
     if (l < 30 && (vx * Math.sin(ry) + vz * Math.cos(ry)) / l > 0.3 && los(bp, p)) { b.blind = Math.max(b.blind || 0, bl); n++; } });
@@ -8689,9 +8692,10 @@ function rsTick(dt) {
     }
   }
   if (RS.hk) {
-    const h = RS.hk, p = h.m.position, n = p.clone().addScaledVector(h.d, XGL.speed * dt); h.t -= dt;
+    const h = RS.hk, p = h.m.position;
+    if (h.w != null) { if ((h.w -= dt) <= 0) hkFlash(); } else { const n = p.clone().addScaledVector(h.d, XGL.speed * dt); h.t -= dt;
     if (n.y > 0.3 && !blocked(n.x, n.z, 0.2, n.y - 0.2)) p.copy(n);
-    if (h.t <= 0) { h.t = 0; hkPop(); } // wiki: the hawk flashes at the end of its flight (was: faded without a flash)
+    if (h.t <= 0) { h.t = 0; hkPop(); } } // wiki: the hawk flashes at the end of its flight (was: faded without a flash)
   }
   RS.sk = RS.sk.filter((s) => {
     s.t -= dt; const p = s.m.position;
@@ -9075,7 +9079,7 @@ try { const r0 = renderer.render.bind(renderer), E = new THREE.Euler(0, 0, 0, "Y
 const XNANO = { r: 4.5, det: 5.25, active: 5, delay: 1, dps: 45 };
 // Killjoy Turret fire (wiki.playvalorant.com/en-us/Turret): 0.75 s lock windup, bursts of 3 shots 0.083 s apart every 1.25 s,
 // 8 / 6 / 4 per shot within 20 / 35 / beyond m. Same values as the server (DEV.turret / turretDamage); 30 m sight as the server.
-const XTUR = { range: 30, windup: 0.75, shots: 3, gap: 0.083, cycle: 1.25, near: 20, mid: 35, dmg: [8, 6, 4] };
+const XTUR = { range: 30, cone: 100, deploy: 2.7, active: 40, windup: 0.75, shots: 3, gap: 0.083, cycle: 1.25, near: 20, mid: 35, dmg: [8, 6, 4] };
 function xTurDmg(d) { return d < XTUR.near ? XTUR.dmg[0] : d < XTUR.mid ? XTUR.dmg[1] : XTUR.dmg[2]; }
 const XKN = [];
 function xKnClr() { for (const o of XKN) if (o.on) { o.on = false; jRel(o.m); o.m = null; } }

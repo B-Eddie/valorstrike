@@ -468,10 +468,18 @@ offline client 10 every 0.35 s within 25 m, no windup.
   every 1.25 s; losing the target re-arms the windup. Each hit still tags 0.5 s.
 - Client: `XTUR` (same values, asserted equal) / `xTurDmg` in the `J.tur` tick (same state machine); sight range 25 -> 30 m
   to match the server's 30 m.
-- Not changed: 180 degree arc (wiki detection cone 100 degrees), 2.7 s deploy, 40 m proximity deactivation, 20 s life on the
-  server; range tiers past 30 m never apply on either side (30 m sight).
+- Deploy / cone / proximity (wiki Turret: deploy time 2.7 s, detection cone angle 100 degrees, proximity radius to remain
+  active 40 m; "will also deactivate if Killjoy is killed"): server `DEV.turret {arc: 50 degrees (half-angle), deploy: 2.7,
+  active: 40}`: the first lock check waits 2.7 s after the cast (was 0.7 s); targets only within 50 degrees of its facing
+  (was 90, a 180 degree arc); while Killjoy is dead or more than 40 m away it shoots nothing and its lock / windup re-arms.
+  Client `XTUR {cone: 100, deploy: 2.7, active: 40}`: `J.tur.cd` starts at 2.7 s (was 0.5), the same cone and the same
+  40 m / alive check against the player.
+- Not changed: 20 s life on the server, the 4.5 m max deploy length (placed at the aim point, up to 14 m); range tiers past
+  30 m never apply on either side (30 m sight).
 - Tests: `server/test-ults.js` (table; tiers; 10 m foe: 0 / 24 / 24 / 48 / 48 / 72 at 0.7 / 1.3 / 1.9 / 2.5 / 3.1 / 3.7 s;
-  25 m: 6 a shot), `work/test_ability_equip.cjs` (XTUR == DEV.turret, tiers, 10 m bot 0 / 24 / 24 / 48 at 0.7 / 1.3 / 1.9 / 2.5 s).
+  25 m: 6 a shot; deploy: nothing by 3.4 s, shot by 3.6 s; 45 degrees off hit, 55 not; Killjoy 41 m away / dead: off, 39 m:
+  on), `work/test_ability_equip.cjs` (XTUR == DEV.turret incl. cone / deploy / active, tiers, 10 m bot 0 / 24 / 24 / 48 at
+  0.7 / 1.3 / 1.9 / 2.5 s; 45 degrees hit, 55 not, player 41 m away off, 39 m on).
 
 ### Skye Guiding Light (wiki.playvalorant.com/en-us/Guiding_Light, fetched 2026-10-25)
 
@@ -484,11 +492,13 @@ hawk flew 2.5 s and faded without a flash.
   hawk gets after flying there (`distance / 18` s): 14 m and beyond the full 2.25 s, 5 m ~1.46 s. Breach / Omen unchanged.
 - Client: `XGL = {speed: 18, life: 2, min: 1, max: 2.25, ramp: 0.75}` (asserted equal to GUIDING), `xGlBlind`; `hkPop` blinds by
   the hawk's flight time; the hawk flies 2 s and then flashes (was 2.5 s and a silent fade).
-- Not modelled: the 0.3 s activation windup before the flash, steering the hawk with held FIRE; offline bot Skye still throws
-  the shared bot flash orb.
+- Activation windup (wiki "Flash activation windup time" 0.3 s): server `GUIDING.act = .3`, Skye's stand-in flash goes off
+  0.3 s after the cast (was the generic 0.35 s); client `XGL.act = 0.3`: `hkPop` (E or the end of the flight) stops the hawk
+  and `hkFlash` blinds 0.3 s later, by the flight time at the pop.
+- Not modelled: steering the hawk with held FIRE; offline bot Skye still throws the shared bot flash orb.
 - Tests: `server/test-abilities.js` (table; glBlind ramp; a wall at 5.5 m -> blind glBlind(5/18) ~1.46; 14 m -> 2.25;
-  Flashpoint still 2.25), `work/test_ability_equip.cjs` (XGL == GUIDING; ramp table; popped after 0.25 s -> 1.42 s; flashes at
-  the end of the flight with ~2.25 s).
+  Flashpoint still 2.25; flash 0.3 s after the cast), `work/test_ability_equip.cjs` (XGL == GUIDING; ramp table; popped after
+  0.25 s: no flash at the pop or 0.25 s later, ~1.42 s blind at 0.35 s; flashes at the end of the flight with ~2.25 s).
 
 ### Sova Owl Drone dart and Cypher Spycam dart (wiki.playvalorant.com/en-us/Owl_Drone, /Spycam, fetched 2026-10-25)
 
