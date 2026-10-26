@@ -5,7 +5,7 @@ import {Simulation,weapons,reserveOf,armorItem,armorOwned,regenTick,tagMul,stimK
 import Motor from './motor.cjs';
 import kits from './kits.json' with {type:'json'};
 import {path} from './path.js';
-import {persona,flankNode,plan,spotNear,variedPath,spaceLook,strategy,stageNode,roundTime,botSeed,buyMill,buyClamp,buyEnd,botView} from './bots.js';
+import {persona,flankNode,plan,spotNear,variedPath,spaceLook,strategy,stageNode,roundTime,botSeed,buyMill,buyClamp,buyEnd,botView,hearTick} from './bots.js';
 import BotBrain from '../../vendor/bot-brain.cjs';
 const FOLLOW=[]; // scratch: moving teammates' positions (goalPath trade spacing)
 import SpawnBarriers from '../../vendor/spawn-barriers.cjs';
@@ -211,7 +211,7 @@ export class SpikeSimulation extends Simulation{
  // Once per tick: what the bots perceive. Deaths (teammates react: trade the killer, fall back or hold), sounds (gunshots
  // within 35 m, running footsteps within 16 m: hold the angle, glance or push) and defender information (attackers seen
  // or heard near a site: rotators rotate there after their own delay).
- botSense(){if(this._senseT===this.time)return;this._senseT=this.time;const U=this.units,sites=this.world.map.sites,names=Object.keys(sites);
+ botSense(){if(this._senseT===this.time)return;this._senseT=this.time;hearTick(this);/* castAt stamps for the cast reactions */const U=this.units,sites=this.world.map.sites,names=Object.keys(sites);
   for(const d of U){const was=d._wasAlive;d._wasAlive=d.alive;if(!(was&&!d.alive))continue;let k=null,kd=Infinity;for(const e of U)if(e.alive&&e.team!==d.team){const q=Math.hypot(e.x-d.x,e.z-d.z);if(q<kd){kd=q;k=e;}}
    const alive=U.filter(v=>v.alive&&v.team===d.team).length;
    // at most RESPOND.trade of the mates that want to trade go (the nearest; already-trading mates count), the second one
@@ -225,7 +225,7 @@ export class SpikeSimulation extends Simulation{
      else m.react={kind:'hold',x:k.x,z:k.z,duck:false,until:this.time+.8+P.r()*.8};}
     (this.tradeLog||(this.tradeLog=[])).push({round:this.round,team:d.team,want:want.length,go:go.size});if(this.tradeLog.length>200)this.tradeLog.shift();}}
   for(const m of U){if(!m.alive||m.human||m.sawTarget||(m.react&&m.react.until>this.time))continue;let best=null,bd=Infinity;
-   for(const e of U){if(!e.alive||e.team===m.team)continue;const dist=Math.hypot(e.x-m.x,e.z-m.z),shot=e.shotAt>this.time-.12&&dist<35,run=!shot&&dist<16&&Math.hypot(e.vx||0,e.vz||0)>4.5&&!(e.input&&(e.input.walk||e.input.duck));if((shot||run)&&dist<bd){bd=dist;best={e,kind:shot?'shot':'step',dist};}}
+   for(const e of U){if(!e.alive||e.team===m.team)continue;const dist=Math.hypot(e.x-m.x,e.z-m.z),shot=e.shotAt>this.time-.12&&BotBrain.reacts('shot',dist,e.weapon),cast=!shot&&e.castAt>this.time-.12&&BotBrain.reacts('cast',dist),run=!shot&&!cast&&BotBrain.reacts('step',dist)&&this.loud(e);/* the shared hearing model (BotBrain.reactR: shots 35 m, suppressed / steps / casts 30 m; loud = running, = offline xHear) */if((shot||cast||run)&&dist<bd){bd=dist;best={e,kind:shot?'shot':cast?'cast':'step',dist};}}
    if(!best||m.heardAt>this.time-1.5)continue;m.heardAt=this.time;const P=persona(this,m),c=BotBrain.onSound(P.brain,P.r,best.kind,best.dist),e=best.e;
    const pushing=c==='push'&&U.filter(v=>v!==m&&v.alive&&v.team===m.team&&v.react&&v.react.kind==='push'&&v.react.until>this.time).length>=BotBrain.RESPOND.push;/* one pusher per team at a time: the rest hold the angle */
    if(c==='push'&&!pushing)m.react={kind:'push',x:e.x,y:e.y,z:e.z,until:this.time+2+P.r()};else if(c==='push')m.react={kind:'hold',x:e.x,z:e.z,duck:false,until:this.time+.6+P.brain.patience*1.2};else m.react={kind:'hold',x:e.x,z:e.z,duck:P.r()<.25,until:this.time+(c==='hold'?.6+P.brain.patience*1.2:.25+P.r()*.25)};

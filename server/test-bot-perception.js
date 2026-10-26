@@ -10,7 +10,7 @@
 //  6. glimpses: a 100 ms glimpse is never shot; a jiggle peek rarely dies
 //  7. fire rate: a spraying Vandal bot never beats 9.75 rounds/s
 import assert from 'node:assert/strict';import {createRequire} from 'node:module';
-import {Simulation} from './src/simulation.js';import {persona,botView} from './src/bots.js';
+import {Simulation} from './src/simulation.js';import {SpikeSimulation} from './src/spike.js';import {persona,botView} from './src/bots.js';
 const B=createRequire(import.meta.url)('../vendor/bot-brain.cjs'),out=[];
 const NAMES=['Bot Sage','Bot Omen','Bot Raze','Bot Sova','Bot Breach','Bot Phoenix','Bot Cypher','Bot Skye','Bot Killjoy','Bot Jett'];
 const nodes=[],adj=[];for(let i=0;i<21;i++)for(let j=0;j<21;j++){nodes.push([i*2-20,0,-j*2+20]);const k=i*21+j,a=[];if(i>0)a.push(k-21);if(i<20)a.push(k+21);if(j>0)a.push(k-1);if(j<20)a.push(k+1);adj.push(a);}
@@ -73,4 +73,15 @@ function tick(s,b,dt=1/30){s.time+=dt;const L0=b.look;s.bot(b);botView(s,b,L0,dt
 {let worst=0,total=0,span=0;for(let k=0;k<10;k++){const {s,t,b}=duo(k,{tz:-6});t.hp=1e9;const times=[];for(let i=0;i<240;i++){const r=tick(s,b,1/60);t.hp=1e9;b.ammo=1e9;if(r.shots)times.push(s.time);}
   for(let i=0;i<times.length;i++){let n=0;for(let j=i;j<times.length&&times[j]-times[i]<1-1e-9;j++)n++;worst=Math.max(worst,n);}for(let i=1;i<times.length;i++){const g=times[i]-times[i-1];assert.ok(g>=1/9.75-1e-6,'Vandal gap '+g.toFixed(4)+' s');}total+=times.length;span+=4;}
  assert.ok(worst<=10,'at most 10 Vandal rounds in any 1 s window ('+worst+')');out.push('Vandal: '+worst+' rounds max in 1 s, min gap >= '+(1/9.75).toFixed(4)+' s');}
+// 8. Spike-mode sound reactions on the shared hearing model (bots-tune-1; before: steps only < 16 m at > 4.5 m/s, no casts)
+{const SG={...G(),map:{attacker:[-20,0,20],defender:[20,0,-20],sites:{A:[-8,0,0],B:[8,0,0]}}};
+ const react=(kind,d,{weapon='Vandal',walk=false}={})=>{const s=new SpikeSimulation(SG,'five','ascent',()=>.5),b=s.add('Bot Sage','Sage',false),e=s.add('Enemy','Jett',true);s.phase='game';s.round=2;s.atk=1;s.buy=0;
+  Object.assign(b,{team:0,x:0,y:0,z:0,look:0,alive:true,hp:100,loading:false});Object.assign(e,{team:1,x:0,y:0,z:d,alive:true,hp:100,loading:false,weapon,vx:0,vz:0,input:{}});
+  s.spike={st:'carry',carrier:e.id,x:0,y:0,z:0,t:45,pt:0,dt:0,site:'A'};s.remaining=80;s.time=5;e.inputAt=5;
+  if(kind==='shot')e.shotAt=5;else if(kind==='cast')s.castEvents=[{t:'ac',i:e.id,ag:'Jett',k:'q'}];else{e.vx=5.4;e.input={walk};if(walk)e.vx=3.2;}
+  s.botSense();return b.react&&['hold','push'].includes(b.react.kind)||!!(b.react&&b.react.kind==='hold');};
+ const R=[['step',25,{},true],['step',29,{},true],['step',33,{},false],['step',10,{walk:true},false],['cast',25,{},true],['cast',33,{},false],['shot',33,{},true],['shot',38,{},false],['shot',33,{weapon:'Phantom'},true],['shot',38,{weapon:'Phantom'},false]];
+ for(const [k,d,o,want] of R)assert.equal(react(k,d,o),want,'Spike botSense reacts to '+k+(o.walk?' (walking)':'')+(o.weapon?' '+o.weapon:'')+' at '+d+' m: '+want);
+ for(const [k,w] of [['step',null],['cast',null],['shot','Vandal'],['shot','Phantom']])assert.equal(B.reactR(k,w),{step:30,cast:30}[k]||35,'reactR '+k+' '+w);
+ out.push('Spike sound reactions: run 25/29 m yes, 33 no, walk silent; cast 25 yes / 33 no; Vandal 33 yes / 38 no; Phantom 33 yes / 38 no');}
 console.log('Bot perception: '+out.join('; '));

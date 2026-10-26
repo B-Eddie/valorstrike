@@ -480,11 +480,16 @@
  // Phantom only within 40 m), ability casts within 30 m. Both feed a per-bot memory of last-known positions (a heard one
  // placed with an error that grows with range); the bot looks at / hunts / pre-aims those, never at where an enemy really is.
  const SENSE={fov:103*Math.PI/180,step:30,shot:150,shotSup:40,cast:30,near:2,sup:{Ghost:1,Spectre:1,Phantom:1},
-  mem:{seen:6,heard:4},glance:3,hunt:10,repeek:2,repeekAng:.3,ear:.08};
+  mem:{seen:6,heard:4},glance:3,hunt:10,repeek:2,repeekAng:.3,ear:.08,react:{shot:35}};
  // off: rad between where the bot looks and the enemy's bearing (any sign / wrap); dist: m (pads the cone by the body's half-width).
  function inView(off,dist){return Math.abs(wrapA(off))<=SENSE.fov/2+(dist>0?Math.atan(.3/Math.max(.5,dist)):0);}
  // kind 'step' | 'shot' | 'cast' | 'near' (anyone within 2 m), weapon: the shooter's gun (suppressed guns carry 40 m).
  function audible(kind,dist,weapon){if(!(dist>=0))return false;if(kind==='step')return dist<=SENSE.step;if(kind==='shot')return dist<=(SENSE.sup[weapon]?SENSE.shotSup:SENSE.shot);if(kind==='cast')return dist<=SENSE.cast;return dist<=SENSE.near;}
+ // Sound REACTIONS (stop and hold / turn / push, onSound) use the same hearing model, server botSense = offline xHear /
+ // xbvSound: running footsteps and casts as far as they are audible (30 m), gunshots only within SENSE.react.shot (35 m; a
+ // fight across the map goes into memory, it does not stop a bot; a suppressed gun's 40 m carry is past that anyway).
+ function reactR(kind,weapon){if(kind==='shot')return Math.min(SENSE.react.shot,SENSE.sup[weapon]?SENSE.shotSup:SENSE.shot);if(kind==='step')return SENSE.step;if(kind==='cast')return SENSE.cast;return SENSE.near;}
+ function reacts(kind,dist,weapon){return dist>=0&&dist<=reactR(kind,weapon)&&audible(kind,dist,weapon);}
  // Where a heard sound seems to be: the true spot off by up to SENSE.ear x range (stereo: direction is decent, range is not).
  // n1, n2: two noise draws in [0, 1) from the caller's own deterministic source.
  function earSpot(sx,sz,lx,lz,n1,n2){const d=Math.hypot(sx-lx,sz-lz),e=d*SENSE.ear*n1,a=n2*Math.PI*2;return [sx+Math.cos(a)*e,sz+Math.sin(a)*e];}
@@ -504,5 +509,5 @@
  function mayFire(visibleFor,reactionS,losNow){return !!losNow&&visibleFor>=Math.max(REACT[0],reactionS||0);}
  // Fire-rate cap: never faster than the gun (Vandal 9.75 rounds/s). Returns the earliest next shot time.
  function nextShot(t,rate){return t+1/Math.max(.1,rate||1);}
- return {hash,rng,clamp,pickW,REACT,personality,reaction,crosshair,crosshairAt,firePattern,peek,attackPlan,defensePlan,roles,teamBuy,buyFor,onMateDeath,onSound,ATTACK,DEFENSE,utility,UTIL,turnStep,trackLag,wrapA,SPIKE,plantSpot,postPlant,retake,postPlay,SHOOT_UTIL,shootUtility,TAILWIND,tailwindDash,tailwindKeys,LEVEL,level,aimTraits,AIM_H,aimHeight,halfWidth,aimPlan,aimAt,readyToFire,planFire,idlePitch,recoilPull,discipline,hitPart,BUY,buyArea,buyRoute,buyExit,buySpot,buyWander,buyHold,buyNew,buyTick,buyNext,buySep,SENS,cm360,sensOf,turnRate,SENSE,inView,audible,earSpot,memNew,memNote,memForget,memBest,repeek,mayFire,nextShot,areas,DFORM,GAP,midPoint,RESPOND,nearest,tradeSpot,follow,buyNear,buyCross};
+ return {hash,rng,clamp,pickW,REACT,personality,reaction,crosshair,crosshairAt,firePattern,peek,attackPlan,defensePlan,roles,teamBuy,buyFor,onMateDeath,onSound,ATTACK,DEFENSE,utility,UTIL,turnStep,trackLag,wrapA,SPIKE,plantSpot,postPlant,retake,postPlay,SHOOT_UTIL,shootUtility,TAILWIND,tailwindDash,tailwindKeys,LEVEL,level,aimTraits,AIM_H,aimHeight,halfWidth,aimPlan,aimAt,readyToFire,planFire,idlePitch,recoilPull,discipline,hitPart,BUY,buyArea,buyRoute,buyExit,buySpot,buyWander,buyHold,buyNew,buyTick,buyNext,buySep,SENS,cm360,sensOf,turnRate,SENSE,inView,audible,earSpot,memNew,memNote,memForget,memBest,repeek,mayFire,nextShot,areas,DFORM,GAP,midPoint,RESPOND,nearest,tradeSpot,follow,buyNear,buyCross,reactR,reacts};
 });

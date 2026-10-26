@@ -259,8 +259,13 @@ if(typeof SFX!=='undefined')['at','step'].forEach(k=>{const f=SFX[k];if(f)SFX[k]
 // the player's own running steps (SFX.selfStep: never walking / crouching) are heard by enemy bots like a bot's (bots-perception-2)
 if(typeof SFX!=='undefined'&&SFX.selfStep){const f=SFX.selfStep;SFX.selfStep=function(){const r=f.apply(this,arguments);try{if(running&&player&&player.hp>0&&typeof xHear==='function'){const k0=XBH.k;XBH.k='step';try{xHear({x:player.x,z:player.z});}finally{XBH.k=k0;}}}catch(e){}return r;};}
 // a bot's ability cast is heard within 30 m by the other team
-if(typeof xBUse==='function'){const f=xBUse;xBUse=function(b){const r=f.apply(this,arguments);try{if(r&&b&&b.g)xbvHearMem(b.g.position,'cast');}catch(e){}return r;};}
-if(typeof xHear==='function'){const h0=xHear;xHear=function(p){const r=h0.apply(this,arguments);try{xbvHearMem(p,XBH.k||'shot',XBH.w);}catch(e){}try{xbvSound(p,XBH.k||'step');}catch(e){}return r;};}
+if(typeof xBUse==='function'){const f=xBUse;xBUse=function(b){const r=f.apply(this,arguments);try{if(r&&b&&b.g)xbvCast(b.g.position);}catch(e){}return r;};}
+// ... and so is the player's (bots-tune-1): any charge or the ult spent this frame (quick-cast, equip-flow release, recast)
+function xbvCast(p){if(!p||typeof xHear!=='function')return;const k0=XBH.k,w0=XBH.w;XBH.k='cast';XBH.w=null;try{xHear({x:p.x,y:p.y||0,z:p.z});}finally{XBH.k=k0;XBH.w=w0;}}
+function xbvPCast(){if(typeof J==='undefined'||!J||typeof player==='undefined'||!player)return;const n=(+J.c||0)+(+J.q||0)+(+J.e||0),u=+J.ult||0,was=XBH.pc;XBH.pc={n,u,live:running&&player.hp>0&&!(mode==='five'&&(FV.buy>0||FV.esc))};
+ if(was&&was.live&&XBH.pc.live&&(n<was.n||u<was.u))xbvCast({x:player.x,y:player.y||0,z:player.z});}
+if(typeof tick==='function'){const t0=tick;tick=function(){const r=t0.apply(this,arguments);try{xbvPCast();}catch(e){}return r;};}
+if(typeof xHear==='function'){const h0=xHear;xHear=function(p){const r=h0.apply(this,arguments);try{xbvHearMem(p,XBH.k||'shot',xbEarW());}catch(e){}try{xbvSound(p,XBH.k||'shot');}catch(e){}return r;};}
 // holding: stand still (goal = where it stands) while it faces the sound; a fight or a trade ends it
 {const g0=xGoal;xGoal=function(u,team,atk,out){if(u&&u.xHold&&u.g&&!(u.see>0)&&mode==='five'){if(performance.now()<u.xHold.until){const p=u.g.position;if(u.hearT>0){u.hear=u.hear||[0,0];u.hear[0]=u.xHold.x;u.hear[1]=u.xHold.z;}return x2(out,p.x,p.z);}u.xHold=null;}return g0.apply(this,arguments);};}
 // Turn-rate limit per bot (BotBrain personality turn 7-14 rad/s, as the server; was 12 rad/s for every bot) and no shot
@@ -439,9 +444,15 @@ function xbHunt(u,tg,out){const c=xbBest(u,window.BotBrain?BotBrain.SENSE.hunt:0
 // what an unsighted bot knows of the nearest threat for its peek / creep logic: [dx, dz, dist] toward the freshest contact,
 // or nothing known (dist 1e9: no jiggle, no creeping up on an enemy it has not seen or heard).
 function xbKnown(u,p){const c=xbBest(u,window.BotBrain?BotBrain.SENSE.hunt:0);if(!c)return [0,0,1e9];const dx=c.x-p.x,dz=c.z-p.z;return [dx,dz,Math.hypot(dx,dz)||.01];}
-// hearing range for the turn-toward-it reaction (base xHear): a close gunshot (35 m, as the server's botSense) or running
-// footsteps inside the 30 m sound circle; every audible sound also goes into memory (xbvHearMem), map-wide shots included.
-function xbEarR(){return XBH.k==='shot'?35:window.BotBrain?BotBrain.SENSE.step:25;}
+// what an unsighted bot's ability logic (botAb, both teams) gets as its target: the freshest contact it saw / heard
+// (BotBrain.SENSE.hunt s), shaped like a base-loop target {x, y, z, t: null, mem: 1}, or null - never the nearest real enemy.
+function xbAbKnown(u){const c=u&&u.g?xbBest(u,window.BotBrain?BotBrain.SENSE.hunt:0):null;if(!c)return null;const o=u.xAbK||(u.xAbK={x:0,y:0,z:0,t:null,mem:1});o.x=c.x;o.y=c.y||0;o.z=c.z;return o;}
+// hearing range for the turn / hold / push reaction (base xHear -> xbvSound): BotBrain.reactR, the server botSense's ranges -
+// a gunshot within 35 m (suppressed too), running footsteps / an ability cast within the 30 m sound circle; every
+// audible sound also goes into memory (xbvHearMem), map-wide shots included.
+function xbEarR(){const k=XBH.k||'shot';if(!window.BotBrain)return k==='shot'?35:25;return BotBrain.reactR(k,k==='shot'?xbEarW():null);}
+// the gun of a heard shot: SFX.at passes it; the player's own shots (shoot -> xHear, no XBH.k) are the player's gun
+function xbEarW(){return XBH.w||(!XBH.k&&typeof wName==='function'?wName():null);}
 function xbvHearMem(p,kind,w){if(!p||!window.BotBrain)return;let src=null,srcBot=false;
  if(player&&player.hp>0&&Math.hypot(player.x-p.x,player.z-p.z)<.6)src='player';
  for(const L of [bots,allies])for(const u of L){if(src||!u||!u.alive||!u.g)continue;if(Math.hypot(u.g.position.x-p.x,u.g.position.z-p.z)<.6){src=u.name;srcBot=L===bots;}}

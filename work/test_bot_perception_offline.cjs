@@ -9,6 +9,9 @@
 //     contact (no lerp snap)
 //  5. no omniscience: unsighted Deathmatch bots hunt a contact or roam the spawn points, never the enemy's real spot; peeks /
 //     creeping use what the bot knows
+//  6. the player's own ability casts (any charge / the ult spent) are heard within 30 m like a bot's (bots-tune-1)
+//  7. unsighted ability logic (botAb, both teams) gets only the remembered contact (xbAbKnown), never the nearest real enemy
+//  8. sound reactions (xHear / xbvSound) use the server botSense ranges (BotBrain.reactR): shots 35 m, steps / casts 30 m
 const fs=require('fs'),path=require('path'),vm=require('vm'),assert=require('assert/strict');const root=path.join(__dirname,'..');
 const THREE=require(path.join(root,'server/node_modules/three/build/three.cjs'));
 const html=fs.readFileSync(path.join(root,'index.html'),'utf8'),A='// ---- BOT VARIETY ----',Z='// ---- END BOT VARIETY ----',i=html.indexOf(A),j=html.indexOf(Z,i);assert(i>=0&&j>i,'bot variety block');
@@ -20,7 +23,8 @@ for(const w of ['s = (typeof xbInView !== "function" || xbInView(b, f.x - p.x, f
  'if (d < td && (typeof xbInView !== "function" || xbInView(a, q.x - p.x, q.z - p.z, d)))',
  '(typeof xbLosNow !== "function" || xbLosNow(from, XTK.q.set(tg.g.position.x, (tg.g.position.y || 0) + 1.5, tg.g.position.z)) || ((a.xTg = null), (a.xTh = 0), false))',
  'if (typeof xbHunt === "function") [gx, gz] = xbHunt(b, tg, XG_V);','xPeekMove(b, dt, kd, kx, kz, vx, vz)','botWalk(b, see, kd)','xPeekMove(a, dt, apd, apx, apz, vx, vz)',
- 'const y = typeof xbFaceTo === "function" ? xbFaceTo(u, t, dt) : null;','d < (typeof xbEarR === "function" ? xbEarR() : 25)','botStep(b, dt, Math.hypot(p.x - bx0, p.z - bz0), b.cr || b.wk, b.spd);'/* footsteps by distance (shared motor footfall): crouching / walking bots pass quiet and never reach SFX.step */])assert(html.includes(w),'wired: '+w);
+ 'const y = typeof xbFaceTo === "function" ? xbFaceTo(u, t, dt) : null;',
+ 'botAb(b, dt, see, see || typeof xbAbKnown !== "function" ? tg : xbAbKnown(b), from);','else botAb(a, dt, false, typeof xbAbKnown === "function" ? xbAbKnown(a) : null, from);','d < (typeof xbEarR === "function" ? xbEarR() : 25)','botStep(b, dt, Math.hypot(p.x - bx0, p.z - bz0), b.cr || b.wk, b.spd);'/* footsteps by distance (shared motor footfall): crouching / walking bots pass quiet and never reach SFX.step */])assert(html.includes(w),'wired: '+w);
 let now=0,rnd=7;const R=()=>{rnd=(rnd*16807)%2147483647;return rnd/2147483647;};const calls={los:0,losRaw:0};
 const SFX={at(p){ctx.xHear(p);},step(p){ctx.xHear(p);},selfStep(){}};/* index.html wraps SFX.at / SFX.step to call xHear(p) (the BOT VARIETY block then wraps both) */
 const ctx={Math:Object.assign(Object.create(Math),{random:R}),Object,Number,Infinity,Set,Map,WeakMap,Array,Float64Array,Int32Array,Uint8Array,THREE,performance:{now:()=>now},window:{xBotSeed:91},mode:'five',running:true,
@@ -28,7 +32,7 @@ const ctx={Math:Object.assign(Object.create(Math),{random:R}),Object,Number,Infi
  nmActive:()=>null,xSmV:(u,dt,vx,vz)=>[vx,vz],xGoal:(u,t,a,o)=>o,nmClimbOk:()=>false,nmPath:()=>[0],nmNext:()=>[0],SFX,
  los:()=>{calls.los++;return true;},losRaw:()=>{calls.losRaw++;return ctx.wall?false:true;},wall:false,dmPts:()=>[[30,30],[-30,30],[30,-30],[-30,-30],[0,40]],wName:()=>'Phantom',
  xHear:function(p){/* base xHear range rule (index.html): the other side within xbEarR m turns toward it */for(const u of ctx.bots){const d=Math.hypot(u.g.position.x-p.x,u.g.position.z-p.z);if(d>1&&d<ctx.xbEarR()){u.hear=[p.x,p.z];u.hearT=1.2;}}},
- xBUse:()=>true,xAng:a=>Math.atan2(Math.sin(a),Math.cos(a))};
+ xBUse:()=>true,xAng:a=>Math.atan2(Math.sin(a),Math.cos(a)),tick:function(){},J:{c:1,q:0,e:0,ult:0}};
 ctx.globalThis=ctx;vm.createContext(ctx);vm.runInContext(block+'\n;globalThis.BotBrain=BotBrain;globalThis.BotRoutes=BotRoutes;',ctx);Object.assign(ctx.window,{BotRoutes:ctx.BotRoutes,BotBrain:ctx.BotBrain});
 const B=ctx.BotBrain,unit=(name,x,z,ry)=>({name,alive:true,hp:100,g:{position:{x,y:0,z},rotation:{y:ry||0}},see:0});
 // xFace as in index.html (pinned above): the base function is not in the block, so it is evaluated from the page source
@@ -60,4 +64,21 @@ const B=ctx.BotBrain,unit=(name,x,z,ry)=>({name,alive:true,hp:100,g:{position:{x
  ctx.player.hp=100;ctx.player.x=10;ctx.player.z=0;ctx.xbSeen(u,ctx.player,10,0,0);const g2=ctx.xbHunt(u,tg,[0,0]);assert.deepEqual([g2[0],g2[1]],[10,0],'hunts the last-known spot');
  const k0=ctx.xbKnown(unit('Bot Cypher',0,0,0),{x:0,z:0});assert.equal(k0[2],1e9,'nothing known: no peek / creep distance');ctx.FV.dm=false;
  out.push('DM: roams spawn points with nothing known, hunts last-known spot');}
+// 6. the player's casts are heard (30 m) and turn / hold bots like a bot's cast
+{const cast=d=>{const L=unit('Bot Omen',0,0,0);ctx.bots=[L];ctx.allies=[];L.xMem=null;L.hearT=0;L.xHeardAt=0;now+=5000;Object.assign(ctx.player,{x:0,z:d,hp:100});ctx.FV.dm=false;
+  ctx.J.c=1;ctx.J.ult=0;ctx.tick(1/60);ctx.J.c=0;ctx.tick(1/60);const c=L.xMem&&L.xMem.c.player;return {c,L};};
+ const a=cast(22),b=cast(38);assert(a.c&&a.c.kind==='heard','a player cast 22 m away is heard');assert(a.L.hearT>0,'and turns the bot (30 m reaction)');assert(!b.c,'not 38 m away');
+ const L=unit('Bot Omen',0,0,0);ctx.bots=[L];L.xMem=null;Object.assign(ctx.player,{x:0,z:10});ctx.J.c=2;ctx.tick(1/60);ctx.J.c=3;ctx.tick(1/60);assert(!(L.xMem&&L.xMem.c.player),'buying a charge is silent');
+ ctx.J.ult=7;ctx.tick(1/60);ctx.J.ult=0;ctx.tick(1/60);assert(L.xMem&&L.xMem.c.player,'an ult cast is heard');
+ out.push('player casts: 22 m heard + turn, 38 m not, buying silent, ult heard');}
+// 7. unsighted ability target = memory only
+{const u=unit('Bot Raze',0,0,0);u.xMem=null;now+=20000;assert.equal(ctx.xbAbKnown(u),null,'nothing known: no ability target (was the nearest real enemy)');
+ ctx.player.hp=100;ctx.player.x=4;ctx.player.z=9;ctx.xbSeen(u,ctx.player,4,0,9);ctx.player.x=-12;ctx.player.z=3;/* it moved since */const k=ctx.xbAbKnown(u);
+ assert.deepEqual([k.x,k.z],[4,9],'the remembered spot, not where the enemy really is now');assert.equal(k.t,null,'no live unit handle');now+=11000;assert.equal(ctx.xbAbKnown(u),null,'forgotten after SENSE.hunt s');
+ out.push('botAb unsighted: null with nothing known, last-known spot otherwise');}
+// 8. reaction ranges = server botSense (BotBrain.reactR)
+{const r=(k,w)=>{ctx.XBH.k=k;ctx.XBH.w=w;try{return ctx.xbEarR();}finally{ctx.XBH.k=null;ctx.XBH.w=null;}};
+ assert.equal(r('shot','Vandal'),35);assert.equal(r('shot','Phantom'),35);assert.equal(r('step',null),30);assert.equal(r('cast',null),30);assert.equal(r(null,null),35,"the player's own shot (no XBH.k) is a 35 m shot");
+ for(const [k,w] of [['shot','Vandal'],['step',null],['cast',null]])assert.equal(r(k,w),B.reactR(k,w),'offline = server '+k);
+ out.push('reaction ranges shot 35 / step 30 / cast 30 = BotBrain.reactR');}
 console.log('Offline bot perception: '+out.join('; '));
