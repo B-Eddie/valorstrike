@@ -70,7 +70,7 @@ export class SpikeSimulation extends Simulation{
  canInteract(u){return u.alive&&!u.loading&&!u.pendingTeleport&&!(u.dismissUntil>this.time)&&!u.air&&u.input.interact&&!u.input.fire&&this.time-(u.inputAt||0)<.3&&Math.hypot(u.vx||0,u.vz||0)<.1&&Math.abs(u.vy||0)<.1;}
  // Bots cannot see (or shoot) through smokes or Sage barriers; the same target the base bot chose is checked.
  canSee(u,v,o,p){return sightClear(this,o,p);}
- motor(u,input,dt){return this.motorFn(u,input,dt,this.world);}
+ motor(u,input,dt){if(!u.dash)return this.motorFn(u,input,dt,this.world);const r=this.motorFn(u,{...input,x:0,z:0},dt,this.world);if(!Motor.dashStep(u,u.dash,dt,this.world))u.dash=null;return r;}/* Jett Tailwind dash (0.45 s, shared motor = the page's prediction): movement input is ignored while it runs; barriers / walls stop it */
  // Sage barriers stop bullets (and cannot be wallbanged); shotImpact then damages the barrier the shot ended on.
  // Destroyable utility stops a shot too: the nearest of a Sage barrier and an enemy device (devices.js SHOOT); shotImpact
  // then puts the bullet's body damage on what the shot ended on (a device is removed at 0 HP, a barrier ends at 0).

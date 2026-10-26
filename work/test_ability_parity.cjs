@@ -90,11 +90,12 @@ const assert=require('assert/strict'),path=require('path');const {boot}=require(
    bots.forEach(x=>{if(x!==b)x.g.position.set(P.x-60,x.g.position.y,P.z-60);});J.ab={m:new THREE.Object3D(),p:new THREE.Vector3(p0.x,0,p0.z),dep:XALB.deploy};b.g.position.set(p0.x+4.5,b.g.position.y,p0.z);st(1.8);o.push(J.ab.tg||null,J.ab.p.distanceTo(p0)<1e-6);st(.1);o.push(J.ab.tg===b);
    J.ab={m:new THREE.Object3D(),p:new THREE.Vector3(P.x+41,0,P.z)};b.g.position.set(P.x+45.5,b.g.position.y,P.z);st(1);o.push(J.ab.tg||null,J.ab.p.x===P.x+41);J.ab=null;return o;})()`);
  assert.deepEqual(ad,[null,true,true,null,true],'offline Alarmbot deploy / 40 m: '+JSON.stringify(ad));
- // offline Tailwind: first E spends the charge, no dash; E during the 1 s windup does nothing; E in the window dashes 11 m once; the window fades after 7.5 s
+ // offline Tailwind: first E spends the charge, no dash; E during the 1 s windup does nothing; E in the window starts an 11 m dash over 0.45 s
+ // (24.4 m/s through moveP / the shared motor dashStep: nothing moves at the press, ~6.1 m after 0.25 s, 11 m when done) once; the window fades after 7.5 s
  const tw0=J(`(()=>{const P=player,pk=J.pick,o=[],d=()=>Math.round(Math.hypot(P.x-x0,P.z-z0)*100)/100;J.pick="Jett";J.tw=null;J.e=1;J.cd.e=0;const x0=P.x,z0=P.z;
-   jKey("KeyE");o.push(J.e,!!J.tw,d());jKey("KeyE");o.push(d());J.tw.arm=0;jKey("KeyE");o.push(J.tw,d()>0);jKey("KeyE");o.push(J.tw);
+   jKey("KeyE");o.push(J.e,!!J.tw,d());jKey("KeyE");o.push(d());J.tw.arm=0;jKey("KeyE");o.push(J.tw,d());const D=J.dash,v=D&&D.v;for(let i=0;i<5;i++)moveP(.05,false);const mid=d();for(let i=0;i<6;i++)moveP(.05,false);o.push(Math.abs(v-11/.45)<1e-9,mid>4&&mid<=6.12,Math.abs(d()-11)<.01||(d()>0&&d()<11&&!J.dash),J.dash);jKey("KeyE");o.push(J.tw);
    P.x=x0;P.z=z0;J.e=1;jKey("KeyE");J.tw.arm=0;J.tw.t=.01;const hp=player.hp;J.tw.t-=.02;if(J.tw.t<=0)J.tw=null;o.push(J.tw,J.e);J.pick=pk;J.tw=null;return o;})()`);
- assert.deepEqual(tw0,[0,true,0,0,null,true,null,null,0],'offline Tailwind flow: '+JSON.stringify(tw0));
+ assert.deepEqual(tw0,[0,true,0,0,null,0,true,true,true,null,null,null,0],'offline Tailwind flow: '+JSON.stringify(tw0));
  assert.ok(require('fs').readFileSync(require('path').join(__dirname,'..','index.html'),'utf8').includes('if (J.tw) { J.tw.arm -= dt; if ((J.tw.t -= dt) <= 0 || player.hp <= 0) { J.tw = null;'),'jTick fades the Tailwind window');
  // offline Trapwire (player's wire): deploy 1.5 s, 50 % slow at once, zap 5 + reveal after 0.7 s, held within 4 m, 1.25 s slow after, re-arms in 2 s, not used up
  const tw=J(`(()=>{const P=player,b=bots.filter(b=>b.alive)[0],o=[];bots.forEach(x=>{if(x!==b)x.g.position.set(P.x+60,x.g.position.y,P.z+60);});b.hp=100;b.armor=0;b.chs=0;

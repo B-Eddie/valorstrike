@@ -230,5 +230,10 @@ function sprayStep(R,w,weight,t,random=Math.random,cap=.024){const n=R.sequence+
  if(n===0){R.drift=random()<.5?-1:1;R.recoilX=0;R.recoilY=0;}else{R.recoilY=Math.min(rifle?.065:.05,R.recoilY+(rifle?(n<7?.006:.0015):.008)*weight);if(n>6){R.recoilX+=R.drift*.003*weight;if(Math.abs(R.recoilX)>.022){R.drift=-Math.sign(R.recoilX);}if(random()<.12)R.drift*=-1;}}
  R.bloom=BLOOM_HOLD[w]?Math.max(0,cap):cap<0?Math.max(cap,(R.bloom||0)-.0015*weight):Math.min(cap,(R.bloom||0)+.0015*weight);R.shot=t;return n;}
 function disk(random=Math.random){const a=random()*Math.PI*2,r=Math.sqrt(random());return [Math.cos(a)*r,Math.sin(a)*r];}
-return {C,step,fallDamage,velocity,brake,groundMove,spread,bloomCap,SPREAD,recoveryTime,recoilMove,disk,damp,approach,clipBlocked,CLIPS,REC,sprayReset,sprayBloom,sprayStep,leashGrid,leashOk,leashNear};
+// Jett Tailwind dash (wiki: Dash duration 0.45 s): a constant-speed burst along (dx, dz) instead of a teleport. D = dash(...)
+// {dx,dz,left,v}; dashStep moves the capsule v*dt (<= 0.25 m sub-steps) and stops at a wall / the playable leash. The server
+// and the page (offline play and the online prediction) share it, so the predicted dash lands where the server's does.
+function dash(f,s,look,dist,time){const sn=Math.sin(look),c=Math.cos(look);let dx=-sn*f+c*s,dz=-c*f-sn*s,len=Math.hypot(dx,dz);if(len<.001){dx=-sn;dz=-c;len=1;}return {dx:dx/len,dz:dz/len,left:dist,v:dist/time};}
+function dashStep(P,D,dt,world){let s=Math.min(D.left,D.v*Math.max(0,dt));D.left-=s;const height=1.8-(P.ch||0);while(s>1e-9){const k=Math.min(.25,s);s-=k;const x=P.x+D.dx*k,z=P.z+D.dz*k;if(world.blocked(x,z,.4,P.y,height)||(world.leash&&!world.leash(x,z,P.y,P.x,P.z))){D.left=0;break;}P.x=x;P.z=z;}P.vx=P.vz=0;return D.left>1e-9;}
+return {C,step,dash,dashStep,fallDamage,velocity,brake,groundMove,spread,bloomCap,SPREAD,recoveryTime,recoilMove,disk,damp,approach,clipBlocked,CLIPS,REC,sprayReset,sprayBloom,sprayStep,leashGrid,leashOk,leashNear};
 });

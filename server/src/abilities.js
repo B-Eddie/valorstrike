@@ -6,6 +6,7 @@ import {WINDUP,XAB_REL,wf} from './windups.js';
 import SovaBolt from '../../vendor/sova-bolt.cjs';
 import Cloudburst from '../../vendor/cloudburst.cjs';
 import {RGN} from './simulation.js';
+import Motor from './motor.cjs';
 // Sage Slow Orb (wiki.playvalorant / valorant.fandom Slow_Orb: 7 s, 50 % slow, affects allies and self). Was a 3 s, 4 m field that
 // slowed enemies only by the generic 65 % slow; the offline game (index.html sgKey Q / xBSlowOrb / sgSlow) is 7 s, 3.5 m, 50 %, everyone.
 export const SLOW_ORB={life:7,radius:3.5,factor:.5};
@@ -29,7 +30,7 @@ function castAbility0(sim,u,m){const k=m.k,K=kits[u.agent]||kits.Jett,A=u.abilit
  else if(bolt&&ty==='recon'){const T=bolt.t;const R=DEV.reconBolt;push('recon',T+Math.max(...R.pulses)+.1,R.radius,{pulses:R.pulses.map(t=>sim.time+T+t),reveal:R.reveal});}
  else if(bolt&&ty==='shock')push('blast',bolt.t+.3,PARITY.shock.outer,{damage:PARITY.shock.max,fall:PARITY.shock,at:sim.time+bolt.t});/* falloff 75 -> 1 (aoeFall) */
  else if(ty!=='ult'&&startDevice(sim,u,ty,p,push,m)){}
- else if(ty==='dash'&&u.agent==='Jett'){const sn=Math.sin(u.look),c=Math.cos(u.look),input=sim.time-(u.inputAt||0)<.3?u.input:{},f=input.forward||0,s=input.side||0;let dx=-sn*f+c*s,dz=-c*f-sn*s,len=Math.hypot(dx,dz);if(len<.001){dx=-sn;dz=-c;len=1;}dx/=len;dz/=len;for(let i=0;i<PARITY.tail*4;i++){const x=u.x+dx*.25,z=u.z+dz*.25;if(sim.world.blocked(x,z,.4,u.y,1.8-(u.ch||0))||(sim.world.leash&&!sim.world.leash(x,z,u.y,u.x,u.z)))break;u.x=x;u.z=z;}u.vx=u.vz=0;u.seq++;p.splice(0,3,u.x,u.y,u.z);}/* Raze Blast Pack: devices.js (thrown, sticks, recast / 5 s, knockback; was an instant 8 m dash) */
+ else if(ty==='dash'&&u.agent==='Jett'){const input=sim.time-(u.inputAt||0)<.3?u.input:{},fin=v=>typeof v==='number'&&Number.isFinite(v),ax=v=>Math.max(-1,Math.min(1,Math.round(v)));u.dash=Motor.dash(fin(m.f)?ax(m.f):input.forward||0,fin(m.s)?ax(m.s):input.side||0,fin(m.r)?m.r:u.look,PARITY.tail,PARITY.dashTime);/* the page sends its keys / yaw at the key press (m.f m.s m.r) so its predicted dash and this one share a direction */const end={x:u.x,y:u.y,z:u.z,ch:u.ch};Motor.dashStep(end,{...u.dash,v:1e9},1,sim.world);p.splice(0,3,end.x,end.y,end.z);}/* Tailwind dash: 11 m over 0.45 s (wiki), moved by Simulation.step through the shared motor (Motor.dashStep, = the page's prediction; no seq bump, so the owner's predicted dash is not snapped); p = where it ends *//* Raze Blast Pack: devices.js (thrown, sticks, recast / 5 s, knockback; was an instant 8 m dash) */
  else if(ty==='updraft'){u.vy=Math.sqrt(2*18*6);u.air=true;}
  else if(ty==='teleport'&&u.agent==='Omen'){u.pendingTeleport={kind:'step',p:omenTarget,at:sim.time+PARITY.step.time};p.splice(0,3,...omenTarget);}
  else if(ty==='dismiss')u.invulnerableUntil=sim.time+PARITY.dismiss;/* wiki Dismiss 1.5 s */
@@ -92,7 +93,7 @@ export const LEER={active:1.6};
 // Shock Bolt 75 inside 1.5 m falling to 1 at the 4 m edge; Aftershock 2 bursts of 80 0.6 s apart in a 3 m radius (no falloff);
 // Healing Orb 100 HP over 5 s on an ally and on Sage herself (v13.00: self 50 -> 100); Dismiss 1.5 s; Shrouded Step 15 m and
 // 1.2 s (0.7 s windup + 0.5 s arrival); From the Shadows 4 s; Rendezvous anchor radius 18 m; Tailwind dash 11 m. Client: index.html XPAR2.
-export const PARITY={shock:{inner:1.5,outer:4,max:75,min:1},aftershock:{damage:80,ticks:2,gap:.6,radius:3},heal:{sage:100,life:5},dismiss:1.5,step:{range:15,time:1.2},shadows:4,rendezvous:18,rdvTime:1.3,rez:{windup:2,revive:1.3,reach:12},tail:11,tailwind:{windup:1,window:7.5}};/* tailwind: wiki Tailwind (v7.04) - the first E consumes the charge, 1 s windup, then a 7.5 s empowered window; E again dashes (u.tailwind); unused, the charge is lost *//* rdvTime: wiki Rendezvous teleport 1.3 s; rez: wiki Resurrection 2 s windup + 1.3 s revive, 12 m max cast distance (v11.04) *//* tail: Tailwind base dash 11 m */
+export const PARITY={shock:{inner:1.5,outer:4,max:75,min:1},aftershock:{damage:80,ticks:2,gap:.6,radius:3},heal:{sage:100,life:5},dismiss:1.5,step:{range:15,time:1.2},shadows:4,rendezvous:18,rdvTime:1.3,rez:{windup:2,revive:1.3,reach:12},tail:11,dashTime:.45,tailwind:{windup:1,window:7.5}};/* dashTime: wiki Tailwind dash duration 0.45 s *//* tailwind: wiki Tailwind (v7.04) - the first E consumes the charge, 1 s windup, then a 7.5 s empowered window; E again dashes (u.tailwind); unused, the charge is lost *//* rdvTime: wiki Rendezvous teleport 1.3 s; rez: wiki Resurrection 2 s windup + 1.3 s revive, 12 m max cast distance (v11.04) *//* tail: Tailwind base dash 11 m */
 // Raze Paint Shells (wiki.playvalorant.com/en-us/Paint_Shells Stats): 2.25 s fuse, 55 inside 2.5 m falling to 1 at the 5.5 m edge, then 4
 // sub-munitions 0.667 s later, each the same damage with a 5.25 m edge. Sub-munitions land 2.5 m out on the diagonals (stopped short of walls).
 // Client: index.html XPS / xPsSubs.

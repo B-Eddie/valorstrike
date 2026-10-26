@@ -8,7 +8,7 @@ assert(/mpCliRS=function\(m\)\{[^\n]*if\(NET\.socket&&m\.status\)\{[^\n]*netStat
 assert(html.includes(net.slice(i,j)),'index.html carries the generated status chip code');
 const els={},said=[];let now=1000;
 const document={getElementById:id=>els[id]||null,createElement:t=>({tag:t,style:{},textContent:''}),body:{appendChild:e=>e}};
-const ctx=vm.createContext({document,performance:{now:()=>now},say:(t,ms)=>said.push(t),Math});
+const NET={};const ctx=vm.createContext({document,performance:{now:()=>now},say:(t,ms)=>said.push(t),Math,NET});
 // register the element by id once assigned
 const realCreate=document.createElement;document.createElement=t=>{const e=realCreate(t);return new Proxy(e,{set(o,k,v){o[k]=v;if(k==='id')els[v]=o;return true;}});};
 vm.runInContext('let netVulnAt=0,netTetherAt=0;'+net.slice(i,j),ctx);
@@ -22,5 +22,5 @@ ctx.netStatusChips({vulnerable:4,tether:0});assert.equal(said.length,3,'a fresh 
 now+=6000;ctx.netStatusChips({vulnerable:0,tether:0,dart:1,drm:0});assert.equal(els.netSt.style.display,'block');assert.equal(els.netSt.textContent,'TRACKING DART · HOLD 4 TO REMOVE');
 ctx.netStatusChips({vulnerable:0,tether:0,dart:1,drm:.925});assert.equal(els.netSt.textContent,'REMOVING DART 50%');ctx.netStatusChips({vulnerable:0,tether:0,dart:0,drm:0});assert.equal(els.netSt.style.display,'none','removed: chip hidden');
 // Jett Tailwind (server status twa / twu: 1 s windup, 7.5 s window)
-ctx.netStatusChips({vulnerable:0,tether:0,twa:.6,twu:8.1});assert.equal(els.netSt.textContent,'TAILWIND 0.6s');ctx.netStatusChips({vulnerable:0,tether:0,twa:0,twu:6.2});assert.equal(els.netSt.textContent,'TAILWIND READY · E TO DASH 7s');ctx.netStatusChips({vulnerable:0,tether:0,twa:0,twu:0});assert.equal(els.netSt.style.display,'none');
+ctx.netStatusChips({vulnerable:0,tether:0,twa:.6,twu:8.1});assert.equal(els.netSt.textContent,'TAILWIND 0.6s');ctx.netStatusChips({vulnerable:0,tether:0,twa:0,twu:6.2});assert.equal(els.netSt.textContent,'TAILWIND READY · E TO DASH 7s');assert.equal(JSON.stringify(NET.tw),JSON.stringify({a:0,u:6.2,at:now}),'NET.tw: the windup / window as of this frame (online dash prediction reads it)');ctx.netStatusChips({vulnerable:0,tether:0,twa:0,twu:0});assert.equal(els.netSt.style.display,'none');
 console.log('Online status: Vulnerable and Trapwire tether notices on onset, countdown chip while active, hidden after; Spycam dart chip (hold 4 / removal %); Tailwind windup / window chip');
