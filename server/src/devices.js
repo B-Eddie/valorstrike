@@ -10,8 +10,8 @@ import {WINDUP,wf} from './windups.js';
 export function turretDamage(d){const T=DEV.turret;return d<T.near?T.dmg[0]:d<T.mid?T.dmg[1]:T.dmg[2];}
 export const DEV={
  recon:{pulses:[.9,2.5],radius:20,reveal:1.6},
- owl:{pings:[1.6,3.4],reveal:.6,radius:20},/* wiki Owl_Drone: the dart's 2 pings, 1st 1.6 s after impact, 2nd 1.2 s after the 1st (0.6 s) ends; stand-in: the dart tags the nearest visible enemy within 20 m of the aim point at once; client XOWL */
- spycam:{deploy:1.15,every:2,pings:5,reveal:1,radius:20},/* wiki Spycam: 1.15 s deploy, the dart reveals 1 every 2 s until removed; stand-in: the cam darts the nearest visible enemy within 20 m once deployed, 5 pings of 1 s (project values: no removal channel); client XSPY */
+ owl:{pings:[1.6,3.4],reveal:.6,radius:20,life:7,lift:1.2},/* life: wiki Owl_Drone 7 s; lift: the body hovers 1.2 m over the aim point *//* wiki Owl_Drone: the dart's 2 pings, 1st 1.6 s after impact, 2nd 1.2 s after the 1st (0.6 s) ends; stand-in: the dart tags the nearest visible enemy within 20 m of the aim point at once; client XOWL */
+ spycam:{deploy:1.15,every:2,pings:5,reveal:1,radius:20,life:120},/* life: the camera stays for the round (no recall channel) *//* wiki Spycam: 1.15 s deploy, the dart reveals 1 every 2 s until removed; stand-in: the cam darts the nearest visible enemy within 20 m once deployed, 5 pings of 1 s (project values: no removal channel); client XSPY */
  reconBolt:{pulses:[.9,2.5],radius:30,reveal:.75},/* wiki Recon_Bolt: radius 30 m, 2 sonar pulses 1 every 1.6 s, 0.75 s reveal each (needs line of sight from the bolt); client XRCN matches */
  blaze:{life:8,length:12,width:.8,height:3,damage:30,heal:12.5},
  hotHands:{life:4,radius:4.5,grow:.75,damage:60,heal:12.5},/* wiki Hot_Hands: 4 s, spreads to 4.5 m over 0.75 s, then 3.25 s at full size */
@@ -32,9 +32,15 @@ export const DEV={
 // Destroyable utility (wiki <Ability> 'Health'): enemy gunfire hits a sphere on the device (y: centre above e.p, r: radius)
 // for the weapon's body damage per bullet and removes it at 0 HP (spike.js traceShot / shotImpact). Boom Bot 60, Turret 100,
 // Alarmbot 20, Trademark 20, Nanoswarm 20, Trapwire 20 (either anchor: e.p and e.q). The Sage Barrier is abilities.js
-// (barrierRay, 600 HP). Owl Drone / Spycam are 'dart' stand-ins with no body here: not shootable. Bots shoot these down
+// (barrierRay, segments). Owl Drone / Spycam: a body effect ('owl' 100 HP over the aim point, 'spycam' 1 HP where it was placed)
+// beside their 'dart'; a body shot down before the dart has tagged anyone ends the dart. Bots shoot these down
 // (spike.js shootUtility, vendor/bot-brain.cjs shootUtility); the offline game uses the same HP (index.html XSHOOT).
-export const SHOOT={boombot:{hp:60,y:.2,r:.4},turret:{hp:100,y:.45,r:.45},alarmbot:{hp:20,y:.3,r:.35},trademark:{hp:20,y:.2,r:.3},nanoswarm:{hp:20,y:.1,r:.3},trapwire:{hp:20,y:.3,r:.2,ends:true},blastpack:{hp:20,y:0,r:.25}};
+export const SHOOT={boombot:{hp:60,y:.2,r:.4},turret:{hp:100,y:.45,r:.45},alarmbot:{hp:20,y:.3,r:.35},trademark:{hp:20,y:.2,r:.3},nanoswarm:{hp:20,y:.1,r:.3},trapwire:{hp:20,y:.3,r:.2,ends:true},blastpack:{hp:20,y:0,r:.25},spycam:{hp:1,y:0,r:.25},owl:{hp:100,y:0,r:.45}};/* Spycam 1 HP, Owl Drone 100 HP (wiki Spycam / Owl_Drone, v9.0) */
+// Snapshot rows for the persistent devices the online client draws as their real models (server_runtime.js netSyncDevices):
+// {id, kind:'dev', d: device kind, o: owner id, tm: team, p (cm), q: Trapwire's other anchor, yaw, hp}.
+export const DEV_ROWS=new Set(['turret','alarmbot','trapwire','trademark','blastpack','spycam','owl']);
+const cm=v=>v.map(n=>Math.round(n*100)/100);
+export function deviceRows(sim){const out=[];for(const e of sim.effects){if(!DEV_ROWS.has(e.kind)||!(e.until>=sim.time)||!(deviceHp(e)>0||e.field)||!Array.isArray(e.p))continue;/* a spent Trademark still sends its slow field (hp 0, fp) */const r={id:e.id,kind:'dev',d:e.kind,o:e.owner,tm:e.team,p:cm(e.p),hp:Math.round(deviceHp(e))};if(e.q)r.q=cm(e.q);if(Number.isFinite(e.yaw))r.yaw=Math.round(e.yaw*1000)/1000;if(e.kind==='trademark'&&e.field&&Array.isArray(e.fp))r.fp=cm(e.fp);/* the 6 m slow field under the spotted enemy */out.push(r);}return out;}
 export function deviceHp(e){const S=SHOOT[e.kind];return S?(e.hp??S.hp):0;}
 // The points a shot or a bot aims at: the device, or both Trapwire anchors.
 export function devicePoints(e){const S=SHOOT[e.kind];if(!S)return [];const a=[e.p[0],e.p[1]+S.y,e.p[2]];return S.ends&&e.q?[a,[e.q[0],e.q[1]+S.y,e.q[2]]]:[a];}
@@ -53,8 +59,8 @@ const f3=u=>{const c=Math.cos(u.pitch||0);return [-Math.sin(u.look)*c,Math.sin(u
 export function startDevice(sim,u,ty,p,push,m={}){
  if(ty==='drone'&&u.agent==='Raze'){push('boombot',DEV.boombot.life,DEV.boombot.radius,{p:[u.x,u.y+.2,u.z],yaw:u.look,hp:DEV.boombot.hp});return true;}
  if(ty==='drone'&&u.agent==='Skye'){push('trail',DEV.trail.life,DEV.trail.radius,{p:[u.x,u.y+.2,u.z],yaw:u.look});return true;}
- if(ty==='drone'&&u.agent==='Sova'){const O=DEV.owl;push('dart',Math.max(...O.pings)+.1,O.radius,{pickAt:sim.time,pings:O.pings.map(t=>sim.time+t),reveal:O.reveal});return true;}
- if(ty==='recon'&&u.agent==='Cypher'){const S=DEV.spycam,pings=Array.from({length:S.pings},(_,k)=>sim.time+S.deploy+k*S.every);push('dart',pings[pings.length-1]-sim.time+.1,S.radius,{pickAt:sim.time+S.deploy,pings,reveal:S.reveal});return true;}
+ if(ty==='drone'&&u.agent==='Sova'){const O=DEV.owl;push('owl',O.life,SHOOT.owl.r,{p:[p[0],p[1]+O.lift,p[2]],yaw:u.look,hp:SHOOT.owl.hp});const body=sim.effects[sim.effects.length-1].id;push('dart',Math.max(...O.pings)+.1,O.radius,{pickAt:sim.time,pings:O.pings.map(t=>sim.time+t),reveal:O.reveal,body});return true;}/* the drone itself: a 100 HP body hovering over the aim point (shootable); its dart as before */
+ if(ty==='recon'&&u.agent==='Cypher'){const S=DEV.spycam,pings=Array.from({length:S.pings},(_,k)=>sim.time+S.deploy+k*S.every);push('spycam',S.life,SHOOT.spycam.r,{yaw:u.look,hp:SHOOT.spycam.hp});const body=sim.effects[sim.effects.length-1].id;/* the camera: a 1 HP body where it was placed (shootable) */push('dart',pings[pings.length-1]-sim.time+.1,S.radius,{pickAt:sim.time+S.deploy,pings,reveal:S.reveal,body});return true;}
  if(ty==='recon'||ty==='drone'){push('recon',Math.max(...DEV.recon.pulses)+.1,DEV.recon.radius,{pulses:DEV.recon.pulses.map(t=>sim.time+t)});return true;}
  const f=fwd(u);
  // Phoenix Blaze: a straight wall of fire along his aim from his feet; blocks sight, burns enemies, heals him.
@@ -109,7 +115,7 @@ export function tickDevices(sim,dt){
   if(u.tether&&sim.time>=u.tether.at){if(u.alive){u.concussUntil=Math.max(u.concussUntil||0,sim.time+DEV.trapwire.daze);u.slowUntil=Math.max(u.slowUntil||0,sim.time+DEV.trapwire.daze);}u.tether=null;}}
  for(let i=sim.effects.length-1;i>=0;i--){const e=sim.effects[i];if(!KINDS.has(e.kind))continue;if(e.until<sim.time)continue;sim.fxSrc=e;const owner=sim.units.find(u=>u.id===e.owner),foes=sim.units.filter(v=>v.alive&&!v.loading&&v.team!==e.team);
   if(e.kind==='blastpack'){if(sim.time>=e.boomAt||!owner?.alive)packBoom(sim,e);continue;}/* 5 s fuse; Raze dead: it goes off */
-  if(e.kind==='dart'){/* Owl Drone / Spycam stand-in: tag one enemy, then reveal it on each ping (a tag: no line of sight needed) */if(e.tgt==null){if(sim.time<e.pickAt)continue;const o=[e.p[0],e.p[1]+.5,e.p[2]],v=foes.filter(v=>Math.hypot(v.x-o[0],v.z-o[2])<e.radius&&losClear(sim,o,chest(v))).sort((a,b)=>Math.hypot(a.x-o[0],a.z-o[2])-Math.hypot(b.x-o[0],b.z-o[2]))[0];if(!v){e.until=sim.time-1;continue;}e.tgt=v.id;}
+  if(e.kind==='dart'){/* Owl Drone / Spycam stand-in: tag one enemy, then reveal it on each ping (a tag: no line of sight needed) */if(e.tgt==null&&e.body!=null&&!sim.effects.some(b=>b.id===e.body&&b.until>=sim.time)){e.until=sim.time-1;continue;}/* its drone / camera was shot down first */if(e.tgt==null){if(sim.time<e.pickAt)continue;const o=[e.p[0],e.p[1]+.5,e.p[2]],v=foes.filter(v=>Math.hypot(v.x-o[0],v.z-o[2])<e.radius&&losClear(sim,o,chest(v))).sort((a,b)=>Math.hypot(a.x-o[0],a.z-o[2])-Math.hypot(b.x-o[0],b.z-o[2]))[0];if(!v){e.until=sim.time-1;continue;}e.tgt=v.id;}
    const v=sim.units.find(x=>x.id===e.tgt);if(!v||!v.alive){e.until=sim.time-1;continue;}while(e.pings.length&&sim.time>=e.pings[0]){e.pings.shift();v.revealedUntil=Math.max(v.revealedUntil||0,sim.time+e.reveal);}if(!e.pings.length)e.until=sim.time-1;continue;}
   if(e.kind==='recon'){while(e.pulses&&e.pulses.length&&sim.time>=e.pulses[0]){e.pulses.shift();const o=[e.p[0],e.p[1]+.5,e.p[2]];for(const v of foes)if(Math.hypot(v.x-o[0],v.z-o[2])<e.radius&&losClear(sim,o,chest(v)))v.revealedUntil=Math.max(v.revealedUntil||0,sim.time+(e.reveal||DEV.recon.reveal));}continue;}
   if(e.kind==='blaze'){const B=DEV.blaze,inWall=v=>Math.abs(v.y-e.p[1])<B.height&&segDist(e,v.x,v.z)<B.width;for(const v of sim.units)if(v.alive&&!v.loading&&v.id!==e.owner&&inWall(v))abilityDamage(sim,owner,v,B.damage*dt);/* allies 1/3 (abilityDamage) */if(owner?.alive&&inWall(owner)&&owner.hp<100)owner.hp=Math.min(100,owner.hp+B.heal*dt);continue;}

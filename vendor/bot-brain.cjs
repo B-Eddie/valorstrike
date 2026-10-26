@@ -197,7 +197,7 @@
  // to shoot, or null. Threats first: an incoming Boom Bot, a Lockdown, a Turret that can fire on the bot, then the trap /
  // information devices near it (Alarmbot, Trademark, Trapwire, Spycam), a Nanoswarm it found; a Sage Barrier only when it
  // blocks the bot's route (blocking) and is close: a barrier off to the side is walked around, not shot.
- const SHOOT_UTIL={boombot:{range:15,pri:6},lockdown:{range:30,pri:5},turret:{range:30,pri:4},alarmbot:{range:12,pri:3},trademark:{range:12,pri:3},trapwire:{range:12,pri:3},spycam:{range:20,pri:2},nanoswarm:{range:8,pri:1},barrier:{range:14,pri:0,block:true}};
+ const SHOOT_UTIL={boombot:{range:15,pri:6},lockdown:{range:30,pri:5},turret:{range:30,pri:4},alarmbot:{range:12,pri:3},trademark:{range:12,pri:3},trapwire:{range:12,pri:3},spycam:{range:20,pri:2},owl:{range:20,pri:2},nanoswarm:{range:8,pri:1},barrier:{range:14,pri:0,block:true}};
  function shootUtility(c){let best=null,bs=-Infinity;for(const x of c||[]){const S=SHOOT_UTIL[x&&x.kind];if(!S||!x.los||!(x.d<=S.range)||(S.block&&!x.blocking))continue;const sc=S.pri*100-x.d;if(sc>bs){bs=sc;best=x;}}return best;}
  return {hash,rng,clamp,pickW,REACT,personality,reaction,crosshair,crosshairAt,firePattern,peek,attackPlan,defensePlan,roles,teamBuy,buyFor,onMateDeath,onSound,ATTACK,DEFENSE,utility,UTIL,turnStep,trackLag,wrapA,SPIKE,plantSpot,postPlant,retake,postPlay,SHOOT_UTIL,shootUtility};
 });
