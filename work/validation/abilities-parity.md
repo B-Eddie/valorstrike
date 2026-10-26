@@ -103,7 +103,7 @@ Changed on both sides (client index.html, server abilities.js / devices.js), tes
 `work/test_ability_equip.cjs`:
 - Jett Cloudburst smoke 4.5 s -> **2.5 s** (player cast, bot Jett, server smoke effect).
 - Phoenix Hot Hands zone 30 dps (client) / 40 dps (server) -> **60 dps** both (wiki: 60/s).
-- Killjoy Nanoswarm active time 4 s -> **5 s** (player, bot Killjoy, server `DEV.nanoswarm.active`).
+- Killjoy Nanoswarm active time 4 s -> **5 s** (player, bot Killjoy, server `DEV.nanoswarm.active`); radius and the 1 s windup: section 7.
 
 Still different (not cheap; each needs a client + server mechanic change):
 - Breach Fault Line hold-to-extend: done, section 7.
@@ -326,7 +326,69 @@ up for 2.5 s from the cast (2.3 s of nearsight after its 0.2 s fuse).
   of nearsight after its fuse).
 - Client: the player's Leer now ends `xWf('leer') + XLEER` (1.6 s) after the release (was 2 s, i.e. 1.8 s of nearsight).
 - Guiding Light: both sides use the 2.25 s maximum (the wiki's flight-time scaling is not modelled).
-- Not changed (needs a mechanic on both sides): Paranoia is a point flash with a facing check on the server and a 14 m/s
-  strip on the client; the wiki's is a 25 m, 20 m/s, 4.3 m radius orb that nearsights through walls regardless of facing.
-- Tests: `server/test-abilities.js` (Flashpoint 2.25, Guiding Light 2.25, Paranoia 2 s; Leer `until - at` = 1.6 s),
+- Paranoia: now the wiki orb, see "Omen Paranoia" below (was a point flash with a facing check on the server and a
+  14 m/s strip on the client).
+- Tests: `server/test-abilities.js` (Flashpoint 2.25, Guiding Light 2.25; Leer `until - at` = 1.6 s),
   `server/test-ults.js` (Curveball blind > 1.1 and <= 1.5 s).
+
+### Killjoy Nanoswarm (wiki.playvalorant.com/en-us/Nanoswarm, fetched 2026-10-25)
+
+Wiki stats: radius 4.5 m; detection radius 5.25 m; activation windup 1 s total (0.5 s windup + 0.5 s damage delay); 45 ticks
+of 1 per second, 180 total; duration 5 s. Was: server 4 m, 45/s from the trigger for 5 s (225); offline client (player and
+bot Killjoy) 2.5 m, 45/s from the trigger for 5 s, bot swarms triggering on an enemy within 2.5 m.
+
+- Server: `DEV.nanoswarm = {life: 120, active: 5, delay: 1, radius: 4.5, damage: 45}`; the trigger (C again) sets
+  `until = +5 s`, `dmgAt = +1 s` and the 4.5 m radius; `tickDevices` burns only from `dmgAt` (4 s x 45 = 180).
+- Client: `XNANO = {r: 4.5, det: 5.25, active: 5, delay: 1, dps: 45}` (asserted equal to the server): the player's swarm and
+  bot Killjoy's (`XKN`, 10 Hz) burn 4.5 m only after the 1 s windup; bot swarms trigger on an enemy within 5.25 m; the disc
+  is drawn at 4.5 m (`zoneGeo` 2.5 m x 1.8).
+- Tests: `server/test-ults.js` (4.3 m burns / 4.7 m does not; nothing in the first 0.95 s, 45 by 2 s, still burning at 4.8 s,
+  gone at 5.2 s), `work/test_ability_equip.cjs` (XNANO == DEV.nanoswarm; C triggers; no damage before 1 s; 4.3 m burns,
+  4.7 m not; disc scale 1.8), `work/test_friendly_fire_offline.cjs` (ally pass wiring reads `XNANO.dps * dt`).
+
+### Omen Paranoia (wiki.playvalorant.com/en-us/Paranoia, fetched 2026-10-25)
+
+Wiki stats: an orb (missile) along the aim, 25 m travel at 20 m/s, 4.3 m radius, nearsight 2 s (vision radius 7.5 m),
+friendly fire Yes. Was: server a point flash 1.6 m up with a facing check that blinded enemies 2 s; offline client a 5 x
+2.4 m box moving 14 m/s for 2.2 s (31 m) that blinded bots within 1.2 m along / 2.8 m beside it.
+
+- Server: `abilities.js PARANOIA = {speed: 20, range: 25, radius: 4.3, nearsight: 2}`; Q pushes a `paranoia` effect from
+  the eye along the aim, `tickParanoia` sweeps the segment travelled each tick (so no tunnelling at low tick rates) and
+  nearsights every unit but Omen within 4.3 m once (`nearsightUntil`, the same status Leer uses), with no line-of-sight
+  or facing check; the effect ends at 25 m. Server bots have no nearsight model, so a nearsighted bot is held like a
+  blinded one (`spike.js`, as the offline client's `b.blind`; this also applies to Leer now).
+- Client: `XPAR = {speed: 20, range: 25, r: 4.3, ns: 2}`; the player's orb moves 20 m/s for 1.25 s and puts every bot
+  and ally bot within 4.3 m of its path on `b.blind = 2` once each (bots have no nearsight model, as for Leer / Seekers).
+- Tests: `server/test-abilities.js` (PARANOIA table; ally hit at 0.2 s, 10 m enemy not yet; hit by 0.45 s through a
+  wall while facing away, 2 s, not blind; 4 m off the line at 20 m hit; 4.6 m off, 5 m past the end and Omen not; orb gone),
+  `work/test_ability_equip.cjs` (XPAR == PARANOIA; same geometry offline with `los` forced false).
+
+### Raze Boom Bot (wiki.playvalorant.com/en-us/Boom_Bot, fetched 2026-10-25)
+
+Wiki stats: duration 5 s (includes the 0.7 s deploy), max detection cone distance 15 m, explodes within 2.5 m of its
+target, radii 2 m inner / 6 m outer, damage 30 - 80 (minimum at the outer radius, maximum inside the inner one), not on
+allies. Was: server 10 m sight, 1.2 m trigger, flat 125 in 3 m; offline client 8 m sight, 1.2 m trigger, flat 80 in 1.5 m,
+10 s life.
+
+- Server: `DEV.boombot = {life: 5, speed: 6, sight: 15, trigger: 2.5, damage: 80, min: 30, inner: 2, radius: 6}`,
+  `bbDamage(d)` = 80 inside 2 m, linear to 30 at 6 m, 0 beyond; each enemy in 6 m with line of sight takes it by distance.
+- Client: `XBB` (same table) and `xBbDmg`; the player's and bot Raze's bot (`RS.bb`) lock within 15 m, explode within
+  2.5 m (`xBbBlast`: the locked target always, anyone else of the owner's targets in 6 m with line of sight, by distance;
+  never allies) and last 5 s.
+- Not modelled: the 0.6 s windup between the trigger and the blast, the 60 HP bot that enemies can shoot, the cone shape of
+  the detection (both sides use a 15 m circle with line of sight).
+- Tests: `server/test-ults.js` (bbDamage table; 73.75 - 80 to the hunted foe; lock at 13.4 m; falloff to a second foe;
+  none at ~10 m), `work/test_ability_equip.cjs` (XBB == DEV.boombot, xBbDmg table, the same lock / falloff offline).
+
+### Skye Trailblazer (wiki.playvalorant.com/en-us/Trailblazer, fetched 2026-10-25)
+
+Wiki stats: duration 6 s, explosion radius 3.5 m, concuss 4 s at the centre falling to 2.5 s at the edge, 30 damage when
+the leap bites an enemy. Was: server 3 s, 4 m, flat 2.5 s; offline client 6 s, 3 m, flat 2 s.
+
+- Server: `DEV.trail = {life: 6, speed: 9, trigger: 2, concuss: 4, minConcuss: 2.5, radius: 3.5}`, `tbConcuss(d)` linear
+  from 4 s (centre) to 2.5 s (3.5 m); concuss and slow per enemy by its distance from the blast.
+- Client: `XTB = {life: 6, r: 3.5, max: 4, min: 2.5}`, `xTbCnc(d)`; the player's leap (`tbLeap`) concusses / blinds each
+  bot in 3.5 m by distance (bots have no concuss model beyond `b.cnc` / `b.blind`).
+- Not modelled: the 30-damage bite, the 22.5 m vision radius.
+- Tests: `server/test-ults.js` (tbConcuss table, 6 s; the closer foe concussed longer; 4 m from the blast untouched),
+  `work/test_ability_equip.cjs` (XTB == DEV.trail; leap lands 4 m ahead: 4 s at the spot, 2.71 s at 3 m, none at 3.8 m).

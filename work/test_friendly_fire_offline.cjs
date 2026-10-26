@@ -49,7 +49,7 @@ const through=async()=>{for(let t=0;t<30000;t+=100){if(xe('running')&&!xe('!!win
  const [hh,nn,tu]=JSON.parse(fx);near(hh,2,'Hot Hands tick 6 -> 2 to an ally');near(nn,1.5,'Nanoswarm 4.5 -> 1.5');near(tu,0,'Turret never hits allies');
  // the wiring: every damaging cast has its ally pass
  const html=require('fs').readFileSync(require('path').join(__dirname,'..','index.html'),'utf8');
- for(const w of ['"Hunter\'s Fury", 80','"Blaze", 30 * dt','"Hot Hands", 60 * dt','"Shock Bolt", 75','"Nanoswarm", 45 * dt','"Aftershock", 80','"Nanoswarm", 4.5'])assert.ok(html.includes('xFFArea("You", false, '+w)||html.includes(', '+w+', (x, z)')||html.includes('en, '+w),'ally pass for '+w);
+ for(const w of ['"Hunter\'s Fury", 80','"Blaze", 30 * dt','"Hot Hands", 60 * dt','"Shock Bolt", 75','"Nanoswarm", XNANO.dps * dt','"Aftershock", 80','"Nanoswarm", 4.5'])assert.ok(html.includes('xFFArea("You", false, '+w)||html.includes(', '+w+', (x, z)')||html.includes('en, '+w),'ally pass for '+w);
  assert.ok(/xFFArea\(b, en, w, n,/.test(html)&&/xFFArea\(u, en, "Hunter's Fury", 80/.test(html)&&/xFFArea\(o\.own, o\.en, w, n,/.test(html),'bot area / bot Hunter\'s Fury / P2P host ally passes');
  // 6. FFA Deathmatch: no allies
  assert.equal(xe('(()=>{const d=FV.dm,t=FV.tdm;FV.dm=true;FV.tdm=false;const n=xMates("You").length+xMates(bots[0]).length;FV.dm=d;FV.tdm=t;return n})()'),0,'FFA: nobody is an ally');

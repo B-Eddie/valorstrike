@@ -180,7 +180,7 @@ const fails=[];const fail=s=>{fails.push(s);if(VERBOSE)console.log('FAIL',s);};c
  // ---- Sova Recon Bolt pulses (wiki Recon_Bolt: 30 m, 2 pulses 1.6 s apart, 0.75 s reveal, the bolt's line of sight); client XRCN == server DEV.reconBolt ----
  await live();{const dsrc=require('fs').readFileSync(require('path').join(__dirname,'../server/src/devices.js'),'utf8'),rb=dsrc.match(/reconBolt:\{pulses:\[([\d.]+),([\d.]+)\],radius:([\d.]+),reveal:([\d.]+)\}/);
   eq(xe('[XRCN.pulses[0],XRCN.pulses[1],XRCN.radius,XRCN.reveal]'),rb?[+rb[1],+rb[2],+rb[3],+rb[4]]:null,'client XRCN == server DEV.reconBolt');
-  const ok=xe('(()=>{const al=bots.filter(b=>b.alive&&b.g);if(al.length<2)return null;window.__rb={p:new THREE.Vector3(player.x,0.2,player.z),near:al[0],out:al[1]};al.forEach(b=>{b.g.position.set(player.x+200,b.g.position.y,player.z);b.det=1e9;});player.hp=100;__rb.near.g.position.x=player.x+28;__rb.out.g.position.x=player.x-33;los=((f)=>{const L=(a,b)=>true;L.f=f;return L;})(los);return true;})()');
+  const ok=xe('(()=>{const al=bots.filter(b=>b.alive&&b.g);if(al.length<2)return null;window.__rb={p:new THREE.Vector3(player.x,0.2,player.z),near:al[0],out:al[1]};al.forEach(b=>{b.g.position.set(player.x+200,b.g.position.y,player.z);b.det=1e9;});player.hp=100;__rb.near.g.position.x=player.x+28;__rb.out.g.position.x=player.x-33;window.__los0=los;los=(a,b)=>true;return true;})()');
   if(!ok)fail('Recon Bolt: need two live bots');else{
    const t0=xe('performance.now()'),at=async ms=>{while(xe('performance.now()')-t0<ms)await adv(20);};const keep=()=>xe('[[__rb.near,28],[__rb.out,-33]].forEach(([b,d])=>{b.alive=true;b.hp=100;b.g.position.x=__rb.p.x+d;b.g.position.z=__rb.p.z;});player.hp=100;true');
    xe('jUnreveal();jReveal(__rb.p);true');keep();eq(xe('J.rvT>0'),false,'no reveal as the bolt lands');await at(850);keep();eq(xe('J.rvT>0'),false,'no reveal before the first pulse (0.9 s)');
@@ -188,8 +188,57 @@ const fails=[];const fail=s=>{fails.push(s);if(VERBOSE)console.log('FAIL',s);};c
    await at(2450);keep();await at(2550);eq(xe('J.rvT>0&&J.rv.includes(__rb.near)'),true,'second pulse at 2.5 s');await at(3400);keep();eq(xe('J.rvT>0'),false,'second reveal over');
    xe('los=(a,b)=>false;true');{const t1=xe('performance.now()');xe('jReveal(__rb.p);true');while(xe('performance.now()')-t1<1000)await adv(20);}eq(xe('J.rv.length'),0,'no reveal without the bolt\'s line of sight');
    xe('los=(a,b)=>true;jReveal(__rb.p);XRCN.g++;jUnreveal();true');{const t1=xe('performance.now()');while(xe('performance.now()')-t1<2700)await adv(50);}eq(xe('J.rvT>0'),false,'a round clear cancels pending pulses');
-   xe('los=los.f;bots.forEach(b=>{if(b.det>1e8)b.det=0;});true');}}
+   xe('los=__los0;bots.forEach(b=>{if(b.det>1e8)b.det=0;});true');}}
+ // ---- Killjoy Nanoswarm (wiki Nanoswarm: 4.5 m, 1 s activation windup, then 45/s to 5 s); client XNANO == server DEV.nanoswarm ----
+ {const dsrc=require('fs').readFileSync(require('path').join(__dirname,'../server/src/devices.js'),'utf8'),nm=dsrc.match(/nanoswarm:\{life:120,active:([\d.]+),delay:([\d.]+),radius:([\d.]+),damage:([\d.]+)\}/);
+  eq(xe('[XNANO.active,XNANO.delay,XNANO.r,XNANO.dps]'),nm?[+nm[1],+nm[2],+nm[3],+nm[4]]:null,'client XNANO == server DEV.nanoswarm');}
+ await live();{xe('bots.concat(allies).forEach(b=>{b.det=1e9;});timeLeft=Math.max(timeLeft,60);true');/* nobody shoots and the clock cannot run out during the section (either ended the round here) */pick('Killjoy');await adv(200);
+  const ok=xe('(()=>{const al=bots.filter(b=>b.alive&&b.g);if(al.length<2)return null;const p=new THREE.Vector3(player.x+40,0.05,player.z);window.__kn={p,near:al[0],far:al[1]};al.forEach(b=>{b.g.position.set(player.x+200,b.g.position.y,player.z);b.det=1e9;});allies.forEach(a=>{a.det=1e9;});const m=jM(zoneGeo,fireMat(0xc8d23a,0.12));m.position.copy(p);scene.add(m);J.nano.push({m,p,on:false,t:0});player.hp=100;return true;})()');
+  if(!ok)fail('Nanoswarm: need two live bots');else{
+   // count only Nanoswarm damage (ally bots keep shooting the parked enemies); time by the swarm's own clock (n.t), not harness ms
+   const keep=()=>xe('[[__kn.near,4.3],[__kn.far,-4.7]].forEach(([b,d])=>{b.alive=true;b.hp=100;b.g.position.x=__kn.p.x+d;b.g.position.z=__kn.p.z;});player.hp=100;true');keep();
+   xe('window.__jh0=jHit;window.__kd=[0,0];jHit=function(b,n,w){if(w==="Nanoswarm"){const i=b===__kn.near?0:b===__kn.far?1:-1;if(i>=0)__kd[i]+=n;}return __jh0.apply(this,arguments);};true');
+   await tap('KeyC');eq(xe('J.nano.filter(n=>n.on).length'),1,'C triggers the hidden swarm');const nt=()=>xe('(J.nano.find(n=>n.on)||{t:-1}).t');
+   const XNw=x=>x("XNANO.active-XNANO.delay");
+   for(let i=0;i<80&&nt()>XNw(xe)+0.05;i++){await adv(50);keep();}eq(xe('__kd[0]'),0,'no damage in the 1 s activation windup');
+   for(let i=0;i<80&&nt()>3.5;i++){await adv(50);keep();}const kd=xe('__kd'),burnt=XNw(xe)-nt();
+   eq([kd[0]>0&&Math.abs(kd[0]-45*burnt)<3,kd[1]],[true,0],'45/s inside 4.5 m after the windup (4.3 m in, 4.7 m out; was 2.5 m): '+JSON.stringify(kd)+' over '+burnt.toFixed(2)+' s');eq(xe('+((J.nano.find(n=>n.on)||{m:{scale:{x:0}}}).m.scale.x).toFixed(2)'),1.8,'disc drawn at 4.5 m');
+   xe('jHit=__jh0;bots.concat(allies).forEach(b=>{if(b.det>1e8)b.det=0;});J.nano.forEach(n=>n.t=0.01);true');await adv(200);}}
+ // ---- Omen Paranoia (wiki Paranoia: a 25 m orb at 20 m/s, 4.3 m radius, through walls, no facing check, allies too: 2 s); client XPAR == server PARANOIA ----
+ {const asrc=require('fs').readFileSync(require('path').join(__dirname,'../server/src/abilities.js'),'utf8'),pm=asrc.match(/PARANOIA=\{speed:([\d.]+),range:([\d.]+),radius:([\d.]+),nearsight:([\d.]+)\}/);
+  eq(xe('[XPAR.speed,XPAR.range,XPAR.r,XPAR.ns]'),pm?[+pm[1],+pm[2],+pm[3],+pm[4]]:null,'client XPAR == server PARANOIA');}
+ await live();{xe('bots.concat(allies).forEach(b=>{b.det=1e9;});timeLeft=Math.max(timeLeft,60);true');pick('Omen');await adv(200);
+  const ok=xe('(()=>{const al=bots.filter(b=>b.alive&&b.g),fr=allies.filter(a=>a.alive&&a.g);if(al.length<2)return null;window.__pa={o:{x:player.x,z:player.z},hit:al[0],wide:al[1],past:al[2]||null,mate:fr[0]||null};bots.forEach(b=>b.g.position.set(player.x+200,b.g.position.y,player.z));J.par.length=0;los.__p=los;return true;})()');
+  if(!ok)fail('Paranoia: need two live bots');else{
+   // yaw 0 aims -z; along the line: hit 10 m (a wall in the way: los false), wide 4.6 m off at 12 m, past 31 m (5 m beyond the end: the orb starts 1 m ahead and travels 25 m), mate 3 m off at 6 m
+   const keep=()=>xe('[[__pa.hit,0,-10],[__pa.wide,4.6,-12],[__pa.past,0,-31],[__pa.mate,3,-6]].forEach(([b,x,z])=>{if(!b)return;b.alive=true;b.hp=100;b.g.position.x=__pa.o.x+x;b.g.position.z=__pa.o.z+z;});player.x=__pa.o.x;player.z=__pa.o.z;player.hp=100;true');keep();
+   xe('[__pa.hit,__pa.wide,__pa.past,__pa.mate].forEach(b=>{if(!b)return;b.blind=0;b.g.rotation.y=0;});yaw=0;los=(a,b)=>false;okKey("KeyQ");true');eq(xe('J.par.length'),1,'Q throws the orb');
+   const ot=()=>xe('J.par.length?J.par[0].t:-1');for(let i=0;i<40&&ot()>=0&&ot()<0.15;i++){await adv(25);keep();}eq(xe('__pa.hit.blind>0'),false,'10 m target not reached at 0.15 s (20 m/s)');
+   for(let i=0;i<80&&xe('J.par.length');i++){await adv(50);keep();}
+   const r=xe('[__pa.hit.blind,__pa.wide.blind,__pa.past?__pa.past.blind:0,__pa.mate?__pa.mate.blind:1,J.par.length]');xe('los=los.__p;true');
+   eq([r[0]>0.5&&r[0]<=2,r[1],r[2],r[3]>0.5&&r[3]<=2,r[4]],[true,0,0,true,0],'Paranoia: 10 m behind a wall and facing away hit (2 s), 4.6 m off the line and 5 m past 25 m missed, ally hit (when a third bot / an ally is alive), orb gone: '+JSON.stringify(r));
+   xe('bots.concat(allies).forEach(b=>{if(b.det>1e8)b.det=0;});true');await adv(200);}}
+ // ---- Raze Boom Bot (wiki Boom_Bot: 5 s, 15 m detection, explodes within 2.5 m, 80 inside 2 m -> 30 at 6 m); client XBB == server DEV.boombot ----
+ {const dsrc=require('fs').readFileSync(require('path').join(__dirname,'../server/src/devices.js'),'utf8'),bm=dsrc.match(/boombot:\{life:([\d.]+),speed:[\d.]+,sight:([\d.]+),trigger:([\d.]+),damage:([\d.]+),min:([\d.]+),inner:([\d.]+),radius:([\d.]+)\}/);
+  eq(xe('[XBB.life,XBB.sight,XBB.trig,XBB.max,XBB.min,XBB.inner,XBB.out]'),bm?bm.slice(1).map(Number):null,'client XBB == server DEV.boombot');
+  eq(xe('[xBbDmg(0),xBbDmg(2),xBbDmg(4),xBbDmg(5.5),xBbDmg(6.01)]'),[80,80,55,36.25,0],'Boom Bot falloff 80 (2 m) -> 30 (6 m)');}
+ await live();{xe('bots.concat(allies).forEach(b=>{b.det=1e9;});timeLeft=Math.max(timeLeft,60);true');pick('Raze');await adv(200);
+  const ok=xe('(()=>{const al=bots.filter(b=>b.alive&&b.g);if(al.length<3)return null;window.__bb={o:{x:player.x,z:player.z},foe:al[0],side:al[1],out:al[2]};bots.forEach(b=>b.g.position.set(player.x+200,b.g.position.y,player.z));window.__bl0=blocked;window.__lo0=los;blocked=()=>false;los=()=>true;RS.bb.length=0;return true;})()');
+  if(!ok)fail('Boom Bot: need three live bots');else{
+   // the bot leaves heading -z; foe 13.4 m away at (12, -6) (outside the old 10 m sight), side 3 m further, out 9 m further
+   const keep=()=>xe('[[__bb.foe,12,-6],[__bb.side,12,-9],[__bb.out,12,-15]].forEach(([b,x,z])=>{b.alive=true;b.hp=100;b.g.position.x=__bb.o.x+x;b.g.position.z=__bb.o.z+z;});player.x=__bb.o.x;player.z=__bb.o.z;player.hp=100;true');keep();
+   xe('window.__bd=[0,0,0];window.__jh1=jHit;jHit=function(b,n,w){if(w==="Boom Bot"){const i=[__bb.foe,__bb.side,__bb.out].indexOf(b);if(i>=0)__bd[i]+=n;}return __jh1.apply(this,arguments);};RS.bb.push({m:rsMesh(0xff8a1f,1.6,new RV(__bb.o.x,0.4,__bb.o.z-1)),dx:0,dz:-1,t:XBB.life});true');
+   for(let i=0;i<120&&xe('RS.bb.length');i++){await adv(50);keep();}
+   const d=xe('__bd');xe('jHit=__jh1;blocked=__bl0;los=__lo0;bots.concat(allies).forEach(b=>{if(b.det>1e8)b.det=0;});true');
+   eq([d[0]>=73.75&&d[0]<=80,d[1]>30&&d[1]<d[0],d[2]],[true,true,0],'Boom Bot locks at 13.4 m, explodes within 2.5 m (73.75-80), falloff to a target ~4.7 m from the blast, none at ~10 m: '+JSON.stringify(d));await adv(200);}}
+ // ---- Skye Trailblazer (wiki Trailblazer: 6 s, 3.5 m explosion, concuss 4 s at the centre -> 2.5 s at the edge); client XTB == server DEV.trail ----
+ {const dsrc=require('fs').readFileSync(require('path').join(__dirname,'../server/src/devices.js'),'utf8'),tm=dsrc.match(/trail:\{life:([\d.]+),speed:[\d.]+,trigger:[\d.]+,concuss:([\d.]+),minConcuss:([\d.]+),radius:([\d.]+)\}/);
+  eq(xe('[XTB.life,XTB.max,XTB.min,XTB.r]'),tm?tm.slice(1).map(Number):null,'client XTB == server DEV.trail');eq(xe('[xTbCnc(0),xTbCnc(1.75),xTbCnc(3.5)]'),[4,3.25,2.5],'Trailblazer concuss falloff');}
+ await live();{xe('bots.concat(allies).forEach(b=>{b.det=1e9;});timeLeft=Math.max(timeLeft,60);true');pick('Skye');await adv(200);
+  const ok=xe('(()=>{const al=bots.filter(b=>b.alive&&b.g);if(al.length<3)return null;const o={x:player.x,z:player.z};window.__tb={o,c:al[0],e:al[1],out:al[2]};bots.forEach(b=>b.g.position.set(player.x+200,b.g.position.y,player.z));[[al[0],0],[al[1],3],[al[2],3.8]].forEach(([b,x])=>{b.cnc=0;b.blind=0;b.g.position.x=o.x+x;b.g.position.z=o.z-4;});window.__bl1=blocked;window.__lo1=los;blocked=()=>false;los=()=>true;yaw=0;J.dr={x:o.x,y:0.6,z:o.z,t:XTB.life,dart:1,yw:0,pt:0,tb:true};tbLeap();const r=[__tb.c.cnc,__tb.e.cnc,__tb.out.cnc||0,J.dr.x-o.x,J.dr.z-o.z];blocked=__bl1;los=__lo1;drEnd();return r;})()');
+  if(!ok)fail('Trailblazer: need three live bots');else eq(ok.map(n=>+(+n).toFixed(2)),[4,2.71,0,0,-4],'Trailblazer leap 4 m: 4 s at the landing spot, 2.71 s at 3 m, none at 3.8 m (was 2 s flat inside 3 m)');
+  xe('bots.concat(allies).forEach(b=>{if(b.det>1e8)b.det=0;});true');await adv(200);}
  if(xe('XEQV.err||null'))fail('ability viewmodel error: '+xe('XEQV.err'));
  if(H.errors.length>errs0)fail('page errors: '+H.errors.slice(errs0).map(e=>String(e&&e.message||e)).join(' | '));
- if(fails.length){console.log(fails.join('\n'));process.exit(1);}console.log('ability equip: binds, migration, HUD labels, equip -> fire flow, first-person equip viewmodel, wiki equip times + windups, Sova bow charge + bounces, Fault Line hold-to-extend, Hot Hands spread, Neural Theft 18 m / 2 s + 6 s, Cyber Cage cylinder, Recon Bolt 30 m pulses, Cloudburst flight + steering, per-ability smoke radii, kit table ok');process.exit(0);
+ if(fails.length){console.log(fails.join('\n'));process.exit(1);}console.log('ability equip: binds, migration, HUD labels, equip -> fire flow, first-person equip viewmodel, wiki equip times + windups, Sova bow charge + bounces, Fault Line hold-to-extend, Hot Hands spread, Neural Theft 18 m / 2 s + 6 s, Cyber Cage cylinder, Recon Bolt 30 m pulses, Nanoswarm 4.5 m / 1 s windup, Paranoia 25 m orb, Boom Bot 15 m / 2.5 m / 80-30 falloff, Trailblazer 3.5 m / 4-2.5 s, Cloudburst flight + steering, per-ability smoke radii, kit table ok');process.exit(0);
 })().catch(e=>{console.error(e);process.exit(1);});
