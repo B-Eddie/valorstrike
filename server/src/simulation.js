@@ -147,6 +147,9 @@ export class Simulation{
   free.sort((a,b)=>Math.hypot(a[0]-u.x,a[2]-u.z)-Math.hypot(b[0]-u.x,b[2]-u.z));return free[0];}
  // Utility hook; SpikeSimulation casts abilities on each bot's own timing.
  botUtility(){}
- rows(){return this.units.map(u=>[u.id,u.team,u.name,u.agent,+u.x.toFixed(3),+u.y.toFixed(3),+u.z.toFixed(3),u.look+Math.PI,Math.ceil(u.hp),Math.ceil(u.armor),u.alive?1:0,u.weapon,u.human?1:0,0,u.seq,u.ammo,u.reserve,+Math.min(1,(u.ch||0)/.45).toFixed(2),+(u.pitch||0).toFixed(3),u.human?Math.max(0,u.lastSeq|0):0,u.human?+Math.max(0,Math.min(1,this.time-(u.inputAt||0))).toFixed(3):0,u.rgn!=null?Math.ceil(u.rgn):-1]);} // [19] last applied input seq, [20] seconds that input has been applied: the client reconciles against its own predicted path at that moment; [21] Regen Shield pool (-1: no Regen Shield)
+ rows(){return this.units.map(u=>[u.id,u.team,u.name,u.agent,+u.x.toFixed(3),+u.y.toFixed(3),+u.z.toFixed(3),u.look+Math.PI,Math.ceil(u.hp),Math.ceil(u.armor),u.alive?1:0,u.weapon,u.human?1:0,0,u.seq,u.ammo,u.reserve,+Math.min(1,(u.ch||0)/.45).toFixed(2),+(u.pitch||0).toFixed(3),u.human?Math.max(0,u.lastSeq|0):0,u.human?+Math.max(0,Math.min(1,this.time-(u.inputAt||0))).toFixed(3):0,u.rgn!=null?Math.ceil(u.rgn):-1,0,this.loud(u)?1:0]);} // [22] fog of war: 1 = hidden row (fog.js fogRow); [23] running footsteps (loud); [19] last applied input seq, [20] seconds that input has been applied: the client reconciles against its own predicted path at that moment; [21] Regen Shield pool (-1: no Regen Shield)
+ // Running footsteps (VALORANT: running is heard, shift-walking and crouching are silent): moving faster than 1.5 m/s on the
+ // unit's live input without walk / duck. The online page plays remote steps from this flag (server_runtime.js netSteps).
+ loud(u){if(!u.alive||u.loading)return false;const i=this.time-(u.inputAt||0)<.3&&u.input||{};return Math.hypot(u.vx||0,u.vz||0)>1.5&&!i.walk&&!i.duck;}
  snapshot(){return {t:'s',tl:this.remaining,u:this.rows(),k:Object.fromEntries(this.units.map(u=>[u.name,u.kills])),d:Object.fromEntries(this.units.map(u=>[u.name,u.deaths])),ev:this.events.splice(0),phase:this.phase};}
 }

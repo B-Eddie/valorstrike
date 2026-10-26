@@ -39,7 +39,7 @@ export function fogPass(sim,snap){const F=sim.fog||(sim.fog={t:-1,n:0,pairs:new 
   const key=a.id<b.id?a.id+':'+b.id:b.id+':'+a.id,last=F.pairs.get(key)??-1e9;let seen=false;
   if(near3(a,b,FOG.near))seen=true;else if(now-last<=FOG.grace||((F.n+a.id+b.id)&1)===0)seen=pairSees(sim,a,b);
   if(seen){F.pairs.set(key,now);mark(ga,b.id);mark(gb,a.id);}}
- for(const v of L){const g=fogGroup(sim,v),run=Math.hypot(v.vx||0,v.vz||0)>FOG.run&&!(v.input&&(v.input.walk||v.input.duck)),shot=now-(v.fogShotAt??-1e9)<=FOG.shotFor,rev=(v.revealedUntil||0)>now;
+ for(const v of L){const g=fogGroup(sim,v),run=typeof sim.loud==='function'?sim.loud(v):Math.hypot(v.vx||0,v.vz||0)>FOG.run&&!(v.input&&(v.input.walk||v.input.duck))/* the row's [23] footsteps flag */,shot=now-(v.fogShotAt??-1e9)<=FOG.shotFor,rev=(v.revealedUntil||0)>now;
   for(const a of L){const ga=fogGroup(sim,a);if(ga===g)continue;if(rev||(run&&near3(a,v,FOG.step))||(shot&&near3(a,v,FOG.shot)))mark(ga,v.id,rev?Math.max(now,v.revealedUntil):now+FOG.grace);}}
  // enemy devices / barriers
  for(const g of groups)F.hide.set(g,new Set());
@@ -53,7 +53,7 @@ export function fogPass(sim,snap){const F=sim.fog||(sim.fog={t:-1,n:0,pairs:new 
  return F;}
 // A hidden enemy row: identity, team, alive, weapon (for the shot sound) and input seq stay; position, aim, HP, armour,
 // ammo, crouch, Regen pool and input timing go; [22] = 1.
-export function fogRow(r){const o=r.slice();o[4]=o[5]=o[6]=o[7]=0;o[8]=o[10]?100:0;o[9]=0;o[15]=o[16]=0;o[17]=o[18]=0;o[19]=o[20]=0;o[21]=-1;o[22]=1;return o;}
+export function fogRow(r){const o=r.slice();o[4]=o[5]=o[6]=o[7]=0;o[8]=o[10]?100:0;o[9]=0;o[15]=o[16]=0;o[17]=o[18]=0;o[19]=o[20]=0;o[21]=-1;o[22]=1;if(o.length>23)o[23]=0;return o;}
 // The snapshot (or any frame with unit rows u and effect rows fx) as viewer may receive it.
 export function fogView(sim,snap,viewer){if(!snap||!viewer||sim.phase!=='game'||sim.fogOff)return snap;const F=fogPass(sim,snap),g=fogGroup(sim,viewer),rel=F.rel.get(g),now=sim.time,kill=viewer.fogKiller&&viewer.fogKiller.until>=now?viewer.fogKiller.id:-1,hide=F.hide.get(g);
  const out={...snap};if(Array.isArray(snap.u))out.u=snap.u.map(r=>!Array.isArray(r)||r[0]===viewer.id||rowGroup(sim,r)===g||!r[10]||r[0]===kill||(rel&&rel.get(r[0])>=now)?r:fogRow(r));

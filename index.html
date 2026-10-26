@@ -14283,6 +14283,15 @@ function netFogPost(m){if(!NET.socket||!m||!Array.isArray(m.u))return;const all=
   else if(u.fogBack){u.fogBack=0;if(u.alive&&u.g){u.g.position.set(e[4],e[5]||0,e[6]);u.g.rotation.y=e[7];if(u.g.parent!==scene)scene.add(u.g);}}}}
 const netFog0=mpCliSnap;mpCliSnap=function(m){netFogPre(m);const r=netFog0.apply(this,arguments);netFogPost(m);return r;};
 if(typeof mpMkUnit==='function'){const netFogMk0=mpMkUnit;mpMkUnit=function(e){const u=netFogMk0.apply(this,arguments);if(NET.socket&&u&&Array.isArray(e)&&e[22]===1){u.fog=1;if(u.nb)u.nb.length=0;if(u.g&&u.g.parent)u.g.parent.remove(u.g);}return u;};}/* guarded: test sandboxes slice this file without the page */
+// Remote footsteps (online): the page played footsteps only for its own offline bots, so online nobody heard an enemy (or
+// ally) run. Rows carry [23] = running footsteps (server simulation.js loud: moving on live input without walk / duck);
+// a drawn, live, relevant unit with it plays SFX.step (25 m, panned) every 0.4 s, the first step 0.3 s after it starts
+// running (VALORANT's first running step is silent).
+function netStepFlags(m){if(!NET.socket||!m||!Array.isArray(m.u))return;const all=bots.concat(allies);for(const e of m.u){if(!Array.isArray(e)||e[0]===MP.me)continue;const u=all.find(x=>x.nid===e[0]);if(u)u.loud=e[23]===1&&e[22]!==1;}}
+let netStepT=0;function netSteps(){if(!(NET.socket&&MP.st==='game'&&running)){netStepT=0;return;}const now=performance.now(),dt=netStepT?Math.min(.1,(now-netStepT)/1000):0;netStepT=now;
+ for(const L of [bots,allies])for(const u of L){if(!u||!u.loud||!u.alive||u.fog||!u.g||u.g.parent!==scene){if(u)u.fsN=.3;continue;}u.fsN=(u.fsN??.3)-dt;if(u.fsN<=0){u.fsN+=.4;try{SFX.step(u.g.position);}catch(err){}}}}
+if(typeof window!=='undefined')(window.XHK||(window.XHK=[])).push(netSteps);
+const netStep0=mpCliSnap;mpCliSnap=function(m){const r=netStep0.apply(this,arguments);netStepFlags(m);return r;};
 // Online soul resources and buff presentation follow private server round state.
 const netSouls=new Map();
 function netReynaClear(){for(const m of netSouls.values()){scene.remove(m);m.material.dispose();}netSouls.clear();}
