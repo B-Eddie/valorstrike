@@ -15,7 +15,7 @@ const SIZES=(process.env.SIZES||'1280x720,640x360,390x844').split(',').map(s=>s.
 // Ability equip-then-fire FP visuals + Deathmatch 640x360 leaderboard vs combat report, headless Chromium (SwiftShader, LOW).
 // A. offline 5v5 Ascent as Phoenix, action phase, 1280x720: real Q key -> Hot Hands equipped (gun lowered, hand + item in the
 //    first-person view), stays in hand while not fired; real left click -> thrown; gun comes back. Same for C (Blaze).
-//    Records J.eq / XEQV state and the FP gun's lowered offset per capture; screenshots abil-*.jpg.
+//    Records J.eq / ability-rig (XAF, f95aa9e replaced the legacy XEQV) state and the FP gun's lowered offset per capture; screenshots abil-*.jpg.
 // B. Deathmatch Ascent at 640x360: player killed -> combat report shown and the FFA leaderboard hidden (7a58c99); after the
 //    respawn the leaderboard is back.   node work/browser_abil_dm.cjs <out.json>
 (async()=>{
@@ -26,6 +26,8 @@ const SIZES=(process.env.SIZES||'1280x720,640x360,390x844').split(',').map(s=>s.
  await ctx.route(/127\.0\.0\.1:8876\/(index\.html)?(\?.*)?$/,r=>{const h=fs.readFileSync(ROOT+'/index.html','utf8').replace('window.xValorantFeel={','window.__xe=s=>eval(s);window.xValorantFeel={');r.fulfill({body:h,contentType:'text/html'});});
  const page=await ctx.newPage();await require('./pw_shot.cjs')(ctx,page);page.setDefaultTimeout(600000);page.on('pageerror',e=>R.errors.push('pageerror '+String(e).slice(0,300)));
  const X=s=>page.evaluate(s=>window.__xe(s),s);
+ // hk-30: waits in GAME time (the box runs ~0.25-1 rAF/s): xSimStep is wrapped to count sim time (installed by go()).
+ const simWait=async(sec,why)=>{const t=+(await X('window.__sim||0'));await page.waitForFunction(t=>window.__xe('window.__sim||0')>=t,t+sec,{timeout:900000,polling:200}).catch(e=>log('simWait '+(why||sec)+' timeout',String(e).slice(0,80)));};
  const frames=async n=>{await X(`window.__allow=${n};1`);await page.waitForFunction(()=>window.__xe('window.__allow<=0'),null,{timeout:900000,polling:1000});};
  const shot=async(n,w,h)=>{await frames(2);await page.screenshot({path:`${SHOT}${n}-${w}x${h}.jpg`,type:'jpeg',quality:82,timeout:150000}).catch(e=>log('shot '+n+' failed (non-fatal)',String(e).slice(0,120)));};
  await page.goto('http://127.0.0.1:8876/',{waitUntil:'domcontentloaded'});await page.waitForFunction(()=>window.__xe&&window.xValorantAssets,null,{timeout:180000,polling:1000});log('assets',1);
@@ -33,19 +35,19 @@ const SIZES=(process.env.SIZES||'1280x720,640x360,390x844').split(',').map(s=>s.
  const go=async(fn,agent)=>{await X(`FV.pick='ascent';J.pick=${JSON.stringify(agent)};window.xSwift=false;setTimeout(()=>xGo(${fn}),0);1`);
   await page.waitForFunction(()=>window.__xe('running&&!window.xLdOn&&bots.length>0'),null,{timeout:1200000,polling:2000});
   await X(`[...document.querySelectorAll('button')].filter(b=>/^got it$/i.test(b.textContent.trim())&&b.offsetParent).forEach(b=>b.click());if(!window.__gd){window.__gd=1;const h=hurt;hurt=function(t){if(t===player&&window.__god)return;return h.apply(this,arguments);};}1`);
-  await X(`if(!window.__rp){window.__rp=1;window.__allow=3;const r0=renderer.render;renderer.render=function(sc,c){if(sc===scene){if(window.__allow<=0)return;window.__allow--;}return r0.call(this,sc,c);};}1`);};
- const st=()=>X(`JSON.stringify({eq:J.eq?{k:J.eq.k,st:J.eq.st}:null,v:{on:XEQV.on,kind:XEQV.kind,item:!!XEQV.item,vis:!!(XEQV.item&&XEQV.item.visible)},q:J.q,c:J.c,ammo,pick:J.pick,buy:FV.buy})`).then(JSON.parse);
+  await X(`if(!window.__rp){window.__rp=1;window.__allow=3;const r0=renderer.render;renderer.render=function(sc,c){if(sc===scene){if(window.__allow<=0)return;window.__allow--;}return r0.call(this,sc,c);};}if(!window.__simH){window.__simH=1;window.__sim=0;const s0=xSimStep;xSimStep=function(d){const r=s0.apply(this,arguments);window.__sim+=d;return r;};}1`);};
+ const st=()=>X(`JSON.stringify({eq:J.eq?{k:J.eq.k,st:J.eq.st}:null,v:{on:XAF.on,kind:XAF.mode,item:!!(XAF.last&&XAF.last.item),vis:!!(XAF.cur&&XAF.cur.root.visible),rig:!!(XAF.last&&XAF.last.rig)},q:J.q,c:J.c,ammo,pick:J.pick,buy:FV.buy})`).then(JSON.parse);
  // A. abilities
  await go('startFive','Phoenix');await X('window.__god=1;bots.concat(allies).forEach(u=>u.nt=true);FV.buy=Math.min(FV.buy,0.2);1');await frames(3);
  await X('J.c=2;J.q=2;J.cd={c:0,q:0,e:0,x:0};reloading=0;1');log('agent',await st());
  await page.mouse.move(640,360);
  for(const [key,slot,name] of [['KeyQ','q','hot-hands'],['KeyC','c','blaze']]){
-  await page.keyboard.press(key);await page.waitForTimeout(150);let s=await st();log(name+' after key',s);
-  await frames(2);await page.waitForTimeout(900);await frames(1);s=await st();log(name+' equipped',s);
+  await page.keyboard.down(key);await simWait(0.1,key);await page.keyboard.up(key);let s=await st();log(name+' after key',s);
+  await simWait(1.2,name+' equip');await frames(1);s=await st();log(name+' equipped',s);
   check(`${name}: ${key} equips (no instant cast), FP item shown`,s.eq&&s.eq.k===slot&&s.v.on,JSON.stringify(s));await shot('abil-'+name+'-equipped',1280,720);
-  const before=s[slot],a0=s.ammo;await page.mouse.down();await page.waitForTimeout(80);await page.mouse.up();
+  const before=s[slot],a0=s.ammo;await page.mouse.down();await simWait(0.1,'click');await page.mouse.up();
   await frames(1);s=await st();log(name+' after click',s);await shot('abil-'+name+'-release',1280,720);
-  for(let i=0;i<4;i++){await page.waitForTimeout(500);await frames(1);}s=await st();log(name+' after recovery',s);
+  await simWait(2,name+' recovery');await frames(1);s=await st();log(name+' after recovery',s);
   check(`${name}: left click casts it (charge spent, gun did not fire) and the gun is back up`,s[slot]===before-1&&s.ammo===a0&&!s.eq,JSON.stringify(s));await shot('abil-'+name+'-after',1280,720);
  }
  await X('try{leave()}catch(e){}1');await page.waitForTimeout(1500);
@@ -54,9 +56,9 @@ const SIZES=(process.env.SIZES||'1280x720,640x360,390x844').split(',').map(s=>s.
  const lb=()=>X(`JSON.stringify((()=>{const e=document.querySelector('.x-dmlb'),c=document.querySelector('.x-cbt');const vis=el=>!!el&&getComputedStyle(el).display!=='none'&&getComputedStyle(el).visibility!=='hidden'&&el.getBoundingClientRect().width>2;const r=el=>el?[...Object.values(el.getBoundingClientRect().toJSON())].slice(0,4).map(Math.round):null;return {lb:vis(e),lbR:r(e),cbt:vis(c),cbtR:r(c),on:document.body.classList.contains('x-cbt-on'),hp:player.hp};})())`).then(JSON.parse);
  let l=await lb();log('dm alive',l);check('DM 640x360 alive: leaderboard shown',l.lb,JSON.stringify(l));await shot('dm-lb-alive',640,360);
  await X(`window.__god=0;{const b=bots[0];hurt(player,500,b.name);if(player.hp>0)pDie(b.name,"Vandal");}1`);
- for(let i=0;i<3;i++){await page.waitForTimeout(500);await frames(1);}l=await lb();log('dm dead',l);
+ await simWait(1.5,'dm dead');await frames(1);l=await lb();log('dm dead',l);
  check('DM 640x360 dead: combat report shown, leaderboard hidden (not covered)',l.cbt&&!l.lb,JSON.stringify(l));await shot('dm-lb-dead',640,360);
- for(let i=0;i<20&&(await X('player.hp'))<=0;i++){await page.waitForTimeout(1000);await frames(1);}
+ for(let i=0;i<20&&(await X('player.hp'))<=0;i++){await simWait(1,'respawn');}
  await frames(2);l=await lb();log('dm respawn',l);check('DM 640x360 respawned: leaderboard back, report gone',l.hp>0&&l.lb&&!l.on,JSON.stringify(l));await shot('dm-lb-respawn',640,360);
  log('errors',R.errors);await browser.close();
 })().catch(e=>{R.errors.push(String(e).slice(0,400));fs.writeFileSync(OUT,JSON.stringify(R,null,1));process.exit(1);});
