@@ -1,5 +1,5 @@
 // 640x360 landscape: the combat report (hit feedback, .x-cbt, CSS injected by xCrUi) sat over the centred death card
-// (.x-kb short-screen rule: bottom 60px, translateX(-50%)), browser-found after the hark-hitfx merge. On short landscape
+// (.x-kbc short-screen rule: bottom 60px, translateX(-50%)), browser-found after the hark-hitfx merge. On short landscape
 // screens the report is bottom-right (clear of the kill feed at the top) and, while it shows (body.x-cbt-on), the death
 // card centres in the space left of it. Checks the rules and the resulting boxes at 640x360 and 844x390.
 const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert');
@@ -8,11 +8,13 @@ const m=html.match(/st\.textContent='(\.x-cbt\{[^']*)'/);assert(m,'combat report
 const short=css.match(/@media \(max-height:560px\) and \(orientation:landscape\)\{([\s\S]*)\}$/);assert(short,'short landscape combat report rule missing');
 const rule=(src,sel)=>{const r=new RegExp('(?:^|\\})'+sel.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\{([^}]*)\\}');const x=src.match(r);return x&&x[1];};
 const decl=(body,prop)=>{const x=body&&body.match(new RegExp('(?:^|;)'+prop+':([^;]+)'));return x&&x[1].trim();};
-const cbt=rule(short[1],'.x-cbt'),card=rule(short[1],'body.x-cbt-on .x-kb.on');assert(cbt&&card,'rules missing');
+const cbt=rule(short[1],'.x-cbt'),card=rule(short[1],'body.x-cbt-on .x-kbc.on');assert(cbt&&card,'rules missing');
 assert.equal(decl(cbt,'top'),'auto');assert.equal(decl(cbt,'bottom'),'60px');
 const W=parseFloat(decl(cbt,'width')),Rt=parseFloat(decl(cbt,'right'));
 // the base short death card rule this has to beat
-const kbm=html.match(/@media \(max-height:560px\)\{\s*\.x-kb\{left:50%;bottom:60px;transform:translateX\(-50%\);width:auto;max-width:min\(92vw,380px\)/);assert(kbm,'short .x-kb rule changed; re-check this layout');
+// the base short death card rule this has to beat (the card is .x-kb.x-kbc; instinct 97f903e scoped its rules to .x-kbc so the
+// ELIMINATED banner #xKbn, also .x-kb, keeps its own style - the shift targets .x-kbc only, so it never moves the banner)
+const kbm=html.match(/@media \(max-height:560px\)\{\s*\.x-kbc\{left:50%;bottom:60px;transform:translateX\(-50%\);width:auto;max-width:min\(92vw,380px\)/);assert(kbm,'short .x-kbc rule changed; re-check this layout');
 for(const [vw,vh] of [[640,360],[844,390]]){
  const calc=e=>Function('vw','return '+e.replace(/calc\(|\)$/g,'').replace(/100vw/g,'vw').replace(/(\d+)px/g,'$1'))(vw);
  const left=calc(decl(card,'left')),maxw=Math.min(calc(decl(card,'max-width')),380);
