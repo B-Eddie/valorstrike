@@ -37,7 +37,11 @@ if aa in s:s=s[:s.index(aa)]+s[s.index(ab)+len(ab):]
 block+='\n'+(root/'work/audio_runtime.js').read_text().rstrip('\n').replace('/*GAME_AUDIO_JSON*/null',__import__('json').dumps(__import__('json').loads((root/'audio/manifest.json').read_text()),separators=(',',':')))
 za='// ---- SKIN FINISHERS ----';zb='// ---- END SKIN FINISHERS ----'
 if za in s:s=s[:s.index(za)]+s[s.index(zb)+len(zb):]
-block+='\n'+(root/'work/finishers_runtime.js').read_text().rstrip('\n');mark='xReady = true; // every mode is initialised; lobby launches may now start them';s=s.replace(mark,block+'\n'+mark)
+block+='\n'+(root/'work/finishers_runtime.js').read_text().rstrip('\n')
+# Spectate POV (first-person view of the followed teammate; work/spectate_runtime.js), last: it wraps xskGet / xvFPClear / bfxBot / mpCliRS / mpCliSnap / vmTick / xHud.
+pa='// ---- SPECTATE POV ----';pb='// ---- END SPECTATE POV ----'
+if pa in s:s=s[:s.index(pa)]+s[s.index(pb)+len(pb):]
+block+='\n'+(root/'work/spectate_runtime.js').read_text().rstrip('\n');mark='xReady = true; // every mode is initialised; lobby launches may now start them';s=s.replace(mark,block+'\n'+mark)
 if '<script src="models/valorant/manifest.js"></script>' not in s:s=s.replace('<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>','<script src="models/valorant/manifest.js"></script>\n<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>')
 # Find the actual three script tag, which may use an onerror handler.
 if '<script src="models/valorant/manifest.js"></script>' not in s:s=s.replace('<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js"></script>','<script src="models/valorant/manifest.js"></script>\n<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js"></script>')

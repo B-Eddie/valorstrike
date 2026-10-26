@@ -1,11 +1,10 @@
 // Online spectate on the real server path: the real page (audit.js fake DOM) on the real worker module
 // (tools/local-cluster.mjs; ENABLE_SPIKE locally only). The deaths come from the server's own snapshot kill events, so the
-// page goes through mpCliSnap -> kfeed -> xKLDie exactly as online (test_spectate_follow.cjs calls xKLDie directly).
-//  - online 5v5: the page's player and every teammate killed -> after the 2 s killed-by card the cam follows the killer, a
-//    living enemy ("SPECTATING <NAME> · ENEMY"), as VALORANT; Space cycles to another living enemy.
-//  - online Team Deathmatch and Deathmatch (respawn modes): the page's player and every teammate dead (respawns held back
-//    on the server) -> never an enemy cam; the label is written when the view opens ("NO ONE ALIVE", no Spike cam): it
-//    kept the previous death's text, here the 5v5 match's "SPECTATING <enemy> · ENEMY".
+// page goes through mpCliSnap -> kfeed -> xKLDie exactly as online. Living TEAMMATES only, as VALORANT (user 2026-10-26):
+//  - online 5v5: the page's player and all teammates but one killed -> after the 2 s killed-by card the cam follows that
+//    teammate ("SPECTATING <NAME>"), the server's roundState pov (ADS / blind / reload) arrives for teammates only and only
+//    while dead; that teammate killed too -> "NO TEAMMATES ALIVE", nobody followed (was: the killer, "· ENEMY").
+//  - online Team Deathmatch and Deathmatch (respawn modes): never spectate.
 const fs=require('fs'),path=require('path'),assert=require('assert/strict'),vm=require('vm');
 const audit=fs.readFileSync(path.join(__dirname,'audit.js'),'utf8'),boot=audit.slice(0,audit.indexOf('// ---------- audit ----------')).replace(/^"use strict";/,'');
 const log=console.log;console.log=()=>{};
@@ -40,16 +39,24 @@ console.log=log;
   for(const u of sim.units)if(!u.human)u.frozen=true;
   const me=sim.units.find(u=>u.human),foes=sim.units.filter(u=>u!==me&&(mode==='dm'||u.team!==me.team)),mates=mode==='dm'?[]:sim.units.filter(u=>u!==me&&u.team===me.team),killer=foes[1]||foes[0];
   if(mode==='five'&&me.team===sim.atk)Object.assign(sim.spike,{st:'plant',site:'A',x:me.x,y:me.y,z:me.z,t:45,carrier:null,dt:0,pt:0});/* attackers wiped after a plant: the round goes on */
-  await step(200);for(const a of mates)kill(sim,a,killer);await step(200);kill(sim,me,killer);
-  let enemySeen=null;for(let t=0;t<3000;t+=100){await step(100);const c=cam();if(c.enemy||(c.sp&&/ENEMY/.test(c.label)))enemySeen=enemySeen||c;}
-  const c=cam();out.push(mode+' '+JSON.stringify(c));
-  assert.equal(c.hp<=0,true,mode+': the page saw its own death '+JSON.stringify(c));assert.equal(c.al,0,mode+': every teammate dead on the page');assert.ok(c.on,mode+': spectate on (xKLDie from the server kill event)');
-  if(mode==='five'){assert.ok(c.sp&&c.enemy&&c.cur===killer.name&&/SPECTATING .* · ENEMY/.test(c.label),'online 5v5 team wiped: the killer, a living enemy '+JSON.stringify(c));
-   xe('xKL.si++');await step(200);const d=cam();out.push('five cycle '+JSON.stringify(d));assert.ok(d.enemy&&d.cur!==killer.name,'online 5v5: Space cycles the living enemies '+JSON.stringify(d));}
-  else assert.equal(enemySeen,null,mode+': respawn mode never follows an enemy '+JSON.stringify(enemySeen));
-  if(mode!=='five')assert.ok(c.sp&&c.label==='NO ONE ALIVE',mode+': label written when the view opens, no Spike cam in a respawn mode (was the previous match\'s "SPECTATING <enemy> · ENEMY") '+JSON.stringify(c));
+  const last=mode==='five'?mates[0]:null;
+  await step(200);for(const a of mates)if(a!==last)kill(sim,a,killer);await step(200);kill(sim,me,killer);
+  let enemySeen=null;const watch=c=>{if(c.enemy||(c.sp&&/ENEMY/.test(c.label)))enemySeen=enemySeen||c;};
+  for(let t=0;t<3000;t+=100){await step(100);watch(cam());}
+  let c=cam();out.push(mode+' '+JSON.stringify(c));
+  assert.equal(c.hp<=0,true,mode+': the page saw its own death '+JSON.stringify(c));assert.ok(c.on,mode+': spectate on (xKLDie from the server kill event)');
+  if(mode==='five'){
+   assert.ok(c.sp&&c.cur===last.name&&!c.enemy&&c.label==='SPECTATING '+last.name.toUpperCase(),'online 5v5: the living teammate '+JSON.stringify(c));
+   const pov=JSON.parse(xe('JSON.stringify(window.xSpectatePov.pov)'));assert.ok(Array.isArray(pov[last.id])&&pov[last.id].length===3,'server pov for the living teammate '+JSON.stringify(pov));
+   assert.ok(Object.keys(pov).every(id=>sim.units.find(u=>u.id===+id).team===me.team),'pov carries teammates only '+JSON.stringify(pov));
+   assert.equal(sim.roundState(last).pov,undefined,'a living player gets no pov');
+   xe('xKL.si++');await step(200);watch(cam());
+   kill(sim,last,killer);for(let t=0;t<1500;t+=100){await step(100);watch(cam());}c=cam();out.push('five wiped '+JSON.stringify(c));
+   assert.ok(c.sp&&c.cur===null&&c.al===0&&c.label==='NO TEAMMATES ALIVE','online 5v5 team wiped: nobody to follow, never the killer '+JSON.stringify(c));}
+  else assert.ok(c.al===0&&c.cur===null&&c.label==='NO TEAMMATES ALIVE',mode+': respawn mode never spectates '+JSON.stringify(c));
+  assert.equal(enemySeen,null,mode+': never an enemy cam '+JSON.stringify(enemySeen));
   xe('try{mpLeave()}catch(e){}1');await step(300);
  }
  const errs=H.errors.slice(errs0);if(process.env.VERBOSE)console.log(out.join('\n'));assert.deepEqual(errs,[],'no page exceptions');
- console.log('Online spectate (real server kill events): 5v5 team wiped -> the killer then the other living enemies (· ENEMY); TDM / Deathmatch with the team dead -> never an enemy cam');process.exit(0);
+ console.log('Online spectate (real server kill events): 5v5 -> the living teammate (server pov for teammates only), team wiped -> nobody, never the killer / an enemy; TDM / Deathmatch -> never spectate');process.exit(0);
 })().catch(e=>{console.error(e);process.exit(1);});

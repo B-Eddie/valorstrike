@@ -1,15 +1,14 @@
-// Spectator follow + team-wipe spectate.
+// Spectator follow: living TEAMMATES only, first person (VALORANT; user 2026-10-26 "You shouldn't be able to spectate enemy",
+// "There isn't supposed to be a 3rd person when spectating when dead").
 // 1. Follow logic (index.html xKLDie / xSpec / xSpecPick cut as test_spectate.cjs does): the cam stays on the followed
 //    teammate when another teammate dies, Space / click step from them, the followed one's death moves the cam to the next
-//    living teammate after them; whole team dead = the living enemies, the killer first (VALORANT), cycling among them;
-//    nobody alive = spike cam (null); respawn modes (deathmatch / TDM: FV.dm without MP.m5) never follow enemies; online
-//    5v5 (FV.dm with MP.m5) does; a new death starts from the first living teammate.
-// 2. Real page (work/page_harness.cjs, real three.js scene) on a raised native floor (y 6.4, see below): offline 5v5, the
-//    player and every teammate killed after a plant (the round goes on: the spike must be defused), and the online 5v5
-//    path (MP.m5 + FV.dm, units as net puppets, the death from the server's kill message: xKLDie).
-//    After the 2 s killed-by card the camera follows a living enemy at eye height: camera y >= the target's nav floor + 1.2
-//    and never below it; with nobody alive the spike orbit sits above the floor (was absolute y 1 / 12: under raised
-//    floors). The floor guard lifts a camera whose target stands below its floor.
+//    living teammate after them; whole team dead = nobody (null, "NO TEAMMATES ALIVE"; never the killer or another enemy);
+//    respawn modes (deathmatch / TDM: FV.dm without MP.m5) never spectate; online 5v5 (FV.dm with MP.m5) follows teammates
+//    only; a new death starts from the first living teammate.
+// 2. Real page (work/page_harness.cjs, real three.js scene) on a raised native floor (y 6.4), offline 5v5 after a plant and
+//    the online 5v5 path (MP.m5 + FV.dm, the death from xKLDie as the server's kill message): after the 2 s killed-by card
+//    the camera is the last living teammate's eye (y = floor + 1.6), the floor guard lifts it for a target sunk under its
+//    floor, and when that teammate dies too the camera HOLDS that last view (no enemy cam, no orbit, no 3rd person).
 const fs=require('fs'),vm=require('vm'),assert=require('assert/strict'),s=fs.readFileSync(__dirname+'/../index.html','utf8');
 const cut=(a,b)=>{const i=s.indexOf(a);assert(i>=0,a);const j=s.indexOf(b,i);assert(j>=0,b);return s.slice(i,j);};
 class El{constructor(){this.style={};this.cls=new Set();this.classList={add:k=>this.cls.add(k),remove:k=>this.cls.delete(k),toggle(){},contains:k=>this.cls.has(k)};this.textContent='';}set innerHTML(h){}querySelector(){return new El();}querySelectorAll(){return [new El(),new El()];}addEventListener(){}setAttribute(){}}
@@ -24,15 +23,15 @@ c.xKL.si++;assert.equal(spec(),'Omen','Space steps from Jett');c.xKL.si--;assert
 A[1].alive=false;assert.equal(spec(),'Omen','Jett dies: next living after him');
 c.xKL.si++;assert.equal(spec(),'Sova');c.xKL.si++;assert.equal(spec(),'Omen','cycling wraps');
 A[3].alive=false;assert.equal(spec(),'Omen','Sova (not followed) dies: stays');
-A[2].alive=false;assert.equal(spec(),'Raze','whole team dead: the killer');assert.match(c.xKL.sn.textContent,/SPECTATING RAZE · ENEMY/);
-c.xKL.si++;assert.equal(spec(),'Killjoy','Space cycles the living enemies');B[2].alive=false;assert.equal(spec(),'Reyna','followed enemy dies: next living enemy after them');
-B[0].alive=false;B[1].alive=false;assert.equal(spec(),null,'nobody alive: spike cam');assert.match(c.xKL.sn.textContent,/SPIKE CAM/);
+A[2].alive=false;assert.equal(spec(),null,'whole team dead: nobody (never the killer)');assert.match(c.xKL.sn.textContent,/^NO TEAMMATES ALIVE$/);
+c.xKL.si++;assert.equal(spec(),null,'Space never reaches an enemy');c.xKL.si--;assert.equal(spec(),null);
+assert.doesNotMatch(c.xKL.sn.textContent,/ENEMY|SPIKE CAM/);
 const reset=()=>{A.forEach(a=>a.alive=true);B.forEach(b=>b.alive=true);c.xKLReset();};
-reset();vm.runInContext('xKLDie("Reyna","Vandal")',c);assert.equal(c.xSpec(2.5)?.name,'Sage','next death starts again from the first living teammate');
-reset();A.forEach(a=>a.alive=false);B[0].alive=false;vm.runInContext('xKLDie("Reyna","Vandal")',c);assert.equal(c.xSpec(2.5)?.name,'Raze','dead killer: first living enemy');
-reset();c.FV.dm=true;A.forEach(a=>a.alive=false);vm.runInContext('xKLDie("Raze","Vandal")',c);assert.equal(c.xSpec(2.5),null,'respawn modes (FV.dm): no enemy cam');
-c.MP.m5=true;assert.equal(spec(),'Raze','online 5v5 (FV.dm + MP.m5): the killer');c.FV.dm=false;c.MP.m5=false;
-console.log('Spectate follow: stays on the followed teammate, steps from them, next after their death; team wiped: the killer then the living enemies; spike cam when nobody is alive');
+reset();vm.runInContext('xKLDie("Raze","Vandal")',c);assert.equal(c.xSpec(2.5)?.name,'Sage','a new death starts from the first living teammate');
+reset();c.FV.dm=true;vm.runInContext('xKLDie("Raze","Vandal")',c);assert.equal(c.xSpec(2.5),null,'respawn modes (FV.dm): no spectating, teammates alive or not');
+c.MP.m5=true;assert.equal(spec(),'Sage','online 5v5 (FV.dm + MP.m5): a teammate');A.forEach(a=>a.alive=false);assert.equal(spec(),null,'online 5v5, team wiped: never an enemy');c.FV.dm=false;c.MP.m5=false;
+for(let i=0;i<20;i++){reset();A.forEach((a,j)=>a.alive=j===i%4);vm.runInContext('xKLDie("Raze","Vandal")',c);const x=c.xSpec(2.5);assert.ok(x&&A.includes(x),'only teammates ('+i+')');c.xKL.si+=i;assert.ok(A.includes(c.xSpec(.1)));}
+console.log('Spectate follow: stays on the followed teammate, steps from them, next after their death; team wiped: nobody (no enemy cam); respawn modes never spectate');
 
 // ---- 2. real page on a raised native floor ----
 // The audit fixture strips the native-maps block, so the page gets a raised native map of its own: one floor slab at y 6.4
@@ -60,31 +59,35 @@ const camCheck=(tag,ry)=>JSON.parse(xe(`(()=>{const a=xKL.cur,C=nmActive(),cy=ca
  const setup=(online)=>`(()=>{for(const u of bots.concat(allies))u.nt=true;FV.buy=0;buyMenu(false);timeLeft=999;FV.atk=true;const k=Object.keys(SITES)[0],x0=SITES[k][0],z0=SITES[k][1];
   FV.sp.st="plant";FV.sp.site=k;FV.sp.x=x0;FV.sp.z=z0;FV.sp.c=null;FV.sp.t=40;spike.position.set(x0,${FY}+.4,z0);
   bots.forEach((b,i)=>{b.alive=true;b.hp=100;b.g.position.set(x0+2+i,${FY},z0+1);b.sunkY=null;Object.defineProperty(b.g.position,'y',{configurable:true,get(){return b.sunkY==null?${FY}:b.sunkY},set(){}});if(!b.g.parent)scene.add(b.g);});/* units stand on the slab (the box-map grounding would put them back at y 0; a native map grounds them with nmHeight) */
-  allies.forEach((a,i)=>{a.g.position.set(x0-2-i,${FY},z0-3);});
+  allies.forEach((a,i)=>{a.g.position.set(x0-2-i,${FY},z0-3);a.nt=true;a.sunkY=null;Object.defineProperty(a.g.position,'y',{configurable:true,get(){return a.sunkY==null?${FY}:a.sunkY},set(){}});});/* teammates stand on the slab too */
   player.x=x0-2;player.z=z0-2;player.y=${FY};player.vy=0;player.hp=100;${online?'clearTimeout(FV.to);running=true;try{$("xBan").style.display="none";$("result").style.display="none"}catch(e){}MP.m5=true;FV.dm=true;window.__sp0=[dmSpawnP,dmSpawnB];dmSpawnP=dmSpawnB=function(){};/* online: respawns come from the server, not the offline deathmatch tick */':''}return k;})()`;
  for(const online of [false,true]){
   const tag=online?'online':'offline';out.push(tag+' site '+xe(setup(online)));
-  const killer=xe('bots[1].name');
-  if(online)xe(`(()=>{allies.forEach(a=>{a.alive=false;a.hp=0;scene.remove(a.g)});player.hp=0;xKLDie(bots[1].name,"Vandal");return 1})()`);
-  else xe(`(()=>{allies.forEach(a=>{a.hp=0;allyDie(a,bots[1].name,"Vandal")});hurt(player,500,bots[1].name);pDie(bots[1].name,"Vandal");return 1})()`);
+  const last=xe('allies[0].name');
+  if(online)xe(`(()=>{allies.forEach((a,i)=>{if(i){a.alive=false;a.hp=0;scene.remove(a.g)}});player.hp=0;xKLDie(bots[1].name,"Vandal");return 1})()`);
+  else xe(`(()=>{allies.forEach((a,i)=>{if(i){a.hp=0;allyDie(a,bots[1].name,"Vandal")}});hurt(player,500,bots[1].name);pDie(bots[1].name,"Vandal");return 1})()`);
   const pin=()=>xe(`player.y=${FY};player.vy=0;1`);
-  await adv(300);pin();if(!online)assert.ok(xe('running'),tag+': round goes on after the wipe (spike planted)');/* online: the server owns the round (the offline pass ended it by wiping the bots; the page is put back in a live round) */
+  await adv(300);pin();if(!online)assert.ok(xe('running'),tag+': round goes on (spike planted, a teammate alive)');
   for(let t=0;t<2500;t+=250){await adv(250);pin();}
-  let r=camCheck(tag+' killer');out.push(JSON.stringify(r));
-  assert.ok(r.who===killer&&r.enemy&&r.ok&&Math.abs(r.cy-(FY+1.6))<.05,tag+': whole team dead -> the killer at eye height '+JSON.stringify(r));
-  xe('xKL.si++');await adv(200);pin();await adv(50);r=camCheck(tag+' cycle');out.push(JSON.stringify(r));assert.ok(r.enemy&&r.ok&&r.who!==killer,tag+': Space cycles the enemies '+JSON.stringify(r));
-  xe('xTPToggle()');for(let t=0;t<600;t+=100){await adv(100);pin();}r=camCheck(tag+' 3rd person');out.push(JSON.stringify(r));assert.ok(r.ok,tag+': third person above the floor '+JSON.stringify(r));xe('xTPToggle()');
+  let r=camCheck(tag+' teammate');out.push(JSON.stringify(r));
+  assert.ok(r.who===last&&!r.enemy&&r.ok&&Math.abs(r.cy-(FY+1.6))<.05,tag+': the living teammate at eye height '+JSON.stringify(r));
+  xe('xKL.si++');await adv(200);pin();await adv(50);r=camCheck(tag+' cycle');out.push(JSON.stringify(r));assert.ok(r.who===last&&!r.enemy,tag+': Space with one teammate stays on them (never an enemy) '+JSON.stringify(r));
+  assert.equal(xe('typeof xTPToggle'),'undefined',tag+': no 3rd-person toggle');
   // a target below its floor (bad snapshot height): the floor face just above it lifts the camera to the floor + 1.2
-  xe(`xKL.cur.sunkY=${FY-1.5}`);await adv(400);r=camCheck(tag+' sunk target',FY);out.push(JSON.stringify(r));assert.ok(r.cy>=FY+1.2-1e-6,tag+': guard keeps the camera over the floor '+JSON.stringify(r));
-  xe('bots.forEach(b=>{b.sunkY=null})');
-  // nobody alive: spike orbit over the planted spike, above its floor
-  xe('bots.forEach(b=>{b.alive=false;b.hp=0;scene.remove(b.g)})');for(let t=0;t<800;t+=200){await adv(200);pin();}r=camCheck(tag+' orbit');out.push(JSON.stringify(r));
-  assert.ok(r.orbit&&r.ok&&r.cy>FY+5,tag+': spike orbit above the raised floor '+JSON.stringify(r));
+  xe(`allies[0].sunkY=${FY-1.5}`);await adv(400);r=camCheck(tag+' sunk target',FY);out.push(JSON.stringify(r));assert.ok(r.cy>=FY+1.2-1e-6,tag+': guard keeps the camera over the floor '+JSON.stringify(r));
+  xe('allies[0].sunkY=null');await adv(300);pin();await adv(100);
+  const eye=JSON.parse(xe('JSON.stringify([camera.position.x,camera.position.y,camera.position.z,camera.rotation.y])'));
+  // the last teammate dies: the camera holds that last view - no enemy, no orbit, no 3rd person
+  if(online)xe('(()=>{const a=allies[0];a.alive=false;a.hp=0;scene.remove(a.g);return 1})()');else xe('(()=>{allyDie(allies[0],bots[1].name,"Vandal");return 1})()');
+  for(let t=0;t<1200;t+=200){await adv(200);pin();}
+  r=JSON.parse(xe(`JSON.stringify({cur:xKL.cur&&xKL.cur.name,sn:xKL.sn.textContent,hold:!!XOB.orb&&XOB.orb===XOB.hold,fp:!!XOB.fp,cam:[camera.position.x,camera.position.y,camera.position.z,camera.rotation.y],running})`));out.push(tag+' hold '+JSON.stringify(r));
+  assert.ok(r.cur===null&&!r.fp&&r.sn==='NO TEAMMATES ALIVE',tag+': nobody followed '+JSON.stringify(r));
+  if(r.running){assert.ok(r.hold,tag+': last view held '+JSON.stringify(r));assert.ok(Math.hypot(r.cam[0]-eye[0],r.cam[1]-eye[1],r.cam[2]-eye[2])<.3&&Math.abs(r.cam[3]-eye[3])<.3,tag+': camera stays where the teammate last looked from '+JSON.stringify([eye,r.cam]));}
   if(online){xe('MP.m5=false;FV.dm=false;dmSpawnP=__sp0[0];dmSpawnB=__sp0[1];1');break;}
   xe('allies.forEach(a=>{a.alive=true;a.hp=100;scene.add(a.g)});bots.forEach(b=>{b.alive=true;b.hp=100;scene.add(b.g)});player.hp=100;xKLReset();1');await adv(200);
  }
  const errs=H.errors.slice(errs0),xr=H.xErrCalls.slice(x0);if(process.env.VERBOSE)console.log(out.join('\n'));
  assert.equal(errs.length+xr.length,0,'page errors: '+JSON.stringify(errs.concat(xr).slice(0,3)));
- console.log('Team-wipe spectate on a raised native floor (offline 5v5 after a plant + online 5v5 path): the killer then the other living enemies at eye height, camera >= target floor + 1.2, floor guard for a sunk target, spike orbit above the floor');
+ console.log('Spectate on a raised native floor (offline 5v5 after a plant + online 5v5 path): the last living teammate at eye height, never an enemy, floor guard for a sunk target, team wiped -> the last teammate view held');
  process.exit(0);
-})().catch(e=>{console.log(out.join('\n'));console.error(e);process.exit(1);});
+})().catch(e=>{console.log(out.join("\n"));try{console.log("page errors",JSON.stringify(H.errors.concat(H.xErrCalls).slice(0,4)).slice(0,1500));}catch(_){}console.error(e);process.exit(1);});

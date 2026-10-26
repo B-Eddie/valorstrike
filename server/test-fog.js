@@ -141,12 +141,12 @@ const adv=(s,t)=>{s.time+=t;};
  b.alive=false;const F=['fin',1,c.id,b.id,'Vandal','x',10,0,0,1];s.time+=.05;fogView(s,frame(s,[]),a);s.time+=.05;
  const va=fogView(s,frame(s,[F]),a);assert.equal(row(va,b)[22],1);assert.deepEqual(va.ev,[],'A: unseen victim, finisher dropped');
  assert.deepEqual(fogView(s,frame(s,[F]),c).ev,[F],'the killer keeps it');assert.deepEqual(fogView(s,frame(s,[F]),b).ev,[F],'the victim keeps it');}
-// 24. Spike mode: a team with everyone dead (no Phoenix inside Run It Back) gets the whole frame and whole casts, so its
-// spectator camera can follow the enemies; one live member (or a pending Run It Back) keeps the fog; never in TDM / DM
-{const {s,a,b}=setup();b.x=40;a.alive=false;adv(s,.05);let v=view(s,a);assert.notEqual(row(v,b)[22],1,'team eliminated: enemies whole');assert.equal(row(v,b)[4],40);
- const e={t:'ac',i:b.id,ag:'Jett',k:'q',o:[40,1.6,0],d:[-1,0,0],p:[38,0,0],ts:1};assert.equal(fogCast(s,e,a),e,'and whole casts');
- a.runItBack={p:[-10,0,0],until:s.time+5};assert.equal(row(view(s,a),b)[22],1,'Run It Back pending: still fogged');a.runItBack=null;
- const c=s.add('C','Sova');c.team=a.team;Object.assign(c,{x:-30,y:0,z:0,alive:true,loading:false,vx:0,vz:0,input:{},ch:0,revealedUntil:0});s.units.push(c);adv(s,.05);assert.equal(row(view(s,a),b)[22],1,'a live teammate: fogged');
+// 24. Spike mode: a team with everyone dead (eliminated) keeps the fog like everyone else - no whole frame, no whole casts
+// (VALORANT never lets the dead spectate an enemy; user 2026-10-26 "You shouldn't be able to spectate enemy"); the
+// killer stays relevant to the victim for FOG.killer s only; never in TDM / DM either
+{const {s,a,b}=setup();b.x=40;a.alive=false;adv(s,.05);let v=view(s,a);assert.equal(row(v,b)[22],1,'team eliminated: the enemy behind the wall stays hidden');assert.equal(row(v,b)[4],0,'no position');
+ const e={t:'ac',i:b.id,ag:'Jett',k:'q',o:[40,1.6,0],d:[-1,0,0],p:[38,0,0],ts:1};const ce=fogCast(s,e,a);assert.equal(ce.fog,1,'cast fogged');assert.equal(ce.o,undefined,'no caster eye');assert.equal(ce.d,undefined,'no aim');
+ a.fogKiller={id:b.id,until:s.time+FOG.killer};assert.notEqual(row(view(s,a),b)[22],1,'my killer for FOG.killer s');adv(s,FOG.killer+.2);assert.equal(row(view(s,a),b)[22],1,'then fogged again, team still eliminated');
  const t=setup('tdm');t.b.x=40;t.a.alive=false;adv(t.s,.05);assert.equal(row(view(t.s,t.a),t.b)[22],1,'TDM: the dead respawn, fog stays');}
 // 25. round state ('rs') per player: Reyna's soul orbs only to that Reyna (not her team, not the enemy); the Spike's spot
 // only to the attackers until planted; credits of the own team only; revealed enemies only while revealed
@@ -170,4 +170,12 @@ const adv=(s,t)=>{s.time+=t;};
  a.z=20;assert.deepEqual(fw(a),[70,71],'spot seen');a.z=0;adv(s,3);assert.deepEqual(fw(a),[70,71],'stays once seen');
  s.floor.push({id:72,w:'Phantom',x:9.5,y:0,z:0,ammo:25,reserve:50,dropper:a.id,graceUntil:0});assert.ok(fw(a).includes(72),'own drop');assert.ok(fw(b).includes(72),'an enemy drop B stands 1 m from (in sight): row');
  s.floor.push({id:73,w:'Spectre',x:-12,y:0,z:-2,ammo:25,reserve:50,dropper:a.id,graceUntil:0});assert.ok(!fw(b).includes(73),'A\'s drop behind the wall: not B\'s');}
+// 27. Spectate POV (spike.js roundState pov): a dead player gets, per LIVING TEAMMATE only, [ADS held, blind s left, reload s
+// left] so the page can draw that teammate's own first-person view; never an enemy, never a dead teammate, nothing while alive
+{const {s,a,b}=setup();const c=s.add('C','Sova');c.team=a.team;Object.assign(c,{x:-12,y:0,z:0,alive:true,loading:false,vx:0,vz:0,input:{ads:1},ch:0,revealedUntil:0,blindUntil:s.time+1.2,reloadAt:s.time+2});s.units.push(c);
+ const d=s.add('D','Sage');d.team=a.team;Object.assign(d,{alive:false,loading:false,input:{}});s.units.push(d);b.input={ads:1};b.blindUntil=s.time+3;
+ assert.equal(s.roundState(a).pov,undefined,'alive: no pov');a.alive=false;const pov=s.roundState(a).pov;
+ assert.deepEqual(Object.keys(pov).map(Number),[c.id],'only the living teammate');assert.deepEqual(pov[c.id],[1,1.2,2]);
+ c.input={};c.blindUntil=0;c.reloadAt=0;assert.deepEqual(s.roundState(a).pov[c.id],[0,0,0]);
+ assert.ok(!JSON.stringify(s.roundState(a)).includes('"'+b.id+'":'),'no enemy entry anywhere in the round state');}
 console.log('test-fog: ok');

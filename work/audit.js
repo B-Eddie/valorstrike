@@ -1947,7 +1947,7 @@ if (!NO3) {
     if (String($("xMag").textContent) !== String(xe("WEAP[xKL.cur.w].mag"))) return "HUD ammo " + $("xMag").textContent; if ($("xHp").textContent !== "100") return "HUD hp " + $("xHp").textContent;
     xe("xLob0 = false; xResOn = false; true"); frames(3); if (xe("XOB.fp === xKL.cur && XOB.vy === XOB.fpY && XOB.orb === null") !== true) return "camera not on the teammate's eye / aim: " + xe("JSON.stringify([XOB.fp && XOB.fp.name, xKL.cur && xKL.cur.name, XOB.vy, XOB.fpY, XOB.orb])");
     xe("allies.forEach((a) => { a.alive = false; a.hp = 0; }); running = false; xLob0 = false; xResOn = false; xSpec(0.05); true"); /* round logic paused: the camera loop alone */ if (!/NO TEAMMATES ALIVE/.test(xe("xKL.sn.textContent"))) return "no-teammate label: " + xe("xKL.sn.textContent");
-    frames(3); if (xe("!!XOB.orb && XOB.fp === null && Number.isFinite(XOB.orb.yw) && XOB.orb.y > 5") !== true) return "no orbit camera with every teammate dead: " + xe("JSON.stringify([xKL.sp, xResOn, xLob0, !!XOB.orb])");
+    frames(3); if (xe("!!XOB.orb && XOB.orb === XOB.hold && XOB.fp === null && xKL.cur === null && Number.isFinite(XOB.orb.yw)") !== true) return "every teammate dead: the last teammate view is not held (no enemy cam / orbit): " + xe("JSON.stringify([xKL.sp, xResOn, xLob0, !!XOB.orb, !!XOB.hold, xKL.cur && xKL.cur.name])");
     xe("running = false; fRound(); running = true; window.xLdOn = false; xLob0 = false; xResOn = false; true"); frames(3);
     if (xe("player.hp > 0 && !xKL.sp && XOB.fp === null && XOB.orb === null") !== true) return "next round did not return to own view: " + xe("JSON.stringify([player.hp, xKL.sp, xKL.on, xLob0, xResOn, paused, XNF])");
     return true; });
@@ -2002,33 +2002,18 @@ if (!NO3) {
     if (!start5()) return "5v5 did not start"; xe("FV.buy = 0; true");
     dispatch(win, mkEvent("keydown", { key: "z", code: "KeyZ" })); advance(30);
     const n = xe("window.xPG.s.filter((q) => q.on).length"); return n >= 1 || "no ping marker after Z: " + n; });
-  OB("spectator hardening: first-person spectating hides the followed teammate's model (gun inside it), restores it on switch, third person and next round", () => {
+  OB("spectator hardening: first-person spectating hides the followed teammate's model (gun inside it), restores it on switch and next round", () => {
     if (!start5()) return "5v5 did not start"; xe("xLob0 = false; xResOn = false; true"); frames(2);
     xe('(() => { window.__v0 = xVisB; window.__xr0 = [xResUp, xSetFull]; xResUp = () => false; xSetFull = () => false; /* the stub reads every screen as shown */ xVisB = function () {}; allies.forEach((a, i) => { a.hp = 100; a.alive = true; a.w = "Vandal"; a.xm = { m: { visible: true }, dead: 0, __fake: 1 }; }); player.hp = 0; pDie(bots[0].name, "Vandal"); xSpec(2.1); running = false; /* round logic paused: the camera loop alone */ return true; })()');
     try { const vis = () => JSON.parse(xe("JSON.stringify(allies.map((a) => a.xm ? a.xm.m.visible : null))"));
-      xe("xLob0 = false; xResOn = false; xTP.on = false; true"); frames(2); const c0 = xe("allies.indexOf(xKL.cur)"); if (c0 < 0) return "no teammate spectated";
+      xe("xLob0 = false; xResOn = false; true"); frames(2); const c0 = xe("allies.indexOf(xKL.cur)"); if (c0 < 0) return "no teammate spectated";
       let v = vis(); if (v[c0] !== false || v.filter((x) => x === false).length !== 1) return "followed model not the only hidden one: " + JSON.stringify(v) + " cur " + c0 + " fp " + xe("!!XOB.fp");
       dispatch(win, mkEvent("mousedown", { button: 0 })); xe("xLob0 = false; xResOn = false; true"); frames(2); const c1 = xe("allies.indexOf(xKL.cur)"); v = vis();
       if (c1 === c0 || v[c0] !== true || v[c1] !== false) return "switch did not move the hidden model: " + JSON.stringify([c0, c1, v]);
-      xe("xTPToggle(); xLob0 = false; xResOn = false; true"); frames(2); v = vis(); if (v.some((x) => x === false) || xe("XOB.hm") !== null) return "third person still hides a model: " + JSON.stringify(v);
-      xe("xTPToggle(); xLob0 = false; xResOn = false; true"); frames(2); v = vis(); if (v[c1] !== false) return "back to first person did not hide again: " + JSON.stringify(v);
       xe("allies[" + c1 + "].alive = false; allies[" + c1 + "].hp = 0; xLob0 = false; xResOn = false; true"); frames(2); v = vis(); if (v[c1] !== true) return "dead teammate's model (corpse) left hidden";
       xe("running = false; fRound(); running = true; window.xLdOn = false; xLob0 = false; xResOn = false; true"); frames(2);
       if (xe("XOB.hm === null && player.hp > 0") !== true) return "hidden model not cleared next round"; if (xe("[].concat(allies).every((a) => !a.xm || !a.xm.__fake || a.xm.m.visible !== false)") !== true) return "model left hidden after round end";
-      return true; } finally { xe("xVisB = window.__v0; xResUp = window.__xr0[0]; xSetFull = window.__xr0[1]; allies.forEach((a) => { if (a.xm && a.xm.__fake) a.xm = null; }); xTP.on = false; true"); } });
-  OB("spectator hardening: spike orbit camera is pulled in front of a wall between spike and camera, eases back out once clear, still faces the spike", () => {
-    if (!start5()) return "5v5 did not start";
-    const r = JSON.parse(xe(`(() => { const i0 = XLR.intersectObjects, b0 = xBoxHit, out = {}; try {
-      xBoxHit = () => false; XLR.intersectObjects = () => []; XOBC.k = 1; let o = xObsOrbit(0.016); out.L = o.dist; out.free = Math.hypot(o.x - o.cx, o.y - 1, o.z - o.cz);
-      XLR.intersectObjects = () => [{ distance: 6 }]; o = xObsOrbit(0.016); out.hit = o.dist; out.hd = Math.hypot(o.x - o.cx, o.y - 1, o.z - o.cz); out.yw = o.yw; out.want = Math.atan2(o.x - o.cx, o.z - o.cz); out.p = o.p;
-      XLR.intersectObjects = () => []; xBoxHit = (a, b) => Math.hypot(b.x - a.x, b.y - a.y, b.z - a.z) > 8; XOBC.k = 1; o = xObsOrbit(0.016); out.box = o.dist;
-      xBoxHit = () => false; o = xObsOrbit(0.05); out.ease1 = o.dist; for (let i = 0; i < 40; i++) o = xObsOrbit(0.1); out.ease2 = o.dist; } finally { XLR.intersectObjects = i0; xBoxHit = b0; XOBC.k = 1; } return JSON.stringify(out); })()`));
-    const bad = []; if (!(r.L > 15 && Math.abs(r.free - r.L) < 1e-6)) bad.push("free orbit distance " + r.L);
-    if (!(Math.abs(r.hit - 5.5) < 1e-6 && Math.abs(r.hd - 5.5) < 1e-6)) bad.push("wall at 6 m: camera at " + r.hit + " (want 5.5, in front of the hit)");
-    if (!(Math.abs(xe("xAng(" + r.yw + " - " + r.want + ")")) < 1e-6 && r.p < 0)) bad.push("not facing the spike after the pull-in");
-    if (!(r.box > 7 && r.box < 8)) bad.push("box fallback: camera at " + r.box + " (box wall at 8 m)");
-    if (!(r.ease1 > r.box && r.ease1 < r.L - 1)) bad.push("did not ease out gradually: " + r.ease1); if (!(Math.abs(r.ease2 - r.L) < 0.05)) bad.push("never returned to full orbit: " + r.ease2);
-    return bad.length ? bad.join(" | ") : true; });
+      return true; } finally { xe("xVisB = window.__v0; xResUp = window.__xr0[0]; xSetFull = window.__xr0[1]; allies.forEach((a) => { if (a.xm && a.xm.__fake) a.xm = null; }); true"); } });
   OB("spectator hardening: enemy buys stay hidden in the buy phase (no weapon, shield, HP bar or credits), shown again once the round is live; own team credits only", () => {
     if (!start5()) return "5v5 did not start";
     xe("FV.buy = 20; running = true; player.hp = 100; bots.forEach((b) => { b.w = 'Vandal'; b.armor = 50; }); xObsTick(true); true"); const bad = [];

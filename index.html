@@ -2900,21 +2900,10 @@ function xFF(c, t, n, w, nm) { // ally t caught in c's utility w: a third of n; 
 }
 function xFFArea(c, en, w, n, inside, nm) { if (!XFF.has(w)) return; for (const t of xMates(c, en)) { const q = t === player ? player : t.g && t.g.position; if (!q) continue; const k = inside(q.x, q.z, t); if (k) xFF(c, t, k === true ? n : n * k, w, nm); } } // inside: true, or a falloff factor
 // spectator follow cam: V (or tap SPECTATING) toggles first person / over-the-shoulder, 3 m back, 0.6 m right
-const xTP = { on: false, init: false, x: 0, y: 0, z: 0, yw: 0, d: 3, t: 0, tg: null, o: new THREE.Vector3(), v: new THREE.Vector3(), dir: new THREE.Vector3() };
-function xTPToggle() { xTP.on = !xTP.on; xTP.init = false; try { if (xKL.tp) { xKL.tp.setAttribute("aria-pressed", String(xTP.on)); xKL.tp.classList.toggle("on", xTP.on); xKL.tp.firstChild.textContent = xTP.on ? "1ST PERSON " : "3RD PERSON "; } } catch (e) {} try { say(xTP.on ? "Third-person follow cam" : "First-person view", 700); } catch (e) {} }
-addEventListener("keydown", (e) => { if (e.code === "KeyV" && !e.repeat && xKL.sp && player && player.hp <= 0) xTPToggle(); });
-function xTPCam(a, dt) {
-  const q = a.g.position, ry = a.g.rotation.y, fx = Math.sin(ry), fz = Math.cos(ry), rx = -fz, rz = fx;
-  if (xTP.tg !== a) { xTP.tg = a; xTP.init = false; }
-  xTP.t -= dt;
-  if (xTP.t <= 0) { xTP.t = 0.1; // one raycast at 10 Hz pulls the camera in front of walls
-    const o = xTP.o.set(q.x, (q.y || 0) + 1.75, q.z), dir = xTP.dir.set(-fx * 3 + rx * 0.6, 0.15, -fz * 3 + rz * 0.6), L = dir.length(); dir.normalize();
-    XLR.set(o, dir); XLR.far = L; XLH.length = 0; let d = L; try { const h = XLR.intersectObjects(solids, false, XLH); if (h.length) d = Math.max(0.4, h[0].distance - 0.25); else if (xBoxHit(o, xTP.v.copy(dir).multiplyScalar(L).add(o))) d = 1; } catch (e) {}
-    xTP.d = d / L * 3; }
-  const k = xTP.d / 3, tx = q.x + (-fx * 3 + rx * 0.6) * k, ty = (q.y || 0) + 1.75 + 0.15 * k, /* native maps: follow the target floor height */ tz = q.z + (-fz * 3 + rz * 0.6) * k, yw = ry + Math.PI;
-  if (!xTP.init) { xTP.init = true; xTP.x = tx; xTP.y = ty; xTP.z = tz; xTP.yw = yw; }
-  const s = Math.min(1, dt * 8); xTP.x += (tx - xTP.x) * s; xTP.y += (ty - xTP.y) * s; xTP.z += (tz - xTP.z) * s; xTP.yw += xAng(yw - xTP.yw) * s;
-}
+// Spectating is first person only, as VALORANT (no third-person / free cam after death: those exist only in Replays and
+// custom-game observers; user 2026-10-26: "There isn't supposed to be a 3rd person when spectating when dead"). xTP stays
+// as an always-off stub for code that still reads xTP.cur.
+const xTP = { on: false, cur: null };
 
 const botMat = new THREE.MeshLambertMaterial({ color: 0xff4655 });
 const headMat = new THREE.MeshLambertMaterial({ color: 0xffb0b6 });
@@ -2977,8 +2966,7 @@ function xKLog(t, by, d) { const hs = xHS; xHS = false; if (!(d > 0) || !player 
   else if (by === undefined && t !== player && t && t.name && player.hp > 0) { e = xKLe(t.name); if (e) { e.dd += d; e.dh++; if (hs) e.dhs++; } } }
 function xKLui() { if (xKL.el && xKL.el.parentNode && xKL.t && xKL.nm && xKL.w && xKL.dd && xKL.tk && xKL.sn) return; if (xKL.el && xKL.el.parentNode) xKL.el.parentNode.removeChild(xKL.el); if (xKL.sl && xKL.sl.parentNode) xKL.sl.parentNode.removeChild(xKL.sl); const c = document.createElement("div"); c.className = "x-kb x-kbc"; c.setAttribute("aria-live", "polite"); // x-kbc scopes the card rules below off the shared .x-kb (the ELIMINATED banner #xKbn carries .x-kb too)
   c.innerHTML = '<p class="x-kb__h">KILLED BY</p><div class="x-kb__r"><i></i><div><b></b><span></span></div></div><dl class="x-kb__d"><dt>DEALT</dt><dd></dd><dt>TAKEN</dt><dd></dd></dl>';
-  const s = document.createElement("div"); s.className = "x-sp"; s.innerHTML = '<span></span><button type="button" class="x-sp__tp" aria-pressed="false">3RD PERSON <kbd>V</kbd></button><small>Click or Space to switch player · V or the button for 3rd person</small>'; const tp = s.querySelector(".x-sp__tp"); // spectating frees the mouse pointer (see xSpec), so this is a real clickable button
-  tp.addEventListener("click", (e) => { e.preventDefault(); e.stopPropagation(); xTPToggle(); }); ["mousedown", "pointerdown", "touchstart"].forEach((k) => tp.addEventListener(k, (e) => e.stopPropagation(), { passive: k === "touchstart" })); s.querySelector("span").addEventListener("click", (e) => { e.stopPropagation(); xTPToggle(); }); s.querySelector("span").style.cursor = "pointer"; s.querySelector("span").style.pointerEvents = "auto"; s.style.pointerEvents = "auto"; xKL.tp = tp;
+  const s = document.createElement("div"); s.className = "x-sp"; s.innerHTML = '<span></span><small>Click or Space: next teammate · right click: previous</small>'; xKL.tp = null; // first person only (no 3rd-person button)
   document.body.appendChild(c); document.body.appendChild(s); xKL.el = c; xKL.sl = s;
   const q = (k) => c.querySelector(k); xKL.t = q("i"); xKL.nm = q("b"); xKL.w = q(".x-kb__r span"); const dd = c.querySelectorAll("dd"); xKL.dd = dd[0]; xKL.tk = dd[1]; xKL.sn = s.querySelector("span"); }
 function xKLfx(on) { try { const cv = renderer.domElement; cv.style.transition = "filter .35s ease-out"; cv.style.filter = on ? "saturate(.12) brightness(.55)" : ""; } catch (e) {} }
@@ -2993,41 +2981,31 @@ function xKLDie(by, w) { if (!xKLm()) return; xKLui(); xKL.on = true; xKL.st = 0
 function xKLReset() { try { if (typeof XOB !== "undefined" && XOB.hm) { XOB.hm.visible = true; XOB.hm = null; } } catch (e) {} xKL.p = player; xKL.n = 0; xKL.st = 0; xKL.on = false; xKL.sp = false; xKL.cur = null; xHS = false; if (xKL.el) { xKL.el.classList.remove("on"); xKL.sl.classList.remove("on"); xKLfx(false); } }
 function xSpec(dt) { if (!xKL.on) return xSpecPick(); xKL.st += dt; if (xKL.st < 2) return null;
   if (!xKL.sp) { xKL.sp = true; xKL.cur = undefined; /* write the label now: it kept the previous death's text */ xKLfx(false); xKL.el.classList.remove("on"); xKL.sl.classList.add("on"); try { if (document.pointerLockElement) document.exitPointerLock(); } catch (e) {} } // free the cursor so the 3rd-person button can be clicked; pointerlockchange does not pause while spectating
-  const a = xSpecPick(); if (a !== xKL.cur) { xKL.cur = a; if (xKL.sn) xKL.sn.textContent = a ? "SPECTATING " + String(a.name).toUpperCase() + (!allies.includes(a) ? " · ENEMY" : "") : (typeof FV !== "undefined" && FV.dm && !(typeof MP !== "undefined" && MP.m5)) ? "NO ONE ALIVE" : "NO ONE ALIVE · SPIKE CAM"; } return a; }
+  const a = xSpecPick(); if (a !== xKL.cur) { xKL.cur = a; if (xKL.sn) xKL.sn.textContent = a ? "SPECTATING " + String(a.name).toUpperCase() : "NO TEAMMATES ALIVE"; } return a; }
 // Spectating stays on the followed player until they die or the player cycles (click / Space step from them, as VALORANT):
 // picking by index alone jumped to another teammate whenever someone earlier in the list died. When the followed player
-// dies the cam moves to the next living one after them. Whole team dead (5v5 attackers wiped after a plant, the post-round,
-// Retake / Rifle round end, online 5v5; not the respawn modes): the cam follows the living enemies, the killer first, as VALORANT does; it used to fall to the
-// spike orbit, whose absolute height (centre y 1, camera y 12) put it under the floor on raised native maps.
-function xSpecPool() { for (const x of allies) if (x.alive) return allies; if (xKL.on && xKLm() && typeof bots !== "undefined" && (typeof FV === "undefined" || !FV.dm || (typeof MP !== "undefined" && MP.m5))) for (const x of bots) if (x.alive && x.g) return bots; return null; }
+// dies the cam moves to the next living one after them. Only living TEAMMATES, ever (VALORANT: never an enemy, offline or
+// online; user 2026-10-26 "You shouldn't be able to spectate enemy"). Whole team dead: nobody to follow - the camera holds
+// the last teammate view it showed (or the player's own death view), no enemy cam, no orbit. The respawn modes
+// (Deathmatch / TDM, 1.5 s respawn) never spectate anyone: VALORANT's Deathmatch has no spectating between lives.
+function xSpecPool() { if (typeof FV !== "undefined" && FV.dm && !(typeof MP !== "undefined" && MP.m5)) return null; for (const x of allies) if (x.alive) return allies; return null; }
 function xSpecPick() { const L = xSpecPool(); let n = 0; if (L) for (const x of L) if (x.alive) n++; const d = xKL.si - (xKL.sj || 0); xKL.sj = xKL.si; if (!n) return null;
   const c = xKL.cur, at = c ? L.indexOf(c) : -1;
   if (at >= 0 && c.alive) { if (!d) return c; let k = 0, i = 0; for (const x of L) if (x.alive) { if (x === c) k = i; i++; } let j = (((k + d) % n) + n) % n; for (const x of L) if (x.alive && j-- === 0) return x; }
   if (at >= 0) for (let s = 1; s <= L.length; s++) { const x = L[(at + s) % L.length]; if (x && x.alive) return x; }
-  if (L !== allies && xKL.kb && xKL.kb.alive && L.includes(xKL.kb)) return xKL.kb;
   let i = ((xKL.si % n) + n) % n; for (const x of L) if (x.alive && i-- === 0) return x; return null; }
 // floor under a spectate target: the native nav floor nearest the hint height (box maps: the hint, 0 for the orbit)
 function xSpecFloor(x, z, y) { const h = Number.isFinite(y) ? y : 0; try { const C = typeof nmActive === "function" ? nmActive() : null; if (C) { const f = nmHeight(C, x, z, h + 0.5); if (Number.isFinite(f)) return f; } } catch (e) {} return h; }
 addEventListener("mousedown", (e) => { if (xKL.sp && player && player.hp <= 0) { if (e.button === 0) xKL.si++; else if (e.button === 2) xKL.si--; } });
-// observer pass: first-person spectating follows the teammate's own aim at eye height; Space cycles; nobody left = slow orbit over the spike / carrier
+// observer pass: first-person spectating follows the teammate's own aim (their yaw and pitch) at eye height; Space cycles; nobody left = the last view held
 const XOB = { fp: null, fpU: null, fpY: 0, fpP: -0.04, orb: null, oa: 0, e: { x: 0, y: 0, z: 0 }, o: { x: 0, y: 0, z: 0, yw: 0, p: 0, cx: 0, cz: 0 }, vy: null, vx: null, vz: null, mr: true, el: null, rows: [[], []], t: 0, hm: null };
 addEventListener("keydown", (e) => { if (e.code === "Space" && !e.repeat && xKL.sp && player && player.hp <= 0) { xKL.si++; e.preventDefault(); } });
-function xObsEye(a, dt) { const q = a.g.position, ry = a.g.rotation.y, ty = ry + Math.PI; if (XOB.fpU !== a) { XOB.fpU = a; XOB.fpY = ty; }
-  XOB.fpY += xAng(ty - XOB.fpY) * Math.min(1, (dt || 0) * 14); const e = XOB.e; e.x = q.x + Math.sin(ry) * 0.3; e.y = (q.y || 0) + 1.6; e.z = q.z + Math.cos(ry) * 0.3; return e; }
-function xObsOrbit(dt) { if (!player) return null; let x = player.x, z = player.z;
-  try { const s = mode === "five" && FV.sp; if (s && s.st !== "plant" && s.c && s.c.g) { x = s.c.g.position.x; z = s.c.g.position.z; } else if (s && Number.isFinite(s.x) && Number.isFinite(s.z)) { x = s.x; z = s.z; } } catch (e) {}
-  let hy = player.y || 0; try { const s = mode === "five" && FV.sp; if (s && s.st !== "plant" && s.c && s.c.g) hy = s.c.g.position.y || 0; else if (s && s.st === "plant" && typeof spike !== "undefined") hy = spike.position.y - 0.4; } catch (e) {}
-  const F = XOB.fb || (XOB.fb = { x: NaN, z: NaN, y: 0 }); if (!(Math.hypot(F.x - x, F.z - z) < 0.5)) { F.x = x; F.z = z; F.y = typeof nmActive === "function" && nmActive() ? xSpecFloor(x, z, hy) : 0; } // native maps: orbit above the real floor (absolute y 1 / 12 sat under raised floors)
-  XOB.oa += (dt || 0) * 0.22; const R = 15, H = 12, o = XOB.o, b = F.y; o.cx = x; o.cz = z; o.cy = b; o.x = x + Math.sin(XOB.oa) * R; o.z = z + Math.cos(XOB.oa) * R; o.y = b + H; xObsClip(o, x, z, dt, b); o.yw = Math.atan2(o.x - o.cx, o.z - o.cz); o.p = -Math.atan2(o.y - b - 1, Math.max(0.5, Math.hypot(o.x - o.cx, o.z - o.cz))); return o; }
-// observer hardening: spike orbit never passes through walls: ray from the spike (1 m up) to the orbit point against the static map (solids, then box fallback), camera pulled 0.5 m in front of the hit; pulls in at once, eases back out
-const XOBC = { o: new THREE.Vector3(), d: new THREE.Vector3(), a: { x: 0, y: 0, z: 0 }, b: { x: 0, y: 0, z: 0 }, k: 1 };
-function xObsClip(o, x, z, dt, b) { b = b || 0; const dx = o.x - x, dy = o.y - b - 1, dz = o.z - z, L = Math.hypot(dx, dy, dz); if (!(L > 0.01)) return o; const ux = dx / L, uy = dy / L, uz = dz / L; let d = L;
-  try { XLR.set(XOBC.o.set(x, b + 1, z), XOBC.d.set(ux, uy, uz)); XLR.near = 0; XLR.far = L; XLH.length = 0; const h = typeof solids !== "undefined" && solids ? XLR.intersectObjects(solids, false, XLH) : null; if (Array.isArray(h) && h.length && typeof h[0].distance === "number" && h[0].distance < L) d = h[0].distance;
-    else if (typeof xBoxHit === "function") { const A = XOBC.a, B = XOBC.b, at = (t) => { B.x = x + ux * t; B.y = b + 1 + uy * t; B.z = z + uz * t; return B; }; A.x = x; A.y = b + 1; A.z = z;
-      if (xBoxHit(A, at(L))) { let lo = 0, hi = L; for (let i = 0; i < 7; i++) { const m = (lo + hi) / 2; if (xBoxHit(A, at(m))) hi = m; else lo = m; } d = lo < 0.3 ? L : lo; /* origin itself inside a box (spike against cover): no usable hit, keep the full orbit */ } } } catch (e) {}
-  const k = Math.max(0.12, Math.min(1, (d - 0.5) / L)); XOBC.k = k < XOBC.k ? k : XOBC.k + (k - XOBC.k) * Math.min(1, (dt || 0) * 2.5);
-  o.x = x + ux * L * XOBC.k; o.y = b + 1 + uy * L * XOBC.k; o.z = z + uz * L * XOBC.k; o.dist = L * XOBC.k; o.hit = d < L; return o; }
-// observer hardening: first-person spectating hides the followed teammate's own agent model (gun is parented inside it) so the eye never clips into it; restored on switch, third person, death, round end
+function xObsEye(a, dt) { const q = a.g.position, ry = a.g.rotation.y, ty = ry + Math.PI, tp = xObsPitch(a); if (XOB.fpU !== a) { XOB.fpU = a; XOB.fpY = ty; XOB.fpP = tp; }
+  XOB.fpY += xAng(ty - XOB.fpY) * Math.min(1, (dt || 0) * 14); XOB.fpP += (tp - XOB.fpP) * Math.min(1, (dt || 0) * 14); const e = XOB.e; e.x = q.x + Math.sin(ry) * 0.3; e.y = (q.y || 0) + 1.6; e.z = q.z + Math.cos(ry) * 0.3; return e; }
+// the followed teammate's view pitch: online the server's aim pitch (row [18], u.np, the camera's own convention), offline
+// the bot's aim direction while it aims (xBotAim), else level (-0.04, eyes slightly down as before)
+function xObsPitch(a) { if (a && Number.isFinite(a.np)) return Math.max(-1.45, Math.min(1.45, a.np)); const A = a && a.xaimOn && a.xaim; if (A && Number.isFinite(A.y)) return Math.asin(Math.max(-1, Math.min(1, A.y))); return -0.04; }
+// observer hardening: first-person spectating hides the followed teammate's own agent model (gun is parented inside it) so the eye never clips into it; restored on switch, death, round end
 // spectate floor guard: floor under the followed player (nav floor nearest their height, refreshed at 4 Hz or when they move 0.5 m)
 const XSG = {}; function xSpecGuard(a) { const q = a.g.position, G = a.xSG || (a.xSG = { x: NaN, z: NaN, y: 0, t: 0 }), n = performance.now();
   if (!(Math.hypot(G.x - q.x, G.z - q.z) < 0.5) || n - G.t > 250) { G.x = q.x; G.z = q.z; G.t = n; const C = typeof nmActive === "function" ? nmActive() : null; G.y = -Infinity;
@@ -4507,16 +4485,16 @@ function loop() {
       let cx = player.x, cy = 1.6 - (player.ch || 0) + (player.y || 0) + (player.eyeOffset || 0) + (typeof vfCamDip === "function" ? vfCamDip(running && !paused ? dt : 0) : 0), cz = player.z; // + VALORANT landing view dip (spring, <= 2.5 cm)
       if (player !== xKL.p || (xKL.on && player.hp > 0)) xKLReset(); // observer pass: alive again (next round / revive) = back to own view
       XOB.fp = XOB.orb = null;
-      if (mode !== "duel" && player.hp <= 0) { const a = xSpec(rt); xTP.cur = null; if (a) { if (xTP.on && xKL.sp) { xTPCam(a, dt); xTP.cur = a; cx = xTP.x; cy = xTP.y; cz = xTP.z; } else { const e = xObsEye(a, dt); XOB.fp = a; cx = e.x; cy = e.y; cz = e.z; } } else if (xKL.sp) { const o = xObsOrbit(running && !paused ? dt : 0); if (o) { XOB.orb = o; cx = o.x; cy = o.y; cz = o.z; } }
-        try { const f = a && a.g ? xSpecGuard(a) : XOB.orb ? XOB.orb.cy : null; if (Number.isFinite(f) && cy < f + 1.2) cy = f + 1.2; } catch (e) { xE(e); } } else xTP.cur = null; // spectate floor guard: never under the followed player's / spike's floor
+      if (mode !== "duel" && player.hp <= 0) { const a = xSpec(rt); xTP.cur = null; if (a) { const e = xObsEye(a, dt); XOB.fp = a; cx = e.x; cy = e.y; cz = e.z; } else if (xKL.sp && XOB.hold) { const h = XOB.hold; XOB.orb = h; cx = h.x; cy = h.y; cz = h.z; } // nobody left to follow: hold the last teammate view (no enemy cam, no orbit)
+        try { const f = a && a.g ? xSpecGuard(a) : null; if (Number.isFinite(f) && cy < f + 1.2) cy = f + 1.2; } catch (e) { xE(e); } if (a) { const h = XOB.hold || (XOB.hold = { x: 0, y: 0, z: 0, yw: 0, p: 0 }); h.x = cx; h.y = cy; h.z = cz; h.yw = XOB.fpY; h.p = XOB.fpP; } } else { xTP.cur = null; XOB.hold = null; } // spectate floor guard: never under the followed player's floor
       if (J.dr) { const tb = J.dr.tb ? 1.3 : 0; cx = J.dr.x + Math.sin(yaw) * tb; cy = J.dr.y + tb * 0.35; cz = J.dr.z + Math.cos(yaw) * tb; gun.visible = false; knife.visible = false; }
       if (shk > 0) { shk = Math.max(0, shk - 0.015); cx += (Math.random() - 0.5) * shk; cy += (Math.random() - 0.5) * shk * 0.6; cz += (Math.random() - 0.5) * shk; }
       // no head bob: the camera stays level while moving, as in Valorant
       camera.position.set(cx, cy, cz);
       const rk = Math.min(1, dt * (since > 0.1 ? (sprW === "Phantom" ? 11 : 8) : 1.5)); rcl -= rcl * rk; rclH -= rclH * rk; // smooth recovery
-      XOB.vx = cx; XOB.vz = cz; XOB.vy = J.dr ? yaw : xTP.cur ? xTP.yw : XOB.orb ? XOB.orb.yw : XOB.fp ? XOB.fpY : yaw - rclH;
-      if (xTP.cur && !J.dr) camera.rotation.set(-0.12, xTP.yw, 0, "YXZ"); else if (XOB.orb && !J.dr) camera.rotation.set(XOB.orb.p, XOB.orb.yw, 0, "YXZ"); else if (XOB.fp && !J.dr) camera.rotation.set(XOB.fpP, XOB.fpY, 0, "YXZ"); else { const cq = xCU > 0 ? xCon() : 0; if (xCOn && cq <= 0) xConEnd(); camera.rotation.set(pitch + rcl, yaw - rclH, cq > 0 ? Math.sin(performance.now() * 0.0042) * 0.02618 * Math.min(1, cq * 4) : 0, "YXZ"); } camera.updateMatrixWorld(); sfxL();
-      try { xObsHide(XOB.fp && !xTP.cur && !J.dr ? XOB.fp : null); } catch (e) { xE(e); }
+      XOB.vx = cx; XOB.vz = cz; XOB.vy = J.dr ? yaw : XOB.orb ? XOB.orb.yw : XOB.fp ? XOB.fpY : yaw - rclH;
+      if (XOB.orb && !J.dr) camera.rotation.set(XOB.orb.p, XOB.orb.yw, 0, "YXZ"); else if (XOB.fp && !J.dr) camera.rotation.set(XOB.fpP, XOB.fpY, 0, "YXZ"); else { const cq = xCU > 0 ? xCon() : 0; if (xCOn && cq <= 0) xConEnd(); camera.rotation.set(pitch + rcl, yaw - rclH, cq > 0 ? Math.sin(performance.now() * 0.0042) * 0.02618 * Math.min(1, cq * 4) : 0, "YXZ"); } camera.updateMatrixWorld(); sfxL();
+      try { xObsHide(XOB.fp && !J.dr ? XOB.fp : null); } catch (e) { xE(e); }
       const cw = mode === "aim" && typeof aimW === "function" ? aimW() : wName(), CW = WEAP[cw];
       const xe = S.xhd !== false && CW && running ? xhErr(cw, CW) : null, tm = xe ? xe.m : 0, tf = xe ? xe.f : 0;
       VM.xh = (VM.xh || 0) + (tm - (VM.xh || 0)) * Math.min(1, dt * (tm > (VM.xh || 0) ? 30 : 22)); VM.xf = (VM.xf || 0) + (tf - (VM.xf || 0)) * Math.min(1, dt * (tf > (VM.xf || 0) ? 30 : 22)); // opens fast, closes fast
@@ -10877,7 +10855,7 @@ xLocEl.xT = ""; xLocEl.xK = "";
 setInterval(() => {
   const g = $("game"), on = !!(g && g.classList.contains("x-mm") && player && !g.hidden && g.offsetParent !== null);
   let t = "";
-  if (on) { const sp = player.hp <= 0 && xKL.sp && xKL.cur && xKL.cur.alive && xKL.cur.g ? xKL.cur.g.position : player; /* spectated mate (first or third person), else own spot */ t = xLoc(sp.x, sp.z); }
+  if (on) { const sp = player.hp <= 0 && xKL.sp && xKL.cur && xKL.cur.alive && xKL.cur.g ? xKL.cur.g.position : player; /* spectated teammate, else own spot */ t = xLoc(sp.x, sp.z); }
   if (xLocEl.xT !== t) { xLocEl.xT = t; xLocEl.textContent = t; }
   const vis = on && t ? "" : "none"; if (xLocEl.style.display !== vis) xLocEl.style.display = vis;
   if (vis === "" && MM) {
@@ -19056,6 +19034,77 @@ function xfLocalEnd(){try{return ['five','retake'].includes(mode)&&!FV.dm&&bots.
 if(window.requestIdleCallback)requestIdleCallback(xfWarm,{timeout:2000});else setTimeout(xfWarm,400);
 window.xSkinFinishers={state:XF,play:xfPlay,clear:xfClear,warm:xfWarm};
 // ---- END SKIN FINISHERS ----
+// ---- SPECTATE POV ----
+// Spectating after death = the followed teammate's own first-person view, as VALORANT (user 2026-10-26: "There isn't
+// supposed to be a 3rd person when spectating when dead"; VALORANT's post-death spectate is a living teammate's POV only -
+// their camera, their gun with their skin, their crosshair and HUD - cycled with next / previous; third person and free cam
+// exist only in Replays and custom-game observers). index.html's render path already puts the camera at the teammate's
+// eye with their yaw and pitch (xObsEye / xObsPitch; online both come from the interpolated snapshot pose). This block draws
+// what they hold:
+//  - their native first-person rig (the teammate's agent arms + weapon, their equipped skin online - XSK.net, the skin map
+//    the server sends per human seat; bots and offline mates: Standard), loaded through the same xvFPGet cache as the
+//    player's own viewmodel (xskGet answers for the teammate while the key / load is made);
+//  - equip on a new target or weapon, fire on each of their shots (bfxBot: every offline mate shot and every online 's'
+//    event reaches it at the shooter's spot), reload (online: the server's reload clock, roundState pov[id][2]; offline:
+//    the mag running dry), idle otherwise; the rig is scaled to the authored 43.383 deg viewmodel FOV as xvFPTick does;
+//  - their ADS: rifles / SMGs zoom the camera to the weapon's zoom, snipers show the scope (viewmodel hidden), as the
+//    player's own setScope does (online: pov[id][0], the server's input.ads; offline bots never ADS);
+//  - their flash: a white screen for the blind they are under (online pov[id][1], offline b.blind), as #netBlind does
+//    for the player.
+// The server sends pov only to a dead player and only for living teammates (spike.js roundState); enemies are never
+// spectated (index.html xSpecPool), so no enemy view data exists to draw.
+var XSPV = { F: null, key: null, u: null, w: null, am: null, fire: 0, rl: 0, rlT: 0, fail: {}, ov: null, zoom: 0, scope: false, bl: null, pov: {}, povAt: 0 };
+function xspvTarget() { try { if (!running || !player || player.hp > 0 || !xKL.sp) return null; const a = XOB.fp; return a && a.alive && allies.indexOf(a) >= 0 ? a : null; } catch (e) { return null; } }
+function xspvWeap(a) { let w = a && a.w; try { if (!(typeof MP !== 'undefined' && MP.on) && typeof xWeapOf === 'function') w = xWeapOf(a) || w; } catch (e) {} return w === 'Knife' || (w && WEAP[w]) ? w : 'Classic'; }
+function xspvAgent(a) { let g = null; try { g = xAg(a); } catch (e) {} g = String(g || a.agent || 'Jett'); return g.charAt(0).toUpperCase() + g.slice(1).toLowerCase(); }
+function xspvSkins(a) { try { const m = typeof XSK !== 'undefined' && XSK.net && a && a.nid != null ? XSK.net[a.nid] : null; return m && typeof m === 'object' ? m : {}; } catch (e) { return {}; } }
+// the teammate's skin answers xskGet while their rig's key / load is made (xvFPKey / xvFPLoad read it synchronously)
+if (typeof xskGet === 'function') { const g0 = xskGet; xskGet = function (w) { if (XSPV.ov) { const id = XSPV.ov[w]; try { return id && xskValidFor(w, id) ? id : 'standard'; } catch (e) { return 'standard'; } } return g0.apply(this, arguments); }; }
+function xspvKey(ag, w, sk) { XSPV.ov = sk; try { return xvFPKey(ag, w); } finally { XSPV.ov = null; } }
+// the player's own rig warm-up evicts other agents' rigs from the cache (xvFPGet): never dispose the one being shown
+if (typeof xvFPClear === 'function') { const c0 = xvFPClear; xvFPClear = function (F) { if (F && F === XSPV.F) { F.xspvEvicted = 1; return; } return c0.apply(this, arguments); }; }
+function xspvDrop() { const F = XSPV.F; XSPV.F = null; XSPV.key = null; XSPV.u = null; XSPV.am = null; XSPV.rl = 0; if (!F) return;
+  if (F === (typeof XV !== 'undefined' && XV.fp)) return; /* the player's own rig: xvFPTick owns its visibility */ F.root.visible = false;
+  if (F.xspvEvicted) { F.xspvEvicted = 0; try { xvFPClear(F); } catch (e) {} } }
+// one shot of the followed teammate (bfxBot is called at the shooter's spot: offline mate shots, online 's' events)
+if (typeof bfxBot === 'function') { const b0 = bfxBot; bfxBot = function (p) { try { const a = xspvTarget(); if (a && p && Math.hypot(a.g.position.x - p.x, a.g.position.z - p.z) < 0.6) XSPV.fire++; } catch (e) {} return b0.apply(this, arguments); }; }
+// online: the server's per-teammate view state, and each teammate's ammo (row [15]) for the HUD / reload cue
+if (typeof mpCliRS === 'function') { const r0 = mpCliRS; mpCliRS = function (m) { const r = r0.apply(this, arguments); try { XSPV.pov = m && m.pov && typeof m.pov === 'object' ? m.pov : {}; XSPV.povAt = performance.now(); } catch (e) {} return r; }; }
+if (typeof mpCliSnap === 'function') { const s0 = mpCliSnap; mpCliSnap = function (m) { const r = s0.apply(this, arguments); try { if (m && Array.isArray(m.u)) for (const e of m.u) { if (!Array.isArray(e) || e[0] === MP.me || !Number.isFinite(e[15])) continue; const u = allies.find((x) => x.nid === e[0]); if (u) u.nam = e[15]; } } catch (e) {} return r; }; }
+function xspvPov(a) { const p = a && a.nid != null && XSPV.pov ? XSPV.pov[a.nid] : null; if (!Array.isArray(p)) return null; const age = (performance.now() - XSPV.povAt) / 1000; return { ads: p[0] ? 1 : 0, blind: Math.max(0, (+p[1] || 0) - age), rl: Math.max(0, (+p[2] || 0) - age) }; }
+function xspvBlind(v) { let el = XSPV.bl; if (!el && !(v > 0)) return; if (!el) { el = XSPV.bl = document.createElement('div'); el.id = 'xSpvBlind'; el.style.cssText = 'pointer-events:none;position:fixed;inset:0;z-index:110;background:#fff;opacity:0'; document.body.appendChild(el); }
+  const o = v > 0 ? Math.min(1, v / 1.5).toFixed(2) : '0'; if (el.style.opacity !== o) el.style.opacity = o; }
+function xspvZoom(w, ads) { // the teammate's lens: 0 = hip, else the zoom the player's own setScope gives that weapon
+  const sn = !!(typeof XSZ !== 'undefined' && XSZ[w]), z = !ads || w === 'Knife' || w === 'Classic' || w === 'Sheriff' || w === 'Frenzy' ? 1 : sn ? XSZ[w][0] : (XZ[w] || 1.25), scope = !!ads && sn;
+  const was = XSPV.zoom; XSPV.zoom = z; if (z !== 1 || (was && was !== 1)) { const f = xSCf(z !== 1 ? z : xSC.z); if (Math.abs(camera.fov - f) > 1e-4) { camera.fov = f; camera.updateProjectionMatrix(); } } // (xADu also re-heals the player's own lens every frame)
+  if (scope !== XSPV.scope) { XSPV.scope = scope; hudS($('scope'), 'display', scope ? 'block' : 'none'); hudS($('cross'), 'display', scope ? 'none' : ''); } }
+function xspvOff() { if (XSPV.zoom && XSPV.zoom !== 1) { XSPV.zoom = 0; try { const f = xSCf(xSC.z); camera.fov = f; camera.updateProjectionMatrix(); } catch (e) {} } XSPV.zoom = 0; if (XSPV.scope) { XSPV.scope = false; hudS($('scope'), 'display', 'none'); hudS($('cross'), 'display', ''); } xspvBlind(0); }
+function xspvTick(dt) {
+  const a = xspvTarget(); if (!a) { if (XSPV.F || XSPV.key) xspvDrop(); xspvOff(); return; }
+  const ag = xspvAgent(a), w = xspvWeap(a), sk = xspvSkins(a), key = xspvKey(ag, w, sk), pov = xspvPov(a), online = typeof MP !== 'undefined' && MP.on;
+  if (XSPV.key !== key || XSPV.u !== a) { const same = XSPV.u === a; xspvDrop(); XSPV.key = key; XSPV.u = a; XSPV.w = w; XSPV.fire = 0; XSPV.eq = 1; void same;
+    if (!XSPV.fail[key] && !(XV.failures && XV.failures[key])) { XSPV.ov = sk; let P = null; try { P = xvFPGet(ag, w); } catch (e) { XSPV.fail[key] = String(e); } finally { XSPV.ov = null; }
+      if (P) P.then((F) => { if (XSPV.key !== key) return; XSPV.F = F; F.kind = null; F.age = 0; xvFPPlay(F, 'equip'); if (F.root.parent !== camera) camera.add(F.root); }).catch((e) => { XSPV.fail[key] = String(e); }); } }
+  // ammo -> reload cue (offline: the mag ran dry; online: the server's reload clock when it is in, else the mag refilling)
+  const am = online && Number.isFinite(a.nam) ? a.nam : a.xAmW === w && Number.isFinite(a.xAm) ? a.xAm : null, W = WEAP[w] || {}, rlT = W.rld || 2;
+  if (pov && pov.rl > 0) { if (!(XSPV.rl > 0)) XSPV.rlT = Math.max(pov.rl, rlT); XSPV.rl = pov.rl; }
+  else if (am != null && XSPV.am != null && w !== 'Knife' && ((am === 0 && XSPV.am > 0) || (am > XSPV.am && !online)) && !(XSPV.rl > 0)) { XSPV.rl = XSPV.rlT = rlT; }
+  else if (XSPV.rl > 0) XSPV.rl = Math.max(0, XSPV.rl - dt);
+  XSPV.am = am;
+  xspvZoom(w, pov ? pov.ads : 0); xspvBlind(pov ? pov.blind : a.blind > 0 ? a.blind : 0);
+  const F = XSPV.F; if (!F || XSPV.key !== key) return;
+  F.root.visible = !XSPV.scope; if (F.root.parent !== camera) camera.add(F.root);
+  if (XSPV.rl > 0) { XSPV.fire = 0; xvFPPlay(F, 'reload', 1 - XSPV.rl / Math.max(0.1, XSPV.rlT)); }
+  else if (XSPV.fire > 0) { XSPV.fire = 0; F.kind = null; xvFPPlay(F, w === 'Knife' ? 'attack 1' : 'fire'); }
+  else if (F.kind === 'reload' || (F.kind !== 'idle' && F.age > (F.duration || (F.action ? F.action.getClip().duration : 0.4)))) xvFPPlay(F, 'idle');
+  F.am.update(dt); F.gm.update(dt); F.age += dt;
+  const s = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) / Math.tan(THREE.MathUtils.degToRad(43.383 / 2)); F.root.scale.set(s, s, 1); F.root.position.set(F.origin.x * s, F.origin.y * s, F.origin.z);
+}
+{ const t0 = vmTick; vmTick = function (dt) { const r = t0.apply(this, arguments); try { xspvTick(Math.min(0.1, dt || 0.016)); } catch (e) { if (!XSPV.err) { XSPV.err = String(e); console.warn('spectate pov', e); } } return r; }; }
+// the spectated teammate's ammo in the HUD online (index.html's xHud wrapper counts offline shots in a.xAm)
+{ const h0 = xHud; xHud = function () { const r = h0.apply(this, arguments); try { const a = xspvTarget(); if (a && typeof MP !== 'undefined' && MP.on && Number.isFinite(a.nam)) setT('xMag', a.nam); } catch (e) {} return r; }; }
+window.xSpectatePov = XSPV;
+// ---- END SPECTATE POV ----
 xReady = true; // every mode is initialised; lobby launches may now start them
 { let rb = null; try { rb = sessionStorage.getItem("vs.retry"); sessionStorage.removeItem("vs.retry"); } catch (e) {} // Retry on the engine error reloaded the page: relaunch the same mode
   if (rb) setTimeout(() => { const b = $(rb); if (b) b.click(); }, 300); }
