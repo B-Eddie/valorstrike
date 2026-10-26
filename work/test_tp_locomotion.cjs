@@ -9,7 +9,7 @@ const grab=(re)=>{const m=html.match(re);assert.ok(m,'source block '+re);return 
 const src=grab(/const XUB_NAT = [^\n]*\n/)+grab(/const XUB_RATE = [^\n]*\n/)+grab(/function xUbLoco\([\s\S]*?\n}\n/);
 const {XUB_NAT,XUB_RATE,xUbLoco}=new Function(src+'return {XUB_NAT,XUB_RATE,xUbLoco};')();
 assert.ok(!/sp \/ 4\.5/.test(html)&&!/sp \/ 1\.6\)\)\)/.test(html),'old skating playback rates removed');
-assert.ok(/xUbLoco\(sp, cw, back, air, gait\)/.test(html),'xUbAnim uses xUbLoco (clip path = fallback without the procedural gait, test_tp_gait.cjs)');
+assert.ok(/xUbLoco\(sp, cw, back, air\)/.test(html),'xUbAnim uses xUbLoco');
 (async()=>{const nat={walk:[],run:[],crouchWalk:[]},clip={walk:'Walk_Loop',run:'Jog_Fwd_Loop',crouchWalk:'Crouch_Fwd_Loop'};
  for(const agent of ['jett','breach','sage']){const sc=(await parse(path.join(__dirname,'../models/valorant',agent+'.glb'))).scene;sc.updateMatrixWorld(true);const bx=new T.Box3().setFromObject(sc),scale=1.92/(bx.max.y-bx.min.y);
   const data=JSON.parse(fs.readFileSync(path.join(__dirname,'../models/valorant',agent+'-locomotion.json'))),mx=new T.AnimationMixer(sc),Lf=sc.getObjectByName('L_Foot'),Rf=sc.getObjectByName('R_Foot'),v=new T.Vector3(),w=new T.Vector3();

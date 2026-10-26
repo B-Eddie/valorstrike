@@ -90,24 +90,14 @@ vfBindRenderer(renderer);
 // A fast velocity response and a slightly delayed one produce a small inertial handoff on a stop/reversal.
 // Integrate the two filters together analytically: their response is identical at 30/60/144 Hz for the same velocity.
 function vfViewDrift(V,axis,target,dt){const fast=V[axis]||0,lag=V[axis+'Lag']||0,a=30,b=18,ea=Math.exp(-a*dt),eb=Math.exp(-b*dt);V[axis]=target+(fast-target)*ea;V[axis+'Lag']=target+(lag-target)*eb+b*(fast-target)*(ea-eb)/(b-a);return V[axis]-V[axis+'Lag'];}
-// Jump / land on the viewmodel (anim-jump-2), on top of the calibrated root motion above (its landing dip, vertical-velocity
-// lag, bob and sway are unchanged): VALORANT's gun pops up a touch as the legs push off, floats with a slow small sway in the
-// air, and on touchdown the muzzle nods down briefly over the existing dip. Each term is a closed-form pulse of the time since
-// the event (t/tau * e^(1 - t/tau), peak 1 at tau), so the motion is the same at 30 / 60 / 144 Hz, and ADS damps it like the rest.
-var VF_JUMP={lift:.006,liftPitch:.01,liftTau:.08,swayX:.002,swayPitch:.004,swayHz:1.2,swayIn:.15,landPitch:.018,landY:.004,landTau:.07};
-function vfPulse(t,tau){if(!(t>=0)||t>tau*8)return 0;const u=t/tau;return u*Math.exp(1-u);}
-function vfJumpEdge(V,P){if(V.jt==null){V.jt=V.lt=V.at=9;V.li=0;}if(!V.lastAir&&P.air){V.at=0;if((P.vy||0)>1)V.jt=0;}if(V.lastAir&&!P.air){V.lt=0;V.li=Math.min(1,P.landImpact||.5);}}
-function vfJumpPose(F,V,dt,h){const J=VF_JUMP;V.jt+=dt;V.lt+=dt;if(V.lastAir)V.at+=dt;const up=vfPulse(V.jt,J.liftTau),dn=vfPulse(V.lt,J.landTau)*(V.li||0),air=V.lastAir?Math.min(1,V.at/J.swayIn):0,w=2*Math.PI*J.swayHz*V.at;
- if(!up&&!dn&&!air)return;F.root.position.y+=h*(J.lift*up-J.landY*dn);F.root.position.x+=h*J.swayX*Math.sin(w)*air;F.root.rotation.x+=h*(J.liftPitch*up-J.landPitch*dn+J.swayPitch*Math.sin(w+.8)*air);}
 function vfViewTick(F,dt){const P=player,V=VF_VIEW;if(!F||!P)return;dt=Math.max(0,Math.min(.1,dt||0));
- if(V.owner!==P||V.dead&&P.hp>0){V.owner=P;V.lastAir=!!P.air;V.phase=V.land=V.landT=V.vyo=V.bob=V.swayX=V.swayY=V.moveX=V.moveXLag=V.moveZ=V.moveZLag=0;V.jt=V.lt=V.at=9;V.li=0;}V.dead=P.hp<=0;
- if(F.root.parent!==V.scene){if(F.root.parent)F.root.parent.remove(F.root);V.scene.add(F.root);}vfJumpEdge(V,P);if(V.lastAir&&!P.air)V.landT=Math.min(1,P.landImpact||.5);V.lastAir=!!P.air;V.landT=VF.model.damp(V.landT||0,0,10,dt);V.land=VF.model.damp(V.land,V.landT,30,dt);V.vyo=VF.model.damp(V.vyo||0,Math.max(-.02,Math.min(.02,-(P.vy||0)*.002)),14,dt);const speed=Math.hypot(P.vx||0,P.vz||0),target=!P.air?Math.min(1,speed/5.4):0;V.bob=VF.model.damp(V.bob,target,16,dt);V.phase+=speed*dt*Math.PI/1.85;/* one bob per footfall (upstream fix): footsteps every 1.85 m; the old 3.4 rad/m bobbed twice per step */
+ if(V.owner!==P||V.dead&&P.hp>0){V.owner=P;V.lastAir=!!P.air;V.phase=V.land=V.landT=V.vyo=V.bob=V.swayX=V.swayY=V.moveX=V.moveXLag=V.moveZ=V.moveZLag=0;}V.dead=P.hp<=0;
+ if(F.root.parent!==V.scene){if(F.root.parent)F.root.parent.remove(F.root);V.scene.add(F.root);}if(V.lastAir&&!P.air)V.landT=Math.min(1,P.landImpact||.5);V.lastAir=!!P.air;V.landT=VF.model.damp(V.landT||0,0,10,dt);V.land=VF.model.damp(V.land,V.landT,30,dt);V.vyo=VF.model.damp(V.vyo||0,Math.max(-.02,Math.min(.02,-(P.vy||0)*.002)),14,dt);const speed=Math.hypot(P.vx||0,P.vz||0),target=!P.air?Math.min(1,speed/5.4):0;V.bob=VF.model.damp(V.bob,target,16,dt);V.phase+=speed*dt*Math.PI/1.85;/* one bob per footfall (upstream fix): footsteps every 1.85 m; the old 3.4 rad/m bobbed twice per step */
  // Use measured movement in the camera's basis, so pressing into a wall cannot sway a stationary gun.
  const cy=Math.cos(yaw),sy=Math.sin(yaw),side=Math.max(-1,Math.min(1,((P.vx||0)*cy-(P.vz||0)*sy)/5.4)),forward=Math.max(-1,Math.min(1,(-(P.vx||0)*sy-(P.vz||0)*cy)/5.4)),sideLag=vfViewDrift(V,'moveX',side,dt),forwardLag=vfViewDrift(V,'moveZ',forward,dt);
  V.swayX=VF.model.damp(V.swayX,Math.max(-1,Math.min(1,VM.sx||0)),18,dt);V.swayY=VF.model.damp(V.swayY,Math.max(-1,Math.min(1,VM.sy||0)),18,dt);const k=Math.max(0,Math.min(1,xAD.k||0)),handling=1-.8*k;
  // The world camera stays level. The native animation owns recoil/equip/reload; this is a restrained root offset.
  F.root.scale.setScalar(1);F.root.position.copy(F.origin);F.root.position.x+=.045+handling*(-V.swayX*.01-V.moveX*.005-sideLag*.009+Math.sin(V.phase)*.003*V.bob);F.root.position.y-=.035+handling*(Math.abs(Math.cos(V.phase))*.004*V.bob+V.land*.025);F.root.position.y+=handling*(V.vyo-Math.abs(forwardLag)*.003);F.root.position.z+=handling*(V.moveZ*.002+forwardLag*.004);F.root.rotation.set(handling*(-V.swayY*.007+forwardLag*.003),Math.PI/2-handling*V.swayX*.008,handling*Math.max(-.012,Math.min(.012,-V.swayX*.01-V.moveX*.006-sideLag*.012+Math.sin(V.phase)*.002*V.bob)));
- vfJumpPose(F,V,dt,handling);
  if(k>0){F.root.updateMatrixWorld(true);const optic=F.ws.getObjectByName('Reflex')||F.ws.getObjectByName('Scope');if(optic){const p=optic.getWorldPosition(new THREE.Vector3());F.root.position.x-=p.x*k;F.root.position.y-=(p.y+.025)*k;}else{F.root.position.x-=.12*k;F.root.position.y+=.045*k;}F.root.position.z+=.07*k;}
 }
 // Preload the selected loadout to reduce fallback frames during weapon switches.
