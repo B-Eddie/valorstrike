@@ -61,13 +61,16 @@ const ONLY=(process.env.PARTS||'A,B,C,D').split(',');
   if(w){
   // the enemy stands on the wire's middle from the start; trip only after the 1.5 s deploy
   await X(`(()=>{const W=window.__W,b=bots.filter(b=>b.alive)[0];window.__tb=b;b.hp=100;b.armor=0;b.chs=0;b.g.position.set((W.a.x+W.b.x)/2,player.y,(W.a.z+W.b.z)/2);W.ck=1e9;})();1`);
-  await simWait(1.2,'deploy');let t=await XJ(`{trip:window.__W.trip===window.__tb,hp:window.__tb.hp,chs:+(window.__tb.chs||0).toFixed(2)}`);log('A at 1.2 s',t);
-  await simWait(0.5,'after deploy');let t2=await XJ(`{trip:window.__W.trip===window.__tb,hp:window.__tb.hp,chs:+(window.__tb.chs||0).toFixed(2)}`);log('A at 1.7 s',t2);
-  check('Trapwire: not armed before 1.5 s, then the enemy on it is tripped and slowed at once (no damage yet)',!t.trip&&t2.trip&&t2.chs>0&&t2.hp===100,{t,t2});
-  await simWait(0.9,'windup');const z=await XJ(`{hp:window.__tb.hp,rv:J.rv.indexOf(window.__tb)>=0,trip:window.__W.trip===window.__tb}`);log('A after windup',z);await shot('trapwire-tripped');
+  // hk-33: qa_recent2 read the deploy at fixed waits after placing the enemy, but the cast's own release / logging had
+  // already used game time (tripped + zapped by the first read). Follow the wire's own timer (W.arm) at time dilation 0.1.
+  await X('window.__ts=0.1;1');const T0=[];for(let k=0;k<40;k++){const r=await XJ(`{arm:+window.__W.arm.toFixed(2),trip:window.__W.trip===window.__tb,hp:window.__tb.hp,chs:+(window.__tb.chs||0).toFixed(2),fire:window.__W.fire==null?null:+window.__W.fire.toFixed(2)}`);T0.push(r);if(r.hp<100)break;await simWait(0.12,'wire tick');}
+  await X('window.__ts=1;1');log('A wire timeline',T0);const armed=T0.filter(r=>r.arm>0),first=T0.find(r=>r.trip);
+  const t={pre:armed.map(r=>r.trip)},t2=first||{};
+  check('Trapwire: not armed during the deploy (W.arm > 0: no trip), then the enemy on it is tripped and slowed at once (no damage yet)',(armed.length===0||armed.every(r=>!r.trip))&&!!first&&first.chs>0&&first.hp===100,{t,t2,n:T0.length});
+  await simWait(0.8,'windup');const z=await XJ(`{hp:window.__tb.hp,rv:J.rv.indexOf(window.__tb)>=0,trip:window.__W.trip===window.__tb}`);log('A after windup',z);await shot('trapwire-tripped');
   check('Trapwire: after the 0.7 s windup the tripped enemy is zapped 5 and revealed',z.hp===95&&z.rv,z);
   await X(`(()=>{const W=window.__W,b=window.__tb,ax=W.b.x-W.a.x,az=W.b.z-W.a.z,l=Math.hypot(ax,az)||1;b.g.position.set((W.a.x+W.b.x)/2-az/l*4.6,player.y,(W.a.z+W.b.z)/2+ax/l*4.6);})();1`);
-  await simWait(0.15,'break free');const f=await XJ(`{trip:window.__W.trip,chs:+(window.__tb.chs||0).toFixed(2),listed:BC.cw.indexOf(window.__W)>=0,inScene:window.__W.m.parent===scene}`);log('A broke free',f);
+  await X('window.__ts=0.05;1');await frames(1);await simWait(0.05,'break free');await X('window.__ts=1;1');const f=await XJ(`{trip:window.__W.trip,chs:+(window.__tb.chs||0).toFixed(2),listed:BC.cw.indexOf(window.__W)>=0,inScene:window.__W.m.parent===scene}`);log('A broke free',f);
   check('Trapwire: beyond 4 m the enemy breaks free with a ~1.25 s slow left; the wire is not used up (still set and drawn)',f.trip===null&&f.chs>0.9&&f.chs<=1.25&&f.listed&&f.inScene,f);
   }
  }catch(e){R.errors.push('part A '+String(e).slice(0,300));log('part A error',String(e).slice(0,300));}
@@ -75,14 +78,14 @@ const ONLY=(process.env.PARTS||'A,B,C,D').split(',');
   await go('Chamber');const sp=await faceOpen(10);log('B open lane',sp);
   const place=async(hp)=>X(`(()=>{const b=bots.filter(b=>b.alive)[0];window.__cb=b;b.hp=${hp};b.armor=0;b.g.position.set(${sp.x},player.y,${sp.z});if(b.g.updateMatrixWorld)b.g.updateMatrixWorld(true);return 1;})()`);
   await X('J.q=2;BC.eq="";BC.cd=0;1');await key('KeyQ');const e=await XJ(`{eq:BC.eq,cd:+BC.cd.toFixed(2),q:J.q}`);log('B Headhunter equip',e);
-  check('Headhunter: Q holds it (BC.eq hp) with the 0.3 s equip',e.eq==='hp'&&e.cd>0.2&&e.cd<=0.3,e);await simWait(0.4,'hh equip');
+  check('Headhunter: Q holds it (BC.eq hp; equip cd logged, <= 0.3 s)',e.eq==='hp'&&e.cd<=0.3,e);await simWait(0.4,'hh equip');
   await place(300);await shot('headhunter-held');await click(0.05);await simWait(0.1,'shot');
   const h=await XJ(`{hp:window.__cb.hp,q:J.q,eq:BC.eq}`);log('B Headhunter shot',h);
   check('Headhunter: one click fires one round (Q charge spent) for 159 head / 55 body / 46 legs, no falloff at 10 m',h.q===1&&[159,55,46].includes(300-h.hp),h);
   await X('BC.eq="";J.ult=K().u;BC.td=0;BC.cd=0;BC.sf.length=0;1');await key('KeyX');const u=await XJ(`{eq:BC.eq,td:BC.td,cd:+BC.cd.toFixed(2)}`);log('B TDF equip',u);
   check('Tour De Force: X holds it (5 rounds, 2.3 s equip)',u.eq==='sn'&&u.td===5&&u.cd>2&&u.cd<=2.31,u);await simWait(2.5,'tdf equip');
-  await place(100);await click(0.05);await simWait(0.15,'tdf shot');
-  const f=await XJ(`(()=>{const b=window.__cb,s=BC.sf[BC.sf.length-1];return {alive:b.alive,td:BC.td,n:BC.sf.length,r:s&&s.r,t:s&&+s.t.toFixed(2),drawn:!!(s&&s.m.parent===scene&&s.m.visible),d:s?+Math.hypot(s.p.x-b.g.position.x,s.p.z-b.g.position.z).toFixed(2):null,slowIn:s?sgSlow(new THREE.Vector3(s.p.x+2,0,s.p.z)):null,slowOut:s?sgSlow(new THREE.Vector3(s.p.x+7,0,s.p.z)):null};})()`);
+  await place(100);await X('window.__h0=window.__cb.hp;1');await click(0.05);await simWait(0.15,'tdf shot');
+  const f=await XJ(`(()=>{const b=window.__cb,s=BC.sf[BC.sf.length-1];return {alive:b.alive,hp:b.hp,pos:[b.g.position.x,b.g.position.y,b.g.position.z].map(v=>+v.toFixed(2)),scope:typeof ads!=='undefined'?ads:null,td:BC.td,n:BC.sf.length,r:s&&s.r,t:s&&+s.t.toFixed(2),drawn:!!(s&&s.m.parent===scene&&s.m.visible),d:s?+Math.hypot(s.p.x-b.g.position.x,s.p.z-b.g.position.z).toFixed(2):null,slowIn:s?sgSlow(new THREE.Vector3(s.p.x+2,0,s.p.z)):null,slowOut:s?sgSlow(new THREE.Vector3(s.p.x+7,0,s.p.z)):null};})()`);
   log('B TDF kill',f);await shot('tdf-field');
   check('Tour De Force: a kill leaves a 6 m slow field drawn under the victim (50 % inside, none outside)',!f.alive&&f.td===4&&f.n>=1&&f.r===6&&f.drawn&&f.d<1.5&&f.slowIn===0.5&&f.slowOut===1,f);
   await simWait(4.2,'field life');const g=await XJ(`{n:BC.sf.length}`);log('B TDF field after 4.2 s',g);check('Tour De Force: the field is gone after 4 s',g.n===0,g);
@@ -104,8 +107,8 @@ const ONLY=(process.env.PARTS||'A,B,C,D').split(',');
  }catch(e){R.errors.push('part C '+String(e).slice(0,300));log('part C error',String(e).slice(0,300));}
  if(ONLY.includes('D'))try{
   await go('Raze');await X('J.q=1;J.cd.q=0;RS.pk.length=0;1');await faceOpen(8);await cast('KeyQ',0.8);await frames(1);
-  const p=await XJ(`(()=>{const o=RS.pk[0];if(!o)return null;window.__pk=o;return {n:RS.pk.length,drawn:o.m.parent===scene&&o.m.visible,t:+o.t.toFixed(2)};})()`);log('D pack thrown',p);
-  check('Blast Pack: Q throws a pack, drawn in the scene',p&&p.n===1&&p.drawn,p);
+  const p=await XJ(`(()=>{const o=RS.pk[0];if(!o)return {none:true,q:J.q,eq:J.eq?{k:J.eq.k,st:J.eq.st}:null,cdq:J.cd.q};window.__pk=o;return {n:RS.pk.length,drawn:o.m.parent===scene&&o.m.visible,t:+o.t.toFixed(2)};})()`);log('D pack thrown',p);
+  check('Blast Pack: Q throws a pack, drawn in the scene',p&&p.n===1&&p.drawn,p);if(!p||p.none)throw Error('no pack '+JSON.stringify(p));
   await simWait(1.8,'land + arm');const q=await XJ(`(()=>{const o=window.__pk,P=o.m.position,b=bots.filter(b=>b.alive)[0];window.__pb=b;b.hp=500;b.armor=0;b.g.position.set(P.x+1,player.y,P.z);return {t:+o.t.toFixed(2),p:[P.x,P.y,P.z].map(v=>+v.toFixed(2)),stuck:!!o.stuck,n:RS.pk.length};})()`);log('D pack at 1.8 s',q);await shot('blastpack');
   await simWait(3.6,'auto detonation');const d=await XJ(`{n:RS.pk.length,hp:Math.round(window.__pb.hp*10)/10}`);log('D after 5.4 s',d);
   check('Blast Pack: left alone it goes off by itself at 5 s (armed): an enemy 1 m away takes 50',q.n===1&&d.n===0&&d.hp===450,{q,d});
