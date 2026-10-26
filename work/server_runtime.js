@@ -120,8 +120,9 @@ const netMpFx0=mpFx;mpFx=function(u,ag,k,o,d,auth,p){if(!NET.socket)return netMp
 const netPNs0=pNs;pNs=function(){if(NET.socket&&netFxReplay)return;return netPNs0.apply(this,arguments);};
 const netCon0=xConStart;xConStart=function(){if(NET.socket&&netFxReplay)return;return netCon0.apply(this,arguments);};
 const netEnPop0=enPop;enPop=function(p){if(!NET.socket)return netEnPop0.apply(this,arguments);const hp=player.hp;player.hp=0;try{return netEnPop0.apply(this,arguments);}finally{player.hp=hp;}};
-// Server smokes sit on the floor they landed on (p[1] = floor + 0.1); keep the rendered sphere on that floor too.
-const netSmoke0=enSmoke;enSmoke=function(){const r=netSmoke0.apply(this,arguments);if(NET.socket&&netFxReplay&&netFxPoint!=null){const S=J.smokes[J.smokes.length-1];if(S&&S.m)S.m.position.y=netFxPoint-.1+1.8;}return r;};
+// Server smokes sit on the floor they landed on (p[1] = floor + 0.1); keep the rendered sphere on that floor too (a Cyber Cage
+// cylinder is centred on the floor itself, as the server's cageBlocks).
+const netSmoke0=enSmoke;enSmoke=function(){const r=netSmoke0.apply(this,arguments);if(NET.socket&&netFxReplay&&netFxPoint!=null){const S=J.smokes[J.smokes.length-1];if(S&&S.m)S.m.position.y=netFxPoint-.1+(S.cyl?0:1.8);}return r;};
 // Floor weapons (#4): the server owns every floor gun (snapshot fw rows [id,weapon,x,y,z]) and every swap.
 // F asks for the gun under the crosshair by id, G asks to drop the gun in hand; the private round state's
 // ld [primary,secondary] keeps both slots in step after a pick-up, drop or death.
