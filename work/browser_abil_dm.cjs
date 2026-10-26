@@ -58,7 +58,7 @@ const SIZES=(process.env.SIZES||'1280x720,640x360,390x844').split(',').map(s=>s.
  let l=await lb();log('dm alive',l);check('DM 640x360 alive: leaderboard shown',l.lb,JSON.stringify(l));await shot('dm-lb-alive',640,360);
  await X('window.__ts=0.05;1');await frames(1);/* abil_dm4: switching after the kill let the first frame carry 1x time past the 1.5 s DM respawn (DM.prt -= dt) */
  // hk-34: abil_dm4 / abil_dm5 read 'dead' already respawned (hp 100, no report): log the report state in the same call as the kill
- log('dm kill',await XJ(`(()=>{window.__god=0;const b=bots[0];hurt(player,500,b.name);if(player.hp>0)pDie(b.name,"Vandal");const c=document.querySelector('.x-cbt');return {hp:player.hp,klOn:!!xKL.on,klN:xKL.n,crOn:!!(c&&c.classList.contains('on')),body:document.body.classList.contains('x-cbt-on'),prt:typeof DM!=='undefined'?DM.prt:null,by:XHF.cr.by};})()`));
+ log('dm kill',await XJ(`(()=>{window.__god=0;const b=bots[0];hurt(player,500,b.name);if(player.hp<=0)pDie(b.name,"Vandal");/* hk-35: was hp>0 (never true after 500 damage): pDie never ran, so no KILLED BY report (abil_dm6) */const c=document.querySelector('.x-cbt');return {hp:player.hp,klOn:!!xKL.on,klN:xKL.n,crOn:!!(c&&c.classList.contains('on')),body:document.body.classList.contains('x-cbt-on'),prt:typeof DM!=='undefined'?DM.prt:null,by:XHF.cr.by};})()`));
  // hk-32: abil_dm3 sampled 1.5 s after the kill - DM respawns within that, so 'dead' read the respawned player (hp 100) and, with
  // __god off, a bot killed the player again before the 'respawned' sample (hp 0, report up). Time is slowed (__ts) and each
  // phase waits for its own state: dead = hp <= 0 with the report class on; then __god back on and respawned = hp > 0.

@@ -54,11 +54,14 @@ const ONLY=(process.env.PARTS||'E,F,G').split(',');
  if(ONLY.includes('E'))try{
   await go('Jett');const sp=await faceOpen(12);log('E open lane',sp);
   const hud=()=>XJ(`(()=>{const el=document.getElementById('jE');const em=el&&el.querySelector('em');return {txt:em?em.textContent:null,off:el?el.classList.contains('off'):null,tw:J.tw?{arm:+J.tw.arm.toFixed(2),t:+J.tw.t.toFixed(2)}:null,e:J.e,p:[player.x,player.z].map(v=>+v.toFixed(2))};})()`);
-  await X('J.e=1;J.tw=null;J.cd.e=0;1');await key('KeyE');await frames(1);const a=await hud();log('E armed',a);
+  // hk-35: qa28_1 read arm -4.06 - key() put __ts back to 1 and frames(1) ran one ~4 s box frame at full speed. The windup reads
+  // (a, b, c) now stay at __ts 0.05 (keyD: key press without restoring the dilation) until the window read.
+  const keyD=async(k)=>{await X('window.__ts=0.05;1');await page.keyboard.down(k);await simWait(0.02,k);await page.keyboard.up(k);};
+  await X('J.e=1;J.tw=null;J.cd.e=0;1');await keyD('KeyE');await frames(1);const a=await hud();log('E armed',a);
   check('Tailwind: E arms it (charge spent, J.tw windup <= 1 s, HUD WINDUP)',a.e===0&&!!a.tw&&a.tw.arm>0.5&&a.tw.arm<=1&&a.txt==='WINDUP',a);
-  await key('KeyE');const b=await hud();log('E during windup',b);
+  await keyD('KeyE');const b=await hud();log('E during windup',b);
   check('Tailwind: E during the windup is refused (still armed, no dash)',!!b.tw&&b.tw.arm>0&&Math.hypot(b.p[0]-a.p[0],b.p[1]-a.p[1])<0.5,{a,b});
-  await simWait(Math.max(0.1,(b.tw?b.tw.arm:1)+0.15),'windup');await frames(1);const c=await hud();log('E window',c);
+  await simWait(Math.max(0.1,(b.tw?b.tw.arm:1)+0.15),'windup');await frames(1);const c=await hud();await X('window.__ts=1;1');log('E window',c);
   check('Tailwind: after the windup the HUD shows the window seconds (7 / 8 s)',!!c.tw&&c.tw.arm<=0&&/^[78] s$/.test(c.txt||''),c);
   await key('KeyE');await simWait(0.6,'dash');await frames(1);const d=await hud();log('E dashed',d);
   check('Tailwind: E in the window dashes (> 5 m) and uses the window',!d.tw&&Math.hypot(d.p[0]-c.p[0],d.p[1]-c.p[1])>5,{c,d});
@@ -67,11 +70,11 @@ const ONLY=(process.env.PARTS||'E,F,G').split(',');
  }catch(e){R.errors.push('part E '+String(e).slice(0,300));log('part E error',String(e).slice(0,300));}
  if(ONLY.includes('F'))try{
   await go('Killjoy');await X('J.q=2;J.cd.q=0;J.ab=null;1');await faceOpen(4);const P0=await XJ(`[player.x,player.y,player.z]`);
-  await cast('KeyQ',0.85);await frames(1);
+  await cast('KeyQ',0.85);await X('window.__ts=0.05;1');await frames(1);/* hk-35: qa28_1 - the frame after the cast ran at 1x and the 1.85 s deploy was over (dep 0) by the 'deploying' read; dilated until then */
   const a=await XJ(`(()=>{const A=J.ab;if(!A)return null;window.__A=A;const b=bots.filter(b=>b.alive)[0];window.__ab=b;b.vul=0;b.g.position.set(A.p.x+2.5,player.y,A.p.z);return {p:[A.p.x,A.p.y,A.p.z].map(v=>+v.toFixed(2)),py:+player.y.toFixed(2),dep:+A.dep.toFixed(2),drawn:A.m.parent===scene&&A.m.visible,tg:!!A.tg};})()`);log('F alarmbot placed',a);
   check('Alarmbot: Q (equip + click) places it ON the floor (y = player floor + 0.225; on native Ascent it sat at 0.225, under the map), drawn',!!a&&a.drawn&&Math.abs(a.p[1]-(a.py+0.225))<0.15,a);
   if(!a)throw Error('no Alarmbot');
-  await X('window.__ts=0.2;1');await simWait(0.6,'deploying');const b=await XJ(`{dep:+window.__A.dep.toFixed(2),tg:!!window.__A.tg,moved:+Math.hypot(window.__A.p.x-${a.p[0]},window.__A.p.z-${a.p[2]}).toFixed(2),vul:window.__ab.vul||0}`);await X('window.__ts=1;1');log('F deploying',b);
+  await simWait(0.6,'deploying');const b=await XJ(`{dep:+window.__A.dep.toFixed(2),tg:!!window.__A.tg,moved:+Math.hypot(window.__A.p.x-${a.p[0]},window.__A.p.z-${a.p[2]}).toFixed(2),vul:window.__ab.vul||0}`);await X('window.__ts=1;1');log('F deploying',b);
   check('Alarmbot: while deploying (1.85 s) it does not go for an enemy 2.5 m away',b.dep>0&&!b.tg&&b.moved<0.05&&!(b.vul>0),b);
   const far=await XJ(`(()=>{const A=window.__A;let best=null;const C=NM.current,N=C&&C.nav?C.nav.nodes:[];for(let i=0;i<N.length;i++){const n=N[i];if(C.playable&&!C.playable[i])continue;const d=Math.hypot(n[0]-A.p.x,n[2]-A.p.z);if(d>45&&d<60&&(!best||d<best[3]))best=[n[0],n[1],n[2],d];}return best;})()`);log('F far spot',far);
   if(far){await X(`player.x=${far[0]};player.y=${far[1]};player.z=${far[2]};player.vy=0;1`);
