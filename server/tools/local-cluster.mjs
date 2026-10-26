@@ -1,7 +1,7 @@
 // Runs the real worker module (default fetch, GameRoom, Directory) in-process on a virtual clock, with in-memory
 // Durable Object storage and WebSocket pairs. Lets acceptance scenarios exercise the full room/directory path
 // (connect, auth, ticks, leave/rejoin, result persistence) in a deterministic `npm test` without wrangler.
-import fs from 'node:fs';import vm from 'node:vm';import {loadWorld} from '../src/world.js';import {Simulation} from '../src/simulation.js';import {SpikeSimulation} from '../src/spike.js';
+import fs from 'node:fs';import vm from 'node:vm';import {loadWorld} from '../src/world.js';import {Simulation} from '../src/simulation.js';import {SpikeSimulation} from '../src/spike.js';import {createSim,SPIKE_VARIANTS} from '../src/modes.js';
 
 class Storage{constructor(){this.m=new Map();}
  async get(k){return structuredClone(this.m.get(k));}
@@ -25,7 +25,7 @@ export async function localCluster({env:vars={},assetsRoot=new URL('../public',i
   close(code,reason){if(this.readyState!==1)return;this.readyState=3;const p=this.peer;queueMicrotask(()=>{p.readyState=3;p.emit('close',{code,reason});this.emit('close',{code,reason});});}}
  class Resp extends Response{constructor(body,init={}){if(init.status===101){super(null,{status:200});this.webSocket=init.webSocket;this.upgraded=true;}else super(body,init);}}
  const src=fs.readFileSync(new URL('../src/worker.js',import.meta.url),'utf8').replace(/^import .*$/gm,'').replace('export default','const handler=').replace(/export class/g,'class')+';globalThis.__mod={handler,GameRoom,Directory};';
- const ctxGlobals={DurableObject:class{constructor(ctx,env){this.ctx=ctx;this.env=env;}},loadWorld,Simulation,SpikeSimulation,kits:JSON.parse(fs.readFileSync(new URL('../src/kits.json',import.meta.url),'utf8')),
+ const ctxGlobals={DurableObject:class{constructor(ctx,env){this.ctx=ctx;this.env=env;}},loadWorld,Simulation,SpikeSimulation,createSim,SPIKE_VARIANTS,kits:JSON.parse(fs.readFileSync(new URL('../src/kits.json',import.meta.url),'utf8')),
   ...(prod?{fogView:(await import('../src/fog.js')).fogView,fogCast:(await import('../src/fog.js')).fogCast,cleanSkins:(await import('../src/skins.js')).cleanSkins}:{}),
   WebSocketPair:Pair,Response:Resp,Request,Headers,URL,URLSearchParams,TextEncoder,crypto:globalThis.crypto,performance,Date:FakeDate,setInterval:setI,clearInterval:clear,setTimeout:setT,clearTimeout:clear,console,Map,Set,JSON,Math,Number,Object,Array,Promise,Error,Uint8Array,structuredClone,queueMicrotask};
  const c=vm.createContext(ctxGlobals);vm.runInContext(src,c);const {handler,GameRoom,Directory}=c.__mod;
