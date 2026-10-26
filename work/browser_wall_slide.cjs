@@ -43,8 +43,8 @@ const MAPS=(process.env.MAPS||'ascent,bind').split(',');
   let i=0;for(const [from,dir,sv,deg,dyMax0] of SPOTS[map]||[]){const dyMax=dyMax0||0.1;i++;
    // park everyone else far away; stand at the spot facing the walk
    await X(`bots.concat(allies).forEach((u,k)=>{u.g.position.set(player.x+200+k*3,player.y-50,player.z+200);});(()=>{const P=player;P.x=${from[0]};P.z=${from[2]};const fy=xFy(P.x,P.z,${from[1]}+.1);P.y=Number.isFinite(fy)&&Math.abs(fy-${from[1]})<.6?fy:${from[1]};P.vx=P.vz=0;P.vy=0;P.air=false;yaw=Math.atan2(-(${dir[0]}),-(${dir[1]}));pitch=0;})();1`);
-   await X('window.__ts=0.25;1');await simWait(0.2,'settle');const s0=await XJ(`{p:[player.x,player.y,player.z].map(v=>+v.toFixed(3)),yaw:+yaw.toFixed(3)}`);
-   await X('window.__rec=[];1');await page.keyboard.down('KeyW');await simWait(1.5,'walk');await page.keyboard.up('KeyW');const rec=await XJ('window.__rec');await X('window.__rec=null;window.__ts=1;1');
+   await X('window.__ts=0.25;XRT.debt=0;clock.getDelta();1');await simWait(0.2,'settle');const s0=await XJ(`{p:[player.x,player.y,player.z].map(v=>+v.toFixed(3)),yaw:+yaw.toFixed(3)}`);
+   await X('window.__rec=[];1');await page.keyboard.down('KeyW');await simWait(1.5,'walk');await page.keyboard.up('KeyW');const rec0=await XJ('window.__rec'),rec=rec0.length?rec0.filter(r=>r[0]<=rec0[0][0]+1.5):[]; /* hk-37: wallslide2 walked 3 s (keyup a box frame late at __ts 0.25) and ran past the wall end; judged on the first 1.5 s of game time */await X('window.__rec=null;window.__ts=1;1');
    const end=await XJ(`(()=>{const P=player;return {p:[P.x,P.y,P.z].map(v=>+v.toFixed(3)),inWall:typeof blocked==='function'?!!blocked(P.x,P.z,.3,P.y):null};})()`);
    // slide speed over the last 0.6 s of the walk, its angle to the walk, the floor
    const t1=rec.length?rec[rec.length-1][0]:0,a=rec.find(r=>r[0]>=t1-.6)||rec[0],b=rec[rec.length-1]||a;let v=null,ang=null,along=null,dy=null;
