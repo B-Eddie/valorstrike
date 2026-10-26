@@ -8,7 +8,7 @@ const ROOT=new URL('../../',import.meta.url).pathname,src=fs.readFileSync(ROOT+'
 const cut=(s,a,b)=>{const i=s.indexOf(a),j=s.indexOf(b,i);if(i<0||j<0)throw Error('marker '+a);return s.slice(i,j);};
 export function runtime(){const cache={};const ctx={THREE:{...THREE,SkeletonUtils},console,Math,Promise,XNR:()=>{},XABT:{draw:.5,rel:.2,rec:.45},
   xvLoad:(n)=>cache[n]||(cache[n]=parse(ROOT+'models/valorant/'+n+'.glb'))};vm.createContext(ctx);
- vm.runInContext(cut(src,'var XAF_SET','function xAfHideGun(')+';globalThis.api={XAF,XAF_SET,XAF_K,XAF_GUN,xAfLoad,xAfPose,xAfProp,xAfPhase,xAfBowDraw,xAfSpec,xAfGunPhase,xAfGunPose,xAfGunModel,xAfBone};',ctx);return ctx.api;}
+ vm.runInContext(cut(src,'var XAF_SET','function xAfHideGun(')+';globalThis.api={XAF,XAF_SET,XAF_K,XAF_GUN,xAfLoad,xAfPose,xAfProp,xAfPhase,xAfBowDraw,xAfSpec,xAfGunPhase,xAfGunPose,xAfGunModel,xAfBone,xAfKnifeShow};',ctx);return ctx.api;}
 export async function build(ag,api=runtime()){const R=await api.xAfLoad(ag);const cam=new THREE.Group();cam.add(R.root);R.root.visible=true;return {R,cam,api};}
 // pose ability k of the rig at a phase (u: clip fraction; idle uses u directly), returns placement numbers (camera space, metres)
 export async function pose(B,k,ph='idle',u=0.5){const {R,api,cam}=B,sp=api.xAfSpec(R.ag,k),set=api.XAF_SET[sp.s],clip=ph==='equip'?set.eq:ph==='idle'?set.idle:set.cast;

@@ -49,5 +49,21 @@ console.warn=((w)=>(...a)=>{if(!/boneTransform/.test(String(a[0])))w(...a);})(co
    assert.ok(M.g.visible&&!bb.isEmpty(),k+' gun drawn');assert.ok(bb.distanceToPoint(h)<0.08,`${ag} ${k} ${clip}: gun in the right hand (${bb.distanceToPoint(h).toFixed(3)} m)`);
    assert.ok(bb.min.z<-0.5,k+' gun reaches forward of the camera');let mesh='';B.R.sc.traverse(o=>{if(o.isSkinnedMesh&&!mesh)mesh=o.name;});assert.ok(new RegExp('^FP_'+CODE[ag]).test(mesh),k+' on '+ag+"'s own arms");}
   if(G.gun){assert.ok(M.gm&&M.ga[G.gun[G.fire[0]]],'Showstopper plays its own AB_ clips');}}
- console.log('ability FP: legacy box hand removed; '+only.length+' agents x C/Q/E/X on their own native FP arms ('+n+' poses: clips resolve, item in the palm, hand in view); equip / release / recovery timings; ult guns rk/hp/sn on the native arms (box guns gone)');process.exit(0);
+ // (5) Jett Blade Storm: the knife viewmodel gives way to Jett's own Wushu X set (equip / idle / Attack01-05 throws alternating
+ // R L R L R, RightClickAttack flurry) with a knife in each palm; the throwing hand's knife leaves at the release frame
+ assert(/J\.bsOn && J\.bs > 0 && typeof rw !== "undefined" && rw === "knife"\) return "bs"/.test(html),'Blade Storm drawn by the ability FP layer');
+ assert(/jThrow = function \(\) \{ const c = J\.cd\.x;/.test(html),'Blade Storm throws drive the throw clips');
+ {const G=api.XAF_GUN.bs;const J_=x=>JSON.parse(JSON.stringify(x));assert.deepEqual(J_(G.hand),['R','L','R','L','R']);
+  const f=n=>api.xAfGunPhase(G,{t:5,f:.01,n,fired:1});assert.deepEqual([1,2,3,4,5,6].map(n=>f(n).clip),J_([...G.fire,G.fire[0]]),'throws cycle Attack01-05');
+  const ks=(i,u,n)=>J_(api.xAfKnifeShow(G,{ph:'fire',i,u,alt:false},n));
+  assert.deepEqual(ks(0,.02,4),{r:true,l:true});assert.deepEqual(ks(0,.2,4),{r:false,l:true},'right knife thrown');assert.deepEqual(ks(1,.2,3),{r:true,l:false},'left knife thrown');
+  assert.deepEqual(ks(0,.6,4),{r:true,l:true},'knife back in hand');assert.deepEqual(ks(0,.2,0),{r:false,l:false},'last knife gone');
+  assert.deepEqual(J_(api.xAfKnifeShow(G,{ph:'idle'},1)),{r:true,l:false});
+  if(!process.env.AGENTS||/Jett/.test(process.env.AGENTS)){const B=await FP.build('Jett',api),T=await import('file://'+path.join(root,'server/node_modules/three/build/three.module.js'));
+   for(const c of [G.eq,G.idle,G.alt,...G.fire])assert.ok(B.R.clips[c],'Jett authored clip '+c);
+   const M=api.xAfGunModel(B.R,'bs');for(let i=0;i<200&&!M.ok;i++)await new Promise(r=>setTimeout(r,20));assert.ok(M.ok,'knives loaded');
+   for(const [clip,u] of [[G.eq,.95],[G.idle,.3],[G.fire[0],.03],[G.fire[1],.03],[G.alt,.04]]){api.xAfGunPose(B.R,'bs',{clip,u});M.g.visible=M.l.visible=true;B.cam.updateMatrixWorld(true);
+    for(const [g,sd] of [[M.g,'R'],[M.l,'L']]){const bb=new T.Box3().setFromObject(g),h=B.R.sc.getObjectByName(sd+'_Hand').getWorldPosition(new T.Vector3());
+     assert.ok(!bb.isEmpty()&&bb.distanceToPoint(h)<0.06,`Blade Storm ${clip} ${u}: knife in the ${sd} hand`);const sz=bb.getSize(new T.Vector3()).length();assert.ok(sz>.2&&sz<.4,'knife size '+sz);}}}}
+ console.log('ability FP: legacy box hand removed; '+only.length+' agents x C/Q/E/X on their own native FP arms ('+n+' poses: clips resolve, item in the palm, hand in view); equip / release / recovery timings; ult guns rk/hp/sn on the native arms (box guns gone); Blade Storm on the Jett Wushu set with a knife per hand');process.exit(0);
 })().catch(e=>{console.error(e);process.exit(1);});

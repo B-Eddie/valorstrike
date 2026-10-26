@@ -14596,6 +14596,11 @@ var XAF_GUN = {
     gun: { FP_Clay_S0_X_RocketLauncher_Equip: "AB_Clay_S0_X_RocketLauncher_Equip", FP_Clay_S0_X_RocketLauncher_Idle: "AB_Clay_S0_X_RocketLauncher_Idle", FP_Clay_S0_X_RocketLauncher_Fire: "AB_Clay_S0_X_RocketLauncher_Fire" },
     L: { eq: 1.9167, idle: 3.1667, fire: [0.8333] }, wind: "showstopper" },
   hp: { ag: "Chamber", model: "sheriff", standIn: "Headhunter", eq: "FP_Deadeye_S0_Q_DestabilizePistol_Equip", idle: "FP_Deadeye_S0_Q_DestabilizePistol_Idle", fire: ["FP_Deadeye_S0_Q_DestabilizePistol_Fire"], L: { eq: 1, idle: 3, fire: [0.8333] } },
+  // Blade Storm: knives in both hands; Attack01-05 throw right, left, right, left, right (peak hand speed on the clips:
+  // R 0.05, L 0.05, R 0.1, L 0.1, R 0.05 of the clip); RightClickAttack is the two-handed flurry.
+  bs: { ag: "Jett", knives: 1, eq: "FP_Wushu_S0_X_Equip", idle: "FP_Wushu_S0_X_Idle", fire: ["FP_Wushu_S0_X_Attack01", "FP_Wushu_S0_X_Attack02", "FP_Wushu_S0_X_Attack03", "FP_Wushu_S0_X_Attack04", "FP_Wushu_S0_X_Attack05"],
+    hand: ["R", "L", "R", "L", "R"], rel: [0.06, 0.06, 0.1, 0.1, 0.06], alt: "FP_Wushu_S0_X_RightClickAttack", arel: 0.08,
+    L: { eq: 1.6667, idle: 3.9833, fire: [0.9667, 1.15, 0.9833, 1.0667, 0.8667], alt: 1.3 } },
   sn: { ag: "Chamber", model: "operator", standIn: "Tour De Force", eq: "FP_Deadeye_S0_X_Ultimate_Equip", idle: "FP_Deadeye_S0_X_Ultimate_Idle", fire: ["FP_Deadeye_S0_X_Ultimate_Fire"], L: { eq: 3, idle: 3, fire: [2.6167] }, wind: "tourDeForce" },
 };
 XAF.gs = null;
@@ -14611,20 +14616,41 @@ function xAfGunModel(R, k) { // the gun of key k in the agent rig's weapon slot 
   R.guns = R.guns || {}; let M = R.guns[k]; if (M) return M; const G = XAF_GUN[k];
   M = R.guns[k] = { g: new THREE.Group(), ok: false, gm: null, ga: {} }; M.g.name = "xaf-prop-gun-" + k; M.g.visible = false;
   const slot = xAfBone(R, G.bone || "R_WeaponMaster"); if (slot) slot.add(M.g); const r = G.rot || [0, 90, 0]; M.g.rotation.set(r[0] * Math.PI / 180, r[1] * Math.PI / 180, r[2] * Math.PI / 180);
-  if (G.model) xvLoad(G.model).then((gl) => { const o = THREE.SkeletonUtils.clone(gl.scene);
+  if (G.knives) { M.l = new THREE.Group(); M.l.name = "xaf-prop-gun-" + k + "-L"; M.l.visible = false; M.g.rotation.set(0, 0, 0); xAfPalm(R, "R").add(M.g); xAfPalm(R, "L").add(M.l);
+    xvLoad("melee").then((gl) => { [M.g, M.l].forEach((h) => h.add(xAfKnife(R, h === M.g ? "R" : "L", gl))); M.ok = true; }).catch((e) => { XAF.err = String(e); }); }
+  else if (G.model) xvLoad(G.model).then((gl) => { const o = THREE.SkeletonUtils.clone(gl.scene);
     o.traverse((x) => { if (x.isMesh) { x.frustumCulled = false; x.castShadow = x.receiveShadow = false; x.raycast = XNR; x.renderOrder = 11; x.material = Array.isArray(x.material) ? x.material.map((m) => m.clone()) : x.material.clone(); } });
     M.g.add(o); if (G.gun && gl.animations && gl.animations.length) { M.gm = new THREE.AnimationMixer(o); gl.animations.forEach((c) => { M.ga[c.name] = M.gm.clipAction(c); }); } M.ok = true; }).catch((e) => { XAF.err = String(e); });
   return M;
 }
+function xAfKnife(R, side, gl) { // the native knife (stand-in kunai) in the palm, blade out past the fingers, ~26 cm
+  const o = THREE.SkeletonUtils.clone(gl.scene), b = new THREE.Box3().setFromObject(o), sz = b.getSize(new THREE.Vector3()), c = b.getCenter(new THREE.Vector3());
+  o.traverse((x) => { if (x.isMesh) { x.frustumCulled = false; x.castShadow = x.receiveShadow = false; x.raycast = XNR; x.renderOrder = 11; } });
+  const ax = sz.x >= sz.y && sz.x >= sz.z ? "x" : sz.y >= sz.z ? "y" : "z", s = 0.26 / sz[ax], w = new THREE.Group(), q = new THREE.Group();
+  o.scale.setScalar(s); o.position.copy(c).multiplyScalar(-s); q.add(o); w.add(q); w.name = "xaf-knife-" + side;
+  const h = xAfBone(R, side + "_Hand"), m = xAfBone(R, side + "_Middle1"); R.sc.updateMatrixWorld(true);
+  const d = h && m ? h.worldToLocal(m.getWorldPosition(new THREE.Vector3())).normalize() : new THREE.Vector3(1, 0, 0);
+  const tip = (b.max[ax] - c[ax] > c[ax] - b.min[ax] ? 1 : -1) * (XAF.knifeTip || 1), v = new THREE.Vector3(); v[ax] = tip; // the blade end of the model's long axis
+  q.quaternion.setFromUnitVectors(v, d); w.position.copy(d).multiplyScalar(0.07);
+  return w;
+}
+function xAfKnifeShow(G, P, n) { // which hands hold a knife (n = knives left after the last throw)
+  let r = n >= 1, l = n >= 2;
+  if (P.ph === "fire") { const h = P.alt ? "B" : G.hand[P.i], rel = P.alt ? G.arel : G.rel[P.i];
+    if (P.u < rel) { if (h !== "L") r = true; if (h !== "R") l = true; } else if (P.u < 0.45) { if (h !== "L") r = false; if (h !== "R") l = false; } }
+  return { r, l };
+}
 function xAfGunPose(R, k, P) { // arms clip + the gun's own clip at the same fraction
   const G = XAF_GUN[k]; xAfPose(R, P.clip, P.u); const M = xAfGunModel(R, k);
   if (M.gm && G.gun) { const gn = G.gun[P.clip], a = gn && M.ga[gn]; if (a) { if (M.cur !== gn) { M.gm.stopAllAction(); a.reset().play(); M.cur = gn; } a.time = Math.min(a.getClip().duration - 0.001, P.u * a.getClip().duration); M.gm.update(0); } }
-  for (const x in R.guns) R.guns[x].g.visible = x === k && R.guns[x].ok;
+  for (const x in R.guns) { const g = R.guns[x]; g.g.visible = x === k && g.ok; if (g.l) g.l.visible = false; }
+  if (G.knives && M.ok) { const v = xAfKnifeShow(G, P, typeof J !== "undefined" && J.bsOn ? J.bs | 0 : 0); M.g.visible = v.r; M.l.visible = v.l; }
   for (const x in R.props) R.props[x].g.visible = false; xAfBow(R, false);
   return M;
 }
 function xAfGunKey() { // the held ult / ability gun right now ("" none): Showstopper / Headhunter / Tour De Force, then a fire's tail
   if (typeof BC !== "undefined" && BC.vm && XAF_GUN[BC.vm]) return BC.vm;
+  if (J.pick === "Jett" && J.bsOn && J.bs > 0 && typeof rw !== "undefined" && rw === "knife") return "bs"; // Blade Storm: the knives replace the knife viewmodel
   const s = XAF.gs; return s && s.tail > 0 ? s.k : "";
 }
 function xAfGunFire(k, tail) { let s = XAF.gs; if (!s || s.k !== k) s = XAF.gs = { k, t: 99, f: -1, n: 0, fired: 0, tail: 0 };
@@ -14639,7 +14665,7 @@ function xAfGunTick(dt, k, ag) {
 }
 function xAfHideGun() { gun.visible = false; knife.visible = false; if (typeof XV !== "undefined" && XV.fp && XV.fp.root) XV.fp.root.visible = false; }
 function xAfOff() {
-  const R = XAF.cur; XAF.on = false; XAF.mode = ""; if (!R) return; R.root.visible = false; for (const k in R.props) R.props[k].g.visible = false; for (const k in R.guns || {}) R.guns[k].g.visible = false; XAF.gs = null;
+  const R = XAF.cur; XAF.on = false; XAF.mode = ""; if (!R) return; R.root.visible = false; for (const k in R.props) R.props[k].g.visible = false; for (const k in R.guns || {}) { R.guns[k].g.visible = false; if (R.guns[k].l) R.guns[k].l.visible = false; } XAF.gs = null;
   try { if (XV.fp) { XV.fp.kind = null; xvFPPlay(XV.fp, "equip"); } } catch (e) {} // the gun comes back with its native equip
 }
 function xAfShow(R) { if (XAF.cur && XAF.cur !== R) XAF.cur.root.visible = false; XAF.cur = R; if (R.root.parent !== camera) camera.add(R.root); R.root.visible = true; XAF.on = true; }
@@ -14650,7 +14676,7 @@ function xAfTick(dt) {
   if (running) xAfLoad(ag);
   xAfHideGun(); // Valorant swaps straight from the gun to the ability arms: the gun is never drawn while an ability is out
   if (gk) return xAfGunTick(dt, gk, ag);
-  if (XAF.cur && XAF.cur.guns) for (const x in XAF.cur.guns) XAF.cur.guns[x].g.visible = false;
+  if (XAF.cur && XAF.cur.guns) for (const x in XAF.cur.guns) { XAF.cur.guns[x].g.visible = false; if (XAF.cur.guns[x].l) XAF.cur.guns[x].l.visible = false; }
   const k = q ? q.k : XAF.qk || "c", sp = xAfSpec(ag, k), set = XAF_SET[sp.s] || XAF_SET.nade;
   let P;
   if (q) P = xAfPhase(set, q, XABT.rel, XABT.rec);
@@ -14669,6 +14695,8 @@ function xAfTick(dt) {
 // fire hooks: rsFire is the click path of Showstopper and (wrapped by bcFire) Headhunter / Tour De Force
 { const r0 = rsFire; rsFire = function () { const ss = typeof RS !== "undefined" && RS.ss, k = typeof BC !== "undefined" ? BC.vm : "", n = (J.q | 0) + (BC.td | 0); const r = r0.apply(this, arguments);
   try { if (ss && !RS.ss && J.pick === "Raze") xAfGunFire("rk", true); else if ((k === "hp" || k === "sn") && (J.q | 0) + (BC.td | 0) < n) xAfGunFire(k, !BC.eq); } catch (e) {} return r; }; }
+// Blade Storm throw (offline jThrow, or the online wrapper sending 'blade'): each throw starts J.cd.x
+{ const t0 = jThrow; jThrow = function () { const c = J.cd.x; const r = t0.apply(this, arguments); try { if (J.pick === "Jett" && !(c > 0) && J.cd.x > 0) xAfGunFire("bs", !(J.bsOn && J.bs > 0)); } catch (e) {} return r; }; }
 { const v2 = vmTick; vmTick = function (dt) { v2.apply(this, arguments); try { xAfTick(dt); } catch (e) { if (!XAF.err) { XAF.err = String(e); console.warn("ability viewmodel", e); } } }; }
 { const s1 = xCaStart; xCaStart = function () { try { XAF.qk = XAF.nk || "c"; } catch (e) {} return s1.apply(this, arguments); }; }
 { const k1 = jKey; jKey = function (code) { if (typeof code === "string" && /^Key[CQEX]$/.test(code)) XAF.nk = code[3].toLowerCase(); return k1.apply(this, arguments); }; }
