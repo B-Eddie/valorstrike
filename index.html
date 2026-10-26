@@ -8368,7 +8368,7 @@ function sgWallEnd(msg) { const w = J.sw; if (!w) return; xBarGone(w); J.sw = nu
 function sgDmg(n, w, si) { if (w && w !== true) return xBSwDmg(w, n, si); if (!J.sw) return; // w: the hit mesh's userData.sw (true: the player's barrier, else a bot barrier); si: the segment (userData.si)
   if (xBarHit(J.sw, si, n)) sgWallEnd("Barrier broken"); }
 function sgSlow(p) { return (J.slz || []).some((z) => Math.hypot(p.x - z.p.x, p.z - z.p.z) < 3.5) ? 0.5 : 1; }
-function sgLook(list, far, cos) { const e = pEyeTo(PE_V), d = jAim(); return list.find((a) => { const v = new THREE.Vector3(a.g.position.x, 1, a.g.position.z).sub(e), l = v.length() || 0.01; return l < far && v.dot(d) / l > cos; }); }
+function sgLook(list, far, cos) { const e = pEyeTo(PE_V), d = jAim(); return list.find((a) => { const v = new THREE.Vector3(a.g.position.x, a.g.position.y + 1, a.g.position.z).sub(e) /* hk-33: chest over the ally's own floor (was y 1: on a native map the eye is 7 m above that, so a fallen ally 5 m ahead was 'not in sight' for Resurrection / Healing Orb) */, l = v.length() || 0.01; return l < far && v.dot(d) / l > cos; }); }
 function sgKey(code) {
   const P = player, fx = -Math.sin(yaw), fz = -Math.cos(yaw);
   if (code === "KeyC") {
@@ -9071,10 +9071,10 @@ function cyReveal(list, t) { jUnreveal(); J.rvT = t; J.rv = list.filter((b) => b
 function cyRm(W) { scene.remove(W.m); W.an.forEach((o) => scene.remove(o)); }
 function cyWire(cx, cz, ax, az, own) { // wire across (ax,az) between the nearest walls on each side (2.5 m if none within 8 m)
   const end = (s) => { for (let r = 0.25; r <= 8; r += 0.25) if (blocked(cx + ax * s * r, cz + az * s * r, 0.05, 0)) return Math.max(0.3, r - 0.15); return 2.5; };
-  const r1 = end(1), r2 = end(-1), A = { x: cx + ax * r1, z: cz + az * r1 }, B = { x: cx - ax * r2, z: cz - az * r2 };
-  const m = new THREE.Mesh(xG("Box", 0.03, 0.03, 1), fireMat(0x3fd0c0, 0.75)); m.scale.z = r1 + r2; m.position.set((A.x + B.x) / 2, 0.35, (A.z + B.z) / 2); m.rotation.y = Math.atan2(ax, az); scene.add(m);
+  const r1 = end(1), r2 = end(-1), A = { x: cx + ax * r1, z: cz + az * r1 }, B = { x: cx - ax * r2, z: cz - az * r2 }; let fy = 0; try { const h = groundAt(cx, cz, 0.3, (own && own.g ? own.g.position.y : player.y) + 0.5); if (Number.isFinite(h)) fy = h; } catch (e) {} // hk-33: floor under the wire (native maps: not 0)
+  const m = new THREE.Mesh(xG("Box", 0.03, 0.03, 1), fireMat(0x3fd0c0, 0.75)); m.scale.z = r1 + r2; m.position.set((A.x + B.x) / 2, fy + 0.35, (A.z + B.z) / 2); m.rotation.y = Math.atan2(ax, az); scene.add(m);
   const W = { a: A, b: B, m, an: [], hp: 20, own, ck: 0, arm: XTRAP.deploy, trip: null }; // live 1.5 s after placement (wiki deploy time)
-  [A, B].forEach((p) => { const o = new THREE.Mesh(xG("Box", 0.2, 0.2, 0.2), fireMat(0xe8e8e4, 0.95)); o.position.set(p.x, 0.35, p.z); o.userData.cyw = W; scene.add(o); W.an.push(o); });
+  [A, B].forEach((p) => { const o = new THREE.Mesh(xG("Box", 0.2, 0.2, 0.2), fireMat(0xe8e8e4, 0.95)); o.position.set(p.x, fy + 0.35, p.z); o.userData.cyw = W; scene.add(o); W.an.push(o); });
   BC.cw.push(W); return W;
 }
 function cyD(W, x, z) { const dx = W.b.x - W.a.x, dz = W.b.z - W.a.z, l = dx * dx + dz * dz || 1, t = Math.max(0, Math.min(1, ((x - W.a.x) * dx + (z - W.a.z) * dz) / l)); return Math.hypot(W.a.x + dx * t - x, W.a.z + dz * t - z); }
@@ -13679,7 +13679,8 @@ function nmBlocked(C,x,z,r,y,height=1.8){if(!Number.isFinite(y))y=nmHeight(C,x,z
 // The player motor asks it through world.leash (feel moveP); the page's own direct moves (offline dash, knife lunge,
 // knock-back) probe the global blocked(), which reports a point off the footprint as blocked.
 function nmLeash(C,x,z,y,x0,z0){const VM_=window.ValorantFeel;if(!VM_||!VM_.leashOk||!C||!C.nav)return true;if(!C.leash)C.leash=VM_.leashGrid(C.nav.nodes,C.nav.valid,C.nav.adj);return VM_.leashOk(C.leash,x,z,y,(a,b,c)=>nmHeight(C,a,b,c),x0,z0);}
-{const b=blocked,g=groundAt;blocked=function(x,z,r,y){const C=nmActive();if(!C)return b(x,z,r,y);if(sgBlk(x,z,r,y))return true;if(Number.isFinite(y)&&!nmLeash(C,x,z,y))return true;if(!nmBlocked(C,x,z,r,y))return false;const floor=nmHeight(C,x,z,y+.32);return !(floor<=y+.32&&!nmBlocked(C,x,z,r,y+.32));};groundAt=function(x,z,r,y){const C=nmActive();return C?nmHeight(C,x,z,y):g(x,z,r,y);};}
+/* hk-33: legacy callers (25 in the base game: cyWire / cyKey Trapwire, Boom Bot bounce, Blast Pack, okPlace, bot Sage / Omen / KJ / Cypher spots, bcWall ...) pass a literal y 0 = "the floor here" (old maps' floor). On a native map y 0 is under the floor (Ascent 7.05): the leash refused it, so every probe read blocked (offline Trapwire spanned 0.6 m). y 0 now means the nav floor at (x, z). */
+{const b=blocked,g=groundAt;blocked=function(x,z,r,y){const C=nmActive();if(!C)return b(x,z,r,y);if(y===0){try{y=nmHeight(C,x,z);}catch(e){}}if(sgBlk(x,z,r,y))return true;if(Number.isFinite(y)&&!nmLeash(C,x,z,y))return true;if(!nmBlocked(C,x,z,r,y))return false;const floor=nmHeight(C,x,z,y+.32);return !(floor<=y+.32&&!nmBlocked(C,x,z,r,y+.32));};groundAt=function(x,z,r,y){const C=nmActive();return C?nmHeight(C,x,z,y):g(x,z,r,y);};}
 function nmPlant(C,x,z){const t=C.meta.transform,p=C.meta.apiProjection,ca=Math.cos(t.angle),sa=Math.sin(t.angle),sx=ca*x-sa*z+t.cx,sz=sa*x+ca*z+t.cz,u=Math.floor((sx*100*p.xMultiplier+p.xScalarToAdd)*1024),v=Math.floor((-sz*100*p.yMultiplier+p.yScalarToAdd)*1024);for(const row of C.plants.rows[v]||[])if(u>=row[0]&&u<row[1])return row[2];return undefined;}
 // Site anchors sit at the very edge of their plant zones (breeze B: anchor 0.15 u inside a 15 u
 // zone), so a carrier stopping at the arrival floor never entered the zone and never planted -
