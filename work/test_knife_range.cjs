@@ -5,6 +5,7 @@ const assert=require('assert/strict'),fs=require('fs'),path=require('path');cons
 (async()=>{
  const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
  assert.match(html,/const KNIFE_RANGE = 2;/,'client KNIFE_RANGE 2 m');
+ {const line=html.split('\n').find(l=>l.includes('const KNIFE_RANGE'));assert.ok(/\*\/ let kHv = 0, kLg = 0, kLx = 0, kLz = 0;$/.test(line),'knife state declarations still live on the KNIFE line (not swallowed by a comment)');}
  assert.equal((html.match(/ray\.far = KNIFE_RANGE;/g)||[]).length,3,'shoot, duel and aim-training knife rays use KNIFE_RANGE');
  assert(!/SFX\.knife\(\);[^\n]{0,80}ray\.far = 2\.2/.test(html)&&!/ray\.far = 2\.2; const hit/.test(html),'no 2.2 m knife ray left');
  const S=await import('file://'+path.join(root,'server/src/simulation.js'));

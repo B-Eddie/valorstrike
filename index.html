@@ -1860,7 +1860,7 @@ function xRate(W) { if (!W.spin) return W.rate; const n = performance.now(); if 
 const XRLP = { Bucky: 0.5, Marshal: 0.5 };
 function xRT() { const n = wName(), W = WEAP[n]; if (XRLP[n]) return XRLP[n]; if (n === "Outlaw" && W) return W.mag - ammo >= 2 ? 3.8 : 2.3; return (W && W.rld) || 2.5; } // reload duration from the gun's own Valorant reload time
 // one damage table for player and bots; zone = "body" | "head" | "legs"; falloff ff past ffd m (default 15); knife 50 light, heavy 75 body / 150 back-stab or head
-const KNIFE = { light: 50, heavy: 75, heavyCrit: 150 }; const KNIFE_RANGE = 2; // m, eye to hit (= the server Knife trace limit / damage range, simulation.js KNIFE_RANGE) let kHv = 0, kLg = 0, kLx = 0, kLz = 0;
+const KNIFE = { light: 50, heavy: 75, heavyCrit: 150 }; const KNIFE_RANGE = 2; /* m, eye to hit (= the server Knife trace limit / damage range, simulation.js KNIFE_RANGE) */ let kHv = 0, kLg = 0, kLx = 0, kLz = 0;
 // bot yaw r is set as atan2(dx, dz) toward where it aims/moves, so its forward is (sin r, cos r); back-stab when forward · dir(attacker→target) > 0.5
 function kBack(r, ax, az, tx, tz) { const dx = tx - ax, dz = tz - az, l = Math.hypot(dx, dz) || 1; return (Math.sin(r) * dx + Math.cos(r) * dz) / l > 0.5; }
 var xPelOn = false; // true inside the player's pellet loop: wDmg returns one pellet; otherwise (bots) a shotgun shot = expected pellets landing
