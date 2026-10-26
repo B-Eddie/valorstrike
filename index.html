@@ -15109,6 +15109,23 @@ if(typeof botAb==='function'){const ba0=botAb;botAb=function(b,dt,see,tg,from){
   if(ag==='Killjoy'&&!X.U.kj&&d<12){X.U.kj=1;if(xKnPlace(b,X.al,sp.x,sp.z,2,0.5,2.5)){feed("Killjoy ▸ Nanoswarm");xbvUsed(b,X,null,'fire');}}
   if(ag==='Raze'&&it&&it.phase==='post'&&d<16&&xBUse(b,'e')){xRzShells(A,sp.x,sp.z);xbvUsed(b,X,it,'grenade');}}}
  return r;};}
+// Sound reactions (BotBrain.onSound, as the server's botSense): a bot that hears a gunshot / running footsteps out of a
+// fight either turns to it and keeps going (xFace already does), stops and holds that angle for 0.6 s + up to 1.2 s by
+// patience, or pushes a close gunshot. Not the Spike carrier, not attackers fetching a dropped Spike, not a late retake.
+var XBH={k:null};
+function xbvSound(p,kind){
+ if(!p||!running||mode!=='five'||FV.dm||!window.BotBrain)return;const now=performance.now(),s=FV.sp||{};
+ for(const L of [bots,allies])for(const u of L){if(!u||!u.alive||!u.g||!(u.hearT>=1.2)||!u.hear||u.hear[0]!==p.x||u.hear[1]!==p.z||u.see>0||(u.xHeardAt&&now-u.xHeardAt<1500))continue;
+  const atk=typeof xBAtk==='function'?xBAtk(L===allies):false;if(s.c===u||(atk&&s.st==='drop')||(!atk&&s.st==='plant'&&s.t<15))continue;
+  u.xHeardAt=now;const B=xbBrain(u);if(!B)continue;const r=xbRand(u),q=u.g.position,d=Math.hypot(p.x-q.x,p.z-q.z),c=BotBrain.onSound(B,r,kind,d);u.xSnd=c;
+  if(c==='push'){u.tr=[p.x,p.z];u.trT=2+r();u.xHold=null;}
+  else if(c==='hold'){const dur=.6+B.patience*1.2;u.xHold={until:now+dur*1000,x:p.x,z:p.z};u.hearT=Math.max(u.hearT,dur);}
+  else u.xHold=null;}
+}
+if(typeof SFX!=='undefined')['at','step'].forEach(k=>{const f=SFX[k];if(f)SFX[k]=function(p){const k0=XBH.k;XBH.k=k==='at'?'shot':'step';try{return f.apply(this,arguments);}finally{XBH.k=k0;}};});
+if(typeof xHear==='function'){const h0=xHear;xHear=function(p){const r=h0.apply(this,arguments);try{xbvSound(p,XBH.k||'step');}catch(e){}return r;};}
+// holding: stand still (goal = where it stands) while it faces the sound; a fight or a trade ends it
+{const g0=xGoal;xGoal=function(u,team,atk,out){if(u&&u.xHold&&u.g&&!(u.see>0)&&mode==='five'){if(performance.now()<u.xHold.until){const p=u.g.position;if(u.hearT>0){u.hear=u.hear||[0,0];u.hear[0]=u.xHold.x;u.hear[1]=u.xHold.z;}return x2(out,p.x,p.z);}u.xHold=null;}return g0.apply(this,arguments);};}
 // ---- END BOT VARIETY ----
 // ---- DEBUG HOOKS ----
 // Headless/manual testing hooks. Active only on localhost or with ?__vs=1.

@@ -85,6 +85,19 @@ for(const map of ['ascent','bind']){
  ctx.botAb(kj,.05,false,null,kj.g.position);ctx.botAb(rz,.05,false,null,rz.g.position);assert.equal(knives.length,1,'post-plant Killjoy hides her Nanoswarms on the Spike once');assert.equal(shells.length,0,'Raze waits for a defender');
  ctx.FV.sp.du={};now+=1e4;ctx.botAb(rz,.05,false,null,rz.g.position);assert.equal(shells.length,1,'Raze shells the Spike when a defender goes for it');
  out.push(`plan utility: held ${held}/${tested}, thrown ${thrown}, lurkers quiet ${lurkQuiet}, log ${L.map(e=>e.phase+':'+e.kind).join(',')}`);}
+// sound reactions: out of a fight a heard shot / footsteps -> turn, stop and hold the angle, or push a close shot (as the server)
+{let now=1000;const ctx={Math,Object,Number,Infinity,Set,Map,WeakMap,Array,Float64Array,Int32Array,Uint8Array,performance:{now:()=>now},window:{xBotSeed:5},mode:'five',running:true,player:{hp:0},allies:[],bots:[],XNF:0,timeLeft:80,
+  FV:{you:1,them:1,map:'ascent',atk:false,dm:false,sp:{st:'carry',c:null,site:'A'}},x2:(o,x,z)=>{if(!o)return [x,z];o[0]=x;o[1]=z;return o;},nmActive:()=>null,xGoal:(u,t,a,o)=>ctx.x2(o,50,50),xSmV:(u,dt,vx,vz)=>[vx,vz],xBAtk:al=>ctx.FV.atk===al,
+  xHear(p){for(const u of ctx.bots.concat(ctx.allies)){const d=Math.hypot(u.g.position.x-p.x,u.g.position.z-p.z);if(d>1&&d<25){u.hear=[p.x,p.z];u.hearT=1.2;}}}};
+ ctx.SFX={at(p){ctx.xHear(p);},step(p){ctx.xHear(p);}};ctx.globalThis=ctx;vm.createContext(ctx);vm.runInContext(html.slice(i,j+Z.length)+'\n;globalThis.BotBrain=BotBrain;globalThis.BotRoutes=BotRoutes;',ctx);Object.assign(ctx.window,{BotRoutes:ctx.BotRoutes,BotBrain:ctx.BotBrain});
+ const seen={hold:0,push:0,turn:0};let held=0,released=0;
+ for(let k=0;k<40;k++){const u={name:'Bot '+k,alive:true,see:0,g:{position:{x:0,y:0,z:0}}};ctx.bots=[u];now+=5000;ctx.SFX[k%2?'at':'step']({x:k%2?8:12,z:0});seen[u.xSnd]=(seen[u.xSnd]||0)+1;
+  if(u.xSnd==='hold'){const g=ctx.xGoal(u,ctx.bots,true,[0,0]);if(g[0]===0&&g[1]===0)held++;assert(u.hearT>=.6,'faces the sound while holding');now+=2000;const g2=ctx.xGoal(u,ctx.bots,true,[0,0]);if(g2[0]===50)released++;}
+  if(u.xSnd==='push')assert(u.trT>=2&&u.tr[0]===8,'pushes the shot');}
+ assert(seen.hold>=5&&seen.turn>=5,'sound reactions vary ('+JSON.stringify(seen)+')');assert.equal(held,seen.hold,'holders stop where they stand');assert.equal(released,seen.hold,'holds end after 0.6-1.8 s');
+ const c={name:'Bot Carrier',alive:true,see:0,g:{position:{x:0,y:0,z:0}}};ctx.bots=[c];ctx.FV.atk=false;ctx.FV.sp.c=c;now+=5000;for(let k=0;k<5;k++){now+=2000;ctx.SFX.step({x:10,z:0});}assert.equal(c.xSnd,undefined,'the Spike carrier keeps going');
+ const f={name:'Bot Fight',alive:true,see:1,g:{position:{x:0,y:0,z:0}}};ctx.bots=[f];ctx.SFX.at({x:10,z:0});assert.equal(f.xSnd,undefined,'a bot in a fight ignores it');
+ out.push('sound reactions '+JSON.stringify(seen));}
 // team economy: eco / save rounds buy small through the wrapper; full rounds use the shop
 {const v=html.slice(i,j+Z.length);let shop=0;const bs={};const ctx={window:{xBotSeed:7},Math,Map,Set,Object,console,mode:'five',XNF:0,FV:{you:3,them:4,map:'ascent',atk:true,dm:false,lsY:2,lsT:0,bs},F_MATES:['M1','M2','M3','M4'],F_EN:['E1','E2','E3','E4','E5'],
   fBotBuy(n){shop++;return bs[n];},xBBuy(){},sbSpend(){},xGoal(){},xSmV(){},performance:{now:()=>0}};ctx.window=Object.assign(ctx,{xBotSeed:7});vm.createContext(ctx);vm.runInContext(v,ctx);
