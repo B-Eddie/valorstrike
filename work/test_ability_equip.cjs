@@ -180,7 +180,7 @@ const fails=[];const fail=s=>{fails.push(s);if(VERBOSE)console.log('FAIL',s);};c
  // ---- Sova Recon Bolt pulses (wiki Recon_Bolt: 30 m, 2 pulses 1.6 s apart, 0.75 s reveal, the bolt's line of sight); client XRCN == server DEV.reconBolt ----
  await live();{const dsrc=require('fs').readFileSync(require('path').join(__dirname,'../server/src/devices.js'),'utf8'),rb=dsrc.match(/reconBolt:\{pulses:\[([\d.]+),([\d.]+)\],radius:([\d.]+),reveal:([\d.]+)\}/);
   eq(xe('[XRCN.pulses[0],XRCN.pulses[1],XRCN.radius,XRCN.reveal]'),rb?[+rb[1],+rb[2],+rb[3],+rb[4]]:null,'client XRCN == server DEV.reconBolt');
-  const ok=xe('(()=>{const al=bots.filter(b=>b.alive&&b.g);if(al.length<2)return null;window.__rb={p:new THREE.Vector3(player.x,0.2,player.z),near:al[0],out:al[1]};al.forEach(b=>{b.g.position.set(player.x+200,b.g.position.y,player.z);b.det=1e9;});player.hp=100;__rb.near.g.position.x=player.x+28;__rb.out.g.position.x=player.x-33;los=((f)=>{const L=(a,b)=>true;L.f=f;return L;})(los);return true;})()');
+  const ok=xe('(()=>{const al=bots.filter(b=>b.alive&&b.g);if(al.length<2)return null;window.__rb={p:new THREE.Vector3(player.x,0.2,player.z),near:al[0],out:al[1]};al.forEach(b=>{b.g.position.set(player.x+200,b.g.position.y,player.z);b.det=1e9;});player.hp=100;__rb.near.g.position.x=player.x+28;__rb.out.g.position.x=player.x-33;window.__los0=los;los=(a,b)=>true;return true;})()');
   if(!ok)fail('Recon Bolt: need two live bots');else{
    const t0=xe('performance.now()'),at=async ms=>{while(xe('performance.now()')-t0<ms)await adv(20);};const keep=()=>xe('[[__rb.near,28],[__rb.out,-33]].forEach(([b,d])=>{b.alive=true;b.hp=100;b.g.position.x=__rb.p.x+d;b.g.position.z=__rb.p.z;});player.hp=100;true');
    xe('jUnreveal();jReveal(__rb.p);true');keep();eq(xe('J.rvT>0'),false,'no reveal as the bolt lands');await at(850);keep();eq(xe('J.rvT>0'),false,'no reveal before the first pulse (0.9 s)');
@@ -188,8 +188,23 @@ const fails=[];const fail=s=>{fails.push(s);if(VERBOSE)console.log('FAIL',s);};c
    await at(2450);keep();await at(2550);eq(xe('J.rvT>0&&J.rv.includes(__rb.near)'),true,'second pulse at 2.5 s');await at(3400);keep();eq(xe('J.rvT>0'),false,'second reveal over');
    xe('los=(a,b)=>false;true');{const t1=xe('performance.now()');xe('jReveal(__rb.p);true');while(xe('performance.now()')-t1<1000)await adv(20);}eq(xe('J.rv.length'),0,'no reveal without the bolt\'s line of sight');
    xe('los=(a,b)=>true;jReveal(__rb.p);XRCN.g++;jUnreveal();true');{const t1=xe('performance.now()');while(xe('performance.now()')-t1<2700)await adv(50);}eq(xe('J.rvT>0'),false,'a round clear cancels pending pulses');
-   xe('los=los.f;bots.forEach(b=>{if(b.det>1e8)b.det=0;});true');}}
+   xe('los=__los0;bots.forEach(b=>{if(b.det>1e8)b.det=0;});true');}}
+ // ---- Killjoy Nanoswarm (wiki Nanoswarm: 4.5 m, 1 s activation windup, then 45/s to 5 s); client XNANO == server DEV.nanoswarm ----
+ {const dsrc=require('fs').readFileSync(require('path').join(__dirname,'../server/src/devices.js'),'utf8'),nm=dsrc.match(/nanoswarm:\{life:120,active:([\d.]+),delay:([\d.]+),radius:([\d.]+),damage:([\d.]+)\}/);
+  eq(xe('[XNANO.active,XNANO.delay,XNANO.r,XNANO.dps]'),nm?[+nm[1],+nm[2],+nm[3],+nm[4]]:null,'client XNANO == server DEV.nanoswarm');}
+ await live();{xe('bots.concat(allies).forEach(b=>{b.det=1e9;});timeLeft=Math.max(timeLeft,60);true');/* nobody shoots and the clock cannot run out during the section (either ended the round here) */pick('Killjoy');await adv(200);
+  const ok=xe('(()=>{const al=bots.filter(b=>b.alive&&b.g);if(al.length<2)return null;const p=new THREE.Vector3(player.x+40,0.05,player.z);window.__kn={p,near:al[0],far:al[1]};al.forEach(b=>{b.g.position.set(player.x+200,b.g.position.y,player.z);b.det=1e9;});allies.forEach(a=>{a.det=1e9;});const m=jM(zoneGeo,fireMat(0xc8d23a,0.12));m.position.copy(p);scene.add(m);J.nano.push({m,p,on:false,t:0});player.hp=100;return true;})()');
+  if(!ok)fail('Nanoswarm: need two live bots');else{
+   // count only Nanoswarm damage (ally bots keep shooting the parked enemies); time by the swarm's own clock (n.t), not harness ms
+   const keep=()=>xe('[[__kn.near,4.3],[__kn.far,-4.7]].forEach(([b,d])=>{b.alive=true;b.hp=100;b.g.position.x=__kn.p.x+d;b.g.position.z=__kn.p.z;});player.hp=100;true');keep();
+   xe('window.__jh0=jHit;window.__kd=[0,0];jHit=function(b,n,w){if(w==="Nanoswarm"){const i=b===__kn.near?0:b===__kn.far?1:-1;if(i>=0)__kd[i]+=n;}return __jh0.apply(this,arguments);};true');
+   await tap('KeyC');eq(xe('J.nano.filter(n=>n.on).length'),1,'C triggers the hidden swarm');const nt=()=>xe('(J.nano.find(n=>n.on)||{t:-1}).t');
+   const XNw=x=>x("XNANO.active-XNANO.delay");
+   for(let i=0;i<80&&nt()>XNw(xe)+0.05;i++){await adv(50);keep();}eq(xe('__kd[0]'),0,'no damage in the 1 s activation windup');
+   for(let i=0;i<80&&nt()>3.5;i++){await adv(50);keep();}const kd=xe('__kd'),burnt=XNw(xe)-nt();
+   eq([kd[0]>0&&Math.abs(kd[0]-45*burnt)<3,kd[1]],[true,0],'45/s inside 4.5 m after the windup (4.3 m in, 4.7 m out; was 2.5 m): '+JSON.stringify(kd)+' over '+burnt.toFixed(2)+' s');eq(xe('+((J.nano.find(n=>n.on)||{m:{scale:{x:0}}}).m.scale.x).toFixed(2)'),1.8,'disc drawn at 4.5 m');
+   xe('jHit=__jh0;bots.concat(allies).forEach(b=>{if(b.det>1e8)b.det=0;});J.nano.forEach(n=>n.t=0.01);true');await adv(200);}}
  if(xe('XEQV.err||null'))fail('ability viewmodel error: '+xe('XEQV.err'));
  if(H.errors.length>errs0)fail('page errors: '+H.errors.slice(errs0).map(e=>String(e&&e.message||e)).join(' | '));
- if(fails.length){console.log(fails.join('\n'));process.exit(1);}console.log('ability equip: binds, migration, HUD labels, equip -> fire flow, first-person equip viewmodel, wiki equip times + windups, Sova bow charge + bounces, Fault Line hold-to-extend, Hot Hands spread, Neural Theft 18 m / 2 s + 6 s, Cyber Cage cylinder, Recon Bolt 30 m pulses, Cloudburst flight + steering, per-ability smoke radii, kit table ok');process.exit(0);
+ if(fails.length){console.log(fails.join('\n'));process.exit(1);}console.log('ability equip: binds, migration, HUD labels, equip -> fire flow, first-person equip viewmodel, wiki equip times + windups, Sova bow charge + bounces, Fault Line hold-to-extend, Hot Hands spread, Neural Theft 18 m / 2 s + 6 s, Cyber Cage cylinder, Recon Bolt 30 m pulses, Nanoswarm 4.5 m / 1 s windup, Cloudburst flight + steering, per-ability smoke radii, kit table ok');process.exit(0);
 })().catch(e=>{console.error(e);process.exit(1);});

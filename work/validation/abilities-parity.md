@@ -103,7 +103,7 @@ Changed on both sides (client index.html, server abilities.js / devices.js), tes
 `work/test_ability_equip.cjs`:
 - Jett Cloudburst smoke 4.5 s -> **2.5 s** (player cast, bot Jett, server smoke effect).
 - Phoenix Hot Hands zone 30 dps (client) / 40 dps (server) -> **60 dps** both (wiki: 60/s).
-- Killjoy Nanoswarm active time 4 s -> **5 s** (player, bot Killjoy, server `DEV.nanoswarm.active`).
+- Killjoy Nanoswarm active time 4 s -> **5 s** (player, bot Killjoy, server `DEV.nanoswarm.active`); radius and the 1 s windup: section 7.
 
 Still different (not cheap; each needs a client + server mechanic change):
 - Breach Fault Line hold-to-extend: done, section 7.
@@ -330,3 +330,18 @@ up for 2.5 s from the cast (2.3 s of nearsight after its 0.2 s fuse).
   strip on the client; the wiki's is a 25 m, 20 m/s, 4.3 m radius orb that nearsights through walls regardless of facing.
 - Tests: `server/test-abilities.js` (Flashpoint 2.25, Guiding Light 2.25, Paranoia 2 s; Leer `until - at` = 1.6 s),
   `server/test-ults.js` (Curveball blind > 1.1 and <= 1.5 s).
+
+### Killjoy Nanoswarm (wiki.playvalorant.com/en-us/Nanoswarm, fetched 2026-10-25)
+
+Wiki stats: radius 4.5 m; detection radius 5.25 m; activation windup 1 s total (0.5 s windup + 0.5 s damage delay); 45 ticks
+of 1 per second, 180 total; duration 5 s. Was: server 4 m, 45/s from the trigger for 5 s (225); offline client (player and
+bot Killjoy) 2.5 m, 45/s from the trigger for 5 s, bot swarms triggering on an enemy within 2.5 m.
+
+- Server: `DEV.nanoswarm = {life: 120, active: 5, delay: 1, radius: 4.5, damage: 45}`; the trigger (C again) sets
+  `until = +5 s`, `dmgAt = +1 s` and the 4.5 m radius; `tickDevices` burns only from `dmgAt` (4 s x 45 = 180).
+- Client: `XNANO = {r: 4.5, det: 5.25, active: 5, delay: 1, dps: 45}` (asserted equal to the server): the player's swarm and
+  bot Killjoy's (`XKN`, 10 Hz) burn 4.5 m only after the 1 s windup; bot swarms trigger on an enemy within 5.25 m; the disc
+  is drawn at 4.5 m (`zoneGeo` 2.5 m x 1.8).
+- Tests: `server/test-ults.js` (4.3 m burns / 4.7 m does not; nothing in the first 0.95 s, 45 by 2 s, still burning at 4.8 s,
+  gone at 5.2 s), `work/test_ability_equip.cjs` (XNANO == DEV.nanoswarm; C triggers; no damage before 1 s; 4.3 m burns,
+  4.7 m not; disc scale 1.8), `work/test_friendly_fire_offline.cjs` (ally pass wiring reads `XNANO.dps * dt`).

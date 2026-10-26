@@ -8275,7 +8275,7 @@ function okKey(code) {
   }
   if (code === "KeyC") {
     const pend = J.nano.filter((n) => !n.on);
-    if (pend.length) { pend.forEach((n) => { n.on = true; n.t = 5; n.m.material.opacity = 0.55; n.m.scale.setScalar(1); }); say("Nanoswarm active", 700); SFX.ab("nano", pend[0].p); return blip(700, 0.3, "square", 0.12); }
+    if (pend.length) { pend.forEach((n) => { n.on = true; n.t = XNANO.active; n.m.material.opacity = 0.55; n.m.scale.setScalar(XNANO.r / 2.5); }); say("Nanoswarm active", 700); SFX.ab("nano", pend[0].p); return blip(700, 0.3, "square", 0.12); }
     if (J.c < 1 || J.cd.c > 0) return sgNo(); J.c--; J.cd.c = 0.6;
     const p = okGround(15); p.y = 0.05; const m = jM(zoneGeo, fireMat(0xc8d23a, 0.12)); m.rotation.x = -Math.PI / 2; m.position.copy(p); m.scale.setScalar(0.15); scene.add(m);
     J.nano.push({ m, p, on: false, t: 0 }); say("Nanoswarm hidden · C to trigger", 900); blip(420, 0.15, "triangle", 0.12); SFX.ab("nanoSet", p);
@@ -8314,7 +8314,7 @@ function okTick(dt) {
   });
   prune(J.nano, (n) => {
     if (!n.on) return true; n.t -= dt; n.m.material.opacity = 0.55 * Math.min(1, n.t / 0.5);
-    bots.forEach((b) => b.alive && Math.hypot(b.g.position.x - n.p.x, b.g.position.z - n.p.z) < 2.5 && jHit(b, 45 * dt, "Nanoswarm")); xFFArea("You", false, "Nanoswarm", 45 * dt, (x, z) => Math.hypot(x - n.p.x, z - n.p.z) < 2.5);
+    if (n.t <= XNANO.active - XNANO.delay) { bots.forEach((b) => b.alive && Math.hypot(b.g.position.x - n.p.x, b.g.position.z - n.p.z) < XNANO.r && jHit(b, XNANO.dps * dt, "Nanoswarm")); xFFArea("You", false, "Nanoswarm", XNANO.dps * dt, (x, z) => Math.hypot(x - n.p.x, z - n.p.z) < XNANO.r); }
     if (n.t > 0) return true; scene.remove(n.m); return false;
   });
   if (J.ab) {
@@ -8879,8 +8879,12 @@ try { const r0 = renderer.render.bind(renderer), E = new THREE.Euler(0, 0, 0, "Y
   for (let i = 0; i < 2; i++) { if (!xBUse(b, "c")) break; const sd = i ? -s0 : s0; let x = from.x + sd * 10, z = from.z + i * 3;
     if (blocked(x, z, 0.3, 0)) { x = from.x + sd * 4; if (blocked(x, z, 0.3, 0)) x = from.x; }
     cyWire(x, z, 0, 1, b); feed("Cypher ▸ Trapwire"); } }; }
-// bot Killjoy (team-agnostic): on defence both Nanoswarm charges hidden on the held site (C, bought); each one triggers when an enemy steps within 2.5 m,
-// then the player's numbers: 45 dps in 2.5 m for 5 s, same mesh + colour. Pooled records, ticked at 10 Hz, cleared by jClear.
+// bot Killjoy (team-agnostic): on defence both Nanoswarm charges hidden on the held site (C, bought); each one triggers when an enemy steps within the 5.25 m detection radius (XNANO.det),
+// then the player's numbers (XNANO: 1 s windup, then 45 dps in 4.5 m to 5 s), same mesh + colour. Pooled records, ticked at 10 Hz, cleared by jClear.
+// Killjoy Nanoswarm (wiki.playvalorant.com/en-us/Nanoswarm): damage radius 4.5 m, 5 s once triggered = 1 s activation windup
+// (0.5 s windup + 0.5 s damage delay) then 45/s (180 total); a bot's swarm triggers on an enemy within the 5.25 m detection
+// radius. Same values as the server (DEV.nanoswarm).
+const XNANO = { r: 4.5, det: 5.25, active: 5, delay: 1, dps: 45 };
 const XKN = [];
 function xKnClr() { for (const o of XKN) if (o.on) { o.on = false; jRel(o.m); o.m = null; } }
 { const b0 = botAb; botAb = function (b, dt, see, tg, from) { b0(b, dt, see, tg, from);
@@ -8891,11 +8895,12 @@ function xKnClr() { for (const o of XKN) if (o.on) { o.on = false; jRel(o.m); o.
     let o = null; for (const q of XKN) if (!q.on) { o = q; break; } if (!o) { o = { p: { x: 0, z: 0 } }; XKN.push(o); }
     o.on = true; o.act = false; o.t = 0; o.own = b; o.en = !al; o.p.x = x; o.p.z = z; o.m = jM(zoneGeo, fireMat(0xc8d23a, 0.12)); o.m.rotation.x = -Math.PI / 2; o.m.position.set(x, 0.05, z); o.m.scale.setScalar(0.15); scene.add(o.m); }
   if (nP) feed("Killjoy ▸ Nanoswarm"); }; }
-function xKnIn(o, x, z) { return Math.hypot(x - o.p.x, z - o.p.z) < 2.5; }
+function xKnIn(o, x, z, r) { return Math.hypot(x - o.p.x, z - o.p.z) < (r || XNANO.r); }
 setInterval(function () { try { if (!running || !XKN.length) return; for (const o of XKN) { if (!o.on) continue; const en = o.en;
-  if (!o.act) { let hit = false; if (en) { if (player.hp > 0 && xKnIn(o, player.x, player.z)) hit = true; for (const a of allies) if (a.alive && xKnIn(o, a.g.position.x, a.g.position.z)) hit = true; } else for (const b of bots) if (b.alive && xKnIn(o, b.g.position.x, b.g.position.z)) hit = true;
-    if (hit) { o.act = true; o.t = 5; o.m.material.opacity = 0.55; o.m.scale.setScalar(1); try { SFX.ab("nano", o.m.position); } catch (e) {} } continue; }
+  if (!o.act) { const D = XNANO.det; let hit = false; if (en) { if (player.hp > 0 && xKnIn(o, player.x, player.z, D)) hit = true; for (const a of allies) if (a.alive && xKnIn(o, a.g.position.x, a.g.position.z, D)) hit = true; } else for (const b of bots) if (b.alive && xKnIn(o, b.g.position.x, b.g.position.z, D)) hit = true;
+    if (hit) { o.act = true; o.t = XNANO.active; o.m.material.opacity = 0.55; o.m.scale.setScalar(XNANO.r / 2.5); try { SFX.ab("nano", o.m.position); } catch (e) {} } continue; }
   o.t -= 0.1; o.m.material.opacity = 0.55 * Math.min(1, o.t / 0.5); const nm = o.own && o.own.name || "Killjoy";
+  if (o.t > XNANO.active - XNANO.delay + 1e-6) { if (o.t <= 0) { o.on = false; jRel(o.m); o.m = null; } continue; } // 1 s activation windup
   if (en) { if (player.hp > 0 && xKnIn(o, player.x, player.z)) xBotDmg(player, 4.5, nm, "Nanoswarm"); for (const a of allies) if (a.alive && xKnIn(o, a.g.position.x, a.g.position.z)) xBotDmg(a, 4.5, nm, "Nanoswarm"); }
   else for (const b of bots) if (b.alive && xKnIn(o, b.g.position.x, b.g.position.z)) xBotDmg(b, 4.5, nm, "Nanoswarm");
   xFFArea(o.own || null, en, "Nanoswarm", 4.5, (x, z) => xKnIn(o, x, z), nm); // allies: a third
