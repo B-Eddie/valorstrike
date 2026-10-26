@@ -26,7 +26,7 @@ const SIZES=(process.env.SIZES||'1280x720,640x360,390x844').split(',').map(s=>s.
  await ctx.route(/^https?:\/\/(unpkg\.com|cdn\.jsdelivr\.net)\//,r=>{const f=r.request().url().split('/').pop().split('?')[0];if(LOCAL[f])return r.fulfill({path:LOCAL[f],contentType:'application/javascript',headers:{'access-control-allow-origin':'*'}});return r.continue();});
  await ctx.route(/127\.0\.0\.1:8876\/(index\.html)?(\?.*)?$/,r=>{const h=fs.readFileSync(ROOT+'/index.html','utf8').replace('window.xValorantFeel={','window.__xe=s=>eval(s);window.xValorantFeel={');r.fulfill({body:h,contentType:'text/html'});});
  const page=await ctx.newPage();await require('./pw_shot.cjs')(ctx,page);page.setDefaultTimeout(600000);page.on('pageerror',e=>R.errors.push('pageerror '+String(e).slice(0,300)));
- const X=s=>page.evaluate(s=>window.__xe(s),s);
+ const X=s=>page.evaluate(s=>window.__xe(s),s);const XJ=async s=>JSON.parse(await X(`JSON.stringify(${s})`));
  // hk-30: waits in GAME time (the box runs ~0.25-1 rAF/s): xSimStep is wrapped to count sim time (installed by go()).
  const simWait=async(sec,why)=>{const t=+(await X('window.__sim||0'));await page.waitForFunction(t=>window.__xe('window.__sim||0')>=t,t+sec,{timeout:900000,polling:200}).catch(e=>log('simWait '+(why||sec)+' timeout',String(e).slice(0,80)));};
  const frames=async n=>{await X(`window.__allow=${n};1`);await page.waitForFunction(()=>window.__xe('window.__allow<=0'),null,{timeout:900000,polling:1000});};
@@ -57,7 +57,8 @@ const SIZES=(process.env.SIZES||'1280x720,640x360,390x844').split(',').map(s=>s.
  const lb=()=>X(`JSON.stringify((()=>{const e=document.querySelector('.x-dmlb'),c=document.querySelector('.x-cbt');const vis=el=>!!el&&getComputedStyle(el).display!=='none'&&getComputedStyle(el).visibility!=='hidden'&&el.getBoundingClientRect().width>2;const r=el=>el?[...Object.values(el.getBoundingClientRect().toJSON())].slice(0,4).map(Math.round):null;return {lb:vis(e),lbR:r(e),cbt:vis(c),cbtR:r(c),on:document.body.classList.contains('x-cbt-on'),hp:player.hp};})())`).then(JSON.parse);
  let l=await lb();log('dm alive',l);check('DM 640x360 alive: leaderboard shown',l.lb,JSON.stringify(l));await shot('dm-lb-alive',640,360);
  await X('window.__ts=0.05;1');await frames(1);/* abil_dm4: switching after the kill let the first frame carry 1x time past the 1.5 s DM respawn (DM.prt -= dt) */
- await X(`window.__god=0;{const b=bots[0];hurt(player,500,b.name);if(player.hp>0)pDie(b.name,"Vandal");}1`);
+ // hk-34: abil_dm4 / abil_dm5 read 'dead' already respawned (hp 100, no report): log the report state in the same call as the kill
+ log('dm kill',await XJ(`(()=>{window.__god=0;const b=bots[0];hurt(player,500,b.name);if(player.hp>0)pDie(b.name,"Vandal");const c=document.querySelector('.x-cbt');return {hp:player.hp,klOn:!!xKL.on,klN:xKL.n,crOn:!!(c&&c.classList.contains('on')),body:document.body.classList.contains('x-cbt-on'),prt:typeof DM!=='undefined'?DM.prt:null,by:XHF.cr.by};})()`));
  // hk-32: abil_dm3 sampled 1.5 s after the kill - DM respawns within that, so 'dead' read the respawned player (hp 100) and, with
  // __god off, a bot killed the player again before the 'respawned' sample (hp 0, report up). Time is slowed (__ts) and each
  // phase waits for its own state: dead = hp <= 0 with the report class on; then __god back on and respawned = hp > 0.
