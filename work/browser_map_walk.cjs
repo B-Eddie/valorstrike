@@ -55,15 +55,22 @@ const SIZES=(process.env.SIZES||'1280x720,640x360,390x844').split(',').map(s=>s.
   await X(`if(!window.__rp){window.__rp=1;window.__allow=3;const r0=renderer.render;renderer.render=function(sc,c){if(sc===scene){if(window.__allow<=0)return;window.__allow--;}return r0.call(this,sc,c);};}1`);
   await frames(2);await hookSim();await simWait(0.5,'warm-up');log(map+' loaded',await X('JSON.stringify({map:FV.map,bots:bots.length})'));
   if(map==='ascent'){
+   // hk-32: lane x=6 ends at the paving edge (z ~66.2: no floor beyond in the render mesh or the collision, only the vista
+   // water far below; the shared motor stops at 66.17 on the server world too), so its walk must reach 7.0 m, not 7.5.
+   const LANE_MIN={2:7.5,4:7.5,6:7.0};
    for(const x of [2,4,6]){const o=[x,8.45,59];await place(o,yawTo(0,1));await simWait(0.3,'settle');const S=await walk(2500);const a=along(S,o,[0,1]);
-    let stall=0;for(let i=2;i<a.length-1;i++)if(a[i]<8&&a[i]-a[i-1]<0.05&&a[i-1]-a[i-2]<0.05)stall++;
+    let stall=0;for(let i=2;i<a.length-1;i++)if(a[i]<LANE_MIN[x]&&a[i]-a[i-1]<0.05&&a[i-1]-a[i-2]<0.05)stall++;
     log(`ascent paving lane x=${x}`,{a:a.map(v=>+v.toFixed(2)),end:S[S.length-1]});
-    check(`Ascent attacker-spawn paving x=${x}: walk z 59 -> 67 on flat floor without stopping`,Math.max(...a)>=7.5&&!stall,JSON.stringify({max:Math.max(...a),stall,end:S[S.length-1]}));
+    check(`Ascent attacker-spawn paving x=${x}: walk z 59 -> ${(59+LANE_MIN[x]).toFixed(0)}+ on flat floor without stopping`,Math.max(...a)>=LANE_MIN[x]&&!stall,JSON.stringify({max:Math.max(...a),stall,end:S[S.length-1]}));
     if(x===4){await frames(2);await page.screenshot({path:SHOT+'mapwalk-ascent-paving-640x360.jpg',type:'jpeg',quality:70,timeout:300000}).catch(e=>log('shot',String(e).slice(0,100)));}}
   }
   const E=FX[map].edges||[];let ok=0;const bad=[];
   for(const [f,t] of E){const dx=t[0]-f[0],dz=t[2]-f[2],l=Math.hypot(dx,dz),d=[dx/l,dz/l];await place(f,yawTo(d[0],d[1]));await simWait(0.25,'settle');const S=await walk(900);const a=along(S,f,d),m=Math.max(...a),end=S[S.length-1];
-   if(m>=0.7&&Math.abs(end[1]-t[1])<1.0)ok++;else bad.push({f,t,m:+m.toFixed(2),end});}
+   // hk-32: an edge is crossed when the walk gets 0.7 m along it or ends within 0.35 m of its far node (server
+   // test-map-bounds walkEdge, same fixture), with the floor height kept AT THE CROSSING - mapwalk2 compared the end of the
+   // whole 0.9 s walk (~6 m on, up Breeze's ramps), not the far node's floor.
+   const near=S.map(p=>Math.hypot(p[0]-t[0],p[2]-t[2])),Lf=Math.hypot(dx,dz),ix=a.findIndex((v,i)=>v>=Math.min(0.7,Lf-0.35)||near[i]<0.35),cross=ix>=0?S[ix]:null;
+   if(cross&&Math.abs(cross[1]-t[1])<1.0)ok++;else bad.push({f,t,m:+m.toFixed(2),end,cross});}
   log(map+' crack edges',{n:E.length,ok,bad});check(`${map}: every fixture crack edge walks across (>= 0.7 m, floor kept)`,E.length>0&&ok===E.length,JSON.stringify({n:E.length,ok,bad}));
   const T=FX[map].traps||[];if(T.length){let ok2=0;const bad2=[];
    for(const [f,dir] of T){const l=Math.hypot(dir[0],dir[1]),d=[dir[0]/l,dir[1]/l];await place(f,yawTo(d[0],d[1]));await simWait(0.25,'settle');await walk(1000);const p1=await pos();
