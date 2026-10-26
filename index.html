@@ -1728,7 +1728,9 @@ function xRate(W) { if (!W.spin) return W.rate; const n = performance.now(); if 
 // Valorant reload times (s), one per gun; Ares / Odin / Outlaw keep their own rld above
 { const RLD = { Classic: 1.75, Shorty: 1.75, Frenzy: 1.5, Ghost: 1.5, Sheriff: 2.25, Stinger: 2.25, Spectre: 2.25, Bucky: 2.5, Judge: 2.2, Bulldog: 2.5, Guardian: 2.5, Phantom: 2.5, Vandal: 2.5, Marshal: 2.5, Operator: 3.7 };
   for (const n in RLD) if (WEAP[n] && !WEAP[n].rld) WEAP[n].rld = RLD[n]; }
-function xRT() { const W = WEAP[wName()]; return (W && W.rld) || 2.5; } // reload duration from the gun's own Valorant reload time
+// per-round reloads (wiki Bucky "0.5 per shell", Marshal "0.5 per bullet"; a shot interrupts it); Outlaw 2.3 s one barrel / 3.8 s both. = server RELOAD_ROUND / reloadTime
+const XRLP = { Bucky: 0.5, Marshal: 0.5 };
+function xRT() { const n = wName(), W = WEAP[n]; if (XRLP[n]) return XRLP[n]; if (n === "Outlaw" && W) return W.mag - ammo >= 2 ? 3.8 : 2.3; return (W && W.rld) || 2.5; } // reload duration from the gun's own Valorant reload time
 // one damage table for player and bots; zone = "body" | "head" | "legs"; falloff ff past ffd m (default 15); knife 50 light, heavy 75 body / 150 back-stab or head
 const KNIFE = { light: 50, heavy: 75, heavyCrit: 150 }; let kHv = 0, kLg = 0, kLx = 0, kLz = 0;
 // bot yaw r is set as atan2(dx, dz) toward where it aims/moves, so its forward is (sin r, cos r); back-stab when forward · dir(attacker→target) > 0.5
@@ -2870,11 +2872,14 @@ const XSG = {}; function xSpecGuard(a) { const q = a.g.position, G = a.xSG || (a
 function xObsHide(a) { const m = a && a.alive !== false && a.xm && !a.xm.dead && a.xm.m ? a.xm.m : null; if (XOB.hm === m) return; if (XOB.hm) XOB.hm.visible = true; XOB.hm = m; if (m) m.visible = false; }
 { const b0 = bfxBot; bfxBot = function (p) { try { if (p && typeof allies !== "undefined") for (const u of allies) if (u.alive && Math.hypot(u.g.position.x - p.x, u.g.position.z - p.z) < 0.6) { const m = (WEAP[u.w || "Classic"] || {}).mag || 12; if (u.xAmW !== (u.w || "Classic") || !(u.xAm > 0)) { u.xAm = m; u.xAmW = u.w || "Classic"; } u.xAm--; break; } } catch (e) {} return b0.apply(this, arguments); }; } // spectated teammate's mag count (refills when empty)
 // Valorant tagging: a bullet hit slows the target for 0.25 s; heavy (28%) for big hits, lighter (50%) for sidearm / SMG body shots
-function xTag(t, n) { if (!t) return; const k = n < 30 ? 0.5 : 0.28; if (!(t.tagT > 0) || k < t.tagK) t.tagK = k; t.tagT = 0.5; } // tagging: 0.5 s, rifle hits slow 72%
+// shotgun hit past 10 m (patch 1.07, wiki Bucky / Judge / Shorty): 30% slow for 0.5 s easing back to full speed, not the standard tag. = server tagHit / tagMul
+function xTagAt(t, n, w, d) { if (!t) return; const W = WEAP[w]; if (!(W && W.pel > 1 && d > 10)) return xTag(t, n); if (t.tagT > 0 && !t.tagS) return; t.tagT = 0.5; t.tagK = 0.7; t.tagS = 1; }
+function xTagK(t) { if (!t || !(t.tagT > 0)) return 1; if (!t.tagS) return t.tagK; return 1 - (1 - t.tagK) * (0.5 - 0.5 * Math.cos(Math.PI * Math.min(1, t.tagT / 0.5))); }
+function xTag(t, n) { if (!t) return; t.tagS = 0; const k = n < 30 ? 0.5 : 0.28; if (!(t.tagT > 0) || k < t.tagK) t.tagK = k; t.tagT = 0.5; } // tagging: 0.5 s, rifle hits slow 72%
 function pDie(by, w) {
   if (jRib()) return; // Phoenix Run It Back
   try { if (mode === "five" && !XTKILL && by !== "Fall" && by !== "Spike") jUlt(); } catch (e) {} // +1 ult point per death to an enemy (not a fall, the Spike or a teamkill)
-  fKC(by); player.hp = 0; defuseT = 0; reloading = 0; stats.d++; sbKill(by, "You", false); if (w) kfeed(by, "You", false, w); else feed(by + " ▸ You"); showStats(); setScope(false);
+  fKC(by); player.hp = 0; defuseT = 0; reloading = 0; if (by !== "Spike") stats.d++; /* the Spike is no KDA death (wiki Spike, patch 1.11) */ sbKill(by, "You", false); if (w) kfeed(by, "You", false, w); else feed(by + " ▸ You"); showStats(); setScope(false);
   if (!allies.some((a) => a.alive)) return end(false, "You were eliminated by " + by);
   say("You died · spectating your team", 1800);
 }
@@ -2895,7 +2900,7 @@ function moveP(dt, run, hold) {
   if (kk.KeyW) { mx += fx; mz += fz; } if (kk.KeyS) { mx -= fx; mz -= fz; }
   if (kk.KeyA) { mx += fz; mz -= fx; } if (kk.KeyD) { mx -= fz; mz += fx; }
   if (P.tagT > 0) P.tagT -= dt;
-  const l = Math.hypot(mx, mz), sp = (cr ? 0.45 : wk ? 0.6 : 1) * run * (P.tagT > 0 ? P.tagK : 1); // tagged: slowed; knife run 6.75 · walk 4.05 · crouch 3.04 m/s
+  const l = Math.hypot(mx, mz), sp = (cr ? 0.45 : wk ? 0.6 : 1) * run * xTagK(P); // tagged: slowed; knife run 6.75 · walk 4.05 · crouch 3.04 m/s
   P.lp = Math.max(0, (P.lp || 0) - dt); // landing accuracy penalty timer
   const want = !!l && !hold, tx = want ? (mx / l) * sp : 0, tz = want ? (mz / l) * sp : 0;
   P.vx = P.vx || 0; P.vz = P.vz || 0; P.cr = cr; P.wk = wk;
@@ -3174,10 +3179,10 @@ function shoot(hv) {
     if (kSwing > 0) return; kSwing = hv ? 1 : 0.5; kHv = hv ? 1 : 0; kick = 1; SFX.knife(); ray.far = 2.2; // light 0.5 s (= the server Knife fireRate 2/s), heavy 1 s cooldown, 2.2 m lunge
     if (hv) { body = KNIFE.heavy; head = KNIFE.heavyCrit; if (!(typeof NET !== "undefined" && NET.socket && MP.st === "game")) { kLg = 0.15; kLx = -Math.sin(yaw); kLz = -Math.cos(yaw); } } // lunge 1.2 m over 0.15 s offline; online the server moves the player and has no lunge (heavy = kh input: 1 s, 75 / 150 head or back)
   } else {
-    if (reloading > 0) return;
+    if (reloading > 0) { if (XRLP[w] && ammo > 0) reloading = 0; else return; } // a per-round reload: the shot interrupts it
     const rt = xRT();
     if (ammo <= 0) { SFX.empty(); if (rsv > 0 && S.autoReload !== false) { reloading = rt; SFX.reload(); } fireHeld = false; updHud(); return; }
-    ammo--; if (ammo === 0 && rsv > 0 && S.autoReload !== false) { reloading = rt; setTimeout(() => SFX.reload(), 150); }
+    ammo--; if (ammo === 0 && rsv > 0 && S.autoReload !== false) { reloading = xRT(); setTimeout(() => SFX.reload(), 150); }
     if (ammo > 0 && ammo * 5 <= MAG()) SFX.low();
     fcd = 1 / xRate(W) / (jOn() && J.emp > 0 ? 1.15 : 1) * (xCU > performance.now() ? 1.25 : 1); // Empress +15 % / concussed -20 %, as the server since = 0; body = W.body; head = W.head;
     kick = W.semi ? 1 : Math.min(1, 0.45 + W.rec * 0.5); vmFire(); SFX.gun(w);
@@ -3254,7 +3259,7 @@ function xPellets(W, targets) {
     }
   } finally { xPelOn = false; d.copy(XPB); }
   XPM.forEach((dmg, b) => { if (!b.alive) { b._pp = null; return; } const hs = XPP.get(b) === -1, pt = b._pp || b.g.position; b._pp = null; dmg = Math.round(dmg);
-    xHS = hs; hurt(b, dmg); xTag(b, dmg); vmHit(pt, dmg, hs, b.hp <= 0.001, b); if (b.hp <= 0.001) kill(b, hs); else flash(b); });
+    xHS = hs; hurt(b, dmg); xTagAt(b, dmg, wName(), Math.hypot(b.g.position.x - player.x, b.g.position.z - player.z)); vmHit(pt, dmg, hs, b.hp <= 0.001, b); if (b.hp <= 0.001) kill(b, hs); else flash(b); });
 }
 function kill(b, hs, by, w) {
   by = by || "You"; if (!b.alive) return;
@@ -4289,7 +4294,7 @@ function tick(dt) {
   if (fcd > 0) fcd -= dt;
   since += dt; if (since > (sprW === "Phantom" ? 0.27 : 0.3)) spray = Math.max(0, spray - dt * 40);
   if (alive && fireHeld && rw !== "knife" && !WEAP[wName()].semi && fcd <= 0 && ammo > 0) shoot();
-  if (reloading > 0) { reloading -= dt; if (reloading <= 0) { reloading = 0; /* not left a hair below 0: online treats it as still reloading (ammo sync off, the next auto-reload never sent) */ const n = Math.min(MAG() - ammo, rsv); ammo += n; rsv -= n; } updHud(); }
+  if (reloading > 0) { reloading -= dt; if (reloading <= 0) { reloading = 0; /* not left a hair below 0: online treats it as still reloading (ammo sync off, the next auto-reload never sent) */ const one = XRLP[wName()], n = Math.min(one ? Math.min(1, MAG() - ammo) : MAG() - ammo, rsv); ammo += n; rsv -= n; if (one && ammo < MAG() && rsv > 0) reloading = one; /* next round */ } updHud(); }
   const near = ret && alive && Math.hypot(player.x - spike.position.x, player.z - spike.position.z) < 2.5; // distance to the spike, not the map origin (native maps plant it at site B)
   if (near && defusing) { const d0 = defuseT; defuseT += dt; if (d0 < 3.5 && defuseT >= 3.5) SFX.defHalf(); } else defuseT = defuseT >= 3.5 ? 3.5 : 0; // half defuse is kept
   let ad = false; if (ret) for (const a of allies) if (a.alive && a.def > 0) { ad = a; break; }
@@ -4350,7 +4355,7 @@ function tick(dt) {
     if (!see) xFace(b, dt, vx, vz); b.cr = see && d < 8 && !!b.crR; // crouch-spray up close, 30% of fights
     [vx, vz] = xSmV(b, dt, vx, vz);
     if (b.tagT > 0) b.tagT -= dt;
-    const D = DIFF[S.diff], bwk = botWalk(b, see, d), bs = botRun(b, bwk) * Math.min(1, D.speed) * dt * bk * (b.tagT > 0 ? b.tagK : 1); b.mv = !!(vx || vz) && bs > 0; b.wk = bwk ? 1 : 0; // fidelity: player speed table, walk x0.6 near contact
+    const D = DIFF[S.diff], bwk = botWalk(b, see, d), bs = botRun(b, bwk) * Math.min(1, D.speed) * dt * bk * xTagK(b); b.mv = !!(vx || vz) && bs > 0; b.wk = bwk ? 1 : 0; // fidelity: player speed table, walk x0.6 near contact
     { const vl = Math.hypot(vx, vz); if (vl > 1) { vx /= vl; vz /= vl; } } const bx0 = p.x, bz0 = p.z;
     if (!blocked(p.x + vx * bs, p.z, 0.45, p.y)) p.x += vx * bs; else { b.strafe *= -1; b.blk = 1; }
     if (!blocked(p.x, p.z + vz * bs, 0.45, p.y)) p.z += vz * bs; else { b.strafe *= -1; b.blk = 1; }
@@ -4365,7 +4370,7 @@ function tick(dt) {
       bSpread(b, w, W, aim, d, D);
       mv.copy(pt); mv.sub(from); mv.cross(aim); const miss = mv.length(), head = b.hd && miss < 0.2;
       if (miss < (b.hd ? 0.3 : 0.45)) {
-        { const n = wDmg(W, head ? "head" : miss > 0.35 ? "legs" : "body", d); xHS = head; xHLeg = !head && miss > 0.35; hurt(tg.t, n, b.name); xTag(tg.t, n); if (typeof xHitOther === "function") xHitOther(tg.t, head, b, null, xHLeg ? "legs" : "body"); } // same table as the player; edge-of-hitbox hits land low
+        { const n = wDmg(W, head ? "head" : miss > 0.35 ? "legs" : "body", d); xHS = head; xHLeg = !head && miss > 0.35; hurt(tg.t, n, b.name); xTagAt(tg.t, n, w, d); if (typeof xHitOther === "function") xHitOther(tg.t, head, b, null, xHLeg ? "legs" : "body"); } // same table as the player; edge-of-hitbox hits land low
         if (tg.t === player) {
           xDmgArc(b.g.position.x, b.g.position.z); xDmgFlash(); updHud();
           if (player.hp <= 0) { pDie(b.name, xWeapOf(b)); if (!running) return; }
@@ -4568,7 +4573,7 @@ function duelTick(dt) {
   if (!see || d > 16 || d < 3) { vx = dx / d; vz = dz / d; } else { b.cd = Math.max(b.bolt, R.react - b.aim); [vx, vz] = xFight(b, dt, player.x, player.z, d); }
   if (d > 1.2 && !(b.det > 0)) [vx, vz] = xUn(b, dt, vx, vz);
   if (b.tagT > 0) b.tagT -= dt;
-  const bs = botRun(b, false) * Math.min(1, D.speed) * dt * botK(b) * (b.tagT > 0 ? b.tagK : 1);
+  const bs = botRun(b, false) * Math.min(1, D.speed) * dt * botK(b) * xTagK(b);
   if (d > 1.2) {
     if (!blocked(p.x + vx * bs, p.z, 0.45)) p.x += vx * bs; else b.strafe *= -1;
     if (!blocked(p.x, p.z + vz * bs, 0.45)) p.z += vz * bs; else b.strafe *= -1;
@@ -7702,7 +7707,7 @@ function fRound() {
   if (!FV.alive) { FV.pri = null; FV.sec = "Classic"; FV.arm = 0; FV.rgn = undefined; } // died last round: back to a Classic
   const pz0 = FV.atk ? xSpawn(FV.map).atk : xSpawn(FV.map).def;
   player = { x: 0, z: pz0, hp: 100, armor: FV.arm, rgn: FV.rgn, y: 0, vy: 0, ch: 0, st: 0 }; yaw = FV.atk ? 0 : Math.PI; pitch = 0;
-  timeLeft = 100; FV.buy = FV.you + FV.them === 0 || FV.you + FV.them === 12 ? 45 : 30; defuseT = 0; kSwing = 0; fSpawn(); $("feed").innerHTML = ""; $("defuse").style.display = "none";
+  timeLeft = 100; FV.buy = FV.you + FV.them === 0 || FV.you + FV.them === 12 || (FV.you + FV.them === 24 && !FV.sw && !FV.sr) ? 45 : 30; /* 45 s: first buy phase of each half and of overtime (rounds 1, 13, 25; wiki Unrated, = server buyPhaseSeconds) */ defuseT = 0; kSwing = 0; fSpawn(); $("feed").innerHTML = ""; $("defuse").style.display = "none";
   const pm = FV.pri ? WEAP[FV.pri].mag : 0, sm = WEAP[FV.sec].mag;
   slots.pri = FV.pri ? { ammo: pm, rsv: xRsv(FV.pri) } : {}; slots.pis = { ammo: sm, rsv: xRsv(WEAP[FV.sec] ? FV.sec : "Classic") };
   rw = FV.pri ? "pri" : "pis"; ammo = slots[rw].ammo; rsv = slots[rw].rsv; reloading = 0; fcd = 0; spray = 0; fireHeld = false; try { XSP.used = false; } catch (e) {} // round start re-arms the one spray per round
@@ -9687,7 +9692,7 @@ function sbDmg(by, v, n) { if (XTKILL || !(n > 0) || by === v || !SB[by]) return
 function sbAst(by, v) { const m = SBH[v]; if (!m) return; const now = performance.now(); for (const n in m) if (n !== by && SB[n] && m[n].d >= 50 && now - m[n].t <= 5000) SB[n].a = (SB[n].a || 0) + 1; delete SBH[v]; }
 function sbSpend(n, c) { if (c > 0 && SB[n]) SB[n].sp = (SB[n].sp || 0) + c; }
 function sbEcon(p) { return Math.round((p.dmg || 0) * 1000 / Math.max(1, p.sp || 0)); }
-function sbKill(by, victim, hs) { if (XTKILL) { if (SB[victim]) SB[victim].d++; try { delete SBH[victim]; } catch (e) {} return; } try { sbAst(by, victim); } catch (e) {} let r = 0; try { const s = sbScore(); r = s[0] + s[1]; } catch (e) {} if (SB[by]) { SB[by].k++; if (hs) SB[by].hs++; if (sbKill.r !== r) SB[by].fb = (SB[by].fb || 0) + 1; } sbKill.r = r; if (SB[victim]) SB[victim].d++; }
+function sbKill(by, victim, hs) { if (XTKILL) { if (SB[victim]) SB[victim].d++; try { delete SBH[victim]; } catch (e) {} return; } try { sbAst(by, victim); } catch (e) {} let r = 0; try { const s = sbScore(); r = s[0] + s[1]; } catch (e) {} if (SB[by]) { SB[by].k++; if (hs) SB[by].hs++; if (sbKill.r !== r) SB[by].fb = (SB[by].fb || 0) + 1; } sbKill.r = r; if (SB[victim] && by !== "Spike") SB[victim].d++; /* the Spike is no KDA death (wiki Spike, patch 1.11) */ }
 { const e0 = end; end = function (w, text) { try { const m = /^(.+?) defused the spike/i.exec(text || ""); const n = m ? m[1] : /defused/i.test(text || "") && w ? "You" : null; if (n && SB && SB[n]) SB[n].pd = (SB[n].pd || 0) + 1; } catch (e) {} return e0.apply(this, arguments); }; }
 const clk = (t) => { const s = Math.max(0, Math.ceil(t)); return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0"); };
 const setT = (id, v) => { const e = $(id); v = String(v); if (e.textContent !== v) e.textContent = v; };
@@ -11004,7 +11009,7 @@ let xTGOn = false; const xTG = { inPlay: () => false, relAll: () => {} };
     } else okHitBy(o, 0.1);
     if (o.hp <= 0) { free(o); feed("Lockdown destroyed"); return; } if (o.t > 0) return;
     const x = o.p.x, z = o.p.z, inR = (q) => Math.hypot(q.x - x, q.z - z) < 32;
-    if (o.en) { if (player.hp > 0 && inR(player)) { pDt = 8; player.tagT = 8; player.tagK = 0.2; say("Detained · 8 s", 1400); } if (typeof allies !== "undefined") for (const a of allies) if (a.alive && inR(a.g.position)) a.xdt = 8; }
+    if (o.en) { if (player.hp > 0 && inR(player)) { pDt = 8; player.tagT = 8; player.tagK = 0.2; player.tagS = 0; say("Detained · 8 s", 1400); } if (typeof allies !== "undefined") for (const a of allies) if (a.alive && inR(a.g.position)) a.xdt = 8; }
     else for (const b of bots) if (b.alive && inR(b.g.position)) b.xdt = 8;
     feed("Lockdown ▸ detained"); try { blip(110, 0.6, "sawtooth", 0.15); } catch (e) {} free(o); }
   function omenCast(u, en) { const L = en ? [player].concat(typeof allies !== "undefined" ? allies : []) : bots, alive = L.filter((t) => (t === player ? t.hp > 0 : t.alive)); if (!alive.length) return 0;
@@ -11615,7 +11620,7 @@ function mpHostHit(c, u, m) { // a client's hit claim: target alive, enemy, in r
   if (Math.hypot(tx - u.g.position.x, tz - u.g.position.z) > 120) return;
   if (now - c.nT > 1000) { c.nT = now; c.nH = 0; } if (++c.nH > 24) return;
   const w = xWOwn(m.w) ? m.w : m.w === "Knife" ? "Knife" : u.w || "Vandal", dmg = Math.min(n, 255), hs = !!m.hs;
-  xHS = hs; hurt(t, dmg, u.name); try { xTag(t, dmg); } catch (e) {}
+  xHS = hs; hurt(t, dmg, u.name); try { xTagAt(t, dmg, w, Math.hypot(tx - u.g.position.x, tz - u.g.position.z)); } catch (e) {}
   if (t === player) { try { xDmgArc(u.g.position.x, u.g.position.z); xDmgFlash(); } catch (e) {} updHud(); if (player.hp <= 0) pDie(u.name, w); }
   else if (t.hp <= 0.001) { if (bots.indexOf(t) >= 0) kill(t, hs, u.name, w); else allyDie(t, u.name, w); }
   else try { flash(t); } catch (e) {}
@@ -13135,13 +13140,13 @@ xWkDmg=function(W,part,distance,k){const v=wRaw(W,part,distance);return v==null?
 xEq=function(w){return w==='Knife'?.75:vfProfile(w).equipTimeSeconds;};
 xRate=function(W){const w=Object.keys(WEAP).find(k=>WEAP[k]===W),p=VF.profiles[w];return ads&&p&&p.adsStats?p.adsStats.fireRate:W.rate;};
 xSCf=function(z){return 2*Math.atan(Math.tan(VF_C.verticalFov*Math.PI/360)/z)*180/Math.PI;};
-xTag=function(t){if(!t)return;t.tagT=.5;t.tagK=.275;};
+xTag=function(t){if(!t)return;t.tagT=.5;t.tagK=.275;t.tagS=0;};
 // The motor owns all movement multipliers, avoiding stacked scope/weapon scaling.
 moveP=function(dt,run,hold){
  const P=player;if(!P)return;const w=vfWeapon(),p=vfProfile(w),kn=w==='Knife',kk=J.dr?{}:keys,fx=-Math.sin(yaw),fz=-Math.cos(yaw);let x=0,z=0;if(kk.KeyW){x+=fx;z+=fz;}if(kk.KeyS){x-=fx;z-=fz;}if(kk.KeyA){x+=fz;z-=fx;}if(kk.KeyD){x-=fz;z+=fx;}
  P.tagT=Math.max(0,(P.tagT||0)-dt);let speed=6.75*(kn?1:p.runSpeedMultiplier||.8)*(ads&&p.adsStats?p.adsStats.runSpeedMultiplier:1);if(J.dis>0)speed*=1.6;if(typeof sgSlow==='function')speed*=sgSlow(P);
  const native=typeof nmActive==='function'&&nmActive(),world={ground:(x,z,y)=>groundAt(x,z,.3,y),blocked:(x,z,r,y,h)=>native?sgBlk(x,z,r,y)||nmBlocked(native,x,z,r,y,h):blocked(x,z,r,y),leash:native?(x,z,y,x0,z0)=>nmLeash(native,x,z,y,x0,z0):null,ceiling:native?(x,z,low,high)=>{const ray=new THREE.Ray(new THREE.Vector3(x,low+.01,z),new THREE.Vector3(0,1,0)),hit=native.bvh.raycastFirst(ray,THREE.DoubleSide);return !!hit&&hit.distance<high-low;}:null};
- const result=VF.model.step(P,{x,z,jump:!!kk.Space,duck:!!(kk.ControlLeft||kk.ControlRight),walk:!!(kk.ShiftLeft||kk.ShiftRight),speed,tag:P.tagT>0?P.tagK:1,hold:!!hold||!!J.dr},dt,world);
+ const result=VF.model.step(P,{x,z,jump:!!kk.Space,duck:!!(kk.ControlLeft||kk.ControlRight),walk:!!(kk.ShiftLeft||kk.ShiftRight),speed,tag:xTagK(P),hold:!!hold||!!J.dr},dt,world);
  if(result.landed){SFX.land();P.st=0;const fd=VF.model.fallDamage(result.drop);if(fd>0&&running&&mode!=='aim'&&mode!=='duel'&&!(typeof MP!=='undefined'&&MP.on)&&P.hp>0){P.hp=Math.max(0,P.hp-fd);try{updHud();}catch(e){}if(P.hp<=0)pDie('Fall','Fall');}} // fall damage: health only (shields ignored); online the server applies it
  // Footfalls follow distance. Shift-walking and crouching stay silent.
  P.footDistance=(P.footDistance||0)+result.speed*dt;if(P.footDistance>1.85&&P.mv&&!P.air&&!P.wk&&!P.cr){P.footDistance%=1.85;SFX.selfStep(P.y>1);}
