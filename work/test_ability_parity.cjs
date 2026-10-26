@@ -14,7 +14,7 @@ const assert=require('assert/strict'),path=require('path');const {boot}=require(
  assert.deepEqual(C.shock,P.shock,'Shock Bolt server = offline');
  assert.deepEqual([C.ash.dmg,C.ash.n,C.ash.gap,C.ash.r],[P.aftershock.damage,P.aftershock.ticks,P.aftershock.gap,P.aftershock.radius],'Aftershock server = offline');
  assert.equal(C.heal,P.heal.sage,'Healing Orb');assert.equal(C.step,P.step.time,'Shrouded Step');assert.equal(C.shadows,P.shadows,'From the Shadows');
- assert.equal(C.rdv,P.rendezvous,'Rendezvous');assert.equal(C.tail,P.tail,'Tailwind');assert.equal(C.ld,32.5,'Lockdown 32.5 m (wiki)');const CP=J('XPS');for(const k of Object.keys(S.PAINT))assert.equal(CP[k],S.PAINT[k],'Paint Shells '+k+' server = offline');assert.equal(C.regrow,20,'Regrowth 20 HP/s (wiki)');
+ assert.equal(C.rdv,P.rendezvous,'Rendezvous');assert.equal(C.tail,P.tail,'Tailwind');assert.deepEqual(J('XTW'),P.tailwind,'Tailwind windup / window: page XTW = server PARITY.tailwind');assert.deepEqual(P.tailwind,{windup:1,window:7.5},'Tailwind 1 s windup, 7.5 s window (wiki v7.04)');assert.equal(C.ld,32.5,'Lockdown 32.5 m (wiki)');const CP=J('XPS');for(const k of Object.keys(S.PAINT))assert.equal(CP[k],S.PAINT[k],'Paint Shells '+k+' server = offline');assert.equal(C.regrow,20,'Regrowth 20 HP/s (wiki)');
  // the same falloff curve on both sides
  for(let d=0;d<=5;d+=.125){const a=S.aoeFall(d,P.shock),b=xe('xAoeFall('+d+',XPAR2.shock)');assert.ok(Math.abs(a-b)<1e-9,'falloff at '+d+' m: server '+a+' offline '+b);}
  assert.equal(S.aoeFall(1.5,P.shock),75);assert.ok(Math.abs(S.aoeFall(3.999999,P.shock)-1)<1e-4);assert.equal(S.aoeFall(4,P.shock),0);assert.equal(S.aoeFall(2.75,P.shock),38);
@@ -82,9 +82,20 @@ const assert=require('assert/strict'),path=require('path');const {boot}=require(
   const A=D.DEV.alarmbot;assert.deepEqual([A.sight,A.alert,A.speed,A.trigger,A.windup,A.vulnerable],[5.5,.5,22.5,2,.5,4],'Alarmbot (wiki v13.00)');
   assert.deepEqual([U.ULT.seekers.maxTravel,U.ULT.seekers.nearsight,U.ULT.seekers.slow,U.ULT.seekers.slowK],[15,3,5,.4],'Seekers');
   const B=SM.weapons['Blade Storm'];assert.deepEqual([B.fireRate,B.damageRanges[0].headDamage,B.damageRanges[0].bodyDamage,B.damageRanges[0].legDamage],[6,150,50,42.5],'Blade Storm (wiki)');
-  assert.deepEqual(J('XALB'),{sight:A.sight,alert:A.alert,speed:A.speed,trig:A.trigger,windup:A.windup,r:A.radius,vul:A.vulnerable},'page XALB = server DEV.alarmbot');
+  assert.deepEqual(J('XALB'),{deploy:A.deploy,active:A.active,sight:A.sight,alert:A.alert,speed:A.speed,trig:A.trigger,windup:A.windup,r:A.radius,vul:A.vulnerable},'page XALB = server DEV.alarmbot');assert.deepEqual([A.deploy,A.active],[1.85,40],'Alarmbot 1.85 s deploy, 40 m proximity (wiki)');
   assert.deepEqual(J('XTRAP'),{deploy:T.deploy,windup:T.windup,leave:T.leave,slow:T.slow,zap:T.zap,rearm:T.rearm},'page XTRAP = server DEV.trapwire');
   assert.deepEqual(J('XBK_RC'),{Sage:45,Sova:50,Skye:50,Omen:40},'bot signature recharge = wiki (Recon Bolt / Guiding Light 50 s since v13.00)');}
+ // offline Alarmbot: 1.85 s deploy (detects nothing), inactive while Killjoy is past 40 m (= server)
+ const ad=J(`(()=>{const P=player,b=bots.filter(b=>b.alive)[0],o=[];const p0=new THREE.Vector3(P.x+30,0,P.z);const st=(t)=>{for(let i=0;i<Math.round(t/.05);i++)okTick(.05);};
+   bots.forEach(x=>{if(x!==b)x.g.position.set(P.x-60,x.g.position.y,P.z-60);});J.ab={m:new THREE.Object3D(),p:new THREE.Vector3(p0.x,0,p0.z),dep:XALB.deploy};b.g.position.set(p0.x+4.5,b.g.position.y,p0.z);st(1.8);o.push(J.ab.tg||null,J.ab.p.distanceTo(p0)<1e-6);st(.1);o.push(J.ab.tg===b);
+   J.ab={m:new THREE.Object3D(),p:new THREE.Vector3(P.x+41,0,P.z)};b.g.position.set(P.x+45.5,b.g.position.y,P.z);st(1);o.push(J.ab.tg||null,J.ab.p.x===P.x+41);J.ab=null;return o;})()`);
+ assert.deepEqual(ad,[null,true,true,null,true],'offline Alarmbot deploy / 40 m: '+JSON.stringify(ad));
+ // offline Tailwind: first E spends the charge, no dash; E during the 1 s windup does nothing; E in the window dashes 11 m once; the window fades after 7.5 s
+ const tw0=J(`(()=>{const P=player,pk=J.pick,o=[],d=()=>Math.round(Math.hypot(P.x-x0,P.z-z0)*100)/100;J.pick="Jett";J.tw=null;J.e=1;J.cd.e=0;const x0=P.x,z0=P.z;
+   jKey("KeyE");o.push(J.e,!!J.tw,d());jKey("KeyE");o.push(d());J.tw.arm=0;jKey("KeyE");o.push(J.tw,d()>0);jKey("KeyE");o.push(J.tw);
+   P.x=x0;P.z=z0;J.e=1;jKey("KeyE");J.tw.arm=0;J.tw.t=.01;const hp=player.hp;J.tw.t-=.02;if(J.tw.t<=0)J.tw=null;o.push(J.tw,J.e);J.pick=pk;J.tw=null;return o;})()`);
+ assert.deepEqual(tw0,[0,true,0,0,null,true,null,null,0],'offline Tailwind flow: '+JSON.stringify(tw0));
+ assert.ok(require('fs').readFileSync(require('path').join(__dirname,'..','index.html'),'utf8').includes('if (J.tw) { J.tw.arm -= dt; if ((J.tw.t -= dt) <= 0 || player.hp <= 0) { J.tw = null;'),'jTick fades the Tailwind window');
  // offline Trapwire (player's wire): deploy 1.5 s, 50 % slow at once, zap 5 + reveal after 0.7 s, held within 4 m, 1.25 s slow after, re-arms in 2 s, not used up
  const tw=J(`(()=>{const P=player,b=bots.filter(b=>b.alive)[0],o=[];bots.forEach(x=>{if(x!==b)x.g.position.set(P.x+60,x.g.position.y,P.z+60);});b.hp=100;b.armor=0;b.chs=0;
    const W=cyWire(P.x,P.z-6,1,0,null);W.ck=1e9;/* nobody shoots the anchors in this check */const mid={x:(W.a.x+W.b.x)/2,z:(W.a.z+W.b.z)/2},st=(t)=>{for(let i=0;i<Math.round(t/.05);i++)cyTick(.05);};
@@ -126,6 +137,6 @@ const assert=require('assert/strict'),path=require('path');const {boot}=require(
    try{XDRT.length=0;const d=xDartLoop(b,XSPY.every,XSPY.reveal);b.see=0;xDartRmTick(1.5);b.see=1;xDartRmTick(.05);o.push(d.rm,d.off);b.see=0;xDartRmTick(1.8);o.push(d.off,XDRT.length);xDartRmTick(.06);o.push(d.off,XDRT.length);const k=n;while(q.length)q.shift()[0]();o.push(n-k);return o;}finally{window.setTimeout=st;setTimeout=st;xHfRv=rv0;b.see=see;}})()`);
  assert.deepEqual(sr,[0,0,0,1,1,0,0],'offline Spycam dart removal 1.85 s, sight restarts it, no ping after: '+JSON.stringify(sr));
  assert.ok(require('fs').readFileSync(require('path').join(__dirname,'..','index.html'),'utf8').includes('bcTick(dt); xDartRmTick(dt);'),'removal ticks every frame');
- console.log('Ability parity: server PARITY = offline XPAR2 (Shock Bolt falloff 75->1 over 1.5-4 m, Aftershock 2x80/0.6 s/3 m, Healing Orb 100/5 s, Regrowth 20/s, Shrouded Step 1.2 s, From the Shadows 4 s, Rendezvous 18 m, Lockdown 32.5 m, Tailwind 11 m); falloff curves identical; server and offline Shock Bolt 75/38/0 at 1/2.75/5 m; server and offline Aftershock bursts; server Sage self heal 100, Dismiss 1.5 s; Paint Shells server = offline (2.25 s fuse, 55->1 over 2.5-5.5 m, 4 sub-munitions +0.667 s 2.5 m out, 5.25 m); offline Blast Pack 5 s fuse + 50->20 falloff; offline Trademark 10 m / 0.9 s / 6 m 50 % 4 s field; Spycam dart 1.85 s removal (server = offline)');
+ console.log('Ability parity: server PARITY = offline XPAR2 (Shock Bolt falloff 75->1 over 1.5-4 m, Aftershock 2x80/0.6 s/3 m, Healing Orb 100/5 s, Regrowth 20/s, Shrouded Step 1.2 s, From the Shadows 4 s, Rendezvous 18 m, Lockdown 32.5 m, Tailwind 11 m); falloff curves identical; server and offline Shock Bolt 75/38/0 at 1/2.75/5 m; server and offline Aftershock bursts; server Sage self heal 100, Dismiss 1.5 s; Paint Shells server = offline (2.25 s fuse, 55->1 over 2.5-5.5 m, 4 sub-munitions +0.667 s 2.5 m out, 5.25 m); offline Blast Pack 5 s fuse + 50->20 falloff; offline Trademark 10 m / 0.9 s / 6 m 50 % 4 s field; Alarmbot 1.85 s deploy / 40 m; Tailwind 1 s + 7.5 s; Spycam dart 1.85 s removal (server = offline)');
  process.exit(0);
 })().catch(e=>{console.error(e);process.exit(1);});

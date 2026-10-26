@@ -182,9 +182,15 @@ const ab=(s,u,k,m={})=>{s.time+=.5;return s.command(u,{t:'ab',k,...m});};
 // Alarmbot chases a nearby visible enemy and leaves it Vulnerable (double damage from guns and abilities).
 // wiki Alarmbot (v13.00): 5.5 m detection, 0.5 s alert phase, 22.5 m/s, 0.5 s windup once within 2 m, 4 s Vulnerable.
 {const {s,u,list:[foe]}=setup('Killjoy',['foe']);u.ability.q=1;assert.equal(ab(s,u,'q'),true);const e=s.effects.find(e=>e.kind==='alarmbot');const p0=[...e.p];Object.assign(foe,{x:p0[0]+4.5,y:0,z:p0[2]});
+ assert.equal(DEV.alarmbot.deploy,1.85);tick(s,1.8);assert.ok(e.chase==null&&!e.alertAt,'1.85 s deploy: detects nothing');tick(s,.05);assert.equal(e.chase,foe.id,'deployed: detects');
  tick(s,.45);assert.ok(Math.hypot(e.p[0]-p0[0],e.p[2]-p0[2])<1e-6,'0.5 s alert phase: not moving yet');tick(s,.1);const m=Math.hypot(e.p[0]-p0[0],e.p[2]-p0[2]);assert.ok(m>.5&&m<=22.5*.1+1e-6,'runs at 22.5 m/s: '+m);
- tick(s,.15);assert.ok(e.blastAt>s.time,'within 2 m: 0.5 s windup');assert.ok(!(foe.vulnerableUntil>s.time),'not before the windup');tick(s,.5);
+ tick(s,.15);assert.ok(e.blastAt>s.time,'within 2 m: 0.5 s windup');assert.ok(!(foe.vulnerableUntil>s.time),'not before the windup');tick(s,.55);
  assert.ok(foe.vulnerableUntil>s.time&&!s.effects.some(e=>e.kind==='alarmbot'),'Alarmbot pops');assert.ok(s.roundState(foe).status.vulnerable>3);const hp=foe.hp;abilityDamage(s,u,foe,10);assert.equal(hp-foe.hp,20,'vulnerable doubles damage');}
+// Alarmbot proximity (wiki 'Proximity radius to remain active 40 m', v1.11): inactive while Killjoy is dead or past 40 m (as the Turret).
+{const {s,u,list:[foe]}=setup('Killjoy',['foe']);u.ability.q=1;assert.equal(ab(s,u,'q'),true);const e=s.effects.find(e=>e.kind==='alarmbot');const p0=[...e.p];assert.equal(DEV.alarmbot.active,40);
+ Object.assign(u,{x:p0[0],z:p0[2]+41});Object.assign(foe,{x:p0[0]+4.5,y:0,z:p0[2]});tick(s,3);assert.ok(e.chase==null&&Math.hypot(e.p[0]-p0[0],e.p[2]-p0[2])<1e-6,'Killjoy 41 m away: inactive');
+ Object.assign(u,{z:p0[2]+39});tick(s,.1);assert.equal(e.chase,foe.id,'back within 40 m: active');tick(s,.6);const m=Math.hypot(e.p[0]-p0[0],e.p[2]-p0[2]);assert.ok(m>.5,'running');u.alive=false;tick(s,.3);assert.ok(e.chase==null&&Math.abs(Math.hypot(e.p[0]-p0[0],e.p[2]-p0[2])-m)<1e-6&&!e.blastAt,'Killjoy dead: stops, inactive');
+ console.log('Alarmbot: 1.85 s deploy; inactive while Killjoy is dead or past 40 m');}
 // Turret only covers the 180° in front of where Killjoy faced; hits tag.
 {const {s,u,list:[back,front]}=setup('Killjoy',['foeBack'],['foeFront']);Object.assign(back,{x:0,y:0,z:-8});Object.assign(front,{x:0,y:0,z:-200});assert.equal(ab(s,u,'e'),true);tick(s,4);assert.equal(back.hp,100,'behind the turret');
  front.z=-20;tick(s,1.5);assert.ok(front.hp<100&&front.tagUntil>s.time-.6,'in front');}

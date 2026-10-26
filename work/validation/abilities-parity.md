@@ -554,7 +554,7 @@ Status: **OK** = wiki on both sides; **stand-in** = the mechanic is simplified o
 |---|---|---|---|---|---|
 | Jett | C Cloudburst | 2 x 200, 3.35 m radius, 2 s max flight, 2.5 s smoke, hold to steer | SMOKE.r.Jett 3.35, vendor/cloudburst.cjs flight + steer | same cloudburst.cjs, smoke 2.5 s | OK |
 | Jett | Q Updraft | 1 x 150, 0.6 s lift | vy launch (abilities.js 'updraft') | J.up | OK (height tuned, not on the wiki) |
-| Jett | E Tailwind | free, 1 s windup, 7.5 s empowered, 0.45 s / 11 m dash, 2-kill recharge | PARITY.tail 11, signatureKills 2 | XPAR2.tail 11 | stand-in: instant dash (no 1 s windup / 7.5 s window) |
+| Jett | E Tailwind | free, 1 s windup, 7.5 s empowered, 0.45 s / 11 m dash, 2-kill recharge | PARITY.tail 11, PARITY.tailwind {windup 1, window 7.5}: first E spends the charge (u.tailwind), E in the window dashes; lost when unused / death / round; bots dash once armed; status twa / twu (qa-28) | XPAR2.tail 11, XTW =, J.tw (HUD WINDUP / n s) | OK (qa-28); stand-in: the 0.45 s dash is instant |
 | Jett | X Blade Storm | 8 pts, 5 blades, 50 body x3 head x0.85 legs, Single Fire 6 / s, regen on kill | weapons['Blade Storm'] fireRate 6, 150 / 50 / 42.5 | jThrow J.cd.x 1/6, 150 / 50 | OK (qa-26 / 0b21ca6); page has no leg zone for blades |
 | Phoenix | C Blaze | 1 x 150, 8 s wall, 1-21 m, 30 / s, heals Phoenix 12.5 / s | DEV.blaze 8 s, 12 m, 30 / s, heal 12.5 | = (fd7297c) | OK (length capped 12 m, project value) |
 | Phoenix | Q Curveball | 2 x 250, 0.6 s windup (v11.00), 1.5 s max blind | WINDUP.curveball 0.6 (hand-release 0.2 -> 0.4 fuse), DEV.curveball.blind 1.5 | jPop 1.5, XAB_WIND | OK |
@@ -577,7 +577,7 @@ Status: **OK** = wiki on both sides; **stand-in** = the mechanic is simplified o
 | Omen | E Dark Cover | 2 charges, 40 s recharge, 4.1 m, 15 s | SMOKE.r.Omen 4.1, recharge 40 | = | OK |
 | Omen | X From the Shadows | 7 pts, 4 s (1.5 + 2.5) | PARITY.shadows 4 | = | OK |
 | Killjoy | C Nanoswarm | 2 x 200, 1 s activation, 4.5 m, 45 / s for 5 s (180) | DEV.nanoswarm | XNANO | OK |
-| Killjoy | Q Alarmbot | 1 x 200, 5.5 m detect, 0.5 s alert, 22.5 m/s, 2 m trigger, 0.5 s windup, 4 s Vulnerable | DEV.alarmbot (0b21ca6) | XALB = | OK; not modelled: 1.85 s deploy, 40 m proximity |
+| Killjoy | Q Alarmbot | 1 x 200, 5.5 m detect, 0.5 s alert, 22.5 m/s, 2 m trigger, 0.5 s windup, 4 s Vulnerable | DEV.alarmbot (0b21ca6), deploy 1.85 + active 40: inactive while Killjoy is dead / past 40 m (qa-28) | XALB = (dep, 40 m) | OK |
 | Killjoy | E Turret | free, 2.7 s deploy, 100 deg cone, 0.75 s windup, 3-shot bursts 8 / 6 / 4, 40 m proximity | DEV.turret | XTUR | OK |
 | Killjoy | X Lockdown | 9 pts, 13 s windup, 32.5 m, 8 s detain | ULT.lockdown | XPAR2.ld = | OK |
 | Raze | C Boom Bot | 1 x 300, 5 s, 15 m, 2.5 m trigger, 0.6 s windup, 2 / 6 m, 60 HP | DEV.boombot | = | OK |
@@ -602,5 +602,7 @@ Status: **OK** = wiki on both sides; **stand-in** = the mechanic is simplified o
 | Chamber | X Tour De Force | 8 pts, 2.3 s summon, 5 rounds, 0.9 / s (v8.03), 150 x1.7 x0.85, 6 m 4 s slow field on kill (allies too) | ABILITY_GUNS['Tour De Force'], ULT.tdf, tdfKill -> Trademark-style field (qa-27) | XTDF =, bcTdfField; bot Chamber 5 rounds at 0.9 / s | OK (qa-27; was Operator 0.6 / s, no field online, any hit killed offline) |
 
 Not modelled anywhere (listed for the next pass): equip / unequip times of most abilities beyond the per-ability windups
-(section 5), Alarmbot / Trapwire / Turret proximity-to-remain-active radii, Jett Tailwind 1 s windup + 7.5 s empowered window.
-(Spycam dart removal channel: done by qa-28.)
+(section 5; presentation-level, the gun-lowering XAB_REC 0.45 s covers the trigger lockout).
+Done by qa-28: Spycam dart 1.85 s removal channel; Jett Tailwind 1 s windup + 7.5 s empowered window; Alarmbot 1.85 s deploy and
+40 m proximity-to-remain-active (the Turret already had it; Trapwire has no proximity rule on the wiki - its Stats table lists
+none; Nanoswarm neither).

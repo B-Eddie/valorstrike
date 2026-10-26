@@ -8158,7 +8158,7 @@ const xAdd = (k, c, o) => jMat(k, () => new THREE.MeshBasicMaterial({ color: c, 
 function xKjAcc(m, s) { [0.18, -0.12].forEach((y, i) => { const b = new THREE.Mesh(xKjBand, xKjMat); b.scale.set(s * (1.06 - i * 0.02), 1, s * (1.06 - i * 0.02)); b.position.y = y * s * 2; b.raycast = () => {}; m.add(b); }); }
 const blazeGeo = new THREE.BoxGeometry(0.3, 3, 1), orbGeo = new THREE.SphereGeometry(0.25, 12, 8), zoneGeo = new THREE.CircleGeometry(2.5, 28);
 // Phoenix Hot Hands (wiki.playvalorant.com/en-us/Hot_Hands): 4 s, the fire spreads to 4.5 m over 0.75 s, then 3.25 s at full size. Server: devices.js DEV.hotHands.
-const XALB = { sight: 5.5, alert: 0.5, speed: 22.5, trig: 2, windup: 0.5, r: 3, vul: 4 }; // Alarmbot (= server devices.js DEV.alarmbot)
+const XALB = { deploy: 1.85, active: 40, sight: 5.5, alert: 0.5, speed: 22.5, trig: 2, windup: 0.5, r: 3, vul: 4 }; // Alarmbot (= server devices.js DEV.alarmbot): 1.85 s deploy, inactive while Killjoy is dead or past 40 m
 const XHOT = { r: 4.5, grow: 0.75, life: 4, heal: 12.5 }; // heal: Phoenix in his own fire, 12.5 / s (server DEV.hotHands.heal)
 // Phoenix Blaze = server devices.js DEV.blaze (wiki): a straight wall of fire ALONG the aim from 1 m ahead of his feet, up to 12 m
 // (0.3 m short of a wall), 8 s, 0.8 m either side of its line burns 30 / s (allies a third) and heals Phoenix 12.5 / s, blocks
@@ -8533,7 +8533,7 @@ function okKey(code) {
   }
   if (code === "KeyQ") {
     if (J.q < 1) return sgNo(); J.q = 0; okRm(J.ab);
-    const m = okPlace(kjBox, 0xf2c230, 1.5); xKjAcc(m, 0.45); J.ab = { m, p: m.position }; say("Alarmbot placed", 700); blip(600, 0.15, "triangle", 0.12); SFX.ab("alarm", m.position);
+    const m = okPlace(kjBox, 0xf2c230, 1.5); xKjAcc(m, 0.45); J.ab = { m, p: m.position, dep: XALB.deploy }; say("Alarmbot placed", 700); blip(600, 0.15, "triangle", 0.12); SFX.ab("alarm", m.position);
   }
   if (code === "KeyE") {
     if (J.e < 1) return sgNo(); J.e = 0; okRm(J.tur);
@@ -8574,8 +8574,9 @@ function okTick(dt) {
     if (n.t > 0) return true; scene.remove(n.m); return false;
   });
   if (J.ab) { // XALB (= server DEV.alarmbot, wiki v13.00): 5.5 m detection, 0.5 s alert, runs at 22.5 m/s, 0.5 s windup within 2 m, Vulnerable 4 s in 3 m
-    const A = J.ab, e = new V(A.p.x, 0.5, A.p.z), sees = (b) => b.alive && Math.hypot(b.g.position.x - e.x, b.g.position.z - e.z) < XALB.sight && los(e, new V(b.g.position.x, 1, b.g.position.z));
-    if (A.wu == null) { if (!A.tg || !A.tg.alive) { A.tg = bots.filter(sees).sort((a, b) => Math.hypot(a.g.position.x - e.x, a.g.position.z - e.z) - Math.hypot(b.g.position.x - e.x, b.g.position.z - e.z))[0] || null; A.al = XALB.alert; }
+    const A = J.ab, e = new V(A.p.x, 0.5, A.p.z), off = A.dep > 1e-9 ? (A.dep -= dt) > 1e-9 : player.hp <= 0 || Math.hypot(player.x - A.p.x, player.z - A.p.z) > XALB.active; // deploying 1.85 s / Killjoy dead or past 40 m: inactive (= server)
+    const sees = (b) => b.alive && Math.hypot(b.g.position.x - e.x, b.g.position.z - e.z) < XALB.sight && los(e, new V(b.g.position.x, 1, b.g.position.z));
+    if (off) { A.tg = null; A.wu = null; } else if (A.wu == null) { if (!A.tg || !A.tg.alive) { A.tg = bots.filter(sees).sort((a, b) => Math.hypot(a.g.position.x - e.x, a.g.position.z - e.z) - Math.hypot(b.g.position.x - e.x, b.g.position.z - e.z))[0] || null; A.al = XALB.alert; }
       if (A.tg) { if (A.al > 1e-9) A.al -= dt; else { const dx = A.tg.g.position.x - A.p.x, dz = A.tg.g.position.z - A.p.z, d = Math.hypot(dx, dz);
         if (d < XALB.trig) A.wu = XALB.windup; else { const st = Math.min(d, XALB.speed * dt); A.p.x += (dx / d) * st; A.p.z += (dz / d) * st; } } } }
     else A.wu -= dt;
@@ -9545,7 +9546,7 @@ function jRound(match) { // each round start in Retake and 5v5
   resetBotRoundAbilities();
   if (mode === "five" && typeof FV !== "undefined" && FV.map === "lotus" && LG.on) { xLotusReset(); LG.pl = player; } // doors open + wall intact every round start
   J.on = !!KITS[J.pick] && (mode === "retake" || mode === "five"); jClear();
-  J.prevE = J.e; J.bs = 0; J.bsOn = false; J.e = 1; J.tk = 0; J.cd = { c: 0, q: 0, e: 0, x: 0 };
+  J.prevE = J.e; J.bs = 0; J.bsOn = false; J.e = 1; J.tk = 0; J.tw = null; J.cd = { c: 0, q: 0, e: 0, x: 0 };
   const M = K().mx;
   if (match) { J.ult = 0; J.c = mode === "five" ? 0 : M.c; J.q = mode === "five" ? 0 : M.q; }
   if (mode === "retake") { J.c = M.c; J.q = M.q; }
@@ -9583,14 +9584,15 @@ function jKey(code) {
     const m = jM(orbGeo, jMat("cbp", () => new THREE.MeshBasicMaterial({ color: 0xdbe6f2 }))); m.scale.setScalar(0.8); m.position.copy(o); scene.add(m);
     J.cbs.push({ m, st: Cloudburst.start([o.x, o.y, o.z], [d.x, d.y, d.z]) }); blip(640, 0.08, "sine", 0.08);
   }
-  if (code === "KeyE") {
-    if (J.e < 1) return no(), true;
+  if (code === "KeyE") { // Tailwind (wiki v7.04, = server PARITY.tailwind): the first E spends the charge, 1 s windup, then a 7.5 s window in which E dashes; unused, it is lost (jTick)
+    if (!J.tw) { if (J.e < 1) return no(), true; J.e = 0; J.tk = 0; J.cd.e = 0.4; J.tw = { arm: XTW.windup, t: XTW.windup + XTW.window }; say("Tailwind · empowered in " + XTW.windup + " s", 700); blip(520, 0.1, "sine", 0.08); return true; }
+    if (J.tw.arm > 0) return no(), true; J.tw = null;
     const fx = -Math.sin(yaw), fz = -Math.cos(yaw); let mx = 0, mz = 0;
     if (keys.KeyW) { mx += fx; mz += fz; } if (keys.KeyS) { mx -= fx; mz -= fz; }
     if (keys.KeyA) { mx += fz; mz -= fx; } if (keys.KeyD) { mx -= fz; mz += fx; }
     if (!mx && !mz) { mx = fx; mz = fz; } const l = Math.hypot(mx, mz); mx /= l; mz /= l;
     for (let i = 0; i < XPAR2.tail * 4; i++) { const nx = P.x + mx * 0.25, nz = P.z + mz * 0.25; if (blocked(nx, nz, 0.4, P.y)) break; P.x = nx; P.z = nz; } // wiki Tailwind base dash 11 m (server the same)
-    J.e = 0; J.tk = 0; J.cd.e = 0.4; SFX.ab("dash");
+    J.cd.e = 0.4; SFX.ab("dash");
   }
   if (code === "KeyX") {
     if (J.bsOn) { swapW("knife"); return true; }
@@ -9638,6 +9640,7 @@ function jTick(dt) {
   const on = jOn() && running && $("game").style.display !== "none";
   $("xAb").classList.toggle("on", on); if (!on) return;
   for (const k in J.cd) J.cd[k] = Math.max(0, J.cd[k] - dt);
+  if (J.tw) { J.tw.arm -= dt; if ((J.tw.t -= dt) <= 0 || player.hp <= 0) { J.tw = null; if (player.hp > 0) say("Tailwind faded", 700); } } // the 7.5 s window ran out (or Jett died): the charge is gone
   XSU.value += dt;
   J.smokes = J.smokes.filter((s) => { s.t -= dt; s.m.material.opacity = 0.6 * Math.min(1, s.t / 0.5); const sm = s.m.material.uniforms; if (sm) { sm.uO.value = s.m.material.opacity / 0.6; s.a = (s.a || 0) + dt; const k = Math.min(1, s.a / 0.3); const g = 0.3 + 0.7 * (1 - (1 - k) ** 3), sx = (s.r || 4) / 4; if (s.cyl) s.m.scale.set(sx, g, sx); else s.m.scale.setScalar(sx * g); } if (s.t > 0) return true; jRel(s.m); return false; });
   jCbTick(dt); jFxTick(dt); sgTick(dt); rsTick(dt); bcTick(dt); xDartRmTick(dt); xBTurTick(dt); xBSwTick(dt);
@@ -9645,7 +9648,7 @@ function jTick(dt) {
   const u = K().u, cq = ["jQ", J.q, J.q + "", J.cd.q / 0.6], ce = ["jE", J.e, J.e ? "1" : "Used", J.cd.e / 0.4];
   const sl = J.pick === "Breach" || J.pick === "Chamber" ? bcSl(u) : J.pick === "Cypher" ? cySl(u) : J.pick === "Raze" || J.pick === "Skye" ? rsSl(u) : J.pick === "Omen" || J.pick === "Killjoy" ? okSl(u) : J.pick === "Sage" || J.pick === "Reyna" ? sgSl(u, cq) : J.pick === "Phoenix" ? [["jC", J.c, J.c + "", J.cd.c / 0.6], cq, ["jE", J.e, J.e > 0 ? J.e + "" : J.tk + "/2 kills", J.cd.e / 0.6], ["jX", J.rib > 0 || J.ult >= u, J.rib > 0 ? Math.ceil(J.rib) + " s" : J.ult + "/" + u, J.rib > 0 ? 1 - J.rib / 10 : 1 - J.ult / u]]
     : J.pick === "Sova" ? [["jC", J.c || J.dr, J.dr ? Math.ceil(J.dr.t) + " s" : J.c + "", J.dr ? 1 - J.dr.t / 7 : J.cd.c / 0.6], cq, ["jE", J.e, J.e ? "1" : Math.ceil(J.cd.e) + " s", J.cd.e / 50], ["jX", J.hf > 0 || J.ult >= u, J.hf > 0 ? J.hf + " shots" : J.ult + "/" + u, J.hf > 0 ? J.cd.x / 0.9 : 1 - J.ult / u]]
-    : [["jC", J.c, J.c + "", J.cd.c / 0.6], ["jQ", J.q, J.q + "", J.cd.q / 0.6], ["jE", J.e, J.e ? "1" : J.tk + "/2 kills", J.cd.e / 0.4], ["jX", J.bsOn || J.ult >= u, J.bsOn ? J.bs + " knives" : J.ult + "/" + u, J.bsOn ? J.cd.x / 0.33 : 1 - J.ult / u]];
+    : [["jC", J.c, J.c + "", J.cd.c / 0.6], ["jQ", J.q, J.q + "", J.cd.q / 0.6], ["jE", J.e || !!J.tw, J.tw ? (J.tw.arm > 0 ? "WINDUP" : Math.ceil(J.tw.t) + " s") : J.e ? "1" : J.tk + "/2 kills", J.tw ? Math.max(0, J.tw.arm) : J.cd.e / 0.4], ["jX", J.bsOn || J.ult >= u, J.bsOn ? J.bs + " knives" : J.ult + "/" + u, J.bsOn ? J.cd.x / 0.33 : 1 - J.ult / u]];
   const PK = { jC: "c", jQ: "q", jE: "e" }, mx = K().mx || {}, pc = (id) => { const v = J[PK[id]]; return typeof v === "number" ? Math.max(0, v | 0) : v ? 1 : 0; }, pm = (id) => Math.min(4, Math.max(pc(id), mx[PK[id]] || (J.pick === "Omen" && id === "jE" ? 2 : 1)));
   const st = JSON.stringify(sl.map((x) => [x[1], x[2], Math.round(x[3] * 40), PK[x[0]] ? pc(x[0]) + "/" + pm(x[0]) : 0])); if (st === J.hs) return; J.hs = st;
   sl.forEach(([id, ok, txt, cd]) => {
@@ -12732,6 +12735,7 @@ const mpDist = (px, pz, x, z, seg) => (seg ? segD(px, pz, seg) : Math.hypot(px -
 // Parity sweep (qa-20, wiki Stats; server abilities.js PARITY / aoeFall): Shock Bolt 75 inside 1.5 m -> 1 at 4 m; Aftershock 2 x 80, 0.6 s apart,
 // 3 m; Healing Orb 100 HP over 5 s (ally or self); Regrowth 20 HP/s; Shrouded Step 1.2 s; From the Shadows 4 s; Rendezvous 18 m; Lockdown 32.5 m;
 // Tailwind dash 11 m (server ty 'dash').
+var XTW = { windup: 1, window: 7.5 }; // Jett Tailwind (wiki v7.04): 1 s windup, 7.5 s empowered window (= server PARITY.tailwind)
 var XPAR2 = { shock: { inner: 1.5, outer: 4, max: 75, min: 1 }, ash: { dmg: 80, n: 2, gap: 0.6, r: 3 }, heal: 100, regrow: 20, step: 1.2, shadows: 4, rdv: 18, rdvT: 1.3, rez: { w: 2, r: 1.3, reach: 12 }, ld: 32.5, tail: 11 }; // rdvT: Rendezvous 1.3 s teleport; rez: Resurrection 2 s windup + 1.3 s revive, 12 m (wiki; server PARITY.rdvTime / rez)
 // Raze Paint Shells (wiki Paint_Shells Stats; server abilities.js PAINT / paintSubs): 2.25 s fuse, 55 inside 2.5 m -> 1 at the 5.5 m edge, then
 // 4 sub-munitions 0.667 s later (5.25 m edge) 2.5 m out on the diagonals. xPsFall(sub): the damage by distance.
@@ -14127,7 +14131,7 @@ const XR_ACT=[];XR_ACT.max=4;
 // ---- TRUSTED ONLINE SERVER ----
 let netDetainAt=0; // Killjoy Lockdown detain notice (server status.detain)
 let netVulnAt=0,netTetherAt=0; // Alarmbot Vulnerable / Trapwire tether (server status.vulnerable / status.tether)
-function netStatusChips(st){const now=performance.now();if(st.vulnerable>0&&!(netVulnAt>now))say('Vulnerable · taking double damage · '+Math.ceil(st.vulnerable)+' s',1200);netVulnAt=st.vulnerable>0?now+st.vulnerable*1000:0;if(st.tether>0&&!(netTetherAt>now))say('Slowed by Trapwire · move 4 m away or shoot the anchor',1200);netTetherAt=st.tether>0?now+st.tether*1000:0;const on=[];if(st.vulnerable>0)on.push('VULNERABLE '+st.vulnerable.toFixed(1)+'s');if(st.tether>0)on.push('TRAPWIRE');if(st.dart>0)on.push(st.drm>0?'REMOVING DART '+Math.min(100,Math.round(st.drm/1.85*100))+'%':'TRACKING DART · HOLD 4 TO REMOVE');/* Spycam dart in me: server 1.85 s removal channel (h4 held, standing, not firing) */let el=document.getElementById('netSt');if(!el&&!on.length)return on;if(!el){el=document.body.appendChild(document.createElement('div'));el.id='netSt';el.style.cssText='pointer-events:none;position:fixed;left:50%;bottom:22%;transform:translateX(-50%);z-index:61;padding:3px 10px;background:rgba(255,70,85,.8);color:#fff;font:600 12px var(--sans,sans-serif);letter-spacing:.12em';}el.textContent=on.join(' · ');el.style.display=on.length?'block':'none';return on;}
+function netStatusChips(st){const now=performance.now();if(st.vulnerable>0&&!(netVulnAt>now))say('Vulnerable · taking double damage · '+Math.ceil(st.vulnerable)+' s',1200);netVulnAt=st.vulnerable>0?now+st.vulnerable*1000:0;if(st.tether>0&&!(netTetherAt>now))say('Slowed by Trapwire · move 4 m away or shoot the anchor',1200);netTetherAt=st.tether>0?now+st.tether*1000:0;const on=[];if(st.vulnerable>0)on.push('VULNERABLE '+st.vulnerable.toFixed(1)+'s');if(st.tether>0)on.push('TRAPWIRE');if(st.twa>0)on.push('TAILWIND '+st.twa.toFixed(1)+'s');else if(st.twu>0)on.push('TAILWIND READY · E TO DASH '+Math.ceil(st.twu)+'s');/* Jett Tailwind: server 1 s windup, 7.5 s window */if(st.dart>0)on.push(st.drm>0?'REMOVING DART '+Math.min(100,Math.round(st.drm/1.85*100))+'%':'TRACKING DART · HOLD 4 TO REMOVE');/* Spycam dart in me: server 1.85 s removal channel (h4 held, standing, not firing) */let el=document.getElementById('netSt');if(!el&&!on.length)return on;if(!el){el=document.body.appendChild(document.createElement('div'));el.id='netSt';el.style.cssText='pointer-events:none;position:fixed;left:50%;bottom:22%;transform:translateX(-50%);z-index:61;padding:3px 10px;background:rgba(255,70,85,.8);color:#fff;font:600 12px var(--sans,sans-serif);letter-spacing:.12em';}el.textContent=on.join(' · ');el.style.display=on.length?'block':'none';return on;}
 // Browser prediction is display only. The server consumes controls and owns
 // positions, collision, guns, damage, kills and results. Legacy P2P is not used.
 var netSkyeState=null,netReyna=null,netChannel=null;
