@@ -1,7 +1,7 @@
 // Server-authoritative ultimates (ledger row 9): Hunter's Fury, Showstopper, Lockdown, Rolling Thunder,
 // Seekers, Neural Theft, Tour de Force and Run It Back replace the old shared 100-damage blast.
 // Intents carry no trusted origin/aim/target; everything comes from server state.
-import assert from 'node:assert/strict';import {SpikeSimulation} from './src/spike.js';import {tickAbilities,SMOKE,smokeBlocks,cageBlocks} from './src/abilities.js';import {ULT} from './src/ults.js';import {floorTick} from './src/floor.js';
+import assert from 'node:assert/strict';import {SpikeSimulation} from './src/spike.js';import {tickAbilities,SMOKE,smokeBlocks,cageBlocks} from './src/abilities.js';import {ULT,ssDamage} from './src/ults.js';import {floorTick} from './src/floor.js';
 let wall=Infinity;const W={map:{attacker:[0,0,0],defender:[0,0,-10],sites:{A:[0,0,0]}},nav:{nodes:[[0,0,0],[0,0,-10]],adj:[[1],[0]]},playable:[0,1],allowed:new Set([0,1]),near:(x,z)=>z<-5?1:0,ground:()=>0,blocked:()=>false,ray:(o,d,max=Infinity)=>{if(!(d[2]<0)||!Number.isFinite(wall))return Infinity;const t=(o[2]+wall)/-d[2];return t>=0&&t<=max?t:Infinity;}};// wall: a plane at z=-wall
 const setup=(agent,...others)=>{wall=Infinity;const s=new SpikeSimulation(W,'five','ascent',()=>.5),u=s.add(agent,agent),list=others.map(([n,team])=>{const v=s.add(n);return v;});s.start(false);s.buy=0;s.roundDelay=0;
  Object.assign(u,{x:0,y:0,z:0,look:0,pitch:0});for(const v of list){Object.assign(v,{armor:0,hp:100,protectedUntil:0});}
@@ -39,6 +39,9 @@ const rocket=(s,u,m={})=>{const ok=cast(s,u,m);if(!ok)return ok;s.time+=ULT.rock
  u.triggerHeld=false;assert.equal(s.fire(u),true,'next FIRE is the gun again');assert.equal(u.ammo,24);assert.equal(s.effects.filter(e=>e.kind==='rocket').length,1);}
 {const {s,u,list:[foe]}=setup('Raze',['foe']);u.ability.ult=9;cast(s,u);tick(s,9.9);assert(u.showstopper,'launcher still out at 9.9 s');tick(s,.15);assert.equal(u.showstopper,null,'put away after 10 s');s.time+=.1;u.ammo=5;s.fire(u);assert.equal(s.effects.some(e=>e.kind==='rocket'),false,'no rocket after the window');}
 {const {s,u,list:[foe]}=setup('Raze',['foe']);u.ability.ult=9;cast(s,u);u.alive=false;tick(s,.05);assert.equal(u.showstopper,null,'death drops the launcher');}
+// Showstopper splash (wiki Showstopper: 4 m inner / 7 m outer, 30 - 150): full inside 4 m (was 3 m), linear to 30 at the edge (was to 0).
+assert.deepEqual([ULT.rocket.inner,ULT.rocket.outer,ULT.rocket.damage,ULT.rocket.min],[4,7,150,30],'ULT.rocket radii / damage');
+assert.deepEqual([0,3.5,4,5.5,7,8].map(ssDamage),[150,150,150,90,0,0],'ssDamage: 150 to 4 m, 90 at 5.5 m, nothing from 7 m');assert.ok(Math.abs(ssDamage(6.999)-30)<.1,'30 at the outer edge');
 // Showstopper rocket: a travelling rocket; impact on a body deals 150 at the centre with falloff to 7 m and LOS;
 // a wall detonates it early; allies take a third (VALORANT friendly fire 1/3).
 {const {s,u,list:[foe,near,mate,hidden]}=setup('Raze',['foe'],['foeNear'],['mate'],['foeHidden']);Object.assign(foe,{x:0,y:.6,z:-15});Object.assign(near,{x:5.5,y:.6,z:-15});Object.assign(mate,{x:-1,y:.6,z:-15});Object.assign(hidden,{x:0,y:.6,z:-60});

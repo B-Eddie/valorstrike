@@ -8459,13 +8459,17 @@ function rsFly(o, dt, g) { // simple bouncing projectile; true on contact
   if (ny < 0.15) { p.y = 0.15; o.v.y = Math.abs(o.v.y) * 0.4; o.v.x *= 0.7; o.v.z *= 0.7; if (o.v.y < 0.8) o.v.y = 0; hit = true; } else p.y = ny;
   return hit;
 }
-function rsBoom(p, r, dmg, w, c, direct, fall) {
+// Raze Showstopper splash (wiki.playvalorant.com/en-us/Showstopper: radii 4 m inner / 7 m outer, damage 30 - 150): 150 inside
+// 4 m, linear to 30 at the 7 m edge. Same values as the server (ULT.rocket / ssDamage).
+const XSS = { inner: 4, outer: 7, max: 150, min: 30 };
+function xSsDmg(d) { return d <= XSS.inner ? XSS.max : d < XSS.outer ? XSS.max - (XSS.max - XSS.min) * (d - XSS.inner) / (XSS.outer - XSS.inner) : 0; }
+function rsBoom(p, r, dmg, w, c, direct, fall) { // fall: Showstopper falloff (xSsDmg)
   const e = new RV(p.x, Math.max(0.5, p.y), p.z), m = jM(smokeGeo, fireMat(c, 0.45)); m.scale.setScalar(r / 4); m.position.copy(e); jFx(m, 0.4);
   blip(70 + Math.random() * 30, 0.45, "sawtooth", 0.22);
   bots.forEach((b) => { if (!b.alive) return; const q = new RV(b.g.position.x, 1, b.g.position.z), d = q.distanceTo(e);
-    if (!(dmg > 0)) {} else if (b === direct) jHit(b, dmg, w); else if (d < r && los(e, q)) jHit(b, fall ? dmg * Math.max(0.35, 1 - d / r) : dmg, w);
+    if (!(dmg > 0)) {} else if (b === direct) jHit(b, dmg, w); else if (d < r && los(e, q)) jHit(b, fall ? dmg * xSsDmg(d) / XSS.max : dmg, w);
     if (b.alive && d < r) flash(b); });
-  xFFArea("You", false, w, dmg, (x, z, t) => { const q = new RV(x, 1, z), d = q.distanceTo(e); return d < r && los(e, q) ? (fall ? Math.max(0.35, 1 - d / r) : true) : false; }); // Paint Shells / Showstopper (Boom Bot, Blast Pack: not in XFF)
+  xFFArea("You", false, w, dmg, (x, z, t) => { const q = new RV(x, 1, z), d = q.distanceTo(e); return d < r && los(e, q) ? (fall ? xSsDmg(d) / XSS.max : true) : false; }); // Paint Shells / Showstopper (Boom Bot, Blast Pack: not in XFF)
 }
 function rsPack() { // Blast Pack detonation: 50 to enemies, knocks everyone back
   const P = player;
@@ -8560,7 +8564,7 @@ function rsTick(dt) {
     o.t += dt; const p = o.m.position;
     if (o.kind === "rocket") {
       const wall = rsFly(o, dt, 0), tg = bots.find((b) => b.alive && Math.hypot(b.g.position.x - p.x, b.g.position.z - p.z) < 0.8 && p.y < 2.1);
-      if (!wall && !tg && o.t < 3) return true; rsBoom(p, 7, 150, "Showstopper", 0xff8a1f, tg, true); scene.remove(o.m); return false;
+      if (!wall && !tg && o.t < 3) return true; rsBoom(p, XSS.outer, XSS.max, "Showstopper", 0xff8a1f, tg, true); scene.remove(o.m); return false;
     }
     rsFly(o, dt, 16); if (o.t < o.fuse) return true;
     const sub = o.kind === "sub"; rsBoom(p, sub ? 3.5 : 4, 55, "Paint Shells", sub ? 0xff4fa0 : 0xffb21f);

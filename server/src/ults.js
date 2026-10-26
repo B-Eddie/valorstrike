@@ -7,7 +7,7 @@ import {WINDUP,wf} from './windups.js';
 // Values follow the project's lightweight kit interpretation, scaled to the original agents' ults.
 export const ULT={
  fury:{blasts:3,cycle:2.125,window:6,range:66,width:1.76,damage:80,reveal:1},/* wiki Hunter's_Fury: 3 charges, 1 every 2.125 s, 6 s, 66 m x 1.76 m radius, 80, reveal 1 s; blasts only on FIRE (recast); client XHF */
- rocket:{speed:30,life:3,inner:3,outer:7,damage:150,arm:.05,equip:WINDUP.showstopper,window:10},/* wiki Showstopper: X equips the launcher (1.4 s), FIRE shoots the one rocket, 10 s max including the equip */
+ rocket:{speed:30,life:3,inner:4,outer:7,damage:150,min:30,arm:.05,equip:WINDUP.showstopper,window:10},/* wiki Showstopper: X equips the launcher (1.4 s), FIRE shoots the one rocket, 10 s max including the equip */
  lockdown:{windup:WINDUP.lockdown,radius:32.5,detain:8},
  quake:{delay:wf('rollingThunder'),near:8,length:32,width:18,concuss:4},/* wiki Rolling_Thunder: a 32 m x 18 m strip starting 8 m in front of Breach, concuss 4 s; client XRT2 */
  seekers:{count:3,speed:12,maxTravel:4,nearsight:3},
@@ -19,6 +19,8 @@ const eye=u=>[u.x,u.y+1.6-(u.ch||0),u.z];
 const aim=u=>[-Math.sin(u.look)*Math.cos(u.pitch||0),Math.sin(u.pitch||0),-Math.cos(u.look)*Math.cos(u.pitch||0)];
 const enemies=(sim,u)=>sim.units.filter(v=>v!==u&&v.team!==u.team&&v.alive&&!v.loading);
 const effect=(sim,u,kind,p,seconds,radius,extra={})=>{const e={id:++sim.effectSeq,kind,owner:u.id,ag:u.agent,team:u.team,p:[...p],until:sim.time+seconds,radius,...extra};sim.effects.push(e);return e;};
+// Showstopper splash (wiki Showstopper: radii 4 m inner / 7 m outer, damage 30 - 150): full 150 inside 4 m, linear to 30 at 7 m, 0 beyond; client xSsDmg.
+export function ssDamage(r){const C=ULT.rocket;return r<=C.inner?C.damage:r<C.outer?C.damage-(C.damage-C.min)*(r-C.inner)/(C.outer-C.inner):0;}
 export function resetUlts(u){u.detainUntil=0;u.revealedUntil=0;u.runItBack=null;u.showstopper=null;if(u.ultWeapon){u.ultWeapon=null;}if(u.ability)u.ability.fury=null;}
 
 // Pre-cast checks that may reject the intent before the ult points are spent. Returns false to reject,
@@ -75,7 +77,7 @@ export function tickUlts(sim,dt){
    if(sim.time-e.born>C.arm)for(const v of sim.units){if(!v.alive||v.loading||v.id===e.owner)continue;const q=[v.x-e.p[0],v.y+1-e.p[1],v.z-e.p[2]],t=Math.max(0,Math.min(step,q.reduce((s,n,k)=>s+n*d[k],0)));if(q.reduce((s,n,k)=>s+(n-d[k]*t)**2,0)<.8*.8&&(at==null||t<at))at=t;}
    if(at==null&&sim.time+dt<e.until){for(let k=0;k<3;k++)e.p[k]+=d[k]*step;continue;}
    const t=at==null?step:at;for(let k=0;k<3;k++)e.p[k]+=d[k]*Math.max(0,t-.05);sim.effects.splice(i,1);
-   for(const v of sim.units){if(!v.alive||v.loading||v.id===e.owner)continue;/* Showstopper: allies take 1/3 (abilityDamage) */const r=Math.hypot(v.x-e.p[0],v.y+1-e.p[1],v.z-e.p[2]);if(r>=C.outer)continue;const o=[e.p[0],e.p[1],e.p[2]],q=[v.x-o[0],v.y+1-o[1],v.z-o[2]],len=Math.hypot(...q);if(len>.5&&sim.world.ray(o,q.map(n=>n/len),len-.4)!==Infinity)continue;const n=r<=C.inner?C.damage:C.damage*(C.outer-r)/(C.outer-C.inner);abilityDamage(sim,owner,v,n);}
+   for(const v of sim.units){if(!v.alive||v.loading||v.id===e.owner)continue;/* Showstopper: allies take 1/3 (abilityDamage) */const r=Math.hypot(v.x-e.p[0],v.y+1-e.p[1],v.z-e.p[2]);if(r>=C.outer)continue;const o=[e.p[0],e.p[1],e.p[2]],q=[v.x-o[0],v.y+1-o[1],v.z-o[2]],len=Math.hypot(...q);if(len>.5&&sim.world.ray(o,q.map(n=>n/len),len-.4)!==Infinity)continue;const n=ssDamage(r);abilityDamage(sim,owner,v,n);}
    sim.castEvents.push({t:'ac',i:e.owner,ag:'Raze',k:'x',sub:'boom',o:[...e.p],d:[...d],p:[...e.p],ts:Math.round(sim.time*1000)});continue;}
   if(e.kind==='lockdown'&&sim.time>=e.at){sim.effects.splice(i,1);for(const v of sim.units)if(v.alive&&!v.loading&&v.team!==e.team&&Math.hypot(v.x-e.p[0],v.z-e.p[2])<e.radius&&Math.abs(v.y-e.p[1])<8){v.detainUntil=Math.max(v.detainUntil||0,sim.time+ULT.lockdown.detain);v.slowUntil=Math.max(v.slowUntil||0,sim.time+ULT.lockdown.detain);}continue;}
   if(e.kind==='quake'&&sim.time>=e.at){sim.effects.splice(i,1);const fx=-Math.sin(e.yaw),fz=-Math.cos(e.yaw),C=ULT.quake;for(const v of sim.units){if(!v.alive||v.loading||v.team===e.team||Math.abs(v.y-e.p[1])>4)continue;const dx=v.x-e.p[0],dz=v.z-e.p[2],f=dx*fx+dz*fz,sd=Math.abs(dx*fz-dz*fx);if(f>C.near&&f<C.near+C.length&&sd<C.width/2){v.concussUntil=Math.max(v.concussUntil||0,sim.time+C.concuss);v.slowUntil=Math.max(v.slowUntil||0,sim.time+C.concuss);}}continue;}

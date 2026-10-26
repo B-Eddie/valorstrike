@@ -430,3 +430,14 @@ Was: server 0.9 m, 2 s reveal, 6.5 s window, an automatic blast every 2 s plus a
   40 m 1.5 m off hit + revealed, 2 m missed, blasts at 0 / 2.125 / 4.25 s only; enemy bot hits the player; a round clear
   cancels pending blasts). Also fixes the Paranoia section's `los` restore (it left `los` undefined, freezing every later
   ability tick in that test run).
+
+### Raze Showstopper splash (wiki.playvalorant.com/en-us/Showstopper, fetched 2026-10-25)
+
+Wiki stats: radii 4 m inner / 7 m outer, damage 30 - 150 ("anything within the inner radius will take full damage", falling
+to the minimum at the very edge). Was: server inner 3 m, linear to 0 at 7 m; offline client `150 x max(0.35, 1 - d / 7)`.
+
+- Server: `ULT.rocket {inner: 4, outer: 7, damage: 150, min: 30}`, `ssDamage(r)` = 150 inside 4 m, linear to 30 at 7 m, 0 beyond.
+- Client: `XSS` (same values, asserted equal) / `xSsDmg(d)` in `rsBoom` for the player's rocket and its ally pass.
+- Not changed: offline bot Raze's ult stays the generic 5 m / 150 burst (`xAoe`).
+- Tests: `server/test-ults.js` (table; ssDamage 150 / 150 / 150 / 90 / 0 at 0 / 3.5 / 4 / 5.5 / 7 m, ~30 at the edge),
+  `work/test_ability_equip.cjs` (XSS == ULT.rocket, xSsDmg table, rsBoom 150 / 90 / 0 at 3.5 / 5.5 / 7.5 m).
