@@ -3,7 +3,7 @@
 const fs=require('fs'),path=require('path'),assert=require('assert/strict');
 const src=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
 const a=src.indexOf('// per-bot behavior profiles'),a2=src.indexOf('const XR = {');
-const g=src.indexOf('function xGoal'),b=src.indexOf('function xStep');
+const g=src.indexOf('function xGoal'),b=src.indexOf('function xStep(');
 assert(a>=0&&a2>a&&g>a2&&b>g,'variety+xGoal source found');
 const c=src.indexOf('function xFight'),d=src.indexOf('// peek style',c);
 assert(c>=0&&d>c,'xFight found');
