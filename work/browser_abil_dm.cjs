@@ -56,12 +56,13 @@ const SIZES=(process.env.SIZES||'1280x720,640x360,390x844').split(',').map(s=>s.
  await page.setViewportSize({width:640,height:360});await go('startDM','Jett');log('dm',await X('JSON.stringify({mode,dm:FV.dm})'));await frames(2);
  const lb=()=>X(`JSON.stringify((()=>{const e=document.querySelector('.x-dmlb'),c=document.querySelector('.x-cbt');const vis=el=>!!el&&getComputedStyle(el).display!=='none'&&getComputedStyle(el).visibility!=='hidden'&&el.getBoundingClientRect().width>2;const r=el=>el?[...Object.values(el.getBoundingClientRect().toJSON())].slice(0,4).map(Math.round):null;return {lb:vis(e),lbR:r(e),cbt:vis(c),cbtR:r(c),on:document.body.classList.contains('x-cbt-on'),hp:player.hp};})())`).then(JSON.parse);
  let l=await lb();log('dm alive',l);check('DM 640x360 alive: leaderboard shown',l.lb,JSON.stringify(l));await shot('dm-lb-alive',640,360);
+ await X('window.__ts=0.05;1');await frames(1);/* abil_dm4: switching after the kill let the first frame carry 1x time past the 1.5 s DM respawn (DM.prt -= dt) */
  await X(`window.__god=0;{const b=bots[0];hurt(player,500,b.name);if(player.hp>0)pDie(b.name,"Vandal");}1`);
  // hk-32: abil_dm3 sampled 1.5 s after the kill - DM respawns within that, so 'dead' read the respawned player (hp 100) and, with
  // __god off, a bot killed the player again before the 'respawned' sample (hp 0, report up). Time is slowed (__ts) and each
  // phase waits for its own state: dead = hp <= 0 with the report class on; then __god back on and respawned = hp > 0.
  await page.waitForFunction(()=>window.__xe('player.hp<=0'),null,{timeout:120000,polling:50}).catch(e=>log('dead wait',String(e).slice(0,80)));
- await X('window.__god=1;window.__ts=0.05;1');await frames(1);
+ await X('window.__god=1;1');
  await page.waitForFunction(()=>window.__xe("player.hp>0||document.body.classList.contains('x-cbt-on')"),null,{timeout:300000,polling:100}).catch(e=>log('report wait',String(e).slice(0,80)));
  await frames(1);l=await lb();log('dm dead',l);
  check('DM 640x360 dead: combat report shown, leaderboard hidden (not covered)',l.cbt&&!l.lb,JSON.stringify(l));await shot('dm-lb-dead',640,360);
