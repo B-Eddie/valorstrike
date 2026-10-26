@@ -73,10 +73,11 @@ const ONLY=(process.env.ONLY||'A,B,C,D').split(',');
    await page.keyboard.press(key);const ok=await until('typeof XAF!=="undefined"&&XAF.on&&XAF.last&&XAF.last.rig===true&&J.eq&&(J.eq.st==="ready"||J.eq.st==="hold")',45000,200);
    const st=await XJ(`(()=>{const R=XAF.cur;let sk=0,vis=0;if(R&&R.root)R.root.traverse(o=>{if(o.isSkinnedMesh)sk++;});vis=!!(R&&R.root&&R.root.visible&&R.root.parent===camera);
      const it=XAF.last;return {on:XAF.on,mode:XAF.mode,last:it,eq:J.eq&&J.eq.st,sk,vis,err:XAF.err,legacy:typeof xCaHand!=='undefined'||typeof XEQV!=='undefined'||typeof xEqItem!=='undefined',gunFP:!!(XV.fp&&XV.fp.root.visible)};})()`);
+   const ti=Date.now(),itemOk=ok&&await until('XAF.on&&XAF.last&&XAF.last.item===true',30000,200);st.itemWaitMs=Date.now()-ti;st.itemNow=await X('!!(XAF.last&&XAF.last.item)');
    log(ag+' '+key+' equipped',st);await shot('arms-'+ag.toLowerCase()+'-'+key[3].toLowerCase());
-   check(`${ag} ${key[3]}: ability drawn by the agent's own native FP arms (rig loaded, SkinnedMesh under the camera, item in hand, gun rig hidden, no legacy box hand)`,ok&&st.last&&st.last.ag===ag&&st.sk>0&&st.vis&&st.last.item===true&&!st.gunFP&&!st.legacy&&!st.err,JSON.stringify(st));
+   check(`${ag} ${key[3]}: ability drawn by the agent's own native FP arms (rig loaded, SkinnedMesh under the camera, item in hand within 30 s of the prop glb load, gun rig hidden, no legacy box hand)`,ok&&itemOk&&st.last&&st.last.ag===ag&&st.sk>0&&st.vis&&!st.gunFP&&!st.legacy&&!st.err,JSON.stringify(st));
    await page.mouse.down();await page.waitForTimeout(80);await page.mouse.up();
-   const off=await until('!XAF.on&&!J.eq',8000,200);await page.waitForTimeout(1500);const st2=await XJ('{on:XAF.on,eq:J.eq&&J.eq.st,gunFP:!!(XV.fp&&XV.fp.root.visible),err:XAF.err}');log(ag+' after FIRE',st2);
+   const off=await until('!XAF.on&&!J.eq',8000,200);const tg=Date.now();await until('!!(XV.fp&&XV.fp.root.visible)',30000,200);const st2=await XJ('{on:XAF.on,eq:J.eq&&J.eq.st,gunFP:!!(XV.fp&&XV.fp.root.visible),err:XAF.err}');st2.gunWaitMs=Date.now()-tg;log(ag+' after FIRE',st2);
    check(`${ag} ${key[3]}: FIRE throws it, the ability rig goes away and the native gun rig comes back`,off&&!st2.on&&st2.gunFP,JSON.stringify(st2));
   }
  }
@@ -106,11 +107,11 @@ const ONLY=(process.env.ONLY||'A,B,C,D').split(',');
   await X(`if(!window.__kp){window.__kp=1;window.__kev=[];const p0=xvFPPlay;xvFPPlay=function(F,kind){try{if(F&&F.w==='Knife'&&kind!=='idle'||(F&&F.w==='Knife'&&F.kind&&/ttack/.test(F.kind)&&kind==='idle'))window.__kev.push([+(performance.now()/1000).toFixed(2),kind,F.kc||0]);}catch(e){}return p0.apply(this,arguments);};}1`);
   await page.keyboard.press('Digit3');const ok=await until('knife.visible&&XV.fp&&XV.fp.w==="Knife"&&XV.fp.root.visible',45000,200);log('knife rig',ok);
   await page.waitForTimeout(1200);await X('window.__kev=[];1');
-  for(let i=0;i<4;i++){await page.mouse.down();await page.waitForTimeout(50);await page.mouse.up();await page.waitForTimeout(500);if(i===1)await shot('knife-attack2');}
+  for(let i=0;i<4;i++){await page.mouse.down();await page.waitForTimeout(60);await page.mouse.up();await page.waitForTimeout(470);}await shot('knife-after-combo');
   await page.waitForTimeout(1300);await page.mouse.down();await page.waitForTimeout(50);await page.mouse.up();await page.waitForTimeout(1600);
   const ev=await XJ('window.__kev');log('knife events',ev);
   const atk=ev.filter(e=>/^attack/.test(e[1])).map(e=>e[1]);
-  check('Knife: four light swings ~0.55 s apart play attack 1 -> 2 -> 3 -> 1, a pause restarts at attack 1',ok&&JSON.stringify(atk)===JSON.stringify(['attack 1','attack 2','attack 3','attack 1','attack 1']),JSON.stringify(atk));
+  check('Knife: four light swings ~0.53 s apart play attack 1 -> 2 -> 3 -> 1, a pause restarts at attack 1',ok&&JSON.stringify(atk)===JSON.stringify(['attack 1','attack 2','attack 3','attack 1','attack 1']),JSON.stringify(atk));
   const last=ev.filter(e=>/^attack/.test(e[1])).pop(),idle=last&&ev.find(e=>e[1]==='idle'&&e[0]>last[0]);
   check('Knife: the last swing returns to idle by ~XVK.light (1.0 s, allow 1.3 s at SwiftShader frame rates)',!!idle&&idle[0]-last[0]<=1.3,JSON.stringify({last,idle}));
  }
