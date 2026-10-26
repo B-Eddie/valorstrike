@@ -50,6 +50,12 @@ export function fogPass(sim,snap){const F=sim.fog||(sim.fog={t:-1,n:0,pairs:new 
   for(const g of groups){if(g===ownG)continue;const sticky=!MOVING.has(e.kind);if(sticky&&e.fogSeen.has(g))continue;let seen=false;
    for(const a of L){if(fogGroup(sim,a)!==g)continue;if(pts.some(p=>(a.x-p[0])**2+(a.z-p[2])**2<=FOG.devNear*FOG.devNear&&Math.abs(a.y-p[1])<4)){seen=true;break;}const E=eyes(a);if(E.some(o=>pts.some(p=>segClear(sim,o,p)))){seen=true;break;}}
    if(seen)e.fogSeen.set(g,now+FOG.grace);if(!(e.fogSeen.get(g)>=now))F.hide.get(g).add(e.id);}}
+ // floor guns (Spike mode fw rows): one an enemy dropped (a G drop, its death drop, a swap) is a position - it reaches a
+ // group once one of its live members has seen the spot (sticky, like a static device); own-team and ownerless drops always
+ F.hideFw=new Map();for(const g of groups)F.hideFw.set(g,new Set());
+ for(const d of sim.floor||[]){if(!d||d.dropper==null||![d.x,d.y,d.z].every(Number.isFinite))continue;const o=U.find(u=>u.id===d.dropper);if(!o)continue;const og=fogGroup(sim,o);d.fogSeen||(d.fogSeen=new Set());const p=[d.x,d.y+.3,d.z];
+  for(const g of groups){if(g===og||d.fogSeen.has(g))continue;let seen=false;for(const a of L){if(fogGroup(sim,a)!==g)continue;if((a.x-p[0])**2+(a.z-p[2])**2<=FOG.devNear*FOG.devNear&&Math.abs(a.y-p[1])<4||eyes(a).some(e=>segClear(sim,e,p))){seen=true;break;}}
+   if(seen)d.fogSeen.add(g);else F.hideFw.get(g).add(d.id);}}
  // forget pair stamps of departed units
  if(F.n%200===0){const ids=new Set(U.map(u=>u.id));for(const k of F.pairs.keys()){const [x,y]=k.split(':').map(Number);if(!ids.has(x)||!ids.has(y))F.pairs.delete(k);}for(const m of rel.values())for(const id of m.keys())if(!ids.has(id))m.delete(id);}
  return F;}
@@ -66,6 +72,7 @@ export function fogView(sim,snap,viewer){if(!snap||!viewer||sim.phase!=='game'||
  const out={...snap};if(Array.isArray(snap.u))out.u=snap.u.map(r=>!Array.isArray(r)||r[0]===viewer.id||rowGroup(sim,r)===g||r[0]===kill||seen(r)?r:fogRow(r));
  if(Array.isArray(snap.ev)&&Array.isArray(out.u)){const hid=new Set(out.u.filter(r=>Array.isArray(r)&&r[22]===1).map(r=>r[0]));if(hid.size){const grp=new Map(snap.u.filter(Array.isArray).map(r=>[r[0],rowGroup(sim,r)]));/* a hit on a hidden enemy by someone outside our group: its damage would give away the HP the row hides, and its blood would land at a stale spot */const outsider=id=>id!==viewer.id&&grp.get(id)!==g;
   out.ev=snap.ev.filter(e=>!(Array.isArray(e)&&(e[0]==='h'&&hid.has(e[2])&&outsider(e[1])/* a gunshot ('s') of a hidden enemy: it is out of hearing range (a shot within FOG.shot m makes the shooter relevant this very pass), so no cue at all */||e[0]==='s'&&hid.has(e[1])&&outsider(e[1])/* a finisher ('fin') carries the victim's death spot */||e[0]==='fin'&&hid.has(e[3])&&outsider(e[3])&&e[2]!==viewer.id)));}}
+ const hideFw=F.hideFw&&F.hideFw.get(g);if(Array.isArray(snap.fw)&&hideFw&&hideFw.size)out.fw=snap.fw.filter(r=>!(Array.isArray(r)&&hideFw.has(r[0])));
  if(Array.isArray(snap.fx)&&hide&&hide.size)out.fx=snap.fx.filter(r=>!(r&&hide.has(r.id)&&(r.kind==='dev'||r.kind==='barrier'||r.kind==='cb'&&r.s===0)));return out;}
 // A cast event ('ac': caster id, agent, key, eye o, aim d, effect point p) as viewer may receive it. The caster's own team
 // (or the caster, in Deathmatch), and a group the caster is relevant to (seen, heard - a cast is heard within FOG.cast m

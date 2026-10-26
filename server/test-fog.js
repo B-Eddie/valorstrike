@@ -162,4 +162,12 @@ const adv=(s,t)=>{s.time+=t;};
  const types=new Set([...src.matchAll(/events\.push\(\[\s*'([a-z]+)'/g)].map(m=>m[1]));if(/const e=\['fin'/.test(src))types.add('fin');
  const audited={k:'names only',h:'dropped for a hidden target (19)',s:'dropped for a hidden shooter (22)',n:'out-of-bounds warning: a name only',sp:'Spike planted: site public',fin:'dropped for a hidden victim (23)'};
  for(const t of types)assert.ok(audited[t],'unaudited snapshot event type: '+t);}
+// 27. floor guns (fw rows): an enemy's drop (G, death, swap) reaches a group only once one of its live members has seen the
+// spot (then it stays); the dropper's team always; an ownerless gun always
+{const {s,a,b}=setup();s.floor=[{id:70,w:'Vandal',x:9,y:0,z:0,ammo:25,reserve:50,dropper:b.id,graceUntil:0},{id:71,w:'Ghost',x:9,y:0,z:1,ammo:15,reserve:30,dropper:null,graceUntil:0}];
+ const fw=u=>{adv(s,.05);return fogView(s,{...frame(s,[]),fw:s.floor.map(d=>[d.id,d.w,d.x,d.y,d.z])},u).fw.map(r=>r[0]);};
+ assert.deepEqual(fw(a),[71],'enemy drop behind the wall: no row (ownerless one kept)');assert.deepEqual(fw(b),[70,71],'dropper\'s team: row');
+ a.z=20;assert.deepEqual(fw(a),[70,71],'spot seen');a.z=0;adv(s,3);assert.deepEqual(fw(a),[70,71],'stays once seen');
+ s.floor.push({id:72,w:'Phantom',x:9.5,y:0,z:0,ammo:25,reserve:50,dropper:a.id,graceUntil:0});assert.ok(fw(a).includes(72),'own drop');assert.ok(fw(b).includes(72),'an enemy drop B stands 1 m from (in sight): row');
+ s.floor.push({id:73,w:'Spectre',x:-12,y:0,z:-2,ammo:25,reserve:50,dropper:a.id,graceUntil:0});assert.ok(!fw(b).includes(73),'A\'s drop behind the wall: not B\'s');}
 console.log('test-fog: ok');
