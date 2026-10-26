@@ -104,6 +104,22 @@ function leashGrid(nodes,valid,adj){const keep=new Uint8Array(nodes.length);if(a
  const cells=new Map();for(let i=0;i<nodes.length;i++){if(!keep[i])continue;const p=nodes[i],k=Math.floor(p[0])*4096+Math.floor(p[2]);let l=cells.get(k);if(!l)cells.set(k,l=[]);l.push(p[0],p[1],p[2]);}return cells;}
 function leashNear(L,x,z,y){let best=Infinity;const cx=Math.floor(x),cz=Math.floor(z);for(let dx=-6;dx<=6;dx++)for(let dz=-6;dz<=6;dz++){const l=L.get((cx+dx)*4096+cz+dz);if(!l)continue;for(let i=0;i<l.length;i+=3){const ny=l[i+1];if(ny>y+1||ny<y-7.5)continue;const d=(l[i]-x)**2+(l[i+2]-z)**2;if(d<best)best=d;}}return best>36?Infinity:best;}
 function leashOk(L,x,z,y,ground,x0,z0){if(!L)return true;if(x0!=null){if(leashOk(L,x,z,y,ground))return true;if(leashOk(L,x0,z0,y,ground))return false;const a=leashNear(L,x0,z0,y);return a===Infinity||leashNear(L,x,z,y)<=a+1e-9;}let core=-Infinity;const rim=[],cx=Math.floor(x),cz=Math.floor(z);for(let dx=-2;dx<=2;dx++)for(let dz=-2;dz<=2;dz++){const l=L.get((cx+dx)*4096+cz+dz);if(!l)continue;for(let i=0;i<l.length;i+=3){const ny=l[i+1],d=(l[i]-x)**2+(l[i+2]-z)**2;if(d>2.25)continue;if(d<=.36&&ny<=y+1&&ny>=y-7.5){if(ny>=y-1.6)return true;if(ny>core)core=ny;}rim.push(ny);}}if(!rim.length||!ground)return false;const g=ground(x,z,y);if(core>-Infinity&&core>=g-1.6)return true;for(const ny of rim)if(Math.abs(ny-g)<=1)return true;return false;}
+// Wall slide for a blocked move (rx, rz). A 20 cm probe turned 80 deg each way tells a slanted wall (free on exactly one side)
+// from a head-on push or a gap (free on both) and a corner or an axis-aligned wall the other axis already slid along
+// (free on neither): those get no slide, so they behave as before and a capsule in a corner settles instead of jittering.
+// For a slanted wall the capsule first closes the gap along the move (6 halvings), then the smallest free turn of the probe
+// (7.5 deg scan, then 6 halvings) is the wall's tangent, and the rest of the move is projected on it (length cos a). Every
+// move is tested whole at its destination (halved up to 4 times if blocked), so a slide never tunnels.
+const SLIDE_MAX=80*Math.PI/180,SLIDE_STEP=7.5*Math.PI/180,SLIDE_PROBE=.2,SLIDE_RISE=.02;
+function slide(P,world,rx,rz,height){const L=Math.hypot(rx,rz);if(L<1e-7)return null;const ux=rx/L,uz=rz/L,probe=Math.max(SLIDE_PROBE,4*L);let ox=0,oz=0;
+ const ok=(dx,dz)=>{const x=P.x+ox+dx,z=P.z+oz+dz;return !(world.leash&&!world.leash(x,z,P.y,P.x,P.z))&&!world.blocked(x,z,.4,P.y,height)&&!(world.ground(x,z,P.y+C.stepHeight)>P.y+SLIDE_RISE);};/* flat only: a slide never climbs (a plinth, a stair: moveAxis's step rules decide those) */
+ const dir=(a,s)=>{const c=Math.cos(a),sn=Math.sin(a)*s;return [ux*c-uz*sn,uz*c+ux*sn];},free=(a,s)=>{const d=dir(a,s);return ok(d[0]*probe,d[1]*probe);};
+ const p=free(SLIDE_MAX,1),m=free(SLIDE_MAX,-1);if(p===m)return null;const s=p?1:-1;
+ let f0=0,f1=1;for(let n=0;n<6;n++){const mid=(f0+f1)/2;if(ok(rx*mid,rz*mid))f0=mid;else f1=mid;}ox=rx*f0;oz=rz*f0;
+ let lo=0,hi=SLIDE_MAX;if(!free(SLIDE_MAX,s))return f0>0?[ox,oz,ux,uz,0]:null;
+ for(let a=SLIDE_STEP;a<SLIDE_MAX-1e-9;a+=SLIDE_STEP){if(free(a,s)){hi=a;break;}lo=a;}
+ for(let n=0;n<6;n++){const mid=(lo+hi)/2;if(free(mid,s))hi=mid;else lo=mid;}
+ const d=dir(hi,s);let len=L*(1-f0)*Math.cos(hi);for(let n=0;n<5;n++,len/=2)if(ok(d[0]*len,d[1]*len))return [ox+d[0]*len,oz+d[1]*len,d[0],d[1],1];return f0>0?[ox,oz,ux,uz,0]:null;}
 function step(P,input,dt,world){
  const dt0=Math.max(0,Math.min(.1,dt)),parts=Math.max(1,Math.ceil(dt0*128)),h=dt0/parts;let landed=false,jumped=false,drop=0;
  // Moved from outside the motor since the last step (a teleport, a rescue, a respawn): the fall starts over from here.
@@ -142,8 +158,13 @@ function step(P,input,dt,world){
     if(world.ceiling&&world.ceiling(P.x,P.z,P.y+height,cap+height))return false;
     // Riser test: sampled every 10 cm ahead, no single rise may exceed the step height (stairs pass, a 60 cm box does not).
     {const sx=Math.sign(dx),sz=Math.sign(dz);let prev=Math.max(world.ground(P.x,P.z,top),P.y-.2);for(let d=.1;d<.55;d+=.1){const g=world.ground(P.x+sx*d,P.z+sz*d,top);if(g<prev-1)continue;if(g-prev>C.stepHeight+.01)return false;prev=Math.max(prev,g);}} /* samples through seams between stair meshes are ignored; a dip (a crack between floor slabs, a gutter) never lowers the reference, so the far side of a crack is no riser */let lo=Math.max(P.y,support),hi=cap;if(!world.blocked(x,z,.4,lo,height))hi=lo;else for(let n=0;n<10;n++){const mid=(lo+hi)/2;if(world.blocked(x,z,.4,mid,height))lo=mid;else hi=mid;}const base=floorNear(world,P.x,P.z,P.y);if(hi-base>C.stepHeight+.12)return false;const rise=hi-P.y;P.x=x;P.z=z;P.y=hi;P.vy=0;if(rise>0)P.eyeOffset=(P.eyeOffset||0)-rise;return true;}return false;};
-  if(!moveAxis(v.dx,0))P.vx=0;
-  if(!moveAxis(0,v.dz))P.vz=0;
+  const vx0=P.vx||0,vz0=P.vz||0,okx=moveAxis(v.dx,0);if(!okx)P.vx=0;
+  const okz=moveAxis(0,v.dz);if(!okz)P.vz=0;
+  // Wall slide: the axis-separated move above stops dead against a wall that is not world-axis aligned (Ascent's slanted
+  // wall at (-12.5, 7.07, 38)). The blocked part of the move is projected onto the wall (VALORANT slides at ~cos of the
+  // angle between the move and the wall); the velocity becomes its projection on the wall, so the slide holds the tangential
+  // part of the walk sub-step to sub-step (the push into the wall is what the next acceleration adds back, and is clipped again).
+  if(!okx||!okz){const sl=slide(P,world,okx?0:v.dx,okz?0:v.dz,height);if(sl){P.x+=sl[0];P.z+=sl[1];if(sl[4]){const k=Math.max(0,vx0*sl[2]+vz0*sl[3]);P.vx=sl[2]*k;P.vz=sl[3]*k;}}}
   let gy=world.ground(P.x,P.z,P.y),vy=P.vy||0;
   if(grounded&&P.jumpBuffer>0&&!input.hold){vy=C.jumpSpeed;P.jumpBuffer=0;P.takeoffSpeed=Math.hypot(P.vx,P.vz);P.air=true;jumped=true;}
   const oldY=P.y;let next=P.y+vy*h-.5*C.gravity*h*h;vy-=C.gravity*h;
