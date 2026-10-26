@@ -16,7 +16,22 @@ const SC={
  stop:{T:.7,pre:.6,f:(t)=>{const r=Math.min(t,.6);const s=t<.6?0:Math.max(0,stopDist(t-.6));return {x:0,z:5.4*r+s,y:0};}},
  jiggle:{T:1.2,pre:.2,f:(t)=>({x:jig(t),z:0,y:0})},
  turn:{T:.8,pre:.3,f:(t)=>({x:0,z:0,y:0,yaw:Math.min(1,Math.max(0,(t-.3)/.25))*Math.PI/2})},
+ // anim-jump-2: knife run (6.75 m/s), aim turn in place (60 deg over 0.6 s: upper body first, then the hips and feet), start from
+ // a standstill (VALORANT 0.288 s acceleration) and stop, jumps sideways / backwards, stairs up / down, strafing across a slope,
+ // aim pitch while running (look up / down)
+ knife:{T:.8,pre:.6,w:'Knife',f:(t)=>({x:0,z:6.75*t,y:0})},
+ aimturn:{T:1.2,pre:.3,f:(t)=>({x:0,z:0,y:0,yaw:Math.min(1,Math.max(0,(t-.3)/.6))*Math.PI/3})},
+ start:{T:.8,pre:.3,f:(t)=>({x:0,z:accDist(t-.3),y:0})},
+ jumpside:{T:1.1,pre:.6,f:(t)=>({x:5.4*t,z:0,y:arc(t-.6)})},
+ jumpback:{T:1.1,pre:.6,f:(t)=>({x:0,z:-5.4*t,y:arc(t-.6)})},
+ stairsup:{T:1.2,pre:.3,ff:stairs,f:(t)=>({x:0,z:t<.3?0:3.24*(t-.3),y:null})},
+ stairsdown:{T:1.2,pre:.3,ff:(x,z)=>stairs(x,-z),f:(t)=>({x:0,z:t<.3?0:-3.24*(t-.3),y:null,yaw:Math.PI})},
+ slope:{T:1,pre:.3,ff:(x,z)=>.25*x,f:(t)=>({x:0,z:t<.3?0:3.24*(t-.3),y:null})},
+ lookup:{T:.6,pre:.6,pit:.6,f:(t)=>({x:0,z:5.4*t,y:0})},
+ lookdown:{T:.6,pre:.6,pit:-.6,f:(t)=>({x:0,z:5.4*t,y:0})},
 };
+function stairs(x,z){return z<1?0:Math.min(8,Math.floor((z-1)/.3)+1)*.2;} // 0.2 m rise / 0.3 m run (VALORANT stairs ~0.2-0.25 m)
+function accDist(t){if(t<=0)return 0;const a=5.4/.288;return t<.288?.5*a*t*t:.5*a*.288*.288+5.4*(t-.288);}
 function arc(t){if(t<=0)return 0;const y=6.902*t-.5*20.45*t*t;return Math.max(0,y);}
 function stopDist(t){let v=5.4,x=0;for(let s=0;s<t;s+=1/240){v=Math.max(0,v-(7.3625*v+46.5)/240);x+=v/240;}return x;} // VALORANT release friction
 function jig(t){ // 0.15 s out at full accel, 0.15 back, 0.2 hold, repeated (the bots' jiggle)
@@ -24,17 +39,22 @@ function jig(t){ // 0.15 s out at full accel, 0.15 back, 0.2 hold, repeated (the
 (async()=>{const [name='run',out='/tmp/tp.png',agent='jett',nc='8',view='side']=process.argv.slice(2),S=SC[name],n=+nc;if(!S)throw Error('scenario '+name);
  const sm=await sim(agent),dt=1/60,frames=Math.round(S.T/dt)+Math.round(S.pre/dt);const shots=[],files=[];const every=Math.max(1,Math.floor((frames-Math.round(S.pre/dt))/n));
  const stats={contacts:[],maxSlide:0};let plant=[null,null];
- for(let i=0;i<60;i++)sm.frame(dt,0,0,0,0,{cr:S.cr});const fy0=Math.min(sm.at('L_Foot').y,sm.at('R_Foot').y);
- for(let i=1;i<=frames;i++){const t=i*dt,p=S.f(t);sm.frame(dt,p.x,p.y,p.z,p.yaw||0,{cr:S.cr});
-  ['L_Foot','R_Foot'].forEach((bn,k)=>{const f=sm.at(bn);const low=f.y-p.y<fy0+.012&&p.y<.01;if(low){if(!plant[k])plant[k]={x:f.x,z:f.z,d:0};else plant[k].d=Math.max(plant[k].d,Math.hypot(f.x-plant[k].x,f.z-plant[k].z));}else if(plant[k]){stats.contacts.push(+(plant[k].d*100).toFixed(1));plant[k]=null;}});
+ const O={cr:S.cr,ff:S.ff,w:S.w,pit:S.pit};let ry=0;
+ for(let i=0;i<60;i++)sm.frame(dt,0,0,0,0,{cr:S.cr,w:S.w,pit:S.pit});const fy0=Math.min(sm.at('L_Foot').y,sm.at('R_Foot').y);if(S.ff)for(let i=0;i<30;i++)sm.frame(dt,0,0,0,(S.f(0).yaw||0),O); /* ankle height on flat ground */
+ for(let i=1;i<=frames;i++){const t=i*dt,p=S.f(t);if(p.y==null){const g=S.ff(p.x,p.z);ry+=(g-ry)*(1-Math.exp(-dt*20));p.y=ry;}sm.frame(dt,p.x,p.y,p.z,p.yaw||0,O);
+  if(S.ff&&i>10){const G=sm.X.ug;['L_Foot','R_Foot'].forEach((bn,k)=>{const fg=G&&G.f&&G.f[k];if(!fg||fg.sw||fg.settle||sm.X.air||(fg.u||0)>.2)return; /* early stance: before the heel-off lifts the ankle */const f=sm.at(bn),e=f.y-S.ff(f.x,f.z)-fy0;stats.hover=Math.max(stats.hover||0,e);stats.clip=Math.min(stats.clip||0,e);});}
+  ['L_Foot','R_Foot'].forEach((bn,k)=>{const f=sm.at(bn);const low=S.ff?false:f.y-p.y<fy0+.012&&p.y<.01;if(low){if(!plant[k])plant[k]={x:f.x,z:f.z,d:0};else plant[k].d=Math.max(plant[k].d,Math.hypot(f.x-plant[k].x,f.z-plant[k].z));}else if(plant[k]){stats.contacts.push(+(plant[k].d*100).toFixed(1));plant[k]=null;}});
   if(i>=Math.round(S.pre/dt)&&(i-Math.round(S.pre/dt))%every===0&&shots.length<n){const f=`/tmp/tpms-${shots.length}.png`;const cx=p.x,cz=p.z;
-   const eye=view==='front'?[cx,1.0,cz+3.6]:view==='back'?[cx,1.3,cz-3.6]:view==='q'?[cx+2.6,1.4,cz+2.6]:[cx+3.6,1.0,cz];
-   const g=[];for(let gx=-3;gx<3;gx++)for(let gz=Math.floor(cz)-3;gz<Math.floor(cz)+3;gz++){const c=(gx+gz)&1?[105,105,105]:[135,135,135];g.push([[gx,0,gz],[gx+1,0,gz+1],[gx+1,0,gz],c],[[gx,0,gz],[gx,0,gz+1],[gx+1,0,gz+1],c]);}
-   render([{o:sm.M.m,color:[150,160,180]}],f,{w:200,h:300,eye,target:[cx,.9+p.y*.5,cz],fov:44,extra:g});files.push(f);shots.push(t.toFixed(2));}}
+   const py=p.y||0,eye=view==='front'?[cx,1.0+py,cz+3.6]:view==='back'?[cx,1.3+py,cz-3.6]:view==='q'?[cx+2.6,1.4+py,cz+2.6]:view==='low'?[cx+2.4,.35+py,cz]:[cx+3.6,1.0+py,cz];
+   const g=[];if(S.ff){const h=.1,F=S.ff;for(let gx=-1.5;gx<1.5-1e-9;gx+=h)for(let gz=Math.floor(cz)-3;gz<Math.floor(cz)+3-1e-9;gz+=h){const c=(Math.floor(gx)+Math.floor(gz))&1?[105,105,105]:[135,135,135],y=F(gx+h/2,gz+h/2),y1=F(gx+h/2,gz+h*1.5),yx=F(gx+h*1.5,gz+h/2);
+    g.push([[gx,y,gz],[gx+h,y,gz+h],[gx+h,y,gz],c],[[gx,y,gz],[gx,y,gz+h],[gx+h,y,gz+h],c]);if(Math.abs(y1-y)>.05)g.push([[gx,y,gz+h],[gx,y1,gz+h],[gx+h,y1,gz+h],[90,90,95]],[[gx,y,gz+h],[gx+h,y1,gz+h],[gx+h,y,gz+h],[90,90,95]]);
+    if(Math.abs(yx-y)>.004){}}}
+   else for(let gx=-3;gx<3;gx++)for(let gz=Math.floor(cz)-3;gz<Math.floor(cz)+3;gz++){const c=(gx+gz)&1?[105,105,105]:[135,135,135];g.push([[gx,0,gz],[gx+1,0,gz+1],[gx+1,0,gz],c],[[gx,0,gz],[gx,0,gz+1],[gx+1,0,gz+1],c]);}
+   render([{o:sm.M.m,color:[150,160,180]}],f,{w:200,h:300,eye,target:[cx,view==='low'?.35+py:.9+(S.ff?py:p.y*.5),cz],fov:44,extra:g});files.push(f);shots.push(t.toFixed(2));}}
  cp.execFileSync('python3',['-c',`import sys
 from PIL import Image,ImageDraw
 o=sys.argv[1];lab=sys.argv[2].split(',');fs=sys.argv[3:];ims=[Image.open(f) for f in fs];W=Image.new('RGB',(200*len(ims),316),(20,20,20));d=ImageDraw.Draw(W)
 for i,im in enumerate(ims):W.paste(im,(200*i,16));d.text((200*i+4,2),lab[i],fill=(255,255,255))
 W.save(o)`,out,[name+' '+agent].concat(shots.slice(1).map(s=>'t='+s)).map((s,i)=>i===0?s+' t='+shots[0]:s).join(','),...files]);
- console.log(JSON.stringify({scenario:name,agent,frames:shots,footContactsSlideCm:stats.contacts}));
+ console.log(JSON.stringify({scenario:name,agent,frames:shots,footContactsSlideCm:stats.contacts,plantedAnkleOverFloorCm:S.ff?[+((stats.clip||0)*100).toFixed(1),+((stats.hover||0)*100).toFixed(1)]:undefined}));
 })().catch(e=>{console.error(e);process.exit(1);});

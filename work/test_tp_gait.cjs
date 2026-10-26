@@ -21,7 +21,12 @@ async function drive(S,fn,dur,hz,opt={}){const dt=1/hz,R={contacts:[],steps:0,li
  assert.ok(g54.cad>=3&&g54.cad<=3.5,`5.4 m/s: ${g54.cad.toFixed(2)} steps/s (was 4.0)`);
  assert.ok(g32.cad>=2.5&&g32.cad<=3.4,`3.24 m/s shift-walk: ${g32.cad.toFixed(2)} steps/s`);
  assert.ok(g2c.cad>=3&&g2c.stance<=XUG.crouch.D+1e-9,'crouch-walk: quick short steps');
- for(const g of [g54,g32,g675])assert.ok(g.stance<=XUG.stand.D+1e-9,'stance never outgrows the leg');
+ for(const g of [g54,g32,g675])assert.ok(g.stance<=g.D+1e-9&&g.D<=XUG.walk.D,'stance never outgrows the leg');
+ // shift-walk is its own gait (VALORANT walk creeps: low feet, no heel kick, almost no bob, slower steps than the run); the knife run steps faster
+ assert.ok(g32.wk>.99&&g54.wk<.01&&g675.wk<.01&&xUgGait(5.13,0).wk<.01&&xUgGait(4.05,0).wk>.99,'walk band: 3.1-4.05 m/s walks, 5.13+ runs');
+ assert.ok(g32.h<.4*g54.h&&g32.bob<=.01&&g32.r<.2&&g32.drop>=.05,'walk: feet skim, soft knees, no bob / heel kick');
+ assert.ok(g32.cad<g54.cad-.2,`walk ${g32.cad.toFixed(2)} steps/s slower than the run ${g54.cad.toFixed(2)}`);
+ assert.ok(g675.cad>g54.cad+.6,`knife run ${g675.cad.toFixed(2)} steps/s, faster than the gun run`);
  assert.ok(g54.duty<g32.duty&&g32.duty<xUgGait(1,0).duty,'duty falls with speed (walk -> run with flight)');
  // the clip path is the fallback only: with the gait the standing pose stays under the steps
  const L=S0.api2.xUbLoco(5.4,0,false,false,true);assert.equal(L.T.idle,1);assert.ok(!L.T.run&&!L.T.walk,'gait: no jog / walk clip');

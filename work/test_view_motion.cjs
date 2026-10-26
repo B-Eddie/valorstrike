@@ -31,4 +31,17 @@ const optic=new THREE.Object3D();optic.name='Reflex';optic.position.set(.2,.3,-.
 const respawn=side(1);respawn.C.player={hp:100,vx:0,vz:0,vy:0,air:false,mv:false};respawn.tick(0);near(respawn.F.root.position.x,.045,1e-12,'respawn clears old lateral motion');near(respawn.F.root.position.y,-.035,1e-12,'respawn clears old landing/bob');
 const revive=side(1);revive.P.hp=0;revive.tick(0);Object.assign(revive.P,{hp:100,vx:0,vz:0});revive.tick(0);near(revive.F.root.position.x,.045,1e-12,'same-player revival clears old motion');
 const switching=side(1),next={root:new THREE.Group(),origin:new THREE.Vector3(),ws:new THREE.Group()},before=switching.F.root.position.clone();switching.C.tick(next,0);assert(next.root.position.equals(before),'weapon switch changes current movement response');
-console.log('FP view motion: measured camera-local velocity, mirrored strafes, stop/reversal settle, <=.7 degree roll, zero idle drift, 30/144 Hz agreement, ADS damping/alignment, and respawn reset');
+// Jump / land (anim-jump-2, on top of the calibrated motion): lift on takeoff, small sway in the air, muzzle nod on landing;
+// identical at 30 / 144 Hz, subtle (< 1 cm, < 1.5 deg beyond the calibrated terms), damped by ADS, gone 0.6 s after landing.
+function jump(fps,ads=0){const h=harness();h.C.xAD.k=ads;h.run(.2,fps);const base=h.F.root.position.y,bx=h.F.root.rotation.x;const out={};
+ h.P.air=true;h.P.vy=6.9;h.run(.08,fps);out.lift=h.F.root.position.y-base-h.view.vyo;out.liftPitch=h.F.root.rotation.x-bx;
+ let mx=0,mr=0;for(let i=0;i<Math.round(.6*fps);i++){h.P.vy-=20.45/fps;h.tick(1/fps);mx=Math.max(mx,Math.abs(h.F.root.position.x-.045));mr=Math.max(mr,Math.abs(h.F.root.rotation.x-bx));}out.airX=mx;out.airPitch=mr;
+ h.P.air=false;h.P.vy=0;h.P.landImpact=1;h.run(.07,fps);out.landPitch=h.F.root.rotation.x-bx;out.landY=h.F.root.position.y-base;h.run(.6,fps);out.restY=h.F.root.position.y-base;out.restPitch=h.F.root.rotation.x-bx;return out;}
+const j144=jump(144),j30=jump(30),jads=jump(144,1);
+assert(j144.lift>.003&&j144.lift<.01,'takeoff lift '+j144.lift);assert(j144.liftPitch>.005&&j144.liftPitch<.02,'takeoff muzzle up '+j144.liftPitch);
+assert(j144.airX>.0005&&j144.airX<.006,'air sway '+j144.airX);assert(j144.airPitch<.026,'air pitch subtle '+j144.airPitch);
+assert(j144.landPitch<-.01&&j144.landPitch>-.026,'landing muzzle nod '+j144.landPitch);assert(j144.landY<-.01,'landing dip (calibrated + nod) '+j144.landY);
+near(j144.restY,0,.0005,'settled after landing');near(j144.restPitch,0,.0005,'pitch settled after landing');
+for(const k of ['lift','liftPitch','landPitch'])near(j30[k],j144[k],.0015,'30 / 144 Hz agree '+k);
+assert(Math.abs(jads.liftPitch)<Math.abs(j144.liftPitch)*.35,'ADS damps the jump motion');
+console.log('FP view motion: jump lift / air sway / landing nod (30-144 Hz), measured camera-local velocity, mirrored strafes, stop/reversal settle, <=.7 degree roll, zero idle drift, 30/144 Hz agreement, ADS damping/alignment, and respawn reset');
