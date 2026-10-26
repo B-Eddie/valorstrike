@@ -58,6 +58,7 @@ export function fogRow(r){const o=r.slice();o[4]=o[5]=o[6]=o[7]=0;o[8]=o[10]?100
 // The snapshot (or any frame with unit rows u and effect rows fx) as viewer may receive it.
 export function fogView(sim,snap,viewer){if(!snap||!viewer||sim.phase!=='game'||sim.fogOff)return snap;const F=fogPass(sim,snap),g=fogGroup(sim,viewer),rel=F.rel.get(g),now=sim.time,kill=viewer.fogKiller&&viewer.fogKiller.until>=now?viewer.fogKiller.id:-1,hide=F.hide.get(g);
  const out={...snap};if(Array.isArray(snap.u))out.u=snap.u.map(r=>!Array.isArray(r)||r[0]===viewer.id||rowGroup(sim,r)===g||!r[10]||r[0]===kill||(rel&&rel.get(r[0])>=now)?r:fogRow(r));
+ if(Array.isArray(snap.ev)&&Array.isArray(out.u)){const hid=new Set(out.u.filter(r=>Array.isArray(r)&&r[22]===1).map(r=>r[0]));if(hid.size){const grp=new Map(snap.u.filter(Array.isArray).map(r=>[r[0],rowGroup(sim,r)]));/* a hit on a hidden enemy by someone outside our group: its damage would give away the HP the row hides, and its blood would land at a stale spot */out.ev=snap.ev.filter(e=>!(Array.isArray(e)&&e[0]==='h'&&hid.has(e[2])&&e[1]!==viewer.id&&grp.get(e[1])!==g));}}
  if(Array.isArray(snap.fx)&&hide&&hide.size)out.fx=snap.fx.filter(r=>!(r&&hide.has(r.id)&&(r.kind==='dev'||r.kind==='barrier')));return out;}
 // A cast event ('ac': caster id, agent, key, eye o, aim d, effect point p) as viewer may receive it. The caster's own team
 // (or the caster, in Deathmatch), and a group the caster is relevant to (seen, heard - a cast is heard within FOG.cast m

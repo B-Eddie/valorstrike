@@ -104,4 +104,12 @@ const adv=(s,t)=>{s.time+=t;};
  s.castEvents.push({t:'ac',i:b.id,ag:'Jett',k:'q',o:[b.x,b.y+1.6,b.z],d:[-1,0,0],p:[b.x-2,b.y,b.z],ts:1});
  room.tick();clearInterval(room.timer);const ga=got.get('a'),gb=got.get('b');assert.ok(ga&&gb,'both got the cast');assert.ok(Array.isArray(gb.o),'caster: whole');
  assert.ok(a.alive&&b.alive&&Math.abs(b.z)<5&&b.x>30,'still apart behind the wall');assert.equal(ga.o,undefined,'worker: enemy gets no eye');assert.equal(ga.p,undefined,'worker: nor the out-of-sight effect point');assert.equal(ga.fog,1);}
+// 19. hit events ('h'): a hit on an enemy hidden from us by someone outside our group is dropped (its damage would give
+// away the HP the row hides); our own hit on a hidden enemy (a wallbang) and hits on visible units stay; the target keeps it
+{const {s,a,b}=setup('dm');const c=s.add('C','Sova');s.units.push(c);Object.assign(c,{x:12,y:0,z:0,alive:true,loading:false,vx:0,vz:0,input:{},ch:0,revealedUntil:0});
+ const hv=(u,ev)=>{s.time+=.05;fogView(s,frame(s,[]),u);s.time+=.05;return fogView(s,frame(s,ev),u);};const H=(x,y)=>['h',x.id,y.id,0,0,30,0,1,0,0,0];
+ let v=hv(a,[H(c,b),H(a,b),['k','C','B',0,'Vandal']]);assert.equal(row(v,b)[22],1,'B hidden from A');
+ assert.deepEqual(v.ev.filter(e=>e[0]==='h').map(e=>e[1]),[a.id],'C on hidden B dropped for A; A\'s own wallbang kept');assert.ok(v.ev.some(e=>e[0]==='k'),'kill feed kept');
+ v=hv(b,[H(c,b)]);assert.equal(v.ev.length,1,'the target keeps the hit');v=hv(c,[H(c,b)]);assert.equal(v.ev.length,1,'the shooter keeps the hit');
+ b.x=-6;b.z=8;v=hv(a,[H(c,b)]);assert.notEqual(row(v,b)[22],1,'B in sight');assert.equal(v.ev.length,1,'a hit on a visible unit stays');}
 console.log('test-fog: ok');
