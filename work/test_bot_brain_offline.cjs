@@ -98,6 +98,18 @@ for(const map of ['ascent','bind']){
  const c={name:'Bot Carrier',alive:true,see:0,g:{position:{x:0,y:0,z:0}}};ctx.bots=[c];ctx.FV.atk=false;ctx.FV.sp.c=c;now+=5000;for(let k=0;k<5;k++){now+=2000;ctx.SFX.step({x:10,z:0});}assert.equal(c.xSnd,undefined,'the Spike carrier keeps going');
  const f={name:'Bot Fight',alive:true,see:1,g:{position:{x:0,y:0,z:0}}};ctx.bots=[f];ctx.SFX.at({x:10,z:0});assert.equal(f.xSnd,undefined,'a bot in a fight ignores it');
  out.push('sound reactions '+JSON.stringify(seen));}
+// turn-rate limit per bot and no shot mid-swing; tracking lag on a target crossing the crosshair
+{let now=1000;const ctx={Math,Object,Number,Infinity,Set,Map,WeakMap,Array,Float64Array,Int32Array,Uint8Array,performance:{now:()=>now},window:{xBotSeed:5},mode:'five',running:true,player:{hp:0},allies:[],bots:[],XNF:0,timeLeft:80,
+  FV:{you:1,them:1,map:'ascent',atk:false,dm:false,sp:{st:'carry',c:null,site:'A'}},x2:(o,x,z)=>o,nmActive:()=>null,xGoal:()=>null,xSmV:(u,dt,vx,vz)=>[vx,vz],xAng:a=>Math.atan2(Math.sin(a),Math.cos(a)),xBotYaw:()=>{},botCanShoot:()=>true};
+ ctx.globalThis=ctx;vm.createContext(ctx);vm.runInContext(html.slice(i,j+Z.length)+'\n;globalThis.BotBrain=BotBrain;globalThis.BotRoutes=BotRoutes;',ctx);Object.assign(ctx.window,{BotRoutes:ctx.BotRoutes,BotBrain:ctx.BotBrain});
+ const u={name:'Bot Raze',alive:true,g:{rotation:{y:0}}};ctx.bots=[u];ctx.xBotYaw(.016);const B=ctx.xbBrain(u);u.g.rotation.y=Math.PI;assert.equal(ctx.botCanShoot(u),false,'no shot while facing away');
+ let ticks=0;for(;ticks<200;ticks++){u.g.rotation.y=Math.PI;/* the AI aims at the target every frame */if(ctx.botCanShoot(u))break;now+=16;ctx.xBotYaw(.016);}const secs=ticks*.016;
+ assert(secs>=(Math.PI-.3)/B.turn-.04&&secs<=(Math.PI-.3)/B.turn+.1,'swings at its own turn rate ('+secs.toFixed(2)+' s for ~180, '+B.turn.toFixed(1)+' rad/s)');
+ const stale={name:'Bot X',alive:true,g:{rotation:{y:2}},xyw:0,xywT:0};assert.equal(ctx.xbTurned(stale),true,'no render loop (harness): no gate');
+ const v=(yaw)=>({x:Math.sin(yaw),y:0,z:Math.cos(yaw),normalize(){const l=Math.hypot(this.x,this.y,this.z);this.x/=l;this.y/=l;this.z/=l;return this;}});
+ const w={name:'Bot Omen',see:.5};ctx.xbEngage(w,true);let yaw=0;for(let k=0;k<6;k++){now+=100;yaw+=.1;w.see+=.1;ctx.xbAimErr(w,v(yaw),{ae:1.3});}assert(w.xLag>.01,'tracking lag on a crossing target ('+w.xLag.toFixed(4)+' rad)');
+ for(let k=0;k<3;k++){now+=100;ctx.xbAimErr(w,v(yaw),{ae:1.3});}assert(Math.abs(w.xLag)<1e-9,'no lag on a still target');
+ out.push('turn '+B.turn.toFixed(1)+' rad/s (180 in '+secs.toFixed(2)+' s)');}
 // older scripted maps (no native graph): BotBrain picks the site (not Math.random), a seeded scripted route, staged
 // attackers / the plan's lurker hold their points, defender holds a seeded shuffle; replays exactly under one seed
 {const run=()=>{let now=0;const ctx={Math,Object,Number,Infinity,Set,Map,WeakMap,Array,Float64Array,Int32Array,Uint8Array,performance:{now:()=>now},window:{xBotSeed:77},mode:'five',running:true,player:{hp:0},allies:[],bots:[],XNF:0,timeLeft:100,

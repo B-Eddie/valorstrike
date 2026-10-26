@@ -3,6 +3,7 @@ import {path,prepare} from './path.js';
 import {rayHit} from './hitboxes.js';
 import {persona,aimError,strafe,flankNode,variedPath,spaceLook,engage,crosshairErr,trigger} from './bots.js';
 import calibration from './weapons.json' with {type:'json'};
+import BotBrain from '../../vendor/bot-brain.cjs';
 // Armor absorbs 66 %: float leftovers (54.00000000000001 hp read as 55 by Math.ceil, a 1e-14 hp survivor) are snapped to 1e-6.
 export const snapHp=n=>Math.round(n*1e6)/1e6;
 // Knife reach 2 m (eye to hit) for the trace and the damage row alike; the client's KNIFE_RANGE is the same (test_knife_range).
@@ -95,15 +96,17 @@ export class Simulation{
  canSee(u,v,o,p){const q=p.map((n,i)=>n-o[i]),len=Math.hypot(...q);return len<.01||this.world.ray(o,q.map(n=>n/len),len-.5)===Infinity;}
  traceShot(o,d,max){this.shotBlockedBy=null;return this.world.ray(o,d,max);}
  penetrate(o,d,wall,limit,p){const tier=PENETRATION[String(p.wallPenetration||'').split('::')[1]];if(!tier||!(wall<limit))return null;const t=tier.t,probe=o.map((n,k)=>n+d[k]*(wall+t)),back=this.world.ray(probe,d.map(n=>-n),t);if(!(back<Infinity)||t-back<=.001)return null;const exit=wall+t-back+.01;if(exit>=limit)return null;const next=this.world.ray(o.map((n,k)=>n+d[k]*exit),d,limit-exit);return {through:Math.min(limit,exit+next),exit,k:tier.k};}
- bot(u){const W=this.world,P=persona(this,u),enemies=this.units.filter(v=>v!==u&&v.alive&&!v.loading&&(this.mode==='dm'||v.team!==u.team));u.inputAt=this.time;u.input={};if(!enemies.length)return;
+ bot(u){const W=this.world,P=persona(this,u),botT0=u.botT;u.botT=this.time;const enemies=this.units.filter(v=>v!==u&&v.alive&&!v.loading&&(this.mode==='dm'||v.team!==u.team));u.inputAt=this.time;u.input={};if(!enemies.length)return;
   const target=enemies.sort((a,b)=>Math.hypot(a.x-u.x,a.z-u.z)-Math.hypot(b.x-u.x,b.z-u.z))[0],dx=target.x-u.x,dz=target.z-u.z,dist=Math.hypot(dx,dz);
   if(u.aimTarget!==target.id){u.aimTarget=target.id;u.aimHead=P.r()<P.head;}
   const aimY=target.y+(u.aimHead?1.62-(target.ch||0):1.1-(target.ch||0)*.5),eye=u.y+1.6-(u.ch||0),dy=aimY-eye;
   const see=dist<55&&this.canSee(u,target,[u.x,eye,u.z],[target.x,aimY,target.z]);u.sawTarget=see;
   if(see){/* a new fight: reaction drawn 180-320 ms around this bot's mean, crosshair error that settles (smaller when the crosshair was already on the angle) */if(!u.engagedAt){u.engagedAt=this.time||1e-6;const want=Math.atan2(-dx,-dz),off=Math.abs(Math.atan2(Math.sin(want-(u.look||0)),Math.cos(want-(u.look||0))));u.reactionAt=this.time+engage(this,u,P,off<.35);}
-   const engaged=this.time-u.engagedAt,[ey,ep]=aimError(P,this.time,engaged),xe=crosshairErr(u,P,engaged);u.look=Math.atan2(-dx,-dz)+ey+xe[0];u.pitch=Math.atan2(dy,dist)+ep+xe[1];
+   const engaged=this.time-u.engagedAt,[ey,ep]=aimError(P,this.time,engaged),xe=crosshairErr(u,P,engaged);
+   // Turn-rate limit (no instant 180 onto someone behind) and tracking lag (the crosshair runs where a moving target was a moment ago, so strafing targets get missed until it catches up): vendor/bot-brain.cjs turnStep / trackLag, as offline
+   const bdt=Math.min(.1,Math.max(.02,this.time-(botT0??(this.time-.05))||.05)),lag=BotBrain.trackLag(P.brain,engaged),lx=dx-(target.vx||0)*lag,lz=dz-(target.vz||0)*lag,ts=BotBrain.turnStep(P.brain,u.look||0,Math.atan2(-lx,-lz)+ey+xe[0],bdt);u.look=ts.yaw;u.turnLeft=ts.left;u.pitch=Math.atan2(dy,dist)+ep+xe[1];
    // trigger discipline: taps far, bursts mid, sprays close, with pauses between (not one endless spray)
-   const Wp=weapons[u.weapon]||{},auto=Wp.fireMode!=='EWeaponFireModeDisplayType::SemiAutomatic';u.input.fire=this.time>(u.reactionAt||0)&&trigger(this,u,P,dist,auto,Wp.fireRate);if(!auto&&this.time>=u.fireAt)u.triggerHeld=false;
+   const Wp=weapons[u.weapon]||{},auto=Wp.fireMode!=='EWeaponFireModeDisplayType::SemiAutomatic';u.input.fire=this.time>(u.reactionAt||0)&&u.turnLeft<.2&&trigger(this,u,P,dist,auto,Wp.fireRate);if(!auto&&this.time>=u.fireAt)u.triggerHeld=false;
    // Engagement range preference: entries close in, anchors hold, others keep their band. Taps / bursts past 8 m are
    // shot standing still (counter-strafe), strafing between them; low-HP patient bots back out of the fight.
    const stop=u.input.fire&&u.stopShoot&&dist>8&&!(u.firePat&&u.firePat.kind==='spray');

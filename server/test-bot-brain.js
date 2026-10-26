@@ -36,7 +36,7 @@ const G={map:{attacker:[-14,0,0],defender:[14,0,-28],sites:{A:[-8,0,-14],B:[8,0,
  out.push('reaction first shots '+[...new Set(first)].sort().join('/')+' s');}
 {const s=new SpikeSimulation({...G,ray:(o,d,max)=>max>3?1:Infinity},'five','ascent',()=>.5),b=s.add('Bot Sage','Sage',false),m=s.add('Bot Omen','Omen',false),e=s.add('Enemy','Jett',true);
  s.phase='game';s.round=2;s.atk=1;s.buy=0;Object.assign(b,{team:0,x:0,y:0,z:-10,look:0,alive:true,hp:100});Object.assign(m,{team:0,x:3,y:0,z:-10,alive:true,hp:100});Object.assign(e,{team:1,x:0,y:0,z:4,alive:true,hp:100,shotAt:0});
- s.spike={st:'carry',carrier:e.id,x:0,y:0,z:0,t:45,pt:0,dt:0,site:'A'};s.remaining=80;s.time=5;e.shotAt=5;s.bot(b);
+ s.spike={st:'carry',carrier:e.id,x:0,y:0,z:0,t:45,pt:0,dt:0,site:'A'};s.remaining=80;s.time=5;e.shotAt=5;s.bot(b);if(b.react&&b.react.kind==='hold'){const l0=b.look;assert.ok(Math.abs(l0)<=persona(s,b).brain.turn*.05+1e-9,'turns onto the sound at its own rate, no instant 180');for(let k=0;k<12&&b.react.until>s.time+.06;k++){s.time+=.05;s.bot(b);}}
  assert.ok(b.react&&['hold','push'].includes(b.react.kind),'a gunshot behind the bot gets a reaction');if(b.react.kind==='hold')assert.ok(Math.abs(Math.atan2(Math.sin(b.look-Math.atan2(b.x-e.x,b.z-e.z)),Math.cos(b.look-Math.atan2(b.x-e.x,b.z-e.z))))<.01,'holds the angle the shot came from');
  const react=new Set();for(let k=0;k<16;k++){const s2=new SpikeSimulation({...G,ray:()=>1},'five','ascent',()=>.5),a=s2.add('Bot '+k,'Sage',false),c=s2.add('Bot X'+k,'Omen',false),f=s2.add('Enemy','Jett',true);s2.phase='game';s2.round=2;s2.atk=1;s2.buy=0;
   Object.assign(a,{team:0,x:0,y:0,z:-10,alive:true,hp:100});Object.assign(c,{team:0,x:4,y:0,z:-10,alive:true,hp:100});Object.assign(f,{team:1,x:4,y:0,z:-24,alive:true,hp:100});s2.spike={st:'carry',carrier:f.id,x:0,y:0,z:0,t:45,pt:0,dt:0,site:'A'};s2.remaining=80;
@@ -57,6 +57,16 @@ const G={map:{attacker:[-14,0,0],defender:[14,0,-28],sites:{A:[-8,0,-14],B:[8,0,
  // determinism: the same seed replays the same strategies
  const replay=async()=>{let sd=5;const T=new SpikeSimulation(W,'five','ascent',()=>(sd=(sd*16807)%2147483647)/2147483647);T.start(true);const L=[];for(let r=0;r<6;r++){if(r)T.newRound();L.push(T.spike.site+strategy(T,T.atk).plan.type+strategy(T,1-T.atk).plan.type);}return L.join();};
  assert.equal(await replay(),await replay(),'seeded: identical strategies on replay');}
+// 5. Turn-rate limit and tracking lag: a bot facing away swings at its own rate (no instant 180) and holds fire until it is
+// on target; a strafing target is tracked from slightly behind (misses while the crosshair catches up)
+{const s=new Simulation(G,'tdm','ascent',()=>.5),t=s.add('Target','Jett',true),b=s.add('Bot Raze','Raze',false);s.phase='game';
+ Object.assign(t,{team:1,x:0,y:0,z:-12,hp:1e9});Object.assign(b,{team:0,x:0,y:0,z:0,look:Math.PI});const P=persona(s,b);let fireTurning=0,looks=[];
+ for(let i=0;i<20;i++){s.time+=.05;const l0=b.look;s.bot(b);looks.push(Math.abs(Math.atan2(Math.sin(b.look-l0),Math.cos(b.look-l0))));if(b.input.fire&&b.turnLeft>=.2)fireTurning++;}
+ assert.ok(looks[0]<=P.brain.turn*.05+1e-9&&P.brain.turn>=7&&P.brain.turn<=14,'a 180 takes several ticks ('+looks[0].toFixed(2)+' rad in the first 50 ms, '+P.brain.turn.toFixed(1)+' rad/s)');assert.equal(fireTurning,0,'no shots while still swinging');
+ assert.ok(Math.abs(Math.atan2(Math.sin(b.look),Math.cos(b.look)))<.2,'on target after the swing');
+ let sum=0,n=0;for(let i=0;i<60;i++){s.time+=.05;t.vx=6;t.vz=0;t.x+=6*.05;s.bot(b);if(i<10)continue;const exact=Math.atan2(-(t.x-b.x),-(t.z-b.z)),err=Math.atan2(Math.sin(b.look-exact),Math.cos(b.look-exact));sum+=err;n++;}
+ const lagRad=sum/n;assert.ok(Math.abs(lagRad)>.004,'the crosshair trails a strafing target ('+lagRad.toFixed(4)+' rad)');
+ out.push('turn '+P.brain.turn.toFixed(1)+' rad/s, tracking lag '+(Math.abs(lagRad)*1000).toFixed(1)+' mrad');}
 // 4. Plan utility ("use utility before entry"): pure timing, then a real Ascent match where casts follow the plan
 {const P=B.personality(B.hash('Bot Omen')),ex={type:'execute',utilFirst:true,executeAt:20,site:'A',other:'B'};
  assert.equal(B.utility(P,{atk:true,plan:ex,role:{},rt:10,siteDist:20}),null,'no entry utility while defaulting');

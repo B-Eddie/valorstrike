@@ -117,7 +117,7 @@ export class SpikeSimulation extends Simulation{
  if(this.planUtility(u))return;/* lining up plan utility (smoke / flash / recon before the entry, post-plant mollies, defender delay) */
  // reactions: trade / fall back after a teammate dies, hold or push a sound (not the carrier, not a late retake)
  const R=u.react;if(R&&R.until>this.time&&!carrier&&!(sp.st==='drop'&&u.team===this.atk)&&!(sp.st==='plant'&&u.team!==this.atk&&sp.t<15)){
-  if(R.kind==='hold'){u.input=R.duck?{duck:true}:{};u.look=Math.atan2(u.x-R.x,u.z-R.z);u.inputAt=this.time;return;}
+  if(R.kind==='hold'){u.input=R.duck?{duck:true}:{};u.look=BotBrain.turnStep(persona(this,u).brain,u.look||0,Math.atan2(u.x-R.x,u.z-R.z),.05).yaw;/* turns onto the angle at its own turn rate */u.inputAt=this.time;return;}
   goal=[R.x,R.y,R.z];u.spread=true;loose=true;}
  if(u.plan&&u.plan.round===this.round&&this.time<u.plan.go&&!carrier){u.input={};u.inputAt=this.time;return;}/* staggered start */
  if(goal){const target={x:goal[0],y:goal[1],z:goal[2]};this.goalPath(u,target,loose);if(u.plan&&u.plan.walk&&u.input&&u.input.forward&&!carrier&&roundTime(this)<70)u.input.walk=true;} }

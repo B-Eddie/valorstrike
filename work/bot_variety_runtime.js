@@ -18,7 +18,11 @@ function xbEngage(u,pre){const B=xbBrain(u);if(!B){u.rtE=.26;u.xhE=null;u.stand=
 function xbRt(u,D){const k=(D&&D.rt?D.rt:260)/260;return ((u.rtE||.26)*1000+(u.pre?0:150))*k;}
 const XB_E=[0,0];
 // settle the crosshair error onto a shot direction (yaw around up, pitch on y), scaled by the difficulty aim error
-function xbAimErr(u,aim,D){if(!u||!u.xhE)return;const B=xbBrain(u);if(!B)return;const e=BotBrain.crosshairAt(u.xhE,B,u.see||u.ts||0,XB_E),k=D&&D.ae?D.ae/1.3:1,hl=Math.hypot(aim.x,aim.z)||1,hx=-aim.z/hl,hz=aim.x/hl;aim.x+=hx*e[0]*k;aim.z+=hz*e[0]*k;aim.y+=e[1]*k;aim.normalize();}
+// + tracking lag (BotBrain.trackLag, as the server): the shot runs behind a target that moves across the crosshair (the aim
+// yaw's turn rate since the bot's previous shot times the lag), so strafing targets get missed until the crosshair catches up
+function xbAimErr(u,aim,D){if(!u||!u.xhE)return;const B=xbBrain(u);if(!B)return;const e=BotBrain.crosshairAt(u.xhE,B,u.see||u.ts||0,XB_E),k=D&&D.ae?D.ae/1.3:1,hl=Math.hypot(aim.x,aim.z)||1,hx=-aim.z/hl,hz=aim.x/hl;
+ const yaw=Math.atan2(aim.x,aim.z),t=performance.now()/1000;let lg=0;if(u.xaT!=null&&t>u.xaT&&t-u.xaT<.5){const w=Math.atan2(Math.sin(yaw-u.xaY),Math.cos(yaw-u.xaY))/(t-u.xaT);lg=Math.max(-3,Math.min(3,w))*BotBrain.trackLag(B,u.see||u.ts||0);}u.xaY=yaw;u.xaT=t;u.xLag=lg;
+ aim.x+=hx*(e[0]*k+lg);aim.z+=hz*(e[0]*k+lg);aim.y+=e[1]*k;aim.normalize();}
 function xbvKey(){return FV.you+'|'+FV.them+'|'+FV.map+'|'+(FV.atk?1:0);}
 function xbvTeamTaken(team,u,field){const out=[];for(const v of team){if(v===u)continue;const q=XBV.plans.get(v);if(q&&q[field])out.push(q[field]);}return out;}
 // one spread standing spot near a site centre; null when the nav has nothing better than the centre itself
@@ -180,6 +184,13 @@ if(typeof SFX!=='undefined')['at','step'].forEach(k=>{const f=SFX[k];if(f)SFX[k]
 if(typeof xHear==='function'){const h0=xHear;xHear=function(p){const r=h0.apply(this,arguments);try{xbvSound(p,XBH.k||'step');}catch(e){}return r;};}
 // holding: stand still (goal = where it stands) while it faces the sound; a fight or a trade ends it
 {const g0=xGoal;xGoal=function(u,team,atk,out){if(u&&u.xHold&&u.g&&!(u.see>0)&&mode==='five'){if(performance.now()<u.xHold.until){const p=u.g.position;if(u.hearT>0){u.hear=u.hear||[0,0];u.hear[0]=u.xHold.x;u.hear[1]=u.xHold.z;}return x2(out,p.x,p.z);}u.xHold=null;}return g0.apply(this,arguments);};}
+// Turn-rate limit per bot (BotBrain personality turn 7-14 rad/s, as the server; was 12 rad/s for every bot) and no shot
+// while the body is still swinging onto the target (xbTurned: rendered yaw within 0.3 rad of the aim): no instant 180s.
+if(typeof xBotYaw==='function'){xBotYaw=function(dt){if(!dt)return;const now=performance.now();
+ for(const L of [typeof bots!=='undefined'?bots:[],typeof allies!=='undefined'?allies:[]])for(const u of L){if(!u||!u.g)continue;const t=u.g.rotation.y;if(u.xyw==null||!u.alive){u.xyw=t;u.xywT=now;continue;}
+  const B=window.BotBrain&&xbBrain(u),m=(B&&B.turn||12)*dt;let d=xAng(t-u.xyw)*Math.min(1,dt*14);d=Math.max(-m,Math.min(m,d));u.xyw+=d;u.xywT=now;u.g.rotation.y=u.xyw;}};}
+function xbTurned(u){if(!u||!u.g||u.xyw==null||!(performance.now()-(u.xywT||0)<250))return true;return Math.abs(xAng(u.g.rotation.y-u.xyw))<.3;} // rotation.y: the yaw the AI just chose this frame
+if(typeof botCanShoot==='function'){const cs0=botCanShoot;botCanShoot=function(b){return cs0.apply(this,arguments)&&xbTurned(b);};}
 // Older scripted maps (no native nav graph: page harnesses, fallback maps): the same BotBrain round strategy picks the
 // attackers' site (was Math.random at round start) and the scripted route to it (was xaPick's Math.random), attackers on a
 // default / slow / split / fake / execute plan hold their staged point (part of the way from where they start to the site,

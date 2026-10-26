@@ -18,7 +18,9 @@
    xh:(.022+.035*(1-acc))*(.8+r()*.4),settle:.14+r()*.22,xhFloor:.12+(1-acc)*.18, // crosshair error (rad) when a fight starts, settle time constant, residual share
    crouchSpray:.08+r()*.5,tapBias:r(),stand:.18+pa*.25,strafeRhythm:.25+r()*.35,
    peek:{jiggle:.2+pa*.6,wide:.15+ag*.8,tight:.5,hold:.1+pa*.5},
-   angle:r()<.5?'close':'long',head:.25+acc*.4};
+   angle:r()<.5?'close':'long',head:.25+acc*.4,
+   turn:7+ag*4+r()*3,                                              // rad/s: how fast the bot can swing its crosshair (a 180 takes ~0.25-0.45 s)
+   lag:.05+(1-acc)*.09+r()*.03};                                   // s: tracking lag on a moving target (aims where it was), settles with P.settle
 
  }
  // One reaction draw per engagement, always inside REACT.
@@ -27,6 +29,11 @@
  // toward P.xhFloor of the start error over P.settle seconds of tracking (a flick that corrects, not a laser).
  function crosshair(P,rand,preaimed){const a=rand()*Math.PI*2,m=P.xh*(.55+rand()*.9)*(preaimed?.45:1);return {y:Math.cos(a)*m,p:Math.sin(a)*m*.55};}
  function crosshairAt(e,P,t,out){const k=P.xhFloor+(1-P.xhFloor)*Math.exp(-Math.max(0,t)/P.settle),o=out||[0,0];o[0]=e.y*k;o[1]=e.p*k;return o;}
+ // Turning and tracking: turnStep() moves a yaw toward the wanted one at most P.turn rad/s (no instant 180s); trackLag()
+ // is how far behind a moving target the crosshair runs (P.lag at the start of a fight, settling to 35%).
+ function wrapA(a){return Math.atan2(Math.sin(a),Math.cos(a));}
+ function turnStep(P,from,want,dt){const d=wrapA(want-from),m=(P.turn||10)*dt;return Math.abs(d)<=m?{yaw:want,left:0}:{yaw:from+Math.sign(d)*m,left:Math.abs(d)-m};}
+ function trackLag(P,t){return (P.lag||.08)*(.35+.65*Math.exp(-Math.max(0,t)/((P.settle||.25)*2)));}
  // Fire rhythm by range: taps far, bursts mid, sprays close (semi-auto guns always single shots). shots = trigger pulls
  // or the burst length, pause = seconds before the next one.
  function firePattern(P,rand,dist,auto){
@@ -151,5 +158,5 @@
   if(ctx.planted)return used<2&&ctx.spikeDist<26&&ctx.spikeDist>7?{phase:'retake',want:UTIL.retake,aim:'spike'}:null;
   return used<2&&ctx.info&&ctx.siteDist<28?{phase:'delay',want:UTIL.delay,aim:'info'}:null;
  }
- return {hash,rng,clamp,pickW,REACT,personality,reaction,crosshair,crosshairAt,firePattern,peek,attackPlan,defensePlan,roles,teamBuy,buyFor,onMateDeath,onSound,ATTACK,DEFENSE,utility,UTIL};
+ return {hash,rng,clamp,pickW,REACT,personality,reaction,crosshair,crosshairAt,firePattern,peek,attackPlan,defensePlan,roles,teamBuy,buyFor,onMateDeath,onSound,ATTACK,DEFENSE,utility,UTIL,turnStep,trackLag,wrapA};
 });
