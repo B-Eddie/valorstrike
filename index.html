@@ -3345,7 +3345,7 @@ function shoot(hv) {
   ray.setFromCamera(XC0, camera);
   const targets = xTgtA; targets.length = 0;
   for (let i = 0; i < solids.length; i++) targets.push(solids[i]);
-  for (let i = 0; i < bots.length; i++) { const b = bots[i]; if (b.alive) { targets.push(b.body); targets.push(b.head); } }
+  for (let i = 0; i < bots.length; i++) { const b = bots[i]; if (b.alive && !b.fog) { targets.push(b.body); targets.push(b.head); } } // b.fog: an online enemy the server's fog of war hides (server_runtime.js netFog): no stale-position hits
   const w = wName(), W = WEAP[w], P = player, kn = rw === "knife";
   let body = KNIFE.light, head = KNIFE.light;
   if (kn) {
@@ -10622,7 +10622,7 @@ function minimap() {
     mmT = now; mmVis = new Set(); const V3 = THREE.Vector3, eyes = [];
     if (player.hp > 0) eyes.push(new V3(player.x, 1.5, player.z));
     allies.forEach((a) => a.alive && eyes.push(new V3(a.g.position.x, a.g.position.y + 1.5, a.g.position.z)));
-    bots.forEach((b) => { if (!b.alive) return; const e = new V3(b.g.position.x, 1.4, b.g.position.z); if (eyes.some((y) => los(y, e))) mmVis.add(b); });
+    bots.forEach((b) => { if (!b.alive || b.fog) return; const e = new V3(b.g.position.x, 1.4, b.g.position.z); if (eyes.some((y) => los(y, e))) mmVis.add(b); }); // b.fog: hidden by the server's fog of war, its position is stale (it shows as last seen)
     if (J.rvT > 0) J.rv.forEach((b) => b.alive && mmVis.add(b)); // Sova Recon Bolt
     if (window.xPG) { const S = window.xPG.s; for (let i = 0; i < S.length; i++) { const q = S[i]; if (q.b && q.b.alive && now < q.rv) mmVis.add(q.b); } } // enemy ping: revealed 2 s
     mmPrev.forEach((b) => { if (!mmVis.has(b) && b.alive) mmLost.set(b, { t: now, x: b.g.position.x, z: b.g.position.z }); });
@@ -12317,7 +12317,7 @@ function mpCliSnap(m) {
     if (v[0] === "k") { const k = mpIn(v[1] || v[4] || "Utility"), d = mpIn(v[2]); /* blank killer: ownerless utility from an older server */ kfeed(k, d, !!v[3], v[4], v.length > 5 ? v[5] : null); if (d === "You") { try { xKLDie(k, v[4]); } catch (e) {} stats.d++; } if (k === "You") { stats.k++; if (v[3]) stats.hs = (stats.hs || 0) + 1; try { jKill(); } catch (e) {} } }
     else if (v[0] === "n") feed(v[1]);
     else if (v[0] === "sp") { feed(mpIn(v[2]) + " planted the Spike on " + v[3]); say("Spike planted · " + v[3], 1500); try { SFX.planted(); } catch (e) {} }
-    else if (v[0] === "s" && v[1] !== MP.me) { const u = bots.concat(allies).find((x) => x.nid === v[1]); if (u && u.alive) SFX.at(u.g.position, WEAP[v[2]] ? v[2] : "Vandal"); }
+    else if (v[0] === "s" && v[1] !== MP.me) { const u = bots.concat(allies).find((x) => x.nid === v[1]); if (u && u.alive && !u.fog) SFX.at(u.g.position, WEAP[v[2]] ? v[2] : "Vandal"); }
   } catch (e) {}
   try { showStats(); } catch (e) {}
 }
@@ -12387,7 +12387,7 @@ function mpTags() {
   const v = MPT.v || (MPT.v = new THREE.Vector3()), now = performance.now(), chk = now - MPT.losT > 200; if (chk) MPT.losT = now;
   const W = innerWidth, H = innerHeight, used = new Set();
   for (const L of [allies, bots]) for (const u of L) {
-    if (!u.hum || !u.alive || !u.g) continue; const p = u.g.position, mate = L === allies, d = Math.hypot(p.x - camera.position.x, p.z - camera.position.z);
+    if (!u.hum || !u.alive || !u.g || u.fog) continue; const p = u.g.position, mate = L === allies, d = Math.hypot(p.x - camera.position.x, p.z - camera.position.z);
     if (!mate) { if (chk) { let s = false; try { s = d < 40 && los(new THREE.Vector3(camera.position.x, camera.position.y, camera.position.z), new THREE.Vector3(p.x, (p.y || 0) + 1.5, p.z)); } catch (e) {} MPT.see.set(u, s); } if (!MPT.see.get(u)) continue; }
     v.set(p.x, (p.y || 0) + 2.15, p.z); v.project(camera); const x = (v.x + 1) / 2 * W, y = (1 - v.y) / 2 * H;
     if (!(v.z < 1) || !isFinite(x) || !isFinite(y) || x < -50 || x > W + 50) continue;
@@ -14232,6 +14232,16 @@ const netHeader=document.querySelector('.x-qon__h small');if(netHeader)netHeader
 // server's hit volumes are crouched. Replayed enemy casts are visual only online: blind, nearsight and concussion
 // come from the server's private status (mpCliRS), never from the local replay's own range/facing guesses.
 const netPose0=mpCliSnap;mpCliSnap=function(m){const r=netPose0.apply(this,arguments);if(NET.socket&&m&&Array.isArray(m.u)){const all=bots.concat(allies);for(const e of m.u){if(!Array.isArray(e)||e[0]===MP.me)continue;const u=all.find(x=>x.nid===e[0]);if(!u)continue;if(Number.isFinite(e[17]))u.cr=e[17]>.5;if(Number.isFinite(e[18]))u.np=e[18];}}return r;};
+// Fog of war (server fog.js): an enemy row the server flags hidden ([22] = 1: no position, aim, HP or ammo) leaves the
+// enemy known (scoreboard, alive pips, kill feed) but not drawn: before the page reads the row its position is pinned to
+// where the enemy was last drawn (no jump toward 0,0,0); after, the model leaves the scene, its interpolation buffer is
+// emptied and u.fog is set (shots, the minimap and name tags skip it). Its first relevant row brings it back where it is.
+function netFogPre(m){if(!NET.socket||!m||!Array.isArray(m.u))return;const all=bots.concat(allies);for(const e of m.u){if(!Array.isArray(e)||e[0]===MP.me)continue;const u=all.find(x=>x.nid===e[0]);if(e[22]===1){if(u&&u.g){e[4]=u.g.position.x;e[5]=u.g.position.y;e[6]=u.g.position.z;e[7]=u.g.rotation.y;u.fog=1;/* before the page's event loop: no shot sound at a stale spot */}}else if(u&&u.fog){u.fog=0;if(u.nb)u.nb.length=0;u.fogBack=1;}}}
+function netFogPost(m){if(!NET.socket||!m||!Array.isArray(m.u))return;const all=bots.concat(allies);for(const e of m.u){if(!Array.isArray(e)||e[0]===MP.me)continue;const u=all.find(x=>x.nid===e[0]);if(!u)continue;
+  if(e[22]===1){u.fog=1;u.fogBack=0;if(u.nb)u.nb.length=0;if(u.g&&u.g.parent)u.g.parent.remove(u.g);}
+  else if(u.fogBack){u.fogBack=0;if(u.alive&&u.g){u.g.position.set(e[4],e[5]||0,e[6]);u.g.rotation.y=e[7];if(u.g.parent!==scene)scene.add(u.g);}}}}
+const netFog0=mpCliSnap;mpCliSnap=function(m){netFogPre(m);const r=netFog0.apply(this,arguments);netFogPost(m);return r;};
+const netFogMk0=mpMkUnit;mpMkUnit=function(e){const u=netFogMk0.apply(this,arguments);if(NET.socket&&u&&Array.isArray(e)&&e[22]===1){u.fog=1;if(u.nb)u.nb.length=0;if(u.g&&u.g.parent)u.g.parent.remove(u.g);}return u;};
 let netFxReplay=0,netFxPoint=null;
 const netMpFx0=mpFx;mpFx=function(u,ag,k,o,d,auth,p){if(!NET.socket)return netMpFx0.apply(this,arguments);netFxReplay++;netFxPoint=p&&Number.isFinite(p.y)?p.y:null;try{return netMpFx0.apply(this,arguments);}finally{netFxReplay--;netFxPoint=null;}};
 const netPNs0=pNs;pNs=function(){if(NET.socket&&netFxReplay)return;return netPNs0.apply(this,arguments);};

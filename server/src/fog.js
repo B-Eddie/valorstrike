@@ -1,0 +1,60 @@
+// Fog of war (anti-wallhack, after Riot's "Demolishing Wallhacks with VALORANT's Fog of War",
+// technology.riotgames.com/news/demolishing-wallhacks-valorants-fog-war): the server only sends an enemy's position to a
+// team that can see it, hear it, or has it revealed. Everything else about the enemy row stays (name, agent, alive, weapon,
+// kills), so the scoreboard and the alive pips keep working; a hidden row carries no position, aim, HP, ammo or crouch and
+// is flagged [22] = 1 (the page parks that enemy off screen until it is relevant again: server_runtime.js netFog).
+//
+//  - Sight: a world ray (smokes and Barrier Orbs do not count, as in VALORANT: a smoke edge still shows the body) from a
+//    team member's eye to a few points on the enemy's box, both ways, with the box and the eye stretched along their
+//    velocity by FOG.ahead s ("look into the future", the article's attempt #2) so an enemy rounding a corner arrives
+//    before the client renders it. Hidden pairs are re-tested every other tick (the look-ahead covers the 50 ms).
+//  - Hearing: running footsteps within FOG.step m (VALORANT's minimap footstep circle, ~30 m), a gunshot within FOG.shot m
+//    for FOG.shotFor s, anyone within FOG.near m.
+//  - Reveals: Recon Bolt / Owl dart / Spycam / Alarmbot / Haunt ... (v.revealedUntil, ults.js revealedFor).
+//  - Grace: relevant stays relevant FOG.grace s after the last test that saw it (the article: "relevant actors stay relevant
+//    for a small amount of time"), so an unpeek does not pop and a killcam / death recap still has its killer.
+//  - Your killer stays relevant to you (the victim only) for FOG.killer s after your death.
+// Vision is per team (per player in Deathmatch): a teammate's sight is yours (minimap). Enemy devices (deviceRows) and
+// Barrier Orbs (fx 'barrier') follow the same sight test; static ones stay once seen, Owl Drone / Blast Pack use the grace.
+import {barrierPoints} from './abilities.js';import {devicePoints,DEV_ROWS} from './devices.js';
+export const FOG=Object.freeze({ahead:.4,pad:.45,grace:1,step:30,run:3.6,shot:50,shotFor:1,near:3,killer:3,devNear:6});
+const MOVING=new Set(['owl','blastpack']);
+export function fogGroup(sim,u){return sim.mode==='dm'?'u'+u.id:'t'+u.team;}
+const rowGroup=(sim,r)=>sim.mode==='dm'?'u'+r[0]:'t'+r[1];
+const live=u=>u&&u.alive&&!u.loading;
+function eyes(u){const y=u.y+1.6-(u.ch||0),out=[[u.x,y,u.z]],vx=u.vx||0,vz=u.vz||0;if(vx*vx+vz*vz>.25)out.push([u.x+vx*FOG.ahead,y,u.z+vz*FOG.ahead]);return out;}
+// points on u's box seen from o: head / chest / knee on the axis, chest+head at the box's sides across the line of sight,
+// and the same box FOG.ahead s along its velocity
+function points(u,o){let dx=u.x-o[0],dz=u.z-o[2];const l=Math.hypot(dx,dz)||1;dx/=l;dz/=l;const sx=-dz*FOG.pad,sz=dx*FOG.pad,top=1.65-(u.ch||0),y=u.y,out=[[u.x,y+top,u.z],[u.x,y+1.05,u.z],[u.x+sx,y+1.2,u.z+sz],[u.x-sx,y+1.2,u.z-sz],[u.x,y+.4,u.z]];
+ const vx=u.vx||0,vz=u.vz||0;if(vx*vx+vz*vz>.25){const x=u.x+vx*FOG.ahead,z=u.z+vz*FOG.ahead;out.push([x,y+top,z],[x+sx,y+1.1,z+sz],[x-sx,y+1.1,z-sz]);}return out;}
+export function segClear(sim,o,p){const q=[p[0]-o[0],p[1]-o[1],p[2]-o[2]],len=Math.hypot(q[0],q[1],q[2]);if(len<.05)return true;const w=sim.baseWorld||sim.world,r=w&&w.ray;/* the map only: Barrier Orbs and smokes never hide (conservative, and a device is never behind its own barrier) */if(typeof r!=='function')return true;return r(o,[q[0]/len,q[1]/len,q[2]/len],len-.05)===Infinity;}
+export function pairSees(sim,a,b){for(const [s,t] of [[a,b],[b,a]])for(const e of eyes(s))for(const p of points(t,e)){sim.fogRays=(sim.fogRays||0)+1;if(segClear(sim,e,p))return true;}return false;}
+const near3=(a,b,r)=>(a.x-b.x)**2+(a.y-b.y)**2+(a.z-b.z)**2<=r*r;
+// One pass per simulation time: which enemy ids (and which enemy effect ids to hide) each group gets.
+export function fogPass(sim,snap){const F=sim.fog||(sim.fog={t:-1,n:0,pairs:new Map(),rel:new Map(),hide:new Map()});if(F.t===sim.time)return F;F.t=sim.time;F.n++;const now=sim.time,U=sim.units,byName=new Map(U.map(u=>[u.name,u]));
+ for(const e of (snap&&snap.ev)||[]){if(!Array.isArray(e))continue;if(e[0]==='s'){const u=U.find(v=>v.id===e[1]);if(u)u.fogShotAt=now;}else if(e[0]==='k'){const k=byName.get(e[1]),v=byName.get(e[2]);if(k&&v&&k!==v)v.fogKiller={id:k.id,until:now+FOG.killer};}}
+ const groups=new Set(U.map(u=>fogGroup(sim,u)));for(const g of groups){if(!F.rel.has(g))F.rel.set(g,new Map());}const rel=F.rel,mark=(g,id,t=now+FOG.grace)=>{const m=rel.get(g);if(m&&!(m.get(id)>=t))m.set(id,t);};
+ const L=U.filter(live);
+ for(let i=0;i<L.length;i++)for(let j=i+1;j<L.length;j++){const a=L[i],b=L[j],ga=fogGroup(sim,a),gb=fogGroup(sim,b);if(ga===gb)continue;
+  const key=a.id<b.id?a.id+':'+b.id:b.id+':'+a.id,last=F.pairs.get(key)??-1e9;let seen=false;
+  if(near3(a,b,FOG.near))seen=true;else if(now-last<=FOG.grace||((F.n+a.id+b.id)&1)===0)seen=pairSees(sim,a,b);
+  if(seen){F.pairs.set(key,now);mark(ga,b.id);mark(gb,a.id);}}
+ for(const v of L){const g=fogGroup(sim,v),run=Math.hypot(v.vx||0,v.vz||0)>FOG.run&&!(v.input&&(v.input.walk||v.input.duck)),shot=now-(v.fogShotAt??-1e9)<=FOG.shotFor,rev=(v.revealedUntil||0)>now;
+  for(const a of L){const ga=fogGroup(sim,a);if(ga===g)continue;if(rev||(run&&near3(a,v,FOG.step))||(shot&&near3(a,v,FOG.shot)))mark(ga,v.id,rev?Math.max(now,v.revealedUntil):now+FOG.grace);}}
+ // enemy devices / barriers
+ for(const g of groups)F.hide.set(g,new Set());
+ for(const e of sim.effects||[]){const dev=DEV_ROWS.has(e.kind),bar=e.kind==='barrier';if(!(dev||bar)||!Array.isArray(e.p))continue;const pts=bar?(e.hp>0?barrierPoints(e):[]):devicePoints(e).concat(e.field&&Array.isArray(e.fp)?[[e.fp[0],e.fp[1]+.3,e.fp[2]]]:[]);if(!pts.length)pts.push([e.p[0],e.p[1]+.3,e.p[2]]);
+  e.fogSeen||(e.fogSeen=new Map());const ownG=sim.mode==='dm'?'u'+e.owner:'t'+e.team;
+  for(const g of groups){if(g===ownG)continue;const sticky=!MOVING.has(e.kind);if(sticky&&e.fogSeen.has(g))continue;let seen=false;
+   for(const a of L){if(fogGroup(sim,a)!==g)continue;if(pts.some(p=>(a.x-p[0])**2+(a.z-p[2])**2<=FOG.devNear*FOG.devNear&&Math.abs(a.y-p[1])<4)){seen=true;break;}const E=eyes(a);if(E.some(o=>pts.some(p=>segClear(sim,o,p)))){seen=true;break;}}
+   if(seen)e.fogSeen.set(g,now+FOG.grace);if(!(e.fogSeen.get(g)>=now))F.hide.get(g).add(e.id);}}
+ // forget pair stamps of departed units
+ if(F.n%200===0){const ids=new Set(U.map(u=>u.id));for(const k of F.pairs.keys()){const [x,y]=k.split(':').map(Number);if(!ids.has(x)||!ids.has(y))F.pairs.delete(k);}for(const m of rel.values())for(const id of m.keys())if(!ids.has(id))m.delete(id);}
+ return F;}
+// A hidden enemy row: identity, team, alive, weapon (for the shot sound) and input seq stay; position, aim, HP, armour,
+// ammo, crouch, Regen pool and input timing go; [22] = 1.
+export function fogRow(r){const o=r.slice();o[4]=o[5]=o[6]=o[7]=0;o[8]=o[10]?100:0;o[9]=0;o[15]=o[16]=0;o[17]=o[18]=0;o[19]=o[20]=0;o[21]=-1;o[22]=1;return o;}
+// The snapshot (or any frame with unit rows u and effect rows fx) as viewer may receive it.
+export function fogView(sim,snap,viewer){if(!snap||!viewer||sim.phase!=='game'||sim.fogOff)return snap;const F=fogPass(sim,snap),g=fogGroup(sim,viewer),rel=F.rel.get(g),now=sim.time,kill=viewer.fogKiller&&viewer.fogKiller.until>=now?viewer.fogKiller.id:-1,hide=F.hide.get(g);
+ const out={...snap};if(Array.isArray(snap.u))out.u=snap.u.map(r=>!Array.isArray(r)||r[0]===viewer.id||rowGroup(sim,r)===g||!r[10]||r[0]===kill||(rel&&rel.get(r[0])>=now)?r:fogRow(r));
+ if(Array.isArray(snap.fx)&&hide&&hide.size)out.fx=snap.fx.filter(r=>!(r&&hide.has(r.id)&&(r.kind==='dev'||r.kind==='barrier')));return out;}
