@@ -12350,7 +12350,7 @@ function mpHostMsg(c, m) {
     const L = u.nb && u.nb.length ? u.nb[u.nb.length - 1] : { t: now - 50, x: u.g.position.x, z: u.g.position.z };
     const lim = 9 * Math.max(0.05, (now - L.t) / 1000) + 1.5; let ok = Math.hypot(x - L.x, z - L.z) <= lim;
     try { if (ok && blocked(x, z, 0.2, y)) ok = false; } catch (e) {}
-    if (!ok) return; (u.nb || (u.nb = [])).push({ t: now, x, y: Math.max(0, Math.min(8, y)), z, r: (+m.r || 0) + Math.PI }); if (u.nb.length > 12) u.nb.shift();
+    if (!ok) return; const nb = u.nb || (u.nb = []); nb.push({ t: mpStamp(nb, +m.c, now), x, y: Math.max(0, Math.min(8, y)), z, r: (+m.r || 0) + Math.PI }); if (u.nb.length > 12) u.nb.shift();
     return;
   }
   if (m.t === "sh") { if (u.alive && typeof m.w === "string") { if (u.pp) dmFired(u); try { SFX.at(u.g.position, xWOwn(m.w) ? m.w : "Vandal"); } catch (e) {} } return; }
@@ -12492,7 +12492,7 @@ function mpCliSnap(m) {
     if (u.alive && !alive) { u.alive = false; u.hp = 0; scene.remove(u.g); u.nb.length = 0; }
     else if (!u.alive && alive) { u.alive = true; u.hp = e[8]; u.nb.length = 0; u.g.position.set(e[4], e[5] || 0, e[6]); u.g.rotation.y = e[7]; dmLive(u); }
     else u.hp = alive ? e[8] : 0;
-    if (alive) { const B = u.nb, L = B[B.length - 1]; if (L && Math.hypot(L.x - e[4], L.z - e[6]) > 10) B.length = 0; B.push({ t: now, x: e[4], y: e[5] || 0, z: e[6], r: e[7], p: Number.isFinite(e[18]) ? e[18] : 0 }); if (B.length > 12) B.shift(); }
+    if (alive) { const B = u.nb, L = B[B.length - 1]; if (L && Math.hypot(L.x - e[4], L.z - e[6]) > 10) B.length = 0; B.push({ t: mpStamp(B, Number.isFinite(m.c) ? m.c : m.serverTime, now), x: e[4], y: e[5] || 0, z: e[6], r: e[7], p: Number.isFinite(e[18]) ? e[18] : 0 }); if (B.length > 12) B.shift(); }
   }
   for (const L of [bots, allies]) for (let i = L.length - 1; i >= 0; i--) if (!seen.has(L[i].nid)) { scene.remove(L[i].g); L.splice(i, 1); }
   mpCliKD(m.k, m.d);
@@ -12559,9 +12559,20 @@ function mpCliMsg(m) {
 function mpInterp(u, now) {
   const B = u.nb; if (!B || !B.length || !u.alive) return; const rt = now - MP.DELAY;
   while (B.length > 2 && B[1].t <= rt) B.shift();
-  const a = B[0], b = B[1] || B[0], k = b.t > a.t ? Math.max(0, Math.min(1, (rt - a.t) / (b.t - a.t))) : 1, p = u.g.position;
+  // past the newest snapshot (a late packet): carry on along the last segment for up to 60 ms instead of freezing, then hold
+  const a = B[0], b = B[1] || B[0], k = b.t > a.t ? Math.max(0, Math.min(1 + Math.min(60, b.t - a.t) / (b.t - a.t), (rt - a.t) / (b.t - a.t))) : 1, p = u.g.position;
   p.x = a.x + (b.x - a.x) * k; p.z = a.z + (b.z - a.z) * k; p.y = a.y + (b.y - a.y) * k; u.g.rotation.y = a.r + xAng(b.r - a.r) * k;
   if (Number.isFinite(a.p) && Number.isFinite(b.p)) u.np = a.p + (b.p - a.p) * k; // same render time as the body's yaw
+}
+// Snapshot time on the receiver's clock (remote smoothness). Stamping by arrival time put network jitter straight into the
+// interpolation: snapshots sent every 50-66 ms arriving +-20 ms off made a remote run at 5.4 m/s render at ~3-8 m/s from
+// one segment to the next (legs and footsteps stuttered, the body surged and hitched). With the sender's clock (trusted
+// server: serverTime; P2P host / client: c) the stamp is sent + offset, the offset easing toward the smallest one-way delay seen
+// (down at 10 % per packet, up at 0.5 %: no segment changes length by more than a few ms; a jump over 250 ms resyncs at once); without it, arrival time as before. Stamps never go backwards.
+function mpStamp(B, sent, now) {
+  let t = now;
+  if (Number.isFinite(sent)) { const d = now - sent; if (B.off == null || Math.abs(d - B.off) > 250) B.off = d; else B.off += (d - B.off) * (d < B.off ? 0.1 : 0.005); t = sent + B.off; }
+  const L = B.length ? B[B.length - 1] : null; if (L && t <= L.t) t = L.t + 1; return t;
 }
 const MPT = { el: null, pool: new Map(), v: null, losT: 0, see: new Map() };
 function mpTagsOff() { MPT.pool.forEach((d) => { d.style.display = "none"; }); }
@@ -12604,12 +12615,12 @@ setInterval(function mpNet() {
     if (MP.st === "room" && MP.pub && MP.cdAt) { if (now >= MP.cdAt) { MP.cdAt = 0; mpStart(); } else if (now - MP.rmT > 1000) { MP.rmT = now; mpRoomCast(); } }
     else if ((MP.st === "room" || MP.st === "post") && now - MP.rmT > 2000) { MP.rmT = now; mpRoomCast(); }
     if (MP.m5 && MP.st === "game") mpRSNet(now);
-    if (MP.st === "game" && now - MP.nsT >= 50) { MP.nsT = now; const s = { t: "s", tl: +(+timeLeft).toFixed(2), u: mpEnts(), k: MP.m5 ? mpSBK("k") : mpKD(DM.k), d: MP.m5 ? mpSBK("d") : mpKD(DM.d), ev: MP.ev }; MP.ev = []; MP.conns.forEach((c) => { if (c.u) mpSend(c.conn, s); }); }
+    if (MP.st === "game" && now - MP.nsT >= 50) { MP.nsT = now; const s = { t: "s", c: +now.toFixed(1), tl: +(+timeLeft).toFixed(2), u: mpEnts(), k: MP.m5 ? mpSBK("k") : mpKD(DM.k), d: MP.m5 ? mpSBK("d") : mpKD(DM.d), ev: MP.ev }; MP.ev = []; MP.conns.forEach((c) => { if (c.u) mpSend(c.conn, s); }); }
   } else if (MP.role === "client") {
     if (now - MP.piT > 1000) { MP.piT = now; mpSend(MP.hc, { t: "pi", c: now }); }
     const mpLim = MP.loadT && now - MP.loadT < 300000 ? 300000 : 10000; // up to 5 min for a map build; normal 10 s otherwise
     if (now - MP.last > mpLim && !(typeof NET!=="undefined"&&NET.socket&&!NET.ready)) return mpLost("Lost connection to the host.");
-    if (MP.st === "game" && running && player && now - MP.inT >= 33) { MP.inT = now; mpSend(MP.hc, { t: "in", x: +player.x.toFixed(3), y: +(player.y || 0).toFixed(3), z: +player.z.toFixed(3), r: +yaw.toFixed(3), p: +pitch.toFixed(3), w: wName(), sq: MP.sq, h4: MP.m5 && alive4() ? 1 : 0 }); }
+    if (MP.st === "game" && running && player && now - MP.inT >= 33) { MP.inT = now; mpSend(MP.hc, { t: "in", c: +now.toFixed(1), x: +player.x.toFixed(3), y: +(player.y || 0).toFixed(3), z: +player.z.toFixed(3), r: +yaw.toFixed(3), p: +pitch.toFixed(3), w: wName(), sq: MP.sq, h4: MP.m5 && alive4() ? 1 : 0 }); }
   }
 }, 33);
 // ---- ONLINE section UI (PLAY queue panel) ----
