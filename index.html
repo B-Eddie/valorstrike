@@ -15077,8 +15077,8 @@ function xAfPhase(set, q, rel, rec) {
 // authored first-person set on the agent's FP rig (raze-fp / chamber-fp / jett-fp .glb; durations are the SequenceLength
 // of <agent>-fp.json). Showstopper ships its own skinned glb + AB_ clips (showstopper.json); Headhunter and Tour De Force
 // ship no model, so the closest native weapon stands in, in the same R_WeaponMaster slot the guns use (xvFPLoad): the
-// Sheriff (Valorant's heavy revolver) for Headhunter, the Operator (bolt sniper) for Tour De Force. Blade Storm holds
-// knives (no kunai glb ships: the native tactical knife, melee.glb, stands in) and throws them with the Wushu Attack01-05
+// Sheriff (Valorant's heavy revolver) for Headhunter, the Operator (bolt sniper) for Tour De Force. Blade Storm floats
+// its daggers around the open hands (no kunai glb ships: the native tactical knife, melee.glb, stands in) and throws them with the Wushu Attack01-05
 // set, alternating the throwing hand as authored. Equip = the authored equip clip over the gameplay windup where one
 // exists (XAB_WIND showstopper 1.4 s / tourDeForce 2.3 s), otherwise over its authored length; a fire plays the fire clip
 // at authored speed (interrupted by the next fire); idle loops at its authored length.
@@ -15087,8 +15087,8 @@ var XAF_GUN = {
     gun: { FP_Clay_S0_X_RocketLauncher_Equip: "AB_Clay_S0_X_RocketLauncher_Equip", FP_Clay_S0_X_RocketLauncher_Idle: "AB_Clay_S0_X_RocketLauncher_Idle", FP_Clay_S0_X_RocketLauncher_Fire: "AB_Clay_S0_X_RocketLauncher_Fire" },
     L: { eq: 1.9167, idle: 3.1667, fire: [0.8333] }, wind: "showstopper" },
   hp: { ag: "Chamber", model: "sheriff", standIn: "Headhunter", eq: "FP_Deadeye_S0_Q_DestabilizePistol_Equip", idle: "FP_Deadeye_S0_Q_DestabilizePistol_Idle", fire: ["FP_Deadeye_S0_Q_DestabilizePistol_Fire"], L: { eq: 1, idle: 3, fire: [0.8333] } },
-  // Blade Storm: knives in both hands; Attack01-05 throw right, left, right, left, right (peak hand speed on the clips:
-  // R 0.05, L 0.05, R 0.1, L 0.1, R 0.05 of the clip); RightClickAttack is the two-handed flurry.
+  // Blade Storm: daggers floating around the open hands (xAfKnifeRing); Attack01-05 flick right, left, right, left, right
+  // (peak hand speed on the clips: R 0.05, L 0.05, R 0.1, L 0.1, R 0.05 of the clip); RightClickAttack is the two-handed flurry.
   bs: { ag: "Jett", knives: 1, eq: "FP_Wushu_S0_X_Equip", idle: "FP_Wushu_S0_X_Idle", fire: ["FP_Wushu_S0_X_Attack01", "FP_Wushu_S0_X_Attack02", "FP_Wushu_S0_X_Attack03", "FP_Wushu_S0_X_Attack04", "FP_Wushu_S0_X_Attack05"],
     hand: ["R", "L", "R", "L", "R"], rel: [0.06, 0.06, 0.1, 0.1, 0.06], alt: "FP_Wushu_S0_X_RightClickAttack", arel: 0.08,
     L: { eq: 1.6667, idle: 3.9833, fire: [0.9667, 1.15, 0.9833, 1.0667, 0.8667], alt: 1.3 } },
@@ -15107,38 +15107,70 @@ function xAfGunModel(R, k) { // the gun of key k in the agent rig's weapon slot 
   R.guns = R.guns || {}; let M = R.guns[k]; if (M) return M; const G = XAF_GUN[k];
   M = R.guns[k] = { g: new THREE.Group(), ok: false, gm: null, ga: {} }; M.g.name = "xaf-prop-gun-" + k; M.g.visible = false;
   const slot = xAfBone(R, G.bone || "R_WeaponMaster"); if (slot) slot.add(M.g); const r = G.rot || [0, 90, 0]; M.g.rotation.set(r[0] * Math.PI / 180, r[1] * Math.PI / 180, r[2] * Math.PI / 180);
-  if (G.knives) { M.l = new THREE.Group(); M.l.name = "xaf-prop-gun-" + k + "-L"; M.l.visible = false; M.g.rotation.set(0, 0, 0); xAfPalm(R, "R").add(M.g); xAfPalm(R, "L").add(M.l);
-    xvLoad("melee").then((gl) => { [M.g, M.l].forEach((h) => h.add(xAfKnife(R, h === M.g ? "R" : "L", gl))); M.ok = true; }).catch((e) => { XAF.err = String(e); }); }
+  if (G.knives) { M.g.rotation.set(0, 0, 0); if (M.g.parent) M.g.parent.remove(M.g); M.k = []; // floating ring in camera space (xAfKnifeRing), not in the hands
+    xvLoad("melee").then((gl) => { for (let i = 0; i < XAF_KR.length; i++) { const w = xAfKnife(gl, i); M.k.push(w); M.g.add(w); } M.ok = true; }).catch((e) => { XAF.err = String(e); }); }
   else if (G.model) xvLoad(G.model).then((gl) => { const o = THREE.SkeletonUtils.clone(gl.scene);
     o.traverse((x) => { if (x.isMesh) { x.frustumCulled = false; x.castShadow = x.receiveShadow = false; x.raycast = XNR; x.renderOrder = 11; x.material = Array.isArray(x.material) ? x.material.map((m) => m.clone()) : x.material.clone(); } });
     M.g.add(o); if (G.gun && gl.animations && gl.animations.length) { M.gm = new THREE.AnimationMixer(o); gl.animations.forEach((c) => { M.ga[c.name] = M.gm.clipAction(c); }); } M.ok = true; }).catch((e) => { XAF.err = String(e); });
   return M;
 }
-function xAfKnife(R, side, gl) { // the native knife (stand-in kunai) in the palm, blade out past the fingers, ~26 cm
-  const o = THREE.SkeletonUtils.clone(gl.scene), b = new THREE.Box3().setFromObject(o), sz = b.getSize(new THREE.Vector3()), c = b.getCenter(new THREE.Vector3());
+// Blade Storm daggers FLOAT around the view in Valorant (hands open, palms down, the kunai hovering beside them: two at the
+// left edge pointing in, one under the crosshair pointing up, two at the right edge), they are never gripped. hk-37 replaced
+// the old 'tactical knife in each palm' (a 26 cm combat knife poking out of an open authored hand). Slots are screen
+// fractions measured off Valorant's own Blade Storm view (16:9) at ~0.7 m, knife ~0.24 m (the melee.glb knife stands in
+// for the kunai, which ships no glb); one slot per dagger left, in throw order. Pure layout (exported for tests).
+var XAF_KR = [[0.11, 0.58, 1, 0.05], [0.13, 0.73, 1, -0.1], [0.53, 0.86, 0, 1], [0.88, 0.69, -1, -0.05], [0.87, 0.52, -1, 0.1]]; // [sx, sy, dir x, dir y]
+function xAfKnifeRing(n, aspect, fov, t) { // n daggers left -> camera-space [{p:[x,y,z], d:[x,y,z]}] for the first n slots
+  const tv = Math.tan(fov * Math.PI / 360), th = tv * Math.min(aspect, 16 / 9), D = 0.7 * Math.tan(70.53 * Math.PI / 360) / tv, out = []; // across: the 16:9 frame the rig is framed in (wider phones keep the daggers by the hands);
+  // D: 0.7 m at the 70.53 deg 16:9 lens, pushed out as the hip lens narrows (wider than 16:9 caps the horizontal at 103 deg, db9313f) so each dagger keeps its share of the screen (844x390: the centre one was cut 3 px at the bottom)
+  for (let i = 0; i < Math.min(n | 0, XAF_KR.length); i++) { const [sx, sy, dx, dy] = XAF_KR[i], b = Math.sin((t || 0) * 2.1 + i * 1.7) * 0.012; // a slow hover
+    const x = (sx * 2 - 1) * th * D, y = -(sy * 2 - 1) * tv * D + b, L = Math.hypot(dx * 0.85, dy * 0.85, 0.5);
+    out.push({ p: [x, y, -D], d: [dx * 0.85 / L, dy * 0.85 / L, -0.5 / L] }); }
+  return out;
+}
+function xAfKnife(gl, i) { // one dagger: the native knife model, ~24 cm, blade end along local +z, flat face along local +x
+  const o = THREE.SkeletonUtils.clone(gl.scene); o.updateMatrixWorld(true); const b = xAfDrawnBox(o), sz = b.getSize(new THREE.Vector3()), c = b.getCenter(new THREE.Vector3());
   o.traverse((x) => { if (x.isMesh) { x.frustumCulled = false; x.castShadow = x.receiveShadow = false; x.raycast = XNR; x.renderOrder = 11; } });
-  const ax = sz.x >= sz.y && sz.x >= sz.z ? "x" : sz.y >= sz.z ? "y" : "z", s = 0.26 / sz[ax], w = new THREE.Group(), q = new THREE.Group();
-  o.scale.setScalar(s); o.position.copy(c).multiplyScalar(-s); q.add(o); w.add(q); w.name = "xaf-knife-" + side;
-  const h = xAfBone(R, side + "_Hand"), m = xAfBone(R, side + "_Middle1"); R.sc.updateMatrixWorld(true);
-  const d = h && m ? h.worldToLocal(m.getWorldPosition(new THREE.Vector3())).normalize() : new THREE.Vector3(1, 0, 0);
-  const tip = (b.max[ax] - c[ax] > c[ax] - b.min[ax] ? 1 : -1) * (XAF.knifeTip || 1), v = new THREE.Vector3(); v[ax] = tip; // the blade end of the model's long axis
-  q.quaternion.setFromUnitVectors(v, d); w.position.copy(d).multiplyScalar(0.07);
+  const ax = sz.x >= sz.y && sz.x >= sz.z ? "x" : sz.y >= sz.z ? "y" : "z", s = 0.24 / sz[ax], w = new THREE.Group(), q = new THREE.Group();
+  o.scale.setScalar(s); o.position.copy(c).multiplyScalar(-s); q.add(o); w.add(q); w.name = "xaf-knife-" + i;
+  const tip = (b.max[ax] - c[ax] > c[ax] - b.min[ax] ? 1 : -1) * (XAF.knifeTip || 1), ez = new THREE.Vector3(); ez[ax] = tip; // the blade end of the model's long axis
+  const th = ["x", "y", "z"].filter((a) => a !== ax).sort((a, b2) => sz[a] - sz[b2])[0], ex = new THREE.Vector3(); ex[th] = 1; // flat-face normal = the drawn thinnest axis
+  const ey = new THREE.Vector3().crossVectors(ez, ex), Mb = new THREE.Matrix4().makeBasis(ex, ey, ez); q.quaternion.setFromRotationMatrix(Mb).invert(); // model tip -> +z, flat normal -> +x
+  w.visible = false;
   return w;
 }
-function xAfKnifeShow(G, P, n) { // which hands hold a knife (n = knives left after the last throw)
-  let r = n >= 1, l = n >= 2;
-  if (P.ph === "fire") { const h = P.alt ? "B" : G.hand[P.i], rel = P.alt ? G.arel : G.rel[P.i];
-    if (P.u < rel) { if (h !== "L") r = true; if (h !== "R") l = true; } else if (P.u < 0.45) { if (h !== "L") r = false; if (h !== "R") l = false; } }
-  return { r, l };
+function xAfDrawnBox(o) { // box of the model as DRAWN: skinned vertices through their bones (the bind-pose box of the skinned knife is turned 90 deg)
+  const B = new THREE.Box3(), v = new THREE.Vector3(), inv = new THREE.Matrix4().copy(o.matrixWorld).invert(), m = new THREE.Matrix4();
+  o.traverse((x) => { if (!x.isMesh || !x.geometry || !x.geometry.attributes.position) return; const P = x.geometry.attributes.position, bt = x.isSkinnedMesh ? (x.applyBoneTransform || x.boneTransform) : null;
+    if (x.isSkinnedMesh && x.skeleton) x.skeleton.update(); m.multiplyMatrices(inv, x.matrixWorld);
+    for (let k = 0; k < P.count; k++) { v.fromBufferAttribute(P, k); if (bt) bt.call(x, k, v); v.applyMatrix4(m); B.expandByPoint(v); } });
+  return B.isEmpty() ? new THREE.Box3().setFromObject(o) : B;
+}
+function xAfKnifePose(R, M, n) { // place the floating daggers (camera space: a sibling of the rig root under the camera)
+  const cam = R.root.parent; if (!cam || !M.k) return 0; if (M.g.parent !== cam) cam.add(M.g);
+  const fov = cam.fov || 70, asp = cam.aspect || 16 / 9, ring = xAfKnifeRing(n, asp, fov, XAF.t), d = new THREE.Vector3(), nx = new THREE.Vector3(), ny = new THREE.Vector3(), B = new THREE.Matrix4();
+  for (let i = 0; i < M.k.length; i++) { const w = M.k[i], r = ring[i]; w.visible = !!r; if (!r) continue; w.position.set(r.p[0], r.p[1], r.p[2]); d.set(r.d[0], r.d[1], r.d[2]);
+    nx.set(-r.p[0], -r.p[1], -r.p[2]).normalize(); nx.addScaledVector(d, -nx.dot(d)).normalize(); ny.crossVectors(d, nx); B.makeBasis(nx, ny, d); w.quaternion.setFromRotationMatrix(B); } // point along d, flat face turned to the eye
+  return ring.length;
 }
 function xAfGunPose(R, k, P) { // arms clip + the gun's own clip at the same fraction
   const G = XAF_GUN[k]; xAfPose(R, P.clip, P.u); const M = xAfGunModel(R, k);
   if (M.gm && G.gun) { const gn = G.gun[P.clip], a = gn && M.ga[gn]; if (a) { if (M.cur !== gn) { M.gm.stopAllAction(); a.reset().play(); M.cur = gn; } a.time = Math.min(a.getClip().duration - 0.001, P.u * a.getClip().duration); M.gm.update(0); } }
-  for (const x in R.guns) { const g = R.guns[x]; g.g.visible = x === k && g.ok; if (g.l) g.l.visible = false; }
-  if (G.knives && M.ok) { const v = xAfKnifeShow(G, P, typeof J !== "undefined" && J.bsOn ? J.bs | 0 : 0); M.g.visible = v.r; M.l.visible = v.l; }
+  for (const x in R.guns) { const g = R.guns[x]; g.g.visible = x === k && g.ok; }
+  if (G.knives && M.ok) M.g.visible = xAfKnifePose(R, M, typeof J !== "undefined" && J.bsOn ? J.bs | 0 : 0) > 0;
   for (const x in R.props) R.props[x].g.visible = false; xAfBow(R, false);
   return M;
 }
+// hk-37 (user: "the arms for Jett's ultimate look weird"): the FP rigs are authored for a 43.383 deg viewmodel camera
+// (<agent>-fp.json Settings.FOV, every agent), but the ability rig was drawn through the 70.5 deg world camera unscaled: the
+// hands sat small and close to the middle, long bare forearms crossed the view and the upper arms / shoulders poked in at
+// the bottom corners (Blade Storm worst: both arms out). Scaling the rig 's' across and up in CAMERA space (depth kept) is
+// exactly the authored narrower-FOV picture on the world camera (x / z and y / z grow by s = tan(fov / 2) / tan(43.383 / 2));
+// the rig's eye point stays on the camera. Root local axes: x = view depth, y = up, z = across (root.rotation.y = 90 deg).
+XAF.vfov = 43.383;
+function xAfFov(R, fov) { if (!R || !R.root || !(fov > 0)) return 1; const s = Math.tan(fov * Math.PI / 360) / Math.tan(XAF.vfov * Math.PI / 360);
+  if (!R.eye0) { R.eye0 = R.root.position.clone(); } if (R.fs === s) return s; R.fs = s;
+  R.root.scale.set(1, s, s); R.root.position.set(R.eye0.x, R.eye0.y * s, R.eye0.z); return s; }
 function xAfGunKey() { // the held ult / ability gun right now ("" none): Showstopper / Headhunter / Tour De Force, then a fire's tail
   if (typeof BC !== "undefined" && BC.vm && XAF_GUN[BC.vm]) return BC.vm;
   if (J.pick === "Jett" && J.bsOn && J.bs > 0 && typeof rw !== "undefined" && rw === "knife") return "bs"; // Blade Storm: the knives replace the knife viewmodel
@@ -15156,7 +15188,7 @@ function xAfGunTick(dt, k, ag) {
 }
 function xAfHideGun() { gun.visible = false; knife.visible = false; if (typeof XV !== "undefined" && XV.fp && XV.fp.root) XV.fp.root.visible = false; }
 function xAfOff() {
-  const R = XAF.cur; XAF.on = false; XAF.mode = ""; xAfShowGun(); if (!R) return; R.root.visible = false; for (const k in R.props) R.props[k].g.visible = false; for (const k in R.guns || {}) { R.guns[k].g.visible = false; if (R.guns[k].l) R.guns[k].l.visible = false; } XAF.gs = null;
+  const R = XAF.cur; XAF.on = false; XAF.mode = ""; xAfShowGun(); if (!R) return; R.root.visible = false; for (const k in R.props) R.props[k].g.visible = false; for (const k in R.guns || {}) R.guns[k].g.visible = false; XAF.gs = null;
   try { if (XV.fp) { XV.fp.kind = null; xvFPPlay(XV.fp, "equip"); } } catch (e) {} // the gun comes back with its native equip
 }
 // xAfHideGun cleared gun / knife visibility every tick while the ability was out (even while the rig was still loading or failed);
@@ -15165,7 +15197,7 @@ function xAfShowGun() { // the held weapon's own visibility, as the weapon-switc
   try { if (typeof mode !== "undefined" && (mode === "duel" || mode === "aim")) return; const dead = !player || player.hp <= 0, w = typeof rw !== "undefined" ? rw : "";
     knife.visible = w === "knife" && !dead; gun.visible = w !== "knife" && !dead && !(typeof ads !== "undefined" && ads === 2); } catch (e) {}
 }
-function xAfShow(R) { if (XAF.cur && XAF.cur !== R) XAF.cur.root.visible = false; XAF.cur = R; if (R.root.parent !== camera) camera.add(R.root); R.root.visible = true; XAF.on = true; }
+function xAfShow(R) { if (XAF.cur && XAF.cur !== R) { XAF.cur.root.visible = false; for (const x in XAF.cur.guns || {}) XAF.cur.guns[x].g.visible = false; } XAF.cur = R; if (R.root.parent !== camera) camera.add(R.root); R.root.visible = true; XAF.on = true; xAfFov(R, camera.fov); }
 function xAfTick(dt) {
   XAF.t += dt; const q = J.eq, live = running && player && player.hp > 0 && jOn(), ag = J.pick || "Jett";
   const gk = live && !q ? xAfGunKey() : "", quick = live && !q && !gk && XCA.on, want = live && (q || quick || gk);
