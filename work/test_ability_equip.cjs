@@ -10,7 +10,7 @@ const fails=[];const fail=s=>{fails.push(s);if(VERBOSE)console.log('FAIL',s);};c
  // a session that saved the legacy layout (abilities on Z / X / C) without ever choosing it
  const legacy={fwd:"KeyW",back:"KeyS",left:"KeyA",right:"KeyD",walk:"ShiftLeft",crouch:"KeyC",jump:"Space",use:"KeyF",abC:"KeyZ",abQ:"KeyX",abE:"KeyC",abX:"KeyV",ping:"KeyQ"};
  const store=lsStore([["vs.keys",JSON.stringify(legacy)]]);
- const H=boot({real3:true,seed:SEED,ls:store}),xe=H.xe;const adv=async ms=>{for(let t=0;t<ms;t+=50){H.advance(Math.min(50,ms-t));await new Promise(r=>setImmediate(r));}};
+ const H=boot({real3:true,seed:SEED,ls:store}),xe=H.xe;const adv=async ms=>{for(let t=0;t<ms;t+=50){H.advance(Math.min(50,ms-t)-1e-6);await new Promise(r=>setImmediate(r));}};/* qa-35: -1e-6 so a 50 ms step is always 3 frames: the harness clock (audit.js advance: whole 1/60 s frames while now < end) drifts in floating point, and depending on how many frames ran before, a step ran a 4th frame (66.7 ms) - the windup / burst timings below then fired a step early (failed since 2651675 changed how many frames the earlier sections run) */
  const errs0=H.errors.length;
  eq(xe('XKB.filter(a=>/^ab|crouch/.test(a[0])).map(a=>a[2])'),["ControlLeft","KeyC","KeyQ","KeyE","KeyX"],'defaults crouch/C/Q/E/X');
  eq(xe('[XS.keys.abC,XS.keys.abQ,XS.keys.abE,XS.keys.abX,XS.keys.crouch,XS.keys.ping]'),["KeyC","KeyQ","KeyE","KeyX","ControlLeft","KeyZ"],'legacy Z/X/C map migrated');
@@ -98,7 +98,7 @@ const fails=[];const fail=s=>{fails.push(s);if(VERBOSE)console.log('FAIL',s);};c
  // the weapon key of the gun in hand (the sidearm here, no primary bought) puts the ability away and brings the gun back
  await tap('KeyC');await adv(700);await tap('Digit2');await adv(900);const v3=xe(VM);if(v3.gv!==v0.gv||v3.on)fail('weapon key did not bring the gun back '+JSON.stringify(v3));
  // ---- section 7 mechanics (run last: they add game time; each waits for a live round) ----
- const live=async()=>{for(let i=0;i<150&&!xe('running&&player.hp>0&&!(FV.buy>0)');i++){if(xe('FV.buy>0'))xe('FV.buy=0.05;true');await adv(200);}if(!xe('running&&player.hp>0'))fail('no live round for the section 7 checks');};
+ const live=async()=>{for(let i=0;i<400&&!xe('running&&player.hp>0&&!(FV.buy>0)');i++){if(xe('FV.buy>0'))xe('FV.buy=0.05;true');await adv(200);}if(!xe('running&&player.hp>0'))fail('no live round for the section 7 checks '+JSON.stringify(xe('[running,player.hp,FV.buy,typeof planted!=="undefined"&&planted]')));};/* up to 80 s: a round the player lost after the Spike went down runs on to the 45 s detonation (qa-35: the earlier sections play a live 5v5, so which round state they leave depends on the bots) */
  // ---- Breach Fault Line: HOLD FIRE extends the strip (wiki 8 -> 56 m over 1 s, 8 m ahead, 8 m wide); client XFAULT == server FAULT ----
  await live();{const src=require('fs').readFileSync(require('path').join(__dirname,'../server/src/abilities.js'),'utf8'),sf=Function('return '+src.match(/const FAULT=(\{[^}]*\})/)[1])();
   eq(xe('JSON.parse(JSON.stringify(XFAULT))'),sf,'client XFAULT == server FAULT');eq(xe('[xFaultLen(0),xFaultLen(0.5),xFaultLen(1),xFaultLen(9),xFaultLen(undefined),xFaultLen("x")]'),[8,32,56,56,56,56],'Fault Line length from the charge');
