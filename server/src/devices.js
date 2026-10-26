@@ -28,7 +28,20 @@ export const DEV={
 };
 // Boom Bot damage at d m from the blast: 80 inside the 2 m inner radius, linear to 30 at the 6 m outer radius (wiki Boom_Bot).
 // Boom Bot hitbox for gunfire (spike.js traceShot / shotImpact): a 0.4 m sphere on the crawling bot, enemies of its team only.
-export function nearestBoomBot(sim,o,d,max,by){let out=null,dist=max;for(const e of sim.effects){if(e.kind!=='boombot'||!(e.hp>0)||e.until<sim.time||(by&&by.team===e.team))continue;const c=[e.p[0]-o[0],e.p[1]+.2-o[1],e.p[2]-o[2]],t=c[0]*d[0]+c[1]*d[1]+c[2]*d[2],q=c[0]*c[0]+c[1]*c[1]+c[2]*c[2]-t*t;if(t<0||q>.16)continue;const h=t-Math.sqrt(.16-q);if(h>=0&&h<dist){out=e;dist=h;}}return out?{effect:out,distance:dist}:null;}
+// Destroyable utility (wiki <Ability> 'Health'): enemy gunfire hits a sphere on the device (y: centre above e.p, r: radius)
+// for the weapon's body damage per bullet and removes it at 0 HP (spike.js traceShot / shotImpact). Boom Bot 60, Turret 100,
+// Alarmbot 20, Trademark 20, Nanoswarm 20, Trapwire 20 (either anchor: e.p and e.q). The Sage Barrier is abilities.js
+// (barrierRay, 600 HP). Owl Drone / Spycam are 'dart' stand-ins with no body here: not shootable. Bots shoot these down
+// (spike.js shootUtility, vendor/bot-brain.cjs shootUtility); the offline game uses the same HP (index.html XSHOOT).
+export const SHOOT={boombot:{hp:60,y:.2,r:.4},turret:{hp:100,y:.45,r:.45},alarmbot:{hp:20,y:.3,r:.35},trademark:{hp:20,y:.2,r:.3},nanoswarm:{hp:20,y:.1,r:.3},trapwire:{hp:20,y:.3,r:.2,ends:true}};
+export function deviceHp(e){const S=SHOOT[e.kind];return S?(e.hp??S.hp):0;}
+// The points a shot or a bot aims at: the device, or both Trapwire anchors.
+export function devicePoints(e){const S=SHOOT[e.kind];if(!S)return [];const a=[e.p[0],e.p[1]+S.y,e.p[2]];return S.ends&&e.q?[a,[e.q[0],e.q[1]+S.y,e.q[2]]]:[a];}
+// Nearest live enemy device the ray o + d t (unit d, t < max) hits; by: the shooter (its own team's devices are not hit).
+export function nearestDevice(sim,o,d,max,by){let out=null,dist=max;for(const e of sim.effects){const S=SHOOT[e.kind];if(!S||!(deviceHp(e)>0)||e.until<sim.time||(by&&by.team===e.team))continue;const r2=S.r*S.r;for(const c0 of devicePoints(e)){const c=[c0[0]-o[0],c0[1]-o[1],c0[2]-o[2]],t=c[0]*d[0]+c[1]*d[1]+c[2]*d[2],q=c[0]*c[0]+c[1]*c[1]+c[2]*c[2]-t*t;if(t<0||q>r2)continue;const h=t-Math.sqrt(r2-q);if(h>=0&&h<dist){out=e;dist=h;}}}return out?{effect:out,distance:dist}:null;}
+// A bullet's body damage on a device; destroyed (removed from sim.effects) at 0 HP. Returns true when destroyed.
+export function damageDevice(sim,e,n){e.hp=deviceHp(e)-n;if(e.hp>0)return false;const j=sim.effects.indexOf(e);if(j>=0)sim.effects.splice(j,1);sim.destroyed=(sim.destroyed||0)+1;return true;}
+export function nearestBoomBot(sim,o,d,max,by){const h=nearestDevice(sim,o,d,max,by);return h&&h.effect.kind==='boombot'?h:null;}
 export const bbDamage=d=>{const B=DEV.boombot;return d<=B.inner?B.damage:d>=B.radius?0:B.damage-(d-B.inner)/(B.radius-B.inner)*(B.damage-B.min);};
 // Trailblazer concuss at d m from the blast: 4 s at the centre, linear to 2.5 s at the 3.5 m edge (wiki Trailblazer).
 export const tbConcuss=d=>{const T=DEV.trail;return T.concuss-Math.min(1,Math.max(0,d/T.radius))*(T.concuss-T.minConcuss);};
@@ -48,13 +61,13 @@ export function startDevice(sim,u,ty,p,push,m={}){
  // Curveball bends right (m.l: left) and pops beside the corner, not at the crosshair.
  if(u.agent==='Phoenix'&&ty==='flash'){const C=DEV.curveball,side=m.l?-1:1,r=[-f[2]*side,0,f[0]*side],o=[u.x,u.y+1.6,u.z];let a=C.ahead;const h=sim.world.ray(o,f,a);if(Number.isFinite(h))a=Math.max(.5,h-.4);const mid=[o[0]+f[0]*a,o[1],o[2]+f[2]*a];let b=C.side;const h2=sim.world.ray(mid,r,b);if(Number.isFinite(h2))b=Math.max(0,h2-.4);push('flash',C.windup+.1,C.radius,{p:[mid[0]+r[0]*b,o[1],mid[2]+r[2]*b],at:sim.time+C.windup,blind:C.blind});return true;}
  // Killjoy Nanoswarm hides at the aim point until recast (C again); Alarmbot waits for an enemy to walk by.
- if(u.agent==='Killjoy'&&ty==='fire'){push('nanoswarm',DEV.nanoswarm.life,DEV.nanoswarm.radius,{armed:false});return true;}
- if(u.agent==='Killjoy'&&ty==='trap'){push('alarmbot',DEV.alarmbot.life,DEV.alarmbot.radius,{chase:null});return true;}
- if(u.agent==='Killjoy'&&ty==='turret'){push('turret',DEV.turret.life,DEV.turret.range,{at:sim.time+DEV.turret.deploy,yaw:u.look});return true;}
+ if(u.agent==='Killjoy'&&ty==='fire'){push('nanoswarm',DEV.nanoswarm.life,DEV.nanoswarm.radius,{armed:false,hp:SHOOT.nanoswarm.hp});return true;}
+ if(u.agent==='Killjoy'&&ty==='trap'){push('alarmbot',DEV.alarmbot.life,DEV.alarmbot.radius,{chase:null,hp:SHOOT.alarmbot.hp});return true;}
+ if(u.agent==='Killjoy'&&ty==='turret'){push('turret',DEV.turret.life,DEV.turret.range,{at:sim.time+DEV.turret.deploy,yaw:u.look,hp:SHOOT.turret.hp});return true;}
  // Cypher Trapwire: stretched across at the aim point, perpendicular to his view, to the walls either side.
- if(u.agent==='Cypher'&&ty==='trap'){const r=[-f[2],0,f[0]],o=[p[0],p[1]+.3,p[2]],span=d=>{const h=sim.world.ray(o,d,DEV.trapwire.reach);return Number.isFinite(h)?Math.max(.3,h-.05):DEV.trapwire.reach;},a=span(r),b=span(r.map(n=>-n));push('trapwire',DEV.trapwire.life,DEV.trapwire.width,{armAt:sim.time+DEV.trapwire.arm,p:[p[0]-r[0]*b,p[1],p[2]-r[2]*b],q:[p[0]+r[0]*a,p[1],p[2]+r[2]*a]});return true;}
+ if(u.agent==='Cypher'&&ty==='trap'){const r=[-f[2],0,f[0]],o=[p[0],p[1]+.3,p[2]],span=d=>{const h=sim.world.ray(o,d,DEV.trapwire.reach);return Number.isFinite(h)?Math.max(.3,h-.05):DEV.trapwire.reach;},a=span(r),b=span(r.map(n=>-n));push('trapwire',DEV.trapwire.life,DEV.trapwire.width,{armAt:sim.time+DEV.trapwire.arm,hp:SHOOT.trapwire.hp,p:[p[0]-r[0]*b,p[1],p[2]-r[2]*b],q:[p[0]+r[0]*a,p[1],p[2]+r[2]*a]});return true;}
  if(u.agent==='Cypher'&&ty==='smoke'){push('smoke',DEV.cage.life,SMOKE.r.Cypher,{cyl:DEV.cage.h});return true;}
- if(u.agent==='Chamber'&&ty==='trap'){push('trademark',DEV.trademark.life,DEV.trademark.radius,{spotted:0,armAt:sim.time+DEV.trademark.armDeploy});return true;}
+ if(u.agent==='Chamber'&&ty==='trap'){push('trademark',DEV.trademark.life,DEV.trademark.radius,{spotted:0,armAt:sim.time+DEV.trademark.armDeploy,hp:SHOOT.trademark.hp});return true;}
  // Chamber Headhunter: one round of the heavy pistol per charge; the previous gun comes back when it is spent,
  // put away (Q again), swapped off or Chamber dies.
  if(u.agent==='Chamber'&&ty==='headhun'){const H=DEV.headhunter;if(!u.inventory)u.inventory={};u.headhunter={saved:u.weapon,savedAmmo:u.ammo,savedReserve:u.reserve,savedSidearm:u.inventory[H.weapon]};u.inventory[u.weapon]=u.ammo;u.weapon=H.weapon;u.ammo=H.ammo;u.reserve=0;u.reloadAt=0;p.splice(0,3,u.x,u.y,u.z);return true;}

@@ -4525,6 +4525,7 @@ function tick(dt) {
     if (see) b.g.rotation.y = Math.atan2(dx, dz);
     { const tm = allies.indexOf(b) >= 0 ? allies : bots; xPeekThink(b, dt, see, see && !b.see, d, tg.t === player ? FV.pri || "" : tg.t.w || "", tm, tm === allies); } // shared with ally bots
     botAb(b, dt, see, tg, from); if (!running) return;
+    if (!see && xUtilShoot(b, dt, from, true)) continue; // no enemy in sight: shoot down the player's team's utility in the way (xUtilShoot)
     const bk = botK(b);
     if (mode === "five" && (b.xj != null || bk > 0) && xStep(b, dt * Math.max(bk, 0.01))) continue;
     let vx = 0, vz = 0;
@@ -4537,6 +4538,7 @@ function tick(dt) {
     else if (true) {
       let gx = tg.x, gz = tg.z; if (b.trT > 0) { b.trT -= dt; [gx, gz] = b.tr; } else if (mode === "five" && !FV.dm) { const o = xGoal(b, bots, !FV.atk, XG_V); if (o) [gx, gz] = o; }
       if (!(b.xr && b.xr.length)) [gx, gz] = xPath(b, dt, gx, gz, XP_V);
+      (b.xUg || (b.xUg = [0, 0]))[0] = gx; b.xUg[1] = gz; // where it is heading (xUtilAcross: is a barrier across its way)
       const ex = gx - p.x, ez = gz - p.z, ed = Math.hypot(ex, ez) || 0.01; if (ed > 0.5) { vx = ex / ed; vz = ez / ed; }
       [vx, vz] = xPeekMove(b, dt, d, dx, dz, vx, vz);
     } else { vx = (-dz / d) * b.strafe * 0.5; vz = (dx / d) * b.strafe * 0.5; }
@@ -4591,6 +4593,7 @@ function tick(dt) {
     a.xTt = tg; a.xSe = !!tg; a.see = tg ? (a.see || 0) + dt : 0; // same LOS/target fields as the enemy bot AI (orb-run cancel reads xSe / see)
     if (tg) { const tp = a.xTp || (a.xTp = { x: 0, z: 0 }); tp.x = tg.g.position.x; tp.z = tg.g.position.z; botAb(a, dt, true, tp, from); } else botAb(a, dt, false, null, from); // allies share the enemy ability logic
     if (!running) return;
+    if (!tg && xUtilShoot(a, dt, from, false)) continue; // allies shoot down enemy utility in the way the same way
     let vx = 0, vz = 0, gx = a.ox, gz = a.oz == null ? 1.2 : a.oz;
     if (rf) { const nb = a.xNb; if (nb) { gx = nb.g.position.x; gz = nb.g.position.z; } }
     else if (mode !== "five" || FV.dm) { const nb = a.xNb; if (nb && nb.alive) { gx = nb.g.position.x; gz = nb.g.position.z; } } // TDM/DM run as mode "five" (dmGo sets FV.dm): hunt the nearest enemy like enemy bots do instead of idling at spawn
@@ -4598,6 +4601,7 @@ function tick(dt) {
     if (mode === "five" && !FV.dm) { const o = xGoal(a, allies, FV.atk, XG_V); if (o) [gx, gz] = o; } // DM/TDM: no spike sites, keep the hunt goal
     if (!tg && a.trT > 0) { a.trT -= dt; [gx, gz] = a.tr; } // trade a fallen teammate
     if (!tg && !(a.xr && a.xr.length)) [gx, gz] = xPath(a, dt, gx, gz, XP_V);
+    (a.xUg || (a.xUg = [0, 0]))[0] = gx; a.xUg[1] = gz;
     const sx = gx - p.x, sz = gz - p.z, sd = Math.hypot(sx, sz), f5 = mode === "five";
     a.ts = tg ? (a.ts || 0) + dt : 0;
     if (tg) { const q = tg.g.position; a.g.rotation.y = Math.atan2(q.x - p.x, q.z - p.z); a.flip -= dt; if (a.flip <= 0) { a.strafe *= -1; a.flip = f5 ? 0.3 + Math.random() * 0.3 : 0.8 + Math.random(); } [vx, vz] = xFight(a, dt, q.x, q.z, td || 0.01);
@@ -8531,7 +8535,7 @@ function okTick(dt) {
     if (hit.length) { hit.forEach((b) => { b.vul = 4; drTag(b); }); say("Alarmbot · " + hit.length + " Vulnerable 4 s", 900); blip(1000, 0.3, "square", 0.15); SFX.ab("alarm", e); const m = jM(smokeGeo, fireMat(0xf2c230, 0.25)); m.scale.setScalar(1.5); m.position.copy(e); jFx(m, 0.5); okRm(J.ab); J.ab = null; }
   }
   if (J.tur) {
-    const T = J.tur; okHitBy(T, dt); if (T.hp <= 0) { okRm(T); J.tur = null; say("Turret destroyed", 800); blip(200, 0.3, "square", 0.12); }
+    const T = J.tur; if (T.hp <= 0) { okRm(T); J.tur = null; say("Turret destroyed", 800); blip(200, 0.3, "square", 0.12); }
     else if ((T.cd -= dt) <= 0) for (let n = 0; n < 4 && T.cd <= 0; n++) { // XTUR: 100 degree cone, off while Killjoy is dead or beyond 40 m; lock windup, then 3-shot bursts every 1.25 s; losing the target re-arms the windup
       const e = new V(T.p.x, 0.8, T.p.z), on = player.hp > 0 && Math.hypot(player.x - T.p.x, player.z - T.p.z) <= XTUR.active, ca = Math.cos(XTUR.cone / 2 * Math.PI / 180), tg = on && bots.filter((b) => { if (!b.alive) return false; const q = b.g.position, vx = q.x - e.x, vz = q.z - e.z, d = Math.hypot(vx, vz); return d < XTUR.range && vx * T.fx + vz * T.fz >= d * ca - 1e-6 && los(e, new V(q.x, 1.2, q.z)); }).sort((a, b) => a.g.position.distanceTo(e) - b.g.position.distanceTo(e))[0];
       if (!tg) { T.lock = 0; T.shot = 0; T.cd = 0.15; break; }
@@ -9352,7 +9356,7 @@ function xBTurret(b, al, from, tx, tz) { const dx = tx - from.x, dz = tz - from.
   const T = xBbShootable({ m, p: m.position, fx, fz, hp: 100, cd: XTUR.deploy, lock: 0, shot: 0, own: b, en: !al }); XBTU.push(T); try { SFX.ab("turret", m.position); } catch (er) {} feed("Killjoy ▸ Turret"); return T; }
 function xBTurGone(T) { xBbGone(T); const i = XBTU.indexOf(T); if (i >= 0) XBTU.splice(i, 1); }
 function xBTurTick(dt) { // every bot turret: shot down at 0 HP; fires (XTUR, as the player's J.tur) only while its Killjoy lives within XTUR.active m
-  for (let i = XBTU.length - 1; i >= 0; i--) { const T = XBTU[i], o = T.own; if (!T.en) okHitBy(T, dt); if (T.hp <= 0) { xBTurGone(T); feed("Killjoy ▸ Turret destroyed"); continue; }
+  for (let i = XBTU.length - 1; i >= 0; i--) { const T = XBTU[i], o = T.own; if (T.hp <= 0) { xBTurGone(T); feed("Killjoy ▸ Turret destroyed"); continue; }
     if ((T.cd -= dt) > 0) continue; const e = new RV(T.p.x, T.p.y + 0.35, T.p.z), on = o && o.alive && o.g && Math.hypot(o.g.position.x - T.p.x, o.g.position.z - T.p.z) <= XTUR.active, ca = Math.cos((XTUR.cone / 2) * Math.PI / 180);
     for (let n = 0; n < 4 && T.cd <= 0; n++) { let tg = null, td = Infinity, tq = null;
       if (on) { const C = T.en ? (player.hp > 0 ? [player] : []).concat(allies.filter((a) => a && a.alive && a.g)) : bots.filter((t) => t && t.alive && t.g);
@@ -9383,6 +9387,37 @@ function xBSwGone(w) { scene.remove(w.m); const i = solids.indexOf(w.m); if (i >
 function xBSwDmg(w, n) { if (XBSW.indexOf(w) < 0) return; w.hp -= n; w.m.material.opacity = 0.55 + 0.35 * Math.max(0, w.hp / 600); if (w.hp <= 0) { xBSwGone(w); feed("Sage ▸ Barrier broken"); blip(300, 0.25, "square", 0.12); } }
 function xBSwTick(dt) { for (let i = XBSW.length - 1; i >= 0; i--) { const w = XBSW[i]; if ((w.t -= dt) <= 0) xBSwGone(w); } }
 function xBSwClr() { while (XBSW.length) xBSwGone(XBSW[XBSW.length - 1]); }
+// ---- Bots shoot down destroyable enemy utility (offline twin of server spike.js shootUtility; the choice is the shared
+// vendor/bot-brain.cjs shootUtility: an incoming Boom Bot, then a Turret, then an Alarmbot near it, a Sage Barrier only when
+// it stands across the bot's way and within 14 m). HP = server devices.js SHOOT / the barrier's 600 (wiki 'Health'): Boom
+// Bot 60, Turret 100, Alarmbot 20. A bot (enemy or ally) with no enemy in sight stops, turns onto it and fires its gun at
+// the gun's rate: body damage by distance (wDmg), shot sound and tracer, through each device's own damage path (sgDmg /
+// xBSwDmg, T.hp / o.hp, which their ticks remove at 0). Replaces the old abstract 12 HP/s turret drain (okHitBy, still used
+// for Lockdown). en: the shooter is on the enemy team (shoots the player's team's utility), else an ally (enemy utility).
+const XSHOOT = { boombot: 60, turret: 100, alarmbot: 20, barrier: 600 };
+function xUtilCands(en) { const L = xUtilCands.L || (xUtilCands.L = []); L.length = 0; const add = (kind, o, q, hit) => L.push({ kind, o, x: q.x, y: q.y || 0, z: q.z, hit, d: 0, los: false, blocking: false });
+  if (en && J.sw && J.sw.hp > 0) add("barrier", J.sw, J.sw.p, (n) => sgDmg(n, true));
+  for (const w of XBSW) if (!w.en === en && w.hp > 0) add("barrier", w, w.p, (n) => xBSwDmg(w, n));
+  if (en && J.tur && J.tur.hp > 0) add("turret", J.tur, J.tur.p, (n) => { J.tur.hp -= n; });
+  for (const T of XBTU) if (!T.en === en && T.hp > 0) add("turret", T, T.p, (n) => { T.hp -= n; });
+  if (en && J.ab && J.ab.p) { if (J.ab.hp == null) J.ab.hp = XSHOOT.alarmbot; add("alarmbot", J.ab, J.ab.p, (n) => { const A = J.ab; if (!A) return; A.hp -= n; if (A.hp <= 0) { okRm(A); J.ab = null; say("Alarmbot destroyed", 800); } }); }
+  for (const o of RS.bb) if (!o.en === en && o.wu == null && (o.hp == null ? (o.hp = XSHOOT.boombot) : o.hp) > 0) add("boombot", o, o.m.position, (n) => { o.hp -= n; });
+  return L; }
+// a barrier across the bot's way: on the line to where it is heading (b.xUg) within 14 m, or the bot pressed against it
+function xUtilAcross(b, w) { const p = b.g.position; if (xBSwD(w, p.x, p.z) < 1.2) return true; const g = b.xUg; if (!g) return false; const dx = g[0] - p.x, dz = g[1] - p.z, l = Math.hypot(dx, dz); if (l < 0.05) return false;
+  const run = Math.min(l, 14); for (let t = 0; t <= run; t += 0.25) if (xBSwD(w, p.x + dx / l * t, p.z + dz / l * t) < 0.6) return true; return false; }
+const XUS_V = new THREE.Vector3(), XUS_D = new THREE.Vector3();
+function xUtilShoot(b, dt, from, en) { if (!running || !b.g || !botCanShoot(b) || typeof BotBrain === "undefined" || !BotBrain.shootUtility) { b.xUs = null; return false; }
+  const w = b.w || "Classic"; if (w === "Knife") { b.xUs = null; return false; } const p = b.g.position, C = xUtilCands(en); if (!C.length) { b.xUs = null; return false; }
+  for (const c of C) { let ax = c.x, az = c.z, ay = c.y; if (c.kind === "barrier") { const o = c.o, t = Math.max(-3, Math.min(3, (p.x - o.p.x) * o.ax + (p.z - o.p.z) * o.az)); ax = o.p.x + o.ax * t; az = o.p.z + o.az * t; ay = Math.min(o.p.y + 1, (p.y || 0) + 1.4); c.blocking = xUtilAcross(b, o); }
+    const dx = ax - p.x, dz = az - p.z, d = Math.hypot(dx, dz) || 0.01; c.d = d; c.ax = ax; c.ay = ay; c.az = az; if (d > 32) { c.los = false; continue; }
+    const k = Math.min(0.35, d * 0.5) / d; c.los = los(from, XUS_V.set(ax - dx * k, ay, az - dz * k)); } // a point just short of it (the barrier mesh is in the solids)
+  const pick = BotBrain.shootUtility(C); if (!pick) { b.xUs = null; return false; }
+  b.g.rotation.y = Math.atan2(pick.ax - p.x, pick.az - p.z); b.xUs = pick.kind; b.mv = false; b.spd = 0; b.see = 0;
+  b.cd = (b.cd || 0) - dt; if (b.cd > 0) return true; const W = WEAP[w] || WEAP.Classic; b.cd = 1 / (W.rate || 4);
+  XUS_D.set(pick.ax - from.x, pick.ay - from.y, pick.az - from.z); const L = XUS_D.length() || 0.01; XUS_D.multiplyScalar(1 / L);
+  try { SFX.at(p, w); } catch (e) {} try { bFx(from, XUS_D, null, L); } catch (e) {}
+  pick.hit(wDmg(W, "body", pick.d)); b.xUsN = (b.xUsN || 0) + 1; return true; }
 function botAb(b, dt, see, tg, from) {
   if (!jOn()) return; // abilities live with the agent kit (Retake + 5v5)
   const A = b.ab || (b.ab = { t: 0, smk: true, cb: 2, rb: true, rbT: 2 + Math.random() * 6, saw: false });
@@ -15121,7 +15156,14 @@ window.xAbilityFP = { XAF, XAF_SET, XAF_K, XAF_GUN, phase: xAfPhase, gunPhase: x
  //  eta: s to reach the Spike}: 'hide' (the fuse beats any defuse now, even from half: stay out of sight, keep the gun),
  //  'stop' (a defuse that can still finish and this bot gets there first: go stop it), 'hold' (play the post-plant spot).
  function postPlay(P,ctx){const prog=ctx.defusing?ctx.dt:ctx.dt>=SPIKE.half?SPIKE.half:0,rem=SPIKE.defuse-prog;if(ctx.left<rem-.1)return 'hide';if(ctx.defusing&&ctx.eta<rem)return 'stop';return 'hold';}
- return {hash,rng,clamp,pickW,REACT,personality,reaction,crosshair,crosshairAt,firePattern,peek,attackPlan,defensePlan,roles,teamBuy,buyFor,onMateDeath,onSound,ATTACK,DEFENSE,utility,UTIL,turnStep,trackLag,wrapA,SPIKE,plantSpot,postPlant,retake,postPlay};
+ // Destroyable enemy utility a bot shoots down when no enemy is in sight (server spike.js shootUtility, offline index.html
+ // xUtilShoot). c = [{kind, d: m to it, los: a clear line, blocking: (barrier) it stands across the bot's way}] -> the one
+ // to shoot, or null. Threats first: an incoming Boom Bot, a Lockdown, a Turret that can fire on the bot, then the trap /
+ // information devices near it (Alarmbot, Trademark, Trapwire, Spycam), a Nanoswarm it found; a Sage Barrier only when it
+ // blocks the bot's route (blocking) and is close: a barrier off to the side is walked around, not shot.
+ const SHOOT_UTIL={boombot:{range:15,pri:6},lockdown:{range:30,pri:5},turret:{range:30,pri:4},alarmbot:{range:12,pri:3},trademark:{range:12,pri:3},trapwire:{range:12,pri:3},spycam:{range:20,pri:2},nanoswarm:{range:8,pri:1},barrier:{range:14,pri:0,block:true}};
+ function shootUtility(c){let best=null,bs=-Infinity;for(const x of c||[]){const S=SHOOT_UTIL[x&&x.kind];if(!S||!x.los||!(x.d<=S.range)||(S.block&&!x.blocking))continue;const sc=S.pri*100-x.d;if(sc>bs){bs=sc;best=x;}}return best;}
+ return {hash,rng,clamp,pickW,REACT,personality,reaction,crosshair,crosshairAt,firePattern,peek,attackPlan,defensePlan,roles,teamBuy,buyFor,onMateDeath,onSound,ATTACK,DEFENSE,utility,UTIL,turnStep,trackLag,wrapA,SPIKE,plantSpot,postPlant,retake,postPlay,SHOOT_UTIL,shootUtility};
 });
 // Native-map 5v5 bots stop moving as one blob: per-round plans (own spot inside the site, one lurker on the other site,
 // staggered starts by personality, shuffled defender sites with spread holds), lane-varied routes from the shared

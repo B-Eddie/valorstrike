@@ -16,7 +16,7 @@ import {initAbilities,buyAbility,castAbility,tickAbilities,smokeBlocks,sightClea
 export function survivorLoss(sim,u,text){if(!u.alive)return false;if(u.team===sim.atk)return text==='Time ran out';return text==='Spike detonated';}
 export const SPIKE_RADIUS=32.5;export const POST_ROUND=7;export function buyPhaseSeconds(round){return round===1||round===13||round===25?45:30;}
 const prices={Classic:0,Shorty:300,Frenzy:450,Ghost:500,Sheriff:800,Stinger:1100,Spectre:1600,Bucky:850,Judge:1850,Bulldog:2050,Guardian:2250,Phantom:2900,Vandal:2900,Marshal:950,Outlaw:2400,Operator:4700,Ares:1600,Odin:3200};
-import {revealedFor,showstopperFire} from './ults.js';import {nearestBoomBot} from './devices.js';
+import {revealedFor,showstopperFire} from './ults.js';import {nearestDevice,damageDevice,devicePoints,deviceHp,SHOOT} from './devices.js';
 import {soulKill} from './reyna.js';
 export class SpikeSimulation extends Simulation{
  static LOAD_GRACE=15;
@@ -66,8 +66,12 @@ export class SpikeSimulation extends Simulation{
  canSee(u,v,o,p){return sightClear(this,o,p);}
  motor(u,input,dt){return this.motorFn(u,input,dt,this.world);}
  // Sage barriers stop bullets (and cannot be wallbanged); shotImpact then damages the barrier the shot ended on.
- traceShot(o,d,max){const wall=this.baseWorld.ray(o,d,max),barrier=nearestBarrier(this,o,d,Math.min(max,wall)),lim=barrier?barrier.distance:wall,bb=nearestBoomBot(this,o,d,Math.min(max,lim),this.shotBy);this.shotBlockedBy=bb?'boombot':barrier?'barrier':null;return bb?bb.distance:lim;}
- shotImpact(o,d,distance,weapon){if(this.shotBlockedBy==='boombot'){/* enemy Boom Bot (60 HP, wiki): body damage per bullet, destroyed at 0 */const b=nearestBoomBot(this,o,d,distance+.001,this.shotBy);if(b){const r=weapon.damageRanges.find(r=>distance>=r.rangeStartMeters&&distance<r.rangeEndMeters)||weapon.damageRanges.at(-1);b.effect.hp-=r.bodyDamage;if(b.effect.hp<=0){const j=this.effects.indexOf(b.effect);if(j>=0)this.effects.splice(j,1);}}return;}const barrier=nearestBarrier(this,o,d,distance+.001);if(!barrier||Math.abs(barrier.distance-distance)>.002)return;const range=weapon.damageRanges.find(r=>distance>=r.rangeStartMeters&&distance<r.rangeEndMeters)||weapon.damageRanges.at(-1);barrier.effect.hp-=range.bodyDamage;if(barrier.effect.hp<=0)barrier.effect.until=this.time;}
+ // Destroyable utility stops a shot too: the nearest of a Sage barrier and an enemy device (devices.js SHOOT); shotImpact
+ // then puts the bullet's body damage on what the shot ended on (a device is removed at 0 HP, a barrier ends at 0).
+ traceShot(o,d,max){const wall=this.baseWorld.ray(o,d,max),barrier=nearestBarrier(this,o,d,Math.min(max,wall)),lim=barrier?barrier.distance:wall,dv=nearestDevice(this,o,d,Math.min(max,lim),this.shotBy);this.shotBlockedBy=dv?dv.effect.kind:barrier?'barrier':null;/* the device kind ('boombot', 'turret' ...) */return dv?dv.distance:lim;}
+ shotImpact(o,d,distance,weapon){const range=weapon.damageRanges.find(r=>distance>=r.rangeStartMeters&&distance<r.rangeEndMeters)||weapon.damageRanges.at(-1);
+  if(this.shotBlockedBy&&this.shotBlockedBy!=='barrier'){const h=nearestDevice(this,o,d,distance+.001,this.shotBy);if(h)damageDevice(this,h.effect,range.bodyDamage);return;}
+  const barrier=nearestBarrier(this,o,d,distance+.001);if(!barrier||Math.abs(barrier.distance-distance)>.002)return;barrier.effect.hp-=range.bodyDamage;if(barrier.effect.hp<=0)barrier.effect.until=this.time;}
 
  onGunKill(killer,victim){finisherEvent(this,killer,victim);}
  fireBlade(u){const A=u.ability;if(this.phase!=='game'||this.buy>0||this.roundDelay>0||u.agent!=='Jett'||!A?.bladesActive||A.blades<1)return false;const weapon=u.weapon,ammo=u.ammo,kills=u.kills;u.weapon='Blade Storm';u.ammo=A.blades;try{const fired=this.fire(u);if(fired){A.blades=this.lastKills>0?5:u.ammo;A.bladesActive=A.blades>0;}return fired;}finally{u.weapon=weapon;u.ammo=ammo;}}
@@ -120,6 +124,7 @@ export class SpikeSimulation extends Simulation{
    if(site&&!carrier&&W.map.sites[site]){if(L.spotSite!==site){L.spotSite=site;L.spot=spotNear(this,u,W.map.sites[site],'spot',atk?{rMin:1.5,rMax:7,gap:3}:L.role.offAngle?{rMin:6,rMax:14,gap:4}:{rMin:2,rMax:10,gap:4});}if(L.spot>=0){goal=N[L.spot];u.spread=true;}}}}
  if(u.team!==this.atk&&sp.st==='plant'&&Math.hypot(u.x-sp.x,u.z-sp.z)<2&&this.defuseNow(u)){u.input={interact:true};u.inputAt=this.time;return;}
  if(u.blindUntil>this.time||u.concussUntil>this.time||u.nearsightUntil>this.time){/* bots have no nearsight model: held like a blinded bot, as offline (b.blind) */u.input={};u.inputAt=this.time;return;}const route=u.route,routeAt=u.routeAt;u.route=null;super.bot(u);const combat=u.input.fire||u.sawTarget;if(!combat){u.route=route;u.routeAt=routeAt;}if(combat)return;
+ if(this.shootUtility(u,goal))return;/* no enemy in sight: shoot down enemy utility in the way (Boom Bot, Turret, Alarmbot, Trademark, Trapwire, Nanoswarm; a Sage Barrier across its way) */
  if(this.planUtility(u))return;/* lining up plan utility (smoke / flash / recon before the entry, post-plant mollies, defender delay) */
  // reactions: trade / fall back after a teammate dies, hold or push a sound (not the carrier, not a late retake)
  const R=u.react;if(R&&R.until>this.time&&!carrier&&!(sp.st==='drop'&&u.team===this.atk)&&!(sp.st==='plant'&&u.team!==this.atk&&sp.t<15)){
@@ -127,6 +132,27 @@ export class SpikeSimulation extends Simulation{
   goal=[R.x,R.y,R.z];u.spread=true;loose=true;}
  if(u.plan&&u.plan.round===this.round&&this.time<u.plan.go&&!carrier){u.input={};u.inputAt=this.time;return;}/* staggered start */
  if(goal){const target={x:goal[0],y:goal[1],z:goal[2]};this.goalPath(u,target,loose);if(u.plan&&u.plan.walk&&u.input&&u.input.forward&&!carrier&&roundTime(this)<70)u.input.walk=true;} }
+ // ---- Bots shoot down destroyable enemy utility (vendor/bot-brain.cjs shootUtility; offline index.html xUtilShoot) ----
+ // Candidates: live enemy devices (devices.js SHOOT: aim point = the device / nearer Trapwire anchor, needs sightClear) and
+ // enemy Sage barriers (aim at the wall's middle, needs a clear map line; blocking = the wall stands across the bot's way
+ // within 14 m: the straight line to its goal or its route). Aims at its own turn rate and fires the gun it holds (real
+ // bullets: traceShot / shotImpact take the HP off); reloads when empty. u.utilShot names what it is shooting (tests).
+ barrierAcross(u,e,goal){const pts=[[u.x,u.z]];if(goal)pts.push([goal[0],goal[2]]);const N=this.world.nav.nodes,R=u.route;
+  const lines=[pts];if(R&&R.length){let k=0,best=Infinity;R.forEach((n,i)=>{const q=N[n];if(!q)return;const d=Math.hypot(q[0]-u.x,q[2]-u.z);if(d<best){best=d;k=i;}});const l=[[u.x,u.z]];for(let i=k;i<R.length&&l.length<8;i++){const q=N[R[i]];if(q)l.push([q[0],q[2]]);}lines.push(l);}
+  for(const l of lines){let left=14;for(let i=1;i<l.length&&left>0;i++){const [ax,az]=l[i-1],[bx,bz]=l[i],len=Math.hypot(bx-ax,bz-az);if(len<1e-6)continue;const run=Math.min(len,left);for(let t=0;t<=run;t+=.25){const x=ax+(bx-ax)*t/len,z=az+(bz-az)*t/len;if(barrierBlocked(e,x,z,.4,u.y,1.8))return true;}left-=run;}}return false;}
+ shootUtility(u,goal){if(u.human||this.buy>0||this.roundDelay>0||this.phase!=='game'){u.utilShot=null;return false;}const Wp=weapons[u.weapon];if(!Wp||u.weapon==='Knife'||Wp.abilityOnly){u.utilShot=null;return false;}
+  const eye=[u.x,u.y+1.6-(u.ch||0),u.z],c=[];
+  for(const e of this.effects){if(e.team===u.team||!(e.until>=this.time))continue;
+   if(e.kind==='barrier'){if(!(e.hp>0))continue;const pt=[e.p[0],e.p[1]+1.5,e.p[2]],d=Math.hypot(pt[0]-eye[0],pt[2]-eye[2]);if(d>16)continue;const q=pt.map((n,i)=>n-eye[i]),l=Math.hypot(...q);c.push({kind:'barrier',d,los:this.baseWorld.ray(eye,q.map(n=>n/l),Math.max(0,l-.4))===Infinity,blocking:this.barrierAcross(u,e,goal),e,pt});continue;}
+   if(!SHOOT[e.kind]||!(deviceHp(e)>0))continue;let pt=null,d=Infinity;for(const q of devicePoints(e)){const dd=Math.hypot(q[0]-eye[0],q[1]-eye[1],q[2]-eye[2]);if(dd<d){d=dd;pt=q;}}if(!pt||d>32)continue;
+   if(e.kind==='turret'&&this.time<(e.at||0)&&d>12)continue;/* a turret still deploying far away is not a threat yet */
+   c.push({kind:e.kind,d,los:sightClear(this,eye,pt),blocking:false,e,pt});}
+  const pick=BotBrain.shootUtility(c);if(!pick){u.utilShot=null;return false;}
+  const P=persona(this,u),dx=pick.pt[0]-eye[0],dz=pick.pt[2]-eye[2],h=Math.hypot(dx,dz)||1e-6,bdt=Math.min(.1,Math.max(.02,this.time-(u.utilT??(this.time-.05))||.05));u.utilT=this.time;
+  const ts=BotBrain.turnStep(P.brain,u.look||0,Math.atan2(-dx,-dz),bdt);u.look=ts.yaw;u.pitch=Math.atan2(pick.pt[1]-eye[1],h);
+  const size=pick.kind==='barrier'?1.2:(SHOOT[pick.kind]?.r||.3),aligned=Math.abs(ts.left)<Math.max(.03,Math.atan2(size,h)*.8);
+  u.input={};u.inputAt=this.time;if(u.ammo<=0){if(!u.reloadAt)this.command(u,{t:'reload'});}else if(aligned&&!u.reloadAt){u.input.fire=true;if(Wp.fireMode==='EWeaponFireModeDisplayType::SemiAutomatic'&&this.time>=(u.fireAt||0))u.triggerHeld=false;}
+  u.utilShot={id:pick.e.id,kind:pick.kind,at:this.time};return true;}
  // ---- Spike play (vendor/bot-brain.cjs plantSpot / postPlant / postPlay / retake) ----
  // The carrier's plant spot this round: default (near the centre), safe (toward the attackers' entrance) or open (toward the
  // defenders' side), the nearest plantable nav node (shrunk toward the centre until it is inside the plant zone).
