@@ -2577,18 +2577,25 @@ box(0, -16, 20, 5, 1, 0xd0d6dc); box(0, 16, 20, 5, 1, 0xd0d6dc); box(-10, 0, 1, 
 // cover, lane paint, trusses and backdrop: rtdBuildDuel() (after the 5v5 zone kit below)
 // memory: on a map switch, free the GPU copies of the previous map's geometries/materials/textures (three.js re-uploads them if that map is shown again)
 let xCurMap = null;
-function xFreeMap(o, keep) {
-  if (!o) return; const seen = new Set();
-  const tex = (m) => { for (const k in m) { const v = m[k]; if (v && v.isTexture && !keep.has(v) && !seen.has(v)) { seen.add(v); v.dispose(); } } };
+// Named xFreeLegacyMap: it shared the name xFreeMap with the Split / Lotus / Breeze rebuild free below (2eaf3b6), and the later
+// declaration won everywhere, so this call threw inside useMap's try and freed nothing. Kept: anything the next map or the rest of
+// the scene still uses, shared geometries / materials / textures, and the native map pieces (their CPU copies are dropped after
+// upload, nmDropArray / nmTexUploaded, so a GPU free could never be re-uploaded; nmFree owns that map's lifetime).
+function xFreeLegacyMap(o, keep) {
+  if (!o) return; try { if (typeof NM !== "undefined" && NM.current && NM.current.M && NM.current.M.g === o) return; } catch (e) {}
+  const seen = new Set(), live = (v) => keep.has(v) || seen.has(v);
+  scene.traverse((m) => { if (m === o) return; let p = m.parent; while (p && p !== o) p = p.parent; if (p === o) return;
+    if (m.geometry) keep.add(m.geometry); [].concat(m.material || []).forEach((t) => { if (!t) return; keep.add(t); for (const k in t) if (t[k] && t[k].isTexture) keep.add(t[k]); }); });
+  const tex = (m) => { for (const k in m) { const v = m[k]; if (v && v.isTexture && !live(v) && !(v.userData && v.userData.shared) && !(v.source && (v.source.nmRefs !== undefined || v.source.data == null))) { seen.add(v); v.dispose(); } } };
   o.traverse((m) => {
-    if (m.geometry && !m.geometry.userData.shared && !keep.has(m.geometry) && !seen.has(m.geometry)) { seen.add(m.geometry); m.geometry.dispose(); }
-    [].concat(m.material || []).forEach((t) => { if (!keep.has(t) && !seen.has(t)) { seen.add(t); tex(t); t.dispose(); } });
+    const g = m.geometry; if (g && !(g.userData && (g.userData.shared || g.userData.nmReleased)) && !live(g)) { seen.add(g); g.dispose(); }
+    [].concat(m.material || []).forEach((t) => { if (t && !live(t) && !(t.userData && t.userData.xdShared)) { seen.add(t); tex(t); t.dispose(); } });
   });
 }
 function xMapRes(o) { const s = new Set(); if (o) o.traverse((m) => { if (m.geometry) s.add(m.geometry); [].concat(m.material || []).forEach((t) => { s.add(t); for (const k in t) if (t[k] && t[k].isTexture) s.add(t[k]); }); }); return s; }
 function useMap(n) {
   try { if (n !== "surf" && n !== "aim" && n !== "utopia") xDressMap(n === "five" ? FV.map : n); } catch (e) { try { console.warn("map dressing failed", e); } catch (e2) {} }
-  try { const prev = xCurMap && MAPS[xCurMap] && MAPS[xCurMap].g, next = MAPS[n] && MAPS[n].g; if (prev && next && prev !== next) xFreeMap(prev, xMapRes(next)); xCurMap = n; } catch (e) {}
+  try { const prev = xCurMap && MAPS[xCurMap] && MAPS[xCurMap].g, next = MAPS[n] && MAPS[n].g; if (prev && next && prev !== next) xFreeLegacyMap(prev, xMapRes(next)); xCurMap = n; } catch (e) {}
   for (const k in MAPS) MAPS[k].g.visible = k === n; solids = MAPS[n].solids; boxes = MAPS[n].boxes;
   const sf = n === "surf"; $("game").classList.toggle("x-surf", sf);
   scene.background = sf ? SURF_BG : SKY; scene.fog.color.setHex(sf ? 0x05070d : FOG_C);
@@ -11837,7 +11844,7 @@ function dmProtHud() { const on = running && mode === "five" && FV.dm && !!playe
 { const s0 = startFive; startFive = function () { FV.dm = false; FV.tdm = false; if (DM.menu) dmMenu(false); return s0.apply(this, arguments); }; }
 { const ag0 = $("againBtn").onclick; $("againBtn").onclick = function (e) { return mode === "five" && FV.dm ? (FV.tdm ? startTDM() : startDM()) : ag0 && ag0.call(this, e); }; }
 { const l0 = $("lobbyBtn").onclick; $("lobbyBtn").onclick = function () { // leaving mid buy phase (pause → home) left the buy / free-gun overlays (children of <body>, not #game) open over the lobby with FV.menu stuck on
-  try { FV.menu = false; DM.menu = false; $("xBuy").classList.remove("on"); if (DM.el) DM.el.classList.remove("on"); XWS.hide(); } catch (e) {} try { xKLReset(); } catch (e) {} try { xdClear(); } catch (e) {} return l0 && l0.apply(this, arguments); }; } // + floor guns (scene-level meshes) were only cleared by fRound / non-5v5 tick: they stayed on the map in DM / TDM, Surf, Aim and Duel
+  try { FV.menu = false; DM.menu = false; $("xBuy").classList.remove("on"); if (DM.el) DM.el.classList.remove("on"); XWS.hide(); } catch (e) {} try { xKLReset(); } catch (e) {} try { xdClear(); } catch (e) {} try { jClear(); } catch (e) {} return l0 && l0.apply(this, arguments); }; } // + floor guns (scene-level meshes) were only cleared by fRound / non-5v5 tick: they stayed on the map in DM / TDM, Surf, Aim and Duel; + ability objects (jClear): an enemy Boom Bot rolling when you left a Retake stayed in the scene and in the gun raycast's XLDH list into Surf / Aim (test_client_lifecycle, hk-31)
 // ---- SPIKE RUSH: 5v5 systems, first to 4 (max 7), no economy, one random gun for everyone each round, every attacker carries a Spike ----
 const SR_G = ["Vandal", "Phantom", "Bulldog", "Guardian", "Spectre", "Stinger", "Operator", "Marshal", "Outlaw", "Judge", "Bucky", "Ares", "Odin"].filter((n) => WEAP[n]);
 const SR = { orbs: [], geo: null, mat: null };

@@ -6,13 +6,13 @@
 // is now xfnPose. Pinned below: the finisher pose is not called from the foot block and vice versa.
 const fs=require('fs'),path=require('path'),assert=require('assert/strict');
 const html=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
-// KNOWN: xFreeMap(o, keep) (useMap, legacy maps) is shadowed by xFreeMap(k, call) (Split / Lotus / Breeze rebuild) since 2eaf3b6;
-// the useMap call throws inside its try and frees nothing. Reported, not changed (re-enabling GPU frees there needs its own browser check).
-const KNOWN=new Set(['xFreeMap']);
+// No known duplicates: useMap's xFreeMap(o, keep) (shadowed by the Split / Lotus / Breeze xFreeMap(k, call) since 2eaf3b6) is
+// xFreeLegacyMap since hk-31 (work/test_legacy_map_free.cjs).
+const KNOWN=new Set();
 const seen=new Map(),dup=[];
 html.split('\n').forEach((l,i)=>{const m=/^(?:async\s+)?function\s*\*?\s*([A-Za-z_$][\w$]*)\s*\(/.exec(l);if(!m)return;const n=m[1];if(seen.has(n)){if(!KNOWN.has(n))dup.push(`${n} (lines ${seen.get(n)+1} and ${i+1})`);}else seen.set(n,i);});
 assert.deepEqual(dup,[],'duplicate top-level function declarations: '+dup.join(', '));
 const feet=fs.readFileSync(path.join(__dirname,'feet_runtime.js'),'utf8'),fin=fs.readFileSync(path.join(__dirname,'finishers_runtime.js'),'utf8');
 assert(/function xfPose\(M, dt, C\)/.test(feet)&&/xfPose\(M, M\.sx\.poseDt/.test(feet),'foot planting keeps its xfPose');
 assert(/function xfnPose\(s,t\)/.test(fin)&&!/\bxfPose\b/.test(fin),'finishers use xfnPose only');
-console.log('global names: '+seen.size+' top-level functions unique (known: '+[...KNOWN].join(', ')+'); foot planting xfPose not shadowed');
+console.log('global names: '+seen.size+' top-level functions unique (no known duplicates); foot planting xfPose not shadowed');
