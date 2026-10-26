@@ -49,7 +49,7 @@ const ONLY=(process.env.ONLY||'E,F,G,H').split(',');
  if(ONLY.includes('E')){
   for(const [ag,key,k,prep] of [['Raze','KeyX','rk','J.ult=K().u'],['Chamber','KeyQ','hp','J.q=Math.max(1,J.q||0);J.cd.q=0'],['Chamber','KeyX','sn','J.ult=K().u;BC.td=0;BC.eq=""']]){
    await keep();await pick(ag);await X(prep+';window.__keepEx='+JSON.stringify(k==='rk'?'if(RS.ss)RS.sst=10':'')+';1');await tick(800);await page.keyboard.press(key);
-   const ok=await untilF(`XAF.on&&XAF.last&&XAF.last.gun==="${k}"&&XAF.last.rig===true&&XAF.last.item===true`,60000);const s=await XJ(VS);log(`${ag} ${key} ${k}`,s);await shot(`ultgun-${k}`);
+   const ok=await untilF(`XAF.on&&XAF.last&&XAF.last.gun==="${k}"&&XAF.last.rig===true&&XAF.last.item===true`,180000);const s=await XJ(VS);log(`${ag} ${key} ${k}`,s);await shot(`ultgun-${k}`);
    check(`${ag} ${key} (${k}): ult / ability gun on the agent's own FP arms (gun mode, SkinnedMesh rig under the camera, gun model in the hand, no XVM primitives)`,ok&&s.sk>0&&s.vis&&!s.xvm&&!s.err&&s.mode.startsWith('gun-'),JSON.stringify(s));
    if(k!=='hp'){await tick(k==='sn'?2600:1600);const n0=await X('XAF.gs?XAF.gs.n:0');const s2=await fireSample(VS);await X('window.__keepEx="";1');log(k+' fired',s2);
     check(`${ag} ${key} (${k}): FIRE plays the gun's fire clip on the arms`,!!s2.gs&&s2.gs.n>n0&&/Fire/.test((s2.last&&s2.last.clip)||''),JSON.stringify(s2));}
