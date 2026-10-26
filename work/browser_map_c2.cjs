@@ -35,12 +35,13 @@ const MAPS=(process.env.MAPS||'breeze,ascent').split(',');
  const leave=async P=>{await P.X('try{leave()}catch(e){}1');await P.page.waitForTimeout(2000);};
  // A. load time
  const LT={};
- for(const [tag,idx] of [['new',ROOT+'/index.html']].concat(process.env.PREV?[['prev',process.env.PREV]]:[])){
+ const PARTS=(process.env.PARTS||'A,B').split(',');
+ for(const [tag,idx] of (PARTS.includes('A')?[['new',ROOT+'/index.html']].concat(process.env.PREV?[['prev',process.env.PREV]]:[]):[])){
   const P=await open(idx);LT[tag]={};
   for(const map of MAPS){const r=await start(P,map);LT[tag][map]=r;log(`load ${tag} ${map}`,r);await leave(P);}
   await P.ctx.close();}
  log('load time',LT);
- if(LT.prev)for(const map of MAPS){const a=LT.prev[map].opt[0],b=LT.new[map].opt[0];check(`${map}: nmOptimizeScene faster than before C2 (prev ${a} ms -> new ${b} ms)`,a>0&&b>0&&b<a,JSON.stringify({prev:LT.prev[map],new:LT.new[map]}));}
+ if(!PARTS.includes('A'));else if(LT.prev)for(const map of MAPS){const a=LT.prev[map].opt[0],b=LT.new[map].opt[0];check(`${map}: nmOptimizeScene faster than before C2 (prev ${a} ms -> new ${b} ms)`,a>0&&b>0&&b<a,JSON.stringify({prev:LT.prev[map],new:LT.new[map]}));}
  else for(const map of MAPS)check(`${map}: map loads (optimizer ran, ${LT.new[map].opt[0]} ms)`,LT.new[map].opt.length>0,JSON.stringify(LT.new[map]));
  // B. Breeze item 9
  const P=await open(ROOT+'/index.html');const {page,X}=P;await start(P,'breeze');
@@ -50,6 +51,10 @@ const MAPS=(process.env.MAPS||'breeze,ascent').split(',');
  const pos=()=>X('JSON.stringify([+player.x.toFixed(3),+player.y.toFixed(3),+player.z.toFixed(3)])').then(JSON.parse);
  const yawTo=(dx,dz)=>Math.atan2(-dx,-dz);
  const walk=async ms=>{const S=[await pos()];await X('keys.KeyW=true;1');const t=Date.now();while(Date.now()-t<ms){await page.waitForTimeout(120);S.push(await pos());}await X('keys.KeyW=false;1');await page.waitForTimeout(200);S.push(await pos());return S;};
+ // movement ready: mapc2_1's first walk (the first after the match start) did not move at all in either direction while the server motor
+ // walks the same fixture in and out (node, real Breeze collision); later walks moved. Walk a known open spot until the player moves (<= 90 s).
+ {let ok=null;const t=Date.now();while(Date.now()-t<90000){await place([12.25,8.1,-22],yawTo(0,1));await page.waitForTimeout(250);const S=await walk(700);const m=Math.hypot(S[S.length-1][0]-S[0][0],S[S.length-1][2]-S[0][2]);if(m>0.3){ok=m;break;}}
+  log('movement ready',{moved:ok,s:((Date.now()-t)/1000).toFixed(1),st:await X('JSON.stringify({buy:FV.buy,running,paused,hp:player.hp,air:!!player.air})').then(JSON.parse)});}
  const jumps=()=>X('typeof jumps!=="undefined"?jumps:0');
  const along=(S,o,d)=>S.map(p=>(p[0]-o[0])*d[0]+(p[2]-o[2])*d[1]);
  // leaning walls: start = fixture node, walk into the wall (fixture direction), then straight back
@@ -57,9 +62,10 @@ const MAPS=(process.env.MAPS||'breeze,ascent').split(',');
  for(const [f,dir,nm] of LEAN){const l=Math.hypot(dir[0],dir[1]),d=[dir[0]/l,dir[1]/l];await place(f,yawTo(d[0],d[1]));await page.waitForTimeout(250);const In=await walk(1000);const p1=In[In.length-1];
   await X(`yaw=${yawTo(-d[0],-d[1])};player.vy=0;1`);const vy0=await X('player.vy');const S=await walk(900);const back=along(S,p1,[-d[0],-d[1]]);
   let lat=0;for(let i=1;i<S.length;i++){const dx=S[i][0]-S[i-1][0],dz=S[i][2]-S[i-1][2];lat=Math.max(lat,Math.abs(dx*-d[1]+dz*d[0]));}
-  const r={into:p1,back:+Math.max(...back).toFixed(2),maxLateralStep:+lat.toFixed(3),yIn:p1[1],yEnd:S[S.length-1][1]};log('lean '+nm,r);
+  let rise=0;for(let i=1;i<S.length;i++)rise=Math.max(rise,S[i][1]-S[i-1][1]);
+  const r={into:p1,back:+Math.max(...back).toFixed(2),maxLateralStep:+lat.toFixed(3),maxRise:+rise.toFixed(3),yIn:p1[1],yEnd:S[S.length-1][1]};log('lean '+nm,r);
   if(nm.startsWith('(6.56')){await frames(2);await page.screenshot({path:SHOT+'mapc2-breeze-leanwall-640x360.jpg',type:'jpeg',quality:70,timeout:300000}).catch(e=>log('shot',String(e).slice(0,100)));}
-  check(`Breeze leaning wall ${nm}: into the wall, then walks straight back out without a jump (>= 0.7 m, no sideways pop > 0.15 m)`,r.back>=0.7&&r.maxLateralStep<=0.15&&Math.abs(r.yEnd-r.yIn)<0.5,JSON.stringify(r));}
+  check(`Breeze leaning wall ${nm}: into the wall, then walks straight back out without a jump (>= 0.7 m, no sideways pop > 0.15 m)`,r.back>=0.7&&r.maxLateralStep<=0.15&&r.maxRise<0.35,JSON.stringify(r));} // no jump = no upward pop between samples (the (17.8, 9.19, 7.59) fixture backs down a ramp: 8.5 m -> 6.5 m at z 10.25 on the nav grid, so the end height is not compared)
  // 12 m platform SE edge -> crate stack: walk +z from (9.25, 12, -25)
  {await place([9.25,12,-25],yawTo(0,1));await page.waitForTimeout(250);const S=await walk(1800);const e=S[S.length-1],minY=Math.min(...S.map(p=>p[1]));const r={end:e,minY,maxZ:Math.max(...S.map(p=>p[2]))};log('platform edge over the stack',r);
   await frames(2);await page.screenshot({path:SHOT+'mapc2-breeze-platform-edge-640x360.jpg',type:'jpeg',quality:70,timeout:300000}).catch(x=>log('shot',String(x).slice(0,100)));
@@ -67,8 +73,8 @@ const MAPS=(process.env.MAPS||'breeze,ascent').split(',');
  // east of the stack: same walk at x 11 should still drop to the 8 m floor (if the platform extends there)
  {await place([11,12,-25],yawTo(0,1));await page.waitForTimeout(250);const y0=await X('player.y');const S=await walk(2200);const e=S[S.length-1],r={y0,end:e,minY:Math.min(...S.map(p=>p[1]))};log('platform edge east of the stack (x 11)',r);
   check('Breeze 12 m platform edge east of the stack (x 11): walking off still drops toward the 8 m floor (clip limited to the stack)',y0>11.5?r.minY<10.5:true,JSON.stringify(r));}
- // 8 m floor under the stack: walk +x along z -23 at y 8
- {await place([4,8.1,-23],yawTo(1,0));await page.waitForTimeout(400);const y0=await X('player.y');const S=await walk(2500);const a=along(S,[4,0,-23],[1,0]);const r={y0,end:S[S.length-1],max:+Math.max(...a).toFixed(2)};log('8 m floor under the stack',r);
-  check('Breeze 8 m floor under the crate stack: walk along x at z -23 is not stopped by the 12 m clip (>= 3 m progress, or blocked by the real stack only)',Math.abs(y0-8)<1.5?r.max>=3||r.end[0]>=7.0:true,JSON.stringify(r));}
+ // 8 m floor under the platform edge beside the stack: walk -z along x 11.5 at y 8
+ {/* start on the 8 m floor itself: (4, -23) has no floor at 8 m (mapc2_1 dropped to 6.2 and walked out under the map). x 11.5 from z -22 to -26.5 is valid 8 m nav floor under the 12 m platform's south edge (z -24.45), next to the stack (x 7.3..10.45, solid crates); the server motor walks it to -26.5 */await place([11.5,8.1,-22],yawTo(0,-1));await page.waitForTimeout(400);const y0=await X('player.y');const S=await walk(2500);const a=along(S,[11.5,0,-22],[0,-1]);const r={y0,end:S[S.length-1],max:+Math.max(...a).toFixed(2)};log('8 m floor under the stack',r);
+  check('Breeze 8 m floor under the crate stack: walk -z at x 11.5 under the platform edge is not stopped by the 12 m clip (>= 3 m progress on the 8 m floor)',Math.abs(y0-8)<1.5&&r.max>=3&&r.end[1]>7,JSON.stringify(r));}
  log('errors',R.errors);await browser.close();
 })().catch(e=>{R.errors.push(String(e).slice(0,400));fs.writeFileSync(OUT,JSON.stringify(R,null,1));process.exit(1);});
