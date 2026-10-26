@@ -322,7 +322,7 @@ function xbbTeam(C,atk){const k=xbvKey()+'|'+(atk?1:0);if(XBYM.k!==xbvKey()){XBY
 function xbbOk(C,T,y0){return (x,z)=>{if(T.s*z<T.edge+XBYM_IN+.05)return null;const i=nmNear(C,x,z,y0);if(i<0||!T.area.f[i])return null;const n=C.nav.nodes[i];if(Math.hypot(n[0]-x,n[2]-z)>.9||Math.abs(n[1]-y0)>2.5)return null;
  let y;try{y=nmHeight(C,x,z,n[1]+.3);}catch(e){return null;}if(!(Math.abs(y-n[1])<.45)||nmBlocked(C,x,z,.5,y)||!nmLeash(C,x,z,y,n[0],n[2]))return null;
  for(let k=1;k<4;k++){const t=k/4;if(nmBlocked(C,n[0]+(x-n[0])*t,n[2]+(z-n[2])*t,.4,y))return null;}return [y,i];};}
-function xbbInit(C,u,team,atk){const T=xbbTeam(C,atk),key=XBYM.k+'|'+(atk?1:0);if(u.xbb&&u.xbb.key===key)return u.xbb;const p=u.g.position,N=C.nav.nodes,s=T.s,edge=T.edge;
+function xbbInit(C,u,team,atk){const T=xbbTeam(C,atk),key=XBYM.k+'|'+(atk?1:0);if(u.xbb&&u.xbb.key===key)return u.xbb;u.smMotor=null;u.svx=u.svz=0;/* a new buy phase starts from rest (the round reset put it in spawn) */const p=u.g.position,N=C.nav.nodes,s=T.s,edge=T.edge;
  const rand=BotRoutes.rng(BotRoutes.hash('buy|'+(u.name||'')+'|'+key+'|'+xbvSeed())),start=nmNear(C,p.x,p.z,p.y),B={key,st:BotBrain.buyNew(xbBrain(u),rand),spot:null,face:[0,-s],route:[],rg:null,stuck:0,last:[p.x,p.z],fails:0,bad:null,esc:null,off:!(start>=0&&T.area.f[start])};
  if(!B.off){let site=null;try{const P=xbvPlan(u,team,atk,C),g=P.stages&&P.stages[0]?P.stages[0].site:atk?FV.sp.site:P.site;site=C.meta.sites[g]||C.meta.sites[Object.keys(C.meta.sites)[0]];}catch(e){}
   const ex=site?BotBrain.buyExit(N,nmPath(C,start,nmNear(C,site[0],site[2],site[1])),s,edge):null,exit=ex||{x:p.x,y:p.y,z:s*edge,dx:0,dz:-s};
@@ -347,17 +347,20 @@ function xbbStep(C,u,team,atk,dt){
   else{const t=BotBrain.buyNext(N,B.route,p.x,p.z,g[0],g[2],XBYM.V),l0=Math.hypot(t[0]-p.x,t[1]-p.z)||1,v=BotBrain.buySep(p.x,p.z,mates.map(m=>[m.x,m.z]),(t[0]-p.x)/l0,(t[1]-p.z)/l0,XBYM.V);vx=v[0];vz=v[1];}
   if(!d.face&&(vx||vz))turn(vx,vz,8);}
  else{B.rg=null;B.route.length=0;B.stuck=0;}
- // move like the round's bots (weapon run speed, walk x0.6, axis-separated against blocked()), never within XBYM_IN of the barrier
- const D=typeof DIFF!=='undefined'&&DIFF[S.diff]||{speed:1},bs=botRun(u,walk)*Math.min(1,D.speed||1)*dt,x0=p.x,z0=p.z;
+ // move like the round's bots (weapon run speed, walk x0.6, axis-separated against blocked()), never within XBYM_IN of the barrier.
+ // Acceleration / stop through the shared motor like the round's bots (83b0d90 xSmV: groundMove on u.smMotor in m/s, 128 Hz
+ // sub-steps), without xSmV's teammate spacing steer (the line-up stands 0.75 m apart on purpose); a blocked axis stops it.
+ const D=typeof DIFF!=='undefined'&&DIFF[S.diff]||{speed:1},run=botRun(u,walk)*Math.min(1,D.speed||1),bs=run*dt,x0=p.x,z0=p.z,VFm=window.ValorantFeel,Pm=VFm&&VFm.groundMove&&run>1e-6?(u.smMotor||(u.smMotor={vx:0,vz:0})):null;
+ if(Pm){const l=Math.hypot(vx,vz);if(l>1){vx/=l;vz/=l;}const parts=Math.max(1,Math.ceil(dt*128)),h=dt/parts;let dx=0,dz=0;for(let i=0;i<parts;i++){const v=VFm.groundMove(Pm,vx*run,vz*run,run/VFm.C.accelTime,h);dx+=v.dx;dz+=v.dz;}vx=dx/bs;vz=dz/bs;u.svx=Pm.vx/run;u.svz=Pm.vz/run;}
  // a step is taken only where the capsule also stands clear on the floor it lands on or a step up from it (no embedding in a
  // spawn rim / ledge lip). Stepping down, the floor is the highest under the capsule's footprint (0.42 m, as the motor's support), so a bot
  // walking off a ledge stays on it until clear of the lip instead of snapping into it; a bot already embedded (spawned on
  // a lip) moves as the round's bots do until it is clear.
  const strict=!nmBlocked(C,p.x,p.z,.4,p.y),floor=(x,z)=>{let y=nmHeight(C,x,z,p.y+.01);if(y<p.y-.05)for(let k=0;k<8;k++){const a=k*Math.PI/4;let q;try{q=nmHeight(C,x+Math.cos(a)*.42,z+Math.sin(a)*.42,p.y+.01);}catch(e){continue;}if(q<=p.y+.05&&q>y)y=q;}return y;};
  const step=(x,z)=>{if(blocked(x,z,.45,p.y))return false;let y;try{y=floor(x,z);}catch(e){return false;}if(!(y>p.y-1.2)||(strict&&nmBlocked(C,x,z,.4,y)&&nmBlocked(C,x,z,.4,y+.32)))return false;p.x=x;p.z=z;p.y=y;return true;};
- if(vx)step(p.x+vx*bs,p.z);
- if(vz){const z=p.z+vz*bs;if(s*z>=edge+XBYM_IN)step(p.x,z);}
- u.spd=Math.hypot(p.x-x0,p.z-z0)/dt;u.mv=u.spd>.05;u.wk=walk?1:0;u.fs=(u.fs||0)-dt;if(u.mv&&!walk&&u.fs<=0){u.fs=.4;try{SFX.step(p);}catch(e){}}}
+ if(vx&&!step(p.x+vx*bs,p.z)&&Pm)Pm.vx=0;
+ if(vz){const z=p.z+vz*bs;if(!(s*z>=edge+XBYM_IN&&step(p.x,z))&&Pm)Pm.vz=0;}
+ u.spd=Pm?Math.hypot(Pm.vx,Pm.vz):Math.hypot(p.x-x0,p.z-z0)/dt;u.sf=u.spd/botRun(u,false);u.mv=u.spd>.05;u.wk=walk?1:0;u.fs=(u.fs||0)-dt;if(u.mv&&!walk&&u.fs<=0){u.fs=.4;try{SFX.step(p);}catch(e){}}}
 function xbbTick(dt){const C=nmActive();if(!C||!C.nav||!C.meta||!C.meta.attacker)return;
  for(const [team,atk] of [[bots,!FV.atk],[allies,!!FV.atk]])for(const u of team){if(!u||!u.alive||!u.g||u.nt||u.det>0)continue;try{xbbStep(C,u,team,atk,dt);}catch(e){u.xbb=Object.assign(u.xbb||{},{off:true});}}}
 function xbbEnd(){for(const u of bots.concat(allies))if(u){u.xbb=null;u.mv=false;u.spd=0;}}

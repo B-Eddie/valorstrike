@@ -9,7 +9,7 @@ const html=fs.readFileSync(path.join(root,'index.html'),'utf8'),A='// ---- BOT V
 const block=html.slice(i,j+Z.length);
 // base loop wiring (enemy bots)
 for(const w of ['xbEngage(b, b.pre, { off: Math.abs(oy), e0y: oy, d, flashed:','typeof xbFaceAim === "function" ? xbFaceAim(b, Math.atan2(dx, dz), dt)','typeof xbShot === "function" ? xbShot(b, tg, from, w, W, d, D)',
- '((b.spd || 0) <= BOT_STOP || b.xbSl)','(b.bn > 0 || typeof xbReady !== "function" || xbReady(b, d))','b.see = see && !(b.blind > 0) ?','if (b.blind > 0) b.xbFl = performance.now();'])assert(html.includes(w),'wired: '+w);
+ '(botStopped(b) || b.xbSl)'/* 83b0d90: weapon deadzone stop (was BOT_STOP 1.4 m/s) */,'(b.bn > 0 || typeof xbReady !== "function" || xbReady(b, d))','b.see = see && !(b.blind > 0) ?','if (b.blind > 0) b.xbFl = performance.now();'])assert(html.includes(w),'wired: '+w);
 assert(!/if \(see\) b\.g\.rotation\.y = Math\.atan2\(dx, dz\);/.test(html),'enemy bots no longer snap their yaw onto the target');
 let now=0,rnd=1;const R=()=>{rnd=(rnd*16807)%2147483647;return rnd/2147483647;};
 const ctx={Math:Object.assign(Object.create(Math),{random:R}),Object,Number,Infinity,Set,Map,WeakMap,Array,Float64Array,Int32Array,Uint8Array,THREE,performance:{now:()=>now},window:{xBotSeed:77},mode:'five',running:true,

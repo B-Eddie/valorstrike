@@ -61,5 +61,8 @@ for(const map of MAPS){
   ok(units.every(u=>u.xbb===null),tag+': buy-phase state cleared when the barrier drops');
  }
 }
+// the block is in the generated page (83b0d90's index.html had dropped it) and walks through the shared motor like the round's bots
+ok(html.includes('function xbbStep(')&&html.includes('if(typeof fiveTick===\'function\'){const ft0=fiveTick;'),'index.html carries the buy-phase block (regenerate with work/install_valorant.py)');
+ok(/VFm\.groundMove\(Pm,vx\*run,vz\*run,run\/VFm\.C\.accelTime,h\)/.test(html),'buy-phase walking accelerates / stops through the shared motor (groundMove), as xSmV');
 console.log('Buy-phase bots (offline): '+out.join('; '));
 if(!process.env.BB_MEASURE){if(fails.length){console.error(fails.join('\n'));process.exit(1);}console.log('test_bot_buy_phase_offline: OK');}
