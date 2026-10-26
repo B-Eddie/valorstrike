@@ -14487,13 +14487,17 @@ var XAF_SET = {
   // bolt (grenade-ready right-side tracks); HOLD FIRE draws the string back with the charge (xAfBowDraw).
   bow: { eq: "FP_Hunter_S0_E_Equip", idle: "FP_Hunter_S0_E_IdleAdd", cast: "FP_Hunter_S0_E_Deploy", hand: "R", rel: 0.05, rEq: "FP_Killjoy_S0_4_Grenade_Equip", rIdle: "FP_Killjoy_S0_4_Swarm_Idle", rCast: "FP_Core_Grenade_UnderhandThrow" },
 };
+// Borrowed sets follow how each ability is cast in Valorant: Phoenix Curveball (Q) is a quick side flick (hawk-cast, as Skye's
+// thrown flash) and Hot Hands (E) a lobbed throw with an underhand ALT (grenade set); Sage Resurrection (X) pushes the hand
+// straight out (Trailblazer cast); Sage Barrier Orb (C) is set down in front (Cypher place). Sova's bow is his own
+// model (agents/sova.glb Bow_Static mesh, xAfBowMesh). Nothing in models/valorant matches the rest of Breach / Reyna / Omen / Jett better.
 // Per agent, per key (c q e x): archetype set + held item. prop: native glb (slug) held at its bone (WeaponMaster of the
 // set's hand unless the glb's own FP bone is given) scaled to sz metres; orb: an energy orb in the palm (agent VFX colour).
 var XAF_K = {
   Jett: { c: { s: "flick", orb: 0xd8f4ff }, q: { s: "gaunt", orb: 0xd8f4ff }, e: { s: "gaunt", orb: 0xd8f4ff } },
-  Phoenix: { c: { s: "flick", orb: 0xff7a1a }, q: { s: "nade", orb: 0xff7a1a }, e: { s: "flick", orb: 0xfff1b0 }, x: { s: "flick", orb: 0xff7a1a } },
+  Phoenix: { c: { s: "flick", orb: 0xff7a1a }, q: { s: "flick", orb: 0xfff1b0 }, e: { s: "nade", orb: 0xff7a1a }, x: { s: "flick", orb: 0xff7a1a } },
   Sova: { c: { s: "gaunt", prop: "owl-drone", sz: 0.22, bone: "Gauntlet_Socket" }, q: { s: "bow", prop: "shock-dart", sz: 0.32, bolt: 1 }, e: { s: "bow", prop: "recon-bolt", sz: 0.32, bolt: 1 }, x: { s: "bow", orb: 0x4fc3ff } },
-  Sage: { c: { s: "flick", orb: 0x5fe6c8 }, q: { s: "nade", orb: 0x5fe6c8 }, e: { s: "flick", orb: 0x8dffd8 }, x: { s: "flick", orb: 0x8dffd8 } },
+  Sage: { c: { s: "place", orb: 0x5fe6c8 }, q: { s: "nade", orb: 0x5fe6c8 }, e: { s: "flick", orb: 0x8dffd8 }, x: { s: "wolf", orb: 0x8dffd8 } },
   Reyna: { c: { s: "flick", orb: 0xb05cff }, q: { s: "flick", orb: 0xb05cff }, e: { s: "flick", orb: 0xb05cff }, x: { s: "flick", orb: 0xb05cff } },
   Omen: { c: { s: "flick", orb: 0x6a4cff }, q: { s: "flick", orb: 0x6a4cff }, e: { s: "nade", orb: 0x6a4cff }, x: { s: "flick", orb: 0x6a4cff } },
   Killjoy: { c: { s: "nade", prop: "nanoswarm", sz: 0.11 }, q: { s: "place", prop: "alarmbot", sz: 0.16 }, e: { s: "place", prop: "turret", sz: 0.2 }, x: { s: "bomb", prop: "lockdown", sz: 0.24 } },
@@ -14556,15 +14560,21 @@ function xAfProp(R, sp, set) { // the item held for this ability (cached per rig
   xAfBow(R, set === XAF_SET.bow);
   return P;
 }
-function xAfBow(R, on) { // Sova's bow in the left fist (no bow glb ships with the assets): limbs bent back toward the archer + string, upright in view
+function xAfBowMesh(gl) { // Sova's own bow: the Hunter_Bow primitives of his agent model (agents/sova.glb, skinned to the Bow_Static bone; no FP bow glb ships), baked static in that bone's space and centred on the grip
+  const g = new THREE.Group(), box = new THREE.Box3();
+  gl.scene.traverse((o) => { if (!o.isSkinnedMesh) return; const mats = [].concat(o.material); if (!mats.some((m) => /^Hunter_Bow/.test(m.name))) return;
+    const bi = o.skeleton.bones.findIndex((b) => b.name === "Bow_Static"); if (bi < 0) return;
+    const geo = o.geometry.clone(); geo.deleteAttribute("skinIndex"); geo.deleteAttribute("skinWeight"); geo.applyMatrix4(new THREE.Matrix4().multiplyMatrices(o.skeleton.boneInverses[bi], o.bindMatrix));
+    const conv = (m) => new THREE.MeshLambertMaterial({ name: m.name, color: m.color, map: m.map, emissive: /Emissive/.test(m.name) ? 0x3fb8ff : 0x000000, side: THREE.DoubleSide });
+    const mesh = new THREE.Mesh(geo, Array.isArray(o.material) ? o.material.map(conv) : conv(o.material)); geo.computeBoundingBox(); box.union(geo.boundingBox); g.add(mesh); });
+  const c = box.isEmpty() ? new THREE.Vector3() : box.getCenter(new THREE.Vector3()); g.children.forEach((m) => m.position.sub(c)); g.userData.size = box.isEmpty() ? 0 : box.getSize(new THREE.Vector3()).y;
+  return g;
+}
+function xAfBow(R, on) { // the bow in Sova's left fist, upright in view (limbs along the view's up axis, curve toward the aim)
   let b = R.bow;
   if (!b && on) {
-    const r = 0.35, th = 0.8, m = new THREE.MeshLambertMaterial({ color: 0x2c4a6e }), e = new THREE.MeshBasicMaterial({ color: 0x9fe3ff, fog: false });
-    b = R.bow = new THREE.Group(); b.name = "xaf-prop-bow";
-    const limbs = new THREE.Mesh(new THREE.TorusGeometry(r, 0.011, 6, 30, 2 * th), m); limbs.rotation.set(0, Math.PI / 2, -th); limbs.position.z = r; // arc in the view's YZ plane, apex at the grip
-    const str = new THREE.Mesh(new THREE.CylinderGeometry(0.002, 0.002, 2 * r * Math.sin(th), 4), e); str.position.z = r * (1 - Math.cos(th));
-    const grip = new THREE.Mesh(new THREE.CylinderGeometry(0.017, 0.017, 0.11, 8), m);
-    b.add(limbs, str, grip); b.userData.str = str; b.traverse((x) => { if (x.isMesh) { x.frustumCulled = false; x.raycast = XNR; x.renderOrder = 11; } });
+    b = R.bow = new THREE.Group(); b.name = "xaf-prop-bow"; const inner = new THREE.Group(); inner.rotation.y = Math.PI / 2; b.add(inner); // bow-bone x (limb curve) -> view forward, y (limbs) -> view up
+    xvLoad("agents/sova").then((gl) => { const m = xAfBowMesh(gl); if (!m.children.length) return; m.scale.setScalar(XAF.bowH / (m.userData.size || XAF.bowH)); m.traverse((x) => { if (x.isMesh) { x.frustumCulled = false; x.raycast = XNR; x.renderOrder = 11; } }); inner.add(m); b.userData.ok = true; }).catch((e) => { XAF.err = String(e); });
     xAfPalm(R, "L").add(b);
   }
   if (!b) return; b.visible = !!on; if (!on) return;
@@ -14572,6 +14582,7 @@ function xAfBow(R, on) { // Sova's bow in the left fist (no bow glb ships with t
   cam.updateMatrixWorld(true); const qc = cam.getWorldQuaternion(new THREE.Quaternion()), qp = b.parent.getWorldQuaternion(new THREE.Quaternion());
   b.quaternion.copy(qp.invert().multiply(qc).multiply(XAF.bowQ || (XAF.bowQ = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, 0.75, 0.3))))); // canted and turned so the limbs read, as Valorant holds it
 }
+XAF.bowH = 0.78; // held bow height in view (m): the stowed model is 0.57 m on his back
 function xAfBowDraw(R, pw) { // HOLD FIRE: the right hand pulls the bolt back toward the cheek with the charge (0..1)
   const s = xAfBone(R, "R_Shoulder"), e = xAfBone(R, "R_Elbow"); if (!s || !e || !(pw > 0)) return;
   const q = new THREE.Quaternion(); q.setFromEuler(new THREE.Euler(0, 0, -0.55 * pw)); s.quaternion.multiply(q); q.setFromEuler(new THREE.Euler(0, 0, 0.9 * pw)); e.quaternion.multiply(q);

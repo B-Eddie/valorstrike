@@ -1,13 +1,13 @@
 # Builds models/valorant/animations/FP_Abilities.glb: the authored first-person ABILITY clips that other agents borrow
 # (Valorant's FP rigs share one skeleton, 102 common bones, so a clip binds to any agent's arms by bone name, exactly as
 # the shared weapon clips in animations/FP_<Weapon>.glb do). Only the animation data + the bone hierarchy are kept
-# (no mesh / skin / textures). Sources: the agents' own *-fp.glb (Killjoy grenade, Skye Guiding Light, Cypher Trapwire,
+# (no mesh / skin / textures). Sources: the agents' own *-fp.glb (Killjoy grenade, Skye Guiding Light + Trailblazer cast, Cypher Trapwire,
 # Sova Owl Drone, Raze underhand). Usage: python3 work/build_ability_anims.py
 import json,struct,pathlib
 R=pathlib.Path(__file__).resolve().parents[1]/'models/valorant'
 TAKE={'killjoy':['FP_Killjoy_S0_4_Grenade_Equip','FP_Killjoy_S0_4_Swarm_Idle','FP_Core_Grenade_OverhandThrow','FP_Killjoy_S0_4_Swarm_UnderhandThrow'],
  'raze':['FP_Core_Grenade_UnderhandThrow'],
- 'skye':['FP_Guide_S0_E_Hawk_Equip','FP_Guide_S0_E_Hawk_EquipIdle','FP_Guide_S0_E_Hawk_Cast'],
+ 'skye':['FP_Guide_S0_E_Hawk_Equip','FP_Guide_S0_E_Hawk_EquipIdle','FP_Guide_S0_E_Hawk_Cast','FP_Guide_S0_Q_Wolf_Equip','FP_Guide_S0_Q_Wolf_Idle','FP_Guide_S0_Q_Wolf_Cast'],
  'cypher':['FP_Gumshoe_S0_E_Equip','FP_Gumshoe_S0_E_Loop','FP_Gumshoe_S0_E_Fire'],
  'sova':['FP_Hunter_S0_E_Equip','FP_Hunter_S0_E_IdleAdd','FP_Hunter_S0_E_Deploy']}
 def load(f):

@@ -65,5 +65,13 @@ console.warn=((w)=>(...a)=>{if(!/boneTransform/.test(String(a[0])))w(...a);})(co
    for(const [clip,u] of [[G.eq,.95],[G.idle,.3],[G.fire[0],.03],[G.fire[1],.03],[G.alt,.04]]){api.xAfGunPose(B.R,'bs',{clip,u});M.g.visible=M.l.visible=true;B.cam.updateMatrixWorld(true);
     for(const [g,sd] of [[M.g,'R'],[M.l,'L']]){const bb=new T.Box3().setFromObject(g),h=B.R.sc.getObjectByName(sd+'_Hand').getWorldPosition(new T.Vector3());
      assert.ok(!bb.isEmpty()&&bb.distanceToPoint(h)<0.06,`Blade Storm ${clip} ${u}: knife in the ${sd} hand`);const sz=bb.getSize(new T.Vector3()).length();assert.ok(sz>.2&&sz<.4,'knife size '+sz);}}}}
- console.log('ability FP: legacy box hand removed; '+only.length+' agents x C/Q/E/X on their own native FP arms ('+n+' poses: clips resolve, item in the palm, hand in view); equip / release / recovery timings; ult guns rk/hp/sn on the native arms (box guns gone); Blade Storm on the Jett Wushu set with a knife per hand');process.exit(0);
+ // (6) Sova's bow is his own model (agents/sova.glb Hunter_Bow mesh on Bow_Static), not a primitive torus; borrowed sets per cast
+ assert(!/TorusGeometry/.test(html.slice(html.indexOf('// ---- ABILITY FIRST PERSON ----'),html.indexOf('// ---- END ABILITY FIRST PERSON ----'))),'no primitive bow');
+ {const K=api.XAF_K;assert.equal(K.Phoenix.q.s,'flick');assert.equal(K.Phoenix.e.s,'nade');assert.equal(K.Sage.c.s,'place');assert.equal(K.Sage.x.s,'wolf');}
+ if(!process.env.AGENTS||/Sova/.test(process.env.AGENTS)){const B=await FP.build('Sova',api),T=await import('file://'+path.join(root,'server/node_modules/three/build/three.module.js'));await FP.pose(B,'q','idle',.3);
+  for(let i=0;i<200&&!(B.R.bow&&B.R.bow.userData.ok);i++)await new Promise(r=>setTimeout(r,20));await FP.pose(B,'q','idle',.3);const bow=B.R.bow;assert.ok(bow&&bow.userData.ok&&bow.visible,'Sova bow loaded');
+  const mats=[];bow.traverse(o=>{if(o.isMesh)[].concat(o.material).forEach(m=>mats.push(m.name));});assert.ok(mats.length&&mats.every(n=>/^Hunter_Bow/.test(n)),'bow = Hunter_Bow mesh '+mats);
+  B.cam.updateMatrixWorld(true);const bb=new T.Box3().setFromObject(bow),sz=bb.getSize(new T.Vector3()),l=B.R.sc.getObjectByName('L_Hand').getWorldPosition(new T.Vector3());
+  assert.ok(Math.abs(sz.y-api.XAF.bowH)<0.05,'bow upright in view, '+sz.y.toFixed(2)+' m tall');assert.ok(bb.distanceToPoint(l)<0.06,'bow in the left fist');}
+ console.log('ability FP: legacy box hand removed; '+only.length+' agents x C/Q/E/X on their own native FP arms ('+n+' poses: clips resolve, item in the palm, hand in view); equip / release / recovery timings; ult guns rk/hp/sn on the native arms (box guns gone); Blade Storm on the Jett Wushu set with a knife per hand; Sova holds his own bow model');process.exit(0);
 })().catch(e=>{console.error(e);process.exit(1);});
