@@ -1,11 +1,11 @@
 {
-"_about":"tools/map-sweep.mjs findings fixed in the shared motor (motor.cjs step/moveAxis): edges = [from node, to node] nav edges on flat or stepped floor the motor refused before the riser/step-up fixes (crack between slabs read as a riser, step-up pinned by a wall beside the capsule); traps = [from node, direction] walks that ended in a spot the capsule could not walk out of (Breeze paving against walls; the last three were embedded a few mm in a leaning wall, the very last walked off the 12 m platform onto the crate stack below it, now a clip; the next two settled on the lip past Breeze's west 8 m floor edge, now a clip, the last perched on a lattice prop by the mid-west railing, now a clip; Bind: three walks off a rock bump into the crevices beside it, now a clip). walksOut needs 0.3 m within 0.5 s. backs = [from node, direction] walks that must come straight back (the browser walk: 1 s in, then 0.9 s the opposite way, >= 0.7 m, standing on a floor - not hanging on a lip): Breeze crate at (-30.5, 8.99, -28), walking off its west edge hung the capsule 0.84 m up on the crate lip (8-direction walksOut still passed), now a clip. test-map-bounds.js section 5 replays them.",
+"_about":"tools/map-sweep.mjs findings fixed in the shared motor (motor.cjs step/moveAxis): edges = [from node, to node] nav edges on flat or stepped floor the motor refused before the riser/step-up fixes (crack between slabs read as a riser, step-up pinned by a wall beside the capsule); traps = [from node, direction] walks that ended in a spot the capsule could not walk out of (Breeze paving against walls; the last three were embedded a few mm in a leaning wall, the very last walked off the 12 m platform onto the crate stack below it, now a clip; the next two settled on the lip past Breeze's west 8 m floor edge, now a clip, the last perched on a lattice prop by the mid-west railing, now a clip; Bind: three walks off a rock bump into the crevices beside it, now a clip). walksOut needs 0.3 m within 0.5 s. backs = [from node, direction] walks that must come straight back (the browser walk: 1 s in, then 0.9 s the opposite way, >= 0.7 m, standing on a floor - not hanging on a lip): Breeze crate at (-30.5, 8.99, -28), walking off its west edge hung the capsule 0.84 m up on the crate lip (8-direction walksOut still passed), now a clip. test-map-bounds.js section 5 replays them. level = [from, dir]: 1.5 s walks along / into a wall whose feet must never rise more than 0.1 m (Ascent: a 7 cm, 0.5 m plinth by the slanted wall at (-12.5, 7.07, 38) lifted the capsule 0.27 m, now a clip; that spot's crack edge moved from x -12.5 to -12.65, where a 0.4 capsule fits past the plinth).",
 "ascent":{"edges":[
   [[-11,8.55,-57.25],[-11,8.74,-58]],
   [[-11,8.74,-58],[-11,8.55,-57.25]],
   [[7.75,7.32,7.25],[7.75,7.57,8]],
   [[24.25,12.7,-51.25],[24.25,12.73,-52]],
-  [[-12.5,7.07,38],[-12.5,7.07,37.25]],
+  [[-12.65,7.07,38],[-12.65,7.07,37.25]],
   [[1,8.45,59],[1,8.43,59.75]],
   [[-1.25,8.44,59.75],[-1.25,8.44,60.5]],
   [[6.25,8.43,63.5],[5.5,8.43,63.5]],
@@ -15,7 +15,8 @@
   [[7,8.41,65],[7.75,8.43,65]],
   [[4.75,8.43,65.75],[5.5,8.43,65.75]],
   [[3.25,8.43,67.25],[2.5,8.44,67.25]]],
- "traps":[[[30.25,9.07,-9.25],[0,-1]]]},
+ "traps":[[[30.25,9.07,-9.25],[0,-1]]],
+ "level":[[[-12.5,7.07,40],[0,-1]],[[-12.2,7.07,39.5],[-0.17,-0.98]],[[-12.9,7.07,38],[0.98,-0.17]]]},
 "bind":{"edges":[
   [[-3,8.51,-3.75],[-3.75,8.75,-3.75]],
   [[-3.75,8.75,-3.75],[-4.5,8.9,-3.75]],
