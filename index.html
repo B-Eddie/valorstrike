@@ -8986,6 +8986,10 @@ function bcFire() {
   if (sn ? BC.td < 1 : J.q < 1) { BC.eq = ""; return false; }
   if (sn) BC.td--; else J.q--; BC.cd = 1 / (sn ? XTDF.rate : XHH.rate); kick = 1; vmFire(); SFX.gun(sn ? "Operator" : "Sheriff");
   ray.setFromCamera(XC0, camera); ray.far = 200;
+  // Headhunter = the server's Sheriff pipeline (simulation.js ABILITY_GUNS / gunOf: Sheriff spread, spray and recoil weight): first-shot
+  // spread 0.25 deg standing (wiki Headhunter = Sheriff row), bloom on follow-ups, and a camera kick (rcl) that recovers after the
+  // shot as Valorant's (v11.07 recoil recovery). The aim itself (yaw / pitch) never moves. Before hk-36 it fired the exact centre.
+  if (!sn) { since = 0; gFire(ray.ray.direction, "Sheriff", WEAP.Sheriff); }
   const h = ray.intersectObjects(solids.concat(bots.filter((b) => b.alive).flatMap((b) => [b.body, b.head])))[0];
   if (h && h.object.userData.bot) {
     const b = h.object.userData.bot, hs = !!h.object.userData.head, w = sn ? "Tour De Force" : "Headhunter";
