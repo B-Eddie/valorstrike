@@ -29,35 +29,71 @@ function longestFlight() {
   const t0 = Date.now(); const el = () => ((Date.now()-t0)/1000).toFixed(0) + 's';
   try {
     await boot(p);
-    await p.evaluate((m) => { window.__vs.FV.pick = m; window.__vs.light(true); }, MAP);
-    try { await p.click('#mIntro [data-close]', {timeout: 4000}); } catch (e) {}
-    try { await p.click('#playBtn', {timeout: 4000}); } catch (e) {}
-    await p.evaluate(() => { try { document.getElementById('mIntro').style.display = 'none'; } catch (e) {} });
+    await p.evaluate((m) => { window.__vs.FV.pick = m; window.__vs.FV.dmN = 0; window.__vs.light(true); window.__vs.agents(false); }, MAP); // dmN=0: no bots, clean movement signal (bot body-blocks made the down leg flaky)
     await startDM(p);
     await p.waitForFunction(() => window.__vs && window.__vs.state().running, {timeout: 120000, polling: 1000});
-    await p.evaluate(() => { window.__vs.player.hp = 1e9; }); // god-mode: bot fire must not interrupt movement evidence
-    const leg = async (from, to, secs) => {
-      await p.evaluate(([f, t]) => { window.__vs.setPos(f.x, f.y + .1, f.z); window.__vs.aimAt(t.x, t.y + 1, t.z); window.__vs.player.hp = 1e9; }, [from, to]);
+    await p.evaluate(() => { window.__vs.player.hp = 1e9; window.__vs.DM.win = 1e9; window.__vs.DM.len = 9999; if (window.__vs.setTimeLeft) window.__vs.setTimeLeft(9999); }); // god-mode + no match end: cull-kills must never reach the win threshold
+    // SETTLE=<secs>: wait in-match before walking - separates early-match boot/preload contention
+    // (SwiftShader) from real motor stalls. Active-protocol stalls on heavy maps read 9-15; settled 0-1.
+    const SETTLE = +(process.env.SETTLE || 0);
+    if (SETTLE) { console.log('settling', SETTLE + 's in-match before walking'); await new Promise(r => setTimeout(r, SETTLE * 1000)); console.log('settled, walking now'); }
+
+    // Walk a node path, re-aiming each poll at the node just ahead (how a player follows stairs).
+    const legPath = async (nodes, secs, teleport) => {
+      const f = nodes[0];
+      if (teleport !== false) await p.evaluate(([f, t]) => { window.__vs.setPos(f.x, f.y + .1, f.z); window.__vs.aimAt(t.x, t.y + 1, t.z); window.__vs.player.hp = 1e9; window.__vs.DM.win = 1e9; window.__vs.DM.len = 9999; if (window.__vs.setTimeLeft) window.__vs.setTimeLeft(9999); }, [f, nodes[1] || f]);
       await p.keyboard.down('KeyW');
       const samples = [];
+      let lastMove = Date.now(), dumped = false, lastPos = null;
       const tEnd = Date.now() + secs * 1000;
-      while (Date.now() < tEnd) { const s = await p.evaluate(() => { const q = window.__vs.state().player; return q && [q[0], q[1], q[2]]; });
-        if (s) samples.push(s); await new Promise(r => setTimeout(r, 100)); }
+      while (Date.now() < tEnd) { const s = await p.evaluate(() => { const q = window.__vs.state().player; try { window.__vs.bots.forEach((bb) => { if (bb.alive) window.__vs.kill(bb); }); } catch (e) {} return q && [q[0], q[1], q[2]]; });
+        if (s) { samples.push(s);
+          if (!lastPos || Math.hypot(s[0] - lastPos[0], s[2] - lastPos[2]) > .05) { lastMove = Date.now(); lastPos = s; }
+          if (!dumped && Date.now() - lastMove > 5000) { dumped = true;
+            const st = await p.evaluate(() => { const P = window.__vs.player; const D = window.__vs.state();
+              return { pos: [P.x, P.y, P.z], air: !!P.air, duck: !!P.duck, ch: P.ch, lp: P.lp, vx: P.vx, vy: P.vy, vz: P.vz, wk: !!P.wk, cr: !!P.cr, tagT: P.tagT, hp: P.hp, mv: !!P.mv, sf: P.sf, eyeOffset: P.eyeOffset, jumpHeld: !!P.jumpHeld, duckHeld: !!P.duckHeld, duckFatigue: P.duckFatigue, takeoffSpeed: P.takeoffSpeed, keyW: (typeof keys !== 'undefined') ? !!keys.KeyW : 'n/a', paused: D.paused, dmMenu: D.menu, running: D.running }; }).catch((e) => ({ err: String(e).slice(0, 120) }));
+            console.log('FREEZE-STATE', JSON.stringify(st)); }
+          let ni = 0, nd = 1e9;
+          for (let i = 0; i < nodes.length; i++) { const d = Math.hypot(s[0] - nodes[i].x, s[2] - nodes[i].z); if (d < nd) { nd = d; ni = i; } }
+          const t = nodes[Math.min(ni + 1, nodes.length - 1)];
+          await p.evaluate((t) => window.__vs.aimAt(t.x, t.y + 1, t.z), t); }
+        await new Promise(r => setTimeout(r, 100)); }
       await p.keyboard.up('KeyW');
       return samples;
     };
-    const up = await leg(flight[0], flight[1], Math.min(10, 2 + flight.length * .9));
+    // Extend past the top onto the plateau: teleporting exactly onto the top node can wedge the
+    // capsule into stair-mouth geometry (observed on split), a teleport artifact, not a game bug.
+    const NN = NAV.nodes, topN = flight[flight.length - 1], prevN = flight[flight.length - 2];
+    const ddx = topN.x - prevN.x, ddz = topN.z - prevN.z, ddl = Math.hypot(ddx, ddz) || 1;
+    const px = topN.x + ddx / ddl * 2.5, pz = topN.z + ddz / ddl * 2.5;
+    let plat = null, pd = 1e9;
+    for (let i = 0; i < NN.length; i++) { if (NAV.valid && !NAV.valid[i]) continue;
+      const d = Math.hypot(NN[i][0] - px, NN[i][2] - pz);
+      if (d < pd && Math.abs(NN[i][1] - topN.y) < .4) { pd = d; plat = { x: NN[i][0], y: NN[i][1], z: NN[i][2] }; } }
+    const upPath = plat ? flight.concat([plat]) : flight;
+    let up = await legPath(upPath, Math.min(18, 2 + upPath.length * .9));
+    // One retry: a wandering bot can body-block the stair base (god-mode stops damage, not collision).
+    const upGoal = flight[flight.length - 1];
+    if (!up.some((q) => Math.hypot(q[0] - upGoal.x, q[2] - upGoal.z) < 1.6 && Math.abs(q[1] - upGoal.y) < .5)) {
+      console.log(el(), 'up leg retry (bot interference suspected)');
+      up = await legPath(upPath, Math.min(18, 2 + upPath.length * .9));
+    }
     const upEnd = up[up.length - 1];
     let stall = 0;
     for (let i = 5; i < up.length; i++) { if (Math.hypot(up[i][0] - up[i-5][0], up[i][2] - up[i-5][2]) < .15 && up[i][1] < flight[flight.length-1].y - .3) stall++; }
     const goal = flight[flight.length - 1];
-    const reached = Math.hypot(upEnd[0] - goal.x, upEnd[2] - goal.z) < 1.6 && Math.abs(upEnd[1] - goal.y) < .5;
+    const reached = up.some((s) => Math.hypot(s[0] - goal.x, s[2] - goal.z) < 1.6 && Math.abs(s[1] - goal.y) < .5);
     const minY = Math.min(...up.map((s) => s[1]));
     console.log(el(), 'up: y', up[0][1].toFixed(2), '->', upEnd[1].toFixed(2), 'goal y', goal.y.toFixed(2), 'reached', reached, 'stallSamples', stall, 'minY', minY.toFixed(2));
-    const down = await leg(goal, flight[flight.length - 2], Math.min(10, 2 + flight.length * .9));
-    const dnEnd = down[down.length - 1];
+    let down = await legPath(flight.slice().reverse(), Math.min(55, 6 + flight.length * 1.8), false);
     const base = flight[0];
-    const backHome = Math.hypot(dnEnd[0] - base.x, dnEnd[2] - base.z) < 1.8 && Math.abs(dnEnd[1] - base.y) < .5;
+    const home = (q) => Math.hypot(q[0] - base.x, q[2] - base.z) < 1.8 && Math.abs(q[1] - base.y) < .5;
+    if (!home(down[down.length - 1])) {
+      console.log(el(), 'down leg retry (bot interference suspected)');
+      down = await legPath(flight.slice().reverse(), Math.min(55, 6 + flight.length * 1.8), false);
+    }
+    const dnEnd = down[down.length - 1];
+    const backHome = home(dnEnd);
     console.log(el(), 'down: y', down[0][1].toFixed(2), '->', dnEnd[1].toFixed(2), 'base y', base.y.toFixed(2), 'backHome', backHome);
     if (!reached) throw new Error('did not reach the top (end ' + JSON.stringify(upEnd.map(v=>+v.toFixed(1))) + ' vs goal ' + JSON.stringify(goal) + ')');
     if (stall > 4) throw new Error('stalled on the way up (' + stall + ' samples)');

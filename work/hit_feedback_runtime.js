@@ -122,7 +122,7 @@ XHF.pass=0;
 {const snap=mpCliSnap;mpCliSnap=function(m){const on=typeof NET!=='undefined'&&NET.socket&&running&&MP.st==='game',ev=on&&m&&m.ev||null;
  if(ev){XHF.pass++;for(const e of ev)if(e&&e[0]==='h')netHitLog(e);}
  const r=snap.apply(this,arguments);
- if(ev&&running&&MP.st==='game'){for(const e of ev){if(e&&e[0]==='h')netHitFeedback(e);else if(e&&e[0]==='k'&&mpIn(e[1])==='You'){vmKill(mpIn(e[2]),!!e[3]);xKiAdd(!!e[3]);}}}
+ if(ev&&running&&MP.st==='game'){for(const e of ev){if(e&&e[0]==='h')netHitFeedback(e);else if(e&&e[0]==='k'&&mpIn(e[1])==='You'){vmKill(mpIn(e[2]),!!e[3]);xKiAdd(!!e[3],e[4]);}}}
  return r;};}
 {const a0=audio;audio=function(){const r=a0.apply(this,arguments);if(!XSF.ok&&typeof ac!=='undefined'&&ac)xSfWarm();return r;};}
 if(window.requestIdleCallback)requestIdleCallback(()=>{xHitInit();try{xCrUi();}catch(e){}},{timeout:1500});else setTimeout(()=>{xHitInit();try{xCrUi();}catch(e){}},0);

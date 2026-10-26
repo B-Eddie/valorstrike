@@ -42,3 +42,31 @@ Branch screenshots and benchmark figures remain historical evidence, not measure
 - Final tested frontend/server deployment and the full Spike release gate. No paid-plan or billing changes.
 
 The complete original handoff checklist is preserved in [NEXT_STEPS.md](NEXT_STEPS.md).
+
+## Latest branch integration — 25 October 2026
+
+Integrated `origin/hark` at `142af32`, `origin/instinct` at `a216fcb`, and the skin work on `origin/hark-skins` at `b08947b` into `main`. Hark contributes the newer HUD, route variety, ability equip flow, combat/economy corrections, spectating fixes, collision patches and renderer/corpse performance work. Instinct contributes mobile layout, diagnostics, texture memory limits and out-of-bounds recovery. Kept Hark's shared movement and concurrent shot processing; the last-resort Instinct OOB watch now complements existing recovery.
+
+Kept movement boundaries separate from bullet/visibility collision. Removed Instinct's dense `fence.bin` merge from the client collision fallback as well, so the fallback and prebuilt/server collision paths agree. Hark's targeted Ascent, Lotus and Breeze patches remain included in the regenerated six worlds.
+
+Retained the skin branch's free collection/store UI, validated inventory and server synchronization, but replaced its fabricated finishes with installed original assets: **86 skins, 138 variants, 18 collections**. Models, normals, emissions, ORM and transparency come from Kingdom Archives exports; icons/names come from VALORANT API. Every listed variant has a hashed local GLB and matching native FP/weapon clips. Unique knives use their own models and native animation sets. Unsupported Ego shaders are excluded. Placeholder upgrade levels, muzzle recolours and made-up finishers were removed.
+
+Native rig caches include the equipped skin in their keys. Third-person/floor/lobby models swap actual geometry and carry the new grip sockets. Async swaps reject stale completions, restore Standard's grip and visibility, retry failures with a delay and retain a small template cache. Imports and previews are on demand; opening the lobby does not download the skin library.
+
+Validation records for this integration are appended below. Historical counts and screenshots above refer to earlier builds. Spike production release and the broader rendered online/mobile acceptance checklist remain separate gates.
+
+Additional merge corrections found by the combined checks:
+
+- The collection renderer now uses Hark's `xShChk` wrapper, avoiding synchronous shader-log checks when a preview opens.
+- The short-screen layout regression now checks that later compact feed placements still clear the subtitle, instead of rejecting every later rule. Instinct's 64 px placement clears the 48 px subtitle plus its 12 px line and 4 px gap.
+- The default test runner excludes `test_slice.cjs`, which is a runner utility and otherwise repeats the complete suite as though it were a regression file.
+
+Verification on the integrated code with authentic skins:
+
+- `npm test` from `server/`: **39 regression files passed**. Rebuilt all six worlds; map-boundary grids and 2,310 boundary probes passed, along with original Lotus stair paths and map seam checks.
+- **107 client regression files passed** in the full-range slice runner, with targeted rechecks after final skin-only changes. The first default run exposed the preview shader-wrapper omission; continuation exposed the stale layout assertion and spectator fixture. Those were corrected before the successful complete run. The spectator fixture now captures the optimized numeric-cell nearest-node helper and its height-band parameter without changing spectator behavior.
+- All **138 GLB variants** passed SHA-256/size, embedded texture/no external image dependency, local icon and native clip dependency checks. Eight representative custom weapon/knife rigs passed actual asset-based idle hand-contact and equip/fire/reload/inspect checks. Skin inventory/network tests cover unsupported ids, ownership persistence, stale async completion, Standard restoration and distinct per-finish native rig caches.
+- Normal browser UI: authentic Prime preview and chroma switch, acquire/equip, persistence after reload, native first-person range firing and reload. Screenshots: `validation/authentic-prime.png`, `validation/authentic-prime-fp.png`.
+- Page generation is byte-identical; all seven inline scripts parse; `git diff --check` passes. This is local validation, not a claim of production deployment or completed mobile/online rendered release acceptance.
+
+Final fetch additionally integrated `origin/hark` at `7140175` and `origin/instinct` at `ba83fa1`. Beyond already-integrated skin work, these add browser scripts and validation findings only: the Lotus spectator probe holds the fuse to avoid a false failure, and Instinct documents dynamic-prop clearance and startup contention findings without changing map navigation. Updated the newly imported skins browser script to use installed Prime/BlastX native rig ids instead of retired Reaver/RGX shader uniforms. These imported browser scripts were not run in this desktop environment; the normal UI checks above used the in-app browser.

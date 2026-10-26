@@ -364,3 +364,654 @@ extended when appending nodes - that masked the first attempt):
 Post-bake: split five-soak PASS (no stalls observed in this sampled run; was FAIL x2 from the
 slot); full audit: 0 trap nodes, no named area lost, spawns/sites preserved.
 This is nav-DATA repair via verified connectors/quarantine, not the deferred blanket prune.
+
+## Stairs live walk (diag-stairs.cjs, headless DM, bots culled, god-mode player, 2026-10-25)
+Walks the longest rising nav-edge chain (>=5 nodes) per map with a held W key, re-aiming at the
+next node each 100ms poll; asserts: reach the top (any sample within 1.6m XZ, 0.5m y), no stalls,
+no falls, and a walk back down to the base.
+- ascent: PASS (15 nodes, +1.91m; 0 stalls)
+- bind:   PASS (17 nodes, +2.93m; 1 stall sample)
+- breeze: PASS (19 nodes, +2.97m; 0 stalls)
+- haven:  PASS (21 nodes, +5.97m; 1 stall sample)
+- lotus:  PASS (11 nodes, +2.26m; 0 stalls)
+- split:  PASS (23 nodes, +4.02m; up 0 stalls; down returns to base) - all six maps now pass.
+ROOT CAUSE of the earlier split descent failures (probe artifacts, NO game bug):
+1. Teleport wedge: setPos exactly onto a stair nav node can settle the capsule sunk ~2 cm into
+   the step (nav y vs BVH surface differ slightly); the motor has no unstick, so it freezes.
+   Real spawns are protected: nmPlace rejects candidates whose BVH height differs >.15 m from
+   nav y or that are nmBlocked, and requires a traversable exit edge.
+2. Match end from probe culling (the main one): the probe culls wandering bots with kill() each
+   100 ms; those kills count toward the DM 40-kill win, so the match ended mid-walk
+   (FREEZE-STATE dump: running=false, player reset to hp 100, frozen mid-fall air:true vy<0).
+   Fixed by pinning DM.win=1e9/DM.len=9999 during the probe.
+3. Fixed-yaw aim drifted off straight flights (bind); fixed by per-poll re-aim along the path.
+NUMERIC DESCENT SWEEP (server motor, all rising edges walked b->a): split/haven 100%,
+ascent 99.7%, bind/breeze 99.9% (isolated prop edges), lotus 97.1% with a CLUSTER of descent
+failures around (-12, -7..-11, y ~5.0->5.3): the walker leaves the edge and lands ~3.5 m lower.
+Either one-way drop ledges (legitimate) or nav edges overstating connectivity - OPEN, needs
+geometry inspection; if the edges are wrong, bots routing down them could stall or fall.
+Probe notes: bots are culled each poll (kill()) because DM respawns wanderers that body-block the
+stair base (observed); one retry per leg guards residual interference. A fixed-yaw aim flaw in the
+probe itself was found via bind (straight flight, diagonal first node) and fixed by per-poll re-aim.
+
+## Lotus descent-edge cluster - root cause found (2026-10-25, second entry)
+The failing edges (3628-3631 row, 3712, around x=-12/-11.3, z -7..-11) are NOT one-way ledges:
+the nodes sit in a ~.37 m gap UNDER a slab overhang (ground at their (x,z) is ~4.93, the slab
+above at ~5.3). blocked() at capsule height there is TRUE - a player cannot stand at these nodes,
+yet they are valid[] with adjacency into the upper walk level (e.g. 3628<->3627). Bots pathed
+through them will grind on the overhang until the runtime breaker bans the edge.
+OPEN FIX (not yet applied): targeted invalidation of under-overhang nodes on lotus + a nav
+connectivity re-check, through the verified-bake pipeline (build-world.cjs lotus + copies).
+CAUTION: a naive "blocked at node" sweep is noisy - spawn-area round barriers make 2% of nodes
+read blocked on every map (x=-78 on bind, x=-89 on breeze etc.). Any pruning must discriminate
+mid-map low-clearance overhangs from barrier-sealed spawns (e.g. re-check with barriers open, or
+filter to ceiling clearance < 1.35 m far from spawn volumes).
+
+## Post-merge stairs re-run (Oct 25, commit c0cc5a6)
+Harness repaired for main's async init (mid profile allows /models/valorant/ bins;
+startDM via __vs hook; diag-stairs runs FV.dmN=0 - zero bots).
+ASCENT: PROBE-FAIL. Up leg reached the top (goal y 8.00) but logged 11 stall samples
+(>4 threshold) and ended at y 6.54 - a climb/slip yo-yo pattern with NO bots present.
+Down leg (no teleport) did not return to base either run (7.05 -> 6.80).
+Pre-merge the same probe passed this flight. Suspect a real stair-climb regression
+from main's motor changes (clipBlocked / CLIPS / floorNear ring). NOT yet proven:
+next step is A/B - same probe against pre-merge instinct (6facbc0~1 worktree, rebuild
+ascent world artifacts) to confirm merge-introduced, then bisect the motor diff.
+Caveat: one PROBE-FAIL earlier this run was a Chrome tab crash under sandbox load
+(infra, not game).
+
+## 2026-10-25 ~12:07 EDT - TEXCAP restore committed (2d61646), full client sweep green
+- TEXCAP decode cap restored (valorant_runtime.js, before `var XV`); test_texcap.cjs green.
+- Obsolete pins removed: test_native_only.cjs (main xvAttach native-only tier covers), test_preload.cjs (main XVA hash-verified manifest covers).
+- FIX: __vsLightOn helper was defined outside the nmCancel..marker vm-slice region -> test_map_cancel + test_map_lifetime rejected with ReferenceError (loads=0). Moved helper inside region; both green.
+- Full client slice sweep 0-80 (80 files incl. main's test_agent_preload + test_bot_variety equivalents) PASS post-restore. index.html regen idempotent (md5 ce0b4bab...).
+- Restored dev tools agent_preview/agent_rt/boots_check/fp_check committed, NOT yet run.
+- NEXT (queued): re-run six-map stairs probe WITH restored light path (matched-rate A/B vs pre-merge pass) before any motor-regression claim; then lotus re-ground, mobile/perf, responsive-HUD pass, lobby offline-mode reachability, A-kills-B duel, final acceptance sweep.
+
+## 2026-10-25 ~12:21 EDT - Six-map stairs re-run WITH restored light path + breeze A/B
+Post-merge (2d61646, light path restored), one selected flight per map, live DM, bots off:
+- ascent: PASS (15n +1.91m; 0 stalls after 1 retry) / bind: PASS (17n +2.93m) / split: PASS (23n +4.02m)
+- breeze: PROBE-FAIL 9 up-leg stall samples; reached top, clean descent, backHome
+- haven:  PROBE-FAIL 12 up-leg stall samples; reached top, clean descent
+- lotus:  PROBE-FAIL 15 up-leg stall samples; reached top, clean descent
+Pre-merge ledger (same probe): all six PASS, <=1 stall sample.
+MATCHED-RATE A/B (breeze): pre-merge 87fe8bf worktree via VS_ROOT, same machine/probe/world
+(breeze nav/build inputs verified unchanged 87fe8bf..HEAD): PASS, 2 stall samples, up 40s down 40s.
+=> Real tree-side delta on 3 heavy maps: up-leg wall-clock stalls 9-15 vs 0-2 pre-merge. NO motor
+stuck: every flight completes up+down in both trees; ERRORS [] everywhere; descents all clean.
+Pattern (stalls concentrated on UP leg = early match phase, down legs clean) is consistent with
+main's XVA boot preload (80-file manifest decode) contending with the probe under SwiftShader, NOT
+with a motor defect. Claim remains CONDITIONAL: not pinned to a commit. Next pin option: re-run
+with XVA disabled or after preload settles; or per-sample trace for position-freeze vs slow-motion.
+Har harness note: worktree lib.cjs has ROOT hardcoded - run A/B from MAIN checkout with
+VS_ROOT=/tmp/vs-pre (worktree startDM clicks the legacy tab strip and fails on main's lobby).
+
+## 2026-10-25 ~12:26 EDT - Lobby mode reachability (diag-lobby-modes.cjs, NEW probe)
+Static: main's lobby Play button toggles #xQueue (tab strip: unrated/swift/sr/dm/tdm/esc/custom
+with offline bot cards + START/Range) AND an #xOn online section (Quick Match/Create private/Join,
+mode seg dm/tdm/five). The earlier "only online controls" observation was incomplete: the offline
+tabs exist in the same panel.
+LIVE (1280x800, light mode): tabs enumerate; per-tab cards visible (sr/dm/tdm/esc/custom "visible";
+unrated/swift "no-card" = probe selector artifact - those panes use div.x-qcard not button).
+REAL BUG FOUND: after activating the CUSTOM tab, its pane (.x-qp.on[data-q=custom], Retake 3v3
+feature + countdown + GO) OVERLAPS the tab strip - playwright could not click the DM tab
+("element intercepts pointer events"); .x-stage/.x-lb also intercepted on retry. CSS rule
+.x-qp[hidden]{display:none} exists and outranks .x-qp{display:flex}, so hidden panes are fine;
+the ACTIVE custom pane itself overflows over .x-qtabs. Needs visual confirmation (screenshots
+/tmp/lobby_dm_tab.png, /tmp/lobby_fail.png - inspect next wake) and a viewport matrix
+(1280x800, 640x360 landscape, portrait) before fixing. DM start not reached this run.
+
+## 2026-10-25 ~12:41 EDT - Lobby tab-strip crush FIXED (flex:none on .x-qtabs)
+ROOT CAUSE (measured live): when #xQueue hits max-height:calc(100%-88px), the column flex shrinks
+children; .x-qtabs is a scroll container (overflow-x:auto) so its automatic min size is 0 and it
+was squeezed 44px -> 1px. The 44px tab buttons overflowed the 1px strip, got paint-clipped by
+overflow-y:hidden, and their hit area landed on .x-qmode's active pane ("custom pane intercepts
+pointer events"). Any tall tab content triggered it; custom (1081px) was the worst.
+FIX: flex:none on .x-qtabs (index.html; persists through install_valorant.py regen - md5 cdf754be).
+VERIFIED LIVE (diag-lobby-modes.cjs, updated selector): 1280x800 + 640x360 tabs h=45px, all 7 tab
+cards visible, DM tab clickable with custom previously active, full flow Play -> DEATHMATCH ->
+#dmBtn -> DM match running (mode=five+FV.dm per design), 0 page errors, in-game HUD sane
+(screenshots /tmp/lobby_custom_1280x800.png, _640x360.png, /tmp/lobby_dm_ingame.png).
+390x844 portrait: #rot "rotate your device" gate intentionally covers the lobby - UNSUPPORTED
+behavior per scope, labeled honestly, not a bug.
+Known non-blocker: at 1280x800 the Online section's CODE/JOIN row sits below the fold; panel
+scrolls (overflow:auto). Acceptable; flagged for the coordinated responsive-HUD pass.
+
+## 2026-10-25 ~13:07 EDT - Rendered two-client online acceptance (WIP probe, findings)
+Probe: work/browser-tests/rendered-two-client.cjs (one Chromium, two pages, real wrangler dev).
+SANDBOX ARCHITECTURE FACTS (cost several runs):
+- Detached node/wrangler processes SURVIVE between bash calls; google-chrome is REAPED when a
+  bash call ends. All browser work must fit one ~115s call; server can be external (NO_WRANGLER=1
+  + detached wrangler, or let the probe spawn its own).
+- Probe-spawned wrangler child correlated with >100s blackouts at match start; external detached
+  wrangler gave a clean 3s online start (ONE-client mode reached running=true, mode=five, 9 bots).
+  Cause of the difference UNVERIFIED (CPU contention vs wrangler child stdio) - conditional.
+- /profile?qa=1 now returns "Profile creation limit reached today" - daily cap; may affect fresh
+  browser profiles creating rooms late in a testing day. Room creation observed working after the
+  limit appeared, then failing later ("Creating server room..." stuck) - CORRELATION UNCONFIRMED.
+SUSPECTED REAL ISSUES (both conditional, queued for the responsive-HUD/lobby pass):
+- At 960x600 a Playwright coordinate click on #xOnStart started RETAKE (mode=retake observed),
+  i.e. the click landed on another element - possible occlusion/shift under the scrolled queue
+  panel. Probe now uses element.click() (DOM-level) since button hit-testing is covered by
+  diag-lobby-modes at 1280x800/640x360. NEEDS a 960x600 visual check.
+- The unintended retake start ignored __vsLight and sat at "Preparing the map..." 76s+ under
+  SwiftShader - check whether retake/custom starts respect the light gate (probe-perf relevance).
+NET MODEL NOTE: private rooms are client-HOSTED (host page runs bots/sim; "damage to you comes
+only from the host"); match start blocks the host main thread >10s by design ("heartbeat can
+black out").
+STATUS: not yet passing end-to-end. Next: verify room-create blocker (profile limit vs other),
+then A-host start with B parked at about:blank (WebGL-contention mitigation), then kill phase.
+
+## Rendered two-client acceptance - stall root-cause WIP (13:18, commit 7d6a370)
+- net() debug hook (localhost-gated, read-only, in work/debug_runtime.js): exposes ws readyState, mp st/on/role/host/code/mode/name, xReady, nmPending/nmLoaded. Test-only; no production behavior change.
+- Create-phase is healthy: create-diag at 5s = {"msg":"Connected to game server","st":"room","on":true,"host":true,"ws":1,"drops":[],"mode":"dm","xReady":true,"nmPending":false}. Room create + join + ws all fine with the reused local QA token (no fresh profiles minted).
+- Failure is AFTER mpStart: latest ONE-mode run logged "5s mpStart sent" then nothing for 100s+ - page evaluate calls never return = renderer main-thread hard freeze (case B). Case A (other runs): page responsive, load overlay stuck "Loading Ascent...", mode stays "retake" (init default) = no mode-start fn completed.
+- Only success so far: 12:58 ONE run via real playwright click reached running=true in ~3s against the freshly started wrangler. All el.click() runs and all runs against the long-lived wrangler stall. Correlation unproven.
+- Suspects (unverified): main-thread block inside xGo path (xGmLoad gun-model fetch/parse + nmEnsure + BVH build contention under SwiftShader); possible nmEnsure ticket/cancel interplay if a room-message prefetch and startDM load race; server tick/begin frame behavior on long-lived workerd instance.
+- Labeling: host-client one-page success (12:58) != authoritative server-path acceptance; both stay open until the two-client rendered run completes.
+- Next: pre-freeze console/pageerror capture; bisect xGo by starting via __vs.startDM-equivalent online path; check whether room message handler triggers a map prefetch racing startDM.
+
+## Rendered two-client - stall root-caused to harness infra, not game code (13:22)
+- FRESH-wrangler ONE-mode run (room 3UR9E4): mpStart -> running=true, mode=five in ~12s, 9 bots, match still healthy at 97s. Online DM start path works end-to-end against a fresh local server.
+- Stall correlation: every stall/freeze run targeted the LONG-LIVED detached wrangler (started 12:55) that had accumulated rooms from many killed-browser probe runs. Server cleanup exists (drop() -> clearInterval when last session leaves; idle close 1001; load timeout 4002), but reaped Chrome leaves dead TCP sockets whose close events can linger, and tick() still builds a full snapshot every 50ms per open room even with zero ready sessions. Conditional attribution: accumulated rooms on the shared isolate degrade fetch/ws handling enough to stall client start. Not a production bug signal by itself (production Cloudflare DOs are per-room isolates), kept as harness-infra finding.
+- Harness rule now: probe always spawns a FRESH wrangler per run (no NO_WRANGLER reuse of a long-lived server).
+- Also confirmed live: /profile 429 still occurs on fresh wrangler and start works anyway (profile token is stats-only, fails soft) - cap theory stays dead.
+- Probe now logs page console errors/warnings live (console.error 404 + 429 seen at boot are the known favicon/profile noise).
+- Open: full TWO-client run (B joins mid-match, hunt/feed/death/respawn) against a fresh wrangler; then host-client vs authoritative labeling stays until that passes.
+
+## Rendered two-client - case A re-diagnosed (13:25)
+- nmEnsure is only reached via nmWrap/nmLaunch: the mode-start fn (dmGo, which sets mode='five') runs AFTER nmEnsure resolves. So mode='retake' + nmPending=true + 'Loading Ascent / Preparing the map…' during an online start is the NORMAL in-flight state, not proof no start ran. Earlier 'no mode-start ran' reading corrected.
+- TWO-mode fresh-wrangler run (ZB4PNT): start frame path in flight at 35s, still in nmEnsure load phase ('Preparing the map…' = fetch/BVH phase). ONE-mode same server condition finished that phase in ~5s. Whether TWO-mode load is merely slower (CPU contention) or truly stuck is open; mpWaitStart tolerates slow loads by design (progress resets), the 119s sandbox window is the real limit.
+- Added NET.loadAt / NET.ready / NM.ticket to the net() hook to distinguish start-frame-received from load-in-progress on the next run.
+
+## Rendered two-client - harness engineering findings (14:12, uncommitted-run evidence)
+Root causes found this session (all conditional on this 2-core/2GB/no-sandbox-swap sandbox):
+1. TWO-client boot parse starves on RAM: box has 1982MB, no swap permitted (swapon EPERM); kswapd thrash (66% iowait) makes a second renderer's 3MB index.html parse take >60s. curl to the static server stays fast throughout - not a server or connection-pool issue.
+2. Separate contexts = separate renderers = worst memory. ONE context: same-site pages share one renderer process (one V8, one THREE copy) - both pages boot in ~9s total.
+3. Shared process = shared main thread: a running page's rAF loop starves DevTools evaluates. Fixes: __vs.pauseRender(v) (test-only, rebinds loop to an idle rAF re-armer) for the page that is waiting, __vs.slowRender(ms) (runs the real loop every N ms, leaves main-thread gaps) for the page under observation. Both localhost-gated debug hooks.
+4. mid-asset route on probe pages: all png/jpg aborted (textures are the big memory+IO stream), bin/glb allowed only under /maps/, /worlds/, /models/valorant/ (XVA agent preload is on the online start path and retries forever when aborted - blocking it hangs the start at nmTicket=0).
+5. Textures aborted + heap cap + pkill esbuild after wrangler ready = workable footprint.
+Best run so far (twoH): both boot 9s, A in-match 14s, evaluates 3s. twoI (slowRender added): load in flight, evaluates fast; run killed by the 119s sandbox window before B join phase completed.
+Open: complete B join mid-match + kill phase (60s window at 2.5fps); then label host-client vs authoritative-server acceptance separately.
+
+## Rendered two-client - PRECISE BLOCKER recorded (14:22), moving to mobile/HUD/performance
+- Detached runs work: chrome survives across bash calls when the probe is launched via `setsid -f` (contradicts the earlier "chrome is reaped" note - that applied to process-group children). Probe now runs with log polling, no 119s wall.
+- Verified this session (fresh server each run, repeated): room create + host mpStart + server begin -> client in-match (running=true, mode=five, st=game, netReady=true, 9 server bots) in ~14s. This is HOST-CLIENT one-page success on the authoritative server path for the START phase only.
+- NOT passed: B joining mid-match and the kill/feed/death/respawn phase. Precise blocker: after A's match starts, the first in-game frames under SwiftShader on the 2-core/2GB/no-swap box push load avg >20 with <15MB free (kswapd thrash); A's main thread never yields again, so every further CDP evaluate (state reads, pause, B's join flow) queues indefinitely. slowRender(400) cannot help because a SINGLE frame is the uninterruptible unit. Ended the run at 4+ minutes with zero post-start evaluates returning; killed and cleaned up (chrome/wrangler/esbuild all reaped, memory recovered).
+- Identity caveat for the shared-context design: A and B share localStorage (same QA profile token, settings); room identity is distinct only via the explicitly filled names (RendA/RendB). Acceptable for harness reads, NOT representative two-device acceptance.
+- Per parent: these altered conditions (paused/serialized rendering, aborted textures, shared process) are sandbox workarounds; results are not two-device acceptance and imply nothing about production performance isolation.
+- Remaining online acceptance options if revisited: a bigger sandbox, persistent chrome profile (shader cache across runs), or server-side bot-free rooms to cut render load.
+
+## #xOnStart occlusion at 960x600 - root-caused and FIXED (14:25)
+- Measured (real room, fresh wrangler, probe work/browser-tests/lobby-start-hittest.cjs): at 960x600 the queue panel is y72..584 (max-height calc(100%-88px), overflow:auto) but #xOnStart laid out at y828 (stressed 10-player roster: y906) - fully clipped below the panel fold; elementFromPoint at the button center returned null; a coordinate click there hits page content behind the panel (explains the earlier "coordinate click started RETAKE").
+- Fix (index.html, direct region): (1) room controls row (Map/Start/Leave) moved ABOVE the roster list in the DOM; (2) .x-qon__list capped (max-height:min(28vh,180px); overflow-y:auto) so roster growth scrolls internally and can never push the controls; (3) mpUI auto-scrolls the room block into view once, on the room-hidden->shown transition only (mpUI polls at 33ms, so transition-gated to never fight user scrolling).
+- Verified rendered, hit-target level: 960x600 real room AND stressed 10-player roster: Start at y463-507, elementFromPoint = #xOnStart, inViewport, position IDENTICAL across roster sizes. 640x360 (y247-291) and 1280x800 (y663-707) pass the same way. Screenshot /tmp/hittest_960x600.png visually inspected: room code, map select, red Start, Leave and the internally-scrolling roster all visible.
+- Closes the ledger's "NEEDS a 960x600 visual check" item. The sibling item (retake/custom start ignoring __vsLight, 76s+ "Preparing the map...") remains open for the perf pass.
+
+## Mobile lobby reachability pass (14:38) - measurements + tab affordance fix
+- Probe work/browser-tests/lobby-mobile-reach.cjs (offline lobby, no match): measures visibility + elementFromPoint hit targets per tab/START/online controls.
+- 390x844 portrait: #rot gate shown (ROTATE YOUR PHONE TO LANDSCAPE / PLAY IN PORTRAIT) - current unsupported behavior, labeled, not waived.
+- 844x390 landscape: rot gate correctly hidden. Tabs UNRATED..TEAM DEATHMATCH visible+hit-ok; ESCALATION clipped by the tab-strip scroll (rect pokes under the close-button zone) and CUSTOM off-strip - both reachable via strip scroll but with zero affordance (scrollbar-width:none). START card 377..441 below the 390 fold (page scrolls). Online section below fold (scrollable).
+- 640x360: TEAM DEATHMATCH clipped, ESCALATION+CUSTOM off-strip, START below fold - same pattern.
+- FIX: fade mask on .x-qtabs at <=1024px (linear-gradient 90%->99%) so an overflowing strip shows a fading right edge. Verified visually at 844x390 (ESCALATION edge fades before the close button).
+- Left as accepted-scroll behavior (recorded, not fixed): START card + online section below the initial fold at <=390px-tall viewports; strip remains scroll-only (chosen over wrapping in the earlier crush fix to protect vertical space).
+
+## Touch gameplay acceptance (offline DM, emulated touch, 844x390 landscape) - PASS (14:41)
+- Probe work/browser-tests/touch-dm.cjs (hasTouch+isMobile emulation, CDP dispatchTouchEvent, mid asset profile):
+  touch layer on (pointer:coarse true), floating joystick drag moved the player 5.9m in one drag (53m cumulative across directions), right-half drag aimed (camera dir delta 0.68), FIRE tap spent ammo (25->21), joystick visual appears during hold (hidden on release by design).
+- Screenshot /tmp/touch_dm.png inspected: touch buttons (FIRE/JUMP/DUCK/ZOOM/R/INS/PING/F/COMMS/C-Q-E-X), minimap, score, standings, ammo 21|75, hp 100+50 all render at 844x390.
+- Observed, deferred to the coordinated responsive-HUD pass (not chased piecemeal per plan): default ZOOM/FIRE button positions overlap the right-side standings list; the mode subtitle truncates under the top-right buttons.
+- NOTE: emulated touch, not a real phone (standing caveat from the ledger's touch row).
+
+## Tab-strip swipe + tab reach (844x390 touch) - PASS (14:42)
+- Probe work/browser-tests/lobby-tab-swipe.cjs: touch drag on .x-qtabs moves scrollLeft 0->186 (fade-mask affordance backed by real scrolling); after the swipe, ESCALATION rect fully inside the clip with elementFromPoint on the tab; tap activates it (class .on) and the visible pane switches to the Escalation card; CUSTOM tap activates; X closes the queue.
+- Note: the strip resets scrollLeft to 0 when a pane activates (reads after a tap are not the swipe measurement).
+
+## TDM loadout/tier/respawn transitions (offline, 844x390 emulated touch) - PASS (14:59)
+- Probe work/browser-tests/tdm-transitions.cjs, 12/12 checks:
+  - Touch BUY opens the loadout (tap after the loading screen clears; elementFromPoint on the button).
+  - Tier 0 locks correct: Shotguns/Rifles locked "2:00", Snipers/MGs "5:00", all disabled; Sidearms/SMGs free.
+  - Loadout grid at 844x390 (351px dialog, overflow-y:auto): Spectre initially half-clipped; a touch drag on the grid scrolls it into reach (drag verified, not just programmatic), tap equips (pri=Spectre, ammo 30) and the menu auto-closes.
+  - Tier 1 at 2:00 elapsed: toast "Rifles & shotguns unlocked · B"; the OPEN loadout re-renders live (Rifles unlocked); Vandal tap equips (ammo 25).
+  - Tier 2 at 5:00: toast "Snipers & machine guns unlocked · B"; all weapons enabled (Operator tappable).
+  - Death: "You died · respawning" toast, DM.prt 1.5s timer set, loadout closed, death counted. (An earlier probe run read "spectating your team" because hurt and die were split across two evaluates and dmTick set DM.prt in between, gating the wrapper - probe artifact, not a game bug; the real path is one synchronous frame.)
+  - Respawn: hp 100, armor 50, vx/crouch/air reset, spawn protection armed (DM.pp ~1.7s remaining when polled).
+- Harness notes: __vs.die hook added to debug_runtime.js (localhost-gated test hook) to drive the same pDie path bots use; Vandal grid scroll used scrollIntoView after two real touch drags (grid touch-scroll proven on Spectre), tap itself was real.
+
+## Spike touch plant probe - IN PROGRESS (15:02)
+- work/browser-tests/spike-touch.cjs written (hold -> progress, release -> cancel, re-hold -> complete, via touch "4" button). Current blocker: inSite() consults the navmesh plant bitmap (nmPlant over C.plants.rows), not the static SITES table; neither the generic SITES A (-20,-21) nor ASC_SITES A (-31.7,-19.4) is in-zone, so the plant prompt never shows. Fix for next run: expose nmSiteGoals output (verified in-zone world points, already computed at runtime) via a localhost test hook and teleport to siteGoals.A. Touch plant button itself verified present/usable in five (54px, hit-tested).
+
+## Spike plant by touch "4" (offline five, 844x390 emulated touch) - PASS (15:04)
+- Probe work/browser-tests/spike-touch.cjs, 5/5: teleported to the navmesh-verified in-zone point (new __vs.siteGoals test hook; Ascent A goal [45.25,-32.5] - the static SITES/ASC_SITES anchors are NOT in the plant bitmap, which is why the first probe run never saw the prompt), "Hold 4 to plant" prompt shows; touch hold -> "Planting" with pt rising (1.34 at 1.3s); release -> pt resets to 0 and prompt returns (cancel); re-hold -> plant completes (st "plant", pt 4.03). Touch plant button 54px, hit-tested.
+- Screenshot /tmp/spike_planting.png inspected: PLANTING bar filling, "4" button lit while held, SPIKE drop hint, 5v5 HUD intact.
+- Harness: spike assigned to the player (production carrier is a random attacker) and buy phase skipped; the plant/hold/cancel path itself is the production one. Emulated touch, not a real phone.
+
+## Defuse hold/checkpoint/cancel + interrupted-touch safety (offline five, 844x390 emulated touch) - PASS (15:07)
+- Probe work/browser-tests/spike-defuse-cancel.cjs, 6/6:
+  - FIRE hold then CDP touchCancel: fireHeld true -> false (no stuck firing).
+  - Joystick drag then touchCancel: player moved during drag, fully stopped after (no stuck keys).
+  - Touch 4 plants (production path; harness: spike assigned, buy skipped, teleport to siteGoals A).
+  - At the planted spike (harness: FV.atk flipped so the player is the defuser, defender bots moved away): "Hold 4 to defuse" shows; hold -> "Defusing · half" at dt 3.55; touchCancel mid-hold -> dt pinned at 3.5 (half checkpoint kept, no reset, no stuck Digit4); re-hold -> defuse completes (st "done").
+
+## Coordinated short-screen HUD layout (ann/feed/toast/card) - FIX + PASS (15:24)
+- Root cause of the reopened FIRST BLOOD x kill-feed collision: the short-screen .x-ann rules in the early max-height:560px block LOST the cascade to the later .x-ann base block (right:0, top:22%), so the ann band never actually moved; the ann title also renders as flex spans whose 24px gaps push glyphs wide.
+- Coordinated fix (index.html, no single-offset chasing): at max-height:560px the ann owns a reserved top band below the scoreboard strip and right of the minimap (top:64px, left:128px, right:248px; rnd 70px) with banner fonts/gaps sized to the band (ant clamp(16px,3.3vw,28px) gap 8px; rnd clamp(20px,4.4vw,36px); big clamp(22px,4.5vw,36px)); the feed owns the right strip capped at 2 rows (max-height:56px, overflow hidden; kfPush prepends so the cropped row is the oldest); the toast shares the ann's reserved column above the KILLED BY card (bottom:142px, left:0, right:240px, margin auto); card unchanged (bottom:60px).
+- Probe work/browser-tests/hud-coexist.cjs: FIRST BLOOD + feed rows + toast + KILLED BY card coexisting at 568x320 / 640x360 / 1280x720; region rect intersections [], glyph-range (Range.getBoundingClientRect) vs feed/minimap/scores clear (gaps 29/85/202px). __vs.resetFirstBlood test hook re-arms the once-per-round banner per size. Screenshots /tmp/hud_{568x320,640x360,1280x720}.png visually inspected.
+- Known adjacent items, out of this pass's scope: at 568x320 the scoreboard strip (x 93-475) overlaps the minimap (x 8-120) - pre-existing; DM standings (x-dmlb) overlaps the default FIRE touch button at 844x390 coarse - deferred to a touch-default-layout item.
+- Regression: test_short_layout.cjs passes (28 short-screen rules); full work/test_* sweep runs next wake (exceeds the foreground budget).
+
+## Parent review 15:28 - HUD acceptance widened to whole-HUD pixels (next-wake plan)
+- Chosen-element rect metric is not acceptance. Named defects, all in scope: (1) 568/640 contextual #hint visible behind toast/death card again; (2) ELIMINATED banner shows through the KILLED BY card (also 1280) - duplicate conflicting overlays to remove/merge; (3) touch defaults at coarse short screens: II pause on the scoreboard clock, ability pips on the subtitle, DUCK on credits/ammo, COMMS on F, DM standings/feed/button overlap.
+- Plan for next wake: pixel-based verification (rendered screenshot region scanning, not selected rects) at 568x320/640x360/1280x720 + 844x390 coarse; merge ELIMINATED banner into the KILLED BY card; move #hint out of the toast/card stack; reposition touch DEF defaults clear of HUD panels; keep functional touch passes as functional evidence only, separate from visual readiness. Full test sweep results pending (detached runner).
+
+## 15:44 - whole-HUD map probe (work/browser-tests/hud-map.cjs) + overlay dedup landed
+- hud-map.cjs measures EVERY visible fixed HUD panel + touch button rect and reports all pairwise intersections. First map at 568x320 (non-coarse) exposed the full overlap set the parent's 15:28 review flagged: minimap x scores x tb:buy; scores x tb:pause + tb:c/q/e/x; subtitle x tb:c/q/e; credits x tb:fire/duck/reload; ammo x tb:duck.
+- LANDED: (1) vmKill skips the ELIMINATED banner while xKL.on or player dead (streak counting kept); (2) xKLDie clears #xKbn.on + VM.kt so a pending banner cannot bleed through the KILLED BY card (both are .x-kb, co-located at <=560h by design); (3) #game #hint display:none at <=560h (confirmed absent in the probe map).
+- IN PROGRESS: short-landscape touch default layout (DEFS). Constraint map at 568x320: minimap 8-104, scores 35-534/8-40, subtitle 136-432/48-59, credits 442-564/232-264, ammo 472-564/272-316, vitals 8-136/264-312; ann reserved 128-320/64-120; feed strip right side. Right cluster (fire/jump/duck/reload/zoom/swap/c/q/e/x) needs a measured rearrangement that stays clear at BOTH 568x320 and 844x390 coarse (feed top:100 there); pause needs scores-strip margins at <=560h. touch:true + 844x390 hung the renderer once - retry with care; non-touch 568x320 works (30s).
+
+## 16:15 - short-landscape touch HUD: DEFS layout + panel coordination (hud-map-verified, zero overlaps 3/4 sizes)
+- DEFS (<=480h landscape): measured grid vs real panel rects. c/q/e/pause row (pause stays off the death card), zoom/reload/jump/x row, fire right column, duck/swap under, buy/plant/use left column under minimap. ping/inspect/drills default OFF (re-enable via touch edit mode; comms wheel covers callouts).
+- Feed: top:64 at <=560h (was 100, sat on the ability row); 1-row cap at <=480h (2-row kept 481-560h).
+- COMMS (#xCmB): fixed dock left:110px top:124px at <=480h landscape (was left:12px top:62% = ON the F/use button).
+- Toast at <=480h: body-child selector fix (#toast is NOT in #game - first override silently missed; caught by probe). Now bottom-center band top:260px, stacks under the death card, clear of the button grid.
+- DM standings (.x-dmlb) at <=480h landscape: ticker under the feed - leader + you only (header hidden, li:first-child + li.me); full table needs taller screens.
+- tb:buy in DM is FUNCTIONAL (KeyB -> dmMenu free-guns loadout :9777, hark's botfix241 intent) - kept.
+- hud-map.cjs: added comms + toast to the grab list. Result: OVERLAPS [] at 844x390 five, 568x320 DM, 844x390 DM; 568x320 five has only minimap/scores (designed: translucent map under the no-background score strip; pixels verified legible). Pixel-inspected 568x320 five capture: clean.
+- KNOWN TRADEOFFS (parent can veto): feed 1-row at <=480h; DM standings = ticker not table at <=480h; ping default-off at <=480h; 2s sliver overlaps none (pause fully off the card).
+- Still open from 15:28 scope: pixel-check 844 captures + kill/death-scene captures (banner dedup verification), sweep rerun, performance A/B, Lotus.
+
+## 16:30 - whole-HUD acceptance round 2: ALL SIZES ZERO OVERLAPS + death-scene dedup verified
+- Scores strip at <=560h: right-docked + compacted (13px pips, 15px digits, 52px timer) and bpT() shortens to "BUY 0:43" (the nowrap "BUY PHASE 0:43" was the strip width driver). Rules placed after the max-width:820px block (cascade). 568x320: strip [135,8,560,40] clears the minimap markers fully (parent's 16:14 rejection fixed).
+- Toast at <=480h: bone bg + ink text (low-contrast fix), max-width:260 (clears credits), top:260 (stacks under the death card, off the button grid). #toast is a body child - selector fixed.
+- DM standings ticker: tap toggles .x-full (full table) - full standings access preserved on touch (no scoreboard button exists).
+- hud-coexist.cjs: added banner (#xKbn.on) grab, r1 screenshots, SIZES env, r2-banner-is-gone assertion. PASS at 568x320/640x360/1280x720: kill -> FIRST BLOOD + ELIMINATED banner + feed + toast coexist clean; die -> KILLED BY card with banner GONE (no bleed-through; pixels verified 568 + 1280).
+- 1280 coexist flake root-caused as PROBE artifact (waitForFunction TTL race: 900ms "Round start" toast vs ann poll under SwiftShader at 720p; card opacity transition delay > 300ms grab window). Fresh-state 1280 probe (/tmp/banner1280.cjs): banner:true ann:true feedRows:2 at +500ms - desktop banner confirmed working post-dedup.
+- xKLReset coverage verified thorough (render tick :4003, round flow, DM respawn, revive) - dedup's xKL.on gate clears on every real respawn path.
+
+## Lotus overhang re-ground (2026-10-25 ~16:50 EDT) - static source CONTRADICTS the slab reading
+BVH clearance audit (/tmp/lotus-clearance2.cjs: upward rays from every valid lotus nav node
+against collision.bin, floor-noise hits <0.12m ignored): ZERO nodes with ceiling clearance
+< 1.35 m. Spot-check at the ledger cluster (nodes 3628-3631, 3712-3717, x=-12/-11.25,
+z=-7..-11): first ceiling hit at +7.87 m; down-ray shows ONE surface (y 4.93) - no slab at
+~5.3 anywhere in the static source. collision.bin (10-24 23:31) predates the latest world
+bake (10-25 11:48), so build staleness cannot explain the live probe's blocked()=TRUE.
+Lotus runs dynamic props excluded from static collision (X_DYN_RE): xLotusMech rebuilds
+LG.doors / LG.wall / LG.deb (rotating doors, breakable wall, debris); doors open each round
+start, bots sometimes close them. A closed dynamic prop at that spot reads as a "slab" to a
+capsule blocked() probe but is NOT a permanent overhang, so static invalidation of the
+3628-3631/3712 cluster would be WRONG (nodes are walkable when the prop is open/gone).
+Revised hypothesis for the descent-edge failures: one-way drop ledges (terrain steps
+5.34->4.95->4.6->4.29, exceeding the 0.321 climb limit for up-travel only) - the ORIGINAL
+hypothesis in the descent-edge entry. NEXT: live probe at (-12,-9) lotus naming the prop +
+its open/closed state (door/debris), then decide: if a closed-door reading, no nav change;
+if a real static slab appears in the live world, capture its mesh name before any prune.
+
+## Stairs settled-vs-active A/B (2026-10-25 ~16:58 EDT) - contention CONFIRMED on breeze
+Same probe, same machine, same world, same flight (19 nodes +2.97m), live DM, dmN=0:
+- active (12:21 run, walk immediately after match start): 9 up-leg stall samples.
+- settled (new SETTLE=60 env: wait 60 s in-match before walking): 0 stall samples,
+  up leg y 8.16 -> 11.00 goal reached, down leg backHome true, ERRORS [].
+Pre-merge matched-rate baseline was 2 stall samples. Conclusion: the post-merge up-leg
+stall pattern on heavy maps is early-match boot/XVA-settling contention under SwiftShader,
+NOT a motor regression. Probe harness gained SETTLE env (/tmp/diag-stairs-settle.cjs;
+upstream into work/browser-tests/diag-stairs.cjs next pass). Haven + lotus settled
+confirmation runs queued behind it (one chrome at a time).
+
+## Lotus overhang RETRACTED (2026-10-25 ~17:17 EDT) - one-way drop lip, no slab, no nav change
+Live corroboration (lotus DM, doors open, /tmp/lotus-prop.cjs): nmBlocked (standing AND
+crouch capsule) TRUE at all five cluster nodes (3628-3631, 3712). Live bundle raycast
+(server/public/worlds/lotus position/index bins, /tmp/lotus-bundle-ray.cjs): UP rays from
+the nodes hit NO ceiling at all (open sky, rules out any slab in the served world); ground
+within capsule radius r=0.43 is 4.93 at the node but 5.32 on the -x/-z sides - a 0.39 m
+floor lip inside the capsule radius. nmBlocked's shapecast catches that lip below its line
+start (y+r), which reads blocked()=TRUE without any overhang. CLIPS has no lotus entry
+(server/src/motor.cjs:31), ruling out an invisible-wall clip. Stand test: teleported
+capsule settled at y=5.27 on the lip, consistent. CONCLUSION: the 2026-10-25 'slab
+overhang root cause' was a misread of blocked()=TRUE; the cluster is a one-way drop at a
+real terrain step (up impassable at 0.39 m > 0.321 climb limit, down fine). NO nav
+invalidation (bake would remove legitimate standing space; one-way drops are plausibly
+intentional; the runtime per-unit stall breaker covers bots attempting the up leg).
+
+## Parent calibration on stairs A/B + sweep methodology (2026-10-25 ~17:18 EDT)
+- A/B framing: settled-vs-unsettled SUPPORTS the startup-contention hypothesis, it is NOT
+  definitive no-motor-regression proof. Recorded: breeze 9->0, haven 12->1, lotus 15->5
+  stall samples (settled). Residual lotus stalls (5) stay an open bounded item.
+- SETTLE=60 is DIAGNOSTIC ONLY, not a user-facing fix for early-match hitching. Open work
+  item: reduce ACTUAL startup contention (bounded preload/decode scheduling or readiness
+  changes), no invisible agents, preserve main's newer loader/cache behavior, check hark
+  branch overlap FIRST.
+- Lotus terrain-step directionality: unresolved routing-quality limit, not proven
+  intentional. Open.
+- Sweep: a run without a completion marker is INCOMPLETE, not green. Replaced the single
+  long sweep with /tmp/sliced-sweep.sh: 9 deterministic slices, per-test RESULT lines with
+  exit codes + durations, SLICE-DONE markers, resumable via recorded results.
+
+## Startup-contention readiness fix (2026-10-25 ~17:22 EDT, commit pending tests)
+Root cause found for early-match hitching: xGate() fires xPrecompile (full-scene
+synchronous renderer.compile + ability/effect meshes) on the first rAF where
+running && !xPC - under frame starvation (SwiftShader headless, weak devices) that
+multi-second main-thread block lands INSIDE the playable window. Fix (readiness, no
+loader/cache change): window.xWarmShaders bridge (same xPrecompile + one warm
+renderer.render for texture uploads, hidden by the opaque overlay) called from
+xMatchLoad's chain after the match build resolves and before fill()/ready(), with a
+PREPARING status line. xGate fallback unchanged (direct-start/probe paths still compile
+on demand). Measured on breeze, same probe/machine/world, ACTIVE protocol (no settle):
+9 stall samples before -> 4 after (60 s settle diagnostic: 0; pre-merge baseline: 2).
+Meaningful reduction, not elimination - residual early-match work not yet attributed.
+Hark-overlap check: origin/hark-loading exists but has ZERO unique commits; hark-perf
+owns agent cull + nav GC only. Loading/preload space clear. Test: work/test_warm_shaders.cjs.
+
+## 2026-10-25 ~17:44 EDT - Consolidated HUD pass (97f903e, 3899b90) - parent review: 3 simultaneous-state gaps OPEN
+Parent inspected final 844/568/1280 captures: touch layouts materially clearer, 568 main panels
+separated, but whole-HUD is NOT complete. OPEN for the consolidated polish pass (no immediate
+capture loop):
+1. DESKTOP barrier countdown text overlaps the ann's SECONDARY line (e.g. "You > Sage") even
+   though 10px clear of the measured primary ann rect (3899b90 positions off getBoundingClientRect
+   bottom+8). Fix direction: position off the ann's actual glyph bounds (Range API on the ann's
+   text nodes) or a larger margin; verify glyph-vs-glyph, not container-vs-glyph.
+2. DESKTOP ELIMINATED banner overlaps the contextual control hint line (bottom-center hints).
+3. 568 DM: SPAWN PROTECTED chip/panel overlaps the ZOOM touch-button cluster.
+Status labels: all current captures are STATIC FORCED-END-STATE layout evidence only, not natural
+animation/timing behavior. Continue sweep triage + functional/performance queue next.
+
+## 2026-10-25 ~17:45 EDT - Sliced sweep in progress (SIGSTOP caveat for triage)
+/tmp/sliced-sweep.sh: 9 slices, 80 files, `timeout 600` per test, aggregates excluded, per-test
+RESULT rc lines + SLICE-DONE markers in /tmp/sweep-results.log.
+CAVEAT: sweep was SIGSTOPped ~17:26-17:43 for chrome probes. test_client_lifecycle.cjs rc=124
+(1031s wall) in slice 0 spans that freeze - LIKELY SIGSTOP-INDUCED, not a real failure. Re-run it
+individually before treating as a defect. Same lens for any rc=124 whose wall time overlaps a freeze.
+
+## 2026-10-25 ~17:45 EDT - Code read: retake "ignores light gate" suspicion (from 13:07 entry)
+The light gate is SHARED, not per-mode: the map loader applies `__vsLightOn()` at the nmLoadScene
+fork (index.html:12537) for every mode through nmEnsure, retake included. Agent loads are gated
+separately: xvReadyAgents honors `window.__vsNoAgents` (index.html:13303), and only the
+`__vs.light(true)` helper sets BOTH flags (13305). A probe that sets `window.__vsLight=1` directly
+leaves __vsNoAgents undefined -> the ~40s all-12 agent gate still runs, matching the observed
+"retake sat at Preparing the map... 76s+". Alternative contributor: nmCollision BVH build +
+xGmLoad gun-model fetch contention under SwiftShader (unverified). HYPOTHESIS, not proven - verify
+with a retake probe launched via __vs.light(true) (not direct flag set) before any code change.
+
+## 2026-10-25 ~17:49 EDT - Sliced sweep COMPLETE + triage: all green after vm-realm guard
+ALL-SLICES-DONE 17:45:59 (9 slices, 80 files, aggregates excluded, per-test rc captured).
+9 rc!=0 lines triaged, ALL resolved:
+- 8x rc=1 (test_client_online{,_abilities,_buy,_rebind}, test_client_results, test_client_settings,
+  test_offline_realtime, test_touch_spike): root cause = 3899b90's MutationObserver ran unguarded at
+  load in node vm test realms ("MutationObserver is not defined", xerr phase=load). Fixed with a
+  typeof guard + try/catch (browsers unchanged; observer still installed there). All 8 re-run
+  individually GREEN post-fix.
+- test_client_lifecycle.cjs rc=124 (1031s): confirmed SIGSTOP-freeze artifact as suspected -
+  re-run green in 33s (24 matches, six maps, no per-match growth).
+Net: full 80-file sweep green with the guard fix.
+
+## 2026-10-25 ~17:53 EDT - Damage-lag follow-up: per-shot array allocations pooled (test_shot_alloc.cjs)
+shoot() ran `solids.concat(bots.filter(alive).flatMap(body,head))` per bullet and a second
+`.concat(XLDH)` whenever dropped guns were live (xPellets the same) - 3+ arrays, length
+~solids+20, per shot at 9.75-14 rps. Now pooled: xTgtA/xTgtB scratch + xShotTgts() helper,
+scratch Vector2 for setFromCamera. Solids-first layout preserved (the patched
+Raycaster.intersectObjects spatial-cell fast path keys on objs[0]/objs[n-1] === solids ends).
+Regression: work/test_shot_alloc.cjs (source-level, house style). Behavioral: combat_consistency,
+knife_heavy, hit_perf, weapon_resource (from repo root - it reads relative index.html) all green.
+Not browser-profiled: frame-time capture under live combat remains the acceptance gap (sandbox
+SwiftShader saturation), same caveat as 3778dea.
+
+## 2026-10-25 ~17:54 EDT - Retake light-gate VERIFIED: probe artifact, no game bug
+Probe /tmp/retake-light.cjs (offline, 960x600, mid profile): `__vs.light(true)` + FV.pick=ascent +
+`__vs.startRetake()` -> RUNNING mode=retake in 3.3s, xLdOn cleared, hp 100. Flags confirmed
+{light:true,noAgents:true}. The 13:07 "retake sat at Preparing the map... 76s+" observation was the
+probe setting window.__vsLight=1 directly, leaving __vsNoAgents unset so the ~40s all-12 agent gate
+still ran - exactly the 17:45 code-read hypothesis. The light gate itself is shared and works for
+retake. NO game-code change. Screenshot /tmp/retake_light.png. Closes the sibling item from the
+960x600 lobby reachability fix.
+
+## 2026-10-25 ~18:04 EDT - A-kills-B duel DEMONSTRATED (server/test-a-kills-b.js, PASS) + QA_BOTS hook
+The gap from the two-client protocol check (bots always intercepted B; kill credit went to bots) is
+closed deterministically:
+- New fail-closed QA hook QA_BOTS (0-9, gated by QA_TEST_HOOKS:'true', range/malformed-validated,
+  client-unreachable; test-qa-hooks.cjs extended, wrangler.jsonc still clean). simulation.start()
+  caps the bot fill at sim.qaBots when set.
+- server/test-a-kills-b.js (own wrangler on :8788 with QA_CREDITS:5000/QA_BUY_SECONDS:3/QA_BOTS:0):
+  1v1 room, exactly 2 humans, opposite teams (asserted in BOTH snapshots). A buys Spectre+shields,
+  nav-walks to B, fires via inputs. Assertions ALL PASS: B's hp drops in B's OWN snapshot (100->74),
+  B dead in both snapshots, server kills map {"AlphaQA":1,"BravoQA":0}, B's Classic death drop
+  visible to both clients at the death position.
+- Also fixed a test-two-client.js startup race: B connected before A's create finished -> 404
+  "Room not found" (hit 2 of 3 runs). B now connects after A's welcome. Two-client suite re-run
+  after the fix: FULL PASS (phases 1,2,2a,2b,3,4) - its phase 3 still credits a bot by design
+  (that suite asserts death visibility, not credit).
+- Regressions: test-qa-hooks, test-bots, test-spike, test-two-player all green. Wranglers cleaned up.
+Scope label: protocol evidence only - not rendered two-human gameplay acceptance (sandbox-blocked,
+previously acknowledged).
+
+## 2026-10-25 ~18:13 EDT - Consolidated HUD polish: parent's 3 simultaneous-state gaps FIXED + pixel-verified
+(a) Barrier vs ann secondary line: measured the actual capture - the secondary "You > Sage" glyphs
+    OVERFLOW the ann container box (container bottom 223, glyph bottom ~230), which is why the
+    container-rect+8 fix read as overlapping. cdText now positions off xAnnBottom() - the lowest
+    text-node glyph edge via createTreeWalker(SHOW_TEXT)+createRange (guarded for node vm realms) -
+    with a 12px margin, and the MutationObserver now also covers childList/characterData subtree
+    (ann text swaps without a class toggle) plus a 300ms settle re-measure (entry transition is
+    250ms; xAnP pulse animates opacity/shadow only, glyph boxes static). VERIFIED 1280: secondary
+    glyph bottom ~230, barrier glyphs y251-259 = 21px clear. Capture /tmp/coexist_bar_1280x720.png.
+(b) ELIMINATED banner vs control hint: both anchored bottom-center (banner bottom:110px, hint
+    bottom:112px) - collision by construction. Fix: #game:has(.x-kb.on) #hint{opacity:0}, NO
+    transition (a fade freezes mid-value under starved frame clocks - first attempt with
+    transition .15s left the hint visible in the forced capture; instant hide is deterministic).
+    VERIFIED 1280: hint fully gone while the banner shows.
+(c) 568 DM SPAWN PROTECTED chip vs ZOOM cluster: at top:62%/left:50% the chip's top-right corner
+    (x197-371, y198-223) overlapped tb:zoom [326,178,364,216]. Fix: left:36%!important inside the
+    existing max-height:560px block (also fixes the same latent overlap at 844x390). VERIFIED
+    568x320 DM capture: chip x~128-288 y~201-216, 38px clear of zoom's left edge, clear of
+    vitals/COMMS/use/buy. Capture /tmp/hudmap_dm_568x320.png.
+Source invariants pinned: work/test_hud_polish.cjs. vm subset (settings/touch_spike/
+offline_realtime) green. Captures are static forced-end-state layout evidence, as labeled.
+
+## 2026-10-25 ~18:18 EDT - Lotus settled-stall residual LOCALIZED: stair-mouth plateau transition, variance 15->5->2
+Traced run (/tmp/diag-stairs-trace2.cjs logs stall sample positions; MAP=lotus SETTLE=60, dmN=0):
+STAIRS DONE - up y4.90->5.75 reached true, 2 stall samples BOTH at the same point
+(-32.19, 6.08, 19.1): the plateau-approach extension just past the flight top (top node
+-34.5,7.06,19.25), i.e. a ~1s pause at the stair-mouth/plateau step transition, then the capsule
+proceeded on its own. Down leg + backHome true, ERRORS [].
+Settled-run history on the identical flight: 15 -> 5 -> 2 stall samples (same probe, same world) -
+nondeterministic residual load/timing variance, not a fixed geometric trap: every settled run
+reaches the top unaided. Reframed: transient self-recovering stair-mouth pauses under SwiftShader;
+the runtime per-unit stall breaker already covers bots in real matches. Downgraded to a
+smoothness nit; kept open (a real step-up smoothing change needs a proven mechanism first).
+
+## 2026-10-25 ~18:21 EDT - Breeze ACTIVE (unsettled) re-measure with stall tracing: 5 samples
+Same traced probe, breeze, NO settle (walk immediately): 5 stall samples (earlier: 9 pre-warm,
+4 post-warm at 17:22), reached=true, down leg completed after retries but over threshold.
+StallPts: 2 at the flight BASE (-30.5,8.16,-50.5 - the start node, startup contention window),
+1 mid-flight (-27.65,9.06,-47.65), 2 at (-25.11,8.72,-50.85). Spread across the flight, not one
+geometric point -> consistent with residual early-match contention, not a motor/geometry trap.
+Post-warm active readings now 4 and 5 (noise band around the earlier 9). Open work unchanged:
+reduce ACTUAL startup contention (bounded decode/preload scheduling or readiness changes);
+check hark-perf overlap first (it owns agent cull + nav GC).
+
+## 2026-10-25 18:30 - Startup contention: checkShaderErrors off (hark-perf slice)
+- Applied ONLY the renderer checkShaderErrors slice of hark-perf 0e30df5 (xShChk wraps all 5
+  WebGLRenderer creations; ?shaderdebug restores). Kill-icon/LOS-cache/replan parts NOT taken
+  (different surface; hark owns combat-cost work).
+- Mechanism: three reads every program/shader info log after each link when checkShaderErrors is
+  on, forcing synchronous compiles during the startup burst. hark-perf's browser profile measured
+  this at 79% of first frames. That is the load-bearing evidence.
+- Local proxy (breeze active stairs, SwiftShader, 2-core): post-change samples {1, 5, 8} stall
+  samples vs pre-change 4-5 band -> INCONCLUSIVE, run-to-run variance dominates. Not evidence of
+  improvement; not evidence against (mechanism can only reduce main-thread startup work).
+- Test: work/test_shader_check.cjs pins all renderer sites wrapped + escape hatch. Regen
+  byte-identical. VM tests: lifecycle, settings, hud_polish, agent_preload pass.
+- Status: implementation landed; live-startup acceptance stays with the open live-combat
+  profiling row. Remaining on this item: bounded preload/decode scheduling investigation.
+
+## 2026-10-25 18:34 - Match-start longtask profile (diagnostic, SwiftShader sandbox)
+- Probe /tmp/probe-longtasks.cjs (PerformanceObserver longtask, heavy profile, breeze DM,
+  __vs.light(true) + agents(false), 20s window from preDM):
+  marks booted 1948ms, preDM 1985ms, dmStarted 4965ms.
+- ONE discrete burst: a 1548ms monolithic longtask at +1.1s into the DM-start sequence
+  (before dmStarted). With light mode the map scene.gltf load is SKIPPED (nmLoadScene bypassed),
+  so this 1.5s is inside the match-start code path itself (world/nav build + first frames),
+  not asset parsing. This is the remaining startup-contention target.
+- The other 40 longtasks (50-390ms, ~5.9s total) are evenly spaced across the whole window:
+  consistent with SwiftShader software-rasterizer frame cost, a sandbox artifact, NOT
+  decode/parse bursts. Sandbox cannot resolve real-hardware decode contention; do not tune
+  against it.
+- Next concrete step: decompose the 1548ms task with lightweight timing marks around the
+  match-start sub-steps (roster gate, world build, nav activation, first compile) to find the
+  chunkable piece. Any scheduling change must preserve main's loader/cache behavior.
+
+## 2026-10-25 18:42 - Match-start monolith decomposed: fallback BVH build was a probe artifact
+- Probe-side instrumentation (GLTF parse/load, MeshBVH build/deserialize, renderer, cib wrapped
+  with timing; /tmp/probe-decompose.cjs) attributed the 1548ms DM-start longtask:
+  MeshBVHLib.MeshBVH CONSTRUCTOR 1445-1498ms + one cib whose wall time was inflated by the
+  blocked main thread. No other wrapped primitive contributed.
+- Cause: in local probes the game resolves collision from NET.url = 127.0.0.1:8787 (hardcoded
+  for localhost) and no worlds server runs there -> prebuilt bvh*.bin fetch fails -> nmCollision
+  catch path builds the BVH SYNCHRONOUSLY at match start. Production worker returns 200 for
+  /worlds/breeze/meta.json (verified), so real users get MeshBVH.deserialize, not the build.
+  Per parent's caution: the monolith was never evidence of a production start-path cost.
+- Durable fix: serveWorlds() added to work/browser-tests/lib.cjs (serves server/public on 8787
+  with CORS, required since page origin differs); diag-stairs-trace2.cjs moved into
+  work/browser-tests/ and now starts it. Future probes are production-faithful by default.
+- Stairs-stall metric re-read with the worlds server up: runs {9, 13} but 11 of 13 at ONE
+  identical point (-22.78,9.32,-50.41), run1 clustered at two points. Repeated identical stallPts
+  = the walker WEDGES at fixed flight positions, a different signature from spread contention
+  points. Combined with earlier {1,5,8}: this metric cannot resolve startup contention.
+- New hypothesis (recorded, NOT proven): the wedge events look frame-rate dependent - under
+  SwiftShader the effective fps is very low and dt-based step logic may fail to mount stair lips.
+  Same class as the lotus terrain-step routing limit (queue item 2): movement robustness at low
+  fps / stair-lip geometry, not startup scheduling. Folded into item 2's investigation.
+- Residual longtasks after the fix: 55-355ms, evenly spaced, uncovered by any wrapped interval -
+  consistent with (not conclusively) SwiftShader rasterization; THREE prototype wraps did not
+  record (suspected frozen namespace), so first-render compile attribution is still open.
+- Startup-contention item status: mechanism-level slice landed (checkShaderErrors, 247fe1a);
+  the only discrete burst found was a probe artifact, now fixed; no further scheduling change is
+  justified by sandbox evidence. Remaining acceptance lives with the live-profiling ledger row.
+
+## 2026-10-25 18:45 - Stair wedge: player-motor substep hardening landed; wedge persists -> geometry class
+- Player motor (index.html ~2696) moved with ONE blocked() check at the full dt-displaced
+  target; at low fps a long frame jumps deep into stair risers. Substepped at 0.1m, mirroring the
+  existing kLg path precedent (same wall checks). Sound as tunneling hardening independent of
+  the wedge question; cost ~54 blocked checks/s at run speed, negligible.
+- A/B: breeze flight probe WITH the patch still wedged (13 stalls, 7 consecutive samples at
+  (-19.2,10.06,-50.17), then self-recovered, reached=true). The substep hypothesis is NOT
+  confirmed for this symptom. The wedge is NOT the horizontal dt-jump.
+- Wedge signature across runs: clusters at fixed flight positions (-28.5,8.7 / -23.x,9.4 /
+  -22.78,9.32 / -19.2,10.06), self-recovering after ~0.5-1s. Points sit mid-flight where nav
+  rises ~0.156m/edge but GEOMETRY risers may be non-uniform.
+- Current hypothesis (recorded, not proven): one or more breeze flight GEOMETRY risers exceed
+  the +0.32m step-up clearance in the blocked() wrapper (index.html ~12645:
+  floor<=y+.32 && !nmBlocked(...,y+.32)); the axis-split slide (X blocked, Z free) is what
+  eventually un-wedges. Same class as the lotus 0.39m one-way step. If measured risers >0.32m,
+  this is a level-design/step-height question -> parent/user call, not silent code change.
+- Next diagnostic: sample nmHeight along the walked flight line from collision geometry and
+  list actual riser heights; compare against the 0.32 climb limit. Then decide: raise step
+  height (gameplay-feel change), smooth the collision, or accept as level intent.
+
+### 18:48 addendum - riser hypothesis REFUTED by offline collision measurement
+- Parsed models/valorant/maps/breeze/collision.bin directly and raycast-sampled ground height
+  every 0.1m along the exact walked flight line (-30.5,-50.5)->(-17.75,-48.25): NO risers
+  above 0.15m (max 0.000 above threshold; the flight collision is effectively a smooth ramp
+  along the walk line). The >0.32m geometry-riser hypothesis is refuted for breeze.
+- Re-read of wedge evidence: points are consistent within a run (1-2 clusters) but SPREAD along
+  the flight across runs (-28.55 / -26.36 / -23.58 / -22.78 / -20.09 / -19.2). Not one fixed
+  geometry feature. Remaining candidates: (a) lateral contact - the probe walks a BLIND
+  straight line with W held; clipping a rail/wall edge wedges the capsule until the axis-split
+  slide clears it, which is probe behavior, not necessarily a gameplay bug; (b) low-fps
+  ground-snap interaction (untested).
+- Next diagnostic: (1) lateral clearance check at wedge points (triangle distance to the
+  capsule segment above foot level) from collision.bin; (2) re-walk following nav edges with
+  steering instead of a straight line - if steering walks clean, the wedge is a probe artifact
+  and this investigation closes as no-gameplay-bug; if steering also wedges, it's a real
+  movement/collision issue. Player-motor substep hardening stays regardless (06e32f9).
+
+## 2026-10-25 18:54 - Breeze wedge CLOSED (starvation artifact); lotus one-way step: nav directionality filter
+- Breeze wedge RESOLVED as probe artifact: frame counter added to the stairs probe - 10/10
+  stall samples had a FROZEN frame counter (dfc 0-1 over 5 samples), zero true wedges; every
+  completed run reached=true up and back. The "wedging" was SwiftShader main-thread starvation,
+  not movement or geometry. Lateral-clearance check (collision.bin, nmBlocked's exact rule):
+  11/12 wedge points clear, one marginal rail-brush (0.385 vs 0.388) at a starvation sample.
+  Player-motor substepping (06e32f9) stays as tunneling hardening, explicitly NOT the wedge fix.
+  Frame-cost bound, code-verified: n = max(1, ceil(max|d|/0.1)) = 1 at dt<=~37ms (identical work
+  at 60fps); substeps only appear in the low-fps case they protect.
+- Lotus one-way step INTENDED-REACHABILITY evidence (parent asked before any design ask):
+  nav-wide 877 up-impassable (dy>0.321) edges; the source navmesh is undirected (build-world.cjs
+  READS navigation.json), so one-way drop edges exist in both directions and A* planned climbs
+  the motor can never make. BFS: the upper band above the step is climbable-reachable from both
+  spawns via alternate routes (component 8636/9036) - the step is a shortcut drop, standard
+  one-way level design. The step's lower band is a TRUE one-way pocket (every exit climbs
+  >0.321): bots dropping in had a stall-ban loop; honest routing now returns no path.
+- Fix (work/native_maps_runtime.js nmPath expansion): skip edges with dy > 0.321 when PLANNING
+  (terrain untouched, players unaffected - a 0.39m lip is jumpable; bots do not jump-climb).
+  Down edges stay; runtime stall-breaker bans stay as backstop for dynamic geometry.
+- Test: work/test_nav_directionality.cjs EXECUTES the shipped nmPath (brace-matched extraction)
+  against real lotus navigation.json: pocket->upper = honest no-path, both spawns -> upper band
+  and -> all three sites route with every hop within the climb limit, down-across-step routes,
+  cache consistent. test_client_lifecycle 24 matches green. Regen byte-identical twice.
+- PROCESS BUG self-caught: the first version of this patch used a //-comment that swallowed the
+  rest of a minified line (for-body silently commented out). Caught by the functional test before
+  commit; use /* */ when patching minified lines. Regen md5-identical does NOT catch this class.
+- Lotus intent no longer needs a design ask: reachability evidence shows the one-way step is a
+  shortcut drop with alternates preserved. Remaining lotus openness: none on directionality.
+
+## 2026-10-25 19:00 - Nav climb filter CORRECTED to traversal semantics (parent challenge was right)
+- Parent's challenge quantified and confirmed: the endpoint-dy filter in 5836648 was wrong.
+  Offline chord sampling against real collision geometry: endpoint-dy>0.321 edges that are
+  actually SMOOTH RAMPS (walkable): lotus 576, breeze 1285, ascent 807 (later: haven 1598,
+  bind 476, split 1230). True concentrated lips >0.321: only 19/24/6 on the three maps. The
+  endpoint filter mass-rejected walkable routes.
+- Fix (supersedes 5836648's criterion): nmClimbOk delegates to the game's own hop validator
+  nmSegDrop (per-0.18 m ground sampling + capsule blocked test at .45 radius) between the two
+  node positions, memoized per directed edge per map context, consulted only for dy>0.321
+  edges. Ground sampling alone was ALSO insufficient: nmHeight reads the lip as clear (ray
+  band) while the capsule's vertical segment catches the riser face - only the full hop
+  validator matches what nmNext does at walk time.
+- RETRACTED claims from earlier today: (1) "true one-way pocket" - false, it was an artifact
+  of the same endpoint fallacy; the lower band has a 36-hop traversal-verified climbable route
+  out (drops -0.31/-0.33, ramps 0.31-0.35). (2) "877 unclimbable lotus edges" - actually ~19
+  true lips; the rest are ramps. Undirected-source + alternate-route evidence is "consistent
+  with" one-way-drop design, not proof of intent (parent's wording preserved).
+- Authoritative server validation: server motor stepHeight is 0.4 (motor.cjs C.stepHeight),
+  NOT 0.321. Zero nav edges across ALL SIX maps have a concentrated rise >0.41, so the
+  authoritative sim can climb every nav edge - server path.js needs NO filter and server bots
+  were never stalled by these lips.
+- NEW finding (flagged, not changed): client climb limit 0.321 vs server stepHeight 0.4 -
+  a motor-semantics mismatch. Online, server-simmed bots traverse 0.33-0.40 lips the client
+  motor cannot climb; offline both use client semantics. Changing either constant is a
+  gameplay-feel decision - parent/design call, recorded here only.
+- test_nav_directionality.cjs now extracts nmNear/nmHeight/nmBlocked/nmSegDrop/nmClimbOk/
+  nmPath verbatim and runs them against the production prebuilt BVH: ramps kept (14->13,
+  35->54, 55->54 with endpoint dy 0.34-0.37), lips rejected (3713->3628, 3628->3627,
+  3712->3626), pocket routes around in 36 verified hops, spawns->sites green, cache
+  consistent. Lifecycle 24 matches green; regen byte-identical twice.
+
+## 2026-10-25 19:01 - All-six-map climb-filter coverage + first-route cost + pre-warm
+- work/test_nav_allmaps.cjs (new): shipped nmPath/nmClimbOk/nmSegDrop/etc. vs each map's
+  production prebuilt BVH: every spawn->site route on all six maps PASS, every dy>0.321 hop
+  traversal-verified. Cold-memo first-route cost measured per parent's ask: ascent 102ms
+  (223 climb checks), bind 32, breeze 30, haven 8, lotus 4, split 3 (2-core SwiftShader;
+  real hardware lower); warm routes ~0ms via NM.routeCache.
+- Pre-warm added at map commit (native_maps_runtime.js, behind the loading overlay, after
+  NM.routeCache.clear()): both spawns -> every site, so the one-time cold cost lands in the
+  existing "Preparing the map…" phase instead of the first in-match bot plan. Loader/cache
+  behavior unchanged (uses existing nmPath; the spawn->site set is the pre-warm set).
+  Regen byte-identical twice; lifecycle 24 matches green.
+- Confirmed while here: NM.routeCache IS cleared on map commit (line 36) - no cross-map
+  stale-route bug.
+- Remaining mismatch groundwork owed (parent): intended player/server step semantics and
+  actual online correction behavior for the 0.321 client vs 0.4 server climb band, BEFORE
+  any design ask. Constants retained.
+
+### 19:02 parent calibration on pre-warm (carried, not resolved)
+- Do NOT claim real hardware is faster than the sandbox timings (phones may be slower);
+  cold-cost measurements are sandbox-local evidence only.
+- The pre-warm MOVES the known cold cost behind the loading overlay; it does not remove it -
+  the overlay/startup now carries up to ~102ms (sandbox) of route computation per map load.
+  Any route outside the spawn->site pre-warm set (drop-site goals, spike-carrier goals, chase
+  goals) still pays its lazy cold cost in-match. Both stay in the loading/startup acceptance row.
+
+## 19:20 - Sweep green + motor-semantics grounding (0.321 nav gate vs 0.4 motor) RESOLVED as non-issue
+- FULL sliced regression sweep after the nav/motor/probe commits: 85/85 rc=0, all 9 slices, SWEEP-ALL-DONE 19:18:04 (completion marker present; /tmp/sweep-results.log). No regressions.
+- Motor-semantics grounding (parent-directed, research before any design ask):
+  - INTENDED SEMANTICS: the shared motor (vendor/valorant-feel.js = server/src/motor.cjs, byte-identical) owns movement for client local player, offline bots AND server sim. stepHeight 0.4 is deliberate: 99f92a4 (10-25 07:03) "step height 0.36 -> 0.40 m so the Lotus 0.373 m riser is walkable". The nav 0.321 gate is older than the shared motor entirely: nmSegment created with it in e9fa9bc (10-24 21:43, pre-stepHeight), nmSegDrop inherited it in 8f88df6 (10-25 05:59, stepHeight then 0.36). It was never revisited after the 0.4 bump.
+  - ONLINE CORRECTION: no hazard. Remote players/bots are pure 20 Hz snapshot interpolation (100 ms delay), never re-simmed client-side. Local player predicts with the SAME shared motor as the host's authoritative sim (VF.model.step, index.html:12818), so a 0.373 lip is climbable identically on both sides - no reconciliation divergence. Server path.js carries no climb gate at all; host-simmed bots cross anything the 0.4 motor walks, and clients just draw it.
+  - PRACTICAL DIVERGENCE: ZERO on shipped maps. All 453,582 directed nav edges across six maps sampled per-0.18 m along chords: NONE rise in the (0.321, 0.4] band (ascent 73,409 / bind 86,988 / breeze 99,152 / haven 72,991 / lotus 64,996 / split 73,046 edges). Blocked-rejected edges (753-2,654/map) fail the motor's own capsule check too. The stricter nav gate rejects nothing the motor could walk; earlier "client motor can't climb what server bots cross" framing was wrong (0.321 is nav-only, not a motor).
+  - CONCLUSION: constants retained; no user design decision needed. Residual = latent maintenance hazard only: a FUTURE map with a nav chord rising 0.33-0.4 would make offline bots route around player-walkable geometry. Pinned by new work/test_nav_band.cjs (fails loudly if any band edge ever appears, forcing a deliberate constants call then).
+- Corrected the stale nmPath comment (claimed the lotus 0.39 lip is "a climb the motor cannot make" - false since 99f92a4). Regen idempotent (md5 twice identical); pins green: test_nav_directionality, test_nav_allmaps (all six maps, all spawn->site routes traversal-verified).

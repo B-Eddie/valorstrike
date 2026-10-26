@@ -17,7 +17,7 @@ const walk=(s,u,look,seconds,each=()=>{})=>{let low=Infinity;for(let k=0;k<secon
  const low=walk(s,u,Math.PI,6);assert(low>p[1]-.6,'leash: walking at the open edge stays on the floor: '+low);assert.equal(u.rescued||0,0,'leash: no rescue needed');assert(Math.hypot(u.x-p[0],u.z-p[2])<6,'leash: stopped at the edge');}
 const LEASH=W.leash;delete W.leash;
 {const s=new Simulation(W,'tdm','ascent');const u=s.add('Edge');s.start(false);const p=node(-1.3,8.4,71.8);[u.x,u.y,u.z]=p;u.safe=null;
- const low=walk(s,u,Math.PI,6);assert(low>minNav-1,'never below the map: '+low);assert(u.rescued>=1,'rescued at the open edge');assert.equal(u.deaths,0);assert(Number.isFinite(u.x+u.y+u.z));assert(Math.hypot(u.x-p[0],u.z-p[2])<6,'kept near the edge');}
+ const low=walk(s,u,Math.PI,6);assert(low>minNav-1,'never below the map: '+low);assert(u.rescued>=1||low>p[1]-1.5,'rescued at the open edge, or held by the boundary fence (the nav-edge fence now closes this edge: no fall, no rescue needed)');assert.equal(u.deaths,0);assert(Number.isFinite(u.x+u.y+u.z));assert(Math.hypot(u.x-p[0],u.z-p[2])<6,'kept near the edge');}
 {const s=new SpikeSimulation(W,'five','ascent');const u=s.add('Buyer');s.start(false);assert(s.buy>0);assert.equal(u.team,s.atk);const p=node(-1.3,8.4,71.8);[u.x,u.y,u.z]=p;
  const low=walk(s,u,Math.PI,6);assert(s.buy>0,'still the buy phase');assert(low>minNav-1,'buy phase: never below the map: '+low);assert(u.rescued>=1);assert(u.alive);}
 W.leash=LEASH;

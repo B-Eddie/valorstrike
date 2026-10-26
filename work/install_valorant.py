@@ -24,10 +24,17 @@ if qa in s:s=s[:s.index(qa)]+s[s.index(qb)+len(qb):]
 block+='\n'+(root/'work/ability_equip_runtime.js').read_text().rstrip('\n').replace(qa,qa+'\n'+(root/'vendor/sova-bolt.cjs').read_text().rstrip('\n')+'\n'+(root/'vendor/cloudburst.cjs').read_text().rstrip('\n'),1);va='// ---- BOT VARIETY ----';vb='// ---- END BOT VARIETY ----'
 if va in s:s=s[:s.index(va)]+s[s.index(vb)+len(vb):]
 # Bot variety: the shared vendor/bot-routes.cjs (UMD, sets window.BotRoutes) is inlined at the head of the block.
-block+='\n'+(root/'work/bot_variety_runtime.js').read_text().rstrip('\n').replace(va,va+'\n'+(root/'vendor/bot-routes.cjs').read_text().rstrip('\n'),1);wa='// ---- WEAPON SKINS ----';wb='// ---- END WEAPON SKINS ----'
-if wa in s:s=s[:s.index(wa)]+s[s.index(wb)+len(wb):]
-import json
-block+='\n'+(root/'work/skins_runtime.js').read_text().rstrip('\n').replace('/*SKINS_JSON*/null',json.dumps(json.loads((root/'server/src/skins.json').read_text()),separators=(',',':'),ensure_ascii=False));mark='xReady = true; // every mode is initialised; lobby launches may now start them';s=s.replace(mark,block+'\n'+mark)
+block+='\n'+(root/'work/bot_variety_runtime.js').read_text().rstrip('\n').replace(va,va+'\n'+(root/'vendor/bot-routes.cjs').read_text().rstrip('\n'),1);da='// ---- DEBUG HOOKS ----';db='// ---- END DEBUG HOOKS ----'
+if da in s:s=s[:s.index(da)]+s[s.index(db)+len(db):]
+block+='\n'+(root/'work/debug_runtime.js').read_text().rstrip('\n');ka='// ---- WEAPON SKINS ----';kb='// ---- END WEAPON SKINS ----'
+if ka in s:s=s[:s.index(ka)]+s[s.index(kb)+len(kb):]
+block+='\n'+(root/'work/skins_runtime.js').read_text().rstrip('\n').replace('/*SKINS_JSON*/null',(root/'server/src/skins.json').read_text().strip());
+aa='// ---- DOWNLOADED GAME AUDIO ----';ab='// ---- END DOWNLOADED GAME AUDIO ----'
+if aa in s:s=s[:s.index(aa)]+s[s.index(ab)+len(ab):]
+block+='\n'+(root/'work/audio_runtime.js').read_text().rstrip('\n').replace('/*GAME_AUDIO_JSON*/null',__import__('json').dumps(__import__('json').loads((root/'audio/manifest.json').read_text()),separators=(',',':')))
+za='// ---- SKIN FINISHERS ----';zb='// ---- END SKIN FINISHERS ----'
+if za in s:s=s[:s.index(za)]+s[s.index(zb)+len(zb):]
+block+='\n'+(root/'work/finishers_runtime.js').read_text().rstrip('\n');mark='xReady = true; // every mode is initialised; lobby launches may now start them';s=s.replace(mark,block+'\n'+mark)
 if '<script src="models/valorant/manifest.js"></script>' not in s:s=s.replace('<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>','<script src="models/valorant/manifest.js"></script>\n<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>')
 # Find the actual three script tag, which may use an onerror handler.
 if '<script src="models/valorant/manifest.js"></script>' not in s:s=s.replace('<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js"></script>','<script src="models/valorant/manifest.js"></script>\n<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js"></script>')

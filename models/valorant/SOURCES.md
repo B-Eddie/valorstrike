@@ -70,3 +70,11 @@ The weapon-stat snapshot comes from [Valorant API](https://valorant-api.com/v1/w
 ## Map loading artwork
 
 Map-specific Riot splash images downloaded through the public Valorant API map records; per-map source URLs are recorded in maps/*/loading-source.json. Converted to1600x900 JPEG for loading screens and map tiles. Riot Games copyright; fan-project attribution above applies.
+
+## Installed weapon finishes (25 October 2026)
+
+`skins/` contains 86 original VALORANT weapon/knife skins with 138 selectable variants from 18 collections. Geometry, diffuse/normal/emissive/packed ORM textures, material assignments, attachment constraints and corresponding native first-person/weapon animation exports come from the public [Kingdom Archives model gallery](https://kingdomarchives.com/models). Models and textures remain © Riot Games. This fan project is not affiliated with or endorsed by Riot Games.
+
+Each entry in `server/src/skins.json` records its exact model-viewer source URL, local hashed GLB, SHA-256, byte size, variant and local configuration. Icons and official item names come from the public [VALORANT API weapons endpoint](https://valorant-api.com/v1/weapons); each icon retains its original media URL in the catalogue. Materials are packaged as standard glTF PBR, images capped at 1024 pixels, and transparencies preserved. These are downloaded original finishes, rather than the previous invented palette/pattern shaders. Unsupported Ego shader exports are excluded. No custom finisher, paid entitlement, or original game's skin-specific sound system is claimed.
+
+Reproduce with a Pillow-enabled Python: `python work/import_valorant_skins.py` (or `work/build_skins_catalog.py`). Source responses are cached in ignored `work/valorant-source/`. Only selected models load at runtime; this collection is not part of the startup agent preload. New animation files live alongside the existing standard clips in `animations/`.
