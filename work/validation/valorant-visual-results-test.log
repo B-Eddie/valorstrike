@@ -1,0 +1,1 @@
+Results flows: online kill feed (one row per kill, names / weapon / team colours), scoreboard K/D = server for 10 players in 5 + 5 unique rows, one round per round won, match end + leaving the finished server room to the lobby; offline kill feed names the gun in hand, scoreboard, round / match end, Play again resets, Lobby leaves; no page exceptions

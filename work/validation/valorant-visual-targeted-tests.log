@@ -1,0 +1,19 @@
+PASS test_hud_native.cjs
+PASS test_hud_valorant.cjs
+PASS test_hud_polish.cjs
+PASS test_short_layout.cjs
+PASS test_combat_report_layout.cjs
+PASS test_render_quality.cjs
+PASS test_minimap.cjs
+PASS test_minimap_visibility.cjs
+PASS test_crosshair_error.cjs
+PASS test_loadout.cjs
+PASS test_round_timers.cjs
+PASS test_touch_layout.cjs
+PASS test_skye_hud.cjs
+PASS test_reyna_hud.cjs
+PASS test_spectate.cjs
+PASS test_online_spike_hud.cjs
+PASS test_client_online_buy.cjs
+PASS test_client_results.cjs
+{"passed":18,"failed":[],"total":18}

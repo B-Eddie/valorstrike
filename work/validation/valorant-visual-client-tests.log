@@ -1,0 +1,12 @@
+PASS test_ability_equip.cjs
+PASS test_agent_assets.cjs
+PASS test_agent_cull.cjs
+PASS test_agent_preload.cjs
+PASS test_air_spread.cjs
+PASS test_ally_acquire.cjs
+PASS test_anchor.cjs
+PASS test_blades_intent.cjs
+PASS test_bot_variety.cjs
+PASS test_bot_variety_routes.cjs
+PASS test_client_abilities.cjs
+he unrelated, long-running client ability simulation; this is not a complete suite result. See valorant-visual-targeted-tests.log for the completed tests covering this change.

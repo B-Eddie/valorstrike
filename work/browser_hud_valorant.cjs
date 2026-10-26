@@ -50,7 +50,7 @@ const SIZES=(process.env.SIZES||'1280x720,640x360,390x844').split(',').map(s=>s.
  await frames(3);await page.waitForTimeout(600);await capture('action');
  const m=JSON.parse(await measure());check('kill feed: player headshot row has the headshot mark, wallbang row has the wallbang mark',m._feed.some(t=>/\[HS\]/.test(t))&&m._feed.some(t=>/\[WB\]/.test(t)),JSON.stringify(m._feed));
  check('portraits: ten agent tiles, dead ones marked, own ult ready marked gold',m._pp.replace(/[-*]/g,'').length===10&&/-/.test(m._pp)&&/\*/.test(m._pp),m._pp);
- check('bundled HUD fonts loaded (no network fonts)',JSON.parse(fonts).every(Boolean)&&/VS Hud/.test(m._hpFont),fonts+' '+m._hpFont);
+ check('bundled title fonts loaded and native HUD uses system sans (no network fonts)',JSON.parse(fonts).every(Boolean)&&/Arial/.test(m._hpFont),fonts+' '+m._hpFont);
  await X('window.__kfHold=0;1');
  // 3. round end (banner, its hide timer and the next-round timer held for the three captures):
  // the remaining bots die -> ROUND WIN banner

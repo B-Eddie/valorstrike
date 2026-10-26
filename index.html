@@ -166,7 +166,7 @@ button{font:inherit;text-transform:inherit;letter-spacing:inherit;cursor:pointer
 #xBoard{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(640px,94vw);z-index:15;display:none;padding:18px 22px;pointer-events:none;border-top:3px solid var(--red)}
 #xBoard.on{display:block}
 /* Valorant-style Tab scoreboard: centered panel, score bar, two fixed-column team tables */
-#xBoard{width:min(980px,calc(100vw - 24px));max-height:calc(100vh - 24px);overflow:hidden;border:0;border-radius:6px;padding:14px 16px 6px;background:rgba(15,25,35,.92);color:#ece8e1;box-shadow:0 18px 48px rgba(0,0,0,.45)}
+#xBoard{width:min(980px,calc(100vw - 24px));max-height:calc(100vh - 24px);overflow:hidden;border:0;border-radius:0;padding:14px 16px 6px;background:rgba(14,24,29,.58);color:#f5f8f6;box-shadow:none;font-family:Arial,sans-serif;text-transform:none;letter-spacing:.02em}
 #xBoard .x-sbtop{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:16px;padding:0 4px 12px;margin-bottom:10px;border-bottom:1px solid rgba(236,232,225,.12)}
 #xBoard .x-sbmap{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #xBoard .x-sbmap b{display:block;font-size:18px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;line-height:1.2}
@@ -174,21 +174,23 @@ button{font:inherit;text-transform:inherit;letter-spacing:inherit;cursor:pointer
 #xBoard .x-sbsc{display:flex;align-items:baseline;gap:14px;font-weight:900;font-variant-numeric:tabular-nums;line-height:1}
 #xBoard .x-sbsc b{font-size:44px}#xBoard .x-sbsc span{font-size:28px;opacity:.45}
 #xBoard .x-sbsc .tl{color:#3fd6c5}#xBoard .x-sbsc .rd{color:#ff4655}
-#xBoard .x-sbt{--sbc:#3fd6c5;width:100%;table-layout:fixed;border-collapse:collapse;border-left:3px solid var(--sbc);margin:0 0 12px;font-size:14px;font-weight:600}
-#xBoard .x-sbt.en{--sbc:#ff4655}
-#xBoard .x-sbt col.ag{width:56px}#xBoard .x-sbt col.ul{width:104px}#xBoard .x-sbt col.n{width:52px}#xBoard .x-sbt col.w{width:72px}#xBoard .x-sbt col.ec{width:84px}
-#xBoard .x-sbt th{height:28px;padding:0 10px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--sbc);text-align:right;white-space:nowrap;border:0;opacity:1;background:rgba(236,232,225,.04)}
-#xBoard .x-sbt td{height:44px;padding:0 10px;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border:0;font-variant-numeric:tabular-nums;background:rgba(236,232,225,.06)}
-#xBoard .x-sbt tbody tr:nth-child(even) td{background:rgba(236,232,225,.025)}
+#xBoard .x-sbt{--sbc:#3fd6c5;width:100%;table-layout:fixed;border-collapse:collapse;border-left:0;margin:0 0 18px;font-size:14px;font-weight:600}
+#xBoard .x-sbt.en{--sbc:#ef8b91}
+#xBoard .x-sbt col.ag{width:56px}#xBoard .x-sbt col.ul{width:104px}#xBoard .x-sbt col.n{width:52px}#xBoard .x-sbt col.w{width:140px}#xBoard .x-sbt col.ec{width:90px}#xBoard .x-sbt col.pg{width:48px}
+#xBoard .x-sbt th{height:28px;padding:0 10px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#eef5f4;text-align:right;white-space:nowrap;border:0;opacity:.85;background:rgba(12,21,25,.65)}
+#xBoard .x-sbt td{height:44px;padding:0 10px;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border:0;font-variant-numeric:tabular-nums;background:color-mix(in srgb,var(--sbc) 30%,rgba(12,23,28,.8));border-bottom:1px solid rgba(205,239,229,.08)}
+#xBoard .x-sbt.en td{background:color-mix(in srgb,var(--sbc) 35%,rgba(25,17,23,.8))}
+#xBoard .x-sbt tbody tr:nth-child(even) td{background:color-mix(in srgb,var(--sbc) 34%,rgba(12,23,28,.8))}
+#xBoard .x-sbt.en tbody tr:nth-child(even) td{background:color-mix(in srgb,var(--sbc) 39%,rgba(25,17,23,.8))}
 #xBoard .x-sbt .ag,#xBoard .x-sbt .ul{text-align:center}#xBoard .x-sbt .nm{text-align:left}
 #xBoard .x-sbt td.ag{padding:0 6px}
-#xBoard .x-sbt tr.me td{background:rgba(255,201,64,.14);color:#fff3cf}
-#xBoard .x-sbt tr.me td:first-child{box-shadow:inset 3px 0 0 #ffc940}
-#xBoard .x-sbt tr.dead td{opacity:.45}
-#xBoard .x-ag{width:30px;height:30px;border-radius:50%;font-size:14px;vertical-align:middle}
+#xBoard .x-sbt tr.me td{background:rgba(188,231,218,.32);color:#fff}
+#xBoard .x-sbt tr.me td:first-child{box-shadow:inset 3px 0 0 #b8f4de}
+#xBoard .x-sbt tr.dead .x-ag{filter:grayscale(1);opacity:.45}
+#xBoard .x-ag{width:36px;height:36px;border-radius:0;font-size:14px;vertical-align:middle}
 #xBoard .x-sbp{display:inline-flex;gap:3px;vertical-align:middle}
 #xBoard .x-sbp i{width:7px;height:7px;border-radius:50%;border:1px solid rgba(236,232,225,.45)}
-#xBoard .x-sbp i.on{background:#ffe14d;border-color:#ffe14d}
+#xBoard .x-sbp i.on{background:#e5fff6;border-color:#e5fff6}
 @media(max-width:899px){#xBoard .x-sbt .w,#xBoard .x-sbt .ec{display:none}#xBoard .x-sbsc b{font-size:36px}}
 /* Short screens (640x360 landscape): the 44 px rows put the enemy table below the board's max-height (overflow hidden), so
    only your own team showed. Compact rows so header + both five-row tables fit in 100vh - 24px (>= 336 px). */
@@ -508,7 +510,7 @@ body.x-cbh .x-mvp.en{border-left-color:#ff9f1c}
 #game #jX.rdy{background:rgba(255,225,77,.14)!important}
 #game #jX em{left:0;right:0;top:auto;bottom:5px;font-size:0;display:flex;justify-content:center;gap:3px}
 #game .x-pip{width:6px;height:6px;transform:rotate(45deg);border:1px solid rgba(255,255,255,.6);display:inline-block}
-#game .x-pip.on{background:#ffe14d;border-color:#ffe14d}
+#game .x-pip.on{background:#e5fff6;border-color:#e5fff6}
 /* bottom-right ammo */
 #game .x-br{right:28px;bottom:18px;height:62px;box-sizing:border-box;padding:0 18px;background:rgba(10,16,22,.72)!important;border:0;color:#fff;gap:8px}
 #game .x-br svg{display:none}
@@ -954,6 +956,87 @@ body.x-cbh #game{--ha:#3d8bff;--he:#ff9f1c}
 .x-spray__row button.on { border-color: var(--text-primary); box-shadow: inset 0 0 0 1px var(--text-primary); }
 .x-spray__row canvas { width: 48px; height: 48px; }
 </style>
+<style id="xHudNative">
+/* Native in-match visual treatment. Assets are local; no fetch or render-loop work. */
+#game{--ha:#75cbb2;--he:#e8848b;--hf:Arial,"Helvetica Neue",sans-serif;--ht:"VS Title","Arial Narrow",sans-serif}
+#game .hud.x-top{filter:drop-shadow(0 1px 2px #0008)}
+#game .x-top .x-al,#game .x-top .x-en{background:linear-gradient(180deg,rgba(11,24,29,.32),transparent)!important;clip-path:none}
+#game .x-top .x-pp i,#game .x-top .x-en .x-pp i,#game .x-top .x-pp i.ult{background:var(--portrait,linear-gradient(135deg,#567c85,#24343d)) center/cover no-repeat!important;box-shadow:none}
+#game .x-top .x-pp i::before{content:""}
+#game .x-top .x-pp i::after{left:0;right:0;bottom:-4px;height:2px;background:var(--ha)}
+#game .x-top .x-en .x-pp i::after{background:var(--he)}
+#game .x-top .x-pp i.ult::after{background:#fff4ac;box-shadow:0 0 4px #fff4ac}
+#game .x-top .x-sc b,#game .x-top .x-sc b:first-child,#game .x-top .x-sc b:last-child{clip-path:none;background:transparent!important;color:#fff!important;font-weight:500}
+#game .x-top .x-tm{font-weight:400}
+#game .x-top .x-tm::before{background:rgba(12,22,27,.45);clip-path:polygon(0 0,100% 0,87% 100%,13% 100%)}
+#game .x-top::after{display:none}
+#game .x-top.x-bpo::before{font-family:var(--ht);font-size:44px;letter-spacing:.04em;line-height:1.15;top:100%;margin-top:65px;padding:8px 45px 20px;background:linear-gradient(90deg,transparent,rgba(20,32,36,.42),transparent);border-top:1px solid #ffffff70;border-bottom:1px solid #ffffff70}
+#game .x-top.x-bpo::after{display:block;content:"PRESS B TO BUY";position:absolute;left:50%;top:100%;transform:translateX(-50%);width:auto;height:auto;margin:124px 0 0;background:none;font:10px Arial,sans-serif;letter-spacing:.12em;white-space:nowrap}
+#game #xSub{display:none}
+body:has(#game .x-top.x-bpo) #xAnn.buy{display:none!important}
+#game .x-top.x-bpo~#xSub{opacity:0}
+#game .x-bl .x-hp,#game .x-br #xMag{font-family:Arial,sans-serif;font-weight:400;font-size:38px}
+#game .x-br em::before{width:1px;height:22px;background:#ffffff90;transform:rotate(12deg);margin:0 5px}
+#game .x-br .x-rs{font:400 18px Arial,sans-serif;opacity:.75}
+#game .x-br small{font-size:10px;letter-spacing:.08em}
+#game .x-vb i{height:3px!important}
+#game .x-ab .x-as .x-pp s.on{background:#fff}
+#game .x-ab .x-as b{font:10px Arial,sans-serif;color:#fff}
+#game .x-ab .x-as .x-aic{stroke-width:1.5}
+#game .x-ab #jX.rdy .x-ai{filter:drop-shadow(0 0 4px #fff9)}
+#game #feed .kf--k .kf__n{font-family:Arial,sans-serif;font-size:12px;text-transform:none;font-weight:600;letter-spacing:0;min-height:28px}
+#game #feed .kf--k>.kf__n:first-child::before,#game #feed .kf--k>.kf__n:nth-child(3)::after{content:"";background:var(--portrait,linear-gradient(135deg,#567c85,#24343d)) center/cover no-repeat;width:28px;height:28px}
+#game #feed .kf--k .kf__w>b{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+#game #feed .kf--k.kf--mine{box-shadow:inset 0 0 0 1px #b7f5df}
+#game #feed .kf--k.kf--died{box-shadow:inset 0 0 0 1px #fda3aa}
+#game #xMap{background:rgba(15,23,27,.22);border:0;box-shadow:none}
+#game #hint{font:10px Arial,sans-serif;letter-spacing:.03em;text-transform:none}
+#game #xCr{font-family:Arial,sans-serif;font-size:14px}
+#game #defuse{background:rgba(14,25,29,.55);font:12px Arial,sans-serif;border-top:1px solid #ffffff70}
+#game #defuse .bar i{background:#ecfff6;box-shadow:none}
+#xBoard .x-ag img,#xResB .x-ag img{display:block;width:100%;height:100%;object-fit:cover}
+#xBoard .x-sbload{display:flex;align-items:center;justify-content:flex-end;gap:12px;color:#f2f8f5}
+#xBoard .x-sbload svg{width:76px;height:24px;flex:none}
+#xBoard .x-sbload .x-sbshield{width:15px;height:19px}
+#xBoard .x-sbunknown{opacity:.4}
+#xBoard .pg{font-size:11px;opacity:.7}
+#xBoard .x-sbtop{border-bottom:1px solid #e5fff62b}
+#xBoard .x-sbmap b{font-weight:500;font-size:14px}
+#xBoard .x-sbsc b{font:400 36px Arial,sans-serif}
+#xBoard .x-sbsc .tl{color:var(--ha,#b5e4d5)}
+#xBoard .x-sbp i{border-radius:0;transform:rotate(45deg);width:5px;height:5px;margin:0 1px}
+#xBoard .x-rh i{border-radius:0;background:transparent;border-bottom:2px solid currentColor}
+#xBoard .x-rh i.w{color:#9fe0cb}#xBoard .x-rh i.l{color:#ed9199}
+#xBuy{font-family:Arial,sans-serif!important;--xb-t:#a9eed1!important;--xb-c:#a9eed1!important;background:rgba(12,25,28,.88)!important;backdrop-filter:blur(3px)!important}
+#xBuy .xb-card>button[data-n]{border-radius:0;background:rgba(156,191,182,.12);box-shadow:inset 0 0 0 1px #ffffff12;font-weight:500}
+#xBuy .xb-card>button[data-n]:hover,#xBuy .xb-card>button[data-n]:focus-visible{background:rgba(153,223,194,.3);box-shadow:inset 0 0 0 1px #bdf6de}
+#xBuy .xb-card>button.on{background:rgba(98,164,137,.55);box-shadow:inset 0 0 0 1px #bdf6de;border-left-color:#bdf6de}
+#xBuy .x-bc h4{color:#fff;border-bottom:0;font-weight:400;letter-spacing:.08em}
+#xBuy .x-bh{border-bottom-color:#ffffff40}
+#xBuy .x-bc.on h4{border-bottom-color:#bdf6de}
+#xObs .x-oba{background:var(--portrait) center/cover no-repeat!important;color:transparent;border:0;border-radius:0}
+#xObs{font-family:Arial,sans-serif;font-size:11px;letter-spacing:.02em;text-transform:none}
+#xObs .x-obr.me .x-obn{color:#c4f2e0}
+#xObs .x-obcr{color:#e3f4ec}
+#xAnn.rnd .x-ant{letter-spacing:.06em;font-size:clamp(40px,6vw,76px);border-top:1px solid currentColor;border-bottom:1px solid currentColor;background:linear-gradient(90deg,transparent,rgba(13,29,30,.65),transparent);padding:10px 48px}
+@media(min-width:821px) and (pointer:fine){
+ #game .hud.x-top{top:10px}
+ #game .x-top .x-al{min-width:clamp(150px,20vw,330px);padding:0 12px}
+ #game .x-top .x-pp{gap:12px}
+ #game .x-top .x-pp i{width:32px;height:32px}
+ #game .x-top .x-tm{min-width:100px;font-size:26px}
+ #game #xSub{top:62px}
+ #game .x-top.x-bpo~#xSub{top:190px}
+ #game .hud.x-bl{bottom:18px}
+ #game .hud.x-ab{bottom:18px}
+ #game .hud.x-br{bottom:22px}
+}
+@media(max-width:899px){#xBoard .x-sbt col.pg,#xBoard .x-sbt .pg{display:none}}
+@media(max-width:600px){#xBoard .x-sbt col.ag{width:34px}#xBoard .x-sbt col.ul{width:68px}#xBoard .x-sbt col.n{width:30px}#xBoard .x-sbt td,#xBoard .x-sbt th{padding-left:4px;padding-right:4px}#xBoard .x-sbp{gap:1px}#xBoard .x-sbp i{width:3px;height:3px}#xBoard .x-sbt th{font-size:9px}}
+@media(max-height:560px){#xBoard .x-sbsc b{font-size:22px}#game .x-top.x-bpo::before{margin-top:20px;font-size:24px;padding:4px 26px 12px}#game .x-top.x-bpo::after{margin-top:56px;font-size:8px}#game .x-bl .x-hp,#game .x-br #xMag{font-size:28px}#xAnn.rnd .x-ant{font-size:30px;padding:4px 24px}}
+@media(max-width:480px){#game .x-top.x-bpo::before{margin-top:28px;font-size:25px;padding:5px 26px 14px}#game .x-top.x-bpo::after{margin-top:68px;font-size:8px}#game .x-bl .x-hp,#game .x-br #xMag{font-size:28px}#game #feed .kf--k .kf__n{font-size:10px;min-height:22px}#game #feed .kf--k>.kf__n:first-child::before,#game #feed .kf--k>.kf__n:nth-child(3)::after{width:20px;height:22px}}
+</style>
+
 </head>
 <body>
 <style>
@@ -1964,7 +2047,7 @@ const SFX = {
   wall() { if (!sOk()) return; sTn(0, 70, 240, 0.7, "sawtooth", 0.12, 0, 0.1); sNz(0, 0.8, "lowpass", 300, 900, 0.35, 0, 1); },
   heal() { if (!sOk()) return; [660, 880, 1320].forEach((f, i) => sTn(i * 0.1, f, f, 0.45, "sine", 0.15, 0, 0.01)); },
   ult() { annc("ULTIMATE READY", 1800); if (!sOk()) return; [880, 1320, 1760, 2640].forEach((f, i) => sTn(i * 0.08, f, f, 0.6, "triangle", 0.12, 0, 0.01)); },
-  buy() { annc("BUY PHASE", 2000, { s: "buy" }); whoosh(); },
+  buy() { annc("BUY PHASE", 2000, { s: "buy", c: "buy" }); whoosh(); },
   lowT(u) { if (!sOk() || !sCap("lowT", 1, 0.5)) return; const f = u ? 1480 : 1180; sTn(0, f, f, 0.05, "square", 0.06); sTn(0, f * 1.5, f * 1.5, 0.04, "sine", 0.04); }, // last-10-s round clock tick, higher in the last 5 s
   roundStart() { if (!sOk()) return; [392, 523, 784].forEach((f, i) => sTn(i * 0.07, f, f * 1.01, 0.35, "triangle", 0.13, 0, 0.01)); sNz(0, 0.4, "bandpass", 900, 2600, 0.12, 0, 1.5); }, // barrier drop stinger (original)
   defHalf() { if (!sOk()) return; sTn(0, 1320, 1320, 0.08, "sine", 0.14); sTn(0.09, 1760, 1760, 0.12, "sine", 0.12); }, // half-defuse checkpoint chime
@@ -3015,9 +3098,9 @@ const KF_AB = { // ability + spike icons for the kill feed (inner SVG, 40 x 14)
 };
 function kfeed(k, v, hs, w, wbo) { // wbo: server wallbang flag (online kill event 6th field); offline uses xWB from shoot()
   w = w || kfWeap(k); const wb = wbo != null ? !!wbo : !!(k === "You" && xWB.on && performance.now() - xWB.t < 250); xWB.on = false; const d = kfGet("kf kf--k" + (k === "You" ? " kf--mine" : "") + (v === "You" ? " kf--died" : ""));
-  const nm = (s, n) => { s.className = "kf__n " + (kfBlue(n) ? "kf--blue" : "kf--red"); let ag = null; try { const u = n === "You" ? null : kfAll().find((x) => x && x.name === n); ag = u ? xAg(u) : null; } catch (e) {} s.textContent = ag && ag !== n && n !== "Bot " + ag ? n + " · " + ag : n; s.title = ag || ""; s.style.display = ""; const pa = n === "You" ? (J && J.pick) || "Jett" : ag; if (pa && kfKnown(n)) { s.dataset.a = String(pa)[0].toUpperCase(); s.style.setProperty("--c", mmAgC(String(pa))); } else { delete s.dataset.a; s.style.removeProperty("--c"); } };
+  const nm = (s, n) => { s.className = "kf__n " + (kfBlue(n) ? "kf--blue" : "kf--red"); let ag = null; try { const u = n === "You" ? null : kfAll().find((x) => x && x.name === n); ag = u ? xAg(u) : null; } catch (e) {} s.textContent = ag && ag !== n && n !== "Bot " + ag ? n + " · " + ag : n; s.title = ag || ""; s.style.display = ""; const pa = n === "You" ? (J && J.pick) || "Jett" : ag; if (pa && kfKnown(n)) { s.dataset.a = String(pa)[0].toUpperCase(); s.style.setProperty("--c", mmAgC(String(pa))); const src = hudPortrait(pa); if (src) s.style.setProperty("--portrait", "url(" + src + ")"); else s.style.removeProperty("--portrait"); } else { delete s.dataset.a; s.style.removeProperty("--c"); s.style.removeProperty("--portrait"); } };
   const wp = d.xW, key = w + (hs ? "|hs" : "") + (wb ? "|wb" : ""); wp.title = w + (wb ? " · wallbang" : ""); wp.style.display = "";
-  if (wp.xK !== key) { wp.xK = key; wp.innerHTML = (KF_AB[w] ? '<svg viewBox="0 0 40 14" aria-hidden="true">' + KF_AB[w] + "</svg>" : /Knife|Blade/.test(w) ? KF_KNIFE : w === "Ability" ? "" : KF_GUN) + '<b></b>' + (wb ? KF_WB : "") + (hs ? KF_HS : ""); const wn = wp.querySelector("b"); if (wn) wn.textContent = w; }
+  if (wp.xK !== key) { wp.xK = key; wp.innerHTML = (KF_AB[w] ? '<svg viewBox="0 0 40 14" aria-hidden="true">' + KF_AB[w] + "</svg>" : /Knife|Blade/.test(w) ? KF_KNIFE : w === "Ability" ? "" : typeof BUY_SIL !== "undefined" && BUY_SIL[w] ? '<svg viewBox="0 0 64 20" aria-hidden="true"><path d="' + BUY_SIL[w] + '" fill="currentColor"/></svg>' : KF_GUN) + '<b></b>' + (wb ? KF_WB : "") + (hs ? KF_HS : ""); const wn = wp.querySelector("b"); if (wn) wn.textContent = w; }
   nm(d.xA, k); nm(d.xB, v); d.xB.classList.remove("kf__n--at"); // pooled rows
   try { if (v !== "You" && kfBlue(v) && typeof xLoc === "function") { const u = kfAll().find((x) => x && x.name === v), at = u && u.g ? xLoc(u.g.position.x, u.g.position.z) : ""; if (at) { d.xB.textContent += " died at " + at; d.xB.classList.add("kf__n--at"); } } } catch (e) {}
   kfPush(d);
@@ -9874,7 +9957,7 @@ function xHud() {
     if (xHud.pe !== ke) { xHud.pe = ke; $("xPE").innerHTML = ph(ke); }
     if (mode === "five") { const nw = performance.now(), ch = xHud.pk0 !== ka + ke; if (ch || !(nw - (xHud.pt || 0) < 250)) { xHud.pt = nw; xHud.pk0 = ka + ke; try { // HUD v2: Valorant portraits (agent colour + initial; grey when dead, gold when the ult is ready), 4 Hz or on a death
       const T = sbTeams(), pt = (L) => { let k = "", h = ""; for (const n of L) { const me = n === "You", u = me ? null : sbUnit(n), al = me ? player.hp > 0 : !!(u && u.alive && u.hp > 0); let ag = n; try { ag = me ? J.pick || "Jett" : (u && xAg(u)) || (typeof xAgOf === "function" ? xAgOf(n) : n) || n; } catch (e) {} ag = String(ag || "?"); const ul = sbUlt(n), ur = al && ul[1] > 0 && ul[0] >= ul[1];
-        k += ag + (al ? 1 : 0) + (ur ? 1 : 0) + ","; h += `<i class="${al ? "" : "dead"}${ur ? " ult" : ""}" style="--c:${mmAgC(ag)}" data-a="${ag[0].toUpperCase()}" title="${ag.replace(/[<>&"]/g, "")}${ur ? " · ultimate ready" : ""}"></i>`; } return [k, h]; };
+        k += ag + (al ? 1 : 0) + (ur ? 1 : 0) + ","; h += `<i class="${al ? "" : "dead"}${ur ? " ult" : ""}" style="--c:${mmAgC(ag)};${hudPortrait(ag) ? "--portrait:url(" + hudPortrait(ag) + ")" : ""}" data-a="${ag[0].toUpperCase()}" title="${ag.replace(/[<>&"]/g, "")}${ur ? " · ultimate ready" : ""}"></i>`; } return [k, h]; };
       const A = pt(T[0]), E = pt(T[1]); if (ch || xHud.p5a !== A[0]) { xHud.p5a = A[0]; $("xPA").innerHTML = A[1]; } if (ch || xHud.p5e !== E[0]) { xHud.p5e = E[0]; $("xPE").innerHTML = E[1]; } } catch (e) {} } }
     let xe = xHud.em; if (!xe || !xe.parentNode || xe.parentNode !== $("jX")) xe = xHud.em = document.querySelector("#jX em"); // cached: no selector match every frame
     const uu = xe && jOn() ? K().u : 0, mt = uu ? [Math.min(J.ult, uu) + "/" + uu, Math.min(J.ult, uu), uu] : null; // pips driven by the ult charge itself
@@ -9901,7 +9984,18 @@ function xHud() {
 function sbScore() { try { if (mode === "five") return [FV.you, FV.them, F_MAPN[FV.map] || "Ascent"]; if (mode === "duel") return [du.you, du.them, "Operator Duel"]; if (mode === "rifle") return [RF.you, RF.them, "Ascent"]; } catch (e) {} return [score.you, score.bots, "Ascent · B Site"]; }
 function sbAcs(p) { const s = sbScore(), r = Math.max(1, s[0] + s[1]); return Math.round(((p.dmg || 0) + p.k * 50 + (p.a || 0) * 25) / r); }
 function sbTeams() { const MT = mode === "five" ? F_MATES : MATES; return [["You"].concat(MT.filter((n) => SB[n])), Object.keys(SB).filter((n) => n !== "You" && MT.indexOf(n) < 0)]; }
-function sbTile(n) { let ag = n; try { if (n === "You" && J.pick) ag = J.pick; else { const u = kfAll().find((x) => x && x.name === n); if (u) ag = xAg(u) || ag; } } catch (e) {} let h = 0; for (const c of ag) h = (h * 31 + c.charCodeAt(0)) % 360; return `<span class="x-ag" style="background:hsl(${h} 45% 42%)">${ag[0].toUpperCase()}</span>`; }
+function hudPortrait(ag) { const a = String(ag || "").toLowerCase(); return /^(jett|phoenix|sova|sage|reyna|raze|killjoy|omen|skye|chamber|breach|cypher)$/.test(a) ? "models/valorant/agents/portraits/" + a + ".png" : ""; }
+function hudEscape(v) { return String(v == null ? "" : v).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function sbTile(n) { let ag = n; try { if (n === "You" && J.pick) ag = J.pick; else { const u = kfAll().find((x) => x && x.name === n); if (u) ag = xAg(u) || ag; } } catch (e) {} const src = hudPortrait(ag); return `<span class="x-ag" title="${hudEscape(ag)}">${src ? `<img src="${src}" alt="${hudEscape(ag)}" draggable="false">` : hudEscape(String(ag)[0])}</span>`; }
+function sbLoadout(n, friendly, living) {
+  if (!friendly || !living) return '<span class="x-sbunknown">—</span>';
+  let w = "Classic", arm = 0;
+  try { const u = n === "You" ? player : sbUnit(n); if (n === "You") { w = typeof mode !== "undefined" && mode === "five" ? FV.pri || FV.sec || "Classic" : typeof vfWeapon === "function" ? vfWeapon() : wName(); arm = player.armor || 0; } else if (u) { w = xWeapOf(u) || u.w || "Classic"; arm = u.armor || 0; } } catch (e) {}
+  const sil = typeof BUY_SIL !== "undefined" && BUY_SIL[w];
+  return `<span class="x-sbload" title="${hudEscape(w)}${arm ? " · " + arm + " shields" : ""}">${arm ? '<svg class="x-sbshield" viewBox="0 0 20 24" aria-label="Shields"><path d="M10 2l8 3v7c0 5-5 8-8 10-3-2-8-5-8-10V5z" fill="none" stroke="currentColor" stroke-width="2"/></svg>' : ""}${sil ? `<svg viewBox="0 0 64 20" aria-label="${hudEscape(w)}"><path d="${sil}" fill="currentColor"/></svg>` : hudEscape(w)}</span>`;
+}
+function sbPing(n) { try { if (typeof MP !== "undefined" && MP.on) { if (n === "You") return Math.max(0, Math.round(MP.ping || 0)); const u = sbUnit(n); if (u && u.hum) return Math.max(0, Math.round(u.ping || 0)); } } catch (e) {} return "—"; }
+
 function sbUnit(n) { try { return kfAll().find((x) => x && x.name === n) || null; } catch (e) { return null; } }
 function sbUlt(n) { // [charge, max]: the player's real ult charge; bots only if they carry one
   try { if (n === "You") { const uu = jOn() ? K().u : 0; if (uu) return [Math.min(J.ult || 0, uu), uu]; } else { const u = sbUnit(n), UC = window.xBotUC; if (UC) { let a = null; try { a = u ? xAg(u) : typeof xAgOf === "function" ? xAgOf(n) : null; } catch (e) {} const m = (window.xBotUltCost && window.xBotUltCost(a)) || 7; return [Math.min(UC[n] || 0, m), m]; } if (u && typeof u.ult === "number") { const m = +(u.ultMax || u.uMax || 7); return [Math.min(u.ult, m), m]; } } } catch (e) {}
@@ -9911,8 +10005,8 @@ function sbCred(n, p) { try { if (mode === "five") { if (n === "You") return FV.
 function sbMode() { try { if (mode === "five") return FV.dm ? (FV.tdm ? "Team Deathmatch" : "Deathmatch") : FV.sr ? "Spike Rush" : "5v5 · Round " + (FV.you + FV.them + 1); if (mode === "duel") return "Operator Duel"; if (mode === "rifle") return "Rifle 2v2"; } catch (e) {} return "Retake"; }
 function sbTable(list, cls, alive) {
   const rows = list.map((n) => { const p = SB[n], u = sbUlt(n), pips = Array.from({ length: u[1] }, (_, i) => `<i${i < u[0] ? ' class="on"' : ""}></i>`).join("");
-    return `<tr class="${n === "You" ? "me " : ""}${alive && !alive(n) ? "dead" : ""}"><td class="ag">${sbTile(n)}</td><td class="nm">${n}</td><td class="ul"><span class="x-sbp" aria-label="Ult ${u[0]} of ${u[1]}">${pips}</span></td><td class="k">${p.k}</td><td class="d">${p.d}</td><td class="a">${p.a || 0}</td><td class="w">${sbAcs(p)}</td><td class="ec">${sbCred(n, p)}</td></tr>`; }).join("");
-  return `<table class="x-sbt ${cls}"><colgroup><col class="ag"><col class="nm"><col class="ul"><col class="n"><col class="n"><col class="n"><col class="w"><col class="ec"></colgroup><thead><tr><th class="ag"></th><th class="nm">${cls === "al" ? "Your team" : "Enemies"}</th><th class="ul">Ult</th><th>K</th><th>D</th><th>A</th><th class="w">ACS</th><th class="ec">Econ</th></tr></thead><tbody>${rows}</tbody></table>`;
+    return `<tr class="${n === "You" ? "me " : ""}${alive && !alive(n) ? "dead" : ""}"><td class="ag">${sbTile(n)}</td><td class="nm">${hudEscape(n)}</td><td class="ul"><span class="x-sbp" aria-label="Ult ${u[0]} of ${u[1]}">${pips}</span></td><td class="k">${p.k}</td><td class="d">${p.d}</td><td class="a">${p.a || 0}</td><td class="w">${sbLoadout(n, cls === "al", !alive || alive(n))}</td><td class="ec">${Number(sbCred(n, p)).toLocaleString("en-US")}</td><td class="pg">${sbPing(n)}</td></tr>`; }).join("");
+  return `<table class="x-sbt ${cls}"><colgroup><col class="ag"><col class="nm"><col class="ul"><col class="n"><col class="n"><col class="n"><col class="w"><col class="ec"><col class="pg"></colgroup><thead><tr><th class="ag"></th><th class="nm">${cls === "al" ? "NAME" : "NAME"}</th><th class="ul">Ultimate</th><th>K</th><th>D</th><th>A</th><th class="w">Loadout</th><th class="ec">Creds</th><th class="pg">Ping</th></tr></thead><tbody>${rows}</tbody></table>`;
 }
 { const k0 = sbKill; sbKill = function () { const r = k0.apply(this, arguments); try { if (typeof allies === "undefined") return r;
   // count the victim as dead whether or not its death flag is set yet, so the survivor is fixed the moment a team drops to 1
@@ -10473,7 +10567,7 @@ function xMiniRotLoad() { let v = null; try { v = localStorage.getItem("vs.minir
     r.innerHTML = '<span class="x-oba"></span><div class="x-obm"><p><b class="x-obn"></b><em class="x-obw"></em><span class="x-obcr"></span></p><div class="x-obh"><i class="hp"></i><i class="sh"></i></div><span class="x-obu"></span></div>' + sk;
     c.appendChild(r); XOB.rows[ti].push({ r, a: r.querySelector(".x-oba"), n: r.querySelector(".x-obn"), w: r.querySelector(".x-obw"), cr: r.querySelector(".x-obcr"), hp: r.querySelector(".hp"), sh: r.querySelector(".sh"), u: r.querySelector(".x-obu"), k: "" }); }
     d.appendChild(c); }); document.body.appendChild(d); XOB.el = d; }
-function xObsShow() { try { return mode === "five" && !FV.dm && !!player && $("game").style.display !== "none" && ((player.hp <= 0 && xKL.sp) || (running && FV.buy > 0)); } catch (e) { return false; } }
+function xObsShow() { try { return mode === "five" && !FV.dm && !!player && $("game").style.display !== "none" && (player.hp <= 0 && xKL.sp); } catch (e) { return false; } }
 function xObsTick(force) { const on = xObsShow(); if (XOB.el.classList.contains("on") !== on) XOB.el.classList.toggle("on", on); if (!on) return;
   const now = performance.now(); if (!force && now - XOB.t < 120) return; XOB.t = now; const T = sbTeams(), buy = FV.buy > 0;
   T.forEach((L, ti) => XOB.rows[ti].forEach((R, i) => { const n = L[i]; R.r.hidden = !n; if (!n) return; const me = n === "You", u = me ? player : sbUnit(n);
@@ -10482,7 +10576,7 @@ function xObsTick(force) { const on = xObsShow(); if (XOB.el.classList.contains(
     let w = "—"; try { w = me ? (rw === "knife" ? "Knife" : wName()) : (u && u.w) || "Classic"; } catch (e) {} if (eh) w = "";
     const ul = sbUlt(n), cr = ti === 0 && buy ? String(sbCred(n, SB[n] || {})) : "";
     const k = [ag, n, al ? 1 : 0, Math.round(hp), Math.round(ar), w, ul[0], ul[1], cr, eh ? 1 : 0].join("|"); if (k === R.k) return; R.k = k;
-    R.r.className = "x-obr" + (me ? " me" : "") + (al ? "" : " dead") + (eh ? " nohp" : ""); R.a.textContent = String(ag)[0].toUpperCase(); R.a.style.background = mmAgC(String(ag));
+    R.r.className = "x-obr" + (me ? " me" : "") + (al ? "" : " dead") + (eh ? " nohp" : ""); R.a.textContent = String(ag)[0].toUpperCase(); R.a.style.background = mmAgC(String(ag)); const portrait = hudPortrait(ag); if (portrait) R.a.style.setProperty("--portrait", "url(" + portrait + ")"); else R.a.style.removeProperty("--portrait");
     R.n.textContent = me ? "You" : n; R.w.textContent = al ? w : ""; R.cr.textContent = cr; R.hp.style.width = hp * 0.8 + "%"; R.sh.style.width = ar * 0.4 + "%"; // bar = 100 hp + 50 shield
     R.u.classList.toggle("rdy", ul[1] > 0 && ul[0] >= ul[1]); R.u.setAttribute("aria-label", "Ult " + ul[0] + " of " + ul[1]); R.u.innerHTML = Array.from({ length: ul[1] }, (_, j) => j < ul[0] ? '<i class="on"></i>' : "<i></i>").join(""); })); }
 (window.XHK || (window.XHK = [])).push(() => xObsTick(false));
@@ -11983,7 +12077,7 @@ function mpCliMsg(m) {
 { const t0 = sbTable; sbTable = function (list) { let h = t0.apply(this, arguments); if (!(MP.on && mode === "five" && (FV.dm || MP.m5))) return h;
   const U = bots.concat(allies);
   for (const n of list) { const u = n === "You" ? null : U.find((x) => x.name === n), tag = n === "You" ? (MP.role === "host" ? "HOST" : MP.ping + " ms") : u && u.hum ? (MP.role === "host" ? (([...MP.conns.values()].find((c) => c.u === u) || {}).ping || 0) + " ms" : u.nid === 0 ? "HOST" : (u.ping || 0) + " ms") : "BOT";
-    h = h.split('<td class="nm">' + n + "</td>").join('<td class="nm">' + n + ' <small class="x-mpp">' + tag + "</small></td>"); }
+    h = h.split('<td class="nm">' + hudEscape(n) + "</td>").join('<td class="nm">' + hudEscape(n) + ' <small class="x-mpp">' + tag + "</small></td>"); }
   return h; }; }
 // result screen buttons: an online match returns to the room (still connected); leaving mid-match disconnects
 { const l0 = $("lobbyBtn").onclick; $("lobbyBtn").onclick = function () { const r = l0 && l0.apply(this, arguments);
