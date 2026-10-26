@@ -408,7 +408,7 @@ function xbbStep(C,u,team,atk,dt){
  const step=(x,z)=>{if(blocked(x,z,.45,p.y))return false;let y;try{y=floor(x,z);}catch(e){return false;}if(!(y>p.y-1.2)||(strict&&nmBlocked(C,x,z,.4,y)&&nmBlocked(C,x,z,.4,y+.32)))return false;p.x=x;p.z=z;p.y=y;return true;};
  if(vx){const x=p.x+vx*bs;if(!(!xbbClose(T,x,p.z)&&step(x,p.z))&&Pm)Pm.vx=0;}
  if(vz){const z=p.z+vz*bs;if(!(!xbbClose(T,p.x,z)&&step(p.x,z))&&Pm)Pm.vz=0;}
- u.spd=Pm?Math.hypot(Pm.vx,Pm.vz):Math.hypot(p.x-x0,p.z-z0)/dt;u.sf=u.spd/botRun(u,false);u.mv=u.spd>.05;u.wk=walk?1:0;u.fs=(u.fs||0)-dt;if(u.mv&&!walk&&u.fs<=0){u.fs=.4;try{SFX.step(p);}catch(e){}}}
+ u.spd=Pm?Math.hypot(Pm.vx,Pm.vz):Math.hypot(p.x-x0,p.z-z0)/dt;u.sf=u.spd/botRun(u,false);u.mv=u.spd>.05;u.wk=walk?1:0;if(typeof botStep==='function')botStep(u,dt,Math.hypot(p.x-x0,p.z-z0),walk,u.spd);}/* footsteps: the shared rule (1.85 m stride while running) */
 function xbbTick(dt){const C=nmActive();if(!C||!C.nav||!C.meta||!C.meta.attacker)return;
  for(const [team,atk] of [[bots,!FV.atk],[allies,!!FV.atk]])for(const u of team){if(!u||!u.alive||!u.g||u.nt||u.det>0)continue;try{xbbStep(C,u,team,atk,dt);}catch(e){u.xbb=Object.assign(u.xbb||{},{off:true});}}}
 function xbbEnd(){for(const u of bots.concat(allies))if(u){u.xbb=null;u.mv=false;u.spd=0;}}

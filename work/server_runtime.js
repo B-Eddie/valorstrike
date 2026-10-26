@@ -291,15 +291,18 @@ function netFogPost(m){if(!NET.socket||!m||!Array.isArray(m.u))return;const all=
 const netFog0=mpCliSnap;mpCliSnap=function(m){netFogPre(m);const r=netFog0.apply(this,arguments);netFogPost(m);return r;};
 if(typeof mpMkUnit==='function'){const netFogMk0=mpMkUnit;mpMkUnit=function(e){if(Array.isArray(e)&&e[22]===1&&e[11]==='')e[11]='Classic';const u=netFogMk0.apply(this,arguments);if(NET.socket&&u&&Array.isArray(e)&&e[22]===1){u.fog=1;if(u.nb)u.nb.length=0;if(u.g&&u.g.parent)u.g.parent.remove(u.g);}return u;};}/* guarded: test sandboxes slice this file without the page */
 // Remote footsteps (online): the page played footsteps only for its own offline bots, so online nobody heard an enemy (or
-// ally) run. Rows carry [23] = running footsteps (server simulation.js loud: moving on live input without walk / duck);
-// a drawn, live, relevant unit with it plays SFX.step (25 m, panned) every 0.4 s, the first step 0.3 s after it starts
-// running (VALORANT's first running step is silent).
+// ally) run. Rows carry [23] = running footsteps (server simulation.js loud = shared Motor.runs: faster than 0.65x its weapon's
+// run speed, no walk / duck). qa-34: a drawn, live, relevant unit with it steps by DISTANCE like the player and the offline bots
+// (Motor.footfall: one step per 1.85 m its drawn model moves while running; the first step is silent), not on a fixed 0.4 s
+// timer (2.16 m per step at rifle speed, 2.7 m with the knife). Rows carry no velocity; the drawn position moves at the
+// server's speed, so the bank follows it.
 function netStepFlags(m){if(!NET.socket||!m||!Array.isArray(m.u))return;const all=bots.concat(allies);for(const e of m.u){if(!Array.isArray(e)||e[0]===MP.me)continue;const u=all.find(x=>x.nid===e[0]);if(u)u.loud=e[23]===1&&e[22]!==1;}}
-// hk-35: the cadence follows real time (dt up to 1 s; a longer gap is a stall). It was capped at 0.1 s per frame, so below 10 fps
-// the steps slowed with the frame rate and on a ~0.2 fps page (browser fog5: frames 4.5 s apart) a runner was never heard. At
-// most one step per frame; an overdue step keeps the 0.4 s rhythm (no burst after a long frame).
-let netStepT=0;function netSteps(){if(!(NET.socket&&MP.st==='game'&&running)){netStepT=0;return;}const now=performance.now(),dt=netStepT?Math.min(1,Math.max(0,(now-netStepT)/1000)):0;netStepT=now;
- for(const L of [bots,allies])for(const u of L){if(!u||!u.loud||!u.alive||u.fog||!u.g||u.g.parent!==scene){if(u)u.fsN=.3;continue;}u.fsN=(u.fsN??.3)-dt;if(u.fsN<=0){u.fsN=.4-((-u.fsN)%.4);try{SFX.step(u.g.position);}catch(err){}}}}
+// hk-35: real time, at most one step per frame. A slow page (browser fog5 ~0.2 fps, frames 4.5 s apart) still hears the runner:
+// a long frame banks the whole distance and sounds ONE step (Motor.footfall carries the rest mod 1.85 m, no burst). A jump faster
+// than 15 m/s of real time (respawn / fog reappearance) is a teleport and banks nothing.
+let netStepT=0;function netSteps(){if(!(NET.socket&&MP.st==='game'&&running)){netStepT=0;return;}const now=performance.now(),dt=netStepT?Math.max(0,(now-netStepT)/1000):0;netStepT=now;const M=typeof window!=='undefined'&&window.ValorantFeel;if(!M||!M.footfall)return;
+ for(const L of [bots,allies])for(const u of L){if(!u)continue;const q=u.g&&u.g.position;if(!u.alive||u.fog||!u.g||u.g.parent!==scene){u.fd=0;u.fsP=null;continue;}
+  const P=u.fsP,d=P?Math.hypot(q.x-P.x,q.z-P.z):0,mv=d>15*Math.max(dt,1/30)+.5?0:d;u.fsP={x:q.x,z:q.z};if(M.footfall(u,mv,Math.min(1,dt),!!u.loud)){try{SFX.step(q);}catch(err){}}}}/* walking / crouching (flag 0): the bank drains */
 if(typeof window!=='undefined')(window.XHK||(window.XHK=[])).push(netSteps);
 const netStep0=mpCliSnap;mpCliSnap=function(m){const r=netStep0.apply(this,arguments);netStepFlags(m);return r;};
 // Fog of war, casts (server fog.js fogCast): a cast from an enemy we can't see or hear comes without the caster's eye and

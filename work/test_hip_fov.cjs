@@ -25,7 +25,7 @@ assert(/xSCf=function\(z\)\{return 2\*Math\.atan\(Math\.tan\(xHipVFov\(\)\*Math\
 const mm=s.slice(s.indexOf('addEventListener("mousemove"'),s.indexOf('addEventListener("mousemove"')+600);
 assert(/Math\.tan\(\(typeof xHipVFov === "function" \? xHipVFov\(\)/.test(mm),'mouse sensitivity divides by the current hip lens');
 // bob cadence
-assert(/V\.phase\+=speed\*dt\*Math\.PI\/1\.85/.test(f),'bob phase pi per 1.85 m');assert(/P\.footDistance>1\.85/.test(f),'footsteps every 1.85 m');
+assert(/V\.phase\+=speed\*dt\*Math\.PI\/1\.85/.test(f),'bob phase pi per 1.85 m');assert(/VF\.model\.footfall\(P,result\.speed\*dt/.test(f)&&require(path.join(root,'vendor/valorant-feel.js')).C.stride===1.85,'footsteps every 1.85 m (shared motor footfall)');
 assert(/Math\.abs\(Math\.cos\(V\.phase\)\)/.test(f),'vertical bob is |cos(phase)| (period pi = one dip per step)');
 const hz=5.4*Math.PI/1.85/Math.PI;near(hz,5.4/1.85,1e-9,'rifle run: '+hz.toFixed(2)+' dips/s = footstep rate');
 console.log('test_hip_fov: PASS (1920x969 was '+old.toFixed(1)+' deg horizontal, now 103; bob '+hz.toFixed(2)+' Hz at 5.4 m/s, was '+(5.4*3.4/Math.PI).toFixed(2)+' Hz)');

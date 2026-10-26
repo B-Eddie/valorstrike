@@ -33,8 +33,10 @@ moveP=function(dt,run,hold){
  const result=VF.model.step(P,{x,z,jump:!!kk.Space,duck:!!(kk.ControlLeft||kk.ControlRight),walk:!!(kk.ShiftLeft||kk.ShiftRight),speed,tag:dis?1:xTagK(P),hold:!!hold||!!J.dr},dt,world);
  if(dsh&&!VF.model.dashStep(P,J.dash,dt,world))J.dash=null;
  if(result.landed){SFX.land();P.st=0;const fd=VF.model.fallDamage(result.drop);if(fd>0&&running&&mode!=='aim'&&mode!=='duel'&&!(typeof MP!=='undefined'&&MP.on)&&P.hp>0){P.hp=Math.max(0,P.hp-fd);try{updHud();}catch(e){}if(P.hp<=0)pDie('Fall','Fall');}} // fall damage: health only (shields ignored); online the server applies it
- // Footfalls follow distance. Shift-walking and crouching stay silent.
- P.footDistance=(P.footDistance||0)+result.speed*dt;if(P.footDistance>1.85&&P.mv&&!P.air&&!P.wk&&!P.cr){P.footDistance%=1.85;SFX.selfStep(P.y>1&&xStepMetal(P.y));}
+ // Footfalls follow distance (shared motor footfall: one step per 1.85 m while running, first step silent). Shift-walking,
+ // crouching, the air and moving under the run threshold (accelerating / stopping / slowed) stay silent - the rule every
+ // other unit uses (offline bots, server row [23]).
+ if(VF.model.footfall(P,result.speed*dt,dt,!P.air&&VF.model.runs(result.speed,6.75*(kn?1:p.runSpeedMultiplier||.8),P.wk||P.cr)))SFX.selfStep(P.y>1&&xStepMetal(P.y));
  // Preserve explicit ability impulses; ordinary air steering never creates a speed boost.
  if(kLg>0){const t=Math.min(dt,kLg);kLg-=t;const nx=P.x+kLx*8*t,nz=P.z+kLz*8*t;if(!world.blocked(nx,nz,.4,P.y,1.8-P.ch)&&!(world.leash&&!world.leash(nx,nz,P.y,P.x,P.z))){P.x=nx;P.z=nz;}}
 };

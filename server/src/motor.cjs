@@ -247,5 +247,15 @@ function disk(random=Math.random){const a=random()*Math.PI*2,r=Math.sqrt(random(
 // and the page (offline play and the online prediction) share it, so the predicted dash lands where the server's does.
 function dash(f,s,look,dist,time){const sn=Math.sin(look),c=Math.cos(look);let dx=-sn*f+c*s,dz=-c*f-sn*s,len=Math.hypot(dx,dz);if(len<.001){dx=-sn;dz=-c;len=1;}return {dx:dx/len,dz:dz/len,left:dist,v:dist/time};}
 function dashStep(P,D,dt,world){let s=Math.min(D.left,D.v*Math.max(0,dt));D.left-=s;const height=1.8-(P.ch||0);while(s>1e-9){const k=Math.min(.25,s);s-=k;const x=P.x+D.dx*k,z=P.z+D.dz*k;if(world.blocked(x,z,.4,P.y,height)||(world.leash&&!world.leash(x,z,P.y,P.x,P.z))){D.left=0;break;}P.x=x;P.z=z;}P.vx=P.vz=0;return D.left>1e-9;}
-return {C,step,dash,dashStep,fallDamage,velocity,brake,groundMove,spread,bloomCap,SPREAD,recoveryTime,recoilMove,disk,damp,approach,clipBlocked,CLIPS,REC,sprayReset,sprayBloom,sprayStep,leashGrid,leashOk,leashNear};
+// Footsteps (VALORANT: running is heard, shift-walking and crouch-walking are silent, the first running step is silent - it
+// builds a "step threshold" from distance moved; playvalorant.com Unrated / Riot support "Walking, Running, and Crouching").
+// One rule for every unit: a unit RUNS when it moves faster than C.stepRun of its weapon's run speed (above walk speed 0.6x:
+// accelerating / stopping / slowed under it is quiet) without walk / crouch; footfall() banks the distance it moves while
+// running and sounds one step per C.stride (the player's 1.85 m stride), at most one per call (a long frame never bursts,
+// hk-35), the rest carried; while quiet the bank drains one stride per second. The server's row flag [23] (simulation.js loud),
+// the page's player, its offline bots / allies / buy-phase bots and the online remote units all use it.
+C.stride=1.85;C.stepRun=.65;
+function runs(speed,top,quiet){return !quiet&&speed>C.stepRun*Math.max(.1,top||0);}
+function footfall(st,dist,dt,run){if(!run){st.fd=Math.max(0,(st.fd||0)-C.stride*Math.max(0,dt||0));return false;}st.fd=(st.fd||0)+Math.max(0,dist||0);if(st.fd<C.stride)return false;st.fd%=C.stride;return true;}
+return {C,step,dash,dashStep,runs,footfall,fallDamage,velocity,brake,groundMove,spread,bloomCap,SPREAD,recoveryTime,recoilMove,disk,damp,approach,clipBlocked,CLIPS,REC,sprayReset,sprayBloom,sprayStep,leashGrid,leashOk,leashNear};
 });

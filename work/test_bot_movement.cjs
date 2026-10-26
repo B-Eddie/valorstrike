@@ -32,7 +32,7 @@ for(const speed of [3.24,1.485,2]){
 }
 const crouched={w:'Vandal',cr:true};step(crouched,1,0,.2,2);assert(Math.abs(crouched.spd-2*.2/M.C.crouchAccelTime)<1e-9,'crouched bot has the shared slower acceleration');
 // Execute the shipped enemy post-move block: a low frame-average must not authorize a fast endpoint shot.
-const motion=html.slice(html.indexOf('const bx0 = p.x, bz0 = p.z;'),html.indexOf('    b.fs =',html.indexOf('const bx0 = p.x, bz0 = p.z;')));
+const motion=html.slice(html.indexOf('const bx0 = p.x, bz0 = p.z;'),html.indexOf('    botStep(b,',html.indexOf('const bx0 = p.x, bz0 = p.z;'))/* qa-34: the footstep line after the move block (was '    b.fs =') */);
 assert(motion.includes('b.smMotor.vx'),'shipped bot loop consumes motor velocity');
 const u={w:'Vandal',smMotor:{vx:-.95,vz:0}},dt=.05,v=c.xSmV(u,dt,-1,0,5.4);
 Object.assign(c,{b:u,p:{x:0,y:0,z:0},vx:v[0],vz:v[1],bs:5.4*dt,dt,blocked:()=>false});vm.runInContext('{'+motion+'}',c);

@@ -4650,7 +4650,7 @@ function tick(dt) {
     if (!blocked(p.x + vx * bs, p.z, 0.45, p.y)) p.x += vx * bs; else { b.strafe *= -1; b.blk = 1; if (b.smMotor) b.smMotor.vx = 0; }
     if (!blocked(p.x, p.z + vz * bs, 0.45, p.y)) p.z += vz * bs; else { b.strafe *= -1; b.blk = 1; if (b.smMotor) b.smMotor.vz = 0; }
     b.spd = b.smMotor ? Math.hypot(b.smMotor.vx, b.smMotor.vz) : dt > 0 ? Math.hypot(p.x - bx0, p.z - bz0) / dt : 0; b.sf = b.spd / botRun(b, false); b.mv = b.spd > 0.25; // end-of-step speed: firing / spread cannot use an average that hides a reversal
-    b.fs = (b.fs || 0) - dt; if ((vx || vz) && bs > 0 && b.fs <= 0) { b.fs = 0.4 / Math.max(0.6, DIFF[S.diff].speed || 1); if (!b.cr && !b.wk) SFX.step(p); } // crouching / walking bots are silent
+    botStep(b, dt, Math.hypot(p.x - bx0, p.z - bz0), b.cr || b.wk, b.spd); // footsteps every 1.85 m while running (shared motor rule); crouching / walking / slow bots are silent
     b.cd -= dt; b.lt = (b.lt || 0) + dt; b.see = see && !(b.blind > 0) ? (b.see || 0) + dt : 0; // blinded: the fight restarts once it can see again
     if (see && b.cd <= 0 && b.see * 1000 >= (typeof xbRt === "function" ? xbRt(b, D) : D.rt + (b.pre ? 0 : 150)) && botCanShoot(b) && b.xs && !(b.pk === 3 && b.mv && !b.xbSl) && (botStopped(b) || b.xbSl) && (b.bn > 0 || typeof xbReady !== "function" || xbReady(b, d)) && (typeof xbLosNow !== "function" || xbLosNow(from, eye) || ((b.xSe = false), (b.xTh = 0), (b.bn = 0), false))) { // a fresh, uncached line to the target for every shot: no stale fire into a wall (BOT VARIETY perception) // tight peek: fully stopped first (a sloppy fight, b.xbSl, fires before the counter-strafe has stopped it); a new pull waits for the flick (xbReady)
       const bsw = xBsBot(b), w = bsw ? "Blade Storm" : b.w || "Classic", W = bsw ? XBSB : WEAP[w] || WEAP.Classic, far = d > 20; b.bsW = bsw; // Blade Storm out: knives (XBSB), not the gun
@@ -4724,7 +4724,7 @@ function tick(dt) {
     if (!blocked(p.x, p.z + vz * bs, 0.45, p.y)) p.z += vz * bs; else { a.strafe *= -1; a.blk = 1; if (a.smMotor) a.smMotor.vz = 0; }
     a.spd = a.smMotor ? Math.hypot(a.smMotor.vx, a.smMotor.vz) : dt > 0 ? Math.hypot(p.x - ax0, p.z - az0) / dt : 0; a.sf = a.spd / botRun(a, false); a.mv = a.spd > 0.25;
     if (a.xk == null && a.xj == null && !a.xup) p.y = groundAt(p.x, p.z, 0.3, p.y + 0.01); // allies climb steps like bots (Split B stairs: carrier stuck on step 1 at y 0)
-    a.fs = (a.fs || 0) - dt; if ((vx || vz) && a.fs <= 0) { a.fs = 0.4; if (!a.cr && !a.wk) SFX.step(p); } // ally footsteps: same pooled step voices
+    botStep(a, dt, Math.hypot(p.x - ax0, p.z - az0), a.cr || a.wk, a.spd); // ally footsteps: same rule and pooled step voices
     a.cd -= dt;
     if (tg && a.cd <= 0 && a.xs && !(a.pk === 3 && a.mv) && botStopped(a) && !(a.rtE && typeof xbRt === "function" && a.ts * 1000 < xbRt(a, null)) && (typeof xbTurned !== "function" || xbTurned(a)) && (typeof xbLosNow !== "function" || xbLosNow(from, XTK.q.set(tg.g.position.x, (tg.g.position.y || 0) + 1.5, tg.g.position.z)) || ((a.xTg = null), (a.xTh = 0), false))) { // fresh line of sight for every shot (BOT VARIETY perception) // no shot mid-swing (BOT VARIETY turn rate) // allies react like enemy bots (no instant first shot) // tight peek: fully stopped first
       const abs = xBsBot(a); a.bsW = abs; a.cd = abs ? 1 / XBSB.rate + Math.random() * 0.3 : 0.8 + Math.random() * 0.8; SFX.at(p, abs ? "Blade Storm" : a.w || "Vandal"); if (a.pp) dmFired(a); // Blade Storm out: a knife (XBSB)
@@ -8111,6 +8111,9 @@ function botStopped(u) { // match the player's weapon accuracy threshold (Operat
   const C = window.ValorantFeel && window.ValorantFeel.C;
   return (u.spd || 0) <= botRun(u, false) * (u.w === "Operator" ? (C ? C.operatorDeadzone : 0.15) : (C ? C.deadzone : 0.275));
 }
+function botStep(u, dt, moved, quiet, speed) { // offline bot / ally / buy-phase footsteps = the player's and the server's rule (shared motor runs / footfall): one step per 1.85 m moved while faster than 0.65x its weapon's run speed (speed: its motor speed, else moved / dt) without walking / crouching; first running step silent; at most one per frame
+  const M = window.ValorantFeel; if (!M || !M.footfall || !u || !u.g) return false; const run = M.runs(Number.isFinite(speed) ? speed : dt > 0 ? moved / dt : 0, botRun(u, false), !!quiet);
+  if (!M.footfall(u, moved, dt, run)) return false; try { SFX.step(u.g.position); } catch (e) {} return true; }
 function botRun(u, walk) { const w = u && u.w ? u.w : u && u === duelBot ? "Operator" : "Classic"; return 6.75 * vRunK(w) * (walk ? 0.6 : 1); }
 function botWalk(u, see, d) { // shift-walk while holding an angle (scoped) or creeping up on an enemy it cannot see yet; never for the Spike carrier or a wide swing
   if (!u || see) return false; if (u.scp) return true;
@@ -14219,8 +14222,10 @@ moveP=function(dt,run,hold){
  const result=VF.model.step(P,{x,z,jump:!!kk.Space,duck:!!(kk.ControlLeft||kk.ControlRight),walk:!!(kk.ShiftLeft||kk.ShiftRight),speed,tag:dis?1:xTagK(P),hold:!!hold||!!J.dr},dt,world);
  if(dsh&&!VF.model.dashStep(P,J.dash,dt,world))J.dash=null;
  if(result.landed){SFX.land();P.st=0;const fd=VF.model.fallDamage(result.drop);if(fd>0&&running&&mode!=='aim'&&mode!=='duel'&&!(typeof MP!=='undefined'&&MP.on)&&P.hp>0){P.hp=Math.max(0,P.hp-fd);try{updHud();}catch(e){}if(P.hp<=0)pDie('Fall','Fall');}} // fall damage: health only (shields ignored); online the server applies it
- // Footfalls follow distance. Shift-walking and crouching stay silent.
- P.footDistance=(P.footDistance||0)+result.speed*dt;if(P.footDistance>1.85&&P.mv&&!P.air&&!P.wk&&!P.cr){P.footDistance%=1.85;SFX.selfStep(P.y>1&&xStepMetal(P.y));}
+ // Footfalls follow distance (shared motor footfall: one step per 1.85 m while running, first step silent). Shift-walking,
+ // crouching, the air and moving under the run threshold (accelerating / stopping / slowed) stay silent - the rule every
+ // other unit uses (offline bots, server row [23]).
+ if(VF.model.footfall(P,result.speed*dt,dt,!P.air&&VF.model.runs(result.speed,6.75*(kn?1:p.runSpeedMultiplier||.8),P.wk||P.cr)))SFX.selfStep(P.y>1&&xStepMetal(P.y));
  // Preserve explicit ability impulses; ordinary air steering never creates a speed boost.
  if(kLg>0){const t=Math.min(dt,kLg);kLg-=t;const nx=P.x+kLx*8*t,nz=P.z+kLz*8*t;if(!world.blocked(nx,nz,.4,P.y,1.8-P.ch)&&!(world.leash&&!world.leash(nx,nz,P.y,P.x,P.z))){P.x=nx;P.z=nz;}}
 };
@@ -14778,15 +14783,18 @@ function netFogPost(m){if(!NET.socket||!m||!Array.isArray(m.u))return;const all=
 const netFog0=mpCliSnap;mpCliSnap=function(m){netFogPre(m);const r=netFog0.apply(this,arguments);netFogPost(m);return r;};
 if(typeof mpMkUnit==='function'){const netFogMk0=mpMkUnit;mpMkUnit=function(e){if(Array.isArray(e)&&e[22]===1&&e[11]==='')e[11]='Classic';const u=netFogMk0.apply(this,arguments);if(NET.socket&&u&&Array.isArray(e)&&e[22]===1){u.fog=1;if(u.nb)u.nb.length=0;if(u.g&&u.g.parent)u.g.parent.remove(u.g);}return u;};}/* guarded: test sandboxes slice this file without the page */
 // Remote footsteps (online): the page played footsteps only for its own offline bots, so online nobody heard an enemy (or
-// ally) run. Rows carry [23] = running footsteps (server simulation.js loud: moving on live input without walk / duck);
-// a drawn, live, relevant unit with it plays SFX.step (25 m, panned) every 0.4 s, the first step 0.3 s after it starts
-// running (VALORANT's first running step is silent).
+// ally) run. Rows carry [23] = running footsteps (server simulation.js loud = shared Motor.runs: faster than 0.65x its weapon's
+// run speed, no walk / duck). qa-34: a drawn, live, relevant unit with it steps by DISTANCE like the player and the offline bots
+// (Motor.footfall: one step per 1.85 m its drawn model moves while running; the first step is silent), not on a fixed 0.4 s
+// timer (2.16 m per step at rifle speed, 2.7 m with the knife). Rows carry no velocity; the drawn position moves at the
+// server's speed, so the bank follows it.
 function netStepFlags(m){if(!NET.socket||!m||!Array.isArray(m.u))return;const all=bots.concat(allies);for(const e of m.u){if(!Array.isArray(e)||e[0]===MP.me)continue;const u=all.find(x=>x.nid===e[0]);if(u)u.loud=e[23]===1&&e[22]!==1;}}
-// hk-35: the cadence follows real time (dt up to 1 s; a longer gap is a stall). It was capped at 0.1 s per frame, so below 10 fps
-// the steps slowed with the frame rate and on a ~0.2 fps page (browser fog5: frames 4.5 s apart) a runner was never heard. At
-// most one step per frame; an overdue step keeps the 0.4 s rhythm (no burst after a long frame).
-let netStepT=0;function netSteps(){if(!(NET.socket&&MP.st==='game'&&running)){netStepT=0;return;}const now=performance.now(),dt=netStepT?Math.min(1,Math.max(0,(now-netStepT)/1000)):0;netStepT=now;
- for(const L of [bots,allies])for(const u of L){if(!u||!u.loud||!u.alive||u.fog||!u.g||u.g.parent!==scene){if(u)u.fsN=.3;continue;}u.fsN=(u.fsN??.3)-dt;if(u.fsN<=0){u.fsN=.4-((-u.fsN)%.4);try{SFX.step(u.g.position);}catch(err){}}}}
+// hk-35: real time, at most one step per frame. A slow page (browser fog5 ~0.2 fps, frames 4.5 s apart) still hears the runner:
+// a long frame banks the whole distance and sounds ONE step (Motor.footfall carries the rest mod 1.85 m, no burst). A jump faster
+// than 15 m/s of real time (respawn / fog reappearance) is a teleport and banks nothing.
+let netStepT=0;function netSteps(){if(!(NET.socket&&MP.st==='game'&&running)){netStepT=0;return;}const now=performance.now(),dt=netStepT?Math.max(0,(now-netStepT)/1000):0;netStepT=now;const M=typeof window!=='undefined'&&window.ValorantFeel;if(!M||!M.footfall)return;
+ for(const L of [bots,allies])for(const u of L){if(!u)continue;const q=u.g&&u.g.position;if(!u.alive||u.fog||!u.g||u.g.parent!==scene){u.fd=0;u.fsP=null;continue;}
+  const P=u.fsP,d=P?Math.hypot(q.x-P.x,q.z-P.z):0,mv=d>15*Math.max(dt,1/30)+.5?0:d;u.fsP={x:q.x,z:q.z};if(M.footfall(u,mv,Math.min(1,dt),!!u.loud)){try{SFX.step(q);}catch(err){}}}}/* walking / crouching (flag 0): the bank drains */
 if(typeof window!=='undefined')(window.XHK||(window.XHK=[])).push(netSteps);
 const netStep0=mpCliSnap;mpCliSnap=function(m){const r=netStep0.apply(this,arguments);netStepFlags(m);return r;};
 // Fog of war, casts (server fog.js fogCast): a cast from an enemy we can't see or hear comes without the caster's eye and
@@ -16819,7 +16827,7 @@ function xbbStep(C,u,team,atk,dt){
  const step=(x,z)=>{if(blocked(x,z,.45,p.y))return false;let y;try{y=floor(x,z);}catch(e){return false;}if(!(y>p.y-1.2)||(strict&&nmBlocked(C,x,z,.4,y)&&nmBlocked(C,x,z,.4,y+.32)))return false;p.x=x;p.z=z;p.y=y;return true;};
  if(vx){const x=p.x+vx*bs;if(!(!xbbClose(T,x,p.z)&&step(x,p.z))&&Pm)Pm.vx=0;}
  if(vz){const z=p.z+vz*bs;if(!(!xbbClose(T,p.x,z)&&step(p.x,z))&&Pm)Pm.vz=0;}
- u.spd=Pm?Math.hypot(Pm.vx,Pm.vz):Math.hypot(p.x-x0,p.z-z0)/dt;u.sf=u.spd/botRun(u,false);u.mv=u.spd>.05;u.wk=walk?1:0;u.fs=(u.fs||0)-dt;if(u.mv&&!walk&&u.fs<=0){u.fs=.4;try{SFX.step(p);}catch(e){}}}
+ u.spd=Pm?Math.hypot(Pm.vx,Pm.vz):Math.hypot(p.x-x0,p.z-z0)/dt;u.sf=u.spd/botRun(u,false);u.mv=u.spd>.05;u.wk=walk?1:0;if(typeof botStep==='function')botStep(u,dt,Math.hypot(p.x-x0,p.z-z0),walk,u.spd);}/* footsteps: the shared rule (1.85 m stride while running) */
 function xbbTick(dt){const C=nmActive();if(!C||!C.nav||!C.meta||!C.meta.attacker)return;
  for(const [team,atk] of [[bots,!FV.atk],[allies,!!FV.atk]])for(const u of team){if(!u||!u.alive||!u.g||u.nt||u.det>0)continue;try{xbbStep(C,u,team,atk,dt);}catch(e){u.xbb=Object.assign(u.xbb||{},{off:true});}}}
 function xbbEnd(){for(const u of bots.concat(allies))if(u){u.xbb=null;u.mv=false;u.spd=0;}}
