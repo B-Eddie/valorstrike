@@ -1,0 +1,35 @@
+ 1 duel                   pause   objects=1054 geo=36 o.geo=0 tex=6 o.tex=0 harness.timers=25 window+document=76 heap=37
+ 2 rifle                  results objects=1095 geo=36 o.geo=0 tex=6 o.tex=0 harness.timers=25 window+document=76 heap=38
+ 3 retake                 pause   objects=1157 geo=44 o.geo=0 tex=6 o.tex=0 harness.timers=25 window+document=76 heap=39
+ 4 surf boreas            pause   objects=1062 geo=64 o.geo=0 tex=6 o.tex=0 harness.timers=26 window+document=76 heap=40
+ 5 aim                    pause   objects=1065 geo=69 o.geo=0 tex=6 o.tex=0 harness.timers=27 window+document=76 heap=40
+ 6 deathmatch ascent      results objects=1238 geo=88 o.geo=0 tex=7 o.tex=0 harness.timers=27 window+document=76 heap=41
+ 7 tdm bind               pause   objects=1273 geo=90 o.geo=0 tex=7 o.tex=0 harness.timers=31 window+document=76 heap=42
+ 8 escalation haven       results objects=1277 geo=90 o.geo=3 tex=7 o.tex=0 harness.timers=27 window+document=76 heap=42
+ 9 5v5 split              pause   objects=1264 geo=90 o.geo=3 tex=7 o.tex=0 harness.timers=27 window+document=76 heap=43
+10 spike rush lotus       results objects=1279 geo=91 o.geo=2 tex=7 o.tex=0 harness.timers=27 window+document=76 heap=43
+11 surf utopia            pause   objects=1144 geo=129 o.geo=3 tex=7 o.tex=0 harness.timers=28 window+document=76 heap=44
+12 deathmatch breeze      results objects=1278 geo=129 o.geo=4 tex=7 o.tex=0 harness.timers=29 window+document=76 heap=44
+13 duel                   results objects=1167 geo=129 o.geo=4 tex=7 o.tex=0 harness.timers=35 window+document=76 heap=44
+14 rifle                  pause   objects=1208 geo=129 o.geo=4 tex=7 o.tex=0 harness.timers=30 window+document=76 heap=44
+15 retake                 results objects=1260 geo=133 o.geo=4 tex=7 o.tex=0 harness.timers=34 window+document=76 heap=44
+16 surf boreas            pause   objects=1151 geo=133 o.geo=4 tex=7 o.tex=0 harness.timers=28 window+document=76 heap=44
+17 aim                    results objects=1151 geo=133 o.geo=4 tex=7 o.tex=0 harness.timers=28 window+document=76 heap=44
+18 deathmatch ascent      pause   objects=1306 geo=133 o.geo=5 tex=7 o.tex=0 harness.timers=32 window+document=76 heap=44
+19 tdm bind               results objects=1317 geo=133 o.geo=4 tex=7 o.tex=0 harness.timers=28 window+document=76 heap=45
+20 escalation haven       pause   objects=1333 geo=133 o.geo=5 tex=7 o.tex=0 harness.timers=28 window+document=76 heap=45
+21 5v5 split              results objects=1319 geo=133 o.geo=5 tex=7 o.tex=0 harness.timers=28 window+document=76 heap=45
+22 spike rush lotus       pause   objects=1345 geo=133 o.geo=3 tex=7 o.tex=0 harness.timers=28 window+document=76 heap=45
+23 surf utopia            pause   objects=1148 geo=133 o.geo=4 tex=7 o.tex=0 harness.timers=28 window+document=76 heap=45
+24 deathmatch breeze      pause   objects=1322 geo=133 o.geo=6 tex=7 o.tex=0 harness.timers=29 window+document=76 heap=45
+match 7 tdm: map ascent not bind
+match 8 escalation: map ascent not haven
+match 9 5v5: map ascent not split
+match 10 spike rush: map ascent not lotus
+match 12 deathmatch: map ascent not breeze
+match 19 tdm: map ascent not bind
+match 20 escalation: map ascent not haven
+match 21 5v5: map ascent not split
+match 22 spike rush: map ascent not lotus
+match 24 deathmatch: map ascent not breeze
+grew between cycles (per-match leak): scene.objects: 1278 -> 1322; scene.meshes: 1080 -> 1115

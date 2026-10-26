@@ -1,0 +1,6 @@
+{"duel":{"ms":18989,"prog":[0.1,4.5],"rounds":0,"heapMB":39.1,"scene":1075,"timers":28},"aim":{"ms":27798,"prog":[0,68.5],"rounds":0,"heapMB":39.6,"scene":1122,"timers":26},"rifle":{"ms":20912,"prog":[0.1,2],"rounds":0,"heapMB":40.5,"scene":1121,"timers":34},"surf boreas":{"ms":10888,"prog":[3.2,-33.2],"rounds":0,"heapMB":41,"scene":1072,"timers":26},"surf utopia":{"ms":10486,"prog":[3.2,-5.4],"rounds":0,"heapMB":41.7,"scene":1125,"timers":27},"retake":{"ms":33441,"prog":[0.1,5.4],"rounds":1,"heapMB":42.9,"scene":1248,"timers":46},"deathmatch":{"ms":40488,"prog":[65.1,85.7],"rounds":0,"heapMB":43.6,"scene":1280,"timers":32},"escalation":{"ms":41511,"prog":[7.1,25.7],"rounds":0,"heapMB":43.8,"scene":1380,"timers":40}}
+DM spawns bind: {"map":"ascent","n":21,"out":[],"dup":0}
+DM spawns haven: {"map":"ascent","n":21,"out":[],"dup":0}
+DM spawns split: {"map":"ascent","n":21,"out":[],"dup":0}
+DM spawns lotus: {"map":"ascent","n":21,"out":[],"dup":0}
+DM spawns breeze: {"map":"ascent","n":21,"out":[],"dup":0}

@@ -2,18 +2,46 @@
 // Retargeted crouch clips barely lower the native head. Correct their vertical root motion
 // after the mixer, then undo it before the next mixer evaluation.
 {const pre=xUbPre,post=xUbPost;xUbPre=function(M){const X=M.sx;if(X&&X.crouchRestore){X.crouchBone.position.copy(X.crouchRestore);X.crouchRestore=null;}return pre(M);};xUbPost=function(M){post(M);const X=M.sx;if(!M.valorant||!X||X.dd||M.dead||X.nativeContact)return;const head=X.sc.getObjectByName('Head'),pelvis=X.sc.getObjectByName('Root');X.crouchBone=pelvis;if(!head||!pelvis)return;M.m.updateMatrixWorld(true);const hp=head.getWorldPosition(new THREE.Vector3());if(X.standHead==null)X.standHead=hp.y-M.m.getWorldPosition(new THREE.Vector3()).y;const cb=Math.max(0,Math.min(1,X.cb||0));if(cb<.001)return;const desired=M.m.getWorldPosition(new THREE.Vector3()).y+X.standHead-.45*cb,delta=desired-hp.y;X.crouchRestore=pelvis.position.clone();const p=pelvis.getWorldPosition(new THREE.Vector3());p.y+=delta;pelvis.position.copy(pelvis.parent.worldToLocal(p));pelvis.updateMatrix();M.m.updateMatrixWorld(true);};}
-// Native rigs (nativeContact): the retargeted crouch clips move only the Pelvis bone, but Spine1 is the Pelvis's
-// sibling under Splitter, so the torso never follows it down; with the aim upper layer a full crouch dropped the head
-// ~4 cm while the authoritative head volume drops ch (0.45 m at full crouch, server/src/hitboxes.js). After the mixer
-// and contact correction, lower the torso chain (Spine1) so the Head bone sits at the upright head height minus
-// 0.45 * crouch blend, measured against the agent root; legs and feet are untouched. Undone before the next mixer pass.
-const XRC={drop:.45,stand:1.72};
-{const pre=xUbPre,post=xUbPost;xUbPre=function(M){const X=M&&M.sx;if(X&&X.ncRestore){X.ncBone.position.copy(X.ncRestore);X.ncRestore=null;}return pre(M);};xUbPost=function(M){post(M);const X=M.sx;if(!M.valorant||!X||!X.nativeContact||X.dd||M.dead||!X.sc)return;
- if(X.ncBone===undefined){X.ncBone=X.sc.getObjectByName('Spine1')||null;X.ncHead=X.sc.getObjectByName('Head')||null;X.ncV=new THREE.Vector3();X.ncR=new THREE.Vector3();}
- if(!X.ncBone||!X.ncHead||!X.ncBone.parent)return;M.m.updateMatrixWorld(true);const v=X.ncV,root=M.m.getWorldPosition(X.ncR).y,head=X.ncHead.getWorldPosition(v).y-root,cb=Math.max(0,Math.min(1,X.cb||0));
- if(cb<.001){if(!X.air&&!X.lo&&Number.isFinite(head))X.ncStand=X.ncStand==null?head:X.ncStand+(head-X.ncStand)*.2;return;}
- const want=(X.ncStand==null?XRC.stand:X.ncStand)-XRC.drop*cb,delta=want-head;if(!(delta<-.001)||delta<-.8)return;
- X.ncRestore=X.ncBone.position.clone();X.ncBone.getWorldPosition(v);v.y+=delta;X.ncBone.position.copy(X.ncBone.parent.worldToLocal(v));X.ncBone.updateMatrix();M.m.updateMatrixWorld(true);};}
+// Native rigs (nativeContact): follow the pelvis first, then correct crouch height on both halves
+// of the waist. Save the feet before shifting and re-plant them with two-bone IK. Every offset
+// is restored before the mixer. Only idle frames may update the standing reference (jog bobs low).
+const XRC={drop:.45,stand:1.72,max:.3};
+{const pre=xUbPre,post=xUbPost;
+xUbPre=function(M){
+ const X=M&&M.sx,restore=X&&X.ncRestore;
+ if(restore)for(const [bone,pos] of restore)bone.position.copy(pos);
+ const result=pre(M);
+ // Terrain setup may have saved its first leg pose after our IK ran. Restore the raw
+ // crouch leg rotations last, after the shared quaternion restore, before the mixer.
+ if(restore){for(const L of X.ncLegs)for(let i=0;i<3;i++)[L.up,L.lo,L.hand][i].quaternion.copy(L.saved[i]);X.ncRestore=null;}
+ return result;
+};
+xUbPost=function(M){
+ post(M);const X=M.sx;if(!M.valorant||!X||!X.nativeContact||X.dd||M.dead||!X.sc)return;
+ if(X.ncBone===undefined){
+  const bone=n=>X.sc.getObjectByName(n);X.ncBone=bone('Pelvis')||null;X.ncSpine=bone('Spine1');X.ncHead=bone('Head');
+  X.ncV=new THREE.Vector3();X.ncR=new THREE.Vector3();
+  X.ncLegs=['L','R'].map(s=>({up:bone(s+'_Hip'),lo:bone(s+'_Knee'),hand:bone(s+'_Foot'),target:new THREE.Vector3(),pole:new THREE.Vector3(),fq:new THREE.Quaternion(),saved:Array.from({length:3},()=>new THREE.Quaternion())}));
+  X.ncIK={ik:Array.from({length:9},()=>new THREE.Vector3()),q:[new THREE.Quaternion(),new THREE.Quaternion()]};
+ }
+ if(!X.ncBone||!X.ncSpine||!X.ncHead||X.ncLegs.some(L=>!L.up||!L.lo||!L.hand))return;
+ M.m.updateMatrixWorld(true);const v=X.ncV,root=M.m.getWorldPosition(X.ncR).y,head=X.ncHead.getWorldPosition(v).y-root,cb=Math.max(0,Math.min(1,X.cb||0));
+ if(cb<.001){if(!X.air&&!X.lo&&(X.w.idle||0)>.9&&Number.isFinite(head))X.ncStand=X.ncStand==null?head:X.ncStand+(head-X.ncStand)*.2;return;}
+ if(X.air||X.lo||(X.w.plant||0)>.01)return;
+ const want=(X.ncStand==null?XRC.stand:X.ncStand)-XRC.drop*cb,delta=Math.max(-XRC.max,Math.min(XRC.max,want-head));
+ if(!Number.isFinite(delta)||Math.abs(delta)<.001)return;
+ for(const L of X.ncLegs){
+  L.hand.getWorldPosition(L.target);xgWorldQ(L.hand,L.fq);
+  L.lo.getWorldPosition(L.pole);L.up.getWorldPosition(v);L.pole.sub(v);
+  X.ncR.subVectors(L.target,v).normalize();L.pole.addScaledVector(X.ncR,-L.pole.dot(X.ncR));
+  if(L.pole.lengthSq()<1e-8)L.pole.set(0,0,1).transformDirection(M.m.matrixWorld);L.pole.normalize();
+  [L.up,L.lo,L.hand].forEach((bone,i)=>L.saved[i].copy(bone.quaternion));
+ }
+ X.ncRestore=[X.ncBone,X.ncSpine].map(bone=>[bone,bone.position.clone()]);
+ for(const [bone] of X.ncRestore){bone.getWorldPosition(v);v.y+=delta;bone.position.copy(bone.parent.worldToLocal(v));bone.updateMatrixWorld(true);}
+ for(const L of X.ncLegs){xgIK(L,L.target,L.pole,X.ncIK);xgSetWorldQ(L.hand,L.fq);}
+ M.m.updateMatrixWorld(true);
+};}
 function xrHitboxes(b,M){
  if(b&&b.nt)return;
  if(!b||!b.body||!b.head||!M||!M.sx||M.dead)return;

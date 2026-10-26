@@ -1,0 +1,27 @@
+FAIL split Phoenix: map ascent
+FAIL split Sage: map ascent
+  note split Sage KeyE: no charge spent (before {"c":1,"q":2,"e":1,"ult":7} after {"c":1,"q":2,"e":1,"ult":7,"bsOn":false,"dr":false,"hf":0} {"dr":false,"om":false,"bs":false,"hf":0})
+  note split Sage KeyX: no charge spent (before {"c":1,"q":2,"e":1,"ult":7} after {"c":1,"q":2,"e":1,"ult":7,"bsOn":false,"dr":false,"hf":0} {"dr":false,"om":false,"bs":false,"hf":0})
+  note ascent Reyna KeyQ: no charge spent (before {"c":2,"q":2,"e":1,"ult":7} after {"c":2,"q":2,"e":1,"ult":7,"bsOn":false,"dr":false,"hf":0} {"dr":false,"om":false,"bs":false,"hf":0})
+  note ascent Reyna KeyE: no charge spent (before {"c":2,"q":2,"e":1,"ult":7} after {"c":2,"q":2,"e":1,"ult":7,"bsOn":false,"dr":false,"hf":0} {"dr":false,"om":false,"bs":false,"hf":0})
+FAIL split Omen: map ascent
+  note split Omen KeyX: no charge spent (before {"c":2,"q":1,"e":2,"ult":7} after {"c":2,"q":1,"e":2,"ult":7,"bsOn":false,"dr":false,"hf":0} {"dr":false,"om":false,"bs":false,"hf":0})
+FAIL split Raze: map ascent
+FAIL split Breach: map ascent
+  note split Breach KeyC: no charge spent (before {"c":1,"q":2,"e":1,"ult":8} after {"c":1,"q":2,"e":1,"ult":8,"bsOn":false,"dr":false,"hf":0} {"dr":false,"om":false,"bs":false,"hf":0})
+  note split Breach KeyQ: no charge spent (before {"c":1,"q":2,"e":1,"ult":8} after {"c":1,"q":2,"e":1,"ult":8,"bsOn":false,"dr":false,"hf":0} {"dr":false,"om":false,"bs":false,"hf":0})
+  note split Breach KeyE: no charge spent (before {"c":1,"q":2,"e":1,"ult":8} after {"c":1,"q":2,"e":1,"ult":8,"bsOn":false,"dr":false,"hf":0} {"dr":false,"om":false,"bs":false,"hf":0})
+  note ascent Cypher KeyE: no charge spent (before {"c":2,"q":2,"e":1,"ult":7} after {"c":2,"q":2,"e":1,"ult":7,"bsOn":false,"dr":false,"hf":0} {"dr":false,"om":false,"bs":false,"hf":0})
+  note ascent Cypher KeyX: no charge spent (before {"c":2,"q":2,"e":1,"ult":7} after {"c":2,"q":2,"e":1,"ult":7,"bsOn":false,"dr":false,"hf":0} {"dr":false,"om":false,"bs":false,"hf":0})
+FAIL split Chamber: map ascent
+  note split Chamber KeyQ: no charge spent (before {"c":1,"q":8,"e":1,"ult":8} after {"c":1,"q":8,"e":1,"ult":8,"bsOn":false,"dr":false,"hf":0} {"dr":false,"om":false,"bs":false,"hf":0})
+  note split Chamber KeyE: no charge spent (before {"c":1,"q":8,"e":1,"ult":8} after {"c":1,"q":8,"e":1,"ult":8,"bsOn":false,"dr":false,"hf":0} {"dr":false,"om":false,"bs":false,"hf":0})
+casts that spent nothing on the first press: split Sage KeyE, split Sage KeyX, ascent Reyna KeyQ, ascent Reyna KeyE, split Omen KeyX, split Breach KeyC, split Breach KeyQ, split Breach KeyE, ascent Cypher KeyE, ascent Cypher KeyX, split Chamber KeyQ, split Chamber KeyE
+casts that never spent a charge (press, clicks, recast): split Sage KeyE, split Sage KeyX, ascent Reyna KeyQ, ascent Reyna KeyE, split Omen KeyX, split Breach KeyC, split Breach KeyQ, split Breach KeyE, ascent Cypher KeyE, ascent Cypher KeyX, split Chamber KeyE
+split Phoenix: map ascent
+split Sage: map ascent
+split Omen: map ascent
+split Raze: map ascent
+split Breach: map ascent
+split Chamber: map ascent
+Child exit: 1 signal: null

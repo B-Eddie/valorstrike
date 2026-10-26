@@ -3490,8 +3490,9 @@ xLobbyAgentIdle(function () {
         sc2.updateMatrixWorld(true); const bx = new THREE.Box3().setFromObject(sc2), s2 = 1.92 / Math.max(0.01, bx.max.y - bx.min.y);
         wr.scale.setScalar(s2); wr.position.y = -bx.min.y * s2;
         const mx = new THREE.AnimationMixer(sc2), idle = kit.C[XUB_ST.idle] || kit.gl.animations.find((cl) => /idle/i.test(cl.name));
-        if (idle) mx.clipAction(idle).play(); mx.update(0);
-        ready({ m: wr, mx, real: 1, bd: null });
+        const sx = { sc: sc2, b: { pelvis: sc2.getObjectByName('Pelvis'), spine_01: sc2.getObjectByName('Spine1') } };
+        if (idle) mx.clipAction(idle).play(); mx.update(0); xUbCarry(sx);
+        ready({ m: wr, mx, sx, real: 1, bd: null });
       }).catch(() => ready(null));
     } catch (e) { ready(null); }
   };
@@ -3516,7 +3517,7 @@ xLobbyAgentIdle(function () {
     if (dx === null) { rotY += vel; vel *= 0.93; rotY += (-0.4 - rotY) * 0.02; }
     { const hw = innerWidth / 2 || 1, nx = cx ? (cx - hw) / hw : 0, tg = Math.max(-0.349, Math.min(0.349, nx * 0.349)); look += (tg - look) * 0.06; } // slow eased turn toward the cursor, clamped ±20°
     ag.rotation.y = rotY + look; ag.rotation.z = Math.sin(t * 0.5) * 0.012;
-    if (J) J.mx.update(0.033);
+    if (J) { xUbPre(J); J.mx.update(0.033); xUbCarry(J.sx); }
     r.render(sc, cam);
   })();
 });
@@ -3859,20 +3860,48 @@ function xUbRot(X, bone, axis, ang) {
   pq.identity(); for (let p = bone.parent; p && p !== X.sc; p = p.parent) pq.premultiply(p.quaternion);
   v.copy(axis).applyQuaternion(pq.invert()); q.setFromAxisAngle(v, ang); bone.quaternion.premultiply(q);
 }
-// the mixer skips bones whose clip value did not change since its last write, so the offsets are undone before every mixer update (xUbPre) instead of stacking
-function xUbPre(M) { const X = M.sx; if (!X || !X.sv) return; for (const k in X.sv) if (X.svOn[k]) { X.b[k].quaternion.copy(X.sv[k]); X.svOn[k] = 0; } }
+// Native Spine1 and Pelvis are siblings. Carry Spine1 as a virtual child, using the skin's bind
+// matrices rather than a possibly animated pose. Position only: the torso keeps its authored rotation.
+function xUbFollow(X) {
+  if (X.follow !== undefined) return X.follow;
+  X.follow = null; const P = X.b && X.b.pelvis, S = X.b && X.b.spine_01;
+  if (!P || !S || !P.parent || P.parent !== S.parent) return null;
+  X.sc.traverse((o) => {
+    if (X.follow || !o.isSkinnedMesh) return; const sk = o.skeleton, pi = sk.bones.indexOf(P), si = sk.bones.indexOf(S), ri = sk.bones.indexOf(S.parent);
+    if (pi < 0 || si < 0 || ri < 0) return;
+    const pb = sk.boneInverses[pi].clone().invert(), sb = sk.boneInverses[si].clone().invert();
+    X.follow = { p: P, s: S, offset: new THREE.Vector3().setFromMatrixPosition(pb.invert().multiply(sb)),
+      bind: new THREE.Vector3().setFromMatrixPosition(sk.boneInverses[ri].clone().multiply(sb)) };
+  });
+  return X.follow;
+}
+function xUbCarry(X) {
+  const F = xUbFollow(X); if (!F) return;
+  F.s.position.copy(F.offset).multiply(F.p.scale).applyQuaternion(F.p.quaternion).add(F.p.position);
+}
+// The mixer can skip unchanged values. Undo procedural offsets before each mixer evaluation.
+function xUbPre(M) {
+  const X = M.sx; if (!X) return; const F = xUbFollow(X); if (F) F.s.position.copy(F.bind);
+  if (!X.sv) return; for (const k in X.sv) if (X.svOn[k]) { X.b[k].quaternion.copy(X.sv[k]); X.svOn[k] = 0; }
+}
 function xUbPost(M) {
   const X = M.sx; if (!X || !X.ub || X.dd) return; const B = X.b;
   if (!X.sv) { X.sv = {}; X.svOn = {}; for (const k in B) if (B[k]) { X.sv[k] = new THREE.Quaternion(); X.svOn[k] = 0; } }
   for (const k in X.sv) { X.sv[k].copy(B[k].quaternion); X.svOn[k] = 1; }
-  if (Math.abs(X.yaw) > 0.01) { xUbRot(X, B.pelvis, XUB.up, X.yaw); xUbRot(X, B.spine_01, XUB.up, -X.yaw * 0.5); xUbRot(X, B.spine_02, XUB.up, -X.yaw * 0.5); }
+  if (Math.abs(X.yaw) > 0.01) {
+    xUbRot(X, B.pelvis, XUB.up, X.yaw);
+    const chain = [B.spine_01, B.spine_02, B.spine_03, B.spine_04].filter(Boolean), n = chain.length;
+    for (let i = 0; i < n; i++) xUbRot(X, chain[i], XUB.up, -X.yaw / n + (i === 0 && xUbFollow(X) ? X.yaw : 0));
+  }
   if (Math.abs(X.pit) > 0.01) xUbRot(X, B.spine_03, XUB.rt, -X.pit * 0.8);
+  xUbCarry(X);
 }
 // death: one of two death clips (by name), others fade out over 0.15 s; keeps animating ~2.6 s, then the pose freezes for the corpse fade (XDEAD)
 function xUbDead(M, d) {
   const X = M.sx; if (!X || !X.ub) return false;
   if (!X.dd) { xUbPre(M); X.dd = 1; X.dt = 0; X.yaw = X.pit = 0; const n = String(M.nm || "").length % 2 ? "death2" : "death1"; X.dn = n; const a = X.a[n]; a.reset(); a.play(); X.w[n] = 0; }
-  X.dt += d; const T = {}; T[X.dn] = 1; xUbW(X, T, d, 14); X.mx.update(d);
+  else xUbPre(M);
+  X.dt += d; const T = {}; T[X.dn] = 1; xUbW(X, T, d, 14); X.mx.update(d); xUbCarry(X);
   return X.dt < 2.6;
 }
 // any weapon sound from a unit (bot / ally / remote player / duel bot) counts as its shot for the fire-recoil layer
@@ -12858,11 +12887,11 @@ function xvAgent(M, kit) {
   const mats = new Map(), cull = []; sc.traverse((o) => { if (!o.isMesh) return; o.castShadow = true; o.frustumCulled = false; cull.push(o); o.raycast = XNR; o.geometry.userData.shared = true;
     const mat = (s) => { if (!mats.has(s)) { const m = new THREE.MeshLambertMaterial({ name:s.name, color:s.color, map:s.map, side:THREE.DoubleSide, transparent:s.transparent, alphaTest:s.alphaTest }); m.userData.agent = 1; xRimM(m, M.rim, null); mats.set(s,m); M.mats.push(m); } return mats.get(s); }; o.material = Array.isArray(o.material) ? o.material.map(mat) : mat(o.material);
   }); M.m.add(wr);
-  const mx = new THREE.AnimationMixer(sc), bone = (n) => sc.getObjectByName(n), X = {mx,a:{},w:{},ub:1,nativeContact:true,sc,b:{pelvis:bone('Pelvis'),spine_01:bone('Spine1'),spine_02:bone('Spine2'),spine_03:bone('Spine3')},cs:bone('Splitter'),cb:0,yaw:0,pit:0,sn:0,shots:0,hp:null,uo:null,ut:0,lo:null,lt:0,air:false,py:null,px:null,pz:null,cur:'idle',ad:{}};
+  const mx = new THREE.AnimationMixer(sc), bone = (n) => sc.getObjectByName(n), X = {mx,a:{},w:{},ub:1,nativeContact:true,sc,b:{pelvis:bone('Pelvis'),spine_01:bone('Spine1'),spine_02:bone('Spine2'),spine_03:bone('Spine3'),spine_04:bone('Spine4')},cs:bone('Splitter'),cb:0,yaw:0,pit:0,sn:0,shots:0,hp:null,uo:null,ut:0,lo:null,lt:0,air:false,py:null,px:null,pz:null,cur:'idle',ad:{}};
   const mk = (n,set,once) => { const c = kit[set][XUB_ST[n]], a = mx.clipAction(c); if (once) { a.setLoop(THREE.LoopOnce,1); a.clampWhenFinished = true; } X.a[n] = a; X.w[n] = 0; };
   XUB_LO.forEach((n) => mk(n,'L',n==='jump'||n==='land')); XUB_UPN.forEach((n) => mk(n,'U',n==='reload'||n==='cast'||n==='throw')); XUB_FU.forEach((n) => mk(n,'C',n!=='plant'));
   [['fire','Pistol_Shoot'],['hit','Hit_Chest'],['hitHead','Hit_Head']].forEach(([n,c]) => { const a=mx.clipAction(kit.A[c]); a.blendMode=THREE.AdditiveAnimationBlendMode; a.setLoop(THREE.LoopOnce,1); X.ad[n]=a; });
-  X.a.idle.play(); X.a.aim.play(); X.w.idle = X.w.aim = 1; mx.update(.01); M.m.updateMatrixWorld(true); X.cull = xvCull(cull);
+  X.a.idle.play(); X.a.aim.play(); X.w.idle = X.w.aim = 1; mx.update(.01); xUbCarry(X); M.m.updateMatrixWorld(true); X.cull = xvCull(cull);
   const hand = bone('R_Hand'); if (hand && M.gun) { const hold = new THREE.Group(), p=new THREE.Vector3(),q=new THREE.Quaternion(),s=new THREE.Vector3(); new THREE.Matrix4().copy(M.m.matrixWorld).invert().multiply(hand.matrixWorld).decompose(p,q,s); hold.quaternion.copy(q.invert()); hold.scale.set(1/s.x,1/s.y,1/s.z); hand.add(hold); hold.add(M.gun); M.gun.position.set(0,0,.03); M.gun.rotation.set(0,Math.PI,0); M.weaponHolder=hold; } // gun models are authored muzzle -Z: PI faces the muzzle the way the character looks
   X.contactLift=kit.contactLift;X.contactProbes=kit.contactProbes.map(p=>({o:sc.getObjectByName(p.mesh),indices:p.indices})).filter(p=>p.o&&p.o.isSkinnedMesh);X.contactV=new THREE.Vector3();X.contactInv=new THREE.Matrix4();X.contactShift=new THREE.Vector3();X.contactScale=new THREE.Vector3();X.contactFloor=bx.min.y;X.acts=X.a; M.ub=1; M.sx=X; M.valorant=1; M.xAt=[]; M.solOwn=()=>{M.solOwn=null;}; XSOL.mx.push(M);
   if (M.xvWait) { M.xvWait = 0; if (M.gun) M.gun.visible = true; } // the weapon waited, hidden, for the body
@@ -13401,18 +13430,46 @@ window.xValorantFeel={state:VF,view:VF_VIEW,cam:VF_CAM,camDip:vfCamDip,model:VF.
 // Retargeted crouch clips barely lower the native head. Correct their vertical root motion
 // after the mixer, then undo it before the next mixer evaluation.
 {const pre=xUbPre,post=xUbPost;xUbPre=function(M){const X=M.sx;if(X&&X.crouchRestore){X.crouchBone.position.copy(X.crouchRestore);X.crouchRestore=null;}return pre(M);};xUbPost=function(M){post(M);const X=M.sx;if(!M.valorant||!X||X.dd||M.dead||X.nativeContact)return;const head=X.sc.getObjectByName('Head'),pelvis=X.sc.getObjectByName('Root');X.crouchBone=pelvis;if(!head||!pelvis)return;M.m.updateMatrixWorld(true);const hp=head.getWorldPosition(new THREE.Vector3());if(X.standHead==null)X.standHead=hp.y-M.m.getWorldPosition(new THREE.Vector3()).y;const cb=Math.max(0,Math.min(1,X.cb||0));if(cb<.001)return;const desired=M.m.getWorldPosition(new THREE.Vector3()).y+X.standHead-.45*cb,delta=desired-hp.y;X.crouchRestore=pelvis.position.clone();const p=pelvis.getWorldPosition(new THREE.Vector3());p.y+=delta;pelvis.position.copy(pelvis.parent.worldToLocal(p));pelvis.updateMatrix();M.m.updateMatrixWorld(true);};}
-// Native rigs (nativeContact): the retargeted crouch clips move only the Pelvis bone, but Spine1 is the Pelvis's
-// sibling under Splitter, so the torso never follows it down; with the aim upper layer a full crouch dropped the head
-// ~4 cm while the authoritative head volume drops ch (0.45 m at full crouch, server/src/hitboxes.js). After the mixer
-// and contact correction, lower the torso chain (Spine1) so the Head bone sits at the upright head height minus
-// 0.45 * crouch blend, measured against the agent root; legs and feet are untouched. Undone before the next mixer pass.
-const XRC={drop:.45,stand:1.72};
-{const pre=xUbPre,post=xUbPost;xUbPre=function(M){const X=M&&M.sx;if(X&&X.ncRestore){X.ncBone.position.copy(X.ncRestore);X.ncRestore=null;}return pre(M);};xUbPost=function(M){post(M);const X=M.sx;if(!M.valorant||!X||!X.nativeContact||X.dd||M.dead||!X.sc)return;
- if(X.ncBone===undefined){X.ncBone=X.sc.getObjectByName('Spine1')||null;X.ncHead=X.sc.getObjectByName('Head')||null;X.ncV=new THREE.Vector3();X.ncR=new THREE.Vector3();}
- if(!X.ncBone||!X.ncHead||!X.ncBone.parent)return;M.m.updateMatrixWorld(true);const v=X.ncV,root=M.m.getWorldPosition(X.ncR).y,head=X.ncHead.getWorldPosition(v).y-root,cb=Math.max(0,Math.min(1,X.cb||0));
- if(cb<.001){if(!X.air&&!X.lo&&Number.isFinite(head))X.ncStand=X.ncStand==null?head:X.ncStand+(head-X.ncStand)*.2;return;}
- const want=(X.ncStand==null?XRC.stand:X.ncStand)-XRC.drop*cb,delta=want-head;if(!(delta<-.001)||delta<-.8)return;
- X.ncRestore=X.ncBone.position.clone();X.ncBone.getWorldPosition(v);v.y+=delta;X.ncBone.position.copy(X.ncBone.parent.worldToLocal(v));X.ncBone.updateMatrix();M.m.updateMatrixWorld(true);};}
+// Native rigs (nativeContact): follow the pelvis first, then correct crouch height on both halves
+// of the waist. Save the feet before shifting and re-plant them with two-bone IK. Every offset
+// is restored before the mixer. Only idle frames may update the standing reference (jog bobs low).
+const XRC={drop:.45,stand:1.72,max:.3};
+{const pre=xUbPre,post=xUbPost;
+xUbPre=function(M){
+ const X=M&&M.sx,restore=X&&X.ncRestore;
+ if(restore)for(const [bone,pos] of restore)bone.position.copy(pos);
+ const result=pre(M);
+ // Terrain setup may have saved its first leg pose after our IK ran. Restore the raw
+ // crouch leg rotations last, after the shared quaternion restore, before the mixer.
+ if(restore){for(const L of X.ncLegs)for(let i=0;i<3;i++)[L.up,L.lo,L.hand][i].quaternion.copy(L.saved[i]);X.ncRestore=null;}
+ return result;
+};
+xUbPost=function(M){
+ post(M);const X=M.sx;if(!M.valorant||!X||!X.nativeContact||X.dd||M.dead||!X.sc)return;
+ if(X.ncBone===undefined){
+  const bone=n=>X.sc.getObjectByName(n);X.ncBone=bone('Pelvis')||null;X.ncSpine=bone('Spine1');X.ncHead=bone('Head');
+  X.ncV=new THREE.Vector3();X.ncR=new THREE.Vector3();
+  X.ncLegs=['L','R'].map(s=>({up:bone(s+'_Hip'),lo:bone(s+'_Knee'),hand:bone(s+'_Foot'),target:new THREE.Vector3(),pole:new THREE.Vector3(),fq:new THREE.Quaternion(),saved:Array.from({length:3},()=>new THREE.Quaternion())}));
+  X.ncIK={ik:Array.from({length:9},()=>new THREE.Vector3()),q:[new THREE.Quaternion(),new THREE.Quaternion()]};
+ }
+ if(!X.ncBone||!X.ncSpine||!X.ncHead||X.ncLegs.some(L=>!L.up||!L.lo||!L.hand))return;
+ M.m.updateMatrixWorld(true);const v=X.ncV,root=M.m.getWorldPosition(X.ncR).y,head=X.ncHead.getWorldPosition(v).y-root,cb=Math.max(0,Math.min(1,X.cb||0));
+ if(cb<.001){if(!X.air&&!X.lo&&(X.w.idle||0)>.9&&Number.isFinite(head))X.ncStand=X.ncStand==null?head:X.ncStand+(head-X.ncStand)*.2;return;}
+ if(X.air||X.lo||(X.w.plant||0)>.01)return;
+ const want=(X.ncStand==null?XRC.stand:X.ncStand)-XRC.drop*cb,delta=Math.max(-XRC.max,Math.min(XRC.max,want-head));
+ if(!Number.isFinite(delta)||Math.abs(delta)<.001)return;
+ for(const L of X.ncLegs){
+  L.hand.getWorldPosition(L.target);xgWorldQ(L.hand,L.fq);
+  L.lo.getWorldPosition(L.pole);L.up.getWorldPosition(v);L.pole.sub(v);
+  X.ncR.subVectors(L.target,v).normalize();L.pole.addScaledVector(X.ncR,-L.pole.dot(X.ncR));
+  if(L.pole.lengthSq()<1e-8)L.pole.set(0,0,1).transformDirection(M.m.matrixWorld);L.pole.normalize();
+  [L.up,L.lo,L.hand].forEach((bone,i)=>L.saved[i].copy(bone.quaternion));
+ }
+ X.ncRestore=[X.ncBone,X.ncSpine].map(bone=>[bone,bone.position.clone()]);
+ for(const [bone] of X.ncRestore){bone.getWorldPosition(v);v.y+=delta;bone.position.copy(bone.parent.worldToLocal(v));bone.updateMatrixWorld(true);}
+ for(const L of X.ncLegs){xgIK(L,L.target,L.pole,X.ncIK);xgSetWorldQ(L.hand,L.fq);}
+ M.m.updateMatrixWorld(true);
+};}
 function xrHitboxes(b,M){
  if(b&&b.nt)return;
  if(!b||!b.body||!b.head||!M||!M.sx||M.dead)return;

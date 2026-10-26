@@ -1,0 +1,131 @@
+
+> valorstrike-server@1.0.0 test
+> node test.js && node test-spike.js && node test-directory.cjs && node test-abilities.js && node test-ability-equip.js && node test-spike-edges.js && node test-spike-accept.js && node test-weapons.js && node test-prebuilt.cjs && node test-trigger.js && node test-protocol.cjs && node test-barriers.js && node test-buy-worlds.js && node test-reyna.js && node test-interactions.js && node test-blades.js && node test-release-gate.cjs && node test-reconnect.js && node test-floor.js && node test-ults.js && node test-combat.js && node test-gunplay.js && node test-economy.js && node test-spread.js && node test-parity-rules.js && node test-bots.js && node test-bot-variety.js && node test-background.js && node test-two-player.js && node test-perf.js && node test-bundle.cjs && node test-soak.js && node test-traversal.js && node test-stairs.js && node test-qa-hooks.cjs && node test-map-bounds.js && node test-map-zfight.js && node test-oob.js && node test-skins.js && node test-finishers.js
+
+authority tests passed: ignored damage/teleport/credit claims, monotonic input, speed, server ray/damage/scoring, walls, reload and cadence
+Inherited prototype names cannot select a weapon
+Name collision suffix advances, including user-supplied numbered names
+TDM server enforces UI weapon tier unlocks at2and5minutes with Spectre start
+Spike tests passed: economy limits/refunds, owned equip, plant time, half defuse, defender win, delayed next round, elimination once
+Directory self-stats require bearer identity, expose no tokens/id; presence counts active connected human sessions including private rooms without exposing them
+Directory persistence/idempotency passed using in-memory storage double; live completed-match durability remains unverified
+Ability authority checks passed: buy cost/caps, buy-phase cast rejection, no unearned ult, server-derived origin/aim, limited dash, server area damage and once-only kill
+Signature recharge timers server owned; Reyna Devour/Dismiss share charge pool and free round charge
+Sage heal targets hurt aimed teammate; invalid casts keep charge; resurrection preserves corpse location with no freearmor/loadout reset
+Flash resolves once after delay, requires facing+LOS and sends server status instead of continuous arbitrary blind
+Chamber Rendezvous: first E places server-position anchor without teleport/spend, return within15m preserves elevation, cooldown30s, forged target ignored
+Breach Fault Line (after the 1.1 s windup): wiki strip 8 m ahead, 8 m wide, 8-56 m long from the HOLD FIRE charge (pw in the intent, clamped, junk/missing = full, echoed on the ac event), not generic area slow, rejects behind/outside/allies and recharges 50s
+Concuss fire is server-limited to80%rate and disables ADS; normal fire resumes afterward
+Omen ult validates walkable minimap target, consumes earned points, waits3s, teleports with reconciliation, death cancels; never generic blast
+Omen Step uses server aim/15m/1schannel, walkable elevated target, no anchor/instant movement, blocks overlapping cast
+Jett Tailwind uses current server input direction/fallback,8m capsule collision limit, preserves elevation/reconciliation; Updraft matches project impulse, never client coordinates
+Sage selected heal follows moving target, never dead target; resurrection uses project5m aimed range and preserves points for invalid long-range corpse
+Skye Regrowth follows caster18m, excludes self/enemies, shares100HPpool, toggles/resumes without extra charge, stops spent
+Regrowth stops on caster death
+Spike motor honors current-input ADS weapon speed, concuss disables ADS, slow stacks, expired input cannot retain ADS
+Ability equip (server): kit table matches the wiki, equip casts hold fire for 0.45 s, quick-casts do not; Cloudburst projectile (tap arc / steered while C held / smoke on contact or after 2 s, 2.5 s), Hot Hands 60/s spreading to 4.5 m over 0.75 s, Nanoswarm 5 s; wiki windups (Aftershock / Flashpoint / Fault Line / Leer / Curveball / Rolling Thunder / Trapwire / Trademark / Tour De Force); Sova bolt charge + 0-2 bounces
+Spike edge checks passed: finite reserve/reload, equip lock, armor exact name, halftime reset, balanced late seat waits for next round
+Spike refund regression: no free restored weapon/armor from out-of-order sells; loading/dead refund and post-round ability rejected
+Spike weapon rewards: each shotgun kill credited, agent ult cap respected
+Spike drop survives next tick without auto-pickup by sender; ability refund changes charge/credits exactly once
+Defenders do not receive hidden Spike carrier/site/coordinates before plant
+Buy-phase server boundary matches client/native visual zedge, not unrelated12m spawn circle; releases at phaseend
+Buy-boundary projection never places capsule into world solid
+Spike loading hold: capped at 15 s per player and per round, late loader sits the round out and returns next round
+Spike seats: a leaver's seat bot takes over the living body; a rejoin gives up a dead bot before a living one
+Sidearm-only round: equip of an empty slot / malformed name refused, the simulation keeps ticking
+Armor v9.10: Light / Heavy Armor names (old Shields names refused), Regen Shield 650 = 25 at 100%, 3 s refill from a 50 pool, sell / replace restore, rows[21] pool, round carry, death clears
+Spike acceptance (local ENABLE_SPIKE, real worker + Ascent world, virtual clock): gate, buy/sell/econ, human plant with +300 team bonus, late join, detonation, human defuse with checkpoint, leave/rejoin seat handover, half-time swap, overtime 5000/swap/win-by-two, match end
+Weapons: shotgun pellets use one round/shot event, kill credited once; knife range enforced without ammo depletion
+Weapons: knife heavy swing (kh) 75 front / 150 head or back, 1 s cooldown; light 50 at 2/s; kh ignored for guns
+Weapons: reserve ammo per gun = wiki (18 guns), on buy
+Weapons: Bucky / Marshal reload one round per .5 s and a shot interrupts it, Outlaw 2.3 / 3.8 s, shotgun hits past 10 m = 30% slow easing out
+ascent app BVH reader deserialized prebuilt server collision, spawn/site floor rays match
+lotus app BVH reader deserialized prebuilt server collision, spawn/site floor rays match
+bind app BVH reader deserialized prebuilt server collision, spawn/site floor rays match
+haven app BVH reader deserialized prebuilt server collision, spawn/site floor rays match
+split app BVH reader deserialized prebuilt server collision, spawn/site floor rays match
+breeze app BVH reader deserialized prebuilt server collision, spawn/site floor rays match
+Semi-auto trigger requires release and respawn clears stale controls
+Protocol: null/primitives/arrays ignored; real agent selections preserved; invalid prototype names default; async late auth cannot exceed10humans; match clock/bots wait until first ready human
+Sage wall: server-derived placement, oriented collision, elevation, LOS/bullet block,600HP weapon damage and break
+Shot first hitting player in front of barrier does not also damage barrier
+ascent buyworld pass [
+  [ -0.5, 7.345707286434266, 45.43568620854566 ],
+  [ 0.25, 8.054900169372559, -42.75 ]
+]
+bind buyworld pass [
+  [ 0.75, 3.9360757795026298, 64.25 ],
+  [ -6.9252306915625084e-15, 6.898940086364746, -64.25 ]
+]
+haven buyworld pass [
+  [ -0.75, 6.999427684182463, 45.583659343111925 ],
+  [ -6.9252306915625084e-15, 7.019370506579752, -45.25017042410682 ]
+]
+split buyworld pass [
+  [ -0.5, 7.0000200271606445, 38.25 ],
+  [ 0.25, 9.000020027160645, -38.25 ]
+]
+lotus buyworld pass [
+  [ -0.75, 6.284329891204834, 34.5 ],
+  [ -6.9252306915625084e-15, 8.275172593243239, -34.5 ]
+]
+breeze buyworld pass [
+  [ -0.5, 4.001490130464989, 44.25 ],
+  [ 2.5, 12, -46.971990239533135 ]
+]
+Reyna authority: owned nearby unexpired souls, shared charges, +50 Devour/overheal expiry, Dismiss immunity/no attacks, Empress/free casts, gun and ability souls, private state and death/round reset, heals never clamp an overheal
+Spike interaction interruption: moving, firing, airborne, loading and stale holds reject; half-defuse checkpoint retained; buy/end-phase attacks reject
+Blade Storm authority: earned activation, five accurate airborne knives, cadence, server hit/head damage, kill refill/rewards, no gun-ammo mutation, exhaustion/death reset, DM equip rejection
+Release gate: production wrangler sets no Spike/local-origin vars and the worker never imports tools/ (browser-bridge is local only); Spike requires explicit opt-in; loopback origins require local opt-in and reject lookalikes; loading sockets retain 180 s timeout
+Reconnect records: leave fills bot seat, host transfers, duplicate drop ignored; departed and rejoined human stats aggregate once per identity without bot credit; TDM rejoin (profile and guest) restores the original team at 5v5
+Floor weapons: G drop of primaries (no refund; sidearm and knife kept), F swap with old gun left in place, reach/height/LOS checks, walk-over pick-up with dropper grace, death drop once with live ammo, snapshot/round-state rows, cap, round reset with Classic, bot trade-up
+Ultimates: Hunter's Fury (3 wall-piercing blasts, recast, reveal, death end), Showstopper (1.4 s launcher equip, FIRE shoots, 10 s window, travelling rocket, falloff, LOS, wall detonation), Lockdown (windup, radius detain blocks guns/abilities, round reset), Rolling Thunder (cone through walls), Seekers (3 nearest), Neural Theft (corpse targeting, reveals at 2 s and 6 s), Tour de Force (5-round Operator, weapon restore, round reset), Run It Back (death/expiry return, no elimination, no death drop, gear kept at round end); leaver utility/ult state moves to the seat bot; server-side aim only
+Devices: recon pulses reveal by line of sight (two pulses), Boom Bot seeks and explodes, Trailblazer concusses
+Devices row 9: Blaze (wall burn/heal/sight), Hot Hands self-heal, Curveball (curve, windup, 1.5 s), Nanoswarm (dormant, free trigger, 45/s), Alarmbot (Vulnerable x2), Turret 180° arc + tag, Trapwire (wall-to-wall tether, daze, one use), Cyber Cage 7.25 s / 3.72 m, Dark Cover 4.1 m and Cloudburst 3.35 m smoke radii, Trademark (spot, slow field), Headhunter weapon restore
+Combat: pose-following head/body/legs volumes (facing, crouch, run, air), crouched headshots, official wall penetration tiers, barrier stops bullets, render-matched smoke blocks bot sight, flash LOS/facing, crouch/pitch rows
+Gunplay: 306 weapon x band x part x armor cases (shots-to-kill and every shot's row HP / armor exact, headshot damage per band = weapons.json), shotgun pellet count / cone / round pattern at 3 facings, spray climb = shared motor (pause / weapon reset, crouch), swap and knife mid-reload cancel the reload, G mid-reload, enemy gun pickup keeps ammo, ammo refill next round, same-tick trades (one survivor, first shooter rotates)
+Economy: loss streak 1900/2400/2900 (reset by a win and at half), win 3000, cap 9000, half-time 800 + ult reset, kill 200, plant 300 to every attacker, overtime 5000; ult points for kill, death to an enemy (once; not falls / teamkills), plant (planter only) and defuse; a Phoenix killed inside Run It Back is no kill / death / ult point (credits, soul orb, Blade Storm refresh and kill feed kept)
+Spread: movement penalty ramps with speed (deadzone to full), landing +7 deg for .225 s; wiki first-shot / crouch / crouch-walk / walk / run / airborne for 18 guns hip + ADS; online jumping scoped Operator spreads over the 15 deg airborne cone, still = dead centre; spray error capped at the published max (Ares min); recovery times; running recoil x1.8 / x1.5
+Parity rules: lost-round survivors 1000 (attacker without plant at time-out, defender after detonation), Shorty 300; fall damage 15 at 8 m to 100 at 17 m (health only); detonation kills within 32.5 m, no credit, no death ult point (nor for fall damage); overtime ults 3 short
+Bots: deterministic per-bot seeds; identical starts diverge in path and actions; distinct reaction/aim/strafe/crouch; mixed roles per team; spike goals spread but exact for the spike
+Bot variety (server): ascent distinct attacker routes 24 over 6 rounds (per round 5/5/5/5/5/5), avg moving teammate gap 20.34 m, <1.8 m 0.5%; bind distinct attacker routes 26 over 6 rounds (per round 5/5/5/5/5/5), avg moving teammate gap 14.97 m, <1.8 m 3.4%
+Background tab: hidden clients signal vis, keep their seat through once-a-minute throttling and Worker heartbeats, held input released; silent sessions still dropped at 15 s visible / 150 s hidden; slow loads kept while progressing, closed as 'Load timed out' when stalled/silent/capped
+Two-player acceptance (in-process worker, Ascent DM): human hits A→B 11, B→A 10; kills both ways; respawns; leave → bot seat; rejoin same profile; natural end (Bot Sage); persisted records match (B aggregated 5/7); DM spawns spread (39 kills/60 s, 0/38 in sight)
+Perf hot paths: grid near == full scan, cached A* == reference (routes copied), static spawn candidates cached per anchor; ascent near 10.3µs vs scan 100.8µs, A* 2.39ms vs 2.08ms; split near 16.5µs vs scan 119.8µs, A* 2.59ms vs 3.21ms
+Bundle: worker bundle embeds hitboxes.json (volumes and poses), no runtime JSON import; 1239 KB
+Gameplay QA: open-edge falls rescued (TDM + Spike buy phase), wedged bot freed (also high on a prop), routes avoid prop-blocked nodes, leaving or replaced spike carrier hands over/drops, stuck-in-place escape, Spike bots skip discarded hunt routes, off-graph loose goal arrival, Breeze off-map pocket, seeded worker soak (TDM, Spike) clean; ability/ult-heavy Spike soaks (Bind ults, Lotus abilities) hold the economy/carry-over/detain/Run It Back/kill-event invariants
+ascent traversal pass attacker spawn→defender spawn 21.0s; attacker spawn→A 18.8s; attacker spawn→B 20.9s; defender spawn→A 12.2s; defender spawn→B 9.9s; A ramp pit, south floor 4.0s; A ramp pit, north floor 4.0s; A ramp pit, east ramp 4.0s; A ramp pit, west ledge 4.0s; A ramp pit, south floor, jumping 4.0s; A ramp pit, north-east corner 4.0s; A ramp pit, ramp, diagonal 4.0s
+bind traversal pass attacker spawn→defender spawn 31.9s; attacker spawn→A 22.2s; attacker spawn→B 26.4s; defender spawn→A 10.2s; defender spawn→B 9.7s; A Teleporter→B Exit→site 17.5s repaths 2; B Teleporter→A Exit→site 9.2s
+breeze traversal pass attacker spawn→defender spawn 29.8s repaths 2; attacker spawn→B 17.2s; attacker spawn→A 16.4s; defender spawn→B 19.7s; defender spawn→A 20.9s repaths 2
+haven traversal pass attacker spawn→defender spawn 24.6s; attacker spawn→A 17.4s; attacker spawn→B 14.1s; attacker spawn→C 16.7s; defender spawn→A 9.6s; defender spawn→B 11.5s; defender spawn→C 12.6s
+lotus traversal pass attacker spawn→defender spawn 23.1s; attacker spawn→A 15.3s; attacker spawn→B 11.3s; attacker spawn→C 23.3s; defender spawn→A 9.8s; defender spawn→B 9.0s; defender spawn→C 14.1s
+split traversal pass attacker spawn→defender spawn 29.8s repaths 1; attacker spawn→A 20.3s; attacker spawn→B 38.2s repaths 4; defender spawn→A 13.6s; defender spawn→B 12.2s
+Traversal: 43 human-driven walks (spawn→every site both teams, buy-wall release, Bind teleporters) on 6 maps with the shared motor
+[ -66, 5.2969, 3.5 ] [ -66, 5.280215465902965, 3.4535784110361307 ]
+[ -53.25, 6.2993, -9.25 ] [ -53.28412597536052, 6.284319877624512, -9.284125975360515 ]
+[ -50.25, 4.7726, -6.25 ] [ -50.28412597536051, 4.7860507132250785, -6.284125975360514 ]
+Original Lotus stair regression: 140 walking ticks, three previously blocked paths, no jumps/embedded capsule; client/server motors identical
+QA hooks: gate required, ranges validated, malformed ignored, production config clean, client input unreachable
+ascent holes 0 / 85608 samples; known escapes contained 16 (old motor escapes 12); sweep 406 probes contained, 0 perches; 23.2s
+bind holes 0 / 88497 samples; known escapes contained 17 (old motor escapes 13); sweep 406 probes contained, 0 perches; 25.1s
+haven holes 0 / 72900 samples; known escapes contained 16 (old motor escapes 9); sweep 364 probes contained, 0 perches; 18.5s
+split holes 0 / 70011 samples; known escapes contained 17 (old motor escapes 11); sweep 357 probes contained, 0 perches; 32.4s
+lotus holes 0 / 77679 samples; known escapes contained 16 (old motor escapes 14); sweep 315 probes contained, 0 perches; 12.4s
+breeze holes 0 / 104139 samples; known escapes contained 16 (old motor escapes 10); sweep 364 probes contained, 0 perches; 19.2s
+Map bounds: 6 maps, hole grid clean, 2310 boundary probes contained
+ascent spawns/sites/callouts valid; walk fixtures 14 edges 1 traps
+bind spawns/sites/callouts valid; walk fixtures 4 edges 0 traps
+haven spawns/sites/callouts valid; walk fixtures 4 edges 0 traps
+split spawns/sites/callouts valid; walk fixtures 2 edges 1 traps
+lotus spawns/sites/callouts valid; walk fixtures 0 edges 0 traps
+breeze spawns/sites/callouts valid; walk fixtures 22 edges 48 traps
+Map walk: spawns, plant sites and callouts valid on 6 maps; 96 walk fixtures pass
+ascent seams: 1350 open coplanar overlaps before -> 0 after (0 m2 left); 9.7s
+split seams: 970 open coplanar overlaps before -> 0 after (0 m2 left); 8.5s
+breeze seams: 392 open coplanar overlaps before -> 0 after (0 m2 left); 8.3s
+Map z-fight: 3 maps, 2712 seam overlaps resolved by the runtime fix
+OOB server rule: grounded past nav coverage warns then kills at 2 s; dm/tdm respawn, five stays dead; in-coverage and re-entry safe; kill attributed to the map boundary
+Skins: catalogue ids validated; hi/sk store and relay valid skins, invalid ids rejected whole (skr) and never relayed; room skins sent before start; floor rows carry the dropper skin
+Finishers: server last-opponent gate, validated skin/weapon, Phoenix exclusion, round dedupe and cosmetic-only state
+Finisher integration: actual Spike gun kill emits the server-owned event
