@@ -218,7 +218,20 @@ const fails=[];const fail=s=>{fails.push(s);if(VERBOSE)console.log('FAIL',s);};c
    const r=xe('[__pa.hit.blind,__pa.wide.blind,__pa.past?__pa.past.blind:0,__pa.mate?__pa.mate.blind:1,J.par.length]');xe('los=los.__p;true');
    eq([r[0]>0.5&&r[0]<=2,r[1],r[2],r[3]>0.5&&r[3]<=2,r[4]],[true,0,0,true,0],'Paranoia: 10 m behind a wall and facing away hit (2 s), 4.6 m off the line and 5 m past 25 m missed, ally hit (when a third bot / an ally is alive), orb gone: '+JSON.stringify(r));
    xe('bots.concat(allies).forEach(b=>{if(b.det>1e8)b.det=0;});true');await adv(200);}}
+ // ---- Raze Boom Bot (wiki Boom_Bot: 5 s, 15 m detection, explodes within 2.5 m, 80 inside 2 m -> 30 at 6 m); client XBB == server DEV.boombot ----
+ {const dsrc=require('fs').readFileSync(require('path').join(__dirname,'../server/src/devices.js'),'utf8'),bm=dsrc.match(/boombot:\{life:([\d.]+),speed:[\d.]+,sight:([\d.]+),trigger:([\d.]+),damage:([\d.]+),min:([\d.]+),inner:([\d.]+),radius:([\d.]+)\}/);
+  eq(xe('[XBB.life,XBB.sight,XBB.trig,XBB.max,XBB.min,XBB.inner,XBB.out]'),bm?bm.slice(1).map(Number):null,'client XBB == server DEV.boombot');
+  eq(xe('[xBbDmg(0),xBbDmg(2),xBbDmg(4),xBbDmg(5.5),xBbDmg(6.01)]'),[80,80,55,36.25,0],'Boom Bot falloff 80 (2 m) -> 30 (6 m)');}
+ await live();{xe('bots.concat(allies).forEach(b=>{b.det=1e9;});timeLeft=Math.max(timeLeft,60);true');pick('Raze');await adv(200);
+  const ok=xe('(()=>{const al=bots.filter(b=>b.alive&&b.g);if(al.length<3)return null;window.__bb={o:{x:player.x,z:player.z},foe:al[0],side:al[1],out:al[2]};bots.forEach(b=>b.g.position.set(player.x+200,b.g.position.y,player.z));window.__bl0=blocked;window.__lo0=los;blocked=()=>false;los=()=>true;RS.bb.length=0;return true;})()');
+  if(!ok)fail('Boom Bot: need three live bots');else{
+   // the bot leaves heading -z; foe 13.4 m away at (12, -6) (outside the old 10 m sight), side 3 m further, out 9 m further
+   const keep=()=>xe('[[__bb.foe,12,-6],[__bb.side,12,-9],[__bb.out,12,-15]].forEach(([b,x,z])=>{b.alive=true;b.hp=100;b.g.position.x=__bb.o.x+x;b.g.position.z=__bb.o.z+z;});player.x=__bb.o.x;player.z=__bb.o.z;player.hp=100;true');keep();
+   xe('window.__bd=[0,0,0];window.__jh1=jHit;jHit=function(b,n,w){if(w==="Boom Bot"){const i=[__bb.foe,__bb.side,__bb.out].indexOf(b);if(i>=0)__bd[i]+=n;}return __jh1.apply(this,arguments);};RS.bb.push({m:rsMesh(0xff8a1f,1.6,new RV(__bb.o.x,0.4,__bb.o.z-1)),dx:0,dz:-1,t:XBB.life});true');
+   for(let i=0;i<120&&xe('RS.bb.length');i++){await adv(50);keep();}
+   const d=xe('__bd');xe('jHit=__jh1;blocked=__bl0;los=__lo0;bots.concat(allies).forEach(b=>{if(b.det>1e8)b.det=0;});true');
+   eq([d[0]>=73.75&&d[0]<=80,d[1]>30&&d[1]<d[0],d[2]],[true,true,0],'Boom Bot locks at 13.4 m, explodes within 2.5 m (73.75-80), falloff to a target ~4.7 m from the blast, none at ~10 m: '+JSON.stringify(d));await adv(200);}}
  if(xe('XEQV.err||null'))fail('ability viewmodel error: '+xe('XEQV.err'));
  if(H.errors.length>errs0)fail('page errors: '+H.errors.slice(errs0).map(e=>String(e&&e.message||e)).join(' | '));
- if(fails.length){console.log(fails.join('\n'));process.exit(1);}console.log('ability equip: binds, migration, HUD labels, equip -> fire flow, first-person equip viewmodel, wiki equip times + windups, Sova bow charge + bounces, Fault Line hold-to-extend, Hot Hands spread, Neural Theft 18 m / 2 s + 6 s, Cyber Cage cylinder, Recon Bolt 30 m pulses, Nanoswarm 4.5 m / 1 s windup, Paranoia 25 m orb, Cloudburst flight + steering, per-ability smoke radii, kit table ok');process.exit(0);
+ if(fails.length){console.log(fails.join('\n'));process.exit(1);}console.log('ability equip: binds, migration, HUD labels, equip -> fire flow, first-person equip viewmodel, wiki equip times + windups, Sova bow charge + bounces, Fault Line hold-to-extend, Hot Hands spread, Neural Theft 18 m / 2 s + 6 s, Cyber Cage cylinder, Recon Bolt 30 m pulses, Nanoswarm 4.5 m / 1 s windup, Paranoia 25 m orb, Boom Bot 15 m / 2.5 m / 80-30 falloff, Cloudburst flight + steering, per-ability smoke radii, kit table ok');process.exit(0);
 })().catch(e=>{console.error(e);process.exit(1);});

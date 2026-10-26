@@ -19,9 +19,11 @@ export const DEV={
  cage:{life:7.25,h:5},/* wiki Cyber_Cage: 7.25 s, hollow open-ended cylinder r 3.72 m centred on the cage; h: half-height (not on the wiki; client CYCAGE.h) */
  trademark:{life:120,sight:10,arm:.5,armDeploy:WINDUP.trademark,radius:6,field:9.5},
  headhunter:{weapon:'Sheriff',ammo:1},
- boombot:{life:5,speed:6,sight:10,trigger:1.2,damage:125,radius:3},
+ boombot:{life:5,speed:6,sight:15,trigger:2.5,damage:80,min:30,inner:2,radius:6},/* wiki Boom_Bot: 5 s, 15 m detection, explodes within 2.5 m, 80 inside 2 m falling to 30 at 6 m; client XBB */
  trail:{life:3,speed:9,trigger:2,concuss:2.5,radius:4}
 };
+// Boom Bot damage at d m from the blast: 80 inside the 2 m inner radius, linear to 30 at the 6 m outer radius (wiki Boom_Bot).
+export const bbDamage=d=>{const B=DEV.boombot;return d<=B.inner?B.damage:d>=B.radius?0:B.damage-(d-B.inner)/(B.radius-B.inner)*(B.damage-B.min);};
 const losClear=(sim,o,p)=>{const q=p.map((n,i)=>n-o[i]),len=Math.hypot(...q);if(len<.05)return true;return sim.world.ray(o,q.map(n=>n/len),Math.max(0,len-.4))===Infinity;};
 const chest=v=>[v.x,v.y+1.2-(v.ch||0)*.5,v.z];
 const fwd=u=>[-Math.sin(u.look),0,-Math.cos(u.look)];
@@ -81,7 +83,7 @@ export function tickDevices(sim,dt){
   // Boom Bot locks onto the nearest enemy it can see; Trailblazer runs straight.
   if(e.kind==='boombot'){const seen=foes.filter(v=>Math.hypot(v.x-o[0],v.z-o[2])<C.sight&&losClear(sim,o,chest(v))).sort((a,b)=>Math.hypot(a.x-o[0],a.z-o[2])-Math.hypot(b.x-o[0],b.z-o[2]))[0];if(seen)e.yaw=Math.atan2(o[0]-seen.x,o[2]-seen.z);}
   const hit=foes.find(v=>Math.hypot(v.x-o[0],v.z-o[2])<C.trigger&&Math.abs(v.y-e.p[1])<2);
-  if(hit){sim.effects.splice(i,1);for(const v of foes)if(Math.hypot(v.x-o[0],v.z-o[2])<C.radius&&Math.abs(v.y-e.p[1])<2.5&&losClear(sim,o,chest(v))){if(e.kind==='boombot')abilityDamage(sim,owner,v,C.damage);else{v.concussUntil=Math.max(v.concussUntil||0,sim.time+C.concuss);v.slowUntil=Math.max(v.slowUntil||0,sim.time+C.concuss);}}continue;}
+  if(hit){sim.effects.splice(i,1);for(const v of foes)if(Math.hypot(v.x-o[0],v.z-o[2])<C.radius&&Math.abs(v.y-e.p[1])<2.5&&losClear(sim,o,chest(v))){if(e.kind==='boombot')abilityDamage(sim,owner,v,bbDamage(Math.hypot(v.x-o[0],v.z-o[2])));else{v.concussUntil=Math.max(v.concussUntil||0,sim.time+C.concuss);v.slowUntil=Math.max(v.slowUntil||0,sim.time+C.concuss);}}continue;}
   if(!crawl(sim,e,dt,C.speed)){if(e.kind==='boombot'){const yaw=e.yaw+Math.PI/2;e.yaw=yaw;}else e.until=sim.time;}
  }
 }

@@ -362,3 +362,20 @@ friendly fire Yes. Was: server a point flash 1.6 m up with a facing check that b
 - Tests: `server/test-abilities.js` (PARANOIA table; ally hit at 0.2 s, 10 m enemy not yet; hit by 0.45 s through a
   wall while facing away, 2 s, not blind; 4 m off the line at 20 m hit; 4.6 m off, 5 m past the end and Omen not; orb gone),
   `work/test_ability_equip.cjs` (XPAR == PARANOIA; same geometry offline with `los` forced false).
+
+### Raze Boom Bot (wiki.playvalorant.com/en-us/Boom_Bot, fetched 2026-10-25)
+
+Wiki stats: duration 5 s (includes the 0.7 s deploy), max detection cone distance 15 m, explodes within 2.5 m of its
+target, radii 2 m inner / 6 m outer, damage 30 - 80 (minimum at the outer radius, maximum inside the inner one), not on
+allies. Was: server 10 m sight, 1.2 m trigger, flat 125 in 3 m; offline client 8 m sight, 1.2 m trigger, flat 80 in 1.5 m,
+10 s life.
+
+- Server: `DEV.boombot = {life: 5, speed: 6, sight: 15, trigger: 2.5, damage: 80, min: 30, inner: 2, radius: 6}`,
+  `bbDamage(d)` = 80 inside 2 m, linear to 30 at 6 m, 0 beyond; each enemy in 6 m with line of sight takes it by distance.
+- Client: `XBB` (same table) and `xBbDmg`; the player's and bot Raze's bot (`RS.bb`) lock within 15 m, explode within
+  2.5 m (`xBbBlast`: the locked target always, anyone else of the owner's targets in 6 m with line of sight, by distance;
+  never allies) and last 5 s.
+- Not modelled: the 0.6 s windup between the trigger and the blast, the 60 HP bot that enemies can shoot, the cone shape of
+  the detection (both sides use a 15 m circle with line of sight).
+- Tests: `server/test-ults.js` (bbDamage table; 73.75 - 80 to the hunted foe; lock at 13.4 m; falloff to a second foe;
+  none at ~10 m), `work/test_ability_equip.cjs` (XBB == DEV.boombot, xBbDmg table, the same lock / falloff offline).
