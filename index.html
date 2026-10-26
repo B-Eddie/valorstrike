@@ -12474,7 +12474,7 @@ function mpCliSnap(m) {
   const now = performance.now(), seen = new Set(), units = new Map(bots.concat(allies).map((u) => [u.nid, u]));
   // Preserve the server's sample spacing: packets delivered together after jitter must not become simultaneous poses.
   // A minimum observed clock offset removes clock skew without treating network delay as movement time.
-  const stamped = Number.isFinite(m.serverTime), stamp = stamped ? m.serverTime : now;
+  const stamped = Number.isFinite(m.serverTime) || Number.isFinite(m.c), stamp = Number.isFinite(m.serverTime) ? m.serverTime : stamped ? m.c : now; // P2P host snapshots carry the host clock (c)
   if (stamped) {
     let C = MP.snapClock;
     if (!C || stamp < C.last - 1000 || now - C.at > 3000) C = MP.snapClock = { offset: now - stamp, last: stamp, at: now, jitter: 0, delay: MP.DELAY };
@@ -12482,7 +12482,8 @@ function mpCliSnap(m) {
       const gap = now - C.at, spacing = stamp - C.last;
       C.offset = Math.min(now - stamp, C.offset + Math.max(0, gap) * .001);
       C.jitter = Math.max(C.jitter * .95, Math.min(100, Math.abs(gap - spacing)) * .5);
-      C.delay = Math.max(MP.DELAY, Math.min(220, MP.DELAY + C.jitter * 2));
+      C.starve = (C.starve || 0) * .995; // stalls seen in mpInterp keep the buffer wide for a few seconds
+      C.delay = Math.max(MP.DELAY, Math.min(220, MP.DELAY + Math.max(C.jitter * 2, C.starve)));
       C.last = stamp; C.at = now;
     }
   }
@@ -12576,7 +12577,11 @@ function mpInterp(u, now) {
   const C = B[0].clock && MP.snapClock, target = C ? now - C.offset - C.delay : now - MP.DELAY;
   const elapsed = u.nrAt == null ? 0 : Math.max(0, now - u.nrAt);
   // A changing jitter buffer must not reverse the render clock or race through a burst of queued snapshots.
-  const rt = u.nr == null || elapsed > 1000 ? target : u.nr + Math.max(elapsed * .9, Math.min(elapsed * 1.1, target - u.nr));
+  let rt = u.nr == null || elapsed > 1000 ? target : u.nr + Math.max(elapsed * .9, Math.min(elapsed * 1.1, target - u.nr));
+  // Starved (a lost packet held back by TCP, a long stall): the render clock stops at the 50 ms extrapolation bound instead of
+  // running on (it jumped the unit ahead by the whole stall when the data resumed), and the buffer widens by the shortfall.
+  const nw = B[B.length - 1].t;
+  if (u.nr != null && B.length > 1 && rt > nw + 50) { if (C) { C.starve = Math.max(C.starve || 0, Math.min(150, target - nw)); C.delay = Math.max(C.delay, Math.min(220, MP.DELAY + C.starve)); } rt = Math.max(u.nr, nw + 50); }
   u.nr = rt; u.nrAt = now;
   while (B.length > 2 && B[1].t <= rt) B.shift();
   const a = B[0], b = B[1] || a, span = b.t - a.t, p = u.g.position;
