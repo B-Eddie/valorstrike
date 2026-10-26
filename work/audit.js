@@ -1582,7 +1582,7 @@ if (!NO3) {
   let started = false;
   try { toLobby(); xe('(() => { FV.pick = "ascent"; FV.srOn = 0; window.xSwift = false; startFive(); clearTimeout(FV.to); return true; })()'); advance(60); started = xe("mode === 'five' && running"); } catch (e) {}
   const EXP = [["Sidearms", [["Classic", 0], ["Shorty", 300], ["Frenzy", 450], ["Ghost", 500], ["Sheriff", 800]]], ["SMGs", [["Stinger", 1100], ["Spectre", 1600]]], ["Shotguns", [["Bucky", 850], ["Judge", 1850]]],
-    ["Rifles", [["Bulldog", 2050], ["Guardian", 2250], ["Phantom", 2900], ["Vandal", 2900]]], ["Sniper", [["Marshal", 950], ["Outlaw", 2400], ["Operator", 4700]]], ["Machine guns", [["Ares", 1600], ["Odin", 3200]]], ["Armor", [["Light Armor", 400], ["Regen Shield", 650], ["Heavy Armor", 1000]]]];
+    ["Rifles", [["Bulldog", 2050], ["Guardian", 2250], ["Phantom", 2900], ["Vandal", 2900]]], ["Sniper", [["Marshal", 950], ["Outlaw", 2400], ["Operator", 4700]]], ["Heavies", [["Ares", 1600], ["Odin", 3200]]], ["Armor", [["Light Armor", 400], ["Regen Shield", 650], ["Heavy Armor", 1000]]]];
   R("menu opens in a 5v5 buy phase with all 7 category columns in Valorant order and every card at the right price", () => {
     if (!started) return "5v5 did not start"; xe("FV.pri = null; FV.sec = 'Classic'; player.armor = 0; FV.bt = []; true"); open(9000); if (!$("xBuy").classList.contains("on")) return "menu not open";
     const cols = Array.from(doc.querySelectorAll("#xBG .x-bc")).map((c) => String(c.querySelector("h4").textContent)), bad = [];
@@ -2046,7 +2046,7 @@ if (!NO3) {
     if (!/@media \(max-height:560px\)\{\.x-obs\.on\{display:none\}\}/.test(css)) bad.push("short-landscape hide missing");
     if (!/#game\.x-mm #fps\{left:184px\}/.test(css)) bad.push("FPS readout still under the minimap");
     if (!/@media \(max-width:700px\)\{#xMap\{left:8px;top:8px;width:112px;height:112px\}/.test(css)) bad.push("narrow minimap rule missing");
-    if (!/#xBuy\{position:fixed;inset:0;[^}]*overflow:auto/.test(css)) bad.push("buy menu does not scroll");
+    if (!/#xBuy\{position:fixed;inset:0;[^}]*overflow:hidden/.test(css)) bad.push("buy menu is not the fixed no-scroll frame (it fits the screen; work/test_buy_menu_fit.cjs)");
     return bad.length ? bad.join(" | ") : true; });
   try { xe("annClear(); running = false; true"); toLobby(); } catch (e) {}
 }

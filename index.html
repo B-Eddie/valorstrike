@@ -265,77 +265,104 @@ button{font:inherit;text-transform:inherit;letter-spacing:inherit;cursor:pointer
 @media (max-width:700px){#xMap{left:8px;top:8px;width:112px;height:112px}#game.x-mm #fps{left:128px;top:8px}} /* narrow: smaller minimap clears the centred score / timer bar */
 .x-brs{position:fixed;right:24px;bottom:22px;display:flex;flex-direction:column;align-items:flex-end;gap:8px;pointer-events:none}
 .x-brs>.hud{position:static}
-#xBuy{position:fixed;inset:0;z-index:25;display:none;flex-direction:column;gap:16px;padding:24px clamp(16px,3vw,40px);overflow:auto}
-/* buy menu rebuild: Valorant-style layout (credits bar, six weapon columns, shields + abilities row, stats + team loadout on the right), original styling; one font, red accent, teal allies, 8 px scale */
-#game #xBuy,#xBuy{background:linear-gradient(180deg,rgba(8,12,18,.92),rgba(10,16,24,.84));-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);border:0;border-radius:0;box-shadow:none;transform:none;width:auto;max-height:none;left:0;top:0;font-family:var(--f);color:var(--bone);--xb-t:#19d3c5;--xb-c:#5fffb0;--xb-l:rgba(236,232,225,.14);--xb-d:rgba(236,232,225,.62)}
+/* BUY MENU FIT START: the whole buy menu fits the screen with no scrolling (user, 2026-10-26: "Make it so you don't need to scroll in the buy menu"), as Valorant's buy screen. Every size comes from the custom properties below (clamp() of the viewport height / width), the menu is a fixed grid (header / main / key hints) and the six weapon columns share five equal card tracks that stretch to the space left, so cards grow or shrink with the window instead of overflowing. Landscape phones get the compact card (name, price + status) and no key hints. Only portrait phones and screens under 360 px tall keep a scrolling stacked layout. work/test_buy_menu_fit.cjs evaluates these rules for every listed viewport. */
+#xBuy{position:fixed;inset:0;z-index:25;display:none;overflow:hidden;overflow:clip}
+#game #xBuy,#xBuy{background:linear-gradient(180deg,rgba(8,12,18,.92),rgba(10,16,24,.84));-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);border:0;border-radius:0;box-shadow:none;transform:none;width:auto;max-height:none;left:0;top:0;font-family:var(--f);color:var(--bone);--xb-t:#19d3c5;--xb-c:#5fffb0;--xb-l:rgba(236,232,225,.14);--xb-d:rgba(236,232,225,.62);--xb-vh:1vh;--xb-vw:1vw;--xb-u:clamp(4px,calc(var(--xb-vh)*1.1),10px);--xb-p:clamp(6px,calc(var(--xb-vh)*2),24px);--xb-px:clamp(8px,calc(var(--xb-vw)*2.4),40px);--xb-f1:clamp(10px,calc(var(--xb-vw)*.6 + var(--xb-vh)*.7),14px);--xb-f2:clamp(9px,calc(var(--xb-vh)*1.5),13px);--xb-fc:clamp(16px,calc(var(--xb-vh)*3.4),32px);--xb-cp:clamp(4px,calc(var(--xb-vh)*.9),10px);--xb-sb:clamp(196px,calc(var(--xb-vw)*19),320px);--xb-sil:clamp(14px,calc(var(--xb-vh)*6),64px);--xb-g2:calc(var(--xb-u)*.75);--xb-hh:calc(var(--xb-f2)*1.2 + 2px + var(--xb-fc) + var(--xb-u) + 1px);--xb-fh:calc(var(--xb-f2)*1.4 + var(--xb-u) + 1px);--xb-h4:calc(var(--xb-f2)*1.3 + var(--xb-u)*.5 + 2px);--xb-ar:calc(var(--xb-cp)*2 + var(--xb-f1)*2.4 + var(--xb-u) + max(var(--xb-f1)*1.2,var(--xb-f2)*1.4))}
+@supports (height:1dvh){#game #xBuy,#xBuy{--xb-vh:1dvh;--xb-vw:1dvw}}/* phone browsers: the visible height, not the height with the URL bar hidden */
 #xBuy *{font-family:inherit;box-sizing:border-box}
-#xBuy.on{display:flex}
-#xBuy .x-bh{display:flex;align-items:flex-end;gap:16px 40px;flex-wrap:wrap;border-bottom:1px solid var(--xb-l);padding-bottom:16px}
-#xBuy .x-bh p{margin:0;display:flex;flex-direction:column;gap:8px;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--xb-d)}
-#xBuy .x-bh p b{display:inline-flex;align-items:center;gap:8px;font-size:32px;line-height:1;font-weight:700;letter-spacing:.02em;color:var(--bone);font-variant-numeric:tabular-nums}
-#xBuy .x-bh .xb-lb b{font-size:24px;color:rgba(236,232,225,.86)}
-#xBuy .x-bh .xb-rd{margin-left:auto;align-self:center;font-size:14px;color:var(--bone)}
-#xBuy .x-bh .xb-tm{align-items:flex-end}#xBuy .x-bh .xb-tm b{font-size:24px;color:var(--red)}
+#xBuy.on{display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:var(--xb-hh) minmax(0,1fr) var(--xb-fh);gap:var(--xb-u);padding:max(var(--xb-p),env(safe-area-inset-top)) max(var(--xb-px),env(safe-area-inset-right)) max(var(--xb-p),env(safe-area-inset-bottom)) max(var(--xb-px),env(safe-area-inset-left))}
+#xBuy .x-bh{display:flex;align-items:flex-end;flex-wrap:nowrap;gap:0 calc(var(--xb-u)*4);min-width:0;height:var(--xb-hh);margin:0;padding:0 0 var(--xb-u);border-bottom:1px solid var(--xb-l);overflow:hidden;overflow:clip}
+#xBuy .x-bh p{margin:0;display:flex;flex-direction:column;gap:2px;min-width:0;font-size:var(--xb-f2);line-height:1.2;letter-spacing:.14em;text-transform:uppercase;white-space:nowrap;color:var(--xb-d)}
+#xBuy .x-bh p b{display:inline-flex;align-items:center;gap:calc(var(--xb-fc)*.25);font-size:var(--xb-fc);line-height:1;font-weight:700;letter-spacing:.02em;color:var(--bone);font-variant-numeric:tabular-nums}
+#xBuy .x-bh .xb-lb b{font-size:calc(var(--xb-fc)*.75);color:rgba(236,232,225,.86)}
+#xBuy .x-bh .xb-rd{margin-left:auto;align-self:center;font-size:calc(var(--xb-f2) + 1px);color:var(--bone)}
+#xBuy .x-bh .xb-tm{align-items:flex-end}#xBuy .x-bh .xb-tm b{font-size:calc(var(--xb-fc)*.75);color:var(--red)}
 #xBuy .x-bh .xb-cr b::before,#xBuy .x-bh .xb-lb b::before,.x-cg{content:"";display:inline-block;width:12px;height:12px;border:2px solid #5fffb0;transform:rotate(45deg);border-radius:2px;flex:none;box-sizing:border-box}
-#xBuy .x-bh .xb-cr b::before{width:16px;height:16px}
-#xBuy .xb-main{display:grid;grid-template-columns:minmax(0,1fr) 296px;gap:24px;align-items:start;flex:1 0 auto}
-#xBG.x-bg{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:16px;align-items:start}
+#xBuy .x-bh .xb-cr b::before,#xBuy .x-bh .xb-lb b::before{width:calc(var(--xb-fc)*.45);height:calc(var(--xb-fc)*.45)}
+#xBuy .xb-x{flex:none;align-self:center;display:grid;place-items:center;width:calc(var(--xb-hh) - var(--xb-u) - 1px);height:calc(var(--xb-hh) - var(--xb-u) - 1px);min-height:0;margin:0;padding:0;font-size:var(--xb-f1);line-height:1;color:var(--bone);background:transparent;border:1px solid var(--xb-l);border-radius:2px;cursor:pointer}
+#xBuy .xb-x:hover,#xBuy .xb-x:focus-visible{background:rgba(236,232,225,.12);outline:0}
+#xBuy .xb-main{display:grid;grid-template-columns:minmax(0,1fr) var(--xb-sb);grid-template-rows:minmax(0,1fr);gap:var(--xb-u);min-height:0;align-items:stretch}
+#xBG.x-bg{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));grid-template-rows:minmax(0,1fr) calc(var(--xb-h4) + var(--xb-g2) + var(--xb-ar));gap:var(--xb-u);min-height:0;align-items:stretch}
 #xBG div{border:0;padding:0;font-size:inherit}
-#xBuy .x-bc{display:flex;flex-direction:column;gap:8px;min-width:0}
-#xBuy .x-bc h4{display:flex;align-items:center;gap:8px;margin:0;padding:0 0 8px;font-size:12px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--xb-d);border-bottom:2px solid var(--xb-l)}
+#xBuy .x-bc{display:grid;grid-template-rows:var(--xb-h4) repeat(5,minmax(0,1fr));gap:var(--xb-g2);min-width:0;min-height:0}/* five equal tracks in every weapon column (sidearms fill them; a two-card column leaves the rest empty, as in Valorant) */
+#xBuy .x-bc h4{display:flex;align-items:center;gap:calc(var(--xb-u)*.75);height:var(--xb-h4);margin:0;padding:0 0 calc(var(--xb-u)*.5);font-size:var(--xb-f2);line-height:1.3;font-weight:700;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;overflow:hidden;overflow:clip;text-overflow:ellipsis;color:var(--xb-d);border-bottom:2px solid var(--xb-l)}
 #xBuy .x-bc.on h4{color:var(--bone);border-bottom-color:var(--red)}
-#xBuy kbd{display:inline-grid;place-items:center;min-width:16px;height:16px;padding:0 4px;font-size:10px;font-weight:700;letter-spacing:0;color:var(--bone);background:rgba(236,232,225,.1);border-radius:2px}
+#xBuy kbd{display:inline-grid;place-items:center;flex:none;min-width:calc(var(--xb-f2)*1.3);height:calc(var(--xb-f2)*1.3);padding:0 3px;font-size:calc(var(--xb-f2) - 1px);line-height:1;font-weight:700;letter-spacing:0;color:var(--bone);background:rgba(236,232,225,.1);border-radius:2px}
 #xBuy .x-bc.on h4 kbd{background:var(--red)}
-#xBuy .x-bc.xb-shc{grid-column:1/3}#xBuy .x-bc.xb-abc{grid-column:3/-1}
-#xBuy .xb-row{display:flex;flex-wrap:wrap;gap:8px}#xBuy .xb-row>.xb-card{flex:1 1 160px}
-#xBuy .xb-card{position:relative;min-width:0}
-#xBuy .xb-card>button[data-n]{display:flex;flex-direction:column;gap:8px;width:100%;min-height:96px;margin:0;padding:8px 8px 8px 16px;text-align:left;font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--bone);background:rgba(24,32,42,.94);border:0;border-left:2px solid transparent;border-radius:2px;box-shadow:inset 0 0 0 1px var(--xb-l);cursor:pointer;transition:background .12s,box-shadow .12s}
+#xBuy .x-bc.xb-shc,#xBuy .x-bc.xb-abc{grid-row:2;grid-template-rows:var(--xb-h4) minmax(0,1fr)}#xBuy .x-bc.xb-shc{grid-column:1/3}#xBuy .x-bc.xb-abc{grid-column:3/-1}#xBuy .x-bc.xb-shc:last-child{grid-column:1/-1}
+#xBuy .xb-row{display:flex;flex-wrap:nowrap;gap:var(--xb-g2);min-width:0;min-height:0}#xBuy .xb-row>.xb-card{flex:1 1 0}
+#xBuy .xb-card{position:relative;display:grid;min-width:0;min-height:0}
+#xBuy .xb-card>button[data-n]{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto minmax(0,1fr) auto;grid-template-areas:"nm pr" "sil sil" "ft ft";gap:calc(var(--xb-u)*.5) var(--xb-u);align-items:center;width:100%;min-width:0;min-height:0;margin:0;padding:var(--xb-cp) var(--xb-cp) var(--xb-cp) calc(var(--xb-cp)*1.5);text-align:left;font-size:var(--xb-f1);line-height:1.2;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--bone);background:rgba(24,32,42,.94);border:0;border-left:2px solid transparent;border-radius:2px;box-shadow:inset 0 0 0 1px var(--xb-l);cursor:pointer;overflow:clip;transition:background .12s,box-shadow .12s}
 #xBuy .xb-card>button[data-n]:hover,#xBuy .xb-card>button[data-n]:focus-visible{background:rgba(44,56,70,.98);box-shadow:inset 0 0 0 1px rgba(236,232,225,.5);outline:0}
 #xBuy .xb-card>button.on{border-left-color:var(--xb-t);background:rgba(16,48,52,.94);box-shadow:inset 0 0 0 1px rgba(25,211,197,.5)}
 #xBuy .xb-card>button.xb-no{opacity:.38;cursor:not-allowed}
 #xBuy .xb-card>button.xb-sell{border-left-color:var(--red)}
-#xBuy .xb-top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:2px 8px;width:100%}
-#xBuy .xb-top b{font-weight:700;min-width:0;max-width:100%;overflow-wrap:anywhere}/* a narrow card puts the price under the name instead of cutting the name ('CLASS…' / 'VA…' at 1280x720, buy1) */
-#xBuy .xb-card svg{width:100%;height:32px;fill:#fff;align-self:center;opacity:.92}
-#xBuy .xb-ft{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:4px 8px;width:100%;margin-top:auto}
-#xBuy .xb-ft small{white-space:nowrap;font-size:11px;font-weight:400;letter-spacing:.04em;text-transform:none;color:var(--xb-d)}
-#xBuy .xb-ft em{font-style:normal;font-size:10px;letter-spacing:.14em;padding:0 8px;line-height:16px;border-radius:2px;background:rgba(25,211,197,.2);color:var(--xb-t);white-space:nowrap}
+#xBuy .xb-top{display:contents}
+#xBuy .xb-top b{grid-area:nm;min-width:0;font-weight:inherit;white-space:nowrap}/* weapon names are one word and always fit the column (test_buy_menu_fit measures OPERATOR at the narrowest size); no ellipsis */
+#xBuy .xb-top .x-tp{grid-area:pr;justify-self:end;font-size:calc(var(--xb-f1)*.9)}
+#xBuy .xb-shc .xb-card>button.xb-w{grid-template-columns:auto minmax(0,1fr);grid-template-areas:"nm nm" "sil sil" "pr ft"}#xBuy .xb-shc .xb-top b{white-space:normal;overflow-wrap:normal}#xBuy .xb-shc .xb-top .x-tp{justify-self:start}#xBuy .xb-shc .xb-ft small{display:none}/* shields (two columns wide, abilities take four): name on up to two lines, price + status under it */
+#xBuy .xb-w>svg{grid-area:sil;justify-self:center;width:100%;height:100%;min-height:0;max-height:var(--xb-sil);fill:#fff;opacity:.92}
+#xBuy .xb-ft{grid-area:ft;display:flex;flex-wrap:nowrap;align-items:center;justify-content:space-between;gap:var(--xb-u);min-width:0}
+#xBuy .xb-ft small{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:var(--xb-f2);line-height:1.4;font-weight:400;letter-spacing:.04em;text-transform:none;color:var(--xb-d)}
+#xBuy .xb-ft em{flex:0 1 auto;min-width:0;margin-left:auto;overflow:hidden;text-overflow:ellipsis;font-style:normal;font-size:calc(var(--xb-f2) - 1px);line-height:1.4;letter-spacing:.1em;padding:0 calc(var(--xb-u)*.5 + 2px);border-radius:2px;background:rgba(25,211,197,.2);color:var(--xb-t);white-space:nowrap}
 #xBuy .xb-sell .xb-ft em{background:rgba(255,70,85,.18);color:var(--red)}
-#xBuy .x-tp{display:inline-flex;align-items:center;gap:8px;font-size:14px;font-weight:700;letter-spacing:.04em;color:var(--bone);font-variant-numeric:tabular-nums}
-#xBuy .xb-rq{position:absolute;min-height:0;display:inline-flex;align-items:center;right:8px;bottom:8px;z-index:1;margin:0;padding:0 8px;height:24px;font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--xb-t);background:rgba(10,16,22,.9);border:1px solid rgba(25,211,197,.55);border-radius:2px;cursor:pointer}
+#xBuy .x-tp{display:inline-flex;align-items:center;gap:calc(var(--xb-u)*.5 + 1px);font-size:var(--xb-f1);font-weight:700;letter-spacing:.04em;color:var(--bone);font-variant-numeric:tabular-nums;white-space:nowrap}
+#xBuy .x-tp .x-cg{width:calc(var(--xb-f1)*.75);height:calc(var(--xb-f1)*.75)}
+#xBuy .xb-rq{position:absolute;min-height:0;display:inline-flex;align-items:center;right:var(--xb-cp);bottom:var(--xb-cp);z-index:1;margin:0;padding:0 calc(var(--xb-u)*.75);height:calc(var(--xb-f2)*1.4 + 2px);font-size:calc(var(--xb-f2) - 1px);font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--xb-t);background:rgba(10,16,22,.9);border:1px solid rgba(25,211,197,.55);border-radius:2px;cursor:pointer}
+#xBuy .xb-card:has(.xb-rq) .xb-ft small{padding-right:calc(var(--xb-f2)*6)}/* the meta line stops short of the Request button */
 #xBuy .xb-rq:hover,#xBuy .xb-rq:focus-visible{background:rgba(25,211,197,.2);outline:0}
-#xBuy .xb-a .x-aic{width:24px;height:24px;margin:0;flex:none}#xBuy .xb-a .xb-top{justify-content:flex-start}#xBuy .xb-a .xb-top kbd{margin-left:auto}
-#xBuy .xb-pips{display:flex;gap:4px}#xBuy .xb-pips i{width:24px;height:8px;border-radius:1px;background:rgba(236,232,225,.16)}#xBuy .xb-pips i.on{background:var(--bone)}
-#xBuy .xb-side{display:flex;flex-direction:column;gap:16px;position:sticky;top:0}
-#xBuy .x-ws{position:static;width:auto;max-height:none;padding:16px;background:rgba(18,26,36,.96);border:0;box-shadow:inset 0 0 0 1px var(--xb-l);border-left:2px solid var(--red);border-radius:2px;color:var(--bone);pointer-events:none}
+#xBuy .xb-card>button.xb-a{grid-template-columns:auto minmax(0,1fr) auto;grid-template-rows:auto auto;grid-template-areas:"ic nm kb" "ft ft ft";align-content:space-between}
+#xBuy .xb-a .x-aic{grid-area:ic;align-self:start;width:calc(var(--xb-f1)*1.4);height:calc(var(--xb-f1)*1.4);margin:0}
+#xBuy .xb-a .xb-top b{white-space:normal;overflow-wrap:normal;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}/* ability names may take two lines ("Headhunter round"); --xb-ar budgets two */
+#xBuy .xb-a .xb-top kbd{grid-area:kb;align-self:start}
+#xBuy .xb-a .xb-pips{grid-area:ft;justify-self:center;align-self:center;display:flex;gap:3px;pointer-events:none}#xBuy .xb-pips i{width:calc(var(--xb-f1)*1.3);height:calc(var(--xb-u)*.75);border-radius:1px;background:rgba(236,232,225,.16)}#xBuy .xb-pips i.on{background:var(--bone)}
+#xBuy .xb-side{display:flex;flex-direction:column;gap:var(--xb-u);min-width:0;min-height:0;position:static}
+#xBuy .x-ws{position:static;flex:0 1 auto;display:flex;flex-direction:column;gap:calc(var(--xb-u)*.5);min-height:0;width:auto;max-height:none;padding:var(--xb-cp) calc(var(--xb-cp)*1.5);background:rgba(18,26,36,.96);border:0;box-shadow:inset 0 0 0 1px var(--xb-l);border-left:2px solid var(--red);border-radius:2px;color:var(--bone);pointer-events:none;overflow:hidden;overflow:clip}
 #xBuy .x-ws[hidden]{display:none}
-#xBuy .x-ws svg{width:100%;height:56px;fill:#fff;stroke:none}
-#xBuy .x-ws h3{margin:8px 0 0;font-size:24px;letter-spacing:.08em;text-transform:uppercase}
-#xBuy .x-ws .x-wsc{margin:0;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--xb-d)}
-#xBuy .x-ws .x-wsp{display:flex;align-items:center;gap:8px;margin:8px 0 16px}#xBuy .x-ws .x-wsp b{font-size:16px;color:var(--bone)}
-#xBuy .x-ws table{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:8px}
-#xBuy .x-ws th,#xBuy .x-ws td{padding:4px;border-bottom:1px solid var(--xb-l);text-align:right;font-weight:500}
-#xBuy .x-ws th:first-child{text-align:left;color:var(--xb-d);letter-spacing:.08em;text-transform:uppercase;font-size:12px}#xBuy .x-ws thead th{font-size:11px;color:var(--xb-d)}
-#xBuy .x-ws dl{margin:0;display:grid;grid-template-columns:1fr 1fr;gap:0 16px}#xBuy .x-ws dl div{display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid rgba(236,232,225,.08)}#xBuy .x-ws dt{color:var(--xb-d);letter-spacing:.06em;text-transform:uppercase;font-size:11px}#xBuy .x-ws dd{margin:0}
-#xBuy .xb-team{padding:16px;background:rgba(18,26,36,.96);box-shadow:inset 0 0 0 1px var(--xb-l);border-left:2px solid var(--xb-t);border-radius:2px}
-#xBuy .xb-team h4{margin:0 0 8px;font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--xb-t)}
-#xBuy .xb-team ul{list-style:none;margin:0 0 16px;padding:0;display:flex;flex-direction:column}
-#xBuy .xb-team li{display:grid;grid-template-columns:1fr auto;grid-template-areas:"ag cr" "ld ld" "ex ex";gap:4px 8px;padding:8px 0;border-bottom:1px solid var(--xb-l)}
+#xBuy .x-ws svg{flex:0 1 calc(var(--xb-sil)*1.2);width:100%;min-height:0;fill:#fff;stroke:none}
+#xBuy .x-ws h3{margin:0;font-size:calc(var(--xb-f1)*1.5);line-height:1.1;letter-spacing:.08em;text-transform:uppercase}
+#xBuy .x-ws .x-wsc{margin:0;font-size:var(--xb-f2);line-height:1.4;letter-spacing:.16em;text-transform:uppercase;color:var(--xb-d)}
+#xBuy .x-ws .x-wsp{display:flex;align-items:center;gap:var(--xb-u);margin:0;font-size:var(--xb-f2);line-height:1.4}#xBuy .x-ws .x-wsp b{font-size:var(--xb-f1);line-height:1.1;color:var(--bone)}
+#xBuy .x-ws table{width:100%;border-collapse:collapse;font-size:var(--xb-f2);line-height:1.2;margin:0}
+#xBuy .x-ws th,#xBuy .x-ws td{padding:calc(var(--xb-u)*.25) 4px;border-bottom:1px solid var(--xb-l);text-align:right;font-weight:500}
+#xBuy .x-ws th:first-child{text-align:left;color:var(--xb-d);letter-spacing:.08em;text-transform:uppercase;font-size:var(--xb-f2)}#xBuy .x-ws thead th{font-size:calc(var(--xb-f2) - 1px);color:var(--xb-d)}
+#xBuy .x-ws dl{margin:0;display:grid;grid-template-columns:minmax(0,1fr);gap:0 var(--xb-u)}#xBuy .x-ws dl div{display:flex;justify-content:space-between;gap:4px;font-size:var(--xb-f2);line-height:1.2;padding:calc(var(--xb-u)*.25) 0;border-bottom:1px solid rgba(236,232,225,.08);white-space:nowrap}#xBuy .x-ws dt{color:var(--xb-d);letter-spacing:.04em;text-transform:uppercase;font-size:calc(var(--xb-f2) - 1px)}#xBuy .x-ws dd{margin:0}
+#xBuy .xb-team{flex:none;padding:var(--xb-cp) calc(var(--xb-cp)*1.5);background:rgba(18,26,36,.96);box-shadow:inset 0 0 0 1px var(--xb-l);border-left:2px solid var(--xb-t);border-radius:2px}
+#xBuy .xb-team h4{margin:0 0 calc(var(--xb-u)*.5);font-size:var(--xb-f2);line-height:1.3;letter-spacing:.18em;text-transform:uppercase;color:var(--xb-t)}
+#xBuy .xb-team ul{list-style:none;margin:0 0 calc(var(--xb-u)*.5);padding:0;display:flex;flex-direction:column}
+#xBuy .xb-team li{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr) auto;grid-template-areas:"ag ld cr" "ex ex ex";align-items:center;gap:0 var(--xb-u);padding:calc(var(--xb-u)*.25) 0;border-bottom:1px solid var(--xb-l);font-size:var(--xb-f2);line-height:1.3}
 #xBuy .xb-team li.xb-me .xb-ag b{color:#ffd166}
-#xBuy .xb-ag{grid-area:ag;display:flex;align-items:baseline;gap:8px;min-width:0}#xBuy .xb-ag b{font-size:13px;color:var(--xb-t);letter-spacing:.08em}#xBuy .xb-ag small{font-size:11px;color:var(--xb-d);text-transform:none;letter-spacing:.02em}
-#xBuy .xb-team .x-tp{grid-area:cr;font-size:13px}
-#xBuy .xb-ld{grid-area:ld;display:flex;align-items:center;gap:8px;min-width:0}#xBuy .xb-ld svg{width:48px;height:16px;fill:#fff;flex:none;opacity:.85}#xBuy .xb-ld small{font-size:11px;color:var(--xb-d);text-transform:none;letter-spacing:.02em}
-#xBuy .xb-team li em{grid-area:ex;font-style:normal;font-size:11px;letter-spacing:.06em;color:var(--xb-t)}
+#xBuy .xb-ag{grid-area:ag;display:flex;align-items:baseline;gap:calc(var(--xb-u)*.75);min-width:0;white-space:nowrap}#xBuy .xb-ag b{flex:none;font-size:var(--xb-f2);color:var(--xb-t);letter-spacing:.06em}#xBuy .xb-ag small{min-width:0;overflow:hidden;text-overflow:ellipsis;font-size:calc(var(--xb-f2) - 1px);color:var(--xb-d);text-transform:none;letter-spacing:.02em}
+#xBuy .xb-team .x-tp{grid-area:cr;font-size:var(--xb-f2)}#xBuy .xb-team .x-tp .x-cg{width:calc(var(--xb-f2)*.75);height:calc(var(--xb-f2)*.75)}
+#xBuy .xb-ld{grid-area:ld;display:flex;align-items:center;gap:calc(var(--xb-u)*.5);min-width:0;white-space:nowrap}#xBuy .xb-ld svg{width:calc(var(--xb-f2)*3);height:var(--xb-f2);fill:#fff;flex:none;opacity:.85}#xBuy .xb-ld small{min-width:0;overflow:hidden;text-overflow:ellipsis;font-size:calc(var(--xb-f2) - 1px);color:var(--xb-d);text-transform:none;letter-spacing:.02em}
+#xBuy .xb-team li em{grid-area:ex;font-style:normal;font-size:calc(var(--xb-f2) - 1px);line-height:1.3;letter-spacing:.06em;color:var(--xb-t);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #xBuy .xb-team li em.xb-wait{color:#ffd166}
-#xBuy .xb-rqb{width:100%;height:32px;margin:0;font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--bone);background:transparent;border:1px solid var(--xb-t);border-radius:2px;cursor:pointer}
+#xBuy .xb-rqb{width:100%;height:clamp(24px,calc(var(--xb-vh)*4),32px);margin:0;font-size:var(--xb-f2);font-weight:700;letter-spacing:.12em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--bone);background:transparent;border:1px solid var(--xb-t);border-radius:2px;cursor:pointer}
 #xBuy .xb-rqb:hover:not(:disabled),#xBuy .xb-rqb:focus-visible{background:rgba(25,211,197,.2);outline:0}#xBuy .xb-rqb:disabled{opacity:.4;cursor:default;border-color:var(--xb-l)}
-@media (max-width:1180px){#xBG.x-bg{grid-template-columns:repeat(3,minmax(0,1fr))}#xBuy .x-bc.xb-shc{grid-column:1/-1}#xBuy .x-bc.xb-abc{grid-column:1/-1}}
-@media (min-width:821px) and (max-height:800px){/* short landscape screens (1280x720, 844x390): browser buy2 at 1280x720 - the five sidearm cards ran ~760 px and Sheriff was cut at the bottom edge. Compact header and cards keep the weapon grid on one screen; armor / abilities and the side panels scroll */
-#xBuy{padding:12px clamp(12px,2.4vw,32px);gap:10px}#xBuy .x-bh{padding-bottom:8px;gap:8px 32px}#xBuy .x-bh p{gap:4px;font-size:11px}#xBuy .x-bh p b{font-size:24px}#xBuy .x-bh .xb-lb b,#xBuy .x-bh .xb-tm b{font-size:20px}
-#xBuy .xb-main{gap:16px}#xBG.x-bg{gap:10px 12px}#xBuy .x-bc{gap:6px}#xBuy .x-bc h4{padding-bottom:4px}#xBuy .xb-row{gap:6px}
-#xBuy .xb-card>button[data-n]{min-height:0;gap:4px;padding:6px 8px 6px 12px;font-size:12px}#xBuy .xb-card svg{height:18px}#xBuy .xb-ft small{font-size:10px}#xBuy .xb-ft em{line-height:14px;font-size:9px}
-#xBuy .xb-side{gap:10px}#xBuy .x-ws{padding:10px 12px}#xBuy .x-ws svg{height:36px}#xBuy .x-ws h3{font-size:20px}#xBuy .x-ws .x-wsp{margin:4px 0 8px}#xBuy .xb-team{padding:10px 12px}#xBuy .xb-team li{padding:4px 0}}
-@media (max-width:820px){#xBuy{padding:16px;gap:16px}#xBuy .xb-main{grid-template-columns:minmax(0,1fr)}#xBuy .xb-side{position:static}#xBG.x-bg{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 8px}#xBuy .x-bh{gap:16px 24px}#xBuy .x-bh p b{font-size:24px}#xBuy .x-bh .xb-rd{margin-left:0}#xBuy .xb-card>button[data-n]{min-height:80px}#xBuy .x-ws dl{grid-template-columns:1fr}}
+#xBuy #xBL{position:absolute;left:max(var(--xb-px),env(safe-area-inset-left));bottom:calc(var(--xb-fh) + var(--xb-p));margin:0;padding:2px 8px;background:rgba(10,16,22,.92);font-size:var(--xb-f2)}#xBuy #xBL[hidden]{display:none}
+#xBuy .x-bf{display:flex;align-items:center;margin:0;padding:var(--xb-u) 0 0;height:var(--xb-fh);font-size:var(--xb-f2);line-height:1.4;letter-spacing:.1em;white-space:nowrap;overflow:hidden;overflow:clip;text-overflow:ellipsis;opacity:.75;border-top:1px solid rgba(236,232,225,.2)}#xBuy .x-bf kbd{color:var(--red);margin:0 4px 0 12px}#xBuy .x-bf kbd:first-child{margin-left:0}
+/* narrow (landscape phones, small windows): price moves under the name, no meta line, no per-card Request (the team panel's Request button asks for the tapped / hovered weapon) */
+@media (max-width:1100px){
+#xBuy .xb-card>button.xb-w{grid-template-columns:auto minmax(0,1fr);grid-template-areas:"nm nm" "sil sil" "pr ft"}
+#xBuy .xb-top .x-tp{justify-self:start}#xBuy .xb-ft small{display:none}#xBuy .xb-ft em{letter-spacing:.04em}#xBuy .xb-rq{display:none}
+#xBuy .xb-a .xb-pips,#xBuy .xb-a .xb-top kbd{display:none}
+#xBuy .x-bh{gap:0 calc(var(--xb-u)*3)}#xBuy .x-bh p{letter-spacing:.08em}
+}
+@media (max-width:760px){#game #xBuy,#xBuy{--xb-f1:9px;--xb-sb:150px}#xBuy .xb-card>button[data-n]{letter-spacing:.02em}#xBuy .xb-ld small{display:none}}
+/* short (landscape phones, short windows): no key-hint footer, no silhouettes in the cards, no stats rows under the damage table */
+@media (max-height:500px){
+#xBuy.on{grid-template-rows:var(--xb-hh) minmax(0,1fr)}#xBuy .x-bf{display:none}
+#xBuy .xb-w>svg,#xBuy .x-ws svg,#xBuy .x-ws dl{display:none}#xBuy #xBL{bottom:var(--xb-p)}
+}
+@media (pointer:coarse){#xBuy.on{grid-template-rows:var(--xb-hh) minmax(0,1fr)}#xBuy .x-bf{display:none}#xBuy .xb-rqb{height:32px}}/* touch: no keyboard, so no key hints; Request stays a full-size target */
+/* portrait phones / screens under 360 px tall: six columns cannot fit, so this is the one layout that scrolls (stacked, three columns, full-size touch cards) */
+@media (orientation:portrait) and (max-width:820px),(max-height:359px){
+#xBuy.on{display:flex;flex-direction:column;overflow-y:auto;gap:12px}#xBuy .x-bh{flex-wrap:wrap;height:auto;gap:8px 24px;padding-right:48px}#xBuy .x-bh .xb-rd{margin-left:0}#xBuy .xb-x{position:absolute;top:max(8px,env(safe-area-inset-top));right:max(8px,env(safe-area-inset-right));width:40px;height:40px}
+#xBuy .x-bh,#xBuy .xb-main,#xBuy .x-bf{flex:none}#xBuy .xb-main{grid-template-columns:minmax(0,1fr);grid-template-rows:none}#xBG.x-bg{grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:none;align-items:start}
+#xBuy .x-bc{grid-template-rows:var(--xb-h4);grid-auto-rows:minmax(44px,auto)}#xBuy .x-bc.xb-shc,#xBuy .x-bc.xb-abc{grid-row:auto;grid-column:1/-1;grid-template-rows:var(--xb-h4) minmax(44px,auto)}
+#xBuy .xb-row{flex-wrap:wrap}#xBuy .xb-row>.xb-card{flex:1 1 30%}#xBuy .x-ws{overflow:visible}#xBuy .x-bf{height:auto}
+}
+/* BUY MENU FIT END */
 /* agent select + Jett ability slots */
 #xAg{position:fixed;inset:0;z-index:31;display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:radial-gradient(circle at 50% 30%,#1f3346,#0f1923 70%);text-align:center;padding:20px}
 #xAg .mt{font-size:14px;letter-spacing:.16em;opacity:.85}#xAg .mt b{color:var(--red);font-variant-numeric:tabular-nums}
@@ -408,7 +435,6 @@ button{font:inherit;text-transform:inherit;letter-spacing:inherit;cursor:pointer
 #xBuy p{font-size:14px;letter-spacing:.14em}#xBuy p b{color:#5fffb0}
 .x-bh{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}.x-bh p:first-child b{color:var(--bone);font-size:20px}
 .x-bc{display:flex;flex-direction:column;gap:8px}.x-bc h4{font-size:12px;letter-spacing:.14em;opacity:.7}.x-bc.on h4{color:var(--red);opacity:1}
-#xBuy .x-bf{font-size:12px;opacity:.75;border-top:1px solid rgba(236,232,225,.2);padding-top:10px}#xBuy .x-bf kbd{color:var(--red);font-family:inherit;margin:0 4px 0 12px}#xBuy .x-bf kbd:first-child{margin-left:0}
 #xCr{display:none;padding:6px 12px;font-size:16px}#game.x-five #xCr{display:block}#xCr b{color:#5fffb0}
 .x-bg{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
 .x-bg button{background:rgba(236,232,225,.06);border:1px solid rgba(236,232,225,.25);color:var(--bone);padding:10px;text-align:left;font-size:15px;font-weight:800;display:flex;flex-direction:column;gap:4px;min-height:44px}
@@ -1017,7 +1043,7 @@ body:has(#game .x-top.x-bpo) #xAnn.buy{display:none!important}
 #xBuy .xb-card>button[data-n]{border-radius:0;background:rgba(156,191,182,.12);box-shadow:inset 0 0 0 1px #ffffff12;font-weight:500}
 #xBuy .xb-card>button[data-n]:hover,#xBuy .xb-card>button[data-n]:focus-visible{background:rgba(153,223,194,.3);box-shadow:inset 0 0 0 1px #bdf6de}
 #xBuy .xb-card>button.on{background:rgba(98,164,137,.55);box-shadow:inset 0 0 0 1px #bdf6de;border-left-color:#bdf6de}
-#xBuy .x-bc h4{color:#fff;border-bottom:0;font-weight:400;letter-spacing:.08em}
+#xBuy .x-bc h4{color:#fff;border-bottom:0;font-weight:400}
 #xBuy .x-bh{border-bottom-color:#ffffff40}
 #xBuy .x-bc.on h4{border-bottom-color:#bdf6de}
 #xObs .x-oba{background:var(--portrait) center/cover no-repeat!important;color:transparent;border:0;border-radius:0}
@@ -1777,7 +1803,7 @@ body:has(#game .x-top.x-bpo) #xAnn.buy{display:none!important}
 </div>
 <div id="xBoard" class="x-fr" aria-hidden="true"></div>
 <div id="xPick" class="x-fr" role="dialog" aria-label="Pick your rifle"><p>Round <b id="xPR">1</b> · Pick your rifle · auto in <b id="xPC">3</b></p><div class="x-pw"><button data-w="Vandal"><kbd>1</kbd>Vandal<small>25 rounds · 40 body / 160 head · heavy recoil</small></button><button data-w="Phantom"><kbd>2</kbd>Phantom<small>30 rounds · faster, softer, quieter · falloff past 15 m</small></button></div></div>
-<div id="xBuy" class="x-fr" role="dialog" aria-label="Buy menu"><div class="x-bh"><p class="xb-cr"><span>Credits</span><b id="xBC">800</b></p><p class="xb-lb"><span>Next round minimum</span><b id="xBLB">1900</b></p><p class="xb-rd"><span id="xBRd">Round 1</span></p><p class="xb-tm"><span>Buy Time Remaining</span><b id="xBT">00:20</b></p></div><div class="xb-main"><div class="x-bg" id="xBG"></div><div class="xb-side" id="xBSd"><section class="xb-team" id="xBTm" aria-label="Team loadout"></section></div></div><p id="xBL" hidden></p><p class="x-bf"><kbd>[1-7]</kbd>Category<kbd>[Click]</kbd>Buy<kbd>[Right click]</kbd>Sell back<kbd>[B / Escape]</kbd>Close</p></div>
+<div id="xBuy" class="x-fr" role="dialog" aria-label="Buy menu"><div class="x-bh"><p class="xb-cr"><span>Credits</span><b id="xBC">800</b></p><p class="xb-lb"><span>Next round minimum</span><b id="xBLB">1900</b></p><p class="xb-rd"><span id="xBRd">Round 1</span></p><p class="xb-tm"><span>Buy Time Remaining</span><b id="xBT">00:20</b></p><button type="button" class="xb-x" id="xBX" aria-label="Close buy menu" title="Close (B / Escape)">&#x2715;</button></div><div class="xb-main"><div class="x-bg" id="xBG"></div><div class="xb-side" id="xBSd"><section class="xb-team" id="xBTm" aria-label="Team loadout"></section></div></div><p id="xBL" hidden></p><p class="x-bf"><kbd>[1-7]</kbd>Category<kbd>[Click]</kbd>Buy<kbd>[Right click]</kbd>Sell back<kbd>[B / Escape]</kbd>Close</p></div>
 <div id="xRg" class="x-rg" role="dialog" aria-modal="true" aria-labelledby="xRgT"><div class="x-rgb">
   <h2 id="xRgT">THE RANGE</h2>
   <p>Pick a drill. P opens this panel, B opens the free buy menu, Esc closes.</p>
@@ -4945,7 +4971,7 @@ function fBotBuy(n) { // rifle + heavy shields at 3900+, else Spectre or Sheriff
 // buy menu rebuild: Valorant layout. Columns left to right (keys 1-6), shields (7) + abilities row, stats + team loadout on the right.
 // Every purchase this round goes in FV.bt, so right-click sells it back for the full price during the buy phase, and buying a
 // different weapon for the same slot (or heavy over light shields) refunds the one bought this round first, as in Valorant.
-const BUY_COLS = [[0, "Sidearms"], [1, "SMGs"], [5, "Shotguns"], [2, "Rifles"], [3, "Snipers"], [6, "Machine guns"]];
+const BUY_COLS = [[0, "Sidearms"], [1, "SMGs"], [5, "Shotguns"], [2, "Rifles"], [3, "Snipers"], [6, "Heavies"]];
 const bItem = (n) => BUY.flatMap((c) => c[1]).find((x) => x[0] === n);
 const bSide = (n) => /^(Classic|Shorty|Frenzy|Ghost|Sheriff)$/.test(n);
 function bLog() { const r = FV.you + FV.them; if (!FV.bt || FV.btR !== r) { FV.bt = []; FV.btR = r; FV.req = null; FV.reqBy = null; FV.reqNo = false; } return FV.bt; }
@@ -5077,6 +5103,7 @@ $("xBG").addEventListener("focusin", (e) => { const b = e.target.closest && e.ta
 $("xBG").onclick = (e) => { const b = e.target.closest("button"); if (!b) return; if (b.dataset.rq) { xTap = false; return fReq(b.dataset.rq); } if (!b.dataset.n) return;
   if (xTap && WEAP[b.dataset.n] && XWS.cur !== b.dataset.n) { xTap = false; XWS.show(b.dataset.n); return buyRender(); } xTap = false; if (b.getAttribute("aria-disabled") !== "true") fBuy(b.dataset.n); };
 $("xBTm").onclick = (e) => { const b = e.target.closest("button"); if (b && b.dataset.rq) fReq(b.dataset.rq); };
+$("xBX").onclick = () => buyMenu(false); // touch has no B / Escape: the header close button
 $("xBuy").addEventListener("contextmenu", (e) => { e.preventDefault(); const b = e.target.closest && e.target.closest("button"); if (b && b.dataset.n) { fSell(b.dataset.n); return; } $("xBL").hidden = !$("xBL").hidden; });
 mapG = xMG(); mapG.visible = false; scene.add(mapG); solids = []; boxes = [];
 MAPS.five = { g: mapG, solids, boxes };

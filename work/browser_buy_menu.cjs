@@ -3,11 +3,11 @@
 // unclipped, no sideways scroll), hovers Vandal for the stats panel.  node work/browser_buy_menu.cjs <out.json> [prefix]  (shots -> work/validation/<prefix>-buymenu-<WxH>.jpg)
 const PW='/workspace/work/pw/node_modules/playwright';process.env.PLAYWRIGHT_BROWSERS_PATH=process.env.PLAYWRIGHT_BROWSERS_PATH||'/workspace/work/pw/browsers';
 process.env.LD_LIBRARY_PATH=(process.env.LD_LIBRARY_PATH||'')+':/workspace/work/pw/libs';
-const {chromium}=require(PW),fs=require('fs');const ROOT='/workspace/work/valorstrike',QA='/workspace/work/qa/',OUT=process.argv[2]||'/tmp/buy.json',PRE=process.argv[3]||'hud',SHOT=ROOT+'/work/validation/';
+const {chromium}=require(PW),fs=require('fs');const ROOT=process.env.VS_ROOT||'/workspace/work/valorstrike',QA='/workspace/work/qa/',OUT=process.argv[2]||'/tmp/buy.json',PRE=process.argv[3]||'hud',SHOT=ROOT+'/work/validation/';
 const LOCAL={'three.min.js':QA+'three.min.js','GLTFLoader.js':QA+'GLTFLoader.js','SkeletonUtils.js':QA+'SkeletonUtils.js'};const R={steps:[],checks:[],errors:[]};const t00=Date.now();
 const log=(k,v)=>{R.steps.push([((Date.now()-t00)/1000).toFixed(1),k,v]);fs.writeFileSync(OUT,JSON.stringify(R,null,1));};
 const check=(n,ok,d)=>{R.checks.push([n,ok?'pass':'FAIL',d]);log('check '+n,ok?'pass':'FAIL');};
-const SIZES=(process.env.SIZES||'1280x720,640x360,390x844,844x390').split(',').map(s=>s.split('x').map(Number));
+const SIZES=(process.env.SIZES||'1280x720,1366x768,1440x900,1920x1080,1920x969,1280x657,844x390,932x430,640x360,390x844').split(',').map(s=>s.split('x').map(Number));
 (async()=>{
  const browser=await chromium.launch({headless:true,args:['--no-sandbox','--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader','--disable-dev-shm-usage','--ignore-gpu-blocklist','--in-process-gpu','--renderer-process-limit=1']});
  const ctx=await browser.newContext({viewport:{width:SIZES[0][0],height:SIZES[0][1]},deviceScaleFactor:1});
@@ -44,6 +44,18 @@ const SIZES=(process.env.SIZES||'1280x720,640x360,390x844,844x390').split(',').m
    for(const c of all){c.scrollIntoView({block:'nearest'});const r=c.getBoundingClientRect();if(r.top<-0.5||r.bottom>innerHeight+0.5)unreach.push(c.dataset.n);}B.scrollTop=0;
    const sh=B.querySelector('button[data-n="Sheriff"]'),sr=sh&&sh.getBoundingClientRect();return {weapons:W.length,below,unreach,sheriffBottom:sr?Math.round(sr.bottom):null,scrollH:B.scrollHeight,clientH:B.clientHeight};})())`));
   log(`buymenu vertical ${w}x${h}`,vm);
+  // buymenu-1 (user: "Make it so you don't need to scroll in the buy menu"): every landscape size >= 360 px tall shows the whole menu at once -
+  // no scrolling anywhere in it, every card / column header / the stats panel / team loadout inside the window and not cut by its own box, cards >= 40 px tall on phone sizes.
+  const fit=JSON.parse(await X(`JSON.stringify((()=>{const B=document.getElementById('xBuy'),out=e=>{const r=e.getBoundingClientRect();return r.width>0&&(r.left<-0.5||r.top<-0.5||r.right>innerWidth+0.5||r.bottom>innerHeight+0.5);};
+   const scrollers=[B,...B.querySelectorAll('*')].filter(e=>{const s=getComputedStyle(e);return /auto|scroll/.test(s.overflowY+s.overflowX)&&e.scrollHeight>e.clientHeight+1;}).map(e=>e.id||e.className||e.tagName);
+   const items=[...B.querySelectorAll('.xb-card>button[data-n],.x-bc h4,.x-ws:not([hidden]),.xb-team,#xBRq,.xb-x')],off=items.filter(out).map(e=>e.dataset.n||e.id||e.className);
+   const cut=[...B.querySelectorAll('.xb-card>button[data-n]')].filter(b=>{const r=b.getBoundingClientRect();return [...b.querySelectorAll('b,.x-tp,em,.x-aic')].some(c=>{const q=c.getBoundingClientRect();if(!q.width||getComputedStyle(c).display==='none')return false;return q.bottom>r.bottom+0.5||q.right>r.right+0.5||q.top<r.top-0.5;})||[...b.querySelectorAll('b')].some(c=>c.scrollHeight>c.clientHeight+1&&!b.classList.contains('xb-a'));}).map(b=>b.dataset.n);
+   const ws=B.querySelector('.x-ws'),wsCut=ws&&!ws.hidden&&ws.scrollHeight>ws.clientHeight+1;const hs=[...B.querySelectorAll('.xb-card>button[data-n]')].map(b=>b.getBoundingClientRect().height);
+   return {scrollH:B.scrollHeight,clientH:B.clientHeight,scrollers,off,cut,wsCut,minCard:Math.round(Math.min(...hs)*10)/10,cards:hs.length,disp:getComputedStyle(B).display};})())`));
+  log(`buymenu fit ${w}x${h}`,fit);
+  if(w>=h&&h>=360){check(`buy menu ${w}x${h}: whole menu on screen with no scrolling (no scroll container, every card / header / stats / team panel inside the window)`,fit.disp==='grid'&&fit.scrollH<=fit.clientH+1&&!fit.scrollers.length&&!fit.off.length,JSON.stringify(fit));
+   check(`buy menu ${w}x${h}: no card content cut by its card, stats panel not cut`,!fit.cut.length&&!fit.wsCut,JSON.stringify({cut:fit.cut,wsCut:fit.wsCut}));
+   if(h<=500)check(`buy menu ${w}x${h}: phone-size cards >= 40 px tall`,fit.minCard>=40,String(fit.minCard));}
   if(w>820&&h>=700)check(`buy menu ${w}x${h}: every weapon column fits on screen without scrolling (Sheriff not cut)`,vm.weapons>=18&&!vm.below.length,JSON.stringify(vm));
   check(`buy menu ${w}x${h}: every card can be scrolled fully into view`,!vm.unreach.length,JSON.stringify({unreach:vm.unreach,scrollH:vm.scrollH,clientH:vm.clientH}));
   log(`buymenu ${w}x${h}`,m);
