@@ -29,7 +29,7 @@ function groundMove(P,tx,tz,accel,h){const vx=P.vx||0,vz=P.vz||0,T=Math.hypot(tx
 // Vertical probes use a 2 cm thinner capsule than horizontal moves (.4): horizontal movement accepts a capsule grazing a
 // wall at its .388 tolerance, where a same-radius blocked() flips with float noise as the capsule moves up or down. That made
 // any wall corner read as a floor (hanging mid-air beside it and jumping again from there).
-const VR=.38;
+const VR=.38,LEAN_LIFTS=[.005,.015,.03,.05];
 // A grazed wall reads blocked at y-.03 as often as not, so contact alone is not support: there must also be a floor under
 // the capsule's footprint within a riser and a bit (a nosing's tread, a box edge), never a wall face mid-air.
 function supported(P,world,y,height){if(!world.blocked(P.x,P.z,.4,y-.03,height)||world.blocked(P.x,P.z,VR,y,height))return false;if(world.ground(P.x,P.z,y+.05)>y-.45)return true;for(let k=0;k<8;k++){const a=k*Math.PI/4;if(world.ground(P.x+Math.cos(a)*.34,P.z+Math.sin(a)*.34,y+.05)>y-.45)return true;}return false;}
@@ -38,13 +38,25 @@ function supported(P,world,y,height){if(!world.blocked(P.x,P.z,.4,y-.03,height)|
 // A stairs, west rim over the 8 m pit) stands on the tread under its rim, not on the pit floor; measuring the next riser
 // from the pit refused every step (10 m 'climb'), so it pressed into the riser corner until the unwedge moved it.
 // Only floors at or below the feet count, so a wall top beside the capsule never becomes its base.
+// Largest capsule radius in [.3, .4] free of collision at (x, z, feet y): .4 when the full capsule is free (0.1 mm steps).
+function clearance(world,x,z,y,height){if(!world.blocked(x,z,.4,y,height))return .4;let lo=.3,hi=.4;if(world.blocked(x,z,lo,y,height))return lo;for(let n=0;n<10;n++){const m=(lo+hi)/2;if(world.blocked(x,z,m,y,height))hi=m;else lo=m;}return lo;}
 function floorNear(world,x,z,y){let f=world.ground(x,z,y+.05);for(const [ox,oz]of [[.2,0],[-.2,0],[0,.2],[0,-.2]])f=Math.max(f,world.ground(x+ox,z+oz,y+.05));if(f<y-.45)for(let k=0;k<8;k++){const a=k*Math.PI/4;f=Math.max(f,world.ground(x+Math.cos(a)*.34,z+Math.sin(a)*.34,y+.05));}return f;}
 // Player clips: invisible walls over open map edges the source collision leaves open (Ascent A: a hole beside the A ramp,
 // open on every side, no floor below). Movement only: the client's nmBlocked and the server world's blocked() both ask
 // clipBlocked, while shots, sight and floor rays never see a clip. Each clip is a vertical prism: polygon p of [x,z]
 // (the void's outline, measured on the collision mesh) from y[0] to y[1]; a capsule (radius r, feet y, height) is blocked
 // when its footprint comes within r of the polygon and the heights overlap, exactly as a wall standing on the rim would.
-const CLIPS={ascent:[{name:'A ramp pit',y:[-60,15],p:[[42.55,-25.15],[42.62,-24.95],[42.78,-24.25],[42.98,-23.25],[42.5,-23.13],[41,-22.83],[39.5,-22.52],[38,-22.2],[37.3,-22.18],[37.22,-22.7],[37.12,-23.1],[37,-23.55],[36.97,-23.82],[37.45,-23.92],[37.95,-24.02],[38.15,-24.25],[38.75,-24.42],[39.65,-24.62],[40.7,-24.82],[41.7,-25.02]]}]};
+// Split (-4.12, 9, -46.4): a rounded 0.5 m wide, 0.8 m tall prop whose collision is a dome; walking into it the capsule
+// stepped onto its lip and climbed the curved side a few cm per sub-step (each lift cleared by contact at the capsule's
+// rim, no single riser over the step height) and ended 0.8 m up, embedded on its shoulder. The clip (an octagon on its
+// footprint, feet band 9..9.85 m) makes it a post; jumping on top still works.
+// Breeze (x 7.3..10.45, z -24.45..-21.4): crate blocks step down from the 12 m platform (10.95, 9.96, 9.0 m) to the 8 m floor
+// off the nav footprint; a capsule walked off the platform edge dropped 1 m onto the top block, where the leash only let
+// it move back toward the platform (1 m up: jump only). The clip spans the platform's height band only (feet 11..14.5 m;
+// capsules on the 8 m floor, even at a jump apex, top out below 11 m), so the platform edge stops a walk as a wall would.
+const CLIPS={ascent:[{name:'A ramp pit',y:[-60,15],p:[[42.55,-25.15],[42.62,-24.95],[42.78,-24.25],[42.98,-23.25],[42.5,-23.13],[41,-22.83],[39.5,-22.52],[38,-22.2],[37.3,-22.18],[37.22,-22.7],[37.12,-23.1],[37,-23.55],[36.97,-23.82],[37.45,-23.92],[37.95,-24.02],[38.15,-24.25],[38.75,-24.42],[39.65,-24.62],[40.7,-24.82],[41.7,-25.02]]}],
+ split:[{name:'rounded 0.8 m prop by a wall (domed: a capsule climbed it rim-first)',y:[9,9.85],p:[[-3.85,-46.4],[-3.93,-46.21],[-4.12,-46.13],[-4.31,-46.21],[-4.39,-46.4],[-4.31,-46.59],[-4.12,-46.67],[-3.93,-46.59]]}],
+ breeze:[{name:'crate stack below the 12 m platform south-east edge',y:[11,14.5],p:[[8.6,-24.45],[10.45,-24.45],[10.45,-21.4],[7.3,-21.4],[7.3,-23.6],[8,-23.85],[8.35,-24.2]]}]};
 for(const k in CLIPS)for(const c of CLIPS[k]){let a=1e9,b=-1e9,e=1e9,f=-1e9;for(const [x,z]of c.p){a=Math.min(a,x);b=Math.max(b,x);e=Math.min(e,z);f=Math.max(f,z);}c.b=[a,b,e,f];}
 function polyDist(p,x,z){let inside=false,d=Infinity;for(let i=0,j=p.length-1;i<p.length;j=i++){const [ax,az]=p[j],[bx,bz]=p[i];if((bz>z)!==(az>z)&&x<(ax-bx)*(z-bz)/(az-bz)+bx)inside=!inside;const ex=bx-ax,ez=bz-az,t=Math.max(0,Math.min(1,((x-ax)*ex+(z-az)*ez)/(ex*ex+ez*ez||1)));d=Math.min(d,Math.hypot(ax+ex*t-x,az+ez*t-z));}return inside?0:d;}
 function clipBlocked(map,x,z,r,y,height=1.8){const L=CLIPS[map];if(!L)return false;const y0=y+.025,y1=y+height;for(const c of L){if(y1<=c.y[0]||y0>=c.y[1]||x<c.b[0]-r||x>c.b[1]+r||z<c.b[2]-r||z>c.b[3]+r)continue;if(polyDist(c.p,x,z)<r)return true;}return false;}
@@ -88,15 +100,25 @@ function step(P,input,dt,world){
   else{if(!l){tx=P.vx||0;tz=P.vz||0;}const cap=Math.min(C.knifeSpeed*(input.tag||1),Math.max(P.takeoffSpeed||input.speed,.1)),s=Math.hypot(tx,tz);if(s>cap){tx*=cap/s;tz*=cap/s;}v=velocity(P.vx||0,P.vz||0,tx,tz,C.airAcceleration,h);P.vx=v.vx;P.vz=v.vz;}
   const height=1.8-(P.ch||0);
   const moveAxis=(dx,dz)=>{const x=P.x+dx,z=P.z+dz;if(world.leash&&!world.leash(x,z,P.y,P.x,P.z))return false;if(!world.blocked(x,z,.4,P.y,height)){P.x=x;P.z=z;return true;}
+   // Already embedded a few mm (a capsule pressed into a wall that leans in over uneven paving): the 0.5 mm sub-steps of a
+   // move away never clear the wall, so velocity was zeroed every sub-step and the capsule stayed pinned until a jump
+   // (Breeze (6.56, 8.04, -34.75), (17.8, 9.19, 7.59)). A move that strictly increases the clearance (largest free radius,
+   // embedding no deeper than 10 cm) is let through, so the capsule backs out; sliding along or into the wall is not.
+   {const c0=clearance(world,P.x,P.z,P.y,height);if(c0<.4&&c0>.3&&clearance(world,x,z,P.y,height)>c0+1e-5){P.x=x;P.z=z;return true;}}
    // A grounded capsule may step onto a low stair, never teleport onto a tall box. The lifted capsule needs 1 cm of clearance
    // ahead of it (along the move): a slanted wall lip that a .4 capsule only grazes is not a step (it sank into the lip,
    // embedded). Ahead only: a wall beside or behind the capsule (pressed into a corner over a bumpy floor) is no lip, and an
    // all-round 1 cm margin pinned it there for good. Where the capsule lifted by the full step height still meets geometry
    // (a wall that leans in above the feet), only a lift of at most 5 cm (a bump or seam in the floor) may pass, tested at
-   // that height (Breeze: 44 walk-in traps against walls over uneven paving).
+   // that height (Breeze: 44 walk-in traps against walls over uneven paving). The lowest such lift that clears is used
+   // (0.5, 1.5, 3, 5 cm): under a low ceiling or a beam a 5 cm lift put the head into it while a few mm cleared the bump
+   // (Ascent (30.25, 9.2, -10.19): wedged under a 1.66 m soffit over bumpy floor).
    // Lift by the step height, move, then settle onto the lowest free height above the destination floor.
-   if(grounded&&(P.vy||0)<=0){const top=P.y+C.stepHeight,support=world.ground(x,z,top),ax=x+Math.sign(dx)*.01,az=z+Math.sign(dz)*.01;let cap=top;if(support>top+.001||(world.ceiling&&world.ceiling(P.x,P.z,P.y+height,top+height)))return false;
-    if(world.blocked(ax,az,.4,top,height)){cap=Math.max(P.y,support)+.05;if(cap>=top||world.blocked(ax,az,.4,cap,height))return false;}
+   if(grounded&&(P.vy||0)<=0){const top=P.y+C.stepHeight,support=world.ground(x,z,top),ax=x+Math.sign(dx)*.01,az=z+Math.sign(dz)*.01;let cap=top;if(support>top+.001)return false;
+    if(world.blocked(ax,az,.4,top,height)){const b0=Math.max(P.y,support);cap=0;for(const l of LEAN_LIFTS)if(b0+l<top&&!world.blocked(ax,az,.4,b0+l,height)){cap=b0+l;break;}if(!cap)return false;}
+    // Headroom for the lift actually used (a full step, or the few cm of a bump under a lintel: Haven (9, 7.93, -57.7), a
+    // low ceiling 1.8-2.2 m over the floor refused a 5 mm lift because it was tested for the full 40 cm step).
+    if(world.ceiling&&world.ceiling(P.x,P.z,P.y+height,cap+height))return false;
     // Riser test: sampled every 10 cm ahead, no single rise may exceed the step height (stairs pass, a 60 cm box does not).
     {const sx=Math.sign(dx),sz=Math.sign(dz);let prev=Math.max(world.ground(P.x,P.z,top),P.y-.2);for(let d=.1;d<.55;d+=.1){const g=world.ground(P.x+sx*d,P.z+sz*d,top);if(g<prev-1)continue;if(g-prev>C.stepHeight+.01)return false;prev=Math.max(prev,g);}} /* samples through seams between stair meshes are ignored; a dip (a crack between floor slabs, a gutter) never lowers the reference, so the far side of a crack is no riser */let lo=Math.max(P.y,support),hi=cap;if(!world.blocked(x,z,.4,lo,height))hi=lo;else for(let n=0;n<10;n++){const mid=(lo+hi)/2;if(world.blocked(x,z,.4,mid,height))lo=mid;else hi=mid;}const base=floorNear(world,P.x,P.z,P.y);if(hi-base>C.stepHeight+.12)return false;const rise=hi-P.y;P.x=x;P.z=z;P.y=hi;P.vy=0;if(rise>0)P.eyeOffset=(P.eyeOffset||0)-rise;return true;}return false;};
   if(!moveAxis(v.dx,0))P.vx=0;

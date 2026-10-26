@@ -489,3 +489,48 @@ in-process server; it keeps the VALORANT FEEL block the audit fixture strips, an
   score. The player's death ult point is also no longer given for a fall or a Spike death (server step 7 rule). Found on
   the way: the Alarmbot / Dismiss `hurt` wrapper dropped the attacker, so every bot's damage reached the scoreboard as the
   player's (and the KILLED BY card logged bot-on-bot damage as the player's); it now passes the attacker through.
+- **Reserve ammo per gun = the wiki** (wiki.playvalorant.com/en-us/<Weapon> infobox "Reserve", retrieved 2026-10-25): every
+  gun carried 3 magazines on the page and the server (valorant-api's weaponStats has no reserve field), e.g. Vandal 75,
+  Odin 300, Operator 15. Now Classic 36, Shorty 6, Frenzy 45, Ghost 39, Sheriff 24, Stinger 60, Spectre 90, Bucky 10,
+  Judge 15, Bulldog 72, Guardian 36, Phantom 60, Vandal 50 (75 -> 50 in v3.0), Marshal 15, Outlaw 10, Operator 10, Ares 100,
+  Odin 200: server `RESERVE` / `reserveOf` (spawn, buy, swap, floor-gun default), page `XRSV` / `xRsv` (buy, round reset,
+  TDM / DM loadouts, floor guns, buy-menu stat card). `work/test_reserve_ammo.cjs` (page table == server table, real page
+  buys), `test-weapons.js`; `test_client_online_gunplay.cjs` next-round refill checks the table (Vandal 25 / 50).
+  `test_floor_pickup.cjs` / `test_tdf_round_reset.cjs` cuts now include `xWOwn` (gate_m9 failures on a4c5e5d) and `xRsv`.
+- **Reyna Leer offline threw `d is not defined`** (gate_m9 on a4c5e5d, test_client_abilities ascent Reyna): the merged Leer
+  windup comment was a `//` line comment on a one-line `bots.forEach` body, so it swallowed the body's declarations. Now a
+  block comment (origin/hark 8dd8565 has the same fix).
+- **Armor v9.10** (wiki.playvalorant.com/en-us/Armor_and_Shield; playvalorant.com patch notes 9.10): Light / Heavy Shields
+  are now **Light Armor** (400, 25, 66%) / **Heavy Armor** (1000, 50, 66%) in the buy menu ("Armor" column), the server's
+  buy / sell / bot autobuy and the soak tool; old names are refused. **Regen Shield** added (650): holds 25, absorbs 100% of
+  a hit before health, refills from a 50 regeneration pool after a delay since its last absorbed hit, the pool carried into
+  the next round by a survivor (re-buying refills it); a death clears it; Heavy / Light replace it, selling restores it.
+  Delay 3 s (beebom.com / gameland.gg / 1v9.gg 9.10 coverage; Riot says "after a brief delay"); refill rate 12.5 / s is
+  inferred (no published figure). Server `ARMOR_BUY` / `RGN` / `armorOwned` / `regenTick` (gun and ability damage),
+  snapshot row [21] = pool (-1 none), `bo` carries `rg`; page `XRGN` (== server), `armAbs` 100% for a Regen Shield,
+  `xRgnTick` (player, bots, allies offline and on the P2P host), HUD green shield icon + pool superscript. TDM Stage 1's
+  Regen Shield (9.11) not modelled. `server/test-spike-edges.js` armor block, `work/test_regen_shield.cjs`, audit.js names.
+- **gate_m9 fix-forwards (a4c5e5d, merged origin/hark)**: the skin preview's WebGLRenderer (work/skins_runtime.js) skipped
+  `xShChk` (test_kill_perf "every renderer goes through xShChk 5/6"); test_spectate_follow's nmNear cut now includes the
+  merged `nmCellNum` numeric cell map.
+- **Per-round reloads** (wiki.playvalorant.com/en-us/Bucky "reload=2.5 sec (0.5 per shell)", /Marshal "2.5 sec (0.5 per
+  bullet)", both "reloaded one ... at a time" with a shot possible between rounds; /Outlaw "2.3 sec (1 bullet), 3.8 sec
+  (2 bullets)"): the Bucky and Marshal reload one round every 0.5 s until full or out of reserve, and pulling the trigger
+  with a round loaded fires and stops the reload (a magazine reload still blocks the shot); the Outlaw takes 2.3 s with one
+  barrel empty and 3.8 s with both. Server `RELOAD_ROUND` / `reloadTime` / `finishReload` (next round on the reload's own
+  clock, no per-tick drift) / `fire`; page `XRLP` / `xRT` / tick / `shoot`. Reload animation spans each round.
+- **Shotgun tagging past 10 m** (patch 1.07 on the wiki Bucky / Judge / Shorty pages: "Hitting an enemy past 10 meters will
+  now apply a different tagging value instead of standard tagging. New tagging: 30% slow for .5s on a smooth curve going
+  back to normal speed"): a shotgun hit past 10 m slows 30% easing back (cosine) to full speed over 0.5 s instead of the
+  standard 72.5% tag; it never weakens a standard tag already running. Server `tagHit` / `tagMul` (motor `tag`), page
+  `xTagAt` / `xTagK` (player pellets on bots, bots on the player, P2P host hit claims). `server/test-weapons.js`,
+  `work/test_reload_rounds.cjs`.
+- **Round timers / Spike / economy vs wiki (2026-10-25)**: checked wiki.playvalorant.com/en-us/Spike, /Credits, /Unrated and the
+  agent pages. Matching on both sides: plant 4 s, defuse 7 s with progress saved at 3.5 s, 45 s fuse, round 100 s, buy 30 s
+  (45 s rounds 1 / 13), post-round 7 s, kill 200, plant 300 to every attacker, win 3000, loss 1900 / 2400 / 2900, lost-round
+  survivor 1000, cap 9000, start 800, overtime 5000, ult points (Jett 8, Phoenix 7, Sova 8, Sage 7, Reyna 7, Omen 7, Killjoy 9,
+  Raze 8, Skye 8, Breach 8, Cypher 7, Chamber 8). Fixed: (1) dying to the Spike counted as a death (wiki Spike, patch 1.11:
+  "no longer counts as a death in KDA statistics"): server `detonate` and the page's `pDie` / `sbKill` skip it; (2) the
+  offline 5v5's overtime round 25 had a 30 s buy phase; it is 45 s like the server's `buyPhaseSeconds`. Sage Barrier Orb
+  stays 300 (Barrier Orb page, v11.08; the Credits page table still lists 400). `work/test_round_timers.cjs`,
+  `work/test_offline_detonation.cjs`, `server/test-parity-rules.js`.

@@ -1,5 +1,5 @@
 {
-"_about":"tools/map-sweep.mjs findings fixed in the shared motor (motor.cjs step/moveAxis): edges = [from node, to node] nav edges on flat or stepped floor the motor refused before the riser/step-up fixes (crack between slabs read as a riser, step-up pinned by a wall beside the capsule); traps = [from node, direction] walks that ended in a spot the capsule could not walk out of (Breeze paving against walls). test-map-bounds.js section 5 replays them.",
+"_about":"tools/map-sweep.mjs findings fixed in the shared motor (motor.cjs step/moveAxis): edges = [from node, to node] nav edges on flat or stepped floor the motor refused before the riser/step-up fixes (crack between slabs read as a riser, step-up pinned by a wall beside the capsule); traps = [from node, direction] walks that ended in a spot the capsule could not walk out of (Breeze paving against walls; the last three were embedded a few mm in a leaning wall, the very last walked off the 12 m platform onto the crate stack below it, now a clip). test-map-bounds.js section 5 replays them.",
 "ascent":{"edges":[
   [[-11,8.55,-57.25],[-11,8.74,-58]],
   [[-11,8.74,-58],[-11,8.55,-57.25]],
@@ -15,7 +15,7 @@
   [[7,8.41,65],[7.75,8.43,65]],
   [[4.75,8.43,65.75],[5.5,8.43,65.75]],
   [[3.25,8.43,67.25],[2.5,8.44,67.25]]],
- "traps":[]},
+ "traps":[[[30.25,9.07,-9.25],[0,-1]]]},
 "bind":{"edges":[
   [[-3,8.51,-3.75],[-3.75,8.75,-3.75]],
   [[-3.75,8.75,-3.75],[-4.5,8.9,-3.75]],
@@ -25,12 +25,13 @@
 "haven":{"edges":[
   [[-48,6.01,-8.5],[-48.75,6.01,-8.5]],
   [[8.25,7.8,-57.25],[9,7.99,-57.25]],
-  [[-1.5,7.03,34.25],[-1.5,7.07,35]]],
+  [[-1.5,7.03,34.25],[-1.5,7.07,35]],
+  [[9,8,-58],[9,7.99,-57.25]]],
  "traps":[]},
 "split":{"edges":[
   [[-35.75,9.01,17.5],[-36.5,9.06,17.5]],
   [[1.75,10.52,6.25],[1,8.6,6.25]]],
- "traps":[]},
+ "traps":[[[-3.5,9.02,-47],[-0.71,0.71]]]},
 "lotus":{"edges":[],"traps":[]},
 "breeze":{"edges":[
   [[-71.75,7.46,1.25],[-71.75,7.65,0.5]],
@@ -96,5 +97,9 @@
   [[28.75,8.16,-10],[0,1]],
   [[29.5,8.02,-9.25],[-0.71,0.71]],
   [[43.75,8.02,-15.25],[1,0]],
-  [[44.5,8.03,-15.25],[1,0]]]}
+  [[44.5,8.03,-15.25],[1,0]],
+  [[7,8.04,-34.75],[-1,0]],
+  [[16,4.14,35],[0.71,0.71]],
+  [[16.75,8.49,8],[0.71,-0.71]],
+  [[9.25,12,-25],[0,1]]]}
 }

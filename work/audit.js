@@ -1218,7 +1218,7 @@ if (!NO3) {
         swapW("knife"); if (rw !== "knife") return "knife switch"; swapW(sl); if (rw !== sl) return "switch back"; return true; })()`);
       if (r !== true) bad.push(n + ": " + r);
     }
-    for (const sh of ["Light Shields", "Heavy Shields", "Regen Shield"]) { xe("FV.cr = 9000; FV.buy = 20; FV.menu = true; player.armor = 0; buyRender(); true"); const b = Array.from(doc.querySelectorAll("#xBG button[data-n]")).find((x) => x.dataset.n === sh); if (b) { b.click(); if (!(xe("player.armor") > 0)) bad.push(sh + " gave no armor"); } }
+    for (const sh of ["Light Armor", "Regen Shield", "Heavy Armor"]) { xe("FV.cr = 9000; FV.buy = 20; FV.menu = true; player.armor = 0; buyRender(); true"); const b = Array.from(doc.querySelectorAll("#xBG button[data-n]")).find((x) => x.dataset.n === sh); if (b) { b.click(); if (!(xe("player.armor") > 0)) bad.push(sh + " gave no armor"); } }
     const k = xe('(() => { FV.buy = 0; FV.menu = false; FV.pri = "Vandal"; slots.pri = { ammo: 25, rsv: 75 }; const out = []; [["Digit1", "pri"], ["Digit2", "pis"], ["Digit3", "knife"], ["Digit1", "pri"]].forEach(([c, w]) => { window.dispatchEvent(Object.assign(new Event("keydown"), { code: c })); window.dispatchEvent(Object.assign(new Event("keyup"), { code: c })); if (rw !== w) out.push(c + "->" + rw); }); return out.length ? out.join(",") : true; })()');
     if (k !== true) bad.push("slot keys: " + k);
     return bad.length ? bad.slice(0, 8).join(" | ") : true;
@@ -1582,13 +1582,13 @@ if (!NO3) {
   let started = false;
   try { toLobby(); xe('(() => { FV.pick = "ascent"; FV.srOn = 0; window.xSwift = false; startFive(); clearTimeout(FV.to); return true; })()'); advance(60); started = xe("mode === 'five' && running"); } catch (e) {}
   const EXP = [["Sidearms", [["Classic", 0], ["Shorty", 300], ["Frenzy", 450], ["Ghost", 500], ["Sheriff", 800]]], ["SMGs", [["Stinger", 1100], ["Spectre", 1600]]], ["Shotguns", [["Bucky", 850], ["Judge", 1850]]],
-    ["Rifles", [["Bulldog", 2050], ["Guardian", 2250], ["Phantom", 2900], ["Vandal", 2900]]], ["Sniper", [["Marshal", 950], ["Outlaw", 2400], ["Operator", 4700]]], ["Machine guns", [["Ares", 1600], ["Odin", 3200]]], ["Shields", [["Light Shields", 400], ["Heavy Shields", 1000]]]];
+    ["Rifles", [["Bulldog", 2050], ["Guardian", 2250], ["Phantom", 2900], ["Vandal", 2900]]], ["Sniper", [["Marshal", 950], ["Outlaw", 2400], ["Operator", 4700]]], ["Machine guns", [["Ares", 1600], ["Odin", 3200]]], ["Armor", [["Light Armor", 400], ["Regen Shield", 650], ["Heavy Armor", 1000]]]];
   R("menu opens in a 5v5 buy phase with all 7 category columns in Valorant order and every card at the right price", () => {
     if (!started) return "5v5 did not start"; xe("FV.pri = null; FV.sec = 'Classic'; player.armor = 0; FV.bt = []; true"); open(9000); if (!$("xBuy").classList.contains("on")) return "menu not open";
     const cols = Array.from(doc.querySelectorAll("#xBG .x-bc")).map((c) => String(c.querySelector("h4").textContent)), bad = [];
     EXP.forEach(([cat, its], i) => { if (!new RegExp(cat, "i").test(cols[i] || "")) bad.push("column " + (i + 1) + " is " + cols[i] + " (want " + cat + ")");
       its.forEach(([n, p]) => { const b = btn(n); if (!b) return bad.push("no card " + n); const t = b.querySelector(".x-tp"); if (!t || String(t.textContent).trim() !== String(p)) bad.push(n + " shows " + (t && t.textContent) + " want " + p);
-        if (!b.querySelector("svg")) bad.push(n + " no silhouette"); if (!/Shields/.test(n) && !xe(`!!WEAP[${JSON.stringify(n)}]`)) bad.push(n + " missing from WEAP"); }); });
+        if (!b.querySelector("svg")) bad.push(n + " no silhouette"); if (!/Armor|Shield/.test(n) && !xe(`!!WEAP[${JSON.stringify(n)}]`)) bad.push(n + " missing from WEAP"); }); });
     if (!$("xBTm") || !/Team loadout/i.test($("xBTm").textContent)) bad.push("no team loadout panel");
     return bad.length ? bad.slice(0, 6).join(" | ") : true; });
   R("buying deducts credits and equips; right-click sells back for the full price; a sidearm sale restores the Classic", () => {
@@ -1602,10 +1602,10 @@ if (!NO3) {
     xe("FV.pri = null; FV.bt = []; true"); open(500); const b = btn("Vandal"); if (!b || b.getAttribute("aria-disabled") !== "true" || !b.classList.contains("xb-no")) return "Vandal not marked unaffordable at 500";
     b.click(); xe('fBuy("Operator"); true'); if (xe("FV.cr") !== 500 || xe("FV.pri") !== null) return "bought anyway: cr " + xe("FV.cr") + " pri " + xe("FV.pri");
     if (btn("Ghost").getAttribute("aria-disabled") === "true") return "Ghost (500) dimmed at 500"; return true; });
-  R("shields: light then heavy (light refunded), right-click sells heavy back", () => {
-    xe("player.armor = 0; FV.bt = []; true"); open(2000); btn("Light Shields").click(); if (xe("player.armor") !== 25 || xe("FV.cr") !== 1600) return "light: " + xe("player.armor") + " / " + xe("FV.cr");
-    btn("Heavy Shields").click(); if (xe("player.armor") !== 50 || xe("FV.cr") !== 1000) return "heavy: " + xe("player.armor") + " / " + xe("FV.cr");
-    rclick(btn("Heavy Shields")); if (xe("player.armor") !== 0 || xe("FV.cr") !== 2000) return "sell: " + xe("player.armor") + " / " + xe("FV.cr"); return true; });
+  R("armor: light then heavy (light refunded), right-click sells heavy back", () => {
+    xe("player.armor = 0; player.rgn = undefined; FV.bt = []; true"); open(2000); btn("Light Armor").click(); if (xe("player.armor") !== 25 || xe("FV.cr") !== 1600) return "light: " + xe("player.armor") + " / " + xe("FV.cr");
+    btn("Heavy Armor").click(); if (xe("player.armor") !== 50 || xe("FV.cr") !== 1000) return "heavy: " + xe("player.armor") + " / " + xe("FV.cr");
+    rclick(btn("Heavy Armor")); if (xe("player.armor") !== 0 || xe("FV.cr") !== 2000) return "sell: " + xe("player.armor") + " / " + xe("FV.cr"); return true; });
   R("ability charges: per-charge pips, buy fills a pip, right-click sells it back", () => {
     xe('(() => { J.on = true; J.pick = "Jett"; J.c = 0; J.q = 0; FV.bt = []; return true; })()'); open(1000); const b = btn("ab:c"); if (!b) return "no ability card";
     const pips = () => Array.from(btn("ab:c").querySelectorAll(".xb-pips i")); if (pips().length !== xe("K().mx.c")) return "pips " + pips().length;

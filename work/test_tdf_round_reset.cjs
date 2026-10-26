@@ -7,7 +7,7 @@
 const fs=require('fs'),path=require('path'),vm=require('vm'),assert=require('assert/strict');
 const html=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
 const cut=(a,b)=>{const i=html.indexOf(a);assert(i>=0,'missing '+a);const j=html.indexOf(b,i);assert(j>i,'missing end of '+a);return html.slice(i,j);};
-const src=cut('function swapW(s) {','\naddEventListener("keyup"')+'\n'+cut('function bEquip(n, sl) {','\nfunction bUndo')+'\n'+cut('function mpRdArm(ld) {','\nfunction mpCli5');
+const src=cut('function swapW(s) {','\naddEventListener("keyup"')+'\n'+cut('function bEquip(n, sl) {','\nfunction bUndo')+'\n'+cut('function mpRdArm(ld) {','\nfunction mpCli5')+'\n'+cut('function xWOwn(n) {','\n')+'\n'+cut('const XRSV = ','\nconst xRsv')+'\n'+cut('const xRsv = ','\n');/* the page's reserve table */
 const WEAP={Spectre:{mag:30},Classic:{mag:12},Operator:{mag:5},Sheriff:{mag:6}};
 function boot(){const c=vm.createContext({WEAP,FV:{pri:null,sec:'Classic'},slots:{pri:{},pis:{ammo:12,rsv:36}},rw:'pis',ammo:12,rsv:36,reloading:0,fireHeld:false,skins:0,scope:null,MAG(){return 5;},blip(){},onSkin(){c.skins++;},setScope(v){c.scope=v;},updHud(){}});vm.runInContext(src.replace(/^let |^const /gm,'var '),c);vm.runInContext('var get=()=>({rw,ammo,rsv,reloading,fireHeld}),set=(o)=>{rw=o.rw;ammo=o.ammo;rsv=o.rsv;}',c);return c;}
 // Spectre bought, Tour de Force: the snapshot's held Operator is bEquip'd into the primary slot, two shots fired

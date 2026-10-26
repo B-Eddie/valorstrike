@@ -125,6 +125,15 @@ typed-array copy per attribute), precomputed per-level bins in the split, typed-
 bounding-sphere pass: 1.8-2.0 s -> 0.9-1.2 s per map. Triangles are preserved exactly (`tris out` = source on all six;
 `work/test_map_optimizer.cjs` checks every corner's position/normal/uv). Raw numbers: `work/validation/map/perf.json`.
 
+Load cost, pass C2 (profiled with `node --cpu-prof` on `server/tools/.scratch/opt/realopt3.mjs` / `realopt4.mjs`):
+`nmOptimizeScene` was one large function whose hot loops (triangle gather, attribute copy) ran mostly unoptimized - the
+engine recompiled it 4-5 times per map (100-190 ms each, "wrong map" deopts) - so its own time was ~0.9 s of Lotus's
+optimize. The loops are now small functions (`nmGather`, `nmOffset`, `nmCopy3/2/N`, `nmCentroids` for the plan's
+centroids) that optimize in a few ms; output is unchanged (triangles out = source on all six, `work/test_map_optimizer.cjs`).
+Optimize ms on the loaded sandbox (load ~15, same run, before -> after): Ascent 2050 -> 1327, Bind 1470 -> 1082, Haven
+2163 -> 1385, Split 1964 -> 1463, Lotus ~1990 -> ~1475, Breeze 1923 -> 1114 (-25..-42%; the idle-sandbox column above was
+measured before). Left: the plan's median split (~0.3 s Lotus, loaded) and GC.
+
 Not done (measured or judged not worth it):
 - PVS occlusion culling: built and measured (24 m columns, 8 m viewer cells, conservative ray marching): it removed
   only ~3% more triangles on Lotus (61% of columns visible from an average cell: open sightlines + vista), not worth
@@ -244,9 +253,19 @@ Two motor bugs (fixed in the shared motor, `server/src/motor.cjs` = `vendor/valo
   step (the wall it touches is within 0.41 m) nor stay grounded enough to move, so every direction was refused: stuck
   until a jump. 44 such spots on Breeze (sampled every 3rd node). Fix: the 1 cm margin is tested ahead of the move only,
   and where a wall leans in above the feet only a lift of at most 5 cm (a bump or seam) may pass, tested at that height.
-  41 of 44 now walk out; the other 3 (Breeze (6.56, 8.04, -34.75), (17.0, 4.25, 36.0) - capsule sits embedded a few mm
-  in a leaning wall; (9.25, 10.95, -24.4) - dropped 1 m onto a ledge off the footprint, the leash only lets it move
-  toward the playable floor above) still need one jump.
+  41 of 44 walked out after this fix; the other 3 (and one more the stride-5 re-sweep found) are fixed in the next pass:
+- **Embedded a few mm in a leaning wall (C2).** Breeze (6.56, 8.04, -34.75), (17.0, 4.25, 36.0), (17.8, 9.19, 7.59): the
+  capsule rests 1-3 mm inside a wall that leans in over the paving. A move's 0.5 mm sub-steps never clear it, so each
+  sub-step was refused and velocity zeroed: pinned until a jump. Fix (shared motor `moveAxis`): when the capsule is
+  already embedded (free radius 0.3-0.4 m, bisected to 0.1 mm), a move that strictly increases the free radius passes,
+  so it backs out; sliding along or deeper into the wall is still refused. All three walk out in every open direction.
+- **Ledge off the footprint (C2).** Breeze crate stack below the 12 m platform's south-east edge (x 7.3..10.45,
+  z -24.45..-21.4; blocks at 10.95, 9.96, 9.0 m down to the 8 m floor, no nav on them): walking off the platform edge
+  from (9.25, 12, -25) dropped 1 m onto the top block, where the leash only allowed moves back toward the platform (1 m
+  up, jump only). Fix: a player clip (`CLIPS.breeze`, feet band 11..14.5 m) over the stack, so the platform edge stops
+  the walk like a wall; capsules on the 8 m floor (even at a jump apex) are below the band and walk under it as before;
+  no nav node is clip-blocked; the platform's east edge (x > 10.45) still drops to the 8 m floor.
+  Fixtures: the 4 cases are appended to `map-walk-fixtures.json` Breeze traps (all 4 fail on the C1 motor).
 - Still refused and correct: the `tall` edges are posts, a pillar corner, a hanging cable bundle at Ascent A
   (46.3, 10.07, -32.1, collision on visible `WiresDark` cables) - the nav node sits 0.3-0.4 m from thin visible geometry
   the 0.4 m capsule meets; all have visible render surfaces (none `invisible`). The `base` edges (Haven C (-48, 6.01, -8.5), a 4 cm floor plate
@@ -254,6 +273,31 @@ Two motor bugs (fixed in the shared motor, `server/src/motor.cjs` = `vendor/valo
 - Stuck (placed on a node, cannot walk or jump out): 0 on all six maps. Embedded nodes: Ascent 22 (17 inside the A ramp
   pit player clip, as intended), others 1-7; none is a spawn candidate (spawns test 0.43 m clearance) and the DM spawn
   test is the same.
+
+Re-sweep after C1/C2 (stride 2 + walk-in trap test on every sampled node, RENDER=1; `.scratch/sweepA-<map>.json`):
+<!--RESWEEP-->
+- Ascent (C1 motor; 4,772 nodes, 16,018 edges): 0 stuck, 1 refused edge (the visible `WiresDark` cable bundle at A,
+  `tall`, correct), 1 walk-in trap: walking -z from (30.25, 9.07, -9.25) wedged the capsule at (30.25, 9.2, -10.19) under
+  a 1.66 m soffit over bumpy floor - lifting 5 cm to clear the bump put the head into the soffit while 5 mm cleared it.
+  Fix (shared motor): the lean-wall step-up tries the lowest of 0.5 / 1.5 / 3 / 5 cm that clears ahead; it walks out in
+  4 directions. Fixture added (Ascent traps).
+- Bind (C2 motor; 4,988 nodes, 17,700 edges): 0 stuck, 0 refused edges, 1 walk-in trap: (-53.25, 7.56, 21) walking
+  (-0.71, 0.71) wedges the capsule at (-53.49, 7.41, 21.32) in a rock pocket between a mound and a wall leaning over at
+  head height; every standing move meets one of them within 2 mm at any lift, so it is not fixed in the motor. It walks
+  out crouched (225-315 deg, 1.2-1.4 m in 0.6 s) or with a jump toward (0.71, -0.71): left for the browser list.
+- Haven (C2 motor; 4,081 nodes, 14,575 edges): 0 stuck, 0 traps, 1 refused edge (9, 8, -58) -> (9, 7.99, -57.25): a 5 mm
+  paving bump under a low ceiling (1.8-2.2 m over the floor) - the step-up tested headroom for the full 40 cm step and
+  refused it. Fix (shared motor): headroom is tested for the lift actually used (full step, or the few cm of the lean-wall
+  lift). Fixture added (Haven edges).
+- Split (3,902 nodes, 13,421 edges): 0 stuck, 0 refused edges, 1 walk-in trap: walking (-0.71, 0.71) from (-3.5, 9.02, -47)
+  into a rounded prop by a wall (centre (-4.12, 9, -46.4), 0.5 m wide, 0.8 m tall, domed collision) stepped onto its lip
+  and climbed the curved side a few cm per sub-step - each lift cleared by contact at the capsule's rim, no single riser
+  over the step height - ending 0.8 m up, embedded 1.7 cm on its shoulder. A motor-wide slope rule (lift must end on
+  floor within 0.2 m of the axis) was tried and dropped: it also refuses ordinary stairs, whose first riser is met by the
+  rim 0.4 m ahead (`work/test_map_riser.cjs` failed). Fix: a player clip on the prop's footprint (`CLIPS.split`, octagon
+  r 0.27, feet band 9..9.85 m) makes it a post; it now stops beside it and walks off in 5 directions, jumping on top
+  still works. No playable node is clip-blocked (one non-playable node 0.64 m from the centre is). Fixture added (Split traps).
+- Lotus (4,348 nodes, 14,676 edges): 0 stuck, 0 traps, 0 refused edges.
 
 Spawns and plant sites (all six maps): attacker / defender spawn candidates 246-660 / 103-634 per map, none embedded or
 stuck, every candidate reaches every site on the navigation. Every site anchor lies in its own plant zone, its nearest
@@ -301,3 +345,7 @@ refused with/without a crack and after a step down; 0.2 m stairs up and down; it
 8. Movement fixes (motor): walk across Ascent's attacker-spawn back paving (x 1..7, z 59..67) and Breeze's paved lanes
    without stopping on flat floor; run into walls over Breeze paving (e.g. (44.9, 8.06, -15.25), (-80, 7.1, 8.3)) and walk
    away without jumping; stairs and boxes still behave (0.6 m crates need a jump, stairs walk).
+9. Breeze (C2): press into the leaning walls at (6.56, 8.04, -34.75), (17.0, 4.25, 36.0), (17.8, 9.19, 7.59) and walk away
+   without a jump (no visible push-out pop); walk off the 12 m platform's south-east edge toward the crate stack
+   (x 7.3..10.45, z -24.45): stops at the edge like a wall, no visible invisible-wall gap feel worse than a railing; the
+   east edge (x > 10.45) still drops to the 8 m floor; walking on the 8 m floor under the stack is unaffected.
