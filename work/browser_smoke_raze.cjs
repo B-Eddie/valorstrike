@@ -39,7 +39,9 @@ const SRV=(()=>{const s=fs.readFileSync(ROOT+'/server/src/abilities.js','utf8'),
   for(const [ag,key] of [['Jett','KeyC'],['Omen','KeyE'],['Cypher','KeyQ']]){
    await X(`J.pick=${JSON.stringify(ag)};jRound(false);J.c=K().mx.c||1;J.q=K().mx.q||1;J.e=Math.max(1,K().mx.e||1);J.cd={c:0,q:0,e:0,x:0};player.hp=100;J.eq=null;J.cbs=[];for(const s of J.smokes)scene.remove(s.m);J.smokes.length=0;pitch=-0.15;1`);await frames(1);
    await page.keyboard.press(key);let n=0;
-   for(let i=0;i<60;i++){n=await X('J.smokes.length');if(n)break;if(i===5&&(await X('!!J.eq'))){await page.mouse.down();await page.waitForTimeout(80);await page.mouse.up();log(ag+' equip: clicked',1);}await page.waitForTimeout(100);}
+   const t0=Date.now();let nc=0; // equip-then-fire (1.1 s draw): click while the ability is out until the smoke exists (a click during the draw is ignored); <= 40 s on the ~1 frame/s box
+   for(let i=0;Date.now()-t0<40000;i++){n=await X('J.smokes.length');if(n)break;if(i%15===5&&(await X('!!J.eq'))){await page.mouse.down();await page.waitForTimeout(80);await page.mouse.up();nc++;}await X('window.__allow=1;1');await page.waitForTimeout(100);}
+   log(ag+' cast state',await X(`JSON.stringify({clicks:${nc},eq:J.eq,smokes:J.smokes.length,cd:J.cd,lc:typeof XNF!=='undefined'?XNF:null})`));
    const s=await X(`JSON.stringify((()=>{const s=J.smokes[J.smokes.length-1];if(!s)return null;const g=s.m.geometry;if(!g.boundingSphere)g.computeBoundingSphere();s.m.updateMatrixWorld(true);const ws=new THREE.Vector3();s.m.getWorldScale(ws);return {r:s.r,drawn:+(g.boundingSphere.radius*Math.max(ws.x,ws.y,ws.z)).toFixed(3),geo:g.boundingSphere.radius,p:[+s.p.x.toFixed(1),+s.p.y.toFixed(1),+s.p.z.toFixed(1)],t:+s.t.toFixed(2)};})())`).then(JSON.parse);
    log(ag+' smoke',s);await frames(2);await page.screenshot({path:`${SHOT}smoke-${ag.toLowerCase()}-1280x720.jpg`,type:'jpeg',quality:80,timeout:150000}).catch(e=>log('shot failed (non-fatal)',String(e).slice(0,120)));
    const want=await X(`XSMR[${JSON.stringify(ag)}]`);
