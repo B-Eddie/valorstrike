@@ -7,7 +7,7 @@ const {chromium}=require(PW),fs=require('fs');const ROOT='/workspace/work/valors
 const LOCAL={'three.min.js':QA+'three.min.js','GLTFLoader.js':QA+'GLTFLoader.js','SkeletonUtils.js':QA+'SkeletonUtils.js'};const R={steps:[],checks:[],errors:[]};const t00=Date.now();
 const log=(k,v)=>{R.steps.push([((Date.now()-t00)/1000).toFixed(1),k,v]);fs.writeFileSync(OUT,JSON.stringify(R,null,1));};
 const check=(n,ok,d)=>{R.checks.push([n,ok?'pass':'FAIL',d]);log('check '+n,ok?'pass':'FAIL');};
-const SIZES=(process.env.SIZES||'1280x720,640x360,390x844').split(',').map(s=>s.split('x').map(Number));
+const SIZES=(process.env.SIZES||'1280x720,640x360,390x844,844x390').split(',').map(s=>s.split('x').map(Number));
 (async()=>{
  const browser=await chromium.launch({headless:true,args:['--no-sandbox','--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader','--disable-dev-shm-usage','--ignore-gpu-blocklist','--in-process-gpu','--renderer-process-limit=1']});
  const ctx=await browser.newContext({viewport:{width:SIZES[0][0],height:SIZES[0][1]},deviceScaleFactor:1});
@@ -37,6 +37,15 @@ const SIZES=(process.env.SIZES||'1280x720,640x360,390x844').split(',').map(s=>s.
    const over=cards.filter((c,i)=>rs[i].left<0||rs[i].right>innerWidth+1).map(c=>c.dataset.n);const clip=cards.filter(c=>{const b=c.querySelector('b');return b&&b.scrollWidth>b.clientWidth+1}).map(c=>c.dataset.n);
    const ov=[];for(let i=0;i<rs.length;i++)for(let j=i+1;j<rs.length;j++){const a=rs[i],b=rs[j];if(a.left<b.right-1&&b.left<a.right-1&&a.top<b.bottom-1&&b.top<a.bottom-1)ov.push(cards[i].dataset.n+'/'+cards[j].dataset.n);}
    return {n:cards.length,cols,hscroll:B.scrollWidth>B.clientWidth+1,over,clip,ov,side:sr?[sr.left,sr.top,sr.width,sr.height].map(Math.round):null,stats:(B.querySelector('.x-ws')||{}).textContent?.slice(0,120)||'',minH:Math.round(Math.min(...rs.map(r=>r.height))),minW:Math.round(Math.min(...rs.map(r=>r.width)))};})())`));
+  // hk-30 (buy2 1280x720 screenshot: Sheriff cut at the bottom edge, never measured - the old check was horizontal only):
+  // on a desktop-width screen at least 700 px tall the six weapon columns fit with no scroll; on every size each card can be scrolled fully into view.
+  const vm=JSON.parse(await X(`JSON.stringify((()=>{const B=document.getElementById('xBuy');B.scrollTop=0;const W=[...B.querySelectorAll('.x-bc:not(.xb-shc):not(.xb-abc) .xb-card>button[data-n]')],all=[...B.querySelectorAll('.xb-card>button[data-n]')];
+   const below=W.filter(c=>c.getBoundingClientRect().bottom>innerHeight+0.5).map(c=>c.dataset.n);const unreach=[];
+   for(const c of all){c.scrollIntoView({block:'nearest'});const r=c.getBoundingClientRect();if(r.top<-0.5||r.bottom>innerHeight+0.5)unreach.push(c.dataset.n);}B.scrollTop=0;
+   const sh=B.querySelector('button[data-n="Sheriff"]'),sr=sh&&sh.getBoundingClientRect();return {weapons:W.length,below,unreach,sheriffBottom:sr?Math.round(sr.bottom):null,scrollH:B.scrollHeight,clientH:B.clientHeight};})())`));
+  log(`buymenu vertical ${w}x${h}`,vm);
+  if(w>820&&h>=700)check(`buy menu ${w}x${h}: every weapon column fits on screen without scrolling (Sheriff not cut)`,vm.weapons>=18&&!vm.below.length,JSON.stringify(vm));
+  check(`buy menu ${w}x${h}: every card can be scrolled fully into view`,!vm.unreach.length,JSON.stringify({unreach:vm.unreach,scrollH:vm.scrollH,clientH:vm.clientH}));
   log(`buymenu ${w}x${h}`,m);
   check(`buy menu ${w}x${h}: all cards on screen, none overlapping, names unclipped, no sideways scroll`,m.n>=17&&!m.hscroll&&!m.over.length&&!m.ov.length&&!m.clip.length,JSON.stringify({n:m.n,hs:m.hscroll,over:m.over,ov:m.ov.slice(0,5),clip:m.clip}));
   check(`buy menu ${w}x${h}: hovering Vandal fills the stats panel`,/vandal/i.test(m.stats),m.stats);
