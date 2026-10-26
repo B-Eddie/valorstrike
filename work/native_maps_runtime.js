@@ -9,23 +9,26 @@ async function nmCollision(key,signal){
  const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.BufferAttribute(new Float32Array(positions),3));geometry.setIndex(new THREE.BufferAttribute(new Uint32Array(index),1));geometry.boundsTree=MeshBVHLib.MeshBVH.deserialize({index:geometry.index.array,roots},geometry,{setIndex:false});return geometry;
 }
 function nmCancel(interactive=true){const pending=NM.pending;++NM.ticket;NM.pending=null;if(pending?.controller)pending.controller.abort(Object.assign(new Error('Map selection changed'),{name:'AbortError'}));nmOverlay(null);if(interactive&&window.xCancelMatchLoad)window.xCancelMatchLoad();if(interactive&&typeof NET!=='undefined'&&NET.socket&&typeof mpLost==='function')mpLost('Map loading cancelled');}
+const NM_STALL_MS=120000,NM_CAP_MS=600000; // map load: abort after 120 s with no progress, 10 min overall
 async function nmEnsure(key){
  if(NM.current&&NM.current.key===key){if(NM.pending){nmCancel(false);}return NM.current;}
  if(NM.pending&&NM.pending.key===key)return NM.pending.promise;
  if(NM.pending)nmCancel(false);
  const ticket=++NM.ticket,controller=new AbortController();let loadedGeometry=null,loadedScene=null,committed=false,failed=false;
  const release=()=>{if(loadedScene||loadedGeometry){nmFree({M:{g:loadedScene||new THREE.Group()},geometry:loadedGeometry});loadedScene=loadedGeometry=null;}};
- const timeout=setTimeout(()=>controller.abort(new Error('Map loading timed out. Please retry.')),120000);
+ // load timeout = 120 s WITHOUT PROGRESS (a fetch finishing, a glTF asset loading, a prepare phase), capped at 10 min overall:
+ // a slow device that keeps progressing is no longer failed at a fixed 120 s (browser-found: SwiftShader Ascent load took 92-130 s).
+ let timeout=0;const tStart=Date.now(),arm=()=>{if(committed||failed)return;clearTimeout(timeout);timeout=setTimeout(()=>controller.abort(new Error('Map loading timed out. Please retry.')),Math.max(0,Math.min(NM_STALL_MS,NM_CAP_MS-(Date.now()-tStart))));};arm();NM.kick=t=>{if(t===ticket)arm();};
  nmOverlay(key.charAt(0).toUpperCase()+key.slice(1));
- const promise=(async()=>{const base='models/valorant/maps/'+key+'/';const read=url=>fetch(base+url,{signal:controller.signal}).then(r=>{if(!r.ok)throw new Error(url+' '+r.status);return r;});
+ const promise=(async()=>{const base='models/valorant/maps/'+key+'/';const read=url=>fetch(base+url,{signal:controller.signal}).then(r=>{if(!r.ok)throw new Error(url+' '+r.status);arm();return r;});
   const tLoad=nmNow(),aborted=new Promise((_,reject)=>controller.signal.addEventListener('abort',()=>reject(controller.signal.reason||new Error('Map selection changed')),{once:true}));
   const [meta,nav,geometry,gl,plants]=await Promise.race([aborted,Promise.all([read('map.json').then(r=>r.json()),read('navigation.json').then(r=>r.json()),nmCollision(key,controller.signal).catch(async e=>{if(controller.signal.aborted)throw e;const bytes=await read('collision.bin').then(r=>r.arrayBuffer()),head=new Uint32Array(bytes,0,2),positions=new Float32Array(bytes,8,head[0]*3),indices=new Uint32Array(bytes,8+head[0]*12,head[1]),g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(positions,3));g.setIndex(new THREE.BufferAttribute(indices,1));g.boundsTree=new MeshBVHLib.MeshBVH(g,{maxLeafTris:12,maxDepth:64,strategy:MeshBVHLib.CENTER});return g;}).then(g=>{loadedGeometry=g;if(failed||controller.signal.aborted){release();throw controller.signal.reason||new Error('Map selection changed');}return g;}),nmLoadScene(base,ticket).then(gl=>{loadedScene=gl.scene;if(failed||controller.signal.aborted){release();throw controller.signal.reason||new Error('Map selection changed');}return gl;}),read('plants.json').then(r=>r.json())])]);
   if(ticket!==NM.ticket){release();throw new Error('Map selection changed');}
   if(!nav.validation.attackerToDefender||Object.values(nav.validation.attackerToSites).some(v=>!v))throw new Error('Map navigation is incomplete');
-  NM.progress.querySelector('small').textContent='Preparing the map…';await new Promise(r=>setTimeout(r,20));if(ticket!==NM.ticket){release();throw new Error('Map selection changed');}
+  arm();NM.progress.querySelector('small').textContent='Preparing the map…';await new Promise(r=>setTimeout(r,20));if(ticket!==NM.ticket){release();throw new Error('Map selection changed');}
   const collision=new THREE.Mesh(geometry,new THREE.MeshBasicMaterial({side:THREE.DoubleSide,visible:false}));collision.name='native-collision';collision.raycast=MeshBVHLib.acceleratedRaycast;
   const root=xMG();root.name='native-'+key;root.userData.nativeMap=key;root.visible=false;root.add(gl.scene,collision);const M={g:root,solids:[collision],boxes:[],built:1,native:true};
-  const t0=nmNow();nmPrepareScene(gl.scene);nmZFixApply(gl.scene,key);const mapOpt=nmOptimizeScene(gl.scene);NM.progress.querySelector('small').textContent='Fitting the map to this device…';const mem=await nmBudget(gl.scene,nmTexCap());if(ticket!==NM.ticket){release();throw new Error('Map selection changed');}mem.optimizer=mapOpt;mem.prepareMs=Math.round(nmNow()-t0);mem.loadMs=Math.round(t0-tLoad);
+  const t0=nmNow();nmPrepareScene(gl.scene);nmZFixApply(gl.scene,key);const mapOpt=nmOptimizeScene(gl.scene);arm();NM.progress.querySelector('small').textContent='Fitting the map to this device…';const mem=await nmBudget(gl.scene,nmTexCap());if(ticket!==NM.ticket){release();throw new Error('Map selection changed');}mem.optimizer=mapOpt;mem.prepareMs=Math.round(nmNow()-t0);mem.loadMs=Math.round(t0-tLoad);
   const C={key,meta,nav,plants,M,geometry,bvh:geometry.boundsTree,image:new Image(),cells:new Map(),cellSize:2,scene:gl.scene,memory:mem,cullAt:null};mem.collisionBytes=nmBytes(geometry);C.image.src=base+'minimap.png';nmConnected(C);root.add(nmSkirt(nmSkirtSpec(nav.nodes,C.playable)));nav.nodes.forEach((p,i)=>{if(!C.playable[i])return;const k=Math.floor(p[0]/2)+','+Math.floor(p[2]/2);if(!C.cells.has(k))C.cells.set(k,[]);C.cells.get(k).push(i);});
   nmSiteGoals(C);
   // Only the original playable footprint defines navigation/minimap bounds; vista geometry is still rendered.
@@ -113,7 +116,7 @@ if(typeof scene!=='undefined'&&scene){const prev=scene.onBeforeRender;scene.onBe
 // (anti-aliasing switch -> xRemake, or a restored context) has nothing to re-upload from, so the scene is reloaded
 // from the HTTP cache and prepared again (nmRehydrate) at the then-current texture cap.
 function nmNow(){return typeof performance!=='undefined'?performance.now():Date.now();}
-function nmLoadScene(base,ticket){return new THREE.GLTFLoader(new THREE.LoadingManager(()=>{},(url,done,total)=>{if(ticket===NM.ticket)NM.loaded=total?done/total:0;/* reported to the server while loading (lp) */if(ticket===NM.ticket&&NM.progress)NM.progress.querySelector('small').textContent='Loading map assets '+done+' / '+total+'…';})).loadAsync(base+'scene.gltf');}
+function nmLoadScene(base,ticket){return new THREE.GLTFLoader(new THREE.LoadingManager(()=>{},(url,done,total)=>{if(ticket===NM.ticket){NM.loaded=total?done/total:0;if(NM.kick)NM.kick(ticket);}/* reported to the server while loading (lp) */if(ticket===NM.ticket&&NM.progress)NM.progress.querySelector('small').textContent='Loading map assets '+done+' / '+total+'…';})).loadAsync(base+'scene.gltf');}
 // Z-fighting fix (map-zfight.mjs scan of the render meshes; every converted map material is double-sided, so coplanar
 // layers of different materials flickered against each other: wall trims, plaster patches, floor inlays). Per map:
 // o = materials pulled forward by polygonOffset, by level (o[0] one step ... o[4] five: a layer sits one step
