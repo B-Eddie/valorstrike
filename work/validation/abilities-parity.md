@@ -399,9 +399,14 @@ the leap bites an enemy. Was: server 3 s, 4 m, flat 2.5 s; offline client 6 s, 3
   from 4 s (centre) to 2.5 s (3.5 m); concuss and slow per enemy by its distance from the blast.
 - Client: `XTB = {life: 6, r: 3.5, max: 4, min: 2.5}`, `xTbCnc(d)`; the player's leap (`tbLeap`) concusses / blinds each
   bot in 3.5 m by distance (bots have no concuss model beyond `b.cnc` / `b.blind`).
-- Not modelled: the 30-damage bite, the 22.5 m vision radius.
-- Tests: `server/test-ults.js` (tbConcuss table, 6 s; the closer foe concussed longer; 4 m from the blast untouched),
-  `work/test_ability_equip.cjs` (XTB == DEV.trail; leap lands 4 m ahead: 4 s at the spot, 2.71 s at 3 m, none at 3.8 m).
+- Bite (wiki: "If the tiger comes into contact with an enemy agent during the jump it will bite them", damage 30): server
+  `DEV.trail.bite = 30` to the enemy that triggered the leap (within 2 m), the others in 3.5 m are only concussed; client
+  `XTB {bite: 30, br: 2}`: `tbLeap` bites the nearest bot within 2 m of the landing spot (`jHit`, "Trailblazer"). No ally
+  damage (wiki friendly fire "Yes (excluding damage)").
+- Not modelled: the 22.5 m vision radius, the tiger's 80 HP.
+- Tests: `server/test-ults.js` (tbConcuss table, 6 s; the closer foe concussed longer; 4 m from the blast untouched; bite:
+  the reached foe 100 -> 70, the one 2.5 m aside untouched but concussed), `work/test_ability_equip.cjs` (XTB == DEV.trail incl.
+  trigger / bite; leap lands 4 m ahead: 4 s at the spot, 2.71 s at 3 m, none at 3.8 m; 30 bite to the bot at the spot only).
 
 ### Breach Rolling Thunder (wiki.playvalorant.com/en-us/Rolling_Thunder, fetched 2026-10-25)
 

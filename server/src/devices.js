@@ -24,7 +24,7 @@ export const DEV={
  trademark:{life:120,sight:10,arm:.5,armDeploy:WINDUP.trademark,radius:6,field:9.5},
  headhunter:{weapon:'Sheriff',ammo:1},
  boombot:{life:5,speed:6,sight:15,trigger:2.5,windup:.6,hp:60,damage:80,min:30,inner:2,radius:6},/* wiki Boom_Bot: 5 s, 15 m detection, explodes 0.6 s after closing within 2.5 m (it stops), 60 HP (enemy fire destroys it), 80 inside 2 m falling to 30 at 6 m; client XBB */
- trail:{life:6,speed:9,trigger:2,concuss:4,minConcuss:2.5,radius:3.5}/* wiki Trailblazer: 6 s, 3.5 m explosion, concuss 4 s at the centre falling to 2.5 s at the edge; client XTB */
+ trail:{life:6,speed:9,trigger:2,concuss:4,minConcuss:2.5,radius:3.5,bite:30}/* wiki Trailblazer: 6 s, 3.5 m explosion, concuss 4 s at the centre falling to 2.5 s at the edge; client XTB */
 };
 // Boom Bot damage at d m from the blast: 80 inside the 2 m inner radius, linear to 30 at the 6 m outer radius (wiki Boom_Bot).
 // Boom Bot hitbox for gunfire (spike.js traceShot / shotImpact): a 0.4 m sphere on the crawling bot, enemies of its team only.
@@ -98,7 +98,7 @@ export function tickDevices(sim,dt){
   if(e.kind==='boombot'){const seen=foes.filter(v=>Math.hypot(v.x-o[0],v.z-o[2])<C.sight&&losClear(sim,o,chest(v))).sort((a,b)=>Math.hypot(a.x-o[0],a.z-o[2])-Math.hypot(b.x-o[0],b.z-o[2]))[0];if(seen)e.yaw=Math.atan2(o[0]-seen.x,o[2]-seen.z);}
   const hit=foes.find(v=>Math.hypot(v.x-o[0],v.z-o[2])<C.trigger&&Math.abs(v.y-e.p[1])<2);
   if(hit&&e.kind==='boombot'){e.blastAt=sim.time+C.windup;e.until=Math.max(e.until,e.blastAt+.1);continue;}
-  if(hit){sim.effects.splice(i,1);for(const v of foes)if(Math.hypot(v.x-o[0],v.z-o[2])<C.radius&&Math.abs(v.y-e.p[1])<2.5&&losClear(sim,o,chest(v))){{const c=tbConcuss(Math.hypot(v.x-o[0],v.z-o[2]));v.concussUntil=Math.max(v.concussUntil||0,sim.time+c);v.slowUntil=Math.max(v.slowUntil||0,sim.time+c);}}continue;}
+  if(hit){sim.effects.splice(i,1);abilityDamage(sim,owner,hit,C.bite);/* wiki Trailblazer: the leap bites the enemy it reaches for 30 */for(const v of foes)if(Math.hypot(v.x-o[0],v.z-o[2])<C.radius&&Math.abs(v.y-e.p[1])<2.5&&losClear(sim,o,chest(v))){{const c=tbConcuss(Math.hypot(v.x-o[0],v.z-o[2]));v.concussUntil=Math.max(v.concussUntil||0,sim.time+c);v.slowUntil=Math.max(v.slowUntil||0,sim.time+c);}}continue;}
   if(!crawl(sim,e,dt,C.speed)){if(e.kind==='boombot'){const yaw=e.yaw+Math.PI/2;e.yaw=yaw;}else e.until=sim.time;}
  }
 }

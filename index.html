@@ -8583,13 +8583,14 @@ function hkPop() { // Guiding Light flash at the hawk
 }
 // Skye Trailblazer (wiki.playvalorant.com/en-us/Trailblazer): 6 s, 3.5 m explosion, concuss 4 s at the centre falling to
 // 2.5 s at the edge. Same values as the server (DEV.trail).
-const XTB = { life: 6, r: 3.5, max: 4, min: 2.5 };
+const XTB = { life: 6, r: 3.5, max: 4, min: 2.5, bite: 30, br: 2 }; // bite: 30 damage to the enemy the leap lands on (within 2 m, the server's trigger)
 function xTbCnc(d) { return XTB.max - Math.min(1, Math.max(0, d / XTB.r)) * (XTB.max - XTB.min); }
 function tbLeap() { // Trailblazer leap: concusses enemies near the landing spot (can't shoot 2.5 to 4 s by distance)
   const d = J.dr; if (!d.dart) return sgNo(); d.dart = 0; const fx = -Math.sin(yaw), fz = -Math.cos(yaw);
   for (let i = 0; i < 16; i++) { const nx = d.x + fx * 0.25, nz = d.z + fz * 0.25; if (blocked(nx, nz, 0.25, 0)) break; d.x = nx; d.z = nz; }
   const e = new RV(d.x, 0.8, d.z), hit = bots.filter((b) => b.alive && Math.hypot(b.g.position.x - d.x, b.g.position.z - d.z) < XTB.r && los(e, new RV(b.g.position.x, 1, b.g.position.z)));
   hit.forEach((b) => { const c = xTbCnc(Math.hypot(b.g.position.x - d.x, b.g.position.z - d.z)); b.blind = Math.max(b.blind || 0, c); b.cnc = Math.max(b.cnc || 0, c); });
+  let bt = null, bd = XTB.br; bots.forEach((b) => { if (!b.alive || !b.g) return; const q = Math.hypot(b.g.position.x - d.x, b.g.position.z - d.z); if (q < bd) { bd = q; bt = b; } }); if (bt) jHit(bt, XTB.bite, "Trailblazer"); // wiki: the tiger bites the enemy it lands on
   const m = jM(smokeGeo, fireMat(0x7fd84a, 0.35)); m.scale.setScalar(XTB.r / 4); m.position.copy(e); jFx(m, 0.4); blip(180, 0.35, "square", 0.18);
   say(hit.length ? "Trailblazer · " + hit.length + " concussed" : "Trailblazer · missed", 900); if (hit.length) feed("Trailblazer ▸ " + hit.map((b) => b.name).join(", "));
   d.t = Math.min(d.t, 0.4);

@@ -127,6 +127,9 @@ import {DEV,bbDamage,tbConcuss,turretDamage} from './src/devices.js';
 {assert.deepEqual([bbDamage(0),bbDamage(2),bbDamage(4),bbDamage(5.5),bbDamage(6.01)],[80,80,55,36.25,0],'Boom Bot falloff 80 (2 m) -> 30 (6 m)');
  const {s,u,list:[foe,side,out]}=setup('Raze',['foe'],['foeSide'],['foeOut']);u.ability.c=1;Object.assign(foe,{x:12,y:0,z:-6});Object.assign(side,{x:12,y:0,z:-9});Object.assign(out,{x:12,y:0,z:-15});
  assert.equal(s.command(u,{t:'ab',k:'c'}),true);tick(s,4.5);assert.ok(foe.hp<=26.25,'locks onto an enemy 13.4 m away (15 m detection, was 10 m): '+foe.hp);assert.ok(side.hp<100&&side.hp>=20&&side.hp>foe.hp,'falloff to a second enemy 4-6 m from the blast: '+side.hp);assert.equal(out.hp,100,'9 m away: outside 6 m');assert.ok(!s.effects.some(e=>e.kind==='boombot'));}
+// Trailblazer bite (wiki Trailblazer: 30 damage to the enemy the leap reaches); the one beside it is only concussed.
+{assert.equal(DEV.trail.bite,30,'DEV.trail.bite');const {s,u,list:[foe,side]}=setup('Skye',['foe'],['foeSide']);u.ability.q=1;Object.assign(foe,{x:0,y:0,z:-8});Object.assign(side,{x:2.5,y:0,z:-8});assert.equal(s.command(u,{t:'ab',k:'q'}),true);tick(s,1.5);
+ assert.ok(!s.effects.some(e=>e.kind==='trail'),'leapt');assert.equal(foe.hp,70,'bitten for 30');assert.equal(side.hp,100,'only the reached enemy is bitten');assert.ok(side.concussUntil>s.time,'the other one concussed');}
 // Boom Bot windup + 60 HP (wiki Boom_Bot): it stops within 2.5 m and explodes 0.6 s later; enemy gunfire destroys it (60 HP), allies' shots pass it.
 {assert.deepEqual([DEV.boombot.windup,DEV.boombot.hp],[.6,60],'DEV.boombot windup / hp');
  const {s,u,list:[foe]}=setup('Raze',['foe']);u.ability.c=1;Object.assign(foe,{x:0,y:0,z:-5});assert.equal(s.command(u,{t:'ab',k:'c'}),true);const bb=s.effects.find(e=>e.kind==='boombot');assert.equal(bb.hp,60,'the bot has 60 HP');
@@ -143,7 +146,7 @@ import {DEV,bbDamage,tbConcuss,turretDamage} from './src/devices.js';
  assert.deepEqual([tbConcuss(0),tbConcuss(1.75),tbConcuss(3.5),DEV.trail.life],[4,3.25,2.5,6],'Trailblazer concuss falloff 4 -> 2.5 s, 6 s');
  const t0=s.time,cf=foe.concussUntil-t0,cs=side.concussUntil-t0;/* the explosion happened up to 1.5 s ago: compare remaining times */assert.ok(cf>cs&&cs>0,'closer foe concussed longer: '+cf.toFixed(2)+' > '+cs.toFixed(2));assert.ok(!(out.concussUntil>0),'4 m from the blast: outside 3.5 m (was 4 m)');
  assert.ok(Math.abs((foe.concussUntil-side.concussUntil)-(tbConcuss(1.8)-tbConcuss(2.55)))<.25,'falloff by distance');}
-console.log('Devices: recon pulses reveal by line of sight (two pulses), Boom Bot seeks and explodes (0.6 s windup, 60 HP, shootable), Trailblazer concusses');
+console.log('Devices: recon pulses reveal by line of sight (two pulses), Boom Bot seeks and explodes (0.6 s windup, 60 HP, shootable), Trailblazer concusses + 30 bite');
 // Row 9 device parity: Phoenix (Blaze, Hot Hands, Curveball), Killjoy (Nanoswarm, Alarmbot, Turret arc),
 // Cypher (Trapwire, Cyber Cage), Chamber (Trademark, Headhunter weapon restore).
 import {sightClear,abilityDamage} from './src/abilities.js';
