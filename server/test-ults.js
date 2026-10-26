@@ -46,9 +46,15 @@ const rocket=(s,u,m={})=>{const ok=cast(s,u,m);if(!ok)return ok;s.time+=ULT.rock
  assert.equal(s.fire(foe),false,'detained cannot fire');foe.ability.ult=9;assert.equal(cast(s,foe),false,'detained cannot cast');assert.ok(s.roundState(foe).status.detain>7);assert.ok(foe.slowUntil>s.time);
  tick(s,8.1);foe.fireAt=0;foe.triggerHeld=false;assert.equal(s.fire(foe),true,'detain expires');s.newRound();assert.equal(foe.detainUntil,0);}
 
-// Rolling Thunder: after 0.9 s, a forward 18 m cone concusses enemies through walls; behind and out of cone are spared.
-{const {s,u,list:[a,b,c,mate]}=setup('Breach',['foeIn'],['foeWide'],['foeBehind'],['mate']);Object.assign(a,{x:2,y:0,z:-12});Object.assign(b,{x:14,y:0,z:-6});Object.assign(c,{x:0,y:0,z:6});Object.assign(mate,{x:0,y:0,z:-5});wall=1;u.ability.ult=9;
- assert.equal(cast(s,u),true);tick(s,.5);assert.ok(!(a.concussUntil>s.time));tick(s,.5);assert.ok(a.concussUntil>s.time+5,'concussed through the wall for 6 s');assert.ok(!(b.concussUntil>s.time));assert.ok(!(c.concussUntil>s.time));assert.ok(!(mate.concussUntil>s.time));}
+// Rolling Thunder (wiki Rolling_Thunder): after the 1 s fuse (1.2 s windup - 0.2 s release), a 32 m x 18 m strip starting 8 m in
+// front of Breach concusses enemies for 4 s through walls; nearer than 8 m, past 40 m, more than 9 m to the side, behind and allies are spared.
+{assert.deepEqual([ULT.quake.near,ULT.quake.length,ULT.quake.width,ULT.quake.concuss],[8,32,18,4],'ULT.quake strip');
+ const {s,u,list:[a,b,c,mate,close,edge,side,past]}=setup('Breach',['foeIn'],['foeWide'],['foeBehind'],['mate'],['foeClose'],['foeEdge'],['foeSide'],['foePast']);
+ Object.assign(a,{x:2,y:0,z:-12});Object.assign(b,{x:14,y:0,z:-6});Object.assign(c,{x:0,y:0,z:6});Object.assign(mate,{x:0,y:0,z:-12});
+ Object.assign(close,{x:0,y:0,z:-5});Object.assign(edge,{x:8.5,y:0,z:-38});Object.assign(side,{x:-9.6,y:0,z:-20});Object.assign(past,{x:0,y:0,z:-41});wall=1;u.ability.ult=9;
+ assert.equal(cast(s,u),true);tick(s,.5);assert.ok(!(a.concussUntil>s.time),'windup');tick(s,.6);
+ assert.ok(a.concussUntil>s.time+3&&a.concussUntil<=s.time+4,'concussed through the wall for 4 s');assert.ok(edge.concussUntil>s.time+3,'38 m ahead, 8.5 m aside: inside the strip');
+ for(const v of [b,c,mate,close,side,past])assert.ok(!(v.concussUntil>s.time),v.name+' spared');}
 
 // Seekers: the three nearest living enemies are nearsighted when their seeker arrives; a fourth is not.
 {const {s,u,list}=setup('Skye',['foe1'],['foe2'],['foe3'],['foe4']);list.forEach((v,i)=>Object.assign(v,{x:0,y:0,z:-(6+i*10)}));u.ability.ult=9;assert.equal(cast(s,u),true);assert.equal(s.effects.filter(e=>e.kind==='seeker').length,3);
@@ -94,7 +100,7 @@ const rocket=(s,u,m={})=>{const ok=cast(s,u,m);if(!ok)return ok;s.time+=ULT.rock
 {const {s,u,list:[foe]}=setup('Raze',['foe']);Object.assign(foe,{x:0,y:0,z:-12,hp:1,armor:0});u.ability.ult=9;rocket(s,u);s.units=s.units.filter(v=>v!==u);tick(s,1);assert.equal(foe.alive,false);assert(s.events.some(e=>e[0]==='k'&&e[1]==='Raze'&&e[2]===foe.name&&e[4]==='Ability'),'ownerless kill in the feed, credited to the utility\'s agent');assert.equal(s.fxSrc,null,'no stale effect source after the tick (a later owner-less direct kill must not borrow it)');}
 // Detain survives a disconnect: the seat bot inherits the leaver's statuses.
 {const {s,u}=setup('Jett',['foe']);u.detainUntil=s.time+5;const b=s.add('Bot Jett','Jett',false);b.team=u.team;s.takeOver(b,u);assert(b.detainUntil>s.time,'still detained');}
-console.log('Ultimates: Hunter\'s Fury (3 wall-piercing blasts, recast, reveal, death end), Showstopper (1.4 s launcher equip, FIRE shoots, 10 s window, travelling rocket, falloff, LOS, wall detonation), Lockdown (windup, radius detain blocks guns/abilities, round reset), Rolling Thunder (cone through walls), Seekers (3 nearest), Neural Theft (corpse targeting, reveals at 2 s and 6 s), Tour de Force (5-round Operator, weapon restore, round reset), Run It Back (death/expiry return, no elimination, no death drop, gear kept at round end); leaver utility/ult state moves to the seat bot; server-side aim only');
+console.log('Ultimates: Hunter\'s Fury (3 wall-piercing blasts, recast, reveal, death end), Showstopper (1.4 s launcher equip, FIRE shoots, 10 s window, travelling rocket, falloff, LOS, wall detonation), Lockdown (windup, radius detain blocks guns/abilities, round reset), Rolling Thunder (32 x 18 m strip from 8 m ahead, 4 s, through walls), Seekers (3 nearest), Neural Theft (corpse targeting, reveals at 2 s and 6 s), Tour de Force (5-round Operator, weapon restore, round reset), Run It Back (death/expiry return, no elimination, no death drop, gear kept at round end); leaver utility/ult state moves to the seat bot; server-side aim only');
 // Devices that used to be inert markers: recon pulses reveal enemies in the bolt's sight (not through walls),
 // Boom Bot hunts the nearest visible enemy and explodes for 125, Trailblazer concusses on contact.
 import {DEV,bbDamage,tbConcuss} from './src/devices.js';

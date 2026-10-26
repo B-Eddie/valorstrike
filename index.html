@@ -8736,10 +8736,13 @@ function bcLine(P, fx, fz, L, w, t, ry, nr) { // strip nr .. nr + L ahead of P a
   const m = new THREE.Mesh(new THREE.BoxGeometry(w * 2, 0.25, L), fireMat(0xff9a3a, 0.45)); m.position.set(P.x + fx * (nr + L / 2), 0.15, P.z + fz * (nr + L / 2)); m.rotation.y = ry ?? yaw; jFx(m, 0.9);
   blip(90, 0.5, "sawtooth", 0.22); try { shk = 0.25; } catch (e) {} say("Fault Line · " + n + " dazed " + t + " s", 900);
 }
+// Breach Rolling Thunder (wiki.playvalorant.com/en-us/Rolling_Thunder): a 32 m long, 18 m wide strip starting 8 m in front of
+// Breach, through walls; everyone in it is knocked up and concussed 4 s. Same values as the server (ULT.quake).
+const XRT2 = { near: 8, len: 32, w: 18, cnc: 4 };
 function bcCone(at) { // at: { x, z, ry } where Breach cast it (after the windup); default: now
-  const P = at || player, ry = at ? at.ry : yaw, fx = -Math.sin(ry), fz = -Math.cos(ry), H = 0.72; let n = 0;
-  bots.forEach((b) => { if (!b.alive) return; const vx = b.g.position.x - P.x, vz = b.g.position.z - P.z, d = Math.hypot(vx, vz) || 0.01; if (d < 32 && (vx * fx + vz * fz) / d > Math.cos(H)) { bcDaze(b, 4, true); n++; } });
-  const m = new THREE.Mesh(new THREE.CircleGeometry(32, 24, ry + Math.PI / 2 - H, H * 2), fireMat(0xff9a3a, 0.35)); m.rotation.x = -Math.PI / 2; m.position.set(P.x, 0.1, P.z); jFx(m, 1.2);
+  const P = at || player, ry = at ? at.ry : yaw, fx = -Math.sin(ry), fz = -Math.cos(ry), R2 = XRT2; let n = 0;
+  bots.forEach((b) => { if (!b.alive) return; const vx = b.g.position.x - P.x, vz = b.g.position.z - P.z, a = vx * fx + vz * fz, s = Math.abs(vx * fz - vz * fx); if (a > R2.near && a < R2.near + R2.len && s < R2.w / 2) { bcDaze(b, R2.cnc, true); n++; } });
+  const m = new THREE.Mesh(new THREE.BoxGeometry(R2.w, 0.25, R2.len), fireMat(0xff9a3a, 0.35)); m.position.set(P.x + fx * (R2.near + R2.len / 2), 0.1, P.z + fz * (R2.near + R2.len / 2)); m.rotation.y = ry; jFx(m, 1.2);
   try { shk = 0.45; } catch (e) {} blip(60, 0.8, "sawtooth", 0.28); say("Rolling Thunder · " + n + " knocked up", 1100); feed("Breach ▸ Rolling Thunder");
 }
 function bcField(q) { const m = new THREE.Mesh(slowGeo, fireMat(0xd8b04a, 0.35)); m.rotation.x = -Math.PI / 2; m.position.set(q.x, 0.06, q.z); scene.add(m); BC.sf.push({ m, p: new RV(q.x, 0, q.z), t: 6 }); }

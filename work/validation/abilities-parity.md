@@ -392,3 +392,17 @@ the leap bites an enemy. Was: server 3 s, 4 m, flat 2.5 s; offline client 6 s, 3
 - Not modelled: the 30-damage bite, the 22.5 m vision radius.
 - Tests: `server/test-ults.js` (tbConcuss table, 6 s; the closer foe concussed longer; 4 m from the blast untouched),
   `work/test_ability_equip.cjs` (XTB == DEV.trail; leap lands 4 m ahead: 4 s at the spot, 2.71 s at 3 m, none at 3.8 m).
+
+### Breach Rolling Thunder (wiki.playvalorant.com/en-us/Rolling_Thunder, fetched 2026-10-25)
+
+Wiki stats: area 32 m long x 18 m wide, 8 m between Breach and the area (patch: "Spawn location from Breach increased 0 >>>
+8 meters", cone changed to a line), concuss 4 s, through walls. Was: server an 18 m cone (30 degree half-angle) from Breach
+with a 6 s concuss; offline client a 32 m, 0.72 rad half-angle cone, 4 s.
+
+- Server: `ULT.quake = {delay, near: 8, length: 32, width: 18, concuss: 4}`; the quake tick concusses / slows each enemy
+  with `8 < ahead < 40` and `|aside| < 9` (height band 4 m unchanged).
+- Client: `XRT2 = {near: 8, len: 32, w: 18, cnc: 4}` (asserted equal); `bcCone` uses the same strip and draws an 18 x 32 m
+  box from 8 m ahead.
+- Not changed: offline bot Breach's ult stays the generic 5 m burst at its target; the 0.6 s knock-up / ticks are not modelled.
+- Tests: `server/test-ults.js` (strip table; 12 m ahead through a wall concussed <= 4 s, 38 m ahead / 8.5 m aside hit;
+  5 m ahead, 9.6 m aside, 41 m ahead, behind, ally spared), `work/test_ability_equip.cjs` (XRT2 == ULT.quake, same cases offline).
