@@ -132,11 +132,62 @@ function slideFrom(P,world,rx,rz,height,bx,bz){const L=Math.hypot(rx,rz);if(L<1e
  for(let a=SLIDE_STEP;a<SLIDE_MAX-1e-9;a+=SLIDE_STEP){if(free(a,s)){hi=a;break;}lo=a;}
  for(let n=0;n<6;n++){const mid=(lo+hi)/2;if(free(mid,s))hi=mid;else lo=mid;}
  const d=dir(hi,s);let len=L*(1-f0)*Math.cos(hi);for(let n=0;n<5;n++,len/=2)if(ok(d[0]*len,d[1]*len))return [ox+d[0]*len,oz+d[1]*len,d[0],d[1],1];return f0>0?[ox,oz,ux,uz,0]:null;}
+// Rope ascenders (VALORANT Split; no other shipped map has ropes or ziplines: Icebox / Fracture are not in the game).
+// Seven ascenders per wiki.playvalorant.com/en-us/Split ("Two that allow players to get up from Sewer to A Lobby, One that
+// allows players to get up from B Hell to B Tower, Four that allow players to navigate through Vents"); spots from the wiki's
+// interactive map (Map:Split markers, fitted to this map's callouts, 0.8 m rms) snapped onto the collision mesh: each rope
+// hangs 0.5 m out from the upper floor's ledge face, near a side wall of the shaft as in the in-game screenshots.
+// x, z: hang point (the climbing capsule's axis); y0 / y1: lower / upper floor; ex, ez: where the climber steps off at the top;
+// ty: height of that step-off move (clears the ledge lip). Behaviour (VALORANT): Use (F) near a rope attaches (also from the
+// ledge at the top, or mid-air); W / S climb look-relative (looking down past ~17 deg, W climbs down) at about Operator run
+// speed (dev Pearl Hogbash, 2020: "about the same speed as when running with an Operator"; walk held = walk speed), reached
+// almost at once; climbing past the top steps off onto the upper floor, reaching the floor at the bottom lets go; Jump pushes
+// off the rope, Use again lets go. Weapons fire on ropes with the rope spread (patch 6.11 / 12.09, see spread()).
+const ROPES={split:[
+ {name:'B Hell - B Tower',x:-23.03,z:-8.9,y0:9,y1:13,ex:-21.1,ez:-8.9,ty:13.3},
+ {name:'A Sewer - A Lobby (north)',x:41.13,z:12.15,y0:3.13,y1:7,ex:42.35,ez:12.15,ty:7.05},
+ {name:'A Sewer - A Lobby (south)',x:41.19,z:14.85,y0:3.05,y1:7,ex:42.39,ez:14.85,ty:7.05},
+ {name:'Vent - A Tower side (north)',x:15.3,z:-17.85,y0:6.5,y1:10.517,ex:16.5,ez:-17.85,ty:10.57},
+ {name:'Vent - A Tower side (south)',x:15.37,z:-15.5,y0:6.5,y1:10.517,ex:16.57,ez:-15.5,ty:10.57},
+ {name:'Vent - Mid Vent (north)',x:11.99,z:-10.8,y0:6.5,y1:10.5,ex:10.79,ez:-10.8,ty:10.55},
+ {name:'Vent - Mid Vent (south)',x:12.06,z:-8.3,y0:6.5,y1:10.5,ex:10.86,ez:-8.3,ty:10.55}]};
+// reach: grab distance from the rope (capsule axis); speed: 6.75 x Operator 0.76; accel: top speed in 0.1 s (patch 1.10: no
+// sudden direction shifts); down: pitch under which W climbs down; hold: time on the rope before Jump / Use may let go;
+// cooldown: before the same unit can grab again; push: Jump-off speed away from the rope; exit: step-off duration.
+const ROPE_SG=new Set(['Shorty','Bucky','Judge']);
+const ROPE={reach:.9,speed:6.75*.76,accel:6.75*.76/.1,down:.3,hold:.2,cooldown:.35,push:3,exit:.2};
+function ropeFind(R,P){let best=-1,bd=Infinity;for(let k=0;k<R.length;k++){const r=R[k],d=Math.hypot(P.x-r.x,P.z-r.z),t=Math.hypot(P.x-r.ex,P.z-r.ez);
+  let s=Infinity;if(d<=ROPE.reach&&P.y>=r.y0-.3&&P.y<=r.y1+.3)s=d;else if(t<=ROPE.reach+.4&&Math.abs(P.y-r.y1)<=.3)s=t;if(s<bd){bd=s;best=k;}}return best;}
+// Climb direction -1..1: bots give input.climb; players give the forward axis (f, W = 1) and the camera pitch (+ up).
+function ropeClimb(input){if(input.climb!=null)return Math.max(-1,Math.min(1,+input.climb||0));const f=Math.max(-1,Math.min(1,+input.f||0));return (input.pitch||0)<-ROPE.down?-f:f;}
+function ropeLeave(P){P.rope=0;P.ropeT=0;P.ropeOut=null;P.ropeCd=ROPE.cooldown;P.ropeAt=null;}
+function ropeStep(P,input,dt,world,press,usePress){const r=world.ropes[P.rope-1];P.ropeT=(P.ropeT||0)+dt;P.lp=0;P.ls=0;P.jumpBuffer=0;P.vx=P.vz=0;
+ P.ch=approach(P.ch||0,0,C.crouchEye/C.crouchUp*dt);P.cr=false;P.wk=!!input.walk;const out={landed:false,jumped:false,speed:0,drop:0,rope:true};
+ const done=()=>{const s=Math.abs(P.vy||0);P.mv=s>.1;P.sf=s/Math.max(.001,input.speed||1);P.speed=s;out.speed=s;P.fallTop=P.y;P.fallY=P.y;P.fallDrop=0;P.ropeAt=P.rope?[P.x,P.y,P.z]:null;return out;};
+ if(P.ropeOut!=null){/* stepping off at the top: up to ty at the rope, then across onto the ledge */P.ropeOut=Math.min(1,P.ropeOut+dt/ROPE.exit);const k=P.ropeOut;P.vy=0;P.x=r.x+(r.ex-r.x)*k;P.z=r.z+(r.ez-r.z)*k;P.y=r.ty;
+  if(k>=1){ropeLeave(P);P.air=true;P.vy=0;P.takeoffSpeed=0;P.fallTop=P.y;}else P.air=false;return done();}
+ P.x=r.x;P.z=r.z;P.air=false;
+ if(press&&P.ropeT>=ROPE.hold){/* jump off: pushed away from the rope (along the move keys, else away from the ledge) */let dx=input.x||0,dz=input.z||0,l=Math.hypot(dx,dz);if(l<.1){dx=r.x-r.ex;dz=r.z-r.ez;l=Math.hypot(dx,dz)||1;}
+  ropeLeave(P);P.vx=dx/l*ROPE.push;P.vz=dz/l*ROPE.push;P.vy=C.jumpSpeed;P.air=true;P.takeoffSpeed=ROPE.push;out.jumped=true;return done();}
+ if(usePress&&P.ropeT>=ROPE.hold){ropeLeave(P);P.vy=0;P.air=true;P.takeoffSpeed=0;return done();}
+ const c=ropeClimb(input),want=c*ROPE.speed*(input.walk?C.walk:1);P.vy=approach(P.vy||0,want,ROPE.accel*dt);let y=P.y+P.vy*dt;
+ if(y>=r.y1){if(c>0&&!world.blocked(r.ex,r.ez,.4,r.ty,1.8)){P.y=r.y1;P.ropeOut=0;P.vy=0;return done();}y=r.y1;if(P.vy>0)P.vy=0;}
+ const floor=world.ground(r.x,r.z,Math.max(P.y,y)+.05);if(y<=floor){y=floor;if(P.vy<0)P.vy=0;if(c<0){P.y=y;ropeLeave(P);P.air=false;return done();}}
+ P.y=y;return done();}
+// Nav links for bots: lower floor node <-> upper floor node of every rope (both ends on nodes ok(i) accepts).
+function ropeLinks(R,nodes,ok){const L=[];if(!R)return L;const pick=(x,y,z)=>{let b=-1,d=1.5*1.5;for(let i=0;i<nodes.length;i++){if(ok&&!ok(i))continue;const p=nodes[i];if(Math.abs(p[1]-y)>.5)continue;const e=(p[0]-x)**2+(p[2]-z)**2;if(e<d){d=e;b=i;}}return b;};
+ R.forEach((r,k)=>{const a=pick(r.x,r.y0,r.z),b=pick(r.ex,r.y1,r.ez);if(a>=0&&b>=0&&a!==b)L.push({a,b,k,up:1},{a:b,b:a,k,up:0});});return L;}
 function step(P,input,dt,world){
  const dt0=Math.max(0,Math.min(.1,dt)),parts=Math.max(1,Math.ceil(dt0*128)),h=dt0/parts;let landed=false,jumped=false,drop=0;
  // Moved from outside the motor since the last step (a teleport, a rescue, a respawn): the fall starts over from here.
  if(P.fallY==null||Math.abs(P.y-P.fallY)>1e-4)P.fallTop=P.y;
  const press=!!input.jump&&!P.jumpHeld;P.jumpHeld=!!input.jump;if(press)P.jumpBuffer=.07;
+ // Ropes (world.ropes): Use grabs the nearest rope in reach; on a rope the rope moves the unit. A unit moved from outside
+ // the motor since its last rope step (respawn, rescue, teleport, a dash) is off the rope.
+ const usePress=!!input.use&&!P.useHeld;P.useHeld=!!input.use;const RS=world.ropes;
+ if(P.rope&&(!RS||!RS[P.rope-1]||!P.ropeAt||Math.abs(P.x-P.ropeAt[0])+Math.abs(P.y-P.ropeAt[1])+Math.abs(P.z-P.ropeAt[2])>1e-6))ropeLeave(P);
+ if(RS){P.ropeCd=Math.max(0,(P.ropeCd||0)-dt0);if(!P.rope&&usePress&&!(P.ropeCd>0)){const k=ropeFind(RS,P);if(k>=0){const r=RS[k];P.rope=k+1;P.ropeT=0;P.ropeOut=null;P.vx=P.vz=P.vy=0;P.y=Math.max(r.y0,Math.min(r.y1,P.y));P.x=r.x;P.z=r.z;P.ropeAt=[P.x,P.y,P.z];}}
+  if(P.rope){P.jumpBuffer=0;const parts=Math.max(1,Math.ceil(dt0*128)),h=dt0/parts;let o=null,j=false;for(let k=0;k<parts&&P.rope;k++){o=ropeStep(P,input,h,world,press&&k===0,usePress&&k===0);j=j||o.jumped;}if(o){o.jumped=j;if(!P.rope&&parts>1){/* let go mid-step: the rest of the step is ordinary movement */}return o;}}}
  for(let k=0;k<parts;k++){
   const floor=world.ground(P.x,P.z,P.y),grounded=(P.vy||0)<=0&&(P.y<=floor+.025||supported(P,world,P.y,1.8-(P.ch||0)));
   P.lp=Math.max(0,(P.lp||0)-h);P.ls=Math.max(0,(P.ls||0)-h);P.jumpBuffer=Math.max(0,(P.jumpBuffer||0)-h);P.duckFatigue=Math.max(0,(P.duckFatigue||0)-h*.55);
@@ -211,6 +262,9 @@ function spread(state,weapon,stats){
   // as agents accelerate ... and fall off as agents decelerate"), from 0 at the deadzone to the full value at the mode's top speed
   // (sf = speed / the current mode's speed). Landing adds 7 deg for 0.225 s on top (Weapons: "an additional 7 deg spread upon
   // landing ... lasting for 0.225 seconds"; patch 1.09).
+  // On a rope (patch 6.11): at least 65 % of the walking spread while still, the ground walk / run spread while climbing; shotguns
+  // (patch 12.09): 0.75 still, 1.5 walking, 3.0 running.
+  if(state.rope&&!state.air){const sg=ROPE_SG.has(weapon),still=sg?.75:.65*T[5];error=moving?Math.max(still,(state.wk?(sg?1.5:T[5]):(sg?3:T[6]))*moveRamp(speed,dead)):still;return rad(row.first+error);}
   if(state.air)error=T[7];else{if(moving)error=(state.cr?T[4]:state.wk?T[5]:T[6])*moveRamp(speed,dead);if(state.ls>0)error+=C.landSpread;}
   return rad(row.first+error);}
  let base=Math.max(0,stats.firstBulletAccuracy||0),error=0;if(state.ads&&stats.adsStats)base=Math.max(0,stats.adsStats.firstBulletAccuracy||0);
@@ -290,5 +344,5 @@ function dashStep(P,D,dt,world){let s=Math.min(D.left,D.v*Math.max(0,dt));D.left
 C.stride=1.85;C.stepRun=.65;
 function runs(speed,top,quiet){return !quiet&&speed>C.stepRun*Math.max(.1,top||0);}
 function footfall(st,dist,dt,run){if(!run){st.fd=Math.max(0,(st.fd||0)-C.stride*Math.max(0,dt||0));return false;}st.fd=(st.fd||0)+Math.max(0,dist||0);if(st.fd<C.stride)return false;st.fd%=C.stride;return true;}
-return {C,step,dash,dashStep,runs,footfall,fallDamage,velocity,brake,groundMove,spread,bloomCap,SPREAD,CADENCE,cadenceShot,cadenceGap,cadenceOwed,CLASSIC_ALT,classicAltSpread,BUCKY_ALT,recoveryTime,recoilMove,disk,damp,approach,clipBlocked,CLIPS,REC,sprayReset,sprayBloom,sprayStep,leashGrid,leashOk,leashNear};
+return {C,ROPES,ROPE,ropeFind,ropeLinks,step,dash,dashStep,runs,footfall,fallDamage,velocity,brake,groundMove,spread,bloomCap,SPREAD,CADENCE,cadenceShot,cadenceGap,cadenceOwed,CLASSIC_ALT,classicAltSpread,BUCKY_ALT,recoveryTime,recoilMove,disk,damp,approach,clipBlocked,CLIPS,REC,sprayReset,sprayBloom,sprayStep,leashGrid,leashOk,leashNear};
 });

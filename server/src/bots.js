@@ -147,12 +147,19 @@ export function spotNear(sim,u,center,field,o){
 // turns it off (bots then stand at their spawn spot as before).
 const BUY_IN=.42;
 export function buyWalls(sim,team){const W=sim.world,side=team===sim.atk?'atk':'def';return SpawnBarriers.pieces(W.map.key).filter(p=>p.side===side);}
+// The buy-phase walk graph: the nav links without the rope links (world.ropeLinks, Split's ascenders). A buy-phase bot only
+// walks (buyMill drives the motor without use / climb), so a route or an area over a rope would leave it stranded below a
+// ledge (Split defenders dropped into the Vent room on their way to Mid Vent and stood there the whole buy phase). Page: xbbAdj.
+function buyAdj(W){const L=W.ropeLinks;if(!L||!L.size)return W.nav.adj;if(W._buyAdj&&W._buyAdj.src===W.nav.adj)return W._buyAdj.adj;const adj=W.nav.adj.map((l,a)=>l.filter(b=>!L.has(a+'>'+b)));W._buyAdj={src:W.nav.adj,adj};return adj;}
+// the world on that graph (same nodes, allowed set and blocked-node costs; its own A* state): buyInit plans the bot's route
+// out to its first goal on it, so the exit it lines up at is one it can walk to (= page xbbInit nmPath(..., C.ropeLinks)).
+function buyWalkW(W){if(!W.ropeLinks||!W.ropeLinks.size)return W;if(W._buyW&&W._buyW.nav.adj===buyAdj(W))return W._buyW;const nav=Object.create(W.nav);nav.adj=buyAdj(W);return W._buyW={...W,nav};}
 function buyTeam(sim,team){
  const W=sim.world,M=W.map,atk=team===sim.atk,key=sim.map+'|'+(sim.round||0)+'|'+team+'|'+(atk?1:0),T=(sim._buyT||(sim._buyT={}));
  if(T[team]&&T[team].key===key)return T[team];
  const anchor=atk?M.attacker:M.defender,walls=buyWalls(sim,team),N=W.nav.nodes,start=W.near(anchor[0],anchor[2],anchor[1]);
- const area=BotBrain.buyArea(N,W.nav.adj,start,walls,i=>!W.allowed||W.allowed.has(i));
- return T[team]={key,walls,area,spots:[],bl:blockedNodes(W)};
+ const adj=buyAdj(W),area=BotBrain.buyArea(N,adj,start,walls,i=>!W.allowed||W.allowed.has(i));
+ return T[team]={key,walls,area,adj,spots:[],bl:blockedNodes(W)};
 }
 const BUY_RING=[[.15,0],[-.15,0],[0,.15],[0,-.15]];
 function buyOk(W,A,y0){return (x,z)=>{const nr=BotBrain.buyNear(A.walls,x,z);if(nr&&(nr.d<BUY_IN+.05||!nr.inside&&nr.d<1.5))return null;const i=W.near(x,z,y0);if(i<0||!A.area.f[i])return null;const n=W.nav.nodes[i];if(Math.hypot(n[0]-x,n[2]-z)>.9||Math.abs(n[1]-y0)>2.5)return null;
@@ -164,7 +171,7 @@ function buyInit(sim,u){
  if(!out.off){
   // the bot's first round goal: the strategy's first staged position (its site) or its site; the full-map route there
   const L=plan(sim,u),atk=u.team===sim.atk,g=L.stages&&L.stages[0]?L.stages[0].site:atk?(sim.spike||{}).site:L.site,site=(g==='mid'?sitePoint(sim,'mid'):W.map.sites[g])||W.map.sites[Object.keys(W.map.sites)[0]];/* a mid player lines up at the exit toward mid */
-  const path=site?sim.findPath(W,start,W.near(site[0],site[2],site[1])):null;let ex=site?BotBrain.buyExit(N,path,A.walls):null;
+  const path=site?sim.findPath(buyWalkW(W),start,W.near(site[0],site[2],site[1])):null;let ex=site?BotBrain.buyExit(N,path,A.walls):null;/* walked: no rope on the way out (buyAdj) */
   /* its goal inside its own area (a defender's own site): it walks there and holds instead of lining up */
   const h=!ex&&BotBrain.buyHold(N,path,A.area,A.walls,A.spots,(x,z,y)=>buyOk(W,A,y)(x,z),i=>!!A.bl[i]);if(h){out.spot=h.p;out.node=h.node;out.hold=true;A.spots.push(h.p);out.face=h.face;return u.buyMill=out;}
   if(!ex){/* no route out through a wall: the wall nearest the bot */const nr=BotBrain.buyNear(A.walls,u.x,u.z),w=nr.w;ex={x:w.ax+w.tx*nr.t,y:w.y0!=null?w.y0+.4:u.y,z:w.az+w.tz*nr.t,dx:-w.nx,dz:-w.nz,w};/* the wall's floor, not the bot's (a far wall can sit on another level) */}
@@ -185,7 +192,7 @@ export function buyMill(sim,u,dt){
  const d=BotBrain.buyTick(B.st,c);u.inputAt=sim.time;
  if(d.face){const B0=persona(sim,u).brain,Bf=B0._face||(B0._face=Object.assign({},B0,{turn:(B0.turn||10)*.6}));/* a calm look-around at 60 % of its turn rate; the full step dt (not dt*.6) keeps the yaw velocity in u.turnSt continuous between facing and walking, so the hand's acceleration limit holds across the switch (bots-tune-3: soak flagged 200 vs 177 rad/s^2) */u.look=BotBrain.turnStep(Bf,u.look||0,Math.atan2(-d.face[0],-d.face[1]),dt,u.turnSt||(u.turnSt={v:0})).yaw;}
  if(!d.goal){B.rg=null;B.route.length=0;B.stuck=0;u.input={};return {x:0,z:0,walk:false};}
- const g=d.goal;if(B.rg!==g){B.rg=g;const a=W.near(u.x,u.z,u.y),b=W.near(g[0],g[2],g[1]);const occ=[];for(const v of mates){occ.push([v.x,v.z]);if(v.buyMill&&v.buyMill.spot)occ.push([v.buyMill.spot[0],v.buyMill.spot[2]]);}/* walk around teammates and their spots, not through them */B.route=BotBrain.buyRoute(N,W.nav.adj,A.area,a,b,i=>(A.bl[i]?8:0)+(B.bad&&B.bad.has(i)?6:0)+(occ.some(o=>Math.abs(o[0]-N[i][0])<1.1&&Math.abs(o[1]-N[i][2])<1.1)?5:0));B.stuck=0;B.last=[u.x,u.z];}
+ const g=d.goal;if(B.rg!==g){B.rg=g;const a=W.near(u.x,u.z,u.y),b=W.near(g[0],g[2],g[1]);const occ=[];for(const v of mates){occ.push([v.x,v.z]);if(v.buyMill&&v.buyMill.spot)occ.push([v.buyMill.spot[0],v.buyMill.spot[2]]);}/* walk around teammates and their spots, not through them */B.route=BotBrain.buyRoute(N,A.adj,A.area,a,b,i=>(A.bl[i]?8:0)+(B.bad&&B.bad.has(i)?6:0)+(occ.some(o=>Math.abs(o[0]-N[i][0])<1.1&&Math.abs(o[1]-N[i][2])<1.1)?5:0));B.stuck=0;B.last=[u.x,u.z];}
  // no progress for 0.6 s (a prop corner the motor cannot slide past): re-route around the next node (it costs 6 m
  // more from now on) after a short sidestep in the free direction nearest the goal's; a wander leg that keeps failing ends
  if(Math.hypot(u.x-B.last[0],u.z-B.last[1])>.25){B.last=[u.x,u.z];B.stuck=0;}else if((B.stuck+=dt)>.6){B.stuck=0;if(B.route.length)(B.bad||(B.bad=new Set())).add(B.route[0]);B.rg=null;B.fails=(B.fails||0)+1;if(B.st.mode==='mill'&&B.fails>1)B.st.legT=99;

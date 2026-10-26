@@ -354,13 +354,24 @@ node too, and passes `siteAt`'s 2 m height test; plantable playable nodes per si
 points: Breeze's are all at one height and its A Lobby label sits 7.9 m off the minimap floor; overlaying the playable
 nav on Breeze's minimap shows it covers the whole drawn floor).
 
-Ladders / ropes: none is climbable in VALORANT on these maps and none is in the motor. The exports hold decorative
+Ladders / ropes: no ladder is climbable in VALORANT and none is in the motor. The exports hold decorative
 `Prop_18_M0_LadderA_MI` ladders (Bind (15.5, 7.2-10.6, 29.3), Haven (-23.4, 5.0, 26.4) lying flat, Breeze four on
-rooftops at y 11-17 and (-0.6, 8-12, -65)) and rope props (Ascent, Breeze ship rigging); Split's ascender ropes are not
-in the export (only the 1.2 m `Ascender_0_M0_CableADark_MI` head unit at (-4.5, 9, 22.7) by mid bottom), so the spots
-they serve are reached on foot as everywhere else: every Split callout (A/B rafters, B tower, mid mail/vent) is
-reachable from the attacker spawn on the navigation (traversal test walks spawn -> every site). No ladder or rope blocks a
-path (the edge sweep found none of them among the refusals).
+rooftops at y 11-17 and (-0.6, 8-12, -65)) and rope props (Ascent, Breeze ship rigging); none blocks a path. Split's rope
+ascenders ARE climbable since ropes-2 / ropes-3 (2026-10-26): seven ascenders per wiki.playvalorant.com/en-us/Split (2 Sewer ->
+A Lobby, 1 B Hell -> B Tower, 4 in Vents), spots fitted from the wiki interactive map's markers onto this map's callouts
+(0.8 m rms) and snapped onto the collision mesh, each hanging 0.5 m out from the upper floor's ledge face (shared motor
+`ROPES.split`, see server/src/motor.cjs for the table: hang point x / z, lower / upper floor y0 / y1, step-off ex / ez / ty).
+The export has no rope meshes (only the 1.2 m `Ascender_0_M0_CableADark_MI` head unit at (-4.5, 9, 22.7) by mid bottom, which
+is not one of the seven), so the page draws them (work/rope_runtime.js nmRopes): a cable from the lower floor to 2.3 m above
+the upper floor (or 0.14 m under the ceiling), 0.3 m toward the ledge from the climbing axis, a housing at its top bracketed to
+the nearest wall within 2.5 m (all seven found one), and a marker on the minimap. Nav: one link per rope each way (lower <->
+upper floor node, motor `ropeLinks`), added on the server (world.js, before the playable set and the leash grid) and the page
+(nmRopes, before nmConnected) - the same 14 links; the Vent room floor (only reached by rope) and the B Hell pocket join the
+playable set. Behaviour: Use (F) grabs within 0.9 m (also from the ledge at the top, or mid-air), W / S climb look-relative
+(looking down past 17 deg W climbs down) at 5.13 m/s (Operator run speed, dev Pearl Hogbash 2020; walk held = walk speed),
+past the top steps off onto the ledge, the floor at the bottom lets go, Jump pushes off, Use again lets go; guns fire with the
+rope spread (patch 6.11 / 12.09); no fall damage on ropes. Wiki screenshots of each spot: valorstrike-ropes-scratch/
+Split_*_Ascender*.png (browser check pending: compare the drawn rope spots with them).
 
 Regression: `server/test-map-bounds.js` (npm test) sections 4-5 - spawns / sites / callouts on all six maps, and
 `server/map-walk-fixtures.json` (45 crack/step edges + 41 Breeze traps) walked with the current motor (the same cases

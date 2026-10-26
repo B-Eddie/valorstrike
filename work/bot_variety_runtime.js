@@ -368,9 +368,12 @@ var XBYM={k:'',T:{},bl:null,blC:null,V:[0,0]};
 const XBYM_IN=.42;
 function xbbOn(){return !!(window.BotBrain&&window.xBuyMill!==false&&running&&mode==='five'&&!FV.dm&&FV.buy>0&&typeof nmActive==='function'&&nmActive()&&!(typeof srOn==='function'&&srOn())&&!(typeof MP!=='undefined'&&MP&&MP.cl));}/* an online client draws the host's / server's bots */
 function xbbBl(C,i){if(XBYM.blC!==C){XBYM.blC=C;XBYM.bl=new Map();}let v=XBYM.bl.get(i);if(v===undefined){const n=C.nav.nodes[i];v=nmBlocked(C,n[0],n[2],.3,n[1])?1:0;XBYM.bl.set(i,v);}return v;}
+// The buy-phase walk graph = server bots.js buyAdj: nav links without the rope links (C.ropeLinks, rope_runtime nmRopes);
+// a buy-phase bot only walks, so a route over a rope would strand it below a ledge (Split Vent room).
+function xbbAdj(C){const L=C.ropeLinks;if(!L||!L.size)return C.nav.adj;if(C.xbbAdj&&C.xbbAdj.src===C.nav.adj)return C.xbbAdj.adj;const adj=C.nav.adj.map((l,a)=>l.filter(b=>!L.has(a+'>'+b)));C.xbbAdj={src:C.nav.adj,adj};return adj;}
 function xbbTeam(C,atk){const k=xbvKey()+'|'+(atk?1:0);if(XBYM.k!==xbvKey()){XBYM.k=xbvKey();XBYM.T={};}let T=XBYM.T[k];if(T)return T;
  const M=C.meta,a=atk?M.attacker:M.defender,walls=window.SpawnBarriers?SpawnBarriers.pieces(C.key).filter(q=>q.side===(atk?'atk':'def')):[];
- const ak=(atk?1:0)+'|'+walls.length;if(XBYM.AC!==C){XBYM.AC=C;XBYM.A=new Map();}let area=XBYM.A.get(ak);if(!area){area=BotBrain.buyArea(C.nav.nodes,C.nav.adj,nmNear(C,a[0],a[2],a[1]),walls,i=>!C.playable||!!C.playable[i]);XBYM.A.set(ak,area);}
+ const ak=(atk?1:0)+'|'+walls.length;if(XBYM.AC!==C){XBYM.AC=C;XBYM.A=new Map();}let area=XBYM.A.get(ak);if(!area){area=BotBrain.buyArea(C.nav.nodes,xbbAdj(C),nmNear(C,a[0],a[2],a[1]),walls,i=>!C.playable||!!C.playable[i]);XBYM.A.set(ak,area);}
  /* perf-1 (round-start hitch): the spawn's walkable region depends only on the map and the side's walls (read-only after it is built), so it is built once per map and side instead of at every round start (xbvKey changes with the score: ~10 ms per round) */
  return XBYM.T[k]={walls,area,spots:[]};}
 const XBB_RING=[[.15,0],[-.15,0],[0,.15],[0,-.15]];
@@ -382,7 +385,7 @@ function xbbOk(C,T,y0){return (x,z)=>{{const nr=BotBrain.buyNear(T.walls,x,z);if
 function xbbInit(C,u,team,atk){const T=xbbTeam(C,atk),key=XBYM.k+'|'+(atk?1:0);if(u.xbb&&u.xbb.key===key)return u.xbb;u.smMotor=null;u.svx=u.svz=0;/* a new buy phase starts from rest (the round reset put it in spawn) */const p=u.g.position,N=C.nav.nodes;
  const rand=BotRoutes.rng(BotRoutes.hash('buy|'+(u.name||'')+'|'+key+'|'+xbvSeed())),start=nmNear(C,p.x,p.z,p.y),B={key,st:BotBrain.buyNew(xbBrain(u),rand),spot:null,face:[0,atk?-1:1],route:[],rg:null,stuck:0,last:[p.x,p.z],fails:0,bad:null,esc:null,off:!(start>=0&&T.area.f[start])||!T.walls.length};
  if(!B.off){let site=null;try{const P=xbvPlan(u,team,atk,C),g=P.stages&&P.stages[0]?P.stages[0].site:atk?FV.sp.site:P.site;site=(g==='mid'?xbvMid(C):C.meta.sites[g])||C.meta.sites[Object.keys(C.meta.sites)[0]];}catch(e){}/* a mid player lines up at the exit toward mid (= server sitePoint) */
-  const path=site?nmPath(C,start,nmNear(C,site[0],site[2],site[1])):null;let exit=site?BotBrain.buyExit(N,path,T.walls):null;
+  const path=site?nmPath(C,start,nmNear(C,site[0],site[2],site[1]),C.ropeLinks&&C.ropeLinks.size?C.ropeLinks:null):null;/* walked: no rope on the way out (= server buyWalkW) */let exit=site?BotBrain.buyExit(N,path,T.walls):null;
   /* its goal inside its own area (a defender's own site): it walks there and holds instead of lining up */
   const h=!exit&&BotBrain.buyHold(N,path,T.area,T.walls,T.spots,(x,z,y)=>xbbOk(C,T,y)(x,z),i=>xbbBl(C,i));if(h){B.spot=h.p;B.hold=true;T.spots.push(h.p);B.face=h.face;return u.xbb=B;}
   if(!exit){/* no route out through a wall: the wall nearest the bot */const nr=BotBrain.buyNear(T.walls,p.x,p.z),w=nr.w;exit={x:w.ax+w.tx*nr.t,y:w.y0!=null?w.y0+.4:p.y,z:w.az+w.tz*nr.t,dx:-w.nx,dz:-w.nz,w};/* the wall's floor, not the bot's (a far wall can sit on another level) */}
@@ -398,7 +401,7 @@ function xbbStep(C,u,team,atk,dt){
  if(d.face)turn(d.face[0],d.face[1],3.5);
  let vx=0,vz=0,walk=!!d.walk;
  if(d.goal){const g=d.goal;if(B.rg!==g){B.rg=g;const occ=[];for(const v of mates){occ.push([v.x,v.z]);if(v.m&&v.m.spot)occ.push([v.m.spot[0],v.m.spot[2]]);}
-   B.route=BotBrain.buyRoute(N,C.nav.adj,T.area,nmNear(C,p.x,p.z,p.y),nmNear(C,g[0],g[2],g[1]),i=>(xbbBl(C,i)?8:0)+(B.bad&&B.bad.has(i)?6:0)+(occ.some(o=>Math.abs(o[0]-N[i][0])<1.1&&Math.abs(o[1]-N[i][2])<1.1)?5:0));B.stuck=0;B.last=[p.x,p.z];}
+   B.route=BotBrain.buyRoute(N,xbbAdj(C),T.area,nmNear(C,p.x,p.z,p.y),nmNear(C,g[0],g[2],g[1]),i=>(xbbBl(C,i)?8:0)+(B.bad&&B.bad.has(i)?6:0)+(occ.some(o=>Math.abs(o[0]-N[i][0])<1.1&&Math.abs(o[1]-N[i][2])<1.1)?5:0));B.stuck=0;B.last=[p.x,p.z];}
   if(Math.hypot(p.x-B.last[0],p.z-B.last[1])>.25){B.last=[p.x,p.z];B.stuck=0;}else if((B.stuck+=dt)>.6){B.stuck=0;if(B.route.length)(B.bad||(B.bad=new Set())).add(B.route[0]);B.rg=null;B.fails++;if(B.st.mode==='mill'&&B.fails>1)B.st.legT=99;
    const gx=g[0]-p.x,gz=g[2]-p.z,gl=Math.hypot(gx,gz)||1;let best=null,bd=-2;for(let k=0;k<16;k++){const a=k*Math.PI/8,ex=Math.sin(a),ez=Math.cos(a);if(blocked(p.x+ex*.3,p.z+ez*.3,.45,p.y)||xbbClose(T,p.x+ex*.3,p.z+ez*.3))continue;const dot=(ex*gx+ez*gz)/gl;if(dot>bd){bd=dot;best=[ex,ez];}}
    if(best)B.esc={v:best,until:FV.buy-.3};

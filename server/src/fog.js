@@ -67,7 +67,7 @@ export function fogEliminated(sim,g){if(sim.mode!=='five')return false;let any=f
 // A hidden enemy row: identity, team, alive and input seq stay; position, aim, HP, armour, ammo, crouch, Regen pool,
 // input timing and the weapon ([11] = '': what an unseen enemy holds is not ours to know - VALORANT shows enemy guns only
 // in the world when seen and in the kill feed; a hidden shooter's shot never reaches us, fogView drops it) go; [22] = 1.
-export function fogRow(r){const o=r.slice();o[11]='';o[4]=o[5]=o[6]=o[7]=0;o[8]=o[10]?100:0;o[9]=0;o[15]=o[16]=0;o[17]=o[18]=0;o[19]=o[20]=0;o[21]=-1;o[22]=1;if(o.length>23)o[23]=0;if(o.length>24)o[24]=0;/* Blade Storm knives */return o;}
+export function fogRow(r){const o=r.slice();o[11]='';o[4]=o[5]=o[6]=o[7]=0;o[8]=o[10]?100:0;o[9]=0;o[15]=o[16]=0;o[17]=o[18]=0;o[19]=o[20]=0;o[21]=-1;o[22]=1;if(o.length>23)o[23]=0;if(o.length>24)o[24]=0;/* Blade Storm knives */if(o.length>25)o[25]=0;/* rope ascender */return o;}
 // The snapshot (or any frame with unit rows u and effect rows fx) as viewer may receive it.
 export function fogView(sim,snap,viewer){if(!snap||!viewer||sim.phase!=='game'||sim.fogOff)return snap;const F=fogPass(sim,snap),g=fogGroup(sim,viewer),rel=F.rel.get(g),now=sim.time,kill=viewer.fogKiller&&viewer.fogKiller.until>=now?viewer.fogKiller.id:-1,hide=F.hide.get(g);
  const byId=new Map(sim.units.map(u=>[u.id,u])),seen=r=>{if(r[10])return rel&&rel.get(r[0])>=now;const u=byId.get(r[0]),d=u&&u.fogDeadAt;/* dead: only if it was relevant to us when it died (its corpse / death spot) */return d!==undefined&&rel&&rel.get(r[0])>=d;};

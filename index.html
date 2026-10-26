@@ -12497,6 +12497,10 @@ function mpDrop(c) {
 }
 function mpRoomInfo() { const L = [{ n: MP.name, p: 0, h: 1 }]; MP.conns.forEach((c) => { if (c.ok) L.push({ n: c.name, p: c.ping, h: 0 }); }); return { t: "room", v: MP_V, code: MP.code, pub: MP.pub, mode: MP.mode, map: MP.map, st: MP.st, cd: MP.cdAt ? Math.max(0, Math.ceil((MP.cdAt - performance.now()) / 1000)) : 0, pl: L }; }
 function mpRoomCast() { if (MP.role !== "host") return; const r = mpRoomInfo(); MP.conns.forEach((c) => { if (c.ok) mpSend(c.conn, r); }); mpUI(); }
+// P2P host: the height a client reports for its puppet. The legacy box maps stand on 0-8 m; a native map's floors span its nav
+// graph (Split: B Tower 13 m, the Vent ledges 10.5 m, reached by rope), so there the clamp is that span (0.5 m below the lowest
+// node, 4 m above the highest: jumps, a rope's top). Was 0-8 m everywhere, which pinned a climber at 8 m on the Vent / B Tower ropes.
+function mpHostY(y) { let lo = 0, hi = 8; try { const C = typeof nmActive === "function" && nmActive(), N = C && C.nav && C.nav.nodes; if (N && N.length) { let r = C.mpYr; if (!r || r.n !== N) { let a = Infinity, b = -Infinity; for (const p of N) { if (p[1] < a) a = p[1]; if (p[1] > b) b = p[1]; } r = C.mpYr = { n: N, lo: a - 0.5, hi: b + 4 }; } lo = r.lo; hi = r.hi; } } catch (e) {} return Math.max(lo, Math.min(hi, y)); }
 function mpHostMsg(c, m) {
   if (m.t === "pi") return mpSend(c.conn, { t: "po", c: m.c });
   if (m.t === "po") { c.ping = Math.max(0, Math.round(performance.now() - m.c)); return; }
@@ -12519,7 +12523,7 @@ function mpHostMsg(c, m) {
     const L = u.nb && u.nb.length ? u.nb[u.nb.length - 1] : { t: now - 50, x: u.g.position.x, z: u.g.position.z };
     const lim = 9 * Math.max(0.05, (now - L.t) / 1000) + 1.5; let ok = Math.hypot(x - L.x, z - L.z) <= lim;
     try { if (ok && blocked(x, z, 0.2, y)) ok = false; } catch (e) {}
-    if (!ok) return; const nb = u.nb || (u.nb = []); nb.push({ t: mpStamp(nb, +m.c, now), x, y: Math.max(0, Math.min(8, y)), z, r: (+m.r || 0) + Math.PI }); if (u.nb.length > 12) u.nb.shift();
+    if (!ok) return; const nb = u.nb || (u.nb = []); nb.push({ t: mpStamp(nb, +m.c, now), x, y: mpHostY(y), z, r: (+m.r || 0) + Math.PI }); if (u.nb.length > 12) u.nb.shift();
     return;
   }
   if (m.t === "sh") { if (u.alive && typeof m.w === "string") { if (u.pp) dmFired(u); try { SFX.at(u.g.position, xWOwn(m.w) ? m.w : "Vandal"); } catch (e) {} } return; }
@@ -13891,7 +13895,7 @@ async function nmEnsure(key){
   const collision=new THREE.Mesh(geometry,new THREE.MeshBasicMaterial({side:THREE.DoubleSide,visible:false}));collision.name='native-collision';collision.raycast=MeshBVHLib.acceleratedRaycast;
   const root=xMG();root.name='native-'+key;root.userData.nativeMap=key;root.visible=false;root.add(gl.scene,collision);const M={g:root,solids:[collision],boxes:[],built:1,native:true};
   const t0=nmNow();nmPrepareScene(gl.scene);nmZFixApply(gl.scene,key);const mapOpt=nmOptimizeScene(gl.scene);arm();NM.progress.querySelector('small').textContent='Fitting the map to this device…';const mem=await nmBudget(gl.scene,nmTexCap());if(ticket!==NM.ticket){release();throw new Error('Map selection changed');}mem.optimizer=mapOpt;mem.prepareMs=Math.round(nmNow()-t0);mem.loadMs=Math.round(t0-tLoad);
-  const C={key,meta,nav,plants,M,geometry,bvh:geometry.boundsTree,image:new Image(),cells:new Map(),cellSize:2,scene:gl.scene,memory:mem,cullAt:null};mem.collisionBytes=nmBytes(geometry);C.image.src=base+'minimap.png';nmConnected(C);root.add(nmSkirt(nmSkirtSpec(nav.nodes,C.playable)));nav.nodes.forEach((p,i)=>{if(!C.playable[i])return;const k=Math.floor(p[0]/2)+','+Math.floor(p[2]/2);if(!C.cells.has(k))C.cells.set(k,[]);C.cells.get(k).push(i);});
+  const C={key,meta,nav,plants,M,geometry,bvh:geometry.boundsTree,image:new Image(),cells:new Map(),cellSize:2,scene:gl.scene,memory:mem,cullAt:null};mem.collisionBytes=nmBytes(geometry);C.image.src=base+'minimap.png';if(typeof nmRopes==='function')nmRopes(C,root);/* rope ascenders: nav links before the playable set (server world.js the same), rope meshes */nmConnected(C);root.add(nmSkirt(nmSkirtSpec(nav.nodes,C.playable)));nav.nodes.forEach((p,i)=>{if(!C.playable[i])return;const k=Math.floor(p[0]/2)+','+Math.floor(p[2]/2);if(!C.cells.has(k))C.cells.set(k,[]);C.cells.get(k).push(i);});
   nmSiteGoals(C);
   // Only the original playable footprint defines navigation/minimap bounds; vista geometry is still rendered.
   const X=nav.nodes.filter((_,i)=>C.playable[i]).map(p=>p[0]),Z=nav.nodes.filter((_,i)=>C.playable[i]).map(p=>p[2]);C.bounds={x1:Math.min(...X)-3,x2:Math.max(...X)+3,z1:Math.min(...Z)-3,z2:Math.max(...Z)+3};
@@ -14074,7 +14078,7 @@ function nmSiteGoals(C){if(!C.plants||!C.plants.rows)return;const t=C.meta.trans
 // capsule). Memoized per directed edge for the life of the map context; only called for dy>0.321.
 function nmClimbOk(C,a,b){let M=C.climbMemo;if(!M)M=C.climbMemo=new Map();const k=a+'>'+b;let v=M.get(k);if(v!==undefined)return v;const N=C.nav.nodes;v=nmSegDrop(C,{x:N[a][0],y:N[a][1],z:N[a][2]},N[b]);M.set(k,v);return v;}
 function nmPath(C,start,end,banned){const cacheKey=start+'>'+end,noCache=banned&&banned.size>0;if(!noCache&&NM.routeCache.has(cacheKey))return NM.routeCache.get(cacheKey);const N=C.nav.nodes,A=C.nav.adj,S=C.ps&&C.ps.n===N.length&&C.ps.hi instanceof Int32Array?C.ps:(C.ps={n:N.length,cost:new Float32Array(N.length),prev:new Int32Array(N.length),closed:new Uint8Array(N.length),hi:new Int32Array(1024),hs:new Float64Array(1024)}),cost=S.cost,prev=S.prev,closed=S.closed;cost.fill(Infinity);cost[start]=0;prev.fill(-1);closed.fill(0);/* perf: scratch arrays reused per map (one search at a time), heap as index/score arrays: same order as the old [i,s] pairs. perf-1: typed heap arrays with a size counter, grown by doubling and kept between searches (hi.length=0 on plain arrays freed the backing stores, so each search regrew them: ~290 KB of garbage per frame in a 5v5); same pushes / pops / comparisons, same order */let hi=S.hi,hs=S.hs,hn=0;const push=(i,s)=>{if(hn===hi.length){const a=new Int32Array(hn*2),b=new Float64Array(hn*2);a.set(hi);b.set(hs);hi=S.hi=a;hs=S.hs=b;}let k=hn++;while(k){const p=(k-1)>>1;if(hs[p]<=s)break;hi[k]=hi[p];hs[k]=hs[p];k=p;}hi[k]=i;hs[k]=s;},pop=()=>{const first=hi[0];hn--;const li=hi[hn],ls=hs[hn];if(hn){let k=0;while(k*2+1<hn){let c=k*2+1;if(c+1<hn&&hs[c+1]<hs[c])c++;if(hs[c]>=ls)break;hi[k]=hi[c];hs[k]=hs[c];k=c;}hi[k]=li;hs[k]=ls;}return first;},ne=N[end],heur=i=>Math.hypot(N[i][0]-ne[0],N[i][2]-ne[2]);push(start,heur(start));let found=false,steps=0;
- while(hn&&steps++<N.length*12){const a=pop();if(closed[a])continue;closed[a]=1;if(a===end){found=true;break;}const Aa=A[a],na=N[a];for(let q=0;q<Aa.length;q++){const b=Aa[q];if(closed[b]||(banned&&banned.has(a+'>'+b)))continue;if(N[b][1]-N[a][1]>.321&&!nmClimbOk(C,a,b))continue; /* one-way drops: never PLAN a climb the traversal validator rejects (the source navmesh is undirected). The 0.321 gate predates the shared motor and is stricter than its stepHeight 0.4 (99f92a4 made the lotus 0.373 riser walkable); all six maps verified to have zero nav chords rising in the 0.321-0.4 band (453,582 directed edges sampled offline), so the stricter gate rejects nothing the motor could walk. Endpoint dy alone would false-reject smooth ramps (lotus 576, breeze 1285, ascent 807 measured offline), so borderline edges pay one memoized chord sampling that matches nmSegment's per-0.18 m climb leg. Down-travel and the stall-breaker ban stay as backstop. */const nb=N[b],d=cost[a]+Math.hypot(na[0]-nb[0],na[2]-nb[2])+Math.abs(na[1]-nb[1])*.2;if(d<cost[b]){cost[b]=d;prev[b]=a;push(b,d+Math.hypot(nb[0]-ne[0],nb[2]-ne[2]));}}}/* perf-1: indexed adjacency loop, the heuristic inline (same terms, same order) */
+ while(hn&&steps++<N.length*12){const a=pop();if(closed[a])continue;closed[a]=1;if(a===end){found=true;break;}const Aa=A[a],na=N[a];for(let q=0;q<Aa.length;q++){const b=Aa[q];if(closed[b]||(banned&&banned.has(a+'>'+b)))continue;if(N[b][1]-N[a][1]>.321&&!(C.ropeLinks&&C.ropeLinks.has(a+'>'+b))&&!nmClimbOk(C,a,b))continue;/* a rope link climbs by rope (rope_runtime xrBot) */ /* one-way drops: never PLAN a climb the traversal validator rejects (the source navmesh is undirected). The 0.321 gate predates the shared motor and is stricter than its stepHeight 0.4 (99f92a4 made the lotus 0.373 riser walkable); all six maps verified to have zero nav chords rising in the 0.321-0.4 band (453,582 directed edges sampled offline), so the stricter gate rejects nothing the motor could walk. Endpoint dy alone would false-reject smooth ramps (lotus 576, breeze 1285, ascent 807 measured offline), so borderline edges pay one memoized chord sampling that matches nmSegment's per-0.18 m climb leg. Down-travel and the stall-breaker ban stay as backstop. */const nb=N[b],d=cost[a]+Math.hypot(na[0]-nb[0],na[2]-nb[2])+Math.abs(na[1]-nb[1])*.2;if(d<cost[b]){cost[b]=d;prev[b]=a;push(b,d+Math.hypot(nb[0]-ne[0],nb[2]-ne[2]));}}}/* perf-1: indexed adjacency loop, the heuristic inline (same terms, same order) */
  const path=[];if(found)for(let i=end;i>=0;i=prev[i]){path.push(i);if(i===start)break;}path.reverse();if(noCache)return path;if(NM.routeCache.size>200)NM.routeCache.clear();NM.routeCache.set(cacheKey,path);return path;
 }
 // Smoothing follows support height at every sample. Wall clearance alone would
@@ -14284,9 +14288,9 @@ xTag=function(t){if(!t)return;t.tagT=.5;t.tagK=.275;t.tagS=0;};
 moveP=function(dt,run,hold){
  const P=player;if(!P)return;const w=vfWeapon(),p=vfProfile(w),kn=w==='Knife',kk=J.dr?{}:keys,fx=-Math.sin(yaw),fz=-Math.cos(yaw);let x=0,z=0;if(kk.KeyW){x+=fx;z+=fz;}if(kk.KeyS){x-=fx;z-=fz;}if(kk.KeyA){x+=fz;z-=fx;}if(kk.KeyD){x-=fz;z+=fx;}
  P.tagT=Math.max(0,(P.tagT||0)-dt);let speed=6.75*(kn?1:p.runSpeedMultiplier||.8)*(ads&&p.adsStats?p.adsStats.runSpeedMultiplier:1);const dis=J.dis>0;/* Reyna's Dismiss: 12 m/s top speed (wiki v8.11; server reyna.js DISMISS), intangible - no slow, no tag */if(dis)speed=12;else if(typeof sgSlow==='function')speed*=sgSlow(P);
- const native=typeof nmActive==='function'&&nmActive(),world={ground:(x,z,y)=>groundAt(x,z,.3,y),blocked:(x,z,r,y,h)=>native?sgBlk(x,z,r,y)||nmBlocked(native,x,z,r,y,h):blocked(x,z,r,y),leash:native?(x,z,y,x0,z0)=>nmLeash(native,x,z,y,x0,z0):null,ceiling:native?(x,z,low,high)=>{const ray=new THREE.Ray(new THREE.Vector3(x,low+.01,z),new THREE.Vector3(0,1,0)),hit=native.bvh.raycastFirst(ray,THREE.DoubleSide);return !!hit&&hit.distance<high-low;}:null};
+ const native=typeof nmActive==='function'&&nmActive(),world={ground:(x,z,y)=>groundAt(x,z,.3,y),blocked:(x,z,r,y,h)=>native?sgBlk(x,z,r,y)||nmBlocked(native,x,z,r,y,h):blocked(x,z,r,y),leash:native?(x,z,y,x0,z0)=>nmLeash(native,x,z,y,x0,z0):null,ceiling:native?(x,z,low,high)=>{const ray=new THREE.Ray(new THREE.Vector3(x,low+.01,z),new THREE.Vector3(0,1,0)),hit=native.bvh.raycastFirst(ray,THREE.DoubleSide);return !!hit&&hit.distance<high-low;}:null,ropes:native&&native.ropes||null};/* rope ascenders (shared motor ROPES; native_maps_runtime nmRopes) */
  const dsh=!!J.dash;if(dsh){x=0;z=0;}/* Jett Tailwind dash: movement keys are ignored while it runs (server the same) */
- const result=VF.model.step(P,{x,z,jump:!!kk.Space,duck:!!(kk.ControlLeft||kk.ControlRight),walk:!!(kk.ShiftLeft||kk.ShiftRight),speed,tag:dis?1:xTagK(P),hold:!!hold||!!J.dr},dt,world);
+ const result=VF.model.step(P,{x,z,jump:!!kk.Space,duck:!!(kk.ControlLeft||kk.ControlRight),walk:!!(kk.ShiftLeft||kk.ShiftRight),speed,tag:dis?1:xTagK(P),hold:!!hold||!!J.dr,use:!!kk.KeyF,f:(kk.KeyW?1:0)-(kk.KeyS?1:0),pitch:typeof pitch==='number'?pitch:0},dt,world);/* use / f / pitch: rope ascenders (Use grabs, W / S climb look-relative); the server reads the same from its input message (u, f, p) */
  if(dsh&&!VF.model.dashStep(P,J.dash,dt,world))J.dash=null;
  if(result.landed){SFX.land();P.st=0;const fd=VF.model.fallDamage(result.drop);if(fd>0&&running&&mode!=='aim'&&mode!=='duel'&&!(typeof MP!=='undefined'&&MP.on)&&P.hp>0){P.hp=Math.max(0,P.hp-fd);try{updHud();}catch(e){}if(P.hp<=0)pDie('Fall','Fall');}} // fall damage: health only (shields ignored); online the server applies it
  // Footfalls follow distance (shared motor footfall: one step per 1.85 m while running, first step silent). Shift-walking,
@@ -14296,7 +14300,7 @@ moveP=function(dt,run,hold){
  // Preserve explicit ability impulses; ordinary air steering never creates a speed boost.
  if(kLg>0){const t=Math.min(dt,kLg);kLg-=t;const nx=P.x+kLx*8*t,nz=P.z+kLz*8*t;if(!world.blocked(nx,nz,.4,P.y,1.8-P.ch)&&!(world.leash&&!world.leash(nx,nz,P.y,P.x,P.z))){P.x=nx;P.z=nz;}}
 };
-gSpread=function(w,W,B){const p=vfProfile(w),P=B||player||{},state={sf:B?(B.sf!=null?B.sf:B.mv?1:0):P.sf,mv:P.mv,air:P.air,cr:P.cr,wk:P.wk,lp:P.lp||0,ls:P.ls||0,ads:B?0:ads};let cone=VF.model.spread(state,w,p);if(!B){const bloom=VF.model.sprayBloom(VF,w,VF.time);/* the shared motor's bloom recovery (= server fire; Outlaw holds its 13.01 2.25 deg) */cone+=bloom;if(xCU>performance.now())cone+=.06;if(xAD.bs)cone=xClassicAlt(P)+(xCU>performance.now()?.06:0);}else cone+=Math.min(B.n||0,10)*.0025*(W.rec||1);return cone;};
+gSpread=function(w,W,B){const p=vfProfile(w),P=B||player||{},state={sf:B?(B.sf!=null?B.sf:B.mv?1:0):P.sf,mv:P.mv,air:P.air,cr:P.cr,wk:P.wk,lp:P.lp||0,ls:P.ls||0,ads:B?0:ads,rope:B?B.rope||0:P.rope||0};let cone=VF.model.spread(state,w,p);if(!B){const bloom=VF.model.sprayBloom(VF,w,VF.time);/* the shared motor's bloom recovery (= server fire; Outlaw holds its 13.01 2.25 deg) */cone+=bloom;if(xCU>performance.now())cone+=.06;if(xAD.bs)cone=xClassicAlt(P)+(xCU>performance.now()?.06:0);}else cone+=Math.min(B.n||0,10)*.0025*(W.rec||1);return cone;};
 // Circular angular spread in the shot's own basis, with a stable early climb and late directional drift.
 gFire=function(d,w,W){const M=VF.model;M.sprayReset(VF,w,VF.time);const cone=gSpread(w,W),disc=M.disk(),right=new THREE.Vector3().crossVectors(d,new THREE.Vector3(0,1,0)).normalize();if(right.lengthSq()<.5)right.set(1,0,0);const up=new THREE.Vector3().crossVectors(right,d).normalize(),weight=(W.rec||1)*(player.cr?.85:1)*(ads?.85:1)*M.recoilMove(player,w);
  M.sprayStep(VF,w,weight,VF.time,Math.random,M.bloomCap({cr:player.cr,ads},w,vfProfile(w)));const jit=W.pel?0:1;VF.pelCone=W.pel?cone:0;/* pellet guns: xPellets spreads every pellet over this cone */
@@ -14770,7 +14774,7 @@ const netSgBlk0=sgBlk;sgBlk=function(x,z,r,y=0){if(!NET.socket)return netSgBlk0(
 const netShoot0=shoot;shoot=function(){if(NET.socket&&(netReyna?.dismiss>0||netChannel?.remaining>0))return false;const before=ammo,k0=kSwing,ss=typeof RS!=='undefined'&&RS.ss,r=netShoot0.apply(this,arguments);const swung=rw==='knife'&&kSwing!==k0,rocket=ss&&!RS.ss;/* Showstopper: the click that launched the rocket is one fire pulse (the server's launcher fires on it; a semi-auto gun sends no held fire) */if(NET.socket&&MP.st==='game'&&(swung||rocket||(rw!=='knife'&&ammo<before))){NET.firePulse=performance.now()+80;NET.fireHeavy=swung&&kHv===1?NET.firePulse:0;/* ...and stays pending until an input message carried it: on a slow page the next 50 ms input tick runs after the frame, past the 80 ms window (online Showstopper launched no rocket) */NET.firePend=1;NET.firePendH=NET.fireHeavy?1:0;if(typeof xAD!=='undefined'&&xAD.bs&&rw!=='knife'){NET.altPulse=NET.firePulse;NET.firePendA=1;}/* qa-36: Classic ALT FIRE (xBurst) - the server fires the 3 rounds at once on alt:1 */if(rocket)NET.ssFiredAt=performance.now();}return r;}; // knife: one pulse per swing the client actually started (a click during a swing sent a pulse the server could turn into an extra hit); a heavy swing sends kh so the server applies the heavy cooldown/damage
 /* window, not document: the keymap layer re-sends a rebound key on window only (it never reaches document) */addEventListener('keydown',e=>{if(e.code!=='KeyR'||!(NET.socket&&MP.st==='game')||xKbSkip(e)||e.repeat)return;netSend({t:'reload'});if(reloading>0)netReload=true;/* the page's own R handler already started the local reload: the loop must not send it again */});
 // Camera, server shots and bots all treat positive pitch as looking up; send it unchanged.
-function netInputMsg(kk,w){const seq=++NET.seq;const log=NET.inLog||(NET.inLog=[]);log.push({seq,t:performance.now()});if(log.length>240)log.shift();const fp=NET.firePend,fh=NET.firePendH,fa=NET.firePendA;NET.firePend=NET.firePendH=NET.firePendA=0;/* a pending click rides this message once */return {t:'in',seq,r:yaw,p:pitch,f:(kk.KeyW?1:0)-(kk.KeyS?1:0),s:(kk.KeyD?1:0)-(kk.KeyA?1:0),j:kk.Space?1:0,c:kk.ControlLeft||kk.ControlRight?1:0,w:kk.ShiftLeft||kk.ShiftRight?1:0,ads:ads?1:0,az:ads===2&&w==='Operator'&&typeof xSC!=='undefined'&&xSC.lv===2?1:0/* Operator second zoom (5x): teammates spectating see it (roundState pov ADS 2) */,h4:kk.Digit4||kk.Numpad4?1:0,fire:(w!=='Knife'&&!WEAP[w]?.semi&&fireHeld)||NET.firePulse>performance.now()||fp?1:0,kh:NET.fireHeavy>performance.now()||fh?1:0,alt:NET.altPulse>performance.now()||fa?1:0,cb:J.pick==='Jett'&&kk.KeyC?1:0/* Cloudburst steering: C held */};} // a held knife click is one swing on the client, so it is a pulse (not held fire) online
+function netInputMsg(kk,w){const seq=++NET.seq;const log=NET.inLog||(NET.inLog=[]);log.push({seq,t:performance.now()});if(log.length>240)log.shift();const fp=NET.firePend,fh=NET.firePendH,fa=NET.firePendA;NET.firePend=NET.firePendH=NET.firePendA=0;/* a pending click rides this message once */return {t:'in',seq,r:yaw,p:pitch,f:(kk.KeyW?1:0)-(kk.KeyS?1:0),s:(kk.KeyD?1:0)-(kk.KeyA?1:0),j:kk.Space?1:0,c:kk.ControlLeft||kk.ControlRight?1:0,w:kk.ShiftLeft||kk.ShiftRight?1:0,ads:ads?1:0,az:ads===2&&w==='Operator'&&typeof xSC!=='undefined'&&xSC.lv===2?1:0/* Operator second zoom (5x): teammates spectating see it (roundState pov ADS 2) */,h4:kk.Digit4||kk.Numpad4?1:0,fire:(w!=='Knife'&&!WEAP[w]?.semi&&fireHeld)||NET.firePulse>performance.now()||fp?1:0,kh:NET.fireHeavy>performance.now()||fh?1:0,alt:NET.altPulse>performance.now()||fa?1:0,cb:J.pick==='Jett'&&kk.KeyC?1:0/* Cloudburst steering: C held */,u:kk.KeyF?1:0/* Use held: grabs / lets go of a rope ascender (shared motor) */};} // a held knife click is one swing on the client, so it is a pulse (not held fire) online
 let netWeapon='',netReload=false,netEquipWant=null,netEquipUntil=0,netRec=false;
 // A local swap sends its equip at once and holds the snapshot reconcile (above) until the server names that gun or 1 s passes.
 const netSwap0=swapW;swapW=function(s){const r=netSwap0.apply(this,arguments);if(!netRec&&NET.socket&&NET.socket.readyState===1&&MP.st==='game'&&NET.ready){const w=rw==='knife'?'Knife':wName();if(w!==netWeapon){netWeapon=w;netSend({t:'equip',w});netEquipWant=w;netEquipUntil=performance.now()+1000;}}return r;};
@@ -17021,9 +17025,12 @@ var XBYM={k:'',T:{},bl:null,blC:null,V:[0,0]};
 const XBYM_IN=.42;
 function xbbOn(){return !!(window.BotBrain&&window.xBuyMill!==false&&running&&mode==='five'&&!FV.dm&&FV.buy>0&&typeof nmActive==='function'&&nmActive()&&!(typeof srOn==='function'&&srOn())&&!(typeof MP!=='undefined'&&MP&&MP.cl));}/* an online client draws the host's / server's bots */
 function xbbBl(C,i){if(XBYM.blC!==C){XBYM.blC=C;XBYM.bl=new Map();}let v=XBYM.bl.get(i);if(v===undefined){const n=C.nav.nodes[i];v=nmBlocked(C,n[0],n[2],.3,n[1])?1:0;XBYM.bl.set(i,v);}return v;}
+// The buy-phase walk graph = server bots.js buyAdj: nav links without the rope links (C.ropeLinks, rope_runtime nmRopes);
+// a buy-phase bot only walks, so a route over a rope would strand it below a ledge (Split Vent room).
+function xbbAdj(C){const L=C.ropeLinks;if(!L||!L.size)return C.nav.adj;if(C.xbbAdj&&C.xbbAdj.src===C.nav.adj)return C.xbbAdj.adj;const adj=C.nav.adj.map((l,a)=>l.filter(b=>!L.has(a+'>'+b)));C.xbbAdj={src:C.nav.adj,adj};return adj;}
 function xbbTeam(C,atk){const k=xbvKey()+'|'+(atk?1:0);if(XBYM.k!==xbvKey()){XBYM.k=xbvKey();XBYM.T={};}let T=XBYM.T[k];if(T)return T;
  const M=C.meta,a=atk?M.attacker:M.defender,walls=window.SpawnBarriers?SpawnBarriers.pieces(C.key).filter(q=>q.side===(atk?'atk':'def')):[];
- const ak=(atk?1:0)+'|'+walls.length;if(XBYM.AC!==C){XBYM.AC=C;XBYM.A=new Map();}let area=XBYM.A.get(ak);if(!area){area=BotBrain.buyArea(C.nav.nodes,C.nav.adj,nmNear(C,a[0],a[2],a[1]),walls,i=>!C.playable||!!C.playable[i]);XBYM.A.set(ak,area);}
+ const ak=(atk?1:0)+'|'+walls.length;if(XBYM.AC!==C){XBYM.AC=C;XBYM.A=new Map();}let area=XBYM.A.get(ak);if(!area){area=BotBrain.buyArea(C.nav.nodes,xbbAdj(C),nmNear(C,a[0],a[2],a[1]),walls,i=>!C.playable||!!C.playable[i]);XBYM.A.set(ak,area);}
  /* perf-1 (round-start hitch): the spawn's walkable region depends only on the map and the side's walls (read-only after it is built), so it is built once per map and side instead of at every round start (xbvKey changes with the score: ~10 ms per round) */
  return XBYM.T[k]={walls,area,spots:[]};}
 const XBB_RING=[[.15,0],[-.15,0],[0,.15],[0,-.15]];
@@ -17035,7 +17042,7 @@ function xbbOk(C,T,y0){return (x,z)=>{{const nr=BotBrain.buyNear(T.walls,x,z);if
 function xbbInit(C,u,team,atk){const T=xbbTeam(C,atk),key=XBYM.k+'|'+(atk?1:0);if(u.xbb&&u.xbb.key===key)return u.xbb;u.smMotor=null;u.svx=u.svz=0;/* a new buy phase starts from rest (the round reset put it in spawn) */const p=u.g.position,N=C.nav.nodes;
  const rand=BotRoutes.rng(BotRoutes.hash('buy|'+(u.name||'')+'|'+key+'|'+xbvSeed())),start=nmNear(C,p.x,p.z,p.y),B={key,st:BotBrain.buyNew(xbBrain(u),rand),spot:null,face:[0,atk?-1:1],route:[],rg:null,stuck:0,last:[p.x,p.z],fails:0,bad:null,esc:null,off:!(start>=0&&T.area.f[start])||!T.walls.length};
  if(!B.off){let site=null;try{const P=xbvPlan(u,team,atk,C),g=P.stages&&P.stages[0]?P.stages[0].site:atk?FV.sp.site:P.site;site=(g==='mid'?xbvMid(C):C.meta.sites[g])||C.meta.sites[Object.keys(C.meta.sites)[0]];}catch(e){}/* a mid player lines up at the exit toward mid (= server sitePoint) */
-  const path=site?nmPath(C,start,nmNear(C,site[0],site[2],site[1])):null;let exit=site?BotBrain.buyExit(N,path,T.walls):null;
+  const path=site?nmPath(C,start,nmNear(C,site[0],site[2],site[1]),C.ropeLinks&&C.ropeLinks.size?C.ropeLinks:null):null;/* walked: no rope on the way out (= server buyWalkW) */let exit=site?BotBrain.buyExit(N,path,T.walls):null;
   /* its goal inside its own area (a defender's own site): it walks there and holds instead of lining up */
   const h=!exit&&BotBrain.buyHold(N,path,T.area,T.walls,T.spots,(x,z,y)=>xbbOk(C,T,y)(x,z),i=>xbbBl(C,i));if(h){B.spot=h.p;B.hold=true;T.spots.push(h.p);B.face=h.face;return u.xbb=B;}
   if(!exit){/* no route out through a wall: the wall nearest the bot */const nr=BotBrain.buyNear(T.walls,p.x,p.z),w=nr.w;exit={x:w.ax+w.tx*nr.t,y:w.y0!=null?w.y0+.4:p.y,z:w.az+w.tz*nr.t,dx:-w.nx,dz:-w.nz,w};/* the wall's floor, not the bot's (a far wall can sit on another level) */}
@@ -17051,7 +17058,7 @@ function xbbStep(C,u,team,atk,dt){
  if(d.face)turn(d.face[0],d.face[1],3.5);
  let vx=0,vz=0,walk=!!d.walk;
  if(d.goal){const g=d.goal;if(B.rg!==g){B.rg=g;const occ=[];for(const v of mates){occ.push([v.x,v.z]);if(v.m&&v.m.spot)occ.push([v.m.spot[0],v.m.spot[2]]);}
-   B.route=BotBrain.buyRoute(N,C.nav.adj,T.area,nmNear(C,p.x,p.z,p.y),nmNear(C,g[0],g[2],g[1]),i=>(xbbBl(C,i)?8:0)+(B.bad&&B.bad.has(i)?6:0)+(occ.some(o=>Math.abs(o[0]-N[i][0])<1.1&&Math.abs(o[1]-N[i][2])<1.1)?5:0));B.stuck=0;B.last=[p.x,p.z];}
+   B.route=BotBrain.buyRoute(N,xbbAdj(C),T.area,nmNear(C,p.x,p.z,p.y),nmNear(C,g[0],g[2],g[1]),i=>(xbbBl(C,i)?8:0)+(B.bad&&B.bad.has(i)?6:0)+(occ.some(o=>Math.abs(o[0]-N[i][0])<1.1&&Math.abs(o[1]-N[i][2])<1.1)?5:0));B.stuck=0;B.last=[p.x,p.z];}
   if(Math.hypot(p.x-B.last[0],p.z-B.last[1])>.25){B.last=[p.x,p.z];B.stuck=0;}else if((B.stuck+=dt)>.6){B.stuck=0;if(B.route.length)(B.bad||(B.bad=new Set())).add(B.route[0]);B.rg=null;B.fails++;if(B.st.mode==='mill'&&B.fails>1)B.st.legT=99;
    const gx=g[0]-p.x,gz=g[2]-p.z,gl=Math.hypot(gx,gz)||1;let best=null,bd=-2;for(let k=0;k<16;k++){const a=k*Math.PI/8,ex=Math.sin(a),ez=Math.cos(a);if(blocked(p.x+ex*.3,p.z+ez*.3,.45,p.y)||xbbClose(T,p.x+ex*.3,p.z+ez*.3))continue;const dot=(ex*gx+ez*gz)/gl;if(dot>bd){bd=dot;best=[ex,ez];}}
    if(best)B.esc={v:best,until:FV.buy-.3};
@@ -20385,6 +20392,163 @@ if (typeof mpCliSnap === 'function') { const c0 = mpCliSnap; let last = 0; mpCli
   return r; }; }
 window.xDmPacks = DMPK; window.xEscPacks = ESCPK;
 // ---- END GAME RULES ----
+// ---- ROPE ASCENDERS ----
+// VALORANT Split's rope ascenders on the page (wiki.playvalorant.com/en-us/Split: two Sewer -> A Lobby, one B Hell -> B Tower,
+// four in Vents; no other shipped map has ropes). The climb itself is the shared motor (vendor/valorant-feel.js = server
+// src/motor.cjs ROPES / ropeStep): the player's moveP passes world.ropes (feel_runtime.js), Use (F) grabs, W / S climb
+// look-relative, climbing past the top steps off, Jump pushes off, Use again lets go, guns fire with the rope spread. This block:
+//  - nmRopes (called by nmEnsure before nmConnected, as server world.js before its playable set and leash grid): C.ropes (the
+//    motor's ROPES[map]), the same nav links as the server (motor ropeLinks: lower <-> upper floor node of each rope, valid
+//    nodes) in C.ropeLinks and nav.adj, and the rope meshes: a cable from the lower floor to ~2.3 m above the upper floor (under
+//    the ceiling) hung 0.3 m toward the ledge from the climbing axis, with a housing at its top bracketed to the nearest wall;
+//    the ropes are also marked on the minimap;
+//  - offline bots on ropes: nmNext routes a bot to the rope when a rope link is in its next hops (xrBot), the xStep wrapper then
+//    grabs and climbs it with the shared motor (as server ropes.js ropeBot) and hands the bot back at the far floor;
+//  - online: snapshot row [25] (server simulation.js rows: 1-based rope index, 0 none; fog hides it; [24] = Blade Storm knives) -> u.rope; P2P host rows
+//    carry [25] too (the host's player, its bots, and P2P clients, who send rp in their input message); a tapped F always reaches
+//    the server (one input message carries it, as fire pulses); an eased reconcile correction keeps the player on the rope;
+//  - the climb pose: a separate, last xUbPost wrapper (support hand on the rope, legs bent), undone in xUbPre; the
+//    third-person gait code is not touched;
+//  - "F  Grab rope" under the crosshair in reach of a rope ("F  Let go" while climbing); F there does not inspect the gun.
+var XRO = { off: 0.3, top: 2.3, err: 0, ray: null, useP: 0, el: null, geo: null, v0: [0, 0] };
+function xroVF() { return typeof window !== 'undefined' && window.ValorantFeel || null; }
+function xroRay(C, o, d, max) {
+  if (!C || !C.bvh || typeof THREE === 'undefined') return Infinity;
+  const R = XRO.ray || (XRO.ray = new THREE.Ray(new THREE.Vector3(), new THREE.Vector3())); R.origin.set(o[0], o[1], o[2]); R.direction.set(d[0], d[1], d[2]).normalize();
+  const h = C.bvh.raycastFirst(R, THREE.DoubleSide); return h && h.distance < max ? h.distance : Infinity;
+}
+// Where a rope's cable and housing go: cable 0.3 m from the climbing axis toward the ledge (between the climber and the wall),
+// from the lower floor to 2.3 m above the upper floor or 0.14 m under the ceiling; housing bracketed to the nearest wall within 2.5 m.
+function xroSpec(C, r) {
+  let ux = r.ex - r.x, uz = r.ez - r.z; const l = Math.hypot(ux, uz) || 1; ux /= l; uz /= l;
+  const cx = r.x + ux * XRO.off, cz = r.z + uz * XRO.off; let top = r.y1 + XRO.top;
+  const up = xroRay(C, [cx, r.y1 + 0.5, cz], [0, 1, 0], XRO.top + 1); if (up < Infinity) top = Math.min(top, r.y1 + 0.5 + up - 0.14);
+  let wall = null; for (let i = 0; i < 16; i++) { const a = i / 16 * Math.PI * 2, dx = Math.sin(a), dz = Math.cos(a), d = xroRay(C, [cx, top, cz], [dx, 0, dz], 2.5); if (d < (wall ? wall.d : Infinity)) wall = { d, dx, dz }; }
+  return { name: r.name, cx, cz, y0: r.y0, top, wall, ux, uz };
+}
+function xroMeshes(C, specs) {
+  const g = new THREE.Group(); g.name = 'native-ropes';
+  const G = XRO.geo || (XRO.geo = { cable: new THREE.MeshStandardMaterial({ color: 0xb59f74, roughness: 0.95, metalness: 0 }), metal: new THREE.MeshStandardMaterial({ color: 0x3b4148, roughness: 0.55, metalness: 0.45 }), stripe: new THREE.MeshStandardMaterial({ color: 0xe7b416, roughness: 0.6, metalness: 0.1 }), box: new THREE.BoxGeometry(1, 1, 1) });
+  const box = (sx, sy, sz, m, x, y, z, ry) => { const o = new THREE.Mesh(G.box, m); o.scale.set(sx, sy, sz); o.position.set(x, y, z); if (ry) o.rotation.y = ry; o.matrixAutoUpdate = false; o.updateMatrix(); g.add(o); return o; };
+  for (const s of specs) {
+    const h = s.top - s.y0, cable = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.028, h, 6, 1), G.cable); cable.name = 'rope-cable'; cable.position.set(s.cx, s.y0 + h / 2, s.cz); cable.matrixAutoUpdate = false; cable.updateMatrix(); g.add(cable);
+    const ry = Math.atan2(s.ux, s.uz); box(0.34, 0.3, 0.34, G.metal, s.cx, s.top + 0.15, s.cz, ry).name = 'rope-housing'; box(0.36, 0.06, 0.36, G.stripe, s.cx, s.top + 0.04, s.cz, ry);
+    if (s.wall && s.wall.d > 0.2) { const w = s.wall, a = Math.atan2(w.dx, w.dz); box(0.09, 0.09, w.d, G.metal, s.cx + w.dx * w.d / 2, s.top + 0.2, s.cz + w.dz * w.d / 2, a).name = 'rope-bracket'; box(0.5, 0.6, 0.05, G.metal, s.cx + w.dx * (w.d - 0.025), s.top + 0.15, s.cz + w.dz * (w.d - 0.025), a).name = 'rope-plate'; }
+  }
+  return g;
+}
+function nmRopes(C, root) {
+  const VM_ = xroVF(), R = VM_ && VM_.ROPES && VM_.ROPES[C.key] || null; C.ropes = R; C.ropeLinks = new Map(); C.ropeSpec = null; if (!R || !R.length) return C;
+  const nav = C.nav; for (const l of VM_.ropeLinks(R, nav.nodes, (i) => !nav.valid || !!nav.valid[i])) { C.ropeLinks.set(l.a + '>' + l.b, l); if (!nav.adj[l.a].includes(l.b)) nav.adj[l.a].push(l.b); }
+  C.ropeSpec = R.map((r) => xroSpec(C, r));
+  if (root && typeof THREE !== 'undefined') try { root.add(C.ropeGroup = xroMeshes(C, C.ropeSpec)); } catch (e) { console.warn('rope meshes skipped', e); }
+  return C;
+}
+// A rope link climbs by rope: the instinct climb rule (nmClimbOk) passes it, so the lane-varied routes (BOT VARIETY) keep it.
+if (typeof nmClimbOk === 'function') { const c0 = nmClimbOk; nmClimbOk = function (C, a, b) { return !!(C && C.ropeLinks && C.ropeLinks.has(a + '>' + b)) || c0.apply(this, arguments); }; }
+// ---- offline bots ----
+// The first rope link in the bot's next hops, if the bot is on that link's floor within 6 m of where the climb starts (lower end:
+// the climbing axis; upper end: the step-off point on the ledge).
+function xroAhead(C, u, path) {
+  if (!path || path.length < 2 || !C.ropes) return null; const p = u.g.position;
+  for (let j = 0; j < Math.min(5, path.length - 1); j++) { const L = C.ropeLinks.get(path[j] + '>' + path[j + 1]); if (!L) continue; const r = C.ropes[L.k], sx = L.up ? r.x : r.ex, sz = L.up ? r.z : r.ez, sy = L.up ? r.y0 : r.y1;
+    if (Math.abs((p.y || 0) - sy) > 0.9) return null; const d = Math.hypot(p.x - sx, p.z - sz); return d > 6 ? null : { L, r, sx, sz, sy, d }; }
+  return null;
+}
+// nmNext's stall breakers must not ban a rope link: the chord to the far floor never validates (it is a climb), so the
+// edge-ban counters would drop the rope after three re-plans at its foot.
+function xroScrub(C, u) {
+  if (u.xb) for (const k of [...u.xb.keys()]) if (C.ropeLinks.has(k)) u.xb.delete(k);
+  if (u.xfE && C.ropeLinks.has(u.xfE)) { u.xf = 0; u.xfE = null; } if (u.xfK && C.ropeLinks.has(u.xfK)) { u.xfm = 0; u.xfK = null; }
+}
+if (typeof nmNext === 'function' && typeof nmPath === 'function') {
+  const nn = nmNext, np = nmPath; let cur = null;
+  nmPath = function (C, s, e, banned) { const r = np.apply(this, arguments); if (cur && C && C.ropeLinks && C.ropeLinks.size) cur.xroPath = r; return r; };
+  nmNext = function (C, u, gx, gz) {
+    if (!C || !C.ropeLinks || !C.ropeLinks.size || !u || !u.g || u === (typeof player !== 'undefined' ? player : null)) return nn.apply(this, arguments);
+    xroScrub(C, u); const prev = cur; cur = u; u.xroPath = null; let out; try { out = nn.apply(this, arguments); } finally { cur = prev; } xroScrub(C, u);
+    const a = xroAhead(C, u, u.xroPath); u.xroPath = null; if (a) { u.xrq = { k: a.L.k, up: a.L.up, b: a.L.b, at: performance.now() }; return [a.sx, a.sz]; }
+    u.xrq = null; return out;
+  };
+}
+function xroWorld(C) { return C.xroW || (C.xroW = { ground: (x, z, y) => groundAt(x, z, 0.3, y), blocked: (x, z, r, y, h) => nmBlocked(C, x, z, r, y, h), leash: null, ceiling: null, ropes: C.ropes }); }
+function xroRun(u) { return typeof botRun === 'function' ? botRun(u, false) : 5.4; } // = server input.speed 6.75 x runSpeedMultiplier: the rope motor's sf (spread) matches
+function xroDone(u, replan) { u.xrm = null; u.rope = 0; u.xroF = false; if (u.xk === -1) u.xk = null; u.xrq = null; if (replan) { u.np = null; u.npT = 0; } }
+// One frame of a bot's rope: true while the rope moves the bot (the caller skips its walking for the frame). u.xk = -1 keeps the
+// floor snaps (nmGroundUnits, the bot loop's groundAt) off the bot while it hangs; the climb is the shared motor's (a motor state
+// u.xrm with the input a server bot gets from ropeBot: Use to grab, climb +1 / -1).
+function xrBot(C, u, dt) {
+  const VM_ = xroVF(); if (!VM_ || !VM_.step || !C.ropes || !u || !u.g) return false; const p = u.g.position, now = performance.now(); let M = u.xrm;
+  if (M && M.rope) {
+    if (!u.alive || Math.abs(p.x - M.x) + Math.abs((p.y || 0) - M.y) + Math.abs(p.z - M.z) > 1e-3) { xroDone(u, true); return false; } // moved from outside (a round reset, a knock-up): off the rope
+    const r = C.ropes[M.rope - 1]; VM_.step(M, { x: 0, z: 0, jump: false, use: false, climb: M.up ? 1 : -1, f: 0, pitch: 0, speed: xroRun(u) }, dt, xroWorld(C));
+    p.x = M.x; p.y = M.y; p.z = M.z; u.rope = M.rope || 0; u.xrmT = now; u.spd = Math.abs(M.vy || 0); u.mv = true; if (!u.xSe) u.g.rotation.y = Math.atan2(r.ex - r.x, r.ez - r.z);
+    M.t = (M.t || 0) + dt; if (!M.rope || M.t > 8) xroDone(u, true); return true;
+  }
+  const q = u.xrq; if (!q || !u.alive || now - q.at > 1500) return false; const r = C.ropes[q.k]; if (!r) return false;
+  const sx = q.up ? r.x : r.ex, sz = q.up ? r.z : r.ez, sy = q.up ? r.y0 : r.y1; if (Math.abs((p.y || 0) - sy) > 0.6 || Math.hypot(p.x - sx, p.z - sz) > VM_.ROPE.reach * 0.75) return false;
+  M = { x: p.x, y: p.y || 0, z: p.z, vx: 0, vy: 0, vz: 0, air: false, ch: 0, up: q.up, t: 0 };
+  VM_.step(M, { x: 0, z: 0, jump: false, use: true, climb: q.up ? 1 : -1, f: 0, pitch: 0, speed: xroRun(u) }, dt, xroWorld(C));
+  if (!M.rope || M.rope - 1 !== q.k) { u.xrq = null; return false; }
+  u.xrm = M; p.x = M.x; p.y = M.y; p.z = M.z; u.rope = M.rope; u.xk = -1; u.xrq = null; u.xrmT = now; if (!u.xSe) u.g.rotation.y = Math.atan2(r.ex - r.x, r.ez - r.z); return true;
+}
+// A climbing bot that has an enemy in sight fights from the rope like a server bot (ropeBot keeps the brain's fire; simulation.js
+// fires while |horizontal v| <= 1.6, the motor's rope spread): the rope still moves it this frame, but xStep answers false with
+// u.xroF set, so the bot loop runs its aim / fire block; xSmV (below) zeroes the walk for the frame (horizontal speed 0, as the
+// server's rope: botStopped passes) and bSpread reads the rope motor's climb speed (sf / mv) with u.rope -> the rope spread.
+if (typeof xStep === 'function') { const st = xStep; xStep = function (u, dt) { try { const C = typeof nmActive === 'function' && nmActive(); if (u) u.xroF = false; if (C && C.ropes && xrBot(C, u, dt)) { if (u.alive && u.rope > 0 && u.xrm && u.xrm.rope && u.xSe) { u.xroF = true; return false; } return true; } } catch (e) { if (!XRO.err++) console.warn('rope bots disabled for a frame', e); } return st.apply(this, arguments); }; }
+if (typeof xSmV === 'function') { const sm0 = xSmV; xSmV = function (u, dt, vx, vz, speed) { if (u && u.xroF && u.rope > 0) { if (u.smMotor) u.smMotor.vx = u.smMotor.vz = 0; u.svx = u.svz = 0; XRO.v0[0] = XRO.v0[1] = 0; return XRO.v0; } return sm0.apply(this, arguments); }; }
+if (typeof bSpread === 'function') { const bs0 = bSpread; bSpread = function (b) { const M = b && b.xroF && b.rope > 0 && b.xrm; if (!M) return bs0.apply(this, arguments); const sf = b.sf, mv = b.mv; b.sf = M.sf || 0; b.mv = !!M.mv; try { return bs0.apply(this, arguments); } finally { b.sf = sf; b.mv = mv; } }; }
+// A hanging bot whose rope frames stopped (stunned: the bot loop skips xStep; dead; map gone) is let go after 20 frames.
+(window.XHK || (window.XHK = [])).push(function xroStale() {
+  if (typeof running === 'undefined' || !running || paused) return; const C = typeof nmActive === 'function' && nmActive();
+  for (const u of bots.concat(allies)) { if (!u || u.xk !== -1 && !u.xrm) continue; if (u.nt) continue; u.xroS = u.xrmT === u.xroL ? (u.xroS || 0) + 1 : 0; u.xroL = u.xrmT; if (!C || !u.alive || u.xroS > 20) { u.xroS = 0; xroDone(u, true); } }
+});
+// ---- online / P2P ----
+function xroRow(e, k) { while (e.length < 25) { const i = e.length; e.push(i === 21 ? -1 : i >= 22 ? 0 : null); } e[25] = k; return e; } // P2P rows are 15 long: neutral fill for the server-only fields
+if (typeof mpCliSnap === 'function') { const s0 = mpCliSnap; mpCliSnap = function (m) { const r = s0.apply(this, arguments); try { if (m && Array.isArray(m.u)) { const by = new Map(); for (const u of bots.concat(allies)) if (u && u.nid != null) by.set(u.nid, u); for (const e of m.u) { if (!Array.isArray(e) || e[0] === MP.me) continue; const u = by.get(e[0]); if (u) u.rope = e[22] === 1 ? 0 : Number.isInteger(e[25]) && e[25] > 0 ? e[25] : 0; } } } catch (e) {} return r; }; }
+if (typeof mpEnts === 'function') { const e0 = mpEnts; mpEnts = function () { const E = e0.apply(this, arguments); try { const by = new Map(); for (const u of allies.concat(bots)) if (u) by.set(u.nid, u); E.forEach((e, i) => { const u = i === 0 ? player : by.get(e[0]), k = u && u.alive !== false ? u.rope | 0 : 0; if (k > 0) xroRow(e, k); }); } catch (er) {} return E; }; }
+if (typeof mpSend === 'function') { const ms0 = mpSend; mpSend = function (conn, m) { try { if (m && m.t === 'in' && typeof MP !== 'undefined' && MP.role === 'client' && player && player.rope > 0 && Number.isFinite(m.x)) m.rp = player.rope | 0; } catch (e) {} return ms0.apply(this, arguments); }; }
+if (typeof mpHostMsg === 'function') { const hm0 = mpHostMsg; mpHostMsg = function (c, m) { try { if (m && m.t === 'in' && c && c.u) { const C = typeof nmActive === 'function' && nmActive(), n = C && C.ropes ? C.ropes.length : 0; c.u.rope = Number.isInteger(m.rp) && m.rp > 0 && m.rp <= n ? m.rp : 0; } } catch (e) {} return hm0.apply(this, arguments); }; }
+// a tapped F (shorter than the 50 ms input tick) still rides one input message, so the server sees the Use edge the page predicted
+addEventListener('keydown', (e) => { if (e.code === 'KeyF' && !e.repeat) XRO.useP = 1; });
+if (typeof netInputMsg === 'function') { const ni0 = netInputMsg; netInputMsg = function () { const m = ni0.apply(this, arguments); if (m && XRO.useP) { m.u = 1; XRO.useP = 0; } return m; }; }
+// an eased reconcile residual moves the player from outside the motor, which reads as "moved off the rope": re-anchor it
+if (typeof netCorrect === 'function') { const nc0 = netCorrect; netCorrect = function () { const P = typeof player !== 'undefined' && player, on = P && P.rope > 0 && P.ropeAt; const r = nc0.apply(this, arguments); if (on && P.rope > 0 && P.ropeAt) P.ropeAt = [P.x, P.y, P.z]; return r; }; }
+// ---- climb pose (third person) ----
+// After every other layer (gait clips, aim, grip, feet): the support (left) hand IK'd onto the cable a hand above the shoulder,
+// the knees bent with the feet tucked under the hips toward the wall. Restored before the next mixer evaluation (LIFO with the
+// other procedural layers). Needs the grip block's two-bone IK (xgIK).
+function xroPoseSetup(M) {
+  const X = M.sx, b = (n) => X.sc.getObjectByName(n), P = { ok: false }; X.xro = P; if (!X.sc || typeof xgIK !== 'function') return P;
+  P.L = { up: b('L_Shoulder'), lo: b('L_Elbow'), hand: b('L_Hand') }; P.legs = ['L', 'R'].map((s) => ({ up: b(s + '_Hip'), lo: b(s + '_Knee'), hand: b(s + '_Foot') }));
+  if (!P.L.up || !P.L.lo || !P.L.hand || P.legs.some((L) => !L.up || !L.lo || !L.hand)) return P;
+  P.bones = [P.L.up, P.L.lo, P.L.hand]; for (const L of P.legs) P.bones.push(L.up, L.lo, L.hand); P.save = P.bones.map(() => new THREE.Quaternion());
+  P.G = { ik: Array.from({ length: 9 }, () => new THREE.Vector3()), q: [new THREE.Quaternion(), new THREE.Quaternion()] }; P.v = Array.from({ length: 4 }, () => new THREE.Vector3()); P.ok = true; return P;
+}
+function xroPose(M, u) {
+  const X = M.sx, C = typeof nmActive === 'function' && nmActive(); if (!C || !C.ropeSpec || !X || !X.sc) return false; const s = C.ropeSpec[u.rope - 1]; if (!s) return false;
+  const P = X.xro || xroPoseSetup(M); if (!P.ok) return false;
+  for (let i = 0; i < P.bones.length; i++) P.save[i].copy(P.bones[i].quaternion); X.xroRestore = true;
+  M.m.updateWorldMatrix(true, true); const V = P.v, ry = M.m.getWorldDirection(V[3]), fx = ry.x, fz = ry.z, fl = Math.hypot(fx, fz) || 1, f = [fx / fl, fz / fl], left = [f[1], -f[0]];
+  const sh = P.L.up.getWorldPosition(V[0]), hand = V[1].set(s.cx, sh.y + 0.32, s.cz); xgIK(P.L, hand, V[2].set(left[0] * 0.6, -1, left[1] * 0.6).normalize(), P.G);
+  P.legs.forEach((L, i) => { const hip = L.up.getWorldPosition(V[0]), t = V[1].set(hip.x + f[0] * 0.28, hip.y - (i ? 0.52 : 0.68), hip.z + f[1] * 0.28); xgIK(L, t, V[2].set(f[0], 0.35, f[1]).normalize(), P.G); });
+  return true;
+}
+if (typeof xUbPre === 'function') { const pre = xUbPre; xUbPre = function (M) { const X = M && M.sx; if (X && X.xroRestore && X.xro && X.xro.ok) { const P = X.xro; for (let i = 0; i < P.bones.length; i++) P.bones[i].quaternion.copy(P.save[i]); X.xroRestore = false; } return pre.apply(this, arguments); }; }
+if (typeof xUbPost === 'function') { const post = xUbPost; xUbPost = function (M) { post.apply(this, arguments); const u = M && M.unit; if (!u || !(u.rope > 0) || !M.valorant || !M.sx || M.dead || M.sx.dd) return; try { xroPose(M, u); } catch (e) { if (!XRO.err++) console.warn('rope climb pose disabled for a frame', e); } }; }
+// ---- prompt, inspect, minimap ----
+function xroNear() { const C = typeof nmActive === 'function' && nmActive(), VM_ = xroVF(); if (!C || !C.ropes || !VM_ || !player || !(player.hp > 0)) return 0; if (player.rope > 0) return 2; return !(player.ropeCd > 0) && VM_.ropeFind(C.ropes, player) >= 0 ? 1 : 0; }
+(window.XHK || (window.XHK = [])).push(function xroPrompt() {
+  let el = XRO.el; const st = running && !paused && !(typeof FV !== 'undefined' && FV && FV.menu) ? xroNear() : 0;
+  if (!st) { if (el && el.style.display !== 'none') el.style.display = 'none'; return; }
+  if (!el) { el = XRO.el = document.createElement('div'); el.id = 'xroPrompt'; el.setAttribute('role', 'status'); el.style.cssText = 'position:fixed;left:50%;top:calc(50% + 78px);transform:translateX(-50%);z-index:60;display:none;align-items:center;gap:8px;padding:6px 12px;background:rgba(15,25,35,.72);color:#ece8e1;font:600 14px/1 Arial,sans-serif;letter-spacing:.04em;pointer-events:none;white-space:nowrap'; el.innerHTML = '<b style="display:inline-grid;place-items:center;min-width:22px;height:22px;border:1px solid #ece8e1;font-size:12px">F</b><span></span>'; document.body.append(el); }
+  const text = st === 2 ? 'Let go' : 'Grab rope'; if (el.lastChild.textContent !== text) el.lastChild.textContent = text; if (el.style.display !== 'flex') el.style.display = 'flex';
+});
+addEventListener('keydown', (e) => { if (e.code !== 'KeyF' || e.repeat) return; try { if (xroNear() && typeof VM !== 'undefined' && VM.ins > 0) VM.ins = 0; } catch (er) {} }); // F at a rope is Use, not the weapon inspect
+if (typeof nmMinimap === 'function') { const mm0 = nmMinimap; nmMinimap = function (C) { const t0 = nmMinimap.last; const r = mm0.apply(this, arguments); try { if (C && C.ropes && nmMinimap.last !== t0 && typeof mmx !== 'undefined') { const ctx = mmx, { X, Z } = nmMapProjection(C, MM.width, MM.height), px = Math.max(1, (nmMinimap.cw ? MM.width / nmMinimap.cw : 1)); ctx.save(); ctx.fillStyle = '#e9dcae'; ctx.strokeStyle = '#18242e'; ctx.lineWidth = px; for (const q of C.ropes) { const x = X(q.x), z = Z(q.z); ctx.beginPath(); ctx.arc(x, z, 2.2 * px, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); } ctx.restore(); } } catch (e) {} return r; }; nmMinimap.last = 0; }
+window.xRopes = XRO;
+// ---- END ROPE ASCENDERS ----
 xReady = true; // every mode is initialised; lobby launches may now start them
 { let rb = null; try { rb = sessionStorage.getItem("vs.retry"); sessionStorage.removeItem("vs.retry"); } catch (e) {} // Retry on the engine error reloaded the page: relaunch the same mode
   if (rb) setTimeout(() => { const b = $(rb); if (b) b.click(); }, 300); }

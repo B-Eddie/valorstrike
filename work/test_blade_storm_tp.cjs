@@ -9,7 +9,7 @@ const fs=require('fs'),vm=require('vm'),path=require('path'),assert=require('ass
  const {SpikeSimulation}=await import('file://'+root+'/server/src/spike.js'),{fogRow}=await import('file://'+root+'/server/src/fog.js');
  const W={map:{attacker:[0,0,0],defender:[0,0,-10],sites:{A:[0,0,0]}},nav:{nodes:[[0,0,0],[0,0,-10]],adj:[[1],[0]]},playable:[0,1],near:(x,z)=>z<-5?1:0,ground:()=>0,blocked:()=>false,ray:()=>Infinity}; // = server/test-blades.js
  if(W){const s=new SpikeSimulation(W,'five','ascent',()=>.5),j=s.add('jet','Jett'),v=s.add('v0');s.start(false);s.buy=0;s.roundDelay=0;const row=()=>s.rows().find(r=>r[0]===j.id);
-  assert.equal(row().length,25,'row has [24]');assert.equal(row()[24],0,'no knives out');
+  assert.equal(row().length,26,'row has [24] (and [25] = rope ascender)');assert.equal(row()[24],0,'no knives out');
   j.ability.ult=8;assert(s.command(j,{t:'ab',k:'x'}));assert.equal(row()[24],5,'Blade Storm: 5 knives');assert.equal(row()[11],j.weapon,'the server weapon stays the gun');
   Object.assign(j,{x:0,y:0,z:0,look:0,pitch:0,air:true,sf:1});Object.assign(v,{x:0,y:0,z:-4,hp:200,armor:0,protectedUntil:0});s.time+=1;assert(s.command(j,{t:'blade'}));assert.equal(row()[24],j.ability.blades,'one throw: knives left');
   assert.equal(fogRow(row())[24],0,'fog-hidden row: no knives');
