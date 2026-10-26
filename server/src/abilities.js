@@ -34,7 +34,7 @@ function castAbility0(sim,u,m){const k=m.k,K=kits[u.agent]||kits.Jett,A=u.abilit
  else if(ty==='heal'){const target=healTarget||u;p.splice(0,3,target.x,target.y,target.z);push('heal',u.agent==='Sage'?5:3,8,{target:u.agent==='Skye'?null:target.id,rate:u.agent==='Sage'?(target===u?10:20):20});}
  else if(ty==='wall'&&u.agent==='Sage'){const x=u.x-Math.sin(u.look)*2.5,z=u.z-Math.cos(u.look)*2.5;p[0]=x;p[1]=u.y;p[2]=z;push('barrier',40,3,{hp:600,yaw:u.look});}else if(ty==='smoke'&&u.agent==='Jett'){/* Cloudburst: a projectile from the eye, steered while C is held (input cb), smoke where it lands (tickCloudburst, vendor/cloudburst.cjs) */cloud=Cloudburst.start(o,d);push('cloudburst',Cloudburst.CB.maxT+.5,0,{st:cloud,p:[...o]});}else if(ty==='smoke'||ty==='wall')push('smoke',u.agent==='Jett'?2.5:15,SMOKE.r[u.agent]||SMOKE.radius);
  else if(ty==='flash'&&u.agent==='Omen'){const P=PARANOIA;push('paranoia',P.range/P.speed+.1,P.radius,{p:[...o],o:[...o],d:[...d],born:sim.time,s:0,hit:[]});}/* Paranoia: a 25 m orb along the aim (tickParanoia) */
- else if(ty==='flash'||ty==='leer'){p[1]+=1.6;/* wiki windups: Leer 0.4 s, Flashpoint 0.5 s from FIRE (windups.js) */const at=ty==='leer'?wf('leer'):u.agent==='Breach'?wf('flashpoint'):.35;push(ty==='leer'?'leer':'flash',ty==='leer'?at+LEER.active:Math.max(1,at+.2),ty==='leer'?15:30,{at:sim.time+at,blind:FLASH_BLIND[u.agent]});}
+ else if(ty==='flash'||ty==='leer'){p[1]+=1.6;/* wiki windups: Leer 0.4 s, Flashpoint 0.5 s from FIRE (windups.js) */const at=ty==='leer'?wf('leer'):u.agent==='Breach'?wf('flashpoint'):.35;push(ty==='leer'?'leer':'flash',ty==='leer'?at+LEER.active:Math.max(1,at+.2),ty==='leer'?15:30,{at:sim.time+at,blind:u.agent==='Skye'&&ty==='flash'?glBlind(distance/GUIDING.speed):FLASH_BLIND[u.agent]});}
  else if(ty==='shock'||ty==='grenade'){const at=ty==='shock'&&u.agent==='Breach'?wf('aftershock'):.65;/* Breach Aftershock: 2.2 s windup from FIRE */push('blast',at+.55,4,{damage:ty==='grenade'?100:75,at:sim.time+at});}
  else if(ty==='fire')push('fire',4,4,{rate:40});
  else if(ty==='stun'&&u.agent==='Breach'){/* Fault Line: the quake runs along the strip after the 1.1 s windup (wiki) from where Breach stood (tickFault); HOLD FIRE charge m.pw sets its length (FAULT) */fault=faultPw(m.pw);u.fault={at:sim.time+wf('faultLine'),x:u.x,y:u.y,z:u.z,fx:-Math.sin(u.look),fz:-Math.cos(u.look),near:FAULT.near,len:faultLen(fault)};p.splice(0,3,u.x,u.y,u.z);}else if(ty==='slow'||ty==='stun'||ty==='trap')push('slow',ty==='trap'?20:3,4);
@@ -70,6 +70,10 @@ export function abilityDamage(sim,owner,v,n){if(!v.alive||v.invulnerableUntil>si
 // Max blind per flash (wiki.playvalorant.com/en-us/<Ability> "Max blind duration"): Flashpoint 2.25 s, Guiding Light 2.25 s
 // (max, from a full 0.75 s flight), Curveball 1.5 s (DEV.curveball.blind); Omen's Paranoia 2 s. The offline client uses the same.
 export const FLASH_BLIND={Breach:2.25,Skye:2.25,Omen:2};
+// Skye Guiding Light (wiki Guiding_Light: hawk 18 m/s, max blind 1 - 2.25 s growing over the first 0.75 s of flight). The server's
+// stand-in pops at the aim point (up to 14 m): the blind is the one a hawk gets after flying there. Client XGL / xGlBlind.
+export const GUIDING={speed:18,min:1,max:2.25,ramp:.75};
+export function glBlind(t){const G=GUIDING;return G.min+(G.max-G.min)*Math.min(1,Math.max(0,t)/G.ramp);}
 // Omen Paranoia (wiki /Paranoia): an orb (missile) along the aim, 20 m/s for 25 m, 4.3 m radius, through terrain, no facing
 // check; everyone it touches but Omen (friendlyfire Yes) is nearsighted for 2 s, once. Client mirror: index.html XPAR.
 export const PARANOIA={speed:20,range:25,radius:4.3,nearsight:2};

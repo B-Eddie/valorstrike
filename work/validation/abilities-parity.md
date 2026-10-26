@@ -325,7 +325,7 @@ up for 2.5 s from the cast (2.3 s of nearsight after its 0.2 s fuse).
   read it; anyone else stays 1.5 s), `DEV.curveball.blind` 1.1 -> 1.5, Leer effect life `wf('leer') + LEER.active` (1.6 s
   of nearsight after its fuse).
 - Client: the player's Leer now ends `xWf('leer') + XLEER` (1.6 s) after the release (was 2 s, i.e. 1.8 s of nearsight).
-- Guiding Light: both sides use the 2.25 s maximum (the wiki's flight-time scaling is not modelled).
+- Guiding Light: flight-time scaling now modelled, see "Skye Guiding Light" below.
 - Paranoia: now the wiki orb, see "Omen Paranoia" below (was a point flash with a facing check on the server and a
   14 m/s strip on the client).
 - Tests: `server/test-abilities.js` (Flashpoint 2.25, Guiding Light 2.25; Leer `until - at` = 1.6 s),
@@ -457,3 +457,20 @@ offline client 10 every 0.35 s within 25 m, no windup.
   server; range tiers past 30 m never apply on either side (30 m sight).
 - Tests: `server/test-ults.js` (table; tiers; 10 m foe: 0 / 24 / 24 / 48 / 48 / 72 at 0.7 / 1.3 / 1.9 / 2.5 / 3.1 / 3.7 s;
   25 m: 6 a shot), `work/test_ability_equip.cjs` (XTUR == DEV.turret, tiers, 10 m bot 0 / 24 / 24 / 48 at 0.7 / 1.3 / 1.9 / 2.5 s).
+
+### Skye Guiding Light (wiki.playvalorant.com/en-us/Guiding_Light, fetched 2026-10-25)
+
+Wiki stats: hawk 18 m/s, duration 2 s, "flash max duration windup time" 0.75 s, max flash duration 1 - 2.25 s based on that
+windup; the hawk flashes on reactivation or at the end of its duration. Was: 2.25 s on every pop on both sides; the offline
+hawk flew 2.5 s and faded without a flash.
+
+- Server: `GUIDING = {speed: 18, min: 1, max: 2.25, ramp: .75}`, `glBlind(t)` = 1 + 1.25 x min(1, t / 0.75). The trusted
+  server has no hawk flight: its stand-in flash pops at the aim point (up to 14 m, short of a wall), so the blind is the one a
+  hawk gets after flying there (`distance / 18` s): 14 m and beyond the full 2.25 s, 5 m ~1.46 s. Breach / Omen unchanged.
+- Client: `XGL = {speed: 18, life: 2, min: 1, max: 2.25, ramp: 0.75}` (asserted equal to GUIDING), `xGlBlind`; `hkPop` blinds by
+  the hawk's flight time; the hawk flies 2 s and then flashes (was 2.5 s and a silent fade).
+- Not modelled: the 0.3 s activation windup before the flash, steering the hawk with held FIRE; offline bot Skye still throws
+  the shared bot flash orb.
+- Tests: `server/test-abilities.js` (table; glBlind ramp; a wall at 5.5 m -> blind glBlind(5/18) ~1.46; 14 m -> 2.25;
+  Flashpoint still 2.25), `work/test_ability_equip.cjs` (XGL == GUIDING; ramp table; popped after 0.25 s -> 1.42 s; flashes at
+  the end of the flight with ~2.25 s).
