@@ -1,7 +1,7 @@
 // Knife heavy swing parity (client <-> server). The client's right-click / long-press heavy swing (1 s, 75 / 150 head or
 // back-stab, KNIFE table) had no server equivalent: online it went out as a plain fire pulse and the server dealt a 50 light hit
 // at 2/s. Now a heavy swing sends kh:1 and simulation.js applies KNIFE_HEAVY; a click during a swing sends no pulse; a held
-// knife button is one swing on the client and so no longer held fire online; the 1.2 m lunge is offline-only (server moves you).
+// knife button is one swing on the client and so no longer held fire online; there is no lunge (qa-37; the offline 1.2 m lunge is gone).
 const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),assert=require('node:assert/strict');
 const root=path.join(__dirname,'..'),h=fs.readFileSync(path.join(root,'index.html'),'utf8');
 (async()=>{
@@ -27,7 +27,7 @@ const root=path.join(__dirname,'..'),h=fs.readFileSync(path.join(root,'index.htm
  const p0=T.NET.firePulse;T.go(false);assert.equal(T.NET.firePulse,p0,'a click during a swing must not send a pulse');
  T.kSwing=0;T.go(false);assert(T.NET.firePulse>p0&&T.NET.fireHeavy===0,'light swing pulses without kh');m=T.msg('Knife');assert.equal(m.kh,0);assert.equal(m.fire,1);
  T.performance.t+=100;T.fireHeld=true;assert.equal(T.msg('Knife').fire,0,'a held knife button is not held fire');assert.equal(T.msg('Vandal').fire,1,'held fire still works for guns');
- // Lunge offline only.
- assert(h.includes('if (hv) { body = KNIFE.heavy; head = KNIFE.heavyCrit; if (!(typeof NET !== "undefined" && NET.socket && MP.st === "game")) { kLg = 0.15;'),'lunge must be offline only');
- console.log('Knife heavy parity: client KNIFE heavy 75/150 and 1 s == server KNIFE_HEAVY; same back-stab cone (72 cases); online heavy swing sends kh, light none, no pulse mid-swing, held knife not held fire; lunge offline only');
+ // No lunge anywhere (qa-37: VALORANT's ALT FIRE is a stab in place; the offline 1.2 m lunge was removed, online never had it).
+ assert(h.includes('if (hv) { body = KNIFE.heavy; head = KNIFE.heavyCrit; }'),'heavy swing sets 75 / 150 and nothing else');assert(!/kLg = 0\.15/.test(h),'no heavy lunge');
+ console.log('Knife heavy parity: client KNIFE heavy 75/150 and 1 s == server KNIFE_HEAVY; same back-stab cone (72 cases); online heavy swing sends kh, light none, no pulse mid-swing, held knife not held fire; no lunge');
 })().catch(e=>{console.error(e);process.exit(1);});

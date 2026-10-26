@@ -56,7 +56,9 @@ function xskTemplate(w,id) {
   if(!XSK_MODELS.has(key)) { while(XSK_MODELS.size>=12)XSK_MODELS.delete(XSK_MODELS.keys().next().value); XSK_MODELS.set(key,Promise.all([Promise.resolve().then(()=>xvLoad(a.model)),Promise.resolve().then(()=>xskModelData(a))]).then(([gl,meta])=>{
     const f=XGM.F[w],k='skin/'+key,old=XGM.sk[w];
     try { XGM.src[k]=xvStatic(gl,meta.descriptor);XGM.F[w]=k;return xGmTpl(w); }
-    finally {XGM.F[w]=f;XGM.sk[w]=old;delete XGM.src[k];delete XV.cache[a.model];}
+    // qa-37: put back what was there, and only that - `XGM.sk[w]=old` with no recolour material (the Knife) CREATED XGM.sk.Knife =
+    // undefined, and the next swap's xVM loop over XGM.sk threw "m is undefined" (user 13:12: switching to a skinned knife).
+    finally {if(f===undefined)delete XGM.F[w];else XGM.F[w]=f;if(old===undefined)delete XGM.sk[w];else XGM.sk[w]=old;delete XGM.src[k];delete XV.cache[a.model];}
   }).catch(e=>{XSK_MODELS.delete(key);throw e;})); }
   return XSK_MODELS.get(key);
 }

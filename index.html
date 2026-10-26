@@ -2100,6 +2100,7 @@ const SFX = {
   low() { if (!sOk() || !sCap("low", 2, 0.04)) return; sTn(0.012, 4200, 3600, 0.03, "triangle", 0.035); }, // low-mag tick: quiet, high, layered over each shot at ≤20%
   empty() { if (!sOk() || !sCap("dry", 1, 0.25)) return; /* dry fire: at most once per 0.25 s */ sNz(0, 0.018, "bandpass", 3800, 3000, 0.32, 0, 6); sTn(0, 2000, 1300, 0.018, "square", 0.05); sNz(0.03, 0.015, "bandpass", 2400, 2000, 0.14, 0, 6); },
   knife() { if (!sOk()) return; sNz(0, 0.18, "bandpass", 700, 4500, 0.35, 0, 1.5); },
+  knifeHeavy() { if (!sOk()) return; sNz(0, 0.3, "bandpass", 420, 2600, 0.45, 0.02, 1.2); sTn(0.12, 140, 70, 0.08, "sine", 0.18); }, // heavy stab: longer, lower whoosh + a thud at the thrust (qa-37)
   at(p, w) { // bot / ally shots: 3D-panned by direction (pooled HRTF panners); past 30 m a delayed, muffled distant-echo tail. Voices: me 4 + gun 6 + echo 2 = 12 max
     if (!sOk() || !p) return; const P = sCap("gun", 6, 0.15); if (!P) return; const n = sPanP(P, p, 6); this.gun(w, n, 0.8);
     const d = camera ? Math.hypot(camera.position.x - p.x, camera.position.z - p.z) : 0;
@@ -3387,8 +3388,8 @@ function shoot(hv) {
   const w = wName(), W = WEAP[w], P = player, kn = rw === "knife";
   let body = KNIFE.light, head = KNIFE.lightBack; // knife: body = front hit, head = back-stab (the knife has no headshot bonus)
   if (kn) {
-    if (kSwing > 0) return; kSwing = hv ? 1 : 0.5; kHv = hv ? 1 : 0; kick = 1; SFX.knife(); ray.far = KNIFE_RANGE; // light 0.5 s (= the server Knife fireRate 2/s), heavy 1 s cooldown, 2 m reach (server parity)
-    if (hv) { body = KNIFE.heavy; head = KNIFE.heavyCrit; if (!(typeof NET !== "undefined" && NET.socket && MP.st === "game")) { kLg = 0.15; kLx = -Math.sin(yaw); kLz = -Math.cos(yaw); } } // lunge 1.2 m over 0.15 s offline; online the server moves the player and has no lunge (heavy = kh input: 1 s, 75 / 150 head or back)
+    if (kSwing > 0) return; kSwing = hv ? 1 : 0.5; kHv = hv ? 1 : 0; kick = 1; if (hv && SFX.knifeHeavy) SFX.knifeHeavy(); else SFX.knife(); ray.far = KNIFE_RANGE; // light 0.5 s (= the server Knife fireRate 2/s), heavy 1 s cooldown, 2 m reach (server parity)
+    if (hv) { body = KNIFE.heavy; head = KNIFE.heavyCrit; } // heavy (ALT FIRE) = one forward stab in place: 1 s, 75 front / 150 back, same 2 m reach (wiki Melee; = server kh input). qa-37: the offline 1.2 m lunge is gone (VALORANT has none; online never had it)
   } else {
     if (reloading > 0) { if (XRLP[w] && ammo > 0) reloading = 0; else return; } // a per-round reload: the shot interrupts it
     const rt = xRT();
@@ -3750,7 +3751,7 @@ function xVM() {
   for (const n in VMS) VMS[n].visible = n === k;
   gBarrel.position.z = VMS[k].userData.mz + 0.175 * gBarrel.scale.z;
   for (const n in XTN_) XTN_[n].color.set(skin[n] || SKINS[0]);
-  if (typeof XGM !== "undefined" && XGM) for (const n in XGM.sk) { const m = XGM.sk[n], c = skin[n]; if (c && c !== SKINS[0]) m.color.set(c); else if (m.userData.c0) m.color.copy(m.userData.c0); } // skins recolor the model's main material
+  if (typeof XGM !== "undefined" && XGM) for (const n in XGM.sk) { const m = XGM.sk[n], c = skin[n]; if (!m) continue; if (c && c !== SKINS[0]) m.color.set(c); else if (m.userData.c0) m.color.copy(m.userData.c0); } // skins recolor the model's main material
 }
 { const o0 = onSkin; onSkin = function () { o0.apply(this, arguments); xVM(); }; onSkin(); }
 // keyframed procedural reload: per-class tracks of {t, pos, rot} (t = reload progress 0..1, so it always spans the gun's reload time), lerped with easeInOut
@@ -10629,7 +10630,7 @@ function aimFire(hv) {
   const w = aimW(), kn = w === "Knife", W = WEAP[w];
   if (!kn && AM.ammo <= 0) { SFX.empty(); AM.fire = false; fireHeld = false; if (S.autoReload !== false) aimReload(); return; } // empty-click parity with fire()
   ray.setFromCamera(XC0, camera);
-  if (kn) { AM.cd = kSwing = hv ? 1 : 0.5; kHv = hv ? 1 : 0; kick = 1; SFX.knife(); AM.fire = false; ray.far = KNIFE_RANGE; }
+  if (kn) { AM.cd = kSwing = hv ? 1 : 0.5; kHv = hv ? 1 : 0; kick = 1; if (hv && SFX.knifeHeavy) SFX.knifeHeavy(); else SFX.knife(); AM.fire = false; ray.far = KNIFE_RANGE; }
   else {
     AM.ammo--; AM.cd = 1 / W.rate; since = 0; kick = Math.min(1, 0.45 + W.rec * 0.5); vmFire(); SFX.gun(w);
     gFire(ray.ray.direction, w, W); if (W.semi) AM.fire = false;
@@ -11513,7 +11514,7 @@ html.xt-nocm .x-cmb{display:none!important}
     if (k === "drills") return rgOpen("xRg");
     if (k === "ping") { kd("KeyZ"); return ku("KeyZ"); }
     if (k === "drop") { kd("KeyG"); return ku("KeyG"); }
-    if (k === "zoom") { if (mode !== "duel" && !J.dr && jOn() && J.bs > 0 && rw === "knife") return jBurst(); if (mode === "duel" || !J.dr) xScopeT(); return; } // Blade Storm out: the scope button is ALT FIRE (all remaining knives), as right-click
+    if (k === "zoom") { if (mode === "aim" && aimW() === "Knife") return aimFire(true); if (mode !== "duel" && !J.dr && jOn() && J.bs > 0 && rw === "knife") return jBurst(); if (mode !== "duel" && !J.dr && rw === "knife") return shoot(true); if (mode === "duel" || !J.dr) xScopeT(); return; } // Blade Storm out: the scope button is ALT FIRE (all remaining knives), as right-click
     if (k === "swap") {
       if (mode === "duel") return setWeap(du.w === "op" ? "knife" : "op");
       if (mode === "surf" || player.hp <= 0) return;
@@ -19538,7 +19539,9 @@ function xskTemplate(w,id) {
   if(!XSK_MODELS.has(key)) { while(XSK_MODELS.size>=12)XSK_MODELS.delete(XSK_MODELS.keys().next().value); XSK_MODELS.set(key,Promise.all([Promise.resolve().then(()=>xvLoad(a.model)),Promise.resolve().then(()=>xskModelData(a))]).then(([gl,meta])=>{
     const f=XGM.F[w],k='skin/'+key,old=XGM.sk[w];
     try { XGM.src[k]=xvStatic(gl,meta.descriptor);XGM.F[w]=k;return xGmTpl(w); }
-    finally {XGM.F[w]=f;XGM.sk[w]=old;delete XGM.src[k];delete XV.cache[a.model];}
+    // qa-37: put back what was there, and only that - `XGM.sk[w]=old` with no recolour material (the Knife) CREATED XGM.sk.Knife =
+    // undefined, and the next swap's xVM loop over XGM.sk threw "m is undefined" (user 13:12: switching to a skinned knife).
+    finally {if(f===undefined)delete XGM.F[w];else XGM.F[w]=f;if(old===undefined)delete XGM.sk[w];else XGM.sk[w]=old;delete XGM.src[k];delete XV.cache[a.model];}
   }).catch(e=>{XSK_MODELS.delete(key);throw e;})); }
   return XSK_MODELS.get(key);
 }
@@ -19798,6 +19801,7 @@ for(const name in GA_EVENTS){const fn=SFX[name];if(typeof fn!=='function')contin
  const at=SFX.at;SFX.at=function(p,w){let id='standard';try{for(const L of [bots,allies])for(const u of L)if(u.g&&Math.hypot(u.g.position.x-p.x,u.g.position.z-p.z)<.35){id=typeof NET!=='undefined'&&NET.socket?xskNetGet(u.nid,w):XSK.botSkins?xskBot(u.name,w):'standard';}}catch(e){}
  const prior=GA.remote;GA.remote={id,position:p};try{const ok=gaPlay(gaWeapon(w,'fire',id),'gun',{position:p,gain:.65});return gaOriginal(at,this,arguments,ok);}finally{GA.remote=prior;}};
  const knife0=SFX.knife;SFX.knife=function(){return gaOriginal(knife0,this,arguments,gaPlay(gaWeapon('Knife','knife')||'scifi/forceField_000','gun',{gain:.45}));};
+ /* qa-37 heavy stab (ALT FIRE): the skin's swing clip slowed to 0.78x and louder, so it reads heavier than a light swing (no heavy clip downloaded) */const knifeH0=SFX.knifeHeavy;SFX.knifeHeavy=function(){return gaOriginal(knifeH0,this,arguments,gaPlay(gaWeapon('Knife','knife')||'scifi/forceField_000','gun',{gain:.6,rate:.78}));};
  const rs=SFX.rs;SFX.rs=function(k){if(GA.reload)return;const key=k==='out'?'impact/impactMetal_light_000':k==='in'?'impact/impactMetal_medium_000':'ui/switch_002';return gaOriginal(rs,this,arguments,gaPlay(key,'gun',{gain:.35}));};
  const step=SFX.step,self=SFX.selfStep;SFX.step=function(p){const surface=p&&/metal|wood|grass/.exec(p.surface||''),key=gaPick('impact/footstep_'+(surface?surface[0]:'concrete')+'_');return gaOriginal(step,this,arguments,gaPlay(key,'step',{position:p,gain:.6}));};SFX.selfStep=function(m){return gaOriginal(self,this,arguments,gaPlay(gaPick('impact/footstep_concrete_'),'step',{gain:.19}));};
  const ab=SFX.ab;SFX.ab=function(n,p){const key=GA.manifest.abilities[n]||'scifi/forceField_001';return gaOriginal(ab,this,arguments,gaPlay(key,'ability',{position:p,gain:.5}));};
