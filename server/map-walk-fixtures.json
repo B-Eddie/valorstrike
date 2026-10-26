@@ -1,5 +1,5 @@
 {
-"_about":"tools/map-sweep.mjs findings fixed in the shared motor (motor.cjs step/moveAxis): edges = [from node, to node] nav edges on flat or stepped floor the motor refused before the riser/step-up fixes (crack between slabs read as a riser, step-up pinned by a wall beside the capsule); traps = [from node, direction] walks that ended in a spot the capsule could not walk out of (Breeze paving against walls; the last three were embedded a few mm in a leaning wall, the very last walked off the 12 m platform onto the crate stack below it, now a clip). test-map-bounds.js section 5 replays them.",
+"_about":"tools/map-sweep.mjs findings fixed in the shared motor (motor.cjs step/moveAxis): edges = [from node, to node] nav edges on flat or stepped floor the motor refused before the riser/step-up fixes (crack between slabs read as a riser, step-up pinned by a wall beside the capsule); traps = [from node, direction] walks that ended in a spot the capsule could not walk out of (Breeze paving against walls; the last three were embedded a few mm in a leaning wall, the very last walked off the 12 m platform onto the crate stack below it, now a clip; the next two settled on the lip past Breeze's west 8 m floor edge, now a clip, the last perched on a lattice prop by the mid-west railing, now a clip). walksOut needs 0.3 m within 0.5 s. test-map-bounds.js section 5 replays them.",
 "ascent":{"edges":[
   [[-11,8.55,-57.25],[-11,8.74,-58]],
   [[-11,8.74,-58],[-11,8.55,-57.25]],
@@ -101,5 +101,8 @@
   [[7,8.04,-34.75],[-1,0]],
   [[16,4.14,35],[0.71,0.71]],
   [[16.75,8.49,8],[0.71,-0.71]],
-  [[9.25,12,-25],[0,1]]]}
+  [[9.25,12,-25],[0,1]],
+  [[-33.5,8.05,-60.25],[-0.71,-0.71]],
+  [[-33.5,8.08,-61.75],[-0.71,0.71]],
+  [[-10.25,6.02,0.5],[-0.71,-0.71]]]}
 }

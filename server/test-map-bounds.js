@@ -15,7 +15,8 @@
 //     points: Breeze's all sit at one height, its A Lobby label lies 7.9 m off the minimap's floor).
 //  5. Walk fixtures (map-walk-fixtures.json): nav edges on flat or stepped floor the motor refused before the riser /
 //     step-up fixes are walked end to end, and the walk-in traps (a capsule pressed against a wall over uneven paving
-//     that could not walk out again) now walk out.
+//     that could not walk out again) now walk out: 0.3 m within 0.5 s in one of 8 directions (a pocket that lets the
+//     capsule shuffle 0.2 m, Breeze's west-edge lip, is still a trap).
 import fs from 'node:fs';import assert from 'node:assert/strict';import {loadWorld} from './src/world.js';import {scanHoles} from './tools/map-holes.mjs';import {scanBoundary,PROBES,index} from './tools/map-boundary.mjs';import {createRequire} from 'node:module';
 process.chdir(new URL('.',import.meta.url).pathname);
 const require=createRequire(import.meta.url),Motor=require('./src/motor.cjs');
@@ -38,7 +39,7 @@ const place=(w,p)=>{const y=w.ground(p[0],p[2],p[1]+.1);return {x:p[0],z:p[2],y:
 const reachSet=(w,from)=>{const seen=new Uint8Array(w.nav.nodes.length),q=[from];seen[from]=1;for(let k=0;k<q.length;k++)for(const j of w.nav.adj[q[k]])if(!seen[j]&&w.allowed.has(j)){seen[j]=1;q.push(j);}return seen;};
 function walkEdge(w,p,q){const L=Math.hypot(q[0]-p[0],q[2]-p[2]),d=[(q[0]-p[0])/L,(q[2]-p[2])/L],up=q[1]-p[1]>.42;for(const jump of up?[false,true]:[false]){const P=place(w,p);for(let t=0;t<.8;t+=DT){Motor.step(P,{x:d[0],z:d[1],speed:6.75,jump:jump&&t>1.5*DT&&t<.12},DT,w);if(Math.hypot(P.x-q[0],P.z-q[2])<.35&&Math.abs(P.y-q[1])<1.2)return true;}
   /* a drop edge carries past the next node in the air: reached = landed on its floor beyond it */if(p[1]-q[1]>1&&!P.air&&Math.abs(P.y-q[1])<.6&&(P.x-p[0])*d[0]+(P.z-p[2])*d[1]>=L-.35)return true;}return false;}
-function walksOut(w,from,dir){const P=place(w,from);for(let t=0;t<.4;t+=DT)Motor.step(P,{x:dir[0],z:dir[1],speed:6.75},DT,w);for(const d of DIRS){const Q={x:P.x,y:P.y,z:P.z,vx:0,vz:0,vy:0,ch:0};for(let t=0;t<.3;t+=DT)Motor.step(Q,{x:d[0],z:d[1],speed:6.75},DT,w);if(Math.hypot(Q.x-P.x,Q.z-P.z)>=.1||Math.abs(Q.y-P.y)>.3)return true;}return false;}
+function walksOut(w,from,dir){const P=place(w,from);for(let t=0;t<.4;t+=DT)Motor.step(P,{x:dir[0],z:dir[1],speed:6.75},DT,w);for(const d of DIRS){const Q={x:P.x,y:P.y,z:P.z,vx:0,vz:0,vy:0,ch:0};for(let t=0;t<.5;t+=DT)Motor.step(Q,{x:d[0],z:d[1],speed:6.75},DT,w);if(Math.hypot(Q.x-P.x,Q.z-P.z)>=.3||Math.abs(Q.y-P.y)>.3)return true;}return false;}
 let fixtures=0;
 for(const key of maps){const w=await loadWorld(assets,key),N=w.nav.nodes,M=w.map,siteNode={};for(const [s,a]of Object.entries(M.sites))siteNode[s]=w.near(a[0],a[2],a[1]);
  for(const [team,anchor]of [['attacker',M.attacker],['defender',M.defender]]){const c=w.playable.filter(i=>{const p=N[i];return Math.hypot(p[0]-anchor[0],p[2]-anchor[2])<12&&Math.abs(p[1]-anchor[1])<2&&!w.blocked(p[0],p[2],.43,p[1],1.92);});
