@@ -7,7 +7,7 @@
 // ~0.20 m), jump launch 6.902 m/s under 20.45 m/s^2 gravity (1.165 m apex, 0.675 s airtime), crouch-walk 2.5 m/s with the
 // knife (0.37x) and a 0.276 s crouch. Walk is 0.6x (Riot's 2020 weapon data: Classic run 5.73 / walk 3.43 m/s). Air speed
 // never exceeds melee speed (patch 12.09) and landing keeps momentum (no landing slowdown in VALORANT).
-const C={stepHeight:.4,knifeSpeed:6.75,walk:.6,crouch:2.5/6.75,accelTime:.288,crouchAccelTime:.472,frictionScale:7.3625,frictionFlat:46.5,airAcceleration:3.5,jumpSpeed:6.902,gravity:20.45,landingLock:.2,crouchEye:.45,crouchDown:.276,crouchUp:.276,deadzone:.275,operatorDeadzone:.15,eyeHeight:1.6,referenceAspect:16/9,horizontalFov:103};
+const C={stepHeight:.4,knifeSpeed:6.75,walk:.6,crouch:2.5/6.75,accelTime:.288,crouchAccelTime:.472,frictionScale:7.3625,frictionFlat:46.5,airAcceleration:3.5,jumpSpeed:6.902,gravity:20.45,landingLock:.2,landSpreadTime:.225,landSpread:7,crouchEye:.45,crouchDown:.276,crouchUp:.276,deadzone:.275,operatorDeadzone:.15,eyeHeight:1.6,referenceAspect:16/9,horizontalFov:103};
 C.verticalFov=2*Math.atan(Math.tan(C.horizontalFov*Math.PI/360)/C.referenceAspect)*180/Math.PI;
 function approach(v,t,d){return v<t?Math.min(t,v+d):Math.max(t,v-d);}
 function damp(v,t,k,dt){return t+(v-t)*Math.exp(-k*dt);}
@@ -29,7 +29,7 @@ function groundMove(P,tx,tz,accel,h){const vx=P.vx||0,vz=P.vz||0,T=Math.hypot(tx
 // Vertical probes use a 2 cm thinner capsule than horizontal moves (.4): horizontal movement accepts a capsule grazing a
 // wall at its .388 tolerance, where a same-radius blocked() flips with float noise as the capsule moves up or down. That made
 // any wall corner read as a floor (hanging mid-air beside it and jumping again from there).
-const VR=.38;
+const VR=.38,LEAN_LIFTS=[.005,.015,.03,.05];
 // A grazed wall reads blocked at y-.03 as often as not, so contact alone is not support: there must also be a floor under
 // the capsule's footprint within a riser and a bit (a nosing's tread, a box edge), never a wall face mid-air.
 function supported(P,world,y,height){if(!world.blocked(P.x,P.z,.4,y-.03,height)||world.blocked(P.x,P.z,VR,y,height))return false;if(world.ground(P.x,P.z,y+.05)>y-.45)return true;for(let k=0;k<8;k++){const a=k*Math.PI/4;if(world.ground(P.x+Math.cos(a)*.34,P.z+Math.sin(a)*.34,y+.05)>y-.45)return true;}return false;}
@@ -38,13 +38,25 @@ function supported(P,world,y,height){if(!world.blocked(P.x,P.z,.4,y-.03,height)|
 // A stairs, west rim over the 8 m pit) stands on the tread under its rim, not on the pit floor; measuring the next riser
 // from the pit refused every step (10 m 'climb'), so it pressed into the riser corner until the unwedge moved it.
 // Only floors at or below the feet count, so a wall top beside the capsule never becomes its base.
+// Largest capsule radius in [.3, .4] free of collision at (x, z, feet y): .4 when the full capsule is free (0.1 mm steps).
+function clearance(world,x,z,y,height){if(!world.blocked(x,z,.4,y,height))return .4;let lo=.3,hi=.4;if(world.blocked(x,z,lo,y,height))return lo;for(let n=0;n<10;n++){const m=(lo+hi)/2;if(world.blocked(x,z,m,y,height))hi=m;else lo=m;}return lo;}
 function floorNear(world,x,z,y){let f=world.ground(x,z,y+.05);for(const [ox,oz]of [[.2,0],[-.2,0],[0,.2],[0,-.2]])f=Math.max(f,world.ground(x+ox,z+oz,y+.05));if(f<y-.45)for(let k=0;k<8;k++){const a=k*Math.PI/4;f=Math.max(f,world.ground(x+Math.cos(a)*.34,z+Math.sin(a)*.34,y+.05));}return f;}
 // Player clips: invisible walls over open map edges the source collision leaves open (Ascent A: a hole beside the A ramp,
 // open on every side, no floor below). Movement only: the client's nmBlocked and the server world's blocked() both ask
 // clipBlocked, while shots, sight and floor rays never see a clip. Each clip is a vertical prism: polygon p of [x,z]
 // (the void's outline, measured on the collision mesh) from y[0] to y[1]; a capsule (radius r, feet y, height) is blocked
 // when its footprint comes within r of the polygon and the heights overlap, exactly as a wall standing on the rim would.
-const CLIPS={ascent:[{name:'A ramp pit',y:[-60,15],p:[[42.55,-25.15],[42.62,-24.95],[42.78,-24.25],[42.98,-23.25],[42.5,-23.13],[41,-22.83],[39.5,-22.52],[38,-22.2],[37.3,-22.18],[37.22,-22.7],[37.12,-23.1],[37,-23.55],[36.97,-23.82],[37.45,-23.92],[37.95,-24.02],[38.15,-24.25],[38.75,-24.42],[39.65,-24.62],[40.7,-24.82],[41.7,-25.02]]}]};
+// Split (-4.12, 9, -46.4): a rounded 0.5 m wide, 0.8 m tall prop whose collision is a dome; walking into it the capsule
+// stepped onto its lip and climbed the curved side a few cm per sub-step (each lift cleared by contact at the capsule's
+// rim, no single riser over the step height) and ended 0.8 m up, embedded on its shoulder. The clip (an octagon on its
+// footprint, feet band 9..9.85 m) makes it a post; jumping on top still works.
+// Breeze (x 7.3..10.45, z -24.45..-21.4): crate blocks step down from the 12 m platform (10.95, 9.96, 9.0 m) to the 8 m floor
+// off the nav footprint; a capsule walked off the platform edge dropped 1 m onto the top block, where the leash only let
+// it move back toward the platform (1 m up: jump only). The clip spans the platform's height band only (feet 11..14.5 m;
+// capsules on the 8 m floor, even at a jump apex, top out below 11 m), so the platform edge stops a walk as a wall would.
+const CLIPS={ascent:[{name:'A ramp pit',y:[-60,15],p:[[42.55,-25.15],[42.62,-24.95],[42.78,-24.25],[42.98,-23.25],[42.5,-23.13],[41,-22.83],[39.5,-22.52],[38,-22.2],[37.3,-22.18],[37.22,-22.7],[37.12,-23.1],[37,-23.55],[36.97,-23.82],[37.45,-23.92],[37.95,-24.02],[38.15,-24.25],[38.75,-24.42],[39.65,-24.62],[40.7,-24.82],[41.7,-25.02]]}],
+ split:[{name:'rounded 0.8 m prop by a wall (domed: a capsule climbed it rim-first)',y:[9,9.85],p:[[-3.85,-46.4],[-3.93,-46.21],[-4.12,-46.13],[-4.31,-46.21],[-4.39,-46.4],[-4.31,-46.59],[-4.12,-46.67],[-3.93,-46.59]]}],
+ breeze:[{name:'crate stack below the 12 m platform south-east edge',y:[11,14.5],p:[[8.6,-24.45],[10.45,-24.45],[10.45,-21.4],[7.3,-21.4],[7.3,-23.6],[8,-23.85],[8.35,-24.2]]}]};
 for(const k in CLIPS)for(const c of CLIPS[k]){let a=1e9,b=-1e9,e=1e9,f=-1e9;for(const [x,z]of c.p){a=Math.min(a,x);b=Math.max(b,x);e=Math.min(e,z);f=Math.max(f,z);}c.b=[a,b,e,f];}
 function polyDist(p,x,z){let inside=false,d=Infinity;for(let i=0,j=p.length-1;i<p.length;j=i++){const [ax,az]=p[j],[bx,bz]=p[i];if((bz>z)!==(az>z)&&x<(ax-bx)*(z-bz)/(az-bz)+bx)inside=!inside;const ex=bx-ax,ez=bz-az,t=Math.max(0,Math.min(1,((x-ax)*ex+(z-az)*ez)/(ex*ex+ez*ez||1)));d=Math.min(d,Math.hypot(ax+ex*t-x,az+ez*t-z));}return inside?0:d;}
 function clipBlocked(map,x,z,r,y,height=1.8){const L=CLIPS[map];if(!L)return false;const y0=y+.025,y1=y+height;for(const c of L){if(y1<=c.y[0]||y0>=c.y[1]||x<c.b[0]-r||x>c.b[1]+r||z<c.b[2]-r||z>c.b[3]+r)continue;if(polyDist(c.p,x,z)<r)return true;}return false;}
@@ -78,7 +90,7 @@ function step(P,input,dt,world){
  const press=!!input.jump&&!P.jumpHeld;P.jumpHeld=!!input.jump;if(press)P.jumpBuffer=.07;
  for(let k=0;k<parts;k++){
   const floor=world.ground(P.x,P.z,P.y),grounded=(P.vy||0)<=0&&(P.y<=floor+.025||supported(P,world,P.y,1.8-(P.ch||0)));
-  P.lp=Math.max(0,(P.lp||0)-h);P.jumpBuffer=Math.max(0,(P.jumpBuffer||0)-h);P.duckFatigue=Math.max(0,(P.duckFatigue||0)-h*.55);
+  P.lp=Math.max(0,(P.lp||0)-h);P.ls=Math.max(0,(P.ls||0)-h);P.jumpBuffer=Math.max(0,(P.jumpBuffer||0)-h);P.duckFatigue=Math.max(0,(P.duckFatigue||0)-h*.55);
   if(!!input.duck!==!!P.duckHeld){if(input.duck)P.duckFatigue=Math.min(.65,(P.duckFatigue||0)+.08);P.duckHeld=!!input.duck;}
   const chTarget=input.duck?C.crouchEye:0,allowed=chTarget>=(P.ch||0)||(!world.blocked(P.x,P.z,.4,P.y,C.eyeHeight+.2)&&(!world.ceiling||!world.ceiling(P.x,P.z,P.y+1.8-(P.ch||0),P.y+1.8)));if(allowed)P.ch=approach(P.ch||0,chTarget,C.crouchEye/((input.duck?C.crouchDown:C.crouchUp)*(1+(P.duckFatigue||0)))*h);
   P.cr=(P.ch||0)>C.crouchEye*.5;P.wk=!!input.walk;
@@ -88,12 +100,27 @@ function step(P,input,dt,world){
   else{if(!l){tx=P.vx||0;tz=P.vz||0;}const cap=Math.min(C.knifeSpeed*(input.tag||1),Math.max(P.takeoffSpeed||input.speed,.1)),s=Math.hypot(tx,tz);if(s>cap){tx*=cap/s;tz*=cap/s;}v=velocity(P.vx||0,P.vz||0,tx,tz,C.airAcceleration,h);P.vx=v.vx;P.vz=v.vz;}
   const height=1.8-(P.ch||0);
   const moveAxis=(dx,dz)=>{const x=P.x+dx,z=P.z+dz;if(world.leash&&!world.leash(x,z,P.y,P.x,P.z))return false;if(!world.blocked(x,z,.4,P.y,height)){P.x=x;P.z=z;return true;}
+   // Already embedded a few mm (a capsule pressed into a wall that leans in over uneven paving): the 0.5 mm sub-steps of a
+   // move away never clear the wall, so velocity was zeroed every sub-step and the capsule stayed pinned until a jump
+   // (Breeze (6.56, 8.04, -34.75), (17.8, 9.19, 7.59)). A move that strictly increases the clearance (largest free radius,
+   // embedding no deeper than 10 cm) is let through, so the capsule backs out; sliding along or into the wall is not.
+   {const c0=clearance(world,P.x,P.z,P.y,height);if(c0<.4&&c0>.3&&clearance(world,x,z,P.y,height)>c0+1e-5){P.x=x;P.z=z;return true;}}
    // A grounded capsule may step onto a low stair, never teleport onto a tall box. The lifted capsule needs 1 cm of clearance
-   // beyond its radius: a slanted wall lip that a .4 capsule only grazes is not a step (it sank into the lip, embedded).
+   // ahead of it (along the move): a slanted wall lip that a .4 capsule only grazes is not a step (it sank into the lip,
+   // embedded). Ahead only: a wall beside or behind the capsule (pressed into a corner over a bumpy floor) is no lip, and an
+   // all-round 1 cm margin pinned it there for good. Where the capsule lifted by the full step height still meets geometry
+   // (a wall that leans in above the feet), only a lift of at most 5 cm (a bump or seam in the floor) may pass, tested at
+   // that height (Breeze: 44 walk-in traps against walls over uneven paving). The lowest such lift that clears is used
+   // (0.5, 1.5, 3, 5 cm): under a low ceiling or a beam a 5 cm lift put the head into it while a few mm cleared the bump
+   // (Ascent (30.25, 9.2, -10.19): wedged under a 1.66 m soffit over bumpy floor).
    // Lift by the step height, move, then settle onto the lowest free height above the destination floor.
-   if(grounded&&(P.vy||0)<=0){const top=P.y+C.stepHeight,support=world.ground(x,z,top);if(support>top+.001||world.blocked(x,z,.41,top,height)||(world.ceiling&&world.ceiling(P.x,P.z,P.y+height,top+height)))return false;
+   if(grounded&&(P.vy||0)<=0){const top=P.y+C.stepHeight,support=world.ground(x,z,top),ax=x+Math.sign(dx)*.01,az=z+Math.sign(dz)*.01;let cap=top;if(support>top+.001)return false;
+    if(world.blocked(ax,az,.4,top,height)){const b0=Math.max(P.y,support);cap=0;for(const l of LEAN_LIFTS)if(b0+l<top&&!world.blocked(ax,az,.4,b0+l,height)){cap=b0+l;break;}if(!cap)return false;}
+    // Headroom for the lift actually used (a full step, or the few cm of a bump under a lintel: Haven (9, 7.93, -57.7), a
+    // low ceiling 1.8-2.2 m over the floor refused a 5 mm lift because it was tested for the full 40 cm step).
+    if(world.ceiling&&world.ceiling(P.x,P.z,P.y+height,cap+height))return false;
     // Riser test: sampled every 10 cm ahead, no single rise may exceed the step height (stairs pass, a 60 cm box does not).
-    {const sx=Math.sign(dx),sz=Math.sign(dz);let prev=Math.max(world.ground(P.x,P.z,top),P.y-.2);for(let d=.1;d<.55;d+=.1){const g=world.ground(P.x+sx*d,P.z+sz*d,top);if(g<prev-1)continue;if(g-prev>C.stepHeight+.01)return false;prev=g;}} /* samples through seams between stair meshes are ignored */let lo=Math.max(P.y,support),hi=top;if(!world.blocked(x,z,.4,lo,height))hi=lo;else for(let n=0;n<10;n++){const mid=(lo+hi)/2;if(world.blocked(x,z,.4,mid,height))lo=mid;else hi=mid;}const base=floorNear(world,P.x,P.z,P.y);if(hi-base>C.stepHeight+.12)return false;const rise=hi-P.y;P.x=x;P.z=z;P.y=hi;P.vy=0;if(rise>0)P.eyeOffset=(P.eyeOffset||0)-rise;return true;}return false;};
+    {const sx=Math.sign(dx),sz=Math.sign(dz);let prev=Math.max(world.ground(P.x,P.z,top),P.y-.2);for(let d=.1;d<.55;d+=.1){const g=world.ground(P.x+sx*d,P.z+sz*d,top);if(g<prev-1)continue;if(g-prev>C.stepHeight+.01)return false;prev=Math.max(prev,g);}} /* samples through seams between stair meshes are ignored; a dip (a crack between floor slabs, a gutter) never lowers the reference, so the far side of a crack is no riser */let lo=Math.max(P.y,support),hi=cap;if(!world.blocked(x,z,.4,lo,height))hi=lo;else for(let n=0;n<10;n++){const mid=(lo+hi)/2;if(world.blocked(x,z,.4,mid,height))lo=mid;else hi=mid;}const base=floorNear(world,P.x,P.z,P.y);if(hi-base>C.stepHeight+.12)return false;const rise=hi-P.y;P.x=x;P.z=z;P.y=hi;P.vy=0;if(rise>0)P.eyeOffset=(P.eyeOffset||0)-rise;return true;}return false;};
   if(!moveAxis(v.dx,0))P.vx=0;
   if(!moveAxis(0,v.dz))P.vz=0;
   let gy=world.ground(P.x,P.z,P.y),vy=P.vy||0;
@@ -102,7 +129,7 @@ function step(P,input,dt,world){
   if(vy>0&&world.ceiling&&world.ceiling(P.x,P.z,P.y+height,next+height)){vy=0;next=P.y;}
   // Rising into geometry beside the axis (an overhang, a wall lip) the centre ceiling ray misses: stop at the highest free height.
   if(next>oldY&&world.blocked(P.x,P.z,VR,next,height)&&!world.blocked(P.x,P.z,VR,oldY,height)){let lo=oldY,hi=next;for(let n=0;n<10;n++){const mid=(lo+hi)/2;if(world.blocked(P.x,P.z,VR,mid,height))hi=mid;else lo=mid;}next=lo;vy=Math.min(vy,0);}
-  if(next<=gy){next=gy;if(P.air&&vy<-.5){landed=true;P.lp=C.landingLock;P.landImpact=Math.min(1,-vy/10);drop=Math.max(drop,(P.fallTop??oldY)-gy);}vy=0;}
+  if(next<=gy){next=gy;if(P.air&&vy<-.5){landed=true;P.lp=C.landingLock;P.ls=C.landSpreadTime;P.landImpact=Math.min(1,-vy/10);drop=Math.max(drop,(P.fallTop??oldY)-gy);}vy=0;}
   // Descending beside a riser must not settle the capsule inside the stair face.
   // (Thin probe up the wall, full radius in the last 45 cm above the floor so a landing beside a nosing never ends inside it.)
   if(next<oldY&&!world.blocked(P.x,P.z,VR,oldY,height)&&(world.blocked(P.x,P.z,VR,next,height)||(next-gy<.45&&world.blocked(P.x,P.z,.4,next,height)))){let lo=next,hi=oldY;for(let n=0;n<10;n++){const mid=(lo+hi)/2;if(world.blocked(P.x,P.z,.4,mid,height))lo=mid;else hi=mid;}next=hi;vy=0;}
@@ -121,14 +148,19 @@ const SPREAD={Classic:[.4,.3,1.8,1.35,.5,1.1,2.3,7],Shorty:[4,3.4,4,3.4,.5,1,2,4
  Marshal:[1,.9,1,.9,7.5,10,15,20,0,0,0,0],Outlaw:[3.5,3.15,3.5,3.15,7.5,10,15,20,0,0,0,0],Operator:[5,4.5,5,4.5,7.5,10,15,15,0,0,0,0],Ares:[1,.6,.7,.42,.4,3,6.5,10,.9,.54,.55,.33],Odin:[.8,.48,1.3,.78,.4,3,6.5,10,.79,.47,1.36,.82]};
 const rad=d=>Math.tan(d*Math.PI/180);
 function spreadRow(state,weapon,stats){const T=SPREAD[weapon];if(!T)return null;const ads=!!(state.ads&&stats&&stats.adsStats&&T.length>8),o=ads?8:0,cr=!!state.cr;return {first:T[o+(cr?1:0)],max:T[o+(cr?3:2)],T};}
+function moveRamp(sf,dead){return Math.max(0,Math.min(1,(sf-dead)/(1-dead)));}
 function spread(state,weapon,stats){
  const dead=weapon==='Operator'?C.operatorDeadzone:C.deadzone,speed=state.sf!=null?state.sf:(state.mv?1:0),moving=speed>dead,row=spreadRow(state,weapon,stats);
  if(row){const T=row.T;let error=0;
-  // Airborne: the published airborne penalty for every gun (a jumping scoped Operator is +15 deg); the .2 s landing lock counts as running.
-  if(state.air)error=T[7];else if(state.lp>0)error=T[6];else if(moving){const walk=state.wk||speed<.65;error=state.cr?T[4]:walk?T[5]:T[6];}
+  // Airborne: the published airborne penalty for every gun (a jumping scoped Operator is +15 deg). On the ground the crouch-walk /
+  // walk / run penalty ramps with speed (wiki.playvalorant.com/en-us/Weapons: "Movement speed penalties scale up to their max value
+  // as agents accelerate ... and fall off as agents decelerate"), from 0 at the deadzone to the full value at the mode's top speed
+  // (sf = speed / the current mode's speed). Landing adds 7 deg for 0.225 s on top (Weapons: "an additional 7 deg spread upon
+  // landing ... lasting for 0.225 seconds"; patch 1.09).
+  if(state.air)error=T[7];else{if(moving)error=(state.cr?T[4]:state.wk?T[5]:T[6])*moveRamp(speed,dead);if(state.ls>0)error+=C.landSpread;}
   return rad(row.first+error);}
  let base=Math.max(0,stats.firstBulletAccuracy||0),error=0;if(state.ads&&stats.adsStats)base=Math.max(0,stats.adsStats.firstBulletAccuracy||0);
- if(state.air)error=12;else if(state.lp>0)error=5;else if(moving)error=state.cr?.5:state.wk||speed<.65?1.1:2.3;
+ if(state.air)error=12;else{if(moving)error=(state.cr?.5:state.wk?1.1:2.3)*moveRamp(speed,dead);if(state.ls>0)error+=C.landSpread;}
  return rad(base+error);
 }
 // Spray error growth caps at the published max spread (Ares: shrinks to its min) over the first-shot spread.

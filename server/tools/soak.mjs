@@ -19,7 +19,7 @@ import kits from '../src/kits.json' with {type:'json'};
 import {instrument,checkFive,deathCheck,driveBots,fuzzCast,FOCUS} from './soak-checks.mjs';
 
 export const MAPS=['ascent','bind','haven','split','lotus','breeze'],MODES=['dm','tdm','five'];
-const BUYABLE=['Classic','Shorty','Frenzy','Ghost','Sheriff','Stinger','Spectre','Bucky','Judge','Bulldog','Guardian','Phantom','Vandal','Marshal','Outlaw','Operator','Ares','Odin','Light Shields','Heavy Shields'];
+const BUYABLE=['Classic','Shorty','Frenzy','Ghost','Sheriff','Stinger','Spectre','Bucky','Judge','Bulldog','Guardian','Phantom','Vandal','Marshal','Outlaw','Operator','Ares','Odin','Light Armor','Regen Shield','Heavy Armor'];
 const AGENTS=Object.keys(kits);
 export function mulberry(seed){let a=seed>>>0;return ()=>{a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return ((t^t>>>14)>>>0)/4294967296;};}
 const worlds=new Map();

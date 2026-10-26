@@ -12,7 +12,7 @@ process.chdir(new URL('..',import.meta.url).pathname);
 export const MAPS=['ascent','bind','haven','split','lotus','breeze'];
 const VIEWS=+process.env.VIEWS||48;
 export function runtimeApi(){const src=fs.readFileSync(process.env.RUNTIME||new URL('../../work/native_maps_runtime.js',import.meta.url),'utf8'),pick=n=>{const i=src.indexOf('function '+n+'(');if(i<0)return '';return src.slice(i,src.indexOf('\n',i));};
- const names=['nmChunkPlan','nmDetailDistance'].filter(n=>pick(n)),opt=(src.match(/var NM_OPT=(\{[^}]*\})/)||[])[1];return new Function(names.map(pick).join('\n')+'\nreturn {'+names.join(',')+',NM_OPT:'+(opt||'undefined')+'};')();}
+ const names=['nmChunkPlan','nmDetailDistance','nmCentroids'].filter(n=>pick(n)),opt=(src.match(/var NM_OPT=(\{[^}]*\})/)||[])[1];return new Function(names.map(pick).join('\n')+'\nreturn {'+names.join(',')+',NM_OPT:'+(opt||'undefined')+'};')();}
 function pngSize(file){const b=Buffer.alloc(24);const fd=fs.openSync(file,'r');fs.readSync(fd,b,0,24,0);fs.closeSync(fd);return [b.readUInt32BE(16),b.readUInt32BE(20)];}
 function rng(seed){return()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296;};}
 export function sphereOf(pos,index,tris){// tris: Uint32Array of triangle ids (or null = all); exact centre of the box, radius over vertices

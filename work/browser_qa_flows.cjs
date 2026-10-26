@@ -21,7 +21,7 @@ const qa=async js=>{const r=await fetch('http://127.0.0.1:8787/__qa',{method:'PO
  await ctx.addInitScript(()=>{try{if(!sessionStorage.getItem('qa.init')){sessionStorage.setItem('qa.init','1');localStorage.setItem('vs.gq','low');localStorage.setItem('vs.aa','0');}}catch(e){}window.__fc=0;const f=()=>{window.__fc++;requestAnimationFrame(f);};requestAnimationFrame(f);});
  await ctx.route(/^https?:\/\/(unpkg\.com|cdn\.jsdelivr\.net)\//,r=>{const f=r.request().url().split('/').pop().split('?')[0];if(LOCAL[f])return r.fulfill({path:LOCAL[f],contentType:'application/javascript',headers:{'access-control-allow-origin':'*'}});return r.continue();});
  await ctx.route(/127\.0\.0\.1:8876\/(index\.html)?(\?.*)?$/,r=>{const h=fs.readFileSync(ROOT+'/index.html','utf8').replace('window.xValorantFeel={','window.__xe=s=>eval(s);window.xValorantFeel={');r.fulfill({body:h,contentType:'text/html'});});
- const page=await ctx.newPage();page.setDefaultTimeout(600000);page.setDefaultNavigationTimeout(300000);page.on('pageerror',e=>R.errors.push('pageerror '+String(e).slice(0,300)));
+ const page=await ctx.newPage();await require('./pw_shot.cjs')(ctx,page);page.setDefaultTimeout(600000);page.setDefaultNavigationTimeout(300000);page.on('pageerror',e=>R.errors.push('pageerror '+String(e).slice(0,300)));
  page.on('console',m=>{if(m.type()==='error')R.errors.push('console '+m.text().slice(0,200));});
  const X=s=>page.evaluate(s=>window.__xe(s),s);
  const frames=async n=>{const f0=await page.evaluate(()=>window.__fc);await page.waitForFunction(([f0,n])=>window.__fc>=f0+n,[f0,n],{timeout:600000,polling:500}).catch(()=>{});};

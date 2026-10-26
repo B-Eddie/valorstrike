@@ -463,3 +463,53 @@ in-process server; it keeps the VALORANT FEEL block the audit fixture strips, an
   side, no signature recharge), gun or utility; the Reyna soul orb and Jett's Blade Storm refresh still trigger (patch
   1.02), the kill feed still shows it, offline bots get no ult point for it. The 200 kill credits are kept: no source says
   they are withheld (the drafted withholding was dropped). `test-economy.js` section 6.
+- **Friendly fire 1/3** (wiki.playvalorant.com/en-us/Abilities; per ability "friendlyfire: Yes (damage reduced)"): Shock
+  Bolt / Paint Shells / Hot Hands / Blaze / Nanoswarm / Showstopper / Hunter's Fury deal a third to allies; a teamkill is a
+  death with no kill, credits, ult point or score for the caster; the caster's own utility never hurts the caster; Turret /
+  Boom Bot never target allies. `test-ults.js`.
+- **Spread corrections**: (1) landing adds 7 deg for 0.225 s on top of the movement penalty (wiki Weapons; patch 1.09
+  "jump land inaccuracy .2 -> .225 s, 5 -> 7"), replacing the inferred run-penalty landing lock; (2) the crouch-walk / walk
+  / run penalty ramps with speed, 0 at the deadzone (27.5%, Operator 15%) to the full value at the mode's top speed (wiki
+  Weapons: penalties "scale up ... as agents accelerate ... and fall off as agents decelerate"), instead of snapping to the
+  walk row below 65%; the crosshair movement error includes the landing spread. (3) The death ult point is only for a death
+  to an enemy (gun or utility): falls out of the map and teamkills give none. `test-spread.js` 1b, `test-economy.js` 7.
+- **Online spectate on the real server path** (`work/test_spectate_online.cjs`: the page on the real worker module, deaths from
+  the server's snapshot kill events -> mpCliSnap -> xKLDie): online 5v5 team wiped follows the killer, Space cycles the
+  living enemies; online TDM / Deathmatch with the team dead never follow an enemy. Fix: the spectate label is written when
+  the view opens (it kept the previous death's text, e.g. the previous match's "SPECTATING <enemy> · ENEMY" over a TDM
+  death with nobody to follow), and the respawn modes say "NO ONE ALIVE" (no Spike cam). `test_spectate_follow.cjs`: the
+  nmNear cut takes the merged signature (C,x,z,y,yBand).
+- **Offline friendly fire = the server's rule** (`work/test_friendly_fire_offline.cjs`, the real page in an offline 5v5):
+  the offline game had none (the player's utility only hit enemy bots, each bot's only the other team). Now, per the wiki
+  ("abilities that damage allies deal 1/3 damage"; each ability's "Affects allies/self?"): Paint Shells, Showstopper, Shock
+  Bolt, Hot Hands, Blaze, Nanoswarm, Hunter's Fury, Aftershock (and Incendiary / Orbital Strike / Snake Bite / Mosh Pit /
+  FRAG/ment by name) hit the caster's teammates for a third, the player's casts and the bots' alike (and the P2P host's
+  remote casts); never the caster; Boom Bot, Blast Pack and Turret ("No") never hit allies. A teamkill is a death (victim's
+  deaths +1, kill feed) with no kill, kill credits, ult point (caster or victim), damage / assist credit, first blood or TDM
+  score. The player's death ult point is also no longer given for a fall or a Spike death (server step 7 rule). Found on
+  the way: the Alarmbot / Dismiss `hurt` wrapper dropped the attacker, so every bot's damage reached the scoreboard as the
+  player's (and the KILLED BY card logged bot-on-bot damage as the player's); it now passes the attacker through.
+- **Reserve ammo per gun = the wiki** (wiki.playvalorant.com/en-us/<Weapon> infobox "Reserve", retrieved 2026-10-25): every
+  gun carried 3 magazines on the page and the server (valorant-api's weaponStats has no reserve field), e.g. Vandal 75,
+  Odin 300, Operator 15. Now Classic 36, Shorty 6, Frenzy 45, Ghost 39, Sheriff 24, Stinger 60, Spectre 90, Bucky 10,
+  Judge 15, Bulldog 72, Guardian 36, Phantom 60, Vandal 50 (75 -> 50 in v3.0), Marshal 15, Outlaw 10, Operator 10, Ares 100,
+  Odin 200: server `RESERVE` / `reserveOf` (spawn, buy, swap, floor-gun default), page `XRSV` / `xRsv` (buy, round reset,
+  TDM / DM loadouts, floor guns, buy-menu stat card). `work/test_reserve_ammo.cjs` (page table == server table, real page
+  buys), `test-weapons.js`; `test_client_online_gunplay.cjs` next-round refill checks the table (Vandal 25 / 50).
+  `test_floor_pickup.cjs` / `test_tdf_round_reset.cjs` cuts now include `xWOwn` (gate_m9 failures on a4c5e5d) and `xRsv`.
+- **Reyna Leer offline threw `d is not defined`** (gate_m9 on a4c5e5d, test_client_abilities ascent Reyna): the merged Leer
+  windup comment was a `//` line comment on a one-line `bots.forEach` body, so it swallowed the body's declarations. Now a
+  block comment (origin/hark 8dd8565 has the same fix).
+- **Armor v9.10** (wiki.playvalorant.com/en-us/Armor_and_Shield; playvalorant.com patch notes 9.10): Light / Heavy Shields
+  are now **Light Armor** (400, 25, 66%) / **Heavy Armor** (1000, 50, 66%) in the buy menu ("Armor" column), the server's
+  buy / sell / bot autobuy and the soak tool; old names are refused. **Regen Shield** added (650): holds 25, absorbs 100% of
+  a hit before health, refills from a 50 regeneration pool after a delay since its last absorbed hit, the pool carried into
+  the next round by a survivor (re-buying refills it); a death clears it; Heavy / Light replace it, selling restores it.
+  Delay 3 s (beebom.com / gameland.gg / 1v9.gg 9.10 coverage; Riot says "after a brief delay"); refill rate 12.5 / s is
+  inferred (no published figure). Server `ARMOR_BUY` / `RGN` / `armorOwned` / `regenTick` (gun and ability damage),
+  snapshot row [21] = pool (-1 none), `bo` carries `rg`; page `XRGN` (== server), `armAbs` 100% for a Regen Shield,
+  `xRgnTick` (player, bots, allies offline and on the P2P host), HUD green shield icon + pool superscript. TDM Stage 1's
+  Regen Shield (9.11) not modelled. `server/test-spike-edges.js` armor block, `work/test_regen_shield.cjs`, audit.js names.
+- **gate_m9 fix-forwards (a4c5e5d, merged origin/hark)**: the skin preview's WebGLRenderer (work/skins_runtime.js) skipped
+  `xShChk` (test_kill_perf "every renderer goes through xShChk 5/6"); test_spectate_follow's nmNear cut now includes the
+  merged `nmCellNum` numeric cell map.
