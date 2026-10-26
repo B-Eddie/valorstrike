@@ -441,3 +441,19 @@ to the minimum at the very edge). Was: server inner 3 m, linear to 0 at 7 m; off
 - Not changed: offline bot Raze's ult stays the generic 5 m / 150 burst (`xAoe`).
 - Tests: `server/test-ults.js` (table; ssDamage 150 / 150 / 150 / 90 / 0 at 0 / 3.5 / 4 / 5.5 / 7 m, ~30 at the edge),
   `work/test_ability_equip.cjs` (XSS == ULT.rocket, xSsDmg table, rsBoom 150 / 90 / 0 at 3.5 / 5.5 / 7.5 m).
+
+### Killjoy Turret fire (wiki.playvalorant.com/en-us/Turret, fetched 2026-10-25)
+
+Wiki stats: windup (lock) 0.75 s; bursts of three shots, 0.083 s between shots, 1 s between bursts, overall cycle 1.25 s;
+damage per shot 8 within 20 m, 6 from 20 to 35 m, 4 beyond; 50 % tagging slow. Was: server 12 every 0.7 s, no windup;
+offline client 10 every 0.35 s within 25 m, no windup.
+
+- Server: `DEV.turret {windup: .75, shots: 3, gap: .083, cycle: 1.25, near: 20, mid: 35, dmg: [8, 6, 4]}`, `turretDamage(d)`;
+  the turret effect locks on its nearest visible enemy in the 180 degree arc, waits the windup, then fires bursts starting
+  every 1.25 s; losing the target re-arms the windup. Each hit still tags 0.5 s.
+- Client: `XTUR` (same values, asserted equal) / `xTurDmg` in the `J.tur` tick (same state machine); sight range 25 -> 30 m
+  to match the server's 30 m.
+- Not changed: 180 degree arc (wiki detection cone 100 degrees), 2.7 s deploy, 40 m proximity deactivation, 20 s life on the
+  server; range tiers past 30 m never apply on either side (30 m sight).
+- Tests: `server/test-ults.js` (table; tiers; 10 m foe: 0 / 24 / 24 / 48 / 48 / 72 at 0.7 / 1.3 / 1.9 / 2.5 / 3.1 / 3.7 s;
+  25 m: 6 a shot), `work/test_ability_equip.cjs` (XTUR == DEV.turret, tiers, 10 m bot 0 / 24 / 24 / 48 at 0.7 / 1.3 / 1.9 / 2.5 s).

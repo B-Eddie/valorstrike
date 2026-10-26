@@ -8415,13 +8415,14 @@ function okTick(dt) {
   }
   if (J.tur) {
     const T = J.tur; okHitBy(T, dt); if (T.hp <= 0) { okRm(T); J.tur = null; say("Turret destroyed", 800); blip(200, 0.3, "square", 0.12); }
-    else if ((T.cd -= dt) <= 0) {
-      const e = new V(T.p.x, 0.8, T.p.z), tg = bots.filter((b) => { if (!b.alive) return false; const q = b.g.position, vx = q.x - e.x, vz = q.z - e.z, d = Math.hypot(vx, vz); return d < 25 && vx * T.fx + vz * T.fz >= 0 && los(e, new V(q.x, 1.2, q.z)); }).sort((a, b) => a.g.position.distanceTo(e) - b.g.position.distanceTo(e))[0];
-      if (tg) {
-        T.cd = 0.35; const q = new V(tg.g.position.x, 1.2, tg.g.position.z); T.m.rotation.y = Math.atan2(q.x - e.x, q.z - e.z);
-        const m = new THREE.Mesh(beamGeo, fireMat(0xffd23a, 0.85)); m.scale.set(0.3, 0.3, e.distanceTo(q)); m.position.lerpVectors(e, q, 0.5); m.lookAt(q); jFx(m, 0.08);
-        jHit(tg, 10, "Turret"); if (tg.alive) flash(tg); SFX.ab("tShot", T.p);
-      } else T.cd = 0.15;
+    else if ((T.cd -= dt) <= 0) for (let n = 0; n < 4 && T.cd <= 0; n++) { // XTUR: lock windup, then 3-shot bursts every 1.25 s; losing the target re-arms the windup
+      const e = new V(T.p.x, 0.8, T.p.z), tg = bots.filter((b) => { if (!b.alive) return false; const q = b.g.position, vx = q.x - e.x, vz = q.z - e.z, d = Math.hypot(vx, vz); return d < XTUR.range && vx * T.fx + vz * T.fz >= 0 && los(e, new V(q.x, 1.2, q.z)); }).sort((a, b) => a.g.position.distanceTo(e) - b.g.position.distanceTo(e))[0];
+      if (!tg) { T.lock = 0; T.shot = 0; T.cd = 0.15; break; }
+      if (!T.lock) { T.lock = 1; T.shot = 0; T.cd = XTUR.windup; break; }
+      const q = new V(tg.g.position.x, 1.2, tg.g.position.z); T.m.rotation.y = Math.atan2(q.x - e.x, q.z - e.z);
+      const m = new THREE.Mesh(beamGeo, fireMat(0xffd23a, 0.85)); m.scale.set(0.3, 0.3, e.distanceTo(q)); m.position.lerpVectors(e, q, 0.5); m.lookAt(q); jFx(m, 0.08);
+      jHit(tg, xTurDmg(Math.hypot(q.x - e.x, q.z - e.z)), "Turret"); if (tg.alive) flash(tg); SFX.ab("tShot", T.p);
+      if (++T.shot >= XTUR.shots) { T.shot = 0; T.cd += XTUR.cycle - (XTUR.shots - 1) * XTUR.gap; } else T.cd += XTUR.gap;
     }
   }
   if (J.ld) {
@@ -8994,6 +8995,10 @@ try { const r0 = renderer.render.bind(renderer), E = new THREE.Euler(0, 0, 0, "Y
 // (0.5 s windup + 0.5 s damage delay) then 45/s (180 total); a bot's swarm triggers on an enemy within the 5.25 m detection
 // radius. Same values as the server (DEV.nanoswarm).
 const XNANO = { r: 4.5, det: 5.25, active: 5, delay: 1, dps: 45 };
+// Killjoy Turret fire (wiki.playvalorant.com/en-us/Turret): 0.75 s lock windup, bursts of 3 shots 0.083 s apart every 1.25 s,
+// 8 / 6 / 4 per shot within 20 / 35 / beyond m. Same values as the server (DEV.turret / turretDamage); 30 m sight as the server.
+const XTUR = { range: 30, windup: 0.75, shots: 3, gap: 0.083, cycle: 1.25, near: 20, mid: 35, dmg: [8, 6, 4] };
+function xTurDmg(d) { return d < XTUR.near ? XTUR.dmg[0] : d < XTUR.mid ? XTUR.dmg[1] : XTUR.dmg[2]; }
 const XKN = [];
 function xKnClr() { for (const o of XKN) if (o.on) { o.on = false; jRel(o.m); o.m = null; } }
 { const b0 = botAb; botAb = function (b, dt, see, tg, from) { b0(b, dt, see, tg, from);

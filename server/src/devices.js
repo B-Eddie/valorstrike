@@ -6,6 +6,8 @@ import {WINDUP,wf} from './windups.js';
 // Cyber Cage) and Chamber (Trademark, Headhunter) replace the shared generic smoke/slow/fire markers.
 // Intent-only like the ults: position, targets and timing are server state. Values follow the project's
 // lightweight kit interpretation of the original abilities (not datamined numbers).
+// Turret damage per shot by distance (wiki Turret: 0-20 m 8, 20-35 m 6, 35+ m 4).
+export function turretDamage(d){const T=DEV.turret;return d<T.near?T.dmg[0]:d<T.mid?T.dmg[1]:T.dmg[2];}
 export const DEV={
  recon:{pulses:[.9,2.5],radius:20,reveal:1.6},
  reconBolt:{pulses:[.9,2.5],radius:30,reveal:.75},/* wiki Recon_Bolt: radius 30 m, 2 sonar pulses 1 every 1.6 s, 0.75 s reveal each (needs line of sight from the bolt); client XRCN matches */
@@ -14,7 +16,7 @@ export const DEV={
  curveball:{ahead:5,side:2.5,windup:wf('curveball'),blind:1.5,radius:30},/* wiki Curveball: max blind 1.5 s (client jPop 1.5) */
  nanoswarm:{life:120,active:5,delay:1,radius:4.5,damage:45},/* wiki Nanoswarm: radius 4.5 m, 5 s, 1 s activation windup (0.5 s windup + 0.5 s damage delay) then 45/s (180 total); client XNANO */
  alarmbot:{life:120,sight:5.5,speed:5,trigger:1.5,radius:3,vulnerable:4},
- turret:{life:20,range:30,arc:Math.PI/2,damage:12,interval:.7,tag:.5},
+ turret:{life:20,range:30,arc:Math.PI/2,interval:.7,windup:.75,shots:3,gap:.083,cycle:1.25,near:20,mid:35,dmg:[8,6,4],tag:.5},/* wiki Turret: 0.75 s lock windup, bursts of 3 shots 0.083 s apart every 1.25 s, 8 / 6 / 4 per shot to 20 / 35 / beyond m; client XTUR */
  trapwire:{life:120,arm:WINDUP.trapwire,reach:7.5,width:.4,tether:2.5,daze:2.5},
  cage:{life:7.25,h:5},/* wiki Cyber_Cage: 7.25 s, hollow open-ended cylinder r 3.72 m centred on the cage; h: half-height (not on the wiki; client CYCAGE.h) */
  trademark:{life:120,sight:10,arm:.5,armDeploy:WINDUP.trademark,radius:6,field:9.5},
