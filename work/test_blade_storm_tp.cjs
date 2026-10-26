@@ -84,5 +84,22 @@ const fs=require('fs'),vm=require('vm'),path=require('path'),assert=require('ass
  c.mpCliSnap({u:[[4,1,'RJ','Jett',0,0,0,0,100,0,1,'Phantom',1,0,1,0,0,0,0,0,0,-1,1,0,5]]});assert.equal(rb.bsK,0,'fog-hidden row: no knives');
  // death: daggers hidden, gun back for the drop
  rb.bsK=5;c.xUbAnim(rb,M2,0,1/60);assert.equal(M2.gun.visible,false);rb.xm=M2;c.xDie(rb);assert.equal(M2.gun.visible,true,'death drops the gun');assert.equal(M2.btp.g.visible,false);
+ // hk-43 knife-hands raise (user: TP Blade Storm "arms hang low"): on the real Jett rig (server/tools/grip-view.mjs, Sword_Idle upper body) the
+ // installed xBtpHands lifts both hands from the hips to the chest, in front of the shoulders, pitched with the aim; off with the knives.
+ {const hs=src.indexOf('var XBTP_HANDS'),he=src.indexOf('\nif (typeof xUbPost === "function") { const hp0',hs);assert(hs>0&&he>hs,'knife-hands block installed');
+  assert(fs.readFileSync(root+'/index.html','utf8').includes(src.slice(hs,he)),'index.html carries the knife-hands block (rerun install_valorant.py)');
+  const GV=await import('file://'+root+'/server/tools/grip-view.mjs'),api=GV.runtime();vm.runInContext(src.slice(hs,he)+';globalThis.api.xBtpHands=xBtpHands;',api.ctx);
+  const _w=console.warn;console.warn=(...x)=>{if(!/boneTransform/.test(String(x[0])))_w(...x);};
+  const R=await GV.build('jett','vandal',api),{M,X,bone}=R,V=api.ctx.THREE;M.w='Knife';R.play('idle','knife');R.step(30);
+  const loc=n=>M.m.worldToLocal(bone(n).getWorldPosition(new V.Vector3()));
+  const run=(n,pit)=>{X.pit=pit;for(let i=0;i<n;i++){X.poseDt=1/30;api.xUbPre(M);X.mx.update(1/30);api.xUbPost(M);api.xBtpHands(M,1/30);}M.m.updateMatrixWorld(true);};
+  const meas=()=>{const o={};for(const s of ['R','L']){const h=loc(s+'_Hand'),sh=loc(s+'_Shoulder');o[s]={dy:h.y-sh.y,dz:h.z-sh.z};}return o;};
+  run(1,0);const b0=meas();assert(b0.R.dy<-0.3&&b0.L.dy<-0.3,'stock Sword_Idle hands hang low ('+b0.R.dy.toFixed(2)+', '+b0.L.dy.toFixed(2)+')');
+  M.btp={on:true};run(40,0);const a0=meas();
+  for(const s of ['R','L']){assert(a0[s].dy>-0.26&&a0[s].dy<-0.12,s+' hand at chest height, ~0.2 m under the shoulder ('+a0[s].dy.toFixed(2)+')');assert(a0[s].dz>0.22,s+' hand in front of the shoulder ('+a0[s].dz.toFixed(2)+')');}
+  run(40,0.5);const up=meas();assert(up.R.dy>a0.R.dy+0.05&&up.L.dy>a0.L.dy+0.05,'hands rise with an upward aim');
+  run(40,-0.5);const dn=meas();assert(dn.R.dy<a0.R.dy-0.05,'hands lower with a downward aim');
+  M.btp.on=false;run(40,0);const off=meas();assert(off.R.dy<-0.3&&M.btp.hw===0,'knives gone: back to the stock pose');
+  console.warn=_w;console.log('knife hands: stock dy R '+b0.R.dy.toFixed(2)+' -> '+a0.R.dy.toFixed(2)+' (L '+b0.L.dy.toFixed(2)+' -> '+a0.L.dy.toFixed(2)+'), fwd '+a0.R.dz.toFixed(2));}
  console.log('Blade Storm TP: knife throw sound + no gun tracer for remote / bot knives; offline bot knife damage 50/150/42.5 (no x1.3); server row [24] knives (fog 0, burst = several shot events); offline bot 5 knives / kill refill / over at 0; knife hands + gun hidden + one floating dagger per knife pitched with the aim; OverhandThrow per throw, faster burst throw with the fan; tail then gun back; death drops the gun; kunai = real 3D geometry (diamond-section glowing blade, grip, ring, additive edge + trail)');
 })().catch(e=>{console.error(e);process.exit(1);});

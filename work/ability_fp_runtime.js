@@ -438,4 +438,32 @@ if (typeof mpCliSnap === "function") { const c0 = mpCliSnap; mpCliSnap = functio
 if (typeof xDie === "function") { const x0 = xDie; xDie = function (b) { try { if (b && b.xm && !b.xd) xBtpEnd(b, b.xm); } catch (e) {} return x0.apply(this, arguments); }; } // the gun drops (not the daggers)
 (window.XHK = window.XHK || []).push(() => { try { const n = performance.now(), d = XBTP.t0 ? Math.min(0.1, (n - XBTP.t0) / 1000) : 0; XBTP.t0 = n; if (XBTP.live.length) xBtpTick(d); } catch (e) {} });
 window.xBladeTP = { XBTP, XBTP_SLOT, ring: xBtpRing, k: xBtpK };
+// hk-42 (user: TP Blade Storm "arms hang low"): the native Sword_Idle upper body holds the hands down at the hips, so a third-person
+// Jett with her knives out looked unarmed with daggers floating in front of her belt. In Valorant her Blade Storm stance raises both
+// hands in front of the chest, elbows bent and out, palms down and fingers open, the kunai hovering around them. Now, after the
+// stock pose + grip pass (xUbPost), a unit with knives out solves both arms (the grip's two-bone IK, xgIK / xgHandQ / xgCurl on the
+// arm + finger bones it already restores before each mixer pass) to XBTP_HANDS: hands 0.32 m ahead of and 0.2 m below the
+// shoulders, 0.04 m outside them, pitched with the aim (x0.6), palms down, knuckles forward and a little out, fingers open (rest).
+// Blends in over ~0.15 s; during a throw (OverhandThrow) it eases to 0.2 so the throwing arm still swings; off with the knives.
+var XBTP_HANDS = { fwd: 0.32, down: 0.2, out: 0.04, pit: 0.6, rate: 9, thr: 0.2 };
+function xBtpHandT(n) { // pure (tests): agent-frame hand offsets from each shoulder at aim pitch n -> {R:[x,y,z], L:[x,y,z]}
+  const H = XBTP_HANDS, p = Math.max(-1.2, Math.min(1.2, n || 0)) * H.pit, c = Math.cos(p), s = Math.sin(p), y = -H.down, z = H.fwd;
+  const yy = y * c + z * s, zz = -y * s + z * c; return { R: [-H.out, yy, zz], L: [H.out, yy, zz] };
+}
+function xBtpHands(M, dt) {
+  const R = M.btp, X = M.sx; if (!R || !X || !X.sc || X.dd || M.dead || !M.valorant) return;
+  const want = R.on ? (X.uo === "throw" ? XBTP_HANDS.thr : 1) : 0; R.hw = (R.hw || 0) + (want - (R.hw || 0)) * Math.min(1, (dt || 1 / 60) * XBTP_HANDS.rate);
+  if (R.hw < 0.01) { R.hw = 0; return; }
+  const G = X.grip || (typeof xgSetup === "function" ? xgSetup(M) : null); if (!G || !G.ok) return;
+  const sv = R.hsv || (R.hsv = new Map()); for (const bn of G.R.bones.concat(G.L.bones)) { let q = sv.get(bn); if (!q) sv.set(bn, (q = new THREE.Quaternion())); q.copy(bn.quaternion); }
+  const root = M.m; root.updateWorldMatrix(true, false); const rq = xgWorldQ(root, R.hq || (R.hq = new THREE.Quaternion()));
+  const V = R.hv || (R.hv = Array.from({ length: 6 }, () => new THREE.Vector3())), ax = (x, y, z, o) => o.set(x, y, z).applyQuaternion(rq), T = xBtpHandT(X.pit || 0), hq = R.hq2 || (R.hq2 = new THREE.Quaternion());
+  for (const [A, o, sd] of [[G.R, T.R, -1], [G.L, T.L, 1]]) {
+    const t = A.up.getWorldPosition(V[0]).add(ax(o[0], o[1], o[2], V[1]));
+    const k = ax(sd * 0.25, 0.1, 1, V[2]).normalize(), n = ax(0, -1, 0.15, V[3]).normalize(); xgHandQ(A, k, n, hq);
+    xgIK(A, t, ax(sd * 0.8, -1, -0.25, V[4]).normalize(), G); xgSetWorldQ(A.hand, hq); xgCurl(A, XBTP_HANDS.curl || (XBTP_HANDS.curl = {}), k, n);
+  }
+  if (R.hw < 0.999) for (const [bn, q] of sv) { bn.quaternion.slerp(q, 1 - R.hw); bn.updateMatrixWorld(true); }
+}
+if (typeof xUbPost === "function") { const hp0 = xUbPost; xUbPost = function (M) { hp0.apply(this, arguments); try { if (M && M.btp) xBtpHands(M, M.sx && M.sx.poseDt); } catch (e) { XBTP.err = String(e); } }; }
 // ---- END ABILITY FIRST PERSON ----
