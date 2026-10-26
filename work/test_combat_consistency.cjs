@@ -17,9 +17,11 @@ assert.ok(Math.max(...Object.values(table.maxAgentDeviation))<.08,'one shared ta
  for(const [n,w]of Object.entries(W))assert.equal(c.xPen(n),c.XPN[tier[w.wallPenetration.split('::')[1]]],n+' penetration tier');
  assert.deepEqual(JSON.parse(JSON.stringify(c.XPN)),{H:{t:.6,k:.75},M:{t:.35,k:.5},L:{t:.15,k:.5}});}
 {const s=fs.readFileSync(path.join(root,'server/src/simulation.js'),'utf8');assert(s.includes("PENETRATION={High:{t:.6,k:.75},Medium:{t:.35,k:.5},Low:{t:.15,k:.5}}"),'server tier sizes');}
-// 3. Smoke: server LOS sphere equals the rendered smoke (radius-4 SphereGeometry 1.8 m above the floor).
+// 3. Smoke: server LOS sphere equals the rendered smoke (radius-4 SphereGeometry 1.8 m above the floor, scaled per ability:
+// client XSMR == server SMOKE.r, wiki Cloudburst 3.35 / Dark Cover 4.1 / Cyber Cage 3.72 m).
 assert(html.includes('smokeGeo = new THREE.SphereGeometry(4, 22, 16)')&&html.includes('m.position.set(x, 1.8, z); scene.add(m); J.smokes.push'));
-{const s=fs.readFileSync(path.join(root,'server/src/abilities.js'),'utf8');assert(s.includes('export const SMOKE={radius:4,lift:1.7}'),'server smoke volume');}
+{const s=fs.readFileSync(path.join(root,'server/src/abilities.js'),'utf8'),m=s.match(/export const SMOKE=\{radius:4,lift:1\.7,r:(\{[^}]*\})/);assert(m,'server smoke volume');
+ const cm=html.match(/const XSMR = (\{[^}]*\});/);assert(cm,'client XSMR');const j=t=>JSON.stringify(Function('return '+t)());assert.equal(j(m[1]),j(cm[1]),'client XSMR == server SMOKE.r');}
 // 4. Online: replayed enemy casts are visual only; statuses come from the server; remote rows drive crouch.
 {const a=net.indexOf('// Combat consistency (#10)'),b=net.indexOf('// Floor weapons (#4)');assert(a>0&&b>a);
  const calls=[],white=[],c={NET:{socket:{}},MP:{me:1},J:{smokes:[]},player:{hp:100},bots:[],allies:[],

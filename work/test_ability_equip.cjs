@@ -148,7 +148,21 @@ const fails=[];const fail=s=>{fails.push(s);if(VERBOSE)console.log('FAIL',s);};c
   xe('netSyncEffects([{id:78,kind:"cb",o:MP.me,p:[1,2,3],s:0}]);true');eq(xe('[netCbs.has(77),netCbs.has(78)]'),[false,false],'gone row dropped; own Cloudburst (flown locally) skipped');
   eq(xe('netSyncEffects([{id:79,kind:"cb",o:-5,p:[NaN,2,3],s:0},{id:"x",kind:"cb",p:[1,2,3]}]),netCbs.size'),0,'junk cb rows ignored');
   xe('J.smokes.forEach(s=>s.t=0.01);true');await adv(200);}
+ // ---- Cypher Neural Theft offline (wiki: 18 m reach, reveals at 2 s and 6 s after the cast; same as server ULT.theft) ----
+ await live();{pick('Cypher');await adv(200);eq(xe('[CYNT.reach,CYNT.at,CYNT.reveal]'),[18,[2,6],1.6],'client CYNT table');
+  const far=xe('(()=>{const al=bots.filter(b=>b.alive&&b.g),dd=bots.filter(b=>!b.alive&&b.g);if(!dd.length&&al.length>1)dd.push(al.shift()),dd[0].alive=false;if(!dd.length||!al.length)return null;dd.forEach((b,i)=>{b.g.position.x=player.x+(i?100:19);b.g.position.z=player.z;});al.forEach(b=>{b.g.position.x=player.x;b.g.position.z=player.z-60;});return true;})()');
+  if(!far)fail('Neural Theft: no bot to fall');else{
+   const tx=async()=>{await tap('KeyX');await adv(600);await click(0);for(let i=0;i<10&&xe('J.ult')>0;i++)await adv(20);};// X equips (0.5 s draw), FIRE casts
+   xe('J.ult=K().u;jUnreveal();true');await tx();eq(xe('J.ult'),xe('K().u'),'corpse at 19 m: not cast, ult kept');if(xe('!!J.eq'))await tap('KeyX');await adv(500);
+   xe('(()=>{const c=bots.find(b=>!b.alive&&b.g&&Math.abs(b.g.position.x-player.x-19)<0.01);c.g.position.x=player.x+17;})();jUnreveal();true');await tx();eq(xe('J.ult'),0,'corpse at 17 m: cast');
+   // page clock (performance.now, which drives the page timers and frames) from the cast
+   const t0=xe('performance.now()'),at=async ms=>{while(xe('performance.now()')-t0<ms)await adv(20);};
+   eq(xe('J.rvT>0'),false,'no reveal at the cast');await at(1900);eq(xe('J.rvT>0'),false,'no reveal before 2 s');
+   await at(2100);eq(xe('J.rvT>0&&J.rv.length>0'),true,'first reveal at 2 s');await at(3800);eq(xe('J.rvT>0'),false,'first reveal over (1.6 s)');
+   await at(5900);eq(xe('J.rvT>0'),false,'no reveal before 6 s');await at(6100);eq(xe('J.rvT>0&&J.rv.length>0'),true,'second reveal at 6 s');
+   // a cast whose pulses are still pending when the round clears never reveals in the next round
+   xe('J.ult=K().u;jUnreveal();true');await tx();eq(xe('J.ult'),0,'second cast');xe('bcClear();jUnreveal();true');{const t1=xe('performance.now()');while(xe('performance.now()')-t1<6300)await adv(50);}eq(xe('J.rvT>0'),false,'round clear cancels pending reveals (none through 6.3 s)');}}
  if(xe('XEQV.err||null'))fail('ability viewmodel error: '+xe('XEQV.err'));
  if(H.errors.length>errs0)fail('page errors: '+H.errors.slice(errs0).map(e=>String(e&&e.message||e)).join(' | '));
- if(fails.length){console.log(fails.join('\n'));process.exit(1);}console.log('ability equip: binds, migration, HUD labels, equip -> fire flow, first-person equip viewmodel, wiki equip times + windups, Sova bow charge + bounces, Fault Line hold-to-extend, Hot Hands spread, Cloudburst flight + steering, per-ability smoke radii, kit table ok');process.exit(0);
+ if(fails.length){console.log(fails.join('\n'));process.exit(1);}console.log('ability equip: binds, migration, HUD labels, equip -> fire flow, first-person equip viewmodel, wiki equip times + windups, Sova bow charge + bounces, Fault Line hold-to-extend, Hot Hands spread, Neural Theft 18 m / 2 s + 6 s, Cloudburst flight + steering, per-ability smoke radii, kit table ok');process.exit(0);
 })().catch(e=>{console.error(e);process.exit(1);});
