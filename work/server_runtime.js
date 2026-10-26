@@ -159,16 +159,6 @@ const netHeader=document.querySelector('.x-qon__h small');if(netHeader)netHeader
 // server's hit volumes are crouched. Replayed enemy casts are visual only online: blind, nearsight and concussion
 // come from the server's private status (mpCliRS), never from the local replay's own range/facing guesses.
 const netPose0=mpCliSnap;mpCliSnap=function(m){const r=netPose0.apply(this,arguments);if(NET.socket&&m&&Array.isArray(m.u)){const all=bots.concat(allies);for(const e of m.u){if(!Array.isArray(e)||e[0]===MP.me)continue;const u=all.find(x=>x.nid===e[0]);if(!u)continue;if(Number.isFinite(e[17]))u.cr=e[17]>.5;if(Number.isFinite(e[18]))u.np=e[18];}}return r;};
-// Fog of war (server fog.js): an enemy row the server flags hidden ([22] = 1: no position, aim, HP or ammo) leaves the
-// enemy known (scoreboard, alive pips, kill feed) but not drawn: before the page reads the row its position is pinned to
-// where the enemy was last drawn (no jump toward 0,0,0); after, the model leaves the scene, its interpolation buffer is
-// emptied and u.fog is set (shots, the minimap and name tags skip it). Its first relevant row brings it back where it is.
-function netFogPre(m){if(!NET.socket||!m||!Array.isArray(m.u))return;const all=bots.concat(allies);for(const e of m.u){if(!Array.isArray(e)||e[0]===MP.me)continue;const u=all.find(x=>x.nid===e[0]);if(e[22]===1){if(u&&u.g){e[4]=u.g.position.x;e[5]=u.g.position.y;e[6]=u.g.position.z;e[7]=u.g.rotation.y;u.fog=1;/* before the page's event loop: no shot sound at a stale spot */}}else if(u&&u.fog){u.fog=0;if(u.nb)u.nb.length=0;u.fogBack=1;}}}
-function netFogPost(m){if(!NET.socket||!m||!Array.isArray(m.u))return;const all=bots.concat(allies);for(const e of m.u){if(!Array.isArray(e)||e[0]===MP.me)continue;const u=all.find(x=>x.nid===e[0]);if(!u)continue;
-  if(e[22]===1){u.fog=1;u.fogBack=0;if(u.nb)u.nb.length=0;if(u.g&&u.g.parent)u.g.parent.remove(u.g);}
-  else if(u.fogBack){u.fogBack=0;if(u.alive&&u.g){u.g.position.set(e[4],e[5]||0,e[6]);u.g.rotation.y=e[7];if(u.g.parent!==scene)scene.add(u.g);}}}}
-const netFog0=mpCliSnap;mpCliSnap=function(m){netFogPre(m);const r=netFog0.apply(this,arguments);netFogPost(m);return r;};
-const netFogMk0=mpMkUnit;mpMkUnit=function(e){const u=netFogMk0.apply(this,arguments);if(NET.socket&&u&&Array.isArray(e)&&e[22]===1){u.fog=1;if(u.nb)u.nb.length=0;if(u.g&&u.g.parent)u.g.parent.remove(u.g);}return u;};
 let netFxReplay=0,netFxPoint=null;
 const netMpFx0=mpFx;mpFx=function(u,ag,k,o,d,auth,p){if(!NET.socket)return netMpFx0.apply(this,arguments);netFxReplay++;netFxPoint=p&&Number.isFinite(p.y)?p.y:null;try{return netMpFx0.apply(this,arguments);}finally{netFxReplay--;netFxPoint=null;}};
 const netPNs0=pNs;pNs=function(){if(NET.socket&&netFxReplay)return;return netPNs0.apply(this,arguments);};
@@ -196,6 +186,16 @@ addEventListener('keydown',e=>{if(!(NET.socket&&MP.st==='game'&&MP.m5)||xKbSkip(
  if(e.code==='KeyF'){const d=xdLook([...netFloor.values()]);if(d){netSend({t:'pick',id:d.id});e.stopImmediatePropagation();}return;}
  if(e.code==='KeyG'){if(FV.sp&&FV.sp.st==='carry'&&FV.sp.c===player&&!(FV.buy>0))return;/* the Spike can't be dropped in the buy phase (server), so a carrier's G drops the held gun for a teammate then */if(rw==='pri'&&FV.pri){netSend({t:'dropw'});e.stopImmediatePropagation();}}},true);
 
+// Fog of war (server fog.js): an enemy row the server flags hidden ([22] = 1: no position, aim, HP or ammo) leaves the
+// enemy known (scoreboard, alive pips, kill feed) but not drawn: before the page reads the row its position is pinned to
+// where the enemy was last drawn (no jump toward 0,0,0); after, the model leaves the scene, its interpolation buffer is
+// emptied and u.fog is set (shots, the minimap and name tags skip it). Its first relevant row brings it back where it is.
+function netFogPre(m){if(!NET.socket||!m||!Array.isArray(m.u))return;const all=bots.concat(allies);for(const e of m.u){if(!Array.isArray(e)||e[0]===MP.me)continue;const u=all.find(x=>x.nid===e[0]);if(e[22]===1){if(u&&u.g){e[4]=u.g.position.x;e[5]=u.g.position.y;e[6]=u.g.position.z;e[7]=u.g.rotation.y;u.fog=1;/* before the page's event loop: no shot sound at a stale spot */}}else if(u&&u.fog){u.fog=0;if(u.nb)u.nb.length=0;u.fogBack=1;}}}
+function netFogPost(m){if(!NET.socket||!m||!Array.isArray(m.u))return;const all=bots.concat(allies);for(const e of m.u){if(!Array.isArray(e)||e[0]===MP.me)continue;const u=all.find(x=>x.nid===e[0]);if(!u)continue;
+  if(e[22]===1){u.fog=1;u.fogBack=0;if(u.nb)u.nb.length=0;if(u.g&&u.g.parent)u.g.parent.remove(u.g);}
+  else if(u.fogBack){u.fogBack=0;if(u.alive&&u.g){u.g.position.set(e[4],e[5]||0,e[6]);u.g.rotation.y=e[7];if(u.g.parent!==scene)scene.add(u.g);}}}}
+const netFog0=mpCliSnap;mpCliSnap=function(m){netFogPre(m);const r=netFog0.apply(this,arguments);netFogPost(m);return r;};
+if(typeof mpMkUnit==='function'){const netFogMk0=mpMkUnit;mpMkUnit=function(e){const u=netFogMk0.apply(this,arguments);if(NET.socket&&u&&Array.isArray(e)&&e[22]===1){u.fog=1;if(u.nb)u.nb.length=0;if(u.g&&u.g.parent)u.g.parent.remove(u.g);}return u;};}/* guarded: test sandboxes slice this file without the page */
 // Online soul resources and buff presentation follow private server round state.
 const netSouls=new Map();
 function netReynaClear(){for(const m of netSouls.values()){scene.remove(m);m.material.dispose();}netSouls.clear();}

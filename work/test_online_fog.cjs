@@ -6,7 +6,7 @@
 const fs=require('fs'),vm=require('vm'),assert=require('node:assert/strict'),path=require('path');
 const root=path.join(__dirname,'..'),page=fs.readFileSync(path.join(root,'index.html'),'utf8'),rt=fs.readFileSync(path.join(root,'work/server_runtime.js'),'utf8');
 const base=page.slice(page.indexOf('function mpCliSnap(m) {'),page.indexOf('function mpCliSelf(e) {'));
-const fog=rt.slice(rt.indexOf('function netFogPre('),rt.indexOf('let netFxReplay=0'));
+const fog=rt.slice(rt.indexOf('function netFogPre('),rt.indexOf('// Online soul resources'));
 assert.ok(base.length>500&&fog.includes('netFogPost'),'slices found');
 const live=new Set();const V=()=>({x:0,y:0,z:0,set(x,y,z){this.x=x;this.y=y;this.z=z;return this;}});
 const scene={add(g){live.add(g);g.parent=scene;},remove(g){live.delete(g);if(g.parent===scene)g.parent=null;}};
