@@ -12,8 +12,9 @@
 //     (leader only, live to every member, new unit ids, map change loads the world), queue countdown seen by members, a mode
 //     change / leader cancel / leader leaving cancels it, the queued start uses the selected mode and map.
 import assert from 'node:assert/strict';
-import {EscalationSimulation,VariantSpikeSimulation,ESC_LEVELS,SR_LOADOUT,createSim} from './src/modes.js';
-import {Simulation} from './src/simulation.js';
+import {EscalationSimulation,VariantSpikeSimulation,ESC_LEVELS,ESC_PACK,SR_LOADOUT,createSim} from './src/modes.js';
+import {Simulation,reserveOf,weapons} from './src/simulation.js';
+import {fogView} from './src/fog.js';
 import {SpikeSimulation} from './src/spike.js';
 import kits from './src/kits.json' with {type:'json'};
 import {localCluster} from './tools/local-cluster.mjs';
@@ -35,6 +36,20 @@ let seed=1;const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647;
  const t=new EscalationSimulation(W,'esc','ascent',rnd);t.add('A');t.add('C');t.start(false);t.onGunKill(t.units[1],t.units[0]);t.remaining=.01;t.step(.05);assert.equal(t.phase,'post');assert(t.scores[1]>t.scores[0],'time out: furthest along wins');
  const snap=s.snapshot();assert.deepEqual(snap.esc.lv,[12,0]);assert.equal(snap.esc.w[1],'Odin');
  note('escalation: Odin..Knife, 7 points / level (0.5 behind), kill-gated individual level, level-locked weapon, 5 s protection ends on move, Knife kill or time ends it');}
+// ---- 1b. Escalation health packs (wiki Escalation: each death drops a pack on the body for 10 s, full health / shields / ammo) ----
+{seed=3;const s=new EscalationSimulation(W,'esc','ascent',rnd),a=s.add('A','Jett'),b=s.add('C','Sage'),c=s.add('B','Sova');s.start(false);
+ assert.deepEqual({...ESC_PACK},{life:10,hp:100,armor:50,r:.5,cap:100,armorCap:50,ammo:true});
+ const park=(u,x,z)=>Object.assign(u,{x,y:0,z,vx:0,vz:0,vy:0,input:{},inputAt:-9,loading:false});park(a,0,-30);park(b,20,-10);park(c,-20,-10);
+ b.hp=0;b.alive=false;b.deaths++;b.lastKiller=a.id;b.respawnAt=s.time+60;s.step(.05);assert.equal(s.packs.length,1,'an Escalation death drops a pack');const k=s.packs[0];assert.deepEqual([k.x,k.z],[20,-10]);
+ const sn=s.snapshot();assert(Array.isArray(sn.hpk)&&sn.hpk.length===1&&sn.hpk[0][6]>9.8&&sn.hpk[0][6]<=10,'snapshot hpk row, 10 s left');
+ const g=c.weapon;park(c,20,-10);c.hp=100;c.armor=50;c.ammo=1;c.reserve=0;c.inventory[g]=1;c.reserves[g]=0;c.reloadAt=s.time+1;s.step(.05);assert.equal(s.packs.length,0,'full health, gun not full: taken');
+ assert.equal(c.ammo,weapons[g].magazineSize,'magazine refilled');assert.equal(c.reserve,reserveOf(g),'reserve refilled');assert.equal(c.reloadAt,0,'reload cancelled');
+ b.alive=true;b.hp=100;park(b,20,-10);b.hp=0;b.alive=false;b.deaths++;s.step(.05);assert.equal(s.packs.length,1);park(c,20,-10);c.hp=100;c.armor=50;s.step(.05);assert.equal(s.packs.length,1,'full health / armour / ammo: the pack stays');
+ c.hp=7;c.armor=0;s.step(.05);assert.equal(s.packs.length,0);assert.deepEqual([c.hp,c.armor],[100,50],'full restore');
+ b.alive=true;park(b,20,-10);b.hp=0;b.alive=false;b.deaths++;s.step(.05);park(c,-20,-10);for(let i=0;i<196;i++)s.step(.05);assert.equal(s.packs.length,1,'still there before 10 s');for(let i=0;i<6;i++)s.step(.05);assert.equal(s.packs.length,0,'gone after 10 s');
+ assert.equal(fogView(s,sn,a).hpk?.length,1,'killer sees it through fog');
+ {const t=new Simulation(W,'tdm','ascent',()=>.5);t.add('p','Jett',true);t.start(false);assert.equal(t.snapshot().hpk,undefined,'still no packs in TDM');}
+ note('escalation packs: a death drops one (10 s), full health / armour + magazine and reserve, taken at full health when a gun is not full, fog-filtered hpk rows');}
 // helpers for the Spike variants
 const mk=(gm,agents=['Jett','Sova','Sage','Omen'])=>{seed=7;const s=new VariantSpikeSimulation(W,gm,'ascent',rnd);const u=agents.map((g,i)=>s.add('P'+i,g,true));s.start(false);return {s,u};};
 const next=(s,w)=>{s.finishRound(w,'Attackers eliminated');for(let i=0;i<200&&s.roundDelay>0&&s.phase==='game';i++)s.step(.05);};

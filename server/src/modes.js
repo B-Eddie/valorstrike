@@ -23,9 +23,16 @@ export const ESC_LEVELS=Object.freeze(['Odin','Ares','Spectre','Judge','Bulldog'
 // Wiki: 7 team points per level; a kill by a player on the team's current level is 1 point, on a previous level 0.5; 10 minutes;
 // respawn at a random spot, protected 5 s or until moving. The last (Knife) level ends on 1 point, as the offline page plays it.
 export const ESC=Object.freeze({need:7,last:1,current:1,behind:.5,seconds:600,protect:5});
+// Escalation health packs (wiki.playvalorant.com/en-us/Escalation: a kill "drops a health pack on the victim's body that lasts for 10
+// seconds and can be picked up to fully restore the user's health, shields, and ammo"; playvalorant.com "New VALORANT mode: Escalation"
+// (2021-02-16): "Every death drops a health pack that expires after 10 seconds"). Same pickup as fog-spec-3's Deathmatch packs
+// (Simulation.packTick: one pack at the victim's feet, 0.5 m sphere + 0.35 m capsule, within 1.8 m vertically, not out of bounds),
+// with Escalation's numbers: 10 s, health to 100 and armour to 50 (full: the 100 / 50 cap), the weapon's magazine + reserve
+// refilled; a unit at full health / armour still takes it when its gun is not full.
+export const ESC_PACK=Object.freeze({life:10,hp:100,armor:50,r:.5,cap:100,armorCap:50,ammo:true});
 export const escNeed=lv=>lv>=ESC_LEVELS.length-1?ESC.last:ESC.need;
 export class EscalationSimulation extends Simulation{
- constructor(world,mode='esc',map='ascent',random=Math.random){super(world,'esc',map,random);this.gm='esc';this.matchLen=ESC.seconds;this.remaining=ESC.seconds;this.maxKills=Infinity;this.esc={lv:[0,0],pt:[0,0]};}
+ constructor(world,mode='esc',map='ascent',random=Math.random){super(world,'esc',map,random);this.gm='esc';this.packRule=ESC_PACK;this.matchLen=ESC.seconds;this.remaining=ESC.seconds;this.maxKills=Infinity;this.esc={lv:[0,0],pt:[0,0]};}
  escWeapon(u){const t=u.team===1?1:0,lv=Math.min(u.escLv??0,this.esc.lv[t],ESC_LEVELS.length-1);return ESC_LEVELS[lv];}
  add(name,agent,human,want){const u=super.add(name,agent,human,want);u.escLv=Math.min(this.esc.lv[u.team===1?1:0],ESC_LEVELS.length-1);u.escK=false;this.arm(u);return u;}
  // Give u its level's weapon, full magazine and reserve (the only weapon besides the knife).
