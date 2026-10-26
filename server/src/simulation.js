@@ -1,7 +1,7 @@
 import Motor from './motor.cjs';
 import {path,prepare} from './path.js';
 import {rayHit} from './hitboxes.js';
-import {persona,aimError,strafe,flankNode,variedPath,spaceLook} from './bots.js';
+import {persona,aimError,strafe,flankNode,variedPath,spaceLook,engage,crosshairErr,trigger} from './bots.js';
 import calibration from './weapons.json' with {type:'json'};
 // Armor absorbs 66 %: float leftovers (54.00000000000001 hp read as 55 by Math.ceil, a 1e-14 hp survivor) are snapped to 1e-6.
 export const snapHp=n=>Math.round(n*1e6)/1e6;
@@ -98,13 +98,18 @@ export class Simulation{
   if(u.aimTarget!==target.id){u.aimTarget=target.id;u.aimHead=P.r()<P.head;}
   const aimY=target.y+(u.aimHead?1.62-(target.ch||0):1.1-(target.ch||0)*.5),eye=u.y+1.6-(u.ch||0),dy=aimY-eye;
   const see=dist<55&&this.canSee(u,target,[u.x,eye,u.z],[target.x,aimY,target.z]);u.sawTarget=see;
-  if(see){if(!u.engagedAt){u.engagedAt=this.time;if(!(u.reactionAt>0))u.reactionAt=this.time+P.react;}const engaged=this.time-u.engagedAt,[ey,ep]=aimError(P,this.time,engaged);u.look=Math.atan2(-dx,-dz)+ey;u.pitch=Math.atan2(dy,dist)+ep;
-   u.input.fire=this.time>(u.reactionAt||0);if(weapons[u.weapon].fireMode==='EWeaponFireModeDisplayType::SemiAutomatic'&&this.time>=u.fireAt)u.triggerHeld=false;
-   // Engagement range preference: entries close in, anchors hold, others keep their band.
-   u.input.forward=dist>P.range[1]?1:dist<P.range[0]?-.6:0;u.input.side=dist<30?strafe(this,u,P):0;
-   if(P.crouch&&dist<P.crouchRange&&engaged>.25&&u.input.fire)u.input.duck=true;
+  if(see){/* a new fight: reaction drawn 180-320 ms around this bot's mean, crosshair error that settles (smaller when the crosshair was already on the angle) */if(!u.engagedAt){u.engagedAt=this.time||1e-6;const want=Math.atan2(-dx,-dz),off=Math.abs(Math.atan2(Math.sin(want-(u.look||0)),Math.cos(want-(u.look||0))));u.reactionAt=this.time+engage(this,u,P,off<.35);}
+   const engaged=this.time-u.engagedAt,[ey,ep]=aimError(P,this.time,engaged),xe=crosshairErr(u,P,engaged);u.look=Math.atan2(-dx,-dz)+ey+xe[0];u.pitch=Math.atan2(dy,dist)+ep+xe[1];
+   // trigger discipline: taps far, bursts mid, sprays close, with pauses between (not one endless spray)
+   const Wp=weapons[u.weapon]||{},auto=Wp.fireMode!=='EWeaponFireModeDisplayType::SemiAutomatic';u.input.fire=this.time>(u.reactionAt||0)&&trigger(this,u,P,dist,auto,Wp.fireRate);if(!auto&&this.time>=u.fireAt)u.triggerHeld=false;
+   // Engagement range preference: entries close in, anchors hold, others keep their band. Taps / bursts past 8 m are
+   // shot standing still (counter-strafe), strafing between them; low-HP patient bots back out of the fight.
+   const stop=u.input.fire&&u.stopShoot&&dist>8&&!(u.firePat&&u.firePat.kind==='spray');
+   u.input.forward=stop?0:dist>P.range[1]?1:dist<P.range[0]?-.6:0;u.input.side=stop?0:dist<30?strafe(this,u,P):0;
+   if(u.hp<35&&P.brain.patience>.55&&!u.input.fire)u.input.forward=-1;
+   if(u.crouchFight&&dist<P.crouchRange+4&&engaged>.2&&u.input.fire&&!(u.firePat&&u.firePat.kind==='tap'))u.input.duck=true;
    u.route=null;u.via=-1;if(u.ammo===0&&!u.reloadAt)this.command(u,{t:'reload'});this.botUtility(u,target,dist,P,engaged);return;}
-  u.engagedAt=0;u.reactionAt=this.time+P.react*(dist>30?1.25:1);u.pitch=0;if(this.objectiveRoutes)return;/* Spike routes bots to the objective itself (goalPath); a hunt route to the nearest enemy every tick was thrown away */
+  u.engagedAt=0;u.reactionAt=0;u.xhE=null;u.pitch=0;if(this.objectiveRoutes)return;/* Spike routes bots to the objective itself (goalPath); a hunt route to the nearest enemy every tick was thrown away */
   // Holders pause in place between pushes; the pause length and spacing come from the bot's own stream.
   if(P.hold>0&&!(this.time<u.nextHoldAt)){u.nextHoldAt=this.time+2+P.r()*3.5;if(P.r()<P.hold)u.holdUntil=this.time+1+P.r()*1.8;}if(u.holdUntil>this.time)return;
   if(!u.route||u.routeAt<this.time||u.route.length<2){const via=P.flank&&dist>12?(u.via>=0&&u.viaTarget===target.id?u.via:flankNode(this,u,target)):-1;u.via=via;u.viaTarget=target.id;const goal=via>=0?via:W.near(target.x,target.z,target.y);u.route=variedPath(this,u,W.near(u.x,u.z,u.y),goal,path);u.routeAt=this.time+P.repath;}

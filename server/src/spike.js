@@ -5,7 +5,8 @@ import {Simulation,weapons,reserveOf,armorItem,armorOwned,regenTick,tagMul} from
 import Motor from './motor.cjs';
 import kits from './kits.json' with {type:'json'};
 import {path} from './path.js';
-import {persona,flankNode,plan,spotNear,variedPath,spaceLook} from './bots.js';
+import {persona,flankNode,plan,spotNear,variedPath,spaceLook,strategy,stageNode,roundTime,botSeed} from './bots.js';
+import BotBrain from '../../vendor/bot-brain.cjs';
 import {initAbilities,buyAbility,castAbility,tickAbilities,smokeBlocks,sightClear,types,rewardAbilityKill,gainUlt,barrierBlocked,nearestBarrier} from './abilities.js';
 // VALORANT round phases (wiki.playvalorant.com/en-us/Unrated): buy phase 30 s, 45 s for the first buy phase of each half and
 // of overtime / endgame (rounds 1, 13, 25); post-round phase 7 s.
@@ -31,8 +32,14 @@ export class SpikeSimulation extends Simulation{
  // Overtime: every player starts each overtime round 3 ult points short of their ultimate
  // (wiki.playvalorant.com/en-us/Competitive: every overtime round: 5000 credits and ultimate points "set to being 3 short").
  if(this.round>=25)for(const u of this.units)if(u.ability)u.ability.ult=Math.max(0,(kits[u.agent]||kits.Jett).u-3);
- const carrier=this.units.filter(u=>u.team===this.atk).sort((a,b)=>a.id-b.id)[0];this.spike={st:'carry',carrier:carrier?.id,x:carrier?.x||0,y:carrier?.y||0,z:carrier?.z||0,t:45,pt:0,dt:0,site:Object.keys(this.world.map.sites)[this.round%Object.keys(this.world.map.sites).length]};this.roundEvents.push({t:'rd'});}
- autoBuy(u){const budget=u.credits;if(budget>=3900){this.command(u,{t:'buy',n:'Vandal'});this.command(u,{t:'buy',n:'Heavy Armor'});}else if(budget>=2000){this.command(u,{t:'buy',n:'Spectre'});if(u.credits>=400)this.command(u,{t:'buy',n:'Light Armor'});}else if(budget>=400)this.command(u,{t:'buy',n:'Light Armor'});}
+ const carrier=this.units.filter(u=>u.team===this.atk).sort((a,b)=>a.id-b.id)[0];this.spike={st:'carry',carrier:carrier?.id,x:carrier?.x||0,y:carrier?.y||0,z:carrier?.z||0,t:45,pt:0,dt:0,site:Object.keys(this.world.map.sites)[this.round%Object.keys(this.world.map.sites).length]};/* bot attackers: the site comes from the round strategy (seeded, weighted away from recent sites), not round % sites */if(this.units.some(u=>!u.human&&u.team===this.atk))this.spike.site=strategy(this,this.atk).plan.site;this.roundEvents.push({t:'rd'});}
+ // Bot buys follow a team economy call for the round (pistol / full / half / force / eco / save from every bot's credits and
+ // the loss streak, vendor/bot-brain.cjs) and each bot's own pick inside it (Vandal or Phantom, an Operator for patient
+ // players, Judge / Odin on defence, Sheriff / Ghost ecos), so bots no longer all buy the same thing on the same money.
+ autoBuy(u){const team=u.team,k=this.round+'|'+team;this.teamCall||(this.teamCall={});this._callK||(this._callK={});
+  if(this._callK[team]!==k){this._callK[team]=k;const cr=this.units.filter(v=>!v.human&&v.team===team).map(v=>v.credits);this.teamCall[team]=BotBrain.teamBuy(cr,this.losses[team]||0,this.round,BotBrain.rng(BotBrain.hash(botSeed(this)+'|buy|'+this.map+'|'+k)),12);}
+  const P=persona(this,u),b=BotBrain.buyFor(this.teamCall[team],u.credits,P.brain,BotBrain.rng(BotBrain.hash(botSeed(this)+'|'+u.name+'|'+u.id+'|'+k)),team!==this.atk);u.buyCall=this.teamCall[team];
+  if(b.armor)this.command(u,{t:'buy',n:b.armor==='heavy'?'Heavy Armor':'Light Armor'});if(b.side)this.command(u,{t:'buy',n:b.side});if(b.weapon)this.command(u,{t:'buy',n:b.weapon});}
  command(u,m){if(m?.t==='blade')return this.fireBlade(u);if(m?.t==='ab')return this.phase==='game'&&this.roundDelay<=0&&castAbility(this,u,m);if(m?.t==='buy'&&String(m.n).startsWith('ab:'))return this.buy>0&&u.alive&&buyAbility(u,String(m.n));if(m?.t==='buy'){if(!(this.buy>0)||!u.alive)return false;const n=String(m.n||''),AR=armorItem(n),armor=AR?AR.a:0,cost=AR?AR.p:prices[n];if(!Number.isFinite(cost)||u.credits<cost||(!armor&&!weapons[n]))return false;if(armor){if(armorOwned(u,n))return false;u.purchases.push({n,cost,armor:u.armor,rgn:u.rgn??null});u.armor=armor;u.rgn=AR.rg??null;u.rgnAt=0;}else{const side=['Classic','Shorty','Frenzy','Ghost','Sheriff'].includes(n),key=side?'secondary':'primary';if(u[key]===n)return false;u.purchases.push({n,cost,key,prior:u[key]});u[key]=n;u.weapon=n;u.ammo=weapons[n].magazineSize;u.inventory[n]=u.ammo;u.reserve=reserveOf(n);u.reserves[n]=u.reserve;}u.credits-=cost;return true;}
  if(m?.t==='sell'){if(!(this.buy>0)||!u.alive||u.loading)return false;const i=u.purchases.findLastIndex(p=>p.n===m.n);if(i<0)return false;const p=u.purchases[i];if(p.ab&&!(u.ability[p.ab]>0))return false;if(u.purchases.slice(i+1).some(q=>p.key?q.key===p.key:!p.ab&&!q.key&&!q.ab))return false;u.purchases.splice(i,1);u.credits=Math.min(9000,u.credits+p.cost);if(p.ab)u.ability[p.ab]--;else if(p.key)u[p.key]=p.prior;else{u.armor=p.armor;u.rgn=p.rgn??null;}u.weapon=u.primary||u.secondary||'Knife';u.ammo=u.inventory[u.weapon]??weapons[u.weapon].magazineSize;u.reserve=u.reserves[u.weapon]??reserveOf(u.weapon);return true;}
  if(m?.t==='equip'){if(!u.alive||typeof m.w!=='string'||!Object.hasOwn(weapons,m.w)||![u.primary,u.secondary,'Knife'].includes(m.w))return false;/* an empty slot is null: equip {w:null} on a sidearm-only round matched it and left the unit holding no weapon (every tick then threw) *//* any time, as the client: the new gun's equip time gates its first shot */if(m.w!==u.weapon){u.reloadAt=0;/* a swap cancels the reload (as the client's swapW): the magazine stays as it was */u.inventory[u.weapon]=u.ammo;u.reserves[u.weapon]=u.reserve;u.weapon=m.w;u.reserve=u.reserves[m.w]??reserveOf(m.w);u.ammo=u.inventory[m.w]??weapons[m.w].magazineSize;u.fireAt=this.time+weapons[m.w].equipTimeSeconds;u.equipAt=u.fireAt;}return true;}
@@ -66,7 +73,7 @@ export class SpikeSimulation extends Simulation{
  // A Phoenix killed inside Run It Back is not a kill or a death in VALORANT (no kill / death on the scoreboard, no ult point
  // either side, no signature recharge): the soul orb (Reyna, patch 1.02) and the Blade Storm refresh (Jett, patch 1.02) still trigger.
  // The 200 kill credits are kept: no source says they are withheld.
- fire(u){if(this.buy>0||this.roundDelay>0||u.detainUntil>this.time)return false;if(u.showstopper){const r=showstopperFire(this,u);if(r!==undefined)return r;}const before=u.kills,living=this.units.filter(v=>v.alive),r=super.fire(u);this.lastKills=0;if(u.kills>before){for(const v of living)if(!v.alive){this.lastKills++;if(v.runItBack){u.kills--;v.deaths--;this.scores[u.team]=(this.scores[u.team]||0)-1;u.credits=Math.min(9000,u.credits+200);soulKill(this,u,v);continue;}u.credits=Math.min(9000,u.credits+200);u.roundKills++;rewardAbilityKill(u,this,v);}}return r;}
+ fire(u){if(this.buy>0||this.roundDelay>0||u.detainUntil>this.time)return false;u.shotAt=this.time;/* heard by bots (botSense) */if(u.showstopper){const r=showstopperFire(this,u);if(r!==undefined)return r;}const before=u.kills,living=this.units.filter(v=>v.alive),r=super.fire(u);this.lastKills=0;if(u.kills>before){for(const v of living)if(!v.alive){this.lastKills++;if(v.runItBack){u.kills--;v.deaths--;this.scores[u.team]=(this.scores[u.team]||0)-1;u.credits=Math.min(9000,u.credits+200);soulKill(this,u,v);continue;}u.credits=Math.min(9000,u.credits+200);u.roundKills++;rewardAbilityKill(u,this,v);}}return r;}
  // A human leaving mid-round: the bot taking the seat takes over their body (alive where they stood, health, loadout,
  // credits, abilities) instead of sitting the round out dead, which cost the team a player for every disconnect.
  // The leaver's live utility (turret, Nanoswarm, Boom Bot, Lockdown windup, Showstopper rocket ...) now belongs to the seat
@@ -92,16 +99,42 @@ export class SpikeSimulation extends Simulation{
  // for being "killed by an enemy agent"); the dead lose their gear in finishRound.
  detonate(sp){for(const u of this.units){if(!u.alive||u.loading||Math.hypot(u.x-sp.x,(u.y||0)-(sp.y||0),u.z-sp.z)>SPIKE_RADIUS)continue;u.hp=0;u.alive=false;/* not a death (wiki Spike, patch 1.11: dying to the Spike no longer counts in KDA), so no ult point either */this.events.push(['k','',u.name,0,'Spike']);}}
  finishRound(winner,text){if(this.roundDelay>0)return;this.roundScores[winner]++;this.losses[winner]=0;this.losses[1-winner]++;for(const u of this.units){u.credits=Math.min(9000,u.credits+(u.team===winner?3000:survivorLoss(this,u,text)?1000:Math.min(2900,1900+(this.losses[u.team]-1)*500)));if(!u.alive&&!u.runItBack){/* a Phoenix inside Run It Back is coming back: he keeps his gear */u.primary=null;u.secondary='Classic';u.armor=0;u.rgn=null;}}this.roundDelay=POST_ROUND;this.roundEvents.push({t:'re',w:winner===0?1:0,tx:text,sc:[...this.roundScores],o:Math.max(...this.roundScores)>=13&&Math.abs(this.roundScores[0]-this.roundScores[1])>=2?1:0});}
- bot(u){const sp=this.spike,W=this.world;let goal=null;if(u.team===this.atk){if(sp.st==='carry'&&sp.carrier===u.id){const p=W.map.sites[sp.site];goal=p;if(this.siteAt(u)){u.input={interact:true};u.inputAt=this.time;return;}}else if(sp.st==='drop')goal=[sp.x,sp.y,sp.z];else if(sp.st==='plant')goal=[sp.x+(u.id%3-1)*5,sp.y,sp.z+5];else goal=W.map.sites[sp.site];}else goal=sp.st==='plant'?[sp.x,sp.y,sp.z]:W.map.sites[Object.keys(W.map.sites)[u.id%Object.keys(W.map.sites).length]];
- // Variety: spread spots / lurker / staggered start (u.spread: the goal is already a spread nav spot, so no extra offset)
- u.spread=false;const exact=sp.st==='drop'&&u.team===this.atk||sp.st==='carry'&&sp.carrier===u.id||u.team!==this.atk&&sp.st==='plant';
- if(!exact&&!u.human&&(sp.st==='carry'||sp.st==='plant'||sp.st==='')){const L=plan(this,u),N=W.nav.nodes;
-  if(u.team===this.atk&&sp.st==='plant'){const k=sp.x+','+sp.z;if(L.post0!==k){L.post0=k;L.post=spotNear(this,u,[sp.x,sp.y,sp.z],'post',{rMin:3,rMax:9,gap:3.5});}if(L.post>=0){goal=N[L.post];u.spread=true;}}
+ bot(u){const sp=this.spike,W=this.world;let goal=null;this.botSense();if(u.team===this.atk){if(sp.st==='carry'&&sp.carrier===u.id){const p=W.map.sites[sp.site];goal=p;if(this.siteAt(u)){u.input={interact:true};u.inputAt=this.time;return;}}else if(sp.st==='drop')goal=[sp.x,sp.y,sp.z];else if(sp.st==='plant')goal=[sp.x+(u.id%3-1)*5,sp.y,sp.z+5];else goal=W.map.sites[sp.site];}else goal=sp.st==='plant'?[sp.x,sp.y,sp.z]:W.map.sites[Object.keys(W.map.sites)[u.id%Object.keys(W.map.sites).length]];
+ // Variety: the round strategy's staged positions (defaults, fakes, lurks, splits, aggressive defenders), spread spots,
+ // rotations on information, staggered starts (u.spread: the goal is already a spread nav spot, so no extra offset)
+ u.spread=false;const carrier=sp.st==='carry'&&sp.carrier===u.id,loose0=!(sp.st==='drop'&&u.team===this.atk)&&!carrier;let loose=loose0;
+ if(!u.human&&(sp.st==='carry'||sp.st==='plant'||sp.st==='')){const L=plan(this,u),N=W.nav.nodes,atk=u.team===this.atk;
+  if(atk&&sp.st==='plant'){const k=sp.x+','+sp.z;if(L.post0!==k){L.post0=k;L.post=spotNear(this,u,[sp.x,sp.y,sp.z],'post',{rMin:3,rMax:9,gap:3.5});}if(L.post>=0){goal=N[L.post];u.spread=true;}}
   else if(sp.st!=='plant'){if(L.go==null)L.go=this.time+L.delay;
-   const site=u.team===this.atk?(L.lurk&&this.remaining>L.lurkUntil?L.site:sp.site):L.site;
-   if(W.map.sites[site]){if(L.spotSite!==site){L.spotSite=site;L.spot=spotNear(this,u,W.map.sites[site],'spot',u.team===this.atk?{rMin:1.5,rMax:7,gap:3}:{rMin:2,rMax:10,gap:4});}if(L.spot>=0){goal=N[L.spot];u.spread=true;}}}}
+   const rt=roundTime(this);let stage=null;for(const g of L.stages)if(rt<g.until){stage=g;break;}
+   let site=atk?sp.site:L.site;const info=this.atkInfo&&this.atkInfo.round===this.round?this.atkInfo:null;
+   if(!atk&&info&&L.role.rotator&&info.site!==L.site&&this.time>=info.at+(L.rotDelay??(L.rotDelay=1+L.rand()*3))){site=info.site;stage=null;} // defenders rotate on information
+   if(stage){const i=stageNode(this,u,stage,this.findPath);if(i>=0){goal=N[i];u.spread=true;loose=true;site=null;}}
+   if(site&&!carrier&&W.map.sites[site]){if(L.spotSite!==site){L.spotSite=site;L.spot=spotNear(this,u,W.map.sites[site],'spot',atk?{rMin:1.5,rMax:7,gap:3}:L.role.offAngle?{rMin:6,rMax:14,gap:4}:{rMin:2,rMax:10,gap:4});}if(L.spot>=0){goal=N[L.spot];u.spread=true;}}}}
  if(u.team!==this.atk&&sp.st==='plant'&&Math.hypot(u.x-sp.x,u.z-sp.z)<2){u.input={interact:true};u.inputAt=this.time;return;}
- if(u.blindUntil>this.time||u.concussUntil>this.time||u.nearsightUntil>this.time){/* bots have no nearsight model: held like a blinded bot, as offline (b.blind) */u.input={};u.inputAt=this.time;return;}const route=u.route,routeAt=u.routeAt;u.route=null;super.bot(u);const combat=u.input.fire||u.sawTarget;if(!combat){u.route=route;u.routeAt=routeAt;}if(combat)return;if(u.plan&&u.plan.round===this.round&&this.time<u.plan.go&&!(sp.st==='carry'&&sp.carrier===u.id)){u.input={};u.inputAt=this.time;return;}/* staggered start */if(goal){const target={x:goal[0],y:goal[1],z:goal[2]};this.goalPath(u,target,!(sp.st==='drop'&&u.team===this.atk)&&!(sp.st==='carry'&&sp.carrier===u.id));} }
+ if(u.blindUntil>this.time||u.concussUntil>this.time||u.nearsightUntil>this.time){/* bots have no nearsight model: held like a blinded bot, as offline (b.blind) */u.input={};u.inputAt=this.time;return;}const route=u.route,routeAt=u.routeAt;u.route=null;super.bot(u);const combat=u.input.fire||u.sawTarget;if(!combat){u.route=route;u.routeAt=routeAt;}if(combat)return;
+ // reactions: trade / fall back after a teammate dies, hold or push a sound (not the carrier, not a late retake)
+ const R=u.react;if(R&&R.until>this.time&&!carrier&&!(sp.st==='drop'&&u.team===this.atk)&&!(sp.st==='plant'&&u.team!==this.atk&&sp.t<15)){
+  if(R.kind==='hold'){u.input=R.duck?{duck:true}:{};u.look=Math.atan2(u.x-R.x,u.z-R.z);u.inputAt=this.time;return;}
+  goal=[R.x,R.y,R.z];u.spread=true;loose=true;}
+ if(u.plan&&u.plan.round===this.round&&this.time<u.plan.go&&!carrier){u.input={};u.inputAt=this.time;return;}/* staggered start */
+ if(goal){const target={x:goal[0],y:goal[1],z:goal[2]};this.goalPath(u,target,loose);if(u.plan&&u.plan.walk&&u.input&&u.input.forward&&!carrier&&roundTime(this)<70)u.input.walk=true;} }
+ // Once per tick: what the bots perceive. Deaths (teammates react: trade the killer, fall back or hold), sounds (gunshots
+ // within 35 m, running footsteps within 16 m: hold the angle, glance or push) and defender information (attackers seen
+ // or heard near a site: rotators rotate there after their own delay).
+ botSense(){if(this._senseT===this.time)return;this._senseT=this.time;const U=this.units,sites=this.world.map.sites,names=Object.keys(sites);
+  for(const d of U){const was=d._wasAlive;d._wasAlive=d.alive;if(!(was&&!d.alive))continue;let k=null,kd=Infinity;for(const e of U)if(e.alive&&e.team!==d.team){const q=Math.hypot(e.x-d.x,e.z-d.z);if(q<kd){kd=q;k=e;}}
+   const alive=U.filter(v=>v.alive&&v.team===d.team).length;
+   for(const m of U){if(!m.alive||m.human||m.team!==d.team||m.sawTarget)continue;const dist=Math.hypot(m.x-d.x,m.z-d.z),P=persona(this,m),c=BotBrain.onMateDeath(P.brain,P.r,dist,alive);if(c==='hold'||!k)continue;
+    if(c==='trade')m.react={kind:'trade',x:k.x,y:k.y,z:k.z,until:this.time+2.5+P.r()*1.5};
+    else{const dx=m.x-k.x,dz=m.z-k.z,l=Math.hypot(dx,dz)||1,n=this.world.nav.nodes[this.world.near(m.x+dx/l*6,m.z+dz/l*6,m.y)];if(n)m.react={kind:'fallback',x:n[0],y:n[1],z:n[2],until:this.time+1.5+P.r()*1.5};}}}
+  for(const m of U){if(!m.alive||m.human||m.sawTarget||(m.react&&m.react.until>this.time))continue;let best=null,bd=Infinity;
+   for(const e of U){if(!e.alive||e.team===m.team)continue;const dist=Math.hypot(e.x-m.x,e.z-m.z),shot=e.shotAt>this.time-.12&&dist<35,run=!shot&&dist<16&&Math.hypot(e.vx||0,e.vz||0)>4.5&&!(e.input&&(e.input.walk||e.input.duck));if((shot||run)&&dist<bd){bd=dist;best={e,kind:shot?'shot':'step',dist};}}
+   if(!best||m.heardAt>this.time-1.5)continue;m.heardAt=this.time;const P=persona(this,m),c=BotBrain.onSound(P.brain,P.r,best.kind,best.dist),e=best.e;
+   if(c==='push')m.react={kind:'push',x:e.x,y:e.y,z:e.z,until:this.time+2+P.r()};else m.react={kind:'hold',x:e.x,z:e.z,duck:P.r()<.25,until:this.time+(c==='hold'?.6+P.brain.patience*1.2:.25+P.r()*.25)};
+   if(m.team!==this.atk&&this.spike.st!=='plant')for(const n of names){const c2=sites[n];if(Math.hypot(e.x-c2[0],e.z-c2[2])<16){this.siteInfo(n);break;}}}
+  if(this.spike.st!=='plant')for(const m of U)if(m.alive&&m.team!==this.atk&&m.sawTarget){const e=U.find(v=>v.id===m.aimTarget);if(e)for(const n of names){const c2=sites[n];if(Math.hypot(e.x-c2[0],e.z-c2[2])<16){this.siteInfo(n);break;}}}}
+ siteInfo(n){const I=this.atkInfo;if(!I||I.round!==this.round||(I.site!==n&&this.time>I.at+6))this.atkInfo={site:n,at:this.time,round:this.round};}
  // Persona-driven objective movement: own spot inside the site, own repath/accept/lateral jitter, lurker flanks,
  // walking near the objective for quiet roles. loose=false keeps exact goals (spike pickup, defuse).
  goalPath(u,target,loose=true){const W=this.world,P=persona(this,u);if(loose&&!u.goalOff)u.goalOff=[(P.r()-.5)*6,(P.r()-.5)*6];const o=loose&&!u.spread?u.goalOff:[0,0],gx=target.x+o[0],gz=target.z+o[1];
