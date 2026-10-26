@@ -13,7 +13,7 @@ assert.match(cd,/gb \+ 12/,'barrier clears the ann glyphs by 12px');
 assert.match(cd,/attributeFilter: \["class"\], childList: true, characterData: true, subtree: true/,'ann observer covers text/content changes, not only class');
 assert.match(cd,/300\)/,'settle re-measure after the 250ms entry transition');
 assert.match(s,/#game:has\(\.x-kb\.on\) #hint\{opacity:0/,'hint hides while the ELIMINATED banner shows');
-const mh=s.match(/@media \(max-height:560px\)\{[\s\S]*?\n\}/);
-assert(mh,'short-landscape media block exists');
+const mh=[...s.matchAll(/@media \(max-height:560px\)\{\n[\s\S]*?\n\}/g)].map(m=>m[0]).filter(b=>/\.x-dmprot\{/.test(b));/* the multi-line short-landscape block (one-line @media copies earlier in the file are not it) */
+assert(mh.length,'short-landscape media block exists');
 assert.match(mh[0],/\.x-dmprot\{left:36%!important\}/,'spawn-protection chip shifts clear of the touch cluster on short landscape');
 console.log('HUD polish: barrier clears ann glyph bounds (+12px, settle re-measure), hint yields to ELIMINATED banner, DM chip clears the touch cluster on short landscape');

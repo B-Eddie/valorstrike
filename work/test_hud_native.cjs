@@ -6,7 +6,7 @@ const helpers=html.slice(html.indexOf('function hudPortrait('),html.indexOf('\nf
 const table=html.slice(html.indexOf('function sbTable('),html.indexOf('\n{ const k0 = sbKill;',html.indexOf('function sbTable(')));
 const units=[{name:'Ally <&',agent:'Sage',w:'Phantom',armor:25},{name:'Enemy',agent:'Omen',w:'Operator',armor:50}];
 const ctx={J:{pick:'Jett'},player:{armor:50},MP:{on:true,ping:37},kfAll:()=>units,xAg:u=>u.agent,sbUnit:n=>units.find(u=>u.name===n),vfWeapon:()=> 'Vandal',xWeapOf:u=>u.w,BUY_SIL:{Vandal:'M1 2h30v3H1z',Phantom:'M2 3h40v3H2z'},SB:{You:{k:4,d:2,a:1},'Ally <&':{k:1,d:3,a:2},Enemy:{k:2,d:4,a:0}},sbUlt:()=>[3,7],sbCred:()=>4300};
-vm.createContext(ctx);vm.runInContext(helpers+'\n'+table,ctx);
+vm.createContext(ctx);vm.runInContext(helpers+'\n'+table+'\n'+html.slice(html.indexOf('function sbCredTxt('),html.indexOf('\n',html.indexOf('function sbCredTxt('))),ctx);/* sbTable formats credits through sbCredTxt (enemy-info: unknown = em dash) */
 for(const agent of ['Jett','Phoenix','Sova','Sage','Reyna','Raze','Killjoy','Omen','Skye','Chamber','Breach','Cypher']){
  const file=path.join(__dirname,'..',ctx.hudPortrait(agent));const bytes=fs.readFileSync(file);assert.equal(bytes.subarray(1,4).toString(),'PNG',agent+' has a valid bundled portrait');
 }

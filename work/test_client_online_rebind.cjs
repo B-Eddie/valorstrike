@@ -55,7 +55,7 @@ Math.random=mulberry(SEED*104729+1);require('vm').runInContext(`Math.random=(${m
  const arm=async()=>{for(const b of sim.units)if(!b.human&&!b.primary){b.primary='Phantom';b.inventory=b.inventory||{};b.inventory.Phantom=25;b.reserves=b.reserves||{};b.reserves.Phantom=75;}const u=me();u.credits=9000;await step(100);if(!me().primary){xe('fBuy("Vandal");true');await step(250);}xe('buyMenu(false);true');await step(50);xe('if(FV.pri)swapW("pri");true');await step(200);
   if(sim.spike&&sim.spike.carrier===me().id){sim.spike.carrier=null;sim.spike.st='drop';sim.spike.x=0;sim.spike.z=0;await step(100);}};
  const floorV=()=>(sim.floor||[]).find(g=>[g.weapon,g.w,g.n].includes('Vandal'));
- const lookAt=async g=>{const u=me();u.x=g.x;u.z=g.z;await step(300);};
+ const lookAt=async g=>{const u=me();u.x=g.x;u.z=g.z;await step(300);xe('player.x='+g.x+';player.z='+g.z+';player.y='+(g.y||0)+';true');};/* the harness page has no native map (legacy blockout, ground y 0) while the server stands the unit on Ascent's real floor (attacker spawn y ~7.05): put the page player where the server put it, so xdLook's 2 m / height window sees the gun as in a browser */
  // 1. default binds: G drops once, F picks up once, R reloads once
  await arm();if(me().primary!=='Vandal')fail('setup: no Vandal ('+me().primary+')');
  sent();await phys('KeyG');let s=sent();if(s.join()!=='dropw')fail('default G sent '+JSON.stringify(s)+' (want one dropw)');

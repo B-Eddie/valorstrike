@@ -54,8 +54,8 @@ const warn=console.warn;console.warn=(...a)=>{if(!/boneTransform/.test(String(a[
  }
  for(const y of [-1,1]){const vertical=new T.Vector3(0,y,0);c.xBotAim(b,vertical);checkAim(vertical,'directly vertical offline aim keeps a valid gun frame');}
  // Allied damage selection has its own head/body branch; preserve that selected height too.
- const allyShot=cut('        const hs = Math.random() < 0.2, AW = WEAP[a.w || "Vandal"];',' hurt(tg,');
- vm.runInContext('function selectAllyShot(a,tg,from){'+allyShot+'}',c);c.WEAP.Vandal={head:160,body:40};
+ const allyShot=cut('        const hs = Math.random() < 0.2, AW = abs ? XBSB : WEAP[a.w || "Vandal"];',' hurt(tg,');/* Blade Storm stack (e344cc5): an ally with the knives out uses XBSB; abs = false here (a gun) */
+ vm.runInContext('function selectAllyShot(a,tg,from){const abs=false;'+allyShot+'}',c);c.WEAP.Vandal={head:160,body:40};
  const allyTarget={g:new T.Group()};allyTarget.g.position.set(5,5,-1);c.Math=Object.create(Math);
  for(const head of [false,true]){c.Math.random=()=>head?.1:.9;c.selectAllyShot(b,allyTarget,from);assert.equal(b.hd,head);checkAim(new T.Vector3(1,5+(head?1.5:1.05)-6.7,2).normalize(),'allied native gun matches selected '+(head?'head':'body')+' shot');}
  c.Math=Math;
