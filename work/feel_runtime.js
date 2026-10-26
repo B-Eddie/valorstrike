@@ -16,7 +16,13 @@ wDmg=function(W,part,distance){const v=wRaw(W,part,distance);if(v==null)return w
 xWkDmg=function(W,part,distance,k){const v=wRaw(W,part,distance);return v==null?Math.round(wDmg(W,part,distance)*k):Math.floor(v*k);};
 xEq=function(w){return w==='Knife'?.6:vfProfile(w).equipTimeSeconds;}; // knife: wiki Melee equip 0.6 s (normal)
 xRate=function(W){const w=Object.keys(WEAP).find(k=>WEAP[k]===W),p=VF.profiles[w];return ads&&p&&p.adsStats?p.adsStats.fireRate:W.rate;};
-xSCf=function(z){return 2*Math.atan(Math.tan(VF_C.verticalFov*Math.PI/360)/z)*180/Math.PI;};
+// Hip lens: VALORANT renders 103 deg horizontal at 16:9 (vertical 70.53 deg) and never shows more than 16:9 width - wider
+// screens are letterboxed or cropped to it (support-valorant.riotgames.com 'Supported Resolutions'). A browser window is
+// usually wider than 16:9 (1920 x ~970 = 1.98:1), so a fixed vertical FOV gave ~109 deg horizontal (118 deg at 21:9) and
+// the world streamed past faster than in VALORANT. Wider than 16:9 keeps the 103 deg horizontal; 16:9 and narrower keep the
+// 70.53 deg vertical (16:10 = 97 deg horizontal as in the game).
+function xHipVFov(a){a=a||(typeof camera!=='undefined'&&camera&&camera.aspect)||VF_C.referenceAspect;return a>VF_C.referenceAspect?2*Math.atan(Math.tan(VF_C.horizontalFov*Math.PI/360)/a)*180/Math.PI:VF_C.verticalFov;}
+xSCf=function(z){return 2*Math.atan(Math.tan(xHipVFov()*Math.PI/360)/z)*180/Math.PI;};
 xTag=function(t){if(!t)return;t.tagT=.5;t.tagK=.275;t.tagS=0;};
 // The motor owns all movement multipliers, avoiding stacked scope/weapon scaling.
 moveP=function(dt,run,hold){
@@ -82,7 +88,7 @@ vfBindRenderer(renderer);
 {const remake=xRemake;xRemake=function(){remake();vfBindRenderer(renderer);};}
 
 function vfViewTick(F,dt){const P=player,V=VF_VIEW;if(!F)return;
- if(F.root.parent!==V.scene){if(F.root.parent)F.root.parent.remove(F.root);V.scene.add(F.root);}if(V.lastAir&&!P.air)V.landT=Math.min(1,P.landImpact||.5);V.lastAir=!!P.air;V.landT=VF.model.damp(V.landT||0,0,10,dt);V.land=VF.model.damp(V.land,V.landT,30,dt);V.vyo=VF.model.damp(V.vyo||0,Math.max(-.02,Math.min(.02,-(P.vy||0)*.002)),14,dt);const speed=Math.hypot(P.vx||0,P.vz||0),target=P.mv&&!P.air?Math.min(1,speed/5.4):0;V.bob=VF.model.damp(V.bob,target,16,dt);V.phase+=speed*dt*3.4;
+ if(F.root.parent!==V.scene){if(F.root.parent)F.root.parent.remove(F.root);V.scene.add(F.root);}if(V.lastAir&&!P.air)V.landT=Math.min(1,P.landImpact||.5);V.lastAir=!!P.air;V.landT=VF.model.damp(V.landT||0,0,10,dt);V.land=VF.model.damp(V.land,V.landT,30,dt);V.vyo=VF.model.damp(V.vyo||0,Math.max(-.02,Math.min(.02,-(P.vy||0)*.002)),14,dt);const speed=Math.hypot(P.vx||0,P.vz||0),target=P.mv&&!P.air?Math.min(1,speed/5.4):0;V.bob=VF.model.damp(V.bob,target,16,dt);V.phase+=speed*dt*Math.PI/1.85;/* one vertical bob (|cos| period pi) per footfall: footsteps every 1.85 m below; the old 3.4 rad/m bobbed twice per step (5.8 Hz at rifle speed) */
  V.swayX=VF.model.damp(V.swayX,Math.max(-1,Math.min(1,VM.sx||0)),18,dt);V.swayY=VF.model.damp(V.swayY,Math.max(-1,Math.min(1,VM.sy||0)),18,dt);const k=xAD.k||0;
  F.root.scale.setScalar(1);F.root.position.copy(F.origin);F.root.position.x+=.045-V.swayX*.012+Math.sin(V.phase)*.006*V.bob;F.root.position.y-=.035+Math.abs(Math.cos(V.phase))*.008*V.bob+V.land*.025;F.root.position.y+=V.vyo;F.root.rotation.set(-V.swayY*.009,Math.PI/2-V.swayX*.01,-V.swayX*.012+Math.sin(V.phase)*.003*V.bob);
  if(k>0){F.root.updateMatrixWorld(true);const optic=F.ws.getObjectByName('Reflex')||F.ws.getObjectByName('Scope');if(optic){const p=optic.getWorldPosition(new THREE.Vector3());F.root.position.x-=p.x*k;F.root.position.y-=(p.y+.025)*k;}else{F.root.position.x-=.12*k;F.root.position.y+=.045*k;}F.root.position.z+=.07*k;}
