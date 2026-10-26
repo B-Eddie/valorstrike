@@ -201,8 +201,8 @@ function xKunMats() {
   if (XKUN.mat) return XKUN.mat;
   const S = (o) => new THREE.MeshStandardMaterial(o);
   XKUN.mat = {
-    blade: S({ color: 0xdcecf8, metalness: 0.5, roughness: 0.28, emissive: 0x3aaee8, emissiveIntensity: 0.26, flatShading: true }),
-    edge: new THREE.MeshBasicMaterial({ color: 0x8fe4ff, transparent: true, opacity: 0.22, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.BackSide }),
+    blade: S({ color: 0xa8c2d8, metalness: 0.68, roughness: 0.24, emissive: 0x45b8f0, emissiveIntensity: 0.26, flatShading: true }),
+    edge: new THREE.MeshBasicMaterial({ color: 0x8fe4ff, transparent: true, opacity: 0.24, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.BackSide }),
     grip: S({ color: 0x1f2b3a, metalness: 0.2, roughness: 0.75, emissive: 0x061018, emissiveIntensity: 1 }),
     metal: S({ color: 0xcfe6f7, metalness: 0.6, roughness: 0.3, emissive: 0x3aa6dc, emissiveIntensity: 0.45 }),
     trail: new THREE.MeshBasicMaterial({ color: 0x9fe8ff, transparent: true, opacity: 0.45, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }),
@@ -211,7 +211,7 @@ function xKunMats() {
 }
 function xKunBladeGeo(sc) { // diamond cross-section leaf blade from z = 0 (collar) to the tip; width along y, thickness along x
   const N = 14, L = 0.155, P = [];
-  const ring = (t) => { const w = (t < 0.28 ? 0.62 + 0.38 * t / 0.28 : Math.pow((1 - t) / 0.72, 0.85)) * 0.023 * sc, th = 0.0006 + w * 0.32; return [[0, w], [th, 0], [0, -w], [-th, 0]]; };
+  const ring = (t) => { const w = (t < 0.28 ? 0.62 + 0.38 * t / 0.28 : Math.pow((1 - t) / 0.72, 0.85)) * 0.023 * sc, th = 0.0006 + w * 0.5; return [[0, w], [th, 0], [0, -w], [-th, 0]]; };
   for (let k = 0; k < N; k++) { const t0 = k / N, t1 = (k + 1) / N, A = ring(t0), B = ring(t1), z0 = t0 * L, z1 = t1 * L;
     for (let j = 0; j < 4; j++) { const a0 = A[j], a1 = A[(j + 1) % 4], b0 = B[j], b1 = B[(j + 1) % 4];
       P.push(a0[0], a0[1], z0, a1[0], a1[1], z0, b1[0], b1[1], z1, a0[0], a0[1], z0, b1[0], b1[1], z1, b0[0], b0[1], z1); } }
