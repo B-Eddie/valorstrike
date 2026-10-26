@@ -15481,7 +15481,99 @@ window.xAbilityFP = { XAF, XAF_SET, XAF_K, XAF_GUN, phase: xAfPhase, gunPhase: x
  const TAILWIND={hp:50,lost:30,last:.6};
  function tailwindDash(c){if(!c||!c.armed)return null;if(c.kills>0)return 'kill';if(c.hp<TAILWIND.hp||c.hp0-c.hp>=TAILWIND.lost)return 'hurt';if(c.left<TAILWIND.last)return 'expiring';return null;}
  function tailwindKeys(rand){return {f:-1,s:rand()<.5?-1:1};}
- return {hash,rng,clamp,pickW,REACT,personality,reaction,crosshair,crosshairAt,firePattern,peek,attackPlan,defensePlan,roles,teamBuy,buyFor,onMateDeath,onSound,ATTACK,DEFENSE,utility,UTIL,turnStep,trackLag,wrapA,SPIKE,plantSpot,postPlant,retake,postPlay,SHOOT_UTIL,shootUtility,TAILWIND,tailwindDash,tailwindKeys,LEVEL,level,aimTraits,AIM_H,aimHeight,halfWidth,aimPlan,aimAt,readyToFire,planFire,idlePitch,recoilPull,discipline,hitPart};
+ // ---- Buy phase: bots mill around spawn, then line up at the spawn barrier (server bots.js buyMill, offline
+ // work/bot_variety_runtime.js xbbTick). The barrier is the plane both builds already clamp players to during the buy
+ // phase: z = s*edge with edge = min(|attacker z|, |defender z|) - 7 (map.json spawns) and s the side's sign (attackers +z);
+ // inside = s*z >= edge. Bots walk only on BUY_AREA: the spawn's own connected nav region with every node at least
+ // BUY.margin inside the barrier, so a route can never lead through it; standing spots sit BUY.depth inside (a 0.4 m
+ // capsule never touches the wall) and BUY.gap apart.
+ const BUY={margin:.5,depth:[.55,.7],gap:.9,peek:[.3,.55],wander:[1.5,6],run:4.6};
+ function buyEdge(atk,def){return Math.min(Math.abs(atk[2]),Math.abs(def[2]))-7;}
+ function buySide(anchor){return anchor[2]<0?-1:1;}
+ // ok(i): the node is playable. -> {f: Uint8Array flags, list: node ids} (empty when start is not inside)
+ function buyArea(nodes,adj,start,s,edge,ok){
+  const f=new Uint8Array(nodes.length),list=[],inside=i=>s*nodes[i][2]>=edge+BUY.margin&&(!ok||ok(i));
+  if(start==null||start<0||!inside(start))return {f,list};f[start]=1;list.push(start);
+  for(let k=0;k<list.length;k++)for(const j of adj[list[k]])if(!f[j]&&inside(j)){f[j]=1;list.push(j);}
+  return {f,list};}
+ // A* inside the area; cost(i): extra metres for entering node i (a node whose capsule touches a prop), may be omitted.
+ function buyRoute(nodes,adj,area,a,b,cost){
+  if(a<0||b<0||!area.f[a]||!area.f[b])return [];if(a===b)return [a];
+  const g=new Map(),prev=new Map(),done=new Set(),H=[],h=i=>Math.hypot(nodes[i][0]-nodes[b][0],nodes[i][2]-nodes[b][2]);
+  const push=(i,sc)=>{H.push([i,sc]);let k=H.length-1;while(k){const p=(k-1)>>1;if(H[p][1]<=H[k][1])break;[H[p],H[k]]=[H[k],H[p]];k=p;}};
+  const pop=()=>{const r=H[0],l=H.pop();if(H.length){H[0]=l;let k=0;for(;;){let c=k*2+1;if(c>=H.length)break;if(c+1<H.length&&H[c+1][1]<H[c][1])c++;if(H[c][1]>=H[k][1])break;[H[c],H[k]]=[H[k],H[c]];k=c;}}return r[0];};
+  g.set(a,0);push(a,h(a));
+  while(H.length){const i=pop();if(done.has(i))continue;done.add(i);if(i===b){const p=[];for(let k=b;k!=null;k=prev.get(k))p.push(k);return p.reverse();}
+   for(const j of adj[i]){if(!area.f[j]||done.has(j))continue;const c=g.get(i)+Math.hypot(nodes[i][0]-nodes[j][0],nodes[i][2]-nodes[j][2])+Math.abs(nodes[i][1]-nodes[j][1])*.2+(cost?cost(j):0);
+    if(!(g.get(j)<=c)){g.set(j,c);prev.set(j,i);push(j,c+h(j));}}}
+  return [];}
+ // Where a planned route (node ids from spawn toward the bot's first round goal) leaves spawn: the first crossing of the
+ // barrier plane -> {x, y, z, dx, dz} with (dx, dz) the unit heading out along the route (always some way out through the
+ // barrier, never back into spawn), or null when the route does not start inside / never crosses.
+ function buyExit(nodes,path,s,edge){
+  if(!path||path.length<2||s*nodes[path[0]][2]<edge)return null;
+  for(let k=1;k<path.length;k++){const a=nodes[path[k-1]],b=nodes[path[k]];if(s*b[2]>=edge)continue;
+   const t=(s*a[2]-edge)/((s*a[2]-s*b[2])||1),x=a[0]+(b[0]-a[0])*t,y=a[1]+(b[1]-a[1])*t;
+   let m=k,acc=0;while(m+1<path.length&&acc<5){const p=nodes[path[m]],q=nodes[path[m+1]];acc+=Math.hypot(q[0]-p[0],q[2]-p[2]);m++;}
+   const f=nodes[path[m]];let dx=f[0]-x,dz=s*(s*edge-f[2]),l=Math.hypot(dx,dz);/* dz here: metres out past the barrier */
+   if(l<.5){dx=0;dz=1;l=1;}dx/=l;dz/=l;if(dz<.4){dz=.4;dx=Math.sign(dx||1)*Math.sqrt(1-.16);}
+   return {x,y,z:s*edge,dx,dz:-s*dz};}
+  return null;}
+ // A standing spot just inside the barrier at that exit: BUY.depth inside, shifted along the barrier in 0.5 m steps
+ // (alternating sides, seeded) until it is free and BUY.gap from every spot a teammate took: the front row within 2.25 m of
+ // the exit, a second row 0.75 m behind it (staggered half a step, like players stacking in a doorway), then wider. ok(x, z) -> [floorY, node] where a capsule may stand and walk to from its area node, else null.
+ function buySpot(exit,s,edge,taken,rand,ok){
+  const depth=BUY.depth[0]+rand()*(BUY.depth[1]-BUY.depth[0]),side=rand()<.5?-1:1;
+  for(const [row,reach] of [[0,9],[1,9],[0,40],[1,40],[2,40],[3,40]]){const z=s*(edge+depth+row*.75);
+   for(let i=0;i<=reach;i++){const x=exit.x+(i?Math.ceil(i/2)*(i%2?side:-side):0)*.5+(row%2)*.25*side;
+    if(taken.some(t=>Math.hypot(t[0]-x,t[2]-z)<BUY.gap))continue;const r=ok(x,z);if(!r)continue;return {p:[x,r[0],z],node:r[1]};}}
+  return null;}
+ // A short wander target inside spawn: an area node BUY.wander m away, 1.2 m+ inside the barrier, clear of the points
+ // teammates stand on or walk to (avoid), ok(i) when given (not a node inside a prop). -> node id or -1.
+ function buyWander(nodes,area,from,rand,avoid,s,edge,ok){
+  const L=area.list;if(!L.length)return -1;
+  for(let k=0;k<24;k++){const i=L[Math.floor(rand()*L.length)],n=nodes[i],d=Math.hypot(n[0]-from[0],n[2]-from[1]);
+   if(d<BUY.wander[0]||d>BUY.wander[1]||s*n[2]<edge+1.2)continue;if((ok&&!ok(i))||avoid.some(a=>Math.hypot(a[0]-n[0],a[1]-n[2])<1.4))continue;return i;}
+  return -1;}
+ // One bot's buy-phase schedule (seeded): it stands at its spawn spot (the buy menu), walks a few short legs around spawn
+ // with pauses and look-arounds (more for patient players), then walks to its barrier spot, timed so it arrives with a
+ // margin (cautious players earlier), faces out along its route and makes small peeks along the barrier until it drops.
+ function buyNew(P,rand){const ag=P&&P.aggression!=null?P.aggression:.5,pa=P&&P.patience!=null?P.patience:.5;
+  return {mode:'shop',t:0,until:.4+rand()*1.5+pa*.6,legs:Math.floor(1+rand()*2.2+pa*.9),leg:0,legT:0,margin:2.5+(1-ag)*3+rand()*2.5,walkLeg:false,
+   goal:null,look:null,lookAt:0,sway:rand()*6.283,peekAt:1.2+rand()*2.5,peekSide:rand()<.5?-1:1,peekT:0,rand};}
+ // c: {dt, left: buy seconds left, pos: [x, z], spot: [x, y, z] | null, face: [fx, fz] (out along the route),
+ //     wander(): [x, y, z] | null, free(x, z): a peek target is clear}. -> {goal: [x, y, z] | null, walk, face: [fx, fz] | null
+ // (null: face along the walk)}. Modes: shop -> mill <-> pause -> go -> wait <-> peek / hold.
+ function buyTick(st,c){
+  st.t+=c.dt;const r=st.rand,px=c.pos[0],pz=c.pos[1],sp=c.spot,dS=sp?Math.hypot(sp[0]-px,sp[2]-pz):0,eta=dS/BUY.run+.8,late=!!sp&&c.left<=eta+st.margin;
+  const around=()=>{if(st.t>=st.lookAt||!st.look){const a=(r()-.5)*Math.PI*1.6,f=c.face||[0,-1],b=Math.atan2(f[0],f[1])+a;st.look=[Math.sin(b),Math.cos(b)];st.lookAt=st.t+.7+r()*1.4;}return st.look;};
+  if(st.mode==='shop'){if(st.t>=st.until||late)st.mode='mill';else return {goal:null,walk:false,face:around()};}
+  if((st.mode==='mill'||st.mode==='pause')&&(late||st.leg>=st.legs)){st.mode=sp?'go':'idle';st.goal=null;}
+  if(st.mode==='pause'){if(st.t<st.until)return {goal:null,walk:false,face:around()};st.mode='mill';}
+  if(st.mode==='mill'){
+   if(!st.goal){st.goal=c.wander();st.legT=0;st.walkLeg=r()<.3;if(!st.goal){st.leg=st.legs;st.mode=sp?'go':'idle';}}
+   if(st.goal){st.legT+=c.dt;const d=Math.hypot(st.goal[0]-px,st.goal[2]-pz);
+    if(d<.5||st.legT>5){st.leg++;st.goal=null;st.mode='pause';st.until=st.t+.5+r()*1.7;st.lookAt=0;return {goal:null,walk:false,face:around()};}
+    return {goal:st.goal,walk:st.walkLeg,face:null};}}
+  if(st.mode==='idle'||!sp)return {goal:null,walk:false,face:around()};
+  if(st.mode==='go'){if(dS<.12){st.mode='wait';st.peekAt=st.t+1+r()*2.5;}else return {goal:sp,walk:dS<1.1,face:dS<1.5?c.face:null};}
+  const f=c.face||[0,-1],sw=.12*Math.sin(st.t*.9+st.sway),fa=Math.atan2(f[0],f[1])+sw,face=[Math.sin(fa),Math.cos(fa)];
+  if(st.mode==='peek'){st.peekT+=c.dt;const d=Math.hypot(st.goal[0]-px,st.goal[2]-pz);if(d<.12||st.peekT>.9){st.mode='hold';st.until=st.t+.25+r()*.6;}else return {goal:st.goal,walk:true,face};}
+  if(st.mode==='hold'){if(st.t<st.until)return {goal:null,walk:false,face};st.mode='wait';st.peekAt=st.t+1.4+r()*3;}
+  // wait: back onto the spot when drifted, otherwise a small peek along the barrier now and then
+  if(dS>.2)return {goal:sp,walk:true,face};
+  if(st.t>=st.peekAt&&c.left>1.2){st.peekAt=st.t+1.4+r()*3;const o=st.peekSide*(BUY.peek[0]+r()*(BUY.peek[1]-BUY.peek[0])),q=[sp[0]+o,sp[1],sp[2]];st.peekSide=-st.peekSide;
+   if(c.free(q[0],q[2])){st.mode='peek';st.goal=q;st.peekT=0;return {goal:q,walk:true,face};}}
+  return {goal:null,walk:false,face};}
+ // walking past a teammate: push the move away from anyone closer than 1.2 m (others: [[x, z]]) -> out [vx, vz] (unit or 0)
+ function buySep(px,pz,others,vx,vz,out){let ax=vx,az=vz;for(const o of others){const dx=px-o[0],dz=pz-o[1],d=Math.hypot(dx,dz);if(d>=1.2||d<1e-6)continue;const k=(1.2-d)*3/d;ax+=dx*k;az+=dz*k;}
+  const l=Math.hypot(ax,az);out[0]=l>1e-6?ax/l:0;out[1]=l>1e-6?az/l:0;return out;}
+ // steering target along a route (node ids, drained as they are reached) and then the exact goal -> out [x, z]
+ function buyNext(nodes,route,px,pz,gx,gz,out){
+  while(route.length&&Math.hypot(nodes[route[0]][0]-px,nodes[route[0]][2]-pz)<.45)route.shift();
+  if(!route.length||Math.hypot(gx-px,gz-pz)<1){out[0]=gx;out[1]=gz;return out;}
+  const n=nodes[route[0]];out[0]=n[0];out[1]=n[2];return out;}
+ return {hash,rng,clamp,pickW,REACT,personality,reaction,crosshair,crosshairAt,firePattern,peek,attackPlan,defensePlan,roles,teamBuy,buyFor,onMateDeath,onSound,ATTACK,DEFENSE,utility,UTIL,turnStep,trackLag,wrapA,SPIKE,plantSpot,postPlant,retake,postPlay,SHOOT_UTIL,shootUtility,TAILWIND,tailwindDash,tailwindKeys,LEVEL,level,aimTraits,AIM_H,aimHeight,halfWidth,aimPlan,aimAt,readyToFire,planFire,idlePitch,recoilPull,discipline,hitPart,BUY,buyEdge,buySide,buyArea,buyRoute,buyExit,buySpot,buyWander,buyNew,buyTick,buyNext,buySep};
 });
 // Native-map 5v5 bots stop moving as one blob: per-round plans (own spot inside the site, one lurker on the other site,
 // staggered starts by personality, shuffled defender sites with spread holds), lane-varied routes from the shared
@@ -15789,6 +15881,63 @@ if(typeof xDefOk==='function'){const do0=xDefOk;xDefOk=function(x,safe){if(!xbvS
   return x2(out,x,z);
  }catch(e){}
  return sg0.apply(this,arguments);};}
+// Buy phase (native-map 5v5, as the server's bots.js buyMill; shared logic vendor/bot-brain.cjs buy*): after their buy
+// (fBotBuy, unchanged) the bots stand a moment, walk a few short legs around spawn with pauses and look-arounds, then walk
+// to a spot 0.55-0.7 m inside the spawn barrier (the plane fiveTick clamps the player to: z = +-xSpawn().edge) where
+// their planned route (xbvPlan: stage / site) leaves spawn, staggered from their teammates' spots (a second row 0.75 m
+// back in a full doorway), face out along that route and peek a little along the barrier until it drops. They walk only
+// on the spawn's own nav region 0.5 m+ inside the barrier and every step keeps them 0.42 m inside, so they never touch or
+// cross it; the round's own logic (xGoal, staggered starts, utility) takes over from there when it drops.
+var XBYM={k:'',T:{},bl:null,blC:null,V:[0,0]};
+const XBYM_IN=.42;
+function xbbOn(){return !!(window.BotBrain&&window.xBuyMill!==false&&running&&mode==='five'&&!FV.dm&&FV.buy>0&&typeof nmActive==='function'&&nmActive()&&!(typeof srOn==='function'&&srOn())&&!(typeof MP!=='undefined'&&MP&&MP.cl));}/* an online client draws the host's / server's bots */
+function xbbBl(C,i){if(XBYM.blC!==C){XBYM.blC=C;XBYM.bl=new Map();}let v=XBYM.bl.get(i);if(v===undefined){const n=C.nav.nodes[i];v=nmBlocked(C,n[0],n[2],.3,n[1])?1:0;XBYM.bl.set(i,v);}return v;}
+function xbbTeam(C,atk){const k=xbvKey()+'|'+(atk?1:0);if(XBYM.k!==xbvKey()){XBYM.k=xbvKey();XBYM.T={};}let T=XBYM.T[k];if(T)return T;
+ const M=C.meta,a=atk?M.attacker:M.defender,s=BotBrain.buySide(a),edge=BotBrain.buyEdge(M.attacker,M.defender);
+ return XBYM.T[k]={s,edge,area:BotBrain.buyArea(C.nav.nodes,C.nav.adj,nmNear(C,a[0],a[2],a[1]),s,edge,i=>!C.playable||!!C.playable[i]),spots:[]};}
+function xbbOk(C,T,y0){return (x,z)=>{if(T.s*z<T.edge+XBYM_IN+.05)return null;const i=nmNear(C,x,z,y0);if(i<0||!T.area.f[i])return null;const n=C.nav.nodes[i];if(Math.hypot(n[0]-x,n[2]-z)>.9||Math.abs(n[1]-y0)>2.5)return null;
+ let y;try{y=nmHeight(C,x,z,n[1]+.3);}catch(e){return null;}if(!(Math.abs(y-n[1])<.45)||nmBlocked(C,x,z,.5,y)||!nmLeash(C,x,z,y,n[0],n[2]))return null;
+ for(let k=1;k<4;k++){const t=k/4;if(nmBlocked(C,n[0]+(x-n[0])*t,n[2]+(z-n[2])*t,.4,y))return null;}return [y,i];};}
+function xbbInit(C,u,team,atk){const T=xbbTeam(C,atk),key=XBYM.k+'|'+(atk?1:0);if(u.xbb&&u.xbb.key===key)return u.xbb;const p=u.g.position,N=C.nav.nodes,s=T.s,edge=T.edge;
+ const rand=BotRoutes.rng(BotRoutes.hash('buy|'+(u.name||'')+'|'+key+'|'+xbvSeed())),start=nmNear(C,p.x,p.z,p.y),B={key,st:BotBrain.buyNew(xbBrain(u),rand),spot:null,face:[0,-s],route:[],rg:null,stuck:0,last:[p.x,p.z],fails:0,bad:null,esc:null,off:!(start>=0&&T.area.f[start])};
+ if(!B.off){let site=null;try{const P=xbvPlan(u,team,atk,C),g=P.stages&&P.stages[0]?P.stages[0].site:atk?FV.sp.site:P.site;site=C.meta.sites[g]||C.meta.sites[Object.keys(C.meta.sites)[0]];}catch(e){}
+  const ex=site?BotBrain.buyExit(N,nmPath(C,start,nmNear(C,site[0],site[2],site[1])),s,edge):null,exit=ex||{x:p.x,y:p.y,z:s*edge,dx:0,dz:-s};
+  const sp=BotBrain.buySpot(exit,s,edge,T.spots,rand,xbbOk(C,T,exit.y));if(sp){B.spot=sp.p;T.spots.push(sp.p);B.face=[exit.dx,exit.dz];}}
+ return u.xbb=B;}
+function xbbStep(C,u,team,atk,dt){
+ const B=xbbInit(C,u,team,atk),p=u.g.position;if(B.off||!dt)return;const T=xbbTeam(C,atk),N=C.nav.nodes,s=T.s,edge=T.edge;
+ const mates=team.filter(v=>v!==u&&v.alive&&v.g).map(v=>({x:v.g.position.x,z:v.g.position.z,m:v.xbb}));if(team===allies&&player&&player.hp>0)mates.push({x:player.x,z:player.z,m:null});
+ const ok=xbbOk(C,T,p.y),c={dt,left:FV.buy,pos:[p.x,p.z],spot:B.spot,face:B.face,
+  wander:()=>{const av=mates.map(v=>[v.x,v.z]);for(const v of mates){const g=v.m&&v.m.st.goal;if(g)av.push([g[0],g[2]]);}const i=BotBrain.buyWander(N,T.area,[p.x,p.z],B.st.rand,av,s,edge,j=>!xbbBl(C,j));return i>=0?N[i]:null;},
+  free:(x,z)=>!!ok(x,z)&&mates.every(v=>{const q=v.m&&v.m.spot,g=v.m&&v.m.st.goal;return Math.hypot(v.x-x,v.z-z)>1.05&&!(q&&Math.hypot(q[0]-x,q[2]-z)<1.05)&&!(g&&Math.hypot(g[0]-x,g[2]-z)<1.05);})};
+ const d=BotBrain.buyTick(B.st,c),turn=(fx,fz,k)=>{const t=Math.atan2(fx,fz);u.g.rotation.y+=xAng(t-u.g.rotation.y)*Math.min(1,dt*k);};
+ if(d.face)turn(d.face[0],d.face[1],3.5);
+ let vx=0,vz=0,walk=!!d.walk;
+ if(d.goal){const g=d.goal;if(B.rg!==g){B.rg=g;const occ=[];for(const v of mates){occ.push([v.x,v.z]);if(v.m&&v.m.spot)occ.push([v.m.spot[0],v.m.spot[2]]);}
+   B.route=BotBrain.buyRoute(N,C.nav.adj,T.area,nmNear(C,p.x,p.z,p.y),nmNear(C,g[0],g[2],g[1]),i=>(xbbBl(C,i)?8:0)+(B.bad&&B.bad.has(i)?6:0)+(occ.some(o=>Math.abs(o[0]-N[i][0])<1.1&&Math.abs(o[1]-N[i][2])<1.1)?5:0));B.stuck=0;B.last=[p.x,p.z];}
+  if(Math.hypot(p.x-B.last[0],p.z-B.last[1])>.25){B.last=[p.x,p.z];B.stuck=0;}else if((B.stuck+=dt)>.6){B.stuck=0;if(B.route.length)(B.bad||(B.bad=new Set())).add(B.route[0]);B.rg=null;B.fails++;if(B.st.mode==='mill'&&B.fails>1)B.st.legT=99;
+   const gx=g[0]-p.x,gz=g[2]-p.z,gl=Math.hypot(gx,gz)||1;let best=null,bd=-2;for(let k=0;k<16;k++){const a=k*Math.PI/8,ex=Math.sin(a),ez=Math.cos(a);if(blocked(p.x+ex*.3,p.z+ez*.3,.45,p.y)||s*(p.z+ez*.3)<edge+XBYM_IN)continue;const dot=(ex*gx+ez*gz)/gl;if(dot>bd){bd=dot;best=[ex,ez];}}
+   if(best)B.esc={v:best,until:FV.buy-.3};
+   if(B.st.mode==='go'&&B.fails>=2&&B.spot){const k=T.spots.indexOf(B.spot),sp=BotBrain.buySpot({x:p.x},s,edge,T.spots.filter(q=>q!==B.spot),B.st.rand,ok);if(sp&&Math.hypot(sp.p[0]-p.x,sp.p[2]-p.z)<Math.hypot(B.spot[0]-p.x,B.spot[2]-p.z)){if(k>=0)T.spots[k]=sp.p;B.spot=sp.p;B.fails=0;}}}
+  if(B.esc&&FV.buy>B.esc.until){vx=B.esc.v[0];vz=B.esc.v[1];walk=false;}
+  else{const t=BotBrain.buyNext(N,B.route,p.x,p.z,g[0],g[2],XBYM.V),l0=Math.hypot(t[0]-p.x,t[1]-p.z)||1,v=BotBrain.buySep(p.x,p.z,mates.map(m=>[m.x,m.z]),(t[0]-p.x)/l0,(t[1]-p.z)/l0,XBYM.V);vx=v[0];vz=v[1];}
+  if(!d.face&&(vx||vz))turn(vx,vz,8);}
+ else{B.rg=null;B.route.length=0;B.stuck=0;}
+ // move like the round's bots (weapon run speed, walk x0.6, axis-separated against blocked()), never within XBYM_IN of the barrier
+ const D=typeof DIFF!=='undefined'&&DIFF[S.diff]||{speed:1},bs=botRun(u,walk)*Math.min(1,D.speed||1)*dt,x0=p.x,z0=p.z;
+ // a step is taken only where the capsule also stands clear on the floor it lands on or a step up from it (no embedding in a
+ // spawn rim / ledge lip). Stepping down, the floor is the highest under the capsule's footprint (0.42 m, as the motor's support), so a bot
+ // walking off a ledge stays on it until clear of the lip instead of snapping into it; a bot already embedded (spawned on
+ // a lip) moves as the round's bots do until it is clear.
+ const strict=!nmBlocked(C,p.x,p.z,.4,p.y),floor=(x,z)=>{let y=nmHeight(C,x,z,p.y+.01);if(y<p.y-.05)for(let k=0;k<8;k++){const a=k*Math.PI/4;let q;try{q=nmHeight(C,x+Math.cos(a)*.42,z+Math.sin(a)*.42,p.y+.01);}catch(e){continue;}if(q<=p.y+.05&&q>y)y=q;}return y;};
+ const step=(x,z)=>{if(blocked(x,z,.45,p.y))return false;let y;try{y=floor(x,z);}catch(e){return false;}if(!(y>p.y-1.2)||(strict&&nmBlocked(C,x,z,.4,y)&&nmBlocked(C,x,z,.4,y+.32)))return false;p.x=x;p.z=z;p.y=y;return true;};
+ if(vx)step(p.x+vx*bs,p.z);
+ if(vz){const z=p.z+vz*bs;if(s*z>=edge+XBYM_IN)step(p.x,z);}
+ u.spd=Math.hypot(p.x-x0,p.z-z0)/dt;u.mv=u.spd>.05;u.wk=walk?1:0;u.fs=(u.fs||0)-dt;if(u.mv&&!walk&&u.fs<=0){u.fs=.4;try{SFX.step(p);}catch(e){}}}
+function xbbTick(dt){const C=nmActive();if(!C||!C.nav||!C.meta||!C.meta.attacker)return;
+ for(const [team,atk] of [[bots,!FV.atk],[allies,!!FV.atk]])for(const u of team){if(!u||!u.alive||!u.g||u.nt||u.det>0)continue;try{xbbStep(C,u,team,atk,dt);}catch(e){u.xbb=Object.assign(u.xbb||{},{off:true});}}}
+function xbbEnd(){for(const u of bots.concat(allies))if(u){u.xbb=null;u.mv=false;u.spd=0;}}
+if(typeof fiveTick==='function'){const ft0=fiveTick;fiveTick=function(dt){const on=xbbOn(),r=ft0.apply(this,arguments);if(on){try{xbbTick(window.xLdOn?0:Math.min(.1,dt||0));}catch(e){}if(!(FV.buy>0))xbbEnd();}return r;};}
 // ---- END BOT VARIETY ----
 // ---- DEBUG HOOKS ----
 // Headless/manual testing hooks. Active only on localhost or with ?__vs=1.
