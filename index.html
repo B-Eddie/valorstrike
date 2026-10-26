@@ -14705,8 +14705,14 @@ function xAfGunTick(dt, k, ag) {
 }
 function xAfHideGun() { gun.visible = false; knife.visible = false; if (typeof XV !== "undefined" && XV.fp && XV.fp.root) XV.fp.root.visible = false; }
 function xAfOff() {
-  const R = XAF.cur; XAF.on = false; XAF.mode = ""; if (!R) return; R.root.visible = false; for (const k in R.props) R.props[k].g.visible = false; for (const k in R.guns || {}) { R.guns[k].g.visible = false; if (R.guns[k].l) R.guns[k].l.visible = false; } XAF.gs = null;
+  const R = XAF.cur; XAF.on = false; XAF.mode = ""; xAfShowGun(); if (!R) return; R.root.visible = false; for (const k in R.props) R.props[k].g.visible = false; for (const k in R.guns || {}) { R.guns[k].g.visible = false; if (R.guns[k].l) R.guns[k].l.visible = false; } XAF.gs = null;
   try { if (XV.fp) { XV.fp.kind = null; xvFPPlay(XV.fp, "equip"); } } catch (e) {} // the gun comes back with its native equip
+}
+// xAfHideGun cleared gun / knife visibility every tick while the ability was out (even while the rig was still loading or failed);
+// nothing else restores it until a weapon switch or ADS, so the gun stayed invisible after every cast (browser newmain1 / diag_kj1).
+function xAfShowGun() { // the held weapon's own visibility, as the weapon-switch / ADS paths set it (5v5 / DM / TDM; duel and aim have no abilities)
+  try { if (typeof mode !== "undefined" && (mode === "duel" || mode === "aim")) return; const dead = !player || player.hp <= 0, w = typeof rw !== "undefined" ? rw : "";
+    knife.visible = w === "knife" && !dead; gun.visible = w !== "knife" && !dead && !(typeof ads !== "undefined" && ads === 2); } catch (e) {}
 }
 function xAfShow(R) { if (XAF.cur && XAF.cur !== R) XAF.cur.root.visible = false; XAF.cur = R; if (R.root.parent !== camera) camera.add(R.root); R.root.visible = true; XAF.on = true; }
 function xAfTick(dt) {

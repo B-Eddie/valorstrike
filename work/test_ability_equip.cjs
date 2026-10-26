@@ -79,7 +79,7 @@ const fails=[];const fail=s=>{fails.push(s);if(VERBOSE)console.log('FAIL',s);};c
  pick('Phoenix');xe('ammo=Math.max(ammo,5);reloading=0;true');await tap('Digit2');await adv(900);
  const VM=`(()=>{const F=typeof XV!=="undefined"&&XV.fp,R=XAF.cur;
   const cv=o=>{let v=!!o;for(let x=o;x&&v;x=x.parent)v=x.visible;return v;};
-  return {gv:cv(gun)||cv(knife),fp:F&&F.root?cv(F.root):null,arms:[VMA.R,VMA.L].filter(Boolean).some(cv),rig:R?cv(R.root):false,on:XAF.on,mode:XAF.mode,legacy:typeof xCaHand!=="undefined"||typeof XEQV!=="undefined"||"h" in XCA,eq:J.eq&&J.eq.st};})()`;
+  return {gvr:gun.visible||knife.visible,gv:cv(gun)||cv(knife),fp:F&&F.root?cv(F.root):null,arms:[VMA.R,VMA.L].filter(Boolean).some(cv),rig:R?cv(R.root):false,on:XAF.on,mode:XAF.mode,legacy:typeof xCaHand!=="undefined"||typeof XEQV!=="undefined"||"h" in XCA,eq:J.eq&&J.eq.st};})()`;
  const v0=xe(VM);if(VERBOSE)console.log('vm idle',v0);
  if(v0.on||v0.rig)fail('ability viewmodel up before equip '+JSON.stringify(v0));
  if(v0.legacy)fail('legacy primitive ability hand (xCaHand / XEQV / XCA.h) still present');
@@ -93,6 +93,7 @@ const fails=[];const fail=s=>{fails.push(s);if(VERBOSE)console.log('FAIL',s);};c
  eq(v2.eq,null,'cast finished');
  if(v2.on||v2.rig)fail('ability viewmodel left up after the cast '+JSON.stringify(v2));
  if(v2.gv!==v0.gv)fail('gun visibility not restored');
+ if(!v0.gvr)fail('precondition: gun / knife visible flag set before the equip '+JSON.stringify(v0)+' (an earlier cast left the gun hidden?)');if(v2.gvr!==v0.gvr)fail('gun / knife visible flag not restored after the cast (xAfHideGun cleared it; xAfOff must set it back) '+JSON.stringify(v2));
  if(v0.fp!==null&&v2.fp!==v0.fp)fail(`native rig visibility not restored (${v0.fp} -> ${v2.fp})`);
  // the weapon key of the gun in hand (the sidearm here, no primary bought) puts the ability away and brings the gun back
  await tap('KeyC');await adv(700);await tap('Digit2');await adv(900);const v3=xe(VM);if(v3.gv!==v0.gv||v3.on)fail('weapon key did not bring the gun back '+JSON.stringify(v3));
