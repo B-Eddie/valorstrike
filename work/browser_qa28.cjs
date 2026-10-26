@@ -29,11 +29,11 @@ const ONLY=(process.env.PARTS||'E,F,G').split(',');
  const simWait=async(sec,why)=>{const t=+(await X('window.__sim||0'));await page.waitForFunction(t=>window.__xe('window.__sim||0')>=t,t+sec,{timeout:900000,polling:200}).catch(e=>log('simWait '+(why||sec)+' timeout',String(e).slice(0,80)));};
  const frames=async n=>{await X(`window.__allow=${n};1`);await page.waitForFunction(()=>window.__xe('window.__allow<=0'),null,{timeout:900000,polling:1000}).catch(()=>{});};
  const shot=async n=>{await frames(2);await page.screenshot({path:`${SHOT}qa28-${n}-640x360.jpg`,type:'jpeg',quality:80,timeout:300000}).catch(e=>log('shot '+n+' failed (non-fatal)',String(e).slice(0,120)));};
- const key=async(k)=>{await X('window.__ts=0.05;1');await page.keyboard.down(k);await simWait(0.02,k);await page.keyboard.up(k);await X('window.__ts=1;1');};
+ const key=async(k)=>{await X('window.__ts=0.05;XRT.debt=0;clock.getDelta();1');await page.keyboard.down(k);await simWait(0.02,k);await page.keyboard.up(k);await X('window.__ts=1;1');};
  // equip-then-fire abilities (XAB_EQ: Cypher C, Sage C / X, Raze Q): the key draws it (XAB_EQT s), a click casts it
- const cast=async(k,draw)=>{await key(k);await simWait((draw||0.8)+0.25,'draw '+k);const e=await XJ(`J.eq?{k:J.eq.k,st:J.eq.st}:null`);log('equipped '+k,e);await click(0.05);await X('window.__ts=0.05;1');await simWait(0.7,'release '+k);await X('window.__ts=1;1');return e;};
+ const cast=async(k,draw)=>{await key(k);await simWait((draw||0.8)+0.25,'draw '+k);const e=await XJ(`J.eq?{k:J.eq.k,st:J.eq.st}:null`);log('equipped '+k,e);await click(0.05);await X('window.__ts=0.05;XRT.debt=0;clock.getDelta();1');await simWait(0.7,'release '+k);await X('window.__ts=1;1');return e;};
  // hk-34: the 0.7 s release wait ran at __ts 1: one ~1-4 s box frame could carry the cast past short windows (qa_recent2: no Blast Pack left by the read, armed 1.5 s / goes off at 5 s). Released at __ts 0.05.
- const click=async(hold)=>{await X('window.__ts=0.05;1');await frames(1);await page.mouse.down();await simWait(hold||0.05,'click');await page.mouse.up();await X('window.__ts=1;1');};
+ const click=async(hold)=>{await X('window.__ts=0.05;XRT.debt=0;clock.getDelta();1');await frames(1);await page.mouse.down();await simWait(hold||0.05,'click');await page.mouse.up();await X('window.__ts=1;1');};
  await page.goto('http://127.0.0.1:8876/',{waitUntil:'domcontentloaded'});await page.waitForFunction(()=>window.__xe&&window.xValorantAssets,null,{timeout:180000,polling:1000});log('assets',1);
  await page.getByRole('button',{name:'Got it',exact:true}).click({timeout:5000}).catch(()=>{});
  const go=async(agent)=>{await X(`try{leave()}catch(e){}1`);await page.waitForTimeout(1500);
@@ -56,12 +56,17 @@ const ONLY=(process.env.PARTS||'E,F,G').split(',');
   const hud=()=>XJ(`(()=>{const el=document.getElementById('jE');const em=el&&el.querySelector('em');return {txt:em?em.textContent:null,off:el?el.classList.contains('off'):null,tw:J.tw?{arm:+J.tw.arm.toFixed(2),t:+J.tw.t.toFixed(2)}:null,e:J.e,p:[player.x,player.z].map(v=>+v.toFixed(2))};})()`);
   // hk-35: qa28_1 read arm -4.06 - key() put __ts back to 1 and frames(1) ran one ~4 s box frame at full speed. The windup reads
   // (a, b, c) now stay at __ts 0.05 (keyD: key press without restoring the dilation) until the window read.
-  const keyD=async(k)=>{await X('window.__ts=0.05;1');await page.keyboard.down(k);await simWait(0.02,k);await page.keyboard.up(k);};
-  await X('J.e=1;J.tw=null;J.cd.e=0;1');await keyD('KeyE');await frames(1);const a=await hud();log('E armed',a);
+  const keyD=async(k)=>{await X('window.__ts=0.05;XRT.debt=0;clock.getDelta();1');await page.keyboard.down(k);await simWait(0.02,k);await page.keyboard.up(k);};
+  // hk-37: qa28_2 read arm -0.68 (1.68 s late) although dilated: the 1x time since the last frame (up to one ~2-4 s box frame,
+  // performance.now is continuous across the __ts change) and XRT.debt (catch-up carried from slow 1x frames) were still owed
+  // to the next frames. dil() drops both (clock.getDelta + debt 0) before the press; the windup runs at __ts 0.02.
+  const dil=async ts=>{await X(`window.__ts=${ts};XRT.debt=0;clock.getDelta();1`);};
+  const keyW=async k=>{await dil(0.02);await page.keyboard.down(k);await simWait(0.01,k);await page.keyboard.up(k);};
+  await X('J.e=1;J.tw=null;J.cd.e=0;1');await keyW('KeyE');const a0=await hud();await frames(1);const a=await hud();a.at_press=a0.tw;log('E armed',a);
   check('Tailwind: E arms it (charge spent, J.tw windup <= 1 s, HUD WINDUP)',a.e===0&&!!a.tw&&a.tw.arm>0.5&&a.tw.arm<=1&&a.txt==='WINDUP',a);
-  await keyD('KeyE');const b=await hud();log('E during windup',b);
+  await keyW('KeyE');await frames(1);const b=await hud();log('E during windup',b);
   check('Tailwind: E during the windup is refused (still armed, no dash)',!!b.tw&&b.tw.arm>0&&Math.hypot(b.p[0]-a.p[0],b.p[1]-a.p[1])<0.5,{a,b});
-  await simWait(Math.max(0.1,(b.tw?b.tw.arm:1)+0.15),'windup');await frames(1);const c=await hud();await X('window.__ts=1;1');log('E window',c);
+  await X('window.__ts=0.1;1');await simWait(Math.max(0.1,(b.tw?b.tw.arm:1)+0.15),'windup');await dil(0.02);await frames(1);const c=await hud();await X('window.__ts=1;1');log('E window',c);
   check('Tailwind: after the windup the HUD shows the window seconds (7 / 8 s)',!!c.tw&&c.tw.arm<=0&&/^[78] s$/.test(c.txt||''),c);
   await key('KeyE');await simWait(0.6,'dash');await frames(1);const d=await hud();log('E dashed',d);
   check('Tailwind: E in the window dashes (> 5 m) and uses the window',!d.tw&&Math.hypot(d.p[0]-c.p[0],d.p[1]-c.p[1])>5,{c,d});
@@ -70,7 +75,7 @@ const ONLY=(process.env.PARTS||'E,F,G').split(',');
  }catch(e){R.errors.push('part E '+String(e).slice(0,300));log('part E error',String(e).slice(0,300));}
  if(ONLY.includes('F'))try{
   await go('Killjoy');await X('J.q=2;J.cd.q=0;J.ab=null;1');await faceOpen(4);const P0=await XJ(`[player.x,player.y,player.z]`);
-  await cast('KeyQ',0.85);await X('window.__ts=0.05;1');await frames(1);/* hk-35: qa28_1 - the frame after the cast ran at 1x and the 1.85 s deploy was over (dep 0) by the 'deploying' read; dilated until then */
+  await cast('KeyQ',0.85);await X('window.__ts=0.05;XRT.debt=0;clock.getDelta();1');await frames(1);/* hk-35: qa28_1 - the frame after the cast ran at 1x and the 1.85 s deploy was over (dep 0) by the 'deploying' read; dilated until then */
   const a=await XJ(`(()=>{const A=J.ab;if(!A)return null;window.__A=A;const b=bots.filter(b=>b.alive)[0];window.__ab=b;b.vul=0;b.g.position.set(A.p.x+2.5,player.y,A.p.z);return {p:[A.p.x,A.p.y,A.p.z].map(v=>+v.toFixed(2)),py:+player.y.toFixed(2),dep:+A.dep.toFixed(2),drawn:A.m.parent===scene&&A.m.visible,tg:!!A.tg};})()`);log('F alarmbot placed',a);
   check('Alarmbot: Q (equip + click) places it ON the floor (y = player floor + 0.225; on native Ascent it sat at 0.225, under the map), drawn',!!a&&a.drawn&&Math.abs(a.p[1]-(a.py+0.225))<0.15,a);
   if(!a)throw Error('no Alarmbot');
@@ -90,9 +95,12 @@ const ONLY=(process.env.PARTS||'E,F,G').split(',');
   await X(`FV.pri='Outlaw';rw='pri';ammo=WEAP.Outlaw.mag;reloading=0;fcd=0;VM.sw=0;try{onSkin();}catch(e){}1`);await simWait(1.2,'equip');
   await X(`VM.sw=0;fcd=0;reloading=0;ammo=WEAP.Outlaw.mag;setScope(true);1`);await simWait(0.5,'scope');
   const st=await XJ(`{w:wName(),ads,ammo,fcd:+fcd.toFixed(2)}`);log('G Outlaw scoped',st);
-  await X(`window.__gs.length=0;{const t=window.__sim;window.__q=[[t+0.05,()=>{setScope(true);fireHeld=true;shoot();fireHeld=false;}],[t+0.42,()=>{setScope(true);fireHeld=true;shoot();fireHeld=false;}]];}1`);
-  await page.waitForFunction(()=>window.__xe('!window.__q.length'),null,{timeout:600000,polling:200});await simWait(0.1,'shots');
-  const g=await XJ(`{gs:window.__gs.slice(),qe:window.__qe||null,ammo}`);log('G Outlaw shots',g);
+  // hk-37: qa28_2 fired only the first shot: __q callbacks run after a whole substep (<= 50 ms), so the planned 0.37 s gap was
+  // 0.32..0.42 s - under the 0.364 s Outlaw refire (refused) or past the 0.375 s bloom reset. The second shot is now queued from
+  // the first one's own sim time, with 2 ms substeps (XRT.step) at __ts 0.05 while they run: gap 0.370..0.374 s.
+  await X(`window.__ts=0.05;XRT.debt=0;clock.getDelta();window.__st0=XRT.step;XRT.step=0.002;window.__gs.length=0;{const t=window.__sim;const f=()=>{setScope(true);fireHeld=true;shoot();fireHeld=false;};window.__q=[[t+0.05,()=>{f();window.__t1=window.__sim;window.__q.push([window.__sim+0.37,()=>{f();window.__t2=window.__sim;}]);}]];}1`);
+  await page.waitForFunction(()=>window.__xe('window.__t2!=null'),null,{timeout:900000,polling:500});await simWait(0.05,'shots');await X('XRT.step=window.__st0||0.05;window.__ts=1;1');
+  const g=await XJ(`{gs:window.__gs.slice(),qe:window.__qe||null,ammo,gap:+(window.__t2-window.__t1).toFixed(4)}`);log('G Outlaw shots',g);
   const s1=g.gs[0],s2=g.gs[1];
   check('Outlaw: scoped first shot spread ~0 (< 0.3 deg)',!!s1&&s1[1]==='Outlaw'&&s1[2]===2&&s1[3]<0.3,g);
   check('Outlaw: a second scoped shot 0.37 s later carries the 13.01 bloom (~2.14 deg, 1.9..2.3)',!!s2&&s2[2]===2&&s2[3]>=1.9&&s2[3]<=2.3,g);

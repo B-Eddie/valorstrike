@@ -50,10 +50,15 @@ const HEAL=c=>`{const s=sim('${c}');if(s.remaining!=null)s.remaining=Math.max(s.
   const s0=await srv(),c0=await chipNow();log('A darted',{s0,c0,chips:await XJ('window.__chips.slice(-3)')});
   check('online Spycam dart: the darted player sees "TRACKING DART · HOLD 4 TO REMOVE" (server dartedUntil, status.dart 1)',mk.dart&&s0.dart&&s0.darted&&c0.shown&&/TRACKING DART · HOLD 4 TO REMOVE/.test(c0.text),{mk,s0,c0});
   await page.screenshot({path:SHOT+'online-dart-tracking-640x360.jpg',type:'jpeg',quality:70,timeout:600000}).catch(e=>log('shot',String(e).slice(0,120)));
-  // A2: hold 4 about 1 s, let go: the channel resets (no removal)
-  await X('window.__chips.length=0;1');await page.keyboard.down('Digit4');const t1=await sync(0.9);const mid=await srv(),cm=await chipNow();await page.keyboard.up('Digit4');await sync(0.6);const rs=await srv();
-  log('A held ~1 s then released',{t1,mid,cm,rs,chips:await XJ('window.__chips.filter(c=>c.drm>0).slice(-4)')});
-  check('online Spycam dart: holding 4 shows "REMOVING DART n%" (server rm climbing, < 1.85 s); letting go early resets it (dart kept, rm 0)',mid.dart&&mid.rm>0.3&&mid.rm<1.85&&mid.h4&&/REMOVING DART \d+%/.test(cm.text)&&rs.dart&&rs.rm===0,{mid,cm,rs});
+  // A2: hold 4, let go early: the channel resets (no removal).
+  // hk-37: dart_tw1 read the server ~1.7 s after the press (keyboard.down + 1 s fetch polling on the loaded box): the dart was
+  // already removed by the 'mid' read. Now the page lets go of 4 itself (keyup inside the status handler) on the first server
+  // status with drm >= 0.6 s; the lockstep server only moves on page input, so it sees the release within one page frame.
+  await X(`window.__chips.length=0;window.__rel=null;window.__relAt=0.6;if(!window.__relH){window.__relH=1;const f=netStatusChips;netStatusChips=function(st){const r=f.apply(this,arguments);try{if(window.__relAt&&!window.__rel&&st.drm>=window.__relAt){window.__rel={drm:+st.drm.toFixed(2),dart:st.dart,t:+performance.now().toFixed(0),text:(document.getElementById('netSt')||{}).textContent||''};dispatchEvent(new KeyboardEvent('keyup',{code:'Digit4',key:'4'}));}}catch(e){}return r;};}1`);
+  await page.keyboard.down('Digit4');await W8('window.__rel',300000,'drm >= 0.6');await page.keyboard.up('Digit4');await X('window.__relAt=0;1');await sync(0.6);const rs=await srv();
+  const rel=await XJ('window.__rel'),mx=await XJ('Math.max(0,...window.__chips.map(c=>c.drm))');
+  log('A held then released',{rel,mx,rs,chips:await XJ('window.__chips.filter(c=>c.drm>0).slice(-4)')});
+  check('online Spycam dart: holding 4 shows "REMOVING DART n%" (server rm climbing, < 1.85 s); letting go early resets it (dart kept, rm 0)',!!rel&&rel.dart===1&&rel.drm>0.3&&mx<1.85&&/REMOVING DART \d+%/.test(rel.text)&&rs.dart&&rs.rm===0,{rel,mx,rs});
   // A3: hold 4 for the full 1.85 s: dart gone, chip cleared
   await X('window.__chips.length=0;1');await page.keyboard.down('Digit4');const t2=await sync(2.3);const done=await srv();await page.keyboard.up('Digit4');await sync(0.5);const c3=await chipNow(),after=await srv();
   const pct=await XJ(`window.__chips.filter(c=>c.drm>0).map(c=>c.on)`);log('A held 2.3 s',{t2,done,after,c3,pct:pct.slice(-6)});
@@ -63,9 +68,11 @@ const HEAL=c=>`{const s=sim('${c}');if(s.remaining!=null)s.remaining=Math.max(s.
   // B. Tailwind, page player Jett, real E key
   const me0=await qa(HEAL(code)+`const s=sim('${code}');const me=s.units.find(u=>u.human);me.ability=me.ability||{};me.ability.e=1;if(me.ability.cool)me.ability.cool.e=0;me.tailwind=null;return {agent:me.agent,e:me.ability.e};`);
   await X(`J.e=1;J.cd.e=0;window.__chips.length=0;1`);log('B ready',me0);
-  await page.keyboard.down('KeyE');await sync(0.3);await page.keyboard.up('KeyE');
-  const w=await srv(),cw=await chipNow();log('B windup',{w,cw,chips:await XJ('window.__chips.slice(-3)')});
-  check('online Tailwind: E starts the 1 s windup on the server and the page chip reads "TAILWIND <s>s"',me0.agent==='Jett'&&w.tw&&w.tw.arm>0&&w.tw.arm<=1&&/TAILWIND \d\.\ds/.test(cw.text),{me0,w,cw});
+  // hk-37: dart_tw1 read the windup 2.15 s after the press (fetch polling / slow page): judged from the status history instead -
+  // every server status the page handled during the windup (twa = server armAt - time) and the chip text it put up for it.
+  await page.keyboard.down('KeyE');await W8('window.__chips.some(c=>c.twa>0||c.twu>0)',300000,'tailwind status');await page.keyboard.up('KeyE');
+  const w=await srv(),cw=await chipNow(),wu=await XJ('window.__chips.filter(c=>c.twa>0)');log('B windup',{w,cw,n:wu.length,first:wu[0]||null,last:wu[wu.length-1]||null});
+  check('online Tailwind: E starts the 1 s windup on the server and the page chip reads "TAILWIND <s>s"',me0.agent==='Jett'&&!!w.tw&&wu.length>0&&wu.every(c=>c.twa<=1&&/TAILWIND \d\.\ds/.test(c.on)&&c.shown),{me0,w,cw,n:wu.length,first:wu[0]||null});
   await sync(1.1);const r=await srv(),cr=await chipNow();log('B window',{r,cr});
   await page.screenshot({path:SHOT+'online-tailwind-ready-640x360.jpg',type:'jpeg',quality:70,timeout:600000}).catch(e=>log('shot',String(e).slice(0,120)));
   check('online Tailwind: after the windup the chip reads "TAILWIND READY · E TO DASH <n>s" (server window <= 7.5 s)',r.tw&&r.tw.arm<=0&&r.tw.until>0&&r.tw.until<=7.5&&/TAILWIND READY · E TO DASH \d+s/.test(cr.text),{r,cr});
