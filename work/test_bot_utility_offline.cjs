@@ -59,13 +59,20 @@ const ok=(c,m)=>{if(!c)fail(m);};
   eq(h,[0,0,24],'bot Turret: nothing through the 2.7 s deploy + 0.75 s windup, then a 3 x 8 burst at 10 m');eq(D(A0+'|'+B0),0,'the turret never shoots its own team');
   xe('__t.hp=0;true');await run(100);eq(xe('XBTU.length'),0,'a shot-down turret is removed');
   xe('xBTurret(bots[0],false,bots[0].g.position,player.x,player.z);jClear();true');eq(xe('XBTU.length'),0,'a round clear removes bot turrets');
-  // ---- Blaze: enemy bot Phoenix 3 m from the player: the 8 m wall across its line 3 m out, 8 s, 30/s to the other team (the
-  // caster's team a third), blocks sight across it, not along it ----
-  place([['b',0,0,-3],['a',0,2,0],['b',1,-2,0]]);keep();xe('blocked=()=>false;window.__bz=xBBlaze(bots[0],false,bots[0].g.position,player.x,player.z);blocked=__bl;true');
-  eq(xe('[Math.round(Math.hypot(__bz.p.x-bots[0].g.position.x,__bz.p.z-bots[0].g.position.z)*10)/10,__bz.t,__bz.en,__bz.own===bots[0],Math.round(Math.abs(__bz.ax)*100)/100,J.walls.includes(__bz)]'),[3,8,true,true,1,true],'Blaze: 3 m out on the line to the player, across it (along x), 8 s, enemy-owned');
-  await run(1000);{const bp=D('P|'+B0),ba=D(A0+'|'+B0),bm=D(B1+'|'+B0);ok(bp>=25&&bp<=36,'Blaze burns the player ~30/s ('+bp+')');ok(ba>=25&&ba<=36,'and the ally bot in it ('+ba+')');ok(bm>=7&&bm<=13,'the caster\'s mate in it takes a third ('+bm+')');}
-  eq(xe('(()=>{const o=__U.o,a=new THREE.Vector3(o.x,1.5,o.z-6),d=new THREE.Vector3(0,0,1);const b2=new THREE.Vector3(o.x+6,1.5,o.z-6);return [jBlock(a,d,9),jBlock(b2,d,9)];})()'),[true,false],'Blaze blocks sight across it, not 6 m to the side');
+  // ---- Blaze (XBLZ = server DEV.blaze): enemy bot Phoenix 3 m from the player: a straight wall along its line toward the
+  // player from 1 m ahead of its feet to 12 m, 8 s, 30/s within 0.8 m of the line (the caster's team a third), blocks sight
+  // across it, not beside it; shorter in front of a wall ----
+  eq(xe('[XBLZ.life,XBLZ.length,XBLZ.width,XBLZ.damage,XBLZ.heal,XHOT.heal]'),[8,12,0.8,30,12.5,12.5],'Blaze / Hot Hands values = server devices.js DEV.blaze / DEV.hotHands');
+  place([['b',0,0,-3],['a',0,0.5,3],['b',1,-0.5,5],['a',1,1.2,0]]);keep();xe('blocked=()=>false;window.__bz=xBBlaze(bots[0],false,bots[0].g.position,player.x,player.z);blocked=__bl;true');
+  eq(xe('[Math.round(Math.hypot(__bz.p.x-bots[0].g.position.x,__bz.p.z-bots[0].g.position.z)*10)/10,__bz.h,__bz.t,__bz.en,__bz.own===bots[0],Math.round(Math.abs(__bz.az)*100)/100,J.walls.includes(__bz),Math.round(__bz.m.scale.z*10)/10]'),[6.5,5.5,8,true,true,1,true,11],'Blaze: 11 m wall from 1 m to 12 m along the line to the player, 8 s, enemy-owned');
+  await run(1000);{const bp=D('P|'+B0),ba=D(A0+'|'+B0),bm=D(B1+'|'+B0),bo=D(A1+'|'+B0);ok(bp>=25&&bp<=36,'Blaze burns the player ~30/s ('+bp+')');ok(ba>=25&&ba<=36,'and the ally bot 0.5 m off its line ('+ba+')');ok(bm>=7&&bm<=13,'the caster\'s mate in it takes a third ('+bm+')');eq(bo,0,'nobody 1.2 m off the line');}
+  eq(xe('(()=>{const o=__U.o,a=new THREE.Vector3(o.x-6,1.5,o.z+1),d=new THREE.Vector3(1,0,0);const b2=new THREE.Vector3(o.x+2,1.5,o.z-6),d2=new THREE.Vector3(0,0,1);return [jBlock(a,d,12),jBlock(b2,d2,14)];})()'),[true,false],'Blaze blocks sight across it, not 2 m beside it');
   await run(7300);eq(xe('J.walls.includes(__bz)'),false,'Blaze gone after 8 s');
+  xe('blocked=(x,z)=>Math.hypot(x-bots[0].g.position.x,z-bots[0].g.position.z)>=4&&Math.hypot(x-bots[0].g.position.x,z-bots[0].g.position.z)<4.3;window.__bz=xBBlaze(bots[0],false,bots[0].g.position,player.x,player.z);blocked=__bl;true');
+  eq(xe('[Math.round(__bz.h*100)/100,Math.round(Math.hypot(__bz.p.x-bots[0].g.position.x,__bz.p.z-bots[0].g.position.z)*100)/100]'),[1.35,2.35],'Blaze stops 0.3 m short of a wall 4 m out');xe('jClear();true');
+  // the player's Blaze: the same wall along the aim; Phoenix heals 12.5/s standing in it
+  place([['b',0,30,0]]);keep();xe('blocked=()=>false;window.__pz=blazeWall(player.x,player.y||0,player.z,0,-1);blocked=__bl;player.z-=3;player.hp=50;true');eq(xe('[__pz.own===undefined,__pz.h,Math.round(__pz.ax*100)/100,Math.round(__pz.az*100)/100]'),[true,5.5,0,-1],'player Blaze along the aim');
+  {const h0=xe('player.hp');for(let t=0;t<1000;t+=50){H.advance(50);await new Promise(r=>setImmediate(r));}const dh=xe('player.hp')-h0;ok(dh>=11&&dh<=14.5,'Phoenix heals 12.5/s in his own Blaze ('+dh.toFixed(1)+')');}xe('player.z+=3;jClear();true');
   // ---- Barrier Orb: enemy bot Sage 5 m from the player: the 6 m ice wall 2.5 m out, solid (movement, sight), 600 HP to gunfire, 40 s ----
   place([['b',0,0,-5]]);keep();xe('blocked=()=>false;window.__bw=xBBarrier(bots[0],false,bots[0].g.position,player.x,player.z);blocked=__bl;true');
   eq(xe('[XBSW.length,__bw.hp,__bw.t,Math.round(Math.hypot(__bw.p.x-bots[0].g.position.x,__bw.p.z-bots[0].g.position.z)*10)/10,solids.includes(__bw.m),__bw.m.userData.sw===__bw]'),[1,600,40,2.5,true,true],'Barrier: one wall 2.5 m out, 600 HP, 40 s, in solids');
