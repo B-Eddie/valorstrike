@@ -38,9 +38,9 @@ const SRV=(()=>{const s=fs.readFileSync(ROOT+'/server/src/abilities.js','utf8'),
   await frames(3);await page.mouse.move(640,360);log('match A',await X('JSON.stringify({map:FV.map,XSMR})'));
   for(const [ag,key] of [['Jett','KeyC'],['Omen','KeyE'],['Cypher','KeyQ']]){
    await X(`J.pick=${JSON.stringify(ag)};jRound(false);J.c=K().mx.c||1;J.q=K().mx.q||1;J.e=Math.max(1,K().mx.e||1);J.cd={c:0,q:0,e:0,x:0};player.hp=100;J.eq=null;J.cbs=[];for(const s of J.smokes)scene.remove(s.m);J.smokes.length=0;window.__spw=0;window.__lastSmk=null;pitch=-0.15;1`);await frames(1);
+   await X(`if(!window.__spw){window.__spw=1;const p0=J.smokes.push;J.smokes.push=function(...a){window.__lastSmk=a[a.length-1];return p0.apply(this,a);};}1`);/* hooked BEFORE the key (smoke_raze3: the Cloudburst threw, landed and its 2.5 s smoke expired before the hook went in) - the smoke as it is created: a Cloudburst smoke lives 2.5 s and the 1 frame/s box can step past it between polls */
    await page.keyboard.press(key);let n=0;
    const t0=Date.now();let nc=0; // equip-then-fire (1.1 s draw): click while the ability is out until the smoke exists (a click during the draw is ignored); <= 40 s on the ~1 frame/s box
-   await X(`if(!window.__spw){window.__spw=1;const p0=J.smokes.push;J.smokes.push=function(...a){window.__lastSmk=a[a.length-1];return p0.apply(this,a);};}1`);/* the smoke as it is created: a Cloudburst smoke lives 2.5 s and the 1 frame/s box can step past it between polls */
    for(let i=0;Date.now()-t0<40000;i++){n=await X('J.smokes.length+(window.__lastSmk?1:0)');if(n)break;if(i%15===5&&(await X('!!J.eq'))){await page.mouse.down();await page.waitForTimeout(80);await page.mouse.up();nc++;}await X('window.__allow=1;1');await page.waitForTimeout(100);}
    log(ag+' cast state',await X(`JSON.stringify({clicks:${nc},eq:J.eq,smokes:J.smokes.length,made:!!window.__lastSmk,c:J.c,cbs:J.cbs.length,cd:J.cd,lc:typeof XNF!=='undefined'?XNF:null})`));
    /* the smoke grows in over its first 0.3 s (scale 0.3 -> 1 of r, s.a = age): smoke_raze2 sampled Jett at age ~0.1 s (drawn 2.62 = 3.35 x 0.78) - wait for full size (<= 20 s) */
