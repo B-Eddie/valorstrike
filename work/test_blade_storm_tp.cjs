@@ -24,6 +24,16 @@ const fs=require('fs'),vm=require('vm'),path=require('path'),assert=require('ass
   xvLoad:()=>Promise.resolve({scene:new T.Group()}),xAfKnife:()=>mkKnife(),jBurstDirs:n=>{const o=[];for(let i=0;i<n;i++)o.push((i-(n-1)/2)*2.5*Math.PI/180);return o;},
   SFX:{at:(p,w)=>sfx.push(['gun',w]),ab:(n,p)=>sfx.push(['ab',n,p])},renderer:{info:{render:{frame:1}}},xUbOnce:(X,n,set,dur)=>clip.push([n,set,dur]),xUbAnim:(bb,M)=>calls.push(['anim',M.w]),xUbShot:()=>{},kill:(x)=>{x.alive=false;},allyDie:(x)=>{x.alive=false;},pDie:()=>{},mpCliSnap:()=>{},xDie:()=>{}};
  vm.createContext(c);vm.runInContext(src.slice(a,b),c);const L=c.window.xBladeTP;assert(L,'export');
+ // hk-41 kunai: real 3D geometry (user "it looks like 2d png's of knives"), not a flat card / sprite / textured quad
+ {const ka=src.indexOf('var XKUN ='),kb=src.indexOf('function xAfDrawnBox',ka);assert(ka>0&&kb>ka,'kunai builder present');const kc={THREE:T,XNR:()=>{}};vm.createContext(kc);vm.runInContext(src.slice(ka,kb),kc);
+  const w=vm.runInContext('xAfKnife(null,0)',kc);w.visible=true;w.updateMatrixWorld(true);const ms=[];w.traverse(o=>{if(o.isMesh)ms.push(o);});assert(ms.length>=6,'kunai = blade + edge glow + collar + grip + bands + ring ('+ms.length+')');
+  assert(!/PlaneGeometry|Sprite|ShapeGeometry|alphaTest|map:/.test(src.slice(ka,kb)),'no flat card / sprite / texture in the kunai');
+  const blade=ms[0],bb=new T.Box3().setFromBufferAttribute(blade.geometry.attributes.position),sz=bb.getSize(new T.Vector3());assert(sz.z>.14&&sz.y>.04&&sz.x>.008,'blade has length, width AND thickness (diamond section): '+sz.toArray().map(v=>v.toFixed(3)));
+  const all=new T.Box3().setFromObject(w),as=all.getSize(new T.Vector3());assert(as.z>.22&&as.z<.3,'kunai ~0.25 m long: '+as.z.toFixed(3));
+  const tip=new T.Vector3(0,0,.155+(-0.027)).applyMatrix4(ms[0].parent.matrixWorld);assert(Math.abs(all.max.z-tip.z)<.01||all.max.z>0,'blade end on +z');
+  const n=blade.geometry.attributes.normal;let px=0,nx=0;for(let i=0;i<n.count;i++){const x=n.getX(i);if(x>.5)px++;if(x<-.5)nx++;}assert(px>0&&nx>0,'faceted both faces (ridge)');
+  assert(blade.material.emissive.getHex()!==0&&blade.material.emissiveIntensity>0,'glowing blade');assert(ms.some(m=>m.material.blending===T.AdditiveBlending),'soft additive edge glow');
+  const tr=vm.runInContext('xKunTrail()',kc);assert(tr.material.blending===T.AdditiveBlending&&tr.geometry.type==='ConeGeometry','thrown trail = additive 3D streak');}
  // layout
  const R5=L.ring(5,0);assert.equal(R5.length,5);assert.equal(L.ring(3,0).length,3,'one dagger per knife left');assert.equal(L.ring(0,0).length,0);
  for(const r of R5){assert(r.p[2]>.3,'in front of the agent');assert(r.p[1]>1&&r.p[1]<1.5,'at the hands / chest');assert(Math.abs(Math.hypot(...r.d)-1)<1e-9);assert(r.d[2]>.5,'points forward');}
@@ -74,5 +84,5 @@ const fs=require('fs'),vm=require('vm'),path=require('path'),assert=require('ass
  c.mpCliSnap({u:[[4,1,'RJ','Jett',0,0,0,0,100,0,1,'Phantom',1,0,1,0,0,0,0,0,0,-1,1,0,5]]});assert.equal(rb.bsK,0,'fog-hidden row: no knives');
  // death: daggers hidden, gun back for the drop
  rb.bsK=5;c.xUbAnim(rb,M2,0,1/60);assert.equal(M2.gun.visible,false);rb.xm=M2;c.xDie(rb);assert.equal(M2.gun.visible,true,'death drops the gun');assert.equal(M2.btp.g.visible,false);
- console.log('Blade Storm TP: knife throw sound + no gun tracer for remote / bot knives; offline bot knife damage 50/150/42.5 (no x1.3); server row [24] knives (fog 0, burst = several shot events); offline bot 5 knives / kill refill / over at 0; knife hands + gun hidden + one floating dagger per knife pitched with the aim; OverhandThrow per throw, faster burst throw with the fan; tail then gun back; death drops the gun');
+ console.log('Blade Storm TP: knife throw sound + no gun tracer for remote / bot knives; offline bot knife damage 50/150/42.5 (no x1.3); server row [24] knives (fog 0, burst = several shot events); offline bot 5 knives / kill refill / over at 0; knife hands + gun hidden + one floating dagger per knife pitched with the aim; OverhandThrow per throw, faster burst throw with the fan; tail then gun back; death drops the gun; kunai = real 3D geometry (diamond-section glowing blade, grip, ring, additive edge + trail)');
 })().catch(e=>{console.error(e);process.exit(1);});

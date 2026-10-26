@@ -55,8 +55,8 @@ console.warn=((w)=>(...a)=>{if(!/boneTransform/.test(String(a[0])))w(...a);})(co
  // dagger left), never gripped in the palms; and the rig is framed for its authored 43.383 deg viewmodel camera (scaled across
  // and up in camera space), not drawn raw through the 70.5 deg world camera.
  assert(/J\.bsOn && J\.bs > 0 && typeof rw !== "undefined" && rw === "knife"\) return "bs"/.test(html),'Blade Storm drawn by the ability FP layer');
- assert(/jThrow = function \(\) \{ const c = J\.cd\.x;/.test(html),'Blade Storm throws drive the throw clips');
- assert(/jBurst = function \(\) \{ const c = J\.cd\.x; const r = b0\.apply\(this, arguments\); try \{ if \(J\.pick === "Jett" && !\(c > 0\) && J\.cd\.x > 0\) xAfGunFire\("bs", true, true\);/.test(html),'Blade Storm ALT FIRE plays the RightClickAttack clip');
+ assert(/jThrow = function \(\) \{ const c = J\.cd\.x[,;]/.test(html)&&/xAfGunFire\("bs", !\(J\.bsOn && J\.bs > 0\)\); xBtpFlyFP\(sl, n0, false\)/.test(html),'Blade Storm throws drive the throw clips (and the thrown kunai flies from its slot, hk-41)');
+ assert(/jBurst = function \(\) \{ const c = J\.cd\.x[^;]*; const r = b0\.apply\(this, arguments\); try \{ if \(J\.pick === "Jett" && !\(c > 0\) && J\.cd\.x > 0\) \{ xAfGunFire\("bs", true, true\); xBtpFlyFP\(sl, n0, true\);/.test(html),'Blade Storm ALT FIRE plays the RightClickAttack clip and every kunai left flies in the fan (hk-41)');
  assert(html.includes('camera.add(R.root); R.root.visible = true; XAF.on = true; xAfFov(R, camera.fov); }'),'every shown ability rig is FOV-matched');
  {const G=api.XAF_GUN.bs;const J_=x=>JSON.parse(JSON.stringify(x));assert.deepEqual(J_(G.hand),['R','L','R','L','R']);
   const f=n=>api.xAfGunPhase(G,{t:5,f:.01,n,fired:1});assert.deepEqual([1,2,3,4,5,6].map(n=>f(n).clip),J_([...G.fire,G.fire[0]]),'throws cycle Attack01-05');const fa=api.xAfGunPhase(G,{t:5,f:.1,n:1,fired:1,alt:true});assert.equal(fa.clip,'FP_Wushu_S0_X_RightClickAttack','alt fire clip');assert.equal(fa.alt,true);

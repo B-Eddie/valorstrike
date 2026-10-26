@@ -15311,7 +15311,7 @@ function xAfPhase(set, q, rel, rec) {
 // of <agent>-fp.json). Showstopper ships its own skinned glb + AB_ clips (showstopper.json); Headhunter and Tour De Force
 // ship no model, so the closest native weapon stands in, in the same R_WeaponMaster slot the guns use (xvFPLoad): the
 // Sheriff (Valorant's heavy revolver) for Headhunter, the Operator (bolt sniper) for Tour De Force. Blade Storm floats
-// its daggers around the open hands (no kunai glb ships: the native tactical knife, melee.glb, stands in) and throws them with the Wushu Attack01-05
+// its daggers around the open hands (the kunai are original 3D geometry built here, xKunai - hk-41) and throws them with the Wushu Attack01-05
 // set, alternating the throwing hand as authored. Equip = the authored equip clip over the gameplay windup where one
 // exists (XAB_WIND showstopper 1.4 s / tourDeForce 2.3 s), otherwise over its authored length; a fire plays the fire clip
 // at authored speed (interrupted by the next fire); idle loops at its authored length.
@@ -15341,7 +15341,7 @@ function xAfGunModel(R, k) { // the gun of key k in the agent rig's weapon slot 
   M = R.guns[k] = { g: new THREE.Group(), ok: false, gm: null, ga: {} }; M.g.name = "xaf-prop-gun-" + k; M.g.visible = false;
   const slot = xAfBone(R, G.bone || "R_WeaponMaster"); if (slot) slot.add(M.g); const r = G.rot || [0, 90, 0]; M.g.rotation.set(r[0] * Math.PI / 180, r[1] * Math.PI / 180, r[2] * Math.PI / 180);
   if (G.knives) { M.g.rotation.set(0, 0, 0); if (M.g.parent) M.g.parent.remove(M.g); M.k = []; // floating ring in camera space (xAfKnifeRing), not in the hands
-    xvLoad("melee").then((gl) => { for (let i = 0; i < XAF_KR.length; i++) { const w = xAfKnife(gl, i); M.k.push(w); M.g.add(w); } M.ok = true; }).catch((e) => { XAF.err = String(e); }); }
+    try { for (let i = 0; i < XAF_KR.length; i++) { const w = xAfKnife(null, i); M.k.push(w); M.g.add(w); } M.ok = true; } catch (e) { XAF.err = String(e); } } // the kunai are built here (xKunai), no model to load
   else if (G.model) xvLoad(G.model).then((gl) => { const o = THREE.SkeletonUtils.clone(gl.scene);
     o.traverse((x) => { if (x.isMesh) { x.frustumCulled = false; x.castShadow = x.receiveShadow = false; x.raycast = XNR; x.renderOrder = 11; x.material = Array.isArray(x.material) ? x.material.map((m) => m.clone()) : x.material.clone(); } });
     M.g.add(o); if (G.gun && gl.animations && gl.animations.length) { M.gm = new THREE.AnimationMixer(o); gl.animations.forEach((c) => { M.ga[c.name] = M.gm.clipAction(c); }); } M.ok = true; }).catch((e) => { XAF.err = String(e); });
@@ -15350,8 +15350,8 @@ function xAfGunModel(R, k) { // the gun of key k in the agent rig's weapon slot 
 // Blade Storm daggers FLOAT around the view in Valorant (hands open, palms down, the kunai hovering beside them: two at the
 // left edge pointing in, one under the crosshair pointing up, two at the right edge), they are never gripped. hk-37 replaced
 // the old 'tactical knife in each palm' (a 26 cm combat knife poking out of an open authored hand). Slots are screen
-// fractions measured off Valorant's own Blade Storm view (16:9) at ~0.7 m, knife ~0.24 m (the melee.glb knife stands in
-// for the kunai, which ships no glb); one slot per dagger left, in throw order. Pure layout (exported for tests).
+// fractions measured off Valorant's own Blade Storm view (16:9) at ~0.7 m, knife ~0.24 m (hk-41: the kunai is built by xKunai;
+// the melee.glb tactical knife stood in before); one slot per dagger left, in throw order. Pure layout (exported for tests).
 var XAF_KR = [[0.11, 0.58, 1, 0.05], [0.13, 0.73, 1, -0.1], [0.53, 0.86, 0, 1], [0.88, 0.69, -1, -0.05], [0.87, 0.52, -1, 0.1]]; // [sx, sy, dir x, dir y]
 function xAfKnifeRing(n, aspect, fov, t) { // n daggers left -> camera-space [{p:[x,y,z], d:[x,y,z]}] for the first n slots
   const tv = Math.tan(fov * Math.PI / 360), th = tv * Math.min(aspect, 16 / 9), D = 0.7 * Math.tan(70.53 * Math.PI / 360) / tv, out = []; // across: the 16:9 frame the rig is framed in (wider phones keep the daggers by the hands);
@@ -15361,16 +15361,56 @@ function xAfKnifeRing(n, aspect, fov, t) { // n daggers left -> camera-space [{p
     out.push({ p: [x, y, -D], d: [dx * 0.85 / L, dy * 0.85 / L, -0.5 / L] }); }
   return out;
 }
-function xAfKnife(gl, i) { // one dagger: the native knife model, ~24 cm, blade end along local +z, flat face along local +x
-  const o = THREE.SkeletonUtils.clone(gl.scene); o.updateMatrixWorld(true); const b = xAfDrawnBox(o), sz = b.getSize(new THREE.Vector3()), c = b.getCenter(new THREE.Vector3());
-  o.traverse((x) => { if (x.isMesh) { x.frustumCulled = false; x.castShadow = x.receiveShadow = false; x.raycast = XNR; x.renderOrder = 11; } });
-  const ax = sz.x >= sz.y && sz.x >= sz.z ? "x" : sz.y >= sz.z ? "y" : "z", s = 0.24 / sz[ax], w = new THREE.Group(), q = new THREE.Group();
-  o.scale.setScalar(s); o.position.copy(c).multiplyScalar(-s); q.add(o); w.add(q); w.name = "xaf-knife-" + i;
-  const tip = (b.max[ax] - c[ax] > c[ax] - b.min[ax] ? 1 : -1) * (XAF.knifeTip || 1), ez = new THREE.Vector3(); ez[ax] = tip; // the blade end of the model's long axis
-  const th = ["x", "y", "z"].filter((a) => a !== ax).sort((a, b2) => sz[a] - sz[b2])[0], ex = new THREE.Vector3(); ex[th] = 1; // flat-face normal = the drawn thinnest axis
-  const ey = new THREE.Vector3().crossVectors(ez, ex), Mb = new THREE.Matrix4().makeBasis(ex, ey, ez); q.quaternion.setFromRotationMatrix(Mb).invert(); // model tip -> +z, flat normal -> +x
+// hk-41 (user 13:17 "jett's ultimate looks weird (it looks like 2d png's of knives)"): the stand-in was the black tactical melee
+// knife turned flat to the eye, which read as a cut-out. Blade Storm daggers are now a KUNAI built here as real 3D geometry
+// (original model, no game asset): a leaf-shaped blade with a diamond cross-section (flat-shaded facets, centre ridge both
+// faces), a collar, a wrapped grip and a ring pommel, pale steel with an ice-blue emissive glow and a soft additive edge shell;
+// rolled 0.5 rad about its length so the facets catch the light instead of showing a flat silhouette. Same contract as before:
+// ~0.24 m long, blade end along local +z, flat-face normal along local +x (gl is unused; the callers still pass the melee set).
+var XKUN = { len: 0.25, roll: 0.5, mat: null };
+function xKunMats() {
+  if (XKUN.mat) return XKUN.mat;
+  const S = (o) => new THREE.MeshStandardMaterial(o);
+  XKUN.mat = {
+    blade: S({ color: 0xdcecf8, metalness: 0.5, roughness: 0.28, emissive: 0x3aaee8, emissiveIntensity: 0.26, flatShading: true }),
+    edge: new THREE.MeshBasicMaterial({ color: 0x8fe4ff, transparent: true, opacity: 0.22, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.BackSide }),
+    grip: S({ color: 0x1f2b3a, metalness: 0.2, roughness: 0.75, emissive: 0x061018, emissiveIntensity: 1 }),
+    metal: S({ color: 0xcfe6f7, metalness: 0.6, roughness: 0.3, emissive: 0x3aa6dc, emissiveIntensity: 0.45 }),
+    trail: new THREE.MeshBasicMaterial({ color: 0x9fe8ff, transparent: true, opacity: 0.45, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }),
+  };
+  return XKUN.mat;
+}
+function xKunBladeGeo(sc) { // diamond cross-section leaf blade from z = 0 (collar) to the tip; width along y, thickness along x
+  const N = 14, L = 0.155, P = [];
+  const ring = (t) => { const w = (t < 0.28 ? 0.62 + 0.38 * t / 0.28 : Math.pow((1 - t) / 0.72, 0.85)) * 0.023 * sc, th = 0.0006 + w * 0.32; return [[0, w], [th, 0], [0, -w], [-th, 0]]; };
+  for (let k = 0; k < N; k++) { const t0 = k / N, t1 = (k + 1) / N, A = ring(t0), B = ring(t1), z0 = t0 * L, z1 = t1 * L;
+    for (let j = 0; j < 4; j++) { const a0 = A[j], a1 = A[(j + 1) % 4], b0 = B[j], b1 = B[(j + 1) % 4];
+      P.push(a0[0], a0[1], z0, a1[0], a1[1], z0, b1[0], b1[1], z1, a0[0], a0[1], z0, b1[0], b1[1], z1, b0[0], b0[1], z1); } }
+  const R = ring(0); for (let j = 0; j < 4; j++) { const a = R[j], b = R[(j + 1) % 4]; P.push(0, 0, 0, b[0], b[1], 0, a[0], a[1], 0); } // the base cap
+  const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute(P, 3)); g.computeVertexNormals(); return g;
+}
+function xKunRingGeo() { // the pommel ring: a small circle swept around the z axis (lathe), turned into the y-z plane later
+  const pts = []; for (let k = 0; k <= 8; k++) { const a = (k / 8) * Math.PI * 2; pts.push(new THREE.Vector2(0.0115 + Math.cos(a) * 0.0024, Math.sin(a) * 0.0024)); }
+  return new THREE.LatheGeometry(pts, 18);
+}
+function xKunai() { // one kunai group (local frame: tip +z, flat-face normal +x), centred on its length
+  const m = xKunMats(), G = XKUN.geo || (XKUN.geo = { blade: xKunBladeGeo(1), edge: xKunBladeGeo(1.22), grip: new THREE.CylinderGeometry(0.0056, 0.006, 0.062, 10), band: new THREE.CylinderGeometry(0.0068, 0.0068, 0.004, 10), collar: new THREE.CylinderGeometry(0.0075, 0.0062, 0.012, 10), ring: xKunRingGeo() });
+  const k = new THREE.Group(), add = (geo, mat, z, rx, ry) => { const o = new THREE.Mesh(geo, mat); o.position.z = z; if (rx) o.rotation.x = rx; if (ry) o.rotation.y = ry; k.add(o); return o; };
+  add(G.blade, m.blade, 0); const e = add(G.edge, m.edge, -0.004); e.scale.set(1.6, 1, 1.05);
+  add(G.collar, m.metal, -0.006, Math.PI / 2); add(G.grip, m.grip, -0.043, Math.PI / 2);
+  for (const z of [-0.02, -0.043, -0.066]) add(G.band, m.metal, z, Math.PI / 2);
+  add(G.ring, m.metal, -0.087).rotation.z = Math.PI / 2; // lathe axis (y) -> x: the ring lies in the y-z plane, in line with the blade
+  k.position.z = -0.027; return k; // blade tip 0.155 .. ring end -0.101
+}
+function xAfKnife(gl, i) { // one dagger: the kunai, ~0.25 m, blade end along local +z, flat face along local +x
+  const w = new THREE.Group(), q = new THREE.Group(), k = xKunai(); q.rotation.z = XKUN.roll; q.add(k); w.add(q); w.name = "xaf-knife-" + i;
+  k.traverse((x) => { if (x.isMesh) { x.frustumCulled = false; x.castShadow = x.receiveShadow = false; x.raycast = XNR; x.renderOrder = 11; } });
   w.visible = false;
   return w;
+}
+function xKunTrail() { // a soft additive streak behind a thrown kunai (open cone, apex trailing)
+  const g = XKUN.tg || (XKUN.tg = new THREE.ConeGeometry(0.014, 0.7, 8, 1, true)), o = new THREE.Mesh(g, xKunMats().trail.clone());
+  o.rotation.x = -Math.PI / 2; o.position.z = -0.42; o.name = "xbtp-trail"; o.frustumCulled = false; o.raycast = XNR; return o;
 }
 function xAfDrawnBox(o) { // box of the model as DRAWN: skinned vertices through their bones (the bind-pose box of the skinned knife is turned 90 deg)
   const B = new THREE.Box3(), v = new THREE.Vector3(), inv = new THREE.Matrix4().copy(o.matrixWorld).invert(), m = new THREE.Matrix4();
@@ -15458,9 +15498,9 @@ function xAfTick(dt) {
 { const r0 = rsFire; rsFire = function () { const ss = typeof RS !== "undefined" && RS.ss, k = typeof BC !== "undefined" ? BC.vm : "", n = (J.q | 0) + (BC.td | 0); const r = r0.apply(this, arguments);
   try { if (ss && !RS.ss && J.pick === "Raze") xAfGunFire("rk", true); else if ((k === "hp" || k === "sn") && (J.q | 0) + (BC.td | 0) < n) xAfGunFire(k, !BC.eq); } catch (e) {} return r; }; }
 // Blade Storm throw (offline jThrow, or the online wrapper sending 'blade'): each throw starts J.cd.x
-{ const t0 = jThrow; jThrow = function () { const c = J.cd.x; const r = t0.apply(this, arguments); try { if (J.pick === "Jett" && !(c > 0) && J.cd.x > 0) xAfGunFire("bs", !(J.bsOn && J.bs > 0)); } catch (e) {} return r; }; }
+{ const t0 = jThrow; jThrow = function () { const c = J.cd.x, n0 = J.bsOn ? J.bs | 0 : 0, sl = !(c > 0) && n0 > 0 ? xBtpFpSlots() : null; const r = t0.apply(this, arguments); try { if (J.pick === "Jett" && !(c > 0) && J.cd.x > 0) { xAfGunFire("bs", !(J.bsOn && J.bs > 0)); xBtpFlyFP(sl, n0, false); } } catch (e) {} return r; }; }
 // Blade Storm ALT FIRE (jBurst offline / 'blade' alt:1 online): the two-handed RightClickAttack clip, the rig stays for its tail while the gun comes back
-{ const b0 = jBurst; jBurst = function () { const c = J.cd.x; const r = b0.apply(this, arguments); try { if (J.pick === "Jett" && !(c > 0) && J.cd.x > 0) xAfGunFire("bs", true, true); } catch (e) {} return r; }; }
+{ const b0 = jBurst; jBurst = function () { const c = J.cd.x, n0 = J.bsOn ? J.bs | 0 : 0, sl = !(c > 0) && n0 > 0 ? xBtpFpSlots() : null; const r = b0.apply(this, arguments); try { if (J.pick === "Jett" && !(c > 0) && J.cd.x > 0) { xAfGunFire("bs", true, true); xBtpFlyFP(sl, n0, true); } } catch (e) {} return r; }; }
 { const v2 = vmTick; vmTick = function (dt) { v2.apply(this, arguments); try { xAfTick(dt); } catch (e) { if (!XAF.err) { XAF.err = String(e); console.warn("ability viewmodel", e); } } }; }
 { const s1 = xCaStart; xCaStart = function () { try { XAF.qk = XAF.nk || "c"; } catch (e) {} return s1.apply(this, arguments); }; }
 { const k1 = jKey; jKey = function (code) { if (typeof code === "string" && /^Key[CQEX]$/.test(code)) XAF.nk = code[3].toLowerCase(); return k1.apply(this, arguments); }; }
@@ -15477,7 +15517,7 @@ window.xAbilityFP = { XAF, XAF_SET, XAF_K, XAF_GUN, phase: xAfPhase, gunPhase: x
 // right; slow hover; the arc pitches with the aim), and every throw plays Jett's OverhandThrow on the upper body with the
 // thrown dagger flying off along the aim; a right-click burst (several knives in one server step) plays one faster,
 // two-armed-weight throw and launches every dagger together in the 2.5 deg fan. Kept to Blade Storm: locomotion untouched.
-var XBTP = { len: 0.28, single: 0.42, burst: 0.62, tail: 0.5, fly: 0.22, spd: 45, gl: null, ld: 0, live: [], free: [] };
+var XBTP = { len: 0.3, single: 0.42, burst: 0.62, tail: 0.5, fly: 0.22, spd: 45, gl: null, ld: 0, live: [], free: [] };
 // arc slots in the agent frame (+x = the agent's left, +y up, +z forward), metres; [x, y, z, dir x, dir y]
 var XBTP_SLOT = [[0.36, 1.36, 0.36, 0.3, 0.05], [0.27, 1.17, 0.44, 0.15, -0.05], [0, 1.08, 0.5, 0, 0.55], [-0.27, 1.17, 0.44, -0.15, -0.05], [-0.36, 1.36, 0.36, -0.3, 0.05]];
 function xBtpRing(n, t) { // pure layout (tests): n knives left -> [{p:[x,y,z], d:[x,y,z] unit}] for the first n slots, hovering
@@ -15504,21 +15544,35 @@ function xBtpRefill(by) { // the kill with the last knife refills too (its shot 
   if (xBtpOn() || !by) return; const UB = window.xBotUB; if (!UB || !UB[by]) return;
   for (const L of [bots, allies]) for (const b of L) if (b && b.name === by && (b.bsK > 0 || b.bsEnd)) { b.bsK = 5; b.bsEnd = 0; b.bsSn = b.xsh || 0; }
 }
-function xBtpKnife(i) { // a TP dagger: the FP dagger builder (native melee.glb knife) at TP size, normal depth order
-  const w = xAfKnife(XBTP.gl, i); w.scale.setScalar(XBTP.len / 0.24); w.name = "xbtp-knife-" + i;
-  w.traverse((o) => { if (o.isMesh) { o.renderOrder = 0; o.castShadow = true; } }); return w;
+function xBtpKnife(i) { // a TP dagger: the FP kunai builder at TP size, normal depth order (the additive edge shell casts no shadow)
+  const w = xAfKnife(null, i); w.scale.setScalar(XBTP.len / (typeof XKUN !== "undefined" ? XKUN.len : 0.25)); w.name = "xbtp-knife-" + i;
+  w.traverse((o) => { if (o.isMesh) { o.renderOrder = 0; o.castShadow = !o.material.transparent; } }); return w;
 }
 function xBtpRig(M) { // the floating daggers group on the agent root (built once per model)
-  if (M.btp) return M.btp; if (!XBTP.gl) { if (!XBTP.ld && typeof xvLoad === "function") { XBTP.ld = 1; xvLoad("melee").then((gl) => { XBTP.gl = gl; }).catch((e) => { XBTP.ld = 0; XBTP.err = String(e); }); } return null; }
+  if (M.btp) return M.btp;
   const g = new THREE.Group(); g.name = "xbtp"; g.position.set(0, 1.4, 0); const k = []; for (let i = 0; i < XBTP_SLOT.length; i++) { const w = xBtpKnife(i); k.push(w); g.add(w); }
   M.m.add(g); M.btp = { g, k, on: false, tail: 0, sn: null, th: 0, burst: 0, n: 0, w0: null }; return M.btp;
 }
-function xBtpFly(M, from, d, n) { // the thrown dagger(s) leave along the aim (pooled; burst = the 2.5 deg fan)
-  if (!XBTP.gl || typeof scene === "undefined") return; const up = new THREE.Vector3(0, 1, 0), fan = n > 1 && typeof jBurstDirs === "function" ? jBurstDirs(n) : [0];
-  for (const a of fan) { let f = XBTP.free.pop(); if (!f) { f = { w: xBtpKnife(0), v: new THREE.Vector3(), t: 0 }; } f.w.visible = true; f.t = 0; f.w.position.copy(from); f.v.copy(d).applyAxisAngle(up, a).multiplyScalar(XBTP.spd);
-    f.w.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), f.v.clone().normalize()); scene.add(f.w); XBTP.live.push(f); }
+function xBtpLaunch(from, v, life, fp) { // one flying kunai with its trail (pooled), world space
+  let f = XBTP.free.pop(); if (!f) { f = { w: xBtpKnife(0), v: new THREE.Vector3(), t: 0, life: XBTP.fly }; f.tr = typeof xKunTrail === "function" ? xKunTrail() : null; if (f.tr) (f.w.children[0] || f.w).add(f.tr); }
+  f.w.visible = true; f.t = 0; f.life = life || XBTP.fly; f.w.position.copy(from); f.v.copy(v); if (f.tr) f.tr.material.opacity = 0.45;
+  f.w.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), f.v.clone().normalize());
+  f.w.traverse((o) => { if (o.isMesh) o.renderOrder = fp ? 11 : 0; }); scene.add(f.w); XBTP.live.push(f); return f;
 }
-function xBtpTick(dt) { for (let i = XBTP.live.length - 1; i >= 0; i--) { const f = XBTP.live[i]; f.t += dt; f.w.position.addScaledVector(f.v, dt); if (f.t >= XBTP.fly) { scene.remove(f.w); f.w.visible = false; XBTP.live.splice(i, 1); XBTP.free.push(f); } } }
+function xBtpFly(M, from, d, n) { // the thrown dagger(s) leave along the aim (burst = the 2.5 deg fan)
+  if (typeof scene === "undefined") return; const up = new THREE.Vector3(0, 1, 0), fan = n > 1 && typeof jBurstDirs === "function" ? jBurstDirs(n) : [0];
+  for (const a of fan) xBtpLaunch(from, d.clone().applyAxisAngle(up, a).multiplyScalar(XBTP.spd), XBTP.fly);
+}
+// FIRST PERSON (hk-41): the player's own throw sends the kunai that leaves the fan flying from its slot toward the crosshair (every
+// knife of a right-click burst, fanned as its hits), so a throw reads as a thrown blade instead of a dagger blinking out of view.
+function xBtpFpSlots() { try { const R = xAfReady("Jett"), M = R && R.guns && R.guns.bs; if (!M || !M.ok || !M.g.visible) return null; return M.k.map((w) => (w.visible ? w.getWorldPosition(new THREE.Vector3()) : null)); } catch (e) { return null; } }
+function xBtpFlyFP(slots, n0, burst) {
+  if (!slots || typeof scene === "undefined" || typeof camera === "undefined") return 0; const o = camera.getWorldPosition(new THREE.Vector3()), f = camera.getWorldDirection(new THREE.Vector3()), up = new THREE.Vector3(0, 1, 0);
+  const idx = burst ? Array.from({ length: n0 }, (_, i) => i) : [n0 - 1], fan = burst && typeof jBurstDirs === "function" ? jBurstDirs(n0) : null; let c = 0;
+  idx.forEach((i, j) => { const p = slots[i]; if (!p) return; const aim = fan ? f.clone().applyAxisAngle(up, fan[j]) : f, v = o.clone().addScaledVector(aim, 30).sub(p).normalize().multiplyScalar(XBTP.spd); xBtpLaunch(p, v, 0.5, true); c++; });
+  XBTP.fp = (XBTP.fp || 0) + c; return c;
+}
+function xBtpTick(dt) { for (let i = XBTP.live.length - 1; i >= 0; i--) { const f = XBTP.live[i]; f.t += dt; f.w.position.addScaledVector(f.v, dt); if (f.tr) f.tr.material.opacity = 0.45 * Math.max(0, 1 - f.t / f.life); if (f.t >= f.life) { scene.remove(f.w); f.w.visible = false; XBTP.live.splice(i, 1); XBTP.free.push(f); } } }
 function xBtpPre(b, M) { // before the stock layer pass: knife hands instead of the gun, throws instead of fire recoil
   const k = xBtpK(b), X = M.sx; if (!X || (!M.btp && !(k > 0))) return; const R = xBtpRig(M); if (!R) return; /* the dagger rig is built on a unit's first Blade Storm only */ const sn = b.xsh || 0, ds = R.sn == null ? 0 : sn - R.sn; R.sn = sn;
   if (!(k > 0 || R.on)) return;
