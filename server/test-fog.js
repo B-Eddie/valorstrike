@@ -3,7 +3,7 @@
 // grace after; allies, the player's own row and the killer of a fresh victim stay. Also through the real worker tick
 // (GameRoom.view) and on the real Ascent world.
 import fs from 'node:fs';import vm from 'node:vm';import assert from 'node:assert/strict';
-import {SpikeSimulation} from './src/spike.js';import {Simulation} from './src/simulation.js';import {fogView,fogPass,FOG,fogRow} from './src/fog.js';import {loadWorld} from './src/world.js';
+import {SpikeSimulation} from './src/spike.js';import {Simulation} from './src/simulation.js';import {fogView,fogPass,FOG,fogRow,fogCast} from './src/fog.js';import {loadWorld} from './src/world.js';
 // a 10 m wide, 4 m tall wall on x = 0 between z -5 and 5
 const wallRay=(o,d,max=Infinity)=>{if(Math.abs(d[0])<1e-9)return Infinity;const t=-o[0]/d[0];if(!(t>0&&t<max))return Infinity;const z=o[2]+d[2]*t,y=o[1]+d[1]*t;return Math.abs(z)<5&&y<4?t:Infinity;};
 const W={map:{attacker:[-10,0,0],defender:[10,0,0],sites:{A:[10,0,0]}},nav:{nodes:[[-10,0,0],[10,0,0]],adj:[[1],[0]]},playable:[0,1],allowed:new Set([0,1]),near:(x)=>x<0?0:1,ground:()=>0,blocked:()=>false,ray:wallRay};
@@ -61,7 +61,7 @@ const adv=(s,t)=>{s.time+=t;};
 {const {s,a,b}=setup();s.phase='post';assert.equal(row(view(s,a),b)[22],0);assert.equal(fogRow(s.rows()[0]).length,24);}
 // 14. the real worker tick sends each session its own view (GameRoom.view -> fogView)
 {const source=fs.readFileSync('src/worker.js','utf8'),code=source.slice(source.indexOf('export class GameRoom')).replace('export class','class')+';globalThis.GameRoom=GameRoom;';
- const context={DurableObject:class{constructor(ctx,env){this.ctx=ctx;this.env=env;}},crypto:globalThis.crypto,Date,URL,performance,setInterval,clearInterval,Map,Set,JSON,Number,Object,Math,Array,fogView};vm.createContext(context);vm.runInContext(code,context);
+ const context={DurableObject:class{constructor(ctx,env){this.ctx=ctx;this.env=env;}},crypto:globalThis.crypto,Date,URL,performance,setInterval,clearInterval,Map,Set,JSON,Number,Object,Math,Array,fogView,fogCast};vm.createContext(context);vm.runInContext(code,context);
  const room=new context.GameRoom({waitUntil(){}},{DIRECTORY:{idFromName:()=>'',get:()=>({fetch:async()=>new Response('{}')})}});room.advertise=()=>{};const {s,a,b}=setup();room.sim=s;room.last=Date.now();
  const got=new Map(),mk=n=>({send(m){const o=JSON.parse(m);if(o.t==='s')got.set(n,o);},close(){}});const wa=mk('a'),wb=mk('b');room.sessions.set(wa,{id:'a',u:a,ready:true,last:Date.now()});room.sessions.set(wb,{id:'b',u:b,ready:true,last:Date.now()});a.human=b.human=true;
  room.tick();assert.ok(got.get('a')&&got.get('b'),'both got a snapshot');const ra=got.get('a').u.find(r=>r[0]===b.id),rb=got.get('b').u.find(r=>r[0]===a.id);
@@ -81,4 +81,27 @@ const adv=(s,t)=>{s.time+=t;};
 // 16. row [23]: running footsteps (moving > 1.5 m/s on live input without walk / duck); a hidden row never carries it
 {const {s,a,b}=setup();const R=()=>s.rows().find(r=>r[0]===b.id);b.vx=5.4;b.input={};b.inputAt=s.time;assert.equal(R()[23],1,'running: loud');b.input={walk:1};assert.equal(R()[23],0,'shift-walk: silent');b.input={duck:1};assert.equal(R()[23],0,'crouch: silent');
  b.input={};b.vx=.5;assert.equal(R()[23],0,'standing: silent');b.vx=5.4;b.alive=false;assert.equal(R()[23],0,'dead: silent');b.alive=true;assert.equal(fogRow(R())[23],0,'hidden row: no footsteps flag');}
+// 17. cast events ('ac'): a hidden caster's eye / aim never reach the enemy; the effect point only when it is in sight;
+// heard within FOG.cast m (the caster becomes relevant: whole event); own team always whole
+{const ac=(s,u,p)=>({t:'ac',i:u.id,ag:u.agent,k:'q',o:[u.x,u.y+1.6,u.z],d:[-1,0,0],p,ts:Math.round(s.time*1000)});
+ const far=()=>{const t=setup();t.b.x=40;return t;};
+ {const {s,a,b}=far();const e=ac(s,b,[38,0,2]);s.castEvents.push(e);view(s,a);const v=fogCast(s,e,a);s.castEvents.length=0;
+  assert.deepEqual(v,{t:'ac',i:b.id,ag:'Jett',k:'q',ts:e.ts,fog:1},'far, behind the wall, effect out of sight: no position at all');
+  assert.equal(fogCast(s,e,b),e,'the caster gets its own cast');}
+ {const {s,a,b}=far();const e=ac(s,b,[-5,0,0]);s.castEvents.push(e);view(s,a);const v=fogCast(s,e,a);s.castEvents.length=0;
+  assert.deepEqual(v.p,[-5,0,0],'effect point in sight: p kept');assert.equal(v.o,undefined,'no eye');assert.equal(v.d,undefined,'no aim');assert.equal(v.fog,1);}
+ {const {s,a,b}=setup();const e=ac(s,b,[8,0,2]);view(s,a);assert.equal(row(view(s,a),b)[22],1,'B (20 m, behind the wall, still) hidden before the cast');
+  s.castEvents.push(e);const r=row(view(s,a),b);const v=fogCast(s,e,a);s.castEvents.length=0;assert.notEqual(r[22],1,'a cast 20 m away is heard: row sent');assert.equal(v,e,'heard: the whole event');
+  adv(s,FOG.shotFor+FOG.grace+.2);view(s,a);assert.equal(row(view(s,a),b)[22],1,'cast heard 2 s ago: hidden again');}
+ {const {s,a,b}=far();const c=s.add('C','Sova');c.team=b.team;Object.assign(c,{x:-12,y:0,z:0,alive:true,loading:false,vx:0,vz:0,input:{},ch:0});s.units.push(c);const e=ac(s,b,[38,0,2]);s.castEvents.push(e);view(s,c);
+  assert.equal(fogCast(s,e,c),e,'teammate: whole');s.castEvents.length=0;}
+ {const {s,a,b}=far();s.phase='post';const e=ac(s,b,[38,0,2]);assert.equal(fogCast(s,e,a),e,'out of the match phase: whole');}}
+// 18. the real worker tick sends each session its own cast view (GameRoom tick -> fogCast)
+{const source=fs.readFileSync('src/worker.js','utf8'),code=source.slice(source.indexOf('export class GameRoom')).replace('export class','class')+';globalThis.GameRoom=GameRoom;';
+ const context={DurableObject:class{constructor(ctx,env){this.ctx=ctx;this.env=env;}},crypto:globalThis.crypto,Date,URL,performance,setInterval,clearInterval,Map,Set,JSON,Number,Object,Math,Array,fogView,fogCast};vm.createContext(context);vm.runInContext(code,context);
+ const room=new context.GameRoom({waitUntil(){}},{DIRECTORY:{idFromName:()=>'',get:()=>({fetch:async()=>new Response('{}')})}});room.advertise=()=>{};const {s,a,b}=setup();b.x=40;room.sim=s;room.last=Date.now();
+ const got=new Map(),mk=n=>({send(m){const o=JSON.parse(m);if(o.t==='ac')got.set(n,o);},close(){}});const wa=mk('a'),wb=mk('b');room.sessions.set(wa,{id:'a',u:a,ready:true,last:Date.now()});room.sessions.set(wb,{id:'b',u:b,ready:true,last:Date.now()});a.human=b.human=true;
+ s.castEvents.push({t:'ac',i:b.id,ag:'Jett',k:'q',o:[b.x,b.y+1.6,b.z],d:[-1,0,0],p:[b.x-2,b.y,b.z],ts:1});
+ room.tick();clearInterval(room.timer);const ga=got.get('a'),gb=got.get('b');assert.ok(ga&&gb,'both got the cast');assert.ok(Array.isArray(gb.o),'caster: whole');
+ assert.ok(a.alive&&b.alive&&Math.abs(b.z)<5&&b.x>30,'still apart behind the wall');assert.equal(ga.o,undefined,'worker: enemy gets no eye');assert.equal(ga.p,undefined,'worker: nor the out-of-sight effect point');assert.equal(ga.fog,1);}
 console.log('test-fog: ok');

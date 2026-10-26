@@ -14292,6 +14292,12 @@ let netStepT=0;function netSteps(){if(!(NET.socket&&MP.st==='game'&&running)){ne
  for(const L of [bots,allies])for(const u of L){if(!u||!u.loud||!u.alive||u.fog||!u.g||u.g.parent!==scene){if(u)u.fsN=.3;continue;}u.fsN=(u.fsN??.3)-dt;if(u.fsN<=0){u.fsN+=.4;try{SFX.step(u.g.position);}catch(err){}}}}
 if(typeof window!=='undefined')(window.XHK||(window.XHK=[])).push(netSteps);
 const netStep0=mpCliSnap;mpCliSnap=function(m){const r=netStep0.apply(this,arguments);netStepFlags(m);return r;};
+// Fog of war, casts (server fog.js fogCast): a cast from an enemy we can't see or hear comes without the caster's eye and
+// aim, flagged fog:1. With p (its effect point is in our sight) the effect is drawn there - the replay reads the caster's
+// spot from its model, so the model stands at p for that call only; without p there is nothing to draw (no stale spot).
+if(typeof mpCastFx==='function'){const netCastFx0=mpCastFx;mpCastFx=function(m){if(!(NET.socket&&m&&m.fog))return netCastFx0.apply(this,arguments);if(!Array.isArray(m.p)||m.p.length!==3||!m.p.every(Number.isFinite))return;
+ const u=bots.find(x=>x&&x.nid===m.i)||allies.find(x=>x&&x.nid===m.i);if(!u||!u.g)return;const P=u.g.position,x=P.x,y=P.y,z=P.z;P.set(m.p[0],m.p[1],m.p[2]);
+ try{return netCastFx0.call(this,{...m,o:[m.p[0],m.p[1]+1.6,m.p[2]]});}finally{P.set(x,y,z);}};}
 // Online soul resources and buff presentation follow private server round state.
 const netSouls=new Map();
 function netReynaClear(){for(const m of netSouls.values()){scene.remove(m);m.material.dispose();}netSouls.clear();}
