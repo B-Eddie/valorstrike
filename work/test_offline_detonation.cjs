@@ -27,4 +27,8 @@ c.player.hp=100;c.log.length=0;c.bots[1].alive=true;c.fDetonate({x:0,z:0});asser
 assert.ok(/s\.t <= 0\) \{[^\n]*fDetonate\(s\); return fCheck\(FV\.atk, "Attackers win", "SPIKE DETONATED"\)/.test(html),'fuse -> fDetonate -> fCheck');
 assert.ok(html.includes('function fCheck(win, text, title) {\n  if (!running || FV.det) return;'),'fCheck guard');
 assert.ok(html.includes('s.x = p.x; s.y = p.y || 0; s.z = p.z;'),'plant height recorded');
-console.log('Offline detonation: kills both teams within 32.5 m (3D), no credit, one round decision');
+// wiki Spike (patch 1.11): dying to the Spike is no KDA death: the scoreboard (sbKill) and the player's own stats (pDie) skip it
+{const sb=cut('function sbKill(by, victim, hs) {','\n');const k=vm.createContext({XTKILL:false,SB:{V:{k:0,d:0,hs:0},E:{k:0,d:0,hs:0}},SBH:{},sbAst(){},sbScore:()=>[0,0]});vm.runInContext(sb,k);
+ k.sbKill('Spike','V',false);assert.equal(k.SB.V.d,0,'Spike: no scoreboard death');k.sbKill('E','V',false);assert.equal(k.SB.V.d,1,'enemy kill: a death');assert.equal(k.SB.E.k,1);
+ const pd=cut('function pDie(by, w) {','\n}\n');assert.ok(pd.includes('if (by !== "Spike") stats.d++;'),'pDie: no stats death for the Spike');}
+console.log('Offline detonation: kills both teams within 32.5 m (3D), no credit, one round decision, no KDA death');

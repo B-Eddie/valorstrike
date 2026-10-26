@@ -16,7 +16,7 @@ s.time+=XAB_REC+.01;ph.triggerHeld=false;assert.notEqual(s.fire(ph),false,'gun b
 j.ability.c=1;j.fireAt=0;assert.equal(s.command(j,{t:'ab',k:'c'}),true,'Cloudburst cast');assert(!(j.fireAt>s.time),'quick-cast keeps the gun up');
 // effect values checked against the wiki (work/validation/abilities-wiki.txt): Cloudburst 2.5 s, Hot Hands 60 dps, Nanoswarm 5 s
 {const {tickAbilities}=await import('./src/abilities.js'),cb=s.effects.filter(e=>e.kind==='cloudburst').pop();assert(cb,'Cloudburst projectile');let n=0;while(cb.kind==='cloudburst'&&n++<200){s.time+=.05;tickAbilities(s,.05);}
- const e=cb;assert.equal(e.kind,'smoke','Cloudburst landed as a smoke');assert(e.cb);assert(Math.abs(e.until-s.time-2.5)<1e-6,'Cloudburst lasts 2.5 s (got '+(e.until-s.time)+')');}
+ const e=cb;assert.equal(e.kind,'smoke','Cloudburst landed as a smoke');assert(e.cb);assert(Math.abs(e.until-s.time-2.5)<1e-6,'Cloudburst lasts 2.5 s (got '+(e.until-s.time)+')');assert.equal(e.radius,3.35,'Cloudburst radius 3.35 m (wiki)');}
 {/* Cloudburst flight (vendor/cloudburst.cjs; wiki: thrown INSTANTLY, HOLD steers it with the crosshair, release = gravity, smoke on contact or after 2 s in the air) */
  const CBm=(await import('../vendor/cloudburst.cjs')).default,{tickAbilities}=await import('./src/abilities.js');assert.deepEqual([CBm.CB.maxT,CBm.CB.life],[2,2.5]);
  const fly=(world,setup,each)=>{const t=new SpikeSimulation({...W,...world}),u=t.add('jt','Jett');t.add('foe');t.start(false);t.buy=0;Object.assign(u,{x:0,y:0,z:0,look:0,pitch:0});u.ability.c=2;setup&&setup(t,u);assert.equal(t.command(u,{t:'ab',k:'c'}),true);const e=t.effects.find(x=>x.kind==='cloudburst');assert(e,'projectile');assert.equal(t.castEvents.filter(c=>c.k==='c').length,0,'no cast event at the throw');

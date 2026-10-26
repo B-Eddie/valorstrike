@@ -1,7 +1,7 @@
 // Server-authoritative ultimates (ledger row 9): Hunter's Fury, Showstopper, Lockdown, Rolling Thunder,
 // Seekers, Neural Theft, Tour de Force and Run It Back replace the old shared 100-damage blast.
 // Intents carry no trusted origin/aim/target; everything comes from server state.
-import assert from 'node:assert/strict';import {SpikeSimulation} from './src/spike.js';import {tickAbilities} from './src/abilities.js';import {ULT} from './src/ults.js';import {floorTick} from './src/floor.js';
+import assert from 'node:assert/strict';import {SpikeSimulation} from './src/spike.js';import {tickAbilities,SMOKE,smokeBlocks} from './src/abilities.js';import {ULT} from './src/ults.js';import {floorTick} from './src/floor.js';
 let wall=Infinity;const W={map:{attacker:[0,0,0],defender:[0,0,-10],sites:{A:[0,0,0]}},nav:{nodes:[[0,0,0],[0,0,-10]],adj:[[1],[0]]},playable:[0,1],allowed:new Set([0,1]),near:(x,z)=>z<-5?1:0,ground:()=>0,blocked:()=>false,ray:(o,d,max=Infinity)=>{if(!(d[2]<0)||!Number.isFinite(wall))return Infinity;const t=(o[2]+wall)/-d[2];return t>=0&&t<=max?t:Infinity;}};// wall: a plane at z=-wall
 const setup=(agent,...others)=>{wall=Infinity;const s=new SpikeSimulation(W,'five','ascent',()=>.5),u=s.add(agent,agent),list=others.map(([n,team])=>{const v=s.add(n);return v;});s.start(false);s.buy=0;s.roundDelay=0;
  Object.assign(u,{x:0,y:0,z:0,look:0,pitch:0});for(const v of list){Object.assign(v,{armor:0,hp:100,protectedUntil:0});}
@@ -54,11 +54,12 @@ const rocket=(s,u,m={})=>{const ok=cast(s,u,m);if(!ok)return ok;s.time+=ULT.rock
 {const {s,u,list}=setup('Skye',['foe1'],['foe2'],['foe3'],['foe4']);list.forEach((v,i)=>Object.assign(v,{x:0,y:0,z:-(6+i*10)}));u.ability.ult=9;assert.equal(cast(s,u),true);assert.equal(s.effects.filter(e=>e.kind==='seeker').length,3);
  tick(s,.4);assert.ok(!(list[0].nearsightUntil>s.time),'travel time');tick(s,3);for(const v of list.slice(0,3))assert.ok(v.nearsightUntil>s.time,'seeker hits '+v.name);assert.ok(!(list[3].nearsightUntil>s.time));}
 
-// Neural Theft: needs a visible enemy corpse within 5 m in front (ult points kept otherwise); reveals all living enemies twice
+// Neural Theft: needs a visible enemy corpse within 18 m in front (ult points kept otherwise); reveals all living enemies twice
 // (wiki: 1st reveal after a 2 s windup, the 2nd 4 s after it).
 {const {s,u,list:[corpse,alive1,alive2]}=setup('Cypher',['foeDead'],['foeA'],['foeB']);Object.assign(corpse,{x:0,y:0,z:-3});Object.assign(alive1,{x:30,y:0,z:-30});Object.assign(alive2,{x:-30,y:0,z:-30});u.ability.ult=9;
  assert.equal(cast(s,u),false,'no corpse');assert.equal(u.ability.ult,9);corpse.alive=false;u.look=Math.PI;assert.equal(cast(s,u),false,'corpse behind');u.look=0;wall=1;assert.equal(cast(s,u),false,'corpse behind a wall');wall=Infinity;
- assert.equal(cast(s,u),true);assert.equal(u.ability.ult,0);tick(s,1.9);assert.equal(s.roundState(u).rv.length,0,'nothing before 2 s');tick(s,.2);assert.equal(s.roundState(u).rv.length,2,'first reveal at 2 s');tick(s,1.6);assert.equal(s.roundState(u).rv.length,0);tick(s,2.1);assert.equal(s.roundState(u).rv.length,0,'nothing before 6 s');tick(s,.25);assert.equal(s.roundState(u).rv.length,2,'second reveal at 6 s');}
+ corpse.z=-18.5;assert.equal(cast(s,u),false,'corpse beyond 18 m');assert.equal(u.ability.ult,9);corpse.z=-17;
+ assert.equal(cast(s,u),true,'corpse at 17 m');assert.equal(u.ability.ult,0);tick(s,1.9);assert.equal(s.roundState(u).rv.length,0,'nothing before 2 s');tick(s,.2);assert.equal(s.roundState(u).rv.length,2,'first reveal at 2 s');tick(s,1.6);assert.equal(s.roundState(u).rv.length,0);tick(s,2.1);assert.equal(s.roundState(u).rv.length,0,'nothing before 6 s');tick(s,.25);assert.equal(s.roundState(u).rv.length,2,'second reveal at 6 s');}
 
 // Tour de Force: the gun becomes a 5-round Operator; spent, swapped away or dead, the previous weapon returns.
 {const {s,u,list:[foe]}=setup('Chamber',['foe']);Object.assign(foe,{x:0,y:0,z:-6,hp:1000,armor:0});u.weapon='Spectre';u.ammo=17;u.reserve=60;u.ability.ult=9;
@@ -133,7 +134,10 @@ const ab=(s,u,k,m={})=>{s.time+=.5;return s.command(u,{t:'ab',k,...m});};
 // Trapwire: across the lane at the aim point; an enemy crossing is revealed and slowed, then dazed; one use.
 {const {s,u,list:[foe,mate]}=setup('Cypher',['foe'],['mate']);u.ability.c=1;Object.assign(foe,{x:3,y:0,z:-16});Object.assign(mate,{x:-3,y:0,z:-14});assert.equal(ab(s,u,'c'),true);const w=s.effects.find(e=>e.kind==='trapwire');assert.ok(Math.abs(w.p[0])>7&&Math.abs(w.q[0])>7,'wall to wall');
  tick(s,.1);assert.equal(mate.slowUntil||0,0,'allies pass');foe.z=-14;tick(s,.4);assert.ok(!foe.tether,'not armed before the 0.7 s windup');foe.z=-16;tick(s,.3);foe.z=-14;tick(s,.1);assert.ok(foe.revealedUntil>s.time&&foe.slowUntil>s.time&&s.roundState(foe).status.tether>2,'tethered');tick(s,2.5);assert.ok(foe.concussUntil>s.time,'dazed');assert.ok(!s.effects.some(e=>e.kind==='trapwire'),'consumed');}
-{const {s,u}=setup('Cypher',['foe']);u.ability.q=1;ab(s,u,'q');const c=s.effects.find(e=>e.kind==='smoke');assert.ok(Math.abs(c.until-s.time-7.25)<.01,'Cyber Cage 7.25 s');}
+{const {s,u}=setup('Cypher',['foe']);u.ability.q=1;ab(s,u,'q');const c=s.effects.find(e=>e.kind==='smoke');assert.ok(Math.abs(c.until-s.time-7.25)<.01,'Cyber Cage 7.25 s');assert.equal(c.radius,3.72,'Cyber Cage radius 3.72 m (wiki)');}
+// Smoke radius per ability (wiki): Cloudburst 3.35 m, Dark Cover 4.1 m, Cyber Cage 3.72 m; sight is blocked inside that radius only.
+{assert.deepEqual(SMOKE.r,{Jett:3.35,Omen:4.1,Cypher:3.72});const {s,u}=setup('Omen',['foe']);u.ability.e=1;assert.equal(ab(s,u,'e'),true);const c=s.effects.find(e=>e.kind==='smoke');assert.equal(c.radius,4.1,'Dark Cover radius 4.1 m (wiki)');
+ for(const [r,off,want] of [[3.35,3.5,false],[4.1,3.5,true],[3.72,3.6,true],[3.72,3.8,false]]){s.effects=[{kind:'smoke',p:[0,0,-10],until:s.time+5,radius:r}];const y=SMOKE.lift;assert.equal(smokeBlocks(s,[-20,y,-10+off],[1,0,0],40),want,'radius '+r+' m, ray '+off+' m from the centre');}}
 // Trademark: spots a visible enemy within 10 m, then a 9.5 s slow field.
 {const {s,u,list:[foe]}=setup('Chamber',['foe']);u.ability.c=1;Object.assign(foe,{x:0,y:0,z:-19});assert.equal(ab(s,u,'c'),true);tick(s,1.9);assert.ok(!s.effects.find(e=>e.kind==='trademark').spotted,'Trademark arms 2 s after placement');tick(s,.2);tick(s,.3);assert.ok(!s.effects.find(e=>e.kind==='trademark').field);tick(s,.4);
  const t=s.effects.find(e=>e.kind==='trademark');assert.ok(t.field&&Math.abs(t.until-s.time-9.3)<.2&&foe.slowUntil>s.time,'slow field');}
@@ -157,4 +161,4 @@ const ab=(s,u,k,m={})=>{s.time+=.5;return s.command(u,{t:'ab',k,...m});};
  assert.deepEqual([u.kills,u.credits,u.ability.ult,s.scores[u.team]||0],k0,'no kill / credits / ult / score for a teamkill');assert.equal(mate.deaths,d0+1,'the ally still dies');
  const t=new SpikeSimulation(W,'five','ascent',()=>.5),kj=t.add('kj','Killjoy'),m2=t.add('mate2'),f2=t.add('foe2');t.start(false);t.buy=0;m2.team=kj.team;f2.team=1-kj.team;Object.assign(m2,{x:1,y:0,z:-3,hp:100,armor:0});Object.assign(f2,{x:-1,y:0,z:-3,hp:100,armor:0});
  t.effects.push({id:++t.effectSeq,kind:'turret',owner:kj.id,ag:'Killjoy',team:kj.team,p:[0,0,0],until:t.time+5,radius:30,at:t.time,yaw:0});tick(t,.05);assert(f2.hp<100,'turret shoots the enemy');assert.equal(m2.hp,100,'turret never shoots allies');}
-console.log('Devices row 9: Blaze (wall burn/heal/sight), Hot Hands self-heal, Curveball (curve, windup, 1.1 s), Nanoswarm (dormant, free trigger, 45/s), Alarmbot (Vulnerable x2), Turret 180° arc + tag, Trapwire (wall-to-wall tether, daze, one use), Cyber Cage 7.25 s, Trademark (spot, slow field), Headhunter weapon restore');
+console.log('Devices row 9: Blaze (wall burn/heal/sight), Hot Hands self-heal, Curveball (curve, windup, 1.1 s), Nanoswarm (dormant, free trigger, 45/s), Alarmbot (Vulnerable x2), Turret 180° arc + tag, Trapwire (wall-to-wall tether, daze, one use), Cyber Cage 7.25 s / 3.72 m, Dark Cover 4.1 m and Cloudburst 3.35 m smoke radii, Trademark (spot, slow field), Headhunter weapon restore');

@@ -20,7 +20,7 @@ assert.equal(Motor.fallDamage(7.9),0);assert.equal(Motor.fallDamage(8),15);asser
  [a.x,a.z]=[10,0];[a2.x,a2.z]=[40,0];[b.x,b.z]=[0,32];[b2.x,b2.z]=[0,33];s.deathUlts();const ua=a.ability.ult,ub=b.ability.ult;const k0=s.events.length;s.step(.05);
  assert.equal(a.alive,false,'attacker 10 m away dies too');assert.equal(b.alive,false,'defender at 32 m dies');assert.equal(a2.alive,true,'40 m: outside');assert.equal(b2.alive,true,'33 m: outside');
  const ks=s.events.slice(k0).filter(e=>e[0]==='k');assert.deepEqual(ks.map(e=>[e[1],e[2],e[4]]).sort(),[['',a.name,'Spike'],['',b.name,'Spike']].sort(),'kill feed: Spike, no killer');
- assert(s.units.every(u=>!u.kills),'no kill credit');assert.equal(s.roundScores[s.atk],1,'attackers win');
+ assert(s.units.every(u=>!u.kills),'no kill credit');assert.equal(a.deaths,0,'Spike death: no KDA death (wiki Spike, patch 1.11)');assert.equal(b.deaths,0,'Spike death: no KDA death');assert.equal(s.roundScores[s.atk],1,'attackers win');
  assert.equal(b.credits,1900,'dead defender: loss bonus');assert.equal(b2.credits,1000,'defender who outran the blast: 1000');assert.equal(a.credits,3000,'winners +3000, dead or alive');
  assert.equal(a.ability.ult,ua,'Spike death: no ult point (wiki Unrated: "killed by an enemy agent"; vlr.gg/645360)');assert.equal(b.ability.ult,ub,'Spike death: no ult point');}
 // 4. overtime (wiki.playvalorant.com/en-us/Competitive): every overtime round starts with ults 3 points short (and 5000 credits)

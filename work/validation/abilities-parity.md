@@ -143,7 +143,7 @@ pages also list unequip times (mostly 0.7 s); the gun recovery stays the generic
 Thrown / cast abilities count the windup from the FIRE click: the equip flow's 0.2 s hand release (`XABT.rel` =
 `XAB_REL`) happens first, so the effect fuse after the cast is `windup - 0.2` (`xWf` / `wf`). Bots cast without the hand
 release and use the full windup. Not changed: Jett Tailwind 1 s (Tailwind keeps its instant dash), Sage Barrier 2 s
-fortification (the wall is full HP at once), Neural Theft reveals: server now 2 s / 6 s (section 7); the offline client still pulses at 0 / 1.5 s.
+fortification (the wall is full HP at once), Neural Theft reveals: 2 s / 6 s on the server and the offline client (section 7).
 Tests: `server/test-ability-equip.js`, `server/test-abilities.js` (Fault Line), `server/test-ults.js` (Trapwire /
 Trademark arm), `work/test_ability_equip.cjs`.
 
@@ -253,6 +253,26 @@ again after, put away after 10 s, dropped on death; the rocket / seat-bot / join
 ### Cypher Neural Theft reveals (wiki.playvalorant.com/en-us/Neural_Theft, fetched 2026-10-25)
 
 Wiki: 1st reveal windup 2 s, 2nd reveal windup 4 s (v5.10: "4 s delay between reveals"), so the server reveals at 2 s and
-6 s after the cast (`ULT.theft.reveals` [1, 3] -> [2, 6]; the 1.6 s reveal length unchanged). Not changed: the 5 m corpse
-reach (wiki 18 m) and the offline client's 0 / 1.5 s pulses. Test: `server/test-ults.js` (nothing before 2 s, first
-reveal at 2 s, gone, nothing before 6 s, second at 6 s).
+6 s after the cast (`ULT.theft.reveals` [1, 3] -> [2, 6]; the 1.6 s reveal length unchanged). Re-checked against the
+official page (oldid 153225, edited 2026-09-13): the stats table lists "2nd reveal windup time 4 seconds" next to the 2 s
+first windup, and the v5.10 note reads "4 s delay between reveals" - the 4 s is counted from the first reveal, so 2 s and
+6 s stand. Corpse reach: wiki "Max cast distance 18 meters" (v5.10, 12 -> 18 m): server `ULT.theft.reach` 5 -> 18 m
+(still a visible corpse in front, LOS). Offline client now matches (`CYNT {reach: 18, at: [2, 6], reveal: 1.6}`; was
+8 m and pulses at 0 / 1.5 s of 1.2 s): the pulses carry a round token (`CYNT.g`, bumped by `cyClear` on every round
+clear) so a cast pending at round end never reveals in the next round, and Cypher's own death does not cancel them
+(wiki v7.07). The offline client still finds the corpse by 2D distance only (no aim cone / LOS) and keeps the 0.5 s equip
++ FIRE flow. Tests: `server/test-ults.js` (corpse at 18.5 m refused with the ult kept, 17 m cast; nothing before 2 s,
+first reveal at 2 s, gone, nothing before 6 s, second at 6 s), `work/test_ability_equip.cjs` (CYNT table; 19 m refused,
+17 m cast; page-clock 1.9 / 2.1 / 3.8 / 5.9 / 6.1 s checks; a round clear cancels pending reveals).
+
+### Smoke radius per ability (wiki.playvalorant.com/en-us/Cloudburst, /Dark_Cover, /Cyber_Cage, fetched 2026-10-25)
+
+Wiki: Cloudburst radius 3.35 m, Dark Cover radius 4.1 m, Cyber Cage cylinder radius 3.72 m - each ability has its own, so
+the shared 4 m is gone for these three. Server: `abilities.js SMOKE.r = {Jett: 3.35, Omen: 4.1, Cypher: 3.72}` (Dark Cover
+push, Cloudburst landing `e.radius`, `devices.js` Cyber Cage); `smokeBlocks` already reads `e.radius`; any other smoke keeps
+`SMOKE.radius` 4. Client: `XSMR` (same table, asserted equal), every `J.smokes` entry carries `r` and its 4 m sphere is
+scaled to it (`xSmk`): the player's Dark Cover / Cyber Cage / Cloudburst, bot smokes and relayed casts (`enSmoke(..., r)`
+from `mpFx` / the bot kit / `netSyncCb`); `jBlock` (bot sight) and the minimap circle use `s.r` (4 m when absent).
+Cyber Cage stays a sphere (not a cylinder). Tests: `server/test-ults.js` (table, Dark Cover 4.1 / Cyber Cage 3.72 on the
+cast, `smokeBlocks` blocks inside the radius only), `server/test-ability-equip.js` (Cloudburst 3.35), `work/test_ability_equip.cjs`
+(XSMR == SMOKE.r, relayed radii and mesh scale, `jBlock` 3.6 m pass).

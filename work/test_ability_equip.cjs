@@ -124,6 +124,12 @@ const fails=[];const fail=s=>{fails.push(s);if(VERBOSE)console.log('FAIL',s);};c
   // relayed (online) Hot Hands spreads the same; Paint Shells stay 2.5 m
   eq(xe('(()=>{const u=bots.find(b=>b.alive&&b.g);if(!u)return null;const n=J.zones.length;mpFx(u,"Phoenix","q",new THREE.Vector3(u.g.position.x,1.6,u.g.position.z),new THREE.Vector3(0,0,-1),false,null,true);mpFx(u,"Raze","e",new THREE.Vector3(u.g.position.x,1.6,u.g.position.z),new THREE.Vector3(0,0,-1),false,null,true);return J.zones.slice(n).map(z=>[z.R||0,+z.m.scale.x.toFixed(2)]);})()'),[[4.5,0.01],[0,1]],'relayed Hot Hands spreads, Paint Shells do not');
   await adv(200);}
+ // ---- smoke radius per ability (wiki: Cloudburst 3.35 m, Dark Cover 4.1 m, Cyber Cage 3.72 m); client XSMR == server SMOKE.r ----
+ {const src=require('fs').readFileSync(require('path').join(__dirname,'../server/src/abilities.js'),'utf8'),sr=Function('return '+src.match(/SMOKE=\{radius:4,lift:[\d.]+,r:(\{[^}]*\})\}/)[1])();
+  eq(xe('XSMR'),sr,'client XSMR == server SMOKE.r');eq(sr,{Jett:3.35,Omen:4.1,Cypher:3.72},'wiki smoke radii');
+  // relayed casts (online / bots) carry the caster's radius on the mesh and in sight checks
+  eq(xe('(()=>{const u=bots.find(b=>b.alive&&b.g);if(!u)return null;const n=J.smokes.length,o=new THREE.Vector3(u.g.position.x,1.6,u.g.position.z),d=new THREE.Vector3(0,0,-1);mpFx(u,"Jett","c",o,d,false,null,true);mpFx(u,"Omen","e",o,d,false,null,true);mpFx(u,"Cypher","q",o,d,false,null,true);const r=J.smokes.slice(n).map(s=>[s.r,+s.m.scale.x.toFixed(4)]);J.smokes.slice(n).forEach(s=>{s.t=0;});return r;})()'),[[3.35,0.8375],[4.1,1.025],[3.72,0.93]],'relayed Cloudburst / Dark Cover / Cyber Cage radii');
+  eq(xe('(()=>{const keep=J.smokes;try{const out=[];for(const r of [3.35,4.1]){J.smokes=[{p:new THREE.Vector3(0,1.8,-10),r,t:5}];out.push(jBlock(new THREE.Vector3(-20,1.8,-10+3.6),new THREE.Vector3(1,0,0),40));}J.smokes=[{p:new THREE.Vector3(0,1.8,-10),t:5}];out.push(jBlock(new THREE.Vector3(-20,1.8,-10+3.6),new THREE.Vector3(1,0,0),40));return out;}finally{J.smokes=keep;}})()'),[false,true,true],'sight blocked within the smoke radius only (3.6 m pass: Cloudburst no, Dark Cover yes, no r = 4 m)');}
  // ---- Jett Cloudburst: thrown INSTANTLY, steered with the crosshair while C is held, falls after release (vendor/cloudburst.cjs) ----
  await live();{pick('Jett');xe('player.hp=100;J.cd.c=0;J.c=2;J.cbs=[];J.eq=null;true');await adv(200);
   const P0=xe('[player.x,player.z,yaw]');H.key('KeyC',true);await adv(250);eq(xe('J.cbs.length'),1,'held C: projectile out');const s0=xe('(c=>c.st.held)(J.cbs[0])');eq(s0,true,'held: steering');
@@ -142,7 +148,21 @@ const fails=[];const fail=s=>{fails.push(s);if(VERBOSE)console.log('FAIL',s);};c
   xe('netSyncEffects([{id:78,kind:"cb",o:MP.me,p:[1,2,3],s:0}]);true');eq(xe('[netCbs.has(77),netCbs.has(78)]'),[false,false],'gone row dropped; own Cloudburst (flown locally) skipped');
   eq(xe('netSyncEffects([{id:79,kind:"cb",o:-5,p:[NaN,2,3],s:0},{id:"x",kind:"cb",p:[1,2,3]}]),netCbs.size'),0,'junk cb rows ignored');
   xe('J.smokes.forEach(s=>s.t=0.01);true');await adv(200);}
+ // ---- Cypher Neural Theft offline (wiki: 18 m reach, reveals at 2 s and 6 s after the cast; same as server ULT.theft) ----
+ await live();{pick('Cypher');await adv(200);eq(xe('[CYNT.reach,CYNT.at,CYNT.reveal]'),[18,[2,6],1.6],'client CYNT table');
+  const far=xe('(()=>{const al=bots.filter(b=>b.alive&&b.g),dd=bots.filter(b=>!b.alive&&b.g);if(!dd.length&&al.length>1)dd.push(al.shift()),dd[0].alive=false;if(!dd.length||!al.length)return null;dd.forEach((b,i)=>{b.g.position.x=player.x+(i?100:19);b.g.position.z=player.z;});al.forEach(b=>{b.g.position.x=player.x;b.g.position.z=player.z-60;});return true;})()');
+  if(!far)fail('Neural Theft: no bot to fall');else{
+   const tx=async()=>{await tap('KeyX');await adv(600);await click(0);for(let i=0;i<10&&xe('J.ult')>0;i++)await adv(20);};// X equips (0.5 s draw), FIRE casts
+   xe('J.ult=K().u;jUnreveal();true');await tx();eq(xe('J.ult'),xe('K().u'),'corpse at 19 m: not cast, ult kept');if(xe('!!J.eq'))await tap('KeyX');await adv(500);
+   xe('(()=>{const c=bots.find(b=>!b.alive&&b.g&&Math.abs(b.g.position.x-player.x-19)<0.01);c.g.position.x=player.x+17;})();jUnreveal();true');await tx();eq(xe('J.ult'),0,'corpse at 17 m: cast');
+   // page clock (performance.now, which drives the page timers and frames) from the cast
+   const t0=xe('performance.now()'),at=async ms=>{while(xe('performance.now()')-t0<ms)await adv(20);};
+   eq(xe('J.rvT>0'),false,'no reveal at the cast');await at(1900);eq(xe('J.rvT>0'),false,'no reveal before 2 s');
+   await at(2100);eq(xe('J.rvT>0&&J.rv.length>0'),true,'first reveal at 2 s');await at(3800);eq(xe('J.rvT>0'),false,'first reveal over (1.6 s)');
+   await at(5900);eq(xe('J.rvT>0'),false,'no reveal before 6 s');await at(6100);eq(xe('J.rvT>0&&J.rv.length>0'),true,'second reveal at 6 s');
+   // a cast whose pulses are still pending when the round clears never reveals in the next round
+   xe('J.ult=K().u;jUnreveal();true');await tx();eq(xe('J.ult'),0,'second cast');xe('bcClear();jUnreveal();true');{const t1=xe('performance.now()');while(xe('performance.now()')-t1<6300)await adv(50);}eq(xe('J.rvT>0'),false,'round clear cancels pending reveals (none through 6.3 s)');}}
  if(xe('XEQV.err||null'))fail('ability viewmodel error: '+xe('XEQV.err'));
  if(H.errors.length>errs0)fail('page errors: '+H.errors.slice(errs0).map(e=>String(e&&e.message||e)).join(' | '));
- if(fails.length){console.log(fails.join('\n'));process.exit(1);}console.log('ability equip: binds, migration, HUD labels, equip -> fire flow, first-person equip viewmodel, wiki equip times + windups, Sova bow charge + bounces, Fault Line hold-to-extend, Hot Hands spread, Cloudburst flight + steering, kit table ok');process.exit(0);
+ if(fails.length){console.log(fails.join('\n'));process.exit(1);}console.log('ability equip: binds, migration, HUD labels, equip -> fire flow, first-person equip viewmodel, wiki equip times + windups, Sova bow charge + bounces, Fault Line hold-to-extend, Hot Hands spread, Neural Theft 18 m / 2 s + 6 s, Cloudburst flight + steering, per-ability smoke radii, kit table ok');process.exit(0);
 })().catch(e=>{console.error(e);process.exit(1);});

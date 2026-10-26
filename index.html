@@ -1218,6 +1218,7 @@ body.x-cbh #game{--ha:#3d8bff;--he:#ff9f1c}
     <div class="x-qon__h"><h3 id="xOnH">Online</h3><small>Peer-to-peer with friends · bots fill empty slots</small><label class="x-qon__nm">Name <input id="xOnName" placeholder="Your name" maxlength="16" autocomplete="off" spellcheck="false"></label></div>
     <div class="x-qon__row">
       <div class="x-qon__seg" role="group" aria-label="Online mode"><button type="button" data-om="dm" aria-pressed="false">Deathmatch</button><button type="button" data-om="tdm" aria-pressed="true">Team Deathmatch</button><button type="button" data-om="five" aria-pressed="false">Unrated (Spike)</button></div>
+      <label class="x-qon__nm">Map <select id="xOnMap"><option value="ascent">Ascent</option><option value="bind">Bind</option><option value="haven">Haven</option><option value="split">Split</option><option value="lotus">Lotus</option><option value="breeze">Breeze</option><option value="random">Random</option></select></label>
       <button type="button" class="x-qrange x-qon__go" id="xOnQuick">Quick Match</button>
       <button type="button" class="x-qrange" id="xOnCreate">Create private</button>
       <span class="x-qon__join"><input id="xOnCode" maxlength="6" placeholder="CODE" aria-label="Room code" autocomplete="off" spellcheck="false"><button type="button" class="x-qrange" id="xOnJoin">Join</button></span>
@@ -1225,7 +1226,7 @@ body.x-cbh #game{--ha:#3d8bff;--he:#ff9f1c}
     <div class="x-qon__room" id="xOnRoom" hidden>
       <div class="x-qon__code"><small>Room code</small><b id="xOnCodeT">—</b><button type="button" class="x-qrange" id="xOnCopy">Copy</button><span id="xOnRoomM"></span></div>
       <ol class="x-qon__list" id="xOnList"></ol>
-      <div class="x-qon__row"><label class="x-qon__nm">Map <select id="xOnMap"><option value="ascent">Ascent</option><option value="bind">Bind</option><option value="haven">Haven</option><option value="split">Split</option><option value="lotus">Lotus</option><option value="breeze">Breeze</option><option value="random">Random</option></select></label>
+      <div class="x-qon__row">
         <button type="button" class="x-qrange x-qon__go" id="xOnStart">Start</button><span id="xOnWait"></span><button type="button" class="x-qrange" id="xOnLeave">Leave</button></div>
     </div>
     <p class="x-qon__msg" id="xOnMsg" role="status" aria-live="polite"></p>
@@ -1254,13 +1255,23 @@ body.x-cbh #game{--ha:#3d8bff;--he:#ff9f1c}
     document.getElementById("xqClose").addEventListener("click", function () { q.hidden = true; });
     document.addEventListener("keydown", function (e) { if (e.key === "Escape" && !q.hidden) q.hidden = true; });
     // map picker: only applied to the 5v5 flow once a tile has been chosen
-    var qMap = "ascent";window.xQMap=qMap;
-    q.querySelectorAll(".x-qmap").forEach(function (m) {
-      m.addEventListener("click", function () {
-        qMap = m.dataset.map; window.xQMap = qMap;
-        q.querySelectorAll(".x-qmap").forEach(function (b) { b.setAttribute("aria-pressed", b === m ? "true" : "false");b.classList.toggle("selected",b===m); });
-      });
-    });
+    // One lobby map choice: the tiles here, the Online map select and the 5v5 pre-match picker all show and set it, it is
+    // remembered on this device (vs.map), and every launch from this panel uses it: START and the mode cards themselves
+    // (clicking the Deathmatch / TDM / Spike Rush / Escalation card used to skip it and play the last map, Ascent by default).
+    var QMAPS = ["ascent", "bind", "haven", "split", "lotus", "breeze", "random"], qMap = "ascent";
+    try { var sv = localStorage.getItem("vs.map"); if (QMAPS.indexOf(sv) >= 0) qMap = sv; } catch (e) {}
+    function setQ(m, save) {
+      if (QMAPS.indexOf(m) < 0) return; qMap = m; window.xQMap = m;
+      q.querySelectorAll(".x-qmap").forEach(function (b) { var on = b.dataset.map === m; b.setAttribute("aria-pressed", on ? "true" : "false"); b.classList.toggle("selected", on); });
+      var os = document.getElementById("xOnMap"); if (os && !os.disabled && os.value !== m) os.value = m; // in a room it shows the room's map
+      if (save) try { localStorage.setItem("vs.map", m); } catch (e) {}
+      try { if (window.xLobbyPick) window.xLobbyPick(m); } catch (e) {}
+    }
+    window.xQSetMap = function (m) { setQ(m, true); };
+    setQ(qMap, false);
+    q.querySelectorAll(".x-qmap").forEach(function (m) { m.addEventListener("click", function () { setQ(m.dataset.map, true); }); });
+    (function () { var os = document.getElementById("xOnMap"); if (os) os.addEventListener("change", function () { if (!os.disabled) setQ(os.value, true); }); })();
+    document.addEventListener("click", function (e) { if (e.target && e.target.closest && e.target.closest("#dmBtn,#tdmBtn,#srBtn,#escBtn,#pm5v5")) window.xQPick = qMap; }, true);
     document.getElementById("xqRange").addEventListener("click", function () { var a = document.getElementById("aimBtn"); if (a) a.click(); });
   })();
   </script>
@@ -1728,7 +1739,9 @@ function xRate(W) { if (!W.spin) return W.rate; const n = performance.now(); if 
 // Valorant reload times (s), one per gun; Ares / Odin / Outlaw keep their own rld above
 { const RLD = { Classic: 1.75, Shorty: 1.75, Frenzy: 1.5, Ghost: 1.5, Sheriff: 2.25, Stinger: 2.25, Spectre: 2.25, Bucky: 2.5, Judge: 2.2, Bulldog: 2.5, Guardian: 2.5, Phantom: 2.5, Vandal: 2.5, Marshal: 2.5, Operator: 3.7 };
   for (const n in RLD) if (WEAP[n] && !WEAP[n].rld) WEAP[n].rld = RLD[n]; }
-function xRT() { const W = WEAP[wName()]; return (W && W.rld) || 2.5; } // reload duration from the gun's own Valorant reload time
+// per-round reloads (wiki Bucky "0.5 per shell", Marshal "0.5 per bullet"; a shot interrupts it); Outlaw 2.3 s one barrel / 3.8 s both. = server RELOAD_ROUND / reloadTime
+const XRLP = { Bucky: 0.5, Marshal: 0.5 };
+function xRT() { const n = wName(), W = WEAP[n]; if (XRLP[n]) return XRLP[n]; if (n === "Outlaw" && W) return W.mag - ammo >= 2 ? 3.8 : 2.3; return (W && W.rld) || 2.5; } // reload duration from the gun's own Valorant reload time
 // one damage table for player and bots; zone = "body" | "head" | "legs"; falloff ff past ffd m (default 15); knife 50 light, heavy 75 body / 150 back-stab or head
 const KNIFE = { light: 50, heavy: 75, heavyCrit: 150 }; let kHv = 0, kLg = 0, kLx = 0, kLz = 0;
 // bot yaw r is set as atan2(dx, dz) toward where it aims/moves, so its forward is (sin r, cos r); back-stab when forward · dir(attacker→target) > 0.5
@@ -2075,6 +2088,7 @@ function xGo(fn) {
   try { if (typeof xGmLoad === "function") xGmLoad(); } catch (e) {} // CC0 gun models, same lazy first-launch fetch
   xLob0 = false; // perf pass 16: a mode launched, the first-load lobby no longer covers the game
   try { const pending=fn();if(pending&&pending.catch)pending.catch(e=>{if(window.xErr)window.xErr(e);}); } catch (e) { if (window.xErr) window.xErr(e); }
+  window.xQPick = null; // the launched mode took the queue map pick synchronously (or does not use one); never let it leak into a later start
 }
 const failWith = (msg) => { xNoGL = true; xFailMsg = msg; };
 // AGENTS nav: roster from the agent-select tiles (static markup, so it works without WebGL); a pick sets the lobby agent, as locking in does
@@ -2183,7 +2197,7 @@ function xLobbyInit() {
   bind("pre-match GO", () => $("preGo").onclick = () => { clearInterval(preTimer);
     xGo(() => (preMode === "five" ? agentSelect(startFive) : preMode === "surf" ? startSurf() : preMode === "aim" ? startAim() : preMode === "rifle" ? startRifle() : agentSelect(start))); });
   bind("pre-match cancel", () => $("preCancel").onclick = () => { clearInterval(preTimer); $("pre").style.display = "none"; $("lobby").style.display = "flex"; });
-  bind("5v5 map pick", () => $("xMp").onclick = (e) => { const b = e.target.closest("button"); if (b && xReady) mpSet(b.dataset.m); });
+  bind("5v5 map pick", () => $("xMp").onclick = (e) => { const b = e.target.closest("button"); if (b && xReady) { mpSet(b.dataset.m); try { if (window.xQSetMap) window.xQSetMap(b.dataset.m); } catch (er) {} } });
   bind("lock in", () => $("xAgL").onclick = () => { $("xAg").style.display = "none"; $("lobby").style.display = "flex"; }); // agentSelect sets the real handler each time
   bind("result lobby", () => $("lobbyBtn").onclick = () => { $("result").style.display = "none"; $("game").style.display = "none"; $("lobby").style.display = "flex"; }); // the game replaces it once loaded
 }
@@ -2870,11 +2884,14 @@ const XSG = {}; function xSpecGuard(a) { const q = a.g.position, G = a.xSG || (a
 function xObsHide(a) { const m = a && a.alive !== false && a.xm && !a.xm.dead && a.xm.m ? a.xm.m : null; if (XOB.hm === m) return; if (XOB.hm) XOB.hm.visible = true; XOB.hm = m; if (m) m.visible = false; }
 { const b0 = bfxBot; bfxBot = function (p) { try { if (p && typeof allies !== "undefined") for (const u of allies) if (u.alive && Math.hypot(u.g.position.x - p.x, u.g.position.z - p.z) < 0.6) { const m = (WEAP[u.w || "Classic"] || {}).mag || 12; if (u.xAmW !== (u.w || "Classic") || !(u.xAm > 0)) { u.xAm = m; u.xAmW = u.w || "Classic"; } u.xAm--; break; } } catch (e) {} return b0.apply(this, arguments); }; } // spectated teammate's mag count (refills when empty)
 // Valorant tagging: a bullet hit slows the target for 0.25 s; heavy (28%) for big hits, lighter (50%) for sidearm / SMG body shots
-function xTag(t, n) { if (!t) return; const k = n < 30 ? 0.5 : 0.28; if (!(t.tagT > 0) || k < t.tagK) t.tagK = k; t.tagT = 0.5; } // tagging: 0.5 s, rifle hits slow 72%
+// shotgun hit past 10 m (patch 1.07, wiki Bucky / Judge / Shorty): 30% slow for 0.5 s easing back to full speed, not the standard tag. = server tagHit / tagMul
+function xTagAt(t, n, w, d) { if (!t) return; const W = WEAP[w]; if (!(W && W.pel > 1 && d > 10)) return xTag(t, n); if (t.tagT > 0 && !t.tagS) return; t.tagT = 0.5; t.tagK = 0.7; t.tagS = 1; }
+function xTagK(t) { if (!t || !(t.tagT > 0)) return 1; if (!t.tagS) return t.tagK; return 1 - (1 - t.tagK) * (0.5 - 0.5 * Math.cos(Math.PI * Math.min(1, t.tagT / 0.5))); }
+function xTag(t, n) { if (!t) return; t.tagS = 0; const k = n < 30 ? 0.5 : 0.28; if (!(t.tagT > 0) || k < t.tagK) t.tagK = k; t.tagT = 0.5; } // tagging: 0.5 s, rifle hits slow 72%
 function pDie(by, w) {
   if (jRib()) return; // Phoenix Run It Back
   try { if (mode === "five" && !XTKILL && by !== "Fall" && by !== "Spike") jUlt(); } catch (e) {} // +1 ult point per death to an enemy (not a fall, the Spike or a teamkill)
-  fKC(by); player.hp = 0; defuseT = 0; reloading = 0; stats.d++; sbKill(by, "You", false); if (w) kfeed(by, "You", false, w); else feed(by + " ▸ You"); showStats(); setScope(false);
+  fKC(by); player.hp = 0; defuseT = 0; reloading = 0; if (by !== "Spike") stats.d++; /* the Spike is no KDA death (wiki Spike, patch 1.11) */ sbKill(by, "You", false); if (w) kfeed(by, "You", false, w); else feed(by + " ▸ You"); showStats(); setScope(false);
   if (!allies.some((a) => a.alive)) return end(false, "You were eliminated by " + by);
   say("You died · spectating your team", 1800);
 }
@@ -2895,7 +2912,7 @@ function moveP(dt, run, hold) {
   if (kk.KeyW) { mx += fx; mz += fz; } if (kk.KeyS) { mx -= fx; mz -= fz; }
   if (kk.KeyA) { mx += fz; mz -= fx; } if (kk.KeyD) { mx -= fz; mz += fx; }
   if (P.tagT > 0) P.tagT -= dt;
-  const l = Math.hypot(mx, mz), sp = (cr ? 0.45 : wk ? 0.6 : 1) * run * (P.tagT > 0 ? P.tagK : 1); // tagged: slowed; knife run 6.75 · walk 4.05 · crouch 3.04 m/s
+  const l = Math.hypot(mx, mz), sp = (cr ? 0.45 : wk ? 0.6 : 1) * run * xTagK(P); // tagged: slowed; knife run 6.75 · walk 4.05 · crouch 3.04 m/s
   P.lp = Math.max(0, (P.lp || 0) - dt); // landing accuracy penalty timer
   const want = !!l && !hold, tx = want ? (mx / l) * sp : 0, tz = want ? (mz / l) * sp : 0;
   P.vx = P.vx || 0; P.vz = P.vz || 0; P.cr = cr; P.wk = wk;
@@ -2964,8 +2981,8 @@ function kfeed(k, v, hs, w, wbo) { // wbo: server wallbang flag (online kill eve
   const nm = (s, n) => { s.className = "kf__n " + (kfBlue(n) ? "kf--blue" : "kf--red"); let ag = null; try { const u = n === "You" ? null : kfAll().find((x) => x && x.name === n); ag = u ? xAg(u) : null; } catch (e) {} s.textContent = ag && ag !== n && n !== "Bot " + ag ? n + " · " + ag : n; s.title = ag || ""; s.style.display = ""; const pa = n === "You" ? (J && J.pick) || "Jett" : ag; if (pa && kfKnown(n)) { s.dataset.a = String(pa)[0].toUpperCase(); s.style.setProperty("--c", mmAgC(String(pa))); } else { delete s.dataset.a; s.style.removeProperty("--c"); } };
   const wp = d.xW, key = w + (hs ? "|hs" : "") + (wb ? "|wb" : ""); wp.title = w + (wb ? " · wallbang" : ""); wp.style.display = "";
   if (wp.xK !== key) { wp.xK = key; wp.innerHTML = (KF_AB[w] ? '<svg viewBox="0 0 40 14" aria-hidden="true">' + KF_AB[w] + "</svg>" : /Knife|Blade/.test(w) ? KF_KNIFE : w === "Ability" ? "" : KF_GUN) + '<b></b>' + (wb ? KF_WB : "") + (hs ? KF_HS : ""); const wn = wp.querySelector("b"); if (wn) wn.textContent = w; }
-  nm(d.xA, k); nm(d.xB, v);
-  try { if (v !== "You" && kfBlue(v) && typeof xLoc === "function") { const u = kfAll().find((x) => x && x.name === v), at = u && u.g ? xLoc(u.g.position.x, u.g.position.z) : ""; if (at) d.xB.textContent += " died at " + at; } } catch (e) {}
+  nm(d.xA, k); nm(d.xB, v); d.xB.classList.remove("kf__n--at"); // pooled rows
+  try { if (v !== "You" && kfBlue(v) && typeof xLoc === "function") { const u = kfAll().find((x) => x && x.name === v), at = u && u.g ? xLoc(u.g.position.x, u.g.position.z) : ""; if (at) { d.xB.textContent += " died at " + at; d.xB.classList.add("kf__n--at"); } } } catch (e) {}
   kfPush(d);
 }
 function kfPush(d) {
@@ -3174,10 +3191,10 @@ function shoot(hv) {
     if (kSwing > 0) return; kSwing = hv ? 1 : 0.5; kHv = hv ? 1 : 0; kick = 1; SFX.knife(); ray.far = 2.2; // light 0.5 s (= the server Knife fireRate 2/s), heavy 1 s cooldown, 2.2 m lunge
     if (hv) { body = KNIFE.heavy; head = KNIFE.heavyCrit; if (!(typeof NET !== "undefined" && NET.socket && MP.st === "game")) { kLg = 0.15; kLx = -Math.sin(yaw); kLz = -Math.cos(yaw); } } // lunge 1.2 m over 0.15 s offline; online the server moves the player and has no lunge (heavy = kh input: 1 s, 75 / 150 head or back)
   } else {
-    if (reloading > 0) return;
+    if (reloading > 0) { if (XRLP[w] && ammo > 0) reloading = 0; else return; } // a per-round reload: the shot interrupts it
     const rt = xRT();
     if (ammo <= 0) { SFX.empty(); if (rsv > 0 && S.autoReload !== false) { reloading = rt; SFX.reload(); } fireHeld = false; updHud(); return; }
-    ammo--; if (ammo === 0 && rsv > 0 && S.autoReload !== false) { reloading = rt; setTimeout(() => SFX.reload(), 150); }
+    ammo--; if (ammo === 0 && rsv > 0 && S.autoReload !== false) { reloading = xRT(); setTimeout(() => SFX.reload(), 150); }
     if (ammo > 0 && ammo * 5 <= MAG()) SFX.low();
     fcd = 1 / xRate(W) / (jOn() && J.emp > 0 ? 1.15 : 1) * (xCU > performance.now() ? 1.25 : 1); // Empress +15 % / concussed -20 %, as the server since = 0; body = W.body; head = W.head;
     kick = W.semi ? 1 : Math.min(1, 0.45 + W.rec * 0.5); vmFire(); SFX.gun(w);
@@ -3254,7 +3271,7 @@ function xPellets(W, targets) {
     }
   } finally { xPelOn = false; d.copy(XPB); }
   XPM.forEach((dmg, b) => { if (!b.alive) { b._pp = null; return; } const hs = XPP.get(b) === -1, pt = b._pp || b.g.position; b._pp = null; dmg = Math.round(dmg);
-    xHS = hs; hurt(b, dmg); xTag(b, dmg); vmHit(pt, dmg, hs, b.hp <= 0.001, b); if (b.hp <= 0.001) kill(b, hs); else flash(b); });
+    xHS = hs; hurt(b, dmg); xTagAt(b, dmg, wName(), Math.hypot(b.g.position.x - player.x, b.g.position.z - player.z)); vmHit(pt, dmg, hs, b.hp <= 0.001, b); if (b.hp <= 0.001) kill(b, hs); else flash(b); });
 }
 function kill(b, hs, by, w) {
   by = by || "You"; if (!b.alive) return;
@@ -4289,7 +4306,7 @@ function tick(dt) {
   if (fcd > 0) fcd -= dt;
   since += dt; if (since > (sprW === "Phantom" ? 0.27 : 0.3)) spray = Math.max(0, spray - dt * 40);
   if (alive && fireHeld && rw !== "knife" && !WEAP[wName()].semi && fcd <= 0 && ammo > 0) shoot();
-  if (reloading > 0) { reloading -= dt; if (reloading <= 0) { reloading = 0; /* not left a hair below 0: online treats it as still reloading (ammo sync off, the next auto-reload never sent) */ const n = Math.min(MAG() - ammo, rsv); ammo += n; rsv -= n; } updHud(); }
+  if (reloading > 0) { reloading -= dt; if (reloading <= 0) { reloading = 0; /* not left a hair below 0: online treats it as still reloading (ammo sync off, the next auto-reload never sent) */ const one = XRLP[wName()], n = Math.min(one ? Math.min(1, MAG() - ammo) : MAG() - ammo, rsv); ammo += n; rsv -= n; if (one && ammo < MAG() && rsv > 0) reloading = one; /* next round */ } updHud(); }
   const near = ret && alive && Math.hypot(player.x - spike.position.x, player.z - spike.position.z) < 2.5; // distance to the spike, not the map origin (native maps plant it at site B)
   if (near && defusing) { const d0 = defuseT; defuseT += dt; if (d0 < 3.5 && defuseT >= 3.5) SFX.defHalf(); } else defuseT = defuseT >= 3.5 ? 3.5 : 0; // half defuse is kept
   let ad = false; if (ret) for (const a of allies) if (a.alive && a.def > 0) { ad = a; break; }
@@ -4350,7 +4367,7 @@ function tick(dt) {
     if (!see) xFace(b, dt, vx, vz); b.cr = see && d < 8 && !!b.crR; // crouch-spray up close, 30% of fights
     [vx, vz] = xSmV(b, dt, vx, vz);
     if (b.tagT > 0) b.tagT -= dt;
-    const D = DIFF[S.diff], bwk = botWalk(b, see, d), bs = botRun(b, bwk) * Math.min(1, D.speed) * dt * bk * (b.tagT > 0 ? b.tagK : 1); b.mv = !!(vx || vz) && bs > 0; b.wk = bwk ? 1 : 0; // fidelity: player speed table, walk x0.6 near contact
+    const D = DIFF[S.diff], bwk = botWalk(b, see, d), bs = botRun(b, bwk) * Math.min(1, D.speed) * dt * bk * xTagK(b); b.mv = !!(vx || vz) && bs > 0; b.wk = bwk ? 1 : 0; // fidelity: player speed table, walk x0.6 near contact
     { const vl = Math.hypot(vx, vz); if (vl > 1) { vx /= vl; vz /= vl; } } const bx0 = p.x, bz0 = p.z;
     if (!blocked(p.x + vx * bs, p.z, 0.45, p.y)) p.x += vx * bs; else { b.strafe *= -1; b.blk = 1; }
     if (!blocked(p.x, p.z + vz * bs, 0.45, p.y)) p.z += vz * bs; else { b.strafe *= -1; b.blk = 1; }
@@ -4365,7 +4382,7 @@ function tick(dt) {
       bSpread(b, w, W, aim, d, D);
       mv.copy(pt); mv.sub(from); mv.cross(aim); const miss = mv.length(), head = b.hd && miss < 0.2;
       if (miss < (b.hd ? 0.3 : 0.45)) {
-        { const n = wDmg(W, head ? "head" : miss > 0.35 ? "legs" : "body", d); xHS = head; xHLeg = !head && miss > 0.35; hurt(tg.t, n, b.name); xTag(tg.t, n); if (typeof xHitOther === "function") xHitOther(tg.t, head, b, null, xHLeg ? "legs" : "body"); } // same table as the player; edge-of-hitbox hits land low
+        { const n = wDmg(W, head ? "head" : miss > 0.35 ? "legs" : "body", d); xHS = head; xHLeg = !head && miss > 0.35; hurt(tg.t, n, b.name); xTagAt(tg.t, n, w, d); if (typeof xHitOther === "function") xHitOther(tg.t, head, b, null, xHLeg ? "legs" : "body"); } // same table as the player; edge-of-hitbox hits land low
         if (tg.t === player) {
           xDmgArc(b.g.position.x, b.g.position.z); xDmgFlash(); updHud();
           if (player.hp <= 0) { pDie(b.name, xWeapOf(b)); if (!running) return; }
@@ -4568,7 +4585,7 @@ function duelTick(dt) {
   if (!see || d > 16 || d < 3) { vx = dx / d; vz = dz / d; } else { b.cd = Math.max(b.bolt, R.react - b.aim); [vx, vz] = xFight(b, dt, player.x, player.z, d); }
   if (d > 1.2 && !(b.det > 0)) [vx, vz] = xUn(b, dt, vx, vz);
   if (b.tagT > 0) b.tagT -= dt;
-  const bs = botRun(b, false) * Math.min(1, D.speed) * dt * botK(b) * (b.tagT > 0 ? b.tagK : 1);
+  const bs = botRun(b, false) * Math.min(1, D.speed) * dt * botK(b) * xTagK(b);
   if (d > 1.2) {
     if (!blocked(p.x + vx * bs, p.z, 0.45)) p.x += vx * bs; else b.strafe *= -1;
     if (!blocked(p.x, p.z + vz * bs, 0.45)) p.z += vz * bs; else b.strafe *= -1;
@@ -7309,7 +7326,9 @@ function xLotusTick() { // no allocations per frame
   }
 }
 const HAVEN_CALL = []; XCALL.clear(); XCALL.add(...ASC_CALL);
-FV.pick = "ascent"; FV.map = "ascent";
+FV.pick = window.xQMap || "ascent"; FV.map = "ascent"; // the lobby map choice (queue tiles, remembered as vs.map)
+// a lobby map tile / Online select change is the pick right away (the pre-match screen and every launch read it), not only on START
+window.xLobbyPick = (m) => { try { if (!running && $("lobby").style.display !== "none" && !(typeof MP !== "undefined" && MP.on) && (F_MAPN[m] || m === "random")) FV.pick = m; } catch (e) {} };
 const F_MAPN = { ascent: "Ascent", bind: "Bind", haven: "Haven", split: "Split", lotus: "Lotus", breeze: "Breeze" };
 // Free a lazily built map on switch (rebuilt next time it is picked). Freeing only its geometry left every switch's canvas
 // textures (callout labels, plaques, the map's own surfaces) and materials on the GPU, the callout sprites' too (they live in
@@ -7702,7 +7721,7 @@ function fRound() {
   if (!FV.alive) { FV.pri = null; FV.sec = "Classic"; FV.arm = 0; FV.rgn = undefined; } // died last round: back to a Classic
   const pz0 = FV.atk ? xSpawn(FV.map).atk : xSpawn(FV.map).def;
   player = { x: 0, z: pz0, hp: 100, armor: FV.arm, rgn: FV.rgn, y: 0, vy: 0, ch: 0, st: 0 }; yaw = FV.atk ? 0 : Math.PI; pitch = 0;
-  timeLeft = 100; FV.buy = FV.you + FV.them === 0 || FV.you + FV.them === 12 ? 45 : 30; defuseT = 0; kSwing = 0; fSpawn(); $("feed").innerHTML = ""; $("defuse").style.display = "none";
+  timeLeft = 100; FV.buy = FV.you + FV.them === 0 || FV.you + FV.them === 12 || (FV.you + FV.them === 24 && !FV.sw && !FV.sr) ? 45 : 30; /* 45 s: first buy phase of each half and of overtime (rounds 1, 13, 25; wiki Unrated, = server buyPhaseSeconds) */ defuseT = 0; kSwing = 0; fSpawn(); $("feed").innerHTML = ""; $("defuse").style.display = "none";
   const pm = FV.pri ? WEAP[FV.pri].mag : 0, sm = WEAP[FV.sec].mag;
   slots.pri = FV.pri ? { ammo: pm, rsv: xRsv(FV.pri) } : {}; slots.pis = { ammo: sm, rsv: xRsv(WEAP[FV.sec] ? FV.sec : "Classic") };
   rw = FV.pri ? "pri" : "pis"; ammo = slots[rw].ammo; rsv = slots[rw].rsv; reloading = 0; fcd = 0; spray = 0; fireHeld = false; try { XSP.used = false; } catch (e) {} // round start re-arms the one spray per round
@@ -7914,6 +7933,10 @@ function xTbIco() { const a = J.pick || "Jett"; ["c", "q", "e", "x"].forEach((k,
 function xAbIcons() { const a = J.pick || "Jett"; if (xAbIcons.a !== a) { xAbIcons.a = a; ["jC", "jQ", "jE", "jX"].forEach((id, i) => { const s = $(id); if (!s) return; let d = s.querySelector(".x-ai"); if (!d) { d = document.createElement("div"); d.className = "x-ai"; s.insertBefore(d, s.querySelector("span")); } d.innerHTML = abIco(a, i); }); } xTbIco(); }
 const jOn = () => J.on && (mode === "retake" || mode === "five");
 const smokeGeo = new THREE.SphereGeometry(4, 22, 16);
+// Smoke radius per ability (wiki.playvalorant.com, fetched 2026-10-25): Cloudburst 3.35 m, Dark Cover 4.1 m, Cyber Cage 3.72 m;
+// server abilities.js SMOKE.r is the same table. The 4 m sphere is scaled to it; sight (jBlock) and the minimap read s.r.
+const XSMR = { Jett: 3.35, Omen: 4.1, Cypher: 3.72 };
+function xSmk(m, r) { m.scale.setScalar(r / 4); return r; }
 // look pass: Valorant-style ability VFX — own shaders/geometry, pooled via jMat, no extra lights or shadows
 const XSU = { value: 0 }; // shared smoke clock
 function xSmokeM(k, c, r) { return jMat(k, () => { const m = new THREE.ShaderMaterial({ uniforms: { uT: XSU, uO: { value: 1 }, uC: { value: new THREE.Color(c) }, uR: { value: new THREE.Color(r) } }, transparent: true, depthWrite: false, side: THREE.DoubleSide,
@@ -7942,7 +7965,7 @@ function jFx(m, t) { scene.add(m); const f = { m, t, t0: t, o: m.material.opacit
 function segD(x, z, w) { const qx = w.p.x - w.ax * 4, qz = w.p.z - w.az * 4, t = Math.max(0, Math.min(8, (x - qx) * w.ax + (z - qz) * w.az)); return Math.hypot(x - qx - w.ax * t, z - qz - w.az * t); }
 function jBlock(a, dir, dist) { // shared sight check for every bot, all modes
   const tv = jBlock.v || (jBlock.v = new THREE.Vector3());
-  if (J.smokes.some((s) => { const t = Math.max(0, Math.min(dist, tv.copy(s.p).sub(a).dot(dir))); return tv.copy(a).addScaledVector(dir, t).distanceTo(s.p) < 4; })) return true;
+  if (J.smokes.some((s) => { const t = Math.max(0, Math.min(dist, tv.copy(s.p).sub(a).dot(dir))); return tv.copy(a).addScaledVector(dir, t).distanceTo(s.p) < (s.r || 4); })) return true;
   const rx = dir.x * dist, rz = dir.z * dist;
   return J.walls.some((w) => { const sx = w.ax * 8, sz = w.az * 8, qx = w.p.x - w.ax * 4 - a.x, qz = w.p.z - w.az * 4 - a.z, den = rx * sz - rz * sx; if (Math.abs(den) < 1e-6) return false; const t = (qx * sz - qz * sx) / den, u = (qx * rz - qz * rx) / den; return t >= 0 && t <= 1 && u >= 0 && u <= 1; });
 }
@@ -8222,7 +8245,7 @@ function okKey(code) {
       const o = pEye(), d = jAim(); ray.set(o, d); ray.far = 30; const h = ray.intersectObjects(solids)[0];
       const p = h ? h.point.clone().addScaledVector(d, -0.5) : o.clone().addScaledVector(d, 30); p.y = Math.max(1.5, Math.min(p.y, 4));
       const m = jM(smokeGeo, xSmokeM("s3x", 0x22183a, 0x8a5cff));
-      m.position.copy(p); scene.add(m); J.smokes.push({ m, p: m.position, t: 15 }); SFX.smoke();
+      m.position.copy(p); scene.add(m); J.smokes.push({ m, p: m.position, t: 15, r: xSmk(m, XSMR.Omen) }); SFX.smoke();
     }
     if (code === "KeyX") {
       if (J.fts) return say("From the Shadows · " + Math.ceil(J.fts.t) + " s", 700);
@@ -8773,7 +8796,10 @@ function cyKeep(W, dt) {
   if (t) { t.cnc = Math.max(t.cnc || 0, 2); feed("Cypher ▸ Trapwire triggered"); cyRm(W); return false; }
   return true;
 }
-function cyClear() { BC.cw.forEach(cyRm); BC.cw = []; if (BC.cam) scene.remove(BC.cam.m); BC.cam = null; BC.cv = false; }
+// Neural Theft (server ults.js ULT.theft, wiki Neural_Theft): corpse within 18 m, reveals at 2 s and 6 s (2nd reveal 4 s after the 1st), 1.6 s each;
+// CYNT.g changes on every round clear so pulses from a cast in an earlier round never fire (Cypher's own death does not cancel them, v7.07).
+const CYNT = { reach: 18, at: [2, 6], reveal: 1.6, g: 0 };
+function cyClear() { CYNT.g++; BC.cw.forEach(cyRm); BC.cw = []; if (BC.cam) scene.remove(BC.cam.m); BC.cam = null; BC.cv = false; }
 function cyVy() { return BC.cam.yw + yaw - BC.cam.y0; }
 function cyVp() { return Math.max(-1.2, Math.min(1.2, pitch - BC.cam.pp)); }
 function cyDart() {
@@ -8793,7 +8819,7 @@ function cyKey(code) {
   }
   if (code === "KeyQ") {
     if (J.q < 1 || J.cd.q > 0) return no(); J.q--; J.cd.q = 0.6;
-    const p = okGround(15), m = jM(smokeGeo, xSmokeM("cyq", 0x5a6a6c, 0x3fd0c0)); m.position.set(p.x, 1.2, p.z); scene.add(m); J.smokes.push({ m, p: m.position, t: 7.25 }); SFX.smoke(); say("Cyber Cage · 7 s", 600);
+    const p = okGround(15), m = jM(smokeGeo, xSmokeM("cyq", 0x5a6a6c, 0x3fd0c0)); m.position.set(p.x, 1.2, p.z); scene.add(m); J.smokes.push({ m, p: m.position, t: 7.25, r: xSmk(m, XSMR.Cypher) }); SFX.smoke(); say("Cyber Cage · 7 s", 600);
   }
   if (code === "KeyE") {
     if (!BC.cam) {
@@ -8807,9 +8833,9 @@ function cyKey(code) {
   }
   if (code === "KeyX") {
     const u = K().u; if (J.ult < u) return no(), say("Neural Theft " + J.ult + "/" + u, 800);
-    const c = bots.find((b) => !b.alive && b.g && Math.hypot(b.g.position.x - P.x, b.g.position.z - P.z) < 8); if (!c) return no(), say("Neural Theft · no fallen enemy within 8 m", 900);
-    J.ult = 0; const pulse = () => { const l = bots.filter((b) => b.alive && b.g); cyReveal(l, 1.2); say("Neural Theft · " + l.length + " revealed", 800); blip(500, 0.2, "triangle", 0.15); };
-    pulse(); setTimeout(() => { if (jOn()) pulse(); }, 1500);
+    const c = bots.find((b) => !b.alive && b.g && Math.hypot(b.g.position.x - P.x, b.g.position.z - P.z) < CYNT.reach); if (!c) return no(), say("Neural Theft · no fallen enemy within " + CYNT.reach + " m", 900);
+    J.ult = 0; const g = CYNT.g, pulse = () => { if (!jOn() || g !== CYNT.g) return; const l = bots.filter((b) => b.alive && b.g); cyReveal(l, CYNT.reveal); say("Neural Theft · " + l.length + " revealed", 800); blip(500, 0.2, "triangle", 0.15); };
+    say("Neural Theft · downloading", 700); for (const t of CYNT.at) setTimeout(pulse, t * 1000);
   }
 }
 function cySl(u) {
@@ -8964,9 +8990,9 @@ function drDart() {
   J.arrows.push({ m, a: o, b: e, t: 0, dur: Math.max(0.05, o.distanceTo(e) / 45), kind: "dart", tg: h && h.object.userData.bot }); blip(700, 0.08, "triangle", 0.15);
 }
 // ---- enemy bot abilities: light and probabilistic ----
-function enSmoke(x, z, al, dur, y) { // y: smoke centre (default 1.8)
+function enSmoke(x, z, al, dur, y, r) { // y: smoke centre (default 1.8), r: radius (XSMR, default 4)
   const m = jM(smokeGeo, al ? xSmokeM("s9a", 0x7fa6c2, 0xb8dcf2) : xSmokeM("s9x", 0x8a929a, 0xc9d2da)); // ally smokes take the team blue
-  m.position.set(x, 1.8, z); scene.add(m); J.smokes.push({ m, p: m.position, t: dur || 7 }); SFX.smoke(); if (Number.isFinite(y)) m.position.y = y;
+  m.position.set(x, 1.8, z); scene.add(m); J.smokes.push({ m, p: m.position, t: dur || 7, r: xSmk(m, r || 4) }); SFX.smoke(); if (Number.isFinite(y)) m.position.y = y;
 }
 function enPop(p) {
   SFX.flash(); const m = jM(orbGeo, xAdd("pcore", 0xfff6e8, 1)); m.scale.setScalar(4); m.position.copy(p); jFx(m, 0.3);
@@ -9043,7 +9069,7 @@ function botAb(b, dt, see, tg, from) {
   if ((ag === "Jett" || ag === "Omen") && A.t > 1.2 && (A.smT || 0) < A.t) { // controller-style smokes: Jett Cloudburst (C) 2.5 s, Omen Dark Cover (E) 15 s, as the player's
     const k = ag === "Jett" ? "c" : "e"; let q = ch[k] >= 1 ? xBChoke(b, al, from, A) : null;
     if (!q && !al && mode === "retake" && !A.rsm) { A.rsm = 1; const P = [[-8, 8], [8, 8], [0, 10]][Math.floor(Math.random() * 3)]; XBK_P.x = P[0] + (Math.random() - 0.5) * 2; XBK_P.z = P[1]; q = XBK_P; } // retake hold: smoke a retake entrance
-    if (q && xBUse(b, k)) { A.smT = A.t + 5 + Math.random() * 3; enSmoke(q.x, q.z, al, ag === "Jett" ? 2.5 : 15); feed(ag === "Jett" ? "Jett ▸ Cloudburst" : "Omen ▸ Dark Cover"); }
+    if (q && xBUse(b, k)) { A.smT = A.t + 5 + Math.random() * 3; enSmoke(q.x, q.z, al, ag === "Jett" ? 2.5 : 15, undefined, XSMR[ag]); feed(ag === "Jett" ? "Jett ▸ Cloudburst" : "Omen ▸ Dark Cover"); }
   }
   if (ag === "Phoenix") xBFl(b, A, see, peek, tg, from, "e", al, 0xfff2b0, "orb", "Phoenix ▸ Curveball", 800);
   if (ag === "Sova" && A.t > A.rbT && ch.e >= 1) { // Recon Bolt: attackers recon the site before entering, defenders the attackers' approach
@@ -9173,7 +9199,7 @@ function jCbTick(dt) {
 }
 function jCbSmoke(L, c) { // the smoke where a Cloudburst landed (centre between floor + 1.5 and + 4 m); P2P: the cast goes out now, with the point
   const y = Cloudburst.centreY(L[1], groundAt(L[0], L[2], 0.05, L[1] + 0.1)), m = jM(smokeGeo, xSmokeM("sjx", 0xdbe6f2, 0xa8dcff));
-  m.position.set(L[0], y, L[2]); scene.add(m); J.smokes.push({ m, p: m.position, t: Cloudburst.CB.life }); SFX.smoke(); // Cloudburst 2.5 s (wiki.playvalorant.com/en-us/Cloudburst)
+  m.position.set(L[0], y, L[2]); scene.add(m); J.smokes.push({ m, p: m.position, t: Cloudburst.CB.life, r: xSmk(m, XSMR.Jett) }); SFX.smoke(); // Cloudburst 2.5 s (wiki.playvalorant.com/en-us/Cloudburst)
   if (c.net) { try { mpCastSelf("c", m.position); } catch (e) { xE(e); } }
 }
 function jTick(dt) {
@@ -9680,7 +9706,7 @@ function sbDmg(by, v, n) { if (XTKILL || !(n > 0) || by === v || !SB[by]) return
 function sbAst(by, v) { const m = SBH[v]; if (!m) return; const now = performance.now(); for (const n in m) if (n !== by && SB[n] && m[n].d >= 50 && now - m[n].t <= 5000) SB[n].a = (SB[n].a || 0) + 1; delete SBH[v]; }
 function sbSpend(n, c) { if (c > 0 && SB[n]) SB[n].sp = (SB[n].sp || 0) + c; }
 function sbEcon(p) { return Math.round((p.dmg || 0) * 1000 / Math.max(1, p.sp || 0)); }
-function sbKill(by, victim, hs) { if (XTKILL) { if (SB[victim]) SB[victim].d++; try { delete SBH[victim]; } catch (e) {} return; } try { sbAst(by, victim); } catch (e) {} let r = 0; try { const s = sbScore(); r = s[0] + s[1]; } catch (e) {} if (SB[by]) { SB[by].k++; if (hs) SB[by].hs++; if (sbKill.r !== r) SB[by].fb = (SB[by].fb || 0) + 1; } sbKill.r = r; if (SB[victim]) SB[victim].d++; }
+function sbKill(by, victim, hs) { if (XTKILL) { if (SB[victim]) SB[victim].d++; try { delete SBH[victim]; } catch (e) {} return; } try { sbAst(by, victim); } catch (e) {} let r = 0; try { const s = sbScore(); r = s[0] + s[1]; } catch (e) {} if (SB[by]) { SB[by].k++; if (hs) SB[by].hs++; if (sbKill.r !== r) SB[by].fb = (SB[by].fb || 0) + 1; } sbKill.r = r; if (SB[victim] && by !== "Spike") SB[victim].d++; /* the Spike is no KDA death (wiki Spike, patch 1.11) */ }
 { const e0 = end; end = function (w, text) { try { const m = /^(.+?) defused the spike/i.exec(text || ""); const n = m ? m[1] : /defused/i.test(text || "") && w ? "You" : null; if (n && SB && SB[n]) SB[n].pd = (SB[n].pd || 0) + 1; } catch (e) {} return e0.apply(this, arguments); }; }
 const clk = (t) => { const s = Math.max(0, Math.ceil(t)); return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0"); };
 const setT = (id, v) => { const e = $(id); v = String(v); if (e.textContent !== v) e.textContent = v; };
@@ -10253,7 +10279,7 @@ function mmSmk(X, Z, k) {
     mmSmk.k = key; c.width = MM.width; c.height = MM.height; const g = c.getContext("2d");
     S.forEach((s) => {
       if (!s.c) { const u = s.m.material.uniforms; s.c = u && u.uR ? "#" + u.uR.value.getHexString() : "#c9d2da"; }
-      const x = X(s.p.x), y = Z(s.p.z), r = Math.abs(X(s.p.x + 4) - x) || 8 * k, f = Math.min(1, s.t / 0.5, (s.a || 1) / 0.3);
+      const x = X(s.p.x), y = Z(s.p.z), r = Math.abs(X(s.p.x + (s.r || 4)) - x) || 8 * k, f = Math.min(1, s.t / 0.5, (s.a || 1) / 0.3);
       const gr = g.createRadialGradient(x, y, r * 0.2, x, y, r); gr.addColorStop(0, s.c + "b3"); gr.addColorStop(0.7, s.c + "73"); gr.addColorStop(1, s.c + "00");
       g.globalAlpha = Math.max(0, f); g.fillStyle = gr; g.beginPath(); g.arc(x, y, r, 0, 6.2832); g.fill();
     });
@@ -10997,7 +11023,7 @@ let xTGOn = false; const xTG = { inPlay: () => false, relAll: () => {} };
     } else okHitBy(o, 0.1);
     if (o.hp <= 0) { free(o); feed("Lockdown destroyed"); return; } if (o.t > 0) return;
     const x = o.p.x, z = o.p.z, inR = (q) => Math.hypot(q.x - x, q.z - z) < 32;
-    if (o.en) { if (player.hp > 0 && inR(player)) { pDt = 8; player.tagT = 8; player.tagK = 0.2; say("Detained · 8 s", 1400); } if (typeof allies !== "undefined") for (const a of allies) if (a.alive && inR(a.g.position)) a.xdt = 8; }
+    if (o.en) { if (player.hp > 0 && inR(player)) { pDt = 8; player.tagT = 8; player.tagK = 0.2; player.tagS = 0; say("Detained · 8 s", 1400); } if (typeof allies !== "undefined") for (const a of allies) if (a.alive && inR(a.g.position)) a.xdt = 8; }
     else for (const b of bots) if (b.alive && inR(b.g.position)) b.xdt = 8;
     feed("Lockdown ▸ detained"); try { blip(110, 0.6, "sawtooth", 0.15); } catch (e) {} free(o); }
   function omenCast(u, en) { const L = en ? [player].concat(typeof allies !== "undefined" ? allies : []) : bots, alive = L.filter((t) => (t === player ? t.hp > 0 : t.alive)); if (!alive.length) return 0;
@@ -11450,7 +11476,7 @@ function fpaWeap() { let w = "Vandal"; try { w = mode === "duel" ? "Operator" : 
 // loading screen: the loader script further down cannot reach this IIFE's functions (its agentSelect / window.startSR wraps were silent no-ops), so the match starts hand themselves to window.xMatchLoad here
 { const xLd = (fn, name) => function () { const a = arguments, self = this, L = window.xMatchLoad; if (typeof L !== "function") return fn.apply(self, a); if(window.xQPick){FV.pick=window.xQPick;window.xQPick=null;}return L(() => fn.apply(self, a), FV.pick, name, true); };
   const ag0 = agentSelect; agentSelect = function (go) { return ag0(xLd(go)); };
-  startSR = xLd(startSR, "SPIKE RUSH"); startTDM = xLd(startTDM, "TEAM DEATHMATCH"); startDM = xLd(startDM, "DEATHMATCH"); startDuel = xLd(startDuel, "OPERATOR DUEL"); startRifle = xLd(startRifle, "RIFLE 2V2"); startSurf = xLd(startSurf, "SURF"); startAim = xLd(startAim, "AIM PRACTICE"); start = xLd(start, "RETAKE"); } // every bot-spawning or player-kit start rides the readiness gate // duel spawns a native agent too: it takes the same readiness gate
+  startSR = xLd(startSR, "SPIKE RUSH"); startTDM = xLd(startTDM, "TEAM DEATHMATCH"); startDM = xLd(startDM, "DEATHMATCH"); startDuel = xLd(startDuel, "OPERATOR DUEL"); startRifle = xLd(startRifle, "RIFLE 2V2"); startSurf = xLd(startSurf, "SURF"); startAim = xLd(startAim, "AIM PRACTICE"); start = xLd(start, "RETAKE"); startESC = xLd(startESC, "ESCALATION"); } // every bot-spawning or player-kit start rides the readiness gate // duel spawns a native agent too: it takes the same readiness gate
 // ---- ONLINE MULTIPLAYER (P2P, PeerJS): host-authoritative DM / TDM. Host runs the sim (bots fill empty slots); clients send
 // inputs + shots at 30 Hz, get 20 Hz snapshots (100 ms interpolation) and predict their own movement. Inert unless MP.on. ----
 const MP = { on: false, role: null, st: "idle", pub: false, mode: "tdm", map: "ascent", code: "", peer: null, hc: null, conns: new Map(), name: "", me: -1, team: 0, sq: 0, ping: 0,
@@ -11608,7 +11634,7 @@ function mpHostHit(c, u, m) { // a client's hit claim: target alive, enemy, in r
   if (Math.hypot(tx - u.g.position.x, tz - u.g.position.z) > 120) return;
   if (now - c.nT > 1000) { c.nT = now; c.nH = 0; } if (++c.nH > 24) return;
   const w = xWOwn(m.w) ? m.w : m.w === "Knife" ? "Knife" : u.w || "Vandal", dmg = Math.min(n, 255), hs = !!m.hs;
-  xHS = hs; hurt(t, dmg, u.name); try { xTag(t, dmg); } catch (e) {}
+  xHS = hs; hurt(t, dmg, u.name); try { xTagAt(t, dmg, w, Math.hypot(tx - u.g.position.x, tz - u.g.position.z)); } catch (e) {}
   if (t === player) { try { xDmgArc(u.g.position.x, u.g.position.z); xDmgFlash(); } catch (e) {} updHud(); if (player.hp <= 0) pDie(u.name, w); }
   else if (t.hp <= 0.001) { if (bots.indexOf(t) >= 0) kill(t, hs, u.name, w); else allyDie(t, u.name, w); }
   else try { flash(t); } catch (e) {}
@@ -11657,7 +11683,7 @@ function mpStart() { // host: build the match, number every unit, seat every con
   MP.m5 = 0; if (MP.mode === "five") return mpStart5();
   if (!xReady) { mpMsg("The game engine isn't ready yet. Try again in a moment."); return mpUI(); }
   const tdm = MP.mode === "tdm"; MP.ev = [];
-  FV.pick = MP.map || "ascent"; FV.dmN = 9; MP.starting = 1;
+  FV.pick = MP.map || "ascent"; window.xQPick = null; FV.dmN = 9; MP.starting = 1;
   MP.conns.forEach((c) => mpSend(c.conn, { t: "starting" })); // clients suspend their 10 s silence watchdog (capped) while the map builds
   mpMsg("Loading the map…"); mpUI();
   running = false; xGo(tdm ? startTDM : startDM); FV.dmN = 0;
@@ -11694,7 +11720,7 @@ function mpCliStart(m) {
   if (m.v !== MP_V) return mpLost("The host runs a different game version.");
   MP.m5 = 0; if (m.mode === "five") return mpCliStart5(m);
   if (!xReady) return mpLost("The game engine isn't ready yet.");
-  const tdm = m.mode === "tdm"; FV.pick = m.map; FV.dmN = 9;
+  const tdm = m.mode === "tdm"; FV.pick = m.map; window.xQPick = null; FV.dmN = 9;
   MP.me = m.you; MP.team = m.team; MP.cl = true; MP.inT = 0; MP.sq = 0;
   try { $("result").style.display = "none"; } catch (e) {}
   running = false; xGo(tdm ? startTDM : startDM); FV.dmN = 0;
@@ -11916,7 +11942,7 @@ function mpMe5(c) { const s = FV.bs[c.nm]; return s ? s.cr | 0 : 0; }
 function mpStart5() {
   if (MP.starting) return;
   const sw = window.xSwift; MP.ev = []; MP.u5 = null; MP.spSt = "";
-  FV.pick = MP.map || "ascent"; FV.dm = false; FV.tdm = false; FV.srOn = 0; window.xSwift = false; MP.starting = 1;
+  FV.pick = MP.map || "ascent"; window.xQPick = null; FV.dm = false; FV.tdm = false; FV.srOn = 0; window.xSwift = false; MP.starting = 1;
   MP.conns.forEach((c) => mpSend(c.conn, { t: "starting" })); // clients suspend their 10 s silence watchdog (capped) while the map builds
   mpMsg("Loading the map…"); mpUI();
   running = false; xGo(startFive); window.xSwift = sw;
@@ -11994,7 +12020,7 @@ function mpHost5(c, u, m) { // returns true when handled
 // ---- client ----
 function mpCliStart5(m) {
   if (!xReady) return mpLost("The game engine isn't ready yet.");
-  const sw = window.xSwift; FV.pick = m.map; FV.dm = false; FV.tdm = false; FV.srOn = 0; window.xSwift = false;
+  const sw = window.xSwift; FV.pick = m.map; window.xQPick = null; FV.dm = false; FV.tdm = false; FV.srOn = 0; window.xSwift = false;
   MP.me = m.you; MP.team = m.team; MP.cl = true; MP.inT = 0;
   try { $("result").style.display = "none"; } catch (e) {}
   running = false; xGo(startFive); window.xSwift = sw;
@@ -12133,7 +12159,7 @@ function mpFx(u, ag, k, o, d, auth, p, quiet) { // u: caster unit, o/d: eye + ai
   const i = "cqex".indexOf(k); if (i < 0 || !u || !u.g) return; if (!Object.hasOwn(KITS, ag)) ag = "Jett";
   const ty = ABI_M[ag][i] || "ult", al = allies.indexOf(u) >= 0, en = !al, nd = !auth, nm = KITS[ag].n[i] || "Ability", up = u.g.position, col = al ? 0x3fb4ff : 0xff4655;
   const tg = (far, back) => (p ? MPC.e.copy(p) : mpTgt(o, d, far, back));
-  if (ty === "smoke") { const S = MP_SMK[ag] || [14, 7], e = tg(S[0], 0.5); enSmoke(e.x, e.z, al, S[1], ag === "Jett" && p ? e.y : undefined); } // Jett: at the Cloudburst's landing point
+  if (ty === "smoke") { const S = MP_SMK[ag] || [14, 7], e = tg(S[0], 0.5); enSmoke(e.x, e.z, al, S[1], ag === "Jett" && p ? e.y : undefined, XSMR[ag]); } // Jett: at the Cloudburst's landing point
   else if (ty === "flash") { const e = tg(ag === "Phoenix" ? 6 : 12, 0.4).clone(), m = jM(orbGeo, jMat("orb", () => new THREE.MeshBasicMaterial({ color: 0xfff2b0 }))); m.position.copy(o); scene.add(m); J.orbs.push({ m, a: o.clone(), b: e, t: 0, en }); }
   else if (ty === "fire") { const rz = ag === "Raze", e = rz ? tg(14, 0.4) : p ? tg() : mpTgt(new THREE.Vector3(up.x, 1, up.z), MPC.d.set(d.x, 0, d.z).normalize(), 5, 0.5);
     const c = new THREE.Vector3(e.x, 0.05, e.z), m = jM(zoneGeo, fireMat(rz ? 0xff4fa0 : 0xff5a1a, 0.55)); m.rotation.x = -Math.PI / 2; m.position.copy(c); scene.add(m);
@@ -12807,23 +12833,26 @@ async function nmCollision(key,signal){
  const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.BufferAttribute(new Float32Array(positions),3));geometry.setIndex(new THREE.BufferAttribute(new Uint32Array(index),1));geometry.boundsTree=MeshBVHLib.MeshBVH.deserialize({index:geometry.index.array,roots},geometry,{setIndex:false});return geometry;
 }
 function nmCancel(interactive=true){const pending=NM.pending;++NM.ticket;NM.pending=null;if(pending?.controller)pending.controller.abort(Object.assign(new Error('Map selection changed'),{name:'AbortError'}));nmOverlay(null);if(interactive&&window.xCancelMatchLoad)window.xCancelMatchLoad();if(interactive&&typeof NET!=='undefined'&&NET.socket&&typeof mpLost==='function')mpLost('Map loading cancelled');}
+const NM_STALL_MS=120000,NM_CAP_MS=600000; // map load: abort after 120 s with no progress, 10 min overall
 async function nmEnsure(key){
  if(NM.current&&NM.current.key===key){if(NM.pending){nmCancel(false);}return NM.current;}
  if(NM.pending&&NM.pending.key===key)return NM.pending.promise;
  if(NM.pending)nmCancel(false);
  const ticket=++NM.ticket,controller=new AbortController();let loadedGeometry=null,loadedScene=null,committed=false,failed=false;
  const release=()=>{if(loadedScene||loadedGeometry){nmFree({M:{g:loadedScene||new THREE.Group()},geometry:loadedGeometry});loadedScene=loadedGeometry=null;}};
- const timeout=setTimeout(()=>controller.abort(new Error('Map loading timed out. Please retry.')),120000);
+ // load timeout = 120 s WITHOUT PROGRESS (a fetch finishing, a glTF asset loading, a prepare phase), capped at 10 min overall:
+ // a slow device that keeps progressing is no longer failed at a fixed 120 s (browser-found: SwiftShader Ascent load took 92-130 s).
+ let timeout=0;const tStart=Date.now(),arm=()=>{if(committed||failed)return;clearTimeout(timeout);timeout=setTimeout(()=>controller.abort(new Error('Map loading timed out. Please retry.')),Math.max(0,Math.min(NM_STALL_MS,NM_CAP_MS-(Date.now()-tStart))));};arm();NM.kick=t=>{if(t===ticket)arm();};
  nmOverlay(key.charAt(0).toUpperCase()+key.slice(1));
- const promise=(async()=>{const base='models/valorant/maps/'+key+'/';const read=url=>fetch(base+url,{signal:controller.signal}).then(r=>{if(!r.ok)throw new Error(url+' '+r.status);return r;});
+ const promise=(async()=>{const base='models/valorant/maps/'+key+'/';const read=url=>fetch(base+url,{signal:controller.signal}).then(r=>{if(!r.ok)throw new Error(url+' '+r.status);arm();return r;});
   const tLoad=nmNow(),aborted=new Promise((_,reject)=>controller.signal.addEventListener('abort',()=>reject(controller.signal.reason||new Error('Map selection changed')),{once:true}));
   const [meta,nav,geometry,gl,plants]=await Promise.race([aborted,Promise.all([read('map.json').then(r=>r.json()),read('navigation.json').then(r=>r.json()),nmCollision(key,controller.signal).catch(async e=>{if(controller.signal.aborted)throw e;const bytes=await read('collision.bin').then(r=>r.arrayBuffer()),head=new Uint32Array(bytes,0,2),positions=new Float32Array(bytes,8,head[0]*3),indices=new Uint32Array(bytes,8+head[0]*12,head[1]),g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(positions,3));g.setIndex(new THREE.BufferAttribute(indices,1));g.boundsTree=new MeshBVHLib.MeshBVH(g,{maxLeafTris:12,maxDepth:64,strategy:MeshBVHLib.CENTER});return g;}).then(g=>{loadedGeometry=g;if(failed||controller.signal.aborted){release();throw controller.signal.reason||new Error('Map selection changed');}return g;}),nmLoadScene(base,ticket).then(gl=>{loadedScene=gl.scene;if(failed||controller.signal.aborted){release();throw controller.signal.reason||new Error('Map selection changed');}return gl;}),read('plants.json').then(r=>r.json())])]);
   if(ticket!==NM.ticket){release();throw new Error('Map selection changed');}
   if(!nav.validation.attackerToDefender||Object.values(nav.validation.attackerToSites).some(v=>!v))throw new Error('Map navigation is incomplete');
-  NM.progress.querySelector('small').textContent='Preparing the map…';await new Promise(r=>setTimeout(r,20));if(ticket!==NM.ticket){release();throw new Error('Map selection changed');}
+  arm();NM.progress.querySelector('small').textContent='Preparing the map…';await new Promise(r=>setTimeout(r,20));if(ticket!==NM.ticket){release();throw new Error('Map selection changed');}
   const collision=new THREE.Mesh(geometry,new THREE.MeshBasicMaterial({side:THREE.DoubleSide,visible:false}));collision.name='native-collision';collision.raycast=MeshBVHLib.acceleratedRaycast;
   const root=xMG();root.name='native-'+key;root.userData.nativeMap=key;root.visible=false;root.add(gl.scene,collision);const M={g:root,solids:[collision],boxes:[],built:1,native:true};
-  const t0=nmNow();nmPrepareScene(gl.scene);nmZFixApply(gl.scene,key);const mapOpt=nmOptimizeScene(gl.scene);NM.progress.querySelector('small').textContent='Fitting the map to this device…';const mem=await nmBudget(gl.scene,nmTexCap());if(ticket!==NM.ticket){release();throw new Error('Map selection changed');}mem.optimizer=mapOpt;mem.prepareMs=Math.round(nmNow()-t0);mem.loadMs=Math.round(t0-tLoad);
+  const t0=nmNow();nmPrepareScene(gl.scene);nmZFixApply(gl.scene,key);const mapOpt=nmOptimizeScene(gl.scene);arm();NM.progress.querySelector('small').textContent='Fitting the map to this device…';const mem=await nmBudget(gl.scene,nmTexCap());if(ticket!==NM.ticket){release();throw new Error('Map selection changed');}mem.optimizer=mapOpt;mem.prepareMs=Math.round(nmNow()-t0);mem.loadMs=Math.round(t0-tLoad);
   const C={key,meta,nav,plants,M,geometry,bvh:geometry.boundsTree,image:new Image(),cells:new Map(),cellSize:2,scene:gl.scene,memory:mem,cullAt:null};mem.collisionBytes=nmBytes(geometry);C.image.src=base+'minimap.png';nmConnected(C);root.add(nmSkirt(nmSkirtSpec(nav.nodes,C.playable)));nav.nodes.forEach((p,i)=>{if(!C.playable[i])return;const k=Math.floor(p[0]/2)+','+Math.floor(p[2]/2);if(!C.cells.has(k))C.cells.set(k,[]);C.cells.get(k).push(i);});
   nmSiteGoals(C);
   // Only the original playable footprint defines navigation/minimap bounds; vista geometry is still rendered.
@@ -12911,7 +12940,7 @@ if(typeof scene!=='undefined'&&scene){const prev=scene.onBeforeRender;scene.onBe
 // (anti-aliasing switch -> xRemake, or a restored context) has nothing to re-upload from, so the scene is reloaded
 // from the HTTP cache and prepared again (nmRehydrate) at the then-current texture cap.
 function nmNow(){return typeof performance!=='undefined'?performance.now():Date.now();}
-function nmLoadScene(base,ticket){return new THREE.GLTFLoader(new THREE.LoadingManager(()=>{},(url,done,total)=>{if(ticket===NM.ticket)NM.loaded=total?done/total:0;/* reported to the server while loading (lp) */if(ticket===NM.ticket&&NM.progress)NM.progress.querySelector('small').textContent='Loading map assets '+done+' / '+total+'…';})).loadAsync(base+'scene.gltf');}
+function nmLoadScene(base,ticket){return new THREE.GLTFLoader(new THREE.LoadingManager(()=>{},(url,done,total)=>{if(ticket===NM.ticket){NM.loaded=total?done/total:0;if(NM.kick)NM.kick(ticket);}/* reported to the server while loading (lp) */if(ticket===NM.ticket&&NM.progress)NM.progress.querySelector('small').textContent='Loading map assets '+done+' / '+total+'…';})).loadAsync(base+'scene.gltf');}
 // Z-fighting fix (map-zfight.mjs scan of the render meshes; every converted map material is double-sided, so coplanar
 // layers of different materials flickered against each other: wall trims, plaster patches, floor inlays). Per map:
 // o = materials pulled forward by polygonOffset, by level (o[0] one step ... o[4] five: a layer sits one step
@@ -13028,7 +13057,9 @@ var NM_RP={f:-1,n:0,full(){const f=typeof XNF==='number'?XNF:null;if(f===null)re
 {const freeze=xFreeze;xFreeze=function(g){if(g&&g.userData.nativeMap){g.updateMatrixWorld(true);return;}return freeze(g);};}
 // Match startup waits for the complete scene and collisions. Failure keeps the map unstarted.
 function nmLaunch(fn,self,args,key){return nmEnsure(key).then(()=>{const result=fn.apply(self,args);nmOverlay(null);return result;});}
-function nmWrap(fn,retake){return function(){let key=retake?'ascent':FV.pick||'ascent';if(key==='random')key=['ascent','bind','haven','split','lotus','breeze'][Math.floor(Math.random()*6)];if(!retake)FV.pick=key;const self=this,args=arguments;return nmLaunch(fn,self,args,key);};}
+// The wrapped start reads FV.pick for FV.map, so it sees the drawn map; a Random pick is restored afterwards (Play again
+// draws a new map and the pre-match picker still shows Random) instead of turning into whichever map was drawn.
+function nmWrap(fn,retake){return function(){const rnd=!retake&&FV.pick==='random';let key=retake?'ascent':FV.pick||'ascent';if(key==='random')key=['ascent','bind','haven','split','lotus','breeze'][Math.floor(Math.random()*6)];if(!retake)FV.pick=key;const self=this,args=arguments,back=()=>{if(rnd&&FV.pick===key)FV.pick='random';};return nmLaunch(fn,self,args,key).then(r=>{back();return r;},e=>{back();throw e;});};}
 startFive=nmWrap(startFive);dmStart0=nmWrap(dmStart0);start=nmWrap(start,true);
 {const build=ensureMapBuilt;ensureMapBuilt=function(n){if(NM.current&&(n==='five'||n==='retake'))return;return build.apply(this,arguments);};}
 {const build=xBuildMap;xBuildMap=function(k){if(NM.current&&NM.current.key===k)return;return build.apply(this,arguments);};const dress=xDressMap;xDressMap=function(k){if(NM.current&&(k===NM.current.key||k==='retake'))return null;return dress.apply(this,arguments);};}
@@ -13128,13 +13159,13 @@ xWkDmg=function(W,part,distance,k){const v=wRaw(W,part,distance);return v==null?
 xEq=function(w){return w==='Knife'?.75:vfProfile(w).equipTimeSeconds;};
 xRate=function(W){const w=Object.keys(WEAP).find(k=>WEAP[k]===W),p=VF.profiles[w];return ads&&p&&p.adsStats?p.adsStats.fireRate:W.rate;};
 xSCf=function(z){return 2*Math.atan(Math.tan(VF_C.verticalFov*Math.PI/360)/z)*180/Math.PI;};
-xTag=function(t){if(!t)return;t.tagT=.5;t.tagK=.275;};
+xTag=function(t){if(!t)return;t.tagT=.5;t.tagK=.275;t.tagS=0;};
 // The motor owns all movement multipliers, avoiding stacked scope/weapon scaling.
 moveP=function(dt,run,hold){
  const P=player;if(!P)return;const w=vfWeapon(),p=vfProfile(w),kn=w==='Knife',kk=J.dr?{}:keys,fx=-Math.sin(yaw),fz=-Math.cos(yaw);let x=0,z=0;if(kk.KeyW){x+=fx;z+=fz;}if(kk.KeyS){x-=fx;z-=fz;}if(kk.KeyA){x+=fz;z-=fx;}if(kk.KeyD){x-=fz;z+=fx;}
  P.tagT=Math.max(0,(P.tagT||0)-dt);let speed=6.75*(kn?1:p.runSpeedMultiplier||.8)*(ads&&p.adsStats?p.adsStats.runSpeedMultiplier:1);if(J.dis>0)speed*=1.6;if(typeof sgSlow==='function')speed*=sgSlow(P);
  const native=typeof nmActive==='function'&&nmActive(),world={ground:(x,z,y)=>groundAt(x,z,.3,y),blocked:(x,z,r,y,h)=>native?sgBlk(x,z,r,y)||nmBlocked(native,x,z,r,y,h):blocked(x,z,r,y),leash:native?(x,z,y,x0,z0)=>nmLeash(native,x,z,y,x0,z0):null,ceiling:native?(x,z,low,high)=>{const ray=new THREE.Ray(new THREE.Vector3(x,low+.01,z),new THREE.Vector3(0,1,0)),hit=native.bvh.raycastFirst(ray,THREE.DoubleSide);return !!hit&&hit.distance<high-low;}:null};
- const result=VF.model.step(P,{x,z,jump:!!kk.Space,duck:!!(kk.ControlLeft||kk.ControlRight),walk:!!(kk.ShiftLeft||kk.ShiftRight),speed,tag:P.tagT>0?P.tagK:1,hold:!!hold||!!J.dr},dt,world);
+ const result=VF.model.step(P,{x,z,jump:!!kk.Space,duck:!!(kk.ControlLeft||kk.ControlRight),walk:!!(kk.ShiftLeft||kk.ShiftRight),speed,tag:xTagK(P),hold:!!hold||!!J.dr},dt,world);
  if(result.landed){SFX.land();P.st=0;const fd=VF.model.fallDamage(result.drop);if(fd>0&&running&&mode!=='aim'&&mode!=='duel'&&!(typeof MP!=='undefined'&&MP.on)&&P.hp>0){P.hp=Math.max(0,P.hp-fd);try{updHud();}catch(e){}if(P.hp<=0)pDie('Fall','Fall');}} // fall damage: health only (shields ignored); online the server applies it
  // Footfalls follow distance. Shift-walking and crouching stay silent.
  P.footDistance=(P.footDistance||0)+result.speed*dt;if(P.footDistance>1.85&&P.mv&&!P.air&&!P.wk&&!P.cr){P.footDistance%=1.85;SFX.selfStep(P.y>1);}
@@ -13410,7 +13441,7 @@ mpCreate=function(pub,mode){MP.mode=mode||MP.mode;netConnect(true,mpCode(),pub);
 mpJoin=function(code){code=String(code||'').toUpperCase();if(!/^[A-HJ-NP-Z2-9]{6}$/.test(code)){mpMsg('Enter the six-character room code.');return;}netConnect(false,code,false);};
 mpQuick=async function(mode){MP.mode=mode||MP.mode;mpMsg('Finding a live server room…');try{const r=await fetch(NET.url+'/rooms'),data=await r.json(),room=data.rooms.find(r=>r.mode===MP.mode&&r.players<10&&(window.xQMap==='random'||r.map===(window.xQMap||MP.map)));if(room)netConnect(false,room.code,true);else mpCreate(true,MP.mode);}catch(e){mpMsg('Room list unavailable. Try a private room.');}};
 mpStart=function(){if(NET.host&&MP.st==='room')netSend({t:'start'});};
-const netUI0=mpUI;mpUI=function(){netUI0();const start=mpEl('xOnStart');if(start){start.hidden=!NET.host;start.disabled=MP.st!=='room';}const map=mpEl('xOnMap');if(map)map.disabled=!!MP.on;const wait=mpEl('xOnWait');if(wait&&NET.host)wait.textContent='Server room ready';document.querySelectorAll('#xOn [data-om]').forEach(b=>{b.disabled=MP.on;});};
+const netUI0=mpUI;mpUI=function(){netUI0();const start=mpEl('xOnStart');if(start){start.hidden=!NET.host;start.disabled=MP.st!=='room';}const map=mpEl('xOnMap');if(map){map.disabled=!!MP.on;/* outside a room it is the lobby map choice that Create / Quick Match use (window.xQMap); in a room, the room's map */if(!MP.on&&typeof window.xQMap==='string'&&map.value!==window.xQMap)map.value=window.xQMap;}const wait=mpEl('xOnWait');if(wait&&NET.host)wait.textContent='Server room ready';document.querySelectorAll('#xOn [data-om]').forEach(b=>{b.disabled=MP.on;});};
 // Movement reconciliation: the server echoes the last input it applied (row[19]) and how long it has applied it (row[20]).
 // The page keeps its predicted path and the send time of every input, and compares the server position with where its own
 // prediction was at that moment, not with where it is now. The current position runs ahead of every snapshot by the round
@@ -13431,7 +13462,7 @@ function netClearEffects(){document.getElementById('netBlind')?.remove();for(con
 // once per id, tl seconds left). Our own Cloudburst flies locally (jCbTick) and is skipped here.
 function netSyncCb(rows){const seen=new Set();for(const e of rows){if(e.kind!=='cb'||!Number.isFinite(e.id)||e.o===MP.me||!Array.isArray(e.p)||e.p.length!==3||!e.p.every(Number.isFinite))continue;seen.add(e.id);let c=netCbs.get(e.id);if(!c){c={m:null,s:false};netCbs.set(e.id,c);}
  if(e.s!==1){if(!c.m){c.m=jM(orbGeo,jMat('cbp',()=>new THREE.MeshBasicMaterial({color:0xdbe6f2})));c.m.scale.setScalar(.8);scene.add(c.m);}c.m.position.set(e.p[0],e.p[1],e.p[2]);continue;}
- if(c.m){jRel(c.m);c.m=null;}if(!c.s){c.s=true;const u=allies.find(x=>x&&x.nid===e.o),al=!!u;enSmoke(e.p[0],e.p[2],al,Math.max(.1,Math.min(Cloudburst.CB.life,Number.isFinite(e.tl)?e.tl:Cloudburst.CB.life)),e.p[1]);try{feed('Jett ▸ Cloudburst');}catch(err){}}}
+ if(c.m){jRel(c.m);c.m=null;}if(!c.s){c.s=true;const u=allies.find(x=>x&&x.nid===e.o),al=!!u;enSmoke(e.p[0],e.p[2],al,Math.max(.1,Math.min(Cloudburst.CB.life,Number.isFinite(e.tl)?e.tl:Cloudburst.CB.life)),e.p[1],XSMR.Jett);try{feed('Jett ▸ Cloudburst');}catch(err){}}}
  for(const [id,c]of netCbs)if(!seen.has(id)){if(c.m)jRel(c.m);netCbs.delete(id);}}
 function netSyncEffects(rows){if(J.sw)sgWallEnd();const ids=new Set();netSyncCb(rows);for(const e of rows){if(e.kind!=='barrier'||!Array.isArray(e.p)||e.p.length!==3)continue;ids.add(e.id);let m=netWalls.get(e.id);if(!m){m=new THREE.Mesh(new THREE.BoxGeometry(6,3,.4),new THREE.MeshLambertMaterial({color:0xb5f1fa,transparent:true,opacity:.85}));m.userData.netBarrier=true;scene.add(m);netWalls.set(e.id,m);}m.position.set(e.p[0],e.p[1]+1.5,e.p[2]);m.rotation.y=e.yaw;m.material.opacity=.55+.3*Math.max(0,Math.min(1,e.hp/600));}for(const [id,m]of netWalls)if(!ids.has(id)){scene.remove(m);m.geometry.dispose();m.material.dispose();netWalls.delete(id);}}
 const netSgBlk0=sgBlk;sgBlk=function(x,z,r,y=0){if(!NET.socket)return netSgBlk0(x,z,r,y);for(const m of netWalls.values()){const low=m.position.y-1.5;if(y>=low+3||y+1.8<=low)continue;const c=Math.cos(m.rotation.y),s=Math.sin(m.rotation.y),dx=x-m.position.x,dz=z-m.position.z,a=c*dx-s*dz,b=s*dx+c*dz;if(Math.hypot(Math.max(0,Math.abs(a)-3),Math.max(0,Math.abs(b)-.2))<r)return true;}return false;};
@@ -13460,7 +13491,7 @@ const netAbilityKey0=jKey;jKey=function(code){if(NET.socket&&MP.st==='game'&&MP.
 function netChamberAnchor(A,time){if(J.pick!=='Chamber')return;J.cd.e=Math.max(0,(A.cool?.e||0)-time);const a=A.anchor;if(!Array.isArray(a)){if(BC.an){scene.remove(BC.an.m);BC.an=null;}return;}if(!BC.an){const m=new THREE.Mesh(ringGeo,fireMat(0xd8b04a,.8));m.rotation.x=-Math.PI/2;scene.add(m);BC.an={m};}BC.an.x=a[0];BC.an.y=a[1];BC.an.z=a[2];BC.an.m.position.set(a[0],a[1]+.06,a[2]);}
 const netRS0=mpCliRS;mpCliRS=function(m){netRS0(m);if(NET.socket){netChannel=m.channel||null;if(J.pick==='Reyna')netReynaSync(m.reyna);}if(NET.socket&&Array.isArray(m.rv)){const t=performance.now();for(const r of m.rv){const b=Array.isArray(r)&&bots.find(x=>x.nid===r[0]);if(b)b.netRvUntil=t+400;}}if(NET.socket&&m.status){const st=m.status;if(st.detain>0&&!(netDetainAt>performance.now())){netDetainAt=performance.now()+st.detain*1000;say('Detained · '+Math.ceil(st.detain)+' s',1200);}if(st.concuss>0){if(xCU<=performance.now())xConStart(st.concuss*1000);else xCU=performance.now()+st.concuss*1000;player.tagT=Math.max(player.tagT||0,st.concuss);player.tagK=.35;}if(st.nearsight>0)pNs(Math.min(3,st.nearsight));netStatusChips(st);if(st.slow>0){player.tagT=Math.max(player.tagT||0,st.slow);player.tagK=.35;}const el=document.getElementById('netBlind')||document.body.appendChild(Object.assign(document.createElement('div'),{id:'netBlind'}));el.style.cssText='pointer-events:none;position:fixed;inset:0;z-index:110;background:#fff;opacity:'+Math.min(1,st.blind/1.5); }if(NET.socket&&m.ab){for(const k of ['c','q','e','ult'])if(Number.isFinite(m.ab[k]))J[k]=m.ab[k];netChamberAnchor(m.ab,m.tm||0);if(J.pick==='Jett'){const was=J.bsOn;J.bs=Math.max(0,m.ab.blades||0);J.bsOn=!!m.ab.bladesActive;if(J.bsOn&&!was)swapW('knife');if(was&&!J.bsOn&&rw==='knife')swapW(FV.pri?'pri':'pis');}if(J.pick==='Skye')netSkyeState={pool:Math.max(0,Math.min(100,m.ab.regrowthPool||0)),active:!!m.ab.regrowthActive,used:!!m.ab.regrowthUsed};if(J.pick==='Breach')J.cd.e=Math.max(0,(m.ab.cool?.e||0)-(m.tm||0),(m.ab.rechargeAt||0)-(m.tm||0));}};
 const netHud0=mpHud;mpHud=function(){netHud0();const h=mpEl('xMpHud');if(h&&NET.socket&&MP.st==='game')h.textContent='ONLINE · SERVER · '+MP.ping+' ms';};
-const netStyle=document.createElement('style');netStyle.textContent='.x-mphud{inset:auto!important;bottom:72px!important;left:12px!important;width:auto!important;height:auto!important;max-height:24px;transform:none!important;font-size:10px;opacity:.75}#feed .kf__n{max-width:145px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}';document.head.append(netStyle);
+const netStyle=document.createElement('style');netStyle.textContent='.x-mphud{inset:auto!important;bottom:72px!important;left:12px!important;width:auto!important;height:auto!important;max-height:24px;transform:none!important;font-size:10px;opacity:.75}#feed .kf__n{max-width:145px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#feed .kf__n.kf__n--at{max-width:300px}/* hud_b5: an ally death row ("SAGE DIED AT ATTACKER SIDE") was cut at the 145 px name cap with no ellipsis (flex box) */';document.head.append(netStyle);
 const netRsSl0=rsSl;rsSl=function(u){const rows=netRsSl0(u);if(NET.socket&&MP.st==='game'&&J.pick==='Skye'&&netSkyeState){const a=netSkyeState;rows[0]=['jC',J.c>0||a.used&&a.pool>0,a.active?Math.ceil(a.pool)+' HP':a.used?(a.pool>0?Math.ceil(a.pool)+' HP · ready':'Spent'):String(J.c),a.used?1-a.pool/100:0];}return rows;};
 async function netLeaderboard(){try{const r=await fetch(NET.url+'/leaderboard'),data=await r.json(),body=mpEl('pLb');if(!body)return;body.textContent='';for(const p of data.rows||[]){const tr=document.createElement('tr');for(const text of [p.name,p.kills+' K · '+p.deaths+' D · '+p.wins+' W']){const td=document.createElement('td');td.textContent=text;tr.append(td);}body.append(tr);}if(!body.children.length){const tr=document.createElement('tr'),td=document.createElement('td');td.textContent='No completed online matches yet';tr.append(td);body.append(tr);}const note=body.closest('.x-pp')?.querySelector('.x-cre');if(note)note.textContent=data.scope+' · saved globally';}catch(e){const body=mpEl('pLb');if(body)body.textContent='Global board unavailable';}}
 let netProfileRequest=0;async function netProfileStats(){const request=++netProfileRequest;const dl=mpEl('pDl');if(!dl)return;let box=document.getElementById('netStats');if(!box){box=document.createElement('section');box.id='netStats';box.style.cssText='margin:12px 0 20px;padding:16px;border:1px solid #455c67;background:#142632';dl.parentNode.insertBefore(box,dl.parentNode.firstChild);}let token=netSessionToken;try{token=token||localStorage.getItem('vs.serverToken');}catch(e){}box.textContent=token?'Loading online record…':'Play an online match to create a saved online record on this browser.';if(!token)return;try{const r=await fetch(NET.url+'/stats',{headers:{Authorization:'Bearer '+token}});if(!r.ok)throw Error('Profile unavailable');const data=await r.json(),p=data.profile;if(request!==netProfileRequest)return;box.textContent='';const title=document.createElement('h3');title.textContent='ONLINE RECORD';title.style.cssText='margin:0 0 12px;font-size:14px;letter-spacing:.12em';box.append(title);const list=document.createElement('dl');list.style.cssText='display:grid;grid-template-columns:1fr auto;gap:8px;margin:0';for(const [name,value]of [['Matches',p.matches],['Kills',p.kills],['Deaths',p.deaths],['K/D',(p.kills/Math.max(1,p.deaths)).toFixed(2)],['Wins',p.wins]]){const dt=document.createElement('dt'),dd=document.createElement('dd');dt.textContent=name;dd.textContent=String(value);dd.style.margin='0';list.append(dt,dd);}box.append(list);const note=document.createElement('small');note.textContent=data.scope+(netTokenPersistent?'. Browser-linked anonymous identity, not account recovery.':'. Temporary session identity: browser storage is unavailable, so this record cannot be recovered after closing this page.');note.style.cssText='display:block;margin-top:12px;opacity:.65;font-size:11px';box.append(note);}catch(e){if(request!==netProfileRequest)return;box.textContent='Online record unavailable. Your saved local practice data is below.';}}
@@ -14470,11 +14501,11 @@ xReady = true; // every mode is initialised; lobby launches may now start them
   function xLdSet(id, k, v) { var e = document.getElementById(id); if (e) e[k] = v; }
   function show(map, mode, title) {
     clearTimeout(hideT); clearInterval(tipT);
-    map = PAL[map] ? map : "ascent";
+    var known = !!PAL[map]; // "random" (or an unknown key) is resolved while loading; fill() shows the real map then
     var tab = document.querySelector("#xQueue [role=tab].on");
     xLdSet("xLdMode", "textContent", (mode || (tab ? tab.textContent : "UNRATED")).toUpperCase());
-    xLdSet("xLdMap", "textContent", String(title || map).toUpperCase());
-    el.style.setProperty("--x-ld-bg", 'url("models/valorant/maps/'+map+'/loading.jpg") center/cover, '+PAL[map]);
+    xLdSet("xLdMap", "textContent", String(title || (known ? map : map === "random" ? "random map" : "")).toUpperCase());
+    el.style.setProperty("--x-ld-bg", known ? 'url("models/valorant/maps/'+map+'/loading.jpg") center/cover, '+PAL[map] : "radial-gradient(120% 90% at 50% 25%,#3a4652,#1b2733 50%,#0f1923)");
     xLdSet("xLdA", "innerHTML", ""); xLdSet("xLdB", "innerHTML", ""); xLdSet("xLdAg", "textContent", "");
     window.xLdOn = true; try { if (window.xLdKeys) window.xLdKeys(false); } catch (e) {}
     window.xLdAgFrac = 0; // agent-load fraction, reported to an online server while loading (lp)
