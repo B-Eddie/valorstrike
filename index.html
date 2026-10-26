@@ -9087,10 +9087,12 @@ function xKnClr() { for (const o of XKN) if (o.on) { o.on = false; jRel(o.m); o.
   if (!jOn() || !running || !b.ab || !b.g || (b.name !== "Killjoy" && xAgOf(b.name) !== "Killjoy")) return; const A = b.ab, al = allies.indexOf(b) >= 0;
   if (A.knS != null) return; A.knS = 1; if (xBAtk(al)) return;
   const S = xBSite(b, al, from), sx = S.x, sz = S.z;
-  let nP = 0; for (let i = 0; i < 2; i++) { if (!xBUse(b, "c")) break; nP++; const a = Math.random() * Math.PI * 2, r = 2 + Math.random() * 4; let x = sx + Math.cos(a) * r, z = sz + Math.sin(a) * r; if (blocked(x, z, 0.4, 0)) { x = sx; z = sz; }
+  const nP = xKnPlace(b, al, sx, sz, 2, 2, 4); if (nP) feed("Killjoy ▸ Nanoswarm"); }; }
+function xKnPlace(b, al, sx, sz, n, r0, rr) { // hide up to n bought Nanoswarm charges (C) around sx, sz (r0 .. r0 + rr m out); returns how many
+  let nP = 0; for (let i = 0; i < n; i++) { if (!xBUse(b, "c")) break; nP++; const a = Math.random() * Math.PI * 2, r = r0 + Math.random() * rr; let x = sx + Math.cos(a) * r, z = sz + Math.sin(a) * r; if (blocked(x, z, 0.4, 0)) { x = sx; z = sz; }
     let o = null; for (const q of XKN) if (!q.on) { o = q; break; } if (!o) { o = { p: { x: 0, z: 0 } }; XKN.push(o); }
     o.on = true; o.act = false; o.t = 0; o.own = b; o.en = !al; o.p.x = x; o.p.z = z; o.m = jM(zoneGeo, fireMat(0xc8d23a, 0.12)); o.m.rotation.x = -Math.PI / 2; o.m.position.set(x, 0.05, z); o.m.scale.setScalar(0.15); scene.add(o.m); }
-  if (nP) feed("Killjoy ▸ Nanoswarm"); }; }
+  return nP; }
 function xKnIn(o, x, z, r) { return Math.hypot(x - o.p.x, z - o.p.z) < (r || XNANO.r); }
 setInterval(function () { try { if (!running || !XKN.length) return; for (const o of XKN) { if (!o.on) continue; const en = o.en;
   if (!o.act) { const D = XNANO.det; let hit = false; if (en) { if (player.hp > 0 && xKnIn(o, player.x, player.z, D)) hit = true; for (const a of allies) if (a.alive && xKnIn(o, a.g.position.x, a.g.position.z, D)) hit = true; } else for (const b of bots) if (b.alive && xKnIn(o, b.g.position.x, b.g.position.z, D)) hit = true;
@@ -9281,6 +9283,10 @@ function xBFl(b, A, see, peek, tg, from, k, al, col, key, nm, hz) { // flash bef
   if ((A.flT || 0) > A.t) return false; let tx, tz;
   if (!see && xBPre(A, from) && Math.random() < 0.06) { tx = A.lkx; tz = A.lkz; } else if (peek && tg && Math.random() < 0.25) { tx = tg.x; tz = tg.z; } else return false;
   if (!xBUse(b, k)) return false; A.flT = A.t + 3; xBFlash(b, al, from, tx, tz, col, key, nm, hz); return true; }
+function xRzShells(A, x, z) { // Raze Paint Shells (E, charge already spent) landing at x, z: 55 + 4 sub-bombs of 55, as the player's
+  if (!A.pq) A.pq = []; A.ps = 0; const c = new THREE.Vector3(x, 0.3, z); A.pq.push({ p: c, t: 0.9, r: 4, c: 0xffb21f });
+  for (let i = 0; i < 4; i++) { const a = (i * Math.PI) / 2 + Math.random() * 0.6; A.pq.push({ p: new THREE.Vector3(c.x + Math.cos(a) * 2.2, 0.3, c.z + Math.sin(a) * 2.2), t: 1.8 + i * 0.12, r: 3.5, c: 0xff4fa0 }); }
+  feed("Raze ▸ Paint Shells"); blip(500, 0.12, "square", 0.1); }
 function botAb(b, dt, see, tg, from) {
   if (!jOn()) return; // abilities live with the agent kit (Retake + 5v5)
   const A = b.ab || (b.ab = { t: 0, smk: true, cb: 2, rb: true, rbT: 2 + Math.random() * 6, saw: false });
@@ -9303,11 +9309,7 @@ function botAb(b, dt, see, tg, from) {
     if (A.ps === undefined) { A.ps = 1; A.pq = []; }
     if (ch.e >= 1 && see && tg && tg.x !== undefined) {
       const tp = tg, dp = Math.hypot(player.x - tp.x, player.z - tp.z), near = al ? bots.filter((t) => t.alive && Math.hypot(t.g.position.x - tp.x, t.g.position.z - tp.z) < 5).length > 1 : player.hp > 0 && dp > 0.5 && dp < 5; // ally: enemy bots clustered; enemy: mate stacked with the player
-      if ((near || (peek && Math.random() < 0.25)) && xBUse(b, "e")) {
-        A.ps = 0; const c = new THREE.Vector3(tp.x, 0.3, tp.z); A.pq.push({ p: c, t: 0.9, r: 4, c: 0xffb21f });
-        for (let i = 0; i < 4; i++) { const a = (i * Math.PI) / 2 + Math.random() * 0.6; A.pq.push({ p: new THREE.Vector3(c.x + Math.cos(a) * 2.2, 0.3, c.z + Math.sin(a) * 2.2), t: 1.8 + i * 0.12, r: 3.5, c: 0xff4fa0 }); }
-        feed("Raze ▸ Paint Shells"); blip(500, 0.12, "square", 0.1);
-      }
+      if ((near || (peek && Math.random() < 0.25)) && xBUse(b, "e")) xRzShells(A, tp.x, tp.z);
     }
     if (A.pq.length) { let w = 0; for (let i = 0; i < A.pq.length; i++) { const s = A.pq[i]; if ((s.t -= dt) > 0) { A.pq[w++] = s; continue; }
       const m = jM(smokeGeo, fireMat(s.c, 0.45)); m.scale.setScalar(s.r / 4); m.position.set(s.p.x, 0.5, s.p.z); jFx(m, 0.4); blip(80, 0.35, "sawtooth", 0.18); xAoe(b, s.p, s.r, 55, "Paint Shells"); } A.pq.length = w; }
@@ -14809,6 +14811,7 @@ window.xAbilityFP = { XAF, XAF_SET, XAF_K, XAF_GUN, phase: xAfPhase, gunPhase: x
    crouchSpray:.08+r()*.5,tapBias:r(),stand:.18+pa*.25,strafeRhythm:.25+r()*.35,
    peek:{jiggle:.2+pa*.6,wide:.15+ag*.8,tight:.5,hold:.1+pa*.5},
    angle:r()<.5?'close':'long',head:.25+acc*.4};
+
  }
  // One reaction draw per engagement, always inside REACT.
  function reaction(P,rand){const j=(rand()+rand()+rand()-1.5)*1.4;return clamp(P.react+j*P.reactJit*2,REACT[0],REACT[1]);}
@@ -14914,7 +14917,33 @@ window.xAbilityFP = { XAF, XAF_SET, XAF_K, XAF_GUN, phase: xAfPhase, gunPhase: x
  function onMateDeath(P,rand,dist,alive){if(dist>18)return 'hold';const t=P.aggression*.8+(alive>=3?.15:0)-(dist>12?.2:0);const x=rand();return x<t?'trade':x<t+P.patience*.5?'fallback':'hold';}
  // A sound heard (gunshot / running footsteps): 'turn' (face it, keep going), 'hold' (stop and hold that angle) or 'push'.
  function onSound(P,rand,kind,dist){const x=rand();if(kind==='shot'&&dist<20&&x<P.aggression*.35)return 'push';return x<P.patience*.6?'hold':'turn';}
- return {hash,rng,clamp,pickW,REACT,personality,reaction,crosshair,crosshairAt,firePattern,peek,attackPlan,defensePlan,roles,teamBuy,buyFor,onMateDeath,onSound,ATTACK,DEFENSE};
+ // ---- Utility timing ("use utility before entry") ----
+ // Which utility a bot wants right now for the round plan. Pure; the caller supplies what the bot knows:
+ // ctx {atk, plan (attackPlan/defensePlan), role (this bot's roles() entry), rt (round seconds since the buy phase),
+ //      siteDist (m to the plan / held site), otherDist (m to plan.other, fakes), planted, spikeDist (m),
+ //      threat (attacker side: an enemy seen / heard within 12 m of the planted Spike or defusing it),
+ //      info (defender: attackers seen / heard at this bot's site in the last 8 s), used (utility casts this round)}
+ // Returns null or {phase, want: ability types in order, aim}: phase 'entry' (smokes / flashes / recon before the
+ // execute; rush: right away, only if the plan said utility first), 'fake' (the fake group's utility at the other site just
+ // before it rotates), 'post' (mollies / traps on the Spike when a defender comes for it), 'delay' (defenders slow the
+ // push on their site), 'retake' (defenders flash / recon the planted site before going in). aim: 'site' | 'other' |
+ // 'spike' | 'info'. Lurkers stay quiet. The ability itself (charges, values, effect) is the caller's existing logic.
+ const UTIL={entry:['smoke','flash','recon','drone','stun','shock','fire'],entryFirst:['flash','drone','recon','smoke','stun','shock'],fake:['smoke','flash','recon','stun'],
+  post:['fire','grenade','turret','trap','slow','shock','stun'],delay:['slow','fire','smoke','stun','flash','trap','shock','grenade','recon'],retake:['flash','recon','drone','stun','smoke','shock']};
+ function utility(P,ctx){
+  const used=ctx.used||0,pl=ctx.plan,e=ctx.role||{};
+  if(ctx.atk){
+   if(ctx.planted)return used<3&&ctx.threat&&ctx.spikeDist<16?{phase:'post',want:UTIL.post,aim:'spike'}:null;
+   if(!pl||e.lurk||!(ctx.rt>=0))return null;
+   if(e.fakeGroup)return used<1&&pl.rotateAt&&ctx.rt>=pl.rotateAt-6&&ctx.rt<pl.rotateAt&&ctx.otherDist<30?{phase:'fake',want:UTIL.fake,aim:'other'}:null;
+   if(!pl.utilFirst||used>=2)return null;
+   const at=pl.type==='rush'?0:Math.max(0,pl.executeAt-3);
+   return ctx.rt>=at&&ctx.siteDist<30&&ctx.siteDist>6?{phase:'entry',want:e.entry||(P&&P.aggression>.7)?UTIL.entryFirst:UTIL.entry,aim:'site'}:null;
+  }
+  if(ctx.planted)return used<2&&ctx.spikeDist<26&&ctx.spikeDist>7?{phase:'retake',want:UTIL.retake,aim:'spike'}:null;
+  return used<2&&ctx.info&&ctx.siteDist<28?{phase:'delay',want:UTIL.delay,aim:'info'}:null;
+ }
+ return {hash,rng,clamp,pickW,REACT,personality,reaction,crosshair,crosshairAt,firePattern,peek,attackPlan,defensePlan,roles,teamBuy,buyFor,onMateDeath,onSound,ATTACK,DEFENSE,utility,UTIL};
 });
 // Native-map 5v5 bots stop moving as one blob: per-round plans (own spot inside the site, one lurker on the other site,
 // staggered starts by personality, shuffled defender sites with spread holds), lane-varied routes from the shared
@@ -14977,7 +15006,7 @@ function xbvStage(C,u,g,P){
 function xbvInfo(team,C){
  const k=xbvKey();if(XBV.info&&XBV.info.k!==k)XBV.info=null;if(XBV.infoF===XNF)return XBV.info;XBV.infoF=XNF;
  for(const d of team){if(!d||!d.alive)continue;let p=null;if(d.see>0){const t=d.xTt||d.xTg;p=t&&(t.g?t.g.position:t);}if(!p&&d.hearT>0&&d.hear)p={x:d.hear[0],z:d.hear[1]};if(!p)continue;
-  for(const n of Object.keys(C.meta.sites)){const c=C.meta.sites[n];if(Math.hypot(p.x-c[0],p.z-c[2])<16){const now=performance.now();if(!XBV.info||(XBV.info.site!==n&&now>XBV.info.at+6000))XBV.info={k,site:n,at:now};break;}}}
+  for(const n of Object.keys(C.meta.sites)){const c=C.meta.sites[n];if(Math.hypot(p.x-c[0],p.z-c[2])<16){const now=performance.now();if(!XBV.info||(XBV.info.site!==n&&now>XBV.info.at+6000))XBV.info={k,site:n,at:now};if(XBV.info.site===n){XBV.info.x=p.x;XBV.info.z=p.z;}break;}}}
  return XBV.info;
 }
 function xbvSiteCenter(C,name,atk){const g=atk&&C.siteGoals&&C.siteGoals[name],p=C.meta.sites[name];return g?[g[0],p[1],g[1]]:[p[0],p[1],p[2]];}
@@ -15036,6 +15065,50 @@ if(typeof fBotBuy==='function'){const fb0=fBotBuy;fBotBuy=function(n){
   for(const w of [b.weapon,b.side])if(w&&cost[w]&&s.cr>=cost[w]){s.cr-=cost[w];s.w=w;}
   if(b.armor==='light'&&(s.arm||0)<25&&s.cr>=400){s.cr-=400;s.arm=25;s.rgn=undefined;}}
  try{xBBuy(n,s);}catch(e){}try{sbSpend(n,c0-s.cr);}catch(e){}return s;};}
+// Plan utility ("use utility before entry", BotBrain.utility, as the server): attackers keep smokes / recon / Fault Line
+// for the execute and throw them toward the site just before it (utility-first plans only; lurkers stay quiet), the fake
+// group throws its utility at the fake site, post-plant Killjoy hides her Nanoswarms on the Spike and Raze shells it when a
+// defender comes for it, defenders delay a push on their site (smoke / flash toward the attackers, Boom Bot after them)
+// and flash / recon before a retake. Each cast is the kit's existing bot cast (xBUse charges, enSmoke / xBFlash /
+// recon bolt / xKnPlace / xRzShells): no ability values change. Native-map 5v5 only; other modes keep the old triggers.
+function xbvUtilX(b){
+ const C=typeof nmActive==='function'&&nmActive(),s=FV.sp;if(!C||mode!=='five'||FV.dm||FV.buy>0||!window.BotBrain||!s||!b||!b.g||!C.meta||!C.meta.sites||typeof xBAtk!=='function')return null;
+ const al=allies.indexOf(b)>=0,team=al?allies:bots,atk=xBAtk(al),P=xbvPlan(b,team,atk,C),S=xbvStrat(team,atk,C);
+ const U=P.util||(P.util={used:0,it:null,at:0,kj:0,rand:BotRoutes.rng(BotRoutes.hash((b.name||'')+'|util|'+xbvKey()+'|'+xbvSeed()))});
+ return {C,s,al,team,atk,P,S,U,planted:s.st==='plant',p:b.g.position};}
+function xbvUtil(b,see,tg,X){
+ X=X||xbvUtilX(b);if(!X)return null;const {C,s,atk,P,S,U,planted,p}=X,now=performance.now();if(U.it&&now<U.it.until)return U.it;if(now<U.at)return null;U.at=now+300+U.rand()*300;
+ const sites=C.meta.sites,sc=n=>sites[n]?xbvSiteCenter(C,n,atk):null,dist=c=>c?Math.hypot(c[0]-p.x,c[2]-p.z):Infinity,site=sc(atk?s.site:P.site),other=sc(S.plan.other);
+ const sp=planted&&typeof spike!=='undefined'&&spike&&spike.parent?spike.position:planted&&s.x!=null?{x:s.x,z:s.z}:null,spd=sp?Math.hypot(sp.x-p.x,sp.z-p.z):Infinity;
+ let threat=false;if(atk&&sp)threat=!!s.du||s.dt>0||!!(see&&tg&&Math.hypot(tg.x-sp.x,tg.z-sp.z)<12)||!!(b.hearT>0&&b.hear&&Math.hypot(b.hear[0]-sp.x,b.hear[1]-sp.z)<12);
+ const I=!atk&&!planted?xbvInfo(X.team,C):null,info=!!(I&&I.site===P.site&&now-I.at<8000);
+ const call=BotBrain.utility(xbBrain(b),{atk,plan:S.plan,role:P.role,rt:100-timeLeft,siteDist:dist(site),otherDist:dist(other),planted,spikeDist:spd,threat,info,used:U.used});
+ if(!call)return U.it=null;let t=call.aim==='spike'?[sp.x,0,sp.z]:call.aim==='other'?other:call.aim==='info'?(I&&I.x!=null?[I.x,0,I.z]:site):site;if(!t)return U.it=null;
+ return U.it={phase:call.phase,want:call.want,x:t[0],z:t[2],until:now+2500};}
+function xbvUsed(b,X,it,kind){X.U.used++;X.U.it=null;X.U.at=performance.now()+1200+X.U.rand()*1500;(XBV.ulog||(XBV.ulog=[])).push({name:b.name,phase:it?it.phase:'post',kind,t:100-timeLeft,atk:X.atk});if(XBV.ulog.length>200)XBV.ulog.shift();}
+// smokes (Jett Cloudburst, Omen Dark Cover): toward the plan target in the entry / fake / delay / retake phases; attackers on a
+// utility-first plan hold them until then
+if(typeof xBChoke==='function'){const ch0=xBChoke;xBChoke=function(b,al,from,A){const X=xbvUtilX(b);if(!X)return ch0.apply(this,arguments);const it=xbvUtil(b,false,null,X);
+ if(it&&it.want.includes('smoke')){const dx=it.x-from.x,dz=it.z-from.z,l=Math.hypot(dx,dz)||1;if(l<4)return null;const lead=it.phase==='entry'||it.phase==='fake'?6:0;let k=Math.max(3,Math.min(14,l-lead));for(;k>3&&typeof blocked==='function'&&blocked(from.x+dx/l*k,from.z+dz/l*k,0.5,0);k-=2);
+  XBK_P.x=from.x+dx/l*k;XBK_P.z=from.z+dz/l*k;X.U.sm=it;return XBK_P;}
+ if(X.atk&&!X.planted&&X.S.plan.utilFirst)return null;return ch0.apply(this,arguments);};}
+// flashes (Phoenix Curveball, Breach Flashpoint, Skye Guiding Light all go through xBFl): one toward the plan target
+if(typeof xBFl==='function'){const f0=xBFl;xBFl=function(b,A,see,peek,tg,from,k,al,col,key,nm,hz){const X=!see?xbvUtilX(b):null,it=X?xbvUtil(b,see,tg,X):null;
+ if(it&&it.want.includes('flash')&&(A.flT||0)<=A.t){const l=Math.hypot(it.x-from.x,it.z-from.z);if(l>4&&l<30&&xBUse(b,k)){A.flT=A.t+3;xBFlash(b,al,from,it.x,it.z,col,key,nm,hz);xbvUsed(b,X,it,'flash');return true;}}
+ return f0.apply(this,arguments);};}
+if(typeof botAb==='function'){const ba0=botAb;botAb=function(b,dt,see,tg,from){
+ const X=b&&b.g&&running?xbvUtilX(b):null;if(!X)return ba0.apply(this,arguments);
+ const A=b.ab,ag=typeof xBAg==='function'?xBAg(b):null,it=xbvUtil(b,see,tg,X),hold=X.atk&&!X.planted&&X.S.plan.utilFirst&&!it,ch=typeof xBCh==='function'?xBCh(b):null,e0=ch?ch.e:0;
+ if(A&&ag==='Sova'&&A.rbT!=null){if(it&&it.want.includes('recon'))A.rbT=Math.min(A.rbT,A.t);else if(hold)A.rbT=Math.max(A.rbT,A.t+.5);} // Recon Bolt at the execute
+ if(A&&ag==='Breach'&&A.beT!=null&&hold)A.beT=Math.max(A.beT,A.t+.5); // Fault Line waits for the execute
+ if(A&&ag==='Raze'&&it&&it.phase==='delay'&&!see&&A.rzb)A.rlk={x:it.x,z:it.z,t:0}; // defenders: Boom Bot after the push
+ X.U.sm=null;const c0=ch?ch.c+ch.q+ch.e:0,r=ba0.apply(this,arguments);
+ if(X.U.sm&&ch&&ch.c+ch.q+ch.e<c0)xbvUsed(b,X,X.U.sm,'smoke');else if(ag==='Sova'&&it&&ch&&ch.e<e0)xbvUsed(b,X,it,'recon');
+ // post-plant: Killjoy hides her Nanoswarms on the Spike once; Raze shells it when a defender comes for it
+ if(X.atk&&X.planted&&b.alive&&A){const sp=typeof spike!=='undefined'&&spike&&spike.parent?spike.position:null;if(sp){const d=Math.hypot(sp.x-X.p.x,sp.z-X.p.z);
+  if(ag==='Killjoy'&&!X.U.kj&&d<12){X.U.kj=1;if(xKnPlace(b,X.al,sp.x,sp.z,2,0.5,2.5)){feed("Killjoy ▸ Nanoswarm");xbvUsed(b,X,null,'fire');}}
+  if(ag==='Raze'&&it&&it.phase==='post'&&d<16&&xBUse(b,'e')){xRzShells(A,sp.x,sp.z);xbvUsed(b,X,it,'grenade');}}}
+ return r;};}
 // ---- END BOT VARIETY ----
 // ---- DEBUG HOOKS ----
 // Headless/manual testing hooks. Active only on localhost or with ?__vs=1.

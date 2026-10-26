@@ -57,4 +57,26 @@ const G={map:{attacker:[-14,0,0],defender:[14,0,-28],sites:{A:[-8,0,-14],B:[8,0,
  // determinism: the same seed replays the same strategies
  const replay=async()=>{let sd=5;const T=new SpikeSimulation(W,'five','ascent',()=>(sd=(sd*16807)%2147483647)/2147483647);T.start(true);const L=[];for(let r=0;r<6;r++){if(r)T.newRound();L.push(T.spike.site+strategy(T,T.atk).plan.type+strategy(T,1-T.atk).plan.type);}return L.join();};
  assert.equal(await replay(),await replay(),'seeded: identical strategies on replay');}
+// 4. Plan utility ("use utility before entry"): pure timing, then a real Ascent match where casts follow the plan
+{const P=B.personality(B.hash('Bot Omen')),ex={type:'execute',utilFirst:true,executeAt:20,site:'A',other:'B'};
+ assert.equal(B.utility(P,{atk:true,plan:ex,role:{},rt:10,siteDist:20}),null,'no entry utility while defaulting');
+ assert.equal(B.utility(P,{atk:true,plan:ex,role:{},rt:18,siteDist:20}).phase,'entry','entry utility just before the execute');
+ assert.equal(B.utility(P,{atk:true,plan:ex,role:{},rt:18,siteDist:40}),null,'not from across the map');
+ assert.equal(B.utility(P,{atk:true,plan:ex,role:{lurk:true},rt:30,siteDist:10}),null,'lurkers stay quiet');
+ assert.equal(B.utility(P,{atk:true,plan:{...ex,utilFirst:false},role:{},rt:30,siteDist:10}),null,'a dry execute throws nothing first');
+ assert.equal(B.utility(P,{atk:true,plan:ex,role:{},rt:30,siteDist:10,used:2}),null,'two entry utilities at most');
+ const fk={type:'fake',utilFirst:true,executeAt:10,rotateAt:22,site:'A',other:'B'};assert.equal(B.utility(P,{atk:true,plan:fk,role:{fakeGroup:true},rt:18,otherDist:12}).phase,'fake','fake group throws its utility at the fake site');
+ assert.equal(B.utility(P,{atk:true,planted:true,threat:true,spikeDist:9}).phase,'post','post-plant utility when a defender comes for the Spike');
+ assert.equal(B.utility(P,{atk:true,planted:true,threat:false,spikeDist:9}),null,'no post-plant utility into nothing');
+ assert.equal(B.utility(P,{atk:false,plan:{type:'standard'},info:true,siteDist:12}).phase,'delay','defenders delay a push on their site');
+ assert.equal(B.utility(P,{atk:false,plan:{type:'standard'},info:false,siteDist:12}),null,'defenders keep utility without information');
+ assert.equal(B.utility(P,{atk:false,planted:true,spikeDist:15}).phase,'retake','defenders utility a retake');
+ assert.deepEqual(B.utility(P,{atk:false,planted:true,spikeDist:15}).want.slice(0,2),['flash','recon']);
+ const assets={async fetch(r){try{return new Response(await fs.readFile('public'+new URL(r.url).pathname));}catch(e){return new Response('',{status:404});}}};
+ const W=await loadWorld(assets,'ascent');let seed=7;const S=new SpikeSimulation(W,'five','ascent',()=>(seed=(seed*16807)%2147483647)/2147483647);S.start(true);
+ const plans=new Map();for(let t=0;t<260/.05;t++){S.step(.05);if(S.phase==='game'&&!plans.has(S.round)&&S.buy<=0){const A=strategy(S,S.atk);plans.set(S.round,{plan:A.plan,lurk:new Set(S.units.filter(u=>u.team===S.atk&&plan(S,u).lurk).map(u=>u.id))});}}
+ const L=S.utilLog||[],ph=new Set(L.map(e=>e.phase));assert.ok(L.length>=4&&ph.size>=2,'Ascent: bots cast plan utility in several phases ('+L.map(e=>e.phase+':'+e.kind).join(',')+')');
+ for(const e of L){const R=plans.get(e.round);if(!R)continue;if(e.phase==='entry'){assert.ok(R.plan.utilFirst&&e.t>=(R.plan.type==='rush'?0:R.plan.executeAt-3)-.01,'entry utility only on utility-first plans, at the execute');assert.ok(!R.lurk.has(e.id),'the lurker throws no entry utility');}}
+ const mine=Object.keys(S.units[0].ability||{});assert.ok(mine.includes('c'),'ability charges as before');
+ out.push('plan utility '+L.length+' casts ('+[...ph].join('/')+')');}
 console.log('Bot brain: '+out.join('; '));

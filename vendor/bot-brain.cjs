@@ -19,6 +19,7 @@
    crouchSpray:.08+r()*.5,tapBias:r(),stand:.18+pa*.25,strafeRhythm:.25+r()*.35,
    peek:{jiggle:.2+pa*.6,wide:.15+ag*.8,tight:.5,hold:.1+pa*.5},
    angle:r()<.5?'close':'long',head:.25+acc*.4};
+
  }
  // One reaction draw per engagement, always inside REACT.
  function reaction(P,rand){const j=(rand()+rand()+rand()-1.5)*1.4;return clamp(P.react+j*P.reactJit*2,REACT[0],REACT[1]);}
@@ -124,5 +125,31 @@
  function onMateDeath(P,rand,dist,alive){if(dist>18)return 'hold';const t=P.aggression*.8+(alive>=3?.15:0)-(dist>12?.2:0);const x=rand();return x<t?'trade':x<t+P.patience*.5?'fallback':'hold';}
  // A sound heard (gunshot / running footsteps): 'turn' (face it, keep going), 'hold' (stop and hold that angle) or 'push'.
  function onSound(P,rand,kind,dist){const x=rand();if(kind==='shot'&&dist<20&&x<P.aggression*.35)return 'push';return x<P.patience*.6?'hold':'turn';}
- return {hash,rng,clamp,pickW,REACT,personality,reaction,crosshair,crosshairAt,firePattern,peek,attackPlan,defensePlan,roles,teamBuy,buyFor,onMateDeath,onSound,ATTACK,DEFENSE};
+ // ---- Utility timing ("use utility before entry") ----
+ // Which utility a bot wants right now for the round plan. Pure; the caller supplies what the bot knows:
+ // ctx {atk, plan (attackPlan/defensePlan), role (this bot's roles() entry), rt (round seconds since the buy phase),
+ //      siteDist (m to the plan / held site), otherDist (m to plan.other, fakes), planted, spikeDist (m),
+ //      threat (attacker side: an enemy seen / heard within 12 m of the planted Spike or defusing it),
+ //      info (defender: attackers seen / heard at this bot's site in the last 8 s), used (utility casts this round)}
+ // Returns null or {phase, want: ability types in order, aim}: phase 'entry' (smokes / flashes / recon before the
+ // execute; rush: right away, only if the plan said utility first), 'fake' (the fake group's utility at the other site just
+ // before it rotates), 'post' (mollies / traps on the Spike when a defender comes for it), 'delay' (defenders slow the
+ // push on their site), 'retake' (defenders flash / recon the planted site before going in). aim: 'site' | 'other' |
+ // 'spike' | 'info'. Lurkers stay quiet. The ability itself (charges, values, effect) is the caller's existing logic.
+ const UTIL={entry:['smoke','flash','recon','drone','stun','shock','fire'],entryFirst:['flash','drone','recon','smoke','stun','shock'],fake:['smoke','flash','recon','stun'],
+  post:['fire','grenade','turret','trap','slow','shock','stun'],delay:['slow','fire','smoke','stun','flash','trap','shock','grenade','recon'],retake:['flash','recon','drone','stun','smoke','shock']};
+ function utility(P,ctx){
+  const used=ctx.used||0,pl=ctx.plan,e=ctx.role||{};
+  if(ctx.atk){
+   if(ctx.planted)return used<3&&ctx.threat&&ctx.spikeDist<16?{phase:'post',want:UTIL.post,aim:'spike'}:null;
+   if(!pl||e.lurk||!(ctx.rt>=0))return null;
+   if(e.fakeGroup)return used<1&&pl.rotateAt&&ctx.rt>=pl.rotateAt-6&&ctx.rt<pl.rotateAt&&ctx.otherDist<30?{phase:'fake',want:UTIL.fake,aim:'other'}:null;
+   if(!pl.utilFirst||used>=2)return null;
+   const at=pl.type==='rush'?0:Math.max(0,pl.executeAt-3);
+   return ctx.rt>=at&&ctx.siteDist<30&&ctx.siteDist>6?{phase:'entry',want:e.entry||(P&&P.aggression>.7)?UTIL.entryFirst:UTIL.entry,aim:'site'}:null;
+  }
+  if(ctx.planted)return used<2&&ctx.spikeDist<26&&ctx.spikeDist>7?{phase:'retake',want:UTIL.retake,aim:'spike'}:null;
+  return used<2&&ctx.info&&ctx.siteDist<28?{phase:'delay',want:UTIL.delay,aim:'info'}:null;
+ }
+ return {hash,rng,clamp,pickW,REACT,personality,reaction,crosshair,crosshairAt,firePattern,peek,attackPlan,defensePlan,roles,teamBuy,buyFor,onMateDeath,onSound,ATTACK,DEFENSE,utility,UTIL};
 });

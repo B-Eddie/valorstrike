@@ -48,6 +48,43 @@ for(const map of ['ascent','bind']){
  const err=t=>{w.see=t;const a=v();ctx.xbAimErr(w,a,{ae:1.3});return Math.hypot(a.x,a.y);};assert(err(0)>.005&&err(.6)<err(0)*.6&&err(3)<err(.6),'crosshair error settles');
  out.push(`${map}: sites ${[...siteSet].join('')}, plans ${[...plans].join('/')}, defence ${[...defs].join('/')}, rotations ${rotated}, climb checks ${climbCalls}`);
 }
+// plan utility: attackers hold smokes / flashes for the execute and throw them toward the site just before it, lurkers stay
+// quiet, defenders delay a push on their site, post-plant Killjoy hides Nanoswarms on the Spike and Raze shells it when a
+// defender comes for it (stubbed kit casts: the real ones are the existing xBUse / enSmoke / xBFlash / xKnPlace / xRzShells)
+{const map='ascent',dir=path.join(root,'models/valorant/maps',map),meta=JSON.parse(fs.readFileSync(path.join(dir,'map.json'),'utf8')),nav=JSON.parse(fs.readFileSync(path.join(dir,'navigation.json'),'utf8')),N=nav.nodes;
+ const C={key:map,nav,meta,playable:new Uint8Array(N.length).fill(1),siteGoals:null};let now=0;const smokes=[],flashes=[],knives=[],shells=[];
+ const near=(x,z)=>{let b=-1,d=Infinity;for(let k=0;k<N.length;k++){const n=N[k],v=(n[0]-x)**2+(n[2]-z)**2;if(v<d){d=v;b=k;}}return b;};
+ const unit=(name,ag,x,z)=>{const n=N[near(x,z)];return {name,ag,per:{ag:.5,fl:.5,sd:.5},alive:true,see:0,ab:{t:0,flT:0},kc:{c:2,q:2,e:2},g:{position:{x:n[0],y:n[1],z:n[2]}}};};
+ const ctx={Math,Object,Number,Infinity,Set,Map,WeakMap,Array,Float64Array,Int32Array,Uint8Array,performance:{now:()=>now},window:{xBotSeed:99},mode:'five',running:true,player:{hp:0},allies:[],bots:[],XNF:0,timeLeft:100,
+  FV:{you:0,them:0,map,atk:false,dm:false,buy:0,sp:null},x2:(o,x,z)=>{if(!o)return [x,z];o[0]=x;o[1]=z;return o;},nmActive:()=>C,xGoal:(u,t,a,o)=>ctx.x2(o,0,0),nmClimbOk:()=>false,xSmV:(u,dt,vx,vz)=>[vx,vz],
+  XBK_P:{x:0,z:0},blocked:()=>false,feed:()=>{},xBAtk:al=>ctx.FV.atk===al,xBAg:b=>b.ag,xBCh:b=>b.kc,xBUse:(b,k)=>b.kc[k]>=1?(b.kc[k]--,true):false,
+  xBChoke:b=>b.ab.lkt!=null?{x:1e3,z:1e3}:null,/* the base: smoke a last-seen enemy */xBFl:()=>false,xBFlash:(b,al,from,x,z)=>flashes.push([b.name,x,z]),xKnPlace:(b,al,x,z,n)=>{knives.push([x,z]);return n;},xRzShells:(A,x,z)=>shells.push([x,z]),spike:null,
+  botAb(b,dt,see,tg,from){const ag=ctx.xBAg(b);if(ag==='Jett'){const q=ctx.xBChoke(b,false,from,b.ab);if(q&&ctx.xBUse(b,'c'))smokes.push([b.name,q.x,q.z]);}if(ag==='Phoenix')ctx.xBFl(b,b.ab,see,false,tg,from,'e',false,0,'orb','Phoenix',800);}};
+ ctx.globalThis=ctx;vm.createContext(ctx);vm.runInContext(html.slice(i,j+Z.length)+'\n;globalThis.BotRoutes=BotRoutes;globalThis.BotBrain=BotBrain;globalThis.XBVq=()=>XBV;',ctx);Object.assign(ctx.window,{BotRoutes:ctx.BotRoutes,BotBrain:ctx.BotBrain});
+ const sites=Object.keys(meta.sites);let tested=0,held=0,thrown=0,lurkQuiet=0;
+ for(let r=0;r<40&&tested<4;r++){Object.assign(ctx.FV,{you:r,them:1,atk:false});const team=[unit('Bot Jett','Jett',meta.attacker[0],meta.attacker[2]),unit('Bot Phoenix','Phoenix',meta.attacker[0]+1,meta.attacker[2]),unit('Bot Sova','Sova',meta.attacker[0]+2,meta.attacker[2]),unit('Bot Omen','Omen',meta.attacker[0]+3,meta.attacker[2]),unit('Bot Sage','Sage',meta.attacker[0]+4,meta.attacker[2])];
+  ctx.bots=team;ctx.FV.sp={st:'carry',site:sites[0],c:team[4]};now=1;ctx.timeLeft=100;const S=ctx.xbvStrat(team,true,C),pl=S.plan;if(!pl.utilFirst||pl.type==='rush'||pl.type==='fake')continue;
+  for(const u of team)ctx.xbvPlan(u,team,true,C);const jett=team[0],ph=team[1],sc=meta.sites[ctx.FV.sp.site],P=ctx.XBVq().plans.get(jett);
+  for(const u of [jett,ph]){const n=N[near(sc[0]+14,sc[2])];Object.assign(u.g.position,{x:n[0],y:n[1],z:n[2]});}
+  jett.ab.lkt=0;const s0=smokes.length,f0=flashes.length;ctx.timeLeft=100-Math.max(0,pl.executeAt-8);now+=1e4;ctx.botAb(jett,.05,false,null,jett.g.position);ctx.botAb(ph,.05,false,null,ph.g.position);
+  if(smokes.length===s0&&flashes.length===f0)held++;jett.ab.lkt=null;
+  ctx.timeLeft=100-(pl.executeAt+.5);now+=1e4;ctx.botAb(jett,.05,false,null,jett.g.position);now+=1e4;ctx.botAb(ph,.05,false,null,ph.g.position);
+  const sm=smokes.slice(s0),fl=flashes.slice(f0);if(P.role.lurk){if(!sm.length)lurkQuiet++;}else if(sm.length||fl.length){thrown++;for(const q of sm)assert(Math.hypot(q[1]-sc[0],q[2]-sc[2])<Math.hypot(jett.g.position.x-sc[0],jett.g.position.z-sc[2])+.01,'entry smoke lands toward the site');}
+  tested++;}
+ assert(tested>=3&&held===tested,'utility-first plans: nothing thrown while defaulting ('+held+'/'+tested+')');assert(thrown>=2,'entry smokes / flashes thrown at the execute ('+thrown+'/'+tested+')');
+ const L=ctx.XBVq().ulog||[];assert(L.some(e=>e.phase==='entry'),'utility log names the entry phase');
+ // defenders: information at their site -> delay utility toward the attackers
+ Object.assign(ctx.FV,{you:50,them:1,atk:true});const def=[unit('Def Jett','Jett',meta.defender[0],meta.defender[2]),unit('Def Phoenix','Phoenix',meta.defender[0]+1,meta.defender[2])];ctx.bots=def;ctx.FV.sp={st:'carry',site:sites[0],c:null};now=5e6;ctx.timeLeft=70;
+ for(const u of def){const P=ctx.xbvPlan(u,def,false,C),c=meta.sites[P.site],n=N[near(c[0],c[2])];Object.assign(u.g.position,{x:n[0],y:n[1],z:n[2]});}
+ const P0=ctx.XBVq().plans.get(def[0]),c0=meta.sites[P0.site],s1=smokes.length;ctx.botAb(def[0],.05,false,null,def[0].g.position);assert.equal(smokes.length,s1,'no defender utility without information');
+ def[0].see=1;def[0].xTt={x:c0[0]+12,z:c0[2]};ctx.XNF++;ctx.xbvInfo(def,C);now+=1e3;def[0].see=0;ctx.botAb(def[0],.05,false,null,def[0].g.position);assert(smokes.length>s1,'defender smokes the push on its site');
+ // post-plant
+ Object.assign(ctx.FV,{you:60,them:2,atk:false});const kj=unit('Bot Killjoy','Killjoy',0,0),rz=unit('Bot Raze','Raze',0,0);ctx.bots=[kj,rz];const pc=meta.sites[sites[0]];
+ for(const u of [kj,rz]){const n=N[near(pc[0]+6,pc[2])];Object.assign(u.g.position,{x:n[0],y:n[1],z:n[2]});}
+ ctx.spike={parent:{},position:{x:pc[0],z:pc[2]}};ctx.FV.sp={st:'plant',site:sites[0],x:pc[0],z:pc[2],dt:0,du:null};now+=1e5;ctx.timeLeft=30;
+ ctx.botAb(kj,.05,false,null,kj.g.position);ctx.botAb(rz,.05,false,null,rz.g.position);assert.equal(knives.length,1,'post-plant Killjoy hides her Nanoswarms on the Spike once');assert.equal(shells.length,0,'Raze waits for a defender');
+ ctx.FV.sp.du={};now+=1e4;ctx.botAb(rz,.05,false,null,rz.g.position);assert.equal(shells.length,1,'Raze shells the Spike when a defender goes for it');
+ out.push(`plan utility: held ${held}/${tested}, thrown ${thrown}, lurkers quiet ${lurkQuiet}, log ${L.map(e=>e.phase+':'+e.kind).join(',')}`);}
 // team economy: eco / save rounds buy small through the wrapper; full rounds use the shop
 {const v=html.slice(i,j+Z.length);let shop=0;const bs={};const ctx={window:{xBotSeed:7},Math,Map,Set,Object,console,mode:'five',XNF:0,FV:{you:3,them:4,map:'ascent',atk:true,dm:false,lsY:2,lsT:0,bs},F_MATES:['M1','M2','M3','M4'],F_EN:['E1','E2','E3','E4','E5'],
   fBotBuy(n){shop++;return bs[n];},xBBuy(){},sbSpend(){},xGoal(){},xSmV(){},performance:{now:()=>0}};ctx.window=Object.assign(ctx,{xBotSeed:7});vm.createContext(ctx);vm.runInContext(v,ctx);

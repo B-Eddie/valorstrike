@@ -7,6 +7,7 @@ import kits from './kits.json' with {type:'json'};
 import {path} from './path.js';
 import {persona,flankNode,plan,spotNear,variedPath,spaceLook,strategy,stageNode,roundTime,botSeed} from './bots.js';
 import BotBrain from '../../vendor/bot-brain.cjs';
+const BOT_TURN=9;// rad/s: a bot turns at most this fast when lining up utility (no instant 180)
 import {initAbilities,buyAbility,castAbility,tickAbilities,smokeBlocks,sightClear,types,rewardAbilityKill,gainUlt,barrierBlocked,nearestBarrier} from './abilities.js';
 // VALORANT round phases (wiki.playvalorant.com/en-us/Unrated): buy phase 30 s, 45 s for the first buy phase of each half and
 // of overtime / endgame (rounds 1, 13, 25); post-round phase 7 s.
@@ -113,6 +114,7 @@ export class SpikeSimulation extends Simulation{
    if(site&&!carrier&&W.map.sites[site]){if(L.spotSite!==site){L.spotSite=site;L.spot=spotNear(this,u,W.map.sites[site],'spot',atk?{rMin:1.5,rMax:7,gap:3}:L.role.offAngle?{rMin:6,rMax:14,gap:4}:{rMin:2,rMax:10,gap:4});}if(L.spot>=0){goal=N[L.spot];u.spread=true;}}}}
  if(u.team!==this.atk&&sp.st==='plant'&&Math.hypot(u.x-sp.x,u.z-sp.z)<2){u.input={interact:true};u.inputAt=this.time;return;}
  if(u.blindUntil>this.time||u.concussUntil>this.time||u.nearsightUntil>this.time){/* bots have no nearsight model: held like a blinded bot, as offline (b.blind) */u.input={};u.inputAt=this.time;return;}const route=u.route,routeAt=u.routeAt;u.route=null;super.bot(u);const combat=u.input.fire||u.sawTarget;if(!combat){u.route=route;u.routeAt=routeAt;}if(combat)return;
+ if(this.planUtility(u))return;/* lining up plan utility (smoke / flash / recon before the entry, post-plant mollies, defender delay) */
  // reactions: trade / fall back after a teammate dies, hold or push a sound (not the carrier, not a late retake)
  const R=u.react;if(R&&R.until>this.time&&!carrier&&!(sp.st==='drop'&&u.team===this.atk)&&!(sp.st==='plant'&&u.team!==this.atk&&sp.t<15)){
   if(R.kind==='hold'){u.input=R.duck?{duck:true}:{};u.look=Math.atan2(u.x-R.x,u.z-R.z);u.inputAt=this.time;return;}
@@ -132,9 +134,9 @@ export class SpikeSimulation extends Simulation{
    for(const e of U){if(!e.alive||e.team===m.team)continue;const dist=Math.hypot(e.x-m.x,e.z-m.z),shot=e.shotAt>this.time-.12&&dist<35,run=!shot&&dist<16&&Math.hypot(e.vx||0,e.vz||0)>4.5&&!(e.input&&(e.input.walk||e.input.duck));if((shot||run)&&dist<bd){bd=dist;best={e,kind:shot?'shot':'step',dist};}}
    if(!best||m.heardAt>this.time-1.5)continue;m.heardAt=this.time;const P=persona(this,m),c=BotBrain.onSound(P.brain,P.r,best.kind,best.dist),e=best.e;
    if(c==='push')m.react={kind:'push',x:e.x,y:e.y,z:e.z,until:this.time+2+P.r()};else m.react={kind:'hold',x:e.x,z:e.z,duck:P.r()<.25,until:this.time+(c==='hold'?.6+P.brain.patience*1.2:.25+P.r()*.25)};
-   if(m.team!==this.atk&&this.spike.st!=='plant')for(const n of names){const c2=sites[n];if(Math.hypot(e.x-c2[0],e.z-c2[2])<16){this.siteInfo(n);break;}}}
-  if(this.spike.st!=='plant')for(const m of U)if(m.alive&&m.team!==this.atk&&m.sawTarget){const e=U.find(v=>v.id===m.aimTarget);if(e)for(const n of names){const c2=sites[n];if(Math.hypot(e.x-c2[0],e.z-c2[2])<16){this.siteInfo(n);break;}}}}
- siteInfo(n){const I=this.atkInfo;if(!I||I.round!==this.round||(I.site!==n&&this.time>I.at+6))this.atkInfo={site:n,at:this.time,round:this.round};}
+   if(m.team!==this.atk&&this.spike.st!=='plant')for(const n of names){const c2=sites[n];if(Math.hypot(e.x-c2[0],e.z-c2[2])<16){this.siteInfo(n,e);break;}}}
+  if(this.spike.st!=='plant')for(const m of U)if(m.alive&&m.team!==this.atk&&m.sawTarget){const e=U.find(v=>v.id===m.aimTarget);if(e)for(const n of names){const c2=sites[n];if(Math.hypot(e.x-c2[0],e.z-c2[2])<16){this.siteInfo(n,e);break;}}}}
+ siteInfo(n,e){const I=this.atkInfo;if(!I||I.round!==this.round||(I.site!==n&&this.time>I.at+6))this.atkInfo={site:n,at:this.time,round:this.round};const J=this.atkInfo;if(J.site===n&&e){J.x=e.x;J.y=e.y;J.z=e.z;J.seen=this.time;}}
  // Persona-driven objective movement: own spot inside the site, own repath/accept/lateral jitter, lurker flanks,
  // walking near the objective for quiet roles. loose=false keeps exact goals (spike pickup, defuse).
  goalPath(u,target,loose=true){const W=this.world,P=persona(this,u);if(loose&&!u.goalOff)u.goalOff=[(P.r()-.5)*6,(P.r()-.5)*6];const o=loose&&!u.spread?u.goalOff:[0,0],gx=target.x+o[0],gz=target.z+o[1];
@@ -145,6 +147,38 @@ export class SpikeSimulation extends Simulation{
   // No progress while walking (a prop edge, a corner, another unit): repath, then the shared probed escape (botEscape).
   if(u.input?.forward&&u.goalPos&&Math.hypot(u.x-u.goalPos[0],u.z-u.goalPos[1])<.01)u.goalStuck=(u.goalStuck||0)+.05;else u.goalStuck=0;u.goalPos=[u.x,u.z];
   if(u.goalStuck>1||u.escapeUntil>this.time){if(u.goalStuck>1&&u.goalStuck<1.06){u.route=null;u.goalAt=0;}if(this.botEscape(u,u.goalStuck))u.goalAt=0;}this.botProgress(u);}
+ // Plan utility (vendor/bot-brain.cjs utility()): attackers smoke / flash / recon the site before the execute (only when the
+ // plan said utility first; lurkers stay quiet), the fake group throws its utility at the fake site, post-plant mollies /
+ // traps on the Spike when a defender comes for it, defenders delay a push on their site and flash / recon a retake.
+ // Casts go through the same command(ab) / castAbility as every other cast (charges, values, effects unchanged); the bot
+ // stops and turns (turn-rate limited) to line the throw up, aimed at the furthest point of its own nav path toward the
+ // target it can see within the ability's reach, at the floor there.
+ planUtility(u){const A=u.ability;if(u.human||!A||this.buy>0||this.roundDelay>0||this.phase!=='game'||!(this.time>=(u.putilAt||0)))return false;
+  const sp=this.spike,W=this.world,sites=W.map.sites;if(!(sp.st==='carry'||sp.st==='plant'||sp.st==='drop'))return false;
+  const L=plan(this,u),S=strategy(this,u.team),atk=u.team===this.atk,planted=sp.st==='plant',P=persona(this,u),U=L.util||(L.util={used:0,rand:BotBrain.rng(BotBrain.hash('util|'+u.name+'|'+u.id+'|'+this.round+'|'+botSeed(this)))});
+  const d2=c=>c?Math.hypot(c[0]-u.x,c[2]-u.z):Infinity,site=atk?sites[sp.site]:sites[L.site],info=!atk&&this.atkInfo&&this.atkInfo.round===this.round&&this.atkInfo.site===L.site&&this.time-this.atkInfo.at<8?this.atkInfo:null;
+  let threat=null;if(atk&&planted)for(const e of this.units){if(!e.alive||e.team===u.team||Math.hypot(e.x-sp.x,e.z-sp.z)>12)continue;if(sp.defuser===e.id||e.shotAt>this.time-1||Math.hypot(e.vx||0,e.vz||0)>4.5||this.units.some(m=>m.alive&&m.team===u.team&&m.sawTarget&&m.aimTarget===e.id)){threat=e;break;}}
+  const call=BotBrain.utility(P.brain,{atk,plan:S.plan,role:L.role,rt:roundTime(this),siteDist:d2(site),otherDist:d2(sites[S.plan.other]),planted,spikeDist:Math.hypot(sp.x-u.x,sp.z-u.z),threat:!!threat,info:!!info,used:U.used});
+  if(!call){u.putilAt=this.time+.4+U.rand()*.4;u.castAim=null;return false;}
+  const ty=types[u.agent]||[];let k=null,kind=null;for(const w of call.want){const i=ty.indexOf(w);if(i>=0&&A['cqe'[i]]>0&&!(this.time<(A.cool['cqe'[i]]||0))){k='cqe'[i];kind=w;break;}}
+  if(!k){u.putilAt=this.time+1.5+U.rand();u.castAim=null;return false;}
+  const goal=call.aim==='spike'?[sp.x,sp.y,sp.z]:call.aim==='other'?sites[S.plan.other]:call.aim==='info'?(info.x!=null?[info.x,info.y,info.z]:site):site;if(!goal){u.putilAt=this.time+1;return false;}
+  const reach=kind==='smoke'&&u.agent==='Omen'?40:kind==='recon'||kind==='shock'?(u.agent==='Cypher'?20:40):kind==='drone'?20:13;
+  if(!u.castAim||u.castAim.k!==k||this.time>u.castAim.until){const p=this.utilAim(u,goal,reach);if(!p){u.putilAt=this.time+.8+U.rand()*.6;return false;}u.castAim={k,kind,p,phase:call.phase,until:this.time+1.2};}
+  const p=u.castAim.p,eye=u.y+1.6-(u.ch||0),dx=p[0]-u.x,dz=p[2]-u.z,want=Math.atan2(-dx,-dz),dl=Math.atan2(Math.sin(want-(u.look||0)),Math.cos(want-(u.look||0)));
+  u.inputAt=this.time;u.input={};u.pitch=Math.max(-.7,Math.min(.6,Math.atan2(p[1]-eye,Math.hypot(dx,dz)||1)));
+  if(Math.abs(dl)>.12){u.look=(u.look||0)+Math.sign(dl)*Math.min(Math.abs(dl),BOT_TURN*.05);return true;}/* turning to line it up */
+  u.look=want;const ok=this.command(u,{t:'ab',k});u.castAim=null;
+  if(ok){U.used++;u.utilAt=Math.max(u.utilAt||0,this.time+3);u.putilAt=this.time+1.2+U.rand()*1.8;(this.utilLog||(this.utilLog=[])).push({round:this.round,t:roundTime(this),id:u.id,team:u.team,atk,phase:call.phase,kind,k,agent:u.agent,p:[...p]});if(this.utilLog.length>400)this.utilLog.shift();}
+  else u.putilAt=this.time+1+U.rand();
+  return ok;}
+ // Where to throw: the furthest node of the bot's own path toward goal that it can see and that is within reach, at the
+ // floor (a smoke / molly lands there, a flash pops there); the goal itself when it is in sight and in reach.
+ utilAim(u,goal,reach){const W=this.world,N=W.nav.nodes,eye=[u.x,u.y+1.6-(u.ch||0),u.z],vis=q=>this.canSee(u,null,eye,[q[0],q[1]+.4,q[2]]);
+  if(Math.hypot(goal[0]-u.x,goal[2]-u.z)<=reach&&vis(goal))return [goal[0],goal[1]+.1,goal[2]];
+  const path=this.findPath(W,W.near(u.x,u.z,u.y),W.near(goal[0],goal[2],goal[1]));if(!path||path.length<2)return null;let best=null;
+  for(const i of path){const n=N[i],d=Math.hypot(n[0]-u.x,n[2]-u.z);if(d>reach)break;if(d>3&&vis(n))best=n;}
+  return best?[best[0],best[1]+.1,best[2]]:null;}
  // Utility on each bot's own timing and role: entries open with flashes/mobility, supports smoke/heal, anchors slow/trap.
  botUtility(u,target,dist,P,engaged){const A=u.ability;if(!A||this.buy>0||this.roundDelay>0||engaged<P.util||this.time<(u.utilAt||0))return;const ty=types[u.agent]||[],want=P.role==='entry'?['flash','dash','updraft']:P.role==='support'?['smoke','flash','slow','heal']:P.role==='anchor'?['slow','trap','fire','turret','smoke']:['flash','smoke','recon'];for(const w of want){const i=ty.indexOf(w);if(i<0)continue;const k='cqe'[i];if(A[k]>0&&this.command(u,{t:'ab',k})){u.utilAt=this.time+4+P.r()*6;return;}}u.utilAt=this.time+1+P.r();}
  snapshot(){return {...super.snapshot(),fw:floorRows(this),fx:[...this.effects.filter(e=>e.kind==='barrier'&&e.hp>0&&e.until>this.time).map(e=>({id:e.id,kind:e.kind,p:e.p,yaw:e.yaw,hp:e.hp})),/* Jett Cloudburst: the projectile (s 0) then its smoke (s 1, p = centre, tl = seconds left) */...this.effects.filter(e=>(e.kind==='cloudburst'||e.kind==='smoke'&&e.cb)&&e.until>this.time).map(e=>e.kind==='cloudburst'?{id:e.id,kind:'cb',o:e.owner,p:e.p.map(n=>Math.round(n*100)/100),s:0}:{id:e.id,kind:'cb',o:e.owner,p:e.c.map(n=>Math.round(n*100)/100),s:1,tl:Math.round((e.until-this.time)*100)/100})]};}
