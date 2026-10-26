@@ -1218,6 +1218,7 @@ body.x-cbh #game{--ha:#3d8bff;--he:#ff9f1c}
     <div class="x-qon__h"><h3 id="xOnH">Online</h3><small>Peer-to-peer with friends · bots fill empty slots</small><label class="x-qon__nm">Name <input id="xOnName" placeholder="Your name" maxlength="16" autocomplete="off" spellcheck="false"></label></div>
     <div class="x-qon__row">
       <div class="x-qon__seg" role="group" aria-label="Online mode"><button type="button" data-om="dm" aria-pressed="false">Deathmatch</button><button type="button" data-om="tdm" aria-pressed="true">Team Deathmatch</button><button type="button" data-om="five" aria-pressed="false">Unrated (Spike)</button></div>
+      <label class="x-qon__nm">Map <select id="xOnMap"><option value="ascent">Ascent</option><option value="bind">Bind</option><option value="haven">Haven</option><option value="split">Split</option><option value="lotus">Lotus</option><option value="breeze">Breeze</option><option value="random">Random</option></select></label>
       <button type="button" class="x-qrange x-qon__go" id="xOnQuick">Quick Match</button>
       <button type="button" class="x-qrange" id="xOnCreate">Create private</button>
       <span class="x-qon__join"><input id="xOnCode" maxlength="6" placeholder="CODE" aria-label="Room code" autocomplete="off" spellcheck="false"><button type="button" class="x-qrange" id="xOnJoin">Join</button></span>
@@ -1225,7 +1226,7 @@ body.x-cbh #game{--ha:#3d8bff;--he:#ff9f1c}
     <div class="x-qon__room" id="xOnRoom" hidden>
       <div class="x-qon__code"><small>Room code</small><b id="xOnCodeT">—</b><button type="button" class="x-qrange" id="xOnCopy">Copy</button><span id="xOnRoomM"></span></div>
       <ol class="x-qon__list" id="xOnList"></ol>
-      <div class="x-qon__row"><label class="x-qon__nm">Map <select id="xOnMap"><option value="ascent">Ascent</option><option value="bind">Bind</option><option value="haven">Haven</option><option value="split">Split</option><option value="lotus">Lotus</option><option value="breeze">Breeze</option><option value="random">Random</option></select></label>
+      <div class="x-qon__row">
         <button type="button" class="x-qrange x-qon__go" id="xOnStart">Start</button><span id="xOnWait"></span><button type="button" class="x-qrange" id="xOnLeave">Leave</button></div>
     </div>
     <p class="x-qon__msg" id="xOnMsg" role="status" aria-live="polite"></p>
@@ -1254,13 +1255,23 @@ body.x-cbh #game{--ha:#3d8bff;--he:#ff9f1c}
     document.getElementById("xqClose").addEventListener("click", function () { q.hidden = true; });
     document.addEventListener("keydown", function (e) { if (e.key === "Escape" && !q.hidden) q.hidden = true; });
     // map picker: only applied to the 5v5 flow once a tile has been chosen
-    var qMap = "ascent";window.xQMap=qMap;
-    q.querySelectorAll(".x-qmap").forEach(function (m) {
-      m.addEventListener("click", function () {
-        qMap = m.dataset.map; window.xQMap = qMap;
-        q.querySelectorAll(".x-qmap").forEach(function (b) { b.setAttribute("aria-pressed", b === m ? "true" : "false");b.classList.toggle("selected",b===m); });
-      });
-    });
+    // One lobby map choice: the tiles here, the Online map select and the 5v5 pre-match picker all show and set it, it is
+    // remembered on this device (vs.map), and every launch from this panel uses it: START and the mode cards themselves
+    // (clicking the Deathmatch / TDM / Spike Rush / Escalation card used to skip it and play the last map, Ascent by default).
+    var QMAPS = ["ascent", "bind", "haven", "split", "lotus", "breeze", "random"], qMap = "ascent";
+    try { var sv = localStorage.getItem("vs.map"); if (QMAPS.indexOf(sv) >= 0) qMap = sv; } catch (e) {}
+    function setQ(m, save) {
+      if (QMAPS.indexOf(m) < 0) return; qMap = m; window.xQMap = m;
+      q.querySelectorAll(".x-qmap").forEach(function (b) { var on = b.dataset.map === m; b.setAttribute("aria-pressed", on ? "true" : "false"); b.classList.toggle("selected", on); });
+      var os = document.getElementById("xOnMap"); if (os && !os.disabled && os.value !== m) os.value = m; // in a room it shows the room's map
+      if (save) try { localStorage.setItem("vs.map", m); } catch (e) {}
+      try { if (window.xLobbyPick) window.xLobbyPick(m); } catch (e) {}
+    }
+    window.xQSetMap = function (m) { setQ(m, true); };
+    setQ(qMap, false);
+    q.querySelectorAll(".x-qmap").forEach(function (m) { m.addEventListener("click", function () { setQ(m.dataset.map, true); }); });
+    (function () { var os = document.getElementById("xOnMap"); if (os) os.addEventListener("change", function () { if (!os.disabled) setQ(os.value, true); }); })();
+    document.addEventListener("click", function (e) { if (e.target && e.target.closest && e.target.closest("#dmBtn,#tdmBtn,#srBtn,#escBtn,#pm5v5")) window.xQPick = qMap; }, true);
     document.getElementById("xqRange").addEventListener("click", function () { var a = document.getElementById("aimBtn"); if (a) a.click(); });
   })();
   </script>
@@ -2075,6 +2086,7 @@ function xGo(fn) {
   try { if (typeof xGmLoad === "function") xGmLoad(); } catch (e) {} // CC0 gun models, same lazy first-launch fetch
   xLob0 = false; // perf pass 16: a mode launched, the first-load lobby no longer covers the game
   try { const pending=fn();if(pending&&pending.catch)pending.catch(e=>{if(window.xErr)window.xErr(e);}); } catch (e) { if (window.xErr) window.xErr(e); }
+  window.xQPick = null; // the launched mode took the queue map pick synchronously (or does not use one); never let it leak into a later start
 }
 const failWith = (msg) => { xNoGL = true; xFailMsg = msg; };
 // AGENTS nav: roster from the agent-select tiles (static markup, so it works without WebGL); a pick sets the lobby agent, as locking in does
@@ -2183,7 +2195,7 @@ function xLobbyInit() {
   bind("pre-match GO", () => $("preGo").onclick = () => { clearInterval(preTimer);
     xGo(() => (preMode === "five" ? agentSelect(startFive) : preMode === "surf" ? startSurf() : preMode === "aim" ? startAim() : preMode === "rifle" ? startRifle() : agentSelect(start))); });
   bind("pre-match cancel", () => $("preCancel").onclick = () => { clearInterval(preTimer); $("pre").style.display = "none"; $("lobby").style.display = "flex"; });
-  bind("5v5 map pick", () => $("xMp").onclick = (e) => { const b = e.target.closest("button"); if (b && xReady) mpSet(b.dataset.m); });
+  bind("5v5 map pick", () => $("xMp").onclick = (e) => { const b = e.target.closest("button"); if (b && xReady) { mpSet(b.dataset.m); try { if (window.xQSetMap) window.xQSetMap(b.dataset.m); } catch (er) {} } });
   bind("lock in", () => $("xAgL").onclick = () => { $("xAg").style.display = "none"; $("lobby").style.display = "flex"; }); // agentSelect sets the real handler each time
   bind("result lobby", () => $("lobbyBtn").onclick = () => { $("result").style.display = "none"; $("game").style.display = "none"; $("lobby").style.display = "flex"; }); // the game replaces it once loaded
 }
@@ -7309,7 +7321,9 @@ function xLotusTick() { // no allocations per frame
   }
 }
 const HAVEN_CALL = []; XCALL.clear(); XCALL.add(...ASC_CALL);
-FV.pick = "ascent"; FV.map = "ascent";
+FV.pick = window.xQMap || "ascent"; FV.map = "ascent"; // the lobby map choice (queue tiles, remembered as vs.map)
+// a lobby map tile / Online select change is the pick right away (the pre-match screen and every launch read it), not only on START
+window.xLobbyPick = (m) => { try { if (!running && !(typeof MP !== "undefined" && MP.on) && (F_MAPN[m] || m === "random")) FV.pick = m; } catch (e) {} };
 const F_MAPN = { ascent: "Ascent", bind: "Bind", haven: "Haven", split: "Split", lotus: "Lotus", breeze: "Breeze" };
 // Free a lazily built map on switch (rebuilt next time it is picked). Freeing only its geometry left every switch's canvas
 // textures (callout labels, plaques, the map's own surfaces) and materials on the GPU, the callout sprites' too (they live in
@@ -11454,7 +11468,7 @@ function fpaWeap() { let w = "Vandal"; try { w = mode === "duel" ? "Operator" : 
 // loading screen: the loader script further down cannot reach this IIFE's functions (its agentSelect / window.startSR wraps were silent no-ops), so the match starts hand themselves to window.xMatchLoad here
 { const xLd = (fn, name) => function () { const a = arguments, self = this, L = window.xMatchLoad; if (typeof L !== "function") return fn.apply(self, a); if(window.xQPick){FV.pick=window.xQPick;window.xQPick=null;}return L(() => fn.apply(self, a), FV.pick, name, true); };
   const ag0 = agentSelect; agentSelect = function (go) { return ag0(xLd(go)); };
-  startSR = xLd(startSR, "SPIKE RUSH"); startTDM = xLd(startTDM, "TEAM DEATHMATCH"); startDM = xLd(startDM, "DEATHMATCH"); startDuel = xLd(startDuel, "OPERATOR DUEL"); startRifle = xLd(startRifle, "RIFLE 2V2"); startSurf = xLd(startSurf, "SURF"); startAim = xLd(startAim, "AIM PRACTICE"); start = xLd(start, "RETAKE"); } // every bot-spawning or player-kit start rides the readiness gate // duel spawns a native agent too: it takes the same readiness gate
+  startSR = xLd(startSR, "SPIKE RUSH"); startTDM = xLd(startTDM, "TEAM DEATHMATCH"); startDM = xLd(startDM, "DEATHMATCH"); startDuel = xLd(startDuel, "OPERATOR DUEL"); startRifle = xLd(startRifle, "RIFLE 2V2"); startSurf = xLd(startSurf, "SURF"); startAim = xLd(startAim, "AIM PRACTICE"); start = xLd(start, "RETAKE"); startESC = xLd(startESC, "ESCALATION"); } // every bot-spawning or player-kit start rides the readiness gate // duel spawns a native agent too: it takes the same readiness gate
 // ---- ONLINE MULTIPLAYER (P2P, PeerJS): host-authoritative DM / TDM. Host runs the sim (bots fill empty slots); clients send
 // inputs + shots at 30 Hz, get 20 Hz snapshots (100 ms interpolation) and predict their own movement. Inert unless MP.on. ----
 const MP = { on: false, role: null, st: "idle", pub: false, mode: "tdm", map: "ascent", code: "", peer: null, hc: null, conns: new Map(), name: "", me: -1, team: 0, sq: 0, ping: 0,
@@ -11661,7 +11675,7 @@ function mpStart() { // host: build the match, number every unit, seat every con
   MP.m5 = 0; if (MP.mode === "five") return mpStart5();
   if (!xReady) { mpMsg("The game engine isn't ready yet. Try again in a moment."); return mpUI(); }
   const tdm = MP.mode === "tdm"; MP.ev = [];
-  FV.pick = MP.map || "ascent"; FV.dmN = 9; MP.starting = 1;
+  FV.pick = MP.map || "ascent"; window.xQPick = null; FV.dmN = 9; MP.starting = 1;
   MP.conns.forEach((c) => mpSend(c.conn, { t: "starting" })); // clients suspend their 10 s silence watchdog (capped) while the map builds
   mpMsg("Loading the map…"); mpUI();
   running = false; xGo(tdm ? startTDM : startDM); FV.dmN = 0;
@@ -11698,7 +11712,7 @@ function mpCliStart(m) {
   if (m.v !== MP_V) return mpLost("The host runs a different game version.");
   MP.m5 = 0; if (m.mode === "five") return mpCliStart5(m);
   if (!xReady) return mpLost("The game engine isn't ready yet.");
-  const tdm = m.mode === "tdm"; FV.pick = m.map; FV.dmN = 9;
+  const tdm = m.mode === "tdm"; FV.pick = m.map; window.xQPick = null; FV.dmN = 9;
   MP.me = m.you; MP.team = m.team; MP.cl = true; MP.inT = 0; MP.sq = 0;
   try { $("result").style.display = "none"; } catch (e) {}
   running = false; xGo(tdm ? startTDM : startDM); FV.dmN = 0;
@@ -11920,7 +11934,7 @@ function mpMe5(c) { const s = FV.bs[c.nm]; return s ? s.cr | 0 : 0; }
 function mpStart5() {
   if (MP.starting) return;
   const sw = window.xSwift; MP.ev = []; MP.u5 = null; MP.spSt = "";
-  FV.pick = MP.map || "ascent"; FV.dm = false; FV.tdm = false; FV.srOn = 0; window.xSwift = false; MP.starting = 1;
+  FV.pick = MP.map || "ascent"; window.xQPick = null; FV.dm = false; FV.tdm = false; FV.srOn = 0; window.xSwift = false; MP.starting = 1;
   MP.conns.forEach((c) => mpSend(c.conn, { t: "starting" })); // clients suspend their 10 s silence watchdog (capped) while the map builds
   mpMsg("Loading the map…"); mpUI();
   running = false; xGo(startFive); window.xSwift = sw;
@@ -11998,7 +12012,7 @@ function mpHost5(c, u, m) { // returns true when handled
 // ---- client ----
 function mpCliStart5(m) {
   if (!xReady) return mpLost("The game engine isn't ready yet.");
-  const sw = window.xSwift; FV.pick = m.map; FV.dm = false; FV.tdm = false; FV.srOn = 0; window.xSwift = false;
+  const sw = window.xSwift; FV.pick = m.map; window.xQPick = null; FV.dm = false; FV.tdm = false; FV.srOn = 0; window.xSwift = false;
   MP.me = m.you; MP.team = m.team; MP.cl = true; MP.inT = 0;
   try { $("result").style.display = "none"; } catch (e) {}
   running = false; xGo(startFive); window.xSwift = sw;
@@ -13032,7 +13046,9 @@ var NM_RP={f:-1,n:0,full(){const f=typeof XNF==='number'?XNF:null;if(f===null)re
 {const freeze=xFreeze;xFreeze=function(g){if(g&&g.userData.nativeMap){g.updateMatrixWorld(true);return;}return freeze(g);};}
 // Match startup waits for the complete scene and collisions. Failure keeps the map unstarted.
 function nmLaunch(fn,self,args,key){return nmEnsure(key).then(()=>{const result=fn.apply(self,args);nmOverlay(null);return result;});}
-function nmWrap(fn,retake){return function(){let key=retake?'ascent':FV.pick||'ascent';if(key==='random')key=['ascent','bind','haven','split','lotus','breeze'][Math.floor(Math.random()*6)];if(!retake)FV.pick=key;const self=this,args=arguments;return nmLaunch(fn,self,args,key);};}
+// The wrapped start reads FV.pick for FV.map, so it sees the drawn map; a Random pick is restored afterwards (Play again
+// draws a new map and the pre-match picker still shows Random) instead of turning into whichever map was drawn.
+function nmWrap(fn,retake){return function(){const rnd=!retake&&FV.pick==='random';let key=retake?'ascent':FV.pick||'ascent';if(key==='random')key=['ascent','bind','haven','split','lotus','breeze'][Math.floor(Math.random()*6)];if(!retake)FV.pick=key;const self=this,args=arguments,back=()=>{if(rnd&&FV.pick===key)FV.pick='random';};return nmLaunch(fn,self,args,key).then(r=>{back();return r;},e=>{back();throw e;});};}
 startFive=nmWrap(startFive);dmStart0=nmWrap(dmStart0);start=nmWrap(start,true);
 {const build=ensureMapBuilt;ensureMapBuilt=function(n){if(NM.current&&(n==='five'||n==='retake'))return;return build.apply(this,arguments);};}
 {const build=xBuildMap;xBuildMap=function(k){if(NM.current&&NM.current.key===k)return;return build.apply(this,arguments);};const dress=xDressMap;xDressMap=function(k){if(NM.current&&(k===NM.current.key||k==='retake'))return null;return dress.apply(this,arguments);};}
@@ -13414,7 +13430,7 @@ mpCreate=function(pub,mode){MP.mode=mode||MP.mode;netConnect(true,mpCode(),pub);
 mpJoin=function(code){code=String(code||'').toUpperCase();if(!/^[A-HJ-NP-Z2-9]{6}$/.test(code)){mpMsg('Enter the six-character room code.');return;}netConnect(false,code,false);};
 mpQuick=async function(mode){MP.mode=mode||MP.mode;mpMsg('Finding a live server room…');try{const r=await fetch(NET.url+'/rooms'),data=await r.json(),room=data.rooms.find(r=>r.mode===MP.mode&&r.players<10&&(window.xQMap==='random'||r.map===(window.xQMap||MP.map)));if(room)netConnect(false,room.code,true);else mpCreate(true,MP.mode);}catch(e){mpMsg('Room list unavailable. Try a private room.');}};
 mpStart=function(){if(NET.host&&MP.st==='room')netSend({t:'start'});};
-const netUI0=mpUI;mpUI=function(){netUI0();const start=mpEl('xOnStart');if(start){start.hidden=!NET.host;start.disabled=MP.st!=='room';}const map=mpEl('xOnMap');if(map)map.disabled=!!MP.on;const wait=mpEl('xOnWait');if(wait&&NET.host)wait.textContent='Server room ready';document.querySelectorAll('#xOn [data-om]').forEach(b=>{b.disabled=MP.on;});};
+const netUI0=mpUI;mpUI=function(){netUI0();const start=mpEl('xOnStart');if(start){start.hidden=!NET.host;start.disabled=MP.st!=='room';}const map=mpEl('xOnMap');if(map){map.disabled=!!MP.on;/* outside a room it is the lobby map choice that Create / Quick Match use (window.xQMap); in a room, the room's map */if(!MP.on&&typeof window.xQMap==='string'&&map.value!==window.xQMap)map.value=window.xQMap;}const wait=mpEl('xOnWait');if(wait&&NET.host)wait.textContent='Server room ready';document.querySelectorAll('#xOn [data-om]').forEach(b=>{b.disabled=MP.on;});};
 // Movement reconciliation: the server echoes the last input it applied (row[19]) and how long it has applied it (row[20]).
 // The page keeps its predicted path and the send time of every input, and compares the server position with where its own
 // prediction was at that moment, not with where it is now. The current position runs ahead of every snapshot by the round
@@ -14474,11 +14490,11 @@ xReady = true; // every mode is initialised; lobby launches may now start them
   function xLdSet(id, k, v) { var e = document.getElementById(id); if (e) e[k] = v; }
   function show(map, mode, title) {
     clearTimeout(hideT); clearInterval(tipT);
-    map = PAL[map] ? map : "ascent";
+    var known = !!PAL[map]; // "random" (or an unknown key) is resolved while loading; fill() shows the real map then
     var tab = document.querySelector("#xQueue [role=tab].on");
     xLdSet("xLdMode", "textContent", (mode || (tab ? tab.textContent : "UNRATED")).toUpperCase());
-    xLdSet("xLdMap", "textContent", String(title || map).toUpperCase());
-    el.style.setProperty("--x-ld-bg", 'url("models/valorant/maps/'+map+'/loading.jpg") center/cover, '+PAL[map]);
+    xLdSet("xLdMap", "textContent", String(title || (known ? map : map === "random" ? "random map" : "")).toUpperCase());
+    el.style.setProperty("--x-ld-bg", known ? 'url("models/valorant/maps/'+map+'/loading.jpg") center/cover, '+PAL[map] : "radial-gradient(120% 90% at 50% 25%,#3a4652,#1b2733 50%,#0f1923)");
     xLdSet("xLdA", "innerHTML", ""); xLdSet("xLdB", "innerHTML", ""); xLdSet("xLdAg", "textContent", "");
     window.xLdOn = true; try { if (window.xLdKeys) window.xLdKeys(false); } catch (e) {}
     window.xLdAgFrac = 0; // agent-load fraction, reported to an online server while loading (lp)
