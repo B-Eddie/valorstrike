@@ -1,5 +1,5 @@
 // Offline bot utility casts that had no bot path (index.html xBHotHands / xBSlowOrb / xBShock / xBParanoia / xBCage /
-// xBTrail / xBTurret), on the real page (work/page_harness.cjs): team-aware with the player's values. Hot Hands spreads to
+// xBTrail / xBTurret / xBBlaze / xBBarrier), on the real page (work/page_harness.cjs): team-aware with the player's values. Hot Hands spreads to
 // XHOT.r and burns the other team 60/s (the caster's team a third, the caster never), Slow Orb halves speed in 3.5 m for 7 s,
 // Shock Bolt 75 in 3 m on landing, Paranoia nearsights everyone it passes but Omen (the player too), Cyber Cage is a 7 s
 // cylinder smoke, Trailblazer concusses in 3.5 m and bites the nearest for 30, Turret: nothing before deploy + windup, then
@@ -59,7 +59,25 @@ const ok=(c,m)=>{if(!c)fail(m);};
   eq(h,[0,0,24],'bot Turret: nothing through the 2.7 s deploy + 0.75 s windup, then a 3 x 8 burst at 10 m');eq(D(A0+'|'+B0),0,'the turret never shoots its own team');
   xe('__t.hp=0;true');await run(100);eq(xe('XBTU.length'),0,'a shot-down turret is removed');
   xe('xBTurret(bots[0],false,bots[0].g.position,player.x,player.z);jClear();true');eq(xe('XBTU.length'),0,'a round clear removes bot turrets');
+  // ---- Blaze: enemy bot Phoenix 3 m from the player: the 8 m wall across its line 3 m out, 8 s, 30/s to the other team (the
+  // caster's team a third), blocks sight across it, not along it ----
+  place([['b',0,0,-3],['a',0,2,0],['b',1,-2,0]]);keep();xe('blocked=()=>false;window.__bz=xBBlaze(bots[0],false,bots[0].g.position,player.x,player.z);blocked=__bl;true');
+  eq(xe('[Math.round(Math.hypot(__bz.p.x-bots[0].g.position.x,__bz.p.z-bots[0].g.position.z)*10)/10,__bz.t,__bz.en,__bz.own===bots[0],Math.round(Math.abs(__bz.ax)*100)/100,J.walls.includes(__bz)]'),[3,8,true,true,1,true],'Blaze: 3 m out on the line to the player, across it (along x), 8 s, enemy-owned');
+  await run(1000);{const bp=D('P|'+B0),ba=D(A0+'|'+B0),bm=D(B1+'|'+B0);ok(bp>=25&&bp<=36,'Blaze burns the player ~30/s ('+bp+')');ok(ba>=25&&ba<=36,'and the ally bot in it ('+ba+')');ok(bm>=7&&bm<=13,'the caster\'s mate in it takes a third ('+bm+')');}
+  eq(xe('(()=>{const o=__U.o,a=new THREE.Vector3(o.x,1.5,o.z-6),d=new THREE.Vector3(0,0,1);const b2=new THREE.Vector3(o.x+6,1.5,o.z-6);return [jBlock(a,d,9),jBlock(b2,d,9)];})()'),[true,false],'Blaze blocks sight across it, not 6 m to the side');
+  await run(7300);eq(xe('J.walls.includes(__bz)'),false,'Blaze gone after 8 s');
+  // ---- Barrier Orb: enemy bot Sage 5 m from the player: the 6 m ice wall 2.5 m out, solid (movement, sight), 600 HP to gunfire, 40 s ----
+  place([['b',0,0,-5]]);keep();xe('blocked=()=>false;window.__bw=xBBarrier(bots[0],false,bots[0].g.position,player.x,player.z);blocked=__bl;true');
+  eq(xe('[XBSW.length,__bw.hp,__bw.t,Math.round(Math.hypot(__bw.p.x-bots[0].g.position.x,__bw.p.z-bots[0].g.position.z)*10)/10,solids.includes(__bw.m),__bw.m.userData.sw===__bw]'),[1,600,40,2.5,true,true],'Barrier: one wall 2.5 m out, 600 HP, 40 s, in solids');
+  eq(xe('(()=>{const w=__bw,y=player.y||0;return [sgBlk(w.p.x,w.p.z,0.3,y),sgBlk(w.p.x+w.ax*2.5,w.p.z+w.az*2.5,0.3,y),sgBlk(w.p.x+w.ax*4,w.p.z+w.az*4,0.3,y),sgBlk(w.p.x-w.az*1,w.p.z+w.ax*1,0.3,y),blocked(w.p.x,w.p.z,0.3,y)];})()'),[true,true,false,false,true],'Barrier blocks movement along its 6 m (sgBlk / blocked), not past its end or 1 m in front');
+  eq(xe('(()=>{const w=__bw,y=(player.y||0)+1.5,q=bots[0].g.position;XLOS.clear();return losRaw(new THREE.Vector3(player.x,y,player.z),new THREE.Vector3(q.x,(q.y||0)+1.5,q.z));})()'),false,'Barrier blocks sight / shots between the player and the Sage');
+  xe('sgDmg(250,__bw.m.userData.sw);true');eq(xe('[XBSW.length,__bw.hp,J.sw]'),[1,350,null],'gunfire on a bot barrier damages that barrier (not the player\'s)');
+  xe('sgDmg(400,__bw.m.userData.sw);true');eq(xe('[XBSW.length,solids.includes(__bw.m)]'),[0,false],'a broken barrier is gone from the world');
+  xe('blocked=()=>false;window.__bw=xBBarrier(bots[0],false,bots[0].g.position,player.x,player.z);window.__bw2=xBBarrier(bots[0],false,bots[0].g.position,player.x+5,player.z);blocked=__bl;true');eq(xe('[XBSW.length,XBSW[0]===__bw2,solids.includes(__bw.m)]'),[1,true,false],'one barrier per Sage');
+  xe('__bw2.t=0.1;true');await run(200);eq(xe('XBSW.length'),0,'barrier expires');
+  xe('blocked=()=>false;xBBarrier(bots[0],false,bots[0].g.position,player.x,player.z);blocked=__bl;jClear();true');eq(xe('XBSW.length'),0,'a round clear removes bot barriers');
+  xe('blocked=(x,z)=>Math.hypot(x-bots[0].g.position.x,z-(bots[0].g.position.z+2.5))<0.4;window.__bw=xBBarrier(bots[0],false,bots[0].g.position,player.x,player.z);blocked=__bl;true');ok(xe('Math.hypot(__bw.p.x-bots[0].g.position.x,__bw.p.z-bots[0].g.position.z)<2.2'),'Barrier set short of a wall');xe('jClear();true');
   xe('hurt=__hu;xBotDmg=__bd;xFFArea=__ff;los=__lo;blocked=__bl;bots.concat(allies).forEach(b=>{b.det=0;b.__p=null;});true');}
  if(H.errors.length>errs0)fail('page errors: '+H.errors.slice(errs0).map(e=>String(e&&e.message||e)).join(' | '));
- if(fails.length){console.log(fails.join('\n'));process.exit(1);}console.log('bot utility offline: Hot Hands, Slow Orb, Shock Bolt, Paranoia, Cyber Cage, Trailblazer, Turret team-aware with the player values');process.exit(0);
+ if(fails.length){console.log(fails.join('\n'));process.exit(1);}console.log('bot utility offline: Hot Hands, Slow Orb, Shock Bolt, Paranoia, Cyber Cage, Trailblazer, Turret, Blaze, Barrier Orb team-aware with the player values');process.exit(0);
 })().catch(e=>{console.error(e);process.exit(1);});

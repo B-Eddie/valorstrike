@@ -140,11 +140,11 @@
  //      info (defender: attackers seen / heard at this bot's site in the last 8 s), used (utility casts this round)}
  // Returns null or {phase, want: ability types in order, aim}: phase 'entry' (smokes / flashes / recon before the
  // execute; rush: right away, only if the plan said utility first), 'fake' (the fake group's utility at the other site just
- // before it rotates), 'post' (mollies / traps on the Spike when a defender comes for it), 'delay' (defenders slow the
- // push on their site), 'retake' (defenders flash / recon the planted site before going in). aim: 'site' | 'other' |
+ // before it rotates), 'post' (mollies / traps on the Spike when a defender comes for it, a wall over it last), 'delay'
+ // (defenders slow / burn / wall off the push on their site: Sage Slow Orb then Barrier Orb, Phoenix Hot Hands then Blaze), 'retake' (defenders flash / recon the planted site before going in). aim: 'site' | 'other' |
  // 'spike' | 'info'. Lurkers stay quiet. The ability itself (charges, values, effect) is the caller's existing logic.
  const UTIL={entry:['smoke','flash','recon','drone','stun','shock','fire'],entryFirst:['flash','drone','recon','smoke','stun','shock'],fake:['smoke','flash','recon','stun'],
-  post:['fire','grenade','turret','trap','slow','shock','stun'],delay:['slow','fire','smoke','stun','flash','trap','shock','grenade','recon'],retake:['flash','recon','drone','stun','smoke','shock']};
+  post:['fire','grenade','turret','trap','slow','shock','stun','wall'],delay:['slow','fire','wall','smoke','stun','flash','trap','shock','grenade','recon'],retake:['flash','recon','drone','stun','smoke','shock']};
  function utility(P,ctx){
   const used=ctx.used||0,pl=ctx.plan,e=ctx.role||{};
   if(ctx.atk){

@@ -3355,7 +3355,7 @@ function shoot(hv) {
   XWH.length = 0; ray.intersectObjects(xShotTgts(targets), true, XWH); let hit = XWH[0], wk = 1;
   if (!kn) bFx(null, ray.ray.direction, xSurfHit(hit, ray.ray.direction, 200), 200);
   if (!kn && hit) { const wb = xWall(hit, ray.ray.direction, w); if (wb) { hit = wb; wk = xPen(w).k; } } // wallbang: first hitbox past a thin wall
-  if (hit && hit.object.userData.sw) sgDmg(body);
+  if (hit && hit.object.userData.sw) sgDmg(body, hit.object.userData.sw);
   if (hit && hit.object.userData.ld) { const o = hit.object.userData.ld, n = kn ? body : wDmg(W, "body", hit.distance); o.hp -= n; vmHit(hit.point, n, false, o.hp <= 0); }
   if (hit && hit.object.userData.bot) {
     const b = hit.object.userData.bot, hs = !!hit.object.userData.head;
@@ -3413,7 +3413,7 @@ function xPellets(W, targets) {
       if (i < 4) bFx(null, d, xSurfHit(hit, d, 200), 200); // a few tracers only
       if (!hit) continue;
       const u = hit.object.userData;
-      if (u.sw) sgDmg(wDmg(D, "body", hit.distance));
+      if (u.sw) sgDmg(wDmg(D, "body", hit.distance), u.sw);
       if (u.ld) u.ld.hp -= wDmg(D, "body", hit.distance);
       if (u.bot) { const b = u.bot, hs = !!u.head, legs = !hs && b.g && hit.point.y - b.g.position.y < 0.9;
         XPM.set(b, (XPM.get(b) || 0) + wDmg(D, hs ? "head" : legs ? "legs" : "body", hit.distance)); if (hs || !XPP.has(b)) XPP.set(b, hs ? -1 : 1); if (hs) b._pp = hit.point; else if (!b._pp) b._pp = hit.point; }
@@ -8314,9 +8314,10 @@ function jFxTick(dt) {
 const sgWallGeo = new THREE.BoxGeometry(6, 3, 0.4), slowGeo = new THREE.CircleGeometry(3.5, 32);
 const sgNo = () => blip(120, 0.08, "square", 0.1);
 function sgWallD(x, z) { const w = J.sw, dx = x - w.p.x, dz = z - w.p.z, t = Math.max(-3, Math.min(3, dx * w.ax + dz * w.az)); return Math.hypot(dx - w.ax * t, dz - w.az * t); }
-function sgBlk(x, z, r, y) { try { return !!(J.sw && J.sw.m && (y || 0) + 0.5 < 3 && sgWallD(x, z) < r + 0.2); } catch (e) { return false; } return !!(J.sw && (y || 0) + 0.5 < 3 && sgWallD(x, z) < r + 0.2); }
+function sgBlk(x, z, r, y) { try { return !!(J.sw && J.sw.m && (y || 0) + 0.5 < 3 && sgWallD(x, z) < r + 0.2) || (XBSW.length > 0 && xBSwBlk(x, z, r, y)); } catch (e) { return false; } return !!(J.sw && (y || 0) + 0.5 < 3 && sgWallD(x, z) < r + 0.2); }
 function sgWallEnd(msg) { const w = J.sw; if (!w) return; scene.remove(w.m); const i = w.arr.indexOf(w.m); if (i >= 0) w.arr.splice(i, 1); J.sw = null; if (msg) { say(msg, 900); blip(300, 0.25, "square", 0.12); } }
-function sgDmg(n) { if (!J.sw) return; J.sw.hp -= n; J.sw.m.material.opacity = 0.55 + 0.35 * Math.max(0, J.sw.hp / 600); if (J.sw.hp <= 0) sgWallEnd("Barrier broken"); }
+function sgDmg(n, w) { if (w && w !== true) return xBSwDmg(w, n); if (!J.sw) return; // w: the hit mesh's userData.sw (true: the player's barrier, else a bot barrier)
+  J.sw.hp -= n; J.sw.m.material.opacity = 0.55 + 0.35 * Math.max(0, J.sw.hp / 600); if (J.sw.hp <= 0) sgWallEnd("Barrier broken"); }
 function sgSlow(p) { return (J.slz || []).some((z) => Math.hypot(p.x - z.p.x, p.z - z.p.z) < 3.5) ? 0.5 : 1; }
 function sgLook(list, far, cos) { const e = pEyeTo(PE_V), d = jAim(); return list.find((a) => { const v = new THREE.Vector3(a.g.position.x, 1, a.g.position.z).sub(e), l = v.length() || 0.01; return l < far && v.dot(d) / l > cos; }); }
 function sgKey(code) {
@@ -9354,6 +9355,27 @@ function xBTurTick(dt) { // every bot turret: shot down at 0 HP; fires (XTUR, as
       const by = (o && o.name) || "Killjoy"; xBotDmg(tg, xTurDmg(td), by, "Turret"); if (tg === player) { try { updHud(); } catch (er) {} if (player.hp <= 0) pDie(by, "Turret"); } else if (tg.alive) flash(tg); try { SFX.ab("tShot", T.p); } catch (er) {}
       if (++T.shot >= XTUR.shots) { T.shot = 0; T.cd += XTUR.cycle - (XTUR.shots - 1) * XTUR.gap; } else T.cd += XTUR.gap; } } }
 function xBTurClr() { while (XBTU.length) xBTurGone(XBTU[XBTU.length - 1]); }
+// Phoenix Blaze (C) and Sage Barrier Orb (C) for offline bots (the plan's 'wall' utility: defenders cut off a push, attackers
+// cover the planted Spike), with the player's values. Blaze: the player's wall (blazeGeo 8 x 3 m) across the bot's line toward
+// tx, tz, 3 m out (short of a wall), 8 s, blocks sight (jBlock), burns 30 / s through mpAreaHit (team-aware, o.loc) and heals
+// Phoenix 15 / s inside it. Barrier: the player's ice wall (sgWallGeo 6 x 3 x 0.4 m) 2.5 m out on that line (the server's
+// barrier distance), solid like J.sw: in solids (stops shots and sight), blocks movement through sgBlk, 600 HP to gunfire
+// (sgDmg -> xBSwDmg), 40 s; one per Sage, cleared each round.
+function xBWallAt(from, tx, tz, out) { const dx = tx - from.x, dz = tz - from.z, l = Math.hypot(dx, dz) || 1, fx = dx / l, fz = dz / l, y = from.y || 0; let d = out;
+  while (d > 1 && blocked(from.x + fx * d, from.z + fz * d, 0.3, y)) d -= 0.25; return { x: from.x + fx * d, z: from.z + fz * d, y, yaw: Math.atan2(-fx, -fz) }; }
+function xBBlaze(b, al, from, tx, tz) { const P = xBWallAt(from, tx, tz, 3), w = { p: new THREE.Vector3(P.x, P.y + 1.5, P.z), ax: Math.cos(P.yaw), az: -Math.sin(P.yaw), t: 8, own: b, en: !al, loc: 1 };
+  w.m = jM(blazeGeo, fireMat(0xff7a1a, 0.7)); w.m.position.copy(w.p); w.m.rotation.y = P.yaw; scene.add(w.m); J.walls.push(w); try { SFX.wall(); SFX.ab("blaze", w.p); } catch (er) {} feed("Phoenix ▸ Blaze"); return w; }
+var XBSW = []; // bot Sage barriers (var: sgBlk may run before this line)
+function xBSwD(w, x, z) { const dx = x - w.p.x, dz = z - w.p.z, t = Math.max(-3, Math.min(3, dx * w.ax + dz * w.az)); return Math.hypot(dx - w.ax * t, dz - w.az * t); }
+function xBSwBlk(x, z, r, y) { y = y || 0; for (let i = 0; i < XBSW.length; i++) { const w = XBSW[i], low = w.p.y - 1.5; if (y >= low + 2.5 || y + 1.8 <= low) continue; if (xBSwD(w, x, z) < r + 0.2) return true; } return false; }
+function xBBarrier(b, al, from, tx, tz) { for (let i = XBSW.length - 1; i >= 0; i--) if (XBSW[i].own === b) xBSwGone(XBSW[i]); // one barrier per Sage
+  const P = xBWallAt(from, tx, tz, 2.5), ice = xBBarrier.ice || (xBBarrier.ice = new THREE.MeshPhongMaterial({ color: 0xc8f6ff, emissive: 0x1f6f95, specular: 0xffffff, shininess: 120, flatShading: true, transparent: true, opacity: 0.9 }));
+  const m = new THREE.Mesh(sgWallGeo, ice.clone()), w = { m, p: new THREE.Vector3(P.x, P.y + 1.5, P.z), ax: Math.cos(P.yaw), az: -Math.sin(P.yaw), t: 40, hp: 600, own: b, en: !al };
+  m.position.copy(w.p); m.rotation.y = P.yaw; m.userData.sw = w; scene.add(m); solids.push(m); XBSW.push(w); try { SFX.wall(); } catch (er) {} feed("Sage ▸ Barrier Orb"); return w; }
+function xBSwGone(w) { scene.remove(w.m); const i = solids.indexOf(w.m); if (i >= 0) solids.splice(i, 1); const j = XBSW.indexOf(w); if (j >= 0) XBSW.splice(j, 1); try { w.m.material.dispose(); } catch (er) {} }
+function xBSwDmg(w, n) { if (XBSW.indexOf(w) < 0) return; w.hp -= n; w.m.material.opacity = 0.55 + 0.35 * Math.max(0, w.hp / 600); if (w.hp <= 0) { xBSwGone(w); feed("Sage ▸ Barrier broken"); blip(300, 0.25, "square", 0.12); } }
+function xBSwTick(dt) { for (let i = XBSW.length - 1; i >= 0; i--) { const w = XBSW[i]; if ((w.t -= dt) <= 0) xBSwGone(w); } }
+function xBSwClr() { while (XBSW.length) xBSwGone(XBSW[XBSW.length - 1]); }
 function botAb(b, dt, see, tg, from) {
   if (!jOn()) return; // abilities live with the agent kit (Retake + 5v5)
   const A = b.ab || (b.ab = { t: 0, smk: true, cb: 2, rb: true, rbT: 2 + Math.random() * 6, saw: false });
@@ -9385,7 +9407,7 @@ function botAb(b, dt, see, tg, from) {
 function jClear() {
   drEnd();
   J.smokes.concat(J.walls, J.zones, J.orbs, J.arrows, J.fx, J.cbs).forEach((s) => jRel(s.m)); J.smokes = []; J.walls = []; J.zones = []; J.orbs = []; J.arrows = []; J.fx = []; J.cbs = [];
-  if (J.ribM) scene.remove(J.ribM); J.rib = 0; J.hf = 0; XRCN.g++; XHFU.g++; jUnreveal(); $("xWh").style.opacity = 0; sgClear(); rsClear(); bcClear(); try { xKnClr(); xBTurClr(); } catch (e) {}
+  if (J.ribM) scene.remove(J.ribM); J.rib = 0; J.hf = 0; XRCN.g++; XHFU.g++; jUnreveal(); $("xWh").style.opacity = 0; sgClear(); rsClear(); bcClear(); try { xKnClr(); xBTurClr(); xBSwClr(); } catch (e) {}
 }
 function resetBotRoundAbilities() { // per-round bot ability state; each kit re-inits lazily when its key is null
   try { [].concat(bots || [], allies || []).forEach((b) => { const A = b && b.ab; if (!A) return;
@@ -9498,7 +9520,7 @@ function jTick(dt) {
   for (const k in J.cd) J.cd[k] = Math.max(0, J.cd[k] - dt);
   XSU.value += dt;
   J.smokes = J.smokes.filter((s) => { s.t -= dt; s.m.material.opacity = 0.6 * Math.min(1, s.t / 0.5); const sm = s.m.material.uniforms; if (sm) { sm.uO.value = s.m.material.opacity / 0.6; s.a = (s.a || 0) + dt; const k = Math.min(1, s.a / 0.3); const g = 0.3 + 0.7 * (1 - (1 - k) ** 3), sx = (s.r || 4) / 4; if (s.cyl) s.m.scale.set(sx, g, sx); else s.m.scale.setScalar(sx * g); } if (s.t > 0) return true; jRel(s.m); return false; });
-  jCbTick(dt); jFxTick(dt); sgTick(dt); rsTick(dt); bcTick(dt); xBTurTick(dt);
+  jCbTick(dt); jFxTick(dt); sgTick(dt); rsTick(dt); bcTick(dt); xBTurTick(dt); xBSwTick(dt);
   const hn = $("hint"); if (hn && J.pick !== "Jett" && hn.textContent.includes(KITS.Jett.h)) hn.textContent = hn.textContent.replace(KITS.Jett.h, K().h);
   const u = K().u, cq = ["jQ", J.q, J.q + "", J.cd.q / 0.6], ce = ["jE", J.e, J.e ? "1" : "Used", J.cd.e / 0.4];
   const sl = J.pick === "Breach" || J.pick === "Chamber" ? bcSl(u) : J.pick === "Cypher" ? cySl(u) : J.pick === "Raze" || J.pick === "Skye" ? rsSl(u) : J.pick === "Omen" || J.pick === "Killjoy" ? okSl(u) : J.pick === "Sage" || J.pick === "Reyna" ? sgSl(u, cq) : J.pick === "Phoenix" ? [["jC", J.c, J.c + "", J.cd.c / 0.6], cq, ["jE", J.e, J.e > 0 ? J.e + "" : J.tk + "/2 kills", J.cd.e / 0.6], ["jX", J.rib > 0 || J.ult >= u, J.rib > 0 ? Math.ceil(J.rib) + " s" : J.ult + "/" + u, J.rib > 0 ? 1 - J.rib / 10 : 1 - J.ult / u]]
@@ -15011,11 +15033,11 @@ window.xAbilityFP = { XAF, XAF_SET, XAF_K, XAF_GUN, phase: xAfPhase, gunPhase: x
  //      info (defender: attackers seen / heard at this bot's site in the last 8 s), used (utility casts this round)}
  // Returns null or {phase, want: ability types in order, aim}: phase 'entry' (smokes / flashes / recon before the
  // execute; rush: right away, only if the plan said utility first), 'fake' (the fake group's utility at the other site just
- // before it rotates), 'post' (mollies / traps on the Spike when a defender comes for it), 'delay' (defenders slow the
- // push on their site), 'retake' (defenders flash / recon the planted site before going in). aim: 'site' | 'other' |
+ // before it rotates), 'post' (mollies / traps on the Spike when a defender comes for it, a wall over it last), 'delay'
+ // (defenders slow / burn / wall off the push on their site: Sage Slow Orb then Barrier Orb, Phoenix Hot Hands then Blaze), 'retake' (defenders flash / recon the planted site before going in). aim: 'site' | 'other' |
  // 'spike' | 'info'. Lurkers stay quiet. The ability itself (charges, values, effect) is the caller's existing logic.
  const UTIL={entry:['smoke','flash','recon','drone','stun','shock','fire'],entryFirst:['flash','drone','recon','smoke','stun','shock'],fake:['smoke','flash','recon','stun'],
-  post:['fire','grenade','turret','trap','slow','shock','stun'],delay:['slow','fire','smoke','stun','flash','trap','shock','grenade','recon'],retake:['flash','recon','drone','stun','smoke','shock']};
+  post:['fire','grenade','turret','trap','slow','shock','stun','wall'],delay:['slow','fire','wall','smoke','stun','flash','trap','shock','grenade','recon'],retake:['flash','recon','drone','stun','smoke','shock']};
  function utility(P,ctx){
   const used=ctx.used||0,pl=ctx.plan,e=ctx.role||{};
   if(ctx.atk){
@@ -15198,9 +15220,9 @@ if(typeof fBotBuy==='function'){const fb0=fBotBuy;fBotBuy=function(n){
 // agent ability types c / q / e (server/src/abilities.js types) and the offline bot casts (index.html xBHotHands ...) for the
 // ones that had no bot path; reach as the server's planUtility
 const XBV_TY={Jett:['smoke','updraft','dash'],Phoenix:['wall','fire','flash'],Sova:['drone','shock','recon'],Sage:['wall','slow','heal'],Reyna:['leer','heal','dismiss'],Omen:['teleport','flash','smoke'],Killjoy:['fire','trap','turret'],Raze:['drone','satchel','grenade'],Skye:['heal','drone','flash'],Breach:['shock','flash','stun'],Cypher:['trap','smoke','recon'],Chamber:['trap','headhun','teleport']};
-const XBV_CAST={Phoenix:{fire:()=>typeof xBHotHands==='function'&&xBHotHands},Sage:{slow:()=>typeof xBSlowOrb==='function'&&xBSlowOrb},Sova:{shock:()=>typeof xBShock==='function'&&xBShock},
+const XBV_CAST={Phoenix:{fire:()=>typeof xBHotHands==='function'&&xBHotHands,wall:()=>typeof xBBlaze==='function'&&xBBlaze},Sage:{slow:()=>typeof xBSlowOrb==='function'&&xBSlowOrb,wall:()=>typeof xBBarrier==='function'&&xBBarrier},Sova:{shock:()=>typeof xBShock==='function'&&xBShock},
  Omen:{flash:()=>typeof xBParanoia==='function'&&xBParanoia},Cypher:{smoke:()=>typeof xBCage==='function'&&xBCage},Skye:{drone:()=>typeof xBTrail==='function'&&xBTrail},Killjoy:{turret:()=>typeof xBTurret==='function'&&xBTurret}};
-const XBV_REACH={fire:13,slow:15,shock:40,flash:25,smoke:10,drone:20,turret:30};
+const XBV_REACH={fire:13,slow:15,shock:40,flash:25,smoke:10,drone:20,turret:30,wall:13};
 function xbvUtilX(b){
  const C=typeof nmActive==='function'&&nmActive(),s=FV.sp;if(!C||mode!=='five'||FV.dm||FV.buy>0||!window.BotBrain||!s||!b||!b.g||!C.meta||!C.meta.sites||typeof xBAtk!=='function')return null;
  const al=allies.indexOf(b)>=0,team=al?allies:bots,atk=xBAtk(al),P=xbvPlan(b,team,atk,C),S=xbvStrat(team,atk,C);
@@ -15234,7 +15256,7 @@ if(typeof botAb==='function'){const ba0=botAb;botAb=function(b,dt,see,tg,from){
  if(A&&ag==='Raze'&&it&&it.phase==='delay'&&!see&&A.rzb)A.rlk={x:it.x,z:it.z,t:0}; // defenders: Boom Bot after the push
  X.U.sm=null;const c0=ch?ch.c+ch.q+ch.e:0,r=ba0.apply(this,arguments);
  if(X.U.sm&&ch&&ch.c+ch.q+ch.e<c0)xbvUsed(b,X,X.U.sm,'smoke');else if(ag==='Sova'&&it&&ch&&ch.e<e0)xbvUsed(b,X,it,'recon');
- // the plan's utility with no older bot path (Hot Hands, Slow Orb, Shock Bolt, Paranoia, Cyber Cage, Trailblazer, Turret):
+ // the plan's utility with no older bot path (Hot Hands, Slow Orb, Shock Bolt, Paranoia, Cyber Cage, Trailblazer, Turret, Blaze, Barrier Orb):
  // the first wanted type this agent has; a type an older hook owns (xBChoke / xBFl / Recon / Nanoswarm / Paint Shells) waits for it
  if(it&&b.alive&&A&&XBV_CAST[ag]&&ch&&X.U.it===it){const ty=XBV_TY[ag];for(const w of it.want){const i=ty.indexOf(w);if(i<0)continue;const k='cqe'[i],cf=XBV_CAST[ag][w],fn=cf&&cf();
   if(!cf){if(ch[k]>=1)break;continue;}if(!fn||!(ch[k]>=1))continue;
