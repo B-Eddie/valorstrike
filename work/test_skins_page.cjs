@@ -26,7 +26,7 @@ const through=async()=>{for(let t=0;t<20000;t+=100){if(xe('running')&&!xe('!!win
  xe('xskClose();true');assert.ok(H.$('xSk').hidden);assert.equal(xe('XSK.pv'),null,'preview renderer released');
  xe('xskEquip("Vandal","prime.1");true');
  // offline 5v5: skins on the viewmodel and on bot guns
- xe('XSK.botSkins=true;FV.pick="ascent";window.xQPick="ascent";try{mpSet("ascent")}catch(e){}true');
+ xe('XSK.botSkins=true;FV.pick="ascent";window.xQPick="ascent";try{window.xQSetMap&&window.xQSetMap(FV.pick)}catch(e){}try{mpSet("ascent")}catch(e){}true');
  H.$('pm5v5').click();await adv(50);assert.ok(await through(),'5v5 did not start');xe('for(const b of bots)b.nt=true;for(const a of allies)a.nt=true;player.hp=100;FV.buy=0;true');await frames(20);
  // Native assets are asynchronous; the headless harness supplies placeholder GLTFs. Assert routing here;
  // actual GLB bytes/textures/clips are checked by test_skin_levels and in the browser.

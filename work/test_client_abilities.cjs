@@ -42,7 +42,7 @@ const through=async agent=>{for(let t=0;t<20000;t+=100){if(xe('running')&&!xe('!
  // fast variant (test_all): every agent once, maps alternating; QA_LONG / MAPS: every agent on every map
  const RUNS=LONG||process.env.MAPS?MAPS.flatMap(m=>AGENTS.map(a=>[m,a])):AGENTS.map((a,i)=>[MAPS[i%MAPS.length],a]);
  for(const [map,agent] of RUNS){const tag=`${map} ${agent}`;H.setPhase(tag);matches++;
-  xe(`FV.pick=${JSON.stringify(map)};window.xQPick=${JSON.stringify(map)};try{mpSet(${JSON.stringify(map)})}catch(e){}true`);
+  xe(`FV.pick=${JSON.stringify(map)};window.xQPick=${JSON.stringify(map)};try{window.xQSetMap&&window.xQSetMap(FV.pick)}catch(e){}try{mpSet(${JSON.stringify(map)})}catch(e){}true`);
   H.$('pm5v5').click();await adv(50);if(!(await through(agent))){fail(`${tag}: match did not start`);continue;}
   if(xe('J.pick')!==agent){fail(`${tag}: agent select gave ${xe('J.pick')}`);}
   if(xe('FV.map')!==map)fail(`${tag}: map ${xe('FV.map')}`);

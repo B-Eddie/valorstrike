@@ -19,7 +19,7 @@ const through=async()=>{for(let t=0;t<20000;t+=100){if(xe('running')&&!xe('!!win
 // No AI: bots and allies become online-driven puppets (b.nt) so nobody ends the round while the clocks are measured.
 const freeze='for(const b of bots)b.nt=true;for(const a of allies)a.nt=true;player.hp=100;true';
 (async()=>{
- xe('FV.pick="split";window.xQPick="split";try{mpSet("split")}catch(e){}true');
+ xe('FV.pick="split";window.xQPick="split";try{window.xQSetMap&&window.xQSetMap(FV.pick)}catch(e){}try{mpSet("split")}catch(e){}true');
  H.$('pm5v5').click();await adv(50);assert.ok(await through(),'5v5 did not start');
  xe(freeze);xe('FV.buy=45;true');
  // buy phase at 1 / 5 / 20 fps
@@ -54,7 +54,7 @@ const freeze='for(const b of bots)b.nt=true;for(const a of allies)a.nt=true;play
  {xe(`${freeze};FV.sp.t=45;XRT.debt=0;true`);const t0=xe('FV.sp.t');for(let i=0;i<4;i++)H.frameMs(3000);near('fuse across four 3 s frames',t0-xe('FV.sp.t'),12,0.02);}
  // deathmatch: respawn on real time at 1 fps
  H.dispatch(H.win,H.mkEvent('keydown',{key:'Escape',code:'Escape'}));await adv(100);H.$('xHome').click();await adv(300);
- xe('FV.pick="ascent";window.xQPick=null;true');H.$('dmBtn').click();await adv(50);assert.ok(await through(),'DM did not start');
+ xe('FV.pick="ascent";window.xQPick=null;try{window.xQSetMap&&window.xQSetMap(FV.pick)}catch(e){}true');H.$('dmBtn').click();await adv(50);assert.ok(await through(),'DM did not start');
  xe('for(const b of bots)b.nt=true;true');
  const dmT0=xe('timeLeft');await run(1,5);near('DM clock 1 fps, 5 s',dmT0-xe('timeLeft'),5,0.2);
  xe('player.hp=0;DM.prt=0;true'); // the page's 1.5 s DM respawn

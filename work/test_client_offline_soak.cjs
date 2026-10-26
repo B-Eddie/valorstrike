@@ -70,14 +70,14 @@ const tStart=Date.now();
 (async()=>{
  // DM / TDM / Escalation spawn candidates on every legacy blockout map lie inside that map (they were Ascent's callouts
  // on every map: dmPts() looked for the nav graph's nodes under the wrong key).
- if(!process.env.ONLY)for(const m of ['ascent','bind','haven','split','lotus','breeze']){H.setPhase('dm spawns '+m);xe(`FV.pick=${JSON.stringify(m)};window.xQPick=null;true`);H.$('dmBtn').click();await adv(50);await through();
+ if(!process.env.ONLY)for(const m of ['ascent','bind','haven','split','lotus','breeze']){H.setPhase('dm spawns '+m);xe(`FV.pick=${JSON.stringify(m)};window.xQPick=null;try{window.xQSetMap&&window.xQSetMap(FV.pick)}catch(e){}true`);H.$('dmBtn').click();await adv(50);await through();
   const r=xe(`(()=>{const P=dmPts(),B=__nav.getB();let bx=[1e9,-1e9,1e9,-1e9];for(const b of B){bx[0]=Math.min(bx[0],b.x1);bx[1]=Math.max(bx[1],b.x2);bx[2]=Math.min(bx[2],b.z1);bx[3]=Math.max(bx[3],b.z2);}
    return {map:FV.map,n:P.length,out:P.filter(p=>p[0]<bx[0]||p[0]>bx[1]||p[1]<bx[2]||p[1]>bx[3]).map(p=>p.map(v=>+v.toFixed(1))),dup:P.length-new Set(P.map(p=>p.join())).size};})()`);
   if(r.map!==m||r.n<8||r.out.length)fail('DM spawns '+m,JSON.stringify(r));
   H.dispatch(H.win,H.mkEvent('keydown',{key:'Escape',code:'Escape'}));await adv(100);H.$('xHome').click();await adv(200);}
  for(const M of MODES){
  H.setPhase('offline '+M.n);const tm=Date.now();await toLobby();releaseAll();
- if(M.map)xe(`FV.pick=${JSON.stringify(M.map)};window.xQPick=null;true`);
+ if(M.map)xe(`FV.pick=${JSON.stringify(M.map)};window.xQPick=null;try{window.xQSetMap&&window.xQSetMap(FV.pick)}catch(e){}true`);
  H.$(M.btn).click();await adv(50);if(!(await through())){fail(M.n,'did not start (running '+xe('running')+' ld '+xe('!!window.xLdOn')+')');continue;}
  const s0=sizes(),seen={},maxS={},prog0=xe(M.prog);let progMoved=false,mid=null,series=[],bad=0,outside=0,rounds=0,lastProg=prog0;const out=[];
  for(let t=0;t<SECS*1000;t+=100){

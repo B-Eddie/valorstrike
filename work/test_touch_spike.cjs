@@ -20,7 +20,7 @@ const prompt=()=>{const d=H.$('defuse');return d&&d.style.display!=='none'&&d.fi
 // No AI (puppets), nobody can end the round while the hold is measured.
 const freeze='for(const b of bots)b.nt=true;for(const a of allies)a.nt=true;player.hp=100;player.vx=player.vz=0;true';
 (async()=>{
- xe('FV.pick="split";window.xQPick="split";try{mpSet("split")}catch(e){}true');
+ xe('FV.pick="split";window.xQPick="split";try{window.xQSetMap&&window.xQSetMap(FV.pick)}catch(e){}try{mpSet("split")}catch(e){}true');
  H.$('pm5v5').click();await adv(50);assert.ok(await through(),'5v5 did not start');
  xe(freeze);xe('FV.buy=0;buyMenu(false);true');await adv(200);
  check('touch controls shown in the round',H.$('xT').classList.contains('on'));
@@ -47,7 +47,7 @@ const freeze='for(const b of bots)b.nt=true;for(const a of allies)a.nt=true;play
  // deathmatch: no Spike, no PLANT button
  await adv(6000);H.dispatch(H.win,H.mkEvent('keydown',{key:'Escape',code:'Escape'}));await adv(100);if(H.$('xHome'))H.$('xHome').click();await adv(300);
  if(H.shown('result'))H.$('lobbyBtn').click();await adv(300);
- xe('FV.pick="ascent";window.xQPick=null;true');H.$('dmBtn').click();await adv(50);
+ xe('FV.pick="ascent";window.xQPick=null;try{window.xQSetMap&&window.xQSetMap(FV.pick)}catch(e){}true');H.$('dmBtn').click();await adv(50);
  if(await through()){await adv(200);check('PLANT button hidden in deathmatch',btn('plant').classList.contains('hid'));}else check('deathmatch started',false);
  {const e=H.errors.slice(errs0),x=H.xErrCalls.slice(x0);if(e.length||x.length)fails.push('page exceptions: '+JSON.stringify({e:e.slice(0,4),x:x.slice(0,4)}));}
  if(process.env.VERBOSE||fails.length)console.log(out.join('\n'));

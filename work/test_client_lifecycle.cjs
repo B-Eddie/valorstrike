@@ -64,7 +64,7 @@ const fails=[],marks=[];const fail=s=>fails.push(s);
  const t0=Date.now();let n=0;
  for(let c=0;c<CYCLES;c++){for(const [name,btn,map,end] of CYCLE){n++;H.setPhase(`match ${n} ${name}${map?' '+map:''}`);releaseAll();
   // the 5v5 / Spike Rush queue reads the lobby's map pick; the free-for-all modes read FV.pick
-  if(map)xe(`FV.pick=${JSON.stringify(map)};window.xQPick=${JSON.stringify(map)};try{mpSet(${JSON.stringify(map)})}catch(e){}true`);
+  if(map)xe(`FV.pick=${JSON.stringify(map)};window.xQPick=${JSON.stringify(map)};try{window.xQSetMap&&window.xQSetMap(FV.pick)}catch(e){}try{mpSet(${JSON.stringify(map)})}catch(e){}true`);
   H.$(btn).click();await adv(50);if(!(await through())){fail(`match ${n} ${name}: did not start (ld ${xe('!!window.xLdOn')} running ${xe('running')})`);await adv(500);if(res())H.$('lobbyBtn').click();continue;}
   if(map&&xe('mode')==='five'&&xe('FV.map')!==map)fail(`match ${n} ${name}: map ${xe('FV.map')} not ${map}`);
   for(let t=0;t<PLAY;t+=100){randomInput();await adv(100);if(res())break;}
@@ -77,6 +77,7 @@ const fails=[],marks=[];const fail=s=>fails.push(s);
   // and the list kept the freed map alive): outside a Lotus match nothing parented may remain live in it.
   if(xe('xLdh().filter(m=>m.parent).length'))fail(`match ${n} ${name}: gun raycast still lists ${xe('xLdh().filter(m=>m.parent).length')} map hitbox(es) in the lobby`);
   if(process.env.QA_STACKS&&n===CYCLE.length)xe('__qaGpu();for(const g of __qaLiveG)g.__c1=1;true');
+  if(n===CYCLE.length)xe('window.__qaXpg0=[...XPGEO.keys()];true');
   marks.push({n,name,map,cycle:c,via:viaResults?'results':'pause',m:measure()});}}
  if(process.env.QA_STACKS){// debug: where the orphans and the still-live geometries made in the last cycle come from
   const grp=expr=>{const by={};for(const st of xe(expr))by[st]=(by[st]||0)+1;return Object.entries(by).sort((a,b)=>b[1]-a[1]).slice(0,10).map(([k,v])=>v+' '+k.slice(0,500)).join('\n');};
@@ -85,7 +86,7 @@ const fails=[],marks=[];const fail=s=>fails.push(s);
  // leak verdict: last cycle's end vs first cycle's end (same 12 matches in between)
  const a=marks[CYCLE.length-1].m,b=marks.at(-1).m,grow=[];
  for(const k in b){if(k==='XLOS')continue;/* clears itself past 800 entries */const x=a[k]||0,y=b[k],tol=k==='heap MB'?40:Math.max(4,Math.ceil(x*.03));if(y>x+tol)grow.push(`${k}: ${x} -> ${y}`);}
- if(grow.length)fail('grew between cycles (per-match leak): '+grow.join('; '));
+ if(grow.length)fail('grew between cycles (per-match leak): '+grow.join('; ')+' (XPGEO keys new after cycle 1: '+JSON.stringify(xe('[...XPGEO.keys()].filter(k=>!window.__qaXpg0.includes(k))'))+')');
  const errors=H.errors.slice(errs0),xerr=H.xErrCalls.slice(x0);if(errors.length||xerr.length)fail('page exceptions: '+JSON.stringify({errors:errors.slice(0,6),xerr:xerr.slice(0,6)}));
  const keys=['scene.objects','geometries','orphan geometries','textures','orphan textures','harness.timers','window+document listeners','heap MB'];
  if(VERBOSE||fails.length)for(const m of marks)console.log(String(m.n).padStart(2),(m.name+(m.map?' '+m.map:'')).padEnd(22),m.via.padEnd(7),keys.map(k=>k.replace('scene.','').replace('orphan ','o.').replace('geometries','geo').replace('textures','tex').split(' ')[0]+'='+m.m[k]).join(' '));

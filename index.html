@@ -8814,7 +8814,7 @@ function cyRm(W) { scene.remove(W.m); W.an.forEach((o) => scene.remove(o)); }
 function cyWire(cx, cz, ax, az, own) { // wire across (ax,az) between the nearest walls on each side (2.5 m if none within 8 m)
   const end = (s) => { for (let r = 0.25; r <= 8; r += 0.25) if (blocked(cx + ax * s * r, cz + az * s * r, 0.05, 0)) return Math.max(0.3, r - 0.15); return 2.5; };
   const r1 = end(1), r2 = end(-1), A = { x: cx + ax * r1, z: cz + az * r1 }, B = { x: cx - ax * r2, z: cz - az * r2 };
-  const m = new THREE.Mesh(xG("Box", 0.03, 0.03, r1 + r2), fireMat(0x3fd0c0, 0.75)); m.position.set((A.x + B.x) / 2, 0.35, (A.z + B.z) / 2); m.rotation.y = Math.atan2(ax, az); scene.add(m);
+  const m = new THREE.Mesh(xG("Box", 0.03, 0.03, 1), fireMat(0x3fd0c0, 0.75)); m.scale.z = r1 + r2; m.position.set((A.x + B.x) / 2, 0.35, (A.z + B.z) / 2); m.rotation.y = Math.atan2(ax, az); scene.add(m);
   const W = { a: A, b: B, m, an: [], hp: 20, own, ck: 0, arm: XAB_WIND.trapwire }; // arms 0.7 s after placement (wiki windup)
   [A, B].forEach((p) => { const o = new THREE.Mesh(xG("Box", 0.2, 0.2, 0.2), fireMat(0xe8e8e4, 0.95)); o.position.set(p.x, 0.35, p.z); o.userData.cyw = W; scene.add(o); W.an.push(o); });
   BC.cw.push(W); return W;
