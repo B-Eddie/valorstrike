@@ -1919,7 +1919,7 @@ if (!NO3) {
       return (tt === 0.5 && tk === 0.28 && v1 < v0 * 0.35 && v1 > 0 && left > 0) || JSON.stringify([v0, v1, tt, tk, left]); } finally { keys.KeyW = false; player.tagT = 0; }`);
   // Odin spin-up: the fire rate climbs over the first second of a spray
   let odOk = false, odErr = [];
-  try { const a = xe("xSpL = -1e9; xRate(WEAP.Odin)"); let b = a; for (let i = 0; i < 12; i++) { advance(100); b = xe("xRate(WEAP.Odin)"); }
+  try { const a = xe('ads = 0; for (const k in XCAD) delete XCAD[k]; xCadShot("Odin"); xRate(WEAP.Odin)'); let b = a; for (let i = 0; i < 12; i++) { advance(80); b = xe('xCadShot("Odin"); xRate(WEAP.Odin)'); } /* qa-36: the motor CADENCE spin-up, one recorded shot per 80 ms */
     odOk = typeof a === "number" && b > a + 2; if (!odOk) odErr.push(JSON.stringify([a, b])); } catch (e) { odErr.push(String(e).slice(0, 300)); }
   report.push({ label: "fid2: Odin spin-up raises the fire rate over a held spray", el: true, handler: true, cond: odOk, pass: odOk, errs: odErr });
   try { toLobby(); } catch (e) {}

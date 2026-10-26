@@ -11,13 +11,13 @@ const line=(src,start)=>{const i=src.indexOf(start);assert(i>=0,'missing '+start
 (async()=>{
  const {weapons}=await import(path.join(root,'server/src/simulation.js'));
  // The server's cadence formula this test mirrors.
- assert(sim.includes('u.fireAt=this.time+1/((aiming&&p.adsStats?p.adsStats.fireRate:p.fireRate)*(concussed?.8:1)*stimK(u))')&&/STIM=1\.1;/.test(sim),'server cadence formula changed');
+ assert(sim.includes('rk=(concussed?.8:1)*stimK(u)')&&sim.includes('u.fireAt=this.time+(gap!=null?gap/rk:1/((aiming&&p.adsStats?p.adsStats.fireRate:p.fireRate)*rk))')&&/STIM=1\.1;/.test(sim),'server cadence formula changed');/* qa-36: + the motor CADENCE gap (ADS bursts, Odin spin-up) - pinned by work/test_weapon_cadence_page.cjs + server test-weapon-cadence.js; here xCadRate passes the base rate through */
  const win={};vm.runInNewContext(fs.readFileSync(path.join(root,'models/valorant/weapon-calibration.js'),'utf8'),{window:win});
  const now={t:1000};const C={window:win,WEAP:{},VRUN:{},FSA:{},XZ:{},Math,performance:{now:()=>now.t},ads:0,xCU:0,J:{emp:0},jOn:()=>true,NET:{socket:null},netReyna:null,VM:{sw:0},ammo:30,rw:'pri',fcd:0,AM:{},aimFire(){},w:'Vandal'};
  for(const n of Object.keys(weapons).concat('Knife'))C.WEAP[n]={mag:1,rate:1};
  C.shoot=function(){C.ammo--;C.fcd=99;};C.wName=()=>C.w;
  vm.createContext(C);
- vm.runInContext(['var VF={profiles:window.VALORANT_WEAPON_STATS.weapons};',line(feel,'function vfProfile('),line(feel,'for(const [w,p]of Object.entries(VF.profiles))'),'var xEq,xRate;',line(feel,'xEq=function('),line(feel,'xRate=function('),line(feel,'function vfDuration('),line(feel,'function xStimK('),'var xRT=function(){return 2.5;};',line(feel,'{const rt0=xRT;xRT=function()'),line(feel,'function vfRateK('),line(feel,"{const shoot0=shoot;shoot=function(){if(VM.sw>0)return;"),'globalThis.api={vfDuration,vfRateK,xEq:w=>xEq(w),xRT:()=>xRT(),xRate,fire:()=>shoot()};'].join('\n'),C);
+ vm.runInContext(['var VF={profiles:window.VALORANT_WEAPON_STATS.weapons};',line(feel,'function vfProfile('),line(feel,'for(const [w,p]of Object.entries(VF.profiles))'),'var xEq,xRate;var xCadRate=function(w,b){return b;};',line(feel,'xEq=function('),line(feel,'xRate=function('),line(feel,'function vfDuration('),line(feel,'function xStimK('),'var xRT=function(){return 2.5;};',line(feel,'{const rt0=xRT;xRT=function()'),line(feel,'function vfRateK('),line(feel,"{const shoot0=shoot;shoot=function(){if(VM.sw>0)return;"),'globalThis.api={vfDuration,vfRateK,xEq:w=>xEq(w),xRT:()=>xRT(),xRate,fire:()=>shoot()};'].join('\n'),C);
  const A=C.api;let checked=0;
  for(const [n,p] of Object.entries(weapons)){if(p.abilityOnly)continue;C.J.emp=0;C.xCU=0;
   assert.equal(A.xEq(n),p.equipTimeSeconds,n+' equip');

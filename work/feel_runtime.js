@@ -15,7 +15,7 @@ const wDmg0=wDmg;
 wDmg=function(W,part,distance){const v=wRaw(W,part,distance);if(v==null)return wDmg0(W,part,distance);const d=Math.floor(v);return W.pel&&!xPelOn?Math.min(150,Math.round(d*W.pel*Math.max(.08,Math.min(.6,.75-distance/((W.ffd||15)*3))))):d;};
 xWkDmg=function(W,part,distance,k){const v=wRaw(W,part,distance);return v==null?Math.round(wDmg(W,part,distance)*k):Math.floor(v*k);};
 xEq=function(w){return w==='Knife'?.6:vfProfile(w).equipTimeSeconds;}; // knife: wiki Melee equip 0.6 s (normal)
-xRate=function(W){const w=Object.keys(WEAP).find(k=>WEAP[k]===W),p=VF.profiles[w];return ads&&p&&p.adsStats?p.adsStats.fireRate:W.rate;};
+xRate=function(W){const w=Object.keys(WEAP).find(k=>WEAP[k]===W),p=VF.profiles[w];return xCadRate(w,ads&&p&&p.adsStats?p.adsStats.fireRate:W.rate);};/* qa-36: + the shared motor CADENCE (ADS bursts, Odin spin-up; index.html xCadRate) */
 // Hip lens: VALORANT renders 103 deg horizontal at 16:9 (vertical 70.53 deg) and never shows more than 16:9 width - wider
 // screens are letterboxed or cropped to it (support-valorant.riotgames.com 'Supported Resolutions'). A browser window is
 // usually wider than 16:9 (1920 x ~970 = 1.98:1), so a fixed vertical FOV gave ~109 deg horizontal (118 deg at 21:9) and

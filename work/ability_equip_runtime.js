@@ -41,7 +41,7 @@ function xEqT(k) { const t = XAB_EQT[J.pick]; return (t && t[k]) || XABT.draw; }
 // its FAST equip time (Instant for Curveball, Leer, Rendezvous; wiki weapon pages Normal / Fast / Instant) - the gun's native
 // equip clip over VM.sw, firing blocked until it is up (Valorant: "After casting an ability, an agent will reequip the last
 // weapon ... at its normal, fast, or instant equip time"). Was a flat 0.45 s, gun usable at once after it. Empress +10 %.
-const XAB_UNEQ = { Phoenix: { c: 0.5, q: 0.7, e: 0.48 }, Sova: { c: 0.7, q: 0.7, e: 0.7, x: 1 }, Sage: { c: 0.7, q: 0.4, e: 0.7, x: 1 }, Reyna: { c: 0.5 }, Omen: { c: 0.7, q: 0.7, e: 0.7 }, Killjoy: { c: 0.7, q: 0.75, e: 0.7, x: 0.15 }, Raze: { c: 0, q: 0.7, e: 0.7 }, Skye: { e: 0.85, x: 0.55 }, Breach: { c: 0.7, q: 0.7, e: 0.7, x: 0.4 }, Cypher: { c: 0.7, q: 0.7, e: 0.7, x: 1 }, Chamber: { c: 0.7, e: 0.6 } };
+const XAB_UNEQ = { Jett: { c: 0.25, e: 0.2 }, Phoenix: { c: 0.5, q: 0.7, e: 0.48 }, Sova: { c: 0.7, q: 0.7, e: 0.7, x: 1 }, Sage: { c: 0.7, q: 0.4, e: 0.7, x: 1 }, Reyna: { c: 0.5, q: 0.5, e: 0.6 }, Omen: { c: 0.7, q: 0.7, e: 0.7 }, Killjoy: { c: 0.7, q: 0.75, e: 0.7, x: 0.15 }, Raze: { c: 0, q: 0.7, e: 0.7 }, Skye: { e: 0.85, x: 0.55 }, Breach: { c: 0.7, q: 0.7, e: 0.7, x: 0.4 }, Cypher: { c: 0.7, q: 0.7, e: 0.7, x: 1 }, Chamber: { c: 0.7, e: 0.6 } };
 const XAB_REEQI = { Phoenix: "e", Reyna: "c", Chamber: "e" };
 const XAB_REEQ = { Classic: [0.45, 0.15], Shorty: [0.45, 0.15], Frenzy: [0.45, 0.15], Ghost: [0.45, 0.15], Sheriff: [0.6, 0.2], Stinger: [0.45, 0.15], Spectre: [0.45, 0.15], Bucky: [0.6, 0.2], Judge: [0.6, 0.2], Bulldog: [0.6, 0.2], Guardian: [0.6, 0.2], Phantom: [0.6, 0.2], Vandal: [0.6, 0.2], Marshal: [0.6, 0.2], Outlaw: [0.6, 0.2], Operator: [0.9, 0.5], Ares: [0.75, 0.25], Odin: [0.75, 0.25], Knife: [0.3, 0] };
 function xUneqT(k, ag = J.pick) { const t = XAB_UNEQ[ag]; return t && Number.isFinite(t[k]) ? t[k] : XABT.rec; }
@@ -100,9 +100,30 @@ jKey = function (code) {
   if (J.eq && J.eq.st === "hold") return true; // drawing the bow / holding: finish it first
   if (player && player.hp > 0 && xEqMode(code)) { J.eq = { k: code[3].toLowerCase(), code, st: "draw", t: xEqT(code[3].toLowerCase()), d0: xEqT(code[3].toLowerCase()), alt: false, buf: 0, h: 0, bn: 0 }; fireHeld = false; try { setScope(false); } catch (e) {} return true; }
   if (J.eq) J.eq = null; // a quick-cast / recast puts away whatever was out
-  return xEqKey0.apply(this, arguments);
+  const ik = code[3].toLowerCase(), inst = (XAB_INST[J.pick] || "").includes(ik) && player && player.hp > 0, s0 = inst ? xInstSig(ik) : null, ready = inst ? xInstOnline(ik) : null, r = xEqKey0.apply(this, arguments);
+  if (inst && (ready === true || (ready === null && xInstCast(ik, s0, xInstSig(ik))))) xInstGo(ik);
+  return r;
 };
+// Instant casts (qa-36 = server abilities.js INSTANT_UNEQUIP): Jett Cloudburst (C) / the Tailwind dash (E recast), Reyna Devour (Q) /
+// Dismiss (E) have no equip, but the gun is put away over the wiki 'Unequip time' (XAB_UNEQ: 0.25 / 0.2 / 0.5 / 0.6 s) from the press
+// and comes back at its Fast equip time (wiki 'Weapon Reequip Speed: Fast'): no fire meanwhile (was: the gun stayed up, a flat 0.72 s
+// cast-gesture lock). The cast gesture (XCA) is rescaled to the unequip time, then the gun's equip clip plays over VM.sw.
+const XAB_INST = { Jett: "ce", Reyna: "qe" };
+function xInstSig(k) { if (J.pick === "Jett") return k === "c" ? J.c : !!J.dash; return [J.q, (J.so && J.so.length) || 0, J.dis > 0 ? 1 : 0, J.ohT > 0 ? 1 : 0].join(); }
+function xInstCast(k, a, b) { return J.pick === "Jett" ? (k === "c" ? b < a : !a && b) : a !== b; }
+function xInstOnline(k) { // online Reyna: the server consumes the orb (the page keeps no local orb state): cast = the orb was usable on the press
+  try { if (J.pick !== "Reyna" || !(typeof NET !== "undefined" && NET.socket) || typeof netReyna === "undefined" || !netReyna) return null; const A = netReyna, n = (A.souls || []).filter((s) => Math.hypot(s.p[0] - player.x, s.p[2] - player.z) < 15).length; return n > 0 && (J.q > 0 || !!A.empress) && !(A.dismiss > 0); } catch (e) { return null; }
+}
+function xInstGo(k) {
+  const t = xUneqT(k); XABT.inst = { k, t, w: xEqWeap() }; try { setScope(false); } catch (e) {}
+  if (XCA.on) { const f = t / (XCA.D + XCA.G + XCA.U); XCA.D *= f; XCA.G *= f; XCA.U *= f; } // the cast gesture lasts the unequip time
+}
+function xInstTick(dt) {
+  const q = XABT.inst; if (!q) return; if (!player || player.hp <= 0 || !running) { XABT.inst = null; return; }
+  if ((q.t -= dt) > 1e-9) return; XABT.inst = null; try { xCaEnd(); } catch (e) {} VM.sw = VM.swT = xReeqT(q.k, q.w); VM.ins = 0; // put away: the gun re-equips at its fast time
+}
 { const s0 = shoot; shoot = function (hv) { // the gun is down while an ability is out or coming back
+  if (jOn() && XABT.inst) return; // an instant cast is putting the gun away (xInstGo)
   if (jOn() && J.eq) { if (hv || !xEqHold(J.eq)) fireHeld = false; xEqFire(!!hv); return; } // knife ALT FIRE / touch long-press = ability ALT FIRE; a hold ability keeps fireHeld to see the release
   if (jOn() && J.pick === "Sova" && J.hf > 0 && !hv) { fireHeld = false; return void xEqKey0("KeyX"); } // Hunter's Fury: FIRE shoots the next blast
   return s0.apply(this, arguments); }; }
@@ -118,7 +139,7 @@ try { const st = document.createElement("style"); st.textContent = "#xBow{positi
   const d = document.createElement("div"); d.id = "xBow"; d.innerHTML = "<u></u><i><b></b></i><u></u>"; (document.getElementById("game") || document.body).appendChild(d); } catch (e) {}
 function xBowHud() { const q = J.eq, hk = q && q.st !== "rec" ? xEqHold(q) : "", on = hk === "bow" || hk === "fault", el = $("xBow"); if (!el) return; const pw = on ? xEqHoldPw(q) : 0, k = on ? hk + Math.round(pw * 20) + "|" + (q.bn | 0) : "";
   if (xBowHud.k === k) return; xBowHud.k = k; el.classList.toggle("on", on); if (!on) return; el.querySelector("b").style.width = (pw * 100).toFixed(0) + "%"; el.querySelectorAll("u").forEach((u, i) => { u.classList.toggle("on", (q.bn | 0) > i); u.style.display = hk === "fault" ? "none" : ""; }); } // Fault Line: the charge bar only (no bounces)
-{ const t0 = jTick; jTick = function (dt) { const v = t0.apply(this, arguments); try { xEqTick(dt); xEqHud(); xBowHud(); } catch (e) { J.eq = null; } return v; }; }
+{ const t0 = jTick; jTick = function (dt) { const v = t0.apply(this, arguments); try { xEqTick(dt); xEqHud(); xBowHud(); } catch (e) { J.eq = null; } try { xInstTick(dt); } catch (e) { XABT.inst = null; } return v; }; }
 // First person: the agent's native arms draw the ability (work/ability_fp_runtime.js, ABILITY FIRST PERSON).
 // ---- Third person: others see the throw. A cast relayed for another unit (online relay / trusted-server replay, mpFx)
 // plays the rig's throw / cast one-shot (upper-body rigs) or the right-arm swing (skinned rigs), typed like the first person.

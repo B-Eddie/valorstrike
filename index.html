@@ -1887,24 +1887,32 @@ document.querySelectorAll(".soon").forEach((b) => b.onclick = () => say("Coming 
 // ---- settings, inventory, stats (in memory) ----
 const S = { sens: 0.4, vol: 70, bright: 100, fps: false, xh: "#ffffff", diff: "normal", muted: true, weapon: "Vandal", hm: false, dn: false }; // hm / dn: hit marker, damage numbers (off, as in Valorant)
 let mode = "retake";
-// rate = shots/s, body/head/legs = damage 0-30 m, ff = [body, head, legs] past 15 m, rec = recoil
-const WEAP = { Vandal: { mag: 25, rate: 9.75, body: 40, head: 160, legs: 34, rec: 1, vol: 0.3, f: 170 }, Phantom: { mag: 30, rate: 11, body: 39, head: 156, legs: 33, ff: [35, 140, 30], ff2: [31, 124, 26], ffd2: 30, rec: 0.6, vol: 0.14, f: 230 },
-  Operator: { mag: 5, rate: 0.75, body: 150, head: 255, legs: 120, rec: 1.5, vol: 0.3, f: 90, semi: 1 }, Classic: { mag: 12, rate: 6.75, body: 26, head: 78, legs: 22, rec: 0.5, vol: 0.22, f: 260, semi: 1 },
-  Sheriff: { mag: 6, rate: 4, body: 55, head: 159, legs: 46, ff: [50, 145, 43], ffd: 30, rec: 1.3, vol: 0.28, f: 140, semi: 1 }, Spectre: { mag: 30, rate: 13.3, body: 26, head: 78, legs: 22, ff: [22, 66, 18], ffd: 20, rec: 0.45, vol: 0.16, f: 280 },
-  Guardian: { mag: 12, rate: 5.25, body: 65, head: 195, legs: 49, rec: 0.9, vol: 0.26, f: 150, semi: 1 },
-  Marshal: { mag: 5, rate: 0.8, body: 101, head: 202, legs: 85, rec: 1.2, vol: 0.28, f: 110, semi: 1 }, Bulldog: { mag: 24, rate: 9.15, body: 35, head: 116, legs: 30, rec: 0.8, vol: 0.26, f: 190 },
-  Stinger: { mag: 20, rate: 16, body: 27, head: 67, legs: 23, ff: [25, 62, 21], ffd: 15, rec: 0.55, vol: 0.15, f: 290 }, Frenzy: { mag: 13, rate: 10, body: 26, head: 78, legs: 22, ff: [21, 63, 17], ffd: 20, rec: 0.5, vol: 0.18, f: 270 },
+// rate = shots/s, body/head/legs = damage 0-30 m, ff = [body, head, legs] past ffd m (ff2 past ffd2), rec = recoil. mag / rate / pel / damage
+// = models/valorant/weapon-calibration.js (= server weapons.json = valorant-api 13.08, floored; qa-36: was stale - Operator 0.75/s,
+// Marshal 0.8, Bulldog 9.15, Shorty 3.33 x12, Judge mag 7, Frenzy mag 13 - which only the feel-less page harness still saw)
+const WEAP = { Vandal: { mag: 25, rate: 9.75, body: 40, head: 160, legs: 34, rec: 1, vol: 0.3, f: 170 }, Phantom: { mag: 30, rate: 11, body: 39, head: 156, legs: 33, ff: [35, 140, 29], ffd: 20, rec: 0.6, vol: 0.14, f: 230 },
+  Operator: { mag: 5, rate: 0.6, body: 150, head: 255, legs: 120, rec: 1.5, vol: 0.3, f: 90, semi: 1 }, Classic: { mag: 12, rate: 6.75, body: 26, head: 78, legs: 22, ff: [22, 66, 18], ffd: 30, rec: 0.5, vol: 0.22, f: 260, semi: 1 },
+  Sheriff: { mag: 6, rate: 4, body: 55, head: 159, legs: 46, ff: [50, 145, 42], ffd: 30, rec: 1.3, vol: 0.28, f: 140, semi: 1 }, Spectre: { mag: 30, rate: 13.333, body: 26, head: 78, legs: 22, ff: [22, 66, 18], ffd: 15, ff2: [20, 60, 17], ffd2: 30, rec: 0.45, vol: 0.16, f: 280 },
+  Guardian: { mag: 12, rate: 5.25, body: 65, head: 195, legs: 48, rec: 0.9, vol: 0.26, f: 150, semi: 1 },
+  Marshal: { mag: 5, rate: 1.5, body: 101, head: 202, legs: 85, rec: 1.2, vol: 0.28, f: 110, semi: 1 }, Bulldog: { mag: 24, rate: 10, body: 35, head: 115, legs: 29, rec: 0.8, vol: 0.26, f: 190 },
+  Stinger: { mag: 20, rate: 16, body: 27, head: 67, legs: 22, ff: [23, 57, 19], ffd: 15, rec: 0.55, vol: 0.15, f: 290 }, Frenzy: { mag: 15, rate: 10, body: 26, head: 78, legs: 22, ff: [21, 63, 17], ffd: 20, rec: 0.5, vol: 0.18, f: 270 },
   // shotguns: body/head/legs = per pellet, pel pellets per shell inside cone (rad); alt = Bucky ADS tight slug-ish spread
-  Shorty: { mag: 2, rate: 3.33, pel: 12, cone: 0.09, body: 12, head: 36, legs: 10, ff: [5, 15, 4], ffd: 7, rec: 1.2, vol: 0.3, f: 120, semi: 1 },
-  Bucky: { mag: 5, rate: 1.1, pel: 15, cone: 0.065, body: 20, head: 40, legs: 17, ff: [9, 18, 8], ffd: 8, rec: 1.4, vol: 0.32, f: 100, semi: 1, alt: { pel: 5, k: 0.28, body: 17, head: 34, legs: 14, ff: [13, 26, 11], ffd: 8, ff2: [9, 18, 7], ffd2: 12 } }, // alt pellets: the primary's 0-8 / 8-12 / 12+ m table (wiki.playvalorant.com/en-us/Bucky; was the pre-12.09 22 / 44 / 19 to 15 m)
-  Judge: { mag: 7, rate: 3.5, pel: 12, cone: 0.075, body: 17, head: 34, legs: 14, ff: [8, 16, 7], ffd: 10, rec: 1.1, vol: 0.3, f: 130 }, // Judge: full auto
-  // machine guns: spin = [start, full] rps over the first second of a spray (rate = bots' average); adsK = ADS spread mult; pen = wall penetration (3 high); rld = reload s; heavy = move x0.9
-  Ares: { mag: 50, rate: 11.5, spin: [10, 13], body: 30, head: 72, legs: 25, rec: 0.7, vol: 0.3, f: 240, adsK: 0.75, pen: 2, rld: 3.25, heavy: 1 },
-  Odin: { mag: 100, rate: 13.8, spin: [12, 15.6], body: 38, head: 95, legs: 32, rec: 0.75, vol: 0.32, f: 260, adsK: 0.55, pen: 3, rld: 5, heavy: 1 } };
-WEAP.Ghost = { mag: 13, rate: 6.75, body: 30, head: 105, legs: 25, ff: [25, 88, 21], ffd: 30, rec: 0.55, vol: 0.12, f: 250, semi: 1 }; // buy menu rebuild: suppressed sidearm
-WEAP.Outlaw = { mag: 2, rate: 1 / 0.75, body: 140, head: 238, legs: 119, rec: 1.4, vol: 0.3, f: 100, semi: 1, rld: 2.8 }; // double-barrel sniper, 0.75 s between shots, 3.5x scope via XSZ
-let xSpS = 0, xSpL = 0; // spin-up: start of the current spray, last shot (ms)
-function xRate(W) { if (!W.spin) return W.rate; const n = performance.now(); if (n - xSpL > 250) xSpS = n; xSpL = n; return W.spin[0] + (W.spin[1] - W.spin[0]) * Math.min(1, (n - xSpS) / 1000); }
+  Shorty: { mag: 2, rate: 3, pel: 15, cone: 0.09, body: 11, head: 22, legs: 9, ff: [6, 12, 5], ffd: 7, ff2: [3, 6, 2], ffd2: 15, rec: 1.2, vol: 0.3, f: 120, semi: 1 },
+  Bucky: { mag: 5, rate: 1.1, pel: 15, cone: 0.065, body: 17, head: 34, legs: 14, ff: [13, 26, 11], ffd: 8, ff2: [9, 18, 7], ffd2: 12, rec: 1.4, vol: 0.32, f: 100, semi: 1, alt: { pel: 5, k: 0.28, body: 17, head: 34, legs: 14, ff: [13, 26, 11], ffd: 8, ff2: [9, 18, 7], ffd2: 12 } }, // alt pellets: the primary's 0-8 / 8-12 / 12+ m table (wiki.playvalorant.com/en-us/Bucky; was the pre-12.09 22 / 44 / 19 to 15 m)
+  Judge: { mag: 5, rate: 3.5, pel: 12, cone: 0.075, body: 17, head: 34, legs: 14, ff: [10, 20, 8], ffd: 10, ff2: [7, 14, 5], ffd2: 15, rec: 1.1, vol: 0.3, f: 130 }, // Judge: full auto
+  // machine guns: the Odin hip spin-up 12 -> 15.6/s is the shared motor CADENCE (xRate); the Ares has none since 2.0 (flat 13); adsK = ADS spread mult; pen = wall penetration (3 high); rld = reload s; heavy = move x0.9
+  Ares: { mag: 50, rate: 13, body: 30, head: 75, legs: 25, ff: [28, 70, 23], ffd: 30, rec: 0.7, vol: 0.3, f: 240, adsK: 0.75, pen: 2, rld: 3.25, heavy: 1 },
+  Odin: { mag: 100, rate: 12, body: 38, head: 95, legs: 32, ff: [31, 77, 26], ffd: 30, rec: 0.75, vol: 0.32, f: 260, adsK: 0.55, pen: 3, rld: 5, heavy: 1 } };
+WEAP.Ghost = { mag: 13, rate: 6.75, body: 30, head: 105, legs: 25, ff: [25, 87, 21], ffd: 30, rec: 0.55, vol: 0.12, f: 250, semi: 1 }; // buy menu rebuild: suppressed sidearm
+WEAP.Outlaw = { mag: 2, rate: 2.75, body: 140, head: 238, legs: 119, rec: 1.4, vol: 0.3, f: 100, semi: 1, rld: 2.8 }; // double-barrel sniper, 2.75/s (valorant-api 13.08), 3.5x scope via XSZ
+// Fire cadence (qa-36) = the server's fire(): the shared motor CADENCE (vendor/valorant-feel.js, wiki): Bulldog / Stinger ADS bursts
+// (3 rounds at 13.333/s, 2.105 bursts/s; 4 at 18/s, 2.118 bursts/s) that finish once started, Odin hip spin-up 12 -> 15.6/s. shoot()
+// records each shot (xCadShot) and xRate turns the gap to the next one into a rate; without a cadence entry it is the gun's own rate.
+const XCAD = {}; function xCadAds() { return !!ads; }
+function xCadShot(w) { try { window.ValorantFeel.cadenceShot(XCAD, w, xCadAds(), performance.now() / 1000); } catch (e) {} }
+function xCadOwed() { try { return window.ValorantFeel.cadenceOwed(XCAD, wName()); } catch (e) { return false; } }
+function xCadRate(w, base) { let g = null; try { g = window.ValorantFeel.cadenceGap(XCAD, w, xCadAds(), performance.now() / 1000); } catch (e) {} return g != null ? 1 / g : base; }
+function xRate(W) { const w = Object.keys(WEAP).find((k) => WEAP[k] === W); return xCadRate(w, W.rate); }
 // Valorant reload times (s), one per gun; Ares / Odin / Outlaw keep their own rld above
 { const RLD = { Classic: 1.75, Shorty: 1.75, Frenzy: 1.5, Ghost: 1.5, Sheriff: 2.25, Stinger: 2.25, Spectre: 2.25, Bucky: 2.5, Judge: 2.2, Bulldog: 2.5, Guardian: 2.5, Phantom: 2.5, Vandal: 2.5, Marshal: 2.5, Operator: 3.7 };
   for (const n in RLD) if (WEAP[n] && !WEAP[n].rld) WEAP[n].rld = RLD[n]; }
@@ -3396,7 +3404,7 @@ function shoot(hv) {
     if (ammo <= 0) { SFX.empty(); if (rsv > 0 && S.autoReload !== false) { reloading = rt; SFX.reload(); } fireHeld = false; updHud(); return; }
     ammo--; if (ammo === 0 && rsv > 0 && S.autoReload !== false) { reloading = xRT(); setTimeout(() => SFX.reload(), 150); }
     if (ammo > 0 && ammo * 5 <= MAG()) SFX.low();
-    fcd = 1 / xRate(W) / (jOn() && J.emp > 0 ? 1.1 : 1) * (xCU > performance.now() ? 1.25 : 1); since = 0; body = W.body; head = W.head; // Empress +10 % (v11.08) / concussed -20 %, as the server (hk-36: 74a5da4 had put since / body / head inside this comment, so since never reset on a gun shot)
+    xCadShot(w); fcd = 1 / xRate(W) / (jOn() && J.emp > 0 ? 1.1 : 1) * (xCU > performance.now() ? 1.25 : 1); since = 0; body = W.body; head = W.head; // Empress +10 % (v11.08) / concussed -20 %, as the server (hk-36: 74a5da4 had put since / body / head inside this comment, so since never reset on a gun shot)
     kick = W.semi ? 1 : Math.min(1, 0.45 + W.rec * 0.5); vmFire(); SFX.gun(w);
     // first shot exact when still; spread grows with spray, moving and jumping; recoil climbs
     gFire(ray.ray.direction, w, W);
@@ -3453,8 +3461,20 @@ function xBotWall(u, o, d, h) { // enemy bot sprays through a thin wall at a rec
 // shotgun pellets: one batched raycast loop, reused temps (base dir, hit array, per-bot damage map); damage applied once per bot
 const XPB = new THREE.Vector3(), XPR = new THREE.Vector3(), XPU = new THREE.Vector3(), XPY = new THREE.Vector3(0, 1, 0), XPH = [], XPM = new Map(), XPP = new Map();
 function xPellets(W, targets) {
-  const online = typeof NET !== "undefined" && NET.socket && MP.st === "game", alt = W.alt && ads === 1 && !online ? W.alt : null, D = alt || W, n = alt ? alt.pel : W.pel, sp = ((typeof VF !== "undefined" && VF.pelCone) || W.cone) * (alt ? alt.k : 1), d = ray.ray.direction;
-  const objs = xShotTgts(targets);
+  // Bucky ALT FIRE (qa-36, = server fire() / motor BUCKY_ALT, wiki Bucky "Air burst"): a hitscan canister along the aim; a target inside
+  // 7.5 m takes the canister only (40 head / 20 body / 15 legs), a wall inside 7.5 m stops it (no pellets), else 5 pellets in the
+  // primary cone from the burst point, damage by distance from it (the primary table). Online too (the server fires it on ads:1;
+  // was offline only, pellets from the muzzle in a 0.28x cone).
+  const alt = W.alt && ads === 1 ? W.alt : null, D = alt || W, BA = alt && window.ValorantFeel && window.ValorantFeel.BUCKY_ALT, n = BA ? BA.pellets : alt ? alt.pel : W.pel, sp = ((typeof VF !== "undefined" && VF.pelCone) || W.cone) * (alt && !BA ? alt.k : 1), d = ray.ray.direction;
+  const objs = xShotTgts(targets); let o0 = null;
+  if (BA) {
+    ray.far = BA.dist; XPH.length = 0; ray.intersectObjects(objs, true, XPH); const c = XPH[0]; ray.far = 200;
+    if (c) { const u = c.object.userData; bFx(null, d, xSurfHit(c, d, BA.dist), BA.dist);
+      if (u.bot && u.bot.alive) { const b = u.bot, hs = !!u.head, legs = !hs && b.g && c.point.y - b.g.position.y < 0.9, dmg = hs ? BA.head : legs ? BA.legs : BA.body;
+        xHS = hs; hurt(b, dmg); xTagAt(b, dmg, wName(), Math.hypot(b.g.position.x - player.x, b.g.position.z - player.z)); vmHit(c.point, dmg, hs, b.hp <= 0.001, b); if (b.hp <= 0.001) kill(b, hs); else flash(b); }
+      else if (u.sw) sgDmg(BA.body, u.sw, u.si); else if (u.ld) u.ld.hp -= BA.body;
+      return; }
+    o0 = ray.ray.origin.clone(); ray.ray.origin.addScaledVector(d, BA.dist); }
   XPB.copy(d); XPM.clear(); XPP.clear(); xPelOn = true; XPR.crossVectors(XPB, XPY).normalize(); if (XPR.lengthSq() < 0.5) XPR.set(1, 0, 0); XPU.crossVectors(XPR, XPB).normalize();
   try {
     for (let i = 0; i < n; i++) {
@@ -3469,7 +3489,7 @@ function xPellets(W, targets) {
       if (u.bot) { const b = u.bot, hs = !!u.head, legs = !hs && b.g && hit.point.y - b.g.position.y < 0.9;
         XPM.set(b, (XPM.get(b) || 0) + wDmg(D, hs ? "head" : legs ? "legs" : "body", hit.distance)); if (hs || !XPP.has(b)) XPP.set(b, hs ? -1 : 1); if (hs) b._pp = hit.point; else if (!b._pp) b._pp = hit.point; }
     }
-  } finally { xPelOn = false; d.copy(XPB); }
+  } finally { xPelOn = false; d.copy(XPB); if (o0) ray.ray.origin.copy(o0); }
   XPM.forEach((dmg, b) => { if (!b.alive) { b._pp = null; return; } const hs = XPP.get(b) === -1, pt = b._pp || b.g.position; b._pp = null; dmg = Math.round(dmg);
     xHS = hs; hurt(b, dmg); xTagAt(b, dmg, wName(), Math.hypot(b.g.position.x - player.x, b.g.position.z - player.z)); vmHit(pt, dmg, hs, b.hp <= 0.001, b); if (b.hp <= 0.001) kill(b, hs); else flash(b); });
 }
@@ -4579,7 +4599,7 @@ function tick(dt) {
   if (kSwing > 0) kSwing -= dt;
   if (fcd > 0) fcd -= dt;
   since += dt; if (since > (sprW === "Phantom" ? 0.27 : 0.3)) spray = Math.max(0, spray - dt * 40);
-  if (alive && fireHeld && rw !== "knife" && !WEAP[wName()].semi && fcd <= 0 && ammo > 0) shoot();
+  if (alive && (fireHeld || xCadOwed()) && rw !== "knife" && !WEAP[wName()].semi && fcd <= 0 && ammo > 0) shoot(); // xCadOwed: an ADS burst finishes once started
   if (reloading > 0) { reloading -= dt; if (reloading <= 0) { reloading = 0; /* not left a hair below 0: online treats it as still reloading (ammo sync off, the next auto-reload never sent) */ const one = XRLP[wName()], n = Math.min(one ? Math.min(1, MAG() - ammo) : MAG() - ammo, rsv); ammo += n; rsv -= n; if (one && ammo < MAG() && rsv > 0) reloading = xRT(); /* next round: xRT (Empress stim /1.1 via the feel wrapper) */ } updHud(); }
   const near = ret && alive && Math.hypot(player.x - spike.position.x, player.z - spike.position.z) < 2.5; // distance to the spike, not the map origin (native maps plant it at site B)
   if (near && defusing) { defG = 0; const d0 = defuseT; defuseT += dt; if (d0 < 3.5 && defuseT >= 3.5) SFX.defHalf(); } else if (!xDefRel(near) || (defG += dt) >= DEF_CANCEL) { defG = DEF_CANCEL; defuseT = defuseT >= 3.5 ? 3.5 : 0; } // half defuse is kept; a key let-go under 0.2 s holds, stepping off / moving / firing does not
@@ -10577,16 +10597,12 @@ function xTdfOp() { try { return J.pick === "Chamber" && BC.eq === "sn"; } catch
 { const k1 = jKey; jKey = function (code) { const r = k1.apply(this, arguments); if (r && ads && mode !== "duel" && /^Key[CQEX]$/.test(code)) try { setScope(false); } catch (e) {} return r; }; } // ability cast unscopes
 (window.XHK = window.XHK || []).push(() => { if (ads && mode !== "duel" && (!running || $("game").style.display === "none" || (mode !== "aim" && (!player || player.hp <= 0 || reloading > 0)))) setScope(false); else if (!ads && !du.scoped && xSC.tz !== 1) xSCgo(1, true); }); // safety net: scope never survives a death, round end, reload or the lobby
 { const sh = shoot; shoot = function (hv) { const c = fcd, r = sh.apply(this, arguments); if (ads === 1 && fcd > c) { fcd /= 0.9; kick *= 0.85; } return r; }; }
-{ const sh2 = shoot; shoot = function (hv) { // Bulldog ADS: 3-round burst (1.25x zoom from XZ default)
-  if (!hv && !xAD.bb && ads === 1 && rw !== "knife" && player && wName() === "Bulldog") {
-    fireHeld = false; if (xAD.bt > performance.now() || fcd > 0 || reloading > 0) return; xAD.bt = performance.now() + 420;
-    for (let i = 0; i < 3; i++) setTimeout(() => { if (!running || paused) return; xAD.bb = 1; try { fcd = 0; sh2(); } catch (e) {} xAD.bb = 0; }, i * 70);
-    return; }
-  if (!hv && !xAD.bb && ads === 1 && rw !== "knife" && player && wName() === "Stinger") { // Stinger ADS: 4-round burst at 1.15x
-    fireHeld = false; if (xAD.bt > performance.now() || fcd > 0 || reloading > 0) return; xAD.bt = performance.now() + 400;
-    for (let i = 0; i < 4; i++) setTimeout(() => { if (!running || paused) return; xAD.bb = 1; try { fcd = 0; sh2(); } catch (e) {} xAD.bb = 0; }, i * 55);
-    return; }
-  return sh2.apply(this, arguments); }; }
+{ const sh2 = shoot; shoot = function (hv) { // Bulldog / Stinger ADS bursts (3 rounds at 13.333/s, 2.105 bursts/s; 4 at 18/s, 2.118 bursts/s) = the shared motor
+  // CADENCE (xCadShot / xRate in shoot, xCadOwed in tick: a started burst finishes without the trigger, = server fire()). qa-37: was a setTimeout
+  // burst here (70 / 55 ms rounds, 420 / 400 ms lockout, trigger dropped) that swallowed the click and bypassed the cadence. xAD.bb marks
+  // a burst round (Stinger bloom, gSpread below).
+  if (hv || ads !== 1 || rw === "knife" || !player || (wName() !== "Bulldog" && wName() !== "Stinger")) return sh2.apply(this, arguments);
+  xAD.bb = 1; try { return sh2.apply(this, arguments); } finally { xAD.bb = 0; } }; }
 { const g2 = gSpread; gSpread = function (w, W, B) { const s = g2(w, W, B), n = B ? B.n || 0 : spray; // Stinger blooms after 3 shots; Frenzy keeps moving accuracy
   return w === "Stinger" ? s + (n > 3 && !xAD.bb ? Math.min(0.05, (n - 3) * 0.009) : 0) : w === "Frenzy" ? s * 0.7 : s; }; }
 { const af = aimFire; aimFire = function (hv) { const c = AM.cd, r = af.apply(this, arguments); if (ads === 1 && AM.cd > c) { AM.cd /= 0.9; kick *= 0.85; } return r; }; }
@@ -12270,7 +12286,7 @@ var XCA = { t: 0, on: false, g: 0, ty: "", kk: false, bb: null, D: 0.12, G: 0.45
 var XCA_T = { flash: "throw", fire: "throw", smoke: "throw", eye: "cast", drone: "cast", stun: "cast", ult: "cast", wall: "place", trap: "place", device: "place", dash: "buff", heal: "buff" };
 function xCaEnd() { XCA.on = false; XCA.t = 0; XCA.g = 0; XCA.kk = false; }
 function xCaStart(ty) {
-  XCA.t = XCA.on ? XCA.D * XCA.g : 0; XCA.s = performance.now() - XCA.t * 1000; XCA.ty = ty; XCA.on = true; XCA.kk = false; try { VM.ins = 0; } catch (e) {}
+  XCA.t = XCA.on ? XCA.D * XCA.g : 0; XCA.D = 0.12; XCA.G = 0.45; XCA.U = 0.15; /* qa-36: an instant cast with a wiki unequip time rescales these (ABILITY EQUIP xInstGo) */ XCA.s = performance.now() - XCA.t * 1000; XCA.ty = ty; XCA.on = true; XCA.kk = false; try { VM.ins = 0; } catch (e) {}
 }
 function xCaTick(dt) { // timing only: the agent's native arms play the cast (ABILITY FIRST PERSON, work/ability_fp_runtime.js)
   if (!XCA.on) return;
@@ -14212,7 +14228,7 @@ const wDmg0=wDmg;
 wDmg=function(W,part,distance){const v=wRaw(W,part,distance);if(v==null)return wDmg0(W,part,distance);const d=Math.floor(v);return W.pel&&!xPelOn?Math.min(150,Math.round(d*W.pel*Math.max(.08,Math.min(.6,.75-distance/((W.ffd||15)*3))))):d;};
 xWkDmg=function(W,part,distance,k){const v=wRaw(W,part,distance);return v==null?Math.round(wDmg(W,part,distance)*k):Math.floor(v*k);};
 xEq=function(w){return w==='Knife'?.6:vfProfile(w).equipTimeSeconds;}; // knife: wiki Melee equip 0.6 s (normal)
-xRate=function(W){const w=Object.keys(WEAP).find(k=>WEAP[k]===W),p=VF.profiles[w];return ads&&p&&p.adsStats?p.adsStats.fireRate:W.rate;};
+xRate=function(W){const w=Object.keys(WEAP).find(k=>WEAP[k]===W),p=VF.profiles[w];return xCadRate(w,ads&&p&&p.adsStats?p.adsStats.fireRate:W.rate);};/* qa-36: + the shared motor CADENCE (ADS bursts, Odin spin-up; index.html xCadRate) */
 // Hip lens: VALORANT renders 103 deg horizontal at 16:9 (vertical 70.53 deg) and never shows more than 16:9 width - wider
 // screens are letterboxed or cropped to it (support-valorant.riotgames.com 'Supported Resolutions'). A browser window is
 // usually wider than 16:9 (1920 x ~970 = 1.98:1), so a fixed vertical FOV gave ~109 deg horizontal (118 deg at 21:9) and
@@ -14703,10 +14719,10 @@ function netSyncDevices(rows){const seen=new Set(),own=new Set();for(const r of 
 function netSyncEffects(rows){if(J.sw)sgWallEnd();const ids=new Set();netSyncCb(rows);netSyncDevices(rows);for(const e of rows){if(e.kind!=='barrier'||!Array.isArray(e.p)||e.p.length!==3)continue;ids.add(e.id);let m=netWalls.get(e.id);if(!m){/* Barrier Orb: the server's 4 segments (abilities.js BARRIER = XBAR), each hidden once its HP is gone */m=new THREE.Group();m.userData.netBarrier=true;m.userData.seg=[];const W=XBAR.len/XBAR.segs;for(let i=0;i<XBAR.segs;i++){const q=new THREE.Mesh(new THREE.BoxGeometry(W,XBAR.h,XBAR.th),new THREE.MeshLambertMaterial({color:0xb5f1fa,transparent:true,opacity:.85}));q.position.x=-XBAR.len/2+(i+.5)*W;q.userData.netBarrier=true;m.add(q);}scene.add(m);netWalls.set(e.id,m);}
  m.position.set(e.p[0],e.p[1]+1.5,e.p[2]);m.rotation.y=e.yaw;const S=Array.isArray(e.seg)&&e.seg.length===m.children.length?e.seg:m.children.map(()=>e.hp/m.children.length);m.userData.seg=S.map(Number);m.children.forEach((q,i)=>{const h=+S[i]||0;q.visible=h>0;q.material.opacity=.55+.3*Math.max(0,Math.min(1,h/(XBAR.hp+XBAR.fort)));});}for(const [id,m]of netWalls)if(!ids.has(id)){scene.remove(m);m.children.forEach(q=>{q.geometry.dispose();q.material.dispose();});netWalls.delete(id);}}
 const netSgBlk0=sgBlk;sgBlk=function(x,z,r,y=0){if(!NET.socket)return netSgBlk0(x,z,r,y);for(const m of netWalls.values()){const low=m.position.y-1.5;if(y>=low+3||y+1.8<=low)continue;const c=Math.cos(m.rotation.y),s=Math.sin(m.rotation.y),dx=x-m.position.x,dz=z-m.position.z,a=c*dx-s*dz,b=s*dx+c*dz,W=XBAR.len/XBAR.segs;for(let i=0;i<m.children.length;i++){if(!(m.userData.seg[i]>0))continue;const mid=-XBAR.len/2+(i+.5)*W;if(Math.hypot(Math.max(0,Math.abs(a-mid)-W/2),Math.max(0,Math.abs(b)-XBAR.th/2))<r)return true;}}return false;};/* live segments only (a broken one is a gap) */
-const netShoot0=shoot;shoot=function(){if(NET.socket&&(netReyna?.dismiss>0||netChannel?.remaining>0))return false;const before=ammo,k0=kSwing,ss=typeof RS!=='undefined'&&RS.ss,r=netShoot0.apply(this,arguments);const swung=rw==='knife'&&kSwing!==k0,rocket=ss&&!RS.ss;/* Showstopper: the click that launched the rocket is one fire pulse (the server's launcher fires on it; a semi-auto gun sends no held fire) */if(NET.socket&&MP.st==='game'&&(swung||rocket||(rw!=='knife'&&ammo<before))){NET.firePulse=performance.now()+80;NET.fireHeavy=swung&&kHv===1?NET.firePulse:0;/* ...and stays pending until an input message carried it: on a slow page the next 50 ms input tick runs after the frame, past the 80 ms window (online Showstopper launched no rocket) */NET.firePend=1;NET.firePendH=NET.fireHeavy?1:0;if(rocket)NET.ssFiredAt=performance.now();}return r;}; // knife: one pulse per swing the client actually started (a click during a swing sent a pulse the server could turn into an extra hit); a heavy swing sends kh so the server applies the heavy cooldown/damage
+const netShoot0=shoot;shoot=function(){if(NET.socket&&(netReyna?.dismiss>0||netChannel?.remaining>0))return false;const before=ammo,k0=kSwing,ss=typeof RS!=='undefined'&&RS.ss,r=netShoot0.apply(this,arguments);const swung=rw==='knife'&&kSwing!==k0,rocket=ss&&!RS.ss;/* Showstopper: the click that launched the rocket is one fire pulse (the server's launcher fires on it; a semi-auto gun sends no held fire) */if(NET.socket&&MP.st==='game'&&(swung||rocket||(rw!=='knife'&&ammo<before))){NET.firePulse=performance.now()+80;NET.fireHeavy=swung&&kHv===1?NET.firePulse:0;/* ...and stays pending until an input message carried it: on a slow page the next 50 ms input tick runs after the frame, past the 80 ms window (online Showstopper launched no rocket) */NET.firePend=1;NET.firePendH=NET.fireHeavy?1:0;if(typeof xAD!=='undefined'&&xAD.bs&&rw!=='knife'){NET.altPulse=NET.firePulse;NET.firePendA=1;}/* qa-36: Classic ALT FIRE (xBurst) - the server fires the 3 rounds at once on alt:1 */if(rocket)NET.ssFiredAt=performance.now();}return r;}; // knife: one pulse per swing the client actually started (a click during a swing sent a pulse the server could turn into an extra hit); a heavy swing sends kh so the server applies the heavy cooldown/damage
 /* window, not document: the keymap layer re-sends a rebound key on window only (it never reaches document) */addEventListener('keydown',e=>{if(e.code!=='KeyR'||!(NET.socket&&MP.st==='game')||xKbSkip(e)||e.repeat)return;netSend({t:'reload'});if(reloading>0)netReload=true;/* the page's own R handler already started the local reload: the loop must not send it again */});
 // Camera, server shots and bots all treat positive pitch as looking up; send it unchanged.
-function netInputMsg(kk,w){const seq=++NET.seq;const log=NET.inLog||(NET.inLog=[]);log.push({seq,t:performance.now()});if(log.length>240)log.shift();const fp=NET.firePend,fh=NET.firePendH;NET.firePend=NET.firePendH=0;/* a pending click rides this message once */return {t:'in',seq,r:yaw,p:pitch,f:(kk.KeyW?1:0)-(kk.KeyS?1:0),s:(kk.KeyD?1:0)-(kk.KeyA?1:0),j:kk.Space?1:0,c:kk.ControlLeft||kk.ControlRight?1:0,w:kk.ShiftLeft||kk.ShiftRight?1:0,ads:ads?1:0,az:ads===2&&w==='Operator'&&typeof xSC!=='undefined'&&xSC.lv===2?1:0/* Operator second zoom (5x): teammates spectating see it (roundState pov ADS 2) */,h4:kk.Digit4||kk.Numpad4?1:0,fire:(w!=='Knife'&&!WEAP[w]?.semi&&fireHeld)||NET.firePulse>performance.now()||fp?1:0,kh:NET.fireHeavy>performance.now()||fh?1:0,cb:J.pick==='Jett'&&kk.KeyC?1:0/* Cloudburst steering: C held */};} // a held knife click is one swing on the client, so it is a pulse (not held fire) online
+function netInputMsg(kk,w){const seq=++NET.seq;const log=NET.inLog||(NET.inLog=[]);log.push({seq,t:performance.now()});if(log.length>240)log.shift();const fp=NET.firePend,fh=NET.firePendH,fa=NET.firePendA;NET.firePend=NET.firePendH=NET.firePendA=0;/* a pending click rides this message once */return {t:'in',seq,r:yaw,p:pitch,f:(kk.KeyW?1:0)-(kk.KeyS?1:0),s:(kk.KeyD?1:0)-(kk.KeyA?1:0),j:kk.Space?1:0,c:kk.ControlLeft||kk.ControlRight?1:0,w:kk.ShiftLeft||kk.ShiftRight?1:0,ads:ads?1:0,az:ads===2&&w==='Operator'&&typeof xSC!=='undefined'&&xSC.lv===2?1:0/* Operator second zoom (5x): teammates spectating see it (roundState pov ADS 2) */,h4:kk.Digit4||kk.Numpad4?1:0,fire:(w!=='Knife'&&!WEAP[w]?.semi&&fireHeld)||NET.firePulse>performance.now()||fp?1:0,kh:NET.fireHeavy>performance.now()||fh?1:0,alt:NET.altPulse>performance.now()||fa?1:0,cb:J.pick==='Jett'&&kk.KeyC?1:0/* Cloudburst steering: C held */};} // a held knife click is one swing on the client, so it is a pulse (not held fire) online
 let netWeapon='',netReload=false,netEquipWant=null,netEquipUntil=0,netRec=false;
 // A local swap sends its equip at once and holds the snapshot reconcile (above) until the server names that gun or 1 s passes.
 const netSwap0=swapW;swapW=function(s){const r=netSwap0.apply(this,arguments);if(!netRec&&NET.socket&&NET.socket.readyState===1&&MP.st==='game'&&NET.ready){const w=rw==='knife'?'Knife':wName();if(w!==netWeapon){netWeapon=w;netSend({t:'equip',w});netEquipWant=w;netEquipUntil=performance.now()+1000;}}return r;};
@@ -15271,7 +15287,7 @@ function xEqT(k) { const t = XAB_EQT[J.pick]; return (t && t[k]) || XABT.draw; }
 // its FAST equip time (Instant for Curveball, Leer, Rendezvous; wiki weapon pages Normal / Fast / Instant) - the gun's native
 // equip clip over VM.sw, firing blocked until it is up (Valorant: "After casting an ability, an agent will reequip the last
 // weapon ... at its normal, fast, or instant equip time"). Was a flat 0.45 s, gun usable at once after it. Empress +10 %.
-const XAB_UNEQ = { Phoenix: { c: 0.5, q: 0.7, e: 0.48 }, Sova: { c: 0.7, q: 0.7, e: 0.7, x: 1 }, Sage: { c: 0.7, q: 0.4, e: 0.7, x: 1 }, Reyna: { c: 0.5 }, Omen: { c: 0.7, q: 0.7, e: 0.7 }, Killjoy: { c: 0.7, q: 0.75, e: 0.7, x: 0.15 }, Raze: { c: 0, q: 0.7, e: 0.7 }, Skye: { e: 0.85, x: 0.55 }, Breach: { c: 0.7, q: 0.7, e: 0.7, x: 0.4 }, Cypher: { c: 0.7, q: 0.7, e: 0.7, x: 1 }, Chamber: { c: 0.7, e: 0.6 } };
+const XAB_UNEQ = { Jett: { c: 0.25, e: 0.2 }, Phoenix: { c: 0.5, q: 0.7, e: 0.48 }, Sova: { c: 0.7, q: 0.7, e: 0.7, x: 1 }, Sage: { c: 0.7, q: 0.4, e: 0.7, x: 1 }, Reyna: { c: 0.5, q: 0.5, e: 0.6 }, Omen: { c: 0.7, q: 0.7, e: 0.7 }, Killjoy: { c: 0.7, q: 0.75, e: 0.7, x: 0.15 }, Raze: { c: 0, q: 0.7, e: 0.7 }, Skye: { e: 0.85, x: 0.55 }, Breach: { c: 0.7, q: 0.7, e: 0.7, x: 0.4 }, Cypher: { c: 0.7, q: 0.7, e: 0.7, x: 1 }, Chamber: { c: 0.7, e: 0.6 } };
 const XAB_REEQI = { Phoenix: "e", Reyna: "c", Chamber: "e" };
 const XAB_REEQ = { Classic: [0.45, 0.15], Shorty: [0.45, 0.15], Frenzy: [0.45, 0.15], Ghost: [0.45, 0.15], Sheriff: [0.6, 0.2], Stinger: [0.45, 0.15], Spectre: [0.45, 0.15], Bucky: [0.6, 0.2], Judge: [0.6, 0.2], Bulldog: [0.6, 0.2], Guardian: [0.6, 0.2], Phantom: [0.6, 0.2], Vandal: [0.6, 0.2], Marshal: [0.6, 0.2], Outlaw: [0.6, 0.2], Operator: [0.9, 0.5], Ares: [0.75, 0.25], Odin: [0.75, 0.25], Knife: [0.3, 0] };
 function xUneqT(k, ag = J.pick) { const t = XAB_UNEQ[ag]; return t && Number.isFinite(t[k]) ? t[k] : XABT.rec; }
@@ -15330,9 +15346,30 @@ jKey = function (code) {
   if (J.eq && J.eq.st === "hold") return true; // drawing the bow / holding: finish it first
   if (player && player.hp > 0 && xEqMode(code)) { J.eq = { k: code[3].toLowerCase(), code, st: "draw", t: xEqT(code[3].toLowerCase()), d0: xEqT(code[3].toLowerCase()), alt: false, buf: 0, h: 0, bn: 0 }; fireHeld = false; try { setScope(false); } catch (e) {} return true; }
   if (J.eq) J.eq = null; // a quick-cast / recast puts away whatever was out
-  return xEqKey0.apply(this, arguments);
+  const ik = code[3].toLowerCase(), inst = (XAB_INST[J.pick] || "").includes(ik) && player && player.hp > 0, s0 = inst ? xInstSig(ik) : null, ready = inst ? xInstOnline(ik) : null, r = xEqKey0.apply(this, arguments);
+  if (inst && (ready === true || (ready === null && xInstCast(ik, s0, xInstSig(ik))))) xInstGo(ik);
+  return r;
 };
+// Instant casts (qa-36 = server abilities.js INSTANT_UNEQUIP): Jett Cloudburst (C) / the Tailwind dash (E recast), Reyna Devour (Q) /
+// Dismiss (E) have no equip, but the gun is put away over the wiki 'Unequip time' (XAB_UNEQ: 0.25 / 0.2 / 0.5 / 0.6 s) from the press
+// and comes back at its Fast equip time (wiki 'Weapon Reequip Speed: Fast'): no fire meanwhile (was: the gun stayed up, a flat 0.72 s
+// cast-gesture lock). The cast gesture (XCA) is rescaled to the unequip time, then the gun's equip clip plays over VM.sw.
+const XAB_INST = { Jett: "ce", Reyna: "qe" };
+function xInstSig(k) { if (J.pick === "Jett") return k === "c" ? J.c : !!J.dash; return [J.q, (J.so && J.so.length) || 0, J.dis > 0 ? 1 : 0, J.ohT > 0 ? 1 : 0].join(); }
+function xInstCast(k, a, b) { return J.pick === "Jett" ? (k === "c" ? b < a : !a && b) : a !== b; }
+function xInstOnline(k) { // online Reyna: the server consumes the orb (the page keeps no local orb state): cast = the orb was usable on the press
+  try { if (J.pick !== "Reyna" || !(typeof NET !== "undefined" && NET.socket) || typeof netReyna === "undefined" || !netReyna) return null; const A = netReyna, n = (A.souls || []).filter((s) => Math.hypot(s.p[0] - player.x, s.p[2] - player.z) < 15).length; return n > 0 && (J.q > 0 || !!A.empress) && !(A.dismiss > 0); } catch (e) { return null; }
+}
+function xInstGo(k) {
+  const t = xUneqT(k); XABT.inst = { k, t, w: xEqWeap() }; try { setScope(false); } catch (e) {}
+  if (XCA.on) { const f = t / (XCA.D + XCA.G + XCA.U); XCA.D *= f; XCA.G *= f; XCA.U *= f; } // the cast gesture lasts the unequip time
+}
+function xInstTick(dt) {
+  const q = XABT.inst; if (!q) return; if (!player || player.hp <= 0 || !running) { XABT.inst = null; return; }
+  if ((q.t -= dt) > 1e-9) return; XABT.inst = null; try { xCaEnd(); } catch (e) {} VM.sw = VM.swT = xReeqT(q.k, q.w); VM.ins = 0; // put away: the gun re-equips at its fast time
+}
 { const s0 = shoot; shoot = function (hv) { // the gun is down while an ability is out or coming back
+  if (jOn() && XABT.inst) return; // an instant cast is putting the gun away (xInstGo)
   if (jOn() && J.eq) { if (hv || !xEqHold(J.eq)) fireHeld = false; xEqFire(!!hv); return; } // knife ALT FIRE / touch long-press = ability ALT FIRE; a hold ability keeps fireHeld to see the release
   if (jOn() && J.pick === "Sova" && J.hf > 0 && !hv) { fireHeld = false; return void xEqKey0("KeyX"); } // Hunter's Fury: FIRE shoots the next blast
   return s0.apply(this, arguments); }; }
@@ -15348,7 +15385,7 @@ try { const st = document.createElement("style"); st.textContent = "#xBow{positi
   const d = document.createElement("div"); d.id = "xBow"; d.innerHTML = "<u></u><i><b></b></i><u></u>"; (document.getElementById("game") || document.body).appendChild(d); } catch (e) {}
 function xBowHud() { const q = J.eq, hk = q && q.st !== "rec" ? xEqHold(q) : "", on = hk === "bow" || hk === "fault", el = $("xBow"); if (!el) return; const pw = on ? xEqHoldPw(q) : 0, k = on ? hk + Math.round(pw * 20) + "|" + (q.bn | 0) : "";
   if (xBowHud.k === k) return; xBowHud.k = k; el.classList.toggle("on", on); if (!on) return; el.querySelector("b").style.width = (pw * 100).toFixed(0) + "%"; el.querySelectorAll("u").forEach((u, i) => { u.classList.toggle("on", (q.bn | 0) > i); u.style.display = hk === "fault" ? "none" : ""; }); } // Fault Line: the charge bar only (no bounces)
-{ const t0 = jTick; jTick = function (dt) { const v = t0.apply(this, arguments); try { xEqTick(dt); xEqHud(); xBowHud(); } catch (e) { J.eq = null; } return v; }; }
+{ const t0 = jTick; jTick = function (dt) { const v = t0.apply(this, arguments); try { xEqTick(dt); xEqHud(); xBowHud(); } catch (e) { J.eq = null; } try { xInstTick(dt); } catch (e) { XABT.inst = null; } return v; }; }
 // First person: the agent's native arms draw the ability (work/ability_fp_runtime.js, ABILITY FIRST PERSON).
 // ---- Third person: others see the throw. A cast relayed for another unit (online relay / trusted-server replay, mpFx)
 // plays the rig's throw / cast one-shot (upper-body rigs) or the right-arm swing (skinned rigs), typed like the first person.

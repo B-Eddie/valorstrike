@@ -1,7 +1,7 @@
 // Server side of the Valorant ability flow (work/ability_equip_runtime.js): kit charges / costs / ult points / signature
 // recharge match the wiki table (work/validation/abilities-wiki.json), and an equip-then-fire cast keeps the gun down
 // for the ability's unequip + the weapon's re-equip time on the server too (recoverTime: fire() refuses until u.fireAt),
-// while a quick-cast (Jett Cloudburst) does not.
+// and a quick-cast (Jett Cloudburst) from the press for its wiki unequip + re-equip (qa-36; was: the gun stayed up).
 import assert from 'node:assert/strict';import fs from 'node:fs';import {SpikeSimulation} from './src/spike.js';import {ABILITY_EQUIP,abilityRecover} from './src/abilities.js';import {UNEQUIP,REEQUIP,REEQ_INSTANT,recoverTime} from './src/windups.js';import {DEV} from './src/devices.js';import {WINDUP,XAB_REL,wf} from './src/windups.js';import {ULT} from './src/ults.js';
 const kits=JSON.parse(fs.readFileSync(new URL('./src/kits.json',import.meta.url),'utf8')),wiki=JSON.parse(fs.readFileSync(new URL('../work/validation/abilities-wiki.json',import.meta.url),'utf8'));
 for(const [a,w] of Object.entries(wiki)){if(a[0]==='_')continue;const k=kits[a];assert(k,a+' kit');assert.equal(k.u,w.u,a+' ult points');
@@ -21,7 +21,7 @@ assert.equal(recoverTime('Phoenix','q','Vandal'),1.3,'Hot Hands + Vandal: 0.7 + 
 assert.equal(recoverTime('Killjoy','x','Knife'),.45,'Lockdown 0.15 + knife fast 0.3');assert.equal(recoverTime('Reyna','c','Phantom'),.7,'Leer instant: 0.5 + 0.2');assert.equal(recoverTime('Sage','q','Vandal',1.1),Math.round((.4+.6/1.1)*1e6)/1e6,'stim');
 {const u={agent:'Breach',weapon:'Odin',empress:false};assert.equal(abilityRecover(u)('x'),1.15,'Rolling Thunder + Odin 0.4 + 0.75');}
 for(const w of Object.keys(REEQUIP))if(w!=='Knife')assert(REEQUIP[w][1]<REEQUIP[w][0],w+' instant < fast');
-j.ability.c=1;j.fireAt=0;assert.equal(s.command(j,{t:'ab',k:'c'}),true,'Cloudburst cast');assert(!(j.fireAt>s.time),'quick-cast keeps the gun up');
+j.ability.c=1;j.fireAt=0;assert.equal(s.command(j,{t:'ab',k:'c'}),true,'Cloudburst cast');assert(Math.abs(j.fireAt-(s.time+recoverTime('Jett','c',j.weapon)))<1e-9,'quick-cast: no equip, but the gun is put away over the wiki 0.25 s unequip + the fast re-equip (qa-36; was: kept up)');
 // effect values checked against the wiki (work/validation/abilities-wiki.txt): Cloudburst 2.5 s, Hot Hands 60 dps, Nanoswarm 5 s
 {const {tickAbilities}=await import('./src/abilities.js'),cb=s.effects.filter(e=>e.kind==='cloudburst').pop();assert(cb,'Cloudburst projectile');let n=0;while(cb.kind==='cloudburst'&&n++<200){s.time+=.05;tickAbilities(s,.05);}
  const e=cb;assert.equal(e.kind,'smoke','Cloudburst landed as a smoke');assert(e.cb);assert(Math.abs(e.until-s.time-2.5)<1e-6,'Cloudburst lasts 2.5 s (got '+(e.until-s.time)+')');assert.equal(e.radius,3.35,'Cloudburst radius 3.35 m (wiki)');}
@@ -67,4 +67,4 @@ assert(Math.abs(DEV.curveball.windup-.4)<1e-9&&Math.abs(ULT.quake.delay-1)<1e-9&
  const cl=shot('q',{pw:7,b:9});assert(cl.pw===1&&cl.b===2,'charge / bounces clamped');const bad=shot('q',{pw:'x',b:'2; drop'});assert(bad.pw===1&&bad.b===0,'junk -> full charge, no bounce');
  const leg=shot('q',{});assert(leg.pw===1&&leg.b===0,'an older client: full-charge, no-bounce bolt');
  const P=SB.path([0,1.6,0],[0,0,-1],1,2,W2.rayN,()=>0);assert.equal(P.pts.length,4,'two bounces recorded');}
-console.log('Ability equip (server): kit table matches the wiki, equip casts hold fire for the ability unequip + weapon re-equip (Blaze + Classic '+recoverTime('Phoenix','c','Classic')+' s), quick-casts do not; Cloudburst projectile (tap arc / steered while C held / smoke on contact or after 2 s, 2.5 s), Hot Hands 60/s spreading to 4.5 m over 0.75 s, Nanoswarm 5 s; wiki windups (Aftershock / Flashpoint / Fault Line / Leer / Curveball / Rolling Thunder / Trapwire / Trademark / Tour De Force); Sova bolt charge + 0-2 bounces');
+console.log('Ability equip (server): kit table matches the wiki, equip casts hold fire for the ability unequip + weapon re-equip (Blaze + Classic '+recoverTime('Phoenix','c','Classic')+' s), quick-casts from the press (wiki unequip + fast re-equip); Cloudburst projectile (tap arc / steered while C held / smoke on contact or after 2 s, 2.5 s), Hot Hands 60/s spreading to 4.5 m over 0.75 s, Nanoswarm 5 s; wiki windups (Aftershock / Flashpoint / Fault Line / Leer / Curveball / Rolling Thunder / Trapwire / Trademark / Tour De Force); Sova bolt charge + 0-2 bounces');

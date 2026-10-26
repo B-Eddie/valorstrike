@@ -242,6 +242,39 @@ function sprayStep(R,w,weight,t,random=Math.random,cap=.024){const n=R.sequence+
  if(n===0){R.drift=random()<.5?-1:1;R.recoilX=0;R.recoilY=0;}else{R.recoilY=Math.min(rifle?.065:.05,R.recoilY+(rifle?(n<7?.006:.0015):.008)*weight);if(n>6){R.recoilX+=R.drift*.003*weight;if(Math.abs(R.recoilX)>.022){R.drift=-Math.sign(R.recoilX);}if(random()<.12)R.drift*=-1;}}
  R.bloom=BLOOM_HOLD[w]?Math.max(0,cap):cap<0?Math.max(cap,(R.bloom||0)-.0015*weight):Math.min(cap,(R.bloom||0)+.0015*weight);R.shot=t;return n;}
 function disk(random=Math.random){const a=random()*Math.PI*2,r=Math.sqrt(random());return [Math.cos(a)*r,Math.sin(a)*r];}
+// Fire cadence (qa-36, wiki.playvalorant.com weapon pages, fetched 2026-10-26; shared by the server fire() and the page shoot()).
+//  ADS bursts: Bulldog "Alt Fire: 3-round burst", rounds 13.333/s, 2.105 bursts/s; Stinger "4-round burst", rounds 18/s,
+//  2.118 bursts/s (valorant-api adsStats.burstCount 3 / 4; adsStats.fireRate 6.315715 / 8.470589 = rounds x bursts/s). A
+//  burst, once started, fires all its rounds (trigger released or not); the next burst starts 1/bursts-per-second after the
+//  first round of the last one.
+//  Odin spin-up: wiki Odin "Fire Rate 12-15.6 rounds/sec ... the fire rate will increase over the duration the weapon is fired to
+//  a maximum amount"; Alt Fire (ADS) "starts firing at maximum fire rate" (adsStats.fireRate 15.6). The ramp time is not published
+//  anywhere we found (wiki / fandom / Liquipedia / valorant.gs game-file dump list only 12 -> 15.6): ramp 1 s linear and a 0.25 s
+//  gap resetting it are an ASSUMPTION (the page's pre-feel xRate model).
+const CADENCE={burst:{Bulldog:{n:3,rate:13.333,bps:2.105},Stinger:{n:4,rate:18,bps:2.118}},spin:{Odin:{from:12,to:15.6,ramp:1,gap:.25}}};
+// Record one shot of `weapon` at `now` (s) on the shooter's cadence state S (ads: aiming down sights / alt fire).
+function cadenceShot(S,weapon,ads,now){if(S.w!==weapon){S.w=weapon;S.left=0;S.inB=false;S.bs=0;S.ss=now;S.sl=-1e9;}
+ const B=CADENCE.burst[weapon];if(B&&(ads||S.left>0)){if(S.inB&&S.left>0)S.left--;else{S.left=B.n-1;S.bs=now;}S.inB=true;}else{S.left=0;S.inB=false;}
+ const P=CADENCE.spin[weapon];if(P){if(now-S.sl>P.gap)S.ss=now;S.sl=now;}}
+// Seconds from the shot just recorded to the next one; null = the gun's own rate (1 / fireRate or the ADS rate).
+function cadenceGap(S,weapon,ads,now){if(S.w!==weapon)return null;const B=CADENCE.burst[weapon];
+ if(B&&S.inB)return S.left>0?1/B.rate:Math.max(1/B.rate,S.bs+1/B.bps-now);
+ const P=CADENCE.spin[weapon];if(P&&!ads)return 1/(P.from+(P.to-P.from)*Math.min(1,Math.max(0,now-S.ss)/P.ramp));return null;}
+// a burst still owes rounds: the shooter keeps firing without the trigger
+const cadenceOwed=(S,weapon)=>!!(S&&S.w===weapon&&S.inB&&S.left>0);
+// Classic ALT FIRE (wiki.playvalorant.com/en-us/Classic, valorant-api altShotgunStats {shotgunPelletCount 3, burstRate 2.22}): three
+// rounds at once, 2.22 bursts/s; spread = the wiki "Spread values" Alt Fire row 1.9 / 1.71 -> 5.78 / 5.21 deg, + crouch-walk 0 / walk
+// 0.6 / run 1.5 / airborne 2.25 (ramped with speed past the deadzone like every gun); back-to-back bursts (within the cycle +
+// chain s) step 1.9 -> 2.5 -> max (wiki update history). = the page's XCLA / xClassicAlt (index.html).
+const CLASSIC_ALT={pellets:3,bps:2.22,chain:.3,steps:[1.9,2.5,5.78],cr:.9,move:[0,.6,1.5,2.25]};
+function classicAltSpread(P,n){P=P||{};const A=CLASSIC_ALT,k=Math.min(A.steps.length-1,Math.max(0,n|0)),sp=P.sf!=null?P.sf:P.mv?1:0;let e=A.steps[k]*(P.cr?A.cr:1);
+ if(P.air)e+=A.move[3];else if(sp>C.deadzone)e+=(P.cr?A.move[0]:P.wk?A.move[1]:A.move[2])*moveRamp(sp,C.deadzone);return rad(e);}
+// Bucky ALT FIRE (wiki.playvalorant.com/en-us/Bucky "Air burst": a canister that detonates after 7.5 m into 5 pellets; "If a canister
+// hits a target before 7.5m it will not detonate and only deal 40/20/15 damage from Head-Legs"; v3.0 "Alt fire now applies
+// instantaneous, hitscan damage"; pellet distance measured from where the canister explodes, primary spread and damage table;
+// valorant-api airBurstStats {shotgunPelletCount 5, burstDistance 7.5}). A canister stopped by a wall before 7.5 m bursts at the
+// wall into it (no pellets come back: inferred, unpublished).
+const BUCKY_ALT={dist:7.5,pellets:5,head:40,body:20,legs:15};
 // Jett Tailwind dash (wiki: Dash duration 0.45 s): a constant-speed burst along (dx, dz) instead of a teleport. D = dash(...)
 // {dx,dz,left,v}; dashStep moves the capsule v*dt (<= 0.25 m sub-steps) and stops at a wall / the playable leash. The server
 // and the page (offline play and the online prediction) share it, so the predicted dash lands where the server's does.
@@ -257,5 +290,5 @@ function dashStep(P,D,dt,world){let s=Math.min(D.left,D.v*Math.max(0,dt));D.left
 C.stride=1.85;C.stepRun=.65;
 function runs(speed,top,quiet){return !quiet&&speed>C.stepRun*Math.max(.1,top||0);}
 function footfall(st,dist,dt,run){if(!run){st.fd=Math.max(0,(st.fd||0)-C.stride*Math.max(0,dt||0));return false;}st.fd=(st.fd||0)+Math.max(0,dist||0);if(st.fd<C.stride)return false;st.fd%=C.stride;return true;}
-return {C,step,dash,dashStep,runs,footfall,fallDamage,velocity,brake,groundMove,spread,bloomCap,SPREAD,recoveryTime,recoilMove,disk,damp,approach,clipBlocked,CLIPS,REC,sprayReset,sprayBloom,sprayStep,leashGrid,leashOk,leashNear};
+return {C,step,dash,dashStep,runs,footfall,fallDamage,velocity,brake,groundMove,spread,bloomCap,SPREAD,CADENCE,cadenceShot,cadenceGap,cadenceOwed,CLASSIC_ALT,classicAltSpread,BUCKY_ALT,recoveryTime,recoilMove,disk,damp,approach,clipBlocked,CLIPS,REC,sprayReset,sprayBloom,sprayStep,leashGrid,leashOk,leashNear};
 });

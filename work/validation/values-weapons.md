@@ -2,11 +2,11 @@
 
 Sources fetched 2026-10-26: valorant-api.com/v1/weapons (game build **release-13.08**, 13.08.00.5715960, built 2026-10-15), wiki.playvalorant.com (Riot's official wiki, en-us weapon pages), valorant.fandom.com weapon pages. Liquipedia was rate-limited for scripted access (not used beyond search excerpts). Raw copies: /workspace/work/qa/qa35/ (weapons.json, pv/*.txt, fandom/*.txt).
 
-**Ours** = the server (server/src/weapons.json = models/valorant/weapon-calibration.js, simulation.js RESERVE / KNIFE_*, spike.js prices, windups.js REEQUIP) and the production page (work/feel_runtime.js copies every profile value from the same calibration file onto WEAP / VRUN / FSA / XZ; damage via wRaw from damageRanges; spread from the shared motor vendor/valorant-feel.js SPREAD = server/src/motor.cjs). The page's base WEAP table in index.html is stale (Operator 0.75/s, Marshal 0.8/s, Bulldog 9.15/s, Shorty 3.33/s, Judge mag 7, Frenzy mag 13) but is overwritten in production; the offline page harness (work/audit.js) strips the VALORANT FEEL block, so harness tests still see it (open item).
+**Ours** = the server (server/src/weapons.json = models/valorant/weapon-calibration.js, simulation.js RESERVE / KNIFE_*, spike.js prices, windups.js REEQUIP) and the production page (work/feel_runtime.js copies every profile value from the same calibration file onto WEAP / VRUN / FSA / XZ; damage via wRaw from damageRanges; spread from the shared motor vendor/valorant-feel.js SPREAD = server/src/motor.cjs). The page's base WEAP table in index.html was stale (Operator 0.75/s, Marshal 0.8/s, Bulldog 9.15/s, Shorty 3.33/s, Judge mag 7, Frenzy mag 13; overwritten in production, but the offline page harness (work/audit.js) strips the VALORANT FEEL block and saw it); qa-36/37 synced it to the calibration (pinned by work/test_weapon_cadence_page.cjs) (was an open item).
 
 Damage is floored as in Valorant (wiki Weapons: decimals round down); note the pv infobox lists Guardian legs 49 while the raw value is 48.75 (floor 48, Liquipedia/community 48).
 
-Summary: 267 ok, 5 fixed in qa-35, 3 open, 6 notes, 0 unresolved mismatches.
+Summary: 267 ok, 5 fixed in qa-35, 0 open (the 3 qa-35 open rows - Bulldog / Stinger ADS bursts, Odin spin-up - fixed in qa-36/37, the Odin ramp time an ASSUMPTION; also Bucky canister / wall stop, online Classic alt), 6 notes, 0 unresolved mismatches.
 
 | weapon | value | ours | source value | URL | status |
 |---|---|---|---|---|---|
@@ -20,7 +20,7 @@ Summary: 267 ok, 5 fixed in qa-35, 3 open, 6 notes, 0 unresolved mismatches.
 | Classic | first-shot spread hip (deg) | 0.4 | 0.4 | https://valorant-api.com/v1/weapons | ok |
 | Classic | spread row hip [1st st/cr, max st/cr, crouch-walk/walk/run/air] | [0.4, 0.3, 1.8, 1.35, 0.5, 1.1, 2.3, 7] | ['0.4', '0.3', '1.8', '1.35', '0.5', '1.1', '2.3', '7'] | https://wiki.playvalorant.com/en-us/Classic | ok |
 | Classic | ALT FIRE spread [1st st/cr, max st/cr, cw/walk/run/air] | was primary cone + 0.045 rad; now feel_runtime XCLA 1.9/1.71 -> 5.78/5.21, +0/0.6/1.5/2.25 | ['1.9', '1.71', '5.78', '5.21', '0', '0.6', '1.5', '2.25'] | https://wiki.playvalorant.com/en-us/Classic | fixed (page; qa-35) |
-| Classic | ALT FIRE mode | was 3 single shots 60 ms apart (0.45 s cycle); now 3 bullets at once, 2.22 bursts/s | 3-bullet shotgun blast, 2.22 bursts/s (altShotgunStats pellets 3, burstRate 2.22) | https://valorant-api.com/v1/weapons + https://wiki.playvalorant.com/en-us/Classic | fixed (page; online Classic alt still sends one pulse - open) |
+| Classic | ALT FIRE mode | 3 bullets at once, 2.22 bursts/s; online the click sends alt:1 with the fire pulse and the server fires the 3 rounds (motor CLASSIC_ALT, wiki spread row) | 3-bullet shotgun blast, 2.22 bursts/s (altShotgunStats pellets 3, burstRate 2.22) | https://valorant-api.com/v1/weapons + https://wiki.playvalorant.com/en-us/Classic | fixed (page qa-35, server + online qa-36/37) |
 | Classic | wall penetration | Low | Low | https://valorant-api.com/v1/weapons | ok |
 | Classic | damage head/body/legs 0-30 m (floored) | 78 / 26 / 22 | 78 / 26 / 22 (raw 78/26/22.1) | https://valorant-api.com/v1/weapons | ok |
 | Classic | damage head/body/legs 30-50 m (floored) | 66 / 22 / 18 | 66 / 22 / 18 (raw 66/22/18.7) | https://valorant-api.com/v1/weapons | ok |
@@ -82,7 +82,7 @@ Summary: 267 ok, 5 fixed in qa-35, 3 open, 6 notes, 0 unresolved mismatches.
 | Stinger | ADS zoom | 1.15 | 1.15 | https://valorant-api.com/v1/weapons | ok |
 | Stinger | ADS move multiplier | 0.76 | 0.76 | https://valorant-api.com/v1/weapons | ok |
 | Stinger | ADS first-shot spread (deg) | 0.35 | 0.35 | https://valorant-api.com/v1/weapons + https://wiki.playvalorant.com/en-us/Stinger | ok |
-| Stinger | ADS burst | none: full-auto at the 8.471/s average | 4-round burst, rounds at 18/s, 2.118 bursts/s | https://wiki.playvalorant.com/en-us/Stinger | open (burst cadence not modelled, server + page) |
+| Stinger | ADS burst | was full-auto at the 8.471/s average; now 4 rounds at 18/s, next burst 1/2.118 s after the first round, a started burst finishes without the trigger (shared motor CADENCE: server fire() + page shoot() / tick) | 4-round burst, rounds at 18/s, 2.118 bursts/s | https://wiki.playvalorant.com/en-us/Stinger | fixed (qa-36/37, server + page) |
 | Stinger | reload (s) | 2.25 | 2.25 sec | https://wiki.playvalorant.com/en-us/Stinger | ok |
 | Stinger | equip normal / fast / instant (s) | 0.75 / 0.45 / 0.15 | 0.75 sec (Normal) 0.45 sec (Fast) 0.15 sec (Instant) | https://valorant-api.com/v1/weapons + https://wiki.playvalorant.com/en-us/Stinger | ok |
 | Stinger | run speed (m/s) | 5.737 | 0.85 x 6.75 = 5.737 (pv 5.73 m/sec) | https://valorant-api.com/v1/weapons | ok |
@@ -117,7 +117,7 @@ Summary: 267 ok, 5 fixed in qa-35, 3 open, 6 notes, 0 unresolved mismatches.
 | Bucky | run speed (m/s) | 5.062 | 0.75 x 6.75 = 5.062 (pv 5.06 m/sec) | https://valorant-api.com/v1/weapons | ok |
 | Bucky | first-shot spread hip (deg) | 3 | 3 | https://valorant-api.com/v1/weapons | ok |
 | Bucky | spread row hip [1st st/cr, max st/cr, crouch-walk/walk/run/air] | [3, 2.55, 3, 2.55, 0.5, 1, 2, 4] | ['3.0', '2.55', '3.0', '2.55', '0.5', '1', '2', '4'] | https://wiki.playvalorant.com/en-us/Bucky | ok |
-| Bucky | ALT FIRE air burst | 5 pellets, cone x0.28 from the muzzle; damage was 22/44/19 to 15 m then 14/28/12 -> now the primary 17/34/14, 13/26/11 past 8 m, 9/18/7 past 12 m | canister detonates at 7.5 m into 5 pellets, same damage table; a direct canister hit before 7.5 m 40/20/15 | https://valorant-api.com/v1/weapons + https://wiki.playvalorant.com/en-us/Bucky | fixed (damage, page offline only); geometry approx + canister direct hit + server alt fire open |
+| Bucky | ALT FIRE air burst | hitscan canister along the aim: a target inside 7.5 m takes the canister only (40 head / 20 body / 15 legs), a wall inside 7.5 m stops it (no pellets), else 5 pellets in the primary cone from the burst point with damage by distance from it (17/34/14, 13/26/11 past 8 m, 9/18/7 past 12 m); server + page, online too (motor BUCKY_ALT) | canister detonates at 7.5 m into 5 pellets, same damage table; a direct canister hit before 7.5 m 40/20/15 | https://valorant-api.com/v1/weapons + https://wiki.playvalorant.com/en-us/Bucky | fixed (qa-36/37); wall-before-7.5 m = no pellets is inferred (unpublished) |
 | Bucky | pellets | 15 | 15 | https://valorant-api.com/v1/weapons | ok |
 | Bucky | wall penetration | Low | Low | https://valorant-api.com/v1/weapons | ok |
 | Bucky | damage head/body/legs 0-8 m (floored) | 34 / 17 / 14 | 34 / 17 / 14 (raw 34/17/14) | https://valorant-api.com/v1/weapons | ok |
@@ -145,7 +145,7 @@ Summary: 267 ok, 5 fixed in qa-35, 3 open, 6 notes, 0 unresolved mismatches.
 | Bulldog | ADS zoom | 1.25 | 1.25 | https://valorant-api.com/v1/weapons | ok |
 | Bulldog | ADS move multiplier | 0.76 | 0.76 | https://valorant-api.com/v1/weapons | ok |
 | Bulldog | ADS first-shot spread (deg) | 0.1 | API adsStats 0.3; wiki Alt Fire row 0.1 (fandom same) | https://valorant-api.com/v1/weapons + https://wiki.playvalorant.com/en-us/Bulldog | note (sources disagree; ours = wiki 0.1) |
-| Bulldog | ADS burst | none: full-auto at the 6.316/s average | 3-round burst, rounds at 13.333/s, 2.105 bursts/s | https://wiki.playvalorant.com/en-us/Bulldog | open (burst cadence not modelled, server + page) |
+| Bulldog | ADS burst | was full-auto at the 6.316/s average (page: an old setTimeout burst at 70 ms rounds that dropped the trigger); now 3 rounds at 13.333/s, next burst 1/2.105 s after the first round, a started burst finishes without the trigger (shared motor CADENCE: server fire() + page shoot() / tick) | 3-round burst, rounds at 13.333/s, 2.105 bursts/s | https://wiki.playvalorant.com/en-us/Bulldog | fixed (qa-36/37, server + page) |
 | Bulldog | reload (s) | 2.5 | 2.5 sec | https://wiki.playvalorant.com/en-us/Bulldog | ok |
 | Bulldog | equip normal / fast / instant (s) | 1 / 0.6 / 0.2 | 1 sec (Normal) 0.6 sec (Fast) 0.2 sec (Instant) | https://valorant-api.com/v1/weapons + https://wiki.playvalorant.com/en-us/Bulldog | ok |
 | Bulldog | run speed (m/s) | 5.4 | 0.8 x 6.75 = 5.4 (pv 5.4 m/sec) | https://valorant-api.com/v1/weapons | ok |
@@ -264,7 +264,7 @@ Summary: 267 ok, 5 fixed in qa-35, 3 open, 6 notes, 0 unresolved mismatches.
 | Odin | magazine | 100 | 100 | https://valorant-api.com/v1/weapons | ok |
 | Odin | reserve | 200 | 200 (2 magazines) | https://wiki.playvalorant.com/en-us/Odin | ok |
 | Odin | fire rate (hip, /s) | 12 | 12 | https://valorant-api.com/v1/weapons | ok |
-| Odin | hip fire-rate ramp | flat 12/s (no spin-up) | 12 -> 15.6/s 'rate of fire increases over time' (feature ROFIncrease); ramp time not published | https://wiki.playvalorant.com/en-us/Odin | open (ramp duration unpublished) |
+| Odin | hip fire-rate ramp | was flat 12/s; now 12 -> 15.6/s linear over 1 s of continuous fire, reset by a 0.25 s pause (motor CADENCE.spin, server + page); ADS starts at 15.6 | 12 -> 15.6/s 'rate of fire increases over time' (feature ROFIncrease); ramp time not published (wiki / fandom / Liquipedia / valorant.gs list only 12 -> 15.6) | https://wiki.playvalorant.com/en-us/Odin | fixed (qa-36/37); ramp 1 s + 0.25 s reset = ASSUMPTION (unpublished) |
 | Odin | ADS fire rate (/s) | 15.6 | 15.6 | https://valorant-api.com/v1/weapons | ok |
 | Odin | ADS zoom | 1.15 | 1.15 | https://valorant-api.com/v1/weapons | ok |
 | Odin | ADS move multiplier | 0.76 | 0.76 | https://valorant-api.com/v1/weapons | ok |

@@ -43,7 +43,7 @@ console.log('Combat consistency: server hit volumes = client bone hitboxes, shar
  const feel=fs.readFileSync(path.join(__dirname,'feel_runtime.js'),'utf8'),a=feel.indexOf('const wRaw='),b=feel.indexOf('\n',feel.indexOf('xWkDmg=function',a));assert(a>0&&b>a,'feel wallbang block');
  const W=JSON.parse(fs.readFileSync(path.join(root,'server/src/weapons.json'),'utf8')).weapons,WEAP={};for(const n of Object.keys(W))WEAP[n]={body:1};
  const c={WEAP,VF:{profiles:W},Math,Object,xPelOn:false};vm.createContext(c);vm.runInContext('var wDmg,xWkDmg;'+feel.slice(a,b),c);
- const sim=fs.readFileSync(path.join(root,'server/src/simulation.js'),'utf8');assert(sim.includes("damage=Math.floor((u.weapon==='Knife'?(knifeBack(target,u)?(heavy?KNIFE_HEAVY.crit:KNIFE_LIGHT.back):heavy?KNIFE_HEAVY.body:KNIFE_LIGHT.front):range[part==='head'?'headDamage':part==='legs'?'legDamage':'bodyDamage'])*scale"),'server floors raw x scale');
+ const sim=fs.readFileSync(path.join(root,'server/src/simulation.js'),'utf8');assert(sim.includes("this.applyHit(u,target,part,(u.weapon==='Knife'?(knifeBack(target,u)?(heavy?KNIFE_HEAVY.crit:KNIFE_LIGHT.back):heavy?KNIFE_HEAVY.body:KNIFE_LIGHT.front):range[part==='head'?'headDamage':part==='legs'?'legDamage':'bodyDamage'])*scale,")&&sim.includes("applyHit(u,target,part,raw,o,d,hitDist,wall,p){const damage=Math.floor(raw*(target.vulnerableUntil>this.time?2:1))"),'server floors raw x scale');/* qa-37: fire() hands raw x scale to applyHit (shared with the Bucky canister), which floors it */
  let n=0,frac=0;for(const [name,w]of Object.entries(W)){if(w.shotgunPelletCount>1)continue;for(const r of w.damageRanges)for(const part of ['head','body','legs'])for(const k of [1,.75,.5]){const raw=r[part==='head'?'headDamage':part==='legs'?'legDamage':'bodyDamage'],d=(r.rangeStartMeters+Math.min(r.rangeEndMeters,r.rangeStartMeters+5))/2;
   assert.equal(c.xWkDmg(WEAP[name],part,d,k),Math.floor(raw*k),`${name} ${part} @${d} m x${k}`);n++;if(Math.floor(raw*k)!==Math.round(Math.floor(raw)*k))frac++;}}
  assert(frac>0,'the case set includes rows the old rounding got wrong');console.log(`Wallbang damage: ${n} weapon x band x part x k cases = server floor(raw x k) (${frac} differed under the old rounding)`);}
@@ -51,7 +51,7 @@ console.log('Combat consistency: server hit volumes = client bone hitboxes, shar
 // Judge did 17 a shot, the base table's expected pellets ~119); the Bucky's alt fire (no profile) lost its falloff.
 {const feel=fs.readFileSync(path.join(__dirname,'feel_runtime.js'),'utf8'),W=JSON.parse(fs.readFileSync(path.join(root,'server/src/weapons.json'),'utf8')).weapons;
  const cut=(s,a,b)=>{const i=s.indexOf(a),j=s.indexOf(b,i);assert(i>=0&&j>i,'slice '+a);return s.slice(i,j);};
- const base=cut(html,'const WEAP = {','let xSpS')+cut(html,'var xPelOn','const RF =');
+ const base=cut(html,'const WEAP = {','const XCAD = {};')+cut(html,'var xPelOn','const RF =');
  const prof=cut(feel,'for(const [w,p]of Object.entries(VF.profiles))','\n'),wb=feel.indexOf('const wRaw='),we=feel.indexOf('\n',feel.indexOf('xWkDmg=function',wb));
  const c={VF:{profiles:W},VRUN:{},FSA:{},XZ:{},Math,Object,JSON};vm.createContext(c);
  vm.runInContext(base.replace('const WEAP','var WEAP')+';'+prof+';var xWkDmg;'+feel.slice(wb,we)+';globalThis.T={WEAP,setPel:v=>{xPelOn=v;},wDmg0:typeof wDmg0!=="undefined"?wDmg0:null};',c);
