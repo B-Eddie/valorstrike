@@ -1,7 +1,7 @@
 // Floor weapons (5v5): deaths drop the best gun, G drops the held gun, F picks up the gun the player is
 // looking at and swaps it with the gun in that slot (the old one lands where the new one lay). Walking over a
 // gun with that slot empty picks it up. The server owns every floor gun, its ammo and every swap.
-import {weapons,reserveOf} from './simulation.js';
+import {weapons,reserveOf,stimK} from './simulation.js';
 export const SIDEARMS=new Set(['Classic','Shorty','Frenzy','Ghost','Sheriff']);
 const RANK={Classic:0,Shorty:1,Frenzy:2,Ghost:3,Sheriff:4,Stinger:5,Bucky:6,Spectre:7,Judge:8,Bulldog:9,Marshal:10,Ares:11,Guardian:12,Odin:13,Outlaw:13,Phantom:14,Vandal:14,Operator:15};
 export const FLOOR_LIMIT=24,PICK_RANGE=2.5,AUTO_RANGE=1,DROPPER_GRACE=1.5;
@@ -18,7 +18,7 @@ function ammoOf(u,w){return u.weapon===w?[u.ammo,u.reserve]:[u.inventory?.[w],u.
 // Removing a gun from a slot ends its buy-phase refund: a gun on the floor or picked up from it is never sold back.
 function lockSlot(u,slot){if(Array.isArray(u.purchases))u.purchases=u.purchases.filter(p=>p.key!==slot);}
 function holster(u){if(u.weapon&&u.weapon!=='Knife'){u.inventory[u.weapon]=u.ammo;u.reserves[u.weapon]=u.reserve;}}
-function wield(sim,u,w){u.weapon=w;u.ammo=u.inventory[w]??(w==='Knife'?1:weapons[w].magazineSize);u.reserve=u.reserves[w]??0;u.reloadAt=0;u.triggerHeld=false;u.fireAt=sim.time+weapons[w].equipTimeSeconds;u.equipAt=u.fireAt;}
+function wield(sim,u,w){u.weapon=w;u.ammo=u.inventory[w]??(w==='Knife'?1:weapons[w].magazineSize);u.reserve=u.reserves[w]??0;u.reloadAt=0;u.triggerHeld=false;u.fireAt=sim.time+weapons[w].equipTimeSeconds/stimK(u);u.equipAt=u.fireAt;}
 function able(sim,u){return u.alive&&!u.loading&&!u.pendingTeleport&&!(u.dismissUntil>sim.time)&&sim.roundDelay<=0;}
 function take(sim,u,d){const slot=slotOf(d.w),old=u[slot];sim.floor.splice(sim.floor.indexOf(d),1);
  if(old){const [a,r]=ammoOf(u,old);if(u.weapon===old)u.weapon=null;floorDrop(sim,old,d.x,d.y,d.z,a,r,u.id);delete u.inventory[old];delete u.reserves[old];}

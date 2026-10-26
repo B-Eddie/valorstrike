@@ -27,3 +27,9 @@ console.log('Reyna authority: owned nearby unexpired souls, shared charges, +50 
 {const {s,u,v}=fixture();s.roundDelay=0;Object.assign(v,{x:40,z:-60});u.human=v.human=true;soul(s,u);assert(s.command(u,{t:'ab',k:'e'}));assert.ok(Math.abs(u.dismissUntil-s.time-1.5)<1e-9,'1.5 s');
  u.slowUntil=s.time+5;u.tagUntil=s.time+5;const sp=()=>Math.hypot(u.vx||0,u.vz||0);for(let i=0;i<20;i++){u.input={forward:1};u.inputAt=s.time;s.step(.05);}assert.ok(Math.abs(sp()-12)<.05,'dismissed: 12 m/s, not slowed: '+sp());
  for(let i=0;i<20;i++){u.input={forward:1};u.inputAt=s.time;s.step(.05);}assert.ok(!(u.dismissUntil>s.time)&&sp()<6.75*.35+.05,'after Dismiss the slow is back: '+sp());}
+// Empress Combat Stim (v11.08): +10 % fire rate, reload and equip speed (was +15 % fire rate only)
+{const {s,u,v}=fixture();const {weapons,reloadTime}=await import('./src/simulation.js');s.roundDelay=0;Object.assign(v,{x:40,z:-60});u.weapon='Vandal';u.ammo=10;u.reserve=50;u.inventory={Vandal:10,Classic:12};u.reserves={Vandal:50,Classic:36};u.primary='Vandal';
+ const base=reloadTime(u);u.empress=true;assert.ok(Math.abs(reloadTime(u)-base/1.1)<1e-9,'reload /1.1');
+ assert(s.command(u,{t:'equip',w:'Classic'}),'equip');assert.equal(u.weapon,'Classic');assert.ok(Math.abs(u.equipAt-s.time-weapons.Classic.equipTimeSeconds/1.1)<1e-9,'equip /1.1: '+(u.equipAt-s.time));
+ u.weapon='Vandal';u.ammo=10;u.fireAt=0;u.equipAt=0;
+ const t0=s.time;u.input={fire:true};u.inputAt=s.time;assert(s.fire(u));assert.ok(Math.abs(u.fireAt-t0-1/(weapons.Vandal.fireRate*1.1))<1e-9,'fire rate x1.1: '+(u.fireAt-t0));}
