@@ -29,7 +29,7 @@ export async function build(agent='jett',weapon='vandal',api=runtime()){
  const play=(lo,upn)=>{mx.stopAllAction();X.a={};const a=mx.clipAction(L[ST[lo]]);a.play();const b=mx.clipAction(U[ST[upn]]);b.play();X.uo=upn==='aim'||upn==='knife'?null:upn;};
  play('idle','aim');mx.update(.01);m.updateMatrixWorld(true);
  const hand=bone('R_Hand'),hold=new THREE.Group(),p=new THREE.Vector3(),q=new THREE.Quaternion(),s=new THREE.Vector3();new THREE.Matrix4().copy(m.matrixWorld).invert().multiply(hand.matrixWorld).decompose(p,q,s);hold.quaternion.copy(q.invert());hold.scale.set(1/s.x,1/s.y,1/s.z);hand.add(hold);hold.add(gun);gun.position.set(0,0,.03);gun.rotation.set(0,Math.PI,0);
- const step=(n=30,dt=1/30)=>{for(let i=0;i<n;i++){api.xUbPre(M);mx.update(dt);api.xUbPost(M);}m.updateMatrixWorld(true);};
+ const step=(n=30,dt=1/30,poseDt=dt||1/60)=>{for(let i=0;i<n;i++){X.poseDt=poseDt;api.xUbPre(M);mx.update(dt);api.xUbPost(M);}m.updateMatrixWorld(true);};
  return {M,X,play,step,api,bone,inner,Tg};}
 // Measurements: hand-to-socket gaps and the gun's aim alignment, in metres/radians.
 export function measure(R){const {M,bone}=R,g=M.gun.children[0].userData.grip||{},v=new THREE.Vector3(),w=new THREE.Vector3();M.m.updateMatrixWorld(true);

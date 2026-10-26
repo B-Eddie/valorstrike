@@ -3902,12 +3902,12 @@ function xUbAnim(b, M, sp, dt) {
   const dx = X.px == null ? 0 : P.x - X.px, dz = X.pz == null ? 0 : P.z - X.pz, dy = X.py == null ? 0 : P.y - X.py; X.px = P.x; X.pz = P.z; X.py = P.y;
   // airborne: only re-check the floor when the unit moved vertically (or is already in the air)
   let air = X.air; if (Math.abs(dy) > 1e-3 || air) { try { air = typeof groundAt === "function" && P.y > groundAt(P.x, P.z, 0.3, P.y) + 0.2; } catch (e) { air = false; } }
-  X.spS = X.spS == null ? sp : X.spS + (sp - X.spS) * Math.min(1, dt * 20); sp = X.spS; // per-frame position deltas are noisy; ~0.1 s smoothing keeps VALORANT's near-instant stop
+  X.spS = X.spS == null ? sp : X.spS + (sp - X.spS) * (1 - Math.exp(-dt * 30)); sp = X.spS; // per-frame position deltas are noisy; ~0.1 s smoothing keeps VALORANT's near-instant stop
   if (air && !X.air && dy > 0) xUbOnce(X, "jump", "L", 0.35); else if (!air && X.air && sp < 0.35) xUbOnce(X, "land", "L", 0.3); // moving landings go straight back to the stride (no knee-buckle mid-run)
   X.air = air;
   let S = null; try { S = mode === "five" && xFvOK && FV.sp ? FV.sp : null; } catch (e) {}
   const plant = !!S && ((S.st === "carry" && S.c === b && S.pt > 0) || (S.st === "plant" && S.du === b));
-  const cr = !!b.cr && !air && !plant; X.cb += ((cr ? 1 : 0) - X.cb) * Math.min(1, dt * 10);
+  const cr = !!b.cr && !air && !plant; X.cb += ((cr ? 1 : 0) - X.cb) * (1 - Math.exp(-dt * 10));
   // events: shots (SFX.at hook bumps b.xsh), hp loss, ability casts (xCaBotGo sets M.xCast)
   const sn = b.xsh || 0; if (sn !== X.sn) { if (sn > X.sn) { xUbAdd(X, "fire", 0.9); X.shots++; } X.sn = sn; }
   let mag = 25, rld = 2; try { const W = WEAP[M.w]; if (W) { mag = W.mag || mag; rld = W.rld || rld; } } catch (e) {}
@@ -3996,11 +3996,10 @@ function xUbShot(p) {
   if (best) best.xsh = (best.xsh || 0) + 1;
 }
 try { const a0 = SFX.at; if (typeof a0 === "function") SFX.at = function (p) { try { xUbShot(p); } catch (e) {} return a0.apply(this, arguments); }; } catch (e) {}
-(function xSolTick() {
-  requestAnimationFrame(xSolTick);
-  const d = Math.min(0.05, XSOL.ck.getDelta());
+function xSolTick(d) {
+  d = Math.max(0, Math.min(0.25, d || 0));
   if (typeof running !== "undefined" && running && paused) return;
-  // perf: animate only bots in view and within 60 m; half rate past 30 m
+  // Cull hidden rigs, but sample every visible pose on the same frame as movement.
   const F = xSolTick.F || (xSolTick.F = { f: new THREE.Frustum(), m: new THREE.Matrix4(), s: new THREE.Sphere(new THREE.Vector3(), 1.3), n: 0 });
   let cam = null; try { cam = camera; } catch (e) {}
   F.n++; if (cam) { cam.updateMatrixWorld(); F.m.multiplyMatrices(cam.projectionMatrix, cam.matrixWorldInverse); F.f.setFromProjectionMatrix(F.m); }
@@ -4013,13 +4012,12 @@ try { const a0 = SFX.at; if (typeof a0 === "function") SFX.at = function (p) { t
       let lod = 60; try { lod = XS.lod || 40; } catch (e) {} // bot anim LOD follows the preset distance (25 / 40 / 60 m)
       const cul = dd > lod || (dd > 2 && !F.f.intersectsSphere(F.s));
       if (M.xAt && M.xAv === cul) { M.xAv = !cul; for (let j = 0; j < M.xAt.length; j++) M.xAt[j].visible = !cul; } // attachments follow the bot's cull state
-      if (cul) { M.acc = 0; continue; }
-      M.acc = (M.acc || 0) + d;
-      if (dd > lod / 2 && (F.n + i) & 1) continue;
-      if (M.ub) xUbPre(M); M.sx.mx.update(Math.min(0.1, M.acc)); M.acc = 0; if (M.ub) xUbPost(M);
-    } else { if (M.ub) xUbPre(M); M.sx.mx.update(d); if (M.ub) xUbPost(M); }
+      if (cul) continue;
+      if (M.ub) xUbPre(M); M.sx.poseDt = d; M.sx.mx.update(d); if (M.ub) xUbPost(M);
+      if (M.unit && typeof xrHitboxes === "function") xrHitboxes(M.unit, M);
+    } else { if (M.ub) xUbPre(M); M.sx.poseDt = d; M.sx.mx.update(d); if (M.ub) xUbPost(M); }
   }
-})();
+}
 // agent root: the pivots the game drives (body / head / limbs), the team ring and the held weapon. The visible body is always the
 // real Valorant rig, attached by xvAttach (valorant_runtime.js) as soon as that agent's kit is in memory; there is no stand-in body.
 function xAgent(name, rim, w) {
@@ -4381,7 +4379,7 @@ function xbReport() {
 // Real-time offline simulation: game time (buy phase, round clock, Spike fuse, plant / defuse, respawns, ability timers)
 // follows the real clock at any frame rate. Each frame's real elapsed time is split into steps of at most 50 ms so
 // movement / physics still substep; the first frame back from a hidden tab counts as one step. Online the server owns the
-// clocks, so the client keeps one capped step per frame. Stalls: a frame counts at most XRT.max (4 s) of game time, and
+// clocks; local prediction still substeps up to 250 ms instead of slowing below 20 fps. Stalls: a frame counts at most XRT.max (4 s) of game time, and
 // the catch-up is bounded: once a frame's steps have used XRT.budget ms of compute the rest is carried as XRT.debt into
 // the next frames (still capped at XRT.max in total), so a slow device keeps real time without a spiral of ever-longer
 // frames. (2.5 s with no carry lost time on software rendering: 39 s of buy phase took 70 s at <0.3 fps.)
@@ -4394,10 +4392,10 @@ function xSimStep(d) {
 }
 function xSimRun(real, f) { // returns the game time advanced
   let on = false; try { on = !!MP.on; } catch (e) {} // MP is declared further down the page
-  if (on) XRT.debt = 0; else { real = Math.min(XRT.max, real + XRT.debt); XRT.debt = 0; }
-  if (on || real <= XRT.step) { const d = Math.min(real, XRT.step); XRT.n = 1; f(d); return d; }
-  const n = Math.ceil(real / XRT.step - 1e-9), d = real / n, t0 = XRT.now(); let t = 0; XRT.n = 0;
-  for (let i = 0; i < n && running && !paused; i++) { f(d); t += d; XRT.n++; if (i < n - 1 && XRT.now() - t0 > XRT.budget) { XRT.debt = real - t; break; } }
+  if (on) { XRT.debt = 0; real = Math.min(.25, real); } else { real = Math.min(XRT.max, real + XRT.debt); XRT.debt = 0; }
+  if (real <= XRT.step) { const d = Math.min(real, XRT.step); XRT.n = 1; f(d); return d; }
+  const n = Math.ceil(real / XRT.step - 1e-9), d = real / n, t0 = XRT.now(), frameAt = performance.now(); let t = 0; XRT.n = 0;
+  for (let i = 0; i < n && running && !paused; i++) { XRT.at = on ? frameAt - (real - t - d) * 1000 : null; try { f(d); } finally { XRT.at = null; } t += d; XRT.n++; if (i < n - 1 && XRT.now() - t0 > XRT.budget) { XRT.debt = real - t; break; } }
   return t;
 }
 function xCov() { if (xLob0 || xResUp() || xSetFull()) return true; for (const el of xCovEl) if (el.style.display === "flex") return true; return false; }
@@ -4450,6 +4448,7 @@ function loop() {
     spike.material.emissive.setHex(Math.sin(performance.now() / (timeLeft < 10 ? 80 : 250)) > 0 ? 0x880000 : 0x220000);
   } catch (e) { xE(e); }
   try { xVis(rt); } catch (e) { xE(e); }
+  try { xSolTick(rt); } catch (e) { xE(e); }
   try { renderer.render(scene, camera); } catch (e) { xE(e); }
 }
 const XTK = { defs: [], pool: [], pt: new THREE.Vector3(), aim: new THREE.Vector3(), mv: new THREE.Vector3(), q: new THREE.Vector3() }; // perf pass 9: tick scratch
@@ -13020,7 +13019,7 @@ function xvAgent(M, kit) {
   [['fire','Pistol_Shoot'],['hit','Hit_Chest'],['hitHead','Hit_Head']].forEach(([n,c]) => { const a=mx.clipAction(kit.A[c]); a.blendMode=THREE.AdditiveAnimationBlendMode; a.setLoop(THREE.LoopOnce,1); X.ad[n]=a; });
   X.a.idle.play(); X.a.aim.play(); X.w.idle = X.w.aim = 1; mx.update(.01); xUbCarry(X); M.m.updateMatrixWorld(true); X.cull = xvCull(cull);
   const hand = bone('R_Hand'); if (hand && M.gun) { const hold = new THREE.Group(), p=new THREE.Vector3(),q=new THREE.Quaternion(),s=new THREE.Vector3(); new THREE.Matrix4().copy(M.m.matrixWorld).invert().multiply(hand.matrixWorld).decompose(p,q,s); hold.quaternion.copy(q.invert()); hold.scale.set(1/s.x,1/s.y,1/s.z); hand.add(hold); hold.add(M.gun); M.gun.position.set(0,0,.03); M.gun.rotation.set(0,Math.PI,0); M.weaponHolder=hold; } // gun models are authored muzzle -Z: PI faces the muzzle the way the character looks
-  X.contactLift=kit.contactLift;X.contactProbes=kit.contactProbes.map(p=>({o:sc.getObjectByName(p.mesh),indices:p.indices})).filter(p=>p.o&&p.o.isSkinnedMesh);X.contactV=new THREE.Vector3();X.contactInv=new THREE.Matrix4();X.contactShift=new THREE.Vector3();X.contactScale=new THREE.Vector3();X.contactFloor=bx.min.y;X.acts=X.a; M.ub=1; M.sx=X; M.valorant=1; M.xAt=[]; M.solOwn=()=>{M.solOwn=null;}; XSOL.mx.push(M);
+  X.contactRoot=wr;X.contactLift=kit.contactLift;X.contactProbes=kit.contactProbes.map(p=>({o:sc.getObjectByName(p.mesh),indices:p.indices})).filter(p=>p.o&&p.o.isSkinnedMesh);X.contactV=new THREE.Vector3();X.contactInv=new THREE.Matrix4();X.contactShift=new THREE.Vector3();X.contactScale=new THREE.Vector3();X.contactFloor=bx.min.y;X.acts=X.a; M.ub=1; M.sx=X; M.valorant=1; M.xAt=[]; M.solOwn=()=>{M.solOwn=null;}; XSOL.mx.push(M);
   if (M.xvWait) { M.xvWait = 0; if (M.gun) M.gun.visible = true; } // the weapon waited, hidden, for the body
 }
 // #11: no stand-in bodies. An agent whose kit is in memory gets its real rig immediately; otherwise it stays
@@ -13031,9 +13030,12 @@ function xvAttach(M) {
   M.xvWait = 1; if (M.gun) M.gun.visible = false; xvAgentLoad(ag).then((k) => xvAgent(M, k)).catch(() => {}); return M;
 }
 {const create=xAgent;xAgent=function(){return xvAttach(create.apply(this,arguments));};}
-// Correct only the blended support-foot height after the mixer. Authored jog flight remains airborne. The shift moves
-// Splitter (legs and torso together) so the waist never separates; stub rigs without it shift the pelvis.
-{const pre=xUbPre,post=xUbPost;xUbPre=function(M){const X=M.sx;if(X&&X.contactRestore){(X.cs||X.b.pelvis).position.copy(X.contactRestore);X.contactRestore=null;}return pre(M);};xUbPost=function(M){post(M);const X=M.sx;if(!X||!X.nativeContact||X.dd||M.dead||X.air||X.lo||(X.w.plant||0)>.01||!X.contactProbes.length)return;M.m.updateMatrixWorld(true);const v=X.contactV,inv=X.contactInv.copy(X.sc.matrixWorld).invert();let low=Infinity;for(const {o,indices}of X.contactProbes){o.skeleton.update();for(const i of indices){v.fromBufferAttribute(o.geometry.attributes.position,i);o.boneTransform(i,v);v.applyMatrix4(o.matrixWorld).applyMatrix4(inv);low=Math.min(low,v.y);}}let lift=0;const c=X.contactLift,a=X.a.run;if(c&&a&&(X.w.run||0)>.001){const t=a.time%c.times[c.times.length-1];let i=0;while(i<c.times.length-2&&c.times[i+1]<t)i++;const f=(t-c.times[i])/Math.max(.00001,c.times[i+1]-c.times[i]);lift=(c.values[i]*(1-f)+c.values[i+1]*f)*(X.w.run||0);}const dy=X.contactFloor+lift-low;if(!Number.isFinite(dy)||Math.abs(dy)>.5)return;X.contactRestore=(X.cs||X.b.pelvis).position.clone();(X.cs||X.b.pelvis).getWorldPosition(v);const shift=X.contactShift.set(0,1,0).transformDirection(X.sc.matrixWorld).multiplyScalar(Math.abs(dy)*X.sc.getWorldScale(X.contactScale).y);if(dy<0)shift.negate();v.add(shift);(X.cs||X.b.pelvis).position.copy((X.cs||X.b.pelvis).parent.worldToLocal(v));M.m.updateMatrixWorld(true);};}
+// Correct the blended support-foot height after the mixer. The retargeted jog has a pronounced flight
+// (over 8 cm), which looks like repeated hopping at tactical run speeds. Keep at most 2 cm of
+// grounded stride lift; actual airborne movement bypasses this correction. The shift moves
+// the rig wrapper (all skin influences together) so helper-bone weights cannot leave a foot floating;
+// older stub rigs fall back to Splitter or pelvis.
+{const pre=xUbPre,post=xUbPost;xUbPre=function(M){const X=M.sx;if(X&&X.contactRestore){(X.contactRoot||X.cs||X.b.pelvis).position.copy(X.contactRestore);X.contactRestore=null;}return pre(M);};xUbPost=function(M){post(M);const X=M.sx;if(!X||!X.nativeContact||X.dd||M.dead||X.air||X.lo||(X.w.plant||0)>.01||!X.contactProbes.length)return;M.m.updateMatrixWorld(true);const v=X.contactV,inv=X.contactInv.copy(X.sc.matrixWorld).invert();let low=Infinity;for(const {o,indices}of X.contactProbes){o.skeleton.update();for(const i of indices){v.fromBufferAttribute(o.geometry.attributes.position,i);o.boneTransform(i,v);v.applyMatrix4(o.matrixWorld).applyMatrix4(inv);low=Math.min(low,v.y);}}let lift=0;const c=X.contactLift,a=X.a.run;if(c&&a&&(X.w.run||0)>.001){const t=a.time%c.times[c.times.length-1];let i=0;while(i<c.times.length-2&&c.times[i+1]<t)i++;const f=(t-c.times[i])/Math.max(.00001,c.times[i+1]-c.times[i]);lift=Math.min(.02,Math.max(0,(c.values[i]*(1-f)+c.values[i+1]*f)*.15))*(X.w.run||0);}const dy=X.contactFloor+lift-low;if(!Number.isFinite(dy)||Math.abs(dy)>.5)return;X.contactRestore=(X.contactRoot||X.cs||X.b.pelvis).position.clone();(X.contactRoot||X.cs||X.b.pelvis).getWorldPosition(v);const shift=X.contactShift.set(0,1,0).transformDirection(X.sc.matrixWorld).multiplyScalar(Math.abs(dy)*X.sc.getWorldScale(X.contactScale).y);if(dy<0)shift.negate();v.add(shift);(X.contactRoot||X.cs||X.b.pelvis).position.copy((X.contactRoot||X.cs||X.b.pelvis).parent.worldToLocal(v));M.m.updateMatrixWorld(true);};}
 // Native first-person rigs and their matching weapon animation clips. The virtual source camera faces +X.
 function xvFPPlay(F, kind, time) {
   const key = kind === 'idle' ? 'Idle' : kind.charAt(0).toUpperCase()+kind.slice(1), a = F.entries.find((e)=>e.Translatable === key) || F.entries.find((e)=>e.Translatable.startsWith(key));
@@ -13607,7 +13609,7 @@ function xrHitboxes(b,M){
  const top=Math.max(.65,h.y-.13),bottom=.06,height=top-bottom;
  b.body.position.set(p.x,(top+bottom)/2,p.z);b.body.scale.set(.72,height/1.8,.72);b.body.updateMatrixWorld(true);b.head.updateMatrixWorld(true);
 }
-{const update=xVisB;xVisB=function(b){const r=update.apply(this,arguments);xrHitboxes(b,b&&b.xm);return r;};}
+{const update=xVisB;xVisB=function(b){const r=update.apply(this,arguments);if(b&&b.xm)b.xm.unit=b;xrHitboxes(b,b&&b.xm);return r;};}
 // Skeleton-preserving corpse physics. Only the major joints are simulated (Verlet particles with
 // distance, rigidity and joint-limit constraints); bones are then re-aimed, never stretched, so
 // face/twist/helper bones keep their authored offsets and the skin cannot explode.
@@ -13802,7 +13804,7 @@ NET.inLog=[];NET.path=[];
 function netPathAt(t){const P=NET.path;if(!P.length||t<P[0].t)return null;for(let i=P.length-1;i>=0;i--)if(P[i].t<=t){const a=P[i],b=P[i+1];if(!b)return a;const k=(t-a.t)/Math.max(1e-6,b.t-a.t);return {x:a.x+(b.x-a.x)*k,y:a.y+(b.y-a.y)*k,z:a.z+(b.z-a.z)*k};}return null;}
 function netPredicted(seq,age){if(!(seq>0)||!Number.isFinite(age))return null;let e=null;for(let i=NET.inLog.length-1;i>=0&&!e;i--)if(NET.inLog[i].seq===seq)e=NET.inLog[i];if(!e)return null;return netPathAt(Math.min(performance.now(),e.t+age*1000));}
 function netShiftPath(dx,dy,dz){for(const p of NET.path){p.x+=dx;p.y+=dy;p.z+=dz;}}
-{const move0=moveP;moveP=function(){const r=move0.apply(this,arguments);if(NET.socket&&player){const now=performance.now();NET.path.push({t:now,x:player.x,y:player.y||0,z:player.z});while(NET.path.length&&NET.path[0].t<now-1500)NET.path.shift();}return r;};}
+{const move0=moveP;moveP=function(){const r=move0.apply(this,arguments);if(NET.socket&&player){const now=typeof XRT!=='undefined'&&XRT.at!=null?XRT.at:performance.now();NET.path.push({t:now,x:player.x,y:player.y||0,z:player.z});while(NET.path.length&&NET.path[0].t<now-1500)NET.path.shift();}return r;};}
 function netReconcile(e,ref){const ex=e[4]-ref.x,ey=e[5]-ref.y,ez=e[6]-ref.z,eh=Math.hypot(ex,ez);if(eh>1||Math.abs(ey)>1){player.x+=ex;player.y+=ey;player.z+=ez;netShiftPath(ex,ey,ez);return 'snap';}const k=eh<.05?0:.2,ky=Math.abs(ey)<.15?0:.2;if(!k&&!ky)return 'kept';player.x+=ex*k;player.z+=ez*k;player.y+=ey*ky;netShiftPath(ex*k,ey*ky,ez*k);return 'eased';}
 const netSelf0=mpCliSelf;mpCliSelf=function(e){const seq=MP.sq;netSelf0(e);if(!NET.socket)return;const ref=seq===e[14]?netPredicted(e[19],e[20]):null;if(seq!==e[14]){player.x=e[4];player.y=e[5];player.z=e[6];NET.path.length=0;}else if(ref)NET.lastFix=netReconcile(e,ref);else{const err=Math.hypot(player.x-e[4],player.z-e[6]);if(err>.75){player.x=e[4];player.y=e[5];player.z=e[6];}else{player.x+=(e[4]-player.x)*.25;player.z+=(e[6]-player.z)*.25;if(Math.abs(player.y-e[5])>.35)player.y=e[5];}}if(netEquipWant&&(e[11]===netEquipWant||performance.now()>netEquipUntil))netEquipWant=null;const held=rw==='knife'?'Knife':wName();/* a swap the server has not applied yet: its snapshots still name the old gun (and its ammo) for a round trip; reverting to it lost the swap (netWeapon was reset, so the equip was never sent) */
  if(!netEquipWant&&e[11]&&WEAP[e[11]]&&wName()!==e[11]&&rw!=='knife'){netRec=true;try{if(MP.m5){const slot=['Classic','Shorty','Frenzy','Ghost','Sheriff'].includes(e[11])?'pis':'pri';if((slot==='pri'?FV.pri:FV.sec)!==e[11])bEquip(e[11],slot);swapW(slot);}else bEquip(e[11],'pri');}finally{netRec=false;}netWeapon=e[11];}const same=(rw==='knife'?'Knife':wName())===e[11];/* ammo only for the gun the server holds: mid-swap it was the other gun's, written into this slot */if(same&&e[16]!=null&&MP.m5){rsv=e[16];if(slots[rw])slots[rw].rsv=rsv;}if(same&&e[15]!=null&&!(reloading>0)){/* reloading > 0, not truthiness: a finished reload can leave it a hair below 0 */if(rw!=='knife')ammo=e[15];if(slots[rw])slots[rw].ammo=ammo;}updHud();};
@@ -14037,7 +14039,7 @@ function xfSetup(M) {
 }
 function xfPose(M, dt, C) {
   const X = M.sx; if (!X || !X.sc || !M.valorant || M.dead || X.dd) return; const F = X.ft || xfSetup(M); if (!F.ok) return;
-  M.m.updateWorldMatrix(true, false); const V = F.v, root = M.m.getWorldPosition(V[0]), y0 = root.y, k = Math.min(1, (dt || 1 / 60) * XFT.rate);
+  M.m.updateWorldMatrix(true, false); const V = F.v, root = M.m.getWorldPosition(V[0]), y0 = root.y, k = 1 - Math.exp(-Math.max(0, dt) * XFT.rate);
   for (let i = 0; i < 2; i++) { let d = 0; if (!X.air) { const f = F.legs[i].hand.getWorldPosition(V[1]), g = xfGround(C, f.x, f.z, y0); if (g != null && Number.isFinite(g)) d = Math.max(-XFT.max, Math.min(XFT.max, g - y0)); } F.d[i] += (d - F.d[i]) * k; }
   const p = Math.min(0, F.d[0], F.d[1]); F.p = p; if (Math.abs(F.d[0]) < 0.004 && Math.abs(F.d[1]) < 0.004) return;
   // body down to the lower foot (vertical, in world), restored in xUbPre
@@ -14051,7 +14053,7 @@ function xfPose(M, dt, C) {
 { const pre = xUbPre; xUbPre = function (M) { const X = M && M.sx; if (X && X.ftRestore && X.ft && X.ft.split) { X.ft.split.position.copy(X.ft.rest); X.ftRestore = false; } return pre.apply(this, arguments); }; }
 { const post = xUbPost; xUbPost = function (M) { post.apply(this, arguments); if (!M || !M.valorant || !M.sx || M.dead) return; try { const C = typeof nmActive === 'function' && nmActive(); if (!C || !C.bvh) return;
     let cam = null; try { cam = camera; } catch (e) {} if (cam) { const c = XFT.cam || (XFT.cam = new THREE.Vector3()); cam.getWorldPosition(c); M.m.getWorldPosition(XFT.p || (XFT.p = new THREE.Vector3())); if (XFT.p.distanceTo(c) > XFT.lod) { if (M.sx.ft) M.sx.ft.d[0] = M.sx.ft.d[1] = 0; return; } }
-    xfPose(M, 1 / 60, C); } catch (e) { if (!XFT.err++) console.warn('foot planting disabled for a frame', e); } }; }
+    xfPose(M, M.sx.poseDt || 0, C); } catch (e) { if (!XFT.err++) console.warn('foot planting disabled for a frame', e); } }; }
 // ---- END FOOT PLANTING ----
 // ---- LOCALIZED HIT FEEDBACK ----
 // Valorant's outgoing hit feedback (patch 1.07 + combat report), no crosshair hit marker and no damage numbers by default:

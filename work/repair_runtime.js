@@ -52,7 +52,7 @@ function xrHitboxes(b,M){
  const top=Math.max(.65,h.y-.13),bottom=.06,height=top-bottom;
  b.body.position.set(p.x,(top+bottom)/2,p.z);b.body.scale.set(.72,height/1.8,.72);b.body.updateMatrixWorld(true);b.head.updateMatrixWorld(true);
 }
-{const update=xVisB;xVisB=function(b){const r=update.apply(this,arguments);xrHitboxes(b,b&&b.xm);return r;};}
+{const update=xVisB;xVisB=function(b){const r=update.apply(this,arguments);if(b&&b.xm)b.xm.unit=b;xrHitboxes(b,b&&b.xm);return r;};}
 // Skeleton-preserving corpse physics. Only the major joints are simulated (Verlet particles with
 // distance, rigidity and joint-limit constraints); bones are then re-aimed, never stretched, so
 // face/twist/helper bones keep their authored offsets and the skin cannot explode.

@@ -20,7 +20,7 @@ function xfSetup(M) {
 }
 function xfPose(M, dt, C) {
   const X = M.sx; if (!X || !X.sc || !M.valorant || M.dead || X.dd) return; const F = X.ft || xfSetup(M); if (!F.ok) return;
-  M.m.updateWorldMatrix(true, false); const V = F.v, root = M.m.getWorldPosition(V[0]), y0 = root.y, k = Math.min(1, (dt || 1 / 60) * XFT.rate);
+  M.m.updateWorldMatrix(true, false); const V = F.v, root = M.m.getWorldPosition(V[0]), y0 = root.y, k = 1 - Math.exp(-Math.max(0, dt) * XFT.rate);
   for (let i = 0; i < 2; i++) { let d = 0; if (!X.air) { const f = F.legs[i].hand.getWorldPosition(V[1]), g = xfGround(C, f.x, f.z, y0); if (g != null && Number.isFinite(g)) d = Math.max(-XFT.max, Math.min(XFT.max, g - y0)); } F.d[i] += (d - F.d[i]) * k; }
   const p = Math.min(0, F.d[0], F.d[1]); F.p = p; if (Math.abs(F.d[0]) < 0.004 && Math.abs(F.d[1]) < 0.004) return;
   // body down to the lower foot (vertical, in world), restored in xUbPre
@@ -34,5 +34,5 @@ function xfPose(M, dt, C) {
 { const pre = xUbPre; xUbPre = function (M) { const X = M && M.sx; if (X && X.ftRestore && X.ft && X.ft.split) { X.ft.split.position.copy(X.ft.rest); X.ftRestore = false; } return pre.apply(this, arguments); }; }
 { const post = xUbPost; xUbPost = function (M) { post.apply(this, arguments); if (!M || !M.valorant || !M.sx || M.dead) return; try { const C = typeof nmActive === 'function' && nmActive(); if (!C || !C.bvh) return;
     let cam = null; try { cam = camera; } catch (e) {} if (cam) { const c = XFT.cam || (XFT.cam = new THREE.Vector3()); cam.getWorldPosition(c); M.m.getWorldPosition(XFT.p || (XFT.p = new THREE.Vector3())); if (XFT.p.distanceTo(c) > XFT.lod) { if (M.sx.ft) M.sx.ft.d[0] = M.sx.ft.d[1] = 0; return; } }
-    xfPose(M, 1 / 60, C); } catch (e) { if (!XFT.err++) console.warn('foot planting disabled for a frame', e); } }; }
+    xfPose(M, M.sx.poseDt || 0, C); } catch (e) { if (!XFT.err++) console.warn('foot planting disabled for a frame', e); } }; }
 // ---- END FOOT PLANTING ----

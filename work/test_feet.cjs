@@ -31,6 +31,14 @@ console.warn=((w)=>(...a)=>{if(!/boneTransform/.test(String(a[0])))w(...a);})(co
   floor=(x)=>left(x)?0.2:0;settle();const a=v('L_Foot').y;for(let i=0;i<60;i++)R.step(1,0);assert(Math.abs(v('L_Foot').y-a)<1e-4,agent+' stable over frames');
   // grip still holds after the body drop
   const m=G.measure(R);assert(m.right<0.04&&m.left<0.05,agent+' grip survives foot planting');
+  // Hold the authored pose while advancing presentation time at different refresh rates.
+  floor=()=>-.2;
+  for(const fps of [20,60,120]){
+   R.X.ft.d[0]=R.X.ft.d[1]=0;
+   R.step(fps/4,0,1/fps);
+   const want=-.2*(1-Math.exp(-14*.25));
+   for(const d of R.X.ft.d)assert(Math.abs(d-want)<1e-5,agent+' terrain smoothing at '+fps+' fps');
+  }
  }
  console.log('foot planting ok');
 })().catch(e=>{console.error(e);process.exit(1);});

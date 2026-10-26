@@ -28,7 +28,7 @@ async function build(slug,c){
   c.api.xUbPre(M);X.cb=cb;X.yaw=yaw;X.pit=pit;
   for(const n in X.a){const w=n===lo?1-.62*cb:n===(lo==='idle'?'crouch':'crouchWalk')?.62*cb:n==='aim'?1:0;X.w[n]=w;X.a[n].setEffectiveWeight(w);if(w)X.a[n].play();else X.a[n].stop();}
  };
- const step=(dt=1/60)=>{c.api.xUbPre(M);X.mx.update(dt);c.api.xUbPost(M);M.m.updateMatrixWorld(true);};
+ const step=(dt=1/60)=>{X.poseDt=dt;c.api.xUbPre(M);X.mx.update(dt);c.api.xUbPost(M);M.m.updateMatrixWorld(true);};
  const bone=n=>X.sc.getObjectByName(n),at=n=>bone(n).getWorldPosition(new T.Vector3());
  return {c,M,X,kit,play,step,bone,at};
 }

@@ -18,10 +18,20 @@ Movement physics follow public frame-by-frame measurements of VALORANT ([VALORAN
 
 Crouch fatigue, air control (3.5 m/s²), landing-accuracy duration, visual springs, spread recovery and recoil drift are this project's approximations. They are centralized for tuning rather than claimed to reproduce Riot's private controller or recoil implementation. Third-person locomotion remains the credited retargeted Quaternius animation set; it is not native VALORANT locomotion. The separate surf practice mode retains its own controller.
 
+## Skipping diagnosis and correction
+
+The skeleton mixer previously ran in its own requestAnimationFrame callback, before the main loop applied movement and animation weights. Visible rigs beyond half the animation LOD distance also held every other pose. Skeleton evaluation now runs after movement and locomotion weights, immediately before rendering, at every visible frame. Bone-following hitboxes refresh after that evaluation. Offscreen rigs remain culled.
+
+The retargeted jog deliberately preserved a flight curve exceeding 8 cm, then played at up to 2.35× to match ground speed. Grounded stride lift now retains 15% of that curve, capped at 2 cm in rig space. The correction moves the whole rig wrapper, including helper-bone skin influences; moving Splitter alone left some agents' feet floating. Jump, landing, plant and death poses bypass this grounded correction. Distance-matched playback remains in place to avoid foot skating. Terrain foot correction uses the actual pose timestep and exponential smoothing instead of an assumed 60 Hz.
+
+Online prediction previously advanced at most 50 ms per rendered frame, losing movement time below 20 FPS. It now substeps elapsed frames up to 250 ms, with a distinct historical timestamp for each predicted sample. Longer stalls remain bounded. The shared motor's calibrated speeds, braking, jump arc and collision behavior are unchanged. These fixes improve timing and presentation; they do not establish exact equivalence with Riot's private controller and animation assets.
+
 ## Verification
 
 - `node work/test_feel.js`: 72 deterministic checks (incl. 0.288 s acceleration, 84 ms / 0.20 m stop, counter-strafe, 1.165 m apex, 0.675 s airtime, no landing slowdown, jump spam capped at melee speed, crouch-jump, 0.276 s crouch) for refresh-rate independence, weapon/stance/tag speeds, diagonal normalization, stopping, jumping, landing accuracy, wall sliding, ceiling clearance and accuracy thresholds.
 - `node work/test_net_reconcile.cjs`: online reconciliation against the predicted path (no snaps or vertical pulls on a jump-spamming run at 40 ms each way; the legacy rule snaps it).
+- `node work/test_movement_sampling.cjs`: visible pose sampling at 120 Hz across animation LOD distances, render ordering, pause/culling, and online motor distance/acceleration at 4–144 FPS with ordered prediction timestamps.
+- `node work/test_native_stride.cjs`: actual packed clips and skinned support-foot vertices for all 12 agents stay within 2 cm of the floor at rifle speed; real airborne poses bypass correction.
 - `node work/verify_feel.js`: real Chromium range checks for actual controller integration, fire/equip/reload timers, animation phase and blend weight, world/weapon lenses, mouse sensitivity and scoped speed.
 - `node work/verify_valorant.js`: actual native assets, all 12 agent skeletons, 228 retargeted movement clips and 30 first-person combinations.
 - `node work/verify_native_maps.js [map ...]`: native geometry, navigation, collision, jump/movement grounding and rendering.
