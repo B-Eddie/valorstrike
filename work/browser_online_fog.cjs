@@ -48,7 +48,7 @@ const LIB=code=>`const s=sim('${code}');const W=s.baseWorld||s.world,N=W.nav.nod
   window.__cf=[];{const f=mpCastFx;mpCastFx=function(m){const u=m&&(bots.find(x=>x&&x.nid===m.i)||allies.find(x=>x&&x.nid===m.i));const rec={fog:m&&m.fog||0,i:m&&m.i,k:m&&m.k,ag:m&&m.ag,p:m&&m.p,o:!!(m&&m.o),d:!!(m&&m.d)};let err=null;try{return f.apply(this,arguments);}catch(e){err=String(e).slice(0,160);throw e;}finally{rec.err=err;rec.after=u&&u.g?{inScene:u.g.parent===scene,pos:[u.g.position.x,u.g.position.y,u.g.position.z].map(v=>+v.toFixed(2)),fog:u.fog||0}:null;window.__cf.push(rec);}};}
   window.__ust=id=>{const u=bots.find(x=>x&&x.nid===id)||allies.find(x=>x&&x.nid===id);if(!u)return null;return {fog:u.fog||0,loud:!!u.loud,alive:!!u.alive,inScene:!!(u.g&&u.g.parent===scene),pos:u.g?[u.g.position.x,u.g.position.y,u.g.position.z].map(v=>+v.toFixed(2)):null};};1`);
  // freeze every bot (scripted brain), stack the allies on the page player, end the buy phase
- log('match',await qa(LIB(code)+`s.qaRun=null;s.bot=u=>{const r=s.qaRun&&s.qaRun.id===u.id?s.qaRun:null;if(r){if(s.time>=r.flip){r.flip=s.time+.5;u.look+=Math.PI;}u.input={forward:1};}else u.input={};u.inputAt=s.time;};
+ log('match',await qa(LIB(code)+`s.qaRun=null;s.bot=u=>{const r=s.qaRun&&s.qaRun.id===u.id?s.qaRun:null;if(r){if(s.time>=r.flip){r.flip=s.time+(r.every||.5);u.look+=Math.PI;}u.input={forward:1};}else u.input={};u.inputAt=s.time;};
   s.buy=Math.min(s.buy,.3);return {team:me.team,phase:s.phase,buy:s.buy,me:mp.map(v=>+v.toFixed(2))};`));
  await W8('FV.buy===0',1500000,'buy end');
  // pick the spots on the server's own world from where the page player stands now
@@ -82,11 +82,14 @@ const LIB=code=>`const s=sim('${code}');const W=s.baseWorld||s.world,N=W.nav.nod
  // B. hearing: back to H1 hidden, run (turning every 0.5 s) for ~4 s of sim time
  await qa(LIB(code)+`const T=s.units.find(u=>u.id===${spots.T});put(T,${JSON.stringify(spots.H1)});return 1;`);await sync(1.2);await W8(`(window.__ust(${spots.T})||{}).fog===1`,300000,'T fogged again');
  await X('window.__st.length=0;1');
- await qa(LIB(code)+`s.qaRun={id:${spots.T},flip:s.time+.5};return 1;`);log('B running (near) sim',await sync(4));
+ // hk-33: fog2's runner turned every 0.5 s: loud ([23]) only between the turn-arounds, and the page's netSteps adds at most
+ // 0.1 s per frame (dt cap) while the lockstep room moves 0.25 s per page message, so the 0.3 s first-step delay never ran out
+ // on the ~1 frame/s box (row sent, fog 0, loud at the end, 0 steps). Turn every 1.2 s (~1 s loud runs); steps near the lane.
+ await qa(LIB(code)+`s.qaRun={id:${spots.T},flip:s.time+.6,every:1.2};return 1;`);log('B running (near) sim',await sync(5));
  const runN=await qa(LIB(code)+`const T=s.units.find(u=>u.id===${spots.T});return {T:[T.x,T.y,T.z].map(v=>+v.toFixed(2)),d:+Math.hypot(T.x-mp[0],T.z-mp[2]).toFixed(1),loud:s.loud(T),seen:sees(mp,[T.x,T.y,T.z])};`);
  const bN=JSON.parse(await X(`JSON.stringify({u:window.__ust(${spots.T}),steps:window.__st.slice()})`));log('B near: page',{bN,server:runN});
- const nearSteps=bN.steps.filter(p=>Math.hypot(p[0]-runN.T[0],p[1]-runN.T[2])<4);
- check('online fog: a hidden enemy running within 30 m is heard - its row is sent and the page plays its footsteps at it (SFX.step)',runN.d<30&&nearSteps.length>0,{runN,steps:bN.steps.length,nearSteps:nearSteps.length,u:bN.u});
+ const nearSteps=bN.steps.filter(p=>Math.hypot(p[0]-runN.T[0],p[1]-runN.T[2])<9||Math.hypot(p[0]-spots.H1[0],p[1]-spots.H1[2])<9);
+ check('online fog: a hidden enemy running within 30 m is heard - its row is sent and the page plays its footsteps at it (SFX.step)',runN.d<30&&!runN.seen&&nearSteps.length>0,{runN,steps:bN.steps.length,nearSteps:nearSteps.length,u:bN.u});
  await qa(LIB(code)+`s.qaRun=null;return 1;`);
  if(spots.H2){
   // B2: beyond 30 m, hidden, running -> fogged, silent
