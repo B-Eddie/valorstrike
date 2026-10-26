@@ -1860,7 +1860,7 @@ function xRate(W) { if (!W.spin) return W.rate; const n = performance.now(); if 
 const XRLP = { Bucky: 0.5, Marshal: 0.5 };
 function xRT() { const n = wName(), W = WEAP[n]; if (XRLP[n]) return XRLP[n]; if (n === "Outlaw" && W) return W.mag - ammo >= 2 ? 3.8 : 2.3; return (W && W.rld) || 2.5; } // reload duration from the gun's own Valorant reload time
 // one damage table for player and bots; zone = "body" | "head" | "legs"; falloff ff past ffd m (default 15); knife 50 light, heavy 75 body / 150 back-stab or head
-const KNIFE = { light: 50, heavy: 75, heavyCrit: 150 }; let kHv = 0, kLg = 0, kLx = 0, kLz = 0;
+const KNIFE = { light: 50, heavy: 75, heavyCrit: 150 }; const KNIFE_RANGE = 2; // m, eye to hit (= the server Knife trace limit / damage range, simulation.js KNIFE_RANGE) let kHv = 0, kLg = 0, kLx = 0, kLz = 0;
 // bot yaw r is set as atan2(dx, dz) toward where it aims/moves, so its forward is (sin r, cos r); back-stab when forward · dir(attacker→target) > 0.5
 function kBack(r, ax, az, tx, tz) { const dx = tx - ax, dz = tz - az, l = Math.hypot(dx, dz) || 1; return (Math.sin(r) * dx + Math.cos(r) * dz) / l > 0.5; }
 var xPelOn = false; // true inside the player's pellet loop: wDmg returns one pellet; otherwise (bots) a shotgun shot = expected pellets landing
@@ -3318,7 +3318,7 @@ function shoot(hv) {
   const w = wName(), W = WEAP[w], P = player, kn = rw === "knife";
   let body = KNIFE.light, head = KNIFE.light;
   if (kn) {
-    if (kSwing > 0) return; kSwing = hv ? 1 : 0.5; kHv = hv ? 1 : 0; kick = 1; SFX.knife(); ray.far = 2.2; // light 0.5 s (= the server Knife fireRate 2/s), heavy 1 s cooldown, 2.2 m lunge
+    if (kSwing > 0) return; kSwing = hv ? 1 : 0.5; kHv = hv ? 1 : 0; kick = 1; SFX.knife(); ray.far = KNIFE_RANGE; // light 0.5 s (= the server Knife fireRate 2/s), heavy 1 s cooldown, 2 m reach (server parity)
     if (hv) { body = KNIFE.heavy; head = KNIFE.heavyCrit; if (!(typeof NET !== "undefined" && NET.socket && MP.st === "game")) { kLg = 0.15; kLx = -Math.sin(yaw); kLz = -Math.cos(yaw); } } // lunge 1.2 m over 0.15 s offline; online the server moves the player and has no lunge (heavy = kh input: 1 s, 75 / 150 head or back)
   } else {
     if (reloading > 0) { if (XRLP[w] && ammo > 0) reloading = 0; else return; } // a per-round reload: the shot interrupts it
@@ -4708,7 +4708,7 @@ function duelShoot() {
   const targets = solids.concat([duelBot.body, duelBot.head]);
   if (du.w === "knife") {
     if (du.swing > 0) return; du.swing = 0.45; kick = 1; SFX.knife();
-    ray.far = 2.2; const hit = ray.intersectObjects(targets)[0];
+    ray.far = KNIFE_RANGE; const hit = ray.intersectObjects(targets)[0];
     if (hit && hit.object.userData.bot) {
       const khs = !!hit.object.userData.head, kd = khs ? 100 : 50;
       try { sbDmg("You", duelBot.name, Math.min(Math.max(0, duelBot.hp), kd)); } catch (e) {} duelBot.hp -= kd; vmHit(hit.point, kd, khs, duelBot.hp <= 0, duelBot);
@@ -10194,7 +10194,7 @@ function aimFire(hv) {
   const w = aimW(), kn = w === "Knife", W = WEAP[w];
   if (!kn && AM.ammo <= 0) { SFX.empty(); AM.fire = false; fireHeld = false; if (S.autoReload !== false) aimReload(); return; } // empty-click parity with fire()
   ray.setFromCamera(XC0, camera);
-  if (kn) { AM.cd = kSwing = hv ? 1 : 0.5; kHv = hv ? 1 : 0; kick = 1; SFX.knife(); AM.fire = false; ray.far = 2.2; }
+  if (kn) { AM.cd = kSwing = hv ? 1 : 0.5; kHv = hv ? 1 : 0; kick = 1; SFX.knife(); AM.fire = false; ray.far = KNIFE_RANGE; }
   else {
     AM.ammo--; AM.cd = 1 / W.rate; since = 0; kick = Math.min(1, 0.45 + W.rec * 0.5); vmFire(); SFX.gun(w);
     gFire(ray.ray.direction, w, W); if (W.semi) AM.fire = false;
