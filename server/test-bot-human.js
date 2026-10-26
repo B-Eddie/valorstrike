@@ -68,4 +68,12 @@ assert.ok(stats['15s'].acc<stats['15'].acc,'a strafing target is hit less ('+(st
 assert.ok(stats['15b'].med>stats['15'].med+.3,'an enemy behind takes far longer to kill (turn + slower reaction: '+stats['15b'].med.toFixed(2)+' s vs '+stats['15'].med.toFixed(2)+' s)');
 assert.ok(stats['15'].med>.3,'never an instant kill on sight (median '+stats['15'].med.toFixed(2)+' s incl. reaction)');
 out.push('server fights: HS '+(H/T*100).toFixed(0)+' % of hits; accuracy 8/15/25/40 m '+['8','15','25','40'].map(k=>(stats[k].acc*100).toFixed(0)).join('/')+' %, strafing 15 m '+(stats['15s'].acc*100).toFixed(0)+' %; first shot hit at 25-40 m '+(far1*100).toFixed(0)+' %; median TTK (150 HP) 15 m '+stats['15'].med.toFixed(2)+' s, behind '+stats['15b'].med.toFixed(2)+' s');
+// 5. Pace: attackers mostly default and take their time (a flat-out rush is rare), not everyone leaves spawn on the buzzer,
+// starts are staggered (no robotic shared timing), some walk the default; rush rounds still go fast.
+{const types={},wait=[],start=[],walkers=[0,0],rushD=[];for(let r=0;r<300;r++){const p=B.attackPlan(B.hash('pace|'+r),['A','B'],{});types[p.type]=(types[p.type]||0)+1;const R=B.roles(p,5,B.hash('roles|'+r),true,['A','B'],0);
+  for(const e of R){if(p.type==='rush'){rushD.push(e.delay);continue;}if(!e.lurk){start.push(e.delay);if(e.delay>=2)wait.push(e.delay);}if(['default','execute','split'].includes(p.type)){walkers[1]++;if(e.walk)walkers[0]++;}}}
+ const n=300,top=Object.entries(types).sort((a,b)=>b[1]-a[1])[0][0];assert.equal(top,'default','default is the most common attack');assert.ok((types.rush||0)/n<.1,'rush under 10 % of rounds ('+(types.rush||0)+'/300)');
+ assert.ok(wait.length/start.length>.3&&wait.length/start.length<.8,'some attackers linger in spawn 2 s+ ('+(wait.length/start.length*100).toFixed(0)+' %)');assert.ok(Math.min(...start)>=.2,'nobody but a rusher leaves on the buzzer');assert.ok(mean(start)>1.5&&mean(start)<5,'mean start 1.5-5 s ('+mean(start).toFixed(1)+')');
+ assert.ok(new Set(start.map(v=>v.toFixed(1))).size>40,'staggered, not shared, start times');assert.ok(walkers[0]/walkers[1]>.2,'some walk the default ('+(walkers[0]/walkers[1]*100).toFixed(0)+' %)');assert.ok(Math.max(...rushD)<=2,'a rush still goes at once');
+ out.push('pace: '+Object.entries(types).map(([k,v])=>k+' '+v).join(' / ')+' of 300 rounds; '+(wait.length/start.length*100).toFixed(0)+' % of attackers wait 2 s+ in spawn, mean start '+mean(start).toFixed(1)+' s');}
 console.log('Bots human-like: '+out.join('; '));

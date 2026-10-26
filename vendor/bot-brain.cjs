@@ -100,7 +100,8 @@
  // How to take a corner the bot cannot see past yet.
  function peek(P,rand,ctx={}){if(ctx.sniper)return rand()<.75?'jiggle':'hold';const w=Object.assign({},P.peek);if(ctx.mate)w.wide+=.6;if(ctx.carrier)return 'tight';return pickW(rand,w);}
  // ---- Round strategy ----
- const ATTACK={default:.22,execute:.2,rush:.12,split:.14,fake:.12,lurk:.12,slow:.08},DEFENSE={standard:.38,stack:.18,retake:.16,aggro:.28};
+ // Pace (bots-human-1): mid-ranked teams mostly default and take their time; a flat-out rush is rare.
+ const ATTACK={default:.3,execute:.18,rush:.06,split:.13,fake:.1,lurk:.11,slow:.12},DEFENSE={standard:.38,stack:.18,retake:.16,aggro:.28};
  // ctx: {eco: 'full'|'half'|'force'|'eco'|'save'|'pistol', last: [{type,site}] previous rounds (newest last)}
  function attackPlan(seed,sites,ctx={}){
   const r=rng(seed),w=Object.assign({},ATTACK),last=ctx.last||[],prev=last[last.length-1];
@@ -130,7 +131,7 @@
  //   defense {site, stages:[{site,frac,until,from}], aggro, retake, rotator, offAngle}
  // A stage is "stand at fraction frac of the way from spawn to site (1 = inside the site)" until round time `until`.
  function roles(plan,n,seed,atk,sites,carrierIndex=-1){
-  const r=rng(seed),out=[],ord=[];for(let i=0;i<n;i++)ord.push(i);for(let i=n-1;i>0;i--){const j=Math.floor(r()*(i+1));[ord[i],ord[j]]=[ord[j],ord[i]];}
+  const r=rng(seed),pace=rng(((seed>>>0)^0x2f6e2b1)>>>0),out=[],ord=[];for(let i=0;i<n;i++)ord.push(i);for(let i=n-1;i>0;i--){const j=Math.floor(r()*(i+1));[ord[i],ord[j]]=[ord[j],ord[i]];}
   if(atk){
    const lurker=plan.type==='lurk'&&n>=3?ord.find(i=>i!==carrierIndex):-1,fakeN=plan.type==='fake'?Math.max(1,Math.min(n-1,Math.round(n*.6))):0;
    const fakers=new Set(ord.filter(i=>i!==carrierIndex).slice(0,fakeN));
@@ -142,7 +143,10 @@
     else if(plan.type==='default'||plan.type==='slow'){const s=sites[Math.floor(r()*sites.length)];e.stages=[{site:s,frac:.35+r()*.3,until:plan.executeAt+d*3}];e.delay=d*2.5;}
     else if(plan.type==='split'){const s=i%2?plan.site:plan.other;e.stages=[{site:s,frac:i%2?.6:.45,until:plan.executeAt+d*2}];e.delay=d*2;}
     else {e.stages=[{site:plan.site,frac:.55+r()*.15,until:plan.executeAt+d*2}];e.delay=d*2;} // execute / lurk main
-    if(i===carrierIndex)e.delay=Math.min(e.delay,1.5);
+    // Not everyone leaves spawn on the buzzer: outside a rush some players linger (2-7 s: last buys, comms, utility first),
+    // the rest leave a beat apart, and some walk the default to stay quiet (separate stream: the role draws are unchanged).
+    if(plan.type!=='rush'&&!e.lurk){e.delay+=pace()<.25?2+pace()*5:.2+pace();if(plan.type==='default'||plan.type==='execute'||plan.type==='split')e.walk=e.walk||pace()<.3;}
+    if(i===carrierIndex)e.delay=Math.min(e.delay,plan.type==='rush'?1.5:3);
     out[i]=e;}
   }else{
    // seats: every site keeps at least one anchor; extra bodies by setup
