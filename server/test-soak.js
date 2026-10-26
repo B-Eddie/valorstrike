@@ -104,9 +104,11 @@ W.leash=LEASH;
  const j=s.add('joiner');assert.equal(s.units.length,10);assert(!s.units.includes(bot)||s.units.some(u=>u!==j&&!u.human),'a bot gave up its seat');
  assert.equal(new Set(s.units.map(u=>u.team)).size,10,'every DM unit on its own side');assert.notEqual(j.team,bot.team);assert.equal(s.scores[j.team]||0,0,'no inherited points');}
 
+const yawLog=[];
 // 7. Short seeded soak through the real worker: fuzzing humans + bots, TDM and Spike, invariants every tick.
 for(const [mode,seconds] of [['tdm',50],['five',70]]){const r=await soakRun({map:'ascent',mode,seconds,humans:3,seed:3,stuckSeconds:10});
- assert.deepEqual(r.errors,[],mode+' errors');const bad=r.violations.filter(v=>v.kind!=='bot stuck');assert.deepEqual(bad.map(v=>v.kind+': '+v.detail.slice(0,200)),[],mode+' invariants');assert(r.stats.ticks>seconds*15);if(mode==='tdm')assert(r.stats.kills>0);}
+ assert.deepEqual(r.errors,[],mode+' errors');const bad=r.violations.filter(v=>v.kind!=='bot stuck');assert.deepEqual(bad.map(v=>v.kind+': '+v.detail.slice(0,200)),[],mode+' invariants');assert(r.stats.ticks>seconds*15);if(mode==='tdm')assert(r.stats.kills>0);
+ /* bots-tune-1: no impossible flicks - every bot's view stays within its own turn rate and hand acceleration (BotBrain turnAcc) */const Y=r.stats.yaw;assert(Y&&Y.n>1000,mode+' yaw samples');assert.equal(Y.overV,0,mode+' yaw speed over the turn rate ('+JSON.stringify(Y)+')');assert.equal(Y.overA,0,mode+' yaw acceleration over the hand limit ('+JSON.stringify(Y.worst)+')');yawLog.push(mode+' max '+Y.maxV.toFixed(1)+' rad/s / '+Y.maxA.toFixed(0)+' rad/s^2 ('+(Y.maxAk*100).toFixed(0)+' % of the hand limit, '+Y.n+' samples)');}
 // Ability- and ult-heavy Spike soaks (bots and fuzzers spend utility / ults constantly, aimed at enemies) with the
 // economy, carry-over, detain, Run It Back, owned-weapon and kill-event invariants of tools/soak-checks.mjs.
 // Bind ults runs 150 s: with every ult refilled and cast, 70 s can end with no death at all (seed 5 after the hark merge).
@@ -116,5 +118,5 @@ for(const [map,scenario,seconds] of [['bind','ults',150],['lotus','abilities',70
  /* a death is guaranteed (forceDeathAt: a real utility kill between ticks once the round runs, after 40 s): the kill-event invariant above
     must have checked it, so this no longer flakes when load starves the natural fights (qa-19: one FAIL under box load) */
  assert(r.stats.forcedDeaths,scenario+' forced death happened');assert(F.deathsChecked>0,scenario+' deaths checked '+F.deathsChecked);}
-console.log('Gameplay QA: open-edge falls rescued (TDM + Spike buy phase), wedged bot freed (also high on a prop), routes avoid prop-blocked nodes, leaving or replaced spike carrier hands over/drops, stuck-in-place escape, Spike bots skip discarded hunt routes, off-graph loose goal arrival, Breeze off-map pocket, seeded worker soak (TDM, Spike) clean; ability/ult-heavy Spike soaks (Bind ults, Lotus abilities) hold the economy/carry-over/detain/Run It Back/kill-event invariants');
+console.log('Gameplay QA: open-edge falls rescued (TDM + Spike buy phase), wedged bot freed (also high on a prop), routes avoid prop-blocked nodes, leaving or replaced spike carrier hands over/drops, stuck-in-place escape, Spike bots skip discarded hunt routes, off-graph loose goal arrival, Breeze off-map pocket, seeded worker soak (TDM, Spike) clean; ability/ult-heavy Spike soaks (Bind ults, Lotus abilities) hold the economy/carry-over/detain/Run It Back/kill-event invariants; bot view kinematics '+yawLog.join(', ')+'');
 process.exit(0);

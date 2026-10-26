@@ -183,7 +183,7 @@ export function buyMill(sim,u,dt){
   wander:()=>{const av=mates.map(v=>[v.x,v.z]);for(const v of mates){const g=v.buyMill&&v.buyMill.st.goal;if(g)av.push([g[0],g[2]]);}const i=BotBrain.buyWander(N,A.area,[u.x,u.z],B.st.rand,av,A.walls,j=>!A.bl[j]);return i>=0?N[i]:null;},
   free:(x,z)=>!!buyOk(W,A,u.y)(x,z)&&mates.every(v=>{const m=v.buyMill,q=m&&m.spot,g=m&&m.st.goal;return Math.hypot(v.x-x,v.z-z)>1.05&&!(q&&Math.hypot(q[0]-x,q[2]-z)<1.05)&&!(g&&Math.hypot(g[0]-x,g[2]-z)<1.05);})};/* a peek never steps toward where a teammate stands, will stand or is peeking */
  const d=BotBrain.buyTick(B.st,c);u.inputAt=sim.time;
- if(d.face)u.look=BotBrain.turnStep(persona(sim,u).brain,u.look||0,Math.atan2(-d.face[0],-d.face[1]),dt*.6).yaw;
+ if(d.face){const B0=persona(sim,u).brain,Bf=B0._face||(B0._face=Object.assign({},B0,{turn:(B0.turn||10)*.6}));/* a calm look-around at 60 % of its turn rate; the full step dt (not dt*.6) keeps the yaw velocity in u.turnSt continuous between facing and walking, so the hand's acceleration limit holds across the switch (bots-tune-3: soak flagged 200 vs 177 rad/s^2) */u.look=BotBrain.turnStep(Bf,u.look||0,Math.atan2(-d.face[0],-d.face[1]),dt,u.turnSt||(u.turnSt={v:0})).yaw;}
  if(!d.goal){B.rg=null;B.route.length=0;B.stuck=0;u.input={};return {x:0,z:0,walk:false};}
  const g=d.goal;if(B.rg!==g){B.rg=g;const a=W.near(u.x,u.z,u.y),b=W.near(g[0],g[2],g[1]);const occ=[];for(const v of mates){occ.push([v.x,v.z]);if(v.buyMill&&v.buyMill.spot)occ.push([v.buyMill.spot[0],v.buyMill.spot[2]]);}/* walk around teammates and their spots, not through them */B.route=BotBrain.buyRoute(N,W.nav.adj,A.area,a,b,i=>(A.bl[i]?8:0)+(B.bad&&B.bad.has(i)?6:0)+(occ.some(o=>Math.abs(o[0]-N[i][0])<1.1&&Math.abs(o[1]-N[i][2])<1.1)?5:0));B.stuck=0;B.last=[u.x,u.z];}
  // no progress for 0.6 s (a prop corner the motor cannot slide past): re-route around the next node (it costs 6 m
@@ -195,7 +195,7 @@ export function buyMill(sim,u,dt){
   if(B.st.mode==='go'&&B.fails>=2&&B.spot&&!B.hold){const k=A.spots.indexOf(B.spot),rest=A.spots.filter(p=>p!==B.spot),nr=BotBrain.buyNear(A.walls,u.x,u.z),sp=nr&&BotBrain.buySpot({x:nr.w.ax+nr.w.tx*nr.t,z:nr.w.az+nr.w.tz*nr.t,w:nr.w},A.walls,rest,B.st.rand,buyOk(W,A,u.y));if(sp&&Math.hypot(sp.p[0]-u.x,sp.p[2]-u.z)<Math.hypot(B.spot[0]-u.x,B.spot[2]-u.z)){if(k>=0)A.spots[k]=sp.p;B.spot=sp.p;B.node=sp.node;B.fails=0;}}}
  if(B.esc&&sim.time<B.esc.until){u.input={forward:1,walk:false};return {x:B.esc.v[0],z:B.esc.v[1],walk:false};}
  const t=BotBrain.buyNext(N,B.route,u.x,u.z,g[0],g[2],BUY_V),l0=Math.hypot(t[0]-u.x,t[1]-u.z)||1,v=BotBrain.buySep(u.x,u.z,mates.map(m=>[m.x,m.z]),(t[0]-u.x)/l0,(t[1]-u.z)/l0,BUY_V),dx=v[0],dz=v[1],l=Math.hypot(dx,dz)||1;
- if(!d.face)u.look=BotBrain.turnStep(persona(sim,u).brain,u.look||0,Math.atan2(-dx,-dz),dt).yaw;
+ if(!d.face)u.look=BotBrain.turnStep(persona(sim,u).brain,u.look||0,Math.atan2(-dx,-dz),dt,u.turnSt||(u.turnSt={v:0})).yaw;/* + the hand's acceleration limit (bots-tune-1) */
  u.input={forward:1,walk:!!d.walk};return {x:dx/l,z:dz/l,walk:!!d.walk};
 }
 // After the motor: a bot never ends within BUY_IN m of (or past) a spawn wall: such a move goes back.
@@ -226,5 +226,5 @@ export function hearTick(sim){if(sim._hearT===sim.time)return;sim._hearT=sim.tim
 export function botView(sim,u,L0,dt){if(u.human||!u.alive||u.sawTarget||!u.input||!Number.isFinite(L0)||!(dt>0))return;const P=persona(sim,u),B=P.brain;
  let want=u.look;const c=u.mem&&BotBrain.memBest(u.mem,sim.time,u.x,u.z,BotBrain.SENSE.glance),cd=c?Math.hypot(c.x-u.x,c.z-u.z):0;
  if(c&&cd>.8&&cd<45){want=Math.atan2(u.x-c.x,u.z-c.z);u.pitch=Math.atan2((c.y??u.y)+BotBrain.AIM_H.head-(u.y+1.6-(u.ch||0)),cd)+BotBrain.idlePitch(B)-Math.atan2(BotBrain.AIM_H.head-1.6,15);u.viewAt=c.id;}else u.viewAt=null;
- if(!Number.isFinite(want))return;const L=u.look,V=BotBrain.wrapA(BotBrain.turnStep(B,L0,want,dt).yaw),f=u.input.forward||0,s=u.input.side||0;u.look=V;
+ if(!Number.isFinite(want))return;const L=u.look,V=BotBrain.wrapA(BotBrain.turnStep(B,L0,want,dt,u.turnSt||(u.turnSt={v:0})).yaw),f=u.input.forward||0,s=u.input.side||0;u.look=V;
  if(f||s){const wx=-Math.sin(L)*f+Math.cos(L)*s,wz=-Math.cos(L)*f-Math.sin(L)*s;u.input.forward=-Math.sin(V)*wx-Math.cos(V)*wz;u.input.side=Math.cos(V)*wx-Math.sin(V)*wz;}}

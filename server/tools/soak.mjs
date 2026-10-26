@@ -18,6 +18,7 @@ import {FLOOR_LIMIT} from '../src/floor.js';
 import kits from '../src/kits.json' with {type:'json'};
 import {instrument,checkFive,deathCheck,driveBots,fuzzCast,FOCUS} from './soak-checks.mjs';
 import {abilityDamage} from '../src/abilities.js';
+import {persona} from '../src/bots.js';import {createRequire} from 'node:module';const BotBrain=createRequire(import.meta.url)('../../vendor/bot-brain.cjs');
 
 export const MAPS=['ascent','bind','haven','split','lotus','breeze'],MODES=['dm','tdm','five'];
 const BUYABLE=['Classic','Shorty','Frenzy','Ghost','Sheriff','Stinger','Spectre','Bucky','Judge','Bulldog','Guardian','Phantom','Vandal','Marshal','Outlaw','Operator','Ares','Odin','Light Armor','Regen Shield','Heavy Armor'];
@@ -76,7 +77,16 @@ export async function soakRun({map='ascent',mode='dm',seconds=120,humans=3,seed=
   const tickEv=[];const origSnap=sim.snapshot;sim.snapshot=function(){const s=origSnap.call(this);for(const e of s.ev||[]){tickEv.push(e);if(e[0]==='k'){killEvents++;stats.kills++;}if(e[0]==='sp')stats.plants++;}return s;};
   const tickStart=performance.now(),cpuStart=process.cpuUsage();
   try{tick();}catch(e){threw=e;errors.push('tick threw: '+(e.stack||e).split('\n').slice(0,4).join(' | '));}finally{const cpu=process.cpuUsage(cpuStart);tickWall.push(performance.now()-tickStart);tickCpu.push((cpu.user+cpu.system)/1000);sim.snapshot=origSnap;}
-  stats.ticks++;check(sim,threw);if(sim.mode==='five'){checkFive(sim,flag,stats);deathCheck(sim,flag,stats,tickEv);}};
+  stats.ticks++;check(sim,threw);yawTrack(sim);if(sim.mode==='five'){checkFive(sim,flag,stats);deathCheck(sim,flag,stats,tickEv);}};
+ // Bot view kinematics (bots-tune-1: no impossible flicks): yaw speed / acceleration per bot between room ticks, against its
+ // own caps (BotBrain personality turn, turnAcc). Skips deaths, respawns, round changes and teleports (> 2.5 m in a tick).
+ const YAW=new Map(),wrapA=a=>Math.atan2(Math.sin(a),Math.cos(a));
+ function yawTrack(sim){const Y=stats.yaw||(stats.yaw={maxV:0,maxA:0,maxVk:0,maxAk:0,n:0,overV:0,overA:0,worst:null});
+  for(const u of sim.units){if(u.human)continue;const t=sim.time,q=YAW.get(u.id),fresh={t,look:u.look,x:u.x,z:u.z,v:null,round:sim.round};
+   if(!u.alive||u.loading||!Number.isFinite(u.look)||!q||q.round!==sim.round||!(t>q.t)||t-q.t>.25||Math.hypot(u.x-q.x,u.z-q.z)>2.5){YAW.set(u.id,fresh);continue;}
+   const dt=t-q.t,v=wrapA(u.look-q.look)/dt,a=q.v==null?0:Math.abs(v-q.v)/dt,B=persona(sim,u).brain,vk=Math.abs(v)/(B.turn||10),ak=a/BotBrain.turnAcc(B);Y.n++;
+   Y.maxV=Math.max(Y.maxV,Math.abs(v));Y.maxA=Math.max(Y.maxA,a);Y.maxVk=Math.max(Y.maxVk,vk);if(ak>Y.maxAk){Y.maxAk=ak;Y.worst={name:u.name,v:+v.toFixed(2),a:+a.toFixed(0),cap:+BotBrain.turnAcc(B).toFixed(0),saw:!!u.sawTarget,t:+t.toFixed(2)};}
+   if(vk>1.02)Y.overV++;if(ak>1.1)Y.overA++;fresh.v=v;YAW.set(u.id,fresh);}}
  const valid=w=>typeof w==='string'&&Object.hasOwn(weapons,w);
  function check(sim){const t=now(),phases=['room','game','post','closed'];if(!phases.includes(sim.phase))flag('phase',sim.phase);
   if(sim.units.length>10)flag('units>10',sim.units.length);if(room.sessions.size>10)flag('sessions>10',room.sessions.size);

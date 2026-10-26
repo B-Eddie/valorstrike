@@ -3,6 +3,8 @@
 // is pinned. Checks: reaction off-angle / flash costs, the visible yaw flicks (eases in and out, turn-rate limited, never a
 // snap), a new pull waits for the flick, shots are judged against the server hit volumes (head share of hits 12-28 %,
 // accuracy falls with range), the recoil pull is partial, a sloppy fight may fire before stopping, difficulty scales it.
+// bots-tune-1: trigger pulls are the server's BotBrain.firePattern mix by range (xbBurst), spray control fades over a long
+// spray (BotBrain.sprayFade), the visible yaw is acceleration-limited (BotBrain.turnStep with the bot's xTurnSt).
 const fs=require('fs'),path=require('path'),vm=require('vm'),assert=require('assert/strict');const root=path.join(__dirname,'..');
 const THREE=require(path.join(root,'server/node_modules/three/build/three.cjs'));
 const html=fs.readFileSync(path.join(root,'index.html'),'utf8'),A='// ---- BOT VARIETY ----',Z='// ---- END BOT VARIETY ----',i=html.indexOf(A),j=html.indexOf(Z,i);assert(i>=0&&j>i,'bot variety block');
@@ -11,6 +13,8 @@ const block=html.slice(i,j+Z.length);
 for(const w of ['xbEngage(b, b.pre, { off: Math.abs(oy), e0y: oy, d, flashed:','typeof xbFaceAim === "function" ? xbFaceAim(b, Math.atan2(dx, dz), dt)','typeof xbShot === "function" ? xbShot(b, tg, from, w, W, d, D)',
  '(botStopped(b) || b.xbSl)'/* 83b0d90: weapon deadzone stop (was BOT_STOP 1.4 m/s) */,'(b.bn > 0 || typeof xbReady !== "function" || xbReady(b, d))','b.see = see && !(b.blind > 0) ?','if (b.blind > 0) b.xbFl = performance.now();'])assert(html.includes(w),'wired: '+w);
 assert(!/if \(see\) b\.g\.rotation\.y = Math\.atan2\(dx, dz\);/.test(html),'enemy bots no longer snap their yaw onto the target');
+for(const w of ['b.bn = typeof xbBurst === "function" ? xbBurst(b, d, W) :','(b.xbPz != null ? Math.max(1 / (W.rate || 4), b.xbPz) :'])assert(html.includes(w),'wired: '+w);
+for(const w of ['aim.y-=vy*u.xbPull*BotBrain.sprayFade(sn);','u.xTurnSt||(u.xTurnSt={v:0})'])assert(block.includes(w),'block: '+w);
 let now=0,rnd=1;const R=()=>{rnd=(rnd*16807)%2147483647;return rnd/2147483647;};
 const ctx={Math:Object.assign(Object.create(Math),{random:R}),Object,Number,Infinity,Set,Map,WeakMap,Array,Float64Array,Int32Array,Uint8Array,THREE,performance:{now:()=>now},window:{xBotSeed:77},mode:'five',running:true,
  player:{hp:100,x:0,y:0,z:0,ch:0},allies:[],bots:[],timeLeft:100,S:{diff:'normal'},FV:{you:0,them:0,map:'ascent',atk:true,dm:false,sp:null},x2:(o,x,z)=>{if(!o)return [x,z];o[0]=x;o[1]=z;return o;},nmActive:()=>null,xSmV:(u,dt,vx,vz)=>[vx,vz],xGoal:(u,t,a,o)=>o,nmClimbOk:()=>false,nmPath:()=>[0],nmNext:()=>[0],
@@ -48,4 +52,12 @@ function shoot(dist,diff){ctx.S.diff=diff||'normal';const st={shots:0,head:0,bod
  out.push('shots: HS '+(H/T*100).toFixed(0)+' % of hits; accuracy 8/15/25/40 m '+[8,15,25,40].map(d=>(S[d].acc*100).toFixed(0)).join('/')+' %; first shot at 40 m '+(S[40].firstHit/S[40].first*100).toFixed(0)+' %; easy/normal/hard 15 m '+[E,S[15],Hd].map(s=>(s.acc*100).toFixed(0)).join('/')+' %');}
 // 4. discipline: some fights fire on the move, not all
 {let sl=0,n=0;for(const nm of NAMES){const u={name:'Bot '+nm+' d'};for(let k=0;k<20;k++){ctx.xbEngage(u,true,{off:.1,e0y:.1,d:15});n++;if(u.xbSl)sl++;}}assert(sl/n>.05&&sl/n<.6,'some fights are not counter-strafed ('+(sl/n*100).toFixed(0)+' %)');out.push('sloppy fights '+(sl/n*100).toFixed(0)+' %');}
+// bots-tune-1: fire mix by range (= server firePattern), semi-autos tap; acceleration-limited visible flick
+{const u={name:'Bot Sova'},mix=(d,W)=>{const n={tap:0,burst:0,spray:0};for(let k=0;k<1500;k++){ctx.xbBurst(u,d,W);n[u.xbPat]++;assert(u.xbPz>0,'a pause after the pull');}return n;};
+ const n8=mix(8,{rate:9.75}),n22=mix(22,{rate:9.75}),n40=mix(40,{rate:9.75}),sh=mix(15,{rate:4,semi:1});
+ assert(n8.spray>n8.burst&&n22.burst>100&&n22.spray>100&&n40.tap>n8.tap*3,'tap / burst / spray mix by range ('+JSON.stringify([n8,n22,n40])+')');assert.equal(sh.tap,1500,'semi-auto: taps');
+ const v={name:'Bot Raze',g:{rotation:{y:Math.PI-.01}},see:0},B=ctx.xbBrain(v),a=ctx.BotBrain.turnAcc(B),dt=1/60;let y0=v.g.rotation.y,w0=0,maxA=0;
+ for(let f=0;f<60;f++){v.g.rotation.y=ctx.xbFaceTo(v,0,dt);const w=ctx.BotBrain.wrapA(v.g.rotation.y-y0)/dt;maxA=Math.max(maxA,Math.abs(w-w0)/dt);w0=w;y0=v.g.rotation.y;}
+ assert(maxA<=a*1.0001,'off-fight 180 within the hand acceleration ('+maxA.toFixed(0)+' <= '+a.toFixed(0)+' rad/s^2)');assert(Math.abs(ctx.BotBrain.wrapA(v.g.rotation.y))<.02,'and it gets there');
+ out.push('fire mix 8 m '+JSON.stringify(n8)+' 40 m '+JSON.stringify(n40)+'; 180 accel <= '+maxA.toFixed(0)+' rad/s^2');}
 console.log('Offline bots human-like: '+out.join('; '));

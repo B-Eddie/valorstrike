@@ -18,8 +18,8 @@ const B=createRequire(import.meta.url)('../vendor/bot-brain.cjs'),out=[];
  const e=B.crosshair(P,B.rng(3),false),a0=Math.hypot(...B.crosshairAt(e,P,0)),a1=Math.hypot(...B.crosshairAt(e,P,.5)),a2=Math.hypot(...B.crosshairAt(e,P,3));
  assert.ok(a0>.008&&a1<a0*.5&&a2<a1&&a2>0,'crosshair error starts off and settles over time ('+[a0,a1,a2].map(v=>v.toFixed(4))+')');
  const pre=Math.hypot(...B.crosshairAt(B.crosshair(P,B.rng(3),true),P,0));assert.ok(pre<a0,'pre-aimed angles start closer');
- const fr=B.rng(5),far=new Set(),close=new Set();for(let k=0;k<30;k++){far.add(B.firePattern(P,fr,35,true).kind);close.add(B.firePattern(P,fr,6,true).kind);}
- assert.ok(!far.has('spray')&&close.has('spray')&&!close.has('tap'),'taps / bursts far, sprays close');assert.equal(B.firePattern(P,fr,6,false).shots,1,'semi-auto: single shots');
+ const fr=B.rng(5),far={tap:0,burst:0,spray:0},close={tap:0,burst:0,spray:0};for(let k=0;k<300;k++){far[B.firePattern(P,fr,35,true).kind]++;close[B.firePattern(P,fr,6,true).kind]++;}
+ /* bots-tune-1: a mix per range band like Gold-Plat bullets (offangle.pro), not one fixed pattern per range */assert.ok(far.tap>close.tap*3&&far.burst>far.spray&&close.spray>close.burst+close.tap&&close.spray>200,'mostly taps / bursts far, mostly sprays close ('+JSON.stringify({far,close})+')');assert.equal(B.firePattern(P,fr,6,false).shots,1,'semi-auto: single shots');
  const calls=new Set(),guns=new Set();for(let r=0;r<40;r++){const c=B.teamBuy([800+r*120,900+r*110,700+r*130,1000+r*100,850+r*120],r%4,3+r,B.rng(r));calls.add(c);const b=B.buyFor(c,800+r*150,P,B.rng(r+99),r%2);if(b.weapon)guns.add(b.weapon);if(b.side)guns.add(b.side);}
  assert.ok(calls.size>=4&&guns.size>=5,'economy calls and guns vary ('+[...calls]+' / '+[...guns]+')');assert.equal(B.teamBuy([800,800,800,800,800],0,1,B.rng(1)),'pistol');
  const atkR=B.roles(B.attackPlan(B.hash('f'),sites,{}),5,1,true,sites,0);assert.equal(atkR.length,5);assert.ok(atkR.filter(r=>r.lurk).length<=1,'at most one lurker');

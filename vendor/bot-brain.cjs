@@ -45,7 +45,18 @@
  // Turning and tracking: turnStep() moves a yaw toward the wanted one at most P.turn rad/s (no instant 180s); trackLag()
  // is how far behind a moving target the crosshair runs (P.lag at the start of a fight, settling to 35%).
  function wrapA(a){return Math.atan2(Math.sin(a),Math.cos(a));}
- function turnStep(P,from,want,dt){const d=wrapA(want-from),m=(P.turn||10)*dt;return Math.abs(d)<=m?{yaw:want,left:0}:{yaw:from+Math.sign(d)*m,left:Math.abs(d)-m};}
+ // A hand also has an acceleration limit (bots-tune-1: no impossible flicks). turnAcc: this bot's peak hand acceleration
+ // 12-22 m/s^2 (a mid-ranked 90 deg flick at ~47 cm / 360 is ~12 cm in ~0.2 s: min-jerk peak ~17 m/s^2) through its own
+ // sensitivity -> rad/s^2 (~160-300). Own seeded stream: personality() draws are unchanged.
+ function turnAcc(P){if(P._acc)return P._acc;const r=rng(((P.seed>>>0)^0x7a11cc03)>>>0),hand=12+r()*10;return (P._acc=hand/(cm360(P.sens||sensOf(P.seed||0),P.dpi)/100)*Math.PI*2);}
+ // One view step toward want at the turn-rate cap. With st ({v}: the bot's own yaw velocity, kept by the caller) the step is
+ // also acceleration-limited: speeds up at most turnAcc, and brakes in time to stop on want (v^2 / 2a <= d), so a flick is a
+ // smooth bell, not a jump to full speed and an instant stop. The caller drops st on a respawn.
+ function turnStep(P,from,want,dt,st){const d=wrapA(want-from),m=(P.turn||10)*dt;
+  if(!st||!(dt>0))return Math.abs(d)<=m?{yaw:want,left:0}:{yaw:from+Math.sign(d)*m,left:Math.abs(d)-m};
+  const a=turnAcc(P),vm=P.turn||10,v0=st.v||0;
+  let vw=Math.sign(d)*Math.min(vm,a*(Math.sqrt(dt*dt/4+2*Math.abs(d)/a)-dt/2));/* the speed it can still brake from in whole ticks: v^2/2a + v dt/2 = d */if(Math.abs(d)<=Math.abs(vw)*dt)vw=d/dt;
+  const v=v0+clamp(vw-v0,-a*dt,a*dt),y=from+v*dt;st.v=v;st.y=wrapA(y);const left=Math.abs(wrapA(want-y));return {yaw:left<1e-9?want:y,left};}
  function trackLag(P,t){return (P.lag||.08)*(.35+.65*Math.exp(-Math.max(0,t)/((P.settle||.25)*2)));}
  // ---- Human aim (default: a mid-ranked player, think Gold-Plat; LEVEL easy / hard scale it) ----
  // A fight's crosshair path is a planned human flick, not a laser: aimPlan() takes where the crosshair is when the enemy
@@ -63,7 +74,7 @@
  function level(name){return LEVEL[name]||LEVEL.normal;}
  // Per-bot aim traits (pure, from P.seed on a separate stream: personality() draws are unchanged).
  function aimTraits(P){const r=rng(((P.seed>>>0)^0x51ed270b)>>>0),acc=P.accuracy==null?.6:P.accuracy;
-  return {headAim:.06+acc*.12+r()*.05,neckAim:.3+r()*.15,place:.01+(1-acc)*.012+r()*.005,over:.04+r()*.08,fitts:.045+(1-acc)*.035+r()*.015,
+  return {headAim:.22+acc*.15+r()*.06,neckAim:.3+r()*.15,place:.01+(1-acc)*.012+r()*.005,over:.04+r()*.08,fitts:.045+(1-acc)*.035+r()*.015,
    trem:.003+(1-acc)*.006,pull:.25+acc*.25+r()*.1,eager:.6+r()*.8+(P.aggression||0)*.4,discipline:clamp(.45+(P.patience==null?.5:P.patience)*.35+r()*.15,0,.97),idle:Math.atan2(AIM_H.head-1.6,15)-(.004+(1-acc)*.016+r()*.01)};}
  const AIM_H={head:1.8,neck:1.45,chest:1.2}; // metres above the feet, standing (server hitboxes: head sphere centre 1.815, body capsule top ~1.6)
  function aimHeight(P,rand,lvl,pre){const A=aimTraits(P),L=level(lvl),x=rand(),h=Math.min(.85,A.headAim*L.head*(pre?1.8:1));return x<h?'head':x<h+(1-h)*A.neckAim?'neck':'chest';}
@@ -72,7 +83,7 @@
  // Target half-width (rad) at dist m: a 0.3 m wide body.
  function halfWidth(dist){return Math.max(.004,Math.atan(.3/Math.max(.5,dist||1)));}
  function aimPlan(P,rand,e0y,e0p,dist,ctx){ctx=ctx||{};const A=aimTraits(P),L=level(ctx.level),mag=Math.hypot(e0y||0,e0p||0),w=halfWidth(dist);
-  const T1=Math.max(mag/Math.max(.5,(P.turn||10)*.9),(.06+A.fitts*Math.log2(1+mag/w))*(.85+rand()*.3)*L.rt),big=mag>w*2.5;
+  const T1=Math.max(mag/Math.max(.5,(P.turn||10)*.9),Math.sqrt(5.77*mag/turnAcc(P)),/* min-jerk peak acceleration 5.77 mag / T^2 within the hand's */(.06+A.fitts*Math.log2(1+mag/w))*(.85+rand()*.3)*L.rt),big=mag>w*2.5;
   const sd=A.place*L.err*(ctx.moving?1.5:1)*(.65+.35*Math.min(1,w/.03)),/* players aim finer (and slower, Fitts) at a small far target */res=[gauss(rand)*sd,gauss(rand)*sd*.6-sd*.25],over=big?A.over*(.6+rand()*.8):0;
   return planFire({start:Math.max(0,ctx.start||0),e0:[e0y||0,e0p||0],T1,T2:big?.07+rand()*.09:0,o:big?[-(e0y||0)*over+res[0]*1.6,-(e0p||0)*over+res[1]*1.6]:[res[0],res[1]],res,
    trem:A.trem*L.err,ph:rand()*6.283,settle:.3+rand()*.35,eager:A.eager*Math.sqrt(L.err),w,fireAt:0},P,rand);}
@@ -98,14 +109,24 @@
  // crouch ch lowers the head and the body top by ch): 'head' | 'body' | 'legs' | null.
  function hitPart(lat,h,ch){ch=ch||0;const hc=1.815-ch,top=1.605-ch;if(lat*lat+(h-hc)*(h-hc)<.195*.195)return 'head';
   if(Math.abs(lat)<.288&&h>.06&&h<top){const a=.348,b=top-.288,y=h<a?a:h>b?b:h;if(lat*lat+(h-y)*(h-y)<.288*.288||(h>=a&&h<=b))return h<.9*(hc/1.815)?'legs':'body';}return null;}
- // Fire rhythm by range: taps far, bursts mid, sprays close (semi-auto guns always single shots). shots = trigger pulls
- // or the burst length, pause = seconds before the next one.
+ // Fire rhythm by range (bots-tune-1): a mix per range band like Gold-Plat players' visible-enemy Vandal bullets
+ // (offangle.pro/stats, Jun-Oct 2026: tap / burst 2-4 / spray 5+ = 0-15 m 2.6 / 27 / 70 %, 15-30 m 4.8 / 44 / 51 %, 30+ m
+ // 10 / 64 / 25 %), not one fixed pattern per range. FIRE.p = chance per trigger pull [tap, burst] (spray the rest), fitted so
+ // the bullet shares land on those numbers once kills cut sprays short; tapBias tilts a bot toward taps. Semi-auto: taps.
+ const FIRE={near:{d:15,p:[.02,.12],spray:[6,12]},mid:{d:30,p:[.05,.32],spray:[5,7]},far:{p:[.17,.5],spray:[5,8]}};
  function firePattern(P,rand,dist,auto){
   if(!auto)return {kind:'tap',shots:1,pause:.12+rand()*.25+(dist>25?.1:0)};
-  if(dist>26)return rand()<.35+P.tapBias*.5?{kind:'tap',shots:1,pause:.3+rand()*.25}:{kind:'burst',shots:2,pause:.35+rand()*.25};
-  if(dist>12)return {kind:'burst',shots:2+Math.floor(rand()*3),pause:.22+rand()*.2};
-  return {kind:'spray',shots:6+Math.floor(rand()*7),pause:.15+rand()*.2};
+  const b=dist<=FIRE.near.d?FIRE.near:dist<=FIRE.mid.d?FIRE.mid:FIRE.far,tb=P.tapBias==null?.5:P.tapBias,pt=b.p[0]*(.6+tb*.8),pb=b.p[1],x=rand(),far=b===FIRE.far;
+  if(x<pt)return {kind:'tap',shots:1,pause:.25+rand()*.25+(far?.1:0)};
+  if(x<pt+pb)return {kind:'burst',shots:2+Math.floor(rand()*(far?2:3)),pause:.22+rand()*.2+(far?.1:0)};
+  return {kind:'spray',shots:b.spray[0]+Math.floor(rand()*(b.spray[1]-b.spray[0]+1)),pause:b===FIRE.near?.06+rand()*.12:.15+rand()*.2}; // up close a spray barely lets go before the next
  }
+ // Spray control fades over a long spray (bots-tune-1): the share of the climb pulled down (recoilPull) holds for the first
+ // FIRE.fade[0] bullets, then drops FIRE.fade[1] per bullet to at least FIRE.fade[2] of it - a mid-ranked player loses the
+ // pattern after ~6 bullets, so bullets 10+ mostly miss past close range. n = 0-based bullet index in the spray.
+ FIRE.fade=[5,.12,.3];
+ function sprayFade(n){return n<=FIRE.fade[0]?1:Math.max(FIRE.fade[2],1-(n-FIRE.fade[0])*FIRE.fade[1]);}
+ function sprayPull(P,lvl,n){return recoilPull(P,lvl)*sprayFade(n||0);}
  // How to take a corner the bot cannot see past yet.
  function peek(P,rand,ctx={}){if(ctx.sniper)return rand()<.75?'jiggle':'hold';const w=Object.assign({},P.peek);if(ctx.mate)w.wide+=.6;if(ctx.carrier)return 'tight';return pickW(rand,w);}
  // ---- Round strategy ----
@@ -509,5 +530,5 @@
  function mayFire(visibleFor,reactionS,losNow){return !!losNow&&visibleFor>=Math.max(REACT[0],reactionS||0);}
  // Fire-rate cap: never faster than the gun (Vandal 9.75 rounds/s). Returns the earliest next shot time.
  function nextShot(t,rate){return t+1/Math.max(.1,rate||1);}
- return {hash,rng,clamp,pickW,REACT,personality,reaction,crosshair,crosshairAt,firePattern,peek,attackPlan,defensePlan,roles,teamBuy,buyFor,onMateDeath,onSound,ATTACK,DEFENSE,utility,UTIL,turnStep,trackLag,wrapA,SPIKE,plantSpot,postPlant,retake,postPlay,SHOOT_UTIL,shootUtility,TAILWIND,tailwindDash,tailwindKeys,LEVEL,level,aimTraits,AIM_H,aimHeight,halfWidth,aimPlan,aimAt,readyToFire,planFire,idlePitch,recoilPull,discipline,hitPart,BUY,buyArea,buyRoute,buyExit,buySpot,buyWander,buyHold,buyNew,buyTick,buyNext,buySep,SENS,cm360,sensOf,turnRate,SENSE,inView,audible,earSpot,memNew,memNote,memForget,memBest,repeek,mayFire,nextShot,areas,DFORM,GAP,midPoint,RESPOND,nearest,tradeSpot,follow,buyNear,buyCross,reactR,reacts};
+ return {hash,rng,clamp,pickW,REACT,personality,reaction,crosshair,crosshairAt,firePattern,peek,attackPlan,defensePlan,roles,teamBuy,buyFor,onMateDeath,onSound,ATTACK,DEFENSE,utility,UTIL,turnStep,trackLag,wrapA,SPIKE,plantSpot,postPlant,retake,postPlay,SHOOT_UTIL,shootUtility,TAILWIND,tailwindDash,tailwindKeys,LEVEL,level,aimTraits,AIM_H,aimHeight,halfWidth,aimPlan,aimAt,readyToFire,planFire,idlePitch,recoilPull,discipline,hitPart,BUY,buyArea,buyRoute,buyExit,buySpot,buyWander,buyHold,buyNew,buyTick,buyNext,buySep,SENS,cm360,sensOf,turnRate,SENSE,inView,audible,earSpot,memNew,memNote,memForget,memBest,repeek,mayFire,nextShot,areas,DFORM,GAP,midPoint,RESPOND,nearest,tradeSpot,follow,buyNear,buyCross,reactR,reacts,FIRE,sprayFade,sprayPull,turnAcc};
 });

@@ -173,7 +173,7 @@ export class SpikeSimulation extends Simulation{
    c.push({kind:e.kind,d,los:sightClear(this,eye,pt),blocking:false,e,pt});}
   const pick=BotBrain.shootUtility(c);if(!pick){u.utilShot=null;return false;}
   const P=persona(this,u),dx=pick.pt[0]-eye[0],dz=pick.pt[2]-eye[2],h=Math.hypot(dx,dz)||1e-6,bdt=Math.min(.1,Math.max(.02,this.time-(u.utilT??(this.time-.05))||.05));u.utilT=this.time;
-  const ts=BotBrain.turnStep(P.brain,u.look||0,Math.atan2(-dx,-dz),bdt);u.look=ts.yaw;u.pitch=Math.atan2(pick.pt[1]-eye[1],h);
+  const ts=BotBrain.turnStep(P.brain,u.look||0,Math.atan2(-dx,-dz),bdt,u.turnSt||(u.turnSt={v:0}));u.look=ts.yaw;u.pitch=Math.atan2(pick.pt[1]-eye[1],h);
   const size=pick.kind==='barrier'?1.2:(SHOOT[pick.kind]?.r||.3),aligned=Math.abs(ts.left)<Math.max(.03,Math.atan2(size,h)*.8);
   u.input={};u.inputAt=this.time;if(u.ammo<=0){if(!u.reloadAt)this.command(u,{t:'reload'});}else if(aligned&&!u.reloadAt){u.input.fire=true;if(Wp.fireMode==='EWeaponFireModeDisplayType::SemiAutomatic'&&this.time>=(u.fireAt||0))u.triggerHeld=false;}
   u.utilShot={id:pick.e.id,kind:pick.kind,at:this.time};return true;}

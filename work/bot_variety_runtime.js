@@ -25,8 +25,12 @@ function xbEngage(u,pre,ctx){const B=xbBrain(u);if(!B){u.rtE=.26;u.xhE=null;u.st
 // reaction gate in ms for difficulty D (normal = the bot's own 180-320 ms draw; +150 ms when it was not pre-aimed). With the
 // human aim model (rtX) the draw already holds the off-angle cost.
 function xbRt(u,D){const k=(D&&D.rt?D.rt:260)/260;return ((u.rtE||.26)*1000+(u.pre||u.rtX?0:150))*k;}
+// A new trigger pull's length and the pause after it (bots-tune-1): BotBrain.firePattern, the server's tap / burst / spray
+// mix by range band (semi-auto guns tap); b.xbPz = the pause in s (scaled by the difficulty's cd in the base loop).
+function xbBurst(u,d,W){const B=window.BotBrain&&xbBrain(u);if(!B){u.xbPz=null;return d>20?3+Math.floor(Math.random()*3):6+Math.floor(Math.random()*5);}
+ const f=BotBrain.firePattern(B,xbRand(u),d,!(W&&W.semi));u.xbPz=f.pause;u.xbPat=f.kind;return f.shots;}
 // Visible yaw while fighting: the planned flick (min-jerk, overshoot, correction) at the bot's own turn rate, not a snap.
-function xbFaceAim(u,want,dt){const B=xbBrain(u);if(!B||!u.xbAP||!u.g)return want;const e=BotBrain.aimAt(u.xbAP,u.see||0,XB_E);return BotBrain.turnStep(B,u.g.rotation.y,want+e[0],dt).yaw;}
+function xbFaceAim(u,want,dt){const B=xbBrain(u);if(!B||!u.xbAP||!u.g)return want;const e=BotBrain.aimAt(u.xbAP,u.see||0,XB_E);return BotBrain.turnStep(B,u.g.rotation.y,want+e[0],dt,u.xTurnSt||(u.xTurnSt={v:0})).yaw;}
 // A new trigger pull: once the bot believes it is on target (end of its flick / correction) or the crosshair passes close.
 function xbReady(u,d){if(!u.xbAP)return true;const e=BotBrain.aimAt(u.xbAP,u.see||0,XB_E);return BotBrain.readyToFire(u.xbAP,Math.hypot(e[0],e[1]),d,u.see||0);}
 // One shot of an enemy bot with the human aim model: the crosshair sits at the fight's body spot (head / neck / chest) on the
@@ -35,7 +39,7 @@ function xbReady(u,d){if(!u.xbAP)return true;const e=BotBrain.aimAt(u.xbAP,u.see
 // target. Returns 'head' | 'body' | 'legs' | null (miss).
 function xbShot(u,tg,from,w,W,d,D){const B=xbBrain(u);if(!B||!u.xbAP)return undefined;const t=tg.t,pl=t===player,fy=pl?(player.y||0):t&&t.g?t.g.position.y:0,ch=pl?(player.ch||0):t&&t.cr?.28:0;
  const h=BotBrain.AIM_H[u.xbSpot]||1.3,aim=(XB_AIM||(XB_AIM=new THREE.Vector3())).set(tg.x-from.x,fy+h-ch*h/1.8-from.y,tg.z-from.z).normalize();
- const sn=u.sn||0;bSpread(u,w,W,aim,d,D);/* spread + uncontrolled climb ... */if(u.xbPull&&sn>0){const k=D&&D.ae?D.ae/1.3:1,r=w==='Vandal'?1:w==='Phantom'?.7:0,ck=u.cr&&!u.mv?.85:1,vy=ck*(r?Math.min(sn,6)*.0065*r:Math.min(sn,6)*.004*(W.rec||1))*k*.6;aim.y-=vy*u.xbPull;aim.normalize();}/* ... minus the part this bot drags down */
+ const sn=u.sn||0;bSpread(u,w,W,aim,d,D);/* spread + uncontrolled climb ... */if(u.xbPull&&sn>0){const k=D&&D.ae?D.ae/1.3:1,r=w==='Vandal'?1:w==='Phantom'?.7:0,ck=u.cr&&!u.mv?.85:1,vy=ck*(r?Math.min(sn,6)*.0065*r:Math.min(sn,6)*.004*(W.rec||1))*k*.6;aim.y-=vy*u.xbPull*BotBrain.sprayFade(sn);/* control fades over a long spray (BotBrain.sprayFade, = server sprayPull) */aim.normalize();}/* ... minus the part this bot drags down */
  const e=BotBrain.aimAt(u.xbAP,u.see||0,XB_E),yaw=Math.atan2(aim.x,aim.z),tm=performance.now()/1000;let lg=0;if(u.xaT!=null&&tm>u.xaT&&tm-u.xaT<.5){const wv=Math.atan2(Math.sin(yaw-u.xaY),Math.cos(yaw-u.xaY))/(tm-u.xaT);lg=Math.max(-3,Math.min(3,wv))*BotBrain.trackLag(B,u.see||0);}u.xaY=yaw;u.xaT=tm;u.xLag=lg;
  const hl=Math.hypot(aim.x,aim.z)||1,hx=-aim.z/hl,hz=aim.x/hl,ey=-e[0]+lg;/* yaw + plan error, minus the lag */aim.x+=hx*ey;aim.z+=hz*ey;aim.y+=e[1];aim.normalize();
  const dx=tg.x-from.x,dz=tg.z-from.z,ah=Math.hypot(aim.x,aim.z)||1e-6,s=(dx*aim.x+dz*aim.z)/ah;if(s<=0)return null;const k2=s/ah,qx=from.x+aim.x*k2,qy=from.y+aim.y*k2,qz=from.z+aim.z*k2;
@@ -435,7 +439,7 @@ function xbLive(id){if(id==='player')return !!player&&player.hp>0;for(const L of
 function xbSeen(u,t,x,y,z){if(!window.BotBrain||!u)return;BotBrain.memNote(xbMem(u),xbId(t),x,y||0,z,xbNow(),'seen');}
 function xbBest(u,age){if(!window.BotBrain||!u||!u.xMem||!u.g)return null;const m=u.xMem;for(const id in m.c)if(!xbLive(id))delete m.c[id];const p=u.g.position;return BotBrain.memBest(m,xbNow(),p.x,p.z,age);}
 function xbGlance(u){const c=xbBest(u,window.BotBrain?BotBrain.SENSE.glance:0);if(!c)return null;const p=u.g.position,d=Math.hypot(c.x-p.x,c.z-p.z);return d>.8&&d<45?c:null;}
-function xbFaceTo(u,want,dt){const B=xbBrain(u);if(!B||!u.g)return null;return BotBrain.turnStep(B,u.g.rotation.y,want,dt).yaw;}
+function xbFaceTo(u,want,dt){const B=xbBrain(u);if(!B||!u.g)return null;return BotBrain.turnStep(B,u.g.rotation.y,want,dt,u.xTurnSt||(u.xTurnSt={v:0})).yaw;}
 // out of a fight in Deathmatch / TDM: the freshest contact (BotBrain.SENSE.hunt s), else a spawn point 15 m+ away (new one
 // on arrival or after 15 s); other modes keep their own goals.
 function xbHunt(u,tg,out){const c=xbBest(u,window.BotBrain?BotBrain.SENSE.hunt:0);if(c)return x2(out,c.x,c.z);const p=u.g.position,now=xbNow();
