@@ -4683,7 +4683,7 @@ const DB_FROM = new THREE.Vector3(), DB_EYE = new THREE.Vector3(); // duel bot p
 var ads = 0; // 0 hip, 1 light ADS (1.25x), 2 Operator scope; every mode but Surf
 function setScope(on) {
   du.scoped = !!on && running && mode === "duel" && du.w === "op" && du.reload <= 0 && du.wait <= 0;
-  const gm = mode !== "duel" && mode !== "surf", w = gm && player ? wName() : "";
+  const gm = mode !== "duel" && mode !== "surf", w = gm && player ? (xTdfOp() ? "Operator" : wName()) : "";
   ads = du.scoped ? 2 : !!on && !(xCU > performance.now()) && running && gm && player && player.hp > 0 && rw !== "knife" && reloading <= 0 && !(mode === "five" && FV.buy > 0 && FV.menu) ? (w === "Operator" || w === "Marshal" || w === "Outlaw" ? 2 : { Vandal: 1, Phantom: 1, Spectre: 1, Stinger: 1, Sheriff: 1, Guardian: 1, Bulldog: 1, Bucky: 1, Ares: 1, Odin: 1 }[w] || 0) : 0;
   camera.fov = ads === 2 ? (w === "Operator" ? 33 : 24) : ads === 1 ? 63 : 75; camera.updateProjectionMatrix(); // fallback only: the SCOPE pass wrapper sets the real per-weapon zoom and eases it
   hudS($("scope"), "display", ads === 2 ? "block" : "none"); hudS($("cross"), "display", ads === 2 ? "none" : ""); // perf pass 145: diffed
@@ -8989,14 +8989,16 @@ function bcFire() {
   // Headhunter = the server's Sheriff pipeline (simulation.js ABILITY_GUNS / gunOf: Sheriff spread, spray and recoil weight): first-shot
   // spread 0.25 deg standing (wiki Headhunter = Sheriff row), bloom on follow-ups, and a camera kick (rcl) that recovers after the
   // shot as Valorant's (v11.07 recoil recovery). The aim itself (yaw / pitch) never moves. Before hk-36 it fired the exact centre.
-  if (!sn) { since = 0; gFire(ray.ray.direction, "Sheriff", WEAP.Sheriff); }
+  // Tour De Force = the server's Operator pipeline (simulation.js ABILITY_GUNS['Tour De Force'] = Operator spread / adsStats, scoped
+  // through setScope like the Operator: xTdfOp). Before qa-32 it fired the exact screen centre, scoped or not.
+  since = 0; if (sn) gFire(ray.ray.direction, "Operator", WEAP.Operator); else gFire(ray.ray.direction, "Sheriff", WEAP.Sheriff);
   const h = ray.intersectObjects(solids.concat(bots.filter((b) => b.alive).flatMap((b) => [b.body, b.head])))[0];
   if (h && h.object.userData.bot) {
     const b = h.object.userData.bot, hs = !!h.object.userData.head, w = sn ? "Tour De Force" : "Headhunter";
     const lg = !hs && h.point.y - b.g.position.y < 0.9, G = sn ? XTDF : XHH, n = hs ? G.head : lg ? G.legs : G.body, q = b.g.position.clone(); // no falloff (both)
     hurt(b, n); vmHit(h.point, n, hs, b.hp <= 0.001, b); if (b.hp <= 0.001) { kill(b, hs, 0, w); if (sn) bcField(q); } else flash(b);
   }
-  if (BC.eq && (sn ? BC.td < 1 : J.q < 1)) { BC.eq = ""; say(sn ? "Tour De Force spent" : "Headhunter empty", 700); }
+  if (BC.eq && (sn ? BC.td < 1 : J.q < 1)) { BC.eq = ""; if (sn) setScope(false); say(sn ? "Tour De Force spent" : "Headhunter empty", 700); }
   return true;
 }
 function bcKey(code) {
@@ -10380,7 +10382,7 @@ function xBurst() {
   for (let i = 0; i < 3; i++) setTimeout(() => { if (!running) return; xAD.bs = 1; try { if (mode === "aim") { AM.cd = 0; aimFire(); } else { fcd = 0; shoot(); } } catch (e) {} xAD.bs = 0; }, i * 60);
 }
 { const s1 = setScope; setScope = function (on) {
-  const w = mode === "aim" ? aimW() : mode !== "duel" && mode !== "surf" && player ? wName() : "";
+  const w = mode === "aim" ? aimW() : mode !== "duel" && mode !== "surf" && player ? (xTdfOp() ? "Operator" : wName()) : "";
   if (on && !ads && w === "Classic" && player && player.hp > 0 && rw !== "knife") return xBurst();
   const was = ads, sn = !!XSZ[mode === "duel" ? (du.w === "op" ? "Operator" : "") : w];
   if (on && sn && was !== 2 && (mode === "duel" ? du.bolt > 0 : mode === "aim" ? AM.cd > 0 : fcd > 0)) return; // no scoping in while the bolt cycles
@@ -10402,7 +10404,8 @@ function xScopeT() { // right-click / zoom button: Operator 2.5x -> 5x -> off; e
   if (sc && (mode === "duel" || xSCw() === "Operator") && xSC.lv === 1) { xSC.lv = 2; xSCgo(XSZ.Operator[1], false); try { blip(900, 0.03, "square", 0.05); } catch (e) {} return; }
   xSC.soft = 1; try { setScope(mode === "duel" ? !du.scoped : !ads); } finally { xSC.soft = 0; }
 }
-function xSCw() { try { return mode === "duel" ? (du.w === "op" ? "Operator" : "Knife") : mode === "aim" ? aimW() : mode !== "surf" && player ? wName() : ""; } catch (e) { return ""; } }
+function xSCw() { try { return mode === "duel" ? (du.w === "op" ? "Operator" : "Knife") : mode === "aim" ? aimW() : mode !== "surf" && player ? (xTdfOp() ? "Operator" : wName()) : ""; } catch (e) { return ""; } }
+function xTdfOp() { try { return J.pick === "Chamber" && BC.eq === "sn"; } catch (e) { return false; } } // Chamber holding Tour De Force scopes as the Operator (= server ULT.tdf.weapon)
 { const g1 = gSpread; gSpread = function (w, W, B) { return g1(w, W, B) + (!B && xAD.bs ? 0.045 : 0); }; } // Classic burst: big spread
 { const m0 = moveP; moveP = function (dt, run, hold) { const kn = rw === "knife" || (mode === "aim" && aimW() === "Knife"); return m0(dt, mode === "duel" ? run : run * vRunK(kn ? "knife" : wName()), hold); }; } // weapon run speed (VRUN): knife 6.75, pistols/SMGs 5.73, rifles 5.4, heavies 5.13
 { const m1 = moveP; moveP = function (dt, run, hold) { return m1(dt, mode === "duel" ? run : ads === 1 ? run * 0.76 : ads === 2 ? run * 0.4 : run, hold); }; } // ADS x0.76, sniper scoped x0.4 (~2.7 m/s)

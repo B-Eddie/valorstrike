@@ -1,7 +1,7 @@
 // Chamber Headhunter on the real page (work/page_harness.cjs): the shot goes through the Sheriff pipeline the server uses for it
 // (server/src/simulation.js ABILITY_GUNS.Headhunter = Sheriff spread / spray / recoil weight; wiki Headhunter: 0.25 deg first-shot
 // spread standing = the Sheriff row, recoil that recovers). Before hk-36 bcFire shot the exact screen centre with no kick.
-// Checks: gFire runs with "Sheriff" for a Headhunter shot (not for Tour De Force), the aim (yaw / pitch) does not move, the camera
+// Checks: gFire runs with "Sheriff" for a Headhunter shot (Tour De Force: "Operator"), the aim (yaw / pitch) does not move, the camera
 // kick (rcl) rises on the shot and recovers to ~0 within 0.5 s, and since resets (plant refusal right after a shot).
 //   node work/test_headhunter_kick.cjs
 const assert=require('assert/strict');const {boot}=require('./page_harness.cjs');
@@ -18,8 +18,8 @@ const assert=require('assert/strict');const {boot}=require('./page_harness.cjs')
  assert.ok(r[4]>0.003&&r[4]<0.06,'camera kick (rcl) after the shot: '+r[4]);assert.equal(r[5],0,'since resets on the shot');
  await adv(500);const k=xe('rcl');assert.ok(k<r[4]*0.05,'the kick recovers within 0.5 s: rcl '+k+' (was '+r[4]+')');
  assert.equal(xe('+pitch.toFixed(6)'),0.05,'pitch still where it was after the recovery');
- // Tour De Force keeps its own path (no Sheriff pipeline)
- xe('window.__gf.length=0;BC.eq="sn";BC.td=5;BC.cd=0;true');xe('bcFire();true');assert.deepEqual(JSON.parse(JSON.stringify(xe('window.__gf.slice()'))),[],'Tour De Force does not use the Sheriff pipeline');
+ // Tour De Force goes through the Operator pipeline, not the Sheriff's (qa-32: test_tdf_spread.cjs)
+ xe('window.__gf.length=0;BC.eq="sn";BC.td=5;BC.cd=0;true');xe('bcFire();true');assert.deepEqual(JSON.parse(JSON.stringify(xe('window.__gf.slice()'))),['Operator'],'Tour De Force uses the Operator pipeline (server ABILITY_GUNS Tour De Force), not the Sheriff one');
  assert.equal(H.errors.length,e0,'no page errors: '+JSON.stringify(H.errors.slice(0,3).map(e=>String(e&&e.stack||e.message||JSON.stringify(e)).slice(0,300))));
  console.log('test_headhunter_kick: PASS (kick '+r[4].toFixed(4)+' rad -> '+k.toExponential(1)+' after 0.5 s; aim unchanged)');
  process.exit(0);
