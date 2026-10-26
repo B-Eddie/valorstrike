@@ -17,6 +17,9 @@ const ONLY=(process.env.ONLY||'E,F,G,H').split(',');
 (async()=>{
  const browser=await chromium.launch({headless:true,args:['--no-sandbox','--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader','--disable-dev-shm-usage','--ignore-gpu-blocklist','--in-process-gpu','--renderer-process-limit=1']});
  const ctx=await browser.newContext({viewport:{width:1280,height:720},deviceScaleFactor:1});
+ // harness time dilation: window.__ts scales performance.now (game + viewmodel time follow it). SwiftShader renders ~1 frame/s and
+ // vmTick advances by real time, so a < 1 s fire / throw clip would finish inside one frame; the fire samples run at __ts=0.1.
+ await ctx.addInitScript(()=>{const pn=performance.now.bind(performance);let r0=pn(),v0=r0,sc=1;Object.defineProperty(window,'__ts',{get:()=>sc,set:v=>{const r=pn();v0+=(r-r0)*sc;r0=r;sc=v;}});performance.now=()=>v0+(pn()-r0)*sc;});
  await ctx.addInitScript(()=>{try{localStorage.setItem('vs.gq','low');localStorage.setItem('vs.aa','0');localStorage.setItem('vs.portrait','1');}catch(e){}});
  await ctx.route(/^https?:\/\/(unpkg\.com|cdn\.jsdelivr\.net)\//,r=>{const f=r.request().url().split('/').pop().split('?')[0];if(LOCAL[f])return r.fulfill({path:LOCAL[f],contentType:'application/javascript',headers:{'access-control-allow-origin':'*'}});return r.continue();});
  await ctx.route(new RegExp('127\\.0\\.0\\.1:'+PORT+'/(index\\.html)?(\\?.*)?$'),r=>{const h=fs.readFileSync(ROOT+'/index.html','utf8').replace('window.xValorantFeel={','window.__xe=s=>eval(s);window.xValorantFeel={');r.fulfill({body:h,contentType:'text/html'});});
@@ -37,17 +40,18 @@ const ONLY=(process.env.ONLY||'E,F,G,H').split(',');
 
 
  const tick=async(ms)=>{const t=Date.now();while(Date.now()-t<ms){await X('window.__allow=2;1');await page.waitForTimeout(400);}};
- const untilF=async(expr,ms)=>{const t=Date.now();while(Date.now()-t<ms){if(await X(expr))return true;await X('window.__allow=2;1');await page.waitForTimeout(300);}return false;};
+ const untilF=async(expr,ms)=>{const t=Date.now();while(Date.now()-t<ms){if(await X(expr))return true;await X('if(window.__keepEx)eval(window.__keepEx);window.__allow=2;1');await page.waitForTimeout(300);}return false;};
+ const fireSample=async(expr)=>{await X('window.__ts=0.1;1');await page.mouse.down();await page.waitForTimeout(60);await page.mouse.up();await frames(1);const r=await XJ(expr);await X('window.__ts=1;1');return r;};
  const VS=`(()=>{const R=XAF.cur;let sk=0;if(R&&R.root)R.root.traverse(o=>{if(o.isSkinnedMesh)sk++;});const G=R&&R.guns?Object.fromEntries(Object.entries(R.guns).map(([k,v])=>[k,{ok:!!v.ok,vis:v.g.visible,l:v.l?v.l.visible:null}])):null;
    return {on:XAF.on,mode:XAF.mode,last:XAF.last,gs:XAF.gs&&{k:XAF.gs.k,n:XAF.gs.n},sk,vis:!!(R&&R.root&&R.root.visible&&R.root.parent===camera),guns:G,err:XAF.err,xvm:typeof XVM!=='undefined',bcvm:typeof BC!=='undefined'?BC.vm:null,gun:gun.visible,knife:knife.visible,rw:typeof rw!=='undefined'?rw:null};})()`;
  const back=async(nm)=>{const ok=await untilF('!XAF.on&&(gun.visible||knife.visible)',20000);const s=await XJ(VS);log(nm+' after',s);check(nm+': afterwards the ability rig is gone and the held weapon is visible again',ok,JSON.stringify({on:s.on,gun:s.gun,knife:s.knife,rw:s.rw}));};
  await X('player.x=-53.25+6;player.z=21-6;player.y=7.3;1').catch(()=>{});
  if(ONLY.includes('E')){
   for(const [ag,key,k,prep] of [['Raze','KeyX','rk','J.ult=K().u'],['Chamber','KeyQ','hp','J.q=Math.max(1,J.q||0);J.cd.q=0'],['Chamber','KeyX','sn','J.ult=K().u;BC.td=0;BC.eq=""']]){
-   await keep();await pick(ag);await X(prep+';1');await tick(800);await page.keyboard.press(key);
+   await keep();await pick(ag);await X(prep+';window.__keepEx='+JSON.stringify(k==='rk'?'if(RS.ss)RS.sst=10':'')+';1');await tick(800);await page.keyboard.press(key);
    const ok=await untilF(`XAF.on&&XAF.last&&XAF.last.gun==="${k}"&&XAF.last.rig===true&&XAF.last.item===true`,60000);const s=await XJ(VS);log(`${ag} ${key} ${k}`,s);await shot(`ultgun-${k}`);
    check(`${ag} ${key} (${k}): ult / ability gun on the agent's own FP arms (gun mode, SkinnedMesh rig under the camera, gun model in the hand, no XVM primitives)`,ok&&s.sk>0&&s.vis&&!s.xvm&&!s.err&&s.mode.startsWith('gun-'),JSON.stringify(s));
-   if(k!=='hp'){await tick(k==='sn'?2600:1600);const n0=await X('XAF.gs?XAF.gs.n:0');await page.mouse.down();await page.waitForTimeout(80);await page.mouse.up();await tick(300);const s2=await XJ(VS);log(k+' fired',s2);
+   if(k!=='hp'){await tick(k==='sn'?2600:1600);const n0=await X('XAF.gs?XAF.gs.n:0');await X('window.__keepEx="";1');const s2=await fireSample(VS);log(k+' fired',s2);
     check(`${ag} ${key} (${k}): FIRE plays the gun's fire clip on the arms`,!!s2.gs&&s2.gs.n>n0&&/Fire/.test((s2.last&&s2.last.clip)||''),JSON.stringify(s2));}
    if(k==='rk')await back('Showstopper (rocket spent)');
    else{await X('BC.eq="";BC.td=0;1');await page.keyboard.press('Digit2');await back(`${k} put away (weapon key)`);}
@@ -58,7 +62,7 @@ const ONLY=(process.env.ONLY||'E,F,G,H').split(',');
   const ok=await untilF('XAF.on&&XAF.last&&XAF.last.gun==="bs"&&XAF.last.rig===true&&XAF.last.item===true',60000);const s=await XJ(VS);log('blade storm',s);await shot('bladestorm-idle');
   check("Jett X Blade Storm: Jett's Wushu X set on her FP arms with a knife in each hand",ok&&s.sk>0&&s.vis&&s.guns&&s.guns.bs&&s.guns.bs.vis&&s.guns.bs.l===true,JSON.stringify(s));
   await tick(1800);const clips=[];
-  for(let i=0;i<3;i++){await page.mouse.down();await page.waitForTimeout(80);await page.mouse.up();await tick(450);const c=await XJ('{clip:XAF.last&&XAF.last.clip,n:XAF.gs&&XAF.gs.n,bs:J.bs}');clips.push(c);}
+  for(let i=0;i<3;i++){const c=await fireSample('{clip:XAF.last&&XAF.last.clip,n:XAF.gs&&XAF.gs.n,bs:J.bs}');clips.push(c);await tick(1200);}
   log('blade storm throws',clips);check('Blade Storm throws play Attack01 -> Attack02 -> Attack03 (right, left, right) and spend knives',clips.map(c=>(c.clip||'').slice(-8)).join()==='Attack01,Attack02,Attack03'&&clips[2].bs<=2,JSON.stringify(clips));
   await X('J.bs=0;J.bsOn=false;1');await page.keyboard.press('Digit2');await back('Blade Storm ended');
  }
@@ -76,8 +80,8 @@ const ONLY=(process.env.ONLY||'E,F,G,H').split(',');
   const e0=R.errors.length;const res={};
   for(const [nm,d] of [['near',1.6],['far',2.9]]){
    const s=await XJ(`(()=>{const b=bots.find(b=>b.alive);if(!b)return null;yaw=0;pitch=-0.05;b.nt=true;b.hp=100;b.g.position.set(player.x,player.y,player.z-${d});if('x' in b){b.x=player.x;b.z=player.z-${d};}window.__kb=b;return {hp:b.hp,p:[b.g.position.x,b.g.position.z]};})()`);
-   await tick(400);await X(`(()=>{const b=window.__kb;b.g.position.set(player.x,player.y,player.z-${d});return 1})()`);
-   await page.mouse.down();await page.waitForTimeout(80);await page.mouse.up();await tick(700);
+   await tick(400);await X(`(()=>{window.__ts=0.1;const b=window.__kb;b.g.position.set(player.x,player.y,player.z-${d});if('x' in b){b.x=player.x;b.z=player.z-${d};}b.g.updateMatrixWorld(true);return 1})()`); // hitboxes at the set spot before the swing (raycast uses matrixWorld)
+   await page.mouse.down();await page.waitForTimeout(60);await page.mouse.up();await frames(1);await X('window.__ts=1;1');await tick(500);
    res[nm]=await XJ(`(()=>{const b=window.__kb;return {d:${d},hp:b.hp,alive:b.alive,dist:+Math.hypot(b.g.position.x-player.x,b.g.position.z-player.z).toFixed(2)};})()`);log('knife '+nm,{s,r:res[nm]});
    await tick(800);}
   check('Knife: a light swing hits a bot ~1.6 m ahead',res.near&&(res.near.hp<100||!res.near.alive)&&res.near.dist<1.9,JSON.stringify(res.near));
