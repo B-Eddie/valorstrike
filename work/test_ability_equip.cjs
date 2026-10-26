@@ -219,8 +219,8 @@ const fails=[];const fail=s=>{fails.push(s);if(VERBOSE)console.log('FAIL',s);};c
    eq([r[0]>0.5&&r[0]<=2,r[1],r[2],r[3]>0.5&&r[3]<=2,r[4]],[true,0,0,true,0],'Paranoia: 10 m behind a wall and facing away hit (2 s), 4.6 m off the line and 5 m past 25 m missed, ally hit (when a third bot / an ally is alive), orb gone: '+JSON.stringify(r));
    xe('bots.concat(allies).forEach(b=>{if(b.det>1e8)b.det=0;});true');await adv(200);}}
  // ---- Raze Boom Bot (wiki Boom_Bot: 5 s, 15 m detection, explodes within 2.5 m, 80 inside 2 m -> 30 at 6 m); client XBB == server DEV.boombot ----
- {const dsrc=require('fs').readFileSync(require('path').join(__dirname,'../server/src/devices.js'),'utf8'),bm=dsrc.match(/boombot:\{life:([\d.]+),speed:[\d.]+,sight:([\d.]+),trigger:([\d.]+),damage:([\d.]+),min:([\d.]+),inner:([\d.]+),radius:([\d.]+)\}/);
-  eq(xe('[XBB.life,XBB.sight,XBB.trig,XBB.max,XBB.min,XBB.inner,XBB.out]'),bm?bm.slice(1).map(Number):null,'client XBB == server DEV.boombot');
+ {const dsrc=require('fs').readFileSync(require('path').join(__dirname,'../server/src/devices.js'),'utf8'),bm=dsrc.match(/boombot:\{life:([\d.]+),speed:[\d.]+,sight:([\d.]+),trigger:([\d.]+),windup:([\d.]+),hp:([\d.]+),damage:([\d.]+),min:([\d.]+),inner:([\d.]+),radius:([\d.]+)\}/);
+  eq(xe('[XBB.life,XBB.sight,XBB.trig,XBB.wu,XBB.hp,XBB.max,XBB.min,XBB.inner,XBB.out]'),bm?bm.slice(1).map(Number):null,'client XBB == server DEV.boombot');
   eq(xe('[xBbDmg(0),xBbDmg(2),xBbDmg(4),xBbDmg(5.5),xBbDmg(6.01)]'),[80,80,55,36.25,0],'Boom Bot falloff 80 (2 m) -> 30 (6 m)');}
  await live();{xe('bots.concat(allies).forEach(b=>{b.det=1e9;});timeLeft=Math.max(timeLeft,60);true');pick('Raze');await adv(200);
   const ok=xe('(()=>{const al=bots.filter(b=>b.alive&&b.g);if(al.length<3)return null;window.__bb={o:{x:player.x,z:player.z},foe:al[0],side:al[1],out:al[2]};bots.forEach(b=>b.g.position.set(player.x+200,b.g.position.y,player.z));window.__bl0=blocked;window.__lo0=los;blocked=()=>false;los=()=>true;RS.bb.length=0;return true;})()');
@@ -231,6 +231,20 @@ const fails=[];const fail=s=>{fails.push(s);if(VERBOSE)console.log('FAIL',s);};c
    for(let i=0;i<120&&xe('RS.bb.length');i++){await adv(50);keep();}
    const d=xe('__bd');xe('jHit=__jh1;blocked=__bl0;los=__lo0;bots.concat(allies).forEach(b=>{if(b.det>1e8)b.det=0;});true');
    eq([d[0]>=73.75&&d[0]<=80,d[1]>30&&d[1]<d[0],d[2]],[true,true,0],'Boom Bot locks at 13.4 m, explodes within 2.5 m (73.75-80), falloff to a target ~4.7 m from the blast, none at ~10 m: '+JSON.stringify(d));await adv(200);}}
+ // Boom Bot 0.6 s windup + 60 HP (wiki Boom_Bot): stops within 2.5 m, explodes 0.6 s later; an enemy bot Raze's Boom Bot is a player gun target (XLDH) and dies at 0 HP without exploding
+ await live();{xe('bots.concat(allies).forEach(b=>{b.det=1e9;});timeLeft=Math.max(timeLeft,60);true');pick('Raze');await adv(200);
+  const ok=xe('(()=>{const f=bots.find(b=>b.alive&&b.g);if(!f)return null;window.__bw={o:{x:player.x,z:player.z},f};bots.forEach(b=>{if(b!==f)b.g.position.set(player.x+200,b.g.position.y,player.z);});window.__bl1=blocked;window.__lo1=los;blocked=()=>false;los=()=>true;RS.bb.length=0;return true;})()');
+  if(!ok)fail('Boom Bot windup: need a live bot');else{
+   const keep=()=>xe('__bw.f.alive=true;__bw.f.hp=1000;__bw.f.g.position.x=__bw.o.x;__bw.f.g.position.z=__bw.o.z-4;player.x=__bw.o.x+30;player.z=__bw.o.z;player.hp=100;true');keep();
+   xe('window.__bwd=0;window.__jh2=jHit;jHit=function(b,n,w){if(w==="Boom Bot"&&b===__bw.f)__bwd+=n;return __jh2.apply(this,arguments);};RS.bb.push({m:rsMesh(0xff8a1f,1.6,new RV(__bw.o.x,0.4,__bw.o.z-1)),dx:0,dz:-1,t:XBB.life,hp:XBB.hp});window.__bwo=RS.bb[0];true');
+   for(let i=0;i<20&&xe('__bwo.wu==null');i++){await adv(50);keep();}const w0=xe('[__bwo.wu!=null,__bwd,RS.bb.length,__bwo.m.position.z]');await adv(400);keep();const w1=xe('[__bwd,RS.bb.length,__bwo.m.position.z]');await adv(300);keep();const w2=xe('[__bwd>0,RS.bb.length]');
+   eq([w0[0],w0[1],w0[2],w1[0],w1[1],w1[2]===w0[3],w2[0],w2[1]],[true,0,1,0,1,true,true,0],'Boom Bot stops within 2.5 m, no damage for 0.6 s, then explodes (was instant): '+JSON.stringify([w0,w1,w2]));
+   // an enemy bot Raze's Boom Bot: a player gun target with 60 HP
+   xe('window.__bwe=xBbShootable({m:rsMesh(0xff8a1f,1.6,new RV(__bw.o.x+60,0.4,__bw.o.z+60)),dx:0,dz:1,t:XBB.life,hp:XBB.hp,own:__bw.f,en:true});RS.bb.push(__bwe);true');
+   eq(xe('[xShotTgts([]).indexOf(__bwe.m)>=0,__bwe.m.userData.ld===__bwe,RS.bb.length]'),[true,true,1],'an enemy Boom Bot is in the player gun raycast (XLDH)');
+   xe('__bwe.m.userData.ld.hp-=40;true');await adv(100);eq(xe('[RS.bb.length,__bwe.hp]'),[1,20],'one 40-damage body shot: 60 -> 20, still rolling');
+   xe('__bwe.m.userData.ld.hp-=40;true');await adv(100);eq(xe('[RS.bb.length,XLDH.indexOf(__bwe.m),player.hp,!!__bwe.m.parent]'),[0,-1,100,false],'second shot destroys it: gone from the scene and XLDH, no blast');
+   xe('jHit=__jh2;blocked=__bl1;los=__lo1;bots.concat(allies).forEach(b=>{if(b.det>1e8)b.det=0;});__bw.f.hp=100;true');await adv(200);}}
  // ---- Skye Trailblazer (wiki Trailblazer: 6 s, 3.5 m explosion, concuss 4 s at the centre -> 2.5 s at the edge); client XTB == server DEV.trail ----
  {const dsrc=require('fs').readFileSync(require('path').join(__dirname,'../server/src/devices.js'),'utf8'),tm=dsrc.match(/trail:\{life:([\d.]+),speed:[\d.]+,trigger:[\d.]+,concuss:([\d.]+),minConcuss:([\d.]+),radius:([\d.]+)\}/);
   eq(xe('[XTB.life,XTB.max,XTB.min,XTB.r]'),tm?tm.slice(1).map(Number):null,'client XTB == server DEV.trail');eq(xe('[xTbCnc(0),xTbCnc(1.75),xTbCnc(3.5)]'),[4,3.25,2.5],'Trailblazer concuss falloff');}
@@ -305,5 +319,5 @@ const fails=[];const fail=s=>{fails.push(s);if(VERBOSE)console.log('FAIL',s);};c
    xe('jUnreveal();__dt.hp=Math.min(100,__dthp);bots.concat(allies).forEach(b=>{if(b.det>1e8)b.det=0;});true');await adv(200);}}
  if(xe('XAF.err&&!/load|fetch|Request/i.test(XAF.err)?XAF.err:null'))fail('ability viewmodel error: '+xe('XAF.err'));
  if(H.errors.length>errs0)fail('page errors: '+H.errors.slice(errs0).map(e=>String(e&&e.message||e)).join(' | '));
- if(fails.length){console.log(fails.join('\n'));process.exit(1);}console.log('ability equip: binds, migration, HUD labels, equip -> fire flow, first-person equip viewmodel, wiki equip times + windups, Sova bow charge + bounces, Fault Line hold-to-extend, Hot Hands spread, Neural Theft 18 m / 2 s + 6 s, Cyber Cage cylinder, Recon Bolt 30 m pulses, Nanoswarm 4.5 m / 1 s windup, Paranoia 25 m orb, Boom Bot 15 m / 2.5 m / 80-30 falloff, Trailblazer 3.5 m / 4-2.5 s, Rolling Thunder 32 x 18 m strip, Hunter\'s Fury 1.76 m / 2.125 s / 6 s / 1 s reveal, Showstopper 4 / 7 m 150-30, Turret windup / bursts / falloff, Guiding Light blind by flight time, Owl Drone / Spycam dart pings, Cloudburst flight + steering, per-ability smoke radii, kit table ok');process.exit(0);
+ if(fails.length){console.log(fails.join('\n'));process.exit(1);}console.log('ability equip: binds, migration, HUD labels, equip -> fire flow, first-person equip viewmodel, wiki equip times + windups, Sova bow charge + bounces, Fault Line hold-to-extend, Hot Hands spread, Neural Theft 18 m / 2 s + 6 s, Cyber Cage cylinder, Recon Bolt 30 m pulses, Nanoswarm 4.5 m / 1 s windup, Paranoia 25 m orb, Boom Bot 15 m / 2.5 m / 80-30 falloff / 0.6 s windup / 60 HP, Trailblazer 3.5 m / 4-2.5 s, Rolling Thunder 32 x 18 m strip, Hunter\'s Fury 1.76 m / 2.125 s / 6 s / 1 s reveal, Showstopper 4 / 7 m 150-30, Turret windup / bursts / falloff, Guiding Light blind by flight time, Owl Drone / Spycam dart pings, Cloudburst flight + steering, per-ability smoke radii, kit table ok');process.exit(0);
 })().catch(e=>{console.error(e);process.exit(1);});

@@ -15,7 +15,7 @@ import {initAbilities,buyAbility,castAbility,tickAbilities,smokeBlocks,sightClea
 export function survivorLoss(sim,u,text){if(!u.alive)return false;if(u.team===sim.atk)return text==='Time ran out';return text==='Spike detonated';}
 export const SPIKE_RADIUS=32.5;export const POST_ROUND=7;export function buyPhaseSeconds(round){return round===1||round===13||round===25?45:30;}
 const prices={Classic:0,Shorty:300,Frenzy:450,Ghost:500,Sheriff:800,Stinger:1100,Spectre:1600,Bucky:850,Judge:1850,Bulldog:2050,Guardian:2250,Phantom:2900,Vandal:2900,Marshal:950,Outlaw:2400,Operator:4700,Ares:1600,Odin:3200};
-import {revealedFor,showstopperFire} from './ults.js';
+import {revealedFor,showstopperFire} from './ults.js';import {nearestBoomBot} from './devices.js';
 import {soulKill} from './reyna.js';
 export class SpikeSimulation extends Simulation{
  static LOAD_GRACE=15;
@@ -65,8 +65,8 @@ export class SpikeSimulation extends Simulation{
  canSee(u,v,o,p){return sightClear(this,o,p);}
  motor(u,input,dt){return this.motorFn(u,input,dt,this.world);}
  // Sage barriers stop bullets (and cannot be wallbanged); shotImpact then damages the barrier the shot ended on.
- traceShot(o,d,max){const wall=this.baseWorld.ray(o,d,max),barrier=nearestBarrier(this,o,d,Math.min(max,wall));this.shotBlockedBy=barrier?'barrier':null;return barrier?barrier.distance:wall;}
- shotImpact(o,d,distance,weapon){const barrier=nearestBarrier(this,o,d,distance+.001);if(!barrier||Math.abs(barrier.distance-distance)>.002)return;const range=weapon.damageRanges.find(r=>distance>=r.rangeStartMeters&&distance<r.rangeEndMeters)||weapon.damageRanges.at(-1);barrier.effect.hp-=range.bodyDamage;if(barrier.effect.hp<=0)barrier.effect.until=this.time;}
+ traceShot(o,d,max){const wall=this.baseWorld.ray(o,d,max),barrier=nearestBarrier(this,o,d,Math.min(max,wall)),lim=barrier?barrier.distance:wall,bb=nearestBoomBot(this,o,d,Math.min(max,lim),this.shotBy);this.shotBlockedBy=bb?'boombot':barrier?'barrier':null;return bb?bb.distance:lim;}
+ shotImpact(o,d,distance,weapon){if(this.shotBlockedBy==='boombot'){/* enemy Boom Bot (60 HP, wiki): body damage per bullet, destroyed at 0 */const b=nearestBoomBot(this,o,d,distance+.001,this.shotBy);if(b){const r=weapon.damageRanges.find(r=>distance>=r.rangeStartMeters&&distance<r.rangeEndMeters)||weapon.damageRanges.at(-1);b.effect.hp-=r.bodyDamage;if(b.effect.hp<=0){const j=this.effects.indexOf(b.effect);if(j>=0)this.effects.splice(j,1);}}return;}const barrier=nearestBarrier(this,o,d,distance+.001);if(!barrier||Math.abs(barrier.distance-distance)>.002)return;const range=weapon.damageRanges.find(r=>distance>=r.rangeStartMeters&&distance<r.rangeEndMeters)||weapon.damageRanges.at(-1);barrier.effect.hp-=range.bodyDamage;if(barrier.effect.hp<=0)barrier.effect.until=this.time;}
 
  onGunKill(killer,victim){finisherEvent(this,killer,victim);}
  fireBlade(u){const A=u.ability;if(this.phase!=='game'||this.buy>0||this.roundDelay>0||u.agent!=='Jett'||!A?.bladesActive||A.blades<1)return false;const weapon=u.weapon,ammo=u.ammo,kills=u.kills;u.weapon='Blade Storm';u.ammo=A.blades;try{const fired=this.fire(u);if(fired){A.blades=this.lastKills>0?5:u.ammo;A.bladesActive=A.blades>0;}return fired;}finally{u.weapon=weapon;u.ammo=ammo;}}

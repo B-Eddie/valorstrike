@@ -375,10 +375,20 @@ allies. Was: server 10 m sight, 1.2 m trigger, flat 125 in 3 m; offline client 8
 - Client: `XBB` (same table) and `xBbDmg`; the player's and bot Raze's bot (`RS.bb`) lock within 15 m, explode within
   2.5 m (`xBbBlast`: the locked target always, anyone else of the owner's targets in 6 m with line of sight, by distance;
   never allies) and last 5 s.
-- Not modelled: the 0.6 s windup between the trigger and the blast, the 60 HP bot that enemies can shoot, the cone shape of
-  the detection (both sides use a 15 m circle with line of sight).
+- Windup and HP (wiki: 0.6 s windup, 60 HP): within 2.5 m of its target the bot stops and explodes 0.6 s later (was at
+  once); the blast damages by each target's distance then (the locked target needs no line of sight). Server
+  `DEV.boombot {windup: .6, hp: 60}`: the effect carries `hp`; `spike.js` `traceShot` stops an enemy's bullet on the bot
+  (`nearestBoomBot`, a 0.4 m sphere, never the owner's team; `fire` records `shotBy`) and `shotImpact` takes the gun's body
+  damage, removing the bot at 0 HP (no blast). Client `XBB {wu: 0.6, hp: 60}`: `o.wu` windup in the `RS.bb` tick;
+  an enemy bot Raze's Boom Bot (`xBbShootable`) joins the player's gun raycast through `XLDH` (`userData.ld`, as Lockdown /
+  the Lotus wall) and is destroyed at 0 HP; `xBbGone` drops the mesh and hitbox.
+- Not modelled: the cone shape of the detection (both sides use a 15 m circle with line of sight); offline bots never shoot
+  the player's Boom Bot (bot AI untouched).
 - Tests: `server/test-ults.js` (bbDamage table; 73.75 - 80 to the hunted foe; lock at 13.4 m; falloff to a second foe;
-  none at ~10 m), `work/test_ability_equip.cjs` (XBB == DEV.boombot, xBbDmg table, the same lock / falloff offline).
+  none at ~10 m; windup: no damage at the trigger or 0.5 s in, stopped, blast at 0.6 s; ally shot passes, enemy shot stops
+  on it, 60 -> 20 -> destroyed with no blast; the real `fire` path destroys it), `work/test_ability_equip.cjs` (XBB ==
+  DEV.boombot incl. wu / hp, xBbDmg table, the same lock / falloff offline; stop + 0.6 s windup; an enemy Boom Bot in the
+  gun raycast, 60 -> 20 -> gone from scene and XLDH, no blast).
 
 ### Skye Trailblazer (wiki.playvalorant.com/en-us/Trailblazer, fetched 2026-10-25)
 

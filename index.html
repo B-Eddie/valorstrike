@@ -8604,7 +8604,7 @@ function rsKey(code) {
   if (J.pick === "Raze") {
     if (code === "KeyC") {
       if (J.c < 1 || J.cd.c > 0) return no(); J.c--; J.cd.c = 0.6; let d = 1.2; while (d > 0 && blocked(P.x + fx * d, P.z + fz * d, 0.3, 0)) d -= 0.3;
-      RS.bb.push({ m: rsMesh(0xff8a1f, 1.6, new RV(P.x + fx * d, 0.4, P.z + fz * d)), dx: fx, dz: fz, t: XBB.life }); say("Boom Bot · seeking", 700); blip(520, 0.15, "square", 0.12); try { XCUE.play("whir"); } catch (e) {}
+      RS.bb.push({ m: rsMesh(0xff8a1f, 1.6, new RV(P.x + fx * d, 0.4, P.z + fz * d)), dx: fx, dz: fz, t: XBB.life, hp: XBB.hp }); say("Boom Bot · seeking", 700); blip(520, 0.15, "square", 0.12); try { XCUE.play("whir"); } catch (e) {}
     }
     if (code === "KeyQ") {
       if (RS.pk.length) return rsPack();
@@ -8664,15 +8664,17 @@ function rsTick(dt) {
   for (let i = 0; i < add.length; i++) RS.pj.push(add[i]);
   RS.pk.forEach((o) => { o.t += dt; if (!o.stuck && rsFly(o, dt, 16)) o.stuck = true; });
   prune(RS.bb, (o) => {
-    o.t -= dt; const p = o.m.position; let tg = null, bd = XBB.sight;
+    if (!(o.hp > 0) && o.hp != null) { xBbGone(o); say("Boom Bot destroyed", 700); blip(160, 0.2, "square", 0.12); return false; } // 60 HP: shot down by the player (enemy bots)
+    const p = o.m.position; if (o.wu != null) { o.m.rotation.y += dt * 20; if ((o.wu -= dt) > 0) return true; xBbBlast(p, o, o.tg); xBbGone(o); return false; } // 0.6 s windup: stopped, then the blast
+    o.t -= dt; let tg = null, bd = XBB.sight;
     xBbTg(o).forEach((b) => { const q = xBbPos(b); if (!q) return; const d = Math.hypot(q.x - p.x, q.z - p.z); if (d < bd && (d < XBB.trig || los(new RV(p.x, 0.5, p.z), new RV(q.x, 1, q.z)))) { bd = d; tg = b; } });
     if (tg) { const q = xBbPos(tg), l = bd || 1, k = Math.min(1, 6 * dt); o.dx += ((q.x - p.x) / l - o.dx) * k; o.dz += ((q.z - p.z) / l - o.dz) * k; const n = Math.hypot(o.dx, o.dz) || 1; o.dx /= n; o.dz /= n; }
     const sp = (tg ? 8 : 6) * dt, nx = p.x + o.dx * sp, nz = p.z + o.dz * sp;
     if (blocked(nx, p.z, 0.3, 0)) o.dx = -o.dx; else p.x = nx;
     if (blocked(p.x, nz, 0.3, 0)) o.dz = -o.dz; else p.z = nz;
     o.m.rotation.y += dt * 8;
-    if (tg && bd < XBB.trig) { xBbBlast(p, o, tg); scene.remove(o.m); return false; }
-    if (o.t > 0) return true; scene.remove(o.m); return false;
+    if (tg && bd < XBB.trig) { o.wu = XBB.wu; o.tg = tg; blip(1200, 0.3, "square", 0.08); return true; }
+    if (o.t > 0) return true; xBbGone(o); return false;
   });
   if (RS.kb) { const s = 14 * dt, nx = P.x + RS.kb.x * s, nz = P.z + RS.kb.z * s; if (!blocked(nx, P.z, 0.4, P.y)) P.x = nx; if (!blocked(P.x, nz, 0.4, P.y)) P.z = nz; if ((RS.kb.t -= dt) <= 0) RS.kb = null; }
   if (RS.ssd > 0) RS.ssd -= dt;
@@ -8700,7 +8702,7 @@ function rsTick(dt) {
   bots.forEach((b) => { if (b.cnc > 0) b.cnc -= dt; if (b.ns > 0) b.ns -= dt; });
 }
 function rsClear() {
-  RS.pj.concat(RS.bb, RS.pk, RS.sk).forEach((o) => scene.remove(o.m)); if (RS.hk) scene.remove(RS.hk.m); rgEnd();
+  RS.bb.forEach(xBbGone); RS.pj.concat(RS.pk, RS.sk).forEach((o) => scene.remove(o.m)); if (RS.hk) scene.remove(RS.hk.m); rgEnd();
   RS.pj = []; RS.bb = []; RS.pk = []; RS.sk = []; RS.hk = null; RS.kb = null; RS.ss = 0; RS.ssd = 0;
 }
 function rsSl(u) {
@@ -8781,13 +8783,16 @@ function pNs(t) { const o = $("xNs"); o.classList.add("on"); clearTimeout(pNs.h)
   if (A.sp <= 0.01 || (!mates.length && !pIn)) A.srg = 0; }; }
 // bot-owned ability entities (Boom Bot in RS.bb, Aftershock in BC.as): o.own = caster, o.en = cast by the enemy team
 // Raze Boom Bot (wiki.playvalorant.com/en-us/Boom_Bot): 5 s, locks onto an enemy within 15 m, explodes within 2.5 m;
-// 80 damage inside the 2 m inner radius, falling linearly to 30 at the 6 m outer radius. Same values as the server (DEV.boombot).
-const XBB = { life: 5, sight: 15, trig: 2.5, inner: 2, out: 6, max: 80, min: 30 };
+// 80 damage inside the 2 m inner radius, falling linearly to 30 at the 6 m outer radius; it stops within 2.5 m and explodes 0.6 s
+// later; 60 HP (an enemy bot Raze's Boom Bot takes the player's gunfire through the XLDH hitbox list). Same values as the server (DEV.boombot).
+const XBB = { life: 5, sight: 15, trig: 2.5, wu: 0.6, hp: 60, inner: 2, out: 6, max: 80, min: 30 };
+function xBbShootable(o) { if (o.en) { o.m.userData.ld = o; if (XLDH.indexOf(o.m) < 0) XLDH.push(o.m); } return o; }
+function xBbGone(o) { scene.remove(o.m); const i = XLDH.indexOf(o.m); if (i >= 0) XLDH.splice(i, 1); }
 function xBbDmg(d) { return d <= XBB.inner ? XBB.max : d >= XBB.out ? 0 : XBB.max - (d - XBB.inner) / (XBB.out - XBB.inner) * (XBB.max - XBB.min); }
-// the blast (player's or a bot Raze's): every target of the bot's owner within 6 m with line of sight (the locked one always), falloff damage; never allies
+// the blast (player's or a bot Raze's): every target of the bot's owner within 6 m with line of sight (the locked one needs none), falloff damage by distance; never allies
 function xBbBlast(p, o, tg) { const e = new RV(p.x, Math.max(0.5, p.y), p.z), m = jM(smokeGeo, fireMat(0xff8a1f, 0.45)); m.scale.setScalar(XBB.out / 4); m.position.copy(e); jFx(m, 0.4);
   if (o.own) { try { XCUE.play("bbPop", { x: e.x, y: e.y, z: e.z }); } catch (er) {} } else blip(70 + Math.random() * 30, 0.45, "sawtooth", 0.22);
-  xBbTg(o).forEach((t) => { const q = xBbPos(t); if (!q) return; const d = Math.hypot(q.x - e.x, q.z - e.z), n = xBbDmg(Math.min(d, t === tg ? XBB.trig : d)); if (!(n > 0) || (t !== tg && !los(e, new RV(q.x, 1, q.z)))) return;
+  xBbTg(o).forEach((t) => { const q = xBbPos(t); if (!q) return; const d = Math.hypot(q.x - e.x, q.z - e.z), n = xBbDmg(d); if (!(n > 0) || (t !== tg && !los(e, new RV(q.x, 1, q.z)))) return;
     if (o.own) xBotDmg(t, n, o.own.name, "Boom Bot"); else { jHit(t, n, "Boom Bot"); if (t.alive) flash(t); } }); }
 function xBbPos(t) { return t === player ? (player.hp > 0 ? player : null) : t && t.alive && t.g ? t.g.position : null; }
 function xBbTg(o) { return o.own ? (o.en ? [player].concat(typeof allies !== "undefined" ? allies : []) : bots) : bots; }
@@ -8800,7 +8805,7 @@ function xBotDmg(t, n, by, w) { try { if (t === player) { hurt(player, n, by); r
   if (!A.rzb || !A.rlk || (A.rlk.t += dt) > 6) return;
   const dx = A.rlk.x - from.x, dz = A.rlk.z - from.z, l = Math.hypot(dx, dz) || 1; if (l < 4 || l > 28 || Math.random() > dt * 1.5) return;
   if (!xBUse(b, "c")) { A.rzb = 0; return; } A.rzb = 0; const fx = dx / l, fz = dz / l, p = new RV(from.x + fx, 0.4, from.z + fz); /* Boom Bot (C) bought */ if (blocked(p.x, p.z, 0.3, 0)) p.set(from.x, 0.4, from.z);
-  RS.bb.push({ m: rsMesh(0xff8a1f, 1.6, p), dx: fx, dz: fz, t: XBB.life, own: b, en: !al }); feed("Raze ▸ Boom Bot"); try { XCUE.play("bbGo", { x: p.x, y: 0.4, z: p.z }); } catch (e) {} }; }
+  RS.bb.push(xBbShootable({ m: rsMesh(0xff8a1f, 1.6, p), dx: fx, dz: fz, t: XBB.life, hp: XBB.hp, own: b, en: !al })); feed("Raze ▸ Boom Bot"); try { XCUE.play("bbGo", { x: p.x, y: 0.4, z: p.z }); } catch (e) {} }; }
 // bot Breach (team-agnostic): Aftershock once per round, through the wall onto an enemy who just ducked behind cover, or onto the Spike once the other team has planted
 { const b0 = botAb; botAb = function (b, dt, see, tg, from) { b0(b, dt, see, tg, from);
   if (!jOn() || !running || !b.ab || !b.g || (b.name !== "Breach" && xAgOf(b.name) !== "Breach")) return; const A = b.ab, al = allies.indexOf(b) >= 0;

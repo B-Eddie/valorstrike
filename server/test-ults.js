@@ -127,12 +127,23 @@ import {DEV,bbDamage,tbConcuss,turretDamage} from './src/devices.js';
 {assert.deepEqual([bbDamage(0),bbDamage(2),bbDamage(4),bbDamage(5.5),bbDamage(6.01)],[80,80,55,36.25,0],'Boom Bot falloff 80 (2 m) -> 30 (6 m)');
  const {s,u,list:[foe,side,out]}=setup('Raze',['foe'],['foeSide'],['foeOut']);u.ability.c=1;Object.assign(foe,{x:12,y:0,z:-6});Object.assign(side,{x:12,y:0,z:-9});Object.assign(out,{x:12,y:0,z:-15});
  assert.equal(s.command(u,{t:'ab',k:'c'}),true);tick(s,4.5);assert.ok(foe.hp<=26.25,'locks onto an enemy 13.4 m away (15 m detection, was 10 m): '+foe.hp);assert.ok(side.hp<100&&side.hp>=20&&side.hp>foe.hp,'falloff to a second enemy 4-6 m from the blast: '+side.hp);assert.equal(out.hp,100,'9 m away: outside 6 m');assert.ok(!s.effects.some(e=>e.kind==='boombot'));}
+// Boom Bot windup + 60 HP (wiki Boom_Bot): it stops within 2.5 m and explodes 0.6 s later; enemy gunfire destroys it (60 HP), allies' shots pass it.
+{assert.deepEqual([DEV.boombot.windup,DEV.boombot.hp],[.6,60],'DEV.boombot windup / hp');
+ const {s,u,list:[foe]}=setup('Raze',['foe']);u.ability.c=1;Object.assign(foe,{x:0,y:0,z:-5});assert.equal(s.command(u,{t:'ab',k:'c'}),true);const bb=s.effects.find(e=>e.kind==='boombot');assert.equal(bb.hp,60,'the bot has 60 HP');
+ let n=0;while(!bb.blastAt&&n++<40)tick(s,.05);assert.ok(bb.blastAt>0,'closed within 2.5 m: windup started');const p0=[...bb.p];assert.equal(foe.hp,100,'no damage at the trigger (0.6 s windup, was instant)');
+ tick(s,.5);assert.equal(foe.hp,100,'0.5 s into the windup: not yet');assert.deepEqual(bb.p,p0,'stopped during the windup');tick(s,.15);assert.ok(foe.hp<=30&&foe.hp>=20,'explodes 0.6 s after the trigger: '+foe.hp);assert.ok(!s.effects.includes(bb));}
+{const {s,u,list:[foe,mate]}=setup('Raze',['foe'],['mate']);u.ability.c=1;Object.assign(foe,{x:0,y:0,z:30});Object.assign(mate,{x:0,y:0,z:28});assert.equal(s.command(u,{t:'ab',k:'c'}),true);tick(s,.5);const bb=s.effects.find(e=>e.kind==='boombot'),o=[bb.p[0],bb.p[1]+.2,30],d=[0,0,-1],V={damageRanges:[{rangeStartMeters:0,rangeEndMeters:999,bodyDamage:40}]};
+ s.shotBy=mate;assert.equal(s.traceShot(o,d,100),Infinity,'an ally shot passes the bot');s.shotBy=foe;const t=s.traceShot(o,d,100);assert.ok(s.shotBlockedBy==='boombot'&&Math.abs(t-(30-bb.p[2]-.4))<.02,'an enemy shot stops on the bot: '+t);
+ s.shotImpact(o,d,t,V);assert.equal(bb.hp,20,'40 body damage: 60 -> 20');assert.ok(s.effects.includes(bb));s.traceShot(o,d,100);s.shotImpact(o,d,t,V);assert.ok(!s.effects.includes(bb),'destroyed at 0 HP');tick(s,5);assert.equal(foe.hp,100,'a destroyed bot never explodes');
+ // through the real gun path (fire sets shotBy): the foe shoots the bot 5 m away
+ const {s:s2,u:u2,list:[f2]}=setup('Raze',['foe']);u2.ability.c=1;Object.assign(f2,{x:0,y:0,z:40});assert.equal(s2.command(u2,{t:'ab',k:'c'}),true);tick(s2,.3);const b2=s2.effects.find(e=>e.kind==='boombot');Object.assign(u2,{x:10});/* Raze out of the line of fire */Object.assign(f2,{x:b2.p[0],z:b2.p[2]+5,look:0});f2.pitch=Math.atan2(b2.p[1]+.2-(f2.y+1.6),5);
+ let shots=0;for(let k=0;k<10&&s2.effects.includes(b2);k++){s2.time+=1;f2.triggerHeld=false;if(s2.fire(f2))shots++;}assert.ok(!s2.effects.includes(b2)&&shots>=2,'enemy gunfire destroys the Boom Bot ('+shots+' shots, hp '+b2.hp+')');}
 {const {s,u,list:[foe,side,out]}=setup('Skye',['foe'],['foeSide'],['foeOut']);u.ability.q=1;Object.assign(foe,{x:0,y:0,z:-10});Object.assign(side,{x:2.5,y:0,z:-8});Object.assign(out,{x:4,y:0,z:-8});assert.equal(s.command(u,{t:'ab',k:'q'}),true);tick(s,1.5);assert.ok(!s.effects.some(e=>e.kind==='trail'));
  // Trailblazer (wiki): 6 s, 3.5 m explosion, concuss 4 s at the centre falling to 2.5 s at the edge
  assert.deepEqual([tbConcuss(0),tbConcuss(1.75),tbConcuss(3.5),DEV.trail.life],[4,3.25,2.5,6],'Trailblazer concuss falloff 4 -> 2.5 s, 6 s');
  const t0=s.time,cf=foe.concussUntil-t0,cs=side.concussUntil-t0;/* the explosion happened up to 1.5 s ago: compare remaining times */assert.ok(cf>cs&&cs>0,'closer foe concussed longer: '+cf.toFixed(2)+' > '+cs.toFixed(2));assert.ok(!(out.concussUntil>0),'4 m from the blast: outside 3.5 m (was 4 m)');
  assert.ok(Math.abs((foe.concussUntil-side.concussUntil)-(tbConcuss(1.8)-tbConcuss(2.55)))<.25,'falloff by distance');}
-console.log('Devices: recon pulses reveal by line of sight (two pulses), Boom Bot seeks and explodes, Trailblazer concusses');
+console.log('Devices: recon pulses reveal by line of sight (two pulses), Boom Bot seeks and explodes (0.6 s windup, 60 HP, shootable), Trailblazer concusses');
 // Row 9 device parity: Phoenix (Blaze, Hot Hands, Curveball), Killjoy (Nanoswarm, Alarmbot, Turret arc),
 // Cypher (Trapwire, Cyber Cage), Chamber (Trademark, Headhunter weapon restore).
 import {sightClear,abilityDamage} from './src/abilities.js';
