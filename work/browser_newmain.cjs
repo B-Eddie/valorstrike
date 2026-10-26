@@ -30,6 +30,7 @@ const ONLY=(process.env.ONLY||'A,B,C,D').split(',');
  const X=s=>page.evaluate(s=>window.__xe(s),s);const XJ=s=>X('JSON.stringify('+s+')').then(JSON.parse);
  const frames=async n=>{await X(`window.__allow=${n};1`);await page.waitForFunction(()=>window.__xe('window.__allow<=0'),null,{timeout:900000,polling:1000});};
  const shot=async(n)=>{await frames(2);await page.screenshot({path:`${SHOT}newmain-${n}-1280x720.jpg`,type:'jpeg',quality:82,timeout:150000}).catch(e=>log('shot '+n+' failed (non-fatal)',String(e).slice(0,120)));};
+ const untilF=async(expr,ms)=>{const t=Date.now();while(Date.now()-t<ms){if(await X(expr))return true;await X('window.__allow=2;1');await page.waitForTimeout(300);}return false;}; // lets a couple of frames render per poll (glb loads finish on rendered frames here)
  const until=async(expr,ms,step=100)=>{const t=Date.now();while(Date.now()-t<ms){if(await X(expr))return true;await page.waitForTimeout(step);}return false;};
  await page.goto('http://127.0.0.1:'+PORT+'/',{waitUntil:'domcontentloaded'});await page.waitForFunction(()=>window.__xe&&window.xValorantAssets,null,{timeout:180000,polling:1000});log('assets',1);
  await page.getByRole('button',{name:'Got it',exact:true}).click({timeout:5000}).catch(()=>{});
@@ -73,11 +74,11 @@ const ONLY=(process.env.ONLY||'A,B,C,D').split(',');
    await page.keyboard.press(key);const ok=await until('typeof XAF!=="undefined"&&XAF.on&&XAF.last&&XAF.last.rig===true&&J.eq&&(J.eq.st==="ready"||J.eq.st==="hold")',45000,200);
    const st=await XJ(`(()=>{const R=XAF.cur;let sk=0,vis=0;if(R&&R.root)R.root.traverse(o=>{if(o.isSkinnedMesh)sk++;});vis=!!(R&&R.root&&R.root.visible&&R.root.parent===camera);
      const it=XAF.last;return {on:XAF.on,mode:XAF.mode,last:it,eq:J.eq&&J.eq.st,sk,vis,err:XAF.err,legacy:typeof xCaHand!=='undefined'||typeof XEQV!=='undefined'||typeof xEqItem!=='undefined',gunFP:!!(XV.fp&&XV.fp.root.visible)};})()`);
-   const ti=Date.now(),itemOk=ok&&await until('XAF.on&&XAF.last&&XAF.last.item===true',30000,200);st.itemWaitMs=Date.now()-ti;st.itemNow=await X('!!(XAF.last&&XAF.last.item)');
+   const ti=Date.now(),itemOk=ok&&await untilF('XAF.on&&XAF.last&&XAF.last.item===true',45000);st.itemWaitMs=Date.now()-ti;st.itemNow=await X('!!(XAF.last&&XAF.last.item)');
    log(ag+' '+key+' equipped',st);await shot('arms-'+ag.toLowerCase()+'-'+key[3].toLowerCase());
-   check(`${ag} ${key[3]}: ability drawn by the agent's own native FP arms (rig loaded, SkinnedMesh under the camera, item in hand within 30 s of the prop glb load, gun rig hidden, no legacy box hand)`,ok&&itemOk&&st.last&&st.last.ag===ag&&st.sk>0&&st.vis&&!st.gunFP&&!st.legacy&&!st.err,JSON.stringify(st));
+   check(`${ag} ${key[3]}: ability drawn by the agent's own native FP arms (rig loaded, SkinnedMesh under the camera, item in hand within 45 s of the prop glb load, gun rig hidden, no legacy box hand)`,ok&&itemOk&&st.last&&st.last.ag===ag&&st.sk>0&&st.vis&&!st.gunFP&&!st.legacy&&!st.err,JSON.stringify(st));
    await page.mouse.down();await page.waitForTimeout(80);await page.mouse.up();
-   const off=await until('!XAF.on&&!J.eq',8000,200);const tg=Date.now();await until('!!(XV.fp&&XV.fp.root.visible)',30000,200);const st2=await XJ('{on:XAF.on,eq:J.eq&&J.eq.st,gunFP:!!(XV.fp&&XV.fp.root.visible),err:XAF.err}');st2.gunWaitMs=Date.now()-tg;log(ag+' after FIRE',st2);
+   const off=await until('!XAF.on&&!J.eq',8000,200);const tg=Date.now();await untilF('!!(XV.fp&&XV.fp.root.visible)',30000);const st2=await XJ('{on:XAF.on,eq:J.eq&&J.eq.st,gunFP:!!(XV.fp&&XV.fp.root.visible),err:XAF.err}');st2.gunWaitMs=Date.now()-tg;log(ag+' after FIRE',st2);
    check(`${ag} ${key[3]}: FIRE throws it, the ability rig goes away and the native gun rig comes back`,off&&!st2.on&&st2.gunFP,JSON.stringify(st2));
   }
  }
