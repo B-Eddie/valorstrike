@@ -1896,7 +1896,7 @@ const WEAP = { Vandal: { mag: 25, rate: 9.75, body: 40, head: 160, legs: 34, rec
   Stinger: { mag: 20, rate: 16, body: 27, head: 67, legs: 23, ff: [25, 62, 21], ffd: 15, rec: 0.55, vol: 0.15, f: 290 }, Frenzy: { mag: 13, rate: 10, body: 26, head: 78, legs: 22, ff: [21, 63, 17], ffd: 20, rec: 0.5, vol: 0.18, f: 270 },
   // shotguns: body/head/legs = per pellet, pel pellets per shell inside cone (rad); alt = Bucky ADS tight slug-ish spread
   Shorty: { mag: 2, rate: 3.33, pel: 12, cone: 0.09, body: 12, head: 36, legs: 10, ff: [5, 15, 4], ffd: 7, rec: 1.2, vol: 0.3, f: 120, semi: 1 },
-  Bucky: { mag: 5, rate: 1.1, pel: 15, cone: 0.065, body: 20, head: 40, legs: 17, ff: [9, 18, 8], ffd: 8, rec: 1.4, vol: 0.32, f: 100, semi: 1, alt: { pel: 5, k: 0.28, body: 22, head: 44, legs: 19, ff: [14, 28, 12], ffd: 15 } },
+  Bucky: { mag: 5, rate: 1.1, pel: 15, cone: 0.065, body: 20, head: 40, legs: 17, ff: [9, 18, 8], ffd: 8, rec: 1.4, vol: 0.32, f: 100, semi: 1, alt: { pel: 5, k: 0.28, body: 17, head: 34, legs: 14, ff: [13, 26, 11], ffd: 8, ff2: [9, 18, 7], ffd2: 12 } }, // alt pellets: the primary's 0-8 / 8-12 / 12+ m table (wiki.playvalorant.com/en-us/Bucky; was the pre-12.09 22 / 44 / 19 to 15 m)
   Judge: { mag: 7, rate: 3.5, pel: 12, cone: 0.075, body: 17, head: 34, legs: 14, ff: [8, 16, 7], ffd: 10, rec: 1.1, vol: 0.3, f: 130 }, // Judge: full auto
   // machine guns: spin = [start, full] rps over the first second of a spray (rate = bots' average); adsK = ADS spread mult; pen = wall penetration (3 high); rld = reload s; heavy = move x0.9
   Ares: { mag: 50, rate: 11.5, spin: [10, 13], body: 30, head: 72, legs: 25, rec: 0.7, vol: 0.3, f: 240, adsK: 0.75, pen: 2, rld: 3.25, heavy: 1 },
@@ -1911,8 +1911,8 @@ function xRate(W) { if (!W.spin) return W.rate; const n = performance.now(); if 
 // per-round reloads (wiki Bucky "0.5 per shell", Marshal "0.5 per bullet"; a shot interrupts it); Outlaw 2.3 s one barrel / 3.8 s both. = server RELOAD_ROUND / reloadTime
 const XRLP = { Bucky: 0.5, Marshal: 0.5 };
 function xRT() { const n = wName(), W = WEAP[n]; if (XRLP[n]) return XRLP[n]; if (n === "Outlaw" && W) return W.mag - ammo >= 2 ? 3.8 : 2.3; return (W && W.rld) || 2.5; } // reload duration from the gun's own Valorant reload time
-// one damage table for player and bots; zone = "body" | "head" | "legs"; falloff ff past ffd m (default 15); knife 50 light, heavy 75 body / 150 back-stab or head
-const KNIFE = { light: 50, heavy: 75, heavyCrit: 150 }; const KNIFE_RANGE = 2; /* m, eye to hit (= the server Knife trace limit / damage range, simulation.js KNIFE_RANGE) */ let kHv = 0, kLg = 0, kLx = 0, kLz = 0;
+// one damage table for player and bots; zone = "body" | "head" | "legs"; falloff ff past ffd m (default 15); knife light 50 front / 100 back, heavy 75 front / 150 back (any hit zone)
+const KNIFE = { light: 50, lightBack: 100, heavy: 75, heavyCrit: 150 }; /* wiki.playvalorant.com/en-us/Melee: Front 50 / 75, Back 100 / 150 (Primary / Alt); no headshot bonus (= server KNIFE_LIGHT / KNIFE_HEAVY) */ const KNIFE_RANGE = 2; /* m, eye to hit (= the server Knife trace limit / damage range, simulation.js KNIFE_RANGE) */ let kHv = 0, kLg = 0, kLx = 0, kLz = 0;
 // bot yaw r is set as atan2(dx, dz) toward where it aims/moves, so its forward is (sin r, cos r); back-stab when forward · dir(attacker→target) > 0.5
 function kBack(r, ax, az, tx, tz) { const dx = tx - ax, dz = tz - az, l = Math.hypot(dx, dz) || 1; return (Math.sin(r) * dx + Math.cos(r) * dz) / l > 0.5; }
 var xPelOn = false; // true inside the player's pellet loop: wDmg returns one pellet; otherwise (bots) a shotgun shot = expected pellets landing
@@ -3385,7 +3385,7 @@ function shoot(hv) {
   for (let i = 0; i < solids.length; i++) targets.push(solids[i]);
   for (let i = 0; i < bots.length; i++) { const b = bots[i]; if (b.alive && !b.fog) { targets.push(b.body); targets.push(b.head); } } // b.fog: an online enemy the server's fog of war hides (server_runtime.js netFog): no stale-position hits
   const w = wName(), W = WEAP[w], P = player, kn = rw === "knife";
-  let body = KNIFE.light, head = KNIFE.light;
+  let body = KNIFE.light, head = KNIFE.lightBack; // knife: body = front hit, head = back-stab (the knife has no headshot bonus)
   if (kn) {
     if (kSwing > 0) return; kSwing = hv ? 1 : 0.5; kHv = hv ? 1 : 0; kick = 1; SFX.knife(); ray.far = KNIFE_RANGE; // light 0.5 s (= the server Knife fireRate 2/s), heavy 1 s cooldown, 2 m reach (server parity)
     if (hv) { body = KNIFE.heavy; head = KNIFE.heavyCrit; if (!(typeof NET !== "undefined" && NET.socket && MP.st === "game")) { kLg = 0.15; kLx = -Math.sin(yaw); kLz = -Math.cos(yaw); } } // lunge 1.2 m over 0.15 s offline; online the server moves the player and has no lunge (heavy = kh input: 1 s, 75 / 150 head or back)
@@ -3410,8 +3410,8 @@ function shoot(hv) {
   if (hit && hit.object.userData.bot) {
     const b = hit.object.userData.bot, hs = !!hit.object.userData.head;
     const legs = !hs && b.g && hit.point.y - b.g.position.y < 0.9; // below hip height
-    let bk = false; if (kn && hv) try { bk = kBack(b.g.rotation.y, P.x, P.z, b.g.position.x, b.g.position.z); } catch (e) {} // facing away = back-stab
-    let dmg = kn ? (hs || bk ? head : body) : xWkDmg(W, hs ? "head" : legs ? "legs" : "body", hit.distance, wk);
+    let bk = false; if (kn) try { bk = kBack(b.g.rotation.y, P.x, P.z, b.g.position.x, b.g.position.z); } catch (e) {} // facing away = back-stab
+    let dmg = kn ? (bk ? head : body) : xWkDmg(W, hs ? "head" : legs ? "legs" : "body", hit.distance, wk);
     xHS = !!hs; xHLeg = legs; if (wk < 1) { xWB.on = true; xWB.t = performance.now(); } else xWB.on = false; hurt(b, dmg); if (!kn) xTag(b, dmg); vmHit(hit.point, dmg, hs, b.hp <= 0.001, b, hs ? "head" : legs ? "legs" : "body"); if (b.hp <= 0.001) kill(b, hs); else flash(b);
   }
   updHud();
@@ -10533,9 +10533,16 @@ function xADu(dt) {
   if (xAD.p !== t) { xAD.p = t > xAD.p ? Math.min(1, xAD.p + dt / 0.12) : Math.max(0, xAD.p - dt / 0.09); const p = xAD.p; xAD.k = t ? 1 - Math.pow(1 - p, 3) : p * p * (3 - 2 * p); }
   const el = $("xAdsT"); if (el) hudS(el, "opacity", xAD.k > 0.001 ? xAD.k.toFixed(2) : "0");
 }
-function xBurst() {
-  if (xAD.bt > performance.now() || !running || paused) return; xAD.bt = performance.now() + 450;
-  for (let i = 0; i < 3; i++) setTimeout(() => { if (!running) return; xAD.bs = 1; try { if (mode === "aim") { AM.cd = 0; aimFire(); } else { fcd = 0; shoot(); } } catch (e) {} xAD.bs = 0; }, i * 60);
+// Classic ALT FIRE spread (wiki.playvalorant.com/en-us/Classic "Spread values", Alt Fire row): 1.9 deg first burst (1.71 crouched,
+// x0.9), max 5.78 (5.21); movement penalties crouch-walk 0 / walk 0.6 / run 1.5 / airborne 2.25 (ramped like the primary). Back-to-back
+// bursts jump in error (wiki update history: 1.9 the first, 2.5 the second, then the max) - "back-to-back" = within the 0.45 s
+// cycle + XCLA.chain (inferred: no published recovery). Replaces the primary cone + 0.045 rad that the 3 single shots used; the feel gSpread (feel_runtime) uses it too.
+const XCLA={pellets:3,cycle:1/2.22,chain:.3,steps:[1.9,2.5,5.78],cr:.9,move:[0,.6,1.5,2.25]};
+function xClassicAlt(P){P=P||{};const n=Math.min(XCLA.steps.length-1,xAD.bn||0),dead=(window.ValorantFeel&&ValorantFeel.C.deadzone)||.275,sp=P.sf!=null?P.sf:P.mv?1:0;let e=XCLA.steps[n]*(P.cr?XCLA.cr:1);
+ if(P.air)e+=XCLA.move[3];else if(sp>dead)e+=(P.cr?XCLA.move[0]:P.wk?XCLA.move[1]:XCLA.move[2])*Math.max(0,Math.min(1,(sp-dead)/(1-dead)));return Math.tan(e*Math.PI/180);}
+function xBurst() { // Classic ALT FIRE (wiki.playvalorant.com/en-us/Classic, valorant-api altShotgunStats): a 3-bullet shotgun blast - three rounds leave at once - at 2.22 bursts/sec (0.45 s); spread = the wiki Alt Fire row (feel_runtime XCLA). Was three single shots 60 ms apart.
+  const now = performance.now(); if (xAD.bt > now || !running || paused) return; xAD.bn = now - (xAD.bl || -1e9) <= 1000 * (XCLA.cycle + XCLA.chain) ? (xAD.bn || 0) + 1 : 0; xAD.bl = now; xAD.bt = now + 1000 * XCLA.cycle;
+  xAD.bs = 1; try { for (let i = 0; i < XCLA.pellets; i++) { if (mode === "aim") { AM.cd = 0; aimFire(); } else { fcd = 0; shoot(); } } } catch (e) {} xAD.bs = 0; if (mode !== "aim") fcd = XCLA.cycle;
 }
 { const s1 = setScope; setScope = function (on) {
   const w = mode === "aim" ? aimW() : mode !== "duel" && mode !== "surf" && player ? (xTdfOp() ? "Operator" : wName()) : "";
@@ -10562,7 +10569,7 @@ function xScopeT() { // right-click / zoom button: Operator 2.5x -> 5x -> off; e
 }
 function xSCw() { try { return mode === "duel" ? (du.w === "op" ? "Operator" : "Knife") : mode === "aim" ? aimW() : mode !== "surf" && player ? (xTdfOp() ? "Operator" : wName()) : ""; } catch (e) { return ""; } }
 function xTdfOp() { try { return J.pick === "Chamber" && BC.eq === "sn"; } catch (e) { return false; } } // Chamber holding Tour De Force scopes as the Operator (= server ULT.tdf.weapon)
-{ const g1 = gSpread; gSpread = function (w, W, B) { return g1(w, W, B) + (!B && xAD.bs ? 0.045 : 0); }; } // Classic burst: big spread
+{ const g1 = gSpread; gSpread = function (w, W, B) { return !B && xAD.bs ? xClassicAlt(player) + (xCU > performance.now() ? 0.06 : 0) : g1(w, W, B); }; } // Classic ALT FIRE: the wiki Alt Fire spread row (xClassicAlt)
 { const m0 = moveP; moveP = function (dt, run, hold) { const kn = rw === "knife" || (mode === "aim" && aimW() === "Knife"); return m0(dt, mode === "duel" ? run : run * vRunK(kn ? "knife" : wName()), hold); }; } // weapon run speed (VRUN): knife 6.75, pistols/SMGs 5.73, rifles 5.4, heavies 5.13
 { const m1 = moveP; moveP = function (dt, run, hold) { return m1(dt, mode === "duel" ? run : ads === 1 ? run * 0.76 : ads === 2 ? run * 0.4 : run, hold); }; } // ADS x0.76, sniper scoped x0.4 (~2.7 m/s)
 { const sh0 = shoot; shoot = function (hv) { const a0 = ammo, sc = ads === 2, r = sh0.apply(this, arguments); if (sc && ads === 2 && ammo < a0 && XSZ[wName()]) setScope(false); return r; }; } // sniper shot unscopes (Operator / Marshal / Outlaw)
@@ -10636,7 +10643,7 @@ function aimFire(hv) {
     if (t.type === "head" && !hs) { say("Headshots only", 600); blip(160, 0.08, "square", 0.08); }
     else {
       AM.hit++; if (hs) AM.hs++;
-      let dmg = t.type === "sph" ? 100 : kn ? (hv ? (hs ? KNIFE.heavyCrit : KNIFE.heavy) : KNIFE.light) : wDmg(W, hs ? "head" : "body", h.distance);
+      let dmg = t.type === "sph" ? 100 : kn ? (hv ? KNIFE.heavy : KNIFE.light) : wDmg(W, hs ? "head" : "body", h.distance);
       t.hp -= t.type === "sph" ? 1 : t.dr ? dmg - armAbs(t, dmg) : dmg; vmHit(h.point, dmg, hs, t.hp <= 0, t.b);
       if (t.hp <= 0) {
         AM.k++; AM.ttk += performance.now() - t.born; AM.sc += { sph: 100, bot: 150, head: 200 }[t.type] + (hs && t.type === "bot" ? 50 : 0);
@@ -14229,7 +14236,7 @@ moveP=function(dt,run,hold){
  // Preserve explicit ability impulses; ordinary air steering never creates a speed boost.
  if(kLg>0){const t=Math.min(dt,kLg);kLg-=t;const nx=P.x+kLx*8*t,nz=P.z+kLz*8*t;if(!world.blocked(nx,nz,.4,P.y,1.8-P.ch)&&!(world.leash&&!world.leash(nx,nz,P.y,P.x,P.z))){P.x=nx;P.z=nz;}}
 };
-gSpread=function(w,W,B){const p=vfProfile(w),P=B||player||{},state={sf:B?(B.sf!=null?B.sf:B.mv?1:0):P.sf,mv:P.mv,air:P.air,cr:P.cr,wk:P.wk,lp:P.lp||0,ls:P.ls||0,ads:B?0:ads};let cone=VF.model.spread(state,w,p);if(!B){const bloom=VF.model.sprayBloom(VF,w,VF.time);/* the shared motor's bloom recovery (= server fire; Outlaw holds its 13.01 2.25 deg) */cone+=bloom;if(xCU>performance.now())cone+=.06;if(xAD.bs)cone+=.045;}else cone+=Math.min(B.n||0,10)*.0025*(W.rec||1);return cone;};
+gSpread=function(w,W,B){const p=vfProfile(w),P=B||player||{},state={sf:B?(B.sf!=null?B.sf:B.mv?1:0):P.sf,mv:P.mv,air:P.air,cr:P.cr,wk:P.wk,lp:P.lp||0,ls:P.ls||0,ads:B?0:ads};let cone=VF.model.spread(state,w,p);if(!B){const bloom=VF.model.sprayBloom(VF,w,VF.time);/* the shared motor's bloom recovery (= server fire; Outlaw holds its 13.01 2.25 deg) */cone+=bloom;if(xCU>performance.now())cone+=.06;if(xAD.bs)cone=xClassicAlt(P)+(xCU>performance.now()?.06:0);}else cone+=Math.min(B.n||0,10)*.0025*(W.rec||1);return cone;};
 // Circular angular spread in the shot's own basis, with a stable early climb and late directional drift.
 gFire=function(d,w,W){const M=VF.model;M.sprayReset(VF,w,VF.time);const cone=gSpread(w,W),disc=M.disk(),right=new THREE.Vector3().crossVectors(d,new THREE.Vector3(0,1,0)).normalize();if(right.lengthSq()<.5)right.set(1,0,0);const up=new THREE.Vector3().crossVectors(right,d).normalize(),weight=(W.rec||1)*(player.cr?.85:1)*(ads?.85:1)*M.recoilMove(player,w);
  M.sprayStep(VF,w,weight,VF.time,Math.random,M.bloomCap({cr:player.cr,ads},w,vfProfile(w)));const jit=W.pel?0:1;VF.pelCone=W.pel?cone:0;/* pellet guns: xPellets spreads every pellet over this cone */

@@ -6,8 +6,11 @@ const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),asse
 const root=path.join(__dirname,'..'),h=fs.readFileSync(path.join(root,'index.html'),'utf8');
 (async()=>{
  const {KNIFE_HEAVY}=await import(path.join(root,'server/src/simulation.js'));
- const K=/const KNIFE = \{ light: (\d+), heavy: (\d+), heavyCrit: (\d+) \}/.exec(h);assert(K,'client KNIFE table');
- assert.equal(+K[2],KNIFE_HEAVY.body);assert.equal(+K[3],KNIFE_HEAVY.crit);
+ const K=/const KNIFE = \{ light: (\d+), lightBack: (\d+), heavy: (\d+), heavyCrit: (\d+) \}/.exec(h);assert(K,'client KNIFE table');
+ const {KNIFE_LIGHT}=await import(path.join(root,'server/src/simulation.js'));assert.equal(+K[1],KNIFE_LIGHT.front);assert.equal(+K[2],KNIFE_LIGHT.back);assert.equal(+K[3],KNIFE_HEAVY.body);assert.equal(+K[4],KNIFE_HEAVY.crit);
+ // wiki.playvalorant.com/en-us/Melee: Front 50 / 75, Back 100 / 150 (Primary / Alt); the knife has no headshot bonus
+ assert.deepEqual([KNIFE_LIGHT.front,KNIFE_LIGHT.back,KNIFE_HEAVY.body,KNIFE_HEAVY.crit],[50,100,75,150]);
+ assert(h.includes('let dmg = kn ? (bk ? head : body) :')&&h.includes('let bk = false; if (kn) try { bk = kBack('),'client knife: back-stab for both swings, no head bonus');
  assert(h.includes('kSwing = hv ? 1 : 0.5;'),'client heavy cooldown must be 1 s like the server');assert.equal(KNIFE_HEAVY.cooldown,1);
  const kb=/function kBack\(r, ax, az, tx, tz\) \{[^\n]*\}/.exec(h)[0];
  // Same back-stab cone: client model yaw r faces +z rotated (sin r, cos r); server look faces (-sin, -cos), i.e. r = look + PI.
