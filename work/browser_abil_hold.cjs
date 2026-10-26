@@ -42,7 +42,7 @@ await ctx.addInitScript(()=>{try{localStorage.setItem('vs.gq','low');localStorag
  const go=async(fn,agent)=>{await X(`FV.pick='ascent';J.pick=${JSON.stringify(agent)};window.xSwift=false;setTimeout(()=>xGo(${fn}),0);1`);
   await page.waitForFunction(()=>window.__xe('running&&!window.xLdOn&&bots.length>0'),null,{timeout:1200000,polling:2000});
   await X(`[...document.querySelectorAll('button')].filter(b=>/^got it$/i.test(b.textContent.trim())&&b.offsetParent).forEach(b=>b.click());if(!window.__gd){window.__gd=1;const h=hurt;hurt=function(t){if(t===player&&window.__god)return;return h.apply(this,arguments);};}1`);
-  await X(`if(!window.__rp){window.__rp=1;window.__allow=3;const r0=renderer.render;renderer.render=function(sc,c){if(sc===scene){if(window.__allow<=0)return;window.__allow--;}return r0.call(this,sc,c);};}if(!window.__simH){window.__simH=1;window.__sim=0;const s0=xSimStep;xSimStep=function(d){const r=s0.apply(this,arguments);window.__sim+=d;return r;};}1`);};
+  await X(`if(!window.__rp){window.__rp=1;window.__allow=3;const r0=renderer.render;renderer.render=function(sc,c){if(sc===scene){if(window.__allow<=0)return;window.__allow--;}return r0.call(this,sc,c);};}if(!window.__simH){window.__simH=1;window.__sim=0;const s0=xSimStep;xSimStep=function(d){const r=s0.apply(this,arguments);window.__sim+=d;if(window.__relAt!=null&&window.__sim>=window.__relAt){window.__relAt=null;fireHeld=false;}return r;};}1`);};
 
  const pick=a=>X(`FV.buy=0;J.pick=${JSON.stringify(a)};jRound(false);J.c=K().mx.c||1;J.q=K().mx.q||1;J.e=Math.max(1,K().mx.e||1);J.cd={c:0,q:0,e:0,x:0};player.hp=100;J.eq=null;BC.fq=[];J.cbs=[];1`);
  const eqSt=()=>X('J.eq?J.eq.st:null');
@@ -59,9 +59,12 @@ await ctx.addInitScript(()=>{try{localStorage.setItem('vs.gq','low');localStorag
   const t0=jCbTick;jCbTick=function(){const b=new Set(J.smokes);for(const c of J.cbs)window.__cbH.push(!!c.st.held);if(window.__cbH.length>400)window.__cbH.splice(0,200);const r=t0.apply(this,arguments);for(const s of J.smokes)if(!b.has(s))window.__cbSm++;return r;};}1`);
  const ev=()=>X('JSON.stringify({fl:window.__fl.slice(),cbT:window.__cbT,cbSm:window.__cbSm,buy:FV.buy})').then(JSON.parse);await frames(3);await page.mouse.move(640,360);
  // A. Breach
- for(const [nm,hold] of [['tap',60],['held',1300]]){
+ // hk-34: abilhold4 tap cast 53.9 m: the script let go of FIRE by wall clock, and one slow frame (load ~7, another suite beside it)
+ // stepped ~0.9 s of game first. FIRE is now let go INSIDE the sim (xSimStep wrapper: fireHeld=false once __sim reaches __relAt),
+ // so the hold is game time to the 0.05 s step; the tap's 0.02 s ends after one step (h <= ~0.12 s -> <= 13.8 m).
+ for(const [nm,hold] of [['tap',20],['held',1300]]){
   await pick('Breach');await frames(1);await X('window.__ts=0.05;1');await frames(1);await page.keyboard.down('KeyE');await simWait(0.05,'KeyE');await page.keyboard.up('KeyE');await readyWait();log('breach '+nm+' drawn',await eqSt());
-  await page.mouse.down();await simWait(hold/1000,'hold');if(nm==='held'){log('breach held state',await eqSt());await shot('abilhold-breach-charging',1280,720);}await page.mouse.up();
+  await X(`window.__relAt=(window.__sim||0)+${hold/1000};1`);await page.mouse.down();if(nm==='held'){await simWait(0.6,'hold');log('breach held state',await eqSt());await shot('abilhold-breach-charging',1280,720);}await page.waitForFunction(()=>window.__xe('window.__relAt==null'),null,{timeout:900000,polling:100}).catch(e=>log('release wait timeout',String(e).slice(0,80)));await page.mouse.up();
   const fl0=(await ev()).fl.length;const f=await waitFq();for(let i=0;i<120&&(await ev()).fl.length===fl0;i++)await simWait(0.1,'fl cast');const fe=(await ev()).fl.slice(fl0);log('breach '+nm+' strip',{fq:f,cast:fe});if(nm==='held')await shot('abilhold-breach-released',1280,720);
   const L=fe.length?fe[0]:f.length?f[0][1]:null;
   check(nm==='tap'?'Breach E tap: Fault Line strip near the 8 m minimum (8..14 m)':'Breach E held 1.3 s: Fault Line strip near the 56 m maximum (>=50 m)',nm==='tap'?L>=8&&L<14:L>=50&&L<=56,JSON.stringify({fq:f,cast:fe}));
