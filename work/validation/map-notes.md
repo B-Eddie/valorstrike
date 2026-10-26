@@ -331,6 +331,21 @@ Re-sweep after C1/C2 (stride 2 + walk-in trap test on every sampled node, RENDER
   Post-clip full Breeze sweep (`sweepD-breeze.json`, committed motor + all three Breeze clips, 5,838 nodes, 18,683 edges):
   0 stuck, 0 walk-in traps, 0 jump-only, 3 embedded (the same three), 8 refused edges, all `tall` on visible posts.
 
+Re-sweep E on main (motor e28fd747, i.e. every C1/C2 motor fix and all player clips incl. Bind's; stride 2 + walk-in trap
+test + RENDER=1; `.scratch/sweepE-<map>.json`), the five non-Breeze maps (Breeze: sweepD above, same motor rules):
+
+| map | nodes sampled | edges walked | stuck | walk-in traps | jump-only | refused edges | embedded nodes |
+|---|---|---|---|---|---|---|---|
+| Ascent | 4,772 | 16,018 | 0 | 0 | 0 | 1 `tall` (visible `WiresDark` cable bundle at A, as before) | 13 (10 inside the A ramp pit clip, intended; (-11.75, 9.02, -59.5), (-7.25, 7.4, 38), (42.25, 9.59, 21.5) walk out) |
+| Bind | 4,988 | 17,700 | 0 | 0 (rock pocket fixed) | 0 | 0 | 1 ((19.5, 5.52, 43.5), walks out) |
+| Haven | 4,081 | 14,575 | 0 | 0 | 0 | 0 | 0 |
+| Split | 3,902 | 13,421 | 0 | 0 | 0 | 0 | 4 ((-50..-46.25, 6.62, -5..2.5), walk out) |
+| Lotus | 4,348 | 14,676 | 0 | 0 | 0 | 0 | 2 ((-12, 4.95, -7), (-9, 3.59, -6.25), walk out) |
+
+No `invisible` refusal on any map (every refused edge meets a visible render surface). Spawns, sites and callouts as
+below (unchanged: Ascent B 6 / Lotus B 7 zone cells on another floor, refused by `siteAt`, correct). With sweepD this
+closes the stuck-spot / invisible-wall sweep on all six maps: 0 stuck, 0 traps, 0 jump-only, no invisible walls.
+
 Spawns and plant sites (all six maps): attacker / defender spawn candidates 246-660 / 103-634 per map, none embedded or
 stuck, every candidate reaches every site on the navigation. Every site anchor lies in its own plant zone, its nearest
 node too, and passes `siteAt`'s 2 m height test; plantable playable nodes per site 133-468. Zone cells at another floor
