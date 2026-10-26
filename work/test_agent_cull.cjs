@@ -36,4 +36,21 @@ for(const r149 of [false,true]){const R=rig(r149);R.M.position.set(12,3,-7);R.M.
  const vis=(px,pz,lx,lz)=>{cam.position.set(px,1.6,pz);cam.lookAt(lx,1.6,lz);cam.updateMatrixWorld(true);const F=new THREE.Frustum().setFromProjectionMatrix(new THREE.Matrix4().multiplyMatrices(cam.projectionMatrix,cam.matrixWorldInverse));return F.intersectsObject(R.m);};
  assert.equal(vis(0,10,0,0),true,'unit in view drawn');assert.equal(vis(0,10,0,20),false,'unit behind the camera culled');assert.equal(vis(0,1.2,0,8),true,'camera hugging the unit (sphere padding) still draws it');
  out.push((r149?'r149 boneTransform':'r151+ applyBoneTransform')+' worst pose '+(worst*100).toFixed(0)+'% of the radius');}
+// Near camera (browser perf_cull4: Reyna's body mesh undrawn at the screen edge at 3 m while one of its skinned vertices was in view):
+// live agents inside XSOL_NEAR of the camera skip the frustum test; beyond it the idle sphere culls again. Run the real xSolTick.
+{const i1=html.indexOf('function xSolTick(d) {'),i0=html.indexOf('const XSOL_NEAR = ',i1),i2=html.indexOf('\n}\n',i1);assert(i1>=0&&i0>i1&&i2>i0,'XSOL_NEAR inside xSolTick in index.html');
+ const near=+html.slice(i0).match(/XSOL_NEAR = ([0-9.]+)/)[1];assert(near>=4&&near<=10,'near radius '+near);
+ const c2={THREE,Math,running:true,paused:false,XS:{lod:40},XSOL:{mx:[]},camera:new THREE.PerspectiveCamera(70,16/9,.1,500),xrHitboxes:null,xUbPre(){},xUbPost(){},xUbDead(){return false;}};vm.createContext(c2);
+ vm.runInContext(html.slice(i1,i2+3)+';globalThis.xSolTick=xSolTick;',c2);
+ const sc=new THREE.Scene(),mk=()=>{const M={m:new THREE.Group(),sx:{mx:{update(){}},cull:[new THREE.Mesh(),new THREE.Mesh()]}};M.sx.cull.forEach(o=>{o.frustumCulled=true;M.m.add(o);});sc.add(M.m);c2.XSOL.mx.push(M);return M;};
+ const A=mk(),B=mk(),D=mk();D.dead=1;D.sx.cull.forEach(o=>o.frustumCulled=false);
+ c2.camera.position.set(0,1.6,0);c2.camera.lookAt(0,1.6,-10);
+ const at=(M,x,z)=>{M.m.position.set(x,0,z);M.m.updateMatrixWorld(true);};
+ at(A,3,0);at(B,0,-near-4);at(D,1,0);c2.xSolTick(1/60);
+ assert(A.sx.cull.every(o=>o.frustumCulled===false),'agent 3 m from the camera (off to the side) is never frustum-culled');
+ assert(B.sx.cull.every(o=>o.frustumCulled===true),'agent beyond XSOL_NEAR keeps its cull sphere');
+ assert(D.sx.cull.every(o=>o.frustumCulled===false),'corpse culling stays off');
+ at(A,near+5,0);c2.xSolTick(1/60);assert(A.sx.cull.every(o=>o.frustumCulled===true),'walking away re-enables culling');
+ at(A,-2,1);c2.xSolTick(1/60);assert(A.sx.cull.every(o=>o.frustumCulled===false),'behind the camera but close: drawn (turning past it cannot pop)');
+ out.push('near-camera agents (< '+near+' m) unculled, culled again beyond');}
 console.log('Agent cull: '+out.join('; ')+'; behind-camera unit culled, corpses unculled in xDie');

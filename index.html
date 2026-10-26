@@ -4019,6 +4019,7 @@ function xUbShot(p) {
 }
 try { const a0 = SFX.at; if (typeof a0 === "function") SFX.at = function (p) { try { xUbShot(p); } catch (e) {} return a0.apply(this, arguments); }; } catch (e) {}
 function xSolTick(d) {
+  const XSOL_NEAR = 6; // m: live agent meshes inside this camera distance skip the frustum test (below)
   d = Math.max(0, Math.min(0.25, d || 0));
   if (typeof running !== "undefined" && running && paused) return;
   // Cull hidden rigs, but sample every visible pose on the same frame as movement.
@@ -4031,6 +4032,9 @@ function xSolTick(d) {
     if (!r.isScene) { if (XSOL.mx.length > 60) XSOL.mx.splice(i, 1); continue; }
     if (cam) {
       M.m.getWorldPosition(F.s.center); const dd = F.s.center.distanceTo(cam.position); F.s.center.y += 0.9;
+      // close agents are never frustum-culled (browser perf_cull4: Reyna's body mesh went undrawn at the view edge at 3 m while a skinned
+      // vertex was in view; the idle cull sphere is only trusted beyond XSOL_NEAR, where a miss cannot pop at the screen edge in front of you)
+      { const nr = dd < XSOL_NEAR, C = M.sx && M.sx.cull; if (C && M.xNear !== nr) { M.xNear = nr; for (let j = 0; j < C.length; j++) C[j].frustumCulled = !nr; } }
       let lod = 60; try { lod = XS.lod || 40; } catch (e) {} // bot anim LOD follows the preset distance (25 / 40 / 60 m)
       const cul = dd > lod || (dd > 2 && !F.f.intersectsSphere(F.s));
       if (M.xAt && M.xAv === cul) { M.xAv = !cul; for (let j = 0; j < M.xAt.length; j++) M.xAt[j].visible = !cul; } // attachments follow the bot's cull state
