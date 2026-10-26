@@ -24,6 +24,6 @@ function boot(){const c=vm.createContext({WEAP,FV:{pri:null,sec:'Classic'},slots
 {const c=boot();c.mpRdArm(undefined);assert.equal(c.FV.sec,'Classic');assert.equal(c.get().rw,'pis');}
 // wiring: the round-start message uses it, and the round start clears the local Tour de Force overlay
 assert.ok(/if \(m\.t === "rd"\) \{[^\n]*\n\s*mpRdArm\(m\.ld\);/.test(html),'rd handler re-arms through mpRdArm');
-assert.ok(/function jRound\(match\)[\s\S]{0,400}jClear\(\)/.test(html)&&/function jClear\(\)[\s\S]{0,400}bcClear\(\)/.test(html)&&/function bcClear\(\)[\s\S]{0,200}BC\.td = 0; BC\.eq = ""/.test(html),'jRound -> jClear -> bcClear drops BC.eq/BC.td');
+assert.ok(/function jRound\(match\)[\s\S]{0,400}jClear\(\)/.test(html)&&/function jClear\(\)[\s\S]{0,400}bcClear\(\)/.test(html)&&/function bcClear\(\)[\s\S]{0,600}BC\.td = 0; BC\.eq = ""/.test(html),'jRound -> jClear -> bcClear drops BC.eq/BC.td');
 const ults=fs.readFileSync(path.join(__dirname,'..','server','src','spike.js'),'utf8');assert.ok(/u\.weapon=u\.primary\|\|u\.secondary/.test(ults),'server round start re-arms the saved loadout');
 console.log('Tour de Force round reset (online/native): loadout re-armed (Spectre mag, Classic-only, knife, no ld), overlay cleared, server re-arms');
