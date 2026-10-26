@@ -16,7 +16,7 @@ const root=path.join(__dirname,'..'),h=fs.readFileSync(path.join(root,'index.htm
  // Online input: pulse per started swing, kh only for heavy, held knife button is not held fire.
  const i0=h.indexOf('const netShoot0=shoot;'),src=h.slice(i0,h.indexOf('\n',i0));
  const ni=h.indexOf('function netInputMsg('),nsrc=h.slice(ni,h.indexOf('\n',ni));
- const T={NET:{socket:{},firePulse:0,fireHeavy:0},MP:{st:'game'},J:{pick:''},/* netInputMsg reads J.pick (Jett Cloudburst cb) */rw:'knife',ammo:0,kSwing:0,kHv:0,netReyna:null,netChannel:null,ads:0,fireHeld:false,yaw:0,pitch:0,WEAP:{Vandal:{}},performance:{t:1000,now(){return this.t;}},
+ const T={NET:{socket:{},firePulse:0,fireHeavy:0},J:{pick:'Phoenix'},MP:{st:'game'},rw:'knife',ammo:0,kSwing:0,kHv:0,netReyna:null,netChannel:null,ads:0,fireHeld:false,yaw:0,pitch:0,WEAP:{Vandal:{}},performance:{t:1000,now(){return this.t;}},
   shoot(hv){if(T.kSwing>0)return;T.kSwing=hv?1:.5;T.kHv=hv?1:0;}};
  vm.createContext(T);vm.runInContext(src+'\n'+nsrc+'\n;globalThis.go=(hv)=>shoot(hv);globalThis.msg=(w)=>netInputMsg({},w);',T);
  T.go(true);assert(T.NET.firePulse>1000&&T.NET.fireHeavy===T.NET.firePulse,'heavy swing must pulse with kh');let m=T.msg('Knife');assert.equal(m.fire,1);assert.equal(m.kh,1);
