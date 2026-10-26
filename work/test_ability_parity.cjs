@@ -119,7 +119,7 @@ const assert=require('assert/strict'),path=require('path');const {boot}=require(
   assert.deepEqual(J('XTDF'),{rounds:T.ammo,rate:T.fireRate,body:TG.bodyDamage,head:TG.headDamage,legs:Math.floor(TG.legDamage),r:T.field,life:T.slow},'page XTDF = server ULT.tdf / ABILITY_GUNS');
   assert.deepEqual(J('XHH'),{rate:HG.fireRate,equip:HG.equipTimeSeconds,body:HR.bodyDamage,head:HR.headDamage,legs:HR.legDamage},'page XHH = server Headhunter');assert.equal(D.DEV.headhunter.equip,.3);
   assert.deepEqual([C.rdvT,C.rez],[P.rdvTime,{w:P.rez.windup,r:P.rez.revive,reach:P.rez.reach}],'Rendezvous 1.3 s / Resurrection 2 + 1.3 s, 12 m: page = server');
-  assert.deepEqual([D.DEV.spycam.every,D.DEV.spycam.remove,J('XSPY')],[2,1.85,{every:2,reveal:1,remove:1.85}],'Spycam every 2 s, 1.85 s removal: page = server');}
+  assert.deepEqual([D.DEV.spycam.every,D.DEV.spycam.remove,D.DEV.spycam.deploy,D.DEV.spycam.radius,J('XSPY')],[2,1.85,1.15,20,{every:2,reveal:1,remove:1.85,reach:20,deploy:1.15,cd:6}],'Spycam every 2 s, 1.85 s removal, 1.15 s deploy, 20 m (qa-32: + 6 s dart cooldown, wiki): page = server');}
  // offline Tour De Force kill field: 6 m, 4 s, 50 % for everyone in it (bots of both sides and the player)
  const tf=J(`(()=>{const P=player,b=bots.filter(b=>b.alive)[0],o=[];b.chs=0;b.sks=0;const n0=BC.sf.length;bcTdfField(P.x+40,P.z);const f=BC.sf[BC.sf.length-1];o.push(BC.sf.length-n0,f.r,f.t,f.tm);b.g.position.set(P.x+44,b.g.position.y,P.z);o.push(sgSlow(b.g.position));b.g.position.set(P.x+46.5,b.g.position.y,P.z);o.push(sgSlow(b.g.position));bcTick(4.05);o.push(BC.sf.indexOf(f)<0);return o;})()`);
  assert.deepEqual(tf,[1,6,4,1,.5,1,true],'offline Tour De Force field: '+JSON.stringify(tf));

@@ -32,4 +32,12 @@ for(const [agent,k,kind] of [['Killjoy','e','turret'],['Killjoy','q','alarmbot']
  tick(s,.2);assert.ok(rows(s).every(r=>r.d!=='owl'),'no row after');}
 // 6. own team's bullets pass through own devices
 {const {s,u,h}=setup('Cypher');h.team=u.team;u.ability.e=1;ab(s,u,'e');const c=s.effects.find(e=>e.kind==='spycam');Object.assign(h,{x:c.p[0],z:c.p[2]-6});shoot(s,h,[c.p[0],c.p[1],c.p[2]],1);assert.ok(s.effects.includes(c),'an ally does not break it');}
-console.log('Device bodies: Turret / Alarmbot / Trapwire / Trademark / Blast Pack / Spycam / Owl Drone snapshot rows (owner, team, cm, HP, Trapwire anchors, yaw; gone when ended); Spycam 1 HP shot down by a human ends its dart; Owl Drone 100 HP takes 3 Vandal bullets; allies do not hit them');
+// 7. Owl Drone stand-in darts every 5 s while the drone is up (wiki Owl_Drone dart cooldown 5 s, 7 s flight; qa-32): the 2nd dart
+// prefers an enemy the 1st did not tag; a drone shot down before 5 s fires no 2nd dart.
+{const {s,u,h}=setup('Sova'),h2=s.add('h2','Jett');Object.assign(h2,{team:h.team,alive:true,hp:100,human:true});u.ability.c=1;Object.assign(h,{x:40,z:40});Object.assign(h2,{x:40,z:-40});ab(s,u,'c');const o=s.effects.find(e=>e.kind==='owl');
+ assert.equal(s.effects.filter(e=>e.kind==='dart').length,2,'two darts queued for a 7 s flight (0 s, 5 s)');
+ Object.assign(h,{x:o.p[0]+3,z:o.p[2]});Object.assign(h2,{x:o.p[0]+9,z:o.p[2]});tick(s,.2);const d1=s.effects.find(e=>e.kind==='dart'&&e.tgt!=null);assert.ok(d1&&d1.tgt===h.id,'1st dart: the nearest enemy');
+ tick(s,5);const d2=s.effects.find(e=>e.kind==='dart'&&e.tgt!=null&&e!==d1);assert.ok(d2&&d2.tgt===h2.id,'2nd dart 5 s in: the enemy the 1st did not tag');tick(s,2);assert.ok(h2.revealedUntil>0,'2nd dart pings');}
+{const {s,u,h}=setup('Sova');u.ability.c=1;Object.assign(h,{x:40,z:40});ab(s,u,'c');const o=s.effects.find(e=>e.kind==='owl');Object.assign(h,{x:o.p[0]+.01,z:o.p[2]+8});tick(s,.2);shoot(s,h,o.p,3);assert.ok(!s.effects.includes(o),'drone down');
+ tick(s,5.5);assert.ok(!s.effects.some(e=>e.kind==='dart'&&e.tgt==null),'no 2nd dart after the drone is down');}
+console.log('Device bodies: Turret / Alarmbot / Trapwire / Trademark / Blast Pack / Spycam / Owl Drone snapshot rows (owner, team, cm, HP, Trapwire anchors, yaw; gone when ended); Spycam 1 HP shot down by a human ends its dart; Owl Drone 100 HP takes 3 Vandal bullets, darts every 5 s while up (2nd prefers an untagged enemy); allies do not hit them');
