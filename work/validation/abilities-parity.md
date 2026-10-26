@@ -526,8 +526,15 @@ reveal at the tag, Spycam dart a flat 3 s reveal.
 - Client: `XOWL = {pings: [1.6, 3.4], reveal: 0.6}`, `XSPY = {every: 2, pings: 5, reveal: 1}` (asserted equal to the server);
   `xDartPings(b, at, rv)` schedules the pings through `xHfRv` (adds to a running reveal), keyed to the round token `XRCN.g`
   and skipped once the target is dead. `drTag` (Owl dart) and `cyDart` (Spycam dart) use it.
-- Not modelled: removing the Spycam dart (no 1.85 s removal channel: since qa-27 the dart pings every 2 s until its target
-  dies or the round ends, section 8; was 5 pings), the drone / camera flight itself on the server.
+- Spycam dart removal (qa-28, wiki 'Dart removal channel time 1.85 seconds'): server `DEV.spycam.remove = 1.85`; the darted
+  unit holds interact (`h4`, the plant / defuse key) grounded and still, not firing, and not on the Spike (planting on a site
+  with it or defusing a planted one wins): 1.85 s unbroken and the dart is gone (no more pings); any break restarts it
+  (`devices.js dartChannel`). Server bots channel it while no enemy is in sight (`spike.js botDartRemove`, run first in
+  `bot()`); the page gets `status.dart` / `status.drm` and shows a chip ("TRACKING DART · HOLD 4 TO REMOVE", then
+  "REMOVING DART n%"). Offline: `XSPY.remove = 1.85` (= server), `xDartRmTick` (every frame from `jTick`) removes a bot's
+  dart after 1.85 s with no enemy in sight (`b.see`), with a notice; the pings stop. Offline bots keep moving while they
+  channel (server bots stand still).
+- Not modelled: the drone / camera flight itself on the server.
 - Tests: `server/test-ults.js` (tables; Owl: not before 1.6 s, on at 1.7, off at 2.35, on at 3.5, off at 4.1, far foe not tagged;
   Spycam: off at 1.05, on at 1.25, off at 2.3, on at 3.25 and 9.25, done by 10.5; ends with its target; misses behind a wall),
   `work/test_ability_equip.cjs` (XOWL / XSPY == server; Owl timeline false / true / false / true / false at 1.5 / 1.7 / 2.35 / 3.5 /
@@ -587,7 +594,7 @@ Status: **OK** = wiki on both sides; **stand-in** = the mechanic is simplified o
 | Breach | X Rolling Thunder | 8 pts, 32 x 18 m from 8 m ahead | ULT.quake | XRT2 | OK |
 | Cypher | C Trapwire | 2 x 200, 1.5 s deploy, 15 m wire, 50 % slow, 0.7 s windup, 5 damage + Reveal while within 4 m, 1.25 s slow after, re-arm | DEV.trapwire (0b21ca6) | XTRAP = | OK (wire reach 7.5 m each side = 15 m) |
 | Cypher | Q Cyber Cage | 2 x 100, 3.72 m cylinder, 7.25 s | SMOKE.r.Cypher, DEV.cage | = | OK |
-| Cypher | E Spycam | free, 1.15 s deploy, 20 m, 1 HP, dart pings every 2 s until removed (1.85 s channel) | DEV.spycam every 2, dart pings until the target dies / round ends (qa-27) | XSPY =, xDartLoop | stand-in: no possession view server-side; no removal channel (pings until death / round end) |
+| Cypher | E Spycam | free, 1.15 s deploy, 20 m, 1 HP, dart pings every 2 s until removed (1.85 s channel) | DEV.spycam every 2, remove 1.85: pings until removed (h4 channel, bots when no enemy in sight) / death / round end (qa-28) | XSPY =, xDartLoop + xDartRmTick (bots) | OK (qa-28 removal channel); stand-in: no possession view server-side |
 | Cypher | X Neural Theft | 7 pts, 18 m, reveals at 2 s and 6 s | ULT.theft | CYNT = | OK |
 | Chamber | C Trademark | 1 x 200, 2 s deploy, 10 m search, 0.9 s windup, 6 m 50 % field 4 s | DEV.trademark | XTMK = | OK |
 | Chamber | Q Headhunter | 100 / round (8 max), 0.3 s equip, 159 / 55 / 46 no falloff, 4 / s | ABILITY_GUNS.Headhunter, DEV.headhunter.equip 0.3, next round chambered after each shot (qa-27) | XHH =, BC.cd 0.3 / 0.25 | OK (qa-27; was Sheriff 145 / 50 past 30 m, no equip) |
@@ -595,5 +602,5 @@ Status: **OK** = wiki on both sides; **stand-in** = the mechanic is simplified o
 | Chamber | X Tour De Force | 8 pts, 2.3 s summon, 5 rounds, 0.9 / s (v8.03), 150 x1.7 x0.85, 6 m 4 s slow field on kill (allies too) | ABILITY_GUNS['Tour De Force'], ULT.tdf, tdfKill -> Trademark-style field (qa-27) | XTDF =, bcTdfField; bot Chamber 5 rounds at 0.9 / s | OK (qa-27; was Operator 0.6 / s, no field online, any hit killed offline) |
 
 Not modelled anywhere (listed for the next pass): equip / unequip times of most abilities beyond the per-ability windups
-(section 5), Alarmbot / Trapwire / Turret proximity-to-remain-active radii, Spycam dart removal channel, Jett Tailwind 1 s
-windup + 7.5 s empowered window.
+(section 5), Alarmbot / Trapwire / Turret proximity-to-remain-active radii, Jett Tailwind 1 s windup + 7.5 s empowered window.
+(Spycam dart removal channel: done by qa-28.)

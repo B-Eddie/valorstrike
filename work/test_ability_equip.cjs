@@ -340,7 +340,7 @@ const fails=[];const fail=s=>{fails.push(s);if(VERBOSE)console.log('FAIL',s);};c
   if(!ok)fail('Owl dart: need a live bot, not revealed at the tag');else{const t0=xe('__dt0'),at=async ms=>{while(xe('performance.now()')-t0<ms){await adv(50);xe('__dt.alive=true;__dt.hp=1000;true');}},on=()=>xe('J.rv.indexOf(__dt)>=0&&J.rvT>0'),h=[];
    for(const ms of [1500,1700,2350,3500,4150]){await at(ms);h.push(on());}
    eq(h,[false,true,false,true,false],'Owl dart: ping 0.6 s at 1.6 s and at 3.4 s (was a 5 s reveal at the tag)');
-   xe('jUnreveal();window.__dt1=performance.now();xDartLoop(__dt,XSPY.every,XSPY.reveal);true');const t1=xe('__dt1'),at1=async ms=>{while(xe('performance.now()')-t1<ms){await adv(50);xe('__dt.alive=true;__dt.hp=1000;true');}},h2=[];
+   xe('jUnreveal();window.__dt1=performance.now();xDartLoop(__dt,XSPY.every,XSPY.reveal);XDRT.length=0;true');const t1=xe('__dt1'),at1=async ms=>{while(xe('performance.now()')-t1<ms){await adv(50);xe('__dt.alive=true;__dt.hp=1000;true');}},h2=[];/* XDRT cleared: this bot never channels the 1.85 s removal (xDartRmTick: test_ability_parity) */
    for(const ms of [100,1150,2100,8100,9300,10100]){await at1(ms);h2.push(on());}
    eq(h2,[true,false,true,true,false,true],'Spycam dart: 1 s pings every 2 s until removed (6th ping at 10 s: no 5-ping cap)');
    xe('XRCN.g++;window.__dt2=performance.now();drTag(__dt);XRCN.g++;true');const t2=xe('__dt2');while(xe('performance.now()')-t2<1800){await adv(50);xe('__dt.alive=true;__dt.hp=1000;true');}eq(on(),false,'a round clear cancels pending dart pings');

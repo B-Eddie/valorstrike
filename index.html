@@ -9308,8 +9308,11 @@ function drTick(dt) {
 // Sova Owl Drone dart (wiki.playvalorant.com/en-us/Owl_Drone): 2 pings of 0.6 s, the 1st 1.6 s after impact, the 2nd 1.2 s after
 // the 1st ends. Cypher Spycam dart (wiki Spycam): a ping every 2 s from impact until removed (here: until the target dies or the round ends, 1 s reveals; no removal channel). Same as
 // the server (DEV.owl / DEV.spycam). Pings carry the round token (XRCN.g) and stop once the target is dead.
-const XOWL = { pings: [1.6, 3.4], reveal: 0.6 }, XSPY = { every: 2, reveal: 1 }; // Spycam: every 2 s until removed (no removal channel here: until the target dies or the round ends)
-function xDartLoop(b, every, rv) { const g = XRCN.g, ping = () => { if (g !== XRCN.g || !b.alive || !running) return; xHfRv([b], rv); setTimeout(ping, every * 1000); }; ping(); }
+const XOWL = { pings: [1.6, 3.4], reveal: 0.6 }, XSPY = { every: 2, reveal: 1, remove: 1.85 }; // Spycam: every 2 s until removed (wiki 1.85 s removal channel: xDartRmTick; = server DEV.spycam)
+const XDRT = []; // live offline Spycam darts in bots: { b, g, rm, off }
+function xDartLoop(b, every, rv) { const g = XRCN.g, d = { b, g, rm: 0, off: 0 }, ping = () => { if (d.off || g !== XRCN.g || !b.alive || !running) return; xHfRv([b], rv); setTimeout(ping, every * 1000); }; XDRT.push(d); ping(); return d; }
+// Spycam dart removal (wiki Spycam: 1.85 s channel): a darted bot channels it while it has no enemy in sight (b.see falsy), the server bots' rule (spike.js botDartRemove); sighting an enemy restarts it. Removed: no more pings.
+function xDartRmTick(dt) { for (let i = XDRT.length - 1; i >= 0; i--) { const d = XDRT[i], b = d.b; if (d.off || d.g !== XRCN.g || !b.alive) { XDRT.splice(i, 1); continue; } d.rm = b.see ? 0 : d.rm + dt; if (d.rm >= XSPY.remove - 1e-9) { d.off = 1; XDRT.splice(i, 1); say(b.name + " removed the tracking dart", 800); } } }
 function xDartPings(b, at, rv) { const g = XRCN.g; at.forEach((t) => setTimeout(() => { if (g === XRCN.g && b.alive && running) xHfRv([b], rv); }, t * 1000)); }
 function drTag(b) {
   xDartPings(b, XOWL.pings, XOWL.reveal); say(b.name + " tagged", 900); blip(900, 0.12, "triangle", 0.15);
@@ -9637,7 +9640,7 @@ function jTick(dt) {
   for (const k in J.cd) J.cd[k] = Math.max(0, J.cd[k] - dt);
   XSU.value += dt;
   J.smokes = J.smokes.filter((s) => { s.t -= dt; s.m.material.opacity = 0.6 * Math.min(1, s.t / 0.5); const sm = s.m.material.uniforms; if (sm) { sm.uO.value = s.m.material.opacity / 0.6; s.a = (s.a || 0) + dt; const k = Math.min(1, s.a / 0.3); const g = 0.3 + 0.7 * (1 - (1 - k) ** 3), sx = (s.r || 4) / 4; if (s.cyl) s.m.scale.set(sx, g, sx); else s.m.scale.setScalar(sx * g); } if (s.t > 0) return true; jRel(s.m); return false; });
-  jCbTick(dt); jFxTick(dt); sgTick(dt); rsTick(dt); bcTick(dt); xBTurTick(dt); xBSwTick(dt);
+  jCbTick(dt); jFxTick(dt); sgTick(dt); rsTick(dt); bcTick(dt); xDartRmTick(dt); xBTurTick(dt); xBSwTick(dt);
   const hn = $("hint"); if (hn && J.pick !== "Jett" && hn.textContent.includes(KITS.Jett.h)) hn.textContent = hn.textContent.replace(KITS.Jett.h, K().h);
   const u = K().u, cq = ["jQ", J.q, J.q + "", J.cd.q / 0.6], ce = ["jE", J.e, J.e ? "1" : "Used", J.cd.e / 0.4];
   const sl = J.pick === "Breach" || J.pick === "Chamber" ? bcSl(u) : J.pick === "Cypher" ? cySl(u) : J.pick === "Raze" || J.pick === "Skye" ? rsSl(u) : J.pick === "Omen" || J.pick === "Killjoy" ? okSl(u) : J.pick === "Sage" || J.pick === "Reyna" ? sgSl(u, cq) : J.pick === "Phoenix" ? [["jC", J.c, J.c + "", J.cd.c / 0.6], cq, ["jE", J.e, J.e > 0 ? J.e + "" : J.tk + "/2 kills", J.cd.e / 0.6], ["jX", J.rib > 0 || J.ult >= u, J.rib > 0 ? Math.ceil(J.rib) + " s" : J.ult + "/" + u, J.rib > 0 ? 1 - J.rib / 10 : 1 - J.ult / u]]
@@ -14124,7 +14127,7 @@ const XR_ACT=[];XR_ACT.max=4;
 // ---- TRUSTED ONLINE SERVER ----
 let netDetainAt=0; // Killjoy Lockdown detain notice (server status.detain)
 let netVulnAt=0,netTetherAt=0; // Alarmbot Vulnerable / Trapwire tether (server status.vulnerable / status.tether)
-function netStatusChips(st){const now=performance.now();if(st.vulnerable>0&&!(netVulnAt>now))say('Vulnerable · taking double damage · '+Math.ceil(st.vulnerable)+' s',1200);netVulnAt=st.vulnerable>0?now+st.vulnerable*1000:0;if(st.tether>0&&!(netTetherAt>now))say('Slowed by Trapwire · move 4 m away or shoot the anchor',1200);netTetherAt=st.tether>0?now+st.tether*1000:0;const on=[];if(st.vulnerable>0)on.push('VULNERABLE '+st.vulnerable.toFixed(1)+'s');if(st.tether>0)on.push('TRAPWIRE');let el=document.getElementById('netSt');if(!el&&!on.length)return on;if(!el){el=document.body.appendChild(document.createElement('div'));el.id='netSt';el.style.cssText='pointer-events:none;position:fixed;left:50%;bottom:22%;transform:translateX(-50%);z-index:61;padding:3px 10px;background:rgba(255,70,85,.8);color:#fff;font:600 12px var(--sans,sans-serif);letter-spacing:.12em';}el.textContent=on.join(' · ');el.style.display=on.length?'block':'none';return on;}
+function netStatusChips(st){const now=performance.now();if(st.vulnerable>0&&!(netVulnAt>now))say('Vulnerable · taking double damage · '+Math.ceil(st.vulnerable)+' s',1200);netVulnAt=st.vulnerable>0?now+st.vulnerable*1000:0;if(st.tether>0&&!(netTetherAt>now))say('Slowed by Trapwire · move 4 m away or shoot the anchor',1200);netTetherAt=st.tether>0?now+st.tether*1000:0;const on=[];if(st.vulnerable>0)on.push('VULNERABLE '+st.vulnerable.toFixed(1)+'s');if(st.tether>0)on.push('TRAPWIRE');if(st.dart>0)on.push(st.drm>0?'REMOVING DART '+Math.min(100,Math.round(st.drm/1.85*100))+'%':'TRACKING DART · HOLD 4 TO REMOVE');/* Spycam dart in me: server 1.85 s removal channel (h4 held, standing, not firing) */let el=document.getElementById('netSt');if(!el&&!on.length)return on;if(!el){el=document.body.appendChild(document.createElement('div'));el.id='netSt';el.style.cssText='pointer-events:none;position:fixed;left:50%;bottom:22%;transform:translateX(-50%);z-index:61;padding:3px 10px;background:rgba(255,70,85,.8);color:#fff;font:600 12px var(--sans,sans-serif);letter-spacing:.12em';}el.textContent=on.join(' · ');el.style.display=on.length?'block':'none';return on;}
 // Browser prediction is display only. The server consumes controls and owns
 // positions, collision, guns, damage, kills and results. Legacy P2P is not used.
 var netSkyeState=null,netReyna=null,netChannel=null;

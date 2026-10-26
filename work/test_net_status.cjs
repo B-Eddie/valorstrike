@@ -18,4 +18,7 @@ now+=100;ctx.netStatusChips({vulnerable:3.5,tether:2.4});assert.equal(said.lengt
 now+=100;ctx.netStatusChips({vulnerable:3.4,tether:2.3});assert.equal(said.length,2);
 now+=4000;ctx.netStatusChips({vulnerable:0,tether:0});assert.equal(els.netSt.style.display,'none','chip hidden when both end');
 ctx.netStatusChips({vulnerable:4,tether:0});assert.equal(said.length,3,'a fresh Alarmbot hit notifies again');
-console.log('Online status: Vulnerable and Trapwire tether notices on onset, countdown chip while active, hidden after');
+// Spycam dart in me (server status dart / drm, 1.85 s removal channel on h4): the chip says how to remove it, then the channel progress.
+now+=6000;ctx.netStatusChips({vulnerable:0,tether:0,dart:1,drm:0});assert.equal(els.netSt.style.display,'block');assert.equal(els.netSt.textContent,'TRACKING DART · HOLD 4 TO REMOVE');
+ctx.netStatusChips({vulnerable:0,tether:0,dart:1,drm:.925});assert.equal(els.netSt.textContent,'REMOVING DART 50%');ctx.netStatusChips({vulnerable:0,tether:0,dart:0,drm:0});assert.equal(els.netSt.style.display,'none','removed: chip hidden');
+console.log('Online status: Vulnerable and Trapwire tether notices on onset, countdown chip while active, hidden after; Spycam dart chip (hold 4 / removal %)');
