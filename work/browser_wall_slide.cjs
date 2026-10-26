@@ -12,8 +12,12 @@ const LOCAL={'three.min.js':QA+'three.min.js','GLTFLoader.js':QA+'GLTFLoader.js'
 const log=(k,v)=>{R.steps.push([((Date.now()-t00)/1000).toFixed(1),k,v]);fs.writeFileSync(OUT,JSON.stringify(R,null,1));};
 const check=(n,ok,d)=>{R.checks.push([n,ok?'pass':'FAIL',typeof d==='string'?d:JSON.stringify(d)]);log('check '+n,ok?'pass':'FAIL');};
 // [from, dir (x, z), server m/s, deg between walk and slide] - server/tools/find-wall-slides.mjs output (hk-35, main eaf28e2)
-const SPOTS={ascent:[[[-12.5,7.07,40],[0,-1],5.5,null],[[-64.29,4.28,-23.27],[0.383,-0.924],3.74,56.3],[[-57.46,4.05,-20.07],[0.924,0.383],3.74,56.3]],
- bind:[[[-65.33,8.9,-18.25],[0.383,0.924],2.59,63.2],[[-65.64,8.9,-24.62],[0.383,-0.924],2.16,71.8],[[-59.3,8.87,-24.2],[-0.383,-0.924],2.59,63.2],[[-52.66,8.93,-18.33],[0.383,0.924],2.59,63.3]]};
+// hk-35 after wallslide1: Ascent wall 2 runs over uneven floor (server motor rises 0.196 m on the same walk: dyMax 0.25);
+// Bind (-52.66, -18.33) dropped - it slides into a corner and stops there on the server too (same end point, scan artifact);
+// Ascent wall 3 kept: the SERVER motor's slide there depends on the tick (1/20 s keeps 3.3 m/s, 1/30 s 1.9, 1/60 s sticks at
+// (-55.88, -16.31)) - OPEN for the motor owner (project work/notes-hk35-wallslide.md).
+const SPOTS={ascent:[[[-12.5,7.07,40],[0,-1],5.5,null],[[-64.29,4.28,-23.27],[0.383,-0.924],3.74,56.3,0.25],[[-57.46,4.05,-20.07],[0.924,0.383],3.74,56.3]],
+ bind:[[[-65.33,8.9,-18.25],[0.383,0.924],2.59,63.2],[[-65.64,8.9,-24.62],[0.383,-0.924],2.16,71.8],[[-59.3,8.87,-24.2],[-0.383,-0.924],2.59,63.2]]};
 const MAPS=(process.env.MAPS||'ascent,bind').split(',');
 (async()=>{
  const browser=await chromium.launch({headless:true,args:['--no-sandbox','--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader','--disable-dev-shm-usage','--ignore-gpu-blocklist','--in-process-gpu','--renderer-process-limit=1']});
@@ -36,7 +40,7 @@ const MAPS=(process.env.MAPS||'ascent,bind').split(',');
   await X('window.__god=1;bots.concat(allies).forEach(u=>u.nt=true);FV.buy=Math.min(FV.buy,0.2);1');
   await page.waitForFunction(()=>window.__xe('FV.buy<=0'),null,{timeout:900000,polling:1000}).catch(e=>log('buy end wait',String(e).slice(0,80)));
   const nm=await XJ(`{map:FV.map||FV.pick,native:typeof nmActive==='function'&&!!nmActive(),p:[player.x,player.y,player.z].map(v=>+v.toFixed(2))}`);log(map+' match',nm);
-  let i=0;for(const [from,dir,sv,deg] of SPOTS[map]||[]){i++;
+  let i=0;for(const [from,dir,sv,deg,dyMax0] of SPOTS[map]||[]){const dyMax=dyMax0||0.1;i++;
    // park everyone else far away; stand at the spot facing the walk
    await X(`bots.concat(allies).forEach((u,k)=>{u.g.position.set(player.x+200+k*3,player.y-50,player.z+200);});(()=>{const P=player;P.x=${from[0]};P.z=${from[2]};const fy=xFy(P.x,P.z,${from[1]}+.1);P.y=Number.isFinite(fy)&&Math.abs(fy-${from[1]})<.6?fy:${from[1]};P.vx=P.vz=0;P.vy=0;P.air=false;yaw=Math.atan2(-(${dir[0]}),-(${dir[1]}));pitch=0;})();1`);
    await X('window.__ts=0.25;1');await simWait(0.2,'settle');const s0=await XJ(`{p:[player.x,player.y,player.z].map(v=>+v.toFixed(3)),yaw:+yaw.toFixed(3)}`);
@@ -49,8 +53,8 @@ const MAPS=(process.env.MAPS||'ascent,bind').split(',');
    const r={from,dir,server:{v:sv,deg},start:s0,end,steps:rec.length,v:v&&+v.toFixed(2),ang:ang&&+ang.toFixed(1),along:along&&+along.toFixed(2),dy:dy&&+dy.toFixed(3),moved:tot&&+tot.toFixed(2)};log(map+' wall '+i,r);
    if(i===1)await page.screenshot({path:`${SHOT}wall-slide-${map}-640x360.jpg`,type:'jpeg',quality:75,timeout:300000}).catch(e=>log('shot failed (non-fatal)',String(e).slice(0,100)));
    const want=Math.max(1.5,(sv||0)*0.75);
-   check(`${map} wall ${i} (${from.join(', ')} toward ${dir.join(', ')}): the walk keeps sliding along the slanted wall (>= ${want.toFixed(2)} m/s over the last 0.6 s, 15-80 deg off the walk), never inside a wall, feet within 0.1 m of the floor`,
-    rec.length>10&&v!=null&&v>=want&&ang!=null&&ang>=(deg==null?5:10)&&ang<=80&&end.inWall!==true&&dy!=null&&dy<0.1,r);}
+   check(`${map} wall ${i} (${from.join(', ')} toward ${dir.join(', ')}): the walk keeps sliding along the slanted wall (>= ${want.toFixed(2)} m/s over the last 0.6 s, 15-80 deg off the walk), never inside a wall, feet within ${dyMax} m of the floor`,
+    rec.length>10&&v!=null&&v>=want&&ang!=null&&ang>=(deg==null?5:10)&&ang<=80&&end.inWall!==true&&dy!=null&&dy<dyMax,r);}
  }catch(e){R.errors.push(map+' '+String(e).slice(0,300));log(map+' error',String(e).slice(0,300));}
  check('no page errors',!R.errors.length,{errors:R.errors.slice(0,5)});
  await browser.close();process.exit(R.checks.every(c=>c[1]==='pass')?0:1);

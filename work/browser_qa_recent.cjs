@@ -46,7 +46,7 @@ const ONLY=(process.env.PARTS||'A,B,C,D').split(',');
   await X(`[...document.querySelectorAll('button')].filter(b=>/^got it$/i.test(b.textContent.trim())&&b.offsetParent).forEach(b=>b.click());if(!window.__gd){window.__gd=1;const h=hurt;hurt=function(t){if(t===player&&window.__god)return;return h.apply(this,arguments);};}1`);
   await X(`if(!window.__rp){window.__rp=1;window.__allow=3;const r0=renderer.render;renderer.render=function(sc,c){if(sc===scene){if(window.__allow<=0)return;window.__allow--;}return r0.call(this,sc,c);};}if(!window.__simH){window.__simH=1;window.__sim=0;const s0=xSimStep;xSimStep=function(d){const r=s0.apply(this,arguments);window.__sim+=d;return r;};}1`);
   await X('window.__god=1;bots.concat(allies).forEach(u=>u.nt=true);FV.buy=Math.min(FV.buy,0.2);1');
-  await X(`if(!window.__sayH){window.__sayH=1;window.__say=[];const f=say;say=function(t){try{window.__say.push(String(t).slice(0,90));if(window.__say.length>30)window.__say.shift();}catch(e){}return f.apply(this,arguments);};}1`);
+  await X(`if(!window.__sayH){window.__sayH=1;window.__say=[];try{const f=say;say=function(t){try{window.__say.push(String(t).slice(0,90));if(window.__say.length>30)window.__say.shift();}catch(e){}return f.apply(this,arguments);};}catch(e){window.__say.push('say not hookable: '+String(e).slice(0,60));}}1`);/* hk-35: say is a const in the page (qa_recent5 part A threw on the assignment) */
   await page.waitForFunction(()=>window.__xe('FV.buy<=0'),null,{timeout:900000,polling:1000}).catch(e=>log('buy end wait',String(e).slice(0,80)));
   // everyone else far away, the player on open floor facing its own forward
   await X(`bots.concat(allies).forEach((u,i)=>{u.g.position.set(player.x+200+i*3,player.y-50,player.z+200);});J.cd={c:0,q:0,e:0,x:0};1`);
@@ -89,7 +89,7 @@ const ONLY=(process.env.PARTS||'A,B,C,D').split(',');
   const e2=await XJ(`{cd:+BC.cd.toFixed(3),s1:window.__sim}`);await X('window.__ts=1;1');e.equip=+(e2.cd+(e2.s1-e.s0)+0).toFixed(3);e.cd2=e2.cd;
   // a click inside the equip does not fire (still at __ts 0.05)
   log('B Headhunter equip',e);
-  check('Headhunter: Q holds it (BC.eq hp) with a 0.3 s equip (cd at the press 0.3 +- one 0.05-dilated frame, gone by 0.3 s of game time)',e.eq==='hp'&&e.cd>0.2&&e.cd<=0.3&&e2.cd>0,e);await simWait(0.4,'hh equip');
+  check('Headhunter: Q holds it (BC.eq hp) with a 0.3 s equip (BC.cd = 0.3 set at the press)',e.eq==='hp'&&Math.abs(e.cd-0.3)<1e-6,e);/* hk-35: qa_recent5 cd 0.3 at the press, 0 by 0.4 s; the 0.02 s hold itself can take > 0.3 s of game time on one slow frame, so the release read is not a bound */await simWait(0.4,'hh equip');
   const e3=await XJ(`{cd:+BC.cd.toFixed(3)}`);log('B Headhunter equip done',e3);check('Headhunter: the equip is over after 0.4 s of game time (cd 0)',e3.cd===0,e3);
   await place(300);await shot('headhunter-held');await click(0.05);await simWait(0.1,'shot');
   const h=await XJ(`{hp:window.__cb.hp,q:J.q,eq:BC.eq}`);log('B Headhunter shot',h);
@@ -126,7 +126,7 @@ const ONLY=(process.env.PARTS||'A,B,C,D').split(',');
   await go('Raze');await X('J.q=1;J.cd.q=0;RS.pk.length=0;1');await faceOpen(8);await cast('KeyQ',0.8);await X('window.__ts=0.1;1');await frames(1);/* hk-34: qa_recent3 read the pack at t 1.48 and 5.03 (gone): the whole part runs at __ts 0.1 and follows the pack's own clock */
   const p=await XJ(`(()=>{const o=RS.pk[0];if(!o)return {none:true,q:J.q,eq:J.eq?{k:J.eq.k,st:J.eq.st}:null,cdq:J.cd.q};window.__pk=o;return {n:RS.pk.length,drawn:o.m.parent===scene&&o.m.visible,t:+o.t.toFixed(2)};})()`);log('D pack thrown',p);
   check('Blast Pack: Q throws a pack, drawn in the scene',p&&p.n===1&&p.drawn,p);if(!p||p.none)throw Error('no pack '+JSON.stringify(p));
-  await page.waitForFunction(()=>window.__xe('!window.__pk||window.__pk.t>=1.6||RS.pk.indexOf(window.__pk)<0'),null,{timeout:600000,polling:100}).catch(()=>{});const q=await XJ(`(()=>{const o=window.__pk,P=o.m.position,b=bots.filter(b=>b.alive)[0];window.__pb=b;b.hp=500;b.armor=0;b.g.position.set(P.x+1,player.y,P.z);return {t:+o.t.toFixed(2),p:[P.x,P.y,P.z].map(v=>+v.toFixed(2)),stuck:!!o.stuck,n:RS.pk.length};})()`);log('D pack at 1.8 s',q);await shot('blastpack');
+  await page.waitForFunction(()=>window.__xe('!window.__pk||window.__pk.t>=1.6||RS.pk.indexOf(window.__pk)<0'),null,{timeout:600000,polling:100}).catch(()=>{});const q=await XJ(`(()=>{const o=window.__pk,P=o.m.position,b=bots.filter(b=>b.alive)[0];window.__pb=b;b.hp=500;b.armor=0;{const dx=player.x-P.x,dz=player.z-P.z,l=Math.hypot(dx,dz)||1;b.g.position.set(P.x+dx/l,player.y,P.z+dz/l);}/* hk-35: 1 m from the pack toward the player (qa_recent5: +x put the enemy behind the wall the pack stuck to: no damage) */return {t:+o.t.toFixed(2),p:[P.x,P.y,P.z].map(v=>+v.toFixed(2)),stuck:!!o.stuck,n:RS.pk.length};})()`);log('D pack at 1.8 s',q);await shot('blastpack');
   await page.waitForFunction(()=>window.__xe('RS.pk.indexOf(window.__pk)<0'),null,{timeout:900000,polling:200}).catch(()=>{});await X('window.__ts=1;1');const d=await XJ(`{n:RS.pk.length,hp:Math.round(window.__pb.hp*10)/10}`);log('D after 5.4 s',d);
   check('Blast Pack: left alone it goes off by itself at 5 s (armed): an enemy 1 m away takes 50',q.n===1&&d.n===0&&d.hp===450,{q,d});
  }catch(e){R.errors.push('part D '+String(e).slice(0,300));log('part D error',String(e).slice(0,300));}
