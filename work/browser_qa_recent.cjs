@@ -33,6 +33,8 @@ const ONLY=(process.env.PARTS||'A,B,C,D').split(',');
  const frames=async n=>{await X(`window.__allow=${n};1`);await page.waitForFunction(()=>window.__xe('window.__allow<=0'),null,{timeout:900000,polling:1000}).catch(()=>{});};
  const shot=async n=>{await frames(2);await page.screenshot({path:`${SHOT}qa-recent-${n}-640x360.jpg`,type:'jpeg',quality:80,timeout:300000}).catch(e=>log('shot '+n+' failed (non-fatal)',String(e).slice(0,120)));};
  const key=async(k)=>{await X('window.__ts=0.05;1');await page.keyboard.down(k);await simWait(0.02,k);await page.keyboard.up(k);await X('window.__ts=1;1');};
+ // equip-then-fire abilities (XAB_EQ: Cypher C, Sage C / X, Raze Q): the key draws it (XAB_EQT s), a click casts it
+ const cast=async(k,draw)=>{await key(k);await simWait((draw||0.8)+0.25,'draw '+k);const e=await XJ(`J.eq?{k:J.eq.k,st:J.eq.st}:null`);log('equipped '+k,e);await click(0.05);await simWait(0.7,'release '+k);return e;};
  const click=async(hold)=>{await X('window.__ts=0.05;1');await frames(1);await page.mouse.down();await simWait(hold||0.05,'click');await page.mouse.up();await X('window.__ts=1;1');};
  await page.goto('http://127.0.0.1:8876/',{waitUntil:'domcontentloaded'});await page.waitForFunction(()=>window.__xe&&window.xValorantAssets,null,{timeout:180000,polling:1000});log('assets',1);
  await page.getByRole('button',{name:'Got it',exact:true}).click({timeout:5000}).catch(()=>{});
@@ -47,14 +49,16 @@ const ONLY=(process.env.PARTS||'A,B,C,D').split(',');
   await X(`bots.concat(allies).forEach((u,i)=>{u.g.position.set(player.x+200+i*3,player.y-50,player.z+200);});J.cd={c:0,q:0,e:0,x:0};1`);
   await frames(2);log(agent+' match',await XJ(`{pick:J.pick,buy:FV.buy,p:[player.x,player.y,player.z].map(v=>+v.toFixed(2)),yaw:+yaw.toFixed(2)}`));};
  // a spot d m straight ahead of the camera on the player's floor (null when a wall is in between)
- const ahead=d=>XJ(`(()=>{const fx=-Math.sin(yaw),fz=-Math.cos(yaw),x=player.x+fx*${d},z=player.z+fz*${d};let ok=true;for(let r=.5;r<=${d};r+=.5)if(blocked(player.x+fx*r,player.z+fz*r,.3,0))ok=false;return {x,z,ok};})()`);
+ const ahead=d=>XJ(`(()=>{const fx=-Math.sin(yaw),fz=-Math.cos(yaw),x=player.x+fx*${d},z=player.z+fz*${d};let ok=true;for(let r=.5;r<=${d};r+=.5)if(blocked(player.x+fx*r,player.z+fz*r,.3,player.y))ok=false;return {x,z,ok};})()`);
  const faceOpen=async d=>{for(let k=0;k<16;k++){const a=await ahead(d);if(a.ok)return a;await X(`yaw+=Math.PI/8;1`);}return await ahead(d);};
 
- if(ONLY.includes('A')){
+ if(ONLY.includes('A'))try{
   await go('Cypher');await X('J.c=2;1');const sp=await faceOpen(7);log('A open lane',sp);
-  const n0=await X('BC.cw.length');await key('KeyC');await frames(1);
-  const w=await XJ(`(()=>{const W=BC.cw[BC.cw.length-1];if(!W)return null;window.__W=W;const vis=o=>!!o&&o.parent===scene&&o.visible;return {n:BC.cw.length,wire:vis(W.m),anchors:W.an.map(vis),a:[W.a.x,W.a.z].map(v=>+v.toFixed(2)),b:[W.b.x,W.b.z].map(v=>+v.toFixed(2)),c:J.c};})()`);
+  const n0=await X('BC.cw.length');await cast('KeyC',0.8);await frames(1);
+  const w=await XJ(`(()=>{const W=BC.cw[BC.cw.length-1];if(!W)return null;window.__W=W;const vis=o=>!!o&&o.parent===scene&&o.visible;return {n:BC.cw.length,wire:vis(W.m),anchors:W.an.map(vis),len:+Math.hypot(W.a.x-W.b.x,W.a.z-W.b.z).toFixed(2),py:+player.y.toFixed(2),a:[W.a.x,W.a.z].map(v=>+v.toFixed(2)),b:[W.b.x,W.b.z].map(v=>+v.toFixed(2)),c:J.c};})()`);
   log('A wire',w);check('Trapwire: C key sets a wire, drawn (wire + both anchors in the scene)',w&&w.n===n0+1&&w.wire&&w.anchors.every(Boolean),{n0,w});
+  check('Trapwire: the wire spans the lane between walls (> 1 m; the legacy blocked(x, z, r, 0) probes ask y 0 on native maps)',w&&w.len>1,w);
+  if(w){
   // the enemy stands on the wire's middle from the start; trip only after the 1.5 s deploy
   await X(`(()=>{const W=window.__W,b=bots.filter(b=>b.alive)[0];window.__tb=b;b.hp=100;b.armor=0;b.chs=0;b.g.position.set((W.a.x+W.b.x)/2,player.y,(W.a.z+W.b.z)/2);W.ck=1e9;})();1`);
   await simWait(1.2,'deploy');let t=await XJ(`{trip:window.__W.trip===window.__tb,hp:window.__tb.hp,chs:+(window.__tb.chs||0).toFixed(2)}`);log('A at 1.2 s',t);
@@ -65,8 +69,9 @@ const ONLY=(process.env.PARTS||'A,B,C,D').split(',');
   await X(`(()=>{const W=window.__W,b=window.__tb,ax=W.b.x-W.a.x,az=W.b.z-W.a.z,l=Math.hypot(ax,az)||1;b.g.position.set((W.a.x+W.b.x)/2-az/l*4.6,player.y,(W.a.z+W.b.z)/2+ax/l*4.6);})();1`);
   await simWait(0.15,'break free');const f=await XJ(`{trip:window.__W.trip,chs:+(window.__tb.chs||0).toFixed(2),listed:BC.cw.indexOf(window.__W)>=0,inScene:window.__W.m.parent===scene}`);log('A broke free',f);
   check('Trapwire: beyond 4 m the enemy breaks free with a ~1.25 s slow left; the wire is not used up (still set and drawn)',f.trip===null&&f.chs>0.9&&f.chs<=1.25&&f.listed&&f.inScene,f);
- }
- if(ONLY.includes('B')){
+  }
+ }catch(e){R.errors.push('part A '+String(e).slice(0,300));log('part A error',String(e).slice(0,300));}
+ if(ONLY.includes('B'))try{
   await go('Chamber');const sp=await faceOpen(10);log('B open lane',sp);
   const place=async(hp)=>X(`(()=>{const b=bots.filter(b=>b.alive)[0];window.__cb=b;b.hp=${hp};b.armor=0;b.g.position.set(${sp.x},player.y,${sp.z});if(b.g.updateMatrixWorld)b.g.updateMatrixWorld(true);return 1;})()`);
   await X('J.q=2;BC.eq="";BC.cd=0;1');await key('KeyQ');const e=await XJ(`{eq:BC.eq,cd:+BC.cd.toFixed(2),q:J.q}`);log('B Headhunter equip',e);
@@ -81,9 +86,9 @@ const ONLY=(process.env.PARTS||'A,B,C,D').split(',');
   log('B TDF kill',f);await shot('tdf-field');
   check('Tour De Force: a kill leaves a 6 m slow field drawn under the victim (50 % inside, none outside)',!f.alive&&f.td===4&&f.n>=1&&f.r===6&&f.drawn&&f.d<1.5&&f.slowIn===0.5&&f.slowOut===1,f);
   await simWait(4.2,'field life');const g=await XJ(`{n:BC.sf.length}`);log('B TDF field after 4.2 s',g);check('Tour De Force: the field is gone after 4 s',g.n===0,g);
- }
- if(ONLY.includes('C')){
-  await go('Sage');await X('J.c=1;J.cd.c=0;1');await faceOpen(6);await key('KeyC');await frames(1);
+ }catch(e){R.errors.push('part B '+String(e).slice(0,300));log('part B error',String(e).slice(0,300));}
+ if(ONLY.includes('C'))try{
+  await go('Sage');await X('J.c=1;J.cd.c=0;1');await faceOpen(6);await cast('KeyC',0.8);await frames(1);
   const b=await XJ(`(()=>{const w=J.sw;if(!w)return null;return {segs:w.sm.length,drawn:w.sm.map(m=>m.visible&&!!m.parent),inSolids:w.sm.map(m=>solids.indexOf(m)>=0),hp:w.seg.slice()};})()`);log('C barrier',b);
   check('Barrier Orb: C raises 4 segments, all drawn and solid',b&&b.segs===4&&b.drawn.every(Boolean)&&b.inSolids.every(Boolean),b);
   await X('xBarHit(J.sw,1,99999);1');await frames(1);
@@ -91,20 +96,20 @@ const ONLY=(process.env.PARTS||'A,B,C,D').split(',');
   check('Barrier Orb: one broken segment disappears (not solid), the other 3 stay up',!b2.gone&&!b2.drawn[1]&&!b2.inSolids[1]&&[0,2,3].every(i=>b2.drawn[i]&&b2.inSolids[i]),b2);
   // Resurrection: a dead ally 5 m in front
   const sp=await faceOpen(5);await X(`(()=>{const a=allies.filter(a=>a.alive)[0];window.__ra=a;a.g.position.set(${sp.x},player.y,${sp.z});allyDie(a,'QA','Vandal');J.ult=K().u;J.rz=null;})();1`);
-  await simWait(0.6,'corpse');await key('KeyX');const r0=await XJ(`{rz:!!J.rz,t:J.rz?+J.rz.t.toFixed(2):null,crystal:!!(J.rz&&J.rz.m.parent===scene),alive:window.__ra.alive}`);log('C rez cast',r0);
-  check('Resurrection: X on a dead ally in front starts the 3.3 s channel with the crystal drawn',r0.rz&&r0.t>3.1&&r0.t<=3.3&&r0.crystal&&!r0.alive,r0);
-  await simWait(2.0,'windup');const r1=await XJ(`{alive:window.__ra.alive,cy:J.rz?+J.rz.m.position.y.toFixed(2):null}`);log('C rez at 2 s',r1);await shot('resurrection-rise');
+  await simWait(0.6,'corpse');await cast('KeyX',0.8);const r0=await XJ(`{rz:!!J.rz,t:J.rz?+J.rz.t.toFixed(2):null,crystal:!!(J.rz&&J.rz.m.parent===scene),alive:window.__ra.alive}`);log('C rez cast',r0);
+  check('Resurrection: X (equip + click) on a dead ally in front starts the 3.3 s channel with the crystal drawn',r0.rz&&r0.t>2.2&&r0.t<=3.3&&r0.crystal&&!r0.alive,r0);
+  await X('window.__rzT=J.rz?J.rz.t:0;1');await simWait(Math.max(0,(r0.t||3.3)-1.45),'windup');const r1=await XJ(`{alive:window.__ra.alive,cy:J.rz?+J.rz.m.position.y.toFixed(2):null}`);log('C rez at 2 s',r1);await shot('resurrection-rise');
   await simWait(1.5,'rise');const r2=await XJ(`{alive:window.__ra.alive,hp:window.__ra.hp,rz:!!J.rz}`);log('C rez at 3.5 s',r2);
   check('Resurrection: the ally is still down after the 2 s windup and stands (100 HP) by 3.5 s',!r1.alive&&r2.alive&&r2.hp===100&&!r2.rz,{r1,r2});
- }
- if(ONLY.includes('D')){
-  await go('Raze');await X('J.q=1;J.cd.q=0;RS.pk.length=0;1');await faceOpen(8);await key('KeyQ');await frames(1);
+ }catch(e){R.errors.push('part C '+String(e).slice(0,300));log('part C error',String(e).slice(0,300));}
+ if(ONLY.includes('D'))try{
+  await go('Raze');await X('J.q=1;J.cd.q=0;RS.pk.length=0;1');await faceOpen(8);await cast('KeyQ',0.8);await frames(1);
   const p=await XJ(`(()=>{const o=RS.pk[0];if(!o)return null;window.__pk=o;return {n:RS.pk.length,drawn:o.m.parent===scene&&o.m.visible,t:+o.t.toFixed(2)};})()`);log('D pack thrown',p);
   check('Blast Pack: Q throws a pack, drawn in the scene',p&&p.n===1&&p.drawn,p);
   await simWait(1.8,'land + arm');const q=await XJ(`(()=>{const o=window.__pk,P=o.m.position,b=bots.filter(b=>b.alive)[0];window.__pb=b;b.hp=500;b.armor=0;b.g.position.set(P.x+1,player.y,P.z);return {t:+o.t.toFixed(2),p:[P.x,P.y,P.z].map(v=>+v.toFixed(2)),stuck:!!o.stuck,n:RS.pk.length};})()`);log('D pack at 1.8 s',q);await shot('blastpack');
   await simWait(3.6,'auto detonation');const d=await XJ(`{n:RS.pk.length,hp:Math.round(window.__pb.hp*10)/10}`);log('D after 5.4 s',d);
   check('Blast Pack: left alone it goes off by itself at 5 s (armed): an enemy 1 m away takes 50',q.n===1&&d.n===0&&d.hp===450,{q,d});
- }
+ }catch(e){R.errors.push('part D '+String(e).slice(0,300));log('part D error',String(e).slice(0,300));}
  check('no page errors',!R.errors.length,{errors:R.errors.slice(0,5)});
  await browser.close();process.exit(0);
 })().catch(e=>{R.errors.push('fatal '+String(e&&e.stack||e).slice(0,400));fs.writeFileSync(OUT,JSON.stringify(R,null,1));process.exit(1);});
