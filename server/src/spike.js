@@ -7,6 +7,7 @@ import kits from './kits.json' with {type:'json'};
 import {path} from './path.js';
 import {persona,flankNode,plan,spotNear,variedPath,spaceLook,strategy,stageNode,roundTime,botSeed,buyMill,buyClamp,buyEnd,botView} from './bots.js';
 import BotBrain from '../../vendor/bot-brain.cjs';
+const FOLLOW=[]; // scratch: moving teammates' positions (goalPath trade spacing)
 const BOT_TURN=9,BOT_RUN=5.4;// BOT_RUN: m/s a bot covers on foot (rifle run, 6.75 x 0.8), for post-plant timing// rad/s: a bot turns at most this fast when lining up utility (no instant 180)
 import {initAbilities,buyAbility,castAbility,tickAbilities,smokeBlocks,sightClear,types,rewardAbilityKill,gainUlt,barrierBlocked,nearestBarrier,damageBarrier,barrierPoints,SLOW_ORB} from './abilities.js';
 // VALORANT round phases (wiki.playvalorant.com/en-us/Unrated): buy phase 30 s, 45 s for the first buy phase of each half and
@@ -130,9 +131,9 @@ export class SpikeSimulation extends Simulation{
   else if(sp.st!=='plant'){if(L.go==null)L.go=this.time+L.delay;
    const rt=roundTime(this);let stage=null;for(const g of L.stages)if(rt<g.until){stage=g;break;}
    let site=atk?sp.site:L.site;const info=this.atkInfo&&this.atkInfo.round===this.round?this.atkInfo:null;
-   if(!atk&&info&&L.role.rotator&&info.site!==L.site&&this.time>=info.at+(L.rotDelay??(L.rotDelay=1+L.rand()*3))){site=info.site;stage=null;} // defenders rotate on information
+   if(!atk&&info&&this.rotates(u,L,info)&&this.time>=info.at+(L.rotDelay??(L.rotDelay=BotBrain.RESPOND.delay[0]+L.rand()*(BotBrain.RESPOND.delay[1]-BotBrain.RESPOND.delay[0])))){site=info.site;stage=null;L.rotSite=site;} // defenders rotate on information: only the nearest RESPOND.rotate eligible ones, after their own delay; the rest hold their areas
    if(stage){const i=stageNode(this,u,stage,this.findPath);if(i>=0){goal=N[i];u.spread=true;loose=true;site=null;}}
-   if(site&&!carrier&&W.map.sites[site]){if(L.spotSite!==site){L.spotSite=site;L.spot=spotNear(this,u,W.map.sites[site],'spot',atk?{rMin:1.5,rMax:7,gap:3}:L.role.offAngle?{rMin:6,rMax:14,gap:4}:{rMin:2,rMax:10,gap:4});}if(L.spot>=0){goal=N[L.spot];u.spread=true;}}}}
+   if(site&&!carrier&&W.map.sites[site]){if(L.spotSite!==site){L.spotSite=site;L.spot=spotNear(this,u,W.map.sites[site],'spot',atk?{rMin:2,rMax:10,gap:4.5}:L.role.offAngle?{rMin:6,rMax:14,gap:4}:{rMin:2,rMax:10,gap:4});}if(L.spot>=0){goal=N[L.spot];u.spread=true;}}}}
  if(u.team!==this.atk&&sp.st==='plant'&&Math.hypot(u.x-sp.x,u.z-sp.z)<2&&this.defuseNow(u)){u.input={interact:true};u.inputAt=this.time;return;}
  if(u.blindUntil>this.time||u.concussUntil>this.time||u.nearsightUntil>this.time){/* bots have no nearsight model: held like a blinded bot, as offline (b.blind) */u.input={};u.inputAt=this.time;u.engagedAt=0;/* the fight restarts after the flash: a fresh, slower reaction (BotBrain.reaction ctx.flashed) */return;}const route=u.route,routeAt=u.routeAt;u.route=null;super.bot(u);const combat=u.input.fire||u.sawTarget;if(!combat){u.route=route;u.routeAt=routeAt;}if(combat)return;
  if(this.shootUtility(u,goal))return;/* no enemy in sight: shoot down enemy utility in the way (Boom Bot, Turret, Alarmbot, Trademark, Trapwire, Nanoswarm; a Sage Barrier across its way) */
@@ -201,15 +202,31 @@ export class SpikeSimulation extends Simulation{
  botSense(){if(this._senseT===this.time)return;this._senseT=this.time;const U=this.units,sites=this.world.map.sites,names=Object.keys(sites);
   for(const d of U){const was=d._wasAlive;d._wasAlive=d.alive;if(!(was&&!d.alive))continue;let k=null,kd=Infinity;for(const e of U)if(e.alive&&e.team!==d.team){const q=Math.hypot(e.x-d.x,e.z-d.z);if(q<kd){kd=q;k=e;}}
    const alive=U.filter(v=>v.alive&&v.team===d.team).length;
+   // at most RESPOND.trade of the mates that want to trade go (the nearest; already-trading mates count), the second one
+   // GAP m to the side of the killer's spot; the rest hold their spot facing the fight (bots-spread-1: no team collapse)
+   const want=[];
    for(const m of U){if(!m.alive||m.human||m.team!==d.team||m.sawTarget)continue;const dist=Math.hypot(m.x-d.x,m.z-d.z),P=persona(this,m),c=BotBrain.onMateDeath(P.brain,P.r,dist,alive);if(c==='hold'||!k)continue;
-    if(c==='trade')m.react={kind:'trade',x:k.x,y:k.y,z:k.z,until:this.time+2.5+P.r()*1.5};
-    else{const dx=m.x-k.x,dz=m.z-k.z,l=Math.hypot(dx,dz)||1,n=this.world.nav.nodes[this.world.near(m.x+dx/l*6,m.z+dz/l*6,m.y)];if(n)m.react={kind:'fallback',x:n[0],y:n[1],z:n[2],until:this.time+1.5+P.r()*1.5};}}}
+    if(c==='trade')want.push({m,P,id:m.id,d:dist});
+    else{const dx=m.x-k.x,dz=m.z-k.z,l=Math.hypot(dx,dz)||1,n=this.world.nav.nodes[this.world.near(m.x+dx/l*6,m.z+dz/l*6,m.y)];if(n)m.react={kind:'fallback',x:n[0],y:n[1],z:n[2],until:this.time+1.5+P.r()*1.5};}}
+   if(want.length){const busy=U.filter(v=>v.alive&&v.team===d.team&&v.react&&v.react.kind==='trade'&&v.react.until>this.time&&!want.some(w=>w.m===v)).length,go=BotBrain.nearest(want,BotBrain.RESPOND.trade-busy);let j=busy;
+    for(const w of want.sort((a,b)=>a.d-b.d)){const m=w.m,P=w.P;if(go.has(m.id)){const q=BotBrain.tradeSpot(j++,m.x,m.z,k.x,k.z),n=j>1?this.world.nav.nodes[this.world.near(q[0],q[1],k.y)]:null;m.react={kind:'trade',x:n?n[0]:k.x,y:n?n[1]:k.y,z:n?n[2]:k.z,until:this.time+2.5+P.r()*1.5};}
+     else m.react={kind:'hold',x:k.x,z:k.z,duck:false,until:this.time+.8+P.r()*.8};}
+    (this.tradeLog||(this.tradeLog=[])).push({round:this.round,team:d.team,want:want.length,go:go.size});if(this.tradeLog.length>200)this.tradeLog.shift();}}
   for(const m of U){if(!m.alive||m.human||m.sawTarget||(m.react&&m.react.until>this.time))continue;let best=null,bd=Infinity;
    for(const e of U){if(!e.alive||e.team===m.team)continue;const dist=Math.hypot(e.x-m.x,e.z-m.z),shot=e.shotAt>this.time-.12&&dist<35,run=!shot&&dist<16&&Math.hypot(e.vx||0,e.vz||0)>4.5&&!(e.input&&(e.input.walk||e.input.duck));if((shot||run)&&dist<bd){bd=dist;best={e,kind:shot?'shot':'step',dist};}}
    if(!best||m.heardAt>this.time-1.5)continue;m.heardAt=this.time;const P=persona(this,m),c=BotBrain.onSound(P.brain,P.r,best.kind,best.dist),e=best.e;
-   if(c==='push')m.react={kind:'push',x:e.x,y:e.y,z:e.z,until:this.time+2+P.r()};else m.react={kind:'hold',x:e.x,z:e.z,duck:P.r()<.25,until:this.time+(c==='hold'?.6+P.brain.patience*1.2:.25+P.r()*.25)};
+   const pushing=c==='push'&&U.filter(v=>v!==m&&v.alive&&v.team===m.team&&v.react&&v.react.kind==='push'&&v.react.until>this.time).length>=BotBrain.RESPOND.push;/* one pusher per team at a time: the rest hold the angle */
+   if(c==='push'&&!pushing)m.react={kind:'push',x:e.x,y:e.y,z:e.z,until:this.time+2+P.r()};else if(c==='push')m.react={kind:'hold',x:e.x,z:e.z,duck:false,until:this.time+.6+P.brain.patience*1.2};else m.react={kind:'hold',x:e.x,z:e.z,duck:P.r()<.25,until:this.time+(c==='hold'?.6+P.brain.patience*1.2:.25+P.r()*.25)};
    if(m.team!==this.atk&&this.spike.st!=='plant')for(const n of names){const c2=sites[n];if(Math.hypot(e.x-c2[0],e.z-c2[2])<16){this.siteInfo(n,e);break;}}}
   if(this.spike.st!=='plant')for(const m of U)if(m.alive&&m.team!==this.atk&&m.sawTarget){const e=U.find(v=>v.id===m.aimTarget);if(e)for(const n of names){const c2=sites[n];if(Math.hypot(e.x-c2[0],e.z-c2[2])<16){this.siteInfo(n,e);break;}}}}
+ // Who rotates on information about site info.site (bots-spread-1): rotation-eligible defenders (BotBrain.areas: never an
+ // anchor; a mid / rotator / push / retake player even when its nominal site is that one, a support only from another site),
+ // the RESPOND.rotate nearest to the site; chosen once per information site, so one contact never pulls the whole team.
+ rotates(u,L,info){const R=L.role;if(!R||!R.rotator)return false;const loose=R.slot==='mid'||R.slot==='rot'||R.slot==='push'||R.slot==='retake';if(!loose&&L.site===info.site)return false;
+  if(info.rotK!==info.site){info.rotK=info.site;const c=this.world.map.sites[info.site],list=[];
+   for(const v of this.units){if(!v.alive||v.human||v.team!==u.team)continue;const Q=plan(this,v),R2=Q.role;if(!R2||!R2.rotator)continue;const l2=R2.slot==='mid'||R2.slot==='rot'||R2.slot==='push'||R2.slot==='retake';if(!l2&&Q.site===info.site)continue;list.push({id:v.id,d:c?Math.hypot(v.x-c[0],v.z-c[2]):0});}
+   info.rot=BotBrain.nearest(list,BotBrain.RESPOND.rotate);(this.rotateLog||(this.rotateLog=[])).push({round:this.round,site:info.site,ids:[...info.rot],of:list.length});if(this.rotateLog.length>200)this.rotateLog.shift();}
+  return info.rot.has(u.id);}
  siteInfo(n,e){const I=this.atkInfo;if(!I||I.round!==this.round||(I.site!==n&&this.time>I.at+6))this.atkInfo={site:n,at:this.time,round:this.round};const J=this.atkInfo;if(J.site===n&&e){J.x=e.x;J.y=e.y;J.z=e.z;J.seen=this.time;}}
  // Persona-driven objective movement: own spot inside the site, own repath/accept/lateral jitter, lurker flanks,
  // walking near the objective for quiet roles. loose=false keeps exact goals (spike pickup, defuse).
@@ -218,6 +235,9 @@ export class SpikeSimulation extends Simulation{
   if(u.flankGoal>=0){const n=W.nav.nodes[u.flankGoal];if(!n||Math.hypot(n[0]-u.x,n[2]-u.z)<1.5){u.flankDone=true;u.flankGoal=-1;u.route=null;u.goalAt=0;}}
   while(u.route&&u.route.length>1&&Math.hypot(W.nav.nodes[u.route[0]][0]-u.x,W.nav.nodes[u.route[0]][2]-u.z)<P.accept)u.route.shift();const p=u.route&&W.nav.nodes[u.route[0]];u.inputAt=this.time;
   if(p){const far=Math.hypot(gx-u.x,gz-u.z),tx=p[0]-u.x,tz=p[2]-u.z,l=Math.hypot(tx,tz)||1,j=loose&&far>3?P.jitter*Math.sin((u.route[0]||0)*1.7+P.jitterPhase):0;u.look=Math.atan2(u.x-(p[0]-tz/l*j),u.z-(p[2]+tx/l*j));if(far>2.5)spaceLook(this,u);/* The goal itself can lie off the nav graph (a loose offset into a wall or onto another floor): standing on the route's last node is arrival, not a reason to keep walking into the wall. Exact goals (spike) step straight at the goal from there. */const arrived=u.route.length<=1&&Math.hypot(tx,tz)<P.accept;if(arrived&&!loose)u.look=Math.atan2(u.x-gx,u.z-gz);u.input={forward:far>(loose?1.2:1)&&!(arrived&&loose)?1:0,walk:P.walk&&far<20};}
+  // trade spacing (bots-spread-1): a teammate a few metres ahead on the same heading -> walk until the gap opens again, so an
+  // execute / default walks in a line ~3 m apart rather than nose to tail (BotBrain.follow)
+  if(loose&&u.input&&u.input.forward&&!u.input.walk){const M=FOLLOW;M.length=0;for(const v of this.units)if(v!==u&&v.alive&&v.team===u.team){const sp=Math.hypot(v.vx||0,v.vz||0);if(sp>1)M.push([v.x,v.z,v.followAt>this.time-.3?9:sp]);}/* a mate held back by its own follow counts as running: the line keeps its order */if(M.length&&BotBrain.follow(u.x,u.z,-Math.sin(u.look),-Math.cos(u.look),M)<1){u.input.walk=true;u.followAt=this.time;}}
   // No progress while walking (a prop edge, a corner, another unit): repath, then the shared probed escape (botEscape).
   if(u.input?.forward&&u.goalPos&&Math.hypot(u.x-u.goalPos[0],u.z-u.goalPos[1])<.01)u.goalStuck=(u.goalStuck||0)+.05;else u.goalStuck=0;u.goalPos=[u.x,u.z];
   if(u.goalStuck>1||u.escapeUntil>this.time){if(u.goalStuck>1&&u.goalStuck<1.06){u.route=null;u.goalAt=0;}if(this.botEscape(u,u.goalStuck))u.goalAt=0;}this.botProgress(u);}
@@ -230,7 +250,7 @@ export class SpikeSimulation extends Simulation{
  planUtility(u){const A=u.ability;if(u.human||!A||this.buy>0||this.roundDelay>0||this.phase!=='game'||!(this.time>=(u.putilAt||0)))return false;
   const sp=this.spike,W=this.world,sites=W.map.sites;if(!(sp.st==='carry'||sp.st==='plant'||sp.st==='drop'))return false;
   const L=plan(this,u),S=strategy(this,u.team),atk=u.team===this.atk,planted=sp.st==='plant',P=persona(this,u),U=L.util||(L.util={used:0,rand:BotBrain.rng(BotBrain.hash('util|'+u.name+'|'+u.id+'|'+this.round+'|'+botSeed(this)))});
-  const d2=c=>c?Math.hypot(c[0]-u.x,c[2]-u.z):Infinity,site=atk?sites[sp.site]:sites[L.site],info=!atk&&this.atkInfo&&this.atkInfo.round===this.round&&this.atkInfo.site===L.site&&this.time-this.atkInfo.at<8?this.atkInfo:null;
+  const d2=c=>c?Math.hypot(c[0]-u.x,c[2]-u.z):Infinity,site=atk?sites[sp.site]:sites[L.rotSite||L.site],info=!atk&&this.atkInfo&&this.atkInfo.round===this.round&&this.atkInfo.site===(L.rotSite||L.site)&&/* a rotator answers for the site it rotated to */this.time-this.atkInfo.at<8?this.atkInfo:null;
   let threat=null;if(atk&&planted)for(const e of this.units){if(!e.alive||e.team===u.team||Math.hypot(e.x-sp.x,e.z-sp.z)>12)continue;if(sp.defuser===e.id||e.shotAt>this.time-1||Math.hypot(e.vx||0,e.vz||0)>4.5||this.units.some(m=>m.alive&&m.team===u.team&&m.sawTarget&&m.aimTarget===e.id)){threat=e;break;}}
   const call=BotBrain.utility(P.brain,{atk,plan:S.plan,role:L.role,rt:roundTime(this),siteDist:d2(site),otherDist:d2(sites[S.plan.other]),planted,spikeDist:Math.hypot(sp.x-u.x,sp.z-u.z),threat:!!threat,info:!!info,used:U.used});
   if(!call){u.putilAt=this.time+.4+U.rand()*.4;u.castAim=null;return false;}

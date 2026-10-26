@@ -1,0 +1,159 @@
+{
+ "ascent": [
+  {
+   "pair": 39.235,
+   "jumpMax": 2,
+   "jumpMean": 1.429,
+   "conv": 2.429,
+   "areas": 2.588,
+   "groups": 3.947,
+   "clump": 0.002,
+   "stacks": 0,
+   "stackOk": 0,
+   "plans": "A:default D:aggro A:default D:standard A:default D:stack A:default D:aggro"
+  },
+  {
+   "pair": 34.844,
+   "jumpMax": 2,
+   "jumpMean": 1.429,
+   "conv": 2.286,
+   "areas": 2.364,
+   "groups": 3.863,
+   "clump": 0,
+   "stacks": 0,
+   "stackOk": 0,
+   "plans": "D:stack A:default D:aggro A:slow D:stack A:execute D:retake A:execute"
+  }
+ ],
+ "bind": [
+  {
+   "pair": 33.881,
+   "jumpMax": 2,
+   "jumpMean": 1.333,
+   "conv": 1.667,
+   "areas": 1.871,
+   "groups": 4.002,
+   "clump": 0,
+   "stacks": 0,
+   "stackOk": 0,
+   "plans": "A:lurk D:aggro A:slow D:aggro A:slow D:standard A:slow D:aggro"
+  },
+  {
+   "pair": 32.86,
+   "jumpMax": 3,
+   "jumpMean": 1.833,
+   "conv": 2.667,
+   "areas": 1.996,
+   "groups": 4.096,
+   "clump": 0.004,
+   "stacks": 0,
+   "stackOk": 0,
+   "plans": "D:standard A:default D:standard A:default D:retake A:default D:standard A:execute"
+  }
+ ],
+ "haven": [
+  {
+   "pair": 26.264,
+   "jumpMax": 3,
+   "jumpMean": 1.375,
+   "conv": 2.125,
+   "areas": 2.452,
+   "groups": 3.589,
+   "clump": 0.116,
+   "stacks": 1,
+   "stackOk": 0,
+   "plans": "A:default* D:stack A:split D:aggro A:fake D:stack A:default D:stack"
+  },
+  {
+   "pair": 27.877,
+   "jumpMax": 3,
+   "jumpMean": 1.5,
+   "conv": 2.25,
+   "areas": 2.603,
+   "groups": 4.135,
+   "clump": 0.013,
+   "stacks": 0,
+   "stackOk": 0,
+   "plans": "D:standard A:execute D:retake A:default D:aggro A:rush D:standard A:split"
+  }
+ ],
+ "split": [
+  {
+   "pair": 35.156,
+   "jumpMax": 3,
+   "jumpMean": 1.75,
+   "conv": 2,
+   "areas": 2.292,
+   "groups": 3.528,
+   "clump": 0.049,
+   "stacks": 0,
+   "stackOk": 0,
+   "plans": "A:fake D:aggro A:execute D:retake A:default D:aggro A:slow D:standard"
+  },
+  {
+   "pair": 38.386,
+   "jumpMax": 2,
+   "jumpMean": 1.25,
+   "conv": 1.75,
+   "areas": 2.253,
+   "groups": 3.807,
+   "clump": 0.022,
+   "stacks": 0,
+   "stackOk": 0,
+   "plans": "D:retake A:rush D:stack A:split D:standard A:lurk D:retake A:default"
+  }
+ ],
+ "lotus": [
+  {
+   "pair": 27.251,
+   "jumpMax": 3,
+   "jumpMean": 1.625,
+   "conv": 1.875,
+   "areas": 2.512,
+   "groups": 3.819,
+   "clump": 0.002,
+   "stacks": 0,
+   "stackOk": 0,
+   "plans": "A:fake D:retake A:rush D:aggro A:rush D:aggro A:default D:retake"
+  },
+  {
+   "pair": 24.611,
+   "jumpMax": 2,
+   "jumpMean": 1.375,
+   "conv": 1.75,
+   "areas": 2.575,
+   "groups": 4.21,
+   "clump": 0,
+   "stacks": 0,
+   "stackOk": 0,
+   "plans": "D:standard A:execute D:stack A:execute D:standard A:execute D:standard A:slow"
+  }
+ ],
+ "breeze": [
+  {
+   "pair": 36.13,
+   "jumpMax": 3,
+   "jumpMean": 1.571,
+   "conv": 1.857,
+   "areas": 2.138,
+   "groups": 4.172,
+   "clump": 0.001,
+   "stacks": 0,
+   "stackOk": 0,
+   "plans": "A:execute D:aggro A:split D:standard A:lurk D:standard A:default D:aggro"
+  },
+  {
+   "pair": 32.024,
+   "jumpMax": 3,
+   "jumpMean": 1.857,
+   "conv": 1.857,
+   "areas": 2.063,
+   "groups": 3.909,
+   "clump": 0.01,
+   "stacks": 0,
+   "stackOk": 0,
+   "plans": "D:aggro A:default D:aggro A:fake D:stack A:split D:stack A:split"
+  }
+ ],
+ "_note": "Offline bot team spread on main 6ea8c3e (before bots-spread-1): work/bot_spread_offline.cjs, 8 rounds x 60 s per map, window.xBotSeed 1234; read by test_bot_spread_offline.cjs for the before/after line."
+}

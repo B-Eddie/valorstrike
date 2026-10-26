@@ -67,24 +67,39 @@ function xbvPlan(u,team,atk,C){
  let P=XBV.plans.get(u);if(P)return P;
  const per=u.per||{ag:.5,fl:.5,sd:.5},seed=BotRoutes.hash((u.name||'')+'|'+k+'|'+xbvSeed()),rand=BotRoutes.rng(seed),names=Object.keys(C.meta.sites),S=xbvStrat(team,atk,C);
  const role=S.roles.get(u)||{site:atk?FV.sp.site:names[0],stages:[],delay:0};
- P={seed,rand,go:0,lurk:!!role.lurk,site:role.site,spot:null,post:null,post0:null,role,strat:S.plan.type,stages:(role.stages||[]).map(g=>Object.assign({pt:null},g)),rotD:(S.plan.rotateDelay?S.plan.rotateDelay[0]+rand()*(S.plan.rotateDelay[1]-S.plan.rotateDelay[0]):2)*1000};
+ P={seed,rand,go:0,lurk:!!role.lurk,site:role.site,spot:null,post:null,post0:null,role,strat:S.plan.type,stages:(role.stages||[]).map(g=>Object.assign({pt:null},g)),atk,rotD:(BotBrain.RESPOND.delay[0]+rand()*(BotBrain.RESPOND.delay[1]-BotBrain.RESPOND.delay[0]))*1000}; // rotation delay 1.5-4 s (bots-spread-1, as the server)
  XBV.plans.set(u,P);
  // staggered start: the role's delay, a little longer for cautious players (ms)
  P.delay=atk?((role.delay||0)+(1-per.ag)*.6+rand()*.3)*1000:0;
  if(P.lurk){P.lurkSite=role.stages[0].site;P.lurkUntil=100-role.stages[0].until;}
- if(C.meta.sites[P.site])P.spot=xbvSpot(C,xbvSiteCenter(C,P.site,atk),xbvTeamTaken(team,u,'spot'),rand,atk?{rMin:1.5,rMax:7,gap:3}:role.offAngle?{rMin:6,rMax:14,gap:4}:{rMin:2,rMax:10,gap:4});
+ if(C.meta.sites[P.site])P.spot=xbvSpot(C,xbvSiteCenter(C,P.site,atk),xbvTeamTaken(team,u,'spot'),rand,atk?{rMin:2,rMax:10,gap:4.5}:role.offAngle?{rMin:6,rMax:14,gap:4}:{rMin:2,rMax:10,gap:4});
  P.spotSite=P.site;return P;
 }
-// A staged position: the point part of the way along the bot's own nav path from its spawn (or a team spawn) to a site.
+// A staged position: the point part of the way along the nav path from the team's spawn (or the other team's) to a site or
+// 'mid' (the map's middle, xbvMid), `back` m short of it (an entry, its trade partner and an execute line share one path
+// and stand GAP m apart along it), kept off the teammates' stage points (bots-spread-1, as the server's stageNode).
 function xbvStage(C,u,g,P){
- if(g.pt!==null)return g.pt;g.pt=false;if(typeof nmPath!=='function'||!C.meta.sites[g.site])return false;
+ if(g.pt!==null)return g.pt;g.pt=false;if(g.site==='mid'&&g.avoid&&g.alt){const m=xbvMid(C),c=C.meta.sites[g.avoid];if(m&&c&&Math.hypot(m[0]-c[0],m[2]-c[2])<20)g.site=g.alt;} // the middle is the plan's own site (Haven / Lotus B): map control goes the other way
+ if(typeof nmPath!=='function'||!(g.site==='mid'||C.meta.sites[g.site]))return false;
  const N=C.nav.nodes,ok=j=>!C.playable||!!C.playable[j],snap=(p,r)=>BotRoutes.spot(C.nav,p,[],P.rand,{rMin:0,rMax:r,gap:0,ok}),pos=u.g.position;
- const base=g.from==='atk'?C.meta.attacker:g.from==='def'?C.meta.defender:[pos.x,pos.y,pos.z],a=snap(base,4),b=snap(xbvSiteCenter(C,g.site,true),4);if(a<0||b<0)return false;
+ const base=g.from==='atk'?C.meta.attacker:g.from==='def'?C.meta.defender:P.atk!=null?(P.atk?C.meta.attacker:C.meta.defender):[pos.x,pos.y,pos.z],a=snap(base,4),b=snap(xbvSiteCenter(C,g.site,true),4);if(a<0||b<0)return false;
  const path=g.from==='atk'?nmPath(C,b,a):nmPath(C,a,b);if(!path||path.length<2)return false;
  let L=0;for(let k=1;k<path.length;k++)L+=Math.hypot(N[path[k]][0]-N[path[k-1]][0],N[path[k]][2]-N[path[k-1]][2]);
- let d=0,k=1;for(;k<path.length;k++){d+=Math.hypot(N[path[k]][0]-N[path[k-1]][0],N[path[k]][2]-N[path[k-1]][2]);if(d>=L*g.frac)break;}
- const n=N[path[Math.min(k,path.length-1)]],q=snap(n,3),m=q>=0?N[q]:n;return g.pt=[m[0],m[1],m[2]];
+ const back=g.back||0,want=g.from==='atk'?Math.min(L,L*g.frac+back):Math.max(0,L*g.frac-back);
+ let d=0,k=1;for(;k<path.length;k++){d+=Math.hypot(N[path[k]][0]-N[path[k-1]][0],N[path[k]][2]-N[path[k-1]][2]);if(d>=want)break;}
+ const taken=[];for(const [v,Q] of XBV.plans)if(v!==u&&Q.atk===P.atk&&Q.stages)for(const h of Q.stages)if(h.pt)taken.push(h.pt);
+ const n=N[path[Math.min(k,path.length-1)]],q=BotRoutes.spot(C.nav,n,taken,P.rand,{rMin:0,rMax:2,gap:2.5,ok}),m=q>=0?N[q]:n;return g.pt=[m[0],m[1],m[2]];
 }
+// The map's middle (BotBrain.midPoint of the A / B / C sites and both spawns), snapped to a playable nav node; cached per map.
+function xbvMid(C){if(C._botMid)return C._botMid;const S={};for(const k of Object.keys(C.meta.sites))if(/^[ABC]$/.test(k))S[k]=C.meta.sites[k];const p=BotBrain.midPoint(S,C.meta.attacker,C.meta.defender),N=C.nav.nodes;let b=-1,bd=Infinity;
+ for(let i=0;i<N.length;i++){if(C.playable&&!C.playable[i])continue;const n=N[i],v=Math.hypot(n[0]-p[0],n[2]-p[2])+Math.abs(n[1]-p[1])*3;if(v<bd){bd=v;b=i;}}return C._botMid=b>=0?[N[b][0],N[b][1],N[b][2]]:p;}
+// Who rotates on information (as the server's rotates): rotation-eligible defenders (never an anchor; mid / rotator / push /
+// retake players always, supports from another site), the BotBrain.RESPOND.rotate nearest to the site, chosen once per site.
+function xbvRotLoose(R){return R.slot==='mid'||R.slot==='rot'||R.slot==='push'||R.slot==='retake';}
+function xbvRot(team,u,P,I,C){const R=P.role;if(!R||!R.rotator||(!xbvRotLoose(R)&&P.site===I.site))return false;
+ if(I.rotK!==I.site){I.rotK=I.site;const c=C.meta.sites[I.site],list=[];for(let k=0;k<team.length;k++){const v=team[k];if(!v||!v.alive||!v.g||v===player)continue;const Q=xbvPlan(v,team,false,C),R2=Q.role;if(!R2||!R2.rotator||(!xbvRotLoose(R2)&&Q.site===I.site))continue;const q=v.g.position;list.push({id:k,d:c?Math.hypot(q.x-c[0],q.z-c[2]):0,v});}
+  const go=BotBrain.nearest(list,BotBrain.RESPOND.rotate);I.rot=new Set(list.filter(e=>go.has(e.id)).map(e=>e.v));(XBV.rlog||(XBV.rlog=[])).push({site:I.site,n:I.rot.size,of:list.length});if(XBV.rlog.length>200)XBV.rlog.shift();}
+ return I.rot.has(u);}
 // Defender information: an enemy seen or heard within 16 m of a site (once per frame); rotators rotate after their delay.
 function xbvInfo(team,C){
  const k=xbvKey();if(XBV.info&&XBV.info.k!==k)XBV.info=null;if(XBV.infoF===XNF)return XBV.info;XBV.infoF=XNF;
@@ -92,7 +107,7 @@ function xbvInfo(team,C){
   for(const n of Object.keys(C.meta.sites)){const c=C.meta.sites[n];if(Math.hypot(p.x-c[0],p.z-c[2])<16){const now=performance.now();if(!XBV.info||(XBV.info.site!==n&&now>XBV.info.at+6000))XBV.info={k,site:n,at:now};if(XBV.info.site===n){XBV.info.x=p.x;XBV.info.z=p.z;}break;}}}
  return XBV.info;
 }
-function xbvSiteCenter(C,name,atk){const g=atk&&C.siteGoals&&C.siteGoals[name],p=C.meta.sites[name];return g?[g[0],p[1],g[1]]:[p[0],p[1],p[2]];}
+function xbvSiteCenter(C,name,atk){if(name==='mid')return xbvMid(C);const g=atk&&C.siteGoals&&C.siteGoals[name],p=C.meta.sites[name];return g?[g[0],p[1],g[1]]:[p[0],p[1],p[2]];}
 {const goal=xGoal;xGoal=function(u,team,atk,out){
  const C=typeof nmActive==='function'&&nmActive(),s=FV.sp;
  if(!C||mode!=='five'||FV.dm||!window.BotRoutes||!s||!u||!u.g||!C.meta||!C.meta.sites)return goal.apply(this,arguments);
@@ -104,22 +119,25 @@ function xbvSiteCenter(C,name,atk){const g=atk&&C.siteGoals&&C.siteGoals[name],p
  if(atk&&u===s.c){const q=st&&xbvStage(C,u,st,P);return q?x2(out,q[0],q[2]):goal.apply(this,arguments);} // the carrier: staged with its group, then the exact plant goal
  if(!P.go)P.go=now+(P.delay||0);if(now<P.go)return x2(out,p.x,p.z); // staggered start: hold at spawn
  let site=atk?s.site:P.site;
- if(!atk){const I=xbvInfo(team,C),seen=s.seen||(I&&now>=I.at+P.rotD?I.site:null);if(seen&&P.role&&P.role.rotator&&seen!==P.site){site=seen;st=null;}} // rotators answer information
+ if(!atk){let I=xbvInfo(team,C);if(!I&&s.seen){if(!s.seenI||s.seenI.site!==s.seen||s.seenI.k!==xbvKey())s.seenI={k:xbvKey(),site:s.seen,at:now};I=s.seenI;}
+  if(I&&I.site&&xbvRot(team,u,P,I,C)&&now>=I.at+P.rotD){site=I.site;st=null;P.rotSite=site;}} // only the nearest RESPOND.rotate eligible defenders answer information, after their delay; the rest hold their areas
  if(st){const q=xbvStage(C,u,st,P);if(q)return x2(out,q[0],q[2]);} // default / fake / lurk / split / aggressive-push positions
  if(!C.meta.sites[site])return goal.apply(this,arguments);
- if(P.spotSite!==site){P.spotSite=site;P.spot=xbvSpot(C,xbvSiteCenter(C,site,atk),xbvTeamTaken(team,u,'spot'),P.rand,atk?{rMin:1.5,rMax:7,gap:3}:{rMin:2,rMax:10,gap:4});}
+ if(P.spotSite!==site){P.spotSite=site;P.spot=xbvSpot(C,xbvSiteCenter(C,site,atk),xbvTeamTaken(team,u,'spot'),P.rand,atk?{rMin:2,rMax:10,gap:4.5}:{rMin:2,rMax:10,gap:4});}
  return P.spot?x2(out,P.spot[0],P.spot[2]):goal.apply(this,arguments);
 };}
 // Lane-varied routes: nmNext's A* result is re-routed once per goal through BotRoutes.route (seeded per bot and round,
 // penalised along teammates' routes) and followed from the cache until the goal changes or the unit leaves it.
+// the index of the node of path (from i0 to i1) nearest to node s, within r m and on its floor; -1 if none
+function xbvOnPath(N,path,s,i0,i1,r){const q=N[s];let k=-1,bd=r;for(let j=i0;j<Math.min(path.length,i1);j++){const n=N[path[j]],d=Math.hypot(n[0]-q[0],n[2]-q[2]);if(d<bd&&Math.abs(n[1]-q[1])<1.2){bd=d;k=j;}}return k;}
 function xbvPath(C,u,s,e,banned,base){
  const now=performance.now(),N=C.nav.nodes,v=u.xvr;
  if(v&&v.e===e&&v.C===C&&v.k===XBV.k&&now<v.until){
-  let k=v.path.indexOf(s,v.i);if(k<0){const q=N[s];for(let j=v.i;j<Math.min(v.path.length,v.i+14);j++){const n=N[v.path[j]];if(Math.hypot(n[0]-q[0],n[2]-q[2])<2.5&&Math.abs(n[1]-q[1])<1.2){k=j;break;}}}
+  let k=v.path.indexOf(s,v.i);if(k<0)k=xbvOnPath(N,v.path,s,Math.max(0,v.i-6),v.i+14,2.5);/* a few nodes back too: a body pushed back by spacing stays on its lane */
   if(k>=0&&(!banned||!banned.size||v.path.slice(k,k+2).length<2||!banned.has(v.path[k]+'>'+v.path[k+1]))){v.i=k;return v.path.slice(k);}
  }
  const path=base(C,s,e,banned);if(path.length<4)return path;
- if(XBV.budget.f!==XNF){XBV.budget.f=XNF;XBV.budget.n=0;}if(XBV.budget.n>=2)return path;XBV.budget.n++; // at most two varied re-routes per frame
+ if(XBV.budget.f!==XNF){XBV.budget.f=XNF;XBV.budget.n=0;}if(XBV.budget.n>=2){/* over budget: keep the lane already chosen for this goal (returning the plain A* here and the varied lane next time flip-flopped a bot between two routes: Breeze defender ramp) */if(v&&v.e===e&&v.C===C&&v.k===XBV.k){const k=xbvOnPath(N,v.path,s,0,v.path.length,4);if(k>=0){v.i=k;return v.path.slice(k);}}return path;}XBV.budget.n++; // at most two varied re-routes per frame
  const team=bots.includes(u)?bots:allies,peers=[];for(const t of team)if(t!==u&&t.alive&&t.xvr&&t.xvr.k===XBV.k)peers.push({path:t.xvr.path.slice(t.xvr.i)});
  const r=BotRoutes.route(C.nav,path,(u.name||'')+'|'+XBV.k+'|'+e,peers,null,banned,typeof nmClimbOk==='function'?(a,b)=>N[b][1]-N[a][1]<=.321||nmClimbOk(C,a,b):null); // the instinct climb rule, as nmPath
  u.xvr={e,C,k:XBV.k,path:r,i:0,until:now+12000};return r.slice();
@@ -130,8 +148,27 @@ if(typeof nmPath==='function'&&typeof nmNext==='function'){/* native maps presen
 {const sm=xSmV;xSmV=function(u,dt,vx,vz,speed){
  if((vx||vz)&&!(u.see>0)&&window.BotRoutes&&running&&mode==='five'&&typeof nmActive==='function'&&nmActive()){
   const team=bots.indexOf(u)>=0?bots:allies,o=XBV.oth;o.length=0;for(const t of team)if(t!==u&&t.alive&&t.g)o.push(t.g.position);if(team===allies&&player&&player.hp>0)o.push(player);
-  if(o.length){const r=BotRoutes.steer(u.g.position,o,vx,vz,team.indexOf(u),1.8,XBV.sv);vx=r[0];vz=r[1];}}
+  if(o.length){const r=BotRoutes.steer(u.g.position,o,vx,vz,team.indexOf(u),1.8,XBV.sv);vx=r[0];vz=r[1];}
+  // trade spacing (bots-spread-1, as the server): a moving teammate a few metres ahead on the same heading -> ease off to
+  // walking pace until the gap opens, so an execute walks in a line ~3 m apart instead of nose to tail (not the carrier, not in
+  // the buy phase: the barrier line-up keeps its own spacing)
+  if(window.BotBrain&&!(FV.buy>0)&&!(FV.sp&&FV.sp.c===u)){const M=XBV.fm||(XBV.fm=[]);M.length=0;for(const t of team)if(t!==u&&t.alive&&t.g&&(t.spd||0)>1)M.push([t.g.position.x,t.g.position.z,performance.now()-(t.xFol||-1e9)<300?9:t.spd]);/* a mate held back by its own follow counts as running */if(M.length){const k=BotBrain.follow(u.g.position.x,u.g.position.z,vx,vz,M);if(k<1){vx*=k;vz*=k;u.xFol=performance.now();}}}}
  return sm.call(this,u,dt,vx,vz,speed);};}
+// Trades (bots-spread-1, as the server's botSense): when a teammate dies, at most BotBrain.RESPOND.trade of the mates within
+// 15 m (the nearest; mates already trading / pushing count) push the killer's spot for 4 s, the second one GAP m to the
+// side of it; everyone else holds where they stand facing the fight for 1.2 s (was: every mate within 15 m ran at the
+// killer's spot, so one pick pulled the whole team into one clump). Native-map / scripted 5v5 with BotBrain only.
+if(typeof xTradeChk==='function'){const tc0=xTradeChk;xTradeChk=function(team,foes,live){
+ if(!window.BotBrain||mode!=='five'||FV.dm)return tc0.apply(this,arguments);const now=performance.now(),T=XBV.tq||(XBV.tq=[0,0]);
+ for(let i=0;i<team.length;i++){const u=team[i];
+  if(u.wasA&&!u.alive){const q=u.g.position;let kx=0,kz=0,has=false,kd=1e9;
+   for(let j=0;j<foes.length;j++){const f=foes[j];if(live&&!f.alive)continue;const fx=live?f.g.position.x:f.x,fz=live?f.g.position.z:f.z,d=Math.hypot(fx-q.x,fz-q.z);if(d<kd){kd=d;kx=fx;kz=fz;has=true;}}
+   if(has){const near=[];let busy=0;for(let j=0;j<team.length;j++){const m=team[j];if(!m.alive||m===u)continue;if(m.trT>0){busy++;continue;}const d=Math.hypot(m.g.position.x-q.x,m.g.position.z-q.z);if(d<15)near.push({id:j,d,m});}
+    const go=BotBrain.nearest(near,BotBrain.RESPOND.trade-busy);let k=busy;near.sort((a,b)=>a.d-b.d);
+    for(const c of near){const m=c.m;if(go.has(c.id)){const t=BotBrain.tradeSpot(k++,m.g.position.x,m.g.position.z,kx,kz,T);m.tr=[t[0],t[1]];m.trT=4;m.np=null;m.xHold=null;}
+     else{m.xHold={until:now+1200,x:kx,z:kz};m.hear=m.hear||[0,0];m.hear[0]=kx;m.hear[1]=kz;m.hearT=Math.max(m.hearT||0,1.2);}}
+    (XBV.tlog||(XBV.tlog=[])).push({n:near.length,go:go.size});if(XBV.tlog.length>200)XBV.tlog.shift();}}
+  u.wasA=u.alive;}};}
 // Stable personalities: the per-round xPer roll keeps its lane offset, aggression / flank / strafe rhythm come from the
 // bot's match personality, so a bot plays like itself every round.
 if(typeof fSpawn==='function'){const fs0=fSpawn;fSpawn=function(){const r=fs0.apply(this,arguments);try{if(window.BotBrain&&mode==='five'&&!FV.dm)for(const u of bots.concat(allies)){const B=xbBrain(u);if(B&&u.per){u.per.ag=Math.max(.15,B.aggression);u.per.fl=Math.min(.99,(B.seed%1000)/1000*.6+B.patience*.4);u.per.cd=.7+B.strafeRhythm;}}}catch(e){}return r;};}
@@ -167,10 +204,10 @@ function xbvUtilX(b){
  return {C,s,al,team,atk,P,S,U,planted:s.st==='plant',p:b.g.position};}
 function xbvUtil(b,see,tg,X){
  X=X||xbvUtilX(b);if(!X)return null;const {C,s,atk,P,S,U,planted,p}=X,now=performance.now();if(U.it&&now<U.it.until)return U.it;if(now<U.at)return null;U.at=now+300+U.rand()*300;
- const sites=C.meta.sites,sc=n=>sites[n]?xbvSiteCenter(C,n,atk):null,dist=c=>c?Math.hypot(c[0]-p.x,c[2]-p.z):Infinity,site=sc(atk?s.site:P.site),other=sc(S.plan.other);
+ const sites=C.meta.sites,sc=n=>sites[n]?xbvSiteCenter(C,n,atk):null,dist=c=>c?Math.hypot(c[0]-p.x,c[2]-p.z):Infinity,site=sc(atk?s.site:P.rotSite||P.site),other=sc(S.plan.other);
  const sp=planted&&typeof spike!=='undefined'&&spike&&spike.parent?spike.position:planted&&s.x!=null?{x:s.x,z:s.z}:null,spd=sp?Math.hypot(sp.x-p.x,sp.z-p.z):Infinity;
  let threat=false;if(atk&&sp)threat=!!s.du||s.dt>0||!!(see&&tg&&Math.hypot(tg.x-sp.x,tg.z-sp.z)<12)||!!(b.hearT>0&&b.hear&&Math.hypot(b.hear[0]-sp.x,b.hear[1]-sp.z)<12);
- const I=!atk&&!planted?xbvInfo(X.team,C):null,info=!!(I&&I.site===P.site&&now-I.at<8000);
+ const I=!atk&&!planted?xbvInfo(X.team,C):null,info=!!(I&&I.site===(P.rotSite||P.site)&&now-I.at<8000);
  const call=BotBrain.utility(xbBrain(b),{atk,plan:S.plan,role:P.role,rt:100-timeLeft,siteDist:dist(site),otherDist:dist(other),planted,spikeDist:spd,threat,info,used:U.used});
  if(!call)return U.it=null;let t=call.aim==='spike'?[sp.x,0,sp.z]:call.aim==='other'?other:call.aim==='info'?(I&&I.x!=null?[I.x,0,I.z]:site):site;if(!t)return U.it=null;
  return U.it={phase:call.phase,want:call.want,x:t[0],z:t[2],until:now+2500};}
@@ -212,7 +249,8 @@ function xbvSound(p,kind){
  if(!p||!running||mode!=='five'||FV.dm||!window.BotBrain)return;const now=performance.now(),s=FV.sp||{};
  for(const L of [bots,allies])for(const u of L){if(!u||!u.alive||!u.g||!(u.hearT>=1.2)||!u.hear||u.hear[0]!==p.x||u.hear[1]!==p.z||u.see>0||(u.xHeardAt&&now-u.xHeardAt<1500))continue;
   const atk=typeof xBAtk==='function'?xBAtk(L===allies):false;if(s.c===u||(atk&&s.st==='drop')||(!atk&&s.st==='plant'&&s.t<15))continue;
-  u.xHeardAt=now;const B=xbBrain(u);if(!B)continue;const r=xbRand(u),q=u.g.position,d=Math.hypot(p.x-q.x,p.z-q.z),c=BotBrain.onSound(B,r,kind,d);u.xSnd=c;
+  u.xHeardAt=now;const B=xbBrain(u);if(!B)continue;const r=xbRand(u),q=u.g.position,d=Math.hypot(p.x-q.x,p.z-q.z);let c=BotBrain.onSound(B,r,kind,d);
+  if(c==='push'&&L.some(t=>t!==u&&t.alive&&t.trT>0))c='hold';/* one pusher / trader at a time per team (BotBrain.RESPOND.push): the rest hold the angle */u.xSnd=c;
   if(c==='push'){u.tr=[p.x,p.z];u.trT=2+r();u.xHold=null;}
   else if(c==='hold'){const dur=.6+B.patience*1.2;u.xHold={until:now+dur*1000,x:p.x,z:p.z};u.hearT=Math.max(u.hearT,dur);}
   else u.xHold=null;}
@@ -323,12 +361,14 @@ function xbbBl(C,i){if(XBYM.blC!==C){XBYM.blC=C;XBYM.bl=new Map();}let v=XBYM.bl
 function xbbTeam(C,atk){const k=xbvKey()+'|'+(atk?1:0);if(XBYM.k!==xbvKey()){XBYM.k=xbvKey();XBYM.T={};}let T=XBYM.T[k];if(T)return T;
  const M=C.meta,a=atk?M.attacker:M.defender,s=BotBrain.buySide(a),edge=BotBrain.buyEdge(M.attacker,M.defender);
  return XBYM.T[k]={s,edge,area:BotBrain.buyArea(C.nav.nodes,C.nav.adj,nmNear(C,a[0],a[2],a[1]),s,edge,i=>!C.playable||!!C.playable[i]),spots:[]};}
+const XBB_RING=[[.15,0],[-.15,0],[0,.15],[0,-.15]];
 function xbbOk(C,T,y0){return (x,z)=>{if(T.s*z<T.edge+XBYM_IN+.05)return null;const i=nmNear(C,x,z,y0);if(i<0||!T.area.f[i])return null;const n=C.nav.nodes[i];if(Math.hypot(n[0]-x,n[2]-z)>.9||Math.abs(n[1]-y0)>2.5)return null;
  let y;try{y=nmHeight(C,x,z,n[1]+.3);}catch(e){return null;}if(!(Math.abs(y-n[1])<.45)||nmBlocked(C,x,z,.5,y)||!nmLeash(C,x,z,y,n[0],n[2]))return null;
+ for(let k=0;k<4;k++)if(nmBlocked(C,x+XBB_RING[k][0],z+XBB_RING[k][1],.4,y))return null;/* no step lip within the arrival slack: a .5 capsule can clear a low step that a body stopping .15 m off the spot stands in */
  for(let k=1;k<4;k++){const t=k/4;if(nmBlocked(C,n[0]+(x-n[0])*t,n[2]+(z-n[2])*t,.4,y))return null;}return [y,i];};}
 function xbbInit(C,u,team,atk){const T=xbbTeam(C,atk),key=XBYM.k+'|'+(atk?1:0);if(u.xbb&&u.xbb.key===key)return u.xbb;u.smMotor=null;u.svx=u.svz=0;/* a new buy phase starts from rest (the round reset put it in spawn) */const p=u.g.position,N=C.nav.nodes,s=T.s,edge=T.edge;
  const rand=BotRoutes.rng(BotRoutes.hash('buy|'+(u.name||'')+'|'+key+'|'+xbvSeed())),start=nmNear(C,p.x,p.z,p.y),B={key,st:BotBrain.buyNew(xbBrain(u),rand),spot:null,face:[0,-s],route:[],rg:null,stuck:0,last:[p.x,p.z],fails:0,bad:null,esc:null,off:!(start>=0&&T.area.f[start])};
- if(!B.off){let site=null;try{const P=xbvPlan(u,team,atk,C),g=P.stages&&P.stages[0]?P.stages[0].site:atk?FV.sp.site:P.site;site=C.meta.sites[g]||C.meta.sites[Object.keys(C.meta.sites)[0]];}catch(e){}
+ if(!B.off){let site=null;try{const P=xbvPlan(u,team,atk,C),g=P.stages&&P.stages[0]?P.stages[0].site:atk?FV.sp.site:P.site;site=(g==='mid'?xbvMid(C):C.meta.sites[g])||C.meta.sites[Object.keys(C.meta.sites)[0]];}catch(e){}/* a mid player lines up at the exit toward mid (= server sitePoint) */
   const ex=site?BotBrain.buyExit(N,nmPath(C,start,nmNear(C,site[0],site[2],site[1])),s,edge):null,exit=ex||{x:p.x,y:p.y,z:s*edge,dx:0,dz:-s};
   const sp=BotBrain.buySpot(exit,s,edge,T.spots,rand,xbbOk(C,T,exit.y));if(sp){B.spot=sp.p;T.spots.push(sp.p);B.face=[exit.dx,exit.dz];}}
  return u.xbb=B;}

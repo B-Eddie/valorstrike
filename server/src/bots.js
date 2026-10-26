@@ -112,16 +112,24 @@ export const roundTime=sim=>100-(sim.remaining??100);
 // The node part of the way along a bot's own path from its spawn to a site (frac 1 = the site): a reachable "default"
 // position, a fake / lurk spot, an aggressive defender's push spot (from 'atk': from the site toward the attackers).
 export function stageNode(sim,u,g,find){
- if(g.node>=0)return g.node;const W=sim.world,N=W.nav.nodes,site=W.map.sites[g.site];if(!site)return g.node=-2;
- const base=g.from==='atk'?W.map.attacker:g.from==='def'?W.map.defender:null,a=base?W.near(base[0],base[2],base[1]):W.near(u.x,u.z,u.y),b=W.near(site[0],site[2],site[1]);
+ if(g.node>=0)return g.node;const W=sim.world,N=W.nav.nodes;if(g.site==='mid'&&g.avoid&&g.alt){const m=sitePoint(sim,'mid'),c=W.map.sites[g.avoid];if(m&&c&&Math.hypot(m[0]-c[0],m[2]-c[2])<20)g.site=g.alt;}/* the middle is the plan's own site (Haven / Lotus B): map control goes the other way */
+ const site=sitePoint(sim,g.site);if(!site)return g.node=-2;
+ // the path starts from the team's own spawn (not wherever the bot stands), so an entry, its trade partner and an execute
+ // line share one path and `back` spaces them along it exactly (bots-spread-1)
+ const atk=u.team===sim.atk,base=g.from==='atk'?W.map.attacker:g.from==='def'?W.map.defender:atk?W.map.attacker:W.map.defender,a=base?W.near(base[0],base[2],base[1]):W.near(u.x,u.z,u.y),b=W.near(site[0],site[2],site[1]);
  const p=g.from==='atk'?find(W,b,a):find(W,a,b);if(!p||p.length<2)return g.node=-2;
  let L=0;for(let k=1;k<p.length;k++)L+=Math.hypot(N[p[k]][0]-N[p[k-1]][0],N[p[k]][2]-N[p[k-1]][2]);
- const want=L*(g.from==='atk'?g.frac:g.frac);let d=0,k=1;for(;k<p.length;k++){d+=Math.hypot(N[p[k]][0]-N[p[k-1]][0],N[p[k]][2]-N[p[k-1]][2]);if(d>=want)break;}
+ const back=g.back||0,want=g.from==='atk'?Math.min(L,L*g.frac+back):Math.max(0,L*g.frac-back);let d=0,k=1;for(;k<p.length;k++){d+=Math.hypot(N[p[k]][0]-N[p[k-1]][0],N[p[k]][2]-N[p[k-1]][2]);if(d>=want)break;}
  let i=p[Math.min(k,p.length-1)];
- // a little spread so two bots on the same stage do not stand on one node
- const q=BotRoutes.spot(W.nav,N[i],[],u.plan.rand,{rMin:0,rMax:3,gap:0,ok:j=>!W.allowed||W.allowed.has(j)});if(q>=0)i=q;
+ // a little spread so two bots on the same stage do not stand on one node: kept off the teammates' stage spots
+ const taken=[];for(const v of sim.units){if(v===u||v.team!==u.team||!v.plan||v.plan.round!==u.plan.round)continue;for(const h of v.plan.stages||[])if(h.node>=0)taken.push(N[h.node]);}
+ const q=BotRoutes.spot(W.nav,N[i],taken,u.plan.rand,{rMin:0,rMax:2,gap:2.5,ok:j=>!W.allowed||W.allowed.has(j)});if(q>=0)i=q;
  return g.node=i;
 }
+// A stage's target point: a site, or 'mid' = the map's middle (BotBrain.midPoint, snapped to a playable nav node; cached).
+export function sitePoint(sim,name){const W=sim.world,M=W.map;if(name!=='mid')return M.sites[name];if(W._botMid)return W._botMid;
+ const p=BotBrain.midPoint(M.sites,M.attacker,M.defender),N=W.nav.nodes;let best=-1,bd=Infinity;for(const i of W.playable||[]){const n=N[i];if(W.allowed&&!W.allowed.has(i))continue;const v=Math.hypot(n[0]-p[0],n[2]-p[2])+Math.abs(n[1]-p[1])*3;if(v<bd){bd=v;best=i;}}
+ return W._botMid=best>=0?[N[best][0],N[best][1],N[best][2]]:p;}
 export function spotNear(sim,u,center,field,o){
  const W=sim.world,bl=blockedNodes(W),taken=[];for(const v of sim.units)if(v!==u&&v.team===u.team&&v.plan&&v.plan.round===u.plan.round&&v.plan[field]>=0)taken.push(W.nav.nodes[v.plan[field]]);
  const also=o&&o.also;return BotRoutes.spot(W.nav,center,taken,u.plan.rand,Object.assign({},o,{ok:i=>(!W.allowed||W.allowed.has(i))&&!bl[i]&&(!also||also(i))})); // o.also: an extra node filter (post-plant: sight of the Spike)
@@ -142,15 +150,16 @@ function buyTeam(sim,team,edge){
  const area=BotBrain.buyArea(N,W.nav.adj,start,s,edge,i=>!W.allowed||W.allowed.has(i));
  return T[team]={key,s,area,spots:[],bl:blockedNodes(W)};
 }
+const BUY_RING=[[.15,0],[-.15,0],[0,.15],[0,-.15]];
 function buyOk(W,A,s,edge,y0){return (x,z)=>{if(s*z<edge+BUY_IN+.05)return null;const i=W.near(x,z,y0);if(i<0||!A.area.f[i])return null;const n=W.nav.nodes[i];if(Math.hypot(n[0]-x,n[2]-z)>.9||Math.abs(n[1]-y0)>2.5)return null;
- const y=W.ground(x,z,n[1]+.3);if(!(Math.abs(y-n[1])<.45)||W.blocked(x,z,.5,y,1.8))return null;if(W.leash&&!W.leash(x,z,y,n[0],n[2]))return null;
+ const y=W.ground(x,z,n[1]+.3);if(!(Math.abs(y-n[1])<.45)||W.blocked(x,z,.5,y,1.8))return null;for(const o of BUY_RING)if(W.blocked(x+o[0],z+o[1],.4,y,1.8))return null;/* = page xbbOk: no step lip within the arrival slack */if(W.leash&&!W.leash(x,z,y,n[0],n[2]))return null;
  for(let k=1;k<4;k++){const t=k/4;if(W.blocked(n[0]+(x-n[0])*t,n[2]+(z-n[2])*t,.4,y,1.8))return null;}return [y,i];};}
 function buyInit(sim,u,edge){
  const W=sim.world,N=W.nav.nodes,A=buyTeam(sim,u.team,edge),round=sim.round||0,key=A.key;if(u.buyMill&&u.buyMill.key===key)return u.buyMill;
  const rand=BotBrain.rng(BotBrain.hash('buy|'+u.name+'|'+u.id+'|'+key+'|'+botSeed(sim))),s=A.s,start=W.near(u.x,u.z,u.y),out={key,st:BotBrain.buyNew(persona(sim,u).brain,rand),spot:null,face:[0,-s],route:[],rg:null,stuck:0,last:[u.x,u.z],off:!A.area.f[start]};
  if(!out.off){
   // the bot's first round goal: the strategy's first staged position (its site) or its site; the full-map route there
-  const L=plan(sim,u),atk=u.team===sim.atk,g=L.stages&&L.stages[0]?L.stages[0].site:atk?(sim.spike||{}).site:L.site,site=W.map.sites[g]||W.map.sites[Object.keys(W.map.sites)[0]];
+  const L=plan(sim,u),atk=u.team===sim.atk,g=L.stages&&L.stages[0]?L.stages[0].site:atk?(sim.spike||{}).site:L.site,site=(g==='mid'?sitePoint(sim,'mid'):W.map.sites[g])||W.map.sites[Object.keys(W.map.sites)[0]];/* a mid player lines up at the exit toward mid */
   const ex=site?BotBrain.buyExit(N,sim.findPath(W,start,W.near(site[0],site[2],site[1])),s,edge):null,exit=ex||{x:u.x,y:u.y,z:s*edge,dx:0,dz:-s};
   const sp=BotBrain.buySpot(exit,s,edge,A.spots,rand,buyOk(W,A,s,edge,exit.y));
   if(sp){out.spot=sp.p;out.node=sp.node;A.spots.push(sp.p);out.face=[exit.dx,exit.dz];}

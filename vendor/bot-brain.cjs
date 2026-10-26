@@ -166,8 +166,96 @@
     if(plan.type==='aggro'&&(k===sites.length||k===sites.length+1&&d<.5)){e.aggro=true;e.stages=[{site:seat[k],frac:.3+r()*.15,until:plan.aggroAt,from:'atk'}];}
     out[i]=e;}
   }
+  areas(plan,out,n,seed,atk,sites,carrierIndex);
   return out;
  }
+ // ---- Team areas (bots-spread-1, user: "the opponent bots all just bunch up ... I just get jumped by the entire team") ----
+ // A real team splits the map: defenders set up 2-1-2 / 1-3-1 / heavy-side / stack formations with an anchor on every
+ // site, a mid player, a rotator, off-angle supports and sometimes an early info push; attackers default spread (entry +
+ // trade partner on the plan's site, a map-control player through mid, a flank pair on the other side) and only group
+ // for an execute / split / lurk hit, and even then in a line a few metres apart (stage `back`: metres short of the stage
+ // point, so entry and trade partner never share a spot). Runs after the delays / walk draws above on its own stream, so
+ // pacing (167ec76) is unchanged. Stage site 'mid' is the map's middle (the caller resolves it: midPoint below).
+ // Every entry gains slot ('anchor' | 'support' | 'off' | 'mid' | 'rot' | 'push' | 'retake' | 'entry' | 'trade' | 'stack' |
+ // 'control' | 'flank' | 'lurk' | 'fake' | 'rush') and the array gains .formation. rotator = may rotate on information
+ // (anchors never do); who actually rotates is decided at the time (rotation(): only the nearest RESPOND.rotate).
+ const GAP=3.5; // m between an entry and its trade partner (and down an execute line)
+ const DFORM={2:{'2-1-2':[['anchor',0],['anchor',1],['mid'],['support',0],['support',1]],'1-3-1':[['anchor',0],['anchor',1],['mid'],['rot'],['push']],
+   'heavy':[['anchor',0],['anchor',1],['mid'],['support','h'],['off','h']],'stack':[['anchor','x'],['anchor','y'],['support','x'],['off','x'],['support','x']],
+   'retake':[['anchor',0],['anchor',1],['retake',0],['retake',1],['rot']],'aggro':[['anchor',0],['anchor',1],['mid'],['push'],['support','h']]},
+  3:{'1-1-1-2':[['anchor',0],['anchor',1],['anchor',2],['rot'],['support','h']],'2-1-2':[['anchor',0],['anchor',1],['anchor',2],['support',0],['support',2]],
+   '1-3-1':[['anchor',0],['anchor',1],['anchor',2],['support',1],['rot']],'stack':[['anchor','x'],['anchor','y'],['anchor','z'],['support','x'],['off','x']],
+   'retake':[['anchor',0],['anchor',1],['anchor',2],['retake','h'],['rot']],'aggro':[['anchor',0],['anchor',1],['anchor',2],['push'],['support','h']]}};
+ function areas(plan,out,n,seed,atk,sites,carrierIndex){
+  const r=rng(((seed>>>0)^0x5bd1e995)>>>0),ord=[];for(let i=0;i<n;i++)ord.push(i);for(let i=n-1;i>0;i--){const j=Math.floor(r()*(i+1));[ord[i],ord[j]]=[ord[j],ord[i]];}
+  if(!n||!sites.length)return out;
+  if(!atk){
+   const F=DFORM[sites.length>=3?3:2]||DFORM[2];let name=plan.type;
+   if(name==='standard'){const x=r();name=sites.length>=3?(x<.35?'1-1-1-2':x<.75?'2-1-2':'1-3-1'):(x<.45?'2-1-2':x<.75?'1-3-1':'heavy');}
+   const form=F[name]||F[Object.keys(F)[0]];out.formation=name;
+   const xi=Math.max(0,sites.indexOf(plan.stack)),others=sites.map((_,k)=>k).filter(k=>k!==xi),hi=Math.floor(r()*sites.length);
+   const si=v=>v==='x'?xi:v==='y'?others[0]:v==='z'?(others[1]??others[0]):v==='h'?hi:typeof v==='number'?Math.min(v,sites.length-1):hi;
+   for(let k=0;k<n;k++){const i=ord[k],e=out[i],f=form[k<form.length?k:form.length-2+(k-form.length)%2]||['support','h'],kind=f[0],S=sites[si(f[1])];
+    e.slot=kind;e.stages=[];e.aggro=false;e.retake=false;e.site=S;
+    if(kind==='anchor'){e.rotator=false;e.offAngle=false;}
+    else if(kind==='support'){e.rotator=true;e.offAngle=true;}
+    else if(kind==='off'){e.rotator=false;e.offAngle=true;}
+    else if(kind==='mid'){e.rotator=true;e.offAngle=false;e.site=sites[Math.floor(r()*sites.length)];e.stages=[{site:'mid',frac:.85+r()*.15,until:999}];}
+    else if(kind==='rot'){e.rotator=true;e.offAngle=false;e.site=sites[Math.floor(r()*sites.length)];e.stages=[{site:'mid',frac:.45+r()*.15,until:999}];}
+    else if(kind==='push'){e.rotator=true;e.aggro=true;e.offAngle=false;e.site=sites[Math.floor(r()*sites.length)];e.stages=[{site:sites.length>=3?S:'mid',frac:.25+r()*.15,until:plan.aggroAt||15+r()*10,from:'atk'}];}
+    else if(kind==='retake'){e.rotator=true;e.retake=true;e.offAngle=false;e.stages=[{site:S,frac:.4+r()*.2,until:999,from:'def'}];}}
+   return out;
+  }
+  const X=plan.site,Y=plan.other&&plan.other!==X?plan.other:sites.find(s=>s!==X)||X,Z=sites.find(s=>s!==X&&s!==Y)||Y,t=plan.type,ex=plan.executeAt||0;
+  if(t==='rush'){for(const e of out)e.slot='rush';out.formation='rush';return out;}
+  // slot lists in priority order (a short team takes the first n)
+  const L={default:[['entry',X],['trade',X],['control','mid'],['flank',Y],['flank2',sites.length>=3?Z:Y]],slow:null,
+   execute:[['entry',X],['trade',X],['stack',X,2],['control','mid'],['stack',X,3]],
+   split:[['entry',X],['trade',X],['control','mid'],['control2','mid'],['stack',X,2]],
+   lurk:[['entry',X],['trade',X],['control','mid'],['stack',X,2]],
+   fake:[['fake',Y,0],['fake',Y,1],['fake',Y,2],['entry',X],['trade',X]]};L.slow=L.default;
+  const list=(L[t]||L.default).slice();out.formation=t==='default'||t==='slow'?(sites.length>=3?'2-1-1-1':'2-1-2'):t;
+  const lurker=out.findIndex(e=>e.lurk);
+  // the carrier plays the trade slot (behind the entry), the plan's lurker keeps its own stage
+  const seq=ord.filter(i=>i!==lurker),slotOf=new Map();let li=0;
+  if(carrierIndex>=0&&carrierIndex!==lurker){const k=list.findIndex(x=>x[0]==='trade');if(k>=0){slotOf.set(carrierIndex,list[k]);list.splice(k,1);}}
+  for(const i of seq){if(slotOf.has(i))continue;slotOf.set(i,list[li++]||['stack',X,2+li]);}
+  if(lurker>=0)out[lurker].slot='lurk';
+  for(const [i,f] of slotOf){const e=out[i],kind=f[0],S=f[1],until=e.stages[0]?e.stages[0].until:ex+r()*2;e.slot=kind.replace(/2$/,'');if(kind==='entry')e.entry=true;
+   if(kind==='fake'){e.fakeGroup=true;e.site=X;e.stages=[{site:S,frac:.9,until:plan.rotateAt||until,back:(f[2]||0)*GAP}];continue;}
+   if(t==='fake'){e.stages=[{site:X,frac:.5,until:(plan.rotateAt||until)-2,back:kind==='trade'?GAP+.5:0}];continue;}
+   e.site=X;
+   if(kind==='entry')e.stages=[{site:X,frac:(t==='default'||t==='slow'?.45:.55)+r()*.12,until,back:0}];
+   else if(kind==='trade')e.stages=[{site:X,frac:(t==='default'||t==='slow'?.45:.55)+r()*.12,until,back:GAP}];
+   else if(kind==='stack')e.stages=[{site:X,frac:.55+r()*.12,until,back:(f[2]||2)*GAP}];
+   else if(kind==='control'||kind==='control2')e.stages=[{site:'mid',frac:t==='split'?.85+r()*.1:.75+r()*.15,until,back:kind==='control2'?GAP:0,avoid:X,alt:Y}];
+   else if(kind==='flank'||kind==='flank2')e.stages=[{site:S,frac:.4+r()*.15,until:until+(t==='default'||t==='slow'?2+r()*4:0),back:kind==='flank2'&&S===Y?GAP:0}];}
+  // entry and trade partner share the stage point: the trade partner stands GAP m behind it (same frac)
+  // (and an execute line behind them on the same point, each `back` GAP m further)
+  const en=out.find(e=>e.slot==='entry'),g0=en&&en.stages[0];if(g0)for(const e of out){const g=e.stages[0];if(e!==en&&g&&(e.slot==='trade'||e.slot==='stack')&&g.site===g0.site){g.frac=g0.frac;delete g.pair;}}
+  return out;
+ }
+ // A 'mid' stage with avoid / alt (attack map control): when the map's middle is the plan's own site (Haven / Lotus B is
+ // the middle), the caller sends it toward alt instead, so map control never just joins the execute.
+ // The map's middle for stage site 'mid': the site nearest the midpoint between the spawns when one is within 25 m of it
+ // (Haven / Lotus B), otherwise that midpoint (the caller snaps it to its nav graph). sites {name: [x, y, z]}.
+ function midPoint(sites,attacker,defender){const mx=(attacker[0]+defender[0])/2,mz=(attacker[2]+defender[2])/2,my=(attacker[1]+defender[1])/2;let best=null,bd=25;
+  for(const k in sites){const c=sites[k],d=Math.hypot(c[0]-mx,c[2]-mz);if(d<bd){bd=d;best=c;}}return best?[best[0],best[1],best[2]]:[mx,my,mz];}
+ // ---- Who answers a contact (bots-spread-1) ----
+ // Not everyone collapses on the first contact: at most RESPOND.trade teammates go for a trade (the nearest ones that chose
+ // to), at most RESPOND.push answer a gunshot by pushing it (one at a time per team), at most RESPOND.rotate defenders
+ // rotate on information (the nearest rotation-eligible ones, after their own 1.5-4 s delay); everyone else holds their
+ // area. A second trader takes the killer's spot GAP m to the side (a trade, not a two-man clump).
+ const RESPOND={trade:2,push:1,rotate:2,gap:GAP,delay:[1.5,4],follow:3.6,pass:4};
+ // list: [{id, d}] -> Set of the ids of the `max` nearest (ties by id, so the pick is stable).
+ function nearest(list,max){return new Set(list.slice().sort((a,b)=>a.d-b.d||(a.id<b.id?-1:a.id>b.id?1:0)).slice(0,Math.max(0,max)).map(c=>c.id));}
+ // k-th trader's spot: the killer's position pushed GAP m sideways (alternating sides) from the line trader -> killer.
+ function tradeSpot(k,ux,uz,kx,kz,out){const o=out||[0,0];if(!k){o[0]=kx;o[1]=kz;return o;}const dx=kx-ux,dz=kz-uz,l=Math.hypot(dx,dz)||1,s=(k%2?1:-1)*GAP*Math.ceil(k/2);o[0]=kx-dz/l*s;o[1]=kz+dx/l*s;return o;}
+ // Trade spacing while walking: a teammate a few metres ahead on the same heading -> walk speed factor (1 = run). Keeps an
+ // execute line ~RESPOND.follow m apart instead of nose-to-tail. mates: [[x, z, speed?], ...] (moving teammates only). A teammate
+ // ahead at a walk (speed under RESPOND.pass m/s: a quiet walker, a lingerer) is overtaken, not queued behind: a line never
+ // jams behind its slowest member (Breeze defender ramp: all five share one spawn exit).
+ function follow(px,pz,vx,vz,mates){const l=Math.hypot(vx,vz);if(l<1e-6)return 1;const hx=vx/l,hz=vz/l;let k=1;for(const m of mates){const dx=m[0]-px,dz=m[1]-pz,d=Math.hypot(dx,dz);if(d<.3||d>RESPOND.follow||(m[2]!=null&&m[2]<RESPOND.pass))continue;const ahead=(dx*hx+dz*hz)/d;if(ahead>.6)k=Math.min(k,.55);}return k;}
  // ---- Economy ----
  // Team call for the round from every member's credits, the loss streak and the round number.
  function teamBuy(credits,lossStreak,round,rand,half=12){
@@ -400,5 +488,5 @@
  function mayFire(visibleFor,reactionS,losNow){return !!losNow&&visibleFor>=Math.max(REACT[0],reactionS||0);}
  // Fire-rate cap: never faster than the gun (Vandal 9.75 rounds/s). Returns the earliest next shot time.
  function nextShot(t,rate){return t+1/Math.max(.1,rate||1);}
- return {hash,rng,clamp,pickW,REACT,personality,reaction,crosshair,crosshairAt,firePattern,peek,attackPlan,defensePlan,roles,teamBuy,buyFor,onMateDeath,onSound,ATTACK,DEFENSE,utility,UTIL,turnStep,trackLag,wrapA,SPIKE,plantSpot,postPlant,retake,postPlay,SHOOT_UTIL,shootUtility,TAILWIND,tailwindDash,tailwindKeys,LEVEL,level,aimTraits,AIM_H,aimHeight,halfWidth,aimPlan,aimAt,readyToFire,planFire,idlePitch,recoilPull,discipline,hitPart,BUY,buyEdge,buySide,buyArea,buyRoute,buyExit,buySpot,buyWander,buyNew,buyTick,buyNext,buySep,SENS,cm360,sensOf,turnRate,SENSE,inView,audible,earSpot,memNew,memNote,memForget,memBest,repeek,mayFire,nextShot};
+ return {hash,rng,clamp,pickW,REACT,personality,reaction,crosshair,crosshairAt,firePattern,peek,attackPlan,defensePlan,roles,teamBuy,buyFor,onMateDeath,onSound,ATTACK,DEFENSE,utility,UTIL,turnStep,trackLag,wrapA,SPIKE,plantSpot,postPlant,retake,postPlay,SHOOT_UTIL,shootUtility,TAILWIND,tailwindDash,tailwindKeys,LEVEL,level,aimTraits,AIM_H,aimHeight,halfWidth,aimPlan,aimAt,readyToFire,planFire,idlePitch,recoilPull,discipline,hitPart,BUY,buyEdge,buySide,buyArea,buyRoute,buyExit,buySpot,buyWander,buyNew,buyTick,buyNext,buySep,SENS,cm360,sensOf,turnRate,SENSE,inView,audible,earSpot,memNew,memNote,memForget,memBest,repeek,mayFire,nextShot,areas,DFORM,GAP,midPoint,RESPOND,nearest,tradeSpot,follow};
 });
