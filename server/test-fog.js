@@ -60,7 +60,7 @@ const adv=(s,t)=>{s.time+=t;};
 {const {s,a,b}=setup('dm');const c=s.add('C','Sova');s.units.push(c);Object.assign(c,{x:-10,y:0,z:20,alive:true,loading:false,vx:0,vz:0,input:{},ch:0,team:a.team});b.z=6;adv(s,.05);
  assert.notEqual(row(view(s,c),b)[22],1,'C sees B');assert.equal(row(view(s,a),b)[22],1,'A does not get C\'s sight in DM');}
 // 13. out of the match phase nothing is fogged; fogRow keeps the row length (24)
-{const {s,a,b}=setup();s.phase='post';assert.equal(row(view(s,a),b)[22],0);assert.equal(fogRow(s.rows()[0]).length,24);}
+{const {s,a,b}=setup();s.phase='post';assert.equal(row(view(s,a),b)[22],0);assert.equal(fogRow(s.rows()[0]).length,25);{const r=s.rows()[0].slice();r[24]=5;assert.equal(fogRow(r)[24],0);}}
 // 14. the real worker tick sends each session its own view (GameRoom.view -> fogView)
 {const source=fs.readFileSync('src/worker.js','utf8'),code=source.slice(source.indexOf('export class GameRoom')).replace('export class','class')+';globalThis.GameRoom=GameRoom;';
  const context={DurableObject:class{constructor(ctx,env){this.ctx=ctx;this.env=env;}},crypto:globalThis.crypto,Date,URL,performance,setInterval,clearInterval,Map,Set,JSON,Number,Object,Math,Array,fogView,fogCast};vm.createContext(context);vm.runInContext(code,context);

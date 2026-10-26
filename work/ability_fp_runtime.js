@@ -296,4 +296,92 @@ function xAfTick(dt) {
 // the agent's ability rig is warmed with the weapons once a match runs (no hitch on the first equip)
 (window.XHK = window.XHK || []).push(() => { try { if (running && player && jOn()) xAfLoad(J.pick || "Jett"); } catch (e) {} });
 window.xAbilityFP = { XAF, XAF_SET, XAF_K, XAF_GUN, phase: xAfPhase, gunPhase: xAfGunPhase, load: xAfLoad };
+// ---- Blade Storm THIRD PERSON (hk-39, user 10:31 "third-person Blade Storm looks weird") ----
+// The server keeps u.weapon = the gun while Jett's knives are out (fireBlade swaps it only for the throw), so every remote
+// player / bot drew Blade Storm as a rifle. Now: online rows carry [24] = knives left (server simulation.js rows; 0 = none,
+// fog-hidden rows 0); offline a bot Jett's Blade Storm (FEEL bot ult, XU.b) is 5 knives as the player's: one knife per
+// shot, refilled to 5 by a kill (the kill with the last knife too), over at 0 knives. While knives are out the TP rig drops
+// the gun for the knife-hands upper body (the native Sword_Idle hands pose, M.w 'Knife' as the melee pose), the daggers
+// float in an arc in front of the hands (one per knife left, in the FP slot order: two left, one centre pointing up, two
+// right; slow hover; the arc pitches with the aim), and every throw plays Jett's OverhandThrow on the upper body with the
+// thrown dagger flying off along the aim; a right-click burst (several knives in one server step) plays one faster,
+// two-armed-weight throw and launches every dagger together in the 2.5 deg fan. Kept to Blade Storm: locomotion untouched.
+var XBTP = { len: 0.28, single: 0.42, burst: 0.62, tail: 0.5, fly: 0.22, spd: 45, gl: null, ld: 0, live: [], free: [] };
+// arc slots in the agent frame (+x = the agent's left, +y up, +z forward), metres; [x, y, z, dir x, dir y]
+var XBTP_SLOT = [[0.36, 1.36, 0.36, 0.3, 0.05], [0.27, 1.17, 0.44, 0.15, -0.05], [0, 1.08, 0.5, 0, 0.55], [-0.27, 1.17, 0.44, -0.15, -0.05], [-0.36, 1.36, 0.36, -0.3, 0.05]];
+function xBtpRing(n, t) { // pure layout (tests): n knives left -> [{p:[x,y,z], d:[x,y,z] unit}] for the first n slots, hovering
+  const out = []; for (let i = 0; i < Math.min(n | 0, XBTP_SLOT.length); i++) { const [x, y, z, dx, dy] = XBTP_SLOT[i], b = Math.sin((t || 0) * 2.1 + i * 1.7) * 0.015, L = Math.hypot(dx, dy, 1);
+    out.push({ p: [x, y + b, z], d: [dx / L, dy / L, 1 / L] }); }
+  return out;
+}
+function xBtpOn() { return typeof NET !== "undefined" && NET && NET.socket; }
+function xBtpK(b) { // knives out on a remote player / bot: 0 none, else knives left
+  if (!b || b.alive === false || !(b.hp > 0)) return 0;
+  if (b.nt || xBtpOn()) return Math.max(0, Math.min(5, b.bsK | 0)); // online: server row [24]
+  const UB = window.xBotUB; if (!UB || !UB[b.name]) { if (b.bsK) b.bsK = 0; return 0; } // offline: the FEEL bot ult (death / round reset clear it)
+  return Math.max(0, Math.min(5, b.bsK | 0));
+}
+// offline knife count: one knife per shot sound (xUbShot runs before the shot's damage), a kill refills to 5
+function xBtpShots() {
+  if (xBtpOn()) return; const UB = window.xBotUB; if (!UB) return;
+  for (const L of [bots, allies]) for (const b of L) { if (!b || !UB[b.name]) continue;
+    if (b.bsEnd) { b.bsEnd = 0; b.bsK = 0; delete UB[b.name]; continue; } // no kill with the last knife: Blade Storm is over
+    if (!(b.bsK > 0)) continue; const s = b.xsh || 0; if (b.bsSn == null) b.bsSn = s;
+    if (s > b.bsSn) { b.bsK = Math.max(0, b.bsK - (s - b.bsSn)); b.bsSn = s; if (!b.bsK) b.bsEnd = 1; } }
+}
+function xBtpRefill(by) { // the kill with the last knife refills too (its shot sound came first: bsEnd is still pending)
+  if (xBtpOn() || !by) return; const UB = window.xBotUB; if (!UB || !UB[by]) return;
+  for (const L of [bots, allies]) for (const b of L) if (b && b.name === by && (b.bsK > 0 || b.bsEnd)) { b.bsK = 5; b.bsEnd = 0; b.bsSn = b.xsh || 0; }
+}
+function xBtpKnife(i) { // a TP dagger: the FP dagger builder (native melee.glb knife) at TP size, normal depth order
+  const w = xAfKnife(XBTP.gl, i); w.scale.setScalar(XBTP.len / 0.24); w.name = "xbtp-knife-" + i;
+  w.traverse((o) => { if (o.isMesh) { o.renderOrder = 0; o.castShadow = true; } }); return w;
+}
+function xBtpRig(M) { // the floating daggers group on the agent root (built once per model)
+  if (M.btp) return M.btp; if (!XBTP.gl) { if (!XBTP.ld && typeof xvLoad === "function") { XBTP.ld = 1; xvLoad("melee").then((gl) => { XBTP.gl = gl; }).catch((e) => { XBTP.ld = 0; XBTP.err = String(e); }); } return null; }
+  const g = new THREE.Group(); g.name = "xbtp"; g.position.set(0, 1.4, 0); const k = []; for (let i = 0; i < XBTP_SLOT.length; i++) { const w = xBtpKnife(i); k.push(w); g.add(w); }
+  M.m.add(g); M.btp = { g, k, on: false, tail: 0, sn: null, th: 0, burst: 0, n: 0, w0: null }; return M.btp;
+}
+function xBtpFly(M, from, d, n) { // the thrown dagger(s) leave along the aim (pooled; burst = the 2.5 deg fan)
+  if (!XBTP.gl || typeof scene === "undefined") return; const up = new THREE.Vector3(0, 1, 0), fan = n > 1 && typeof jBurstDirs === "function" ? jBurstDirs(n) : [0];
+  for (const a of fan) { let f = XBTP.free.pop(); if (!f) { f = { w: xBtpKnife(0), v: new THREE.Vector3(), t: 0 }; } f.w.visible = true; f.t = 0; f.w.position.copy(from); f.v.copy(d).applyAxisAngle(up, a).multiplyScalar(XBTP.spd);
+    f.w.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), f.v.clone().normalize()); scene.add(f.w); XBTP.live.push(f); }
+}
+function xBtpTick(dt) { for (let i = XBTP.live.length - 1; i >= 0; i--) { const f = XBTP.live[i]; f.t += dt; f.w.position.addScaledVector(f.v, dt); if (f.t >= XBTP.fly) { scene.remove(f.w); f.w.visible = false; XBTP.live.splice(i, 1); XBTP.free.push(f); } } }
+function xBtpPre(b, M) { // before the stock layer pass: knife hands instead of the gun, throws instead of fire recoil
+  const k = xBtpK(b), X = M.sx; if (!X || (!M.btp && !(k > 0))) return; const R = xBtpRig(M); if (!R) return; /* the dagger rig is built on a unit's first Blade Storm only */ const sn = b.xsh || 0, ds = R.sn == null ? 0 : sn - R.sn; R.sn = sn;
+  if (!(k > 0 || R.on)) return;
+  if (!R.on) { R.on = true; R.w0 = M.w; R.n = k; R.tail = 0; }
+  if (ds > 0 && (k > 0 || R.n > 0)) { const burst = ds > 1 || (R.n > 1 && k === 0); // a right-click burst lands as several knives in one server step
+    xUbOnce(X, "throw", "U", burst ? XBTP.burst : XBTP.single); R.th++; if (burst) R.burst++; R.tail = XBTP.tail;
+    try { const P = M.m.getWorldPosition(new THREE.Vector3()), ry = b.g.rotation.y, p = M.xap || 0, d = new THREE.Vector3(Math.sin(ry) * Math.cos(p), Math.sin(p), Math.cos(ry) * Math.cos(p)); P.y += 1.4; P.addScaledVector(d, 0.5); xBtpFly(M, P, d, burst ? Math.max(2, R.n) : 1); } catch (e) {} }
+  R.n = k; M.w = "Knife"; X.sn = sn; X.shots = 0; // knife hands (Sword_Idle) + grip off (xgTarget); no Pistol_Shoot recoil, no visual reload
+}
+function xBtpEnd(b, M) { const R = M.btp; if (!R) return; if (R.on) { R.on = false; R.tail = 0; M.w = R.w0 || M.w; R.w0 = null; if (M.gun && !M.xvWait) M.gun.visible = true; if (M.sx) { M.sx.sn = b.xsh || 0; M.sx.shots = 0; } } R.g.visible = false; }
+function xBtpPost(b, M, dt) {
+  const R = M.btp; if (!R) return; if (!R.on) { R.g.visible = false; return; }
+  const k = xBtpK(b); if (k === 0) R.tail -= dt; if (!(k > 0 || R.tail > 0)) return xBtpEnd(b, M);
+  if (M.gun) M.gun.visible = false; R.g.visible = true; R.g.rotation.x = -(M.xap || 0) * 0.8;
+  const ring = xBtpRing(k, (typeof performance !== "undefined" ? performance.now() : 0) / 1000 + (b.nid || 0)), d = new THREE.Vector3(), z = new THREE.Vector3(0, 0, 1);
+  for (let i = 0; i < R.k.length; i++) { const w = R.k[i], r = ring[i]; w.visible = !!r; if (!r) continue; w.position.set(r.p[0], r.p[1] - 1.4, r.p[2]); d.set(r.d[0], r.d[1], r.d[2]); w.quaternion.setFromUnitVectors(z, d); }
+}
+if (typeof xUbAnim === "function") { const a0 = xUbAnim; xUbAnim = function (b, M, sp, dt) { try { if (dt) xBtpPre(b, M); } catch (e) { XBTP.err = String(e); } const r = a0.apply(this, arguments); try { if (dt) xBtpPost(b, M, dt); } catch (e) { XBTP.err = String(e); } return r; }; }
+// A Blade Storm knife from a remote player / bot (online server 's' event with weapon 'Blade Storm', or an offline bot Jett's
+// knife, index.html xBsBot): the throw counts on the unit (xUbShot -> TP OverhandThrow + the flying dagger, xBtpPre) and plays
+// the knife-throw sound at it (SFX.ab bsThrow, 3D) - never the gun chain (Vandal fallback sound, bfxBot tracer); the P2P host
+// still relays it. One throw sound per unit per frame (a burst lands as several knives in one server step).
+if (typeof SFX !== "undefined" && typeof SFX.at === "function") { const at0 = SFX.at; SFX.at = function (p, w) {
+  if (w !== "Blade Storm") return at0.apply(this, arguments); if (!p) return;
+  try { xUbShot(p); } catch (e) {}
+  try { if (typeof MP !== "undefined" && MP.role === "host" && MP.st === "game") { const u = [].concat(bots, allies).find((x) => x && x.g && x.g.position === p); if (u) MP.ev.push(["s", u.nid, "Blade Storm"]); } } catch (e) {}
+  try { const f = typeof renderer !== "undefined" && renderer.info ? renderer.info.render.frame : 0; if (p.xbsF !== f) { p.xbsF = f; SFX.ab("bsThrow", p); XBTP.snd = (XBTP.snd || 0) + 1; } } catch (e) {}
+}; }
+if (typeof xUbShot === "function") { const s0 = xUbShot; xUbShot = function () { const r = s0.apply(this, arguments); try { xBtpShots(); } catch (e) {} return r; }; }
+if (typeof kill === "function") { const k0 = kill; kill = function (b, hs, by) { const was = b && b.alive, r = k0.apply(this, arguments); try { if (was && b && !b.alive) xBtpRefill(by); } catch (e) {} return r; }; }
+if (typeof allyDie === "function") { const d0 = allyDie; allyDie = function (a, by) { const was = a && a.alive, r = d0.apply(this, arguments); try { if (was && a && !a.alive) xBtpRefill(by); } catch (e) {} return r; }; }
+if (typeof pDie === "function") { const p0 = pDie; pDie = function (by) { const was = player && player.hp > 0, r = p0.apply(this, arguments); try { if (was && player.hp <= 0) xBtpRefill(by); } catch (e) {} return r; }; }
+if (typeof mpCliSnap === "function") { const c0 = mpCliSnap; mpCliSnap = function (m) { try { if (xBtpOn() && m && Array.isArray(m.u)) { const all = bots.concat(allies); for (const e of m.u) { if (!Array.isArray(e) || e[0] === MP.me) continue; const u = all.find((x) => x.nid === e[0]); if (u) u.bsK = e[22] === 1 ? 0 : Math.max(0, Math.min(5, e[24] | 0)); } } } catch (e) {} return c0.apply(this, arguments); }; }
+if (typeof xDie === "function") { const x0 = xDie; xDie = function (b) { try { if (b && b.xm && !b.xd) xBtpEnd(b, b.xm); } catch (e) {} return x0.apply(this, arguments); }; } // the gun drops (not the daggers)
+(window.XHK = window.XHK || []).push(() => { try { const n = performance.now(), d = XBTP.t0 ? Math.min(0.1, (n - XBTP.t0) / 1000) : 0; XBTP.t0 = n; if (XBTP.live.length) xBtpTick(d); } catch (e) {} });
+window.xBladeTP = { XBTP, XBTP_SLOT, ring: xBtpRing, k: xBtpK };
 // ---- END ABILITY FIRST PERSON ----
