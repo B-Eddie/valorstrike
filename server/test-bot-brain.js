@@ -13,7 +13,7 @@ const B=createRequire(import.meta.url)('../vendor/bot-brain.cjs'),out=[];
  const defs=new Set();for(let r=0;r<20;r++)defs.add(B.defensePlan(B.hash('d|'+r),sites,{}).type);assert.ok(defs.size>=3,'defence setups vary ('+[...defs]+')');
  const P=B.personality(B.hash('Bot Jett')),rr=B.rng(7),re=[];for(let k=0;k<200;k++)re.push(B.reaction(P,rr));
  const mean=re.reduce((s,v)=>s+v,0)/re.length,sd=Math.sqrt(re.reduce((s,v)=>s+(v-mean)**2,0)/re.length);
- assert.ok(Math.min(...re)>=.18&&Math.max(...re)<=.32,'reactions inside 180-320 ms');assert.ok(sd>.01,'reaction jitter per fight (sd '+(sd*1000).toFixed(0)+' ms)');
+ assert.ok(Math.min(...re)>=.2&&Math.max(...re)<=.35,'pre-aimed reactions inside 200-350 ms');assert.ok(sd>.01,'reaction jitter per fight (sd '+(sd*1000).toFixed(0)+' ms)');
  const means=new Set();for(const n of ['Sage','Omen','Raze','Sova','Breach','Jett','Reyna','Phoenix'])means.add(B.personality(B.hash(n)).react.toFixed(3));assert.equal(means.size,8,'every bot its own reaction mean');
  const e=B.crosshair(P,B.rng(3),false),a0=Math.hypot(...B.crosshairAt(e,P,0)),a1=Math.hypot(...B.crosshairAt(e,P,.5)),a2=Math.hypot(...B.crosshairAt(e,P,3));
  assert.ok(a0>.008&&a1<a0*.5&&a2<a1&&a2>0,'crosshair error starts off and settles over time ('+[a0,a1,a2].map(v=>v.toFixed(4))+')');
@@ -29,9 +29,9 @@ const nodes=[],adj=[];for(let i=0;i<15;i++)for(let j=0;j<15;j++){nodes.push([i*2
 const all=nodes.map((_,i)=>i),near=(x,z)=>{let b=0,d=Infinity;for(const i of all){const n=nodes[i],v=(n[0]-x)**2+(n[2]-z)**2;if(v<d){d=v;b=i;}}return b;};
 const G={map:{attacker:[-14,0,0],defender:[14,0,-28],sites:{A:[-8,0,-14],B:[8,0,-14]}},nav:{nodes,adj},playable:all,allowed:new Set(all),near,ground:()=>0,blocked:()=>false,ray:()=>Infinity};
 {const first=[],kinds={};for(let k=0;k<12;k++){const s=new Simulation(G,'tdm','ascent',()=>.5),t=s.add('Target','Jett',true),b=s.add('Bot Sage','Sage',false);s.phase='game';const far=k%2?30:6;
-  Object.assign(t,{team:1,x:0,y:0,z:-far,hp:1e9});Object.assign(b,{team:0,x:0,y:0,z:0,look:Math.PI});b.persona=null;persona(s,b).r=B.rng(k+1);let f=-1,on=0,flips=0,last=false;
+  Object.assign(t,{team:1,x:0,y:0,z:-far,hp:1e9});Object.assign(b,{team:0,x:0,y:0,z:0,look:0});b.persona=null;persona(s,b).r=B.rng(k+1);/* crosshair already on the angle (bots-human-1: an enemy behind costs more reaction plus the turn, pinned in test-bot-human.js) */let f=-1,on=0,flips=0,last=false;
   for(let i=0;i<120;i++){s.time+=.01;s.bot(b);const fire=!!b.input.fire;if(fire&&f<0)f=s.time;if(fire)on++;if(fire!==last)flips++;last=fire;}first.push(+f.toFixed(2));(kinds[far]||(kinds[far]=[])).push([on,flips]);}
- assert.ok(first.every(v=>v>=.18&&v<=.34),'first shot after a 180-320 ms reaction ('+first+')');assert.ok(new Set(first).size>=4,'reaction re-drawn per fight ('+first+')');
+ assert.ok(first.every(v=>v>=.2&&v<=.45),'first shot after a 200-350 ms reaction and the flick onto the aim point ('+first+')');assert.ok(new Set(first).size>=4,'reaction re-drawn per fight ('+first+')');
  const avg=L=>L.reduce((s,v)=>s+v[0]/v[1],0)/L.length;assert.ok(avg(kinds[30])<avg(kinds[6]),'trigger held longer per pull up close (spray) than far (taps)');
  out.push('reaction first shots '+[...new Set(first)].sort().join('/')+' s');}
 {const s=new SpikeSimulation({...G,ray:(o,d,max)=>max>3?1:Infinity},'five','ascent',()=>.5),b=s.add('Bot Sage','Sage',false),m=s.add('Bot Omen','Omen',false),e=s.add('Enemy','Jett',true);
@@ -61,7 +61,7 @@ const G={map:{attacker:[-14,0,0],defender:[14,0,-28],sites:{A:[-8,0,-14],B:[8,0,
 // on target; a strafing target is tracked from slightly behind (misses while the crosshair catches up)
 {const s=new Simulation(G,'tdm','ascent',()=>.5),t=s.add('Target','Jett',true),b=s.add('Bot Raze','Raze',false);s.phase='game';
  Object.assign(t,{team:1,x:0,y:0,z:-12,hp:1e9});Object.assign(b,{team:0,x:0,y:0,z:0,look:Math.PI});const P=persona(s,b);let fireTurning=0,looks=[];
- for(let i=0;i<20;i++){s.time+=.05;const l0=b.look;s.bot(b);looks.push(Math.abs(Math.atan2(Math.sin(b.look-l0),Math.cos(b.look-l0))));if(b.input.fire&&b.turnLeft>=.2)fireTurning++;}
+ for(let i=0;i<40;i++){/* 2 s: an enemy behind = slower reaction + the swing (bots-human-1) */s.time+=.05;const l0=b.look;s.bot(b);looks.push(Math.abs(Math.atan2(Math.sin(b.look-l0),Math.cos(b.look-l0))));if(b.input.fire&&b.turnLeft>=.2)fireTurning++;}
  assert.ok(looks[0]<=P.brain.turn*.05+1e-9&&P.brain.turn>=7&&P.brain.turn<=14,'a 180 takes several ticks ('+looks[0].toFixed(2)+' rad in the first 50 ms, '+P.brain.turn.toFixed(1)+' rad/s)');assert.equal(fireTurning,0,'no shots while still swinging');
  assert.ok(Math.abs(Math.atan2(Math.sin(b.look),Math.cos(b.look)))<.2,'on target after the swing');
  let sum=0,n=0;for(let i=0;i<60;i++){s.time+=.05;t.vx=6;t.vz=0;t.x+=6*.05;s.bot(b);if(i<10)continue;const exact=Math.atan2(-(t.x-b.x),-(t.z-b.z)),err=Math.atan2(Math.sin(b.look-exact),Math.cos(b.look-exact));sum+=err;n++;}

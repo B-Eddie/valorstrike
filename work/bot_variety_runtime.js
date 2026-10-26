@@ -12,10 +12,35 @@ var XBV={k:'',plans:new Map(),oth:[],sv:[0,0],budget:{f:-1,n:0},seed:0,fresh:fal
 function xbvSeed(){if(window.xBotSeed!=null)return window.xBotSeed>>>0;if(FV.you+FV.them===0){if(!XBV.fresh){XBV.fresh=true;XBV.seed=(Math.random()*4294967296)>>>0;XBV.brains.clear();XBV.log={a:[],d:[]};}}else XBV.fresh=false;return XBV.seed;}
 function xbBrain(u){if(!u||!window.BotBrain)return null;const sd=xbvSeed();if(u.brain&&u.brainS===sd)return u.brain;const k=(u.name||'')+'|'+sd;let b=XBV.brains.get(k);if(!b){b=BotBrain.personality(BotBrain.hash(k));XBV.brains.set(k,b);}u.brainS=sd;return u.brain=b;}
 function xbRand(u){return u.xbr||(u.xbr=BotRoutes.rng(BotRoutes.hash((u.name||'')+'|r|'+xbvSeed()+'|'+xbvKey())));}
-// a new fight: reaction (s), crosshair error (smaller when the crosshair was already on the angle), stand-still time before strafing
-function xbEngage(u,pre){const B=xbBrain(u);if(!B){u.rtE=.26;u.xhE=null;u.stand=.35;return;}const r=xbRand(u);u.rtE=BotBrain.reaction(B,r);u.xhE=BotBrain.crosshair(B,r,!!pre);u.stand=B.stand*(.8+r()*.4);}
-// reaction gate in ms for difficulty D (normal = the bot's own 180-320 ms draw; +150 ms when it was not pre-aimed)
-function xbRt(u,D){const k=(D&&D.rt?D.rt:260)/260;return ((u.rtE||.26)*1000+(u.pre?0:150))*k;}
+// a new fight: reaction (s), crosshair error (smaller when the crosshair was already on the angle), stand-still time before strafing.
+// ctx (enemy bots, bots-human-1): {off: |view - enemy| rad, e0y: view minus enemy yaw (signed), d: m, flashed} -> the human aim
+// model shared with the server (BotBrain.reaction with off-angle / flash costs, aimPlan flick from where the bot was looking,
+// aimHeight body spot, recoilPull, discipline: a sloppy fight fires before the counter-strafe has stopped it).
+function xbLvl(){try{return S&&S.diff||'normal';}catch(e){return 'normal';}}
+function xbEngage(u,pre,ctx){const B=xbBrain(u);if(!B){u.rtE=.26;u.xhE=null;u.stand=.35;u.xbAP=null;return;}const r=xbRand(u);
+ if(ctx){const L=xbLvl(),k=(BotBrain.LEVEL[L]||BotBrain.LEVEL.normal).rt;u.rtE=BotBrain.reaction(B,r,{pre:!!pre,off:ctx.off,flashed:!!ctx.flashed});u.xhE=BotBrain.crosshair(B,r,!!pre);
+  u.xbSpot=BotBrain.aimHeight(B,r,L);const d=ctx.d||15,h=BotBrain.AIM_H[u.xbSpot]||1.3;u.xbAP=BotBrain.aimPlan(B,r,ctx.e0y||0,BotBrain.idlePitch(B)-Math.atan2(h-1.6,d),d,{start:u.rtE*k,level:L});
+  u.xbPull=BotBrain.recoilPull(B,L);u.xbSl=r()>BotBrain.discipline(B,L);u.stand=B.stand*(.8+r()*.4);u.rtX=1;return;}
+ u.rtE=BotBrain.reaction(B,r);u.xhE=BotBrain.crosshair(B,r,!!pre);u.xbAP=null;u.rtX=0;u.stand=B.stand*(.8+r()*.4);}
+// reaction gate in ms for difficulty D (normal = the bot's own 180-320 ms draw; +150 ms when it was not pre-aimed). With the
+// human aim model (rtX) the draw already holds the off-angle cost.
+function xbRt(u,D){const k=(D&&D.rt?D.rt:260)/260;return ((u.rtE||.26)*1000+(u.pre||u.rtX?0:150))*k;}
+// Visible yaw while fighting: the planned flick (min-jerk, overshoot, correction) at the bot's own turn rate, not a snap.
+function xbFaceAim(u,want,dt){const B=xbBrain(u);if(!B||!u.xbAP||!u.g)return want;const e=BotBrain.aimAt(u.xbAP,u.see||0,XB_E);return BotBrain.turnStep(B,u.g.rotation.y,want+e[0],dt).yaw;}
+// A new trigger pull: once the bot believes it is on target (end of its flick / correction) or the crosshair passes close.
+function xbReady(u,d){if(!u.xbAP)return true;const e=BotBrain.aimAt(u.xbAP,u.see||0,XB_E);return BotBrain.readyToFire(u.xbAP,Math.hypot(e[0],e[1]),d,u.see||0);}
+// One shot of an enemy bot with the human aim model: the crosshair sits at the fight's body spot (head / neck / chest) on the
+// target's real height (crouch lowers it), spread + spray climb (bSpread, minus the share this bot pulls down), the planned
+// flick error and the tracking lag; the ray is then tested against the server's hit volumes (BotBrain.hitPart) at the
+// target. Returns 'head' | 'body' | 'legs' | null (miss).
+function xbShot(u,tg,from,w,W,d,D){const B=xbBrain(u);if(!B||!u.xbAP)return undefined;const t=tg.t,pl=t===player,fy=pl?(player.y||0):t&&t.g?t.g.position.y:0,ch=pl?(player.ch||0):t&&t.cr?.28:0;
+ const h=BotBrain.AIM_H[u.xbSpot]||1.3,aim=(XB_AIM||(XB_AIM=new THREE.Vector3())).set(tg.x-from.x,fy+h-ch*h/1.8-from.y,tg.z-from.z).normalize();
+ const sn=u.sn||0;bSpread(u,w,W,aim,d,D);/* spread + uncontrolled climb ... */if(u.xbPull&&sn>0){const k=D&&D.ae?D.ae/1.3:1,r=w==='Vandal'?1:w==='Phantom'?.7:0,ck=u.cr&&!u.mv?.85:1,vy=ck*(r?Math.min(sn,6)*.0065*r:Math.min(sn,6)*.004*(W.rec||1))*k*.6;aim.y-=vy*u.xbPull;aim.normalize();}/* ... minus the part this bot drags down */
+ const e=BotBrain.aimAt(u.xbAP,u.see||0,XB_E),yaw=Math.atan2(aim.x,aim.z),tm=performance.now()/1000;let lg=0;if(u.xaT!=null&&tm>u.xaT&&tm-u.xaT<.5){const wv=Math.atan2(Math.sin(yaw-u.xaY),Math.cos(yaw-u.xaY))/(tm-u.xaT);lg=Math.max(-3,Math.min(3,wv))*BotBrain.trackLag(B,u.see||0);}u.xaY=yaw;u.xaT=tm;u.xLag=lg;
+ const hl=Math.hypot(aim.x,aim.z)||1,hx=-aim.z/hl,hz=aim.x/hl,ey=-e[0]+lg;/* yaw + plan error, minus the lag */aim.x+=hx*ey;aim.z+=hz*ey;aim.y+=e[1];aim.normalize();
+ const dx=tg.x-from.x,dz=tg.z-from.z,ah=Math.hypot(aim.x,aim.z)||1e-6,s=(dx*aim.x+dz*aim.z)/ah;if(s<=0)return null;const k2=s/ah,qx=from.x+aim.x*k2,qy=from.y+aim.y*k2,qz=from.z+aim.z*k2;
+ const lat=Math.hypot(qx-tg.x,qz-tg.z);return BotBrain.hitPart(lat,qy-fy,ch);}
+var XB_AIM=null; // scratch vector, made on first use (the block also runs without THREE in tests)
 const XB_E=[0,0];
 // settle the crosshair error onto a shot direction (yaw around up, pitch on y), scaled by the difficulty aim error
 // + tracking lag (BotBrain.trackLag, as the server): the shot runs behind a target that moves across the crosshair (the aim

@@ -35,7 +35,10 @@ export function persona(sim,u){
 // test RNG (or set sim.botSeed) so tests replay exactly. Never drawn from sim.random: that stream belongs to the shots.
 export function botSeed(sim){if(sim.botSeed==null)sim.botSeed=sim.random===Math.random?(Math.random()*4294967296)>>>0:0;return sim.botSeed;}
 // Per-engagement reaction (seconds) and crosshair error; called when a bot first sees its target.
-export function engage(sim,u,P,preaimed){const B=P.brain,r=P.r;u.reactNow=BotBrain.reaction(B,r);u.xhE=BotBrain.crosshair(B,r,preaimed);u.firePat=null;u.fireUntil=0;u.pauseUntil=0;u.crouchFight=r()<(P.crouch?.45+B.crouchSpray*.5:B.crouchSpray*.4);u.stopShoot=r()<.55+B.patience*.4;return u.reactNow;}
+// ctx (or a boolean: pre-aimed): {pre, off: rad between the view and the enemy, flashed, dist, e0y / e0p: crosshair minus the aim
+// point (rad)}. The reaction grows off-angle / after a flash (BotBrain.reaction); the crosshair then follows a human flick
+// (BotBrain.aimPlan: min-jerk, overshoot, correction, resting error) that starts when the reaction ends.
+export function engage(sim,u,P,ctx){if(typeof ctx!=='object'||!ctx)ctx={pre:!!ctx};const B=P.brain,r=P.r;u.reactNow=BotBrain.reaction(B,r,ctx);u.xhE=BotBrain.crosshair(B,r,!!ctx.pre);u.aimPlan=BotBrain.aimPlan(B,r,ctx.e0y||0,ctx.e0p||0,ctx.dist||15,{start:u.reactNow,moving:!!ctx.moving});u.firePat=null;u.fireUntil=0;u.pauseUntil=0;u.crouchFight=r()<(P.crouch?.45+B.crouchSpray*.5:B.crouchSpray*.4);u.stopShoot=r()<BotBrain.discipline(B);return u.reactNow;}
 const XH=[0,0];
 export function crosshairErr(u,P,t){return u.xhE?BotBrain.crosshairAt(u.xhE,P.brain,t,XH):(XH[0]=XH[1]=0,XH);}
 // Trigger discipline: taps far, bursts mid, sprays close, with pauses between; true while the trigger should be held.

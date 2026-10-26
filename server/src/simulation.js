@@ -1,7 +1,8 @@
 import Motor from './motor.cjs';
 import {path,prepare} from './path.js';
 import {rayHit} from './hitboxes.js';
-import {persona,aimError,strafe,flankNode,variedPath,spaceLook,engage,crosshairErr,trigger} from './bots.js';
+import {persona,aimError,strafe,flankNode,variedPath,spaceLook,engage,trigger} from './bots.js';
+const XE=[0,0];
 import calibration from './weapons.json' with {type:'json'};
 import BotBrain from '../../vendor/bot-brain.cjs';
 // Armor absorbs 66 %: float leftovers (54.00000000000001 hp read as 55 by Math.ceil, a 1e-14 hp survivor) are snapped to 1e-6.
@@ -107,23 +108,26 @@ export class Simulation{
  penetrate(o,d,wall,limit,p){const tier=PENETRATION[String(p.wallPenetration||'').split('::')[1]];if(!tier||!(wall<limit))return null;const t=tier.t,probe=o.map((n,k)=>n+d[k]*(wall+t)),back=this.world.ray(probe,d.map(n=>-n),t);if(!(back<Infinity)||t-back<=.001)return null;const exit=wall+t-back+.01;if(exit>=limit)return null;const next=this.world.ray(o.map((n,k)=>n+d[k]*exit),d,limit-exit);return {through:Math.min(limit,exit+next),exit,k:tier.k};}
  bot(u){const W=this.world,P=persona(this,u),botT0=u.botT;u.botT=this.time;const enemies=this.units.filter(v=>v!==u&&v.alive&&!v.loading&&(this.mode==='dm'||v.team!==u.team));u.inputAt=this.time;u.input={};if(!enemies.length)return;
   const target=enemies.sort((a,b)=>Math.hypot(a.x-u.x,a.z-u.z)-Math.hypot(b.x-u.x,b.z-u.z))[0],dx=target.x-u.x,dz=target.z-u.z,dist=Math.hypot(dx,dz);
-  if(u.aimTarget!==target.id){u.aimTarget=target.id;u.aimHead=P.r()<P.head;}
-  const aimY=target.y+(u.aimHead?1.62-(target.ch||0):1.1-(target.ch||0)*.5),eye=u.y+1.6-(u.ch||0),dy=aimY-eye;
+  // Where the crosshair sits on the body (BotBrain.aimHeight: head / neck / chest, mostly chest-neck for a mid-ranked player), re-picked per target.
+  if(u.aimTarget!==target.id){u.aimTarget=target.id;u.aimSpot=BotBrain.aimHeight(P.brain,P.r);u.aimHead=u.aimSpot==='head';}
+  const aimH=BotBrain.AIM_H[u.aimSpot]||1.3,aimY=target.y+aimH-(target.ch||0)*aimH/1.8,eye=u.y+1.6-(u.ch||0),dy=aimY-eye;
   const see=dist<55&&this.canSee(u,target,[u.x,eye,u.z],[target.x,aimY,target.z]);u.sawTarget=see;
-  if(see){/* a new fight: reaction drawn 180-320 ms around this bot's mean, crosshair error that settles (smaller when the crosshair was already on the angle) */if(!u.engagedAt){u.engagedAt=this.time||1e-6;const want=Math.atan2(-dx,-dz),off=Math.abs(Math.atan2(Math.sin(want-(u.look||0)),Math.cos(want-(u.look||0))));u.reactionAt=this.time+engage(this,u,P,off<.35);}
-   const engaged=this.time-u.engagedAt,[ey,ep]=aimError(P,this.time,engaged),xe=crosshairErr(u,P,engaged);
+  if(see){/* a new fight: reaction 200-350 ms around this bot's mean plus off-angle / flash costs, then a human flick from where the crosshair was (BotBrain.aimPlan) */if(!u.engagedAt){u.engagedAt=this.time||1e-6;const want=Math.atan2(-dx,-dz),e0y=Math.atan2(Math.sin((u.look||0)-want),Math.cos((u.look||0)-want)),off=Math.abs(e0y);u.reactionAt=this.time+engage(this,u,P,{pre:off<.35,off,flashed:u.blindUntil>this.time-1.2,dist,e0y,e0p:(u.pitch||0)-Math.atan2(dy,dist),moving:Math.hypot(u.vx||0,u.vz||0)>1});}
+   const engaged=this.time-u.engagedAt,[ey,ep]=aimError(P,this.time,engaged),xe=BotBrain.aimAt(u.aimPlan,engaged,XE),sw=.5;/* aimError: a slow sway on top (half of it) */
+   // Spray control: the bot drags down only part of the climb (BotBrain.recoilPull) and leaves part of the drift.
+   const S=u.spray,rc=S&&this.time-(S.shot??-9)<.3?BotBrain.recoilPull(P.brain):0,ry=rc?rc*(S.recoilY||0):0,rx=rc?rc*.6*(S.recoilX||0):0;
    // Turn-rate limit (no instant 180 onto someone behind) and tracking lag (the crosshair runs where a moving target was a moment ago, so strafing targets get missed until it catches up): vendor/bot-brain.cjs turnStep / trackLag, as offline
-   const bdt=Math.min(.1,Math.max(.02,this.time-(botT0??(this.time-.05))||.05)),lag=BotBrain.trackLag(P.brain,engaged),lx=dx-(target.vx||0)*lag,lz=dz-(target.vz||0)*lag,ts=BotBrain.turnStep(P.brain,u.look||0,Math.atan2(-lx,-lz)+ey+xe[0],bdt);u.look=ts.yaw;u.turnLeft=ts.left;u.pitch=Math.atan2(dy,dist)+ep+xe[1];
-   // trigger discipline: taps far, bursts mid, sprays close, with pauses between (not one endless spray)
-   const Wp=gunOf(u)||{},auto=Wp.fireMode!=='EWeaponFireModeDisplayType::SemiAutomatic';u.input.fire=this.time>(u.reactionAt||0)&&u.turnLeft<.2&&trigger(this,u,P,dist,auto,Wp.fireRate);if(!auto&&this.time>=u.fireAt)u.triggerHeld=false;
+   const bdt=Math.min(.1,Math.max(.02,this.time-(botT0??(this.time-.05))||.05)),lag=BotBrain.trackLag(P.brain,engaged),lx=dx-(target.vx||0)*lag,lz=dz-(target.vz||0)*lag,ts=BotBrain.turnStep(P.brain,u.look||0,Math.atan2(-lx,-lz)+ey*sw+xe[0]+rx,bdt);u.look=ts.yaw;u.turnLeft=ts.left;u.pitch=Math.atan2(dy,dist)+ep*sw+xe[1]-ry;
+   // trigger discipline: taps far, bursts mid, sprays close, with pauses between (not one endless spray); a new pull waits until the crosshair is near enough (BotBrain.readyToFire: eager bots pull early and miss the first shot at range)
+   const want=Math.atan2(-dx,-dz),err=Math.hypot(Math.atan2(Math.sin(u.look-want),Math.cos(u.look-want)),u.pitch-Math.atan2(dy,dist)),Wp=gunOf(u)||{},auto=Wp.fireMode!=='EWeaponFireModeDisplayType::SemiAutomatic';const on=this.time>(u.reactionAt||0)&&u.turnLeft<.2,ready=on&&BotBrain.readyToFire(u.aimPlan,err,dist,engaged),held=this.time<(u.fireUntil||0),wantStop=u.stopShoot&&dist>8&&!(u.firePat&&u.firePat.kind==='spray'&&held),slow=Math.hypot(u.vx||0,u.vz||0)<=1.6;/* a disciplined fight counter-strafes to a near-stop before a new pull; a sloppy one (BotBrain.discipline) fires on the move */u.input.fire=on&&(held||(ready&&(!wantStop||slow)))&&trigger(this,u,P,dist,auto,Wp.fireRate);if(!auto&&this.time>=u.fireAt)u.triggerHeld=false;
    // Engagement range preference: entries close in, anchors hold, others keep their band. Taps / bursts past 8 m are
    // shot standing still (counter-strafe), strafing between them; low-HP patient bots back out of the fight.
-   const stop=u.input.fire&&u.stopShoot&&dist>8&&!(u.firePat&&u.firePat.kind==='spray');
+   const stop=(u.input.fire||ready)&&wantStop;
    u.input.forward=stop?0:dist>P.range[1]?1:dist<P.range[0]?-.6:0;u.input.side=stop?0:dist<30?strafe(this,u,P):0;
    if(u.hp<35&&P.brain.patience>.55&&!u.input.fire)u.input.forward=-1;
    if(u.crouchFight&&dist<P.crouchRange+4&&engaged>.2&&u.input.fire&&!(u.firePat&&u.firePat.kind==='tap'))u.input.duck=true;
    u.route=null;u.via=-1;if(u.ammo===0&&!u.reloadAt)this.command(u,{t:'reload'});this.botUtility(u,target,dist,P,engaged);return;}
-  u.engagedAt=0;u.reactionAt=0;u.xhE=null;u.pitch=0;if(this.objectiveRoutes)return;/* Spike routes bots to the objective itself (goalPath); a hunt route to the nearest enemy every tick was thrown away */
+  u.engagedAt=0;u.reactionAt=0;u.xhE=null;u.pitch=BotBrain.idlePitch(P.brain);/* resting crosshair a little below eye level */u.aimTarget=null;/* the next fight re-picks where on the body the crosshair sits */if(this.objectiveRoutes)return;/* Spike routes bots to the objective itself (goalPath); a hunt route to the nearest enemy every tick was thrown away */
   // Holders pause in place between pushes; the pause length and spacing come from the bot's own stream.
   if(P.hold>0&&!(this.time<u.nextHoldAt)){u.nextHoldAt=this.time+2+P.r()*3.5;if(P.r()<P.hold)u.holdUntil=this.time+1+P.r()*1.8;}if(u.holdUntil>this.time)return;
   if(!u.route||u.routeAt<this.time||u.route.length<2){const via=P.flank&&dist>12?(u.via>=0&&u.viaTarget===target.id?u.via:flankNode(this,u,target)):-1;u.via=via;u.viaTarget=target.id;const goal=via>=0?via:W.near(target.x,target.z,target.y);u.route=variedPath(this,u,W.near(u.x,u.z,u.y),goal,path);u.routeAt=this.time+P.repath;}

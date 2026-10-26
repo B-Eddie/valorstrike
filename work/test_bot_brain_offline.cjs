@@ -1,5 +1,5 @@
 // Offline bots use the shared human-like decisions (vendor/bot-brain.cjs inlined in the BOT VARIETY block, as the server):
-// per-fight reaction 180-320 ms around each bot's own mean (scaled by difficulty, +150 ms off-angle), crosshair error that
+// per-fight reaction 200-350 ms around each bot's own mean (scaled by difficulty, +150 ms off-angle), crosshair error that
 // settles, own stand-still time, round strategies on the real Ascent / Bind graphs (>= 2 sites and >= 3 plans over 20
 // seeded rounds, the bot carrier sent to the strategy site, staged positions that differ), defenders that keep every site
 // and rotate on information, the varied route A* honouring the instinct climb rule (dy > 0.321 needs nmClimbOk), and a
@@ -9,7 +9,7 @@ const html=fs.readFileSync(path.join(root,'index.html'),'utf8'),A='// ---- BOT V
 const block=html.slice(i,j+Z.length);assert(/root\.BotBrain=factory\(\)/.test(block),'BotBrain inlined with the block');
 assert.equal(block.slice(block.indexOf('// Shared client/server bot decisions'),block.indexOf("return {hash,rng,clamp")),fs.readFileSync(path.join(root,'vendor/bot-brain.cjs'),'utf8').slice(0,fs.readFileSync(path.join(root,'vendor/bot-brain.cjs'),'utf8').indexOf("return {hash,rng,clamp")),'inlined BotBrain == vendor/bot-brain.cjs');
 // base loop wiring (enemy + ally bots)
-for(const w of ['xbEngage(b, b.pre)','typeof xbRt === "function" ? xbRt(b, D)','xbAimErr(b, aim, D)','(b.see || 0) < (b.stand || 0.35)','xbEngage(a, a.pre)','a.ts * 1000 < xbRt(a, null)','a.ts < (a.stand || 0.35)'])assert(html.includes(w),'wired: '+w);
+for(const w of ['xbEngage(b, b.pre, { off: Math.abs(oy), e0y: oy, d,','typeof xbRt === "function" ? xbRt(b, D)','xbAimErr(b, aim, D)','(b.see || 0) < (b.stand || 0.35)','xbEngage(a, a.pre)','a.ts * 1000 < xbRt(a, null)','a.ts < (a.stand || 0.35)'])assert(html.includes(w),'wired: '+w);
 const out=[];
 for(const map of ['ascent','bind']){
  const dir=path.join(root,'models/valorant/maps',map),meta=JSON.parse(fs.readFileSync(path.join(dir,'map.json'),'utf8')),nav=JSON.parse(fs.readFileSync(path.join(dir,'navigation.json'),'utf8')),N=nav.nodes;
@@ -42,7 +42,7 @@ for(const map of ['ascent','bind']){
  assert(stageSpread.filter(n=>n>=3).length>=15,`${map}: attackers do not share one goal (${stageSpread})`);assert.equal(hops,0,'varied routes plan no climb the instinct rule rejects');assert(rotated>0,'rotators answer information');
  // reactions: own mean per bot, re-drawn per fight, scaled by difficulty; crosshair error settles
  const rts=[],means=new Set();for(const n of NAMES){const u={name:'Bot '+n};const B=ctx.xbBrain(u);means.add(B.react.toFixed(3));for(let k=0;k<10;k++){ctx.xbEngage(u,k%2===0);rts.push(u.rtE);assert(u.stand>.1&&u.stand<.6,'stand time');}}
- assert(Math.min(...rts)>=.18&&Math.max(...rts)<=.32&&new Set(rts.map(v=>v.toFixed(3))).size>=20,'per-fight reactions 180-320 ms with spread');assert.equal(means.size,5,'own reaction mean per bot');
+ assert(Math.min(...rts)>=.2&&Math.max(...rts)<=.35&&new Set(rts.map(v=>v.toFixed(3))).size>=20,'per-fight reactions 200-350 ms with spread (bots-human-1; off-angle costs: test_bot_human_offline)');assert.equal(means.size,5,'own reaction mean per bot');
  const u={name:'Bot Jett',pre:true,rtE:.25};assert.equal(ctx.xbRt(u,{rt:260}),250);assert.equal(ctx.xbRt(u,{rt:520}),500);u.pre=false;assert.equal(ctx.xbRt(u,{rt:260}),400);
  const v=()=>({x:0,y:0,z:-1,normalize(){const l=Math.hypot(this.x,this.y,this.z);this.x/=l;this.y/=l;this.z/=l;return this;}}),w={name:'Bot Omen',see:0};ctx.xbEngage(w,false);
  const err=t=>{w.see=t;const a=v();ctx.xbAimErr(w,a,{ae:1.3});return Math.hypot(a.x,a.y);};assert(err(0)>.005&&err(.6)<err(0)*.6&&err(3)<err(.6),'crosshair error settles');

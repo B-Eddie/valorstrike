@@ -8,7 +8,7 @@
  const clamp=(v,a,b)=>v<a?a:v>b?b:v,lerp=(a,b,t)=>a+(b-a)*t;
  // weighted pick: w = {key: weight}
  function pickW(rand,w){let s=0;for(const k in w)s+=Math.max(0,w[k]);let x=rand()*s;for(const k in w){x-=Math.max(0,w[k]);if(x<0)return k;}return Object.keys(w)[0];}
- const REACT=[.18,.32]; // seconds: human reaction to an enemy appearing (average player ~0.25 s)
+ const REACT=[.2,.35]; // seconds: a mid-ranked player's reaction to an enemy appearing on a pre-aimed angle (~0.25 s); reaction() adds the off-angle / flash costs
  // A bot's character for the whole match. role: optional 'entry' | 'anchor' | 'lurker' | 'support' bias.
  function personality(seed,role){
   const r=rng(seed),ag=role==='entry'?.65+r()*.35:role==='anchor'?.1+r()*.4:.2+r()*.6,pa=clamp(1-ag+(r()-.5)*.5,0,1),acc=.35+r()*.65;
@@ -23,8 +23,13 @@
    lag:.05+(1-acc)*.09+r()*.03};                                   // s: tracking lag on a moving target (aims where it was), settles with P.settle
 
  }
- // One reaction draw per engagement, always inside REACT.
- function reaction(P,rand){const j=(rand()+rand()+rand()-1.5)*1.4;return clamp(P.react+j*P.reactJit*2,REACT[0],REACT[1]);}
+ // One reaction draw per engagement: inside REACT for a pre-aimed angle, then human costs on top (ctx, optional):
+ // ctx.pre false (crosshair not on the angle) +30-70 ms, ctx.off (rad between the view and the enemy) > 0.6 +50-110 ms,
+ // > 1.4 (from the side) +80-160 ms more, > 2.4 (behind) +100-200 ms more (the turn itself is aimPlan / turnStep), ctx.flashed
+ // (blind until just now) +120-220 ms; ctx.k scales the whole draw (difficulty).
+ function reaction(P,rand,ctx){const j=(rand()+rand()+rand()-1.5)*1.4;let t=clamp(P.react+j*P.reactJit*2,REACT[0],REACT[1]);
+  if(ctx){const off=Math.abs(ctx.off||0);if(!ctx.pre)t+=.03+rand()*.04;if(off>.6)t+=.05+rand()*.06;if(off>1.4)t+=.08+rand()*.08;if(off>2.4)t+=.1+rand()*.1;if(ctx.flashed)t+=.12+rand()*.1;t*=ctx.k||1;}
+  return t;}
  // Crosshair placement error for a new engagement: random direction, magnitude around P.xh; crosshairAt(e,P,t) settles it
  // toward P.xhFloor of the start error over P.settle seconds of tracking (a flick that corrects, not a laser).
  function crosshair(P,rand,preaimed){const a=rand()*Math.PI*2,m=P.xh*(.55+rand()*.9)*(preaimed?.45:1);return {y:Math.cos(a)*m,p:Math.sin(a)*m*.55};}
@@ -34,6 +39,56 @@
  function wrapA(a){return Math.atan2(Math.sin(a),Math.cos(a));}
  function turnStep(P,from,want,dt){const d=wrapA(want-from),m=(P.turn||10)*dt;return Math.abs(d)<=m?{yaw:want,left:0}:{yaw:from+Math.sign(d)*m,left:Math.abs(d)-m};}
  function trackLag(P,t){return (P.lag||.08)*(.35+.65*Math.exp(-Math.max(0,t)/((P.settle||.25)*2)));}
+ // ---- Human aim (default: a mid-ranked player, think Gold-Plat; LEVEL easy / hard scale it) ----
+ // A fight's crosshair path is a planned human flick, not a laser: aimPlan() takes where the crosshair is when the enemy
+ // appears (e0 = crosshair minus the aim point, radians yaw / pitch) and aimAt(A, t) returns the error at t s into the fight:
+ //  - until A.start (the reaction) the crosshair stays where it was;
+ //  - flick: minimum-jerk (ease-in / ease-out) over A.T1 = Fitts' law (0.06 s + fitts x log2(1 + error / target half-width),
+ //    never faster than the bot's turn rate), past the target by A.over (overshoot) on a big flick;
+ //  - correction: a second, smaller min-jerk move over A.T2 back to a resting error A.res (placement: a little off the angle);
+ //  - micro-adjust: the resting error shrinks toward 45 % with a slow tremor on top, never exactly zero.
+ // aimHeight() is where the crosshair sits on the body (head / neck / chest: most fights start at chest-neck height, more
+ // head for accurate bots), readyToFire() lets the first shot go while still slightly off (eager players miss it at range),
+ // recoilPull() is the share of the spray climb the bot drags down (never all of it), and discipline is the chance a fight's
+ // shots are counter-strafed (stopped) rather than fired on the move.
+ const LEVEL={easy:{rt:1.3,err:1.7,head:.55,pull:.65,disc:.75},normal:{rt:1,err:1,head:1,pull:1,disc:1},hard:{rt:.82,err:.6,head:1.4,pull:1.2,disc:1.15}};
+ function level(name){return LEVEL[name]||LEVEL.normal;}
+ // Per-bot aim traits (pure, from P.seed on a separate stream: personality() draws are unchanged).
+ function aimTraits(P){const r=rng(((P.seed>>>0)^0x51ed270b)>>>0),acc=P.accuracy==null?.6:P.accuracy;
+  return {headAim:.06+acc*.12+r()*.05,neckAim:.3+r()*.15,place:.01+(1-acc)*.012+r()*.005,over:.04+r()*.08,fitts:.045+(1-acc)*.035+r()*.015,
+   trem:.003+(1-acc)*.006,pull:.25+acc*.25+r()*.1,eager:.6+r()*.8+(P.aggression||0)*.4,discipline:clamp(.45+(P.patience==null?.5:P.patience)*.35+r()*.15,0,.97),idle:-(.02+(1-acc)*.05+r()*.02)};}
+ const AIM_H={head:1.8,neck:1.45,chest:1.2}; // metres above the feet, standing (server hitboxes: head sphere centre 1.815, body capsule top ~1.6)
+ function aimHeight(P,rand,lvl){const A=aimTraits(P),L=level(lvl),x=rand(),h=Math.min(.85,A.headAim*L.head);return x<h?'head':x<h+(1-h)*A.neckAim?'neck':'chest';}
+ function gauss(rand){return (rand()+rand()+rand()+rand()-2)*1.732;}
+ function mj(x){x=x<0?0:x>1?1:x;return x*x*x*(10-15*x+6*x*x);}
+ // Target half-width (rad) at dist m: a 0.3 m wide body.
+ function halfWidth(dist){return Math.max(.004,Math.atan(.3/Math.max(.5,dist||1)));}
+ function aimPlan(P,rand,e0y,e0p,dist,ctx){ctx=ctx||{};const A=aimTraits(P),L=level(ctx.level),mag=Math.hypot(e0y||0,e0p||0),w=halfWidth(dist);
+  const T1=Math.max(mag/Math.max(.5,(P.turn||10)*.9),(.06+A.fitts*Math.log2(1+mag/w))*(.85+rand()*.3)*L.rt),big=mag>w*2.5;
+  const sd=A.place*L.err*(ctx.moving?1.5:1)*(.65+.35*Math.min(1,w/.03)),/* players aim finer (and slower, Fitts) at a small far target */res=[gauss(rand)*sd,gauss(rand)*sd*.6-sd*.25],over=big?A.over*(.6+rand()*.8):0;
+  return planFire({start:Math.max(0,ctx.start||0),e0:[e0y||0,e0p||0],T1,T2:big?.07+rand()*.09:0,o:big?[-(e0y||0)*over+res[0]*1.6,-(e0p||0)*over+res[1]*1.6]:[res[0],res[1]],res,
+   trem:A.trem*L.err,ph:rand()*6.283,settle:.3+rand()*.35,eager:A.eager*Math.sqrt(L.err),w,fireAt:0},P,rand);}
+ // When the player believes the crosshair is on: the end of the flick (eager players, before the correction) or the end of
+ // the correction (careful ones), plus a beat; A.fireAt in s after the reaction. The residual error is not perceived, so
+ // the shot goes regardless of it (that is what misses at range).
+ function planFire(A,P,rand){const e=aimTraits(P).eager;A.fireAt=A.T1*(.8+rand()*.2)+(e>1.1&&rand()<.6?0:A.T2)+rand()*.06;return A;}
+ function aimAt(A,t,out){const o=out||[0,0];if(!A){o[0]=o[1]=0;return o;}const s=t-A.start;let y,p;
+  if(s<=0){y=A.e0[0];p=A.e0[1];}
+  else if(s<A.T1){const k=mj(s/A.T1);y=A.e0[0]+(A.o[0]-A.e0[0])*k;p=A.e0[1]+(A.o[1]-A.e0[1])*k;}
+  else if(s<A.T1+A.T2){const k=mj((s-A.T1)/A.T2);y=A.o[0]+(A.res[0]-A.o[0])*k;p=A.o[1]+(A.res[1]-A.o[1])*k;}
+  else{const q=s-A.T1-A.T2,k=.7+.3*Math.exp(-q/A.settle);y=A.res[0]*k+A.trem*Math.sin(q*6.1+A.ph);p=A.res[1]*k+A.trem*.7*Math.sin(q*4.3+A.ph*1.7);}
+  o[0]=y;o[1]=p;return o;}
+ // May the trigger go now? err: the current crosshair error (rad); the first shot goes once within eager x half-width.
+ function readyToFire(A,err,dist,t){if(!A)return false;if(t!=null&&A.fireAt&&t-A.start>=A.fireAt)return true;return Math.abs(err)<A.eager*.5*halfWidth(dist);}
+ // Resting crosshair pitch while moving / holding (rad, below eye level: a mid-ranked player's crosshair sits a little low, so
+ // most fights start nearer the body than the head).
+ function idlePitch(P){return aimTraits(P).idle;}
+ function recoilPull(P,lvl){return clamp(aimTraits(P).pull*level(lvl).pull,.2,.9);}
+ function discipline(P,lvl){return clamp(aimTraits(P).discipline*level(lvl).disc,0,.97);}
+ // Which hit volume a shot passing lat m beside the target's axis at h m above its feet lands in (server hitboxes, standing;
+ // crouch ch lowers the head and the body top by ch): 'head' | 'body' | 'legs' | null.
+ function hitPart(lat,h,ch){ch=ch||0;const hc=1.815-ch,top=1.605-ch;if(lat*lat+(h-hc)*(h-hc)<.195*.195)return 'head';
+  if(Math.abs(lat)<.288&&h>.06&&h<top){const a=.348,b=top-.288,y=h<a?a:h>b?b:h;if(lat*lat+(h-y)*(h-y)<.288*.288||(h>=a&&h<=b))return h<.9*(hc/1.815)?'legs':'body';}return null;}
  // Fire rhythm by range: taps far, bursts mid, sprays close (semi-auto guns always single shots). shots = trigger pulls
  // or the burst length, pause = seconds before the next one.
  function firePattern(P,rand,dist,auto){
@@ -209,5 +264,5 @@
  const TAILWIND={hp:50,lost:30,last:.6};
  function tailwindDash(c){if(!c||!c.armed)return null;if(c.kills>0)return 'kill';if(c.hp<TAILWIND.hp||c.hp0-c.hp>=TAILWIND.lost)return 'hurt';if(c.left<TAILWIND.last)return 'expiring';return null;}
  function tailwindKeys(rand){return {f:-1,s:rand()<.5?-1:1};}
- return {hash,rng,clamp,pickW,REACT,personality,reaction,crosshair,crosshairAt,firePattern,peek,attackPlan,defensePlan,roles,teamBuy,buyFor,onMateDeath,onSound,ATTACK,DEFENSE,utility,UTIL,turnStep,trackLag,wrapA,SPIKE,plantSpot,postPlant,retake,postPlay,SHOOT_UTIL,shootUtility,TAILWIND,tailwindDash,tailwindKeys};
+ return {hash,rng,clamp,pickW,REACT,personality,reaction,crosshair,crosshairAt,firePattern,peek,attackPlan,defensePlan,roles,teamBuy,buyFor,onMateDeath,onSound,ATTACK,DEFENSE,utility,UTIL,turnStep,trackLag,wrapA,SPIKE,plantSpot,postPlant,retake,postPlay,SHOOT_UTIL,shootUtility,TAILWIND,tailwindDash,tailwindKeys,LEVEL,level,aimTraits,AIM_H,aimHeight,halfWidth,aimPlan,aimAt,readyToFire,planFire,idlePitch,recoilPull,discipline,hitPart};
 });
