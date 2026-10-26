@@ -41,4 +41,30 @@ for(const [open,off] of [[90,0],[90,.2],[60,0],[120,0],[120,-.3]]){const h=rad(o
  assert.ok(A.d(P.x,P.z)>=R-1e-6&&B.d(P.x,P.z)>=R-1e-6,`${open} deg corner: outside both walls`);}
 // 5. Convex corner (a pillar edge): sliding along a slanted face, then past its end, carries on without a snag.
 {const th=rad(45),w=plane([0,-2],[Math.cos(th),Math.sin(th)]),cut={d:(x,z)=>Math.max(w.d(x,z),x-2)},W=world([cut]),P=unit();walk(P,W,{x:0,z:-1},3,.05);assert.ok(P.x>2,'slides off the end of the face');}
+// 6. Real map (hk-36): Ascent (-57.37, 4.03, -15.26), a wall the capsule grazes beside it (clear at r .395, blocked at .4): the
+// step-up's lift search never found a free height and took its top, so a walk lifted the feet 0.40 m in one tick onto nothing
+// (a camera hop; qa-30's hop scan: 1 of 234 walks on eaf28e2). A lift that is still blocked at the top of its search is refused
+// unless it is a lean-wall lift of a few cm. Hop scan around that wall (234 walks, 20 / 60 Hz): no lift over 0.15 m above the floor.
+{const {loadWorld}=await import('./src/world.js'),cwd=process.cwd();process.chdir(new URL('.',import.meta.url).pathname);
+ const assets={fetch:async r=>new Response(await fs.promises.readFile('public'+new URL(r.url).pathname))},w=await loadWorld(assets,'ascent');process.chdir(cwd);
+ let runs=0,worst=0;for(let a=-60;a<=60;a+=10)for(const x0 of [-57,-56.5,-56])for(const z0 of [-16.5,-16,-15.6])for(const dt of [1/20,1/60]){const r=rad(a),P={x:x0,z:z0,y:w.ground(x0,z0,4.5),vx:0,vz:0,vy:0,ch:0};
+  for(let t=0;t<1.5-1e-9;t+=dt){Motor.step(P,{x:Math.cos(r),z:Math.sin(r),speed:6.75},dt,w);worst=Math.max(worst,P.y-w.ground(P.x,P.z,P.y+.5));}runs++;}
+ assert.ok(worst<.15,`Ascent wall at (-55.4, -15.3): a walk lifted the feet ${worst.toFixed(3)} m above the floor`);console.log(`Ascent hop scan: ${runs} walks, highest feet over the floor ${worst.toFixed(3)} m`);}
+// 7. The notch (qa-30 / hk-35): Ascent (-57.46, 4.05, -20.07) walking (0.924, 0.383) pinned the capsule on a cm-scale step of the
+// wall at (-55.88, 4.05, -16.31) at 60 Hz (0 m/s) while 20 Hz slid on (3.27 m/s): the probes found the tangent but every short
+// move along it was blocked. slide() retries from a point backed off the wall 1 / 2 / 4 cm: every tick now slides past it at
+// full speed, feet level. A backed-off slide is taken only when it moves at least 1 mm farther than the plain result (at the
+// Ascent plinth (-12.5, 7.07, 38) the back-off re-ground the capsule into the wall and pinned it: test-map-bounds 'slides').
+{const {loadWorld}=await import('./src/world.js'),cwd=process.cwd();process.chdir(new URL('.',import.meta.url).pathname);
+ const assets={fetch:async r=>new Response(await fs.promises.readFile('public'+new URL(r.url).pathname))},w=await loadWorld(assets,'ascent'),b=await loadWorld(assets,'breeze');process.chdir(cwd);
+ const ends=[];for(const dt of [1/20,1/30,1/60]){const P={x:-57.46,z:-20.07,y:w.ground(-57.46,-20.07,4.15),vx:0,vz:0,vy:0,ch:0},y0=P.y,tr=[];let dy=0;
+  for(let t=0;t<2.5-1e-9;t+=dt){Motor.step(P,{x:.924,z:.383,speed:6.75},dt,w);dy=Math.max(dy,P.y-y0);tr.push([t,P.x,P.z]);}
+  const a=tr.find(r=>r[0]>=1.9-1e-9),e=tr[tr.length-1],v=Math.hypot(e[1]-a[1],e[2]-a[2])/(e[0]-a[0]);
+  assert.ok(v>6,`notch at ${Math.round(1/dt)} Hz: ${v.toFixed(2)} m/s over the last 0.6 s`);assert.ok(dy<.15,`notch walk feet rise ${dy.toFixed(3)}`);ends.push([P.x,P.z]);}
+ assert.ok(Math.hypot(ends[0][0]-ends[2][0],ends[0][1]-ends[2][1])<1.5,'20 Hz and 60 Hz end within 1.5 m: '+JSON.stringify(ends));
+ // 8. Breeze defender spawn rim (hk-36): walking at the 12 m platform's north-east edge rode a thin sloped rim up 0.5 m and ended
+ // embedded (113 / 528 walks on main), worse with the slide; a CLIPS.breeze strip on the rim line keeps the capsule on the floor.
+ let n=0,emb=0;for(let a=0;a<360;a+=15)for(const x0 of [-0.6,-1,-1.5,-2,-2.5])for(const z0 of [-45.9,-45.5,-45.2])for(const dt of [1/20,1/60]){const y0=b.ground(x0,z0,12.5);if(b.blocked(x0,z0,.4,y0,1.8))continue;const r=rad(a),P={x:x0,z:z0,y:y0,vx:0,vz:0,vy:0,ch:0};n++;
+  for(let t=0;t<1.2-1e-9;t+=dt){Motor.step(P,{x:Math.cos(r),z:Math.sin(r),speed:6.75},dt,b);if(b.blocked(P.x,P.z,.4,P.y,1.8)){emb++;break;}}}
+ assert.equal(emb,0,`Breeze spawn rim: ${emb} of ${n} walks embedded`);console.log(`notch: ${ends.length} ticks slide on; Breeze spawn rim: ${n} walks, 0 embedded`);}
 console.log('wall slide: 30 / 45 / 60 deg walls slide at cos(angle) both ways, server and page ticks; head-on stops; axis-aligned unchanged; thin wall never crossed; corners settle; motor pair identical');

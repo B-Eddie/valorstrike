@@ -74,7 +74,8 @@ const CLIPS={ascent:[{name:'A ramp pit',y:[-60,15],p:[[42.55,-25.15],[42.62,-24.
   {name:'7 cm plinth (0.5 m tall) along the slanted wall north of (-12.5, 7.07, 38), z 37.46..38.42 (a capsule walking along or into the wall rode up 0.27 m onto its edge, a camera hop; the clip makes the face vertical at the plinth line, the wall still stops a walk into it)',y:[6.95,7.6],p:[[-12,38.42],[-12.18,37.46],[-11.95,37.46],[-11.88,38.42]]}],
  split:[{name:'rounded 0.8 m prop by a wall (domed: a capsule climbed it rim-first)',y:[9,9.85],p:[[-3.85,-46.4],[-3.93,-46.21],[-4.12,-46.13],[-4.31,-46.21],[-4.39,-46.4],[-4.31,-46.59],[-4.12,-46.67],[-3.93,-46.59]]}],
  bind:[{name:'rock crevices west / north of the 0.65 m bump at (-53.25, 21) (a capsule wedged between bump and leaning rock face)',y:[6.9,8.4],p:[[-53.2,21.45],[-53.5,21.38],[-53.7,21.35],[-53.84,21.41],[-53.9,21.55],[-53.84,21.69],[-53.7,21.75],[-53.2,21.75]]}],
- breeze:[{name:'crate stack below the 12 m platform south-east edge',y:[11,14.5],p:[[8.6,-24.45],[10.45,-24.45],[10.45,-21.4],[7.3,-21.4],[7.3,-23.6],[8,-23.85],[8.35,-24.2]]},
+ breeze:[{name:'defender spawn 12 m platform north-east edge over the 8 m drop: a thin sloped rim along the edge (a capsule walking toward the drop rode up it to 0.5 m and ended embedded, worse with the wall slide; hk-36 bw6: 113 / 528 spawn walks on main). Face 0.1 m inside the rim line z = -45.45 - 0.42 x (the thin sloped bits of the rim sit on it), strip over the drop; the 4 m floor below is untouched',y:[11.5,14.5],p:[[-2.75,-44.403],[2.4,-46.566],[2.4,-45.858],[-2.5,-43.8]]},
+  {name:'crate stack below the 12 m platform south-east edge',y:[11,14.5],p:[[8.6,-24.45],[10.45,-24.45],[10.45,-21.4],[7.3,-21.4],[7.3,-23.6],[8,-23.85],[8.35,-24.2]]},
   {name:'8 m floor west edge over the off-footprint 5.2 m drop (capsule settled on the edge lip)',y:[8.4,9.5],p:[[-34.9,-66],[-34.06,-66],[-33.92,-65.5],[-33.92,-64],[-34,-62],[-34.08,-60.5],[-34.18,-59],[-34.21,-58.4],[-34.9,-58.4]]},
   {name:'pocket west of the 1 m metal crate at (-30.5, 8.97, -28) (walking off its west edge left the capsule hanging 0.84 m up on the crate lip, unable to walk straight back; only a capsule on the crate top reaches this band, the 8 m floor beside it and the 2 m crate north of it (top 9.97) are untouched)',y:[9.85,9.95],p:[[-31.25,-28.6],[-31.25,-27.4],[-31.7,-27.4],[-31.7,-28.6]]},
   {name:'open-lattice 0.7 m prop by the mid-west railing (a capsule perched on its rim)',y:[6.05,6.75],p:[[-10.94,-0.98],[-11.03,-0.77],[-11.24,-0.68],[-11.45,-0.77],[-11.54,-0.98],[-11.45,-1.19],[-11.24,-1.28],[-11.03,-1.19]]}]};
@@ -111,11 +112,22 @@ function leashOk(L,x,z,y,ground,x0,z0){if(!L)return true;if(x0!=null){if(leashOk
 // (7.5 deg scan, then 6 halvings) is the wall's tangent, and the rest of the move is projected on it (length cos a). Every
 // move is tested whole at its destination (halved up to 4 times if blocked), so a slide never tunnels.
 const SLIDE_MAX=80*Math.PI/180,SLIDE_STEP=7.5*Math.PI/180,SLIDE_PROBE=.2,SLIDE_RISE=.02;
-function slide(P,world,rx,rz,height){const L=Math.hypot(rx,rz);if(L<1e-7)return null;const ux=rx/L,uz=rz/L,probe=Math.max(SLIDE_PROBE,4*L);let ox=0,oz=0;
+function slide(P,world,rx,rz,height){const r=slideFrom(P,world,rx,rz,height,0,0);if(r&&r[4])return r;
+ // Pinned on a notch of a wall (a cm-scale step in the collision mesh: the probes find the wall's tangent but even a short move along it
+ // is blocked): retry from a point backed off the wall along a blocked axis (1 / 2 / 4 cm); a real corner still stops (both probes stay
+ // blocked from the backed-off point, so no slide is found). hk-35: Ascent (-57.46, 4.05, -20.07) slid at 20 Hz, stuck at 60 Hz on one.
+ // A backed-off slide is taken only when its whole move (back-off included) goes at least 1 mm farther than the plain result (gap close
+ // or nothing): at the Ascent plinth (-12.5, 7.07, 38) the back-off only re-ground the capsule into the wall it was already closing on
+ // and pinned it (test-map-bounds 'slides'), qa-32.
+ const g=r?Math.hypot(r[0],r[1]):0;
+ for(const b of [.01,.02,.04])for(const ax of [0,1]){const c=ax?rz:rx;if(Math.abs(c)<1e-9)continue;const bx=ax?0:-Math.sign(c)*b,bz=ax?-Math.sign(c)*b:0,q=slideFrom(P,world,rx,rz,height,bx,bz);if(q&&q[4]&&Math.hypot(q[0],q[1])>g+1e-3)return q;}
+ return r;}
+function slideFrom(P,world,rx,rz,height,bx,bz){const L=Math.hypot(rx,rz);if(L<1e-7)return null;const ux=rx/L,uz=rz/L,probe=Math.max(SLIDE_PROBE,4*L);let ox=bx,oz=bz;
  const ok=(dx,dz)=>{const x=P.x+ox+dx,z=P.z+oz+dz;return !(world.leash&&!world.leash(x,z,P.y,P.x,P.z))&&!world.blocked(x,z,.4,P.y,height)&&!(world.ground(x,z,P.y+C.stepHeight)>P.y+SLIDE_RISE);};/* flat only: a slide never climbs (a plinth, a stair: moveAxis's step rules decide those) */
+ if((bx||bz)&&!ok(0,0))return null;
  const dir=(a,s)=>{const c=Math.cos(a),sn=Math.sin(a)*s;return [ux*c-uz*sn,uz*c+ux*sn];},free=(a,s)=>{const d=dir(a,s);return ok(d[0]*probe,d[1]*probe);};
  const p=free(SLIDE_MAX,1),m=free(SLIDE_MAX,-1);if(p===m)return null;const s=p?1:-1;
- let f0=0,f1=1;for(let n=0;n<6;n++){const mid=(f0+f1)/2;if(ok(rx*mid,rz*mid))f0=mid;else f1=mid;}ox=rx*f0;oz=rz*f0;
+ let f0=0,f1=1;for(let n=0;n<6;n++){const mid=(f0+f1)/2;if(ok(rx*mid,rz*mid))f0=mid;else f1=mid;}ox+=rx*f0;oz+=rz*f0;
  let lo=0,hi=SLIDE_MAX;if(!free(SLIDE_MAX,s))return f0>0?[ox,oz,ux,uz,0]:null;
  for(let a=SLIDE_STEP;a<SLIDE_MAX-1e-9;a+=SLIDE_STEP){if(free(a,s)){hi=a;break;}lo=a;}
  for(let n=0;n<6;n++){const mid=(lo+hi)/2;if(free(mid,s))hi=mid;else lo=mid;}
@@ -157,7 +169,7 @@ function step(P,input,dt,world){
     // low ceiling 1.8-2.2 m over the floor refused a 5 mm lift because it was tested for the full 40 cm step).
     if(world.ceiling&&world.ceiling(P.x,P.z,P.y+height,cap+height))return false;
     // Riser test: sampled every 10 cm ahead, no single rise may exceed the step height (stairs pass, a 60 cm box does not).
-    {const sx=Math.sign(dx),sz=Math.sign(dz);let prev=Math.max(world.ground(P.x,P.z,top),P.y-.2);for(let d=.1;d<.55;d+=.1){const g=world.ground(P.x+sx*d,P.z+sz*d,top);if(g<prev-1)continue;if(g-prev>C.stepHeight+.01)return false;prev=Math.max(prev,g);}} /* samples through seams between stair meshes are ignored; a dip (a crack between floor slabs, a gutter) never lowers the reference, so the far side of a crack is no riser */let lo=Math.max(P.y,support),hi=cap;if(!world.blocked(x,z,.4,lo,height))hi=lo;else for(let n=0;n<10;n++){const mid=(lo+hi)/2;if(world.blocked(x,z,.4,mid,height))lo=mid;else hi=mid;}const base=floorNear(world,P.x,P.z,P.y);if(hi-base>C.stepHeight+.12)return false;const rise=hi-P.y;P.x=x;P.z=z;P.y=hi;P.vy=0;if(rise>0)P.eyeOffset=(P.eyeOffset||0)-rise;return true;}return false;};
+    {const sx=Math.sign(dx),sz=Math.sign(dz);let prev=Math.max(world.ground(P.x,P.z,top),P.y-.2);for(let d=.1;d<.55;d+=.1){const g=world.ground(P.x+sx*d,P.z+sz*d,top);if(g<prev-1)continue;if(g-prev>C.stepHeight+.01)return false;prev=Math.max(prev,g);}} /* samples through seams between stair meshes are ignored; a dip (a crack between floor slabs, a gutter) never lowers the reference, so the far side of a crack is no riser */let lo=Math.max(P.y,support),hi=cap;if(!world.blocked(x,z,.4,lo,height))hi=lo;else for(let n=0;n<10;n++){const mid=(lo+hi)/2;if(world.blocked(x,z,.4,mid,height))lo=mid;else hi=mid;}/* still blocked at the top of the search (a wall the capsule grazes beside it, not ahead: Ascent (-55.37, 4.03, -15.26) rose the full 0.40 m in one tick onto nothing and fell back, a camera hop; root cause hk-36): only a lean-wall lift of a few cm may end embedded */if(hi-Math.max(P.y,support)>LEAN_LIFTS[LEAN_LIFTS.length-1]+1e-6&&world.blocked(x,z,.4,hi,height))return false;const base=floorNear(world,P.x,P.z,P.y);if(hi-base>C.stepHeight+.12)return false;const rise=hi-P.y;P.x=x;P.z=z;P.y=hi;P.vy=0;if(rise>0)P.eyeOffset=(P.eyeOffset||0)-rise;return true;}return false;};
   const vx0=P.vx||0,vz0=P.vz||0,okx=moveAxis(v.dx,0);if(!okx)P.vx=0;
   const okz=moveAxis(0,v.dz);if(!okz)P.vz=0;
   // Wall slide: the axis-separated move above stops dead against a wall that is not world-axis aligned (Ascent's slanted
