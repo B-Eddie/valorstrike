@@ -22,7 +22,11 @@ const SIZES=(process.env.SIZES||'1280x720,640x360,390x844').split(',').map(s=>s.
 (async()=>{
  const browser=await chromium.launch({headless:true,args:['--no-sandbox','--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader','--disable-dev-shm-usage','--ignore-gpu-blocklist','--in-process-gpu','--renderer-process-limit=1']});
  const ctx=await browser.newContext({viewport:{width:1280,height:720},deviceScaleFactor:1});
- await ctx.addInitScript(()=>{try{localStorage.setItem('vs.gq','low');localStorage.setItem('vs.aa','0');localStorage.setItem('vs.portrait','1');}catch(e){}});
+ // hk-32: harness time dilation (browser_newmain2.cjs). abilhold3: the Fault Line charge and the hold HUD follow the tick's real-clock
+// dt (<= XRT.max per frame), so a 0.06 s tap spanning one ~1 s SwiftShader frame cast the full 56 m strip; and the script's 100 ms
+// polls let ~0.3 s of game run with C still down after a Jett tap. Taps / holds run at __ts 0.05, where the clocks agree.
+await ctx.addInitScript(()=>{const pn=performance.now.bind(performance);let r0=pn(),v0=r0,sc=1;Object.defineProperty(window,'__ts',{get:()=>sc,set:v=>{const r=pn();v0+=(r-r0)*sc;r0=r;sc=v;}});performance.now=()=>v0+(pn()-r0)*sc;});
+await ctx.addInitScript(()=>{try{localStorage.setItem('vs.gq','low');localStorage.setItem('vs.aa','0');localStorage.setItem('vs.portrait','1');}catch(e){}});
  await ctx.route(/^https?:\/\/(unpkg\.com|cdn\.jsdelivr\.net)\//,r=>{const f=r.request().url().split('/').pop().split('?')[0];if(LOCAL[f])return r.fulfill({path:LOCAL[f],contentType:'application/javascript',headers:{'access-control-allow-origin':'*'}});return r.continue();});
  await ctx.route(/127\.0\.0\.1:8876\/(index\.html)?(\?.*)?$/,r=>{const h=fs.readFileSync(ROOT+'/index.html','utf8').replace('window.xValorantFeel={','window.__xe=s=>eval(s);window.xValorantFeel={');r.fulfill({body:h,contentType:'text/html'});});
  const page=await ctx.newPage();await require('./pw_shot.cjs')(ctx,page);page.setDefaultTimeout(600000);page.on('pageerror',e=>R.errors.push('pageerror '+String(e).slice(0,300)));page.on('console',m=>{if(m.type()==='error')R.errors.push('console '+m.text().slice(0,300));});
@@ -56,18 +60,18 @@ const SIZES=(process.env.SIZES||'1280x720,640x360,390x844').split(',').map(s=>s.
  const ev=()=>X('JSON.stringify({fl:window.__fl.slice(),cbT:window.__cbT,cbSm:window.__cbSm,buy:FV.buy})').then(JSON.parse);await frames(3);await page.mouse.move(640,360);
  // A. Breach
  for(const [nm,hold] of [['tap',60],['held',1300]]){
-  await pick('Breach');await frames(1);await page.keyboard.down('KeyE');await simWait(0.05,'KeyE');await page.keyboard.up('KeyE');await readyWait();log('breach '+nm+' drawn',await eqSt());
+  await pick('Breach');await frames(1);await X('window.__ts=0.05;1');await frames(1);await page.keyboard.down('KeyE');await simWait(0.05,'KeyE');await page.keyboard.up('KeyE');await readyWait();log('breach '+nm+' drawn',await eqSt());
   await page.mouse.down();await simWait(hold/1000,'hold');if(nm==='held'){log('breach held state',await eqSt());await shot('abilhold-breach-charging',1280,720);}await page.mouse.up();
-  const fl0=(await ev()).fl.length;const f=await waitFq();for(let i=0;i<60&&(await ev()).fl.length===fl0;i++)await simWait(0.1,'fl cast');const fe=(await ev()).fl.slice(fl0);log('breach '+nm+' strip',{fq:f,cast:fe});if(nm==='held')await shot('abilhold-breach-released',1280,720);
+  const fl0=(await ev()).fl.length;const f=await waitFq();for(let i=0;i<120&&(await ev()).fl.length===fl0;i++)await simWait(0.1,'fl cast');const fe=(await ev()).fl.slice(fl0);log('breach '+nm+' strip',{fq:f,cast:fe});if(nm==='held')await shot('abilhold-breach-released',1280,720);
   const L=fe.length?fe[0]:f.length?f[0][1]:null;
   check(nm==='tap'?'Breach E tap: Fault Line strip near the 8 m minimum (8..14 m)':'Breach E held 1.3 s: Fault Line strip near the 56 m maximum (>=50 m)',nm==='tap'?L>=8&&L<14:L>=50&&L<=56,JSON.stringify({fq:f,cast:fe}));
-  await simWait(2,'breach after');await frames(1);
+  await X('window.__ts=1;1');await simWait(2,'breach after');await frames(1);
  }
  // B. Jett
- await pick('Jett');await frames(1);
+ await pick('Jett');await frames(1);await X('window.__ts=0.05;1');await frames(1);
  const cb=()=>X('JSON.stringify({n:J.cbs.length,c:J.c,sm:J.smokes.length,cbs:J.cbs.map(c=>({held:c.st.held,p:[+c.st.p[0].toFixed(1),+c.st.p[2].toFixed(1)],v:[+c.st.v[0].toFixed(1),+c.st.v[2].toFixed(1)]})),yaw:+yaw.toFixed(3),pp:[+player.x.toFixed(1),+player.z.toFixed(1)]})').then(JSON.parse);
  let s0=await cb(),ej0=await ev();await X('window.__cbH=[];1');await page.keyboard.down('KeyC');await simWait(0.06,'tap');await page.keyboard.up('KeyC');await simWait(0.2,'after tap');let s1=await cb();log('jett tap',s1);
- const e1=await ev(),hT=await X('JSON.stringify(window.__cbH)').then(JSON.parse);log('jett tap events',{e1,heldTicks:hT.length,heldTrue:hT.filter(Boolean).length});check('Jett C tap: thrown on the press (charge spent, no equip), not steered after release',s1.c===s0.c-1&&e1.cbT===ej0.cbT+1&&(s1.n===1?s1.cbs[0].held===false:true)&&hT.filter(Boolean).length<=3,JSON.stringify({s1,e1,heldTrue:hT.filter(Boolean).length}));
+ const e1=await ev(),hT=await X('JSON.stringify(window.__cbH)').then(JSON.parse);log('jett tap events',{e1,heldTicks:hT.length,heldTrue:hT.filter(Boolean).length});check('Jett C tap: thrown on the press (charge spent, no equip), not steered after release',s1.c===s0.c-1&&e1.cbT===ej0.cbT+1&&(s1.n===1?s1.cbs[0].held===false:true)&&hT.length>0&&hT.indexOf(false)>=0&&hT.lastIndexOf(true)<hT.indexOf(false)/* held only before the first released tick */,JSON.stringify({s1,e1,heldTrue:hT.filter(Boolean).length}));
  for(let i=0;i<60&&(await X('J.cbs.length'));i++)await simWait(0.1,'flight');let s2=await cb();log('jett tap landed',s2);const e2=await ev();check('Jett C tap: lands as a smoke',e2.cbSm===ej0.cbSm+1&&s2.n===0,JSON.stringify({s2,e2}));
  await simWait(0.5,'gap');s0=await cb();const e3=await ev();await page.keyboard.down('KeyC');await simWait(0.25,'hold C');s1=await cb();log('jett held',s1);
  check('Jett C held: projectile out and steering',s1.n===1&&s1.cbs[0].held===true,JSON.stringify(s1));
@@ -78,7 +82,7 @@ const SIZES=(process.env.SIZES||'1280x720,640x360,390x844').split(',').map(s=>s.
  check('Jett C released: no more steering (or already landed)',s3.n===0||s3.cbs[0].held===false,JSON.stringify(s3));
  for(let i=0;i<60&&(await X('J.cbs.length'));i++)await simWait(0.1,'flight');s3=await cb();log('jett held landed',s3);const e4=await ev();check('Jett C held: lands as a smoke',e4.cbSm===e3.cbSm+1,JSON.stringify({s3,e4}));await shot('abilhold-jett-smoke',1280,720);
  // C. Reyna Leer
- await pick('Reyna');await frames(1);const e0=R.errors.length;const c0=await X('J.c');
+ await X('window.__ts=1;1');await pick('Reyna');await frames(1);const e0=R.errors.length;const c0=await X('J.c');
  await page.keyboard.down('KeyC');await simWait(0.05,'KeyC');await page.keyboard.up('KeyC');await readyWait();log('reyna leer drawn',await eqSt());
  await page.mouse.down();await simWait(0.08,'click');await page.mouse.up();
  for(let i=0;i<6;i++){await simWait(0.5,'leer');await frames(1);if(i===1)await shot('abilhold-reyna-leer',1280,720);}
