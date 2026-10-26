@@ -302,8 +302,8 @@ line of sight already checked); offline client one instant 3 s reveal of every b
 bolt on the player the same 15 m.
 
 - Server: `DEV.reconBolt = {pulses: [.9, 2.5], radius: 30, reveal: .75}` for the bolt-flown Sova E (the effect carries
-  `reveal`; `tickDevices` reads `e.reveal`). `DEV.recon` (20 m / 1.6 s) still serves the Owl Drone / Spycam stand-ins,
-  which are not the Recon Bolt.
+  `reveal`; `tickDevices` reads `e.reveal`). `DEV.recon` (20 m / 1.6 s) remains the generic recon / drone
+  fallback; Owl Drone / Spycam are now darts (`DEV.owl` / `DEV.spycam`, see below).
 - Client: `XRCN` (same table, asserted equal). `jReveal` (player / ally bot / relayed ally bolt) and `enRecon` (enemy bolt
   on the player) now schedule the two pulses from the landing; each pulse reveals what is within 30 m and in the bolt's sight
   (`los` from 0.5 m above the bolt to the chest / the player's eye) for 0.75 s and draws the sonar rings. Pulses carry a round
@@ -474,3 +474,24 @@ hawk flew 2.5 s and faded without a flash.
 - Tests: `server/test-abilities.js` (table; glBlind ramp; a wall at 5.5 m -> blind glBlind(5/18) ~1.46; 14 m -> 2.25;
   Flashpoint still 2.25), `work/test_ability_equip.cjs` (XGL == GUIDING; ramp table; popped after 0.25 s -> 1.42 s; flashes at
   the end of the flight with ~2.25 s).
+
+### Sova Owl Drone dart and Cypher Spycam dart (wiki.playvalorant.com/en-us/Owl_Drone, /Spycam, fetched 2026-10-25)
+
+Wiki stats: Owl Drone dart reveals its target in 2 pings of 0.6 s, the first 1.6 s after impact and the second 1.2 s after the
+first ends (3.4 s). Spycam: max deploy distance 20 m, 1.15 s deploy; its dart reveals the target 1 time every 2 s until it is
+removed. Was: server Owl Drone and Spycam both the generic 20 m recon pulse (0.9 / 2.5 s); offline client Owl dart a flat 5 s
+reveal at the tag, Spycam dart a flat 3 s reveal.
+
+- Server: `DEV.owl = {pings: [1.6, 3.4], reveal: .6, radius: 20}`, `DEV.spycam = {deploy: 1.15, every: 2, pings: 5, reveal: 1,
+  radius: 20}`. Stand-in (the trusted server has no flying drone / camera): a `dart` effect tags the nearest enemy in sight
+  within 20 m of the aim point (Owl at once, Spycam once deployed after 1.15 s; Spycam placed at most 20 m away) and reveals
+  it on each ping (a tag: no line of sight needed afterwards). It ends with its target's death, or misses when no enemy is in
+  sight.
+- Client: `XOWL = {pings: [1.6, 3.4], reveal: 0.6}`, `XSPY = {every: 2, pings: 5, reveal: 1}` (asserted equal to the server);
+  `xDartPings(b, at, rv)` schedules the pings through `xHfRv` (adds to a running reveal), keyed to the round token `XRCN.g`
+  and skipped once the target is dead. `drTag` (Owl dart) and `cyDart` (Spycam dart) use it.
+- Not modelled: removing the Spycam dart (5 pings here, project value), the drone / camera flight itself on the server.
+- Tests: `server/test-ults.js` (tables; Owl: not before 1.6 s, on at 1.7, off at 2.35, on at 3.5, off at 4.1, far foe not tagged;
+  Spycam: off at 1.05, on at 1.25, off at 2.3, on at 3.25 and 9.25, done by 10.5; ends with its target; misses behind a wall),
+  `work/test_ability_equip.cjs` (XOWL / XSPY == server; Owl timeline false / true / false / true / false at 1.5 / 1.7 / 2.35 / 3.5 /
+  4.15 s; Spycam pings at 0.1 / 2.1 / 8.1 s, off at 1.15 / 9.3 s; a round clear cancels pending pings).

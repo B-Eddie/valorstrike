@@ -8189,10 +8189,10 @@ function xBoltMove(a) { if (!a.tr) return void a.m.position.lerpVectors(a.a, a.b
 // Sova Hunter's Fury (wiki.playvalorant.com/en-us/Hunter's_Fury): 3 charges, 1 blast every 2.125 s, 6 s to use them, a 66 m
 // cylinder of 1.76 m radius through walls, 80 damage, enemies hit revealed 1 s. Same values as the server (ULT.fury).
 const XHFU = { n: 3, cyc: 2.125, win: 6, len: 66, r: 1.76, dmg: 80, rv: 1, g: 0 };
-function xHfRv(list) { // reveal bots hit by a Hunter's Fury blast for XHFU.rv s (adds to a running Recon / Neural Theft reveal)
+function xHfRv(list, t) { // reveal bots hit by a Hunter's Fury blast for XHFU.rv s (or t s: dart pings; adds to a running Recon / Neural Theft reveal)
   list = list.filter((b) => b && b.alive && b.body && b.head && J.rv.indexOf(b) < 0); if (!list.length && !J.rv.length) return;
   list.forEach((b) => { b.rvO = [b.body, b.head].map((s) => { const o = new THREE.Mesh(s.geometry, rvMat); o.scale.setScalar(1.15); o.renderOrder = 999; o.raycast = () => {}; s.add(o); return o; }); J.rv.push(b); });
-  J.rvT = Math.max(J.rvT || 0, XHFU.rv);
+  J.rvT = Math.max(J.rvT || 0, t || XHFU.rv);
 }
 function jBeam() {
   if (J.cd.x > 0 || J.hf < 1) return; J.cd.x = XHFU.cyc; J.hf--; kick = 1; blip(300, 0.4, "sawtooth", 0.2);
@@ -9020,7 +9020,7 @@ function cyDart() {
   const vy = cyVy(), vp = cyVp(), dx = -Math.sin(vy) * Math.cos(vp), dy = Math.sin(vp), dz = -Math.cos(vy) * Math.cos(vp); let best = null, bd = 0.985;
   bots.forEach((b) => { if (!b.alive || !b.g) return; const q = new RV(b.g.position.x, 1.3, b.g.position.z), vx = q.x - C.p.x, vyy = q.y - C.p.y, vz = q.z - C.p.z, l = Math.hypot(vx, vyy, vz) || 1, c = (vx * dx + vyy * dy + vz * dz) / l;
     if (l < 60 && c > bd && los(C.p, q)) { bd = c; best = b; } });
-  blip(900, 0.08, "square", 0.1); if (best) { cyReveal([best], 3); say("Tracking dart · " + best.name + " revealed 3 s", 900); } else say("Tracking dart missed", 700);
+  blip(900, 0.08, "square", 0.1); if (best) { xDartPings(best, Array.from({ length: XSPY.pings }, (_, k) => k * XSPY.every), XSPY.reveal); say("Tracking dart · " + best.name + " tagged", 900); } else say("Tracking dart missed", 700);
 }
 function cyKey(code) {
   const P = player, no = sgNo, fx = -Math.sin(yaw), fz = -Math.cos(yaw);
@@ -9198,9 +9198,13 @@ function drTick(dt) {
   if (!blocked(d.x, nz, 0.25, d.y - 0.7)) d.z = nz;
   if (!blocked(d.x, d.z, 0.25, ny - 0.7)) d.y = ny;
 }
+// Sova Owl Drone dart (wiki.playvalorant.com/en-us/Owl_Drone): 2 pings of 0.6 s, the 1st 1.6 s after impact, the 2nd 1.2 s after
+// the 1st ends. Cypher Spycam dart (wiki Spycam): a ping every 2 s from impact (5 pings of 1 s here; no removal channel). Same as
+// the server (DEV.owl / DEV.spycam). Pings carry the round token (XRCN.g) and stop once the target is dead.
+const XOWL = { pings: [1.6, 3.4], reveal: 0.6 }, XSPY = { every: 2, pings: 5, reveal: 1 };
+function xDartPings(b, at, rv) { const g = XRCN.g; at.forEach((t) => setTimeout(() => { if (g === XRCN.g && b.alive && running) xHfRv([b], rv); }, t * 1000)); }
 function drTag(b) {
-  if (!J.rv.includes(b)) { J.rv.push(b); b.rvO = [b.body, b.head].map((s) => { const o = new THREE.Mesh(s.geometry, rvMat); o.scale.setScalar(1.15); o.renderOrder = 999; o.raycast = () => {}; s.add(o); return o; }); }
-  J.rvT = Math.max(J.rvT, 5); say(b.name + " tagged · 5 s", 900); blip(900, 0.12, "triangle", 0.15);
+  xDartPings(b, XOWL.pings, XOWL.reveal); say(b.name + " tagged", 900); blip(900, 0.12, "triangle", 0.15);
 }
 function drDart() {
   if (J.dr.tb) return tbLeap();

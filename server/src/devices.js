@@ -10,6 +10,8 @@ import {WINDUP,wf} from './windups.js';
 export function turretDamage(d){const T=DEV.turret;return d<T.near?T.dmg[0]:d<T.mid?T.dmg[1]:T.dmg[2];}
 export const DEV={
  recon:{pulses:[.9,2.5],radius:20,reveal:1.6},
+ owl:{pings:[1.6,3.4],reveal:.6,radius:20},/* wiki Owl_Drone: the dart's 2 pings, 1st 1.6 s after impact, 2nd 1.2 s after the 1st (0.6 s) ends; stand-in: the dart tags the nearest visible enemy within 20 m of the aim point at once; client XOWL */
+ spycam:{deploy:1.15,every:2,pings:5,reveal:1,radius:20},/* wiki Spycam: 1.15 s deploy, the dart reveals 1 every 2 s until removed; stand-in: the cam darts the nearest visible enemy within 20 m once deployed, 5 pings of 1 s (project values: no removal channel); client XSPY */
  reconBolt:{pulses:[.9,2.5],radius:30,reveal:.75},/* wiki Recon_Bolt: radius 30 m, 2 sonar pulses 1 every 1.6 s, 0.75 s reveal each (needs line of sight from the bolt); client XRCN matches */
  blaze:{life:8,length:12,width:.8,height:3,damage:30,heal:12.5},
  hotHands:{life:4,radius:4.5,grow:.75,damage:60,heal:12.5},/* wiki Hot_Hands: 4 s, spreads to 4.5 m over 0.75 s, then 3.25 s at full size */
@@ -34,6 +36,8 @@ const fwd=u=>[-Math.sin(u.look),0,-Math.cos(u.look)];
 export function startDevice(sim,u,ty,p,push,m={}){
  if(ty==='drone'&&u.agent==='Raze'){push('boombot',DEV.boombot.life,DEV.boombot.radius,{p:[u.x,u.y+.2,u.z],yaw:u.look});return true;}
  if(ty==='drone'&&u.agent==='Skye'){push('trail',DEV.trail.life,DEV.trail.radius,{p:[u.x,u.y+.2,u.z],yaw:u.look});return true;}
+ if(ty==='drone'&&u.agent==='Sova'){const O=DEV.owl;push('dart',Math.max(...O.pings)+.1,O.radius,{pickAt:sim.time,pings:O.pings.map(t=>sim.time+t),reveal:O.reveal});return true;}
+ if(ty==='recon'&&u.agent==='Cypher'){const S=DEV.spycam,pings=Array.from({length:S.pings},(_,k)=>sim.time+S.deploy+k*S.every);push('dart',pings[pings.length-1]-sim.time+.1,S.radius,{pickAt:sim.time+S.deploy,pings,reveal:S.reveal});return true;}
  if(ty==='recon'||ty==='drone'){push('recon',Math.max(...DEV.recon.pulses)+.1,DEV.recon.radius,{pulses:DEV.recon.pulses.map(t=>sim.time+t)});return true;}
  const f=fwd(u);
  // Phoenix Blaze: a straight wall of fire along his aim from his feet; blocks sight, burns enemies, heals him.
@@ -68,11 +72,13 @@ const segDist=(e,x,z)=>{const ax=e.p[0],az=e.p[2],dx=e.q[0]-ax,dz=e.q[2]-az,l2=d
 export function blazeBlocks(sim,o,d,max){for(const e of sim.effects){if(e.kind!=='blaze'||e.until<sim.time)continue;const n=24;for(let i=0;i<=n;i++){const t=max*i/n,x=o[0]+d[0]*t,y=o[1]+d[1]*t,z=o[2]+d[2]*t;if(y>=e.p[1]-.1&&y<=e.p[1]+DEV.blaze.height&&segDist(e,x,z)<DEV.blaze.width)return true;}}return false;}
 // Moves a ground device one step along yaw; returns false when blocked.
 function crawl(sim,e,dt,speed){const x=e.p[0]-Math.sin(e.yaw)*speed*dt,z=e.p[2]-Math.cos(e.yaw)*speed*dt;if(sim.world.blocked(x,z,.25,e.p[1]-.2,.5))return false;const y=sim.world.ground(x,z,e.p[1]+.5);if(!Number.isFinite(y)||Math.abs(y+.2-e.p[1])>.6)return false;e.p=[x,y+.2,z];return true;}
-const KINDS=new Set(['recon','boombot','trail','blaze','nanoswarm','alarmbot','trapwire','trademark']);
+const KINDS=new Set(['recon','dart','boombot','trail','blaze','nanoswarm','alarmbot','trapwire','trademark']);
 export function tickDevices(sim,dt){
  for(const u of sim.units){if(u.headhunter&&(!u.alive||u.weapon!==DEV.headhunter.weapon||u.ammo<=0))endHeadhunter(u);
   if(u.tether&&sim.time>=u.tether.at){if(u.alive){u.concussUntil=Math.max(u.concussUntil||0,sim.time+DEV.trapwire.daze);u.slowUntil=Math.max(u.slowUntil||0,sim.time+DEV.trapwire.daze);}u.tether=null;}}
  for(let i=sim.effects.length-1;i>=0;i--){const e=sim.effects[i];if(!KINDS.has(e.kind))continue;if(e.until<sim.time)continue;sim.fxSrc=e;const owner=sim.units.find(u=>u.id===e.owner),foes=sim.units.filter(v=>v.alive&&!v.loading&&v.team!==e.team);
+  if(e.kind==='dart'){/* Owl Drone / Spycam stand-in: tag one enemy, then reveal it on each ping (a tag: no line of sight needed) */if(e.tgt==null){if(sim.time<e.pickAt)continue;const o=[e.p[0],e.p[1]+.5,e.p[2]],v=foes.filter(v=>Math.hypot(v.x-o[0],v.z-o[2])<e.radius&&losClear(sim,o,chest(v))).sort((a,b)=>Math.hypot(a.x-o[0],a.z-o[2])-Math.hypot(b.x-o[0],b.z-o[2]))[0];if(!v){e.until=sim.time-1;continue;}e.tgt=v.id;}
+   const v=sim.units.find(x=>x.id===e.tgt);if(!v||!v.alive){e.until=sim.time-1;continue;}while(e.pings.length&&sim.time>=e.pings[0]){e.pings.shift();v.revealedUntil=Math.max(v.revealedUntil||0,sim.time+e.reveal);}if(!e.pings.length)e.until=sim.time-1;continue;}
   if(e.kind==='recon'){while(e.pulses&&e.pulses.length&&sim.time>=e.pulses[0]){e.pulses.shift();const o=[e.p[0],e.p[1]+.5,e.p[2]];for(const v of foes)if(Math.hypot(v.x-o[0],v.z-o[2])<e.radius&&losClear(sim,o,chest(v)))v.revealedUntil=Math.max(v.revealedUntil||0,sim.time+(e.reveal||DEV.recon.reveal));}continue;}
   if(e.kind==='blaze'){const B=DEV.blaze,inWall=v=>Math.abs(v.y-e.p[1])<B.height&&segDist(e,v.x,v.z)<B.width;for(const v of sim.units)if(v.alive&&!v.loading&&v.id!==e.owner&&inWall(v))abilityDamage(sim,owner,v,B.damage*dt);/* allies 1/3 (abilityDamage) */if(owner?.alive&&inWall(owner)&&owner.hp<100)owner.hp=Math.min(100,owner.hp+B.heal*dt);continue;}
   if(e.kind==='nanoswarm'){if(!e.armed||sim.time<(e.dmgAt||0))continue;/* 1 s activation windup */for(const v of sim.units)if(v.alive&&!v.loading&&v.id!==e.owner&&Math.hypot(v.x-e.p[0],v.z-e.p[2])<e.radius&&Math.abs(v.y-e.p[1])<3&&losClear(sim,[e.p[0],e.p[1]+.4,e.p[2]],chest(v)))abilityDamage(sim,owner,v,DEV.nanoswarm.damage*dt);continue;}
