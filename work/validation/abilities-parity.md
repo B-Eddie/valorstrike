@@ -406,3 +406,27 @@ with a 6 s concuss; offline client a 32 m, 0.72 rad half-angle cone, 4 s.
 - Not changed: offline bot Breach's ult stays the generic 5 m burst at its target; the 0.6 s knock-up / ticks are not modelled.
 - Tests: `server/test-ults.js` (strip table; 12 m ahead through a wall concussed <= 4 s, 38 m ahead / 8.5 m aside hit;
   5 m ahead, 9.6 m aside, 41 m ahead, behind, ally spared), `work/test_ability_equip.cjs` (XRT2 == ULT.quake, same cases offline).
+
+### Sova Hunter's Fury (wiki.playvalorant.com/en-us/Hunter's_Fury, fetched 2026-10-25)
+
+Wiki stats: 3 charges; fire rate 1 every 2.125 s (including the 1 s charge windup); max duration 6 s (not including the 0.8 s
+equip); a 66 m long cylinder of 1.76 m radius through walls; 80 damage; reveal 1 s; allies take reduced damage, no reveal.
+Was: server 0.9 m, 2 s reveal, 6.5 s window, an automatic blast every 2 s plus an early recast after 0.9 s; offline client
+80 m x 0.9 m, a blast every 0.9 s, no reveal, charges never expired; bot Sova three parallel 60 m x 1.1 m beams at once.
+
+- Server: `ULT.fury = {blasts: 3, cycle: 2.125, window: 6, range: 66, width: 1.76, damage: 80, reveal: 1}`. The first blast
+  leaves on the cast, the others only on FIRE (the X recast), no sooner than 2.125 s after the previous one; no automatic
+  blasts (wiki: "Sova can fire in a direction to expend a charge"); unfired charges are lost 6 s after the cast or on death.
+- Client: `XHFU` (same table, asserted equal; `XHF` is taken by an unrelated hit-feedback block). `jBeam`: 66 m x 1.76 m,
+  `J.cd.x` 2.125 s, enemies hit revealed 1 s (`xHfRv`, added to `J.rv`), `J.hfT` drops the charges 6 s after the cast or on
+  death. Bot Sova (offline, both teams): three blasts 2.125 s apart within the 6 s, each re-aimed at the nearest enemy (66 m x
+  1.76 m, 80); bots hit by an ally Sova are revealed to the player for 1 s, a player hit by an enemy Sova gets the enemy
+  reveal warning (bots home in, as for an enemy Recon Bolt); pending blasts stop on the bot's death or a round clear (`XHFU.g`).
+- Not modelled: the 1 s per-charge windup as a separate delay (the 2.125 s cycle includes it), the self-knockback / air hover.
+- Tests: `server/test-ults.js` (table; blast 1 through a wall; reveal on at 0.95 s, off at 1.05 s; recast refused at 2.05 s,
+  no auto blast, accepted at 2.25 s; the last charge waits for FIRE and follows the aim; 1.6 m off hit / 1.9 m missed;
+  charges kept to 5.9 s and lost by 6.05 s), `work/test_ability_equip.cjs` (XHFU == ULT.fury; 1.4 m off hit + revealed 1 s,
+  2 m missed, no blast before 2.125 s, reveal over by 1.1 s, second blast after 2.125 s, charge lost by 6 s; bot Sova 20 m /
+  40 m 1.5 m off hit + revealed, 2 m missed, blasts at 0 / 2.125 / 4.25 s only; enemy bot hits the player; a round clear
+  cancels pending blasts). Also fixes the Paranoia section's `los` restore (it left `los` undefined, freezing every later
+  ability tick in that test run).

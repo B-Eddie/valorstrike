@@ -12,15 +12,22 @@ const cast=(s,u,m={})=>s.command(u,{t:'ab',k:'x',...m});
 // Showstopper: X equips the launcher (wiki 1.4 s), FIRE shoots the rocket
 const rocket=(s,u,m={})=>{const ok=cast(s,u,m);if(!ok)return ok;s.time+=ULT.rocket.equip;return s.fire(u);};
 
-// Hunter's Fury: unearned ult rejected; three wall-piercing 80-damage blasts on the server aim (first now,
-// then every 2 s, recast early after 0.9 s); hit enemies are revealed to Sova's team; spoofed aim ignored.
+// Hunter's Fury (wiki Hunter's_Fury): unearned ult rejected; three wall-piercing 80-damage blasts (66 m, 1.76 m radius) on the
+// server aim - the first on the cast, the rest on FIRE (recast) no sooner than 2.125 s apart, no auto blasts; hit enemies are
+// revealed to Sova's team for 1 s; unfired charges are lost 6 s after the cast; spoofed aim ignored.
 {const {s,u,list:[foe,side,mate]}=setup('Sova',['foe'],['foeSide'],['mate']);Object.assign(foe,{x:0,y:0,z:-40});Object.assign(side,{x:6,y:0,z:-20});Object.assign(mate,{x:0,y:0,z:-10});
  assert.equal(cast(s,u),false,'no unearned ult');u.ability.ult=9;wall=5;
  assert.equal(cast(s,u,{o:[0,0,-40],d:[1,0,0],p:[6,-20]}),true);assert.equal(u.ability.ult,0);assert.equal(foe.hp,20,'first blast pierces the wall');assert.equal(side.hp,100,'off-line enemy untouched');assert(Math.abs(mate.hp-(100-80/3))<1e-6,'ally on the line takes a third (VALORANT friendly fire 1/3): '+mate.hp);
  const rs=s.roundState(mate);assert.deepEqual(rs.rv.map(r=>r[0]),[foe.id],'hit enemy revealed to the team (the hit ally is not)');assert.equal(mate.kills,0);assert.equal(u.kills,0);assert.equal(s.roundState(foe).rv.length,0);
- s.time+=.35;assert.equal(cast(s,u),true,'recast consumed');assert.equal(foe.hp,20,'recast too soon does not fire');tick(s,.7);assert.equal(cast(s,u),true);assert.equal(foe.alive,false,'second blast kills');
- assert.equal(u.ability.fury.left,1);u.look=Math.atan2(-6,20);foe.alive=true;foe.hp=100;tick(s,2.05);assert.equal(u.ability.fury,null,'channel ends after three blasts');assert.equal(side.hp,20,'auto blast follows the current aim');
+ assert.deepEqual([ULT.fury.blasts,ULT.fury.cycle,ULT.fury.window,ULT.fury.range,ULT.fury.width,ULT.fury.damage,ULT.fury.reveal],[3,2.125,6,66,1.76,80,1],'ULT.fury table');
+ {tick(s,.95);assert.ok(s.roundState(mate).rv.some(r=>r[0]===foe.id),'still revealed at 0.95 s');tick(s,.1);assert.ok(!s.roundState(mate).rv.some(r=>r[0]===foe.id),'reveal over after 1 s');}
+ tick(s,1);assert.equal(cast(s,u),true,'recast consumed');assert.equal(foe.hp,20,'recast before 2.125 s does not fire');tick(s,.1);assert.equal(foe.hp,20,'no auto blast');tick(s,.1);assert.equal(cast(s,u),true);assert.equal(foe.alive,false,'second blast kills');
+ assert.equal(u.ability.fury.left,1);u.look=Math.atan2(-6,20);foe.alive=true;foe.hp=100;tick(s,2.2);assert.equal(side.hp,100,'no auto blast for the last charge');assert.equal(cast(s,u),true);assert.equal(u.ability.fury,null,'channel ends after three blasts');assert.equal(side.hp,20,'the blast follows the current aim');
  tick(s,10);assert.equal(cast(s,u),false,'no free blasts after the channel');}
+// 1.76 m radius: a foe 1.6 m off the line is hit (was 0.9 m), 1.9 m is not; a charge left unfired is lost at 6 s.
+{const {s,u,list:[near,far]}=setup('Sova',['foeNear'],['foeFar']);Object.assign(near,{x:1.6,y:0,z:-30});Object.assign(far,{x:-1.9,y:0,z:-30});u.ability.ult=9;
+ assert.equal(cast(s,u),true);assert.equal(near.hp,20,'1.6 m off the line hit');assert.equal(far.hp,100,'1.9 m off the line missed');
+ tick(s,5.9);assert.equal(u.ability.fury.left,2,'charges held until 6 s');tick(s,.15);assert.equal(u.ability.fury,null,'unfired charges lost at 6 s');assert.equal(cast(s,u),false);}
 {const {s,u,list:[foe]}=setup('Sova',['foe']);Object.assign(foe,{x:0,y:0,z:-30});u.ability.ult=9;cast(s,u);u.alive=false;tick(s,.1);assert.equal(u.ability.fury,null,'death ends Hunter\'s Fury');tick(s,3);assert.equal(foe.hp,20);}
 
 // Showstopper (wiki): X equips a launcher (1.4 s equip, 10 s max including it); FIRE before the equip does nothing and
@@ -100,7 +107,7 @@ const rocket=(s,u,m={})=>{const ok=cast(s,u,m);if(!ok)return ok;s.time+=ULT.rock
 {const {s,u,list:[foe]}=setup('Raze',['foe']);Object.assign(foe,{x:0,y:0,z:-12,hp:1,armor:0});u.ability.ult=9;rocket(s,u);s.units=s.units.filter(v=>v!==u);tick(s,1);assert.equal(foe.alive,false);assert(s.events.some(e=>e[0]==='k'&&e[1]==='Raze'&&e[2]===foe.name&&e[4]==='Ability'),'ownerless kill in the feed, credited to the utility\'s agent');assert.equal(s.fxSrc,null,'no stale effect source after the tick (a later owner-less direct kill must not borrow it)');}
 // Detain survives a disconnect: the seat bot inherits the leaver's statuses.
 {const {s,u}=setup('Jett',['foe']);u.detainUntil=s.time+5;const b=s.add('Bot Jett','Jett',false);b.team=u.team;s.takeOver(b,u);assert(b.detainUntil>s.time,'still detained');}
-console.log('Ultimates: Hunter\'s Fury (3 wall-piercing blasts, recast, reveal, death end), Showstopper (1.4 s launcher equip, FIRE shoots, 10 s window, travelling rocket, falloff, LOS, wall detonation), Lockdown (windup, radius detain blocks guns/abilities, round reset), Rolling Thunder (32 x 18 m strip from 8 m ahead, 4 s, through walls), Seekers (3 nearest), Neural Theft (corpse targeting, reveals at 2 s and 6 s), Tour de Force (5-round Operator, weapon restore, round reset), Run It Back (death/expiry return, no elimination, no death drop, gear kept at round end); leaver utility/ult state moves to the seat bot; server-side aim only');
+console.log('Ultimates: Hunter\'s Fury (3 wall-piercing 1.76 m blasts, FIRE every 2.125 s, 1 s reveal, 6 s window, death end), Showstopper (1.4 s launcher equip, FIRE shoots, 10 s window, travelling rocket, falloff, LOS, wall detonation), Lockdown (windup, radius detain blocks guns/abilities, round reset), Rolling Thunder (32 x 18 m strip from 8 m ahead, 4 s, through walls), Seekers (3 nearest), Neural Theft (corpse targeting, reveals at 2 s and 6 s), Tour de Force (5-round Operator, weapon restore, round reset), Run It Back (death/expiry return, no elimination, no death drop, gear kept at round end); leaver utility/ult state moves to the seat bot; server-side aim only');
 // Devices that used to be inert markers: recon pulses reveal enemies in the bolt's sight (not through walls),
 // Boom Bot hunts the nearest visible enemy and explodes for 125, Trailblazer concusses on contact.
 import {DEV,bbDamage,tbConcuss} from './src/devices.js';

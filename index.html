@@ -8103,11 +8103,20 @@ function jArrow(kind) { // XABT.bolt: the charge / bounces of the equip-flow HOL
 const xBoltQ = [0, 0, 0];
 function xBoltMove(a) { if (!a.tr) return void a.m.position.lerpVectors(a.a, a.b, Math.min(1, a.t / a.dur)); // flies the traced arc and bounces, nose along the flight
   SovaBolt.at(a.tr, a.t, xBoltQ); a.m.position.set(xBoltQ[0], xBoltQ[1], xBoltQ[2]); SovaBolt.at(a.tr, a.t + 0.04, xBoltQ); if (Math.abs(xBoltQ[0] - a.m.position.x) + Math.abs(xBoltQ[1] - a.m.position.y) + Math.abs(xBoltQ[2] - a.m.position.z) > 1e-4) a.m.lookAt(xBoltQ[0], xBoltQ[1], xBoltQ[2]); }
+// Sova Hunter's Fury (wiki.playvalorant.com/en-us/Hunter's_Fury): 3 charges, 1 blast every 2.125 s, 6 s to use them, a 66 m
+// cylinder of 1.76 m radius through walls, 80 damage, enemies hit revealed 1 s. Same values as the server (ULT.fury).
+const XHFU = { n: 3, cyc: 2.125, win: 6, len: 66, r: 1.76, dmg: 80, rv: 1, g: 0 };
+function xHfRv(list) { // reveal bots hit by a Hunter's Fury blast for XHFU.rv s (adds to a running Recon / Neural Theft reveal)
+  list = list.filter((b) => b && b.alive && b.body && b.head && J.rv.indexOf(b) < 0); if (!list.length && !J.rv.length) return;
+  list.forEach((b) => { b.rvO = [b.body, b.head].map((s) => { const o = new THREE.Mesh(s.geometry, rvMat); o.scale.setScalar(1.15); o.renderOrder = 999; o.raycast = () => {}; s.add(o); return o; }); J.rv.push(b); });
+  J.rvT = Math.max(J.rvT || 0, XHFU.rv);
+}
 function jBeam() {
-  if (J.cd.x > 0 || J.hf < 1) return; J.cd.x = 0.9; J.hf--; kick = 1; blip(300, 0.4, "sawtooth", 0.2);
-  const o = pEye(), d = jAim(), L = 80;
-  bots.forEach((b) => { if (!b.alive) return; const v = new THREE.Vector3(b.g.position.x, 1.1, b.g.position.z).sub(o), t = v.dot(d); if (t > 0 && t < L && v.addScaledVector(d, -t).length() < 0.9) jHit(b, 80, "Hunter's Fury"); });
-  xFFArea("You", false, "Hunter's Fury", 80, (x, z) => { const v = new THREE.Vector3(x, 1.1, z).sub(o), t = v.dot(d); return t > 0 && t < L && v.addScaledVector(d, -t).length() < 0.9; }); // allies: a third, no reveal
+  if (J.cd.x > 0 || J.hf < 1) return; J.cd.x = XHFU.cyc; J.hf--; kick = 1; blip(300, 0.4, "sawtooth", 0.2);
+  const o = pEye(), d = jAim(), L = XHFU.len, hit = [];
+  bots.forEach((b) => { if (!b.alive) return; const v = new THREE.Vector3(b.g.position.x, 1.1, b.g.position.z).sub(o), t = v.dot(d); if (t > 0 && t < L && v.addScaledVector(d, -t).length() < XHFU.r) { jHit(b, XHFU.dmg, "Hunter's Fury"); hit.push(b); } });
+  xHfRv(hit);
+  xFFArea("You", false, "Hunter's Fury", XHFU.dmg, (x, z) => { const v = new THREE.Vector3(x, 1.1, z).sub(o), t = v.dot(d); return t > 0 && t < L && v.addScaledVector(d, -t).length() < XHFU.r; }); // allies: a third, no reveal
   const m = jM(beamGeo, fireMat(0x45d0ff, 0.85)); m.scale.z = L; o.y -= 0.2; m.position.copy(o).addScaledVector(d, L / 2); m.lookAt(o.clone().addScaledVector(d, L)); jFx(m, 0.35);
 }
 function phCurve(o, fx, fz, side) { // Curveball path: mid = up to 5 m ahead (0.4 m short of a wall), end = up to 2.5 m to the side (side -1 left, 1 right)
@@ -8158,11 +8167,12 @@ function svKey(code) {
   if (code === "KeyX") {
     if (J.hf > 0) return jBeam();
     if (J.ult < K().u) return no(), say("Hunter's Fury " + J.ult + "/" + K().u, 800);
-    J.ult = 0; J.hf = 3; say("Hunter's Fury · 3 shots", 1000); jBeam();
+    J.ult = 0; J.hf = XHFU.n; J.hfT = XHFU.win; say("Hunter's Fury · 3 shots", 1000); jBeam();
   }
 }
 function jFxTick(dt) {
   const P = player, alive = P.hp > 0, heal = () => { if (alive) P.hp = Math.min(100, P.hp + 15 * dt); };
+  if (J.hf > 0 && ((J.hfT -= dt) <= 0 || !alive)) { J.hf = 0; J.hfT = 0; } // Hunter's Fury: unfired charges lost 6 s after the cast or on death
   { const A = J.walls, n = A.length; let k = 0; // in-place compaction, no per-frame closures
     for (let i = 0; i < n; i++) { const w = A[i]; w.t -= dt; w.m.material.opacity = 0.7 * Math.min(1, w.t / 0.5);
       if (w.own) { if (!w.nd) { mpAreaHit(w, 0, 0, 1, 30 * dt, "Blaze", w); const o = w.own; if (o.alive && o.g && segD(o.g.position.x, o.g.position.z, w) < 1) o.hp = Math.min(100, o.hp + 15 * dt); } } // online remote cast: team-aware, host only
@@ -9211,7 +9221,7 @@ function botAb(b, dt, see, tg, from) {
 function jClear() {
   drEnd();
   J.smokes.concat(J.walls, J.zones, J.orbs, J.arrows, J.fx, J.cbs).forEach((s) => jRel(s.m)); J.smokes = []; J.walls = []; J.zones = []; J.orbs = []; J.arrows = []; J.fx = []; J.cbs = [];
-  if (J.ribM) scene.remove(J.ribM); J.rib = 0; J.hf = 0; XRCN.g++; jUnreveal(); $("xWh").style.opacity = 0; sgClear(); rsClear(); bcClear(); try { xKnClr(); } catch (e) {}
+  if (J.ribM) scene.remove(J.ribM); J.rib = 0; J.hf = 0; XRCN.g++; XHFU.g++; jUnreveal(); $("xWh").style.opacity = 0; sgClear(); rsClear(); bcClear(); try { xKnClr(); } catch (e) {}
 }
 function resetBotRoundAbilities() { // per-round bot ability state; each kit re-inits lazily when its key is null
   try { [].concat(bots || [], allies || []).forEach((b) => { const A = b && b.ab; if (!A) return;
@@ -11082,16 +11092,22 @@ let xTGOn = false; const xTG = { inPlay: () => false, relAll: () => {} };
   function tracer(u, x, z, far) { V1.set(u.g.position.x, 1.4, u.g.position.z); DIR.set(x - V1.x, 0, z - V1.z).normalize(); if (far) bFx(V1, DIR, undefined, far); else { V2.set(x, 1.2, z); bFx(V1, DIR, HIT); } }
   function say2(u, a, en) { if (!en) return; const d = kfGet("kf kf--note x-ult"); d.xT.textContent = "Enemy " + a + " ultimate"; d.xT.style.display = ""; kfPush(d); try { blip(160, 0.35, "sawtooth", 0.12); } catch (e) {} }
   function hitU(t, n, by, w) { if (t === player) { hurt(player, n, by); return; } hurt(t, n, by); if (t.hp <= 0.001) { if (bots.indexOf(t) >= 0) kill(t, false, by, w); else allyDie(t, by, w); } }
-  function sova(u, en) { // 3 wall-piercing beams along the lane toward the last known enemy, 80 dmg each
-    const p = u.g.position, ox = p.x, oz = p.z; let dx = TP.x - ox, dz = TP.z - oz; const l = Math.hypot(dx, dz) || 1; dx /= l; dz /= l;
-    for (let k = -1; k <= 1; k++) { const sx = ox - dz * 2 * k, sz = oz + dx * 2 * k;
-      V1.set(sx, 1.4, sz); DIR.set(dx, 0, dz); bFx(V1, DIR, undefined, 60);
-      const beam = (t, x, z) => { const q = (x - sx) * dx + (z - sz) * dz; if (q < 0 || q > 60) return; if (Math.abs((x - sx) * dz - (z - sz) * dx) < 1.1) hitU(t, 80, u.name, "Hunter's Fury"); };
-      if (en) { if (player && player.hp > 0) beam(player, player.x, player.z); if (typeof allies !== "undefined") for (const a of allies) if (a.alive) beam(a, a.g.position.x, a.g.position.z); }
-      else for (const b of bots) if (b.alive) beam(b, b.g.position.x, b.g.position.z);
-      xFFArea(u, en, "Hunter's Fury", 80, (x, z) => { const q = (x - sx) * dx + (z - sz) * dz; return q >= 0 && q <= 60 && Math.abs((x - sx) * dz - (z - sz) * dx) < 1.1; }); // allies: a third, no reveal
-    }
+  function sovaBlast(u, en) { // one wall-piercing XHFU blast (66 m, 1.76 m radius, 80) from u toward TP; enemies hit revealed 1 s
+    const p = u.g.position, sx = p.x, sz = p.z; let dx = TP.x - sx, dz = TP.z - sz; const l = Math.hypot(dx, dz) || 1; dx /= l; dz /= l;
+    V1.set(sx, 1.4, sz); DIR.set(dx, 0, dz); bFx(V1, DIR, undefined, XHFU.len);
+    const on = (x, z) => { const q = (x - sx) * dx + (z - sz) * dz; return q >= 0 && q <= XHFU.len && Math.abs((x - sx) * dz - (z - sz) * dx) < XHFU.r; }, hit = [];
+    const beam = (t, x, z) => { if (on(x, z)) { hitU(t, XHFU.dmg, u.name, "Hunter's Fury"); hit.push(t); } };
+    if (en) { if (player && player.hp > 0) beam(player, player.x, player.z); if (typeof allies !== "undefined") for (const a of allies) if (a.alive) beam(a, a.g.position.x, a.g.position.z); }
+    else for (const b of bots) if (b.alive) beam(b, b.g.position.x, b.g.position.z);
+    if (en) { if (hit.indexOf(player) >= 0 && player.hp > 0) { try { say("Revealed by Hunter's Fury", 900); enRvFx(); } catch (e) {} for (const b of bots) if (b.alive) b.cd = Math.min(b.cd, 0.3); } }
+    else xHfRv(hit);
+    xFFArea(u, en, "Hunter's Fury", XHFU.dmg, on); // allies: a third, no reveal
   }
+  function sova(u, en) { // XHFU.n blasts XHFU.cyc s apart at the nearest enemy (re-aimed each blast), within XHFU.win s; stops on death / round clear
+    sovaBlast(u, en); const g = XHFU.g;
+    for (let k = 1; k < XHFU.n; k++) if (k * XHFU.cyc < XHFU.win) setTimeout(() => { if (g !== XHFU.g || !u.alive || !running) return; if (near(u, en, false, 80)) sovaBlast(u, en); }, k * XHFU.cyc * 1000);
+  }
+  window.xBotSovaUlt = (u, en) => (near(u, en, false, 80) ? (sova(u, en), 1) : 0); // test hook: a bot's Hunter's Fury at its nearest enemy
   function use(u, a, en) {
     if (a === "Breach") { if (!near(u, en, true, 16)) return 0; tracer(u, TP.x, TP.z);
       if (en && player && player.hp > 0 && Math.hypot(player.x - TP.x, player.z - TP.z) < 5) { try { xConStart(3000); } catch (e) {} }

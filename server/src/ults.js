@@ -6,7 +6,7 @@ import {WINDUP,wf} from './windups.js';
 // ({t:'ab',k:'x'}); origin, aim, targets, timing, damage and status all come from server state.
 // Values follow the project's lightweight kit interpretation, scaled to the original agents' ults.
 export const ULT={
- fury:{blasts:3,interval:2,window:6.5,range:66,width:.9,damage:80,reveal:2,recast:.9},
+ fury:{blasts:3,cycle:2.125,window:6,range:66,width:1.76,damage:80,reveal:1},/* wiki Hunter's_Fury: 3 charges, 1 every 2.125 s, 6 s, 66 m x 1.76 m radius, 80, reveal 1 s; blasts only on FIRE (recast); client XHF */
  rocket:{speed:30,life:3,inner:3,outer:7,damage:150,arm:.05,equip:WINDUP.showstopper,window:10},/* wiki Showstopper: X equips the launcher (1.4 s), FIRE shoots the one rocket, 10 s max including the equip */
  lockdown:{windup:WINDUP.lockdown,radius:32.5,detain:8},
  quake:{delay:wf('rollingThunder'),near:8,length:32,width:18,concuss:4},/* wiki Rolling_Thunder: a 32 m x 18 m strip starting 8 m in front of Breach, concuss 4 s; client XRT2 */
@@ -37,7 +37,7 @@ export const ULT_AGENTS=new Set(['Sova','Raze','Killjoy','Breach','Skye','Cypher
 export function startUlt(sim,u,ctx,p){
  const A=u.ability;
  switch(u.agent){
-  case 'Sova':{A.fury={left:ULT.fury.blasts,next:sim.time+ULT.fury.interval,until:sim.time+ULT.fury.window,recastAt:sim.time+ULT.fury.recast};furyBlast(sim,u);break;}
+  case 'Sova':{A.fury={left:ULT.fury.blasts,until:sim.time+ULT.fury.window,recastAt:sim.time+ULT.fury.cycle};furyBlast(sim,u);break;}
   case 'Raze':{u.showstopper={ready:sim.time+ULT.rocket.equip,until:sim.time+ULT.rocket.window};p.splice(0,3,u.x,u.y,u.z);break;}/* the rocket leaves on FIRE (showstopperFire) */
   case 'Killjoy':{const d=aim(u),o=eye(u),hit=sim.world.ray(o,d,4),r=Number.isFinite(hit)?Math.max(0,hit-.5):4,x=o[0]+d[0]*r,z=o[2]+d[2]*r,y=sim.world.ground(x,z,u.y+.5);const pt=[x,Number.isFinite(y)?y:u.y,z];p.splice(0,3,...pt);effect(sim,u,'lockdown',pt,ULT.lockdown.windup+.05,ULT.lockdown.radius,{at:sim.time+ULT.lockdown.windup});break;}
   case 'Breach':{p.splice(0,3,u.x,u.y,u.z);effect(sim,u,'quake',[u.x,u.y,u.z],ULT.quake.delay+.05,ULT.quake.length,{at:sim.time+ULT.quake.delay,yaw:u.look});break;}
@@ -57,7 +57,7 @@ export function showstopperFire(sim,u){const S=u.showstopper;if(!S)return undefi
 export function recastUlt(sim,u){const F=u.ability?.fury;if(u.agent==='Sova'&&F){if(sim.time<F.recastAt||F.left<1)return true;furyBlast(sim,u);return true;}return false;}
 
 // One wall-piercing Hunter's Fury blast along the current server-side aim.
-function furyBlast(sim,u){const F=u.ability.fury,o=eye(u),d=aim(u),C=ULT.fury;F.left--;F.next=sim.time+C.interval;F.recastAt=sim.time+C.recast;
+function furyBlast(sim,u){const F=u.ability.fury,o=eye(u),d=aim(u),C=ULT.fury;F.left--;F.recastAt=sim.time+C.cycle;
  for(const v of sim.units.filter(v=>v!==u&&v.alive&&!v.loading)){/* Hunter's Fury: allies take 1/3 and are not revealed */let best=Infinity;for(const h of [1.62,.95,.35]){const q=[v.x-o[0],v.y+h-(v.ch||0)-o[1],v.z-o[2]],t=q.reduce((s,n,i)=>s+n*d[i],0);if(t<0||t>C.range)continue;const off=Math.sqrt(Math.max(0,q.reduce((s,n)=>s+n*n,0)-t*t));best=Math.min(best,off);}if(best<C.width){if(v.team!==u.team)v.revealedUntil=Math.max(v.revealedUntil||0,sim.time+C.reveal);abilityDamage(sim,u,v,C.damage);}}
  sim.castEvents.push({t:'ac',i:u.id,ag:u.agent,k:'x',sub:'blast',o,d,p:o.map((n,i)=>n+d[i]*C.range),ts:Math.round(sim.time*1000)});
  if(F.left<1)u.ability.fury=null;}
@@ -65,7 +65,7 @@ function furyBlast(sim,u){const F=u.ability.fury,o=eye(u),d=aim(u),C=ULT.fury;F.
 // Per-tick ult state: channels, projectiles, delayed area effects, weapon swaps and the Phoenix return.
 export function tickUlts(sim,dt){
  for(const u of sim.units){
-  const F=u.ability?.fury;if(F){if(!u.alive||sim.time>=F.until)u.ability.fury=null;else if(sim.time>=F.next&&F.left>0)furyBlast(sim,u);}
+  const F=u.ability?.fury;if(F&&(!u.alive||sim.time>=F.until))u.ability.fury=null;/* unfired charges are lost after 6 s (no auto blasts) */
   if(u.ultWeapon&&(!u.alive||u.weapon!==ULT.tdf.weapon||u.ammo<=0)){const W=u.ultWeapon;u.ultWeapon=null;if(u.weapon===ULT.tdf.weapon){u.weapon=W.saved;u.ammo=W.savedAmmo;u.reserve=W.savedReserve;}if(u.inventory)delete u.inventory[ULT.tdf.weapon];}
   if(u.showstopper&&(!u.alive||sim.time>=u.showstopper.until))u.showstopper=null;/* unfired launcher put away after 10 s */
   const R=u.runItBack;if(R&&!u.loading&&(!u.alive||sim.time>=R.until)){u.runItBack=null;[u.x,u.y,u.z]=R.p;u.vx=u.vz=u.vy=0;u.hp=100;u.alive=true;u.respawnAt=0;u.input={};u.triggerHeld=false;u.seq++;u.invulnerableUntil=Math.max(u.invulnerableUntil||0,sim.time+ULT.rib.protect);sim.castEvents.push({t:'ac',i:u.id,ag:u.agent,k:'x',sub:'return',o:[...R.p],d:[0,0,-1],p:[...R.p],ts:Math.round(sim.time*1000)});}
