@@ -45,7 +45,11 @@ block+='\n'+(root/'work/spectate_runtime.js').read_text().rstrip('\n')
 # Enemy info (what the scoreboard / panels may show of the enemy team; work/enemy_info_runtime.js), outermost fBotBuy / sbCred / mpCliRS wrappers.
 ea='// ---- ENEMY INFO ----';eb='// ---- END ENEMY INFO ----'
 if ea in s:s=s[:s.index(ea)]+s[s.index(eb)+len(eb):]
-block+='\n'+(root/'work/enemy_info_runtime.js').read_text().rstrip('\n');mark='xReady = true; // every mode is initialised; lobby launches may now start them';s=s.replace(mark,block+'\n'+mark)
+block+='\n'+(root/'work/enemy_info_runtime.js').read_text().rstrip('\n')
+# Game rules (Deathmatch health packs; work/game_rules_runtime.js), outermost dmScore / dmTick / dmGo / mpCliSnap wrappers.
+ra2='// ---- GAME RULES ----';rb2='// ---- END GAME RULES ----'
+if ra2 in s:s=s[:s.index(ra2)]+s[s.index(rb2)+len(rb2):]
+block+='\n'+(root/'work/game_rules_runtime.js').read_text().rstrip('\n');mark='xReady = true; // every mode is initialised; lobby launches may now start them';s=s.replace(mark,block+'\n'+mark)
 if '<script src="models/valorant/manifest.js"></script>' not in s:s=s.replace('<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>','<script src="models/valorant/manifest.js"></script>\n<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>')
 # Find the actual three script tag, which may use an onerror handler.
 if '<script src="models/valorant/manifest.js"></script>' not in s:s=s.replace('<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js"></script>','<script src="models/valorant/manifest.js"></script>\n<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js"></script>')

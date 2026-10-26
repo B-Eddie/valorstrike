@@ -18,5 +18,5 @@ console.log('Inherited prototype names cannot select a weapon');
 const names=new Simulation(world);names.add('Agent');names.add('Agent 2');assert.equal(names.add('Agent').name,'Agent 3');assert.equal(new Set(names.units.map(u=>u.name)).size,3);
 console.log('Name collision suffix advances, including user-supplied numbered names');
 
-const tier=new Simulation(world,'tdm'),tu=tier.add('tier');tier.start(false);assert.equal(tu.weapon,'Spectre');assert.equal(tier.command(tu,{t:'equip',w:'Vandal'}),false);tier.remaining=450;assert.equal(tier.command(tu,{t:'equip',w:'Vandal'}),true);tier.time=3;assert.equal(tier.command(tu,{t:'equip',w:'Operator'}),false);tier.remaining=270;assert.equal(tier.command(tu,{t:'equip',w:'Operator'}),true);
-console.log('TDM server enforces UI weapon tier unlocks at2and5minutes with Spectre start');
+const tier=new Simulation(world,'tdm'),tu=tier.add('tier');tier.start(false);assert.equal(tu.weapon,'Classic');assert.equal(tier.command(tu,{t:'equip',w:'Vandal'}),false);assert.equal(tier.command(tu,{t:'equip',w:'Ghost'}),true);tier.remaining=570-80;assert.equal(tier.command(tu,{t:'equip',w:'Stinger'}),true);tier.time=3;assert.equal(tier.command(tu,{t:'equip',w:'Vandal'}),false);tier.remaining=570-230;assert.equal(tier.command(tu,{t:'equip',w:'Vandal'}),true);assert.equal(tier.command(tu,{t:'equip',w:'Operator'}),false);
+console.log('TDM server enforces the 4 loadout stages (75 / 150 / 225 s) with a Classic start');

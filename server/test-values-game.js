@@ -11,6 +11,15 @@
 //  [TDM] https://wiki.playvalorant.com/en-us/Team_Deathmatch        (100 kills or 9.5 min = 75+75+75+345 s, 1.5 s respawn)
 //  [AG]  https://valorant.gs/agents/<agent>/                        (game files 13.08: ult points, costs, charges, cooldowns)
 //  [P13] https://playvalorant.com/en-us/news/game-updates/valorant-patch-notes-13-00/ (initiator signature cooldowns 60 -> 50 s)
+//  [P103] https://playvalorant.com/en-us/news/game-updates/valorant-patch-notes-1-03/ ("Unrated will still use the original Sudden Death format")
+// fog-spec-3 (after bca67c1) moved the "differs / missing" rows into the game and pins them in test-game-rules.js (+ client
+// work/test_game_rules.cjs, test_tdm_transitions.cjs, test_offline_overtime.cjs, test_loadout.cjs): TDM 4 stages 75/75/75/345 s
+// with per-stage guns, DM health packs, defuse cancel window, Unrated Endgame round 25 (replaces Competitive overtime here),
+// Operator second zoom in the spectate pov. Judgment calls (no published number / meaning): the 0.2 s defuse window is read as a
+// grace after a KEY RELEASE only (defuser alive, in range, standing, not firing; moving / firing / stepping off drops progress at
+// once); the TDM forced switch to the stage gun comes 3 s after the stage change ("a short duration"); a unit already at full
+// HP and armour leaves a health pack lying; packs reach a non-killer / non-victim within 12 m only (fog); packs give the game
+// files' 50 HP / 25 armour although the wiki says "fully restores".
 import assert from 'node:assert/strict';import {readFileSync} from 'node:fs';
 import {SpikeSimulation,buyPhaseSeconds,POST_ROUND,SPIKE_RADIUS} from './src/spike.js';import {ARMOR_BUY,RGN,matchSeconds,Simulation} from './src/simulation.js';
 import {BARRIER,SLOW_ORB,PARITY,SMOKE,FAULT,GUIDING,PARANOIA} from './src/abilities.js';import {DEV} from './src/devices.js';import {ULT} from './src/ults.js';

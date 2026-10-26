@@ -1,5 +1,5 @@
-// TDM transitions (row 7): loadout tiers unlock by elapsed match time exactly as the server's weaponAllowed (120 s rifles/
-// shotguns, 300 s snipers/MGs) and the call-out fires once per unlock, also on the ONLINE client (whose tick never ran
+// TDM transitions (row 7): four loadout stages by elapsed match time (75 / 75 / 75 / 345 s, wiki Team_Deathmatch) exactly as the
+// server's weaponAllowed / tdmStageTick, the call-out fires once per stage, the forced switch to the stage pick, also on the ONLINE client (whose tick never ran
 // tdmTick) with an open loadout re-rendered; Escalation levels advance on team kill counts (7, knife 1); respawn: 2 s
 // spawn protection that ends when the unit attacks (server rule), movement state reset, "respawning" message, HUD chip;
 // online client mirrors the protection on respawn and closes the loadout on damage or death.
@@ -8,21 +8,36 @@ const root=path.join(__dirname,'..'),h=fs.readFileSync(path.join(root,'index.htm
 const between=(a,b,from=0)=>{const i=h.indexOf(a,from);assert(i>=0,'missing '+a.slice(0,60));const j=h.indexOf(b,i+a.length);assert(j>=0,'missing end '+b.slice(0,40));return h.slice(i,j);};
 const fn=name=>between('function '+name+'(','\nfunction ');
 (async()=>{
- // ---- Tier unlocks (offline and online share tdmTier / tdmTierTick) and parity with the server.
- const said=[];let renders=0;const T={DM:{len:570,tier:0,menu:false},timeLeft:570,say:(t)=>said.push(t),dmMR:()=>renders++,WEAP:{},Object};
+ // ---- Stages (offline and online share tdmTier / tdmTierTick) and parity with the server: four stages 75 / 75 / 75 / 345 s
+ // (wiki.playvalorant.com/en-us/Team_Deathmatch), each with its own guns; a Stage 1 sidearm is kept all match.
+ const said=[];let renders=0,gives=[];const T={DM:{len:570,tier:0,menu:false},timeLeft:570,say:(t)=>said.push(t),dmMR:()=>renders++,WEAP:{},Object,FV:{pri:null,sec:'Classic'},rw:'pis',slots:{pis:{ammo:12,rsv:36}},ammo:12,rsv:36,reloading:0,xRsv:()=>36,onSkin(){},setScope(){},updHud(){},srAll:()=>[],performance:{t:0,now(){return this.t;}},player:{hp:100},dmGive:(n)=>{gives.push(n);if(['Classic','Frenzy','Ghost','Sheriff'].includes(n))T.FV.sec=n;else T.FV.pri=n;}};
  const all='Classic Shorty Frenzy Ghost Sheriff Stinger Spectre Bucky Judge Bulldog Guardian Phantom Vandal Marshal Outlaw Operator Ares Odin'.split(' ');for(const n of all)T.WEAP[n]={mag:10};
- vm.createContext(T);vm.runInContext(between('const DM_C =','\nconst DM_BW')+between('const TDM_C =','\nconst tdmBW')+'\n'+fn('tdmTierTick')+';globalThis.api={tdmTier,tdmTierTick,TDM_C,TDM_T};',T);
- const {tdmTier,tdmTierTick,TDM_C,TDM_T}=T.api;
- const {Simulation}=await import(path.join(root,'server/src/simulation.js'));
- const clientAllowed=n=>{const c=Object.keys(TDM_C).find(k=>TDM_C[k].includes(n));return !!c&&TDM_T[c]<=tdmTier();};
- for(let e=0;e<=570;e+=0.5){T.timeLeft=570-e;for(const n of all)assert.equal(clientAllowed(n),Simulation.prototype.weaponAllowed.call({mode:'tdm',remaining:570-e},n),'tier mismatch '+n+' at '+e+' s');}
- T.timeLeft=570;T.DM.tier=0;said.length=0;for(let e=0;e<=570;e+=0.05){T.timeLeft=570-e;if(Math.abs(e-200)<0.03)T.DM.menu=true;if(Math.abs(e-250)<0.03)T.DM.menu=false;if(Math.abs(e-299)<0.03)T.DM.menu=true;tdmTierTick();}
- assert.deepEqual(said,['Rifles & shotguns unlocked · B','Snipers & machine guns unlocked · B'],'unlock call-outs: '+said);assert.equal(renders,1,'an open loadout must re-render at the unlock');assert.equal(T.DM.tier,2);
- T.timeLeft=570;said.length=0;tdmTierTick();assert.equal(said.length,0,'a new match (tier back to 0) is not an unlock');
- // Online client tick now runs the tier step; a late joiner starts at the current tier (no stale call-out).
- {const i=h.indexOf('// client tick: own movement + gun only'),j=h.indexOf('return; // the client tick never ran tdmTick',i);assert(i>0&&j>i&&j-i<400&&h.slice(i,j).includes('tick(dt); if (FV.tdm) try { tdmTierTick(); } catch (e) {}'),'online client tick does not run the tier step');}
- assert(h.includes('DM.over = null; DM.tier = tdm ? tdmTier() : 0; DM.pp = 0;'),'online start does not adopt the current tier');
- assert(/function tdmTick\(dt\) \{[^}]*\}[^}]*\}\n  tdmTierTick\(\);/.test(h),'offline tdmTick does not use the tier step');
+ vm.createContext(T);vm.runInContext(between('const TDM_C =','\nconst tdmBW')+'\n'+between('function tdmTierTick(','\n// A new stage:')+'\n'+fn('tdmStageArm')+'\n'+between('function tdmStageForce(','\nfunction tdmTS')+'\n;globalThis.api={tdmTier,tdmTierTick,tdmStageArm,tdmStageForce,tdmOk,TDM_C,TDM_T,TDM_BW,TDM_AT};',T);
+ const {tdmTier,tdmTierTick,tdmOk,TDM_C,TDM_T,TDM_BW,TDM_AT}=T.api;
+ const sim=await import(path.join(root,'server/src/simulation.js')),{Simulation}=sim;
+ assert.deepEqual(JSON.parse(JSON.stringify(TDM_BW)),sim.TDM_STAGES.map(a=>[...a]),'page stage guns = server TDM_STAGES');assert.deepEqual([...TDM_AT],[...sim.TDM_STAGE_AT]);
+ assert.deepEqual(sim.TDM_STAGES.map(a=>[...a]),[['Classic','Frenzy','Ghost'],['Sheriff','Stinger','Ares'],['Spectre','Ares','Bulldog','Guardian'],['Phantom','Vandal']],'wiki Loadout tables (no Bandit in this game)');
+ assert.deepEqual([75,75,75,570-225],[TDM_AT[1]-TDM_AT[0],TDM_AT[2]-TDM_AT[1],TDM_AT[3]-TDM_AT[2],345],'75 / 75 / 75 / 345 s');
+ for(let e=0;e<=570;e+=0.5){T.timeLeft=570-e;const st=tdmTier();assert.equal(st,sim.tdmStage(e),'stage at '+e);for(const n of all.concat('Knife'))assert.equal(tdmOk(n,st),Simulation.prototype.weaponAllowed.call({mode:'tdm',remaining:570-e,matchLen:570},n),'allowed mismatch '+n+' at '+e+' s');}
+ T.timeLeft=570-80;assert.equal(tdmOk('Ghost',1),true,'Stage 1 sidearm kept');assert.equal(tdmOk('Spectre',1),false);assert.equal(tdmOk('Stinger',2),false,'an earlier stage gun is gone');assert.equal(tdmOk('Ares',2),true);assert.equal(tdmOk('Vandal',3),true);assert.equal(tdmOk('Operator',3),false,'snipers are spawner-only in VALORANT TDM');
+ T.timeLeft=570;T.DM.tier=0;said.length=0;for(let e=0;e<=570;e+=0.05){T.timeLeft=570-e;if(Math.abs(e-100)<0.03)T.DM.menu=true;if(Math.abs(e-120)<0.03)T.DM.menu=false;if(Math.abs(e-149)<0.03)T.DM.menu=true;tdmTierTick();}
+ assert.deepEqual(said,['Stage 2 · Sheriff, Stinger, Ares · B','Stage 3 · Spectre, Ares, Bulldog, Guardian · B','Stage 4 · Phantom, Vandal · B'],'stage call-outs: '+said);assert.equal(renders,2,'an open loadout must re-render at each stage change (open from 149 s: 150 and 225 s), not while closed (75 s)');assert.equal(T.DM.tier,3);
+ T.timeLeft=570;said.length=0;tdmTierTick();assert.equal(said.length,0,'a new match (stage back to 0) is not a stage change');
+ // a stage change drops an earlier stage's primary at once and forces the stage pick after 3 s (unless one is already held)
+ {T.FV.pri='Stinger';T.FV.sec='Ghost';T.rw='pri';T.DM.tier=1;T.timeLeft=570-150;T.performance.t=1000;gives=[];tdmTierTick();assert.equal(T.FV.pri,null,'Stage 2 Stinger gone in Stage 3');assert.equal(T.rw,'pis','back on the sidearm');assert.equal(T.FV.sec,'Ghost');
+  T.api.tdmStageForce();assert.deepEqual(gives,[],'not before 3 s');T.performance.t=4100;T.DM.stPick={2:'Guardian'};T.api.tdmStageForce();assert.deepEqual(gives,['Guardian'],'stage pick equipped after 3 s');
+  T.FV.pri='Vandal';T.DM.tier=2;T.timeLeft=570-230;T.performance.t=5000;gives=[];tdmTierTick();T.FV.pri='Phantom';T.performance.t=9000;T.api.tdmStageForce();assert.deepEqual(gives,[],'already holding a Stage 4 gun: no forced switch');}
+ T.FV.pri=null;T.FV.sec='Classic';T.rw='pis';T.DM.stPick=null;T.DM.stT=0;
+ // Online client tick now runs the stage step; a late joiner starts at the current stage (no stale call-out).
+ {const i=h.indexOf('// client tick: own movement + gun only'),j=h.indexOf('return; // the client tick never ran tdmTick',i);assert(i>0&&j>i&&j-i<400&&h.slice(i,j).includes('tick(dt); if (FV.tdm) try { tdmTierTick(); tdmStageForce(); } catch (e) {}'),'online client tick does not run the stage step');}
+ assert(h.includes('DM.over = null; DM.tier = tdm ? tdmTier() : 0; DM.pp = 0;'),'online start does not adopt the current stage');
+ assert(/function tdmTick\(dt\) \{[^}]*\}[^}]*\}\n  tdmTierTick\(\); tdmStageForce\(\);/.test(h),'offline tdmTick does not use the stage step');
+ // server: bots take a gun of the new stage, a human holding a gun that is no longer allowed drops to the Classic
+ {const S=Object.create(Simulation.prototype);Object.assign(S,{mode:'tdm',matchLen:570,remaining:570,time:0,random:()=>0,units:[{human:false,weapon:'Classic'},{human:true,weapon:'Ghost'}]});
+  S.tdmStageTick();assert.equal(S.units[0].weapon,'Classic','stage 1 bot');S.remaining=570-76;S.tdmStageTick();assert.equal(S.units[0].weapon,'Sheriff','stage 2 bot');assert.equal(S.units[1].weapon,'Ghost','sidearm kept');
+  S.units[1].weapon='Stinger';S.remaining=570-151;S.tdmStageTick();assert.equal(S.units[0].weapon,'Spectre');assert.equal(S.units[1].weapon,'Classic','Stage 2 gun dropped in Stage 3');
+  {const n=S.units.length;S.tdmStageTick();assert.equal(S.units.length,n);} assert(fs.readFileSync(path.join(root,'server/src/simulation.js'),'utf8').includes("if(this.mode==='tdm'&&this.phase==='game'&&!human&&this.stage!=null){const L=TDM_STAGES[this.stage];this.giveWeapon(u,"),'a bot taking a seat mid-match gets a gun of the current stage');
+  S.units[0].weapon='Blade Storm';S.remaining=570-226;S.tdmStageTick();assert.equal(S.units[0].weapon,'Blade Storm','an ability gun in hand is left alone');}
  // ---- Escalation: team kill counts drive the weapon level.
  {const E={mode:'five',FV:{dm:true,tdm:true,esc:true},WEAP:T.WEAP,DM:{over:null,tsS:''},DM_C:{Sidearms:['Classic','Shorty','Frenzy','Ghost','Sheriff']},allies:[{name:'A1',w:''}],bots:[{name:'B1',w:''}],said:[],dmAmmo(){},onSkin(){},setScope(){},updHud(){},tdmTS(){},feed(){},rw:'pri',Math};E.WEAP.Knife={mag:1};E.say=t=>E.said.push(t);E.dmScore=()=>{};
   vm.createContext(E);vm.runInContext(between('const ESC_W =','\nfunction startESC')+'\n'+between('{ const c0 = dmScore; dmScore = function (by, victim) {','\n{ const s1 = tdmTS;')+';globalThis.api={ESC,ESC_W,escNeed,escBW,get FV(){return FV;},get rw(){return rw;}};',E);
@@ -39,9 +54,9 @@ const fn=name=>between('function '+name+'(','\nfunction ');
  P.api.dmFired(bot);assert.equal(bot.pp,0,'a bot that fires loses its spawn protection');
  // Every bot / ally / remote-human shot ends protection, hit or miss (server fire(): protectedUntil = 0 before the hit test).
  assert(h.includes('SFX.at(p, w); if (b.pp) dmFired(b);'),'enemy bot shots must end its protection');
- assert(h.includes('SFX.at(p, a.w || "Vandal"); if (a.pp) dmFired(a);'),'ally shots must end its protection');
+ assert(/SFX\.at\(p, [^;]*a\.w \|\| "Vandal"\); if \(a\.pp\) dmFired\(a\);/.test(h),'ally shots (gun or Blade Storm) must end its protection');
  assert(h.includes('if (m.t === "sh") { if (u.alive && typeof m.w === "string") { if (u.pp) dmFired(u);'),'a remote human shot must end its protection');
- {const i=h.indexOf('SFX.at(p, w); if (b.pp) dmFired(b);'),j=h.lastIndexOf('if (see && b.cd <= 0',i);assert(j>0&&i-j<1200&&!h.slice(j,i).includes('hurt('),'bot protection must end on the shot, before any hit roll');}
+ {const i=h.indexOf('SFX.at(p, w); if (b.pp) dmFired(b);'),j=h.lastIndexOf('if (see && b.cd <= 0',i);assert(j>0&&i-j<1600&&!h.slice(j,i).includes('hurt('),'bot protection must end on the shot, before any hit roll');}
  P.api.hurt(bot,30,'You');assert.equal(bot.hp,70);P.api.hurt(ally,40,'Bot Sova');assert.equal(ally.hp,100,'protected ally took damage');
  P.DM.menu=true;P.DM.pp=0;P.api.hurt(P.player,20,'Bot Sova');assert.equal(P.player.hp,80);assert.equal(P.menuClosed,1);assert.equal(P.DM.ph,now());
  // The player's own shot ends it (wrapper sees fcd/ammo/kSwing change), a blocked trigger pull does not.
@@ -64,5 +79,5 @@ const fn=name=>between('function '+name+'(','\nfunction ');
   O.DM.menu=true;O.self(row(60,1,1));assert.equal(O.player.hp,60);assert.equal(O.menus,1,'damage must close the loadout');assert.equal(O.DM.ph,9000);
   O.DM.menu=true;O.self(row(0,0,1));assert.equal(O.player.hp,0);assert.equal(O.menus,2,'death must close the loadout');assert.deepEqual(O.said,['You died · respawning']);
   O.self(row(100,1,2));assert.equal(O.player.hp,100);assert.equal(O.player.ch,0);assert.equal(O.DM.pp,11000,'respawn must mirror the 2 s spawn protection');assert(O.ammoed&&O.kl);}
- console.log('TDM transitions: client tiers == server weaponAllowed for every weapon over 0-570 s; one call-out per unlock (online tick too), open loadout re-rendered; Escalation 7 team kills/level, knife 1, finish; spawn protection blocks damage and ends on attack/shot/swing; HUD chip; offline respawn resets movement; online respawn mirrors protection, damage/death close the loadout');
+ console.log('TDM transitions: 4 stages 75/75/75/345 s, client stage guns == server TDM_STAGES / weaponAllowed for every weapon over 0-570 s; one call-out per stage (online tick too), forced switch to the stage pick after 3 s, server bots re-armed per stage, open loadout re-rendered; Escalation 7 team kills/level, knife 1, finish; spawn protection blocks damage and ends on attack/shot/swing; HUD chip; offline respawn resets movement; online respawn mirrors protection, damage/death close the loadout');
 })().catch(e=>{console.error(e);process.exit(1);});

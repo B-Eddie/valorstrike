@@ -2939,6 +2939,11 @@ const botMat = new THREE.MeshLambertMaterial({ color: 0xff4655 });
 const headMat = new THREE.MeshLambertMaterial({ color: 0xffb0b6 });
 let rsv = 0, paused = false;
 let bots = [], player, timeLeft, defuseT, ammo, reloading, running = false, yaw = 0, pitch = 0;
+// Defuse cancel window (valorant.gs/rules Spike "Defuse cancel window 0.2s"; = server spike.js DEFUSE_CANCEL): letting go of the
+// key for less than 0.2 s keeps the defuse going; after that progress drops to the 3.5 s checkpoint (or 0). Only a key release
+// earns the window (still alive, in range, standing, not firing - xDefRel); moving, firing or stepping off drops progress at once.
+const DEF_CANCEL = 0.2; let defG = 0;
+function xDefRel(inRange) { const P = player; return !!inRange && !!P && P.hp > 0 && !fireHeld && !(typeof AM !== "undefined" && AM.fire) && !(keys.KeyW || keys.KeyA || keys.KeyS || keys.KeyD) && Math.hypot(P.vx || 0, P.vz || 0) < 0.1; }
 const keys = {};
 const names = ["Jett", "Phoenix", "Sova"], MATES = ["Sage", "Skye"]; // placeholders only: xRollSmall() re-draws both at every Retake / Rifle start
 const allyMat = new THREE.MeshLambertMaterial({ color: 0x3d8bff }), allyHead = new THREE.MeshLambertMaterial({ color: 0xb8d4ff });
@@ -4557,7 +4562,7 @@ function tick(dt) {
   if (alive && fireHeld && rw !== "knife" && !WEAP[wName()].semi && fcd <= 0 && ammo > 0) shoot();
   if (reloading > 0) { reloading -= dt; if (reloading <= 0) { reloading = 0; /* not left a hair below 0: online treats it as still reloading (ammo sync off, the next auto-reload never sent) */ const one = XRLP[wName()], n = Math.min(one ? Math.min(1, MAG() - ammo) : MAG() - ammo, rsv); ammo += n; rsv -= n; if (one && ammo < MAG() && rsv > 0) reloading = xRT(); /* next round: xRT (Empress stim /1.1 via the feel wrapper) */ } updHud(); }
   const near = ret && alive && Math.hypot(player.x - spike.position.x, player.z - spike.position.z) < 2.5; // distance to the spike, not the map origin (native maps plant it at site B)
-  if (near && defusing) { const d0 = defuseT; defuseT += dt; if (d0 < 3.5 && defuseT >= 3.5) SFX.defHalf(); } else defuseT = defuseT >= 3.5 ? 3.5 : 0; // half defuse is kept
+  if (near && defusing) { defG = 0; const d0 = defuseT; defuseT += dt; if (d0 < 3.5 && defuseT >= 3.5) SFX.defHalf(); } else if (!xDefRel(near) || (defG += dt) >= DEF_CANCEL) { defG = DEF_CANCEL; defuseT = defuseT >= 3.5 ? 3.5 : 0; } // half defuse is kept; a key let-go under 0.2 s holds, stepping off / moving / firing does not
   let ad = false; if (ret) for (const a of allies) if (a.alive && a.def > 0) { ad = a; break; }
   hudS($("defuse"), "display", near || ad ? "block" : "none");
   hudT($("defuse").firstChild, (ad ? ad.name + " defusing" : defusing ? "Defusing" : "Hold 4 to defuse") + (!ad && defuseT >= 3.5 ? " · half" : ""));
@@ -10076,8 +10081,8 @@ function fiveTick(dt) {
     const near = fDef().filter((u) => { const p = fPos(u); return Math.hypot(p.x - s.x, p.z - s.z) < (u === player ? 2.5 : 3.2); });
     const safe = (u) => { const p = fPos(u); return !fAtk().some((a) => { const q = fPos(a); return Math.hypot(q.x - p.x, q.z - p.z) < 10; }); };
     const pn = near.includes(player), u = pn && hold ? player : near.find((x) => x !== player && (x.nt ? x.h4 : xDefOk(x, safe)));
-    if (u !== s.du) { s.du = u || null; if (u && u !== player) feed(u.name + " is defusing"); }
-    if (u) { const d0 = s.dt; s.dt += dt; SFX.whir(s.dt / 7); if (d0 < 3.5 && s.dt >= 3.5 && u === player) SFX.defHalf(); } else s.dt = s.dt >= 3.5 ? 3.5 : 0;
+    if (u !== s.du) { if (u || !s.du || (s.dg || 0) >= DEF_CANCEL) { s.du = u || null; if (u && u !== player) feed(u.name + " is defusing"); } }
+    if (u) { s.dg = 0; const d0 = s.dt; s.dt += dt; SFX.whir(s.dt / 7); if (d0 < 3.5 && s.dt >= 3.5 && u === player) SFX.defHalf(); } else if (!(s.du && (s.du === player ? xDefRel(pn) : near.includes(s.du))) || (s.dg = (s.dg || 0) + dt) >= DEF_CANCEL) { s.dg = DEF_CANCEL; s.dt = s.dt >= 3.5 ? 3.5 : 0; s.du = null; } // a key let-go under 0.2 s holds (DEF_CANCEL); stepping off, moving, firing or dying does not
     if (pn || (u && !FV.atk)) { show = u === player ? "Defusing" : u ? u.name + " defusing" : "Hold 4 to defuse"; prog = s.dt / 7; }
     if (s.dt >= 7) { if (u === player) jUlt(); s.st = "done"; fsM.visible = false; return fCheck(!FV.atk, fName(u) + " defused the Spike", "SPIKE DEFUSED"); }
   }
@@ -10103,16 +10108,16 @@ function fCheck(win, text, title) {
   const swB = FV.sw ? 4000 : null; // Swiftplay: 4000 each round plus that round's economy, capped (pistol round 5 resets via fEco on the swap)
   FV.cr = capC((swB ?? FV.cr) + (win ? 3000 : fSurvLoss(FV.atk, player.hp > 0) ? 1000 : lb(FV.lsY))); FV.alive = player.hp > 0; FV.arm = FV.alive ? player.armor || 0 : 0; FV.rgn = FV.alive ? player.rgn : undefined;
   bots.concat(allies).forEach((u) => { const st = FV.bs[u.name], w2 = allies.includes(u) ? win : !win; if (!st) return; st.cr = capC((swB ?? st.cr) + (w2 ? 3000 : fSurvLoss(allies.includes(u) ? FV.atk : !FV.atk, !!u.alive) ? 1000 : lb(allies.includes(u) ? FV.lsY : FV.lsT))); st.alive = u.alive; st.arm = u.alive ? u.armor || 0 : 0; st.rgn = u.alive ? u.rgn : undefined; });
-  const n = FV.you + FV.them, over = FV.surr ? true : FV.sw ? Math.max(FV.you, FV.them) >= 5 : FV.sr ? Math.max(FV.you, FV.them) >= (FV.srWin || 4) : Math.max(FV.you, FV.them) >= FIVE_WIN && Math.abs(FV.you - FV.them) >= 2, ot = !FV.sr && !FV.sw && !over && n >= 24, swap = !over && (FV.sw ? n === 4 : FV.sr ? n === 3 : n === 12 || ot);
+  const n = FV.you + FV.them, over = FV.surr ? true : FV.sw ? Math.max(FV.you, FV.them) >= 5 : FV.sr ? Math.max(FV.you, FV.them) >= (FV.srWin || 4) : Math.max(FV.you, FV.them) >= FIVE_WIN, ot = !FV.sr && !FV.sw && !over && n === 24, swap = !over && (FV.sw ? n === 4 : FV.sr ? n === 3 : n === 12); // Unrated: first to 13; at 12-12 one Endgame (Sudden Death) round on the same sides decides (wiki Unrated; Competitive's win-by-two Overtime is not this mode)
   if (FV.sw && !over) { try { jUlt(); } catch (e) {} bots.concat(allies).forEach((u) => { try { if (window.xBotUltGain) window.xBotUltGain(u.name); } catch (e) {} }); } // +1 ult point per round
   xRes(win, text, over, !FV.surr && FV.you > FV.them, title);
   if (!over) { if (FV.sw) xCue(FV.you, FV.them, 4, 5); else if (FV.sr) xCue(FV.you, FV.them, 3, 4); else if (n < 24) xCue(FV.you, FV.them, 12, FIVE_WIN);
-    else { if (n === 24) annc("OVERTIME", 2000, { c: "loss", s: "mp" }); annc("SWITCHING SIDES", 2000, { s: "half" }); if (FV.you !== FV.them) annc("MATCH POINT", 2000, { c: "loss", s: "mp" }); } }
+    else { annc("SUDDEN DEATH", 2000, { c: "loss", s: "mp" }); annc("MATCH POINT", 2000, { c: "loss", s: "mp" }); } } // 12-12: the next round wins the match
   xHud();
   FV.to = setTimeout(() => {
     $("xBan").style.display = "none";
     if (!over) { if (swap) { FV.atk = !FV.atk; FV.lsY = FV.lsT = 0; if (!ot) fEco(); }
-      if (ot) { FV.cr = 5000; Object.values(FV.bs).forEach((s) => s.cr = 5000); try { if (jOn()) J.ult = Math.max(0, K().u - 3); const C = window.xBotUC; if (C) bots.concat(allies).forEach((u) => { C[u.name] = Math.max(0, (window.xBotUltCost ? window.xBotUltCost(xAg(u)) : 7) - 3); }); } catch (e) {} } // overtime also sets every ult 3 points short (VALORANT Competitive) // overtime: 5000 each round, sides swap every round, win by 2
+      if (ot) { FV.cr = 5000; Object.values(FV.bs).forEach((s) => s.cr = 5000); FV.lsY = FV.lsT = 0; } // Endgame round 25: 5000 credits each, loss streaks reset, same sides, ult points carry over (wiki Unrated names no ult rule)
       return fRound(); }
     const won = !FV.surr && FV.you > FV.them; if (won) stats.w++; showStats();
     if (document.pointerLockElement) document.exitPointerLock();
@@ -10746,9 +10751,9 @@ $("xDrills").onclick = rgDrills;
     S.t -= dt; const s = Math.max(0, Math.ceil(S.t)); hudT($("timer"), "0:" + (s < 10 ? "0" : "") + s);
     if (Math.hypot(player.x - SPX, player.z - SPZ) < 1.8 && RG.e) {
       if (!S.pop) { S.pop = true; const n = performance.now(); for (let i = 0; i < RG.sd.length; i++) rgUp(RG.sd[i], n); blip(300, 0.1, "square", 0.1); }
-      S.dp += dt; if (S.dp >= 3.5) S.half = true;
+      S.dg = 0; S.dp += dt; if (S.dp >= 3.5) S.half = true;
       if (S.dp >= 7) { S.done = 3; say("Spike defused · " + S.t.toFixed(1) + " s left", 2500); SFX.stinger(true); }
-    } else S.dp = S.half ? 3.5 : 0;
+    } else if (!xDefRel(Math.hypot(player.x - SPX, player.z - SPZ) < 1.8) || (S.dg = (S.dg || 0) + dt) >= DEF_CANCEL) { S.dg = DEF_CANCEL; S.dp = S.half ? 3.5 : 0; } // key let-go only; stepping off resets
     if (S.t <= 0 && !S.done) { S.done = 3; say("Spike detonated", 2500); blip(90, 0.5, "sawtooth", 0.25); }
     const pc = Math.min(100, Math.floor((S.dp / 7) * 100)); if (pc !== RG.pct) { RG.pct = pc; rgPanel(); }
   } else hudT($("timer"), "RANGE");
@@ -11854,11 +11859,16 @@ const DM_C = { Rifles: ["Bulldog", "Guardian", "Phantom", "Vandal"], SMGs: ["Sti
 Object.keys(DM_C).forEach((c) => { DM_C[c] = DM_C[c].filter((n) => !!WEAP[n]); });
 const DM_BW = ["Vandal", "Phantom", "Vandal", "Phantom", "Spectre", "Guardian", "Operator", "Sheriff"].filter((n) => !!WEAP[n]);
 const dmBW = () => DM_BW[Math.floor(Math.random() * DM_BW.length)] || "Classic";
-// ---- TEAM DEATHMATCH: DM systems (FV.dm + FV.tdm), you + 4 allies vs 5 bots, team kills to 100, weapon tiers by time ----
-const TDM_C = { Sidearms: DM_C.Sidearms, SMGs: DM_C.SMGs, Shotguns: ["Bucky", "Judge"].filter((n) => !!WEAP[n]), Rifles: DM_C.Rifles, Snipers: DM_C.Snipers, MGs: ["Ares", "Odin"].filter((n) => !!WEAP[n]) };
-const TDM_T = { Sidearms: 0, SMGs: 0, Shotguns: 1, Rifles: 1, Snipers: 2, MGs: 2 };
-const TDM_BW = [["Spectre", "Stinger", "Spectre", "Sheriff", "Ghost"], ["Vandal", "Phantom", "Vandal", "Judge", "Bulldog", "Spectre"], ["Vandal", "Phantom", "Operator", "Odin", "Vandal", "Marshal"]].map((a) => a.filter((n) => !!WEAP[n]));
-const tdmTier = () => { const e = DM.len - timeLeft; return e >= 300 ? 2 : e >= 120 ? 1 : 0; };
+// ---- TEAM DEATHMATCH: DM systems (FV.dm + FV.tdm), you + 4 allies vs 5 bots, team kills to 100, four loadout stages by time ----
+// VALORANT stages (wiki.playvalorant.com/en-us/Team_Deathmatch: stages 1-3 75 s each, stage 4 345 s; each stage its own guns):
+// a Stage 1 sidearm is kept all match, from Stage 2 the gun comes from the CURRENT stage only (Bandit is not in this game).
+// Same table and rule as the server (simulation.js TDM_STAGES / tdmStage / tdmAllowed). tdmTier() = the stage index 0-3.
+const TDM_C = { "Stage 1": ["Classic", "Frenzy", "Ghost"], "Stage 2": ["Sheriff", "Stinger", "Ares"], "Stage 3": ["Spectre", "Ares", "Bulldog", "Guardian"], "Stage 4": ["Phantom", "Vandal"] };
+Object.keys(TDM_C).forEach((c) => { TDM_C[c] = TDM_C[c].filter((n) => !!WEAP[n]); });
+const TDM_T = { "Stage 1": 0, "Stage 2": 1, "Stage 3": 2, "Stage 4": 3 }, TDM_AT = [0, 75, 150, 225];
+const TDM_BW = Object.keys(TDM_C).map((c) => TDM_C[c]);
+const tdmTier = () => { const e = DM.len - timeLeft; return e >= 225 ? 3 : e >= 150 ? 2 : e >= 75 ? 1 : 0; };
+const tdmOk = (n, st) => n === "Knife" || TDM_C["Stage 1"].includes(n) || TDM_BW[st].includes(n);
 const tdmBW = () => { const a = TDM_BW[tdmTier()]; return a[Math.floor(Math.random() * a.length)] || "Classic"; };
 function tdmTot() { let t = DM.k["You"] || 0, r = 0; for (const a of allies) t += DM.k[a.name] || 0; for (const b of bots) r += DM.k[b.name] || 0; return [t, r]; }
 function tdmSide() { // the map's long axis split in half: teal holds the low side, red the high side
@@ -11883,11 +11893,26 @@ function tdmAb() { // abilities: charges refill every 40 s, for you and every bo
 function tdmTick(dt) {
   if (window.xLdOn) dt = 0; // loading screen up: clock frozen
   for (const a of allies) if (!a.alive) { if (!a.drt) a.drt = 1.5; a.drt -= dt; if (a.drt <= 0) { dmSpawnB(a); a.ox = a.g.position.x; } }
-  tdmTierTick();
+  tdmTierTick(); tdmStageForce();
   if ((DM.abT -= dt) <= 0) { tdmAb(); feed("Ability charges refilled"); }
 }
-function tdmTierTick() { // tiers unlock by elapsed match time (120 s, 300 s), the same rule as the server's weaponAllowed
-  const t = tdmTier(); if (t !== DM.tier) { const up = t > (DM.tier || 0); DM.tier = t; if (up) say(t === 1 ? "Rifles & shotguns unlocked · B" : "Snipers & machine guns unlocked · B", 1600); if (DM.menu) dmMR(); }
+function tdmTierTick() { // stages change by elapsed match time (75 / 150 / 225 s), the same rule as the server's weaponAllowed
+  const t = tdmTier(); if (t !== DM.tier) { const up = t > (DM.tier || 0); DM.tier = t; if (up) { say("Stage " + (t + 1) + " · " + TDM_BW[t].join(", ") + " · B", 1800); tdmStageArm(t); } if (DM.menu) dmMR(); }
+}
+// A new stage: a primary of an earlier stage is no longer allowed (it goes back to the Stage 1 sidearm at once), and the player is
+// switched to their stage pick (DM.stPick, else the stage's first gun) after a short delay unless they choose one first (VALORANT:
+// "players will be prompted to switch to their next weapon, and will be forced to equip it after a short duration"; the delay is
+// not published - 3 s here). Bots / allies take a gun of the new stage.
+function tdmStageArm(t) {
+  if (FV.pri && !tdmOk(FV.pri, t)) { FV.pri = null; if (rw === "pri") { rw = "pis"; ammo = slots.pis && slots.pis.ammo != null ? slots.pis.ammo : WEAP[FV.sec].mag; rsv = slots.pis && slots.pis.rsv != null ? slots.pis.rsv : xRsv(FV.sec); reloading = 0; try { onSkin(); setScope(false); updHud(); } catch (e) {} } slots.pri = {}; }
+  if (FV.sec && !tdmOk(FV.sec, t)) FV.sec = "Classic";
+  DM.stAt = t; DM.stT = performance.now() + 3000;
+  try { srAll().forEach((b) => { if (b && TDM_BW[t].length && !TDM_BW[t].includes(b.w)) b.w = TDM_BW[t][Math.floor(Math.random() * TDM_BW[t].length)] || "Classic"; }); } catch (e) {}
+}
+function tdmStageForce() { // the forced switch after the stage prompt
+  if (!DM.stT || performance.now() < DM.stT) return; DM.stT = 0; const t = DM.stAt; if (t !== tdmTier() || !t || !player || player.hp <= 0) return;
+  if (TDM_BW[t].includes(FV.pri) || TDM_BW[t].includes(FV.sec)) return; // already holding a gun of this stage
+  const n = DM.stPick && TDM_BW[t].includes(DM.stPick[t]) ? DM.stPick[t] : TDM_BW[t][0]; if (n) dmGive(n);
 }
 function tdmTS() { if (!DM.ts) return; const T = tdmTot(), s = '<b class="t">' + T[0] + '</b><span>FIRST TO ' + DM.win + '</span><b class="r">' + T[1] + '</b>'; if (s !== DM.tsS) { DM.tsS = s; DM.ts.innerHTML = s; } }
 function dmUI() {
@@ -11900,7 +11925,7 @@ function dmUI() {
 }
 function dmMR() {
   const cur=[FV.pri,FV.sec],C=FV.tdm?TDM_C:DM_C,tr=FV.tdm?tdmTier():9;
-  DM.el.innerHTML='<div class="x-dmg__in"><header class="x-dmg__head"><div><small>LOADOUT</small><h2>'+ (FV.tdm?'TEAM DEATHMATCH':'DEATHMATCH')+'</h2><p>Free weapons · '+(FV.tdm?['Sidearms & SMGs','Rifles & shotguns','All weapons'][tr]:'All weapons')+'</p></div><button type="button" class="x-dmg__close" aria-label="Close loadout">×</button></header><div class="x-dmg__c">'+Object.keys(C).filter(c=>C[c].length).map(c=>{const locked=FV.tdm&&TDM_T[c]>tr;return '<section'+(locked?' class="x-dmg-locked"':'')+'><h4>'+c+(locked?'<small>'+ (TDM_T[c]===1?'2:00':'5:00')+'</small>':'')+'</h4>'+C[c].map(n=>'<button type="button" data-n="'+n+'"'+(locked?' disabled':cur.includes(n)?' class="on"':'')+'><span>'+n+'<em>'+(cur.includes(n)?'EQUIPPED':locked?'LOCKED':'FREE')+'</em></span><svg viewBox="0 0 64 20" aria-hidden="true"><path d="'+(BUY_SIL[n]||BUY_SIL.Vandal)+'"/></svg><small>'+WEAP[n].mag+' rounds</small></button>').join('')+'</section>';}).join('')+'</div><footer class="x-dmg__f"><span>Heavy shields · unlimited reserve</span><button type="button">Close <kbd>B</kbd></button></footer></div>';
+  DM.el.innerHTML='<div class="x-dmg__in"><header class="x-dmg__head"><div><small>LOADOUT</small><h2>'+ (FV.tdm?'TEAM DEATHMATCH':'DEATHMATCH')+'</h2><p>Free weapons · '+(FV.tdm?'Stage '+(tr+1)+' of 4':'All weapons')+'</p></div><button type="button" class="x-dmg__close" aria-label="Close loadout">×</button></header><div class="x-dmg__c">'+Object.keys(C).filter(c=>C[c].length).map(c=>{const locked=FV.tdm&&(TDM_T[c]>tr||TDM_T[c]>0&&TDM_T[c]<tr),at=FV.tdm?TDM_AT[TDM_T[c]]:0;return '<section'+(locked?' class="x-dmg-locked"':'')+'><h4>'+c+(locked?'<small>'+(TDM_T[c]>tr?Math.floor(at/60)+':'+String(at%60).padStart(2,'0'):'ended')+'</small>':'')+'</h4>'+C[c].map(n=>'<button type="button" data-n="'+n+'"'+(locked?' disabled':cur.includes(n)?' class="on"':'')+'><span>'+n+'<em>'+(cur.includes(n)&&!locked?'EQUIPPED':locked?(FV.tdm&&TDM_T[c]<tr?'ENDED':'LOCKED'):'FREE')+'</em></span><svg viewBox="0 0 64 20" aria-hidden="true"><path d="'+(BUY_SIL[n]||BUY_SIL.Vandal)+'"/></svg><small>'+WEAP[n].mag+' rounds</small></button>').join('')+'</section>';}).join('')+'</div><footer class="x-dmg__f"><span>Heavy shields · unlimited reserve</span><button type="button">Close <kbd>B</kbd></button></footer></div>';
 }
 
 function dmSafe() { if (performance.now() - DM.ph < 2000) return false; for (const b of bots) if (b.alive && Math.hypot(b.g.position.x - player.x, b.g.position.z - player.z) < 12) return false; return true; }
@@ -11916,7 +11941,7 @@ function dmAmmo() {
   rw = FV.pri ? "pri" : "pis"; ammo = slots[rw].ammo; rsv = slots[rw].rsv; reloading = 0; fcd = 0; spray = 0; fireHeld = false; try { XSP.used = false; } catch (e) {} // round start re-arms the one spray per round onSkin();
 }
 function dmGive(n) {
-  const W = Object.hasOwn(WEAP,n) && WEAP[n]; if (!W) return false; if (FV.tdm) { const category=Object.keys(TDM_C).find(k=>TDM_C[k].includes(n)); if (!category || TDM_T[category]>tdmTier()) return false; } const sec = DM_C.Sidearms.includes(n);
+  const W = Object.hasOwn(WEAP,n) && WEAP[n]; if (!W) return false; if (FV.tdm) { const st = tdmTier(); if (!tdmOk(n, st)) return false; if (st && TDM_BW[st].includes(n)) (DM.stPick || (DM.stPick = {}))[st] = n; } const sec = DM_C.Sidearms.includes(n);
   if (sec) FV.sec = n; else FV.pri = n;
   if (rw !== "knife" && rw !== (sec ? "pis" : "pri")) slots[rw] = { ammo, rsv }; // the other slot keeps its live mag (was a stale count)
   slots[sec ? "pis" : "pri"] = { ammo: W.mag, rsv: xRsv(n) }; rw = sec ? "pis" : "pri"; ammo = W.mag; rsv = xRsv(n); reloading = 0; fcd = 0; spray = 0;
@@ -11966,8 +11991,9 @@ function dmSpawnP() {
 }
 function dmScore(by, victim) {
   DM.k[by] = (DM.k[by] || 0) + 1; DM.d[victim] = (DM.d[victim] || 0) + 1;
-  if (by === "You") { if (player.hp > 0) { player.hp = 100; player.armor = 50; updHud(); } }
-  else { const k = bots.find((x) => x.name === by); if (k && k.alive) { k.hp = 100; k.armor = 50; } }
+  if (FV.tdm) { // TDM: the killer is topped up (Deathmatch drops a health pack on the victim instead: GAME RULES block, dmPack*)
+    if (by === "You") { if (player.hp > 0) { player.hp = 100; player.armor = 50; updHud(); } }
+    else { const k = bots.find((x) => x.name === by); if (k && k.alive) { k.hp = 100; k.armor = 50; } } }
   if (FV.tdm) { const T = tdmTot(); if (!DM.over && (T[0] >= DM.win || T[1] >= DM.win)) DM.over = T[0] >= DM.win ? "t" : "r"; tdmTS(); }
   else if (DM.k[by] >= DM.win && !DM.over) DM.over = by;
 }
@@ -12625,7 +12651,7 @@ function mpCliMsg(m) {
   if (MP.cl && MP.st === "game" && mode === "five" && MP.m5) return mpCliTick5(dt);
   if (MP.cl && MP.st === "game" && mode === "five" && FV.dm) { // client tick: own movement + gun only; the host owns everything else
     xdTick(); if (window.xLdOn) dt = 0; if (!running) return;
-    tick(dt); if (FV.tdm) try { tdmTierTick(); } catch (e) {} if ((DM.lbT -= dt) <= 0) { DM.lbT = 0.25; try { dmLB(); } catch (e) {} } return; // the client tick never ran tdmTick: no unlock call-out, an open loadout kept its locks
+    tick(dt); if (FV.tdm) try { tdmTierTick(); tdmStageForce(); } catch (e) {} if ((DM.lbT -= dt) <= 0) { DM.lbT = 0.25; try { dmLB(); } catch (e) {} } return; // the client tick never ran tdmTick: no stage call-out / forced switch, an open loadout kept its locks
   }
   return t0.apply(this, arguments); }; }
 // scoreboard: team split by the live arrays; humans show ping, bots a BOT tag
@@ -12817,7 +12843,7 @@ function mpStart5() {
   if (mp5C()) return; // clients never score rounds
   const was = running, r = c0.apply(this, arguments);
   if (mp5H() && was && !running) {
-    const over = !!FV.surr || (Math.max(FV.you, FV.them) >= FIVE_WIN && Math.abs(FV.you - FV.them) >= 2);
+    const over = !!FV.surr || Math.max(FV.you, FV.them) >= FIVE_WIN; // first to 13 (12-12 -> Sudden Death round 25)
     const m = { t: "re", w: win ? 1 : 0, tx: String(text || "").replace(/\bYou\b/g, MP.name), ti: title || "", o: over ? 1 : 0, sc: [FV.you, FV.them], u: mpEnts(), k: mpSBK("k"), d: mpSBK("d") };
     MP.conns.forEach((c) => { if (c.u) mpSend(c.conn, Object.assign({ me: mpMe5(c) }, m)); });
     if (over) { MP.st = "post"; const e = { t: "end", sc: [FV.you, FV.them] }; MP.conns.forEach((c) => { if (c.u) mpSend(c.conn, e); c.u = null; c.pend = 0; }); mpUI(); }
@@ -14648,7 +14674,7 @@ const netSgBlk0=sgBlk;sgBlk=function(x,z,r,y=0){if(!NET.socket)return netSgBlk0(
 const netShoot0=shoot;shoot=function(){if(NET.socket&&(netReyna?.dismiss>0||netChannel?.remaining>0))return false;const before=ammo,k0=kSwing,ss=typeof RS!=='undefined'&&RS.ss,r=netShoot0.apply(this,arguments);const swung=rw==='knife'&&kSwing!==k0,rocket=ss&&!RS.ss;/* Showstopper: the click that launched the rocket is one fire pulse (the server's launcher fires on it; a semi-auto gun sends no held fire) */if(NET.socket&&MP.st==='game'&&(swung||rocket||(rw!=='knife'&&ammo<before))){NET.firePulse=performance.now()+80;NET.fireHeavy=swung&&kHv===1?NET.firePulse:0;/* ...and stays pending until an input message carried it: on a slow page the next 50 ms input tick runs after the frame, past the 80 ms window (online Showstopper launched no rocket) */NET.firePend=1;NET.firePendH=NET.fireHeavy?1:0;if(rocket)NET.ssFiredAt=performance.now();}return r;}; // knife: one pulse per swing the client actually started (a click during a swing sent a pulse the server could turn into an extra hit); a heavy swing sends kh so the server applies the heavy cooldown/damage
 /* window, not document: the keymap layer re-sends a rebound key on window only (it never reaches document) */addEventListener('keydown',e=>{if(e.code!=='KeyR'||!(NET.socket&&MP.st==='game')||xKbSkip(e)||e.repeat)return;netSend({t:'reload'});if(reloading>0)netReload=true;/* the page's own R handler already started the local reload: the loop must not send it again */});
 // Camera, server shots and bots all treat positive pitch as looking up; send it unchanged.
-function netInputMsg(kk,w){const seq=++NET.seq;const log=NET.inLog||(NET.inLog=[]);log.push({seq,t:performance.now()});if(log.length>240)log.shift();const fp=NET.firePend,fh=NET.firePendH;NET.firePend=NET.firePendH=0;/* a pending click rides this message once */return {t:'in',seq,r:yaw,p:pitch,f:(kk.KeyW?1:0)-(kk.KeyS?1:0),s:(kk.KeyD?1:0)-(kk.KeyA?1:0),j:kk.Space?1:0,c:kk.ControlLeft||kk.ControlRight?1:0,w:kk.ShiftLeft||kk.ShiftRight?1:0,ads:ads?1:0,h4:kk.Digit4||kk.Numpad4?1:0,fire:(w!=='Knife'&&!WEAP[w]?.semi&&fireHeld)||NET.firePulse>performance.now()||fp?1:0,kh:NET.fireHeavy>performance.now()||fh?1:0,cb:J.pick==='Jett'&&kk.KeyC?1:0/* Cloudburst steering: C held */};} // a held knife click is one swing on the client, so it is a pulse (not held fire) online
+function netInputMsg(kk,w){const seq=++NET.seq;const log=NET.inLog||(NET.inLog=[]);log.push({seq,t:performance.now()});if(log.length>240)log.shift();const fp=NET.firePend,fh=NET.firePendH;NET.firePend=NET.firePendH=0;/* a pending click rides this message once */return {t:'in',seq,r:yaw,p:pitch,f:(kk.KeyW?1:0)-(kk.KeyS?1:0),s:(kk.KeyD?1:0)-(kk.KeyA?1:0),j:kk.Space?1:0,c:kk.ControlLeft||kk.ControlRight?1:0,w:kk.ShiftLeft||kk.ShiftRight?1:0,ads:ads?1:0,az:ads===2&&w==='Operator'&&typeof xSC!=='undefined'&&xSC.lv===2?1:0/* Operator second zoom (5x): teammates spectating see it (roundState pov ADS 2) */,h4:kk.Digit4||kk.Numpad4?1:0,fire:(w!=='Knife'&&!WEAP[w]?.semi&&fireHeld)||NET.firePulse>performance.now()||fp?1:0,kh:NET.fireHeavy>performance.now()||fh?1:0,cb:J.pick==='Jett'&&kk.KeyC?1:0/* Cloudburst steering: C held */};} // a held knife click is one swing on the client, so it is a pulse (not held fire) online
 let netWeapon='',netReload=false,netEquipWant=null,netEquipUntil=0,netRec=false;
 // A local swap sends its equip at once and holds the snapshot reconcile (above) until the server names that gun or 1 s passes.
 const netSwap0=swapW;swapW=function(s){const r=netSwap0.apply(this,arguments);if(!netRec&&NET.socket&&NET.socket.readyState===1&&MP.st==='game'&&NET.ready){const w=rw==='knife'?'Knife':wName();if(w!==netWeapon){netWeapon=w;netSend({t:'equip',w});netEquipWant=w;netEquipUntil=performance.now()+1000;}}return r;};
@@ -19868,11 +19894,11 @@ if (typeof bfxBot === 'function') { const b0 = bfxBot; bfxBot = function (p) { t
 // online: the server's per-teammate view state, and each teammate's ammo (row [15]) for the HUD / reload cue
 if (typeof mpCliRS === 'function') { const r0 = mpCliRS; mpCliRS = function (m) { const r = r0.apply(this, arguments); try { XSPV.pov = m && m.pov && typeof m.pov === 'object' ? m.pov : {}; XSPV.povAt = performance.now(); } catch (e) {} return r; }; }
 if (typeof mpCliSnap === 'function') { const s0 = mpCliSnap; mpCliSnap = function (m) { const r = s0.apply(this, arguments); try { if (m && Array.isArray(m.u)) for (const e of m.u) { if (!Array.isArray(e) || e[0] === MP.me || !Number.isFinite(e[15])) continue; const u = allies.find((x) => x.nid === e[0]); if (u) u.nam = e[15]; } } catch (e) {} return r; }; }
-function xspvPov(a) { const p = a && a.nid != null && XSPV.pov ? XSPV.pov[a.nid] : null; if (!Array.isArray(p)) return null; const age = (performance.now() - XSPV.povAt) / 1000; return { ads: p[0] ? 1 : 0, blind: Math.max(0, (+p[1] || 0) - age), rl: Math.max(0, (+p[2] || 0) - age) }; }
+function xspvPov(a) { const p = a && a.nid != null && XSPV.pov ? XSPV.pov[a.nid] : null; if (!Array.isArray(p)) return null; const age = (performance.now() - XSPV.povAt) / 1000; return { ads: p[0] === 2 ? 2 : p[0] ? 1 : 0, blind: Math.max(0, (+p[1] || 0) - age), rl: Math.max(0, (+p[2] || 0) - age) }; }
 function xspvBlind(v) { let el = XSPV.bl; if (!el && !(v > 0)) return; if (!el) { el = XSPV.bl = document.createElement('div'); el.id = 'xSpvBlind'; el.style.cssText = 'pointer-events:none;position:fixed;inset:0;z-index:110;background:#fff;opacity:0'; document.body.appendChild(el); }
   const o = v > 0 ? Math.min(1, v / 1.5).toFixed(2) : '0'; if (el.style.opacity !== o) el.style.opacity = o; }
-function xspvZoom(w, ads) { // the teammate's lens: 0 = hip, else the zoom the player's own setScope gives that weapon
-  const sn = !!(typeof XSZ !== 'undefined' && XSZ[w]), z = !ads || w === 'Knife' || w === 'Classic' || w === 'Sheriff' || w === 'Frenzy' ? 1 : sn ? XSZ[w][0] : (XZ[w] || 1.25), scope = !!ads && sn;
+function xspvZoom(w, ads) { // the teammate's lens: 0 = hip, else the zoom the player's own setScope gives that weapon (2 = the Operator's second zoom, 5x)
+  const sn = !!(typeof XSZ !== 'undefined' && XSZ[w]), z = !ads || w === 'Knife' || w === 'Classic' || w === 'Sheriff' || w === 'Frenzy' ? 1 : sn ? XSZ[w][Math.min(XSZ[w].length, ads) - 1] : (XZ[w] || 1.25), scope = !!ads && sn;
   const was = XSPV.zoom; XSPV.zoom = z; if (z !== 1 || (was && was !== 1)) { const f = xSCf(z !== 1 ? z : xSC.z); if (Math.abs(camera.fov - f) > 1e-4) { camera.fov = f; camera.updateProjectionMatrix(); } } // (xADu also re-heals the player's own lens every frame)
   if (scope !== XSPV.scope) { XSPV.scope = scope; hudS($('scope'), 'display', scope ? 'block' : 'none'); hudS($('cross'), 'display', scope ? 'none' : ''); } }
 function xspvOff() { if (XSPV.zoom && XSPV.zoom !== 1) { XSPV.zoom = 0; try { const f = xSCf(xSC.z); camera.fov = f; camera.updateProjectionMatrix(); } catch (e) {} } XSPV.zoom = 0; if (XSPV.scope) { XSPV.scope = false; hudS($('scope'), 'display', 'none'); hudS($('cross'), 'display', ''); } xspvBlind(0); }
@@ -19923,6 +19949,61 @@ function xeiEnemy(n) { try { if (n === 'You') return false; const T = sbTeams();
 if (typeof sbCred === 'function') { const c0 = sbCred; sbCred = function (n) { try { if (mode === 'five' && !FV.dm && xeiEnemy(n)) { const v = FV.ec && FV.ec[n]; return Number.isFinite(v) ? v : '—'; } } catch (e) {} return c0.apply(this, arguments); }; }
 window.xEnemyInfo = XEI;
 // ---- END ENEMY INFO ----
+// ---- GAME RULES ----
+// Deathmatch health packs (user 2026-10-26 10:32: "search online for everything that you have ... and verify it's right";
+// work/validation/values-game.md). VALORANT Deathmatch: a kill "drops health kits on the victim's body that can be picked up"
+// (wiki.playvalorant.com/en-us/Deathmatch); the game files (valorant.gs/rules DeathmatchGameMode "Health Pack") give Lifespan 8,
+// Health To Restore 50, Armor To Restore 25 and a 50 uu (0.5 m) pickup sphere. Same numbers and rule as the server
+// (server/src/simulation.js HEALTH_PACK / packTick): one pack at the victim's feet, gone after 8 s or when a HURT living unit
+// touches it (sphere 0.5 m + capsule 0.35 m, within 1.8 m vertically): +50 HP (max 100), +25 armour (max 50). The old offline
+// rule (the killer healed to 100 / 50 on every kill) stays for Team Deathmatch only. Online the server owns the packs; the page
+// draws the snapshot's hpk rows ([id, victim, killer, x, y, z, seconds left]).
+var DMPK = { L: [], seq: 0, life: 8, hp: 50, armor: 25, r: 0.5 + 0.35, dy: 1.8, cap: 100, armorCap: 50, mat: null, geo: null };
+function dmPackOn() { return typeof FV !== 'undefined' && !!FV.dm && !FV.tdm && !(FV.esc); }
+function dmPackOnline() { return typeof MP !== 'undefined' && !!MP.on; }
+function dmPackMesh() { // a small green kit with a white cross, slowly turning
+  if (!DMPK.geo) { DMPK.geo = new THREE.BoxGeometry(0.36, 0.22, 0.36); DMPK.mat = new THREE.MeshBasicMaterial({ color: 0x3ad17a }); DMPK.xm = new THREE.MeshBasicMaterial({ color: 0xffffff }); DMPK.xa = new THREE.BoxGeometry(0.28, 0.025, 0.08); DMPK.xb = new THREE.BoxGeometry(0.08, 0.025, 0.28); }
+  const g = new THREE.Group(), b = new THREE.Mesh(DMPK.geo, DMPK.mat), a = new THREE.Mesh(DMPK.xa, DMPK.xm), c = new THREE.Mesh(DMPK.xb, DMPK.xm); a.position.y = c.position.y = 0.12; g.add(b); g.add(a); g.add(c); g.name = 'xDmPack'; return g;
+}
+function dmPackDrop(x, y, z, id) {
+  if (![x, y, z].every(Number.isFinite)) return null;
+  const k = { id: id != null ? id : ++DMPK.seq, x, y, z, t: DMPK.life, g: null };
+  try { k.g = dmPackMesh(); k.g.position.set(x, y + 0.2, z); scene.add(k.g); } catch (e) { k.g = null; }
+  DMPK.L.push(k); return k;
+}
+function dmPackKill(k) { const i = DMPK.L.indexOf(k); if (i >= 0) DMPK.L.splice(i, 1); if (k && k.g && k.g.parent) k.g.parent.remove(k.g); }
+function dmPackClear() { for (const k of DMPK.L.slice()) dmPackKill(k); }
+// Restores a unit {hp, armor} from a pack; false when the unit is already full (the pack stays).
+function dmPackApply(u) { if (!u || !(u.hp > 0) || (u.hp >= DMPK.cap && (u.armor || 0) >= DMPK.armorCap)) return false; u.hp = Math.min(DMPK.cap, u.hp + DMPK.hp); u.armor = Math.max(u.armor || 0, Math.min(DMPK.armorCap, (u.armor || 0) + DMPK.armor)); return true; }
+function dmPackNear(k, x, y, z) { return Math.hypot(x - k.x, z - k.z) <= DMPK.r && Math.abs((Number.isFinite(y) ? y : k.y) - k.y) <= DMPK.dy; }
+function dmPackTick(dt) {
+  if (!DMPK.L.length) return;
+  for (const k of DMPK.L.slice()) {
+    k.t -= dt; if (k.g) k.g.rotation.y += dt * 1.6;
+    if (k.t <= 0) { dmPackKill(k); continue; }
+    if (dmPackOnline()) continue; // online: the server picks up, the snapshot removes it
+    if (player && player.hp > 0 && dmPackNear(k, player.x, player.y, player.z) && dmPackApply(player)) { dmPackKill(k); try { updHud(); blip(880, 0.06, 'triangle', 0.12); } catch (e) {} continue; }
+    for (const b of bots) { if (!b || !b.alive || !b.g) continue; const p = b.g.position; if (dmPackNear(k, p.x, p.y, p.z) && dmPackApply(b)) { dmPackKill(k); break; } }
+  }
+}
+if (typeof dmScore === 'function') { const s0 = dmScore; dmScore = function (by, victim) {
+  const r = s0.apply(this, arguments);
+  try { if (dmPackOn() && !dmPackOnline()) { if (victim === 'You') { if (player) dmPackDrop(player.x, player.y || 0, player.z); } else { const b = bots.find((x) => x.name === victim); if (b && b.g) dmPackDrop(b.g.position.x, b.g.position.y, b.g.position.z); } } } catch (e) {}
+  return r; }; }
+if (typeof dmTick === 'function') { const t0 = dmTick; dmTick = function (dt) { const r = t0.apply(this, arguments); try { if (dmPackOn() && running) dmPackTick(window.xLdOn ? 0 : dt); else if (DMPK.L.length && !dmPackOnline()) dmPackClear(); } catch (e) {} return r; }; }
+if (typeof dmGo === 'function') { const g0 = dmGo; dmGo = function () { dmPackClear(); return g0.apply(this, arguments); }; }
+// Online Deathmatch: draw the server's packs (fog-filtered per player, server/src/fog.js) and spin / expire them between snapshots.
+function dmPackSync(rows) {
+  const seen = new Set();
+  for (const r of rows) { if (!Array.isArray(r) || !Number.isFinite(r[0])) continue; seen.add(r[0]); let k = DMPK.L.find((q) => q.id === r[0]); if (!k) k = dmPackDrop(+r[3], +r[4], +r[5], r[0]); if (k) k.t = Math.max(0, +r[6] || 0); }
+  for (const k of DMPK.L.slice()) if (!seen.has(k.id)) dmPackKill(k);
+}
+if (typeof mpCliSnap === 'function') { const c0 = mpCliSnap; let last = 0; mpCliSnap = function (m) { const r = c0.apply(this, arguments);
+  try { const now = performance.now(), dt = last ? Math.min(0.25, (now - last) / 1000) : 0; last = now; for (const k of DMPK.L) if (k.g) k.g.rotation.y += dt * 1.6; // turned once per snapshot (~20 Hz)
+    if (m && Array.isArray(m.hpk)) dmPackSync(m.hpk); else if (m && Array.isArray(m.u) && DMPK.L.length && dmPackOnline()) dmPackSync([]); } catch (e) {}
+  return r; }; }
+window.xDmPacks = DMPK;
+// ---- END GAME RULES ----
 xReady = true; // every mode is initialised; lobby launches may now start them
 { let rb = null; try { rb = sessionStorage.getItem("vs.retry"); sessionStorage.removeItem("vs.retry"); } catch (e) {} // Retry on the engine error reloaded the page: relaunch the same mode
   if (rb) setTimeout(() => { const b = $(rb); if (b) b.click(); }, 300); }

@@ -9,7 +9,7 @@
 //  5. defuse by a human (7 s, half checkpoint kept on release), detonation (45 s), round credits (3000 / loss streak)
 //  6. leave mid-round (seat bot takes over the living body) and reconnect with the same token (same team, same seat)
 //  7. half time at round 13: sides swap, credits reset to 800, loss streak reset
-//  8. overtime from 12-12: 5000 credits each round, sides swap every round, win by two; match end reaches both clients
+//  8. Endgame from 12-12: one Sudden Death round 25, 5000 credits each, same sides, 13-12 wins; match end reaches both clients
 import assert from 'node:assert/strict';import {localCluster} from './tools/local-cluster.mjs';
 const out=[],note=s=>{out.push(s);if(process.env.VERBOSE)console.log(s);};
 // 1. gate
@@ -78,15 +78,14 @@ const next=async n=>{await until(()=>sim.round===n&&sim.buy>0,8000,'round '+n);a
 await elim(1-sim.atk);for(let n=4;n<=12;n++){await next(n);await elim(1-sim.atk);}
 const atk12=sim.atk;await next(13);assert.equal(sim.atk,1-atk12,'sides swap at round 13');for(const u of sim.units)if(u.human)assert.equal(u.credits,800,'credits reset at half ('+u.name+')');else assert(u.credits<=800&&u.credits+(u.spent||0)>=0,'bot credits reset at half then auto-buy ('+u.name+' '+u.credits+')');assert.deepEqual(sim.losses,[0,0]);
 await C.advance(200);assert.equal(A.rs.atk,sim.atk===0?1:0,'client sees the swap');note('half time: round 13 sides swapped, everyone 800, loss streaks reset; scores '+sim.roundScores);
-// 8. overtime: this round stands in for round 24 at 12-11, the defenders take it: 12-12
+// 8. Endgame / Sudden Death (wiki.playvalorant.com/en-us/Unrated): this round stands in for round 24 at 12-11, the defenders take
+// it: 12-12 -> round 25 on the SAME sides with 5000 each; its winner wins 13-12
 sim.round=24;sim.roundScores[sim.atk]=12;sim.roundScores[1-sim.atk]=11;await elim(sim.atk);assert.deepEqual(sim.roundScores,[12,12]);
 const atk24=sim.atk;await next(25);
-assert.equal(sim.atk,1-atk24,'overtime round 25 swaps sides');for(const u of sim.units)if(u.human)assert.equal(u.credits,5000,'overtime credits 5000 ('+u.name+')');else assert(u.credits<=5000,'bot overtime credits '+u.credits);
+assert.equal(sim.atk,atk24,'Endgame round 25 keeps the sides');for(const u of sim.units)if(u.human)assert.equal(u.credits,5000,'Endgame credits 5000 ('+u.name+')');else assert(u.credits<=5000,'bot Endgame credits '+u.credits);
 const lead=1-sim.atk;await elim(sim.atk);assert.equal(sim.roundScores[lead],13);
-await next(26);assert.equal(sim.atk,atk24,'overtime swaps every round');for(const u of sim.units)if(u.human)assert.equal(u.credits,5000,'overtime credits reset to 5000 each round ('+u.name+')');assert(!A.ended,'13-12 is not a win');
-await elim(1-lead);
-await until(()=>A.ended&&B2.ended,8000,'match end on both clients');assert.equal(sim.phase,'post');assert.deepEqual([...sim.roundScores].sort((a,b)=>a-b),[12,14]);
-note('overtime: 12-12 -> round 25 sides swapped, 5000 each; 13-12 continues; round 26 swapped again, 5000; 14-12 ends the match; end reached both clients');
-console.log('Spike acceptance (local ENABLE_SPIKE, real worker + Ascent world, virtual clock): gate, buy/sell/econ, human plant with +300 team bonus, late join, detonation, human defuse with checkpoint, leave/rejoin seat handover, half-time swap, overtime 5000/swap/win-by-two, match end'+(process.env.VERBOSE?'':''));
+await until(()=>A.ended&&B2.ended,8000,'match end on both clients');assert.equal(sim.phase,'post');assert.equal(sim.round,25,'no round 26');assert.deepEqual([...sim.roundScores].sort((a,b)=>a-b),[12,13]);
+note('Endgame: 12-12 -> round 25 same sides, 5000 each; 13-12 ends the match; end reached both clients');
+console.log('Spike acceptance (local ENABLE_SPIKE, real worker + Ascent world, virtual clock): gate, buy/sell/econ, human plant with +300 team bonus, late join, detonation, human defuse with checkpoint, leave/rejoin seat handover, half-time swap, Endgame round 25 5000 / same sides / 13-12 win, match end'+(process.env.VERBOSE?'':''));
 if(process.env.VERBOSE)console.log(out.join('\n'));
 process.exit(0);

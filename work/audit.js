@@ -1877,7 +1877,7 @@ if (!NO3) {
   const xe = vm.runInContext("__xe", context);
   const f2 = (label, code) => { let ok = false, err = []; try { const r = xe(`(() => { try { ${code} } catch (e) { return String(e.stack || e).slice(0, 300); } })()`); if (r === true) ok = true; else err.push(String(r)); } catch (e) { err.push(String(e).slice(0, 300)); } report.push({ label: "fid2: " + label, el: true, handler: true, cond: ok, pass: ok, errs: err }); return ok; };
   const go5 = 'window.xLdOn = false; FV.pick = "ascent"; FV.srOn = 0; FV.dm = false; FV.tdm = false; window.xSwift = false; startFive(); clearTimeout(FV.to); window.xLdOn = false;';
-  const SRC_OK = ["s.pt >= 4", "prog = s.pt / 4", "s.t = 45", "s.dt >= 7", "s.dt = s.dt >= 3.5 ? 3.5 : 0", "over ? 2200 : 7000", "n >= 24", "s.cr = 5000", "? 45 : 30", "timeLeft = 100;"].every((t) => html.includes(t));
+  const SRC_OK = ["s.pt >= 4", "prog = s.pt / 4", "s.t = 45", "s.dt >= 7", "s.dt = s.dt >= 3.5 ? 3.5 : 0", "over ? 2200 : 7000", "n === 24", "s.cr = 5000", "? 45 : 30", "timeLeft = 100;"].every((t) => html.includes(t));
   f2("timing constants (buy 45 first round of each half / 30, round 100, plant 4, fuse 45 w/ beep 1/s, 2/s <20 s, 4/s <10 s, 6.7/s <5 s, 10/s <1 s, defuse 7 / half 3.5, post-round 7 s, 13 to win, OT 5000)", go5 + `
     const b0 = FV.buy, t0 = timeLeft; FV.you = 1; FV.them = 0; fRound(); clearTimeout(FV.to); const b1 = FV.buy; FV.you = 6; FV.them = 6; fRound(); clearTimeout(FV.to); const b12 = FV.buy;
     const ok = b0 === 45 && t0 === 100 && b1 === 30 && b12 === 45 && FIVE_WIN === 13 && ${SRC_OK} && xSpHz(30) === 1 && xSpHz(15) === 2 && xSpHz(9) === 4 && xSpHz(4) > 6 && xSpHz(0.5) === 10;

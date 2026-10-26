@@ -48,7 +48,7 @@ const NAMES=['Bot Sage','Bot Omen','Bot Raze','Bot Sova','Bot Breach','Bot Phoen
 const nodes=[],adj=[];for(let i=0;i<15;i++)for(let j=0;j<15;j++){nodes.push([i*2-14,0,-j*2]);const k=i*15+j,a=[];if(i>0)a.push(k-15);if(i<14)a.push(k+15);if(j>0)a.push(k-1);if(j<14)a.push(k+1);adj.push(a);}
 const all=nodes.map((_,i)=>i),near=(x,z)=>{let b=0,d=Infinity;for(const i of all){const n=nodes[i],v=(n[0]-x)**2+(n[2]-z)**2;if(v<d){d=v;b=i;}}return b;};
 const G={map:{attacker:[-14,0,0],defender:[14,0,-28],sites:{A:[-8,0,-14],B:[8,0,-14]}},nav:{nodes,adj},playable:all,allowed:new Set(all),near,ground:()=>0,blocked:()=>false,ray:()=>Infinity};
-function fight(k,dist,off,strafe){const s=new Simulation(G,'tdm','ascent',B.rng(1000+k)),t=s.add('Target','Jett',true),b=s.add(NAMES[k%NAMES.length],'Sage',false);s.phase='game';s.remaining=1e9;s.maxKills=1e9;
+function fight(k,dist,off,strafe){const s=new Simulation(G,'tdm','ascent',B.rng(1000+k)),t=s.add('Target','Jett',true),b=s.add(NAMES[k%NAMES.length],'Sage',false);s.phase='game';s.remaining=1e9;s.matchLen=1e9+300;s.stage=3;/* TDM Stage 4 (rifles) for the whole fight: no stage re-arm of the Vandal */s.maxKills=1e9;
  Object.assign(t,{team:1,x:0,y:0,z:-dist,hp:1e9,armor:0,look:0,loading:false,protectedUntil:0,invulnerableUntil:0});Object.assign(b,{team:0,x:0,y:0,z:0,look:off,weapon:'Vandal',ammo:1e9,loading:false,protectedUntil:0});
  b.persona=null;persona(s,b).r=B.rng(k*7+3);b.pitch=B.idlePitch(persona(s,b).brain);const R={shots:0,head:0,body:0,legs:0,first:null,dmg:0,ttk:-1};let side=1,flip=0;
  for(let i=0;i<120;i++){if(strafe){flip-=1/60;if(flip<=0){side=-side;flip=.45+((i*37)%10)/40;}}t.input=strafe?{side}:{};t.inputAt=s.time;t.hp=1e9;b.ammo=1e9;s.step(1/60);

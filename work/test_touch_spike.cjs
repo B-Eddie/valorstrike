@@ -42,7 +42,7 @@ const freeze='for(const b of bots)b.nt=true;for(const a of allies)a.nt=true;play
  const toSpike=`${freeze};FV.atk=false;const s=FV.sp;s.st="plant";s.t=45;s.dt=0;s.x=player.x+0.5;s.z=player.z;timeLeft=45;true`;
  xe(toSpike);await adv(100);
  check('defuse prompt shown at the Spike',/^Hold 4 to defuse/.test(prompt()),prompt());check('PLANT button shown at the planted Spike (defuse)',!btn('plant').classList.contains('hid'));
- down('plant',11);await adv(4500);up(11);await adv(100);const half=xe('FV.sp.dt');
+ down('plant',11);await adv(4500);up(11);await adv(100);const held=xe('FV.sp.dt');check('a 0.1 s release is inside the 0.2 s defuse cancel window (progress held)',held>4,'dt '+held);await adv(200);const half=xe('FV.sp.dt');/* past the window (DEF_CANCEL 0.2 s): back to the checkpoint */
  check('release after the half keeps the 3.5 s checkpoint',half===3.5,'dt '+half);
  down('plant',12);await adv(3700);up(12);await adv(300);
  check('PLANT hold completes the defuse (7 s with the checkpoint)',xe('FV.sp.st')==='done',xe('FV.sp.st')+' dt '+xe('FV.sp.dt'));
