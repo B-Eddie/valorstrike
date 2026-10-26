@@ -292,6 +292,7 @@ Re-sweep after C1/C2 (stride 2 + walk-in trap test on every sampled node, RENDER
   crevices (x -53.9..-53.2, z 21.35..21.75, body band 6.9..8.4 m), never nearer than 0.42 m to the node, so the bump's
   rim stops the walk like a wall: local scan 0 traps (12 before), no playable node clip-blocked; the bump still walks off
   east / south / south-west (1.8-2.8 m in 0.6 s). Fixtures: the three walks off the bump (Bind traps; all fail before).
+  Full gate on main 7add113 (this clip, on top of 4782a01): `npm run test:client` 128/128, server `npm test` EXIT 0.
 - Haven (C2 motor; 4,081 nodes, 14,575 edges): 0 stuck, 0 traps, 1 refused edge (9, 8, -58) -> (9, 7.99, -57.25): a 5 mm
   paving bump under a low ceiling (1.8-2.2 m over the floor) - the step-up tested headroom for the full 40 cm step and
   refused it. Fix (shared motor): headroom is tested for the lift actually used (full step, or the few cm of the lean-wall
