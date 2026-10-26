@@ -79,7 +79,8 @@ function xgPose(M, dt) {
   for (const bn of G.R.bones.concat(G.L.bones)) { let s = G.saved.get(bn); if (!s) G.saved.set(bn, (s = new THREE.Quaternion())); s.copy(bn.quaternion); }
   const V = G.v, root = M.m; root.updateWorldMatrix(true, false); const rq = xgWorldQ(root, G.q[2]);
   const axis = (x, y, z, out) => out.set(x, y, z).applyQuaternion(rq); // agent frame (+Z forward, +X the agent's left) to world
-  const p = Math.max(-1.2, Math.min(1.2, X.pit || 0)), D = axis(0, Math.sin(p), Math.cos(p), V[9]).normalize(), up = axis(0, 1, 0, V[10]); up.addScaledVector(D, -up.dot(D)).normalize();
+  const p = Math.max(-1.5, Math.min(1.5, X.pit || 0)), D = X.aim ? V[9].set(X.aim.x, X.aim.y, X.aim.z).normalize() : axis(0, Math.sin(p), Math.cos(p), V[9]).normalize(), up = axis(0, 1, 0, V[10]); up.addScaledVector(D, -up.dot(D)).normalize();
+  if (up.lengthSq() < 1e-8) axis(0, 0, -1, up).addScaledVector(D, -up.dot(D)).normalize(); // directly above/below: retain a stable gun frame
   // gun frame: local -Z along the aim, +Y up
   const zg = V[11].copy(D).negate(), xg = G.v[3].crossVectors(up, zg).normalize(), Rg = G.m[0].makeBasis(xg, up, zg), gq = G.q[3].setFromRotationMatrix(Rg);
   const gp = G.v[4], tmp = G.v[5];

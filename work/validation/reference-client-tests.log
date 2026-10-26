@@ -1,0 +1,26 @@
+PASS test_bot_aim.cjs
+PASS test_bot_movement.cjs
+PASS test_view_motion.cjs
+PASS test_feel.js
+PASS test_online_pitch.cjs
+PASS test_grip.cjs
+PASS test_grip_frame.cjs
+PASS test_tp_locomotion.cjs
+PASS test_movement_sampling.cjs
+PASS test_fp_timing.cjs
+PASS test_renderer_rebind.cjs
+PASS test_fp_native.cjs
+PASS test_native_stride.cjs
+PASS test_native_crouch.cjs
+PASS test_tp_body_stretch.cjs
+PASS test_feet.cjs
+PASS test_net_reconcile.cjs
+PASS test_bot_brain_offline.cjs
+PASS test_bot_variety.cjs
+PASS test_bot_shoot_utility_offline.cjs
+PASS test_ally_acquire.cjs
+PASS test_global_names.cjs
+PASS test_air_spread.cjs
+PASS test_offline_realtime.cjs
+PASS test_tdm_transitions.cjs
+{"total":25,"passed":25,"failed":[]}

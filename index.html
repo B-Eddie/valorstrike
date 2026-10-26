@@ -3957,7 +3957,7 @@ function xUbAnim(b, M, sp, dt) {
   const ry = b.g.rotation.y, sy = Math.sin(ry), cy = Math.cos(ry), f = dx * sy + dz * cy, sd = dx * cy - dz * sy, mv = sp > 0.35;
   const back = mv && f < -0.25 * Math.hypot(f, sd);
   const yawT = mv && !air ? Math.max(-1.25, Math.min(1.25, back ? Math.atan2(-sd, -f) : Math.atan2(sd, Math.max(1e-4, f)))) : 0; // strafe: hips turn toward the move, torso counter-turns
-  X.yaw += (yawT - X.yaw) * Math.min(1, dt * 8); X.pit = M.xap || 0;
+  X.yaw += (yawT - X.yaw) * Math.min(1, dt * 8); X.pit = M.xap || 0; X.aim = M.xaim || null;
   const cw = X.cb * 0.62, L = xUbLoco(sp, cw, back, air), T = L.T; // crouch blend capped so the head drops ~0.45 m, matching the crouch head hitbox drop
   if (X.lo) { for (const n of XUB_LO) T[n] = 0; T[X.lo] = 1; }
   T[X.uo || (M.w === "Knife" ? "knife" : "aim")] = 1;
@@ -4336,6 +4336,13 @@ function xVis(dt) {
     if (e.t > 3) { const o = Math.max(0, 1 - (e.t - 3)); if (c.solOwn) c.solOwn(); for (let j = 0; j < c.mats.length; j++) { c.mats[j].transparent = true; c.mats[j].opacity = o; } if (o <= 0) { scene.remove(c.m); scene.remove(e.gn); xDisp(e.gn); XDEAD.splice(i, 1); } }
   }
 }
+// Preserve the bot's selected pre-spread direction, including body shots and utility targets. The visual layer
+// consumes this world-space aim; deriving it again from the viewer or the nearest agent loses the selected shot.
+function xBotAim(b, target, from) {
+  if (!b || b.nt) return; const A = b.xaim || (b.xaim = { x: 0, y: 0, z: 1 });
+  const x = target.x - (from ? from.x : 0), y = target.y - (from ? from.y : 0), z = target.z - (from ? from.z : 0), l = Math.hypot(x, y, z);
+  if (l < 1e-8) return; A.x = x / l; A.y = y / l; A.z = z / l; b.xaimOn = true;
+}
 function xVisB(b, dt, now, isAlly) {
     if (!b || !b.g) return;
     if (!b.xm && b.g.parent && b.alive !== false) {
@@ -4349,15 +4356,21 @@ function xVisB(b, dt, now, isAlly) {
     const P = b.g.position, sp = Math.min(8, Math.hypot(P.x - b.xp.x, P.z - b.xp.z) / dt); b.xp.x = P.x; b.xp.z = P.z;
     b.xwk += (Math.min(1, sp / 4) - b.xwk) * Math.min(1, dt * 8); b.xph += dt * (4 + sp * 1.6);
     const s = Math.sin(b.xph) * b.xwk, M = b.xm;
-    if (M.sx) xUbAnim(b, M, sp, dt);
     M.lL.rotation.x = s * 0.7; M.lR.rotation.x = -s * 0.7;
-    // aim pitch toward the target: enemies at the player's eye, allies at the nearest live enemy's head
-    let ty = null, hz = 1;
-    if (isAlly) { let bd2 = 1e9; for (let i = 0; i < bots.length; i++) { const e = bots[i]; if (!e || !e.alive || !e.g) continue; const q = e.g.position, d2 = (q.x - P.x) ** 2 + (q.z - P.z) ** 2; if (d2 < bd2) { bd2 = d2; ty = 1.6; hz = Math.sqrt(d2); } } }
-    else if (player) { ty = 1.6 - player.ch + player.y; hz = Math.hypot(player.x - P.x, player.z - P.z); } // pEye() inlined: no Vector3 per bot per frame
-    const tp = ty === null ? 0 : Math.max(-0.9, Math.min(0.9, Math.atan2(ty - 1.45, Math.max(0.5, hz))));
-    b.xap = (b.xap || 0) + (tp - (b.xap || 0)) * Math.min(1, dt * 8);
+    // Online np is the authoritative pitch, interpolated with yaw by mpInterp (offline np is a navigation array).
+    // Never infer a remote unit's aim from the viewer: it may be shooting someone else, above or below it.
+    let tp = b.nt && Number.isFinite(b.np) ? b.np : 0;
+    const aim = !b.nt && b.xaimOn ? b.xaim : null; M.xaim = aim;
+    if (aim) tp = Math.atan2(aim.y, Math.hypot(aim.x, aim.z));
+    else if (!b.nt && b.xaimOn !== false) {
+      let t = b.xTt || b.xTg || (!isAlly ? player : null);
+      if (!t && isAlly) { let bd2 = Infinity; for (const e of bots) { if (!e || !e.alive || !e.g) continue; const q = e.g.position, d2 = (q.x - P.x) ** 2 + (q.z - P.z) ** 2; if (d2 < bd2) { bd2 = d2; t = e; } } }
+      if (t) { const q = t.g ? t.g.position : t, ty = (q.y || 0) + (t.g ? 1.5 : 1.6 - (t.ch || 0)) - (b.hd === false ? 0.45 : 0), eye = P.y + (isAlly ? 1.6 : 1.7);
+        tp = Math.atan2(ty - eye, Math.max(0.01, Math.hypot(q.x - P.x, q.z - P.z))); }
+    }
+    b.xap = Math.max(-1.5, Math.min(1.5, tp));
     M.xap = b.xap; if (!M.ub) M.gun.rotation.x = -b.xap; if (M.hd) M.hd.rotation.x = -b.xap * 0.8; // the native rig pitches its upper spine instead (xUbPost) and the weapon grip owns its gun: writing rotation.x here re-derived the grip quaternion from Euler and flung the gun sideways each frame
+    if (M.sx) xUbAnim(b, M, sp, dt); // sample this frame's pitch before the mixer / grip runs
     M.aL.rotation.x = -1.25 - s * 0.18 - b.xap; M.aR.rotation.x = -1.35 + s * 0.12 - b.xap;
     M.bd.position.y = Math.sin(now * 2.2) * 0.008 * (1 - b.xwk) + Math.abs(Math.cos(b.xph)) * 0.03 * b.xwk;
     M.bd.rotation.y = Math.sin(now * 0.7 + b.xph) * 0.04 * (1 - b.xwk);
@@ -4527,7 +4540,7 @@ function tick(dt) {
   xTrade(defs);
   for (const b of bots) {
     if (!b.alive || !running || b.nt) continue; // b.nt: online-driven unit (remote player / client puppet), no AI
-    const p = b.g.position, from = b.xFr || (b.xFr = new V()); from.set(p.x, (p.y || 0) + 1.7, p.z);
+    const p = b.g.position, from = b.xFr || (b.xFr = new V()); from.set(p.x, (p.y || 0) + 1.7, p.z); b.xaimOn = false;
     let tg = null, td = 1e9, see = false;
     b.xTh = (b.xTh == null ? Math.random() * 0.1 : b.xTh) - dt; // think (target choice + sight) ~10 Hz, staggered per bot
     if (b.xTh > 0 && b.xTt && b.xTt.hp > 0) for (const f of defs) if (f.t === b.xTt) { tg = f; see = b.xSe; td = Math.hypot(f.x - p.x, f.z - p.z); break; }
@@ -4543,7 +4556,7 @@ function tick(dt) {
     const dx = tg.x - p.x, dz = tg.z - p.z, d = td || 0.01, eye = tg.eye;
     if (b.blind > 0) b.xbFl = performance.now(); // a flash ends the fight: the next one starts with a slower reaction
     if (see && !b.see) { const oy = xAng(b.g.rotation.y - Math.atan2(dx, dz)); b.pre = Math.abs(oy) < 0.6; if (typeof xbEngage === "function") xbEngage(b, b.pre, { off: Math.abs(oy), e0y: oy, d, flashed: performance.now() - (b.xbFl || -1e9) < 1200 }); } // was the crosshair already pre-placed on this angle? new fight: own reaction / crosshair error / stand time (BOT VARIETY)
-    if (see) b.g.rotation.y = typeof xbFaceAim === "function" ? xbFaceAim(b, Math.atan2(dx, dz), dt) : Math.atan2(dx, dz); // human flick at its own turn rate (BOT VARIETY), not a snap
+    if (see) { b.g.rotation.y = typeof xbFaceAim === "function" ? xbFaceAim(b, Math.atan2(dx, dz), dt) : Math.atan2(dx, dz); const pt = XTK.pt.copy(eye); if (b.hd === false) pt.y -= 0.45; xBotAim(b, pt, from); } // human flick at its own turn rate (BOT VARIETY), not a snap; gun follows the aim point (reference alignment)
     { const tm = allies.indexOf(b) >= 0 ? allies : bots; xPeekThink(b, dt, see, see && !b.see, d, tg.t === player ? FV.pri || "" : tg.t.w || "", tm, tm === allies); } // shared with ally bots
     botAb(b, dt, see, tg, from); if (!running) return;
     if (!see && xUtilShoot(b, dt, from, true)) continue; // no enemy in sight: shoot down the player's team's utility in the way (xUtilShoot)
@@ -4566,21 +4579,20 @@ function tick(dt) {
     if (!(b.det > 0)) [vx, vz] = xUn(b, dt, vx, vz);
     if (see && b.bn > 0 && d > 20) vx = vz = 0; // stop to tap/burst at range
     if (!see) xFace(b, dt, vx, vz); b.cr = see && d < 8 && !!b.crR; // crouch-spray up close, 30% of fights
-    [vx, vz] = xSmV(b, dt, vx, vz);
     if (b.tagT > 0) b.tagT -= dt;
-    const D = DIFF[S.diff], bwk = botWalk(b, see, d), bs = botRun(b, bwk) * Math.min(1, D.speed) * dt * bk * xTagK(b); b.mv = !!(vx || vz) && bs > 0; b.wk = bwk ? 1 : 0; // fidelity: player speed table, walk x0.6 near contact
-    { const vl = Math.hypot(vx, vz); if (vl > 1) { vx /= vl; vz /= vl; } } const bx0 = p.x, bz0 = p.z;
-    if (!blocked(p.x + vx * bs, p.z, 0.45, p.y)) p.x += vx * bs; else { b.strafe *= -1; b.blk = 1; }
-    if (!blocked(p.x, p.z + vz * bs, 0.45, p.y)) p.z += vz * bs; else { b.strafe *= -1; b.blk = 1; }
-    b.spd = dt > 0 ? Math.hypot(p.x - bx0, p.z - bz0) / dt : 0; // measured ground speed (m/s): the fire gate below needs a near-stop
+    const D = DIFF[S.diff], bwk = botWalk(b, see, d), speed = botRun(b, bwk) * (b.cr ? (window.ValorantFeel ? window.ValorantFeel.C.crouch : 0.37) : 1) * Math.min(1, D.speed) * bk * xTagK(b), bs = speed * dt; b.mv = !!(vx || vz) && bs > 0; b.wk = bwk ? 1 : 0; // fidelity: player speed table, walk x0.6 near contact
+    [vx, vz] = xSmV(b, dt, vx, vz, speed); const bx0 = p.x, bz0 = p.z;
+    if (!blocked(p.x + vx * bs, p.z, 0.45, p.y)) p.x += vx * bs; else { b.strafe *= -1; b.blk = 1; if (b.smMotor) b.smMotor.vx = 0; }
+    if (!blocked(p.x, p.z + vz * bs, 0.45, p.y)) p.z += vz * bs; else { b.strafe *= -1; b.blk = 1; if (b.smMotor) b.smMotor.vz = 0; }
+    b.spd = b.smMotor ? Math.hypot(b.smMotor.vx, b.smMotor.vz) : dt > 0 ? Math.hypot(p.x - bx0, p.z - bz0) / dt : 0; b.sf = b.spd / botRun(b, false); b.mv = b.spd > 0.25; // end-of-step speed: firing / spread cannot use an average that hides a reversal
     b.fs = (b.fs || 0) - dt; if ((vx || vz) && bs > 0 && b.fs <= 0) { b.fs = 0.4 / Math.max(0.6, DIFF[S.diff].speed || 1); if (!b.cr && !b.wk) SFX.step(p); } // crouching / walking bots are silent
     b.cd -= dt; b.lt = (b.lt || 0) + dt; b.see = see && !(b.blind > 0) ? (b.see || 0) + dt : 0; // blinded: the fight restarts once it can see again
-    if (see && b.cd <= 0 && b.see * 1000 >= (typeof xbRt === "function" ? xbRt(b, D) : D.rt + (b.pre ? 0 : 150)) && botCanShoot(b) && b.xs && !(b.pk === 3 && b.mv && !b.xbSl) && ((b.spd || 0) <= BOT_STOP || b.xbSl) && (b.bn > 0 || typeof xbReady !== "function" || xbReady(b, d))) { // tight peek: fully stopped first (a sloppy fight, b.xbSl, fires before the counter-strafe has stopped it); a new pull waits for the flick (xbReady)
+    if (see && b.cd <= 0 && b.see * 1000 >= (typeof xbRt === "function" ? xbRt(b, D) : D.rt + (b.pre ? 0 : 150)) && botCanShoot(b) && b.xs && !(b.pk === 3 && b.mv && !b.xbSl) && (botStopped(b) || b.xbSl) && (b.bn > 0 || typeof xbReady !== "function" || xbReady(b, d))) { // tight peek: fully stopped first (a sloppy fight, b.xbSl, fires before the counter-strafe has stopped it); a new pull waits for the flick (xbReady)
       const w = b.w || "Classic", W = WEAP[w] || WEAP.Classic, far = d > 20;
       if (!(b.bn > 0)) { b.bn = far ? D.bu[0] + Math.floor(Math.random() * (D.bu[1] - D.bu[0] + 1)) : 6 + Math.floor(Math.random() * 5); b.hd = Math.random() < (b.pre && b.see < 0.6 ? Math.min(1, D.hs * 1.5) : D.hs); } // pre-aimed first bullets land nearer the head // tap/burst far, spray close
       b.bn--; b.cd = b.bn > 0 ? 1 / (W.rate || 4) : ((far ? 0.45 : 0.3) + Math.random() * 0.4) * D.cd; SFX.at(p, w); if (b.pp) dmFired(b);
       const pt = XTK.pt, aim = XTK.aim, mv = XTK.mv, hp = typeof xbShot === "function" ? xbShot(b, tg, from, w, W, d, D) : undefined; // human aim model (BOT VARIETY): body spot, flick, recoil pull, hit volumes
-      let miss = 0, head = false; if (hp === undefined) { pt.copy(eye); if (!b.hd) pt.y -= 0.45; aim.copy(pt); aim.sub(from); aim.normalize();
+      let miss = 0, head = false; if (hp === undefined) { pt.copy(eye); if (!b.hd) pt.y -= 0.45; aim.copy(pt); aim.sub(from); aim.normalize(); xBotAim(b, aim);
       bSpread(b, w, W, aim, d, D); if (typeof xbAimErr === "function") xbAimErr(b, aim, D); // + crosshair error that settles while tracking
       mv.copy(pt); mv.sub(from); mv.cross(aim); miss = mv.length(); head = b.hd && miss < 0.2; } else { head = hp === "head"; miss = hp ? (hp === "legs" ? 0.4 : 0) : 1; }
       if (miss < (b.hd || hp ? 0.3 : 0.45) || hp === "legs") {
@@ -4595,7 +4607,7 @@ function tick(dt) {
   // blue teammates: push to B site, fight attackers they can see, defuse if you are dead
   for (const a of allies) {
     if (!a.alive || !running || a.nt) continue;
-    const p = a.g.position, from = a.xFr || (a.xFr = new V()); from.set(p.x, (p.y || 0) + 1.6, p.z);
+    const p = a.g.position, from = a.xFr || (a.xFr = new V()); from.set(p.x, (p.y || 0) + 1.6, p.z); a.xaimOn = false;
     let tg = null, td = 1e9;
     a.xTh = (a.xTh == null ? Math.random() * 0.1 : a.xTh) - dt; // think ~10 Hz, staggered: sighted target + nearest enemy
     if (a.xTh <= 0 || (a.xTg && !a.xTg.alive) || (a.xNb && !a.xNb.alive)) {
@@ -4626,7 +4638,7 @@ function tick(dt) {
     (a.xUg || (a.xUg = [0, 0]))[0] = gx; a.xUg[1] = gz;
     const sx = gx - p.x, sz = gz - p.z, sd = Math.hypot(sx, sz), f5 = mode === "five";
     a.ts = tg ? (a.ts || 0) + dt : 0;
-    if (tg) { const q = tg.g.position; a.g.rotation.y = Math.atan2(q.x - p.x, q.z - p.z); a.flip -= dt; if (a.flip <= 0) { a.strafe *= -1; a.flip = f5 ? 0.3 + Math.random() * 0.3 : 0.8 + Math.random(); } [vx, vz] = xFight(a, dt, q.x, q.z, td || 0.01);
+    if (tg) { const q = tg.g.position; a.g.rotation.y = Math.atan2(q.x - p.x, q.z - p.z); xBotAim(a, XTK.q.set(q.x, q.y + 1.5 - (a.hd === false ? 0.45 : 0), q.z), from); a.flip -= dt; if (a.flip <= 0) { a.strafe *= -1; a.flip = f5 ? 0.3 + Math.random() * 0.3 : 0.8 + Math.random(); } [vx, vz] = xFight(a, dt, q.x, q.z, td || 0.01);
       if (f5 && a.hp >= 40 && (a.ts < (a.stand || 0.35) || a.flip < 0.1 || a.scp)) vx = vz = 0; // 5v5: stop for the first shots, counter-strafe 0.3-0.6 s, stop again
       if (a.pk === 2 && a.ts < 0.2) { vx = (-pdz / pd) * a.strafe; vz = (pdx / pd) * a.strafe; } } // carry the wide swing through
     else if (tg) {
@@ -4640,19 +4652,18 @@ function tick(dt) {
     if (!tg) xFace(a, dt, vx, vz); a.cr = !!tg && td < 8 && !!a.crR; a.mv = !!(vx || vz); // crouch-spray up close, 30% of fights
     { const pg = window.xPG; if (!tg && pg && pg.ex > 0 && performance.now() < pg.ex && Math.abs(vx) + Math.abs(vz) < 0.15) a.g.rotation.y = Math.atan2(pg.x - p.x, pg.z - p.z); } // idle allies turn toward an enemy ping
     { const pc = window.xCPl; if (!tg && pc && performance.now() < pc.ex && pc.s.has(a) && Math.abs(vx) + Math.abs(vz) < 0.15) a.g.rotation.y = Math.atan2(p.x - pc.x, p.z - pc.z); } // "Planting" call: covering allies face outward from the plant
-    [vx, vz] = xSmV(a, dt, vx, vz);
-    const awk = botWalk(a, !!tg, pd), bs = botRun(a, awk) * dt * botK(a); a.wk = awk ? 1 : 0; // fidelity: same speed table as the player and enemy bots
-    { const vl = Math.hypot(vx, vz); if (vl > 1) { vx /= vl; vz /= vl; } } const ax0 = p.x, az0 = p.z;
-    if (!blocked(p.x + vx * bs, p.z, 0.45, p.y)) p.x += vx * bs; else { a.strafe *= -1; a.blk = 1; } // p.y: steps / ramps climb (Split B stairs, soak)
-    if (!blocked(p.x, p.z + vz * bs, 0.45, p.y)) p.z += vz * bs; else { a.strafe *= -1; a.blk = 1; }
-    a.spd = dt > 0 ? Math.hypot(p.x - ax0, p.z - az0) / dt : 0;
+    const awk = botWalk(a, !!tg, pd), speed = botRun(a, awk) * (a.cr ? (window.ValorantFeel ? window.ValorantFeel.C.crouch : 0.37) : 1) * botK(a), bs = speed * dt; a.wk = awk ? 1 : 0; // fidelity: same speed table as the player and enemy bots
+    [vx, vz] = xSmV(a, dt, vx, vz, speed); const ax0 = p.x, az0 = p.z;
+    if (!blocked(p.x + vx * bs, p.z, 0.45, p.y)) p.x += vx * bs; else { a.strafe *= -1; a.blk = 1; if (a.smMotor) a.smMotor.vx = 0; } // p.y: steps / ramps climb (Split B stairs, soak)
+    if (!blocked(p.x, p.z + vz * bs, 0.45, p.y)) p.z += vz * bs; else { a.strafe *= -1; a.blk = 1; if (a.smMotor) a.smMotor.vz = 0; }
+    a.spd = a.smMotor ? Math.hypot(a.smMotor.vx, a.smMotor.vz) : dt > 0 ? Math.hypot(p.x - ax0, p.z - az0) / dt : 0; a.sf = a.spd / botRun(a, false); a.mv = a.spd > 0.25;
     if (a.xk == null && a.xj == null && !a.xup) p.y = groundAt(p.x, p.z, 0.3, p.y + 0.01); // allies climb steps like bots (Split B stairs: carrier stuck on step 1 at y 0)
     a.fs = (a.fs || 0) - dt; if ((vx || vz) && a.fs <= 0) { a.fs = 0.4; if (!a.cr && !a.wk) SFX.step(p); } // ally footsteps: same pooled step voices
     a.cd -= dt;
-    if (tg && a.cd <= 0 && a.xs && !(a.pk === 3 && a.mv) && (a.spd || 0) <= BOT_STOP && !(a.rtE && typeof xbRt === "function" && a.ts * 1000 < xbRt(a, null)) && (typeof xbTurned !== "function" || xbTurned(a))) { // no shot mid-swing (BOT VARIETY turn rate) // allies react like enemy bots (no instant first shot) // tight peek: fully stopped first
+    if (tg && a.cd <= 0 && a.xs && !(a.pk === 3 && a.mv) && botStopped(a) && !(a.rtE && typeof xbRt === "function" && a.ts * 1000 < xbRt(a, null)) && (typeof xbTurned !== "function" || xbTurned(a))) { // no shot mid-swing (BOT VARIETY turn rate) // allies react like enemy bots (no instant first shot) // tight peek: fully stopped first
       a.cd = 0.8 + Math.random() * 0.8; SFX.at(p, a.w || "Vandal"); if (a.pp) dmFired(a);
       if (Math.random() < Math.max(0.25, 0.6 - td * 0.012)) {
-        const hs = Math.random() < 0.2, AW = WEAP[a.w || "Vandal"]; hurt(tg, hs ? AW.head : AW.body, a.name); xTag(tg, hs ? AW.head : AW.body); if (typeof xHitOther === "function") xHitOther(tg, hs, a); if (tg.hp <= 0.001) kill(tg, hs, a.name, xWeapOf(a)); else flash(tg);
+        const hs = Math.random() < 0.2, AW = WEAP[a.w || "Vandal"]; a.hd = hs; XTK.q.copy(tg.g.position); XTK.q.y += hs ? 1.5 : 1.05; xBotAim(a, XTK.q, from); hurt(tg, hs ? AW.head : AW.body, a.name); xTag(tg, hs ? AW.head : AW.body); if (typeof xHitOther === "function") xHitOther(tg, hs, a); if (tg.hp <= 0.001) kill(tg, hs, a.name, xWeapOf(a)); else flash(tg);
         if (!running) return;
       }
     }
@@ -4782,7 +4793,7 @@ function duelTick(dt) {
   if (du.reload > 0) { du.reload -= dt; if (du.reload <= 0) { const n = Math.min(OP_MAG - du.ammo, du.rsv); du.ammo += n; du.rsv -= n; } }
   const b = duelBot, p = b.g.position, dx = player.x - p.x, dz = player.z - p.z, d = Math.hypot(dx, dz) || 0.01;
   b.g.rotation.y = Math.atan2(dx, dz);
-  const from = DB_FROM.set(p.x, (p.y || 0) + 1.7, p.z), eye = DB_EYE.set(player.x, 1.6 - player.ch + player.y, player.z);
+  const from = DB_FROM.set(p.x, (p.y || 0) + 1.7, p.z), eye = DB_EYE.set(player.x, 1.6 - player.ch + player.y, player.z); b.xaimOn = false; xBotAim(b, eye, from);
   const see = los(from, eye), R = DB[S.diff], D = DIFF[S.diff];
   b.flip -= dt; if (b.flip <= 0) { b.strafe *= -1; b.flip = 1 + Math.random() * 1.5; }
   let vx = 0, vz = 0;
@@ -8011,13 +8022,25 @@ function xBoxHit(a, b) { // segment vs map boxes (slab test in x/z, then height 
     return Math.min(a.y + dy * t0, a.y + dy * t1) < BH(q);
   });
 }
-function xSmV(u, dt, vx, vz) { // ease bot velocity so strafe flips don't jitter
-  const k = Math.min(1, dt * 14); u.svx = (u.svx || 0) + (vx - (u.svx || 0)) * k; u.svz = (u.svz || 0) + (vz - (u.svz || 0)) * k;
-  if (!vx && !vz && Math.hypot(u.svx, u.svz) < 0.05) u.svx = u.svz = 0;
-  XS_V[0] = u.svx; XS_V[1] = u.svz; return XS_V;
+function xSmV(u, dt, vx, vz, speed) { // same acceleration / hard stop as the player, including a counter-strafe through zero
+  const M = window.ValorantFeel, run = speed == null ? botRun(u, false) : Math.max(0, speed), len = Math.hypot(vx, vz);
+  if (len > 1) { vx /= len; vz /= len; }
+  if (!(dt > 0)) { XS_V[0] = u.svx || 0; XS_V[1] = u.svz || 0; return XS_V; }
+  if (!M) { XS_V[0] = vx; XS_V[1] = vz; return XS_V; }
+  // Store velocity in m/s between calls; output the interval's average direction because the legacy bot loop
+  // applies displacement afterwards. Integrating the shared motor avoids frame-rate-dependent stop distance.
+  const P = u.smMotor || (u.smMotor = { vx: (u.svx || 0) * run, vz: (u.svz || 0) * run });
+  if (run < 1e-6) { P.vx = P.vz = u.svx = u.svz = XS_V[0] = XS_V[1] = 0; return XS_V; }
+  const parts = Math.max(1, Math.ceil(dt * 128)), h = dt / parts; let dx = 0, dz = 0;
+  for (let i = 0; i < parts; i++) { const v = M.groundMove(P, vx * run, vz * run, run / (u.cr ? M.C.crouchAccelTime : M.C.accelTime), h); dx += v.dx; dz += v.dz; }
+  u.svx = P.vx / run; u.svz = P.vz / run;
+  XS_V[0] = dx / (run * dt); XS_V[1] = dz / (run * dt); return XS_V;
 }
 // fidelity pass 1: bot run speed from the player's weapon table (VRUN): knife 6.75 · pistols / SMGs 5.73 · rifles 5.4 · heavies 5.13 m/s; walk x0.6
-const BOT_STOP = 1.4; // m/s: bots only fire once (nearly) stopped, like a counter-strafe
+function botStopped(u) { // match the player's weapon accuracy threshold (Operator needs a tighter stop)
+  const C = window.ValorantFeel && window.ValorantFeel.C;
+  return (u.spd || 0) <= botRun(u, false) * (u.w === "Operator" ? (C ? C.operatorDeadzone : 0.15) : (C ? C.deadzone : 0.275));
+}
 function botRun(u, walk) { const w = u && u.w ? u.w : u && u === duelBot ? "Operator" : "Classic"; return 6.75 * vRunK(w) * (walk ? 0.6 : 1); }
 function botWalk(u, see, d) { // shift-walk while holding an angle (scoped) or creeping up on an enemy it cannot see yet; never for the Spike carrier or a wide swing
   if (!u || see) return false; if (u.scp) return true;
@@ -8027,7 +8050,7 @@ function botWalk(u, see, d) { // shift-walk while holding an angle (scoped) or c
 function xBotYaw(dt) { // turn-rate limit + lerp toward the yaw the AI chose, before render
   if (!dt) return;
   [].concat(typeof bots !== "undefined" ? bots : [], typeof allies !== "undefined" ? allies : []).forEach((u) => {
-    if (!u || !u.g) return; const t = u.g.rotation.y;
+    if (!u || !u.g || u.nt) return; const t = u.g.rotation.y; // remote yaw already follows the snapshot interpolation
     if (u.xyw == null || !u.alive) { u.xyw = t; return; }
     let d = xAng(t - u.xyw) * Math.min(1, dt * 14); const m = 12 * dt; d = Math.max(-m, Math.min(m, d));
     u.xyw += d; u.g.rotation.y = u.xyw;
@@ -9515,15 +9538,15 @@ function xUtilCands(en) { const L = xUtilCands.L || (xUtilCands.L = []); L.lengt
 function xUtilAcross(b, w) { const p = b.g.position; if (xBSwD(w, p.x, p.z) < 1.2) return true; const g = b.xUg; if (!g) return false; const dx = g[0] - p.x, dz = g[1] - p.z, l = Math.hypot(dx, dz); if (l < 0.05) return false;
   const run = Math.min(l, 14); for (let t = 0; t <= run; t += 0.25) if (xBSwD(w, p.x + dx / l * t, p.z + dz / l * t) < 0.6) return true; return false; }
 const XUS_V = new THREE.Vector3(), XUS_D = new THREE.Vector3();
-function xUtilShoot(b, dt, from, en) { if (!running || !b.g || !botCanShoot(b) || typeof BotBrain === "undefined" || !BotBrain.shootUtility) { b.xUs = null; return false; }
+function xUtilShoot(b, dt, from, en) { if (b.xUs) b.xaimOn = false; if (!running || !b.g || !botCanShoot(b) || typeof BotBrain === "undefined" || !BotBrain.shootUtility) { b.xUs = null; return false; }
   const w = b.w || "Classic"; if (w === "Knife") { b.xUs = null; return false; } const p = b.g.position, C = xUtilCands(en); if (!C.length) { b.xUs = null; return false; }
   for (const c of C) { let ax = c.x, az = c.z, ay = c.y; if (c.kind === "barrier") { const o = c.o, A = xBarAim(o, p.x, p.z), t = A[0]; c.si = A[1]; ax = o.p.x + o.ax * t; az = o.p.z + o.az * t; /* the nearest live segment (XBAR) */ ay = Math.min(o.p.y + 1, (p.y || 0) + 1.4); c.blocking = xUtilAcross(b, o); }
     const dx = ax - p.x, dz = az - p.z, d = Math.hypot(dx, dz) || 0.01; c.d = d; c.ax = ax; c.ay = ay; c.az = az; if (d > 32) { c.los = false; continue; }
     const k = Math.min(0.35, d * 0.5) / d; c.los = los(from, XUS_V.set(ax - dx * k, ay, az - dz * k)); } // a point just short of it (the barrier mesh is in the solids)
   const pick = BotBrain.shootUtility(C); if (!pick) { b.xUs = null; return false; }
   b.g.rotation.y = Math.atan2(pick.ax - p.x, pick.az - p.z); b.xUs = pick.kind; b.mv = false; b.spd = 0; b.see = 0;
+  XUS_D.set(pick.ax - from.x, pick.ay - from.y, pick.az - from.z); const L = XUS_D.length() || 0.01; XUS_D.multiplyScalar(1 / L); xBotAim(b, XUS_D);
   b.cd = (b.cd || 0) - dt; if (b.cd > 0) return true; const W = WEAP[w] || WEAP.Classic; b.cd = 1 / (W.rate || 4);
-  XUS_D.set(pick.ax - from.x, pick.ay - from.y, pick.az - from.z); const L = XUS_D.length() || 0.01; XUS_D.multiplyScalar(1 / L);
   try { SFX.at(p, w); } catch (e) {} try { bFx(from, XUS_D, null, L); } catch (e) {}
   pick.hit(wDmg(W, "body", pick.d), pick.si); b.xUsN = (b.xUsN || 0) + 1; return true; }
 // Jett Tailwind / Updraft for bots (= server spike.js botUtility): an entry-minded bot (BotBrain aggression >= 0.6, the
@@ -11829,7 +11852,7 @@ function dmSpot(me) { // the candidate farthest from every living enemy (small j
 }
 function dmSpawnB(b) {
   const [x, z] = dmSpot(b); b.g.position.x = x; b.g.position.z = z;
-  Object.assign(b, { hp: 100, armor: 50, alive: true, cd: 0.8 + Math.random() * 0.6, w: FV.tdm ? tdmBW() : dmBW(), pp: performance.now() + 2000, drt: 0, xTt: null, see: 0, bn: 0 });
+  Object.assign(b, { hp: 100, armor: 50, alive: true, cd: 0.8 + Math.random() * 0.6, w: FV.tdm ? tdmBW() : dmBW(), pp: performance.now() + 2000, drt: 0, xTt: null, see: 0, bn: 0, xaimOn: false, smMotor: null, svx: 0, svz: 0, spd: 0, sf: 0, mv: false });
   if (b.xr) b.xr.length = 0; dmLive(b);
 }
 // a DM unit that is alive must be in the scene with a live agent model: xDie hands the old model to the corpse fade (XDEAD) and sets b.xd,
@@ -12362,7 +12385,7 @@ if (typeof SFX !== "undefined" && SFX.at) { const a0 = SFX.at; SFX.at = function
 // ---- client ----
 const mpIn = (n) => (n === MP.name ? "You" : n);
 function mpMkUnit(e, ally) {
-  const n = mpClean(e[2]) || "Agent" + e[0], u = Object.assign(mkGuy(e[4], e[6], ally ? allyMat : botMat, ally ? allyHead : headMat), { hp: e[8], armor: e[9], alive: !!e[10], name: n, w: e[11], nt: 1, nid: e[0], hum: e[12], tm: e[1], nb: [], cd: 1, strafe: 1, flip: 1, ox: 0, def: 0, drt: 0 });
+  const n = mpClean(e[2]) || "Agent" + e[0], u = Object.assign(mkGuy(e[4], e[6], ally ? allyMat : botMat, ally ? allyHead : headMat), { hp: e[8], armor: e[9], alive: !!e[10], name: n, w: e[11], nt: 1, np: Number.isFinite(e[18]) ? e[18] : 0, nid: e[0], hum: e[12], tm: e[1], nb: [], cd: 1, strafe: 1, flip: 1, ox: 0, def: 0, drt: 0 });
   u.body.userData.bot = u; u.head.userData.bot = u; u.head.userData.head = true;
   u.agent = XAG[e[3]] ? e[3] : "Jett"; XBA[n] = u.agent; u.g.rotation.y = e[7]; u.g.position.y = e[5] || 0;
   if (!u.alive) { u.hp = 0; scene.remove(u.g); }
@@ -12409,7 +12432,7 @@ function mpCliSnap(m) {
     if (u.alive && !alive) { u.alive = false; u.hp = 0; scene.remove(u.g); u.nb.length = 0; }
     else if (!u.alive && alive) { u.alive = true; u.hp = e[8]; u.nb.length = 0; u.g.position.set(e[4], e[5] || 0, e[6]); u.g.rotation.y = e[7]; dmLive(u); }
     else u.hp = alive ? e[8] : 0;
-    if (alive) { const B = u.nb, L = B[B.length - 1]; if (L && Math.hypot(L.x - e[4], L.z - e[6]) > 10) B.length = 0; B.push({ t: now, x: e[4], y: e[5] || 0, z: e[6], r: e[7] }); if (B.length > 12) B.shift(); }
+    if (alive) { const B = u.nb, L = B[B.length - 1]; if (L && Math.hypot(L.x - e[4], L.z - e[6]) > 10) B.length = 0; B.push({ t: now, x: e[4], y: e[5] || 0, z: e[6], r: e[7], p: Number.isFinite(e[18]) ? e[18] : 0 }); if (B.length > 12) B.shift(); }
   }
   for (const L of [bots, allies]) for (let i = L.length - 1; i >= 0; i--) if (!seen.has(L[i].nid)) { scene.remove(L[i].g); L.splice(i, 1); }
   mpCliKD(m.k, m.d);
@@ -12478,6 +12501,7 @@ function mpInterp(u, now) {
   while (B.length > 2 && B[1].t <= rt) B.shift();
   const a = B[0], b = B[1] || B[0], k = b.t > a.t ? Math.max(0, Math.min(1, (rt - a.t) / (b.t - a.t))) : 1, p = u.g.position;
   p.x = a.x + (b.x - a.x) * k; p.z = a.z + (b.z - a.z) * k; p.y = a.y + (b.y - a.y) * k; u.g.rotation.y = a.r + xAng(b.r - a.r) * k;
+  if (Number.isFinite(a.p) && Number.isFinite(b.p)) u.np = a.p + (b.p - a.p) * k; // same render time as the body's yaw
 }
 const MPT = { el: null, pool: new Map(), v: null, losT: 0, see: new Map() };
 function mpTagsOff() { MPT.pool.forEach((d) => { d.style.display = "none"; }); }
@@ -13998,17 +14022,24 @@ function vfBindRenderer(r){if(r.userData&&r.userData.vfBound)return;r.userData=r
 vfBindRenderer(renderer);
 {const remake=xRemake;xRemake=function(){remake();vfBindRenderer(renderer);};}
 
-function vfViewTick(F,dt){const P=player,V=VF_VIEW;if(!F)return;
- if(F.root.parent!==V.scene){if(F.root.parent)F.root.parent.remove(F.root);V.scene.add(F.root);}if(V.lastAir&&!P.air)V.landT=Math.min(1,P.landImpact||.5);V.lastAir=!!P.air;V.landT=VF.model.damp(V.landT||0,0,10,dt);V.land=VF.model.damp(V.land,V.landT,30,dt);V.vyo=VF.model.damp(V.vyo||0,Math.max(-.02,Math.min(.02,-(P.vy||0)*.002)),14,dt);const speed=Math.hypot(P.vx||0,P.vz||0),target=P.mv&&!P.air?Math.min(1,speed/5.4):0;V.bob=VF.model.damp(V.bob,target,16,dt);V.phase+=speed*dt*Math.PI/1.85;/* one vertical bob (|cos| period pi) per footfall: footsteps every 1.85 m below; the old 3.4 rad/m bobbed twice per step (5.8 Hz at rifle speed) */
- V.swayX=VF.model.damp(V.swayX,Math.max(-1,Math.min(1,VM.sx||0)),18,dt);V.swayY=VF.model.damp(V.swayY,Math.max(-1,Math.min(1,VM.sy||0)),18,dt);const k=xAD.k||0;
- F.root.scale.setScalar(1);F.root.position.copy(F.origin);F.root.position.x+=.045-V.swayX*.012+Math.sin(V.phase)*.006*V.bob;F.root.position.y-=.035+Math.abs(Math.cos(V.phase))*.008*V.bob+V.land*.025;F.root.position.y+=V.vyo;F.root.rotation.set(-V.swayY*.009,Math.PI/2-V.swayX*.01,-V.swayX*.012+Math.sin(V.phase)*.003*V.bob);
+// A fast velocity response and a slightly delayed one produce a small inertial handoff on a stop/reversal.
+// Integrate the two filters together analytically: their response is identical at 30/60/144 Hz for the same velocity.
+function vfViewDrift(V,axis,target,dt){const fast=V[axis]||0,lag=V[axis+'Lag']||0,a=30,b=18,ea=Math.exp(-a*dt),eb=Math.exp(-b*dt);V[axis]=target+(fast-target)*ea;V[axis+'Lag']=target+(lag-target)*eb+b*(fast-target)*(ea-eb)/(b-a);return V[axis]-V[axis+'Lag'];}
+function vfViewTick(F,dt){const P=player,V=VF_VIEW;if(!F||!P)return;dt=Math.max(0,Math.min(.1,dt||0));
+ if(V.owner!==P||V.dead&&P.hp>0){V.owner=P;V.lastAir=!!P.air;V.phase=V.land=V.landT=V.vyo=V.bob=V.swayX=V.swayY=V.moveX=V.moveXLag=V.moveZ=V.moveZLag=0;}V.dead=P.hp<=0;
+ if(F.root.parent!==V.scene){if(F.root.parent)F.root.parent.remove(F.root);V.scene.add(F.root);}if(V.lastAir&&!P.air)V.landT=Math.min(1,P.landImpact||.5);V.lastAir=!!P.air;V.landT=VF.model.damp(V.landT||0,0,10,dt);V.land=VF.model.damp(V.land,V.landT,30,dt);V.vyo=VF.model.damp(V.vyo||0,Math.max(-.02,Math.min(.02,-(P.vy||0)*.002)),14,dt);const speed=Math.hypot(P.vx||0,P.vz||0),target=!P.air?Math.min(1,speed/5.4):0;V.bob=VF.model.damp(V.bob,target,16,dt);V.phase+=speed*dt*Math.PI/1.85;/* one bob per footfall (upstream fix): footsteps every 1.85 m; the old 3.4 rad/m bobbed twice per step */
+ // Use measured movement in the camera's basis, so pressing into a wall cannot sway a stationary gun.
+ const cy=Math.cos(yaw),sy=Math.sin(yaw),side=Math.max(-1,Math.min(1,((P.vx||0)*cy-(P.vz||0)*sy)/5.4)),forward=Math.max(-1,Math.min(1,(-(P.vx||0)*sy-(P.vz||0)*cy)/5.4)),sideLag=vfViewDrift(V,'moveX',side,dt),forwardLag=vfViewDrift(V,'moveZ',forward,dt);
+ V.swayX=VF.model.damp(V.swayX,Math.max(-1,Math.min(1,VM.sx||0)),18,dt);V.swayY=VF.model.damp(V.swayY,Math.max(-1,Math.min(1,VM.sy||0)),18,dt);const k=Math.max(0,Math.min(1,xAD.k||0)),handling=1-.8*k;
+ // The world camera stays level. The native animation owns recoil/equip/reload; this is a restrained root offset.
+ F.root.scale.setScalar(1);F.root.position.copy(F.origin);F.root.position.x+=.045+handling*(-V.swayX*.01-V.moveX*.005-sideLag*.009+Math.sin(V.phase)*.003*V.bob);F.root.position.y-=.035+handling*(Math.abs(Math.cos(V.phase))*.004*V.bob+V.land*.025);F.root.position.y+=handling*(V.vyo-Math.abs(forwardLag)*.003);F.root.position.z+=handling*(V.moveZ*.002+forwardLag*.004);F.root.rotation.set(handling*(-V.swayY*.007+forwardLag*.003),Math.PI/2-handling*V.swayX*.008,handling*Math.max(-.012,Math.min(.012,-V.swayX*.01-V.moveX*.006-sideLag*.012+Math.sin(V.phase)*.002*V.bob)));
  if(k>0){F.root.updateMatrixWorld(true);const optic=F.ws.getObjectByName('Reflex')||F.ws.getObjectByName('Scope');if(optic){const p=optic.getWorldPosition(new THREE.Vector3());F.root.position.x-=p.x*k;F.root.position.y-=(p.y+.025)*k;}else{F.root.position.x-=.12*k;F.root.position.y+=.045*k;}F.root.position.z+=.07*k;}
 }
 // Preload the selected loadout to reduce fallback frames during weapon switches.
 var VF_RIGS=new Map(),VF_PENDING=new Map();{const load=xvFPLoad;xvFPLoad=function(ag,w){const key=xvFPKey(ag,w);if(VF_RIGS.has(key)){const F=VF_RIGS.get(key);VF_RIGS.delete(key);VF_RIGS.set(key,F);return Promise.resolve(F);}if(VF_PENDING.has(key))return VF_PENDING.get(key);const pending=load(ag,w).then(F=>{VF_RIGS.set(key,F);while(VF_RIGS.size>6){const [k,old]=VF_RIGS.entries().next().value;if(old===XV.fp){VF_RIGS.delete(k);VF_RIGS.set(k,old);continue;}VF_RIGS.delete(k);vfDisposeRig(old);}return F;}).finally(()=>VF_PENDING.delete(key));VF_PENDING.set(key,pending);return pending;};}
 function vfDisposeRig(F){if(F.root.parent)F.root.parent.remove(F.root);F.am.stopAllAction();F.gm.stopAllAction();F.root.traverse(o=>{if(o.isMesh)[].concat(o.material||[]).forEach(m=>m.dispose());});}
 xvFPClear=function(F){if(!F)return;if(F.root.parent)F.root.parent.remove(F.root);F.root.visible=false;F.am.stopAllAction();F.gm.stopAllAction();};
-{const tick=xvFPTick;xvFPTick=function(dt){tick(dt);const F=XV.fp;if(!F)return;if(F.root.visible){if(!F.kind)xvFPPlay(F,VM.sw>0?'equip':'idle');vfViewTick(F,dt);if(VF.prefetch!==F.ag){VF.prefetch=F.ag;for(const w of ['Knife',mode==='five'?(FV.sec||'Classic'):'Classic',mode==='five'?(FV.pri||'Vandal'):'Vandal'])if(w!==F.w)xvFPLoad(F.ag,w).catch(()=>{});}}
+{const tick=xvFPTick;xvFPTick=function(dt){tick(dt);const F=XV.fp;if(!F)return;vfViewTick(F,dt);if(F.root.visible){if(!F.kind)xvFPPlay(F,VM.sw>0?'equip':'idle');if(VF.prefetch!==F.ag){VF.prefetch=F.ag;for(const w of ['Knife',mode==='five'?(FV.sec||'Classic'):'Classic',mode==='five'?(FV.pri||'Vandal'):'Vandal'])if(w!==F.w)xvFPLoad(F.ag,w).catch(()=>{});}}
  // Timer-driven native reloads also work in the practice range.
  const reload=mode==='aim'?AM.rl:mode==='duel'?du.reload:reloading;if(reload>0)xvFPPlay(F,'reload',1-reload*xStimK()/vfProfile(F.w).reloadTimeSeconds);else if(F.kind==='equip'&&VM.sw>0)xvFPPlay(F,'equip',1-VM.sw/Math.max(.001,VM.swT||xEq(F.w)));else if(F.kind!=='idle'&&F.age>F.duration)xvFPPlay(F,'idle');};}
 // Same-weapon equips (buying, respawning, draw cancellation) restart the native equip animation too.
@@ -14518,7 +14549,8 @@ function xgPose(M, dt) {
   for (const bn of G.R.bones.concat(G.L.bones)) { let s = G.saved.get(bn); if (!s) G.saved.set(bn, (s = new THREE.Quaternion())); s.copy(bn.quaternion); }
   const V = G.v, root = M.m; root.updateWorldMatrix(true, false); const rq = xgWorldQ(root, G.q[2]);
   const axis = (x, y, z, out) => out.set(x, y, z).applyQuaternion(rq); // agent frame (+Z forward, +X the agent's left) to world
-  const p = Math.max(-1.2, Math.min(1.2, X.pit || 0)), D = axis(0, Math.sin(p), Math.cos(p), V[9]).normalize(), up = axis(0, 1, 0, V[10]); up.addScaledVector(D, -up.dot(D)).normalize();
+  const p = Math.max(-1.5, Math.min(1.5, X.pit || 0)), D = X.aim ? V[9].set(X.aim.x, X.aim.y, X.aim.z).normalize() : axis(0, Math.sin(p), Math.cos(p), V[9]).normalize(), up = axis(0, 1, 0, V[10]); up.addScaledVector(D, -up.dot(D)).normalize();
+  if (up.lengthSq() < 1e-8) axis(0, 0, -1, up).addScaledVector(D, -up.dot(D)).normalize(); // directly above/below: retain a stable gun frame
   // gun frame: local -Z along the aim, +Y up
   const zg = V[11].copy(D).negate(), xg = G.v[3].crossVectors(up, zg).normalize(), Rg = G.m[0].makeBasis(xg, up, zg), gq = G.q[3].setFromRotationMatrix(Rg);
   const gp = G.v[4], tmp = G.v[5];
@@ -15707,11 +15739,11 @@ function xbvPath(C,u,s,e,banned,base){
 if(typeof nmPath==='function'&&typeof nmNext==='function'){/* native maps present (page harnesses strip them) */const np=nmPath;let cur=null;nmPath=function(C,s,e,banned){return cur&&window.BotRoutes?xbvPath(C,cur,s,e,banned,np):np.apply(this,arguments);};
  const nn=nmNext;nmNext=function(C,u,gx,gz){const prev=cur;cur=mode==='five'&&!FV.dm&&u&&u!==player&&!(u.see>0)?u:null;try{return nn.apply(this,arguments);}finally{cur=prev;}};}
 // Teammate spacing while walking (not while fighting): soft steer away from teammates closer than 1.8 m.
-{const sm=xSmV;xSmV=function(u,dt,vx,vz){
+{const sm=xSmV;xSmV=function(u,dt,vx,vz,speed){
  if((vx||vz)&&!(u.see>0)&&window.BotRoutes&&running&&mode==='five'&&typeof nmActive==='function'&&nmActive()){
   const team=bots.indexOf(u)>=0?bots:allies,o=XBV.oth;o.length=0;for(const t of team)if(t!==u&&t.alive&&t.g)o.push(t.g.position);if(team===allies&&player&&player.hp>0)o.push(player);
   if(o.length){const r=BotRoutes.steer(u.g.position,o,vx,vz,team.indexOf(u),1.8,XBV.sv);vx=r[0];vz=r[1];}}
- return sm.call(this,u,dt,vx,vz);};}
+ return sm.call(this,u,dt,vx,vz,speed);};}
 // Stable personalities: the per-round xPer roll keeps its lane offset, aggression / flank / strafe rhythm come from the
 // bot's match personality, so a bot plays like itself every round.
 if(typeof fSpawn==='function'){const fs0=fSpawn;fSpawn=function(){const r=fs0.apply(this,arguments);try{if(window.BotBrain&&mode==='five'&&!FV.dm)for(const u of bots.concat(allies)){const B=xbBrain(u);if(B&&u.per){u.per.ag=Math.max(.15,B.aggression);u.per.fl=Math.min(.99,(B.seed%1000)/1000*.6+B.patience*.4);u.per.cd=.7+B.strafeRhythm;}}}catch(e){}return r;};}
@@ -15804,7 +15836,7 @@ if(typeof xHear==='function'){const h0=xHear;xHear=function(p){const r=h0.apply(
 // Turn-rate limit per bot (BotBrain personality turn 7-14 rad/s, as the server; was 12 rad/s for every bot) and no shot
 // while the body is still swinging onto the target (xbTurned: rendered yaw within 0.3 rad of the aim): no instant 180s.
 if(typeof xBotYaw==='function'){xBotYaw=function(dt){if(!dt)return;const now=performance.now();
- for(const L of [typeof bots!=='undefined'?bots:[],typeof allies!=='undefined'?allies:[]])for(const u of L){if(!u||!u.g)continue;const t=u.g.rotation.y;if(u.xyw==null||!u.alive){u.xyw=t;u.xywT=now;continue;}
+ for(const L of [typeof bots!=='undefined'?bots:[],typeof allies!=='undefined'?allies:[]])for(const u of L){if(!u||!u.g||u.nt)continue;const t=u.g.rotation.y;if(u.xyw==null||!u.alive){u.xyw=t;u.xywT=now;continue;}
   const B=window.BotBrain&&xbBrain(u),m=(B&&B.turn||12)*dt;let d=xAng(t-u.xyw)*Math.min(1,dt*14);d=Math.max(-m,Math.min(m,d));u.xyw+=d;u.xywT=now;u.g.rotation.y=u.xyw;}};}
 function xbTurned(u){if(!u||!u.g||u.xyw==null||!(performance.now()-(u.xywT||0)<250))return true;return Math.abs(xAng(u.g.rotation.y-u.xyw))<.3;} // rotation.y: the yaw the AI just chose this frame
 if(typeof botCanShoot==='function'){const cs0=botCanShoot;botCanShoot=function(b){return cs0.apply(this,arguments)&&xbTurned(b);};}
@@ -15885,63 +15917,6 @@ if(typeof xDefOk==='function'){const do0=xDefOk;xDefOk=function(x,safe){if(!xbvS
   return x2(out,x,z);
  }catch(e){}
  return sg0.apply(this,arguments);};}
-// Buy phase (native-map 5v5, as the server's bots.js buyMill; shared logic vendor/bot-brain.cjs buy*): after their buy
-// (fBotBuy, unchanged) the bots stand a moment, walk a few short legs around spawn with pauses and look-arounds, then walk
-// to a spot 0.55-0.7 m inside the spawn barrier (the plane fiveTick clamps the player to: z = +-xSpawn().edge) where
-// their planned route (xbvPlan: stage / site) leaves spawn, staggered from their teammates' spots (a second row 0.75 m
-// back in a full doorway), face out along that route and peek a little along the barrier until it drops. They walk only
-// on the spawn's own nav region 0.5 m+ inside the barrier and every step keeps them 0.42 m inside, so they never touch or
-// cross it; the round's own logic (xGoal, staggered starts, utility) takes over from there when it drops.
-var XBYM={k:'',T:{},bl:null,blC:null,V:[0,0]};
-const XBYM_IN=.42;
-function xbbOn(){return !!(window.BotBrain&&window.xBuyMill!==false&&running&&mode==='five'&&!FV.dm&&FV.buy>0&&typeof nmActive==='function'&&nmActive()&&!(typeof srOn==='function'&&srOn())&&!(typeof MP!=='undefined'&&MP&&MP.cl));}/* an online client draws the host's / server's bots */
-function xbbBl(C,i){if(XBYM.blC!==C){XBYM.blC=C;XBYM.bl=new Map();}let v=XBYM.bl.get(i);if(v===undefined){const n=C.nav.nodes[i];v=nmBlocked(C,n[0],n[2],.3,n[1])?1:0;XBYM.bl.set(i,v);}return v;}
-function xbbTeam(C,atk){const k=xbvKey()+'|'+(atk?1:0);if(XBYM.k!==xbvKey()){XBYM.k=xbvKey();XBYM.T={};}let T=XBYM.T[k];if(T)return T;
- const M=C.meta,a=atk?M.attacker:M.defender,s=BotBrain.buySide(a),edge=BotBrain.buyEdge(M.attacker,M.defender);
- return XBYM.T[k]={s,edge,area:BotBrain.buyArea(C.nav.nodes,C.nav.adj,nmNear(C,a[0],a[2],a[1]),s,edge,i=>!C.playable||!!C.playable[i]),spots:[]};}
-function xbbOk(C,T,y0){return (x,z)=>{if(T.s*z<T.edge+XBYM_IN+.05)return null;const i=nmNear(C,x,z,y0);if(i<0||!T.area.f[i])return null;const n=C.nav.nodes[i];if(Math.hypot(n[0]-x,n[2]-z)>.9||Math.abs(n[1]-y0)>2.5)return null;
- let y;try{y=nmHeight(C,x,z,n[1]+.3);}catch(e){return null;}if(!(Math.abs(y-n[1])<.45)||nmBlocked(C,x,z,.5,y)||!nmLeash(C,x,z,y,n[0],n[2]))return null;
- for(let k=1;k<4;k++){const t=k/4;if(nmBlocked(C,n[0]+(x-n[0])*t,n[2]+(z-n[2])*t,.4,y))return null;}return [y,i];};}
-function xbbInit(C,u,team,atk){const T=xbbTeam(C,atk),key=XBYM.k+'|'+(atk?1:0);if(u.xbb&&u.xbb.key===key)return u.xbb;const p=u.g.position,N=C.nav.nodes,s=T.s,edge=T.edge;
- const rand=BotRoutes.rng(BotRoutes.hash('buy|'+(u.name||'')+'|'+key+'|'+xbvSeed())),start=nmNear(C,p.x,p.z,p.y),B={key,st:BotBrain.buyNew(xbBrain(u),rand),spot:null,face:[0,-s],route:[],rg:null,stuck:0,last:[p.x,p.z],fails:0,bad:null,esc:null,off:!(start>=0&&T.area.f[start])};
- if(!B.off){let site=null;try{const P=xbvPlan(u,team,atk,C),g=P.stages&&P.stages[0]?P.stages[0].site:atk?FV.sp.site:P.site;site=C.meta.sites[g]||C.meta.sites[Object.keys(C.meta.sites)[0]];}catch(e){}
-  const ex=site?BotBrain.buyExit(N,nmPath(C,start,nmNear(C,site[0],site[2],site[1])),s,edge):null,exit=ex||{x:p.x,y:p.y,z:s*edge,dx:0,dz:-s};
-  const sp=BotBrain.buySpot(exit,s,edge,T.spots,rand,xbbOk(C,T,exit.y));if(sp){B.spot=sp.p;T.spots.push(sp.p);B.face=[exit.dx,exit.dz];}}
- return u.xbb=B;}
-function xbbStep(C,u,team,atk,dt){
- const B=xbbInit(C,u,team,atk),p=u.g.position;if(B.off||!dt)return;const T=xbbTeam(C,atk),N=C.nav.nodes,s=T.s,edge=T.edge;
- const mates=team.filter(v=>v!==u&&v.alive&&v.g).map(v=>({x:v.g.position.x,z:v.g.position.z,m:v.xbb}));if(team===allies&&player&&player.hp>0)mates.push({x:player.x,z:player.z,m:null});
- const ok=xbbOk(C,T,p.y),c={dt,left:FV.buy,pos:[p.x,p.z],spot:B.spot,face:B.face,
-  wander:()=>{const av=mates.map(v=>[v.x,v.z]);for(const v of mates){const g=v.m&&v.m.st.goal;if(g)av.push([g[0],g[2]]);}const i=BotBrain.buyWander(N,T.area,[p.x,p.z],B.st.rand,av,s,edge,j=>!xbbBl(C,j));return i>=0?N[i]:null;},
-  free:(x,z)=>!!ok(x,z)&&mates.every(v=>{const q=v.m&&v.m.spot,g=v.m&&v.m.st.goal;return Math.hypot(v.x-x,v.z-z)>1.05&&!(q&&Math.hypot(q[0]-x,q[2]-z)<1.05)&&!(g&&Math.hypot(g[0]-x,g[2]-z)<1.05);})};
- const d=BotBrain.buyTick(B.st,c),turn=(fx,fz,k)=>{const t=Math.atan2(fx,fz);u.g.rotation.y+=xAng(t-u.g.rotation.y)*Math.min(1,dt*k);};
- if(d.face)turn(d.face[0],d.face[1],3.5);
- let vx=0,vz=0,walk=!!d.walk;
- if(d.goal){const g=d.goal;if(B.rg!==g){B.rg=g;const occ=[];for(const v of mates){occ.push([v.x,v.z]);if(v.m&&v.m.spot)occ.push([v.m.spot[0],v.m.spot[2]]);}
-   B.route=BotBrain.buyRoute(N,C.nav.adj,T.area,nmNear(C,p.x,p.z,p.y),nmNear(C,g[0],g[2],g[1]),i=>(xbbBl(C,i)?8:0)+(B.bad&&B.bad.has(i)?6:0)+(occ.some(o=>Math.abs(o[0]-N[i][0])<1.1&&Math.abs(o[1]-N[i][2])<1.1)?5:0));B.stuck=0;B.last=[p.x,p.z];}
-  if(Math.hypot(p.x-B.last[0],p.z-B.last[1])>.25){B.last=[p.x,p.z];B.stuck=0;}else if((B.stuck+=dt)>.6){B.stuck=0;if(B.route.length)(B.bad||(B.bad=new Set())).add(B.route[0]);B.rg=null;B.fails++;if(B.st.mode==='mill'&&B.fails>1)B.st.legT=99;
-   const gx=g[0]-p.x,gz=g[2]-p.z,gl=Math.hypot(gx,gz)||1;let best=null,bd=-2;for(let k=0;k<16;k++){const a=k*Math.PI/8,ex=Math.sin(a),ez=Math.cos(a);if(blocked(p.x+ex*.3,p.z+ez*.3,.45,p.y)||s*(p.z+ez*.3)<edge+XBYM_IN)continue;const dot=(ex*gx+ez*gz)/gl;if(dot>bd){bd=dot;best=[ex,ez];}}
-   if(best)B.esc={v:best,until:FV.buy-.3};
-   if(B.st.mode==='go'&&B.fails>=2&&B.spot){const k=T.spots.indexOf(B.spot),sp=BotBrain.buySpot({x:p.x},s,edge,T.spots.filter(q=>q!==B.spot),B.st.rand,ok);if(sp&&Math.hypot(sp.p[0]-p.x,sp.p[2]-p.z)<Math.hypot(B.spot[0]-p.x,B.spot[2]-p.z)){if(k>=0)T.spots[k]=sp.p;B.spot=sp.p;B.fails=0;}}}
-  if(B.esc&&FV.buy>B.esc.until){vx=B.esc.v[0];vz=B.esc.v[1];walk=false;}
-  else{const t=BotBrain.buyNext(N,B.route,p.x,p.z,g[0],g[2],XBYM.V),l0=Math.hypot(t[0]-p.x,t[1]-p.z)||1,v=BotBrain.buySep(p.x,p.z,mates.map(m=>[m.x,m.z]),(t[0]-p.x)/l0,(t[1]-p.z)/l0,XBYM.V);vx=v[0];vz=v[1];}
-  if(!d.face&&(vx||vz))turn(vx,vz,8);}
- else{B.rg=null;B.route.length=0;B.stuck=0;}
- // move like the round's bots (weapon run speed, walk x0.6, axis-separated against blocked()), never within XBYM_IN of the barrier
- const D=typeof DIFF!=='undefined'&&DIFF[S.diff]||{speed:1},bs=botRun(u,walk)*Math.min(1,D.speed||1)*dt,x0=p.x,z0=p.z;
- // a step is taken only where the capsule also stands clear on the floor it lands on or a step up from it (no embedding in a
- // spawn rim / ledge lip). Stepping down, the floor is the highest under the capsule's footprint (0.42 m, as the motor's support), so a bot
- // walking off a ledge stays on it until clear of the lip instead of snapping into it; a bot already embedded (spawned on
- // a lip) moves as the round's bots do until it is clear.
- const strict=!nmBlocked(C,p.x,p.z,.4,p.y),floor=(x,z)=>{let y=nmHeight(C,x,z,p.y+.01);if(y<p.y-.05)for(let k=0;k<8;k++){const a=k*Math.PI/4;let q;try{q=nmHeight(C,x+Math.cos(a)*.42,z+Math.sin(a)*.42,p.y+.01);}catch(e){continue;}if(q<=p.y+.05&&q>y)y=q;}return y;};
- const step=(x,z)=>{if(blocked(x,z,.45,p.y))return false;let y;try{y=floor(x,z);}catch(e){return false;}if(!(y>p.y-1.2)||(strict&&nmBlocked(C,x,z,.4,y)&&nmBlocked(C,x,z,.4,y+.32)))return false;p.x=x;p.z=z;p.y=y;return true;};
- if(vx)step(p.x+vx*bs,p.z);
- if(vz){const z=p.z+vz*bs;if(s*z>=edge+XBYM_IN)step(p.x,z);}
- u.spd=Math.hypot(p.x-x0,p.z-z0)/dt;u.mv=u.spd>.05;u.wk=walk?1:0;u.fs=(u.fs||0)-dt;if(u.mv&&!walk&&u.fs<=0){u.fs=.4;try{SFX.step(p);}catch(e){}}}
-function xbbTick(dt){const C=nmActive();if(!C||!C.nav||!C.meta||!C.meta.attacker)return;
- for(const [team,atk] of [[bots,!FV.atk],[allies,!!FV.atk]])for(const u of team){if(!u||!u.alive||!u.g||u.nt||u.det>0)continue;try{xbbStep(C,u,team,atk,dt);}catch(e){u.xbb=Object.assign(u.xbb||{},{off:true});}}}
-function xbbEnd(){for(const u of bots.concat(allies))if(u){u.xbb=null;u.mv=false;u.spd=0;}}
-if(typeof fiveTick==='function'){const ft0=fiveTick;fiveTick=function(dt){const on=xbbOn(),r=ft0.apply(this,arguments);if(on){try{xbbTick(window.xLdOn?0:Math.min(.1,dt||0));}catch(e){}if(!(FV.buy>0))xbbEnd();}return r;};}
 // ---- END BOT VARIETY ----
 // ---- DEBUG HOOKS ----
 // Headless/manual testing hooks. Active only on localhost or with ?__vs=1.

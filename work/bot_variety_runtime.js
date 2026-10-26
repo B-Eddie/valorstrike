@@ -127,11 +127,11 @@ function xbvPath(C,u,s,e,banned,base){
 if(typeof nmPath==='function'&&typeof nmNext==='function'){/* native maps present (page harnesses strip them) */const np=nmPath;let cur=null;nmPath=function(C,s,e,banned){return cur&&window.BotRoutes?xbvPath(C,cur,s,e,banned,np):np.apply(this,arguments);};
  const nn=nmNext;nmNext=function(C,u,gx,gz){const prev=cur;cur=mode==='five'&&!FV.dm&&u&&u!==player&&!(u.see>0)?u:null;try{return nn.apply(this,arguments);}finally{cur=prev;}};}
 // Teammate spacing while walking (not while fighting): soft steer away from teammates closer than 1.8 m.
-{const sm=xSmV;xSmV=function(u,dt,vx,vz){
+{const sm=xSmV;xSmV=function(u,dt,vx,vz,speed){
  if((vx||vz)&&!(u.see>0)&&window.BotRoutes&&running&&mode==='five'&&typeof nmActive==='function'&&nmActive()){
   const team=bots.indexOf(u)>=0?bots:allies,o=XBV.oth;o.length=0;for(const t of team)if(t!==u&&t.alive&&t.g)o.push(t.g.position);if(team===allies&&player&&player.hp>0)o.push(player);
   if(o.length){const r=BotRoutes.steer(u.g.position,o,vx,vz,team.indexOf(u),1.8,XBV.sv);vx=r[0];vz=r[1];}}
- return sm.call(this,u,dt,vx,vz);};}
+ return sm.call(this,u,dt,vx,vz,speed);};}
 // Stable personalities: the per-round xPer roll keeps its lane offset, aggression / flank / strafe rhythm come from the
 // bot's match personality, so a bot plays like itself every round.
 if(typeof fSpawn==='function'){const fs0=fSpawn;fSpawn=function(){const r=fs0.apply(this,arguments);try{if(window.BotBrain&&mode==='five'&&!FV.dm)for(const u of bots.concat(allies)){const B=xbBrain(u);if(B&&u.per){u.per.ag=Math.max(.15,B.aggression);u.per.fl=Math.min(.99,(B.seed%1000)/1000*.6+B.patience*.4);u.per.cd=.7+B.strafeRhythm;}}}catch(e){}return r;};}
@@ -224,7 +224,7 @@ if(typeof xHear==='function'){const h0=xHear;xHear=function(p){const r=h0.apply(
 // Turn-rate limit per bot (BotBrain personality turn 7-14 rad/s, as the server; was 12 rad/s for every bot) and no shot
 // while the body is still swinging onto the target (xbTurned: rendered yaw within 0.3 rad of the aim): no instant 180s.
 if(typeof xBotYaw==='function'){xBotYaw=function(dt){if(!dt)return;const now=performance.now();
- for(const L of [typeof bots!=='undefined'?bots:[],typeof allies!=='undefined'?allies:[]])for(const u of L){if(!u||!u.g)continue;const t=u.g.rotation.y;if(u.xyw==null||!u.alive){u.xyw=t;u.xywT=now;continue;}
+ for(const L of [typeof bots!=='undefined'?bots:[],typeof allies!=='undefined'?allies:[]])for(const u of L){if(!u||!u.g||u.nt)continue;const t=u.g.rotation.y;if(u.xyw==null||!u.alive){u.xyw=t;u.xywT=now;continue;}
   const B=window.BotBrain&&xbBrain(u),m=(B&&B.turn||12)*dt;let d=xAng(t-u.xyw)*Math.min(1,dt*14);d=Math.max(-m,Math.min(m,d));u.xyw+=d;u.xywT=now;u.g.rotation.y=u.xyw;}};}
 function xbTurned(u){if(!u||!u.g||u.xyw==null||!(performance.now()-(u.xywT||0)<250))return true;return Math.abs(xAng(u.g.rotation.y-u.xyw))<.3;} // rotation.y: the yaw the AI just chose this frame
 if(typeof botCanShoot==='function'){const cs0=botCanShoot;botCanShoot=function(b){return cs0.apply(this,arguments)&&xbTurned(b);};}

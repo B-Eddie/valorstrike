@@ -1,0 +1,1 @@
+Online client soak (page <-> in-process server): fast TDM/DM/Spike, piloted page player kills/deaths 1/1, 2/1, 1/1, respawns, kills, leave/rejoin agent swaps, Spike rounds (2), match end, server disconnect, slow load kept while progressing then closed with a clear message; no page exceptions
