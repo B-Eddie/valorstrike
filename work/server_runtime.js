@@ -38,7 +38,7 @@ function netClean(m){if(!m||typeof m!=='object'||Array.isArray(m)||typeof m.t!==
  const t=m.t;
  if(t==='room'){m.pl=arr(m.pl).filter(p=>obj(p)&&str(p.n));if(!str(m.code))m.code='';if(!str(m.mode))m.mode='tdm';if(!str(m.map))m.map='ascent';}
  else if(t==='welcome'){if(!str(m.name)&&!num(m.name))return null;}
- else if(t==='start'){if(!['tdm','dm','five'].includes(m.mode)||!['ascent','bind','haven','split','lotus','breeze'].includes(m.map)||!num(m.you))return null;m.u=rows(m.u);m.k=kd(m.k);m.d=kd(m.d);if(m.rs!==undefined&&!rs(m.rs))delete m.rs;if(m.ld!==undefined&&!Array.isArray(m.ld))delete m.ld;if(m.tl!==undefined&&!num(m.tl))delete m.tl;}
+ else if(t==='start'){if(!['tdm','dm','five','esc'].includes(m.mode)||!['ascent','bind','haven','split','lotus','breeze'].includes(m.map)||!num(m.you))return null;m.u=rows(m.u);m.k=kd(m.k);m.d=kd(m.d);if(m.rs!==undefined&&!rs(m.rs))delete m.rs;if(m.ld!==undefined&&!Array.isArray(m.ld))delete m.ld;if(m.tl!==undefined&&!num(m.tl))delete m.tl;}
  else if(t==='s'){snap(m);if(m.rs!==undefined&&!rs(m.rs))delete m.rs;if(!num(m.tl))m.tl=0;if(!num(m.serverTime))m.serverTime=Date.now();}
  else if(t==='rs'){if(!rs(m))return null;}
  else if(t==='re'){if(!(Array.isArray(m.sc)&&m.sc.length===2&&m.sc.every(num)))return null;snap(m);if(!str(m.tx))m.tx='';}
@@ -323,5 +323,57 @@ const netSgSl0=sgSl;sgSl=function(u,cq){if(!(NET.socket&&J.pick==='Reyna'&&netRe
 // Throw intent carries no damage, victim, position or remaining-knife claims.
 const netThrow0=jThrow;jThrow=function(){if(!(NET.socket&&MP.st==='game'&&MP.m5))return netThrow0.apply(this,arguments);if(!running||player.hp<=0||FV.buy>0||!J.bsOn||J.bs<1||J.cd.x>0)return;J.cd.x=1/6;/* server Blade Storm fireRate 6 (wiki) */netSend({t:'blade'});kick=1;SFX.ab('bsThrow');};
 const netBurst0=jBurst;jBurst=function(){if(!(NET.socket&&MP.st==='game'&&MP.m5))return netBurst0.apply(this,arguments);if(!running||player.hp<=0||FV.buy>0||!J.bsOn||J.bs<1||J.cd.x>0)return;J.cd.x=XBSD.un;J.bsU=XBSD.un;/* server fireBladeBurst: 0.45 s burst unequip */netSend({t:'blade',alt:1});kick=1;SFX.ab('bsThrow');};
+
+// ---- PARTY MODES (modes-1, user 2026-10-26: "add more gamemodes for multiplayer and make it so you can change gamemode when in a team") ----
+// The server room is the party. Its leader (host) picks the mode and map from the Online panel while the party is in the lobby; the
+// server re-seats everyone and every member's panel follows the room live (read-only for members). START queues a countdown on the
+// server that every member sees; a mode / map change, the leader cancelling or leaving cancels it. What the server offers comes from
+// /health (modes, features); a server without them keeps the old behaviour (DM / TDM / Unrated buttons, immediate start).
+// Modes: Escalation ('esc', a team respawn mode, the page runs its TDM path with the server's levels), Swiftplay / Spike Rush /
+// Replication (Spike rounds on the 'five' path, rules on the server: server/src/modes.js).
+const NM_NAMES={dm:'Deathmatch',tdm:'Team Deathmatch',esc:'Escalation',five:'Unrated (Spike) · 5v5',swift:'Swiftplay · first to 5',sr:'Spike Rush · first to 4',rep:'Replication · first to 5'};
+const NM_LEGACY=['dm','tdm','five'],NM_MAPS=['ascent','bind','haven','split','lotus','breeze'];
+function netHealth(){const now=performance.now();if(NET.healthReq||NET.health||(NET.healthAt&&now-NET.healthAt<30000))return;NET.healthAt=now;
+ try{NET.healthReq=Promise.resolve(fetch(NET.url+'/health')).then(r=>r.json()).then(h=>{if(!h||!Array.isArray(h.modes))throw Error('bad health');NET.health={modes:h.modes.filter(m=>typeof m==='string'),features:Array.isArray(h.features)?h.features.filter(f=>typeof f==='string'):[]};mpUI();}).catch(()=>{NET.health=null;}).finally(()=>{NET.healthReq=null;});}catch(e){NET.healthReq=null;}}
+const netFeat=f=>!!(NET.health&&NET.health.features.includes(f));
+const netModeOk=m=>NET.health?NET.health.modes.includes(m):NM_LEGACY.includes(m);
+const netLeader=()=>!!(MP.on&&NET.host&&MP.st==='room'&&netFeat('party-mode'));
+// Lobby notes from the party flow (queue cancelled, mode changed) stay up for 4 s: the room frame that follows would say 'Connected'.
+function nmNote(t){NET.nmNote={t:String(t),until:performance.now()+4000};mpMsg(t);}
+const nmUI0=mpUI;mpUI=function(){nmUI0();try{netHealth();if(NET.nmNote&&MP.on&&NET.nmNote.until>performance.now()&&MP.msg!==NET.nmNote.t)mpMsg(NET.nmNote.t);const box=mpEl('xOn');if(!box)return;const R=MP.room,inR=!!MP.on,lead=netLeader(),q=inR&&R&&R.q>0&&MP.st==='room'?R.q:0;
+ box.querySelectorAll('[data-om]').forEach(b=>{const m=b.dataset.om,ok=netModeOk(m);b.disabled=!ok||(inR?!lead:mpBusy());b.setAttribute('aria-pressed',m===MP.mode?'true':'false');b.title=!ok?'Not offered by the game server yet':inR&&!NET.host?'Only the party leader can change the mode':inR&&!netFeat('party-mode')?'This game server cannot change the mode of an open room':'';});
+ const map=mpEl('xOnMap');if(map&&inR){map.disabled=!lead;if(R&&R.map&&map.value!==R.map)map.value=R.map;}
+ if(inR){const set=(id,t)=>{const e=mpEl(id);if(e&&e.textContent!==t)e.textContent=t;};set('xOnRoomM',(NM_NAMES[MP.mode]||MP.mode)+' · '+String((R&&R.map)||MP.map||'ascent').replace(/^./,c=>c.toUpperCase())+(q?' · match starts in '+q+' s':'')+((R&&R.st)==='game'?' · match in progress':''));
+  const st=mpEl('xOnStart');if(st&&NET.host&&MP.st==='room'){st.textContent=q?'Cancel queue ('+q+')':MP.pub?'Start now':'Start';st.disabled=false;}
+  set('xOnWait',q?'Match starts in '+q+' s':NET.host?(MP.st==='room'?'Party leader · pick the mode and map':''):MP.st==='post'?'Match over · waiting for the party leader':'Party leader picks the mode · waiting to start');}
+}catch(e){}};
+mpStart=function(){if(!(NET.host&&MP.st==='room'))return;if(netFeat('queue'))netSend({t:'queue',on:MP.room&&MP.room.q>0?0:1});else netSend({t:'start'});};
+try{mpEl('xOn').querySelectorAll('[data-om]').forEach(b=>b.addEventListener('click',()=>{if(!netLeader())return;const want=b.dataset.om;if(MP.room&&MP.room.mode===want)return;netSend({t:'mode',mode:want});nmNote('Changing the party mode to '+(NM_NAMES[want]||want).split(' · ')[0]+'…');mpUI();}));
+ mpEl('xOnMap').addEventListener('change',()=>{if(!netLeader())return;let m=mpEl('xOnMap').value;if(m==='random')m=NM_MAPS[Math.floor(Math.random()*NM_MAPS.length)];if(!NM_MAPS.includes(m)||(MP.room&&MP.room.map===m))return mpUI();netSend({t:'mode',map:m});nmNote('Changing the map…');});}catch(e){}
+// Room replies: a refused change ('mo') puts the selector back on the room's mode; a cancelled queue ('qx') says why.
+const nmMsg0=mpCliMsg;mpCliMsg=function(m){
+ if(m&&m.t==='mo'){if(!m.ok){if(MP.room){MP.mode=MP.room.mode;MP.map=MP.room.map;}nmNote(typeof m.why==='string'?m.why:'Mode not changed');}else{const n=(NM_NAMES[MP.mode]||MP.mode).split(' · ')[0];nmNote(performance.now()-(NET.qxAt||-1e9)<3000&&NET.nmNote?NET.nmNote.t+' · now '+n:'Party mode: '+n);}return mpUI();}
+ if(m&&m.t==='qx'){NET.qxAt=performance.now();nmNote(typeof m.why==='string'?m.why:'Queue cancelled');return mpUI();}
+ if(m&&m.t==='s'&&MP.st==='game'){if(m.esc)nmEscHud(m.esc);if(MP.gm==='esc')try{const me=(m.u||[]).find(e=>e[0]===MP.me);if(me&&me[11]==='Knife'&&rw!=='knife'&&running)swapW('knife');}catch(e){}}
+ return nmMsg0.apply(this,arguments);};
+// Match start: Escalation plays the TDM path (levels and weapons come from the server); Replication switches the page to the team's agent.
+const nmStart0=mpCliStart;mpCliStart=function(m){MP.gm=m&&typeof m.gm==='string'?m.gm:m&&m.mode;
+ if(m&&m.gm==='rep'&&m.rs&&typeof m.rs.rag==='string'&&KITS[m.rs.rag]&&m.rs.rag!==J.pick){MP.repPrev=MP.repPrev||J.pick;J.pick=m.rs.rag;try{xVmAg(J.pick);}catch(e){}}
+ if(m&&m.mode==='esc')m=Object.assign({},m,{mode:'tdm'});const r=nmStart0.call(this,m);nmGmHud();return r;};
+const nmRS0=mpCliRS;mpCliRS=function(rs){try{if(rs&&MP.gm&&rs.gm===MP.gm)nmVarHud(rs);}catch(e){}return nmRS0.apply(this,arguments);};
+const nmMenu0=dmMenu;dmMenu=function(on){if(on&&MP.cl&&MP.gm==='esc'&&MP.st==='game'){say('No buy menu in Escalation',900);return;}return nmMenu0.apply(this,arguments);};
+const nmReset0=mpReset;mpReset=function(){if(MP.repPrev){J.pick=MP.repPrev;MP.repPrev=null;}MP.gm=null;nmGmClear();return nmReset0.apply(this,arguments);};
+// HUD line under the score bar for the new modes, and the Spike Rush power orbs.
+function nmHudEl(){let el=document.getElementById('xGmHud');if(!el){el=document.body.appendChild(document.createElement('div'));el.id='xGmHud';el.setAttribute('role','status');el.style.cssText='pointer-events:none;position:fixed;left:50%;top:64px;transform:translateX(-50%);z-index:60;padding:3px 10px;background:rgba(15,25,35,.72);color:#ece8e1;font:600 12px var(--sans,sans-serif);letter-spacing:.12em;white-space:nowrap;display:none';}return el;}
+function nmGmHud(){const n={esc:'ESCALATION',swift:'SWIFTPLAY · FIRST TO 5',sr:'SPIKE RUSH · FIRST TO 4',rep:'REPLICATION · FIRST TO 5'}[MP.gm];const el=nmHudEl();el.textContent=n||'';el.style.display=n?'block':'none';}
+function nmEscHud(E){if(!Array.isArray(E.lv)||!Array.isArray(E.pt))return;const me=MP.team===1?1:0,th=1-me,lv=Math.min(12,E.lv[me]|0),el=nmHudEl();const w=Array.isArray(E.w)?String(E.w[me]||''):'';const need=Array.isArray(E.n)?E.n[me]:7;
+ const t='ESCALATION · LV '+Math.min(12,lv+1)+'/12 '+w.toUpperCase()+' · '+(+E.pt[me]||0)+'/'+need+' · ENEMY LV '+Math.min(12,(E.lv[th]|0)+1);if(el.textContent!==t)el.textContent=t;el.style.display='block';
+ if(MP.escLv!=null&&lv>MP.escLv)try{say('Your team · level '+(lv+1)+' · '+w,1400);}catch(e){}MP.escLv=lv;}
+function nmVarHud(rs){const el=nmHudEl(),n={swift:'SWIFTPLAY',sr:'SPIKE RUSH',rep:'REPLICATION'}[rs.gm];if(!n)return;let t=n+' · FIRST TO '+(rs.win|0);if(rs.gm==='sr'&&typeof rs.gun==='string')t+=' · '+rs.gun.toUpperCase()+' FOR EVERYONE';if(rs.gm==='rep'&&typeof rs.rag==='string')t+=' · ALL '+rs.rag.toUpperCase();if(rs.fg>0)t+=' · FLASHGUARD '+Math.ceil(rs.fg)+'s';if(el.textContent!==t)el.textContent=t;el.style.display='block';if(rs.gm==='sr')nmOrbs(Array.isArray(rs.orb)?rs.orb:[]);}
+const NM_ORBS=new Map();
+function nmOrbs(list){const keep=new Set();for(const o of list){if(!Array.isArray(o)||o.length<4||![1,2,3].every(i=>Number.isFinite(o[i])))continue;keep.add(o[0]);if(NM_ORBS.has(o[0]))continue;try{const m=new THREE.Mesh(new THREE.OctahedronGeometry(o[4]?0.45:0.35),new THREE.MeshBasicMaterial({color:o[4]?0xffd34d:0xb48cff}));m.position.set(o[1],o[2]+1,o[3]);scene.add(m);NM_ORBS.set(o[0],m);}catch(e){}}
+ for(const [id,m]of NM_ORBS)if(!keep.has(id)){try{scene.remove(m);m.geometry.dispose();m.material.dispose();}catch(e){}NM_ORBS.delete(id);}}
+function nmGmClear(){MP.escLv=null;nmOrbs([]);const el=document.getElementById('xGmHud');if(el)el.style.display='none';}
+setInterval(()=>{try{for(const m of NM_ORBS.values())m.rotation.y+=.1;if(!MP.on||MP.st!=='game'){const el=document.getElementById('xGmHud');if(el&&el.style.display!=='none'){el.style.display='none';nmOrbs([]);}}}catch(e){}},100);
 
 // ---- END TRUSTED ONLINE SERVER ----
