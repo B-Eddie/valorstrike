@@ -17,6 +17,7 @@ import {weapons} from '../src/simulation.js';
 import {FLOOR_LIMIT} from '../src/floor.js';
 import kits from '../src/kits.json' with {type:'json'};
 import {instrument,checkFive,deathCheck,driveBots,fuzzCast,FOCUS} from './soak-checks.mjs';
+import {abilityDamage} from '../src/abilities.js';
 
 export const MAPS=['ascent','bind','haven','split','lotus','breeze'],MODES=['dm','tdm','five'];
 const BUYABLE=['Classic','Shorty','Frenzy','Ghost','Sheriff','Stinger','Spectre','Bucky','Judge','Bulldog','Guardian','Phantom','Vandal','Marshal','Outlaw','Operator','Ares','Odin','Light Armor','Regen Shield','Heavy Armor'];
@@ -31,7 +32,7 @@ class Fuzzer{
  me(){return this.rows?.find(r=>r[0]===this.id)||null;}
 }
 
-export async function soakRun({map='ascent',mode='dm',seconds=120,humans=3,seed=1,log=()=>{},stuckSeconds=8,shorten=null,maxViolations=200,scenario='base'}={}){
+export async function soakRun({map='ascent',mode='dm',seconds=120,humans=3,seed=1,log=()=>{},stuckSeconds=8,shorten=null,maxViolations=200,scenario='base',forceDeathAt=null}={}){
  const realRandom=Math.random,rng=mulberry(seed*7919+MAPS.indexOf(map)*31+MODES.indexOf(mode));Math.random=mulberry(seed*104729+MAPS.indexOf(map)*131+MODES.indexOf(mode)*17);
  const violations=[],seen=new Map(),errors=[],stats={ticks:0,kills:0,rounds:0,plants:0,defuses:0,detonations:0,rejoins:0,disconnects:0,silentDrops:0,commands:{},ults:0,picks:0,drops:0,maxFloor:0,maxEffects:0,maxRoute:0,phaseEnd:null,stuck:[]};
  const flag=(kind,detail,key=kind)=>{const n=(seen.get(key)||0)+1;seen.set(key,n);if(n===1&&violations.length<maxViolations)violations.push({kind,detail,key,t:+(cluster.clock.now()-t0)/1000});};
@@ -166,7 +167,15 @@ export async function soakRun({map='ascent',mode='dm',seconds=120,humans=3,seed=
  }
  // Occasionally give bots ultimate points so their ult paths run too (abilities are cast through the normal 'ab' command).
  const deadline=seconds*1000;let lastGc=0;const heap=[];
- for(let k=0;now()<deadline;k++){for(const h of fz)drive(h);
+ // forceDeathAt (virtual seconds, Spike): from then on, at the first live moment (round running, buy over) one unit
+ // kills an alive enemy through the real utility kill path (abilities.js abilityDamage), between ticks like a command.
+ // The run's invariants then must see that death and its kill event (deathCheck), whatever the machine load did to
+ // the natural fights: test-soak's deathsChecked > 0 no longer depends on a death happening by chance. Picks are by
+ // unit id (no rng draw), so the rest of the seeded run is unchanged up to that moment.
+ const forceDeath=()=>{const sim=room.sim;if(forceDeathAt==null||stats.forcedDeaths||now()<forceDeathAt*1000||sim.mode!=='five'||sim.phase!=='game'||sim.roundDelay>0||sim.buy>0)return;
+  const live=sim.units.filter(u=>u.alive&&!u.loading&&!u.runItBack).sort((a,b)=>a.id-b.id),killer=live.find(u=>u.human)||live[0],victim=killer&&live.find(v=>v.team!==killer.team&&!(v.invulnerableUntil>sim.time));
+  if(!victim)return;abilityDamage(sim,killer,victim,1e4);if(!victim.alive)stats.forcedDeaths={killer:killer.name,victim:victim.name,t:+(now()/1000).toFixed(2),round:sim.round};};
+ for(let k=0;now()<deadline;k++){for(const h of fz)drive(h);forceDeath();
   if(scenario!=='base'&&room.sim.mode==='five'&&k%10===0)driveBots(room.sim,scenario,rng,stats);
   if(room.sim.mode==='five'&&k%400===0)for(const u of room.sim.units)if(!u.human&&u.ability&&chance(.3))room.sim.command(u,{t:'ab',k:'x',p:[u.x,u.z]});
   if(shorten&&room.sim.mode!=='five'&&k===40)room.sim.remaining=Math.min(room.sim.remaining,shorten);

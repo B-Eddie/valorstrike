@@ -110,8 +110,11 @@ for(const [mode,seconds] of [['tdm',50],['five',70]]){const r=await soakRun({map
 // Ability- and ult-heavy Spike soaks (bots and fuzzers spend utility / ults constantly, aimed at enemies) with the
 // economy, carry-over, detain, Run It Back, owned-weapon and kill-event invariants of tools/soak-checks.mjs.
 // Bind ults runs 150 s: with every ult refilled and cast, 70 s can end with no death at all (seed 5 after the hark merge).
-for(const [map,scenario,seconds] of [['bind','ults',150],['lotus','abilities',70]]){const r=await soakRun({map,mode:'five',seconds,humans:4,seed:5,stuckSeconds:10,scenario});const F=r.stats.five;
+for(const [map,scenario,seconds] of [['bind','ults',150],['lotus','abilities',70]]){const r=await soakRun({map,mode:'five',seconds,humans:4,seed:5,stuckSeconds:10,scenario,forceDeathAt:40});const F=r.stats.five;
  assert.deepEqual(r.errors,[],scenario+' errors');const bad=r.violations.filter(v=>v.kind!=='bot stuck');assert.deepEqual(bad.map(v=>v.kind+': '+v.detail.slice(0,200)),[],scenario+' invariants');
- const casts=Object.values(scenario==='ults'?F.ultCasts:F.abilityCasts).reduce((a,b)=>a+b,0);assert(casts>50,scenario+' casts '+casts);assert(F.deathsChecked>0);}
+ const casts=Object.values(scenario==='ults'?F.ultCasts:F.abilityCasts).reduce((a,b)=>a+b,0);assert(casts>50,scenario+' casts '+casts);
+ /* a death is guaranteed (forceDeathAt: a real utility kill between ticks once the round runs, after 40 s): the kill-event invariant above
+    must have checked it, so this no longer flakes when load starves the natural fights (qa-19: one FAIL under box load) */
+ assert(r.stats.forcedDeaths,scenario+' forced death happened');assert(F.deathsChecked>0,scenario+' deaths checked '+F.deathsChecked);}
 console.log('Gameplay QA: open-edge falls rescued (TDM + Spike buy phase), wedged bot freed (also high on a prop), routes avoid prop-blocked nodes, leaving or replaced spike carrier hands over/drops, stuck-in-place escape, Spike bots skip discarded hunt routes, off-graph loose goal arrival, Breeze off-map pocket, seeded worker soak (TDM, Spike) clean; ability/ult-heavy Spike soaks (Bind ults, Lotus abilities) hold the economy/carry-over/detain/Run It Back/kill-event invariants');
 process.exit(0);
