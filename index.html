@@ -8838,7 +8838,7 @@ const XAB = ["Boom Bot", "Blast Pack", "Paint Shells", "Showstopper", "Trailblaz
 { const s0 = sgSlow; sgSlow = function (p) { let k = s0(p); if (p === player) return k;
   if (BC.sf.some((f) => Math.hypot(p.x - f.p.x, p.z - f.p.z) < (f.r || 3.5))) k *= 0.5; if (bots.some((b) => b.g.position === p && b.chs > 0)) k *= 0.5; if (bots.some((b) => b.g.position === p && b.sks > 0)) k *= 0.4; return k; }; }
 // one shared status gate for bot movement and shooting: slow zones/Trademark (sgSlow), daze, knock-up, blind, detain
-function botK(b) { if (!b || b.det > 0) return 0; let k = sgSlow(b.g.position); if (b.cnc > 0) k *= 0.6; if (b.ku > 0) k *= 0.3; if (b.blind > 0) k *= 0.75; return k; }
+function botK(b) { if (!b || b.det > 0 || b.xdrm) return 0; let k = sgSlow(b.g.position); if (b.cnc > 0) k *= 0.6; if (b.ku > 0) k *= 0.3; if (b.blind > 0) k *= 0.75; return k; }
 function botCanShoot(b) { return !(b.blind > 0) && !(b.det > 0) && !(b.cnc > 0) && !(b.ku > 0); }
 function pNs(t) { const o = $("xNs"); o.classList.add("on"); clearTimeout(pNs.h); pNs.h = setTimeout(() => o.classList.remove("on"), t * 1000); }
 { const b0 = botAb; botAb = function (b, dt, see, tg, from) { b0(b, dt, see, tg, from);
@@ -9323,7 +9323,7 @@ const XOWL = { pings: [1.6, 3.4], reveal: 0.6 }, XSPY = { every: 2, reveal: 1, r
 const XDRT = []; // live offline Spycam darts in bots: { b, g, rm, off }
 function xDartLoop(b, every, rv) { const g = XRCN.g, d = { b, g, rm: 0, off: 0 }, ping = () => { if (d.off || g !== XRCN.g || !b.alive || !running) return; xHfRv([b], rv); setTimeout(ping, every * 1000); }; XDRT.push(d); ping(); return d; }
 // Spycam dart removal (wiki Spycam: 1.85 s channel): a darted bot channels it while it has no enemy in sight (b.see falsy), the server bots' rule (spike.js botDartRemove); sighting an enemy restarts it. Removed: no more pings.
-function xDartRmTick(dt) { for (let i = XDRT.length - 1; i >= 0; i--) { const d = XDRT[i], b = d.b; if (d.off || d.g !== XRCN.g || !b.alive) { XDRT.splice(i, 1); continue; } d.rm = b.see ? 0 : d.rm + dt; if (d.rm >= XSPY.remove - 1e-9) { d.off = 1; XDRT.splice(i, 1); say(b.name + " removed the tracking dart", 800); } } }
+function xDartRmTick(dt) { for (let i = XDRT.length - 1; i >= 0; i--) { const d = XDRT[i], b = d.b; if (d.off || d.g !== XRCN.g || !b.alive) { b.xdrm = false; XDRT.splice(i, 1); continue; } d.rm = b.see ? 0 : d.rm + dt; b.xdrm = d.rm > 0; /* channelling: the bot stands still (botK 0), as the server bot (spike.js botDartRemove returns before moving) */ if (d.rm >= XSPY.remove - 1e-9) { d.off = 1; b.xdrm = false; XDRT.splice(i, 1); say(b.name + " removed the tracking dart", 800); } } }
 function xDartPings(b, at, rv) { const g = XRCN.g; at.forEach((t) => setTimeout(() => { if (g === XRCN.g && b.alive && running) xHfRv([b], rv); }, t * 1000)); }
 function drTag(b) {
   xDartPings(b, XOWL.pings, XOWL.reveal); say(b.name + " tagged", 900); blip(900, 0.12, "triangle", 0.15);
