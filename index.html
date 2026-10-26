@@ -4500,7 +4500,7 @@ function tick(dt) {
   if (fcd > 0) fcd -= dt;
   since += dt; if (since > (sprW === "Phantom" ? 0.27 : 0.3)) spray = Math.max(0, spray - dt * 40);
   if (alive && fireHeld && rw !== "knife" && !WEAP[wName()].semi && fcd <= 0 && ammo > 0) shoot();
-  if (reloading > 0) { reloading -= dt; if (reloading <= 0) { reloading = 0; /* not left a hair below 0: online treats it as still reloading (ammo sync off, the next auto-reload never sent) */ const one = XRLP[wName()], n = Math.min(one ? Math.min(1, MAG() - ammo) : MAG() - ammo, rsv); ammo += n; rsv -= n; if (one && ammo < MAG() && rsv > 0) reloading = one; /* next round */ } updHud(); }
+  if (reloading > 0) { reloading -= dt; if (reloading <= 0) { reloading = 0; /* not left a hair below 0: online treats it as still reloading (ammo sync off, the next auto-reload never sent) */ const one = XRLP[wName()], n = Math.min(one ? Math.min(1, MAG() - ammo) : MAG() - ammo, rsv); ammo += n; rsv -= n; if (one && ammo < MAG() && rsv > 0) reloading = xRT(); /* next round: xRT (Empress stim /1.1 via the feel wrapper) */ } updHud(); }
   const near = ret && alive && Math.hypot(player.x - spike.position.x, player.z - spike.position.z) < 2.5; // distance to the spike, not the map origin (native maps plant it at site B)
   if (near && defusing) { const d0 = defuseT; defuseT += dt; if (d0 < 3.5 && defuseT >= 3.5) SFX.defHalf(); } else defuseT = defuseT >= 3.5 ? 3.5 : 0; // half defuse is kept
   let ad = false; if (ret) for (const a of allies) if (a.alive && a.def > 0) { ad = a; break; }
@@ -8396,7 +8396,9 @@ function sgKey(code) {
     if (a.xm) { for (let i = XDEAD.length - 1; i >= 0; i--) if (XDEAD[i].c === a.xm) XDEAD.splice(i, 1); scene.remove(a.xm.m); scene.remove(a.xm.gun); xDisp(a.xm.gun); a.xm = null; } a.xd = 0; /* fresh standing model at the death spot */ feed("Resurrection ▸ " + a.name); say(a.name + " revived", 1000); blip(880, 0.4, "triangle", 0.2); SFX.ab("choir");
   }
 }
-function rySoul(b) { if (!jOn() || J.pick !== "Reyna") return; const m = new THREE.Mesh(orbGeo, fireMat(0xc04dff, 0.9)); m.scale.setScalar(1.4); m.position.set(b.g.position.x, 1.2, b.g.position.z); scene.add(m); J.so.push({ m, p: m.position, t: 3 }); }
+const XDEV = { heal: 50, t: 3, te: 2.5 }; // Devour (wiki v12.02): 50 HP over 3 s, over 2.5 s in Empress (= server reyna.js DEVOUR)
+function xDevour(cap) { const t = J.emp > 0 ? XDEV.te : XDEV.t; J.hl = { tg: player, t, r: XDEV.heal / t, cap }; }
+function rySoul(b) { if (!jOn() || J.pick !== "Reyna") return; const m = new THREE.Mesh(orbGeo, fireMat(0xc04dff, 0.9)); m.scale.setScalar(1.4); m.position.set(b.g.position.x, 1.2, b.g.position.z); scene.add(m); J.so.push({ m, p: m.position, t: 3 }); if (J.emp > 0 && player.hp > 0) { xDevour(100); SFX.heal(); } } // Empress: Devour auto-casts on the kill and keeps the orb (as the server soulKill)
 // look pass: Leer as an eye-shaped purple-magenta glowing orb; pooled (a group with no parent is free to reuse)
 const LEER_POOL = [];
 function ryLeerGet() {
@@ -8428,7 +8430,7 @@ function ryKey(code) {
     if (!best) return sgNo(), say("No soul orb nearby", 700);
     if (!(J.emp > 0)) { if (J.q < 1) return sgNo(), say("No Devour / Dismiss charges", 700); J.q--; } // shared signature charges; Empress makes them free
     scene.remove(best.m); { const k = J.so.indexOf(best); if (k >= 0) J.so.splice(k, 1); }
-    if (code === "KeyQ") { J.hl = { tg: P, t: 3, r: 50 / 3, cap: J.emp > 0 ? 100 : 150 }; if (!(J.emp > 0)) J.ohT = 10; say("Devour · +50 HP" + (J.emp > 0 ? "" : " (overheal 10 s)"), 800); SFX.heal(); SFX.ab("devour"); }
+    if (code === "KeyQ") { xDevour(J.emp > 0 ? 100 : 150); if (!(J.emp > 0)) J.ohT = 10; say("Devour · +50 HP" + (J.emp > 0 ? "" : " (overheal 10 s)"), 800); SFX.heal(); SFX.ab("devour"); }
     else { J.dis = 1.5; $("xEmp").classList.add("dis"); say("Dismiss · intangible 1.5 s", 800); blip(900, 0.25, "sine", 0.15); SFX.ab("dismiss"); }
   }
   if (code === "KeyX") {

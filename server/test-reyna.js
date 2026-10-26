@@ -21,6 +21,19 @@ function soul(s,u,p=[0,1.2,-4],until=s.time+3){s.effects.push({id:++s.effectSeq,
 // A heal on an overhealed Reyna (e.g. Sage's heal running when she Devours past 100) clamped her back to 100.
 {const {s,u}=fixture();u.hp=130;u.overhealUntil=s.time+10;s.effects.push({id:++s.effectSeq,kind:'heal',owner:u.id,team:u.team,target:u.id,p:[0,0,0],until:s.time+5,radius:8,rate:20});
  for(let i=0;i<20;i++){s.time+=.05;tickAbilities(s,.05);}assert.equal(u.hp,130,'heal leaves an overheal alone');u.hp=60;u.overhealUntil=0;for(let i=0;i<20;i++){s.time+=.05;tickAbilities(s,.05);}assert(Math.abs(u.hp-80)<1e-6,'heal still heals below 100: '+u.hp);}
+// Devour (wiki v12.02): 50 HP over 3 s; over 2.5 s in Empress (auto-cast on a kill, orb kept, cap 100)
+{const {DEVOUR}=await import('./src/reyna.js');assert.deepEqual({...DEVOUR},{heal:50,dur:3,empress:2.5});
+ const {s,u,v}=fixture();u.ability.ult=7;assert(s.command(u,{t:'ab',k:'x'}));u.hp=40;abilityDamage(s,u,v,200);assert.ok(Math.abs(u.devour.until-s.time-2.5)<1e-9,'Empress Devour 2.5 s');
+ assert.equal(s.effects.filter(e=>e.kind==='soul'&&e.owner===u.id).length,1,'orb kept');const t0=s.time;const hp=[];for(let i=0;i<30;i++){s.time+=.1;tickAbilities(s,.1);hp.push(u.hp);}
+ assert.ok(Math.abs(hp[9]-60)<1e-6,'20 HP/s: '+hp[9]);assert.ok(Math.abs(hp[23]-88)<1e-6,'2.4 s: '+hp[23]);assert.ok(Math.abs(hp[29]-90)<1e-6,'+50 by 2.5 s: '+hp[29]);assert.equal(u.devour,null);
+ const g=fixture();soul(g.s,g.u);g.u.hp=100;assert(g.s.command(g.u,{t:'ab',k:'q'}));assert.ok(Math.abs(g.u.devour.until-g.s.time-3)<1e-9,'Devour 3 s outside Empress');
+ for(let i=0;i<25;i++){g.s.time+=.1;tickAbilities(g.s,.1);}assert.ok(Math.abs(g.u.hp-(100+2.5*50/3))<1e-6,'not done at 2.5 s: '+g.u.hp);for(let i=0;i<5;i++){g.s.time+=.1;tickAbilities(g.s,.1);}assert.ok(Math.abs(g.u.hp-150)<1e-6);
+ const e=fixture();e.u.empress=true;soul(e.s,e.u);e.u.hp=30;assert(e.s.command(e.u,{t:'ab',k:'q'}));assert.ok(Math.abs(e.u.devour.until-e.s.time-2.5)<1e-9,'Q Devour in Empress 2.5 s');}
+// Empress stim on the per-round (shell-by-shell) reload: every round after the first is /1.1 too
+{for(const emp of [false,true]){const {s,u,v}=fixture();s.roundDelay=0;Object.assign(v,{x:40,z:-60});u.empress=emp;u.weapon='Bucky';u.ammo=1;u.reserve=10;u.inventory={Bucky:1,Classic:12};u.reserves={Bucky:10,Classic:36};u.primary='Bucky';
+ assert(s.command(u,{t:'reload'}),'reload');const first=u.reloadAt-s.time;assert.ok(Math.abs(first-.5/(emp?1.1:1))<1e-9,'first shell '+first);
+ while(u.ammo<2){u.input={};u.inputAt=s.time;s.step(.01);}assert.ok(u.reloadAt>s.time,'still reloading');
+ const due=u.reloadAt;while(u.ammo<3){u.input={};u.inputAt=s.time;s.step(.01);}assert.ok(Math.abs(u.reloadAt-due-.5/(emp?1.1:1))<1e-9,'next shell '+(u.reloadAt-due)+' empress='+emp);}}
 console.log('Reyna authority: owned nearby unexpired souls, shared charges, +50 Devour/overheal expiry, Dismiss immunity/no attacks, Empress/free casts, gun and ability souls, private state and death/round reset, heals never clamp an overheal');
 
 // Dismiss: 12 m/s top speed (v8.11) whatever the gun, intangible - the 65 % slow and tags do not apply; 1.5 s
