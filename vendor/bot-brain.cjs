@@ -38,6 +38,28 @@
  function reaction(P,rand,ctx){const j=(rand()+rand()+rand()-1.5)*1.4;let t=clamp(P.react+j*P.reactJit*2,REACT[0],REACT[1]);
   if(ctx){const off=Math.abs(ctx.off||0);if(!ctx.pre)t+=.03+rand()*.04;if(off>.6)t+=.05+rand()*.06;if(off>1.4)t+=.08+rand()*.08;if(off>2.4)t+=.1+rand()*.1;if(ctx.flashed)t+=.12+rand()*.1;t*=ctx.k||1;}
   return t;}
+ // Flashes (bots-tune-4, item 3): a mid-ranked human who sees an enemy flash coming (the orb in flight toward them, a
+ // Curveball bending round the corner in front of them) turns away if they read it in time; mid-fight they often miss it
+ // (tunnel vision on the enemy). flashRead(P, rand, ctx): ctx {facing: cos between the view and the pop point, min: the blind
+ // model's facing threshold (server .5, page .3), sees: pop point in sight and in range, fight: an enemy in sight, look /
+ // toward: yaw now / yaw onto the pop point, lead: s the
+ // bot already had before the server cast: the caster's FIRE cue - hand animation, the cast sound - comes XAB_REL s before the
+ // orb leaves the hand}. Only a bot the flash would blind reads it: chance FLASH.see (by accuracy, a
+ // proxy for game sense) x FLASH.fight in a fight; the turn starts after a not-pre-aimed reaction + FLASH.decide and goes
+ // FLASH.away rad off the pop point the short way (the turn itself is turnStep: its own hand limits decide if it beats the
+ // pop: Flashpoint 0.5 s, Curveball 0.6 s, Guiding Light 0.3 s after the recast is rarely beaten). It holds FLASH.hold s past
+ // the pop before looking back. Returns null or {at: s after the throw, yaw}.
+ // blindPlay(P, rand, ctx): what a blinded human does: sprays the angle it was fighting (ctx.fought within FLASH.sprayMem s,
+ // nearer than FLASH.sprayR m; aggressive players more) for FLASH.sprayT s, else backs out of the angle (patient players
+ // more), else holds (crouched FLASH.duck of the time). Returns {act: 'spray' | 'back' | 'hold', t, duck}.
+ const FLASH={see:[.4,.7],fight:.45,decide:[.04,.12],away:[1.7,2.4],hold:.15,spray:.45,sprayMem:1.2,sprayR:18,sprayT:[.35,.75],back:.55,duck:.4};
+ function flashRead(P,rand,ctx){if(!ctx||!ctx.sees||!(ctx.facing>(ctx.min??.5)))return null;const S=FLASH.see,p=(S[0]+(S[1]-S[0])*clamp(P.accuracy??.6,0,1))*(ctx.fight?FLASH.fight:1);if(rand()>=p)return null;
+  const at=Math.max(0,reaction(P,rand,{pre:false})+FLASH.decide[0]+rand()*(FLASH.decide[1]-FLASH.decide[0])-(ctx.lead||0)),off=wrapA((ctx.look||0)-(ctx.toward||0)),side=Math.abs(off)>.05?Math.sign(off):rand()<.5?-1:1;
+  return {at,yaw:wrapA((ctx.toward||0)+side*(FLASH.away[0]+rand()*(FLASH.away[1]-FLASH.away[0])))};}
+ function blindPlay(P,rand,ctx){const c=ctx||{},duck=rand()<FLASH.duck;
+  if(c.fought&&c.dist<FLASH.sprayR&&rand()<FLASH.spray*(.6+.8*clamp(P.aggression??.5,0,1)))return {act:'spray',t:FLASH.sprayT[0]+rand()*(FLASH.sprayT[1]-FLASH.sprayT[0]),duck};
+  if(rand()<FLASH.back*(.6+.8*clamp(P.patience??.5,0,1)))return {act:'back',t:0,duck:false};
+  return {act:'hold',t:0,duck};}
  // Crosshair placement error for a new engagement: random direction, magnitude around P.xh; crosshairAt(e,P,t) settles it
  // toward P.xhFloor of the start error over P.settle seconds of tracking (a flick that corrects, not a laser).
  function crosshair(P,rand,preaimed){const a=rand()*Math.PI*2,m=P.xh*(.55+rand()*.9)*(preaimed?.45:1);return {y:Math.cos(a)*m,p:Math.sin(a)*m*.55};}
@@ -549,5 +571,5 @@
  function mayFire(visibleFor,reactionS,losNow){return !!losNow&&visibleFor>=Math.max(REACT[0],reactionS||0);}
  // Fire-rate cap: never faster than the gun (Vandal 9.75 rounds/s). Returns the earliest next shot time.
  function nextShot(t,rate){return t+1/Math.max(.1,rate||1);}
- return {hash,rng,clamp,pickW,REACT,personality,reaction,crosshair,crosshairAt,firePattern,peek,attackPlan,defensePlan,roles,teamBuy,buyFor,onMateDeath,onSound,ATTACK,DEFENSE,utility,UTIL,turnStep,trackLag,wrapA,SPIKE,plantSpot,postPlant,retake,postPlay,SHOOT_UTIL,shootUtility,TAILWIND,tailwindDash,tailwindKeys,LEVEL,level,aimTraits,AIM_H,aimHeight,halfWidth,aimPlan,aimAt,readyToFire,planFire,idlePitch,recoilPull,discipline,hitPart,BUY,buyArea,buyRoute,buyExit,buySpot,buyWander,buyHold,buyNew,buyTick,buyNext,buySep,SENS,cm360,sensOf,turnRate,SENSE,inView,audible,earSpot,memNew,memNote,memForget,memBest,repeek,mayFire,nextShot,areas,DFORM,GAP,midPoint,RESPOND,nearest,tradeSpot,follow,buyNear,buyCross,reactR,reacts,FIRE,sprayFade,sprayPull,turnAcc,trackTurn,cornerPick};
+ return {hash,rng,clamp,pickW,REACT,personality,reaction,crosshair,crosshairAt,firePattern,peek,attackPlan,defensePlan,roles,teamBuy,buyFor,onMateDeath,onSound,ATTACK,DEFENSE,utility,UTIL,turnStep,trackLag,wrapA,SPIKE,plantSpot,postPlant,retake,postPlay,SHOOT_UTIL,shootUtility,TAILWIND,tailwindDash,tailwindKeys,LEVEL,level,aimTraits,AIM_H,aimHeight,halfWidth,aimPlan,aimAt,readyToFire,planFire,idlePitch,recoilPull,discipline,hitPart,BUY,buyArea,buyRoute,buyExit,buySpot,buyWander,buyHold,buyNew,buyTick,buyNext,buySep,SENS,cm360,sensOf,turnRate,SENSE,inView,audible,earSpot,memNew,memNote,memForget,memBest,repeek,mayFire,nextShot,areas,DFORM,GAP,midPoint,RESPOND,nearest,tradeSpot,follow,buyNear,buyCross,reactR,reacts,FIRE,sprayFade,sprayPull,turnAcc,trackTurn,cornerPick,FLASH,flashRead,blindPlay};
 });

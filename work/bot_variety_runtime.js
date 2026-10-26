@@ -463,4 +463,22 @@ function xbvHearMem(p,kind,w){if(!p||!window.BotBrain)return;let src=null,srcBot
  for(const L of [bots,allies])for(const u of L){if(src||!u||!u.alive||!u.g)continue;if(Math.hypot(u.g.position.x-p.x,u.g.position.z-p.z)<.6){src=u.name;srcBot=L===bots;}}
  if(!src)return;if(src==='player'&&kind==='shot'&&!w&&typeof wName==='function')w=wName();const lis=srcBot?allies:bots,now=xbNow(),k=kind==='shot'?'shot':kind==='cast'?'cast':'step';
  for(const u of lis){if(!u||!u.alive||!u.g)continue;const q=u.g.position,d=Math.hypot(q.x-p.x,q.z-p.z);if(!BotBrain.audible(k,d,w))continue;const e=BotBrain.earSpot(p.x,p.z,q.x,q.z,Math.random(),Math.random());BotBrain.memNote(xbMem(u),src,e[0],p.y||0,e[1],now,'heard');}}
+// Flash reads (bots-tune-4, BotBrain.flashRead / blindPlay, as the server's spike.js flashDodge / blindInput): the player's
+// flash throws (Curveball, Flashpoint, Guiding Light: xbFlashWarn(pop point, s until the pop) at the release) warn every
+// enemy bot the pop would blind right now (in range, in sight, the page's facing test dot > 0.3); a read turns its body
+// away from its reaction until FLASH.hold s past the pop (xBotYaw keeps the bot's own turn-rate limit), no shot meanwhile.
+// The player within cast-hearing range gives XAB_REL s of lead (the FIRE cue before the release). Blinded: back out of the
+// angle or hold still (crouched sometimes); the server's blind 'spray' is a hold here (a blind page bot has no shot path).
+function xbFlashWarn(p,popIn){if(!window.BotBrain||typeof bots==='undefined'||!p)return;const now=performance.now();
+ for(const b of bots){if(!b||!b.alive||!b.g)continue;const q=b.g.position,vx=p.x-q.x,vz=p.z-q.z,l=Math.hypot(vx,vz)||.01,ry=b.g.rotation.y,facing=(vx*Math.sin(ry)+vz*Math.cos(ry))/l;
+  if(l>=30||facing<=.3||!los(new THREE.Vector3(q.x,1.6,q.z),p))continue;const P=xbBrain(b),pd=player?Math.hypot(player.x-q.x,player.z-q.z):99;
+  const r=BotBrain.flashRead(P,xbRand(b),{sees:true,facing,min:.3,fight:b.see>0,look:ry,toward:Math.atan2(vx,vz),lead:pd<BotBrain.reactR('cast')?XAB_REL:0});
+  if(r&&!(b.xFd&&b.xFd.until>now))b.xFd={at:now+r.at*1000,until:now+(popIn+BotBrain.FLASH.hold)*1000,yaw:r.yaw};}}
+function xbFdOn(b){const D=b&&b.xFd;if(!D)return false;const now=performance.now();if(now>=D.until||!b.alive){b.xFd=null;return false;}return now>=D.at;}
+function xbBlindPlay(b){if(!(b&&b.blind>0)){if(b)b.xBp=null;return null;}if(b.xBp)return b.xBp;const P=xbBrain(b);if(!P)return null;
+ const m=xbMem(b),now=xbNow();let dist=99;for(const id in m.c){const c=m.c[id];if(c.seenT!=null&&now-c.seenT<BotBrain.FLASH.sprayMem)dist=Math.min(dist,Math.hypot(c.x-b.g.position.x,c.z-b.g.position.z));}
+ const r=BotBrain.blindPlay(P,xbRand(b),{fought:dist<99,dist});return b.xBp=r.act==='spray'?{act:'hold',t:0,duck:r.duck,spray:true}:r;}
+if(typeof xBotYaw==='function'){const y0=xBotYaw;xBotYaw=function(dt){try{if(dt&&typeof bots!=='undefined')for(const b of bots)if(b&&b.g&&xbFdOn(b))b.g.rotation.y=b.xFd.yaw;}catch(e){}return y0.apply(this,arguments);};}
+if(typeof botCanShoot==='function'){const cs1=botCanShoot;botCanShoot=function(b){return cs1.apply(this,arguments)&&!xbFdOn(b);};}
+{const g1=xGoal;xGoal=function(u,team,atk,out){if(u&&u.g&&u.blind>0&&mode==='five'){const B=xbBlindPlay(u);if(B){const q=u.g.position,ry=u.g.rotation.y;return B.act==='back'?x2(out,q.x-Math.sin(ry)*3,q.z-Math.cos(ry)*3):x2(out,q.x,q.z);}}else if(u&&u.xBp&&!(u.blind>0))u.xBp=null;return g1.apply(this,arguments);};}
 // ---- END BOT VARIETY ----

@@ -12,6 +12,9 @@
 //  6. the player's own ability casts (any charge / the ult spent) are heard within 30 m like a bot's (bots-tune-1)
 //  7. unsighted ability logic (botAb, both teams) gets only the remembered contact (xbAbKnown), never the nearest real enemy
 //  8. sound reactions (xHear / xbvSound) use the server botSense ranges (BotBrain.reactR): shots 35 m, steps / casts 30 m
+//  9. flash reads (bots-tune-4, BotBrain.flashRead as the server's flashDodge): the player's flash throws warn enemy bots that
+//     would be blinded; a read turns the body away at the bot's turn rate (xBotYaw) and holds fire; mid-fight reads are rarer;
+//     no read facing away or without sight; blinded bots back out or hold (BotBrain.blindPlay)
 const fs=require('fs'),path=require('path'),vm=require('vm'),assert=require('assert/strict');const root=path.join(__dirname,'..');
 const THREE=require(path.join(root,'server/node_modules/three/build/three.cjs'));
 const html=fs.readFileSync(path.join(root,'index.html'),'utf8'),A='// ---- BOT VARIETY ----',Z='// ---- END BOT VARIETY ----',i=html.indexOf(A),j=html.indexOf(Z,i);assert(i>=0&&j>i,'bot variety block');
@@ -32,7 +35,7 @@ const ctx={Math:Object.assign(Object.create(Math),{random:R}),Object,Number,Infi
  nmActive:()=>null,xSmV:(u,dt,vx,vz)=>[vx,vz],xGoal:(u,t,a,o)=>o,nmClimbOk:()=>false,nmPath:()=>[0],nmNext:()=>[0],SFX,
  los:()=>{calls.los++;return true;},losRaw:()=>{calls.losRaw++;return ctx.wall?false:true;},wall:false,dmPts:()=>[[30,30],[-30,30],[30,-30],[-30,-30],[0,40]],wName:()=>'Phantom',
  xHear:function(p){/* base xHear range rule (index.html): the other side within xbEarR m turns toward it */for(const u of ctx.bots){const d=Math.hypot(u.g.position.x-p.x,u.g.position.z-p.z);if(d>1&&d<ctx.xbEarR()){u.hear=[p.x,p.z];u.hearT=1.2;}}},
- xBUse:()=>true,xAng:a=>Math.atan2(Math.sin(a),Math.cos(a)),tick:function(){},J:{c:1,q:0,e:0,ult:0}};
+ xBotYaw:function(){},botCanShoot:()=>true,XAB_REL:.2,xBUse:()=>true,xAng:a=>Math.atan2(Math.sin(a),Math.cos(a)),tick:function(){},J:{c:1,q:0,e:0,ult:0}};
 ctx.globalThis=ctx;vm.createContext(ctx);vm.runInContext(block+'\n;globalThis.BotBrain=BotBrain;globalThis.BotRoutes=BotRoutes;',ctx);Object.assign(ctx.window,{BotRoutes:ctx.BotRoutes,BotBrain:ctx.BotBrain});
 const B=ctx.BotBrain,unit=(name,x,z,ry)=>({name,alive:true,hp:100,g:{position:{x,y:0,z},rotation:{y:ry||0}},see:0});
 // xFace as in index.html (pinned above): the base function is not in the block, so it is evaluated from the page source
@@ -81,4 +84,20 @@ const B=ctx.BotBrain,unit=(name,x,z,ry)=>({name,alive:true,hp:100,g:{position:{x
  assert.equal(r('shot','Vandal'),35);assert.equal(r('shot','Phantom'),35);assert.equal(r('step',null),30);assert.equal(r('cast',null),30);assert.equal(r(null,null),35,"the player's own shot (no XBH.k) is a 35 m shot");
  for(const [k,w] of [['shot','Vandal'],['step',null],['cast',null]])assert.equal(r(k,w),B.reactR(k,w),'offline = server '+k);
  out.push('reaction ranges shot 35 / step 30 / cast 30 = BotBrain.reactR');}
+// 9. flash reads
+{for(const w of ['xbFlashWarn(c.end, xWf("curveball"))','xbFlashWarn(p, xWf("flashpoint"))','xbFlashWarn(h.m.position.clone(), XGL.act)'])assert(html.includes(w),'wired: '+w);
+ const pop=new THREE.Vector3(0,1.6,6),run=(popIn,fight,n)=>{let read=0,dodged=0,blind=0;for(let k=0;k<n;k++){const b=unit('Bot Flash'+k+(fight?'f':''),0,0,(R()-.5)*.8);b.see=fight?1:0;ctx.bots=[b];ctx.allies=[];Object.assign(ctx.player,{x:0,z:12,hp:100});
+   now+=5000;ctx.xbFlashWarn(pop,popIn);if(b.xFd){read++;assert(ctx.botCanShoot(b)||now<b.xFd.at,'no shot while turning away');}
+   for(let t=0;t<popIn;t+=1/60){now+=1000/60;ctx.xBotYaw(1/60);if(b.xFd&&now>=b.xFd.at)assert.equal(ctx.botCanShoot(b),false,'no shot while turning away');}
+   const ry=b.g.rotation.y,f=(pop.x*Math.sin(ry)+pop.z*Math.cos(ry))/6;if(f>.3)blind++;else if(b.xFd)dodged++;}return {read:read/n,dodged:read?dodged/read:0,blind:blind/n};};
+ const cb=run(.4,false,200),fp=run(.3,false,200),ft=run(.4,true,200),late=run(.05,false,100);
+ assert(cb.read>.3&&cb.read<.85,'reads a Curveball it faces 30-85 % of the time: '+cb.read);assert(cb.dodged>.5,'most Curveball reads beat the 0.4 s pop: '+cb.dodged);
+ assert(ft.read<cb.read*.7,'mid-fight reads are rarer (tunnel vision): '+ft.read+' vs '+cb.read);assert(late.dodged<.1,'a 0.05 s pop cannot be beaten: '+late.dodged);
+ assert(cb.blind<.85&&fp.blind>cb.blind,'blinded Curveball '+cb.blind+' < Flashpoint '+fp.blind);
+ {const b=unit('Bot Away',0,0,Math.PI);ctx.bots=[b];ctx.xbFlashWarn(pop,.4);assert(!b.xFd,'facing away: nothing to read');
+  const c=unit('Bot Wall',0,0,0);ctx.bots=[c];const l0=ctx.los;ctx.los=()=>false;try{ctx.xbFlashWarn(pop,.4);}finally{ctx.los=l0;}assert(!c.xFd,'pop out of sight: nothing to read');}
+ {const acts={};for(let k=0;k<200;k++){const b=unit('Bot Blind'+k,0,0,0);b.blind=2;b.xMem=null;const o=ctx.xGoal(b,1,true,[0,0]);const a=b.xBp.act;acts[a]=(acts[a]||0)+1;
+   if(a==='back')assert(Math.abs(o[1]+3)<1e-9&&Math.abs(o[0])<1e-9,'backs out of the angle (3 m behind its view)');else assert.deepEqual(o,[0,0],'holds where it stands');b.blind=0;ctx.xGoal(b,1,true,[9,9]);assert.equal(b.xBp,null,'plan ends with the blind');}
+  assert(acts.back>20&&acts.hold>20&&!acts.spray,'blinded: back '+acts.back+' / hold '+acts.hold);}
+ out.push('flash reads: Curveball read '+(cb.read*100).toFixed(0)+' % / beaten '+(cb.dodged*100).toFixed(0)+' % of reads / blinded '+(cb.blind*100).toFixed(0)+' %, Flashpoint (0.3 s) blinded '+(fp.blind*100).toFixed(0)+' %, mid-fight read '+(ft.read*100).toFixed(0)+' %, 0.05 s pop beaten '+(late.dodged*100).toFixed(0)+' %; facing away / no sight: no read; blinded back / hold');}
 console.log('Offline bot perception: '+out.join('; '));

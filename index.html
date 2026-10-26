@@ -8399,7 +8399,7 @@ function phKey(code) {
     // Curves like the server's (devices.js DEV.curveball): 5 m ahead (short of a wall), then 2.5 m to the LEFT by default,
     // to the RIGHT while ALT FIRE (right mouse) is held, as in Valorant; pops 0.6 s after FIRE (wiki windup: release + xWf).
     const o = pEye(), side = typeof mpAltHeld !== "undefined" && mpAltHeld ? 1 : -1, c = phCurve(o, fx, fz, side);
-    const m = jM(orbGeo, jMat("orb", () => new THREE.MeshBasicMaterial({ color: 0xfff2b0 }))); m.position.copy(o); scene.add(m); J.orbs.push({ m, a: o, c: c.mid, b: c.end, t: 0, w: xWf("curveball") }); blip(800, 0.1, "sine", 0.15);
+    const m = jM(orbGeo, jMat("orb", () => new THREE.MeshBasicMaterial({ color: 0xfff2b0 }))); m.position.copy(o); scene.add(m); J.orbs.push({ m, a: o, c: c.mid, b: c.end, t: 0, w: xWf("curveball") }); try { if (typeof xbFlashWarn === "function") xbFlashWarn(c.end, xWf("curveball")); } catch (e) {} // enemy bots may read it and turn away (bots-tune-4) blip(800, 0.1, "sine", 0.15);
   }
   if (code === "KeyQ") { // Hot Hands (basic, Q in Valorant): the zone spreads to XHOT.r over XHOT.grow s (jFxTick)
     if (J.q < 1 || J.cd.q > 0) return no(); J.q--; J.cd.q = 0.6;
@@ -8797,7 +8797,7 @@ function rgEnd(msg) { if (!RS.rg) return; scene.remove(RS.rg.m); RS.rg = null; i
 const XGL = { speed: 18, life: 2, min: 1, max: 2.25, ramp: 0.75, act: 0.3 }; // act: wiki 0.3 s activation windup between the pop (E / end of flight) and the flash
 function xGlBlind(t) { return XGL.min + (XGL.max - XGL.min) * Math.min(1, Math.max(0, t) / XGL.ramp); }
 function hkPop() { // Guiding Light: E / end of flight stops the hawk; it flashes XGL.act s later, blinding by its flight time
-  const h = RS.hk; if (h.w != null) return; h.w = XGL.act; h.bl = xGlBlind(XGL.life - h.t); blip(1500, 0.1, "sine", 0.08);
+  const h = RS.hk; if (h.w != null) return; h.w = XGL.act; h.bl = xGlBlind(XGL.life - h.t); try { if (typeof xbFlashWarn === "function") xbFlashWarn(h.m.position.clone(), XGL.act); } catch (e) {} blip(1500, 0.1, "sine", 0.08);
 }
 function hkFlash() { // the Guiding Light flash at the stopped hawk
   const p = RS.hk.m.position.clone(), bl = RS.hk.bl; scene.remove(RS.hk.m); RS.hk = null; SFX.flash();
@@ -9135,7 +9135,7 @@ function bcKey(code) {
     }
     if (code === "KeyQ") {
       if (J.q < 1 || J.cd.q > 0) return no(); const p = bcWall(8); if (!p) return no(), say("Aim at a wall", 800); J.q--; J.cd.q = 0.6; p.y = 1.8;
-      setTimeout(() => { if (jOn()) bcFlash(p); }, xWf("flashpoint") * 1000); blip(900, 0.12, "square", 0.12);
+      setTimeout(() => { if (jOn()) bcFlash(p); }, xWf("flashpoint") * 1000); try { if (typeof xbFlashWarn === "function") xbFlashWarn(p, xWf("flashpoint")); } catch (e) {} blip(900, 0.12, "square", 0.12);
     }
     if (code === "KeyE") { if (J.cd.e > 0) return no(), say("Fault Line " + Math.ceil(J.cd.e) + " s", 700); J.cd.e = 50; BC.fq.push({ k: "fl", t: xWf("faultLine"), x: P.x, z: P.z, fx, fz, ry: yaw, L: xFaultLen(typeof XABT !== "undefined" && XABT.hold ? XABT.hold.pw : 1) }); /* HOLD FIRE charge (equip flow) */ try { XCUE.play("rumble"); } catch (e) {} }
     if (code === "KeyX") { if (J.ult < K().u) return no(), say("Rolling Thunder " + J.ult + "/" + K().u, 800); J.ult = 0; BC.fq.push({ k: "rt", t: xWf("rollingThunder"), x: P.x, z: P.z, ry: yaw }); say("Rolling Thunder", 600); }
@@ -15956,6 +15956,28 @@ if (typeof xUbPost === "function") { const hp0 = xUbPost; xUbPost = function (M)
  function reaction(P,rand,ctx){const j=(rand()+rand()+rand()-1.5)*1.4;let t=clamp(P.react+j*P.reactJit*2,REACT[0],REACT[1]);
   if(ctx){const off=Math.abs(ctx.off||0);if(!ctx.pre)t+=.03+rand()*.04;if(off>.6)t+=.05+rand()*.06;if(off>1.4)t+=.08+rand()*.08;if(off>2.4)t+=.1+rand()*.1;if(ctx.flashed)t+=.12+rand()*.1;t*=ctx.k||1;}
   return t;}
+ // Flashes (bots-tune-4, item 3): a mid-ranked human who sees an enemy flash coming (the orb in flight toward them, a
+ // Curveball bending round the corner in front of them) turns away if they read it in time; mid-fight they often miss it
+ // (tunnel vision on the enemy). flashRead(P, rand, ctx): ctx {facing: cos between the view and the pop point, min: the blind
+ // model's facing threshold (server .5, page .3), sees: pop point in sight and in range, fight: an enemy in sight, look /
+ // toward: yaw now / yaw onto the pop point, lead: s the
+ // bot already had before the server cast: the caster's FIRE cue - hand animation, the cast sound - comes XAB_REL s before the
+ // orb leaves the hand}. Only a bot the flash would blind reads it: chance FLASH.see (by accuracy, a
+ // proxy for game sense) x FLASH.fight in a fight; the turn starts after a not-pre-aimed reaction + FLASH.decide and goes
+ // FLASH.away rad off the pop point the short way (the turn itself is turnStep: its own hand limits decide if it beats the
+ // pop: Flashpoint 0.5 s, Curveball 0.6 s, Guiding Light 0.3 s after the recast is rarely beaten). It holds FLASH.hold s past
+ // the pop before looking back. Returns null or {at: s after the throw, yaw}.
+ // blindPlay(P, rand, ctx): what a blinded human does: sprays the angle it was fighting (ctx.fought within FLASH.sprayMem s,
+ // nearer than FLASH.sprayR m; aggressive players more) for FLASH.sprayT s, else backs out of the angle (patient players
+ // more), else holds (crouched FLASH.duck of the time). Returns {act: 'spray' | 'back' | 'hold', t, duck}.
+ const FLASH={see:[.4,.7],fight:.45,decide:[.04,.12],away:[1.7,2.4],hold:.15,spray:.45,sprayMem:1.2,sprayR:18,sprayT:[.35,.75],back:.55,duck:.4};
+ function flashRead(P,rand,ctx){if(!ctx||!ctx.sees||!(ctx.facing>(ctx.min??.5)))return null;const S=FLASH.see,p=(S[0]+(S[1]-S[0])*clamp(P.accuracy??.6,0,1))*(ctx.fight?FLASH.fight:1);if(rand()>=p)return null;
+  const at=Math.max(0,reaction(P,rand,{pre:false})+FLASH.decide[0]+rand()*(FLASH.decide[1]-FLASH.decide[0])-(ctx.lead||0)),off=wrapA((ctx.look||0)-(ctx.toward||0)),side=Math.abs(off)>.05?Math.sign(off):rand()<.5?-1:1;
+  return {at,yaw:wrapA((ctx.toward||0)+side*(FLASH.away[0]+rand()*(FLASH.away[1]-FLASH.away[0])))};}
+ function blindPlay(P,rand,ctx){const c=ctx||{},duck=rand()<FLASH.duck;
+  if(c.fought&&c.dist<FLASH.sprayR&&rand()<FLASH.spray*(.6+.8*clamp(P.aggression??.5,0,1)))return {act:'spray',t:FLASH.sprayT[0]+rand()*(FLASH.sprayT[1]-FLASH.sprayT[0]),duck};
+  if(rand()<FLASH.back*(.6+.8*clamp(P.patience??.5,0,1)))return {act:'back',t:0,duck:false};
+  return {act:'hold',t:0,duck};}
  // Crosshair placement error for a new engagement: random direction, magnitude around P.xh; crosshairAt(e,P,t) settles it
  // toward P.xhFloor of the start error over P.settle seconds of tracking (a flick that corrects, not a laser).
  function crosshair(P,rand,preaimed){const a=rand()*Math.PI*2,m=P.xh*(.55+rand()*.9)*(preaimed?.45:1);return {y:Math.cos(a)*m,p:Math.sin(a)*m*.55};}
@@ -16467,7 +16489,7 @@ if (typeof xUbPost === "function") { const hp0 = xUbPost; xUbPost = function (M)
  function mayFire(visibleFor,reactionS,losNow){return !!losNow&&visibleFor>=Math.max(REACT[0],reactionS||0);}
  // Fire-rate cap: never faster than the gun (Vandal 9.75 rounds/s). Returns the earliest next shot time.
  function nextShot(t,rate){return t+1/Math.max(.1,rate||1);}
- return {hash,rng,clamp,pickW,REACT,personality,reaction,crosshair,crosshairAt,firePattern,peek,attackPlan,defensePlan,roles,teamBuy,buyFor,onMateDeath,onSound,ATTACK,DEFENSE,utility,UTIL,turnStep,trackLag,wrapA,SPIKE,plantSpot,postPlant,retake,postPlay,SHOOT_UTIL,shootUtility,TAILWIND,tailwindDash,tailwindKeys,LEVEL,level,aimTraits,AIM_H,aimHeight,halfWidth,aimPlan,aimAt,readyToFire,planFire,idlePitch,recoilPull,discipline,hitPart,BUY,buyArea,buyRoute,buyExit,buySpot,buyWander,buyHold,buyNew,buyTick,buyNext,buySep,SENS,cm360,sensOf,turnRate,SENSE,inView,audible,earSpot,memNew,memNote,memForget,memBest,repeek,mayFire,nextShot,areas,DFORM,GAP,midPoint,RESPOND,nearest,tradeSpot,follow,buyNear,buyCross,reactR,reacts,FIRE,sprayFade,sprayPull,turnAcc,trackTurn,cornerPick};
+ return {hash,rng,clamp,pickW,REACT,personality,reaction,crosshair,crosshairAt,firePattern,peek,attackPlan,defensePlan,roles,teamBuy,buyFor,onMateDeath,onSound,ATTACK,DEFENSE,utility,UTIL,turnStep,trackLag,wrapA,SPIKE,plantSpot,postPlant,retake,postPlay,SHOOT_UTIL,shootUtility,TAILWIND,tailwindDash,tailwindKeys,LEVEL,level,aimTraits,AIM_H,aimHeight,halfWidth,aimPlan,aimAt,readyToFire,planFire,idlePitch,recoilPull,discipline,hitPart,BUY,buyArea,buyRoute,buyExit,buySpot,buyWander,buyHold,buyNew,buyTick,buyNext,buySep,SENS,cm360,sensOf,turnRate,SENSE,inView,audible,earSpot,memNew,memNote,memForget,memBest,repeek,mayFire,nextShot,areas,DFORM,GAP,midPoint,RESPOND,nearest,tradeSpot,follow,buyNear,buyCross,reactR,reacts,FIRE,sprayFade,sprayPull,turnAcc,trackTurn,cornerPick,FLASH,flashRead,blindPlay};
 });
 // Spawn barriers (Valorant's buy-phase walls), shared by the server (spike.js world, bots.js) and the page (UMD:
 // index.html inlines it in the BOT VARIETY block and reads window.SpawnBarriers; native_maps_runtime nmBlocked and the
@@ -16987,6 +17009,24 @@ function xbvHearMem(p,kind,w){if(!p||!window.BotBrain)return;let src=null,srcBot
  for(const L of [bots,allies])for(const u of L){if(src||!u||!u.alive||!u.g)continue;if(Math.hypot(u.g.position.x-p.x,u.g.position.z-p.z)<.6){src=u.name;srcBot=L===bots;}}
  if(!src)return;if(src==='player'&&kind==='shot'&&!w&&typeof wName==='function')w=wName();const lis=srcBot?allies:bots,now=xbNow(),k=kind==='shot'?'shot':kind==='cast'?'cast':'step';
  for(const u of lis){if(!u||!u.alive||!u.g)continue;const q=u.g.position,d=Math.hypot(q.x-p.x,q.z-p.z);if(!BotBrain.audible(k,d,w))continue;const e=BotBrain.earSpot(p.x,p.z,q.x,q.z,Math.random(),Math.random());BotBrain.memNote(xbMem(u),src,e[0],p.y||0,e[1],now,'heard');}}
+// Flash reads (bots-tune-4, BotBrain.flashRead / blindPlay, as the server's spike.js flashDodge / blindInput): the player's
+// flash throws (Curveball, Flashpoint, Guiding Light: xbFlashWarn(pop point, s until the pop) at the release) warn every
+// enemy bot the pop would blind right now (in range, in sight, the page's facing test dot > 0.3); a read turns its body
+// away from its reaction until FLASH.hold s past the pop (xBotYaw keeps the bot's own turn-rate limit), no shot meanwhile.
+// The player within cast-hearing range gives XAB_REL s of lead (the FIRE cue before the release). Blinded: back out of the
+// angle or hold still (crouched sometimes); the server's blind 'spray' is a hold here (a blind page bot has no shot path).
+function xbFlashWarn(p,popIn){if(!window.BotBrain||typeof bots==='undefined'||!p)return;const now=performance.now();
+ for(const b of bots){if(!b||!b.alive||!b.g)continue;const q=b.g.position,vx=p.x-q.x,vz=p.z-q.z,l=Math.hypot(vx,vz)||.01,ry=b.g.rotation.y,facing=(vx*Math.sin(ry)+vz*Math.cos(ry))/l;
+  if(l>=30||facing<=.3||!los(new THREE.Vector3(q.x,1.6,q.z),p))continue;const P=xbBrain(b),pd=player?Math.hypot(player.x-q.x,player.z-q.z):99;
+  const r=BotBrain.flashRead(P,xbRand(b),{sees:true,facing,min:.3,fight:b.see>0,look:ry,toward:Math.atan2(vx,vz),lead:pd<BotBrain.reactR('cast')?XAB_REL:0});
+  if(r&&!(b.xFd&&b.xFd.until>now))b.xFd={at:now+r.at*1000,until:now+(popIn+BotBrain.FLASH.hold)*1000,yaw:r.yaw};}}
+function xbFdOn(b){const D=b&&b.xFd;if(!D)return false;const now=performance.now();if(now>=D.until||!b.alive){b.xFd=null;return false;}return now>=D.at;}
+function xbBlindPlay(b){if(!(b&&b.blind>0)){if(b)b.xBp=null;return null;}if(b.xBp)return b.xBp;const P=xbBrain(b);if(!P)return null;
+ const m=xbMem(b),now=xbNow();let dist=99;for(const id in m.c){const c=m.c[id];if(c.seenT!=null&&now-c.seenT<BotBrain.FLASH.sprayMem)dist=Math.min(dist,Math.hypot(c.x-b.g.position.x,c.z-b.g.position.z));}
+ const r=BotBrain.blindPlay(P,xbRand(b),{fought:dist<99,dist});return b.xBp=r.act==='spray'?{act:'hold',t:0,duck:r.duck,spray:true}:r;}
+if(typeof xBotYaw==='function'){const y0=xBotYaw;xBotYaw=function(dt){try{if(dt&&typeof bots!=='undefined')for(const b of bots)if(b&&b.g&&xbFdOn(b))b.g.rotation.y=b.xFd.yaw;}catch(e){}return y0.apply(this,arguments);};}
+if(typeof botCanShoot==='function'){const cs1=botCanShoot;botCanShoot=function(b){return cs1.apply(this,arguments)&&!xbFdOn(b);};}
+{const g1=xGoal;xGoal=function(u,team,atk,out){if(u&&u.g&&u.blind>0&&mode==='five'){const B=xbBlindPlay(u);if(B){const q=u.g.position,ry=u.g.rotation.y;return B.act==='back'?x2(out,q.x-Math.sin(ry)*3,q.z-Math.cos(ry)*3):x2(out,q.x,q.z);}}else if(u&&u.xBp&&!(u.blind>0))u.xBp=null;return g1.apply(this,arguments);};}
 // ---- END BOT VARIETY ----
 // ---- DEBUG HOOKS ----
 // Headless/manual testing hooks. Active only on localhost or with ?__vs=1.

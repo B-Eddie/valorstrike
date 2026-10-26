@@ -230,7 +230,7 @@ export function cornerLook(sim,u,heading){const W=sim.world;if(!W||!W.ray||!Numb
  if(u.corner&&sim.time<u.corner.t+.25&&Math.abs(BotBrain.wrapA(u.corner.h-heading))<.5)return u.corner.y;
  CR_ANG.length=CR_DEP.length=0;const o=[u.x,u.y+1.5-(u.ch||0),u.z];for(let i=-6;i<=6;i++){const a=heading+i*.21;CR_ANG.push(a);const d=W.ray(o,[-Math.sin(a),0,-Math.cos(a)],40);CR_DEP.push(Number.isFinite(d)?d:40);}
  const y=BotBrain.cornerPick(CR_ANG,CR_DEP,heading);u.corner={t:sim.time,h:heading,y};return y;}
-export function botView(sim,u,L0,dt){if(u.human||!u.alive||u.sawTarget||!u.input||!Number.isFinite(L0)||!(dt>0))return;const P=persona(sim,u),B=P.brain;
+export function botView(sim,u,L0,dt){if(u.human||!u.alive||u.sawTarget||u.fdgOn/* turning away from a flash (spike.js flashDodge) */||!u.input||!Number.isFinite(L0)||!(dt>0))return;const P=persona(sim,u),B=P.brain;
  let want=u.look;const c=u.mem&&BotBrain.memBest(u.mem,sim.time,u.x,u.z,BotBrain.SENSE.glance),cd=c?Math.hypot(c.x-u.x,c.z-u.z):0;
  if(c&&cd>.8&&cd<45){want=Math.atan2(u.x-c.x,u.z-c.z);u.pitch=Math.atan2((c.y??u.y)+BotBrain.AIM_H.head-(u.y+1.6-(u.ch||0)),cd)+BotBrain.idlePitch(B)-Math.atan2(BotBrain.AIM_H.head-1.6,15);u.viewAt=c.id;u.corner=null;}else{u.viewAt=null;const k=cornerLook(sim,u,want);if(k!=null)want=k;}
  if(!Number.isFinite(want))return;const L=u.look,V=BotBrain.wrapA(BotBrain.turnStep(B,L0,want,dt,u.turnSt||(u.turnSt={v:0})).yaw),f=u.input.forward||0,s=u.input.side||0;u.look=V;

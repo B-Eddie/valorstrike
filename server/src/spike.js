@@ -10,7 +10,7 @@ import BotBrain from '../../vendor/bot-brain.cjs';
 const FOLLOW=[]; // scratch: moving teammates' positions (goalPath trade spacing)
 import SpawnBarriers from '../../vendor/spawn-barriers.cjs';
 const BOT_TURN=9,BOT_RUN=5.4;// BOT_RUN: m/s a bot covers on foot (rifle run, 6.75 x 0.8), for post-plant timing// rad/s: a bot turns at most this fast when lining up utility (no instant 180)
-import {initAbilities,buyAbility,castAbility,tickAbilities,smokeBlocks,sightClear,types,rewardAbilityKill,gainUlt,barrierBlocked,nearestBarrier,damageBarrier,barrierPoints,SLOW_ORB} from './abilities.js';
+import {initAbilities,buyAbility,castAbility,tickAbilities,smokeBlocks,sightClear,types,rewardAbilityKill,gainUlt,XAB_REL,barrierBlocked,nearestBarrier,damageBarrier,barrierPoints,SLOW_ORB} from './abilities.js';
 // VALORANT round phases (wiki.playvalorant.com/en-us/Unrated): buy phase 30 s, 45 s for the first buy phase of each half and
 // of overtime / endgame (rounds 1, 13, 25); post-round phase 7 s.
 // VALORANT 1.11 (wiki.playvalorant.com/en-us/Credits): a player who survives a lost round gets 1000 instead of the loss bonus when
@@ -147,7 +147,7 @@ export class SpikeSimulation extends Simulation{
    if(stage){const i=stageNode(this,u,stage,this.findPath);if(i>=0){goal=N[i];u.spread=true;loose=true;site=null;}}
    if(site&&!carrier&&W.map.sites[site]){if(L.spotSite!==site){L.spotSite=site;L.spot=spotNear(this,u,W.map.sites[site],'spot',atk?{rMin:2,rMax:10,gap:4.5}:L.role.offAngle?{rMin:6,rMax:14,gap:4}:{rMin:2,rMax:10,gap:4});}if(L.spot>=0){goal=N[L.spot];u.spread=true;}}}}
  if(u.team!==this.atk&&sp.st==='plant'&&Math.hypot(u.x-sp.x,u.z-sp.z)<2&&this.defuseNow(u)){u.input={interact:true};u.inputAt=this.time;return;}
- if(u.blindUntil>this.time||u.concussUntil>this.time||u.nearsightUntil>this.time){/* bots have no nearsight model: held like a blinded bot, as offline (b.blind) */u.input={};u.inputAt=this.time;u.engagedAt=0;/* the fight restarts after the flash: a fresh, slower reaction (BotBrain.reaction ctx.flashed) */return;}const route=u.route,routeAt=u.routeAt;u.route=null;super.bot(u);const combat=u.input.fire||u.sawTarget;if(!combat){u.route=route;u.routeAt=routeAt;}if(combat)return;
+ if(this.flashDodge(u))return;/* an enemy flash it read coming: turning away until it pops (BotBrain.flashRead) */if(u.blindUntil>this.time||u.concussUntil>this.time||u.nearsightUntil>this.time){/* bots have no nearsight model: held like a blinded bot, as offline (b.blind); blinded: spray the angle / back out / hold (BotBrain.blindPlay) */u.input=u.blindUntil>this.time?this.blindInput(u):{};u.inputAt=this.time;u.engagedAt=0;/* the fight restarts after the flash: a fresh, slower reaction (BotBrain.reaction ctx.flashed) */return;}const route=u.route,routeAt=u.routeAt;u.route=null;super.bot(u);const combat=u.input.fire||u.sawTarget;if(!combat){u.route=route;u.routeAt=routeAt;}if(combat)return;
  if(this.shootUtility(u,goal))return;/* no enemy in sight: shoot down enemy utility in the way (Boom Bot, Turret, Alarmbot, Trademark, Trapwire, Nanoswarm; a Sage Barrier across its way) */
  if(this.planUtility(u))return;/* lining up plan utility (smoke / flash / recon before the entry, post-plant mollies, defender delay) */
  // reactions: trade / fall back after a teammate dies, hold or push a sound (not the carrier, not a late retake)
@@ -285,6 +285,26 @@ export class SpikeSimulation extends Simulation{
   const path=this.findPath(W,W.near(u.x,u.z,u.y),W.near(goal[0],goal[2],goal[1]));if(!path||path.length<2)return null;let best=null;
   for(const i of path){const n=N[i],d=Math.hypot(n[0]-u.x,n[2]-u.z);if(d>reach)break;if(d>3&&vis(n))best=n;}
   return best?[best[0],best[1]+.1,best[2]]:null;}
+ // Flash reads (bots-tune-4, BotBrain.flashRead): each enemy flash still in the air is read once per bot, when the bot would be
+ // blinded by it right now (the pop point in sight, in range, in front: the same facing test as tickAbilities); a read turns
+ // the view away at the bot's own turn / hand limits from flashRead's reaction until FLASH.hold s past the pop (no moving,
+ // no shooting meanwhile). A caster within cast-hearing range gives the bot XAB_REL s of lead (the FIRE cue before the release).
+ // u.fdg = {id, at, until, yaw}.
+ flashDodge(u){u.fdgOn=false;if(u.human||!u.alive)return false;const now=this.time;let D=u.fdg;
+  for(const e of this.effects){if(e.kind!=='flash'||!(e.at>now)||e.team===u.team)continue;const R=e.read||(e.read={});if(R[u.id])continue;R[u.id]=1;
+   const eye=[u.x,u.y+1.6-(u.ch||0),u.z],q=[e.p[0]-eye[0],e.p[1]-eye[1],e.p[2]-eye[2]],dist=Math.hypot(q[0],q[1],q[2])||.01,cp=Math.cos(u.pitch||0),facing=(-Math.sin(u.look||0)*cp*q[0]+Math.sin(u.pitch||0)*q[1]-Math.cos(u.look||0)*cp*q[2])/dist;
+   if(dist>=(e.radius||30)||facing<=.5||!sightClear(this,eye,e.p))continue;
+   const P=persona(this,u),r=BotBrain.flashRead(P.brain,P.r,{sees:true,facing,min:.5,fight:!!u.sawTarget,look:u.look||0,toward:Math.atan2(-q[0],-q[2]),lead:(()=>{const o=this.units.find(w=>w.id===e.owner);return o&&Math.hypot(o.x-u.x,o.z-u.z)<BotBrain.reactR('cast')?XAB_REL:0;})()});
+   if(r&&(!D||D.until<now))D=u.fdg={id:e.id,at:now+r.at,until:e.at+BotBrain.FLASH.hold,yaw:r.yaw};}
+  const dt=this.tickDt||.05;if(!D)return false;if(D.until<now){u.fdg=null;return false;}if(now+dt<=D.at)return false;
+  /* the turn starts inside this tick at D.at (no 50 ms quantization) */u.look=BotBrain.turnStep(persona(this,u).brain,u.look||0,D.yaw,Math.min(dt,now+dt-D.at),u.turnSt||(u.turnSt={v:0})).yaw;u.input={};u.inputAt=now;u.engagedAt=0;u.fdgOn=true;return true;}
+ // Blinded (BotBrain.blindPlay, drawn once per blind): spray the angle it was fighting (an enemy seen within FLASH.sprayMem s,
+ // nearer than FLASH.sprayR m: the view stays where it was), back out of the angle, or hold (crouched sometimes).
+ blindInput(u){let b=u.bPlay;if(!b||b.k!==u.blindUntil){const P=persona(this,u),F=BotBrain.FLASH;let dist=99;if(u.mem)for(const id in u.mem.c){const c=u.mem.c[id];if(c.seenT!=null&&this.time-c.seenT<F.sprayMem)dist=Math.min(dist,Math.hypot(c.x-u.x,c.z-u.z));}
+   b=u.bPlay={k:u.blindUntil,t0:this.time,...BotBrain.blindPlay(P.brain,P.r,{fought:dist<99,dist})};}
+  if(b.act==='spray')return this.time-b.t0<b.t?{fire:true,duck:b.duck}:b.duck?{duck:true}:{};
+  if(b.act==='back')return {forward:-1};
+  return b.duck?{duck:true}:{};}
  // Utility on each bot's own timing and role: entries open with flashes/mobility, supports smoke/heal, anchors slow/trap.
  botUtility(u,target,dist,P,engaged){const A=u.ability;if(!A||this.buy>0||this.roundDelay>0)return;if(u.agent==='Jett'&&u.tailwind&&this.time>=u.tailwind.armAt){const T=u.tailwind;if(T.hp0==null){T.hp0=u.hp;T.k0=u.kills||0;}const why=BotBrain.tailwindDash({armed:true,hp:u.hp,hp0:T.hp0,kills:(u.kills||0)-T.k0,left:T.until-this.time});if(why){const d=BotBrain.tailwindKeys(P.r);if(this.command(u,{t:'ab',k:'e',f:d.f,s:d.s,r:u.look||0})){u.twOut=why;return;}}}/* Tailwind armed (1 s after the first E): the dash is kept to get out - after a kill, when hurt, or as the window runs out (vendor/bot-brain.cjs tailwindDash; offline xBJett the same), backwards + a side from the enemy it faces */if(engaged<P.util||this.time<(u.utilAt||0))return;const ty=types[u.agent]||[],want=P.role==='entry'?['flash','dash','updraft']:P.role==='support'?['smoke','flash','slow','heal']:P.role==='anchor'?['slow','trap','fire','turret','smoke']:['flash','smoke','recon'];for(const w of want){const i=ty.indexOf(w);if(i<0)continue;const k='cqe'[i];if(A[k]>0&&this.command(u,{t:'ab',k})){u.utilAt=this.time+4+P.r()*6;if(u.tailwind&&w==='dash'){u.tailwind.hp0=u.hp;u.tailwind.k0=u.kills||0;}return;}}u.utilAt=this.time+1+P.r();}
  snapshot(){return {...super.snapshot(),fw:floorRows(this),fx:[...this.effects.filter(e=>e.kind==='barrier'&&e.hp>0&&e.until>this.time).map(e=>({id:e.id,kind:e.kind,p:e.p,yaw:e.yaw,hp:e.hp,seg:e.seg})),/* Jett Cloudburst: the projectile (s 0) then its smoke (s 1, p = centre, tl = seconds left) */...this.effects.filter(e=>(e.kind==='cloudburst'||e.kind==='smoke'&&e.cb)&&e.until>this.time).map(e=>e.kind==='cloudburst'?{id:e.id,kind:'cb',o:e.owner,p:e.p.map(n=>Math.round(n*100)/100),s:0}:{id:e.id,kind:'cb',o:e.owner,p:e.c.map(n=>Math.round(n*100)/100),s:1,tl:Math.round((e.until-this.time)*100)/100}),/* Turret / Alarmbot / Trapwire / Trademark / Blast Pack / Spycam / Owl Drone bodies (devices.js deviceRows) */...deviceRows(this)]};}

@@ -9,6 +9,9 @@
 //  5. line of sight lost = the burst stops that tick (no stale fire)
 //  6. glimpses: a 100 ms glimpse is never shot; a jiggle peek rarely dies
 //  7. fire rate: a spraying Vandal bot never beats 9.75 rounds/s
+//  8. Spike-mode sound reactions on the shared hearing model
+//  9. flash reads: an enemy flash a bot would be blinded by is read and turned (Curveball mostly, Flashpoint rarely in time,
+//     mid-fight reads rarer); blinded bots back out, hold or spray the angle they were fighting
 import assert from 'node:assert/strict';import {createRequire} from 'node:module';
 import {Simulation} from './src/simulation.js';import {SpikeSimulation} from './src/spike.js';import {persona,botView} from './src/bots.js';
 const B=createRequire(import.meta.url)('../vendor/bot-brain.cjs'),out=[];
@@ -89,4 +92,13 @@ function tick(s,b,dt=1/30){s.time+=dt;const L0=b.look;s.bot(b);botView(s,b,L0,dt
  for(const [k,d,o,want] of R)assert.equal(react(k,d,o),want,'Spike botSense reacts to '+k+(o.walk?' (walking)':'')+(o.weapon?' '+o.weapon:'')+' at '+d+' m: '+want);
  for(const [k,w] of [['step',null],['cast',null],['shot','Vandal'],['shot','Phantom']])assert.equal(B.reactR(k,w),{step:30,cast:30}[k]||35,'reactR '+k+' '+w);
  out.push('Spike sound reactions: run 25/29 m yes, 33 no, walk silent; cast 25 yes / 33 no; Vandal 33 yes / 38 no; Phantom 33 yes / 38 no');}
+// 9. flash reads (bots-tune-4, BotBrain.flashRead / blindPlay; tools/bot-flash-bench.mjs): before, every flash that would blind
+// a bot did and a blinded bot stood still (Breach / Phoenix / Skye from cover: 100 / 93 / 100 % blinded, moved 0 m)
+{const {scenario}=await import('./tools/bot-flash-bench.mjs');const pc=scenario('Phoenix',true,60),bc=scenario('Breach',true,60),pf=scenario('Phoenix',false,60),bf=scenario('Breach',false,60);
+ assert.ok(pc.read>35&&pc.read<80,'reads a Curveball thrown from cover 35-80 %: '+pc.read);assert.ok(pc.blinded<70,'Curveball from cover blinds < 70 % (was 93): '+pc.blinded);assert.ok(pc.readBlinded<25,'a read beats the 0.4 s Curveball: '+pc.readBlinded+' % of reads still blinded');
+ assert.ok(bc.blinded>pc.blinded+15,'Flashpoint (0.3 s) is much harder to turn than Curveball: '+bc.blinded+' vs '+pc.blinded);
+ assert.ok(pf.read<pc.read*.7&&bf.read<bc.read*.7,'mid-fight reads are rarer: '+pf.read+' / '+bf.read+' vs '+pc.read+' / '+bc.read);
+ assert.ok(bc.movedWhileBlind>.8&&bc.acts.back>5&&bc.acts.hold>5&&!bc.acts.none,'blinded from cover: backs out or holds ('+JSON.stringify(bc.acts)+', moved '+bc.movedWhileBlind+' m)');
+ assert.ok(pf.acts.spray>5&&pf.shotsWhileBlind>.5,'blinded mid-fight: some spray the angle ('+JSON.stringify(pf.acts)+', '+pf.shotsWhileBlind+' shots)');
+ out.push('flash reads: Curveball from cover read '+pc.read+' % / blinded '+pc.blinded+' % (was 93), Flashpoint '+bc.blinded+' % (was 100), mid-fight read '+pf.read+' %; blinded back / hold / spray '+JSON.stringify(bc.acts)+' '+JSON.stringify(pf.acts));}
 console.log('Bot perception: '+out.join('; '));
