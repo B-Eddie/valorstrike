@@ -17,14 +17,16 @@ const fails=[],out=[];const check=(n,ok,d)=>{out.push((ok?'ok   ':'FAIL ')+n+(d?
  const c={innerWidth:844,innerHeight:390,Math,Object,String,TO:{sz:1,op:.8,f2:false,cm:false}};vm.createContext(c);
  vm.runInContext(html.slice(a,b).replace(/\bconst (TB|DEF|DEFP|LAND|lay|wsLay|fit|reset|unit) =/g,'var $1 =').replace('let custom','var custom')+';globalThis.get=()=>L;globalThis.setSA=v=>{SA=v;};',c);
  // CSS the HUD rects come from (pointer: coarse block)
+ assert(html.includes('<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />'),'viewport-fit=cover');
+ for(const r of ['#xMap,#game.x-mm #fps{margin:var(--sa-t) 0 0 var(--sa-l)}','#game .hud.x-top{margin:var(--sa-t) var(--sa-r) 0 0}','#game #xSub{margin-top:var(--sa-t)}','#game .hud.x-fw{margin:var(--sa-t) var(--sa-r) 0 0}','#game .hud.x-bl{margin-left:var(--sa-l)}','#game .x-brs{margin-right:var(--sa-r)}','@media (orientation:portrait){#game .hud.x-bl,#game .x-brs{margin-bottom:var(--sa-b)}}','#lobby{padding:var(--sa-t) var(--sa-r) var(--sa-b) var(--sa-l)}','--sa-l:env(safe-area-inset-left,0px)'])assert(html.includes(r),'safe-area rule missing: '+r);
  for(const r of ['#xMap{left:8px;top:8px;width:96px;height:96px}','#game .hud.x-fw{top:64px;right:8px}','#game .hud.x-bl{left:8px;bottom:8px;transform:none;min-width:128px;height:48px;','#game .x-brs{right:4px;bottom:4px}','#game .hud.x-br{height:44px;padding:4px 8px;max-width:150px}'])assert(html.includes(r),'HUD rule moved: '+r);
  const hud=(w,h)=>({minimap:[8,8,104,104],top:h<=560?[w-388,8,w-8,40]:[w/2-190,8,w/2+190,40],sub:[w/2-171,48,w/2+171,63],feed:h<=480?[w-308,64,w-8,92]:[w-308,64,w-8,190],health:[8,h-56,136,h-8],ammo:[w-91,h-73,w-4,h-4],crosshair:[w/2-24,h/2-24,w/2+24,h/2+24]});
  const ov=(p,q,g=0)=>p[0]<q[2]+g&&q[0]<p[2]+g&&p[1]<q[3]+g&&q[1]<p[3]+g;
- for(const [w,h,sa] of [[844,390],[932,430],[844,390,{l:47,r:47,t:0,b:21}],[932,430,{l:59,r:59,t:0,b:21}],[1024,768],[1180,820]]){
+ for(const [w,h,sa] of [[844,390],[932,430],[844,390,{l:47,r:47,t:0,b:21}],[932,430,{l:59,r:59,t:0,b:21}],[852,393,{l:59,r:59,t:0,b:21}],[812,375,{l:44,r:44,t:0,b:21}],[1024,768],[1180,820]]){
   const tag=w+'x'+h+(sa?' notch':'');c.innerWidth=w;c.innerHeight=h;c.setSA(sa||{l:0,r:0,t:0,b:0});c.reset();const L=c.get(),R={};
   for(const k in L){const p=L[k],x=p.x*w/100,y=p.y*h/100,r=p.s/2;R[k]=[x-r,y-r,x+r,y+r];}
   const ws=c.wsLay(w,h,sa);R.strip=[w-ws.r-(3*ws.m+8),h-ws.b-ws.h,w-ws.r,h-ws.b]; // widest strip: 3 chips at max width
-  const H=hud(w,h);if(sa){H.minimap=[8,8,104,104];} // HUD panels do not move with the insets (no viewport-fit=cover)
+  const H=hud(w,h);if(sa){const mv=(k,dx,dy)=>{const q=H[k];H[k]=[q[0]+dx,q[1]+dy,q[2]+dx,q[3]+dy];};mv('minimap',sa.l,sa.t);mv('top',h<=560?-sa.r:0,sa.t);mv('sub',0,sa.t);mv('feed',-sa.r,sa.t);mv('health',sa.l,0);mv('ammo',-sa.r,0);} // viewport-fit=cover: the HUD panels move in by the safe-area insets (margins below)
   let bad=[];for(const k in R)for(const n in H)if(ov(R[k],H[n],2))bad.push(k+'/'+n);
   check(tag+': controls clear of minimap, top bar, subtitle, kill feed, health, ammo, crosshair',!bad.length,bad.join(' '));
   const S0=sa||{l:0,r:0},sw=w-S0.l-S0.r,cz=[S0.l+0.3*sw,0.22*h,S0.l+0.7*sw,0.78*h];bad=Object.keys(R).filter(k=>ov(R[k],cz));check(tag+': centre band clear',!bad.length,bad.join(' '));

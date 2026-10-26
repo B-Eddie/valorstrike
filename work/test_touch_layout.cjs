@@ -12,7 +12,7 @@ const check=(w,h,sa)=>{c.innerWidth=w;c.innerHeight=h;c.setSA(sa||{l:0,r:0,t:0,b
  for(const k of ks){const p=L[k],x=p.x*w/100,y=p.y*h/100,r=p.s/2;assert(x-r>=0&&x+r<=w&&y-r>=0&&y+r<=h,w+'x'+h+' '+k+' inside the screen ('+x.toFixed(0)+','+y.toFixed(0)+')');}
  for(let i=0;i<ks.length;i++)for(let j=i+1;j<ks.length;j++){const p=L[ks[i]],q=L[ks[j]],d=Math.hypot((p.x-q.x)*w/100,(p.y-q.y)*h/100);assert(d>=(p.s+q.s)/2+4,w+'x'+h+' '+ks[i]+' and '+ks[j]+' overlap ('+d.toFixed(1)+' px)');}
  return L;};
-const sizes=[[360,740],[390,844],[412,915],[740,360],[640,360],[568,320],[844,390],[932,430],[915,412],[1024,768],[1180,820],[1280,720]];for(const [w,h] of sizes)check(w,h);
+const sizes=[[360,740],[390,844],[412,915],[740,360],[640,360],[568,320],[667,375],[812,375],[844,390],[932,430],[915,412],[1024,768],[1180,820],[1280,720]];for(const [w,h] of sizes)check(w,h);
 // portrait uses the portrait layout: fire in the lower right, abilities in one row, plant/use/buy on the left edge
 {const L=check(360,740);assert(L.fire.x>60&&L.fire.y>65,'portrait fire bottom right');assert(new Set(['c','q','e','x'].map(k=>Math.round(L[k].y))).size===1,'abilities in one row');for(const k of ['plant','use','buy'])assert(L[k].x<20,k+' on the left edge');}
 // landscape phones and tablets keep the designed layout exactly (fit() moves nothing), safe-area insets included
@@ -53,3 +53,18 @@ console.log('Touch: relock() never takes pointer lock on a touch screen');
   assert(ob>=mapTop+MAP+8&&ob>=feed+FEED_H,w+'x'+h+' team panel below minimap and feed ('+ob+')');assert(ob+PANEL_H+16<=ab,w+'x'+h+' team panel clear of the ability row ('+(ob+PANEL_H)+' vs '+ab+')');
   assert(12+COMMS_W+4<=px('c','x')-L.c.s/2,w+'x'+h+' COMMS clear of C');}}
 console.log('Touch: portrait HUD (top bar fits, subtitle/minimap/feed/team panel stacked clear of the touch buttons at 360x740, 390x844, 412x915)');
+// iPhone portrait with viewport-fit=cover (status bar / Dynamic Island on top, home indicator below): the top HUD (bar, subtitle,
+// minimap, kill feed) drops by the top inset and the health / credits + ammo blocks rise by the bottom inset (CSS margins); the
+// menu drops with the top HUD and the thumb cluster rises with the bottom blocks, all inside the safe area and still stacked.
+{const k='@media (max-width:480px){\n  #game .x-top{',i=html.indexOf(k),blk=html.slice(i,html.indexOf('\n}\n',i));
+ assert(html.includes('@media (orientation:portrait){#game .hud.x-bl,#game .x-brs{margin-bottom:var(--sa-b)}}'),'portrait bottom blocks rise by the bottom inset');
+ const subTop=+blk.match(/#game #xSub\{top:(\d+)px/)[1],mapTop=+blk.match(/#game #xMap\{top:(\d+)px/)[1],MAP=96,SUB_H=11,PANEL_H=118,ov=(p,q,g)=>p[0]<q[2]+g&&q[0]<p[2]+g&&p[1]<q[3]+g&&q[1]<p[3]+g;
+ for(const [w,h,sa] of [[360,740,{l:0,r:0,t:0,b:0}],[390,844,{l:0,r:0,t:0,b:0}],[412,915,{l:0,r:0,t:0,b:0}],[390,844,{l:0,r:0,t:47,b:34}],[393,852,{l:0,r:0,t:59,b:34}],[430,932,{l:0,r:0,t:59,b:34}],[375,812,{l:0,r:0,t:44,b:34}]]){const tag=w+'x'+h+(sa.t?' notch':''),L=check(w,h,sa),px=(k,a)=>L[k][a]*(a==='x'?w:h)/100;
+  for(const k in L){const r=L[k].s/2,y=px(k,'y');assert(y-r>=sa.t&&y+r<=h-sa.b,tag+' '+k+' inside the safe area');}
+  const mt=px('menu','y')-L.menu.s/2,mb=mt+L.menu.s,feed=0.122*h+28+sa.t,ob=h/2-90,ab=px('c','y')-L.c.s/2;
+  assert(mt>=sa.t+subTop+SUB_H+4,tag+' menu below the subtitle');assert(px('menu','x')-L.menu.s/2>8+MAP+4,tag+' menu clear of the minimap');assert(feed>=mb+4,tag+' kill feed below the menu');
+  assert(ob>=sa.t+mapTop+MAP+8,tag+' team panel below the minimap');assert(ob+PANEL_H+16<=ab,tag+' team panel clear of the ability row ('+(ob+PANEL_H)+' vs '+ab+')');
+  const hp=[8,h-sa.b-56,136,h-sa.b-8],am=[w-91,h-sa.b-73,w-4,h-sa.b-4],ws=c.wsLay(w,h,sa),st=[w-ws.r-(3*ws.m+8),h-ws.b-ws.h,w-ws.r,h-ws.b];
+  assert(!ov(st,am,2),tag+' weapon strip above credits + ammo');
+  for(const k in L){const r=L[k].s/2,X=px(k,'x'),Y=px(k,'y'),R=[X-r,Y-r,X+r,Y+r];assert(!ov(R,hp,2),tag+' '+k+' clear of health');assert(!ov(R,am,2),tag+' '+k+' clear of credits + ammo');assert(!ov(R,st,2),tag+' '+k+' clear of the weapon strip');}}}
+console.log('Touch: portrait 360x740 / 390x844 / 412x915 and iPhone portrait notch (390x844, 393x852, 430x932, 375x812): buttons inside the safe area, menu / feed / team panel / abilities stacked, bottom cluster clear of the risen health, credits + ammo and weapon strip');
