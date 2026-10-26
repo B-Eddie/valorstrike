@@ -85,4 +85,9 @@ abilityDamage(s,b,a,25);run(5.5);assert.equal(a.armor,5);assert.equal(a.rgn,0,'p
 const rg=s.rows().find(r=>r[0]===b.id)[21];assert.equal(rg,-1,'no Regen Shield = -1');
 a.rgn=20;a.armor=10;s.finishRound(0,'t');s.roundDelay=0;s.newRound();assert.equal(a.armor,10);assert.equal(a.rgn,20,'survivor keeps armor and pool');
 a.alive=false;s.finishRound(1,'t');assert.equal(a.armor,0);assert.equal(a.rgn,null,'death clears it');
+// Buy phase: aiming down sights slows as in the round (Vandal 5.4 -> 4.10 m/s), matching the page's prediction
+{const B={map:{attacker:[0,0,0],defender:[0,0,-80],sites:{A:[0,0,-40]}},nav:{nodes:[[0,0,0],[0,0,-80]],adj:[[1],[0]]},playable:[0,1],near:(x,z)=>z<-40?1:0,ground:()=>0,blocked:()=>false,ray:()=>Infinity};
+ const speed=ads=>{const s=new SpikeSimulation(B,'five','ascent',()=>.5),u=s.add('P','Jett'),v=s.add('E','Sova');s.start(false);u.human=v.human=true;u.loading=v.loading=false;assert.ok(s.buy>1,'buy phase');u.weapon=u.primary='Vandal';Object.assign(u,{x:0,y:0,z:0,look:Math.PI/2,vx:0,vz:0});
+  for(let i=0;i<12;i++){u.input={forward:1,ads};u.inputAt=s.time;s.step(.05);}assert.ok(s.buy>0,'still buying');return Math.hypot(u.vx||0,u.vz||0);};
+ const run=speed(false),aim=speed(true);assert.ok(Math.abs(run-5.4)<.05,'buy phase run '+run);assert.ok(Math.abs(aim-5.4*.76)<.05,'buy phase ADS '+aim);}
 console.log('Armor v9.10: Light / Heavy Armor names (old Shields names refused), Regen Shield 650 = 25 at 100%, 3 s refill from a 50 pool, sell / replace restore, rows[21] pool, round carry, death clears');}
