@@ -75,6 +75,32 @@ const assert=require('assert/strict'),path=require('path');const {boot}=require(
    const r=[];bcTick(0.5);r.push(BC.tm.length,BC.sf.length);bcTick(0.45);r.push(BC.tm.length,BC.sf.length);const f=BC.sf[0]||{};r.push(f.r,f.t,Math.round((f.p?f.p.x-P.x:0)*10)/10,sgSlow(b[0].g.position),sgSlow(b[1].g.position));
    b[1].g.position.set(P.x+48+6.5,b[1].g.position.y,P.z);r.push(sgSlow(b[1].g.position));bcTick(4.1);r.push(BC.sf.length,sgSlow(b[0].g.position));los=L0;return r;})()`);
  assert.deepEqual(tm,[1,0,0,1,6,3.55,48,0.5,0.5,1,0,1],'player Trademark: 10 m scan, 0.9 s windup, 6 m field under the enemy, 50 % for everyone in it, 4 s');
+ // ---- qa-26 audit (work/validation/abilities-parity.md section 8) ----
+ // server constants = wiki
+ {const D=await import(path.join(__dirname,'..','server','src','devices.js')),U=await import(path.join(__dirname,'..','server','src','ults.js')),SM=await import(path.join(__dirname,'..','server','src','simulation.js'));
+  const T=D.DEV.trapwire;assert.deepEqual([T.deploy,T.windup,T.leave,T.slow,T.zap,T.rearm],[1.5,.7,4,1.25,5,2],'Trapwire (wiki v11.08 / v13.00)');
+  const A=D.DEV.alarmbot;assert.deepEqual([A.sight,A.alert,A.speed,A.trigger,A.windup,A.vulnerable],[5.5,.5,22.5,2,.5,4],'Alarmbot (wiki v13.00)');
+  assert.deepEqual([U.ULT.seekers.maxTravel,U.ULT.seekers.nearsight,U.ULT.seekers.slow,U.ULT.seekers.slowK],[15,3,5,.4],'Seekers');
+  const B=SM.weapons['Blade Storm'];assert.deepEqual([B.fireRate,B.damageRanges[0].headDamage,B.damageRanges[0].bodyDamage,B.damageRanges[0].legDamage],[6,150,50,42.5],'Blade Storm (wiki)');
+  assert.deepEqual(J('XALB'),{sight:A.sight,alert:A.alert,speed:A.speed,trig:A.trigger,windup:A.windup,r:A.radius,vul:A.vulnerable},'page XALB = server DEV.alarmbot');
+  assert.deepEqual(J('XTRAP'),{deploy:T.deploy,windup:T.windup,leave:T.leave,slow:T.slow,zap:T.zap,rearm:T.rearm},'page XTRAP = server DEV.trapwire');
+  assert.deepEqual(J('XBK_RC'),{Sage:45,Sova:50,Skye:50,Omen:40},'bot signature recharge = wiki (Recon Bolt / Guiding Light 50 s since v13.00)');}
+ // offline Trapwire (player's wire): deploy 1.5 s, 50 % slow at once, zap 5 + reveal after 0.7 s, held within 4 m, 1.25 s slow after, re-arms in 2 s, not used up
+ const tw=J(`(()=>{const P=player,b=bots.filter(b=>b.alive)[0],o=[];bots.forEach(x=>{if(x!==b)x.g.position.set(P.x+60,x.g.position.y,P.z+60);});b.hp=100;b.armor=0;b.chs=0;
+   const W=cyWire(P.x,P.z-6,1,0,null);W.ck=1e9;/* nobody shoots the anchors in this check */const mid={x:(W.a.x+W.b.x)/2,z:(W.a.z+W.b.z)/2},st=(t)=>{for(let i=0;i<Math.round(t/.05);i++)cyTick(.05);};
+   b.g.position.set(mid.x,b.g.position.y,mid.z);st(1.4);o.push(W.trip===b);st(.15);o.push(W.trip===b,b.chs>0,b.hp);st(.65);o.push(b.hp,J.rv.indexOf(b)>=0);st(.75);o.push(b.hp,b.chs>0);
+   b.g.position.set(mid.x,b.g.position.y,mid.z+4.5);st(.05);o.push(W.trip===null,Math.round(b.chs*100)/100,W.arm,BC.cw.indexOf(W)>=0);
+   b.g.position.set(mid.x,b.g.position.y,mid.z);st(1.5);o.push(W.trip===b);st(.6);o.push(W.trip===b);cyRm(W);BC.cw.splice(BC.cw.indexOf(W),1);return o;})()`);
+ assert.deepEqual(tw,[false,true,true,100,100,false,95,true,true,1.25,2,true,false,true],'offline Trapwire: '+JSON.stringify(tw));
+ // offline Alarmbot: 5.5 m detection, 0.5 s alert, 22.5 m/s, 0.5 s windup within 2 m, then Vulnerable 4 s in 3 m
+ const al=J(`(()=>{const P=player,b=bots.filter(b=>b.alive)[0],o=[];b.vul=0;const p0=new THREE.Vector3(P.x+30,0,P.z);J.ab={m:new THREE.Object3D(),p:new THREE.Vector3(p0.x,0,p0.z)};b.g.position.set(p0.x+5,b.g.position.y,p0.z);
+   const st=(t)=>{for(let i=0;i<Math.round(t/.05);i++)okTick(.05);};st(.45);o.push(J.ab.p.distanceTo(p0)<1e-6);st(.1);o.push(Math.round(J.ab.p.distanceTo(p0)*100)/100);st(.15);o.push(J.ab&&J.ab.wu>0,!(b.vul>0));st(.5);o.push(J.ab===null,Math.round(b.vul*100)/100);
+   b.vul=0;J.ab={m:new THREE.Object3D(),p:new THREE.Vector3(p0.x,0,p0.z)};b.g.position.set(p0.x+6,b.g.position.y,p0.z);st(2);o.push(!!J.ab,!(b.vul>0));J.ab=null;return o;})()`);
+ assert.deepEqual(al,[true,1.13,true,true,true,4,true,true],'offline Alarmbot (5.5 m: a bot at 6 m is not seen) timing: '+JSON.stringify(al));
+ // offline Seekers: 60 % slow for 5 s (bots), Blade Storm single fire 1/6 s
+ const sk=J(`(()=>{const b=bots.filter(b=>b.alive)[0],p=b.g.position;b.sks=0;b.chs=0;RS.sk.push({m:new THREE.Object3D(),tg:b,t:15});RS.sk[RS.sk.length-1].m.position.set(p.x,1.2,p.z);rsTick(.016);const k=sgSlow(p),t=b.sks;
+   J.bsOn=true;J.bs=5;J.cd.x=0;const fb=FV.buy;FV.buy=0;rw="knife";jThrow();const c=J.cd.x;FV.buy=fb;J.bsOn=false;J.bs=0;return [Math.round(k*100)/100,t,c];})()`);
+ assert.deepEqual(sk,[0.4,5,1/6],'offline Seekers 60 % 5 s / Blade Storm 6 per second: '+JSON.stringify(sk));
  console.log('Ability parity: server PARITY = offline XPAR2 (Shock Bolt falloff 75->1 over 1.5-4 m, Aftershock 2x80/0.6 s/3 m, Healing Orb 100/5 s, Regrowth 20/s, Shrouded Step 1.2 s, From the Shadows 4 s, Rendezvous 18 m, Lockdown 32.5 m, Tailwind 11 m); falloff curves identical; server and offline Shock Bolt 75/38/0 at 1/2.75/5 m; server and offline Aftershock bursts; server Sage self heal 100, Dismiss 1.5 s; Paint Shells server = offline (2.25 s fuse, 55->1 over 2.5-5.5 m, 4 sub-munitions +0.667 s 2.5 m out, 5.25 m); offline Blast Pack 5 s fuse + 50->20 falloff; offline Trademark 10 m / 0.9 s / 6 m 50 % 4 s field');
  process.exit(0);
 })().catch(e=>{console.error(e);process.exit(1);});

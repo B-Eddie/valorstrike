@@ -68,7 +68,8 @@ assert.deepEqual([0,3.5,4,5.5,7,8].map(ssDamage),[150,150,150,90,0,0],'ssDamage:
 
 // Seekers: the three nearest living enemies are nearsighted when their seeker arrives; a fourth is not.
 {const {s,u,list}=setup('Skye',['foe1'],['foe2'],['foe3'],['foe4']);list.forEach((v,i)=>Object.assign(v,{x:0,y:0,z:-(6+i*10)}));u.ability.ult=9;assert.equal(cast(s,u),true);assert.equal(s.effects.filter(e=>e.kind==='seeker').length,3);
- tick(s,.4);assert.ok(!(list[0].nearsightUntil>s.time),'travel time');tick(s,3);for(const v of list.slice(0,3))assert.ok(v.nearsightUntil>s.time,'seeker hits '+v.name);assert.ok(!(list[3].nearsightUntil>s.time));}
+ tick(s,.4);assert.ok(!(list[0].nearsightUntil>s.time),'travel time');tick(s,3);for(const v of list.slice(0,3))assert.ok(v.nearsightUntil>s.time,'seeker hits '+v.name);assert.ok(!(list[3].nearsightUntil>s.time));
+ assert.deepEqual([ULT.seekers.count,ULT.seekers.maxTravel,ULT.seekers.nearsight,ULT.seekers.slow,ULT.seekers.slowK],[3,15,3,5,.4],'wiki Seekers: 3, 15 s lifespan, 3 s Nearsight, 5 s 60 % Slow');for(const v of list.slice(0,3))assert.ok(v.seekSlowUntil>s.time&&v.seekSlowUntil-s.time<=5&&s.roundState(v).status.sslow>0,'seeker slows '+v.name);assert.ok(!(list[3].seekSlowUntil>s.time));}
 
 // Neural Theft: needs a visible enemy corpse within 18 m in front (ult points kept otherwise); reveals all living enemies twice
 // (wiki: 1st reveal after a 2 s windup, the 2nd 4 s after it).
@@ -169,7 +170,10 @@ const ab=(s,u,k,m={})=>{s.time+=.5;return s.command(u,{t:'ab',k,...m});};
 {const {s,u,list:[foe]}=setup('Killjoy',['foe']);u.ability.c=2;Object.assign(foe,{x:1,y:0,z:-14});assert.equal(ab(s,u,'c'),true);tick(s,1);assert.equal(foe.hp,100,'dormant');
  assert.equal(ab(s,u,'c'),true);assert.equal(u.ability.c,1,'trigger is free');tick(s,.95);assert.equal(foe.hp,100,'1 s activation windup (wiki)');tick(s,1.05);assert.ok(Math.abs(foe.hp-55)<1.5,'45/s: '+foe.hp);tick(s,2.8);assert.ok(s.effects.some(e=>e.kind==='nanoswarm'),'still burning at 4.8 s');tick(s,0.4);assert.ok(!s.effects.some(e=>e.kind==='nanoswarm'),'5 s then gone (wiki)');}
 // Alarmbot chases a nearby visible enemy and leaves it Vulnerable (double damage from guns and abilities).
-{const {s,u,list:[foe]}=setup('Killjoy',['foe']);u.ability.q=1;Object.assign(foe,{x:4,y:0,z:-14});assert.equal(ab(s,u,'q'),true);tick(s,1);
+// wiki Alarmbot (v13.00): 5.5 m detection, 0.5 s alert phase, 22.5 m/s, 0.5 s windup once within 2 m, 4 s Vulnerable.
+{const {s,u,list:[foe]}=setup('Killjoy',['foe']);u.ability.q=1;assert.equal(ab(s,u,'q'),true);const e=s.effects.find(e=>e.kind==='alarmbot');const p0=[...e.p];Object.assign(foe,{x:p0[0]+4.5,y:0,z:p0[2]});
+ tick(s,.45);assert.ok(Math.hypot(e.p[0]-p0[0],e.p[2]-p0[2])<1e-6,'0.5 s alert phase: not moving yet');tick(s,.1);const m=Math.hypot(e.p[0]-p0[0],e.p[2]-p0[2]);assert.ok(m>.5&&m<=22.5*.1+1e-6,'runs at 22.5 m/s: '+m);
+ tick(s,.15);assert.ok(e.blastAt>s.time,'within 2 m: 0.5 s windup');assert.ok(!(foe.vulnerableUntil>s.time),'not before the windup');tick(s,.5);
  assert.ok(foe.vulnerableUntil>s.time&&!s.effects.some(e=>e.kind==='alarmbot'),'Alarmbot pops');assert.ok(s.roundState(foe).status.vulnerable>3);const hp=foe.hp;abilityDamage(s,u,foe,10);assert.equal(hp-foe.hp,20,'vulnerable doubles damage');}
 // Turret only covers the 180° in front of where Killjoy faced; hits tag.
 {const {s,u,list:[back,front]}=setup('Killjoy',['foeBack'],['foeFront']);Object.assign(back,{x:0,y:0,z:-8});Object.assign(front,{x:0,y:0,z:-200});assert.equal(ab(s,u,'e'),true);tick(s,4);assert.equal(back.hp,100,'behind the turret');
@@ -197,9 +201,14 @@ const ab=(s,u,k,m={})=>{s.time+=.5;return s.command(u,{t:'ab',k,...m});};
  const run=z=>{const {s,u,list:[foe]}=setup('Killjoy',['foe']);Object.assign(foe,{x:0,y:0,z,hp:100,armor:0});s.effects.push({id:++s.effectSeq,kind:'turret',owner:u.id,ag:'Killjoy',team:u.team,p:[0,0,0],until:s.time+20,radius:30,at:s.time,yaw:0});const h=[];for(const t of [.7,.6,.6,.6,.6,.6])tick(s,t),h.push(100-foe.hp);return h;};
  assert.deepEqual(run(-10),[0,24,24,48,48,72],'10 m: nothing in the 0.75 s windup (0.7 s), one 24 burst by 1.3 s and still at 1.9 s, the next at 2.0 s, the third at 3.25 s');
  assert.deepEqual(run(-25),[0,18,18,36,36,54],'25 m: 6 per shot');}
-// Trapwire: across the lane at the aim point; an enemy crossing is revealed and slowed, then dazed; one use.
+// Trapwire (wiki v11.08 / v13.00): across the lane at the aim point, 1.5 s deploy; a crossing enemy is Slowed 50 % at once, 0.7 s windup,
+// then zapped 5 and Revealed while within 4 m of the crossing; breaking free leaves a 1.25 s slow; the wire re-arms 2 s later (not consumed, no tether / concuss).
 {const {s,u,list:[foe,mate]}=setup('Cypher',['foe'],['mate']);u.ability.c=1;Object.assign(foe,{x:3,y:0,z:-16});Object.assign(mate,{x:-3,y:0,z:-14});assert.equal(ab(s,u,'c'),true);const w=s.effects.find(e=>e.kind==='trapwire');assert.ok(Math.abs(w.p[0])>7&&Math.abs(w.q[0])>7,'wall to wall');
- tick(s,.1);assert.equal(mate.slowUntil||0,0,'allies pass');foe.z=-14;tick(s,.4);assert.ok(!foe.tether,'not armed before the 0.7 s windup');foe.z=-16;tick(s,.3);foe.z=-14;tick(s,.1);assert.ok(foe.revealedUntil>s.time&&foe.slowUntil>s.time&&s.roundState(foe).status.tether>2,'tethered');tick(s,2.5);assert.ok(foe.concussUntil>s.time,'dazed');assert.ok(!s.effects.some(e=>e.kind==='trapwire'),'consumed');}
+ tick(s,.1);assert.equal(mate.orbSlowUntil||0,0,'allies pass');foe.z=-14;tick(s,.4);assert.ok(!(foe.orbSlowUntil>s.time),'not armed in the 1.5 s deploy');foe.z=-16;tick(s,1.1);foe.z=-14;tick(s,.1);
+ assert.ok(foe.orbSlowUntil>s.time&&s.roundState(foe).status.tether>0,'slowed at once');assert.equal(foe.hp,100);assert.ok(!(foe.revealedUntil>s.time),'no reveal in the 0.7 s windup');tick(s,.7);
+ assert.equal(foe.hp,95,'zap 5');assert.ok(foe.revealedUntil>s.time,'revealed');tick(s,3);assert.equal(foe.hp,95,'one zap');assert.ok(foe.orbSlowUntil>s.time&&foe.revealedUntil>s.time,'held while within 4 m');assert.ok(!(foe.concussUntil>s.time),'no concuss since v11.08');
+ foe.x+=4.5;tick(s,.1);assert.ok(Math.abs(foe.orbSlowUntil-s.time-1.15)<.06,'1.25 s slow after breaking free: '+(foe.orbSlowUntil-s.time));tick(s,.3);assert.ok(!(foe.revealedUntil>s.time),'reveal ends');assert.ok(s.effects.some(e=>e.kind==='trapwire'),'not consumed');
+ tick(s,1.2);foe.x-=4.5;foe.z=-16;tick(s,.1);foe.z=-14;tick(s,.1);assert.equal(s.roundState(foe).status.tether,0,'re-arming (2 s)');foe.z=-16;tick(s,.5);foe.z=-14;tick(s,.1);assert.ok(s.roundState(foe).status.tether>0,'re-armed after 2 s');}
 {const {s,u}=setup('Cypher',['foe']);u.ability.q=1;ab(s,u,'q');const c=s.effects.find(e=>e.kind==='smoke');assert.ok(Math.abs(c.until-s.time-7.25)<.01,'Cyber Cage 7.25 s');assert.equal(c.radius,3.72,'Cyber Cage radius 3.72 m (wiki)');assert.equal(c.cyl,5,'Cyber Cage is a cylinder (half-height 5 m)');
  // hollow open-ended cylinder centred on the cage: blocks where a line crosses the wall, not inside-to-inside or down the open top
  s.effects=[{kind:'smoke',p:[0,0,-10],until:s.time+5,radius:3.72,cyl:5}];const B=(o,d,m)=>{const l=Math.hypot(...d);return smokeBlocks(s,o,d.map(n=>n/l),m);};

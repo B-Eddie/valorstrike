@@ -10,7 +10,7 @@ export const ULT={
  rocket:{speed:30,life:3,inner:4,outer:7,damage:150,min:30,arm:.05,equip:WINDUP.showstopper,window:10},/* wiki Showstopper: X equips the launcher (1.4 s), FIRE shoots the one rocket, 10 s max including the equip */
  lockdown:{windup:WINDUP.lockdown,radius:32.5,detain:8},
  quake:{delay:wf('rollingThunder'),near:8,length:32,width:18,concuss:4},/* wiki Rolling_Thunder: a 32 m x 18 m strip starting 8 m in front of Breach, concuss 4 s; client XRT2 */
- seekers:{count:3,speed:12,maxTravel:4,nearsight:3},
+ seekers:{count:3,speed:12,maxTravel:15,nearsight:3,slow:5,slowK:.4},/* wiki Seekers: 3 seekers, 15 s max lifespan, 3 s Nearsight, 5 s 60 % Slow; speed 12 m/s: project value */
  theft:{reach:18,reveals:[2,6],reveal:1.6},/* wiki Neural_Theft: max cast distance 18 m (v5.10); 1st reveal 2 s windup, 2nd reveal windup 4 s counted from the 1st (v5.10 '4 s delay between reveals'), so 6 s after the cast; client CYNT matches */
  tdf:{weapon:'Operator',ammo:5},
  rib:{window:10,protect:.5}
@@ -81,7 +81,7 @@ export function tickUlts(sim,dt){
    sim.castEvents.push({t:'ac',i:e.owner,ag:'Raze',k:'x',sub:'boom',o:[...e.p],d:[...d],p:[...e.p],ts:Math.round(sim.time*1000)});continue;}
   if(e.kind==='lockdown'&&sim.time>=e.at){sim.effects.splice(i,1);for(const v of sim.units)if(v.alive&&!v.loading&&v.team!==e.team&&Math.hypot(v.x-e.p[0],v.z-e.p[2])<e.radius&&Math.abs(v.y-e.p[1])<8){v.detainUntil=Math.max(v.detainUntil||0,sim.time+ULT.lockdown.detain);v.slowUntil=Math.max(v.slowUntil||0,sim.time+ULT.lockdown.detain);}continue;}
   if(e.kind==='quake'&&sim.time>=e.at){sim.effects.splice(i,1);const fx=-Math.sin(e.yaw),fz=-Math.cos(e.yaw),C=ULT.quake;for(const v of sim.units){if(!v.alive||v.loading||v.team===e.team||Math.abs(v.y-e.p[1])>4)continue;const dx=v.x-e.p[0],dz=v.z-e.p[2],f=dx*fx+dz*fz,sd=Math.abs(dx*fz-dz*fx);if(f>C.near&&f<C.near+C.length&&sd<C.width/2){v.concussUntil=Math.max(v.concussUntil||0,sim.time+C.concuss);v.slowUntil=Math.max(v.slowUntil||0,sim.time+C.concuss);}}continue;}
-  if(e.kind==='seeker'){const v=sim.units.find(x=>x.id===e.target);if(!v||!v.alive){sim.effects.splice(i,1);continue;}if(sim.time>=e.at){v.nearsightUntil=Math.max(v.nearsightUntil||0,sim.time+ULT.seekers.nearsight);sim.effects.splice(i,1);}else e.p=[v.x,v.y+1,v.z];continue;}
+  if(e.kind==='seeker'){const v=sim.units.find(x=>x.id===e.target);if(!v||!v.alive){sim.effects.splice(i,1);continue;}if(sim.time>=e.at){v.nearsightUntil=Math.max(v.nearsightUntil||0,sim.time+ULT.seekers.nearsight);v.seekSlowUntil=Math.max(v.seekSlowUntil||0,sim.time+ULT.seekers.slow);sim.effects.splice(i,1);}else e.p=[v.x,v.y+1,v.z];continue;}
   if(e.kind==='theft'&&sim.time>=e.at){sim.effects.splice(i,1);for(const v of sim.units)if(v.alive&&!v.loading&&v.team!==e.team)v.revealedUntil=Math.max(v.revealedUntil||0,sim.time+ULT.theft.reveal);continue;}
  }
 }

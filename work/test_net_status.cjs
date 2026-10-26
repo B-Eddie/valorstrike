@@ -14,7 +14,7 @@ const realCreate=document.createElement;document.createElement=t=>{const e=realC
 vm.runInContext('let netVulnAt=0,netTetherAt=0;'+net.slice(i,j),ctx);
 assert.deepEqual([...ctx.netStatusChips({vulnerable:0,tether:0})],[],'nothing active: no chip');assert(!els.netSt,'no element created needlessly');
 ctx.netStatusChips({vulnerable:3.6,tether:0});assert.equal(els.netSt.style.display,'block');assert.match(els.netSt.textContent,/^VULNERABLE 3\.6s$/);assert.equal(said.length,1);assert.match(said[0],/Vulnerable · taking double damage · 4 s/);
-now+=100;ctx.netStatusChips({vulnerable:3.5,tether:2.4});assert.equal(said.length,2,'vulnerable notice not repeated every round-state; tether notice once');assert.match(said[1],/tethered by Trapwire/);assert.equal(els.netSt.textContent,'VULNERABLE 3.5s · TETHERED 2.4s');
+now+=100;ctx.netStatusChips({vulnerable:3.5,tether:2.4});assert.equal(said.length,2,'vulnerable notice not repeated every round-state; tether notice once');assert.match(said[1],/Slowed by Trapwire · move 4 m away/);assert.equal(els.netSt.textContent,'VULNERABLE 3.5s · TRAPWIRE');
 now+=100;ctx.netStatusChips({vulnerable:3.4,tether:2.3});assert.equal(said.length,2);
 now+=4000;ctx.netStatusChips({vulnerable:0,tether:0});assert.equal(els.netSt.style.display,'none','chip hidden when both end');
 ctx.netStatusChips({vulnerable:4,tether:0});assert.equal(said.length,3,'a fresh Alarmbot hit notifies again');

@@ -8158,6 +8158,7 @@ const xAdd = (k, c, o) => jMat(k, () => new THREE.MeshBasicMaterial({ color: c, 
 function xKjAcc(m, s) { [0.18, -0.12].forEach((y, i) => { const b = new THREE.Mesh(xKjBand, xKjMat); b.scale.set(s * (1.06 - i * 0.02), 1, s * (1.06 - i * 0.02)); b.position.y = y * s * 2; b.raycast = () => {}; m.add(b); }); }
 const blazeGeo = new THREE.BoxGeometry(0.3, 3, 1), orbGeo = new THREE.SphereGeometry(0.25, 12, 8), zoneGeo = new THREE.CircleGeometry(2.5, 28);
 // Phoenix Hot Hands (wiki.playvalorant.com/en-us/Hot_Hands): 4 s, the fire spreads to 4.5 m over 0.75 s, then 3.25 s at full size. Server: devices.js DEV.hotHands.
+const XALB = { sight: 5.5, alert: 0.5, speed: 22.5, trig: 2, windup: 0.5, r: 3, vul: 4 }; // Alarmbot (= server devices.js DEV.alarmbot)
 const XHOT = { r: 4.5, grow: 0.75, life: 4, heal: 12.5 }; // heal: Phoenix in his own fire, 12.5 / s (server DEV.hotHands.heal)
 // Phoenix Blaze = server devices.js DEV.blaze (wiki): a straight wall of fire ALONG the aim from 1 m ahead of his feet, up to 12 m
 // (0.3 m short of a wall), 8 s, 0.8 m either side of its line burns 30 / s (allies a third) and heals Phoenix 12.5 / s, blocks
@@ -8566,9 +8567,14 @@ function okTick(dt) {
     if (n.t <= XNANO.active - XNANO.delay) { bots.forEach((b) => b.alive && Math.hypot(b.g.position.x - n.p.x, b.g.position.z - n.p.z) < XNANO.r && jHit(b, XNANO.dps * dt, "Nanoswarm")); xFFArea("You", false, "Nanoswarm", XNANO.dps * dt, (x, z) => Math.hypot(x - n.p.x, z - n.p.z) < XNANO.r); }
     if (n.t > 0) return true; scene.remove(n.m); return false;
   });
-  if (J.ab) {
-    const e = new V(J.ab.p.x, 0.5, J.ab.p.z), hit = bots.filter((b) => b.alive && Math.hypot(b.g.position.x - e.x, b.g.position.z - e.z) < 6 && los(e, new V(b.g.position.x, 1, b.g.position.z)));
-    if (hit.length) { hit.forEach((b) => { b.vul = 4; drTag(b); }); say("Alarmbot · " + hit.length + " Vulnerable 4 s", 900); blip(1000, 0.3, "square", 0.15); SFX.ab("alarm", e); const m = jM(smokeGeo, fireMat(0xf2c230, 0.25)); m.scale.setScalar(1.5); m.position.copy(e); jFx(m, 0.5); okRm(J.ab); J.ab = null; }
+  if (J.ab) { // XALB (= server DEV.alarmbot, wiki v13.00): 5.5 m detection, 0.5 s alert, runs at 22.5 m/s, 0.5 s windup within 2 m, Vulnerable 4 s in 3 m
+    const A = J.ab, e = new V(A.p.x, 0.5, A.p.z), sees = (b) => b.alive && Math.hypot(b.g.position.x - e.x, b.g.position.z - e.z) < XALB.sight && los(e, new V(b.g.position.x, 1, b.g.position.z));
+    if (A.wu == null) { if (!A.tg || !A.tg.alive) { A.tg = bots.filter(sees).sort((a, b) => Math.hypot(a.g.position.x - e.x, a.g.position.z - e.z) - Math.hypot(b.g.position.x - e.x, b.g.position.z - e.z))[0] || null; A.al = XALB.alert; }
+      if (A.tg) { if (A.al > 1e-9) A.al -= dt; else { const dx = A.tg.g.position.x - A.p.x, dz = A.tg.g.position.z - A.p.z, d = Math.hypot(dx, dz);
+        if (d < XALB.trig) A.wu = XALB.windup; else { const st = Math.min(d, XALB.speed * dt); A.p.x += (dx / d) * st; A.p.z += (dz / d) * st; } } } }
+    else A.wu -= dt;
+    const hit = A.wu != null && A.wu <= 1e-9 ? bots.filter((b) => b.alive && Math.hypot(b.g.position.x - e.x, b.g.position.z - e.z) < XALB.r && los(e, new V(b.g.position.x, 1, b.g.position.z))) : [];
+    if (A.wu != null && A.wu <= 1e-9) { hit.forEach((b) => { b.vul = XALB.vul; drTag(b); }); if (hit.length) say("Alarmbot · " + hit.length + " Vulnerable 4 s", 900); blip(1000, 0.3, "square", 0.15); SFX.ab("alarm", e); const m = jM(smokeGeo, fireMat(0xf2c230, 0.25)); m.scale.setScalar(1.5); m.position.copy(e); jFx(m, 0.5); okRm(J.ab); J.ab = null; }
   }
   if (J.tur) {
     const T = J.tur; if (T.hp <= 0) { okRm(T); J.tur = null; say("Turret destroyed", 800); blip(200, 0.3, "square", 0.12); }
@@ -8777,8 +8783,8 @@ function rsTick(dt) {
     s.t -= dt; const p = s.m.position;
     if (!s.tg || !s.tg.alive) s.tg = bots.filter((b) => b.alive).sort((a, b) => a.g.position.distanceTo(p) - b.g.position.distanceTo(p))[0] || null;
     if (s.tg) { const q = new RV(s.tg.g.position.x, 1.2, s.tg.g.position.z), v = q.sub(p), l = v.length();
-      if (l < 1) { s.tg.blind = Math.max(s.tg.blind || 0, 3); s.tg.ns = 3; s.tg.chs = Math.max(s.tg.chs || 0, 5); say(s.tg.name + " nearsighted 3 s · slowed 5 s", 800); blip(500, 0.2, "sine", 0.12); scene.remove(s.m); return false; }
-      p.addScaledVector(v, Math.min(1, (10 * dt) / l)); }
+      if (l < 1) { s.tg.blind = Math.max(s.tg.blind || 0, 3); s.tg.ns = 3; s.tg.sks = Math.max(s.tg.sks || 0, 5); say(s.tg.name + " nearsighted 3 s · slowed 60 % 5 s", 800); /* wiki Seekers: 3 s Nearsight, 5 s 60 % Slow (= server ULT.seekers) */ blip(500, 0.2, "sine", 0.12); scene.remove(s.m); return false; }
+      p.addScaledVector(v, Math.min(1, (12 * dt) / l)); } // 12 m/s (server ULT.seekers.speed)
     if (s.t > 0) return true; scene.remove(s.m); return false;
   });
   bots.forEach((b) => { if (b.cnc > 0) b.cnc -= dt; if (b.ns > 0) b.ns -= dt; });
@@ -8813,7 +8819,7 @@ const XAB = ["Boom Bot", "Blast Pack", "Paint Shells", "Showstopper", "Trailblaz
 { const k0 = kfeed; kfeed = function (k, v, hs, w) { k0(k, v, hs, w); if (XAB.includes(w)) { const d = $("feed").firstElementChild, s = d && d.querySelector(".kf__w"); if (s) s.classList.add("x-abn"); } }; }
 { const f0 = rsFire; rsFire = function () { return bcFire() || f0(); }; }
 { const s0 = sgSlow; sgSlow = function (p) { let k = s0(p); if (p === player) return k;
-  if (BC.sf.some((f) => Math.hypot(p.x - f.p.x, p.z - f.p.z) < (f.r || 3.5))) k *= 0.5; if (bots.some((b) => b.g.position === p && b.chs > 0)) k *= 0.5; return k; }; }
+  if (BC.sf.some((f) => Math.hypot(p.x - f.p.x, p.z - f.p.z) < (f.r || 3.5))) k *= 0.5; if (bots.some((b) => b.g.position === p && b.chs > 0)) k *= 0.5; if (bots.some((b) => b.g.position === p && b.sks > 0)) k *= 0.4; return k; }; }
 // one shared status gate for bot movement and shooting: slow zones/Trademark (sgSlow), daze, knock-up, blind, detain
 function botK(b) { if (!b || b.det > 0) return 0; let k = sgSlow(b.g.position); if (b.cnc > 0) k *= 0.6; if (b.ku > 0) k *= 0.3; if (b.blind > 0) k *= 0.75; return k; }
 function botCanShoot(b) { return !(b.blind > 0) && !(b.det > 0) && !(b.cnc > 0) && !(b.ku > 0); }
@@ -9031,7 +9037,7 @@ function bcTick(dt) {
     if (!c) return true; bcTmField(c[0], c[1]); scene.remove(t.m); say("Trademark · " + c[2].name + " · slow field 4 s", 900); return false;
   });
   BC.sf = BC.sf.filter((f) => { f.t -= dt; if (f.tm && player.hp > 0 && Math.hypot(player.x - f.p.x, player.z - f.p.z) < f.r) BC.pst = Math.max(BC.pst || 0, performance.now() + 200); /* Trademark field: the player too */ f.m.material.opacity = 0.35 * Math.min(1, f.t); if (f.t > 0) return true; jRel(f.m); return false; });
-  bots.concat(allies.filter(Boolean)).forEach((b) => { if (b.chs > 0) b.chs -= dt; if (b.ku > 0) { b.ku -= dt; b.kg = b.kg != null ? b.kg : b.g.position.y; b.g.position.y = b.ku > 0 ? b.kg + Math.sin((1 - b.ku / 0.7) * Math.PI) * 1.5 : b.kg; if (b.ku <= 0) b.kg = null; } else if (b.g && b.xk == null && b.xj == null) { const q = b.g.position; q.y = groundAt(q.x, q.z, 0.3, q.y + 0.01); } }); // bots stand on box tops / ledges like the player (same floor lookup)
+  bots.concat(allies.filter(Boolean)).forEach((b) => { if (b.chs > 0) b.chs -= dt; if (b.sks > 0) b.sks -= dt; if (b.ku > 0) { b.ku -= dt; b.kg = b.kg != null ? b.kg : b.g.position.y; b.g.position.y = b.ku > 0 ? b.kg + Math.sin((1 - b.ku / 0.7) * Math.PI) * 1.5 : b.kg; if (b.ku <= 0) b.kg = null; } else if (b.g && b.xk == null && b.xj == null) { const q = b.g.position; q.y = groundAt(q.x, q.z, 0.3, q.y + 0.01); } }); // bots stand on box tops / ledges like the player (same floor lookup)
   const tb = !!(J.dr && J.dr.tb); TB.visible = tb; $("xDr").classList.toggle("tb", tb);
   if (tb) { TB.position.set(J.dr.x, 0, J.dr.z); TB.rotation.y = yaw; const s = performance.now() / 70; TB.userData.legs.forEach((l, i) => l.rotation.x = Math.sin(s + (i % 3 ? Math.PI : 0)) * 0.6); }
   bcVm();
@@ -9056,7 +9062,7 @@ function cyWire(cx, cz, ax, az, own) { // wire across (ax,az) between the neares
   const end = (s) => { for (let r = 0.25; r <= 8; r += 0.25) if (blocked(cx + ax * s * r, cz + az * s * r, 0.05, 0)) return Math.max(0.3, r - 0.15); return 2.5; };
   const r1 = end(1), r2 = end(-1), A = { x: cx + ax * r1, z: cz + az * r1 }, B = { x: cx - ax * r2, z: cz - az * r2 };
   const m = new THREE.Mesh(xG("Box", 0.03, 0.03, 1), fireMat(0x3fd0c0, 0.75)); m.scale.z = r1 + r2; m.position.set((A.x + B.x) / 2, 0.35, (A.z + B.z) / 2); m.rotation.y = Math.atan2(ax, az); scene.add(m);
-  const W = { a: A, b: B, m, an: [], hp: 20, own, ck: 0, arm: XAB_WIND.trapwire }; // arms 0.7 s after placement (wiki windup)
+  const W = { a: A, b: B, m, an: [], hp: 20, own, ck: 0, arm: XTRAP.deploy, trip: null }; // live 1.5 s after placement (wiki deploy time)
   [A, B].forEach((p) => { const o = new THREE.Mesh(xG("Box", 0.2, 0.2, 0.2), fireMat(0xe8e8e4, 0.95)); o.position.set(p.x, 0.35, p.z); o.userData.cyw = W; scene.add(o); W.an.push(o); });
   BC.cw.push(W); return W;
 }
@@ -9069,20 +9075,33 @@ function cyTick(dt) {
   arr.length = k; BC.cw = arr;
 }
 const cyTmpV = new RV();
+// Trapwire (wiki v11.08 / v13.00, = server devices.js DEV.trapwire): 1.5 s deploy; a crossing enemy is Slowed 50 % at once, 0.7 s
+// windup, then (wire still standing) zapped 5 and Revealed while within 4 m of where they crossed; breaking free leaves a 1.25 s slow
+// and the wire re-arms 2 s later. No Tether / Concuss since v11.08; the wire is not used up.
+const XTRAP = { deploy: 1.5, windup: XAB_WIND.trapwire, leave: 4, slow: 1.25, zap: 5, rearm: 2 };
+function cyPos(v) { return v === player ? player : v && v.g ? v.g.position : null; }
+function cySlow(v, t) { if (v === player) BC.pst = Math.max(BC.pst || 0, performance.now() + t * 1000); else v.chs = Math.max(v.chs || 0, t); }
 function cyKeep(W, dt) {
-  if (W.arm > 0) { W.arm -= dt; return true; }
+  if (W.trip) { const v = W.trip, q = cyPos(v), live = v === player ? player.hp > 0 : v.alive;
+    if (!live || !q || Math.hypot(q.x - W.tp.x, q.z - W.tp.z) > XTRAP.leave) { if (live) cySlow(v, XTRAP.slow); if (J.rv.indexOf(v) >= 0) J.rvT = Math.min(J.rvT, 0.01); W.trip = null; W.arm = XTRAP.rearm; return true; } // broke free / died
+    cySlow(v, 0.2); W.fire -= dt;
+    if (W.fire <= 0 && !W.zap) { W.zap = 1; if (v === player) { hurt(player, XTRAP.zap, W.own ? W.own.name : "Cypher"); say("Revealed by Trapwire · move away or shoot the anchor", 1000); }
+      else if (bots.indexOf(v) >= 0) { jHit(v, XTRAP.zap, "Trapwire"); if (v.alive) cyReveal([v], 30); say("Trapwire · " + v.name + " revealed", 900); } else xBotDmg(v, XTRAP.zap, W.own ? W.own.name : "Cypher", "Trapwire"); }
+  }
+  else if (W.arm > 0) { W.arm -= dt; return true; }
   const mine = !W.own || allies.indexOf(W.own) >= 0;
   if (mine) {
-    let b = null; for (let i = 0; i < bots.length; i++) { const o = bots[i]; if (o.alive && o.g && cyD(W, o.g.position.x, o.g.position.z) < 0.5) { b = o; break; } }
-    if (b) { b.cnc = Math.max(b.cnc || 0, 2); b.chs = Math.max(b.chs || 0, 2); cyReveal([b], 2); say("Trapwire · " + b.name + " revealed, tethered 2 s", 900); blip(300, 0.3, "square", 0.12); cyRm(W); return false; }
+    if (!W.trip) { let b = null; for (let i = 0; i < bots.length; i++) { const o = bots[i]; if (o.alive && o.g && cyD(W, o.g.position.x, o.g.position.z) < 0.5) { b = o; break; } }
+      if (b) { W.trip = b; W.tp = { x: b.g.position.x, z: b.g.position.z }; W.fire = XTRAP.windup; W.zap = 0; cySlow(b, 0.2); say("Trapwire · " + b.name + " slowed", 700); blip(300, 0.3, "square", 0.12); } }
     W.ck -= dt; if (W.ck > 0) return true; W.ck = 0.25; // enemies that see an anchor shoot it (20 HP)
     let n = 0; for (let i = 0; i < bots.length; i++) { const o = bots[i]; if (o.alive && o.g && Math.hypot(o.g.position.x - W.a.x, o.g.position.z - W.a.z) < 15 && los(cyTmpV.set(o.g.position.x, o.g.position.y + 1.5, o.g.position.z), W.an[0].position)) n++; }
-    if (n) { W.hp -= 5 * n; if (W.hp <= 0) { say("Trapwire anchor shot", 800); cyRm(W); return false; } }
+    if (n) { W.hp -= 5 * n; if (W.hp <= 0) { say("Trapwire anchor shot", 800); if (W.trip && J.rv.indexOf(W.trip) >= 0) J.rvT = Math.min(J.rvT, 0.01); cyRm(W); return false; } }
     return true;
   }
-  if (player.hp > 0 && cyD(W, player.x, player.z) < 0.5) { BC.pst = performance.now() + 2000; say("Revealed and tethered by Trapwire · shoot the anchor", 1000); feed("Cypher ▸ Trapwire triggered"); blip(300, 0.3, "square", 0.12); cyRm(W); return false; }
+  if (W.trip) return true;
+  if (player.hp > 0 && cyD(W, player.x, player.z) < 0.5) { W.trip = player; W.tp = { x: player.x, z: player.z }; W.fire = XTRAP.windup; W.zap = 0; cySlow(player, 0.2); say("Slowed by Trapwire · shoot the anchor or move away", 1000); feed("Cypher ▸ Trapwire triggered"); blip(300, 0.3, "square", 0.12); return true; }
   let t = null; for (let i = 0; i < allies.length; i++) { const o = allies[i]; if (o && o.alive && o.g && cyD(W, o.g.position.x, o.g.position.z) < 0.5) { t = o; break; } }
-  if (t) { t.cnc = Math.max(t.cnc || 0, 2); feed("Cypher ▸ Trapwire triggered"); cyRm(W); return false; }
+  if (t) { W.trip = t; W.tp = { x: t.g.position.x, z: t.g.position.z }; W.fire = XTRAP.windup; W.zap = 0; cySlow(t, 0.2); feed("Cypher ▸ Trapwire triggered"); }
   return true;
 }
 // Neural Theft (server ults.js ULT.theft, wiki Neural_Theft): corpse within 18 m, reveals at 2 s and 6 s (2nd reveal 4 s after the 1st), 1.6 s each;
@@ -9104,7 +9123,7 @@ function cyKey(code) {
     if (J.c < 1 || J.cd.c > 0) return no(); J.c--; J.cd.c = 0.6;
     const o = pEye(), d = jAim(); ray.set(o, d); ray.far = 12; const h = ray.intersectObjects(solids)[0], ok = h && h.point && typeof h.point.x === "number";
     let cx = ok ? h.point.x - fx * 0.8 : P.x + fx * 4, cz = ok ? h.point.z - fz * 0.8 : P.z + fz * 4; if (blocked(cx, cz, 0.3, 0)) { cx = P.x + fx * 1.5; cz = P.z + fz * 1.5; }
-    cyWire(cx, cz, -fz, fx, null); say("Trapwire set · reveals and tethers the first enemy across", 900); blip(620, 0.12, "triangle", 0.12);
+    cyWire(cx, cz, -fz, fx, null); say("Trapwire set · slows and reveals the first enemy across", 900); blip(620, 0.12, "triangle", 0.12);
   }
   if (code === "KeyQ") {
     if (J.q < 1 || J.cd.q > 0) return no(); J.q--; J.cd.q = 0.6;
@@ -9324,7 +9343,7 @@ function enRvFx() { // brief red outline/vignette pulse + REVEALED warning under
 }
 // ---- bot kits: the same charges, credit costs and ult points as KITS. 5v5: bots buy charges in the buy phase with their own credits
 // (FV.bs[n].kc, unused ones carry over if they survived), signature E 1 free per round (Reyna: Devour/Dismiss). Retake / Spike Rush / TDM: full kit.
-const XBK_RC = { Sage: 45, Sova: 60, Skye: 60, Omen: 40 }; // signature recharge (s), as the player's kit
+const XBK_RC = { Sage: 45, Sova: 50, Skye: 50, Omen: 40 }; // signature recharge (s), as the player's kit
 const XBK_KR = { Phoenix: 1, Raze: 1, Jett: 1 }; // signature back after 2 kills, as jKill
 function xBAg(b) { let a = null; try { a = xAg(b); } catch (e) {} if (a && KITS[a]) return a; try { a = xAgOf(b && b.name); } catch (e) {} return KITS[a] ? a : null; }
 function xBFull(a) { const M = (KITS[a] || KITS.Jett).mx; return { c: M.c || 0, q: M.q || 0, e: M.e || 1, tk: 0 }; }
@@ -9568,7 +9587,7 @@ function jKey(code) {
 }
 function jThrow() {
   if (player.hp <= 0 || J.cd.x > 0 || (mode === "five" && FV.buy > 0)) return;
-  J.cd.x = 0.33; J.bs--; kick = 1; SFX.ab("bsThrow");
+  J.cd.x = 1 / 6; J.bs--; kick = 1; SFX.ab("bsThrow"); // wiki Blade_Storm: Single Fire 6 per second (= server weapons["Blade Storm"].fireRate)
   ray.setFromCamera(XC0, camera); ray.far = 200;
   const hit = ray.intersectObjects(solids.concat(bots.filter((b) => b.alive).flatMap((b) => [b.body, b.head])))[0];
   if (hit && hit.object.userData.bot) { const b = hit.object.userData.bot, hs = !!hit.object.userData.head; hurt(b, hs ? 150 : 50); if (b.hp <= 0.001) kill(b, hs, 0, "Blade Storm"); else flash(b); }
@@ -14094,7 +14113,7 @@ const XR_ACT=[];XR_ACT.max=4;
 // ---- TRUSTED ONLINE SERVER ----
 let netDetainAt=0; // Killjoy Lockdown detain notice (server status.detain)
 let netVulnAt=0,netTetherAt=0; // Alarmbot Vulnerable / Trapwire tether (server status.vulnerable / status.tether)
-function netStatusChips(st){const now=performance.now();if(st.vulnerable>0&&!(netVulnAt>now))say('Vulnerable · taking double damage · '+Math.ceil(st.vulnerable)+' s',1200);netVulnAt=st.vulnerable>0?now+st.vulnerable*1000:0;if(st.tether>0&&!(netTetherAt>now))say('Revealed and tethered by Trapwire · '+Math.ceil(st.tether)+' s',1200);netTetherAt=st.tether>0?now+st.tether*1000:0;const on=[];if(st.vulnerable>0)on.push('VULNERABLE '+st.vulnerable.toFixed(1)+'s');if(st.tether>0)on.push('TETHERED '+st.tether.toFixed(1)+'s');let el=document.getElementById('netSt');if(!el&&!on.length)return on;if(!el){el=document.body.appendChild(document.createElement('div'));el.id='netSt';el.style.cssText='pointer-events:none;position:fixed;left:50%;bottom:22%;transform:translateX(-50%);z-index:61;padding:3px 10px;background:rgba(255,70,85,.8);color:#fff;font:600 12px var(--sans,sans-serif);letter-spacing:.12em';}el.textContent=on.join(' · ');el.style.display=on.length?'block':'none';return on;}
+function netStatusChips(st){const now=performance.now();if(st.vulnerable>0&&!(netVulnAt>now))say('Vulnerable · taking double damage · '+Math.ceil(st.vulnerable)+' s',1200);netVulnAt=st.vulnerable>0?now+st.vulnerable*1000:0;if(st.tether>0&&!(netTetherAt>now))say('Slowed by Trapwire · move 4 m away or shoot the anchor',1200);netTetherAt=st.tether>0?now+st.tether*1000:0;const on=[];if(st.vulnerable>0)on.push('VULNERABLE '+st.vulnerable.toFixed(1)+'s');if(st.tether>0)on.push('TRAPWIRE');let el=document.getElementById('netSt');if(!el&&!on.length)return on;if(!el){el=document.body.appendChild(document.createElement('div'));el.id='netSt';el.style.cssText='pointer-events:none;position:fixed;left:50%;bottom:22%;transform:translateX(-50%);z-index:61;padding:3px 10px;background:rgba(255,70,85,.8);color:#fff;font:600 12px var(--sans,sans-serif);letter-spacing:.12em';}el.textContent=on.join(' · ');el.style.display=on.length?'block':'none';return on;}
 // Browser prediction is display only. The server consumes controls and owns
 // positions, collision, guns, damage, kills and results. Legacy P2P is not used.
 var netSkyeState=null,netReyna=null,netChannel=null;
@@ -14235,7 +14254,7 @@ function netShowstopperSync(st){if(typeof RS==='undefined')return;const now=perf
 // The rocket click goes through rsFire straight from the mouse / touch handlers (never shoot()), so online it sent no fire at
 // all: a click that launches the rocket locally is one pending fire pulse here.
 {const netRsFire0=rsFire;rsFire=function(){const ss=typeof RS!=='undefined'&&RS.ss,r=netRsFire0.apply(this,arguments);if(ss&&!RS.ss&&J.pick==='Raze'&&NET.socket&&MP.st==='game'){NET.firePulse=performance.now()+80;NET.fireHeavy=0;NET.firePend=1;NET.firePendH=0;NET.ssFiredAt=performance.now();}return r;};}
-const netRS0=mpCliRS;mpCliRS=function(m){netRS0(m);if(NET.socket){netChannel=m.channel||null;if(J.pick==='Reyna')netReynaSync(m.reyna);if(J.pick==='Raze'&&m.status)netShowstopperSync(m.status);}if(NET.socket&&Array.isArray(m.rv)){const t=performance.now();for(const r of m.rv){const b=Array.isArray(r)&&bots.find(x=>x.nid===r[0]);if(b)b.netRvUntil=t+400;}}if(NET.socket&&m.status){const st=m.status;if(st.detain>0&&!(netDetainAt>performance.now())){netDetainAt=performance.now()+st.detain*1000;say('Detained · '+Math.ceil(st.detain)+' s',1200);}if(st.concuss>0){if(xCU<=performance.now())xConStart(st.concuss*1000);else xCU=performance.now()+st.concuss*1000;player.tagT=Math.max(player.tagT||0,st.concuss);player.tagK=.35;}if(st.nearsight>0)pNs(Math.min(3,st.nearsight));netStatusChips(st);if(st.slow>0){player.tagT=Math.max(player.tagT||0,st.slow);player.tagK=.35;}else if(st.oslow>0){/* Sage Slow Orb field: half speed (server SLOW_ORB.factor), never weaker than a slow already on */if(!(player.tagT>0)||!(player.tagK<=.5)){player.tagK=.5;player.tagS=0;}player.tagT=Math.max(player.tagT||0,st.oslow);}const el=document.getElementById('netBlind')||document.body.appendChild(Object.assign(document.createElement('div'),{id:'netBlind'}));el.style.cssText='pointer-events:none;position:fixed;inset:0;z-index:110;background:#fff;opacity:'+Math.min(1,st.blind/1.5); }if(NET.socket&&m.ab){for(const k of ['c','q','e','ult'])if(Number.isFinite(m.ab[k]))J[k]=m.ab[k];netChamberAnchor(m.ab,m.tm||0);if(J.pick==='Jett'){const was=J.bsOn;J.bs=Math.max(0,m.ab.blades||0);J.bsOn=!!m.ab.bladesActive;if(J.bsOn&&!was)swapW('knife');if(was&&!J.bsOn&&rw==='knife')swapW(FV.pri?'pri':'pis');}if(J.pick==='Skye')netSkyeState={pool:Math.max(0,Math.min(100,m.ab.regrowthPool||0)),active:!!m.ab.regrowthActive,used:!!m.ab.regrowthUsed};if(J.pick==='Breach')J.cd.e=Math.max(0,(m.ab.cool?.e||0)-(m.tm||0),(m.ab.rechargeAt||0)-(m.tm||0));}};
+const netRS0=mpCliRS;mpCliRS=function(m){netRS0(m);if(NET.socket){netChannel=m.channel||null;if(J.pick==='Reyna')netReynaSync(m.reyna);if(J.pick==='Raze'&&m.status)netShowstopperSync(m.status);}if(NET.socket&&Array.isArray(m.rv)){const t=performance.now();for(const r of m.rv){const b=Array.isArray(r)&&bots.find(x=>x.nid===r[0]);if(b)b.netRvUntil=t+400;}}if(NET.socket&&m.status){const st=m.status;if(st.detain>0&&!(netDetainAt>performance.now())){netDetainAt=performance.now()+st.detain*1000;say('Detained · '+Math.ceil(st.detain)+' s',1200);}if(st.concuss>0){if(xCU<=performance.now())xConStart(st.concuss*1000);else xCU=performance.now()+st.concuss*1000;player.tagT=Math.max(player.tagT||0,st.concuss);player.tagK=.35;}if(st.nearsight>0)pNs(Math.min(3,st.nearsight));netStatusChips(st);if(st.slow>0){player.tagT=Math.max(player.tagT||0,st.slow);player.tagK=.35;}else if(st.sslow>0){/* Skye Seekers: 60 % Slow (server seekSlowUntil, wiki) */if(!(player.tagT>0)||!(player.tagK<=.4)){player.tagK=.4;player.tagS=0;}player.tagT=Math.max(player.tagT||0,st.sslow);}else if(st.oslow>0){/* Sage Slow Orb field: half speed (server SLOW_ORB.factor), never weaker than a slow already on */if(!(player.tagT>0)||!(player.tagK<=.5)){player.tagK=.5;player.tagS=0;}player.tagT=Math.max(player.tagT||0,st.oslow);}const el=document.getElementById('netBlind')||document.body.appendChild(Object.assign(document.createElement('div'),{id:'netBlind'}));el.style.cssText='pointer-events:none;position:fixed;inset:0;z-index:110;background:#fff;opacity:'+Math.min(1,st.blind/1.5); }if(NET.socket&&m.ab){for(const k of ['c','q','e','ult'])if(Number.isFinite(m.ab[k]))J[k]=m.ab[k];netChamberAnchor(m.ab,m.tm||0);if(J.pick==='Jett'){const was=J.bsOn;J.bs=Math.max(0,m.ab.blades||0);J.bsOn=!!m.ab.bladesActive;if(J.bsOn&&!was)swapW('knife');if(was&&!J.bsOn&&rw==='knife')swapW(FV.pri?'pri':'pis');}if(J.pick==='Skye')netSkyeState={pool:Math.max(0,Math.min(100,m.ab.regrowthPool||0)),active:!!m.ab.regrowthActive,used:!!m.ab.regrowthUsed};if(J.pick==='Breach')J.cd.e=Math.max(0,(m.ab.cool?.e||0)-(m.tm||0),(m.ab.rechargeAt||0)-(m.tm||0));}};
 const netHud0=mpHud;mpHud=function(){netHud0();const h=mpEl('xMpHud');if(h&&NET.socket&&MP.st==='game')h.textContent='ONLINE · SERVER · '+MP.ping+' ms';};
 const netStyle=document.createElement('style');netStyle.textContent='.x-mphud{inset:auto!important;bottom:72px!important;left:12px!important;width:auto!important;height:auto!important;max-height:24px;transform:none!important;font-size:10px;opacity:.75}#feed .kf__n{max-width:145px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#feed .kf__n.kf__n--at{max-width:300px}/* hud_b5: an ally death row ("SAGE DIED AT ATTACKER SIDE") was cut at the 145 px name cap with no ellipsis (flex box) */';document.head.append(netStyle);
 const netRsSl0=rsSl;rsSl=function(u){const rows=netRsSl0(u);if(NET.socket&&MP.st==='game'&&J.pick==='Skye'&&netSkyeState){const a=netSkyeState;rows[0]=['jC',J.c>0||a.used&&a.pool>0,a.active?Math.ceil(a.pool)+' HP':a.used?(a.pool>0?Math.ceil(a.pool)+' HP · ready':'Spent'):String(J.c),a.used?1-a.pool/100:0];}return rows;};
@@ -14317,7 +14336,7 @@ const netSgSl0=sgSl;sgSl=function(u,cq){if(!(NET.socket&&J.pick==='Reyna'&&netRe
 
 
 // Throw intent carries no damage, victim, position or remaining-knife claims.
-const netThrow0=jThrow;jThrow=function(){if(!(NET.socket&&MP.st==='game'&&MP.m5))return netThrow0.apply(this,arguments);if(!running||player.hp<=0||FV.buy>0||!J.bsOn||J.bs<1||J.cd.x>0)return;J.cd.x=.33;netSend({t:'blade'});kick=1;SFX.ab('bsThrow');};
+const netThrow0=jThrow;jThrow=function(){if(!(NET.socket&&MP.st==='game'&&MP.m5))return netThrow0.apply(this,arguments);if(!running||player.hp<=0||FV.buy>0||!J.bsOn||J.bs<1||J.cd.x>0)return;J.cd.x=1/6;/* server Blade Storm fireRate 6 (wiki) */netSend({t:'blade'});kick=1;SFX.ab('bsThrow');};
 
 // ---- END TRUSTED ONLINE SERVER ----
 
