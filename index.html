@@ -3361,7 +3361,7 @@ function shoot(hv) {
     if (ammo <= 0) { SFX.empty(); if (rsv > 0 && S.autoReload !== false) { reloading = rt; SFX.reload(); } fireHeld = false; updHud(); return; }
     ammo--; if (ammo === 0 && rsv > 0 && S.autoReload !== false) { reloading = xRT(); setTimeout(() => SFX.reload(), 150); }
     if (ammo > 0 && ammo * 5 <= MAG()) SFX.low();
-    fcd = 1 / xRate(W) / (jOn() && J.emp > 0 ? 1.1 : 1) * (xCU > performance.now() ? 1.25 : 1); // Empress +10 % (v11.08) / concussed -20 %, as the server since = 0; body = W.body; head = W.head;
+    fcd = 1 / xRate(W) / (jOn() && J.emp > 0 ? 1.1 : 1) * (xCU > performance.now() ? 1.25 : 1); since = 0; body = W.body; head = W.head; // Empress +10 % (v11.08) / concussed -20 %, as the server (hk-36: 74a5da4 had put since / body / head inside this comment, so since never reset on a gun shot)
     kick = W.semi ? 1 : Math.min(1, 0.45 + W.rec * 0.5); vmFire(); SFX.gun(w);
     // first shot exact when still; spread grows with spray, moving and jumping; recoil climbs
     gFire(ray.ray.direction, w, W);
