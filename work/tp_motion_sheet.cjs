@@ -29,6 +29,12 @@ const SC={
  slope:{T:1,pre:.3,ff:(x,z)=>.25*x,f:(t)=>({x:0,z:t<.3?0:3.24*(t-.3),y:null})},
  lookup:{T:.6,pre:.6,pit:.6,f:(t)=>({x:0,z:5.4*t,y:0})},
  lookdown:{T:.6,pre:.6,pit:-.6,f:(t)=>({x:0,z:5.4*t,y:0})},
+ // anim-jump-3: crouched still (stance), crouch-walk then stop (steps into the stance), a crouch from standing, landing a
+ // strafe jump / a run-jump (stride picked up mid-cycle, no straddle)
+ crouchidle:{T:.8,pre:.6,cr:1,f:(t)=>({x:0,z:0,y:0})},
+ crouchstop:{T:1.2,pre:.6,cr:1,f:(t)=>({x:0,z:2.0*Math.min(t,.6)+(t>.6?Math.min(.05,2*(t-.6)/2):0),y:0})},
+ landstrafe:{T:.64,pre:1.28,f:(t)=>({x:5.4*t,z:0,y:arc(t-.8)})},
+ landrun:{T:.64,pre:1.28,f:(t)=>({x:0,z:5.4*t,y:arc(t-.8)})},
 };
 function stairs(x,z){return z<1?0:Math.min(8,Math.floor((z-1)/.3)+1)*.2;} // 0.2 m rise / 0.3 m run (VALORANT stairs ~0.2-0.25 m)
 function accDist(t){if(t<=0)return 0;const a=5.4/.288;return t<.288?.5*a*t*t:.5*a*.288*.288+5.4*(t-.288);}

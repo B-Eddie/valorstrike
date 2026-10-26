@@ -64,6 +64,12 @@ var XUG = { stand: { b0: 0.6, b1: 0.26, s0: 1.5, s1: 5, c0: 1.6, ck: 0.3, D: 0.8
   // skimming the floor, no heel kick, almost no bob, the pelvis held 7 cm low on soft knees (which is also what lets the leg
   // reach a full stance at 3.2 m/s); a little slower steps than the run (3.05 vs 3.3 steps/s). Weighted in over 1.8-2.6 m/s and out over 4.2-4.9 m/s (the slowest run, Odin / Operator, is 5.13).
   walk: { a0: 1.8, a1: 2.6, z0: 4.2, z1: 4.9, duty: 0.4, c0: 1.3, ck: 0.45, D: 0.85, h: 0.075, drop: 0.07, bob: 0.008, back: 0.06, r: 0.1 },
+  // crouch stance (VALORANT third person: an athletic crouch, left foot ahead, right foot back on its ball, chest up over the
+  // hips with the rifle level - the retargeted Crouch_Idle_Loop is a feet-together squat hunched over the knees): standing
+  // still, the feet stagger front / back (m) and a little wider, the back heel lifts (rad, ankle raised so the toe stays on the
+  // floor), and xUgTorso straightens the spine (up, rad; the crouch height pass then lowers the hips so the head keeps its
+  // 0.45 m drop). Crouch-walking keeps the side-by-side gait.
+  crouchPose: { front: 0, back: 0.04, out: 0.03, heel: 0.5, lift: 0.05, up: 0.32 },
   settle: { dur: 0.12, h: 0.05, d: 0.08, yaw: 0.6 }, minSp: 0.4, reach: 0.78, fade: 12,
   // standing aim yaw: the hips stay while the aim turns, up to max rad, then turn after it (rate /s) and the feet step round
   lag: { max: 0.75, cap: 0.78, rate: 12 },
@@ -92,7 +98,7 @@ function xUgSetup(M) {
   G.IK = { ik: Array.from({ length: 9 }, () => new THREE.Vector3()), q: Array.from({ length: 2 }, () => new THREE.Quaternion()) };
   G.rest = new THREE.Vector3(); G.w = 0; G.moving = false; G.ok = true; return G;
 }
-function xUgReset(G) { if (G && G.f) for (const f of G.f) f.set = false; }
+function xUgReset(G) { if (G && G.f) { for (const f of G.f) f.set = false; G.moving = false; G.fresh = true; } }
 function xUgEase(u) { return u * u * (3 - 2 * u); }
 function xUgPose(M, dt) {
   const X = M.sx; if (!X || !X.sc || !M.valorant || M.dead || X.dd) return; const G = X.ug || xUgSetup(M); if (!G.ok) return;
@@ -105,8 +111,14 @@ function xUgPose(M, dt) {
   // homes: the standing pose's feet (after the mixer, contact and crouch passes); moving, side by side under the hips
   const rest = [G.legs[0].hand.getWorldPosition(V[3]), G.legs[1].hand.getWorldPosition(V[4])], mv = sp > XUG.minSp;
   const fm = ((rest[0].x - root.x) * fwd.x + (rest[0].z - root.z) * fwd.z + (rest[1].x - root.x) * fwd.x + (rest[1].z - root.z) * fwd.z) / 2, al = Math.min(1, sp / 1.5);
-  const home = (i, out) => { const r = rest[i], o = (r.x - root.x) * fwd.x + (r.z - root.z) * fwd.z; return out.copy(r).addScaledVector(fwd, (fm - o) * al).addScaledVector(V[10].set(vel.x, 0, vel.z), -P.back / Math.max(0.5, sp)); }; // stance centred a little behind the hip in a run (the foot lands under the body, pushes off behind)
+  const C = XUG.crouchPose, stg = cw * (1 - al) * (G.w > 0.01 ? 1 : 0);
+  const home = (i, out) => { const r = rest[i], o = (r.x - root.x) * fwd.x + (r.z - root.z) * fwd.z; return out.copy(r).addScaledVector(fwd, (fm - o) * al + (i ? -C.back : C.front) * stg).addScaledVector(left, (i ? -C.out : C.out) * stg).addScaledVector(V[10].set(vel.x, 0, vel.z), -P.back / Math.max(0.5, sp)); }; // stance centred a little behind the hip in a run (the foot lands under the body, pushes off behind)
   for (let i = 0; i < 2; i++) { const f = G.f[i]; if (!f.set || !f.sw && !f.settle && f.p.distanceTo(home(i, V[5])) > 2.5) { /* first frame / teleport: plant at home */ f.p.copy(home(i, V[5])); f.yaw = yawH; f.set = true; f.sw = 0; f.u = i ? 0.5 : 0; } }
+  // re-entry while moving (landing a strafe / run-jump, a gait fade-in): pick the stride up mid-cycle - the foot further
+  // along the move is mid-stance under the hip, the other mid-swing - instead of starting both planted (the trailing foot then
+  // stayed down with a swing-phase clock until the 0.78 m reach lifted it: a split-legged straddle on every moving landing)
+  if (G.fresh) { G.fresh = false; if (mv) { const d0 = (rest[0].x - root.x) * vel.x + (rest[0].z - root.z) * vel.z, d1 = (rest[1].x - root.x) * vel.x + (rest[1].z - root.z) * vel.z, a = d0 >= d1 ? 0 : 1, fa = G.f[a], fb = G.f[1 - a];
+    fa.u = P.duty / 2; fa.sw = 0; fb.u = Math.min(0.999, P.duty / 2 + 0.5); if (fb.u >= P.duty) { fb.sw = 1; fb.from.copy(fb.p); fb.fromYaw = fb.yaw; (fb.tgt || (fb.tgt = new THREE.Vector3())).copy(fb.p); } G.moving = true; } }
   // phase: each foot runs its own cycle u (0..duty stance, duty..1 swing), the feet half a cycle apart
   if (mv) {
     if (!G.moving) { // start: the foot further behind (along the move) lifts first
@@ -141,6 +153,7 @@ function xUgPose(M, dt) {
     else if (f.settle) { const e = xUgEase(Math.min(1, f.st || 0)); t.copy(f.from).lerp(f.tgt, e); t.y = r.y + (XUG.settle.h + 0.06 * Math.min(1, f.from.distanceTo(f.tgt))) * Math.sin(Math.PI * Math.min(1, f.st || 0)); yaws[i] = f.fromYaw + Math.atan2(Math.sin(yawH - f.fromYaw), Math.cos(yawH - f.fromYaw)) * e; }
     else { t.copy(f.p); t.y = r.y; yaws[i] = f.yaw;
       if (mv) { const k = f.u / P.duty; bob = Math.max(bob, Math.sin(Math.PI * Math.min(1, k))); if (k > 0.55) lifts[i] = (k - 0.55) / 0.45; t.y += 0.1 * lifts[i] * P.r + 0.04 * lifts[i]; } }
+    if (i === 1 && stg > 0.01 && !f.sw && !f.settle) t.y += C.lift * stg;
     (f.cur || (f.cur = new THREE.Vector3())).copy(t);
   }
   // pelvis drop and bob (whole body via Splitter, restored in xUbPre)
@@ -151,6 +164,7 @@ function xUgPose(M, dt) {
     const fq = xgWorldQ(L.hand, G.q[0]).clone(), turn = G.q[1].setFromAxisAngle(XUB.up || V[9].set(0, 1, 0), Math.atan2(Math.sin(yaws[i] - yawH), Math.cos(yaws[i] - yawH)));
     const goal = V[9].copy(r).lerp(t, G.w), pole = V[8].copy(fwd).addScaledVector(left, i ? -0.15 : 0.15);
     xgIK(L, goal, pole.normalize(), G.IK); const q = G.q[2].copy(turn).multiply(fq);
+    if (i === 1 && stg > 0.01) q.premultiply(G.q[1].setFromAxisAngle(V[8].copy(left).multiplyScalar(-1).normalize(), C.heel * stg * G.w)); // crouched: the back heel up on the ball of the foot
     if (lifts[i] > 0) q.premultiply(G.q[1].setFromAxisAngle(V[8].copy(left).multiplyScalar(-1).normalize(), (0.3 + 0.35 * P.r) * lifts[i] * G.w)); // heel-off
     xgSetWorldQ(L.hand, q);
   }
@@ -190,9 +204,9 @@ function xUgTorso(M) {
   T.pv = { f: vf, s: vs };
   if (w < 0.01 || X.air) return;
   const cw = Math.max(0, Math.min(1, X.cb || 0)), P = xUgGait(sp, cw), knife = M.w === 'Knife' && !X.uo, runK = xUgSmooth(4.2, 5.2, sp), knK = knife ? xUgSmooth(5.8, 6.6, sp) : 0, mvK = xUgSmooth(0.4, 1.5, sp);
-  const lean = (Q.lean[2] * P.wk + Q.lean[0] * runK * (1 - knK) + Q.lean[1] * knK) * (1 - 0.6 * cw) * w;
+  const lean = (Q.lean[2] * P.wk + Q.lean[0] * runK * (1 - knK) + Q.lean[1] * knK) * (1 - 0.6 * cw) * w, cup = XUG.crouchPose.up * cw * w;
   const lf = sp > 0.1 ? vf / sp : 0, ls = sp > 0.1 ? vs / sp : 0, acc = (v) => Math.max(-Q.accCap, Math.min(Q.accCap, v * Q.acc));
-  const pitch = lean * (lf >= 0 ? lf : 0.5 * lf) + acc(T.acc.f) * w, roll = -(lean * 0.5 * ls + acc(T.acc.s) * w * 0.7);
+  const pitch = lean * (lf >= 0 ? lf : 0.5 * lf) + acc(T.acc.f) * w - cup, roll = -(lean * 0.5 * ls + acc(T.acc.s) * w * 0.7);
   // stride phase from the gait (left foot's cycle: 0 = left foot lands)
   const f0 = G.f && G.f[0], f1 = G.f && G.f[1], duty = Math.max(0.05, P.duty), ph = 2 * Math.PI * (f0 ? f0.u || 0 : 0), stride = mvK * w * (G.moving ? 1 : 0);
   const sgn = lf < -0.3 ? -1 : 1, sL = f0 && !f0.sw ? Math.sin(Math.PI * Math.min(1, (f0.u || 0) / duty)) : 0, sR = f1 && !f1.sw ? Math.sin(Math.PI * Math.min(1, (f1.u || 0) / duty)) : 0;
