@@ -1,23 +1,26 @@
-// Touch layout in portrait and landscape (row 7). Default button layouts are percentages with fixed pixel sizes, so on
-// small screens they overlapped (C/Q/E/X at 640x360: 45 px apart for 46 px buttons) or hung off the screen (portrait
-// 360x740 used the landscape layout: JUMP/DUCK past the right edge, abilities stacked on each other). Portrait now has
-// its own layout, and fit() separates/clamps defaults on any screen while leaving layouts that already fit untouched.
-// Also: portrait no longer blocks play behind "Rotate your phone" (the notice offers Play in portrait).
+// Touch layout in portrait and landscape (row 7 + mobile HUD redesign). Landscape defaults are anchored to the screen
+// edges in px (lay(): FIRE under the right thumb, C/Q/E/X on an arc over it, jump / reload on the right edge, ADS / crouch
+// left of FIRE, context column down the left edge, menu right of the minimap), scaled with the screen height on tablets and
+// moved in by the safe-area insets; portrait keeps its browser-placed layout. fit() separates / clamps any layout on any
+// screen and leaves layouts that already fit untouched. Also: portrait no longer blocks play behind "Rotate your phone".
 const assert=require('assert/strict'),fs=require('fs'),vm=require('vm'),path=require('path');
 const html=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
-const a=html.indexOf('  const DEF = { fire:'),b=html.indexOf('  reset();',a);assert(a>0&&b>a,'layout section');
-const c={innerWidth:800,innerHeight:450,Math,Object};vm.createContext(c);vm.runInContext(html.slice(a,b).replace('const DEF','var DEF').replace('const DEFP','var DEFP').replace('let custom','var custom').replace('const reset','var reset').replace('const fit','var fit')+';globalThis.get=()=>L;',c);
-const check=(w,h)=>{c.innerWidth=w;c.innerHeight=h;c.reset();const L=c.get(),ks=Object.keys(L);assert.equal(ks.length,Object.keys(c.DEF).length);
+const a=html.indexOf('  const SV = (d) =>'),b=html.indexOf('  reset();',a);assert(a>0&&b>a,'layout section');
+const c={innerWidth:800,innerHeight:450,Math,Object,String,TO:{sz:1,op:.8,f2:false,cm:false}};vm.createContext(c);
+vm.runInContext(html.slice(a,b).replace(/\bconst (TB|DEF|DEFP|LAND|lay|wsLay|fit|reset) =/g,'var $1 =').replace('let custom','var custom')+';globalThis.get=()=>L;globalThis.setSA=v=>{SA=v;};',c);
+const check=(w,h,sa)=>{c.innerWidth=w;c.innerHeight=h;c.setSA(sa||{l:0,r:0,t:0,b:0});c.reset();const L=c.get(),ks=Object.keys(L);assert.equal(ks.length,Object.keys(c.TB).length);
  for(const k of ks){const p=L[k],x=p.x*w/100,y=p.y*h/100,r=p.s/2;assert(x-r>=0&&x+r<=w&&y-r>=0&&y+r<=h,w+'x'+h+' '+k+' inside the screen ('+x.toFixed(0)+','+y.toFixed(0)+')');}
  for(let i=0;i<ks.length;i++)for(let j=i+1;j<ks.length;j++){const p=L[ks[i]],q=L[ks[j]],d=Math.hypot((p.x-q.x)*w/100,(p.y-q.y)*h/100);assert(d>=(p.s+q.s)/2+4,w+'x'+h+' '+ks[i]+' and '+ks[j]+' overlap ('+d.toFixed(1)+' px)');}
  return L;};
-const sizes=[[360,740],[390,844],[412,915],[740,360],[640,360],[568,320],[844,390],[915,412],[1024,768],[1280,720]];for(const [w,h] of sizes)check(w,h);
+const sizes=[[360,740],[390,844],[412,915],[740,360],[640,360],[568,320],[844,390],[932,430],[915,412],[1024,768],[1180,820],[1280,720]];for(const [w,h] of sizes)check(w,h);
 // portrait uses the portrait layout: fire in the lower right, abilities in one row, plant/use/buy on the left edge
 {const L=check(360,740);assert(L.fire.x>60&&L.fire.y>65,'portrait fire bottom right');assert(new Set(['c','q','e','x'].map(k=>Math.round(L[k].y))).size===1,'abilities in one row');for(const k of ['plant','use','buy'])assert(L[k].x<20,k+' on the left edge');}
-// a roomy landscape screen keeps the designed layout exactly
-{const L=check(1280,720);for(const k in c.DEF)assert.deepEqual([L[k].x,L[k].y],[c.DEF[k][0],c.DEF[k][1]],'1280x720 '+k+' unchanged');}
-// rotation re-fits the defaults; a layout the player arranged is kept (render() checks custom/lastWH)
-assert(/function render\(\) \{ if \(!custom && lastWH !== innerWidth \+ "x" \+ innerHeight\) reset\(\);/.test(html),'render re-fits defaults on rotation');
+// landscape phones and tablets keep the designed layout exactly (fit() moves nothing), safe-area insets included
+for(const [w,h,sa] of [[844,390],[932,430],[1024,768],[1180,820],[1280,720],[844,390,{l:47,r:47,t:0,b:21}],[932,430,{l:59,r:59,t:0,b:21}]]){c.innerWidth=w;c.innerHeight=h;const D=c.lay(w,h,sa),L=check(w,h,sa);
+ for(const k in c.TB)assert.deepEqual([L[k].x,L[k].y],[D[k][0],D[k][1]],w+'x'+h+(sa?' notch':'')+' '+k+' unchanged by fit()');
+ if(sa)for(const k in L){const p=L[k],x=p.x*w/100,y=p.y*h/100,r=p.s/2;assert(x-r>=sa.l&&x+r<=w-sa.r&&y+r<=h-sa.b,w+'x'+h+' '+k+' inside the safe area');}}
+// rotation / resize / a new size setting re-fit the defaults; a layout the player arranged is kept (render() checks custom/lastWH)
+assert(/function render\(\) \{ const wh = innerWidth \+ "x" \+ innerHeight \+ "x" \+ TO\.sz; if \(!custom && lastWH !== wh\) \{ SA = saRead\(\); reset\(\); \}/.test(html),'render re-fits defaults on rotation');
 for(const m of ['if (p.t === "ed") { custom = true;','if (sel) { custom = true; L[sel].s','if (sel) { custom = true; L[sel].off'])assert(html.includes(m),'edit marks layout arranged: '+m);
 // portrait play: the rotate notice can be dismissed and stays dismissed
 assert(/<div id="rot">[^]*?<button id="rotGo"[^>]*>Play in portrait<\/button>/.test(html),'rotate notice offers portrait play');
@@ -43,8 +46,8 @@ console.log('Touch: relock() never takes pointer lock on a touch screen');
  const subTop=parseFloat(rule('#game #xSub','top')),mapTop=parseFloat(rule('#game #xMap','top')),MAP=96,BAR_BOTTOM=40,SUB_H=11,PANEL_H=118,FEED_H=5*24+6,COMMS_W=83;
  assert(subTop>=BAR_BOTTOM+4&&mapTop>=subTop+SUB_H+4,'bar / subtitle / minimap stacked');assert.equal(rule('#xObs .x-obr','height'),'22px');
  assert.equal(rule('#game .hud.x-fw','top'),'calc(12.2vh + 28px)');assert.equal(rule('#xObs','top'),'calc(50% - 90px)');
- for(const [w,h] of [[360,740],[390,844],[412,915]]){const L=check(w,h),px=(k,a)=>L[k][a]*(a==='x'?w:h)/100,pb=px('pause','y')+L.pause.s/2,feed=0.122*h+28,ob=h/2-90,ab=px('c','y')-L.c.s/2;
-  assert(px('pause','x')-L.pause.s/2>8+MAP+4,w+'x'+h+' pause clear of the minimap');assert(feed>=pb+4,w+'x'+h+' kill feed below pause');
+ for(const [w,h] of [[360,740],[390,844],[412,915]]){const L=check(w,h),px=(k,a)=>L[k][a]*(a==='x'?w:h)/100,pb=px('menu','y')+L.menu.s/2,feed=0.122*h+28,ob=h/2-90,ab=px('c','y')-L.c.s/2;
+  assert(px('menu','x')-L.menu.s/2>8+MAP+4,w+'x'+h+' menu clear of the minimap');assert(feed>=pb+4,w+'x'+h+' kill feed below the menu button');
   assert(ob>=mapTop+MAP+8&&ob>=feed+FEED_H,w+'x'+h+' team panel below minimap and feed ('+ob+')');assert(ob+PANEL_H+16<=ab,w+'x'+h+' team panel clear of the ability row ('+(ob+PANEL_H)+' vs '+ab+')');
   assert(12+COMMS_W+4<=px('c','x')-L.c.s/2,w+'x'+h+' COMMS clear of C');}}
 console.log('Touch: portrait HUD (top bar fits, subtitle/minimap/feed/team panel stacked clear of the touch buttons at 360x740, 390x844, 412x915)');

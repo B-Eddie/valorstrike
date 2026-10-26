@@ -1,6 +1,7 @@
 // Touch Spike plant / defuse (ledger row 7): the real page on a coarse-pointer device (work/page_harness.cjs, coarse),
 // an offline 5v5 round, real pointer events on the on-screen PLANT button (the 4 hold) through the page's own rAF loop:
-//  - the touch controls are shown in the round and the PLANT button is visible; it is hidden in deathmatch (no Spike)
+//  - the touch controls are shown in the round; the PLANT button is a context button: hidden away from a site, shown in a
+//    site as the carrier and at the planted Spike as a defender, never in deathmatch (no Spike)
 //  - holding PLANT in a site as the carrier plants in 4 s; releasing early resets the plant
 //  - holding PLANT at the planted Spike as a defender defuses in 7 s; releasing after the half keeps the 3.5 s checkpoint
 //  - the prompts match the button's own label ("4": "Hold 4 to plant / defuse")
@@ -24,10 +25,11 @@ const freeze='for(const b of bots)b.nt=true;for(const a of allies)a.nt=true;play
  H.$('pm5v5').click();await adv(50);assert.ok(await through(),'5v5 did not start');
  xe(freeze);xe('FV.buy=0;buyMenu(false);true');await adv(200);
  check('touch controls shown in the round',H.$('xT').classList.contains('on'));
- check('PLANT button visible in a Spike round',!btn('plant').classList.contains('hid'));
+ check('PLANT button hidden away from a site (context button)',btn('plant').classList.contains('hid'));
  // plant: carrier in a site
  const toSite=`${freeze};const s=FV.sp,k=Object.keys(SITES)[0];player.x=SITES[k][0];player.z=SITES[k][1];s.st="carry";s.c=player;s.pt=0;since=1;true`;
  xe(toSite);await adv(100);
+ check('PLANT button appears in a site as the carrier',!btn('plant').classList.contains('hid'));
  check('plant prompt matches the button label',/^Hold 4 to plant/.test(prompt())&&btn('plant').textContent.trim()==='4',prompt());
  down('plant',7);await adv(2000);const pt=xe('FV.sp.pt');check('PLANT hold advances the plant',pt>1.8&&pt<2.2,'pt '+pt.toFixed(2)+' after 2 s');
  check('prompt shows Planting while held',/^Planting/.test(prompt()),prompt());
@@ -39,7 +41,7 @@ const freeze='for(const b of bots)b.nt=true;for(const a of allies)a.nt=true;play
  // defuse: player on the defending side, next to the planted Spike
  const toSpike=`${freeze};FV.atk=false;const s=FV.sp;s.st="plant";s.t=45;s.dt=0;s.x=player.x+0.5;s.z=player.z;timeLeft=45;true`;
  xe(toSpike);await adv(100);
- check('defuse prompt shown at the Spike',/^Hold 4 to defuse/.test(prompt()),prompt());
+ check('defuse prompt shown at the Spike',/^Hold 4 to defuse/.test(prompt()),prompt());check('PLANT button shown at the planted Spike (defuse)',!btn('plant').classList.contains('hid'));
  down('plant',11);await adv(4500);up(11);await adv(100);const half=xe('FV.sp.dt');
  check('release after the half keeps the 3.5 s checkpoint',half===3.5,'dt '+half);
  down('plant',12);await adv(3700);up(12);await adv(300);
@@ -52,6 +54,6 @@ const freeze='for(const b of bots)b.nt=true;for(const a of allies)a.nt=true;play
  {const e=H.errors.slice(errs0),x=H.xErrCalls.slice(x0);if(e.length||x.length)fails.push('page exceptions: '+JSON.stringify({e:e.slice(0,4),x:x.slice(0,4)}));}
  if(process.env.VERBOSE||fails.length)console.log(out.join('\n'));
  if(fails.length){console.error(fails.join('\n'));process.exit(1);}
- console.log('Touch Spike: PLANT button visible in Spike rounds (hidden in DM); hold plants in 4 s, early release / cancel / lost capture resets, defuse hold keeps the half checkpoint and completes');
+ console.log('Touch Spike: PLANT context button (hidden off-site and in DM, shown in a site / at the Spike); hold plants in 4 s, early release / cancel / lost capture resets, defuse hold keeps the half checkpoint and completes');
  process.exit(0);
 })().catch(e=>{console.error(e);process.exit(1);});

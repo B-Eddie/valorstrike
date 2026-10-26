@@ -1585,6 +1585,9 @@ body:has(#game .x-top.x-bpo) #xAnn.buy{display:none!important}
   <div class="st-sl"><div class="srow"><label for="sTs">Touch aim</label><b id="vTs">1.00</b></div><input type="range" id="sTs" min="0.2" max="3" step="0.01" value="1" /></div>
   <div class="srow x-sr"><span class="st-l">Aim assist</span><div class="seg" id="xAim"><button data-v="aim" class="on">Aim only</button><button data-v="fire">Aim and fire</button><button data-v="off">Off</button></div></div>
   <div class="srow">Touch buttons<button class="ghost" id="xArr">Arrange on screen</button></div>
+  <div class="st-sl"><div class="srow"><label for="sTz">Touch button size</label><b id="vTz">100%</b></div><input type="range" id="sTz" min="70" max="140" step="5" value="100" /></div>
+  <div class="st-sl"><div class="srow"><label for="sTo">Touch button opacity</label><b id="vTo">80%</b></div><input type="range" id="sTo" min="30" max="100" step="5" value="80" /></div>
+  <div class="srow x-sr"><span class="st-l">Left FIRE button</span><div class="seg" id="xTf2"><button data-v="0" class="on">Off</button><button data-v="1">On</button></div></div>
   <p class="st-n">Keybinds: press Esc in a match and open the Controls tab to rebind any key.</p>
   </div>
   <div data-sp="x" role="tabpanel" aria-label="Crosshair" hidden>
@@ -10928,27 +10931,51 @@ function xAssist(dt) {
 function resize() { renderer.setPixelRatio(xPR()); renderer.setSize(innerWidth, innerHeight); camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); }
 let xRzT = 0; addEventListener("resize", () => { clearTimeout(xRzT); xRzT = setTimeout(resize, 150); }); resize(); if (!loop.id) loop(); // perf pass 15: resize debounced to 150 ms
 // ---- touch controls (coarse pointer only) + button layout editor ----
+// Mobile HUD (Valorant Mobile style): a dynamic stick wherever the left thumb lands in the left half, drag-to-look anywhere
+// else, one big FIRE (optional left FIRE), a small jump / crouch / ADS / reload cluster, C/Q/E/X in a compact arc over FIRE
+// with charges and the ult ring, weapons switched by tapping them in a small strip above the ammo, context buttons (plant /
+// defuse, use / pick up, buy, inspect, drills) only while they do something, and everything rarely used (scoreboard,
+// settings, ping, drop, comms) behind one small menu button. Buttons are smaller and semi-transparent; size, opacity and the
+// left FIRE are settings (Controls tab). Landscape positions are anchored to the screen edges in px (scaled with the
+// screen height on tablets), inside the safe-area insets and clear of the minimap, top bar, kill feed, health and ammo.
 let xTGOn = false; const xTG = { inPlay: () => false, relAll: () => {} };
 (() => {
   const touch = matchMedia("(pointer: coarse)").matches;
+  const TO = { sz: 1, op: 0.8, f2: false, cm: false }; // touch HUD settings: button scale, opacity, left FIRE, COMMS button shown
+  try { const v = JSON.parse(localStorage.getItem("vs.thud") || "null"); if (v && typeof v === "object") { if (v.sz >= 0.7 && v.sz <= 1.4) TO.sz = +v.sz; if (v.op >= 0.3 && v.op <= 1) TO.op = +v.op; TO.f2 = v.f2 === true; TO.cm = v.cm === true; } } catch (e) {}
+  const toSave = () => { try { localStorage.setItem("vs.thud", JSON.stringify(TO)); } catch (e) {} };
+  window.xTO = TO; window.xTUse = touch; // the touch USE button covers the ult-orb capture (its own floating button stays hidden)
   const st = document.createElement("style");
-  st.textContent = `#xT{position:fixed;inset:0;z-index:34;display:none;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+  st.textContent = `#xT{position:fixed;inset:0;z-index:34;display:none;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;--xto:.8}
 #xT.on{display:block}
-#xT .tb{position:absolute;transform:translate(-50%,-50%);border-radius:50%;border:1.5px solid rgba(236,232,225,.85);background:rgba(15,25,35,.55);color:#fff;font:700 12px var(--f,sans-serif);font-stretch:condensed;text-transform:uppercase;letter-spacing:.04em;line-height:1;display:flex;align-items:center;justify-content:center;padding:0;touch-action:none;cursor:pointer;overflow:visible;transition:background .08s,box-shadow .08s,border-color .08s}
-#xT .tb[data-k=fire]{border-color:#ff4655;font-size:14px;letter-spacing:.08em}
-#xT .tb[data-k=c],#xT .tb[data-k=q],#xT .tb[data-k=e],#xT .tb[data-k=x]{font-size:16px;font-weight:800}
-#xT .tb[data-pip]::after{content:attr(data-pip);position:absolute;top:-2px;right:-2px;min-width:16px;height:16px;padding:0 3px;box-sizing:border-box;border-radius:8px;background:rgba(15,25,35,.85);color:#5fffb0;font:400 12px/16px "Geist Mono",monospace;letter-spacing:0;text-align:center;pointer-events:none}
+#xT .tb{position:absolute;transform:translate(-50%,-50%);border-radius:50%;border:1.5px solid rgba(236,232,225,.55);background:rgba(15,25,35,.3);color:rgba(255,255,255,.95);font:700 11px var(--f,sans-serif);font-stretch:condensed;text-transform:uppercase;letter-spacing:.04em;line-height:1;display:flex;align-items:center;justify-content:center;padding:0;touch-action:none;cursor:pointer;overflow:visible;opacity:var(--xto);transition:background .08s,box-shadow .08s,border-color .08s,opacity .08s}
+#xT .tb svg{width:50%;height:50%;pointer-events:none;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+#xT .tb[data-k=fire],#xT .tb[data-k=fire2]{border:2px solid rgba(255,70,85,.85);background:rgba(255,70,85,.16);font-size:13px;letter-spacing:.08em}
+#xT .tb[data-k=c],#xT .tb[data-k=q],#xT .tb[data-k=e],#xT .tb[data-k=x]{font-size:14px;font-weight:800;background:rgba(15,25,35,.4)}
+#xT .tb.emp{opacity:calc(var(--xto) * .5)}
+#xT .tb.ctx{border-color:rgba(95,255,176,.8);background:rgba(20,60,45,.42);font-size:13px}
+#xT .tb[data-k=menu]{border-radius:8px;opacity:calc(var(--xto) * .85)}
+#xT .tb[data-pip]::after{content:attr(data-pip);position:absolute;top:-3px;right:-3px;min-width:15px;height:15px;padding:0 3px;box-sizing:border-box;border-radius:8px;background:rgba(15,25,35,.85);color:#5fffb0;font:400 11px/15px "Geist Mono",monospace;letter-spacing:0;text-align:center;pointer-events:none}
 #xT .tb[data-k=x]::before{content:"";position:absolute;inset:-4px;border-radius:50%;background:conic-gradient(#5fffb0 calc(var(--u,0) * 1turn),rgba(236,232,225,.14) 0);-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 3px),#000 calc(100% - 2.5px));mask:radial-gradient(farthest-side,transparent calc(100% - 3px),#000 calc(100% - 2.5px));pointer-events:none}
-#xT .tb.dn{background:rgba(30,52,62,.78);border-color:#fff;box-shadow:inset 0 0 0 2px rgba(63,242,216,.55),inset 0 0 16px rgba(63,242,216,.65)}
-#xT .tb[data-k=fire].dn{border-color:#ff4655}
+#xT .tb.dn{opacity:1;background:rgba(30,52,62,.78);border-color:#fff;box-shadow:inset 0 0 0 2px rgba(63,242,216,.55),inset 0 0 16px rgba(63,242,216,.65)}
+#xT .tb[data-k=fire].dn,#xT .tb[data-k=fire2].dn{border-color:#ff4655;background:rgba(255,70,85,.4)}
 #xT .tb.off,#xT .tb.hid{display:none}
-#xJ{position:absolute;width:120px;height:120px;margin:-60px 0 0 -60px;border-radius:50%;border:1.5px solid rgba(236,232,225,.6);background:transparent;display:none;pointer-events:none}
-#xJ i{position:absolute;left:50%;top:50%;width:34px;height:34px;margin:-17px 0 0 -17px;border-radius:50%;background:rgba(236,232,225,.85);box-shadow:0 0 0 1.5px rgba(15,25,35,.55)}
-@media (max-width:420px){#xT .tb{letter-spacing:0}#xT .tb[data-k=fire]{font-size:13px}}
+#xJ{position:absolute;width:110px;height:110px;margin:-55px 0 0 -55px;border-radius:50%;border:1.5px solid rgba(236,232,225,.45);background:rgba(15,25,35,.12);display:none;pointer-events:none}
+#xJ i{position:absolute;left:50%;top:50%;width:32px;height:32px;margin:-16px 0 0 -16px;border-radius:50%;background:rgba(236,232,225,.7);box-shadow:0 0 0 1.5px rgba(15,25,35,.45)}
+#xTW{position:absolute;display:flex;gap:4px;opacity:var(--xto)}
+#xTW.hid{display:none}
+#xTW button{height:var(--wh,26px);min-width:var(--ww,46px);max-width:var(--wm,64px);overflow:hidden;text-overflow:ellipsis;padding:0 4px;box-sizing:border-box;border-radius:4px;border:1px solid rgba(236,232,225,.28);background:rgba(15,25,35,.38);color:rgba(236,232,225,.8);font:600 10px var(--f,sans-serif);letter-spacing:.02em;text-transform:uppercase;white-space:nowrap;touch-action:none}
+#xTW button.on{border-color:rgba(236,232,225,.9);background:rgba(236,232,225,.2);color:#fff}
+#xTM{position:absolute;display:none;flex-direction:column;gap:2px;padding:6px;background:rgba(15,25,35,.92);border-top:2px solid var(--red,#ff4655);min-width:160px;z-index:2;touch-action:none}
+#xT.mo #xTM{display:flex}
+#xTM button{min-height:38px;padding:0 12px;text-align:left;border:0;background:transparent;color:var(--bone,#ece8e1);font:600 13px var(--f,sans-serif);letter-spacing:.08em;text-transform:uppercase}
+#xTM button.hid{display:none}#xTM button.on{color:#5fffb0}
+@media (max-width:420px){#xT .tb{letter-spacing:0}#xT .tb[data-k=fire]{font-size:12px}}
 #xT.ed{z-index:70;background:rgba(10,16,22,.6)}
-#xT.ed .tb,#xT.ed .tb.hid{display:flex;outline:1px dashed rgba(236,232,225,.5);outline-offset:3px;cursor:grab}
+#xT.ed .tb,#xT.ed .tb.hid{display:flex;outline:1px dashed rgba(236,232,225,.5);outline-offset:3px;cursor:grab;opacity:1}
 #xT.ed .tb.off{display:flex;opacity:.25}
 #xT.ed .tb.sel{box-shadow:0 0 0 3px var(--red,#ff4655)}
+#xT.ed #xTW,#xT.ed #xTM{display:none}
 #xTE{display:none;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:rgba(15,25,35,.95);border-top:3px solid var(--red,#ff4655);padding:14px 18px;color:var(--bone,#ece8e1);width:min(340px,86vw);font:600 14px var(--f,sans-serif);touch-action:auto}
 #xT.ed #xTE{display:block}
 #xTE p{margin:0 0 10px}#xTE label{display:flex;justify-content:space-between;margin-bottom:4px}
@@ -10956,22 +10983,43 @@ let xTGOn = false; const xTG = { inPlay: () => false, relAll: () => {} };
 #xTE .r{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
 #xTE button{min-height:44px;padding:0 14px;border:1px solid rgba(236,232,225,.4);background:transparent;color:inherit;font:800 13px var(--f,sans-serif);letter-spacing:.1em}
 #xTE button.p{background:var(--red,#ff4655);border-color:var(--red,#ff4655)}
-#xTE button:disabled{opacity:.4}`;
+#xTE button:disabled{opacity:.4}
+html.xt-nocm .x-cmb{display:none!important}
+@media (pointer: coarse){#game.x-mm #fps{top:46px}} /* the touch menu button sits right of the minimap where the FPS counter was */`;
   document.head.appendChild(st);
-  const DEF = { fire: [84, 66, 78, "FIRE", "Fire"], jump: [94, 48, 58, "JUMP", "Jump"], duck: [94, 82, 54, "DUCK", "Duck"], reload: [74, 84, 48, "R", "Reload"], zoom: [73, 50, 50, "ZOOM", "Zoom"], swap: [84, 40, 48, "⇄", "Switch weapon"], pause: [50, 7, 44, "II", "Pause"], c: [62, 18, 46, "C", "Ability C"], q: [69, 18, 46, "Q", "Ability Q"], e: [76, 18, 46, "E", "Ability E"], x: [83, 18, 46, "X", "Ultimate X"], plant: [8, 42, 54, "4", "Plant or defuse (hold)"], use: [8, 58, 48, "F", "Use, pick up or capture (hold)"], buy: [8, 26, 50, "B", "Buy"], inspect: [66, 88, 40, "INS", "Inspect weapon"], ping: [63, 70, 44, "PING", "Ping"], drills: [50, 18, 48, "DRL", "Range drills"] };
+  const SV = (d) => `<svg viewBox="0 0 24 24" aria-hidden="true">${d}</svg>`;
+  const ICO = { jump: SV('<path d="M5 15l7-7 7 7"/>'), duck: SV('<path d="M5 9l7 7 7-7"/>'), zoom: SV('<circle cx="12" cy="12" r="7"/><path d="M12 2v5M12 17v5M2 12h5M17 12h5"/>'), reload: SV('<path d="M19 12a7 7 0 1 1-2.05-4.95"/><path d="M19 4v4h-4"/>'), menu: SV('<path d="M5 7h14M5 12h14M5 17h14"/>') };
+  // [label, aria label, context button]
+  const TB = { fire: ["FIRE", "Fire"], fire2: ["FIRE", "Fire (left)"], jump: [ICO.jump, "Jump"], duck: [ICO.duck, "Crouch"], zoom: [ICO.zoom, "Aim down sights / scope"], reload: [ICO.reload, "Reload"], c: ["C", "Ability C"], q: ["Q", "Ability Q"], e: ["E", "Ability E"], x: ["X", "Ultimate X"], plant: ["4", "Plant or defuse (hold)", 1], use: ["F", "Use, pick up or capture (hold)", 1], buy: ["B", "Buy", 1], inspect: ["INS", "Inspect weapon", 1], drills: ["DRL", "Range drills", 1], menu: [ICO.menu, "Menu: scoreboard, settings, ping, comms"] };
   let L = {};
-  // Short landscape (<=480px tall: 568x320, 640x360, 844x390): grid measured against the real panel rects
-  // (hud-map probe): left column under the minimap (buy/plant/use), two 4-button rows right of the ann column
-  // (c/q/e + pause on top so pause stays off the death card, zoom/reload/jump/x below), fire right of them,
-  // duck/swap under, ping/inspect/drills default OFF (comms wheel covers callouts; re-enable in edit mode).
-  const DEFS = { fire: [94.2, 62, 58], jump: [77.6, 61.8, 38], duck: [60.7, 75.2, 38], reload: [69.2, 61.8, 38], zoom: [60.7, 61.8, 38], swap: [69.2, 75.2, 38], pause: [85.2, 48, 38], c: [60.7, 48, 38], q: [69.2, 48, 38], e: [77.6, 48, 38], x: [85.2, 61.8, 38], plant: [7.6, 57.6, 46], use: [7.6, 73.8, 46], buy: [7.6, 41.3, 46], inspect: [60.7, 93.5, 40], ping: [74.3, 93.5, 42], drills: [66.5, 93.5, 40] };
-  const DEFSOFF = { ping: 1, inspect: 1, drills: 1 };
+  const DEF = { fire: [84, 66, 72], fire2: [18, 48, 56], jump: [95, 46, 48], duck: [76, 84, 46], zoom: [76, 66, 44], reload: [96, 64, 36], c: [77, 49, 42], q: [80, 38, 42], e: [85, 32, 42], x: [91, 30, 44], plant: [8, 51, 50], use: [8, 67, 46], buy: [8, 36, 46], inspect: [15, 75, 38], drills: [21, 6, 34], menu: [15, 6, 32] };
+  // Landscape (any size): [px from the left (+) or right (-) edge, px from the top (+) or bottom (-) edge, size], all times u
+  // (screen height / 390, 1 - 1.3, times the size setting) except the size of the minimap column, which is fixed CSS px.
+  // Placed against the coarse-pointer HUD measured in Chromium at 844x390 (work/browser_mobile_hud.cjs): minimap 8-104 x 8-104,
+  // top bar right 8-40 h, kill feed from y 64 (one row <= 480 h), health 8-136 x h-56..h-8, credits + ammo w-91..w-4 x h-73..h-4.
+  // FIRE sits under the right thumb with C/Q/E/X on a 112 px arc above it (200-278 deg), jump / reload on the right edge,
+  // ADS / crouch left of FIRE; the context column (buy / plant / use) runs down the left edge under the minimap.
+  const ARC = { r: 112, a0: 200, da: 26 };
+  const LAND = { fire: [-92, -160, 72], fire2: [150, -200, 56], jump: [-30, -212, 48], reload: [-28, -140, 36], zoom: [-196, -134, 44], duck: [-234, -62, 46], buy: [64, -250, 46], plant: [64, -190, 50], use: [64, -130, 46], inspect: [126, -96, 38] };
   // Portrait (row 7, browser-placed at 360x740): thumb cluster at the bottom right between the abilities row (below the
-  // buy-phase team panel) and the credits/ammo block, plant/use/buy down the left edge under COMMS, clear of the HP block.
-  const DEFP = { fire: [76.4, 79.7, 72], jump: [91.7, 70.9, 52], duck: [93.1, 84.1, 50], reload: [54.2, 84.5, 44], zoom: [54.2, 73.6, 46], swap: [91.7, 62.2, 44], pause: [50.0, 12.2, 40], c: [34.7, 63.5, 44], q: [48.1, 63.5, 44], e: [61.4, 63.5, 44], x: [74.7, 63.5, 44], plant: [10.0, 77.0, 50], use: [10.0, 85.1, 46], buy: [10.0, 68.9, 46], inspect: [54.2, 96.2, 36], ping: [36.1, 73.0, 40], drills: [50.0, 20.3, 44] };
-  // Default layouts are percentages; on a small or narrow screen fixed-size buttons could overlap (abilities at 640x360,
-  // half the cluster in portrait) or hang off the edge. fit() pushes overlapping defaults apart (6 px gap) and clamps
-  // every button inside the screen; layouts that already fit are left exactly as designed. A layout the player arranged is kept.
+  // buy-phase team panel) and the credits/ammo block, plant/use/buy down the left edge under COMMS, clear of the HP block;
+  // the menu button where the pause button was.
+  const DEFP = { fire: [76.4, 79.7, 72], fire2: [13, 56, 52], jump: [91.7, 70.9, 52], duck: [93.1, 84.1, 50], reload: [54.2, 84.5, 44], zoom: [54.2, 73.6, 46], menu: [50.0, 12.2, 36], c: [34.7, 63.5, 44], q: [48.1, 63.5, 44], e: [61.4, 63.5, 44], x: [74.7, 63.5, 44], plant: [10.0, 77.0, 50], use: [10.0, 85.1, 46], buy: [10.0, 68.9, 46], inspect: [36.1, 73.0, 36], drills: [50.0, 20.3, 44] };
+  const unit = (h) => Math.max(1, Math.min(1.3, h / 390)) * TO.sz;
+  // default layout for a w x h screen with safe-area insets sa {l,r,t,b}: { key: [x %, y %, size px] }
+  const lay = (w, h, sa) => { sa = sa || { l: 0, r: 0, t: 0, b: 0 }; const D = {};
+    if (h > w) { for (const k in DEFP) D[k] = [DEFP[k][0], DEFP[k][1], Math.round(DEFP[k][2] * TO.sz)]; return D; }
+    // notches are on the sides: x moves in by the side inset; vertically a control only moves off the top / bottom inset (home indicator) if it would reach into it
+    const u = unit(h), px = (k, x, y, s) => { const r = s * u / 2, X = x >= 0 ? sa.l + x * u : w - sa.r + x * u, Y = y >= 0 ? Math.max(y * u, sa.t + r + 4) : Math.min(h + y * u, h - sa.b - r - 4); D[k] = [X / w * 100, Y / h * 100, Math.round(s * u)]; };
+    for (const k in LAND) px(k, LAND[k][0], LAND[k][1], LAND[k][2]);
+    const mz = 32 * u, dz = 34 * u; D.menu = [(sa.l + 110 + mz / 2) / w * 100, (sa.t + 8 + mz / 2) / h * 100, Math.round(mz)]; D.drills = [(sa.l + 110 + mz + 8 + dz / 2) / w * 100, (sa.t + 8 + dz / 2) / h * 100, Math.round(dz)]; // menu / drills hug the fixed 8-104 px minimap
+    const fx = D.fire[0] * w / 100, fy = D.fire[1] * h / 100;
+    ["c", "q", "e", "x"].forEach((k, i) => { const a = (ARC.a0 + ARC.da * i) * Math.PI / 180, X = fx + Math.cos(a) * ARC.r * u, Y = fy + Math.sin(a) * ARC.r * u; D[k] = [X / w * 100, Y / h * 100, Math.round((k === "x" ? 44 : 42) * u)]; });
+    return D; };
+  // Weapon strip: right-aligned above the credits/ammo block (4 + 69 px CSS tall), chips 46-64 x 26 px times u (at most 3: 3 x 64 + 8 = 200 px wide).
+  const wsLay = (w, h, sa) => { sa = sa || { l: 0, r: 0, t: 0, b: 0 }; const u = h > w ? TO.sz : unit(h); return { r: sa.r + 4, b: Math.max(77, sa.b + 4), h: Math.round(26 * u), w: Math.round(46 * u), m: Math.round(64 * u) }; };
+  // fit() pushes overlapping defaults apart (6 px gap) and clamps every button inside the screen; layouts that already fit are
+  // left exactly as designed. A layout the player arranged is kept.
   const fit = (w, h) => { const ks = Object.keys(L), P = ks.map((k) => ({ k, x: L[k].x * w / 100, y: L[k].y * h / 100, r: L[k].s / 2 })); let moved = false;
     const clamp = (p) => { const x = Math.max(p.r + 4, Math.min(w - p.r - 4, p.x)), y = Math.max(p.r + 4, Math.min(h - p.r - 4, p.y)); if (x !== p.x || y !== p.y) { p.x = x; p.y = y; moved = true; } };
     P.forEach(clamp);
@@ -10979,19 +11027,26 @@ let xTGOn = false; const xTG = { inPlay: () => false, relAll: () => {} };
       for (let i = 0; i < P.length; i++) for (let j = i + 1; j < P.length; j++) { const a = P[i], b = P[j], dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy), need = a.r + b.r + 6; if (d >= need) continue; any = moved = true; const ux = d > 1e-6 ? dx / d : 1, uy = d > 1e-6 ? dy / d : 0, m = (need - d) / 2 + 0.01; a.x -= ux * m; a.y -= uy * m; b.x += ux * m; b.y += uy * m; }
       P.forEach(clamp); if (!any) break; }
     if (moved) P.forEach((p) => { L[p.k].x = p.x / w * 100; L[p.k].y = p.y / h * 100; }); return moved; };
-  let custom = false, lastWH = "";
-  const reset = () => { L = {}; const D = innerHeight > innerWidth ? DEFP : (innerHeight <= 480 ? DEFS : DEF); for (const k in DEF) { const d = D[k] || DEF[k]; L[k] = { x: d[0], y: d[1], s: d[2], off: D === DEFS && !!DEFSOFF[k] }; } fit(innerWidth, innerHeight); custom = false; lastWH = innerWidth + "x" + innerHeight; };
+  let custom = false, lastWH = "", SA = { l: 0, r: 0, t: 0, b: 0 };
+  const reset = () => { L = {}; const D = lay(innerWidth, innerHeight, SA); for (const k in TB) { const d = D[k] || DEF[k]; L[k] = { x: d[0], y: d[1], s: d[2], off: false }; } fit(innerWidth, innerHeight); custom = false; lastWH = innerWidth + "x" + innerHeight + "x" + TO.sz; };
   reset();
   const T = document.createElement("div"); T.id = "xT";
-  T.innerHTML = '<div id="xJ"><i></i></div>' + Object.keys(DEF).map((k) => `<button class="tb" data-k="${k}" aria-label="${DEF[k][4]}">${DEF[k][3]}</button>`).join("") +
-    '<div id="xTE" role="dialog" aria-label="Arrange buttons"><p>Drag a button to move it</p><label for="xTsz">Size <b id="xTsv">—</b></label><input type="range" id="xTsz" min="36" max="120" step="1" value="56" disabled /><div class="r"><button id="xTrm" disabled>Remove</button><button id="xTrs">Reset</button><button class="p" id="xTok">Done</button></div></div>';
-  setInterval(() => { if (!T.classList.contains("on")) return; xTbIco(); ["c", "q", "e", "x"].forEach((k) => { const b = T.querySelector(`.tb[data-k="${k}"]`), em = document.querySelector("#j" + k.toUpperCase() + " em"); if (!b) return; const t = em ? em.textContent.trim() : ""; if (k === "x") { const m = t.match(/(\d+)\s*\/\s*(\d+)/); b.style.setProperty("--u", m ? Math.min(1, m[1] / m[2]) : 0); if (t && !m) b.setAttribute("data-pip", t); else b.removeAttribute("data-pip"); } else if (t) b.setAttribute("data-pip", t); else b.removeAttribute("data-pip"); }); }, 250); // look pass: mirror desktop HUD pips / ult charge onto touch buttons
+  T.innerHTML = '<div id="xJ"><i></i></div>' + Object.keys(TB).map((k) => `<button class="tb${TB[k][2] ? " ctx" : ""}" data-k="${k}" aria-label="${TB[k][1]}">${TB[k][0]}</button>`).join("") +
+    '<div id="xTW" class="hid" role="group" aria-label="Weapons: tap to switch"></div>' +
+    '<div id="xTM" role="menu" aria-label="Menu"><button data-m="board">Scoreboard</button><button data-m="buy">Buy</button><button data-m="ping">Ping</button><button data-m="inspect">Inspect</button><button data-m="drop">Drop</button><button data-m="comms">Comms button</button><button data-m="set">Settings</button></div>' +
+    '<div id="xTE" role="dialog" aria-label="Arrange buttons"><p>Drag a button to move it</p><label for="xTsz">Size <b id="xTsv">—</b></label><input type="range" id="xTsz" min="28" max="120" step="1" value="56" disabled /><div class="r"><button id="xTrm" disabled>Remove</button><button id="xTrs">Reset</button><button class="p" id="xTok">Done</button></div></div>';
+  setInterval(() => { if (!T.classList.contains("on")) return; xTbIco(); ["c", "q", "e", "x"].forEach((k) => { const b = T.querySelector(`.tb[data-k="${k}"]`), sl = document.querySelector("#j" + k.toUpperCase()), em = sl && sl.querySelector("em"); if (!b) return; const t = em ? em.textContent.trim() : ""; if (k === "x") { const m = t.match(/(\d+)\s*\/\s*(\d+)/); b.style.setProperty("--u", m ? Math.min(1, m[1] / m[2]) : 0); if (t && !m) b.setAttribute("data-pip", t); else b.removeAttribute("data-pip"); } else if (t) b.setAttribute("data-pip", t); else b.removeAttribute("data-pip"); b.classList.toggle("emp", !!(sl && sl.classList.contains("x-empty"))); }); }, 250); // look pass: mirror desktop HUD pips / ult charge onto touch buttons; empty abilities dim
   document.body.appendChild(T);
   const B = {}; T.querySelectorAll(".tb").forEach((b) => B[b.dataset.k] = b);
-  const Jb = $("xJ"), Jk = Jb.firstChild;
+  const Jb = $("xJ"), Jk = Jb.firstChild, TW = $("xTW"), TM = $("xTM");
+  const saRead = () => { try { const p = document.createElement("div"); p.style.cssText = "position:fixed;visibility:hidden;pointer-events:none;padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)"; document.body.appendChild(p); const cs = getComputedStyle(p), n = (v) => Math.max(0, parseFloat(v) || 0); const o = { t: n(cs.paddingTop), r: n(cs.paddingRight), b: n(cs.paddingBottom), l: n(cs.paddingLeft) }; p.remove(); return o; } catch (e) { return { l: 0, r: 0, t: 0, b: 0 }; } };
   let ed = false, sel = null;
-  function render() { if (!custom && lastWH !== innerWidth + "x" + innerHeight) reset(); /* rotation or resize: defaults re-fit; an arranged layout stays */ for (const k in B) { const b = B[k], l = L[k] || (L[k] = { x: DEF[k][0], y: DEF[k][1], s: DEF[k][2], off: false }); b.style.left = l.x + "%"; b.style.top = l.y + "%"; b.style.width = b.style.height = l.s + "px"; b.classList.toggle("off", l.off); b.classList.toggle("sel", ed && sel === k); } }
+  function render() { const wh = innerWidth + "x" + innerHeight + "x" + TO.sz; if (!custom && lastWH !== wh) { SA = saRead(); reset(); } /* rotation, resize or a new size setting: defaults re-fit; an arranged layout stays */ for (const k in B) { const b = B[k], l = L[k] || (L[k] = { x: DEF[k][0], y: DEF[k][1], s: DEF[k][2], off: false }); b.style.left = l.x + "%"; b.style.top = l.y + "%"; b.style.width = b.style.height = l.s + "px"; b.classList.toggle("off", l.off); b.classList.toggle("sel", ed && sel === k); }
+    const ws = wsLay(innerWidth, innerHeight, SA); TW.style.right = ws.r + "px"; TW.style.bottom = ws.b + "px"; TW.style.setProperty("--wh", ws.h + "px"); TW.style.setProperty("--ww", ws.w + "px"); TW.style.setProperty("--wm", ws.m + "px");
+    const m = L.menu; TM.style.left = "calc(" + m.x + "% - " + m.s / 2 + "px)"; TM.style.top = "calc(" + m.y + "% + " + (m.s / 2 + 6) + "px)";
+    T.style.setProperty("--xto", String(TO.op)); document.documentElement.classList.toggle("xt-nocm", touch && !TO.cm); }
   render();
+  addEventListener("resize", () => render()); // rotation / resize re-fits the default layout (render() alone ran only at start-up and in the editor)
   const kd = (code) => dispatchEvent(new KeyboardEvent("keydown", { code, bubbles: true }));
   const ku = (code) => dispatchEvent(new KeyboardEvent("keyup", { code, bubbles: true }));
   const live = () => running && !paused && player;
@@ -11002,8 +11057,11 @@ let xTGOn = false; const xTG = { inPlay: () => false, relAll: () => {} };
     VM.sx = Math.max(-1, Math.min(1, VM.sx + dx * 0.01)); VM.sy = Math.max(-1, Math.min(1, VM.sy + dy * 0.01));
   }
   let kLP = 0;
+  const menuT = (on) => { T.classList.toggle("mo", on); if (B.menu) B.menu.setAttribute("aria-expanded", String(on)); if (on) mSync(); };
   function press(k) {
+    if (k === "menu") return menuT(!T.classList.contains("mo")); // opens over a live round without pausing it
     if (!live()) return;
+    if (k === "fire2") k = "fire";
     if (k === "fire") {
       if (mode === "surf") { if (kSwing <= 0) { kSwing = 0.45; kick = 1; blip(520, 0.06, "triangle", 0.15); } return; }
       if (mode === "duel") return duelShoot();
@@ -11024,7 +11082,8 @@ let xTGOn = false; const xTG = { inPlay: () => false, relAll: () => {} };
     if (k === "c" || k === "q" || k === "e" || k === "x") { const c = "Key" + k.toUpperCase(); kd(c); return ku(c); }
     if (k === "pause") return pause();
     if (k === "drills") return rgOpen("xRg");
-    if (k === "ping") return kd("KeyZ");
+    if (k === "ping") { kd("KeyZ"); return ku("KeyZ"); }
+    if (k === "drop") { kd("KeyG"); return ku("KeyG"); }
     if (k === "zoom") { if (mode === "duel" || !J.dr) xScopeT(); return; }
     if (k === "swap") {
       if (mode === "duel") return setWeap(du.w === "op" ? "knife" : "op");
@@ -11035,9 +11094,36 @@ let xTGOn = false; const xTG = { inPlay: () => false, relAll: () => {} };
     }
   }
   function release(k) {
+    if (k === "fire2") k = "fire";
     if (k === "fire") { fireHeld = false; try { AM.fire = false; } catch (e) {} if (kLP) { clearTimeout(kLP); kLP = 0; shoot(); } }
     if (k === "jump") ku("Space"); if (k === "duck") ku("ControlLeft"); if (k === "plant") ku("Digit4"); if (k === "use") ku("KeyF");
   }
+  // weapon strip: the slots this mode has, as [slot, label, key]; tapping a slot sends that slot's number key (rebinds,
+  // ability equip and the buy menu see it like a key press). Aim Training cycles its guns as the old swap button did.
+  const wList = () => { try {
+    if (mode === "surf") return [];
+    if (mode === "duel") return [["op", "Operator", "Digit1"], ["knife", "Knife", "Digit3"]];
+    if (mode === "aim") return [["swap", String(wName() || "Weapon"), ""]];
+    const rf = mode === "rifle", pri = mode === "five" ? FV.pri : rf ? RF.w : S.weapon, sec = mode === "five" ? FV.sec : "Classic", o = [];
+    if (pri) o.push(["pri", pri, "Digit1"]); if (sec) o.push(["pis", sec, rf ? "Digit3" : "Digit2"]); o.push(["knife", "Knife", rf ? "Digit4" : "Digit3"]); return o;
+  } catch (e) { return []; } };
+  const wCur = () => mode === "duel" ? du.w : mode === "aim" ? "swap" : rw;
+  let wSig = "";
+  function wSync() { const ls = wList(), cur = wCur(), sig = ls.map((x) => x[0] + ":" + x[1]).join("|") + "@" + cur; if (sig === wSig) return; wSig = sig;
+    TW.classList.toggle("hid", !ls.length);
+    TW.innerHTML = ls.map((x) => `<button data-w="${x[0]}" data-c="${x[2]}" class="${x[0] === cur ? "on" : ""}" aria-label="${x[1]}${x[0] === cur ? " (equipped)" : ""}">${String(x[1]).slice(0, 10)}</button>`).join(""); }
+  function wTap(b) { if (!live() || !player || player.hp <= 0) return; const s = b.dataset.w, c = b.dataset.c; if (s === "swap") return press("swap"); if (s === wCur()) return; if (c) { kd(c); ku(c); } wSig = ""; }
+  // menu: scoreboard, buy (outside a buy-phase button: deathmatch), ping, inspect, drop (Spike / gun), comms button, settings
+  function mSync() { const has = (m) => TM.querySelector(`[data-m="${m}"]`);
+    has("buy").classList.toggle("hid", !(mode === "five" && FV.dm)); has("drop").classList.toggle("hid", mode !== "five");
+    has("inspect").classList.toggle("hid", mode === "surf" || mode === "duel"); has("ping").classList.toggle("hid", mode === "surf" || mode === "aim");
+    has("board").classList.toggle("on", $("xBoard").classList.contains("on")); has("comms").classList.toggle("on", TO.cm); has("comms").textContent = "Comms button: " + (TO.cm ? "on" : "off"); }
+  function mTap(b) { const m = b.dataset.m;
+    if (m === "board") { const o = $("xBoard"); if (o.classList.contains("on")) o.classList.remove("on"); else { try { board(); } catch (e) {} o.classList.add("on"); } }
+    else if (m === "comms") { TO.cm = !TO.cm; toSave(); render(); mSync(); return; }
+    else if (m === "set") { menuT(false); return pause(); }
+    else press(m);
+    menuT(false); }
   const P = {};
   const joyOff = () => { ["KeyW", "KeyA", "KeyS", "KeyD", "ShiftLeft"].forEach((c) => keys[c] = false); Jb.style.display = "none"; };
   function end(id) {
@@ -11050,7 +11136,9 @@ let xTGOn = false; const xTG = { inPlay: () => false, relAll: () => {} };
     if (e.target.closest("#xTE")) return;
     e.preventDefault();
     if (P[e.pointerId]) end(e.pointerId); // stale id (missed pointerup) never sticks
+    if (!ed) { const mb = e.target.closest("#xTM button"); if (mb) return mTap(mb); const wb = e.target.closest("#xTW button"); if (wb) { if (T.classList.contains("mo")) menuT(false); return wTap(wb); } }
     const b = e.target.closest(".tb");
+    if (!ed && T.classList.contains("mo") && !(b && b.dataset.k === "menu")) menuT(false); // any other touch closes the menu and still acts
     if (ed) { if (!b) return; sel = b.dataset.k; P[e.pointerId] = { t: "ed", k: sel }; edSync(); }
     else if (b) { P[e.pointerId] = { t: "btn", k: b.dataset.k, b, x: e.clientX, y: e.clientY }; b.classList.add("dn"); press(b.dataset.k); }
     else if (e.clientX < innerWidth / 2 && !Object.values(P).some((p) => p.t === "joy")) {
@@ -11062,9 +11150,9 @@ let xTGOn = false; const xTG = { inPlay: () => false, relAll: () => {} };
   T.addEventListener("pointermove", (e) => {
     const p = P[e.pointerId]; if (!p) return;
     if (p.t === "ed") { custom = true; L[p.k].x = Math.max(2, Math.min(98, e.clientX / innerWidth * 100)); L[p.k].y = Math.max(2, Math.min(98, e.clientY / innerHeight * 100)); return render(); }
-    if (p.t === "aim" || (p.t === "btn" && p.k === "fire")) { aim(e.clientX - p.x, e.clientY - p.y); p.x = e.clientX; p.y = e.clientY; return; }
+    if (p.t === "aim" || (p.t === "btn" && (p.k === "fire" || p.k === "fire2"))) { aim(e.clientX - p.x, e.clientY - p.y); p.x = e.clientX; p.y = e.clientY; return; }
     if (p.t === "joy") {
-      const dx = e.clientX - p.ox, dy = e.clientY - p.oy, m = Math.hypot(dx, dy) || 1, c = Math.min(m, 60), n = c / 60, ux = dx / m, uy = dy / m;
+      const dx = e.clientX - p.ox, dy = e.clientY - p.oy, m = Math.hypot(dx, dy) || 1, c = Math.min(m, 55), n = c / 55, ux = dx / m, uy = dy / m;
       Jk.style.transform = `translate(${ux * c}px,${uy * c}px)`;
       const go = n > 0.2;
       keys.KeyW = go && uy < -0.38; keys.KeyS = go && uy > 0.38; keys.KeyA = go && ux < -0.38; keys.KeyD = go && ux > 0.38;
@@ -11102,21 +11190,44 @@ let xTGOn = false; const xTG = { inPlay: () => false, relAll: () => {} };
   $("xTrm").onclick = () => { if (sel) { custom = true; L[sel].off = !L[sel].off; edSync(); } };
   $("xTrs").onclick = () => { reset(); sel = null; edSync(); };
   $("xTok").onclick = () => { ed = false; sel = null; endAll(); T.classList.remove("ed", "on"); render(); open("mSet"); };
-  $("xArr").onclick = () => { closeAll(); endAll(); ed = true; sel = null; T.classList.add("on", "ed"); edSync(); };
-  // show only in a live match on touch devices; hide context-only buttons
+  $("xArr").onclick = () => { closeAll(); endAll(); menuT(false); ed = true; sel = null; T.classList.add("on", "ed"); edSync(); };
+  // settings (Controls tab): touch button size and opacity, left FIRE button
+  const tSet = () => { const z = $("sTz"), o = $("sTo"); if (z) { z.value = Math.round(TO.sz * 100); $("vTz").textContent = Math.round(TO.sz * 100) + "%"; } if (o) { o.value = Math.round(TO.op * 100); $("vTo").textContent = Math.round(TO.op * 100) + "%"; } const f = $("xTf2"); if (f) f.querySelectorAll("button").forEach((b) => b.classList.toggle("on", (b.dataset.v === "1") === TO.f2)); };
+  if ($("sTz")) $("sTz").oninput = (e) => { TO.sz = Math.max(0.7, Math.min(1.4, +e.target.value / 100)); toSave(); tSet(); render(); };
+  if ($("sTo")) $("sTo").oninput = (e) => { TO.op = Math.max(0.3, Math.min(1, +e.target.value / 100)); toSave(); tSet(); render(); };
+  if ($("xTf2")) $("xTf2").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; TO.f2 = b.dataset.v === "1"; toSave(); tSet(); });
+  tSet();
+  // context: what each context button is for right now (checked every 6th frame)
+  const plantRel = () => { if (!(mode === "retake" || (mode === "five" && !FV.dm))) return false; const d = $("defuse"); return !!d && d.style.display === "block" && /^(Hold|Planting|Defusing)/.test(String(d.firstChild && d.firstChild.textContent || "")); };
+  const useRel = () => { try {
+    const dp = document.getElementById("xdPrompt"); if (dp && dp.style.display === "flex") return true; // "[F] Pick up Vandal"
+    if (typeof BC !== "undefined" && BC.cv && BC.cam) return true; // Cypher camera: F darts
+    if (mode !== "five" || !player || player.hp <= 0) return false;
+    if (FV.map === "ascent" && typeof AD !== "undefined" && AD.doors && AD.doors.some((d) => Math.hypot(d.x - player.x, d.z - player.z) <= 2.5)) return true; // shutters
+    if (FV.map === "lotus" && typeof LG !== "undefined" && LG.on && typeof xLNear === "function" && xLNear(player.x, player.z, 3.2)) return true; // door switches
+    if (window.xOrbs && xOrbs.some((o) => o.on && Math.hypot(player.x - o.x, player.z - o.z) < 1.6)) return true; // ult orbs
+  } catch (e) {} return false; };
+  const reloadRel = () => { try { if (mode === "surf") return false; if (mode === "aim") return true; if (mode === "duel") return du.w === "op" && (du.ammo < OP_MAG || du.reload > 0); return rw !== "knife" && (ammo < MAG() || reloading > 0); } catch (e) { return true; } };
+  const held = (k) => Object.values(P).some((p) => p.t === "btn" && p.k === k);
+  const vis = (k, on) => B[k].classList.toggle("hid", !(on || held(k))); // a held button never vanishes under the thumb
+  let fr = 0, insT = 0, wKey = null;
+  // show only in a live match on touch devices; context buttons only while they do something
   (function loop() {
     requestAnimationFrame(loop);
     if (ed) return;
     const show = touch && inGame() && !paused && !(mode === "five" && FV.menu) && !document.querySelector(".modal.on");
-    if (T.classList.contains("on") !== show) { T.classList.toggle("on", show); if (!show) endAll(); }
+    if (T.classList.contains("on") !== show) { T.classList.toggle("on", show); if (!show) { endAll(); menuT(false); } else { wKey = null; fr = 0; } }
     if (!show) return;
-    const ab = mode !== "duel" && mode !== "surf";
-    B.buy.classList.toggle("hid", !(mode === "five" && (FV.buy > 0 || FV.dm)));
-    B.zoom.classList.toggle("hid", mode === "surf");
-    B.drills.classList.toggle("hid", mode !== "aim");
-    B.plant.classList.toggle("hid", !(mode === "retake" || (mode === "five" && !FV.dm))); // no Spike in deathmatch / TDM / Escalation
-    ["c", "q", "e", "x"].forEach((k) => B[k].classList.toggle("hid", !ab));
-    B.swap.classList.toggle("hid", mode === "surf");
+    if (fr++ % 6) return;
+    const ab = mode !== "duel" && mode !== "surf", now = performance.now(), wk = mode + ":" + wCur() + ":" + (typeof wName === "function" ? wName() : "");
+    if (wKey !== null && wk !== wKey && mode !== "surf" && mode !== "duel") insT = now + 3000; wKey = wk; // a new gun in hand: INSPECT for 3 s
+    vis("buy", mode === "five" && FV.buy > 0);
+    vis("plant", plantRel()); vis("use", useRel()); vis("inspect", now < insT && !fireHeld); vis("drills", mode === "aim");
+    vis("zoom", mode !== "surf" && !(rw === "knife" && mode !== "duel" && mode !== "aim") && !(mode === "duel" && du.w === "knife"));
+    vis("reload", reloadRel()); vis("fire2", TO.f2);
+    ["c", "q", "e", "x"].forEach((k) => vis(k, ab));
+    wSync(); if (T.classList.contains("mo")) mSync();
+    window.xTVis = Object.keys(B).filter((k) => !B[k].classList.contains("hid") && !B[k].classList.contains("off")); // test / probe hook: visible buttons
   })();
 })();
 // ---- lobby profile, weekly board, badges and Ranked (in memory only) ----
@@ -12532,7 +12643,7 @@ window.xMP = { quick: mpQuick, create: mpCreate, join: mpJoin, start: mpStart, l
     if (near && held) { near.hold += dt; if (near.hold >= 3) take(near, null); }
     const showBar = !!(near && near.on && near.hold > 0);
     bar.style.display = showBar ? "block" : "none"; if (showBar) barF.style.width = Math.min(100, near.hold / 3 * 100) + "%";
-    ub.style.display = touch && near && near.on ? "block" : "none";
+    ub.style.display = touch && near && near.on && !window.xTUse ? "block" : "none"; // touch: the context USE (F) button captures instead
     // bots: ~20% walk to their nearby orb while no enemy is known, then hold 3 s
     if (FV.buy > 0) return;
     const bl = typeof bots !== "undefined" ? bots : null;
