@@ -155,6 +155,9 @@ const adv=(s,t)=>{s.time+=t;};
 {const {s,a,b}=setup();a.agent='Reyna';const c=s.add('C','Sova');c.team=a.team;Object.assign(c,{x:-30,y:0,z:0,alive:true,loading:false,input:{},ch:0});s.units.push(c);
  s.effects.push({id:960,kind:'soul',owner:a.id,team:a.team,p:[-5,1.2,0],until:s.time+3,radius:0});
  const rs=u=>JSON.parse(JSON.stringify(s.roundState(u)));assert.deepEqual(rs(a).reyna.souls.map(x=>x.id),[960],'Reyna: her soul');
+ {/* qa-34 (closes the ledger's "fog does not hide Reyna soul rows"): souls never ride the shared snapshot at all - not in fx / dev /
+   fw / events rows, before or after the fog's per-group filter - so the only channel is this per-player round state */
+  const sn=JSON.stringify(s.snapshot());assert.ok(!sn.includes('"soul"')&&!sn.includes('-5,1.2'),'no soul row / spot in the shared snapshot');}
  for(const u of [b,c]){const r=rs(u);assert.equal(r.reyna,null,'no soul rows for '+u.name);assert.ok(!JSON.stringify(r).includes('-5,1.2'),'no soul spot anywhere in '+u.name+'\'s round state');}
  assert.deepEqual(Object.keys(rs(b).cr).sort(),['B'],'enemy credits never sent');assert.deepEqual(rs(b).rv,[],'nothing revealed');
  const def=s.atk===a.team?b:a,sp=rs(def).sp;if(s.spike.st!=='plant')assert.deepEqual([sp[1],sp[2],sp[3],sp[7]],[-1,0,0,''],'defenders: no Spike spot before the plant');}
