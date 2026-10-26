@@ -41,7 +41,7 @@ const SIZES=(process.env.SIZES||'1280x720,640x360,390x844').split(',').map(s=>s.
  await X('FV.buy=Math.max(FV.buy,30);1');await frames(2);await capture('buy');
  // 2. action phase: end buy, real kills, ult ready
  await X('FV.buy=Math.min(FV.buy,0.2);1');await frames(3);
- await X(`if(!window.__kfw){window.__kfw=1;const st=window.setTimeout;window.setTimeout=function(f,ms,...r){if(window.__kfHold&&(ms===4600||ms===5000||window.__kfHold>1&&ms>=1000))return 0;return st.call(window,f,ms,...r);};}window.__kfHold=1;bots.concat(allies).forEach(u=>u.nt=true);1`);
+ await X(`if(!window.__kfw){window.__kfw=1;const st=window.setTimeout;window.setTimeout=function(f,ms,...r){if(window.__kfHold&&(ms===4600||ms===5000||window.__kfHold>1&&ms>=1000&&ms!==7000&&ms!==2200))return 0;return st.call(window,f,ms,...r);};}window.__kfHold=1;bots.concat(allies).forEach(u=>u.nt=true);1`);
  const k=await X(`JSON.stringify((()=>{const v=bots.filter(b=>b.alive);const a=allies.filter(x=>x.alive);const out={};
   if(v[0]){v[0].hp=1;kill(v[0],true);out.hs=v[0].name;}            // player headshot kill (kill() is the real path from shoot())
   if(v[1]){xWB.on=true;xWB.t=performance.now();v[1].hp=1;kill(v[1],false);out.wb=v[1].name;} // wallbang kill (flag as shoot() sets it for a shot through a wall)
@@ -61,7 +61,9 @@ const SIZES=(process.env.SIZES||'1280x720,640x360,390x844').split(',').map(s=>s.
  await page.waitForFunction(()=>window.__xe('document.getElementById("xAnn").classList.contains("on")'),null,{timeout:300000,polling:300}).catch(e=>log('banner wait',String(e).slice(0,100)));
  log('banner',await X('document.querySelector("#xAnn .x-ant").textContent'));
  const rs=await X(`JSON.stringify({running,paused,cov:typeof xCov==='function'?xCov():null,buy:FV.buy,ld:!!window.xLdOn,res:typeof xResUp==='function'?xResUp():null,allow:window.__allow,frame:renderer.info.render.frame})`);log('round end loop state',rs);
- const ok=await frames(2,120000).then(()=>true,()=>false);log('round end scene renders',ok);if(!ok){log('round end loop state after 120 s',await X(`JSON.stringify({running,paused,cov:typeof xCov==='function'?xCov():null,buy:FV.buy,frame:renderer.info.render.frame})`));R.checks.push(['round end: the scene keeps rendering under the ROUND WIN banner','FAIL',rs]);}
+ // fCheck's post-round timers (7000 / 2200 ms) are never held: holding them is what froze hud_b6's round (no next round). SwiftShader here takes
+ // 10-60 s per 1280x720 frame (diag_hud2: 3.4-3.6 M triangles, rAF ~0.1/s before AND after the wipe), so allow 300 s for two frames.
+ const ok=await frames(2,300000).then(()=>true,()=>false);log('round end scene renders',ok);if(!ok){log('round end loop state after 120 s',await X(`JSON.stringify({running,paused,cov:typeof xCov==='function'?xCov():null,buy:FV.buy,frame:renderer.info.render.frame})`));R.checks.push(['round end: the scene keeps rendering under the ROUND WIN banner','FAIL',rs]);}
  else await capture('roundend',{noVerify:true});
  log('errors',R.errors);await browser.close();
 })().catch(e=>{R.errors.push(String(e).slice(0,400));fs.writeFileSync(OUT,JSON.stringify(R,null,1));process.exit(1);});
