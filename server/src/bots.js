@@ -121,5 +121,5 @@ export function stageNode(sim,u,g,find){
 }
 export function spotNear(sim,u,center,field,o){
  const W=sim.world,bl=blockedNodes(W),taken=[];for(const v of sim.units)if(v!==u&&v.team===u.team&&v.plan&&v.plan.round===u.plan.round&&v.plan[field]>=0)taken.push(W.nav.nodes[v.plan[field]]);
- return BotRoutes.spot(W.nav,center,taken,u.plan.rand,Object.assign({ok:i=>(!W.allowed||W.allowed.has(i))&&!bl[i]},o));
+ const also=o&&o.also;return BotRoutes.spot(W.nav,center,taken,u.plan.rand,Object.assign({},o,{ok:i=>(!W.allowed||W.allowed.has(i))&&!bl[i]&&(!also||also(i))})); // o.also: an extra node filter (post-plant: sight of the Spike)
 }

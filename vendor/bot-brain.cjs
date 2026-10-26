@@ -158,5 +158,39 @@
   if(ctx.planted)return used<2&&ctx.spikeDist<26&&ctx.spikeDist>7?{phase:'retake',want:UTIL.retake,aim:'spike'}:null;
   return used<2&&ctx.info&&ctx.siteDist<28?{phase:'delay',want:UTIL.delay,aim:'info'}:null;
  }
- return {hash,rng,clamp,pickW,REACT,personality,reaction,crosshair,crosshairAt,firePattern,peek,attackPlan,defensePlan,roles,teamBuy,buyFor,onMateDeath,onSound,ATTACK,DEFENSE,utility,UTIL,turnStep,trackLag,wrapA};
+ // ---- Spike play ----
+ // Valorant Spike: 45 s fuse, 7 s defuse, progress kept at the 3.5 s half when a defender lets go after it.
+ const SPIKE={fuse:45,defuse:7,half:3.5};
+ // Where the carrier plants this round, relative to the site centre (the caller turns it into a plantable spot):
+ // 'default' (the usual spot, within 2 m of the centre), 'safe' (2.5-5.5 m toward the attackers' entrance, out of the
+ // retake's sight), 'open' (2.5-5.5 m toward the defenders' side, in sight of the post-plant spots). side: -1..1 sideways
+ // share. Patient bots lean safe.
+ function plantSpot(rand,P){const x=rand(),p=P?P.patience:.5,ws=.3*(.6+p*.8),kind=x<.42?'default':x<.42+ws?'safe':'open';return {kind,r:kind==='default'?rand()*2:2.5+rand()*3,side:rand()*2-1};}
+ // Post-plant crossfire for n attackers: angles (rad) around the Spike, 0 = from the Spike toward the attackers' side, spread
+ // over ~125 degrees so two of them cross any defuser, each at its own range: close (5-9 m, on site) or far (11-17 m, off the
+ // site, playing time). One far player from three up, sometimes two; seeded per round. Returns [{ang, r, far}].
+ function postPlant(n,rand){const out=[],span=2.2,base=(rand()-.5)*.6,ang=[];for(let i=0;i<n;i++)ang.push(n<2?base:base-span/2+span*i/(n-1));
+  for(let i=n-1;i>0;i--){const j=Math.floor(rand()*(i+1));[ang[i],ang[j]]=[ang[j],ang[i]];}
+  const far=new Set(),nf=n>=3?1+(rand()<.4?1:0):n===2&&rand()<.5?1:0;while(far.size<nf)far.add(Math.floor(rand()*n));
+  for(let i=0;i<n;i++){const f=far.has(i);out.push({ang:ang[i]+(rand()-.5)*.25,r:f?11+rand()*6:5+rand()*4,far:f});}return out;}
+ // A defender after the plant. ctx {left: s on the fuse, eta: s to reach the Spike, half: the defuse is already at half,
+ //  mates: living defenders (self included), enemies: living attackers, grouped: mates within 12 m (self excluded),
+ //  seen: attackers seen / heard / shooting near the Spike in the last 3 s, at: on the Spike (can defuse), tapped: faked once}
+ // -> {act, style}: 'save' (no time: eta + defuse beats the fuse, or badly outnumbered with little time: keep the gun),
+ //  'wait' (alone with time to spare: hold off the site until a mate joins, retake together), 'go' (retake now),
+ //  on the Spike 'defuse' with style 'ninja' (nobody seen: just defuse), 'stick' (half done or no time to fight first: keep
+ //  defusing under fire), 'tap' (attackers around and time to spare: tap the defuse to bait a peek, once), or 'clear'
+ //  (attackers around and time to spare: fight first).
+ function retake(P,rand,ctx){const need=ctx.eta+(ctx.half?SPIKE.half:SPIKE.defuse),slack=ctx.left-need;
+  if(ctx.at){if(slack<-.25&&!ctx.half)return {act:'save',style:null};if(!ctx.seen)return {act:'defuse',style:'ninja'};if(ctx.half||slack<2.5)return {act:'defuse',style:'stick'};
+   if(!ctx.tapped&&slack>4&&rand()<.3+(P?P.aggression:.5)*.4)return {act:'defuse',style:'tap'};return {act:'clear',style:null};}
+  if(slack<-.25)return {act:'save',style:null};
+  if(ctx.enemies>=ctx.mates+2&&slack<6&&(P?P.patience:.5)>.35)return {act:'save',style:null};
+  if(ctx.mates>1&&ctx.grouped<1&&ctx.enemies>0&&slack>8)return {act:'wait',style:null};
+  return {act:'go',style:null};}
+ // An attacker after the plant. ctx {left: s on the fuse, defusing: a defender is on the Spike, dt: defuse seconds done,
+ //  eta: s to reach the Spike}: 'hide' (the fuse beats any defuse now, even from half: stay out of sight, keep the gun),
+ //  'stop' (a defuse that can still finish and this bot gets there first: go stop it), 'hold' (play the post-plant spot).
+ function postPlay(P,ctx){const prog=ctx.defusing?ctx.dt:ctx.dt>=SPIKE.half?SPIKE.half:0,rem=SPIKE.defuse-prog;if(ctx.left<rem-.1)return 'hide';if(ctx.defusing&&ctx.eta<rem)return 'stop';return 'hold';}
+ return {hash,rng,clamp,pickW,REACT,personality,reaction,crosshair,crosshairAt,firePattern,peek,attackPlan,defensePlan,roles,teamBuy,buyFor,onMateDeath,onSound,ATTACK,DEFENSE,utility,UTIL,turnStep,trackLag,wrapA,SPIKE,plantSpot,postPlant,retake,postPlay};
 });

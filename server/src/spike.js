@@ -7,7 +7,7 @@ import kits from './kits.json' with {type:'json'};
 import {path} from './path.js';
 import {persona,flankNode,plan,spotNear,variedPath,spaceLook,strategy,stageNode,roundTime,botSeed} from './bots.js';
 import BotBrain from '../../vendor/bot-brain.cjs';
-const BOT_TURN=9;// rad/s: a bot turns at most this fast when lining up utility (no instant 180)
+const BOT_TURN=9,BOT_RUN=5.4;// BOT_RUN: m/s a bot covers on foot (rifle run, 6.75 x 0.8), for post-plant timing// rad/s: a bot turns at most this fast when lining up utility (no instant 180)
 import {initAbilities,buyAbility,castAbility,tickAbilities,smokeBlocks,sightClear,types,rewardAbilityKill,gainUlt,barrierBlocked,nearestBarrier} from './abilities.js';
 // VALORANT round phases (wiki.playvalorant.com/en-us/Unrated): buy phase 30 s, 45 s for the first buy phase of each half and
 // of overtime / endgame (rounds 1, 13, 25); post-round phase 7 s.
@@ -100,19 +100,25 @@ export class SpikeSimulation extends Simulation{
  // for being "killed by an enemy agent"); the dead lose their gear in finishRound.
  detonate(sp){for(const u of this.units){if(!u.alive||u.loading||Math.hypot(u.x-sp.x,(u.y||0)-(sp.y||0),u.z-sp.z)>SPIKE_RADIUS)continue;u.hp=0;u.alive=false;/* not a death (wiki Spike, patch 1.11: dying to the Spike no longer counts in KDA), so no ult point either */this.events.push(['k','',u.name,0,'Spike']);}}
  finishRound(winner,text){if(this.roundDelay>0)return;this.roundScores[winner]++;this.losses[winner]=0;this.losses[1-winner]++;for(const u of this.units){u.credits=Math.min(9000,u.credits+(u.team===winner?3000:survivorLoss(this,u,text)?1000:Math.min(2900,1900+(this.losses[u.team]-1)*500)));if(!u.alive&&!u.runItBack){/* a Phoenix inside Run It Back is coming back: he keeps his gear */u.primary=null;u.secondary='Classic';u.armor=0;u.rgn=null;}}this.roundDelay=POST_ROUND;this.roundEvents.push({t:'re',w:winner===0?1:0,tx:text,sc:[...this.roundScores],o:Math.max(...this.roundScores)>=13&&Math.abs(this.roundScores[0]-this.roundScores[1])>=2?1:0});}
- bot(u){const sp=this.spike,W=this.world;let goal=null;this.botSense();if(u.team===this.atk){if(sp.st==='carry'&&sp.carrier===u.id){const p=W.map.sites[sp.site];goal=p;if(this.siteAt(u)){u.input={interact:true};u.inputAt=this.time;return;}}else if(sp.st==='drop')goal=[sp.x,sp.y,sp.z];else if(sp.st==='plant')goal=[sp.x+(u.id%3-1)*5,sp.y,sp.z+5];else goal=W.map.sites[sp.site];}else goal=sp.st==='plant'?[sp.x,sp.y,sp.z]:W.map.sites[Object.keys(W.map.sites)[u.id%Object.keys(W.map.sites).length]];
+ bot(u){const sp=this.spike,W=this.world;let goal=null;this.botSense();if(u.team===this.atk){if(sp.st==='carry'&&sp.carrier===u.id){const p=(!u.human&&this.plantGoal(u))||W.map.sites[sp.site];goal=p;if(this.siteAt(u)&&this.plantNow(u,p)){u.input={interact:true};u.inputAt=this.time;return;}}else if(sp.st==='drop')goal=[sp.x,sp.y,sp.z];else if(sp.st==='plant')goal=[sp.x+(u.id%3-1)*5,sp.y,sp.z+5];else goal=W.map.sites[sp.site];}else goal=sp.st==='plant'?[sp.x,sp.y,sp.z]:W.map.sites[Object.keys(W.map.sites)[u.id%Object.keys(W.map.sites).length]];
  // Variety: the round strategy's staged positions (defaults, fakes, lurks, splits, aggressive defenders), spread spots,
  // rotations on information, staggered starts (u.spread: the goal is already a spread nav spot, so no extra offset)
  u.spread=false;const carrier=sp.st==='carry'&&sp.carrier===u.id,loose0=!(sp.st==='drop'&&u.team===this.atk)&&!carrier;let loose=loose0;
  if(!u.human&&(sp.st==='carry'||sp.st==='plant'||sp.st==='')){const L=plan(this,u),N=W.nav.nodes,atk=u.team===this.atk;
-  if(atk&&sp.st==='plant'){const k=sp.x+','+sp.z;if(L.post0!==k){L.post0=k;L.post=spotNear(this,u,[sp.x,sp.y,sp.z],'post',{rMin:3,rMax:9,gap:3.5});}if(L.post>=0){goal=N[L.post];u.spread=true;}}
+  if(atk&&sp.st==='plant'){const k=sp.x+','+sp.z;if(L.post0!==k){L.post0=k;L.post=this.postNode(u,L,false);L.hide=null;}
+   const pp=L.postAct=BotBrain.postPlay(persona(this,u).brain,{left:sp.t,defusing:sp.defuser!=null,dt:sp.dt,eta:Math.hypot(u.x-sp.x,u.z-sp.z)*1.25/BOT_RUN});
+   if(pp==='stop')goal=[sp.x,sp.y,sp.z];/* a defuse that can still finish: go stop it */
+   else if(pp==='hide'){if(L.hide==null)L.hide=this.postNode(u,L,true);if(L.hide>=0){goal=N[L.hide];u.spread=true;}}/* the fuse beats any defuse: out of sight */
+   else if(L.post>=0){goal=N[L.post];u.spread=true;}}
+  else if(!atk&&sp.st==='plant'){const R=this.retakeCall(u,L);/* retake vs save, group up, then ninja / stick / tap / clear on the Spike */
+   if(R.act==='save'||R.act==='wait'){const k=R.act+'|'+sp.x+','+sp.z;if(L.holdK!==k){L.holdK=k;const dx=u.x-sp.x,dz=u.z-sp.z,l=Math.hypot(dx,dz)||1,want=R.act==='save'?Math.max(l,22):14;L.holdN=l>=want-1?W.near(u.x,u.z,u.y):W.near(sp.x+dx/l*want,sp.z+dz/l*want,u.y);}if(L.holdN>=0){goal=N[L.holdN];u.spread=true;}}else if(R.act!=='clear')loose=false;/* retake: walk onto the Spike itself */}
   else if(sp.st!=='plant'){if(L.go==null)L.go=this.time+L.delay;
    const rt=roundTime(this);let stage=null;for(const g of L.stages)if(rt<g.until){stage=g;break;}
    let site=atk?sp.site:L.site;const info=this.atkInfo&&this.atkInfo.round===this.round?this.atkInfo:null;
    if(!atk&&info&&L.role.rotator&&info.site!==L.site&&this.time>=info.at+(L.rotDelay??(L.rotDelay=1+L.rand()*3))){site=info.site;stage=null;} // defenders rotate on information
    if(stage){const i=stageNode(this,u,stage,this.findPath);if(i>=0){goal=N[i];u.spread=true;loose=true;site=null;}}
    if(site&&!carrier&&W.map.sites[site]){if(L.spotSite!==site){L.spotSite=site;L.spot=spotNear(this,u,W.map.sites[site],'spot',atk?{rMin:1.5,rMax:7,gap:3}:L.role.offAngle?{rMin:6,rMax:14,gap:4}:{rMin:2,rMax:10,gap:4});}if(L.spot>=0){goal=N[L.spot];u.spread=true;}}}}
- if(u.team!==this.atk&&sp.st==='plant'&&Math.hypot(u.x-sp.x,u.z-sp.z)<2){u.input={interact:true};u.inputAt=this.time;return;}
+ if(u.team!==this.atk&&sp.st==='plant'&&Math.hypot(u.x-sp.x,u.z-sp.z)<2&&this.defuseNow(u)){u.input={interact:true};u.inputAt=this.time;return;}
  if(u.blindUntil>this.time||u.concussUntil>this.time||u.nearsightUntil>this.time){/* bots have no nearsight model: held like a blinded bot, as offline (b.blind) */u.input={};u.inputAt=this.time;return;}const route=u.route,routeAt=u.routeAt;u.route=null;super.bot(u);const combat=u.input.fire||u.sawTarget;if(!combat){u.route=route;u.routeAt=routeAt;}if(combat)return;
  if(this.planUtility(u))return;/* lining up plan utility (smoke / flash / recon before the entry, post-plant mollies, defender delay) */
  // reactions: trade / fall back after a teammate dies, hold or push a sound (not the carrier, not a late retake)
@@ -121,6 +127,37 @@ export class SpikeSimulation extends Simulation{
   goal=[R.x,R.y,R.z];u.spread=true;loose=true;}
  if(u.plan&&u.plan.round===this.round&&this.time<u.plan.go&&!carrier){u.input={};u.inputAt=this.time;return;}/* staggered start */
  if(goal){const target={x:goal[0],y:goal[1],z:goal[2]};this.goalPath(u,target,loose);if(u.plan&&u.plan.walk&&u.input&&u.input.forward&&!carrier&&roundTime(this)<70)u.input.walk=true;} }
+ // ---- Spike play (vendor/bot-brain.cjs plantSpot / postPlant / postPlay / retake) ----
+ // The carrier's plant spot this round: default (near the centre), safe (toward the attackers' entrance) or open (toward the
+ // defenders' side), the nearest plantable nav node (shrunk toward the centre until it is inside the plant zone).
+ plantGoal(u){const sp=this.spike,W=this.world,L=plan(this,u),c=W.map.sites[sp.site];if(!c)return null;if(L.plantSite===sp.site)return L.plantP;L.plantSite=sp.site;L.plantP=null;
+  const r=BotBrain.rng(BotBrain.hash('plant|'+sp.site+'|'+this.round+'|'+u.team+'|'+botSeed(this))),Q=BotBrain.plantSpot(r,persona(this,u).brain),to=Q.kind==='safe'?W.map.attacker:Q.kind==='open'?W.map.defender:null;
+  let dx,dz;if(to){dx=to[0]-c[0];dz=to[2]-c[2];}else{const a=r()*Math.PI*2;dx=Math.cos(a);dz=Math.sin(a);}const l=Math.hypot(dx,dz)||1;dx/=l;dz/=l;
+  for(const f of [1,.7,.4,0]){const x=c[0]+(dx*Q.r-dz*Q.side*1.5)*f,z=c[2]+(dz*Q.r+dx*Q.side*1.5)*f,n=W.nav.nodes[W.near(x,z,c[1])];if(n&&this.siteAt({x:n[0],y:n[1],z:n[2]})===sp.site){L.plantP=[n[0],n[1],n[2]];L.plantKind=f?Q.kind:'default';break;}}
+  const G=this.plantLog||(this.plantLog=[]);if(L.plantP&&!G.some(e=>e.round===this.round&&e.team===u.team)){G.push({round:this.round,team:u.team,site:sp.site,kind:L.plantKind,p:[...L.plantP]});if(G.length>200)G.shift();}
+  return L.plantP;}
+ // Plant once on the spot, or after 3 s inside the site (spot unreachable / contested), or when time is short or a fight is on.
+ plantNow(u,p){if(u.human)return true;const L=plan(this,u);if(L.inSite==null)L.inSite=this.time;return !L.plantP||Math.hypot(p[0]-u.x,p[2]-u.z)<1.6||this.time-L.inSite>3||this.remaining<15||!!u.sawTarget;}
+ // Post-plant spot: this bot's crossfire slot (angle around the Spike from its attackers' side, close or far), the nav node
+ // near it that sees the Spike; far=true: a hiding spot 15 m out (no sight needed). Falls back to any spread spot.
+ postNode(u,L,far){const sp=this.spike,W=this.world,S=strategy(this,u.team),key=this.round+'|'+sp.x+','+sp.z;
+  if(!S.post||S.post.k!==key)S.post={k:key,slots:BotBrain.postPlant(S.members.length,BotBrain.rng(BotBrain.hash('post|'+key+'|'+u.team+'|'+botSeed(this))))};
+  const i=Math.max(0,S.members.findIndex(v=>v.id===u.id)),q=S.post.slots[i%Math.max(1,S.post.slots.length)]||{ang:0,r:7,far:false},A=W.map.attacker;
+  let bx=A[0]-sp.x,bz=A[2]-sp.z;const bl=Math.hypot(bx,bz)||1;bx/=bl;bz/=bl;const ca=Math.cos(q.ang),sa=Math.sin(q.ang),dx=bx*ca-bz*sa,dz=bx*sa+bz*ca,r=far?15:q.r,pt=[sp.x+dx*r,sp.y,sp.z+dz*r];
+  const sees=i2=>{const n=W.nav.nodes[i2];return this.canSee(u,null,[n[0],n[1]+1.5,n[2]],[sp.x,sp.y+.5,sp.z]);};
+  let k=spotNear(this,u,pt,far?'hideN':'post',far?{rMin:0,rMax:5,gap:2}:{rMin:0,rMax:3.5,gap:2.5,also:sees});if(k<0&&!far)k=spotNear(this,u,[sp.x,sp.y,sp.z],'post',{rMin:3,rMax:9,gap:3.5,also:sees});if(k<0&&!far)k=spotNear(this,u,[sp.x,sp.y,sp.z],'post',{rMin:3,rMax:9,gap:3.5});
+  if(!far){L.postSlot=q;(this.postLog||(this.postLog=[])).push({round:this.round,id:u.id,ang:q.ang,r:q.r,far:q.far,node:k});if(this.postLog.length>400)this.postLog.shift();}
+  return k;}
+ // A defender after the plant: BotBrain.retake on what this bot knows (fuse, its own travel time, half kept, numbers, mates
+ // around it, attackers seen / shooting near the Spike in the last 3 s); re-thought every 0.5 s.
+ retakeCall(u,L){const sp=this.spike;if(L.ret&&this.time<L.retAt)return L.ret;const U=this.units,R=L.retR||(L.retR=BotBrain.rng(BotBrain.hash('ret|'+u.name+'|'+u.id+'|'+this.round+'|'+botSeed(this))));
+  let mates=0,enemies=0,grouped=0;for(const v of U){if(!v.alive)continue;if(v.team===u.team){mates++;if(v!==u&&Math.hypot(v.x-u.x,v.z-u.z)<12)grouped++;}else enemies++;}
+  for(const e of U){if(!e.alive||e.team===u.team||Math.hypot(e.x-sp.x,e.z-sp.z)>12)continue;if(e.shotAt>this.time-3||U.some(m=>m.alive&&m.team===u.team&&m.sawTarget&&m.aimTarget===e.id)){L.seenAt=this.time;break;}}
+  const dist=Math.hypot(u.x-sp.x,u.z-sp.z),c=BotBrain.retake(persona(this,u).brain,R,{left:sp.t,eta:dist*1.25/BOT_RUN,half:sp.dt>=3.5,mates,enemies,grouped,seen:this.time-(L.seenAt??-1e9)<3,at:dist<2,tapped:!!L.tapped});
+  if(c.style==='tap'&&L.tapAt==null)L.tapAt=this.time;L.ret=c;L.retAt=this.time+.5;(this.retakeLog||(this.retakeLog=[])).push({round:this.round,id:u.id,t:+sp.t.toFixed(2),act:c.act,style:c.style});if(this.retakeLog.length>400)this.retakeLog.shift();return c;}
+ // On the Spike: ninja / stick hold the defuse; a tap defuses 0.8 s then lets go 1.2 s once (baiting a peek); clear fights first.
+ defuseNow(u){const L=u.plan;if(u.human||!L||L.round!==this.round)return true;const c=this.retakeCall(u,L);if(c.act==='save'||c.act==='clear')return false;
+  if(c.style==='tap'||L.tapAt!=null&&!L.tapped){const e=this.time-(L.tapAt??this.time);if(e<.8)return true;if(e<2)return false;L.tapped=true;L.ret=null;}return true;}
  // Once per tick: what the bots perceive. Deaths (teammates react: trade the killer, fall back or hold), sounds (gunshots
  // within 35 m, running footsteps within 16 m: hold the angle, glance or push) and defender information (attackers seen
  // or heard near a site: rotators rotate there after their own delay).

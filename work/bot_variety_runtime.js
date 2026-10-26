@@ -227,4 +227,57 @@ if(typeof xLurk==='function'){const lk0=xLurk;xLurk=function(u,team,s){return xb
   return r;
  }catch(e){}
  return gs0.apply(this,arguments);};}
+// Spike play (BotBrain plantSpot / postPlant / postPlay / retake, as the server): the bot carrier plants on its round's
+// spot (default near the centre, safe toward the attackers' entrance, open toward the defenders: nav-snapped and inside the
+// plant zone; on native maps), plants there or after 3 s in the site / when time is short / in a fight; post-plant attackers
+// take crossfire slots around the Spike (spread angles from their side, close or far, a node that sees the Spike), go stop a
+// defuse they can reach and hide when the fuse beats any defuse; defenders play the fuse: save (eta + defuse beats it),
+// wait off the site for a mate with time to spare, retake, and on the Spike defuse ninja / stick / tap once, or clear first.
+const XBV_RUN=5.4; // m/s on foot (rifle run), for the fuse arithmetic
+function xbvSp(){const s=FV.sp;return mode==='five'&&!FV.dm&&!!window.BotBrain&&!!s;}
+function xbvPlantPt(C,u,s){
+ const k=xbvKey()+'|'+s.site;if(s.xpK===k)return s.xpP;s.xpK=k;s.xpP=null;const S=C.meta.sites,c=xbvSiteCenter(C,s.site,true);if(!S[s.site])return null;
+ const r=BotRoutes.rng(BotRoutes.hash(xbvSeed()+'|plant|'+k)),Q=BotBrain.plantSpot(r,xbBrain(u)),to=Q.kind==='safe'?C.meta.attacker:Q.kind==='open'?C.meta.defender:null;
+ let dx,dz;if(to){dx=to[0]-c[0];dz=to[2]-c[2];}else{const a=r()*Math.PI*2;dx=Math.cos(a);dz=Math.sin(a);}const l=Math.hypot(dx,dz)||1;dx/=l;dz/=l;
+ for(const f of [1,.7,.4,0]){const q=xbvSpot(C,[c[0]+(dx*Q.r-dz*Q.side*1.5)*f,c[1],c[2]+(dz*Q.r+dx*Q.side*1.5)*f],[],r,{rMin:0,rMax:1.2,gap:0});if(q&&(typeof inSite!=='function'||inSite({x:q[0],z:q[2]})===s.site)){s.xpP=q;s.xpKind=f?Q.kind:'default';break;}}
+ if(s.xpP){(XBV.plog||(XBV.plog=[])).push({k,site:s.site,kind:s.xpKind,p:s.xpP.slice()});if(XBV.plog.length>100)XBV.plog.shift();}return s.xpP;}
+if(typeof xPlantOk==='function'){const po0=xPlantOk;xPlantOk=function(c,p){const s=FV.sp;if(!xbvSp()||!c||c===player||!s.xpP||s.xpK!==xbvKey()+'|'+s.site)return po0.apply(this,arguments);
+ const now=performance.now();if(s.xpIn==null||s.xpInK!==s.xpK){s.xpIn=now;s.xpInK=s.xpK;}return Math.hypot(s.xpP[0]-p.x,s.xpP[2]-p.z)<1.6||now-s.xpIn>3000||timeLeft<15||c.see>0;};}
+function xbvPostPt(C,u,team,s,far){
+ const k=xbvKey()+'|'+s.x+','+s.z,S=XBV.post&&XBV.post.k===k?XBV.post:(XBV.post={k,slots:null,order:team.slice().sort((a,b)=>BotRoutes.hash((a.name||'')+'|'+k)-BotRoutes.hash((b.name||'')+'|'+k))});
+ if(!S.slots)S.slots=BotBrain.postPlant(S.order.length,BotRoutes.rng(BotRoutes.hash(xbvSeed()+'|post|'+k)));
+ const i=Math.max(0,S.order.indexOf(u)),q=S.slots[i%Math.max(1,S.slots.length)]||{ang:0,r:7},A=C.meta.attacker,P=xbvPlan(u,team,true,C);let bx=A[0]-s.x,bz=A[2]-s.z;const bl=Math.hypot(bx,bz)||1;bx/=bl;bz/=bl;
+ const ca=Math.cos(q.ang),sa=Math.sin(q.ang),dx=bx*ca-bz*sa,dz=bx*sa+bz*ca,r=far?15:q.r,y=s.y||u.g.position.y,pt=[s.x+dx*r,y,s.z+dz*r],N=C.nav.nodes;
+ const sees=j=>{if(typeof los!=='function'||typeof RV==='undefined')return true;const n=N[j];return los(new RV(n[0],n[1]+1.5,n[2]),new RV(s.x,y+.5,s.z));},ok=j=>(!C.playable||!!C.playable[j])&&(far||sees(j));
+ let p=xbvSpot(C,pt,xbvTeamTaken(team,u,far?'hide':'post'),P.rand,{rMin:0,rMax:far?5:3.5,gap:2.5,ok});if(!p&&!far)p=xbvSpot(C,[s.x,y,s.z],xbvTeamTaken(team,u,'post'),P.rand,{rMin:3,rMax:9,gap:3.5,ok});if(!p&&!far)p=xbvSpot(C,[s.x,y,s.z],xbvTeamTaken(team,u,'post'),P.rand,{rMin:3,rMax:9,gap:3.5});
+ if(!far){P.postSlot=q;(XBV.polog||(XBV.polog=[])).push({k,name:u.name,ang:q.ang,r:q.r,far:q.far});if(XBV.polog.length>200)XBV.polog.shift();}return p;}
+// a defender's retake call, re-thought every 0.5 s (what this bot's team knows: attackers seen / heard near the Spike in the last 3 s)
+function xbvRetake(u,team){
+ const s=FV.sp,now=performance.now(),k=xbvKey();if(u.xRet&&u.xRet.k===k&&now<u.xRet.at)return u.xRet.c;const sp={x:s.x,z:s.z},defP=!FV.atk&&player&&player.hp>0,atkL=(FV.atk?[player].concat(allies):bots).filter(v=>v&&(v===player?v.hp>0:v.alive));
+ let mates=defP?1:0,grouped=0;const p=u.g.position;for(const v of team)if(v&&v.alive){mates++;if(v!==u&&Math.hypot(v.g.position.x-p.x,v.g.position.z-p.z)<12)grouped++;}if(defP&&Math.hypot(player.x-p.x,player.z-p.z)<12)grouped++;
+ const R=u.xRet&&u.xRet.k===k?u.xRet:{k,seenAt:-1e9,tapped:false,tapAt:null,r:BotRoutes.rng(BotRoutes.hash((u.name||'')+'|ret|'+k+'|'+xbvSeed()))};
+ for(const d of team){if(!d||!d.alive)continue;let q=null;if(d.see>0){const t=d.xTt||d.xTg;q=t&&(t.g?t.g.position:t);}if(!q&&d.hearT>0&&d.hear)q={x:d.hear[0],z:d.hear[1]};if(q&&Math.hypot(q.x-sp.x,q.z-sp.z)<12)R.seenAt=now;}
+ const dist=Math.hypot(p.x-sp.x,p.z-sp.z),c=BotBrain.retake(xbBrain(u),R.r,{left:timeLeft,eta:dist*1.25/XBV_RUN,half:s.dt>=3.5,mates,enemies:atkL.length,grouped,seen:now-R.seenAt<3000,at:dist<3.2,tapped:R.tapped});
+ if(c.style==='tap'&&R.tapAt==null)R.tapAt=now;R.c=c;R.at=now+500;u.xRet=R;(XBV.rlog||(XBV.rlog=[])).push({name:u.name,t:+timeLeft.toFixed(1),act:c.act,style:c.style});if(XBV.rlog.length>200)XBV.rlog.shift();return c;}
+if(typeof xDefOk==='function'){const do0=xDefOk;xDefOk=function(x,safe){if(!xbvSp()||!x||x===player||!x.g||FV.sp.st!=='plant')return do0.apply(this,arguments);
+ const team=bots.includes(x)?bots:allies,c=xbvRetake(x,team),R=x.xRet;if(c.act==='save'||c.act==='clear')return false;
+ if(R.tapAt!=null&&!R.tapped){const e=performance.now()-R.tapAt;if(e<800)return true;if(e<2000)return false;R.tapped=true;R.at=0;}return true;};}
+{const sg0=xGoal;xGoal=function(u,team,atk,out){
+ const s=FV.sp;if(!xbvSp()||!u||!u.g||u===player||s.st!=='plant'&&!(atk&&s.st==='carry'&&u===s.c))return sg0.apply(this,arguments);
+ try{const C=typeof nmActive==='function'&&nmActive(),p=u.g.position;
+  if(atk&&s.st==='carry'){if(!C||!C.meta||!C.meta.sites)return sg0.apply(this,arguments);const r=sg0.apply(this,arguments);if(!r||!C.meta.sites[s.site])return r;const q=xbvPlantPt(C,u,s),c=xbvSiteCenter(C,s.site,true),m=C.meta.sites[s.site];
+   // the carrier's last leg (the base / staged goal is the site itself): its plant spot instead
+   if(q&&(Math.hypot(r[0]-c[0],r[1]-c[2])<8||Math.hypot(r[0]-m[0],r[1]-m[2])<8)&&Math.hypot(p.x-c[0],p.z-c[2])<30)return x2(out,q[0],q[2]);return r;}
+  if(atk){if(!C||!C.meta||!C.meta.sites)return sg0.apply(this,arguments);const P=xbvPlan(u,team,true,C),k=xbvKey()+'|'+s.x+','+s.z;
+   if(P.post0!==k){P.post0=k;P.post=xbvPostPt(C,u,team,s,false);P.hide=null;}
+   const du=!!s.du,pp=P.postAct=BotBrain.postPlay(xbBrain(u),{left:timeLeft,defusing:du,dt:s.dt||0,eta:Math.hypot(p.x-s.x,p.z-s.z)*1.25/XBV_RUN});
+   if(pp==='stop')return x2(out,s.x,s.z);if(pp==='hide'){if(P.hide==null)P.hide=xbvPostPt(C,u,team,s,true)||false;if(P.hide)return x2(out,P.hide[0],P.hide[2]);}
+   return P.post?x2(out,P.post[0],P.post[2]):sg0.apply(this,arguments);}
+  const R=xbvRetake(u,team);if(R.act!=='save'&&R.act!=='wait')return sg0.apply(this,arguments);
+  const dx=p.x-s.x,dz=p.z-s.z,l=Math.hypot(dx,dz)||1,want=R.act==='save'?22:14;if(l>=want-1)return x2(out,p.x,p.z); // far enough: hold here
+  let x=s.x+dx/l*want,z=s.z+dz/l*want;if(C&&C.nav){const q=xbvSpot(C,[x,p.y,z],[],BotRoutes.rng(BotRoutes.hash(u.name+'|hold')),{rMin:0,rMax:3,gap:0});if(q){x=q[0];z=q[2];}}
+  else for(let n=0;n<6&&typeof blocked==='function'&&blocked(x,z,0.45);n++){x+=(p.x-x)*.25;z+=(p.z-z)*.25;}
+  return x2(out,x,z);
+ }catch(e){}
+ return sg0.apply(this,arguments);};}
 // ---- END BOT VARIETY ----

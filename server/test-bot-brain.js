@@ -89,4 +89,38 @@ const G={map:{attacker:[-14,0,0],defender:[14,0,-28],sites:{A:[-8,0,-14],B:[8,0,
  for(const e of L){const R=plans.get(e.round);if(!R)continue;if(e.phase==='entry'){assert.ok(R.plan.utilFirst&&e.t>=(R.plan.type==='rush'?0:R.plan.executeAt-3)-.01,'entry utility only on utility-first plans, at the execute');assert.ok(!R.lurk.has(e.id),'the lurker throws no entry utility');}}
  const mine=Object.keys(S.units[0].ability||{});assert.ok(mine.includes('c'),'ability charges as before');
  out.push('plan utility '+L.length+' casts ('+[...ph].join('/')+')');}
+// 6. Spike play: plant spots vary (default / safe / open), post-plant crossfire (spread angles, close + far), defenders
+// play the fuse (save when eta + defuse beats it, wait for a mate with time to spare, ninja / stick / tap / clear on the
+// Spike), attackers stop a defuse they can reach or hide when the fuse beats any defuse
+{const kinds=new Set();for(let k=0;k<60;k++){const q=B.plantSpot(B.rng(B.hash('p'+k)),null);kinds.add(q.kind);assert.ok(q.kind==='default'?q.r<=2:q.r>=2.5&&q.r<=5.5,'plant distance by kind');}
+ assert.equal(kinds.size,3,'plant spots: default, safe and open all occur');
+ for(let k=0;k<20;k++){const P=B.postPlant(5,B.rng(k+1)),a=P.map(q=>q.ang).sort((x,y)=>x-y),nf=P.filter(q=>q.far).length;for(let i=1;i<a.length;i++)assert.ok(a[i]-a[i-1]>.25,'crossfire angles spread');
+  assert.ok(a[4]-a[0]>1.6,'crossfire covers > 90 degrees');assert.ok(nf>=1&&nf<=2,'one or two far (playing time)');for(const q of P)assert.ok(q.far?q.r>=11&&q.r<=17:q.r>=5&&q.r<=9,'post range');}
+ const P=B.personality(B.hash('Bot Sage')),R=B.rng(9),C=(o)=>B.retake(P,R,{left:30,eta:2,half:false,mates:3,enemies:2,grouped:1,seen:false,at:false,tapped:false,...o});
+ assert.equal(C({left:8,eta:2}).act,'save','no time: eta + 7 s defuse beats the fuse -> save');assert.equal(C({left:8,eta:2,half:true}).act,'go','half kept: 3.5 s is enough -> go');
+ assert.equal(C({grouped:0,left:30}).act,'wait','alone with time to spare: wait for a mate');assert.equal(C({grouped:0,left:13}).act,'go','alone, the fuse forces the retake');
+ assert.equal(C({mates:1,enemies:4,left:12,eta:3}).act==='save'||P.patience<=.35,true,'1v4 with little time: save');
+ assert.deepEqual(C({at:true,eta:0}),{act:'defuse',style:'ninja'},'on the Spike, nobody seen: ninja defuse');assert.deepEqual(C({at:true,eta:0,seen:true,half:true}),{act:'defuse',style:'stick'},'half done: stick');
+ assert.deepEqual(C({at:true,eta:0,seen:true,left:8}),{act:'defuse',style:'stick'},'no time to fight first: stick');
+ const sty=new Set();for(let k=0;k<40;k++)sty.add(C({at:true,eta:0,seen:true,left:30}).act+'/'+C({at:true,eta:0,seen:true,left:30}).style);assert.ok(sty.has('defuse/tap')&&sty.has('clear/null'),'attackers around with time: tap the defuse or clear first ('+[...sty]+')');
+ assert.equal(C({at:true,eta:0,seen:true,left:30,tapped:true}).style!=='tap',true,'one tap only');
+ assert.equal(B.postPlay(P,{left:3,defusing:false,dt:0,eta:2}),'hide','the fuse beats any defuse: hide');assert.equal(B.postPlay(P,{left:20,defusing:true,dt:2,eta:3}),'stop','a defuse in reach: stop it');
+ assert.equal(B.postPlay(P,{left:20,defusing:true,dt:5,eta:4}),'hold','too far to stop it: hold');assert.equal(B.postPlay(P,{left:20,defusing:false,dt:0,eta:3}),'hold','no defuse: hold the post');
+ // real Ascent match: plant spots, post-plant slots and retake calls from the sim
+ const assets={async fetch(r){try{return new Response(await fs.readFile('public'+new URL(r.url).pathname));}catch(e){return new Response('',{status:404});}}};
+ const W=await loadWorld(assets,'ascent');let seed=11;const S=new SpikeSimulation(W,'five','ascent',()=>(seed=(seed*16807)%2147483647)/2147483647);S.qaBuy=2;S.start(true);const real=[];let st0='';
+ for(let t=0;t<1500/.05&&real.length<5;t++){S.step(.05);if(S.spike.st==='plant'&&st0!=='plant')real.push({round:S.round,site:S.spike.site,x:S.spike.x,z:S.spike.z});st0=S.spike.st;}
+ const PL=S.plantLog||[],pk=new Set(PL.map(e=>e.kind)),ps=new Set(PL.map(e=>e.p.map(Math.round).join(',')));assert.ok(PL.length>=4&&pk.size>=2&&ps.size>=3,'Ascent: plant spots vary ('+PL.map(e=>e.site+':'+e.kind).join(',')+')');
+ let onSpot=0;for(const r of real){const e=PL.find(q=>q.round===r.round);if(e&&Math.hypot(e.p[0]-r.x,e.p[2]-r.z)<2.5)onSpot++;}assert.ok(real.length>=3&&onSpot>=2,'carriers plant on their chosen spot ('+onSpot+'/'+real.length+')');
+ for(const e of PL)assert.equal(S.siteAt({x:e.p[0],y:e.p[1],z:e.p[2]}),e.site,'every plant spot is inside its plant zone');
+ const PO=S.postLog||[];if(PO.length){const byR=new Map();for(const e of PO){if(!byR.has(e.round))byR.set(e.round,[]);byR.get(e.round).push(e);}for(const L of byR.values()){const a=new Set(L.map(e=>e.ang.toFixed(2)));assert.equal(a.size,L.length,'each attacker its own crossfire slot');}}
+ // a staged plant: B site, fuse / defuse states, one defender and one attacker
+ const site=W.map.sites.B,unitOf=team=>S.units.find(u=>u.team===team&&!u.human),d=unitOf(1-S.atk),a=unitOf(S.atk);for(const u of S.units)if(u!==d&&u!==a)Object.assign(u,{alive:false});
+ S.buy=0;S.roundDelay=0;S.phase='game';Object.assign(S.spike,{st:'plant',site:'B',x:site[0],y:site[1],z:site[2],t:30,dt:0,defuser:null});Object.assign(a,{alive:true,hp:100,x:site[0]+30,y:site[1],z:site[2]+30,shotAt:-9});
+ const at=(t,dt,o)=>{Object.assign(d,{alive:true,hp:100,x:site[0]+.5,y:site[1],z:site[2],plan:null},o||{});Object.assign(S.spike,{t,dt});S.time+=1;S.bot(d);return d.input.interact===true;};
+ assert.equal(at(30,0),true,'nobody seen: ninja defuse at once');assert.equal(at(4,0),false,'4 s on the fuse and no half: save, no defuse');assert.equal(at(4,3.5),true,'half kept: 3.5 s fits in 4 s, stick');
+ Object.assign(a,{x:site[0]+6,z:site[2]+6});let taps=0,clears=0;const r0=S.round;for(let k=0;k<12;k++){S.round=r0+100+k;S.time+=1;a.shotAt=S.time+2;d.plan=null;at(30,0);const c=d.plan.ret;if(c.style==='tap')taps++;if(c.act==='clear')clears++;}S.round=r0;assert.ok(taps+clears===12&&taps>0&&clears>0,'attacker shooting near the Spike: tap or clear first ('+taps+' / '+clears+')');
+ Object.assign(a,{x:site[0]+3,z:site[2]+3,plan:null});Object.assign(S.spike,{t:20,dt:2,defuser:d.id});S.bot(a);assert.equal(a.plan.postAct,'stop','a defuse in reach: the attacker goes to stop it');
+ Object.assign(S.spike,{t:2.5,dt:0,defuser:null});a.plan.post0=null;S.bot(a);assert.equal(a.plan.postAct,'hide','the fuse beats any defuse: the attacker hides');
+ out.push('spike play: plants '+PL.map(e=>e.kind).join('/')+', post slots '+PO.length+', tap '+taps+' clear '+clears);}
 console.log('Bot brain: '+out.join('; '));

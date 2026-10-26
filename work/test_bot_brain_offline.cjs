@@ -144,6 +144,44 @@ for(const map of ['ascent','bind']){
  return {L,staged,lurkOff,lurkRot};};
  const a=run(),b=run();assert.deepEqual(a.L,b.L,'scripted maps replay under one seed');assert(new Set(a.L.map(v=>v.slice(-1))).size>=2&&new Set(a.L.map(v=>v.slice(0,5))).size>=8,'sites and defender holds vary by round');
  assert(a.staged>=10,'staged attackers hold their plan points ('+a.staged+')');assert(a.lurkRot>0,'lurk plans seen ('+a.lurkRot+')');out.push('scripted maps: staged '+a.staged+', lurkers off-site '+a.lurkOff+', single plan lurker rotations '+a.lurkRot);}
+// spike play (BotBrain plantSpot / postPlant / postPlay / retake, as the server): the carrier's last leg goes to its round's
+// plant spot (inside the plant zone, varying by round) and it plants there (or after 3 s in the site); post-plant attackers
+// take their own crossfire slots, go stop a defuse they can reach, hide when the fuse beats any defuse; defenders save with
+// no time, hold off for a mate, defuse ninja when nobody is seen, tap or clear first when attackers are around
+{const map='ascent',dir=path.join(root,'models/valorant/maps',map),meta=JSON.parse(fs.readFileSync(path.join(dir,'map.json'),'utf8')),nav=JSON.parse(fs.readFileSync(path.join(dir,'navigation.json'),'utf8')),N=nav.nodes;
+ const C={key:map,nav,meta,playable:new Uint8Array(N.length).fill(1),siteGoals:null};let now=1;
+ const near=(x,z)=>{let b=-1,d=Infinity;for(let k=0;k<N.length;k++){const n=N[k],v=(n[0]-x)**2+(n[2]-z)**2;if(v<d){d=v;b=k;}}return b;};
+ const unit=(name,x,z)=>{const n=N[near(x,z)];return {name,per:{ag:.5,fl:.5,sd:.5},alive:true,see:0,g:{position:{x:n[0],y:n[1],z:n[2]}}};};
+ const inSite=p=>Object.keys(meta.sites).find(k=>Math.hypot(p.x-meta.sites[k][0],p.z-meta.sites[k][2])<7);
+ const ctx={Math,Object,Number,Infinity,Set,Map,WeakMap,Array,Float64Array,Int32Array,Uint8Array,performance:{now:()=>now},window:{xBotSeed:21},mode:'five',running:true,player:{hp:0},allies:[],bots:[],XNF:0,timeLeft:100,
+  FV:{you:0,them:0,map,atk:false,dm:false,buy:0,sp:null},x2:(o,x,z)=>{if(!o)return [x,z];o[0]=x;o[1]=z;return o;},nmActive:()=>C,nmClimbOk:()=>false,xSmV:(u,dt,vx,vz)=>[vx,vz],blocked:()=>false,inSite,
+  xGoal:(u,t,a,o)=>{const s=ctx.FV.sp;if(s.st==='plant')return ctx.x2(o,s.x,s.z);const c=meta.sites[s.site];return ctx.x2(o,c[0],c[2]);},xPlantOk:()=>true,xDefOk:(x,safe)=>safe(x)};
+ ctx.globalThis=ctx;vm.createContext(ctx);vm.runInContext(html.slice(i,j+Z.length)+'\n;globalThis.BotRoutes=BotRoutes;globalThis.BotBrain=BotBrain;globalThis.XBVq=()=>XBV;',ctx);Object.assign(ctx.window,{BotRoutes:ctx.BotRoutes,BotBrain:ctx.BotBrain});
+ const sites=Object.keys(meta.sites),kinds=new Set(),spots=new Set();let inZone=0,n=0;
+ for(let r=0;r<24;r++){Object.assign(ctx.FV,{you:r,them:0,atk:false});const site=sites[r%sites.length],c=meta.sites[site],car=unit('Bot Raze',c[0]+12,c[2]);ctx.bots=[car];ctx.FV.sp={st:'carry',site,c:car};ctx.timeLeft=40;
+  ctx.xGoal(car,[car],true,[0,0]);{const c2=meta.sites[ctx.FV.sp.site],q=N[near(c2[0]+10,c2[2])];Object.assign(car.g.position,{x:q[0],y:q[1],z:q[2]});} // the strategy picks the site; then near it
+  const g=ctx.xGoal(car,[car],true,[0,0]),P=ctx.FV.sp.xpP,site2=ctx.FV.sp.site;if(!P)continue;n++;kinds.add(ctx.FV.sp.xpKind);spots.add(Math.round(P[0])+','+Math.round(P[2]));assert.deepEqual(g,[P[0],P[2]],'the carrier\'s last leg is its plant spot');if(inSite({x:P[0],z:P[2]})===site2)inZone++;}
+ assert(n>=20&&inZone===n,'plant spots inside the plant zone ('+inZone+'/'+n+')');assert(kinds.size>=2&&spots.size>=6,'plant spots vary by round ('+[...kinds]+', '+spots.size+' spots)');
+ {const s=ctx.FV.sp,P=s.xpP,car=s.c;now=5e4;assert.equal(ctx.xPlantOk(car,{x:P[0]+4,z:P[2]}),false,'not yet off the spot');now+=3100;assert.equal(ctx.xPlantOk(car,{x:P[0]+4,z:P[2]}),true,'plants after 3 s in the site anyway');
+  s.xpIn=null;assert.equal(ctx.xPlantOk(car,{x:P[0]+.5,z:P[2]}),true,'plants on the spot');}
+ // post-plant attackers
+ Object.assign(ctx.FV,{you:40,them:3,atk:false});const pc=meta.sites[sites[0]],A=['Jett','Omen','Sova','Sage','Phoenix'].map((nm,k)=>unit('Bot '+nm,pc[0]+(k-2)*2,pc[2]+4));ctx.bots=A;now=1e6;
+ ctx.FV.sp={st:'plant',site:sites[0],x:pc[0],y:pc[1],z:pc[2],dt:0,du:null};ctx.timeLeft=40;const posts=A.map(u=>ctx.xGoal(u,A,true,[0,0]).slice());
+ const L=ctx.XBVq().polog.filter(e=>e.k.endsWith(pc[0]+','+pc[2])),angs=new Set(L.map(e=>e.ang.toFixed(3)));assert.equal(angs.size,5,'each attacker its own crossfire slot');
+ assert.equal(new Set(posts.map(p=>p.map(Math.round).join())).size,5,'five different post spots');assert(L.some(e=>e.far),'someone plays time from far');
+ const a0=A[0];ctx.FV.sp.du={};ctx.FV.sp.dt=1;Object.assign(a0.g.position,{x:pc[0]+5,z:pc[2]});assert.deepEqual(ctx.xGoal(a0,A,true,[0,0]),[pc[0],pc[2]],'a defuse in reach: go stop it');
+ ctx.FV.sp.du=null;ctx.FV.sp.dt=0;ctx.timeLeft=2.5;const h=ctx.xGoal(a0,A,true,[0,0]);assert(Math.hypot(h[0]-pc[0],h[1]-pc[2])>8,'the fuse beats any defuse: hide off the Spike');
+ // defenders
+ Object.assign(ctx.FV,{you:41,them:3,atk:true});const D=['Killjoy','Cypher'].map((nm,k)=>unit('Def '+nm,pc[0]+20+k*30,pc[2]));ctx.bots=D;ctx.allies=[unit('Atk Reyna',pc[0]-6,pc[2]-6)];now+=1e5;ctx.timeLeft=4;const d0=D[0],q0=d0.g.position;
+ {const g=ctx.xGoal(d0,D,false,[0,0]);assert(Math.hypot(g[0]-pc[0],g[1]-pc[2])>=Math.hypot(q0.x-pc[0],q0.z-pc[2])-.01,'4 s on the fuse, 20 m away: save (back off, no retake)');}
+ ctx.timeLeft=35;now+=1e3;d0.xRet=null;let g=ctx.xGoal(d0,D,false,[0,0]);assert.equal(ctx.XBVq().rlog.slice(-1)[0].act,'wait','alone with time to spare: wait for a mate');assert(Math.hypot(g[0]-pc[0],g[1]-pc[2])>=Math.min(Math.hypot(q0.x-pc[0],q0.z-pc[2]),12),'waits off the site');
+ Object.assign(D[1].g.position,{x:q0.x+3,z:q0.z});now+=1e3;g=ctx.xGoal(d0,D,false,[0,0]);assert.deepEqual(g,[pc[0],pc[2]],'grouped: retake');
+ Object.assign(q0,{x:pc[0]+1,z:pc[2]});now+=1e3;const safe=()=>false;assert.equal(ctx.xDefOk(d0,safe),true,'on the Spike, nobody seen: ninja defuse (attacker 10 m off no longer stops it)');
+ ctx.timeLeft=4;now+=1e3;assert.equal(ctx.xDefOk(d0,safe),false,'no half, 4 s on the fuse: save');ctx.FV.sp.dt=3.5;now+=1e3;assert.equal(ctx.xDefOk(d0,safe),true,'half kept: stick');ctx.FV.sp.dt=0;
+ let taps=0,clears=0;for(let k=0;k<12;k++){ctx.FV.you=60+k;d0.xRet=null;ctx.timeLeft=35;d0.see=1;d0.xTt={x:pc[0]+5,z:pc[2]};now+=1e4;const ok=ctx.xDefOk(d0,safe),c=d0.xRet.c;
+  if(c.style==='tap'){taps++;assert.equal(ok,true,'tap: defusing');now+=1200;assert.equal(ctx.xDefOk(d0,safe),false,'tap: let go to bait');now+=1200;assert.equal(ctx.xDefOk(d0,safe),d0.xRet.c.act!=='clear','after one tap: stick / ninja or clear');}else{clears++;assert.equal(ok,false,'clear first');}}
+ assert(taps>0&&clears>0,'attackers around: tap the defuse or clear first ('+taps+'/'+clears+')');d0.see=0;
+ out.push(`spike play: plant kinds ${[...kinds].join('/')} (${spots.size} spots), post slots ${L.length}, retake ${[...new Set(ctx.XBVq().rlog.map(e=>e.act+(e.style?':'+e.style:'')))].join(',')}`);}
 // team economy: eco / save rounds buy small through the wrapper; full rounds use the shop
 {const v=html.slice(i,j+Z.length);let shop=0;const bs={};const ctx={window:{xBotSeed:7},Math,Map,Set,Object,console,mode:'five',XNF:0,FV:{you:3,them:4,map:'ascent',atk:true,dm:false,lsY:2,lsT:0,bs},F_MATES:['M1','M2','M3','M4'],F_EN:['E1','E2','E3','E4','E5'],
   fBotBuy(n){shop++;return bs[n];},xBBuy(){},sbSpend(){},xGoal(){},xSmV(){},performance:{now:()=>0}};ctx.window=Object.assign(ctx,{xBotSeed:7});vm.createContext(ctx);vm.runInContext(v,ctx);
