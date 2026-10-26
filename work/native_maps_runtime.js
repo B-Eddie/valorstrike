@@ -230,7 +230,9 @@ var NM_RP={f:-1,n:0,full(){const f=typeof XNF==='number'?XNF:null;if(f===null)re
 {const freeze=xFreeze;xFreeze=function(g){if(g&&g.userData.nativeMap){g.updateMatrixWorld(true);return;}return freeze(g);};}
 // Match startup waits for the complete scene and collisions. Failure keeps the map unstarted.
 function nmLaunch(fn,self,args,key){return nmEnsure(key).then(()=>{const result=fn.apply(self,args);nmOverlay(null);return result;});}
-function nmWrap(fn,retake){return function(){let key=retake?'ascent':FV.pick||'ascent';if(key==='random')key=['ascent','bind','haven','split','lotus','breeze'][Math.floor(Math.random()*6)];if(!retake)FV.pick=key;const self=this,args=arguments;return nmLaunch(fn,self,args,key);};}
+// The wrapped start reads FV.pick for FV.map, so it sees the drawn map; a Random pick is restored afterwards (Play again
+// draws a new map and the pre-match picker still shows Random) instead of turning into whichever map was drawn.
+function nmWrap(fn,retake){return function(){const rnd=!retake&&FV.pick==='random';let key=retake?'ascent':FV.pick||'ascent';if(key==='random')key=['ascent','bind','haven','split','lotus','breeze'][Math.floor(Math.random()*6)];if(!retake)FV.pick=key;const self=this,args=arguments,back=()=>{if(rnd&&FV.pick===key)FV.pick='random';};return nmLaunch(fn,self,args,key).then(r=>{back();return r;},e=>{back();throw e;});};}
 startFive=nmWrap(startFive);dmStart0=nmWrap(dmStart0);start=nmWrap(start,true);
 {const build=ensureMapBuilt;ensureMapBuilt=function(n){if(NM.current&&(n==='five'||n==='retake'))return;return build.apply(this,arguments);};}
 {const build=xBuildMap;xBuildMap=function(k){if(NM.current&&NM.current.key===k)return;return build.apply(this,arguments);};const dress=xDressMap;xDressMap=function(k){if(NM.current&&(k===NM.current.key||k==='retake'))return null;return dress.apply(this,arguments);};}
