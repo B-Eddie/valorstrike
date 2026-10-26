@@ -2040,7 +2040,10 @@ const GUNS = {
   shotgun: (o, v, pump) => { sNz(0, 0.05, "highpass", 3200, 1500, 0.55 * v, o); sNz(0, 0.24, "lowpass", 900, 110, 1.0 * v, o, 0.7); sTn(0, 95, 32, 0.22, "sine", 0.85 * v, o); gMk(o, v);
     if (pump) { sNz(0.36, 0.04, "bandpass", 2300, 1800, 0.35 * v, o, 3); sNz(0.5, 0.05, "bandpass", 1500, 1200, 0.4 * v, o, 3); } else sNz(0.12, 0.03, "bandpass", 2600, 2200, 0.2 * v, o, 3); }
 };
+// hk-35: "raised floor = metal" is a legacy-map rule (floor y 0, metal platforms above 0.4 m); a native map's floor sits ~7 m up, so every step rang metal there
+function xStepMetal(y) { let nm = false; try { nm = typeof nmActive === "function" && !!nmActive(); } catch (e) {} return !nm && y > 0.4; }
 const SFX = {
+  stepR: 30,
   gun(w, o, v) { if (!sOk()) return; if (!o && !sCap("me", 4, 0.12)) return; if (/^(Shorty|Bucky|Judge)$/.test(w)) return GUNS.shotgun(o, v || 1, w !== "Judge"); if (/^(Ares|Odin)$/.test(w)) return GUNS.lmg(o, (v || 1) * (w === "Odin" ? 1.1 : 1)); (GUNS[w] || (/Ghost|Frenzy|Shorty/.test(w) ? GUNS.Classic : /Judge|Bucky|Marshal|Outlaw/.test(w) ? GUNS.Sheriff : /Stinger/.test(w) ? GUNS.Spectre : GUNS.Vandal))(o, v || 1); },
   reload() {}, // reload sounds now fire from the reload keyframes (SFX.rs, called by xRld)
   rs(k) { if (!sOk() || !sCap("rs", 2, 0.12)) return; // reload steps, fired by the reload keyframes: mag out (click + slide), mag in (thunk + latch), bolt (rack back + forward)
@@ -2054,9 +2057,9 @@ const SFX = {
     if (!sOk() || !p) return; const P = sCap("gun", 6, 0.15); if (!P) return; const n = sPanP(P, p, 6); this.gun(w, n, 0.8);
     const d = camera ? Math.hypot(camera.position.x - p.x, camera.position.z - p.z) : 0;
     if (d > 30 && sCap("echo", 2, 0.9)) { const dl = 0.1 + Math.min(0.35, d / 300); sNz(dl, 0.7, "lowpass", 650, 70, 0.3, n); sNz(dl + 0.22, 0.6, "lowpass", 420, 60, 0.14, n); } },
-  step(p) { // enemy running footsteps: audible within 25 m, 3D-panned (pooled HRTF panners), louder when close; metal ring on raised floors
-    if (!sOk() || !camera) return; const d = Math.hypot(camera.position.x - p.x, camera.position.z - p.z); if (d > 25) return;
-    const P = sCap("step", 4, 0.08); if (!P) return; const n = sPanP(P, p, 4), v = 0.35 + 0.65 * (1 - d / 25) ** 1.5, m = p.y > 0.4, r = 0.9 + Math.random() * 0.2;
+  step(p) { // enemy running footsteps: audible within SFX.stepR (30 m = the server's hearing range, fog.js FOG.step: a heard row always sounds), 3D-panned (pooled HRTF panners), louder when close; metal ring on the legacy maps' raised floors
+    if (!sOk() || !camera) return; const R = SFX.stepR, d = Math.hypot(camera.position.x - p.x, camera.position.z - p.z); if (d > R) return; // hk-35: was 25 m while online rows for a hidden runner come within 30 m (heard by the server, silent in the page)
+    const P = sCap("step", 4, 0.08); if (!P) return; const n = sPanP(P, p, 4), v = 0.35 + 0.65 * (1 - d / R) ** 1.5, m = xStepMetal(p.y), r = 0.9 + Math.random() * 0.2;
     if (m) { sNz(0, 0.07, "bandpass", 2600 * r, 1400, 0.45 * v, n, 3); sTn(0, 1250 * r, 900, 0.09, "triangle", 0.06 * v, n); sTn(0, 110, 60, 0.05, "sine", 0.18 * v, n); }
     else { sNz(0, 0.06, "lowpass", 900 * r, 180, 0.6 * v, n); sNz(0, 0.03, "highpass", 2200 * r, 1600, 0.12 * v, n); sTn(0, 95 * r, 50, 0.05, "triangle", 0.18 * v, n); }
   },
@@ -3091,7 +3094,7 @@ function moveP(dt, run, hold) {
   const wasAir = P.air; P.air = P.y > gY + 0.001;
   if (wasAir && !P.air) { P.vx *= 0.7; P.vz *= 0.7; SFX.land(); P.st = 0.3; P.lp = 0.15; } // small landing slowdown + thud + 0.15 s accuracy penalty
   { const ct = cr ? 0.45 : 0, cs = 0.45 / 0.1 * dt; P.ch = Math.abs(ct - P.ch) <= cs ? ct : P.ch + Math.sign(ct - P.ch) * cs; } // crouch eye drop 0.45 m in 0.1 s (eye 1.6 -> 1.15 m), linear (no float)
-  if (P.mv && gr && !cr && !wk) { P.st -= dt; if (P.st <= 0) { P.st = 0.36; SFX.selfStep(P.y > 0.4); } } else P.st = 0.12; // walk / crouch silent
+  if (P.mv && gr && !cr && !wk) { P.st -= dt; if (P.st <= 0) { P.st = 0.36; SFX.selfStep(xStepMetal(P.y)); } } else P.st = 0.12; // walk / crouch silent
 }
 const pEye = () => new THREE.Vector3(player.x, 1.6 - player.ch + player.y, player.z);
 const pEyeTo = (out) => out.set(player.x, 1.6 - player.ch + player.y, player.z); // no-alloc pEye for per-frame callers
@@ -8394,8 +8397,8 @@ function sgKey(code) {
     if (J.rz) return sgNo(), say("Resurrection already channelling", 800);
     const a = sgLook(allies.filter((x) => !x.alive), XPAR2.rez.reach, 0.8);
     if (!a) return sgNo(), say("Look at a fallen teammate within " + XPAR2.rez.reach + " m", 900);
-    J.ult = 0; const q = a.xm && a.xm.m ? a.xm.m.position : a.g.position, m = new THREE.Mesh(xG("Box", 0.7, 2, 0.7), fireMat(0x7fe7d8, 0.35)); m.position.set(q.x, -1, q.z); scene.add(m);
-    J.rz = { a, t: XPAR2.rez.w + XPAR2.rez.r, m }; say("Resurrecting " + a.name, 1000); blip(880, 0.4, "triangle", 0.2); SFX.ab("choir"); // 2 s windup, then the 1.3 s rise (wiki)
+    J.ult = 0; const q = a.xm && a.xm.m ? a.xm.m.position : a.g.position, y0 = Number.isFinite(q.y) ? q.y : 0, m = new THREE.Mesh(xG("Box", 0.7, 2, 0.7), fireMat(0x7fe7d8, 0.35)); m.position.set(q.x, y0 - 1, q.z); scene.add(m); // hk-35: the crystal rises out of the corpse's own floor (was y -1: 8 m under a native map's floor, never seen)
+    J.rz = { a, t: XPAR2.rez.w + XPAR2.rez.r, m, y0 }; say("Resurrecting " + a.name, 1000); blip(880, 0.4, "triangle", 0.2); SFX.ab("choir"); // 2 s windup, then the 1.3 s rise (wiki)
   }
 }
 function sgRevive(a) { if (!a || a.alive) return; a.alive = true; a.hp = 100; a.def = 0; a.cd = 1; scene.add(a.g);
@@ -8450,7 +8453,7 @@ function sgTick(dt) {
   if (J.pick === "Sage" && J.e < 1 && J.cd.e <= 0) { J.e = 1; say("Healing Orb ready", 700); }
   if ((J.pick === "Sova" || J.pick === "Skye") && J.e < 1 && J.cd.e <= 0) { J.e = 1; say(J.pick === "Sova" ? "Recon Bolt ready" : "Guiding Light ready", 700); }
   if (J.ohT > 0) { J.ohT -= dt; if (J.ohT <= 0 && P.hp > 100) P.hp = 100; } // Devour overheal is temporary
-  if (J.rz) { const R = J.rz; R.t -= dt; R.m.position.y = -1 + 1.9 * Math.max(0, Math.min(1, (XPAR2.rez.w + XPAR2.rez.r - R.t - XPAR2.rez.w) / XPAR2.rez.r)); // the crystal rises in the last 1.3 s
+  if (J.rz) { const R = J.rz; R.t -= dt; R.m.position.y = (R.y0 || 0) - 1 + 1.9 * Math.max(0, Math.min(1, (XPAR2.rez.w + XPAR2.rez.r - R.t - XPAR2.rez.w) / XPAR2.rez.r)); // the crystal rises in the last 1.3 s
     if (R.t <= 0) { J.rz = null; scene.remove(R.m); sgRevive(R.a); } }
   if (J.hl) { const t = J.hl.tg, ok = t === P ? P.hp > 0 : t.alive, cap = J.hl.cap || 100; if (ok && t.hp < cap) t.hp = Math.min(cap, t.hp + J.hl.r * dt); J.hl.t -= dt; if (J.hl.t <= 0 || !ok) J.hl = null; }
   prune(J.so, (s) => { s.t -= dt; s.m.material.opacity = 0.9 * Math.min(1, s.t / 0.5); if (s.t > 0) return true; jRel(s.m); return false; });
@@ -13877,7 +13880,7 @@ moveP=function(dt,run,hold){
  const result=VF.model.step(P,{x,z,jump:!!kk.Space,duck:!!(kk.ControlLeft||kk.ControlRight),walk:!!(kk.ShiftLeft||kk.ShiftRight),speed,tag:dis?1:xTagK(P),hold:!!hold||!!J.dr},dt,world);
  if(result.landed){SFX.land();P.st=0;const fd=VF.model.fallDamage(result.drop);if(fd>0&&running&&mode!=='aim'&&mode!=='duel'&&!(typeof MP!=='undefined'&&MP.on)&&P.hp>0){P.hp=Math.max(0,P.hp-fd);try{updHud();}catch(e){}if(P.hp<=0)pDie('Fall','Fall');}} // fall damage: health only (shields ignored); online the server applies it
  // Footfalls follow distance. Shift-walking and crouching stay silent.
- P.footDistance=(P.footDistance||0)+result.speed*dt;if(P.footDistance>1.85&&P.mv&&!P.air&&!P.wk&&!P.cr){P.footDistance%=1.85;SFX.selfStep(P.y>1);}
+ P.footDistance=(P.footDistance||0)+result.speed*dt;if(P.footDistance>1.85&&P.mv&&!P.air&&!P.wk&&!P.cr){P.footDistance%=1.85;SFX.selfStep(P.y>1&&xStepMetal(P.y));}
  // Preserve explicit ability impulses; ordinary air steering never creates a speed boost.
  if(kLg>0){const t=Math.min(dt,kLg);kLg-=t;const nx=P.x+kLx*8*t,nz=P.z+kLz*8*t;if(!world.blocked(nx,nz,.4,P.y,1.8-P.ch)&&!(world.leash&&!world.leash(nx,nz,P.y,P.x,P.z))){P.x=nx;P.z=nz;}}
 };
