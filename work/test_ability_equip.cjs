@@ -130,6 +130,20 @@ const fails=[];const fail=s=>{fails.push(s);if(VERBOSE)console.log('FAIL',s);};c
   // relayed casts (online / bots) carry the caster's radius on the mesh and in sight checks
   eq(xe('(()=>{const u=bots.find(b=>b.alive&&b.g);if(!u)return null;const n=J.smokes.length,o=new THREE.Vector3(u.g.position.x,1.6,u.g.position.z),d=new THREE.Vector3(0,0,-1);mpFx(u,"Jett","c",o,d,false,null,true);mpFx(u,"Omen","e",o,d,false,null,true);mpFx(u,"Cypher","q",o,d,false,null,true);const r=J.smokes.slice(n).map(s=>[s.r,+s.m.scale.x.toFixed(4)]);J.smokes.slice(n).forEach(s=>{s.t=0;});return r;})()'),[[3.35,0.8375],[4.1,1.025],[3.72,0.93]],'relayed Cloudburst / Dark Cover / Cyber Cage radii');
   eq(xe('(()=>{const keep=J.smokes;try{const out=[];for(const r of [3.35,4.1]){J.smokes=[{p:new THREE.Vector3(0,1.8,-10),r,t:5}];out.push(jBlock(new THREE.Vector3(-20,1.8,-10+3.6),new THREE.Vector3(1,0,0),40));}J.smokes=[{p:new THREE.Vector3(0,1.8,-10),t:5}];out.push(jBlock(new THREE.Vector3(-20,1.8,-10+3.6),new THREE.Vector3(1,0,0),40));return out;}finally{J.smokes=keep;}})()'),[false,true,true],'sight blocked within the smoke radius only (3.6 m pass: Cloudburst no, Dark Cover yes, no r = 4 m)');}
+ // ---- Cyber Cage: hollow open-ended cylinder (wiki r 3.72 m, centred on the cage), drawn and sight-checked as one (server cageBlocks) ----
+ {const dsrc=require('fs').readFileSync(require('path').join(__dirname,'../server/src/devices.js'),'utf8');eq(xe('CYCAGE.h'),+dsrc.match(/cage:\{life:7\.25,h:([\d.]+)\}/)[1],'client CYCAGE.h == server DEV.cage.h');
+  eq(xe('[cageGeo.type,cageGeo.parameters.openEnded,cageGeo.parameters.radiusTop,cageGeo.parameters.height]'),['CylinderGeometry',true,4,2*xe('CYCAGE.h')],'cage mesh: open-ended cylinder');
+  await live();pick('Cypher');await adv(200);const n0=xe('J.smokes.length');await tap('KeyQ');await adv(600);await click(0);await adv(900);
+  const cg=xe(`(()=>{const s=J.smokes[${n0}];return s&&[s.cyl,s.r,s.m.geometry.type,+s.m.scale.x.toFixed(3),+s.m.scale.y.toFixed(3),+s.m.scale.z.toFixed(3),+(s.m.position.y-groundAt(s.p.x,s.p.z,0.2,(player.y||0)+1)).toFixed(2)];})()`);
+  eq(cg,[5,3.72,'CylinderGeometry',0.93,1,0.93,0],'player Cyber Cage: cylinder r 3.72 m, full height after the bloom, centred on the floor');
+  // a sphere smoke keeps its per-ability radius through the bloom (the tick used to reset the scale to the 4 m mesh)
+  eq(xe('(()=>{const n=J.smokes.length;enSmoke(player.x+30,player.z,false,5,undefined,XSMR.Omen);return n;})()')!==null,true,'enSmoke');await adv(600);
+  eq(xe('+J.smokes[J.smokes.length-1].m.scale.x.toFixed(4)'),1.025,'Dark Cover mesh stays 4.1 m after the bloom');
+  eq(xe('(()=>{const u=bots.find(b=>b.g);const n=J.smokes.length;mpFx(u,"Cypher","q",new THREE.Vector3(u.g.position.x,1.6,u.g.position.z),new THREE.Vector3(0,0,-1),false,null,true);const s=J.smokes[n];return [s.cyl,s.m.geometry.type];})()'),[5,'CylinderGeometry'],'relayed Cyber Cage is the cylinder too');
+  const V='new THREE.Vector3';
+  eq(xe(`(()=>{const keep=J.smokes;try{J.smokes=[{p:${V}(0,0,-10),r:3.72,cyl:5,t:5}];const B=(o,d,m)=>jBlock(${V}(...o),${V}(...d).normalize(),m);
+   return [B([-20,1.6,-10],[1,0,0],40),B([-20,1.6,-10+3.6],[1,0,0],40),B([-20,1.6,-10+3.8],[1,0,0],40),B([0,1.6,-10],[1,0,0],2),B([0,1.6,-10],[1,0,0],10),B([-20,6,-10],[1,0,0],40),B([0,9,-10],[0,-1,0],9),B([-20,1.6,-10],[1,0,0],15)];}finally{J.smokes=keep;}})()`),
+   [true,true,false,false,true,false,false,false],'cage sight: through / 3.6 m inside the wall / 3.8 m past it / inside-to-inside clear / inside-out blocked / over the 5 m top / down the open top / ends short of the wall');}
  // ---- Jett Cloudburst: thrown INSTANTLY, steered with the crosshair while C is held, falls after release (vendor/cloudburst.cjs) ----
  await live();{pick('Jett');xe('player.hp=100;J.cd.c=0;J.c=2;J.cbs=[];J.eq=null;true');await adv(200);
   const P0=xe('[player.x,player.z,yaw]');H.key('KeyC',true);await adv(250);eq(xe('J.cbs.length'),1,'held C: projectile out');const s0=xe('(c=>c.st.held)(J.cbs[0])');eq(s0,true,'held: steering');
@@ -164,5 +178,5 @@ const fails=[];const fail=s=>{fails.push(s);if(VERBOSE)console.log('FAIL',s);};c
    xe('J.ult=K().u;jUnreveal();true');await tx();eq(xe('J.ult'),0,'second cast');xe('bcClear();jUnreveal();true');{const t1=xe('performance.now()');while(xe('performance.now()')-t1<6300)await adv(50);}eq(xe('J.rvT>0'),false,'round clear cancels pending reveals (none through 6.3 s)');}}
  if(xe('XEQV.err||null'))fail('ability viewmodel error: '+xe('XEQV.err'));
  if(H.errors.length>errs0)fail('page errors: '+H.errors.slice(errs0).map(e=>String(e&&e.message||e)).join(' | '));
- if(fails.length){console.log(fails.join('\n'));process.exit(1);}console.log('ability equip: binds, migration, HUD labels, equip -> fire flow, first-person equip viewmodel, wiki equip times + windups, Sova bow charge + bounces, Fault Line hold-to-extend, Hot Hands spread, Neural Theft 18 m / 2 s + 6 s, Cloudburst flight + steering, per-ability smoke radii, kit table ok');process.exit(0);
+ if(fails.length){console.log(fails.join('\n'));process.exit(1);}console.log('ability equip: binds, migration, HUD labels, equip -> fire flow, first-person equip viewmodel, wiki equip times + windups, Sova bow charge + bounces, Fault Line hold-to-extend, Hot Hands spread, Neural Theft 18 m / 2 s + 6 s, Cyber Cage cylinder, Cloudburst flight + steering, per-ability smoke radii, kit table ok');process.exit(0);
 })().catch(e=>{console.error(e);process.exit(1);});

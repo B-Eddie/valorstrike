@@ -1,7 +1,7 @@
 // Server-authoritative ultimates (ledger row 9): Hunter's Fury, Showstopper, Lockdown, Rolling Thunder,
 // Seekers, Neural Theft, Tour de Force and Run It Back replace the old shared 100-damage blast.
 // Intents carry no trusted origin/aim/target; everything comes from server state.
-import assert from 'node:assert/strict';import {SpikeSimulation} from './src/spike.js';import {tickAbilities,SMOKE,smokeBlocks} from './src/abilities.js';import {ULT} from './src/ults.js';import {floorTick} from './src/floor.js';
+import assert from 'node:assert/strict';import {SpikeSimulation} from './src/spike.js';import {tickAbilities,SMOKE,smokeBlocks,cageBlocks} from './src/abilities.js';import {ULT} from './src/ults.js';import {floorTick} from './src/floor.js';
 let wall=Infinity;const W={map:{attacker:[0,0,0],defender:[0,0,-10],sites:{A:[0,0,0]}},nav:{nodes:[[0,0,0],[0,0,-10]],adj:[[1],[0]]},playable:[0,1],allowed:new Set([0,1]),near:(x,z)=>z<-5?1:0,ground:()=>0,blocked:()=>false,ray:(o,d,max=Infinity)=>{if(!(d[2]<0)||!Number.isFinite(wall))return Infinity;const t=(o[2]+wall)/-d[2];return t>=0&&t<=max?t:Infinity;}};// wall: a plane at z=-wall
 const setup=(agent,...others)=>{wall=Infinity;const s=new SpikeSimulation(W,'five','ascent',()=>.5),u=s.add(agent,agent),list=others.map(([n,team])=>{const v=s.add(n);return v;});s.start(false);s.buy=0;s.roundDelay=0;
  Object.assign(u,{x:0,y:0,z:0,look:0,pitch:0});for(const v of list){Object.assign(v,{armor:0,hp:100,protectedUntil:0});}
@@ -134,7 +134,12 @@ const ab=(s,u,k,m={})=>{s.time+=.5;return s.command(u,{t:'ab',k,...m});};
 // Trapwire: across the lane at the aim point; an enemy crossing is revealed and slowed, then dazed; one use.
 {const {s,u,list:[foe,mate]}=setup('Cypher',['foe'],['mate']);u.ability.c=1;Object.assign(foe,{x:3,y:0,z:-16});Object.assign(mate,{x:-3,y:0,z:-14});assert.equal(ab(s,u,'c'),true);const w=s.effects.find(e=>e.kind==='trapwire');assert.ok(Math.abs(w.p[0])>7&&Math.abs(w.q[0])>7,'wall to wall');
  tick(s,.1);assert.equal(mate.slowUntil||0,0,'allies pass');foe.z=-14;tick(s,.4);assert.ok(!foe.tether,'not armed before the 0.7 s windup');foe.z=-16;tick(s,.3);foe.z=-14;tick(s,.1);assert.ok(foe.revealedUntil>s.time&&foe.slowUntil>s.time&&s.roundState(foe).status.tether>2,'tethered');tick(s,2.5);assert.ok(foe.concussUntil>s.time,'dazed');assert.ok(!s.effects.some(e=>e.kind==='trapwire'),'consumed');}
-{const {s,u}=setup('Cypher',['foe']);u.ability.q=1;ab(s,u,'q');const c=s.effects.find(e=>e.kind==='smoke');assert.ok(Math.abs(c.until-s.time-7.25)<.01,'Cyber Cage 7.25 s');assert.equal(c.radius,3.72,'Cyber Cage radius 3.72 m (wiki)');}
+{const {s,u}=setup('Cypher',['foe']);u.ability.q=1;ab(s,u,'q');const c=s.effects.find(e=>e.kind==='smoke');assert.ok(Math.abs(c.until-s.time-7.25)<.01,'Cyber Cage 7.25 s');assert.equal(c.radius,3.72,'Cyber Cage radius 3.72 m (wiki)');assert.equal(c.cyl,5,'Cyber Cage is a cylinder (half-height 5 m)');
+ // hollow open-ended cylinder centred on the cage: blocks where a line crosses the wall, not inside-to-inside or down the open top
+ s.effects=[{kind:'smoke',p:[0,0,-10],until:s.time+5,radius:3.72,cyl:5}];const B=(o,d,m)=>{const l=Math.hypot(...d);return smokeBlocks(s,o,d.map(n=>n/l),m);};
+ assert.deepEqual([B([-20,1.6,-10],[1,0,0],40),B([-20,1.6,-6.4],[1,0,0],40),B([-20,1.6,-6.2],[1,0,0],40),B([0,1.6,-10],[1,0,0],2),B([0,1.6,-10],[1,0,0],10),B([-20,6,-10],[1,0,0],40),B([0,9,-10],[0,-1,0],9),B([-20,1.6,-10],[1,0,0],15),B([-20,-4.5,-10],[1,0,0],40)],
+  [true,true,false,false,true,false,false,false,true],'cage: through / 3.6 m / 3.8 m off / inside-inside / inside-out / over the top / down the top / ends short of the wall / walls below the cage centre');
+ assert.deepEqual([cageBlocks(s.effects[0],[-20,1.6,-10],[1,0,0],16.27),cageBlocks(s.effects[0],[-20,1.6,-10],[1,0,0],16.29)],[false,true],'the wall at 16.28 m');}
 // Smoke radius per ability (wiki): Cloudburst 3.35 m, Dark Cover 4.1 m, Cyber Cage 3.72 m; sight is blocked inside that radius only.
 {assert.deepEqual(SMOKE.r,{Jett:3.35,Omen:4.1,Cypher:3.72});const {s,u}=setup('Omen',['foe']);u.ability.e=1;assert.equal(ab(s,u,'e'),true);const c=s.effects.find(e=>e.kind==='smoke');assert.equal(c.radius,4.1,'Dark Cover radius 4.1 m (wiki)');
  for(const [r,off,want] of [[3.35,3.5,false],[4.1,3.5,true],[3.72,3.6,true],[3.72,3.8,false]]){s.effects=[{kind:'smoke',p:[0,0,-10],until:s.time+5,radius:r}];const y=SMOKE.lift;assert.equal(smokeBlocks(s,[-20,y,-10+off],[1,0,0],40),want,'radius '+r+' m, ray '+off+' m from the centre');}}

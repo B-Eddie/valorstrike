@@ -273,6 +273,23 @@ push, Cloudburst landing `e.radius`, `devices.js` Cyber Cage); `smokeBlocks` alr
 `SMOKE.radius` 4. Client: `XSMR` (same table, asserted equal), every `J.smokes` entry carries `r` and its 4 m sphere is
 scaled to it (`xSmk`): the player's Dark Cover / Cyber Cage / Cloudburst, bot smokes and relayed casts (`enSmoke(..., r)`
 from `mpFx` / the bot kit / `netSyncCb`); `jBlock` (bot sight) and the minimap circle use `s.r` (4 m when absent).
-Cyber Cage stays a sphere (not a cylinder). Tests: `server/test-ults.js` (table, Dark Cover 4.1 / Cyber Cage 3.72 on the
+Cyber Cage: cylinder since the next entry. Tests: `server/test-ults.js` (table, Dark Cover 4.1 / Cyber Cage 3.72 on the
 cast, `smokeBlocks` blocks inside the radius only), `server/test-ability-equip.js` (Cloudburst 3.35), `work/test_ability_equip.cjs`
 (XSMR == SMOKE.r, relayed radii and mesh scale, `jBlock` 3.6 m pass).
+
+### Cyber Cage cylinder (wiki.playvalorant.com/en-us/Cyber_Cage, fetched 2026-10-25)
+
+Wiki: "a white, hollow, open-ended cylinder", radius 3.72 m, "the cylinder's center is positioned at the location where the
+cage was activated" (its walls reach above and below it), 7.25 s. No height is given: half-height 5 m (top 5 m above the
+cage, as tall as the sphere smokes) on both sides (server `DEV.cage.h`, client `CYCAGE.h`, asserted equal). Server: the Cyber
+Cage effect carries `cyl: 5`; `smokeBlocks` hands it to `cageBlocks`, which blocks a segment only where it crosses the side
+wall inside the height band - inside-to-inside and straight down through the open top stay clear, inside-to-outside and
+through are blocked. Client: `cageGeo` (open-ended `CylinderGeometry`, radius 4 scaled to 3.72 in x / z, 10 m tall)
+centred on the floor under the cage for the player's cast (`groundAt`), relayed casts (`mpFx` -> `enSmoke(..., cyl)`, floor
+from the caster's height; online `netFxPoint` floor) and the same `xCageHit` test in `jBlock` (bot sight). The smoke tick's
+0.3 s bloom used to reset every smoke mesh to scale 1 (the 4 m sphere) after `xSmk` sized it; it now keeps the
+per-ability radius (sphere: radius / 4 x bloom; cage: radius / 4 in x / z, bloom in height). Tests: `server/test-ults.js`
+(cast carries `cyl` 5; through / 3.6 m / 3.8 m off / inside-inside / inside-out / over the top / down the top / ends
+short of the wall / walls below the centre; wall at 16.28 m), `work/test_ability_equip.cjs` (CYCAGE.h == DEV.cage.h,
+open-ended cylinder mesh, player cast scale 0.93 / 1 / 0.93 on the floor after the bloom, Dark Cover stays 1.025 after the
+bloom, relayed cage is the cylinder, `jBlock` cases as the server).

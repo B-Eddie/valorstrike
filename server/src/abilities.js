@@ -63,7 +63,10 @@ export function abilityDamage(sim,owner,v,n){if(!v.alive||v.invulnerableUntil>si
 export const SMOKE={radius:4,lift:1.7,r:{Jett:3.35,Omen:4.1,Cypher:3.72}};
 export function smokeCentre(e){return [e.p[0],e.p[1]+SMOKE.lift,e.p[2]];}
 // True when the segment o..o+d*max passes through (or starts/ends inside) an active smoke.
-export function smokeBlocks(sim,o,d,max){for(const e of sim.effects){if(e.kind!=='smoke'||e.until<sim.time)continue;const c=smokeCentre(e),q=c.map((n,i)=>n-o[i]),t=Math.max(0,Math.min(max,q.reduce((s,n,i)=>s+n*d[i],0)));if(q.reduce((s,n,i)=>s+(n-d[i]*t)**2,0)<e.radius**2)return true;}return false;}
+// Cyber Cage (e.cyl = half-height): a hollow open-ended vertical cylinder centred on e.p, radius e.radius. True when the segment
+// o..o+d*max crosses its side wall within the height band; inside-to-inside and straight down through the open top are clear.
+export function cageBlocks(e,o,d,max){const ox=o[0]-e.p[0],oz=o[2]-e.p[2],A=d[0]*d[0]+d[2]*d[2];if(A<1e-9)return false;const b=ox*d[0]+oz*d[2],D=b*b-A*(ox*ox+oz*oz-e.radius*e.radius);if(D<0)return false;const q=Math.sqrt(D);for(const t of [(-b-q)/A,(-b+q)/A])if(t>=0&&t<=max&&Math.abs(o[1]+d[1]*t-e.p[1])<=e.cyl)return true;return false;}
+export function smokeBlocks(sim,o,d,max){for(const e of sim.effects){if(e.kind!=='smoke'||e.until<sim.time)continue;if(e.cyl){if(cageBlocks(e,o,d,max))return true;continue;}const c=smokeCentre(e),q=c.map((n,i)=>n-o[i]),t=Math.max(0,Math.min(max,q.reduce((s,n,i)=>s+n*d[i],0)));if(q.reduce((s,n,i)=>s+(n-d[i]*t)**2,0)<e.radius**2)return true;}return false;}
 // Line of sight for devices, flashes and bots: map geometry, live Sage barriers and smokes all block it.
 export function sightClear(sim,o,p){const q=p.map((n,i)=>n-o[i]),len=Math.hypot(...q);if(len<.01)return true;const d=q.map(n=>n/len),max=Math.max(0,len-.4);if(sim.world.ray(o,d,max)!==Infinity)return false;if(nearestBarrier(sim,o,d,max))return false;if(blazeBlocks(sim,o,d,max))return false;return !smokeBlocks(sim,o,d,max);}
 
