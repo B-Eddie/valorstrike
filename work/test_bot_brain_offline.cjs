@@ -84,6 +84,17 @@ for(const map of ['ascent','bind']){
  ctx.spike={parent:{},position:{x:pc[0],z:pc[2]}};ctx.FV.sp={st:'plant',site:sites[0],x:pc[0],z:pc[2],dt:0,du:null};now+=1e5;ctx.timeLeft=30;
  ctx.botAb(kj,.05,false,null,kj.g.position);ctx.botAb(rz,.05,false,null,rz.g.position);assert.equal(knives.length,1,'post-plant Killjoy hides her Nanoswarms on the Spike once');assert.equal(shells.length,0,'Raze waits for a defender');
  ctx.FV.sp.du={};now+=1e4;ctx.botAb(rz,.05,false,null,rz.g.position);assert.equal(shells.length,1,'Raze shells the Spike when a defender goes for it');
+ // the casts with no older bot path (index.html xBHotHands / xBSlowOrb ...: stubbed here, tested on the page by
+ // work/test_bot_utility_offline.cjs): post-plant Phoenix Hot Hands on the Spike, defender Sage Slow Orb on the push
+ const casts=[];for(const f of ['xBHotHands','xBSlowOrb','xBShock','xBParanoia','xBCage','xBTrail','xBTurret'])ctx[f]=(b,al,from,x,z)=>casts.push([f,b.name,x,z]);
+ const ph=unit('Bot Phoenix','Phoenix',0,0);ph.kc={c:0,q:1,e:0};ctx.bots=[ph];{const n=N[near(pc[0]+7,pc[2])];Object.assign(ph.g.position,{x:n[0],y:n[1],z:n[2]});}
+ Object.assign(ctx.FV,{you:61,them:2,atk:false});ctx.FV.sp={st:'plant',site:sites[0],x:pc[0],z:pc[2],dt:0,du:null};now+=1e5;ctx.botAb(ph,.05,false,null,ph.g.position);assert.equal(casts.length,0,'Phoenix keeps Hot Hands until a defender comes');
+ ctx.FV.sp.du={};now+=1e4;ctx.botAb(ph,.05,false,null,ph.g.position);assert.deepEqual(casts.map(c=>[c[0],c[2],c[3]]),[['xBHotHands',pc[0],pc[2]]],'post-plant Phoenix Hot Hands on the Spike');assert.equal(ph.kc.q,0,'Hot Hands charge spent');
+ now+=1e4;ctx.botAb(ph,.05,false,null,ph.g.position);assert.equal(casts.length,1,'no charge, no second cast');
+ Object.assign(ctx.FV,{you:62,them:2,atk:true});const sg=unit('Def Sage','Sage',meta.defender[0],meta.defender[2]);sg.kc={c:0,q:1,e:1};ctx.bots=[sg];ctx.FV.sp={st:'carry',site:sites[0],c:null};now+=1e6;ctx.timeLeft=70;
+ {const P=ctx.xbvPlan(sg,[sg],false,C),c=meta.sites[P.site],n=N[near(c[0],c[2])];Object.assign(sg.g.position,{x:n[0],y:n[1],z:n[2]});
+  ctx.botAb(sg,.05,false,null,sg.g.position);assert.equal(casts.length,1,'no Slow Orb without information');sg.see=1;sg.xTt={x:n[0]+9,z:n[2]};ctx.XNF++;ctx.xbvInfo([sg],C);now+=1e3;sg.see=0;ctx.botAb(sg,.05,false,null,sg.g.position);
+  assert.deepEqual(casts.slice(1).map(c=>c[0]),['xBSlowOrb'],'defender Sage slows the push on her site');assert(Math.hypot(casts[1][2]-n[0]-9,casts[1][3]-n[2])<0.01,'Slow Orb aimed where the attacker was');}
  out.push(`plan utility: held ${held}/${tested}, thrown ${thrown}, lurkers quiet ${lurkQuiet}, log ${L.map(e=>e.phase+':'+e.kind).join(',')}`);}
 // sound reactions: out of a fight a heard shot / footsteps -> turn, stop and hold the angle, or push a close shot (as the server)
 {let now=1000;const ctx={Math,Object,Number,Infinity,Set,Map,WeakMap,Array,Float64Array,Int32Array,Uint8Array,performance:{now:()=>now},window:{xBotSeed:5},mode:'five',running:true,player:{hp:0},allies:[],bots:[],XNF:0,timeLeft:80,

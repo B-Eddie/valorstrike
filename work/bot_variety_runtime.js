@@ -129,6 +129,12 @@ if(typeof fBotBuy==='function'){const fb0=fBotBuy;fBotBuy=function(n){
 // defender comes for it, defenders delay a push on their site (smoke / flash toward the attackers, Boom Bot after them)
 // and flash / recon before a retake. Each cast is the kit's existing bot cast (xBUse charges, enSmoke / xBFlash /
 // recon bolt / xKnPlace / xRzShells): no ability values change. Native-map 5v5 only; other modes keep the old triggers.
+// agent ability types c / q / e (server/src/abilities.js types) and the offline bot casts (index.html xBHotHands ...) for the
+// ones that had no bot path; reach as the server's planUtility
+const XBV_TY={Jett:['smoke','updraft','dash'],Phoenix:['wall','fire','flash'],Sova:['drone','shock','recon'],Sage:['wall','slow','heal'],Reyna:['leer','heal','dismiss'],Omen:['teleport','flash','smoke'],Killjoy:['fire','trap','turret'],Raze:['drone','satchel','grenade'],Skye:['heal','drone','flash'],Breach:['shock','flash','stun'],Cypher:['trap','smoke','recon'],Chamber:['trap','headhun','teleport']};
+const XBV_CAST={Phoenix:{fire:()=>typeof xBHotHands==='function'&&xBHotHands},Sage:{slow:()=>typeof xBSlowOrb==='function'&&xBSlowOrb},Sova:{shock:()=>typeof xBShock==='function'&&xBShock},
+ Omen:{flash:()=>typeof xBParanoia==='function'&&xBParanoia},Cypher:{smoke:()=>typeof xBCage==='function'&&xBCage},Skye:{drone:()=>typeof xBTrail==='function'&&xBTrail},Killjoy:{turret:()=>typeof xBTurret==='function'&&xBTurret}};
+const XBV_REACH={fire:13,slow:15,shock:40,flash:25,smoke:10,drone:20,turret:30};
 function xbvUtilX(b){
  const C=typeof nmActive==='function'&&nmActive(),s=FV.sp;if(!C||mode!=='five'||FV.dm||FV.buy>0||!window.BotBrain||!s||!b||!b.g||!C.meta||!C.meta.sites||typeof xBAtk!=='function')return null;
  const al=allies.indexOf(b)>=0,team=al?allies:bots,atk=xBAtk(al),P=xbvPlan(b,team,atk,C),S=xbvStrat(team,atk,C);
@@ -162,6 +168,12 @@ if(typeof botAb==='function'){const ba0=botAb;botAb=function(b,dt,see,tg,from){
  if(A&&ag==='Raze'&&it&&it.phase==='delay'&&!see&&A.rzb)A.rlk={x:it.x,z:it.z,t:0}; // defenders: Boom Bot after the push
  X.U.sm=null;const c0=ch?ch.c+ch.q+ch.e:0,r=ba0.apply(this,arguments);
  if(X.U.sm&&ch&&ch.c+ch.q+ch.e<c0)xbvUsed(b,X,X.U.sm,'smoke');else if(ag==='Sova'&&it&&ch&&ch.e<e0)xbvUsed(b,X,it,'recon');
+ // the plan's utility with no older bot path (Hot Hands, Slow Orb, Shock Bolt, Paranoia, Cyber Cage, Trailblazer, Turret):
+ // the first wanted type this agent has; a type an older hook owns (xBChoke / xBFl / Recon / Nanoswarm / Paint Shells) waits for it
+ if(it&&b.alive&&A&&XBV_CAST[ag]&&ch&&X.U.it===it){const ty=XBV_TY[ag];for(const w of it.want){const i=ty.indexOf(w);if(i<0)continue;const k='cqe'[i],cf=XBV_CAST[ag][w],fn=cf&&cf();
+  if(!cf){if(ch[k]>=1)break;continue;}if(!fn||!(ch[k]>=1))continue;
+  const l=Math.hypot(it.x-from.x,it.z-from.z),R=XBV_REACH[w];if(l>R+2||(w!=='turret'&&w!=='flash'&&l<2))break;
+  if(xBUse(b,k)){fn(b,X.al,from,it.x,it.z);xbvUsed(b,X,it,w);}break;}}
  // post-plant: Killjoy hides her Nanoswarms on the Spike once; Raze shells it when a defender comes for it
  if(X.atk&&X.planted&&b.alive&&A){const sp=typeof spike!=='undefined'&&spike&&spike.parent?spike.position:null;if(sp){const d=Math.hypot(sp.x-X.p.x,sp.z-X.p.z);
   if(ag==='Killjoy'&&!X.U.kj&&d<12){X.U.kj=1;if(xKnPlace(b,X.al,sp.x,sp.z,2,0.5,2.5)){feed("Killjoy ▸ Nanoswarm");xbvUsed(b,X,null,'fire');}}

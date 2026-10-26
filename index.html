@@ -8489,6 +8489,8 @@ function okTick(dt) {
     // (bots have no nearsight model: b.blind, as for Leer / Seekers)
     for (const b of bots.concat(typeof allies !== "undefined" ? allies : [])) { if (!b.alive || !b.g || s.hit.has(b)) continue; const q = b.g.position, k = st > 0 ? Math.max(0, Math.min(st, (q.x - x0) * s.fx + (q.z - z0) * s.fz)) : 0;
       if (Math.hypot(q.x - x0 - s.fx * k, q.z - z0 - s.fz * k) < XPAR.r) { s.hit.add(b); b.blind = Math.max(b.blind || 0, XPAR.ns); } }
+    if (s.own && player.hp > 0 && !s.hit.has(player)) { const k = st > 0 ? Math.max(0, Math.min(st, (player.x - x0) * s.fx + (player.z - z0) * s.fz)) : 0; // a bot Omen's orb: the player too (nearsight, as Leer)
+      if (Math.hypot(player.x - x0 - s.fx * k, player.z - z0 - s.fz * k) < XPAR.r) { s.hit.add(player); pNs(XPAR.ns); say("Nearsighted by Paranoia", 900); } }
     if (s.t < T) return true; scene.remove(s.m); return false;
   });
   prune(J.nano, (n) => {
@@ -9288,6 +9290,51 @@ function xRzShells(A, x, z) { // Raze Paint Shells (E, charge already spent) lan
   if (!A.pq) A.pq = []; A.ps = 0; const c = new THREE.Vector3(x, 0.3, z); A.pq.push({ p: c, t: 0.9, r: 4, c: 0xffb21f });
   for (let i = 0; i < 4; i++) { const a = (i * Math.PI) / 2 + Math.random() * 0.6; A.pq.push({ p: new THREE.Vector3(c.x + Math.cos(a) * 2.2, 0.3, c.z + Math.sin(a) * 2.2), t: 1.8 + i * 0.12, r: 3.5, c: 0xff4fa0 }); }
   feed("Raze ▸ Paint Shells"); blip(500, 0.12, "square", 0.1); }
+// ---- offline bot utility casts (team-agnostic; the charge is already spent): the abilities bots had no offline path for, with the
+// player's values. Each lands on the bot's own line toward tx, tz, short of the first wall and within reach. Damage goes through
+// mpAreaHit (o.loc: this client is the authority), so the other team takes it, the caster's team a third (XFF), credited to the bot.
+// Phoenix Hot Hands (XHOT spread, 60 dps, heals Phoenix 15/s), Sage Slow Orb (3.5 m, 7 s, half speed for everyone in it: sgSlow),
+// Sova Shock Bolt (3 m, 75), Omen Paranoia (XPAR orb, nearsights everyone it passes but Omen, the player too), Cypher Cyber Cage
+// (7 s cylinder, XSMR.Cypher, as MP_SMK), Skye Trailblazer (XTB: concuss 2.5-4 s by distance in 3.5 m with line of sight + the
+// 30 bite on the nearest within 2 m), Killjoy Turret (XTUR deploy / windup / bursts / cone / 40 m from Killjoy, 100 HP).
+const XBRCH = { fire: 13, slow: 15, shock: 40, flash: XPAR.range, smoke: 10, drone: 20, turret: XTUR.range }; // cast reach (m), as the server planUtility / the player's kit
+function xBLand(from, tx, tz, reach) { const dx = tx - from.x, dz = tz - from.z, l = Math.hypot(dx, dz) || 1, n = Math.min(l, reach), y = from.y || 0; let k = 0;
+  for (let s = 0.5; s <= n + 1e-6; s += 0.5) { if (blocked(from.x + (dx / l) * s, from.z + (dz / l) * s, 0.3, y)) break; k = s; }
+  return { x: from.x + (dx / l) * k, z: from.z + (dz / l) * k, fx: dx / l, fz: dz / l, k, l }; }
+function xBHotHands(b, al, from, tx, tz) { const L = xBLand(from, tx, tz, XBRCH.fire), c = new THREE.Vector3(L.x, (from.y || 0) + 0.05, L.z), m = jM(zoneGeo, fireMat(0xff5a1a, 0.55));
+  m.rotation.x = -Math.PI / 2; m.position.copy(c); m.scale.setScalar(0.01); scene.add(m); const z = { m, p: c, t: XHOT.life, R: XHOT.r, a: 0, own: b, en: !al, loc: 1 }; J.zones.push(z);
+  feed("Phoenix ▸ Hot Hands"); blip(220, 0.3, "sawtooth", 0.1); return z; }
+function xBSlowOrb(b, al, from, tx, tz) { const L = xBLand(from, tx, tz, XBRCH.slow), e = new THREE.Vector3(L.x, (from.y || 0) + 0.05, L.z), m = new THREE.Mesh(slowGeo, fireMat(0x7fe0ff, 0.45));
+  m.rotation.x = -Math.PI / 2; m.position.copy(e); scene.add(m); const z = { m, p: e, t: 7, own: b }; (J.slz || (J.slz = [])).push(z); try { SFX.ab("slow", e); } catch (er) {} feed("Sage ▸ Slow Orb"); return z; }
+function xBShock(b, al, from, tx, tz) { const L = xBLand(from, tx, tz, XBRCH.shock), o = new THREE.Vector3(from.x, (from.y || 0) + 1.5, from.z), e = new THREE.Vector3(L.x, (from.y || 0) + 0.3, L.z);
+  const a = { m: jBolt(0x7fd8ff, o, e), a: o, b: e, t: 0, dur: Math.max(0.05, o.distanceTo(e) / 45), kind: "shock", own: b, en: !al, loc: 1 }; J.arrows.push(a); feed("Sova ▸ Shock Bolt"); return a; }
+function xBParanoia(b, al, from, tx, tz) { const dx = tx - from.x, dz = tz - from.z, l = Math.hypot(dx, dz) || 1, fx = dx / l, fz = dz / l, m = new THREE.Mesh(parGeo, fireMat(0x2a1550, 0.6));
+  m.position.set(from.x + fx, (from.y || 0) + 1.3, from.z + fz); m.rotation.y = Math.atan2(-fx, -fz); scene.add(m); const s = { m, fx, fz, t: 0, hit: new Set([b]), own: b }; (J.par || (J.par = [])).push(s);
+  try { SFX.ab("paranoia", m.position); } catch (er) {} feed("Omen ▸ Paranoia"); return s; }
+function xBCage(b, al, from, tx, tz) { const L = xBLand(from, tx, tz, XBRCH.smoke); enSmoke(L.x, L.z, al, MP_SMK.Cypher[1], groundAt(L.x, L.z, 0.2, (from.y || 0) + 1), XSMR.Cypher, true); feed("Cypher ▸ Cyber Cage"); return L; }
+function xBTrail(b, al, from, tx, tz) { const L = xBLand(from, tx, tz, XBRCH.drone), e = new RV(L.x, (from.y || 0) + 0.8, L.z), by = b.name; let n = 0, bt = null, bd = XTB.br;
+  const T = al ? bots.filter((t) => t && t.alive && t.g) : allies.filter((t) => t && t.alive && t.g);
+  T.forEach((t) => { const q = t.g.position, d = Math.hypot(q.x - L.x, q.z - L.z); if (d < bd) { bd = d; bt = t; } if (d >= XTB.r || !los(e, new RV(q.x, (q.y || 0) + 1, q.z))) return; const c = xTbCnc(d); t.blind = Math.max(t.blind || 0, c); t.cnc = Math.max(t.cnc || 0, c); n++; });
+  if (!al && player.hp > 0) { const d = Math.hypot(player.x - L.x, player.z - L.z); if (d < bd) { bd = d; bt = player; } if (d < XTB.r && los(e, new RV(player.x, (player.y || 0) + 1, player.z))) { xConStart(xTbCnc(d) * 1000); say("Concussed by Trailblazer", 900); n++; } }
+  if (bt) { xBotDmg(bt, XTB.bite, by, "Trailblazer"); if (bt === player && player.hp <= 0) pDie(by, "Trailblazer"); }
+  const m = jM(smokeGeo, fireMat(0x7fd84a, 0.35)); m.scale.setScalar(XTB.r / 4); m.position.copy(e); jFx(m, 0.4); blip(180, 0.35, "square", 0.18); feed("Skye ▸ Trailblazer"); return n; }
+const XBTU = []; // bot Killjoy turrets (one E per round each)
+function xBTurret(b, al, from, tx, tz) { const dx = tx - from.x, dz = tz - from.z, l = Math.hypot(dx, dz) || 1, fx = dx / l, fz = dz / l; let d = 1.5; while (d > 0 && blocked(from.x + fx * d, from.z + fz * d, 0.3, from.y || 0)) d -= 0.25;
+  const m = new THREE.Mesh(kjTur, okMat(al ? 0x3fb4ff : 0xf2c230)); m.position.set(from.x + fx * d, (from.y || 0) + 0.45, from.z + fz * d); m.rotation.y = Math.atan2(fx, fz); scene.add(m);
+  const T = xBbShootable({ m, p: m.position, fx, fz, hp: 100, cd: XTUR.deploy, lock: 0, shot: 0, own: b, en: !al }); XBTU.push(T); try { SFX.ab("turret", m.position); } catch (er) {} feed("Killjoy ▸ Turret"); return T; }
+function xBTurGone(T) { xBbGone(T); const i = XBTU.indexOf(T); if (i >= 0) XBTU.splice(i, 1); }
+function xBTurTick(dt) { // every bot turret: shot down at 0 HP; fires (XTUR, as the player's J.tur) only while its Killjoy lives within XTUR.active m
+  for (let i = XBTU.length - 1; i >= 0; i--) { const T = XBTU[i], o = T.own; if (!T.en) okHitBy(T, dt); if (T.hp <= 0) { xBTurGone(T); feed("Killjoy ▸ Turret destroyed"); continue; }
+    if ((T.cd -= dt) > 0) continue; const e = new RV(T.p.x, T.p.y + 0.35, T.p.z), on = o && o.alive && o.g && Math.hypot(o.g.position.x - T.p.x, o.g.position.z - T.p.z) <= XTUR.active, ca = Math.cos((XTUR.cone / 2) * Math.PI / 180);
+    for (let n = 0; n < 4 && T.cd <= 0; n++) { let tg = null, td = Infinity, tq = null;
+      if (on) { const C = T.en ? (player.hp > 0 ? [player] : []).concat(allies.filter((a) => a && a.alive && a.g)) : bots.filter((t) => t && t.alive && t.g);
+        for (const t of C) { const q = t === player ? player : t.g.position, vx = q.x - e.x, vz = q.z - e.z, dd = Math.hypot(vx, vz); if (dd < XTUR.range && dd < td && vx * T.fx + vz * T.fz >= dd * ca - 1e-6 && los(e, new RV(q.x, (q.y || 0) + 1.2, q.z))) { tg = t; td = dd; tq = q; } } }
+      if (!tg) { T.lock = 0; T.shot = 0; T.cd = 0.15; break; }
+      if (!T.lock) { T.lock = 1; T.shot = 0; T.cd = XTUR.windup; break; }
+      const q = new RV(tq.x, (tq.y || 0) + 1.2, tq.z); T.m.rotation.y = Math.atan2(q.x - e.x, q.z - e.z); const bm = new THREE.Mesh(beamGeo, fireMat(0xffd23a, 0.85)); bm.scale.set(0.3, 0.3, e.distanceTo(q)); bm.position.lerpVectors(e, q, 0.5); bm.lookAt(q); jFx(bm, 0.08);
+      const by = (o && o.name) || "Killjoy"; xBotDmg(tg, xTurDmg(td), by, "Turret"); if (tg === player) { try { updHud(); } catch (er) {} if (player.hp <= 0) pDie(by, "Turret"); } else if (tg.alive) flash(tg); try { SFX.ab("tShot", T.p); } catch (er) {}
+      if (++T.shot >= XTUR.shots) { T.shot = 0; T.cd += XTUR.cycle - (XTUR.shots - 1) * XTUR.gap; } else T.cd += XTUR.gap; } } }
+function xBTurClr() { while (XBTU.length) xBTurGone(XBTU[XBTU.length - 1]); }
 function botAb(b, dt, see, tg, from) {
   if (!jOn()) return; // abilities live with the agent kit (Retake + 5v5)
   const A = b.ab || (b.ab = { t: 0, smk: true, cb: 2, rb: true, rbT: 2 + Math.random() * 6, saw: false });
@@ -9319,7 +9366,7 @@ function botAb(b, dt, see, tg, from) {
 function jClear() {
   drEnd();
   J.smokes.concat(J.walls, J.zones, J.orbs, J.arrows, J.fx, J.cbs).forEach((s) => jRel(s.m)); J.smokes = []; J.walls = []; J.zones = []; J.orbs = []; J.arrows = []; J.fx = []; J.cbs = [];
-  if (J.ribM) scene.remove(J.ribM); J.rib = 0; J.hf = 0; XRCN.g++; XHFU.g++; jUnreveal(); $("xWh").style.opacity = 0; sgClear(); rsClear(); bcClear(); try { xKnClr(); } catch (e) {}
+  if (J.ribM) scene.remove(J.ribM); J.rib = 0; J.hf = 0; XRCN.g++; XHFU.g++; jUnreveal(); $("xWh").style.opacity = 0; sgClear(); rsClear(); bcClear(); try { xKnClr(); xBTurClr(); } catch (e) {}
 }
 function resetBotRoundAbilities() { // per-round bot ability state; each kit re-inits lazily when its key is null
   try { [].concat(bots || [], allies || []).forEach((b) => { const A = b && b.ab; if (!A) return;
@@ -9432,7 +9479,7 @@ function jTick(dt) {
   for (const k in J.cd) J.cd[k] = Math.max(0, J.cd[k] - dt);
   XSU.value += dt;
   J.smokes = J.smokes.filter((s) => { s.t -= dt; s.m.material.opacity = 0.6 * Math.min(1, s.t / 0.5); const sm = s.m.material.uniforms; if (sm) { sm.uO.value = s.m.material.opacity / 0.6; s.a = (s.a || 0) + dt; const k = Math.min(1, s.a / 0.3); const g = 0.3 + 0.7 * (1 - (1 - k) ** 3), sx = (s.r || 4) / 4; if (s.cyl) s.m.scale.set(sx, g, sx); else s.m.scale.setScalar(sx * g); } if (s.t > 0) return true; jRel(s.m); return false; });
-  jCbTick(dt); jFxTick(dt); sgTick(dt); rsTick(dt); bcTick(dt);
+  jCbTick(dt); jFxTick(dt); sgTick(dt); rsTick(dt); bcTick(dt); xBTurTick(dt);
   const hn = $("hint"); if (hn && J.pick !== "Jett" && hn.textContent.includes(KITS.Jett.h)) hn.textContent = hn.textContent.replace(KITS.Jett.h, K().h);
   const u = K().u, cq = ["jQ", J.q, J.q + "", J.cd.q / 0.6], ce = ["jE", J.e, J.e ? "1" : "Used", J.cd.e / 0.4];
   const sl = J.pick === "Breach" || J.pick === "Chamber" ? bcSl(u) : J.pick === "Cypher" ? cySl(u) : J.pick === "Raze" || J.pick === "Skye" ? rsSl(u) : J.pick === "Omen" || J.pick === "Killjoy" ? okSl(u) : J.pick === "Sage" || J.pick === "Reyna" ? sgSl(u, cq) : J.pick === "Phoenix" ? [["jC", J.c, J.c + "", J.cd.c / 0.6], cq, ["jE", J.e, J.e > 0 ? J.e + "" : J.tk + "/2 kills", J.cd.e / 0.6], ["jX", J.rib > 0 || J.ult >= u, J.rib > 0 ? Math.ceil(J.rib) + " s" : J.ult + "/" + u, J.rib > 0 ? 1 - J.rib / 10 : 1 - J.ult / u]]
@@ -12513,7 +12560,7 @@ function mpDir(a, u) { const v = mpV(a, new THREE.Vector3()); if (v.lengthSq() <
 function mpTgt(o, d, far, back) { ray.set(o, d); ray.far = far; const h = ray.intersectObjects(solids)[0]; return h ? MPC.e.copy(h.point).addScaledVector(d, -back) : MPC.e.copy(o).addScaledVector(d, far); }
 const mpDist = (px, pz, x, z, seg) => (seg ? segD(px, pz, seg) : Math.hypot(px - x, pz - z));
 function mpAreaHit(o, x, z, r, n, w, seg) { // host only: the remote caster's enemies (FFA: everyone else), credited to the caster
-  if (!(MP.role === "host" && MP.st === "game") || !o.own) return; const by = o.own.name, ffa = FV.dm && !FV.tdm;
+  if (!o.own || !(o.loc || (MP.role === "host" && MP.st === "game"))) return; const by = o.own.name, ffa = FV.dm && !FV.tdm; // o.loc: an offline bot cast (this client is the authority)
   if ((o.en || ffa) && player.hp > 0 && mpDist(player.x, player.z, x, z, seg) < r) { xBotDmg(player, n, by, w); try { updHud(); } catch (e) {} if (player.hp <= 0) pDie(by, w); }
   const T = ffa || !o.en ? bots : allies;
   for (let j = 0; j < T.length; j++) { const t = T[j]; if (t && t !== o.own && t.alive && t.g && mpDist(t.g.position.x, t.g.position.z, x, z, seg) < r) xBotDmg(t, n, by, w); }
@@ -15089,6 +15136,12 @@ if(typeof fBotBuy==='function'){const fb0=fBotBuy;fBotBuy=function(n){
 // defender comes for it, defenders delay a push on their site (smoke / flash toward the attackers, Boom Bot after them)
 // and flash / recon before a retake. Each cast is the kit's existing bot cast (xBUse charges, enSmoke / xBFlash /
 // recon bolt / xKnPlace / xRzShells): no ability values change. Native-map 5v5 only; other modes keep the old triggers.
+// agent ability types c / q / e (server/src/abilities.js types) and the offline bot casts (index.html xBHotHands ...) for the
+// ones that had no bot path; reach as the server's planUtility
+const XBV_TY={Jett:['smoke','updraft','dash'],Phoenix:['wall','fire','flash'],Sova:['drone','shock','recon'],Sage:['wall','slow','heal'],Reyna:['leer','heal','dismiss'],Omen:['teleport','flash','smoke'],Killjoy:['fire','trap','turret'],Raze:['drone','satchel','grenade'],Skye:['heal','drone','flash'],Breach:['shock','flash','stun'],Cypher:['trap','smoke','recon'],Chamber:['trap','headhun','teleport']};
+const XBV_CAST={Phoenix:{fire:()=>typeof xBHotHands==='function'&&xBHotHands},Sage:{slow:()=>typeof xBSlowOrb==='function'&&xBSlowOrb},Sova:{shock:()=>typeof xBShock==='function'&&xBShock},
+ Omen:{flash:()=>typeof xBParanoia==='function'&&xBParanoia},Cypher:{smoke:()=>typeof xBCage==='function'&&xBCage},Skye:{drone:()=>typeof xBTrail==='function'&&xBTrail},Killjoy:{turret:()=>typeof xBTurret==='function'&&xBTurret}};
+const XBV_REACH={fire:13,slow:15,shock:40,flash:25,smoke:10,drone:20,turret:30};
 function xbvUtilX(b){
  const C=typeof nmActive==='function'&&nmActive(),s=FV.sp;if(!C||mode!=='five'||FV.dm||FV.buy>0||!window.BotBrain||!s||!b||!b.g||!C.meta||!C.meta.sites||typeof xBAtk!=='function')return null;
  const al=allies.indexOf(b)>=0,team=al?allies:bots,atk=xBAtk(al),P=xbvPlan(b,team,atk,C),S=xbvStrat(team,atk,C);
@@ -15122,6 +15175,12 @@ if(typeof botAb==='function'){const ba0=botAb;botAb=function(b,dt,see,tg,from){
  if(A&&ag==='Raze'&&it&&it.phase==='delay'&&!see&&A.rzb)A.rlk={x:it.x,z:it.z,t:0}; // defenders: Boom Bot after the push
  X.U.sm=null;const c0=ch?ch.c+ch.q+ch.e:0,r=ba0.apply(this,arguments);
  if(X.U.sm&&ch&&ch.c+ch.q+ch.e<c0)xbvUsed(b,X,X.U.sm,'smoke');else if(ag==='Sova'&&it&&ch&&ch.e<e0)xbvUsed(b,X,it,'recon');
+ // the plan's utility with no older bot path (Hot Hands, Slow Orb, Shock Bolt, Paranoia, Cyber Cage, Trailblazer, Turret):
+ // the first wanted type this agent has; a type an older hook owns (xBChoke / xBFl / Recon / Nanoswarm / Paint Shells) waits for it
+ if(it&&b.alive&&A&&XBV_CAST[ag]&&ch&&X.U.it===it){const ty=XBV_TY[ag];for(const w of it.want){const i=ty.indexOf(w);if(i<0)continue;const k='cqe'[i],cf=XBV_CAST[ag][w],fn=cf&&cf();
+  if(!cf){if(ch[k]>=1)break;continue;}if(!fn||!(ch[k]>=1))continue;
+  const l=Math.hypot(it.x-from.x,it.z-from.z),R=XBV_REACH[w];if(l>R+2||(w!=='turret'&&w!=='flash'&&l<2))break;
+  if(xBUse(b,k)){fn(b,X.al,from,it.x,it.z);xbvUsed(b,X,it,w);}break;}}
  // post-plant: Killjoy hides her Nanoswarms on the Spike once; Raze shells it when a defender comes for it
  if(X.atk&&X.planted&&b.alive&&A){const sp=typeof spike!=='undefined'&&spike&&spike.parent?spike.position:null;if(sp){const d=Math.hypot(sp.x-X.p.x,sp.z-X.p.z);
   if(ag==='Killjoy'&&!X.U.kj&&d<12){X.U.kj=1;if(xKnPlace(b,X.al,sp.x,sp.z,2,0.5,2.5)){feed("Killjoy ▸ Nanoswarm");xbvUsed(b,X,null,'fire');}}
