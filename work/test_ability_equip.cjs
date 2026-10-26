@@ -164,7 +164,7 @@ const fails=[];const fail=s=>{fails.push(s);if(VERBOSE)console.log('FAIL',s);};c
   xe('J.smokes.forEach(s=>s.t=0.01);true');await adv(200);}
  // ---- Cypher Neural Theft offline (wiki: 18 m reach, reveals at 2 s and 6 s after the cast; same as server ULT.theft) ----
  await live();{pick('Cypher');await adv(200);eq(xe('[CYNT.reach,CYNT.at,CYNT.reveal]'),[18,[2,6],1.6],'client CYNT table');
-  const far=xe('(()=>{const al=bots.filter(b=>b.alive&&b.g),dd=bots.filter(b=>!b.alive&&b.g);if(!dd.length&&al.length>1)dd.push(al.shift()),dd[0].alive=false;if(!dd.length||!al.length)return null;dd.forEach((b,i)=>{b.g.position.x=player.x+(i?100:19);b.g.position.z=player.z;});al.forEach(b=>{b.g.position.x=player.x;b.g.position.z=player.z-60;});return true;})()');
+  const far=xe('(()=>{const al=bots.filter(b=>b.alive&&b.g),dd=bots.filter(b=>!b.alive&&b.g);if(!dd.length&&al.length>1)dd.push(al.shift()),dd[0].alive=false;if(!dd.length||!al.length)return null;dd.forEach((b,i)=>{b.g.position.x=player.x+(i?100:19);b.g.position.z=player.z;});al.forEach(b=>{b.g.position.x=player.x;b.g.position.z=player.z-60;b.det=1e9;});player.hp=100;return true;})()');/* live bots held (det: no shooting) so a bot that saw the player (e.g. an enemy Recon Bolt pulse) cannot end the round mid-check */
   if(!far)fail('Neural Theft: no bot to fall');else{
    const tx=async()=>{await tap('KeyX');await adv(600);await click(0);for(let i=0;i<10&&xe('J.ult')>0;i++)await adv(20);};// X equips (0.5 s draw), FIRE casts
    xe('J.ult=K().u;jUnreveal();true');await tx();eq(xe('J.ult'),xe('K().u'),'corpse at 19 m: not cast, ult kept');if(xe('!!J.eq'))await tap('KeyX');await adv(500);
@@ -175,8 +175,21 @@ const fails=[];const fail=s=>{fails.push(s);if(VERBOSE)console.log('FAIL',s);};c
    await at(2100);eq(xe('J.rvT>0&&J.rv.length>0'),true,'first reveal at 2 s');await at(3800);eq(xe('J.rvT>0'),false,'first reveal over (1.6 s)');
    await at(5900);eq(xe('J.rvT>0'),false,'no reveal before 6 s');await at(6100);eq(xe('J.rvT>0&&J.rv.length>0'),true,'second reveal at 6 s');
    // a cast whose pulses are still pending when the round clears never reveals in the next round
-   xe('J.ult=K().u;jUnreveal();true');await tx();eq(xe('J.ult'),0,'second cast');xe('bcClear();jUnreveal();true');{const t1=xe('performance.now()');while(xe('performance.now()')-t1<6300)await adv(50);}eq(xe('J.rvT>0'),false,'round clear cancels pending reveals (none through 6.3 s)');}}
+   xe('J.ult=K().u;jUnreveal();true');await tx();eq(xe('J.ult'),0,'second cast');xe('bcClear();jUnreveal();true');{const t1=xe('performance.now()');while(xe('performance.now()')-t1<6300)await adv(50);}eq(xe('J.rvT>0'),false,'round clear cancels pending reveals (none through 6.3 s)');xe('bots.forEach(b=>{if(b.det>1e8)b.det=0;});true');}}
+ {const asrc=require('fs').readFileSync(require('path').join(__dirname,'../server/src/abilities.js'),'utf8'),lm=asrc.match(/LEER=\{active:([\d.]+)\}/);eq(xe('XLEER'),lm?+lm[1]:null,'client XLEER == server LEER.active (wiki Leer 1.6 s)');}
+ // ---- Sova Recon Bolt pulses (wiki Recon_Bolt: 30 m, 2 pulses 1.6 s apart, 0.75 s reveal, the bolt's line of sight); client XRCN == server DEV.reconBolt ----
+ await live();{const dsrc=require('fs').readFileSync(require('path').join(__dirname,'../server/src/devices.js'),'utf8'),rb=dsrc.match(/reconBolt:\{pulses:\[([\d.]+),([\d.]+)\],radius:([\d.]+),reveal:([\d.]+)\}/);
+  eq(xe('[XRCN.pulses[0],XRCN.pulses[1],XRCN.radius,XRCN.reveal]'),rb?[+rb[1],+rb[2],+rb[3],+rb[4]]:null,'client XRCN == server DEV.reconBolt');
+  const ok=xe('(()=>{const al=bots.filter(b=>b.alive&&b.g);if(al.length<2)return null;window.__rb={p:new THREE.Vector3(player.x,0.2,player.z),near:al[0],out:al[1]};al.forEach(b=>{b.g.position.set(player.x+200,b.g.position.y,player.z);b.det=1e9;});player.hp=100;__rb.near.g.position.x=player.x+28;__rb.out.g.position.x=player.x-33;los=((f)=>{const L=(a,b)=>true;L.f=f;return L;})(los);return true;})()');
+  if(!ok)fail('Recon Bolt: need two live bots');else{
+   const t0=xe('performance.now()'),at=async ms=>{while(xe('performance.now()')-t0<ms)await adv(20);};const keep=()=>xe('[[__rb.near,28],[__rb.out,-33]].forEach(([b,d])=>{b.alive=true;b.hp=100;b.g.position.x=__rb.p.x+d;b.g.position.z=__rb.p.z;});player.hp=100;true');
+   xe('jUnreveal();jReveal(__rb.p);true');keep();eq(xe('J.rvT>0'),false,'no reveal as the bolt lands');await at(850);keep();eq(xe('J.rvT>0'),false,'no reveal before the first pulse (0.9 s)');
+   await at(950);eq(xe('[J.rv.includes(__rb.near),J.rv.includes(__rb.out)]'),[true,false],'first pulse: 28 m revealed, 33 m not (was 15 m)');await at(1700);keep();eq(xe('J.rvT>0'),false,'reveal lasts 0.75 s');
+   await at(2450);keep();await at(2550);eq(xe('J.rvT>0&&J.rv.includes(__rb.near)'),true,'second pulse at 2.5 s');await at(3400);keep();eq(xe('J.rvT>0'),false,'second reveal over');
+   xe('los=(a,b)=>false;true');{const t1=xe('performance.now()');xe('jReveal(__rb.p);true');while(xe('performance.now()')-t1<1000)await adv(20);}eq(xe('J.rv.length'),0,'no reveal without the bolt\'s line of sight');
+   xe('los=(a,b)=>true;jReveal(__rb.p);XRCN.g++;jUnreveal();true');{const t1=xe('performance.now()');while(xe('performance.now()')-t1<2700)await adv(50);}eq(xe('J.rvT>0'),false,'a round clear cancels pending pulses');
+   xe('los=los.f;bots.forEach(b=>{if(b.det>1e8)b.det=0;});true');}}
  if(xe('XEQV.err||null'))fail('ability viewmodel error: '+xe('XEQV.err'));
  if(H.errors.length>errs0)fail('page errors: '+H.errors.slice(errs0).map(e=>String(e&&e.message||e)).join(' | '));
- if(fails.length){console.log(fails.join('\n'));process.exit(1);}console.log('ability equip: binds, migration, HUD labels, equip -> fire flow, first-person equip viewmodel, wiki equip times + windups, Sova bow charge + bounces, Fault Line hold-to-extend, Hot Hands spread, Neural Theft 18 m / 2 s + 6 s, Cyber Cage cylinder, Cloudburst flight + steering, per-ability smoke radii, kit table ok');process.exit(0);
+ if(fails.length){console.log(fails.join('\n'));process.exit(1);}console.log('ability equip: binds, migration, HUD labels, equip -> fire flow, first-person equip viewmodel, wiki equip times + windups, Sova bow charge + bounces, Fault Line hold-to-extend, Hot Hands spread, Neural Theft 18 m / 2 s + 6 s, Cyber Cage cylinder, Recon Bolt 30 m pulses, Cloudburst flight + steering, per-ability smoke radii, kit table ok');process.exit(0);
 })().catch(e=>{console.error(e);process.exit(1);});

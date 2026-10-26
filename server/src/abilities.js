@@ -22,7 +22,7 @@ function castAbility0(sim,u,m){const k=m.k,K=kits[u.agent]||kits.Jett,A=u.abilit
  let bolt=null,fault=null,cloud=null;if(u.agent==='Sova'&&(ty==='shock'||ty==='recon')&&!soul){const pw=typeof m.pw==='number'&&Number.isFinite(m.pw)?Math.max(0,Math.min(1,m.pw)):1,nb=SovaBolt.bounces(m.b),W=sim.world,rayN=W.rayN?(a,b,c)=>W.rayN(a,b,c):(a,b,c)=>{const t=W.ray(a,b,c);return Number.isFinite(t)&&t<=c?{distance:t,normal:null}:null;};
   bolt=SovaBolt.path(o,d,pw,nb,rayN,(x,z,y)=>W.ground(x,z,y));bolt.pw=pw;bolt.nb=nb;p.splice(0,3,...bolt.end);}
  if(soul){p.splice(0,3,...consumeSoul(sim,u,k,soul));}
- else if(bolt&&ty==='recon'){const T=bolt.t;push('recon',T+Math.max(...DEV.recon.pulses)+.1,DEV.recon.radius,{pulses:DEV.recon.pulses.map(t=>sim.time+T+t)});}
+ else if(bolt&&ty==='recon'){const T=bolt.t;const R=DEV.reconBolt;push('recon',T+Math.max(...R.pulses)+.1,R.radius,{pulses:R.pulses.map(t=>sim.time+T+t),reveal:R.reveal});}
  else if(bolt&&ty==='shock')push('blast',bolt.t+.3,4,{damage:75,at:sim.time+bolt.t});
  else if(ty!=='ult'&&startDevice(sim,u,ty,p,push,m)){}
  else if(ty==='dash'&&u.agent==='Jett'){const sn=Math.sin(u.look),c=Math.cos(u.look),input=sim.time-(u.inputAt||0)<.3?u.input:{},f=input.forward||0,s=input.side||0;let dx=-sn*f+c*s,dz=-c*f-sn*s,len=Math.hypot(dx,dz);if(len<.001){dx=-sn;dz=-c;len=1;}dx/=len;dz/=len;for(let i=0;i<32;i++){const x=u.x+dx*.25,z=u.z+dz*.25;if(sim.world.blocked(x,z,.4,u.y,1.8-(u.ch||0))||(sim.world.leash&&!sim.world.leash(x,z,u.y,u.x,u.z)))break;u.x=x;u.z=z;}u.vx=u.vz=0;u.seq++;p.splice(0,3,u.x,u.y,u.z);}else if(ty==='satchel'){const dx=-Math.sin(u.look),dz=-Math.cos(u.look);for(let i=0;i<16;i++){if(sim.world.blocked(u.x+dx*.5,u.z+dz*.5,.4,u.y,1.8)||(sim.world.leash&&!sim.world.leash(u.x+dx*.5,u.z+dz*.5,u.y,u.x,u.z)))break;u.x+=dx*.5;u.z+=dz*.5;}}
@@ -32,7 +32,7 @@ function castAbility0(sim,u,m){const k=m.k,K=kits[u.agent]||kits.Jett,A=u.abilit
  else if(ty==='heal'&&u.agent==='Skye'){A.regrowthActive=true;push('regrowth',3600,18,{rate:20});}
  else if(ty==='heal'){const target=healTarget||u;p.splice(0,3,target.x,target.y,target.z);push('heal',u.agent==='Sage'?5:3,8,{target:u.agent==='Skye'?null:target.id,rate:u.agent==='Sage'?(target===u?10:20):20});}
  else if(ty==='wall'&&u.agent==='Sage'){const x=u.x-Math.sin(u.look)*2.5,z=u.z-Math.cos(u.look)*2.5;p[0]=x;p[1]=u.y;p[2]=z;push('barrier',40,3,{hp:600,yaw:u.look});}else if(ty==='smoke'&&u.agent==='Jett'){/* Cloudburst: a projectile from the eye, steered while C is held (input cb), smoke where it lands (tickCloudburst, vendor/cloudburst.cjs) */cloud=Cloudburst.start(o,d);push('cloudburst',Cloudburst.CB.maxT+.5,0,{st:cloud,p:[...o]});}else if(ty==='smoke'||ty==='wall')push('smoke',u.agent==='Jett'?2.5:15,SMOKE.r[u.agent]||SMOKE.radius);
- else if(ty==='flash'||ty==='leer'){p[1]+=1.6;/* wiki windups: Leer 0.4 s, Flashpoint 0.5 s from FIRE (windups.js) */const at=ty==='leer'?wf('leer'):u.agent==='Breach'?wf('flashpoint'):.35;push(ty==='leer'?'leer':'flash',ty==='leer'?2.5:Math.max(1,at+.2),ty==='leer'?15:30,{at:sim.time+at});}
+ else if(ty==='flash'||ty==='leer'){p[1]+=1.6;/* wiki windups: Leer 0.4 s, Flashpoint 0.5 s from FIRE (windups.js) */const at=ty==='leer'?wf('leer'):u.agent==='Breach'?wf('flashpoint'):.35;push(ty==='leer'?'leer':'flash',ty==='leer'?at+LEER.active:Math.max(1,at+.2),ty==='leer'?15:30,{at:sim.time+at,blind:FLASH_BLIND[u.agent]});}
  else if(ty==='shock'||ty==='grenade'){const at=ty==='shock'&&u.agent==='Breach'?wf('aftershock'):.65;/* Breach Aftershock: 2.2 s windup from FIRE */push('blast',at+.55,4,{damage:ty==='grenade'?100:75,at:sim.time+at});}
  else if(ty==='fire')push('fire',4,4,{rate:40});
  else if(ty==='stun'&&u.agent==='Breach'){/* Fault Line: the quake runs along the strip after the 1.1 s windup (wiki) from where Breach stood (tickFault); HOLD FIRE charge m.pw sets its length (FAULT) */fault=faultPw(m.pw);u.fault={at:sim.time+wf('faultLine'),x:u.x,y:u.y,z:u.z,fx:-Math.sin(u.look),fz:-Math.cos(u.look),near:FAULT.near,len:faultLen(fault)};p.splice(0,3,u.x,u.y,u.z);}else if(ty==='slow'||ty==='stun'||ty==='trap')push('slow',ty==='trap'?20:3,4);
@@ -60,6 +60,11 @@ export function abilityDamage(sim,owner,v,n){if(!v.alive||v.invulnerableUntil>si
 // Smoke volume matches the client render (enSmoke: radius-4 sphere centred 1.8 m above the floor; p[1] is floor+0.1).
 // Smoke radius per ability (wiki.playvalorant.com, fetched 2026-10-25): Cloudburst 3.35 m, Dark Cover 4.1 m, Cyber Cage
 // 3.72 m (cylinder radius); client XSMR is the same table. radius = fallback for any other smoke.
+// Max blind per flash (wiki.playvalorant.com/en-us/<Ability> "Max blind duration"): Flashpoint 2.25 s, Guiding Light 2.25 s
+// (max, from a full 0.75 s flight), Curveball 1.5 s (DEV.curveball.blind); Omen's Paranoia 2 s. The offline client uses the same.
+export const FLASH_BLIND={Breach:2.25,Skye:2.25,Omen:2};
+// Leer (wiki /Leer): the eye nearsights for 1.6 s once it arrives (0.4 s windup from FIRE); client xWf('leer') + 1.6.
+export const LEER={active:1.6};
 export const SMOKE={radius:4,lift:1.7,r:{Jett:3.35,Omen:4.1,Cypher:3.72}};
 export function smokeCentre(e){return [e.p[0],e.p[1]+SMOKE.lift,e.p[2]];}
 // True when the segment o..o+d*max passes through (or starts/ends inside) an active smoke.

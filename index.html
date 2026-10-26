@@ -7949,13 +7949,21 @@ function jRib() {
   feed("Run It Back ▸ You"); say("Run It Back · back at the marker", 1400); SFX.tp(); SFX.ab("rewindBack"); return true;
 }
 function jUnreveal() { J.rv.forEach((b) => (b.rvO || []).forEach((o) => o.parent && o.parent.remove(o))); J.rv = []; J.rvT = 0; }
-function jReveal(p) {
-  jUnreveal(); J.rvT = 3;
-  J.rv = bots.filter((b) => b.alive && Math.hypot(b.g.position.x - p.x, b.g.position.z - p.z) < 15);
+// Sova Recon Bolt (wiki.playvalorant.com/en-us/Recon_Bolt): after the bolt lands it sends 2 sonar pulses 1.6 s apart; each
+// reveals enemies within 30 m that the bolt can see for 0.75 s. Same table as the server (DEV.reconBolt); XRCN.g changes on
+// every round clear so pulses of a bolt from an earlier round never fire.
+const XRCN = { pulses: [0.9, 2.5], radius: 30, reveal: 0.75, g: 0 }, XRCN_V = [new THREE.Vector3(), new THREE.Vector3()];
+function xRcnSees(p, x, y, z) { return Math.hypot(x - p.x, z - p.z) < XRCN.radius && los(XRCN_V[0].set(p.x, p.y + 0.5, p.z), XRCN_V[1].set(x, y, z)); }
+function xRcnRings(p, en) { [[15, 0.9], [9, 0.6]].forEach(([g, t], i) => { const m = jM(xRcnGeo, xAdd((en ? "ercn" : "rcn") + i, en ? 0xff5a2a : 0x3fb4ff, 0.85 - i * 0.25)); m.rotation.x = -Math.PI / 2; m.position.set(p.x, 0.12 + i * 0.02, p.z); jFx(m, t).g = g; }); }
+function jReveal(p) { const g = XRCN.g; p = p.clone(); XRCN.pulses.forEach((t) => setTimeout(() => { if (g === XRCN.g) jRcnPulse(p); }, t * 1000)); }
+function jRcnPulse(p) {
+  jUnreveal(); J.rvT = XRCN.reveal;
+  J.rv = bots.filter((b) => b.alive && b.g && xRcnSees(p, b.g.position.x, b.g.position.y + 1.2, b.g.position.z));
   J.rv.forEach((b) => { b.rvO = [b.body, b.head].map((s) => { const o = new THREE.Mesh(s.geometry, rvMat); o.scale.setScalar(1.15); o.renderOrder = 999; o.raycast = () => {}; s.add(o); return o; }); });
-  [[15, 0.9], [9, 0.6]].forEach(([g, t], i) => { const m = jM(xRcnGeo, xAdd("rcn" + i, 0x3fb4ff, 0.85 - i * 0.25)); m.rotation.x = -Math.PI / 2; m.position.set(p.x, 0.12 + i * 0.02, p.z); jFx(m, t).g = g; });
+  xRcnRings(p, false);
   say(J.rv.length + " enem" + (J.rv.length === 1 ? "y" : "ies") + " revealed", 900);
 }
+const XLEER = 1.6; // Leer nearsights for 1.6 s once it arrives (wiki.playvalorant.com/en-us/Leer); server LEER.active
 function jPop(p) {
   SFX.flash(); const m = jM(orbGeo, xAdd("pcore", 0xfff6e8, 1)); m.scale.setScalar(4); m.position.copy(p); jFx(m, 0.3);
   const hm = jM(smokeGeo, xAdd("phalo", 0xff9a40, 0.45)); hm.scale.setScalar(0.3); hm.position.copy(p); jFx(hm, 0.3).g = 0.25;
@@ -8168,7 +8176,7 @@ function sgTick(dt) {
     l.t += dt; l.m.position.lerpVectors(l.a, l.b, Math.min(1, l.t / 0.4)); ryLeerLook(l); const p = l.m.position;
     if (l.t >= xWf("leer")) bots.forEach((b) => { /* wiki windup 0.4 s from FIRE */ if (!b.alive) return; const bp = PF_A.set(b.g.position.x, 1.6, b.g.position.z), ry = b.g.rotation.y, vx = p.x - bp.x, vz = p.z - bp.z, d = Math.hypot(vx, vz) || 0.01;
       if (d < 30 && (vx * Math.sin(ry) + vz * Math.cos(ry)) / d > 0.3 && los(bp, PF_B.copy(p))) b.blind = Math.max(b.blind || 0, 2); });
-    if (l.t < 2) return true; scene.remove(l.m); return false;
+    if (l.t < xWf("leer") + XLEER) return true; scene.remove(l.m); return false;
   });
   if (J.dis > 0) { J.dis -= dt; if (J.dis <= 0) { J.dis = 0; $("xEmp").classList.remove("dis"); } }
   if (J.emp > 0 && !(P.hp > 0)) { J.emp = 0; $("xEmp").classList.remove("on"); } // Empress (current Valorant): lasts until death (round reset clears it in sgClear)
@@ -8974,11 +8982,11 @@ function enPop(p) {
   if (player.hp <= 0 || J.dr) return; const e = pEyeTo(PE_V), v = p.clone().sub(e), l = v.length() || 0.01;
   if (l < 30 && v.dot(jAim()) / l > 0.5 && los(e, p)) { const w = $("xWh"); w.style.transition = "none"; w.style.opacity = 1; setTimeout(() => { w.style.transition = "opacity .8s"; w.style.opacity = 0; }, 450); }
 }
-function enRecon(p) {
-  // same pooled two-ring pulse as the player's recon (pass 117), tinted red-orange for enemies
-  [[15, 0.9], [9, 0.6]].forEach(([g, t], i) => { const m = jM(xRcnGeo, xAdd("ercn" + i, 0xff5a2a, 0.85 - i * 0.25)); m.rotation.x = -Math.PI / 2; m.position.set(p.x, 0.12 + i * 0.02, p.z); jFx(m, t).g = g; });
+function enRecon(p) { const g = XRCN.g; p = p.clone(); XRCN.pulses.forEach((t) => setTimeout(() => { if (g === XRCN.g) enRcnPulse(p); }, t * 1000)); }
+function enRcnPulse(p) { // an enemy bolt's pulse: same rings (tinted red-orange), 30 m and the bolt's line of sight to the player's eye
+  xRcnRings(p, true);
   blip(500, 0.2, "sine", 0.12);
-  if (player.hp > 0 && Math.hypot(player.x - p.x, player.z - p.z) < 15) { say("Revealed by Sova's Recon Bolt", 1100); enRvFx(); bots.forEach((b) => { if (b.alive) b.cd = Math.min(b.cd, 0.3); }); }
+  if (player.hp > 0 && xRcnSees(p, player.x, pEyeTo(PE_V).y, player.z)) { say("Revealed by Sova's Recon Bolt", 1100); enRvFx(); bots.forEach((b) => { if (b.alive) b.cd = Math.min(b.cd, 0.3); }); }
 }
 function enRvFx() { // brief red outline/vignette pulse + REVEALED warning under the crosshair (one reused overlay)
   let o = enRvFx.o;
@@ -9069,7 +9077,7 @@ function botAb(b, dt, see, tg, from) {
 function jClear() {
   drEnd();
   J.smokes.concat(J.walls, J.zones, J.orbs, J.arrows, J.fx, J.cbs).forEach((s) => jRel(s.m)); J.smokes = []; J.walls = []; J.zones = []; J.orbs = []; J.arrows = []; J.fx = []; J.cbs = [];
-  if (J.ribM) scene.remove(J.ribM); J.rib = 0; J.hf = 0; jUnreveal(); $("xWh").style.opacity = 0; sgClear(); rsClear(); bcClear(); try { xKnClr(); } catch (e) {}
+  if (J.ribM) scene.remove(J.ribM); J.rib = 0; J.hf = 0; XRCN.g++; jUnreveal(); $("xWh").style.opacity = 0; sgClear(); rsClear(); bcClear(); try { xKnClr(); } catch (e) {}
 }
 function resetBotRoundAbilities() { // per-round bot ability state; each kit re-inits lazily when its key is null
   try { [].concat(bots || [], allies || []).forEach((b) => { const A = b && b.ab; if (!A) return;
