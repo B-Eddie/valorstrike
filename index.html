@@ -7323,7 +7323,7 @@ function xLotusTick() { // no allocations per frame
 const HAVEN_CALL = []; XCALL.clear(); XCALL.add(...ASC_CALL);
 FV.pick = window.xQMap || "ascent"; FV.map = "ascent"; // the lobby map choice (queue tiles, remembered as vs.map)
 // a lobby map tile / Online select change is the pick right away (the pre-match screen and every launch read it), not only on START
-window.xLobbyPick = (m) => { try { if (!running && !(typeof MP !== "undefined" && MP.on) && (F_MAPN[m] || m === "random")) FV.pick = m; } catch (e) {} };
+window.xLobbyPick = (m) => { try { if (!running && $("lobby").style.display !== "none" && !(typeof MP !== "undefined" && MP.on) && (F_MAPN[m] || m === "random")) FV.pick = m; } catch (e) {} };
 const F_MAPN = { ascent: "Ascent", bind: "Bind", haven: "Haven", split: "Split", lotus: "Lotus", breeze: "Breeze" };
 // Free a lazily built map on switch (rebuilt next time it is picked). Freeing only its geometry left every switch's canvas
 // textures (callout labels, plaques, the map's own surfaces) and materials on the GPU, the callout sprites' too (they live in

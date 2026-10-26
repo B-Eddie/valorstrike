@@ -16,7 +16,7 @@ function mulberry(seed){let a=seed>>>0;return ()=>{a=a+0x6D2B79F5|0;let t=Math.i
 Math.random=mulberry(11);const H=boot({real3:true,seed:23});selFix(H);
 (async()=>{
  const t0=Date.now(),xe=H.xe,$=id=>H.doc.getElementById(id);
- const {localCluster}=await import('../server/tools/local-cluster.mjs');const {ScriptedHuman}=await import('../server/tools/scripted-human.mjs');
+ const {localCluster}=await import('../server/tools/local-cluster.mjs');
  const cluster=await localCluster({env:{ALLOW_LOCAL_ORIGIN:'true',ENABLE_SPIKE:'true'}});
  const sockets=[],codes=new Set();let pending=0;
  const settle=async()=>{const end=Date.now()+120000;const busy=()=>pending>0||[...codes].some(c=>{const r=cluster.room(c);return r&&[...r.sessions.values()].some(s=>s.authenticating&&!s.u);});while(busy()&&Date.now()<end)await new Promise(r=>setTimeout(r,2));};
@@ -28,25 +28,26 @@ Math.random=mulberry(11);const H=boot({real3:true,seed:23});selFix(H);
  // Quick Match lists rooms over HTTP: answer from the cluster's own directory view of its rooms
  H.win.fetch=function(u){u=String(u);if(/\/rooms$/.test(u)){const rooms=[...codes].map(c=>cluster.room(c)).filter(r=>r&&r.sim&&r.public&&['room','game'].includes(r.sim.phase)).map(r=>{const x=r.room();return {code:x.code,map:x.map,mode:x.mode,players:x.pl.length,state:x.st};});return Promise.resolve({ok:true,json:async()=>({rooms})});}return Promise.reject(new TypeError('Failed to fetch'));};
  H.win.__ls=new Map();H.win.__ls.getItem=k=>H.win.__ls.has(k)?H.win.__ls.get(k):null;H.win.__ls.setItem=(k,v)=>H.win.__ls.set(k,String(v));H.win.__ls.removeItem=k=>H.win.__ls.delete(k);
- xe('window.__nmK=[];nmEnsure=function(k){__nmK.push(k);return Promise.resolve(null);};window.xvAgentsReady=xvAgentsReady=function(){return Promise.resolve([]);};xvPreloadAgents=function(){};true');
+ xe('window.xvAgentsReady=xvAgentsReady=function(){return Promise.resolve([]);};xvPreloadAgents=function(){};true');
  const errs0=H.errors.length,x0=H.xErrCalls.length;
  const step=async ms=>{for(let t=0;t<ms;t+=50){if(xe('MP.code'))codes.add(xe('MP.code'));await settle();await cluster.advance(50);H.advance(50);}};
  const until=async(cond,ms,what)=>{for(let t=0;t<ms;t+=50){if(cond())return;await step(50);}throw Error('timed out: '+what+' (MP.st '+xe('MP.st')+' msg '+xe('MP.msg')+' errors '+JSON.stringify(H.errors.slice(errs0,errs0+3))+')');};
- const humans=[];const join=(code,name,agent)=>{const h=new ScriptedHuman({name,agent,world:null,target:null});codes.add(code);pending++;let settled=false;const done=()=>{if(!settled){settled=true;pending--;}};const s=cluster.connect({code});h.attach(s);s.on('message',m=>h.receive(m));s.on('open',()=>{done();h.hello();});s.on('error',done);humans.push(h);return h;};
+ // scripted friends: a bare socket that says hi and otherwise idles (no piloting needed to check maps)
+ const humans=[];const raw=q=>{codes.add(q.code);pending++;let settled=false;const done=()=>{if(!settled){settled=true;pending--;}};const s=cluster.connect(q);const h={socket:s,send:m=>s.send(JSON.stringify(m)),leave(){try{s.send(JSON.stringify({t:'bye'}));s.close();}catch(e){}}};s.on('message',()=>{});s.on('open',()=>{done();h.send({t:'hi',n:q.name,ag:q.agent});});s.on('error',done);humans.push(h);return h;};
+ const join=(code,name,agent)=>raw({code,name,agent});
  const fails=[];const fail=s=>{fails.push(s);if(VERBOSE)console.log('FAIL',s);};
  const tile=m=>H.doc.querySelector('#xQueue .x-qmap[data-map="'+m+'"]').click();
  const pickSelect=m=>{const s=$('xOnMap');if(s.disabled)fail('online map select disabled outside a room');s.value=m;H.dispatch(s,H.mkEvent('change',{}));};
  const mode=m=>H.doc.querySelector('#xOn [data-om="'+m+'"]').click();
  const leave=async()=>{for(const h of humans.splice(0))try{h.leave();}catch(e){}xe('try{mpLeave&&mpLeave("Left the room")}catch(e){}try{mpReset()}catch(e){}true');await step(300);xe('try{toLobby()}catch(e){}true');await step(200);};
- const page=()=>JSON.parse(xe('JSON.stringify({map:FV.map,five:Object.keys(FMAP).find(k=>FMAP[k]===MAPS.five)||null,vis:Object.keys(FMAP).filter(k=>FMAP[k].g&&FMAP[k].g.visible),nm:__nmK.slice(-1)[0]||null,st:MP.st,ready:NET.ready})'));
+ const page=()=>JSON.parse(xe('JSON.stringify({map:FV.map,five:Object.keys(FMAP).find(k=>FMAP[k]===MAPS.five)||null,vis:Object.keys(FMAP).filter(k=>FMAP[k].g&&FMAP[k].g.visible),st:MP.st,ready:NET.ready})'));
  // start the room's match from the page (Start is the host's button) with one scripted friend, and check both sides
  const play=async(what,want,code,hostPage=true)=>{const room=cluster.room(code);if(!room||!room.sim){fail(what+': no server room '+code);return;}
   if(room.sim.map!==want)fail(`${what}: server room ${code} is ${room.sim.map}, wanted ${want}`);
   if($('xOnMap').value!==want||!$('xOnMap').disabled)fail(`${what}: in the room the select shows ${$('xOnMap').value} (disabled ${$('xOnMap').disabled}), room is ${want}`);
   if(hostPage){join(code,'Friend'+(humans.length+1),'Sova');await until(()=>xe('(MP.room&&MP.room.pl||[]).length')>=2,8000,what+' friend joined');$('xOnStart').click();}
   await until(()=>xe('MP.st')==='game'&&xe('NET.ready'),30000,what+' match start');const p=page();
-  if(p.map!==want||p.five!==want||p.vis.length!==1||p.vis[0]!==want)fail(`${what}: page built ${JSON.stringify(p)}, wanted ${want}`);
-  if(p.nm!==want)fail(`${what}: page asked the native loader for ${p.nm}, wanted ${want}`);};
+  if(p.map!==want||p.five!==want||p.vis.length!==1||p.vis[0]!==want)fail(`${what}: page built ${JSON.stringify(p)}, wanted ${want}`);/* (the audit page strips the native-map block; its wrapper is checked in test_map_select.cjs) */};
  xe("MP.name='MapQA';true");
  const runs=[];MAPS.forEach((m,i)=>{for(const [j,md] of MODES.entries())if(!QUICK||j===i%3)runs.push([md,m,(i+j)%2?'select':'tile',(i+j)%3===2?'quick':'create']);});
  let n=0;for(const [md,m,how,btn] of runs){n++;const what=`${md} ${m} via ${how} + ${btn}`;H.setPhase(what);
@@ -57,11 +58,10 @@ Math.random=mulberry(11);const H=boot({real3:true,seed:23});selFix(H);
   await play(what,m,code);await leave();
   if($('xOnMap').value!==m||$('xOnMap').disabled)fail(`${what}: after leaving the select shows ${$('xOnMap').value} (disabled ${$('xOnMap').disabled})`);}
  // Join by code: a friend's Split TDM room; the lobby says Bind and a START that never launched left a queue pick (Bind)
- {H.setPhase('join by code');const code='SPLTQA';codes.add(code);const host=new ScriptedHuman({name:'RoomHost',agent:'Jett',world:null,target:null});pending++;let settled=false;const done=()=>{if(!settled){settled=true;pending--;}};
-  const s=cluster.connect({code,create:'1',mode:'tdm',map:'split',public:'0'});host.attach(s);s.on('message',m=>host.receive(m));s.on('open',()=>{done();host.hello();});s.on('error',done);humans.push(host);await step(500);
+ {H.setPhase('join by code');const code='SPLTQA';codes.add(code);const host=raw({code,create:'1',mode:'tdm',map:'split',public:'0',name:'RoomHost',agent:'Jett'});await step(500);
   tile('bind');xe('window.xQPick="bind";true');$('xOnCode').value=code;$('xOnJoin').click();await until(()=>xe('MP.st')==='room',10000,'joined by code');
   if(xe('MP.map')!=='split')fail('join by code: page room map '+xe('MP.map'));
-  s.send(JSON.stringify({t:'start'}));await play('join by code','split',code,false);
+  host.send({t:'start'});await play('join by code','split',code,false);
   // rejoin: the page's socket drops mid-match; rejoining the code rebuilds Split
   const room=cluster.room(code),ws=[...room.sessions].find(([w,x])=>x.u&&x.u.name===xe('MP.name'))[0];ws.close(1006,'');room.drop(ws);await step(1500);
   if(xe('MP.st')==='game')fail('rejoin: page still in the match after its socket dropped');xe('try{toLobby()}catch(e){}true');await step(200);tile('haven');
