@@ -64,8 +64,15 @@ function floorNear(world,x,z,y){let f=world.ground(x,z,y+.05);for(const [ox,oz]o
 // mid-west drop; walking past it toward (-0.71, -0.71) the capsule climbed its rim 0.6 m in three frames and perched on
 // it at (-11.21, 6.61, -0.66) with no floor under its axis (0.06 m of travel in any direction). The clip (octagon r 0.3,
 // feet band 6.05..6.75 m) makes it a post, as on Split.
+// Bind (x -53.9..-53.2, z 21.35..21.75): rock crevices west and north of a 0.65 m rock bump (nav node (-53.25, 7.55, 21)),
+// between the bump and a rock face that leans over at head height; walking off the bump toward (-0.71, 0.71) /
+// (-0.38, 0.92) / (-0.92, 0.38), or up onto it from the floor to the south-east, the capsule wedged at (-53.49, 7.41,
+// 21.32) / (-53.23, 7.51, 21.2), resting on the crevice rims 0.3 m above their floor, and met rock at every lift in every
+// standing direction (only a crouch or a jump got out). The clip (inside the crevices, never nearer than 0.42 m to the
+// node; body band 6.9..8.4 m) stops the walk at the bump's rim like a wall; the bump and the floor around it stay free.
 const CLIPS={ascent:[{name:'A ramp pit',y:[-60,15],p:[[42.55,-25.15],[42.62,-24.95],[42.78,-24.25],[42.98,-23.25],[42.5,-23.13],[41,-22.83],[39.5,-22.52],[38,-22.2],[37.3,-22.18],[37.22,-22.7],[37.12,-23.1],[37,-23.55],[36.97,-23.82],[37.45,-23.92],[37.95,-24.02],[38.15,-24.25],[38.75,-24.42],[39.65,-24.62],[40.7,-24.82],[41.7,-25.02]]}],
  split:[{name:'rounded 0.8 m prop by a wall (domed: a capsule climbed it rim-first)',y:[9,9.85],p:[[-3.85,-46.4],[-3.93,-46.21],[-4.12,-46.13],[-4.31,-46.21],[-4.39,-46.4],[-4.31,-46.59],[-4.12,-46.67],[-3.93,-46.59]]}],
+ bind:[{name:'rock crevices west / north of the 0.65 m bump at (-53.25, 21) (a capsule wedged between bump and leaning rock face)',y:[6.9,8.4],p:[[-53.2,21.45],[-53.5,21.38],[-53.7,21.35],[-53.84,21.41],[-53.9,21.55],[-53.84,21.69],[-53.7,21.75],[-53.2,21.75]]}],
  breeze:[{name:'crate stack below the 12 m platform south-east edge',y:[11,14.5],p:[[8.6,-24.45],[10.45,-24.45],[10.45,-21.4],[7.3,-21.4],[7.3,-23.6],[8,-23.85],[8.35,-24.2]]},
   {name:'8 m floor west edge over the off-footprint 5.2 m drop (capsule settled on the edge lip)',y:[8.4,9.5],p:[[-34.9,-66],[-34.06,-66],[-33.92,-65.5],[-33.92,-64],[-34,-62],[-34.08,-60.5],[-34.18,-59],[-34.21,-58.4],[-34.9,-58.4]]},
   {name:'open-lattice 0.7 m prop by the mid-west railing (a capsule perched on its rim)',y:[6.05,6.75],p:[[-10.94,-0.98],[-11.03,-0.77],[-11.24,-0.68],[-11.45,-0.77],[-11.54,-0.98],[-11.45,-1.19],[-11.24,-1.28],[-11.03,-1.19]]}]};

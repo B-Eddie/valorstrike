@@ -284,7 +284,14 @@ Re-sweep after C1/C2 (stride 2 + walk-in trap test on every sampled node, RENDER
 - Bind (C2 motor; 4,988 nodes, 17,700 edges): 0 stuck, 0 refused edges, 1 walk-in trap: (-53.25, 7.56, 21) walking
   (-0.71, 0.71) wedges the capsule at (-53.49, 7.41, 21.32) in a rock pocket between a mound and a wall leaning over at
   head height; every standing move meets one of them within 2 mm at any lift, so it is not fixed in the motor. It walks
-  out crouched (225-315 deg, 1.2-1.4 m in 0.6 s) or with a jump toward (0.71, -0.71): left for the browser list.
+  out crouched (225-315 deg, 1.2-1.4 m in 0.6 s) or with a jump toward (0.71, -0.71). The node sits on a 0.65 m rock bump
+  over the 6.9 m floor; the pocket is a crevice between the bump and the rock face west of it, and a local scan
+  (`.scratch/rscan.mjs`, 71 starts within 4 m + a 1.5 m free grid) found a second one north of the bump, reached from the
+  floor to the south-east ((-52.5, 6.9, 19.5) toward (-0.38, 0.92), wedged at (-53.23, 7.51, 21.2)). The capsule rests on
+  the crevice rims 0.3 m above their floor and meets rock at every lift. Fix: player clip `CLIPS.bind` inside both
+  crevices (x -53.9..-53.2, z 21.35..21.75, body band 6.9..8.4 m), never nearer than 0.42 m to the node, so the bump's
+  rim stops the walk like a wall: local scan 0 traps (12 before), no playable node clip-blocked; the bump still walks off
+  east / south / south-west (1.8-2.8 m in 0.6 s). Fixtures: the three walks off the bump (Bind traps; all fail before).
 - Haven (C2 motor; 4,081 nodes, 14,575 edges): 0 stuck, 0 traps, 1 refused edge (9, 8, -58) -> (9, 7.99, -57.25): a 5 mm
   paving bump under a low ceiling (1.8-2.2 m over the floor) - the step-up tested headroom for the full 40 cm step and
   refused it. Fix (shared motor): headroom is tested for the lift actually used (full step, or the few cm of the lean-wall
@@ -378,3 +385,6 @@ refused with/without a crack and after a step down; 0.2 m stairs up and down; it
     z -58..-57.5 where it turns west still walks.
 11. Breeze prop by the mid-west railing (-11.24, 6, -0.98): walking into it stops beside it like a post (no climb onto it);
     the railing line beside it is unchanged.
+12. Bind rock bump at (-53.25, 7.55, 21) over the 6.9 m floor: walking off it
+    north-west / north stops at the bump's rim like a wall (no wedge in the crevice behind it, no visible gap feel worse
+    than touching the rock); walking up onto it from the floor to the south-east and off it east / south still works.

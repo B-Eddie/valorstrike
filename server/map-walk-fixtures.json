@@ -1,5 +1,5 @@
 {
-"_about":"tools/map-sweep.mjs findings fixed in the shared motor (motor.cjs step/moveAxis): edges = [from node, to node] nav edges on flat or stepped floor the motor refused before the riser/step-up fixes (crack between slabs read as a riser, step-up pinned by a wall beside the capsule); traps = [from node, direction] walks that ended in a spot the capsule could not walk out of (Breeze paving against walls; the last three were embedded a few mm in a leaning wall, the very last walked off the 12 m platform onto the crate stack below it, now a clip; the next two settled on the lip past Breeze's west 8 m floor edge, now a clip, the last perched on a lattice prop by the mid-west railing, now a clip). walksOut needs 0.3 m within 0.5 s. test-map-bounds.js section 5 replays them.",
+"_about":"tools/map-sweep.mjs findings fixed in the shared motor (motor.cjs step/moveAxis): edges = [from node, to node] nav edges on flat or stepped floor the motor refused before the riser/step-up fixes (crack between slabs read as a riser, step-up pinned by a wall beside the capsule); traps = [from node, direction] walks that ended in a spot the capsule could not walk out of (Breeze paving against walls; the last three were embedded a few mm in a leaning wall, the very last walked off the 12 m platform onto the crate stack below it, now a clip; the next two settled on the lip past Breeze's west 8 m floor edge, now a clip, the last perched on a lattice prop by the mid-west railing, now a clip; Bind: three walks off a rock bump into the crevices beside it, now a clip). walksOut needs 0.3 m within 0.5 s. test-map-bounds.js section 5 replays them.",
 "ascent":{"edges":[
   [[-11,8.55,-57.25],[-11,8.74,-58]],
   [[-11,8.74,-58],[-11,8.55,-57.25]],
@@ -21,7 +21,7 @@
   [[-3.75,8.75,-3.75],[-4.5,8.9,-3.75]],
   [[21,5.02,48],[21.75,5.27,48]],
   [[48,7.67,13.5],[48,7.9,12.75]]],
- "traps":[]},
+ "traps":[[[-53.25,7.55,21],[-0.71,0.71]],[[-53.25,7.55,21],[-0.38,0.92]],[[-53.25,7.55,21],[-0.92,0.38]]]},
 "haven":{"edges":[
   [[-48,6.01,-8.5],[-48.75,6.01,-8.5]],
   [[8.25,7.8,-57.25],[9,7.99,-57.25]],
