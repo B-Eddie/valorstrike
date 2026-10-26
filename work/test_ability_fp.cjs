@@ -32,5 +32,22 @@ console.warn=((w)=>(...a)=>{if(!/boneTransform/.test(String(a[0])))w(...a);})(co
     assert.ok(m.ok,ag+' '+k+' '+p+' posed');assert.ok(new RegExp('^FP_'+CODE[ag]).test(m.mesh),ag+' uses its own FP arms, got '+m.mesh);
     assert.ok(m.itemToPalm<(sp.bone?0.25:sp.prop?0.06:0.03),`${ag} ${k} ${p}: item in the ${m.hand} hand (${m.itemToPalm.toFixed(3)} m)`);
     if(p==='idle')assert.ok(m.inView,`${ag} ${k}: holding hand in view while ready ${JSON.stringify(m.palm)}`);}}}
- console.log('ability FP: legacy box hand removed; '+only.length+' agents x C/Q/E/X on their own native FP arms ('+n+' poses: clips resolve, item in the palm, hand in view); equip / release / recovery timings');process.exit(0);
+ // (4) ult / ability guns (Showstopper, Headhunter, Tour De Force): no primitive box gun left; the agent's own FP arms play
+ // the authored set with the gun (native glb or the closest native stand-in) gripped in the right hand
+ assert(!/\bXVM\b/.test(html)&&!/primitive viewmodels/.test(html),'box ult-gun viewmodels (XVM) removed');
+ assert(/XAF_GUN\[BC\.vm\]/.test(html),'BC.vm guns drawn by the ability FP layer');
+ const GP=(G,s,eq)=>api.xAfGunPhase(G,{t:0,f:-1,n:0,fired:0,...s},eq);
+ for(const [k,mdl,eqT] of [['rk','showstopper',1.4],['hp','sheriff',1],['sn','operator',2.3]]){const G=api.XAF_GUN[k];assert.equal(G.model,mdl,k+' model');
+  assert.equal(GP(G,{t:0},eqT).ph,'equip');assert.ok(Math.abs(GP(G,{t:eqT/2},eqT).u-.5)<1e-9,k+' equip over the windup');assert.equal(GP(G,{t:eqT+.01},eqT).ph,'idle');
+  const f=GP(G,{t:.1,f:.1,n:1,fired:1},eqT);assert.equal(f.ph,'fire',k+' fire interrupts the equip');assert.ok(Math.abs(f.u-.1/G.L.fire[0])<1e-9,k+' fire at authored speed');
+  assert.equal(GP(G,{t:9,f:G.L.fire[0]+.01,n:1,fired:1},eqT).ph,'idle',k+' back to idle after the fire');}
+ if(!process.env.AGENTS||/Raze|Chamber/.test(process.env.AGENTS))for(const [ag,k] of [['Raze','rk'],['Chamber','hp'],['Chamber','sn']]){const B=await FP.build(ag,api),G=api.XAF_GUN[k];
+  for(const c of [G.eq,G.idle,...G.fire])assert.ok(B.R.clips[c],ag+' '+k+': authored clip '+c+' on its own rig');
+  const M=api.xAfGunModel(B.R,k);for(let i=0;i<200&&!M.ok;i++)await new Promise(r=>setTimeout(r,20));assert.ok(M.ok,k+' gun model loaded');
+  for(const [clip,u] of [[G.eq,.95],[G.idle,.3],[G.fire[0],.1]]){api.xAfGunPose(B.R,k,{clip,u});B.cam.updateMatrixWorld(true);
+   const T=await import('file://'+path.join(root,'server/node_modules/three/build/three.module.js'));const bb=new T.Box3().setFromObject(M.g),h=B.R.sc.getObjectByName('R_Hand').getWorldPosition(new T.Vector3());
+   assert.ok(M.g.visible&&!bb.isEmpty(),k+' gun drawn');assert.ok(bb.distanceToPoint(h)<0.08,`${ag} ${k} ${clip}: gun in the right hand (${bb.distanceToPoint(h).toFixed(3)} m)`);
+   assert.ok(bb.min.z<-0.5,k+' gun reaches forward of the camera');let mesh='';B.R.sc.traverse(o=>{if(o.isSkinnedMesh&&!mesh)mesh=o.name;});assert.ok(new RegExp('^FP_'+CODE[ag]).test(mesh),k+' on '+ag+"'s own arms");}
+  if(G.gun){assert.ok(M.gm&&M.ga[G.gun[G.fire[0]]],'Showstopper plays its own AB_ clips');}}
+ console.log('ability FP: legacy box hand removed; '+only.length+' agents x C/Q/E/X on their own native FP arms ('+n+' poses: clips resolve, item in the palm, hand in view); equip / release / recovery timings; ult guns rk/hp/sn on the native arms (box guns gone)');process.exit(0);
 })().catch(e=>{console.error(e);process.exit(1);});

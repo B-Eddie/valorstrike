@@ -123,18 +123,76 @@ function xAfPhase(set, q, rel, rec) {
   if (q.st === "rec") return { ph: "recover", clip: cast, u: c(f + (1 - f) * (1 - q.t / rec)), item: false };
   return null;
 }
+// ---- ult / ability guns on the same native arms ----
+// Raze Showstopper, Chamber Headhunter / Tour De Force and Jett Blade Storm are held weapons in Valorant, each with its own
+// authored first-person set on the agent's FP rig (raze-fp / chamber-fp / jett-fp .glb; durations are the SequenceLength
+// of <agent>-fp.json). Showstopper ships its own skinned glb + AB_ clips (showstopper.json); Headhunter and Tour De Force
+// ship no model, so the closest native weapon stands in, in the same R_WeaponMaster slot the guns use (xvFPLoad): the
+// Sheriff (Valorant's heavy revolver) for Headhunter, the Operator (bolt sniper) for Tour De Force. Blade Storm holds
+// knives (no kunai glb ships: the native tactical knife, melee.glb, stands in) and throws them with the Wushu Attack01-05
+// set, alternating the throwing hand as authored. Equip = the authored equip clip over the gameplay windup where one
+// exists (XAB_WIND showstopper 1.4 s / tourDeForce 2.3 s), otherwise over its authored length; a fire plays the fire clip
+// at authored speed (interrupted by the next fire); idle loops at its authored length.
+var XAF_GUN = {
+  rk: { ag: "Raze", model: "showstopper", eq: "FP_Clay_S0_X_RocketLauncher_Equip", idle: "FP_Clay_S0_X_RocketLauncher_Idle", fire: ["FP_Clay_S0_X_RocketLauncher_Fire"],
+    gun: { FP_Clay_S0_X_RocketLauncher_Equip: "AB_Clay_S0_X_RocketLauncher_Equip", FP_Clay_S0_X_RocketLauncher_Idle: "AB_Clay_S0_X_RocketLauncher_Idle", FP_Clay_S0_X_RocketLauncher_Fire: "AB_Clay_S0_X_RocketLauncher_Fire" },
+    L: { eq: 1.9167, idle: 3.1667, fire: [0.8333] }, wind: "showstopper" },
+  hp: { ag: "Chamber", model: "sheriff", standIn: "Headhunter", eq: "FP_Deadeye_S0_Q_DestabilizePistol_Equip", idle: "FP_Deadeye_S0_Q_DestabilizePistol_Idle", fire: ["FP_Deadeye_S0_Q_DestabilizePistol_Fire"], L: { eq: 1, idle: 3, fire: [0.8333] } },
+  sn: { ag: "Chamber", model: "operator", standIn: "Tour De Force", eq: "FP_Deadeye_S0_X_Ultimate_Equip", idle: "FP_Deadeye_S0_X_Ultimate_Idle", fire: ["FP_Deadeye_S0_X_Ultimate_Fire"], L: { eq: 3, idle: 3, fire: [2.6167] }, wind: "tourDeForce" },
+};
+XAF.gs = null;
+function xAfGunEqT(G) { return G.wind && typeof XAB_WIND !== "undefined" && XAB_WIND[G.wind] ? XAB_WIND[G.wind] : G.L.eq; }
+// Pure timing (exported for tests): s = { t: s since the equip, f: s since the last fire (-1 none), n: fires so far, alt, fired }
+function xAfGunPhase(G, s, eqT) {
+  const i = Math.max(0, (s.n | 0) - 1) % G.fire.length, alt = !!(s.alt && G.alt), fc = alt ? G.alt : G.fire[i], fl = alt ? G.L.alt : G.L.fire[i], eq = eqT == null ? xAfGunEqT(G) : eqT;
+  if (s.f >= 0 && s.f < fl) return { ph: "fire", clip: fc, u: s.f / fl, i, alt };
+  if (!s.fired && s.t < eq) return { ph: "equip", clip: G.eq, u: Math.max(0, s.t) / eq };
+  const it = s.fired ? s.f - fl : s.t - eq; return { ph: "idle", clip: G.idle, u: (Math.max(0, it) % G.L.idle) / G.L.idle };
+}
+function xAfGunModel(R, k) { // the gun of key k in the agent rig's weapon slot (cached per rig)
+  R.guns = R.guns || {}; let M = R.guns[k]; if (M) return M; const G = XAF_GUN[k];
+  M = R.guns[k] = { g: new THREE.Group(), ok: false, gm: null, ga: {} }; M.g.name = "xaf-prop-gun-" + k; M.g.visible = false;
+  const slot = xAfBone(R, G.bone || "R_WeaponMaster"); if (slot) slot.add(M.g); const r = G.rot || [0, 90, 0]; M.g.rotation.set(r[0] * Math.PI / 180, r[1] * Math.PI / 180, r[2] * Math.PI / 180);
+  if (G.model) xvLoad(G.model).then((gl) => { const o = THREE.SkeletonUtils.clone(gl.scene);
+    o.traverse((x) => { if (x.isMesh) { x.frustumCulled = false; x.castShadow = x.receiveShadow = false; x.raycast = XNR; x.renderOrder = 11; x.material = Array.isArray(x.material) ? x.material.map((m) => m.clone()) : x.material.clone(); } });
+    M.g.add(o); if (G.gun && gl.animations && gl.animations.length) { M.gm = new THREE.AnimationMixer(o); gl.animations.forEach((c) => { M.ga[c.name] = M.gm.clipAction(c); }); } M.ok = true; }).catch((e) => { XAF.err = String(e); });
+  return M;
+}
+function xAfGunPose(R, k, P) { // arms clip + the gun's own clip at the same fraction
+  const G = XAF_GUN[k]; xAfPose(R, P.clip, P.u); const M = xAfGunModel(R, k);
+  if (M.gm && G.gun) { const gn = G.gun[P.clip], a = gn && M.ga[gn]; if (a) { if (M.cur !== gn) { M.gm.stopAllAction(); a.reset().play(); M.cur = gn; } a.time = Math.min(a.getClip().duration - 0.001, P.u * a.getClip().duration); M.gm.update(0); } }
+  for (const x in R.guns) R.guns[x].g.visible = x === k && R.guns[x].ok;
+  for (const x in R.props) R.props[x].g.visible = false; xAfBow(R, false);
+  return M;
+}
+function xAfGunKey() { // the held ult / ability gun right now ("" none): Showstopper / Headhunter / Tour De Force, then a fire's tail
+  if (typeof BC !== "undefined" && BC.vm && XAF_GUN[BC.vm]) return BC.vm;
+  const s = XAF.gs; return s && s.tail > 0 ? s.k : "";
+}
+function xAfGunFire(k, tail) { let s = XAF.gs; if (!s || s.k !== k) s = XAF.gs = { k, t: 99, f: -1, n: 0, fired: 0, tail: 0 };
+  s.f = 0; s.n++; s.fired = 1; s.alt = false; if (tail) { const G = XAF_GUN[k]; s.tail = Math.min(0.6, G.L.fire[(s.n - 1) % G.fire.length]); } }
+function xAfGunTick(dt, k, ag) {
+  let s = XAF.gs; if (!s || s.k !== k) s = XAF.gs = { k, t: 0, f: -1, n: 0, fired: 0, tail: 0 };
+  s.t += dt; if (s.f >= 0) s.f += dt; if (s.tail > 0) s.tail -= dt;
+  const G = XAF_GUN[k], P = xAfGunPhase(G, s); XAF.on = true; XAF.mode = "gun-" + P.ph;
+  const R = xAfReady(ag); if (!R) { if (XAF.cur) XAF.cur.root.visible = false; XAF.last = { ag, k, gun: k, ph: P.ph, clip: P.clip, u: P.u, rig: false }; return; }
+  xAfShow(R); const M = xAfGunPose(R, k, P);
+  XAF.last = { ag, k, gun: k, ph: P.ph, clip: P.clip, u: P.u, item: M.g.visible, rig: true };
+}
 function xAfHideGun() { gun.visible = false; knife.visible = false; if (typeof XV !== "undefined" && XV.fp && XV.fp.root) XV.fp.root.visible = false; }
 function xAfOff() {
-  const R = XAF.cur; XAF.on = false; XAF.mode = ""; if (!R) return; R.root.visible = false; for (const k in R.props) R.props[k].g.visible = false;
+  const R = XAF.cur; XAF.on = false; XAF.mode = ""; if (!R) return; R.root.visible = false; for (const k in R.props) R.props[k].g.visible = false; for (const k in R.guns || {}) R.guns[k].g.visible = false; XAF.gs = null;
   try { if (XV.fp) { XV.fp.kind = null; xvFPPlay(XV.fp, "equip"); } } catch (e) {} // the gun comes back with its native equip
 }
 function xAfShow(R) { if (XAF.cur && XAF.cur !== R) XAF.cur.root.visible = false; XAF.cur = R; if (R.root.parent !== camera) camera.add(R.root); R.root.visible = true; XAF.on = true; }
 function xAfTick(dt) {
   XAF.t += dt; const q = J.eq, live = running && player && player.hp > 0 && jOn(), ag = J.pick || "Jett";
-  const quick = live && !q && XCA.on, want = live && (q || quick);
+  const gk = live && !q ? xAfGunKey() : "", quick = live && !q && !gk && XCA.on, want = live && (q || quick || gk);
   if (!want) { if (XAF.on) xAfOff(); return; }
   if (running) xAfLoad(ag);
   xAfHideGun(); // Valorant swaps straight from the gun to the ability arms: the gun is never drawn while an ability is out
+  if (gk) return xAfGunTick(dt, gk, ag);
+  if (XAF.cur && XAF.cur.guns) for (const x in XAF.cur.guns) XAF.cur.guns[x].g.visible = false;
   const k = q ? q.k : XAF.qk || "c", sp = xAfSpec(ag, k), set = XAF_SET[sp.s] || XAF_SET.nade;
   let P;
   if (q) P = xAfPhase(set, q, XABT.rel, XABT.rec);
@@ -150,10 +208,13 @@ function xAfTick(dt) {
   if (it.halo) it.halo.scale.setScalar(1 + 0.12 * Math.sin(XAF.t * 7));
   XAF.last = { ag, k, set: sp.s, ph: P.ph, clip: P.clip, u, item: it.g.visible, rig: true };
 }
+// fire hooks: rsFire is the click path of Showstopper and (wrapped by bcFire) Headhunter / Tour De Force
+{ const r0 = rsFire; rsFire = function () { const ss = typeof RS !== "undefined" && RS.ss, k = typeof BC !== "undefined" ? BC.vm : "", n = (J.q | 0) + (BC.td | 0); const r = r0.apply(this, arguments);
+  try { if (ss && !RS.ss && J.pick === "Raze") xAfGunFire("rk", true); else if ((k === "hp" || k === "sn") && (J.q | 0) + (BC.td | 0) < n) xAfGunFire(k, !BC.eq); } catch (e) {} return r; }; }
 { const v2 = vmTick; vmTick = function (dt) { v2.apply(this, arguments); try { xAfTick(dt); } catch (e) { if (!XAF.err) { XAF.err = String(e); console.warn("ability viewmodel", e); } } }; }
 { const s1 = xCaStart; xCaStart = function () { try { XAF.qk = XAF.nk || "c"; } catch (e) {} return s1.apply(this, arguments); }; }
 { const k1 = jKey; jKey = function (code) { if (typeof code === "string" && /^Key[CQEX]$/.test(code)) XAF.nk = code[3].toLowerCase(); return k1.apply(this, arguments); }; }
 // the agent's ability rig is warmed with the weapons once a match runs (no hitch on the first equip)
 (window.XHK = window.XHK || []).push(() => { try { if (running && player && jOn()) xAfLoad(J.pick || "Jett"); } catch (e) {} });
-window.xAbilityFP = { XAF, XAF_SET, XAF_K, phase: xAfPhase, load: xAfLoad };
+window.xAbilityFP = { XAF, XAF_SET, XAF_K, XAF_GUN, phase: xAfPhase, gunPhase: xAfGunPhase, load: xAfLoad };
 // ---- END ABILITY FIRST PERSON ----
