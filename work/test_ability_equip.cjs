@@ -333,17 +333,17 @@ const fails=[];const fail=s=>{fails.push(s);if(VERBOSE)console.log('FAIL',s);};c
    const r=xe('[RS.hk===null,+__gl.b.blind.toFixed(2)]');xe('los=__lo4;__gl.b.alive=__gl.was[0];__gl.b.hp=__gl.was[1];__gl.b.blind=0;bots.concat(allies).forEach(b=>{if(b.det>1e8)b.det=0;});true');
    eq([r[0],r[1]>2&&r[1]<=2.25],[true,true],'the hawk flashes at the end of its 2 s flight with the full 2.25 s blind (was: faded, no flash): '+JSON.stringify(r));}}
  // ---- Owl Drone / Spycam darts (wiki Owl_Drone: pings 0.6 s at 1.6 s and 3.4 s; Spycam: a ping every 2 s); client XOWL / XSPY == server DEV.owl / DEV.spycam ----
- {const dsrc=require('fs').readFileSync(require('path').join(__dirname,'../server/src/devices.js'),'utf8'),om=dsrc.match(/owl:\{pings:\[([\d.]+),([\d.]+)\],reveal:([\d.]+)/),sm=dsrc.match(/spycam:\{deploy:[\d.]+,every:([\d.]+),pings:([\d.]+),reveal:([\d.]+)/);
-  eq(xe('XOWL.pings.concat([XOWL.reveal])'),om?om.slice(1).map(Number):null,'client XOWL == server DEV.owl');eq(xe('[XSPY.every,XSPY.pings,XSPY.reveal]'),sm?sm.slice(1).map(Number):null,'client XSPY == server DEV.spycam');}
+ {const dsrc=require('fs').readFileSync(require('path').join(__dirname,'../server/src/devices.js'),'utf8'),om=dsrc.match(/owl:\{pings:\[([\d.]+),([\d.]+)\],reveal:([\d.]+)/),sm=dsrc.match(/spycam:\{deploy:[\d.]+,every:([\d.]+),reveal:([\d.]+)/);
+  eq(xe('XOWL.pings.concat([XOWL.reveal])'),om?om.slice(1).map(Number):null,'client XOWL == server DEV.owl');eq(xe('[XSPY.every,XSPY.reveal]'),sm?sm.slice(1).map(Number):null,'client XSPY == server DEV.spycam');}
  await live();{xe('bots.concat(allies).forEach(b=>{b.det=1e9;});timeLeft=Math.max(timeLeft,60);true');pick('Sova');await adv(200);
   const ok=xe('(()=>{const b=bots.find(b=>b.g&&b.alive);if(!b)return null;window.__dt=b;window.__dthp=b.hp;b.hp=1000;jUnreveal();window.__dt0=performance.now();drTag(b);return J.rv.indexOf(b)<0;})()');
   if(!ok)fail('Owl dart: need a live bot, not revealed at the tag');else{const t0=xe('__dt0'),at=async ms=>{while(xe('performance.now()')-t0<ms){await adv(50);xe('__dt.alive=true;__dt.hp=1000;true');}},on=()=>xe('J.rv.indexOf(__dt)>=0&&J.rvT>0'),h=[];
    for(const ms of [1500,1700,2350,3500,4150]){await at(ms);h.push(on());}
    eq(h,[false,true,false,true,false],'Owl dart: ping 0.6 s at 1.6 s and at 3.4 s (was a 5 s reveal at the tag)');
-   xe('jUnreveal();window.__dt1=performance.now();xDartPings(__dt,Array.from({length:XSPY.pings},(_,k)=>k*XSPY.every),XSPY.reveal);true');const t1=xe('__dt1'),at1=async ms=>{while(xe('performance.now()')-t1<ms){await adv(50);xe('__dt.alive=true;__dt.hp=1000;true');}},h2=[];
-   for(const ms of [100,1150,2100,8100,9300]){await at1(ms);h2.push(on());}
-   eq(h2,[true,false,true,true,false],'Spycam dart: 1 s pings every 2 s, 5 of them (was one 3 s reveal)');
-   xe('window.__dt2=performance.now();drTag(__dt);XRCN.g++;true');const t2=xe('__dt2');while(xe('performance.now()')-t2<1800){await adv(50);xe('__dt.alive=true;__dt.hp=1000;true');}eq(on(),false,'a round clear cancels pending dart pings');
+   xe('jUnreveal();window.__dt1=performance.now();xDartLoop(__dt,XSPY.every,XSPY.reveal);true');const t1=xe('__dt1'),at1=async ms=>{while(xe('performance.now()')-t1<ms){await adv(50);xe('__dt.alive=true;__dt.hp=1000;true');}},h2=[];
+   for(const ms of [100,1150,2100,8100,9300,10100]){await at1(ms);h2.push(on());}
+   eq(h2,[true,false,true,true,false,true],'Spycam dart: 1 s pings every 2 s until removed (6th ping at 10 s: no 5-ping cap)');
+   xe('XRCN.g++;window.__dt2=performance.now();drTag(__dt);XRCN.g++;true');const t2=xe('__dt2');while(xe('performance.now()')-t2<1800){await adv(50);xe('__dt.alive=true;__dt.hp=1000;true');}eq(on(),false,'a round clear cancels pending dart pings');
    xe('jUnreveal();__dt.hp=Math.min(100,__dthp);bots.concat(allies).forEach(b=>{if(b.det>1e8)b.det=0;});true');await adv(200);}}
  if(xe('XAF.err&&!/load|fetch|Request/i.test(XAF.err)?XAF.err:null'))fail('ability viewmodel error: '+xe('XAF.err'));
  if(H.errors.length>errs0)fail('page errors: '+H.errors.slice(errs0).map(e=>String(e&&e.message||e)).join(' | '));

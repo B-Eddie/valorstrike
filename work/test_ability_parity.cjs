@@ -101,6 +101,26 @@ const assert=require('assert/strict'),path=require('path');const {boot}=require(
  const sk=J(`(()=>{const b=bots.filter(b=>b.alive)[0],p=b.g.position;b.sks=0;b.chs=0;RS.sk.push({m:new THREE.Object3D(),tg:b,t:15});RS.sk[RS.sk.length-1].m.position.set(p.x,1.2,p.z);rsTick(.016);const k=sgSlow(p),t=b.sks;
    J.bsOn=true;J.bs=5;J.cd.x=0;const fb=FV.buy;FV.buy=0;rw="knife";jThrow();const c=J.cd.x;FV.buy=fb;J.bsOn=false;J.bs=0;return [Math.round(k*100)/100,t,c];})()`);
  assert.deepEqual(sk,[0.4,5,1/6],'offline Seekers 60 % 5 s / Blade Storm 6 per second: '+JSON.stringify(sk));
+ // ---- qa-27: Chamber / Sage / Cypher (work/validation/abilities-parity.md section 8) ----
+ {const U=await import(path.join(__dirname,'..','server','src','ults.js')),SM=await import(path.join(__dirname,'..','server','src','simulation.js')),D=await import(path.join(__dirname,'..','server','src','devices.js'));
+  const T=U.ULT.tdf,TG=SM.ABILITY_GUNS['Tour De Force'].damageRanges[0],HG=SM.ABILITY_GUNS.Headhunter,HR=HG.damageRanges[0];
+  assert.deepEqual(J('XTDF'),{rounds:T.ammo,rate:T.fireRate,body:TG.bodyDamage,head:TG.headDamage,legs:Math.floor(TG.legDamage),r:T.field,life:T.slow},'page XTDF = server ULT.tdf / ABILITY_GUNS');
+  assert.deepEqual(J('XHH'),{rate:HG.fireRate,equip:HG.equipTimeSeconds,body:HR.bodyDamage,head:HR.headDamage,legs:HR.legDamage},'page XHH = server Headhunter');assert.equal(D.DEV.headhunter.equip,.3);
+  assert.deepEqual([C.rdvT,C.rez],[P.rdvTime,{w:P.rez.windup,r:P.rez.revive,reach:P.rez.reach}],'Rendezvous 1.3 s / Resurrection 2 + 1.3 s, 12 m: page = server');
+  assert.deepEqual([D.DEV.spycam.every,J('XSPY')],[2,{every:2,reveal:1}],'Spycam every 2 s');}
+ // offline Tour De Force kill field: 6 m, 4 s, 50 % for everyone in it (bots of both sides and the player)
+ const tf=J(`(()=>{const P=player,b=bots.filter(b=>b.alive)[0],o=[];b.chs=0;b.sks=0;const n0=BC.sf.length;bcTdfField(P.x+40,P.z);const f=BC.sf[BC.sf.length-1];o.push(BC.sf.length-n0,f.r,f.t,f.tm);b.g.position.set(P.x+44,b.g.position.y,P.z);o.push(sgSlow(b.g.position));b.g.position.set(P.x+46.5,b.g.position.y,P.z);o.push(sgSlow(b.g.position));bcTick(4.05);o.push(BC.sf.indexOf(f)<0);return o;})()`);
+ assert.deepEqual(tf,[1,6,4,1,.5,1,true],'offline Tour De Force field: '+JSON.stringify(tf));
+ // offline Rendezvous: 1.3 s teleport
+ const rd=J(`(()=>{const P=player,pk=J.pick,o=[];J.pick="Chamber";BC.an=null;BC.rdv=null;J.cd.e=0;const x0=P.x,z0=P.z;bcKey("KeyE");P.x=x0+5;bcKey("KeyE");o.push(!!BC.rdv,Math.round((P.x-x0)*100)/100);bcTick(1.25);o.push(Math.round((P.x-x0)*100)/100);bcTick(.1);o.push(Math.round((P.x-x0)*100)/100,BC.rdv,J.cd.e);J.pick=pk;return o;})()`);
+ assert.deepEqual(rd,[true,5,5,0,null,30],'offline Rendezvous 1.3 s: '+JSON.stringify(rd));
+ // offline Resurrection: the ally stands 2 + 1.3 s after the cast
+ const rz=J(`(()=>{const a=allies.filter(Boolean)[0];if(!a)return ["no ally"];const al=a.alive,o=[];a.alive=false;J.rz={a,t:XPAR2.rez.w+XPAR2.rez.r,m:new THREE.Object3D()};sgTick(3.2);o.push(a.alive,!!J.rz);sgTick(.15);o.push(a.alive,J.rz,a.hp);a.alive=al;return o;})()`);
+ assert.deepEqual(rz,[false,true,true,null,100],'offline Resurrection 3.3 s: '+JSON.stringify(rz));
+ // offline Spycam dart: pings keep coming every 2 s (not capped at 5) while the target lives
+ const sp=J(`(()=>{const b=bots.filter(b=>b.alive)[0],st=window.setTimeout,q=[];let n=0;const rv0=xHfRv;xHfRv=(l)=>{if(l[0]===b)n++;};window.setTimeout=(f,ms)=>{q.push([f,ms]);return 0;};setTimeout=window.setTimeout;
+   try{xDartLoop(b,XSPY.every,XSPY.reveal);for(let i=0;i<9&&q.length;i++){const [f,ms]=q.shift();if(ms!==2000)return ["ms",ms];f();}const k=n;b.alive=false;while(q.length)q.shift()[0]();const o=[k,n,q.length];b.alive=true;return o;}finally{window.setTimeout=st;setTimeout=st;xHfRv=rv0;}})()`);
+ assert.deepEqual(sp,[10,10,0],'offline Spycam dart: 10 pings in 18 s, stops with its target: '+JSON.stringify(sp));
  console.log('Ability parity: server PARITY = offline XPAR2 (Shock Bolt falloff 75->1 over 1.5-4 m, Aftershock 2x80/0.6 s/3 m, Healing Orb 100/5 s, Regrowth 20/s, Shrouded Step 1.2 s, From the Shadows 4 s, Rendezvous 18 m, Lockdown 32.5 m, Tailwind 11 m); falloff curves identical; server and offline Shock Bolt 75/38/0 at 1/2.75/5 m; server and offline Aftershock bursts; server Sage self heal 100, Dismiss 1.5 s; Paint Shells server = offline (2.25 s fuse, 55->1 over 2.5-5.5 m, 4 sub-munitions +0.667 s 2.5 m out, 5.25 m); offline Blast Pack 5 s fuse + 50->20 falloff; offline Trademark 10 m / 0.9 s / 6 m 50 % 4 s field');
  process.exit(0);
 })().catch(e=>{console.error(e);process.exit(1);});

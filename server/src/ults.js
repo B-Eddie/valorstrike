@@ -12,7 +12,7 @@ export const ULT={
  quake:{delay:wf('rollingThunder'),near:8,length:32,width:18,concuss:4},/* wiki Rolling_Thunder: a 32 m x 18 m strip starting 8 m in front of Breach, concuss 4 s; client XRT2 */
  seekers:{count:3,speed:12,maxTravel:15,nearsight:3,slow:5,slowK:.4},/* wiki Seekers: 3 seekers, 15 s max lifespan, 3 s Nearsight, 5 s 60 % Slow; speed 12 m/s: project value */
  theft:{reach:18,reveals:[2,6],reveal:1.6},/* wiki Neural_Theft: max cast distance 18 m (v5.10); 1st reveal 2 s windup, 2nd reveal windup 4 s counted from the 1st (v5.10 '4 s delay between reveals'), so 6 s after the cast; client CYNT matches */
- tdf:{weapon:'Operator',ammo:5},
+ tdf:{weapon:'Operator',ammo:5,fireRate:.9,field:6,slow:4},/* wiki Tour_De_Force: 5 rounds, 0.9 shots/s (v8.03), 150 body x1.7 head x0.85 legs; a kill leaves a 6 m slow field under the victim for 4 s (50 %, everyone in it: friendly fire Yes (slow)); client XTDF */
  rib:{window:10,protect:.5}
 };
 const eye=u=>[u.x,u.y+1.6-(u.ch||0),u.z];
@@ -88,3 +88,6 @@ export function tickUlts(sim,dt){
 
 // Enemies the viewer's team currently has revealed by an ult (Hunter's Fury hit, Neural Theft).
 export function revealedFor(sim,u){return sim.units.filter(v=>v.team!==u.team&&v.alive&&(v.revealedUntil||0)>sim.time).map(v=>[v.id,+v.x.toFixed(2),+v.y.toFixed(2),+v.z.toFixed(2)]);}
+// Tour De Force kill: a 6 m, 4 s, 50 % slow field under the victim. Same effect as a spent Trademark's field (devices.js tickDevices
+// trademark field branch: orbSlowUntil for everyone inside; deviceRows sends it to the page as the Trademark field, fp = the spot).
+export function tdfKill(sim,u,v){if(!(u&&u.agent==='Chamber'&&u.ultWeapon&&u.weapon===ULT.tdf.weapon&&v))return null;const fp=[v.x,v.y,v.z];return effect(sim,u,'trademark',fp,ULT.tdf.slow,ULT.tdf.field,{field:true,fp:[...fp],hp:0,spotted:0,tdf:1});}

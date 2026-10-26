@@ -11,7 +11,7 @@ export function turretDamage(d){const T=DEV.turret;return d<T.near?T.dmg[0]:d<T.
 export const DEV={
  recon:{pulses:[.9,2.5],radius:20,reveal:1.6},
  owl:{pings:[1.6,3.4],reveal:.6,radius:20,life:7,lift:1.2},/* life: wiki Owl_Drone 7 s; lift: the body hovers 1.2 m over the aim point *//* wiki Owl_Drone: the dart's 2 pings, 1st 1.6 s after impact, 2nd 1.2 s after the 1st (0.6 s) ends; stand-in: the dart tags the nearest visible enemy within 20 m of the aim point at once; client XOWL */
- spycam:{deploy:1.15,every:2,pings:5,reveal:1,radius:20,life:120},/* life: the camera stays for the round (no recall channel) *//* wiki Spycam: 1.15 s deploy, the dart reveals 1 every 2 s until removed; stand-in: the cam darts the nearest visible enemy within 20 m once deployed, 5 pings of 1 s (project values: no removal channel); client XSPY */
+ spycam:{deploy:1.15,every:2,reveal:1,radius:20,life:120},/* life: the camera and its dart last the round (no recall / removal channel) *//* wiki Spycam: 1.15 s deploy, the dart reveals 1 every 2 s, indefinitely until removed; stand-in: the cam darts the nearest visible enemy within 20 m once deployed, then pings every 2 s (1 s reveal: project value) until the victim dies or the round ends (no 1.85 s removal channel); client XSPY */
  reconBolt:{pulses:[.9,2.5],radius:30,reveal:.75},/* wiki Recon_Bolt: radius 30 m, 2 sonar pulses 1 every 1.6 s, 0.75 s reveal each (needs line of sight from the bolt); client XRCN matches */
  blaze:{life:8,length:12,width:.8,height:3,damage:30,heal:12.5},
  hotHands:{life:4,radius:4.5,grow:.75,damage:60,heal:12.5},/* wiki Hot_Hands: 4 s, spreads to 4.5 m over 0.75 s, then 3.25 s at full size */
@@ -22,7 +22,7 @@ export const DEV={
  trapwire:{life:120,deploy:1.5,windup:WINDUP.trapwire,reach:7.5,width:.4,leave:4,slow:1.25,zap:5,rearm:2},/* wiki Trapwire (v11.08 / v13.00): 1.5 s deploy, 15 m max wire; a crossing enemy is Slowed (50 %) at once, 0.7 s windup, then if the wire still stands it zaps 5 and Reveals them while they stay within 4 m of where they crossed; the 1.25 s triggered slow lingers after they break free; re-arms 2 s later (no Tether / Concuss since v11.08); client XTRAP */
  cage:{life:7.25,h:5},/* wiki Cyber_Cage: 7.25 s, hollow open-ended cylinder r 3.72 m centred on the cage; h: half-height (not on the wiki; client CYCAGE.h) */
  trademark:{life:120,sight:10,arm:.9,armDeploy:WINDUP.trademark,radius:6,field:4},/* wiki Trademark: 2 s deploy, 10 m search radius, 0.9 s windup on a visible enemy, then a 6 m slow field under that enemy for 4 s, 50 % (Chamber page: '4 s 50% Slow'), everyone in it (allies / self too); the trap is used up; client XTMK */
- headhunter:{weapon:'Sheriff',ammo:1},
+ headhunter:{weapon:'Sheriff',ammo:1,equip:.3},/* wiki Headhunter: 0.3 s equip; one charge = one round (8 max), the next is chambered after each shot while charges last (4 per second, simulation.js ABILITY_GUNS) */
  boombot:{life:5,speed:6,sight:15,trigger:2.5,windup:.6,hp:60,damage:80,min:30,inner:2,radius:6},/* wiki Boom_Bot: 5 s, 15 m detection, explodes 0.6 s after closing within 2.5 m (it stops), 60 HP (enemy fire destroys it), 80 inside 2 m falling to 30 at 6 m; client XBB */
  blastPack:{life:5,arm:WINDUP.blastPack,inner:2,outer:5,max:50,min:20,speed:16,up:2,g:16,vy:11,push:14},/* wiki Blast_Pack: thrown, sticks to the first thing it hits, recast (Q) or 5 s detonates; knocks everyone in 5 m back (Raze too); 1.5 s to arm, then 50 inside 2 m -> 20 at 5 m to enemies only; 20 HP; client XBP */
  trail:{life:6,speed:9,trigger:2,concuss:4,minConcuss:2.5,radius:3.5,bite:30}/* wiki Trailblazer: 6 s, 3.5 m explosion, concuss 4 s at the centre falling to 2.5 s at the edge; client XTB */
@@ -60,7 +60,7 @@ export function startDevice(sim,u,ty,p,push,m={}){
  if(ty==='drone'&&u.agent==='Raze'){push('boombot',DEV.boombot.life,DEV.boombot.radius,{p:[u.x,u.y+.2,u.z],yaw:u.look,hp:DEV.boombot.hp});return true;}
  if(ty==='drone'&&u.agent==='Skye'){push('trail',DEV.trail.life,DEV.trail.radius,{p:[u.x,u.y+.2,u.z],yaw:u.look});return true;}
  if(ty==='drone'&&u.agent==='Sova'){const O=DEV.owl;push('owl',O.life,SHOOT.owl.r,{p:[p[0],p[1]+O.lift,p[2]],yaw:u.look,hp:SHOOT.owl.hp});const body=sim.effects[sim.effects.length-1].id;push('dart',Math.max(...O.pings)+.1,O.radius,{pickAt:sim.time,pings:O.pings.map(t=>sim.time+t),reveal:O.reveal,body});return true;}/* the drone itself: a 100 HP body hovering over the aim point (shootable); its dart as before */
- if(ty==='recon'&&u.agent==='Cypher'){const S=DEV.spycam,pings=Array.from({length:S.pings},(_,k)=>sim.time+S.deploy+k*S.every);push('spycam',S.life,SHOOT.spycam.r,{yaw:u.look,hp:SHOOT.spycam.hp});const body=sim.effects[sim.effects.length-1].id;/* the camera: a 1 HP body where it was placed (shootable) */push('dart',pings[pings.length-1]-sim.time+.1,S.radius,{pickAt:sim.time+S.deploy,pings,reveal:S.reveal,body});return true;}
+ if(ty==='recon'&&u.agent==='Cypher'){const S=DEV.spycam;push('spycam',S.life,SHOOT.spycam.r,{yaw:u.look,hp:SHOOT.spycam.hp});const body=sim.effects[sim.effects.length-1].id;/* the camera: a 1 HP body where it was placed (shootable) */push('dart',S.life,S.radius,{pickAt:sim.time+S.deploy,pings:[sim.time+S.deploy],every:S.every,reveal:S.reveal,body});return true;}
  if(ty==='recon'||ty==='drone'){push('recon',Math.max(...DEV.recon.pulses)+.1,DEV.recon.radius,{pulses:DEV.recon.pulses.map(t=>sim.time+t)});return true;}
  const f=fwd(u);
  // Phoenix Blaze: a straight wall of fire along his aim from his feet; blocks sight, burns enemies, heals him.
@@ -79,7 +79,7 @@ export function startDevice(sim,u,ty,p,push,m={}){
  if(u.agent==='Chamber'&&ty==='trap'){push('trademark',DEV.trademark.life,DEV.trademark.radius,{spotted:0,armAt:sim.time+DEV.trademark.armDeploy,hp:SHOOT.trademark.hp});return true;}
  // Chamber Headhunter: one round of the heavy pistol per charge; the previous gun comes back when it is spent,
  // put away (Q again), swapped off or Chamber dies.
- if(u.agent==='Chamber'&&ty==='headhun'){const H=DEV.headhunter;if(!u.inventory)u.inventory={};u.headhunter={saved:u.weapon,savedAmmo:u.ammo,savedReserve:u.reserve,savedSidearm:u.inventory[H.weapon]};u.inventory[u.weapon]=u.ammo;u.weapon=H.weapon;u.ammo=H.ammo;u.reserve=0;u.reloadAt=0;p.splice(0,3,u.x,u.y,u.z);return true;}
+ if(u.agent==='Chamber'&&ty==='headhun'){const H=DEV.headhunter;if(!u.inventory)u.inventory={};u.headhunter={saved:u.weapon,savedAmmo:u.ammo,savedReserve:u.reserve,savedSidearm:u.inventory[H.weapon]};u.inventory[u.weapon]=u.ammo;u.weapon=H.weapon;u.ammo=H.ammo;u.reserve=0;u.reloadAt=0;u.fireAt=Math.max(u.fireAt||0,sim.time+H.equip);p.splice(0,3,u.x,u.y,u.z);return true;}
  return false;
 }
 // Checks before a charge is spent. Returns true/false to answer the intent, undefined to continue the cast.
@@ -111,12 +111,12 @@ export function packBoom(sim,e){const B=DEV.blastPack,owner=sim.units.find(u=>u.
   const h=Math.hypot(dx,dz);let nx=dx/h,nz=dz/h;if(!(h>.3)){const f=fwd(v);nx=f[0];nz=f[2];}v.vx=nx*B.push;v.vz=nz*B.push;v.vy=B.vy;v.air=true;v.seq=(v.seq||0)+1;
   if(armed&&owner&&v.team!==e.team&&losClear(sim,[e.p[0],e.p[1]+.3,e.p[2]],chest(v)))abilityDamage(sim,owner,v,packDamage(d));}}
 export function tickDevices(sim,dt){
- for(const u of sim.units){if(u.headhunter&&(!u.alive||u.weapon!==DEV.headhunter.weapon||u.ammo<=0))endHeadhunter(u);
-}
+ for(const u of sim.units){if(u.headhunter&&u.alive&&u.weapon===DEV.headhunter.weapon&&u.ammo<=0&&u.ability?.q>0){u.ability.q--;u.ammo=1;continue;}/* the next charge is the next round (cadence: fire() 1 / 4 s) */
+  if(u.headhunter&&(!u.alive||u.weapon!==DEV.headhunter.weapon||u.ammo<=0))endHeadhunter(u);}
  for(let i=sim.effects.length-1;i>=0;i--){const e=sim.effects[i];if(!KINDS.has(e.kind))continue;if(e.until<sim.time)continue;sim.fxSrc=e;const owner=sim.units.find(u=>u.id===e.owner),foes=sim.units.filter(v=>v.alive&&!v.loading&&v.team!==e.team);
   if(e.kind==='blastpack'){if(sim.time>=e.boomAt||!owner?.alive)packBoom(sim,e);continue;}/* 5 s fuse; Raze dead: it goes off */
   if(e.kind==='dart'){/* Owl Drone / Spycam stand-in: tag one enemy, then reveal it on each ping (a tag: no line of sight needed) */if(e.tgt==null&&e.body!=null&&!sim.effects.some(b=>b.id===e.body&&b.until>=sim.time)){e.until=sim.time-1;continue;}/* its drone / camera was shot down first */if(e.tgt==null){if(sim.time<e.pickAt)continue;const o=[e.p[0],e.p[1]+.5,e.p[2]],v=foes.filter(v=>Math.hypot(v.x-o[0],v.z-o[2])<e.radius&&losClear(sim,o,chest(v))).sort((a,b)=>Math.hypot(a.x-o[0],a.z-o[2])-Math.hypot(b.x-o[0],b.z-o[2]))[0];if(!v){e.until=sim.time-1;continue;}e.tgt=v.id;}
-   const v=sim.units.find(x=>x.id===e.tgt);if(!v||!v.alive){e.until=sim.time-1;continue;}while(e.pings.length&&sim.time>=e.pings[0]){e.pings.shift();v.revealedUntil=Math.max(v.revealedUntil||0,sim.time+e.reveal);}if(!e.pings.length)e.until=sim.time-1;continue;}
+   const v=sim.units.find(x=>x.id===e.tgt);if(!v||!v.alive){e.until=sim.time-1;continue;}while(e.pings.length&&sim.time>=e.pings[0]){const t=e.pings.shift();v.revealedUntil=Math.max(v.revealedUntil||0,sim.time+e.reveal);if(e.every)e.pings.push(t+e.every);/* Spycam: every 2 s until removed */}if(!e.pings.length)e.until=sim.time-1;continue;}
   if(e.kind==='recon'){while(e.pulses&&e.pulses.length&&sim.time>=e.pulses[0]){e.pulses.shift();const o=[e.p[0],e.p[1]+.5,e.p[2]];for(const v of foes)if(Math.hypot(v.x-o[0],v.z-o[2])<e.radius&&losClear(sim,o,chest(v)))v.revealedUntil=Math.max(v.revealedUntil||0,sim.time+(e.reveal||DEV.recon.reveal));}continue;}
   if(e.kind==='blaze'){const B=DEV.blaze,inWall=v=>Math.abs(v.y-e.p[1])<B.height&&segDist(e,v.x,v.z)<B.width;for(const v of sim.units)if(v.alive&&!v.loading&&v.id!==e.owner&&inWall(v))abilityDamage(sim,owner,v,B.damage*dt);/* allies 1/3 (abilityDamage) */if(owner?.alive&&inWall(owner)&&owner.hp<100)owner.hp=Math.min(100,owner.hp+B.heal*dt);continue;}
   if(e.kind==='nanoswarm'){if(!e.armed||sim.time<(e.dmgAt||0))continue;/* 1 s activation windup */for(const v of sim.units)if(v.alive&&!v.loading&&v.id!==e.owner&&Math.hypot(v.x-e.p[0],v.z-e.p[2])<e.radius&&Math.abs(v.y-e.p[1])<3&&losClear(sim,[e.p[0],e.p[1]+.4,e.p[2]],chest(v)))abilityDamage(sim,owner,v,DEV.nanoswarm.damage*dt);continue;}
