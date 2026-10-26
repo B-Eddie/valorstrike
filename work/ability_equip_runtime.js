@@ -108,52 +108,7 @@ try { const st = document.createElement("style"); st.textContent = "#xBow{positi
 function xBowHud() { const q = J.eq, hk = q && q.st !== "rec" ? xEqHold(q) : "", on = hk === "bow" || hk === "fault", el = $("xBow"); if (!el) return; const pw = on ? xEqHoldPw(q) : 0, k = on ? hk + Math.round(pw * 20) + "|" + (q.bn | 0) : "";
   if (xBowHud.k === k) return; xBowHud.k = k; el.classList.toggle("on", on); if (!on) return; el.querySelector("b").style.width = (pw * 100).toFixed(0) + "%"; el.querySelectorAll("u").forEach((u, i) => { u.classList.toggle("on", (q.bn | 0) > i); u.style.display = hk === "fault" ? "none" : ""; }); } // Fault Line: the charge bar only (no bounces)
 { const t0 = jTick; jTick = function (dt) { const v = t0.apply(this, arguments); try { xEqTick(dt); xEqHud(); xBowHud(); } catch (e) { J.eq = null; } return v; }; }
-// ---- First-person ability viewmodel: the gun goes down and the hand holds the ability item ----
-// While an ability is equipped (J.eq) this owns the viewmodel after every other vmTick layer: the gun / knife and the
-// native first-person rig drop out of view (draw), the procedural hand (xCaHand: glove, cuff, sleeve) comes up holding
-// the ability's item by type (throw: a grenade / orb with an agent-colour band, place: a device, cast / buff: a glowing
-// orb in the palm), holds it cocked (ready, slow sway), swings it out (rel: overhand for FIRE, underhand for ALT FIRE;
-// place reaches down; cast pushes forward) and drops out while the gun comes back up (rec). Types: ABI_M (HUD icons).
-var XEQV = { item: null, kind: "", t: 0, on: false };
-function xEqItem(kind) { // one cached item per type, kept on the (persistent) hand: no geometry made per equip or per match
-  const h = xCaHand(), I = XEQV.items || (XEQV.items = {}); let g = I[kind];
-  if (!g) {
-    g = new THREE.Group(); const nr = typeof XNR === "function" ? XNR : () => {}, band = new THREE.MeshBasicMaterial({ color: 0xff4655 });
-    if (kind === "place") { // device: body + emitter
-      const b = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.045, 0.075), new THREE.MeshStandardMaterial({ color: 0x2b2f36, metalness: 0.6, roughness: 0.45 }));
-      const l = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.012, 12), band); l.position.y = 0.028; g.add(b, l);
-    } else if (kind === "throw") { // grenade / orb with a coloured band
-      const b = new THREE.Mesh(new THREE.SphereGeometry(0.038, 14, 10), new THREE.MeshStandardMaterial({ color: 0x3a3f47, metalness: 0.4, roughness: 0.5 }));
-      const r = new THREE.Mesh(new THREE.TorusGeometry(0.039, 0.007, 6, 18), band); r.rotation.x = Math.PI / 2; g.add(b, r);
-    } else { band.transparent = true; band.opacity = 0.9; band.blending = THREE.AdditiveBlending; band.depthWrite = false; band.fog = false; g.add(new THREE.Mesh(new THREE.SphereGeometry(0.035, 14, 10), band)); } // energy orb
-    g.position.set(0, 0.075, -0.035); g.traverse((o) => { if (o.isMesh) { o.castShadow = false; o.receiveShadow = false; o.raycast = nr; } });
-    g.userData.band = band; g.visible = false; I[kind] = g;
-  }
-  if (g.parent !== h) h.add(g);
-  for (const k in I) if (I[k] !== g) I[k].visible = false;
-  const ag = J.pick || "Jett"; if (g.userData.ag !== ag) { g.userData.ag = ag; try { g.userData.band.color.set(agCol(ag)); } catch (e) {} }
-  XEQV.item = g; XEQV.kind = kind; return g;
-}
-function xEqType(k, ag) { return XCA_T[(ABI_M[ag || J.pick] || ABI_M.Jett)["cqex".indexOf(k)]] || "cast"; }
-function xEqView(dt) {
-  const q = J.eq; XEQV.t += dt;
-  if (!q || !running || !player || player.hp <= 0) { if (XEQV.on) { XEQV.on = false; if (XEQV.item) XEQV.item.visible = false; if (!XCA.on && XCA.h) XCA.h.visible = false; if (XCA.gl && !XCA.on) XCA.gl.material.opacity = 0; } return; }
-  const sm = (x) => { x = Math.max(0, Math.min(1, x)); return x * x * (3 - 2 * x); }, ty = xEqType(q.k);
-  const g = sm(q.st === "draw" ? 1 - q.t / (q.d0 || XABT.draw) : q.st === "rec" ? q.t / XABT.rec : 1); // gun-down amount
-  gun.position.y -= g * 0.42; gun.position.x += g * 0.06; gun.rotation.x -= g * 0.8; gun.rotation.z += g * 0.45; knife.position.y -= g * 0.42; // vmTick sets these absolutely each frame
-  const F = typeof XV !== "undefined" && XV.fp; if (F && F.root) { F.root.position.y -= g * 0.4; if (g > 0.9) F.root.visible = false; }
-  const h = xCaHand(), it = xEqItem(ty); XEQV.on = true;
-  const up = sm(q.st === "draw" ? (1 - q.t / (q.d0 || XABT.draw)) * 1.4 - 0.4 : q.st === "rec" ? (q.t / XABT.rec) * 1.6 - 0.6 : 1); // hand rises behind the gun going down
-  const p = q.st === "rel" ? sm(1 - q.t / XABT.rel) : q.st === "rec" ? 1 : 0, sway = Math.sin(XEQV.t * 1.6) * 0.004;
-  let x = 0.2, y = -0.2 + sway, z = -0.4, rx = -1.0; const rz = 0.3;
-  if (ty === "throw") { if (q.alt) { y += -0.08 + 0.1 * p; z -= 0.22 * p; rx += 0.6 - 0.9 * p; } else { y += 0.05 - 0.09 * p; z += 0.08 - 0.32 * p; rx += 0.5 - 1.0 * p; } } // cocked overhand / low underhand, then the swing
-  else if (ty === "place") { y -= 0.03 + 0.14 * p; z -= 0.06 * p; rx += 0.25 + 0.5 * p; }
-  else { x = 0.12; y += 0.02; z -= 0.22 * p; rx -= 0.25 * p; }
-  h.visible = up > 0.01; h.position.set(x, y - (1 - up) * 0.45, z); h.rotation.set(rx, 0, rz);
-  it.visible = q.st !== "rec" && !(q.st === "rel" && p > 0.75); // leaves the hand at the end of the swing
-  if (XCA.gl) XCA.gl.material.opacity = ty === "cast" || ty === "buff" ? 0.5 * up * (0.8 + 0.2 * Math.sin(XEQV.t * 6)) : 0;
-}
-{ const v1 = vmTick; vmTick = function (dt) { v1.apply(this, arguments); try { xEqView(dt); } catch (e) { if (!XEQV.err) { XEQV.err = String(e); console.warn("ability viewmodel", e); } } }; }
+// First person: the agent's native arms draw the ability (work/ability_fp_runtime.js, ABILITY FIRST PERSON).
 // ---- Third person: others see the throw. A cast relayed for another unit (online relay / trusted-server replay, mpFx)
 // plays the rig's throw / cast one-shot (upper-body rigs) or the right-arm swing (skinned rigs), typed like the first person.
 var XEQT = [];

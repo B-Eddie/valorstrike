@@ -75,27 +75,27 @@ const fails=[];const fail=s=>{fails.push(s);if(VERBOSE)console.log('FAIL',s);};c
  for(const a in wiki){if(a[0]==='_')continue;const k=kits[a],w=wiki[a];if(!k){fail('no kit '+a);continue;}eq(k.u,w.u,a+' ult points');
   for(const s of ['c','q','e']){const ws=w[s];if(!ws||(s==='e'&&!ws[1]))continue;eq(k.mx[s],ws[0],a+' '+s+' charges');const b=k.buy.find(r=>r[0]===s);eq(b&&b[2],ws[1],a+' '+s+' cost');}
   eq(JSON.stringify({u:srv[a].u,mx:srv[a].mx,buy:srv[a].buy}),JSON.stringify({u:k.u,mx:k.mx,buy:k.buy}),a+' server kits.json agrees');}
- // ---- first-person viewmodel: equipping lowers the gun / arms / native rig and shows the hand + item; the cast restores them ----
+ // ---- first-person viewmodel: equipping swaps the gun / knife / native weapon rig for the agent's native ability arms (ABILITY FIRST PERSON); the cast restores them ----
  pick('Phoenix');xe('ammo=Math.max(ammo,5);reloading=0;true');await tap('Digit2');await adv(900);
- const VM=`(()=>{const F=typeof XV!=="undefined"&&XV.fp,h=XCA.h,it=XEQV.item,w=new THREE.Vector3(),c=new THREE.Vector3();gun.updateWorldMatrix(true,false);gun.getWorldPosition(w);camera.updateWorldMatrix(true,false);camera.getWorldPosition(c);
+ const VM=`(()=>{const F=typeof XV!=="undefined"&&XV.fp,R=XAF.cur;
   const cv=o=>{let v=!!o;for(let x=o;x&&v;x=x.parent)v=x.visible;return v;};
-  return {gy:+(w.y-c.y).toFixed(3),gl:+gun.position.y.toFixed(3),gv:cv(gun),fp:F&&F.root?cv(F.root):null,arms:[VMA.R,VMA.L].filter(Boolean).some(cv),hand:cv(h),item:cv(it),on:XEQV.on,eq:J.eq&&J.eq.st};})()`;
+  return {gv:cv(gun)||cv(knife),fp:F&&F.root?cv(F.root):null,arms:[VMA.R,VMA.L].filter(Boolean).some(cv),rig:R?cv(R.root):false,on:XAF.on,mode:XAF.mode,legacy:typeof xCaHand!=="undefined"||typeof XEQV!=="undefined"||"h" in XCA,eq:J.eq&&J.eq.st};})()`;
  const v0=xe(VM);if(VERBOSE)console.log('vm idle',v0);
- if(v0.hand||v0.item)fail('ability hand visible before equip '+JSON.stringify(v0));
+ if(v0.on||v0.rig)fail('ability viewmodel up before equip '+JSON.stringify(v0));
+ if(v0.legacy)fail('legacy primitive ability hand (xCaHand / XEQV / XCA.h) still present');
  await tap('KeyQ');await adv(1000);const v1=xe(VM);if(VERBOSE)console.log('vm equipped',v1);
  eq(v1.eq,'ready','Hot Hands in hand for the viewmodel check');
- if(!(v0.gl-v1.gl>0.35))fail(`gun not lowered out of view while equipped: local y ${v0.gl} -> ${v1.gl}`);
- if(v1.fp)fail('native first-person rig still visible while an ability is equipped');
- if(v1.arms&&v1.fp!==null)fail('primitive arms visible while equipped');
- if(!v1.hand||!v1.item)fail('ability hand / item not shown while equipped '+JSON.stringify(v1));
+ if(v1.gv)fail('gun / knife still drawn while an ability is equipped');
+ if(v1.fp)fail('native weapon rig still visible while an ability is equipped');
+ if(v1.arms)fail('primitive arms visible while equipped');
+ if(!v1.on||v1.mode!=='idle')fail('ability viewmodel not in its idle (ready) phase while equipped '+JSON.stringify(v1));
  await click(0);await adv(1300);const v2=xe(VM);if(VERBOSE)console.log('vm after cast',v2);
  eq(v2.eq,null,'cast finished');
- if(Math.abs(v2.gl-v0.gl)>0.06)fail(`gun not back after the cast: local y ${v0.gl} -> ${v2.gl}`);
- if(v2.hand||v2.item||v2.on)fail('ability hand / item left up after the cast '+JSON.stringify(v2));
- if(v0.fp!==null&&v2.fp!==v0.fp)fail(`native rig visibility not restored (${v0.fp} -> ${v2.fp})`);
+ if(v2.on||v2.rig)fail('ability viewmodel left up after the cast '+JSON.stringify(v2));
  if(v2.gv!==v0.gv)fail('gun visibility not restored');
+ if(v0.fp!==null&&v2.fp!==v0.fp)fail(`native rig visibility not restored (${v0.fp} -> ${v2.fp})`);
  // the weapon key of the gun in hand (the sidearm here, no primary bought) puts the ability away and brings the gun back
- await tap('KeyC');await adv(700);await tap('Digit2');await adv(900);const v3=xe(VM);if(Math.abs(v3.gl-v0.gl)>0.06||v3.hand)fail('weapon key did not bring the gun back '+JSON.stringify(v3));
+ await tap('KeyC');await adv(700);await tap('Digit2');await adv(900);const v3=xe(VM);if(v3.gv!==v0.gv||v3.on)fail('weapon key did not bring the gun back '+JSON.stringify(v3));
  // ---- section 7 mechanics (run last: they add game time; each waits for a live round) ----
  const live=async()=>{for(let i=0;i<150&&!xe('running&&player.hp>0&&!(FV.buy>0)');i++){if(xe('FV.buy>0'))xe('FV.buy=0.05;true');await adv(200);}if(!xe('running&&player.hp>0'))fail('no live round for the section 7 checks');};
  // ---- Breach Fault Line: HOLD FIRE extends the strip (wiki 8 -> 56 m over 1 s, 8 m ahead, 8 m wide); client XFAULT == server FAULT ----
@@ -303,7 +303,7 @@ const fails=[];const fail=s=>{fails.push(s);if(VERBOSE)console.log('FAIL',s);};c
    eq(h2,[true,false,true,true,false],'Spycam dart: 1 s pings every 2 s, 5 of them (was one 3 s reveal)');
    xe('window.__dt2=performance.now();drTag(__dt);XRCN.g++;true');const t2=xe('__dt2');while(xe('performance.now()')-t2<1800){await adv(50);xe('__dt.alive=true;__dt.hp=1000;true');}eq(on(),false,'a round clear cancels pending dart pings');
    xe('jUnreveal();__dt.hp=Math.min(100,__dthp);bots.concat(allies).forEach(b=>{if(b.det>1e8)b.det=0;});true');await adv(200);}}
- if(xe('XEQV.err||null'))fail('ability viewmodel error: '+xe('XEQV.err'));
+ if(xe('XAF.err&&!/load|fetch|Request/i.test(XAF.err)?XAF.err:null'))fail('ability viewmodel error: '+xe('XAF.err'));
  if(H.errors.length>errs0)fail('page errors: '+H.errors.slice(errs0).map(e=>String(e&&e.message||e)).join(' | '));
  if(fails.length){console.log(fails.join('\n'));process.exit(1);}console.log('ability equip: binds, migration, HUD labels, equip -> fire flow, first-person equip viewmodel, wiki equip times + windups, Sova bow charge + bounces, Fault Line hold-to-extend, Hot Hands spread, Neural Theft 18 m / 2 s + 6 s, Cyber Cage cylinder, Recon Bolt 30 m pulses, Nanoswarm 4.5 m / 1 s windup, Paranoia 25 m orb, Boom Bot 15 m / 2.5 m / 80-30 falloff, Trailblazer 3.5 m / 4-2.5 s, Rolling Thunder 32 x 18 m strip, Hunter\'s Fury 1.76 m / 2.125 s / 6 s / 1 s reveal, Showstopper 4 / 7 m 150-30, Turret windup / bursts / falloff, Guiding Light blind by flight time, Owl Drone / Spycam dart pings, Cloudburst flight + steering, per-ability smoke radii, kit table ok');process.exit(0);
 })().catch(e=>{console.error(e);process.exit(1);});

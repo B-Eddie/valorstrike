@@ -301,7 +301,7 @@ function xvFPGet(ag,w){const key=xvFPKey(ag,w),F=XVFP.c.get(key);if(F){XVFP.c.de
   XVFP.c.set(key+'#',P);return P;}
 function xvFPWarm(ag,w){const id=xvFPKey(ag,w);if(XVFP.warm===id)return;XVFP.warm=id;for(const x of [w,'Knife','Classic']){const key=xvFPKey(ag,x);if(!XV.failures[key])xvFPGet(ag,x).catch(e=>{XV.failures[key]=String(e);});}}
 function xvFPTick(dt) {
-  const kn=knife.visible, active=running && player && player.hp>0 && (gun.visible||kn) && !(typeof BC!=='undefined'&&(BC.vm||BC.cv)) && !J.dr && !(XCA.h&&XCA.h.visible&&XCA.on);
+  const kn=knife.visible, active=running && player && player.hp>0 && (gun.visible||kn) && !(typeof BC!=='undefined'&&(BC.vm||BC.cv)) && !J.dr && !(typeof XAF!=='undefined'&&XAF.on);
   const ag=(J&&J.pick)||'Jett',w=kn?'Knife':fpaWeap(),key=xvFPKey(ag,w);
   if(running)xvFPWarm(ag,kn?fpaWeap():w);
   if(active && (!XV.fp||XV.fp.ag!==ag||XV.fp.w!==w||(XV.fp.skin||'standard')!==(typeof xskGet==='function'?xskGet(w):'standard')) && XV.fpLoad!==key && !XV.failures[key]){XV.fpLoad=key;xvFPGet(ag,w).then(F=>{if(XV.fpLoad!==key)return;if(XV.fp&&XV.fp.root.parent)XV.fp.root.parent.remove(XV.fp.root);XV.fp=F;F.kind=null;F.age=0;xvFPPlay(F,'equip');camera.add(F.root);}).catch(e=>{XV.failures[key]=String(e);}).finally(()=>{if(XV.fpLoad===key)XV.fpLoad=null;});}

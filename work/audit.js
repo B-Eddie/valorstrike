@@ -417,7 +417,7 @@ matchFlow("5v5", () => { toCustom(); return clickCheck("CUSTOM: 5v5 GO", $("pm5v
     try {
       const r = xe(`(() => { try { J.pick = "Jett"; FV.buy = 0; player.hp = 100; J.c = 2; if (J.cd) J.cd.c = 0; xCaEnd(); jKey("KeyC"); let blk = true; try { const f0 = fcd; fcd = 0; const a0 = typeof ammo !== "undefined" ? ammo : null; shoot(); blk = (a0 == null || ammo === a0); fcd = f0; } catch (e) {} return XCA.on && XCA.ty === "throw" && blk ? true : "no cast state: " + JSON.stringify({ on: XCA.on, ty: XCA.ty, blk, jon: jOn() }); } catch (e) { return String(e.stack || e).slice(0, 300); } })()`);
       if (r !== true) err.push(r);
-      else { advance(1000); const r2 = xe(`(() => !XCA.on && XCA.g === 0 && (!XCA.h || !XCA.h.visible) ? true : "still casting t=" + XCA.t + " g=" + XCA.g)()`); if (r2 !== true) err.push(r2); }
+      else { advance(1000); const r2 = xe(`(() => !XCA.on && XCA.g === 0 && !(typeof XAF !== "undefined" && XAF.on) ? true : "still casting t=" + XCA.t + " g=" + XCA.g)()`); if (r2 !== true) err.push(r2); }
       errors.slice(e0).forEach((x) => err.push(x.msg)); ok = !err.length;
     } catch (e) { err.push(String(e).slice(0, 300)); }
     report.push({ label: "Ability cast animation: Jett C (Cloudburst) sets the viewmodel cast state (throw gesture, firing blocked) and returns to the gun within 1 s", el: true, handler: true, cond: ok, pass: ok, errs: err });

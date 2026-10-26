@@ -24,6 +24,9 @@ if qa in s:s=s[:s.index(qa)]+s[s.index(qb)+len(qb):]
 block+='\n'+(root/'work/ability_equip_runtime.js').read_text().rstrip('\n').replace(qa,qa+'\n'+(root/'vendor/sova-bolt.cjs').read_text().rstrip('\n')+'\n'+(root/'vendor/cloudburst.cjs').read_text().rstrip('\n'),1);va='// ---- BOT VARIETY ----';vb='// ---- END BOT VARIETY ----'
 if va in s:s=s[:s.index(va)]+s[s.index(vb)+len(vb):]
 # Bot variety: the shared vendor/bot-routes.cjs (UMD, sets window.BotRoutes) is inlined at the head of the block.
+fa2='// ---- ABILITY FIRST PERSON ----';fb2='// ---- END ABILITY FIRST PERSON ----'
+if fa2 in s:s=s[:s.index(fa2)]+s[s.index(fb2)+len(fb2):]
+block+='\n'+(root/'work/ability_fp_runtime.js').read_text().rstrip('\n')
 block+='\n'+(root/'work/bot_variety_runtime.js').read_text().rstrip('\n').replace(va,va+'\n'+(root/'vendor/bot-routes.cjs').read_text().rstrip('\n'),1);da='// ---- DEBUG HOOKS ----';db='// ---- END DEBUG HOOKS ----'
 if da in s:s=s[:s.index(da)]+s[s.index(db)+len(db):]
 block+='\n'+(root/'work/debug_runtime.js').read_text().rstrip('\n');ka='// ---- WEAPON SKINS ----';kb='// ---- END WEAPON SKINS ----'
