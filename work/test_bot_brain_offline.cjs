@@ -125,17 +125,25 @@ for(const map of ['ascent','bind']){
 // attackers / the plan's lurker hold their points, defender holds a seeded shuffle; replays exactly under one seed
 {const run=()=>{let now=0;const ctx={Math,Object,Number,Infinity,Set,Map,WeakMap,Array,Float64Array,Int32Array,Uint8Array,performance:{now:()=>now},window:{xBotSeed:77},mode:'five',running:true,player:{hp:0},allies:[],bots:[],XNF:0,timeLeft:100,
   FV:{you:0,them:0,map:'bind',atk:false,dm:false,sp:null},SITES:{A:[-31.7,-19.4],B:[31.7,-19.4]},XA:{bind:{A:['laneA','tpA'],B:['laneB','hookah','tpB']}},XR:{laneA:[[1,1]],tpA:[[2,2]],laneB:[[3,3]],hookah:[[4,4]],tpB:[[5,5]]},
-  x2:(o,x,z)=>{if(!o)return [x,z];o[0]=x;o[1]=z;return o;},nmActive:()=>null,blocked:()=>false,xGoal:(u,t,a,o)=>{const c=ctx.SITES[ctx.FV.sp.site];return ctx.x2(o,c[0],c[1]);},xSmV:(u,dt,vx,vz)=>[vx,vz]};
+  x2:(o,x,z)=>{if(!o)return [x,z];o[0]=x;o[1]=z;return o;},nmActive:()=>null,blocked:()=>false,xSmV:(u,dt,vx,vz)=>[vx,vz],
+  xLurk:(u,team,s)=>team.filter(t=>t.alive&&t!==s.c).pop()===u&&team.length>3,/* the base rule (index.html xLurk) */
+  xGoal:(u,t,a,o)=>{const s=ctx.FV.sp;if(a&&s.st==='carry'&&ctx.xLurk(u,t,s))return ctx.x2(o,-999,-999);/* the base lurker heads for the other site */if(a&&!u.xr)u.xr=[[9,9]];const c=ctx.SITES[s.site];return ctx.x2(o,c[0],c[1]);}};
  ctx.globalThis=ctx;vm.createContext(ctx);vm.runInContext(html.slice(i,j+Z.length)+'\n;globalThis.BotBrain=BotBrain;globalThis.BotRoutes=BotRoutes;globalThis.XBVq=()=>XBV;',ctx);Object.assign(ctx.window,{BotRoutes:ctx.BotRoutes,BotBrain:ctx.BotBrain});
- const L=[];let staged=0,lurkOff=0;for(let r=0;r<20;r++){Object.assign(ctx.FV,{you:r,them:0,atk:false});const team=['Jett','Omen','Raze','Sova','Sage'].map((n,k)=>({name:'Bot '+n,alive:true,see:0,g:{position:{x:(k-2)*1.5,y:0,z:46}}}));ctx.bots=team;
+ const L=[];let staged=0,lurkOff=0,lurkRot=0;for(let r=0;r<20;r++){Object.assign(ctx.FV,{you:r,them:0,atk:false});const team=['Jett','Omen','Raze','Sova','Sage'].map((n,k)=>({name:'Bot '+n,alive:true,see:0,g:{position:{x:(k-2)*1.5,y:0,z:46}}}));ctx.bots=team;
   ctx.FV.sp={st:'carry',site:'A',c:team[0]};ctx.timeLeft=100;for(const u of team)ctx.xGoal(u,team,true,[0,0]);const S=ctx.XBVq().strat.get(ctx.xbvKey()+'|a');assert.equal(ctx.FV.sp.site,S.plan.site,'scripted map: the carrier heads for the strategy site');
   assert(ctx.XA.bind[ctx.FV.sp.site].includes(ctx.FV.sp.xr),'a scripted route to that site');
   for(const u of team){if(u===team[0])continue;const role=S.roles.get(u),st=(role.stages||[])[0];if(!st)continue;ctx.timeLeft=100-Math.max(0,st.until-1);const g=ctx.xGoal(u,team,true,[0,0]),c=ctx.SITES[ctx.FV.sp.site];if(Math.hypot(g[0]-c[0],g[1]-c[1])>1){staged++;if(role.lurk&&st.site!==ctx.FV.sp.site)lurkOff++;}}
+  // one lurker at most, and only the plan's: the base "last living non-carrier" rule is off; after its stage the plan's
+  // lurker rotates in without a scripted route, everyone else keeps the scripted one
+  ctx.timeLeft=1;let baseLurk=0;for(const u of team){if(u===team[0])continue;const g=ctx.xGoal(u,team,true,[0,0]),role=S.roles.get(u);if(g[0]===-999)baseLurk++;
+   if(role.lurk){lurkRot++;assert.equal(u.xr.length,0,'the plan lurker rotates in with no scripted route');}else assert.equal(u.xr.length,1,'others keep the scripted route');}
+  assert.equal(baseLurk,0,'no base lurker while the plan runs the round');if(S.plan.type!=='lurk')assert(!team.some(u=>S.roles.get(u).lurk),'no lurker off lurk plans');
   const def={name:'Def',alive:true,see:0,g:{position:{x:0,y:0,z:-46}}};ctx.FV.atk=true;ctx.FV.you=r+50;ctx.FV.sp={st:'carry',site:'A',c:null};ctx.xGoal(def,[def],false,[0,0]);
   L.push(ctx.FV.sp.ho.join('')+S.plan.type+S.plan.site);}
- return {L,staged,lurkOff};};
+ ctx.FV.dm=true;const t5=['a','b','c','d','e'].map(n=>({name:n,alive:true}));assert.equal(ctx.xLurk(t5[4],t5,{c:t5[0]}),true,'outside the plan (deathmatch etc.) the base rule stands');ctx.FV.dm=false;
+ return {L,staged,lurkOff,lurkRot};};
  const a=run(),b=run();assert.deepEqual(a.L,b.L,'scripted maps replay under one seed');assert(new Set(a.L.map(v=>v.slice(-1))).size>=2&&new Set(a.L.map(v=>v.slice(0,5))).size>=8,'sites and defender holds vary by round');
- assert(a.staged>=10,'staged attackers hold their plan points ('+a.staged+')');out.push('scripted maps: staged '+a.staged+', lurkers off-site '+a.lurkOff);}
+ assert(a.staged>=10,'staged attackers hold their plan points ('+a.staged+')');assert(a.lurkRot>0,'lurk plans seen ('+a.lurkRot+')');out.push('scripted maps: staged '+a.staged+', lurkers off-site '+a.lurkOff+', single plan lurker rotations '+a.lurkRot);}
 // team economy: eco / save rounds buy small through the wrapper; full rounds use the shop
 {const v=html.slice(i,j+Z.length);let shop=0;const bs={};const ctx={window:{xBotSeed:7},Math,Map,Set,Object,console,mode:'five',XNF:0,FV:{you:3,them:4,map:'ascent',atk:true,dm:false,lsY:2,lsT:0,bs},F_MATES:['M1','M2','M3','M4'],F_EN:['E1','E2','E3','E4','E5'],
   fBotBuy(n){shop++;return bs[n];},xBBuy(){},sbSpend(){},xGoal(){},xSmV(){},performance:{now:()=>0}};ctx.window=Object.assign(ctx,{xBotSeed:7});vm.createContext(ctx);vm.runInContext(v,ctx);

@@ -208,8 +208,12 @@ if(typeof botCanShoot==='function'){const cs0=botCanShoot;botCanShoot=function(b
 // default / slow / split / fake / execute plan hold their staged point (part of the way from where they start to the site,
 // collision-checked) until the plan's time, the plan's lurker waits off the other site until its rotate time, and defender
 // holds are a seeded shuffle per round (was xShuf). Everything else stays the scripted logic (routes, jumps, holds, retakes).
+// The base "last living non-carrier lurks" rule is off while the plan runs the round: the plan's own lurker (lurk plans
+// only) is the one lurker, and once its stage ends it takes no scripted route (straight A* from the other site to the site).
+function xbvScripted(){const s=FV.sp;return mode==='five'&&!FV.dm&&!!window.BotBrain&&!!s&&typeof SITES!=='undefined'&&!!SITES&&!(typeof nmActive==='function'&&nmActive());}
+if(typeof xLurk==='function'){const lk0=xLurk;xLurk=function(u,team,s){return xbvScripted()?false:lk0.apply(this,arguments);};}
 {const gs0=xGoal;xGoal=function(u,team,atk,out){
- const s=FV.sp;if(!u||!u.g||mode!=='five'||FV.dm||!window.BotBrain||!s||typeof SITES==='undefined'||!SITES||(typeof nmActive==='function'&&nmActive()))return gs0.apply(this,arguments);
+ const s=FV.sp;if(!u||!u.g||!xbvScripted())return gs0.apply(this,arguments);
  try{const k=xbvKey(),rand=BotRoutes.rng(BotRoutes.hash(xbvSeed()+'|xs|'+k+'|'+(atk?'a':'d')));
   if(!atk){if(s.xsK!==k&&s.st==='carry'){s.xsK=k;const o=[0,1,2,3,4];for(let i=4;i>0;i--){const j=Math.floor(rand()*(i+1));[o[i],o[j]]=[o[j],o[i]];}s.ho=o;if(s.dh==null)s.dh=rand()<.5;}return gs0.apply(this,arguments);}
   if(s.st!=='carry')return gs0.apply(this,arguments);
@@ -218,6 +222,7 @@ if(typeof botCanShoot==='function'){const cs0=botCanShoot;botCanShoot=function(b
   const st=(role.stages||[]).find(g=>rt<g.until);if(st&&SITES[st.site]){const b=u.xsB&&u.xsB.k===k?u.xsB:(u.xsB={k,x:p.x,z:p.z,pt:null});
    if(!b.pt){const c=SITES[st.site],f=role.lurk?1:st.frac;let x=b.x+(c[0]-b.x)*f,z=b.z+(c[1]-b.z)*f;for(let n=0;n<6&&typeof blocked==='function'&&blocked(x,z,0.45);n++){x+=(b.x-x)*.2;z+=(b.z-z)*.2;}b.pt=[x,z+(role.lurk?3:0)];}
    return x2(out,b.pt[0],b.pt[1]);}
+  if(role.lurk&&u.xsL!==k){u.xsL=k;u.xr=[];} // the plan's lurker rotates in from where it waited
   const r=gs0.apply(this,arguments),b=u.xsB;if(b&&b.k===k&&!b.trim&&u.xr&&u.xr.length&&SITES[s.site]){b.trim=1;const c=SITES[s.site],dh=(x,z)=>Math.hypot(c[0]-x,c[1]-z),me=dh(p.x,p.z);while(u.xr.length>1&&!u.xr[0][2]&&dh(u.xr[0][0],u.xr[0][1])>me)u.xr.shift();} // from the staged point: skip the scripted waypoints already behind it
   return r;
  }catch(e){}
