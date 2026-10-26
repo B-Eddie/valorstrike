@@ -91,8 +91,15 @@ const ONLY=(process.env.PARTS||'A,B,C,D').split(',');
   log('B Headhunter equip',e);
   check('Headhunter: Q holds it (BC.eq hp) with a 0.3 s equip (BC.cd = 0.3 set at the press)',e.eq==='hp'&&Math.abs(e.cd-0.3)<1e-6,e);/* hk-35: qa_recent5 cd 0.3 at the press, 0 by 0.4 s; the 0.02 s hold itself can take > 0.3 s of game time on one slow frame, so the release read is not a bound */await simWait(0.4,'hh equip');
   const e3=await XJ(`{cd:+BC.cd.toFixed(3)}`);log('B Headhunter equip done',e3);check('Headhunter: the equip is over after 0.4 s of game time (cd 0)',e3.cd===0,e3);
-  await place(300);await shot('headhunter-held');await click(0.05);await simWait(0.1,'shot');
+  // hk-36: Headhunter pitch diagnostic (qa_recent5 read pitch 0.176 after the shot; only mouse / touch / aim assist / drone return write
+  // pitch, so a rise there is a pointer event, not the gun). Mouse movement summed around the click; rcl = the gun's camera kick
+  // (recovers), pitch = the aim (must not move).
+  await X(`if(!window.__mvH){window.__mvH=1;window.__mv=[0,0,0];addEventListener('mousemove',e=>{window.__mv[0]+=e.movementX||0;window.__mv[1]+=e.movementY||0;window.__mv[2]++;},true);}window.__mv=[0,0,0];1`);
+  const pb=await XJ(`{pitch:+pitch.toFixed(4),rcl:+rcl.toFixed(4),lock:!!document.pointerLockElement}`);
+  await place(300);await shot('headhunter-held');await click(0.05);const pa=await XJ(`{pitch:+pitch.toFixed(4),rcl:+rcl.toFixed(4),mv:window.__mv.slice(),lock:!!document.pointerLockElement}`);await simWait(0.1,'shot');
   const h=await XJ(`{hp:window.__cb.hp,q:J.q,eq:BC.eq}`);log('B Headhunter shot',h);
+  const pr=await XJ(`{pitch:+pitch.toFixed(4),rcl:+rcl.toFixed(4),mv:window.__mv.slice()}`);log('B Headhunter pitch (hk-36: before / right after the click / 0.1 s later)',{pb,pa,pr});
+  check('Headhunter: the shot never moves the aim (pitch) - a change only with mouse movement events',Math.abs(pa.pitch-pb.pitch)<1e-4||pa.mv[2]>0,{pb,pa,pr});
   check('Headhunter: one click fires one round (Q charge spent) for 159 head / 55 body / 46 legs, no falloff at 10 m',h.q===1&&[159,55,46].includes(300-h.hp),h);
   await X('BC.eq="";J.ult=K().u;BC.td=0;BC.cd=0;BC.sf.length=0;1');await key('KeyX');const u=await XJ(`{eq:BC.eq,td:BC.td,cd:+BC.cd.toFixed(2)}`);log('B TDF equip',u);
   check('Tour De Force: X holds it (5 rounds, 2.3 s equip)',u.eq==='sn'&&u.td===5&&u.cd>2&&u.cd<=2.31,u);await simWait(2.5,'tdf equip');
