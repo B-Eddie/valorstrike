@@ -22,7 +22,8 @@ for(const s of [src,html]){
  assert(/var NM_OPT=\{ratio:(0?\.\d+),minPiece:\d+\};/.test(s)&&+s.match(/var NM_OPT=\{ratio:(0?\.\d+)/)[1]<=.9,'NM_OPT ratio must stay <= 0.9');
  assert(s.includes('scene.onBeforeRender=function(r,s,cam){try{const C=NM.current;if(C&&C.M.g.visible)nmCull(C,cam);}'),'cull hook missing');}
 const NM_OPT={ratio:2,minPiece:2000};// synthetic scene is small: give the planner room to split
-const api=new Function('THREE','NM_OPT',['nmDetailDistance','nmChunkPlan','nmMatKey','nmCull','nmSphere','nmCentroids','nmGather','nmOffset','nmCopy3','nmCopy2','nmCopyN'].map(pick).join('\n')+'\n'+block('nmOptimizeScene')+'\nreturn {nmDetailDistance,nmChunkPlan,nmMatKey,nmOptimizeScene,nmCull};')(THREE,NM_OPT);
+const NM_SMALL=eval('('+src.match(/var NM_SMALL=(\{[^}]*\})/)[1]+')');let GQ='medium';const nmQuality=()=>GQ;// the small-prop split is off without a detail table (this synthetic scene has none): test_map_detail.cjs covers it
+const api=new Function('THREE','NM_OPT','NM_SMALL','nmQuality',['nmDetailDistance','nmChunkPlan','nmMatKey','nmCull','nmSphere','nmCentroids','nmGather','nmOffset','nmCopy3','nmCopy2','nmCopyN','nmSmallDist','nmDetailSplit'].map(pick).join('\n')+'\n'+block('nmOptimizeScene')+'\nreturn {nmDetailDistance,nmChunkPlan,nmMatKey,nmOptimizeScene,nmCull};')(THREE,NM_OPT,NM_SMALL,nmQuality);
 // synthetic scene: one mesh per source material, like scene.gltf
 let seed=5;const R=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296;};
 const tex=new THREE.Texture(),tex2=new THREE.Texture();
