@@ -26,11 +26,11 @@ function xbvSpot(C,center,taken,rand,o){const i=BotRoutes.spot(C.nav,center,take
 // Team strategy for the round (shared BotBrain decisions); a bot carrier is sent to the strategy's site.
 function xbvStrat(team,atk,C){
  const k=xbvKey()+'|'+(atk?'a':'d');let S=XBV.strat.get(k);if(S)return S;
- const names=Object.keys(C.meta.sites),seed=BotRoutes.hash(xbvSeed()+'|'+k),log=XBV.log[atk?'a':'d'],s=FV.sp;
+ const SS=C?C.meta.sites:SITES,names=Object.keys(SS).filter(n=>/^[ABC]$/.test(n)),seed=BotRoutes.hash(xbvSeed()+'|'+k),log=XBV.log[atk?'a':'d'],s=FV.sp;
  const plan=atk?BotBrain.attackPlan(seed,names,{last:log.slice(-4)}):BotBrain.defensePlan(seed,names,{last:log.slice(-4)});
  const order=team.slice().sort((a,b)=>BotRoutes.hash((a.name||'')+'|'+k)-BotRoutes.hash((b.name||'')+'|'+k)),R=BotBrain.roles(plan,order.length,seed^0x9e3779b9,atk,names,atk?order.indexOf(s.c):-1),roles=new Map();
  order.forEach((v,i)=>roles.set(v,R[i]));log.push({type:plan.type,site:plan.site||plan.stack});if(log.length>8)log.shift();
- if(atk&&s&&s.st==='carry'&&s.c&&s.c!==player&&C.meta.sites[plan.site])s.site=plan.site;
+ if(atk&&s&&s.st==='carry'&&s.c&&s.c!==player&&SS[plan.site])s.site=plan.site;
  S={plan,roles};XBV.strat.set(k,S);if(XBV.strat.size>8)XBV.strat.delete(XBV.strat.keys().next().value);return S;
 }
 function xbvPlan(u,team,atk,C){
@@ -180,4 +180,23 @@ if(typeof SFX!=='undefined')['at','step'].forEach(k=>{const f=SFX[k];if(f)SFX[k]
 if(typeof xHear==='function'){const h0=xHear;xHear=function(p){const r=h0.apply(this,arguments);try{xbvSound(p,XBH.k||'step');}catch(e){}return r;};}
 // holding: stand still (goal = where it stands) while it faces the sound; a fight or a trade ends it
 {const g0=xGoal;xGoal=function(u,team,atk,out){if(u&&u.xHold&&u.g&&!(u.see>0)&&mode==='five'){if(performance.now()<u.xHold.until){const p=u.g.position;if(u.hearT>0){u.hear=u.hear||[0,0];u.hear[0]=u.xHold.x;u.hear[1]=u.xHold.z;}return x2(out,p.x,p.z);}u.xHold=null;}return g0.apply(this,arguments);};}
+// Older scripted maps (no native nav graph: page harnesses, fallback maps): the same BotBrain round strategy picks the
+// attackers' site (was Math.random at round start) and the scripted route to it (was xaPick's Math.random), attackers on a
+// default / slow / split / fake / execute plan hold their staged point (part of the way from where they start to the site,
+// collision-checked) until the plan's time, the plan's lurker waits off the other site until its rotate time, and defender
+// holds are a seeded shuffle per round (was xShuf). Everything else stays the scripted logic (routes, jumps, holds, retakes).
+{const gs0=xGoal;xGoal=function(u,team,atk,out){
+ const s=FV.sp;if(!u||!u.g||mode!=='five'||FV.dm||!window.BotBrain||!s||typeof SITES==='undefined'||!SITES||(typeof nmActive==='function'&&nmActive()))return gs0.apply(this,arguments);
+ try{const k=xbvKey(),rand=BotRoutes.rng(BotRoutes.hash(xbvSeed()+'|xs|'+k+'|'+(atk?'a':'d')));
+  if(!atk){if(s.xsK!==k&&s.st==='carry'){s.xsK=k;const o=[0,1,2,3,4];for(let i=4;i>0;i--){const j=Math.floor(rand()*(i+1));[o[i],o[j]]=[o[j],o[i]];}s.ho=o;if(s.dh==null)s.dh=rand()<.5;}return gs0.apply(this,arguments);}
+  if(s.st!=='carry')return gs0.apply(this,arguments);
+  const S=xbvStrat(team,true,null),pl=S.plan;if(s.xsA!==k){s.xsA=k;s.lr=1;if(s.c&&s.c!==player&&SITES[pl.site]){s.site=pl.site;const L=((typeof XA!=='undefined'&&XA[FV.map])||{})[s.site]||[],ok=L.filter(n=>typeof XR!=='undefined'&&XR[n]&&XR[n].length);if(ok.length)s.xr=ok[Math.floor(rand()*ok.length)];}}
+  const role=S.roles.get(u),rt=100-timeLeft,p=u.g.position;if(!role||u===s.c)return gs0.apply(this,arguments);
+  const st=(role.stages||[]).find(g=>rt<g.until);if(st&&SITES[st.site]){const b=u.xsB&&u.xsB.k===k?u.xsB:(u.xsB={k,x:p.x,z:p.z,pt:null});
+   if(!b.pt){const c=SITES[st.site],f=role.lurk?1:st.frac;let x=b.x+(c[0]-b.x)*f,z=b.z+(c[1]-b.z)*f;for(let n=0;n<6&&typeof blocked==='function'&&blocked(x,z,0.45);n++){x+=(b.x-x)*.2;z+=(b.z-z)*.2;}b.pt=[x,z+(role.lurk?3:0)];}
+   return x2(out,b.pt[0],b.pt[1]);}
+  const r=gs0.apply(this,arguments),b=u.xsB;if(b&&b.k===k&&!b.trim&&u.xr&&u.xr.length&&SITES[s.site]){b.trim=1;const c=SITES[s.site],dh=(x,z)=>Math.hypot(c[0]-x,c[1]-z),me=dh(p.x,p.z);while(u.xr.length>1&&!u.xr[0][2]&&dh(u.xr[0][0],u.xr[0][1])>me)u.xr.shift();} // from the staged point: skip the scripted waypoints already behind it
+  return r;
+ }catch(e){}
+ return gs0.apply(this,arguments);};}
 // ---- END BOT VARIETY ----
