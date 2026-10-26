@@ -40,9 +40,9 @@ const ok=(c,m)=>{if(!c)fail(m);};
   place([['b',0,0,-8],['a',0,2,-1]]);keep();xe('blocked=()=>false;window.__s=xBSlowOrb(bots[0],false,bots[0].g.position,player.x,player.z);blocked=__bl;true');
   eq(xe('[sgSlow(player),sgSlow(allies[0].g.position),sgSlow(bots[0].g.position),__s.t]'),[0.5,0.5,1,7],'Slow Orb halves speed in 3.5 m (player, ally), not 8 m away; 7 s');
   await run(7200);eq(xe('sgSlow(player)'),1,'Slow Orb over after 7 s');
-  // ---- Shock Bolt: ally bot Sova onto an enemy bot 12 m away: 75 on landing, 3 m ----
-  place([['a',0,0,0],['b',0,0,-12],['b',1,3.5,-12]]);keep();xe('blocked=()=>false;xBShock(allies[0],true,allies[0].g.position,bots[0].g.position.x,bots[0].g.position.z);blocked=__bl;true');
-  eq(D(B0+'|'+A0),0,'Shock Bolt: nothing in flight');await run(600);eq([D(B0+'|'+A0),D(B1+'|'+A0)],[75,0],'Shock Bolt 75 in 3 m on landing (3.5 m aside spared)');
+  // ---- Shock Bolt: ally bot Sova onto an enemy bot 12 m away: 75 on landing inside 1.5 m, falling to 1 at 4 m (wiki) ----
+  place([['a',0,0,0],['b',0,0,-12],['b',1,3.5,-12],['b',2,4.5,-12]]);keep();xe('blocked=()=>false;xBShock(allies[0],true,allies[0].g.position,bots[0].g.position.x,bots[0].g.position.z);blocked=__bl;true');
+  eq(D(B0+'|'+A0),0,'Shock Bolt: nothing in flight');await run(600);eq([D(B0+'|'+A0),D(B1+'|'+A0),D(xe('bots[2].name')+'|'+A0)],[75,16,0],'Shock Bolt 75 on landing, 16 at 3.5 m aside, none at 4.5 m (falloff 75 -> 1 over 1.5-4 m)');
   // ---- Paranoia: enemy bot Omen at the player: player nearsighted, ally bot in the path blinded, Omen not ----
   place([['b',0,0,-10],['a',0,1,-5]]);keep();xe('xBParanoia(bots[0],false,bots[0].g.position,player.x,player.z);allies[0].blind=0;bots[0].blind=0;true');await run(1400);
   eq(xe('[document.getElementById("xNs").classList.contains("on"),allies[0].blind>0,!(bots[0].blind>0)]'),[true,true,true],'Paranoia nearsights the player and the ally bot it passes, never Omen');

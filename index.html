@@ -8314,7 +8314,7 @@ function jFxTick(dt) {
     if (a.kind === "dart") { if (a.tg && a.tg.alive) drTag(a.tg); }
     else if (a.kind === "erecon") enRecon(a.b);
     else if (a.kind === "recon") jReveal(a.b);
-    else { blip(160, 0.3, "square", 0.2); const m = jM(smokeGeo, fireMat(0x7fd8ff, 0.4)); m.scale.setScalar(0.75); m.position.copy(a.b); jFx(m, 0.35); if (a.own) { if (!a.nd) mpAreaHit(a, a.b.x, a.b.z, 3, 75, "Shock Bolt", null); } else { bots.forEach((b) => b.alive && new THREE.Vector3(b.g.position.x, 1, b.g.position.z).distanceTo(a.b) < 3 && jHit(b, 75, "Shock Bolt")); xFFArea("You", false, "Shock Bolt", 75, (x, z) => new THREE.Vector3(x, 1, z).distanceTo(a.b) < 3); } }
+    else { blip(160, 0.3, "square", 0.2); const m = jM(smokeGeo, fireMat(0x7fd8ff, 0.4)); m.scale.setScalar(0.75); m.position.copy(a.b); jFx(m, 0.35); const F = XPAR2.shock; if (a.own) { if (!a.nd) mpAreaHit(a, a.b.x, a.b.z, F.outer, F.max, "Shock Bolt", null, (d) => xAoeFall(d, F)); } else { bots.forEach((b) => { if (!b.alive) return; const d = PF_B.set(b.g.position.x, 1, b.g.position.z).distanceTo(a.b); if (d < F.outer) jHit(b, xAoeFall(d, F), "Shock Bolt"); }); xFFArea("You", false, "Shock Bolt", F.max, (x, z) => { const d = PF_B.set(x, 1, z).distanceTo(a.b); return d < F.outer && xAoeFall(d, F) / F.max; }); } } // 75 inside 1.5 m -> 1 at 4 m (XPAR2.shock)
     return false;
   });
   J.fx = J.fx.filter((f) => { f.t -= dt; if (f.g) f.m.scale.setScalar(0.5 + f.g * (1 - Math.max(0, f.t / f.t0))); f.m.material.opacity = f.o * Math.max(0, f.t / f.t0); if (f.t > 0) return true; jRel(f.m); return false; });
@@ -8352,7 +8352,7 @@ function sgKey(code) {
     if (J.e < 1) return sgNo(), say("Healing Orb · " + Math.ceil(J.cd.e) + " s", 700);
     const a = J.abAlt ? null : sgLook(allies.filter((x) => x.alive && x.hp < 100), 20, 0.96), tg = a || (P.hp < 100 ? P : null); // ALT FIRE: heal self
     if (!tg) return sgNo(), say("Full HP · look at a hurt teammate", 900);
-    J.e = 0; J.cd.e = 45; J.hl = { tg, t: 5, r: a ? 20 : 10 }; say("Healing " + (a ? a.name : "yourself") + " · " + (a ? 100 : 50) + " HP over 5 s", 900); SFX.heal();
+    J.e = 0; J.cd.e = 45; J.hl = { tg, t: 5, r: XPAR2.heal / 5 }; say("Healing " + (a ? a.name : "yourself") + " · " + XPAR2.heal + " HP over 5 s", 900); SFX.heal(); // wiki v13.00: self 100 too
   }
   if (code === "KeyX") {
     if (J.ult < K().u) return sgNo(), say("Resurrection " + J.ult + "/" + K().u, 800);
@@ -8449,15 +8449,15 @@ function okMMClick(e) {
   const C0 = typeof nmActive === "function" && nmActive(), k = W / 160, P = 8 * k, bb = !C0 && mode === "five" && FV.map === "ascent" ? { x1: -55 * AK, x2: 55 * AK, z1: -60 * AK, z2: 60 * AK } : mmBounds(mode), bw = bb.x2 - bb.x1, bd = bb.z2 - bb.z1, s = (W - 2 * P) / Math.max(bw, bd), ox = P + (W - 2 * P - bw * s) / 2, oz = P + (W - 2 * P - bd * s) / 2; // native maps: mmBounds returns C.bounds; the legacy Ascent box must not reject valid native spots
   const C = C0, point = C ? nmMapProjection(C, W, MM.height).world(cx, cy) : [bb.x1 + (cx - ox) / s, bb.z1 + (cy - oz) / s], x = point[0], z = point[1], ni = C ? nmNear(C, x, z) : -1, ny = C && ni >= 0 ? nmHeight(C, x, z, C.nav.nodes[ni][1]) : 0;
   if (x < bb.x1 || x > bb.x2 || z < bb.z1 || z > bb.z2 || C && (ni < 0 || Math.hypot(C.nav.nodes[ni][0] - x, C.nav.nodes[ni][2] - z) > 1.5) || blocked(x, z, 0.45, ny)) return sgNo(), say("Can't go there · pick an open spot", 900);
-  J.ftp = false; MM.style.pointerEvents = ""; J.ult = 0; J.fts = { t: 3, x, z, y: ny, m: okMark(x, z, 0x6a4cff) }; J.fts.m.position.y = ny + 0.06;
-  say("From the Shadows · 3 s", 1000); blip(300, 0.5, "sawtooth", 0.15); SFX.ab("shadows"); xPLock();
+  J.ftp = false; MM.style.pointerEvents = ""; J.ult = 0; J.fts = { t: XPAR2.shadows, x, z, y: ny, m: okMark(x, z, 0x6a4cff) }; J.fts.m.position.y = ny + 0.06;
+  say("From the Shadows · " + XPAR2.shadows + " s", 1000); blip(300, 0.5, "sawtooth", 0.15); SFX.ab("shadows"); xPLock();
 }
 function okKey(code) {
   const P = player, om = J.pick === "Omen";
   if (om) {
     if (code === "KeyC") {
       if (J.om || J.c < 1 || J.cd.c > 0) return sgNo(); J.c--; J.cd.c = 0.6;
-      const p = okGround(15); J.om = { t: 1, x: p.x, z: p.z, m: okMark(p.x, p.z, 0x6a4cff) }; say("Shrouded Step · 1 s", 700); blip(260, 0.4, "sine", 0.15); SFX.ab("omenStep");
+      const p = okGround(15); J.om = { t: XPAR2.step, x: p.x, z: p.z, m: okMark(p.x, p.z, 0x6a4cff) }; say("Shrouded Step · " + XPAR2.step + " s", 700); blip(260, 0.4, "sine", 0.15); SFX.ab("omenStep");
     }
     if (code === "KeyQ") {
       if (J.q < 1 || J.cd.q > 0) return sgNo(); J.q--; J.cd.q = 0.6;
@@ -8549,7 +8549,7 @@ function okTick(dt) {
   if (J.ld) {
     const L = J.ld; okHitBy(L, dt); L.t -= dt; L.r.material.opacity = 0.3 + 0.3 * Math.abs(Math.sin(L.t * (L.t < 4 ? 8 : 3)));
     if (L.hp <= 0) { okRm(L); J.ld = null; say("Lockdown destroyed", 900); blip(200, 0.3, "square", 0.12); }
-    else if (L.t <= 0) { let n = 0; bots.forEach((b) => { if (b.alive && Math.hypot(b.g.position.x - L.p.x, b.g.position.z - L.p.z) < 32) { b.det = 8; n++; } }); okRm(L); J.ld = null; say("Lockdown · " + n + " detained 8 s", 1200); blip(160, 0.8, "sawtooth", 0.2); feed("Lockdown ▸ " + n + " detained"); }
+    else if (L.t <= 0) { let n = 0; bots.forEach((b) => { if (b.alive && Math.hypot(b.g.position.x - L.p.x, b.g.position.z - L.p.z) < XPAR2.ld) { b.det = 8; n++; } }); okRm(L); J.ld = null; say("Lockdown · " + n + " detained 8 s", 1200); blip(160, 0.8, "sawtooth", 0.2); feed("Lockdown ▸ " + n + " detained"); }
   }
 }
 function okClear() {
@@ -8559,7 +8559,7 @@ function okClear() {
 }
 function okSl(u) {
   if (J.pick === "Omen") return [["jC", J.c || J.om, J.om ? "…" : J.c + "", J.cd.c / 0.6], ["jQ", J.q, J.q + "", J.cd.q / 0.6], ["jE", J.e, J.e + (J.e < (J.oeM || 1) ? " · " + Math.ceil(40 - (J.oe || 0)) + "s" : ""), J.e < 1 ? 1 - (J.oe || 0) / 40 : J.cd.e / 0.6],
-    ["jX", J.fts || J.ftp || J.ult >= u, J.fts ? Math.ceil(J.fts.t) + " s" : J.ftp ? "Map" : J.ult + "/" + u, J.fts ? 1 - J.fts.t / 3 : 1 - J.ult / u]];
+    ["jX", J.fts || J.ftp || J.ult >= u, J.fts ? Math.ceil(J.fts.t) + " s" : J.ftp ? "Map" : J.ult + "/" + u, J.fts ? 1 - J.fts.t / XPAR2.shadows : 1 - J.ult / u]];
   const pend = J.nano.some((n) => !n.on);
   return [["jC", J.c || pend, pend ? "Trigger" : J.c + "", J.cd.c / 0.6], ["jQ", J.q, J.q ? "1" : J.ab ? "Armed" : "Used", 0], ["jE", J.e, J.e ? "1" : J.tur ? Math.ceil(J.tur.hp) + " HP" : "Used", 0],
     ["jX", J.ld || J.ult >= u, J.ld ? Math.ceil(J.ld.t) + " s" : J.ult + "/" + u, J.ld ? 1 - J.ld.t / 13 : 1 - J.ult / u]];
@@ -8802,8 +8802,8 @@ function pNs(t) { const o = $("xNs"); o.classList.add("on"); clearTimeout(pNs.h)
   if (A.sn < 3) return; const bp = b.g.position, mates = (al ? allies : bots).filter((t) => t && t !== b && t.alive && t.g && t.hp < 100 && Math.hypot(t.g.position.x - bp.x, t.g.position.z - bp.z) < 18);
   const pIn = al && player.hp > 0 && player.hp < 100 && Math.hypot(player.x - bp.x, player.z - bp.z) < 18;
   if (!A.srg) { if (!(mates.some((t) => t.hp < 70) || (pIn && player.hp < 70))) return; if (!A.srgB) { if (!xBUse(b, "c")) return; A.srgB = 1; } A.srg = 1; /* Regrowth (C) bought: one 100 HP pool */ feed("Skye ▸ Regrowth"); SFX.heal(); const m = new THREE.Mesh(xG("Box", 1.2, 0.05, 1.2), fireMat(0x7fd84a, 0.4)); m.position.set(bp.x, 0.05, bp.z); jFx(m, 0.6); }
-  mates.forEach((t) => { const h = Math.min(25 * dt, 100 - t.hp, A.sp); t.hp += h; A.sp -= h; });
-  if (pIn) { const h = Math.min(25 * dt, 100 - player.hp, A.sp); player.hp += h; A.sp -= h; }
+  mates.forEach((t) => { const h = Math.min(XPAR2.regrow * dt, 100 - t.hp, A.sp); t.hp += h; A.sp -= h; });
+  if (pIn) { const h = Math.min(XPAR2.regrow * dt, 100 - player.hp, A.sp); player.hp += h; A.sp -= h; }
   if (A.sp <= 0.01 || (!mates.length && !pIn)) A.srg = 0; }; }
 // bot-owned ability entities (Boom Bot in RS.bb, Aftershock in BC.as): o.own = caster, o.en = cast by the enemy team
 // Raze Boom Bot (wiki.playvalorant.com/en-us/Boom_Bot): 5 s, locks onto an enemy within 15 m, explodes within 2.5 m;
@@ -8842,7 +8842,7 @@ function xBotDmg(t, n, by, w) { try { if (t === player) { hurt(player, n, by); r
   if (!s) return; const l = Math.hypot(s.x - from.x, s.z - from.z); if (l < 5 || l > 18 || Math.random() > dt * 1.2) return;
   if (wall && los(new RV(from.x, 1.4, from.z), new RV(s.x, 1, s.z))) return; // behind cover only
   if (!xBUse(b, "c")) { A.bas = 0; return; } A.bas = 0; const p = { x: s.x, z: s.z }, m = jM(zoneGeo, fireMat(0xff9a3a, 0.35)); /* Aftershock (C) bought */ m.rotation.x = -Math.PI / 2; m.scale.setScalar(3 / 2.5); m.position.set(p.x, 0.06, p.z); scene.add(m);
-  BC.as.push({ p, m, t: XAB_WIND.aftershock, n: 3, own: b, en: !al }); feed("Breach ▸ Aftershock"); try { XCUE.play("asArm", { x: p.x, y: 1, z: p.z }); } catch (e) {} }; }
+  BC.as.push({ p, m, t: XAB_WIND.aftershock, n: XPAR2.ash.n, own: b, en: !al }); feed("Breach ▸ Aftershock"); try { XCUE.play("asArm", { x: p.x, y: 1, z: p.z }); } catch (e) {} }; } // 2 bursts of 80 (wiki v7.04; was 3)
 // bot Sage (team-agnostic): Healing Orb (E, 45 s recharge) as the player's: a hurt ally (below 70 HP, within 20 m) 100 HP over 5 s, else herself 50 HP over 5 s; after 3 s with no enemy in sight
 { const b0 = botAb; botAb = function (b, dt, see, tg, from) { b0(b, dt, see, tg, from);
   if (!jOn() || !running || !b.ab || !b.g || (b.name !== "Sage" && xAgOf(b.name) !== "Sage")) return; const A = b.ab, al = allies.indexOf(b) >= 0;
@@ -8854,7 +8854,7 @@ function xBotDmg(t, n, by, w) { try { if (t === player) { hurt(player, n, by); r
   if (A.hoN < 3 || !b.alive || xBCh(b).e < 1) return; const bp = b.g.position, near = (x, z) => Math.hypot(x - bp.x, z - bp.z) < 20;
   let t = null; for (const u of (al ? allies : bots)) if (u && u !== b && u.alive && u.g && u.hp < 70 && near(u.g.position.x, u.g.position.z) && (!t || u.hp < t.hp)) t = u;
   if (!t && al && player.hp > 0 && player.hp < 70 && near(player.x, player.z)) t = "p"; if (!t && b.hp < 60) t = b; if (!t || !xBUse(b, "e")) return;
-  A.hoU = 1; A.hoT = t; A.hoL = t === b ? 50 : 100; A.hoR = A.hoL / 5; feed("Sage ▸ Healing Orb"); try { SFX.heal(); } catch (e) {}
+  A.hoU = 1; A.hoT = t; A.hoL = XPAR2.heal; A.hoR = A.hoL / 5; feed("Sage ▸ Healing Orb"); try { SFX.heal(); } catch (e) {}
   try { const x = t === "p" ? player.x : t.g.position.x, z = t === "p" ? player.z : t.g.position.z, m = new THREE.Mesh(xG("Box", 1.2, 0.05, 1.2), fireMat(0x5fe0d0, 0.4)); m.position.set(x, 0.05, z); jFx(m, 5); } catch (e) {} }; }
 // bot Chamber (team-agnostic): Trademark on a flank lane when defending, Tour De Force on a far enemy once charged (buy hook skipped)
 { const b0 = botAb; botAb = function (b, dt, see, tg, from) { b0(b, dt, see, tg, from);
@@ -8930,7 +8930,7 @@ function bcKey(code) {
     if (code === "KeyC") {
       if (J.c < 1 || J.cd.c > 0) return no(); const p = bcWall(8); if (!p) return no(), say("Aim at a wall", 800); J.c--; J.cd.c = 0.6;
       const m = jM(zoneGeo, fireMat(0xff9a3a, 0.35)); m.rotation.x = -Math.PI / 2; m.scale.setScalar(3 / 2.5); m.position.set(p.x, 0.06, p.z); scene.add(m);
-      BC.as.push({ p, m, t: xWf("aftershock"), n: 2 }); say("Aftershock · 2 bursts of 80", 800); blip(160, 0.3, "sawtooth", 0.15); try { XCUE.play("rumble"); } catch (e) {}
+      BC.as.push({ p, m, t: xWf("aftershock"), n: XPAR2.ash.n }); say("Aftershock · 2 bursts of 80", 800); blip(160, 0.3, "sawtooth", 0.15); try { XCUE.play("rumble"); } catch (e) {}
     }
     if (code === "KeyQ") {
       if (J.q < 1 || J.cd.q > 0) return no(); const p = bcWall(8); if (!p) return no(), say("Aim at a wall", 800); J.q--; J.cd.q = 0.6; p.y = 1.8;
@@ -8953,9 +8953,9 @@ function bcKey(code) {
     if (!BC.an) {
       if (J.cd.e > 0) return no(), say("Rendezvous " + Math.ceil(J.cd.e) + " s", 700);
       const m = new THREE.Mesh(ringGeo, fireMat(0xd8b04a, 0.8)); m.rotation.x = -Math.PI / 2; m.position.set(P.x, P.y + 0.06, P.z); scene.add(m);
-      BC.an = { x: P.x, y: P.y, z: P.z, m }; say("Rendezvous anchor · E within 15 m to return", 900); return blip(700, 0.1, "sine", 0.12);
+      BC.an = { x: P.x, y: P.y, z: P.z, m }; say("Rendezvous anchor · E within " + XPAR2.rdv + " m to return", 900); return blip(700, 0.1, "sine", 0.12);
     }
-    if (Math.hypot(P.x - BC.an.x, P.z - BC.an.z) > 15) return no(), say("Rendezvous · more than 15 m from anchor", 800);
+    if (Math.hypot(P.x - BC.an.x, P.z - BC.an.z) > XPAR2.rdv) return no(), say("Rendezvous · more than " + XPAR2.rdv + " m from anchor", 800);
     P.x = BC.an.x; P.z = BC.an.z; P.y = BC.an.y || 0; P.vy = 0; scene.remove(BC.an.m); BC.an = null; J.cd.e = 30; SFX.tp(); say("Rendezvous", 600);
   }
   if (code === "KeyX") {
@@ -9511,7 +9511,7 @@ function jKey(code) {
     if (keys.KeyW) { mx += fx; mz += fz; } if (keys.KeyS) { mx -= fx; mz -= fz; }
     if (keys.KeyA) { mx += fz; mz -= fx; } if (keys.KeyD) { mx -= fz; mz += fx; }
     if (!mx && !mz) { mx = fx; mz = fz; } const l = Math.hypot(mx, mz); mx /= l; mz /= l;
-    for (let i = 0; i < 32; i++) { const nx = P.x + mx * 0.25, nz = P.z + mz * 0.25; if (blocked(nx, nz, 0.4, P.y)) break; P.x = nx; P.z = nz; }
+    for (let i = 0; i < XPAR2.tail * 4; i++) { const nx = P.x + mx * 0.25, nz = P.z + mz * 0.25; if (blocked(nx, nz, 0.4, P.y)) break; P.x = nx; P.z = nz; } // wiki Tailwind base dash 11 m (server the same)
     J.e = 0; J.tk = 0; J.cd.e = 0.4; SFX.ab("dash");
   }
   if (code === "KeyX") {
@@ -11555,7 +11555,7 @@ html.xt-nocm .x-cmb{display:none!important}
       if (typeof allies !== "undefined") for (const a of allies) if (a.alive && Math.hypot(a.g.position.x - x, a.g.position.z - z) < 30 && ldShot(V1.set(a.g.position.x + (Math.random() - 0.5) * 0.3, 1.7, a.g.position.z + (Math.random() - 0.5) * 0.3), o)) o.hp -= 1.2;
     } else okHitBy(o, 0.1);
     if (o.hp <= 0) { free(o); feed("Lockdown destroyed"); return; } if (o.t > 0) return;
-    const x = o.p.x, z = o.p.z, inR = (q) => Math.hypot(q.x - x, q.z - z) < 32;
+    const x = o.p.x, z = o.p.z, inR = (q) => Math.hypot(q.x - x, q.z - z) < XPAR2.ld;
     if (o.en) { if (player.hp > 0 && inR(player)) { pDt = 8; player.tagT = 8; player.tagK = 0.2; player.tagS = 0; say("Detained · 8 s", 1400); } if (typeof allies !== "undefined") for (const a of allies) if (a.alive && inR(a.g.position)) a.xdt = 8; }
     else for (const b of bots) if (b.alive && inR(b.g.position)) b.xdt = 8;
     feed("Lockdown ▸ detained"); try { blip(110, 0.6, "sawtooth", 0.15); } catch (e) {} free(o); }
@@ -12648,12 +12648,18 @@ function mpV(a, def) { if (Array.isArray(a) && a.length === 3) { const x = +a[0]
 function mpDir(a, u) { const v = mpV(a, new THREE.Vector3()); if (v.lengthSq() < 1e-6) { const r = u && u.g ? u.g.rotation.y : 0; v.set(Math.sin(r), 0, Math.cos(r)); } return v.normalize(); }
 function mpTgt(o, d, far, back) { ray.set(o, d); ray.far = far; const h = ray.intersectObjects(solids)[0]; return h ? MPC.e.copy(h.point).addScaledVector(d, -back) : MPC.e.copy(o).addScaledVector(d, far); }
 const mpDist = (px, pz, x, z, seg) => (seg ? segD(px, pz, seg) : Math.hypot(px - x, pz - z));
-function mpAreaHit(o, x, z, r, n, w, seg) { // host only: the remote caster's enemies (FFA: everyone else), credited to the caster
+// Parity sweep (qa-20, wiki Stats; server abilities.js PARITY / aoeFall): Shock Bolt 75 inside 1.5 m -> 1 at 4 m; Aftershock 2 x 80, 0.6 s apart,
+// 3 m; Healing Orb 100 HP over 5 s (ally or self); Regrowth 20 HP/s; Shrouded Step 1.2 s; From the Shadows 4 s; Rendezvous 18 m; Lockdown 32.5 m;
+// Tailwind dash 11 m (server ty 'dash').
+var XPAR2 = { shock: { inner: 1.5, outer: 4, max: 75, min: 1 }, ash: { dmg: 80, n: 2, gap: 0.6, r: 3 }, heal: 100, regrow: 20, step: 1.2, shadows: 4, rdv: 18, ld: 32.5, tail: 11 };
+function xAoeFall(d, F) { return d <= F.inner ? F.max : d >= F.outer ? 0 : F.max - (d - F.inner) / (F.outer - F.inner) * (F.max - F.min); }
+function mpAreaHit(o, x, z, r, n, w, seg, fall) { // host only: the remote caster's enemies (FFA: everyone else), credited to the caster; fall(d): damage by distance (else n)
   if (!o.own || !(o.loc || (MP.role === "host" && MP.st === "game"))) return; const by = o.own.name, ffa = FV.dm && !FV.tdm; // o.loc: an offline bot cast (this client is the authority)
-  if ((o.en || ffa) && player.hp > 0 && mpDist(player.x, player.z, x, z, seg) < r) { xBotDmg(player, n, by, w); try { updHud(); } catch (e) {} if (player.hp <= 0) pDie(by, w); }
+  const dn = (d) => (fall ? fall(d) : n);
+  if ((o.en || ffa) && player.hp > 0 && mpDist(player.x, player.z, x, z, seg) < r) { xBotDmg(player, dn(mpDist(player.x, player.z, x, z, seg)), by, w); try { updHud(); } catch (e) {} if (player.hp <= 0) pDie(by, w); }
   const T = ffa || !o.en ? bots : allies;
-  for (let j = 0; j < T.length; j++) { const t = T[j]; if (t && t !== o.own && t.alive && t.g && mpDist(t.g.position.x, t.g.position.z, x, z, seg) < r) xBotDmg(t, n, by, w); }
-  xFFArea(o.own, o.en, w, n, (px, pz) => mpDist(px, pz, x, z, seg) < r); // the caster's team: a third
+  for (let j = 0; j < T.length; j++) { const t = T[j]; if (t && t !== o.own && t.alive && t.g && mpDist(t.g.position.x, t.g.position.z, x, z, seg) < r) xBotDmg(t, dn(mpDist(t.g.position.x, t.g.position.z, x, z, seg)), by, w); }
+  xFFArea(o.own, o.en, w, n, (px, pz) => { const d = mpDist(px, pz, x, z, seg); return d < r && (fall ? fall(d) / n : true); }); // the caster's team: a third
 }
 function mpStun(u, en, x, z, r, s, auth) { // the local player on every peer (screen effect); units only on the host
   const ffa = FV.dm && !FV.tdm; if ((en || ffa) && player.hp > 0 && Math.hypot(player.x - x, player.z - z) < r) { try { xConStart(s * 1000); } catch (e) {} }
@@ -12679,7 +12685,7 @@ function mpFx(u, ag, k, o, d, auth, p, quiet) { // u: caster unit, o/d: eye + ai
     if (!sg) blazeWall(up.x, up.y || 0, up.z, f.x, f.z, { own: u, en, nd }); // Blaze along the aim (XBLZ)
     else { const w = { p: new THREE.Vector3(up.x + f.x * 3, (up.y || 0) + 1.5, up.z + f.z * 3), ax: Math.cos(yw), az: -Math.sin(yw), h: 3, t: 30, own: u, en, nd: true }; // Barrier Orb: sight blocker only
       w.m = jM(sgWallGeo, fireMat(0x9fe8ff, 0.7)); w.m.position.copy(w.p); w.m.rotation.y = yw; scene.add(w.m); J.walls.push(w); } }
-  else if (ty === "heal") { if (auth && u.alive) MPC.hl.push({ u, l: 50, r: ag === "Sage" ? 10 : ag === "Reyna" ? 50 / 3 : 25 });
+  else if (ty === "heal") { if (auth && u.alive) MPC.hl.push({ u, l: ag === "Sage" ? XPAR2.heal : 50, r: ag === "Sage" ? XPAR2.heal / 5 : ag === "Reyna" ? 50 / 3 : XPAR2.regrow });
     const m = jM(zoneGeo, fireMat(0x5fe0d0, 0.4)); m.rotation.x = -Math.PI / 2; m.scale.setScalar(0.5); m.position.set(up.x, 0.06, up.z); jFx(m, 3); }
   else if (ty === "stun") {
     if (ag === "Sova") { const B = MPC.bolt, P = B && xBoltPath(o, d, B.pw, B.b), e = P ? (p ? p.clone() : new THREE.Vector3(P.end[0], P.end[1], P.end[2])) : tg(50, 0.2).clone(), a = o.clone(), m = jBolt(0x7fd8ff, a, e); if (P && p) P.tr[P.tr.length - 1] = [p.x, p.y, p.z, P.t]; J.arrows.push({ m, a, b: e, t: 0, dur: P ? Math.max(0.05, P.t) : Math.max(0.05, a.distanceTo(e) / 45), kind: "shock", own: u, en, nd, tr: P ? P.tr : null }); }
@@ -14061,7 +14067,7 @@ function netClean(m){if(!m||typeof m!=='object'||Array.isArray(m)||typeof m.t!==
  else if(t==='ac'){if(!num(m.i)||!str(m.ag)||!str(m.k))return null;for(const k of ['o','d','p'])if(m[k]!==undefined&&!vec(m[k]))return null;for(const k of ['pw','b'])if(m[k]!==undefined&&!num(m[k]))delete m[k];/* Sova bolt charge / bounces */}
  else if(t==='ao'){if(m.rs!==undefined&&!rs(m.rs))delete m.rs;}
  return m;}
-function netConnect(create,code,publicRoom){if(create&&['ascent','bind','haven','split','lotus','breeze','random'].includes(window.xQMap))MP.map=window.xQMap;mpReset();MP.st='conn';mpMsg(create?'Creating server room…':'Joining server room…');mpUI();NET.host=create;const q=new URLSearchParams({code,create:create?'1':'0',mode:MP.mode,map:MP.map==='random'?['ascent','bind','haven','split','lotus','breeze'][Math.floor(Math.random()*6)]:MP.map,public:publicRoom?'1':'0'}),ws=new WebSocket(NET.url.replace('https:','wss:')+'/connect?'+q);NET.socket=ws;MP.code=code;MP.pub=!!publicRoom;MP.loadT=performance.now();ws.onopen=async()=>{const token=await netProfileToken();if(NET.socket===ws)netSend({t:'hi',n:MP.name,ag:J.pick||'Jett',token,sk:typeof xskWire==='function'?xskWire():undefined});};ws.onmessage=e=>{if(NET.socket!==ws)return;let m;try{m=JSON.parse(e.data);}catch(e){return;}m=netClean(m);if(!m)return;MP.last=performance.now();try{netOnMsg(m);}catch(err){/* never let one bad server frame throw out of the socket handler; counted for the fuzz test */NET.dropped=(NET.dropped||0)+1;const w=String(err&&err.message||err).slice(0,160)+' @'+m.t;NET.drops=NET.drops||[];if(NET.drops.length<20&&!NET.drops.includes(w))NET.drops.push(w);}};const netOnMsg=m=>{if(m.t==='hello')return;if((m.t==='sk'||m.t==='sks'||m.t==='skr')&&typeof xskNet==='function')return xskNet(m);if(m.t==='welcome'){MP.name=String(m.name);MP.me=m.you;const input=mpEl('xOnName');if(input)input.value=MP.name;return;}if(m.t==='room'){MP.on=true;MP.role='client';MP.room=m;MP.mode=m.mode;MP.map=m.map;if(MP.st!=='game'&&MP.st!=='post')MP.st='room';NET.host=!!m.pl.find(p=>p.n===MP.name&&p.h);mpMsg('Connected to game server');return mpUI();}if(m.t==='start'){NET.ready=false;NET.latest=null;NET.loadAt=performance.now();NET.lpAt=0;MP.hc={open:true,send(m){if(m.t!=='hit'&&(m.t!=='in'||Number.isSafeInteger(m.seq)))netSend(m);}};return mpCliMsg(m);}if(m.t==='s'){NET.latest=m;NET.receivedAt=performance.now();NET.serverAge=Date.now()-m.serverTime;NET.tickMs=m.tickMs;if(NET.ready){mpCliMsg(m);netSyncEffects(m.fx||[]);}return;}if(m.t==='ac'&&m.ag==='Sage'&&m.k==='c')return;if(m.t==='ao'){if(m.rs)mpCliRS(m.rs);if(!m.ok){sgNo();say('Ability unavailable or target invalid',1000);}else if(J.pick==='Omen'&&(m.k==='x'||m.k==='c'))say(m.k==='x'?'From the Shadows · 3 s':'Shrouded Step · 1 s',1000);return;}if(m.t==='po'){const c=Number(m.c);if(Number.isFinite(c))MP.ping=Math.max(0,Math.round(performance.now()-c));return;}mpCliMsg(m);};ws.onclose=event=>{if(NET.socket!==ws)return;NET.lastClose={code:event.code,reason:event.reason,at:Date.now()};NET.socket=null;const was=MP.st==='game',room=MP.code,loadingMatch=!!NET.loadAt&&!NET.ready;NET.loadAt=0;mpReset();mpMsg(event.reason==='Load timed out'?'Loading the match took too long, so the server closed your seat. Rejoin room '+room+' to try again; closing other tabs or apps can speed up loading.':event.reason==='Connection idle'&&loadingMatch?'Lost contact with the game server while the match was loading. Rejoin room '+room+' to try again.':event.reason==='Connection idle'?'Connection timed out while the client was inactive. Rejoin room '+room+' if another player is still connected.':event.code===1012?'The game server restarted. Join or create a room again.':'Connection to the game server was interrupted. Try rejoining room '+room+'.');if(was)mpExitGame();mpUI();};ws.onerror=()=>mpMsg('Could not reach the game server. Try again shortly.');}
+function netConnect(create,code,publicRoom){if(create&&['ascent','bind','haven','split','lotus','breeze','random'].includes(window.xQMap))MP.map=window.xQMap;mpReset();MP.st='conn';mpMsg(create?'Creating server room…':'Joining server room…');mpUI();NET.host=create;const q=new URLSearchParams({code,create:create?'1':'0',mode:MP.mode,map:MP.map==='random'?['ascent','bind','haven','split','lotus','breeze'][Math.floor(Math.random()*6)]:MP.map,public:publicRoom?'1':'0'}),ws=new WebSocket(NET.url.replace('https:','wss:')+'/connect?'+q);NET.socket=ws;MP.code=code;MP.pub=!!publicRoom;MP.loadT=performance.now();ws.onopen=async()=>{const token=await netProfileToken();if(NET.socket===ws)netSend({t:'hi',n:MP.name,ag:J.pick||'Jett',token,sk:typeof xskWire==='function'?xskWire():undefined});};ws.onmessage=e=>{if(NET.socket!==ws)return;let m;try{m=JSON.parse(e.data);}catch(e){return;}m=netClean(m);if(!m)return;MP.last=performance.now();try{netOnMsg(m);}catch(err){/* never let one bad server frame throw out of the socket handler; counted for the fuzz test */NET.dropped=(NET.dropped||0)+1;const w=String(err&&err.message||err).slice(0,160)+' @'+m.t;NET.drops=NET.drops||[];if(NET.drops.length<20&&!NET.drops.includes(w))NET.drops.push(w);}};const netOnMsg=m=>{if(m.t==='hello')return;if((m.t==='sk'||m.t==='sks'||m.t==='skr')&&typeof xskNet==='function')return xskNet(m);if(m.t==='welcome'){MP.name=String(m.name);MP.me=m.you;const input=mpEl('xOnName');if(input)input.value=MP.name;return;}if(m.t==='room'){MP.on=true;MP.role='client';MP.room=m;MP.mode=m.mode;MP.map=m.map;if(MP.st!=='game'&&MP.st!=='post')MP.st='room';NET.host=!!m.pl.find(p=>p.n===MP.name&&p.h);mpMsg('Connected to game server');return mpUI();}if(m.t==='start'){NET.ready=false;NET.latest=null;NET.loadAt=performance.now();NET.lpAt=0;MP.hc={open:true,send(m){if(m.t!=='hit'&&(m.t!=='in'||Number.isSafeInteger(m.seq)))netSend(m);}};return mpCliMsg(m);}if(m.t==='s'){NET.latest=m;NET.receivedAt=performance.now();NET.serverAge=Date.now()-m.serverTime;NET.tickMs=m.tickMs;if(NET.ready){mpCliMsg(m);netSyncEffects(m.fx||[]);}return;}if(m.t==='ac'&&m.ag==='Sage'&&m.k==='c')return;if(m.t==='ao'){if(m.rs)mpCliRS(m.rs);if(!m.ok){sgNo();say('Ability unavailable or target invalid',1000);}else if(J.pick==='Omen'&&(m.k==='x'||m.k==='c'))say(m.k==='x'?'From the Shadows · 4 s':'Shrouded Step · 1.2 s',1000);return;}if(m.t==='po'){const c=Number(m.c);if(Number.isFinite(c))MP.ping=Math.max(0,Math.round(performance.now()-c));return;}mpCliMsg(m);};ws.onclose=event=>{if(NET.socket!==ws)return;NET.lastClose={code:event.code,reason:event.reason,at:Date.now()};NET.socket=null;const was=MP.st==='game',room=MP.code,loadingMatch=!!NET.loadAt&&!NET.ready;NET.loadAt=0;mpReset();mpMsg(event.reason==='Load timed out'?'Loading the match took too long, so the server closed your seat. Rejoin room '+room+' to try again; closing other tabs or apps can speed up loading.':event.reason==='Connection idle'&&loadingMatch?'Lost contact with the game server while the match was loading. Rejoin room '+room+' to try again.':event.reason==='Connection idle'?'Connection timed out while the client was inactive. Rejoin room '+room+' if another player is still connected.':event.code===1012?'The game server restarted. Join or create a room again.':'Connection to the game server was interrupted. Try rejoining room '+room+'.');if(was)mpExitGame();mpUI();};ws.onerror=()=>mpMsg('Could not reach the game server. Try again shortly.');}
 mpCreate=function(pub,mode){MP.mode=mode||MP.mode;netConnect(true,mpCode(),pub);};
 mpJoin=function(code){code=String(code||'').toUpperCase();if(!/^[A-HJ-NP-Z2-9]{6}$/.test(code)){mpMsg('Enter the six-character room code.');return;}netConnect(false,code,false);};
 mpQuick=async function(mode){MP.mode=mode||MP.mode;mpMsg('Finding a live server room…');try{const r=await fetch(NET.url+'/rooms'),data=await r.json(),room=data.rooms.find(r=>r.mode===MP.mode&&r.players<10&&(window.xQMap==='random'||r.map===(window.xQMap||MP.map)));if(room)netConnect(false,room.code,true);else mpCreate(true,MP.mode);}catch(e){mpMsg('Room list unavailable. Try a private room.');}};
