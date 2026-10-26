@@ -37,7 +37,11 @@ assert(html.includes('if(!world.blocked(nx,nz,.4,P.y,1.8-P.ch)&&!(world.leash&&!
 // server side
 const wsrc=fs.readFileSync(path.join(root,'server/src/world.js'),'utf8'),asrc=fs.readFileSync(path.join(root,'server/src/abilities.js'),'utf8');
 assert(wsrc.includes('leash=(x,z,y,x0,z0)=>Motor.leashOk(leashCells,x,z,y,ground,x0,z0)')&&/return \{plantAt,ground,blocked,leash,/.test(wsrc),'server world exposes the leash');
-assert(asrc.includes("if(sim.world.blocked(x,z,.4,u.y,1.8-(u.ch||0))||(sim.world.leash&&!sim.world.leash(x,z,u.y,u.x,u.z)))break;"),'server Jett dash respects the leash');
+// Tailwind (b875936): an 11 m / 0.45 s dash stepped by the shared motor's dashStep (server Simulation.step / SpikeSimulation.motor and
+// the page), which stops at a wall or the playable leash; the cast only sets u.dash = Motor.dash(...).
+{const msrc=fs.readFileSync(path.join(root,'server/src/motor.cjs'),'utf8'),ssrc=fs.readFileSync(path.join(root,'server/src/simulation.js'),'utf8')+fs.readFileSync(path.join(root,'server/src/spike.js'),'utf8');
+ assert(/function dashStep\(P,D,dt,world\)\{[^\n]*if\(world\.blocked\(x,z,\.4,P\.y,height\)\|\|\(world\.leash&&!world\.leash\(x,z,P\.y,P\.x,P\.z\)\)\)\{D\.left=0;break;\}/.test(msrc),'motor dashStep stops at the leash');
+ assert(asrc.includes('u.dash=Motor.dash(')&&/Motor\.dashStep\(u,u\.dash,dt,this\.world\)/.test(ssrc),'server Jett dash is stepped by the motor dashStep (leash-checked)');}
 // Blast Pack (ac168f0 moved it to devices.js): no direct position step any more - the detonation launches by velocity, so
 // the motor's moveAxis (leash-checked, the shared file above) carries every unit it moves
 const dsrc=fs.readFileSync(path.join(root,'server/src/devices.js'),'utf8'),msrc=fs.readFileSync(path.join(root,'server/src/motor.cjs'),'utf8');
