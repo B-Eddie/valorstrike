@@ -204,7 +204,21 @@ const fails=[];const fail=s=>{fails.push(s);if(VERBOSE)console.log('FAIL',s);};c
    for(let i=0;i<80&&nt()>3.5;i++){await adv(50);keep();}const kd=xe('__kd'),burnt=XNw(xe)-nt();
    eq([kd[0]>0&&Math.abs(kd[0]-45*burnt)<3,kd[1]],[true,0],'45/s inside 4.5 m after the windup (4.3 m in, 4.7 m out; was 2.5 m): '+JSON.stringify(kd)+' over '+burnt.toFixed(2)+' s');eq(xe('+((J.nano.find(n=>n.on)||{m:{scale:{x:0}}}).m.scale.x).toFixed(2)'),1.8,'disc drawn at 4.5 m');
    xe('jHit=__jh0;bots.concat(allies).forEach(b=>{if(b.det>1e8)b.det=0;});J.nano.forEach(n=>n.t=0.01);true');await adv(200);}}
+ // ---- Omen Paranoia (wiki Paranoia: a 25 m orb at 20 m/s, 4.3 m radius, through walls, no facing check, allies too: 2 s); client XPAR == server PARANOIA ----
+ {const asrc=require('fs').readFileSync(require('path').join(__dirname,'../server/src/abilities.js'),'utf8'),pm=asrc.match(/PARANOIA=\{speed:([\d.]+),range:([\d.]+),radius:([\d.]+),nearsight:([\d.]+)\}/);
+  eq(xe('[XPAR.speed,XPAR.range,XPAR.r,XPAR.ns]'),pm?[+pm[1],+pm[2],+pm[3],+pm[4]]:null,'client XPAR == server PARANOIA');}
+ await live();{xe('bots.concat(allies).forEach(b=>{b.det=1e9;});timeLeft=Math.max(timeLeft,60);true');pick('Omen');await adv(200);
+  const ok=xe('(()=>{const al=bots.filter(b=>b.alive&&b.g),fr=allies.filter(a=>a.alive&&a.g);if(al.length<2)return null;window.__pa={o:{x:player.x,z:player.z},hit:al[0],wide:al[1],past:al[2]||null,mate:fr[0]||null};bots.forEach(b=>b.g.position.set(player.x+200,b.g.position.y,player.z));J.par.length=0;los.__p=los;return true;})()');
+  if(!ok)fail('Paranoia: need two live bots');else{
+   // yaw 0 aims -z; along the line: hit 10 m (a wall in the way: los false), wide 4.6 m off at 12 m, past 31 m (5 m beyond the end: the orb starts 1 m ahead and travels 25 m), mate 3 m off at 6 m
+   const keep=()=>xe('[[__pa.hit,0,-10],[__pa.wide,4.6,-12],[__pa.past,0,-31],[__pa.mate,3,-6]].forEach(([b,x,z])=>{if(!b)return;b.alive=true;b.hp=100;b.g.position.x=__pa.o.x+x;b.g.position.z=__pa.o.z+z;});player.x=__pa.o.x;player.z=__pa.o.z;player.hp=100;true');keep();
+   xe('[__pa.hit,__pa.wide,__pa.past,__pa.mate].forEach(b=>{if(!b)return;b.blind=0;b.g.rotation.y=0;});yaw=0;los=(a,b)=>false;okKey("KeyQ");true');eq(xe('J.par.length'),1,'Q throws the orb');
+   const ot=()=>xe('J.par.length?J.par[0].t:-1');for(let i=0;i<40&&ot()>=0&&ot()<0.15;i++){await adv(25);keep();}eq(xe('__pa.hit.blind>0'),false,'10 m target not reached at 0.15 s (20 m/s)');
+   for(let i=0;i<80&&xe('J.par.length');i++){await adv(50);keep();}
+   const r=xe('[__pa.hit.blind,__pa.wide.blind,__pa.past?__pa.past.blind:0,__pa.mate?__pa.mate.blind:1,J.par.length]');xe('los=los.__p;true');
+   eq([r[0]>0.5&&r[0]<=2,r[1],r[2],r[3]>0.5&&r[3]<=2,r[4]],[true,0,0,true,0],'Paranoia: 10 m behind a wall and facing away hit (2 s), 4.6 m off the line and 5 m past 25 m missed, ally hit (when a third bot / an ally is alive), orb gone: '+JSON.stringify(r));
+   xe('bots.concat(allies).forEach(b=>{if(b.det>1e8)b.det=0;});true');await adv(200);}}
  if(xe('XEQV.err||null'))fail('ability viewmodel error: '+xe('XEQV.err'));
  if(H.errors.length>errs0)fail('page errors: '+H.errors.slice(errs0).map(e=>String(e&&e.message||e)).join(' | '));
- if(fails.length){console.log(fails.join('\n'));process.exit(1);}console.log('ability equip: binds, migration, HUD labels, equip -> fire flow, first-person equip viewmodel, wiki equip times + windups, Sova bow charge + bounces, Fault Line hold-to-extend, Hot Hands spread, Neural Theft 18 m / 2 s + 6 s, Cyber Cage cylinder, Recon Bolt 30 m pulses, Nanoswarm 4.5 m / 1 s windup, Cloudburst flight + steering, per-ability smoke radii, kit table ok');process.exit(0);
+ if(fails.length){console.log(fails.join('\n'));process.exit(1);}console.log('ability equip: binds, migration, HUD labels, equip -> fire flow, first-person equip viewmodel, wiki equip times + windups, Sova bow charge + bounces, Fault Line hold-to-extend, Hot Hands spread, Neural Theft 18 m / 2 s + 6 s, Cyber Cage cylinder, Recon Bolt 30 m pulses, Nanoswarm 4.5 m / 1 s windup, Paranoia 25 m orb, Cloudburst flight + steering, per-ability smoke radii, kit table ok');process.exit(0);
 })().catch(e=>{console.error(e);process.exit(1);});

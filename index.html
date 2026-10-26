@@ -8224,6 +8224,8 @@ function sgClear() {
 }
 // ---- Omen + Killjoy kits (player) ----
 const okMat = (c) => new THREE.MeshLambertMaterial({ color: c, emissive: c, emissiveIntensity: 0.35 });
+// Omen Paranoia (wiki.playvalorant.com/en-us/Paranoia): 20 m/s for 25 m, 4.3 m radius, nearsight 2 s; server PARANOIA.
+const XPAR = { speed: 20, range: 25, r: 4.3, ns: 2 };
 const parGeo = new THREE.BoxGeometry(5, 2.4, 1.2), kjBox = new THREE.BoxGeometry(0.45, 0.45, 0.45), kjTur = new THREE.BoxGeometry(0.5, 0.9, 0.5), kjLd = new THREE.CylinderGeometry(0.4, 0.55, 0.9, 10), ldRing = new THREE.RingGeometry(31.6, 32, 72);
 function okGround(far) {
   const o = pEye(), d = jAim(); ray.set(o, d); ray.far = far; const h = ray.intersectObjects(solids)[0];
@@ -8254,7 +8256,7 @@ function okKey(code) {
     if (code === "KeyQ") {
       if (J.q < 1 || J.cd.q > 0) return sgNo(); J.q--; J.cd.q = 0.6;
       const fx = -Math.sin(yaw), fz = -Math.cos(yaw), m = new THREE.Mesh(parGeo, fireMat(0x2a1550, 0.6)); m.position.set(P.x + fx, 1.3, P.z + fz); m.rotation.y = yaw; scene.add(m);
-      J.par.push({ m, fx, fz, t: 0 }); say("Paranoia", 600); blip(140, 0.5, "sawtooth", 0.15); SFX.ab("paranoia");
+      J.par.push({ m, fx, fz, t: 0, hit: new Set() }); say("Paranoia", 600); blip(140, 0.5, "sawtooth", 0.15); SFX.ab("paranoia");
     }
     if (code === "KeyE") {
       if (J.e < 1 || J.cd.e > 0) return sgNo(), say("Dark Cover · next charge " + Math.ceil(40 - (J.oe || 0)) + " s", 800); J.e--; J.cd.e = 0.6;
@@ -8308,9 +8310,12 @@ function okTick(dt) {
   if (J.ftp && !alive) { J.ftp = false; MM.style.pointerEvents = ""; }
   if (J.pick === "Omen" && J.e < (J.oeM || 1)) { J.oe = (J.oe || 0) + dt; if (J.oe >= 40) { J.e++; J.oe = 0; say("Dark Cover charge ready", 700); } } // 40 s recharge, back up to the charges owned this round
   prune(J.par, (s) => {
-    s.t += dt; const p = s.m.position; p.x += s.fx * 14 * dt; p.z += s.fz * 14 * dt; s.m.material.opacity = 0.6 * Math.min(1, (2.2 - s.t) / 0.4);
-    bots.forEach((b) => { if (!b.alive) return; const q = b.g.position, vx = q.x - p.x, vz = q.z - p.z, along = vx * s.fx + vz * s.fz, side = Math.abs(vx * s.fz - vz * s.fx); if (Math.abs(along) < 1.2 && side < 2.8) b.blind = Math.max(b.blind || 0, 2); });
-    if (s.t < 2.2) return true; scene.remove(s.m); return false;
+    const T = XPAR.range / XPAR.speed, t0 = s.t; s.t = Math.min(T, s.t + dt); const p = s.m.position, x0 = p.x, z0 = p.z, st = (s.t - t0) * XPAR.speed; p.x += s.fx * st; p.z += s.fz * st; s.m.material.opacity = 0.6 * Math.min(1, (T - s.t) / 0.3 + 0.01);
+    // every bot the orb passes within 4.3 m of (allies too: friendlyfire Yes), through walls, no facing check; once each, 2 s
+    // (bots have no nearsight model: b.blind, as for Leer / Seekers)
+    for (const b of bots.concat(typeof allies !== "undefined" ? allies : [])) { if (!b.alive || !b.g || s.hit.has(b)) continue; const q = b.g.position, k = st > 0 ? Math.max(0, Math.min(st, (q.x - x0) * s.fx + (q.z - z0) * s.fz)) : 0;
+      if (Math.hypot(q.x - x0 - s.fx * k, q.z - z0 - s.fz * k) < XPAR.r) { s.hit.add(b); b.blind = Math.max(b.blind || 0, XPAR.ns); } }
+    if (s.t < T) return true; scene.remove(s.m); return false;
   });
   prune(J.nano, (n) => {
     if (!n.on) return true; n.t -= dt; n.m.material.opacity = 0.55 * Math.min(1, n.t / 0.5);

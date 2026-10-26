@@ -326,9 +326,9 @@ up for 2.5 s from the cast (2.3 s of nearsight after its 0.2 s fuse).
   of nearsight after its fuse).
 - Client: the player's Leer now ends `xWf('leer') + XLEER` (1.6 s) after the release (was 2 s, i.e. 1.8 s of nearsight).
 - Guiding Light: both sides use the 2.25 s maximum (the wiki's flight-time scaling is not modelled).
-- Not changed (needs a mechanic on both sides): Paranoia is a point flash with a facing check on the server and a 14 m/s
-  strip on the client; the wiki's is a 25 m, 20 m/s, 4.3 m radius orb that nearsights through walls regardless of facing.
-- Tests: `server/test-abilities.js` (Flashpoint 2.25, Guiding Light 2.25, Paranoia 2 s; Leer `until - at` = 1.6 s),
+- Paranoia: now the wiki orb, see "Omen Paranoia" below (was a point flash with a facing check on the server and a
+  14 m/s strip on the client).
+- Tests: `server/test-abilities.js` (Flashpoint 2.25, Guiding Light 2.25; Leer `until - at` = 1.6 s),
   `server/test-ults.js` (Curveball blind > 1.1 and <= 1.5 s).
 
 ### Killjoy Nanoswarm (wiki.playvalorant.com/en-us/Nanoswarm, fetched 2026-10-25)
@@ -345,3 +345,20 @@ bot Killjoy) 2.5 m, 45/s from the trigger for 5 s, bot swarms triggering on an e
 - Tests: `server/test-ults.js` (4.3 m burns / 4.7 m does not; nothing in the first 0.95 s, 45 by 2 s, still burning at 4.8 s,
   gone at 5.2 s), `work/test_ability_equip.cjs` (XNANO == DEV.nanoswarm; C triggers; no damage before 1 s; 4.3 m burns,
   4.7 m not; disc scale 1.8), `work/test_friendly_fire_offline.cjs` (ally pass wiring reads `XNANO.dps * dt`).
+
+### Omen Paranoia (wiki.playvalorant.com/en-us/Paranoia, fetched 2026-10-25)
+
+Wiki stats: an orb (missile) along the aim, 25 m travel at 20 m/s, 4.3 m radius, nearsight 2 s (vision radius 7.5 m),
+friendly fire Yes. Was: server a point flash 1.6 m up with a facing check that blinded enemies 2 s; offline client a 5 x
+2.4 m box moving 14 m/s for 2.2 s (31 m) that blinded bots within 1.2 m along / 2.8 m beside it.
+
+- Server: `abilities.js PARANOIA = {speed: 20, range: 25, radius: 4.3, nearsight: 2}`; Q pushes a `paranoia` effect from
+  the eye along the aim, `tickParanoia` sweeps the segment travelled each tick (so no tunnelling at low tick rates) and
+  nearsights every unit but Omen within 4.3 m once (`nearsightUntil`, the same status Leer uses), with no line-of-sight
+  or facing check; the effect ends at 25 m. Server bots have no nearsight model, so a nearsighted bot is held like a
+  blinded one (`spike.js`, as the offline client's `b.blind`; this also applies to Leer now).
+- Client: `XPAR = {speed: 20, range: 25, r: 4.3, ns: 2}`; the player's orb moves 20 m/s for 1.25 s and puts every bot
+  and ally bot within 4.3 m of its path on `b.blind = 2` once each (bots have no nearsight model, as for Leer / Seekers).
+- Tests: `server/test-abilities.js` (PARANOIA table; ally hit at 0.2 s, 10 m enemy not yet; hit by 0.45 s through a
+  wall while facing away, 2 s, not blind; 4 m off the line at 20 m hit; 4.6 m off, 5 m past the end and Omen not; orb gone),
+  `work/test_ability_equip.cjs` (XPAR == PARANOIA; same geometry offline with `los` forced false).
