@@ -13,9 +13,11 @@ const check=(n,ok,d)=>{R.checks.push([n,ok?'pass':'FAIL',d]);log('check '+n,ok?'
 const SIZES=(process.env.SIZES||'1280x720,640x360,390x844').split(',').map(s=>s.split('x').map(Number));
 
 // Team-wipe spectate on native Lotus (raised sites), headless Chromium (SwiftShader, LOW), real map + nav:
-// offline 5v5 attack, Spike planted on the highest site, enemies on the site floor, every teammate and the player killed by an
-// enemy -> after the killed-by card the camera follows the killer at eye height (>= nav floor + 1.2), real Space key cycles
-// enemies (label "· ENEMY"), real V key third person stays above the floor, nobody alive -> spike orbit above the site floor.
+// offline 5v5 attack, Spike planted on the highest site, enemies and two living teammates on the site floor, the player and the
+// other teammates killed by an enemy -> after the killed-by card the camera is a LIVING TEAMMATE's first-person view at eye
+// height (>= nav floor + 1.2, label "SPECTATING <NAME>", never an enemy), real Space key cycles to the other living teammate,
+// real V key does nothing (no third-person spectate since f5846aa), last teammates dead -> "NO TEAMMATES ALIVE", no enemy
+// follow and no spike orbit (removed in f5846aa: VALORANT spectates living teammates only, first person).
 // Then Deathmatch on Lotus: a death never follows an enemy.   node work/browser_spectate_lotus.cjs <out.json>
 (async()=>{
  const browser=await chromium.launch({headless:true,args:['--no-sandbox','--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader','--disable-dev-shm-usage','--ignore-gpu-blocklist','--in-process-gpu','--renderer-process-limit=1']});
@@ -34,31 +36,30 @@ const SIZES=(process.env.SIZES||'1280x720,640x360,390x844').split(',').map(s=>s.
   await X(`[...document.querySelectorAll('button')].filter(b=>/^got it$/i.test(b.textContent.trim())&&b.offsetParent).forEach(b=>b.click());1`);
   await X(`if(!window.__rp){window.__rp=1;window.__allow=3;const r0=renderer.render;renderer.render=function(sc,c){if(sc===scene){if(window.__allow<=0)return;window.__allow--;}return r0.call(this,sc,c);};}1`);};
  await go('startFive');log('match started',await X('JSON.stringify({mode,map:FV.map,bots:bots.length,allies:allies.length,atk:FV.atk})'));
- const cam=tag=>X(`JSON.stringify((()=>{const a=xKL.cur,C=nmActive(),cy=camera.position.y,lb=xKL.sn?xKL.sn.textContent:'';if(a){const q=a.g.position,f=nmHeight(C,q.x,q.z,q.y+.5);return {tag:${JSON.stringify('x')}.replace('x',${JSON.stringify(tag)}),who:a.name,enemy:bots.includes(a),alive:!!a.alive,cy:+cy.toFixed(2),f:+f.toFixed(2),qy:+q.y.toFixed(2),lb,ok:!!a.alive&&cy>=f+1.2-1e-3};}
-  const o=typeof XOB!=="undefined"&&XOB.orb;if(!o)return {tag:${JSON.stringify(tag)},none:true,cy,lb,running};const f=nmHeight(C,o.cx,o.cz,(o.cy||0)+.5);return {tag:${JSON.stringify(tag)},orbit:true,cy:+cy.toFixed(2),f:+f.toFixed(2),lb,ok:cy>=f+1.2};})())`).then(JSON.parse);
+ const cam=tag=>X(`JSON.stringify((()=>{const a=xKL.cur,C=nmActive(),cy=camera.position.y,lb=xKL.sn?xKL.sn.textContent:'';if(a){const q=a.g.position,f=nmHeight(C,q.x,q.z,q.y+.5);return {tag:${JSON.stringify('x')}.replace('x',${JSON.stringify(tag)}),who:a.name,enemy:bots.includes(a),ally:allies.includes(a),alive:!!a.alive,cy:+cy.toFixed(2),f:+f.toFixed(2),qy:+q.y.toFixed(2),lb,tp:!!(xKL.tp||xKL.t3),ok:!!a.alive&&cy>=f+1.2-1e-3};}
+  return {tag:${JSON.stringify(tag)},none:true,cy:+cy.toFixed(2),lb,running,orbit:typeof XOB!=="undefined"&&!!XOB.orb,tp:!!(xKL.tp||xKL.t3)};})())`).then(JSON.parse);
  // set up: attack side, Spike planted on the site with the highest floor, enemies placed on nav nodes on that site floor
  const st=JSON.parse(await X(`JSON.stringify((()=>{const C=nmActive();FV.buy=0;try{buyMenu(false)}catch(e){}timeLeft=999;
   let best=null;for(const k of Object.keys(SITES)){const x0=SITES[k][0],z0=SITES[k][1],f=nmHeight(C,x0,z0,30);if(Number.isFinite(f)&&(!best||f>best.f))best={k,x0,z0,f};}
   const {k,x0,z0,f}=best;FV.sp.st="plant";FV.sp.site=k;FV.sp.x=x0;FV.sp.z=z0;FV.sp.c=null;FV.sp.t=9999;/* fuse held: SwiftShader frames take minutes of real time and the offline clock is real time, a 45 s fuse detonated and killed the enemies before the Space check */spike.position.set(x0,f+.4,z0);
   const N=C.nav.nodes.filter(n=>Math.hypot(n[0]-x0,n[2]-z0)<9&&Math.abs(n[1]-f)<.8);
   bots.forEach((b,i)=>{const n=N[(i*7)%Math.max(1,N.length)]||[x0+i,f,z0];b.alive=true;b.hp=100;b.g.position.set(n[0],n[1],n[2]);if(b.pos&&b.pos.set)b.pos.set(n[0],n[1],n[2]);b.nt=true;});
-  allies.forEach(a=>{a.nt=true;});return {site:k,x0,z0,floor:f,nodes:N.length,atk:FV.atk,running};})())`));
+  allies.forEach((a,i)=>{a.nt=true;if(i<2){const n=N[(i*5+3)%Math.max(1,N.length)]||[x0-i,f,z0];a.alive=true;a.hp=100;a.g.position.set(n[0],n[1],n[2]);if(a.pos&&a.pos.set)a.pos.set(n[0],n[1],n[2]);}});return {site:k,x0,z0,floor:f,nodes:N.length,atk:FV.atk,running};})())`));
  log('setup',st);check('Lotus site floor is raised (>= 3 m)',st.floor>=3,JSON.stringify(st));
  await frames(2);
- const killer=await X('bots[1].name');
- await X(`(()=>{allies.forEach(a=>{a.hp=0;allyDie(a,bots[1].name,"Vandal")});hurt(player,500,bots[1].name);if(player.hp>0||!xKL.on)pDie(bots[1].name,"Vandal");return 1})()`);
- log('wipe',await X('JSON.stringify({running,php:player.hp,al:allies.filter(a=>a.alive).length,kl:xKL.on,sp:FV.sp.st})'));
+ const mates=JSON.parse(await X('JSON.stringify(allies.slice(0,2).map(a=>a.name))'));
+ await X(`(()=>{allies.slice(2).forEach(a=>{a.hp=0;allyDie(a,bots[1].name,"Vandal")});hurt(player,500,bots[1].name);if(player.hp>0||!xKL.on)pDie(bots[1].name,"Vandal");return 1})()`);
+ log('death',await X('JSON.stringify({running,php:player.hp,al:allies.filter(a=>a.alive).length,kl:xKL.on,sp:FV.sp.st})'));
  // the killed-by card holds 2 s of game time (offline real clock)
  for(let i=0;i<6;i++){await page.waitForTimeout(800);await frames(1);}
- let r=await cam('killer');log('cam killer',r);
- check('team wiped after the plant: camera follows the killer, an enemy, at eye height above the site floor',r.who===killer&&r.enemy&&r.ok&&r.cy-r.f<2.2&&/ENEMY/.test(r.lb),JSON.stringify(r));await shot('killer');
- await page.keyboard.press('Space');await frames(2);await page.waitForTimeout(400);await frames(1);r=await cam('space');log('cam space',r);
- check('Space (real key) cycles to another living enemy, still above the floor',r.enemy&&r.ok&&r.who!==killer,JSON.stringify(r));await shot('space');
- await page.keyboard.press('KeyV');for(let i=0;i<3;i++){await page.waitForTimeout(500);await frames(1);}r=await cam('third');r.sp=await X('xKL.tp||xKL.t3||null');log('cam V',r);
- check('V (real key) third person: camera above the target floor',r.ok,JSON.stringify(r));await shot('third');
- await page.keyboard.press('KeyV');await frames(1);
- await X(`bots.forEach(b=>{b.alive=false;b.hp=0;try{scene.remove(b.g)}catch(e){}});1`);for(let i=0;i<3;i++){await page.waitForTimeout(400);await frames(1);}
- r=await cam('orbit');log('cam orbit',r);check('nobody alive: spike orbit above the site floor',r.orbit&&r.ok&&r.cy>st.floor+1.2,JSON.stringify(r));await shot('orbit');
+ let r=await cam('teammate');log('cam teammate',r);
+ check('dead after the plant: camera is a living teammate (never an enemy), first person at eye height above the site floor',mates.includes(r.who)&&r.ally&&!r.enemy&&r.ok&&r.cy-r.f<2.2&&/^SPECTATING /.test(r.lb)&&!/ENEMY/.test(r.lb),JSON.stringify(r));await shot('teammate');
+ await page.keyboard.press('Space');await frames(2);await page.waitForTimeout(400);await frames(1);const r2=await cam('space');log('cam space',r2);
+ check('Space (real key) cycles to the other living teammate, still above the floor',r2.ally&&!r2.enemy&&r2.ok&&r2.who!==r.who&&mates.includes(r2.who),JSON.stringify(r2));await shot('space');
+ await page.keyboard.press('KeyV');for(let i=0;i<3;i++){await page.waitForTimeout(500);await frames(1);}r=await cam('v');log('cam V',r);
+ check('V (real key): no third-person spectate, same teammate first person',!r.tp&&r.who===r2.who&&r.ok&&r.cy-r.f<2.2,JSON.stringify(r));
+ await X(`allies.slice(0,2).forEach(a=>{a.hp=0;allyDie(a,bots[1].name,"Vandal")});1`);for(let i=0;i<3;i++){await page.waitForTimeout(400);await frames(1);}
+ r=await cam('wiped');log('cam wiped',r);check('team wiped: NO TEAMMATES ALIVE, no enemy follow, no spike orbit, no third person',r.none&&!r.orbit&&!r.tp&&/NO TEAMMATES ALIVE/.test(r.lb),JSON.stringify(r));await shot('wiped');
  // Deathmatch: a death never follows an enemy
  await X('try{leave()}catch(e){}1');await page.waitForTimeout(1500);
  await go('startDM');log('dm started',await X('JSON.stringify({mode,map:FV.map,dm:FV.dm,bots:bots.length})'));

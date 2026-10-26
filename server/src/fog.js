@@ -1,7 +1,7 @@
 // Fog of war (anti-wallhack, after Riot's "Demolishing Wallhacks with VALORANT's Fog of War",
 // technology.riotgames.com/news/demolishing-wallhacks-valorants-fog-war): the server only sends an enemy's position to a
-// team that can see it, hear it, or has it revealed. Everything else about the enemy row stays (name, agent, alive, weapon,
-// kills), so the scoreboard and the alive pips keep working; a hidden row carries no position, aim, HP, ammo or crouch and
+// team that can see it, hear it, or has it revealed. Identity stays (name, agent, alive, kills), so the scoreboard and the
+// alive pips keep working; a hidden row carries no position, aim, HP, ammo, crouch or weapon and
 // is flagged [22] = 1 (the page parks that enemy off screen until it is relevant again: server_runtime.js netFog).
 //
 //  - Sight: a world ray (smokes and Barrier Orbs do not count, as in VALORANT: a smoke edge still shows the body) from a
@@ -64,9 +64,10 @@ export function fogPass(sim,snap){const F=sim.fog||(sim.fog={t:-1,n:0,pairs:new 
 // lets the dead spectate an enemy (only living teammates, first person), so an eliminated team keeps the fog like
 // everyone else (user, 2026-10-26: "You shouldn't be able to spectate enemy"). Kept for tests / tools only.
 export function fogEliminated(sim,g){if(sim.mode!=='five')return false;let any=false;for(const u of sim.units){if(fogGroup(sim,u)!==g)continue;any=true;if(u.alive||u.runItBack)return false;}return any;}
-// A hidden enemy row: identity, team, alive, weapon (for the shot sound) and input seq stay; position, aim, HP, armour,
-// ammo, crouch, Regen pool and input timing go; [22] = 1.
-export function fogRow(r){const o=r.slice();o[4]=o[5]=o[6]=o[7]=0;o[8]=o[10]?100:0;o[9]=0;o[15]=o[16]=0;o[17]=o[18]=0;o[19]=o[20]=0;o[21]=-1;o[22]=1;if(o.length>23)o[23]=0;return o;}
+// A hidden enemy row: identity, team, alive and input seq stay; position, aim, HP, armour, ammo, crouch, Regen pool,
+// input timing and the weapon ([11] = '': what an unseen enemy holds is not ours to know - VALORANT shows enemy guns only
+// in the world when seen and in the kill feed; a hidden shooter's shot never reaches us, fogView drops it) go; [22] = 1.
+export function fogRow(r){const o=r.slice();o[11]='';o[4]=o[5]=o[6]=o[7]=0;o[8]=o[10]?100:0;o[9]=0;o[15]=o[16]=0;o[17]=o[18]=0;o[19]=o[20]=0;o[21]=-1;o[22]=1;if(o.length>23)o[23]=0;return o;}
 // The snapshot (or any frame with unit rows u and effect rows fx) as viewer may receive it.
 export function fogView(sim,snap,viewer){if(!snap||!viewer||sim.phase!=='game'||sim.fogOff)return snap;const F=fogPass(sim,snap),g=fogGroup(sim,viewer),rel=F.rel.get(g),now=sim.time,kill=viewer.fogKiller&&viewer.fogKiller.until>=now?viewer.fogKiller.id:-1,hide=F.hide.get(g);
  const byId=new Map(sim.units.map(u=>[u.id,u])),seen=r=>{if(r[10])return rel&&rel.get(r[0])>=now;const u=byId.get(r[0]),d=u&&u.fogDeadAt;/* dead: only if it was relevant to us when it died (its corpse / death spot) */return d!==undefined&&rel&&rel.get(r[0])>=d;};

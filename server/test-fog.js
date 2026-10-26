@@ -14,8 +14,10 @@ const frame=(s,ev)=>({t:'s',u:s.rows(),ev,fx:s.snapshot?.().fx});
 const view=(s,u,ev=[])=>{s.time+=.05;fogView(s,frame(s,ev),u);s.time+=.05;return fogView(s,frame(s,[]),u);};
 const row=(v,u)=>v.u.find(r=>r[0]===u.id);
 const adv=(s,t)=>{s.time+=t;};
-// 1. behind the wall: hidden row (identity / team / alive / weapon stay; position, aim, HP, armour, ammo gone; [22] = 1)
-{const {s,a,b}=setup();const r=row(view(s,a),b);assert.equal(r[22],1,'enemy behind the wall is hidden');assert.deepEqual([r[0],r[1],r[2],r[3],r[10],r[11]],[b.id,b.team,'B','Jett',1,b.weapon]);
+// 1. behind the wall: hidden row (identity / team / alive stay; position, aim, HP, armour, ammo and the WEAPON gone - VALORANT
+// never tells you what an unseen enemy holds; [22] = 1)
+{const {s,a,b}=setup();b.weapon='Operator';const r=row(view(s,a),b);assert.equal(r[22],1,'enemy behind the wall is hidden');assert.deepEqual([r[0],r[1],r[2],r[3],r[10],r[11]],[b.id,b.team,'B','Jett',1,''],'no weapon in a hidden row');
+ b.z=20;adv(s,.05);assert.equal(row(view(s,a),b)[11],'Operator','in sight: the gun is seen');b.z=0;adv(s,FOG.grace+.2);view(s,a);adv(s,.05);
  assert.deepEqual([r[4],r[5],r[6],r[7],r[9],r[15],r[16]],[0,0,0,0,0,0,0],'no position, aim, armour, ammo');
  const me=row(view(s,a),a);assert.equal(me[22],0,'own row untouched');assert.equal(me[4],-10);
  // the client's row validator (server_runtime.js netClean) still accepts a hidden row: >= 15 fields, numbers where it wants them
@@ -178,4 +180,9 @@ const adv=(s,t)=>{s.time+=t;};
  assert.deepEqual(Object.keys(pov).map(Number),[c.id],'only the living teammate');assert.deepEqual(pov[c.id],[1,1.2,2]);
  c.input={};c.blindUntil=0;c.reloadAt=0;assert.deepEqual(s.roundState(a).pov[c.id],[0,0,0]);
  assert.ok(!JSON.stringify(s.roundState(a)).includes('"'+b.id+'":'),'no enemy entry anywhere in the round state');}
+// 28. Enemy credits (spike.js roundState ec): only what each enemy STARTED the round with (u.roundCr, set at the buy-phase
+// start), never their live credits; own team live (cr); no enemy loadout field anywhere in the round state
+{const {s,a,b}=setup();a.credits=3000;b.credits=4500;s.newRound();const ra=s.roundState(a);assert.deepEqual(ra.ec,{B:b.credits},'enemy round-start credits');const start=b.credits;
+ b.credits=200;b.primary='Operator';b.armor=50;const r2=s.roundState(a);assert.deepEqual(r2.ec,{B:start},'live spending not shown');assert.equal(r2.cr.B,undefined,'no enemy in cr');assert.equal(r2.cr.A,a.credits);
+ assert.ok(!JSON.stringify(r2).includes('Operator'),'no enemy weapon in the round state');}
 console.log('test-fog: ok');

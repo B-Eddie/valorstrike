@@ -41,7 +41,11 @@ block+='\n'+(root/'work/finishers_runtime.js').read_text().rstrip('\n')
 # Spectate POV (first-person view of the followed teammate; work/spectate_runtime.js), last: it wraps xskGet / xvFPClear / bfxBot / mpCliRS / mpCliSnap / vmTick / xHud.
 pa='// ---- SPECTATE POV ----';pb='// ---- END SPECTATE POV ----'
 if pa in s:s=s[:s.index(pa)]+s[s.index(pb)+len(pb):]
-block+='\n'+(root/'work/spectate_runtime.js').read_text().rstrip('\n');mark='xReady = true; // every mode is initialised; lobby launches may now start them';s=s.replace(mark,block+'\n'+mark)
+block+='\n'+(root/'work/spectate_runtime.js').read_text().rstrip('\n')
+# Enemy info (what the scoreboard / panels may show of the enemy team; work/enemy_info_runtime.js), outermost fBotBuy / sbCred / mpCliRS wrappers.
+ea='// ---- ENEMY INFO ----';eb='// ---- END ENEMY INFO ----'
+if ea in s:s=s[:s.index(ea)]+s[s.index(eb)+len(eb):]
+block+='\n'+(root/'work/enemy_info_runtime.js').read_text().rstrip('\n');mark='xReady = true; // every mode is initialised; lobby launches may now start them';s=s.replace(mark,block+'\n'+mark)
 if '<script src="models/valorant/manifest.js"></script>' not in s:s=s.replace('<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>','<script src="models/valorant/manifest.js"></script>\n<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>')
 # Find the actual three script tag, which may use an onerror handler.
 if '<script src="models/valorant/manifest.js"></script>' not in s:s=s.replace('<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js"></script>','<script src="models/valorant/manifest.js"></script>\n<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js"></script>')

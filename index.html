@@ -10359,10 +10359,11 @@ function sbUlt(n) { // [charge, max]: the player's real ult charge; bots only if
   return [0, 7];
 }
 function sbCred(n, p) { try { if (mode === "five") { if (n === "You") return FV.cr; if (FV.bs && FV.bs[n] && typeof FV.bs[n].cr === "number") return FV.bs[n].cr; } const u = sbUnit(n); if (u) { const c = u.cr != null ? u.cr : u.credits; if (typeof c === "number") return c; } } catch (e) {} return sbEcon(p); }
+function sbCredTxt(v) { return typeof v === "number" && Number.isFinite(v) ? v.toLocaleString("en-US") : "—"; }
 function sbMode() { try { if (mode === "five") return FV.dm ? (FV.tdm ? "Team Deathmatch" : "Deathmatch") : FV.sr ? "Spike Rush" : "5v5 · Round " + (FV.you + FV.them + 1); if (mode === "duel") return "Operator Duel"; if (mode === "rifle") return "Rifle 2v2"; } catch (e) {} return "Retake"; }
 function sbTable(list, cls, alive) {
   const rows = list.map((n) => { const p = SB[n], u = sbUlt(n), pips = Array.from({ length: u[1] }, (_, i) => `<i${i < u[0] ? ' class="on"' : ""}></i>`).join("");
-    return `<tr class="${n === "You" ? "me " : ""}${alive && !alive(n) ? "dead" : ""}"><td class="ag">${sbTile(n)}</td><td class="nm">${hudEscape(n)}</td><td class="ul"><span class="x-sbp" aria-label="Ult ${u[0]} of ${u[1]}">${pips}</span></td><td class="k">${p.k}</td><td class="d">${p.d}</td><td class="a">${p.a || 0}</td><td class="w">${sbLoadout(n, cls === "al", !alive || alive(n))}</td><td class="ec">${Number(sbCred(n, p)).toLocaleString("en-US")}</td><td class="pg">${sbPing(n)}</td></tr>`; }).join("");
+    return `<tr class="${n === "You" ? "me " : ""}${alive && !alive(n) ? "dead" : ""}"><td class="ag">${sbTile(n)}</td><td class="nm">${hudEscape(n)}</td><td class="ul"><span class="x-sbp" aria-label="Ult ${u[0]} of ${u[1]}">${pips}</span></td><td class="k">${p.k}</td><td class="d">${p.d}</td><td class="a">${p.a || 0}</td><td class="w">${sbLoadout(n, cls === "al", !alive || alive(n))}</td><td class="ec">${sbCredTxt(sbCred(n, p))}</td><td class="pg">${sbPing(n)}</td></tr>`; }).join("");
   return `<table class="x-sbt ${cls}"><colgroup><col class="ag"><col class="nm"><col class="ul"><col class="n"><col class="n"><col class="n"><col class="w"><col class="ec"><col class="pg"></colgroup><thead><tr><th class="ag"></th><th class="nm">${cls === "al" ? "NAME" : "NAME"}</th><th class="ul">Ultimate</th><th>K</th><th>D</th><th>A</th><th class="w">Loadout</th><th class="ec">Creds</th><th class="pg">Ping</th></tr></thead><tbody>${rows}</tbody></table>`;
 }
 { const k0 = sbKill; sbKill = function () { const r = k0.apply(this, arguments); try { if (typeof allies === "undefined") return r;
@@ -10930,7 +10931,7 @@ function xObsTick(force) { const on = xObsShow(); if (XOB.el.classList.contains(
   const now = performance.now(); if (!force && now - XOB.t < 120) return; XOB.t = now; const T = sbTeams(), buy = FV.buy > 0;
   T.forEach((L, ti) => XOB.rows[ti].forEach((R, i) => { const n = L[i]; R.r.hidden = !n; if (!n) return; const me = n === "You", u = me ? player : sbUnit(n);
     let ag = n; try { ag = me ? J.pick || "Jett" : (u && xAg(u)) || (typeof xAgOf === "function" ? xAgOf(n) : n); } catch (e) {}
-    const al = me ? player.hp > 0 : !!(u && u.alive && u.hp > 0), eh = ti === 1 && buy, hp = al && !eh ? Math.max(0, Math.min(100, u.hp)) : 0, ar = al && !eh ? Math.max(0, Math.min(50, u.armor || 0)) : 0; // enemy buys (weapon, shield) hidden in the buy phase, as in Valorant
+    const al = me ? player.hp > 0 : !!(u && u.alive && u.hp > 0), eh = ti === 1, hp = al && !eh ? Math.max(0, Math.min(100, u.hp)) : 0, ar = al && !eh ? Math.max(0, Math.min(50, u.armor || 0)) : 0; // enemy loadout / HP / shield never shown (buy phase or live round): VALORANT shows an enemy's agent, alive / dead and ult status only; their gun only in the world when seen and in the kill feed (user 2026-10-26: "You shouldn't be able to ... see what guns the enemy has")
     let w = "—"; try { w = me ? (rw === "knife" ? "Knife" : wName()) : (u && u.w) || "Classic"; } catch (e) {} if (eh) w = "";
     const ul = sbUlt(n), cr = ti === 0 && buy ? String(sbCred(n, SB[n] || {})) : "";
     const k = [ag, n, al ? 1 : 0, Math.round(hp), Math.round(ar), w, ul[0], ul[1], cr, eh ? 1 : 0].join("|"); if (k === R.k) return; R.k = k;
@@ -14488,12 +14489,12 @@ addEventListener('keydown',e=>{if(!(NET.socket&&MP.st==='game'&&MP.m5)||xKbSkip(
 // enemy known (scoreboard, alive pips, kill feed) but not drawn: before the page reads the row its position is pinned to
 // where the enemy was last drawn (no jump toward 0,0,0); after, the model leaves the scene, its interpolation buffer is
 // emptied and u.fog is set (shots, the minimap and name tags skip it). Its first relevant row brings it back where it is.
-function netFogPre(m){if(!NET.socket||!m||!Array.isArray(m.u))return;const all=bots.concat(allies);for(const e of m.u){if(!Array.isArray(e)||e[0]===MP.me)continue;const u=all.find(x=>x.nid===e[0]);if(e[22]===1){if(u&&u.g){e[4]=u.g.position.x;e[5]=u.g.position.y;e[6]=u.g.position.z;e[7]=u.g.rotation.y;u.fog=1;/* before the page's event loop: no shot sound at a stale spot */}}else if(u&&u.fog){u.fog=0;if(u.nb)u.nb.length=0;u.fogBack=1;}}}
+function netFogPre(m){if(!NET.socket||!m||!Array.isArray(m.u))return;const all=bots.concat(allies);for(const e of m.u){if(!Array.isArray(e)||e[0]===MP.me)continue;const u=all.find(x=>x.nid===e[0]);if(e[22]===1){/* a hidden row has no weapon (server fogRow [11] = ''): keep the gun last seen in the world (a new unit: Classic) */if(e[11]==='')e[11]=u&&u.w&&WEAP[u.w]?u.w:'Classic';if(u&&u.g){e[4]=u.g.position.x;e[5]=u.g.position.y;e[6]=u.g.position.z;e[7]=u.g.rotation.y;u.fog=1;/* before the page's event loop: no shot sound at a stale spot */}}else if(u&&u.fog){u.fog=0;if(u.nb)u.nb.length=0;u.fogBack=1;}}}
 function netFogPost(m){if(!NET.socket||!m||!Array.isArray(m.u))return;const all=bots.concat(allies);for(const e of m.u){if(!Array.isArray(e)||e[0]===MP.me)continue;const u=all.find(x=>x.nid===e[0]);if(!u)continue;
   if(e[22]===1){u.fog=1;u.fogBack=0;if(u.nb)u.nb.length=0;if(u.g&&u.g.parent)u.g.parent.remove(u.g);}
   else if(u.fogBack){u.fogBack=0;if(u.alive&&u.g){u.g.position.set(e[4],e[5]||0,e[6]);u.g.rotation.y=e[7];if(u.g.parent!==scene)scene.add(u.g);}}}}
 const netFog0=mpCliSnap;mpCliSnap=function(m){netFogPre(m);const r=netFog0.apply(this,arguments);netFogPost(m);return r;};
-if(typeof mpMkUnit==='function'){const netFogMk0=mpMkUnit;mpMkUnit=function(e){const u=netFogMk0.apply(this,arguments);if(NET.socket&&u&&Array.isArray(e)&&e[22]===1){u.fog=1;if(u.nb)u.nb.length=0;if(u.g&&u.g.parent)u.g.parent.remove(u.g);}return u;};}/* guarded: test sandboxes slice this file without the page */
+if(typeof mpMkUnit==='function'){const netFogMk0=mpMkUnit;mpMkUnit=function(e){if(Array.isArray(e)&&e[22]===1&&e[11]==='')e[11]='Classic';const u=netFogMk0.apply(this,arguments);if(NET.socket&&u&&Array.isArray(e)&&e[22]===1){u.fog=1;if(u.nb)u.nb.length=0;if(u.g&&u.g.parent)u.g.parent.remove(u.g);}return u;};}/* guarded: test sandboxes slice this file without the page */
 // Remote footsteps (online): the page played footsteps only for its own offline bots, so online nobody heard an enemy (or
 // ally) run. Rows carry [23] = running footsteps (server simulation.js loud: moving on live input without walk / duck);
 // a drawn, live, relevant unit with it plays SFX.step (25 m, panned) every 0.4 s, the first step 0.3 s after it starts
@@ -19354,6 +19355,27 @@ function xspvTick(dt) {
 { const h0 = xHud; xHud = function () { const r = h0.apply(this, arguments); try { const a = xspvTarget(); if (a && typeof MP !== 'undefined' && MP.on && Number.isFinite(a.nam)) setT('xMag', a.nam); } catch (e) {} return r; }; }
 window.xSpectatePov = XSPV;
 // ---- END SPECTATE POV ----
+// ---- ENEMY INFO ----
+// What the player may know about the ENEMY team, as VALORANT (user 2026-10-26: "You shouldn't be able to ... see what guns
+// the enemy has"). The Tab scoreboard shows an enemy's agent, K / D / A, ult points (live: VALORANT's scoreboard shows
+// enemy ult status, Dignitas "All the Valuable Information on the VALORANT Scoreboard Tab") and the credits they STARTED
+// the round with (VALORANT's enemy credits are updated only at the round start - namu.wiki VALORANT/System 1.3 - never
+// their live spending); never an enemy's weapon, armor or live credits (sbLoadout '—', the spectate panels show no gun /
+// HP / shield for an enemy row, the server sends a hidden enemy row without its weapon and only `ec`, round-start credits,
+// in roundState). The kill feed keeps the killer's weapon (VALORANT does).
+//  - offline 5v5: each bot's credits are taken just before it shops for the round (outermost fBotBuy: every economy
+//    path - srOn, XBV team calls, mp5 seats - runs inside it), keyed by round + side + match;
+//  - online: roundState.ec (server spike.js u.roundCr at the buy-phase start).
+var XEI = { m: 0 };
+function xeiKey() { try { return XEI.m + '|' + (FV.you + FV.them) + '|' + (FV.atk ? 1 : 0); } catch (e) { return ''; } }
+if (typeof sbReset === 'function') { const r0 = sbReset; sbReset = function () { XEI.m++; try { FV.ec = null; } catch (e) {} return r0.apply(this, arguments); }; }
+if (typeof fBotBuy === 'function') { const b0 = fBotBuy; fBotBuy = function (n) { try { if (mode === 'five' && !FV.dm && FV.bs && FV.bs[n] && !(typeof MP !== 'undefined' && MP.on)) { const k = xeiKey(); if (!FV.ec || FV.ec.k !== k) FV.ec = { k }; if (!(n in FV.ec) && Number.isFinite(FV.bs[n].cr)) FV.ec[n] = FV.bs[n].cr; } } catch (e) {} return b0.apply(this, arguments); }; }
+if (typeof mpCliRS === 'function') { const r0 = mpCliRS; mpCliRS = function (m) { const r = r0.apply(this, arguments); try { if (m && m.ec && typeof m.ec === 'object') { const E = { k: 'net' }; for (const n in m.ec) if (Number.isFinite(m.ec[n])) E[mpIn(n)] = m.ec[n] | 0; FV.ec = E; } } catch (e) {} return r; }; }
+function xeiEnemy(n) { try { if (n === 'You') return false; const T = sbTeams(); return T[1].indexOf(n) >= 0 && T[0].indexOf(n) < 0; } catch (e) { return false; } }
+// an enemy's credits: the round-start figure, else unknown ('—'); never their live credits (5v5 economy modes)
+if (typeof sbCred === 'function') { const c0 = sbCred; sbCred = function (n) { try { if (mode === 'five' && !FV.dm && xeiEnemy(n)) { const v = FV.ec && FV.ec[n]; return Number.isFinite(v) ? v : '—'; } } catch (e) {} return c0.apply(this, arguments); }; }
+window.xEnemyInfo = XEI;
+// ---- END ENEMY INFO ----
 xReady = true; // every mode is initialised; lobby launches may now start them
 { let rb = null; try { rb = sessionStorage.getItem("vs.retry"); sessionStorage.removeItem("vs.retry"); } catch (e) {} // Retry on the engine error reloaded the page: relaunch the same mode
   if (rb) setTimeout(() => { const b = $(rb); if (b) b.click(); }, 300); }
