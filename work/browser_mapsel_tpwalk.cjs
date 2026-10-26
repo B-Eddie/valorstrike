@@ -7,6 +7,7 @@
 //    scene) at ~6 samples; per sample the world positions of hips / spine / head / feet bones. A waist stretch shows as the
 //    hips-to-head distance changing while the feet move (upper body left behind). Screenshots work/validation/tpwalk-side-<i>.jpg.
 //   node work/browser_mapsel_tpwalk.cjs <out.json>   env MAPS=bind,haven
+// Visibility uses computed style + client rects: #pre / #xAg are position:fixed, so offsetParent is always null (mapsel1 never clicked GO).
 const PW='/workspace/work/pw/node_modules/playwright';process.env.PLAYWRIGHT_BROWSERS_PATH=process.env.PLAYWRIGHT_BROWSERS_PATH||'/workspace/work/pw/browsers';
 process.env.LD_LIBRARY_PATH=(process.env.LD_LIBRARY_PATH||'')+':/workspace/work/pw/libs';
 const {chromium}=require(PW),fs=require('fs'),path=require('path');const ROOT=process.env.ROOT||path.resolve(__dirname,'..'),QA='/workspace/work/qa/',OUT=process.argv[2]||'/tmp/mapsel.json',SHOT=ROOT+'/work/validation/';
@@ -24,7 +25,7 @@ const MAPS=(process.env.MAPS||'bind,haven').split(',');
  const X=s=>page.evaluate(s=>window.__xe(s),s);
  await page.goto('http://127.0.0.1:8876/',{waitUntil:'domcontentloaded'});await page.waitForFunction(()=>window.__xe&&window.xValorantAssets,null,{timeout:300000,polling:1000});log('assets',1);
  await page.getByRole('button',{name:'Got it',exact:true}).click({timeout:5000}).catch(()=>{});
- const vis=sel=>X(`(()=>{const e=document.querySelector(${JSON.stringify(sel)});return !!(e&&e.offsetParent!==null&&!e.hidden);})()`);
+ const vis=sel=>X(`(()=>{const e=document.querySelector(${JSON.stringify(sel)});return (e=>!!(e&&!e.hidden&&getComputedStyle(e).display!=='none'&&getComputedStyle(e).visibility!=='hidden'&&e.getClientRects().length))(e);})()`);
  const st=()=>X(`JSON.stringify({pick:FV.pick,map:FV.map,nm:(()=>{try{const c=window.xNativeMaps&&window.xNativeMaps.state.current;return c?(c.key||c.meta&&c.meta.key||c.meta&&c.meta.name||null):null}catch(e){return 'err'}})(),preMh:(document.getElementById('preMh')||{}).textContent,preMt:(document.getElementById('preMt')||{}).textContent,xQPick:window.xQPick||null,running,ld:!!window.xLdOn})`).then(JSON.parse);
  let first=true;
  for(const m of MAPS){
@@ -35,7 +36,7 @@ const MAPS=(process.env.MAPS||'bind,haven').split(',');
   log(m+' before START',await st());
   await page.click('#xqPlay',{timeout:20000}).catch(e=>log('xqPlay',String(e).slice(0,120)));
   // pre screen / agent select, as a user would
-  for(let t=0;t<600;t++){const s=await X(`JSON.stringify({run:running&&!window.xLdOn&&bots.length>0,pre:!!(document.getElementById('pre')&&document.getElementById('pre').offsetParent!==null),ag:!!(document.getElementById('xAg')&&document.getElementById('xAg').offsetParent!==null)})`).then(JSON.parse);
+  for(let t=0;t<600;t++){const s=await X(`JSON.stringify({run:running&&!window.xLdOn&&bots.length>0,pre:(e=>!!(e&&!e.hidden&&getComputedStyle(e).display!=='none'&&getComputedStyle(e).visibility!=='hidden'&&e.getClientRects().length))(document.getElementById('pre')),ag:(e=>!!(e&&!e.hidden&&getComputedStyle(e).display!=='none'&&getComputedStyle(e).visibility!=='hidden'&&e.getClientRects().length))(document.getElementById('xAg'))})`).then(JSON.parse);
    if(s.run)break;
    if(s.pre){if(t%10===0)log(m+' pre screen',await st());await page.click('#preGo',{timeout:5000}).catch(()=>{});}
    else if(s.ag){await X(`(()=>{const t=[...document.querySelectorAll('#xAg .x-ag')].filter(b=>!b.disabled);if(t.length)t[0].click();return 1})()`);await page.waitForTimeout(300);await page.click('#xAgL',{timeout:5000}).catch(()=>{});}
@@ -44,7 +45,7 @@ const MAPS=(process.env.MAPS||'bind,haven').split(',');
   const loaded=s.nm||s.map;
   check(`lobby queue: pick ${m}, START -> the match loads ${m} (loaded: map ${s.map}, native ${s.nm})`,String(loaded).toLowerCase().includes(m)&&s.map===m,JSON.stringify(s));
   await page.screenshot({path:`${SHOT}mapsel-${m}-640x360.jpg`,type:'jpeg',quality:60,timeout:150000}).catch(e=>log('shot',String(e).slice(0,100)));
-  if(first&&s.running){first=false;
+  if(first&&s.running&&process.env.TPWALK==='1'){first=false; // B is opt-in (TPWALK=1): animation work on hold (25 Oct 20:34 EDT)
    // B. TP bot walking, side view
    await X(`bots.concat(allies).forEach(u=>u.nt=false);FV.buy=0;if(typeof timeLeft!=='undefined')timeLeft=900;const h=hurt;hurt=function(t){if(t===player)return;return h.apply(this,arguments);};
     window.__sc=new THREE.PerspectiveCamera(60,640/360,.05,200);const r0=renderer.render;renderer.render=function(sc,c){if(sc===scene&&window.__side)return r0.call(this,sc,window.__sc);return r0.call(this,sc,c);};1`);
