@@ -9,6 +9,13 @@
  // weighted pick: w = {key: weight}
  function pickW(rand,w){let s=0;for(const k in w)s+=Math.max(0,w[k]);let x=rand()*s;for(const k in w){x-=Math.max(0,w[k]);if(x<0)return k;}return Object.keys(w)[0];}
  const REACT=[.2,.35]; // seconds: a mid-ranked player's reaction to an enemy appearing on a pre-aimed angle (~0.25 s); reaction() adds the off-angle / flash costs
+ // Mouse: VALORANT turns 0.07 deg per mouse count at sensitivity 1, so a mid-ranked 0.35 sens at 800 DPI is 46.7 cm per 360.
+ // A bot's sensitivity (0.31-0.41 at 800 DPI, separate stream) and its flick hand speed (m/s of mouse travel, 0.6-0.88: a
+ // 23 cm half-turn swipe in 0.25-0.42 s) give its top crosshair speed in rad/s: no instant 180s, no 360 flick kills.
+ const SENS={sens:.35,dpi:800,yaw:.07};
+ function cm360(sens,dpi){return 360/(SENS.yaw*(sens||SENS.sens)*(dpi||SENS.dpi))*2.54;}
+ function sensOf(seed){const r=rng(((seed>>>0)^0x5e45a1d3)>>>0);return Math.round((.31+r()*.1)*1000)/1000;}
+ function turnRate(sens,hand,dpi){return hand/(cm360(sens,dpi)/100)*Math.PI*2;}
  // A bot's character for the whole match. role: optional 'entry' | 'anchor' | 'lurker' | 'support' bias.
  function personality(seed,role){
   const r=rng(seed),ag=role==='entry'?.65+r()*.35:role==='anchor'?.1+r()*.4:.2+r()*.6,pa=clamp(1-ag+(r()-.5)*.5,0,1),acc=.35+r()*.65;
@@ -19,8 +26,9 @@
    crouchSpray:.08+r()*.5,tapBias:r(),stand:.18+pa*.25,strafeRhythm:.25+r()*.35,
    peek:{jiggle:.2+pa*.6,wide:.15+ag*.8,tight:.5,hold:.1+pa*.5},
    angle:r()<.5?'close':'long',head:.25+acc*.4,
-   turn:7+ag*4+r()*3,                                              // rad/s: how fast the bot can swing its crosshair (a 180 takes ~0.25-0.45 s)
-   lag:.05+(1-acc)*.09+r()*.03};                                   // s: tracking lag on a moving target (aims where it was), settles with P.settle
+   turn:turnRate(sensOf(seed),.6+ag*.08+r()*.2),                // rad/s: how fast the bot can swing its crosshair, from its mouse sensitivity and hand speed (a 180 takes ~0.25-0.45 s)
+   lag:.05+(1-acc)*.09+r()*.03,                                    // s: tracking lag on a moving target (aims where it was), settles with P.settle
+   sens:sensOf(seed),dpi:SENS.dpi};
 
  }
  // One reaction draw per engagement: inside REACT for a pre-aimed angle, then human costs on top (ctx, optional):
@@ -56,9 +64,9 @@
  // Per-bot aim traits (pure, from P.seed on a separate stream: personality() draws are unchanged).
  function aimTraits(P){const r=rng(((P.seed>>>0)^0x51ed270b)>>>0),acc=P.accuracy==null?.6:P.accuracy;
   return {headAim:.06+acc*.12+r()*.05,neckAim:.3+r()*.15,place:.01+(1-acc)*.012+r()*.005,over:.04+r()*.08,fitts:.045+(1-acc)*.035+r()*.015,
-   trem:.003+(1-acc)*.006,pull:.25+acc*.25+r()*.1,eager:.6+r()*.8+(P.aggression||0)*.4,discipline:clamp(.45+(P.patience==null?.5:P.patience)*.35+r()*.15,0,.97),idle:-(.02+(1-acc)*.05+r()*.02)};}
+   trem:.003+(1-acc)*.006,pull:.25+acc*.25+r()*.1,eager:.6+r()*.8+(P.aggression||0)*.4,discipline:clamp(.45+(P.patience==null?.5:P.patience)*.35+r()*.15,0,.97),idle:Math.atan2(AIM_H.head-1.6,15)-(.004+(1-acc)*.016+r()*.01)};}
  const AIM_H={head:1.8,neck:1.45,chest:1.2}; // metres above the feet, standing (server hitboxes: head sphere centre 1.815, body capsule top ~1.6)
- function aimHeight(P,rand,lvl){const A=aimTraits(P),L=level(lvl),x=rand(),h=Math.min(.85,A.headAim*L.head);return x<h?'head':x<h+(1-h)*A.neckAim?'neck':'chest';}
+ function aimHeight(P,rand,lvl,pre){const A=aimTraits(P),L=level(lvl),x=rand(),h=Math.min(.85,A.headAim*L.head*(pre?1.8:1));return x<h?'head':x<h+(1-h)*A.neckAim?'neck':'chest';}
  function gauss(rand){return (rand()+rand()+rand()+rand()-2)*1.732;}
  function mj(x){x=x<0?0:x>1?1:x;return x*x*x*(10-15*x+6*x*x);}
  // Target half-width (rad) at dist m: a 0.3 m wide body.
@@ -80,8 +88,9 @@
   o[0]=y;o[1]=p;return o;}
  // May the trigger go now? err: the current crosshair error (rad); the first shot goes once within eager x half-width.
  function readyToFire(A,err,dist,t){if(!A)return false;if(t!=null&&A.fireAt&&t-A.start>=A.fireAt)return true;return Math.abs(err)<A.eager*.5*halfWidth(dist);}
- // Resting crosshair pitch while moving / holding (rad, below eye level: a mid-ranked player's crosshair sits a little low, so
- // most fights start nearer the body than the head).
+ // Resting crosshair pitch while moving / holding (rad): head height at ~15 m with this bot's own placement error, mostly a
+ // little low (a mid-ranked player's crosshair drifts toward the neck), so fights start near the head, not on it. A fight
+ // that starts on a pre-aimed angle more often stays at head height (aimHeight pre).
  function idlePitch(P){return aimTraits(P).idle;}
  function recoilPull(P,lvl){return clamp(aimTraits(P).pull*level(lvl).pull,.2,.9);}
  function discipline(P,lvl){return clamp(aimTraits(P).discipline*level(lvl).disc,0,.97);}
@@ -360,5 +369,36 @@
   while(route.length&&Math.hypot(nodes[route[0]][0]-px,nodes[route[0]][2]-pz)<.45)route.shift();
   if(!route.length||Math.hypot(gx-px,gz-pz)<1){out[0]=gx;out[1]=gz;return out;}
   const n=nodes[route[0]];out[0]=n[0];out[1]=n[2];return out;}
- return {hash,rng,clamp,pickW,REACT,personality,reaction,crosshair,crosshairAt,firePattern,peek,attackPlan,defensePlan,roles,teamBuy,buyFor,onMateDeath,onSound,ATTACK,DEFENSE,utility,UTIL,turnStep,trackLag,wrapA,SPIKE,plantSpot,postPlant,retake,postPlay,SHOOT_UTIL,shootUtility,TAILWIND,tailwindDash,tailwindKeys,LEVEL,level,aimTraits,AIM_H,aimHeight,halfWidth,aimPlan,aimAt,readyToFire,planFire,idlePitch,recoilPull,discipline,hitPart,BUY,buyEdge,buySide,buyArea,buyRoute,buyExit,buySpot,buyWander,buyNew,buyTick,buyNext,buySep};
+ // ---- Perception (bots-perception-2): what a bot can know. No omniscience: an enemy is SEEN only inside the bot's view
+ // cone (VALORANT's fixed 103 deg horizontal hip FOV, plus the body's half-width at that range) with a clear line of sight
+ // (the caller's ray: map, smokes, walls), and HEARD only by what VALORANT lets a player hear: running footsteps inside the
+ // minimap sound circle (~30 m; walking and crouching are silent), gunshots across the map (suppressed Ghost / Spectre /
+ // Phantom only within 40 m), ability casts within 30 m. Both feed a per-bot memory of last-known positions (a heard one
+ // placed with an error that grows with range); the bot looks at / hunts / pre-aims those, never at where an enemy really is.
+ const SENSE={fov:103*Math.PI/180,step:30,shot:150,shotSup:40,cast:30,near:2,sup:{Ghost:1,Spectre:1,Phantom:1},
+  mem:{seen:6,heard:4},glance:3,hunt:10,repeek:2,repeekAng:.3,ear:.08};
+ // off: rad between where the bot looks and the enemy's bearing (any sign / wrap); dist: m (pads the cone by the body's half-width).
+ function inView(off,dist){return Math.abs(wrapA(off))<=SENSE.fov/2+(dist>0?Math.atan(.3/Math.max(.5,dist)):0);}
+ // kind 'step' | 'shot' | 'cast' | 'near' (anyone within 2 m), weapon: the shooter's gun (suppressed guns carry 40 m).
+ function audible(kind,dist,weapon){if(!(dist>=0))return false;if(kind==='step')return dist<=SENSE.step;if(kind==='shot')return dist<=(SENSE.sup[weapon]?SENSE.shotSup:SENSE.shot);if(kind==='cast')return dist<=SENSE.cast;return dist<=SENSE.near;}
+ // Where a heard sound seems to be: the true spot off by up to SENSE.ear x range (stereo: direction is decent, range is not).
+ // n1, n2: two noise draws in [0, 1) from the caller's own deterministic source.
+ function earSpot(sx,sz,lx,lz,n1,n2){const d=Math.hypot(sx-lx,sz-lz),e=d*SENSE.ear*n1,a=n2*Math.PI*2;return [sx+Math.cos(a)*e,sz+Math.sin(a)*e];}
+ // Memory: {c: {enemyId: {x, y, z, t, kind: 'seen' | 'heard', seenT}}}. memNote keeps the newest contact per enemy (a heard
+ // one never overwrites a fresher sighting); memBest is the freshest live contact (seen ones last SENSE.mem.seen s, heard
+ // SENSE.mem.heard s, or maxAge), ties to the nearer; memForget on a kill / death.
+ function memNew(){return {c:{}};}
+ function memNote(m,id,x,y,z,t,kind){const c=m.c[id]||(m.c[id]={t:-1e9});if(kind!=='seen'&&c.kind==='seen'&&t-c.t<.5)return c;c.x=x;c.y=y;c.z=z;c.t=t;c.kind=kind;if(kind==='seen')c.seenT=t;return c;}
+ function memForget(m,id){if(m&&m.c)delete m.c[id];}
+ function memBest(m,now,px,pz,maxAge){let best=null,bs=Infinity;if(!m)return null;for(const id in m.c){const c=m.c[id],age=now-c.t,lim=maxAge!=null?maxAge:c.kind==='seen'?SENSE.mem.seen:SENSE.mem.heard;if(!(age>=0&&age<=lim))continue;const sc=age+Math.hypot(c.x-px,c.z-pz)*.02;if(sc<bs){bs=sc;best=c;best.id=id;}}return best;}
+ // A re-peek: the enemy shows up again within SENSE.repeek s of being seen, at about the bearing the bot still holds (its
+ // crosshair stayed on that spot) -> the fight starts pre-aimed. bearing / lastBearing: rad in the caller's yaw convention.
+ function repeek(c,now,bearing,lastBearing){return !!c&&c.seenT!=null&&now-c.seenT<=SENSE.repeek&&Math.abs(wrapA(bearing-lastBearing))<=SENSE.repeekAng;}
+ // Line of sight is checked every tick a bot shoots: a burst never keeps going at an enemy that has left its sight. A
+ // glimpse shorter than the reaction (>= 200 ms) is never shot at; visibleFor (s of unbroken sight) >= reactionS gates the
+ // trigger, so a 100 ms jiggle cannot be four-shot.
+ function mayFire(visibleFor,reactionS,losNow){return !!losNow&&visibleFor>=Math.max(REACT[0],reactionS||0);}
+ // Fire-rate cap: never faster than the gun (Vandal 9.75 rounds/s). Returns the earliest next shot time.
+ function nextShot(t,rate){return t+1/Math.max(.1,rate||1);}
+ return {hash,rng,clamp,pickW,REACT,personality,reaction,crosshair,crosshairAt,firePattern,peek,attackPlan,defensePlan,roles,teamBuy,buyFor,onMateDeath,onSound,ATTACK,DEFENSE,utility,UTIL,turnStep,trackLag,wrapA,SPIKE,plantSpot,postPlant,retake,postPlay,SHOOT_UTIL,shootUtility,TAILWIND,tailwindDash,tailwindKeys,LEVEL,level,aimTraits,AIM_H,aimHeight,halfWidth,aimPlan,aimAt,readyToFire,planFire,idlePitch,recoilPull,discipline,hitPart,BUY,buyEdge,buySide,buyArea,buyRoute,buyExit,buySpot,buyWander,buyNew,buyTick,buyNext,buySep,SENS,cm360,sensOf,turnRate,SENSE,inView,audible,earSpot,memNew,memNote,memForget,memBest,repeek,mayFire,nextShot};
 });

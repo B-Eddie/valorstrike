@@ -4587,17 +4587,20 @@ function tick(dt) {
     if (!tg) {
       for (const f of defs) {
         if (f.t.hp <= 0 || f.t === b) continue;
-        const fd = Math.hypot(f.x - p.x, f.z - p.z), s = los(from, f.eye);
+        const fd = Math.hypot(f.x - p.x, f.z - p.z), s = (typeof xbInView !== "function" || xbInView(b, f.x - p.x, f.z - p.z, fd)) && los(from, f.eye); // seen only inside the 103 deg view cone (BOT VARIETY perception)
         if (!tg || (s && !see) || (s === see && fd < td)) { tg = f; td = fd; see = s; }
       }
       b.xTt = tg && tg.t; b.xSe = see; if (b.xTh <= 0) b.xTh += 0.1; if (b.xTh <= 0) b.xTh = 0.1;
     }
     if (!tg) break;
     const dx = tg.x - p.x, dz = tg.z - p.z, d = td || 0.01, eye = tg.eye;
+    if (see && typeof xbInView === "function" && !xbInView(b, dx, dz, d)) { see = false; b.xSe = false; b.xTh = 0; } // a cached sighting outside the view cone is not a sighting
+    if (see && typeof xbSeen === "function") xbSeen(b, tg.t, tg.x, (tg.eye && tg.eye.y) - 1.6, tg.z);
+    const kn = !see && typeof xbKnown === "function" ? xbKnown(b, p) : null, kd = kn ? kn[2] : d, kx = kn ? kn[0] : dx, kz = kn ? kn[1] : dz; // unsighted: peek / creep toward what it knows, not the enemy's real spot
     if (b.blind > 0) b.xbFl = performance.now(); // a flash ends the fight: the next one starts with a slower reaction
     if (see && !b.see) { const oy = xAng(b.g.rotation.y - Math.atan2(dx, dz)); b.pre = Math.abs(oy) < 0.6; if (typeof xbEngage === "function") xbEngage(b, b.pre, { off: Math.abs(oy), e0y: oy, d, flashed: performance.now() - (b.xbFl || -1e9) < 1200 }); } // was the crosshair already pre-placed on this angle? new fight: own reaction / crosshair error / stand time (BOT VARIETY)
     if (see) { b.g.rotation.y = typeof xbFaceAim === "function" ? xbFaceAim(b, Math.atan2(dx, dz), dt) : Math.atan2(dx, dz); const pt = XTK.pt.copy(eye); if (b.hd === false) pt.y -= 0.45; xBotAim(b, pt, from); } // human flick at its own turn rate (BOT VARIETY), not a snap; gun follows the aim point (reference alignment)
-    { const tm = allies.indexOf(b) >= 0 ? allies : bots; xPeekThink(b, dt, see, see && !b.see, d, tg.t === player ? FV.pri || "" : tg.t.w || "", tm, tm === allies); } // shared with ally bots
+    { const tm = allies.indexOf(b) >= 0 ? allies : bots; xPeekThink(b, dt, see, see && !b.see, kd, tg.t === player ? FV.pri || "" : tg.t.w || "", tm, tm === allies); } // shared with ally bots
     botAb(b, dt, see, tg, from); if (!running) return;
     if (!see && xUtilShoot(b, dt, from, true)) continue; // no enemy in sight: shoot down the player's team's utility in the way (xUtilShoot)
     const bk = botK(b);
@@ -4610,24 +4613,24 @@ function tick(dt) {
       if (b.pk === 2 && (b.see || 0) < 0.2) { vx = (-dz / d) * b.strafe; vz = (dx / d) * b.strafe; } // carry the wide swing through
     }
     else if (true) {
-      let gx = tg.x, gz = tg.z; if (b.trT > 0) { b.trT -= dt; [gx, gz] = b.tr; } else if (mode === "five" && !FV.dm) { const o = xGoal(b, bots, !FV.atk, XG_V); if (o) [gx, gz] = o; }
+      let gx = tg.x, gz = tg.z; if (typeof xbHunt === "function") [gx, gz] = xbHunt(b, tg, XG_V); /* out of sight: last-known contact / roam, never the enemy's real spot (BOT VARIETY perception) */ if (b.trT > 0) { b.trT -= dt; [gx, gz] = b.tr; } else if (mode === "five" && !FV.dm) { const o = xGoal(b, bots, !FV.atk, XG_V); if (o) [gx, gz] = o; }
       if (!(b.xr && b.xr.length)) [gx, gz] = xPath(b, dt, gx, gz, XP_V);
       (b.xUg || (b.xUg = [0, 0]))[0] = gx; b.xUg[1] = gz; // where it is heading (xUtilAcross: is a barrier across its way)
       const ex = gx - p.x, ez = gz - p.z, ed = Math.hypot(ex, ez) || 0.01; if (ed > 0.5) { vx = ex / ed; vz = ez / ed; }
-      [vx, vz] = xPeekMove(b, dt, d, dx, dz, vx, vz);
+      [vx, vz] = xPeekMove(b, dt, kd, kx, kz, vx, vz);
     } else { vx = (-dz / d) * b.strafe * 0.5; vz = (dx / d) * b.strafe * 0.5; }
     if (!(b.det > 0)) [vx, vz] = xUn(b, dt, vx, vz);
     if (see && b.bn > 0 && d > 20) vx = vz = 0; // stop to tap/burst at range
     if (!see) xFace(b, dt, vx, vz); b.cr = see && d < 8 && !!b.crR; // crouch-spray up close, 30% of fights
     if (b.tagT > 0) b.tagT -= dt;
-    const D = DIFF[S.diff], bwk = botWalk(b, see, d), speed = botRun(b, bwk) * (b.cr ? (window.ValorantFeel ? window.ValorantFeel.C.crouch : 0.37) : 1) * Math.min(1, D.speed) * bk * xTagK(b), bs = speed * dt; b.mv = !!(vx || vz) && bs > 0; b.wk = bwk ? 1 : 0; // fidelity: player speed table, walk x0.6 near contact
+    const D = DIFF[S.diff], bwk = botWalk(b, see, kd), speed = botRun(b, bwk) * (b.cr ? (window.ValorantFeel ? window.ValorantFeel.C.crouch : 0.37) : 1) * Math.min(1, D.speed) * bk * xTagK(b), bs = speed * dt; b.mv = !!(vx || vz) && bs > 0; b.wk = bwk ? 1 : 0; // fidelity: player speed table, walk x0.6 near contact
     [vx, vz] = xSmV(b, dt, vx, vz, speed); const bx0 = p.x, bz0 = p.z;
     if (!blocked(p.x + vx * bs, p.z, 0.45, p.y)) p.x += vx * bs; else { b.strafe *= -1; b.blk = 1; if (b.smMotor) b.smMotor.vx = 0; }
     if (!blocked(p.x, p.z + vz * bs, 0.45, p.y)) p.z += vz * bs; else { b.strafe *= -1; b.blk = 1; if (b.smMotor) b.smMotor.vz = 0; }
     b.spd = b.smMotor ? Math.hypot(b.smMotor.vx, b.smMotor.vz) : dt > 0 ? Math.hypot(p.x - bx0, p.z - bz0) / dt : 0; b.sf = b.spd / botRun(b, false); b.mv = b.spd > 0.25; // end-of-step speed: firing / spread cannot use an average that hides a reversal
     b.fs = (b.fs || 0) - dt; if ((vx || vz) && bs > 0 && b.fs <= 0) { b.fs = 0.4 / Math.max(0.6, DIFF[S.diff].speed || 1); if (!b.cr && !b.wk) SFX.step(p); } // crouching / walking bots are silent
     b.cd -= dt; b.lt = (b.lt || 0) + dt; b.see = see && !(b.blind > 0) ? (b.see || 0) + dt : 0; // blinded: the fight restarts once it can see again
-    if (see && b.cd <= 0 && b.see * 1000 >= (typeof xbRt === "function" ? xbRt(b, D) : D.rt + (b.pre ? 0 : 150)) && botCanShoot(b) && b.xs && !(b.pk === 3 && b.mv && !b.xbSl) && (botStopped(b) || b.xbSl) && (b.bn > 0 || typeof xbReady !== "function" || xbReady(b, d))) { // tight peek: fully stopped first (a sloppy fight, b.xbSl, fires before the counter-strafe has stopped it); a new pull waits for the flick (xbReady)
+    if (see && b.cd <= 0 && b.see * 1000 >= (typeof xbRt === "function" ? xbRt(b, D) : D.rt + (b.pre ? 0 : 150)) && botCanShoot(b) && b.xs && !(b.pk === 3 && b.mv && !b.xbSl) && (botStopped(b) || b.xbSl) && (b.bn > 0 || typeof xbReady !== "function" || xbReady(b, d)) && (typeof xbLosNow !== "function" || xbLosNow(from, eye) || ((b.xSe = false), (b.xTh = 0), (b.bn = 0), false))) { // a fresh, uncached line to the target for every shot: no stale fire into a wall (BOT VARIETY perception) // tight peek: fully stopped first (a sloppy fight, b.xbSl, fires before the counter-strafe has stopped it); a new pull waits for the flick (xbReady)
       const w = b.w || "Classic", W = WEAP[w] || WEAP.Classic, far = d > 20;
       if (!(b.bn > 0)) { b.bn = far ? D.bu[0] + Math.floor(Math.random() * (D.bu[1] - D.bu[0] + 1)) : 6 + Math.floor(Math.random() * 5); b.hd = Math.random() < (b.pre && b.see < 0.6 ? Math.min(1, D.hs * 1.5) : D.hs); } // pre-aimed first bullets land nearer the head // tap/burst far, spray close
       b.bn--; b.cd = b.bn > 0 ? 1 / (W.rate || 4) : ((far ? 0.45 : 0.3) + Math.random() * 0.4) * D.cd; SFX.at(p, w); if (b.pp) dmFired(b);
@@ -4655,14 +4658,15 @@ function tick(dt) {
       for (const b of bots) {
         if (!b.alive) continue;
         const q = b.g.position, d = Math.hypot(q.x - p.x, q.z - p.z);
-        if (d < td) { XTK.q.set(q.x, (q.y || 0) + 1.5, q.z); if (los(from, XTK.q)) { a.xTg = b; td = d; } } // no range cap: enemy bots acquire with LOS at any range, allies must too (fair fights past 30u)
+        if (d < td && (typeof xbInView !== "function" || xbInView(a, q.x - p.x, q.z - p.z, d))) { XTK.q.set(q.x, (q.y || 0) + 1.5, q.z); if (los(from, XTK.q)) { a.xTg = b; td = d; } } // seen only inside the 103 deg view cone (BOT VARIETY perception) // no range cap: enemy bots acquire with LOS at any range, allies must too (fair fights past 30u)
         const d3 = q.distanceTo(p); if (d3 < nd) { nd = d3; a.xNb = b; }
       }
       a.xTh += 0.1; if (a.xTh <= 0) a.xTh = 0.1;
     }
-    tg = a.xTg; if (tg) { const q = tg.g.position; td = Math.hypot(q.x - p.x, q.z - p.z); }
+    tg = a.xTg; if (tg) { const q = tg.g.position; td = Math.hypot(q.x - p.x, q.z - p.z); if (typeof xbSeen === "function") xbSeen(a, tg, q.x, q.y, q.z); }
     const pe = tg || a.xNb, pdx = pe ? pe.g.position.x - p.x : 0, pdz = pe ? pe.g.position.z - p.z : 0, pd = Math.hypot(pdx, pdz) || 0.01;
-    if (pe) xPeekThink(a, dt, !!tg, !!tg && !a.see, pd, pe.w || "", allies, true); // same peek / crouch-spray logic as enemy bots
+    const akn = !tg && typeof xbKnown === "function" ? xbKnown(a, p) : null, apd = akn ? akn[2] : pd, apx = akn ? akn[0] : pdx, apz = akn ? akn[1] : pdz; // unsighted: what it knows, not the enemy's real spot (BOT VARIETY perception)
+    if (pe) xPeekThink(a, dt, !!tg, !!tg && !a.see, apd, pe.w || "", allies, true); // same peek / crouch-spray logic as enemy bots
     if (tg && !a.see && typeof xbEngage === "function") { a.pre = Math.abs(xAng(Math.atan2(tg.g.position.x - p.x, tg.g.position.z - p.z) - a.g.rotation.y)) < 0.6; xbEngage(a, a.pre); } // new fight: own reaction (BOT VARIETY)
     a.xTt = tg; a.xSe = !!tg; a.see = tg ? (a.see || 0) + dt : 0; // same LOS/target fields as the enemy bot AI (orb-run cancel reads xSe / see)
     if (tg) { const tp = a.xTp || (a.xTp = { x: 0, z: 0 }); tp.x = tg.g.position.x; tp.z = tg.g.position.z; botAb(a, dt, true, tp, from); } else botAb(a, dt, false, null, from); // allies share the enemy ability logic
@@ -4670,7 +4674,7 @@ function tick(dt) {
     if (!tg && xUtilShoot(a, dt, from, false)) continue; // allies shoot down enemy utility in the way the same way
     let vx = 0, vz = 0, gx = a.ox, gz = a.oz == null ? 1.2 : a.oz;
     if (rf) { const nb = a.xNb; if (nb) { gx = nb.g.position.x; gz = nb.g.position.z; } }
-    else if (mode !== "five" || FV.dm) { const nb = a.xNb; if (nb && nb.alive) { gx = nb.g.position.x; gz = nb.g.position.z; } } // TDM/DM run as mode "five" (dmGo sets FV.dm): hunt the nearest enemy like enemy bots do instead of idling at spawn
+    else if (mode !== "five" || FV.dm) { const nb = a.xNb; if (nb && nb.alive) { gx = nb.g.position.x; gz = nb.g.position.z; if (typeof xbHunt === "function") [gx, gz] = xbHunt(a, { x: gx, z: gz }, XG_V); } } // out of sight: last-known contact / roam (BOT VARIETY perception) // TDM/DM run as mode "five" (dmGo sets FV.dm): hunt the nearest enemy like enemy bots do instead of idling at spawn
     if (mode === "five" && xStep(a, dt)) continue;
     if (mode === "five" && !FV.dm) { const o = xGoal(a, allies, FV.atk, XG_V); if (o) [gx, gz] = o; } // DM/TDM: no spike sites, keep the hunt goal
     if (!tg && a.trT > 0) { a.trT -= dt; [gx, gz] = a.tr; } // trade a fallen teammate
@@ -4687,12 +4691,12 @@ function tick(dt) {
       a.flip -= dt; if (a.flip <= 0) { a.strafe *= -1; a.flip = 0.8 + Math.random(); }
       vx = (-dz / d) * a.strafe * 0.5; vz = (dx / d) * a.strafe * 0.5;
     } else if (sd > (mode === "five" ? 0.5 : rf ? 3 : 0.6)) { vx = sx / sd; vz = sz / sd; a.g.rotation.y = Math.atan2(vx, vz); }
-    if (!tg && pe) [vx, vz] = xPeekMove(a, dt, pd, pdx, pdz, vx, vz);
+    if (!tg && pe) [vx, vz] = xPeekMove(a, dt, apd, apx, apz, vx, vz);
     [vx, vz] = xUn(a, dt, vx, vz);
     if (!tg) xFace(a, dt, vx, vz); a.cr = !!tg && td < 8 && !!a.crR; a.mv = !!(vx || vz); // crouch-spray up close, 30% of fights
     { const pg = window.xPG; if (!tg && pg && pg.ex > 0 && performance.now() < pg.ex && Math.abs(vx) + Math.abs(vz) < 0.15) a.g.rotation.y = Math.atan2(pg.x - p.x, pg.z - p.z); } // idle allies turn toward an enemy ping
     { const pc = window.xCPl; if (!tg && pc && performance.now() < pc.ex && pc.s.has(a) && Math.abs(vx) + Math.abs(vz) < 0.15) a.g.rotation.y = Math.atan2(p.x - pc.x, p.z - pc.z); } // "Planting" call: covering allies face outward from the plant
-    const awk = botWalk(a, !!tg, pd), speed = botRun(a, awk) * (a.cr ? (window.ValorantFeel ? window.ValorantFeel.C.crouch : 0.37) : 1) * botK(a), bs = speed * dt; a.wk = awk ? 1 : 0; // fidelity: same speed table as the player and enemy bots
+    const awk = botWalk(a, !!tg, apd), speed = botRun(a, awk) * (a.cr ? (window.ValorantFeel ? window.ValorantFeel.C.crouch : 0.37) : 1) * botK(a), bs = speed * dt; a.wk = awk ? 1 : 0; // fidelity: same speed table as the player and enemy bots
     [vx, vz] = xSmV(a, dt, vx, vz, speed); const ax0 = p.x, az0 = p.z;
     if (!blocked(p.x + vx * bs, p.z, 0.45, p.y)) p.x += vx * bs; else { a.strafe *= -1; a.blk = 1; if (a.smMotor) a.smMotor.vx = 0; } // p.y: steps / ramps climb (Split B stairs, soak)
     if (!blocked(p.x, p.z + vz * bs, 0.45, p.y)) p.z += vz * bs; else { a.strafe *= -1; a.blk = 1; if (a.smMotor) a.smMotor.vz = 0; }
@@ -4700,7 +4704,7 @@ function tick(dt) {
     if (a.xk == null && a.xj == null && !a.xup) p.y = groundAt(p.x, p.z, 0.3, p.y + 0.01); // allies climb steps like bots (Split B stairs: carrier stuck on step 1 at y 0)
     a.fs = (a.fs || 0) - dt; if ((vx || vz) && a.fs <= 0) { a.fs = 0.4; if (!a.cr && !a.wk) SFX.step(p); } // ally footsteps: same pooled step voices
     a.cd -= dt;
-    if (tg && a.cd <= 0 && a.xs && !(a.pk === 3 && a.mv) && botStopped(a) && !(a.rtE && typeof xbRt === "function" && a.ts * 1000 < xbRt(a, null)) && (typeof xbTurned !== "function" || xbTurned(a))) { // no shot mid-swing (BOT VARIETY turn rate) // allies react like enemy bots (no instant first shot) // tight peek: fully stopped first
+    if (tg && a.cd <= 0 && a.xs && !(a.pk === 3 && a.mv) && botStopped(a) && !(a.rtE && typeof xbRt === "function" && a.ts * 1000 < xbRt(a, null)) && (typeof xbTurned !== "function" || xbTurned(a)) && (typeof xbLosNow !== "function" || xbLosNow(from, XTK.q.set(tg.g.position.x, (tg.g.position.y || 0) + 1.5, tg.g.position.z)) || ((a.xTg = null), (a.xTh = 0), false))) { // fresh line of sight for every shot (BOT VARIETY perception) // no shot mid-swing (BOT VARIETY turn rate) // allies react like enemy bots (no instant first shot) // tight peek: fully stopped first
       a.cd = 0.8 + Math.random() * 0.8; SFX.at(p, a.w || "Vandal"); if (a.pp) dmFired(a);
       if (Math.random() < Math.max(0.25, 0.6 - td * 0.012)) {
         const hs = Math.random() < 0.2, AW = WEAP[a.w || "Vandal"]; a.hd = hs; XTK.q.copy(tg.g.position); XTK.q.y += hs ? 1.5 : 1.05; xBotAim(a, XTK.q, from); hurt(tg, hs ? AW.head : AW.body, a.name); xTag(tg, hs ? AW.head : AW.body); if (typeof xHitOther === "function") xHitOther(tg, hs, a); if (tg.hp <= 0.001) kill(tg, hs, a.name, xWeapOf(a)); else flash(tg);
@@ -8097,12 +8101,13 @@ function xBotYaw(dt) { // turn-rate limit + lerp toward the yaw the AI chose, be
     u.xyw += d; u.g.rotation.y = u.xyw;
   });
 }
-function xFace(u, dt, vx, vz) { // off-fight: aim at head height along the path (next corner), or toward a heard sound
-  const p = u.g.position; let t = null;
+function xFace(u, dt, vx, vz) { // off-fight: aim at head height along the path (next corner), toward a heard sound, or at the freshest contact it heard / last saw (BOT VARIETY xbGlance: the crosshair waits on that spot), at the bot's own turn rate (xbFaceTo)
+  const p = u.g.position; let t = null; const c = typeof xbGlance === "function" ? xbGlance(u) : null;
   if (u.hearT > 0) { u.hearT -= dt; t = Math.atan2(u.hear[0] - p.x, u.hear[1] - p.z); }
+  else if (c) t = Math.atan2(c.x - p.x, c.z - p.z);
   else if (u.np) t = Math.atan2(u.np[0] - p.x, u.np[1] - p.z);
   else if (vx || vz) t = Math.atan2(vx, vz);
-  if (t !== null) u.g.rotation.y += xAng(t - u.g.rotation.y) * Math.min(1, dt * 8);
+  if (t !== null) { const y = typeof xbFaceTo === "function" ? xbFaceTo(u, t, dt) : null; if (y !== null) u.g.rotation.y = y; else u.g.rotation.y += xAng(t - u.g.rotation.y) * Math.min(1, dt * 8); }
 }
 function xTrade(defs) { // a teammate dies within 15 m: nearby mates push the killer's last seen spot
   xTradeChk(bots, defs, false);
@@ -8123,7 +8128,7 @@ function xTradeChk(team, foes, live) { // live: foes are bots, use alive ones' p
     u.wasA = u.alive;
   }
 }
-function xHear(p) { // gunshots / footsteps within 25 m turn the other side toward the sound
+function xHear(p) { // close gunshots (35 m) / running footsteps (30 m, BOT VARIETY xbEarR) turn the other side toward the sound
   if (!p || !running) return;
   // perf pass 2: footstep path allocates nothing (no concat / find / forEach closures; hear array reused)
   let srcBot = false, found = false;
@@ -8132,7 +8137,7 @@ function xHear(p) { // gunshots / footsteps within 25 m turn the other side towa
   const L = srcBot ? allies : bots;
   for (let i = 0; i < L.length; i++) { const u = L[i];
     if (!u.alive) continue; const d = Math.hypot(u.g.position.x - p.x, u.g.position.z - p.z);
-    if (d > 1 && d < 25) { if (u.hear && u.hear.length === 2) { u.hear[0] = p.x; u.hear[1] = p.z; } else u.hear = [p.x, p.z]; u.hearT = 1.2; }
+    if (d > 1 && d < (typeof xbEarR === "function" ? xbEarR() : 25)) { if (u.hear && u.hear.length === 2) { u.hear[0] = p.x; u.hear[1] = p.z; } else u.hear = [p.x, p.z]; u.hearT = 1.2; }
   }
 }
 if (typeof SFX !== "undefined") ["at", "step"].forEach((k) => { const f = SFX[k]; if (f) SFX[k] = function (p) { try { xHear(p); } catch (e) {} return f.apply(this, arguments); }; });
@@ -15463,6 +15468,13 @@ window.xAbilityFP = { XAF, XAF_SET, XAF_K, XAF_GUN, phase: xAfPhase, gunPhase: x
  // weighted pick: w = {key: weight}
  function pickW(rand,w){let s=0;for(const k in w)s+=Math.max(0,w[k]);let x=rand()*s;for(const k in w){x-=Math.max(0,w[k]);if(x<0)return k;}return Object.keys(w)[0];}
  const REACT=[.2,.35]; // seconds: a mid-ranked player's reaction to an enemy appearing on a pre-aimed angle (~0.25 s); reaction() adds the off-angle / flash costs
+ // Mouse: VALORANT turns 0.07 deg per mouse count at sensitivity 1, so a mid-ranked 0.35 sens at 800 DPI is 46.7 cm per 360.
+ // A bot's sensitivity (0.31-0.41 at 800 DPI, separate stream) and its flick hand speed (m/s of mouse travel, 0.6-0.88: a
+ // 23 cm half-turn swipe in 0.25-0.42 s) give its top crosshair speed in rad/s: no instant 180s, no 360 flick kills.
+ const SENS={sens:.35,dpi:800,yaw:.07};
+ function cm360(sens,dpi){return 360/(SENS.yaw*(sens||SENS.sens)*(dpi||SENS.dpi))*2.54;}
+ function sensOf(seed){const r=rng(((seed>>>0)^0x5e45a1d3)>>>0);return Math.round((.31+r()*.1)*1000)/1000;}
+ function turnRate(sens,hand,dpi){return hand/(cm360(sens,dpi)/100)*Math.PI*2;}
  // A bot's character for the whole match. role: optional 'entry' | 'anchor' | 'lurker' | 'support' bias.
  function personality(seed,role){
   const r=rng(seed),ag=role==='entry'?.65+r()*.35:role==='anchor'?.1+r()*.4:.2+r()*.6,pa=clamp(1-ag+(r()-.5)*.5,0,1),acc=.35+r()*.65;
@@ -15473,8 +15485,9 @@ window.xAbilityFP = { XAF, XAF_SET, XAF_K, XAF_GUN, phase: xAfPhase, gunPhase: x
    crouchSpray:.08+r()*.5,tapBias:r(),stand:.18+pa*.25,strafeRhythm:.25+r()*.35,
    peek:{jiggle:.2+pa*.6,wide:.15+ag*.8,tight:.5,hold:.1+pa*.5},
    angle:r()<.5?'close':'long',head:.25+acc*.4,
-   turn:7+ag*4+r()*3,                                              // rad/s: how fast the bot can swing its crosshair (a 180 takes ~0.25-0.45 s)
-   lag:.05+(1-acc)*.09+r()*.03};                                   // s: tracking lag on a moving target (aims where it was), settles with P.settle
+   turn:turnRate(sensOf(seed),.6+ag*.08+r()*.2),                // rad/s: how fast the bot can swing its crosshair, from its mouse sensitivity and hand speed (a 180 takes ~0.25-0.45 s)
+   lag:.05+(1-acc)*.09+r()*.03,                                    // s: tracking lag on a moving target (aims where it was), settles with P.settle
+   sens:sensOf(seed),dpi:SENS.dpi};
 
  }
  // One reaction draw per engagement: inside REACT for a pre-aimed angle, then human costs on top (ctx, optional):
@@ -15510,9 +15523,9 @@ window.xAbilityFP = { XAF, XAF_SET, XAF_K, XAF_GUN, phase: xAfPhase, gunPhase: x
  // Per-bot aim traits (pure, from P.seed on a separate stream: personality() draws are unchanged).
  function aimTraits(P){const r=rng(((P.seed>>>0)^0x51ed270b)>>>0),acc=P.accuracy==null?.6:P.accuracy;
   return {headAim:.06+acc*.12+r()*.05,neckAim:.3+r()*.15,place:.01+(1-acc)*.012+r()*.005,over:.04+r()*.08,fitts:.045+(1-acc)*.035+r()*.015,
-   trem:.003+(1-acc)*.006,pull:.25+acc*.25+r()*.1,eager:.6+r()*.8+(P.aggression||0)*.4,discipline:clamp(.45+(P.patience==null?.5:P.patience)*.35+r()*.15,0,.97),idle:-(.02+(1-acc)*.05+r()*.02)};}
+   trem:.003+(1-acc)*.006,pull:.25+acc*.25+r()*.1,eager:.6+r()*.8+(P.aggression||0)*.4,discipline:clamp(.45+(P.patience==null?.5:P.patience)*.35+r()*.15,0,.97),idle:Math.atan2(AIM_H.head-1.6,15)-(.004+(1-acc)*.016+r()*.01)};}
  const AIM_H={head:1.8,neck:1.45,chest:1.2}; // metres above the feet, standing (server hitboxes: head sphere centre 1.815, body capsule top ~1.6)
- function aimHeight(P,rand,lvl){const A=aimTraits(P),L=level(lvl),x=rand(),h=Math.min(.85,A.headAim*L.head);return x<h?'head':x<h+(1-h)*A.neckAim?'neck':'chest';}
+ function aimHeight(P,rand,lvl,pre){const A=aimTraits(P),L=level(lvl),x=rand(),h=Math.min(.85,A.headAim*L.head*(pre?1.8:1));return x<h?'head':x<h+(1-h)*A.neckAim?'neck':'chest';}
  function gauss(rand){return (rand()+rand()+rand()+rand()-2)*1.732;}
  function mj(x){x=x<0?0:x>1?1:x;return x*x*x*(10-15*x+6*x*x);}
  // Target half-width (rad) at dist m: a 0.3 m wide body.
@@ -15534,8 +15547,9 @@ window.xAbilityFP = { XAF, XAF_SET, XAF_K, XAF_GUN, phase: xAfPhase, gunPhase: x
   o[0]=y;o[1]=p;return o;}
  // May the trigger go now? err: the current crosshair error (rad); the first shot goes once within eager x half-width.
  function readyToFire(A,err,dist,t){if(!A)return false;if(t!=null&&A.fireAt&&t-A.start>=A.fireAt)return true;return Math.abs(err)<A.eager*.5*halfWidth(dist);}
- // Resting crosshair pitch while moving / holding (rad, below eye level: a mid-ranked player's crosshair sits a little low, so
- // most fights start nearer the body than the head).
+ // Resting crosshair pitch while moving / holding (rad): head height at ~15 m with this bot's own placement error, mostly a
+ // little low (a mid-ranked player's crosshair drifts toward the neck), so fights start near the head, not on it. A fight
+ // that starts on a pre-aimed angle more often stays at head height (aimHeight pre).
  function idlePitch(P){return aimTraits(P).idle;}
  function recoilPull(P,lvl){return clamp(aimTraits(P).pull*level(lvl).pull,.2,.9);}
  function discipline(P,lvl){return clamp(aimTraits(P).discipline*level(lvl).disc,0,.97);}
@@ -15814,7 +15828,38 @@ window.xAbilityFP = { XAF, XAF_SET, XAF_K, XAF_GUN, phase: xAfPhase, gunPhase: x
   while(route.length&&Math.hypot(nodes[route[0]][0]-px,nodes[route[0]][2]-pz)<.45)route.shift();
   if(!route.length||Math.hypot(gx-px,gz-pz)<1){out[0]=gx;out[1]=gz;return out;}
   const n=nodes[route[0]];out[0]=n[0];out[1]=n[2];return out;}
- return {hash,rng,clamp,pickW,REACT,personality,reaction,crosshair,crosshairAt,firePattern,peek,attackPlan,defensePlan,roles,teamBuy,buyFor,onMateDeath,onSound,ATTACK,DEFENSE,utility,UTIL,turnStep,trackLag,wrapA,SPIKE,plantSpot,postPlant,retake,postPlay,SHOOT_UTIL,shootUtility,TAILWIND,tailwindDash,tailwindKeys,LEVEL,level,aimTraits,AIM_H,aimHeight,halfWidth,aimPlan,aimAt,readyToFire,planFire,idlePitch,recoilPull,discipline,hitPart,BUY,buyEdge,buySide,buyArea,buyRoute,buyExit,buySpot,buyWander,buyNew,buyTick,buyNext,buySep};
+ // ---- Perception (bots-perception-2): what a bot can know. No omniscience: an enemy is SEEN only inside the bot's view
+ // cone (VALORANT's fixed 103 deg horizontal hip FOV, plus the body's half-width at that range) with a clear line of sight
+ // (the caller's ray: map, smokes, walls), and HEARD only by what VALORANT lets a player hear: running footsteps inside the
+ // minimap sound circle (~30 m; walking and crouching are silent), gunshots across the map (suppressed Ghost / Spectre /
+ // Phantom only within 40 m), ability casts within 30 m. Both feed a per-bot memory of last-known positions (a heard one
+ // placed with an error that grows with range); the bot looks at / hunts / pre-aims those, never at where an enemy really is.
+ const SENSE={fov:103*Math.PI/180,step:30,shot:150,shotSup:40,cast:30,near:2,sup:{Ghost:1,Spectre:1,Phantom:1},
+  mem:{seen:6,heard:4},glance:3,hunt:10,repeek:2,repeekAng:.3,ear:.08};
+ // off: rad between where the bot looks and the enemy's bearing (any sign / wrap); dist: m (pads the cone by the body's half-width).
+ function inView(off,dist){return Math.abs(wrapA(off))<=SENSE.fov/2+(dist>0?Math.atan(.3/Math.max(.5,dist)):0);}
+ // kind 'step' | 'shot' | 'cast' | 'near' (anyone within 2 m), weapon: the shooter's gun (suppressed guns carry 40 m).
+ function audible(kind,dist,weapon){if(!(dist>=0))return false;if(kind==='step')return dist<=SENSE.step;if(kind==='shot')return dist<=(SENSE.sup[weapon]?SENSE.shotSup:SENSE.shot);if(kind==='cast')return dist<=SENSE.cast;return dist<=SENSE.near;}
+ // Where a heard sound seems to be: the true spot off by up to SENSE.ear x range (stereo: direction is decent, range is not).
+ // n1, n2: two noise draws in [0, 1) from the caller's own deterministic source.
+ function earSpot(sx,sz,lx,lz,n1,n2){const d=Math.hypot(sx-lx,sz-lz),e=d*SENSE.ear*n1,a=n2*Math.PI*2;return [sx+Math.cos(a)*e,sz+Math.sin(a)*e];}
+ // Memory: {c: {enemyId: {x, y, z, t, kind: 'seen' | 'heard', seenT}}}. memNote keeps the newest contact per enemy (a heard
+ // one never overwrites a fresher sighting); memBest is the freshest live contact (seen ones last SENSE.mem.seen s, heard
+ // SENSE.mem.heard s, or maxAge), ties to the nearer; memForget on a kill / death.
+ function memNew(){return {c:{}};}
+ function memNote(m,id,x,y,z,t,kind){const c=m.c[id]||(m.c[id]={t:-1e9});if(kind!=='seen'&&c.kind==='seen'&&t-c.t<.5)return c;c.x=x;c.y=y;c.z=z;c.t=t;c.kind=kind;if(kind==='seen')c.seenT=t;return c;}
+ function memForget(m,id){if(m&&m.c)delete m.c[id];}
+ function memBest(m,now,px,pz,maxAge){let best=null,bs=Infinity;if(!m)return null;for(const id in m.c){const c=m.c[id],age=now-c.t,lim=maxAge!=null?maxAge:c.kind==='seen'?SENSE.mem.seen:SENSE.mem.heard;if(!(age>=0&&age<=lim))continue;const sc=age+Math.hypot(c.x-px,c.z-pz)*.02;if(sc<bs){bs=sc;best=c;best.id=id;}}return best;}
+ // A re-peek: the enemy shows up again within SENSE.repeek s of being seen, at about the bearing the bot still holds (its
+ // crosshair stayed on that spot) -> the fight starts pre-aimed. bearing / lastBearing: rad in the caller's yaw convention.
+ function repeek(c,now,bearing,lastBearing){return !!c&&c.seenT!=null&&now-c.seenT<=SENSE.repeek&&Math.abs(wrapA(bearing-lastBearing))<=SENSE.repeekAng;}
+ // Line of sight is checked every tick a bot shoots: a burst never keeps going at an enemy that has left its sight. A
+ // glimpse shorter than the reaction (>= 200 ms) is never shot at; visibleFor (s of unbroken sight) >= reactionS gates the
+ // trigger, so a 100 ms jiggle cannot be four-shot.
+ function mayFire(visibleFor,reactionS,losNow){return !!losNow&&visibleFor>=Math.max(REACT[0],reactionS||0);}
+ // Fire-rate cap: never faster than the gun (Vandal 9.75 rounds/s). Returns the earliest next shot time.
+ function nextShot(t,rate){return t+1/Math.max(.1,rate||1);}
+ return {hash,rng,clamp,pickW,REACT,personality,reaction,crosshair,crosshairAt,firePattern,peek,attackPlan,defensePlan,roles,teamBuy,buyFor,onMateDeath,onSound,ATTACK,DEFENSE,utility,UTIL,turnStep,trackLag,wrapA,SPIKE,plantSpot,postPlant,retake,postPlay,SHOOT_UTIL,shootUtility,TAILWIND,tailwindDash,tailwindKeys,LEVEL,level,aimTraits,AIM_H,aimHeight,halfWidth,aimPlan,aimAt,readyToFire,planFire,idlePitch,recoilPull,discipline,hitPart,BUY,buyEdge,buySide,buyArea,buyRoute,buyExit,buySpot,buyWander,buyNew,buyTick,buyNext,buySep,SENS,cm360,sensOf,turnRate,SENSE,inView,audible,earSpot,memNew,memNote,memForget,memBest,repeek,mayFire,nextShot};
 });
 // Native-map 5v5 bots stop moving as one blob: per-round plans (own spot inside the site, one lurker on the other site,
 // staggered starts by personality, shuffled defender sites with spread holds), lane-varied routes from the shared
@@ -16024,7 +16069,7 @@ if(typeof botAb==='function'){const ba0=botAb;botAb=function(b,dt,see,tg,from){
 // Sound reactions (BotBrain.onSound, as the server's botSense): a bot that hears a gunshot / running footsteps out of a
 // fight either turns to it and keeps going (xFace already does), stops and holds that angle for 0.6 s + up to 1.2 s by
 // patience, or pushes a close gunshot. Not the Spike carrier, not attackers fetching a dropped Spike, not a late retake.
-var XBH={k:null};
+var XBH={k:null,w:null};
 function xbvSound(p,kind){
  if(!p||!running||mode!=='five'||FV.dm||!window.BotBrain)return;const now=performance.now(),s=FV.sp||{};
  for(const L of [bots,allies])for(const u of L){if(!u||!u.alive||!u.g||!(u.hearT>=1.2)||!u.hear||u.hear[0]!==p.x||u.hear[1]!==p.z||u.see>0||(u.xHeardAt&&now-u.xHeardAt<1500))continue;
@@ -16034,8 +16079,12 @@ function xbvSound(p,kind){
   else if(c==='hold'){const dur=.6+B.patience*1.2;u.xHold={until:now+dur*1000,x:p.x,z:p.z};u.hearT=Math.max(u.hearT,dur);}
   else u.xHold=null;}
 }
-if(typeof SFX!=='undefined')['at','step'].forEach(k=>{const f=SFX[k];if(f)SFX[k]=function(p){const k0=XBH.k;XBH.k=k==='at'?'shot':'step';try{return f.apply(this,arguments);}finally{XBH.k=k0;}};});
-if(typeof xHear==='function'){const h0=xHear;xHear=function(p){const r=h0.apply(this,arguments);try{xbvSound(p,XBH.k||'step');}catch(e){}return r;};}
+if(typeof SFX!=='undefined')['at','step'].forEach(k=>{const f=SFX[k];if(f)SFX[k]=function(p,w){const k0=XBH.k,w0=XBH.w;XBH.k=k==='at'?'shot':'step';XBH.w=k==='at'?w:null;try{return f.apply(this,arguments);}finally{XBH.k=k0;XBH.w=w0;}};});
+// the player's own running steps (SFX.selfStep: never walking / crouching) are heard by enemy bots like a bot's (bots-perception-2)
+if(typeof SFX!=='undefined'&&SFX.selfStep){const f=SFX.selfStep;SFX.selfStep=function(){const r=f.apply(this,arguments);try{if(running&&player&&player.hp>0&&typeof xHear==='function'){const k0=XBH.k;XBH.k='step';try{xHear({x:player.x,z:player.z});}finally{XBH.k=k0;}}}catch(e){}return r;};}
+// a bot's ability cast is heard within 30 m by the other team
+if(typeof xBUse==='function'){const f=xBUse;xBUse=function(b){const r=f.apply(this,arguments);try{if(r&&b&&b.g)xbvHearMem(b.g.position,'cast');}catch(e){}return r;};}
+if(typeof xHear==='function'){const h0=xHear;xHear=function(p){const r=h0.apply(this,arguments);try{xbvHearMem(p,XBH.k||'shot',XBH.w);}catch(e){}try{xbvSound(p,XBH.k||'step');}catch(e){}return r;};}
 // holding: stand still (goal = where it stands) while it faces the sound; a fight or a trade ends it
 {const g0=xGoal;xGoal=function(u,team,atk,out){if(u&&u.xHold&&u.g&&!(u.see>0)&&mode==='five'){if(performance.now()<u.xHold.until){const p=u.g.position;if(u.hearT>0){u.hear=u.hear||[0,0];u.hear[0]=u.xHold.x;u.hear[1]=u.xHold.z;}return x2(out,p.x,p.z);}u.xHold=null;}return g0.apply(this,arguments);};}
 // Turn-rate limit per bot (BotBrain personality turn 7-14 rad/s, as the server; was 12 rad/s for every bot) and no shot
@@ -16182,6 +16231,40 @@ function xbbTick(dt){const C=nmActive();if(!C||!C.nav||!C.meta||!C.meta.attacker
  for(const [team,atk] of [[bots,!FV.atk],[allies,!!FV.atk]])for(const u of team){if(!u||!u.alive||!u.g||u.nt||u.det>0)continue;try{xbbStep(C,u,team,atk,dt);}catch(e){u.xbb=Object.assign(u.xbb||{},{off:true});}}}
 function xbbEnd(){for(const u of bots.concat(allies))if(u){u.xbb=null;u.mv=false;u.spd=0;}}
 if(typeof fiveTick==='function'){const ft0=fiveTick;fiveTick=function(dt){const on=xbbOn(),r=ft0.apply(this,arguments);if(on){try{xbbTick(window.xLdOn?0:Math.min(.1,dt||0));}catch(e){}if(!(FV.buy>0))xbbEnd();}return r;};}
+// ---- Perception (bots-perception-2; vendor/bot-brain.cjs SENSE / inView / audible / mem*, as the server's Simulation.bot,
+// bots.js hearTick / botView). Enemy and ally bots see an enemy only inside the 103 deg view cone (xbInView) with a clear
+// line; a shot needs a fresh, uncached line to the target that frame (xbLosNow: the 100 ms los cache never lets a burst
+// go on into a wall the target just stepped behind, and a fight ends the frame sight is lost). What a bot hears (running
+// footsteps within 30 m - the player's own included - gunshots across the map, suppressed Ghost / Spectre / Phantom
+// within 40 m, a bot's ability cast within 30 m) or last saw goes into u.xMem; out of a fight it looks at the freshest
+// contact at its own turn rate (xbFaceTo, xFace) and Deathmatch bots hunt it (xbHunt) or roam the spawn points - never
+// where an enemy really is.
+function xbNow(){return performance.now()/1000;}
+function xbInView(u,dx,dz,d){if(!window.BotBrain||!u||!u.g)return true;return BotBrain.inView(u.g.rotation.y-Math.atan2(dx,dz),d);}
+function xbLosNow(from,eye){return typeof losRaw==='function'?losRaw(from,eye):true;}
+function xbMem(u){return u.xMem||(u.xMem=BotBrain.memNew());}
+function xbId(t){return t===player?'player':(t&&t.name)||'?';}
+function xbLive(id){if(id==='player')return !!player&&player.hp>0;for(const L of [bots,allies])for(const u of L)if(u&&u.name===id)return !!u.alive;return false;}
+function xbSeen(u,t,x,y,z){if(!window.BotBrain||!u)return;BotBrain.memNote(xbMem(u),xbId(t),x,y||0,z,xbNow(),'seen');}
+function xbBest(u,age){if(!window.BotBrain||!u||!u.xMem||!u.g)return null;const m=u.xMem;for(const id in m.c)if(!xbLive(id))delete m.c[id];const p=u.g.position;return BotBrain.memBest(m,xbNow(),p.x,p.z,age);}
+function xbGlance(u){const c=xbBest(u,window.BotBrain?BotBrain.SENSE.glance:0);if(!c)return null;const p=u.g.position,d=Math.hypot(c.x-p.x,c.z-p.z);return d>.8&&d<45?c:null;}
+function xbFaceTo(u,want,dt){const B=xbBrain(u);if(!B||!u.g)return null;return BotBrain.turnStep(B,u.g.rotation.y,want,dt).yaw;}
+// out of a fight in Deathmatch / TDM: the freshest contact (BotBrain.SENSE.hunt s), else a spawn point 15 m+ away (new one
+// on arrival or after 15 s); other modes keep their own goals.
+function xbHunt(u,tg,out){const c=xbBest(u,window.BotBrain?BotBrain.SENSE.hunt:0);if(c)return x2(out,c.x,c.z);const p=u.g.position,now=xbNow();
+ if(mode==='five'&&FV.dm&&typeof dmPts==='function'){let r=u.xRoam;if(!r||Math.hypot(r[0]-p.x,r[1]-p.z)<2.5||now>(u.xRoamT||0)){const P=dmPts()||[];r=null;for(let k=0;k<12&&P.length;k++){const q=P[Math.floor(Math.random()*P.length)];if(Math.hypot(q[0]-p.x,q[1]-p.z)>=15){r=q;break;}}if(!r&&P.length)r=P[0];u.xRoam=r;u.xRoamT=now+15;}if(r)return x2(out,r[0],r[1]);}
+ return x2(out,tg.x,tg.z);}
+// what an unsighted bot knows of the nearest threat for its peek / creep logic: [dx, dz, dist] toward the freshest contact,
+// or nothing known (dist 1e9: no jiggle, no creeping up on an enemy it has not seen or heard).
+function xbKnown(u,p){const c=xbBest(u,window.BotBrain?BotBrain.SENSE.hunt:0);if(!c)return [0,0,1e9];const dx=c.x-p.x,dz=c.z-p.z;return [dx,dz,Math.hypot(dx,dz)||.01];}
+// hearing range for the turn-toward-it reaction (base xHear): a close gunshot (35 m, as the server's botSense) or running
+// footsteps inside the 30 m sound circle; every audible sound also goes into memory (xbvHearMem), map-wide shots included.
+function xbEarR(){return XBH.k==='shot'?35:window.BotBrain?BotBrain.SENSE.step:25;}
+function xbvHearMem(p,kind,w){if(!p||!window.BotBrain)return;let src=null,srcBot=false;
+ if(player&&player.hp>0&&Math.hypot(player.x-p.x,player.z-p.z)<.6)src='player';
+ for(const L of [bots,allies])for(const u of L){if(src||!u||!u.alive||!u.g)continue;if(Math.hypot(u.g.position.x-p.x,u.g.position.z-p.z)<.6){src=u.name;srcBot=L===bots;}}
+ if(!src)return;if(src==='player'&&kind==='shot'&&!w&&typeof wName==='function')w=wName();const lis=srcBot?allies:bots,now=xbNow(),k=kind==='shot'?'shot':kind==='cast'?'cast':'step';
+ for(const u of lis){if(!u||!u.alive||!u.g)continue;const q=u.g.position,d=Math.hypot(q.x-p.x,q.z-p.z);if(!BotBrain.audible(k,d,w))continue;const e=BotBrain.earSpot(p.x,p.z,q.x,q.z,Math.random(),Math.random());BotBrain.memNote(xbMem(u),src,e[0],p.y||0,e[1],now,'heard');}}
 // ---- END BOT VARIETY ----
 // ---- DEBUG HOOKS ----
 // Headless/manual testing hooks. Active only on localhost or with ?__vs=1.

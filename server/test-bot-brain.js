@@ -3,7 +3,7 @@
 // varied round strategies (sites, plans, defence setups), a team economy, and reactions to sound and teammates dying.
 // Deterministic: seeded test RNG -> botSeed 0, so every run replays the same decisions.
 import fs from 'node:fs/promises';import assert from 'node:assert/strict';import {createRequire} from 'node:module';
-import {Simulation} from './src/simulation.js';import {SpikeSimulation} from './src/spike.js';import {persona,strategy,plan} from './src/bots.js';import {loadWorld} from './src/world.js';
+import {Simulation} from './src/simulation.js';import {SpikeSimulation} from './src/spike.js';import {persona,strategy,plan,botView} from './src/bots.js';import {loadWorld} from './src/world.js';
 const B=createRequire(import.meta.url)('../vendor/bot-brain.cjs'),out=[];
 // 1. Pure decisions
 {const sites=['A','B','C'],last=[],types=new Set(),ss=new Set();for(let r=0;r<20;r++){const p=B.attackPlan(B.hash('t|'+r),sites,{last:last.slice(-4)});last.push(p);types.add(p.type);ss.add(p.site);
@@ -61,10 +61,10 @@ const G={map:{attacker:[-14,0,0],defender:[14,0,-28],sites:{A:[-8,0,-14],B:[8,0,
 // on target; a strafing target is tracked from slightly behind (misses while the crosshair catches up)
 {const s=new Simulation(G,'tdm','ascent',()=>.5),t=s.add('Target','Jett',true),b=s.add('Bot Raze','Raze',false);s.phase='game';
  Object.assign(t,{team:1,x:0,y:0,z:-12,hp:1e9});Object.assign(b,{team:0,x:0,y:0,z:0,look:Math.PI});const P=persona(s,b);let fireTurning=0,looks=[];
- for(let i=0;i<40;i++){/* 2 s: an enemy behind = slower reaction + the swing (bots-human-1) */s.time+=.05;const l0=b.look;s.bot(b);looks.push(Math.abs(Math.atan2(Math.sin(b.look-l0),Math.cos(b.look-l0))));if(b.input.fire&&b.turnLeft>=.2)fireTurning++;}
+ for(let i=0;i<40;i++){/* 2 s: an enemy behind = slower reaction + the swing (bots-human-1); it is heard (a gunshot: bots-perception-2 - a silent enemy behind is never seen) and the view turns at the bot's own rate (botView, as Simulation.step) */s.time+=.05;if(i===0)t.shotAt=s.time;const l0=b.look;s.bot(b);botView(s,b,l0,.05);looks.push(Math.abs(Math.atan2(Math.sin(b.look-l0),Math.cos(b.look-l0))));if(b.input.fire&&b.turnLeft>=.2)fireTurning++;}
  assert.ok(looks[0]<=P.brain.turn*.05+1e-9&&P.brain.turn>=7&&P.brain.turn<=14,'a 180 takes several ticks ('+looks[0].toFixed(2)+' rad in the first 50 ms, '+P.brain.turn.toFixed(1)+' rad/s)');assert.equal(fireTurning,0,'no shots while still swinging');
  assert.ok(Math.abs(Math.atan2(Math.sin(b.look),Math.cos(b.look)))<.2,'on target after the swing');
- let sum=0,n=0;for(let i=0;i<60;i++){s.time+=.05;t.vx=6;t.vz=0;t.x+=6*.05;s.bot(b);if(i<10)continue;const exact=Math.atan2(-(t.x-b.x),-(t.z-b.z)),err=Math.atan2(Math.sin(b.look-exact),Math.cos(b.look-exact));sum+=err;n++;}
+ for(let i=0;i<20;i++){s.time+=.05;s.bot(b);}/* settle on the still target first */let sum=0,n=0;for(let i=0;i<60;i++){s.time+=.05;t.vx=6;t.vz=0;t.x+=6*.05;s.bot(b);if(i<10)continue;const exact=Math.atan2(-(t.x-b.x),-(t.z-b.z)),err=Math.atan2(Math.sin(b.look-exact),Math.cos(b.look-exact));sum+=err;n++;}
  const lagRad=sum/n;assert.ok(Math.abs(lagRad)>.004,'the crosshair trails a strafing target ('+lagRad.toFixed(4)+' rad)');
  out.push('turn '+P.brain.turn.toFixed(1)+' rad/s, tracking lag '+(Math.abs(lagRad)*1000).toFixed(1)+' mrad');}
 // 4. Plan utility ("use utility before entry"): pure timing, then a real Ascent match where casts follow the plan

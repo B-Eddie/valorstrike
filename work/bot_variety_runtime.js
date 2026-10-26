@@ -207,7 +207,7 @@ if(typeof botAb==='function'){const ba0=botAb;botAb=function(b,dt,see,tg,from){
 // Sound reactions (BotBrain.onSound, as the server's botSense): a bot that hears a gunshot / running footsteps out of a
 // fight either turns to it and keeps going (xFace already does), stops and holds that angle for 0.6 s + up to 1.2 s by
 // patience, or pushes a close gunshot. Not the Spike carrier, not attackers fetching a dropped Spike, not a late retake.
-var XBH={k:null};
+var XBH={k:null,w:null};
 function xbvSound(p,kind){
  if(!p||!running||mode!=='five'||FV.dm||!window.BotBrain)return;const now=performance.now(),s=FV.sp||{};
  for(const L of [bots,allies])for(const u of L){if(!u||!u.alive||!u.g||!(u.hearT>=1.2)||!u.hear||u.hear[0]!==p.x||u.hear[1]!==p.z||u.see>0||(u.xHeardAt&&now-u.xHeardAt<1500))continue;
@@ -217,8 +217,12 @@ function xbvSound(p,kind){
   else if(c==='hold'){const dur=.6+B.patience*1.2;u.xHold={until:now+dur*1000,x:p.x,z:p.z};u.hearT=Math.max(u.hearT,dur);}
   else u.xHold=null;}
 }
-if(typeof SFX!=='undefined')['at','step'].forEach(k=>{const f=SFX[k];if(f)SFX[k]=function(p){const k0=XBH.k;XBH.k=k==='at'?'shot':'step';try{return f.apply(this,arguments);}finally{XBH.k=k0;}};});
-if(typeof xHear==='function'){const h0=xHear;xHear=function(p){const r=h0.apply(this,arguments);try{xbvSound(p,XBH.k||'step');}catch(e){}return r;};}
+if(typeof SFX!=='undefined')['at','step'].forEach(k=>{const f=SFX[k];if(f)SFX[k]=function(p,w){const k0=XBH.k,w0=XBH.w;XBH.k=k==='at'?'shot':'step';XBH.w=k==='at'?w:null;try{return f.apply(this,arguments);}finally{XBH.k=k0;XBH.w=w0;}};});
+// the player's own running steps (SFX.selfStep: never walking / crouching) are heard by enemy bots like a bot's (bots-perception-2)
+if(typeof SFX!=='undefined'&&SFX.selfStep){const f=SFX.selfStep;SFX.selfStep=function(){const r=f.apply(this,arguments);try{if(running&&player&&player.hp>0&&typeof xHear==='function'){const k0=XBH.k;XBH.k='step';try{xHear({x:player.x,z:player.z});}finally{XBH.k=k0;}}}catch(e){}return r;};}
+// a bot's ability cast is heard within 30 m by the other team
+if(typeof xBUse==='function'){const f=xBUse;xBUse=function(b){const r=f.apply(this,arguments);try{if(r&&b&&b.g)xbvHearMem(b.g.position,'cast');}catch(e){}return r;};}
+if(typeof xHear==='function'){const h0=xHear;xHear=function(p){const r=h0.apply(this,arguments);try{xbvHearMem(p,XBH.k||'shot',XBH.w);}catch(e){}try{xbvSound(p,XBH.k||'step');}catch(e){}return r;};}
 // holding: stand still (goal = where it stands) while it faces the sound; a fight or a trade ends it
 {const g0=xGoal;xGoal=function(u,team,atk,out){if(u&&u.xHold&&u.g&&!(u.see>0)&&mode==='five'){if(performance.now()<u.xHold.until){const p=u.g.position;if(u.hearT>0){u.hear=u.hear||[0,0];u.hear[0]=u.xHold.x;u.hear[1]=u.xHold.z;}return x2(out,p.x,p.z);}u.xHold=null;}return g0.apply(this,arguments);};}
 // Turn-rate limit per bot (BotBrain personality turn 7-14 rad/s, as the server; was 12 rad/s for every bot) and no shot
@@ -365,4 +369,38 @@ function xbbTick(dt){const C=nmActive();if(!C||!C.nav||!C.meta||!C.meta.attacker
  for(const [team,atk] of [[bots,!FV.atk],[allies,!!FV.atk]])for(const u of team){if(!u||!u.alive||!u.g||u.nt||u.det>0)continue;try{xbbStep(C,u,team,atk,dt);}catch(e){u.xbb=Object.assign(u.xbb||{},{off:true});}}}
 function xbbEnd(){for(const u of bots.concat(allies))if(u){u.xbb=null;u.mv=false;u.spd=0;}}
 if(typeof fiveTick==='function'){const ft0=fiveTick;fiveTick=function(dt){const on=xbbOn(),r=ft0.apply(this,arguments);if(on){try{xbbTick(window.xLdOn?0:Math.min(.1,dt||0));}catch(e){}if(!(FV.buy>0))xbbEnd();}return r;};}
+// ---- Perception (bots-perception-2; vendor/bot-brain.cjs SENSE / inView / audible / mem*, as the server's Simulation.bot,
+// bots.js hearTick / botView). Enemy and ally bots see an enemy only inside the 103 deg view cone (xbInView) with a clear
+// line; a shot needs a fresh, uncached line to the target that frame (xbLosNow: the 100 ms los cache never lets a burst
+// go on into a wall the target just stepped behind, and a fight ends the frame sight is lost). What a bot hears (running
+// footsteps within 30 m - the player's own included - gunshots across the map, suppressed Ghost / Spectre / Phantom
+// within 40 m, a bot's ability cast within 30 m) or last saw goes into u.xMem; out of a fight it looks at the freshest
+// contact at its own turn rate (xbFaceTo, xFace) and Deathmatch bots hunt it (xbHunt) or roam the spawn points - never
+// where an enemy really is.
+function xbNow(){return performance.now()/1000;}
+function xbInView(u,dx,dz,d){if(!window.BotBrain||!u||!u.g)return true;return BotBrain.inView(u.g.rotation.y-Math.atan2(dx,dz),d);}
+function xbLosNow(from,eye){return typeof losRaw==='function'?losRaw(from,eye):true;}
+function xbMem(u){return u.xMem||(u.xMem=BotBrain.memNew());}
+function xbId(t){return t===player?'player':(t&&t.name)||'?';}
+function xbLive(id){if(id==='player')return !!player&&player.hp>0;for(const L of [bots,allies])for(const u of L)if(u&&u.name===id)return !!u.alive;return false;}
+function xbSeen(u,t,x,y,z){if(!window.BotBrain||!u)return;BotBrain.memNote(xbMem(u),xbId(t),x,y||0,z,xbNow(),'seen');}
+function xbBest(u,age){if(!window.BotBrain||!u||!u.xMem||!u.g)return null;const m=u.xMem;for(const id in m.c)if(!xbLive(id))delete m.c[id];const p=u.g.position;return BotBrain.memBest(m,xbNow(),p.x,p.z,age);}
+function xbGlance(u){const c=xbBest(u,window.BotBrain?BotBrain.SENSE.glance:0);if(!c)return null;const p=u.g.position,d=Math.hypot(c.x-p.x,c.z-p.z);return d>.8&&d<45?c:null;}
+function xbFaceTo(u,want,dt){const B=xbBrain(u);if(!B||!u.g)return null;return BotBrain.turnStep(B,u.g.rotation.y,want,dt).yaw;}
+// out of a fight in Deathmatch / TDM: the freshest contact (BotBrain.SENSE.hunt s), else a spawn point 15 m+ away (new one
+// on arrival or after 15 s); other modes keep their own goals.
+function xbHunt(u,tg,out){const c=xbBest(u,window.BotBrain?BotBrain.SENSE.hunt:0);if(c)return x2(out,c.x,c.z);const p=u.g.position,now=xbNow();
+ if(mode==='five'&&FV.dm&&typeof dmPts==='function'){let r=u.xRoam;if(!r||Math.hypot(r[0]-p.x,r[1]-p.z)<2.5||now>(u.xRoamT||0)){const P=dmPts()||[];r=null;for(let k=0;k<12&&P.length;k++){const q=P[Math.floor(Math.random()*P.length)];if(Math.hypot(q[0]-p.x,q[1]-p.z)>=15){r=q;break;}}if(!r&&P.length)r=P[0];u.xRoam=r;u.xRoamT=now+15;}if(r)return x2(out,r[0],r[1]);}
+ return x2(out,tg.x,tg.z);}
+// what an unsighted bot knows of the nearest threat for its peek / creep logic: [dx, dz, dist] toward the freshest contact,
+// or nothing known (dist 1e9: no jiggle, no creeping up on an enemy it has not seen or heard).
+function xbKnown(u,p){const c=xbBest(u,window.BotBrain?BotBrain.SENSE.hunt:0);if(!c)return [0,0,1e9];const dx=c.x-p.x,dz=c.z-p.z;return [dx,dz,Math.hypot(dx,dz)||.01];}
+// hearing range for the turn-toward-it reaction (base xHear): a close gunshot (35 m, as the server's botSense) or running
+// footsteps inside the 30 m sound circle; every audible sound also goes into memory (xbvHearMem), map-wide shots included.
+function xbEarR(){return XBH.k==='shot'?35:window.BotBrain?BotBrain.SENSE.step:25;}
+function xbvHearMem(p,kind,w){if(!p||!window.BotBrain)return;let src=null,srcBot=false;
+ if(player&&player.hp>0&&Math.hypot(player.x-p.x,player.z-p.z)<.6)src='player';
+ for(const L of [bots,allies])for(const u of L){if(src||!u||!u.alive||!u.g)continue;if(Math.hypot(u.g.position.x-p.x,u.g.position.z-p.z)<.6){src=u.name;srcBot=L===bots;}}
+ if(!src)return;if(src==='player'&&kind==='shot'&&!w&&typeof wName==='function')w=wName();const lis=srcBot?allies:bots,now=xbNow(),k=kind==='shot'?'shot':kind==='cast'?'cast':'step';
+ for(const u of lis){if(!u||!u.alive||!u.g)continue;const q=u.g.position,d=Math.hypot(q.x-p.x,q.z-p.z);if(!BotBrain.audible(k,d,w))continue;const e=BotBrain.earSpot(p.x,p.z,q.x,q.z,Math.random(),Math.random());BotBrain.memNote(xbMem(u),src,e[0],p.y||0,e[1],now,'heard');}}
 // ---- END BOT VARIETY ----

@@ -189,3 +189,26 @@ export function buyClamp(sim,u,old){
 }
 // Round start: the round's own bot logic takes over from wherever the bot stands.
 export function buyEnd(sim){for(const u of sim.units){if(u.human||!u.buyMill)continue;u.buyMill=null;u.input={};}}
+// ---- Perception (bots-perception-2, vendor/bot-brain.cjs SENSE) ----
+// Once per simulation time: what every bot hears. A gunshot (map-wide; Ghost / Spectre / Phantom within 40 m), an ability
+// cast within 30 m, running footsteps within 30 m (Simulation.loud: walking / crouching are silent), anyone within 2 m. A
+// heard enemy goes into the bot's memory (u.mem) at a spot off by up to 8 % of the range (BotBrain.earSpot); contacts of
+// dead enemies are dropped. Sight is noted by Simulation.bot itself.
+const HEARD_CAST=new WeakSet();
+const ear=(a,b,t,k)=>BotBrain.hash(a+'|'+b+'|'+Math.round(t*10)+'|'+k)/4294967296;
+export function hearTick(sim){if(sim._hearT===sim.time)return;sim._hearT=sim.time;const U=sim.units,now=sim.time;
+ for(const e of sim.castEvents||[])if(e&&typeof e==='object'&&e.t==='ac'&&!HEARD_CAST.has(e)){HEARD_CAST.add(e);const c=U.find(v=>v.id===e.i);if(c)c.castAt=now;}
+ for(const m of U){if(m.human||!m.alive||m.loading)continue;const mem=m.mem||(m.mem=BotBrain.memNew());
+  for(const id in mem.c){const v=U.find(w=>String(w.id)===id);if(!v||!v.alive)delete mem.c[id];}
+  for(const e of U){if(e===m||!e.alive||e.loading||(sim.mode!=='dm'&&e.team===m.team))continue;const d=Math.hypot(e.x-m.x,e.z-m.z,e.y-m.y);let k=null;
+   if(e.shotAt>now-.12&&BotBrain.audible('shot',d,e.weapon))k='shot';else if(e.castAt>now-.12&&BotBrain.audible('cast',d))k='cast';else if(BotBrain.audible('near',d))k='near';else if(BotBrain.audible('step',d)&&typeof sim.loud==='function'&&sim.loud(e))k='step';
+   if(!k)continue;const p=BotBrain.earSpot(e.x,e.z,m.x,m.z,ear(m.id,e.id,now,1),ear(m.id,e.id,now,2));const c=BotBrain.memNote(mem,e.id,p[0],e.y,p[1],now,'heard');if(c.kind==='heard')c.how=k;}}}
+// After a bot's tick (not in a fight): its view turns at its own turn rate (BotBrain.turnStep: no snap onto a path heading,
+// no instant 180) toward the freshest contact it heard or last saw within BotBrain.SENSE.glance s (the crosshair waits on that
+// spot at head height: a re-peek there is pre-aimed), else along its way. The movement keeps its world direction:
+// forward / side are re-expressed in the new view.
+export function botView(sim,u,L0,dt){if(u.human||!u.alive||u.sawTarget||!u.input||!Number.isFinite(L0)||!(dt>0))return;const P=persona(sim,u),B=P.brain;
+ let want=u.look;const c=u.mem&&BotBrain.memBest(u.mem,sim.time,u.x,u.z,BotBrain.SENSE.glance),cd=c?Math.hypot(c.x-u.x,c.z-u.z):0;
+ if(c&&cd>.8&&cd<45){want=Math.atan2(u.x-c.x,u.z-c.z);u.pitch=Math.atan2((c.y??u.y)+BotBrain.AIM_H.head-(u.y+1.6-(u.ch||0)),cd)+BotBrain.idlePitch(B)-Math.atan2(BotBrain.AIM_H.head-1.6,15);u.viewAt=c.id;}else u.viewAt=null;
+ if(!Number.isFinite(want))return;const L=u.look,V=BotBrain.wrapA(BotBrain.turnStep(B,L0,want,dt).yaw),f=u.input.forward||0,s=u.input.side||0;u.look=V;
+ if(f||s){const wx=-Math.sin(L)*f+Math.cos(L)*s,wz=-Math.cos(L)*f-Math.sin(L)*s;u.input.forward=-Math.sin(V)*wx-Math.cos(V)*wz;u.input.side=Math.cos(V)*wx-Math.sin(V)*wz;}}

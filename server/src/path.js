@@ -10,7 +10,7 @@ const state=new WeakMap(),CACHE=1024;
 export const BLOCKED_COST=8;
 export function blockedNodes(W){const nav=W.nav;if(nav.blockedNodes)return nav.blockedNodes;const N=nav.nodes,b=new Uint8Array(N.length);if(typeof W.blocked==='function')for(const i of W.allowed||[])b[i]=W.blocked(N[i][0],N[i][2],.3,N[i][1],1.8)?1:0;Object.defineProperty(nav,'blockedNodes',{value:b,enumerable:false});return b;}
 export function prepare(W,S=stateFor(W)){if(S.g)return S.g;const N=W.nav.nodes,A=W.nav.adj,off=new Int32Array(N.length+1);for(let i=0;i<N.length;i++)off[i+1]=off[i]+A[i].length;
- const nb=new Int32Array(off[N.length]),eh=new Float64Array(nb.length),ev=new Float64Array(nb.length),ok=new Uint8Array(N.length);for(const i of W.allowed)ok[i]=1;
+ const nb=new Int32Array(off[N.length]),eh=new Float64Array(nb.length),ev=new Float64Array(nb.length),ok=new Uint8Array(N.length);for(const i of W.allowed||W.playable||[])ok[i]=1;/* a test world may carry playable only */
  const bl=blockedNodes(W);for(let a=0;a<N.length;a++){let q=off[a];for(const b of A[a]){nb[q]=b;eh[q]=Math.hypot(N[a][0]-N[b][0],N[a][2]-N[b][2]);ev[q]=Math.abs(N[a][1]-N[b][1])*.2+(bl[b]?BLOCKED_COST:0);q++;}}
  S.hi=new Int32Array(1024);S.hs=new Float64Array(1024);return S.g={off,nb,eh,ev,ok};}
 function stateFor(W){let S=state.get(W.nav);if(!S){const n=W.nav.nodes.length;S={prev:new Int32Array(n),cost:new Float32Array(n),stamp:new Uint32Array(n),closed:new Uint32Array(n),gen:0,cache:new Map(),allowed:W.allowed};state.set(W.nav,S);}return S;}
