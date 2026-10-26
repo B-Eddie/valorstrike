@@ -18,7 +18,7 @@
 // Barrier Orbs (fx 'barrier') follow the same sight test; static ones stay once seen, Owl Drone / Blast Pack use the grace.
 import {barrierPoints} from './abilities.js';import {devicePoints,DEV_ROWS} from './devices.js';
 export const FOG=Object.freeze({ahead:.4,pad:.45,grace:1,step:30,run:3.6,shot:50,shotFor:1,near:3,killer:3,devNear:6,cast:30});
-const MOVING=new Set(['owl','blastpack']);
+const MOVING=new Set(['owl','blastpack','cloudburst']);
 export function fogGroup(sim,u){return sim.mode==='dm'?'u'+u.id:'t'+u.team;}
 const rowGroup=(sim,r)=>sim.mode==='dm'?'u'+r[0]:'t'+r[1];
 const live=u=>u&&u.alive&&!u.loading;
@@ -44,7 +44,7 @@ export function fogPass(sim,snap){const F=sim.fog||(sim.fog={t:-1,n:0,pairs:new 
   for(const a of L){const ga=fogGroup(sim,a);if(ga===g)continue;if(rev||(run&&near3(a,v,FOG.step))||(shot&&near3(a,v,FOG.shot))||(cast&&near3(a,v,FOG.cast)))mark(ga,v.id,rev?Math.max(now,v.revealedUntil):now+FOG.grace);}}
  // enemy devices / barriers
  for(const g of groups)F.hide.set(g,new Set());
- for(const e of sim.effects||[]){const dev=DEV_ROWS.has(e.kind),bar=e.kind==='barrier';if(!(dev||bar)||!Array.isArray(e.p))continue;const pts=bar?(e.hp>0?barrierPoints(e):[]):devicePoints(e).concat(e.field&&Array.isArray(e.fp)?[[e.fp[0],e.fp[1]+.3,e.fp[2]]]:[]);if(!pts.length)pts.push([e.p[0],e.p[1]+.3,e.p[2]]);
+ for(const e of sim.effects||[]){const dev=DEV_ROWS.has(e.kind),bar=e.kind==='barrier',cb=e.kind==='cloudburst'/* Jett's Cloudburst in flight (fx 'cb' s 0): it leaves the caster's eye */;if(!(dev||bar||cb)||!Array.isArray(e.p))continue;const pts=cb?[e.p.slice()]:bar?(e.hp>0?barrierPoints(e):[]):devicePoints(e).concat(e.field&&Array.isArray(e.fp)?[[e.fp[0],e.fp[1]+.3,e.fp[2]]]:[]);if(!pts.length)pts.push([e.p[0],e.p[1]+.3,e.p[2]]);
   e.fogSeen||(e.fogSeen=new Map());const ownG=sim.mode==='dm'?'u'+e.owner:'t'+e.team;
   for(const g of groups){if(g===ownG)continue;const sticky=!MOVING.has(e.kind);if(sticky&&e.fogSeen.has(g))continue;let seen=false;
    for(const a of L){if(fogGroup(sim,a)!==g)continue;if(pts.some(p=>(a.x-p[0])**2+(a.z-p[2])**2<=FOG.devNear*FOG.devNear&&Math.abs(a.y-p[1])<4)){seen=true;break;}const E=eyes(a);if(E.some(o=>pts.some(p=>segClear(sim,o,p)))){seen=true;break;}}
@@ -59,7 +59,7 @@ export function fogRow(r){const o=r.slice();o[4]=o[5]=o[6]=o[7]=0;o[8]=o[10]?100
 export function fogView(sim,snap,viewer){if(!snap||!viewer||sim.phase!=='game'||sim.fogOff)return snap;const F=fogPass(sim,snap),g=fogGroup(sim,viewer),rel=F.rel.get(g),now=sim.time,kill=viewer.fogKiller&&viewer.fogKiller.until>=now?viewer.fogKiller.id:-1,hide=F.hide.get(g);
  const out={...snap};if(Array.isArray(snap.u))out.u=snap.u.map(r=>!Array.isArray(r)||r[0]===viewer.id||rowGroup(sim,r)===g||!r[10]||r[0]===kill||(rel&&rel.get(r[0])>=now)?r:fogRow(r));
  if(Array.isArray(snap.ev)&&Array.isArray(out.u)){const hid=new Set(out.u.filter(r=>Array.isArray(r)&&r[22]===1).map(r=>r[0]));if(hid.size){const grp=new Map(snap.u.filter(Array.isArray).map(r=>[r[0],rowGroup(sim,r)]));/* a hit on a hidden enemy by someone outside our group: its damage would give away the HP the row hides, and its blood would land at a stale spot */out.ev=snap.ev.filter(e=>!(Array.isArray(e)&&e[0]==='h'&&hid.has(e[2])&&e[1]!==viewer.id&&grp.get(e[1])!==g));}}
- if(Array.isArray(snap.fx)&&hide&&hide.size)out.fx=snap.fx.filter(r=>!(r&&hide.has(r.id)&&(r.kind==='dev'||r.kind==='barrier')));return out;}
+ if(Array.isArray(snap.fx)&&hide&&hide.size)out.fx=snap.fx.filter(r=>!(r&&hide.has(r.id)&&(r.kind==='dev'||r.kind==='barrier'||r.kind==='cb'&&r.s===0)));return out;}
 // A cast event ('ac': caster id, agent, key, eye o, aim d, effect point p) as viewer may receive it. The caster's own team
 // (or the caster, in Deathmatch), and a group the caster is relevant to (seen, heard - a cast is heard within FOG.cast m
 // like a gunshot -, revealed, your killer) get it whole. Anyone else never gets the caster's eye or aim: if the effect

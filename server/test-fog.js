@@ -112,4 +112,11 @@ const adv=(s,t)=>{s.time+=t;};
  assert.deepEqual(v.ev.filter(e=>e[0]==='h').map(e=>e[1]),[a.id],'C on hidden B dropped for A; A\'s own wallbang kept');assert.ok(v.ev.some(e=>e[0]==='k'),'kill feed kept');
  v=hv(b,[H(c,b)]);assert.equal(v.ev.length,1,'the target keeps the hit');v=hv(c,[H(c,b)]);assert.equal(v.ev.length,1,'the shooter keeps the hit');
  b.x=-6;b.z=8;v=hv(a,[H(c,b)]);assert.notEqual(row(v,b)[22],1,'B in sight');assert.equal(v.ev.length,1,'a hit on a visible unit stays');}
+// 20. Jett's Cloudburst in flight (fx 'cb' s 0) leaves the caster's eye: hidden from an enemy until the projectile is in
+// sight; its smoke (s 1) always sent; own team always
+{const {s,a,b}=setup();const e={id:950,kind:'cloudburst',owner:b.id,ag:'Jett',team:b.team,p:[10,1.6,0],until:s.time+5,radius:0};s.effects.push(e);
+ const cbs=(u,st)=>view(s,u).fx.filter(r=>r.kind==='cb'&&r.s===st).map(r=>r.id);
+ assert.deepEqual(cbs(a,0),[],'projectile at the hidden caster: no row');assert.deepEqual(cbs(b,0),[950],'own team: row');
+ e.p=[-4,3,0];assert.deepEqual(cbs(a,0),[950],'projectile out in sight: row');
+ Object.assign(e,{kind:'smoke',cb:true,c:[12,1,0],p:[12,0,0]});assert.deepEqual(cbs(a,1),[950],'the smoke: always');}
 console.log('test-fog: ok');
