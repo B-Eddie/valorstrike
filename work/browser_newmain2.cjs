@@ -39,7 +39,7 @@ const ONLY=(process.env.ONLY||'E,F,G,H').split(',');
  const pick=a=>X(`J.pick=${JSON.stringify(a)};jRound(false);J.c=K().mx.c||1;J.q=K().mx.q||1;J.e=Math.max(1,K().mx.e||1);J.cd={c:0,q:0,e:0,x:0};player.hp=100;J.eq=null;BC.fq=[];J.cbs=[];1`);
 
 
- const tick=async(ms)=>{const t=Date.now();while(Date.now()-t<ms){await X('window.__allow=2;1');await page.waitForTimeout(400);}};
+ const tick=async(ms)=>{const t=Date.now();while(Date.now()-t<ms){await X('if(window.__keepEx)eval(window.__keepEx);window.__allow=2;1');await page.waitForTimeout(400);}};
  const untilF=async(expr,ms)=>{const t=Date.now();while(Date.now()-t<ms){if(await X(expr))return true;await X('if(window.__keepEx)eval(window.__keepEx);window.__allow=2;1');await page.waitForTimeout(300);}return false;};
  const fireSample=async(expr)=>{await X('window.__ts=0.1;1');await page.mouse.down();await page.waitForTimeout(60);await page.mouse.up();await frames(1);const r=await XJ(expr);await X('window.__ts=1;1');return r;};
  const VS=`(()=>{const R=XAF.cur;let sk=0;if(R&&R.root)R.root.traverse(o=>{if(o.isSkinnedMesh)sk++;});const G=R&&R.guns?Object.fromEntries(Object.entries(R.guns).map(([k,v])=>[k,{ok:!!v.ok,vis:v.g.visible,l:v.l?v.l.visible:null}])):null;
@@ -51,7 +51,7 @@ const ONLY=(process.env.ONLY||'E,F,G,H').split(',');
    await keep();await pick(ag);await X(prep+';window.__keepEx='+JSON.stringify(k==='rk'?'if(RS.ss)RS.sst=10':'')+';1');await tick(800);await page.keyboard.press(key);
    const ok=await untilF(`XAF.on&&XAF.last&&XAF.last.gun==="${k}"&&XAF.last.rig===true&&XAF.last.item===true`,60000);const s=await XJ(VS);log(`${ag} ${key} ${k}`,s);await shot(`ultgun-${k}`);
    check(`${ag} ${key} (${k}): ult / ability gun on the agent's own FP arms (gun mode, SkinnedMesh rig under the camera, gun model in the hand, no XVM primitives)`,ok&&s.sk>0&&s.vis&&!s.xvm&&!s.err&&s.mode.startsWith('gun-'),JSON.stringify(s));
-   if(k!=='hp'){await tick(k==='sn'?2600:1600);const n0=await X('XAF.gs?XAF.gs.n:0');await X('window.__keepEx="";1');const s2=await fireSample(VS);log(k+' fired',s2);
+   if(k!=='hp'){await tick(k==='sn'?2600:1600);const n0=await X('XAF.gs?XAF.gs.n:0');const s2=await fireSample(VS);await X('window.__keepEx="";1');log(k+' fired',s2);
     check(`${ag} ${key} (${k}): FIRE plays the gun's fire clip on the arms`,!!s2.gs&&s2.gs.n>n0&&/Fire/.test((s2.last&&s2.last.clip)||''),JSON.stringify(s2));}
    if(k==='rk')await back('Showstopper (rocket spent)');
    else{await X('BC.eq="";BC.td=0;1');await page.keyboard.press('Digit2');await back(`${k} put away (weapon key)`);}
@@ -62,7 +62,7 @@ const ONLY=(process.env.ONLY||'E,F,G,H').split(',');
   const ok=await untilF('XAF.on&&XAF.last&&XAF.last.gun==="bs"&&XAF.last.rig===true&&XAF.last.item===true',60000);const s=await XJ(VS);log('blade storm',s);await shot('bladestorm-idle');
   check("Jett X Blade Storm: Jett's Wushu X set on her FP arms with a knife in each hand",ok&&s.sk>0&&s.vis&&s.guns&&s.guns.bs&&s.guns.bs.vis&&s.guns.bs.l===true,JSON.stringify(s));
   await tick(1800);const clips=[];
-  for(let i=0;i<3;i++){const c=await fireSample('{clip:XAF.last&&XAF.last.clip,n:XAF.gs&&XAF.gs.n,bs:J.bs}');clips.push(c);await tick(1200);}
+  for(let i=0;i<3;i++){const c=await fireSample('{clip:XAF.last&&XAF.last.clip,n:XAF.gs&&XAF.gs.n,bs:J.bs,f:XAF.gs&&+XAF.gs.f.toFixed(3),fl:XAF_GUN.bs.L.fire,key:xAfGunKey(),rw}');clips.push(c);await tick(1200);}
   log('blade storm throws',clips);check('Blade Storm throws play Attack01 -> Attack02 -> Attack03 (right, left, right) and spend knives',clips.map(c=>(c.clip||'').slice(-8)).join()==='Attack01,Attack02,Attack03'&&clips[2].bs<=2,JSON.stringify(clips));
   await X('J.bs=0;J.bsOn=false;1');await page.keyboard.press('Digit2');await back('Blade Storm ended');
  }
@@ -80,7 +80,7 @@ const ONLY=(process.env.ONLY||'E,F,G,H').split(',');
   const e0=R.errors.length;const res={};
   for(const [nm,d] of [['near',1.6],['far',2.9]]){
    const s=await XJ(`(()=>{const b=bots.find(b=>b.alive);if(!b)return null;yaw=0;pitch=-0.05;b.nt=true;b.hp=100;b.g.position.set(player.x,player.y,player.z-${d});if('x' in b){b.x=player.x;b.z=player.z-${d};}window.__kb=b;return {hp:b.hp,p:[b.g.position.x,b.g.position.z]};})()`);
-   await tick(400);await X(`(()=>{window.__ts=0.1;const b=window.__kb;b.g.position.set(player.x,player.y,player.z-${d});if('x' in b){b.x=player.x;b.z=player.z-${d};}b.g.updateMatrixWorld(true);return 1})()`); // hitboxes at the set spot before the swing (raycast uses matrixWorld)
+   await tick(400);await X(`(()=>{window.__ts=0.001;const b=window.__kb;b.g.position.set(player.x,player.y,player.z-${d});if('x' in b){b.x=player.x;b.z=player.z-${d};}b.g.updateMatrixWorld(true);return 1})()`);await frames(1); // time nearly frozen: one frame moves the bone-following hitboxes to the set spot before the swing
    await page.mouse.down();await page.waitForTimeout(60);await page.mouse.up();await frames(1);await X('window.__ts=1;1');await tick(500);
    res[nm]=await XJ(`(()=>{const b=window.__kb;return {d:${d},hp:b.hp,alive:b.alive,dist:+Math.hypot(b.g.position.x-player.x,b.g.position.z-player.z).toFixed(2)};})()`);log('knife '+nm,{s,r:res[nm]});
    await tick(800);}
