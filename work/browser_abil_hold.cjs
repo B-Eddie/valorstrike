@@ -28,47 +28,51 @@ const SIZES=(process.env.SIZES||'1280x720,640x360,390x844').split(',').map(s=>s.
  const page=await ctx.newPage();await require('./pw_shot.cjs')(ctx,page);page.setDefaultTimeout(600000);page.on('pageerror',e=>R.errors.push('pageerror '+String(e).slice(0,300)));page.on('console',m=>{if(m.type()==='error')R.errors.push('console '+m.text().slice(0,300));});
  const X=s=>page.evaluate(s=>window.__xe(s),s);
  const frames=async n=>{await X(`window.__allow=${n};1`);await page.waitForFunction(()=>window.__xe('window.__allow<=0'),null,{timeout:900000,polling:1000});};
+ // hk-30: every hold / wait is in GAME time (abilhold1 on 8d7b750: taps, holds and the 90 deg steer all fell between two of the box's
+ // ~1 s frames, so the page saw no time pass). xSimStep is wrapped to count sim time (installed by go()).
+ const simWait=async(sec,why)=>{const t=+(await X('window.__sim||0'));await page.waitForFunction(t=>window.__xe('window.__sim||0')>=t,t+sec,{timeout:900000,polling:100}).catch(e=>log('simWait '+(why||sec)+' timeout',String(e).slice(0,80)));};
+ const readyWait=()=>page.waitForFunction(()=>window.__xe('J.eq&&J.eq.st==="ready"'),null,{timeout:300000,polling:100}).catch(e=>log('ready wait timeout',String(e).slice(0,80)));
  const shot=async(n,w,h)=>{await frames(2);await page.screenshot({path:`${SHOT}${n}-${w}x${h}.jpg`,type:'jpeg',quality:82,timeout:150000}).catch(e=>log('shot '+n+' failed (non-fatal)',String(e).slice(0,120)));};
  await page.goto('http://127.0.0.1:8876/',{waitUntil:'domcontentloaded'});await page.waitForFunction(()=>window.__xe&&window.xValorantAssets,null,{timeout:180000,polling:1000});log('assets',1);
  await page.getByRole('button',{name:'Got it',exact:true}).click({timeout:5000}).catch(()=>{});
  const go=async(fn,agent)=>{await X(`FV.pick='ascent';J.pick=${JSON.stringify(agent)};window.xSwift=false;setTimeout(()=>xGo(${fn}),0);1`);
   await page.waitForFunction(()=>window.__xe('running&&!window.xLdOn&&bots.length>0'),null,{timeout:1200000,polling:2000});
   await X(`[...document.querySelectorAll('button')].filter(b=>/^got it$/i.test(b.textContent.trim())&&b.offsetParent).forEach(b=>b.click());if(!window.__gd){window.__gd=1;const h=hurt;hurt=function(t){if(t===player&&window.__god)return;return h.apply(this,arguments);};}1`);
-  await X(`if(!window.__rp){window.__rp=1;window.__allow=3;const r0=renderer.render;renderer.render=function(sc,c){if(sc===scene){if(window.__allow<=0)return;window.__allow--;}return r0.call(this,sc,c);};}1`);};
+  await X(`if(!window.__rp){window.__rp=1;window.__allow=3;const r0=renderer.render;renderer.render=function(sc,c){if(sc===scene){if(window.__allow<=0)return;window.__allow--;}return r0.call(this,sc,c);};}if(!window.__simH){window.__simH=1;window.__sim=0;const s0=xSimStep;xSimStep=function(d){const r=s0.apply(this,arguments);window.__sim+=d;return r;};}1`);};
 
  const pick=a=>X(`J.pick=${JSON.stringify(a)};jRound(false);J.c=K().mx.c||1;J.q=K().mx.q||1;J.e=Math.max(1,K().mx.e||1);J.cd={c:0,q:0,e:0,x:0};player.hp=100;J.eq=null;BC.fq=[];J.cbs=[];1`);
  const eqSt=()=>X('J.eq?J.eq.st:null');
- const waitFq=async()=>{for(let i=0;i<80;i++){const f=await X('JSON.stringify(BC.fq.map(q=>[q.k,+(+q.L).toFixed(1)]))').then(JSON.parse);if(f.length)return f;await page.waitForTimeout(50);}return [];};
+ const waitFq=async()=>{for(let i=0;i<80;i++){const f=await X('JSON.stringify(BC.fq.map(q=>[q.k,+(+q.L).toFixed(1)]))').then(JSON.parse);if(f.length)return f;await simWait(0.05,'fq');}return [];};
  await go('startFive','Breach');await X('window.__god=1;bots.concat(allies).forEach(u=>u.nt=true);FV.buy=0;1');await frames(3);await page.mouse.move(640,360);
  // A. Breach
  for(const [nm,hold] of [['tap',60],['held',1300]]){
-  await pick('Breach');await frames(1);await page.keyboard.press('KeyE');for(let i=0;i<30&&(await eqSt())!=='ready';i++)await page.waitForTimeout(100);log('breach '+nm+' drawn',await eqSt());
-  await page.mouse.down();await page.waitForTimeout(hold);if(nm==='held'){log('breach held state',await eqSt());await shot('abilhold-breach-charging',1280,720);}await page.mouse.up();
+  await pick('Breach');await frames(1);await page.keyboard.down('KeyE');await simWait(0.05,'KeyE');await page.keyboard.up('KeyE');await readyWait();log('breach '+nm+' drawn',await eqSt());
+  await page.mouse.down();await simWait(hold/1000,'hold');if(nm==='held'){log('breach held state',await eqSt());await shot('abilhold-breach-charging',1280,720);}await page.mouse.up();
   const f=await waitFq();log('breach '+nm+' strip',f);if(nm==='held')await shot('abilhold-breach-released',1280,720);
   const L=f.length?f[0][1]:null;
   check(nm==='tap'?'Breach E tap: Fault Line strip near the 8 m minimum (8..14 m)':'Breach E held 1.3 s: Fault Line strip near the 56 m maximum (>=50 m)',nm==='tap'?L>=8&&L<14:L>=50&&L<=56,JSON.stringify(f));
-  for(let i=0;i<4;i++){await page.waitForTimeout(500);await frames(1);}
+  await simWait(2,'breach after');await frames(1);
  }
  // B. Jett
  await pick('Jett');await frames(1);
  const cb=()=>X('JSON.stringify({n:J.cbs.length,c:J.c,sm:J.smokes.length,cbs:J.cbs.map(c=>({held:c.st.held,p:[+c.st.p[0].toFixed(1),+c.st.p[2].toFixed(1)],v:[+c.st.v[0].toFixed(1),+c.st.v[2].toFixed(1)]})),yaw:+yaw.toFixed(3),pp:[+player.x.toFixed(1),+player.z.toFixed(1)]})').then(JSON.parse);
- let s0=await cb();await page.keyboard.down('KeyC');await page.waitForTimeout(60);await page.keyboard.up('KeyC');await page.waitForTimeout(200);let s1=await cb();log('jett tap',s1);
+ let s0=await cb();await page.keyboard.down('KeyC');await simWait(0.06,'tap');await page.keyboard.up('KeyC');await simWait(0.2,'after tap');let s1=await cb();log('jett tap',s1);
  check('Jett C tap: thrown on the press (charge spent, no equip), not steered after release',s1.c===s0.c-1&&(s1.n===1?s1.cbs[0].held===false:s1.sm===s0.sm+1),JSON.stringify(s1));
- for(let i=0;i<40&&(await X('J.cbs.length'));i++)await page.waitForTimeout(100);let s2=await cb();log('jett tap landed',s2);check('Jett C tap: lands as a smoke',s2.sm===s0.sm+1&&s2.n===0,JSON.stringify(s2));
- await page.waitForTimeout(500);s0=await cb();await page.keyboard.down('KeyC');await page.waitForTimeout(250);s1=await cb();log('jett held',s1);
+ for(let i=0;i<60&&(await X('J.cbs.length'));i++)await simWait(0.1,'flight');let s2=await cb();log('jett tap landed',s2);check('Jett C tap: lands as a smoke',s2.sm===s0.sm+1&&s2.n===0,JSON.stringify(s2));
+ await simWait(0.5,'gap');s0=await cb();await page.keyboard.down('KeyC');await simWait(0.25,'hold C');s1=await cb();log('jett held',s1);
  check('Jett C held: projectile out and steering',s1.n===1&&s1.cbs[0].held===true,JSON.stringify(s1));
- await X('yaw+=Math.PI/2;1');await page.waitForTimeout(500);s2=await cb();log('jett held after 90 deg turn',s2);await shot('abilhold-jett-steer',1280,720);
+ await X('yaw+=Math.PI/2;1');await simWait(0.5,'steer');s2=await cb();log('jett held after 90 deg turn',s2);await shot('abilhold-jett-steer',1280,720);
  {const fx=-Math.sin(s2.yaw),fz=-Math.cos(s2.yaw),c=s2.cbs[0],vl=c?Math.hypot(c.v[0],c.v[1]):0,dot=c&&vl?(c.v[0]*fx+c.v[1]*fz)/vl:-9;
   check('Jett C held: the flight turns with the crosshair (horizontal velocity within ~45 deg of the new aim)',!!c&&c.held&&dot>0.7,JSON.stringify({dot,c}));}
- await page.keyboard.up('KeyC');await page.waitForTimeout(150);let s3=await cb();log('jett released',s3);
+ await page.keyboard.up('KeyC');await simWait(0.15,'release');let s3=await cb();log('jett released',s3);
  check('Jett C released: no more steering (or already landed)',s3.n===0||s3.cbs[0].held===false,JSON.stringify(s3));
- for(let i=0;i<40&&(await X('J.cbs.length'));i++)await page.waitForTimeout(100);s3=await cb();log('jett held landed',s3);check('Jett C held: lands as a smoke',s3.sm===s0.sm+1,JSON.stringify(s3));await shot('abilhold-jett-smoke',1280,720);
+ for(let i=0;i<60&&(await X('J.cbs.length'));i++)await simWait(0.1,'flight');s3=await cb();log('jett held landed',s3);check('Jett C held: lands as a smoke',s3.sm===s0.sm+1,JSON.stringify(s3));await shot('abilhold-jett-smoke',1280,720);
  // C. Reyna Leer
  await pick('Reyna');await frames(1);const e0=R.errors.length;const c0=await X('J.c');
- await page.keyboard.press('KeyC');for(let i=0;i<30&&(await eqSt())!=='ready';i++)await page.waitForTimeout(100);log('reyna leer drawn',await eqSt());
- await page.mouse.down();await page.waitForTimeout(80);await page.mouse.up();
- for(let i=0;i<6;i++){await page.waitForTimeout(500);await frames(1);if(i===1)await shot('abilhold-reyna-leer',1280,720);}
+ await page.keyboard.down('KeyC');await simWait(0.05,'KeyC');await page.keyboard.up('KeyC');await readyWait();log('reyna leer drawn',await eqSt());
+ await page.mouse.down();await simWait(0.08,'click');await page.mouse.up();
+ for(let i=0;i<6;i++){await simWait(0.5,'leer');await frames(1);if(i===1)await shot('abilhold-reyna-leer',1280,720);}
  const lr=await X('JSON.stringify({c:J.c,leer:(J.leer||[]).length,eq:J.eq?J.eq.st:null,running})').then(JSON.parse);log('reyna after leer',lr);
- const newErr=R.errors.slice(e0);check('Reyna C Leer: cast (charge spent), no page / console errors through its life, game still running',lr.c===c0-1&&!newErr.length&&lr.running,JSON.stringify({lr,newErr}));
+ const newErr=R.errors.slice(e0).filter(e=>!/ERR_CONNECTION_REFUSED/.test(e));/* no game server in this offline row: the page's server probe is refused (not a Leer error) */check('Reyna C Leer: cast (charge spent), no page / console errors through its life, game still running',lr.c===c0-1&&!newErr.length&&lr.running,JSON.stringify({lr,newErr}));
  log('errors',R.errors);await browser.close();
 })().catch(e=>{R.errors.push(String(e).slice(0,400));fs.writeFileSync(OUT,JSON.stringify(R,null,1));process.exit(1);});

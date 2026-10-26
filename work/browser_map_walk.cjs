@@ -41,27 +41,32 @@ const SIZES=(process.env.SIZES||'1280x720,640x360,390x844').split(',').map(s=>s.
  const place=(p,yw)=>X(`player.x=${p[0]};player.y=${p[1]};player.z=${p[2]};player.vx=player.vz=0;player.vy=0;yaw=${yw};pitch=0;keys.KeyW=false;keys.Space=false;1`);
  const pos=()=>X('JSON.stringify([+player.x.toFixed(2),+player.y.toFixed(2),+player.z.toFixed(2)])').then(JSON.parse);
  const yawTo=(dx,dz)=>Math.atan2(-dx,-dz);
- const walk=async(ms)=>{const S=[await pos()];await X('keys.KeyW=true;1');const t=Date.now();while(Date.now()-t<ms){await page.waitForTimeout(150);S.push(await pos());}await X('keys.KeyW=false;1');await page.waitForTimeout(200);S.push(await pos());return S;};
+ // hk-30: walks and settles in GAME time (mapwalk1 on 8d7b750: several walks moved 0 m in 0.9-1 s of wall time on the ~1 frame/s box -
+ // same class as mapc2_1 wall 1). xSimStep is wrapped to count sim time; samples every 0.15 s of game time.
+ const hookSim=()=>X(`if(!window.__simH){window.__simH=1;window.__sim=0;const s0=xSimStep;xSimStep=function(d){const r=s0.apply(this,arguments);window.__sim+=d;return r;};}1`);
+ const simNow=async()=>+(await X('window.__sim||0'));
+ const simWait=async(sec,why)=>{const t=await simNow();await page.waitForFunction(t=>window.__xe('window.__sim||0')>=t,t+sec,{timeout:900000,polling:100}).catch(e=>log('simWait '+(why||sec)+' timeout',String(e).slice(0,80)));};
+ const walk=async(ms)=>{const S=[await pos()];await X('keys.KeyW=true;1');const t=await simNow();while((await simNow())-t<ms/1000){await simWait(0.15,'walk');S.push(await pos());}await X('keys.KeyW=false;1');await simWait(0.2,'stop');S.push(await pos());return S;};
  const along=(S,o,d)=>S.map(p=>(p[0]-o[0])*d[0]+(p[2]-o[2])*d[1]);
  for(const map of (process.env.MAPS||'ascent,breeze').split(',')){
   await X(`FV.pick='${map}';J.pick='Jett';window.xSwift=false;setTimeout(()=>xGo(startFive),0);1`);
   await page.waitForFunction(()=>window.__xe('running&&!window.xLdOn&&bots.length>0'),null,{timeout:1500000,polling:2000});
   await X(`[...document.querySelectorAll('button')].filter(b=>/^got it$/i.test(b.textContent.trim())&&b.offsetParent).forEach(b=>b.click());if(!window.__gd){window.__gd=1;const h=hurt;hurt=function(t){if(t===player&&window.__god)return;return h.apply(this,arguments);};}window.__god=1;bots.concat(allies).forEach(u=>u.nt=true);FV.buy=0;if(typeof timeLeft!=='undefined')timeLeft=900;1`);
   await X(`if(!window.__rp){window.__rp=1;window.__allow=3;const r0=renderer.render;renderer.render=function(sc,c){if(sc===scene){if(window.__allow<=0)return;window.__allow--;}return r0.call(this,sc,c);};}1`);
-  await frames(2);log(map+' loaded',await X('JSON.stringify({map:FV.map,bots:bots.length})'));
+  await frames(2);await hookSim();await simWait(0.5,'warm-up');log(map+' loaded',await X('JSON.stringify({map:FV.map,bots:bots.length})'));
   if(map==='ascent'){
-   for(const x of [2,4,6]){const o=[x,8.45,59];await place(o,yawTo(0,1));await page.waitForTimeout(300);const S=await walk(2500);const a=along(S,o,[0,1]);
+   for(const x of [2,4,6]){const o=[x,8.45,59];await place(o,yawTo(0,1));await simWait(0.3,'settle');const S=await walk(2500);const a=along(S,o,[0,1]);
     let stall=0;for(let i=2;i<a.length-1;i++)if(a[i]<8&&a[i]-a[i-1]<0.05&&a[i-1]-a[i-2]<0.05)stall++;
     log(`ascent paving lane x=${x}`,{a:a.map(v=>+v.toFixed(2)),end:S[S.length-1]});
     check(`Ascent attacker-spawn paving x=${x}: walk z 59 -> 67 on flat floor without stopping`,Math.max(...a)>=7.5&&!stall,JSON.stringify({max:Math.max(...a),stall,end:S[S.length-1]}));
     if(x===4){await frames(2);await page.screenshot({path:SHOT+'mapwalk-ascent-paving-640x360.jpg',type:'jpeg',quality:70,timeout:300000}).catch(e=>log('shot',String(e).slice(0,100)));}}
   }
   const E=FX[map].edges||[];let ok=0;const bad=[];
-  for(const [f,t] of E){const dx=t[0]-f[0],dz=t[2]-f[2],l=Math.hypot(dx,dz),d=[dx/l,dz/l];await place(f,yawTo(d[0],d[1]));await page.waitForTimeout(250);const S=await walk(900);const a=along(S,f,d),m=Math.max(...a),end=S[S.length-1];
+  for(const [f,t] of E){const dx=t[0]-f[0],dz=t[2]-f[2],l=Math.hypot(dx,dz),d=[dx/l,dz/l];await place(f,yawTo(d[0],d[1]));await simWait(0.25,'settle');const S=await walk(900);const a=along(S,f,d),m=Math.max(...a),end=S[S.length-1];
    if(m>=0.7&&Math.abs(end[1]-t[1])<1.0)ok++;else bad.push({f,t,m:+m.toFixed(2),end});}
   log(map+' crack edges',{n:E.length,ok,bad});check(`${map}: every fixture crack edge walks across (>= 0.7 m, floor kept)`,E.length>0&&ok===E.length,JSON.stringify({n:E.length,ok,bad}));
   const T=FX[map].traps||[];if(T.length){let ok2=0;const bad2=[];
-   for(const [f,dir] of T){const l=Math.hypot(dir[0],dir[1]),d=[dir[0]/l,dir[1]/l];await place(f,yawTo(d[0],d[1]));await page.waitForTimeout(250);await walk(1000);const p1=await pos();
+   for(const [f,dir] of T){const l=Math.hypot(dir[0],dir[1]),d=[dir[0]/l,dir[1]/l];await place(f,yawTo(d[0],d[1]));await simWait(0.25,'settle');await walk(1000);const p1=await pos();
     await X(`yaw=${yawTo(-d[0],-d[1])};1`);const S=await walk(900);const m=Math.max(...along(S,p1,[-d[0],-d[1]]));if(m>=0.7)ok2++;else bad2.push({f,dir,into:p1,m:+m.toFixed(2)});}
    log(map+' walk-in traps',{n:T.length,ok:ok2,bad:bad2});check(`${map}: every walk-in trap - into the wall, then walks back out without jumping (>= 0.7 m)`,ok2===T.length,JSON.stringify({n:T.length,ok:ok2,bad:bad2}));}
   await X('try{leave()}catch(e){}1');await page.waitForTimeout(2000);
