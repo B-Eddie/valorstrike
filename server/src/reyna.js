@@ -1,7 +1,10 @@
 // Reyna uses the project's shared-charge, 3 s soul and +50 HP Devour rules.
 export function resetReyna(u){u.empress=false;u.dismissUntil=0;u.devour=null;u.overhealUntil=0;}
+// Dismiss (wiki, v8.11): 1.5 s intangible, top speed 12 m/s (was 9.1 m/s / 2 s). The page's prediction uses the same numbers
+// (work/feel_runtime.js moveP: XDISMISS).
+export const DISMISS=Object.freeze({dur:1.5,speed:12});
 export function soulKill(sim,u,v){if(u.agent!=='Reyna'||!u.alive)return;sim.effects.push({id:++sim.effectSeq,kind:'soul',owner:u.id,team:u.team,p:[v.x,v.y+1.2,v.z],until:sim.time+3,radius:0});if(u.empress)u.devour={until:sim.time+3,cap:100};}
 export function reynaTarget(sim,u){return sim.effects.filter(e=>e.kind==='soul'&&e.owner===u.id&&e.until>sim.time&&Math.hypot(u.x-e.p[0],u.z-e.p[2])<15&&Math.abs(u.y+1.2-e.p[1])<4).sort((a,b)=>Math.hypot(u.x-a.p[0],u.z-a.p[2])-Math.hypot(u.x-b.p[0],u.z-b.p[2]))[0];}
-export function consumeSoul(sim,u,k,orb){sim.effects.splice(sim.effects.indexOf(orb),1);if(k==='q'){u.devour={until:sim.time+3,cap:u.empress?100:150};if(!u.empress)u.overhealUntil=sim.time+10;}else{u.dismissUntil=sim.time+1.5;u.invulnerableUntil=u.dismissUntil;u.devour=null;}return [...orb.p];}
+export function consumeSoul(sim,u,k,orb){sim.effects.splice(sim.effects.indexOf(orb),1);if(k==='q'){u.devour={until:sim.time+3,cap:u.empress?100:150};if(!u.empress)u.overhealUntil=sim.time+10;}else{u.dismissUntil=sim.time+DISMISS.dur;u.invulnerableUntil=u.dismissUntil;u.devour=null;}return [...orb.p];}
 export function tickReyna(sim,u,dt){if(u.agent!=='Reyna')return;if(!u.alive){resetReyna(u);sim.effects=sim.effects.filter(e=>!(e.kind==='soul'&&e.owner===u.id));return;}if(u.devour){const active=Math.max(0,Math.min(dt,u.devour.until-(sim.time-dt)));u.hp=Math.min(u.devour.cap,u.hp+active*50/3);if(sim.time>=u.devour.until)u.devour=null;}if(u.overhealUntil&&sim.time>=u.overhealUntil){u.hp=Math.min(100,u.hp);u.overhealUntil=0;}}
 export function reynaState(sim,u){return {empress:!!u.empress,dismiss:Math.max(0,(u.dismissUntil||0)-sim.time),devour:Math.max(0,(u.devour?.until||0)-sim.time),overheal:Math.max(0,(u.overhealUntil||0)-sim.time),souls:sim.effects.filter(e=>e.kind==='soul'&&e.owner===u.id&&e.until>sim.time).map(e=>({id:e.id,p:e.p,remaining:e.until-sim.time}))};}

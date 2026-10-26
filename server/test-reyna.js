@@ -22,3 +22,8 @@ function soul(s,u,p=[0,1.2,-4],until=s.time+3){s.effects.push({id:++s.effectSeq,
 {const {s,u}=fixture();u.hp=130;u.overhealUntil=s.time+10;s.effects.push({id:++s.effectSeq,kind:'heal',owner:u.id,team:u.team,target:u.id,p:[0,0,0],until:s.time+5,radius:8,rate:20});
  for(let i=0;i<20;i++){s.time+=.05;tickAbilities(s,.05);}assert.equal(u.hp,130,'heal leaves an overheal alone');u.hp=60;u.overhealUntil=0;for(let i=0;i<20;i++){s.time+=.05;tickAbilities(s,.05);}assert(Math.abs(u.hp-80)<1e-6,'heal still heals below 100: '+u.hp);}
 console.log('Reyna authority: owned nearby unexpired souls, shared charges, +50 Devour/overheal expiry, Dismiss immunity/no attacks, Empress/free casts, gun and ability souls, private state and death/round reset, heals never clamp an overheal');
+
+// Dismiss: 12 m/s top speed (v8.11) whatever the gun, intangible - the 65 % slow and tags do not apply; 1.5 s
+{const {s,u,v}=fixture();s.roundDelay=0;Object.assign(v,{x:40,z:-60});u.human=v.human=true;soul(s,u);assert(s.command(u,{t:'ab',k:'e'}));assert.ok(Math.abs(u.dismissUntil-s.time-1.5)<1e-9,'1.5 s');
+ u.slowUntil=s.time+5;u.tagUntil=s.time+5;const sp=()=>Math.hypot(u.vx||0,u.vz||0);for(let i=0;i<20;i++){u.input={forward:1};u.inputAt=s.time;s.step(.05);}assert.ok(Math.abs(sp()-12)<.05,'dismissed: 12 m/s, not slowed: '+sp());
+ for(let i=0;i<20;i++){u.input={forward:1};u.inputAt=s.time;s.step(.05);}assert.ok(!(u.dismissUntil>s.time)&&sp()<6.75*.35+.05,'after Dismiss the slow is back: '+sp());}

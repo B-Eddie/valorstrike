@@ -21,9 +21,9 @@ xTag=function(t){if(!t)return;t.tagT=.5;t.tagK=.275;t.tagS=0;};
 // The motor owns all movement multipliers, avoiding stacked scope/weapon scaling.
 moveP=function(dt,run,hold){
  const P=player;if(!P)return;const w=vfWeapon(),p=vfProfile(w),kn=w==='Knife',kk=J.dr?{}:keys,fx=-Math.sin(yaw),fz=-Math.cos(yaw);let x=0,z=0;if(kk.KeyW){x+=fx;z+=fz;}if(kk.KeyS){x-=fx;z-=fz;}if(kk.KeyA){x+=fz;z-=fx;}if(kk.KeyD){x-=fz;z+=fx;}
- P.tagT=Math.max(0,(P.tagT||0)-dt);let speed=6.75*(kn?1:p.runSpeedMultiplier||.8)*(ads&&p.adsStats?p.adsStats.runSpeedMultiplier:1);if(J.dis>0)speed*=1.6;if(typeof sgSlow==='function')speed*=sgSlow(P);
+ P.tagT=Math.max(0,(P.tagT||0)-dt);let speed=6.75*(kn?1:p.runSpeedMultiplier||.8)*(ads&&p.adsStats?p.adsStats.runSpeedMultiplier:1);const dis=J.dis>0;/* Reyna's Dismiss: 12 m/s top speed (wiki v8.11; server reyna.js DISMISS), intangible - no slow, no tag */if(dis)speed=12;else if(typeof sgSlow==='function')speed*=sgSlow(P);
  const native=typeof nmActive==='function'&&nmActive(),world={ground:(x,z,y)=>groundAt(x,z,.3,y),blocked:(x,z,r,y,h)=>native?sgBlk(x,z,r,y)||nmBlocked(native,x,z,r,y,h):blocked(x,z,r,y),leash:native?(x,z,y,x0,z0)=>nmLeash(native,x,z,y,x0,z0):null,ceiling:native?(x,z,low,high)=>{const ray=new THREE.Ray(new THREE.Vector3(x,low+.01,z),new THREE.Vector3(0,1,0)),hit=native.bvh.raycastFirst(ray,THREE.DoubleSide);return !!hit&&hit.distance<high-low;}:null};
- const result=VF.model.step(P,{x,z,jump:!!kk.Space,duck:!!(kk.ControlLeft||kk.ControlRight),walk:!!(kk.ShiftLeft||kk.ShiftRight),speed,tag:xTagK(P),hold:!!hold||!!J.dr},dt,world);
+ const result=VF.model.step(P,{x,z,jump:!!kk.Space,duck:!!(kk.ControlLeft||kk.ControlRight),walk:!!(kk.ShiftLeft||kk.ShiftRight),speed,tag:dis?1:xTagK(P),hold:!!hold||!!J.dr},dt,world);
  if(result.landed){SFX.land();P.st=0;const fd=VF.model.fallDamage(result.drop);if(fd>0&&running&&mode!=='aim'&&mode!=='duel'&&!(typeof MP!=='undefined'&&MP.on)&&P.hp>0){P.hp=Math.max(0,P.hp-fd);try{updHud();}catch(e){}if(P.hp<=0)pDie('Fall','Fall');}} // fall damage: health only (shields ignored); online the server applies it
  // Footfalls follow distance. Shift-walking and crouching stay silent.
  P.footDistance=(P.footDistance||0)+result.speed*dt;if(P.footDistance>1.85&&P.mv&&!P.air&&!P.wk&&!P.cr){P.footDistance%=1.85;SFX.selfStep(P.y>1);}
