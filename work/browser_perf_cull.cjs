@@ -23,7 +23,11 @@ const SIZES=(process.env.SIZES||'1280x720,640x360,390x844').split(',').map(s=>s.
 (async()=>{
  const browser=await chromium.launch({headless:true,args:['--no-sandbox','--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader','--disable-dev-shm-usage','--ignore-gpu-blocklist','--in-process-gpu','--renderer-process-limit=1']});
  const ctx=await browser.newContext({viewport:{width:640,height:360},deviceScaleFactor:1});
- await ctx.addInitScript(()=>{try{localStorage.setItem('vs.gq','low');localStorage.setItem('vs.aa','0');}catch(e){}});
+ // hk-32: harness time dilation (browser_newmain2.cjs): window.__ts scales performance.now. The corpse leaves the scene 4 s after xDie by
+// performance.now (repair_runtime xVis wrapper: age = now - c.diedAt); on the ~1 frame/s box those 4 s were gone before perf_cull6's
+// first probe (inScene false at t 0). The corpse part runs at __ts 0.1 and probes on the page's own clock.
+await ctx.addInitScript(()=>{const pn=performance.now.bind(performance);let r0=pn(),v0=r0,sc=1;Object.defineProperty(window,'__ts',{get:()=>sc,set:v=>{const r=pn();v0+=(r-r0)*sc;r0=r;sc=v;}});performance.now=()=>v0+(pn()-r0)*sc;});
+await ctx.addInitScript(()=>{try{localStorage.setItem('vs.gq','low');localStorage.setItem('vs.aa','0');}catch(e){}});
  await ctx.route(/^https?:\/\/(unpkg\.com|cdn\.jsdelivr\.net)\//,r=>{const f=r.request().url().split('/').pop().split('?')[0];if(LOCAL[f])return r.fulfill({path:LOCAL[f],contentType:'application/javascript',headers:{'access-control-allow-origin':'*'}});return r.continue();});
  await ctx.route(/127\.0\.0\.1:8876\/(index\.html)?(\?.*)?$/,r=>{const h=fs.readFileSync(ROOT+'/index.html','utf8').replace('window.xValorantFeel={','window.__xe=s=>eval(s);window.xValorantFeel={');r.fulfill({body:h,contentType:'text/html'});});
  const page=await ctx.newPage();await require('./pw_shot.cjs')(ctx,page);page.setDefaultTimeout(900000);page.on('pageerror',e=>R.errors.push('pageerror '+String(e).slice(0,300)));
@@ -65,12 +69,15 @@ const SIZES=(process.env.SIZES||'1280x720,640x360,390x844').split(',').map(s=>s.
  // B. corpse stays drawn through the ragdoll
   // hk-30: xDie hands the body (b.xm.m) to the corpse fade (XDEAD, added to the scene by itself): the probe follows that model, not b.g
  // (perf_cull4 probed b.g, which leaves the scene on death: inScene false, 0 drawn = harness).
- const B=JSON.parse(await X(`JSON.stringify((()=>{const b=bots.find(x=>x.nt);b.hp=1;kill(b,false);window.__cb=b;window.__cbm=b.xm&&b.xm.m;return {name:b.name,alive:b.alive,corpse:!!window.__cbm,inXDEAD:XDEAD.some(e=>e.c===b.xm)};})())`));log('killed',B);
- const C=[];for(let i=0;i<8;i++){await page.waitForTimeout(500);
+ await X('window.__ts=0.1;1');await X('window.__allow=1;1');await page.waitForFunction(()=>window.__xe('window.__allow<=0'),null,{timeout:900000,polling:500});/* absorb the 1x frame */
+ const B=JSON.parse(await X(`JSON.stringify((()=>{const b=bots.find(x=>x.nt);b.hp=1;kill(b,false);window.__ck0=performance.now();window.__cb=b;window.__cbm=b.xm&&b.xm.m;return {name:b.name,alive:b.alive,corpse:!!window.__cbm,inXDEAD:XDEAD.some(e=>e.c===b.xm)};})())`));log('killed',B);
+ await page.waitForFunction(()=>window.__xe('window.__cb.xd===1'),null,{timeout:300000,polling:200}).catch(e=>log('xDie wait',String(e).slice(0,80)));/* xDie runs on the next visual tick */await X('window.__ck0=performance.now();1');
+ const C=[];for(let i=0;i<8;i++){await page.waitForFunction(i=>window.__xe(`performance.now()-window.__ck0>=${i*450}`),i,{timeout:900000,polling:200}).catch(e=>log('corpse clock wait',String(e).slice(0,80)));
   C.push(JSON.parse(await X(`JSON.stringify((()=>{const b={g:window.__cbm||window.__cb.g},v=new THREE.Vector3();let sp=null;b.g.traverse(o=>{if(!sp&&o.isBone&&/pelvis|hips/i.test(o.name))sp=o;});(sp||b.g).getWorldPosition(v);const p=player;window.__pc.position.set(p.x-1.5,v.y+1.2,p.z);window.__pc.lookAt(v);window.__pc.updateMatrixWorld(true);
    const s=window.__shot(b);return {t:${i*0.5},inScene:!!b.g.parent,vis:b.g.visible,meshes:s.length,exp:s.filter(x=>x.exp).length,drawn:s.filter(x=>x.drawn).length,hid:s.filter(x=>x.hid).length,pelvisY:+v.y.toFixed(2)};})())`)));}
  log('corpse',C);await page.screenshot({path:SHOT+'perf-corpse-640x360.jpg',type:'jpeg',quality:82,timeout:150000}).catch(e=>log('shot perf-corpse failed (non-fatal)',String(e).slice(0,120)));
  check('corpse drawn every probe frame while it is in the scene and visible (no vanish from the cull sphere)',C.filter(c=>c.inScene&&c.vis).every(c=>c.drawn>=c.exp&&c.exp>0)&&C.slice(0,4).every(c=>c.inScene&&c.vis),JSON.stringify(C));
+ await X('window.__ts=1;1');
  // C. bot spread
  for(const map of ['ascent','bind']){
   if(map!=='ascent'){await X('try{leave()}catch(e){}1');await page.waitForTimeout(1500);await go(map);}
