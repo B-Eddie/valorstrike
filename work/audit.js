@@ -273,7 +273,7 @@ vm.runInContext("Date.now = () => performance.now() + 1.7e12;", context);
 const scripts = [...html.matchAll(/<script([^>]*)>([\s\S]*?)<\/script>/g)];
 for (const s of scripts) {
   const src = (s[1].match(/src="([^"]+)"/) || [])[1];
-  if (src) { if (src === "vendor/three-mesh-bvh.umd.js") { continue; } if (["models/valorant/manifest.js","models/valorant/weapon-calibration.js","vendor/valorant-feel.js","vendor/hit-impact.js"].includes(src)) { vm.runInContext(fs.readFileSync(path.join(__dirname,"..",src),"utf8"),context,{filename:src}); continue; } if (/three/.test(src)) {
+  if (src) { if (src === "vendor/three-mesh-bvh.umd.js" || src === "/_vercel/insights/script.js") { continue; } /* Vercel Web Analytics: served by Vercel only, nothing to run offline */ if (["models/valorant/manifest.js","models/valorant/weapon-calibration.js","vendor/valorant-feel.js","vendor/hit-impact.js"].includes(src)) { vm.runInContext(fs.readFileSync(path.join(__dirname,"..",src),"utf8"),context,{filename:src}); continue; } if (/three/.test(src)) {
       if (REAL3 && !NO3) { // REAL3=1: the real three.js r149 (+ GLTFLoader / SkeletonUtils) with only the WebGL renderers stubbed, so vector / matrix / scene-graph math is real
         const f = /three\.min/.test(src) ? "three.min.js" : /GLTFLoader/.test(src) ? "GLTFLoader.js" : "SkeletonUtils.js";
         try { vm.runInContext(fs.readFileSync(path.join(REAL3_DIR, f), "utf8"), context, { filename: f }); } catch (e) { rec("real three " + f, e); }
