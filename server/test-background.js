@@ -10,9 +10,9 @@ const sock=()=>({closed:null,close(c,r){this.closed=r;},send(){}});
 const seat=(name)=>{const ws=sock(),u=room.sim.add(name);room.sim.spawn(u);room.sessions.set(ws,{id:name,u,window:now,count:0,last:now,ready:true});return ws;};
 const msg=(ws,m)=>room.message(ws,JSON.stringify(m));
 const advance=(ms)=>{const end=now+ms;while(now<end){now=Math.min(end,now+1000);room.tick();}};
-assert.equal(context.GameRoom.IDLE.ready,15000);assert(context.GameRoom.IDLE.hidden>=120000,'hidden allowance must cover once-a-minute throttled timers');
-// 1. A visible player who goes silent for 16 s is still dropped (dead connections must not linger).
-const silent=seat('silent');advance(16000);assert.equal(silent.closed,'Connection idle');assert(!room.sessions.has(silent));
+assert.equal(context.GameRoom.IDLE.ready,45000);assert(context.GameRoom.IDLE.hidden>=120000,'hidden allowance must cover once-a-minute throttled timers');
+// 1. A visible player who goes silent for 46 s is still dropped (dead connections must not linger).
+const silent=seat('silent');advance(46000);assert.equal(silent.closed,'Connection idle');assert(!room.sessions.has(silent));
 // 2. A hidden tab whose input loop only runs once a minute stays connected.
 fresh();const hidden=seat('hidden');await msg(hidden,{t:'in',seq:1,r:0,p:0,f:1,s:0});assert.equal(room.sessions.get(hidden).u.input.forward,1);
 await msg(hidden,{t:'vis',h:1});assert.equal(room.sessions.get(hidden).hidden,true);assert.deepEqual({...room.sessions.get(hidden).u.input},{},'hiding releases held movement/fire');
@@ -20,7 +20,7 @@ for(let i=0;i<4;i++){advance(60000);assert.equal(hidden.closed,null,'throttled h
 // 3. Worker heartbeats alone keep it alive and are not treated as input.
 const before=room.sessions.get(hidden).u.lastSeq;for(let i=0;i<100;i++){advance(2000);await msg(hidden,{t:'hb'});}assert.equal(hidden.closed,null);assert.equal(room.sessions.get(hidden).u.lastSeq,before);
 // 4. Coming back restores the normal limit, and a hidden client that goes fully silent is eventually dropped.
-await msg(hidden,{t:'vis',h:0});assert.equal(room.sessions.get(hidden).hidden,false);advance(16000);assert.equal(hidden.closed,'Connection idle');
+await msg(hidden,{t:'vis',h:0});assert.equal(room.sessions.get(hidden).hidden,false);advance(46000);assert.equal(hidden.closed,'Connection idle');
 fresh();const gone=seat('gone');await msg(gone,{t:'vis',h:1});advance(context.GameRoom.IDLE.hidden-5000);assert.equal(gone.closed,null);advance(10000);assert.equal(gone.closed,'Connection idle');
 // 4b. Slow match loads: a client still loading after IDLE.loading (180 s) was dropped as 'Connection idle' even while it
 //     was making progress. It now stays while it reports progress (lp every 5 s) that keeps moving, up to LOAD.max; a
@@ -40,12 +40,12 @@ fresh();const gone=seat('gone');await msg(gone,{t:'vis',h:1});advance(context.Ga
  // malformed / out-of-place lp never throws or touches play state; a ready player's lp is ignored
  fresh();const bad=loader('bad');for(const v of [null,'x',1e309,-1e9,{},[1],NaN,true])await msg(bad,{t:'lp',p:v,m:v});assert.equal(bad.closed,null);
  const ok=seat('ok');await msg(ok,{t:'lp',p:.5});assert.equal(room.sessions.get(ok).loadPing,undefined);}
-// 5. Client: visibilitychange hook, released keys, idle input + vis message, Worker-timer heartbeat only while hidden.
+// 5. Client: visibilitychange hook, released keys, idle input + vis message, Worker-timer heartbeat in foreground and background.
 const net=fs.readFileSync('../work/server_runtime.js','utf8'),a=net.indexOf('// Background-tab liveness.'),b=net.indexOf('const netOmenClick0=',a);assert(a>0&&b>a);
 let listener=null,workers=[];const sent=[];const keys={KeyW:true,Space:true};
 const c={document:{hidden:false,addEventListener:(t,f)=>{if(t==='visibilitychange')listener=f;}},MP:{on:true},NET:{socket:{readyState:1},ready:true,firePulse:9e9},keys,fireHeld:true,netWeapon:'Vandal',netSend:m=>sent.push(m),netInputMsg:(kk,w)=>({t:'in',f:kk.KeyW?1:0,j:kk.Space?1:0,w}),URL:{createObjectURL:()=>'blob:x',revokeObjectURL(){}},Blob:class{constructor(parts){this.src=parts.join('');}},Worker:class{constructor(u){this.u=u;workers.push(this);}}};
 vm.createContext(c);vm.runInContext(net.slice(a,b)+';globalThis.vis=netVisibility;',c);assert.equal(typeof listener,'function');
 c.document.hidden=true;listener();assert.equal(keys.KeyW,false);assert.equal(keys.Space,false);assert.equal(vm.runInContext('fireHeld',c),false);assert.equal(c.NET.firePulse,0);assert.deepEqual(sent.map(m=>m.t),['in','vis']);assert.equal(sent[0].f,0);assert.equal(sent[1].h,1);assert.equal(c.NET.hid,1);
-assert.equal(workers.length,1);workers[0].onmessage();assert.equal(sent.at(-1).t,'hb');c.document.hidden=false;listener();assert.equal(sent.at(-1).t,'vis');assert.equal(sent.at(-1).h,0);const n=sent.length;workers[0].onmessage();assert.equal(sent.length,n,'no heartbeat while visible (input loop covers it)');
+assert.equal(workers.length,1);workers[0].onmessage();assert.equal(sent.at(-1).t,'hb');c.document.hidden=false;listener();assert.equal(sent.at(-1).t,'vis');assert.equal(sent.at(-1).h,0);const n=sent.length;workers[0].onmessage();assert.equal(sent.length,n+1,'foreground heartbeat must cover a stalled input/render loop');assert.equal(sent.at(-1).t,'hb');
 c.document.hidden=true;listener();assert.equal(workers.length,1,'one heartbeat worker per page');
-console.log('Background tab: hidden clients signal vis, keep their seat through once-a-minute throttling and Worker heartbeats, held input released; silent sessions still dropped at 15 s visible / 150 s hidden; slow loads kept while progressing, closed as \'Load timed out\' when stalled/silent/capped');
+console.log('Background tab: hidden clients signal vis, keep their seat through once-a-minute throttling and Worker heartbeats, held input released; silent sessions still dropped at 45 s visible / 150 s hidden; slow loads kept while progressing, closed as \'Load timed out\' when stalled/silent/capped');

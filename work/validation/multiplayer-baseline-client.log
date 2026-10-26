@@ -1,0 +1,1344 @@
+FAILED: test_ability_equip.cjs
+FAILED: test_ability_fp.cjs
+FAILED: test_ability_parity.cjs
+node:internal/modules/cjs/loader:1568
+  throw err;
+  ^
+
+Error: Cannot find module 'three'
+Require stack:
+- /home/hatch/workspace/valorstrike/work/valorant_rigs.js
+- /home/hatch/workspace/valorstrike/work/test_agent_assets.cjs
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1564:15)
+    at wrapResolveFilename (node:internal/modules/cjs/loader:1118:27)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1169:12)
+    at require.resolve (node:internal/modules/helpers:175:31)
+    at Object.<anonymous> (/home/hatch/workspace/valorstrike/work/valorant_rigs.js:3:25)
+    at Module._compile (node:internal/modules/cjs/loader:1929:14)
+    at Object..js (node:internal/modules/cjs/loader:2060:10)
+    at Module.load (node:internal/modules/cjs/loader:1651:32)
+    at Module._load (node:internal/modules/cjs/loader:1443:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:261:19) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [
+    '/home/hatch/workspace/valorstrike/work/valorant_rigs.js',
+    '/home/hatch/workspace/valorstrike/work/test_agent_assets.cjs'
+  ]
+}
+
+Node.js v24.22.1
+FAILED: test_agent_assets.cjs
+node:internal/modules/cjs/loader:1568
+  throw err;
+  ^
+
+Error: Cannot find module '/home/hatch/workspace/valorstrike/server/node_modules/three/build/three.cjs'
+Require stack:
+- /home/hatch/workspace/valorstrike/work/test_agent_cull.cjs
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1564:15)
+    at wrapResolveFilename (node:internal/modules/cjs/loader:1118:27)
+    at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1142:10)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1169:12)
+    at Module._load (node:internal/modules/cjs/loader:1341:5)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)
+    at Module.require (node:internal/modules/cjs/loader:1674:12)
+    at require (node:internal/modules/helpers:157:16)
+    at Object.<anonymous> (/home/hatch/workspace/valorstrike/work/test_agent_cull.cjs:8:13)
+    at Module._compile (node:internal/modules/cjs/loader:1929:14) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [ '/home/hatch/workspace/valorstrike/work/test_agent_cull.cjs' ]
+}
+
+Node.js v24.22.1
+FAILED: test_agent_cull.cjs
+FAILED: test_agent_cull_rig.cjs
+PASS test_agent_preload.cjs
+node:internal/modules/cjs/loader:1568
+  throw err;
+  ^
+
+Error: Cannot find module '/home/hatch/workspace/valorstrike/server/node_modules/three/build/three.cjs'
+Require stack:
+- /home/hatch/workspace/valorstrike/work/test_air_spread.cjs
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1564:15)
+    at wrapResolveFilename (node:internal/modules/cjs/loader:1118:27)
+    at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1142:10)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1169:12)
+    at Module._load (node:internal/modules/cjs/loader:1341:5)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)
+    at Module.require (node:internal/modules/cjs/loader:1674:12)
+    at require (node:internal/modules/helpers:157:16)
+    at Object.<anonymous> (/home/hatch/workspace/valorstrike/work/test_air_spread.cjs:10:13)
+    at Module._compile (node:internal/modules/cjs/loader:1929:14) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [ '/home/hatch/workspace/valorstrike/work/test_air_spread.cjs' ]
+}
+
+Node.js v24.22.1
+FAILED: test_air_spread.cjs
+PASS test_ally_acquire.cjs
+PASS test_anchor.cjs
+PASS test_blades_intent.cjs
+FAILED: test_bot_aim.cjs
+PASS test_bot_brain_offline.cjs
+node:internal/modules/cjs/loader:1568
+  throw err;
+  ^
+
+Error: Cannot find module 'three'
+Require stack:
+- /home/hatch/workspace/valorstrike/server/package.json
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1564:15)
+    at wrapResolveFilename (node:internal/modules/cjs/loader:1118:27)
+    at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1142:10)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1169:12)
+    at Module._load (node:internal/modules/cjs/loader:1341:5)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)
+    at Module.require (node:internal/modules/cjs/loader:1674:12)
+    at require (node:internal/modules/helpers:157:16)
+    at Object.<anonymous> (/home/hatch/workspace/valorstrike/work/test_bot_buy_phase_offline.cjs:12:105)
+    at Module._compile (node:internal/modules/cjs/loader:1929:14) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [ '/home/hatch/workspace/valorstrike/server/package.json' ]
+}
+
+Node.js v24.22.1
+FAILED: test_bot_buy_phase_offline.cjs
+node:internal/modules/cjs/loader:1568
+  throw err;
+  ^
+
+Error: Cannot find module '/home/hatch/workspace/valorstrike/server/node_modules/three/build/three.cjs'
+Require stack:
+- /home/hatch/workspace/valorstrike/work/test_bot_human_offline.cjs
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1564:15)
+    at wrapResolveFilename (node:internal/modules/cjs/loader:1118:27)
+    at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1142:10)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1169:12)
+    at Module._load (node:internal/modules/cjs/loader:1341:5)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)
+    at Module.require (node:internal/modules/cjs/loader:1674:12)
+    at require (node:internal/modules/helpers:157:16)
+    at Object.<anonymous> (/home/hatch/workspace/valorstrike/work/test_bot_human_offline.cjs:7:13)
+    at Module._compile (node:internal/modules/cjs/loader:1929:14) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [
+    '/home/hatch/workspace/valorstrike/work/test_bot_human_offline.cjs'
+  ]
+}
+
+Node.js v24.22.1
+FAILED: test_bot_human_offline.cjs
+FAILED: test_bot_jett.cjs
+PASS test_bot_movement.cjs
+node:internal/modules/cjs/loader:1568
+  throw err;
+  ^
+
+Error: Cannot find module '/home/hatch/workspace/valorstrike/server/node_modules/three/build/three.cjs'
+Require stack:
+- /home/hatch/workspace/valorstrike/work/test_bot_perception_offline.cjs
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1564:15)
+    at wrapResolveFilename (node:internal/modules/cjs/loader:1118:27)
+    at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1142:10)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1169:12)
+    at Module._load (node:internal/modules/cjs/loader:1341:5)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)
+    at Module.require (node:internal/modules/cjs/loader:1674:12)
+    at require (node:internal/modules/helpers:157:16)
+    at Object.<anonymous> (/home/hatch/workspace/valorstrike/work/test_bot_perception_offline.cjs:13:13)
+    at Module._compile (node:internal/modules/cjs/loader:1929:14) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [
+    '/home/hatch/workspace/valorstrike/work/test_bot_perception_offline.cjs'
+  ]
+}
+
+Node.js v24.22.1
+FAILED: test_bot_perception_offline.cjs
+FAILED: test_bot_shoot_utility_offline.cjs
+FAILED: test_bot_utility_offline.cjs
+PASS test_bot_variety.cjs
+PASS test_bot_variety_routes.cjs
+PASS test_buy_menu_fit.cjs
+node:fs:483
+    return binding.readFileUtf8(path, stringToFlags(options.flag));
+                   ^
+
+Error: ENOENT: no such file or directory, open '/home/hatch/workspace/valorstrike/server/node_modules/three/build/three.cjs'
+    at Object.readFileSync (node:fs:483:20)
+    at threeDir (/home/hatch/workspace/valorstrike/work/page_harness.cjs:10:15)
+    at boot (/home/hatch/workspace/valorstrike/work/page_harness.cjs:20:16)
+    at Object.<anonymous> (/home/hatch/workspace/valorstrike/work/test_client_abilities.cjs:15:9)
+    at Module._compile (node:internal/modules/cjs/loader:1929:14)
+    at Object..js (node:internal/modules/cjs/loader:2060:10)
+    at Module.load (node:internal/modules/cjs/loader:1651:32)
+    at Module._load (node:internal/modules/cjs/loader:1443:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)
+    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5) {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/home/hatch/workspace/valorstrike/server/node_modules/three/build/three.cjs'
+}
+
+Node.js v24.22.1
+FAILED: test_client_abilities.cjs
+FAILED: test_client_fuzz.cjs
+node:fs:483
+    return binding.readFileUtf8(path, stringToFlags(options.flag));
+                   ^
+
+Error: ENOENT: no such file or directory, open '/home/hatch/workspace/valorstrike/server/node_modules/three/build/three.cjs'
+    at Object.readFileSync (node:fs:483:20)
+    at threeDir (/home/hatch/workspace/valorstrike/work/page_harness.cjs:10:15)
+    at boot (/home/hatch/workspace/valorstrike/work/page_harness.cjs:20:16)
+    at Object.<anonymous> (/home/hatch/workspace/valorstrike/work/test_client_lifecycle.cjs:15:9)
+    at Module._compile (node:internal/modules/cjs/loader:1929:14)
+    at Object..js (node:internal/modules/cjs/loader:2060:10)
+    at Module.load (node:internal/modules/cjs/loader:1651:32)
+    at Module._load (node:internal/modules/cjs/loader:1443:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)
+    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5) {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/home/hatch/workspace/valorstrike/server/node_modules/three/build/three.cjs'
+}
+
+Node.js v24.22.1
+FAILED: test_client_lifecycle.cjs
+node:fs:483
+    return binding.readFileUtf8(path, stringToFlags(options.flag));
+                   ^
+
+Error: ENOENT: no such file or directory, open '/home/hatch/workspace/valorstrike/server/node_modules/three/build/three.cjs'
+    at Object.readFileSync (node:fs:483:20)
+    at threeDir (/home/hatch/workspace/valorstrike/work/page_harness.cjs:10:15)
+    at boot (/home/hatch/workspace/valorstrike/work/page_harness.cjs:20:16)
+    at Object.<anonymous> (/home/hatch/workspace/valorstrike/work/test_client_offline_soak.cjs:15:9)
+    at Module._compile (node:internal/modules/cjs/loader:1929:14)
+    at Object..js (node:internal/modules/cjs/loader:2060:10)
+    at Module.load (node:internal/modules/cjs/loader:1651:32)
+    at Module._load (node:internal/modules/cjs/loader:1443:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)
+    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5) {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/home/hatch/workspace/valorstrike/server/node_modules/three/build/three.cjs'
+}
+
+Node.js v24.22.1
+FAILED: test_client_offline_soak.cjs
+FAILED: test_client_online.cjs
+FAILED: test_client_online_abilities.cjs
+FAILED: test_client_online_buy.cjs
+FAILED: test_client_online_gunplay.cjs
+FAILED: test_client_online_rebind.cjs
+FAILED: test_client_results.cjs
+FAILED: test_client_settings.cjs
+PASS test_combat_consistency.cjs
+PASS test_combat_report_layout.cjs
+PASS test_crosshair_error.cjs
+PASS test_curveball_flag.cjs
+node:internal/modules/cjs/loader:1568
+  throw err;
+  ^
+
+Error: Cannot find module 'three'
+Require stack:
+- /home/hatch/workspace/valorstrike/work/test_curveball_offline.cjs
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1564:15)
+    at wrapResolveFilename (node:internal/modules/cjs/loader:1118:27)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1169:12)
+    at require.resolve (node:internal/modules/helpers:175:31)
+    at Object.<anonymous> (/home/hatch/workspace/valorstrike/work/test_curveball_offline.cjs:5:66)
+    at Module._compile (node:internal/modules/cjs/loader:1929:14)
+    at Object..js (node:internal/modules/cjs/loader:2060:10)
+    at Module.load (node:internal/modules/cjs/loader:1651:32)
+    at Module._load (node:internal/modules/cjs/loader:1443:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:261:19) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [
+    '/home/hatch/workspace/valorstrike/work/test_curveball_offline.cjs'
+  ]
+}
+
+Node.js v24.22.1
+FAILED: test_curveball_offline.cjs
+FAILED: test_devour_empress.cjs
+PASS test_dismiss_speed.cjs
+PASS test_dmpts_playable.cjs
+FAILED: test_feet.cjs
+node:internal/modules/cjs/loader:1568
+  throw err;
+  ^
+
+Error: Cannot find module 'three'
+Require stack:
+- /home/hatch/workspace/valorstrike/work/valorant_rigs.js
+- /home/hatch/workspace/valorstrike/work/rig_harness.cjs
+- /home/hatch/workspace/valorstrike/work/test_finishers.cjs
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1564:15)
+    at wrapResolveFilename (node:internal/modules/cjs/loader:1118:27)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1169:12)
+    at require.resolve (node:internal/modules/helpers:175:31)
+    at Object.<anonymous> (/home/hatch/workspace/valorstrike/work/valorant_rigs.js:3:25)
+    at Module._compile (node:internal/modules/cjs/loader:1929:14)
+    at Object..js (node:internal/modules/cjs/loader:2060:10)
+    at Module.load (node:internal/modules/cjs/loader:1651:32)
+    at Module._load (node:internal/modules/cjs/loader:1443:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:261:19) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [
+    '/home/hatch/workspace/valorstrike/work/valorant_rigs.js',
+    '/home/hatch/workspace/valorstrike/work/rig_harness.cjs',
+    '/home/hatch/workspace/valorstrike/work/test_finishers.cjs'
+  ]
+}
+
+Node.js v24.22.1
+FAILED: test_finishers.cjs
+PASS test_floor_pickup.cjs
+FAILED: test_fp_native.cjs
+FAILED: test_fp_timing.cjs
+PASS test_frame_perf.cjs
+node:fs:483
+    return binding.readFileUtf8(path, stringToFlags(options.flag));
+                   ^
+
+Error: ENOENT: no such file or directory, open '/home/hatch/workspace/valorstrike/server/node_modules/three/build/three.cjs'
+    at Object.readFileSync (node:fs:483:20)
+    at threeDir (/home/hatch/workspace/valorstrike/work/page_harness.cjs:10:15)
+    at boot (/home/hatch/workspace/valorstrike/work/page_harness.cjs:20:16)
+    at Object.<anonymous> (/home/hatch/workspace/valorstrike/work/test_friendly_fire_offline.cjs:9:9)
+    at Module._compile (node:internal/modules/cjs/loader:1929:14)
+    at Object..js (node:internal/modules/cjs/loader:2060:10)
+    at Module.load (node:internal/modules/cjs/loader:1651:32)
+    at Module._load (node:internal/modules/cjs/loader:1443:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)
+    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5) {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/home/hatch/workspace/valorstrike/server/node_modules/three/build/three.cjs'
+}
+
+Node.js v24.22.1
+FAILED: test_friendly_fire_offline.cjs
+PASS test_game_audio.cjs
+PASS test_global_names.cjs
+PASS test_gnav_unreachable.cjs
+FAILED: test_grip.cjs
+FAILED: test_grip_frame.cjs
+FAILED: test_headhunter_kick.cjs
+PASS test_hip_fov.cjs
+node:internal/modules/cjs/loader:1568
+  throw err;
+  ^
+
+Error: Cannot find module 'three'
+Require stack:
+- /home/hatch/workspace/valorstrike/work/valorant_rigs.js
+- /home/hatch/workspace/valorstrike/work/test_hit_impact.cjs
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1564:15)
+    at wrapResolveFilename (node:internal/modules/cjs/loader:1118:27)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1169:12)
+    at require.resolve (node:internal/modules/helpers:175:31)
+    at Object.<anonymous> (/home/hatch/workspace/valorstrike/work/valorant_rigs.js:3:25)
+    at Module._compile (node:internal/modules/cjs/loader:1929:14)
+    at Object..js (node:internal/modules/cjs/loader:2060:10)
+    at Module.load (node:internal/modules/cjs/loader:1651:32)
+    at Module._load (node:internal/modules/cjs/loader:1443:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:261:19) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [
+    '/home/hatch/workspace/valorstrike/work/valorant_rigs.js',
+    '/home/hatch/workspace/valorstrike/work/test_hit_impact.cjs'
+  ]
+}
+
+Node.js v24.22.1
+FAILED: test_hit_impact.cjs
+node:internal/modules/cjs/loader:1568
+  throw err;
+  ^
+
+Error: Cannot find module 'three'
+Require stack:
+- /home/hatch/workspace/valorstrike/work/test_hit_path_perf.cjs
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1564:15)
+    at wrapResolveFilename (node:internal/modules/cjs/loader:1118:27)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1169:12)
+    at require.resolve (node:internal/modules/helpers:175:31)
+    at Object.<anonymous> (/home/hatch/workspace/valorstrike/work/test_hit_path_perf.cjs:11:25)
+    at Module._compile (node:internal/modules/cjs/loader:1929:14)
+    at Object..js (node:internal/modules/cjs/loader:2060:10)
+    at Module.load (node:internal/modules/cjs/loader:1651:32)
+    at Module._load (node:internal/modules/cjs/loader:1443:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:261:19) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [ '/home/hatch/workspace/valorstrike/work/test_hit_path_perf.cjs' ]
+}
+
+Node.js v24.22.1
+FAILED: test_hit_path_perf.cjs
+PASS test_hit_perf.cjs
+PASS test_hud_native.cjs
+node:assert:885
+    throw err;
+    ^
+
+AssertionError [ERR_ASSERTION]: spawn-protection chip shifts clear of the touch cluster on short landscape
+    at Object.<anonymous> (/home/hatch/workspace/valorstrike/work/test_hud_polish.cjs:18:8)
+    at Module._compile (node:internal/modules/cjs/loader:1929:14)
+    at Object..js (node:internal/modules/cjs/loader:2060:10)
+    at Module.load (node:internal/modules/cjs/loader:1651:32)
+    at Module._load (node:internal/modules/cjs/loader:1443:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)
+    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+    at node:internal/main/run_main_module:33:47 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: '@media (max-height:560px){#xBoard{padding:8px 12px 2px}#xBoard .x-sbtop{gap:10px;padding:0 4px 4px;margin-bottom:4px}#xBoard .x-sbmap b{font-size:13px}#xBoard .x-sbmap small{font-size:10px}#xBoard .x-sbsc{gap:8px}#xBoard .x-sbsc b{font-size:22px}#xBoard .x-sbsc span{font-size:16px}#xBoard .x-sbt{margin:0 0 6px;font-size:12px}#xBoard .x-sbt th{height:18px;font-size:10px}#xBoard .x-sbt td{height:22px}#xBoard .x-ag{width:18px;height:18px;font-size:10px}}\n' +
+    '.x-sbbar{display:flex;align-items:baseline;justify-content:center;gap:14px;margin-bottom:12px;font-weight:900}\n' +
+    '.x-sbbar b{font-size:40px;line-height:1}.x-sbbar span{font-size:28px;opacity:.5}.x-sbbar .tl{color:#3ee6c1}.x-sbbar .rd{color:#ff4655}\n' +
+    '.x-sbbar small{font-size:12px;letter-spacing:.2em;text-transform:uppercase;opacity:.7;margin-left:10px}\n' +
+    '.x-ag{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;font-weight:900;font-size:15px;color:#fff;border-radius:3px}\n' +
+    '#xResB .x-sbbar b{font-size:56px}\n' +
+    '.x-mvps{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}\n' +
+    '.x-mvp{display:flex;align-items:center;gap:14px;padding:14px 20px;background:rgba(236,232,225,.08);border-left:4px solid #3ee6c1;text-align:left;min-width:240px}\n' +
+    '.x-mvp.en{border-left-color:#ff4655}.x-mvp .x-ag{width:52px;height:52px;font-size:26px}\n' +
+    '.x-mvp small{display:block;font-size:12px;letter-spacing:.2em;font-weight:800;color:#ffe26e}.x-mvp b{display:block;font-size:22px}.x-mvp span{font-size:13px;opacity:.75}\n' +
+    '#resTitle{text-transform:uppercase;letter-spacing:.06em}\n' +
+    '#xPause{position:fixed;inset:0;z-index:35;display:none;align-items:center;justify-content:center;background:rgba(10,16,22,.45);padding:20px}\n' +
+    '#xPause.on{display:flex}\n' +
+    '/* THE RANGE: drill picker + free buy menu + drill HUD */\n' +
+    '.x-rg{position:fixed;inset:0;z-index:36;display:none;align-items:center;justify-content:center;background:rgba(10,16,22,.45);padding:20px}\n' +
+    '.x-rg.on{display:flex}\n' +
+    '.x-rgb{background:var(--fill-primary-on);color:var(--text-primary);border-radius:var(--r-l);padding:24px;width:min(560px,100%);max-height:90vh;overflow:auto;box-shadow:var(--hark-shadow)}\n' +
+    '.x-rgb h2{font:var(--type-title);margin:0 0 4px}\n' +
+    '.x-rgb p{font:var(--type-small);color:var(--text-secondary);margin:0 0 16px}\n' +
+    '.x-rgl{display:grid;gap:8px;margin-bottom:16px}\n' +
+    '.x-rgg{grid-template-columns:repeat(auto-fill,minmax(130px,1fr))}\n' +
+    '.x-rgb button{min-height:var(--tap);text-align:left;font:var(--type-label);color:var(--text-primary);background:var(--fill-tertiary);border:1px solid var(--stroke-secondary);border-radius:var(--r-s);padding:10px 14px;cursor:pointer}\n' +
+    '.x-rgb button:hover,.x-rgb button.on{border-color:var(--text-primary)}\n' +
+    '.x-rgb button small{display:block;font:var(--type-caption);color:var(--text-secondary);margin-top:2px}\n' +
+    '#xRT{position:fixed;left:16px;top:80px;z-index:20;display:none;font:var(--type-small);color:#fff;background:rgba(10,16,22,.6);border-radius:var(--r-s);padding:10px 12px;white-space:pre-line;pointer-events:none}\n' +
+    '#xRT.on{display:block}\n' +
+    '#xRT .x-rc{pointer-events:auto;margin-left:6px;min-height:var(--tap);padding:0 12px;font:var(--type-caption);color:#fff;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.4);border-radius:var(--r-pill);cursor:pointer}\n' +
+    '.x-pb{width:min(520px,100%);padding:26px;display:flex;flex-direction:column;gap:18px;border-top:3px solid var(--red);max-height:90vh;overflow:auto}\n' +
+    '.x-pb h2{font-size:34px;font-weight:800;letter-spacing:.1em}.x-pb h2 b{color:var(--red)}\n' +
+    '.x-icons{display:flex;gap:14px}\n' +
+    '.x-icons button{width:56px;height:56px;border-radius:50%;display:grid;place-items:center;background:rgba(236,232,225,.08);border:1px solid rgba(236,232,225,.25);color:var(--bone);transition:background .15s,border-color .15s}\n' +
+    '.x-icons button:hover,.x-icons button:focus-visible{background:var(--red);border-color:var(--red);color:var(--ink)}\n' +
+    '.x-icons svg{width:24px;height:24px}\n' +
+    '/* Valorant-style pause: dark full screen, left vertical list of big options, red hover underline, no blur */\n' +
+    '#xPause{background:rgba(6,8,12,.86);justify-content:flex-start;align-items:stretch;padding:0;backdrop-filter:none;-webkit-backdrop-filter:none}\n' +
+    '#xPause .x-pb{width:min(560px,100%);max-height:100vh;border:0;border-left:3px solid var(--red);border-radius:0;background:transparent;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;padding:9vh 48px 32px;gap:22px}\n' +
+    '#xPause .x-icons{flex-direction:column;align-items:flex-start;gap:6px}\n' +
+    '#xPause .x-icons button{width:auto;height:auto;min-height:var(--tap);border:0;border-radius:0;display:block;padding:6px 0;background:linear-gradient(var(--red),var(--red)) left bottom/0 3px no-repeat;color:var(--bone);font:800 clamp(26px,4vw,40px)/1.1 var(--sans);letter-spacing:.06em;text-transform:uppercase;text-align:left;cursor:pointer;transition:background-size .18s,color .15s}\n' +
+    '#xPause .x-icons button:hover,#xPause .x-icons button:focus-visible{background:linear-gradient(var(--red),var(--red)) left bottom/100% 3px no-repeat;border-color:transparent;color:#fff}\n' +
+    '#xPause .x-icons button[hidden],#xHome{display:none!important}\n' +
+    '#xPause .x-icons button:disabled{opacity:.35;cursor:not-allowed;background-size:0 3px}\n' +
+    '#xPause .x-icons svg{display:none}\n' +
+    '#xWatch{order:1}#xGear{order:2}#xSurr{order:3}#xPow{order:4}\n' +
+    '#xWatch::after{content:"Resume"}#xGear::after{content:"Settings"}#xSurr::after{content:"Surrender"}#xPow::after{content:"Leave match"}\n' +
+    '#xSurr small{display:block;font:var(--type-caption);letter-spacing:.04em;text-transform:none;opacity:.7}\n' +
+    '#xSv{position:fixed;top:118px;left:50%;transform:translateX(-50%);z-index:30;display:none;padding:10px 22px;background:rgba(10,12,16,.82);border-left:4px solid var(--red);color:var(--bone);font:800 18px/1.2 var(--sans);letter-spacing:.12em;text-transform:uppercase;pointer-events:none;white-space:nowrap}\n' +
+    '#xSv.on{display:block}\n' +
+    '.x-tabs{display:flex;border-bottom:1px solid rgba(236,232,225,.2)}\n' +
+    '.x-tabs button{background:none;border:0;border-bottom:3px solid transparent;color:var(--bone);opacity:.6;font-size:15px;font-weight:800;letter-spacing:.12em;padding:10px 16px;min-height:44px}\n' +
+    '.x-tabs button.on{opacity:1;border-bottom-color:var(--red)}\n' +
+    '.x-pane{display:none}.x-pane.on{display:flex;flex-direction:column;gap:12px}\n' +
+    '.x-keys{display:grid;grid-template-columns:auto 1fr;gap:8px 18px;font-size:14px}\n' +
+    '.x-keys dt{font-weight:800;color:var(--red)}.x-keys dd{opacity:.85}\n' +
+    '.x-pane .play{font-size:22px;padding:14px 48px}\n' +
+    '.x-pane p{font-size:14px;opacity:.8;text-transform:none;letter-spacing:.02em}\n' +
+    '.x-ban{left:50%;top:34%;transform:translate(-50%,-50%);font-size:clamp(40px,8vw,88px);font-weight:900;letter-spacing:.08em;display:none;text-align:center;text-shadow:0 4px 24px rgba(0,0,0,.5)}\n' +
+    '.x-ban small{display:block;font-size:16px;letter-spacing:.14em;opacity:.85;color:var(--bone)}\n' +
+    '#xPick{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:25;display:none;flex-direction:column;gap:14px;padding:22px;border-top:3px solid var(--red);width:min(520px,94vw)}\n' +
+    '#xPick.on{display:flex}\n' +
+    '#xPick p{font-size:14px;letter-spacing:.14em}#xPick p b{color:var(--red)}\n' +
+    '.x-pw{display:grid;grid-template-columns:1fr 1fr;gap:12px}\n' +
+    '.x-pw button{background:rgba(236,232,225,.06);border:1px solid rgba(236,232,225,.25);color:var(--bone);padding:16px;text-align:left;font-size:24px;font-weight:800;display:flex;flex-direction:column;gap:6px;min-height:44px}\n' +
+    '.x-pw button:hover,.x-pw button.on{border-color:var(--red);background:rgba(255,70,85,.15)}\n' +
+    '.x-pw kbd{font:inherit;font-size:12px;color:var(--red)}.x-pw small{font-size:12px;opacity:.75;text-transform:none;letter-spacing:.02em}\n' +
+    '/* 5v5 vs bots: minimap + buy menu */\n' +
+    '#xMap{left:12px;top:12px;width:160px;height:160px;display:none;padding:0;border:1px solid rgba(236,232,225,.18);background:rgba(10,16,22,.55)}\n' +
+    '#game.x-mm #xMap{display:block}\n' +
+    '#game.x-mm #fps{left:184px} /* observer hardening: FPS readout moves right of the 160 px minimap instead of covering it */\n' +
+    '@media (max-width:700px){#xMap{left:8px;top:8px;width:112px;height:112px}#game.x-mm #fps{left:128px;top:8px}} /* narrow: smaller minimap clears the centred score / timer bar */\n' +
+    '.x-brs{position:fixed;right:24px;bottom:22px;display:flex;flex-direction:column;align-items:flex-end;gap:8px;pointer-events:none}\n' +
+    '.x-brs>.hud{position:static}\n' +
+    `/* BUY MENU FIT START: the whole buy menu fits the screen with no scrolling (user, 2026-10-26: "Make it so you don't need to scroll in the buy menu"), as Valorant's buy screen. Every size comes from the custom properties below (clamp() of the viewport height / width), the menu is a fixed grid (header / main / key hints) and the six weapon columns share five equal card tracks that stretch to the space left, so cards grow or shrink with the window instead of overflowing. Landscape phones get the compact card (name, price + status) and no key hints. Only portrait phones and screens under 360 px tall keep a scrolling stacked layout. work/test_buy_menu_fit.cjs evaluates these rules for every listed viewport. */\n` +
+    '#xBuy{position:fixed;inset:0;z-index:25;display:none;overflow:hidden;overflow:clip}\n' +
+    '#game #xBuy,#xBuy{background:linear-gradient(180deg,rgba(8,12,18,.92),rgba(10,16,24,.84));-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);border:0;border-radius:0;box-shadow:none;transform:none;width:auto;max-height:none;left:0;top:0;font-family:var(--f);color:var(--bone);--xb-t:#19d3c5;--xb-c:#5fffb0;--xb-l:rgba(236,232,225,.14);--xb-d:rgba(236,232,225,.62);--xb-vh:1vh;--xb-vw:1vw;--xb-u:clamp(4px,calc(var(--xb-vh)*1.1),10px);--xb-p:clamp(6px,calc(var(--xb-vh)*2),24px);--xb-px:clamp(8px,calc(var(--xb-vw)*2.4),40px);--xb-f1:clamp(10px,calc(var(--xb-vw)*.6 + var(--xb-vh)*.7),14px);--xb-f2:clamp(9px,calc(var(--xb-vh)*1.5),13px);--xb-fc:clamp(16px,calc(var(--xb-vh)*3.4),32px);--xb-cp:clamp(4px,calc(var(--xb-vh)*.9),10px);--xb-sb:clamp(196px,calc(var(--xb-vw)*19),320px);--xb-sil:clamp(14px,calc(var(--xb-vh)*6),64px);--xb-g2:calc(var(--xb-u)*.75);--xb-hh:calc(var(--xb-f2)*1.2 + 2px + var(--xb-fc) + var(--xb-u) + 1px);--xb-fh:calc(va'... 14253 more characters,
+  expected: /\.x-dmprot\{left:36%!important\}/,
+  operator: 'match',
+  diff: 'simple'
+}
+
+Node.js v24.22.1
+FAILED: test_hud_polish.cjs
+PASS test_hud_valorant.cjs
+PASS test_jett_intent.cjs
+PASS test_kill_perf.cjs
+FAILED: test_knife_combo.cjs
+PASS test_knife_heavy.cjs
+PASS test_knife_inspect.cjs
+PASS test_knife_range.cjs
+node:internal/modules/cjs/loader:1568
+  throw err;
+  ^
+
+Error: Cannot find module '/home/hatch/workspace/valorstrike/server/node_modules/three/build/three.cjs'
+Require stack:
+- /home/hatch/workspace/valorstrike/work/test_legacy_map_free.cjs
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1564:15)
+    at wrapResolveFilename (node:internal/modules/cjs/loader:1118:27)
+    at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1142:10)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1169:12)
+    at Module._load (node:internal/modules/cjs/loader:1341:5)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)
+    at Module.require (node:internal/modules/cjs/loader:1674:12)
+    at require (node:internal/modules/helpers:157:16)
+    at Object.<anonymous> (/home/hatch/workspace/valorstrike/work/test_legacy_map_free.cjs:8:50)
+    at Module._compile (node:internal/modules/cjs/loader:1929:14) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [ '/home/hatch/workspace/valorstrike/work/test_legacy_map_free.cjs' ]
+}
+
+Node.js v24.22.1
+FAILED: test_legacy_map_free.cjs
+PASS test_loading.cjs
+PASS test_loading_agents.cjs
+PASS test_loadout.cjs
+PASS test_map_cancel.cjs
+node:internal/modules/cjs/loader:1568
+  throw err;
+  ^
+
+Error: Cannot find module '/home/hatch/workspace/valorstrike/server/node_modules/sharp'
+Require stack:
+- /home/hatch/workspace/valorstrike/work/test_map_decals.cjs
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1564:15)
+    at wrapResolveFilename (node:internal/modules/cjs/loader:1118:27)
+    at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1142:10)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1169:12)
+    at Module._load (node:internal/modules/cjs/loader:1341:5)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)
+    at Module.require (node:internal/modules/cjs/loader:1674:12)
+    at require (node:internal/modules/helpers:157:16)
+    at Object.<anonymous> (/home/hatch/workspace/valorstrike/work/test_map_decals.cjs:7:13)
+    at Module._compile (node:internal/modules/cjs/loader:1929:14) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [ '/home/hatch/workspace/valorstrike/work/test_map_decals.cjs' ]
+}
+
+Node.js v24.22.1
+FAILED: test_map_decals.cjs
+node:internal/modules/cjs/loader:1568
+  throw err;
+  ^
+
+Error: Cannot find module 'three'
+Require stack:
+- /home/hatch/workspace/valorstrike/work/test_map_detail.cjs
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1564:15)
+    at wrapResolveFilename (node:internal/modules/cjs/loader:1118:27)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1169:12)
+    at require.resolve (node:internal/modules/helpers:175:31)
+    at Object.<anonymous> (/home/hatch/workspace/valorstrike/work/test_map_detail.cjs:22:29)
+    at Module._compile (node:internal/modules/cjs/loader:1929:14)
+    at Object..js (node:internal/modules/cjs/loader:2060:10)
+    at Module.load (node:internal/modules/cjs/loader:1651:32)
+    at Module._load (node:internal/modules/cjs/loader:1443:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:261:19) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [ '/home/hatch/workspace/valorstrike/work/test_map_detail.cjs' ]
+}
+
+Node.js v24.22.1
+FAILED: test_map_detail.cjs
+PASS test_map_leash.cjs
+PASS test_map_lifetime.cjs
+PASS test_map_load_stall.cjs
+node:internal/modules/cjs/loader:1568
+  throw err;
+  ^
+
+Error: Cannot find module 'three'
+Require stack:
+- /home/hatch/workspace/valorstrike/work/test_map_memory.cjs
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1564:15)
+    at wrapResolveFilename (node:internal/modules/cjs/loader:1118:27)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1169:12)
+    at require.resolve (node:internal/modules/helpers:175:31)
+    at Object.<anonymous> (/home/hatch/workspace/valorstrike/work/test_map_memory.cjs:6:29)
+    at Module._compile (node:internal/modules/cjs/loader:1929:14)
+    at Object..js (node:internal/modules/cjs/loader:2060:10)
+    at Module.load (node:internal/modules/cjs/loader:1651:32)
+    at Module._load (node:internal/modules/cjs/loader:1443:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:261:19) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [ '/home/hatch/workspace/valorstrike/work/test_map_memory.cjs' ]
+}
+
+Node.js v24.22.1
+FAILED: test_map_memory.cjs
+node:internal/modules/cjs/loader:1568
+  throw err;
+  ^
+
+Error: Cannot find module 'three'
+Require stack:
+- /home/hatch/workspace/valorstrike/work/test_map_optimizer.cjs
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1564:15)
+    at wrapResolveFilename (node:internal/modules/cjs/loader:1118:27)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1169:12)
+    at require.resolve (node:internal/modules/helpers:175:31)
+    at Object.<anonymous> (/home/hatch/workspace/valorstrike/work/test_map_optimizer.cjs:16:29)
+    at Module._compile (node:internal/modules/cjs/loader:1929:14)
+    at Object..js (node:internal/modules/cjs/loader:2060:10)
+    at Module.load (node:internal/modules/cjs/loader:1651:32)
+    at Module._load (node:internal/modules/cjs/loader:1443:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:261:19) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [ '/home/hatch/workspace/valorstrike/work/test_map_optimizer.cjs' ]
+}
+
+Node.js v24.22.1
+FAILED: test_map_optimizer.cjs
+PASS test_map_riser.cjs
+FAILED: test_map_select.cjs
+FAILED: test_map_select_online.cjs
+node:internal/modules/cjs/loader:1568
+  throw err;
+  ^
+
+Error: Cannot find module 'three'
+Require stack:
+- /home/hatch/workspace/valorstrike/work/test_map_skirt.cjs
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1564:15)
+    at wrapResolveFilename (node:internal/modules/cjs/loader:1118:27)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1169:12)
+    at require.resolve (node:internal/modules/helpers:175:31)
+    at Object.<anonymous> (/home/hatch/workspace/valorstrike/work/test_map_skirt.cjs:7:25)
+    at Module._compile (node:internal/modules/cjs/loader:1929:14)
+    at Object..js (node:internal/modules/cjs/loader:2060:10)
+    at Module.load (node:internal/modules/cjs/loader:1651:32)
+    at Module._load (node:internal/modules/cjs/loader:1443:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:261:19) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [ '/home/hatch/workspace/valorstrike/work/test_map_skirt.cjs' ]
+}
+
+Node.js v24.22.1
+FAILED: test_map_skirt.cjs
+node:internal/modules/cjs/loader:1568
+  throw err;
+  ^
+
+Error: Cannot find module 'three'
+Require stack:
+- /home/hatch/workspace/valorstrike/work/test_map_zfight.cjs
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1564:15)
+    at wrapResolveFilename (node:internal/modules/cjs/loader:1118:27)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1169:12)
+    at require.resolve (node:internal/modules/helpers:175:31)
+    at Object.<anonymous> (/home/hatch/workspace/valorstrike/work/test_map_zfight.cjs:11:29)
+    at Module._compile (node:internal/modules/cjs/loader:1929:14)
+    at Object..js (node:internal/modules/cjs/loader:2060:10)
+    at Module.load (node:internal/modules/cjs/loader:1651:32)
+    at Module._load (node:internal/modules/cjs/loader:1443:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:261:19) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [ '/home/hatch/workspace/valorstrike/work/test_map_zfight.cjs' ]
+}
+
+Node.js v24.22.1
+FAILED: test_map_zfight.cjs
+PASS test_minimap.cjs
+PASS test_minimap_visibility.cjs
+node:internal/modules/cjs/loader:1568
+  throw err;
+  ^
+
+Error: Cannot find module 'three'
+Require stack:
+- /home/hatch/workspace/valorstrike/work/valorant_rigs.js
+- /home/hatch/workspace/valorstrike/work/test_movement_sampling.cjs
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1564:15)
+    at wrapResolveFilename (node:internal/modules/cjs/loader:1118:27)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1169:12)
+    at require.resolve (node:internal/modules/helpers:175:31)
+    at Object.<anonymous> (/home/hatch/workspace/valorstrike/work/valorant_rigs.js:3:25)
+    at Module._compile (node:internal/modules/cjs/loader:1929:14)
+    at Object..js (node:internal/modules/cjs/loader:2060:10)
+    at Module.load (node:internal/modules/cjs/loader:1651:32)
+    at Module._load (node:internal/modules/cjs/loader:1443:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:261:19) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [
+    '/home/hatch/workspace/valorstrike/work/valorant_rigs.js',
+    '/home/hatch/workspace/valorstrike/work/test_movement_sampling.cjs'
+  ]
+}
+
+Node.js v24.22.1
+FAILED: test_movement_sampling.cjs
+node:internal/modules/cjs/loader:1568
+  throw err;
+  ^
+
+Error: Cannot find module 'three'
+Require stack:
+- /home/hatch/workspace/valorstrike/work/valorant_rigs.js
+- /home/hatch/workspace/valorstrike/work/test_native_contact.cjs
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1564:15)
+    at wrapResolveFilename (node:internal/modules/cjs/loader:1118:27)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1169:12)
+    at require.resolve (node:internal/modules/helpers:175:31)
+    at Object.<anonymous> (/home/hatch/workspace/valorstrike/work/valorant_rigs.js:3:25)
+    at Module._compile (node:internal/modules/cjs/loader:1929:14)
+    at Object..js (node:internal/modules/cjs/loader:2060:10)
+    at Module.load (node:internal/modules/cjs/loader:1651:32)
+    at Module._load (node:internal/modules/cjs/loader:1443:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:261:19) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [
+    '/home/hatch/workspace/valorstrike/work/valorant_rigs.js',
+    '/home/hatch/workspace/valorstrike/work/test_native_contact.cjs'
+  ]
+}
+
+Node.js v24.22.1
+FAILED: test_native_contact.cjs
+node:internal/modules/cjs/loader:1568
+  throw err;
+  ^
+
+Error: Cannot find module 'three'
+Require stack:
+- /home/hatch/workspace/valorstrike/work/valorant_rigs.js
+- /home/hatch/workspace/valorstrike/work/test_native_contact_runtime.cjs
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1564:15)
+    at wrapResolveFilename (node:internal/modules/cjs/loader:1118:27)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1169:12)
+    at require.resolve (node:internal/modules/helpers:175:31)
+    at Object.<anonymous> (/home/hatch/workspace/valorstrike/work/valorant_rigs.js:3:25)
+    at Module._compile (node:internal/modules/cjs/loader:1929:14)
+    at Object..js (node:internal/modules/cjs/loader:2060:10)
+    at Module.load (node:internal/modules/cjs/loader:1651:32)
+    at Module._load (node:internal/modules/cjs/loader:1443:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:261:19) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [
+    '/home/hatch/workspace/valorstrike/work/valorant_rigs.js',
+    '/home/hatch/workspace/valorstrike/work/test_native_contact_runtime.cjs'
+  ]
+}
+
+Node.js v24.22.1
+FAILED: test_native_contact_runtime.cjs
+node:internal/modules/cjs/loader:1568
+  throw err;
+  ^
+
+Error: Cannot find module 'three'
+Require stack:
+- /home/hatch/workspace/valorstrike/work/valorant_rigs.js
+- /home/hatch/workspace/valorstrike/work/rig_harness.cjs
+- /home/hatch/workspace/valorstrike/work/tp_body_harness.cjs
+- /home/hatch/workspace/valorstrike/work/test_native_crouch.cjs
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1564:15)
+    at wrapResolveFilename (node:internal/modules/cjs/loader:1118:27)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1169:12)
+    at require.resolve (node:internal/modules/helpers:175:31)
+    at Object.<anonymous> (/home/hatch/workspace/valorstrike/work/valorant_rigs.js:3:25)
+    at Module._compile (node:internal/modules/cjs/loader:1929:14)
+    at Object..js (node:internal/modules/cjs/loader:2060:10)
+    at Module.load (node:internal/modules/cjs/loader:1651:32)
+    at Module._load (node:internal/modules/cjs/loader:1443:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:261:19) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [
+    '/home/hatch/workspace/valorstrike/work/valorant_rigs.js',
+    '/home/hatch/workspace/valorstrike/work/rig_harness.cjs',
+    '/home/hatch/workspace/valorstrike/work/tp_body_harness.cjs',
+    '/home/hatch/workspace/valorstrike/work/test_native_crouch.cjs'
+  ]
+}
+
+Node.js v24.22.1
+FAILED: test_native_crouch.cjs
+node:internal/modules/cjs/loader:1568
+  throw err;
+  ^
+
+Error: Cannot find module 'three'
+Require stack:
+- /home/hatch/workspace/valorstrike/work/test_native_kit_y.cjs
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1564:15)
+    at wrapResolveFilename (node:internal/modules/cjs/loader:1118:27)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1169:12)
+    at require.resolve (node:internal/modules/helpers:175:31)
+    at Object.<anonymous> (/home/hatch/workspace/valorstrike/work/test_native_kit_y.cjs:14:25)
+    at Module._compile (node:internal/modules/cjs/loader:1929:14)
+    at Object..js (node:internal/modules/cjs/loader:2060:10)
+    at Module.load (node:internal/modules/cjs/loader:1651:32)
+    at Module._load (node:internal/modules/cjs/loader:1443:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:261:19) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [ '/home/hatch/workspace/valorstrike/work/test_native_kit_y.cjs' ]
+}
+
+Node.js v24.22.1
+FAILED: test_native_kit_y.cjs
+node:internal/modules/cjs/loader:1568
+  throw err;
+  ^
+
+Error: Cannot find module 'three'
+Require stack:
+- /home/hatch/workspace/valorstrike/work/test_native_legacy_y.cjs
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1564:15)
+    at wrapResolveFilename (node:internal/modules/cjs/loader:1118:27)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1169:12)
+    at require.resolve (node:internal/modules/helpers:175:31)
+    at Object.<anonymous> (/home/hatch/workspace/valorstrike/work/test_native_legacy_y.cjs:25:26)
+    at Module._compile (node:internal/modules/cjs/loader:1929:14)
+    at Object..js (node:internal/modules/cjs/loader:2060:10)
+    at Module.load (node:internal/modules/cjs/loader:1651:32)
+    at Module._load (node:internal/modules/cjs/loader:1443:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:261:19) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [ '/home/hatch/workspace/valorstrike/work/test_native_legacy_y.cjs' ]
+}
+
+Node.js v24.22.1
+FAILED: test_native_legacy_y.cjs
+PASS test_native_site_goals.cjs
+PASS test_native_startup.cjs
+node:internal/modules/cjs/loader:1568
+  throw err;
+  ^
+
+Error: Cannot find module 'three'
+Require stack:
+- /home/hatch/workspace/valorstrike/work/valorant_rigs.js
+- /home/hatch/workspace/valorstrike/work/rig_harness.cjs
+- /home/hatch/workspace/valorstrike/work/tp_body_harness.cjs
+- /home/hatch/workspace/valorstrike/work/test_native_stride.cjs
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1564:15)
+    at wrapResolveFilename (node:internal/modules/cjs/loader:1118:27)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1169:12)
+    at require.resolve (node:internal/modules/helpers:175:31)
+    at Object.<anonymous> (/home/hatch/workspace/valorstrike/work/valorant_rigs.js:3:25)
+    at Module._compile (node:internal/modules/cjs/loader:1929:14)
+    at Object..js (node:internal/modules/cjs/loader:2060:10)
+    at Module.load (node:internal/modules/cjs/loader:1651:32)
+    at Module._load (node:internal/modules/cjs/loader:1443:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:261:19) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [
+    '/home/hatch/workspace/valorstrike/work/valorant_rigs.js',
+    '/home/hatch/workspace/valorstrike/work/rig_harness.cjs',
+    '/home/hatch/workspace/valorstrike/work/tp_body_harness.cjs',
+    '/home/hatch/workspace/valorstrike/work/test_native_stride.cjs'
+  ]
+}
+
+Node.js v24.22.1
+FAILED: test_native_stride.cjs
+PASS test_native_teleport.cjs
+node:internal/modules/cjs/loader:1568
+  throw err;
+  ^
+
+Error: Cannot find module 'three'
+Require stack:
+- /home/hatch/workspace/valorstrike/server/build-world.cjs
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1564:15)
+    at wrapResolveFilename (node:internal/modules/cjs/loader:1118:27)
+    at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1142:10)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1169:12)
+    at Module._load (node:internal/modules/cjs/loader:1341:5)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)
+    at Module.require (node:internal/modules/cjs/loader:1674:12)
+    at require (node:internal/modules/helpers:157:16)
+    at Object.<anonymous> (/home/hatch/workspace/valorstrike/work/test_nav_allmaps.cjs:7:15)
+    at Module._compile (node:internal/modules/cjs/loader:1929:14) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [ '/home/hatch/workspace/valorstrike/server/build-world.cjs' ]
+}
+
+Node.js v24.22.1
+FAILED: test_nav_allmaps.cjs
+node:internal/modules/cjs/loader:1568
+  throw err;
+  ^
+
+Error: Cannot find module 'three'
+Require stack:
+- /home/hatch/workspace/valorstrike/server/build-world.cjs
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1564:15)
+    at wrapResolveFilename (node:internal/modules/cjs/loader:1118:27)
+    at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1142:10)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1169:12)
+    at Module._load (node:internal/modules/cjs/loader:1341:5)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)
+    at Module.require (node:internal/modules/cjs/loader:1674:12)
+    at require (node:internal/modules/helpers:157:16)
+    at Object.<anonymous> (/home/hatch/workspace/valorstrike/work/test_nav_band.cjs:6:15)
+    at Module._compile (node:internal/modules/cjs/loader:1929:14) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [ '/home/hatch/workspace/valorstrike/server/build-world.cjs' ]
+}
+
+Node.js v24.22.1
+FAILED: test_nav_band.cjs
+node:internal/modules/cjs/loader:1568
+  throw err;
+  ^
+
+Error: Cannot find module 'three'
+Require stack:
+- /home/hatch/workspace/valorstrike/server/build-world.cjs
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1564:15)
+    at wrapResolveFilename (node:internal/modules/cjs/loader:1118:27)
+    at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1142:10)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1169:12)
+    at Module._load (node:internal/modules/cjs/loader:1341:5)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)
+    at Module.require (node:internal/modules/cjs/loader:1674:12)
+    at require (node:internal/modules/helpers:157:16)
+    at Object.<anonymous> (/home/hatch/workspace/valorstrike/work/test_nav_directionality.cjs:8:15)
+    at Module._compile (node:internal/modules/cjs/loader:1929:14) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [ '/home/hatch/workspace/valorstrike/server/build-world.cjs' ]
+}
+
+Node.js v24.22.1
+FAILED: test_nav_directionality.cjs
+PASS test_nav_gc.cjs
+PASS test_net_clean_rs.cjs
+PASS test_net_identity.cjs
+PASS test_net_reconcile.cjs
+PASS test_net_stall.cjs
+PASS test_net_status.cjs
+PASS test_offline_detonation.cjs
+PASS test_offline_overtime.cjs
+node:fs:483
+    return binding.readFileUtf8(path, stringToFlags(options.flag));
+                   ^
+
+Error: ENOENT: no such file or directory, open '/home/hatch/workspace/valorstrike/server/node_modules/three/build/three.cjs'
+    at Object.readFileSync (node:fs:483:20)
+    at threeDir (/home/hatch/workspace/valorstrike/work/page_harness.cjs:10:15)
+    at boot (/home/hatch/workspace/valorstrike/work/page_harness.cjs:20:16)
+    at Object.<anonymous> (/home/hatch/workspace/valorstrike/work/test_offline_realtime.cjs:12:9)
+    at Module._compile (node:internal/modules/cjs/loader:1929:14)
+    at Object..js (node:internal/modules/cjs/loader:2060:10)
+    at Module.load (node:internal/modules/cjs/loader:1651:32)
+    at Module._load (node:internal/modules/cjs/loader:1443:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)
+    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5) {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/home/hatch/workspace/valorstrike/server/node_modules/three/build/three.cjs'
+}
+
+Node.js v24.22.1
+FAILED: test_offline_realtime.cjs
+PASS test_omen_intent.cjs
+PASS test_online_cast_fog.cjs
+PASS test_online_devices.cjs
+PASS test_online_fog.cjs
+PASS test_online_own_devices.cjs
+FAILED: test_online_pitch.cjs
+PASS test_online_rooms.cjs
+PASS test_online_showstopper.cjs
+PASS test_online_slow_orb.cjs
+FAILED: test_online_spike_hud.cjs
+PASS test_online_startup.cjs
+PASS test_online_steps.cjs
+PASS test_oob_destinations.cjs
+PASS test_oob_kill.cjs
+FAILED: test_owl_spycam.cjs
+node:internal/modules/cjs/loader:1568
+  throw err;
+  ^
+
+Error: Cannot find module 'three'
+Require stack:
+- /home/hatch/workspace/valorstrike/work/test_player_clips.cjs
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1564:15)
+    at wrapResolveFilename (node:internal/modules/cjs/loader:1118:27)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1169:12)
+    at require.resolve (node:internal/modules/helpers:175:31)
+    at Object.<anonymous> (/home/hatch/workspace/valorstrike/work/test_player_clips.cjs:10:25)
+    at Module._compile (node:internal/modules/cjs/loader:1929:14)
+    at Object..js (node:internal/modules/cjs/loader:2060:10)
+    at Module.load (node:internal/modules/cjs/loader:1651:32)
+    at Module._load (node:internal/modules/cjs/loader:1443:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:261:19) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [ '/home/hatch/workspace/valorstrike/work/test_player_clips.cjs' ]
+}
+
+Node.js v24.22.1
+FAILED: test_player_clips.cjs
+PASS test_profile.cjs
+node:internal/modules/cjs/loader:1568
+  throw err;
+  ^
+
+Error: Cannot find module 'three'
+Require stack:
+- /home/hatch/workspace/valorstrike/work/valorant_rigs.js
+- /home/hatch/workspace/valorstrike/work/rig_harness.cjs
+- /home/hatch/workspace/valorstrike/work/test_ragdoll.cjs
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1564:15)
+    at wrapResolveFilename (node:internal/modules/cjs/loader:1118:27)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1169:12)
+    at require.resolve (node:internal/modules/helpers:175:31)
+    at Object.<anonymous> (/home/hatch/workspace/valorstrike/work/valorant_rigs.js:3:25)
+    at Module._compile (node:internal/modules/cjs/loader:1929:14)
+    at Object..js (node:internal/modules/cjs/loader:2060:10)
+    at Module.load (node:internal/modules/cjs/loader:1651:32)
+    at Module._load (node:internal/modules/cjs/loader:1443:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:261:19) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [
+    '/home/hatch/workspace/valorstrike/work/valorant_rigs.js',
+    '/home/hatch/workspace/valorstrike/work/rig_harness.cjs',
+    '/home/hatch/workspace/valorstrike/work/test_ragdoll.cjs'
+  ]
+}
+
+Node.js v24.22.1
+FAILED: test_ragdoll.cjs
+FAILED: test_ragdoll_perf.cjs
+FAILED: test_regen_shield.cjs
+FAILED: test_reload_rounds.cjs
+PASS test_render_quality.cjs
+PASS test_renderer_rebind.cjs
+FAILED: test_reserve_ammo.cjs
+PASS test_reyna_hud.cjs
+FAILED: test_rez_crystal_steps.cjs
+PASS test_roster.cjs
+PASS test_round_timers.cjs
+PASS test_server_effects.cjs
+PASS test_shader_check.cjs
+PASS test_shoot_since.cjs
+PASS test_short_layout.cjs
+PASS test_shot_alloc.cjs
+FAILED: test_skin_fp.cjs
+PASS test_skin_levels.cjs
+node:fs:483
+    return binding.readFileUtf8(path, stringToFlags(options.flag));
+                   ^
+
+Error: ENOENT: no such file or directory, open '/home/hatch/workspace/valorstrike/server/node_modules/three/build/three.cjs'
+    at Object.readFileSync (node:fs:483:20)
+    at threeDir (/home/hatch/workspace/valorstrike/work/page_harness.cjs:10:15)
+    at boot (/home/hatch/workspace/valorstrike/work/page_harness.cjs:20:16)
+    at Object.<anonymous> (/home/hatch/workspace/valorstrike/work/test_skin_preview.cjs:18:9)
+    at Module._compile (node:internal/modules/cjs/loader:1929:14)
+    at Object..js (node:internal/modules/cjs/loader:2060:10)
+    at Module.load (node:internal/modules/cjs/loader:1651:32)
+    at Module._load (node:internal/modules/cjs/loader:1443:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)
+    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5) {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/home/hatch/workspace/valorstrike/server/node_modules/three/build/three.cjs'
+}
+
+Node.js v24.22.1
+FAILED: test_skin_preview.cjs
+PASS test_skins.cjs
+node:fs:483
+    return binding.readFileUtf8(path, stringToFlags(options.flag));
+                   ^
+
+Error: ENOENT: no such file or directory, open '/home/hatch/workspace/valorstrike/server/node_modules/three/build/three.cjs'
+    at Object.readFileSync (node:fs:483:20)
+    at threeDir (/home/hatch/workspace/valorstrike/work/page_harness.cjs:10:15)
+    at boot (/home/hatch/workspace/valorstrike/work/page_harness.cjs:20:16)
+    at Object.<anonymous> (/home/hatch/workspace/valorstrike/work/test_skins_page.cjs:9:9)
+    at Module._compile (node:internal/modules/cjs/loader:1929:14)
+    at Object..js (node:internal/modules/cjs/loader:2060:10)
+    at Module.load (node:internal/modules/cjs/loader:1651:32)
+    at Module._load (node:internal/modules/cjs/loader:1443:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)
+    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5) {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/home/hatch/workspace/valorstrike/server/node_modules/three/build/three.cjs'
+}
+
+Node.js v24.22.1
+FAILED: test_skins_page.cjs
+PASS test_skye_hud.cjs
+PASS test_spectate.cjs
+node:fs:483
+    return binding.readFileUtf8(path, stringToFlags(options.flag));
+                   ^
+
+Error: ENOENT: no such file or directory, open '/home/hatch/workspace/valorstrike/server/node_modules/three/build/three.cjs'
+    at Object.readFileSync (node:fs:483:20)
+    at threeDir (/home/hatch/workspace/valorstrike/work/page_harness.cjs:10:15)
+    at boot (/home/hatch/workspace/valorstrike/work/page_harness.cjs:20:16)
+    at Object.<anonymous> (/home/hatch/workspace/valorstrike/work/test_spectate_follow.cjs:43:9)
+    at Module._compile (node:internal/modules/cjs/loader:1929:14)
+    at Object..js (node:internal/modules/cjs/loader:2060:10)
+    at Module.load (node:internal/modules/cjs/loader:1651:32)
+    at Module._load (node:internal/modules/cjs/loader:1443:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)
+    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5) {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/home/hatch/workspace/valorstrike/server/node_modules/three/build/three.cjs'
+}
+
+Node.js v24.22.1
+FAILED: test_spectate_follow.cjs
+FAILED: test_spectate_online.cjs
+PASS test_spectate_pov.cjs
+PASS test_spike_beep.cjs
+node:internal/modules/cjs/loader:1568
+  throw err;
+  ^
+
+Error: Cannot find module 'three'
+Require stack:
+- /home/hatch/workspace/valorstrike/work/test_stairs.cjs
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1564:15)
+    at wrapResolveFilename (node:internal/modules/cjs/loader:1118:27)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1169:12)
+    at require.resolve (node:internal/modules/helpers:175:31)
+    at Object.<anonymous> (/home/hatch/workspace/valorstrike/work/test_stairs.cjs:5:25)
+    at Module._compile (node:internal/modules/cjs/loader:1929:14)
+    at Object..js (node:internal/modules/cjs/loader:2060:10)
+    at Module.load (node:internal/modules/cjs/loader:1651:32)
+    at Module._load (node:internal/modules/cjs/loader:1443:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:261:19) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [ '/home/hatch/workspace/valorstrike/work/test_stairs.cjs' ]
+}
+
+Node.js v24.22.1
+FAILED: test_stairs.cjs
+PASS test_tailwind_dash.cjs
+PASS test_tdf_round_reset.cjs
+FAILED: test_tdf_spread.cjs
+PASS test_tdm_native_routing.cjs
+PASS test_tdm_transitions.cjs
+PASS test_texcap.cjs
+PASS test_touch.cjs
+PASS test_touch_layout.cjs
+node:fs:483
+    return binding.readFileUtf8(path, stringToFlags(options.flag));
+                   ^
+
+Error: ENOENT: no such file or directory, open '/home/hatch/workspace/valorstrike/server/node_modules/three/build/three.cjs'
+    at Object.readFileSync (node:fs:483:20)
+    at threeDir (/home/hatch/workspace/valorstrike/work/page_harness.cjs:10:15)
+    at boot (/home/hatch/workspace/valorstrike/work/page_harness.cjs:20:16)
+    at Object.<anonymous> (/home/hatch/workspace/valorstrike/work/test_touch_mobile.cjs:41:9)
+    at Module._compile (node:internal/modules/cjs/loader:1929:14)
+    at Object..js (node:internal/modules/cjs/loader:2060:10)
+    at Module.load (node:internal/modules/cjs/loader:1651:32)
+    at Module._load (node:internal/modules/cjs/loader:1443:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)
+    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5) {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/home/hatch/workspace/valorstrike/server/node_modules/three/build/three.cjs'
+}
+
+Node.js v24.22.1
+FAILED: test_touch_mobile.cjs
+node:fs:483
+    return binding.readFileUtf8(path, stringToFlags(options.flag));
+                   ^
+
+Error: ENOENT: no such file or directory, open '/home/hatch/workspace/valorstrike/server/node_modules/three/build/three.cjs'
+    at Object.readFileSync (node:fs:483:20)
+    at threeDir (/home/hatch/workspace/valorstrike/work/page_harness.cjs:10:15)
+    at boot (/home/hatch/workspace/valorstrike/work/page_harness.cjs:20:16)
+    at Object.<anonymous> (/home/hatch/workspace/valorstrike/work/test_touch_spike.cjs:11:9)
+    at Module._compile (node:internal/modules/cjs/loader:1929:14)
+    at Object..js (node:internal/modules/cjs/loader:2060:10)
+    at Module.load (node:internal/modules/cjs/loader:1651:32)
+    at Module._load (node:internal/modules/cjs/loader:1443:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)
+    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5) {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/home/hatch/workspace/valorstrike/server/node_modules/three/build/three.cjs'
+}
+
+Node.js v24.22.1
+FAILED: test_touch_spike.cjs
+node:internal/modules/cjs/loader:1568
+  throw err;
+  ^
+
+Error: Cannot find module 'three'
+Require stack:
+- /home/hatch/workspace/valorstrike/work/valorant_rigs.js
+- /home/hatch/workspace/valorstrike/work/rig_harness.cjs
+- /home/hatch/workspace/valorstrike/work/tp_body_harness.cjs
+- /home/hatch/workspace/valorstrike/work/test_tp_body_stretch.cjs
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1564:15)
+    at wrapResolveFilename (node:internal/modules/cjs/loader:1118:27)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1169:12)
+    at require.resolve (node:internal/modules/helpers:175:31)
+    at Object.<anonymous> (/home/hatch/workspace/valorstrike/work/valorant_rigs.js:3:25)
+    at Module._compile (node:internal/modules/cjs/loader:1929:14)
+    at Object..js (node:internal/modules/cjs/loader:2060:10)
+    at Module.load (node:internal/modules/cjs/loader:1651:32)
+    at Module._load (node:internal/modules/cjs/loader:1443:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:261:19) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [
+    '/home/hatch/workspace/valorstrike/work/valorant_rigs.js',
+    '/home/hatch/workspace/valorstrike/work/rig_harness.cjs',
+    '/home/hatch/workspace/valorstrike/work/tp_body_harness.cjs',
+    '/home/hatch/workspace/valorstrike/work/test_tp_body_stretch.cjs'
+  ]
+}
+
+Node.js v24.22.1
+FAILED: test_tp_body_stretch.cjs
+node:internal/modules/cjs/loader:1568
+  throw err;
+  ^
+
+Error: Cannot find module 'three'
+Require stack:
+- /home/hatch/workspace/valorstrike/work/valorant_rigs.js
+- /home/hatch/workspace/valorstrike/work/rig_harness.cjs
+- /home/hatch/workspace/valorstrike/work/tp_body_harness.cjs
+- /home/hatch/workspace/valorstrike/work/tp_anim_sim.cjs
+- /home/hatch/workspace/valorstrike/work/test_tp_gait.cjs
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1564:15)
+    at wrapResolveFilename (node:internal/modules/cjs/loader:1118:27)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1169:12)
+    at require.resolve (node:internal/modules/helpers:175:31)
+    at Object.<anonymous> (/home/hatch/workspace/valorstrike/work/valorant_rigs.js:3:25)
+    at Module._compile (node:internal/modules/cjs/loader:1929:14)
+    at Object..js (node:internal/modules/cjs/loader:2060:10)
+    at Module.load (node:internal/modules/cjs/loader:1651:32)
+    at Module._load (node:internal/modules/cjs/loader:1443:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:261:19) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [
+    '/home/hatch/workspace/valorstrike/work/valorant_rigs.js',
+    '/home/hatch/workspace/valorstrike/work/rig_harness.cjs',
+    '/home/hatch/workspace/valorstrike/work/tp_body_harness.cjs',
+    '/home/hatch/workspace/valorstrike/work/tp_anim_sim.cjs',
+    '/home/hatch/workspace/valorstrike/work/test_tp_gait.cjs'
+  ]
+}
+
+Node.js v24.22.1
+FAILED: test_tp_gait.cjs
+node:internal/modules/cjs/loader:1568
+  throw err;
+  ^
+
+Error: Cannot find module 'three'
+Require stack:
+- /home/hatch/workspace/valorstrike/work/valorant_rigs.js
+- /home/hatch/workspace/valorstrike/work/rig_harness.cjs
+- /home/hatch/workspace/valorstrike/work/tp_body_harness.cjs
+- /home/hatch/workspace/valorstrike/work/tp_anim_sim.cjs
+- /home/hatch/workspace/valorstrike/work/test_tp_jump.cjs
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1564:15)
+    at wrapResolveFilename (node:internal/modules/cjs/loader:1118:27)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1169:12)
+    at require.resolve (node:internal/modules/helpers:175:31)
+    at Object.<anonymous> (/home/hatch/workspace/valorstrike/work/valorant_rigs.js:3:25)
+    at Module._compile (node:internal/modules/cjs/loader:1929:14)
+    at Object..js (node:internal/modules/cjs/loader:2060:10)
+    at Module.load (node:internal/modules/cjs/loader:1651:32)
+    at Module._load (node:internal/modules/cjs/loader:1443:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:261:19) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [
+    '/home/hatch/workspace/valorstrike/work/valorant_rigs.js',
+    '/home/hatch/workspace/valorstrike/work/rig_harness.cjs',
+    '/home/hatch/workspace/valorstrike/work/tp_body_harness.cjs',
+    '/home/hatch/workspace/valorstrike/work/tp_anim_sim.cjs',
+    '/home/hatch/workspace/valorstrike/work/test_tp_jump.cjs'
+  ]
+}
+
+Node.js v24.22.1
+FAILED: test_tp_jump.cjs
+node:internal/modules/cjs/loader:1568
+  throw err;
+  ^
+
+Error: Cannot find module 'three'
+Require stack:
+- /home/hatch/workspace/valorstrike/work/valorant_rigs.js
+- /home/hatch/workspace/valorstrike/work/test_tp_locomotion.cjs
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1564:15)
+    at wrapResolveFilename (node:internal/modules/cjs/loader:1118:27)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1169:12)
+    at require.resolve (node:internal/modules/helpers:175:31)
+    at Object.<anonymous> (/home/hatch/workspace/valorstrike/work/valorant_rigs.js:3:25)
+    at Module._compile (node:internal/modules/cjs/loader:1929:14)
+    at Object..js (node:internal/modules/cjs/loader:2060:10)
+    at Module.load (node:internal/modules/cjs/loader:1651:32)
+    at Module._load (node:internal/modules/cjs/loader:1443:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:261:19) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [
+    '/home/hatch/workspace/valorstrike/work/valorant_rigs.js',
+    '/home/hatch/workspace/valorstrike/work/test_tp_locomotion.cjs'
+  ]
+}
+
+Node.js v24.22.1
+FAILED: test_tp_locomotion.cjs
+node:internal/modules/cjs/loader:1568
+  throw err;
+  ^
+
+Error: Cannot find module 'three'
+Require stack:
+- /home/hatch/workspace/valorstrike/work/test_view_motion.cjs
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1564:15)
+    at wrapResolveFilename (node:internal/modules/cjs/loader:1118:27)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1169:12)
+    at require.resolve (node:internal/modules/helpers:175:31)
+    at Object.<anonymous> (/home/hatch/workspace/valorstrike/work/test_view_motion.cjs:3:29)
+    at Module._compile (node:internal/modules/cjs/loader:1929:14)
+    at Object..js (node:internal/modules/cjs/loader:2060:10)
+    at Module.load (node:internal/modules/cjs/loader:1651:32)
+    at Module._load (node:internal/modules/cjs/loader:1443:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:261:19) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [ '/home/hatch/workspace/valorstrike/work/test_view_motion.cjs' ]
+}
+
+Node.js v24.22.1
+FAILED: test_view_motion.cjs
+PASS test_warm_shaders.cjs
+PASS test_weapon_resource.cjs
+PASS test_feel.js
+89 client regression files passed, 83 failed: test_ability_equip.cjs test_ability_fp.cjs test_ability_parity.cjs test_agent_assets.cjs test_agent_cull.cjs test_agent_cull_rig.cjs test_air_spread.cjs test_bot_aim.cjs test_bot_buy_phase_offline.cjs test_bot_human_offline.cjs test_bot_jett.cjs test_bot_perception_offline.cjs test_bot_shoot_utility_offline.cjs test_bot_utility_offline.cjs test_client_abilities.cjs test_client_fuzz.cjs test_client_lifecycle.cjs test_client_offline_soak.cjs test_client_online.cjs test_client_online_abilities.cjs test_client_online_buy.cjs test_client_online_gunplay.cjs test_client_online_rebind.cjs test_client_results.cjs test_client_settings.cjs test_curveball_offline.cjs test_devour_empress.cjs test_feet.cjs test_finishers.cjs test_fp_native.cjs test_fp_timing.cjs test_friendly_fire_offline.cjs test_grip.cjs test_grip_frame.cjs test_headhunter_kick.cjs test_hit_impact.cjs test_hit_path_perf.cjs test_hud_polish.cjs test_knife_combo.cjs test_legacy_map_free.cjs test_map_decals.cjs test_map_detail.cjs test_map_memory.cjs test_map_optimizer.cjs test_map_select.cjs test_map_select_online.cjs test_map_skirt.cjs test_map_zfight.cjs test_movement_sampling.cjs test_native_contact.cjs test_native_contact_runtime.cjs test_native_crouch.cjs test_native_kit_y.cjs test_native_legacy_y.cjs test_native_stride.cjs test_nav_allmaps.cjs test_nav_band.cjs test_nav_directionality.cjs test_offline_realtime.cjs test_online_pitch.cjs test_online_spike_hud.cjs test_owl_spycam.cjs test_player_clips.cjs test_ragdoll.cjs test_ragdoll_perf.cjs test_regen_shield.cjs test_reload_rounds.cjs test_reserve_ammo.cjs test_rez_crystal_steps.cjs test_skin_fp.cjs test_skin_preview.cjs test_skins_page.cjs test_spectate_follow.cjs test_spectate_online.cjs test_stairs.cjs test_tdf_spread.cjs test_touch_mobile.cjs test_touch_spike.cjs test_tp_body_stretch.cjs test_tp_gait.cjs test_tp_jump.cjs test_tp_locomotion.cjs test_view_motion.cjs

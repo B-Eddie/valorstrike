@@ -2,7 +2,7 @@
 // heavy=false blocks large binary assets so logic tests boot light.
 const {chromium} = require('playwright-core');
 const http = require('http'), fs = require('fs'), path = require('path');
-const ROOT = process.env.VS_ROOT || '/home/sandbox/valorstrike'; // VS_ROOT: serve a worktree for A/B probes
+const ROOT = process.env.VS_ROOT || path.resolve(__dirname, '../..'); // VS_ROOT: serve a worktree for A/B probes
 const MIME = {'.html':'text/html','.js':'application/javascript','.mjs':'application/javascript','.glb':'model/gltf-binary','.gltf':'model/gltf+json','.png':'image/png','.jpg':'image/jpeg','.css':'text/css','.json':'application/json','.txt':'text/plain','.bin':'application/octet-stream','.wasm':'application/wasm'};
 function serve(port = 8876) {
   const srv = http.createServer((req,res)=>{
@@ -38,7 +38,8 @@ function serveWorlds(port = 8787) {
   return new Promise(r => srv.listen(port, '127.0.0.1', () => r(srv)));
 }
 async function launch({heavy = false, profile = null, viewport = {width:960, height:600}, args = [], touch = false} = {}) {
-  const b = await chromium.launch({headless:true, executablePath:'/usr/bin/google-chrome',
+  const executablePath = process.env.VS_CHROME || ['/usr/bin/google-chrome', '/opt/meta-chromium/chrome'].find(f => fs.existsSync(f));
+  const b = await chromium.launch({headless:true, executablePath,
     args:['--no-sandbox','--use-gl=angle','--use-angle=swiftshader','--disable-dev-shm-usage','--enable-unsafe-swiftshader','--mute-audio',...args]});
   const p = await b.newPage(touch ? {viewport, hasTouch:true, isMobile:true} : {viewport});
   const prof = profile || (heavy ? 'heavy' : 'light');

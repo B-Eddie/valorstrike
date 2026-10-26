@@ -27,8 +27,8 @@ const worlds=new Map();
 async function worldFor(cluster,map){if(!worlds.has(map))worlds.set(map,await loadWorld(cluster.env.ASSETS,map));return worlds.get(map);}
 
 class Fuzzer{
- constructor(i,rng,world,mode){this.i=i;this.rng=rng;this.world=world;this.mode=mode;this.name='Fuzz'+i;this.agent=AGENTS[Math.floor(rng()*AGENTS.length)];this.token=null;this.reset();}
- reset(){this.id=null;this.seq=0;this.ready=false;this.rows=null;this.rs=null;this.fw=[];this.state={f:0,s:0,j:0,c:0,w:0,fire:0,ads:0,h4:0,r:0,p:0};this.until=0;this.goal=null;this.route=null;this.routeAt=-1e9;this.socket=null;this.connected=false;this.silentUntil=0;this.loadDelay=0;this.pendingReady=0;this.started=false;}
+ constructor(i,rng,world,mode){this.i=i;this.rng=rng;this.world=world;this.mode=mode;this.name='Fuzz'+i;this.agent=AGENTS[Math.floor(rng()*AGENTS.length)];this.token=null;this.resume=null;this.reset();}
+ reset(){this.id=null;this.ack=null;this.ready=false;this.rows=null;this.rs=null;this.fw=[];this.state={f:0,s:0,j:0,c:0,w:0,fire:0,ads:0,h4:0,r:0,p:0};this.until=0;this.goal=null;this.route=null;this.routeAt=-1e9;this.socket=null;this.connected=false;this.silentUntil=0;this.loadDelay=0;this.pendingReady=0;this.started=false;if(!this.resume)this.seq=0;}
  me(){return this.rows?.find(r=>r[0]===this.id)||null;}
 }
 
@@ -47,13 +47,13 @@ export async function soakRun({map='ascent',mode='dm',seconds=120,humans=3,seed=
  // Headhunter, Killjoy/Cypher/Phoenix devices, Boom Bot ...).
  if(scenario!=='base')fz.forEach((h,i)=>{h.agent=FOCUS[(i+seed)%FOCUS.length];});
  for(const h of fz){const p=await cluster.profile();h.token=p.token;}
- const send=(h,m)=>{if(h.connected&&h.socket)h.socket.send(typeof m==='string'?m:JSON.stringify(m));};
- const connect=(h,q)=>{h.reset();const s=cluster.connect(q);h.socket=s;
-  s.on('open',()=>{h.connected=true;send(h,{t:'hi',n:h.name,ag:h.agent,token:h.token});});
+ const send=(h,m)=>{if(h.connected&&h.socket)h.socket.send(typeof m==='string'?m:JSON.stringify(Number.isSafeInteger(h.ack)?{...m,q:h.ack}:m));};
+ const connect=(h,q)=>{h.reset();const s=cluster.connect(h.resume?{...q,resume:h.resume}:q);h.socket=s;
+  s.on('open',()=>{h.connected=true;send(h,{t:'hi',n:h.name,ag:h.agent,token:h.token,resume:h.resume||undefined,batch:1,ack:1});});
   s.on('error',e=>{h.connected=false;h.socket=null;h.refused=String(e.message||e);});
   s.on('close',()=>{h.connected=false;h.socket=null;});
   s.on('message',m=>receive(h,m));};
- const receive=(h,m)=>{if(m.t==='welcome'){h.id=m.you;h.name=m.name;}else if(m.t==='room')h.room=m;else if(m.t==='start'){h.started=true;h.rows=m.u;h.pendingReady=now()+h.loadDelay;}else if(m.t==='end')h.ended=m;else if(m.t==='rs')h.rs=m;else if(m.t==='s'&&h.ready){h.rows=m.u;if(m.fw)h.fw=m.fw;}};
+ const receive=(h,m)=>{if(m.t==='welcome'){h.id=m.you;h.name=m.name;h.resume=m.resume||null;}else if(m.t==='room')h.room=m;else if(m.t==='start'){h.started=true;h.rows=m.u;h.pendingReady=now()+h.loadDelay;}else if(m.t==='end')h.ended=m;else if(m.t==='rs')h.rs=m;else if(m.t==='s'){if(Number.isSafeInteger(m.q))h.ack=m.q;if(h.ready){h.rows=m.u;if(m.fw)h.fw=m.fw;if(m.rs)h.rs=m.rs;}}};
  const now=()=>cluster.clock.now()-t0;
  // A joiner's 'hi' is authenticated with real async crypto: hold the virtual clock until it settles, so the moment a
  // (re)joiner gets its seat does not depend on machine speed (keeps seeded runs reproducible).
@@ -70,11 +70,12 @@ export async function soakRun({map='ascent',mode='dm',seconds=120,humans=3,seed=
  send(fz[0],{t:'start'});
  const room=cluster.room(code);
  // Hook every server tick: run the invariant checks right after the room's own tick.
- const tick=room.tick.bind(room);let lastRound=0,roundSince=0,lastRemaining=null,remainingSince=0,killEvents=0;const pos=new Map(),trail=new Map();
+ const tick=room.tick.bind(room),tickWall=[],tickCpu=[];let lastRound=0,roundSince=0,lastRemaining=null,remainingSince=0,killEvents=0;const pos=new Map(),trail=new Map();
  room.tick=()=>{const sim=room.sim;const before=sim.events.length;let threw=null;if(sim.mode==='five')instrument(sim,flag,stats);
   // count kill events before snapshot() drains them
   const tickEv=[];const origSnap=sim.snapshot;sim.snapshot=function(){const s=origSnap.call(this);for(const e of s.ev||[]){tickEv.push(e);if(e[0]==='k'){killEvents++;stats.kills++;}if(e[0]==='sp')stats.plants++;}return s;};
-  try{tick();}catch(e){threw=e;errors.push('tick threw: '+(e.stack||e).split('\n').slice(0,4).join(' | '));}finally{sim.snapshot=origSnap;}
+  const tickStart=performance.now(),cpuStart=process.cpuUsage();
+  try{tick();}catch(e){threw=e;errors.push('tick threw: '+(e.stack||e).split('\n').slice(0,4).join(' | '));}finally{const cpu=process.cpuUsage(cpuStart);tickWall.push(performance.now()-tickStart);tickCpu.push((cpu.user+cpu.system)/1000);sim.snapshot=origSnap;}
   stats.ticks++;check(sim,threw);if(sim.mode==='five'){checkFive(sim,flag,stats);deathCheck(sim,flag,stats,tickEv);}};
  const valid=w=>typeof w==='string'&&Object.hasOwn(weapons,w);
  function check(sim){const t=now(),phases=['room','game','post','closed'];if(!phases.includes(sim.phase))flag('phase',sim.phase);
@@ -138,8 +139,8 @@ export async function soakRun({map='ascent',mode='dm',seconds=120,humans=3,seed=
   if(!h.ready||room.sim.phase!=='game')return;
   if(t<h.silentUntil)return;
   // Disconnect / rejoin mid-round (sometimes mid-load is covered by loadDelay + the next roll).
-  if(chance(.0007)){stats.disconnects++;if(chance(.3))send(h,{t:'bye'});h.socket.close();h.connected=false;h.socket=null;h.rejoinAt=t+R(300,6000);return;}
-  if(chance(.00015)){h.silentUntil=t+R(16000,20000);stats.silentDrops++;h.rejoinAt=h.silentUntil+R(200,2000);return;}
+  if(chance(.0007)){stats.disconnects++;if(chance(.3)){send(h,{t:'bye'});h.resume=null;}h.socket.close();h.connected=false;h.socket=null;h.rejoinAt=t+R(300,6000);return;}
+  if(chance(.00015)){h.silentUntil=t+R(48000,52000);stats.silentDrops++;h.rejoinAt=h.silentUntil+R(200,2000);return;}
   const me=h.me(),sim=room.sim;
   if(t>=h.until){const s=h.state;h.until=t+R(150,1500);s.f=pick([1,1,1,0,-1]);s.s=pick([0,0,1,-1]);s.j=chance(.15)?1:0;s.c=chance(.15)?1:0;s.w=chance(.15)?1:0;s.fire=chance(.3)?1:0;s.ads=chance(.2)?1:0;s.h4=chance(.05)?1:0;s.r=R(-Math.PI,Math.PI);s.p=R(-1.4,1.4);
    // Objective play in Spike: attackers carry to the site and plant; defenders go to a planted spike and defuse.
@@ -185,6 +186,10 @@ export async function soakRun({map='ascent',mode='dm',seconds=120,humans=3,seed=
   if(now()-lastGc>30000&&globalThis.gc){lastGc=now();globalThis.gc();heap.push(process.memoryUsage().heapUsed);}}
  if(room.sim.phase==='post'){await cluster.advance(1500);}
  stats.end={phase:room.sim.phase,remaining:room.sim.remaining,/* DM rows are indexed by unit id: report the live units' rows, not a sparse array */scores:room.sim.mode==='dm'?Object.fromEntries(room.sim.units.map(u=>[u.name,room.sim.scores[u.team]||0])):room.sim.scores,round:room.sim.round,roundScores:room.sim.roundScores,virtualSeconds:now()/1000};stats.heapMB=heap.map(b=>+(b/1048576).toFixed(1));stats.timers=null;
+ // Keep measured networking/tick costs with the gameplay report. CPU is real wall time; throughput uses the
+ // simulated match duration, so seeded soaks can compare normal and congested runs without renderer timing noise.
+ const quantile=(a,q)=>{const sorted=a.toSorted((x,y)=>x-y);return +(sorted[Math.min(sorted.length-1,Math.floor(sorted.length*q))]||0).toFixed(3);};
+ stats.network={...room.metrics,meanTickMs:+(room.metrics.cpuMs/Math.max(1,room.metrics.ticks)).toFixed(3),p95TickMs:quantile(tickWall,.95),p99TickMs:quantile(tickWall,.99),meanCpuTickMs:+(tickCpu.reduce((a,b)=>a+b,0)/Math.max(1,tickCpu.length)).toFixed(3),p95CpuTickMs:quantile(tickCpu,.95),p99CpuTickMs:quantile(tickCpu,.99),bytesPerSecond:Math.round((room.metrics.bytes||0)/Math.max(.001,now()/1000))};
  for(const h of fz)if(h.socket&&h.connected)try{h.socket.close();}catch(e){}
  await cluster.advance(200);
  return {map,mode,seed,humans,violations:violations.map(v=>({...v,count:seen.get(v.key)})),counts:Object.fromEntries(seen),errors:[...new Set(errors)].slice(0,50),stats};
@@ -195,6 +200,6 @@ if(import.meta.url===`file://${process.argv[1]}`){
  const [maps='all',modes='dm,tdm,five',secs='180',humans='3',seed='1',scenario='base']=process.argv.slice(2);
  const list=(maps==='all'?MAPS:maps.split(','));const out=[];
  for(const map of list)for(const mode of modes.split(',')){const t=Date.now();const r=await soakRun({map,mode,seconds:+secs,humans:+humans,seed:+seed,scenario});out.push(r);
-  console.log(JSON.stringify({map,mode,ms:Date.now()-t,ticks:r.stats.ticks,kills:r.stats.kills,rounds:r.stats.rounds,plants:r.stats.plants,rejoins:r.stats.rejoins,end:r.stats.end,heapMB:r.stats.heapMB,five:r.stats.five,maxFloor:r.stats.maxFloor,errors:r.errors,counts:r.counts,violations:r.violations.slice(0,25)}));}
+  console.log(JSON.stringify({map,mode,ms:Date.now()-t,ticks:r.stats.ticks,kills:r.stats.kills,rounds:r.stats.rounds,plants:r.stats.plants,rejoins:r.stats.rejoins,end:r.stats.end,heapMB:r.stats.heapMB,network:r.stats.network,five:r.stats.five,maxFloor:r.stats.maxFloor,errors:r.errors,counts:r.counts,violations:r.violations.slice(0,25)}));}
  process.exit(out.some(r=>r.errors.length||r.violations.length)?1:0);
 }

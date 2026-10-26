@@ -1,0 +1,57 @@
+
+> valorstrike-server@1.0.0 test
+> node test.js && node test-spike.js && node test-directory.cjs && node test-abilities.js && node test-ability-equip.js && node test-spike-edges.js && node test-spike-accept.js && node test-weapons.js && node test-wiki-weapons.js && node test-prebuilt.cjs && node test-trigger.js && node test-protocol.cjs && node test-barriers.js && node test-buy-worlds.js && node test-reyna.js && node test-interactions.js && node test-blades.js && node test-release-gate.cjs && node test-reconnect.js && node test-floor.js && node test-ults.js && node test-combat.js && node test-gunplay.js && node test-economy.js && node test-spread.js && node test-parity-rules.js && node test-bots.js && node test-bot-variety.js && node test-bot-buy-phase.js && node test-bot-brain.js && node test-bot-human.js && node test-bot-perception.js && node test-bot-shoot-utility.js && node test-raze-utility.js && node test-device-bodies.js && node test-fog.js && node test-local-cluster-fog.js && node test-collision-parity.js && node test-wall-slide.js && node test-background.js && node test-two-player.js && node test-perf.js && node test-bundle.cjs && node test-soak.js && node test-traversal.js && node test-stairs.js && node test-qa-hooks.cjs && node test-map-bounds.js && node test-map-zfight.js && node test-oob.js && node test-skins.js && node test-finishers.js
+
+authority tests passed: ignored damage/teleport/credit claims, monotonic input, speed, server ray/damage/scoring, walls, reload and cadence
+Inherited prototype names cannot select a weapon
+Name collision suffix advances, including user-supplied numbered names
+TDM server enforces UI weapon tier unlocks at2and5minutes with Spectre start
+Spike tests passed: economy limits/refunds, owned equip, plant time, half defuse, defender win, delayed next round, elimination once
+Directory self-stats require bearer identity, expose no tokens/id; presence counts active connected human sessions including private rooms without exposing them
+Directory persistence/idempotency passed using in-memory storage double; live completed-match durability remains unverified
+Ability authority checks passed: buy cost/caps, buy-phase cast rejection, no unearned ult, server-derived origin/aim, limited dash, server area damage and once-only kill
+Sage Slow Orb: 7 s, 3.5 m, half speed for everyone in it (enemies, allies, Sage), oslow status; a stronger slow wins
+Signature recharge timers server owned; Reyna Devour/Dismiss share charge pool and free round charge
+Sage heal targets hurt aimed teammate; invalid casts keep charge; resurrection preserves corpse location with no freearmor/loadout reset
+Flash resolves once after delay, requires facing+LOS and sends server status instead of continuous arbitrary blind
+Chamber Rendezvous: first E places server-position anchor without teleport/spend, return within 18 m after the 1.3 s teleport preserves elevation, cooldown 30 s, forged target ignored
+Breach Fault Line (after the 1.1 s windup): wiki strip 8 m ahead, 8 m wide, 8-56 m long from the HOLD FIRE charge (pw in the intent, clamped, junk/missing = full, echoed on the ac event), not generic area slow, rejects behind/outside/allies and recharges 50s
+Concuss fire is server-limited to80%rate and disables ADS; normal fire resumes afterward
+Omen ult validates walkable minimap target, consumes earned points, waits 4 s, teleports with reconciliation, death cancels; never generic blast
+Omen Step uses server aim/15m/1.2 s channel, walkable elevated target, no anchor/instant movement, blocks overlapping cast
+Jett Tailwind: first E spends the charge, 1 s windup, 7.5 s window, E dashes (once), lost when unused / on death / round reset; current server input direction/fallback, 11 m (wiki) capsule collision limit, 0.45 s dash (24.4 m/s, input ignored, no seq bump, page keys / yaw), respawn clears it; Updraft matches project impulse, never client coordinates
+Sage selected heal follows moving target, never dead target; resurrection uses project5m aimed range and preserves points for invalid long-range corpse
+Skye Regrowth follows caster18m, excludes self/enemies, shares100HPpool, toggles/resumes without extra charge, stops spent
+Regrowth stops on caster death
+Spike motor honors current-input ADS weapon speed, concuss disables ADS, slow stacks, expired input cannot retain ADS
+Ability equip (server): kit table matches the wiki, equip casts hold fire for 0.45 s, quick-casts do not; Cloudburst projectile (tap arc / steered while C held / smoke on contact or after 2 s, 2.5 s), Hot Hands 60/s spreading to 4.5 m over 0.75 s, Nanoswarm 5 s; wiki windups (Aftershock / Flashpoint / Fault Line / Leer / Curveball / Rolling Thunder / Trapwire / Trademark / Tour De Force); Sova bolt charge + 0-2 bounces
+Spike edge checks passed: finite reserve/reload, equip lock, armor exact name, halftime reset, balanced late seat waits for next round
+Spike refund regression: no free restored weapon/armor from out-of-order sells; loading/dead refund and post-round ability rejected
+Spike weapon rewards: each shotgun kill credited, agent ult cap respected
+Spike drop survives next tick without auto-pickup by sender; ability refund changes charge/credits exactly once
+Defenders do not receive hidden Spike carrier/site/coordinates before plant
+Buy-phase server boundary matches client/native visual zedge, not unrelated12m spawn circle; releases at phaseend
+Buy-boundary projection never places capsule into world solid
+Spike loading hold: capped at 15 s per player and per round, late loader sits the round out and returns next round
+Spike seats: a leaver's seat bot takes over the living body; a rejoin gives up a dead bot before a living one
+Sidearm-only round: equip of an empty slot / malformed name refused, the simulation keeps ticking
+Armor v9.10: Light / Heavy Armor names (old Shields names refused), Regen Shield 650 = 25 at 100%, 3 s refill from a 50 pool, sell / replace restore, rows[21] pool, round carry, death clears
+node:internal/modules/package_json_reader:331
+  throw new ERR_MODULE_NOT_FOUND(packageName, fileURLToPath(base), null);
+        ^
+
+Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'three' imported from /home/hatch/workspace/valorstrike/server/src/world.js
+    at Object.getPackageJSONURL (node:internal/modules/package_json_reader:331:9)
+    at packageResolve (node:internal/modules/esm/resolve:784:25)
+    at moduleResolve (node:internal/modules/esm/resolve:873:18)
+    at defaultResolve (node:internal/modules/esm/resolve:1006:11)
+    at #cachedDefaultResolve (node:internal/modules/esm/loader:705:20)
+    at #resolveAndMaybeBlockOnLoaderThread (node:internal/modules/esm/loader:725:38)
+    at ModuleLoader.resolveSync (node:internal/modules/esm/loader:763:56)
+    at #resolve (node:internal/modules/esm/loader:687:17)
+    at ModuleLoader.getOrCreateModuleJob (node:internal/modules/esm/loader:607:35)
+    at ModuleJob.syncLink (node:internal/modules/esm/module_job:276:33) {
+  code: 'ERR_MODULE_NOT_FOUND'
+}
+
+Node.js v24.22.1

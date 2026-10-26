@@ -1,0 +1,107 @@
+
+> valorstrike-server@1.0.0 test
+> node test.js && node test-spike.js && node test-directory.cjs && node test-abilities.js && node test-ability-equip.js && node test-spike-edges.js && node test-spike-accept.js && node test-weapons.js && node test-wiki-weapons.js && node test-prebuilt.cjs && node test-trigger.js && node test-protocol.cjs && node test-barriers.js && node test-buy-worlds.js && node test-reyna.js && node test-interactions.js && node test-blades.js && node test-release-gate.cjs && node test-reconnect.js && node test-network.js && node test-floor.js && node test-ults.js && node test-combat.js && node test-gunplay.js && node test-economy.js && node test-spread.js && node test-parity-rules.js && node test-bots.js && node test-bot-variety.js && node test-bot-buy-phase.js && node test-bot-brain.js && node test-bot-human.js && node test-bot-perception.js && node test-bot-shoot-utility.js && node test-raze-utility.js && node test-device-bodies.js && node test-fog.js && node test-local-cluster-fog.js && node test-collision-parity.js && node test-wall-slide.js && node test-background.js && node test-two-player.js && node test-perf.js && node test-bundle.cjs && node test-soak.js && node test-traversal.js && node test-stairs.js && node test-qa-hooks.cjs && node test-map-bounds.js && node test-map-zfight.js && node test-oob.js && node test-skins.js && node test-finishers.js
+
+authority tests passed: ignored damage/teleport/credit claims, monotonic input, speed, server ray/damage/scoring, walls, reload and cadence
+Inherited prototype names cannot select a weapon
+Name collision suffix advances, including user-supplied numbered names
+TDM server enforces UI weapon tier unlocks at2and5minutes with Spectre start
+Spike tests passed: economy limits/refunds, owned equip, plant time, half defuse, defender win, delayed next round, elimination once
+Directory self-stats require bearer identity, expose no tokens/id; presence counts active connected human sessions including private rooms without exposing them
+Directory persistence/idempotency passed using in-memory storage double; live completed-match durability remains unverified
+Ability authority checks passed: buy cost/caps, buy-phase cast rejection, no unearned ult, server-derived origin/aim, limited dash, server area damage and once-only kill
+Sage Slow Orb: 7 s, 3.5 m, half speed for everyone in it (enemies, allies, Sage), oslow status; a stronger slow wins
+Signature recharge timers server owned; Reyna Devour/Dismiss share charge pool and free round charge
+Sage heal targets hurt aimed teammate; invalid casts keep charge; resurrection preserves corpse location with no freearmor/loadout reset
+Flash resolves once after delay, requires facing+LOS and sends server status instead of continuous arbitrary blind
+Chamber Rendezvous: first E places server-position anchor without teleport/spend, return within 18 m after the 1.3 s teleport preserves elevation, cooldown 30 s, forged target ignored
+Breach Fault Line (after the 1.1 s windup): wiki strip 8 m ahead, 8 m wide, 8-56 m long from the HOLD FIRE charge (pw in the intent, clamped, junk/missing = full, echoed on the ac event), not generic area slow, rejects behind/outside/allies and recharges 50s
+Concuss fire is server-limited to80%rate and disables ADS; normal fire resumes afterward
+Omen ult validates walkable minimap target, consumes earned points, waits 4 s, teleports with reconciliation, death cancels; never generic blast
+Omen Step uses server aim/15m/1.2 s channel, walkable elevated target, no anchor/instant movement, blocks overlapping cast
+Jett Tailwind: first E spends the charge, 1 s windup, 7.5 s window, E dashes (once), lost when unused / on death / round reset; current server input direction/fallback, 11 m (wiki) capsule collision limit, 0.45 s dash (24.4 m/s, input ignored, no seq bump, page keys / yaw), respawn clears it; Updraft matches project impulse, never client coordinates
+Sage selected heal follows moving target, never dead target; resurrection uses project5m aimed range and preserves points for invalid long-range corpse
+Skye Regrowth follows caster18m, excludes self/enemies, shares100HPpool, toggles/resumes without extra charge, stops spent
+Regrowth stops on caster death
+Spike motor honors current-input ADS weapon speed, concuss disables ADS, slow stacks, expired input cannot retain ADS
+Ability equip (server): kit table matches the wiki, equip casts hold fire for 0.45 s, quick-casts do not; Cloudburst projectile (tap arc / steered while C held / smoke on contact or after 2 s, 2.5 s), Hot Hands 60/s spreading to 4.5 m over 0.75 s, Nanoswarm 5 s; wiki windups (Aftershock / Flashpoint / Fault Line / Leer / Curveball / Rolling Thunder / Trapwire / Trademark / Tour De Force); Sova bolt charge + 0-2 bounces
+Spike edge checks passed: finite reserve/reload, equip lock, armor exact name, halftime reset, balanced late seat waits for next round
+Spike refund regression: no free restored weapon/armor from out-of-order sells; loading/dead refund and post-round ability rejected
+Spike weapon rewards: each shotgun kill credited, agent ult cap respected
+Spike drop survives next tick without auto-pickup by sender; ability refund changes charge/credits exactly once
+Defenders do not receive hidden Spike carrier/site/coordinates before plant
+Buy-phase server boundary matches client/native visual zedge, not unrelated12m spawn circle; releases at phaseend
+Buy-boundary projection never places capsule into world solid
+Spike loading hold: capped at 15 s per player and per round, late loader sits the round out and returns next round
+Spike seats: a leaver's seat bot takes over the living body; a rejoin gives up a dead bot before a living one
+Sidearm-only round: equip of an empty slot / malformed name refused, the simulation keeps ticking
+Armor v9.10: Light / Heavy Armor names (old Shields names refused), Regen Shield 650 = 25 at 100%, 3 s refill from a 50 pool, sell / replace restore, rows[21] pool, round carry, death clears
+Spike acceptance (local ENABLE_SPIKE, real worker + Ascent world, virtual clock): gate, buy/sell/econ, human plant with +300 team bonus, late join, detonation, human defuse with checkpoint, leave/rejoin seat handover, half-time swap, overtime 5000/swap/win-by-two, match end
+Weapons: shotgun pellets use one round/shot event, kill credited once; knife range enforced without ammo depletion
+Weapons: knife heavy swing (kh) 75 front / 150 head or back, 1 s cooldown; light 50 at 2/s; kh ignored for guns
+Weapons: reserve ammo per gun = wiki (18 guns), on buy
+Weapons: Bucky / Marshal reload one round per .5 s and a shot interrupts it, Outlaw 2.3 / 3.8 s, shotgun hits past 10 m = 30% slow easing out
+Wiki weapons: 18 guns = wiki infobox (price, damage bands, fire / alt rate, mag, reserve, reload, equip, run speed, pellets), server + page tables; Outlaw 13.01 scoped bloom 0 -> ~2.14 deg second shot, unscoped 3.5
+ascent app BVH reader deserialized prebuilt server collision, spawn/site floor rays match
+lotus app BVH reader deserialized prebuilt server collision, spawn/site floor rays match
+bind app BVH reader deserialized prebuilt server collision, spawn/site floor rays match
+haven app BVH reader deserialized prebuilt server collision, spawn/site floor rays match
+split app BVH reader deserialized prebuilt server collision, spawn/site floor rays match
+breeze app BVH reader deserialized prebuilt server collision, spawn/site floor rays match
+Semi-auto trigger requires release and respawn clears stale controls
+Protocol: null/primitives/arrays ignored; real agent selections preserved; invalid prototype names default; async late auth cannot exceed10humans; match clock/bots wait until first ready human
+Sage wall: server-derived placement, oriented collision, elevation, LOS/bullet block; wiki 4 x 2.6 m segments, 400 HP each, +200 at 2 s (damage before stays), a broken segment is a gap, the wall ends with the last one
+Shot first hitting player in front of barrier does not also damage barrier
+ascent buyworld pass [
+  [ 0.2868871194485795, 7.050940151293105, 42.75 ],
+  [ 0.25, 8.054900169372559, -42.75 ]
+]
+bind buyworld pass [
+  [ 0.75, 3.9360757795026298, 64.25 ],
+  [ -6.9252306915625084e-15, 6.898940086364746, -64.25 ]
+]
+haven buyworld pass [
+  [ 0.8801063622623064, 6.99984870808043, 43.5 ],
+  [ -6.9252306915625084e-15, 7.019370506579752, -45.25017042410682 ]
+]
+split buyworld pass [
+  [ -0.5, 7.0000200271606445, 38.25 ],
+  [ 0.25, 9.000020027160645, -38.25 ]
+]
+lotus buyworld pass [
+  [ -0.75, 6.284329891204834, 34.5 ],
+  [ -6.9252306915625084e-15, 8.275172593243239, -34.5 ]
+]
+breeze buyworld pass [
+  [ -0.5, 4.001490130464989, 44.25 ],
+  [ -3.289654186963748, 12, -44.25 ]
+]
+Reyna authority: owned nearby unexpired souls, shared charges, +50 Devour/overheal expiry, Dismiss immunity/no attacks, Empress/free casts, gun and ability souls, private state and death/round reset, heals never clamp an overheal
+Spike interaction interruption: moving, firing, airborne, loading and stale holds reject; half-defuse checkpoint retained; buy/end-phase attacks reject
+Blade Storm authority: earned activation, five accurate airborne knives, cadence, server hit/head damage, kill refill/rewards, no gun-ammo mutation, exhaustion/death reset, DM equip rejection; ALT FIRE burst: all remaining knives in a 2.5 deg fan, single-fire damage, no refill on a burst kill, 0.45 s unequip
+Release gate: production wrangler sets no Spike/local-origin vars and the worker never imports tools/ (browser-bridge is local only); Spike requires explicit opt-in; loopback origins require local opt-in and reject lookalikes; loading sockets retain 180 s timeout
+Reconnect records: leave fills bot seat, host transfers, duplicate drop ignored; departed and rejoined human stats aggregate once per identity without bot credit; TDM rejoin (profile and guest) restores the original team at 5v5
+Network: foreground pause + bidirectional heartbeat, burst tolerance + sustained rate limit, bounded snapshot queue + retained events, hidden bandwidth, fixed 20 Hz bounded catch-up, same-seat resume + stale-socket takeover + expiry, negotiated Spike batching + wire precision
+Network admission: real worker full 10-human room accepts same-seat stale-socket takeover and detached resume, rejects invalid bearer, preserves authoritative inventory/health/stats/sequence
+Floor weapons: G drop of primaries (no refund; sidearm and knife kept), F swap with old gun left in place, reach/height/LOS checks, walk-over pick-up with dropper grace, death drop once with live ammo, snapshot/round-state rows, cap, round reset with Classic, bot trade-up
+Ultimates: Hunter's Fury (3 wall-piercing 1.76 m blasts, FIRE every 2.125 s, 1 s reveal, 6 s window, death end), Showstopper (1.4 s launcher equip, FIRE shoots, 10 s window, travelling rocket, falloff, LOS, wall detonation), Lockdown (windup, radius detain blocks guns/abilities, round reset), Rolling Thunder (32 x 18 m strip from 8 m ahead, 4 s, through walls), Seekers (3 nearest), Neural Theft (corpse targeting, reveals at 2 s and 6 s), Tour de Force (5-round Operator, weapon restore, round reset), Run It Back (death/expiry return, no elimination, no death drop, gear kept at round end); leaver utility/ult state moves to the seat bot; server-side aim only
+Devices: recon pulses reveal by line of sight (two pulses), Boom Bot seeks and explodes (0.6 s windup, 60 HP, shootable), Trailblazer concusses + 30 bite
+Alarmbot: 1.85 s deploy; inactive while Killjoy is dead or past 40 m
+Spycam dart removal: 1.85 s interact channel (standing, not firing, not on the Spike), breaks restart it, no pings after; bots remove it with no enemy in sight; status dart / drm
+Devices row 9: Blaze (wall burn/heal/sight), Hot Hands self-heal, Curveball (curve, windup, 1.5 s), Nanoswarm (dormant, free trigger, 45/s), Alarmbot (Vulnerable x2), Owl Drone / Spycam dart stand-ins (wiki pings), Turret 100° cone / 2.7 s deploy / 40 m + alive Killjoy + tag, 0.75 s windup, 3-shot bursts every 1.25 s, 8 / 6 / 4 by distance, Trapwire (wall-to-wall tether, daze, one use), Cyber Cage 7.25 s / 3.72 m, Dark Cover 4.1 m and Cloudburst 3.35 m smoke radii, Trademark (spot, slow field), Headhunter weapon restore
+Chamber / Sage / Cypher (qa-27): Tour De Force 0.9/s, 150/255/127 no falloff, 6 m 4 s 50 % kill field (allies too); Headhunter 159/55/46 no falloff, 0.3 s equip, 4/s chambering; Resurrection 12 m, 2 s + 1.3 s; Rendezvous 1.3 s teleport; Spycam dart every 2 s until removed (1.85 s) / the target dies / round ends
+Combat: pose-following head/body/legs volumes (facing, crouch, run, air), crouched headshots, official wall penetration tiers, barrier stops bullets, render-matched smoke blocks bot sight, flash LOS/facing, crouch/pitch rows
+Gunplay: 306 weapon x band x part x armor cases (shots-to-kill and every shot's row HP / armor exact, headshot damage per band = weapons.json), shotgun pellet count / cone / round pattern at 3 facings, spray climb = shared motor (pause / weapon reset, crouch), swap and knife mid-reload cancel the reload, G mid-reload, enemy gun pickup keeps ammo, ammo refill next round, same-tick trades (one survivor, first shooter rotates)
+Economy: loss streak 1900/2400/2900 (reset by a win and at half), win 3000, cap 9000, half-time 800 + ult reset, kill 200, plant 300 to every attacker, overtime 5000; ult points for kill, death to an enemy (once; not falls / teamkills), plant (planter only) and defuse; a Phoenix killed inside Run It Back is no kill / death / ult point (credits, soul orb, Blade Storm refresh and kill feed kept)
+Spread: movement penalty ramps with speed (deadzone to full), landing +7 deg for .225 s; wiki first-shot / crouch / crouch-walk / walk / run / airborne for 18 guns hip + ADS; online jumping scoped Operator spreads over the 15 deg airborne cone, still = dead centre; spray error capped at the published max (Ares min); recovery times; running recoil x1.8 / x1.5
+Parity rules: lost-round survivors 1000 (attacker without plant at time-out, defender after detonation), Shorty 300; fall damage 15 at 8 m to 100 at 17 m (health only); detonation kills within 32.5 m, no credit, no death ult point (nor for fall damage); overtime ults 3 short
+Bots: deterministic per-bot seeds; identical starts diverge in path and actions; distinct reaction/aim/strafe/crouch; mixed roles per team; spike goals spread but exact for the spike
+Bot variety (server): ascent distinct attacker routes 29 over 6 rounds (per round 5/5/5/5/5/5), avg moving teammate gap 12.20 m, <1.8 m 3.1%; bind distinct attacker routes 28 over 6 rounds (per round 5/5/5/5/5/5), avg moving teammate gap 11.80 m, <1.8 m 1.9%
+Buy-phase bots (server): ascent r1: buy 45s, 9 bots walked 19.4-42.3 m, end 0.50-1.33 m inside, closest 0.50 m, lined up 9/9, teammate gap at drop 0.97 m (min while walking 0.46), 7/9 left their spot 5 s into the round; ascent r13: buy 45s, 9 bots walked 14.4-43.3 m, end 0.50-1.36 m inside, closest 0.42 m, lined up 9/9, teammate gap at drop 0.91 m (min while walking 0.63), 9/9 left their spot 5 s into the round; bind r1: buy 45s, 9 bots walked 15.0-29.1 m, end 0.63-1.38 m inside, closest 0.53 m, lined up 9/9, teammate gap at drop 1.06 m (min while walking 0.55), 7/9 left their spot 5 s into the round; bind r13: buy 45s, 9 bots walked 11.2-24.8 m, end 0.55-1.37 m inside, closest 0.42 m, lined up 9/9, teammate gap at drop 0.92 m (min while walking 0.71), 9/9 left their spot 5 s into the round; breeze r1: buy 45s, 9 bots walked 14.4-36.7 m, end 0.57-1.42 m inside, closest 0.44 m, lined up 9/9, teammate gap at drop 0.95 m (min while walking 0.61), 8/9 left their spot 5 s into the round; breeze r13: buy 45s, 9 bots walked 11.4-32.2 m, end 0.53-1.33 m inside, closest 0.42 m, lined up 9/9, teammate gap at drop 1.03 m (min while walking 0.58), 9/9 left their spot 5 s into the round; haven r1: buy 45s, 9 bots walked 17.5-30.0 m, end 0.63-1.40 m inside, closest 0.53 m, lined up 9/9, teammate gap at drop 1.02 m (min while walking 0.49), 8/9 left their spot 5 s into the round; haven r13: buy 45s, 9 bots walked 14.5-39.0 m, end 0.61-1.40 m inside, closest 0.49 m, lined up 9/9, teammate gap at drop 0.93 m (min while walking 0.58), 9/9 left their spot 5 s into the round; lotus r1: buy 45s, 9 bots walked 17.0-26.0 m, end 0.49-1.36 m inside, closest 0.42 m, lined up 9/9, teammate gap at drop 0.93 m (min while walking 0.69), 9/9 left their spot 5 s into the round; lotus r13: buy 45s, 9 bots walked 10.9-28.8 m, end 0.59-1.35 m inside, closest 0.48 m, lined up 9/9, teammate gap at drop 0.96 m (min while walking 0.59), 9/9 left their spot 5 s into the round; split r1: buy 45s, 9 bots walked 19.1-76.4 m, end 0.46-1.36 m inside, closest 0.42 m, lined up 9/9, teammate gap at drop 0.99 m (min while walking 0.46), 8/9 left their spot 5 s into the round; split r13: buy 45s, 9 bots walked 18.6-64.9 m, end 0.55-1.44 m inside, closest 0.42 m, lined up 9/9, teammate gap at drop 1.08 m (min while walking 0.19), 9/9 left their spot 5 s into the round
+test-bot-buy-phase: OK
+Bot brain: brain: sites 3, plans 6, defence 4, reaction sd 20 ms; reaction first shots 0.29/0.3/0.31/0.34/0.37/0.39/0.4/0.45 s; mate death reactions hold,fallback,trade; ascent 20 rounds: sites BA, plans slow/default/split/execute/lurk/rush, defence aggro/standard/stack/retake, guns 9, calls pistol/eco/half/save; turn 8.3 rad/s, tracking lag 7.6 mrad; plan utility 4 casts (delay/retake/entry); spike play: plants open/default/default/default/open/safe, post slots 14, tap 9 clear 3
+Bots human-like: reaction ms pre 251 / not pre-aimed 301 / side 501 / behind 652 / flashed 421; flick 34 deg: 393 ms + correction 111 ms, overshoot 8 %; aim spot head 15 % / neck 34 % / chest 51 %, recoil pull 0.37-0.54; server fights: HS 17 % of hits; accuracy 8/15/25/40 m 51/59/36/30 %, strafing 15 m 55 %; first shot hit at 25-40 m 33 %; median TTK (150 HP) 15 m 0.93 s, behind 1.60 s; pace: default 93 / execute 51 / fake 36 / split 45 / slow 34 / lurk 28 / rush 13 of 300 rounds; 59 % of attackers wait 2 s+ in spawn, mean start 2.7 s
+Bot perception: view cone 0:seen 40:seen 50:seen 56:unseen 90:unseen 135:unseen 180:unseen; no omniscience: identical roam paths for 3 hidden enemy spots; hearing: run 25 m yes / 35 m no, walk silent, Vandal 100 m yes, Phantom 45 m no / 30 m yes, heard spot 1.1 m off at 25 m; turned and saw a shooter behind after 0.30 s; turn 9.3-12.5 rad/s (180 in 0.25-0.34 s); median TTK 150 HP front 0.83 s, behind (shooting, heard) 1.93 s; LOS loss: 0 stale shots over 20 broken bursts; glimpse 100 ms: 0 shots; jiggle 250 ms x4: 0/30 died, 0 shots; Vandal: 9 rounds max in 1 s, min gap >= 0.1026 s
+Bots shoot utility: shared priority (Boom Bot > Lockdown > Turret > trap devices > Nanoswarm > blocking barrier), wiki device HP, each device destroyed by real bot gunfire, own devices ignored, barrier only across the way (line or route) and broken, a visible enemy wins, full step loop
+Raze Blast Pack: thrown and stuck (floor / wall), no dash; recast or 5 s detonates; launches everyone in 5 m (Raze, allies, enemies); armed after 1.5 s 50 -> 20 over 2-5 m to enemies only; 20 HP shootable by enemies
+Device bodies: Turret / Alarmbot / Trapwire / Trademark / Blast Pack / Spycam / Owl Drone snapshot rows (owner, team, cm, HP, Trapwire anchors, yaw; gone when ended); Spycam 1 HP shot down by a human ends its dart; Owl Drone 100 HP takes 3 Vandal bullets, darts every 5 s while up (2nd prefers an untagged enemy); allies do not hit them

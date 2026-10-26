@@ -24,14 +24,16 @@ Math.random=mulberry(SEED*104729+1);require('vm').runInContext(`Math.random=(${m
  const {localCluster}=await import('../server/tools/local-cluster.mjs');const {ScriptedHuman}=await import('../server/tools/scripted-human.mjs');const {loadWorld}=await import('../server/src/world.js');const {abilityDamage}=await import('../server/src/abilities.js');
  const cluster=await localCluster({env:{ALLOW_LOCAL_ORIGIN:'true',ENABLE_SPIKE:'true'}});const world=await loadWorld(cluster.env.ASSETS,'ascent');
  // WebSocket bridge: the page's socket is a local-cluster connection.
- const sockets=[],codes=new Set();let pending=0;
+ const sockets=[],codes=new Set(),transit=[],blackholes=new Set();let pending=0,linkDelay=0;
+ const relay=(ws,fn)=>{if(blackholes.has(ws))return;if(linkDelay)transit.push({at:cluster.clock.now()+linkDelay,ws,fn});else fn();};
+ const flushTransit=()=>{for(let i=0;i<transit.length;)if(transit[i].at<=cluster.clock.now()){const q=transit.splice(i,1)[0];if(q.ws.readyState===1&&!blackholes.has(q.ws))q.fn();}else i++;};
  // Hold both virtual clocks (real-time wait, up to 120 s) while a socket is connecting (create = real world file I/O)
  // or any known room has a session still authenticating its 'hi' (real async crypto).
  const settle=async()=>{const end=Date.now()+120000;const busy=()=>pending>0||[...codes].some(c=>{const r=cluster.room(c);return r&&[...r.sessions.values()].some(s=>s.authenticating&&!s.u);});while(busy()&&Date.now()<end)await new Promise(r=>setTimeout(r,2));};
  class WS{constructor(url){const q=Object.fromEntries(new URL(url.replace(/^ws/,'http')).searchParams);this.readyState=0;this.sent=0;sockets.push(this);const api=cluster.connect(q);this.api=api;pending++;let settled=false;const done=()=>{if(!settled){settled=true;pending--;}};if(q.code)codes.add(q.code);
-   api.on('open',()=>{done();this.readyState=1;this.onopen&&this.onopen({});});api.on('message',m=>{if(this.readyState===1&&this.onmessage)this.onmessage({data:JSON.stringify(m)});});
+   api.on('open',()=>{done();this.readyState=1;this.onopen&&this.onopen({});});api.on('message',m=>{if(m.t==='s')this.snapshots=(this.snapshots||0)+1;relay(this,()=>{if(this.readyState===1&&this.onmessage)this.onmessage({data:JSON.stringify(m)});});});
    api.on('close',e=>{if(this.readyState===3)return;this.readyState=3;this.onclose&&this.onclose({code:e.code,reason:e.reason});});api.on('error',e=>{done();this.readyState=3;this.onerror&&this.onerror(e);this.onclose&&this.onclose({code:1006,reason:String(e.message)});});}
-  send(d){if(this.readyState!==1)throw Error('send on closed socket');this.sent++;if(VERBOSE)(this.types||(this.types={}))[JSON.parse(d).t]=1;this.api.send(d);}close(){if(this.readyState===3)return;this.readyState=3;this.api.close();}}
+  send(d){if(this.readyState!==1)throw Error('send on closed socket');this.sent++;if(VERBOSE)(this.types||(this.types={}))[JSON.parse(d).t]=1;relay(this,()=>{if(this.readyState===1)this.api.send(d);});}close(){if(this.readyState===3)return;this.readyState=3;this.api.close();}}
  WS.OPEN=1;H.win.WebSocket=WS;/* No fetch, as in the audit boot: the page plays as a guest (profile fetch fails) and skips asset downloads. */ const fetches=[];H.win.fetch=function(u){fetches.push(String(u)+' @ '+new Error().stack.split('\n').slice(2,5).join(' / '));return Promise.reject(new TypeError('Failed to fetch'));};
  H.win.__ls=new Map();H.win.__ls.getItem=k=>H.win.__ls.has(k)?H.win.__ls.get(k):null;H.win.__ls.setItem=(k,v)=>H.win.__ls.set(k,String(v));H.win.__ls.removeItem=k=>H.win.__ls.delete(k);
  // The native map pipeline downloads the render scene and collision; the harness has no renderer or network, so the
@@ -48,7 +50,7 @@ Math.random=mulberry(SEED*104729+1);require('vm').runInContext(`Math.random=(${m
   pilot.target=foes[0]?.name;pilot.foe=()=>pilot.rows.find(q=>q[2]===pilot.target&&q[10]===1)||null;const i=pilot.input(),fire=!!i.fire;if(fire)stats.fired++;
   xe(`yaw=${i.r||0};pitch=${i.p||0};keys.KeyW=${(i.f||0)>0};keys.KeyS=false;keys.KeyD=${(i.s||0)>0};keys.KeyA=${(i.s||0)<0};keys.Space=${!!i.j};fireHeld=${fire};if(${fire})NET.firePulse=performance.now()+40;true`);};
  const idle=()=>xe('["KeyW","KeyS","KeyA","KeyD","Space"].forEach(k=>keys[k]=false);fireHeld=false;true');
- const step=async ms=>{for(let t=0;t<ms;t+=50){if(xe('MP.code'))codes.add(xe('MP.code'));await settle();await cluster.advance(50);H.advance(50);if(pilotCode&&(pilotTick+=50)>=100){pilotTick=0;drive();}}};
+ const step=async ms=>{for(let t=0;t<ms;t+=50){if(xe('MP.code'))codes.add(xe('MP.code'));await settle();flushTransit();await cluster.advance(50);flushTransit();H.advance(50);if(pilotCode&&(pilotTick+=50)>=100){pilotTick=0;drive();}}};
  const until=async(cond,ms,what)=>{for(let t=0;t<ms;t+=50){if(cond())return;await step(50);}throw Error('timed out: '+what+' (MP.st '+xe('MP.st')+' host '+xe('NET.host')+' room '+xe('JSON.stringify(MP.room)')+' sent '+sockets.map(s=>s.sent+JSON.stringify(s.types))+' server '+(()=>{const r=cluster.room(xe('MP.code'));return r?JSON.stringify({ph:r.sim?.phase,host:r.host,ses:[...r.sessions.values()].map(s=>[s.id,s.u&&s.u.name,s.ready])}):'none';})()+' dbg '+xe('JSON.stringify({role:MP.role,cl:MP.cl,m5:MP.m5,pick:FV.pick,mode:typeof mode!=="undefined"?mode:null,last:NET.lastClose,latest:!!NET.latest})')+' fetches '+JSON.stringify(fetches.slice(0,5))+' running '+xe('running')+' ld '+xe('window.xLdOn')+' ready '+xe('NET.ready')+', errors '+JSON.stringify(H.errors.slice(errs0,errs0+3))+' xerr '+JSON.stringify(H.xErrCalls.slice(x0,x0+3))+')');};
  const humans=[];const join=(code,name,agent,target)=>{const p={};const h=new ScriptedHuman({name,agent,world,target});codes.add(code);pending++;let settled=false;const done=()=>{if(!settled){settled=true;pending--;}};const s=cluster.connect({code});h.attach(s);s.on('message',m=>h.receive(m));s.on('open',()=>{done();h.hello();});s.on('error',done);humans.push(h);return h;};
  const report={};
@@ -77,10 +79,25 @@ Math.random=mulberry(SEED*104729+1);require('vm').runInContext(`Math.random=(${m
   report[mode]={deaths,kills,swaps,forcedDeath,units,round:room.sim.round,ms:Date.now()-tm,virt:cluster.clock.now()-v0};pilotCode=null;idle();
   for(const h of humans.splice(0))try{h.leave();}catch(e){}
   xe('mpReset()');await step(500);xe('try{toLobby()}catch(e){}');await step(200);}
- // Server-side disconnect mid-match: the page must leave the match cleanly.
- H.setPhase('online drop');xe(`mpCreate(false,'tdm')`);await until(()=>xe('MP.st')==='room',8000,'room');const code=xe('MP.code');join(code,'FuzzD','Jett','PageQA');await until(()=>xe('(MP.room&&MP.room.pl||[]).length')===2,8000,'joined');xe('mpStart()');
- await until(()=>xe('MP.st')==='game'&&xe('NET.ready'),20000,'start');await step(5000);const room=cluster.room(code);const ws=[...room.sessions].find(([w,s])=>s.u&&s.u.name==='PageQA')[0];ws.close(1001,'Connection idle');room.drop(ws);
- await step(2000);assert.notEqual(xe('MP.st'),'game','page left the match after the server closed the socket');
+ // The real page recovers transient closes and half-open links in place. Delay both directions, then blackhole one
+ // transport while leaving subsequent sockets healthy, as after a Wi-Fi/mobile handoff. Server snapshots must stay
+ // bounded during the outage and the recovered page must retain its authoritative body, inventory and input sequence.
+ H.setPhase('online recovery');xe(`mpCreate(false,'tdm')`);await until(()=>xe('MP.st')==='room',8000,'room');const code=xe('MP.code');join(code,'FuzzD','Jett','PageQA');await until(()=>xe('(MP.room&&MP.room.pl||[]).length')===2,8000,'joined');xe('mpStart()');
+ await until(()=>xe('MP.st')==='game'&&xe('NET.ready'),20000,'start');await step(1000);const room=cluster.room(code),id=xe('MP.me'),unit=room.sim.units.find(u=>u.id===id);
+ unit.invulnerableUntil=room.sim.time+200;unit.hp=73;unit.ammo=7;unit.credits=2222;
+ const pageSocket=()=>[...room.sessions].find(([w,s])=>s.u?.id===id)?.[0];
+ const recovered=()=>xe('MP.st==="game"&&NET.ready&&!NET.reconnecting');
+ const preserved=()=>{assert.equal(xe('MP.me'),id);assert.equal(room.sim.units.find(u=>u.id===id),unit);assert.equal(unit.hp,73);assert.equal(unit.ammo,7);assert.equal(unit.credits,2222);assert(xe('running'),'match stays mounted');};
+ {const ws=pageSocket();ws.close(1001,'Connection idle');room.drop(ws,true);}
+ await until(recovered,8000,'same-seat recovery after close');preserved();
+ linkDelay=80;await step(5000);assert(recovered(),'160 ms round-trip delay keeps the match connected');preserved();linkDelay=0;await step(500);
+ {const stale=sockets.at(-1),received=stale.snapshots||0,before=room.metrics.coalesced;blackholes.add(stale);await step(33000);blackholes.delete(stale);
+  await until(recovered,8000,'half-open socket recovery');preserved();assert.notEqual(sockets.at(-1),stale,'watchdog replaces a blackholed transport');
+  assert((stale.snapshots||0)-received<=room.constructor.FLOW.window+2,'blackholed client cannot queue unbounded snapshots');assert(room.metrics.coalesced>before,'server coalesced stale state during the outage');}
+ // Cancelling while a retry is pending must not reopen a socket or restart the match later.
+ {const ws=pageSocket();ws.close(1001,'temporary link loss');room.drop(ws,true);await step(50);assert(xe('NET.reconnecting'));const count=sockets.length;xe('mpReset();try{toLobby()}catch(e){}');await step(5000);assert.equal(sockets.length,count,'reset cancels pending reconnect');assert.equal(xe('NET.socket'),null);}
+ // Deliberate departure, protocol refusal and an expired resume capability remain terminal.
+ for(const closeCode of [1000,1008,4003]){xe(`mpCreate(false,'tdm')`);await until(()=>xe('MP.st')==='room',8000,'terminal-close room');const r=cluster.room(xe('MP.code')),ws=[...r.sessions].find(([w,s])=>s.u?.name==='PageQA')[0];r.drop(ws);ws.close(closeCode,'terminal test');await step(1000);assert.equal(xe('NET.socket'),null,'close '+closeCode+' is terminal');assert.equal(xe('NET.reconnecting'),false);}
  // Slow match load: the page reports loading progress (lp) and keeps its seat past the server's load limit while the
  // progress moves; when it stalls the server closes the seat as 'Load timed out' and the page says so plainly.
  // (Limits shortened on the room class for the test; the real ones are 180 s / 120 s stall / 10 min.)
@@ -104,6 +121,6 @@ Math.random=mulberry(SEED*104729+1);require('vm').runInContext(`Math.random=(${m
  const errors=H.errors.slice(errs0),xerr=H.xErrCalls.slice(x0);
  if(errors.length||xerr.length){console.error(JSON.stringify({errors:errors.slice(0,8),xerr:xerr.slice(0,8)},null,1));process.exit(1);}
  if(VERBOSE)console.log(JSON.stringify(report));
- console.log(`Online client soak (page <-> in-process server): ${LONG?'long':'fast'} TDM/DM/Spike, piloted page player kills/deaths ${Object.values(report).map(r=>r.kills+'/'+r.deaths+(r.forcedDeath?' (death forced after 30 s)':'')).join(', ')}, respawns, kills, leave/rejoin agent swaps, Spike rounds (${report.five.round}), match end, server disconnect, slow load kept while progressing then closed with a clear message; no page exceptions`);
+ console.log(`Online client soak (page <-> in-process server): ${LONG?'long':'fast'} TDM/DM/Spike, piloted page player kills/deaths ${Object.values(report).map(r=>r.kills+'/'+r.deaths+(r.forcedDeath?' (death forced after 30 s)':'')).join(', ')}, respawns, kills, leave/rejoin agent swaps, Spike rounds (${report.five.round}), match end; same-seat reconnect, 160 ms RTT, bounded blackhole recovery, retry cancellation and terminal closes; slow load kept while progressing then closed with a clear message; no page exceptions`);
  process.exit(0);
 })().catch(e=>{console.error(e);console.error(JSON.stringify(H.errors.slice(0,8)));process.exit(1);});

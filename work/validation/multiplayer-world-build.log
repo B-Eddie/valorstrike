@@ -1,0 +1,10 @@
+
+> valorstrike-server@1.0.0 build:worlds
+> node build-all.cjs
+
+ascent { v: 1085520, tris: 1839578, roots: [ 15329632 ], bytes: 50430808 }
+bind { v: 1002654, tris: 1711037, roots: [ 14119968 ], bytes: 46684260 }
+haven { v: 1021634, tris: 1672087, roots: [ 13921696 ], bytes: 46246348 }
+split { v: 919937, tris: 1512643, roots: [ 12502496 ], bytes: 41693456 }
+lotus { v: 428935, tris: 673073, roots: [ 5557472 ], bytes: 18781568 }
+breeze { v: 1258600, tris: 1781218, roots: [ 14759648 ], bytes: 51237464 }

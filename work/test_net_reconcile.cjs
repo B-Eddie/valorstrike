@@ -6,7 +6,7 @@
 // same run and must snap the jump (the jarring online jump), so this test fails on the old code.
 const fs=require('fs'),path=require('path'),vm=require('vm'),assert=require('assert/strict');
 const M=require('../server/src/motor.cjs'),src=fs.readFileSync(path.join(__dirname,'server_runtime.js'),'utf8');
-const a=src.indexOf('NET.inLog=[];'),b=src.indexOf('const netSelf0=mpCliSelf;');assert.ok(a>0&&b>a,'reconciliation block present');
+const a=src.indexOf('NET.inLog=[];',src.indexOf('// Movement reconciliation:')),b=src.indexOf('const netSelf0=mpCliSelf;');assert.ok(a>0&&b>a,'reconciliation block present');
 const ctx={NET:{socket:{},seq:0},player:null,performance:{now:()=>ctx.clock},clock:0,moveP:function(){if(ctx.mv)return ctx.mv();M.step(ctx.player,ctx.cur,ctx.dt,W);}};vm.createContext(ctx);
 vm.runInContext(src.slice(a,b),ctx);assert.ok(src.includes('log.push({seq,t:performance.now()})'),'inputs logged at send time');
 assert.ok(/u\.human\?Math\.max\(0,u\.lastSeq\|0\)/.test(fs.readFileSync(path.join(__dirname,'../server/src/simulation.js'),'utf8')),'server rows echo the last applied input');
@@ -16,7 +16,7 @@ function run(mode){ctx.clock=0;ctx.NET.inLog=[];ctx.NET.path=[];ctx.NET.seq=0;ct
  for(let ms=0;ms<6000;ms++){ctx.clock=ms;
   const jump=ms>500&&(Math.floor(ms/200)%4===0),key={x:Math.cos(ms/700),z:Math.sin(ms/700),speed:5.4,jump};
   if(ms%50===0){const seq=++ctx.NET.seq;ctx.NET.inLog.push({seq,t:ms});if(ctx.NET.inLog.length>60)ctx.NET.inLog.shift();toServer.push({at:ms+OWD,seq,key});}
-  if(ms%8===0){ctx.cur=key;ctx.dt=.008;vm.runInContext('moveP()',ctx);}
+  if(ms%8===0){ctx.cur=key;ctx.dt=.008;vm.runInContext('moveP(dt)',ctx);}
   while(toServer.length&&toServer[0].at<=ms){const m=toServer.shift();S.lastSeq=m.seq;S.input=m.key;S.inputAt=S.time;}
   if(ms%16===0&&S.input){M.step(S,S.input,.016,W);S.time+=.016;}
   if(ms%50===25&&S.lastSeq)toClient.push({at:ms+OWD,e:[0,0,'',' ',+S.x.toFixed(3),+S.y.toFixed(3),+S.z.toFixed(3),0,0,0,1,'',1,0,1,0,0,0,0,S.lastSeq,+(S.time-S.inputAt).toFixed(3)]});
@@ -30,9 +30,9 @@ assert.ok(n.snaps>100,'snapshots delivered');assert.equal(n.snapsFixed,0,'no sna
 assert.ok(n.maxDrop<.05,'jump arc never pulled down (max '+n.maxDrop.toFixed(3)+' m)');assert.ok(n.maxFix<.1,'horizontal corrections stay tiny (max '+n.maxFix.toFixed(3)+' m)');
 assert.ok(o.snapsFixed>0&&o.maxDrop>.3,'legacy comparison snaps the jump ('+o.snapsFixed+' snaps, '+o.maxDrop.toFixed(2)+' m drop)');
 ctx.XRT={at:ctx.clock-16};ctx.dt=.008;ctx.cur={x:1,z:0,speed:5.4};
-vm.runInContext('moveP()',ctx);
+vm.runInContext('moveP(dt)',ctx);
 assert.equal(ctx.NET.path.at(-1).t,ctx.XRT.at,'catch-up prediction records the substep time');
-ctx.XRT.at=null;vm.runInContext('moveP()',ctx);
+ctx.XRT.at=null;vm.runInContext('moveP(dt)',ctx);
 assert.equal(ctx.NET.path.at(-1).t,ctx.clock,'ordinary frames record the frame time');
 // Jett Tailwind dash (qa-29 / qa-30): the page predicts the 11 m / 0.45 s dash at the E press (J.dash, shared motor dashStep inside
 // moveP, NET.dashUntil = press + 0.45 s + 0.25 s); the server starts the same dash when the ab message lands (40 ms each way) and
@@ -46,7 +46,7 @@ function runDash(hold,PRESS,jit=0){ctx.clock=0;ctx.NET.inLog=[];ctx.NET.path=[];
  for(let ms=0;ms<3000;ms++){ctx.clock=ms;const key={x:0,z:-1,speed:5.4};
   if(ms===PRESS){ctx.J.dash=M.dash(1,0,0,11,.45);if(hold)ctx.NET.dashUntil=ms+450+250;toAb.push({at:ms+OWD+jit,f:1,s:0,r:0});}
   if(ms%50===0){const seq=++ctx.NET.seq;ctx.NET.inLog.push({seq,t:ms});if(ctx.NET.inLog.length>60)ctx.NET.inLog.shift();toServer.push({at:ms+OWD,seq,key});}
-  if(ms%8===0){ctx.cur=key;ctx.dt=.008;vm.runInContext('moveP()',ctx);}
+  if(ms%8===0){ctx.cur=key;ctx.dt=.008;vm.runInContext('moveP(dt)',ctx);}
   while(toServer.length&&toServer[0].at<=ms){const m=toServer.shift();S.lastSeq=m.seq;S.input=m.key;S.inputAt=S.time;}
   while(toAb.length&&toAb[0].at<=ms){const m=toAb.shift();S.dash=M.dash(m.f,m.s,m.r,11,.45);}
   if(ms%50===10&&S.input){const D=S.dash;M.step(S,D?{...S.input,x:0,z:0}:S.input,.05,W);if(D&&!M.dashStep(S,D,.05,W))S.dash=null;S.time+=.05;}

@@ -7,10 +7,12 @@ function netStatusChips(st){const now=performance.now();NET.tw={a:+st.twa||0,u:+
 var netSkyeState=null,netReyna=null,netChannel=null;
 var NET={url:['localhost','127.0.0.1','[::1]'].includes(location.hostname)?location.protocol+'//'+location.hostname+':8787':'https://valorstrike-game.itsmybirthdayim7.workers.dev',socket:null,host:false,seq:0,ready:false,latest:null};
 MP_V=2;
-function netSend(m){if(NET.socket&&NET.socket.readyState===1)NET.socket.send(JSON.stringify(m));}
-const netReset0=mpReset;mpReset=function(){const ws=NET.socket;NET.socket=null;NET.ready=false;NET.latest=null;NET.tw=null;NET.dashUntil=0;netSkyeState=null;netReyna=null;netChannel=null;netReynaClear();netClearEffects();const hud=mpEl('xMpHud');if(hud)hud.style.display='none';netWeapon='';netReload=false;NET.hid=0;if(ws)try{ws.close();}catch(e){}return netReset0();};
+// WebSocket is reliable and ordered: never queue obsolete movement behind a slow uplink. Keep click pulses until an
+// input can actually be sent. Commands stay reliable; only replaceable input/heartbeat traffic is skipped under pressure.
+function netSend(m){const ws=NET.socket;if(!ws||ws.readyState!==1)return false;if((m.t==='in'||m.t==='hb'||m.t==='pi')&&ws.bufferedAmount>16384){if(m.t==='in'){NET.firePend=NET.firePend||m.fire;NET.firePendH=NET.firePendH||m.kh;}return false;}try{if(Number.isSafeInteger(NET.ack)&&['in','hb','pi','ready'].includes(m.t))m={...m,q:NET.ack};ws.send(JSON.stringify(m));return true;}catch(e){return false;}}
+const netReset0=mpReset;mpReset=function(){const ws=NET.socket;NET.socket=null;clearTimeout(NET.retryTimer);NET.retryTimer=0;NET.epoch=(NET.epoch||0)+1;NET.reconnecting=false;NET.resume=null;NET.ack=null;NET.openAt=NET.lastSeen=NET.watchAt=NET.retryUntil=NET.loadAt=NET.lpAt=NET.hbAt=0;NET.recoverGame=NET.recoverLoading=false;NET.ready=false;NET.latest=null;NET.tw=null;NET.dashUntil=0;NET.inLog=[];NET.path=[];NET.correction=null;MP.snapClock=null;netSkyeState=null;netReyna=null;netChannel=null;netReynaClear();netClearEffects();const hud=mpEl('xMpHud');if(hud)hud.style.display='none';netWeapon='';netReload=false;NET.hid=0;if(ws)try{ws.close();}catch(e){}return netReset0();};
 let netSessionToken=null,netTokenRequest=null,netTokenPersistent=true;
-async function netProfileToken(){if(netSessionToken)return netSessionToken;try{netSessionToken=localStorage.getItem('vs.serverToken');}catch(e){}if(netSessionToken)return netSessionToken;if(!netTokenRequest)netTokenRequest=(async()=>{try{const r=await fetch(NET.url+'/profile');if(!r.ok)return null;const p=await r.json();if(typeof p.token!=='string'||!p.token)return null;netSessionToken=p.token;try{localStorage.setItem('vs.serverToken',p.token);}catch(e){netTokenPersistent=false;}return p.token;}catch(e){return null;}finally{netTokenRequest=null;}})();return netTokenRequest;}
+async function netProfileToken(){if(netSessionToken)return netSessionToken;try{netSessionToken=localStorage.getItem('vs.serverToken');}catch(e){}if(netSessionToken)return netSessionToken;if(!netTokenRequest)netTokenRequest=(async()=>{try{const r=await fetch(NET.url+'/profile',typeof AbortSignal!=='undefined'&&AbortSignal.timeout?{signal:AbortSignal.timeout(6000)}:undefined);if(!r.ok)return null;const p=await r.json();if(typeof p.token!=='string'||!p.token)return null;netSessionToken=p.token;try{localStorage.setItem('vs.serverToken',p.token);}catch(e){netTokenPersistent=false;}return p.token;}catch(e){return null;}finally{netTokenRequest=null;}})();return netTokenRequest;}
 // Server frames are shape-checked before anything stores or replays them (the frame loop re-reads NET.latest and round
 // state every frame, so one malformed snapshot would otherwise throw on every frame): unknown shapes are dropped, the
 // arrays the page iterates are made arrays of the right kind, and unit rows / events with missing fields are removed.
@@ -37,7 +39,7 @@ function netClean(m){if(!m||typeof m!=='object'||Array.isArray(m)||typeof m.t!==
  if(t==='room'){m.pl=arr(m.pl).filter(p=>obj(p)&&str(p.n));if(!str(m.code))m.code='';if(!str(m.mode))m.mode='tdm';if(!str(m.map))m.map='ascent';}
  else if(t==='welcome'){if(!str(m.name)&&!num(m.name))return null;}
  else if(t==='start'){if(!['tdm','dm','five'].includes(m.mode)||!['ascent','bind','haven','split','lotus','breeze'].includes(m.map)||!num(m.you))return null;m.u=rows(m.u);m.k=kd(m.k);m.d=kd(m.d);if(m.rs!==undefined&&!rs(m.rs))delete m.rs;if(m.ld!==undefined&&!Array.isArray(m.ld))delete m.ld;if(m.tl!==undefined&&!num(m.tl))delete m.tl;}
- else if(t==='s'){snap(m);if(!num(m.tl))m.tl=0;if(!num(m.serverTime))m.serverTime=Date.now();}
+ else if(t==='s'){snap(m);if(m.rs!==undefined&&!rs(m.rs))delete m.rs;if(!num(m.tl))m.tl=0;if(!num(m.serverTime))m.serverTime=Date.now();}
  else if(t==='rs'){if(!rs(m))return null;}
  else if(t==='re'){if(!(Array.isArray(m.sc)&&m.sc.length===2&&m.sc.every(num)))return null;snap(m);if(!str(m.tx))m.tx='';}
  else if(t==='end'){snap(m);if(m.over!=null&&!str(m.over))m.over=null;}
@@ -45,7 +47,95 @@ function netClean(m){if(!m||typeof m!=='object'||Array.isArray(m)||typeof m.t!==
  else if(t==='ac'){if(!num(m.i)||!str(m.ag)||!str(m.k))return null;for(const k of ['o','d','p'])if(m[k]!==undefined&&!vec(m[k]))return null;for(const k of ['pw','b'])if(m[k]!==undefined&&!num(m[k]))delete m[k];/* Sova bolt charge / bounces */}
  else if(t==='ao'){if(m.rs!==undefined&&!rs(m.rs))delete m.rs;}
  return m;}
-function netConnect(create,code,publicRoom){if(create&&['ascent','bind','haven','split','lotus','breeze','random'].includes(window.xQMap))MP.map=window.xQMap;mpReset();MP.st='conn';mpMsg(create?'Creating server room…':'Joining server room…');mpUI();NET.host=create;const q=new URLSearchParams({code,create:create?'1':'0',mode:MP.mode,map:MP.map==='random'?['ascent','bind','haven','split','lotus','breeze'][Math.floor(Math.random()*6)]:MP.map,public:publicRoom?'1':'0'}),ws=new WebSocket(NET.url.replace('https:','wss:')+'/connect?'+q);NET.socket=ws;MP.code=code;MP.pub=!!publicRoom;MP.loadT=performance.now();ws.onopen=async()=>{const token=await netProfileToken();if(NET.socket===ws)netSend({t:'hi',n:MP.name,ag:J.pick||'Jett',token,sk:typeof xskWire==='function'?xskWire():undefined});};ws.onmessage=e=>{if(NET.socket!==ws)return;let m;try{m=JSON.parse(e.data);}catch(e){return;}m=netClean(m);if(!m)return;MP.last=performance.now();try{netOnMsg(m);}catch(err){/* never let one bad server frame throw out of the socket handler; counted for the fuzz test */NET.dropped=(NET.dropped||0)+1;const w=String(err&&err.message||err).slice(0,160)+' @'+m.t;NET.drops=NET.drops||[];if(NET.drops.length<20&&!NET.drops.includes(w))NET.drops.push(w);}};const netOnMsg=m=>{if(m.t==='hello')return;if((m.t==='sk'||m.t==='sks'||m.t==='skr')&&typeof xskNet==='function')return xskNet(m);if(m.t==='welcome'){MP.name=String(m.name);MP.me=m.you;const input=mpEl('xOnName');if(input)input.value=MP.name;return;}if(m.t==='room'){MP.on=true;MP.role='client';MP.room=m;MP.mode=m.mode;MP.map=m.map;if(MP.st!=='game'&&MP.st!=='post')MP.st='room';NET.host=!!m.pl.find(p=>p.n===MP.name&&p.h);mpMsg('Connected to game server');return mpUI();}if(m.t==='start'){NET.ready=false;NET.latest=null;NET.loadAt=performance.now();NET.lpAt=0;MP.hc={open:true,send(m){if(m.t!=='hit'&&(m.t!=='in'||Number.isSafeInteger(m.seq)))netSend(m);}};return mpCliMsg(m);}if(m.t==='s'){NET.latest=m;NET.receivedAt=performance.now();NET.serverAge=Date.now()-m.serverTime;NET.tickMs=m.tickMs;if(NET.ready){mpCliMsg(m);netSyncEffects(m.fx||[]);}return;}if(m.t==='ac'&&m.ag==='Sage'&&m.k==='c')return;if(m.t==='ao'){if(m.rs)mpCliRS(m.rs);if(!m.ok&&m.k==='e'&&J.pick==='Jett'&&J.dash){J.dash=null;NET.dashUntil=0;}/* refused: drop the predicted dash, the snapshots put Jett back */if(!m.ok){sgNo();say('Ability unavailable or target invalid',1000);}else if(J.pick==='Omen'&&(m.k==='x'||m.k==='c'))say(m.k==='x'?'From the Shadows · 4 s':'Shrouded Step · 1.2 s',1000);return;}if(m.t==='po'){const c=Number(m.c);if(Number.isFinite(c))MP.ping=Math.max(0,Math.round(performance.now()-c));return;}mpCliMsg(m);};ws.onclose=event=>{if(NET.socket!==ws)return;NET.lastClose={code:event.code,reason:event.reason,at:Date.now()};NET.socket=null;const was=MP.st==='game',room=MP.code,loadingMatch=!!NET.loadAt&&!NET.ready;NET.loadAt=0;mpReset();mpMsg(event.reason==='Load timed out'?'Loading the match took too long, so the server closed your seat. Rejoin room '+room+' to try again; closing other tabs or apps can speed up loading.':event.reason==='Connection idle'&&loadingMatch?'Lost contact with the game server while the match was loading. Rejoin room '+room+' to try again.':event.reason==='Connection idle'?'Connection timed out while the client was inactive. Rejoin room '+room+' if another player is still connected.':event.code===1012?'The game server restarted. Join or create a room again.':'Connection to the game server was interrupted. Try rejoining room '+room+'.');if(was)mpExitGame();mpUI();};ws.onerror=()=>mpMsg('Could not reach the game server. Try again shortly.');}
+function netConnect(create,code,publicRoom){
+ if(create&&['ascent','bind','haven','split','lotus','breeze','random'].includes(window.xQMap))MP.map=window.xQMap;
+ mpReset();MP.st='conn';mpMsg(create?'Creating server room…':'Joining server room…');mpUI();NET.host=create;
+ MP.code=code;MP.pub=!!publicRoom;MP.loadT=performance.now();netOpenSocket(create,code,publicRoom);
+}
+function netOpenSocket(create,code,publicRoom){
+ const q=new URLSearchParams({code,create:create?'1':'0',mode:MP.mode,map:MP.map==='random'?['ascent','bind','haven','split','lotus','breeze'][Math.floor(Math.random()*6)]:MP.map,public:publicRoom?'1':'0'});
+ if(NET.reconnecting&&NET.resume)q.set('resume',NET.resume);
+ let ws;try{ws=new WebSocket(NET.url.replace(/^http/,'ws')+'/connect?'+q);}catch(e){return netFinishConnection({code:1006,reason:''});}
+ const old=NET.socket;NET.socket=ws;NET.openAt=NET.lastSeen=performance.now();NET.ack=null;NET.welcomed=false;
+ if(old&&old!==ws)try{old.close();}catch(e){}
+ ws.onopen=async()=>{const token=await netProfileToken();if(NET.socket===ws){netSend({t:'hi',n:MP.name,ag:J.pick||'Jett',token,resume:NET.resume||undefined,batch:1,ack:1,sk:typeof xskWire==='function'?xskWire():undefined});netHbStart();}};
+ ws.onmessage=e=>{
+  if(NET.socket!==ws)return;let m;try{m=JSON.parse(e.data);}catch(e){return;}m=netClean(m);if(!m)return;
+  NET.lastSeen=MP.last=performance.now();
+  try{netOnMsg(m);}catch(err){NET.dropped=(NET.dropped||0)+1;const w=String(err&&err.message||err).slice(0,160)+' @'+m.t;NET.drops=NET.drops||[];if(NET.drops.length<20&&!NET.drops.includes(w))NET.drops.push(w);}
+ };
+ const netOnMsg=m=>{
+  if(m.t==='hello'||m.t==='hb')return;
+  if((m.t==='sk'||m.t==='sks'||m.t==='skr')&&typeof xskNet==='function')return xskNet(m);
+  if(m.t==='welcome'){NET.welcomed=true;if(typeof m.resume==='string')NET.resume=m.resume;MP.name=String(m.name);MP.me=m.you;const input=mpEl('xOnName');if(input)input.value=MP.name;return;}
+  if(m.t==='room'){
+   MP.on=true;MP.role='client';MP.room=m;MP.mode=m.mode;MP.map=m.map;if(MP.st!=='game'&&MP.st!=='post')MP.st='room';NET.host=!!m.pl.find(p=>p.n===MP.name&&p.h);
+   if(NET.reconnecting&&!NET.recoverGame&&!NET.recoverLoading){NET.reconnecting=false;NET.retryUntil=0;}
+   mpMsg(NET.reconnecting?'Reconnecting to game server…':'Connected to game server');return mpUI();
+  }
+  if(m.t==='start'){
+   const resume=NET.reconnecting&&m.you===NET.resumeMe&&(NET.recoverGame||NET.recoverLoading);
+   NET.reconnecting=false;NET.retryUntil=0;NET.inLog=[];NET.path=[];NET.correction=null;MP.snapClock=null;NET.latest=null;NET.lpAt=0;
+   MP.hc={open:true,send(m){if(m.t!=='hit'&&(m.t!=='in'||Number.isSafeInteger(m.seq)))netSend(m);}};
+   if(resume){
+    MP.team=m.team;netWeapon='';netReload=false;
+    if(NET.recoverGame&&running){
+     NET.ready=true;NET.loadAt=0;MP.loadT=0;
+     const self=m.u.find(e=>e[0]===MP.me);if(self){player.x=self[4];player.y=self[5];player.z=self[6];player.vx=player.vy=player.vz=0;}
+     netSend({t:'ready'});mpCliSnap(m);if(m.rs)mpCliRS(m.rs);netVisibility();
+    }else{NET.ready=false;NET.latest={...m,t:'s'};}
+    mpMsg('Connected to game server');mpUI();return;
+   }
+   NET.ready=false;NET.loadAt=performance.now();return mpCliMsg(m);
+  }
+  if(m.t==='s'){
+   if(Number.isSafeInteger(m.q)&&m.q>=0)NET.ack=m.q;
+   NET.latest=m;NET.receivedAt=performance.now();NET.serverAge=Date.now()-m.serverTime;NET.tickMs=m.tickMs;
+   if(NET.ready){mpCliMsg(m);if(m.rs)mpCliRS(m.rs);netSyncEffects(m.fx||[]);}return;
+  }
+  if(m.t==='ac'&&m.ag==='Sage'&&m.k==='c')return;
+  if(m.t==='ao'){if(m.rs)mpCliRS(m.rs);if(!m.ok&&m.k==='e'&&J.pick==='Jett'&&J.dash){J.dash=null;NET.dashUntil=0;}if(!m.ok){sgNo();say('Ability unavailable or target invalid',1000);}else if(J.pick==='Omen'&&(m.k==='x'||m.k==='c'))say(m.k==='x'?'From the Shadows · 4 s':'Shrouded Step · 1.2 s',1000);return;}
+  if(m.t==='po'){const c=Number(m.c);if(Number.isFinite(c))MP.ping=Math.max(0,Math.round(performance.now()-c));return;}
+  mpCliMsg(m);
+ };
+ ws.onclose=event=>{if(NET.socket!==ws)return;NET.lastClose={code:event.code,reason:event.reason,at:Date.now()};if(![1000,1008,4001,4003].includes(event.code)&&event.reason!=='Load timed out'&&netRetryConnection())return;netFinishConnection(event);};
+ ws.onerror=()=>{if(NET.socket===ws)mpMsg(NET.reconnecting?'Reconnecting to game server…':'Could not reach the game server. Try again shortly.');};
+}
+function netFinishConnection(event){
+ const was=MP.st==='game',room=MP.code,loadingMatch=!!NET.loadAt&&!NET.ready;NET.loadAt=0;mpReset();
+ mpMsg(event.reason==='Load timed out'?'Loading the match took too long, so the server closed your seat. Rejoin room '+room+' to try again; closing other tabs or apps can speed up loading.':event.reason==='Connection idle'&&loadingMatch?'Lost contact with the game server while the match was loading. Rejoin room '+room+' to try again.':event.reason==='Connection idle'?'Connection timed out while the client was inactive. Rejoin room '+room+' if another player is still connected.':event.code===1012?'The game server restarted. Join or create a room again.':'Connection to the game server was interrupted. Try rejoining room '+room+'.');
+ if(was)mpExitGame();mpUI();
+}
+function netRetryConnection(){
+ const now=performance.now();if(!NET.resume||!MP.on||MP.st==='post')return false;
+ if(!NET.reconnecting){NET.reconnecting=true;NET.retryUntil=now+30000;NET.retryCount=0;NET.resumeMe=MP.me;NET.recoverGame=NET.ready&&MP.st==='game';NET.recoverLoading=!NET.ready&&!!NET.loadAt;netReleaseInput();NET.ready=false;NET.latest=null;}
+ if(now>=NET.retryUntil)return false;
+ if(NET.retryTimer)return true;
+ const epoch=NET.epoch,code=MP.code,pub=MP.pub;mpMsg('Reconnecting to game server…');
+ NET.retryTimer=setTimeout(()=>{NET.retryTimer=0;if(NET.epoch===epoch&&NET.reconnecting)netOpenSocket(false,code,pub);},Math.min(4000,250*2**Math.min(4,NET.retryCount++)));
+ return true;
+}
+function netReleaseInput(){
+ if(typeof keys!=='undefined')for(const k in keys)keys[k]=false;
+ fireHeld=false;NET.firePulse=NET.fireHeavy=NET.firePend=NET.firePendH=0;
+}
+// A suspended event loop cannot process queued WebSocket messages. Give them a turn on wake before measuring silence.
+// Active heartbeat replies prove a lobby/hidden connection is alive even when no simulation snapshots are being sent.
+function netTransportTick(){
+ const now=performance.now(),gap=now-(NET.watchAt||now);NET.watchAt=now;
+ if(!NET.socket)return;
+ if(gap>2000){NET.lastSeen=now;NET.openAt=now;return;}
+ if(NET.reconnecting&&now>=NET.retryUntil)return netFinishConnection(NET.lastClose||{code:1006,reason:''});
+ if(NET.retryTimer)return;
+ if(MP.on&&now-(NET.hbAt||0)>=2000){NET.hbAt=now;netSend({t:'hb'});}
+ const silent=now-(NET.lastSeen||NET.openAt),connecting=!NET.welcomed;
+ if((connecting&&now-NET.openAt>20000)||silent>(document.hidden?150000:30000)){
+  const old=NET.socket;if(!netRetryConnection())return netFinishConnection({code:1006,reason:''});
+  // Detach first: the close callback must not schedule a second retry or reset the still-playable match.
+  old.onclose=null;try{old.close();}catch(e){}
+ }
+}
+
 mpCreate=function(pub,mode){MP.mode=mode||MP.mode;netConnect(true,mpCode(),pub);};
 mpJoin=function(code){code=String(code||'').toUpperCase();if(!/^[A-HJ-NP-Z2-9]{6}$/.test(code)){mpMsg('Enter the six-character room code.');return;}netConnect(false,code,false);};
 mpQuick=async function(mode){MP.mode=mode||MP.mode;mpMsg('Finding a live server room…');try{const r=await fetch(NET.url+'/rooms'),data=await r.json(),room=data.rooms.find(r=>r.mode===MP.mode&&r.players<10&&(window.xQMap==='random'||r.map===(window.xQMap||MP.map)));if(room)netConnect(false,room.code,true);else mpCreate(true,MP.mode);}catch(e){mpMsg('Room list unavailable. Try a private room.');}};
@@ -56,15 +146,17 @@ const netUI0=mpUI;mpUI=function(){netUI0();const start=mpEl('xOnStart');if(start
 // prediction was at that moment, not with where it is now. The current position runs ahead of every snapshot by the round
 // trip, so the old comparison pulled a running player back 25 % toward the past each snapshot and snapped a jumping player
 // 0.3-0.7 m down whenever the gap passed 0.35 m (jumps looked jarring online). Small residuals (< 5 cm, < 15 cm vertical)
-// are left alone, larger ones are eased in by 20 % per snapshot, and > 1 m (teleport, wall clip, ability) snaps.
-NET.inLog=[];NET.path=[];
+// are left alone, larger ones are smoothed on movement frames at a bounded rate, and > 1 m (teleport, wall clip, ability) snaps.
+NET.inLog=[];NET.path=[];NET.correction=null;
 function netPathAt(t){const P=NET.path;if(!P.length||t<P[0].t)return null;for(let i=P.length-1;i>=0;i--)if(P[i].t<=t){const a=P[i],b=P[i+1];if(!b)return a;const k=(t-a.t)/Math.max(1e-6,b.t-a.t);return {x:a.x+(b.x-a.x)*k,y:a.y+(b.y-a.y)*k,z:a.z+(b.z-a.z)*k};}return null;}
 function netPredicted(seq,age){if(!(seq>0)||!Number.isFinite(age))return null;let e=null;for(let i=NET.inLog.length-1;i>=0&&!e;i--)if(NET.inLog[i].seq===seq)e=NET.inLog[i];if(!e)return null;return netPathAt(Math.min(performance.now(),e.t+age*1000));}
 function netShiftPath(dx,dy,dz){for(const p of NET.path){p.x+=dx;p.y+=dy;p.z+=dz;}}
+// Small authority residuals are consumed by the movement frames, not in 20 Hz socket-handler jumps.
+function netCorrect(dt){const C=NET.correction;if(!C||!player)return;dt=Math.max(0,Math.min(.05,Number(dt)||0));const h=Math.hypot(C.x,C.z),k=Math.min(1-Math.exp(-10*dt),h>0?.75*dt/h:1),ky=Math.min(1-Math.exp(-10*dt),Math.abs(C.y)>0?.75*dt/Math.abs(C.y):1),dx=C.x*k,dy=C.y*ky,dz=C.z*k;player.x+=dx;player.y+=dy;player.z+=dz;netShiftPath(dx,dy,dz);C.x-=dx;C.y-=dy;C.z-=dz;if(Math.hypot(C.x,C.y,C.z)<.001)NET.correction=null;}
 function netTwReady(){const T=NET.tw;if(!T||J.dash)return false;const el=(performance.now()-T.at)/1000;return T.a-el<=0&&T.u-el>0;}/* server status: Tailwind windup over, window still open */
-{const move0=moveP;moveP=function(){const r=move0.apply(this,arguments);if(NET.socket&&player){const now=typeof XRT!=='undefined'&&XRT.at!=null?XRT.at:performance.now();NET.path.push({t:now,x:player.x,y:player.y||0,z:player.z});while(NET.path.length&&NET.path[0].t<now-1500)NET.path.shift();}return r;};}
-function netReconcile(e,ref){const ex=e[4]-ref.x,ey=e[5]-ref.y,ez=e[6]-ref.z,eh=Math.hypot(ex,ez);if(NET.dashUntil>performance.now()&&eh<2.5&&Math.abs(ey)<1)return 'dash';/* a predicted Tailwind dash (24 m/s) is a tick or two off the server's: hold corrections until it settles, then ease as usual */if(eh>1||Math.abs(ey)>1){player.x+=ex;player.y+=ey;player.z+=ez;netShiftPath(ex,ey,ez);return 'snap';}const k=eh<.05?0:.2,ky=Math.abs(ey)<.15?0:.2;if(!k&&!ky)return 'kept';player.x+=ex*k;player.z+=ez*k;player.y+=ey*ky;netShiftPath(ex*k,ey*ky,ez*k);return 'eased';}
-const netSelf0=mpCliSelf;mpCliSelf=function(e){const seq=MP.sq;netSelf0(e);if(!NET.socket)return;const ref=seq===e[14]?netPredicted(e[19],e[20]):null;if(seq!==e[14]){player.x=e[4];player.y=e[5];player.z=e[6];NET.path.length=0;}else if(ref)NET.lastFix=netReconcile(e,ref);else{const err=Math.hypot(player.x-e[4],player.z-e[6]);if(err>.75){player.x=e[4];player.y=e[5];player.z=e[6];}else{player.x+=(e[4]-player.x)*.25;player.z+=(e[6]-player.z)*.25;if(Math.abs(player.y-e[5])>.35)player.y=e[5];}}if(netEquipWant&&(e[11]===netEquipWant||performance.now()>netEquipUntil))netEquipWant=null;const held=rw==='knife'?'Knife':wName();/* a swap the server has not applied yet: its snapshots still name the old gun (and its ammo) for a round trip; reverting to it lost the swap (netWeapon was reset, so the equip was never sent) */
+{const move0=moveP;moveP=function(){if(NET.socket)netCorrect(arguments[0]);const r=move0.apply(this,arguments);if(NET.socket&&player){const now=typeof XRT!=='undefined'&&XRT.at!=null?XRT.at:performance.now();NET.path.push({t:now,x:player.x,y:player.y||0,z:player.z});while(NET.path.length&&NET.path[0].t<now-5000)NET.path.shift();}return r;};}
+function netReconcile(e,ref){const ex=e[4]-ref.x,ey=e[5]-ref.y,ez=e[6]-ref.z,eh=Math.hypot(ex,ez);if(NET.dashUntil>performance.now()&&eh<2.5&&Math.abs(ey)<1){NET.correction=null;return 'dash';}/* predicted dash has a different tick phase: wait until it settles */if(eh>1||Math.abs(ey)>1){NET.correction=null;player.x+=ex;player.y+=ey;player.z+=ez;netShiftPath(ex,ey,ez);return 'snap';}NET.correction={x:eh<.05?0:ex,y:Math.abs(ey)<.15?0:ey,z:eh<.05?0:ez};if(!NET.correction.x&&!NET.correction.y&&!NET.correction.z){NET.correction=null;return 'kept';}return 'eased';}
+const netSelf0=mpCliSelf;mpCliSelf=function(e){const seq=MP.sq;netSelf0(e);if(!NET.socket)return;const ref=seq===e[14]?netPredicted(e[19],e[20]):null;if(seq!==e[14]){player.x=e[4];player.y=e[5];player.z=e[6];NET.path.length=0;NET.correction=null;}else if(ref)NET.lastFix=netReconcile(e,ref);else{NET.correction=null;NET.lastFix='waiting';/* startup/resume/stall: wait for an acknowledged predicted sample; comparing a past snapshot with today's position reintroduces rubber-banding */}if(netEquipWant&&(e[11]===netEquipWant||performance.now()>netEquipUntil))netEquipWant=null;const held=rw==='knife'?'Knife':wName();/* a swap the server has not applied yet: its snapshots still name the old gun (and its ammo) for a round trip; reverting to it lost the swap (netWeapon was reset, so the equip was never sent) */
  if(!netEquipWant&&e[11]&&WEAP[e[11]]&&wName()!==e[11]&&rw!=='knife'){netRec=true;try{if(MP.m5){const slot=['Classic','Shorty','Frenzy','Ghost','Sheriff'].includes(e[11])?'pis':'pri';if((slot==='pri'?FV.pri:FV.sec)!==e[11])bEquip(e[11],slot);swapW(slot);}else bEquip(e[11],'pri');}finally{netRec=false;}netWeapon=e[11];}const same=(rw==='knife'?'Knife':wName())===e[11];/* ammo only for the gun the server holds: mid-swap it was the other gun's, written into this slot */if(same&&e[16]!=null&&MP.m5){rsv=e[16];if(slots[rw])slots[rw].rsv=rsv;}if(same&&e[15]!=null&&!(reloading>0)){/* reloading > 0, not truthiness: a finished reload can leave it a hair below 0 */if(rw!=='knife')ammo=e[15];if(slots[rw])slots[rw].ammo=ammo;}updHud();};
 const netWalls=new Map(),netCbs=new Map();/* Jett Cloudburst rows (fx kind 'cb'): id -> {m: projectile mesh, s: smoked} */
 function netClearEffects(){document.getElementById('netBlind')?.remove();for(const m of netWalls.values()){scene.remove(m);m.children.forEach(q=>{q.geometry.dispose();q.material.dispose();});}netWalls.clear();for(const id of [...netDevs.keys()])netDevDrop(id);netOwnDevs.clear();}/* a barrier is a Group of segment meshes (no geometry of its own) */
@@ -114,17 +206,18 @@ const netSgBlk0=sgBlk;sgBlk=function(x,z,r,y=0){if(!NET.socket)return netSgBlk0(
 const netShoot0=shoot;shoot=function(){if(NET.socket&&(netReyna?.dismiss>0||netChannel?.remaining>0))return false;const before=ammo,k0=kSwing,ss=typeof RS!=='undefined'&&RS.ss,r=netShoot0.apply(this,arguments);const swung=rw==='knife'&&kSwing!==k0,rocket=ss&&!RS.ss;/* Showstopper: the click that launched the rocket is one fire pulse (the server's launcher fires on it; a semi-auto gun sends no held fire) */if(NET.socket&&MP.st==='game'&&(swung||rocket||(rw!=='knife'&&ammo<before))){NET.firePulse=performance.now()+80;NET.fireHeavy=swung&&kHv===1?NET.firePulse:0;/* ...and stays pending until an input message carried it: on a slow page the next 50 ms input tick runs after the frame, past the 80 ms window (online Showstopper launched no rocket) */NET.firePend=1;NET.firePendH=NET.fireHeavy?1:0;if(rocket)NET.ssFiredAt=performance.now();}return r;}; // knife: one pulse per swing the client actually started (a click during a swing sent a pulse the server could turn into an extra hit); a heavy swing sends kh so the server applies the heavy cooldown/damage
 /* window, not document: the keymap layer re-sends a rebound key on window only (it never reaches document) */addEventListener('keydown',e=>{if(e.code!=='KeyR'||!(NET.socket&&MP.st==='game')||xKbSkip(e)||e.repeat)return;netSend({t:'reload'});if(reloading>0)netReload=true;/* the page's own R handler already started the local reload: the loop must not send it again */});
 // Camera, server shots and bots all treat positive pitch as looking up; send it unchanged.
-function netInputMsg(kk,w){const seq=++NET.seq;const log=NET.inLog||(NET.inLog=[]);log.push({seq,t:performance.now()});if(log.length>60)log.shift();const fp=NET.firePend,fh=NET.firePendH;NET.firePend=NET.firePendH=0;/* a pending click rides this message once */return {t:'in',seq,r:yaw,p:pitch,f:(kk.KeyW?1:0)-(kk.KeyS?1:0),s:(kk.KeyD?1:0)-(kk.KeyA?1:0),j:kk.Space?1:0,c:kk.ControlLeft||kk.ControlRight?1:0,w:kk.ShiftLeft||kk.ShiftRight?1:0,ads:ads?1:0,h4:kk.Digit4||kk.Numpad4?1:0,fire:(w!=='Knife'&&!WEAP[w]?.semi&&fireHeld)||NET.firePulse>performance.now()||fp?1:0,kh:NET.fireHeavy>performance.now()||fh?1:0,cb:J.pick==='Jett'&&kk.KeyC?1:0/* Cloudburst steering: C held */};} // a held knife click is one swing on the client, so it is a pulse (not held fire) online
+function netInputMsg(kk,w){const seq=++NET.seq;const log=NET.inLog||(NET.inLog=[]);log.push({seq,t:performance.now()});if(log.length>240)log.shift();const fp=NET.firePend,fh=NET.firePendH;NET.firePend=NET.firePendH=0;/* a pending click rides this message once */return {t:'in',seq,r:yaw,p:pitch,f:(kk.KeyW?1:0)-(kk.KeyS?1:0),s:(kk.KeyD?1:0)-(kk.KeyA?1:0),j:kk.Space?1:0,c:kk.ControlLeft||kk.ControlRight?1:0,w:kk.ShiftLeft||kk.ShiftRight?1:0,ads:ads?1:0,h4:kk.Digit4||kk.Numpad4?1:0,fire:(w!=='Knife'&&!WEAP[w]?.semi&&fireHeld)||NET.firePulse>performance.now()||fp?1:0,kh:NET.fireHeavy>performance.now()||fh?1:0,cb:J.pick==='Jett'&&kk.KeyC?1:0/* Cloudburst steering: C held */};} // a held knife click is one swing on the client, so it is a pulse (not held fire) online
 let netWeapon='',netReload=false,netEquipWant=null,netEquipUntil=0,netRec=false;
 // A local swap sends its equip at once and holds the snapshot reconcile (above) until the server names that gun or 1 s passes.
 const netSwap0=swapW;swapW=function(s){const r=netSwap0.apply(this,arguments);if(!netRec&&NET.socket&&NET.socket.readyState===1&&MP.st==='game'&&NET.ready){const w=rw==='knife'?'Knife':wName();if(w!==netWeapon){netWeapon=w;netSend({t:'equip',w});netEquipWant=w;netEquipUntil=performance.now()+1000;}}return r;};
-setInterval(()=>{if(!NET.socket||NET.socket.readyState!==1||!MP.on)return;const now=performance.now();if(MP.st==='game'&&running&&!window.xLdOn&&!NET.ready){NET.ready=true;NET.loadAt=0;MP.last=now;netSend({t:'ready'});if(NET.latest)mpCliMsg(NET.latest);}if(!NET.ready){/* Still loading the match: tell the server every 5 s how far along we are, so a slow load is kept rather than dropped at the 180 s idle limit. */if(NET.loadAt&&!(now-(NET.lpAt||0)<5000)){NET.lpAt=now;const f=v=>Number.isFinite(v)?Math.round(Math.max(0,Math.min(1,v))*1000)/1000:-1;let m=-1;try{m=f(NM.loaded);}catch(e){}netSend({t:'lp',p:f(window.xLdAgFrac),m});}return;}if((document.hidden?1:0)!==(NET.hid||0))netVisibility();const loading=reloading>0;if(loading&&!netReload)netSend({t:'reload'});netReload=loading;const kk=keys||{},w=rw==='knife'?'Knife':wName();if(w!==netWeapon){netWeapon=w;netSend({t:'equip',w});}netSend(netInputMsg(kk,w));},50);
+setInterval(()=>{if(!NET.socket||NET.socket.readyState!==1||!MP.on||NET.reconnecting)return;const now=performance.now();if(MP.st==='game'&&running&&!window.xLdOn&&!NET.ready){NET.ready=true;NET.loadAt=0;MP.last=now;netSend({t:'ready'});if(NET.latest)mpCliMsg(NET.latest);}if(!NET.ready){/* Still loading the match: tell the server every 5 s how far along we are, so a slow load is kept rather than dropped at the 180 s idle limit. */if(NET.loadAt&&!(now-(NET.lpAt||0)<5000)){NET.lpAt=now;const f=v=>Number.isFinite(v)?Math.round(Math.max(0,Math.min(1,v))*1000)/1000:-1;let m=-1;try{m=f(NM.loaded);}catch(e){}netSend({t:'lp',p:f(window.xLdAgFrac),m});}return;}if((document.hidden?1:0)!==(NET.hid||0))netVisibility();const loading=reloading>0;if(loading&&!netReload)netSend({t:'reload'});netReload=loading;const kk=keys||{},w=rw==='knife'?'Knife':wName();if(w!==netWeapon){netWeapon=w;netSend({t:'equip',w});}netSend(netInputMsg(kk,w));},50);
+setInterval(netTransportTick,1000);
 // Background-tab liveness. Hidden tabs throttle setInterval (about 1 Hz, then once a minute), which starved the
-// server's 15 s idle check and dropped players who switched tabs. The client tells the server when the tab hides
+// server's idle check and dropped players who switched tabs. The client tells the server when the tab hides
 // (the server then allows a longer silence and drops held input), releases held keys, and keeps a heartbeat on a
-// dedicated Worker timer, which background throttling does not slow down.
+// dedicated Worker timer, with the transport timer as fallback when Workers are unavailable.
 let netHbWorker=null;
-function netHbTick(){if(document.hidden&&MP.on&&NET.socket&&NET.socket.readyState===1)netSend({t:'hb'});}
+function netHbTick(){if(MP.on&&NET.socket&&NET.socket.readyState===1)netSend({t:'hb'});}
 function netHbStart(){if(netHbWorker!==null)return;try{const url=URL.createObjectURL(new Blob(['setInterval(()=>postMessage(0),2000)'],{type:'text/javascript'}));netHbWorker=new Worker(url);URL.revokeObjectURL(url);netHbWorker.onmessage=netHbTick;}catch(e){netHbWorker=false;}}
 function netVisibility(){if(!MP.on||!NET.socket||NET.socket.readyState!==1)return;const h=document.hidden?1:0;NET.hid=h;if(h){for(const k in keys)keys[k]=false;fireHeld=false;NET.firePulse=0;NET.firePend=NET.firePendH=0;if(NET.ready)netSend(netInputMsg({},netWeapon||'Knife'));netHbStart();}netSend({t:'vis',h});}
 document.addEventListener('visibilitychange',netVisibility);
