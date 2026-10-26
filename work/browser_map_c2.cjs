@@ -50,7 +50,10 @@ const MAPS=(process.env.MAPS||'breeze,ascent').split(',');
  const place=(p,yw)=>X(`player.x=${p[0]};player.y=${p[1]};player.z=${p[2]};player.vx=player.vz=0;player.vy=0;yaw=${yw};pitch=0;keys.KeyW=false;keys.Space=false;1`);
  const pos=()=>X('JSON.stringify([+player.x.toFixed(3),+player.y.toFixed(3),+player.z.toFixed(3)])').then(JSON.parse);
  const yawTo=(dx,dz)=>Math.atan2(-dx,-dz);
- const walk=async ms=>{const S=[await pos()];await X('keys.KeyW=true;1');const t=Date.now();while(Date.now()-t<ms){await page.waitForTimeout(120);S.push(await pos());}await X('keys.KeyW=false;1');await page.waitForTimeout(200);S.push(await pos());return S;};
+ /* walks by game frames as well as wall time: the page's frame dt is clamped (<= 0.1 s), so W held for 1 s over one or two
+    multi-second frames (first frames after a teleport to a new view) moves the player ~0 m (mapc2_2: wall 1 'no movement').
+    Held until ms elapsed AND >= ms/100 loop frames ran (<= 60 s); walk.f = frames seen. */
+ const nf=()=>X('XNF');const walk=async ms=>{const S=[await pos()];const f0=await nf();await X('keys.KeyW=true;1');const t=Date.now();let f=f0;while((Date.now()-t<ms||f-f0<Math.ceil(ms/100))&&Date.now()-t<60000){await page.waitForTimeout(120);S.push(await pos());f=await nf();}await X('keys.KeyW=false;1');await page.waitForTimeout(200);S.push(await pos());walk.f=f-f0;walk.ms=Date.now()-t;return S;};
  // movement ready: mapc2_1's first walk (the first after the match start) did not move at all in either direction while the server motor
  // walks the same fixture in and out (node, real Breeze collision); later walks moved. Walk a known open spot until the player moves (<= 90 s).
  {let ok=null;const t=Date.now();while(Date.now()-t<90000){await place([12.25,8.1,-22],yawTo(0,1));await page.waitForTimeout(250);const S=await walk(700);const m=Math.hypot(S[S.length-1][0]-S[0][0],S[S.length-1][2]-S[0][2]);if(m>0.3){ok=m;break;}}
@@ -59,11 +62,11 @@ const MAPS=(process.env.MAPS||'breeze,ascent').split(',');
  const along=(S,o,d)=>S.map(p=>(p[0]-o[0])*d[0]+(p[2]-o[2])*d[1]);
  // leaning walls: start = fixture node, walk into the wall (fixture direction), then straight back
  const LEAN=[[[7,8.04,-34.75],[-1,0],'(6.56, 8.04, -34.75)'],[[16,4.14,35],[0.71,0.71],'(17.0, 4.25, 36.0)'],[[16.75,8.49,8],[0.71,-0.71],'(17.8, 9.19, 7.59)']];
- for(const [f,dir,nm] of LEAN){const l=Math.hypot(dir[0],dir[1]),d=[dir[0]/l,dir[1]/l];await place(f,yawTo(d[0],d[1]));await page.waitForTimeout(250);const In=await walk(1000);const p1=In[In.length-1];
-  await X(`yaw=${yawTo(-d[0],-d[1])};player.vy=0;1`);const vy0=await X('player.vy');const S=await walk(900);const back=along(S,p1,[-d[0],-d[1]]);
+ for(const [f,dir,nm] of LEAN){const l=Math.hypot(dir[0],dir[1]),d=[dir[0]/l,dir[1]/l];await place(f,yawTo(d[0],d[1]));await page.waitForTimeout(250);const In=await walk(1000);const fIn=[walk.f,walk.ms];const p1=In[In.length-1];
+  await X(`yaw=${yawTo(-d[0],-d[1])};player.vy=0;1`);const vy0=await X('player.vy');const S=await walk(900);const fOut=[walk.f,walk.ms];const back=along(S,p1,[-d[0],-d[1]]);
   let lat=0;for(let i=1;i<S.length;i++){const dx=S[i][0]-S[i-1][0],dz=S[i][2]-S[i-1][2];lat=Math.max(lat,Math.abs(dx*-d[1]+dz*d[0]));}
   let rise=0;for(let i=1;i<S.length;i++)rise=Math.max(rise,S[i][1]-S[i-1][1]);
-  const r={into:p1,back:+Math.max(...back).toFixed(2),maxLateralStep:+lat.toFixed(3),maxRise:+rise.toFixed(3),yIn:p1[1],yEnd:S[S.length-1][1]};log('lean '+nm,r);
+  const r={into:p1,back:+Math.max(...back).toFixed(2),maxLateralStep:+lat.toFixed(3),maxRise:+rise.toFixed(3),yIn:p1[1],yEnd:S[S.length-1][1],framesIn:fIn,framesOut:fOut};if(r.back<0.7)/* motor probe at the stuck spot: the page's own leash / blockers / ground one step either way */r.probe=await X(`JSON.stringify((()=>{const C=nmActive(),x=player.x,y=player.y,z=player.z,o={p:[x,y,z],ground:groundAt(x,z,.3,y),ch:player.ch,air:!!player.air,keys:Object.keys(keys).filter(k=>keys[k])};for(const [n,dx,dz] of [['in',${d[0]},${d[1]}],['out',${-d[0]},${-d[1]}]]){const nx=x+dx*.1,nz=z+dz*.1;o[n]={leash:C?nmLeash(C,nx,nz,y,x,z):null,blk:C?nmBlocked(C,nx,nz,.4,y,1.8-(player.ch||0)):null,sg:typeof sgBlk==='function'?!!sgBlk(nx,nz,.4,y):null,g:groundAt(nx,nz,.3,y)};}return o;})())`).then(JSON.parse).catch(e=>String(e).slice(0,200));log('lean '+nm,r);
   if(nm.startsWith('(6.56')){await frames(2);await page.screenshot({path:SHOT+'mapc2-breeze-leanwall-640x360.jpg',type:'jpeg',quality:70,timeout:300000}).catch(e=>log('shot',String(e).slice(0,100)));}
   check(`Breeze leaning wall ${nm}: into the wall, then walks straight back out without a jump (>= 0.7 m, no sideways pop > 0.15 m)`,r.back>=0.7&&r.maxLateralStep<=0.15&&r.maxRise<0.35,JSON.stringify(r));} // no jump = no upward pop between samples (the (17.8, 9.19, 7.59) fixture backs down a ramp: 8.5 m -> 6.5 m at z 10.25 on the nav grid, so the end height is not compared)
  // 12 m platform SE edge -> crate stack: walk +z from (9.25, 12, -25)
