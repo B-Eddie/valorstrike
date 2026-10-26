@@ -30,7 +30,8 @@ const shootAt=(s,a,p)=>{Object.assign(a,aim([a.x,a.y+1.6-(a.ch||0),a.z],p),{fire
 {const s=new SpikeSimulation(world(),'five','ascent',()=>.5);s.effects=[{kind:'smoke',p:[0,.1,-5],until:99,radius:SMOKE.radius}];s.time=0;
  assert.equal(smokeBlocks(s,[0,1.6,0],[0,0,-1],10),true);assert.equal(smokeBlocks(s,[0,1.6,-5],[1,0,0],1),true,'standing inside smoke blocks sight out');assert.equal(smokeBlocks(s,[6,1.6,0],[0,0,-1],10),false);
  const t=duel(undefined,'Vandal',SpikeSimulation,'five'),bot=t.s.units.find(u=>u.name==='b');bot.human=false;t.a.human=false;Object.assign(bot,{reactionAt:0});t.s.effects.push({id:3,kind:'smoke',p:[0,.1,-5],until:99,radius:4});t.s.time=1;t.s.bot(bot);assert.equal(!!bot.input.fire,false,'bot does not fire through smoke');assert.equal(bot.sawTarget,false);
- t.s.effects=[];t.s.time+=1;t.s.bot(bot);assert.equal(bot.sawTarget,true);assert.equal(!!bot.input.fire,true,'bot fires with clear sight');
+ t.s.effects=[];t.s.time+=1;t.s.bot(bot);assert.equal(bot.sawTarget,true);assert.equal(!!bot.input.fire,false,'no shot on the frame the enemy appears (human reaction, 477e06d)');assert.ok(bot.reactionAt-t.s.time>=.18-1e-9&&bot.reactionAt-t.s.time<=.32+1e-9,'reaction 180-320 ms');
+ t.s.time+=.35;t.s.bot(bot);assert.equal(bot.sawTarget,true);assert.equal(!!bot.input.fire,true,'bot fires with clear sight once its reaction has passed');
  // Nearest enemy is the one checked (not merely the first listed enemy).
  const far=t.s.add('far');Object.assign(far,{team:0,x:30,y:0,z:-10,alive:true});t.s.units.unshift(t.s.units.pop());t.s.effects=[{id:4,kind:'smoke',p:[0,.1,-5],until:99,radius:4}];t.s.bot(bot);assert.equal(bot.sawTarget,false,'smoke between the bot and its nearest target blocks it');}
 // 6. Flash: needs line of sight (geometry, barrier, smoke) and 3D facing.
