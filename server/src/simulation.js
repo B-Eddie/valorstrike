@@ -147,7 +147,7 @@ export class Simulation{
   if(u.aimTarget!==target.id||!u.engagedAt){if(u.aimTarget!==target.id)u.engagedAt=0;u.aimTarget=target.id;u.aimSpot=BotBrain.aimHeight(P.brain,P.r,undefined,rp);u.aimHead=u.aimSpot==='head';}
   const aimH=BotBrain.AIM_H[u.aimSpot]||1.3,aimY=target.y+aimH-(target.ch||0)*aimH/1.8,dy=aimY-eye;
   const see=true;u.sawTarget=see;
-  if(see){/* a new fight: reaction 200-350 ms around this bot's mean plus off-angle / flash costs, then a human flick from where the crosshair was (BotBrain.aimPlan) */if(!u.engagedAt){u.engagedAt=this.time||1e-6;const want=Math.atan2(-dx,-dz),e0y=Math.atan2(Math.sin((u.look||0)-want),Math.cos((u.look||0)-want)),off=Math.abs(e0y);u.reactionAt=this.time+engage(this,u,P,{pre:off<.35||rp,off,flashed:u.blindUntil>this.time-1.2,dist,e0y,e0p:(u.pitch||0)-Math.atan2(dy,dist),moving:Math.hypot(u.vx||0,u.vz||0)>1});}
+  if(see){/* a new fight: reaction 200-350 ms around this bot's mean plus off-angle / flash costs, then a human flick from where the crosshair was (BotBrain.aimPlan) */if(!u.engagedAt){u.engagedAt=this.time||1e-6;const want=Math.atan2(-dx,-dz),e0y=Math.atan2(Math.sin((u.look||0)-want),Math.cos((u.look||0)-want)),off=Math.abs(e0y);u.reactionAt=this.time+engage(this,u,P,{pre:off<.35||rp,off,flashed:u.blindUntil>this.time-1.2,peeked:!target.human&&Math.hypot(target.vx||0,target.vz||0)>2.5&&Math.hypot(u.vx||0,u.vz||0)<1.6/* a bot peeking it at speed while it holds still: peeker's advantage (bot vs bot only; a human's comes from the network) */,dist,e0y,e0p:(u.pitch||0)-Math.atan2(dy,dist),moving:Math.hypot(u.vx||0,u.vz||0)>1});}
    const engaged=this.time-u.engagedAt,[ey,ep]=aimError(P,this.time,engaged),xe=BotBrain.aimAt(u.aimPlan,engaged,XE),sw=.5;/* aimError: a slow sway on top (half of it) */
    // Spray control: the bot drags down only part of the climb (BotBrain.sprayPull: recoilPull, fading after ~6 bullets) and leaves part of the drift.
    const S=u.spray,rc=S&&this.time-(S.shot??-9)<.3?BotBrain.sprayPull(P.brain,undefined,S.sequence||0):0,ry=rc?rc*(S.recoilY||0):0,rx=rc?rc*.6*(S.recoilX||0):0;
@@ -161,11 +161,31 @@ export class Simulation{
    u.input.forward=stop?0:dist>P.range[1]?1:dist<P.range[0]?-.6:0;u.input.side=stop?0:dist<30?strafe(this,u,P):0;
    if(u.hp<35&&P.brain.patience>.55&&!u.input.fire)u.input.forward=-1;
    if(u.crouchFight&&dist<P.crouchRange+4&&engaged>.2&&u.input.fire&&!(u.firePat&&u.firePat.kind==='tap'))u.input.duck=true;
-   u.route=null;u.via=-1;if(u.ammo===0&&!u.reloadAt)this.command(u,{t:'reload'});this.botUtility(u,target,dist,P,engaged);return;}
+   this.peekMove(u,P,true);/* a jiggle peek that catches sight of the enemy keeps jiggling, no shot */u.route=null;u.via=-1;if(u.ammo===0&&!u.reloadAt)this.command(u,{t:'reload'});this.botUtility(u,target,dist,P,engaged);return;}
 }
  // No enemy in sight: the fight (if any) is over this tick - no shot goes at an enemy that left the bot's sight. The
  // crosshair rests at head height (BotBrain.idlePitch); the last-known spot (u.mem) is where the bot looks (botView) and,
  // outside Spike (which routes to the objective itself), where it hunts; with nothing known it roams the map.
+ // Peeking (bots-tune-4, BotBrain.peek / peekStep): a bot about to clear a corner onto a remembered, unseen enemy (within
+ // PEEK.range m, no line to it now, but one 1.5 m further along its path or 1.2 m to a side) takes the corner its own way
+ // instead of running round it. The out side is the side step that opens the line (else the side the path turns to); jiggle /
+ // wide run, tight walks, hold stops. Rewrites this tick's move input (relative to u.look) in world space. A jiggle that
+ // catches sight of the enemy keeps jiggling without shooting (info, then a re-peek on the angle it now knows: repeek); the
+ // Spike carrier keeps its path. u.pkSt = {id, style, t, side}.
+ peekMove(u,P,fight){const i=u.input;if(u.human||!u.mem||!i||u.peekOff)return;let S=u.pkSt;
+  if(fight){if(!S||S.style!=='jiggle')return;const m=BotBrain.peekStep(S,this.tickDt||.05,P.r);if(S.style!=='jiggle')return;const c=u.mem.c[S.id];if(!c)return;
+   const d=Math.hypot(c.x-u.x,c.z-u.z)||1,bx=(c.x-u.x)/d,bz=(c.z-u.z)/d,L=u.look||0,wx=-bz*S.side*m.out,wz=bx*S.side*m.out;i.forward=-Math.sin(L)*wx-Math.cos(L)*wz;i.side=Math.cos(L)*wx-Math.sin(L)*wz;i.fire=false;delete i.duck;return;}
+  if(u.sawTarget||!(i.forward||i.side))return;
+  const c=BotBrain.memBest(u.mem,this.time,u.x,u.z,BotBrain.SENSE.glance),d=c?Math.hypot(c.x-u.x,c.z-u.z):99;
+  if(!c||d>=BotBrain.PEEK.range||d<1.5){u.pkSt=null;return;}
+  const bx=(c.x-u.x)/d,bz=(c.z-u.z)/d,L=u.look||0,f=i.forward||0,s=i.side||0,px=-Math.sin(L)*f+Math.cos(L)*s,pz=-Math.cos(L)*f-Math.sin(L)*s;
+  if(!S||S.id!==c.id){if(this.time<(u.pkCheck||0))return;u.pkCheck=this.time+.1;const eye=u.y+1.6-(u.ch||0),ce=[c.x,(c.y??u.y)+1.4,c.z],pl=Math.hypot(px,pz)||1;
+   if(this.canSee(u,null,[u.x,eye,u.z],ce))return;/* in the open already: nothing to peek */let side=0;for(const sg of [1,-1])if(this.canSee(u,null,[u.x-bz*sg*1.2,eye,u.z+bx*sg*1.2],ce)){side=sg;break;}
+   if(!side&&!this.canSee(u,null,[u.x+px/pl*1.5,eye,u.z+pz/pl*1.5],ce))return;/* still well behind cover */
+   const mate=this.units.some(w=>w!==u&&w.alive&&!w.loading&&w.team===u.team&&Math.hypot(w.x-u.x,w.z-u.z)<6),ew=this.units.find(w=>String(w.id)===String(c.id)),sniper=!!ew&&(ew.weapon==='Operator'||ew.weapon==='Marshal');
+   S=u.pkSt={id:c.id,t:0,style:BotBrain.peek(P.brain,P.r,{mate,sniper}),side:side||(px*-bz+pz*bx>=0?1:-1)};}
+  const m=BotBrain.peekStep(S,this.tickDt||.05,P.r);let wx=px*m.path-bz*S.side*m.out,wz=pz*m.path+bx*S.side*m.out;const l=Math.hypot(wx,wz);if(l>1){wx/=l;wz/=l;}
+  i.forward=-Math.sin(L)*wx-Math.cos(L)*wz;i.side=Math.cos(L)*wx-Math.sin(L)*wz;if(m.walk)i.walk=true;else delete i.walk;}
  botUnseen(u,P,mem,enemies){const W=this.world;
   if(u.engagedAt){const c=mem.c[u.aimTarget];if(c)c.prevSeen=c.seenT;}
   u.engagedAt=0;u.reactionAt=0;u.xhE=null;u.pitch=BotBrain.idlePitch(P.brain);u.aimTarget=null;/* the next fight re-picks where on the body the crosshair sits */if(this.objectiveRoutes)return;
@@ -179,7 +199,7 @@ export class Simulation{
   if(!u.route||u.routeAt<this.time||u.route.length<2){const via=P.flank&&dist>12?(u.via>=0&&u.viaTarget===target.id?u.via:flankNode(this,u,target)):-1;u.via=via;u.viaTarget=target.id;const goal=via>=0?via:W.near(target.x,target.z,target.y);u.route=variedPath(this,u,W.near(u.x,u.z,u.y),goal,path);u.routeAt=this.time+P.repath;}
   while(u.route.length>1){const n=W.nav.nodes[u.route[0]];if(Math.hypot(n[0]-u.x,n[2]-u.z)<P.accept)u.route.shift();else break;}
   if(u.via>=0&&u.route.length<=1){const n=W.nav.nodes[u.via];if(n&&Math.hypot(n[0]-u.x,n[2]-u.z)<1.2){u.via=-1;u.route=null;}}
-  const n=u.route&&W.nav.nodes[u.route[0]];if(n){const tx=n[0]-u.x,tz=n[2]-u.z,l=Math.hypot(tx,tz)||1,j=P.jitter*Math.min(1,l/1.5)*Math.sin((u.route[0]||0)*1.7+P.jitterPhase)/* faded near the waypoint: a jitter wider than accept orbited it */,gx=n[0]+(-tz/l)*j,gz=n[2]+(tx/l)*j;u.look=Math.atan2(u.x-gx,u.z-gz);spaceLook(this,u);u.input.forward=1;if(P.walk&&dist<20)u.input.walk=true;}
+  const n=u.route&&W.nav.nodes[u.route[0]];if(n){const tx=n[0]-u.x,tz=n[2]-u.z,l=Math.hypot(tx,tz)||1,j=P.jitter*Math.min(1,l/1.5)*Math.sin((u.route[0]||0)*1.7+P.jitterPhase)/* faded near the waypoint: a jitter wider than accept orbited it */,gx=n[0]+(-tz/l)*j,gz=n[2]+(tx/l)*j;u.look=Math.atan2(u.x-gx,u.z-gz);spaceLook(this,u);u.input.forward=1;if(P.walk&&dist<20)u.input.walk=true;}this.peekMove(u,P);/* a remembered enemy within PEEK.range: jiggle / wide / tight / hold */
   if(u.lastPos&&Math.hypot(u.x-u.lastPos[0],u.z-u.lastPos[1])<.01&&u.input.forward)u.stuck=(u.stuck||0)+.05;else u.stuck=0;if(u.stuck>1||u.escapeUntil>this.time){if(u.stuck>1){u.route=null;u.via=-1;}this.botEscape(u,u.stuck);}this.botProgress(u);u.lastPos=[u.x,u.z];}
  // Stuck bot (no progress for 1 s while walking): random sidestep and hop did not get bots out of corners and ledges
  // (soak: bots frozen for the rest of the match on every map). Probe eight directions with the real motor on a copy of

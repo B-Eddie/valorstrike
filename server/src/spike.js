@@ -155,7 +155,7 @@ export class SpikeSimulation extends Simulation{
   if(R.kind==='hold'){u.input=R.duck?{duck:true}:{};u.look=BotBrain.turnStep(persona(this,u).brain,u.look||0,Math.atan2(u.x-R.x,u.z-R.z),.05).yaw;/* turns onto the angle at its own turn rate */u.inputAt=this.time;return;}
   goal=[R.x,R.y,R.z];u.spread=true;loose=true;}
  if(u.plan&&u.plan.round===this.round&&this.time<u.plan.go&&!carrier){u.input={};u.inputAt=this.time;return;}/* staggered start */
- if(goal){const target={x:goal[0],y:goal[1],z:goal[2]};this.goalPath(u,target,loose);if(u.plan&&u.plan.walk&&u.input&&u.input.forward&&!carrier&&roundTime(this)<70)u.input.walk=true;} }
+ if(goal){const target={x:goal[0],y:goal[1],z:goal[2]};this.goalPath(u,target,loose);if(u.plan&&u.plan.walk&&u.input&&u.input.forward&&!carrier&&roundTime(this)<70)u.input.walk=true;if(!carrier&&u.inputAt===this.time)this.peekMove(u,persona(this,u));/* bots-tune-4: a remembered enemy within PEEK.range is peeked (jiggle / wide / tight / hold), not run into */} }
  // ---- Bots shoot down destroyable enemy utility (vendor/bot-brain.cjs shootUtility; offline index.html xUtilShoot) ----
  // Candidates: live enemy devices (devices.js SHOOT: aim point = the device / nearer Trapwire anchor, needs sightClear) and
  // enemy Sage barriers (aim at the wall's middle, needs a clear map line; blocking = the wall stands across the bot's way

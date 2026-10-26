@@ -34,9 +34,10 @@
  // One reaction draw per engagement: inside REACT for a pre-aimed angle, then human costs on top (ctx, optional):
  // ctx.pre false (crosshair not on the angle) +30-70 ms, ctx.off (rad between the view and the enemy) > 0.6 +50-110 ms,
  // > 1.4 (from the side) +80-160 ms more, > 2.4 (behind) +100-200 ms more (the turn itself is aimPlan / turnStep), ctx.flashed
- // (blind until just now) +120-220 ms; ctx.k scales the whole draw (difficulty).
+ // (blind until just now) +120-220 ms, ctx.peeked (a bot holding still sees a bot that is peeking it at speed: peeker's advantage,
+ // PEEK.adv) +70-100 ms; ctx.k scales the whole draw (difficulty).
  function reaction(P,rand,ctx){const j=(rand()+rand()+rand()-1.5)*1.4;let t=clamp(P.react+j*P.reactJit*2,REACT[0],REACT[1]);
-  if(ctx){const off=Math.abs(ctx.off||0);if(!ctx.pre)t+=.03+rand()*.04;if(off>.6)t+=.05+rand()*.06;if(off>1.4)t+=.08+rand()*.08;if(off>2.4)t+=.1+rand()*.1;if(ctx.flashed)t+=.12+rand()*.1;t*=ctx.k||1;}
+  if(ctx){const off=Math.abs(ctx.off||0);if(!ctx.pre)t+=.03+rand()*.04;if(off>.6)t+=.05+rand()*.06;if(off>1.4)t+=.08+rand()*.08;if(off>2.4)t+=.1+rand()*.1;if(ctx.flashed)t+=.12+rand()*.1;if(ctx.peeked)t+=PEEK.adv[0]+rand()*(PEEK.adv[1]-PEEK.adv[0]);t*=ctx.k||1;}
   return t;}
  // Flashes (bots-tune-4, item 3): a mid-ranked human who sees an enemy flash coming (the orb in flight toward them, a
  // Curveball bending round the corner in front of them) turns away if they read it in time; mid-fight they often miss it
@@ -170,6 +171,23 @@
  function sprayPull(P,lvl,n){return recoilPull(P,lvl)*sprayFade(n||0);}
  // How to take a corner the bot cannot see past yet.
  function peek(P,rand,ctx={}){if(ctx.sniper)return rand()<.75?'jiggle':'hold';const w=Object.assign({},P.peek);if(ctx.mate)w.wide+=.6;if(ctx.carrier)return 'tight';return pickW(rand,w);}
+ // Peeking a known contact (bots-tune-4, item 3b; the page's xPeekThink / xPeekMove draw the same kinds): clearing a corner onto
+ // a remembered, unseen enemy within PEEK.range m, a bot takes the corner one of peek()'s ways, drawn once per contact: jiggle = out PEEK.jig[0]
+ // s, back PEEK.jig[1] s, wait PEEK.jig[2] s (info / bait, a short exposure the holder rarely converts), PEEK.jigN times, then a
+ // tight peek; wide = swing past the corner at full run (half the path + the out side: the holder's crosshair on the close edge
+ // has to flick, and a teammate behind gets the trade); tight = run the path round the corner close to it, crosshair on the
+ // spot (botView), and counter-strafe once it sees (the fight's disciplined stop); hold = wait PEEK.hold s for them to come, then tight. peekStep(S, dt, rand) -> {out: -1..1 along the out
+ // side, path: share of the path move, walk}; S = {style, t} is the caller's per-contact state.
+ const PEEK={range:25,jig:[.15,.15,.2],jigN:3,hold:[1,2.5],adv:[.07,.1]};
+ // PEEK.adv: peeker's advantage. Riot (technology.riotgames.com 'Peeking into VALORANT's Netcode'): the holder sees a peek
+ // ~141 ms late at baseline, ~101 ms after their latency work at 60 FPS, ~71 ms at 144 FPS (network + buffering + frame). Bot
+ // vs bot there is no network, so a bot holding still sees a moving bot peeker 70-100 ms late (reaction ctx.peeked); a human's
+ // peek (or a human holder) already carries the real network delay, so it gets none.
+ function peekStep(S,dt,rand){S.t=(S.t||0)+dt;const J=PEEK.jig,c=J[0]+J[1]+J[2];
+  if(S.style==='jiggle'){if(S.t<c*PEEK.jigN){const ph=S.t%c;return {out:ph<J[0]?1:ph<J[0]+J[1]?-1:0,path:0,walk:false};}S.style='tight';S.t=0;}
+  if(S.style==='hold'){if(S.holdT==null)S.holdT=PEEK.hold[0]+rand()*(PEEK.hold[1]-PEEK.hold[0]);if(S.t<S.holdT)return {out:0,path:0,walk:false};S.style='tight';S.t=0;}
+  if(S.style==='wide')return {out:1,path:.5,walk:false};
+  return {out:0,path:1,walk:false};}
  // ---- Round strategy ----
  // Pace (bots-human-1): mid-ranked teams mostly default and take their time; a flat-out rush is rare.
  const ATTACK={default:.3,execute:.18,rush:.06,split:.13,fake:.1,lurk:.11,slow:.12},DEFENSE={standard:.38,stack:.18,retake:.16,aggro:.28};
@@ -571,5 +589,5 @@
  function mayFire(visibleFor,reactionS,losNow){return !!losNow&&visibleFor>=Math.max(REACT[0],reactionS||0);}
  // Fire-rate cap: never faster than the gun (Vandal 9.75 rounds/s). Returns the earliest next shot time.
  function nextShot(t,rate){return t+1/Math.max(.1,rate||1);}
- return {hash,rng,clamp,pickW,REACT,personality,reaction,crosshair,crosshairAt,firePattern,peek,attackPlan,defensePlan,roles,teamBuy,buyFor,onMateDeath,onSound,ATTACK,DEFENSE,utility,UTIL,turnStep,trackLag,wrapA,SPIKE,plantSpot,postPlant,retake,postPlay,SHOOT_UTIL,shootUtility,TAILWIND,tailwindDash,tailwindKeys,LEVEL,level,aimTraits,AIM_H,aimHeight,halfWidth,aimPlan,aimAt,readyToFire,planFire,idlePitch,recoilPull,discipline,hitPart,BUY,buyArea,buyRoute,buyExit,buySpot,buyWander,buyHold,buyNew,buyTick,buyNext,buySep,SENS,cm360,sensOf,turnRate,SENSE,inView,audible,earSpot,memNew,memNote,memForget,memBest,repeek,mayFire,nextShot,areas,DFORM,GAP,midPoint,RESPOND,nearest,tradeSpot,follow,buyNear,buyCross,reactR,reacts,FIRE,sprayFade,sprayPull,turnAcc,trackTurn,cornerPick,FLASH,flashRead,blindPlay};
+ return {hash,rng,clamp,pickW,REACT,personality,reaction,crosshair,crosshairAt,firePattern,peek,attackPlan,defensePlan,roles,teamBuy,buyFor,onMateDeath,onSound,ATTACK,DEFENSE,utility,UTIL,turnStep,trackLag,wrapA,SPIKE,plantSpot,postPlant,retake,postPlay,SHOOT_UTIL,shootUtility,TAILWIND,tailwindDash,tailwindKeys,LEVEL,level,aimTraits,AIM_H,aimHeight,halfWidth,aimPlan,aimAt,readyToFire,planFire,idlePitch,recoilPull,discipline,hitPart,BUY,buyArea,buyRoute,buyExit,buySpot,buyWander,buyHold,buyNew,buyTick,buyNext,buySep,SENS,cm360,sensOf,turnRate,SENSE,inView,audible,earSpot,memNew,memNote,memForget,memBest,repeek,mayFire,nextShot,areas,DFORM,GAP,midPoint,RESPOND,nearest,tradeSpot,follow,buyNear,buyCross,reactR,reacts,FIRE,sprayFade,sprayPull,turnAcc,trackTurn,cornerPick,FLASH,flashRead,blindPlay,PEEK,peekStep};
 });

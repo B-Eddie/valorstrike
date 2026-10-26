@@ -12,6 +12,8 @@
 //  8. Spike-mode sound reactions on the shared hearing model
 //  9. flash reads: an enemy flash a bot would be blinded by is read and turned (Curveball mostly, Flashpoint rarely in time,
 //     mid-fight reads rarer); blinded bots back out, hold or spray the angle they were fighting
+// 10. corner peeks: clearing a corner onto a known enemy, bots jiggle / wide swing / tight peek / hold (BotBrain.peek), a jiggle
+//     that sees the enemy holds fire; a still bot sees a moving bot peeker 70-100 ms late (peeker's advantage, bot vs bot)
 import assert from 'node:assert/strict';import {createRequire} from 'node:module';
 import {Simulation} from './src/simulation.js';import {SpikeSimulation} from './src/spike.js';import {persona,botView} from './src/bots.js';
 const B=createRequire(import.meta.url)('../vendor/bot-brain.cjs'),out=[];
@@ -101,4 +103,13 @@ function tick(s,b,dt=1/30){s.time+=dt;const L0=b.look;s.bot(b);botView(s,b,L0,dt
  assert.ok(bc.movedWhileBlind>.8&&bc.acts.back>5&&bc.acts.hold>5&&!bc.acts.none,'blinded from cover: backs out or holds ('+JSON.stringify(bc.acts)+', moved '+bc.movedWhileBlind+' m)');
  assert.ok(pf.acts.spray>5&&pf.shotsWhileBlind>.5,'blinded mid-fight: some spray the angle ('+JSON.stringify(pf.acts)+', '+pf.shotsWhileBlind+' shots)');
  out.push('flash reads: Curveball from cover read '+pc.read+' % / blinded '+pc.blinded+' % (was 93), Flashpoint '+bc.blinded+' % (was 100), mid-fight read '+pf.read+' %; blinded back / hold / spray '+JSON.stringify(bc.acts)+' '+JSON.stringify(pf.acts));}
+// 10. corner peeks (bots-tune-4, BotBrain.peek / peekStep / PEEK.adv; tools/bot-peek-bench.mjs). Before (c1b420c): every
+// peeker ran its path round the corner (styles none 100 %), peeker win 37 % close / 37 % long.
+{const {run}=await import('./tools/bot-peek-bench.mjs');const c=run(4,60),l=run(9,60);
+ for(const [k,r] of [['close',c],['long',l]]){for(const st of ['jiggle','wide','tight','hold'])assert.ok((r.styles[st]||0)>=6,k+': '+st+' peeks used ('+JSON.stringify(r.styles)+')');
+  assert.ok(r.peekerWin>25&&r.peekerWin<55,k+': peeker win 25-55 % (holder favoured, as Riot designs it): '+r.peekerWin);assert.ok(r.diedMidJiggle<=3,k+': jiggles are rarely converted: '+r.diedMidJiggle);}
+ assert.ok(l.winByStyle.wide>=l.winByStyle.tight,'a wide swing beats a tight peek on a long angle held off the close edge: '+l.winByStyle.wide+' vs '+l.winByStyle.tight);
+ const P=B.personality(77),r1=B.rng(5),r2=B.rng(5);let a=0,b=0;for(let i=0;i<400;i++){a+=B.reaction(P,r1,{pre:true});b+=B.reaction(P,r2,{pre:true,peeked:true});}
+ const adv=(b-a)/400;assert.ok(adv>.06&&adv<.11,"peeker's advantage 70-100 ms: "+adv.toFixed(3));
+ out.push('peeks close '+JSON.stringify(c.styles)+' peeker win '+c.peekerWin+' % (by style '+JSON.stringify(c.winByStyle)+'), long peeker win '+l.peekerWin+' % '+JSON.stringify(l.winByStyle)+", peeker's advantage "+(adv*1000).toFixed(0)+' ms');}
 console.log('Bot perception: '+out.join('; '));
