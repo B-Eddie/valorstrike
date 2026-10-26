@@ -97,7 +97,7 @@ const rocket=(s,u,m={})=>{const ok=cast(s,u,m);if(!ok)return ok;s.time+=ULT.rock
 console.log('Ultimates: Hunter\'s Fury (3 wall-piercing blasts, recast, reveal, death end), Showstopper (1.4 s launcher equip, FIRE shoots, 10 s window, travelling rocket, falloff, LOS, wall detonation), Lockdown (windup, radius detain blocks guns/abilities, round reset), Rolling Thunder (cone through walls), Seekers (3 nearest), Neural Theft (corpse targeting, reveals at 2 s and 6 s), Tour de Force (5-round Operator, weapon restore, round reset), Run It Back (death/expiry return, no elimination, no death drop, gear kept at round end); leaver utility/ult state moves to the seat bot; server-side aim only');
 // Devices that used to be inert markers: recon pulses reveal enemies in the bolt's sight (not through walls),
 // Boom Bot hunts the nearest visible enemy and explodes for 125, Trailblazer concusses on contact.
-import {DEV,bbDamage} from './src/devices.js';
+import {DEV,bbDamage,tbConcuss} from './src/devices.js';
 {const {s,u,list:[seen,hidden,far]}=setup('Sova',['foeSeen'],['foeHidden'],['foeFar']);u.ability.e=1;Object.assign(seen,{x:3,y:0,z:-14});Object.assign(hidden,{x:-3,y:0,z:-30});Object.assign(far,{x:0,y:0,z:-60});wall=20;
  assert.equal(s.command(u,{t:'ab',k:'e'}),true);const bolt=s.effects.find(e=>e.kind==='recon');assert.ok(bolt&&Math.abs(bolt.p[2]+19.97)<.05,'bolt lands on the wall at the server aim (full-charge flight, vendor/sova-bolt.cjs)');tick(s,.5);assert.equal(s.roundState(u).rv.length,0,'first pulse not yet');tick(s,.9);/* 0.4 s flight + 0.9 s first pulse */
  assert.deepEqual(s.roundState(u).rv.map(r=>r[0]),[seen.id],'pulse reveals only what the bolt sees');const first=seen.revealedUntil;tick(s,1.6);assert.ok(seen.revealedUntil>first+1,'second pulse refreshes the reveal');assert.ok(!(hidden.revealedUntil>0)&&!(far.revealedUntil>0));
@@ -111,7 +111,11 @@ import {DEV,bbDamage} from './src/devices.js';
 {assert.deepEqual([bbDamage(0),bbDamage(2),bbDamage(4),bbDamage(5.5),bbDamage(6.01)],[80,80,55,36.25,0],'Boom Bot falloff 80 (2 m) -> 30 (6 m)');
  const {s,u,list:[foe,side,out]}=setup('Raze',['foe'],['foeSide'],['foeOut']);u.ability.c=1;Object.assign(foe,{x:12,y:0,z:-6});Object.assign(side,{x:12,y:0,z:-9});Object.assign(out,{x:12,y:0,z:-15});
  assert.equal(s.command(u,{t:'ab',k:'c'}),true);tick(s,4.5);assert.ok(foe.hp<=26.25,'locks onto an enemy 13.4 m away (15 m detection, was 10 m): '+foe.hp);assert.ok(side.hp<100&&side.hp>=20&&side.hp>foe.hp,'falloff to a second enemy 4-6 m from the blast: '+side.hp);assert.equal(out.hp,100,'9 m away: outside 6 m');assert.ok(!s.effects.some(e=>e.kind==='boombot'));}
-{const {s,u,list:[foe]}=setup('Skye',['foe']);u.ability.q=1;Object.assign(foe,{x:0,y:0,z:-10});assert.equal(s.command(u,{t:'ab',k:'q'}),true);tick(s,1.5);assert.ok(foe.concussUntil>s.time,'Trailblazer concusses');assert.ok(!s.effects.some(e=>e.kind==='trail'));}
+{const {s,u,list:[foe,side,out]}=setup('Skye',['foe'],['foeSide'],['foeOut']);u.ability.q=1;Object.assign(foe,{x:0,y:0,z:-10});Object.assign(side,{x:2.5,y:0,z:-8});Object.assign(out,{x:4,y:0,z:-8});assert.equal(s.command(u,{t:'ab',k:'q'}),true);tick(s,1.5);assert.ok(!s.effects.some(e=>e.kind==='trail'));
+ // Trailblazer (wiki): 6 s, 3.5 m explosion, concuss 4 s at the centre falling to 2.5 s at the edge
+ assert.deepEqual([tbConcuss(0),tbConcuss(1.75),tbConcuss(3.5),DEV.trail.life],[4,3.25,2.5,6],'Trailblazer concuss falloff 4 -> 2.5 s, 6 s');
+ const t0=s.time,cf=foe.concussUntil-t0,cs=side.concussUntil-t0;/* the explosion happened up to 1.5 s ago: compare remaining times */assert.ok(cf>cs&&cs>0,'closer foe concussed longer: '+cf.toFixed(2)+' > '+cs.toFixed(2));assert.ok(!(out.concussUntil>0),'4 m from the blast: outside 3.5 m (was 4 m)');
+ assert.ok(Math.abs((foe.concussUntil-side.concussUntil)-(tbConcuss(1.8)-tbConcuss(2.55)))<.25,'falloff by distance');}
 console.log('Devices: recon pulses reveal by line of sight (two pulses), Boom Bot seeks and explodes, Trailblazer concusses');
 // Row 9 device parity: Phoenix (Blaze, Hot Hands, Curveball), Killjoy (Nanoswarm, Alarmbot, Turret arc),
 // Cypher (Trapwire, Cyber Cage), Chamber (Trademark, Headhunter weapon restore).

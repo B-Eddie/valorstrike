@@ -379,3 +379,16 @@ allies. Was: server 10 m sight, 1.2 m trigger, flat 125 in 3 m; offline client 8
   the detection (both sides use a 15 m circle with line of sight).
 - Tests: `server/test-ults.js` (bbDamage table; 73.75 - 80 to the hunted foe; lock at 13.4 m; falloff to a second foe;
   none at ~10 m), `work/test_ability_equip.cjs` (XBB == DEV.boombot, xBbDmg table, the same lock / falloff offline).
+
+### Skye Trailblazer (wiki.playvalorant.com/en-us/Trailblazer, fetched 2026-10-25)
+
+Wiki stats: duration 6 s, explosion radius 3.5 m, concuss 4 s at the centre falling to 2.5 s at the edge, 30 damage when
+the leap bites an enemy. Was: server 3 s, 4 m, flat 2.5 s; offline client 6 s, 3 m, flat 2 s.
+
+- Server: `DEV.trail = {life: 6, speed: 9, trigger: 2, concuss: 4, minConcuss: 2.5, radius: 3.5}`, `tbConcuss(d)` linear
+  from 4 s (centre) to 2.5 s (3.5 m); concuss and slow per enemy by its distance from the blast.
+- Client: `XTB = {life: 6, r: 3.5, max: 4, min: 2.5}`, `xTbCnc(d)`; the player's leap (`tbLeap`) concusses / blinds each
+  bot in 3.5 m by distance (bots have no concuss model beyond `b.cnc` / `b.blind`).
+- Not modelled: the 30-damage bite, the 22.5 m vision radius.
+- Tests: `server/test-ults.js` (tbConcuss table, 6 s; the closer foe concussed longer; 4 m from the blast untouched),
+  `work/test_ability_equip.cjs` (XTB == DEV.trail; leap lands 4 m ahead: 4 s at the spot, 2.71 s at 3 m, none at 3.8 m).
