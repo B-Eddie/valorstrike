@@ -9,7 +9,11 @@ class Storage{constructor(){this.m=new Map();}
  async list({prefix='',limit=1000}={}){return new Map([...this.m].filter(([k])=>k.startsWith(prefix)).slice(0,limit).map(([k,v])=>[k,structuredClone(v)]));}
  async transaction(f){return f(this);}}
 
-export async function localCluster({env:vars={},assetsRoot=new URL('../public',import.meta.url)}={}){
+// prod: also hand the worker the modules its imports bring in production that the vm context otherwise lacks - fog.js
+// fogView / fogCast (fog of war: GameRoom.view / castEvents) and skins.js cleanSkins. Without them worker.js's typeof guards
+// fall back to whole frames, so a room here sends every enemy's position (hk-33: the browser bridge's fog check saw a
+// hidden enemy drawn at its true spot). Off by default: the acceptance tests here script whole-frame rooms.
+export async function localCluster({env:vars={},assetsRoot=new URL('../public',import.meta.url),prod=false}={}){
  let now=1_700_000_000_000;const timers=new Map();let nextTimer=1;
  const clock={now:()=>now};
  const FakeDate=class extends Date{constructor(...a){super(...(a.length?a:[now]));}static now(){return now;}};
@@ -22,6 +26,7 @@ export async function localCluster({env:vars={},assetsRoot=new URL('../public',i
  class Resp extends Response{constructor(body,init={}){if(init.status===101){super(null,{status:200});this.webSocket=init.webSocket;this.upgraded=true;}else super(body,init);}}
  const src=fs.readFileSync(new URL('../src/worker.js',import.meta.url),'utf8').replace(/^import .*$/gm,'').replace('export default','const handler=').replace(/export class/g,'class')+';globalThis.__mod={handler,GameRoom,Directory};';
  const ctxGlobals={DurableObject:class{constructor(ctx,env){this.ctx=ctx;this.env=env;}},loadWorld,Simulation,SpikeSimulation,kits:JSON.parse(fs.readFileSync(new URL('../src/kits.json',import.meta.url),'utf8')),
+  ...(prod?{fogView:(await import('../src/fog.js')).fogView,fogCast:(await import('../src/fog.js')).fogCast,cleanSkins:(await import('../src/skins.js')).cleanSkins}:{}),
   WebSocketPair:Pair,Response:Resp,Request,Headers,URL,URLSearchParams,TextEncoder,crypto:globalThis.crypto,performance,Date:FakeDate,setInterval:setI,clearInterval:clear,setTimeout:setT,clearTimeout:clear,console,Map,Set,JSON,Math,Number,Object,Array,Promise,Error,Uint8Array,structuredClone,queueMicrotask};
  const c=vm.createContext(ctxGlobals);vm.runInContext(src,c);const {handler,GameRoom,Directory}=c.__mod;
  const assets={async fetch(r){try{return new Response(fs.readFileSync(new URL('.'+new URL(r.url).pathname,assetsRoot.href.endsWith('/')?assetsRoot:assetsRoot+'/')));}catch(e){return new Response('',{status:404});}}};

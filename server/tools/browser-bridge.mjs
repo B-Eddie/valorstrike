@@ -7,7 +7,8 @@
 //   node tools/browser-bridge.mjs [port=8787]
 import http from 'node:http';import {WebSocketServer} from 'ws';import {localCluster} from './local-cluster.mjs';
 const port=+(process.argv[2]||8787);
-const C=await localCluster({env:{ALLOW_LOCAL_ORIGIN:'true',ENABLE_SPIKE:'true'}});
+// prod: fog of war and skin validation as deployed (hk-33); a scenario that needs whole frames sets sim(code).fogOff=true.
+const C=await localCluster({env:{ALLOW_LOCAL_ORIGIN:'true',ENABLE_SPIKE:'true'},prod:true});
 // Lockstep (QA: `C.lock=true` from /__qa): software-rendered Chromium can take 5-15 s per frame, during which the page
 // sends nothing (its input/heartbeat timers are starved), so the server would drop it for silence and every held key
 // would go stale (inputs count for 0.3 s). With the lock on, each client message buys 250 ms of server time and the

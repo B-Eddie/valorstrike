@@ -9,6 +9,7 @@
 //    page plays its footsteps (SFX.step at the unit, row [23]). Beyond 30 m, still hidden, running: fogged, no footsteps.
 // C. Casts: a hidden Omen beyond FOG.cast 30 m aims Dark Cover at a floor point the page player can see -> the page gets the
 //    cast fog:1 with p and without the caster's eye o / aim d, replays it at p, and the caster's model stays parked.
+// The bridge runs the worker with fog.js handed in (local-cluster prod:true, hk-33); fog1 ran before that and got whole frames.
 //   bash hk_out/start.sh bridge; ROOT=<tree> node work/browser_online_fog.cjs <out.json>
 const PW='/workspace/work/pw/node_modules/playwright';process.env.PLAYWRIGHT_BROWSERS_PATH=process.env.PLAYWRIGHT_BROWSERS_PATH||'/workspace/work/pw/browsers';
 process.env.LD_LIBRARY_PATH=(process.env.LD_LIBRARY_PATH||'')+':/workspace/work/pw/libs';
@@ -74,7 +75,7 @@ const LIB=code=>`const s=sim('${code}');const W=s.baseWorld||s.world,N=W.nav.nod
  check('online fog: an enemy behind a wall (server rays: hidden both ways) is parked in the page - fogged, model out of the scene, never at its true spot',!sv.seen&&a&&a.fog===1&&!a.inScene&&far(a.pos),{a,sv});
  // A2: to plain sight
  await qa(LIB(code)+`const T=s.units.find(u=>u.id===${spots.T});put(T,${JSON.stringify(spots.V)},me.look+Math.PI);return 1;`);
- await W8(`(window.__ust(${spots.T})||{}).fog===0&&window.__ust(${spots.T}).inScene`,300000,'T visible');
+ await W8(`(()=>{const a=window.__ust(${spots.T});return !!a&&a.fog===0&&a.inScene&&!!a.pos&&Math.hypot(a.pos[0]-(${spots.V[0]}),a.pos[2]-(${spots.V[2]}))<1;})()`,300000,'T visible at V'); // hk-33: fog1 read the unit before the move reached the page (it was already fog 0 / in scene at H1)
  a=JSON.parse(await X(`JSON.stringify(window.__ust(${spots.T}))`));const dv=a&&a.pos?Math.hypot(a.pos[0]-spots.V[0],a.pos[2]-spots.V[2]):null;log('A visible: page unit',{a,dv});
  check('online fog: the same enemy in plain sight is drawn at its true spot (fog 0, model in the scene within 1 m)',a&&a.fog===0&&a.inScene&&dv!=null&&dv<1,{a,dv,V:spots.V});
  await X('window.__allow=1;1');await page.screenshot({path:SHOT+'online-fog-visible-640x360.jpg',type:'jpeg',quality:70,timeout:600000}).catch(e=>log('shot',String(e).slice(0,120)));
