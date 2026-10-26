@@ -57,6 +57,25 @@
   const a=turnAcc(P),vm=P.turn||10,v0=st.v||0;
   let vw=Math.sign(d)*Math.min(vm,a*(Math.sqrt(dt*dt/4+2*Math.abs(d)/a)-dt/2));/* the speed it can still brake from in whole ticks: v^2/2a + v dt/2 = d */if(Math.abs(d)<=Math.abs(vw)*dt)vw=d/dt;
   const v=v0+clamp(vw-v0,-a*dt,a*dt),y=from+v*dt;st.v=v;st.y=wrapA(y);const left=Math.abs(wrapA(want-y));return {yaw:left<1e-9?want:y,left};}
+ // Direction changes (bots-tune-2): a human tracks a strafing target from the motion it saw a moment ago, so after the
+ // target reverses (ADAD) the crosshair keeps going the old way, then catches up. w = the target's own angular speed
+ // about the bot (rad/s; its velocity across the line of sight / distance - the bot's own strafe is its own input, not
+ // misjudged). st = per-bot state {t,pw,off}: t the last update, pw the perceived angular speed (low-passed, tau = 0.04 s + 0.8 P.lag: 0.08-0.18 s), off the
+ // yaw error it leaves (rad), corrected at k = 1 / (0.08 + P.settle / 2) per s. Returns off to add to the aim yaw. Steady
+ // motion: off -> 0; a 5.4 m/s reversal at 15 m: up to ~1.5 body widths for ~0.2-0.3 s. Same on the server and offline.
+ function trackTurn(P,st,w,t){w=clamp(w||0,-3,3);if(st.t==null||!(t>st.t)||t-st.t>.5){st.t=t;st.pw=w;st.off=0;return 0;}
+  const dt=t-st.t,tau=.04+(P.lag||.08)*.8,k=1/(.08+(P.settle||.25)/2);
+  st.pw+=(w-st.pw)*(1-Math.exp(-dt/tau));st.off=(st.off+(st.pw-w)*dt)*Math.exp(-k*dt);st.t=t;return st.off;}
+ // Crosshair placement off-fight (bots-tune-2): a mid-ranked player walking a route keeps the crosshair on the next
+ // corner an enemy can appear from, not down the path. ang[i] / dep[i]: eye-height rays fanned around the heading
+ // (ascending angle, depth in m, capped). An opening edge is a neighbour pair whose depth jumps (far >= 1.7x near and
+ // >= 4 m more): the enemy appears just past the near ray's edge, so the pick is a little to the far side of it. Scored
+ // by how close the corner is and how near the heading it lies; a long open lane ahead counts too. Returns a yaw or null.
+ function cornerPick(ang,dep,heading){let best=null,bs=0;const n=ang.length;
+  for(let i=0;i+1<n;i++){const a=dep[i],b=dep[i+1],near=Math.min(a,b),far=Math.max(a,b);if(far<near*1.7||far-near<4||near<1.2)continue;
+   const ni=a<b?i:i+1,fi=a<b?i+1:i,e=ang[ni]+(ang[fi]-ang[ni])*.35,off=Math.abs(wrapA(e-heading)),w=Math.cos(Math.min(1.45,off))**1.5,sc=w/(near+3);if(sc>bs){bs=sc;best=e;}}
+  for(let i=0;i<n;i++){const off=Math.abs(wrapA(ang[i]-heading));if(dep[i]>=25&&off<.6){const sc=.6*Math.cos(off)/(12+3);if(sc>bs){bs=sc;best=ang[i];}}}
+  return best;}
  function trackLag(P,t){return (P.lag||.08)*(.35+.65*Math.exp(-Math.max(0,t)/((P.settle||.25)*2)));}
  // ---- Human aim (default: a mid-ranked player, think Gold-Plat; LEVEL easy / hard scale it) ----
  // A fight's crosshair path is a planned human flick, not a laser: aimPlan() takes where the crosshair is when the enemy
@@ -113,13 +132,13 @@
  // (offangle.pro/stats, Jun-Oct 2026: tap / burst 2-4 / spray 5+ = 0-15 m 2.6 / 27 / 70 %, 15-30 m 4.8 / 44 / 51 %, 30+ m
  // 10 / 64 / 25 %), not one fixed pattern per range. FIRE.p = chance per trigger pull [tap, burst] (spray the rest), fitted so
  // the bullet shares land on those numbers once kills cut sprays short; tapBias tilts a bot toward taps. Semi-auto: taps.
- const FIRE={near:{d:15,p:[.02,.12],spray:[6,12]},mid:{d:30,p:[.05,.32],spray:[5,7]},far:{p:[.17,.5],spray:[5,8]}};
+ const FIRE={near:{d:15,p:[.01,.06],spray:[6,12]},mid:{d:30,p:[.07,.42],spray:[5,7]},far:{p:[.17,.7],spray:[5,7]}};
  function firePattern(P,rand,dist,auto){
   if(!auto)return {kind:'tap',shots:1,pause:.12+rand()*.25+(dist>25?.1:0)};
   const b=dist<=FIRE.near.d?FIRE.near:dist<=FIRE.mid.d?FIRE.mid:FIRE.far,tb=P.tapBias==null?.5:P.tapBias,pt=b.p[0]*(.6+tb*.8),pb=b.p[1],x=rand(),far=b===FIRE.far;
   if(x<pt)return {kind:'tap',shots:1,pause:.25+rand()*.25+(far?.1:0)};
   if(x<pt+pb)return {kind:'burst',shots:2+Math.floor(rand()*(far?2:3)),pause:.22+rand()*.2+(far?.1:0)};
-  return {kind:'spray',shots:b.spray[0]+Math.floor(rand()*(b.spray[1]-b.spray[0]+1)),pause:b===FIRE.near?.06+rand()*.12:.15+rand()*.2}; // up close a spray barely lets go before the next
+  return {kind:'spray',shots:b.spray[0]+Math.floor(rand()*(b.spray[1]-b.spray[0]+1)),pause:b===FIRE.near?.06+rand()*.12:.3+rand()*.25}; // past 15 m a spray lets the recoil reset (~0.3-0.55 s) before the next pull // up close a spray barely lets go before the next
  }
  // Spray control fades over a long spray (bots-tune-1): the share of the climb pulled down (recoilPull) holds for the first
  // FIRE.fade[0] bullets, then drops FIRE.fade[1] per bullet to at least FIRE.fade[2] of it - a mid-ranked player loses the
@@ -530,5 +549,5 @@
  function mayFire(visibleFor,reactionS,losNow){return !!losNow&&visibleFor>=Math.max(REACT[0],reactionS||0);}
  // Fire-rate cap: never faster than the gun (Vandal 9.75 rounds/s). Returns the earliest next shot time.
  function nextShot(t,rate){return t+1/Math.max(.1,rate||1);}
- return {hash,rng,clamp,pickW,REACT,personality,reaction,crosshair,crosshairAt,firePattern,peek,attackPlan,defensePlan,roles,teamBuy,buyFor,onMateDeath,onSound,ATTACK,DEFENSE,utility,UTIL,turnStep,trackLag,wrapA,SPIKE,plantSpot,postPlant,retake,postPlay,SHOOT_UTIL,shootUtility,TAILWIND,tailwindDash,tailwindKeys,LEVEL,level,aimTraits,AIM_H,aimHeight,halfWidth,aimPlan,aimAt,readyToFire,planFire,idlePitch,recoilPull,discipline,hitPart,BUY,buyArea,buyRoute,buyExit,buySpot,buyWander,buyHold,buyNew,buyTick,buyNext,buySep,SENS,cm360,sensOf,turnRate,SENSE,inView,audible,earSpot,memNew,memNote,memForget,memBest,repeek,mayFire,nextShot,areas,DFORM,GAP,midPoint,RESPOND,nearest,tradeSpot,follow,buyNear,buyCross,reactR,reacts,FIRE,sprayFade,sprayPull,turnAcc};
+ return {hash,rng,clamp,pickW,REACT,personality,reaction,crosshair,crosshairAt,firePattern,peek,attackPlan,defensePlan,roles,teamBuy,buyFor,onMateDeath,onSound,ATTACK,DEFENSE,utility,UTIL,turnStep,trackLag,wrapA,SPIKE,plantSpot,postPlant,retake,postPlay,SHOOT_UTIL,shootUtility,TAILWIND,tailwindDash,tailwindKeys,LEVEL,level,aimTraits,AIM_H,aimHeight,halfWidth,aimPlan,aimAt,readyToFire,planFire,idlePitch,recoilPull,discipline,hitPart,BUY,buyArea,buyRoute,buyExit,buySpot,buyWander,buyHold,buyNew,buyTick,buyNext,buySep,SENS,cm360,sensOf,turnRate,SENSE,inView,audible,earSpot,memNew,memNote,memForget,memBest,repeek,mayFire,nextShot,areas,DFORM,GAP,midPoint,RESPOND,nearest,tradeSpot,follow,buyNear,buyCross,reactR,reacts,FIRE,sprayFade,sprayPull,turnAcc,trackTurn,cornerPick};
 });

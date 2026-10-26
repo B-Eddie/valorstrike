@@ -50,6 +50,14 @@ function shoot(dist,diff){ctx.S.diff=diff||'normal';const st={shots:0,head:0,bod
  // crouching target: the head drops with it
  ctx.player.ch=.45;const C=shoot(15);ctx.player.ch=0;assert(C.hits>0,'hits a crouching target');
  out.push('shots: HS '+(H/T*100).toFixed(0)+' % of hits; accuracy 8/15/25/40 m '+[8,15,25,40].map(d=>(S[d].acc*100).toFixed(0)).join('/')+' %; first shot at 40 m '+(S[40].firstHit/S[40].first*100).toFixed(0)+' %; easy/normal/hard 15 m '+[E,S[15],Hd].map(s=>(s.acc*100).toFixed(0)).join('/')+' %');}
+// bots-tune-2: a strafing (ADAD) target at 15 m is hit less - after each reversal the crosshair keeps going the old way
+// (BotBrain.trackTurn, = server test-bot-human strafing row; x0.80 before it, x0.61 with it); the shots are 103 ms apart, the target reverses every 0.45-0.7 s
+{const ST={hits:0,shots:0};for(let k=0;k<NAMES.length*12;k++){const u={name:'Bot '+NAMES[k%NAMES.length]+'#'+k,g:{rotation:{y:.2}},see:0,cr:false,mv:false},tg={t:ctx.player,x:0,z:-15},from={x:0,y:1.7,z:0};
+  let vx=0,side=1,flip=.45+(k%10)/40,n=0;ctx.xbEngage(u,true,{off:.2,e0y:.2,d:15});u.see=u.rtE+.05;
+  const adv=dt=>{for(let q=0;q<dt;q+=1/120){flip-=1/120;if(flip<=0){side=-side;flip=.45+((k*37+q*1e3)%10)/40;}vx+=Math.max(-1,Math.min(1,(side*5.4-vx)/(5.4*1/120/.12)))*5.4/120/.12;tg.x+=vx/120;}};
+  while(u.see<1.6){if(ctx.xbReady(u,15)||n){const p=ctx.xbShot(u,tg,from,'Vandal',{rec:1},15,{ae:1.3,rt:260});ST.shots++;if(p)ST.hits++;n++;u.see+=.103;now+=103;adv(.103);}else{u.see+=1/60;now+=16;adv(1/60);}}}
+ const still=shoot(15),r=(ST.hits/ST.shots)/still.acc;assert(r>.5&&r<.75,'ADAD target at 15 m hit less, not never ('+(ST.hits/ST.shots*100).toFixed(0)+' % vs '+(still.acc*100).toFixed(0)+' % standing, x'+r.toFixed(2)+')');
+ out.push('ADAD 15 m '+(ST.hits/ST.shots*100).toFixed(0)+' % vs standing '+(still.acc*100).toFixed(0)+' %');}
 // 4. discipline: some fights fire on the move, not all
 {let sl=0,n=0;for(const nm of NAMES){const u={name:'Bot '+nm+' d'};for(let k=0;k<20;k++){ctx.xbEngage(u,true,{off:.1,e0y:.1,d:15});n++;if(u.xbSl)sl++;}}assert(sl/n>.05&&sl/n<.6,'some fights are not counter-strafed ('+(sl/n*100).toFixed(0)+' %)');out.push('sloppy fights '+(sl/n*100).toFixed(0)+' %');}
 // bots-tune-1: fire mix by range (= server firePattern), semi-autos tap; acceleration-limited visible flick

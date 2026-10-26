@@ -39,7 +39,7 @@ export function botSeed(sim){if(sim.botSeed==null)sim.botSeed=sim.random===Math.
 // ctx (or a boolean: pre-aimed): {pre, off: rad between the view and the enemy, flashed, dist, e0y / e0p: crosshair minus the aim
 // point (rad)}. The reaction grows off-angle / after a flash (BotBrain.reaction); the crosshair then follows a human flick
 // (BotBrain.aimPlan: min-jerk, overshoot, correction, resting error) that starts when the reaction ends.
-export function engage(sim,u,P,ctx){if(typeof ctx!=='object'||!ctx)ctx={pre:!!ctx};const B=P.brain,r=P.r;u.reactNow=BotBrain.reaction(B,r,ctx);u.xhE=BotBrain.crosshair(B,r,!!ctx.pre);u.aimPlan=BotBrain.aimPlan(B,r,ctx.e0y||0,ctx.e0p||0,ctx.dist||15,{start:u.reactNow,moving:!!ctx.moving});u.firePat=null;u.fireUntil=0;u.pauseUntil=0;u.crouchFight=r()<(P.crouch?.45+B.crouchSpray*.5:B.crouchSpray*.4);u.stopShoot=r()<BotBrain.discipline(B);return u.reactNow;}
+export function engage(sim,u,P,ctx){if(typeof ctx!=='object'||!ctx)ctx={pre:!!ctx};u.cp0=Math.hypot(ctx.e0y||0,ctx.e0p||0);/* crosshair placement at first contact (rad), read by the soak harness soak.mjs */const B=P.brain,r=P.r;u.reactNow=BotBrain.reaction(B,r,ctx);u.xhE=BotBrain.crosshair(B,r,!!ctx.pre);u.aimPlan=BotBrain.aimPlan(B,r,ctx.e0y||0,ctx.e0p||0,ctx.dist||15,{start:u.reactNow,moving:!!ctx.moving});u.firePat=null;u.fireUntil=0;u.pauseUntil=0;u.crouchFight=r()<(P.crouch?.45+B.crouchSpray*.5:B.crouchSpray*.4);u.stopShoot=r()<BotBrain.discipline(B);return u.reactNow;}
 const XH=[0,0];
 export function crosshairErr(u,P,t){return u.xhE?BotBrain.crosshairAt(u.xhE,P.brain,t,XH):(XH[0]=XH[1]=0,XH);}
 // Trigger discipline: taps far, bursts mid, sprays close, with pauses between; true while the trigger should be held.
@@ -223,8 +223,15 @@ export function hearTick(sim){if(sim._hearT===sim.time)return;sim._hearT=sim.tim
 // no instant 180) toward the freshest contact it heard or last saw within BotBrain.SENSE.glance s (the crosshair waits on that
 // spot at head height: a re-peek there is pre-aimed), else along its way. The movement keeps its world direction:
 // forward / side are re-expressed in the new view.
+// Off-fight crosshair placement on the next corner (BotBrain.cornerPick, bots-tune-2): 13 eye-height rays over +-72 deg
+// around the walking heading, re-picked every 0.25 s while the bot moves (held 0.25 s so the view does not flicker).
+const CR_ANG=[],CR_DEP=[];
+export function cornerLook(sim,u,heading){const W=sim.world;if(!W||!W.ray||!Number.isFinite(heading))return null;const mv=Math.hypot(u.vx||0,u.vz||0)>.8||u.input&&(u.input.forward||u.input.side);if(!mv){u.corner=null;return null;}
+ if(u.corner&&sim.time<u.corner.t+.25&&Math.abs(BotBrain.wrapA(u.corner.h-heading))<.5)return u.corner.y;
+ CR_ANG.length=CR_DEP.length=0;const o=[u.x,u.y+1.5-(u.ch||0),u.z];for(let i=-6;i<=6;i++){const a=heading+i*.21;CR_ANG.push(a);const d=W.ray(o,[-Math.sin(a),0,-Math.cos(a)],40);CR_DEP.push(Number.isFinite(d)?d:40);}
+ const y=BotBrain.cornerPick(CR_ANG,CR_DEP,heading);u.corner={t:sim.time,h:heading,y};return y;}
 export function botView(sim,u,L0,dt){if(u.human||!u.alive||u.sawTarget||!u.input||!Number.isFinite(L0)||!(dt>0))return;const P=persona(sim,u),B=P.brain;
  let want=u.look;const c=u.mem&&BotBrain.memBest(u.mem,sim.time,u.x,u.z,BotBrain.SENSE.glance),cd=c?Math.hypot(c.x-u.x,c.z-u.z):0;
- if(c&&cd>.8&&cd<45){want=Math.atan2(u.x-c.x,u.z-c.z);u.pitch=Math.atan2((c.y??u.y)+BotBrain.AIM_H.head-(u.y+1.6-(u.ch||0)),cd)+BotBrain.idlePitch(B)-Math.atan2(BotBrain.AIM_H.head-1.6,15);u.viewAt=c.id;}else u.viewAt=null;
+ if(c&&cd>.8&&cd<45){want=Math.atan2(u.x-c.x,u.z-c.z);u.pitch=Math.atan2((c.y??u.y)+BotBrain.AIM_H.head-(u.y+1.6-(u.ch||0)),cd)+BotBrain.idlePitch(B)-Math.atan2(BotBrain.AIM_H.head-1.6,15);u.viewAt=c.id;u.corner=null;}else{u.viewAt=null;const k=cornerLook(sim,u,want);if(k!=null)want=k;}
  if(!Number.isFinite(want))return;const L=u.look,V=BotBrain.wrapA(BotBrain.turnStep(B,L0,want,dt,u.turnSt||(u.turnSt={v:0})).yaw),f=u.input.forward||0,s=u.input.side||0;u.look=V;
  if(f||s){const wx=-Math.sin(L)*f+Math.cos(L)*s,wz=-Math.cos(L)*f-Math.sin(L)*s;u.input.forward=-Math.sin(V)*wx-Math.cos(V)*wz;u.input.side=Math.cos(V)*wx-Math.sin(V)*wz;}}

@@ -77,7 +77,7 @@ export async function soakRun({map='ascent',mode='dm',seconds=120,humans=3,seed=
   const tickEv=[];const origSnap=sim.snapshot;sim.snapshot=function(){const s=origSnap.call(this);for(const e of s.ev||[]){tickEv.push(e);if(e[0]==='k'){killEvents++;stats.kills++;}if(e[0]==='sp')stats.plants++;}return s;};
   const tickStart=performance.now(),cpuStart=process.cpuUsage();
   try{tick();}catch(e){threw=e;errors.push('tick threw: '+(e.stack||e).split('\n').slice(0,4).join(' | '));}finally{const cpu=process.cpuUsage(cpuStart);tickWall.push(performance.now()-tickStart);tickCpu.push((cpu.user+cpu.system)/1000);sim.snapshot=origSnap;}
-  stats.ticks++;check(sim,threw);yawTrack(sim);if(sim.mode==='five'){checkFive(sim,flag,stats);deathCheck(sim,flag,stats,tickEv);}};
+  stats.ticks++;check(sim,threw);yawTrack(sim);cpTrack(sim);if(sim.mode==='five'){checkFive(sim,flag,stats);deathCheck(sim,flag,stats,tickEv);}};
  // Bot view kinematics (bots-tune-1: no impossible flicks): yaw speed / acceleration per bot between room ticks, against its
  // own caps (BotBrain personality turn, turnAcc). Skips deaths, respawns, round changes and teleports (> 2.5 m in a tick).
  const YAW=new Map(),wrapA=a=>Math.atan2(Math.sin(a),Math.cos(a));
@@ -87,6 +87,16 @@ export async function soakRun({map='ascent',mode='dm',seconds=120,humans=3,seed=
    const dt=t-q.t,v=wrapA(u.look-q.look)/dt,a=q.v==null?0:Math.abs(v-q.v)/dt,B=persona(sim,u).brain,vk=Math.abs(v)/(B.turn||10),ak=a/BotBrain.turnAcc(B);Y.n++;
    Y.maxV=Math.max(Y.maxV,Math.abs(v));Y.maxA=Math.max(Y.maxA,a);Y.maxVk=Math.max(Y.maxVk,vk);if(ak>Y.maxAk){Y.maxAk=ak;Y.worst={name:u.name,v:+v.toFixed(2),a:+a.toFixed(0),cap:+BotBrain.turnAcc(B).toFixed(0),saw:!!u.sawTarget,t:+t.toFixed(2)};}
    if(vk>1.02)Y.overV++;if(ak>1.1)Y.overA++;fresh.v=v;YAW.set(u.id,fresh);}}
+ // Crosshair placement at first contact (bots-tune-2; Gold 6.1-6.4 / Plat 5.8-6.0 deg, tracker.gg): the angle between the
+ // view and the enemy the tick a new fight starts (bots.js engage u.cp0), on the real maps.
+ const ENG=new Map(),PREV=new Map(),LAST=new Map();function cpTrack(sim){const C=stats.cp||(stats.cp=[]),X=stats.cpAlt||(stats.cpAlt={ahead:[],ahead2:[],goal:[],move:[]}),N=sim.world.nav.nodes;
+  for(const u of sim.units){if(u.human)continue;const pv=PREV.get(u.id);
+   if(u.engagedAt&&ENG.get(u.id)!==u.engagedAt){ENG.set(u.id,u.engagedAt);const lk=u.id+'>'+u.aimTarget,fresh=!(LAST.get(lk)>sim.time-3);/* first sight only: a re-peek of the same enemy within 3 s is not a first contact */if(fresh&&Number.isFinite(u.cp0))C.push(u.cp0*180/Math.PI);if(fresh){
+    const t=sim.units.find(v=>v.id===u.aimTarget);if(t&&pv){const want=Math.atan2(u.x-t.x,u.z-t.z),d=a=>a==null?null:Math.abs(wrapA(a-want))*180/Math.PI,ang=p=>p&&Math.hypot(p[0]-u.x,p[2]-u.z)>.5?Math.atan2(u.x-p[0],u.z-p[2]):null;
+     const R=pv.route||[];let ah=null,ah2=null;for(const i of R){const n=N[i];if(!n)continue;const L=Math.hypot(n[0]-u.x,n[2]-u.z);if(ah==null&&L>=5)ah=ang(n);if(ah2==null&&L>=10){ah2=ang(n);break;}}
+     const g=pv.route&&R.length?N[R[R.length-1]]:null;for(const [k,v] of [['ahead',d(ah)],['ahead2',d(ah2)],['goal',d(ang(g))],['move',pv.mv!=null?d(pv.mv):null]])if(v!=null)X[k].push(v);}}}
+   if(!u.engagedAt)ENG.delete(u.id);else if(u.aimTarget!=null)LAST.set(u.id+'>'+u.aimTarget,sim.time);
+   PREV.set(u.id,{route:u.route?u.route.slice(0,40):null,mv:Math.hypot(u.vx||0,u.vz||0)>1?Math.atan2(-(u.vx||0),-(u.vz||0)):null});}}
  const valid=w=>typeof w==='string'&&Object.hasOwn(weapons,w);
  function check(sim){const t=now(),phases=['room','game','post','closed'];if(!phases.includes(sim.phase))flag('phase',sim.phase);
   if(sim.units.length>10)flag('units>10',sim.units.length);if(room.sessions.size>10)flag('sessions>10',room.sessions.size);
