@@ -33,11 +33,11 @@ const VIEWS=(process.env.VIEWS||'1280x720,844x390').split(',');
  await X('J.ult=K().u;J.cd.x=0;1');await page.keyboard.press('KeyX');
  const ok=await untilF('XAF.on&&XAF.last&&XAF.last.gun==="bs"&&XAF.last.rig===true&&J.bsOn&&J.bs===5&&rw==="knife"',240000);
  check('Blade Storm out with 5 knives',ok,await XJ('{last:XAF.last,bs:J.bs,on:J.bsOn,rw}'));
- // 5 enemy bots in the fan slots, 8 m out, standing on the player's floor, body at the crosshair height; the middle one has 50 HP
+ // 5 enemy bots in the fan slots, 8 m out, standing on the player's floor, body at the crosshair height; the middle one has 50 HP; aimed at the chest, 1.3 m over the feet (hk-42: the box centre of the first bot was 0.81 m up, under the page's 0.9 m legs line, so every knife scored legs and the 50 HP bot lived)
  const setup=await XJ(`(()=>{const f=camera.getWorldDirection(new THREE.Vector3()),o=camera.getWorldPosition(new THREE.Vector3()),B=bots.slice(0,5),up=new THREE.Vector3(0,1,0),out=[];
    pitch=0;B.forEach((b,i)=>{const d=f.clone().setY(0).normalize().applyAxisAngle(up,jBurstDirs(5)[i]);b.alive=true;b.nt=true;b.hp=i===2?50:200;b.armor=0;b.g.position.set(o.x+d.x*8,player.y,o.z+d.z*8);b.g.updateMatrixWorld(true);
      const bb=new THREE.Box3().setFromObject(b.body);out.push({i,y0:+player.y.toFixed(2),body:[+bb.min.y.toFixed(2),+bb.max.y.toFixed(2)],eye:+o.y.toFixed(2)});});
-   const bb=new THREE.Box3().setFromObject(B[0].body);pitch=Math.atan2((bb.min.y+bb.max.y)/2-o.y,8);return out;})()`);
+   pitch=Math.atan2(player.y+1.3-o.y,8);return out;})()`);
  log('fan bots',setup);await frames(2);
  const hp0=await XJ('bots.slice(0,5).map(b=>b.hp)');
  await X(`window.__ts=0;try{XRT.debt=0;clock.getDelta();}catch(e){}1`);// game time frozen around the click: the reads below see the burst's own frame

@@ -2118,6 +2118,8 @@ const AB = {
   dash: (o) => { sNz(0, 0.35, "bandpass", 400, 2600, 0.55, o, 1.2); sNz(0.04, 0.3, "highpass", 1800, 600, 0.22, o); sTn(0, 300, 120, 0.25, "sine", 0.08, o); },
   updraft: (o) => { sNz(0, 0.55, "bandpass", 250, 1900, 0.45, o, 1); sTn(0, 180, 720, 0.45, "sine", 0.08, o, 0.05); },
   bsDraw: (o) => { sNz(0, 0.3, "highpass", 3000, 7000, 0.25, o, 2); [0, 0.07, 0.14].forEach((d) => sTn(d, 2600, 3400, 0.25, "sine", 0.05, o, 0.01)); },
+  cbThrow: (o) => { sNz(0, 0.28, "bandpass", 600, 2400, 0.4, o, 1.4); sNz(0.02, 0.22, "highpass", 2500, 900, 0.16, o); sTn(0, 520, 760, 0.2, "sine", 0.05, o, 0.02); }, // Cloudburst throw: a short airy whoosh
+  cbPop: (o) => { sNz(0, 0.5, "lowpass", 2600, 300, 0.5, o); sNz(0, 0.9, "bandpass", 400, 1600, 0.35, o, 0.8); sTn(0, 240, 120, 0.25, "sine", 0.06, o); }, // Cloudburst burst: a soft airy pop + hiss
   bsThrow: (o) => { sNz(0, 0.12, "bandpass", 1500, 5500, 0.35, o, 2); sTn(0.02, 4200, 3700, 0.3, "sine", 0.07, o, 0.005); sTn(0.02, 6300, 5900, 0.2, "sine", 0.03, o, 0.005); },
   bow: (o) => { sNz(0, 0.14, "bandpass", 300, 900, 0.18, o, 4); sTn(0, 110, 170, 0.14, "sawtooth", 0.05, o, 0.1); sTn(0.13, 190, 80, 0.14, "triangle", 0.3, o); sNz(0.13, 0.22, "highpass", 2200, 700, 0.28, o); },
   shock: (o) => { sNz(0, 0.3, "highpass", 3200, 1400, 0.6, o); sTn(0, 1300, 180, 0.28, "sawtooth", 0.15, o); sTn(0.03, 2600, 500, 0.22, "square", 0.06, o); sNz(0.08, 0.15, "bandpass", 5000, 3000, 0.3, o, 3); },
@@ -8245,7 +8247,7 @@ const JPOOL = { mat: {}, mesh: [] };
 // perf pass 12: each live effect owns its material slot (userData.own) — never shared by two live effects; freed only when its owner mesh ends
 function jMat(k, mk) { const a = JPOOL.mat[k] || (JPOOL.mat[k] = []); let m = a.pop(); while (m && m.userData.own) m = a.pop(); m = m || mk(); if (m.userData.o0 === undefined) { m.userData.pk = k; m.userData.o0 = m.opacity; } m.opacity = m.userData.o0; m.userData.own = null; return m; }
 function jM(geo, mat) { const m = JPOOL.mesh.pop() || new THREE.Mesh(geo, mat); m.geometry = geo; m.material = mat; if (mat && mat.userData.pk) mat.userData.own = m; m.position.set(0, 0, 0); m.rotation.set(0, 0, 0); m.scale.setScalar(1); m.visible = true; m.userData.jp = 1; return m; }
-function jRel(m) { if (!m) return; scene.remove(m); if (!m.userData.jp || JPOOL.mesh.includes(m)) return; const t = m.material; if (t && t.userData.pk) { if (t.userData.own === m) { t.userData.own = null; const a = JPOOL.mat[t.userData.pk] || (JPOOL.mat[t.userData.pk] = []); if (!a.includes(t)) a.push(t); } } else if (t && t.dispose) t.dispose(); JPOOL.mesh.push(m); }
+function jRel(m) { if (!m) return; scene.remove(m); if (m.userData.kids) { for (const k of m.userData.kids) m.remove(k); m.userData.kids = null; } if (!m.userData.jp || JPOOL.mesh.includes(m)) return; const t = m.material; if (t && t.userData.pk) { if (t.userData.own === m) { t.userData.own = null; const a = JPOOL.mat[t.userData.pk] || (JPOOL.mat[t.userData.pk] = []); if (!a.includes(t)) a.push(t); } } else if (t && t.dispose) t.dispose(); JPOOL.mesh.push(m); }
 const arrowMat = (c) => jMat("a" + c, () => new THREE.MeshBasicMaterial({ color: c })); // perf pass 12: pooled arrow/dart/recon bolt looks
 function jBolt(c, o, e) { const m = jM(arrowGeo, arrowMat(c)); m.position.copy(o); m.lookAt(e); scene.add(m); return m; }
 const fireMat = (c, o) => jMat("f" + c + "," + o, () => new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: o, depthWrite: false, side: THREE.DoubleSide }));
@@ -9632,7 +9634,7 @@ function botAb(b, dt, see, tg, from) {
   if ((ag === "Jett" || ag === "Omen") && A.t > 1.2 && (A.smT || 0) < A.t) { // controller-style smokes: Jett Cloudburst (C) 2.5 s, Omen Dark Cover (E) 15 s, as the player's
     const k = ag === "Jett" ? "c" : "e"; let q = ch[k] >= 1 ? xBChoke(b, al, from, A) : null;
     if (!q && !al && mode === "retake" && !A.rsm) { A.rsm = 1; const P = [[-8, 8], [8, 8], [0, 10]][Math.floor(Math.random() * 3)]; XBK_P.x = P[0] + (Math.random() - 0.5) * 2; XBK_P.z = P[1]; q = XBK_P; } // retake hold: smoke a retake entrance
-    if (q && xBUse(b, k)) { A.smT = A.t + 5 + Math.random() * 3; enSmoke(q.x, q.z, al, ag === "Jett" ? 2.5 : 15, undefined, XSMR[ag]); feed(ag === "Jett" ? "Jett ▸ Cloudburst" : "Omen ▸ Dark Cover"); }
+    if (q && xBUse(b, k)) { A.smT = A.t + 5 + Math.random() * 3; if (ag === "Jett") xCbBotThrow(b, q); else { enSmoke(q.x, q.z, al, 15, undefined, XSMR[ag]); feed("Omen ▸ Dark Cover"); } } // Jett: thrown (xCbBotThrow), the cloud + feed on landing
   }
   if (ag === "Phoenix") xBFl(b, A, see, peek, tg, from, "e", al, 0xfff2b0, "orb", "Phoenix ▸ Curveball", 800);
   if (ag === "Sova" && A.t > A.rbT && ch.e >= 1) { // Recon Bolt: attackers recon the site before entering, defenders the attackers' approach
@@ -9707,8 +9709,8 @@ function jKey(code) {
   if (code === "KeyC") { // Cloudburst (C in Valorant): INSTANT throw; holding C steers it with the crosshair, it smokes where it lands (jCbTick, vendor/cloudburst.cjs)
     if (J.c < 1 || J.cd.c > 0) return no(), true; J.c--; J.cd.c = 0.6;
     const o = pEye(), d = new THREE.Vector3(-Math.sin(yaw) * Math.cos(pitch), Math.sin(pitch), -Math.cos(yaw) * Math.cos(pitch));
-    const m = jM(orbGeo, jMat("cbp", () => new THREE.MeshBasicMaterial({ color: 0xdbe6f2 }))); m.scale.setScalar(0.8); m.position.copy(o); scene.add(m);
-    J.cbs.push({ m, st: Cloudburst.start([o.x, o.y, o.z], [d.x, d.y, d.z]) }); blip(640, 0.08, "sine", 0.08);
+    const m = xCbProj(); m.position.copy(o).addScaledVector(d, 0.5); scene.add(m);
+    J.cbs.push({ m, st: Cloudburst.start([o.x, o.y, o.z], [d.x, d.y, d.z]) }); SFX.ab("cbThrow");
   }
   if (code === "KeyE") { // Tailwind (wiki v7.04, = server PARITY.tailwind): the first E spends the charge, 1 s windup, then a 7.5 s window in which E dashes; unused, it is lost (jTick)
     if (!J.tw) { if (J.e < 1) return no(), true; J.e = 0; J.tk = 0; J.cd.e = 0.4; J.tw = { arm: XTW.windup, t: XTW.windup + XTW.window }; say("Tailwind · empowered in " + XTW.windup + " s", 700); blip(520, 0.1, "sine", 0.08); return true; }
@@ -9762,14 +9764,48 @@ function jBuy(k) {
 const xCbRay = (o, d, max) => { const h = xBoltRay(o, d, max); return h ? h.distance : Infinity; }, xCbGround = (x, z, y) => groundAt(x, z, 0.05, y);
 function jCbTick(dt) {
   const A = J.cbs; if (!A.length) return; let k = 0;
-  for (let i = 0; i < A.length; i++) { const c = A[i], aim = keys.KeyC && player.hp > 0 && J.pick === "Jett" ? (a => [a.x, a.y, a.z])(jAim()) : null, L = Cloudburst.step(c.st, dt, aim, xCbRay, xCbGround);
-    c.m.position.set(c.st.p[0], c.st.p[1], c.st.p[2]); if (!L) { A[k++] = c; continue; } jRel(c.m); jCbSmoke(L, c); }
+  for (let i = 0; i < A.length; i++) { const c = A[i], aim = !c.bot && keys.KeyC && player.hp > 0 && J.pick === "Jett" ? (a => [a.x, a.y, a.z])(jAim()) : null, L = Cloudburst.step(c.st, dt, aim, xCbRay, xCbGround);
+    c.m.position.set(c.st.p[0], c.st.p[1], c.st.p[2]); xCbSpin(c.m, c.st.v, dt); if (!L) { A[k++] = c; continue; } jRel(c.m); jCbSmoke(L, c); }
   A.length = k;
 }
 function jCbSmoke(L, c) { // the smoke where a Cloudburst landed (centre between floor + 1.5 and + 4 m); P2P: the cast goes out now, with the point
-  const y = Cloudburst.centreY(L[1], groundAt(L[0], L[2], 0.05, L[1] + 0.1)), m = jM(smokeGeo, xSmokeM("sjx", 0xdbe6f2, 0xa8dcff));
-  m.position.set(L[0], y, L[2]); scene.add(m); J.smokes.push({ m, p: m.position, t: Cloudburst.CB.life, r: xSmk(m, XSMR.Jett) }); SFX.smoke(); // Cloudburst 2.5 s (wiki.playvalorant.com/en-us/Cloudburst)
+  const y = Cloudburst.centreY(L[1], groundAt(L[0], L[2], 0.05, L[1] + 0.1)), m = xCbCloud(L[0], y, L[2], Cloudburst.CB.life); // Cloudburst 2.5 s incl. 0.6 s deploy (wiki v7.04)
+  if (c.bot) feed("Jett ▸ Cloudburst");
   if (c.net) { try { mpCastSelf("c", m.position); } catch (e) { xE(e); } }
+}
+// hk-41 (user 13:16 "jett's c ability is also wrong"): Cloudburst looked like a controller smoke - a white ball thrown, then a smooth
+// 3.35 m fresnel sphere in team grey (bots: no throw at all, the smoke just appeared). Valorant (wiki Cloudburst, v7.04): an instant throw,
+// a projectile that becomes a brief vision-blocking cloud on impact, curved toward the crosshair while C is held; 200 credits, 2 charges,
+// radius 3.35 m, 2.5 s including the 0.6 s deployment, 2 s max air time. Now: the projectile is a small wind orb (bright core, pale-blue
+// halo, two spinning swirl bands, a soft streak behind it); the cloud is Jett's white / ice-blue puff (lumpy: the 3.35 m body plus
+// eight overlapping puffs on its surface and two slow swirl bands, all on the smoke's own fading material) that billows out over the
+// 0.6 s deployment; a soft whoosh on the throw and an airy pop on impact; bot Jetts THROW it (a ballistic lob at their choke, steered
+// by nothing) and remote players' Cloudbursts (online rows / P2P) use the same projectile and cloud. Sight blocking is unchanged (s.r).
+const XCB = { geo: null, dep: 0.6 };
+function xCbGeo() { return XCB.geo || (XCB.geo = { core: new THREE.SphereGeometry(0.11, 14, 10), halo: new THREE.SphereGeometry(0.22, 14, 10), band: new THREE.TorusGeometry(0.2, 0.018, 6, 28), streak: new THREE.ConeGeometry(0.12, 0.9, 10, 1, true), puff: new THREE.SphereGeometry(1, 16, 12), swirl: new THREE.TorusGeometry(3.4, 0.22, 8, 48) }); }
+function xCbProj() { // the thrown Cloudburst: a small wind orb (non-pooled group; jRel just removes it)
+  const G = xCbGeo(), g = new THREE.Group(), mk = (geo, mat) => { const o = new THREE.Mesh(geo, mat); o.raycast = () => {}; o.frustumCulled = false; g.add(o); return o; };
+  mk(G.core, jMat("cbcore", () => new THREE.MeshBasicMaterial({ color: 0xf4fbff })));
+  mk(G.halo, xAdd("cbhalo", 0x9fdcff, 0.35));
+  const b1 = mk(G.band, xAdd("cbband", 0xe6f7ff, 0.55)), b2 = mk(G.band, xAdd("cbband", 0xe6f7ff, 0.55)); b2.rotation.x = Math.PI / 2; b1.scale.setScalar(1.1);
+  const st = mk(G.streak, xAdd("cbstreak", 0xbfe9ff, 0.28)); st.name = "cb-streak"; g.userData.cb = { b1, b2, st }; g.name = "xcb-proj"; return g;
+}
+function xCbSpin(m, v, dt) { const U = m && m.userData.cb; if (!U) return; U.b1.rotation.y += dt * 14; U.b1.rotation.x += dt * 5; U.b2.rotation.z += dt * 11;
+  if (v) { const s = Math.hypot(v[0], v[1], v[2]) || 1; XCB.q = XCB.q || new THREE.Quaternion(); XCB.u = XCB.u || new THREE.Vector3(); XCB.u.set(-v[0] / s, -v[1] / s, -v[2] / s);
+    U.st.quaternion.setFromUnitVectors(XCB.y || (XCB.y = new THREE.Vector3(0, 1, 0)), XCB.u); U.st.position.copy(XCB.u).multiplyScalar(0.5); } }
+function xCbCloud(x, y, z, dur) { // Jett's cloud: the 3.35 m smoke body (sight / minimap read s.r) + puffs + swirl bands on its own material
+  const G = xCbGeo(), m = jM(smokeGeo, xSmokeM("sjx", 0xeef6ff, 0x9ed8ff)); m.position.set(x, y, z); scene.add(m); const kids = [];
+  const P = [[0.78, 0.35, 0.1], [-0.72, 0.3, 0.35], [0.15, 0.4, -0.8], [-0.2, 0.25, 0.82], [0.55, -0.35, -0.55], [-0.6, -0.3, -0.45], [0.05, 0.85, 0.05], [0.45, -0.2, 0.7]];
+  P.forEach((q, i) => { const o = new THREE.Mesh(G.puff, m.material), r = 1.2 + (i % 3) * 0.3; o.position.set(q[0] * 2.8, q[1] * 2.5, q[2] * 2.8); o.scale.setScalar(r); o.raycast = () => {}; m.add(o); kids.push(o); });
+  for (const [rx, rz] of [[1.15, 0.2], [-0.5, 1.0]]) { const o = new THREE.Mesh(G.swirl, m.material); o.rotation.set(rx, 0, rz); o.raycast = () => {}; o.userData.sw = 1; m.add(o); kids.push(o); }
+  m.userData.kids = kids; J.smokes.push({ m, p: m.position, t: dur, r: xSmk(m, XSMR.Jett), dep: XCB.dep, cb: 1 }); SFX.ab("cbPop", m.position); return m;
+}
+// a bot Jett's Cloudburst: lobbed from its eye to land at q (Valorant's own throw, no steering), the cloud where it lands
+function xCbBotThrow(b, q) {
+  const o = b.g.position.clone(); o.y += 1.5; const dx = q.x - o.x, dz = q.z - o.z, d = Math.max(0.5, Math.hypot(dx, dz)), v = Cloudburst.CB.speed, g = Cloudburst.CB.g, dy = (Number.isFinite(q.y) ? q.y : groundAt(q.x, q.z, 0.05, o.y)) - o.y;
+  const v2 = v * v, disc = v2 * v2 - g * (g * d * d + 2 * dy * v2); let th = disc >= 0 ? Math.atan((v2 - Math.sqrt(disc)) / (g * d)) : Math.PI / 4; // the low arc
+  const dir = [Math.cos(th) * dx / d, Math.sin(th), Math.cos(th) * dz / d], m = xCbProj(); m.position.copy(o); scene.add(m);
+  const st = Cloudburst.start([o.x, o.y, o.z], dir); st.held = false; J.cbs.push({ m, st, bot: 1 }); SFX.ab("cbThrow", o); return st;
 }
 function jTick(dt) {
   const on = jOn() && running && $("game").style.display !== "none";
@@ -9779,7 +9815,7 @@ function jTick(dt) {
   if (J.dash && player.hp <= 0) J.dash = null; // a Tailwind dash ends with Jett
   if (J.tw) { J.tw.arm -= dt; if ((J.tw.t -= dt) <= 0 || player.hp <= 0) { J.tw = null; if (player.hp > 0) say("Tailwind faded", 700); } } // the 7.5 s window ran out (or Jett died): the charge is gone
   XSU.value += dt;
-  J.smokes = J.smokes.filter((s) => { s.t -= dt; s.m.material.opacity = 0.6 * Math.min(1, s.t / 0.5); const sm = s.m.material.uniforms; if (sm) { sm.uO.value = s.m.material.opacity / 0.6; s.a = (s.a || 0) + dt; const k = Math.min(1, s.a / 0.3); const g = 0.3 + 0.7 * (1 - (1 - k) ** 3), sx = (s.r || 4) / 4; if (s.cyl) s.m.scale.set(sx, g, sx); else s.m.scale.setScalar(sx * g); } if (s.t > 0) return true; jRel(s.m); return false; });
+  J.smokes = J.smokes.filter((s) => { s.t -= dt; s.m.material.opacity = 0.6 * Math.min(1, s.t / 0.5); const sm = s.m.material.uniforms; if (sm) { sm.uO.value = s.m.material.opacity / 0.6; s.a = (s.a || 0) + dt; const k = Math.min(1, s.a / (s.dep || 0.3)); if (s.cb && s.m.userData.kids) for (const o of s.m.userData.kids) if (o.userData.sw) o.rotation.y += dt * 0.9; const g = 0.3 + 0.7 * (1 - (1 - k) ** 3), sx = (s.r || 4) / 4; if (s.cyl) s.m.scale.set(sx, g, sx); else s.m.scale.setScalar(sx * g); } if (s.t > 0) return true; jRel(s.m); return false; });
   jCbTick(dt); jFxTick(dt); sgTick(dt); rsTick(dt); for (const b of bots) xBJettMove(b, dt); for (const a of allies) xBJettMove(a, dt); bcTick(dt); xDartRmTick(dt); xBTurTick(dt); xBSwTick(dt);
   const hn = $("hint"); if (hn && J.pick !== "Jett" && hn.textContent.includes(KITS.Jett.h)) hn.textContent = hn.textContent.replace(KITS.Jett.h, K().h);
   const u = K().u, cq = ["jQ", J.q, J.q + "", J.cd.q / 0.6], ce = ["jE", J.e, J.e ? "1" : "Used", J.cd.e / 0.4];
