@@ -8777,7 +8777,10 @@ function cyKeep(W, dt) {
   if (t) { t.cnc = Math.max(t.cnc || 0, 2); feed("Cypher ▸ Trapwire triggered"); cyRm(W); return false; }
   return true;
 }
-function cyClear() { BC.cw.forEach(cyRm); BC.cw = []; if (BC.cam) scene.remove(BC.cam.m); BC.cam = null; BC.cv = false; }
+// Neural Theft (server ults.js ULT.theft, wiki Neural_Theft): corpse within 18 m, reveals at 2 s and 6 s (2nd reveal 4 s after the 1st), 1.6 s each;
+// CYNT.g changes on every round clear so pulses from a cast in an earlier round never fire (Cypher's own death does not cancel them, v7.07).
+const CYNT = { reach: 18, at: [2, 6], reveal: 1.6, g: 0 };
+function cyClear() { CYNT.g++; BC.cw.forEach(cyRm); BC.cw = []; if (BC.cam) scene.remove(BC.cam.m); BC.cam = null; BC.cv = false; }
 function cyVy() { return BC.cam.yw + yaw - BC.cam.y0; }
 function cyVp() { return Math.max(-1.2, Math.min(1.2, pitch - BC.cam.pp)); }
 function cyDart() {
@@ -8811,9 +8814,9 @@ function cyKey(code) {
   }
   if (code === "KeyX") {
     const u = K().u; if (J.ult < u) return no(), say("Neural Theft " + J.ult + "/" + u, 800);
-    const c = bots.find((b) => !b.alive && b.g && Math.hypot(b.g.position.x - P.x, b.g.position.z - P.z) < 8); if (!c) return no(), say("Neural Theft · no fallen enemy within 8 m", 900);
-    J.ult = 0; const pulse = () => { const l = bots.filter((b) => b.alive && b.g); cyReveal(l, 1.2); say("Neural Theft · " + l.length + " revealed", 800); blip(500, 0.2, "triangle", 0.15); };
-    pulse(); setTimeout(() => { if (jOn()) pulse(); }, 1500);
+    const c = bots.find((b) => !b.alive && b.g && Math.hypot(b.g.position.x - P.x, b.g.position.z - P.z) < CYNT.reach); if (!c) return no(), say("Neural Theft · no fallen enemy within " + CYNT.reach + " m", 900);
+    J.ult = 0; const g = CYNT.g, pulse = () => { if (!jOn() || g !== CYNT.g) return; const l = bots.filter((b) => b.alive && b.g); cyReveal(l, CYNT.reveal); say("Neural Theft · " + l.length + " revealed", 800); blip(500, 0.2, "triangle", 0.15); };
+    say("Neural Theft · downloading", 700); for (const t of CYNT.at) setTimeout(pulse, t * 1000);
   }
 }
 function cySl(u) {

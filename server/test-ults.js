@@ -54,11 +54,12 @@ const rocket=(s,u,m={})=>{const ok=cast(s,u,m);if(!ok)return ok;s.time+=ULT.rock
 {const {s,u,list}=setup('Skye',['foe1'],['foe2'],['foe3'],['foe4']);list.forEach((v,i)=>Object.assign(v,{x:0,y:0,z:-(6+i*10)}));u.ability.ult=9;assert.equal(cast(s,u),true);assert.equal(s.effects.filter(e=>e.kind==='seeker').length,3);
  tick(s,.4);assert.ok(!(list[0].nearsightUntil>s.time),'travel time');tick(s,3);for(const v of list.slice(0,3))assert.ok(v.nearsightUntil>s.time,'seeker hits '+v.name);assert.ok(!(list[3].nearsightUntil>s.time));}
 
-// Neural Theft: needs a visible enemy corpse within 5 m in front (ult points kept otherwise); reveals all living enemies twice
+// Neural Theft: needs a visible enemy corpse within 18 m in front (ult points kept otherwise); reveals all living enemies twice
 // (wiki: 1st reveal after a 2 s windup, the 2nd 4 s after it).
 {const {s,u,list:[corpse,alive1,alive2]}=setup('Cypher',['foeDead'],['foeA'],['foeB']);Object.assign(corpse,{x:0,y:0,z:-3});Object.assign(alive1,{x:30,y:0,z:-30});Object.assign(alive2,{x:-30,y:0,z:-30});u.ability.ult=9;
  assert.equal(cast(s,u),false,'no corpse');assert.equal(u.ability.ult,9);corpse.alive=false;u.look=Math.PI;assert.equal(cast(s,u),false,'corpse behind');u.look=0;wall=1;assert.equal(cast(s,u),false,'corpse behind a wall');wall=Infinity;
- assert.equal(cast(s,u),true);assert.equal(u.ability.ult,0);tick(s,1.9);assert.equal(s.roundState(u).rv.length,0,'nothing before 2 s');tick(s,.2);assert.equal(s.roundState(u).rv.length,2,'first reveal at 2 s');tick(s,1.6);assert.equal(s.roundState(u).rv.length,0);tick(s,2.1);assert.equal(s.roundState(u).rv.length,0,'nothing before 6 s');tick(s,.25);assert.equal(s.roundState(u).rv.length,2,'second reveal at 6 s');}
+ corpse.z=-18.5;assert.equal(cast(s,u),false,'corpse beyond 18 m');assert.equal(u.ability.ult,9);corpse.z=-17;
+ assert.equal(cast(s,u),true,'corpse at 17 m');assert.equal(u.ability.ult,0);tick(s,1.9);assert.equal(s.roundState(u).rv.length,0,'nothing before 2 s');tick(s,.2);assert.equal(s.roundState(u).rv.length,2,'first reveal at 2 s');tick(s,1.6);assert.equal(s.roundState(u).rv.length,0);tick(s,2.1);assert.equal(s.roundState(u).rv.length,0,'nothing before 6 s');tick(s,.25);assert.equal(s.roundState(u).rv.length,2,'second reveal at 6 s');}
 
 // Tour de Force: the gun becomes a 5-round Operator; spent, swapped away or dead, the previous weapon returns.
 {const {s,u,list:[foe]}=setup('Chamber',['foe']);Object.assign(foe,{x:0,y:0,z:-6,hp:1000,armor:0});u.weapon='Spectre';u.ammo=17;u.reserve=60;u.ability.ult=9;
