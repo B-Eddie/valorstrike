@@ -11322,12 +11322,35 @@ html.xt-nocm .x-cmb{display:none!important}
     for (let k = 1; k < XHFU.n; k++) if (k * XHFU.cyc < XHFU.win) setTimeout(() => { if (g !== XHFU.g || !u.alive || !running) return; if (near(u, en, false, 80)) sovaBlast(u, en); }, k * XHFU.cyc * 1000);
   }
   window.xBotSovaUlt = (u, en) => (near(u, en, false, 80) ? (sova(u, en), 1) : 0); // test hook: a bot's Hunter's Fury at its nearest enemy
+  // bot Breach Rolling Thunder, as the player's (XRT2 / bcCone): after the xWf("rollingThunder") windup, a 32 m x 18 m strip from 8 m
+  // ahead toward the target concusses (4 s) every enemy in it through walls, no damage; stops on the bot's death / a round clear (XRCN.g)
+  function breach(u, en) {
+    const p = u.g.position, sx = p.x, sz = p.z; let fx = TP.x - sx, fz = TP.z - sz; const l = Math.hypot(fx, fz) || 1; fx /= l; fz /= l; const g = XRCN.g, R = XRT2;
+    const inS = (x, z) => { const a = (x - sx) * fx + (z - sz) * fz; return a > R.near && a < R.near + R.len && Math.abs((x - sx) * fz - (z - sz) * fx) < R.w / 2; };
+    setTimeout(() => { if (g !== XRCN.g || !u.alive || !running) return;
+      if (en) { if (player && player.hp > 0 && inS(player.x, player.z)) { try { xConStart(R.cnc * 1000); } catch (e) {} } if (typeof allies !== "undefined") for (const a of allies) if (a.alive && a.g && inS(a.g.position.x, a.g.position.z)) { a.cnc = Math.max(a.cnc || 0, R.cnc); a.blind = Math.max(a.blind || 0, R.cnc); a.ku = 0.7; } }
+      else for (const b of bots) if (b.alive && b.g && inS(b.g.position.x, b.g.position.z)) bcDaze(b, R.cnc, true);
+      try { const m = new THREE.Mesh(new THREE.BoxGeometry(R.w, 0.25, R.len), fireMat(0xff9a3a, 0.35)); m.position.set(sx + fx * (R.near + R.len / 2), 0.1, sz + fz * (R.near + R.len / 2)); m.rotation.y = Math.atan2(-fx, -fz); jFx(m, 1.2); blip(60, 0.8, "sawtooth", 0.2); } catch (e) {}
+    }, xWf("rollingThunder") * 1000);
+  }
+  // bot Raze Showstopper, as the player's (XSS / rsBoom falloff): the xWf("showstopper") launcher equip, then a 30 m/s rocket at the
+  // nearest enemy in sight (else the first target); 150 inside 4 m falling to 30 at 7 m, by distance with line of sight; allies a third
+  const XSSR = { speed: 30 };
+  function raze(u, en) { const g = XRCN.g, t0 = { x: TP.x, z: TP.z };
+    setTimeout(() => { if (g !== XRCN.g || !u.alive || !running) return; const q = near(u, en, true, 60) ? { x: TP.x, z: TP.z } : t0, p = u.g.position, l = Math.hypot(q.x - p.x, q.z - p.z); tracer(u, q.x, q.z, l);
+      setTimeout(() => { if (g !== XRCN.g || !running) return; const e = new THREE.Vector3(q.x, 0.5, q.z), e2 = new THREE.Vector3();
+        try { const m = jM(smokeGeo, fireMat(0xff5a1f, 0.45)); m.scale.setScalar(XSS.outer / 4); m.position.copy(e); jFx(m, 0.4); blip(70, 0.45, "sawtooth", 0.22); } catch (er) {}
+        const boom = (t, x, z, y) => { const d = Math.hypot(x - q.x, z - q.z), n = xSsDmg(d); if (n > 0 && (d < 0.5 || los(e, e2.set(x, y, z)))) hitU(t, n, u.name, "Showstopper"); };
+        if (en) { if (player && player.hp > 0) boom(player, player.x, player.z, 1.5); if (typeof allies !== "undefined") for (const a of allies) if (a.alive && a.g) boom(a, a.g.position.x, a.g.position.z, (a.g.position.y || 0) + 1.5); }
+        else for (const b of bots) if (b.alive && b.g) boom(b, b.g.position.x, b.g.position.z, (b.g.position.y || 0) + 1.5);
+        xFFArea(u, en, "Showstopper", XSS.max, (x, z, t) => { const d = Math.hypot(x - q.x, z - q.z); return d < XSS.outer && los(e, t === player ? pEye() : e2.set(x, ((t.g && t.g.position.y) || 0) + 1.5, z)) ? xSsDmg(d) / XSS.max : false; });
+      }, l / XSSR.speed * 1000); }, xWf("showstopper") * 1000);
+  }
+  window.xBotBreachUlt = (u, en) => (near(u, en, false, 60) ? (breach(u, en), 1) : 0); // test hooks: the real ults at the nearest enemy
+  window.xBotRazeUlt = (u, en) => (near(u, en, false, 60) ? (raze(u, en), 1) : 0);
   function use(u, a, en) {
-    if (a === "Breach") { if (!near(u, en, true, 16)) return 0; tracer(u, TP.x, TP.z);
-      if (en && player && player.hp > 0 && Math.hypot(player.x - TP.x, player.z - TP.z) < 5) { try { xConStart(3000); } catch (e) {} }
-      const L = en ? (typeof allies !== "undefined" ? allies : []) : bots; for (const t of L) if (t.alive && Math.hypot(t.g.position.x - TP.x, t.g.position.z - TP.z) < 5) { t.cnc = 3; t.blind = Math.max(t.blind || 0, 1.5); }
-      xAoe(u, TP, 5, 40, "Rolling Thunder"); return 1; }
-    if (a === "Raze") { if (!near(u, en, true, 35)) return 0; if (cluster(en, 5) < 2 && Math.random() > 0.12) return 0; tracer(u, TP.x, TP.z); xAoe(u, TP, 5, 150, "Showstopper"); return 1; }
+    if (a === "Breach") { if (!near(u, en, true, XRT2.near + XRT2.len) || tD <= XRT2.near) return 0; breach(u, en); return 1; } // the strip starts 8 m ahead
+    if (a === "Raze") { if (!near(u, en, true, 35)) return 0; if (cluster(en, 5) < 2 && Math.random() > 0.12) return 0; raze(u, en); return 1; }
     if (a === "Jett") { if (!near(u, en, true, 25)) return 0; XU.b[u.name] = 1.3; return 1; }
     if (a === "Sova") { if (!near(u, en, false, 80) || Math.random() > 0.25) return 0; sova(u, en); return 1; }
     if (a === "Reyna") { if (XU.b[u.name] || !near(u, en, true, 30)) return 0; XU.b[u.name] = 1.15; return 1; } // Empress: +15% fire rate (as the player's, dealt as damage output) until death

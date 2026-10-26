@@ -418,7 +418,11 @@ with a 6 s concuss; offline client a 32 m, 0.72 rad half-angle cone, 4 s.
   with `8 < ahead < 40` and `|aside| < 9` (height band 4 m unchanged).
 - Client: `XRT2 = {near: 8, len: 32, w: 18, cnc: 4}` (asserted equal); `bcCone` uses the same strip and draws an 18 x 32 m
   box from 8 m ahead.
-- Not changed: offline bot Breach's ult stays the generic 5 m burst at its target; the 0.6 s knock-up / ticks are not modelled.
+- Offline bot Breach (both teams) casts the real ult (`breach` in the bot-ult block): once its nearest enemy in sight is 8 - 40 m
+  away, after the `xWf("rollingThunder")` windup the same XRT2 strip from where it stood toward that enemy concusses everyone of
+  the other side in it for 4 s through walls (player: `xConStart(4000)`; bots / ally bots: `cnc` / `blind` 4 s + knock-up), no
+  damage; cancelled by its death or a round clear (`XRCN.g`). Was a 5 m / 40-damage burst at the target with a 3 s concuss.
+- Not modelled: the 0.6 s knock-up / ticks.
 - Tests: `server/test-ults.js` (strip table; 12 m ahead through a wall concussed <= 4 s, 38 m ahead / 8.5 m aside hit;
   5 m ahead, 9.6 m aside, 41 m ahead, behind, ally spared), `work/test_ability_equip.cjs` (XRT2 == ULT.quake, same cases offline).
 
@@ -453,9 +457,16 @@ to the minimum at the very edge). Was: server inner 3 m, linear to 0 at 7 m; off
 
 - Server: `ULT.rocket {inner: 4, outer: 7, damage: 150, min: 30}`, `ssDamage(r)` = 150 inside 4 m, linear to 30 at 7 m, 0 beyond.
 - Client: `XSS` (same values, asserted equal) / `xSsDmg(d)` in `rsBoom` for the player's rocket and its ally pass.
-- Not changed: offline bot Raze's ult stays the generic 5 m / 150 burst (`xAoe`).
+- Offline bot Raze (both teams) fires the real ult (`raze` in the bot-ult block; the cast decision is unchanged): after the
+  `xWf("showstopper")` launcher equip it re-aims at its nearest enemy in sight (else the cast-time target) and the rocket flies
+  there at 30 m/s; the blast deals `xSsDmg` by distance (150 inside 4 m to 30 at 7 m) with line of sight to everyone of the
+  other side, allies of the caster a third (`xFFArea`); cancelled by a round clear. Was a flat 150 burst in 5 m at once.
+- Not modelled for bots: the rocket stopping early on a wall between the bot and its target (the target is in sight when it fires).
 - Tests: `server/test-ults.js` (table; ssDamage 150 / 150 / 150 / 90 / 0 at 0 / 3.5 / 4 / 5.5 / 7 m, ~30 at the edge),
-  `work/test_ability_equip.cjs` (XSS == ULT.rocket, xSsDmg table, rsBoom 150 / 90 / 0 at 3.5 / 5.5 / 7.5 m).
+  `work/test_ability_equip.cjs` (XSS == ULT.rocket, xSsDmg table, rsBoom 150 / 90 / 0 at 3.5 / 5.5 / 7.5 m; bot Raze: nothing
+  during the equip, then 150 / 90 / 0 at 0 / 5.5 / 8 m from the impact, a round clear cancels it; bot Breach: nothing in the
+  windup, then 20 m ahead concussed through walls, 6 m ahead / 10 m aside spared, no damage; an enemy bot Breach concusses the
+  player).
 
 ### Killjoy Turret fire (wiki.playvalorant.com/en-us/Turret, fetched 2026-10-25)
 
