@@ -320,7 +320,8 @@ Re-sweep after C1/C2 (stride 2 + walk-in trap test on every sampled node, RENDER
   -0.66), no floor under its axis, 0.06 m of travel in any direction. Fix: player clip (octagon r 0.3, feet band
   6.05..6.75 m), a post as on Split; local scan 0 traps from playable nodes, none clip-blocked (a non-playable node
   (-12.5, 6.14, -2.5) outside the railing is leash-held as before - unreachable on foot). Fixture added (Breeze traps).
-  A post-clip full Breeze sweep is queued (`sweepD-breeze.json`).
+  Post-clip full Breeze sweep (`sweepD-breeze.json`, committed motor + all three Breeze clips, 5,838 nodes, 18,683 edges):
+  0 stuck, 0 walk-in traps, 0 jump-only, 3 embedded (the same three), 8 refused edges, all `tall` on visible posts.
 
 Spawns and plant sites (all six maps): attacker / defender spawn candidates 246-660 / 103-634 per map, none embedded or
 stuck, every candidate reaches every site on the navigation. Every site anchor lies in its own plant zone, its nearest
