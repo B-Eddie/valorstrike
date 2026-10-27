@@ -80,7 +80,7 @@ console.log('ropes: offline = online identical on 4 ropes');
   assert(W.allowed.has(from),'Vent room floor is playable (reached by rope)');const q=path(W,W.near(39,14,3.05),W.near(44,13.5,7));assert(q.some((a,i)=>W.ropeLinks.has(a+'>'+q[i+1])),'Sewer -> A Lobby routes over a rope');}
  console.log('ropes: bots climbed '+climbed+' rope links ('+links.length/2+' ropes, up and down)');}
 // 6. rows
-{const r=R[3],{s,a}=fresh();put(s,a,r.x,r.y0,r.z);s.step(.05);run(s,a,{u:1},.05);run(s,a,{f:1},.2);const row=s.rows().find(x=>x[0]===a.id);assert.equal(row.length,26);assert.equal(row[25],4,'row [25] rope index');assert.equal(row[24],0,'[24] Blade Storm knives untouched');assert.equal(fogRow(row)[25],0,'fog hides the rope');
+{const r=R[3],{s,a}=fresh();put(s,a,r.x,r.y0,r.z);s.step(.05);run(s,a,{u:1},.05);run(s,a,{f:1},.2);const row=s.rows().find(x=>x[0]===a.id);assert.equal(row.length,27);/* + [26] Spike action */assert.equal(row[25],4,'row [25] rope index');assert.equal(row[24],0,'[24] Blade Storm knives untouched');assert.equal(fogRow(row)[25],0,'fog hides the rope');
  run(s,a,{f:1},2);assert.equal(s.rows().find(x=>x[0]===a.id)[25],0,'off the rope: 0');}
 // 7. buy phase: bots.js buyMill only walks (no Use / climb), so the buy walk graph (buyAdj) drops the rope links: Split
 // defenders headed for Mid Vent used to drop into the Vent room and stand below the ledge all buy phase (test-bot-buy-phase)
