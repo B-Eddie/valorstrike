@@ -20764,6 +20764,9 @@ if(typeof xvAgent==='function') { const original=xvAgent; xvAgent=function(M,kit
     if(meta.additive){a.blendMode=THREE.AdditiveAnimationBlendMode;a.setEffectiveWeight(0);R.add[n]=a;}
     else {const key=aliases[n]||'rm_'+n;R.actions[n]=key;X.a[key]=a;if(X.w[key]==null)X.w[key]=0;}
   }
+  // Name lists cached once: the per-frame passes walk arrays instead of for-in over ~115 action / ~45 additive keys.
+  R.names=Object.keys(R.actions);R.keys=R.names.map(n=>R.actions[n]);R.cycleNames=R.names.filter(n=>R.meta[n].naturalSpeed>0);
+  R.addNames=Object.keys(R.add);R.addLean=R.addNames.map(n=>n.startsWith('lean_')?n.slice(5):null);
   // The old forward-jog support-lift curve belongs to a different donor. Sole probes/terrain IK remain active.
   X.contactLift=null;
   return result;
@@ -20775,9 +20778,10 @@ function xrmCycle(X,T,dt,sp) {
   // naturalSpeed estimate ran the cycles 12-52 % fast (moonwalking feet) and stays as the fallback.
   for(const n in T)if(R.meta[n]&&R.meta[n].naturalSpeed>0&&T[n]>0){const m=R.meta[n];hz+=T[n]*sp/(xrmStanceSpeed(m)*scale*m.duration);total+=T[n];}
   if(total>0)R.phase=(R.phase+dt*hz/total)%1;
-  for(const n in R.actions) {
-    const a=X.a[R.actions[n]],m=R.meta[n];
-    if(m.naturalSpeed>0){a.paused=true;a.time=((R.phase+xrmContactPhase(m))%1)*m.duration;}
+  // Only cycles that have weight or are getting some need their clock (an idle cycle is set the frame its target rises).
+  for(const n of R.cycleNames) {
+    const key=R.actions[n];if(!(T[n]>0)&&!(X.w[key]>0))continue;
+    const a=X.a[key],m=R.meta[n];a.paused=true;a.time=((R.phase+xrmContactPhase(m))%1)*m.duration;
   }
 }
 function xrmPoseTime(X,n,t) {
@@ -20808,9 +20812,12 @@ function xrmTurn(X,T,F,dt) {
 }
 function xrmAdditives(X,T,dt,sp,enabled) {
   const R=X.rm,stopTime=R.stopAge,stopWeight=enabled&&Number.isFinite(stopTime)&&stopTime<.22?(1-stopTime/.22)*R.stopStrength:0;
-  for(const n in R.add) {
-    const a=R.add[n],meta=R.meta[n];let target=0;
-    if(enabled&&n.startsWith('lean_'))target=(T[n.slice(5)]||0)*xrmClamp(sp/.8);
+  const leanK=xrmClamp(sp/.8);
+  for(let i=0;i<R.addNames.length;i++) {
+    const n=R.addNames[i],a=R.add[n],meta=R.meta[n],lean=R.addLean[i];let target=0;
+    if(enabled&&lean)target=(T[lean]||0)*leanK;
+    // fast path: an idle lean (most of the ~45 additives every frame) has nothing to blend
+    if(lean&&!(target>0)&&!R.rope&&a.getEffectiveWeight()===0){if(a.isScheduled())a.stop();continue;}
     if(n==='stopLower'||n==='stopSpine')target=stopWeight;
     if(R.rope&&meta.traversal)target=R.ropeTargets[n]||0;
     if(R.wasAir&&!R.rope&&n==='jumpSpine')target=R.takeoff*(1-R.crouch)*.35;
@@ -20823,7 +20830,7 @@ function xrmAdditives(X,T,dt,sp,enabled) {
     a.setEffectiveWeight(weight<.001?0:weight);
     if(weight>.001){
       if(!a.isScheduled())a.play();a.paused=true;
-      const donor=n.startsWith('lean_')?R.meta[n.slice(5)]:meta;
+      const donor=lean?R.meta[lean]:meta;
       a.time=n.startsWith('stop')?xrmClamp(stopTime/.22)*meta.duration:/^(landSpine|crouchLand)/.test(n)?xrmLandingTime(R.meta.land,R.landAge+dt):((R.phase+xrmContactPhase(donor))%1)*meta.duration;
       if(n==='jumpSpine'||n==='crouchJumpSpine')a.time=Math.min(meta.duration,n==='jumpSpine'?R.jumpTime||0:R.crouchJumpTime||0);
     }
@@ -20836,7 +20843,7 @@ function xrmWeights(X,targets,dt) {
   if(full>.001||X.dd){
     // Full-body events retain the base animator's crouch/yaw, timing and target weights.
     R.crouch=X.cb;R.suppressPosture=true;R.landAge=R.stopAge=Infinity;R.wasAir=X.air;R.rope=false;R.lastSpeed=sp;
-    for(const n in R.actions)if(!XUB_LO.includes(R.actions[n]))targets[R.actions[n]]=0;
+    for(const key of R.keys)if(!XUB_LO.includes(key))targets[key]=0;
     xrmAdditives(X,{},dt,sp,false);return;
   }
   R.crouch+=((b.cr?1:0)-R.crouch)*(1-Math.exp(-dt*10));
@@ -20874,7 +20881,7 @@ function xrmWeights(X,targets,dt) {
   R.stopAge+=dt;R.lastSpeed=sp;
   R.suppressPosture=full>.001||!!X.uo||!!X.dd;
   for(const n of XUB_LO)targets[n]=0;
-  for(const n in R.actions)targets[R.actions[n]]=0;
+  for(const key of R.keys)targets[key]=0;
   for(const n in T)if(R.actions[n])targets[R.actions[n]]=(T[n]||0)*(1-full);
   // Authored directional hips supply their own yaw; retain the original aim-pitch code.
   X.yaw=0;
