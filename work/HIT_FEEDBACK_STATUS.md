@@ -14,10 +14,13 @@ Goal (user): "fix the doing-damage indicator — look up how Valorant does it an
 
 ## What the game now does (work/hit_feedback_runtime.js + vendor/hit-impact.js, installed by work/install_valorant.py)
 - **No hit marker / damage numbers** by default (`S.hm` / `S.dn` stay opt-in, default `false`; no DOM is created on a hit).
-- **Predicted spark** (kind 0): on every local shot that contacts an enemy, world-space, never attached, tiny, 70 ms.
+- **Predicted spark** (kind 0): on every local shot that contacts an enemy, world-space, never attached, 4.5 cm (>= 0.26 deg at range), 80 ms.
 - **Confirmed puff**: online only from the server `'h'` event; offline from the local sim result. Attached to the struck bone
   (cached per rig: `Spine2` body, `Head` head, `Pelvis` legs; primitive models use `hd`/`bd`/`lL`; fallback the unit group).
-  Body (kind 1): blood-red 6-sided puff + 5 streaks. Head (kind 2): distinct pale core + thin red streaks, **smaller** than body.
+  Body (kind 1): blood-red 6-sided puff (16 cm) + 6 streaks. Head (kind 2): distinct pale core (10 cm) + thin red streaks, **smaller** than body.
+  Sizes keep a minimum angular size at range (body core ~0.77 deg = ~10 px at 1080p / 75 deg FOV at 15-30 m) and every burst is drawn
+  0.3 m toward the eye along the eye ray (same screen spot) so the agent model it is attached to never hides it.
+  (2026-10-26, hitfx-2: the first version was 2-6 cm, i.e. ~2 px at 15 m, which the user read as "hit sparks not showing"; work/test_hit_visible.cjs.)
   Normal blending (red reads on bright walls), fades by shrinking, depth-tested, no depth write. Fixed pool (24, 12 on low), 2 draw calls.
 - **Audio** (pooled): body tick, headshot ding (every headshot, lethal too), shield-break crack (online: new `e[10]` flag from the server;
   offline: `armAbs` wrapper notes the hit that emptied armor), kill chime (escalates per kill, from `xKiAdd`). All synthesized once into

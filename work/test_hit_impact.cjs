@@ -6,14 +6,16 @@ assert(html.includes(runtime.trim()),'index.html carries work/hit_feedback_runti
 // ---------- 1. the VFX pool itself ----------
 const scene=new T.Scene(),camera=new T.PerspectiveCamera(50,1,.1,50);camera.position.set(0,1,5);camera.lookAt(0,1,0);camera.updateMatrixWorld(true);
 const bone=new T.Object3D();bone.position.set(0,1,0);scene.add(bone);scene.updateMatrixWorld(true);
+// drawn pulled toward the eye along the eye ray (vendor/hit-impact.js PULL): compare where it lands on screen
+const scr=(a,b)=>{const A=a.clone().project(camera),B=b.clone().project(camera);return Math.hypot(A.x-B.x,A.y-B.y);};
 const fx=new Impact(scene,3),point=new T.Vector3(0,1,.12),matrix=new T.Matrix4(),pos=new T.Vector3(),scl=new T.Vector3(),q=new T.Quaternion();
-assert(fx.emit(point,bone));fx.tick(0,camera);fx.cores.getMatrixAt(0,matrix);pos.setFromMatrixPosition(matrix);assert(pos.distanceTo(point)<.03);
-bone.position.set(1,.55,0);fx.tick(.01,camera);fx.cores.getMatrixAt(0,matrix);pos.setFromMatrixPosition(matrix);assert(Math.abs(pos.x-1)<.03);assert(Math.abs(pos.y-.55)<.03,'confirmed impact follows the moving/crouching body part');
+assert(fx.emit(point,bone));fx.tick(0,camera);fx.cores.getMatrixAt(0,matrix);pos.setFromMatrixPosition(matrix);assert(scr(pos,point)<.01&&pos.z>point.z);
+bone.position.set(1,.55,0);fx.tick(.01,camera);fx.cores.getMatrixAt(0,matrix);pos.setFromMatrixPosition(matrix);assert(scr(pos,new T.Vector3(1,.55,.12))<.02,'confirmed impact follows the moving/crouching body part');
 assert(fx.cores.material.depthTest);assert(!fx.cores.material.depthWrite,'occlusion without blocking later transparency');
 // predicted spark: world space, never attached, even when handed an anchor
 fx.clear();bone.position.set(0,1,0);scene.updateMatrixWorld(true);
 assert(fx.emit(point,bone,false,true));const sp=fx.items.find(e=>e.age<e.life);assert.equal(sp.kind,0);assert.equal(sp.anchor,null,'predicted spark is never attached');
-bone.position.set(2,0,0);scene.updateMatrixWorld(true);fx.tick(.01,camera);fx.cores.getMatrixAt(fx.items.indexOf(sp),matrix);pos.setFromMatrixPosition(matrix);assert(pos.distanceTo(point)<.04,'predicted spark stays where the bullet landed');
+bone.position.set(2,0,0);scene.updateMatrixWorld(true);fx.tick(.01,camera);fx.cores.getMatrixAt(fx.items.indexOf(sp),matrix);pos.setFromMatrixPosition(matrix);assert(scr(pos,point)<.015,'predicted spark stays where the bullet landed');
 // head variant is distinct and smaller than the body puff
 fx.clear();bone.position.set(0,1,0);scene.updateMatrixWorld(true);
 fx.emit(point,bone,false,false);fx.emit(point,bone,true,false);fx.tick(0,camera);

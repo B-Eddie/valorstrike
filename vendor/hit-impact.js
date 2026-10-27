@@ -1,4 +1,5 @@
 // Valorant-style outgoing hit VFX (patch 1.07 model). Opaque-ish normal blending so red blood reads on bright walls; fades by shrinking.
+// Sized to read on screen (a 5 cm puff was ~2 px at 15 m: "hit sparks aren't showing"), with a minimum angular size at range.
 // Fixed pools: two instanced draw calls, no per-hit GPU/DOM allocation.
 //  kind 0 SPARK  client-predicted contact: tiny, world-space, never attached, never a damage confirmation
 //  kind 1 BODY   confirmed body/leg hit: blood-shaped puff attached to the struck bone, moves with it (crouch, strafe)
@@ -6,10 +7,13 @@
 (function(root,factory){if(typeof module==='object'&&module.exports)module.exports=factory;else {let C;root.HitImpact=function(scene,count){C=C||factory(root.THREE);return new C(scene,count);};}})(typeof globalThis!=='undefined'?globalThis:this,function(T){
   'use strict';
   const SHARDS=8;
-  //          life   core   coreStretch  shards reach  shardLen shardW  core rgb            shard rgb           rise
-  const KIND=[{life:.07,core:.022,cy:1,n:2,reach:.035,len:.03,w:.008,cr:[1,.92,.62],sr:[1,.8,.4],gain:.6,rise:0},
-              {life:.20,core:.05,cy:1.15,n:5,reach:.085,len:.05,w:.014,cr:[.95,.16,.08],sr:[.85,.07,.04],gain:1,rise:-.03},
-              {life:.20,core:.032,cy:1,n:6,reach:.06,len:.04,w:.007,cr:[1,.95,.85],sr:[1,.12,.06],gain:1,rise:.015}];
+  // Sizes are metres at the hit; ang is the smallest angular size (radians) the core keeps at range, so a far hit still
+  // reads on screen like Valorant's (body core ~0.75 deg, about 11 px at 1080p / 75 deg FOV); streaks and reach scale with it.
+  //          life   core   coreStretch  shards reach  shardLen shardW  core rgb            shard rgb           rise   ang
+  const KIND=[{life:.08,core:.045,cy:1,n:3,reach:.06,len:.06,w:.014,cr:[1,.92,.62],sr:[1,.8,.4],gain:.8,rise:0,ang:.0045},
+              {life:.22,core:.16,cy:1.15,n:6,reach:.2,len:.15,w:.03,cr:[1,.22,.1],sr:[1,.14,.06],gain:1,rise:-.06,ang:.0135},
+              {life:.20,core:.1,cy:1,n:7,reach:.13,len:.1,w:.016,cr:[1,.95,.85],sr:[1,.16,.08],gain:1,rise:.03,ang:.009}];
+  const PULL=.3; // drawn this far toward the eye along the eye ray (same screen spot): the struck model it is attached to never buries it
   return class HitImpact {
     constructor(scene,count=24){
       this.scene=scene;this.count=count;this.cursor=0;this.serial=0;this.emitted=[0,0,0];
@@ -41,15 +45,16 @@
         const e=this.items[i];e.age+=dt;
         if(e.age>=e.life){e.anchor=null;this.cores.setMatrixAt(i,this.zero);for(let j=0;j<SHARDS;j++)this.shards.setMatrixAt(i*SHARDS+j,this.zero);continue;}
         active++;if(e.anchor){if(!e.anchor.parent&&e.anchor.type!=='Scene'){e.anchor=null;}else{e.anchor.updateWorldMatrix(true,false);e.point.copy(e.local).applyMatrix4(e.anchor.matrixWorld);}}
-        const K=KIND[e.kind],t=e.age/e.life,shrink=t<.3?1:1-(t-.3)/.7,fade=(1-.35*t)*K.gain,size=K.core*(1+t*.8)*shrink;
-        this.v.subVectors(this.eye,e.point).normalize().multiplyScalar(.025);
-        this.obj.position.copy(e.point).add(this.v).addScaledVector(this.up,K.rise*t);this.obj.quaternion.copy(this.q);this.obj.scale.set(size,size*K.cy,1);this.obj.updateMatrix();this.cores.setMatrixAt(i,this.obj.matrix);
+        const K=KIND[e.kind],t=e.age/e.life,shrink=t<.3?1:1-(t-.3)/.7,fade=(1-.35*t)*K.gain;
+        this.v.subVectors(this.eye,e.point);const dist=this.v.length(),pull=Math.min(PULL,dist*.5),g=Math.max(1,K.ang*Math.max(0,dist-pull)/K.core),size=K.core*g*(1+t*.8)*shrink;
+        this.v.multiplyScalar(dist>1e-6?pull/dist:0);
+        this.obj.position.copy(e.point).add(this.v).addScaledVector(this.up,K.rise*g*t);this.obj.quaternion.copy(this.q);this.obj.scale.set(size,size*K.cy,1);this.obj.updateMatrix();this.cores.setMatrixAt(i,this.obj.matrix);
         this.col.setRGB(K.cr[0],K.cr[1],K.cr[2]).multiplyScalar(fade);this.cores.setColorAt(i,this.col);
         for(let j=0;j<SHARDS;j++){
           const index=i*SHARDS+j;if(j>=K.n){this.shards.setMatrixAt(index,this.zero);continue;}
-          const angle=j/K.n*Math.PI*2+(e.seed*2.399963),reach=K.reach*(.25+t),x=Math.cos(angle),y=Math.sin(angle);
-          this.obj.position.copy(e.point).add(this.v).addScaledVector(this.right,x*reach).addScaledVector(this.up,y*reach+K.rise*t);
-          this.spin.setFromAxisAngle(this.axis,angle);this.obj.quaternion.copy(this.q).multiply(this.spin);this.obj.scale.set(K.len*(1-t*.5)*shrink,K.w*shrink,1);this.obj.updateMatrix();this.shards.setMatrixAt(index,this.obj.matrix);
+          const angle=j/K.n*Math.PI*2+(e.seed*2.399963),reach=K.reach*g*(.55+.6*t),x=Math.cos(angle),y=Math.sin(angle);
+          this.obj.position.copy(e.point).add(this.v).addScaledVector(this.right,x*reach).addScaledVector(this.up,y*reach+K.rise*g*t);
+          this.spin.setFromAxisAngle(this.axis,angle);this.obj.quaternion.copy(this.q).multiply(this.spin);this.obj.scale.set(K.len*g*(1-t*.5)*shrink,K.w*g*shrink,1);this.obj.updateMatrix();this.shards.setMatrixAt(index,this.obj.matrix);
           this.col.setRGB(K.sr[0],K.sr[1],K.sr[2]).multiplyScalar(fade);this.shards.setColorAt(index,this.col);
         }
       }

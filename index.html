@@ -51,6 +51,10 @@ button{font:inherit;text-transform:inherit;letter-spacing:inherit;cursor:pointer
 #feed .kf.out{opacity:0}
 #feed .kf--note{border-right:3px solid var(--red);font-weight:400}
 #feed .kf--mine{border-color:#ff4655;background:rgba(60,15,22,.82)}
+#xLog{left:16px;bottom:168px;top:auto;right:auto;display:flex;flex-direction:column;gap:3px;max-width:340px;pointer-events:none;background:none;padding:0}
+#xLog .x-lg{font-size:12px;line-height:1.35;color:#ece8e1;background:rgba(10,14,20,.55);padding:3px 8px;border-left:2px solid rgba(236,232,225,.5);transition:opacity .4s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#xLog .x-lg.out{opacity:0}
+@media (max-width:820px),(pointer:coarse){#xLog{left:8px;top:128px;bottom:auto;max-width:46vw}#xLog .x-lg{font-size:10px;padding:2px 6px}}
 #feed .kf--died{background:rgba(40,12,18,.82)}
 #feed .kf--blue{color:#5ec8ff}
 #feed .kf--red{color:#ff5a66}
@@ -1735,7 +1739,7 @@ body:has(#game .x-top.x-bpo) #xAnn.buy{display:none!important}
   <div class="hud" id="xSpk" aria-label="Spike planted"><svg viewBox="0 0 40 34"><path d="M20 2l14 7v16l-14 7-14-7V9z" fill="#ff4655"/><path d="M20 9l7 3.5v9L20 25l-7-3.5v-9z" fill="#1a0a0c"/><circle cx="20" cy="17" r="3.2" fill="#ff4655"/></svg></div>
   <div class="hud" id="score">You 0 · 0 Bots</div>
   <div class="hud" id="fps">60 FPS</div>
-  <div class="hud x-fw" id="xFw"><div class="hud" id="feed"></div><div class="hud" id="xVo" role="status"></div></div>
+  <div class="hud x-fw" id="xFw"><div class="hud" id="feed"></div><div class="hud" id="xLog" aria-live="polite"></div><div class="hud" id="xVo" role="status"></div></div>
   <div class="hud" id="hp"><small>Health</small><span>100</span></div>
   <div class="hud" id="ammo"><small>Vandal</small><span>25 / 25</span></div>
   <div class="hud" id="defuse">Defusing<div class="bar"><i></i></div></div>
@@ -2782,7 +2786,9 @@ const xHbS = new THREE.Sphere(), xHbL = [];
 function xHbOk(rc, ob) { // cheap world bounding-sphere ray pre-check for childless hitbox meshes (bot body/head)
   const g = ob && ob.isMesh && !ob.isSkinnedMesh && !ob.children.length && ob.geometry;
   if (!g) return true;
-  if (!g.boundingSphere) g.computeBoundingSphere();
+  // never size a big unsized mesh here: the native-collision mesh (~1.5 M vertices, never rendered, so three never computed its
+  // bounding sphere) did it inside the first shot of every match (~300 ms hitch); its own raycast (BVH) decides instead
+  if (!g.boundingSphere) { const u = ob.userData; if (!(u && (u.bot || u.aim))) return true; g.computeBoundingSphere(); }
   xHbS.copy(g.boundingSphere).applyMatrix4(ob.matrixWorld);
   const r = rc.ray;
   if (!r.intersectsSphere(xHbS)) return false;
@@ -3144,11 +3150,21 @@ function moveP(dt, run, hold) {
 const pEye = () => new THREE.Vector3(player.x, 1.6 - player.ch + player.y, player.z);
 const pEyeTo = (out) => out.set(player.x, 1.6 - player.ch + player.y, player.z); // no-alloc pEye for per-frame callers
 const PE_V = new THREE.Vector3(); // pEyeTo scratch (read immediately, never stored)
-function feed(t) { // "A ▸ B" kill lines become kill-feed entries; anything else stays a plain note
-  const m = typeof t === "string" && t.match(/^(.+?) ▸ (.+?)( ◎ Headshot)?$/);
-  if (m && kfKnown(m[1]) && kfKnown(m[2])) return kfeed(m[1], m[2], !!m[3]);
-  const d = kfGet("kf kf--note"); d.xT.textContent = t; d.xT.style.display = ""; kfPush(d);
+function feed(t) { // Valorant's kill feed shows kills only (user 19:51 2026-10-26): "A ▸ B" between two players is a kill row;
+  // any other "X ▸ Y" line is an ability / utility cast ("Jett ▸ Updraft", "Lockdown ▸ ... detained"), which Valorant never lists: dropped;
+  // plain notes (pickups, Spike, comms, joins) go to the small system log (#xLog), never the kill feed
+  const m = typeof t === "string" && t.match(/^(.+?) ▸ (.+?)( ◎ Headshot)?( ◇ Knife)?$/);
+  if (m && kfKnown(m[1]) && kfKnown(m[2])) return kfeed(m[1], m[2], !!m[3], m[4] ? "Knife" : undefined);
+  if (m || typeof t !== "string" || !t) return;
+  xLogNote(t);
 }
+const XLOG = { el: null, rows: [], i: 0 }; // system log: 4 pooled rows, newest at the bottom, each fades after 4 s
+function xLogNote(t) {
+  try { let L = XLOG.el; if (!L || !L.isConnected) { L = XLOG.el = $("xLog"); XLOG.rows.length = 0; } if (!L) return;
+    if (XLOG.rows.length < 4) { const d = document.createElement("div"); d.className = "x-lg"; XLOG.rows.push(d); }
+    const d = XLOG.rows[XLOG.i++ % XLOG.rows.length]; d.textContent = t; d.classList.remove("out"); L.appendChild(d);
+    const g = (d.xG = (d.xG || 0) + 1); setTimeout(() => { if (d.xG === g) d.classList.add("out"); }, 4000); setTimeout(() => { if (d.xG === g && d.parentNode) d.parentNode.removeChild(d); }, 4400);
+  } catch (e) {} }
 const KFP = []; // perf pass 9: pooled kill-feed rows (name, weapon, name, note), reused instead of created/removed
 function kfGet(cls) {
   let d = KFP.pop();
@@ -3156,7 +3172,7 @@ function kfGet(cls) {
   d.className = cls; d.xG = (d.xG || 0) + 1; for (const c of [d.xA, d.xW, d.xB, d.xT]) c.style.display = "none"; return d;
 }
 function kfRel(d) { d.remove(); if (KFP.indexOf(d) < 0 && KFP.length < 8) KFP.push(d); }
-function kfAll() { const a = []; try { if (typeof bots !== "undefined") a.push(...bots); } catch (e) {} try { if (typeof allies !== "undefined") a.push(...allies); } catch (e) {} return a; }
+function kfAll() { const a = []; try { if (typeof bots !== "undefined") a.push(...bots); } catch (e) {} try { if (typeof allies !== "undefined") a.push(...allies); } catch (e) {} try { if (typeof duelBot !== "undefined" && duelBot) a.push(duelBot); } catch (e) {} return a; }
 function kfKnown(n) { return n === "You" || kfAll().some((x) => x && x.name === n); }
 function kfBlue(n) { if (n === "You") return true; try { return typeof allies !== "undefined" && allies.some((x) => x && x.name === n); } catch (e) { return false; } }
 function kfWeap(n) {
@@ -11764,7 +11780,7 @@ html.xt-nocm .x-cmb{display:none!important}
   function chk(t, x, z, vis) { const d = Math.hypot(x - V1.x, z - V1.z); if (d >= tD) return; if (vis && !los(V1, V3.set(x, 1.5, z))) return; tD = d; tU = t; TP.x = x; TP.z = z; }
   function cluster(en, r) { let n = 0; if (en) { if (player && player.hp > 0 && Math.hypot(player.x - TP.x, player.z - TP.z) < r) n++; if (typeof allies !== "undefined") for (const a of allies) if (a.alive && Math.hypot(a.g.position.x - TP.x, a.g.position.z - TP.z) < r) n++; } else for (const b of bots) if (b.alive && Math.hypot(b.g.position.x - TP.x, b.g.position.z - TP.z) < r) n++; return n; }
   function tracer(u, x, z, far) { V1.set(u.g.position.x, 1.4, u.g.position.z); DIR.set(x - V1.x, 0, z - V1.z).normalize(); if (far) bFx(V1, DIR, undefined, far); else { V2.set(x, 1.2, z); bFx(V1, DIR, HIT); } }
-  function say2(u, a, en) { if (!en) return; const d = kfGet("kf kf--note x-ult"); d.xT.textContent = "Enemy " + a + " ultimate"; d.xT.style.display = ""; kfPush(d); try { blip(160, 0.35, "sawtooth", 0.12); } catch (e) {} }
+  function say2(u, a, en) { if (!en) return; xLogNote("Enemy " + a + " ultimate"); /* the kill feed is kills only */ try { blip(160, 0.35, "sawtooth", 0.12); } catch (e) {} }
   function hitU(t, n, by, w) { if (t === player) { hurt(player, n, by); return; } hurt(t, n, by); if (t.hp <= 0.001) { if (bots.indexOf(t) >= 0) kill(t, false, by, w); else allyDie(t, by, w); } }
   function sovaBlast(u, en) { // one wall-piercing XHFU blast (66 m, 1.76 m radius, 80) from u toward TP; enemies hit revealed 1 s
     const p = u.g.position, sx = p.x, sz = p.z; let dx = TP.x - sx, dz = TP.z - sz; const l = Math.hypot(dx, dz) || 1; dx /= l; dz /= l;
