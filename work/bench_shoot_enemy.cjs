@@ -117,7 +117,9 @@ async function scenario(kind,prof){
   const put=front=>`(()=>{let i=0;for(const b of bots){if(!b.alive)continue;b.cd=1e9;b.hp=100;const x=player.x+(i-2)*1.6,z=player.z+(${front}?-1:1)*(6+i);b.g.position.set(x,player.y||0,z);b.g.updateMatrixWorld(true);i++;}
    yaw=0;pitch=0;camera.position.set(player.x,(player.y||0)+1.6,player.z);camera.rotation.set(0,0,0,"YXZ");camera.updateMatrixWorld(true);fireHeld=false;return i;})()`;
   const view=async(front,n)=>{const st=put(front);for(let i=0;i<20;i++){xe(st);H.advance(17);}xe('__VW.sol=0;__VW.hb=0;__VW.um=0;__VW.gobn=0;true');const ts=[];
+   const pv=PROF==='view'&&front&&!view.done;if(pv){view.done=1;await profStart();}
    for(let i=0;i<n;i++){xe(st);const a=process.hrtime.bigint();H.advance(17);ts.push(Number(process.hrtime.bigint()-a)/1e6);}
+   if(pv)await profStop('5 enemies in view');
    const V=JSON.parse(xe('JSON.stringify(__VW)')),r={where:front?'front':'behind',bots:xe(st),frames:n,frameMs:+(ts.reduce((x,y)=>x+y,0)/n).toFixed(2),xSolTickMs:+(V.sol/n).toFixed(3),xrHitboxesMs:+(V.hb/n).toFixed(3),updateMatrixPerFrame:Math.round(V.um/n),getObjectByNamePerFrame:+(V.gobn/n).toFixed(1)};
    console.log('view',JSON.stringify(r));return r;};
   for(const f of [false,true,false,true])await view(f,+(process.env.VIEWN||120));}
