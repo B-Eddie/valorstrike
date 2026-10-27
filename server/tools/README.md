@@ -8,3 +8,4 @@ Run from anywhere (`node server/tools/<script>`); each script resolves paths rel
 - `eval-holes.mjs [samples] [maps…]` — motor walks along flat nav edges, reporting fall-throughs.
 - `eval-fall.mjs [walks] [maps…]` — random-walk fall survey (`MOTOR=path` to compare motors).
 - `../eval-stairs.mjs [motor] [limit]` — step-up success on rising nav edges.
+- `map-render-floors.mjs [maps…]` — appends render-only floors the exporter dropped from collision (Lotus C water floor, `/Water/` objects) plus the void pockets listed in `map-void-fill.json` (floor inside the official footprint, 3 m invisible wall boxes outside) to `collision-patch.bin`. Idempotent; `test-render-floors.js` checks it.
