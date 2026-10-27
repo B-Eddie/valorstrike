@@ -20682,7 +20682,7 @@ window.xDmPacks = DMPK; window.xEscPacks = ESCPK;
 // ---- END GAME RULES ----
 // ---- ROCKLAN MOVEMENT ----
 // Movement-only overlay. The original mixed animation library and upper-body actions stay intact.
-var XRM = { assets: {"movement.json":{"bytes":2029086,"sha256":"1bdcaa369d7f1ac2c86c2befe9f145c19c76d1be8535500b24df6e8cfa4d44ec"},"movement.bin":{"bytes":5017120,"sha256":"43c0e3b4ed2f6a5a5b97bf58c64af468973daa2913953f13b4f0af5345eac3cd"}}, promise: null, dirs: ['N','NE','E','SE','S','SW','W','NW'] };
+var XRM = { assets: {"movement.json":{"bytes":2051123,"sha256":"65ebb2ca3f8920562444049b4b763447852bc306442360ce780f2f0816a263f8"},"movement.bin":{"bytes":5017120,"sha256":"43c0e3b4ed2f6a5a5b97bf58c64af468973daa2913953f13b4f0af5345eac3cd"}}, promise: null, dirs: ['N','NE','E','SE','S','SW','W','NW'] };
 function xrmClamp(v, lo=0, hi=1) { return Math.max(lo, Math.min(hi, v)); }
 function xrmDirections(f, side) {
   const a = (Math.atan2(-side, f) / (Math.PI / 4) + 8) % 8, i = Math.floor(a), u = a - i;
@@ -20825,7 +20825,7 @@ function xrmAdditives(X,T,dt,sp,enabled) {
   }
 }
 function xrmWeights(X,targets,dt) {
-  const R=X.rm,F=R.frame,b=F.b,sp=F.sp,rope=!!(b.xkr&&b.xk!=null),air=X.air&&!rope;
+  const R=X.rm,F=R.frame,b=F.b,sp=F.sp,rope=!!((b.xkr&&b.xk!=null)||b.rope>0),air=X.air&&!rope; // b.rope: Split's ascenders (rope_runtime.js u.rope, row [25])
   const full=xrmClamp(Math.max((targets.plant||0)+(targets.death1||0)+(targets.death2||0),(X.w.plant||0)+(X.w.death1||0)+(X.w.death2||0)));
   if(full>.001||X.dd){
     // Full-body events retain the base animator's crouch/yaw, timing and target weights.
@@ -20841,6 +20841,8 @@ function xrmWeights(X,targets,dt) {
   R.rope=rope;R.ropeTargets={};R.takeoff=0;
   if(rope){
     for(const n in T)delete T[n];X.air=true;X.airH=Math.max(1,X.airH||0);X.lnd=0;R.landAge=Infinity;R.turn=null;
+    // letting go mid-climb falls straight into the airborne loop (no takeoff: the air branch only sets these on leaving the ground)
+    R.jumpDirs=[['',1]];R.airAge=Math.max(R.airAge||0,.16);
     T[F.dy>1e-4?'ropeUp':F.dy< -1e-4?'ropeDown':'ropeIdle']=1;
     if(sp>.15){R.ropeTargets.ropeHorizontal=xrmClamp(Math.abs(side)/Math.max(1e-6,Math.hypot(f,side)));R.ropeTargets[f>=0?'ropeForward':'ropeBack']=xrmClamp(Math.abs(f)/Math.max(1e-6,Math.hypot(f,side)));}
     for(const n of ['ropeIdle','ropeUp','ropeDown'])if(R.actions[n]){

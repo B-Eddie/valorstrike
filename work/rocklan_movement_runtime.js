@@ -143,7 +143,7 @@ function xrmAdditives(X,T,dt,sp,enabled) {
   }
 }
 function xrmWeights(X,targets,dt) {
-  const R=X.rm,F=R.frame,b=F.b,sp=F.sp,rope=!!(b.xkr&&b.xk!=null),air=X.air&&!rope;
+  const R=X.rm,F=R.frame,b=F.b,sp=F.sp,rope=!!((b.xkr&&b.xk!=null)||b.rope>0),air=X.air&&!rope; // b.rope: Split's ascenders (rope_runtime.js u.rope, row [25])
   const full=xrmClamp(Math.max((targets.plant||0)+(targets.death1||0)+(targets.death2||0),(X.w.plant||0)+(X.w.death1||0)+(X.w.death2||0)));
   if(full>.001||X.dd){
     // Full-body events retain the base animator's crouch/yaw, timing and target weights.
@@ -159,6 +159,8 @@ function xrmWeights(X,targets,dt) {
   R.rope=rope;R.ropeTargets={};R.takeoff=0;
   if(rope){
     for(const n in T)delete T[n];X.air=true;X.airH=Math.max(1,X.airH||0);X.lnd=0;R.landAge=Infinity;R.turn=null;
+    // letting go mid-climb falls straight into the airborne loop (no takeoff: the air branch only sets these on leaving the ground)
+    R.jumpDirs=[['',1]];R.airAge=Math.max(R.airAge||0,.16);
     T[F.dy>1e-4?'ropeUp':F.dy< -1e-4?'ropeDown':'ropeIdle']=1;
     if(sp>.15){R.ropeTargets.ropeHorizontal=xrmClamp(Math.abs(side)/Math.max(1e-6,Math.hypot(f,side)));R.ropeTargets[f>=0?'ropeForward':'ropeBack']=xrmClamp(Math.abs(f)/Math.max(1e-6,Math.hypot(f,side)));}
     for(const n of ['ropeIdle','ropeUp','ropeDown'])if(R.actions[n]){
