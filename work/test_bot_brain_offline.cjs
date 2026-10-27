@@ -9,7 +9,7 @@ const html=fs.readFileSync(path.join(root,'index.html'),'utf8'),A='// ---- BOT V
 const block=html.slice(i,j+Z.length);assert(/root\.BotBrain=factory\(\)/.test(block),'BotBrain inlined with the block');
 assert.equal(block.slice(block.indexOf('// Shared client/server bot decisions'),block.indexOf("return {hash,rng,clamp")),fs.readFileSync(path.join(root,'vendor/bot-brain.cjs'),'utf8').slice(0,fs.readFileSync(path.join(root,'vendor/bot-brain.cjs'),'utf8').indexOf("return {hash,rng,clamp")),'inlined BotBrain == vendor/bot-brain.cjs');
 // base loop wiring (enemy + ally bots)
-for(const w of ['xbEngage(b, b.pre, { off: Math.abs(oy), e0y: oy, d,','typeof xbRt === "function" ? xbRt(b, D)','xbAimErr(b, aim, D)','(b.see || 0) < (b.stand || 0.35)','xbEngage(a, a.pre)','a.ts * 1000 < xbRt(a, null)','a.ts < (a.stand || 0.35)'])assert(html.includes(w),'wired: '+w);
+for(const w of ['xbEngage(b, b.pre, { off: Math.abs(oy), e0y: oy, d,','typeof xbRt === "function" ? xbRt(b, D)','xbAimErr(b, aim, D)','(b.see || 0) < (b.stand || 0.35)','xbEngage(a, a.pre, { off: Math.abs(oy), e0y: oy, d: td,','a.ts * 1000 < xbRt(a, null)','a.ts < (a.stand || 0.35)'])assert(html.includes(w),'wired: '+w);
 const out=[];
 for(const map of ['ascent','bind']){
  const dir=path.join(root,'models/valorant/maps',map),meta=JSON.parse(fs.readFileSync(path.join(dir,'map.json'),'utf8')),nav=JSON.parse(fs.readFileSync(path.join(dir,'navigation.json'),'utf8')),N=nav.nodes;

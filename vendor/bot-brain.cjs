@@ -116,7 +116,7 @@
  function level(name){return LEVEL[name]||LEVEL.normal;}
  // Per-bot aim traits (pure, from P.seed on a separate stream: personality() draws are unchanged).
  function aimTraits(P){const r=rng(((P.seed>>>0)^0x51ed270b)>>>0),acc=P.accuracy==null?.6:P.accuracy;
-  return {headAim:.22+acc*.15+r()*.06,neckAim:.3+r()*.15,place:.01+(1-acc)*.012+r()*.005,over:.04+r()*.08,fitts:.045+(1-acc)*.035+r()*.015,
+  return {headAim:.25+acc*.15+r()*.06,neckAim:.3+r()*.15,place:.01+(1-acc)*.012+r()*.005,over:.04+r()*.08,fitts:.045+(1-acc)*.035+r()*.015,
    trem:.003+(1-acc)*.006,pull:.25+acc*.25+r()*.1,eager:.6+r()*.8+(P.aggression||0)*.4,discipline:clamp(.45+(P.patience==null?.5:P.patience)*.35+r()*.15,0,.97),idle:Math.atan2(AIM_H.head-1.6,15)-(.004+(1-acc)*.016+r()*.01)};}
  const AIM_H={head:1.8,neck:1.45,chest:1.2}; // metres above the feet, standing (server hitboxes: head sphere centre 1.815, body capsule top ~1.6)
  function aimHeight(P,rand,lvl,pre){const A=aimTraits(P),L=level(lvl),x=rand(),h=Math.min(.85,A.headAim*L.head*(pre?1.8:1));return x<h?'head':x<h+(1-h)*A.neckAim?'neck':'chest';}
@@ -418,6 +418,9 @@
  //  defusing under fire), 'tap' (attackers around and time to spare: tap the defuse to bait a peek, once), or 'clear'
  //  (attackers around and time to spare: fight first).
  function retake(P,rand,ctx){const need=ctx.eta+(ctx.half?SPIKE.half:SPIKE.defuse),slack=ctx.left-need;
+  // no attacker alive (all died after the plant): nothing to clear, wait for or fake against - go straight on and stick the defuse
+  // (a stale sighting / sound from before the last kill must not hold it off; save only when even a straight run cannot make it)
+  if(ctx.enemies===0){if(ctx.at)return {act:'defuse',style:'stick'};return slack<-.25&&!ctx.half?{act:'save',style:null}:{act:'go',style:null};}
   if(ctx.at){if(slack<-.25&&!ctx.half)return {act:'save',style:null};if(!ctx.seen)return {act:'defuse',style:'ninja'};if(ctx.half||slack<2.5)return {act:'defuse',style:'stick'};
    if(!ctx.tapped&&slack>4&&rand()<.3+(P?P.aggression:.5)*.4)return {act:'defuse',style:'tap'};return {act:'clear',style:null};}
   if(slack<-.25)return {act:'save',style:null};

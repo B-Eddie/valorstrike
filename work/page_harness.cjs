@@ -13,10 +13,14 @@ function threeDir(){
  fs.writeFileSync(path.join(dir,'SkeletonUtils.js'),'THREE.SkeletonUtils={clone:function(o){return o.clone(true);}};');
  return {dir,rev:'160'};
 }
-function boot({real3=false,seed=1,coarse=false,ls=null}={}){
+function boot({real3=false,seed=1,coarse=false,ls=null,native=false}={}){
  const audit=fs.readFileSync(path.join(__dirname,'audit.js'),'utf8');let src=audit.slice(0,audit.indexOf('// ---------- audit ----------')).replace(/^"use strict";/,'');
  // coarse: a touch device ((pointer: coarse) matches), so the page builds and shows its touch controls
  if(coarse)src=src.replace('matchMedia: () => ({ matches: false,','matchMedia: (q) => ({ matches: /coarse/.test(String(q)),');
+ // native: keep the page's VALORANT FEEL (shared motor / guns) and ORIGINAL VALORANT MAPS (native loader) blocks, which
+ // the audit strips, and run vendor/three-mesh-bvh.umd.js (the native collision BVH).
+ if(native){const A1='const fixture = s[2].replace(',A2='if (src === "vendor/three-mesh-bvh.umd.js" || ';if(!src.includes(A1)||!src.includes(A2))throw Error('page_harness: audit.js script loop moved');
+  src=src.replace(A1,'const fixture = s[2]; void (').replace(A2,'if (src === "vendor/three-mesh-bvh.umd.js") { try { vm.runInContext(fs.readFileSync(path.join(__dirname,"..",src),"utf8"),context,{filename:src}); } catch (e) { rec("bvh", e); } continue; } if (');}
  const T=real3?threeDir():null,env={...process.env,REAL3:real3?'1':'',REAL3_DIR:T?T.dir:''};if(!real3)delete env.REAL3;
  const proc=Object.create(process,{env:{value:env},argv:{value:[process.argv[0],'audit']}});
  // ls: a localStorage store present while the page's scripts load (a reload: settings saved by an earlier session are
@@ -37,7 +41,15 @@ function boot({real3=false,seed=1,coarse=false,ls=null}={}){
  if(!ls){H.win.__ls=new Map();H.win.__ls.getItem=k=>H.win.__ls.has(k)?H.win.__ls.get(k):null;H.win.__ls.setItem=(k,v)=>H.win.__ls.set(k,String(v));H.win.__ls.removeItem=k=>H.win.__ls.delete(k);}
  // No renderer / network: native maps fall back to the legacy blockout and agent models are skipped (as the audit's
  // fixtures and test_client_online.cjs do).
- H.xe('nmEnsure=function(){return Promise.resolve(null);};window.xvAgentsReady=xvAgentsReady=function(){return Promise.resolve([]);};xvPreloadAgents=function(){};true');
+ // native: the real native-map loader (nmEnsure) on the repo's own files - map.json / navigation.json / plants.json from
+ // models/valorant/maps/<map>/ and the prebuilt collision world (server/public/worlds/<map>/, npm run build:worlds) for the
+ // BVH collision - with an empty render scene (no glTF loader offline). Bots then walk the real nav graph and collide with
+ // the real map, as on the live page.
+ if(native){const root=path.join(__dirname,'..');Object.assign(H.win,{AbortController,AbortSignal});H.win.fetch=async(u)=>{u=String(u);let f=null;const w=/\/worlds\/([a-z]+)\/(.+)$/.exec(u);
+   if(w)f=path.join(root,'server/public/worlds',w[1],w[2]);else if(!/^[a-z]+:/i.test(u))f=path.join(root,u.split('?')[0]);
+   if(!f||!fs.existsSync(f))return new Response('',{status:404});return new Response(fs.readFileSync(f),{status:200});};
+  H.xe('nmLoadScene=function(){return Promise.resolve({scene:new THREE.Group(),animations:[]});};window.xvAgentsReady=xvAgentsReady=function(){return Promise.resolve([]);};xvPreloadAgents=function(){};true');}
+ else H.xe('nmEnsure=function(){return Promise.resolve(null);};window.xvAgentsReady=xvAgentsReady=function(){return Promise.resolve([]);};xvPreloadAgents=function(){};true');
  // getComputedStyle from inline styles (the audit's returns "" for everything, so the page's results-screen flag read
  // "shown" for good and its rAF loop treated the game as covered: no ticks behind a phantom results screen).
  H.win.getComputedStyle=el=>{const st=(el&&el.style)||{},d=st.display||(el&&el.hidden?'none':(el&&el.id==='result'?'none':'block'));return new Proxy({},{get:(t,k)=>k==='display'?d:k==='visibility'?(st.visibility||'visible'):k==='getPropertyValue'?(n=>st[n]||''):(st[k]||'')});};

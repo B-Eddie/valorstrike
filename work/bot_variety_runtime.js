@@ -441,6 +441,19 @@ function xbSeen(u,t,x,y,z){if(!window.BotBrain||!u)return;BotBrain.memNote(xbMem
 function xbBest(u,age){if(!window.BotBrain||!u||!u.xMem||!u.g)return null;const m=u.xMem;for(const id in m.c)if(!xbLive(id))delete m.c[id];const p=u.g.position;return BotBrain.memBest(m,xbNow(),p.x,p.z,age);}
 function xbGlance(u){const c=xbBest(u,window.BotBrain?BotBrain.SENSE.glance:0);if(!c)return null;const p=u.g.position,d=Math.hypot(c.x-p.x,c.z-p.z);return d>.8&&d<45?c:null;}
 function xbFaceTo(u,want,dt){const B=xbBrain(u);if(!B||!u.g)return null;return BotBrain.turnStep(B,u.g.rotation.y,want,dt,u.xTurnSt||(u.xTurnSt={v:0})).yaw;}
+// An enemy bot with no living enemy to target (every attacker died after the plant; the base loop had `break`: the whole
+// team froze for the rest of the fuse): it still plays its round goal - xGoal (retake / defuse spot, post-plant hold) - on
+// the same path follower, unstuck, smoothed motor, wall slide, facing and footsteps as the loop's unsighted branch.
+function xbNoFoe(b,dt){if(!b||!b.g||!b.alive||!running)return;const p=b.g.position;b.see=0;b.xSe=false;b.xTt=null;b.xaimOn=false;b.bn=0;
+ let gx=p.x,gz=p.z;if(mode==='five'&&!FV.dm){const o=xGoal(b,bots,!FV.atk,XG_V);if(o){gx=o[0];gz=o[1];}}
+ if(b.trT>0)b.trT=0;if(!(b.xr&&b.xr.length))[gx,gz]=xPath(b,dt,gx,gz,XP_V);
+ const ex=gx-p.x,ez=gz-p.z,ed=Math.hypot(ex,ez)||.01;let vx=0,vz=0;if(ed>.5){vx=ex/ed;vz=ez/ed;}
+ if(!(b.det>0))[vx,vz]=xUn(b,dt,vx,vz);xFace(b,dt,vx,vz);b.cr=false;
+ const speed=botRun(b,false)*(typeof botK==='function'?botK(b):1),bs=speed*dt;b.wk=0;[vx,vz]=xSmV(b,dt,vx,vz,speed);const x0=p.x,z0=p.z;
+ if(!blocked(p.x+vx*bs,p.z,.45,p.y))p.x+=vx*bs;else{b.blk=1;if(b.smMotor)b.smMotor.vx=0;}
+ if(!blocked(p.x,p.z+vz*bs,.45,p.y))p.z+=vz*bs;else{b.blk=1;if(b.smMotor)b.smMotor.vz=0;}
+ b.spd=b.smMotor?Math.hypot(b.smMotor.vx,b.smMotor.vz):dt>0?Math.hypot(p.x-x0,p.z-z0)/dt:0;b.sf=b.spd/botRun(b,false);b.mv=b.spd>.25;
+ if(typeof botStep==='function')botStep(b,dt,Math.hypot(p.x-x0,p.z-z0),false,b.spd);b.cd-=dt;}
 // out of a fight in Deathmatch / TDM: the freshest contact (BotBrain.SENSE.hunt s), else a spawn point 15 m+ away (new one
 // on arrival or after 15 s); other modes keep their own goals.
 function xbHunt(u,tg,out){const c=xbBest(u,window.BotBrain?BotBrain.SENSE.hunt:0);if(c)return x2(out,c.x,c.z);const p=u.g.position,now=xbNow();
@@ -481,4 +494,62 @@ function xbBlindPlay(b){if(!(b&&b.blind>0)){if(b)b.xBp=null;return null;}if(b.xB
 if(typeof xBotYaw==='function'){const y0=xBotYaw;xBotYaw=function(dt){try{if(dt&&typeof bots!=='undefined')for(const b of bots)if(b&&b.g&&xbFdOn(b))b.g.rotation.y=b.xFd.yaw;}catch(e){}return y0.apply(this,arguments);};}
 if(typeof botCanShoot==='function'){const cs1=botCanShoot;botCanShoot=function(b){return cs1.apply(this,arguments)&&!xbFdOn(b);};}
 {const g1=xGoal;xGoal=function(u,team,atk,out){if(u&&u.g&&u.blind>0&&mode==='five'){const B=xbBlindPlay(u);if(B){const q=u.g.position,ry=u.g.rotation.y;return B.act==='back'?x2(out,q.x-Math.sin(ry)*3,q.z-Math.cos(ry)*3):x2(out,q.x,q.z);}}else if(u&&u.xBp&&!(u.blind>0))u.xBp=null;return g1.apply(this,arguments);};}
+// ---- Hold and clear like Valorant players (bots-overhaul, user 17:41-17:45 2026-10-26: "bots constantly stand still", "no
+// corner checking / clearing angles", "make the bots smarter") ----
+// (1) Holding an angle. A bot that has reached its spot (defender site / mid / off-angle seat, an attacker's default stage
+// seat) no longer freezes facing wherever it last walked: its crosshair sits on the corners an enemy can come from (XHP
+// angles: from the spot, the routes toward the enemy spawn and toward every site / mid, each followed until the line of sight
+// from the bot's eye breaks - the enemy appears right there, at head height), it checks them in turn (the closest corner
+// most), and after a while (2.5-7.5 s, longer for patient bots) it re-seats 1.2-3.5 m off to another spot that still sees its
+// main angle, or back to its first spot: the small repositioning real players do on a hold instead of standing in one spot
+// all round. (2) Clearing while walking: off-fight the crosshair rides the next opening edge around the heading
+// (BotBrain.cornerPick, = the server's cornerLook: 13 eye-height rays over +-72 deg, re-picked every 0.25 s), i.e. the bot
+// slices the corner it is about to pass instead of looking down its path.
+// its own seeded stream (the hold draws never shift the round plan / trade / sound draws on xbRand)
+function xhpRand(u){return u.xhr&&u.xhrK===xbvKey()?u.xhr:(u.xhrK=xbvKey(),u.xhr=BotRoutes.rng(BotRoutes.hash((u.name||'')+'|hold|'+xbvSeed()+'|'+xbvKey())));}
+var XHP={cache:new Map(),ckey:'',ray:null,v0:null,v1:null,ANG:[],DEP:[]};
+function xhpOn(u){return mode==='five'&&!FV.dm&&running&&!(FV.buy>0)&&!!u&&!!u.g&&u!==player&&u.alive!==false&&!!window.BotBrain&&typeof nmActive==='function'&&!!nmActive();}
+function xhpDepth(o,a,far){if(typeof THREE==='undefined'||typeof solids==='undefined')return far;const R=XHP.ray||(XHP.ray=new THREE.Raycaster());R.firstHitOnly=true;
+ (XHP.v0||(XHP.v0=new THREE.Vector3())).set(o[0],o[1],o[2]);(XHP.v1||(XHP.v1=new THREE.Vector3())).set(Math.sin(a),0,Math.cos(a));R.set(XHP.v0,XHP.v1);R.near=0;R.far=far;
+ const h=R.intersectObjects(solids,false);return h.length?h[0].distance:far;}
+// the corners (yaw + aim point at head height) an enemy can come from, seen from (x, y, z) - cached per map / 1 m cell / side
+function xhpAngles(C,x,y,z,atk){const k=C.key+'|'+Math.round(x)+','+Math.round(z)+'|'+(atk?1:0);if(XHP.ckey!==C.key){XHP.ckey=C.key;XHP.cache.clear();}let A=XHP.cache.get(k);if(A)return A;A=[];
+ try{const N=C.nav.nodes,s=nmNear(C,x,z,y);if(s<0)return A;const eye=new RV(x,y+1.5,z),q=new RV(),srcs=[],en=atk?C.meta.defender:C.meta.attacker;srcs.push([en,1.6]);for(const n in C.meta.sites)srcs.push([C.meta.sites[n],1]);srcs.push([xbvMid(C),.8]);
+  for(const [src,w] of srcs){const e=nmNear(C,src[0],src[2],src[1]);if(e<0||e===s)continue;const P=nmPath(C,s,e);if(!P||P.length<2)continue;let last=null,pt=null,run=0;
+   for(let i=1;i<P.length&&run<45;i++){const n=N[P[i]];run=Math.hypot(n[0]-x,n[2]-z);if(Math.abs(n[1]-y)>5)break;q.set(n[0],n[1]+1.5,n[2]);if(los(eye,q)){last=n;continue;}pt=last?[(last[0]+n[0])/2,(last[1]+n[1])/2+1.5,(last[2]+n[2])/2]:null;break;}
+   if(!pt&&last&&run>=8)pt=[last[0],last[1]+1.5,last[2]];if(!pt)continue;const d=Math.hypot(pt[0]-x,pt[2]-z);if(d<2.5)continue;
+   const yaw=Math.atan2(pt[0]-x,pt[2]-z),sc=w/(4+d)*30;let dup=null;for(const a of A)if(Math.abs(xAng(a.yaw-yaw))<.3){dup=a;break;}if(dup){dup.w+=sc*.5;continue;}A.push({yaw,x:pt[0],y:pt[1],z:pt[2],d,w:sc});}
+  A.sort((a,b)=>b.w-a.w);if(A.length>3)A.length=3;}catch(e){}
+ if(XHP.cache.size>600)XHP.cache.clear();XHP.cache.set(k,A);return A;}
+// re-seat target near the hold's base spot that still sees the main angle (null = stay)
+function xhpSeat(C,u,H,team){const r=xhpRand(u),base=[H.bx,H.by,H.bz],q0=u.g.position;if(r()<.4&&Math.hypot(H.bx-q0.x,H.bz-q0.z)>1.2)return [H.bx,H.bz];/* back to the first spot (only when off it: standing on it, pick another seat) */const taken=[];for(const v of team)if(v!==u&&v.alive&&v.g)taken.push([v.g.position.x,v.g.position.y,v.g.position.z]);
+ const a0=H.ang&&H.ang[0];for(let t=0;t<3;t++){const q=xbvSpot(C,base,taken,r,{rMin:1.2,rMax:3.5,gap:1.8});if(!q)continue;if(!a0||los(new RV(q[0],q[1]+1.5,q[2]),new RV(a0.x,a0.y,a0.z)))return [q[0],q[2]];}return null;}
+{const g2=xGoal;xGoal=function(u,team,atk,out){const g=g2.apply(this,arguments);
+ try{if(!g||!xhpOn(u)||u.see>0||u.trT>0||u.blind>0||u.xHold){if(u)u.xHp=u.xHp&&u.xHp.key===xbvKey()&&g?u.xHp:null;return g;}
+  const s=FV.sp,p=u.g.position,gd=Math.hypot(g[0]-p.x,g[1]-p.z);if(s&&((s.st==='carry'&&s.c===u&&(gd>1.6||(typeof inSite==='function'&&inSite(p))))||(s.st==='plant'&&!atk)||(s.st==='drop'&&atk)))return g; // the carrier on its way / in a plant zone, the retake and the pickup goals stay exact (a carrier waiting on its team's timing holds angles like the rest)
+  const C=nmActive();let H=u.xHp;
+  if(H&&(H.key!==xbvKey()||Math.hypot(H.bx-g[0],H.bz-g[1])>2.5))H=u.xHp=null;
+  if(!H){if(gd>1.6)return g;const B=xbBrain(u),r=xhpRand(u),now=performance.now();H=u.xHp={key:xbvKey(),bx:g[0],by:p.y,bz:g[1],seat:null,until:now+(2.5+(B?B.patience:.5)*3.5+r()*1.5)*1000,ang:null,ai:0,aiT:0,shifts:0};}
+  const now=performance.now();if(!H.ang)H.ang=xhpAngles(C,p.x,p.y,p.z,atk);
+  if(H.seat){if(Math.hypot(H.seat[0]-p.x,H.seat[1]-p.z)>.5)return x2(out,H.seat[0],H.seat[1]);H.seat=null;H.ang=xhpAngles(C,p.x,p.y,p.z,atk);const B=xbBrain(u),r=xhpRand(u);H.until=now+(2.5+(B?B.patience:.5)*3.5+r()*1.5)*1000;}
+  if(now>=H.until){H.until=now+1500;const q=xhpSeat(C,u,H,team);if(q&&Math.hypot(q[0]-p.x,q[1]-p.z)>.6){H.seat=q;H.shifts++;return x2(out,q[0],q[1]);}}
+  return x2(out,p.x,p.z);}catch(e){}return g;};}
+// the yaw a holding / walking bot keeps its crosshair on when nothing it heard or saw is fresher (null = the base facing)
+function xhpYaw(u,dt,vx,vz){if(!xhpOn(u))return null;const H=u.xHp,p=u.g.position,now=performance.now();
+ if(H&&H.ang&&H.ang.length&&!H.seat){if(now>=H.aiT){const r=xhpRand(u),A=H.ang;let k=0;if(A.length>1&&r()>.55)k=1+Math.floor(r()*(A.length-1));H.ai=k;H.aiT=now+(2.2+r()*3)*1000;}const a=H.ang[Math.min(H.ai,H.ang.length-1)];u.xhpA=a;return Math.atan2(a.x-p.x,a.z-p.z);}
+ if(H&&H.seat&&H.ang&&H.ang.length){const a=H.ang[0];u.xhpA=a;return Math.atan2(a.x-p.x,a.z-p.z);} // re-seating: keep the main angle (a shoulder step, not a turn away)
+ u.xhpA=null;if(!(vx||vz))return null;const hd=Math.atan2(vx,vz);const c=u.xhpC;if(c&&now<c.t+250&&Math.abs(xAng(c.h-hd))<.5)return c.y;
+ const o=[p.x,p.y+1.5,p.z];XHP.ANG.length=XHP.DEP.length=0;for(let i=-6;i<=6;i++){const a=hd+i*.21;XHP.ANG.push(a);XHP.DEP.push(xhpDepth(o,a,40));}
+ const y=BotBrain.cornerPick(XHP.ANG,XHP.DEP,hd);u.xhpC={t:now,h:hd,y:y==null?hd:y};return u.xhpC.y;}
+if(typeof xFace==='function'){const f0=xFace;xFace=function(u,dt,vx,vz){if(u&&u.g&&!(u.hearT>0)&&!(typeof xbGlance==='function'&&xbGlance(u))){let t=null;try{t=xhpYaw(u,dt,vx,vz);}catch(e){t=null;}
+  if(t!=null){const y=typeof xbFaceTo==='function'?xbFaceTo(u,t,dt):null;u.g.rotation.y=y!==null?y:u.g.rotation.y+xAng(t-u.g.rotation.y)*Math.min(1,dt*8);return;}}return f0.apply(this,arguments);};}
+// (3) Out of the geometry. A bot whose capsule ends up inside the map (snapped onto a crate lip / ledge by the floor
+// follow, or spawned against one: every axis move then reads blocked and it stands there for the rest of the round - one
+// defender on Ascent did on 55b5ef7) is put back on the nearest clear navigation node within 3 m after 0.6 s stuck.
+function xbUnembed(u,dt){if(!u||!u.g||u.nt||u.xk!=null||u.xj!=null||u.ku>0||u.xup||typeof nmActive!=='function')return false;const C=nmActive();if(!C||!C.nav)return false;const p=u.g.position;
+ if(!blocked(p.x,p.z,.45,p.y)){u.xEmT=0;return false;}if((u.xEmT=(u.xEmT||0)+dt)<.6)return false;u.xEmT=0;
+ const N=C.nav.nodes;let best=-1,bd=9;for(let i=0;i<N.length;i++){const n=N[i];if(Math.abs(n[0]-p.x)>3||Math.abs(n[2]-p.z)>3||Math.abs(n[1]-p.y)>1.5)continue;if(C.playable&&!C.playable[i])continue;const d=Math.hypot(n[0]-p.x,n[2]-p.z)+Math.abs(n[1]-p.y);if(d>=bd)continue;if(blocked(n[0],n[2],.45,n[1]))continue;bd=d;best=i;}
+ if(best<0)return false;const n=N[best];(XBV.emlog||(XBV.emlog=[])).push({name:u.name,from:[+p.x.toFixed(2),+p.y.toFixed(2),+p.z.toFixed(2)],to:best});if(XBV.emlog.length>100)XBV.emlog.shift();
+ p.x=n[0];p.y=n[1];p.z=n[2];u.np=null;u.uw=null;u.usP=null;if(u.smMotor){u.smMotor.vx=0;u.smMotor.vz=0;}return true;}
+if(typeof xUn==='function'){const un0=xUn;xUn=function(u,dt,vx,vz){try{xbUnembed(u,dt);}catch(e){}return un0.apply(this,arguments);};}
 // ---- END BOT VARIETY ----

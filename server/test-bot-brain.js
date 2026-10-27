@@ -104,6 +104,12 @@ const G={map:{attacker:[-14,0,0],defender:[14,0,-28],sites:{A:[-8,0,-14],B:[8,0,
  assert.deepEqual(C({at:true,eta:0,seen:true,left:8}),{act:'defuse',style:'stick'},'no time to fight first: stick');
  const sty=new Set();for(let k=0;k<40;k++)sty.add(C({at:true,eta:0,seen:true,left:30}).act+'/'+C({at:true,eta:0,seen:true,left:30}).style);assert.ok(sty.has('defuse/tap')&&sty.has('clear/null'),'attackers around with time: tap the defuse or clear first ('+[...sty]+')');
  assert.equal(C({at:true,eta:0,seen:true,left:30,tapped:true}).style!=='tap',true,'one tap only');
+ // every attacker dead after the plant (user 17:42 2026-10-26: defenders stood still and never defused): nothing to wait for,
+ // clear or fake against - go straight on and stick the defuse, a stale sighting / sound included; save only when even a
+ // straight run cannot make it (fails on 55b5ef7: alone with time to spare it waited for a mate, a stale sighting cleared first)
+ assert.equal(C({enemies:0,grouped:0,left:30}).act,'go','no attacker alive, alone with time: go, no waiting for a mate');
+ assert.deepEqual(C({enemies:0,at:true,eta:0,seen:true,left:30}),{act:'defuse',style:'stick'},'no attacker alive, a stale sighting: stick the defuse');
+ assert.equal(C({enemies:0,left:5,eta:2}).act,'save','no attacker alive but no time: save');
  assert.equal(B.postPlay(P,{left:3,defusing:false,dt:0,eta:2}),'hide','the fuse beats any defuse: hide');assert.equal(B.postPlay(P,{left:20,defusing:true,dt:2,eta:3}),'stop','a defuse in reach: stop it');
  assert.equal(B.postPlay(P,{left:20,defusing:true,dt:5,eta:4}),'hold','too far to stop it: hold');assert.equal(B.postPlay(P,{left:20,defusing:false,dt:0,eta:3}),'hold','no defuse: hold the post');
  // real Ascent match: plant spots, post-plant slots and retake calls from the sim
@@ -122,5 +128,10 @@ const G={map:{attacker:[-14,0,0],defender:[14,0,-28],sites:{A:[-8,0,-14],B:[8,0,
  Object.assign(a,{x:site[0]+6,z:site[2]+6});let taps=0,clears=0;const r0=S.round;for(let k=0;k<12;k++){S.round=r0+100+k;S.time+=1;a.shotAt=S.time+2;d.plan=null;at(30,0);const c=d.plan.ret;if(c.style==='tap')taps++;if(c.act==='clear')clears++;}S.round=r0;assert.ok(taps+clears===12&&taps>0&&clears>0,'attacker shooting near the Spike: tap or clear first ('+taps+' / '+clears+')');
  Object.assign(a,{x:site[0]+3,z:site[2]+3,plan:null});Object.assign(S.spike,{t:20,dt:2,defuser:d.id});S.bot(a);assert.equal(a.plan.postAct,'stop','a defuse in reach: the attacker goes to stop it');
  Object.assign(S.spike,{t:2.5,dt:0,defuser:null});a.plan.post0=null;S.bot(a);assert.equal(a.plan.postAct,'hide','the fuse beats any defuse: the attacker hides');
+ // every attacker dead after the plant: a defender 20 m out walks onto the Spike and defuses well inside the fuse
+ {Object.assign(a,{alive:false,hp:0});Object.assign(S.spike,{st:'plant',t:30,dt:0,defuser:null});const n=W.nav.nodes[W.near(site[0]+14,site[2]+14,site[1])];Object.assign(d,{alive:true,hp:100,x:n[0],y:n[1],z:n[2],plan:null,react:null,route:null});
+  const d0=Math.hypot(d.x-site[0],d.z-site[2]);let left=null;for(let k=0;k<30/.05;k++){S.step(.05);if(S.spike.dt>=7-1e-6){left=30-(k+1)*.05;break;}if(S.spike.st!=='plant')break;}
+  assert.ok(left!=null&&left>=10,'no attacker alive: the defender ('+d0.toFixed(1)+' m out) walks onto the Spike and defuses in time ('+(left==null?'no defuse, spike '+S.spike.st+' dt '+S.spike.dt.toFixed(1):left.toFixed(1)+' s left')+')');
+  out.push('no-attacker retake '+d0.toFixed(1)+' m, defused with '+left.toFixed(1)+' s left');}
  out.push('spike play: plants '+PL.map(e=>e.kind).join('/')+', post slots '+PO.length+', tap '+taps+' clear '+clears);}
 console.log('Bot brain: '+out.join('; '));
