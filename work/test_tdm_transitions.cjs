@@ -54,7 +54,7 @@ const fn=name=>between('function '+name+'(','\nfunction ');
  P.api.dmFired(bot);assert.equal(bot.pp,0,'a bot that fires loses its spawn protection');
  // Every bot / ally / remote-human shot ends protection, hit or miss (server fire(): protectedUntil = 0 before the hit test).
  assert(h.includes('SFX.at(p, w); if (b.pp) dmFired(b);'),'enemy bot shots must end its protection');
- assert(/SFX\.at\(p, [^;]*a\.w \|\| "Vandal"\); if \(a\.pp\) dmFired\(a\);/.test(h),'ally shots (gun or Blade Storm) must end its protection');
+ assert(h.includes('aw = abs ? "Blade Storm" : a.w || "Vandal"')&&h.includes('SFX.at(p, aw); if (a.pp) dmFired(a);'),'ally shots (gun or Blade Storm) must end its protection');
  assert(h.includes('if (m.t === "sh") { if (u.alive && typeof m.w === "string") { if (u.pp) dmFired(u);'),'a remote human shot must end its protection');
  {const i=h.indexOf('SFX.at(p, w); if (b.pp) dmFired(b);'),j=h.lastIndexOf('if (see && b.cd <= 0',i);assert(j>0&&i-j<1600&&!h.slice(j,i).includes('hurt('),'bot protection must end on the shot, before any hit roll');}
  P.api.hurt(bot,30,'You');assert.equal(bot.hp,70);P.api.hurt(ally,40,'Bot Sova');assert.equal(ally.hp,100,'protected ally took damage');

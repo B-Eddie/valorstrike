@@ -33,8 +33,8 @@ const path=require('path'),assert=require('assert/strict');const {boot}=require(
  // Light / Heavy still 66%
  assert.equal(xe('(()=>{const t={armor:50};return armAbs(t,30)})()'),19.8);
  // a bot with a Regen Shield refills too
- assert.equal(xe('(()=>{const b=globalThis.__rb=bots.find(x=>x.alive);b.armor=25;b.rgn=50;b.hp=1e6;armAbs(b,25);return b.armor})()'),0);await adv(5500);
- {const r=JSON.parse(xe('JSON.stringify([__rb.alive,__rb.armor,__rb.rgn])'));assert.ok(r[0]&&r[2]<50&&r[1]+r[2]<=50+1e-6&&r[1]>0,'bot refilled from its pool '+JSON.stringify(r));xe('__rb.hp=100;true');}
+ assert.equal(xe('(()=>{const b=globalThis.__rb=bots.find(x=>x.alive);b.armor=25;b.rgn=50;b.hp=1e6;armAbs(b,25);allies.forEach(a=>{if(a&&a.alive)a.cd=1e9;});return b.armor})()'),0);await adv(5500);/* ally fire held through the refill (cd: no shot): on the human aim model at the real fire cadence (BOT VARIETY xbShot) allies shot this bot's armour off again mid-check */
+ {const r=JSON.parse(xe('JSON.stringify([__rb.alive,__rb.armor,__rb.rgn])'));assert.ok(r[0]&&r[2]<50&&r[1]+r[2]<=50+1e-6&&r[1]>0,'bot refilled from its pool '+JSON.stringify(r));xe('__rb.hp=100;allies.forEach(a=>{if(a&&a.cd>1e8)a.cd=0;});true');}
  // round carry: a surviving player keeps armor and pool
  xe('player.armor=10;player.rgn=20;player.hp=100;fCheck(true,"QA","QA");true');
  assert.equal(xe('FV.arm'),10);assert.equal(xe('FV.rgn'),20);

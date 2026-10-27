@@ -62,7 +62,7 @@ const fs=require('fs'),vm=require('vm'),path=require('path'),assert=require('ass
   assert.equal(B.body,dr.bodyDamage);assert.equal(B.head,dr.headDamage);assert.equal(B.legs,dr.legDamage);assert.equal(B.rate,weapons['Blade Storm'].fireRate);assert.equal(B.head,3*B.body);assert.equal(B.legs,.85*B.body,'wiki: 50 body, x3 head, x0.85 legs');
   const wd=H.match(/function wDmg\(W, zone, dist\) \{[^\n]*\n[^\n]*\}/)[0];const WD=vm.runInNewContext(wd+';wDmg',{WEAP:{},xPelOn:false});for(const d of [2,30,80])assert.deepEqual(['body','head','legs'].map(z=>WD(B,z,d)),[50,150,42.5],'knife damage at '+d+' m (no falloff)');
   assert(H.includes('const bsw = xBsBot(b), w = bsw ? "Blade Storm" : b.w || "Classic", W = bsw ? XBSB : WEAP[w] || WEAP.Classic'),'enemy bot shot: knives while Blade Storm is out');
-  assert(H.includes('SFX.at(p, abs ? "Blade Storm" : a.w || "Vandal")')&&H.includes('AW = abs ? XBSB : WEAP[a.w || "Vandal"]'),'ally bot shot: knives');
+  assert(H.includes('aw = abs ? "Blade Storm" : a.w || "Vandal", AW = abs ? XBSB : WEAP[aw] || WEAP.Vandal')&&H.includes('SFX.at(p, aw)')&&H.includes('AW = abs ? XBSB : WEAP[a.w || "Vandal"]'),'ally bot shot: knives');
   assert(H.includes('(w === "Blade Storm" ? 0 : gSpread(w, W, { mv: b.mv, n }))'),'knives: no movement spread (server ignoreMovementSpread)');
   assert(H.includes('WEAP[v[2]] || v[2] === "Blade Storm" ? v[2] : "Vandal"'),'online shot event: Blade Storm routed, not Vandal');
   assert(H.includes('if (b.bsW && window.xBotUB && xBotUB[b.name]) return "Blade Storm";'),'kill feed: Blade Storm');
