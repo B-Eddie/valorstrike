@@ -530,7 +530,8 @@ function xhpAngles(C,x,y,z,atk){const k=C.key+'|'+Math.round(x)+','+Math.round(z
 function xhpSeat(C,u,H,team){const r=xhpRand(u),base=[H.bx,H.by,H.bz],q0=u.g.position;if(r()<.4&&Math.hypot(H.bx-q0.x,H.bz-q0.z)>1.2)return [H.bx,H.bz];/* back to the first spot (only when off it: standing on it, pick another seat) */const taken=[];for(const v of team)if(v!==u&&v.alive&&v.g)taken.push([v.g.position.x,v.g.position.y,v.g.position.z]);
  const a0=H.ang&&H.ang[0];for(let t=0;t<3;t++){const q=xbvSpot(C,base,taken,r,{rMin:1.2,rMax:3.5,gap:1.8});if(!q)continue;if(!a0||los(new RV(q[0],q[1]+1.5,q[2]),new RV(a0.x,a0.y,a0.z)))return [q[0],q[2]];}return null;}
 {const g2=xGoal;xGoal=function(u,team,atk,out){const g=g2.apply(this,arguments);
- try{if(!g||!xhpOn(u)||u.see>0||u.trT>0||u.blind>0||u.xHold){if(u)u.xHp=u.xHp&&u.xHp.key===xbvKey()&&g?u.xHp:null;return g;}
+ try{if(u&&u.xHp&&u.g&&!u.xHp.seat&&Math.hypot(u.xHp.bx-u.g.position.x,u.xHp.bz-u.g.position.z)>4.5)u.xHp=null; // left the spot (a fight, a trade, the spike, a retake took it > 4.5 m away; seats sit <= 3.5 m from the base): the hold is over, not carried along while it runs (xhpYaw would keep the old corners)
+  if(!g||!xhpOn(u)||u.see>0||u.trT>0||u.blind>0||u.xHold){if(u)u.xHp=u.xHp&&u.xHp.key===xbvKey()&&g?u.xHp:null;return g;}
   const s=FV.sp,p=u.g.position,gd=Math.hypot(g[0]-p.x,g[1]-p.z);if(s&&((s.st==='carry'&&s.c===u&&(gd>1.6||(typeof inSite==='function'&&inSite(p))))||(s.st==='plant'&&!atk)||(s.st==='drop'&&atk)))return g; // the carrier on its way / in a plant zone, the retake and the pickup goals stay exact (a carrier waiting on its team's timing holds angles like the rest)
   const C=nmActive();let H=u.xHp;
   if(H&&(H.key!==xbvKey()||Math.hypot(H.bx-g[0],H.bz-g[1])>2.5))H=u.xHp=null;
@@ -540,7 +541,7 @@ function xhpSeat(C,u,H,team){const r=xhpRand(u),base=[H.bx,H.by,H.bz],q0=u.g.pos
   if(now>=H.until){H.until=now+1500;const q=xhpSeat(C,u,H,team);if(q&&Math.hypot(q[0]-p.x,q[1]-p.z)>.6){H.seat=q;H.shifts++;return x2(out,q[0],q[1]);}}
   return x2(out,p.x,p.z);}catch(e){}return g;};}
 // the yaw a holding / walking bot keeps its crosshair on when nothing it heard or saw is fresher (null = the base facing)
-function xhpYaw(u,dt,vx,vz){if(!xhpOn(u))return null;const H=u.xHp,p=u.g.position,now=performance.now();
+function xhpYaw(u,dt,vx,vz){if(!xhpOn(u))return null;const p=u.g.position,now=performance.now();if(u.xHp&&!u.xHp.seat&&Math.hypot(u.xHp.bx-p.x,u.xHp.bz-p.z)>4.5)u.xHp=null;const H=u.xHp;
  if(H&&H.ang&&H.ang.length&&!H.seat){if(now>=H.aiT){const r=xhpRand(u),A=H.ang;let k=0;if(A.length>1&&r()>.55)k=1+Math.floor(r()*(A.length-1));H.ai=k;H.aiT=now+(2.2+r()*3)*1000;}const a=H.ang[Math.min(H.ai,H.ang.length-1)];u.xhpA=a;return Math.atan2(a.x-p.x,a.z-p.z);}
  if(H&&H.seat&&H.ang&&H.ang.length){const a=H.ang[0];u.xhpA=a;return Math.atan2(a.x-p.x,a.z-p.z);} // re-seating: keep the main angle (a shoulder step, not a turn away)
  u.xhpA=null;if(!(vx||vz))return null;const hd=Math.atan2(vx,vz);const c=u.xhpC;if(c&&now<c.t+250&&Math.abs(xAng(c.h-hd))<.5)return c.y;

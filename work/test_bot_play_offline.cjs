@@ -28,12 +28,13 @@ const SECS=+(process.env.SECS||180),SEED=+(process.env.SEED||3);
   const e0=xbEngage;xbEngage=function(u,pre,ctx){try{if(ctx&&u&&u.g&&mode==='five'&&!(FV.buy>0)){const H=u.xHp;Q.eng.push({off:ctx.off,hold:!!(H&&!H.seat&&H.ang&&H.ang.length&&!(u.spd>.5)),walk:(u.spd||0)>1.5,d:ctx.d});}}catch(e){}return e0.apply(this,arguments);};
   if(typeof xbBurst==='function'){const b0=xbBurst;xbBurst=function(u,d,W){const n=b0.apply(this,arguments);try{if(!(FV.buy>0))Q.pull.push({d,k:u.xbPat||null,n});}catch(e){}return n;};}
   const s0=SFX.at;SFX.at=function(p,w){try{if(p&&!(FV.buy>0)&&w!=='Spike'&&w!=='Blade Storm'){let u=null;for(const v of bots.concat(allies))if(v&&v.g&&v.g.position===p){u=v;break;}if(u)Q.shot.push({st:botStopped(u),sl:!!u.xbSl,sf:+(u.sf||0).toFixed(2)});}}catch(e){}return s0.apply(this,arguments);};return true;})()`);
- const prev=new Map(),still=new Map(),acc={atk:[0,0],def:[0,0]},hold={n:0,on:0,corners:new Map(),seats:new Map()};let longStill=0,stillN=0;
+ const prev=new Map(),still=new Map(),acc={atk:[0,0],def:[0,0]},hold={n:0,on:0,corners:new Map(),seats:new Map()};let longStill=0,stillN=0,staleHold=0;
  for(let k=0;k<SECS*5;k++){await adv(200);
   const r=JSON.parse(xe(`JSON.stringify((()=>{const o={buy:FV.buy,run:running,u:[]};for(const [L,atk] of [[bots,!FV.atk],[allies,FV.atk]])for(const u of L){if(!u||!u.g)continue;const p=u.g.position,H=u.xHp;let on=null;
    if(u.alive&&H&&!H.seat&&H.ang&&H.ang.length&&!(u.see>0)&&!(u.hearT>0)&&!(u.blind>0)){on=0;for(const a of H.ang){const y=Math.atan2(a.x-p.x,a.z-p.z);if(Math.abs(xAng(u.g.rotation.y-y))<.3)on=1;}}
-   o.u.push([u.name+(atk?'A':'D'),u.alive,p.x,p.z,u.see||0,atk,on,H?H.ai:null,H?H.shifts:null]);}return o;})())`));
+   if(u.alive&&H&&!H.seat&&!(u.see>0)&&!(u.trT>0)&&!(u.hearT>0)&&!(u.blind>0)&&Math.hypot(H.bx-p.x,H.bz-p.z)>5)o.st=(o.st||0)+1;o.u.push([u.name+(atk?'A':'D'),u.alive,p.x,p.z,u.see||0,atk,on,H?H.ai:null,H?H.shifts:null]);}return o;})())`));
   if(r.buy>0||!r.run){prev.clear();still.clear();continue;}
+  staleHold+=r.st||0;
   if(xe('player.hp>0'))xe('pDie(null,"Vandal");true');
   for(const [nm,al,x,z,see,atk,on,ai,sh] of r.u){if(!al){prev.delete(nm);continue;}const p=prev.get(nm);
    if(p){const m=Math.hypot(x-p[0],z-p[1])/.2>.5,A=acc[atk?'atk':'def'];A[0]+=m;A[1]++;const s=m||see>0?0:(still.get(nm)||0)+.2;still.set(nm,s);stillN++;if(s>=8)longStill++;}
@@ -50,6 +51,7 @@ const SECS=+(process.env.SECS||180),SEED=+(process.env.SEED||3);
  // 2. holding angles
  const holders=[...hold.corners.entries()],multi=holders.filter(([,s])=>s.size>=2).length,seated=[...hold.seats.values()].filter(v=>v>=1).length,onPct=hold.n?hold.on/hold.n*100:0;
  console.log(`2. holding: crosshair on a corner ${onPct.toFixed(1)} % of ${hold.n} hold samples, ${multi}/${holders.length} holders checked 2+ corners, ${seated} bots re-seated`);
+ assert(staleHold===0,`a bot that left its spot (> 5 m from the hold's base: dropped at 4.5 m, seats sit <= 3.5 m; a trade push / sound keeps it until it ends) drops the hold instead of carrying its corners along (${staleHold} samples)`);
  assert(hold.n>=200,'bots hold angles on their spots ('+hold.n+' samples)');
  assert(onPct>=70,`a holding bot's crosshair sits on one of its corners (${onPct.toFixed(1)} % >= 70 %)`);
  assert(multi>=3,`holders check more than one corner (${multi})`);assert(seated>=3,`holders re-seat instead of standing in one spot (${seated})`);

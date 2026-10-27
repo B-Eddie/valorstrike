@@ -19,7 +19,9 @@ const fs=require('fs'),path=require('path'),assert=require('assert/strict'),{per
  xe(`(()=>{const W=window.__RS={area:0};const a0=BotBrain.buyArea;BotBrain.buyArea=function(){W.area++;return a0.apply(this,arguments);};return true;})()`);
  xe('__PS.live=true;__PS.endFrame();true');
  const rows=[];let prevBuy=xe('FV.buy'),starts=0,actions=0,firstAct=[],roundStart=[],win=0;
- for(let i=0;i<9000&&(actions<2||win>0);i++){xe("__RS.area=0;true");const a=performance.now();H.frameMs(1000/60);const ms=performance.now()-a;xe('__PS.endFrame()');
+ // frame budget: buy ~45 s + one full round (100 s action, up to 45 s Spike fuse, post-round) + the next buy = up to ~16000 frames
+ // at 60 fps; 9000 (150 s) only fitted a short first round (e341267 spawn walls + 7fd1afb collision: round 1 ran to frame 9115)
+ for(let i=0;i<16000&&(actions<2||win>0);i++){xe("__RS.area=0;true");const a=performance.now();H.frameMs(1000/60);const ms=performance.now()-a;xe('__PS.endFrame()');
   const buy=xe('FV.buy'),rs=JSON.parse(xe('JSON.stringify(__RS)'));
   if(buy>prevBuy+1){starts++;roundStart.push({i,ms,...rs});}
   if(win>0){const r=firstAct[firstAct.length-1];r.ms=Math.max(r.ms,ms);win--;}
