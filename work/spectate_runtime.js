@@ -17,7 +17,7 @@
 //    for the player.
 // The server sends pov only to a dead player and only for living teammates (spike.js roundState); enemies are never
 // spectated (index.html xSpecPool), so no enemy view data exists to draw.
-var XSPV = { F: null, key: null, u: null, w: null, am: null, fire: 0, rl: 0, rlT: 0, fail: {}, ov: null, zoom: 0, scope: false, bl: null, pov: {}, povAt: 0 };
+var XSPV = { F: null, key: null, u: null, w: null, am: null, fire: 0, rl: 0, rlT: 0, fail: {}, ov: null, zoom: 0, scope: false, bl: null, pov: {}, povAt: 0, k: 0 };
 function xspvTarget() { try { if (!running || !player || player.hp > 0 || !xKL.sp) return null; const a = XOB.fp; return a && a.alive && allies.indexOf(a) >= 0 ? a : null; } catch (e) { return null; } }
 function xspvWeap(a) { let w = a && a.w; try { if (!(typeof MP !== 'undefined' && MP.on) && typeof xWeapOf === 'function') w = xWeapOf(a) || w; } catch (e) {} return w === 'Knife' || (w && WEAP[w]) ? w : 'Classic'; }
 function xspvAgent(a) { let g = null; try { g = xAg(a); } catch (e) {} g = String(g || a.agent || 'Jett'); return g.charAt(0).toUpperCase() + g.slice(1).toLowerCase(); }
@@ -27,7 +27,14 @@ if (typeof xskGet === 'function') { const g0 = xskGet; xskGet = function (w) { i
 function xspvKey(ag, w, sk) { XSPV.ov = sk; try { return xvFPKey(ag, w); } finally { XSPV.ov = null; } }
 // the player's own rig warm-up evicts other agents' rigs from the cache (xvFPGet): never dispose the one being shown
 if (typeof xvFPClear === 'function') { const c0 = xvFPClear; xvFPClear = function (F) { if (F && F === XSPV.F) { F.xspvEvicted = 1; return; } return c0.apply(this, arguments); }; }
-function xspvDrop() { const F = XSPV.F; XSPV.F = null; XSPV.key = null; XSPV.u = null; XSPV.am = null; XSPV.rl = 0; if (!F) return;
+// Where the rig draws: the player's own viewmodel layer (feel_runtime VF_VIEW: its own 55 deg camera with a 1.5 cm near
+// plane, its own lights, drawn after a depth clear - vfBindRenderer draws it while a spectate rig shows), so a spectated
+// teammate's arms and hands frame and light exactly like the player's own (user: "first-person spectate shows a floating
+// gun with no arms/hands"). Drawn in the world pass on the world camera instead, the rig had the world's 0.1 m near plane
+// and depth (walls / props in front of the teammate's eye cover the hands) and the arms were framed off screen.
+function xspvView() { return typeof VF_VIEW !== 'undefined' && VF_VIEW && VF_VIEW.scene ? VF_VIEW : null; }
+function xspvLayer(F) { const V = xspvView(), L = V ? V.scene : camera; if (F.root.parent !== L) { if (F.root.parent) F.root.parent.remove(F.root); L.add(F.root); } }
+function xspvDrop() { const F = XSPV.F; XSPV.F = null; XSPV.key = null; XSPV.u = null; XSPV.am = null; XSPV.rl = 0; XSPV.k = 0; if (!F) return;
   if (F === (typeof XV !== 'undefined' && XV.fp)) return; /* the player's own rig: xvFPTick owns its visibility */ F.root.visible = false;
   if (F.xspvEvicted) { F.xspvEvicted = 0; try { xvFPClear(F); } catch (e) {} } }
 // one shot of the followed teammate (bfxBot is called at the shooter's spot: offline mate shots, online 's' events)
@@ -48,7 +55,7 @@ function xspvTick(dt) {
   const ag = xspvAgent(a), w = xspvWeap(a), sk = xspvSkins(a), key = xspvKey(ag, w, sk), pov = xspvPov(a), online = typeof MP !== 'undefined' && MP.on;
   if (XSPV.key !== key || XSPV.u !== a) { const same = XSPV.u === a; xspvDrop(); XSPV.key = key; XSPV.u = a; XSPV.w = w; XSPV.fire = 0; XSPV.eq = 1; void same;
     if (!XSPV.fail[key] && !(XV.failures && XV.failures[key])) { XSPV.ov = sk; let P = null; try { P = xvFPGet(ag, w); } catch (e) { XSPV.fail[key] = String(e); } finally { XSPV.ov = null; }
-      if (P) P.then((F) => { if (XSPV.key !== key) return; XSPV.F = F; F.kind = null; F.age = 0; xvFPPlay(F, 'equip'); if (F.root.parent !== camera) camera.add(F.root); }).catch((e) => { XSPV.fail[key] = String(e); }); } }
+      if (P) P.then((F) => { if (XSPV.key !== key) return; XSPV.F = F; F.kind = null; F.age = 0; xvFPPlay(F, 'equip'); xspvLayer(F); }).catch((e) => { XSPV.fail[key] = String(e); }); } }
   // ammo -> reload cue (offline: the mag ran dry; online: the server's reload clock when it is in, else the mag refilling)
   const am = online && Number.isFinite(a.nam) ? a.nam : a.xAmW === w && Number.isFinite(a.xAm) ? a.xAm : null, W = WEAP[w] || {}, rlT = W.rld || 2;
   if (pov && pov.rl > 0) { if (!(XSPV.rl > 0)) XSPV.rlT = Math.max(pov.rl, rlT); XSPV.rl = pov.rl; }
@@ -57,12 +64,17 @@ function xspvTick(dt) {
   XSPV.am = am;
   xspvZoom(w, pov ? pov.ads : 0); xspvBlind(pov ? pov.blind : a.blind > 0 ? a.blind : 0);
   const F = XSPV.F; if (!F || XSPV.key !== key) return;
-  F.root.visible = !XSPV.scope; if (F.root.parent !== camera) camera.add(F.root);
+  F.root.visible = !XSPV.scope; xspvLayer(F);
   if (XSPV.rl > 0) { XSPV.fire = 0; xvFPPlay(F, 'reload', 1 - XSPV.rl / Math.max(0.1, XSPV.rlT)); }
   else if (XSPV.fire > 0) { XSPV.fire = 0; F.kind = null; xvFPPlay(F, w === 'Knife' ? 'attack 1' : 'fire'); }
   else if (F.kind === 'reload' || (F.kind !== 'idle' && F.age > (F.duration || (F.action ? F.action.getClip().duration : 0.4)))) xvFPPlay(F, 'idle');
   F.am.update(dt); F.gm.update(dt); F.age += dt;
-  // FOV match to the rig's authored 43.383 deg: across and up in CAMERA space, depth kept. The root is turned PI/2 about Y
+  if (xspvView()) { // the player's own viewmodel framing (feel_runtime vfViewTick at rest): scale 1 through VF_VIEW's 55 deg lens, +4.5 cm right, -3.5 cm down; rifle ADS lines the optic up as the player's own ADS does
+    XSPV.k += ((pov && pov.ads && !XSPV.scope ? 1 : 0) - XSPV.k) * Math.min(1, dt * 14); const k = XSPV.k < 1e-3 ? 0 : XSPV.k;
+    F.root.scale.setScalar(1); F.root.rotation.set(0, Math.PI / 2, 0); F.root.position.set(F.origin.x + 0.045, F.origin.y - 0.035, F.origin.z);
+    if (k > 0) { F.root.updateMatrixWorld(true); const o = F.ws && (F.ws.getObjectByName('Reflex') || F.ws.getObjectByName('Scope')); if (o) { const p = o.getWorldPosition(new THREE.Vector3()); F.root.position.x -= p.x * k; F.root.position.y -= (p.y + 0.025) * k; } else { F.root.position.x -= 0.12 * k; F.root.position.y += 0.045 * k; } F.root.position.z += 0.07 * k; }
+    return; }
+  // no feel layer (world camera): FOV match to the rig's authored 43.383 deg: across and up in CAMERA space, depth kept. The root is turned PI/2 about Y
   // (the native rig faces +X), so local x = camera depth and local z = camera width: scale (1, s, s), as xAfFov. (s, s, 1)
   // stretched depth and height but not width - the spectated gun / arms drew squished horizontally, pitched up, arms off screen.
   const s = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) / Math.tan(THREE.MathUtils.degToRad(43.383 / 2)); F.root.scale.set(1, s, s); F.root.position.set(F.origin.x * s, F.origin.y * s, F.origin.z);

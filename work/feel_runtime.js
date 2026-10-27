@@ -85,7 +85,9 @@ var VF_VIEW={scene:new THREE.Scene(),camera:new THREE.PerspectiveCamera(55,1,.01
 VF_VIEW.scene.add(new THREE.HemisphereLight(0xffffff,0x8a95a5,1.7));{const light=new THREE.DirectionalLight(0xffffff,.9);light.position.set(-1,3,2);VF_VIEW.scene.add(light);}
 // Every renderer owns its own draw function. Rebind after AA/quality recreation;
 // retaining a function bound to a disposed renderer breaks the viewmodel layer.
-function vfBindRenderer(r){if(r.userData&&r.userData.vfBound)return;r.userData=r.userData||{};r.userData.vfBound=true;const draw=r.render.bind(r);r.render=function(s,c){const world=s===scene&&c===camera;if(world){r.info.autoReset=false;r.info.reset();}const result=draw(s,c),F=XV.fp;if(world){VF.worldDraw={...r.info.render};}if(s===scene&&c===camera&&F&&F.root.visible&&running&&player&&player.hp>0&&!paused){const auto=r.autoClear;r.autoClear=false;r.clearDepth();VF_VIEW.camera.aspect=camera.aspect;VF_VIEW.camera.updateProjectionMatrix();draw(VF_VIEW.scene,VF_VIEW.camera);r.autoClear=auto;}return result;};}
+function vfBindRenderer(r){if(r.userData&&r.userData.vfBound)return;r.userData=r.userData||{};r.userData.vfBound=true;const draw=r.render.bind(r);r.render=function(s,c){const world=s===scene&&c===camera;if(world){r.info.autoReset=false;r.info.reset();}const result=draw(s,c),F=XV.fp;if(world){VF.worldDraw={...r.info.render};}if(s===scene&&c===camera&&(F&&F.root.visible&&running&&player&&player.hp>0&&!paused||vfSpecView())){const auto=r.autoClear;r.autoClear=false;r.clearDepth();VF_VIEW.camera.aspect=camera.aspect;VF_VIEW.camera.updateProjectionMatrix();draw(VF_VIEW.scene,VF_VIEW.camera);r.autoClear=auto;}return result;};}
+// A spectated teammate's first-person rig (spectate_runtime.js XSPV.F) draws in this layer too, while the player is dead.
+function vfSpecView(){const S=typeof XSPV!=='undefined'&&XSPV?XSPV.F:null;return !!(S&&S.root.visible&&S.root.parent===VF_VIEW.scene&&running&&!paused);}
 vfBindRenderer(renderer);
 {const remake=xRemake;xRemake=function(){remake();vfBindRenderer(renderer);};}
 
