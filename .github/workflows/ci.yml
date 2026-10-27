@@ -103,6 +103,6 @@ jobs:
           SHARD_INDEX: ${{ matrix.shard }}
           QA_PERF_RETRY: '1' # test_round_start_perf / test_frame_perf only: one rerun after a wall-clock failure
         run: |
-          QA_LIST=1 node work/test_all.cjs
+          QA_LIST=1 node ../work/test_all.cjs
           npm run test:client
         working-directory: server
