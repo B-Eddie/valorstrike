@@ -33,6 +33,7 @@ jobs:
             vendor
             audio
             server/src
+            models/valorant/movement
       - name: index.html is the regen output (work/install_valorant.py)
         run: |
           python3 work/install_valorant.py
