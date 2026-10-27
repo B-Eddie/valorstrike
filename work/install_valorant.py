@@ -27,7 +27,9 @@ if va in s:s=s[:s.index(va)]+s[s.index(vb)+len(vb):]
 fa2='// ---- ABILITY FIRST PERSON ----';fb2='// ---- END ABILITY FIRST PERSON ----'
 if fa2 in s:s=s[:s.index(fa2)]+s[s.index(fb2)+len(fb2):]
 block+='\n'+(root/'work/ability_fp_runtime.js').read_text().rstrip('\n')
-block+='\n'+(root/'work/bot_variety_runtime.js').read_text().rstrip('\n').replace(va,va+'\n'+(root/'vendor/bot-routes.cjs').read_text().rstrip('\n')+'\n'+(root/'vendor/bot-brain.cjs').read_text().rstrip('\n')+'\n'+(root/'vendor/spawn-barriers.cjs').read_text().rstrip('\n'),1);da='// ---- DEBUG HOOKS ----';db='// ---- END DEBUG HOOKS ----'
+block+='\n'+(root/'work/bot_variety_runtime.js').read_text().rstrip('\n').replace(va,va+'\n'+(root/'vendor/bot-routes.cjs').read_text().rstrip('\n')+'\n'+(root/'vendor/bot-brain.cjs').read_text().rstrip('\n')+'\n'+(root/'vendor/spawn-barriers.cjs').read_text().rstrip('\n'),1);ma='// ---- BOT AMMO ----';mb='// ---- END BOT AMMO ----'
+while ma in s:s=s[:s.index(ma)]+s[s.index(mb)+len(mb):]
+block+='\n'+(root/'work/bot_ammo_runtime.js').read_text().rstrip('\n');da='// ---- DEBUG HOOKS ----';db='// ---- END DEBUG HOOKS ----'
 if da in s:s=s[:s.index(da)]+s[s.index(db)+len(db):]
 block+='\n'+(root/'work/debug_runtime.js').read_text().rstrip('\n');ka='// ---- WEAPON SKINS ----';kb='// ---- END WEAPON SKINS ----'
 if ka in s:s=s[:s.index(ka)]+s[s.index(kb)+len(kb):]

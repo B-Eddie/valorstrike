@@ -4044,7 +4044,8 @@ function xUbAnim(b, M, sp, dt) {
   // events: shots (SFX.at hook bumps b.xsh), hp loss, ability casts (xCaBotGo sets M.xCast)
   const sn = b.xsh || 0; if (sn !== X.sn) { if (sn > X.sn) { xUbAdd(X, "fire", 0.9); X.shots++; } X.sn = sn; }
   let mag = 25, rld = 2; try { const W = WEAP[M.w]; if (W) { mag = W.mag || mag; rld = W.rld || rld; } } catch (e) {}
-  if (X.shots >= mag && !X.ut) { X.shots = 0; xUbOnce(X, "reload", "U", Math.max(1, Math.min(3.2, rld))); } // bots have no magazine: a visual reload every magazine's worth of shots
+  if (b.xAmRn != null) { if (b.xAmRn !== X.rn) { const fresh = X.rn != null; X.rn = b.xAmRn; X.shots = 0; if (fresh && !X.ut) xUbOnce(X, "reload", "U", Math.max(0.5, Math.min(5, b.xAmRd || rld))); } } // offline bots with a real magazine (BOT AMMO): the clip plays when a reload starts, for its own length
+  else if (X.shots >= mag && !X.ut) { X.shots = 0; xUbOnce(X, "reload", "U", Math.max(1, Math.min(3.2, rld))); } // no magazine state (online puppets): a visual reload every magazine's worth of shots
   if (X.hp != null && b.hp < X.hp) xUbAdd(X, Math.random() < 0.3 ? "hitHead" : "hit", 1); X.hp = b.hp;
   if (M.xCast) { xUbOnce(X, M.xCast === "throw" ? "throw" : "cast", "U", M.xCast === "throw" ? 0.9 : 0.5); M.xCast = 0; }
   X.ut = Math.max(0, X.ut - dt); X.lt = Math.max(0, X.lt - dt); if (!X.ut) X.uo = null; if (!X.lt) X.lo = null;
@@ -4637,6 +4638,7 @@ function tick(dt) {
   xTrade(defs);
   for (const b of bots) {
     if (!b.alive || !running || b.nt) continue; // b.nt: online-driven unit (remote player / client puppet), no AI
+    if (typeof xbAmTick === "function") xbAmTick(b, dt); // magazine / reserve / reload (BOT AMMO)
     const p = b.g.position, from = b.xFr || (b.xFr = new V()); from.set(p.x, (p.y || 0) + 1.7, p.z); b.xaimOn = false;
     let tg = null, td = 1e9, see = false;
     b.xTh = (b.xTh == null ? Math.random() * 0.1 : b.xTh) - dt; // think (target choice + sight) ~10 Hz, staggered per bot
@@ -4690,7 +4692,7 @@ function tick(dt) {
     if (see && b.cd <= 0 && b.see * 1000 >= (typeof xbRt === "function" ? xbRt(b, D) : D.rt + (b.pre ? 0 : 150)) && botCanShoot(b) && b.xs && !(b.pk === 3 && b.mv && !b.xbSl) && (botStopped(b) || b.xbSl) && (b.bn > 0 || typeof xbReady !== "function" || xbReady(b, d)) && (typeof xbLosNow !== "function" || xbLosNow(from, eye) || ((b.xSe = false), (b.xTh = 0), (b.bn = 0), false))) { // a fresh, uncached line to the target for every shot: no stale fire into a wall (BOT VARIETY perception) // tight peek: fully stopped first (a sloppy fight, b.xbSl, fires before the counter-strafe has stopped it); a new pull waits for the flick (xbReady)
       const bsw = xBsBot(b), w = bsw ? "Blade Storm" : b.w || "Classic", W = bsw ? XBSB : WEAP[w] || WEAP.Classic, far = d > 20; b.bsW = bsw; // Blade Storm out: knives (XBSB), not the gun
       if (!(b.bn > 0)) { b.bn = typeof xbBurst === "function" ? xbBurst(b, d, W) : far ? D.bu[0] + Math.floor(Math.random() * (D.bu[1] - D.bu[0] + 1)) : 6 + Math.floor(Math.random() * 5); /* tap / burst / spray mix by range (BOT VARIETY xbBurst = server BotBrain.firePattern) */ b.hd = Math.random() < (b.pre && b.see < 0.6 ? Math.min(1, D.hs * 1.5) : D.hs); } // pre-aimed first bullets land nearer the head // tap/burst far, spray close
-      b.bn--; b.cd = b.bn > 0 ? 1 / (W.rate || 4) : (b.xbPz != null ? Math.max(1 / (W.rate || 4), b.xbPz) : (far ? 0.45 : 0.3) + Math.random() * 0.4) * D.cd; SFX.at(p, w); if (b.pp) dmFired(b);
+      b.bn--; if (!bsw && typeof xbAmFire === "function") xbAmFire(b, w, tg.t); /* one round (BOT AMMO); the last one ends the burst */ b.cd = b.bn > 0 ? 1 / (W.rate || 4) : (b.xbPz != null ? Math.max(1 / (W.rate || 4), b.xbPz) : (far ? 0.45 : 0.3) + Math.random() * 0.4) * D.cd; SFX.at(p, w); if (b.pp) dmFired(b);
       const pt = XTK.pt, aim = XTK.aim, mv = XTK.mv, hp = typeof xbShot === "function" ? xbShot(b, tg, from, w, W, d, D) : undefined; // human aim model (BOT VARIETY): body spot, flick, recoil pull, hit volumes
       let miss = 0, head = false; if (hp === undefined) { pt.copy(eye); if (!b.hd) pt.y -= 0.45; aim.copy(pt); aim.sub(from); aim.normalize(); xBotAim(b, aim);
       bSpread(b, w, W, aim, d, D); if (typeof xbAimErr === "function") xbAimErr(b, aim, D); // + crosshair error that settles while tracking
@@ -4707,6 +4709,7 @@ function tick(dt) {
   // blue teammates: push to B site, fight attackers they can see, defuse if you are dead
   for (const a of allies) {
     if (!a.alive || !running || a.nt) continue;
+    if (typeof xbAmTick === "function") xbAmTick(a, dt); // magazine / reserve / reload (BOT AMMO)
     const p = a.g.position, from = a.xFr || (a.xFr = new V()); from.set(p.x, (p.y || 0) + 1.6, p.z); a.xaimOn = false;
     let tg = null, td = 1e9;
     a.xTh = (a.xTh == null ? Math.random() * 0.1 : a.xTh) - dt; // think ~10 Hz, staggered: sighted target + nearest enemy
@@ -4764,7 +4767,7 @@ function tick(dt) {
     if (tg && a.cd <= 0 && a.xs && !(a.pk === 3 && a.mv) && botStopped(a) && (a.bn > 0 || typeof xbReady !== "function" || xbReady(a, td)) && !(a.rtE && typeof xbRt === "function" && a.ts * 1000 < xbRt(a, null)) && (typeof xbTurned !== "function" || xbTurned(a)) && (typeof xbLosNow !== "function" || xbLosNow(from, XTK.q.set(tg.g.position.x, (tg.g.position.y || 0) + 1.5, tg.g.position.z)) || ((a.xTg = null), (a.xTh = 0), false))) { // fresh line of sight for every shot (BOT VARIETY perception) // no shot mid-swing (BOT VARIETY turn rate) // allies react like enemy bots (no instant first shot) // tight peek: fully stopped first
       const abs = xBsBot(a), aw = abs ? "Blade Storm" : a.w || "Vandal", AW = abs ? XBSB : WEAP[aw] || WEAP.Vandal, AD = DIFF.normal; a.bsW = abs; // Blade Storm out: a knife (XBSB)
       if (!(a.bn > 0)) a.bn = typeof xbBurst === "function" ? xbBurst(a, td, AW) : 1; /* tap / burst / spray by range (BOT VARIETY xbBurst = BotBrain.firePattern), as enemy bots: was one shot every 0.8-1.6 s at any range */
-      a.bn--; a.cd = abs ? 1 / XBSB.rate + Math.random() * 0.3 : a.bn > 0 ? 1 / (AW.rate || 4) : a.xbPz != null ? Math.max(1 / (AW.rate || 4), a.xbPz) : 0.8 + Math.random() * 0.8; SFX.at(p, aw); if (a.pp) dmFired(a);
+      a.bn--; if (!abs && typeof xbAmFire === "function") xbAmFire(a, aw, tg); /* one round (BOT AMMO) */ a.cd = abs ? 1 / XBSB.rate + Math.random() * 0.3 : a.bn > 0 ? 1 / (AW.rate || 4) : a.xbPz != null ? Math.max(1 / (AW.rate || 4), a.xbPz) : 0.8 + Math.random() * 0.8; SFX.at(p, aw); if (a.pp) dmFired(a);
       const ahp = !abs && typeof xbShot === "function" ? xbShot(a, { t: tg, x: tg.g.position.x, z: tg.g.position.z }, from, aw, AW, td, AD) : undefined; // human aim model on the server's hit volumes (BOT VARIETY): body spot, flick, spray climb / pull, tracking lag
       if (ahp !== undefined) { if (ahp) { const hs = ahp === "head", lg = ahp === "legs", n = wDmg(AW, hs ? "head" : lg ? "legs" : "body", td); a.hd = hs; xHS = hs; xHLeg = lg; hurt(tg, n, a.name); xTag(tg, n); if (typeof xHitOther === "function") xHitOther(tg, hs, a, null, lg ? "legs" : "body"); if (tg.hp <= 0.001) kill(tg, hs, a.name, xWeapOf(a)); else flash(tg); if (!running) return; } }
       else if (Math.random() < Math.max(0.25, 0.6 - td * 0.012)) {
@@ -9689,7 +9692,7 @@ function xUtilShoot(b, dt, from, en) { if (b.xUs) b.xaimOn = false; if (!running
   const pick = BotBrain.shootUtility(C); if (!pick) { b.xUs = null; return false; }
   b.g.rotation.y = Math.atan2(pick.ax - p.x, pick.az - p.z); b.xUs = pick.kind; b.mv = false; b.spd = 0; b.see = 0;
   XUS_D.set(pick.ax - from.x, pick.ay - from.y, pick.az - from.z); const L = XUS_D.length() || 0.01; XUS_D.multiplyScalar(1 / L); xBotAim(b, XUS_D);
-  b.cd = (b.cd || 0) - dt; if (b.cd > 0) return true; const W = WEAP[w] || WEAP.Classic; b.cd = 1 / (W.rate || 4);
+  b.cd = (b.cd || 0) - dt; if (b.cd > 0) return true; const W = WEAP[w] || WEAP.Classic; b.cd = 1 / (W.rate || 4); if (typeof xbAmFire === "function") xbAmFire(b, w); // one round (BOT AMMO)
   try { SFX.at(p, w); } catch (e) {} try { bFx(from, XUS_D, null, L); } catch (e) {}
   pick.hit(wDmg(W, "body", pick.d), pick.si); b.xUsN = (b.xUsN || 0) + 1; return true; }
 // Jett Tailwind / Updraft for bots (= server spike.js botUtility): an entry-minded bot (BotBrain aggression >= 0.6, the
@@ -17378,6 +17381,55 @@ function xbUnembed(u,dt){if(!u||!u.g||u.nt||u.xk!=null||u.xj!=null||u.ku>0||u.xu
  p.x=n[0];p.y=n[1];p.z=n[2];u.np=null;u.uw=null;u.usP=null;if(u.smMotor){u.smMotor.vx=0;u.smMotor.vz=0;}return true;}
 if(typeof xUn==='function'){const un0=xUn;xUn=function(u,dt,vx,vz){try{xbUnembed(u,dt);}catch(e){}return un0.apply(this,arguments);};}
 // ---- END BOT VARIETY ----
+// ---- BOT AMMO ----
+// Offline bots (enemy + ally) carry real magazines, reserve ammo and per-weapon reload times, like the server's bots
+// (server/src/simulation.js: magazineSize / reloadTimeSeconds from weapons.json = VF.profiles here, RESERVE = XRSV / xRsv,
+// RELOAD_ROUND = XRLP, Outlaw 2.3 s one barrel / 3.8 s both, finishReload: a 5v5 round draws from a finite reserve, Deathmatch /
+// Team Deathmatch reload from an endless one). Each gun a bot holds keeps its own magazine (b.xAm.inv); a new round refills
+// all of them (xbAmRound, wrapped onto fRound / rRound), a death drops the state (the next life starts full).
+// Human-like reload choice (xbAmTick, every frame of every living offline bot): an empty magazine reloads at once, mid-duel
+// too (= the server's bots); otherwise a bot never starts a reload while it sees an enemy. Out of sight it reloads right
+// after the enemy it was shooting dies (missing >= 20 % of the magazine), behind cover when low (<= 35 %) after ~0.6 s out of
+// sight, and tops up anything missing in a lull of ~3 s. Per-bot jitter on the timing so a team does not reload in lockstep.
+// The gun cannot fire while reloading (a Bucky / Marshal per-round reload excepted: a shot with rounds in the tube interrupts
+// it, as the server's fire()), a weapon swap cancels the reload. Blade Storm knives are not gun ammo. The fire sites
+// (index.html bot loop, ally loop, xUtilShoot) call xbAmFire per bullet; botCanShoot gates on xbAmBlocked. b.xAmRn / b.xAmRd
+// count / time each started reload for the third-person reload clip (xUb).
+const XBAM={r:0,low:.35,kill:.2,cover:.6,lull:3};
+function xbAmMag(w){const p=typeof VF!=='undefined'&&VF&&VF.profiles&&VF.profiles[w];return p&&p.magazineSize>0?p.magazineSize:(WEAP[w]&&WEAP[w].mag)||0;}
+function xbAmRes(w){return typeof xRsv==='function'?xRsv(w):xbAmMag(w)*3;}
+function xbAmGun(w){return !!w&&w!=='Knife'&&w!=='Blade Storm'&&xbAmMag(w)>0;}
+// = server reloadTime(u): per-round guns one round, Outlaw by barrels missing, else the gun's reloadTimeSeconds; Empress stim /1.1.
+function xbAmRT(w,ammo,k){const p=typeof VF!=='undefined'&&VF&&VF.profiles&&VF.profiles[w],t=typeof XRLP!=='undefined'&&XRLP[w]?XRLP[w]:w==='Outlaw'?(xbAmMag(w)-(ammo||0)>=2?3.8:2.3):p&&p.reloadTimeSeconds>0?p.reloadTimeSeconds:(WEAP[w]&&WEAP[w].rld)||2.5;return t/(k||1);}
+function xbAmEndless(){return typeof FV!=='undefined'&&!!FV&&!!(FV.dm||FV.tdm)&&mode==='five';}
+function xbAmW(b){return b.w||(typeof allies!=='undefined'&&allies.indexOf(b)>=0?'Vandal':'Classic');}
+// The state of the bot's current gun (created full on first use / after a round / a death).
+function xbAm(b){let A=b.xAm;if(!A||A.r!==XBAM.r){A=b.xAm={r:XBAM.r,inv:{},w:null,mag:0,res:0,rl:0,rd:0,quiet:0,tg:null,j:.8+Math.random()*.4};}
+ const w=xbAmW(b);if(A.w!==w){if(A.w){A.inv[A.w]=[A.mag,A.res];}if(A.rl>0){A.rl=0;}const s=A.inv[w];A.w=w;A.mag=s?s[0]:xbAmMag(w);A.res=s?s[1]:xbAmRes(w);}return A;}
+function xbAmRound(){XBAM.r++;}
+function xbAmStart(b,A){if(!xbAmGun(A.w)||A.rl>0)return false;const full=xbAmMag(A.w);if(A.mag>=full||(!xbAmEndless()&&A.res<=0))return false;A.rd=xbAmRT(A.w,A.mag,b.empress?1.1:1);A.rl=A.rd;b.xAmRn=(b.xAmRn||0)+1;b.xAmRd=A.rd;return true;}
+function xbAmFinish(b,A){const full=xbAmMag(A.w),one=typeof XRLP!=='undefined'&&XRLP[A.w],need=one?Math.min(1,full-A.mag):full-A.mag,end=xbAmEndless(),n=end?need:Math.min(A.res,need);A.mag+=n;if(!end)A.res-=n;A.rl=0;
+ if(one&&A.mag<full&&(end||A.res>0))xbAmStart(b,A);} // per-round: the next round on its own clock
+// One bullet (or one shotgun blast) fired at t (the enemy unit, for the after-kill reload).
+function xbAmFire(b,w,t){const A=xbAm(b);if(!xbAmGun(A.w))return;if(A.rl>0)A.rl=0;/* only a per-round reload lets a shot through: it interrupts it */A.mag=Math.max(0,A.mag-1);if(t)A.tg=t;if(A.mag<=0){b.bn=0;}}
+function xbAmBlocked(b){if(!b||b.nt||!b.xAm)return false;if(typeof xBsBot==='function'&&xBsBot(b))return false;const A=xbAm(b);if(!xbAmGun(A.w))return false;if(A.mag<=0)return true;return A.rl>0&&!(typeof XRLP!=='undefined'&&XRLP[A.w]);}
+function xbAmDead(t){return !t||(t===(typeof player!=='undefined'&&player)?!(t.hp>0):t.alive===false||!(t.hp>0));}
+function xbAmTick(b,dt){if(!b||b.nt||!b.alive)return;const A=xbAm(b);if(!xbAmGun(A.w))return;
+ const see=(b.see||0)>0;A.quiet=see?0:A.quiet+dt;
+ if(A.rl>0){A.rl-=dt;if(A.rl<=0)xbAmFinish(b,A);return;}
+ const full=xbAmMag(A.w);if(A.mag>=full)return;
+ if(A.mag<=0){xbAmStart(b,A);return;}            // empty: reload now, even mid-duel
+ if(see)return;                                    // never mid-duel otherwise
+ const miss=(full-A.mag)/full,j=A.j;
+ if(A.tg&&xbAmDead(A.tg)&&A.quiet>=.25*j&&miss>=XBAM.kill){A.tg=null;xbAmStart(b,A);return;} // after the kill
+ if(A.quiet>=XBAM.cover*j&&A.mag/full<=XBAM.low){xbAmStart(b,A);return;}                      // behind cover, low
+ if(A.quiet>=XBAM.lull*j)xbAmStart(b,A);}                                                      // a lull: top up
+if(typeof botCanShoot==='function'){const am0=botCanShoot;botCanShoot=function(b){return !xbAmBlocked(b)&&am0.apply(this,arguments);};}
+if(typeof fRound==='function'){const am1=fRound;fRound=function(){xbAmRound();return am1.apply(this,arguments);};}
+if(typeof rRound==='function'){const am2=rRound;rRound=function(){xbAmRound();return am2.apply(this,arguments);};}
+if(typeof kill==='function'){const am3=kill;kill=function(b){const r=am3.apply(this,arguments);try{if(b&&!b.alive)b.xAm=null;}catch(e){}return r;};}
+if(typeof allyDie==='function'){const am4=allyDie;allyDie=function(a){const r=am4.apply(this,arguments);try{if(a&&!a.alive)a.xAm=null;}catch(e){}return r;};}
+// ---- END BOT AMMO ----
 // ---- DEBUG HOOKS ----
 // Headless/manual testing hooks. Active only on localhost or with ?__vs=1.
 // window.__vsLight=1 (via __vs.light(true)) switches the native map load to a

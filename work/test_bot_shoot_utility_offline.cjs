@@ -28,7 +28,7 @@ const fails=[];const fail=s=>fails.push(s);const eq=(a,b,m)=>{if(JSON.stringify(
   xe('bots[0].det=1e9;bots[0].g.position.x+=300;__S.t=null;true');
   // ---- 2. the player's Barrier: shot only when across the bot's way ----
   // the wiki wall (XBAR: 4 x 2.6 m segments), fortified (600 each); the bot stands in front of segment 2 (local x 1.3)
-  xe(`(()=>{const o=__S.o,b=bots[0];b.det=0;b.g.position.set(o.x+1.3,b.g.position.y,o.z);b.xUsN=0;b.cd=0;sgWallEnd();
+  xe(`(()=>{const o=__S.o,b=bots[0];b.det=0;b.g.position.set(o.x+1.3,b.g.position.y,o.z);b.xUsN=0;b.cd=0;b.xAm=null;/* a fresh magazine (BOT AMMO): these direct xUtilShoot calls run no frame loop, so no reload */sgWallEnd();
    const p=new THREE.Vector3(o.x,1.5,o.z-6);J.sw=xBarMake(p,0,new THREE.MeshBasicMaterial({transparent:true}),true,{arr:solids,ft:0});J.sw.seg=[600,600,600,600];J.sw.hp=2400;__S.t=p;b.xUg=[o.x+20,o.z];return true;})()`);
   const from='new THREE.Vector3(bots[0].g.position.x,(bots[0].g.position.y||0)+1.7,bots[0].g.position.z)';
   eq(xe(`[xUtilAcross(bots[0],J.sw),xUtilShoot(bots[0],0.05,${from},true),J.sw.hp]`),[false,false,2400],'heading off to the side: the barrier is left alone');
