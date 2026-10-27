@@ -39,7 +39,7 @@ for(const sites of [['A','B'],['A','B','C']]){const tg={};
 const BEFORE={"ascent":[{"pair":26.8,"jump":2,"jumpMean":1.75,"conv":2,"areas":2.13,"clump":0.01},{"pair":43.9,"jump":1,"jumpMean":1,"conv":2.25,"areas":2.21,"clump":0}],"haven":[{"pair":18.7,"jump":3,"jumpMean":1.8,"conv":2.8,"areas":1.5,"clump":0.028},{"pair":35.5,"jump":2,"jumpMean":1.4,"conv":1.4,"areas":2.87,"clump":0.004}]}; // main 6ea8c3e, same harness, 5 rounds x 55 s
 const maps=(process.env.BS_MAPS||'ascent,haven').split(','),rounds=+(process.env.BS_ROUNDS||5),secs=+(process.env.BS_SECS||55);
 for(const map of maps){const R=await measure(map,{rounds,secs,keep:true});
- for(const r of R){const tag=`${map} team${r.team}`;out.push(`${tag} (${r.team?'defending':'attacking'}): pair ${r.pair.toFixed(1)} m, first-contact 6 m/3 s max ${r.jumpMax} (spread plans ${r.jumpSolo}, group hits ${r.jumpGroup}; mean ${r.jumpMean.toFixed(2)}), 12 m/10 s ${r.conv.toFixed(2)}, areas ${r.areas.toFixed(2)} (groups ${r.groups.toFixed(2)}), clump ${(100*r.clump).toFixed(0)}%, stacks ${r.stacks} (planned ${r.stackOk}), rotations/event max ${r.rotMax}, trades/death max ${r.tradeMax}`+(BEFORE[map]?` [before: pair ${BEFORE[map][r.team].pair}, contact max ${BEFORE[map][r.team].jump} mean ${BEFORE[map][r.team].jumpMean}, 12 m/10 s ${BEFORE[map][r.team].conv}, areas ${BEFORE[map][r.team].areas}, clump ${(100*BEFORE[map][r.team].clump).toFixed(0)}%]`:''));
+ for(const r of R){const tag=`${map} team${r.team}`;out.push(`${tag} (${r.team?'defending':'attacking'}): pair ${r.pair.toFixed(1)} m, first-contact 6 m/3 s max ${r.jumpMax} (spread plans ${r.jumpSolo}, group hits ${r.jumpGroup}; mean ${r.jumpMean.toFixed(2)}), 12 m/10 s ${r.conv.toFixed(2)}, areas ${r.areas.toFixed(2)} (groups ${r.groups.toFixed(2)}), clump ${(100*r.clump).toFixed(0)}% (spread plans ${(100*r.clumpSpread).toFixed(0)}%, group plans ${(100*r.clumpGroup).toFixed(0)}%), stacks ${r.stacks} (planned ${r.stackOk}), rotations/event max ${r.rotMax}, trades/death max ${r.tradeMax}`+(BEFORE[map]?` [before: pair ${BEFORE[map][r.team].pair}, contact max ${BEFORE[map][r.team].jump} mean ${BEFORE[map][r.team].jumpMean}, 12 m/10 s ${BEFORE[map][r.team].conv}, areas ${BEFORE[map][r.team].areas}, clump ${(100*BEFORE[map][r.team].clump).toFixed(0)}%]`:''));
   if(process.env.BS_MEASURE)continue;
   // bots-tune-3: the cap of 3 holds for every round whose plan spreads the team; an attack group hit (execute / split /
   // lurk main group / rush: the team runs in together by design) may pass 4 through the contact spot (a GAP-spaced line of
@@ -48,9 +48,30 @@ for(const map of maps){const R=await measure(map,{rounds,secs,keep:true});
   assert.ok(r.jumpSolo<=3,`${tag}: at most 3 bots within 6 m of the first contact in 3 s (${r.jumpSolo}, spread plans)`);
   assert.ok(r.jumpGroup<=4,`${tag}: at most 4 bots within 6 m of the first contact in 3 s on a group hit (${r.jumpGroup})`);
   assert.ok(r.pair>=15,`${tag}: mean pairwise teammate distance ${r.pair.toFixed(1)} m`);
-  assert.ok(r.clump<=.12,`${tag}: >= 4 bots within 6 m in ${(100*r.clump).toFixed(0)}% of samples`);
+  // Clump: >= 4 bots within 6 m. Capped at 12 % of samples on the rounds whose plan spreads the team (as jumpSolo); an attack
+  // group plan (execute / split / lurk / rush: the staging spot + the run in) or a defence stack gathers 4+ on purpose, so
+  // those rounds only count toward the all-rounds deathball cap (25 %). Why: CI run 40582544240 (x86-64) measured 16 % here
+  // while aarch64 measured 3 % on the same commit - V8's Math.sin / cos / atan2 / exp ... (fdlibm built per CPU, fused
+  // multiply-add on arm64) differ in the last bit between the two, this 5-round sim is chaotic (character collision made the
+  // bot paths more sensitive), and whether the Haven rush round stages its 4-stack for ~9 s inside the window flips with a
+  // 1-ulp change (all of the 3-16 % came from rush / split rounds, 0 % from spread plans). See the ulp-noise block below.
+  assert.ok(r.clumpSpread<=.12,`${tag}: >= 4 bots within 6 m in ${(100*r.clumpSpread).toFixed(0)}% of samples on spread plans`);
+  assert.ok(r.clump<=.25,`${tag}: >= 4 bots within 6 m in ${(100*r.clump).toFixed(0)}% of all samples (deathball)`);
   assert.ok(r.areas>=(r.team?2.6:1.4),`${tag}: distinct areas held ${r.areas.toFixed(2)}`);/* rounds 1-12: team 1 defends (2-1-2 / 1-3-1 ... holds 3+ areas), team 0 attacks (spawn exit counts as one) */
   if(r.team)assert.ok(r.conv<=1.8,`${tag}: defenders within 12 m of the first contact in 10 s ${r.conv.toFixed(2)} (the rest hold their areas)`);
   assert.equal(r.stacks,r.stackOk,`${tag}: true stacks only on execute / rush / stack plans`);
   assert.ok(r.rotMax<=B.RESPOND.rotate&&r.tradeMax<=B.RESPOND.trade,`${tag}: capped rotations (${r.rotMax}) / trades (${r.tradeMax})`);}}
+// 3. Platform noise (regression for the CI x86-64 vs local aarch64 divergence above): the same Haven run with every
+//    transcendental Math result scaled by (1 + eps) - a last-bit change like another CPU's libm - must pass the same clump
+//    checks. eps 2e-14 / 3e-16 put the attackers' rush / split group inside the window here: all-rounds clump 13.1 / 8.1 %
+//    (the old all-rounds <= 12 % check fails at 2e-14, as CI did at 16 %), spread plans 0 / 0 %, vs 4.3 % unperturbed.
+//    BS_NOISE='' skips it; BS_NOISE='e1,e2' overrides.
+if(!process.env.BS_MEASURE){const noise=(process.env.BS_NOISE??'2e-14,3e-16').split(',').filter(Boolean).map(Number);
+ const F=['sin','cos','tan','asin','acos','atan','atan2','exp','log','pow','hypot','cbrt'],M0=Object.fromEntries(F.map(k=>[k,Math[k]]));
+ for(const eps of noise){for(const k of F){const o=M0[k];Math[k]=(...a)=>o.apply(Math,a)*(1+eps);}
+  let R;try{R=await measure('haven',{rounds,secs});}finally{Object.assign(Math,M0);}
+  for(const r of R){const tag=`haven team${r.team} (ulp noise ${eps})`;
+   assert.ok(r.clumpSpread<=.12,`${tag}: >= 4 bots within 6 m in ${(100*r.clumpSpread).toFixed(0)}% of samples on spread plans`);
+   assert.ok(r.clump<=.25,`${tag}: >= 4 bots within 6 m in ${(100*r.clump).toFixed(0)}% of all samples (deathball)`);
+   out.push(`${tag}: clump ${(100*r.clump).toFixed(0)}% (spread plans ${(100*r.clumpSpread).toFixed(0)}%)`);}}}
 console.log('Bot spread: '+out.join('; '));
