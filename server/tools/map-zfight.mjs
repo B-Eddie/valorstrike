@@ -8,6 +8,8 @@
 //   overlay  partial overlap of two surface layers: the layer with less total area in the map (the trim/overlay/patch)
 //            is pulled forward with a material polygonOffset so it wins every frame instead of flickering; offsets are
 //            graded (levels 1..4, colorLayers) so overlapping layers sit on different levels
+//            (which layer sits higher is then re-ordered by tools/map-zorder.mjs so the layer in front is higher:
+//            work/validation/map/zfight-fix.json is its output)
 // scanZFight(key,{region,fix}) -> {pairs, area, byClass, top:[...], fix:{o:[material names], d:{material:[tri ids]}}}
 // region: [[x,z,r],...] restricts the scan to triangles whose centroid is inside one of the circles (tests).
 // fix: a runtime fix (NM_ZFIX entry {o:{material:level},d:{material:[tri]}}) to apply first (dropped triangles skipped;

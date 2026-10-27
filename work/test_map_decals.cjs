@@ -9,7 +9,7 @@ assert(/const st=m\.map&&nmTexStats\(m\.map\.image\);nmDecalApply\(out,nmDecalSt
 assert(html.includes('function nmDecalStyle(name,stats)'),'decal handling missing from the generated page');
 const line=re=>{const m=src.match(re);assert(m,'missing '+re);return m[0];};const pick=(n)=>{const a=src.indexOf('function '+n+'(');return src.slice(a,src.indexOf('\n',a));};
 let raw=null;const document={createElement:()=>({getContext:()=>({drawImage(){},getImageData:()=>({data:raw})})})};
-const ctx=vm.createContext({document,Math});vm.runInContext(line(/^var NM_ZBIAS=.*;$/m)+'\n'+['nmTexStats','nmDecalStyle','nmDecalApply','nmFoliageCut','nmFoliageApply'].map(pick).join('\n')+';globalThis.api={nmTexStats,nmDecalStyle,nmDecalApply,nmFoliageCut,nmFoliageApply};',ctx);
+const ctx=vm.createContext({document,Math});vm.runInContext(line(/^var NM_ZBIAS=.*;$/m)+'\n'+line(/^var NM_ZLEVELS=.*;$/m)+'\n'+['nmTexStats','nmDecalStyle','nmDecalApply','nmFoliageCut','nmFoliageApply'].map(pick).join('\n')+';globalThis.api={nmTexStats,nmDecalStyle,nmDecalApply,nmFoliageCut,nmFoliageApply};',ctx);
 const {nmTexStats,nmDecalStyle,nmDecalApply,nmFoliageCut,nmFoliageApply}=ctx.api;
 (async()=>{const seen={},cutout={};
  for(const key of ['ascent','bind','breeze','haven','lotus','split']){const dir=path.join(root,'models/valorant/maps',key),g=JSON.parse(fs.readFileSync(path.join(dir,'scene.gltf'),'utf8'));
@@ -34,7 +34,7 @@ const {nmTexStats,nmDecalStyle,nmDecalApply,nmFoliageCut,nmFoliageApply}=ctx.api
  for(const k of ['ascent/Decal_0_M2_FishMarketSignA_MI','haven/Brick_M0_BrickFloaterPlaster_MI'])assert.equal(seen[k],null,k+' '+seen[k]);
  assert.equal(nmDecalStyle('Stone_M0_WallExteriorAMossBlend_MI',{minAlpha:2,white:0}),null,'non-decal walls untouched');
  assert.equal(nmDecalStyle('Floater_X',null),null,'unreadable texture falls back to the old opaque material');
- const mask=nmDecalApply(new THREE.MeshLambertMaterial({color:0xffffff}),'mask');assert(mask.transparent&&!mask.depthWrite&&mask.polygonOffset&&mask.polygonOffsetFactor===0&&mask.polygonOffsetUnits===-8&&mask.alphaTest>0,'decals: depth-step bias only (2 levels x NM_ZBIAS 4), no slope-scaled factor (test_map_vanish)');
+ const mask=nmDecalApply(new THREE.MeshLambertMaterial({color:0xffffff}),'mask');assert(mask.transparent&&!mask.depthWrite&&mask.polygonOffset&&mask.polygonOffsetFactor===0&&mask.polygonOffsetUnits===-24&&mask.alphaTest>0,'decals: depth-step bias only, one level above the top z-fight level ((5+1) x NM_ZBIAS 4: at level 2 they tied with level-2 walls and lost to level 3-5 walls, test_map_flicker), no slope-scaled factor (test_map_vanish)');
  assert(mask.color.r<.3&&mask.opacity<1,'mask still renders bright');
  const dec=nmDecalApply(new THREE.MeshLambertMaterial({color:0xffffff}),'decal');assert(dec.transparent&&!dec.depthWrite&&dec.color.r===1&&dec.opacity===1);
  const keep=new THREE.MeshLambertMaterial();assert.equal(nmDecalApply(keep,null).transparent,false);

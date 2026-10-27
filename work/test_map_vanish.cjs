@@ -32,7 +32,7 @@ const PER=+process.env.PER||60,VIEWS=+process.env.VIEWS||12,PIX=+process.env.PIX
 const line=re=>{const m=src.match(re);assert(m,'missing '+re);return m[0];};
 const pick=n=>{const i=src.indexOf('\nfunction '+n+'(')+1;assert(i>0,n+' missing');let j=src.indexOf('\nfunction ',i+1),k=src.indexOf('\nasync function ',i+1);if(j<0)j=src.length;if(k>0&&k<j)j=k;return src.slice(i,j);};
 const NM_ZFIX=JSON.parse(line(/^var NM_ZFIX=(.*);$/m).slice('var NM_ZFIX='.length,-1));
-const api=new Function('THREE','NM_ZFIX',(src.match(/^var NM_ZBIAS=.*;$/m)||[''])[0]+'\n'+['nmZFixApply','nmDecalApply','nmDecalStyle'].map(pick).join('\n')+'\nreturn {nmZFixApply,nmDecalApply,nmDecalStyle};')(THREE,NM_ZFIX);
+const api=new Function('THREE','NM_ZFIX',(src.match(/^var NM_ZBIAS=.*;$/m)||[''])[0]+'\n'+(src.match(/^var NM_ZLEVELS=.*;$/m)||[''])[0]+'\n'+['nmZFixApply','nmDecalApply','nmDecalStyle'].map(pick).join('\n')+'\nreturn {nmZFixApply,nmDecalApply,nmDecalStyle};')(THREE,NM_ZFIX);
 const DECAL=/Decal|Floater/i,TERRAIN=/Floor|Ground|(?:Stone|Brick|Dirt|Gravel|Tile|Grass|Jam|Stairs).*Grass|Grass.*Stone|Blendable.*Gravel/i;
 const SEE=/Glass|Window|Water|Puddle|Foliage|Leaves|Leaf|Plant(?!er)|Bush|Vine|Ivy|Fern|Shrub|Creeper|Moss|Flower|Tree|Palm|Grass_M0_Cards|Cards|Wires?|Cable|Vista|Sky|Cloud|LightCone|Godray|Volumetric|Fog|Smoke|Dust|Particle|Fence|Chain|Net|Grate|Mesh/i;
 // Stand-in material per map material: what the runtime sets for depth (z-fight level, decal offset).
