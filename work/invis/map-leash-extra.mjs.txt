@@ -1,0 +1,52 @@
+// Leash over walk-through foliage beds (user: "invisible walls in the maps ... near the grasses on the side", Breeze).
+// The movement leash (shared motor leashGrid/leashOk) keeps units within 0.6 m (core) / 1.5 m (rim) of the navigation
+// footprint. The nav was baked while plant beds still had collision, so it has no nodes inside them; once foliage became
+// walk-through (work/build_foliage_exclude.py) a player walking into a grass / beach-cabbage bed beside a lane was stopped
+// 1.5 m in by the leash with nothing visible but leaves, 1-6 m short of the real wall behind the bed (Breeze Mid Top /
+// Mid Nest / B Tunnel / Mid Wood Doors / B Window ...: work/invis/leashsweep.mjs + beyond.mjs).
+// This tool flood-fills 0.5 m cells from the leash edge into foliage-covered floor and emits them as extra leash points:
+//  - seed: walking out from a reachable nav node over the same floor, the first cell the leash refuses, if foliage-covered;
+//  - a cell joins when its floor is within the 0.4 m step of its neighbour's (never a ledge or a void), a standing
+//    capsule fits (collision walls, planter rims > 0.4 m, pots, trunks stay hard), render foliage (grass cards, plant beds,
+//    leaves) covers it, it lies inside the official minimap footprint with 1.5 m to spare (rim margin), and within 6 m of a
+//    valid nav node at its height;
+// so the leash now ends at the bed's real wall / rim and never opens a map edge. Output is written into the shared motor
+// (server/src/motor.cjs == vendor/valorant-feel.js, LEASH_EXTRA block) as rows [y, z, x0, x1] of 0.5 m cells.
+// Usage: node tools/map-leash-extra.mjs [maps...]  (WRITE=0: report only)
+import fs from 'node:fs';import path from 'node:path';import sharp from 'sharp';import {loadWorld} from '../src/world.js';import {loadRender} from './map-render.mjs';
+process.chdir(new URL('..',import.meta.url).pathname);
+const MAPS=process.argv.slice(2).length?process.argv.slice(2):['ascent','bind','haven','split','lotus','breeze'];
+const FOL=/Grass(?!.*(Stone|Floor|Blend|Brick|Gravel|Tile))|Foliage|Plant(?!er)|Vegetation|Ivy|Fern|Shrub|Bush|Cabbage|MorningGlory|Agave|Flower|Jasmine|Philodendron|Leaf|Leaves|MossOvergrowth|LillyPad/i,NOTFOL=/Floor|Stone|Blend|Brick|Gravel|Planter|Tile|Wall|Trunk|Bark|Rock|Vista/i;
+export const STAT={};const ST=.5,MAXD=6,MARGIN=.5,CR=2;
+export async function leashExtra(key){
+ const W=await loadWorld({fetch:async r=>new Response(await fs.promises.readFile(path.join('public',new URL(r.url).pathname)))},key),N=W.nav.nodes,V=W.nav.valid;
+ // foliage cover: 0.5 m xz cells -> [ymin, ymax] of foliage render triangles
+ const R=loadRender(key,{bvh:false}),cover=new Map(),ck=(ix,iz)=>ix*65536+iz;
+ for(let t=0;t<R.index.length/3;t++){const nm=R.prims[R.triMat[t]].name;if(!FOL.test(nm)||NOTFOL.test(nm))continue;let x=0,y0=1e9,y1=-1e9,z=0;for(let j=0;j<3;j++){const i=R.index[t*3+j];x+=R.pos[i*3];z+=R.pos[i*3+2];y0=Math.min(y0,R.pos[i*3+1]);y1=Math.max(y1,R.pos[i*3+1]);}
+  const k=ck(Math.floor(x/3/ST),Math.floor(z/3/ST)),e=cover.get(k);if(e){e[0]=Math.min(e[0],y0);e[1]=Math.max(e[1],y1);}else cover.set(k,[y0,y1]);}
+ const covered=(x,z,g)=>{const ix=Math.floor(x/ST),iz=Math.floor(z/ST);for(let a=-CR;a<=CR;a++)for(let b=-CR;b<=CR;b++){const e=cover.get(ck(ix+a,iz+b));if(e&&e[1]>=g-.3&&e[0]<=g+2.5)return true;}return false;};
+ // official minimap footprint (alpha), same projection as world.plantAt
+ const mm=await sharp('../models/valorant/maps/'+key+'/minimap.png').ensureAlpha().raw().toBuffer({resolveWithObject:true}),MW=mm.info.width,MH=mm.info.height,t=W.map.transform,pj=W.map.apiProjection,ca=Math.cos(t.angle),sa=Math.sin(t.angle);
+ const inMap=(x,z)=>{const sx=ca*x-sa*z+t.cx,sz=sa*x+ca*z+t.cz,u=Math.floor((sx*100*pj.xMultiplier+pj.xScalarToAdd)*MW),v=Math.floor((-sz*100*pj.yMultiplier+pj.yScalarToAdd)*MH);return u>=0&&v>=0&&u<MW&&v<MH&&mm.data[(v*MW+u)*4+3]>0;};
+ const inside=(x,z)=>{if(!inMap(x,z))return false;for(let a=0;a<8;a++){const q=a/8*Math.PI*2;if(!inMap(x+Math.cos(q)*MARGIN,z+Math.sin(q)*MARGIN))return false;}return true;};
+ let navIn=0,navAll=0;for(let i=0;i<N.length;i+=7)if(!V||V[i]){navAll++;if(inMap(N[i][0],N[i][2]))navIn++;}
+ // valid nodes hashed for the 6 m reach test
+ const vh=new Map();for(let i=0;i<N.length;i++){if(V&&!V[i])continue;const k=ck(Math.floor(N[i][0]/3),Math.floor(N[i][2]/3));(vh.get(k)||vh.set(k,[]).get(k)).push(N[i]);}
+ const nearNav=(x,z,g)=>{const cx=Math.floor(x/3),cz=Math.floor(z/3);for(let a=-2;a<=2;a++)for(let b=-2;b<=2;b++)for(const p of vh.get(ck(cx+a,cz+b))||[])if(Math.abs(p[1]-g)<1&&(p[0]-x)**2+(p[2]-z)**2<=MAXD*MAXD)return true;return false;};
+ const free=(x,z,g)=>!W.blocked(x,z,.38,g,1.8);
+ const seen=new Map(),q=[],cell=(x,z)=>[Math.round(x/ST),Math.round(z/ST)];
+ const tryAdd=(ix,iz,gPrev)=>{const x=ix*ST,z=iz*ST,g=W.ground(x,z,gPrev+.45),k=ix+','+iz+','+Math.round(gPrev);if(seen.has(k))return;seen.set(k,null);
+  const why=!Number.isFinite(g)||Math.abs(g-gPrev)>.4?'floor':W.leash(x,z,g)?'leashok':!free(x,z,g)?'blocked':!covered(x,z,g)?'nofoliage':!inside(x,z)?'footprint':!nearNav(x,z,g)?'far':null;STAT[why||'ok']=(STAT[why||'ok']||0)+1;if(process.env.TRACE&&Math.hypot(x+22.4,z+25.75)<2)console.log('trace',x,z,g&&g.toFixed(2),why);if(why)return;seen.set(k,g);q.push([ix,iz,g]);};
+ for(let i=0;i<N.length;i++){if(V&&!V[i])continue;const [x,y0,z]=N[i],y=W.ground(x,z,y0+.6);if(!Number.isFinite(y)||!W.leash(x,z,y)||!free(x,z,y))continue;
+  for(let d=0;d<16;d++){const a=d/16*Math.PI*2,cx=Math.cos(a),cz=Math.sin(a);let py=y,px=x,pz=z;
+   for(let s=.25;s<=3;s+=.25){const qx=x+cx*s,qz=z+cz*s,g=W.ground(qx,qz,py+.45);if(!Number.isFinite(g)||Math.abs(g-py)>.4||!free(qx,qz,g))break;
+    if(!W.leash(qx,qz,g,px,pz)){let gy=g;for(let s2=0;s2<=1;s2+=.25){const rx=qx+cx*s2,rz=qz+cz*s2,g2=W.ground(rx,rz,gy+.45);if(!Number.isFinite(g2)||Math.abs(g2-gy)>.4)break;const [ix,iz]=cell(rx,rz);tryAdd(ix,iz,g2);gy=g2;}break;}py=g;px=qx;pz=qz;}}}
+ for(let h=0;h<q.length;h++){const [ix,iz,g]=q[h];for(const [a,b] of [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]])tryAdd(ix+a,iz+b,g);}
+ // rows: [y (0.05 m), z, x0, x1] with x runs of consecutive cells at one height
+ const pts=q.map(([ix,iz,g])=>[ix,iz,Math.round(g/.05)]).sort((a,b)=>a[1]-b[1]||a[2]-b[2]||a[0]-b[0]),rows=[];
+ for(const [ix,iz,gy] of pts){const r=rows[rows.length-1];if(r&&r[1]===iz&&Math.abs(r[0]-gy)<=2&&r[3]===ix-1)r[3]=ix;else rows.push([gy,iz,ix,ix]);}
+ return {key,cells:q.length,rows,navInFootprint:navIn/navAll,seeds:q.length};}
+if(import.meta.url===new URL(process.argv[1],'file:').href){
+ const out={};for(const k of MAPS){const r=await leashExtra(k);out[k]=r.rows;console.log(JSON.stringify(STAT));console.log(k,'extra leash cells',r.cells,'rows',r.rows.length,'nav in minimap footprint',(r.navInFootprint*100).toFixed(1)+'%');}
+ if(process.env.WRITE!=='0'){for(const f of ['src/motor.cjs','../vendor/valorant-feel.js']){let s=fs.readFileSync(f,'utf8');const m=s.match(/const LEASH_EXTRA=(\{.*?\});\/\/ LEASH_EXTRA_END/);const cur=m?JSON.parse(m[1]):{};Object.assign(cur,out);
+   const line='const LEASH_EXTRA='+JSON.stringify(cur)+';// LEASH_EXTRA_END';if(!m)throw Error('LEASH_EXTRA block missing in '+f);s=s.replace(m[0],line);fs.writeFileSync(f,s);}console.log('wrote LEASH_EXTRA into src/motor.cjs + vendor/valorant-feel.js');}}

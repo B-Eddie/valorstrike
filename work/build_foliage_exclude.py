@@ -11,7 +11,7 @@ to the identical render triangle in scene.gltf (positions agree to 1 mm) to get 
 Everything else (planters, pots, trunks, arborvitae columns, giant Lotus vines, flags on poles, curtains, rolled rugs,
 sacks, crates, all floor/wall surfaces incl. moss/grass-blend floors) keeps collision.
 Safety: a dropped triangle is restored (with its whole welded component) when a valid navigation node stands on it and no
-kept collision lies within 0.35 m below that node (the floor beneath must be the walkable surface; never open a hole).
+kept collision lies within DROP (1.3 m) below that node (the floor beneath must be the walkable surface; never open a hole).
 Output models/valorant/maps/<key>/collision-exclude.bin: u32 runCount, then runCount x (u32 firstTriangle, u32 count)
 over collision.bin triangle order. Applied by server/build-world.cjs and work/native_maps_runtime.js nmRawCollision.
 Usage: python3 work/build_foliage_exclude.py [maps...]   (prints one JSON summary line per map)
@@ -37,8 +37,31 @@ MIXED = [r'^Tree_1_M0_PalmA_MI$', r'^Tree_0_M1_Palm_MI$', r'^Tree_4_M0_BonsaiA',
 # (x, floorY, z, why): plants kept because excluding them opened a NEW reachable void (qa reachvoid scan before/after)
 KEEP = {'lotus': [(-60.0, 6.3, -6.25, 'only floor at a ledge west of C Main (reachvoid new-only cell)'),
                   (-59.75, 6.3, -5.25, 'only floor at a ledge west of C Main (reachvoid new-only cell)'),
-                  (-41.25, 6.3, -17.0, 'fenced a pre-existing void edge (reachvoid new-only cell)')]}
-WRE = re.compile('|'.join(WHOLE)); MRE = re.compile('|'.join(MIXED))
+                  (-41.25, 6.3, -17.0, 'fenced a pre-existing void edge (reachvoid new-only cell)')],
+        # grass clumps that are the only floor at void edges beside A Main / A Lobby: the nodes next to them have real floor
+        # within DROP, so the 1.3 m rule stopped restoring them (reachvoid new-only cells, exclusion v2)
+        'split': [(49.5, 4.01, -36.5, 'grass clump = only floor at a void edge (reachvoid new-only cell)'), (51.0, 4.01, -35.75, 'grass clump = only floor at a void edge'),
+                  (49.25, 4.01, -25.25, 'grass clump = only floor at a void edge'), (56.1, 4.01, -24.25, 'grass clump = only floor at a void edge'),
+                  (57.0, 4.01, -19.75, 'grass clump = only floor at a void edge'), (62.0, 4.01, -14.0, 'grass clump = only floor at a void edge')]}
+# Decal cards (graffiti, murals, container stickers): the page draws Decal/Floater materials whose texture has alpha as
+# alpha-tested overlays (nmDecalStyle), so their cards are see-through; several float 2-5 cm off their wall and were the
+# only thing a player touched (invisible walls, work/invis capsweep: Bind UrbanArtI, Breeze DefPathMidMural). Dropped
+# like foliage (nav-ground safety still applies) when the texture really carries alpha (16x16 min alpha < 250, as the page).
+DECAL = [r'Decal', r'Floater']
+WRE = re.compile('|'.join(WHOLE)); MRE = re.compile('|'.join(MIXED)); DRE = re.compile('|'.join(DECAL), re.I)
+# Nav-ground safety depth: a node the nav bake stood on a leaf top is only "unsupported" when no kept surface lies within
+# DROP below it. Was 0.35 m: the beach-cabbage / desert-plant beds the bake walked over sit 0.36-1.3 m above the real
+# ground, so whole welded beds (alpha-cut card edges included) were restored as solid along Breeze lane edges = the
+# invisible walls "near the grasses on the side". Sinking <= 1.3 m through a plant onto the ground is how VALORANT plays.
+DROP = 1.3
+LOCAL = .6
+
+
+def decal_alpha(D, g, m):
+    t = m.get('pbrMetallicRoughness', {}).get('baseColorTexture')
+    if t is None: return False
+    im = Image.open(D / g['images'][g['textures'][t['index']]['source']]['uri']).convert('RGBA').resize((16, 16), Image.BILINEAR)
+    return int(np.asarray(im)[..., 3].min()) < 250
 CT = {5121: np.uint8, 5123: np.uint16, 5125: np.uint32, 5126: np.float32}; NC = {'SCALAR': 1, 'VEC2': 2, 'VEC3': 3}
 
 
@@ -69,18 +92,21 @@ def build(key):
         for pr in g['meshes'][node['mesh']]['primitives']:
             m = g['materials'][pr['material']]; name = m['name']
             whole, mixed = bool(WRE.search(name)), bool(MRE.search(name))
+            if not (whole or mixed) and DRE.search(name) and decal_alpha(D, g, m): whole = True
             if not (whole or mixed): continue
             P = acc(pr['attributes']['POSITION']); I = acc(pr['indices']).astype(np.int64)
             h = tri_hash(P, I)
             if whole: d = np.ones(len(h), bool)
             else:
-                t = m['pbrMetallicRoughness']['baseColorTexture']['index']; im = np.asarray(Image.open(D / g['images'][g['textures'][t]['source']]['uri']).convert('RGB'))
+                t = m['pbrMetallicRoughness']['baseColorTexture']['index']; ima = np.asarray(Image.open(D / g['images'][g['textures'][t]['source']]['uri']).convert('RGBA')); im = ima[..., :3]
                 UV = acc(pr['attributes']['TEXCOORD_0']); T3 = I.reshape(-1, 3); H, W = im.shape[:2]
                 purple = 'FlowerD' in name; votes = np.zeros(len(h), int)
                 for w in ([1/3, 1/3, 1/3], [.6, .2, .2], [.2, .6, .2], [.2, .2, .6]):
                     uv = UV[T3[:, 0]] * w[0] + UV[T3[:, 1]] * w[1] + UV[T3[:, 2]] * w[2]
                     x = np.clip((np.mod(uv[:, 0], 1) * W).astype(int), 0, W - 1); y = np.clip((np.mod(uv[:, 1], 1) * H).astype(int), 0, H - 1)
-                    votes += foliage_pixel(im[y, x], purple)
+                    # foliage-coloured, or cut away by the page's 0.45 alpha test (card texels around leaves often keep a
+                    # non-green RGB under alpha 0: they drew see-through but stayed solid = invisible walls)
+                    votes += foliage_pixel(im[y, x], purple) | (ima[y, x, 3] < 115)
                 d = votes >= 3
             hashes.append(h); drop.append(d); mid.append(np.full(len(h), pr['material'], np.int32))
     H = np.concatenate(hashes); Dp = np.concatenate(drop); Mi = np.concatenate(mid); o = np.argsort(H, kind='stable'); H, Dp, Mi = H[o], Dp[o], Mi[o]
@@ -109,30 +135,32 @@ def build(key):
                 if valid[j] and not seen[j]: seen[j] = True; comp.append(j)
         if len(comp) >= 30: prot[comp] = True
     vn = nodes[prot]; vn = np.concatenate([vn] + [vn + np.array(o) for o in ([.375, 0, 0], [-.375, 0, 0], [0, 0, .375], [0, 0, -.375])])
-    def hits(nodeset, mask):
-        # vertical ray at each node: triangles in mask whose surface lies in [y-0.35, y+0.05] -> list of (node, tri, y)
+    def hits(nodeset, mask, lo=.35):
+        # vertical ray at each node: triangles in mask whose surface lies in [y-lo, y+0.05] -> list of (node, tri, y)
         out = []; cand = np.nonzero(mask)[0]; cell = {}
         for t in cand:
             for gx in range(int(np.floor(mn[t, 0])), int(np.floor(mx[t, 0])) + 1):
                 for gz in range(int(np.floor(mn[t, 2])), int(np.floor(mx[t, 2])) + 1): cell.setdefault((gx, gz), []).append(t)
         for i, (x, y, z) in enumerate(nodeset):
             for t in cell.get((int(np.floor(x)), int(np.floor(z))), []):
-                if mn[t, 1] > y + .05 or mx[t, 1] < y - .35: continue
+                if mn[t, 1] > y + .05 or mx[t, 1] < y - lo: continue
                 a, bb, c = tri[t]; v0, v1 = bb - a, c - a; den = v0[0] * v1[2] - v0[2] * v1[0]
                 if abs(den) < 1e-9: continue
                 px, pz = x - a[0], z - a[2]; s = (px * v1[2] - pz * v1[0]) / den; u = (v0[0] * pz - v0[2] * px) / den
                 if s < -1e-4 or u < -1e-4 or s + u > 1 + 1e-4: continue
                 yy = a[1] + s * v0[1] + u * v1[1]
-                if y - .35 <= yy <= y + .05: out.append((i, t, yy))
+                if y - lo <= yy <= y + .05: out.append((i, t, yy))
         return out
     restored = 0; restored_at = []
     for _ in range(4):
         exh = hits(vn, ex); risky = sorted({i for i, _, _ in exh})
         if not risky: break
-        keep = {i for i, _, _ in hits(vn[risky], ~ex)}; bad = {risky[j] for j in range(len(risky)) if j not in keep}
+        keep = {i for i, _, _ in hits(vn[risky], ~ex, DROP)}; bad = {risky[j] for j in range(len(risky)) if j not in keep}
         if not bad: break
-        # restore the welded component of the LOWEST excluded surface under each bad node (moss carpet that IS the ground,
-        # not the lilypad lying on it); components over excluded triangles only
+        # restore the LOWEST excluded surface under each bad node (moss carpet that IS the ground, not the lilypad lying
+        # on it) with the part of its welded component within LOCAL m of the node: enough to stand on / fence a deep drop
+        # where the nav walked over the plant, without bringing back the whole bed (whole beds restored this way were the
+        # see-through invisible walls along Breeze lane edges)
         seeds = {}
         for i, t, yy in exh:
             if i in bad and (i not in seeds or yy < seeds[i][1]): seeds[i] = (t, yy)
@@ -142,8 +170,13 @@ def build(key):
         rows = np.repeat(np.arange(m)[None, :], 3, 0).ravel()
         vk = (cmat[et][:, None].astype(np.int64) * len(CPa) + vv).T.ravel(); uk, cols = np.unique(vk, return_inverse=True); cols = cols + m  # weld only within one material
         G = coo_matrix((np.ones(len(rows), np.int8), (rows, cols)), shape=(m + len(uk), m + len(uk)))
-        _, lab = connected_components(G, directed=False); pos = {t: j for j, t in enumerate(et)}
-        want = {lab[pos[t]] for t, _ in seeds.values()}; sel = et[np.isin(lab[:m], list(want))]
+        _, lab = connected_components(G, directed=False); pos = {t: j for j, t in enumerate(et)}; lab = lab[:m]
+        sel = set()
+        for i, (t, yy) in seeds.items():
+            x, y, z = vn[i]; comp = et[lab == lab[pos[t]]]
+            near = comp[(mn[comp, 0] <= x + LOCAL) & (mx[comp, 0] >= x - LOCAL) & (mn[comp, 2] <= z + LOCAL) & (mx[comp, 2] >= z - LOCAL) & (mx[comp, 1] >= y - DROP - 1) & (mn[comp, 1] <= y + .3)]
+            sel.update(near.tolist()); sel.add(int(t))
+        sel = np.array(sorted(sel), np.int64)
         restored += len(sel); ex[sel] = False
         for i, (t, yy) in seeds.items(): restored_at.append([round(float(c), 2) for c in vn[i]])
     # explicit keeps: spots where a reachable-void scan (0.25 m cells within 2.5 m of playable nodes, capsule fits, nothing
