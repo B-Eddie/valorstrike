@@ -15769,7 +15769,7 @@ function xAfGunModel(R, k) { // the gun of key k in the agent rig's weapon slot 
   M = R.guns[k] = { g: new THREE.Group(), ok: false, gm: null, ga: {} }; M.g.name = "xaf-prop-gun-" + k; M.g.visible = false;
   const slot = xAfBone(R, G.bone || "R_WeaponMaster"); if (slot) slot.add(M.g); const r = G.rot || [0, 90, 0]; M.g.rotation.set(r[0] * Math.PI / 180, r[1] * Math.PI / 180, r[2] * Math.PI / 180);
   if (G.knives) { M.g.rotation.set(0, 0, 0); if (M.g.parent) M.g.parent.remove(M.g); M.k = []; // floating ring in camera space (xAfKnifeRing), not in the hands
-    try { for (let i = 0; i < XAF_KR.length; i++) { const w = xAfKnife(null, i); M.k.push(w); M.g.add(w); } M.ok = true; } catch (e) { XAF.err = String(e); } } // the kunai are built here (xKunai), no model to load
+    try { for (let i = 0; i < XAF_KR.length; i++) { const w = xAfKnife(null, i); w.children[0].scale.setScalar(XAF_KS); M.k.push(w); M.g.add(w); } M.ok = true; } catch (e) { XAF.err = String(e); } } // the kunai are built here (xKunai), no model to load
   else if (G.model) xvLoad(G.model).then((gl) => { const o = THREE.SkeletonUtils.clone(gl.scene);
     o.traverse((x) => { if (x.isMesh) { x.frustumCulled = false; x.castShadow = x.receiveShadow = false; x.raycast = XNR; x.renderOrder = 11; x.material = Array.isArray(x.material) ? x.material.map((m) => m.clone()) : x.material.clone(); } });
     M.g.add(o); if (G.gun && gl.animations && gl.animations.length) { M.gm = new THREE.AnimationMixer(o); gl.animations.forEach((c) => { M.ga[c.name] = M.gm.clipAction(c); }); } M.ok = true; }).catch((e) => { XAF.err = String(e); });
@@ -15780,13 +15780,22 @@ function xAfGunModel(R, k) { // the gun of key k in the agent rig's weapon slot 
 // the old 'tactical knife in each palm' (a 26 cm combat knife poking out of an open authored hand). Slots are screen
 // fractions measured off Valorant's own Blade Storm view (16:9) at ~0.7 m, knife ~0.24 m (hk-41: the kunai is built by xKunai;
 // the melee.glb tactical knife stood in before); one slot per dagger left, in throw order. Pure layout (exported for tests).
-var XAF_KR = [[0.11, 0.58, 1, 0.05], [0.13, 0.73, 1, -0.1], [0.53, 0.86, 0, 1], [0.88, 0.69, -1, -0.05], [0.87, 0.52, -1, 0.1]]; // [sx, sy, dir x, dir y]
+// hk-44 (user: the fan "looks wrong", knives "flat side-on ... flat light-blue shapes"): re-measured off Valorant's Blade
+// Storm view (RPS Jett ultimate shot, 1600x900; Reddit clip 1920x1080): same edge layout, but every kunai points IN toward
+// the crosshair on screen AND away from the eye down its own line of sight (XAF_KIN = 42 deg), so it is foreshortened like Valorant's (tip smaller
+// than the ring, blade length shortened) instead of lying across the screen side-on; the left pair tips slightly down, the
+// upper right one down, the lower right one level, the centre one up. A slow hover bob + a small sway of the aim.
+var XAF_KR = [[0.118, 0.54, 1, -0.3], [0.13, 0.7, 1, -0.15], [0.52, 0.835, 0, 1], [0.882, 0.5, -1, -0.35], [0.87, 0.685, -1, 0.08]]; // [sx, sy, dir x, dir y] (screen, y up)
+var XAF_KIN = 42 * Math.PI / 180, XAF_KS = 1.2; // XAF_KS: first-person kunai drawn 1.2x (Valorant's float close and big: ~16% of the screen width each)
 function xAfKnifeRing(n, aspect, fov, t) { // n daggers left -> camera-space [{p:[x,y,z], d:[x,y,z]}] for the first n slots
   const tv = Math.tan(fov * Math.PI / 360), th = tv * Math.min(aspect, 16 / 9), D = 0.7 * Math.tan(70.53 * Math.PI / 360) / tv, out = []; // across: the 16:9 frame the rig is framed in (wider phones keep the daggers by the hands);
   // D: 0.7 m at the 70.53 deg 16:9 lens, pushed out as the hip lens narrows (wider than 16:9 caps the horizontal at 103 deg, db9313f) so each dagger keeps its share of the screen (844x390: the centre one was cut 3 px at the bottom)
-  for (let i = 0; i < Math.min(n | 0, XAF_KR.length); i++) { const [sx, sy, dx, dy] = XAF_KR[i], b = Math.sin((t || 0) * 2.1 + i * 1.7) * 0.012; // a slow hover
-    const x = (sx * 2 - 1) * th * D, y = -(sy * 2 - 1) * tv * D + b, L = Math.hypot(dx * 0.85, dy * 0.85, 0.5);
-    out.push({ p: [x, y, -D], d: [dx * 0.85 / L, dy * 0.85 / L, -0.5 / L] }); }
+  const ci = Math.cos(XAF_KIN), si = Math.sin(XAF_KIN);
+  for (let i = 0; i < Math.min(n | 0, XAF_KR.length); i++) { const [sx, sy, dx, dy] = XAF_KR[i], tt = t || 0, b = Math.sin(tt * 2.1 + i * 1.7) * 0.012; // a slow hover
+    const x = (sx * 2 - 1) * th * D, y = -(sy * 2 - 1) * tv * D + b, a = Math.atan2(dy, dx) + Math.sin(tt * 1.3 + i * 2.3) * 0.05, k = 1 + Math.sin(tt * 1.7 + i) * 0.04; // the aim sways a little
+    const pl = Math.hypot(x, y, D), s0 = x / pl, s1 = y / pl, s2 = -D / pl; let u0 = Math.cos(a), u1 = Math.sin(a), u2 = 0; const us = u0 * s0 + u1 * s1; u0 -= s0 * us; u1 -= s1 * us; u2 -= s2 * us; // the screen direction, square to the line of sight
+    const ul = Math.hypot(u0, u1, u2), c = ci / ul, d0 = u0 * c * k + s0 * si, d1 = u1 * c * k + s1 * si, d2 = u2 * c * k + s2 * si, L = Math.hypot(d0, d1, d2); // tip in on screen AND away down the line of sight
+    out.push({ p: [x, y, -D], d: [d0 / L, d1 / L, d2 / L] }); }
   return out;
 }
 // hk-41 (user 13:17 "jett's ultimate looks weird (it looks like 2d png's of knives)"): the stand-in was the black tactical melee
@@ -15795,38 +15804,57 @@ function xAfKnifeRing(n, aspect, fov, t) { // n daggers left -> camera-space [{p
 // faces), a collar, a wrapped grip and a ring pommel, pale steel with an ice-blue emissive glow and a soft additive edge shell;
 // rolled 0.5 rad about its length so the facets catch the light instead of showing a flat silhouette. Same contract as before:
 // ~0.24 m long, blade end along local +z, flat-face normal along local +x (gl is unused; the callers still pass the melee set).
+// hk-44 (user: still "flat light-blue shapes"): the blade was one pale-blue tone (base x emissive) on a thin diamond, so at
+// any angle it read as a flat blue cut-out. Now it is shaded like Valorant's kunai: a hexagonal section with bright bevelled
+// cutting edges and a dark gunmetal centre panel raised to a ridge on both faces (vertex colours on one flat-shaded mesh),
+// silver steel (metalness 0.8) reflecting its own small studio environment (XKUN.env: a procedural cube, sky light above,
+// warm dark floor, a bright horizon band) so the steel reads as metal in any map light, only a faint ice-blue glow; a dark
+// wrapped grip with gunmetal bands, silver collar and ring; first-person kunai drawn 1.2x (XAF_KS).
 var XKUN = { len: 0.25, roll: 0.5, mat: null };
+function xKunEnv() { // small procedural environment cube for the steel (browser only; null in node tests)
+  if (XKUN.env !== undefined) return XKUN.env; XKUN.env = null;
+  try { if (typeof document === "undefined" || !document.createElement) return null; const S = 32, mk = (f) => { const c = document.createElement("canvas"); c.width = c.height = S; const x = c.getContext("2d"); f(x); return c; };
+    const side = mk((x) => { const g = x.createLinearGradient(0, 0, 0, S); g.addColorStop(0, "#dfe8f4"); g.addColorStop(0.42, "#f8fbff"); g.addColorStop(0.5, "#9aa4b0"); g.addColorStop(0.62, "#4a4540"); g.addColorStop(1, "#1e1b18"); x.fillStyle = g; x.fillRect(0, 0, S, S); x.fillStyle = "rgba(255,255,255,0.85)"; x.fillRect(S * 0.3, S * 0.12, S * 0.18, S * 0.22); });
+    const top = mk((x) => { x.fillStyle = "#eef4ff"; x.fillRect(0, 0, S, S); }), bot = mk((x) => { x.fillStyle = "#24201c"; x.fillRect(0, 0, S, S); });
+    const t = new THREE.CubeTexture([side, side, top, bot, side, side]); if (THREE.sRGBEncoding !== undefined) t.encoding = THREE.sRGBEncoding; t.needsUpdate = true; XKUN.env = t; } catch (e) { XKUN.env = null; }
+  return XKUN.env;
+}
 function xKunMats() {
   if (XKUN.mat) return XKUN.mat;
-  const S = (o) => new THREE.MeshStandardMaterial(o);
+  const S = (o) => new THREE.MeshStandardMaterial(o), env = xKunEnv();
   XKUN.mat = {
-    blade: S({ color: 0xa8c2d8, metalness: 0.68, roughness: 0.24, emissive: 0x45b8f0, emissiveIntensity: 0.26, flatShading: true }),
-    edge: new THREE.MeshBasicMaterial({ color: 0x8fe4ff, transparent: true, opacity: 0.24, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.BackSide }),
-    grip: S({ color: 0x1f2b3a, metalness: 0.2, roughness: 0.75, emissive: 0x061018, emissiveIntensity: 1 }),
-    metal: S({ color: 0xcfe6f7, metalness: 0.6, roughness: 0.3, emissive: 0x3aa6dc, emissiveIntensity: 0.45 }),
+    blade: S({ color: 0xc9d1d9, metalness: 0.8, roughness: 0.3, emissive: 0x2a8ed0, emissiveIntensity: 0.1, flatShading: true, vertexColors: true }),
+    edge: new THREE.MeshBasicMaterial({ color: 0x7fdcff, transparent: true, opacity: 0.1, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.BackSide }),
+    grip: S({ color: 0x15120f, metalness: 0.1, roughness: 0.85, emissive: 0x020304, emissiveIntensity: 1 }),
+    metal: S({ color: 0xd4dbe2, metalness: 0.85, roughness: 0.3, emissive: 0x1d5f8a, emissiveIntensity: 0.12 }),
+    band: S({ color: 0x5a6068, metalness: 0.7, roughness: 0.45 }),
     trail: new THREE.MeshBasicMaterial({ color: 0x9fe8ff, transparent: true, opacity: 0.45, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }),
+    wind: new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }),
   };
+  if (env) for (const k of ["blade", "metal", "band"]) { XKUN.mat[k].envMap = env; XKUN.mat[k].envMapIntensity = 1.15; }
   return XKUN.mat;
 }
-function xKunBladeGeo(sc) { // diamond cross-section leaf blade from z = 0 (collar) to the tip; width along y, thickness along x
-  const N = 14, L = 0.155, P = [];
-  const ring = (t) => { const w = (t < 0.28 ? 0.62 + 0.38 * t / 0.28 : Math.pow((1 - t) / 0.72, 0.85)) * 0.023 * sc, th = 0.0006 + w * 0.5; return [[0, w], [th, 0], [0, -w], [-th, 0]]; };
+function xKunBladeGeo(sc, plain) { // leaf blade from z = 0 (collar) to the tip, hexagonal section: bright bevels (cutting edges) + a dark raised centre panel; width along y, thickness along x
+  const N = 14, L = 0.155, P = [], C = [], hi = [1, 1, 1], lo = plain ? hi : [0.05, 0.058, 0.07];
+  const ring = (t) => { const w = (t < 0.28 ? 0.62 + 0.38 * t / 0.28 : Math.pow((1 - t) / 0.72, 0.85)) * 0.029 * sc, tb = 0.0006 + w * 0.3, tr = 0.0006 + w * 0.5;
+    return [[0, w], [tb, 0.5 * w], [tr, 0], [tb, -0.5 * w], [0, -w], [-tb, -0.5 * w], [-tr, 0], [-tb, 0.5 * w]]; };
+  const BEV = [1, 0, 0, 1, 1, 0, 0, 1]; // face j (point j -> j + 1): 1 = bevel (bright), 0 = centre panel (dark)
   for (let k = 0; k < N; k++) { const t0 = k / N, t1 = (k + 1) / N, A = ring(t0), B = ring(t1), z0 = t0 * L, z1 = t1 * L;
-    for (let j = 0; j < 4; j++) { const a0 = A[j], a1 = A[(j + 1) % 4], b0 = B[j], b1 = B[(j + 1) % 4];
-      P.push(a0[0], a0[1], z0, a1[0], a1[1], z0, b1[0], b1[1], z1, a0[0], a0[1], z0, b1[0], b1[1], z1, b0[0], b0[1], z1); } }
-  const R = ring(0); for (let j = 0; j < 4; j++) { const a = R[j], b = R[(j + 1) % 4]; P.push(0, 0, 0, b[0], b[1], 0, a[0], a[1], 0); } // the base cap
-  const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute(P, 3)); g.computeVertexNormals(); return g;
+    for (let j = 0; j < 8; j++) { const a0 = A[j], a1 = A[(j + 1) % 8], b0 = B[j], b1 = B[(j + 1) % 8], c = BEV[j] ? hi : lo;
+      P.push(a0[0], a0[1], z0, a1[0], a1[1], z0, b1[0], b1[1], z1, a0[0], a0[1], z0, b1[0], b1[1], z1, b0[0], b0[1], z1); for (let v = 0; v < 6; v++) C.push(c[0], c[1], c[2]); } }
+  const R = ring(0); for (let j = 0; j < 8; j++) { const a = R[j], b = R[(j + 1) % 8]; P.push(0, 0, 0, b[0], b[1], 0, a[0], a[1], 0); for (let v = 0; v < 3; v++) C.push(lo[0], lo[1], lo[2]); } // the base cap
+  const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute(P, 3)); g.setAttribute("color", new THREE.Float32BufferAttribute(C, 3)); g.computeVertexNormals(); return g;
 }
 function xKunRingGeo() { // the pommel ring: a small circle swept around the z axis (lathe), turned into the y-z plane later
   const pts = []; for (let k = 0; k <= 8; k++) { const a = (k / 8) * Math.PI * 2; pts.push(new THREE.Vector2(0.0115 + Math.cos(a) * 0.0024, Math.sin(a) * 0.0024)); }
   return new THREE.LatheGeometry(pts, 18);
 }
 function xKunai() { // one kunai group (local frame: tip +z, flat-face normal +x), centred on its length
-  const m = xKunMats(), G = XKUN.geo || (XKUN.geo = { blade: xKunBladeGeo(1), edge: xKunBladeGeo(1.22), grip: new THREE.CylinderGeometry(0.0056, 0.006, 0.062, 10), band: new THREE.CylinderGeometry(0.0068, 0.0068, 0.004, 10), collar: new THREE.CylinderGeometry(0.0075, 0.0062, 0.012, 10), ring: xKunRingGeo() });
+  const m = xKunMats(), G = XKUN.geo || (XKUN.geo = { blade: xKunBladeGeo(1), edge: xKunBladeGeo(1.22, true), grip: new THREE.CylinderGeometry(0.0056, 0.006, 0.062, 10), band: new THREE.CylinderGeometry(0.0068, 0.0068, 0.004, 10), collar: new THREE.CylinderGeometry(0.0075, 0.0062, 0.012, 10), ring: xKunRingGeo() });
   const k = new THREE.Group(), add = (geo, mat, z, rx, ry) => { const o = new THREE.Mesh(geo, mat); o.position.z = z; if (rx) o.rotation.x = rx; if (ry) o.rotation.y = ry; k.add(o); return o; };
   add(G.blade, m.blade, 0); const e = add(G.edge, m.edge, -0.004); e.scale.set(1.6, 1, 1.05);
   add(G.collar, m.metal, -0.006, Math.PI / 2); add(G.grip, m.grip, -0.043, Math.PI / 2);
-  for (const z of [-0.02, -0.043, -0.066]) add(G.band, m.metal, z, Math.PI / 2);
+  for (const z of [-0.02, -0.043, -0.066]) add(G.band, m.band, z, Math.PI / 2);
   add(G.ring, m.metal, -0.087).rotation.z = Math.PI / 2; // lathe axis (y) -> x: the ring lies in the y-z plane, in line with the blade
   k.position.z = -0.027; return k; // blade tip 0.155 .. ring end -0.101
 }
@@ -15847,11 +15875,24 @@ function xAfDrawnBox(o) { // box of the model as DRAWN: skinned vertices through
     for (let k = 0; k < P.count; k++) { v.fromBufferAttribute(P, k); if (bt) bt.call(x, k, v); v.applyMatrix4(m); B.expandByPoint(v); } });
   return B.isEmpty() ? new THREE.Box3().setFromObject(o) : B;
 }
+// hk-44: Valorant's floating kunai trail thin cyan wind wisps; two additive ribbons per FP dagger (a sibling group of the
+// dagger under the same camera-space parent, so the dagger's own bounds stay the kunai), spiralling from near the tip
+// round the blade toward the ring, fading at both ends (vertex colours, additive: black = clear), fluttering with time.
+function xKunWindGeo() { const S = 16, P = [], C = [], c0 = [0.35, 0.85, 1]; // a ribbon spiralling once and a half round the kunai from near the tip to past the ring
+  const f = (s) => { const z = 0.12 - s * 0.3, an = s * Math.PI * 1.5, rad = 0.02 + 0.022 * s, w = 0.005 * (1 - s) + 0.0012, a = Math.pow(Math.sin(Math.PI * s), 0.8); return { c: Math.cos(an), sn: Math.sin(an), z, rad, w, a }; };
+  for (let k = 0; k < S; k++) { const A = f(k / S), B = f((k + 1) / S), q = (o, sg) => [o.c * (o.rad + sg * o.w), o.sn * (o.rad + sg * o.w), o.z + sg * o.w * 0.6];
+    for (const [v, o] of [[q(A, -1), A], [q(A, 1), A], [q(B, 1), B], [q(A, -1), A], [q(B, 1), B], [q(B, -1), B]]) { P.push(v[0], v[1], v[2]); C.push(c0[0] * o.a, c0[1] * o.a, c0[2] * o.a); } }
+  const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute(P, 3)); g.setAttribute("color", new THREE.Float32BufferAttribute(C, 3)); return g; }
+function xAfWind(i) { const g = new THREE.Group(), geo = XKUN.wg || (XKUN.wg = xKunWindGeo()), m = xKunMats().wind; g.name = "xaf-wind-" + i; g.r = [];
+  for (const a of [0.9, -1.6]) { const o = new THREE.Mesh(geo, m.clone()), h = new THREE.Group(); h.rotation.z = a; o.frustumCulled = false; o.raycast = XNR; o.renderOrder = 10; h.add(o); g.add(h); g.r.push(h); }
+  g.visible = false; return g; }
 function xAfKnifePose(R, M, n) { // place the floating daggers (camera space: a sibling of the rig root under the camera)
   const cam = R.root.parent; if (!cam || !M.k) return 0; if (M.g.parent !== cam) cam.add(M.g);
-  const fov = cam.fov || 70, asp = cam.aspect || 16 / 9, ring = xAfKnifeRing(n, asp, fov, XAF.t), d = new THREE.Vector3(), nx = new THREE.Vector3(), ny = new THREE.Vector3(), B = new THREE.Matrix4();
-  for (let i = 0; i < M.k.length; i++) { const w = M.k[i], r = ring[i]; w.visible = !!r; if (!r) continue; w.position.set(r.p[0], r.p[1], r.p[2]); d.set(r.d[0], r.d[1], r.d[2]);
-    nx.set(-r.p[0], -r.p[1], -r.p[2]).normalize(); nx.addScaledVector(d, -nx.dot(d)).normalize(); ny.crossVectors(d, nx); B.makeBasis(nx, ny, d); w.quaternion.setFromRotationMatrix(B); } // point along d, flat face turned to the eye
+  const fov = cam.fov || 70, asp = cam.aspect || 16 / 9, t = XAF.t || 0, ring = xAfKnifeRing(n, asp, fov, t), d = new THREE.Vector3(), nx = new THREE.Vector3(), ny = new THREE.Vector3(), B = new THREE.Matrix4();
+  if (!M.wd) { M.wd = []; try { for (let i = 0; i < M.k.length; i++) { const g = xAfWind(i); M.wd.push(g); M.g.add(g); } } catch (e) { M.wd = []; } }
+  for (let i = 0; i < M.k.length; i++) { const w = M.k[i], r = ring[i], wd = M.wd[i]; w.visible = !!r; if (wd) wd.visible = !!r; if (!r) continue; w.position.set(r.p[0], r.p[1], r.p[2]); d.set(r.d[0], r.d[1], r.d[2]);
+    nx.set(-r.p[0], -r.p[1], -r.p[2]).normalize(); nx.addScaledVector(d, -nx.dot(d)).normalize(); nx.applyAxisAngle(d, Math.sin(t * 1.1 + i * 1.9) * 0.18); ny.crossVectors(d, nx); B.makeBasis(nx, ny, d); w.quaternion.setFromRotationMatrix(B); // point along d, flat face (mostly) to the eye, rocking slowly about the blade
+    if (wd) { wd.position.copy(w.position); wd.quaternion.copy(w.quaternion); wd.scale.setScalar(XAF_KS); for (let j = 0; j < wd.r.length; j++) { const h = wd.r[j], o = h.children[0]; h.rotation.z = (j ? -1.6 : 0.9) + Math.sin(t * 3.1 + i + j * 2) * 0.35; o.scale.set(1, 1 + 0.25 * Math.sin(t * 4.3 + i * 1.3 + j), 0.85 + 0.15 * Math.sin(t * 2.7 + j + i)); o.material.opacity = 0.55 + 0.3 * Math.sin(t * 5.1 + i * 2.1 + j * 1.4); } } }
   return ring.length;
 }
 function xAfGunPose(R, k, P) { // arms clip + the gun's own clip at the same fraction
@@ -15945,7 +15986,11 @@ window.xAbilityFP = { XAF, XAF_SET, XAF_K, XAF_GUN, phase: xAfPhase, gunPhase: x
 // right; slow hover; the arc pitches with the aim), and every throw plays Jett's OverhandThrow on the upper body with the
 // thrown dagger flying off along the aim; a right-click burst (several knives in one server step) plays one faster,
 // two-armed-weight throw and launches every dagger together in the 2.5 deg fan. Kept to Blade Storm: locomotion untouched.
-var XBTP = { len: 0.3, single: 0.42, burst: 0.62, tail: 0.5, fly: 0.22, spd: 45, gl: null, ld: 0, live: [], free: [] };
+// spd: Blade Storm is HITSCAN (valorant.fandom.com/wiki/Blade_Storm "deployment: Hitscan"; the damage already lands on the click),
+// so the drawn kunai fly like a tracer: 300 m/s (a 20 m throw in 0.07 s; was 45 m/s = 0.44 s, drawn long after the hit) and stop
+// at the first solid on their line (xBtpRange: where the hitscan knife landed; they flew through walls for a fixed life before).
+// far: open-air flight cap (m); trl: the streak stretches up to trl x its 0.7 m cone with the distance flown (a fast blade's blur).
+var XBTP = { len: 0.3, single: 0.42, burst: 0.62, tail: 0.5, fly: 0.22, spd: 300, far: 90, trl: 4, gl: null, ld: 0, live: [], free: [] };
 // arc slots in the agent frame (+x = the agent's left, +y up, +z forward), metres; [x, y, z, dir x, dir y]
 var XBTP_SLOT = [[0.36, 1.36, 0.36, 0.3, 0.05], [0.27, 1.17, 0.44, 0.15, -0.05], [0, 1.08, 0.5, 0, 0.55], [-0.27, 1.17, 0.44, -0.15, -0.05], [-0.36, 1.36, 0.36, -0.3, 0.05]];
 function xBtpRing(n, t) { // pure layout (tests): n knives left -> [{p:[x,y,z], d:[x,y,z] unit}] for the first n slots, hovering
@@ -15981,15 +16026,19 @@ function xBtpRig(M) { // the floating daggers group on the agent root (built onc
   const g = new THREE.Group(); g.name = "xbtp"; g.position.set(0, 1.4, 0); const k = []; for (let i = 0; i < XBTP_SLOT.length; i++) { const w = xBtpKnife(i); k.push(w); g.add(w); }
   M.m.add(g); M.btp = { g, k, on: false, tail: 0, sn: null, th: 0, burst: 0, n: 0, w0: null }; return M.btp;
 }
+function xBtpRange(from, dir, max) { // distance along dir to the first solid (the hitscan knife's landing point), max when nothing is in the way
+  try { if (typeof solids === "undefined" || !solids || !solids.length) return max; const R = XBTP.rc || (XBTP.rc = new THREE.Raycaster()); R.set(from, dir); R.near = 0; R.far = max; const h = R.intersectObjects(solids, false)[0]; return h ? Math.max(0.05, h.distance - 0.05) : max; } catch (e) { return max; }
+}
+function xBtpStreak(tr, k) { tr.scale.y = k; tr.position.z = -0.07 - 0.35 * k; } // the 0.7 m trail cone stretched k x, its wide end kept at the kunai's tail
 function xBtpLaunch(from, v, life, fp) { // one flying kunai with its trail (pooled), world space
   let f = XBTP.free.pop(); if (!f) { f = { w: xBtpKnife(0), v: new THREE.Vector3(), t: 0, life: XBTP.fly }; f.tr = typeof xKunTrail === "function" ? xKunTrail() : null; if (f.tr) (f.w.children[0] || f.w).add(f.tr); }
-  f.w.visible = true; f.t = 0; f.life = life || XBTP.fly; f.w.position.copy(from); f.v.copy(v); if (f.tr) f.tr.material.opacity = 0.45;
+  f.w.visible = true; f.t = 0; f.life = life || XBTP.fly; f.w.position.copy(from); f.v.copy(v); f.sp = v.length(); if (f.tr) { f.tr.material.opacity = 0.45; xBtpStreak(f.tr, 1); }
   f.w.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), f.v.clone().normalize());
   f.w.traverse((o) => { if (o.isMesh) o.renderOrder = fp ? 11 : 0; }); scene.add(f.w); XBTP.live.push(f); return f;
 }
 function xBtpFly(M, from, d, n) { // the thrown dagger(s) leave along the aim (burst = the 2.5 deg fan)
   if (typeof scene === "undefined") return; const up = new THREE.Vector3(0, 1, 0), fan = n > 1 && typeof jBurstDirs === "function" ? jBurstDirs(n) : [0];
-  for (const a of fan) xBtpLaunch(from, d.clone().applyAxisAngle(up, a).multiplyScalar(XBTP.spd), XBTP.fly);
+  for (const a of fan) { const dir = d.clone().applyAxisAngle(up, a).normalize(); xBtpLaunch(from, dir.clone().multiplyScalar(XBTP.spd), Math.max(0.016, xBtpRange(from, dir, XBTP.far) / XBTP.spd)); } // stops at the first solid
 }
 // FIRST PERSON (hk-41): the player's own throw sends the kunai that leaves the fan flying from its slot toward the crosshair (every
 // knife of a right-click burst, fanned as its hits), so a throw reads as a thrown blade instead of a dagger blinking out of view.
@@ -15997,10 +16046,10 @@ function xBtpFpSlots() { try { const R = xAfReady("Jett"), M = R && R.guns && R.
 function xBtpFlyFP(slots, n0, burst) {
   if (!slots || typeof scene === "undefined" || typeof camera === "undefined") return 0; const o = camera.getWorldPosition(new THREE.Vector3()), f = camera.getWorldDirection(new THREE.Vector3()), up = new THREE.Vector3(0, 1, 0);
   const idx = burst ? Array.from({ length: n0 }, (_, i) => i) : [n0 - 1], fan = burst && typeof jBurstDirs === "function" ? jBurstDirs(n0) : null; let c = 0;
-  idx.forEach((i, j) => { const p = slots[i]; if (!p) return; const aim = fan ? f.clone().applyAxisAngle(up, fan[j]) : f, v = o.clone().addScaledVector(aim, 30).sub(p).normalize().multiplyScalar(XBTP.spd); xBtpLaunch(p, v, 0.5, true); c++; });
+  idx.forEach((i, j) => { const p = slots[i]; if (!p) return; const aim = fan ? f.clone().applyAxisAngle(up, fan[j]) : f, tg = o.clone().addScaledVector(aim, xBtpRange(o, aim, XBTP.far)), L = tg.distanceTo(p) || 0.01, v = tg.sub(p).multiplyScalar(XBTP.spd / L); xBtpLaunch(p, v, Math.max(0.016, L / XBTP.spd), true); c++; }); // from its slot to the crosshair's hit point (the hitscan knife's), at XBTP.spd
   XBTP.fp = (XBTP.fp || 0) + c; return c;
 }
-function xBtpTick(dt) { for (let i = XBTP.live.length - 1; i >= 0; i--) { const f = XBTP.live[i]; f.t += dt; f.w.position.addScaledVector(f.v, dt); if (f.tr) f.tr.material.opacity = 0.45 * Math.max(0, 1 - f.t / f.life); if (f.t >= f.life) { scene.remove(f.w); f.w.visible = false; XBTP.live.splice(i, 1); XBTP.free.push(f); } } }
+function xBtpTick(dt) { for (let i = XBTP.live.length - 1; i >= 0; i--) { const f = XBTP.live[i]; f.t += dt; f.w.position.addScaledVector(f.v, Math.min(dt, Math.max(0, f.life - f.t + dt))); if (f.tr) xBtpStreak(f.tr, Math.max(1, Math.min(XBTP.trl, (f.sp || 0) * Math.min(f.t, f.life) / 0.7))); if (f.tr) f.tr.material.opacity = 0.45 * Math.max(0, 1 - f.t / f.life); if (f.t >= f.life) { scene.remove(f.w); f.w.visible = false; XBTP.live.splice(i, 1); XBTP.free.push(f); } } }
 function xBtpPre(b, M) { // before the stock layer pass: knife hands instead of the gun, throws instead of fire recoil
   const k = xBtpK(b), X = M.sx; if (!X || (!M.btp && !(k > 0))) return; const R = xBtpRig(M); if (!R) return; /* the dagger rig is built on a unit's first Blade Storm only */ const sn = b.xsh || 0, ds = R.sn == null ? 0 : sn - R.sn; R.sn = sn;
   if (!(k > 0 || R.on)) return;

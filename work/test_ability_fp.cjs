@@ -63,7 +63,14 @@ console.warn=((w)=>(...a)=>{if(!/boneTransform/.test(String(a[0])))w(...a);})(co
   // ring layout (pure): one slot per dagger left, all on screen at 16:9 and 844x390, left ones point right, right ones left, bottom one up
   for(const asp of [16/9,844/390]){const r=api.xAfKnifeRing(5,asp,70.53,0),tv=Math.tan(70.53*Math.PI/360);assert.equal(r.length,5);
    for(const k of r){const sx=k.p[0]/(-k.p[2])/(tv*asp),sy=k.p[1]/(-k.p[2])/tv;assert.ok(Math.abs(sx)<0.9&&Math.abs(sy)<0.9,'dagger on screen '+sx.toFixed(2)+','+sy.toFixed(2));assert.ok(Math.abs(Math.hypot(...k.d)-1)<1e-9);}
-   assert.ok(r[0].d[0]>0.5&&r[1].d[0]>0.5&&r[3].d[0]<-0.5&&r[4].d[0]<-0.5&&r[2].d[1]>0.5,'daggers point in / up');}
+   // hk-44 (user: fan "looks wrong", knives flat side-on): Valorant's layout (RPS Jett ultimate shot / Reddit clip): the kunai sit in screen
+   // regions (two at the left edge, one low centre, two at the right edge) with the TIP toward the crosshair on screen (left ones' tips to the right, right ones'
+   // to the left, the centre one's up) and FORESHORTENED: the tip lies farther down the eye's line of sight than the ring (not a side-on knife across the screen)
+   const scr=(q)=>[0.5+q[0]/(-q[2])/(tv*asp)/2,0.5-q[1]/(-q[2])/tv/2],RG=[[0,.26,.38,.82],[0,.26,.38,.82],[.42,.6,.65,1],[.74,1,.38,.82],[.74,1,.38,.82]];
+   r.forEach((k,i)=>{const tip=k.p.map((v,j)=>v+k.d[j]*.128),rng=k.p.map((v,j)=>v-k.d[j]*.128),st=scr(tip),sr=scr(rng),[x0,x1,y0,y1]=RG[i];
+    for(const q of [st,sr])assert.ok(q[0]>=x0&&q[0]<=x1&&q[1]>=y0&&q[1]<=y1,'dagger '+i+' in its Valorant screen region at '+asp.toFixed(2)+': '+q.map(v=>v.toFixed(3)));
+    if(i<2)assert.ok(st[0]>sr[0]+0.02,'left dagger '+i+' tip points in');else if(i>2)assert.ok(st[0]<sr[0]-0.02,'right dagger '+i+' tip points in');else assert.ok(st[1]<sr[1]-0.03,'centre dagger tip up');
+    const pl=Math.hypot(...k.p),along=k.d.reduce((a,v,j)=>a+v*k.p[j]/pl,0);assert.ok(along>0.45,'dagger '+i+' foreshortened: points '+(Math.asin(Math.min(1,along))*180/Math.PI).toFixed(0)+' deg away down its line of sight (side-on = 0)');});}
   assert.deepEqual([5,4,3,1,0].map(n=>api.xAfKnifeRing(n,16/9,70.53,0).length),[5,4,3,1,0],'one dagger per knife left');
   {// a narrower hip lens (wider than 16:9: horizontal capped at 103 deg, db9313f; 844x390 -> 60.4 deg vertical) keeps each dagger's screen spot and screen size (depth pushed out)
    const v2=2*Math.atan(Math.tan(103*Math.PI/360)/(844/390))*180/Math.PI,a=api.xAfKnifeRing(5,844/390,70.53,0),b=api.xAfKnifeRing(5,844/390,v2,0),t1=Math.tan(70.53*Math.PI/360),t2=Math.tan(v2*Math.PI/360);
@@ -80,8 +87,15 @@ console.warn=((w)=>(...a)=>{if(!/boneTransform/.test(String(a[0])))w(...a);})(co
    for(const [clip,u,n] of [[G.eq,.95,5],[G.idle,.3,5],[G.fire[0],.03,4],[G.fire[1],.03,3],[G.alt,.04,5],[G.idle,.5,1]]){api.xAfGunPose(B.R,'bs',{clip,u});const shown=api.xAfKnifePose(B.R,M,n);B.cam.updateMatrixWorld(true);
     assert.equal(shown,n,clip+' daggers shown');assert.equal(M.g.parent,B.cam,'daggers float in camera space (not parented to a hand)');
     const vis=M.k.filter(w=>w.visible);assert.equal(vis.length,n);
-    for(const w of vis){const bb=new T.Box3().setFromObject(w),sz=bb.getSize(new T.Vector3()).length(),c=bb.getCenter(new T.Vector3());assert.ok(sz>.18&&sz<.35,'dagger size '+sz);
-     for(const sd of ['R','L'])assert.ok(c.distanceTo(bone(sd+'_Hand'))>0.1,`${clip}: dagger not in the ${sd} hand`);}}}}
+    for(const w of vis){const bb=new T.Box3().setFromObject(w),sz=bb.getSize(new T.Vector3()).length(),c=bb.getCenter(new T.Vector3());assert.ok(sz>.2&&sz<.42,'dagger size (box diagonal; FP kunai 1.2x, hk-44) '+sz);
+     for(const sd of ['R','L'])assert.ok(c.distanceTo(bone(sd+'_Hand'))>0.1,`${clip}: dagger not in the ${sd} hand`);}
+    // hk-44: the DRAWN kunai (every vertex projected through the camera) stays inside its Valorant region, and each has its cyan wind wisps
+    const RG=[[0,.27,.36,.84],[0,.27,.36,.84],[.4,.62,.62,1.06],[.73,1,.36,.84],[.73,1,.36,.84]],v=new T.Vector3();
+    M.k.forEach((w,i)=>{if(!w.visible)return;let x0=9,x1=-9,y0=9,y1=-9;w.traverse(o=>{if(!o.isMesh)return;const P=o.geometry.attributes.position;for(let q=0;q<P.count;q++){v.fromBufferAttribute(P,q).applyMatrix4(o.matrixWorld);const tv1=Math.tan(B.cam.fov*Math.PI/360),sx=0.5+v.x/(-v.z)/(tv1*B.cam.aspect)/2,sy=0.5-v.y/(-v.z)/tv1/2;x0=Math.min(x0,sx);x1=Math.max(x1,sx);y0=Math.min(y0,sy);y1=Math.max(y1,sy);}});
+     const [a0,a1,b0,b1]=RG[i];assert.ok(x0>=a0&&x1<=a1&&y0>=b0&&y1<=b1,clip+': drawn dagger '+i+' screen box ['+[x0,y0,x1,y1].map(t=>t.toFixed(3))+'] in its region');
+     assert.ok(x1-x0<0.2,clip+': dagger '+i+' not lying across the screen ('+(x1-x0).toFixed(3)+' wide)');});
+    assert.ok(M.wd&&M.wd.length===M.k.length&&M.wd.filter(g=>g.visible).length===n,clip+': one wind wisp group per dagger shown');
+    M.wd.forEach(g=>{if(g.visible)g.traverse(o=>{if(o.isMesh)assert.ok(o.material.blending===T.AdditiveBlending&&o.geometry.attributes.color,'wisps additive, vertex-faded');});});}}}
  // (6) Sova's bow is his own model (agents/sova.glb Hunter_Bow mesh on Bow_Static), not a primitive torus; borrowed sets per cast
  assert(!/TorusGeometry/.test(html.slice(html.indexOf('// ---- ABILITY FIRST PERSON ----'),html.indexOf('// ---- END ABILITY FIRST PERSON ----'))),'no primitive bow');
  {const K=api.XAF_K;assert.equal(K.Phoenix.q.s,'flick');assert.equal(K.Phoenix.e.s,'nade');assert.equal(K.Sage.c.s,'place');assert.equal(K.Sage.x.s,'wolf');}
