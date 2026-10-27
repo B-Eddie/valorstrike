@@ -14204,15 +14204,23 @@ function nmPlace(u,C,point,index){
 (window.XHK||(window.XHK=[])).push(function nmGroundUnits(){const C=nmActive();if(!C||!running||paused)return;for(const b of bots.concat(allies)){if(b.nt||!b.alive||!b.g||b.ku>0||b.xk!=null||b.xj!=null||b.xup)continue;const p=b.g.position;p.y=nmHeight(C,p.x,p.z,p.y+.01);}});
 // Accurate map overview from Riot's minimap projection, rotated by exactly the scene's rigid transform.
 function nmMapProjection(C,W,H){const pad=8,b=C.bounds,s=(Math.min(W,H)-pad*2)/Math.max(b.x2-b.x1,b.z2-b.z1),ox=(W-(b.x2-b.x1)*s)/2,oz=(H-(b.z2-b.z1)*s)/2;return {s,ox,oz,X:x=>ox+(x-b.x1)*s,Z:z=>oz+(z-b.z1)*s,world:(x,z)=>[b.x1+(x-ox)/s,b.z1+(z-oz)/s]};}
-// Team spotting for the native minimap (legacy parity): an enemy shows while any living teammate or the
-// player has line of sight (eye to chest, at native floor height), while revealed by Recon Bolt, Cypher
-// or Fade (J.rv) or a fresh enemy ping; when it drops out of sight, a last-seen marker stays for 2 s where it was last seen.
-const NM_SPOT_RANGE=60;
+// Team spotting for the native minimap (Valorant-style): an enemy shows while the player or a living teammate
+// actually sees it - line of sight (eye to chest, at native floor height) AND inside that viewer's view cone (the player:
+// the current camera FOV around yaw, narrower when scoped; a teammate: the 103 deg bot view cone around g.rotation.y,
+// xbInView) - while revealed by Recon Bolt, Cypher or Fade (J.rv), a fresh enemy ping or a server ult reveal; when it drops
+// out of everyone's sight, a red last-seen "?" stays where it was last seen and fades out over NM_LOST_MS.
+const NM_SPOT_RANGE=60,NM_LOST_MS=3000,NM_CONE_M=14;
+// Half the player's current horizontal FOV (radians): camera.fov is vertical; the hip lens is 103 deg across at 16:9
+// (xHipVFov keeps 103 deg on wider windows), a scope narrows it.
+function nmViewHalf(){const c=typeof camera!=='undefined'&&camera;if(!c||!(c.fov>0))return 103*Math.PI/360;return Math.atan(Math.tan(c.fov*Math.PI/360)*(c.aspect>0?c.aspect:16/9));}
+// Is (dx, dz) inside a view cone facing `face` (g.rotation.y convention: forward = (sin face, cos face))? The body's
+// half width (0.3 m) widens the edge like BotBrain.inView, so a shoulder poking into view counts.
+function nmInCone(face,half,dx,dz,d){const o=face-Math.atan2(dx,dz);return Math.abs(Math.atan2(Math.sin(o),Math.cos(o)))<=half+(d>0?Math.atan(.3/Math.max(.5,d)):0);}
 function nmSpot(now){
  if(now-(nmSpot.t||0)<150&&nmSpot.v)return nmSpot.v;nmSpot.t=now;const V=THREE.Vector3,vis=new Set(),eyes=[];
- if(player.hp>0)eyes.push(typeof pEye==='function'?pEye():new V(player.x,(player.y||0)+1.5,player.z));
- for(const a of allies)if(a.alive)eyes.push(new V(a.g.position.x,a.g.position.y+1.5,a.g.position.z));
- for(const b of bots){if(!b.alive)continue;const p=b.g.position,e=new V(p.x,p.y+1.4,p.z);for(const y of eyes){if(Math.hypot(y.x-p.x,y.z-p.z)<NM_SPOT_RANGE&&los(y,e)){vis.add(b);break;}}}
+ if(player.hp>0){const e=typeof pEye==='function'?pEye():new V(player.x,(player.y||0)+1.5,player.z),half=nmViewHalf(),face=yaw+Math.PI;e.see=(dx,dz,d)=>nmInCone(face,half,dx,dz,d);eyes.push(e);}
+ for(const a of allies)if(a.alive){const e=new V(a.g.position.x,a.g.position.y+1.5,a.g.position.z);e.see=typeof xbInView==='function'?(dx,dz,d)=>xbInView(a,dx,dz,d):(dx,dz,d)=>nmInCone(a.g.rotation?a.g.rotation.y||0:0,103*Math.PI/360,dx,dz,d);eyes.push(e);}
+ for(const b of bots){if(!b.alive)continue;const p=b.g.position,e=new V(p.x,p.y+1.4,p.z);for(const y of eyes){const dx=p.x-y.x,dz=p.z-y.z,d=Math.hypot(dx,dz);if(d<NM_SPOT_RANGE&&y.see(dx,dz,d)&&los(y,e)){vis.add(b);break;}}}
  if(typeof J!=='undefined'&&J.rvT>0&&J.rv)for(const b of J.rv)if(b&&b.alive)vis.add(b);
  if(window.xPG)for(const q of window.xPG.s)if(q.b&&q.b.alive&&now<q.rv)vis.add(q.b);
  for(const b of bots)if(b.alive&&b.netRvUntil>now)vis.add(b); // online: server ult reveals (Hunter's Fury hits, Neural Theft)
@@ -14223,13 +14231,13 @@ function nmMinimap(C){const g=$('game'),show=running&&player&&(mode==='five'||mo
  if(C.image.complete&&C.image.naturalWidth){const t=C.meta.transform,p=C.meta.apiProjection,ca=Math.cos(t.angle),sa=Math.sin(t.angle),point=(u,v)=>{const x=(u/1024-p.xScalarToAdd)/(p.xMultiplier*100)-t.cx,z=-(v/1024-p.yScalarToAdd)/(p.yMultiplier*100)-t.cz;return [ca*x+sa*z,-sa*x+ca*z];},o=point(0,0),a=point(1,0),d=point(0,1);ctx.save();ctx.setTransform((a[0]-o[0])*s,(a[1]-o[1])*s,(d[0]-o[0])*s,(d[1]-o[1])*s,X(o[0]),Z(o[1]));ctx.drawImage(C.image,0,0,1024,1024);ctx.restore();}
  ctx.font='bold '+Math.max(10,W/15,10*px)+'px Arial';ctx.textAlign='center';ctx.fillStyle='#f3efcf';for(const [k,p]of Object.entries(C.meta.sites)){const r=Math.max(7,W/32,6*px),x=Math.max(r+2,Math.min(W-r-2,X(p[0]))),z=Math.max(r+2,Math.min(H-r-2,Z(p[2])));ctx.fillStyle='#18242e';ctx.beginPath();ctx.arc(x,z,r,0,Math.PI*2);ctx.fill();ctx.fillStyle='#f3efcf';ctx.fillText(k,x,z+Math.max(3,W/48,3.5*px));}const dot=(x,z,color,r)=>{ctx.beginPath();ctx.arc(X(x),Z(z),r*px,0,Math.PI*2);ctx.fillStyle=color;ctx.fill();};const dia=(x,z,r)=>{const cx=X(x),cz=Z(z);r*=px;ctx.beginPath();ctx.moveTo(cx,cz-r);ctx.lineTo(cx+r,cz);ctx.lineTo(cx,cz+r);ctx.lineTo(cx-r,cz);ctx.closePath();};
  const vis=nmSpot(now);for(const u of allies)if(u.alive)dot(u.g.position.x,u.g.position.z,'#5fe4df',2.5);for(const u of bots)if(u.alive&&vis.has(u))dot(u.g.position.x,u.g.position.z,'#ff4655',2.5);
- // Last-seen: a fading red "?" for 2 s where a spotted enemy dropped out of the team's sight.
- ctx.font='bold '+Math.max(9,7*px)+'px Arial';for(const [b,l]of mmLost){const f=1-(now-l.t)/2000;if(f<=0||!b.alive){mmLost.delete(b);continue;}ctx.globalAlpha=f;ctx.fillStyle='#ff4655';ctx.fillText('?',X(l.x),Z(l.z)+3*px);ctx.globalAlpha=1;}
+ // Last-seen: a fading red "?" for NM_LOST_MS where a spotted enemy dropped out of the team's sight.
+ ctx.font='bold '+Math.max(9,7*px)+'px Arial';for(const [b,l]of mmLost){const f=1-(now-l.t)/NM_LOST_MS;if(f<=0||!b.alive){mmLost.delete(b);continue;}ctx.globalAlpha=f;ctx.fillStyle='#ff4655';ctx.fillText('?',X(l.x),Z(l.z)+3*px);ctx.globalAlpha=1;}
  // Orbs, call-out rings and pings use the same world-to-map transform as the players.
  if(mode==='five'&&window.xOrbs)for(const o of window.xOrbs){if(!o.on)continue;dia(o.x,o.z,2.5);ctx.fillStyle='#9ffff0';ctx.fill();}
  if(window.xCMk)for(const q of window.xCMk){if(!q.on)continue;const f=1-(now-q.t)/4000;if(f<=0){q.on=false;continue;}ctx.globalAlpha=f;ctx.beginPath();ctx.arc(X(q.x),Z(q.z),5*px,0,Math.PI*2);ctx.strokeStyle=q.en?'#ff4655':'#7fd8ff';ctx.lineWidth=1.5*px;ctx.stroke();ctx.globalAlpha=1;}
  if(window.xPG)for(const q of window.xPG.s){if(!q.on)continue;ctx.globalAlpha=q.a==null?1:q.a;dia(q.x,q.z,3.5);ctx.strokeStyle=q.en?'#ff4655':'#ffd84a';ctx.lineWidth=1.5*px;ctx.stroke();ctx.globalAlpha=1;}
- ctx.lineWidth=1;dot(player.x,player.z,'#ffffff',3);ctx.strokeStyle='#fff';ctx.beginPath();ctx.moveTo(X(player.x),Z(player.z));ctx.lineTo(X(player.x-Math.sin(yaw)*4),Z(player.z-Math.cos(yaw)*4));ctx.stroke();if(mode==='five'&&FV.sp&&(FV.sp.st==='plant'||FV.sp.st==='drop'&&(FV.atk||FV.sp.seen)))dot(FV.sp.x,FV.sp.z,'#ffe269',3);else if(mode==='five'&&FV.sp&&FV.sp.st==='carry'&&FV.sp.c&&FV.sp.c!==player&&allies.includes(FV.sp.c)&&FV.sp.c.g)dot(FV.sp.c.g.position.x,FV.sp.c.g.position.z,'#ffe269',1.6);
+ ctx.lineWidth=1;if(player.hp>0){/* view cone: a wedge from the player dot along the look direction, as wide as the current horizontal FOV (scoping narrows it) */const half=nmViewHalf(),cx=X(player.x),cz=Z(player.z),dir=Math.atan2(-Math.cos(yaw),-Math.sin(yaw)),r=Math.max(24,Math.min(70,NM_CONE_M*s));ctx.beginPath();ctx.moveTo(cx,cz);ctx.arc(cx,cz,r,dir-half,dir+half);ctx.closePath();ctx.fillStyle='rgba(255,255,255,0.2)';ctx.fill();ctx.strokeStyle='rgba(255,255,255,0.45)';ctx.stroke();}dot(player.x,player.z,'#ffffff',3);if(mode==='five'&&FV.sp&&(FV.sp.st==='plant'||FV.sp.st==='drop'&&(FV.atk||FV.sp.seen)))dot(FV.sp.x,FV.sp.z,'#ffe269',3);else if(mode==='five'&&FV.sp&&FV.sp.st==='carry'&&FV.sp.c&&FV.sp.c!==player&&allies.includes(FV.sp.c)&&FV.sp.c.g)dot(FV.sp.c.g.position.x,FV.sp.c.g.position.z,'#ffe269',1.6);
 }
 {const map=minimap;minimap=function(){const C=nmActive();return C?nmMinimap(C):map.apply(this,arguments);};const bounds=mmBounds;mmBounds=function(n){const C=nmActive();return C?C.bounds:bounds(n);};const loc=xLoc;xLoc=function(x,z){const C=nmActive();if(!C)return loc(x,z);let best='',d=Infinity;for(const c of C.meta.callouts){const r=Math.hypot(c.position[0]-x,c.position[2]-z);if(r<d){d=r;best=c.name;}}return best;};}
 // Existing hooks keep their original function references, so add the native minimap after them.
