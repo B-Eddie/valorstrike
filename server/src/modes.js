@@ -12,9 +12,9 @@ import {gainUlt,initAbilities} from './abilities.js';
 import kits from './kits.json' with {type:'json'};
 
 export const SPIKE_VARIANTS=Object.freeze(['swift','sr','rep']);
-export const ALL_MODES=Object.freeze(['dm','tdm','esc','five','swift','sr','rep']);
+export const ALL_MODES=Object.freeze(['dm','tdm','esc','skm','five','swift','sr','rep']);
 export const isSpikeMode=m=>m==='five'||SPIKE_VARIANTS.includes(m);
-export const MODE_NAMES=Object.freeze({dm:'Deathmatch',tdm:'Team Deathmatch',esc:'Escalation',five:'Unrated',swift:'Swiftplay',sr:'Spike Rush',rep:'Replication'});
+export const MODE_NAMES=Object.freeze({dm:'Deathmatch',tdm:'Team Deathmatch',esc:'Escalation',five:'Unrated',swift:'Swiftplay',sr:'Spike Rush',rep:'Replication',skm:'Skirmish 1v1'});
 
 // ---- Escalation ----
 // Weapon ladder = the offline page's ESC_W (index.html ESCALATION block), so online and offline play the same 12 levels. The live
@@ -132,9 +132,58 @@ export class VariantSpikeSimulation extends SpikeSimulation{
  roundState(u){const r=super.roundState(u);r.gm=this.gm;r.win=this.rules.win;r.half=this.rules.half;if(this.gm==='sr'){r.orb=this.buy>3?[]:this.orbs.map(o=>[o.id,Math.round(o.x*100)/100,Math.round(o.y*100)/100,Math.round(o.z*100)/100,o.full]);r.gun=this.srGun||null;}if(this.gm==='rep'&&this.repAgent)r.rag=this.repAgent[u.team]||null;if(u.fgUntil>this.time)r.fg=Math.round((u.fgUntil-this.time)*100)/100;return r;}
 }
 
+// ---- Skirmish 1v1 ('skm') ----
+// VALORANT Skirmish (patch 11.07b notes, playvalorant.com 2025-10-07: "No economy system", "No abilities by default", "Set and
+// forget your weapon, or change loadouts each round", "Unlimited round timer", "Supports 1v1 through 5v5"; valorant.fandom.com
+// /wiki/Skirmish: "The team that kills all of the opposing team players wins the round", Heavy Armor on every spawn, infinite
+// credits, buy phase 15 s on round 1 and 3 s after, no weapon drops). Here: two human players online, one per team, never a bot
+// (the room refuses a third player, no bot fills an empty seat or replaces a leaver); elimination rounds with no Spike; first to 5
+// round wins (user-approved; VALORANT's default is 10); a free loadout of one primary + one sidearm kept between rounds and
+// changed only in the buy phase (equip of a new gun); Heavy Armor (50) and full health every round; walking and fire held during
+// the buy phase (looking around and jumping stay free, as the page's plant / defuse hold); 3 s between rounds; no side swap. Unlimited rounds as VALORANT, with a 20 minute match cap (more round wins, else
+// a draw). A seat left empty (the player left; a dropped connection keeps the unit for the resume window) pauses the match
+// ('wait'): the player rejoining restarts the round (score kept); after 60 s the one still there wins by forfeit.
+export const SKM=Object.freeze({win:5,buyFirst:15,buy:3,end:3,armor:50,cap:1200,forfeit:60,loadHold:90,kit:Object.freeze({pri:'Vandal',sec:'Classic'})});
+const SKM_SIDE=Object.freeze(['Classic','Shorty','Frenzy','Ghost','Sheriff']);
+export class SkirmishSimulation extends Simulation{
+ constructor(world,mode='skm',map='ascent',random=Math.random){super(world,'skm',map,random);this.gm='skm';this.maxHumans=2;this.minHumans=2;this.noBots=true;this.matchLen=SKM.cap;this.remaining=SKM.cap;this.maxKills=Infinity;this.roundWin=SKM.win;this.skm=this.skmFresh();}
+ skmFresh(){return {r:0,sc:[0,0],ph:'room',t:0,lw:-1,why:'',at:0,waitAt:0};}
+ // One human per team: the free team (a returning player gets their side back when it is free); no bots, no third player.
+ add(name,agent='Jett',human=true,want=null){if(!human)throw Error('no bots in Skirmish');if(this.units.filter(u=>u.human).length>=this.maxHumans)throw Error('full');
+  const free=[0,1].filter(t=>!this.units.some(u=>u.team===t)),team=free.includes(want)?want:free[0];const u=super.add(name,agent,true,team);u.kit=u.kit||{...SKM.kit};return u;}
+ start(){this.skm=this.skmFresh();super.start(false);this.newRound();}
+ newRound(){const S=this.skm;S.r++;S.ph='buy';S.t=S.r===1?SKM.buyFirst:SKM.buy;S.at=this.time;S.lw=-1;S.why='';this.roundSpawn=true;try{for(const u of this.units)this.spawn(u);}finally{this.roundSpawn=false;}}
+ // Round spawn: own team spawn, full health, Heavy Armor, the kept loadout with full magazines. A unit that died this round
+ // stays out until the next one (a late 'ready' / rescue spawn never revives it).
+ spawn(u){const S=this.skm;if(this.phase==='game'&&!this.roundSpawn&&!u.alive&&S&&!['buy','wait'].includes(S.ph)){u.respawnAt=Infinity;return;}
+  u.kit=u.kit||{...SKM.kit};u.weapon=u.kit.pri&&weapons[u.kit.pri]?u.kit.pri:u.kit.sec;super.spawn(u);
+  const inv={},res={};for(const w of [u.kit.pri,u.kit.sec])if(w&&weapons[w]){inv[w]=weapons[w].magazineSize;res[w]=reserveOf(w);}
+  u.inventory=inv;u.reserves=res;u.ammo=inv[u.weapon];u.reserve=res[u.weapon];u.reloadAt=0;u.armor=SKM.armor;u.rgn=null;u.protectedUntil=0;u.respawnAt=Infinity;}
+ // No economy, abilities or drops; a gun outside the kept loadout is taken (it replaces that slot) in the buy phase only.
+ command(u,m){const t=m?.t;if(['buy','sell','pick','dropw','drop','ab','blade'].includes(t))return false;
+  if(t==='equip'&&typeof m.w==='string'&&Object.hasOwn(weapons,m.w)&&m.w!=='Knife'&&!weapons[m.w].abilityOnly){const slot=SKM_SIDE.includes(m.w)?'sec':'pri';u.kit=u.kit||{...SKM.kit};
+   if(u.kit[slot]!==m.w){if(this.phase==='game'&&this.skm.ph!=='buy')return false;const old=u.kit[slot];u.kit[slot]=m.w;if(old&&old!==u.weapon){delete u.inventory[old];delete u.reserves[old];}u.inventory[m.w]=weapons[m.w].magazineSize;u.reserves[m.w]=reserveOf(m.w);}}
+  return super.command(u,m);}
+ fire(u){if(this.skm.ph!=='live')return false;return super.fire(u);}
+ alive(t){return this.units.some(u=>u.team===t&&u.alive);}
+ endRound(w){const S=this.skm;S.ph='end';S.t=SKM.end;S.lw=w;if(w===0||w===1){S.sc[w]++;S.why='eliminated';}else S.why='draw';if(Math.max(...S.sc)>=SKM.win){this.phase='post';S.ph='over';}}
+ step(dt){if(this.phase!=='game')return super.step(dt);const S=this.skm,d=Math.min(.05,Math.max(0,dt));
+  const empty=[0,1].filter(t=>!this.units.some(u=>u.team===t));
+  if(empty.length&&S.ph!=='wait'){S.ph='wait';S.waitAt=this.time;S.t=SKM.forfeit;}else if(!empty.length&&S.ph==='wait')this.newRound();
+  if(S.ph==='buy'){const hold=this.units.some(u=>u.loading)&&this.time-S.at<SKM.loadHold;if(!hold)S.t-=d;for(const u of this.units)if(u.input)u.input={...u.input,forward:0,side:0,fire:false};if(S.t<=0){S.ph='live';S.t=0;}}
+  super.step(dt);for(const u of this.units)if(!u.alive)u.respawnAt=Infinity;
+  if(this.phase==='game'){
+   if(S.ph==='wait'){S.t=Math.max(0,SKM.forfeit-(this.time-S.waitAt));if(S.t<=0){const t=[0,1].find(t=>!empty.includes(t));if(t!==undefined){S.sc[t]=Math.max(S.sc[t],SKM.win);S.lw=t;}S.why='forfeit';S.ph='over';this.phase='post';}}
+   else if(S.ph==='live'){const a0=this.alive(0),a1=this.alive(1);if(!a0||!a1)this.endRound(a0?0:a1?1:-1);}
+   else if(S.ph==='end'){S.t-=d;if(S.t<=0)this.newRound();}}
+  this.scores=[...S.sc];}
+ snapshot(){const s=super.snapshot(),S=this.skm;s.skm={r:S.r,sc:[...S.sc],win:SKM.win,ph:S.ph,t:Math.max(0,Math.round(S.t*10)/10),lw:S.lw,why:S.why};return s;}
+}
+
 // Room factory: the simulation class for a mode id. `five` = Unrated (as before), dm / tdm = Simulation.
 export function createSim(world,mode,map,random){
  if(mode==='esc')return new EscalationSimulation(world,'esc',map,random);
+ if(mode==='skm')return new SkirmishSimulation(world,'skm',map,random);
  if(SPIKE_VARIANTS.includes(mode))return new VariantSpikeSimulation(world,mode,map,random);
  if(mode==='five')return new SpikeSimulation(world,mode,map,random);
  return new Simulation(world,mode,map,random);}
