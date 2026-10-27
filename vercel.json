@@ -1,0 +1,6 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "rewrites": [
+    { "source": "/vs-m/:path*", "destination": "https://valorstrike.vercel.app/_vercel/insights/:path*" }
+  ]
+}
