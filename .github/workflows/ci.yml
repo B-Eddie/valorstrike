@@ -97,6 +97,21 @@ jobs:
         if: steps.worlds.outputs.cache-hit != 'true'
         run: npm run build:worlds
         working-directory: server
+      # work/page_harness.cjs real3 boots the page on three r149 + the r147 GLTFLoader / SkeletonUtils, the exact files
+      # index.html loads, from REAL3_DIR; without them it falls back to server/node_modules three r160 and the bot sims
+      # diverge (test_round_start_perf, test_bot_play_offline).
+      - name: three.js files the page loads (REAL3_DIR for the real3 harness)
+        run: |
+          d="$RUNNER_TEMP/three-real3"; mkdir -p "$d"; cd "$d"
+          curl -fsSL --retry 3 -o three.min.js https://cdn.jsdelivr.net/npm/three@0.149.0/build/three.min.js
+          curl -fsSL --retry 3 -o GLTFLoader.js https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js
+          curl -fsSL --retry 3 -o SkeletonUtils.js https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/utils/SkeletonUtils.js
+          sha256sum -c - <<'SUMS'
+          8a5f7249903b54d30f79f708699d2fed2d6a1d0741a4cd41377d1f01bb5a2271  three.min.js
+          b2edda923572c73e6b30b139756d182c87e2c34d022845c6e067a9a0a9544e01  GLTFLoader.js
+          ad2dc432b0e10ea30b19dca3dfcd8c03a5c4d6284e6c691f0c6f1b45a70c3b0d  SkeletonUtils.js
+          SUMS
+          echo "REAL3_DIR=$d" >> "$GITHUB_ENV"
       - name: client regressions (work/test_all.cjs, shard ${{ matrix.shard }} of 4)
         env:
           SHARD_TOTAL: '4'
