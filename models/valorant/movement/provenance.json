@@ -1,0 +1,5502 @@
+{
+  "source": "Rocklan FREE Valorant Blender 3D Model Pack; fan-extracted reference, not official Riot data",
+  "base": "63f8fe64d749c6634273c92732f5f049712d0a79",
+  "conversion": "Direct ActorX PSA parsing and GLTF serialization. Blender is not installed; portable download failed because the configured network proxy is unreachable. Blender export remains unmet.",
+  "sourceScope": "Only specifically named movement files in Shared/Simple are opened. Weapon animations, weapon/ability/emote/death/hit/plant/device curves are excluded.",
+  "clips": [
+    {
+      "name": "idle",
+      "duration": 4.500243242172007,
+      "fps": 30.22058868408203,
+      "frames": 137,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_Idle_LB.psa"
+      ],
+      "additive": false,
+      "layer": "lower",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths."
+    },
+    {
+      "name": "crouch",
+      "duration": 4.516727683067256,
+      "fps": 60.22058868408203,
+      "frames": 273,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_CrouchIdle_LB.psa"
+      ],
+      "additive": false,
+      "layer": "lower",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths."
+    },
+    {
+      "name": "crouchSpine",
+      "duration": 0.016666667726304863,
+      "fps": 59.999996185302734,
+      "frames": 2,
+      "status": "EXTRAPOLATED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_CrouchPose_UB.psa",
+        "Animations/Agent Animations/Shared/Simple/TP_Core_IdlePose_UB.psa"
+      ],
+      "additive": true,
+      "layer": "spine",
+      "derivation": "Derive only the spine rotation difference between the generic pack IdlePose_UB and CrouchPose_UB to apply crouch torso posture over preserved weapon/arm actions. No weapon grip, aim, arm or hand channel is copied."
+    },
+    {
+      "name": "walkN",
+      "duration": 0.8345678855129688,
+      "fps": 31.153846740722656,
+      "frames": 27,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_WalkN_LB.psa"
+      ],
+      "additive": false,
+      "layer": "lower",
+      "gait": "walk",
+      "direction": "N",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths.",
+      "naturalSpeed": 2.2588598395920343,
+      "contact": {
+        "method": "Average of lower-support-foot projected travel/time and complete left-foot stride excursion/time; model units/s. In-place animation estimate, not a measured game speed.",
+        "supportSpeed": 2.523793777063555,
+        "samples": 181,
+        "footPhase": {
+          "left": 0.7666666666666667,
+          "right": 0.26666666666666666
+        },
+        "phaseMeaning": "Maximum forward foot projection; approximate contact entry, not an authored event.",
+        "confidence": "estimated; no authored contact markers or browser visual verification"
+      }
+    },
+    {
+      "name": "walkNE",
+      "duration": 0.8345678855129688,
+      "fps": 31.153846740722656,
+      "frames": 27,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_WalkNE_LB.psa"
+      ],
+      "additive": false,
+      "layer": "lower",
+      "gait": "walk",
+      "direction": "NE",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths.",
+      "naturalSpeed": 2.207991921878257,
+      "contact": {
+        "method": "Average of lower-support-foot projected travel/time and complete left-foot stride excursion/time; model units/s. In-place animation estimate, not a measured game speed.",
+        "supportSpeed": 2.4438067102859398,
+        "samples": 181,
+        "footPhase": {
+          "left": 0.7666666666666667,
+          "right": 0.26666666666666666
+        },
+        "phaseMeaning": "Maximum forward foot projection; approximate contact entry, not an authored event.",
+        "confidence": "estimated; no authored contact markers or browser visual verification"
+      }
+    },
+    {
+      "name": "walkE",
+      "duration": 0.8345678855129688,
+      "fps": 31.153846740722656,
+      "frames": 27,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_WalkE_LB.psa"
+      ],
+      "additive": false,
+      "layer": "lower",
+      "gait": "walk",
+      "direction": "E",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths.",
+      "naturalSpeed": 2.158216070627241,
+      "contact": {
+        "method": "Average of lower-support-foot projected travel/time and complete left-foot stride excursion/time; model units/s. In-place animation estimate, not a measured game speed.",
+        "supportSpeed": 2.291660002431877,
+        "samples": 181,
+        "footPhase": {
+          "left": 0.7333333333333333,
+          "right": 0.23333333333333334
+        },
+        "phaseMeaning": "Maximum forward foot projection; approximate contact entry, not an authored event.",
+        "confidence": "estimated; no authored contact markers or browser visual verification"
+      }
+    },
+    {
+      "name": "walkSE",
+      "duration": 0.8345678855129688,
+      "fps": 31.153846740722656,
+      "frames": 27,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_WalkSE_LB.psa"
+      ],
+      "additive": false,
+      "layer": "lower",
+      "gait": "walk",
+      "direction": "SE",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths.",
+      "naturalSpeed": 2.389271446167579,
+      "contact": {
+        "method": "Average of lower-support-foot projected travel/time and complete left-foot stride excursion/time; model units/s. In-place animation estimate, not a measured game speed.",
+        "supportSpeed": 2.3641829795035854,
+        "samples": 181,
+        "footPhase": {
+          "left": 0.15555555555555556,
+          "right": 0.6555555555555556
+        },
+        "phaseMeaning": "Maximum forward foot projection; approximate contact entry, not an authored event.",
+        "confidence": "estimated; no authored contact markers or browser visual verification"
+      }
+    },
+    {
+      "name": "walkS",
+      "duration": 0.8345678855129688,
+      "fps": 31.153846740722656,
+      "frames": 27,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_WalkS_LB.psa"
+      ],
+      "additive": false,
+      "layer": "lower",
+      "gait": "walk",
+      "direction": "S",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths.",
+      "naturalSpeed": 2.386777223085924,
+      "contact": {
+        "method": "Average of lower-support-foot projected travel/time and complete left-foot stride excursion/time; model units/s. In-place animation estimate, not a measured game speed.",
+        "supportSpeed": 2.360265006065713,
+        "samples": 181,
+        "footPhase": {
+          "left": 0.15555555555555556,
+          "right": 0.6555555555555556
+        },
+        "phaseMeaning": "Maximum forward foot projection; approximate contact entry, not an authored event.",
+        "confidence": "estimated; no authored contact markers or browser visual verification"
+      }
+    },
+    {
+      "name": "walkSW",
+      "duration": 0.8345678855129688,
+      "fps": 31.153846740722656,
+      "frames": 27,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_WalkSW_LB.psa"
+      ],
+      "additive": false,
+      "layer": "lower",
+      "gait": "walk",
+      "direction": "SW",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths.",
+      "naturalSpeed": 2.4140186515596813,
+      "contact": {
+        "method": "Average of lower-support-foot projected travel/time and complete left-foot stride excursion/time; model units/s. In-place animation estimate, not a measured game speed.",
+        "supportSpeed": 2.424248787968939,
+        "samples": 181,
+        "footPhase": {
+          "left": 0.15555555555555556,
+          "right": 0.6555555555555556
+        },
+        "phaseMeaning": "Maximum forward foot projection; approximate contact entry, not an authored event.",
+        "confidence": "estimated; no authored contact markers or browser visual verification"
+      }
+    },
+    {
+      "name": "walkW",
+      "duration": 0.8345678855129688,
+      "fps": 31.153846740722656,
+      "frames": 27,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_WalkW_LB.psa"
+      ],
+      "additive": false,
+      "layer": "lower",
+      "gait": "walk",
+      "direction": "W",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths.",
+      "naturalSpeed": 2.0540529335753805,
+      "contact": {
+        "method": "Average of lower-support-foot projected travel/time and complete left-foot stride excursion/time; model units/s. In-place animation estimate, not a measured game speed.",
+        "supportSpeed": 2.255085074309562,
+        "samples": 181,
+        "footPhase": {
+          "left": 0.8111111111111111,
+          "right": 0.38333333333333336
+        },
+        "phaseMeaning": "Maximum forward foot projection; approximate contact entry, not an authored event.",
+        "confidence": "estimated; no authored contact markers or browser visual verification"
+      }
+    },
+    {
+      "name": "walkNW",
+      "duration": 0.8345678855129688,
+      "fps": 31.153846740722656,
+      "frames": 27,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_WalkNW_LB.psa"
+      ],
+      "additive": false,
+      "layer": "lower",
+      "gait": "walk",
+      "direction": "NW",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths.",
+      "naturalSpeed": 2.251090040331199,
+      "contact": {
+        "method": "Average of lower-support-foot projected travel/time and complete left-foot stride excursion/time; model units/s. In-place animation estimate, not a measured game speed.",
+        "supportSpeed": 2.4547485124694703,
+        "samples": 181,
+        "footPhase": {
+          "left": 0.7666666666666667,
+          "right": 0.26666666666666666
+        },
+        "phaseMeaning": "Maximum forward foot projection; approximate contact entry, not an authored event.",
+        "confidence": "estimated; no authored contact markers or browser visual verification"
+      }
+    },
+    {
+      "name": "lean_walkN",
+      "duration": 0.8345678855129688,
+      "fps": 31.153846740722656,
+      "frames": 27,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_WalkAddN_UB.psa"
+      ],
+      "additive": true,
+      "layer": "spine",
+      "gait": "walk",
+      "direction": "N",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths."
+    },
+    {
+      "name": "lean_walkNE",
+      "duration": 0.8345678855129688,
+      "fps": 31.153846740722656,
+      "frames": 27,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_WalkAddNE_UB.psa"
+      ],
+      "additive": true,
+      "layer": "spine",
+      "gait": "walk",
+      "direction": "NE",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths."
+    },
+    {
+      "name": "lean_walkE",
+      "duration": 0.8345678855129688,
+      "fps": 31.153846740722656,
+      "frames": 27,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_WalkAddE_UB.psa"
+      ],
+      "additive": true,
+      "layer": "spine",
+      "gait": "walk",
+      "direction": "E",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths."
+    },
+    {
+      "name": "lean_walkSE",
+      "duration": 0.8345678855129688,
+      "fps": 31.153846740722656,
+      "frames": 27,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_WalkAddSE_UB.psa"
+      ],
+      "additive": true,
+      "layer": "spine",
+      "gait": "walk",
+      "direction": "SE",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths."
+    },
+    {
+      "name": "lean_walkS",
+      "duration": 0.8345678855129688,
+      "fps": 31.153846740722656,
+      "frames": 27,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_WalkAddS_UB.psa"
+      ],
+      "additive": true,
+      "layer": "spine",
+      "gait": "walk",
+      "direction": "S",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths."
+    },
+    {
+      "name": "lean_walkSW",
+      "duration": 0.8345678855129688,
+      "fps": 31.153846740722656,
+      "frames": 27,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_WalkAddSW_UB.psa"
+      ],
+      "additive": true,
+      "layer": "spine",
+      "gait": "walk",
+      "direction": "SW",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths."
+    },
+    {
+      "name": "lean_walkW",
+      "duration": 0.8345678855129688,
+      "fps": 31.153846740722656,
+      "frames": 27,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_WalkAddW_UB.psa"
+      ],
+      "additive": true,
+      "layer": "spine",
+      "gait": "walk",
+      "direction": "W",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths."
+    },
+    {
+      "name": "lean_walkNW",
+      "duration": 0.8345678855129688,
+      "fps": 31.153846740722656,
+      "frames": 27,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_WalkAddNW_UB.psa"
+      ],
+      "additive": true,
+      "layer": "spine",
+      "gait": "walk",
+      "direction": "NW",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths."
+    },
+    {
+      "name": "runN",
+      "duration": 0.5837838078590107,
+      "fps": 61.666664123535156,
+      "frames": 37,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_RunN_LB.psa"
+      ],
+      "additive": false,
+      "layer": "lower",
+      "gait": "run",
+      "direction": "N",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths.",
+      "naturalSpeed": 4.164794729683294,
+      "contact": {
+        "method": "Average of lower-support-foot projected travel/time and complete left-foot stride excursion/time; model units/s. In-place animation estimate, not a measured game speed.",
+        "supportSpeed": 5.093593945844992,
+        "samples": 181,
+        "footPhase": {
+          "left": 0.75,
+          "right": 0.25
+        },
+        "phaseMeaning": "Maximum forward foot projection; approximate contact entry, not an authored event.",
+        "confidence": "estimated; no authored contact markers or browser visual verification"
+      }
+    },
+    {
+      "name": "runNE",
+      "duration": 0.5837838078590107,
+      "fps": 61.666664123535156,
+      "frames": 37,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_RunNE_LB.psa"
+      ],
+      "additive": false,
+      "layer": "lower",
+      "gait": "run",
+      "direction": "NE",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths.",
+      "naturalSpeed": 4.8278127838597396,
+      "contact": {
+        "method": "Average of lower-support-foot projected travel/time and complete left-foot stride excursion/time; model units/s. In-place animation estimate, not a measured game speed.",
+        "supportSpeed": 5.296162719919493,
+        "samples": 181,
+        "footPhase": {
+          "left": 0.7222222222222222,
+          "right": 0.2222222222222222
+        },
+        "phaseMeaning": "Maximum forward foot projection; approximate contact entry, not an authored event.",
+        "confidence": "estimated; no authored contact markers or browser visual verification"
+      }
+    },
+    {
+      "name": "runE",
+      "duration": 0.5837838078590107,
+      "fps": 61.666664123535156,
+      "frames": 37,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_RunE_LB.psa"
+      ],
+      "additive": false,
+      "layer": "lower",
+      "gait": "run",
+      "direction": "E",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths.",
+      "naturalSpeed": 4.4499181547651325,
+      "contact": {
+        "method": "Average of lower-support-foot projected travel/time and complete left-foot stride excursion/time; model units/s. In-place animation estimate, not a measured game speed.",
+        "supportSpeed": 5.105634581951561,
+        "samples": 181,
+        "footPhase": {
+          "left": 0.7222222222222222,
+          "right": 0.2222222222222222
+        },
+        "phaseMeaning": "Maximum forward foot projection; approximate contact entry, not an authored event.",
+        "confidence": "estimated; no authored contact markers or browser visual verification"
+      }
+    },
+    {
+      "name": "runSE",
+      "duration": 0.5837838078590107,
+      "fps": 61.666664123535156,
+      "frames": 37,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_RunSE_LB.psa"
+      ],
+      "additive": false,
+      "layer": "lower",
+      "gait": "run",
+      "direction": "SE",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths.",
+      "naturalSpeed": 3.7060342860965667,
+      "contact": {
+        "method": "Average of lower-support-foot projected travel/time and complete left-foot stride excursion/time; model units/s. In-place animation estimate, not a measured game speed.",
+        "supportSpeed": 4.7186815484602125,
+        "samples": 181,
+        "footPhase": {
+          "left": 0.3611111111111111,
+          "right": 0.8611111111111112
+        },
+        "phaseMeaning": "Maximum forward foot projection; approximate contact entry, not an authored event.",
+        "confidence": "estimated; no authored contact markers or browser visual verification"
+      }
+    },
+    {
+      "name": "runS",
+      "duration": 0.5837838078590107,
+      "fps": 61.666664123535156,
+      "frames": 37,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_RunS_LB.psa"
+      ],
+      "additive": false,
+      "layer": "lower",
+      "gait": "run",
+      "direction": "S",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths.",
+      "naturalSpeed": 3.735449952082328,
+      "contact": {
+        "method": "Average of lower-support-foot projected travel/time and complete left-foot stride excursion/time; model units/s. In-place animation estimate, not a measured game speed.",
+        "supportSpeed": 4.6890231873384,
+        "samples": 181,
+        "footPhase": {
+          "left": 0.2777777777777778,
+          "right": 0.7777777777777778
+        },
+        "phaseMeaning": "Maximum forward foot projection; approximate contact entry, not an authored event.",
+        "confidence": "estimated; no authored contact markers or browser visual verification"
+      }
+    },
+    {
+      "name": "runSW",
+      "duration": 0.5837838078590107,
+      "fps": 61.666664123535156,
+      "frames": 37,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_RunSW_LB.psa"
+      ],
+      "additive": false,
+      "layer": "lower",
+      "gait": "run",
+      "direction": "SW",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths.",
+      "naturalSpeed": 3.7810701596657474,
+      "contact": {
+        "method": "Average of lower-support-foot projected travel/time and complete left-foot stride excursion/time; model units/s. In-place animation estimate, not a measured game speed.",
+        "supportSpeed": 4.51165380556889,
+        "samples": 181,
+        "footPhase": {
+          "left": 0.3611111111111111,
+          "right": 0.8611111111111112
+        },
+        "phaseMeaning": "Maximum forward foot projection; approximate contact entry, not an authored event.",
+        "confidence": "estimated; no authored contact markers or browser visual verification"
+      }
+    },
+    {
+      "name": "runW",
+      "duration": 0.5837838078590107,
+      "fps": 61.666664123535156,
+      "frames": 37,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_RunW_LB.psa"
+      ],
+      "additive": false,
+      "layer": "lower",
+      "gait": "run",
+      "direction": "W",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths.",
+      "naturalSpeed": 4.0230790716116624,
+      "contact": {
+        "method": "Average of lower-support-foot projected travel/time and complete left-foot stride excursion/time; model units/s. In-place animation estimate, not a measured game speed.",
+        "supportSpeed": 4.550086391318633,
+        "samples": 181,
+        "footPhase": {
+          "left": 0.7222222222222222,
+          "right": 0.2222222222222222
+        },
+        "phaseMeaning": "Maximum forward foot projection; approximate contact entry, not an authored event.",
+        "confidence": "estimated; no authored contact markers or browser visual verification"
+      }
+    },
+    {
+      "name": "runNW",
+      "duration": 0.5837838078590107,
+      "fps": 61.666664123535156,
+      "frames": 37,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_RunNW_LB.psa"
+      ],
+      "additive": false,
+      "layer": "lower",
+      "gait": "run",
+      "direction": "NW",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths.",
+      "naturalSpeed": 4.403018503435766,
+      "contact": {
+        "method": "Average of lower-support-foot projected travel/time and complete left-foot stride excursion/time; model units/s. In-place animation estimate, not a measured game speed.",
+        "supportSpeed": 5.039058148548387,
+        "samples": 181,
+        "footPhase": {
+          "left": 0.7222222222222222,
+          "right": 0.2222222222222222
+        },
+        "phaseMeaning": "Maximum forward foot projection; approximate contact entry, not an authored event.",
+        "confidence": "estimated; no authored contact markers or browser visual verification"
+      }
+    },
+    {
+      "name": "lean_runN",
+      "duration": 0.5837838078590107,
+      "fps": 61.666664123535156,
+      "frames": 37,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_RunAddN_UB.psa"
+      ],
+      "additive": true,
+      "layer": "spine",
+      "gait": "run",
+      "direction": "N",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths."
+    },
+    {
+      "name": "lean_runNE",
+      "duration": 0.5837838078590107,
+      "fps": 61.666664123535156,
+      "frames": 37,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_RunAddNE_UB.psa"
+      ],
+      "additive": true,
+      "layer": "spine",
+      "gait": "run",
+      "direction": "NE",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths."
+    },
+    {
+      "name": "lean_runE",
+      "duration": 0.5837838078590107,
+      "fps": 61.666664123535156,
+      "frames": 37,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_RunAddE_UB.psa"
+      ],
+      "additive": true,
+      "layer": "spine",
+      "gait": "run",
+      "direction": "E",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths."
+    },
+    {
+      "name": "lean_runSE",
+      "duration": 0.5837838078590107,
+      "fps": 61.666664123535156,
+      "frames": 37,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_RunAddSE_UB.psa"
+      ],
+      "additive": true,
+      "layer": "spine",
+      "gait": "run",
+      "direction": "SE",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths."
+    },
+    {
+      "name": "lean_runS",
+      "duration": 0.5837838078590107,
+      "fps": 61.666664123535156,
+      "frames": 37,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_RunAddS_UB.psa"
+      ],
+      "additive": true,
+      "layer": "spine",
+      "gait": "run",
+      "direction": "S",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths."
+    },
+    {
+      "name": "lean_runSW",
+      "duration": 0.5837838078590107,
+      "fps": 61.666664123535156,
+      "frames": 37,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_RunAddSW_UB.psa"
+      ],
+      "additive": true,
+      "layer": "spine",
+      "gait": "run",
+      "direction": "SW",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths."
+    },
+    {
+      "name": "lean_runW",
+      "duration": 0.5837838078590107,
+      "fps": 61.666664123535156,
+      "frames": 37,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_RunAddW_UB.psa"
+      ],
+      "additive": true,
+      "layer": "spine",
+      "gait": "run",
+      "direction": "W",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths."
+    },
+    {
+      "name": "lean_runNW",
+      "duration": 0.5837838078590107,
+      "fps": 61.666664123535156,
+      "frames": 37,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_RunAddNW_UB.psa"
+      ],
+      "additive": true,
+      "layer": "spine",
+      "gait": "run",
+      "direction": "NW",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths."
+    },
+    {
+      "name": "powerWalkN",
+      "duration": 0.6349206349206349,
+      "fps": 31.5,
+      "frames": 21,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_PowerWalkN_LB.psa"
+      ],
+      "additive": false,
+      "layer": "lower",
+      "gait": "powerWalk",
+      "direction": "N",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths.",
+      "naturalSpeed": 3.5732257235551894,
+      "contact": {
+        "method": "Average of lower-support-foot projected travel/time and complete left-foot stride excursion/time; model units/s. In-place animation estimate, not a measured game speed.",
+        "supportSpeed": 4.361586426133215,
+        "samples": 181,
+        "footPhase": {
+          "left": 0.85,
+          "right": 0.3
+        },
+        "phaseMeaning": "Maximum forward foot projection; approximate contact entry, not an authored event.",
+        "confidence": "estimated; no authored contact markers or browser visual verification"
+      }
+    },
+    {
+      "name": "powerWalkNE",
+      "duration": 0.6349206349206349,
+      "fps": 31.5,
+      "frames": 21,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_PowerWalkNE_LB.psa"
+      ],
+      "additive": false,
+      "layer": "lower",
+      "gait": "powerWalk",
+      "direction": "NE",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths.",
+      "naturalSpeed": 3.565913486492053,
+      "contact": {
+        "method": "Average of lower-support-foot projected travel/time and complete left-foot stride excursion/time; model units/s. In-place animation estimate, not a measured game speed.",
+        "supportSpeed": 4.363038540483005,
+        "samples": 181,
+        "footPhase": {
+          "left": 0.8,
+          "right": 0.25
+        },
+        "phaseMeaning": "Maximum forward foot projection; approximate contact entry, not an authored event.",
+        "confidence": "estimated; no authored contact markers or browser visual verification"
+      }
+    },
+    {
+      "name": "powerWalkE",
+      "duration": 0.6349206349206349,
+      "fps": 31.5,
+      "frames": 21,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_PowerWalkE_LB.psa"
+      ],
+      "additive": false,
+      "layer": "lower",
+      "gait": "powerWalk",
+      "direction": "E",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths.",
+      "naturalSpeed": 3.7011654326822208,
+      "contact": {
+        "method": "Average of lower-support-foot projected travel/time and complete left-foot stride excursion/time; model units/s. In-place animation estimate, not a measured game speed.",
+        "supportSpeed": 4.278983675179905,
+        "samples": 181,
+        "footPhase": {
+          "left": 0.8,
+          "right": 0.25
+        },
+        "phaseMeaning": "Maximum forward foot projection; approximate contact entry, not an authored event.",
+        "confidence": "estimated; no authored contact markers or browser visual verification"
+      }
+    },
+    {
+      "name": "powerWalkSE",
+      "duration": 0.6349206349206349,
+      "fps": 31.5,
+      "frames": 21,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_PowerWalkSE_LB.psa"
+      ],
+      "additive": false,
+      "layer": "lower",
+      "gait": "powerWalk",
+      "direction": "SE",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths.",
+      "naturalSpeed": 3.571363004153034,
+      "contact": {
+        "method": "Average of lower-support-foot projected travel/time and complete left-foot stride excursion/time; model units/s. In-place animation estimate, not a measured game speed.",
+        "supportSpeed": 3.540925199651555,
+        "samples": 181,
+        "footPhase": {
+          "left": 0.2,
+          "right": 0.75
+        },
+        "phaseMeaning": "Maximum forward foot projection; approximate contact entry, not an authored event.",
+        "confidence": "estimated; no authored contact markers or browser visual verification"
+      }
+    },
+    {
+      "name": "powerWalkS",
+      "duration": 0.6349206349206349,
+      "fps": 31.5,
+      "frames": 21,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_PowerWalkS_LB.psa"
+      ],
+      "additive": false,
+      "layer": "lower",
+      "gait": "powerWalk",
+      "direction": "S",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths.",
+      "naturalSpeed": 3.6709672247391394,
+      "contact": {
+        "method": "Average of lower-support-foot projected travel/time and complete left-foot stride excursion/time; model units/s. In-place animation estimate, not a measured game speed.",
+        "supportSpeed": 3.589577063713472,
+        "samples": 181,
+        "footPhase": {
+          "left": 0.24444444444444444,
+          "right": 0.75
+        },
+        "phaseMeaning": "Maximum forward foot projection; approximate contact entry, not an authored event.",
+        "confidence": "estimated; no authored contact markers or browser visual verification"
+      }
+    },
+    {
+      "name": "powerWalkSW",
+      "duration": 0.6349206349206349,
+      "fps": 31.5,
+      "frames": 21,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_PowerWalkSW_LB.psa"
+      ],
+      "additive": false,
+      "layer": "lower",
+      "gait": "powerWalk",
+      "direction": "SW",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths.",
+      "naturalSpeed": 3.226908577133603,
+      "contact": {
+        "method": "Average of lower-support-foot projected travel/time and complete left-foot stride excursion/time; model units/s. In-place animation estimate, not a measured game speed.",
+        "supportSpeed": 3.342625369850771,
+        "samples": 181,
+        "footPhase": {
+          "left": 0.2,
+          "right": 0.75
+        },
+        "phaseMeaning": "Maximum forward foot projection; approximate contact entry, not an authored event.",
+        "confidence": "estimated; no authored contact markers or browser visual verification"
+      }
+    },
+    {
+      "name": "powerWalkW",
+      "duration": 0.6349206349206349,
+      "fps": 31.5,
+      "frames": 21,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_PowerWalkW_LB.psa"
+      ],
+      "additive": false,
+      "layer": "lower",
+      "gait": "powerWalk",
+      "direction": "W",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths.",
+      "naturalSpeed": 3.822524747129268,
+      "contact": {
+        "method": "Average of lower-support-foot projected travel/time and complete left-foot stride excursion/time; model units/s. In-place animation estimate, not a measured game speed.",
+        "supportSpeed": 4.251322904667202,
+        "samples": 181,
+        "footPhase": {
+          "left": 0.8,
+          "right": 0.3
+        },
+        "phaseMeaning": "Maximum forward foot projection; approximate contact entry, not an authored event.",
+        "confidence": "estimated; no authored contact markers or browser visual verification"
+      }
+    },
+    {
+      "name": "powerWalkNW",
+      "duration": 0.6349206349206349,
+      "fps": 31.5,
+      "frames": 21,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_PowerWalkNW_LB.psa"
+      ],
+      "additive": false,
+      "layer": "lower",
+      "gait": "powerWalk",
+      "direction": "NW",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths.",
+      "naturalSpeed": 3.5868781133271717,
+      "contact": {
+        "method": "Average of lower-support-foot projected travel/time and complete left-foot stride excursion/time; model units/s. In-place animation estimate, not a measured game speed.",
+        "supportSpeed": 4.368586950362422,
+        "samples": 181,
+        "footPhase": {
+          "left": 0.8,
+          "right": 0.25
+        },
+        "phaseMeaning": "Maximum forward foot projection; approximate contact entry, not an authored event.",
+        "confidence": "estimated; no authored contact markers or browser visual verification"
+      }
+    },
+    {
+      "name": "lean_powerWalkN",
+      "duration": 0.6349206349206349,
+      "fps": 31.5,
+      "frames": 21,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_PowerWalkAddN_UB.psa"
+      ],
+      "additive": true,
+      "layer": "spine",
+      "gait": "powerWalk",
+      "direction": "N",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths."
+    },
+    {
+      "name": "lean_powerWalkNE",
+      "duration": 0.6349206349206349,
+      "fps": 31.5,
+      "frames": 21,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_PowerWalkAddNE_UB.psa"
+      ],
+      "additive": true,
+      "layer": "spine",
+      "gait": "powerWalk",
+      "direction": "NE",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths."
+    },
+    {
+      "name": "lean_powerWalkE",
+      "duration": 0.6349206349206349,
+      "fps": 31.5,
+      "frames": 21,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_PowerWalkAddE_UB.psa"
+      ],
+      "additive": true,
+      "layer": "spine",
+      "gait": "powerWalk",
+      "direction": "E",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths."
+    },
+    {
+      "name": "lean_powerWalkSE",
+      "duration": 0.6349206349206349,
+      "fps": 31.5,
+      "frames": 21,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_PowerWalkAddSE_UB.psa"
+      ],
+      "additive": true,
+      "layer": "spine",
+      "gait": "powerWalk",
+      "direction": "SE",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths."
+    },
+    {
+      "name": "lean_powerWalkS",
+      "duration": 0.6349206349206349,
+      "fps": 31.5,
+      "frames": 21,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_PowerWalkAddS_UB.psa"
+      ],
+      "additive": true,
+      "layer": "spine",
+      "gait": "powerWalk",
+      "direction": "S",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths."
+    },
+    {
+      "name": "lean_powerWalkSW",
+      "duration": 0.6349206349206349,
+      "fps": 31.5,
+      "frames": 21,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_PowerWalkAddSW_UB.psa"
+      ],
+      "additive": true,
+      "layer": "spine",
+      "gait": "powerWalk",
+      "direction": "SW",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths."
+    },
+    {
+      "name": "lean_powerWalkW",
+      "duration": 0.6349206349206349,
+      "fps": 31.5,
+      "frames": 21,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_PowerWalkAddW_UB.psa"
+      ],
+      "additive": true,
+      "layer": "spine",
+      "gait": "powerWalk",
+      "direction": "W",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths."
+    },
+    {
+      "name": "lean_powerWalkNW",
+      "duration": 0.6349206349206349,
+      "fps": 31.5,
+      "frames": 21,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_PowerWalkAddNW_UB.psa"
+      ],
+      "additive": true,
+      "layer": "spine",
+      "gait": "powerWalk",
+      "direction": "NW",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths."
+    },
+    {
+      "name": "sprintN",
+      "duration": 0.6504065040650406,
+      "fps": 61.5,
+      "frames": 41,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_SprintN_LB.psa"
+      ],
+      "additive": false,
+      "layer": "lower",
+      "gait": "sprint",
+      "direction": "N",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths.",
+      "naturalSpeed": 4.621011287178051,
+      "contact": {
+        "method": "Average of lower-support-foot projected travel/time and complete left-foot stride excursion/time; model units/s. In-place animation estimate, not a measured game speed.",
+        "supportSpeed": 6.054057991584537,
+        "samples": 181,
+        "footPhase": {
+          "left": 0.75,
+          "right": 0.25
+        },
+        "phaseMeaning": "Maximum forward foot projection; approximate contact entry, not an authored event.",
+        "confidence": "estimated; no authored contact markers or browser visual verification"
+      }
+    },
+    {
+      "name": "sprintNE",
+      "duration": 0.6504065040650406,
+      "fps": 61.5,
+      "frames": 41,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_SprintNE_LB.psa"
+      ],
+      "additive": false,
+      "layer": "lower",
+      "gait": "sprint",
+      "direction": "NE",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths.",
+      "naturalSpeed": 4.444459362205279,
+      "contact": {
+        "method": "Average of lower-support-foot projected travel/time and complete left-foot stride excursion/time; model units/s. In-place animation estimate, not a measured game speed.",
+        "supportSpeed": 5.88310380580764,
+        "samples": 181,
+        "footPhase": {
+          "left": 0.75,
+          "right": 0.25
+        },
+        "phaseMeaning": "Maximum forward foot projection; approximate contact entry, not an authored event.",
+        "confidence": "estimated; no authored contact markers or browser visual verification"
+      }
+    },
+    {
+      "name": "sprintE",
+      "duration": 0.6504065040650406,
+      "fps": 61.5,
+      "frames": 41,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_SprintE_LB.psa"
+      ],
+      "additive": false,
+      "layer": "lower",
+      "gait": "sprint",
+      "direction": "E",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths.",
+      "naturalSpeed": 4.337160120455516,
+      "contact": {
+        "method": "Average of lower-support-foot projected travel/time and complete left-foot stride excursion/time; model units/s. In-place animation estimate, not a measured game speed.",
+        "supportSpeed": 5.900286270748803,
+        "samples": 181,
+        "footPhase": {
+          "left": 0.75,
+          "right": 0.25
+        },
+        "phaseMeaning": "Maximum forward foot projection; approximate contact entry, not an authored event.",
+        "confidence": "estimated; no authored contact markers or browser visual verification"
+      }
+    },
+    {
+      "name": "sprintSE",
+      "duration": 0.6504065040650406,
+      "fps": 61.5,
+      "frames": 41,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_SprintSE_LB.psa"
+      ],
+      "additive": false,
+      "layer": "lower",
+      "gait": "sprint",
+      "direction": "SE",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths.",
+      "naturalSpeed": 4.119972999450749,
+      "contact": {
+        "method": "Average of lower-support-foot projected travel/time and complete left-foot stride excursion/time; model units/s. In-place animation estimate, not a measured game speed.",
+        "supportSpeed": 5.443128375685036,
+        "samples": 181,
+        "footPhase": {
+          "left": 0.35,
+          "right": 0.8277777777777777
+        },
+        "phaseMeaning": "Maximum forward foot projection; approximate contact entry, not an authored event.",
+        "confidence": "estimated; no authored contact markers or browser visual verification"
+      }
+    },
+    {
+      "name": "sprintS",
+      "duration": 0.6504065040650406,
+      "fps": 61.5,
+      "frames": 41,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_SprintS_LB.psa"
+      ],
+      "additive": false,
+      "layer": "lower",
+      "gait": "sprint",
+      "direction": "S",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths.",
+      "naturalSpeed": 4.200979591339285,
+      "contact": {
+        "method": "Average of lower-support-foot projected travel/time and complete left-foot stride excursion/time; model units/s. In-place animation estimate, not a measured game speed.",
+        "supportSpeed": 5.587059617034871,
+        "samples": 181,
+        "footPhase": {
+          "left": 0.35,
+          "right": 0.8277777777777777
+        },
+        "phaseMeaning": "Maximum forward foot projection; approximate contact entry, not an authored event.",
+        "confidence": "estimated; no authored contact markers or browser visual verification"
+      }
+    },
+    {
+      "name": "sprintSW",
+      "duration": 0.6504065040650406,
+      "fps": 61.5,
+      "frames": 41,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_SprintSW_LB.psa"
+      ],
+      "additive": false,
+      "layer": "lower",
+      "gait": "sprint",
+      "direction": "SW",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths.",
+      "naturalSpeed": 4.15411711870474,
+      "contact": {
+        "method": "Average of lower-support-foot projected travel/time and complete left-foot stride excursion/time; model units/s. In-place animation estimate, not a measured game speed.",
+        "supportSpeed": 5.497411262216059,
+        "samples": 181,
+        "footPhase": {
+          "left": 0.35,
+          "right": 0.8277777777777777
+        },
+        "phaseMeaning": "Maximum forward foot projection; approximate contact entry, not an authored event.",
+        "confidence": "estimated; no authored contact markers or browser visual verification"
+      }
+    },
+    {
+      "name": "sprintW",
+      "duration": 0.6504065040650406,
+      "fps": 61.5,
+      "frames": 41,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_SprintW_LB.psa"
+      ],
+      "additive": false,
+      "layer": "lower",
+      "gait": "sprint",
+      "direction": "W",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths.",
+      "naturalSpeed": 4.1170873816273605,
+      "contact": {
+        "method": "Average of lower-support-foot projected travel/time and complete left-foot stride excursion/time; model units/s. In-place animation estimate, not a measured game speed.",
+        "supportSpeed": 5.5059545105834955,
+        "samples": 181,
+        "footPhase": {
+          "left": 0.75,
+          "right": 0.25
+        },
+        "phaseMeaning": "Maximum forward foot projection; approximate contact entry, not an authored event.",
+        "confidence": "estimated; no authored contact markers or browser visual verification"
+      }
+    },
+    {
+      "name": "sprintNW",
+      "duration": 0.6504065040650406,
+      "fps": 61.5,
+      "frames": 41,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_SprintNW_LB.psa"
+      ],
+      "additive": false,
+      "layer": "lower",
+      "gait": "sprint",
+      "direction": "NW",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths.",
+      "naturalSpeed": 4.466419242178098,
+      "contact": {
+        "method": "Average of lower-support-foot projected travel/time and complete left-foot stride excursion/time; model units/s. In-place animation estimate, not a measured game speed.",
+        "supportSpeed": 5.8336132409129355,
+        "samples": 181,
+        "footPhase": {
+          "left": 0.75,
+          "right": 0.25
+        },
+        "phaseMeaning": "Maximum forward foot projection; approximate contact entry, not an authored event.",
+        "confidence": "estimated; no authored contact markers or browser visual verification"
+      }
+    },
+    {
+      "name": "lean_sprintN",
+      "duration": 0.5684210640439699,
+      "fps": 31.66666603088379,
+      "frames": 19,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_SprintAddN_UB.psa"
+      ],
+      "additive": true,
+      "layer": "spine",
+      "gait": "sprint",
+      "direction": "N",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths."
+    },
+    {
+      "name": "lean_sprintNE",
+      "duration": 0.5684210640439699,
+      "fps": 31.66666603088379,
+      "frames": 19,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_SprintAddNE_UB.psa"
+      ],
+      "additive": true,
+      "layer": "spine",
+      "gait": "sprint",
+      "direction": "NE",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths."
+    },
+    {
+      "name": "lean_sprintE",
+      "duration": 0.6504065040650406,
+      "fps": 61.5,
+      "frames": 41,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_SprintAddE_UB.psa"
+      ],
+      "additive": true,
+      "layer": "spine",
+      "gait": "sprint",
+      "direction": "E",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths."
+    },
+    {
+      "name": "lean_sprintSE",
+      "duration": 0.5684210640439699,
+      "fps": 31.66666603088379,
+      "frames": 19,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_SprintAddSE_UB.psa"
+      ],
+      "additive": true,
+      "layer": "spine",
+      "gait": "sprint",
+      "direction": "SE",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths."
+    },
+    {
+      "name": "lean_sprintS",
+      "duration": 0.5684210640439699,
+      "fps": 31.66666603088379,
+      "frames": 19,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_SprintAddS_UB.psa"
+      ],
+      "additive": true,
+      "layer": "spine",
+      "gait": "sprint",
+      "direction": "S",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths."
+    },
+    {
+      "name": "lean_sprintSW",
+      "duration": 0.5684210640439699,
+      "fps": 31.66666603088379,
+      "frames": 19,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_SprintAddSW_UB.psa"
+      ],
+      "additive": true,
+      "layer": "spine",
+      "gait": "sprint",
+      "direction": "SW",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths."
+    },
+    {
+      "name": "lean_sprintW",
+      "duration": 0.5684210640439699,
+      "fps": 31.66666603088379,
+      "frames": 19,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_SprintAddW_UB.psa"
+      ],
+      "additive": true,
+      "layer": "spine",
+      "gait": "sprint",
+      "direction": "W",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths."
+    },
+    {
+      "name": "lean_sprintNW",
+      "duration": 0.5684210640439699,
+      "fps": 31.66666603088379,
+      "frames": 19,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_SprintAddNW_UB.psa"
+      ],
+      "additive": true,
+      "layer": "spine",
+      "gait": "sprint",
+      "direction": "NW",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths."
+    },
+    {
+      "name": "crouchWalkN",
+      "duration": 0.9011494331899133,
+      "fps": 31.071428298950195,
+      "frames": 29,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_CrouchWalkN_LB.psa"
+      ],
+      "additive": false,
+      "layer": "lower",
+      "gait": "crouchWalk",
+      "direction": "N",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths.",
+      "naturalSpeed": 1.7497789634196987,
+      "contact": {
+        "method": "Average of lower-support-foot projected travel/time and complete left-foot stride excursion/time; model units/s. In-place animation estimate, not a measured game speed.",
+        "supportSpeed": 1.6488591455199997,
+        "samples": 181,
+        "footPhase": {
+          "left": 0.75,
+          "right": 0.21666666666666667
+        },
+        "phaseMeaning": "Maximum forward foot projection; approximate contact entry, not an authored event.",
+        "confidence": "estimated; no authored contact markers or browser visual verification"
+      }
+    },
+    {
+      "name": "crouchWalkNE",
+      "duration": 0.9011494331899133,
+      "fps": 31.071428298950195,
+      "frames": 29,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_CrouchWalkNE_LB.psa"
+      ],
+      "additive": false,
+      "layer": "lower",
+      "gait": "crouchWalk",
+      "direction": "NE",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths.",
+      "naturalSpeed": 1.747419717650089,
+      "contact": {
+        "method": "Average of lower-support-foot projected travel/time and complete left-foot stride excursion/time; model units/s. In-place animation estimate, not a measured game speed.",
+        "supportSpeed": 1.635462785014835,
+        "samples": 181,
+        "footPhase": {
+          "left": 0.7833333333333333,
+          "right": 0.25
+        },
+        "phaseMeaning": "Maximum forward foot projection; approximate contact entry, not an authored event.",
+        "confidence": "estimated; no authored contact markers or browser visual verification"
+      }
+    },
+    {
+      "name": "crouchWalkE",
+      "duration": 0.9011494331899133,
+      "fps": 31.071428298950195,
+      "frames": 29,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_CrouchWalkE_LB.psa"
+      ],
+      "additive": false,
+      "layer": "lower",
+      "gait": "crouchWalk",
+      "direction": "E",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths.",
+      "naturalSpeed": 1.8593333304666761,
+      "contact": {
+        "method": "Average of lower-support-foot projected travel/time and complete left-foot stride excursion/time; model units/s. In-place animation estimate, not a measured game speed.",
+        "supportSpeed": 1.7464906135466147,
+        "samples": 181,
+        "footPhase": {
+          "left": 0.8222222222222222,
+          "right": 0.32222222222222224
+        },
+        "phaseMeaning": "Maximum forward foot projection; approximate contact entry, not an authored event.",
+        "confidence": "estimated; no authored contact markers or browser visual verification"
+      }
+    },
+    {
+      "name": "crouchWalkSE",
+      "duration": 0.9011494331899133,
+      "fps": 31.071428298950195,
+      "frames": 29,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_CrouchWalkSE_LB.psa"
+      ],
+      "additive": false,
+      "layer": "lower",
+      "gait": "crouchWalk",
+      "direction": "SE",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths.",
+      "naturalSpeed": 1.668274287574327,
+      "contact": {
+        "method": "Average of lower-support-foot projected travel/time and complete left-foot stride excursion/time; model units/s. In-place animation estimate, not a measured game speed.",
+        "supportSpeed": 1.6797921474593103,
+        "samples": 181,
+        "footPhase": {
+          "left": 0.5722222222222222,
+          "right": 0.14444444444444443
+        },
+        "phaseMeaning": "Maximum forward foot projection; approximate contact entry, not an authored event.",
+        "confidence": "estimated; no authored contact markers or browser visual verification"
+      }
+    },
+    {
+      "name": "crouchWalkS",
+      "duration": 0.9011494331899133,
+      "fps": 31.071428298950195,
+      "frames": 29,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_CrouchWalkS_LB.psa"
+      ],
+      "additive": false,
+      "layer": "lower",
+      "gait": "crouchWalk",
+      "direction": "S",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths.",
+      "naturalSpeed": 1.6683165799337376,
+      "contact": {
+        "method": "Average of lower-support-foot projected travel/time and complete left-foot stride excursion/time; model units/s. In-place animation estimate, not a measured game speed.",
+        "supportSpeed": 1.679750004669874,
+        "samples": 181,
+        "footPhase": {
+          "left": 0.5722222222222222,
+          "right": 0.14444444444444443
+        },
+        "phaseMeaning": "Maximum forward foot projection; approximate contact entry, not an authored event.",
+        "confidence": "estimated; no authored contact markers or browser visual verification"
+      }
+    },
+    {
+      "name": "crouchWalkSW",
+      "duration": 0.9011494331899133,
+      "fps": 31.071428298950195,
+      "frames": 29,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_CrouchWalkSW_LB.psa"
+      ],
+      "additive": false,
+      "layer": "lower",
+      "gait": "crouchWalk",
+      "direction": "SW",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths.",
+      "naturalSpeed": 1.6645317444490453,
+      "contact": {
+        "method": "Average of lower-support-foot projected travel/time and complete left-foot stride excursion/time; model units/s. In-place animation estimate, not a measured game speed.",
+        "supportSpeed": 1.676894946744824,
+        "samples": 181,
+        "footPhase": {
+          "left": 0.6055555555555555,
+          "right": 0.17777777777777778
+        },
+        "phaseMeaning": "Maximum forward foot projection; approximate contact entry, not an authored event.",
+        "confidence": "estimated; no authored contact markers or browser visual verification"
+      }
+    },
+    {
+      "name": "crouchWalkW",
+      "duration": 0.9011494331899133,
+      "fps": 31.071428298950195,
+      "frames": 29,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_CrouchWalkW_LB.psa"
+      ],
+      "additive": false,
+      "layer": "lower",
+      "gait": "crouchWalk",
+      "direction": "W",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths.",
+      "naturalSpeed": 1.9504762682044705,
+      "contact": {
+        "method": "Average of lower-support-foot projected travel/time and complete left-foot stride excursion/time; model units/s. In-place animation estimate, not a measured game speed.",
+        "supportSpeed": 1.773377960999718,
+        "samples": 181,
+        "footPhase": {
+          "left": 0.6777777777777778,
+          "right": 0.14444444444444443
+        },
+        "phaseMeaning": "Maximum forward foot projection; approximate contact entry, not an authored event.",
+        "confidence": "estimated; no authored contact markers or browser visual verification"
+      }
+    },
+    {
+      "name": "crouchWalkNW",
+      "duration": 0.9011494331899133,
+      "fps": 31.071428298950195,
+      "frames": 29,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_CrouchWalkNW_LB.psa"
+      ],
+      "additive": false,
+      "layer": "lower",
+      "gait": "crouchWalk",
+      "direction": "NW",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths.",
+      "naturalSpeed": 1.7372725569137326,
+      "contact": {
+        "method": "Average of lower-support-foot projected travel/time and complete left-foot stride excursion/time; model units/s. In-place animation estimate, not a measured game speed.",
+        "supportSpeed": 1.652345372510851,
+        "samples": 181,
+        "footPhase": {
+          "left": 0.75,
+          "right": 0.21666666666666667
+        },
+        "phaseMeaning": "Maximum forward foot projection; approximate contact entry, not an authored event.",
+        "confidence": "estimated; no authored contact markers or browser visual verification"
+      }
+    },
+    {
+      "name": "lean_crouchWalkN",
+      "duration": 0.9011494331899133,
+      "fps": 31.071428298950195,
+      "frames": 29,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_CrouchWalkAddN_UB.psa"
+      ],
+      "additive": true,
+      "layer": "spine",
+      "gait": "crouchWalk",
+      "direction": "N",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths."
+    },
+    {
+      "name": "lean_crouchWalkNE",
+      "duration": 0.9011494331899133,
+      "fps": 31.071428298950195,
+      "frames": 29,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_CrouchWalkAddNE_UB.psa"
+      ],
+      "additive": true,
+      "layer": "spine",
+      "gait": "crouchWalk",
+      "direction": "NE",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths."
+    },
+    {
+      "name": "lean_crouchWalkE",
+      "duration": 0.9011494331899133,
+      "fps": 31.071428298950195,
+      "frames": 29,
+      "status": "EXTRAPOLATED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_CrouchWalkE_UB.psa",
+        "Animations/Agent Animations/Shared/Simple/TP_Core_CrouchWalk_Subtract_UB.psa"
+      ],
+      "additive": true,
+      "layer": "spine",
+      "gait": "crouchWalk",
+      "direction": "E",
+      "derivation": "The pack lacks CrouchWalkAddE_UB. Subtract the pack CrouchWalk_Subtract_UB reference from its CrouchWalkE_UB spine rotations to derive the movement-only E additive; preserve all arm/weapon tracks."
+    },
+    {
+      "name": "lean_crouchWalkSE",
+      "duration": 0.9169590397806704,
+      "fps": 61.07143020629883,
+      "frames": 57,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_CrouchWalkAddSE_UB.psa"
+      ],
+      "additive": true,
+      "layer": "spine",
+      "gait": "crouchWalk",
+      "direction": "SE",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths."
+    },
+    {
+      "name": "lean_crouchWalkS",
+      "duration": 0.9169590397806704,
+      "fps": 61.07143020629883,
+      "frames": 57,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_CrouchWalkAddS_UB.psa"
+      ],
+      "additive": true,
+      "layer": "spine",
+      "gait": "crouchWalk",
+      "direction": "S",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths."
+    },
+    {
+      "name": "lean_crouchWalkSW",
+      "duration": 0.9169590397806704,
+      "fps": 61.07143020629883,
+      "frames": 57,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_CrouchWalkAddSW_UB.psa"
+      ],
+      "additive": true,
+      "layer": "spine",
+      "gait": "crouchWalk",
+      "direction": "SW",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths."
+    },
+    {
+      "name": "lean_crouchWalkW",
+      "duration": 0.9011494331899133,
+      "fps": 31.071428298950195,
+      "frames": 29,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_CrouchWalkAddW_UB.psa"
+      ],
+      "additive": true,
+      "layer": "spine",
+      "gait": "crouchWalk",
+      "direction": "W",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths."
+    },
+    {
+      "name": "lean_crouchWalkNW",
+      "duration": 0.9011494331899133,
+      "fps": 31.071428298950195,
+      "frames": 29,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_CrouchWalkAddNW_UB.psa"
+      ],
+      "additive": true,
+      "layer": "spine",
+      "gait": "crouchWalk",
+      "direction": "NW",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths."
+    },
+    {
+      "name": "jump",
+      "duration": 3.2003401215206972,
+      "fps": 30.30927848815918,
+      "frames": 98,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_Jump_LB.psa"
+      ],
+      "additive": false,
+      "layer": "lower",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths.",
+      "phaseKind": "jump",
+      "phase": {
+        "duration": 3.2003401215206972,
+        "initialDip": 0,
+        "firstExtension": 0.4571914459315282,
+        "takeoffSample": 0,
+        "tuckSample": 0.6371914459315282,
+        "method": "Pose extrema measured from retargeted pelvis height, not physics event timestamps. Runtime may select the takeoff/tuck window without compressing the complete 3.2-second source.",
+        "confidence": "extrapolated event timing; source has no authored jump markers"
+      }
+    },
+    {
+      "name": "jumpN",
+      "duration": 3.2003401215206972,
+      "fps": 30.30927848815918,
+      "frames": 98,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_JumpN_LB.psa"
+      ],
+      "additive": false,
+      "layer": "lower",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths.",
+      "phaseKind": "jump",
+      "phase": {
+        "duration": 3.2003401215206972,
+        "initialDip": 0,
+        "firstExtension": 0.4571914459315282,
+        "takeoffSample": 0,
+        "tuckSample": 0.6371914459315282,
+        "method": "Pose extrema measured from retargeted pelvis height, not physics event timestamps. Runtime may select the takeoff/tuck window without compressing the complete 3.2-second source.",
+        "confidence": "extrapolated event timing; source has no authored jump markers"
+      }
+    },
+    {
+      "name": "jumpE",
+      "duration": 3.2003401215206972,
+      "fps": 30.30927848815918,
+      "frames": 98,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_JumpE_LB.psa"
+      ],
+      "additive": false,
+      "layer": "lower",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths.",
+      "phaseKind": "jump",
+      "phase": {
+        "duration": 3.2003401215206972,
+        "initialDip": 0,
+        "firstExtension": 0.4408631800054022,
+        "takeoffSample": 0,
+        "tuckSample": 0.6208631800054022,
+        "method": "Pose extrema measured from retargeted pelvis height, not physics event timestamps. Runtime may select the takeoff/tuck window without compressing the complete 3.2-second source.",
+        "confidence": "extrapolated event timing; source has no authored jump markers"
+      }
+    },
+    {
+      "name": "jumpS",
+      "duration": 3.2003401215206972,
+      "fps": 30.30927848815918,
+      "frames": 98,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_JumpS_LB.psa"
+      ],
+      "additive": false,
+      "layer": "lower",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths.",
+      "phaseKind": "jump",
+      "phase": {
+        "duration": 3.2003401215206972,
+        "initialDip": 0,
+        "firstExtension": 0.4571914459315282,
+        "takeoffSample": 0,
+        "tuckSample": 0.6371914459315282,
+        "method": "Pose extrema measured from retargeted pelvis height, not physics event timestamps. Runtime may select the takeoff/tuck window without compressing the complete 3.2-second source.",
+        "confidence": "extrapolated event timing; source has no authored jump markers"
+      }
+    },
+    {
+      "name": "jumpW",
+      "duration": 3.2003401215206972,
+      "fps": 30.30927848815918,
+      "frames": 98,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_JumpW_LB.psa"
+      ],
+      "additive": false,
+      "layer": "lower",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths.",
+      "phaseKind": "jump",
+      "phase": {
+        "duration": 3.2003401215206972,
+        "initialDip": 0,
+        "firstExtension": 0.4408631800054022,
+        "takeoffSample": 0,
+        "tuckSample": 0.6208631800054022,
+        "method": "Pose extrema measured from retargeted pelvis height, not physics event timestamps. Runtime may select the takeoff/tuck window without compressing the complete 3.2-second source.",
+        "confidence": "extrapolated event timing; source has no authored jump markers"
+      }
+    },
+    {
+      "name": "crouchJump",
+      "duration": 3.2003401215206972,
+      "fps": 30.30927848815918,
+      "frames": 98,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_Crouch_Jump_LB.psa"
+      ],
+      "additive": false,
+      "layer": "lower",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths.",
+      "phaseKind": "jump",
+      "phase": {
+        "duration": 3.2003401215206972,
+        "initialDip": 0,
+        "firstExtension": 0.14695439333513405,
+        "takeoffSample": 0,
+        "tuckSample": 0.32695439333513404,
+        "method": "Pose extrema measured from retargeted pelvis height, not physics event timestamps. Runtime may select the takeoff/tuck window without compressing the complete 3.2-second source.",
+        "confidence": "extrapolated event timing; source has no authored jump markers"
+      }
+    },
+    {
+      "name": "fall",
+      "duration": 2.5337606920218203,
+      "fps": 30.389610290527344,
+      "frames": 78,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_Falling_LB.psa"
+      ],
+      "additive": false,
+      "layer": "lower",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths."
+    },
+    {
+      "name": "crouchFall",
+      "duration": 2.267142758303277,
+      "fps": 30.434783935546875,
+      "frames": 70,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_CrouchFalling_LB.psa"
+      ],
+      "additive": false,
+      "layer": "lower",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths."
+    },
+    {
+      "name": "land",
+      "duration": 0.6349206349206349,
+      "fps": 31.5,
+      "frames": 21,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_JumpLand_LB.psa"
+      ],
+      "additive": false,
+      "layer": "lower",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths.",
+      "phaseKind": "land",
+      "phase": {
+        "duration": 0.6349206349206349,
+        "compressionSample": 0.06349206349206349,
+        "method": "Minimum retargeted pelvis height estimates landing compression; contact timing is unproven."
+      }
+    },
+    {
+      "name": "turnE45",
+      "duration": 0.967741935483871,
+      "fps": 31,
+      "frames": 31,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_TurnE45_LB.psa"
+      ],
+      "additive": false,
+      "layer": "lower",
+      "turn": {
+        "direction": "E",
+        "degrees": 45,
+        "signedDegrees": -45,
+        "crouch": false,
+        "rootYawAuthored": false,
+        "derivation": "The named angle describes intended actor heading change. Source Root/Splitter rotation is static: synchronize foot-replant phase to observed heading change without driving actor or camera orientation."
+      },
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths."
+    },
+    {
+      "name": "turnE90",
+      "duration": 0.967741935483871,
+      "fps": 31,
+      "frames": 31,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_TurnE90_LB.psa"
+      ],
+      "additive": false,
+      "layer": "lower",
+      "turn": {
+        "direction": "E",
+        "degrees": 90,
+        "signedDegrees": -90,
+        "crouch": false,
+        "rootYawAuthored": false,
+        "derivation": "The named angle describes intended actor heading change. Source Root/Splitter rotation is static: synchronize foot-replant phase to observed heading change without driving actor or camera orientation."
+      },
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths."
+    },
+    {
+      "name": "turnE135",
+      "duration": 0.967741935483871,
+      "fps": 31,
+      "frames": 31,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_TurnE135_LB.psa"
+      ],
+      "additive": false,
+      "layer": "lower",
+      "turn": {
+        "direction": "E",
+        "degrees": 135,
+        "signedDegrees": -135,
+        "crouch": false,
+        "rootYawAuthored": false,
+        "derivation": "The named angle describes intended actor heading change. Source Root/Splitter rotation is static: synchronize foot-replant phase to observed heading change without driving actor or camera orientation."
+      },
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths."
+    },
+    {
+      "name": "turnE180",
+      "duration": 0.967741935483871,
+      "fps": 31,
+      "frames": 31,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_TurnE180_LB.psa"
+      ],
+      "additive": false,
+      "layer": "lower",
+      "turn": {
+        "direction": "E",
+        "degrees": 180,
+        "signedDegrees": -180,
+        "crouch": false,
+        "rootYawAuthored": false,
+        "derivation": "The named angle describes intended actor heading change. Source Root/Splitter rotation is static: synchronize foot-replant phase to observed heading change without driving actor or camera orientation."
+      },
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths."
+    },
+    {
+      "name": "turnW45",
+      "duration": 0.967741935483871,
+      "fps": 31,
+      "frames": 31,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_TurnW45_LB.psa"
+      ],
+      "additive": false,
+      "layer": "lower",
+      "turn": {
+        "direction": "W",
+        "degrees": 45,
+        "signedDegrees": 45,
+        "crouch": false,
+        "rootYawAuthored": false,
+        "derivation": "The named angle describes intended actor heading change. Source Root/Splitter rotation is static: synchronize foot-replant phase to observed heading change without driving actor or camera orientation."
+      },
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths."
+    },
+    {
+      "name": "turnW90",
+      "duration": 0.967741935483871,
+      "fps": 31,
+      "frames": 31,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_TurnW90_LB.psa"
+      ],
+      "additive": false,
+      "layer": "lower",
+      "turn": {
+        "direction": "W",
+        "degrees": 90,
+        "signedDegrees": 90,
+        "crouch": false,
+        "rootYawAuthored": false,
+        "derivation": "The named angle describes intended actor heading change. Source Root/Splitter rotation is static: synchronize foot-replant phase to observed heading change without driving actor or camera orientation."
+      },
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths."
+    },
+    {
+      "name": "turnW135",
+      "duration": 0.967741935483871,
+      "fps": 31,
+      "frames": 31,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_TurnW135_LB.psa"
+      ],
+      "additive": false,
+      "layer": "lower",
+      "turn": {
+        "direction": "W",
+        "degrees": 135,
+        "signedDegrees": 135,
+        "crouch": false,
+        "rootYawAuthored": false,
+        "derivation": "The named angle describes intended actor heading change. Source Root/Splitter rotation is static: synchronize foot-replant phase to observed heading change without driving actor or camera orientation."
+      },
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths."
+    },
+    {
+      "name": "turnW180",
+      "duration": 0.967741935483871,
+      "fps": 31,
+      "frames": 31,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_TurnW180_LB.psa"
+      ],
+      "additive": false,
+      "layer": "lower",
+      "turn": {
+        "direction": "W",
+        "degrees": 180,
+        "signedDegrees": 180,
+        "crouch": false,
+        "rootYawAuthored": false,
+        "derivation": "The named angle describes intended actor heading change. Source Root/Splitter rotation is static: synchronize foot-replant phase to observed heading change without driving actor or camera orientation."
+      },
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths."
+    },
+    {
+      "name": "crouchTurnE45",
+      "duration": 0.967741935483871,
+      "fps": 31,
+      "frames": 31,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_CrouchTurnE45_LB.psa"
+      ],
+      "additive": false,
+      "layer": "lower",
+      "turn": {
+        "direction": "E",
+        "degrees": 45,
+        "signedDegrees": -45,
+        "crouch": true,
+        "rootYawAuthored": false,
+        "derivation": "The named angle describes intended actor heading change. Source Root/Splitter rotation is static: synchronize foot-replant phase to observed heading change without driving actor or camera orientation."
+      },
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths."
+    },
+    {
+      "name": "crouchTurnE90",
+      "duration": 0.967741935483871,
+      "fps": 31,
+      "frames": 31,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_CrouchTurnE90_LB.psa"
+      ],
+      "additive": false,
+      "layer": "lower",
+      "turn": {
+        "direction": "E",
+        "degrees": 90,
+        "signedDegrees": -90,
+        "crouch": true,
+        "rootYawAuthored": false,
+        "derivation": "The named angle describes intended actor heading change. Source Root/Splitter rotation is static: synchronize foot-replant phase to observed heading change without driving actor or camera orientation."
+      },
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths."
+    },
+    {
+      "name": "crouchTurnE135",
+      "duration": 0.967741935483871,
+      "fps": 31,
+      "frames": 31,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_CrouchTurnE135_LB.psa"
+      ],
+      "additive": false,
+      "layer": "lower",
+      "turn": {
+        "direction": "E",
+        "degrees": 135,
+        "signedDegrees": -135,
+        "crouch": true,
+        "rootYawAuthored": false,
+        "derivation": "The named angle describes intended actor heading change. Source Root/Splitter rotation is static: synchronize foot-replant phase to observed heading change without driving actor or camera orientation."
+      },
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths."
+    },
+    {
+      "name": "crouchTurnE180",
+      "duration": 0.967741935483871,
+      "fps": 31,
+      "frames": 31,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_CrouchTurnE180_LB.psa"
+      ],
+      "additive": false,
+      "layer": "lower",
+      "turn": {
+        "direction": "E",
+        "degrees": 180,
+        "signedDegrees": -180,
+        "crouch": true,
+        "rootYawAuthored": false,
+        "derivation": "The named angle describes intended actor heading change. Source Root/Splitter rotation is static: synchronize foot-replant phase to observed heading change without driving actor or camera orientation."
+      },
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths."
+    },
+    {
+      "name": "crouchTurnW45",
+      "duration": 0.967741935483871,
+      "fps": 31,
+      "frames": 31,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_CrouchTurnW45_LB.psa"
+      ],
+      "additive": false,
+      "layer": "lower",
+      "turn": {
+        "direction": "W",
+        "degrees": 45,
+        "signedDegrees": 45,
+        "crouch": true,
+        "rootYawAuthored": false,
+        "derivation": "The named angle describes intended actor heading change. Source Root/Splitter rotation is static: synchronize foot-replant phase to observed heading change without driving actor or camera orientation."
+      },
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths."
+    },
+    {
+      "name": "crouchTurnW90",
+      "duration": 0.967741935483871,
+      "fps": 31,
+      "frames": 31,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_CrouchTurnW90_LB.psa"
+      ],
+      "additive": false,
+      "layer": "lower",
+      "turn": {
+        "direction": "W",
+        "degrees": 90,
+        "signedDegrees": 90,
+        "crouch": true,
+        "rootYawAuthored": false,
+        "derivation": "The named angle describes intended actor heading change. Source Root/Splitter rotation is static: synchronize foot-replant phase to observed heading change without driving actor or camera orientation."
+      },
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths."
+    },
+    {
+      "name": "crouchTurnW135",
+      "duration": 0.967741935483871,
+      "fps": 31,
+      "frames": 31,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_CrouchTurnW135_LB.psa"
+      ],
+      "additive": false,
+      "layer": "lower",
+      "turn": {
+        "direction": "W",
+        "degrees": 135,
+        "signedDegrees": 135,
+        "crouch": true,
+        "rootYawAuthored": false,
+        "derivation": "The named angle describes intended actor heading change. Source Root/Splitter rotation is static: synchronize foot-replant phase to observed heading change without driving actor or camera orientation."
+      },
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths."
+    },
+    {
+      "name": "crouchTurnW180",
+      "duration": 0.967741935483871,
+      "fps": 31,
+      "frames": 31,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_CrouchTurnW180_LB.psa"
+      ],
+      "additive": false,
+      "layer": "lower",
+      "turn": {
+        "direction": "W",
+        "degrees": 180,
+        "signedDegrees": 180,
+        "crouch": true,
+        "rootYawAuthored": false,
+        "derivation": "The named angle describes intended actor heading change. Source Root/Splitter rotation is static: synchronize foot-replant phase to observed heading change without driving actor or camera orientation."
+      },
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths."
+    },
+    {
+      "name": "ropeIdle",
+      "duration": 0.016666667726304863,
+      "fps": 59.999996185302734,
+      "frames": 2,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_BasePistol_S0_Rope_IdlePose_LB.psa"
+      ],
+      "additive": false,
+      "layer": "lower",
+      "traversal": true,
+      "derivation": "Only the rope traversal lower-body curves are copied from Shared; weapon/aim/arm channels are excluded."
+    },
+    {
+      "name": "ropeUp",
+      "duration": 0.016666667726304863,
+      "fps": 59.999996185302734,
+      "frames": 2,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_BasePistol_S0_Rope_NavUp_LB.psa"
+      ],
+      "additive": false,
+      "layer": "lower",
+      "traversal": true,
+      "derivation": "Only the rope traversal lower-body curves are copied from Shared; weapon/aim/arm channels are excluded."
+    },
+    {
+      "name": "ropeDown",
+      "duration": 0.016666667726304863,
+      "fps": 59.999996185302734,
+      "frames": 2,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_BasePistol_S0_Rope_NavDown_LB.psa"
+      ],
+      "additive": false,
+      "layer": "lower",
+      "traversal": true,
+      "derivation": "Only the rope traversal lower-body curves are copied from Shared; weapon/aim/arm channels are excluded."
+    },
+    {
+      "name": "ropeHorizontal",
+      "duration": 1.3008130081300813,
+      "fps": 30.75,
+      "frames": 41,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_BasePistol_S0_Rope_HorizontalAdd_LB.psa"
+      ],
+      "additive": true,
+      "layer": "lower",
+      "traversal": true,
+      "derivation": "Only the rope traversal lower-body curves are copied from Shared; weapon/aim/arm channels are excluded."
+    },
+    {
+      "name": "ropeForward",
+      "duration": 0.016666667726304863,
+      "fps": 59.999996185302734,
+      "frames": 2,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_BasePistol_S0_Rope_NavForwardAdd_LB.psa"
+      ],
+      "additive": true,
+      "layer": "lower",
+      "traversal": true,
+      "derivation": "Only the rope traversal lower-body curves are copied from Shared; weapon/aim/arm channels are excluded."
+    },
+    {
+      "name": "ropeBack",
+      "duration": 0.016666667726304863,
+      "fps": 59.999996185302734,
+      "frames": 2,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_BasePistol_S0_Rope_NavBackAdd_LB.psa"
+      ],
+      "additive": true,
+      "layer": "lower",
+      "traversal": true,
+      "derivation": "Only the rope traversal lower-body curves are copied from Shared; weapon/aim/arm channels are excluded."
+    },
+    {
+      "name": "stopLower",
+      "duration": 0.6349206349206349,
+      "fps": 31.5,
+      "frames": 21,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_StopAdd.psa"
+      ],
+      "additive": true,
+      "layer": "lower",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths.",
+      "phaseKind": "stop",
+      "phase": {
+        "duration": 0.6349206349206349,
+        "method": "Copied additive stop posture; runtime envelope follows observed deceleration. Clip duration is not motor stop time."
+      }
+    },
+    {
+      "name": "stopSpine",
+      "duration": 0.6349206349206349,
+      "fps": 31.5,
+      "frames": 21,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_StopAdd.psa"
+      ],
+      "additive": true,
+      "layer": "spine",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths.",
+      "phaseKind": "stop"
+    },
+    {
+      "name": "jumpSpine",
+      "duration": 3.2003401215206972,
+      "fps": 30.30927848815918,
+      "frames": 98,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_JumpAdd_UB.psa"
+      ],
+      "additive": true,
+      "layer": "spine",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths.",
+      "phaseKind": "jump"
+    },
+    {
+      "name": "crouchJumpSpine",
+      "duration": 3.2003401215206972,
+      "fps": 30.30927848815918,
+      "frames": 98,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_Crouch_JumpAdd_UB.psa"
+      ],
+      "additive": true,
+      "layer": "spine",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths.",
+      "phaseKind": "jump"
+    },
+    {
+      "name": "landSpine",
+      "duration": 0.6349206349206349,
+      "fps": 31.5,
+      "frames": 21,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_JumpLandAdd_UB.psa"
+      ],
+      "additive": true,
+      "layer": "spine",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths.",
+      "phaseKind": "land"
+    },
+    {
+      "name": "crouchLandLower",
+      "duration": 0.6349206349206349,
+      "fps": 31.5,
+      "frames": 21,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_Crouch_JumpLandAdd.psa"
+      ],
+      "additive": true,
+      "layer": "lower",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths.",
+      "phaseKind": "land",
+      "phase": {
+        "duration": 0.6349206349206349,
+        "compressionSample": 0.06349206349206349,
+        "method": "Minimum retargeted pelvis height estimates landing compression; contact timing is unproven."
+      }
+    },
+    {
+      "name": "crouchLandSpine",
+      "duration": 0.6349206349206349,
+      "fps": 31.5,
+      "frames": 21,
+      "status": "COPIED",
+      "sources": [
+        "Animations/Agent Animations/Shared/Simple/TP_Core_Crouch_JumpLandAdd.psa"
+      ],
+      "additive": true,
+      "layer": "spine",
+      "derivation": "Native pack bone samples copied at their recorded cadence; centimetres converted to metres and native axes retargeted while retaining target bone lengths.",
+      "phaseKind": "land"
+    }
+  ],
+  "transitions": {
+    "start": {
+      "status": "EXTRAPOLATED",
+      "derivation": "Blend the pack idle and directional gait at shared contact phase using actual speed/acceleration; the complete Shared movement set has no generic authored start clip."
+    },
+    "crouchEnter": {
+      "status": "EXTRAPOLATED",
+      "derivation": "Interpolate the copied idle and crouch lower-body poses following the existing motor crouch amount; no generic authored crouch-enter clip is present."
+    },
+    "crouchExit": {
+      "status": "EXTRAPOLATED",
+      "derivation": "Reverse the idle/crouch pose interpolation following the existing motor stand-up amount."
+    },
+    "directionChange": {
+      "status": "EXTRAPOLATED",
+      "derivation": "Interpolate adjacent authored 45-degree direction samples with phase synchronization; the eight authored gait directions themselves are copied."
+    },
+    "diagonalJump": {
+      "status": "EXTRAPOLATED",
+      "derivation": "Blend the two adjacent copied N/E/S/W directional jump curves for diagonal takeoffs; no diagonal jump source is present."
+    },
+    "ropeAttachDetach": {
+      "status": "EXTRAPOLATED",
+      "derivation": "Crossfade the copied rope lower poses with copied ground or falling poses at the implemented traversal boundary; no generic attach/detach movement clips are present."
+    }
+  },
+  "sources": [
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_Idle_LB.psa",
+      "sha256": "286b48a932d5b7bad0947813bf28e3540a96daa486ee2e17ca1f1aa0f14e55f0",
+      "frames": 137,
+      "fps": 30.22058868408203,
+      "duration": 4.500243242172007,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0.000021514892578125,
+          0.000007262229919433594,
+          0.0000101470947265625
+        ],
+        "splitterExcursion": [
+          0.006912364959716797,
+          0.004485726356506348,
+          0.008573379516601563
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_CrouchIdle_LB.psa",
+      "sha256": "cb89f04adb841ffed1c2e559045b46fe60e1bb6126e6cf9081a1e5e8d3730fea",
+      "frames": 273,
+      "fps": 60.22058868408203,
+      "duration": 4.516727683067256,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          -0.00010003089904785156,
+          0.00018765449523925782,
+          0.000625762939453125
+        ],
+        "splitterExcursion": [
+          0.010223388671875,
+          0.010664520263671875,
+          0.01454864501953125
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_CrouchPose_UB.psa",
+      "sha256": "92f4dcf3cf81a214aec763a5f985589d7650f3bba61c8e02fe6a4af9c03a29a6",
+      "frames": 2,
+      "fps": 59.999996185302734,
+      "duration": 0.016666667726304863,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterExcursion": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_IdlePose_UB.psa",
+      "sha256": "c54a798a3d6cd6ea5d6094c07d40f5696c84fe4f69a298fb00b94873cf62e10b",
+      "frames": 2,
+      "fps": 59.999996185302734,
+      "duration": 0.016666667726304863,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterExcursion": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_WalkN_LB.psa",
+      "sha256": "51723477a3c8342ac5f6cc12772f6f5c7431ad0a1d4e29e619ed9d67ad07c481",
+      "frames": 27,
+      "fps": 31.153846740722656,
+      "duration": 0.8345678855129688,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterExcursion": [
+          0.02964299201965332,
+          0.056389569491148,
+          0.0226385498046875
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_WalkNE_LB.psa",
+      "sha256": "0174fb79e93d7d1b3f65b0e53f836ab8cf6b7503f7ca91b8abab2190c746ad99",
+      "frames": 27,
+      "fps": 31.153846740722656,
+      "duration": 0.8345678855129688,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterExcursion": [
+          0.052688015699386595,
+          0.050008206367492675,
+          0.0226385498046875
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_WalkE_LB.psa",
+      "sha256": "6a52666ca0a2e3fa2c0286dd0bda4c136dbb9fbcdad7f15325f6ba692c7a45a5",
+      "frames": 27,
+      "fps": 31.153846740722656,
+      "duration": 0.8345678855129688,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterExcursion": [
+          0.056389570236206055,
+          0.018378663063049316,
+          0.0226385498046875
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_WalkSE_LB.psa",
+      "sha256": "ceb412cda246390e9665a2cd444c994111b54ae18da8a7e68748ea8fcfec6140",
+      "frames": 27,
+      "fps": 31.153846740722656,
+      "duration": 0.8345678855129688,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterExcursion": [
+          0.031242380142211913,
+          0.03223543643951416,
+          0.025519027709960937
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_WalkS_LB.psa",
+      "sha256": "bab4c4cedf5153bc212c0f3ad529efd42aa4e8d32b55782af5e7ddd140397395",
+      "frames": 27,
+      "fps": 31.153846740722656,
+      "duration": 0.8345678855129688,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterExcursion": [
+          0.030451326370239257,
+          0.024180870056152343,
+          0.025519027709960937
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_WalkSW_LB.psa",
+      "sha256": "e0488bdf8a2665dd3cf6be5e6d6edd660ee0daf6685bcf22e2f950f6cc998cd1",
+      "frames": 27,
+      "fps": 31.153846740722656,
+      "duration": 0.8345678855129688,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterExcursion": [
+          0.03223544120788574,
+          0.031242380142211913,
+          0.025519027709960937
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_WalkW_LB.psa",
+      "sha256": "8342e2cc6a703941e9a9999337b76b781f178c8804f2db00cea4d364d0b204c8",
+      "frames": 27,
+      "fps": 31.153846740722656,
+      "duration": 0.8345678855129688,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterExcursion": [
+          0.03930127382278442,
+          0.016600081920623778,
+          0.022819595336914064
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_WalkNW_LB.psa",
+      "sha256": "a898fefd81baa7b9b9501847efe22adee9be70012d3d7774f31f7cb1a9c0790f",
+      "frames": 27,
+      "fps": 31.153846740722656,
+      "duration": 0.8345678855129688,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterExcursion": [
+          0.050008201599121095,
+          0.05268801689147949,
+          0.0226385498046875
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_WalkAddN_UB.psa",
+      "sha256": "6107e569bc719b3504eb9214615c6bfec8bcfd85d1793ca1031bfd9d7e8128c7",
+      "frames": 27,
+      "fps": 31.153846740722656,
+      "duration": 0.8345678855129688,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterExcursion": [
+          0.02964299201965332,
+          0.056389570236206055,
+          0.0226385498046875
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_WalkAddNE_UB.psa",
+      "sha256": "2ffd4989140e35c7cd61079a2dfbca5e27555469cea7205acefb28c90c9554bd",
+      "frames": 27,
+      "fps": 31.153846740722656,
+      "duration": 0.8345678855129688,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterExcursion": [
+          0.05268801689147949,
+          0.050008206367492675,
+          0.0226385498046875
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_WalkAddE_UB.psa",
+      "sha256": "d575323076eeb59ea467fbd273d9faee93cc281a8dc187eee591f25155c88743",
+      "frames": 27,
+      "fps": 31.153846740722656,
+      "duration": 0.8345678855129688,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterExcursion": [
+          0.056389570236206055,
+          0.029642999172210693,
+          0.0226385498046875
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_WalkAddSE_UB.psa",
+      "sha256": "41eb5d6f7c268945f23f8911ec5df88a9aa08fb772fd9244f5f24a5a6766becc",
+      "frames": 27,
+      "fps": 31.153846740722656,
+      "duration": 0.8345678855129688,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterExcursion": [
+          0.03124238967895508,
+          0.03223543167114258,
+          0.025519027709960937
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_WalkAddS_UB.psa",
+      "sha256": "a08cb523a7a43cb6900db5bdc5f81b0ee589260d6151d7d3a43a3cccbeffec6b",
+      "frames": 27,
+      "fps": 31.153846740722656,
+      "duration": 0.8345678855129688,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterExcursion": [
+          0.030451326370239257,
+          0.024180870056152343,
+          0.025519027709960937
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_WalkAddSW_UB.psa",
+      "sha256": "55f0204157f1ef39fff034dffdca6a5ac1cf8e1416b9919eecd67af9faaf8809",
+      "frames": 27,
+      "fps": 31.153846740722656,
+      "duration": 0.8345678855129688,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterExcursion": [
+          0.03223544120788574,
+          0.03124238967895508,
+          0.025519027709960937
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_WalkAddW_UB.psa",
+      "sha256": "c6abcb4f1a91e569d040293fee77d08ac52662945df56708f609f060fb69e609",
+      "frames": 27,
+      "fps": 31.153846740722656,
+      "duration": 0.8345678855129688,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterExcursion": [
+          0.056389570236206055,
+          0.011857199668884277,
+          0.0226385498046875
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_WalkAddNW_UB.psa",
+      "sha256": "b23049c743f9e4d15471029b9d0531ab86e09eec13d0183e2581fc9cf88d6558",
+      "frames": 27,
+      "fps": 31.153846740722656,
+      "duration": 0.8345678855129688,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterExcursion": [
+          0.050008201599121095,
+          0.052688019275665285,
+          0.0226385498046875
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_RunN_LB.psa",
+      "sha256": "cc5b15b145181beadd1e1cd82fb6fc040badd6194e00a1ed17a05fea9c1d3d97",
+      "frames": 37,
+      "fps": 61.666664123535156,
+      "duration": 0.5837838078590107,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          5.054473876953125e-7,
+          -0.0000025844573974609375,
+          -0.0000011444091796875
+        ],
+        "splitterExcursion": [
+          0.014753684997558594,
+          0.03501746892929077,
+          0.04515762329101562
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_RunNE_LB.psa",
+      "sha256": "7beb7b571d52f3f26e334f242cd73ba8b636200eb5465ac0f23b25f43d2720d7",
+      "frames": 37,
+      "fps": 61.666664123535156,
+      "duration": 0.5837838078590107,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          -0.000003643035888671875,
+          -0.000004309415817260742,
+          -0.000003509521484375
+        ],
+        "splitterExcursion": [
+          0.029036388397216797,
+          0.029489431381225586,
+          0.04515762329101562
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_RunE_LB.psa",
+      "sha256": "1f39183a39fdec676b2fc6291b2b3f8bec4f4bd51c76f2d9c8ae6de9eb6e2e57",
+      "frames": 37,
+      "fps": 61.666664123535156,
+      "duration": 0.5837838078590107,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          -0.000010528564453125,
+          -0.0000037860870361328127,
+          -0.0000023651123046875
+        ],
+        "splitterExcursion": [
+          0.03485396385192871,
+          0.015285110473632813,
+          0.04515762329101562
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_RunSE_LB.psa",
+      "sha256": "ac46f80b585fbe1cd2e5c8b4188654ea2cc8d042c590f354d948a47d1fa489dc",
+      "frames": 37,
+      "fps": 61.666664123535156,
+      "duration": 0.5837838078590107,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          4.38690185546875e-7,
+          2.384185791015625e-8,
+          3.814697265625e-7
+        ],
+        "splitterExcursion": [
+          0.039397964477539064,
+          0.04506973624229431,
+          0.05960159301757813
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_RunS_LB.psa",
+      "sha256": "70cb381c0e9cb2ba368605a36aa1eabb6a94cdfc89722eb6e82d99b7a0c7a72e",
+      "frames": 37,
+      "fps": 61.666664123535156,
+      "duration": 0.5837838078590107,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0.00000148773193359375,
+          0.0000021266937255859375,
+          0.00000640869140625
+        ],
+        "splitterExcursion": [
+          0.0432147216796875,
+          0.02338432312011719,
+          0.04314109802246094
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_RunSW_LB.psa",
+      "sha256": "5d6988f0767d62979d9250192cb847fbfd4cd279830b545912efca0298c86cb5",
+      "frames": 37,
+      "fps": 61.666664123535156,
+      "duration": 0.5837838078590107,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0,
+          -0.0000064373016357421875,
+          0.000005035400390625
+        ],
+        "splitterExcursion": [
+          0.0460462474822998,
+          0.038322668075561526,
+          0.03983612060546875
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_RunW_LB.psa",
+      "sha256": "ce88e9a4f1f6242a33bc26d699a2ab57b82a5f583bee5ac6627c9c5e10fd7810",
+      "frames": 37,
+      "fps": 61.666664123535156,
+      "duration": 0.5837838078590107,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0,
+          -0.000008063316345214844,
+          0.0000046539306640625
+        ],
+        "splitterExcursion": [
+          0.035020856857299804,
+          0.01625692367553711,
+          0.04515762329101562
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_RunNW_LB.psa",
+      "sha256": "078cd2a181c04c7e2cd76e624e277a58db44737d9a2d175c98ce61aaabfdd2aa",
+      "frames": 37,
+      "fps": 61.666664123535156,
+      "duration": 0.5837838078590107,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0.000004358291625976563,
+          -0.000014138221740722656,
+          -0.0000081634521484375
+        ],
+        "splitterExcursion": [
+          0.02948944091796875,
+          0.02903501510620117,
+          0.04515762329101562
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_RunAddN_UB.psa",
+      "sha256": "b6a2d239d56580db029fc166495b9c77bae3b84f7133a9505b13785fbd7c5514",
+      "frames": 37,
+      "fps": 61.666664123535156,
+      "duration": 0.5837838078590107,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterExcursion": [
+          0.014753694534301759,
+          0.03501694679260254,
+          0.04515762329101562
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_RunAddNE_UB.psa",
+      "sha256": "f0ad7a4e3544d8343ec42ffbf759804aabfb6186187c2e030d03c4e06f2cebfb",
+      "frames": 37,
+      "fps": 61.666664123535156,
+      "duration": 0.5837838078590107,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterExcursion": [
+          0.029035539627075196,
+          0.029489431381225586,
+          0.04515762329101562
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_RunAddE_UB.psa",
+      "sha256": "6b49aff595a599fef307b46cb7c8b2a453303b17c669df4275686b84eaf56120",
+      "frames": 37,
+      "fps": 61.666664123535156,
+      "duration": 0.5837838078590107,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterExcursion": [
+          0.034860906600952146,
+          0.015285106897354126,
+          0.04515762329101562
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_RunAddSE_UB.psa",
+      "sha256": "04da44bc59f9510db2fe16feda077badf566fba8822042e2f5f75c762587a694",
+      "frames": 37,
+      "fps": 61.666664123535156,
+      "duration": 0.5837838078590107,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterExcursion": [
+          0.039397974014282224,
+          0.04506971120834351,
+          0.05960159301757813
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_RunAddS_UB.psa",
+      "sha256": "2d97f02c7ae10274a9b2923135a7a7916f1df06d5c3c3da9a9ef55a8065d2fb2",
+      "frames": 37,
+      "fps": 61.666664123535156,
+      "duration": 0.5837838078590107,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterExcursion": [
+          0.0432147216796875,
+          0.023384318351745606,
+          0.04314109802246094
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_RunAddSW_UB.psa",
+      "sha256": "c49886d5f337ebf705e87467b270ab5fcf8cd37687cbc0ad419cf6412015b0a9",
+      "frames": 37,
+      "fps": 61.666664123535156,
+      "duration": 0.5837838078590107,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterExcursion": [
+          0.046046255230903624,
+          0.038322668075561526,
+          0.03983612060546875
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_RunAddW_UB.psa",
+      "sha256": "40d29dba5774619785646c17f39f427eeafc31f6f7f32c77bd123842ce856c3f",
+      "frames": 37,
+      "fps": 61.666664123535156,
+      "duration": 0.5837838078590107,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterExcursion": [
+          0.035020856857299804,
+          0.01625692367553711,
+          0.04515762329101562
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_RunAddNW_UB.psa",
+      "sha256": "df0970683139c89c0a06aa7a735c4a281a29da661bce5879943b1d199acf04dc",
+      "frames": 37,
+      "fps": 61.666664123535156,
+      "duration": 0.5837838078590107,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterExcursion": [
+          0.029489450454711914,
+          0.029035539627075196,
+          0.04515762329101562
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_PowerWalkN_LB.psa",
+      "sha256": "31246a09cc5a6cbaf8ee145b94598ad5f635c8f19053168d29615731c71295ca",
+      "frames": 21,
+      "fps": 31.5,
+      "duration": 0.6349206349206349,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterExcursion": [
+          0.024312973022460938,
+          0.029245033264160156,
+          0.040462188720703125
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_PowerWalkNE_LB.psa",
+      "sha256": "ff28257a3e33fdd59889ed7dd1a1d33aa37f536a6d2c6c5a4f4e1b083888ecaf",
+      "frames": 21,
+      "fps": 31.5,
+      "duration": 0.6349206349206349,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterExcursion": [
+          0.031549177169799804,
+          0.033502357006073,
+          0.040462188720703125
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_PowerWalkE_LB.psa",
+      "sha256": "ec30edd6229e8f696454f00603230d1cd6a7bca36240dfe0a63e792f1136bf7c",
+      "frames": 21,
+      "fps": 31.5,
+      "duration": 0.6349206349206349,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterExcursion": [
+          0.029410552978515626,
+          0.025552358627319336,
+          0.040462188720703125
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_PowerWalkSE_LB.psa",
+      "sha256": "d423bb6286e69dacf0af1ee6323d1272b3977dba01cd42e55da7a7c82449ef52",
+      "frames": 21,
+      "fps": 31.5,
+      "duration": 0.6349206349206349,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterExcursion": [
+          0.037379798889160154,
+          0.03766741752624512,
+          0.035981979370117184
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_PowerWalkS_LB.psa",
+      "sha256": "e9faf5054758ed82c3b4662a3d649e87f33f3c76200ca1cb4eb9c8016742b3ff",
+      "frames": 21,
+      "fps": 31.5,
+      "duration": 0.6349206349206349,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterExcursion": [
+          0.03079483985900879,
+          0.02773223876953125,
+          0.035981979370117184
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_PowerWalkSW_LB.psa",
+      "sha256": "bb352598dcb7d9912ca3d9f4bda642640d3fe387ea91bd35aaf05409cae75a38",
+      "frames": 21,
+      "fps": 31.5,
+      "duration": 0.6349206349206349,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterExcursion": [
+          0.03797092437744141,
+          0.03727041244506836,
+          0.035981979370117184
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_PowerWalkW_LB.psa",
+      "sha256": "5e484a2f771a4970426f59040eca9bec32a92d287822dd5604aee297254f3a29",
+      "frames": 21,
+      "fps": 31.5,
+      "duration": 0.6349206349206349,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterExcursion": [
+          0.029281759262084962,
+          0.026761493682861327,
+          0.040462188720703125
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_PowerWalkNW_LB.psa",
+      "sha256": "9eb1548c93bda50b2c063df22b6ef8718b0e655ee77b747c54c6e6db948650e8",
+      "frames": 21,
+      "fps": 31.5,
+      "duration": 0.6349206349206349,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterExcursion": [
+          0.03350236892700195,
+          0.031549177169799804,
+          0.040462188720703125
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_PowerWalkAddN_UB.psa",
+      "sha256": "a40157dbee4678b1bfb6aff081bc98722b5232a353453e3013c82296d9f0c19e",
+      "frames": 21,
+      "fps": 31.5,
+      "duration": 0.6349206349206349,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterExcursion": [
+          0.024312973022460938,
+          0.029245033264160156,
+          0.040462188720703125
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_PowerWalkAddNE_UB.psa",
+      "sha256": "ec6473ec4284311bd42ad75e4e94383142dbeae4eb1a268d019613de20cf68cc",
+      "frames": 21,
+      "fps": 31.5,
+      "duration": 0.6349206349206349,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterExcursion": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_PowerWalkAddE_UB.psa",
+      "sha256": "de5400bc072cddfc1f664a179791c7b5acc243bc6f8bd8f9af824a825c1a3448",
+      "frames": 21,
+      "fps": 31.5,
+      "duration": 0.6349206349206349,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterExcursion": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_PowerWalkAddSE_UB.psa",
+      "sha256": "0cacd330df67b86401450f42c6a8bdd871a693f4b1af1a3887abdcc9d97ccb08",
+      "frames": 21,
+      "fps": 31.5,
+      "duration": 0.6349206349206349,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterExcursion": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_PowerWalkAddS_UB.psa",
+      "sha256": "eff6bdf00807c47cfbf47613bd39f5712cfb81e04c4a3d3417d36cbcb8f4f138",
+      "frames": 21,
+      "fps": 31.5,
+      "duration": 0.6349206349206349,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterExcursion": [
+          0.03079483985900879,
+          0.02773223876953125,
+          0.035981974601745605
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_PowerWalkAddSW_UB.psa",
+      "sha256": "5ffbc9137c6c762959dfe99f25877fa39cc790ae89aa4040e2862748798a0b60",
+      "frames": 21,
+      "fps": 31.5,
+      "duration": 0.6349206349206349,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterExcursion": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_PowerWalkAddW_UB.psa",
+      "sha256": "28385b4ac7c30c39f99cded17b36e1ee047d5565e88ae8d65164cc386d02ca11",
+      "frames": 21,
+      "fps": 31.5,
+      "duration": 0.6349206349206349,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterExcursion": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_PowerWalkAddNW_UB.psa",
+      "sha256": "55b68736af958c77bc8ce83c7f055b4f711ac4bc12e8326b6f8eaa0bf5243ea7",
+      "frames": 21,
+      "fps": 31.5,
+      "duration": 0.6349206349206349,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterExcursion": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_SprintN_LB.psa",
+      "sha256": "a344fde043dae56ac191c0303fbd968319815ff40ecb86b2d41588104a9c2561",
+      "frames": 41,
+      "fps": 61.5,
+      "duration": 0.6504065040650406,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          -0.00008058547973632812,
+          -4.76837158203125e-9,
+          -1.52587890625e-7
+        ],
+        "splitterExcursion": [
+          0.05502237319946289,
+          9.5367431640625e-9,
+          0.059586715698242185
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_SprintNE_LB.psa",
+      "sha256": "0dfd91a794f7028797ead15b34ac79b11e11e2a22907b91ffdb51653ed5cdce3",
+      "frames": 41,
+      "fps": 61.5,
+      "duration": 0.6504065040650406,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          -0.00005620002746582031,
+          0.00005620002746582031,
+          0.0000159454345703125
+        ],
+        "splitterExcursion": [
+          0.03889955520629883,
+          0.038899543285369875,
+          0.05959190368652344
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_SprintE_LB.psa",
+      "sha256": "bb4146702ee6737d26dfe04e2aa5f8553328e6ca0625c2f4b1f1ff655cb3061a",
+      "frames": 41,
+      "fps": 61.5,
+      "duration": 0.6504065040650406,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          -0.00001110076904296875,
+          0.00007099628448486327,
+          0.0000060272216796875
+        ],
+        "splitterExcursion": [
+          0.008496532440185547,
+          0.054361796379089354,
+          0.05959190368652344
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_SprintSE_LB.psa",
+      "sha256": "b101337353822a0b4f7172479d6c4f5f1c755a53171a1da59cc2456aaf8cad08",
+      "frames": 41,
+      "fps": 61.5,
+      "duration": 0.6504065040650406,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          -9.179115295410156e-7,
+          0.0000022220611572265626,
+          -3.0517578125e-7
+        ],
+        "splitterExcursion": [
+          0.032688615322113035,
+          0.0461355996131897,
+          0.06082366943359375
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_SprintS_LB.psa",
+      "sha256": "01f95723a0177be7f0c7590fe973ec5f078c6da03de1d275e84cc08fe6883597",
+      "frames": 41,
+      "fps": 61.5,
+      "duration": 0.6504065040650406,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          -0.000006284713745117187,
+          0.0000012564659118652343,
+          -2.288818359375e-7
+        ],
+        "splitterExcursion": [
+          0.047087154388427734,
+          0.023499150276184082,
+          0.06082717895507812
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_SprintSW_LB.psa",
+      "sha256": "b517d6e8352a62e5da6d67e08c0c71cb8ae9f564ac6330f3db21d24a8622bc16",
+      "frames": 41,
+      "fps": 61.5,
+      "duration": 0.6504065040650406,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0.000009975433349609376,
+          0.000003857612609863281,
+          -0.00002532958984375
+        ],
+        "splitterExcursion": [
+          0.04826875686645508,
+          0.03179973602294922,
+          0.06082710266113281
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_SprintW_LB.psa",
+      "sha256": "aee9f15461f3571bf240d88c2dc7cb789387f054fa7ce93d3d875d96d9984e7d",
+      "frames": 41,
+      "fps": 61.5,
+      "duration": 0.6504065040650406,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          -0.000006198883056640625,
+          -0.00008654594421386719,
+          0.0000064849853515625
+        ],
+        "splitterExcursion": [
+          0.010467157363891602,
+          0.06002861976623535,
+          0.059584884643554686
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_SprintNW_LB.psa",
+      "sha256": "f252d74494122c551e84dfb40bcd16416a71e93ae2f04aa71111a0b3d2ca58bd",
+      "frames": 41,
+      "fps": 61.5,
+      "duration": 0.6504065040650406,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          -0.000059938430786132814,
+          -0.0000584101676940918,
+          0.0000096893310546875
+        ],
+        "splitterExcursion": [
+          0.038899564743041994,
+          0.038903393745422364,
+          0.059592056274414065
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_SprintAddN_UB.psa",
+      "sha256": "cee47f39bc0ffbc2c97d745a5c580cb28f9ee58448abcc490df3f863c5e2f2ee",
+      "frames": 19,
+      "fps": 31.66666603088379,
+      "duration": 0.5684210640439699,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterExcursion": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_SprintAddNE_UB.psa",
+      "sha256": "b6a650ecb78826d175e13f6db9d95630fac787309c4aeedbc8155a83bbdbd2f8",
+      "frames": 19,
+      "fps": 31.66666603088379,
+      "duration": 0.5684210640439699,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterExcursion": [
+          0.053636112213134766,
+          0.04972505569458008,
+          0.11147544860839843
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_SprintAddE_UB.psa",
+      "sha256": "77223673797ee2edf3a4f60f64539e6e6543ed4e2591751d8d481102047d3541",
+      "frames": 41,
+      "fps": 61.5,
+      "duration": 0.6504065040650406,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0.00003268718719482422,
+          0.00006203651428222656,
+          -0.0000095367431640625
+        ],
+        "splitterExcursion": [
+          0.03490011215209961,
+          0.05502255916595459,
+          0.059591817855834964
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_SprintAddSE_UB.psa",
+      "sha256": "b250eb2d5160af5db0b58d150114229bd20fb0053deb22fb4ccd5441db484548",
+      "frames": 19,
+      "fps": 31.66666603088379,
+      "duration": 0.5684210640439699,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterExcursion": [
+          0.0390117073059082,
+          0.039799268245697024,
+          0.11147544860839843
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_SprintAddS_UB.psa",
+      "sha256": "6d7bc7f162af097ac75718ebc02ffdaf211be4f11fbd6cde90187c92e612f7de",
+      "frames": 19,
+      "fps": 31.66666603088379,
+      "duration": 0.5684210640439699,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterExcursion": [
+          0.026963653564453124,
+          0.04018033266067505,
+          0.11147544860839843
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_SprintAddSW_UB.psa",
+      "sha256": "55a9749e912e2dec03708d750d03b528a33be80f4ab0d7c55bf60d35e7cf4888",
+      "frames": 19,
+      "fps": 31.66666603088379,
+      "duration": 0.5684210640439699,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterExcursion": [
+          0.03979926109313965,
+          0.039011704921722415,
+          0.11147544860839843
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_SprintAddW_UB.psa",
+      "sha256": "f0a51e60126f85567769b3e59b2cdce3132c3bbf2b3b1bad40e942db80048792",
+      "frames": 19,
+      "fps": 31.66666603088379,
+      "duration": 0.5684210640439699,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterExcursion": [
+          0.038966341018676756,
+          0.03191695213317871,
+          0.11147544860839843
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_SprintAddNW_UB.psa",
+      "sha256": "7e8f96d99686a75e9702713fa67433df9140de3ac70706620530fb9d1b832690",
+      "frames": 19,
+      "fps": 31.66666603088379,
+      "duration": 0.5684210640439699,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterExcursion": [
+          0.04972505569458008,
+          0.053636112213134766,
+          0.11147544860839843
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_CrouchWalkN_LB.psa",
+      "sha256": "c3701c2652dd8a9162ea1d0bd968e2b4d8a3b2a16f00dbfa643051b437a24f48",
+      "frames": 29,
+      "fps": 31.071428298950195,
+      "duration": 0.9011494331899133,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterExcursion": [
+          0.04131279945373535,
+          0.058622913360595705,
+          0.033267364501953126
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_CrouchWalkNE_LB.psa",
+      "sha256": "3939f226027b1b4e9dac3940f6f651fb8fa4d9244c3db85913c86c837727e8aa",
+      "frames": 29,
+      "fps": 31.071428298950195,
+      "duration": 0.9011494331899133,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterExcursion": [
+          0.06258762359619141,
+          0.04529561996459961,
+          0.03326744079589844
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_CrouchWalkE_LB.psa",
+      "sha256": "a659486422cfbf5fdfacaab7c3f1d26a87e5901f2eb41755f864e883a4b7d665",
+      "frames": 29,
+      "fps": 31.071428298950195,
+      "duration": 0.9011494331899133,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterExcursion": [
+          0.031553955078125,
+          0.07314544677734375,
+          0.033267364501953126
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_CrouchWalkSE_LB.psa",
+      "sha256": "6273f59a32ae860c76a0668062578162d658a8ed4f2aec47e9e671afb910a08a",
+      "frames": 29,
+      "fps": 31.071428298950195,
+      "duration": 0.9011494331899133,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterExcursion": [
+          0.03174533843994141,
+          0.045408687591552734,
+          0.033267364501953126
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_CrouchWalkS_LB.psa",
+      "sha256": "589ddb4a266f64bbaa43cc39e0dd6db5b55b599c5a51417ec44c12db9b44bced",
+      "frames": 29,
+      "fps": 31.071428298950195,
+      "duration": 0.9011494331899133,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterExcursion": [
+          0.04131282806396484,
+          0.029918441772460936,
+          0.033267364501953126
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_CrouchWalkSW_LB.psa",
+      "sha256": "a93b277f16178bcab57b897cfe17ce7840fbac104ee9edb24d65a0d829d6fad3",
+      "frames": 29,
+      "fps": 31.071428298950195,
+      "duration": 0.9011494331899133,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterExcursion": [
+          0.04540866851806641,
+          0.03174528121948242,
+          0.033267364501953126
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_CrouchWalkW_LB.psa",
+      "sha256": "fbe78d01ab1faeaa32ae38dce34f2e34b03793ba5cfcc0e3f72ecaf295ee572a",
+      "frames": 29,
+      "fps": 31.071428298950195,
+      "duration": 0.9011494331899133,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterExcursion": [
+          0.059656562805175783,
+          0.07038362503051758,
+          0.033267364501953126
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_CrouchWalkNW_LB.psa",
+      "sha256": "291045091ccc0c8fe0a56b026406928c4cd85db60f0d4f1e7261cd02b16edf29",
+      "frames": 29,
+      "fps": 31.071428298950195,
+      "duration": 0.9011494331899133,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterExcursion": [
+          0.045295639038085936,
+          0.06258764266967773,
+          0.033267364501953126
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_CrouchWalkAddN_UB.psa",
+      "sha256": "6b95ff1dcb2bf3a6bdfdec90843440fe2bbee4c6103b5756285c0b0d726ba6b0",
+      "frames": 29,
+      "fps": 31.071428298950195,
+      "duration": 0.9011494331899133,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterExcursion": [
+          0.04131279945373535,
+          0.058622913360595705,
+          0.033267364501953126
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_CrouchWalkAddNE_UB.psa",
+      "sha256": "a57ce4f56ec7a3ef3913ab5cfbf02c10cff9fe5d08c75d01561318e1873dd550",
+      "frames": 29,
+      "fps": 31.071428298950195,
+      "duration": 0.9011494331899133,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterExcursion": [
+          0.06258762359619141,
+          0.04529561996459961,
+          0.03326744079589844
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_CrouchWalkE_UB.psa",
+      "sha256": "3fbf7a863b861f09ae831ca78a6b464b72acb0ee1343f82f35482045afc175be",
+      "frames": 29,
+      "fps": 31.071428298950195,
+      "duration": 0.9011494331899133,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterExcursion": [
+          0.031553955078125,
+          0.07314544677734375,
+          0.033267364501953126
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_CrouchWalk_Subtract_UB.psa",
+      "sha256": "2581ed0518bab8e5b8e64ecc0f2fa820191204bd02586858c3e3cea24bf9e9d4",
+      "frames": 2,
+      "fps": 59.999996185302734,
+      "duration": 0.016666667726304863,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterExcursion": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_CrouchWalkAddSE_UB.psa",
+      "sha256": "f4afe872f846af5a02537dad7efdea07ab6ea3b0d51a8f2416768f62f183d847",
+      "frames": 57,
+      "fps": 61.07143020629883,
+      "duration": 0.9169590397806704,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          -9.72747802734375e-7,
+          -0.000009758472442626953,
+          -0.000001531839370727539
+        ],
+        "splitterExcursion": [
+          0.03172755241394043,
+          0.04540956974029541,
+          0.03327017784118652
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_CrouchWalkAddS_UB.psa",
+      "sha256": "907a9b866f55fec2f9304c82580e7cb5b15a70ffed55926a641730aa51979009",
+      "frames": 57,
+      "fps": 61.07143020629883,
+      "duration": 0.9169590397806704,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0.000007202625274658203,
+          -4.7445297241210937e-7,
+          -0.000004286766052246094
+        ],
+        "splitterExcursion": [
+          0.04131282806396484,
+          0.029918432235717773,
+          0.033267364501953126
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_CrouchWalkAddSW_UB.psa",
+      "sha256": "480b008c66d57dccdb9746d78d9049ae84384cec36cfccc3e11fa2e56757dd9e",
+      "frames": 57,
+      "fps": 61.07143020629883,
+      "duration": 0.9169590397806704,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          -0.000008983612060546875,
+          -0.00002135753631591797,
+          0.000024228096008300782
+        ],
+        "splitterExcursion": [
+          0.045414242744445804,
+          0.031746349334716796,
+          0.03326784133911133
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_CrouchWalkAddW_UB.psa",
+      "sha256": "23a14b68a74f97683469a1b8c541235d8a9d4b9bc7418c006604cc8852714676",
+      "frames": 29,
+      "fps": 31.071428298950195,
+      "duration": 0.9011494331899133,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterExcursion": [
+          0.059656562805175783,
+          0.07038362383842468,
+          0.033267364501953126
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_CrouchWalkAddNW_UB.psa",
+      "sha256": "40be17f1e8c9a7dee87fc78cfd19a77da0f487fe6816886234c72110df2a4d3d",
+      "frames": 29,
+      "fps": 31.071428298950195,
+      "duration": 0.9011494331899133,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterExcursion": [
+          0.045295639038085936,
+          0.06258764266967773,
+          0.033267364501953126
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_Jump_LB.psa",
+      "sha256": "56347f13d06940e205d1db3c2ad4ee70ca3d8e3e461375d1ced81aac5603144e",
+      "frames": 98,
+      "fps": 30.30927848815918,
+      "duration": 3.2003401215206972,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0.035121793746948245,
+          -4.76837158203125e-9,
+          0.2460077667236328
+        ],
+        "splitterExcursion": [
+          0.13081740379333495,
+          2.86102294921875e-8,
+          0.3127924346923828
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_JumpN_LB.psa",
+      "sha256": "9bc4f1c9770a75eb49a7f60691aa9954155a3a49895d584c4cbc0eae8bbec8f0",
+      "frames": 98,
+      "fps": 30.30927848815918,
+      "duration": 3.2003401215206972,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          -0.03384732723236084,
+          4.76837158203125e-9,
+          0.24600845336914062
+        ],
+        "splitterExcursion": [
+          0.08976311683654785,
+          2.384185791015625e-8,
+          0.31279098510742187
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_JumpE_LB.psa",
+      "sha256": "c892a89d52370603f751685ac77ee505a8f86ebfb1442331a6b51be9df29fe60",
+      "frames": 98,
+      "fps": 30.30927848815918,
+      "duration": 3.2003401215206972,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0.03853682518005371,
+          0.011296591758728027,
+          0.24600845336914062
+        ],
+        "splitterExcursion": [
+          0.10981581687927246,
+          0.06027904510498047,
+          0.31279212951660157
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_JumpS_LB.psa",
+      "sha256": "333d48ac2e1c089b84f10f7993d763aa61231e3e605d48970add636dc4ffbddf",
+      "frames": 98,
+      "fps": 30.30927848815918,
+      "duration": 3.2003401215206972,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0.11718898773193359,
+          4.76837158203125e-9,
+          0.24600975036621095
+        ],
+        "splitterExcursion": [
+          0.15095629692077636,
+          2.384185791015625e-8,
+          0.3127924346923828
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_JumpW_LB.psa",
+      "sha256": "088c74ecaf0735505005c42f0248ed56c90c021ef17e6fd9d133e06c3bc851a9",
+      "frames": 98,
+      "fps": 30.30927848815918,
+      "duration": 3.2003401215206972,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          -0.04279537677764893,
+          0.01871704578399658,
+          0.24600845336914062
+        ],
+        "splitterExcursion": [
+          0.08915047645568848,
+          0.098672513961792,
+          0.31279190063476564
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_Crouch_Jump_LB.psa",
+      "sha256": "28fb4685d869fd233580dd61bc3fb106b1646662bd949f8ce941dede14ef9abd",
+      "frames": 98,
+      "fps": 30.30927848815918,
+      "duration": 3.2003401215206972,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0.002174549102783203,
+          -0.004420700073242187,
+          0.15247177124023437
+        ],
+        "splitterExcursion": [
+          0.0021745586395263672,
+          0.004420704841613769,
+          0.1717115020751953
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_Falling_LB.psa",
+      "sha256": "c976119e685494ca5008eba2d42cc19a217475707381e613c885ddfacbec9a5a",
+      "frames": 78,
+      "fps": 30.389610290527344,
+      "duration": 2.5337606920218203,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0.061852340698242185,
+          4.76837158203125e-9,
+          -0.06676017761230468
+        ],
+        "splitterExcursion": [
+          0.09564773559570312,
+          2.384185791015625e-8,
+          0.0704253387451172
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_CrouchFalling_LB.psa",
+      "sha256": "dea4fb5b7ca8f71cf56e3dbb3643339409f75fdb4ece20847746c1af5b0027a5",
+      "frames": 70,
+      "fps": 30.434783935546875,
+      "duration": 2.267142758303277,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0,
+          0,
+          0.0036490631103515627
+        ],
+        "splitterExcursion": [
+          0,
+          0,
+          0.0036775970458984373
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_JumpLand_LB.psa",
+      "sha256": "8cdd8e0c2a66186f1df35b84afcd785150b4137d991964f273cbc52683bf5d7d",
+      "frames": 21,
+      "fps": 31.5,
+      "duration": 0.6349206349206349,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          -0.0704806900024414,
+          -7.152557373046875e-9,
+          0.014077529907226563
+        ],
+        "splitterExcursion": [
+          0.08708460807800293,
+          1.1920928955078126e-8,
+          0.1709320068359375
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_TurnE45_LB.psa",
+      "sha256": "413540c58041abf60aca89facffced43aa864f58a621bbc452beb9f7b5500515",
+      "frames": 31,
+      "fps": 31,
+      "duration": 0.967741935483871,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterExcursion": [
+          0.15784233093261718,
+          0.052458157539367674,
+          0.03269775390625
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_TurnE90_LB.psa",
+      "sha256": "8c4959053f9f453162a0a028fb5cbd853aee79e1e07b162a2368750bf6cf9d9d",
+      "frames": 31,
+      "fps": 31,
+      "duration": 0.967741935483871,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterExcursion": [
+          0.20021263122558594,
+          0.20224239349365233,
+          0.0312408447265625
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_TurnE135_LB.psa",
+      "sha256": "473ee0d95763197ddd507cac2aeea7ff80376b1be83cdcaf7c0463967bafa741",
+      "frames": 31,
+      "fps": 31,
+      "duration": 0.967741935483871,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          -0.20670814514160157,
+          -0.024570989608764648,
+          0.0028925323486328125
+        ],
+        "splitterExcursion": [
+          0.2658377647399902,
+          0.13999707221984864,
+          0.028781890869140625
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_TurnE180_LB.psa",
+      "sha256": "7cfad2cbbafa9461c8d0278c36a1a6608b081965c84f898a96a73a72ec531aa9",
+      "frames": 31,
+      "fps": 31,
+      "duration": 0.967741935483871,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          -0.19451537132263183,
+          -0.041673746109008786,
+          -0.0028749847412109374
+        ],
+        "splitterExcursion": [
+          0.25000398635864257,
+          0.17110260009765624,
+          0.03156745910644531
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_TurnW45_LB.psa",
+      "sha256": "d003df698e2cd093bf0d410a7b2f52da0dc7f9b42a37a7f3571c93f337f081e8",
+      "frames": 31,
+      "fps": 31,
+      "duration": 0.967741935483871,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterExcursion": [
+          0.20967594146728516,
+          0.1253684616088867,
+          0.03269775390625
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_TurnW90_LB.psa",
+      "sha256": "a4a0754604bb82dc47ce6cbdff1d25a50429d2bde6cf0b5229607370352e17b2",
+      "frames": 31,
+      "fps": 31,
+      "duration": 0.967741935483871,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterExcursion": [
+          0.17816204071044922,
+          0.27700817108154296,
+          0.026212387084960938
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_TurnW135_LB.psa",
+      "sha256": "62649c877445f4336e5a3fa637081a3d812256573201056202f23190d24655a9",
+      "frames": 31,
+      "fps": 31,
+      "duration": 0.967741935483871,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          -0.06325702667236328,
+          0.028303084373474122,
+          -0.011902084350585937
+        ],
+        "splitterExcursion": [
+          0.13446223258972168,
+          0.10218063354492188,
+          0.05759712219238281
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_TurnW180_LB.psa",
+      "sha256": "9748aa8a12d9a21fb16e4e41511acce97deb85ae0f21b7165f2773a2672c3449",
+      "frames": 31,
+      "fps": 31,
+      "duration": 0.967741935483871,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          -0.023328204154968262,
+          0.01666478157043457,
+          0
+        ],
+        "splitterExcursion": [
+          0.14973195075988768,
+          0.07667671203613281,
+          0.06193634033203125
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_CrouchTurnE45_LB.psa",
+      "sha256": "b1d9fa34f56870a153b4ede48e7996a008ecacce8a8d008f7ccea32d1092cd0f",
+      "frames": 31,
+      "fps": 31,
+      "duration": 0.967741935483871,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          -0.002831230163574219,
+          0.0011672401428222657,
+          0
+        ],
+        "splitterExcursion": [
+          0.14138877868652344,
+          0.08385767936706542,
+          0.01673095703125
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_CrouchTurnE90_LB.psa",
+      "sha256": "9b89bdb9c9d92810c0a2a82020f8bd577af36397ea21f0d6e7343cfa28fb1119",
+      "frames": 31,
+      "fps": 31,
+      "duration": 0.967741935483871,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          -0.0039993667602539066,
+          0.003999195098876953,
+          0
+        ],
+        "splitterExcursion": [
+          0.14891704559326172,
+          0.14773576736450195,
+          0.030195083618164063
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_CrouchTurnE135_LB.psa",
+      "sha256": "7366250cb84d4136d816a9e9f9436b4e154d05914ceb0e05237b107895e76751",
+      "frames": 31,
+      "fps": 31,
+      "duration": 0.967741935483871,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          -0.018998003005981444,
+          -0.0194913387298584,
+          0.0019415283203125
+        ],
+        "splitterExcursion": [
+          0.24826066255569457,
+          0.08433080196380616,
+          0.0254815673828125
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_CrouchTurnE180_LB.psa",
+      "sha256": "09e0877c6c6c0ad346ae2090d8c90dad0be1dbc105aa7e7cd9c6a3b91233b0c0",
+      "frames": 31,
+      "fps": 31,
+      "duration": 0.967741935483871,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          -0.0006938362121582031,
+          0.00004788398742675781,
+          0
+        ],
+        "splitterExcursion": [
+          0.13529757499694825,
+          0.06536443710327149,
+          0.025420379638671876
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_CrouchTurnW45_LB.psa",
+      "sha256": "5c47cd1118217546fcb5a2b23c4c3eff90c3dd7531ba3653018560febc205177",
+      "frames": 31,
+      "fps": 31,
+      "duration": 0.967741935483871,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0.002822208404541016,
+          0.0011628532409667968,
+          0
+        ],
+        "splitterExcursion": [
+          0.19256820678710937,
+          0.17002546310424804,
+          0.04494110107421875
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_CrouchTurnW90_LB.psa",
+      "sha256": "0dd52d5f8c4c043986f90033907cbc04f0dd85a2b4fd53fe51bd425d0e4dc038",
+      "frames": 31,
+      "fps": 31,
+      "duration": 0.967741935483871,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0.004011344909667969,
+          0.003988933563232422,
+          0
+        ],
+        "splitterExcursion": [
+          0.243385009765625,
+          0.17854265213012696,
+          0.05841346740722656
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_CrouchTurnW135_LB.psa",
+      "sha256": "f09d900e3d59f096d02b8ce20f7355dc6d42ec4f2670cc39862961b3c92d6994",
+      "frames": 31,
+      "fps": 31,
+      "duration": 0.967741935483871,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0.0013516902923583984,
+          0.00024458885192871096,
+          0
+        ],
+        "splitterExcursion": [
+          0.10250317573547363,
+          0.08346458435058594,
+          0.02353294372558594
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_CrouchTurnW180_LB.psa",
+      "sha256": "c23c1d6f6b5ffc94a67c0bbd63035506e5e10d25ca8648ab9b007f29181753f8",
+      "frames": 31,
+      "fps": 31,
+      "duration": 0.967741935483871,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0.005534744262695313,
+          0.02310688018798828,
+          0
+        ],
+        "splitterExcursion": [
+          0.1425457191467285,
+          0.14018169403076172,
+          0.02353294372558594
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_BasePistol_S0_Rope_IdlePose_LB.psa",
+      "sha256": "7b0f6b00a554143772f65b64ac7f7ea9b68369b22e6deeb242c85e6f07d22b93",
+      "frames": 2,
+      "fps": 59.999996185302734,
+      "duration": 0.016666667726304863,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterExcursion": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_BasePistol_S0_Rope_NavUp_LB.psa",
+      "sha256": "48e469a86aa332fbc18ed585302b50d1e9531fa07e18bf54a8fc8c53376b3f53",
+      "frames": 2,
+      "fps": 59.999996185302734,
+      "duration": 0.016666667726304863,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterExcursion": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_BasePistol_S0_Rope_NavDown_LB.psa",
+      "sha256": "cb96bedfe40dcb36c665447dc0e55d8efb3af9677fe9aef3cf2bb4412ed03046",
+      "frames": 2,
+      "fps": 59.999996185302734,
+      "duration": 0.016666667726304863,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterExcursion": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_BasePistol_S0_Rope_HorizontalAdd_LB.psa",
+      "sha256": "f234822978dea3610c915c00d51b0a124859c0afe94b5fa4f5588f11953c7dfe",
+      "frames": 41,
+      "fps": 30.75,
+      "duration": 1.3008130081300813,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterExcursion": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_BasePistol_S0_Rope_NavForwardAdd_LB.psa",
+      "sha256": "e5e545cc4c2971da0776f2de3e48bf41e28fa12f571f7a3939c123bb8d0ce74e",
+      "frames": 2,
+      "fps": 59.999996185302734,
+      "duration": 0.016666667726304863,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterExcursion": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_BasePistol_S0_Rope_NavBackAdd_LB.psa",
+      "sha256": "345db25067f1b11af40f0461dae847cdaa8a94abb4d424565a8e401ccb10abe1",
+      "frames": 2,
+      "fps": 59.999996185302734,
+      "duration": 0.016666667726304863,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterExcursion": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_StopAdd.psa",
+      "sha256": "b4efca962083178737f8836cad1111fe83ed04d5c5a339058c249fe6c97dbac8",
+      "frames": 21,
+      "fps": 31.5,
+      "duration": 0.6349206349206349,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          -0.10036489486694336,
+          -7.152557373046875e-9,
+          -0.021154632568359377
+        ],
+        "splitterExcursion": [
+          0.12576930046081544,
+          1.9073486328125e-8,
+          0.1359984588623047
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_JumpAdd_UB.psa",
+      "sha256": "0e59a0cdbc5deabc6cbf9987ad5c7cd34382631c987031359cf1c439c3d711b6",
+      "frames": 98,
+      "fps": 30.30927848815918,
+      "duration": 3.2003401215206972,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0.05320638656616211,
+          -4.76837158203125e-9,
+          0.22373884201049804
+        ],
+        "splitterExcursion": [
+          0.09085165977478027,
+          2.86102294921875e-8,
+          0.2814244079589844
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_Crouch_JumpAdd_UB.psa",
+      "sha256": "a7e98c2396ef25c1b86731415e8d55cfa89ace8730b7ff30cf815a3ea7d4648a",
+      "frames": 98,
+      "fps": 30.30927848815918,
+      "duration": 3.2003401215206972,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0.002174549102783203,
+          -0.004420700073242187,
+          0.24876968383789064
+        ],
+        "splitterExcursion": [
+          0.002174549102783203,
+          0.004420700073242187,
+          0.2487981414794922
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_JumpLandAdd_UB.psa",
+      "sha256": "e4bb07c20b06df6dfcd69e80109fae019f1ed24cf503a39e2935fe77518fedfa",
+      "frames": 21,
+      "fps": 31.5,
+      "duration": 0.6349206349206349,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          -0.07048201203346252,
+          -4.7682260628789666e-9,
+          0.03262975692749023
+        ],
+        "splitterExcursion": [
+          0.08708461761474609,
+          9.5367431640625e-9,
+          0.1709320068359375
+        ]
+      }
+    },
+    {
+      "file": "Animations/Agent Animations/Shared/Simple/TP_Core_Crouch_JumpLandAdd.psa",
+      "sha256": "0138b6707ef4325f493659560201842b727d3d019d1e1351595ef7b441cf03d1",
+      "frames": 21,
+      "fps": 31.5,
+      "duration": 0.6349206349206349,
+      "motionEvidence": {
+        "coordinateFrame": "PSA native source coordinates; metres; Z is up",
+        "rootNet": [
+          0,
+          0,
+          0
+        ],
+        "splitterNet": [
+          0.006370000839233399,
+          0.04185746192932129,
+          0.04808151245117188
+        ],
+        "splitterExcursion": [
+          0.020132198333740234,
+          0.04185746192932129,
+          0.17673667907714843
+        ]
+      }
+    }
+  ],
+  "mechanics": {
+    "changed": [],
+    "evidence": "All directional ground gait roots are in place. Source curves establish cadence, posture and directional contact travel, not authoritative movement speed, acceleration, friction, stopping distance, gravity or rope speed. Existing motor values are preserved."
+  },
+  "limitations": [
+    "No rendered browser comparison completed.",
+    "Contact phases and contact speeds are estimates from retargeted foot trajectories, not authored source events.",
+    "Animation-specific start, crouch-entry/exit and rope boundary timings are extrapolated blends.",
+    "Exact parity with Riot gameplay is unproven."
+  ]
+}

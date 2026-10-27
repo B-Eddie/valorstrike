@@ -52,6 +52,13 @@ block+='\n'+(root/'work/enemy_info_runtime.js').read_text().rstrip('\n')
 ra2='// ---- GAME RULES ----';rb2='// ---- END GAME RULES ----'
 if ra2 in s:s=s[:s.index(ra2)]+s[s.index(rb2)+len(rb2):]
 block+='\n'+(root/'work/game_rules_runtime.js').read_text().rstrip('\n')
+# Rocklan movement (work/rocklan_movement_runtime.js; Eddie's movement-only pass). Before the rope ascenders so the rope climb pose stays the last xUbPost wrapper
+# (and later layers such as a spike kneel override it). Movement is an isolated overlay; the base mixed/weapon/ability animation data is never rebuilt.
+ma='// ---- ROCKLAN MOVEMENT ----';mb='// ---- END ROCKLAN MOVEMENT ----'
+if ma in s:s=s[:s.index(ma)]+s[s.index(mb)+len(mb):]
+import hashlib,json
+movement_assets={name:{'bytes':(root/'models/valorant/movement'/name).stat().st_size,'sha256':hashlib.sha256((root/'models/valorant/movement'/name).read_bytes()).hexdigest()} for name in ['movement.json','movement.bin']}
+block+='\n'+(root/'work/rocklan_movement_runtime.js').read_text().rstrip('\n').replace('/*MOVEMENT_ASSETS*/null',json.dumps(movement_assets,separators=(',',':')))
 # Rope ascenders (Split; work/rope_runtime.js), last: nmRopes for nmEnsure, rope bots (nmNext / nmPath / xStep), row [25] (mpCliSnap / mpEnts), and the climb pose as the last xUbPost wrapper.
 oa='// ---- ROPE ASCENDERS ----';ob='// ---- END ROPE ASCENDERS ----'
 if oa in s:s=s[:s.index(oa)]+s[s.index(ob)+len(ob):]
