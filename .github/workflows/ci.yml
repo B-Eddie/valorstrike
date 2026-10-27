@@ -1,0 +1,108 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# One run per ref: a newer push to the same branch / PR cancels the run still in progress.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '22' # server/package-lock.json: wrangler / miniflare declare engines node >=22
+
+jobs:
+  checks:
+    name: checks (regen, whitespace, motor==vendor)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      # Only the sources the checks read; the 2 GB models/ tree is not needed here.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+          sparse-checkout: |
+            work
+            vendor
+            audio
+            server/src
+      - name: index.html is the regen output (work/install_valorant.py)
+        run: |
+          python3 work/install_valorant.py
+          git diff --exit-code index.html
+      - name: no whitespace errors against the parent commit
+        run: git diff --check HEAD^ HEAD
+      - name: server motor == vendored client copy
+        run: cmp server/src/motor.cjs vendor/valorant-feel.js
+
+  server:
+    name: server (npm test)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+      - run: npm ci --no-audit --no-fund
+        working-directory: server
+      # server/public (gitignored) is built by `npm run build:worlds` from models/valorant/maps; only public/worlds is read by tests.
+      - name: cache built worlds
+        id: worlds
+        uses: actions/cache@v4
+        with:
+          path: server/public
+          key: worlds-${{ hashFiles('server/build-all.cjs', 'server/build-world.cjs', 'server/package-lock.json', 'models/valorant/maps/*/collision.bin', 'models/valorant/maps/*/collision-patch.bin', 'models/valorant/maps/*/navigation.json', 'models/valorant/maps/*/map.json', 'models/valorant/maps/*/plants.json') }}
+      - name: build worlds
+        if: steps.worlds.outputs.cache-hit != 'true'
+        run: npm run build:worlds
+        working-directory: server
+      - run: npm test
+        working-directory: server
+
+  client:
+    name: client (shard ${{ matrix.shard }}/4)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+      # Client tests load three / three-mesh-bvh / ws from server/node_modules.
+      - run: npm ci --no-audit --no-fund
+        working-directory: server
+      - name: cache built worlds
+        id: worlds
+        uses: actions/cache@v4
+        with:
+          path: server/public
+          key: worlds-${{ hashFiles('server/build-all.cjs', 'server/build-world.cjs', 'server/package-lock.json', 'models/valorant/maps/*/collision.bin', 'models/valorant/maps/*/collision-patch.bin', 'models/valorant/maps/*/navigation.json', 'models/valorant/maps/*/map.json', 'models/valorant/maps/*/plants.json') }}
+      - name: build worlds
+        if: steps.worlds.outputs.cache-hit != 'true'
+        run: npm run build:worlds
+        working-directory: server
+      - name: client regressions (work/test_all.cjs, shard ${{ matrix.shard }} of 4)
+        env:
+          SHARD_TOTAL: '4'
+          SHARD_INDEX: ${{ matrix.shard }}
+          QA_PERF_RETRY: '1' # test_round_start_perf / test_frame_perf only: one rerun after a wall-clock failure
+        run: |
+          QA_LIST=1 node work/test_all.cjs
+          npm run test:client
+        working-directory: server
