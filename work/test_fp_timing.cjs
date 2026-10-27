@@ -11,7 +11,7 @@ const line=(src,start)=>{const i=src.indexOf(start);assert(i>=0,'missing '+start
 (async()=>{
  const {weapons}=await import(path.join(root,'server/src/simulation.js'));
  // The server's cadence formula this test mirrors.
- assert(sim.includes('rk=(concussed?.8:1)*stimK(u)')&&sim.includes('u.fireAt=this.time+(gap!=null?gap/rk:1/((aiming&&p.adsStats?p.adsStats.fireRate:p.fireRate)*rk))')&&/STIM=1\.1;/.test(sim),'server cadence formula changed');/* qa-36: + the motor CADENCE gap (ADS bursts, Odin spin-up) - pinned by work/test_weapon_cadence_page.cjs + server test-weapon-cadence.js; here xCadRate passes the base rate through */
+ assert(sim.includes('rk=(concussed?.8:1)*stimK(u)')&&sim.includes('u.fireAt=t0+(gap!=null?gap/rk:1/((aiming&&p.adsStats?p.adsStats.fireRate:p.fireRate)*rk))')&&sim.includes('t0=u.fireAt>0&&this.time-u.fireAt<(this.tickDt||0)-1e-9?u.fireAt:this.time')&&/STIM=1\.1;/.test(sim),'server cadence formula changed');/* qa-36: + the motor CADENCE gap (ADS bursts, Odin spin-up) - pinned by work/test_weapon_cadence_page.cjs + server test-weapon-cadence.js; here xCadRate passes the base rate through */
  const win={};vm.runInNewContext(fs.readFileSync(path.join(root,'models/valorant/weapon-calibration.js'),'utf8'),{window:win});
  const now={t:1000};const C={window:win,WEAP:{},VRUN:{},FSA:{},XZ:{},Math,performance:{now:()=>now.t},ads:0,xCU:0,J:{emp:0},jOn:()=>true,NET:{socket:null},netReyna:null,VM:{sw:0},ammo:30,rw:'pri',fcd:0,AM:{},aimFire(){},w:'Vandal'};
  for(const n of Object.keys(weapons).concat('Knife'))C.WEAP[n]={mag:1,rate:1};

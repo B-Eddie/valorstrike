@@ -62,6 +62,8 @@ Math.random=mulberry(SEED*104729+1);require('vm').runInContext(`Math.random=(${m
   await until(()=>xe('MP.st')==='game'&&xe('NET.ready'),20000,mode+' match start');
   let deaths=0,lastHp=100,swaps=0,forcedDeath=0;const sample=()=>{const hp=xe('player.hp');if(lastHp>0&&hp<=0)deaths++;lastHp=hp;};pilotCode=code;if(mode==='five'&&!LONG)cluster.room(code).sim.buy=1.5;// fast: skip most of the first buy phase
   const pk=()=>{const u=cluster.room(code)?.sim?.units.find(u=>u.name===xe('MP.name'));return u?u.kills:0;};
+  // the pilot's shots that landed on the server (online hit registration), counted at the server's applyHit
+  const hits={n:0,foe:0};{const sm=cluster.room(code).sim,h0=sm.applyHit;sm.applyHit=function(u,t){if(u&&u.human&&u.name==='PageQA'){hits.n++;if(t&&t!==u&&(this.mode==='dm'||t.team!==u.team))hits.foe++;}return h0.apply(this,arguments);};}
   // Fight; B leaves and rejoins as another agent (a bot takes and gives back the seat), C drops by socket close.
   for(let t=0;t<T.fight[0];t+=500){await step(500);sample();}
   B.leave();await step(1500);const B2=join(code,'FuzzB','Omen','PageQA');swaps++;
@@ -72,11 +74,20 @@ Math.random=mulberry(SEED*104729+1);require('vm').runInContext(`Math.random=(${m
   if(mode==='five'){const r=cluster.room(code).sim;if(!LONG&&r.round<2&&!(r.roundDelay>0))r.finishRound(0,'QA');await until(()=>r.round>=T.rounds,T.until,'Spike round resets');if(!LONG)r.buy=Math.min(r.buy,1.5);}
   // The piloted page player must have fought: fired, killed or died (deaths sampled from the page's own hp).
   for(let t=0;t<T.until&&!(deaths>=1&&pk()>=1)&&(mode!=='five'||!LONG||t<15000);t+=500){await step(500);sample();const r=cluster.room(code).sim,u=r.units.find(u=>u.name===xe('MP.name'));if(mode==='five'&&!LONG&&u&&!u.alive&&!(r.roundDelay>0)&&r.phase==='game'){r.finishRound(0,'QA');}/* Bot variety (spread site spots, staggered starts) can leave a Vandal-armed pilot unbeaten by pistol bots for the whole fast window on a seed (seed 7: 4/0): after 30 s without a death a living enemy bot finishes it through the server's ability-damage path, so the page's death / round-reset handling still runs. */if(mode==='five'&&!LONG&&t>=30000&&!deaths&&u&&u.alive&&r.phase==='game'&&!(r.roundDelay>0)){const k=r.units.find(v=>v.alive&&!v.human&&v.team!==u.team);if(k){abilityDamage(r,k,u,999);forcedDeath++;}}else if(mode==='five'&&!LONG&&r.buy>1.5)r.buy=1.5;}
-  const kills=pk();assert(stats.fired>0,'pilot fired');if(mode!=='five'||!LONG)assert(deaths>=1&&kills>=1,mode+': page player killed and died ('+kills+'/'+deaths+')');
+  const kills=pk();assert(stats.fired>0,'pilot fired');if(mode!=='five')assert(deaths>=1&&kills>=1,mode+': page player killed and died ('+kills+'/'+deaths+')');
+  /* Spike 5v5 (bots7): the bots take corners like players since 662bf3e (jiggle / wide swing / hold, peeker's advantage), and the
+     scripted pilot (no peeking, walks straight at the nearest enemy) now loses its duels on this seed (0 kills / 4 deaths, deterministic;
+     1 / 1 on 10e1208). What this checks is the online 5v5 flow, not that a scripted player wins duels: the page player fires, its shots
+     land on enemies on the server, it dies and the round resets, and the page's kill / death counts are the server's. */
+  if(mode==='five'&&!LONG){const sm=cluster.room(code).sim,u=sm.units.find(u=>u.name==='PageQA'),lk=xe('NET.latest&&NET.latest.k?NET.latest.k.PageQA:null'),ld=xe('NET.latest&&NET.latest.d?NET.latest.d.PageQA:null');
+   assert(hits.foe>=1,'five: none of the page player\'s shots hit an enemy on the server ('+hits.n+' hits, '+stats.fired+' fire inputs)');
+   assert(deaths>=1,'five: page player never died ('+kills+'/'+deaths+')');
+   assert(u&&u.deaths===deaths,'five: page saw '+deaths+' deaths, server counts '+(u&&u.deaths));
+   assert(lk===u.kills&&ld===u.deaths,'five: page snapshot K/D '+lk+'/'+ld+' vs server '+u.kills+'/'+u.deaths);}
   // Match end (DM/TDM by clock, Spike by forcing the score), then the result screen and leaving.
   const room=cluster.room(code);if(mode==='five'){room.sim.roundScores=[12,10];room.sim.roundDelay=0;room.sim.finishRound(0,'QA');}else room.sim.remaining=1;
   await until(()=>xe('MP.st')==='post',30000,mode+' match end');await step(1000);
-  report[mode]={deaths,kills,swaps,forcedDeath,units,round:room.sim.round,ms:Date.now()-tm,virt:cluster.clock.now()-v0};pilotCode=null;idle();
+  report[mode]={deaths,kills,hits:hits.foe,swaps,forcedDeath,units,round:room.sim.round,ms:Date.now()-tm,virt:cluster.clock.now()-v0};pilotCode=null;idle();
   for(const h of humans.splice(0))try{h.leave();}catch(e){}
   xe('mpReset()');await step(500);xe('try{toLobby()}catch(e){}');await step(200);}
  // The real page recovers transient closes and half-open links in place. Delay both directions, then blackhole one
@@ -121,6 +132,6 @@ Math.random=mulberry(SEED*104729+1);require('vm').runInContext(`Math.random=(${m
  const errors=H.errors.slice(errs0),xerr=H.xErrCalls.slice(x0);
  if(errors.length||xerr.length){console.error(JSON.stringify({errors:errors.slice(0,8),xerr:xerr.slice(0,8)},null,1));process.exit(1);}
  if(VERBOSE)console.log(JSON.stringify(report));
- console.log(`Online client soak (page <-> in-process server): ${LONG?'long':'fast'} TDM/DM/Spike, piloted page player kills/deaths ${Object.values(report).map(r=>r.kills+'/'+r.deaths+(r.forcedDeath?' (death forced after 30 s)':'')).join(', ')}, respawns, kills, leave/rejoin agent swaps, Spike rounds (${report.five.round}), match end; same-seat reconnect, 160 ms RTT, bounded blackhole recovery, retry cancellation and terminal closes; slow load kept while progressing then closed with a clear message; no page exceptions`);
+ console.log(`Online client soak (page <-> in-process server): ${LONG?'long':'fast'} TDM/DM/Spike, piloted page player kills/deaths ${Object.values(report).map(r=>r.kills+'/'+r.deaths+' ('+r.hits+' hits)'+(r.forcedDeath?' (death forced after 30 s)':'')).join(', ')}, respawns, kills, leave/rejoin agent swaps, Spike rounds (${report.five.round}), match end; same-seat reconnect, 160 ms RTT, bounded blackhole recovery, retry cancellation and terminal closes; slow load kept while progressing then closed with a clear message; no page exceptions`);
  process.exit(0);
 })().catch(e=>{console.error(e);console.error(JSON.stringify(H.errors.slice(0,8)));process.exit(1);});

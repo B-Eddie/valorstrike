@@ -67,6 +67,12 @@ const close=(a,b,e,m)=>assert.ok(Math.abs(a-b)<=e,`${m}: ${a} vs ${b}`);
  assert.equal(xe('XABT.inst&&XABT.inst.t>0'),true,'Cloudburst: the gun is being put away');const a0=xe('ammo');xe('fcd=0;shoot();true');assert.equal(xe('ammo'),a0,'no fire 20 ms after the press');
  await adv(300);assert.equal(xe('XABT.inst'),null,'unequip over after 0.25 s');assert(xe('VM.sw')>0.2,'the Classic re-equips (VM.sw '+xe('VM.sw')+')');xe('fcd=0;shoot();true');assert.equal(xe('ammo'),a0,'no fire during the re-equip');
  await adv(450);xe('fcd=0;shoot();true');assert.equal(xe('ammo'),a0-1,'fires again after 0.25 + 0.45 s (= server recoverTime Jett c Classic 0.7)');
+ // held auto fire at the gun's real rate (bots7: the page frame loop dropped the part of the frame a round was already due, so every
+ // interval rounded up to whole frames: a held Vandal fired 8.57/s at 60 fps, 6.67/s on 20 Hz steps; the server's fire() carries it, fe07e11)
+ {const r=[];for(const w of ['Vandal','Phantom','Spectre','Ares','Stinger','Bulldog']){xe(`FV.pri="${w}";rw="pri";ammo=999;fcd=0;VM.sw=0;reloading=0;ads=0;pitch=0.6;for(const k in XCAD)delete XCAD[k];true`);await adv(100);
+   xe('ammo=999;reloading=0;fireHeld=true;true');const a0=xe('ammo');await adv(3000);const gaps=a0-xe('ammo')-1,want=cal[w].fireRate*3;xe('fireHeld=false;pitch=0;true');await adv(600);r.push(w+' '+gaps+'/'+want.toFixed(2));
+   assert(gaps<=want+1e-9&&gaps>=want-1,`held ${w} at 60 fps: ${gaps} gaps in 3 s, want ${want.toFixed(2)} (${cal[w].fireRate}/s; never faster, at most one round short)`);}
+  if(process.env.VERBOSE)console.log('held rates',r.join(', '));}
  const {recoverTime}=await import(path.join(root,'server/src/windups.js'));assert.equal(recoverTime('Jett','c','Classic'),.7);
  assert.equal(xe('JSON.stringify([XAB_UNEQ.Jett,XAB_UNEQ.Reyna])'),JSON.stringify([{c:.25,e:.2},{c:.5,q:.5,e:.6}]),'page unequip table = server');
  if(H.errors.length>e0)throw new Error('page errors: '+H.errors.slice(e0,e0+3).map(e=>typeof e==='string'?e:JSON.stringify(e)||String(e)).join(' | '));

@@ -4600,9 +4600,9 @@ function tick(dt) {
   const planting = mode === "five" && alive && xFvOK && FV.sp && FV.sp.st === "carry" && FV.sp.c === player && !!(keys.Digit4 || keys.Numpad4) && !!inSite(player);
   if (alive) moveP(dt, 6.75 * (J.dis > 0 ? 1.6 : 1), defusing || planting); // knife speed; the weapon wrapper below scales it
   if (kSwing > 0) kSwing -= dt;
-  if (fcd > 0) fcd -= dt;
+  let fDue = -1; if (fcd > 0) { fcd -= dt; if (fcd <= 0) fDue = -fcd; } // fDue: how long ago this frame the next round came due (the trigger held through it)
   since += dt; if (since > (sprW === "Phantom" ? 0.27 : 0.3)) spray = Math.max(0, spray - dt * 40);
-  if (alive && (fireHeld || xCadOwed()) && rw !== "knife" && !WEAP[wName()].semi && fcd <= 0 && ammo > 0) shoot(); // xCadOwed: an ADS burst finishes once started
+  if (alive && (fireHeld || xCadOwed()) && rw !== "knife" && !WEAP[wName()].semi && fcd <= 0 && ammo > 0) { const f0 = fcd; shoot(); if (fDue > 0 && fDue < dt && fcd > f0) fcd -= fDue; } // xCadOwed: an ADS burst finishes once started. The cadence carries the part of this frame the round was already due, as the server's fire() (fe07e11): dropping it rounded every interval up to whole frames (Vandal 9.75/s held fired 6.67/s at the 20 Hz harness step, 8.57/s at 60 fps); only when it came due within this frame, so never faster than the gun's rate
   if (reloading > 0) { reloading -= dt; if (reloading <= 0) { reloading = 0; /* not left a hair below 0: online treats it as still reloading (ammo sync off, the next auto-reload never sent) */ const one = XRLP[wName()], n = Math.min(one ? Math.min(1, MAG() - ammo) : MAG() - ammo, rsv); ammo += n; rsv -= n; if (one && ammo < MAG() && rsv > 0) reloading = xRT(); /* next round: xRT (Empress stim /1.1 via the feel wrapper) */ } updHud(); }
   const near = ret && alive && Math.hypot(player.x - spike.position.x, player.z - spike.position.z) < 2.5; // distance to the spike, not the map origin (native maps plant it at site B)
   if (near && defusing) { defG = 0; const d0 = defuseT; defuseT += dt; if (d0 < 3.5 && defuseT >= 3.5) SFX.defHalf(); } else if (!xDefRel(near) || (defG += dt) >= DEF_CANCEL) { defG = DEF_CANCEL; defuseT = defuseT >= 3.5 ? 3.5 : 0; } // half defuse is kept; a key let-go under 0.2 s holds, stepping off / moving / firing does not
