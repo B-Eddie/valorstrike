@@ -1,6 +1,6 @@
 // Hit-path perf regressions ("when I shoot / take damage it starts to lag"):
 //  (a) native-map shader warmup also compiles the pooled hit effects that stay hidden until first use (tracers, hit
-//      impacts), then hides them again; hidden collision meshes inside the map group are never flipped
+//      impacts, the first-person muzzle flash), then hides them again; hidden collision meshes inside the map group are never flipped
 //  (b) the hit-impact pool goes idle: once every burst has expired a tick does no per-slot matrix work
 //  (c) shots allocate no vectors: bFx reuses its muzzle/end scratch, xSurfHit's synthesized hit and slab test are
 //      allocation-free (one owner object per parent group, so decals still follow their map), bfxBot reuses its ray
@@ -13,11 +13,16 @@ const fnSrc=(src,name)=>{const a=src.indexOf('function '+name+'(');assert(a>=0,n
 // (a) native warmup
 {const line=nat.split('\n').find(l=>l.startsWith('{const precompile=xPrecompile;xPrecompile=function(){if(!nmActive())'));assert(line,'native precompile wrapper');
  const tracer={isLine:true,visible:false},impact={isMesh:true,visible:false},group={isGroup:true,visible:false,children:[{isMesh:true,visible:false}]},shown={isMesh:true,visible:true};
- const seen=[];const c={xPrecompile(){},nmActive:()=>true,xPC:false,BFX:{ok:true},bfxInit(){},xHitInit(){c.inited=1;},console,
-  scene:{children:[tracer,impact,group,shown]},camera:{},renderer:{compile(){seen.push([tracer.visible,impact.visible,group.visible,group.children[0].visible]);}}};
+ // the first-person muzzle flash (a hidden Sprite under the gun under the camera): its program was first built by the first
+ // shot of the match (work/bench_shoot_enemy.cjs first-hit render model: 1 new program + 1 texture upload on shot one)
+ const scene={children:[tracer,impact,group,shown]},cam={visible:true,parent:scene},gun={visible:false,parent:cam},muzzle={isSprite:true,visible:false,parent:gun};
+ const seen=[];const c={xPrecompile(){},nmActive:()=>true,xPC:false,BFX:{ok:true},bfxInit(){},xHitInit(){c.inited=1;},console,muzzle,
+  scene,camera:cam,renderer:{compile(){seen.push([tracer.visible,impact.visible,group.visible,group.children[0].visible,muzzle.visible,gun.visible]);}}};
  vm.createContext(c);vm.runInContext(line,c);c.xPrecompile();
- assert.deepEqual(seen,[[true,true,false,false]],'hidden effect leaves visible during compile; map groups and their hidden meshes untouched');
- assert.equal(tracer.visible,false);assert.equal(impact.visible,false);assert.equal(c.inited,1,'hit impacts created before the warmup');assert.equal(c.xPC,true);}
+ assert.deepEqual(seen,[[true,true,false,false,true,true]],'hidden effect leaves and the muzzle flash (with its hidden gun) visible during compile; map groups and their hidden meshes untouched');
+ assert.equal(tracer.visible,false);assert.equal(impact.visible,false);assert.equal(muzzle.visible,false);assert.equal(gun.visible,false);assert.equal(c.inited,1,'hit impacts created before the warmup');assert.equal(c.xPC,true);
+ // its texture is uploaded with the other lazily used ones (xWarmLazy, both warmup paths)
+ assert.match(fnSrc(s,'xWarmLazy'),/initTexture\(muzzle\.material\.map\)/,'muzzle flash texture uploaded at warmup');}
 // (b) idle hit-impact pool
 {const Impact=require('../vendor/hit-impact.js')(T),scene=new T.Scene(),cam=new T.PerspectiveCamera();cam.updateMatrixWorld(true);
  const fx=new Impact(scene,8);let writes=0;const sm=fx.shards.setMatrixAt.bind(fx.shards);fx.shards.setMatrixAt=(i,m)=>{writes++;sm(i,m);};
