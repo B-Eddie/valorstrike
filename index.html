@@ -15062,7 +15062,7 @@ setInterval(()=>{try{for(const m of NM_ORBS.values())m.rotation.y+=.1;if(!MP.on|
 
 // ---- SKIRMISH 1v1 (online only; server/src/modes.js SkirmishSimulation) ----
 // Two players, one per team, no bots, elimination rounds without the Spike, first to 5. The page plays its Deathmatch path (free
-// loadout, every other unit an enemy) with the server's rounds: the snapshot's skm row {r, sc, win, ph buy|live|end|wait|over, t,
+// loadout, every other unit an enemy) with the server's rounds: the snapshot's skm row {r, sc, win, ph buy|live|end|wait|over, t, ld,
 // lw, why} drives the HUD line (round score, round, phase), the round banners, the buy-phase hold (no walking / firing, as the
 // server), the loadout menu (buy phase only) and the result screen. A server whose /health lacks 'skm' (the deployed worker until
 // the owner deploys it) keeps the button disabled and the Online panel says why.
@@ -15076,9 +15076,13 @@ const nmSkmBuy=()=>nmSkmOn()&&!!MP.skm&&MP.skm.ph==='buy';/* no walking */
 const NM_SKM_WALK=['KeyW','KeyA','KeyS','KeyD'];
 function nmSkmScore(K){const me=MP.team===1?1:0,sc=Array.isArray(K&&K.sc)?K.sc:[0,0];return [sc[me]|0,sc[1-me]|0];}
 function nmSkmHud(K){if(!K||!Array.isArray(K.sc))return;const prev=MP.skm;MP.skm=K;if(prev&&prev.ph==='buy'&&K.ph!=='buy'&&typeof DM!=='undefined'&&DM.menu)try{dmMenu(false);}catch(e){}const [mine,theirs]=nmSkmScore(K),el=nmHudEl(),ph=String(K.ph||'');
- const tail=ph==='buy'?' · BUY '+Math.ceil(+K.t||0)+'s':ph==='wait'?' · WAITING FOR OPPONENT '+Math.ceil(+K.t||0)+'s':ph==='end'?' · ROUND OVER':'';
+ /* round-1 load wait (skm.ld = the server's wait left, max 20 s): 'Waiting for opponent' with the seconds, not a buy timer that does not move */
+ const ld=ph==='buy'&&+K.ld>0?Math.ceil(+K.ld):0,pld=prev&&prev.ph==='buy'&&+prev.ld>0?Math.ceil(+prev.ld):0;
+ const tail=ld?' · WAITING FOR OPPONENT… '+ld+'s':ph==='buy'?' · BUY '+Math.ceil(+K.t||0)+'s':ph==='wait'?' · WAITING FOR OPPONENT '+Math.ceil(+K.t||0)+'s':ph==='end'?' · ROUND OVER':'';
  const t='SKIRMISH 1V1 · YOU '+mine+' – '+theirs+' ENEMY · FIRST TO '+(K.win|0)+' · ROUND '+(K.r|0)+tail;if(el.textContent!==t)el.textContent=t;el.style.display='block';
- if(!prev||prev.ph!==ph||prev.r!==K.r)try{const me=MP.team===1?1:0;
+ if(ld){if(ld!==pld||!prev||prev.r!==K.r)try{say('Waiting for opponent to load… '+ld+'s',1500);}catch(e){}}
+ else if(pld&&ph==='buy'&&prev.r===K.r)try{say('Round '+(K.r|0)+' · buy phase · B for loadout',1500);}catch(e){}
+ else if(!prev||prev.ph!==ph||prev.r!==K.r)try{const me=MP.team===1?1:0;
   if(ph==='end')say(K.lw===me?'Round won · '+mine+' – '+theirs:K.lw===1-me?'Round lost · '+mine+' – '+theirs:'Round draw · '+mine+' – '+theirs,1800);
   else if(ph==='buy')say('Round '+(K.r|0)+' · buy phase · B for loadout',1500);
   else if(ph==='live')say('Fight · first to '+(K.win|0),900);

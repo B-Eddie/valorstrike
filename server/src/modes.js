@@ -143,11 +143,11 @@ export class VariantSpikeSimulation extends SpikeSimulation{
 // the buy phase (looking around and jumping stay free, as the page's plant / defuse hold); 3 s between rounds; no side swap. Unlimited rounds as VALORANT, with a 20 minute match cap (more round wins, else
 // a draw). A seat left empty (the player left; a dropped connection keeps the unit for the resume window) pauses the match
 // ('wait'): the player rejoining restarts the round (score kept); after 60 s the one still there wins by forfeit.
-export const SKM=Object.freeze({win:5,buyFirst:15,buy:3,end:3,armor:50,cap:1200,forfeit:60,loadHold:90,kit:Object.freeze({pri:'Vandal',sec:'Classic'})});
+export const SKM=Object.freeze({win:5,buyFirst:15,buy:3,end:3,armor:50,cap:1200,forfeit:60,loadHold:20,kit:Object.freeze({pri:'Vandal',sec:'Classic'})});
 const SKM_SIDE=Object.freeze(['Classic','Shorty','Frenzy','Ghost','Sheriff']);
 export class SkirmishSimulation extends Simulation{
  constructor(world,mode='skm',map='ascent',random=Math.random){super(world,'skm',map,random);this.gm='skm';this.maxHumans=2;this.minHumans=2;this.noBots=true;this.matchLen=SKM.cap;this.remaining=SKM.cap;this.maxKills=Infinity;this.roundWin=SKM.win;this.skm=this.skmFresh();}
- skmFresh(){return {r:0,sc:[0,0],ph:'room',t:0,lw:-1,why:'',at:0,waitAt:0};}
+ skmFresh(){return {r:0,sc:[0,0],ph:'room',t:0,lw:-1,why:'',at:0,waitAt:0,ld:0};}
  // One human per team: the free team (a returning player gets their side back when it is free); no bots, no third player.
  add(name,agent='Jett',human=true,want=null){if(!human)throw Error('no bots in Skirmish');if(this.units.filter(u=>u.human).length>=this.maxHumans)throw Error('full');
   const free=[0,1].filter(t=>!this.units.some(u=>u.team===t)),team=free.includes(want)?want:free[0];const u=super.add(name,agent,true,team);u.kit=u.kit||{...SKM.kit};return u;}
@@ -170,14 +170,14 @@ export class SkirmishSimulation extends Simulation{
  step(dt){if(this.phase!=='game')return super.step(dt);const S=this.skm,d=Math.min(.05,Math.max(0,dt));
   const empty=[0,1].filter(t=>!this.units.some(u=>u.team===t));
   if(empty.length&&S.ph!=='wait'){S.ph='wait';S.waitAt=this.time;S.t=SKM.forfeit;}else if(!empty.length&&S.ph==='wait')this.newRound();
-  if(S.ph==='buy'){const hold=this.units.some(u=>u.loading)&&this.time-S.at<SKM.loadHold;if(!hold)S.t-=d;for(const u of this.units)if(u.input)u.input={...u.input,forward:0,side:0,fire:false};if(S.t<=0){S.ph='live';S.t=0;}}
+  if(S.ph==='buy'){/* a player still loading holds the buy clock for at most SKM.loadHold s from the round's start, then it runs regardless (S.ld = the wait left, sent as skm.ld: the page shows 'Waiting for opponent' instead of the buy timer) */const w=this.units.some(u=>u.loading)?SKM.loadHold-(this.time-S.at):0;S.ld=w>0?w:0;if(!(S.ld>0))S.t-=d;for(const u of this.units)if(u.input)u.input={...u.input,forward:0,side:0,fire:false};if(S.t<=0){S.ph='live';S.t=0;}}
   super.step(dt);for(const u of this.units)if(!u.alive)u.respawnAt=Infinity;
   if(this.phase==='game'){
    if(S.ph==='wait'){S.t=Math.max(0,SKM.forfeit-(this.time-S.waitAt));if(S.t<=0){const t=[0,1].find(t=>!empty.includes(t));if(t!==undefined){S.sc[t]=Math.max(S.sc[t],SKM.win);S.lw=t;}S.why='forfeit';S.ph='over';this.phase='post';}}
    else if(S.ph==='live'){const a0=this.alive(0),a1=this.alive(1);if(!a0||!a1)this.endRound(a0?0:a1?1:-1);}
    else if(S.ph==='end'){S.t-=d;if(S.t<=0)this.newRound();}}
   this.scores=[...S.sc];}
- snapshot(){const s=super.snapshot(),S=this.skm;s.skm={r:S.r,sc:[...S.sc],win:SKM.win,ph:S.ph,t:Math.max(0,Math.round(S.t*10)/10),lw:S.lw,why:S.why};return s;}
+ snapshot(){const s=super.snapshot(),S=this.skm;s.skm={r:S.r,sc:[...S.sc],win:SKM.win,ph:S.ph,t:Math.max(0,Math.round(S.t*10)/10),lw:S.lw,why:S.why};if(S.ph==='buy'&&S.ld>0)s.skm.ld=Math.max(.1,Math.round(S.ld*10)/10);return s;}
 }
 
 // Room factory: the simulation class for a mode id. `five` = Unrated (as before), dm / tdm = Simulation.

@@ -51,6 +51,18 @@ const toLive=s=>{for(let i=0;i<2000&&s.skm.ph!=='live';i++)s.step(.05);assert.eq
  assert.throws(()=>s.add('Charlie','Omen',true,0),/full/);
  s.units=s.units.filter(u=>u!==b2);s.step(.05);assert.equal(s.skm.ph,'wait');run(s,59);assert.equal(s.phase,'game');run(s,1.2);assert.equal(s.phase,'post','60 s alone: forfeit');assert.deepEqual(s.scores,[5,0]);assert.equal(s.skm.why,'forfeit');
  note('sim: empty seat -> wait (no fire), rejoin on own side restarts the round with the score kept, third player refused, 60 s alone = forfeit win');}
+// Round-1 load wait (user, live: whoever loads first was frozen ~105 s - the buy clock held up to 90 s for a loading opponent while
+// the HUD read 'BUY 15s'): the hold is capped at SKM.loadHold = 20 s, then the buy phase runs regardless; the snapshot's skm.ld is
+// the wait left (s) while it holds (the page shows 'Waiting for opponent' with it instead of the buy timer), absent otherwise.
+{seed=9;const s=new SkirmishSimulation(W,'skm','ascent',rnd),a=s.add('Alpha'),b=s.add('Bravo');b.loading=true;s.start();
+ assert.equal(SKM.loadHold,20,'load wait capped at 20 s');
+ run(s,10);assert.equal(s.skm.ph,'buy');assert.equal(s.skm.t,15,'buy clock held while the opponent loads');let K=s.snapshot().skm;assert(K.ld>9.5&&K.ld<=10.05,'snapshot ld = wait left ('+K.ld+')');
+ run(s,9.9);K=s.snapshot().skm;assert(K.ld>0&&K.ld<=.2,'still waiting at 19.9 s ('+K.ld+')');assert.equal(s.skm.t,15);
+ run(s,.3);K=s.snapshot().skm;assert.equal(K.ld,undefined,'no wait after 20 s');assert(s.skm.t<15,'buy clock runs after 20 s even with the opponent still loading');
+ run(s,15.1);assert.equal(s.skm.ph,'live','round 1 live at ~35 s, opponent still loading');assert.equal(s.snapshot().skm.ld,undefined);
+ // the opponent loading in early ends the wait at once
+ seed=10;const s2=new SkirmishSimulation(W,'skm','ascent',rnd),c=s2.add('Alpha'),e=s2.add('Bravo');e.loading=true;s2.start();run(s2,4);assert(s2.snapshot().skm.ld>15);e.loading=false;run(s2,.1);assert.equal(s2.snapshot().skm.ld,undefined);assert(s2.skm.t<15);run(s2,15);assert.equal(s2.skm.ph,'live');
+ note('sim: round-1 load wait capped at 20 s (snapshot skm.ld = wait left), then the buy phase runs; an early load ends the wait');}
 // ---- 2. worker: two simulated clients, a full match to 5 ----
 {const P=await localCluster({env:{ALLOW_LOCAL_ORIGIN:'true'}});const h=await (await P.fetch('/health')).json();assert(h.modes.includes('skm'),'skm offered without ENABLE_SPIKE');assert(!h.modes.includes('five'));
  const C=P,until=async(c,ms,w)=>{const end=C.clock.now()+ms;while(!c()){if(C.clock.now()>end)throw Error('timed out: '+w);await C.advance(50);}};
