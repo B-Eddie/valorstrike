@@ -20749,6 +20749,9 @@ if(typeof xvaKit==='function') { const original=xvaKit; xvaKit=function(gl,L,slu
     const clip=movement.clips[aliases[name]];if(!clip)throw Error('movement alias missing '+aliases[name]);
     kit.L[name]=clip;
   }
+  // crouchSpine is the IdlePose_UB -> CrouchPose_UB spine difference; its Spine2-4 part pitches the arms (which ride on Spine4) 18 deg
+  // further down, because the pack's arm curves that keep the gun level in that pose are not copied. Keep the hip-level Spine1 lean.
+  const cs=movement.clips.crouchSpine;if(cs)cs.tracks=cs.tracks.filter(t=>t.name==='Spine1.quaternion');
   kit.movement=movement;return kit;
 }; }
 if(typeof xvAgent==='function') { const original=xvAgent; xvAgent=function(M,kit){
