@@ -42,12 +42,17 @@ xUbPost=function(M){
  for(const L of X.ncLegs){xgIK(L,L.target,L.pole,X.ncIK);xgSetWorldQ(L.hand,L.fq);}
  M.m.updateMatrixWorld(true);
 };}
+// perf (shooting-at-enemies lag): runs twice a frame per rig (after the xVisB move, after the xSolTick pose). Head / Pelvis are
+// cached per rig and only their own ancestor chains are brought up to date (was a skeleton search by name and two whole-rig
+// updateMatrixWorld(true) passes, ~600 local-matrix composes per call); the volumes land on the same floats.
+const XR_HB=[new THREE.Vector3(),new THREE.Vector3()];
 function xrHitboxes(b,M){
  if(b&&b.nt)return;
  if(!b||!b.body||!b.head||!M||!M.sx||M.dead)return;
- const sc=M.sx.sc,head=sc.getObjectByName('Head'),pelvis=sc.getObjectByName(M.valorant?'Pelvis':'pelvis');
- if(!head||!pelvis)return;M.m.updateMatrixWorld(true);b.g.updateMatrixWorld(true);
- const h=b.g.worldToLocal(head.getWorldPosition(new THREE.Vector3())),p=b.g.worldToLocal(pelvis.getWorldPosition(new THREE.Vector3()));
+ const sc=M.sx.sc;if(M.xrHbS!==sc){M.xrHbS=sc;M.xrHbB=[sc.getObjectByName('Head'),sc.getObjectByName(M.valorant?'Pelvis':'pelvis')];}
+ const head=M.xrHbB[0],pelvis=M.xrHbB[1];
+ if(!head||!pelvis)return;b.g.updateWorldMatrix(true,false);
+ const h=b.g.worldToLocal(head.getWorldPosition(XR_HB[0])),p=b.g.worldToLocal(pelvis.getWorldPosition(XR_HB[1]));
  b.head.position.copy(h);b.head.position.y+=.08;b.head.scale.setScalar(.78);
  const top=Math.max(.65,h.y-.13),bottom=.06,height=top-bottom;
  b.body.position.set(p.x,(top+bottom)/2,p.z);b.body.scale.set(.72,height/1.8,.72);b.body.updateMatrixWorld(true);b.head.updateMatrixWorld(true);
