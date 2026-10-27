@@ -453,8 +453,9 @@
  // panels in the spawn's real exits, {ax, az, bx, bz, nx, nz: unit normal into spawn, tx, tz: unit along, len}); every
  // player and bot collides with them while the buy phase runs. Bots walk only on BUY_AREA: the spawn's own connected nav
  // region reached without crossing a wall, every node BUY.margin+ from every wall, so a route can never lead through one;
- // standing spots sit BUY.depth inside the wall on its spawn side (a 0.4 m capsule never touches it) and BUY.gap apart.
- const BUY={margin:.5,depth:[.55,.7],gap:.9,peek:[.3,.55],wander:[1.5,6],run:4.6};
+ // standing spots sit BUY.depth inside the wall line on its spawn side (0.5-0.65 m clear of the 0.3 m-thick slab's face: a 0.4 m
+ // capsule never touches it; was .55-.7 with the 0.1 m slab) and BUY.gap apart.
+ const BUY={margin:.5,depth:[.65,.8],gap:.9,peek:[.3,.55],wander:[1.5,6],run:4.6};
  function buyOri(ax,az,bx,bz,cx,cz){return Math.sign((bx-ax)*(cz-az)-(bz-az)*(cx-ax));}
  // nearest wall to (x, z) -> {w: the piece, d: metres, t: metres along it, inside: on its spawn side} | null
  function buyNear(walls,x,z){let best=null;for(const w of walls||[]){const t=Math.max(0,Math.min(w.len,(x-w.ax)*w.tx+(z-w.az)*w.tz)),d=Math.hypot(w.ax+w.tx*t-x,w.az+w.tz*t-z);if(!best||d<best.d)best={w,d,t,inside:(x-w.ax)*w.nx+(z-w.az)*w.nz>=0};}return best;}

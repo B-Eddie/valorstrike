@@ -7,7 +7,8 @@
 // server spawn candidate) against the rest of the map (geodesic >= ROUT m). Each connected group
 // of cut nodes is one doorway: a straight panel along the group's principal axis, extended to the walls on both
 // sides (horizontal rays at floor + 0.5 / 1.2 / 2 m), from the doorway floor up to a ceiling or 6 m.
-// usage: node tools/spawn-barriers-gen.mjs [map ...]  (env RIN, ROUT; per-map overrides in TUNE below)
+// usage: node tools/spawn-barriers-gen.mjs [map ...]  (env RIN, ROUT; per-map overrides in TUNE below); after --write run
+// node tools/spawn-barriers-seal.mjs --write (hand fixes, real-motor escape probe -> grown ends, wall heights / feet).
 import fs from 'node:fs';import {loadWorld} from '../src/world.js';import {createRequire} from 'node:module';
 const require=createRequire(import.meta.url);
 process.chdir(new URL('..',import.meta.url).pathname);
