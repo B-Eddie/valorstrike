@@ -27,7 +27,9 @@ function page({keys={},yaw=0,wall=Infinity,frames=40,dt=1/60,press={f:1,s:0}}){c
 {const r=page({yaw:0,frames:4,dt:.2});assert.ok(Math.abs(r.out[0].z+11*.2/.45)<1e-6&&Math.abs(r.out[2].z+11)<1e-6,'0.2 s frames: '+r.out.map(o=>o.z.toFixed(2)));}
 // the server, the same keys / yaw: same end point
 (async()=>{const {SpikeSimulation}=await import(path.join(root,'server','src','spike.js'));const W={map:{attacker:[0,0,0],defender:[0,0,-10],sites:{A:[0,0,0]}},nav:{nodes:[[0,0,0],[0,0,-10]],adj:[[1],[0]]},playable:[0,1],allowed:new Set([0,1]),near:(x,z)=>z<-5?1:0,ground:()=>0,blocked:()=>false,ray:()=>Infinity};/* = server/test-abilities.js */
- const s=new SpikeSimulation(W),j=s.add('j','Jett');s.add('o');s.start(false);s.buy=0;Object.assign(j,{x:0,y:0,z:0,look:0});j.ability.e=1;
+ const s=new SpikeSimulation(W),j=s.add('j','Jett'),o=s.add('o');s.start(false);s.buy=0;Object.assign(j,{x:0,y:0,z:0,look:0});j.ability.e=1;
+ /* sides are random: as a defender 'o' spawns at (0,-10), on the dash line, and its body (character collision) stops Jett at -10.7 -> keep it off the line */
+ Object.assign(o,{x:6,y:0,z:6});
  assert.equal(s.command(j,{t:'ab',k:'e'}),true);s.time+=1;assert.equal(s.command(j,{t:'ab',k:'e',f:0,s:1,r:Math.PI/2}),true);for(let i=0;i<12;i++)s.step(.05);
  const r=page({yaw:Math.PI/2,press:{f:0,s:1},frames:40});assert.ok(Math.hypot(j.x-r.player.x,j.z-r.player.z)<.02,'server '+j.x.toFixed(3)+','+j.z.toFixed(3)+' = page '+r.player.x.toFixed(3)+','+r.player.z.toFixed(3));
  console.log('Tailwind dash: page moveP 24.4 m/s for 0.45 s = 11 m, keys ignored, walls stop it, slow frames exact; server SpikeSimulation lands on the same spot from the page keys / yaw');})().catch(e=>{console.error(e);process.exit(1);});
