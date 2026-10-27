@@ -5,12 +5,12 @@
 // that counts draw calls / programs / texture uploads / buffer uploads).
 // Per frame (fixed 60 Hz page clock): wall ms of the whole frame (timers + rAF), heap bytes allocated (frames without a
 // GC), GC pauses; a V8 CPU profile grouped into game systems (self time) and a sampling heap profile (allocation sites).
-//   MAP=ascent SECS=120 SEED=3 OUT=/path.json node work/perf_match_profile.cjs
+//   MAP=ascent SECS=120 SEED=3 OUT=/path.json [START=startESC] node work/perf_match_profile.cjs
 // The harness's fake DOM costs more than a browser's (getElementById is cached here as in bench_hit_path); absolute ms are
 // a CPU proxy, compare before / after on the same box.
 const fs = require('fs'), path = require('path'), v8 = require('v8'), inspector = require('inspector'), { performance, PerformanceObserver } = require('perf_hooks');
 const { boot } = require('./page_harness.cjs');
-const MAP = process.env.MAP || 'ascent', SECS = +(process.env.SECS || 120), SEED = +(process.env.SEED || 3), OUT = process.env.OUT || '', PROF = process.env.PROF !== '0';
+const MAP = process.env.MAP || 'ascent', SECS = +(process.env.SECS || 120), SEED = +(process.env.SEED || 3), OUT = process.env.OUT || '', PROF = process.env.PROF !== '0', START = /^start[A-Za-z]+$/.test(process.env.START || '') ? process.env.START : 'startFive'; // START=startESC / startTDM / startDM profiles that mode
 const gcs = []; new PerformanceObserver((l) => { for (const e of l.getEntries()) gcs.push([e.startTime, e.duration, e.detail ? e.detail.kind : e.kind]); }).observe({ entryTypes: ['gc'] });
 const sess = new inspector.Session(); sess.connect(); const post = (m, p) => new Promise((ok, no) => sess.post(m, p || {}, (e, r) => (e ? no(e) : ok(r))));
 const tick = () => new Promise((r) => setImmediate(r));
@@ -38,7 +38,7 @@ const GROUPS = [
   xe('try{xGQApply("medium")}catch(e){};true');
   const gq = xe('JSON.stringify({gq:localStorage.getItem("vs.gq"),shd:XS.shd,shm:XS.shm,lod:XS.lod,prc:XS.prc,aa:XS.aa})');
   const adv = async (ms) => { for (let t = 0; t < ms; t += 50) { H.advance(Math.min(50, ms - t) - 1e-6); await tick(); } };
-  xe(`J.pick="Jett";FV.pick=${JSON.stringify(MAP)};FV.srOn=0;FV.repOn=0;window.xSwift=0;xLob0=false;startFive();true`);
+  xe(`J.pick="Jett";FV.pick=${JSON.stringify(MAP)};FV.srOn=0;FV.repOn=0;window.xSwift=0;xLob0=false;${START}();true`);
   const tl = performance.now();
   for (let i = 0; i < 400 && !xe('!!(typeof nmActive==="function"&&nmActive()&&running)'); i++) await adv(200);
   if (!xe('!!nmActive()')) throw Error('native map did not load: ' + MAP);
@@ -81,7 +81,7 @@ const GROUPS = [
   // spikes: frames > 20 ms with their emu counters
   res.spikes = [...ms].map((x, i) => [i, +x.toFixed(1), gcIn[i]]).filter((r) => r[1] > 20).sort((a, b) => b[1] - a[1]).slice(0, 25).map(([i, x, g]) => ({ i, ms: x, gc: g, ...E[i] }));
   if (PROF) {
-    const { profile } = await post('Profiler.stop'); const { profile: hp } = await post('HeapProfiler.stopSampling');
+    const { profile } = await post('Profiler.stop'); if (process.env.CPUPROF) fs.writeFileSync(process.env.CPUPROF, JSON.stringify(profile)); const { profile: hp } = await post('HeapProfiler.stopSampling');
     const N2 = new Map(profile.nodes.map((n) => [n.id, n])), self = new Map(); profile.samples.forEach((s, i) => self.set(s, (self.get(s) || 0) + (profile.timeDeltas[i + 1] || 0) / 1000));
     const fnSelf = new Map(), grp = new Map(); let tot = 0;
     for (const [id, t] of self) { const n = N2.get(id), f = n.callFrame.functionName || '(anon)', u = n.callFrame.url || ''; if (/^\((idle|program|root)\)$/.test(f)) continue; tot += t;
