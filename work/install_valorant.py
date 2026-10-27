@@ -55,7 +55,11 @@ block+='\n'+(root/'work/game_rules_runtime.js').read_text().rstrip('\n')
 # Rope ascenders (Split; work/rope_runtime.js), last: nmRopes for nmEnsure, rope bots (nmNext / nmPath / xStep), row [25] (mpCliSnap / mpEnts), and the climb pose as the last xUbPost wrapper.
 oa='// ---- ROPE ASCENDERS ----';ob='// ---- END ROPE ASCENDERS ----'
 if oa in s:s=s[:s.index(oa)]+s[s.index(ob)+len(ob):]
-block+='\n'+(root/'work/rope_runtime.js').read_text().rstrip('\n');mark='xReady = true; // every mode is initialised; lobby launches may now start them';s=s.replace(mark,block+'\n'+mark)
+block+='\n'+(root/'work/rope_runtime.js').read_text().rstrip('\n')
+# Character collision (work/collide_runtime.js), last: moveP's xcPlayer, the outermost tick / fiveTick / duelTick and xSmV wrappers (bots resolve after each sim step, steer around whoever is in the way).
+ca='// ---- CHARACTER COLLISION ----';cb='// ---- END CHARACTER COLLISION ----'
+if ca in s:s=s[:s.index(ca)]+s[s.index(cb)+len(cb):]
+block+='\n'+(root/'work/collide_runtime.js').read_text().rstrip('\n');mark='xReady = true; // every mode is initialised; lobby launches may now start them';s=s.replace(mark,block+'\n'+mark)
 if '<script src="models/valorant/manifest.js"></script>' not in s:s=s.replace('<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>','<script src="models/valorant/manifest.js"></script>\n<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>')
 # Find the actual three script tag, which may use an onerror handler.
 if '<script src="models/valorant/manifest.js"></script>' not in s:s=s.replace('<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js"></script>','<script src="models/valorant/manifest.js"></script>\n<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js"></script>')

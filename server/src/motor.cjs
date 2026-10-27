@@ -344,5 +344,43 @@ function dashStep(P,D,dt,world){let s=Math.min(D.left,D.v*Math.max(0,dt));D.left
 C.stride=1.85;C.stepRun=.65;
 function runs(speed,top,quiet){return !quiet&&speed>C.stepRun*Math.max(.1,top||0);}
 function footfall(st,dist,dt,run){if(!run){st.fd=Math.max(0,(st.fd||0)-C.stride*Math.max(0,dt||0));return false;}st.fd=(st.fd||0)+Math.max(0,dist||0);if(st.fd<C.stride)return false;st.fd%=C.stride;return true;}
-return {C,ROPES,ROPE,ropeFind,ropeLinks,step,dash,dashStep,runs,footfall,fallDamage,velocity,brake,groundMove,spread,bloomCap,SPREAD,CADENCE,cadenceShot,cadenceGap,cadenceOwed,CLASSIC_ALT,classicAltSpread,BUCKY_ALT,recoveryTime,recoilMove,disk,damp,approach,clipBlocked,CLIPS,REC,sprayReset,sprayBloom,sprayStep,leashGrid,leashOk,leashNear};
+// Character collision (VALORANT: every living character, teammate or enemy, is a solid capsule - nobody walks through
+// another, a walk into one stops at the contact and slides around it, nobody is shoved by someone walking into them).
+// Each character is a vertical cylinder of radius C.bodyR (0.35 m: our estimate of VALORANT's capsule, Riot publishes no
+// figure; 0.05 m inside the 0.4 m world-collision radius) from its feet to its head (1.8 m standing, less crouched). Two
+// characters touch when their centres are closer than 2 x C.bodyR horizontally and their heights overlap by more than
+// C.bodyLip, so a unit dropping onto a head slides off it rather than standing there.
+// bodies(P, others, dt, world, ox, oz) runs after the mover P's own step ((ox, oz) = where P stood before it): the part of
+// each overlap that P's step created is undone at once (a walk into someone stops at the contact; the sideways part of the
+// walk is kept, so it slides around), overlap that was already there (a respawn, teleport or rescue onto someone, a unit
+// landing on a head) is eased apart at C.bodySep m/s. Only P moves, never into world collision (an axis the world refuses is
+// dropped), and P's velocity loses the part pointing into the other unit. Every unit runs it on its own step, so a unit
+// standing still is never pushed by a walker; it only eases out of overlap it was already in.
+// bodySteer(P, others, x, z) is for bots: with someone in its way less than C.bodyLook m ahead (centre to centre; contact is
+// at 2 x C.bodyR, inside the two bodies' width), the walk turns to pass them - to the side away from them, on the right when
+// they are dead ahead (two bots meeting head-on both keep right and pass) - from nothing at C.bodyLook to ~56 deg at the
+// contact; the speed is kept. Short on purpose: a bot only sidesteps whoever it is about to bump, the rest of its walk
+// (paths, holds, peeks) is its own.
+// The server runs both for every unit (simulation.js, spike.js motor()) and the page for its player's prediction (moveP,
+// against the units it draws) and its offline bots, so the prediction equals the server.
+C.bodyR=.35;C.bodySep=3;C.bodyLip=.1;C.bodyLook=1.05;
+function bodyMeet(P,Q){return P.y<Q.y+1.8-(Q.ch||0)-C.bodyLip&&Q.y<P.y+1.8-(P.ch||0)-C.bodyLip;}
+function bodies(P,others,dt,world,ox,oz){
+ if(!others||!others.length)return false;const R2=2*C.bodyR,sep=C.bodySep*Math.max(0,dt||0),was=ox!=null&&oz!=null;let px=0,pz=0,hit=false;
+ for(const Q of others){if(!Q||Q===P||!bodyMeet(P,Q))continue;let dx=P.x-Q.x,dz=P.z-Q.z;const d=Math.hypot(dx,dz);if(d>=R2)continue;
+  const d0=was?Math.hypot(ox-Q.x,oz-Q.z):d;
+  if(d>1e-6){dx/=d;dz/=d;}else if(was&&d0>1e-6){dx=(ox-Q.x)/d0;dz=(oz-Q.z)/d0;}else{dx=1;dz=0;}/* exactly on top of each other: apart toward where P came from, else along +x */
+  const pen=R2-d,fresh=Math.max(0,Math.min(pen,pen-Math.max(0,R2-d0))),push=fresh+Math.min(pen-fresh,sep);
+  px+=dx*push;pz+=dz*push;hit=true;
+  const vin=(P.vx||0)*dx+(P.vz||0)*dz;if(vin<0){P.vx=(P.vx||0)-vin*dx;P.vz=(P.vz||0)-vin*dz;}}
+ if(!hit)return false;if(Math.abs(px)+Math.abs(pz)<1e-12)return true;
+ const h=1.8-(P.ch||0),ok=(x,z)=>!world||(!(world.leash&&!world.leash(x,z,P.y,P.x,P.z))&&!world.blocked(x,z,.4,P.y,h));
+ if(ok(P.x+px,P.z+pz)){P.x+=px;P.z+=pz;}else if(px&&ok(P.x+px,P.z))P.x+=px;else if(pz&&ok(P.x,P.z+pz))P.z+=pz;
+ return true;}
+function bodySteer(P,others,x,z){
+ const m=Math.hypot(x,z);if(m<1e-9||!others||!others.length)return [x,z];const ux=x/m,uz=z/m,rx=-uz,rz=ux,R2=2*C.bodyR;let ahead=Infinity,side=0;
+ for(const Q of others){if(!Q||Q===P||!bodyMeet(P,Q))continue;const dx=Q.x-P.x,dz=Q.z-P.z,a=dx*ux+dz*uz,l=dx*rx+dz*rz;if(a<=0||a>=C.bodyLook||Math.abs(l)>=R2||a>=ahead)continue;ahead=a;side=l>.02?-1:1;}
+ if(ahead===Infinity)return [x,z];
+ const k=1.5*Math.min(1,(C.bodyLook-ahead)/(C.bodyLook-R2)),sx=ux+rx*side*k,sz=uz+rz*side*k,L=Math.hypot(sx,sz);return [sx*m/L,sz*m/L];}
+return {C,ROPES,ROPE,ropeFind,ropeLinks,step,dash,dashStep,runs,footfall,fallDamage,velocity,brake,groundMove,spread,bloomCap,SPREAD,CADENCE,cadenceShot,cadenceGap,cadenceOwed,CLASSIC_ALT,classicAltSpread,BUCKY_ALT,recoveryTime,recoilMove,disk,damp,approach,clipBlocked,CLIPS,REC,sprayReset,sprayBloom,sprayStep,leashGrid,leashOk,leashNear,bodies,bodySteer};
 });
