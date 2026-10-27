@@ -18,7 +18,7 @@ assert(src.includes("const M={g:root,solids:[collision],boxes:[],built:1,native:
 const env={THREE,renderer:{initTexture(t){env.uploads.push(t);if(t.onUpdate)t.onUpdate(t);},capabilities:{getMaxAnisotropy:()=>8}},uploads:[],created:[],closed:0,NM:{current:null},
  createImageBitmap:async(img,o)=>{const b={width:o.resizeWidth,height:o.resizeHeight,close(){env.closed++;},resized:o};env.created.push(b);return b;},document:{createElement:()=>({getContext:()=>({drawImage(){}})})},
  nmFree:r=>env.freed.push(r.M.g),freed:[],nmTexStats:()=>null,nmDecalApply:m=>m,nmDecalStyle:()=>null,nmFoliageApply:m=>m,console:{error(){},warn(){}},localStorage:{getItem:k=>k==='vs.gq'?env.quality:(env.ls[k]??null)},ls:{},quality:null,xLowDev:false,navigator:{}};
-const names=['nmNow','nmQuality','nmTexCap','nmBytes','nmTexBytes','nmDropArray','nmTexUploaded','nmWatchContext'],blocks=['nmPackGeometry','nmShrink','nmBudget','nmUpload','nmRehydrate'];
+const names=['nmNow','nmQuality','nmTexCap','nmBytes','nmTexBytes','nmDropArray','nmTexUploaded','nmWatchContext','nmDrawable'],blocks=['nmPackGeometry','nmShrink','nmBudget','nmUpload','nmRehydrate'];
 const api=new Function('env','with(env){'+names.map(pick).join('\n')+'\n'+blocks.map(block).join('\n')+';return {'+names.concat(blocks).join(',')+'};}')(env);
 (async()=>{
  // Quality tiers: LOW (mobile default) and devices reporting <= 4 GB get 256 px textures; others keep the 512 px sources.
@@ -64,12 +64,23 @@ const api=new Function('env','with(env){'+names.map(pick).join('\n')+'\n'+blocks
  const key='lotus',mapRoot=new THREE.Group(),oldScene=new THREE.Group();mapRoot.add(oldScene);let next=makeScene(),loads=0;
  env.nmLoadScene=async()=>{loads++;await new Promise(r=>setTimeout(r,5));return {scene:next.scene};};env.nmPrepareScene=x=>x;env.nmZFixApply=()=>0;/* z-fight fix and render optimizer run after prepare; stubbed here */env.nmOptimizeScene=()=>({meshes:0,chunks:0,materials:0});env.quality='low';
  const C0={key,M:{g:mapRoot},scene:oldScene,memory:{collisionBytes:7,textures:[]}};env.NM.current=C0;env.freed.length=0;
- const p1=api.nmRehydrate();assert.equal(oldScene.visible,false,'old scene (no CPU copies) must not draw in the new context');assert.equal(await api.nmRehydrate(),false,'second reload while one runs');
- assert.equal(await p1,true);assert.equal(loads,1);assert.equal(C0.scene,next.scene);assert(mapRoot.children.includes(next.scene)&&!mapRoot.children.includes(oldScene));assert(env.freed.includes(oldScene));assert.equal(C0.memory.rehydrated,1);assert.equal(C0.memory.cap,256);assert.equal(C0.memory.collisionBytes,7);
+ const p1=api.nmRehydrate();assert.equal(oldScene.visible,false,'old scene (no CPU copies) must not draw in the new context');assert.equal(await p1,true);assert.equal(loads,1);assert.equal(C0.scene,next.scene);assert(mapRoot.children.includes(next.scene)&&!mapRoot.children.includes(oldScene));assert(env.freed.includes(oldScene));assert.equal(C0.memory.rehydrated,1);assert.equal(C0.memory.cap,256);assert.equal(C0.memory.collisionBytes,7);
  next=makeScene();const p2=api.nmRehydrate();env.NM.current={key:'bind'};assert.equal(await p2,false);assert(env.freed.includes(next.scene),'stale reload not freed');
+ // A second context change while a reload is still uploading supersedes it (quality Low -> Medium in quick succession went
+ // black: the first reload's scene had been drawn by the in-between renderer, CPU copies gone, and the newest renderer was
+ // left to draw it): the in-flight scene is hidden at once, the newest reload replaces it, the superseded one stops.
+ {env.NM.current=C0;const A=makeScene(),B=makeScene();const queue=[A,B];env.nmLoadScene=async()=>{loads++;await new Promise(r=>setTimeout(r,5));return {scene:queue.shift().scene};};
+  const pa=api.nmRehydrate();for(let i=0;i<500&&C0.scene!==A.scene;i++)await new Promise(r=>setTimeout(r,1));assert.equal(C0.scene,A.scene,'first reload swapped in');assert.equal(A.scene.visible,true);
+  A.scene.traverse(o=>{if(o.isMesh)for(const k in o.geometry.attributes)o.geometry.attributes[k].array=null;});/* drawn by the in-between renderer: CPU copies dropped */
+  const pb=api.nmRehydrate();assert.equal(A.scene.visible,false,'a superseded reload\'s scene (no CPU copies) must not draw in the newest context');
+  const [ra,rb]=await Promise.all([pa,pb]);assert.equal(rb,true,'the newest reload completes');assert.equal(C0.scene,B.scene);assert(mapRoot.children.includes(B.scene)&&!mapRoot.children.includes(A.scene),'only the newest scene stays');assert(env.freed.includes(A.scene),'superseded scene freed');assert.equal(B.scene.visible,true);assert.equal(C0.rehydrating,false);
+  // a reload superseded before it swapped frees its own scene and leaves the newest one in place
+  const D=makeScene(),E=makeScene();queue.push(D,E);const pd=api.nmRehydrate(),pe=api.nmRehydrate();assert.equal(await pd,false,'superseded before the swap');assert.equal(await pe,true);assert.equal(C0.scene,E.scene);assert(env.freed.includes(D.scene)&&env.freed.includes(B.scene));assert(!mapRoot.children.includes(D.scene));}
+ // a failed reload shows the old scene again only while it still has its CPU copies (a drawn one would throw every frame)
  env.NM.current=C0;env.nmLoadScene=async()=>{throw new Error('offline');};const kept=C0.scene;assert.equal(await api.nmRehydrate(),false);assert.equal(kept.visible,true,'failed reload must restore the old scene');
+ kept.traverse(o=>{if(o.isMesh)o.geometry.attributes.position.array=null;});assert.equal(await api.nmRehydrate(),false);assert.equal(kept.visible,false,'a failed reload must not show a scene the new context cannot upload');
  // Restored context on the current renderer triggers a reload; listeners attach once per canvas.
  const listeners=[],canvas={addEventListener:(n,f)=>listeners.push([n,f])},r={domElement:canvas};env.renderer=r;api.nmWatchContext(r);api.nmWatchContext(r);assert.equal(listeners.length,1);assert.equal(listeners[0][0],'webglcontextrestored');
  env.NM.current=null;listeners[0][1]();await new Promise(r=>setTimeout(r,1));
- console.log('Map memory budget: '+meshes+' Lotus meshes packed '+(before/1e6).toFixed(1)+' -> '+(after/1e6).toFixed(1)+' MB (worst normal '+(Math.acos(Math.min(1,worst))*180/Math.PI).toFixed(2)+' deg, '+u16+' Uint16 / '+big+' Uint32 indices), arrays dropped on upload with bounds kept; LOW/<=4 GB cap 256 px, shared sources released after the last upload; eager upload stops on cancel; new context reloads the scene, hides the old one, discards stale/failed reloads');
+ console.log('Map memory budget: '+meshes+' Lotus meshes packed '+(before/1e6).toFixed(1)+' -> '+(after/1e6).toFixed(1)+' MB (worst normal '+(Math.acos(Math.min(1,worst))*180/Math.PI).toFixed(2)+' deg, '+u16+' Uint16 / '+big+' Uint32 indices), arrays dropped on upload with bounds kept; LOW/<=4 GB cap 256 px, shared sources released after the last upload; eager upload stops on cancel; new context reloads the scene, hides the old one, a newer context change supersedes a reload in flight, discards stale/failed reloads');
 })().catch(e=>{console.error(e);process.exit(1);});
