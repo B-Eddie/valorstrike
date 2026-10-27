@@ -61,7 +61,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: server/public
-          key: worlds-${{ hashFiles('server/build-all.cjs', 'server/build-world.cjs', 'server/package-lock.json', 'models/valorant/maps/*/collision.bin', 'models/valorant/maps/*/collision-patch.bin', 'models/valorant/maps/*/navigation.json', 'models/valorant/maps/*/map.json', 'models/valorant/maps/*/plants.json') }}
+          key: worlds-${{ hashFiles('server/build-all.cjs', 'server/build-world.cjs', 'server/package-lock.json', 'models/valorant/maps/*/collision.bin', 'models/valorant/maps/*/collision-patch.bin', 'models/valorant/maps/*/collision-exclude.bin', 'models/valorant/maps/*/navigation.json', 'models/valorant/maps/*/map.json', 'models/valorant/maps/*/plants.json') }}
       - name: build worlds
         if: steps.worlds.outputs.cache-hit != 'true'
         run: npm run build:worlds
@@ -92,7 +92,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: server/public
-          key: worlds-${{ hashFiles('server/build-all.cjs', 'server/build-world.cjs', 'server/package-lock.json', 'models/valorant/maps/*/collision.bin', 'models/valorant/maps/*/collision-patch.bin', 'models/valorant/maps/*/navigation.json', 'models/valorant/maps/*/map.json', 'models/valorant/maps/*/plants.json') }}
+          key: worlds-${{ hashFiles('server/build-all.cjs', 'server/build-world.cjs', 'server/package-lock.json', 'models/valorant/maps/*/collision.bin', 'models/valorant/maps/*/collision-patch.bin', 'models/valorant/maps/*/collision-exclude.bin', 'models/valorant/maps/*/navigation.json', 'models/valorant/maps/*/map.json', 'models/valorant/maps/*/plants.json') }}
       - name: build worlds
         if: steps.worlds.outputs.cache-hit != 'true'
         run: npm run build:worlds

@@ -8,6 +8,7 @@
 //  3. Sampled parity: the server world's blocked() and the client's nmBlocked() give the same answer at 1200 seeded capsule
 //     probes per map around valid nav nodes, at every clip, and at every walk fixture of map-walk-fixtures.json (Bind's
 //     traps included).
+//  4b. The fallback drops exactly the foliage runs of collision-exclude.bin that build-world.cjs drops.
 //  4. The client's fallback collision (no game server: raw collision.bin) now appends collision-patch.bin like the server
 //     build (nmRawCollision): on Ascent / Breeze / Lotus the patched floors the server stands on exist for the client too.
 import fs from 'node:fs';import os from 'node:os';import path from 'node:path';import vm from 'node:vm';import assert from 'node:assert/strict';import {execFileSync} from 'node:child_process';import {createRequire} from 'node:module';
@@ -24,9 +25,9 @@ if(!quick){const tmp=fs.mkdtempSync(path.join(os.tmpdir(),'vs-worlds-'));fs.mkdi
 // client nmBlocked / nmRawCollision from the generated page, with the shared motor as window.ValorantFeel
 const html=fs.readFileSync(path.join(root,'index.html'),'utf8'),ctx={THREE:T,Math,Number,Infinity,Float32Array,Uint32Array,globalThis:null,window:null};ctx.globalThis=ctx.window=ctx;vm.createContext(ctx);
 vm.runInContext(fs.readFileSync(path.join(root,'vendor/valorant-feel.js'),'utf8'),ctx);
-const i=html.indexOf('var NM_Q='),j=html.indexOf('function nmBlocked('),k=html.indexOf('\n',j),r0=html.indexOf('function nmRawCollision('),r1=html.indexOf('\nasync function nmEnsure(',r0);assert.ok(i>0&&j>0&&r0>0&&r1>r0,'page functions found');
+const i=html.indexOf('var NM_Q='),j=html.indexOf('function nmBlocked('),k=html.indexOf('\n',j),r0=html.indexOf('function nmExcludeTris('),r1=html.indexOf('\nasync function nmEnsure(',r0);assert.ok(i>0&&j>0&&r0>0&&r1>r0,'page functions found');
 vm.runInContext(html.slice(i,html.indexOf('\n',i))+'\n'+html.slice(j,html.indexOf('\n}',k)+2)+'\n'+html.slice(r0,r1)+'\nglobalThis.nmBlocked=nmBlocked;globalThis.nmRawCollision=nmRawCollision;',ctx);
-assert.ok(/nmRawCollision\(bytes,patch\)/.test(html)&&/collision-patch\.bin/.test(html),'the fallback load passes the patch');
+assert.ok(/nmRawCollision\(bytes,patch,exclude\)/.test(html)&&/collision-patch\.bin/.test(html)&&/collision-exclude\.bin/.test(html),'the fallback load passes the patch and the foliage exclusion');
 const assets=k=>({fetch:async req=>{const f=path.join(here,'public/worlds',k,new URL(req.url).pathname.split('/').pop());return fs.existsSync(f)?new Response(fs.readFileSync(f)):new Response('',{status:404});}});
 const tree=k=>{const b=f=>fs.readFileSync(path.join(here,'public/worlds',k,f)),p=b('position.bin'),ix=b('index.bin'),g=new T.BufferGeometry();g.setAttribute('position',new T.BufferAttribute(new Float32Array(p.buffer.slice(p.byteOffset,p.byteOffset+p.byteLength)),3));g.setIndex(new T.BufferAttribute(new Uint32Array(ix.buffer.slice(ix.byteOffset,ix.byteOffset+ix.byteLength)),1));const meta=JSON.parse(b('meta.json')),roots=[];for(let n=0;n<meta.roots;n++){const r=b('bvh'+n+'.bin');roots.push(r.buffer.slice(r.byteOffset,r.byteOffset+r.byteLength));}return MeshBVH.deserialize({index:g.index.array,roots},g,{setIndex:false});};
 let seed=7;const rnd=()=>(seed=(seed*1103515245+12345)%2147483648)/2147483648;
@@ -43,9 +44,12 @@ for(const key of MAPS){const W=await loadWorld(assets(key),key),C={key,bvh:tree(
  let blockedN=0;for(const [x,z,y] of probes){const s=W.blocked(x,z,.38,y,1.8),c=cl(x,z,.38,y,1.8);assert.equal(c,s,key+' blocked differs at '+[x,z,y].map(v=>v.toFixed(2)));if(s)blockedN++;}
  assert.ok(blockedN>probes.length*.05&&blockedN<probes.length*.95,key+': probes hit both walls and open floor ('+blockedN+'/'+probes.length+')');report.push(key+' '+probes.length+' probes');}
 assert.ok(report.some(r=>r.startsWith('bind:')),'Bind has its 7add113 rock-pocket clips');
+// 4b. fallback drops the same foliage runs as build-world.cjs (collision-exclude.bin, work/build_foliage_exclude.py)
+for(const key of MAPS){const dir=path.join(root,'models/valorant/maps',key),buf=f=>{const b=fs.readFileSync(path.join(dir,f));return b.buffer.slice(b.byteOffset,b.byteOffset+b.byteLength);},raw=buf('collision.bin'),ex=buf('collision-exclude.bin'),n=new Uint32Array(ex,0,1)[0],runs=new Uint32Array(ex.slice(4,4+n*8));let drop=0;for(let r=0;r<n;r++)drop+=runs[r*2+1];
+ const R=ctx.nmRawCollision(raw,null,ex),h=new Uint32Array(raw,0,2);assert.equal(R.indices.length,h[1]-drop*3,key+': fallback drops the excluded foliage triangles');report.push(key+' fallback excludes '+drop+' foliage triangles');}
 // 4. fallback collision = raw + patch
-for(const key of ['ascent','breeze','lotus']){const dir=path.join(root,'models/valorant/maps',key),buf=f=>{const b=fs.readFileSync(path.join(dir,f));return b.buffer.slice(b.byteOffset,b.byteOffset+b.byteLength);},raw=buf('collision.bin'),patch=buf('collision-patch.bin');
- const R=ctx.nmRawCollision(raw,patch),R0=ctx.nmRawCollision(raw,null),hp=new Uint32Array(patch,0,2);assert.equal(R.indices.length,R0.indices.length+hp[1],key+': patch triangles appended');assert.equal(R.positions.length,R0.positions.length+hp[0]*3);
+for(const key of ['ascent','breeze','lotus']){const dir=path.join(root,'models/valorant/maps',key),buf=f=>{const b=fs.readFileSync(path.join(dir,f));return b.buffer.slice(b.byteOffset,b.byteOffset+b.byteLength);},raw=buf('collision.bin'),patch=buf('collision-patch.bin'),ex=buf('collision-exclude.bin');/* the exclusion applies like build-world.cjs */
+ const R=ctx.nmRawCollision(raw,patch,ex),R0=ctx.nmRawCollision(raw,null,ex),hp=new Uint32Array(patch,0,2);assert.equal(R.indices.length,R0.indices.length+hp[1],key+': patch triangles appended');assert.equal(R.positions.length,R0.positions.length+hp[0]*3);
  const pp=new Float32Array(patch.slice(8,8+hp[0]*12)),ip=new Uint32Array(patch.slice(8+hp[0]*12,8+hp[0]*12+hp[1]*4)),Bs=tree(key);let n=0,miss0=0;/* the server world's own BVH */
  const g=new T.BufferGeometry();g.setAttribute('position',new T.BufferAttribute(R.positions,3));g.setIndex(new T.BufferAttribute(R.indices,1));const B=new MeshBVH(g,{maxLeafTris:12,maxDepth:64,strategy:CENTER});
  const g0=new T.BufferGeometry();g0.setAttribute('position',new T.BufferAttribute(R0.positions,3));g0.setIndex(new T.BufferAttribute(R0.indices,1));const B0=new MeshBVH(g0,{maxLeafTris:12,maxDepth:64,strategy:CENTER});
