@@ -151,7 +151,7 @@ export class SkirmishSimulation extends Simulation{
  // One human per team: the free team (a returning player gets their side back when it is free); no bots, no third player.
  add(name,agent='Jett',human=true,want=null){if(!human)throw Error('no bots in Skirmish');if(this.units.filter(u=>u.human).length>=this.maxHumans)throw Error('full');
   const free=[0,1].filter(t=>!this.units.some(u=>u.team===t)),team=free.includes(want)?want:free[0];const u=super.add(name,agent,true,team);u.kit=u.kit||{...SKM.kit};return u;}
- start(){this.skm=this.skmFresh();super.start(false);this.newRound();}
+ start(){this.skm=this.skmFresh();super.start(false);this.remaining=this.matchLen;/* the 20 min cap: Simulation.start set the TDM 9:30 */this.newRound();}
  newRound(){const S=this.skm;S.r++;S.ph='buy';S.t=S.r===1?SKM.buyFirst:SKM.buy;S.at=this.time;S.lw=-1;S.why='';this.roundSpawn=true;try{for(const u of this.units)this.spawn(u);}finally{this.roundSpawn=false;}}
  // Round spawn: own team spawn, full health, Heavy Armor, the kept loadout with full magazines. A unit that died this round
  // stays out until the next one (a late 'ready' / rescue spawn never revives it).

@@ -15068,9 +15068,14 @@ setInterval(()=>{try{for(const m of NM_ORBS.values())m.rotation.y+=.1;if(!MP.on|
 // the owner deploys it) keeps the button disabled and the Online panel says why.
 const SKM_MSG='Skirmish 1v1 needs the updated game server · not offered by this server yet';
 const nmSkmOn=()=>!!(MP.on&&MP.cl&&MP.gm==='skm'&&MP.st==='game');
-const nmSkmHold=()=>nmSkmOn()&&!!MP.skm&&MP.skm.ph!=='live';
+// The server holds walking in the buy phase only (jumping stays free) and fire outside 'live' (modes.js SkirmishSimulation):
+// the page holds the same, or its prediction fights the server (between rounds the page stood still while the server walked
+// the survivor; a buy-phase jump went up on the server only - reconcile eases / snaps of ~1 m).
+const nmSkmHold=()=>nmSkmOn()&&!!MP.skm&&MP.skm.ph!=='live';/* no shots */
+const nmSkmBuy=()=>nmSkmOn()&&!!MP.skm&&MP.skm.ph==='buy';/* no walking */
+const NM_SKM_WALK=['KeyW','KeyA','KeyS','KeyD'];
 function nmSkmScore(K){const me=MP.team===1?1:0,sc=Array.isArray(K&&K.sc)?K.sc:[0,0];return [sc[me]|0,sc[1-me]|0];}
-function nmSkmHud(K){if(!K||!Array.isArray(K.sc))return;const prev=MP.skm;MP.skm=K;const [mine,theirs]=nmSkmScore(K),el=nmHudEl(),ph=String(K.ph||'');
+function nmSkmHud(K){if(!K||!Array.isArray(K.sc))return;const prev=MP.skm;MP.skm=K;if(prev&&prev.ph==='buy'&&K.ph!=='buy'&&typeof DM!=='undefined'&&DM.menu)try{dmMenu(false);}catch(e){}const [mine,theirs]=nmSkmScore(K),el=nmHudEl(),ph=String(K.ph||'');
  const tail=ph==='buy'?' · BUY '+Math.ceil(+K.t||0)+'s':ph==='wait'?' · WAITING FOR OPPONENT '+Math.ceil(+K.t||0)+'s':ph==='end'?' · ROUND OVER':'';
  const t='SKIRMISH 1V1 · YOU '+mine+' – '+theirs+' ENEMY · FIRST TO '+(K.win|0)+' · ROUND '+(K.r|0)+tail;if(el.textContent!==t)el.textContent=t;el.style.display='block';
  if(!prev||prev.ph!==ph||prev.r!==K.r)try{const me=MP.team===1?1:0;
@@ -15080,10 +15085,15 @@ function nmSkmHud(K){if(!K||!Array.isArray(K.sc))return;const prev=MP.skm;MP.skm
   else if(ph==='wait')say('Opponent left · waiting for them to rejoin',2200);}catch(e){}}
 {const m0=mpCliMsg;mpCliMsg=function(m){if(m&&(m.t==='s'||m.t==='end')&&m.skm&&(MP.gm==='skm'||m.t==='end'&&MP.skm))try{nmSkmHud(m.skm);}catch(e){}return m0.apply(this,arguments);};}
 {const s0=mpCliStart;mpCliStart=function(m){if(m&&m.mode==='skm'){MP.skm=null;m=Object.assign({},m,{mode:'dm',gm:'skm'});}const r=s0.call(this,m);if(m&&m.gm==='skm')try{say('Skirmish 1v1 · first to '+((m.win|0)||5)+' rounds · '+(MP.pub?'public match':'room '+MP.code),2200);}catch(e){}return r;};}
-// buy phase / between rounds: walking held (the page's plant / defuse hold) and no shots, as the server
-{const v0=moveP;moveP=function(dt,run,hold){return v0.call(this,dt,run,hold||nmSkmHold());};}
+// buy phase: walking held (jump free); outside 'live': no shots - as the server
+{const v0=moveP;moveP=function(dt,run,hold){if(!nmSkmBuy())return v0.apply(this,arguments);/* walk keys off for this step only: the motor's hold would also block the jump */const K=keys,was=NM_SKM_WALK.map(c=>K[c]);NM_SKM_WALK.forEach(c=>{K[c]=false;});try{return v0.apply(this,arguments);}finally{NM_SKM_WALK.forEach((c,i)=>{K[c]=was[i];});}};}
 {const f0=shoot;shoot=function(){if(nmSkmHold())return false;return f0.apply(this,arguments);};}
 {const d0=dmMenu;dmMenu=function(on){if(on&&nmSkmOn()&&!(MP.skm&&MP.skm.ph==='buy')){say('Loadout changes in the buy phase only',1000);return;}return d0.apply(this,arguments);};}
+// a gun change is the buy phase's only (server refuses it after): no pick outside it, as the menu (it stayed open past the buy
+// phase and its pick stayed on the page until the server's refusal put the old gun back)
+{const g0=dmGive;dmGive=function(n){if(nmSkmOn()&&!nmSkmBuy()&&n!==FV.pri&&n!==FV.sec){say('Loadout changes in the buy phase only',1000);return false;}return g0.apply(this,arguments);};}
+// top HUD: the round score boxes and the subtitle are Skirmish's (the Deathmatch path left them 0 - 0, 'Deathmatch · first to 5')
+{const h0=xHud;xHud=function(){const r=h0.apply(this,arguments);if(nmSkmOn()&&MP.skm)try{const K=MP.skm,[mine,theirs]=nmSkmScore(K);setT('xSA',mine);setT('xSE',theirs);setT('xSub','Skirmish 1v1 · '+((typeof F_MAPN!=='undefined'&&F_MAPN[FV.map])||'Ascent')+' · first to '+((K.win|0)||5)+' · Round '+((K.r|0)||1));}catch(e){}return r;};}
 {const r0=dmMR;dmMR=function(){const r=r0.apply(this,arguments);if(nmSkmOn()&&DM.el)try{const h=DM.el.querySelector('.x-dmg__head h2'),p=DM.el.querySelector('.x-dmg__head p');if(h)h.textContent='SKIRMISH 1V1';if(p)p.textContent='Free weapons · one primary + one sidearm · kept every round';}catch(e){}return r;};}
 {const l0=dmLB;dmLB=function(){const r=l0.apply(this,arguments);if(nmSkmOn()&&DM.lb)try{const h=DM.lb.querySelector('.x-dmlb__h');if(h)h.textContent='SKIRMISH 1V1 · kills';}catch(e){}return r;};}
 // own death: out until the next round (no respawn countdown, no spawn protection shown)
