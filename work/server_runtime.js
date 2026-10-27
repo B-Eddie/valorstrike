@@ -49,7 +49,7 @@ function netClean(m){if(!m||typeof m!=='object'||Array.isArray(m)||typeof m.t!==
  return m;}
 function netConnect(create,code,publicRoom){
  if(create&&['ascent','bind','haven','split','lotus','breeze','random'].includes(window.xQMap))MP.map=window.xQMap;
- mpReset();MP.st='conn';mpMsg(create?'Creating server room…':'Joining server room…');mpUI();NET.host=create;
+ mpReset();NET.seatTries=0;NET.seat=null;MP.st='conn';mpMsg(create?'Creating server room…':'Joining server room…');mpUI();NET.host=create;
  MP.code=code;MP.pub=!!publicRoom;MP.loadT=performance.now();netOpenSocket(create,code,publicRoom);
 }
 function netOpenSocket(create,code,publicRoom){
@@ -78,12 +78,12 @@ function netOpenSocket(create,code,publicRoom){
   }
   if(m.t==='start'){
    const resume=NET.reconnecting&&m.you===NET.resumeMe&&(NET.recoverGame||NET.recoverLoading);
-   NET.reconnecting=false;NET.retryUntil=0;NET.inLog=[];NET.path=[];NET.correction=null;MP.snapClock=null;NET.latest=null;NET.lpAt=0;
+   NET.reconnecting=false;NET.retryUntil=0;NET.inLog=[];NET.path=[];NET.correction=null;MP.snapClock=null;NET.latest=null;NET.lpAt=0;NET.seat=null;
    MP.hc={open:true,send(m){if(m.t!=='hit'&&(m.t!=='in'||Number.isSafeInteger(m.seq)))netSend(m);}};
    if(resume){
     MP.team=m.team;netWeapon='';netReload=false;
     if(NET.recoverGame&&running){
-     NET.ready=true;NET.loadAt=0;MP.loadT=0;
+     NET.ready=true;NET.readyAt=performance.now();NET.loadAt=0;MP.loadT=0;
      const self=m.u.find(e=>e[0]===MP.me);if(self){player.x=self[4];player.y=self[5];player.z=self[6];player.vx=player.vy=player.vz=0;}
      netSend({t:'ready'});mpCliSnap(m);if(m.rs)mpCliRS(m.rs);netVisibility();
     }else{NET.ready=false;NET.latest={...m,t:'s'};}
@@ -94,11 +94,11 @@ function netOpenSocket(create,code,publicRoom){
   if(m.t==='s'){
    if(Number.isSafeInteger(m.q)&&m.q>=0)NET.ack=m.q;
    NET.latest=m;NET.receivedAt=performance.now();NET.serverAge=Date.now()-m.serverTime;NET.tickMs=m.tickMs;
-   if(NET.ready){mpCliMsg(m);if(m.rs)mpCliRS(m.rs);netSyncEffects(m.fx||[]);}return;
+   if(NET.ready){mpCliMsg(m);if(m.rs)mpCliRS(m.rs);netSyncEffects(m.fx||[]);netSeatCheck(m);}return;
   }
   if(m.t==='ac'&&m.ag==='Sage'&&m.k==='c')return;
   if(m.t==='ao'){if(m.rs)mpCliRS(m.rs);if(!m.ok&&m.k==='e'&&J.pick==='Jett'&&J.dash){J.dash=null;NET.dashUntil=0;}if(!m.ok){sgNo();say('Ability unavailable or target invalid',1000);}else if(J.pick==='Omen'&&(m.k==='x'||m.k==='c'))say(m.k==='x'?'From the Shadows · 4 s':'Shrouded Step · 1.2 s',1000);return;}
-  if(m.t==='po'){const c=Number(m.c);if(Number.isFinite(c))MP.ping=Math.max(0,Math.round(performance.now()-c));return;}
+  if(m.t==='po'){NET.poAt=performance.now();const c=Number(m.c);if(Number.isFinite(c))MP.ping=Math.max(0,Math.round(performance.now()-c));return;}
   mpCliMsg(m);
  };
  ws.onclose=event=>{if(NET.socket!==ws)return;NET.lastClose={code:event.code,reason:event.reason,at:Date.now()};/* 1008 'Rate or size limit' (a stalled network delivering its queued inputs at once) resumes like a transport loss; 1008 'Room full' stays final */if((![1000,1008,4001,4003].includes(event.code)||event.code===1008&&event.reason==='Rate or size limit')&&event.reason!=='Load timed out'&&netRetryConnection())return;netFinishConnection(event);};
@@ -120,6 +120,28 @@ function netRetryConnection(){
  NET.retryTimer=setTimeout(()=>{NET.retryTimer=0;if(NET.epoch===epoch&&NET.reconnecting)netOpenSocket(false,code,pub);},Math.min(4000,250*2**Math.min(4,NET.retryCount++)));
  return true;
 }
+// Seat check (online 'ghost' report): the page must never play a local match the server has no live unit for. A worker that
+// does not know our id (no row for MP.me in its snapshots: an old / mismatched server, a lost seat) or that is not applying
+// our inputs (row [19] = last applied input seq stuck while we keep sending: the seat never left loading, e.g. a lost
+// 'ready') left the player moving and shooting on the page only: invisible to everyone, no damage either way.
+// Recovery: re-send 'ready' (a no-op for a live seat), then resume the seat on a new socket, then give up with a message.
+const NET_SEAT={miss:60/* snapshots in a row without our row (3 s at 20 Hz) */,stallMs:3000,stallSeq:40/* inputs sent past the last applied one */,tries:3};
+function netSeatCheck(m){
+ if(!NET.ready||MP.st!=='game'||!NET.socket||NET.reconnecting||!Array.isArray(m.u))return;
+ const now=performance.now(),G=NET.seat||(NET.seat={miss:0,ack:-1,ackAt:now,fix:0});
+ const self=MP.me!=null?m.u.find(e=>e[0]===MP.me):null;
+ if(!self){if(++G.miss>=NET_SEAT.miss){G.miss=0;netUnsynced(G,'no row for our player in the server snapshots');}return;}
+ G.miss=0;const ack=self.length>19&&Number.isSafeInteger(self[19])?self[19]:null;if(ack===null)return;
+ if(ack!==G.ack){if(ack>G.ack&&G.ack>=0){G.fix=0;NET.seatTries=0;}G.ack=ack;G.ackAt=now;return;}
+ if((NET.seq||0)-ack<NET_SEAT.stallSeq||now-G.ackAt<NET_SEAT.stallMs)return;
+ G.ackAt=now;netUnsynced(G,'the server is not applying our inputs');}
+function netUnsynced(G,why){
+ NET.seatWhy=why;
+ if(!G.fix){G.fix=1;netSend({t:'ready'});return;}/* a seat stuck loading (its 'ready' lost) goes live */
+ NET.seatTries=(NET.seatTries||0)+1;
+ const old=NET.socket,fail={code:4000,reason:'Out of sync with the game server'};
+ if(NET.seatTries>=NET_SEAT.tries||!netRetryConnection())return netFinishConnection(fail);
+ old.onclose=null;try{old.close();}catch(e){}NET.lastClose=Object.assign(fail,{at:Date.now()});}
 function netReleaseInput(){
  if(typeof keys!=='undefined')for(const k in keys)keys[k]=false;
  fireHeld=false;NET.firePulse=NET.fireHeavy=NET.firePend=NET.firePendH=0;
@@ -132,7 +154,10 @@ function netTransportTick(){
  if(gap>2000){NET.lastSeen=now;NET.openAt=now;return;}
  if(NET.reconnecting&&now>=NET.retryUntil)return netFinishConnection(NET.lastClose||{code:1006,reason:''});
  if(NET.retryTimer)return;
- if(MP.on&&now-(NET.hbAt||0)>=2000){NET.hbAt=now;netSend({t:'pi',c:Math.round(now)});}/* 'pi' (not 'hb'): every worker version answers it with 'po' (the deployed one ignores 'hb'), and it measures ping */
+ if(MP.on&&now-(NET.hbAt||0)>=2000){NET.hbAt=now;netSend({t:'pi',c:Math.round(now)});}
+ /* seat check: the link answers (recent 'po') but no snapshot has come for 5 s since the match went live: the server is not
+    sending us the match (a seat that never left loading sends none), so we would be playing alone (netSeatCheck) */
+ if(NET.ready&&MP.st==='game'&&!document.hidden&&now-Math.max(NET.receivedAt||0,NET.readyAt||0)>5000&&now-(NET.poAt||0)<3000){NET.receivedAt=now;netUnsynced(NET.seat||(NET.seat={miss:0,ack:-1,ackAt:now,fix:0}),'no snapshots from the server');}/* 'pi' (not 'hb'): every worker version answers it with 'po' (the deployed one ignores 'hb'), and it measures ping */
  const silent=now-(NET.lastSeen||NET.openAt),connecting=!NET.welcomed;
  if((connecting&&now-NET.openAt>20000)||silent>(document.hidden?150000:30000)){
   const old=NET.socket;if(!netRetryConnection())return netFinishConnection({code:1006,reason:''});
@@ -162,7 +187,8 @@ function netTwReady(){const T=NET.tw;if(!T||J.dash)return false;const el=(perfor
 {const move0=moveP;moveP=function(){if(NET.socket)netCorrect(arguments[0]);const r=move0.apply(this,arguments);if(NET.socket&&player){const now=typeof XRT!=='undefined'&&XRT.at!=null?XRT.at:performance.now();NET.path.push({t:now,x:player.x,y:player.y||0,z:player.z});while(NET.path.length&&NET.path[0].t<now-5000)NET.path.shift();}return r;};}
 function netReconcile(e,ref){const ex=e[4]-ref.x,ey=e[5]-ref.y,ez=e[6]-ref.z,eh=Math.hypot(ex,ez);if(NET.dashUntil>performance.now()&&eh<2.5&&Math.abs(ey)<1){NET.correction=null;return 'dash';}/* predicted dash has a different tick phase: wait until it settles */if(eh>1||Math.abs(ey)>1){NET.correction=null;player.x+=ex;player.y+=ey;player.z+=ez;netShiftPath(ex,ey,ez);return 'snap';}NET.correction={x:eh<.05?0:ex,y:Math.abs(ey)<.15?0:ey,z:eh<.05?0:ez};if(!NET.correction.x&&!NET.correction.y&&!NET.correction.z){NET.correction=null;return 'kept';}return 'eased';}
 const netSelf0=mpCliSelf;mpCliSelf=function(e){const seq=MP.sq;netSelf0(e);if(!NET.socket)return;const ref=seq===e[14]?netPredicted(e[19],e[20]):null;if(seq!==e[14]){player.x=e[4];player.y=e[5];player.z=e[6];NET.path.length=0;NET.correction=null;}else if(ref)NET.lastFix=netReconcile(e,ref);else{NET.correction=null;NET.lastFix='waiting';/* startup/resume/stall: wait for an acknowledged predicted sample; comparing a past snapshot with today's position reintroduces rubber-banding */}if(netEquipWant&&(e[11]===netEquipWant||performance.now()>netEquipUntil))netEquipWant=null;const held=rw==='knife'?'Knife':wName();/* a swap the server has not applied yet: its snapshots still name the old gun (and its ammo) for a round trip; reverting to it lost the swap (netWeapon was reset, so the equip was never sent) */
- if(!netEquipWant&&e[11]&&WEAP[e[11]]&&wName()!==e[11]&&rw!=='knife'){netRec=true;try{if(MP.m5){const slot=['Classic','Shorty','Frenzy','Ghost','Sheriff'].includes(e[11])?'pis':'pri';if((slot==='pri'?FV.pri:FV.sec)!==e[11])bEquip(e[11],slot);swapW(slot);}else bEquip(e[11],'pri');}finally{netRec=false;}netWeapon=e[11];}const same=(rw==='knife'?'Knife':wName())===e[11];/* ammo only for the gun the server holds: mid-swap it was the other gun's, written into this slot */if(same&&e[16]!=null&&MP.m5){rsv=e[16];if(slots[rw])slots[rw].rsv=rsv;}if(same&&e[15]!=null&&!(reloading>0)){/* reloading > 0, not truthiness: a finished reload can leave it a hair below 0 */if(rw!=='knife')ammo=e[15];if(slots[rw])slots[rw].ammo=ammo;}updHud();};
+ /* TDM: a primary the current stage does not allow (the page's own start loadout) is not ours: 1 would equip a gun the server refuses */if(typeof FV!=='undefined'&&FV.tdm&&!MP.m5&&FV.pri&&typeof tdmOk==='function'&&!tdmOk(FV.pri,tdmTier())&&!netEquipWant){const was=rw==='pri';FV.pri=null;if(was){netRec=true;try{swapW('pis');}finally{netRec=false;}}slots.pri={};}
+ if(!netEquipWant&&e[11]&&WEAP[e[11]]&&wName()!==e[11]&&rw!=='knife'){netAdoptWeapon(e[11]);netWeapon=e[11];}const same=(rw==='knife'?'Knife':wName())===e[11];/* ammo only for the gun the server holds: mid-swap it was the other gun's, written into this slot */if(same&&e[16]!=null&&MP.m5){rsv=e[16];if(slots[rw])slots[rw].rsv=rsv;}if(same&&e[15]!=null&&!(reloading>0)){/* reloading > 0, not truthiness: a finished reload can leave it a hair below 0 */if(rw!=='knife')ammo=e[15];if(slots[rw])slots[rw].ammo=ammo;}updHud();};
 const netWalls=new Map(),netCbs=new Map();/* Jett Cloudburst rows (fx kind 'cb'): id -> {m: projectile mesh, s: smoked} */
 function netClearEffects(){document.getElementById('netBlind')?.remove();for(const m of netWalls.values()){scene.remove(m);m.children.forEach(q=>{q.geometry.dispose();q.material.dispose();});}netWalls.clear();for(const id of [...netDevs.keys()])netDevDrop(id);netOwnDevs.clear();}/* a barrier is a Group of segment meshes (no geometry of its own) */
 // Others' Cloudbursts from the snapshot: the projectile while it flies (s 0), then the smoke where the server landed it (s 1,
@@ -213,9 +239,19 @@ const netShoot0=shoot;shoot=function(){if(NET.socket&&(netReyna?.dismiss>0||netC
 // Camera, server shots and bots all treat positive pitch as looking up; send it unchanged.
 function netInputMsg(kk,w){const seq=++NET.seq;const log=NET.inLog||(NET.inLog=[]);log.push({seq,t:performance.now()});if(log.length>240)log.shift();const fp=NET.firePend,fh=NET.firePendH,fa=NET.firePendA;NET.firePend=NET.firePendH=NET.firePendA=0;/* a pending click rides this message once */return {t:'in',seq,r:yaw,p:pitch,f:(kk.KeyW?1:0)-(kk.KeyS?1:0),s:(kk.KeyD?1:0)-(kk.KeyA?1:0),j:kk.Space?1:0,c:kk.ControlLeft||kk.ControlRight?1:0,w:kk.ShiftLeft||kk.ShiftRight?1:0,ads:ads?1:0,az:ads===2&&w==='Operator'&&typeof xSC!=='undefined'&&xSC.lv===2?1:0/* Operator second zoom (5x): teammates spectating see it (roundState pov ADS 2) */,h4:kk.Digit4||kk.Numpad4?1:0,fire:(w!=='Knife'&&!WEAP[w]?.semi&&fireHeld)||NET.firePulse>performance.now()||fp?1:0,kh:NET.fireHeavy>performance.now()||fh?1:0,alt:NET.altPulse>performance.now()||fa?1:0,cb:J.pick==='Jett'&&kk.KeyC?1:0/* Cloudburst steering: C held */,u:kk.KeyF?1:0/* Use held: grabs / lets go of a rope ascender (shared motor) */};} // a held knife click is one swing on the client, so it is a pulse (not held fire) online
 let netWeapon='',netReload=false,netEquipWant=null,netEquipUntil=0,netRec=false;
+// The gun the server holds, in hand on the page: a sidearm goes in the sidearm slot, anything else in the primary slot, and the
+// viewmodel / HUD are rebuilt (onSkin) even when that slot was already in hand. DM / TDM used to write every server gun into
+// the primary slot without onSkin, so the viewmodel and the HUD gun name kept the previous gun (online 'ghost' report: a
+// pistol in hand with a primary named on the HUD) while shots used the server's gun.
+const NET_SIDEARMS=['Classic','Shorty','Frenzy','Ghost','Sheriff'];
+function netAdoptWeapon(n){if(!WEAP[n])return;const slot=NET_SIDEARMS.includes(n)?'pis':'pri';netRec=true;try{if((slot==='pri'?FV.pri:FV.sec)!==n)bEquip(n,slot);if(rw!==slot)swapW(slot);else{onSkin();try{setScope(false);}catch(er){}updHud();}}finally{netRec=false;}}
+// A Deathmatch / TDM loadout pick (dmGive: the loadout menu, the TDM stage switch) changes the gun without swapW, so its equip
+// went out only with the next 50 ms input tick and a snapshot that landed first (still naming the old gun) put the old gun
+// back: the pick was lost. Send it at once and hold the reconcile until the server names it (or 1 s passes, e.g. refused).
+if(typeof dmGive==='function'){const netDmGive0=dmGive;dmGive=function(n){const r=netDmGive0.apply(this,arguments);if(r!==false&&!netRec&&NET.socket&&NET.socket.readyState===1&&MP.st==='game'&&NET.ready){const w=rw==='knife'?'Knife':wName();netWeapon=w;netSend({t:'equip',w});netEquipWant=w;netEquipUntil=performance.now()+1000;}return r;};}
 // A local swap sends its equip at once and holds the snapshot reconcile (above) until the server names that gun or 1 s passes.
 const netSwap0=swapW;swapW=function(s){const r=netSwap0.apply(this,arguments);if(!netRec&&NET.socket&&NET.socket.readyState===1&&MP.st==='game'&&NET.ready){const w=rw==='knife'?'Knife':wName();if(w!==netWeapon){netWeapon=w;netSend({t:'equip',w});netEquipWant=w;netEquipUntil=performance.now()+1000;}}return r;};
-setInterval(()=>{if(!NET.socket||NET.socket.readyState!==1||!MP.on||NET.reconnecting)return;const now=performance.now();if(MP.st==='game'&&running&&!window.xLdOn&&!NET.ready){NET.ready=true;NET.loadAt=0;MP.last=now;netSend({t:'ready'});if(NET.latest)mpCliMsg(NET.latest);}if(!NET.ready){/* Still loading the match: tell the server every 5 s how far along we are, so a slow load is kept rather than dropped at the 180 s idle limit. */if(NET.loadAt&&!(now-(NET.lpAt||0)<5000)){NET.lpAt=now;const f=v=>Number.isFinite(v)?Math.round(Math.max(0,Math.min(1,v))*1000)/1000:-1;let m=-1;try{m=f(NM.loaded);}catch(e){}netSend({t:'lp',p:f(window.xLdAgFrac),m});}return;}if((document.hidden?1:0)!==(NET.hid||0))netVisibility();const loading=reloading>0;if(loading&&!netReload)netSend({t:'reload'});netReload=loading;const kk=keys||{},w=rw==='knife'?'Knife':wName();if(w!==netWeapon){netWeapon=w;netSend({t:'equip',w});}netSend(netInputMsg(kk,w));},50);
+setInterval(()=>{if(!NET.socket||NET.socket.readyState!==1||!MP.on||NET.reconnecting)return;const now=performance.now();if(MP.st==='game'&&running&&!window.xLdOn&&!NET.ready){NET.ready=true;NET.readyAt=now;NET.loadAt=0;MP.last=now;netSend({t:'ready'});if(NET.latest)mpCliMsg(NET.latest);}if(!NET.ready){/* Still loading the match: tell the server every 5 s how far along we are, so a slow load is kept rather than dropped at the 180 s idle limit. */if(NET.loadAt&&!(now-(NET.lpAt||0)<5000)){NET.lpAt=now;const f=v=>Number.isFinite(v)?Math.round(Math.max(0,Math.min(1,v))*1000)/1000:-1;let m=-1;try{m=f(NM.loaded);}catch(e){}netSend({t:'lp',p:f(window.xLdAgFrac),m});}return;}if((document.hidden?1:0)!==(NET.hid||0))netVisibility();const loading=reloading>0;if(loading&&!netReload)netSend({t:'reload'});netReload=loading;const kk=keys||{},w=rw==='knife'?'Knife':wName();if(w!==netWeapon){netWeapon=w;netSend({t:'equip',w});}netSend(netInputMsg(kk,w));},50);
 setInterval(netTransportTick,1000);
 // Background-tab liveness. Hidden tabs throttle setInterval (about 1 Hz, then once a minute), which starved the
 // server's idle check and dropped players who switched tabs. The client tells the server when the tab hides
@@ -424,5 +460,10 @@ function nmSkmHud(K){if(!K||!Array.isArray(K.sc))return;const prev=MP.skm;MP.skm
   const off=!netModeOk('skm'),sel=MP.mode==='skm'&&!!MP.on,t=off?SKM_MSG:sel?'Skirmish 1v1 · two players, one per team · no bots · first to 5 rounds':'';
   if(off)b.title=SKM_MSG;if(!n){if(!t)return;n=document.createElement('p');n.id='xOnSkm';n.setAttribute('role','note');n.style.cssText='margin:4px 0 0;font:600 11px var(--sans,sans-serif);letter-spacing:.04em;color:#c9cdd3;opacity:.85';const seg=b.parentNode;seg.parentNode.insertBefore(n,seg.nextSibling);}
   if(n.textContent!==t)n.textContent=t;n.hidden=!t;}catch(e){}};}
+
+// Online panel: a one-line description of the selected mode (user 2026-10-27: mode cards said only "NEW"), the rules the game
+// server plays (simulation.js matchSeconds / maxKills, modes.js ESC / SKM / VARIANT_RULES, spike.js first to 13).
+const NET_MODE_DESC={dm:'Deathmatch · free-for-all · first to 40 kills · 9:00',tdm:'Team Deathmatch · 5v5 · first team to 100 kills · weapons upgrade every stage · 9:30',five:'Unrated · plant or defuse the Spike · first to 13 rounds',esc:'Escalation · weapons change each level · first team through all 12 levels · 10:00',swift:'Swiftplay · plant or defuse the Spike · first to 5 rounds',sr:'Spike Rush · everyone carries a Spike, one random gun each round · first to 4 rounds',rep:'Replication · each team plays one agent · first to 5 rounds',skm:'Skirmish 1v1 · elimination rounds, free loadout, no abilities · first to 5 rounds'};
+{const u0=mpUI;mpUI=function(){u0.apply(this,arguments);try{const e=mpEl('xOnDesc');if(e){const t=NET_MODE_DESC[MP.mode]||'';if(e.textContent!==t)e.textContent=t;}}catch(er){}};}
 
 // ---- END TRUSTED ONLINE SERVER ----

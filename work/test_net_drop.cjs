@@ -34,7 +34,7 @@ const start={t:'start',v:2,you:7,team:0,mode:'tdm',map:'ascent',u:[row],tl:300,k
 const snap=q=>({t:'s',tl:200,u:[row],k:{},d:{},ev:[],serverTime:Date.now()});
 // Run the page's timers for ms: the 1 s transport watchdog, with snapshots from the socket every 50 ms while feed() says so.
 const play=(ms,feed)=>{const end=now+ms;while(now<end){advance(50);const ws=c.NET.socket;if(feed&&ws&&ws.readyState===1&&feed(ws))ws.receive(snap());if(now%1000<50)c.netTransportTick();}};
-const live=()=>{c.MP.st='game';c.MP.on=true;c.MP.role='client';c.NET.ready=true;c.NET.loadAt=0;};
+const live=()=>{c.MP.st='game';c.MP.on=true;c.MP.role='client';c.NET.ready=true;c.NET.loadAt=0;c.MP.me=7;/* mpCliStart sets it from start.you (stubbed here); without it the seat check (online ghost) ends the match */};
 const lastMsg=()=>messages.at(-1)||'';
 (async()=>{
  // 1. Worker without 'welcome' (deployed worker): live match with snapshots for 60 s, no watchdog teardown.

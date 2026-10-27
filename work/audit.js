@@ -306,8 +306,8 @@ const modalOn = (id) => $(id).classList.contains("on");
 const closeModals = () => doc.querySelectorAll(".modal.on").forEach((m) => m.classList.remove("on"));
 const toLobby = () => { phase = "toLobby"; ["pre", "xAg", "result", "game"].forEach((i) => ($(i).style.display = "none")); $("lobby").style.display = "flex"; closeModals(); advance(50); lastErr = errors.length; lastX = xErrCalls.length; };
 
-// intro modal close
-clickCheck("Intro: Got it", doc.querySelector("#mIntro [data-close]"), () => !modalOn("mIntro"));
+// no "still in development" intro popup (removed, user 2026-10-27): the lobby is usable at once
+{ const ok = !$("mIntro") && !doc.querySelector(".modal.on"); report.push({ label: "No intro popup over the lobby", pass: ok, cond: ok, errs: ok ? [] : ["intro / modal open at boot"] }); }
 // top nav + lobby chrome
 { const want = ["PLAY", "CAREER", "COLLECTION", "AGENTS", "SETTINGS"], got = Array.from(doc.querySelectorAll("#lobby .x-bar .x-lnav [data-nav]")).map((b) => String(b.textContent || "").trim().toUpperCase());
   const ok = disp("lobby") !== "none" && want.every((w, i) => got[i] === w) && got.length === want.length;
