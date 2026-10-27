@@ -20290,7 +20290,7 @@ window.xSkinFinishers={state:XF,play:xfPlay,clear:xfClear,warm:xfWarm};
 //    player's own viewmodel (xskGet answers for the teammate while the key / load is made);
 //  - equip on a new target or weapon, fire on each of their shots (bfxBot: every offline mate shot and every online 's'
 //    event reaches it at the shooter's spot), reload (online: the server's reload clock, roundState pov[id][2]; offline:
-//    the mag running dry), idle otherwise; the rig is scaled to the authored 43.383 deg viewmodel FOV as xvFPTick does;
+//    the mag running dry), idle otherwise; the rig is scaled to the authored 43.383 deg viewmodel FOV across and up in camera space (as xAfFov);
 //  - their ADS: rifles / SMGs zoom the camera to the weapon's zoom, snipers show the scope (viewmodel hidden), as the
 //    player's own setScope does (online: pov[id][0], the server's input.ads; offline bots never ADS);
 //  - their flash: a white screen for the blind they are under (online pov[id][1], offline b.blind), as #netBlind does
@@ -20342,7 +20342,10 @@ function xspvTick(dt) {
   else if (XSPV.fire > 0) { XSPV.fire = 0; F.kind = null; xvFPPlay(F, w === 'Knife' ? 'attack 1' : 'fire'); }
   else if (F.kind === 'reload' || (F.kind !== 'idle' && F.age > (F.duration || (F.action ? F.action.getClip().duration : 0.4)))) xvFPPlay(F, 'idle');
   F.am.update(dt); F.gm.update(dt); F.age += dt;
-  const s = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) / Math.tan(THREE.MathUtils.degToRad(43.383 / 2)); F.root.scale.set(s, s, 1); F.root.position.set(F.origin.x * s, F.origin.y * s, F.origin.z);
+  // FOV match to the rig's authored 43.383 deg: across and up in CAMERA space, depth kept. The root is turned PI/2 about Y
+  // (the native rig faces +X), so local x = camera depth and local z = camera width: scale (1, s, s), as xAfFov. (s, s, 1)
+  // stretched depth and height but not width - the spectated gun / arms drew squished horizontally, pitched up, arms off screen.
+  const s = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) / Math.tan(THREE.MathUtils.degToRad(43.383 / 2)); F.root.scale.set(1, s, s); F.root.position.set(F.origin.x * s, F.origin.y * s, F.origin.z);
 }
 { const t0 = vmTick; vmTick = function (dt) { const r = t0.apply(this, arguments); try { xspvTick(Math.min(0.1, dt || 0.016)); } catch (e) { if (!XSPV.err) { XSPV.err = String(e); console.warn('spectate pov', e); } } return r; }; }
 // the spectated teammate's ammo in the HUD online (index.html's xHud wrapper counts offline shots in a.xAm)
