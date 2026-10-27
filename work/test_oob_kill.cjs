@@ -7,7 +7,7 @@ const html=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
 assert(html.includes('function nmOobWatch(C)'),'watch is spliced into the generated page');
 const body=src.slice(src.indexOf('function nmNearV('),src.indexOf("(window.XHK||(window.XHK=[])).push(()=>{const C=nmActive();if(C)nmOobWatch(C);})"));
 function mk(){let now=0;const calls={say:[],hurt:[],kill:[],allyDie:[]};
- const ctx={performance:{now:()=>now},running:true,paused:false,console,
+ const ctx={performance:{now:()=>now},running:true,paused:false,console,NM_NONE:[], // perf-1: nmNearV's shared empty cell list (defined at the top of native_maps_runtime.js, outside this slice)
    nmHeight:(C,x,z,y)=>0,
    player:{x:0,y:0,z:0,hp:100},bots:[],allies:[],
    say:(m)=>calls.say.push(m),hurt:(t,n,by)=>{calls.hurt.push([t,n,by]);t.hp-=n;},

@@ -370,7 +370,9 @@ function xbbOn(){return !!(window.BotBrain&&window.xBuyMill!==false&&running&&mo
 function xbbBl(C,i){if(XBYM.blC!==C){XBYM.blC=C;XBYM.bl=new Map();}let v=XBYM.bl.get(i);if(v===undefined){const n=C.nav.nodes[i];v=nmBlocked(C,n[0],n[2],.3,n[1])?1:0;XBYM.bl.set(i,v);}return v;}
 function xbbTeam(C,atk){const k=xbvKey()+'|'+(atk?1:0);if(XBYM.k!==xbvKey()){XBYM.k=xbvKey();XBYM.T={};}let T=XBYM.T[k];if(T)return T;
  const M=C.meta,a=atk?M.attacker:M.defender,walls=window.SpawnBarriers?SpawnBarriers.pieces(C.key).filter(q=>q.side===(atk?'atk':'def')):[];
- return XBYM.T[k]={walls,area:BotBrain.buyArea(C.nav.nodes,C.nav.adj,nmNear(C,a[0],a[2],a[1]),walls,i=>!C.playable||!!C.playable[i]),spots:[]};}
+ const ak=(atk?1:0)+'|'+walls.length;if(XBYM.AC!==C){XBYM.AC=C;XBYM.A=new Map();}let area=XBYM.A.get(ak);if(!area){area=BotBrain.buyArea(C.nav.nodes,C.nav.adj,nmNear(C,a[0],a[2],a[1]),walls,i=>!C.playable||!!C.playable[i]);XBYM.A.set(ak,area);}
+ /* perf-1 (round-start hitch): the spawn's walkable region depends only on the map and the side's walls (read-only after it is built), so it is built once per map and side instead of at every round start (xbvKey changes with the score: ~10 ms per round) */
+ return XBYM.T[k]={walls,area,spots:[]};}
 const XBB_RING=[[.15,0],[-.15,0],[0,.15],[0,-.15]];
 function xbbClose(T,x,z){const nr=BotBrain.buyNear(T.walls,x,z);return !!nr&&(nr.d<XBYM_IN||!nr.inside&&nr.d<1.5);}
 function xbbOk(C,T,y0){return (x,z)=>{{const nr=BotBrain.buyNear(T.walls,x,z);if(nr&&(nr.d<XBYM_IN+.05||!nr.inside&&nr.d<1.5))return null;}const i=nmNear(C,x,z,y0);if(i<0||!T.area.f[i])return null;const n=C.nav.nodes[i];if(Math.hypot(n[0]-x,n[2]-z)>.9||Math.abs(n[1]-y0)>2.5)return null;

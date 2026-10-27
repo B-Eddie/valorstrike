@@ -13,7 +13,7 @@ function threeDir(){
  fs.writeFileSync(path.join(dir,'SkeletonUtils.js'),'THREE.SkeletonUtils={clone:function(o){return o.clone(true);}};');
  return {dir,rev:'160'};
 }
-function boot({real3=false,seed=1,coarse=false,ls=null,native=false}={}){
+function boot({real3=false,seed=1,coarse=false,ls=null,native=false,fastGlobal=false}={}){
  const audit=fs.readFileSync(path.join(__dirname,'audit.js'),'utf8');let src=audit.slice(0,audit.indexOf('// ---------- audit ----------')).replace(/^"use strict";/,'');
  // coarse: a touch device ((pointer: coarse) matches), so the page builds and shows its touch controls
  if(coarse)src=src.replace('matchMedia: () => ({ matches: false,','matchMedia: (q) => ({ matches: /coarse/.test(String(q)),');
@@ -21,6 +21,13 @@ function boot({real3=false,seed=1,coarse=false,ls=null,native=false}={}){
  // the audit strips, and run vendor/three-mesh-bvh.umd.js (the native collision BVH).
  if(native){const A1='const fixture = s[2].replace(',A2='if (src === "vendor/three-mesh-bvh.umd.js" || ';if(!src.includes(A1)||!src.includes(A2))throw Error('page_harness: audit.js script loop moved');
   src=src.replace(A1,'const fixture = s[2]; void (').replace(A2,'if (src === "vendor/three-mesh-bvh.umd.js") { try { vm.runInContext(fs.readFileSync(path.join(__dirname,"..",src),"utf8"),context,{filename:src}); } catch (e) { rec("bvh", e); } continue; } if (');}
+ // fastGlobal (perf tools only): the page runs in a context made with vm.constants.DONT_CONTEXTIFY, an ordinary global
+ // object, instead of a contextified sandbox whose every global lookup (Math, Number, Infinity, THREE, page globals) goes
+ // through V8 interceptors - in a hot loop that was 5-8x slower than a browser (nmNear: 115 us -> 15 us per call) and
+ // skewed a profile toward global-heavy code. Same fake window, same scripts; tests keep the default.
+ if(fastGlobal){const W0='const win = {',W1='  URL, URLSearchParams, TextEncoder, TextDecoder, structuredClone, queueMicrotask, atob, btoa,\n};',W2='const context = vm.createContext(win);';
+  if(!src.includes(W0)||!src.includes(W1)||!src.includes(W2))throw Error('page_harness: audit.js window literal moved');
+  src=src.replace(W0,'const win = (() => { const c = vm.createContext(vm.constants.DONT_CONTEXTIFY), G = vm.runInContext("globalThis", c); Object.defineProperty(G, "__ctx", { value: c }); return Object.assign(G, {').replace(W1,'  URL, URLSearchParams, TextEncoder, TextDecoder, structuredClone, queueMicrotask, atob, btoa,\n}); })();').replace(W2,'const context = win.__ctx;');}
  const T=real3?threeDir():null,env={...process.env,REAL3:real3?'1':'',REAL3_DIR:T?T.dir:''};if(!real3)delete env.REAL3;
  const proc=Object.create(process,{env:{value:env},argv:{value:[process.argv[0],'audit']}});
  // ls: a localStorage store present while the page's scripts load (a reload: settings saved by an earlier session are
