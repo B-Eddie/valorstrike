@@ -139,7 +139,34 @@ try { const st = document.createElement("style"); st.textContent = "#xBow{positi
   const d = document.createElement("div"); d.id = "xBow"; d.innerHTML = "<u></u><i><b></b></i><u></u>"; (document.getElementById("game") || document.body).appendChild(d); } catch (e) {}
 function xBowHud() { const q = J.eq, hk = q && q.st !== "rec" ? xEqHold(q) : "", on = hk === "bow" || hk === "fault", el = $("xBow"); if (!el) return; const pw = on ? xEqHoldPw(q) : 0, k = on ? hk + Math.round(pw * 20) + "|" + (q.bn | 0) : "";
   if (xBowHud.k === k) return; xBowHud.k = k; el.classList.toggle("on", on); if (!on) return; el.querySelector("b").style.width = (pw * 100).toFixed(0) + "%"; el.querySelectorAll("u").forEach((u, i) => { u.classList.toggle("on", (q.bn | 0) > i); u.style.display = hk === "fault" ? "none" : ""; }); } // Fault Line: the charge bar only (no bounces)
-{ const t0 = jTick; jTick = function (dt) { const v = t0.apply(this, arguments); try { xEqTick(dt); xEqHud(); xBowHud(); } catch (e) { J.eq = null; } try { xInstTick(dt); } catch (e) { XABT.inst = null; } return v; }; }
+// Curveball curve hint (user: "add a curve-direction indicator so the player knows left click curves left, right click curves right"):
+// while Phoenix holds Curveball (J.eq e, drawing / ready) both paths the flare can take are drawn from the hand as dotted arcs -
+// FIRE (left click) curves LEFT, ALT FIRE (right click) curves RIGHT (valorant.fandom.com/wiki/Curveball) - each the same path
+// the cast flies (phCurve: 5 m ahead short of a wall, then 2.5 m aside) ending in a bright pop marker, plus a HUD tag under the
+// crosshair. Hidden as soon as the throw leaves the hand (rel / rec) or the ability is put away.
+var XCBH = { n: 10, u0: 0.18, g: null, d: [[], []] };
+function xCbHintPts(o, fx, fz, side, n) { // pure (tests): n points along the cast's quadratic path, from u0 (clear of the camera) to the pop
+  const c = phCurve(o, fx, fz, side), out = []; for (let i = 0; i < n; i++) { const u = XCBH.u0 + (1 - XCBH.u0) * (i / (n - 1)), w = 1 - u;
+    out.push(new THREE.Vector3(w * w * o.x + 2 * w * u * c.mid.x + u * u * c.end.x, w * w * o.y + 2 * w * u * c.mid.y + u * u * c.end.y, w * w * o.z + 2 * w * u * c.mid.z + u * u * c.end.z)); }
+  return out;
+}
+function xCbHintOn() { const q = J.eq; return !!(q && J.pick === "Phoenix" && q.k === "e" && (q.st === "draw" || q.st === "ready") && running && player && player.hp > 0); }
+function xCbHintBuild() { // two arcs of small additive dots (index 0 = FIRE / left, 1 = ALT FIRE / right), the last dot of each a bigger pop marker
+  if (XCBH.g) { scene.add(XCBH.g); return XCBH.g; } // built once (no new geometry per match); re-added after a scene clear
+  const g = new THREE.Group(); g.name = "xcb-hint"; g.visible = false; const geo = new THREE.SphereGeometry(1, 8, 6);
+  const mats = [0xffe7a0, 0xffb060].map((c) => new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: 0.85, depthWrite: false, blending: THREE.AdditiveBlending }));
+  for (let s = 0; s < 2; s++) for (let i = 0; i < XCBH.n; i++) { const m = new THREE.Mesh(geo, mats[s]); m.scale.setScalar(i === XCBH.n - 1 ? 0.12 : 0.03 + 0.012 * i / XCBH.n); m.raycast = () => {}; m.frustumCulled = false; m.renderOrder = 3; g.add(m); XCBH.d[s].push(m); }
+  scene.add(g); return (XCBH.g = g);
+}
+function xCbHintTick() {
+  const on = xCbHintOn(), el = $("xCbH"); if (el && el.classList.contains("on") !== on) el.classList.toggle("on", on);
+  if (!on) { if (XCBH.g) XCBH.g.visible = false; return; }
+  const g = XCBH.g && XCBH.g.parent ? XCBH.g : xCbHintBuild(), o = pEye(), fx = -Math.sin(yaw), fz = -Math.cos(yaw); g.visible = true;
+  [-1, 1].forEach((side, s) => { const P = xCbHintPts(o, fx, fz, side, XCBH.n); XCBH.d[s].forEach((m, i) => m.position.copy(P[i]).setY(P[i].y - 0.22 * (1 - i / (XCBH.n - 1)))); }); // starts a little under the crosshair (the hand), meets the true pop point
+}
+try { const st = document.createElement("style"); st.textContent = "#xCbH{position:fixed;left:50%;top:calc(50% + 30px);transform:translateX(-50%);display:none;gap:46px;pointer-events:none;z-index:6;font:700 11px/1 sans-serif;letter-spacing:.08em;color:#fff;text-shadow:0 0 3px #000,0 0 2px #000}#xCbH.on{display:flex}#xCbH span:first-child{color:#ffe7a0}#xCbH span:last-child{color:#ffb060}";
+  document.head.appendChild(st); const d = document.createElement("div"); d.id = "xCbH"; d.innerHTML = "<span>\u25C0 L-CLICK</span><span>R-CLICK \u25B6</span>"; (document.getElementById("game") || document.body).appendChild(d); } catch (e) {}
+{ const t0 = jTick; jTick = function (dt) { const v = t0.apply(this, arguments); try { xEqTick(dt); xEqHud(); xBowHud(); } catch (e) { J.eq = null; } try { xInstTick(dt); } catch (e) { XABT.inst = null; } try { xCbHintTick(); } catch (e) { if (XCBH.g) XCBH.g.visible = false; } return v; }; }
 // First person: the agent's native arms draw the ability (work/ability_fp_runtime.js, ABILITY FIRST PERSON).
 // ---- Third person: others see the throw. A cast relayed for another unit (online relay / trusted-server replay, mpFx)
 // plays the rig's throw / cast one-shot (upper-body rigs) or the right-arm swing (skinned rigs), typed like the first person.

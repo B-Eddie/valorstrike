@@ -8,7 +8,7 @@ const cut=(a,b)=>{const i=html.indexOf(a);assert(i>0,'missing '+a);const j=html.
 const src=cut('function phCurve(','\n  if (code === "KeyQ")')+'\n}\n';
 const tick='function orbTick(dt){'+cut('{ const A = J.orbs, n = A.length;','\n  if (J.dr) drTick(dt);')+'}';
 const pops=[];const ctx=vm.createContext({THREE,Math,ray:new THREE.Raycaster(),solids:[],scene:{add(){}},J:{e:2,cd:{e:0},tk:0,orbs:[]},player:{x:0,z:0},yaw:0,
- pEye:()=>new THREE.Vector3(0,1.6,0),jAim:()=>new THREE.Vector3(0,-.3,-1).normalize(),jM:()=>({position:new THREE.Vector3()}),jMat:()=>null,orbGeo:null,blip(){},jRel(){},jPop:p=>pops.push(p.clone()),enPop(){}});
+ pEye:()=>new THREE.Vector3(0,1.6,0),jAim:()=>new THREE.Vector3(0,-.3,-1).normalize(),jM:()=>({position:new THREE.Vector3()}),xCbOrb:p=>({position:p.clone(),scale:{setScalar(){}}}),XCBF:{orb:.3},jMat:()=>null,orbGeo:null,blip(){},jRel(){},jPop:p=>pops.push(p.clone()),enPop(){}});
 vm.runInContext(cut('const XAB_WIND =','const ABI_M =').replace(/^const /gm,'var ')+src+tick,ctx);
 const near=(v,x,y,z,m)=>assert.ok(Math.abs(v.x-x)<1e-6&&Math.abs(v.y-y)<1e-6&&Math.abs(v.z-z)<1e-6,m+': '+v.toArray());
 // facing -Z (yaw 0): FIRE curves left (-X), flat at eye height, 5 m ahead then 2.5 m aside

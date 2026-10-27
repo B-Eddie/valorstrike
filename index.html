@@ -8353,18 +8353,47 @@ function jRcnPulse(p) {
   say(J.rv.length + " enem" + (J.rv.length === 1 ? "y" : "ies") + " revealed", 900);
 }
 const XLEER = 1.6; // Leer nearsights for 1.6 s once it arrives (wiki.playvalorant.com/en-us/Leer); server LEER.active
-function jPop(p) {
-  SFX.flash(); const m = jM(orbGeo, xAdd("pcore", 0xfff6e8, 1)); m.scale.setScalar(4); m.position.copy(p); jFx(m, 0.3);
-  const hm = jM(smokeGeo, xAdd("phalo", 0xff9a40, 0.45)); hm.scale.setScalar(0.3); hm.position.copy(p); jFx(hm, 0.3).g = 0.25;
+// Phoenix Curveball flash (valorant.fandom.com/wiki/Curveball: max blind 1.5 s; wiki Status Effect#Flash: a player looking at
+// the pop is fully flashed for the duration, which then fades over 1 s; turned away = only slightly blinded for a very brief
+// time). Who is flashed is the server's rule (devices.js DEV.curveball radius 30, abilities.js flash: line of sight and
+// facing > 0.5 = within 60 deg of the view): bots look from their own floor + 1.6 m (native maps have upper floors; a flat
+// 1.6 m eye sat inside them and never saw the pop). orb / glow: the flare in flight, a 0.3 m white-hot core in two additive
+// shells out to 1.1 m (was a bare 0.25 m bead); pop: the core flash.
+const XCBF = { blind: 1.5, fade: 1, face: 0.5, r: 30, faint: 0.35, faintT: 0.12, orb: 0.3, glow: [0.6, 1.1], pop: 1.6 };
+const cbOrbGeo = new THREE.SphereGeometry(1, 16, 12);
+function xCbGlowMat(i) { const a = xCbGlowMat.m || (xCbGlowMat.m = []); return a[i] || (a[i] = new THREE.MeshBasicMaterial({ color: i ? 0xff9a3c : 0xffe08a, transparent: true, opacity: i ? 0.28 : 0.55, depthWrite: false, blending: THREE.AdditiveBlending })); }
+function xCbOrb(p) { // the Curveball flare in flight: core + glow shells (children, released with the orb by jRel via userData.kids)
+  const m = jM(cbOrbGeo, jMat("cbOrb", () => new THREE.MeshBasicMaterial({ color: 0xfffbea }))); m.scale.setScalar(XCBF.orb); m.position.copy(p);
+  const kids = XCBF.glow.map((r, i) => { const h = new THREE.Mesh(cbOrbGeo, xCbGlowMat(i)); h.scale.setScalar(r / XCBF.orb); h.raycast = () => {}; h.renderOrder = 2; m.add(h); return h; });
+  m.userData.kids = kids; scene.add(m); return m;
+}
+function xFlashScreen(hold, peak, fade) { // the white flash screen: peak opacity held for hold s, then faded over fade s; a weaker flash never cuts a stronger one short
+  const w = $("xWh"), t = performance.now(), F = xFlashScreen; if (!w) return;
+  if (F.until > t && F.peak > peak) return;
+  clearTimeout(F.k); F.until = t + hold * 1000; F.peak = peak;
+  w.style.background = "radial-gradient(circle, #fff 0, #fffaf0 40%, #ffd6a0 100%)"; w.style.transition = "none"; w.style.opacity = peak;
+  F.k = setTimeout(() => { F.until = 0; F.peak = 0; w.style.transition = "opacity " + fade + "s ease-out"; w.style.opacity = 0; setTimeout(() => { if (!(F.until > 0)) w.style.background = ""; }, fade * 1000 + 50); }, hold * 1000);
+}
+function xFlashPlayer(p, bl) { // the player at a flash pop: looking at it -> full white for bl s + the 1 s fade; turned away (still in sight) -> faint and brief
+  if (!(player.hp > 0)) return 0; const e = pEyeTo(PE_V), v = p.clone().sub(e), l = v.length() || 0.01;
+  if (l >= XCBF.r || !los(e, p)) return 0; const c = v.dot(jAim()) / l;
+  if (c > XCBF.face) { xFlashScreen(bl, 1, XCBF.fade); return 2; }
+  xFlashScreen(XCBF.faintT, XCBF.faint * Math.max(0.3, (c + 1) / (1 + XCBF.face)), 0.3); return 1;
+}
+function xFlashBots(p, bl) { // bots at a flash pop: in range, line of sight from their eye, facing > XCBF.face -> blind bl s (= server)
+  let n = 0; const e = new THREE.Vector3();
   bots.forEach((b) => {
-    if (!b.alive) return; const bp = new THREE.Vector3(b.g.position.x, 1.6, b.g.position.z), ry = b.g.rotation.y, vx = p.x - bp.x, vz = p.z - bp.z, l = Math.hypot(vx, vz) || 0.01;
-    if (l < 30 && (vx * Math.sin(ry) + vz * Math.cos(ry)) / l > 0.3 && los(bp, p)) b.blind = 1.5;
+    if (!b.alive || !b.g) return; const q = b.g.position, ry = b.g.rotation.y; e.set(q.x, (q.y || 0) + 1.6, q.z);
+    const vx = p.x - e.x, vz = p.z - e.z, h = Math.hypot(vx, vz) || 0.01;
+    if (Math.hypot(h, p.y - e.y) < XCBF.r && (vx * Math.sin(ry) + vz * Math.cos(ry)) / h > XCBF.face && los(e, p)) { b.blind = Math.max(b.blind || 0, bl); n++; }
   });
-  if (player.hp > 0) {
-    const e = pEyeTo(PE_V), v = p.clone().sub(e), l = v.length() || 0.01;
-    const c = v.dot(jAim()) / l;
-    if (l < 30 && c > 0.5 && los(e, p)) { const w = $("xWh"); w.style.background = "radial-gradient(circle, #fff 0, #fffaf0 40%, #ffd6a0 100%)"; w.style.transition = "none"; w.style.opacity = Math.min(1, 0.6 + 0.4 * (c - 0.5) / 0.5); setTimeout(() => { w.style.transition = "opacity 1.25s ease-out"; w.style.opacity = 0; setTimeout(() => (w.style.background = ""), 1300); }, 250); }
-  }
+  return n;
+}
+function jPop(p) {
+  SFX.flash(); const m = jM(orbGeo, xAdd("pcore", 0xfff6e8, 1)); m.scale.setScalar(XCBF.pop / 0.25); m.position.copy(p); jFx(m, 0.3);
+  const hm = jM(smokeGeo, xAdd("phalo", 0xff9a40, 0.45)); hm.scale.setScalar(0.4); hm.position.copy(p); jFx(hm, 0.35).g = 0.25;
+  xFlashBots(p, XCBF.blind);
+  xFlashPlayer(p, XCBF.blind); // Phoenix's own flash blinds him too when he looks at it (friendlyfire Yes)
 }
 // Sova bolt flight on the client: the shared SovaBolt.path (vendor/sova-bolt.cjs, the server flies the same one) against
 // the map's solids (face normals for the bounces) and the floor. pw 0..1 = HOLD FIRE charge, nb 0..2 = ALT FIRE bounces.
@@ -8414,7 +8443,7 @@ function phKey(code) {
     // Curves like the server's (devices.js DEV.curveball): 5 m ahead (short of a wall), then 2.5 m to the LEFT by default,
     // to the RIGHT while ALT FIRE (right mouse) is held, as in Valorant; pops 0.6 s after FIRE (wiki windup: release + xWf).
     const o = pEye(), side = typeof mpAltHeld !== "undefined" && mpAltHeld ? 1 : -1, c = phCurve(o, fx, fz, side);
-    const m = jM(orbGeo, jMat("orb", () => new THREE.MeshBasicMaterial({ color: 0xfff2b0 }))); m.position.copy(o); scene.add(m); J.orbs.push({ m, a: o, c: c.mid, b: c.end, t: 0, w: xWf("curveball") }); try { if (typeof xbFlashWarn === "function") xbFlashWarn(c.end, xWf("curveball")); } catch (e) {} // enemy bots may read it and turn away (bots-tune-4) blip(800, 0.1, "sine", 0.15);
+    const m = xCbOrb(o); J.orbs.push({ m, a: o, c: c.mid, b: c.end, t: 0, w: xWf("curveball"), cb: 1 }); try { if (typeof xbFlashWarn === "function") xbFlashWarn(c.end, xWf("curveball")); } catch (e) {} blip(800, 0.1, "sine", 0.15); // enemy bots may read it and turn away (bots-tune-4); the cast blip sat inside this comment
   }
   if (code === "KeyQ") { // Hot Hands (basic, Q in Valorant): the zone spreads to XHOT.r over XHOT.grow s (jFxTick)
     if (J.q < 1 || J.cd.q > 0) return no(); J.q--; J.cd.q = 0.6;
@@ -8465,7 +8494,8 @@ function jFxTick(dt) {
     A.length = k; }
   { const A = J.orbs, n = A.length; let k = 0;
     for (let i = 0; i < n; i++) { const o = A[i]; o.t += dt; const ow = o.w || 0.5, u = Math.min(1, o.t / ow); if (o.c) { const w = 1 - u; o.m.position.set(w * w * o.a.x + 2 * w * u * o.c.x + u * u * o.b.x, w * w * o.a.y + 2 * w * u * o.c.y + u * u * o.b.y, w * w * o.a.z + 2 * w * u * o.c.z + u * u * o.b.z); } else o.m.position.lerpVectors(o.a, o.b, u); // Curveball bends through its control point
-      if (o.t < ow) { A[k++] = o; continue; } jRel(o.m); o.en ? enPop(o.b) : jPop(o.b); }
+      if (o.cb) o.m.scale.setScalar(XCBF.orb * (1 + 0.12 * Math.sin(o.t * 38))); // the flare flickers in flight
+      if (o.t < ow) { A[k++] = o; continue; } jRel(o.m); o.en ? enPop(o.b, o.bl) : jPop(o.b); }
     A.length = k; }
   if (J.dr) drTick(dt);
   J.arrows = J.arrows.filter((a) => {
@@ -9496,10 +9526,10 @@ function enSmoke(x, z, al, dur, y, r, cyl) { // y: smoke centre (default 1.8; a 
   const m = jM(cyl ? cageGeo : smokeGeo, al ? xSmokeM("s9a", 0x7fa6c2, 0xb8dcf2) : xSmokeM("s9x", 0x8a929a, 0xc9d2da)); // ally smokes take the team blue
   m.position.set(x, 1.8, z); scene.add(m); J.smokes.push({ m, p: m.position, t: dur || 7, r: cyl ? xCage(m, r || XSMR.Cypher) : xSmk(m, r || 4), cyl: cyl ? CYCAGE.h : 0 }); SFX.smoke(); if (Number.isFinite(y)) m.position.y = y; else if (cyl) m.position.y = 0;
 }
-function enPop(p) {
-  SFX.flash(); const m = jM(orbGeo, xAdd("pcore", 0xfff6e8, 1)); m.scale.setScalar(4); m.position.copy(p); jFx(m, 0.3);
-  const hm = jM(smokeGeo, xAdd("phalo", 0xff9a40, 0.45)); hm.scale.setScalar(0.3); hm.position.copy(p); jFx(hm, 0.3).g = 0.25;
-  if (player.hp <= 0 || J.dr) return; const e = pEyeTo(PE_V), v = p.clone().sub(e), l = v.length() || 0.01;
+function enPop(p, bl) { // bl: the flash's blind (an enemy bot's Curveball: XCBF.blind); other bot flashes keep their short screen flash
+  SFX.flash(); const m = jM(orbGeo, xAdd("pcore", 0xfff6e8, 1)); m.scale.setScalar(bl ? XCBF.pop / 0.25 : 4); m.position.copy(p); jFx(m, 0.3);
+  const hm = jM(smokeGeo, xAdd("phalo", 0xff9a40, 0.45)); hm.scale.setScalar(bl ? 0.4 : 0.3); hm.position.copy(p); jFx(hm, 0.3).g = 0.25;
+  if (player.hp <= 0 || J.dr) return; if (bl) return void xFlashPlayer(p, bl); const e = pEyeTo(PE_V), v = p.clone().sub(e), l = v.length() || 0.01;
   if (l < 30 && v.dot(jAim()) / l > 0.5 && los(e, p)) { const w = $("xWh"); w.style.transition = "none"; w.style.opacity = 1; setTimeout(() => { w.style.transition = "opacity .8s"; w.style.opacity = 0; }, 450); }
 }
 function enRecon(p) { const g = XRCN.g; p = p.clone(); XRCN.pulses.forEach((t) => setTimeout(() => { if (g === XRCN.g) enRcnPulse(p); }, t * 1000)); }
@@ -9557,8 +9587,8 @@ function xBChoke(b, al, from, A) { // smoke spot: attacking = on the site side o
   XBK_P.x = from.x + dx * 0.5; XBK_P.z = from.z + dz * 0.5; return XBK_P; }
 function xBPre(A, from) { return A.lkt != null && A.lkt > 0.4 && A.lkt < 4 && Math.hypot(A.lkx - from.x, A.lkz - from.z) < 24; } // enemy just went out of sight close by: flash, then re-peek
 function xBFlash(b, al, from, tx, tz, col, key, nm, hz) { // shared bot flash: same J.orbs projectile + pop as the player's (enPop on the player, jPop on enemy bots)
-  const dx = tx - from.x, dz = tz - from.z, l = Math.hypot(dx, dz) || 1, k = Math.min(l, Math.max(1, l * 0.4) + 1), e = new THREE.Vector3(from.x + (dx / l) * k, 2, from.z + (dz / l) * k);
-  const m = jM(orbGeo, jMat(key, () => new THREE.MeshBasicMaterial({ color: col }))); m.position.copy(from); scene.add(m); J.orbs.push({ m, a: from.clone(), b: e, t: 0, en: !al, w: /Curveball/.test(nm) ? XAB_WIND.curveball : 0.5 }); feed(nm); blip(hz, 0.12, "sine", 0.12); }
+  const dx = tx - from.x, dz = tz - from.z, l = Math.hypot(dx, dz) || 1, k = Math.min(l, Math.max(1, l * 0.4) + 1), e = new THREE.Vector3(from.x + (dx / l) * k, (from.y || 1.7) + 0.3, from.z + (dz / l) * k); // pops at the thrower's eye height + 0.3 m (was a flat 2 m: under / inside upper floors)
+  const cb = /Curveball/.test(nm), m = cb ? xCbOrb(from) : jM(orbGeo, jMat(key, () => new THREE.MeshBasicMaterial({ color: col }))); if (!cb) { m.position.copy(from); scene.add(m); } J.orbs.push({ m, a: from.clone(), b: e, t: 0, en: !al, w: cb ? XAB_WIND.curveball : 0.5, cb: cb ? 1 : 0, bl: cb && !al ? XCBF.blind : 0 }); feed(nm); blip(hz, 0.12, "sine", 0.12); } // Curveball: the big flare; an enemy one flashes the player 1.5 s
 function xBFl(b, A, see, peek, tg, from, k, al, col, key, nm, hz) { // flash before peeking (pre-peek on the last-seen spot), rarely on a surprise peek
   if ((A.flT || 0) > A.t) return false; let tx, tz;
   if (!see && xBPre(A, from) && Math.random() < 0.06) { tx = A.lkx; tz = A.lkz; } else if (peek && tg && Math.random() < 0.25) { tx = tg.x; tz = tg.z; } else return false;
@@ -13131,7 +13161,7 @@ function mpFx(u, ag, k, o, d, auth, p, quiet) { // u: caster unit, o/d: eye + ai
   const ty = ABI_M[ag][i] || "ult", al = allies.indexOf(u) >= 0, en = !al, nd = !auth, nm = KITS[ag].n[i] || "Ability", up = u.g.position, col = al ? 0x3fb4ff : 0xff4655;
   const tg = (far, back) => (p ? MPC.e.copy(p) : mpTgt(o, d, far, back));
   if (ty === "smoke") { const S = MP_SMK[ag] || [14, 7], e = tg(S[0], 0.5), cg = ag === "Cypher"; enSmoke(e.x, e.z, al, S[1], cg ? groundAt(e.x, e.z, 0.2, (up.y || 0) + 1) : ag === "Jett" && p ? e.y : undefined, XSMR[ag], cg); } // Jett: at the Cloudburst's landing point
-  else if (ty === "flash") { const e = tg(ag === "Phoenix" ? 6 : 12, 0.4).clone(), m = jM(orbGeo, jMat("orb", () => new THREE.MeshBasicMaterial({ color: 0xfff2b0 }))); m.position.copy(o); scene.add(m); J.orbs.push({ m, a: o.clone(), b: e, t: 0, en }); }
+  else if (ty === "flash") { const ph = ag === "Phoenix", e = tg(ph ? 6 : 12, 0.4).clone(), m = ph ? xCbOrb(o) : jM(orbGeo, jMat("orb", () => new THREE.MeshBasicMaterial({ color: 0xfff2b0 }))); if (!ph) { m.position.copy(o); scene.add(m); } J.orbs.push({ m, a: o.clone(), b: e, t: 0, en, cb: ph ? 1 : 0 }); } // Curveball: the big flare (the blind itself is the server's)
   else if (ty === "fire" && ag === "Raze") { const e = tg(14, 0.4); mpPaint(e.x, e.z, groundAt(e.x, e.z, 0.2, (up.y || 0) + 1) || 0); } // Paint Shells: the bursts as they land (damage stays with the caster's own claims / the server)
   else if (ty === "fire") { const rz = false, e = p ? tg() : mpTgt(new THREE.Vector3(up.x, 1, up.z), MPC.d.set(d.x, 0, d.z).normalize(), 5, 0.5);
     const c = new THREE.Vector3(e.x, 0.05, e.z), m = jM(zoneGeo, fireMat(rz ? 0xff4fa0 : 0xff5a1a, 0.55)); m.rotation.x = -Math.PI / 2; m.position.copy(c); scene.add(m);
@@ -14566,6 +14596,10 @@ const XR_ACT=[];XR_ACT.max=4;
 // ---- END REPAIR PASS ----
 
 // ---- TRUSTED ONLINE SERVER ----
+// Online flash screen (server blindUntil -> st.blind s left): fully white while blinded, then a 1 s fade (wiki Status Effect#Flash:
+// the flash lasts its duration, then fades out over 1 second); was opacity = blind / 1.5, so a 1.5 s Curveball was only fully white
+// for its first frame and faded the whole time.
+function netBlindCss(el,b){const on=b>0;el.style.cssText='pointer-events:none;position:fixed;inset:0;z-index:110;background:#fff;opacity:'+(on?1:0)+';transition:'+(on?'none':'opacity 1s ease-out');return on;}
 let netDetainAt=0; // Killjoy Lockdown detain notice (server status.detain)
 let netVulnAt=0,netTetherAt=0; // Alarmbot Vulnerable / Trapwire tether (server status.vulnerable / status.tether)
 function netStatusChips(st){const now=performance.now();NET.tw={a:+st.twa||0,u:+st.twu||0,at:now};/* Tailwind windup / window as of now (the dash prediction reads it) */if(st.vulnerable>0&&!(netVulnAt>now))say('Vulnerable · taking double damage · '+Math.ceil(st.vulnerable)+' s',1200);netVulnAt=st.vulnerable>0?now+st.vulnerable*1000:0;if(st.tether>0&&!(netTetherAt>now))say('Slowed by Trapwire · move 4 m away or shoot the anchor',1200);netTetherAt=st.tether>0?now+st.tether*1000:0;const on=[];if(st.vulnerable>0)on.push('VULNERABLE '+st.vulnerable.toFixed(1)+'s');if(st.tether>0)on.push('TRAPWIRE');if(st.twa>0)on.push('TAILWIND '+st.twa.toFixed(1)+'s');else if(st.twu>0)on.push('TAILWIND READY · E TO DASH '+Math.ceil(st.twu)+'s');/* Jett Tailwind: server 1 s windup, 7.5 s window */if(st.dart>0)on.push(st.drm>0?'REMOVING DART '+Math.min(100,Math.round(st.drm/1.85*100))+'%':'TRACKING DART · HOLD 4 TO REMOVE');/* Spycam dart in me: server 1.85 s removal channel (h4 held, standing, not firing) */let el=document.getElementById('netSt');if(!el&&!on.length)return on;if(!el){el=document.body.appendChild(document.createElement('div'));el.id='netSt';el.style.cssText='pointer-events:none;position:fixed;left:50%;bottom:22%;transform:translateX(-50%);z-index:61;padding:3px 10px;background:rgba(255,70,85,.8);color:#fff;font:600 12px var(--sans,sans-serif);letter-spacing:.12em';}el.textContent=on.join(' · ');el.style.display=on.length?'block':'none';return on;}
@@ -14844,7 +14878,7 @@ function netShowstopperSync(st){if(typeof RS==='undefined')return;const now=perf
 // The rocket click goes through rsFire straight from the mouse / touch handlers (never shoot()), so online it sent no fire at
 // all: a click that launches the rocket locally is one pending fire pulse here.
 {const netRsFire0=rsFire;rsFire=function(){const ss=typeof RS!=='undefined'&&RS.ss,r=netRsFire0.apply(this,arguments);if(ss&&!RS.ss&&J.pick==='Raze'&&NET.socket&&MP.st==='game'){NET.firePulse=performance.now()+80;NET.fireHeavy=0;NET.firePend=1;NET.firePendH=0;NET.ssFiredAt=performance.now();}return r;};}
-const netRS0=mpCliRS;mpCliRS=function(m){netRS0(m);if(NET.socket){netChannel=m.channel||null;if(J.pick==='Reyna')netReynaSync(m.reyna);if(J.pick==='Raze'&&m.status)netShowstopperSync(m.status);}if(NET.socket&&Array.isArray(m.rv)){const t=performance.now();for(const r of m.rv){const b=Array.isArray(r)&&bots.find(x=>x.nid===r[0]);if(b)b.netRvUntil=t+400;}}if(NET.socket&&m.status){const st=m.status;if(st.detain>0&&!(netDetainAt>performance.now())){netDetainAt=performance.now()+st.detain*1000;say('Detained · '+Math.ceil(st.detain)+' s',1200);}if(st.concuss>0){if(xCU<=performance.now())xConStart(st.concuss*1000);else xCU=performance.now()+st.concuss*1000;player.tagT=Math.max(player.tagT||0,st.concuss);player.tagK=.35;}if(st.nearsight>0)pNs(Math.min(3,st.nearsight));netStatusChips(st);if(st.slow>0){player.tagT=Math.max(player.tagT||0,st.slow);player.tagK=.35;}else if(st.sslow>0){/* Skye Seekers: 60 % Slow (server seekSlowUntil, wiki) */if(!(player.tagT>0)||!(player.tagK<=.4)){player.tagK=.4;player.tagS=0;}player.tagT=Math.max(player.tagT||0,st.sslow);}else if(st.oslow>0){/* Sage Slow Orb field: half speed (server SLOW_ORB.factor), never weaker than a slow already on */if(!(player.tagT>0)||!(player.tagK<=.5)){player.tagK=.5;player.tagS=0;}player.tagT=Math.max(player.tagT||0,st.oslow);}const el=document.getElementById('netBlind')||document.body.appendChild(Object.assign(document.createElement('div'),{id:'netBlind'}));el.style.cssText='pointer-events:none;position:fixed;inset:0;z-index:110;background:#fff;opacity:'+Math.min(1,st.blind/1.5); }if(NET.socket&&m.ab){for(const k of ['c','q','e','ult'])if(Number.isFinite(m.ab[k]))J[k]=m.ab[k];netChamberAnchor(m.ab,m.tm||0);if(J.pick==='Jett'){const was=J.bsOn;J.bs=Math.max(0,m.ab.blades||0);J.bsOn=!!m.ab.bladesActive;if(J.bsOn&&!was)swapW('knife');if(was&&!J.bsOn&&rw==='knife')swapW(FV.pri?'pri':'pis');}if(J.pick==='Skye')netSkyeState={pool:Math.max(0,Math.min(100,m.ab.regrowthPool||0)),active:!!m.ab.regrowthActive,used:!!m.ab.regrowthUsed};if(J.pick==='Breach')J.cd.e=Math.max(0,(m.ab.cool?.e||0)-(m.tm||0),(m.ab.rechargeAt||0)-(m.tm||0));}};
+const netRS0=mpCliRS;mpCliRS=function(m){netRS0(m);if(NET.socket){netChannel=m.channel||null;if(J.pick==='Reyna')netReynaSync(m.reyna);if(J.pick==='Raze'&&m.status)netShowstopperSync(m.status);}if(NET.socket&&Array.isArray(m.rv)){const t=performance.now();for(const r of m.rv){const b=Array.isArray(r)&&bots.find(x=>x.nid===r[0]);if(b)b.netRvUntil=t+400;}}if(NET.socket&&m.status){const st=m.status;if(st.detain>0&&!(netDetainAt>performance.now())){netDetainAt=performance.now()+st.detain*1000;say('Detained · '+Math.ceil(st.detain)+' s',1200);}if(st.concuss>0){if(xCU<=performance.now())xConStart(st.concuss*1000);else xCU=performance.now()+st.concuss*1000;player.tagT=Math.max(player.tagT||0,st.concuss);player.tagK=.35;}if(st.nearsight>0)pNs(Math.min(3,st.nearsight));netStatusChips(st);if(st.slow>0){player.tagT=Math.max(player.tagT||0,st.slow);player.tagK=.35;}else if(st.sslow>0){/* Skye Seekers: 60 % Slow (server seekSlowUntil, wiki) */if(!(player.tagT>0)||!(player.tagK<=.4)){player.tagK=.4;player.tagS=0;}player.tagT=Math.max(player.tagT||0,st.sslow);}else if(st.oslow>0){/* Sage Slow Orb field: half speed (server SLOW_ORB.factor), never weaker than a slow already on */if(!(player.tagT>0)||!(player.tagK<=.5)){player.tagK=.5;player.tagS=0;}player.tagT=Math.max(player.tagT||0,st.oslow);}const el=document.getElementById('netBlind')||document.body.appendChild(Object.assign(document.createElement('div'),{id:'netBlind'}));netBlindCss(el,st.blind); }if(NET.socket&&m.ab){for(const k of ['c','q','e','ult'])if(Number.isFinite(m.ab[k]))J[k]=m.ab[k];netChamberAnchor(m.ab,m.tm||0);if(J.pick==='Jett'){const was=J.bsOn;J.bs=Math.max(0,m.ab.blades||0);J.bsOn=!!m.ab.bladesActive;if(J.bsOn&&!was)swapW('knife');if(was&&!J.bsOn&&rw==='knife')swapW(FV.pri?'pri':'pis');}if(J.pick==='Skye')netSkyeState={pool:Math.max(0,Math.min(100,m.ab.regrowthPool||0)),active:!!m.ab.regrowthActive,used:!!m.ab.regrowthUsed};if(J.pick==='Breach')J.cd.e=Math.max(0,(m.ab.cool?.e||0)-(m.tm||0),(m.ab.rechargeAt||0)-(m.tm||0));}};
 const netHud0=mpHud;mpHud=function(){netHud0();const h=mpEl('xMpHud');if(h&&NET.socket&&MP.st==='game')h.textContent='ONLINE · SERVER · '+MP.ping+' ms';};
 const netStyle=document.createElement('style');netStyle.textContent='.x-mphud{inset:auto!important;bottom:72px!important;left:12px!important;width:auto!important;height:auto!important;max-height:24px;transform:none!important;font-size:10px;opacity:.75}#feed .kf__n{max-width:145px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#feed .kf__n.kf__n--at{max-width:300px}/* hud_b5: an ally death row ("SAGE DIED AT ATTACKER SIDE") was cut at the 145 px name cap with no ellipsis (flex box) */';document.head.append(netStyle);
 const netRsSl0=rsSl;rsSl=function(u){const rows=netRsSl0(u);if(NET.socket&&MP.st==='game'&&J.pick==='Skye'&&netSkyeState){const a=netSkyeState;rows[0]=['jC',J.c>0||a.used&&a.pool>0,a.active?Math.ceil(a.pool)+' HP':a.used?(a.pool>0?Math.ceil(a.pool)+' HP · ready':'Spent'):String(J.c),a.used?1-a.pool/100:0];}return rows;};
@@ -15523,7 +15557,34 @@ try { const st = document.createElement("style"); st.textContent = "#xBow{positi
   const d = document.createElement("div"); d.id = "xBow"; d.innerHTML = "<u></u><i><b></b></i><u></u>"; (document.getElementById("game") || document.body).appendChild(d); } catch (e) {}
 function xBowHud() { const q = J.eq, hk = q && q.st !== "rec" ? xEqHold(q) : "", on = hk === "bow" || hk === "fault", el = $("xBow"); if (!el) return; const pw = on ? xEqHoldPw(q) : 0, k = on ? hk + Math.round(pw * 20) + "|" + (q.bn | 0) : "";
   if (xBowHud.k === k) return; xBowHud.k = k; el.classList.toggle("on", on); if (!on) return; el.querySelector("b").style.width = (pw * 100).toFixed(0) + "%"; el.querySelectorAll("u").forEach((u, i) => { u.classList.toggle("on", (q.bn | 0) > i); u.style.display = hk === "fault" ? "none" : ""; }); } // Fault Line: the charge bar only (no bounces)
-{ const t0 = jTick; jTick = function (dt) { const v = t0.apply(this, arguments); try { xEqTick(dt); xEqHud(); xBowHud(); } catch (e) { J.eq = null; } try { xInstTick(dt); } catch (e) { XABT.inst = null; } return v; }; }
+// Curveball curve hint (user: "add a curve-direction indicator so the player knows left click curves left, right click curves right"):
+// while Phoenix holds Curveball (J.eq e, drawing / ready) both paths the flare can take are drawn from the hand as dotted arcs -
+// FIRE (left click) curves LEFT, ALT FIRE (right click) curves RIGHT (valorant.fandom.com/wiki/Curveball) - each the same path
+// the cast flies (phCurve: 5 m ahead short of a wall, then 2.5 m aside) ending in a bright pop marker, plus a HUD tag under the
+// crosshair. Hidden as soon as the throw leaves the hand (rel / rec) or the ability is put away.
+var XCBH = { n: 10, u0: 0.18, g: null, d: [[], []] };
+function xCbHintPts(o, fx, fz, side, n) { // pure (tests): n points along the cast's quadratic path, from u0 (clear of the camera) to the pop
+  const c = phCurve(o, fx, fz, side), out = []; for (let i = 0; i < n; i++) { const u = XCBH.u0 + (1 - XCBH.u0) * (i / (n - 1)), w = 1 - u;
+    out.push(new THREE.Vector3(w * w * o.x + 2 * w * u * c.mid.x + u * u * c.end.x, w * w * o.y + 2 * w * u * c.mid.y + u * u * c.end.y, w * w * o.z + 2 * w * u * c.mid.z + u * u * c.end.z)); }
+  return out;
+}
+function xCbHintOn() { const q = J.eq; return !!(q && J.pick === "Phoenix" && q.k === "e" && (q.st === "draw" || q.st === "ready") && running && player && player.hp > 0); }
+function xCbHintBuild() { // two arcs of small additive dots (index 0 = FIRE / left, 1 = ALT FIRE / right), the last dot of each a bigger pop marker
+  if (XCBH.g) { scene.add(XCBH.g); return XCBH.g; } // built once (no new geometry per match); re-added after a scene clear
+  const g = new THREE.Group(); g.name = "xcb-hint"; g.visible = false; const geo = new THREE.SphereGeometry(1, 8, 6);
+  const mats = [0xffe7a0, 0xffb060].map((c) => new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: 0.85, depthWrite: false, blending: THREE.AdditiveBlending }));
+  for (let s = 0; s < 2; s++) for (let i = 0; i < XCBH.n; i++) { const m = new THREE.Mesh(geo, mats[s]); m.scale.setScalar(i === XCBH.n - 1 ? 0.12 : 0.03 + 0.012 * i / XCBH.n); m.raycast = () => {}; m.frustumCulled = false; m.renderOrder = 3; g.add(m); XCBH.d[s].push(m); }
+  scene.add(g); return (XCBH.g = g);
+}
+function xCbHintTick() {
+  const on = xCbHintOn(), el = $("xCbH"); if (el && el.classList.contains("on") !== on) el.classList.toggle("on", on);
+  if (!on) { if (XCBH.g) XCBH.g.visible = false; return; }
+  const g = XCBH.g && XCBH.g.parent ? XCBH.g : xCbHintBuild(), o = pEye(), fx = -Math.sin(yaw), fz = -Math.cos(yaw); g.visible = true;
+  [-1, 1].forEach((side, s) => { const P = xCbHintPts(o, fx, fz, side, XCBH.n); XCBH.d[s].forEach((m, i) => m.position.copy(P[i]).setY(P[i].y - 0.22 * (1 - i / (XCBH.n - 1)))); }); // starts a little under the crosshair (the hand), meets the true pop point
+}
+try { const st = document.createElement("style"); st.textContent = "#xCbH{position:fixed;left:50%;top:calc(50% + 30px);transform:translateX(-50%);display:none;gap:46px;pointer-events:none;z-index:6;font:700 11px/1 sans-serif;letter-spacing:.08em;color:#fff;text-shadow:0 0 3px #000,0 0 2px #000}#xCbH.on{display:flex}#xCbH span:first-child{color:#ffe7a0}#xCbH span:last-child{color:#ffb060}";
+  document.head.appendChild(st); const d = document.createElement("div"); d.id = "xCbH"; d.innerHTML = "<span>\u25C0 L-CLICK</span><span>R-CLICK \u25B6</span>"; (document.getElementById("game") || document.body).appendChild(d); } catch (e) {}
+{ const t0 = jTick; jTick = function (dt) { const v = t0.apply(this, arguments); try { xEqTick(dt); xEqHud(); xBowHud(); } catch (e) { J.eq = null; } try { xInstTick(dt); } catch (e) { XABT.inst = null; } try { xCbHintTick(); } catch (e) { if (XCBH.g) XCBH.g.visible = false; } return v; }; }
 // First person: the agent's native arms draw the ability (work/ability_fp_runtime.js, ABILITY FIRST PERSON).
 // ---- Third person: others see the throw. A cast relayed for another unit (online relay / trusted-server replay, mpFx)
 // plays the rig's throw / cast one-shot (upper-body rigs) or the right-arm swing (skinned rigs), typed like the first person.
