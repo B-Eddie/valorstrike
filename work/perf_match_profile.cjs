@@ -35,6 +35,9 @@ const GROUPS = [
   xe(`{const g=document.getElementById.bind(document),C=new Map();document.getElementById=function(id){const e=C.get(id);if(e&&e.id===id)return e;const r=g(id);if(r)C.set(id,r);return r;};}true`);
   try { xe(fs.readFileSync(path.join(__dirname, '..', 'vendor', 'hit-impact.js'), 'utf8') + ';true'); } catch (e) {}
   xe(fs.readFileSync(path.join(__dirname, 'perf_render_emu.js'), 'utf8') + ';true');
+  // AGENTS=1: real agent rigs (the page's loader on models/valorant/agents/*.glb; textures replaced by empty Textures, no
+  // image decode in Node). Units wait hidden for their kit and attach it when it lands (xvAttach); see the wait below.
+  if (process.env.AGENTS === '1') xe(`xvaParse=function(buf){return new Promise((res,rej)=>{const L=new THREE.GLTFLoader();L.register(p=>({name:'EXT_texture_webp',loadTexture:()=>Promise.resolve(new THREE.Texture())}));L.parse(buf,XVA.dir,res,rej);});};true`);
   xe('try{xGQApply("medium")}catch(e){};true');
   const gq = xe('JSON.stringify({gq:localStorage.getItem("vs.gq"),shd:XS.shd,shm:XS.shm,lod:XS.lod,prc:XS.prc,aa:XS.aa})');
   const adv = async (ms) => { for (let t = 0; t < ms; t += 50) { H.advance(Math.min(50, ms - t) - 1e-6); await tick(); } };
@@ -43,12 +46,15 @@ const GROUPS = [
   for (let i = 0; i < 400 && !xe('!!(typeof nmActive==="function"&&nmActive()&&running)'); i++) await adv(200);
   if (!xe('!!nmActive()')) throw Error('native map did not load: ' + MAP);
   const loadMs = performance.now() - tl;
+  if (process.env.AGENTS === '1') { for (let i = 0; i < 6000 && xe('!running||bots.concat(allies).some(b=>b.xm&&!b.xm.valorant)'); i++) { H.frameMs(1000 / 60); await new Promise((r) => setTimeout(r, 10)); }
+    console.error('agent rigs:', xe('bots.concat(allies).filter(b=>b.xm&&b.xm.valorant).length'), '/', xe('bots.length+allies.length')); }
   // player pilot: god mode, trail the first living ally, aim at the nearest enemy in sight within 45 m, fire 0.5 s bursts
   xe(`(()=>{const P=window.__PILOT={t:0,fire:0,shots:0};(window.XHK||(window.XHK=[])).push(()=>{try{if(!running||!player)return;P.t++;if(player.hp<60)player.hp=100;
    const ex=player.x,ey=(player.y||0)+1.6,ez=player.z;let best=null,bd=45;
    if(P.t%6===0){P.tg=null;for(const b of bots){if(!b.alive||!b.g)continue;const p=b.g.position,d=Math.hypot(p.x-ex,p.z-ez);if(d<bd&&los(new THREE.Vector3(ex,ey,ez),new THREE.Vector3(p.x,p.y+1.4,p.z))){bd=d;best=b;}}P.tg=best;
     if(!best){const a=allies.find(a=>a.alive&&a.g);if(a){const q=a.g.position,d=Math.hypot(q.x-ex,q.z-ez);if(d>5){player.x=q.x-Math.sin(a.g.rotation.y)*1.5;player.z=q.z-Math.cos(a.g.rotation.y)*1.5;player.y=q.y;}}}}
-   const t=P.tg;if(t&&t.alive&&!(FV.buy>0)){const p=t.g.position,dx=p.x-ex,dz=p.z-ez,dy=p.y+1.3-ey;yaw=Math.atan2(-dx,-dz);pitch=Math.atan2(dy,Math.hypot(dx,dz));const on=(P.t%45)<30;if(on&&!fireHeld)P.shots++;fireHeld=on;if(ammo<3){ammo=MAG();reloading=0;}}else fireHeld=false;}catch(e){}});return true;})()`);
+   const t=P.tg;if(t&&t.alive&&!(FV.buy>0)){const p=t.g.position,dx=p.x-ex,dz=p.z-ez,dy=p.y+1.3-ey;yaw=Math.atan2(-dx,-dz);pitch=Math.atan2(dy,Math.hypot(dx,dz));const on=!window.__NOFIRE&&(P.t%45)<30;if(on&&!fireHeld)P.shots++;fireHeld=on;if(ammo<3){ammo=MAG();reloading=0;}}else fireHeld=false;}catch(e){}});return true;})()`);
+  if (process.env.NOFIRE === '1') xe('window.__NOFIRE=1;true'); // NOFIRE=1: same pilot (aims at the same enemies), trigger never pulled
   // measured phase
   if (PROF) { await post('Profiler.enable'); await post('Profiler.setSamplingInterval', { interval: 250 }); await post('HeapProfiler.enable'); await post('HeapProfiler.startSampling', { samplingInterval: 16384, includeObjectsCollectedByMajorGC: true, includeObjectsCollectedByMinorGC: true }); await post('Profiler.start'); }
   xe('__PS.live=true;__PS.endFrame();true');
