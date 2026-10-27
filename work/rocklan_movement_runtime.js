@@ -83,9 +83,12 @@ if(typeof xvAgent==='function') { const original=xvAgent; xvAgent=function(M,kit
   X.contactLift=null;
   return result;
 }; }
+function xrmStanceSpeed(m) { return m.contact&&m.contact.stanceSpeed>0?m.contact.stanceSpeed:m.naturalSpeed; }
 function xrmCycle(X,T,dt,sp) {
   const R=X.rm,scale=Math.max(.1,X.sc.parent.scale.y||1);let hz=0,total=0;
-  for(const n in T)if(R.meta[n]&&R.meta[n].naturalSpeed>0&&T[n]>0){const m=R.meta[n];hz+=T[n]*sp/(m.naturalSpeed*scale*m.duration);total+=T[n];}
+  // contact.stanceSpeed: the measured speed at which the planted foot stands still (work/calibrate_rocklan_stride.cjs); the builder's
+  // naturalSpeed estimate ran the cycles 12-52 % fast (moonwalking feet) and stays as the fallback.
+  for(const n in T)if(R.meta[n]&&R.meta[n].naturalSpeed>0&&T[n]>0){const m=R.meta[n];hz+=T[n]*sp/(xrmStanceSpeed(m)*scale*m.duration);total+=T[n];}
   if(total>0)R.phase=(R.phase+dt*hz/total)%1;
   for(const n in R.actions) {
     const a=X.a[R.actions[n]],m=R.meta[n];

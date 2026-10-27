@@ -20682,7 +20682,7 @@ window.xDmPacks = DMPK; window.xEscPacks = ESCPK;
 // ---- END GAME RULES ----
 // ---- ROCKLAN MOVEMENT ----
 // Movement-only overlay. The original mixed animation library and upper-body actions stay intact.
-var XRM = { assets: {"movement.json":{"bytes":2051123,"sha256":"65ebb2ca3f8920562444049b4b763447852bc306442360ce780f2f0816a263f8"},"movement.bin":{"bytes":5017120,"sha256":"43c0e3b4ed2f6a5a5b97bf58c64af468973daa2913953f13b4f0af5345eac3cd"}}, promise: null, dirs: ['N','NE','E','SE','S','SW','W','NW'] };
+var XRM = { assets: {"movement.json":{"bytes":2051123,"sha256":"7fee00be7eefb7e012d949b1275e841ffb25611c586b31ca89fec65824f831ff"},"movement.bin":{"bytes":5017120,"sha256":"43c0e3b4ed2f6a5a5b97bf58c64af468973daa2913953f13b4f0af5345eac3cd"}}, promise: null, dirs: ['N','NE','E','SE','S','SW','W','NW'] };
 function xrmClamp(v, lo=0, hi=1) { return Math.max(lo, Math.min(hi, v)); }
 function xrmDirections(f, side) {
   const a = (Math.atan2(-side, f) / (Math.PI / 4) + 8) % 8, i = Math.floor(a), u = a - i;
@@ -20765,9 +20765,12 @@ if(typeof xvAgent==='function') { const original=xvAgent; xvAgent=function(M,kit
   X.contactLift=null;
   return result;
 }; }
+function xrmStanceSpeed(m) { return m.contact&&m.contact.stanceSpeed>0?m.contact.stanceSpeed:m.naturalSpeed; }
 function xrmCycle(X,T,dt,sp) {
   const R=X.rm,scale=Math.max(.1,X.sc.parent.scale.y||1);let hz=0,total=0;
-  for(const n in T)if(R.meta[n]&&R.meta[n].naturalSpeed>0&&T[n]>0){const m=R.meta[n];hz+=T[n]*sp/(m.naturalSpeed*scale*m.duration);total+=T[n];}
+  // contact.stanceSpeed: the measured speed at which the planted foot stands still (work/calibrate_rocklan_stride.cjs); the builder's
+  // naturalSpeed estimate ran the cycles 12-52 % fast (moonwalking feet) and stays as the fallback.
+  for(const n in T)if(R.meta[n]&&R.meta[n].naturalSpeed>0&&T[n]>0){const m=R.meta[n];hz+=T[n]*sp/(xrmStanceSpeed(m)*scale*m.duration);total+=T[n];}
   if(total>0)R.phase=(R.phase+dt*hz/total)%1;
   for(const n in R.actions) {
     const a=X.a[R.actions[n]],m=R.meta[n];

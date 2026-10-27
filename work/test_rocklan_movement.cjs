@@ -140,7 +140,7 @@ async function animator(){
   const n=gait+dirs[d],a=X.a[X.rm.actions[n]];assert((X.rm.targets[n]||0)>.5,n+' actual directional gait target');assert(a.getEffectiveWeight()>.45,n+' actual mixer weight');
   assert(a.paused,n+' stride manually synchronized');assert(X.rm.add['lean_'+n].getEffectiveWeight()>.1,n+' movement lean applied');near(X.yaw,0,1e-8,n+' no procedural chest counter-turn');waist(R,n);
   const previous=X.rm.phase;R.advance(1,{speed,angle:d*Math.PI/4,cr:!!extra.cr});
-  const expected=Object.entries(X.rm.targets).reduce((sum,[k,w])=>sum+(X.rm.meta[k]?.naturalSpeed>0?w*speed/(X.rm.meta[k].naturalSpeed*X.sc.parent.scale.y*X.rm.meta[k].duration):0),0);
+  const expected=Object.entries(X.rm.targets).reduce((sum,[k,w])=>sum+(X.rm.meta[k]?.naturalSpeed>0?w*speed/(R.c.xrmStanceSpeed(X.rm.meta[k])*X.sc.parent.scale.y*X.rm.meta[k].duration):0),0);
   const total=Object.entries(X.rm.targets).reduce((sum,[k,w])=>sum+(X.rm.meta[k]?.naturalSpeed>0?w:0),0);
   near((X.rm.phase-previous+1)%1,(expected/total/60)%1,1e-6,n+' measured stride rate');
   checks.push(n);
