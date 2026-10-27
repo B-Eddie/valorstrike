@@ -160,7 +160,7 @@ function xCbHintBuild() { // two arcs of small additive dots (index 0 = FIRE / l
 }
 function xCbHintTick() {
   const on = xCbHintOn(), el = $("xCbH"); if (el && el.classList.contains("on") !== on) el.classList.toggle("on", on);
-  if (!on) { if (XCBH.g) XCBH.g.visible = false; return; }
+  if (!on) { if (XCBH.g) { XCBH.g.visible = false; if (XCBH.g.parent) XCBH.g.parent.remove(XCBH.g); } return; } // out of the scene while unused (round reset leaves nothing behind); re-added on the next hold
   const g = XCBH.g && XCBH.g.parent ? XCBH.g : xCbHintBuild(), o = pEye(), fx = -Math.sin(yaw), fz = -Math.cos(yaw); g.visible = true;
   [-1, 1].forEach((side, s) => { const P = xCbHintPts(o, fx, fz, side, XCBH.n); XCBH.d[s].forEach((m, i) => m.position.copy(P[i]).setY(P[i].y - 0.22 * (1 - i / (XCBH.n - 1)))); }); // starts a little under the crosshair (the hand), meets the true pop point
 }

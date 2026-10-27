@@ -56,7 +56,7 @@ console.log('Curveball flash: bots (floor-height eye, facing > 0.5, 30 m) and th
 // --- curve hint (ability_equip_runtime.js): while Curveball is in hand, two arcs = the cast's own path, FIRE left / ALT FIRE right
 {const hs=cut('var XCBH =','\ntry { const st = document.createElement("style"); st.textContent = "#xCbH');
  const hel={classList:{s:new Set(),contains(k){return this.s.has(k);},toggle(k,v){v?this.s.add(k):this.s.delete(k);}}};
- const added=[];Object.assign(ctx,{running:true,J:Object.assign(ctx.J,{pick:'Phoenix',eq:null}),$:id=>id==='xCbH'?hel:el,scene:{add:g=>added.push(g),remove(){}}});ctx.player.hp=100;ctx.yaw=0;
+ const added=[];Object.assign(ctx,{running:true,J:Object.assign(ctx.J,{pick:'Phoenix',eq:null}),$:id=>id==='xCbH'?hel:el,scene:{add:g=>{added.push(g);g.parent=ctx.scene;},remove:g=>{g.parent=null;}}});ctx.player.hp=100;ctx.yaw=0;
  vm.runInContext(hs.replace(/^var /gm,'var '),ctx);
  const o=new THREE.Vector3(0,1.6,0),L=ctx.xCbHintPts(o,0,-1,-1,10),R=ctx.xCbHintPts(o,0,-1,1,10),c=ctx.phCurve(o,0,-1,-1);
  assert.ok(L[9].distanceTo(c.end)<1e-6,'left arc ends at the FIRE pop point');assert.ok(Math.abs(L[9].x+2.5)<1e-6&&Math.abs(R[9].x-2.5)<1e-6,'FIRE arc ends 2.5 m left, ALT FIRE arc 2.5 m right');
@@ -65,7 +65,7 @@ console.log('Curveball flash: bots (floor-height eye, facing > 0.5, 30 m) and th
  ctx.J.eq={k:'e',st:'ready'};ctx.xCbHintTick();assert.equal(ctx.XCBH.g.visible,true,'shown with Curveball in hand');assert.equal(hel.classList.contains('on'),true,'HUD tag on');
  assert.equal(ctx.XCBH.d[0].length,10);assert.ok(ctx.XCBH.d[0][9].position.x<-2&&ctx.XCBH.d[1][9].position.x>2,'world dots: left arc left, right arc right');
  {const g0=ctx.XCBH.g;g0.parent=null;ctx.xCbHintTick();assert.equal(ctx.XCBH.g,g0,'same hint group after a scene clear (no new geometry per match)');assert.equal(added.filter(x=>x===g0).length,2,'re-added to the scene');}
- ctx.J.eq.st='rel';ctx.xCbHintTick();assert.equal(ctx.XCBH.g.visible,false,'gone once thrown');assert.equal(hel.classList.contains('on'),false);
+ ctx.J.eq.st='rel';ctx.xCbHintTick();assert.equal(ctx.XCBH.g.visible,false,'gone once thrown');assert.equal(ctx.XCBH.g.parent,null,'out of the scene once hidden (a round reset leaves nothing behind: test_client_abilities)');assert.equal(hel.classList.contains('on'),false);
  ctx.J.eq={k:'c',st:'ready'};ctx.xCbHintTick();assert.equal(ctx.XCBH.g.visible,false,'not for Blaze');ctx.J.pick='Skye';ctx.J.eq={k:'e',st:'ready'};ctx.xCbHintTick();assert.equal(ctx.XCBH.g.visible,false,'Phoenix only');
  assert.match(html,/id = "xCbH"; d\.innerHTML = "<span>\\u25C0 L-CLICK<\/span><span>R-CLICK \\u25B6<\/span>"/,'HUD tag text');
  assert.match(html,/try \{ xCbHintTick\(\); \}/,'ticked from jTick');}
