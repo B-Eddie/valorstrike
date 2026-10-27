@@ -280,11 +280,18 @@ function xrmPlantPose(M,P) {
   const contact=xrmPlantPoint(L,P.v[3]),delta=P.v[4].subVectors(P.anchor,contact);
   const target=P.v[3].copy(foot);target.x+=delta.x;target.z+=delta.z;
   // A bad state correction or a source phase without a usable stance yields to the authored pose.
-  if(Math.hypot(delta.x,delta.z)>.22||P.age>.65){xrmPlantRelease(P);return;}
+  // Toe-off: once the authored contact point has lifted 3 cm off its anchor the stance is over; holding on stretched the leg to its
+  // reach clamp and dragged the sole (strafe walks, end of run stances).
+  if(Math.hypot(delta.x,delta.z)>.22||P.age>.65||-delta.y>.03){xrmPlantRelease(P);return;}
+  // Nothing to correct (the anchoring frame): keep the authored leg. Solving anyway re-derived a near-straight heel-strike leg with
+  // up to 8 mm of IK error, a one-frame pop of the planted sole.
+  if(Math.hypot(delta.x,delta.z)<1e-5){P.active=true;P.target=(P.target||new THREE.Vector3()).copy(target);return;}
   const hip=L.up.getWorldPosition(P.v[5]),knee=L.lo.getWorldPosition(P.v[6]);
   const l1=hip.distanceTo(knee),l2=knee.distanceTo(foot),dy=target.y-hip.y,max=(l1+l2)*.995;
   if(!(max>Math.abs(dy)+.001)){xrmPlantRelease(P);return;}
   const horizontal=Math.hypot(target.x-hip.x,target.z-hip.z),limit=Math.sqrt(Math.max(0,max*max-dy*dy));
+  // Past the leg's reach by more than 2 cm the stance is over (the body has moved on): yield instead of dragging a straight leg.
+  if(horizontal>limit+.02){xrmPlantRelease(P);return;}
   if(horizontal>limit){
     const k=limit/Math.max(1e-8,horizontal);target.x=hip.x+(target.x-hip.x)*k;target.z=hip.z+(target.z-hip.z)*k;P.clamped=true;
   }
