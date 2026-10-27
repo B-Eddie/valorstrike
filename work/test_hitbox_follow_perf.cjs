@@ -34,7 +34,8 @@ const snap=b=>[...b.head.position.toArray(),...b.head.scale.toArray(),...b.body.
  for(const slug of ['jett','reyna']){
   // two identical rigs on one scene: A runs the shipped code, B the original
   const A=await build(slug),B=await build(slug,A.c);count(A.X.sc);const scene=new T.Scene(),ua=unit(A.M),ub=unit(B.M);scene.add(ua.g,ub.g);
-  const c=A.c;vm.runInContext(NEW+'\n'+REF+';globalThis.HB={xrHitboxes,xrHitboxesRef};',c);
+  const c=A.c;if(vm.runInContext('typeof XR_HB',c)==='undefined')vm.runInContext(NEW.slice(0,NEW.indexOf('function xrHitboxes(b,M){')),c); // tp_body_harness's cut may already carry the scratch
+  vm.runInContext(FN+'\n'+REF+';globalThis.HB={xrHitboxes,xrHitboxesRef};',c);
   const rnd=(()=>{let s=7;return ()=>(s=(s*16807)%2147483647)/2147483647;})();
   for(const R of [A,B])R.play('run',0);scene.updateMatrixWorld(true);
   for(let f=0;f<40;f++){
