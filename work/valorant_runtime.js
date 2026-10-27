@@ -308,6 +308,9 @@ function xvFPGet(ag,w){const key=xvFPKey(ag,w),F=XVFP.c.get(key);if(F){XVFP.c.de
   const P=xvFPLoad(ag,w).then(F=>{XVFP.c.delete(key+'#');for(const k of XVFP.c.keys())if(!k.endsWith('#')&&k.split('|')[0]!==ag&&XVFP.c.get(k)!==XV.fp){xvFPClear(XVFP.c.get(k));XVFP.c.delete(k);}
     XVFP.c.set(key,F);const done=[...XVFP.c.keys()].filter(k=>!k.endsWith('#'));while(done.length>XVFP.max){const k=done.shift(),o=XVFP.c.get(k);if(o===XV.fp)continue;xvFPClear(o);XVFP.c.delete(k);}return F;},e=>{XVFP.c.delete(key+'#');throw e;});
   XVFP.c.set(key+'#',P);return P;}
+// A rig already built for agent|weapon (this cache, or the feel pass's prefetch cache VF_RIGS), else null: usable this tick.
+function xvFPPeek(ag,w){const key=xvFPKey(ag,w),F=XVFP.c.get(key)||(typeof VF_RIGS!=='undefined'&&VF_RIGS.get(key));return F&&F.root?F:null;}
+function xvFPSwap(F){if(XV.fp&&XV.fp!==F&&XV.fp.root.parent)XV.fp.root.parent.remove(XV.fp.root);XV.fp=F;F.kind=null;F.age=0;xvFPPlay(F,'equip');camera.add(F.root);}
 function xvFPWarm(ag,w){const id=xvFPKey(ag,w);if(XVFP.warm===id)return;XVFP.warm=id;for(const x of [w,'Knife','Classic']){const key=xvFPKey(ag,x);if(!XV.failures[key])xvFPGet(ag,x).catch(e=>{XV.failures[key]=String(e);});}}
 // Knife light swings run Valorant's looping three-swing combo (wiki Melee: "the primary slash has a three swing combo that
 // loops"): the authored clips chain (Attack 1 ends with the hand out right, Attack 2 slashes back across to the left,
@@ -319,7 +322,11 @@ function xvFPTick(dt) {
   const kn=knife.visible, active=running && player && player.hp>0 && (gun.visible||kn) && !(typeof BC!=='undefined'&&(BC.vm||BC.cv)) && !J.dr && !(typeof XAF!=='undefined'&&XAF.on);
   const ag=(J&&J.pick)||'Jett',w=kn?'Knife':fpaWeap(),key=xvFPKey(ag,w);
   if(running)xvFPWarm(ag,kn?fpaWeap():w);
-  if(active && (!XV.fp||XV.fp.ag!==ag||XV.fp.w!==w||(XV.fp.skin||'standard')!==(typeof xskGet==='function'?xskGet(w):'standard')) && XV.fpLoad!==key && !XV.failures[key]){XV.fpLoad=key;xvFPGet(ag,w).then(F=>{if(XV.fpLoad!==key)return;if(XV.fp&&XV.fp.root.parent)XV.fp.root.parent.remove(XV.fp.root);XV.fp=F;F.kind=null;F.age=0;xvFPPlay(F,'equip');camera.add(F.root);}).catch(e=>{XV.failures[key]=String(e);}).finally(()=>{if(XV.fpLoad===key)XV.fpLoad=null;});}
+  // Weapon switch (user: "briefly shows the wrong gun"): a load still pending for a weapon the player has switched away
+  // from is abandoned (it used to take the screen with its equip when it landed), and a rig already built (xvFPPeek) is
+  // swapped in on this very tick, so the switch frame draws the new weapon's equip instead of a frame without it.
+  if(XV.fpLoad&&XV.fpLoad!==key)XV.fpLoad=null;
+  if(active && (!XV.fp||XV.fp.ag!==ag||XV.fp.w!==w||(XV.fp.skin||'standard')!==(typeof xskGet==='function'?xskGet(w):'standard')) && XV.fpLoad!==key && !XV.failures[key]){const R=xvFPPeek(ag,w);if(R){xvFPSwap(R);xvFPGet(ag,w).catch(()=>{});}else{XV.fpLoad=key;xvFPGet(ag,w).then(F=>{if(XV.fpLoad!==key)return;xvFPSwap(F);}).catch(e=>{XV.failures[key]=String(e);}).finally(()=>{if(XV.fpLoad===key)XV.fpLoad=null;});}}
   // Until the native rig for this agent|weapon is in, the primitive arms stay hidden (the native weapon model shows
   // alone); only a failed native load falls back to them.
   if(active&&!(XV.fp&&XV.fp.ag===ag&&XV.fp.w===w&&(XV.fp.skin||'standard')===(typeof xskGet==='function'?xskGet(w):'standard'))&&!XV.failures[key]){XV.waitFP=key;[VMA.R,VMA.L,KARM].forEach(o=>{if(o){XV.hidden.push([o,o.visible]);o.visible=false;}});}else XV.waitFP=null;
