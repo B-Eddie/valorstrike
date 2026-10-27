@@ -65,6 +65,9 @@ function netOpenSocket(create,code,publicRoom){
   try{netOnMsg(m);}catch(err){NET.dropped=(NET.dropped||0)+1;const w=String(err&&err.message||err).slice(0,160)+' @'+m.t;NET.drops=NET.drops||[];if(NET.drops.length<20&&!NET.drops.includes(w))NET.drops.push(w);}
  };
  const netOnMsg=m=>{
+  /* Seated: 'welcome', or for a worker that never sends one (the deployed worker as of 2026-10-26 sends hello / room / start / s
+     only) the room, the match start or a snapshot. The 20 s handshake watchdog used to fire on those workers mid-round (queue 1e). */
+  if(m.t==='room'||m.t==='start'||m.t==='s')NET.welcomed=true;
   if(m.t==='hello'||m.t==='hb')return;
   if((m.t==='sk'||m.t==='sks'||m.t==='skr')&&typeof xskNet==='function')return xskNet(m);
   if(m.t==='welcome'){NET.welcomed=true;if(typeof m.resume==='string')NET.resume=m.resume;MP.name=String(m.name);MP.me=m.you;const input=mpEl('xOnName');if(input)input.value=MP.name;return;}
@@ -98,17 +101,19 @@ function netOpenSocket(create,code,publicRoom){
   if(m.t==='po'){const c=Number(m.c);if(Number.isFinite(c))MP.ping=Math.max(0,Math.round(performance.now()-c));return;}
   mpCliMsg(m);
  };
- ws.onclose=event=>{if(NET.socket!==ws)return;NET.lastClose={code:event.code,reason:event.reason,at:Date.now()};if(![1000,1008,4001,4003].includes(event.code)&&event.reason!=='Load timed out'&&netRetryConnection())return;netFinishConnection(event);};
+ ws.onclose=event=>{if(NET.socket!==ws)return;NET.lastClose={code:event.code,reason:event.reason,at:Date.now()};/* 1008 'Rate or size limit' (a stalled network delivering its queued inputs at once) resumes like a transport loss; 1008 'Room full' stays final */if((![1000,1008,4001,4003].includes(event.code)||event.code===1008&&event.reason==='Rate or size limit')&&event.reason!=='Load timed out'&&netRetryConnection())return;netFinishConnection(event);};
  ws.onerror=()=>{if(NET.socket===ws)mpMsg(NET.reconnecting?'Reconnecting to game server…':'Could not reach the game server. Try again shortly.');};
 }
 function netFinishConnection(event){
- const was=MP.st==='game',room=MP.code,loadingMatch=!!NET.loadAt&&!NET.ready;NET.loadAt=0;mpReset();
- mpMsg(event.reason==='Load timed out'?'Loading the match took too long, so the server closed your seat. Rejoin room '+room+' to try again; closing other tabs or apps can speed up loading.':event.reason==='Connection idle'&&loadingMatch?'Lost contact with the game server while the match was loading. Rejoin room '+room+' to try again.':event.reason==='Connection idle'?'Connection timed out while the client was inactive. Rejoin room '+room+' if another player is still connected.':event.code===1012?'The game server restarted. Join or create a room again.':'Connection to the game server was interrupted. Try rejoining room '+room+'.');
+ const was=MP.st==='game',room=MP.code,loadingMatch=!!NET.loadAt&&!NET.ready,tries=NET.reconnecting?NET.retryCount||0:0;NET.loadAt=0;mpReset();
+ /* close code / reason (and the reconnect attempts) for diagnosis, e.g. ' (close 1006, 7 reconnect attempts)' */
+ const why=' (close '+(Number.isFinite(event.code)?event.code:'?')+(event.reason?' "'+String(event.reason).slice(0,60)+'"':'')+(tries?', '+tries+' reconnect attempt'+(tries===1?'':'s'):'')+')';
+ mpMsg(event.reason==='Load timed out'?'Loading the match took too long, so the server closed your seat. Rejoin room '+room+' to try again; closing other tabs or apps can speed up loading.':event.reason==='Connection idle'&&loadingMatch?'Lost contact with the game server while the match was loading. Rejoin room '+room+' to try again.':event.reason==='Connection idle'?'Connection timed out while the client was inactive. Rejoin room '+room+' if another player is still connected.':event.code===1012?'The game server restarted. Join or create a room again.':event.code===4003?'Your seat in room '+room+' was released after too long offline'+why+'. Rejoin room '+room+' to keep playing.':'Connection to the game server was interrupted'+why+'. Try rejoining room '+room+'.');
  if(was)mpExitGame();mpUI();
 }
 function netRetryConnection(){
  const now=performance.now();if(!NET.resume||!MP.on||MP.st==='post')return false;
- if(!NET.reconnecting){NET.reconnecting=true;NET.retryUntil=now+30000;NET.retryCount=0;NET.resumeMe=MP.me;NET.recoverGame=NET.ready&&MP.st==='game';NET.recoverLoading=!NET.ready&&!!NET.loadAt;netReleaseInput();NET.ready=false;NET.latest=null;}
+ if(!NET.reconnecting){NET.reconnecting=true;NET.retryUntil=now+90000;/* the server keeps the seat 90 s (GameRoom.RESUME) */NET.retryCount=0;NET.resumeMe=MP.me;NET.recoverGame=NET.ready&&MP.st==='game';NET.recoverLoading=!NET.ready&&!!NET.loadAt;netReleaseInput();NET.ready=false;NET.latest=null;}
  if(now>=NET.retryUntil)return false;
  if(NET.retryTimer)return true;
  const epoch=NET.epoch,code=MP.code,pub=MP.pub;mpMsg('Reconnecting to game server…');
@@ -127,7 +132,7 @@ function netTransportTick(){
  if(gap>2000){NET.lastSeen=now;NET.openAt=now;return;}
  if(NET.reconnecting&&now>=NET.retryUntil)return netFinishConnection(NET.lastClose||{code:1006,reason:''});
  if(NET.retryTimer)return;
- if(MP.on&&now-(NET.hbAt||0)>=2000){NET.hbAt=now;netSend({t:'hb'});}
+ if(MP.on&&now-(NET.hbAt||0)>=2000){NET.hbAt=now;netSend({t:'pi',c:Math.round(now)});}/* 'pi' (not 'hb'): every worker version answers it with 'po' (the deployed one ignores 'hb'), and it measures ping */
  const silent=now-(NET.lastSeen||NET.openAt),connecting=!NET.welcomed;
  if((connecting&&now-NET.openAt>20000)||silent>(document.hidden?150000:30000)){
   const old=NET.socket;if(!netRetryConnection())return netFinishConnection({code:1006,reason:''});

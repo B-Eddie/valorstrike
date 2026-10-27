@@ -40,10 +40,10 @@ const start={t:'start',v:2,you:7,team:0,mode:'tdm',map:'ascent',u:[row],tl:300,k
  c.document.hidden=true;c.NET.watchAt=now;now+=160000;c.netTransportTick();assert(!c.NET.reconnecting);replacement.receive({t:'hb'});c.document.hidden=false;
  // Genuine visible silence with normally running timers starts recovery, and it cannot retry forever.
  c.NET.lastSeen=now;for(let i=0;i<31;i++){advance(1000);c.netTransportTick();}assert(c.NET.reconnecting);
- for(let i=0;i<31;i++){advance(1000);c.netTransportTick();}assert(events.includes('exit'));assert.equal(c.NET.reconnecting,false);
+ for(let i=0;i<91;i++){advance(1000);c.netTransportTick();}assert(events.includes('exit'));/* 90 s window = server seat grace (queue 1e) */assert.equal(c.NET.reconnecting,false);
  // Explicit leave invalidates pending retry timers; policy/expired-session closes do not reconnect.
  c.netConnect(false,'ABCDEF',false);ws=sockets.at(-1);await ws.open();welcome(ws);c.MP.st='game';c.NET.ready=true;ws.disconnect();assert(c.NET.retryTimer);c.mpReset();const before=sockets.length;advance(5000);assert.equal(sockets.length,before);
- c.netConnect(false,'ABCDEF',false);ws=sockets.at(-1);await ws.open();welcome(ws);ws.disconnect(1008,'Rate or size limit');assert.equal(c.NET.reconnecting,false);
+ c.netConnect(false,'ABCDEF',false);ws=sockets.at(-1);await ws.open();welcome(ws);ws.disconnect(1008,'Room full');assert.equal(c.NET.reconnecting,false);c.mpReset();/* 1008 'Rate or size limit' now resumes (queue 1e, test_net_drop.cjs) */
  for(const code of [4001,4003]){c.netConnect(false,'ABCDEF',false);ws=sockets.at(-1);await ws.open();welcome(ws);ws.disconnect(code,'Resume expired');assert.equal(c.NET.reconnecting,false,'terminal resume close '+code);}
  // A lobby also resumes without creating a second seat or accidentally loading a match.
  c.NET.loadAt=123;c.NET.lpAt=321;c.NET.recoverGame=c.NET.recoverLoading=true;c.netConnect(false,'ABCDEF',false);assert.equal(c.NET.loadAt,0);assert.equal(c.NET.recoverLoading,false);ws=sockets.at(-1);await ws.open();welcome(ws);c.MP.st='room';ws.disconnect();advance(250);const lobby=sockets.at(-1);await lobby.open();welcome(lobby);assert.equal(c.MP.st,'room');assert.equal(c.NET.reconnecting,false);
