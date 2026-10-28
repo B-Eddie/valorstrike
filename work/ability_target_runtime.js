@@ -148,13 +148,17 @@ const XPI = { ring: null, line: null, mat: null };
 function xPlaceSpot(ag, k) { const P = XPLACE[ag] && XPLACE[ag][k]; if (!P) return null;
   if (ag === "Omen") { const g = okGround(P[0]), v = okFtsValid(g.x, g.z); return { x: g.x, z: g.z, y: v ? v.y : xFy(g.x, g.z, player.y + 0.1), ok: !!v, r: P[1], c: P[2] }; }
   if (ag === "Chamber" && k === "e" && BC.an) return null;
-  const q = xAimPlace(P[0]); q.r = P[1]; q.c = P[2]; if (ag === "Sage") q.wall = 10.4; return q; }
+  const q = xAimPlace(P[0]); q.r = P[1]; q.c = P[2]; if (ag === "Sage") q.wall = 10.4;
+  if (typeof xRotKind === "function" && J.eq && xRotKind(J.eq)) q.face = xRotFace(J.eq); return q; } // Turret facing / Barrier angle (ability_equip_runtime.js xRot*)
 function xPlaceTick() {
   const q = J.eq, show = q && (q.st === "draw" || q.st === "ready" || q.st === "hold") && running && player && player.hp > 0 && jOn(), s = show ? xPlaceSpot(J.pick, q.k) : null;
   if (!XPI.ring) { XPI.mat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.85, depthWrite: false, side: THREE.DoubleSide }); XPI.ring = new THREE.Mesh(new THREE.RingGeometry(0.82, 1, 40), XPI.mat); XPI.ring.rotation.x = -Math.PI / 2; XPI.ring.name = "xPlaceRing"; XPI.ring.raycast = () => {}; XPI.line = new THREE.Mesh(new THREE.BoxGeometry(1, 0.06, 0.12), XPI.mat); XPI.line.name = "xPlaceLine"; XPI.line.raycast = () => {}; }
+  if (!XPI.arrow) { const g = new THREE.ConeGeometry(0.22, 0.55, 12); g.rotateX(-Math.PI / 2); XPI.arrow = new THREE.Mesh(g, XPI.mat); XPI.arrow.name = "xPlaceArrow"; XPI.arrow.raycast = () => {}; } // Turret facing arrow (points along -z, turned by rotation.y)
+  if (!s || s.wall || !Number.isFinite(s.face)) { if (XPI.arrow.parent) scene.remove(XPI.arrow); }
+  else { if (!XPI.arrow.parent) scene.add(XPI.arrow); const d = Math.max(0.3, s.r) + 0.35; XPI.arrow.position.set(s.x - Math.sin(s.face) * d, s.y + 0.08, s.z - Math.cos(s.face) * d); XPI.arrow.rotation.set(0, s.face, 0); }
   if (!s) { if (XPI.ring.parent) scene.remove(XPI.ring); if (XPI.line.parent) scene.remove(XPI.line); XPI.s = null; return; }
   XPI.s = s; XPI.mat.color.setHex(s.ok ? s.c : 0xff4655);
-  if (s.wall) { if (XPI.ring.parent) scene.remove(XPI.ring); if (!XPI.line.parent) scene.add(XPI.line); XPI.line.scale.set(s.wall, 1, 1); XPI.line.position.set(s.x, s.y + 0.05, s.z); XPI.line.rotation.set(0, yaw, 0); }
+  if (s.wall) { if (XPI.ring.parent) scene.remove(XPI.ring); if (!XPI.line.parent) scene.add(XPI.line); XPI.line.scale.set(s.wall, 1, 1); XPI.line.position.set(s.x, s.y + 0.05, s.z); XPI.line.rotation.set(0, Number.isFinite(s.face) ? s.face : yaw, 0); }
   else { if (XPI.line.parent) scene.remove(XPI.line); if (!XPI.ring.parent) scene.add(XPI.ring); XPI.ring.scale.setScalar(Math.max(0.3, s.r)); XPI.ring.position.set(s.x, s.y + 0.05, s.z); }
 }
 (window.XHK || (window.XHK = [])).push(function xPlaceHook() { try { xPlaceTick(); } catch (e) { xE(e); } });

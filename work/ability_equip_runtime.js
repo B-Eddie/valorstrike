@@ -79,10 +79,25 @@ function xDarkShow(q) { const on = q && xEqHold(q) === "mark" && q.st !== "rel" 
   const p = xDarkPt(q.md); xDarkMesh.position.set(p.x, p.y, p.z); xDarkMesh.visible = true; }
 function xEqHoldPw(q) { const h = q && q.st === "hold" ? q.h : 0; return xEqHold(q) === "fault" ? Math.max(0, Math.min(1, h / XFAULT.charge)) : SovaBolt.power(h); }
 function xEqHold(q) { const t = q && XAB_HOLD[J.pick]; return (t && t[q.k]) || ""; }
+// Placement rotation. Killjoy Turret (wiki Turret, patch 12.04: "Can now be rotated while holding down ALT-FIRE. ACTIVATE now swaps its direction"):
+// HOLD ALT FIRE + mouse turns the turret, not the view; E again swaps it 180 deg. Sage Barrier Orb (wiki Barrier_Orb): the wall line starts across the
+// aim; C again rotates it 90 deg (and back); HOLD ALT FIRE + mouse sets any angle; the angle is kept between equips (J.sgBo, reset each round).
+// The offset is relative to the view yaw; the cast reads the absolute facing from XABT.face (kjKey E / sgKey C offline, mpCastSelf m.fy / m.by
+// online, server abilities.js castYaw). Was: ALT FIRE cast them at once, E / C again put them away, both always faced the view.
+const XROT = { Killjoy: { e: "turret" }, Sage: { c: "barrier" } };
+function xRotKind(q) { const t = q && XROT[J.pick]; return (t && t[q.k]) || ""; }
+function xRotOff(q) { return xRotKind(q) === "barrier" ? J.sgBo || 0 : (q && q.fy) || 0; }
+function xRotSet(q, v) { v = Math.atan2(Math.sin(v), Math.cos(v)); if (xRotKind(q) === "barrier") J.sgBo = v; else q.fy = v; }
+function xRotFace(q) { return yaw + xRotOff(q); }
+function xRotKey(q) { if (xRotKind(q) === "turret") xRotSet(q, xRotOff(q) + Math.PI); else xRotSet(q, Math.abs(xRotOff(q)) < 1e-3 ? Math.PI / 2 : 0); try { blip(560, 0.05, "triangle", 0.1); } catch (e) {} }
+function xRotOn(q) { return !!(q && q.rot && xRotKind(q) && q.st !== "rel" && q.st !== "rec"); }
+addEventListener("mousemove", (e) => { const q = J.eq; if (!xRotOn(q) || !running || paused) return; // HOLD ALT FIRE: the mouse turns the indicator, the view stays
+  const k = (0.07 * Math.PI / 180) * S.sens; xRotSet(q, xRotOff(q) - (e.movementX || 0) * k); yaw = q.ry; pitch = q.rp; e.stopImmediatePropagation(); }, true);
 // J.eq: null | { k, code, st: "draw" | "ready" | "hold" | "rel" | "rec", t, alt, buf, h (held s), bn (bounces) }
 function xEqMode(code) { const t = XAB_EQ[J.pick], k = code && code[3] && code[3].toLowerCase(), f = t && t[k]; try { return !!(f && f()); } catch (e) { return false; } }
 function xEqFire(alt) { // FIRE / ALT FIRE while an ability is out: true when the click belonged to the ability
   const q = J.eq; if (!q) return false; const hk = xEqHold(q);
+  if (alt && xRotKind(q)) { if (q.st !== "rel" && q.st !== "rec") { q.rot = true; q.ry = yaw; q.rp = pitch; } return true; } // Turret / Barrier: HOLD ALT FIRE rotates
   if (hk === "mark") { if (q.st === "ready" || (q.st === "mark" && q.dir !== (alt ? -1 : 1))) { if (!Number.isFinite(q.md)) xDarkInit(q); q.st = "mark"; q.dir = alt ? -1 : 1; q.h = 0; } else if (q.st === "draw") q.buf = alt ? 2 : 1; return true; } // Dark Cover: FIRE / ALT FIRE move the marker (xEqTick)
   if (hk === "fault" && alt) return true; // Fault Line has no alternate
   if (hk === "bow" && alt) { if (q.st !== "rel" && q.st !== "rec") { q.bn = ((q.bn | 0) + 1) % 3; try { blip(500 + q.bn * 180, 0.05, "triangle", 0.1); } catch (e) {} } return true; } // ALT FIRE: one more bounce
@@ -93,14 +108,16 @@ function xEqCast(q) { // the throw leaves the hand: the kit's own cast (offline 
   const a0 = J.abAlt, m0 = typeof mpAltHeld !== "undefined" ? mpAltHeld : false, s0 = xCaSig(); J.abAlt = !!q.alt; try { if (q.alt) mpAltHeld = true; } catch (e) {}
   const hk = xEqHold(q); XABT.bolt = hk === "bow" ? { pw: SovaBolt.power(q.h), b: SovaBolt.bounces(q.bn) } : null; // read by jArrow and the cast message (mpCastSelf)
   XABT.hold = hk === "fault" ? { pw: Math.max(0, Math.min(1, q.h / XFAULT.charge)) } : null; // Fault Line charge: read by bcKey, mpCastSelf and the server intent
+  XABT.face = xRotKind(q) ? xRotFace(q) : null; // Turret facing / Barrier angle: read by kjKey / sgKey and mpCastSelf (m.fy / m.by)
   XABT.mark = hk === "mark" && Number.isFinite(q.md) ? { d: q.md, p: xDarkPt(q.md) } : null; // Dark Cover marker: read by okKey (offline smoke) and mpCastSelf (dist / p)
-  XABT.casting = true; try { xEqKey0(q.code); } catch (e) { xE(e); } finally { XABT.casting = false; XABT.bolt = null; XABT.hold = null; XABT.mark = null; J.abAlt = a0; try { mpAltHeld = m0; } catch (e) {} }
+  XABT.casting = true; try { xEqKey0(q.code); } catch (e) { xE(e); } finally { XABT.casting = false; XABT.bolt = null; XABT.hold = null; XABT.mark = null; XABT.face = null; J.abAlt = a0; try { mpAltHeld = m0; } catch (e) {} }
   try { xCaEnd(); } catch (e) {} // the equip viewmodel plays the release; the old one-shot cast gesture would replay it
   return xCaSig() !== s0 || !xEqMode(q.code); // false: the kit refused (no target / no room): Valorant keeps it in hand
 }
 function xEqTick(dt) {
   const q = J.eq; if (!q) return;
   if (!jOn() || !running || !player || player.hp <= 0 || (mode === "five" && FV.buy > 0)) { J.eq = null; return; }
+  if (q.rot) { if (!(typeof mpAltHeld !== "undefined" && mpAltHeld) || !xRotOn(q)) q.rot = false; else { yaw = q.ry; pitch = q.rp; } } // ALT FIRE let go: the mouse turns the view again
   if (q.st === "hold") { q.h += dt; if (!fireHeld) { q.st = "rel"; q.t = XABT.rel; q.alt = false; } return; } // releasing FIRE throws
   if (xEqHold(q) === "mark" && q.st !== "rel" && q.st !== "rec" && !Number.isFinite(q.md) && q.st !== "draw") xDarkInit(q);
   if (q.st === "mark") { const held = q.dir > 0 ? fireHeld : typeof mpAltHeld !== "undefined" && mpAltHeld; q.h += dt; // Dark Cover: a quick FIRE tap casts; holding moves the marker
@@ -115,6 +132,7 @@ const xEqKey0 = jKey;
 jKey = function (code) {
   if (XABT.casting || !jOn() || typeof code !== "string" || !/^Key[CQEX]$/.test(code) || (mode === "five" && FV.buy > 0)) return xEqKey0.apply(this, arguments);
   if (J.eq && J.eq.code === code && xEqHold(J.eq) === "mark" && (J.eq.st === "ready" || J.eq.st === "mark")) { if (!Number.isFinite(J.eq.md)) xDarkInit(J.eq); J.eq.st = "rel"; J.eq.t = XABT.rel; J.eq.alt = false; return true; } // Dark Cover: E again sends the smoke to the marker
+  if (J.eq && J.eq.code === code && xRotKind(J.eq) && (J.eq.st === "draw" || J.eq.st === "ready")) { xRotKey(J.eq); return true; } // E again: Turret 180 deg; C again: Barrier 90 deg
   if (J.eq && J.eq.code === code && J.eq.st !== "rec") { if (J.eq.st !== "rel" && J.eq.st !== "hold") J.eq = null; return true; } // same key again: put it away
   if (J.eq && J.eq.st === "rel") return true; // mid-throw
   if (J.eq && J.eq.st === "hold") return true; // drawing the bow / holding: finish it first
@@ -149,7 +167,7 @@ function xInstTick(dt) {
   return s0.apply(this, arguments); }; }
 { const z0 = xScopeT; xScopeT = function () { if (jOn() && J.eq) return void xEqFire(true); return z0.apply(this, arguments); }; }
 { const w0 = swapW; swapW = function () { if (J.eq && !XABT.casting) J.eq = null; return w0.apply(this, arguments); }; }
-{ const r0 = jRound; jRound = function () { J.eq = null; return r0.apply(this, arguments); }; }
+{ const r0 = jRound; jRound = function () { J.eq = null; J.sgBo = 0; return r0.apply(this, arguments); }; } // sgBo: the Barrier angle starts across the aim each round
 // HUD: the equipped slot is outlined, as Valorant highlights the ability in hand
 try { const st = document.createElement("style"); st.textContent = ".x-as.x-eq,#game .x-as.x-eq{box-shadow:inset 0 0 0 2px #fff;border-bottom-color:#fff!important}"; document.head.appendChild(st); } catch (e) {}
 function xEqHud() { const k = J.eq && J.eq.st !== "rec" ? J.eq.k : ""; if (xEqHud.k === k) return; xEqHud.k = k; [["jC", "c"], ["jQ", "q"], ["jE", "e"], ["jX", "x"]].forEach(([id, a]) => { const el = $(id); if (el) el.classList.toggle("x-eq", a === k); }); }
