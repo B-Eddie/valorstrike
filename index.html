@@ -15712,11 +15712,11 @@ if(window.requestIdleCallback)requestIdleCallback(()=>{xHitInit();try{xCrUi();}c
  const CB={speed:18,steer:14,turn:4,g:9,maxT:2,life:2.5,radius:3.35,lo:1.5,hi:4,back:.3,hand:[.35,.16,-.2]};
  // o: eye [x,y,z], d: unit aim. held: the key is down at the cast (it is, for a key press); it drops for good on release.
  // hand(o, d): the throwing hand for eye o and unit aim d (forward CB.hand[0], right CB.hand[1], up CB.hand[2] in the view frame)
-function hand(o,d){const f=CB.hand,h=Math.hypot(d[0],d[2]),r=h>1e-6?[-d[2]/h,0,d[0]/h]:[1,0,0],u=[r[1]*d[2]-r[2]*d[1],r[2]*d[0]-r[0]*d[2],r[0]*d[1]-r[1]*d[0]];
+ function hand(o,d){const f=CB.hand,h=Math.hypot(d[0],d[2]),r=h>1e-6?[-d[2]/h,0,d[0]/h]:[1,0,0],u=[r[1]*d[2]-r[2]*d[1],r[2]*d[0]-r[0]*d[2],r[0]*d[1]-r[1]*d[0]];
  return [o[0]+d[0]*f[0]+r[0]*f[1]+u[0]*f[2],o[1]+d[1]*f[0]+r[1]*f[1]+u[1]*f[2],o[2]+d[2]*f[0]+r[2]*f[1]+u[2]*f[2]];}
-function start(o,d){const p=hand(o,d);return {o:[o[0],o[1],o[2]],p,v:[d[0]*CB.speed,d[1]*CB.speed,d[2]*CB.speed],t:0,held:true};}
+ function start(o,d){const p=hand(o,d);return {o:[o[0],o[1],o[2]],p,v:[d[0]*CB.speed,d[1]*CB.speed,d[2]*CB.speed],t:0,held:true};}
 // turn unit vector a toward unit vector b by at most ang radians (slerp in their plane; b exactly when within ang)
-function turnToward(a,b,ang){const c=Math.max(-1,Math.min(1,a[0]*b[0]+a[1]*b[1]+a[2]*b[2])),th=Math.acos(c);if(th<=ang||th<1e-6)return [b[0],b[1],b[2]];
+ function turnToward(a,b,ang){const c=Math.max(-1,Math.min(1,a[0]*b[0]+a[1]*b[1]+a[2]*b[2])),th=Math.acos(c);if(th<=ang||th<1e-6)return [b[0],b[1],b[2]];
  let w=[b[0]-a[0]*c,b[1]-a[1]*c,b[2]-a[2]*c],wl=Math.hypot(w[0],w[1],w[2]);if(wl<1e-6){w=Math.abs(a[1])<.9?[a[2],0,-a[0]]:[0,a[2],-a[1]];wl=Math.hypot(w[0],w[1],w[2])||1;}
  const k=Math.cos(ang),q=Math.sin(ang)/wl;return [a[0]*k+w[0]*q,a[1]*k+w[1]*q,a[2]*k+w[2]*q];}
  // One step. aim: the caster's current unit aim while the key is held, null otherwise (ends steering for good).
