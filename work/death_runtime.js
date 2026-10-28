@@ -122,7 +122,7 @@ function xdpKiller(by) { // the killer unit for the death camera: the card's bot
   let best = null, bd = 80; try { for (const b of bots) if (b && b.alive && b.g) { const d = Math.hypot(b.g.position.x - player.x, b.g.position.z - player.z); if (d < bd) { bd = d; best = b; } } } catch (e) {} return best;
 }
 function xdpRayFree(E, dir, max) { // free distance from E along unit dir (native collision BVH, else the box map's blocked() sampled every 0.2 m)
-  try { const C = typeof nmActive === "function" ? nmActive() : null; if (C && C.bvh) { const r = XDP.ray || (XDP.ray = new THREE.Ray(new THREE.Vector3(), new THREE.Vector3())); r.origin.copy(E); r.direction.copy(dir); const h = C.bvh.raycastFirst(r, THREE.DoubleSide); return h && Number.isFinite(h.distance) ? Math.min(max, h.distance) : max; } } catch (e) {}
+  try { const C = typeof nmActive === "function" ? nmActive() : null; if (C && C.bvh) { const r = XDP.ray || (XDP.ray = new THREE.Ray(new THREE.Vector3(), new THREE.Vector3())); r.origin.copy(E); r.direction.copy(dir); const h = nmRayFirst(C.bvh, r, THREE.DoubleSide); /* perf2 allocation-free port of MeshBVH.raycastFirst (shared hit: read at once) */ return h && Number.isFinite(h.distance) ? Math.min(max, h.distance) : max; } } catch (e) {}
   for (let s = 0.2; s <= max; s += 0.2) if (xdpBlocked(E.x + dir.x * s, E.z + dir.z * s, E.y - 1.4)) return Math.max(0, s - 0.2); return max;
 }
 function xdpCamStart(by) {
