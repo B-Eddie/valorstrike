@@ -41,7 +41,7 @@ fresh();const gone=seat('gone');await msg(gone,{t:'vis',h:1});advance(context.Ga
  fresh();const bad=loader('bad');for(const v of [null,'x',1e309,-1e9,{},[1],NaN,true])await msg(bad,{t:'lp',p:v,m:v});assert.equal(bad.closed,null);
  const ok=seat('ok');await msg(ok,{t:'lp',p:.5});assert.equal(room.sessions.get(ok).loadPing,undefined);}
 // 5. Client: visibilitychange hook, released keys, idle input + vis message, Worker-timer heartbeat in foreground and background.
-const net=fs.readFileSync('../work/server_runtime.js','utf8'),a=net.indexOf('// Background-tab liveness.'),b=net.indexOf('const netOmenClick0=',a);assert(a>0&&b>a);
+const net=fs.readFileSync('../work/server_runtime.js','utf8'),a=net.indexOf('// Background-tab liveness.'),b=net.indexOf('// Online 5v5 Omen From the Shadows',a);assert(a>0&&b>a);
 let listener=null,workers=[];const sent=[];const keys={KeyW:true,Space:true};
 const c={document:{hidden:false,addEventListener:(t,f)=>{if(t==='visibilitychange')listener=f;}},MP:{on:true},NET:{socket:{readyState:1},ready:true,firePulse:9e9},keys,fireHeld:true,netWeapon:'Vandal',netSend:m=>sent.push(m),netInputMsg:(kk,w)=>({t:'in',f:kk.KeyW?1:0,j:kk.Space?1:0,w}),URL:{createObjectURL:()=>'blob:x',revokeObjectURL(){}},Blob:class{constructor(parts){this.src=parts.join('');}},Worker:class{constructor(u){this.u=u;workers.push(this);}}};
 vm.createContext(c);vm.runInContext(net.slice(a,b)+';globalThis.vis=netVisibility;',c);assert.equal(typeof listener,'function');

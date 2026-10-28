@@ -75,7 +75,11 @@ block+='\n'+(root/'work/spike_anim_runtime.js').read_text().rstrip('\n');
 # bot casts (xBUse, FEEL ult charge), and the first-person holes (online server-cast keys: jKey / netSend; Omen From the Shadows: xAfTick).
 aa2='// ---- ABILITY ANIM ----';ab2='// ---- END ABILITY ANIM ----'
 if aa2 in s:s=s[:s.index(aa2)]+s[s.index(ab2)+len(ab2):]
-block+='\n'+(root/'work/ability_anim_runtime.js').read_text().rstrip('\n');mark='xReady = true; // every mode is initialised; lobby launches may now start them';s=s.replace(mark,block+'\n'+mark)
+block+='\n'+(root/'work/ability_anim_runtime.js').read_text().rstrip('\n')
+# Ability targeting (work/ability_target_runtime.js), last: the tactical map overlay (From the Shadows) as the outermost okKey wrapper.
+ta2='// ---- ABILITY TARGETING ----';tb2='// ---- END ABILITY TARGETING ----'
+if ta2 in s:s=s[:s.index(ta2)]+s[s.index(tb2)+len(tb2):]
+block+='\n'+(root/'work/ability_target_runtime.js').read_text().rstrip('\n');mark='xReady = true; // every mode is initialised; lobby launches may now start them';s=s.replace(mark,block+'\n'+mark)
 if '<script src="models/valorant/manifest.js"></script>' not in s:s=s.replace('<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>','<script src="models/valorant/manifest.js"></script>\n<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>')
 # Find the actual three script tag, which may use an onerror handler.
 if '<script src="models/valorant/manifest.js"></script>' not in s:s=s.replace('<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js"></script>','<script src="models/valorant/manifest.js"></script>\n<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js"></script>')
