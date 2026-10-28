@@ -104,4 +104,10 @@ s=re.sub(r'\n{3,}(?=// ---- VALORANT ASSET INTEGRATION ----)', '\n\n', s)
 # Preserve elevation when handing the visible rig and weapon to corpse animation.
 s=s.replace('c.m.position.set(p.x, 0, p.z)', 'c.m.position.set(p.x, p.y, p.z)')
 s=s.replace('gn.position.set(p.x + Math.sin(ry + 1.2) * 0.7, 0.05, p.z + Math.cos(ry + 1.2) * 0.7)', 'gn.position.set(p.x + Math.sin(ry + 1.2) * 0.7, p.y + 0.05, p.z + Math.cos(ry + 1.2) * 0.7)')
+# Allocation-free Math.hypot (work/hypot_runtime.js): its own inline <script> right after the analytics stub, before three.js
+# and every game script, so all ~450 call sites get it (V8's builtin allocates per call). Re-inserted on every run.
+ha3='<script>/* perf2: allocation-free Math.hypot.'
+if ha3 in s:i3=s.index(ha3);s=s[:i3]+s[s.index('</script>\n',i3)+len('</script>\n'):]
+va3='<script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };</script>\n'
+s=s.replace(va3,va3+'<script>'+(root/'work/hypot_runtime.js').read_text().rstrip('\n')+'</script>\n',1)
 p.write_text(s)
