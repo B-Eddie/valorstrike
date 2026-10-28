@@ -2,12 +2,13 @@
 // a context starts 'suspended', resume() only takes effect inside a user gesture (the harness's dispatch of a
 // pointerdown / touchend / mousedown / keydown / click), and it can be pushed into iOS's 'interrupted' state. It counts
 // every source node started (oscillator / buffer source / constant source) and remembers which of those started while
-// the context was running, so a test can tell "a sound was scheduled" from "a sound was heard".
+// the context was running, so a test can tell "a sound was scheduled" from "a sound was heard". ctorOutside counts contexts
+// constructed outside a gesture (Firefox: "An AudioContext was prevented from starting automatically").
 'use strict';
 const GESTURES=new Set(['pointerdown','pointerup','touchstart','touchend','mousedown','mouseup','keydown','keyup','click']);
 function install(H,opt={}){
  const GEST=opt.gestures?new Set(opt.gestures):GESTURES;
- const rec={refused:0,contexts:[],started:0,audible:0,resumeCalls:0,resumeInGesture:0,rejectNext:opt.rejectFirst|0};
+ const rec={ctorOutside:0,refused:0,contexts:[],started:0,audible:0,resumeCalls:0,resumeInGesture:0,rejectNext:opt.rejectFirst|0};
  let gesture=0;
  const d0=H.dispatch;H.dispatch=function(t,e){const g=e&&GEST.has(e.type);if(g)gesture++;try{return d0.apply(this,arguments);}finally{if(g)gesture--;}};
  const P=v=>({value:v,defaultValue:v,setValueAtTime(){return this},linearRampToValueAtTime(){return this},exponentialRampToValueAtTime(){return this},setTargetAtTime(){return this},cancelScheduledValues(){return this},cancelAndHoldAtTime(){return this},setValueCurveAtTime(){return this}});
@@ -18,7 +19,7 @@ function install(H,opt={}){
   reaches(seen=new Set()){if(this===this.context.destination)return true;if(seen.has(this))return false;seen.add(this);return this.outs.some(o=>o&&o.reaches&&o.reaches(seen));}}
  class Buf{constructor(ch,len,sr){this.numberOfChannels=ch;this.length=len;this.sampleRate=sr;this.duration=len/sr;this._d=[...Array(ch)].map(()=>new Float32Array(len));}getChannelData(i){return this._d[i];}copyToChannel(){}}
  class AC{constructor(){if(opt.ctorThrows>0){opt.ctorThrows--;throw Error('NotSupportedError: failed to start audio device');}this.state='suspended';this.sampleRate=48000;this.currentTime=0;this.baseLatency=0.01;this.destination=new Node(this,'dest');
-   this.listener=Object.assign(new Node(this,'listener'),{forwardX:P(0),forwardY:P(0),forwardZ:P(-1),upX:P(0),upY:P(1),upZ:P(0)});this.onstatechange=null;this._l={};rec.contexts.push(this);}
+   this.listener=Object.assign(new Node(this,'listener'),{forwardX:P(0),forwardY:P(0),forwardZ:P(-1),upX:P(0),upY:P(1),upZ:P(0)});this.onstatechange=null;this._l={};rec.contexts.push(this);if(!gesture)rec.ctorOutside++;}
   _set(s){if(this.state===s)return;this.state=s;if(this.onstatechange)try{this.onstatechange()}catch(e){}for(const f of this._l.statechange||[])try{f({type:'statechange'})}catch(e){}}
   addEventListener(t,f){(this._l[t]=this._l[t]||[]).push(f);}removeEventListener(t,f){this._l[t]=(this._l[t]||[]).filter(x=>x!==f);}
   resume(){rec.resumeCalls++;if(this.state==='closed')return Promise.reject(Error('InvalidStateError'));

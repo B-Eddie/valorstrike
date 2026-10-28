@@ -2117,7 +2117,17 @@ let ac, master;
 // and iOS can stop it at any time ('interrupted': a call, Siri, another app, the screen lock; 'suspended' after the page
 // was hidden). So: never let a refused start throw (WebKit rejects resume() with "Failed to start the audio device",
 // which surfaced as the "Something broke" toast and left the context dead), and retry on EVERY gesture until it runs.
-const AUD = { err: "", fails: 0, lastTry: 0, gest: 0, unlocked: null };
+const AUD = { err: "", fails: 0, lastTry: 0, gest: 0, unlocked: null, act: false };
+// Firefox / Chrome log "An AudioContext was prevented from starting automatically" for a context constructed (or resumed)
+// before the page's first user activation, so none is made until then: sounds before it are skipped (nobody could hear them).
+// navigator.userActivation where the browser has it, else the activation-triggering events (keydown other than Escape,
+// mousedown, pointerdown by mouse, pointerup by touch / pen, touchend, click); touchstart / mouseup are not activations.
+function audAct(e) {
+  if (AUD.act) return true; const u = navigator.userActivation;
+  if (u && (u.isActive || u.hasBeenActive)) return (AUD.act = true);
+  const t = e && e.type; if (!t || u) return false;
+  return (AUD.act = (t === "keydown" && e.key !== "Escape") || t === "mousedown" || t === "touchend" || t === "click" || (t === "pointerdown" && e.pointerType === "mouse") || (t === "pointerup" && e.pointerType !== "mouse"));
+}
 function audKick(gesture) { // resume a context that is not running; outside a gesture at most every 1.5 s (a browser refuses it anyway)
   if (!ac || ac.state === "running" || ac.state === "closed" || document.hidden) return;
   const now = performance.now(); if (!gesture && now - AUD.lastTry < 1500) return; AUD.lastTry = now;
@@ -2125,13 +2135,13 @@ function audKick(gesture) { // resume a context that is not running; outside a g
   catch (e) { AUD.fails++; AUD.err = String((e && e.message) || e); }
 }
 function audio() {
-  if (!ac) { const A = window.AudioContext || window.webkitAudioContext; if (!A) return;
+  if (!ac) { const A = window.AudioContext || window.webkitAudioContext; if (!A || !audAct()) return; // no context before the first user activation
     try { ac = new A(); master = ac.createGain(); master.connect(ac.destination); } catch (e) { ac = undefined; master = undefined; AUD.fails++; AUD.err = String((e && e.message) || e); return; } // retried on the next call / gesture
     try { ac.addEventListener("statechange", () => { if (ac && ac.state !== "running" && !document.hidden) audKick(false); }); } catch (e) {} }
   master.gain.value = S.muted ? 0 : S.vol / 100; audKick(AUD.gest > 0);
 }
-function audGesture() { // every gesture while sound is on: create / resume the context; iOS also needs a sound started inside the gesture
-  if (S.muted) return; AUD.gest++;
+function audGesture(e) { // every gesture while sound is on: create / resume the context; iOS also needs a sound started inside the gesture
+  audAct(e); if (S.muted) return; AUD.gest++;
   try { audio(); if (ac && (ac.state !== "running" || AUD.unlocked !== ac)) { AUD.unlocked = ac; const b = ac.createBuffer(1, 1, ac.sampleRate), s = ac.createBufferSource(); s.buffer = b; s.connect(ac.destination); s.start(0); } } catch (e) { AUD.err = String((e && e.message) || e); }
   finally { AUD.gest--; }
 }
