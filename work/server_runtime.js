@@ -20,37 +20,53 @@ async function netProfileToken(){if(netSessionToken)return netSessionToken;try{n
 // Server frames are shape-checked before anything stores or replays them (the frame loop re-reads NET.latest and round
 // state every frame, so one malformed snapshot would otherwise throw on every frame): unknown shapes are dropped, the
 // arrays the page iterates are made arrays of the right kind, and unit rows / events with missing fields are removed.
-function netClean(m){if(!m||typeof m!=='object'||Array.isArray(m)||typeof m.t!=='string')return null;const arr=v=>Array.isArray(v)?v:[],obj=v=>v&&typeof v==='object'&&!Array.isArray(v)?v:null,num=Number.isFinite,str=v=>typeof v==='string',vec=v=>Array.isArray(v)&&v.length>=3&&v.slice(0,3).every(num);
- const row=r=>Array.isArray(r)&&r.length>=15&&num(r[0])&&(r[1]===0||r[1]===1||num(r[1]))&&str(r[2])&&str(r[3])&&num(r[4])&&num(r[5])&&num(r[6])&&num(r[7])&&num(r[8])&&num(r[9])&&str(r[11])&&num(r[14]),rows=v=>arr(v).filter(row);
- const kd=v=>{const o=obj(v),out={};if(o)for(const [k,n]of Object.entries(o))if(num(n))out[k]=n;return out;};
- // Snapshot-shaped frames ('s', and 'end' / 're', which the page replays through the snapshot path): everything iterated.
- const snap=m=>{m.u=rows(m.u);m.k=kd(m.k);m.d=kd(m.d);m.ev=arr(m.ev).filter(e=>Array.isArray(e)&&str(e[0]));if(m.fx!==undefined)m.fx=arr(m.fx).filter(e=>obj(e)&&vec(e.p));if(m.fw!==undefined)m.fw=arr(m.fw).filter(r=>Array.isArray(r)&&num(r[0])&&str(r[1])&&num(r[2])&&num(r[3])&&num(r[4]));if(m.tl!==undefined&&!num(m.tl))delete m.tl;};
- // Round state (alone, or inside 'start' / 'ao'): the spike row, and the per-agent state the page walks (Reyna souls, ability block, statuses).
- const rs=r=>{if(!obj(r)||!Array.isArray(r.sp)||r.sp.length<9)return null;const wk=v=>typeof v==='string'&&Object.prototype.hasOwnProperty.call(WEAP,v);/* own weapon keys only: '__proto__' / 'constructor' passed WEAP[n] and threw in the skin path (onSkin) */if(r.ld!==undefined){if(!Array.isArray(r.ld))r.ld=[null,'Classic'];else r.ld=[wk(r.ld[0])?r.ld[0]:null,wk(r.ld[1])?r.ld[1]:'Classic'];}if(r.tw!==undefined&&!(r.tw===null||wk(r.tw)))r.tw=null;if(r.status!==undefined&&!obj(r.status))delete r.status;if(r.channel!==undefined&&!obj(r.channel))r.channel=null;
-  if(r.ab!==undefined){if(!obj(r.ab))delete r.ab;else{if(r.ab.cool!==undefined&&!obj(r.ab.cool))delete r.ab.cool;if(r.ab.anchor!=null&&!vec(r.ab.anchor))r.ab.anchor=null;}}
-  if(r.reyna!==undefined&&r.reyna!==null){if(!obj(r.reyna))r.reyna=null;else r.reyna.souls=arr(r.reyna.souls).filter(o=>obj(o)&&(str(o.id)||num(o.id))&&vec(o.p));}
-  r.rv=arr(r.rv).filter(x=>Array.isArray(x)&&x.length>=4&&x.every(num));if(r.cr!==undefined)r.cr=kd(r.cr);if(r.sc!==undefined&&!(Array.isArray(r.sc)&&r.sc.length===2&&r.sc.every(num)))return null;
+function netClean(m){if(!m||typeof m!=='object'||Array.isArray(m)||typeof m.t!=='string')return null;
+ const t=m.t;
+ if(t==='room'){m.pl=nclKeep(m.pl,nclPl);if(!nclStr(m.code))m.code='';if(!nclStr(m.mode))m.mode='tdm';if(!nclStr(m.map))m.map='ascent';}
+ else if(t==='welcome'){if(!nclStr(m.name)&&!nclNum(m.name))return null;}
+ else if(t==='start'){if(!NCL_MODES.includes(m.mode)||!NCL_MAPS.includes(m.map)||!nclNum(m.you))return null;m.u=nclKeep(m.u,nclRow);m.k=nclKd(m.k);m.d=nclKd(m.d);if(m.rs!==undefined&&!nclRs(m.rs))delete m.rs;if(m.ld!==undefined&&!Array.isArray(m.ld))delete m.ld;if(m.tl!==undefined&&!nclNum(m.tl))delete m.tl;}
+ else if(t==='s'){nclSnap(m);if(m.rs!==undefined&&!nclRs(m.rs))delete m.rs;if(!nclNum(m.tl))m.tl=0;if(!nclNum(m.serverTime))m.serverTime=Date.now();}
+ else if(t==='rs'){if(!nclRs(m))return null;}
+ else if(t==='re'){if(!(Array.isArray(m.sc)&&m.sc.length===2&&m.sc.every(nclNum)))return null;nclSnap(m);if(!nclStr(m.tx))m.tx='';}
+ else if(t==='end'){nclSnap(m);if(m.over!=null&&!nclStr(m.over))m.over=null;}
+ else if(t==='rd'){if(m.ld!==undefined&&!Array.isArray(m.ld))m.ld=[null,'Classic'];}
+ else if(t==='ac'){if(!nclNum(m.i)||!nclStr(m.ag)||!nclStr(m.k))return null;for(let i=0;i<3;i++){const k=NCL_AC[i];if(m[k]!==undefined&&!nclVec(m[k]))return null;}for(let i=0;i<2;i++){const k=NCL_ACN[i];if(m[k]!==undefined&&!nclNum(m[k]))delete m[k];}/* Sova bolt charge / bounces */}
+ else if(t==='ao'){if(m.rs!==undefined&&!nclRs(m.rs))delete m.rs;}
+ return m;}
+// perf3: netClean's helpers and predicates live out here (they were ~10 closures built per message, plus one per filter call,
+// a constant table per round state and Object.entries arrays); a list / map whose entries all pass is kept as it came
+// (a filtered copy only when something is dropped). Same checks, same results (work/test_net_clean_alloc.cjs).
+const nclNum=Number.isFinite,nclHas=Object.prototype.hasOwnProperty,NCL_MODES=['tdm','dm','five','esc','skm'],NCL_MAPS=['ascent','bind','haven','split','lotus','breeze'],NCL_RS=[['tm',0,1e7],['b',0,120],['tl',0,1e4],['me',0,99999]],NCL_AB=[['c',0,9],['q',0,9],['e',0,9],['ult',0,20],['blades',0,10],['regrowthPool',0,100],['rechargeAt',0,1e7],['signatureKills',0,99]],NCL_AC=['o','d','p'],NCL_ACN=['pw','b'];
+function nclObj(v){return v&&typeof v==='object'&&!Array.isArray(v)?v:null;}
+function nclStr(v){return typeof v==='string';}
+function nclVec(v){return Array.isArray(v)&&v.length>=3&&nclNum(v[0])&&nclNum(v[1])&&nclNum(v[2]);}
+function nclKeep(v,f){if(!Array.isArray(v))return [];for(let i=0;i<v.length;i++)if(!(i in v)||!f(v[i]))return v.filter(f);return v;}/* arr(v).filter(f) */
+function nclRow(r){return Array.isArray(r)&&r.length>=15&&nclNum(r[0])&&(r[1]===0||r[1]===1||nclNum(r[1]))&&nclStr(r[2])&&nclStr(r[3])&&nclNum(r[4])&&nclNum(r[5])&&nclNum(r[6])&&nclNum(r[7])&&nclNum(r[8])&&nclNum(r[9])&&nclStr(r[11])&&nclNum(r[14]);}
+function nclEv(e){return Array.isArray(e)&&nclStr(e[0]);}
+function nclFx(e){return !!nclObj(e)&&nclVec(e.p);}
+function nclFw(r){return Array.isArray(r)&&nclNum(r[0])&&nclStr(r[1])&&nclNum(r[2])&&nclNum(r[3])&&nclNum(r[4]);}
+function nclRv(x){return Array.isArray(x)&&x.length>=4&&x.every(nclNum);}
+function nclSoul(o){return !!nclObj(o)&&(nclStr(o.id)||nclNum(o.id))&&nclVec(o.p);}
+function nclPl(p){return !!nclObj(p)&&nclStr(p.n);}
+function nclKd(v){const o=nclObj(v);if(!o)return {};for(const k in o)if(nclHas.call(o,k)&&(k==='__proto__'||!nclNum(o[k]))){const out={};for(const [k2,n]of Object.entries(o))if(nclNum(n))out[k2]=n;return out;}return o;}/* {k: n} for the finite numbers only */
+function nclCl(v,lo,hi){return Math.max(lo,Math.min(hi,v));}
+function nclWk(v){return typeof v==='string'&&nclHas.call(WEAP,v);}/* own weapon keys only: '__proto__' / 'constructor' passed WEAP[n] and threw in the skin path (onSkin) */
+// Snapshot-shaped frames ('s', and 'end' / 're', which the page replays through the snapshot path): everything iterated.
+function nclSnap(m){m.u=nclKeep(m.u,nclRow);m.k=nclKd(m.k);m.d=nclKd(m.d);m.ev=nclKeep(m.ev,nclEv);if(m.fx!==undefined)m.fx=nclKeep(m.fx,nclFx);if(m.fw!==undefined)m.fw=nclKeep(m.fw,nclFw);if(m.tl!==undefined&&!nclNum(m.tl))delete m.tl;}
+// Round state (alone, or inside 'start' / 'ao'): the spike row, and the per-agent state the page walks (Reyna souls, ability block, statuses).
+function nclRs(r){if(!nclObj(r)||!Array.isArray(r.sp)||r.sp.length<9)return null;if(r.ld!==undefined){if(!Array.isArray(r.ld))r.ld=[null,'Classic'];else r.ld=[nclWk(r.ld[0])?r.ld[0]:null,nclWk(r.ld[1])?r.ld[1]:'Classic'];}if(r.tw!==undefined&&!(r.tw===null||nclWk(r.tw)))r.tw=null;if(r.status!==undefined&&!nclObj(r.status))delete r.status;if(r.channel!==undefined&&!nclObj(r.channel))r.channel=null;
+  if(r.ab!==undefined){if(!nclObj(r.ab))delete r.ab;else{if(r.ab.cool!==undefined&&!nclObj(r.ab.cool))delete r.ab.cool;if(r.ab.anchor!=null&&!nclVec(r.ab.anchor))r.ab.anchor=null;}}
+  if(r.reyna!==undefined&&r.reyna!==null){if(!nclObj(r.reyna))r.reyna=null;else r.reyna.souls=nclKeep(r.reyna.souls,nclSoul);}
+  r.rv=nclKeep(r.rv,nclRv);if(r.cr!==undefined)r.cr=nclKd(r.cr);if(r.sc!==undefined&&!(Array.isArray(r.sc)&&r.sc.length===2&&r.sc.every(nclNum)))return null;
   // Values (JSON carries 1e999 = Infinity and any magnitude, and typeof checks let them through): every number the page
   // reads is finite and clamped to its range, a junk one dropped (scalars) or zeroed (statuses, spike row).
-  const cl=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));for(const [k,lo,hi]of [['tm',0,1e7],['b',0,120],['tl',0,1e4],['me',0,99999]])if(r[k]!==undefined){if(num(r[k]))r[k]=cl(r[k],lo,hi);else delete r[k];}
-  if(r.atk!==undefined)r.atk=r.atk===1||r.atk===true?1:0;if(r.bl!==undefined)r.bl=arr(r.bl).filter(str);if(r.sc!==undefined)r.sc=r.sc.map(n=>cl(Math.floor(n),0,99));if(r.cr)for(const k in r.cr)r.cr[k]=cl(r.cr[k],0,99999);
-  if(r.status){const o={};for(const [k,v]of Object.entries(r.status))o[k]=num(v)?cl(v,0,60):0;r.status=o;}
-  if(r.channel)r.channel={kind:str(r.channel.kind)?r.channel.kind:'',remaining:num(r.channel.remaining)?cl(r.channel.remaining,0,30):0};
-  if(r.ab){const a=r.ab;for(const [k,lo,hi]of [['c',0,9],['q',0,9],['e',0,9],['ult',0,20],['blades',0,10],['regrowthPool',0,100],['rechargeAt',0,1e7],['signatureKills',0,99]])if(a[k]!==undefined&&!(typeof a[k]==='boolean')){if(num(a[k]))a[k]=cl(a[k],lo,hi);else delete a[k];}if(a.cool)for(const k of Object.keys(a.cool)){if(num(a.cool[k]))a.cool[k]=cl(a.cool[k],0,1e7);else delete a.cool[k];}}
-  {const p=r.sp;r.sp=[str(p[0])?p[0]:'',num(p[1])?Math.floor(p[1]):-1,num(p[2])?cl(p[2],-1e4,1e4):0,num(p[3])?cl(p[3],-1e4,1e4):0,num(p[4])?cl(p[4],0,1e4):0,num(p[5])?cl(p[5],0,1e4):0,num(p[6])?cl(p[6],0,1e4):0,str(p[7])?p[7]:'',p[8]===1||p[8]===true?1:0];}
-  return r;};
- const t=m.t;
- if(t==='room'){m.pl=arr(m.pl).filter(p=>obj(p)&&str(p.n));if(!str(m.code))m.code='';if(!str(m.mode))m.mode='tdm';if(!str(m.map))m.map='ascent';}
- else if(t==='welcome'){if(!str(m.name)&&!num(m.name))return null;}
- else if(t==='start'){if(!['tdm','dm','five','esc','skm'].includes(m.mode)||!['ascent','bind','haven','split','lotus','breeze'].includes(m.map)||!num(m.you))return null;m.u=rows(m.u);m.k=kd(m.k);m.d=kd(m.d);if(m.rs!==undefined&&!rs(m.rs))delete m.rs;if(m.ld!==undefined&&!Array.isArray(m.ld))delete m.ld;if(m.tl!==undefined&&!num(m.tl))delete m.tl;}
- else if(t==='s'){snap(m);if(m.rs!==undefined&&!rs(m.rs))delete m.rs;if(!num(m.tl))m.tl=0;if(!num(m.serverTime))m.serverTime=Date.now();}
- else if(t==='rs'){if(!rs(m))return null;}
- else if(t==='re'){if(!(Array.isArray(m.sc)&&m.sc.length===2&&m.sc.every(num)))return null;snap(m);if(!str(m.tx))m.tx='';}
- else if(t==='end'){snap(m);if(m.over!=null&&!str(m.over))m.over=null;}
- else if(t==='rd'){if(m.ld!==undefined&&!Array.isArray(m.ld))m.ld=[null,'Classic'];}
- else if(t==='ac'){if(!num(m.i)||!str(m.ag)||!str(m.k))return null;for(const k of ['o','d','p'])if(m[k]!==undefined&&!vec(m[k]))return null;for(const k of ['pw','b'])if(m[k]!==undefined&&!num(m[k]))delete m[k];/* Sova bolt charge / bounces */}
- else if(t==='ao'){if(m.rs!==undefined&&!rs(m.rs))delete m.rs;}
- return m;}
+  for(let i=0;i<NCL_RS.length;i++){const T=NCL_RS[i],k=T[0];if(r[k]!==undefined){if(nclNum(r[k]))r[k]=nclCl(r[k],T[1],T[2]);else delete r[k];}}
+  if(r.atk!==undefined)r.atk=r.atk===1||r.atk===true?1:0;if(r.bl!==undefined)r.bl=nclKeep(r.bl,nclStr);if(r.sc!==undefined)r.sc=[nclCl(Math.floor(r.sc[0]),0,99),nclCl(Math.floor(r.sc[1]),0,99)];if(r.cr)for(const k in r.cr)r.cr[k]=nclCl(r.cr[k],0,99999);
+  if(r.status){const S=r.status,o={};for(const k in S)if(nclHas.call(S,k)){const v=S[k];o[k]=nclNum(v)?nclCl(v,0,60):0;}r.status=o;}
+  if(r.channel)r.channel={kind:nclStr(r.channel.kind)?r.channel.kind:'',remaining:nclNum(r.channel.remaining)?nclCl(r.channel.remaining,0,30):0};
+  if(r.ab){const a=r.ab;for(let i=0;i<NCL_AB.length;i++){const T=NCL_AB[i],k=T[0];if(a[k]!==undefined&&!(typeof a[k]==='boolean')){if(nclNum(a[k]))a[k]=nclCl(a[k],T[1],T[2]);else delete a[k];}}if(a.cool)for(const k of Object.keys(a.cool)){if(nclNum(a.cool[k]))a.cool[k]=nclCl(a.cool[k],0,1e7);else delete a.cool[k];}}
+  {const p=r.sp;r.sp=[nclStr(p[0])?p[0]:'',nclNum(p[1])?Math.floor(p[1]):-1,nclNum(p[2])?nclCl(p[2],-1e4,1e4):0,nclNum(p[3])?nclCl(p[3],-1e4,1e4):0,nclNum(p[4])?nclCl(p[4],0,1e4):0,nclNum(p[5])?nclCl(p[5],0,1e4):0,nclNum(p[6])?nclCl(p[6],0,1e4):0,nclStr(p[7])?p[7]:'',p[8]===1||p[8]===true?1:0];}
+  return r;}
 function netConnect(create,code,publicRoom){
  if(create&&['ascent','bind','haven','split','lotus','breeze','random'].includes(window.xQMap))MP.map=window.xQMap;
  mpReset();NET.seatTries=0;NET.seat=null;MP.st='conn';mpMsg(create?'Creating server room…':'Joining server room…');mpUI();NET.host=create;

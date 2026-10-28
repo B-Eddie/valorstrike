@@ -16,7 +16,7 @@
 //  - Your killer stays relevant to you (the victim only) for FOG.killer s after your death.
 // Vision is per team (per player in Deathmatch): a teammate's sight is yours (minimap). Enemy devices (deviceRows) and
 // Barrier Orbs (fx 'barrier') follow the same sight test; static ones stay once seen, Owl Drone / Blast Pack use the grace.
-import {barrierPoints} from './abilities.js';import {devicePoints,DEV_ROWS} from './devices.js';
+import {barrierPoints} from './abilities.js';import {hyp2,hyp3} from './hyp.js';/* Math.hypot without the builtin's per-call argument array, bit-identical (hyp.js) */import {devicePoints,DEV_ROWS} from './devices.js';
 export {hyp2 as fogHyp2,hyp3 as fogHyp3};
 export const FOG=Object.freeze({ahead:.4,pad:.45,grace:1,step:30,run:3.6,shot:50,shotFor:1,near:3,killer:3,devNear:6,cast:30});
 const MOVING=new Set(['owl','blastpack','cloudburst']);
@@ -34,10 +34,6 @@ export function pairSees(sim,a,b){const w=sim.baseWorld||sim.world;if(w&&typeof 
 // the same eyes and points, written out into scratch buffers in the same order, each test segClear's arithmetic with the
 // ray handed to the world through its ray state (world.rayS / rayClear = ray(o, d, len - .05) === Infinity)
 const FE=new Float64Array(6),FP=new Float64Array(24);
-// Math.hypot of 2 / 3 terms as V8's builtin computes it (max scaling, Kahan sum: bit-identical, test-bvh-fast.js checks), without
-// the builtin's per-call argument array (~70 B); non-finite or zero inputs take the builtin (the unary + keeps the result an untagged double)
-function hyp2(x,z){const a=Math.abs(x),b=Math.abs(z),m=a>b?a:b;if(m>0&&m<Infinity&&b===b){const qa=a/m,qb=b/m;return Math.sqrt(qa*qa+qb*qb)*m;}return +Math.hypot(x,z);}
-function hyp3(x,y,z){const a=Math.abs(x),b=Math.abs(y),c=Math.abs(z);let m=a>b?a:b;if(c>m)m=c;if(m>0&&m<Infinity&&a===a&&b===b&&c===c){let q=a/m,u=q*q,s=u,k=0;q=b/m;u=q*q-k;let p=s+u;k=(p-s)-u;s=p;q=c/m;u=q*q-k;p=s+u;s=p;return Math.sqrt(s)*m;}return +Math.hypot(x,y,z);}
 function pairSeesF(sim,w,s,t){const ne=eyesF(s);for(let i=0;i<ne;i++){const np=pointsF(t,i),ex=FE[i*3],ey=FE[i*3+1],ez=FE[i*3+2];
   for(let k=0;k<np;k++){sim.fogRays=(sim.fogRays||0)+1;const q0=FP[k*3]-ex,q1=FP[k*3+1]-ey,q2=FP[k*3+2]-ez,len=hyp3(q0,q1,q2);if(len<.05)return true;
    const R=w.rayS;R.ox=ex;R.oy=ey;R.oz=ez;R.dx=q0/len;R.dy=q1/len;R.dz=q2/len;R.max=len-.05;if(w.rayClear())return true;}}return false;}

@@ -2,6 +2,7 @@ import BotRoutes from '../../vendor/bot-routes.cjs';
 import BotBrain from '../../vendor/bot-brain.cjs';
 import SpawnBarriers from '../../vendor/spawn-barriers.cjs';
 import {blockedNodes} from './path.js';
+import {hyp2} from './hyp.js';/* perf3: Math.hypot bit for bit without the builtin's per-call array (variedPath's cached-route check runs per bot per tick) */
 // Server-authoritative bot personalities. Every bot gets a deterministic seed (its name, id and the map), its own
 // random stream, a role profile and per-bot jittered traits, so bots under identical conditions still move,
 // aim, peek, route and use utility differently, while the same bot replays identically (stable tests).
@@ -71,8 +72,8 @@ export function flankNode(sim,u,target){
 // it, or the round changes. At most two re-routes per simulation tick; past that a bot keeps the plain route this tick.
 export function variedPath(sim,u,start,goal,find){
  const W=sim.world,N=W.nav.nodes,round=sim.round||0,c=u.vroute;
- if(c&&c.round===round&&c.team===u.team&&N[c.goal]&&N[goal]&&Math.hypot(N[c.goal][0]-N[goal][0],N[c.goal][2]-N[goal][2])<6&&Math.abs(N[c.goal][1]-N[goal][1])<2){
-  let k=c.path.indexOf(start,c.i);if(k<0){const q=N[start];for(let j=c.i;j<Math.min(c.path.length,c.i+14);j++){const n=N[c.path[j]];if(Math.hypot(n[0]-q[0],n[2]-q[2])<2.5&&Math.abs(n[1]-q[1])<1.2){k=j;break;}}}
+ if(c&&c.round===round&&c.team===u.team&&N[c.goal]&&N[goal]&&hyp2(N[c.goal][0]-N[goal][0],N[c.goal][2]-N[goal][2])<6&&Math.abs(N[c.goal][1]-N[goal][1])<2){
+  let k=c.path.indexOf(start,c.i);if(k<0){const q=N[start];for(let j=c.i;j<Math.min(c.path.length,c.i+14);j++){const n=N[c.path[j]];if(hyp2(n[0]-q[0],n[2]-q[2])<2.5&&Math.abs(n[1]-q[1])<1.2){k=j;break;}}}
   if(k>=0&&k<c.path.length-1){c.i=k;return c.path.slice(k);}
  }
  const base=find(W,start,goal);if(base.length<4)return base;

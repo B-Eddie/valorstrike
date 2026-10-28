@@ -74,7 +74,11 @@ export class GameRoom extends DurableObject{
   if(blocked){this.metrics.coalesced++;return;}const out={...frame,ev:pending};if(s.ackMode)out.q=(s.sent||0)+1;if(this.sim.mode==='five'&&s.batch)out.rs=this.wireRoundState(s.u);if(this.send(ws,out)){s.pendingEvents=[];s.stateAt=now;if(s.ackMode)s.sent=out.q;if(this.sim.mode==='five'&&!s.batch)this.send(ws,this.wireRoundState(s.u));}}
  // Sub-millimetre positions are already quantized by rows(). Timers and status durations do not need JSON doubles
  // such as 1.2499999999999973 every tick. Quantize only the wire copy, preserving authoritative simulation values.
- wireRoundState(u){const clean=v=>typeof v==='number'?Math.round(v*1000)/1000:Array.isArray(v)?v.map(clean):v&&typeof v==='object'?Object.fromEntries(Object.entries(v).map(([k,n])=>[k,clean(n)])):v;return clean(this.sim.roundState(u));}
+ wireRoundState(u){return GameRoom.wireClean(this.sim.roundState(u));}
+ // Numbers rounded to 1/1000 through the whole round state, as a fresh copy (the state holds the sim's own arrays / objects).
+ // perf3: plain loops - the old clean = v => ... closure built an Object.entries array of [key, value] pairs and a mapped
+ // copy of it for every object, per human per batched snapshot; same keys, order and values (a key named __proto__ stays an own key).
+ static wireClean(v){if(typeof v==='number')return Math.round(v*1000)/1000;if(Array.isArray(v)){const n=v.length,o=new Array(n);for(let i=0;i<n;i++)if(i in v)o[i]=GameRoom.wireClean(v[i]);return o;}if(v&&typeof v==='object'){const o={},K=Object.keys(v);for(let i=0;i<K.length;i++){const k=K[i];if(k==='__proto__')Object.defineProperty(o,k,{value:GameRoom.wireClean(v[k]),enumerable:true,writable:true,configurable:true});else o[k]=GameRoom.wireClean(v[k]);}return o;}return v;}
  broadcast(m){for(const ws of this.sessions.keys())this.send(ws,m);}
  // Cosmetic weapon skins (free): equipped skin id per weapon for every human seat, validated by cleanSkins on the way in.
  // (a guard, not a bare call: tests run this class sliced out of the module, without its imports)

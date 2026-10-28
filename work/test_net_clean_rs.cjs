@@ -5,8 +5,8 @@
 //   node work/test_net_clean_rs.cjs     (in test_all)
 const fs=require('fs'),path=require('path'),vm=require('vm'),assert=require('assert/strict');
 const net=fs.readFileSync(path.join(__dirname,'server_runtime.js'),'utf8'),html=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
-const i=net.indexOf('function netClean(m){'),j=net.indexOf('\n return m;}',i);assert(i>=0&&j>i,'netClean found');
-const src=net.slice(i,j+'\n return m;}'.length);assert(html.includes(src),'index.html carries this netClean (regen)');
+const i=net.indexOf('function netClean(m){'),j=net.indexOf('\nfunction netConnect(',i);assert(i>=0&&j>i,'netClean found');
+const src=net.slice(i,j);/* netClean and its helpers (perf3: hoisted out of it) */assert(html.includes(src),'index.html carries this netClean (regen)');
 const c={WEAP:{Classic:{},Vandal:{},Sheriff:{}},Date,Number,Math,Object,Array,JSON};vm.createContext(c);vm.runInContext(src+';globalThis.netClean=netClean;',c);
 // re-parsed here so objects built in the vm context compare by value (deepStrictEqual checks prototypes)
 const clean=m=>{const r=c.netClean(JSON.parse(JSON.stringify(m).replace(/"__INF__"/g,'1e999').replace(/"__NINF__"/g,'-1e999')));return r==null?r:JSON.parse(JSON.stringify(r));};
