@@ -109,7 +109,7 @@ if (typeof mpCliSnap === 'function') { const c1 = mpCliSnap; mpCliSnap = functio
 // (TDM_CD / TDM_ULT, pinned by work/test_tdm_abilities_offline.cjs): charges recharge on the TDM cooldown table (seconds per use);
 // the signature starts full (+50 % of the next when it holds two), basics at 50 %; no buying, no 2-kill signature refill; ult points
 // from kills (3) and TDM Ultimate Orbs (10) up to the TDM cost, shown as the kit's pips (J.ult = floor(points / cost * pips), full at
-// the cost); a death gives none. Offline: the player (bots keep the page's 40 s bot refill, tdmAb). Online (server tdm.js, rs tab 1):
+// the cost); a death gives none. Offline: the player and the bots (tdmBot* below). Online (server tdm.js, rs tab 1):
 // the server keeps the charges and points (rs ab / tp / uc); the page turns its abilities on for the match and sends its casts.
 var TDMAB = { kill: 3, orb: 10, k: 0,
   cd: { Jett: { c: 29, q: 44, e: 44, sig: 'e' }, Phoenix: { c: 48, q: 54, e: 44, sig: 'q' }, Sova: { c: 51, q: 26, e: 48, sig: 'e' }, Sage: { c: 94, q: 51, e: 22, sig: 'e' }, Reyna: { c: 51, q: 44, sig: 'q' }, Omen: { c: 33, q: 73, e: 65, sig: 'e' }, Killjoy: { c: 54, q: 44, e: 36, sig: 'e' }, Raze: { c: 48, q: 26, e: 58, sig: 'e' }, Skye: { c: 65, q: 51, e: 44, sig: 'e' }, Breach: { c: 58, q: 44, e: 55, sig: 'e' }, Cypher: { c: 29, q: 58, e: 22, sig: 'e' }, Chamber: { c: 46, q: 9, e: 51, sig: 'e' } },
@@ -131,6 +131,20 @@ if (typeof tdmTick === 'function') { const t2 = tdmTick; tdmTick = function (dt)
 if (typeof jKill === 'function') { const k2 = jKill; jKill = function () { if (!tdmAbOn()) return k2.apply(this, arguments); tdmAbPts(TDMAB.kill); if (J.pick === 'Jett' && J.bsOn) J.bs = 5; /* Blade Storm kill refresh; no 2-kill signature refill in TDM */ }; }
 if (typeof jUlt === 'function') { const u2 = jUlt; jUlt = function () { if (tdmAbOn()) return; /* TDM: no ult point for a death (kills: jKill above, orbs: tdmAbPts) */ return u2.apply(this, arguments); }; }
 if (typeof feed === 'function') { const f2 = feed; feed = function (s) { if (s === 'Ability charges refilled' && tdmAbOn()) return; return f2.apply(this, arguments); }; }
+// Offline TDM bots and allies recharge on the same TDM table (their kit charges b.ab.kc): signature 1 (+50 %), basics 50 % at the
+// start, 1 / cooldown per second after, no 40 s full refill (tdmAb keeps their charges) and no 2-kill signature refill (xBKill).
+function tdmBotOn() { return typeof FV !== 'undefined' && !!FV.dm && !!FV.tdm && !FV.esc && !tdmAbNet(); }
+function tdmBotInit(b) { const a = xBAg(b); if (!a) return; const T = TDMAB.cd[a] || TDMAB.cd.Jett, M = (KITS[a] || KITS.Jett).mx, A = b.ab || (b.ab = { t: 0, saw: false, rbT: 2 + Math.random() * 6 }), c = A.kc || (A.kc = xBFull(a)); A.tdp = {};
+  for (const k of ['c', 'q', 'e']) { if (!(T[k] > 0)) continue; const mx = k === 'e' ? (M.e || 1) : (M[k] || 0); if (!(mx > 0)) continue; if (k === T.sig) { c[k] = 1; A.tdp[k] = mx > 1 ? 0.5 : 0; } else { c[k] = 0; A.tdp[k] = 0.5; } } c.tk = 0; }
+function tdmBotTick(dt) { for (const b of srAll()) { if (!b) continue; if (!b.ab || !b.ab.tdp) { tdmBotInit(b); continue; } const a = xBAg(b); if (!a) continue; const T = TDMAB.cd[a] || TDMAB.cd.Jett, M = (KITS[a] || KITS.Jett).mx, A = b.ab, c = A.kc || (A.kc = xBFull(a));
+  for (const k of ['c', 'q', 'e']) { const cd = T[k]; if (!(cd > 0)) continue; const mx = k === 'e' ? (M.e || 1) : (M[k] || 0); if (!((c[k] || 0) < mx)) { A.tdp[k] = 0; continue; } A.tdp[k] = (A.tdp[k] || 0) + dt / cd; if (A.tdp[k] >= 1) { c[k] = Math.min(mx, (c[k] || 0) + 1); A.tdp[k] = c[k] < mx ? A.tdp[k] - 1 : 0; } } } }
+window.xTdmBotTick = tdmBotTick;
+if (typeof tdmAb === 'function') { const a3 = tdmAb; tdmAb = function () { const on = tdmBotOn(), L = on ? srAll() : [], keep = L.map((b) => b && b.ab && b.ab.tdp && b.ab.kc ? { c: b.ab.kc.c, q: b.ab.kc.q, e: b.ab.kc.e, tk: 0 } : null); const r = a3.apply(this, arguments);
+  if (on) try { L.forEach((b, i) => { if (!b) return; if (keep[i] && b.ab) Object.assign(b.ab.kc || (b.ab.kc = {}), keep[i]); else tdmBotInit(b); }); } catch (e) {} return r; }; }
+if (typeof startTDM === 'function') { const s3 = startTDM; startTDM = function () { try { srAll().forEach((b) => { if (b && b.ab) b.ab.tdp = null; }); } catch (e) {} return s3.apply(this, arguments); }; }
+if (typeof tdmTick === 'function') { const t3 = tdmTick; tdmTick = function (dt) { const r = t3.apply(this, arguments); try { if (tdmBotOn() && running) tdmBotTick(window.xLdOn ? 0 : dt); } catch (e) {} return r; }; }
+if (typeof xBKill === 'function') { const b3 = xBKill; xBKill = function (by) { if (!tdmBotOn()) return b3.apply(this, arguments); if (!by || typeof by !== 'string' || !jOn()) return; let u = null; for (const x of bots) if (x.name === by) u = x; if (!u) for (const x of allies) if (x.name === by) u = x;
+  if (u && u.ab && u.ab.tw) u.ab.tw.k = (u.ab.tw.k || 0) + 1; /* Tailwind entry bookkeeping only: no 2-kill signature refill in TDM */ }; }
 if (typeof mpCliRS === 'function') { const r2 = mpCliRS; mpCliRS = function (r) { try { if (r && r.tab === 1 && typeof NET !== 'undefined' && NET.socket && MP.st === 'game' && FV.tdm && !FV.esc && !J.on && KITS[J.pick]) { J.on = true; J.bs = 0; J.bsOn = false; J.tk = 0; J.cd = { c: 0, q: 0, e: 0, x: 0 }; J.hs = ''; NET.tab = 1; try { xAbIcons(); } catch (e) {} } } catch (e) {} return r2.apply(this, arguments); }; }
 window.xDmPacks = DMPK; window.xEscPacks = ESCPK;
 // ---- END GAME RULES ----
