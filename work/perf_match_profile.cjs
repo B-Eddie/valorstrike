@@ -87,7 +87,7 @@ const GROUPS = [
   // spikes: frames > 20 ms with their emu counters
   res.spikes = [...ms].map((x, i) => [i, +x.toFixed(1), gcIn[i]]).filter((r) => r[1] > 20).sort((a, b) => b[1] - a[1]).slice(0, 25).map(([i, x, g]) => ({ i, ms: x, gc: g, ...E[i] }));
   if (PROF) {
-    const { profile } = await post('Profiler.stop'); if (process.env.CPUPROF) fs.writeFileSync(process.env.CPUPROF, JSON.stringify(profile)); const { profile: hp } = await post('HeapProfiler.stopSampling');
+    const { profile } = await post('Profiler.stop'); if (process.env.CPUPROF) fs.writeFileSync(process.env.CPUPROF, JSON.stringify(profile)); const { profile: hp } = await post('HeapProfiler.stopSampling'); if (process.env.HEAPPROF) fs.writeFileSync(process.env.HEAPPROF, JSON.stringify(hp)); // HEAPPROF=/path.json keeps the sampling heap profile (allocation call trees)
     const N2 = new Map(profile.nodes.map((n) => [n.id, n])), self = new Map(); profile.samples.forEach((s, i) => self.set(s, (self.get(s) || 0) + (profile.timeDeltas[i + 1] || 0) / 1000));
     const fnSelf = new Map(), grp = new Map(); let tot = 0;
     for (const [id, t] of self) { const n = N2.get(id), f = n.callFrame.functionName || '(anon)', u = n.callFrame.url || ''; if (/^\((idle|program|root)\)$/.test(f)) continue; tot += t;
