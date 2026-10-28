@@ -9,6 +9,7 @@
 //  [P103] https://playvalorant.com/en-us/news/game-updates/valorant-patch-notes-1-03/ ("Unrated will still use the original
 //         Sudden Death format"; win-by-two Overtime is Competitive)
 import assert from 'node:assert/strict';
+import {createSim} from './src/modes.js';
 import {Simulation,HEALTH_PACK,TDM_STAGES,TDM_STAGE_AT,tdmStage,tdmAllowed,tdmArmor,RGN} from './src/simulation.js';
 import {SpikeSimulation,DEFUSE_CANCEL} from './src/spike.js';
 import {fogView} from './src/fog.js';
@@ -79,7 +80,7 @@ assert.equal(DEFUSE_CANCEL,.2);
  assert.equal(A(2,'Ares'),'{"a":50,"rg":null}','Ares is Heavy in Stage 3');assert.equal(A(2,'Guardian'),'{"a":25,"rg":null}');assert.equal(A(2,'Spectre'),'{"a":50,"rg":null}');assert.equal(A(2,'Bulldog'),'{"a":50,"rg":null}');
  assert.equal(A(3,'Vandal'),'{"a":50,"rg":null}');assert.equal(A(3,'Phantom'),'{"a":50,"rg":null}');
  assert.equal(A(2,'Classic'),A(0,'Classic'),'no stage pick yet: the Stage 1 sidearm\'s armour');assert.equal(A(3,'Ghost'),A(0,'Ghost'));
- const s=new Simulation(W,'tdm','ascent',()=>.5),p=s.add('p','Jett',true),b=s.add('b0','Sage',false);s.start(false);
+ const s=createSim(W,'tdm','ascent',()=>.5),p=s.add('p','Jett',true),b=s.add('b0','Sage',false);assert.equal(s.loadoutArmor,true,'TDM rooms (createSim) use loadout armour');s.start(false);
  assert.equal(p.armor,25,'human on the Classic: 25 Regen Shield');assert.equal(p.rgn,RGN.pool);b.weapon='Ghost';s.spawn(b);assert.equal(b.armor,0,'Ghost: no armour');assert.equal(b.rgn,null);
  s.remaining=570-225.01;s.step(.05);assert(['Phantom','Vandal'].includes(b.weapon));assert.equal(b.armor,50,'Stage 4 re-arm brings Heavy');
  assert(s.command(p,{t:'equip',w:'Vandal'}));p.armor=10;s.spawn(p);assert.equal(p.armor,50,'Stage 4 respawn with the Vandal: Heavy');assert.equal(p.rgn,null);
