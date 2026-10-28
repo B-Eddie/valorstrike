@@ -31,6 +31,7 @@ const J_=v=>JSON.parse(JSON.stringify(v));
  xe('J.c=1;J.cd.c=0;svKey("KeyC");true');await adv(300);assert.ok(xe('!!J.dr'),'drone up');xe('hurt(player,10);true');assert.ok(xe('!J.dr'),'damage to Sova ends the flight');
  // ---- Cypher Spycam ----
  await start('Cypher');assert.deepEqual(J_(xe('[XSPY.reach,XSPY.deploy,XSPY.cd]')),[20,1.15,6],'XSPY = wiki (20 m, 1.15 s deploy, 6 s dart cooldown)');
+ assert.ok(xe('pitch=0;let ok=false;for(let i=0;i<72&&!ok;i++){yaw=i*Math.PI/36;const s=cyCamSpot();ok=!!(s&&s.ok);}ok'),'some heading has a wall within 20 m for the Spycam (5ca299f: vertical terrain only)');
  xe('cyClear();cyKey("KeyE");true');assert.ok(xe('!!BC.cam&&ray.far===20'),'Spycam placed with a 20 m reach');
  xe('cyKey("KeyE");true');assert.equal(xe('BC.cv'),false,'not viewable while deploying');await adv(1250);xe('cyKey("KeyE");true');assert.equal(xe('BC.cv'),true,'viewable after the 1.15 s deploy');
  xe('cyDart();true');assert.ok(Math.abs(xe('BC.cam.dcd')-6)<1e-9,'dart fired: 6 s cooldown');await adv(1000);const c1=xe('BC.cam.dcd');xe('cyDart();true');assert.ok(Math.abs(xe('BC.cam.dcd')-c1)<1e-9,'a dart inside the cooldown is refused');
