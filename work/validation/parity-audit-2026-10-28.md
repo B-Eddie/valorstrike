@@ -143,3 +143,24 @@ server) and the shared motor `vendor/valorant-feel.js` (= `server/src/motor.cjs`
 Results of each fix: see "Commits" below (filled in as they land).
 
 ## Commits
+- 1be75aa audit document (this file)
+- db27fa6 Swiftplay economy + ult + buy phase (page), Swiftplay Endgame ult (server) - test `work/test_swiftplay_economy_offline.cjs` (red before), `server/test-modes.js`
+- 6b8b106 ult orbs 2 s channel, gone on plant (page) - `work/test_ult_orb_rules.cjs` (red before)
+- 125b772 TDM armour by loadout (server + page), no offline TDM kill heal - `work/test_tdm_armor_offline.cjs` (red before), `server/test-game-rules.js`
+- e8a11a0 Spike Rush loadouts / shields / ult x2 / Endgame (page) - `work/test_spike_rush_offline_rules.cjs` (red before)
+
+## Follow-up: Bandit + Warden weapon-add lane (not done here)
+
+Touch points found (every file that names Guardian today): `models/valorant/{bandit,warden}.glb/.json` + `animations/<w>.json`
+(`python work/import_valorant.py bandit warden`; FP clips via `jett-fp?held=<w>` in `work/import_valorant_animations.py`),
+`models/valorant/manifest.js` (`work/build_valorant_manifest.py`), `models/valorant/weapon-calibration.json/.js`
+(`work/build_weapon_calibration.py` currently keeps 18 guns: add the two API entries), `server/src/weapons.json`,
+`server/src/spike.js` prices (Bandit 600, Warden 2900), `server/src/simulation.js` RESERVE (Bandit 24, Warden 36),
+`server/src/windups.js` re-equip, `vendor/valorant-feel.js` (+ `server/src/motor.cjs`) SPREAD rows / REC / RECOVERY (Bandit .4,
+Warden 13.09 2nd/3rd bullet error .2/.5), `server/src/modes.js` SIDEARMS / SR_LOADOUT (+ page `SR_LOAD`), TDM Stage 1 Bandit
+(`TDM_STAGES`, page `TDM_C`, `TDM_ARMOR` Bandit none), bots buy tables (`vendor/bot-brain.cjs`, page `fBotBuy`), buy menu
+slot (`BUY MENU FIT` block; VALORANT: 6 sidearms, 5 rifles), audio (`audio/manifest.json`, `work/import_game_audio.py`),
+kill-feed icon, skins catalog (`server/src/skins.json`), tests pinning 18 guns (`server/test-weapons.js`,
+`test-wiki-weapons.js`, `test-spread.js`, `work/test_weapon_values.cjs`, `test_loadout.cjs`, `test_buy_menu_fit.cjs`,
+`work/audit.js`, `work/verify_valorant.js`). Worker redeploy needed (weapons.json / motor).
+
