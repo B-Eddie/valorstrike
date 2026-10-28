@@ -21,7 +21,7 @@ function xroVF() { return typeof window !== 'undefined' && window.ValorantFeel |
 function xroRay(C, o, d, max) {
   if (!C || !C.bvh || typeof THREE === 'undefined') return Infinity;
   const R = XRO.ray || (XRO.ray = new THREE.Ray(new THREE.Vector3(), new THREE.Vector3())); R.origin.set(o[0], o[1], o[2]); R.direction.set(d[0], d[1], d[2]).normalize();
-  const h = nmRayFirst(C.bvh, R, THREE.DoubleSide); // perf2: allocation-free port (shared hit, read now) return h && h.distance < max ? h.distance : Infinity;
+  const h = nmRayFirst(C.bvh, R, THREE.DoubleSide); /* perf2: allocation-free port (shared hit, read now) */ return h && h.distance < max ? h.distance : Infinity;
 }
 // Where a rope's cable and housing go: cable 0.3 m from the climbing axis toward the ledge (between the climber and the wall),
 // from the lower floor to 2.3 m above the upper floor or 0.14 m under the ceiling; housing bracketed to the nearest wall within 2.5 m.

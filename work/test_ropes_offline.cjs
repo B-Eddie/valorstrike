@@ -69,6 +69,7 @@ vm.runInContext(pre,ctx);vm.runInContext(block,ctx);
 const nav=JSON.parse(fs.readFileSync(path.join(root,'models/valorant/maps/split/navigation.json'),'utf8'));
 const C={key:'split',nav,bvh:{raycastFirst:(ray)=>{const d=W.ray([ray.origin.x,ray.origin.y,ray.origin.z],[ray.direction.x,ray.direction.y,ray.direction.z]);return d<Infinity?{distance:d}:null;}}};
 const group=new THREE.Group();ctx.nmRopes(C,group);ctx.nmConnected(C);ctx.__C=C;
+{const r=C.ropes[0],d=ctx.xroRay(C,[r.x,r.y0+1,r.z],[0,-1,0],50);assert(typeof d==='number'&&d>0&&d<50,'xroRay returns the distance to the floor under a rope top ('+d+')');assert.equal(ctx.xroRay(C,[r.x,r.y0+1,r.z],[0,-1,0],0.01),Infinity,'xroRay: beyond max -> Infinity');}
 assert.equal(C.ropes.length,7,'7 Split ropes');assert.equal(C.ropes,ctx.ValorantFeel.ROPES.split,'C.ropes = the motor ROPES');
 assert.deepEqual([...C.ropeLinks.keys()].sort(),[...W.ropeLinks.keys()].sort(),'page rope links == server world rope links');
 for(const [k,l] of C.ropeLinks)assert(nav.adj[l.a].includes(l.b),'nav link '+k);
