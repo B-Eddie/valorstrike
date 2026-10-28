@@ -4633,6 +4633,7 @@ function loop() {
       const rk = Math.min(1, dt * (since > 0.1 ? (sprW === "Phantom" ? 11 : 8) : 1.5)); rcl -= rcl * rk; rclH -= rclH * rk; // smooth recovery
       XOB.vx = cx; XOB.vz = cz; XOB.vy = J.dr ? yaw : XOB.orb ? XOB.orb.yw : XOB.fp ? XOB.fpY : yaw - rclH;
       if (XOB.orb && !J.dr) camera.rotation.set(XOB.orb.p, XOB.orb.yw, 0, "YXZ"); else if (XOB.fp && !J.dr) camera.rotation.set(XOB.fpP, XOB.fpY, 0, "YXZ"); else { const cq = xCU > 0 ? xCon() : 0; if (xCOn && cq <= 0) xConEnd(); camera.rotation.set(pitch + rcl, yaw - rclH, cq > 0 ? Math.sin(performance.now() * 0.0042) * 0.02618 * Math.min(1, cq * 4) : 0, "YXZ"); } camera.updateMatrixWorld(); sfxL();
+      try { if (mode !== "duel" && player.hp <= 0 && typeof xDcCam === "function" && xDcCam(dt)) camera.updateMatrixWorld(); } catch (e) { xE(e); } // VALORANT death camera (work/death_runtime.js): pulls out of the body and looks at the killer until the teammate spectate takes over
       try { xObsHide(XOB.fp && !J.dr ? XOB.fp : null); } catch (e) { xE(e); }
       const cw = mode === "aim" && typeof aimW === "function" ? aimW() : wName(), CW = WEAP[cw];
       const xe = S.xhd !== false && CW && running ? xhErr(cw, CW) : null, tm = xe ? xe.m : 0, tf = xe ? xe.f : 0;
