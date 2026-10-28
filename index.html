@@ -9840,8 +9840,8 @@ function jKey(code) {
   if (code === "KeyC") { // Cloudburst (C in Valorant): INSTANT throw; holding C steers it with the crosshair, it smokes where it lands (jCbTick, vendor/cloudburst.cjs)
     if (J.c < 1 || J.cd.c > 0) return no(), true; J.c--; J.cd.c = 0.6;
     const o = pEye(), d = new THREE.Vector3(-Math.sin(yaw) * Math.cos(pitch), Math.sin(pitch), -Math.cos(yaw) * Math.cos(pitch));
-    const m = xCbProj(); m.position.copy(o).addScaledVector(d, 0.5); scene.add(m);
-    J.cbs.push({ m, st: Cloudburst.start([o.x, o.y, o.z], [d.x, d.y, d.z]) }); SFX.ab("cbThrow");
+    const st = Cloudburst.start([o.x, o.y, o.z], [d.x, d.y, d.z]), m = xCbProj(); m.position.set(st.p[0], st.p[1], st.p[2]); scene.add(m); // out of Jett's throwing hand (Cloudburst.hand)
+    J.cbs.push({ m, st }); SFX.ab("cbThrow");
   }
   if (code === "KeyE") { // Tailwind (wiki v7.04, = server PARITY.tailwind): the first E spends the charge, 1 s windup, then a 7.5 s window in which E dashes; unused, it is lost (jTick)
     if (!J.tw) { if (J.e < 1) return no(), true; J.e = 0; J.tk = 0; J.cd.e = 0.4; J.tw = { arm: XTW.windup, t: XTW.windup + XTW.window }; say("Tailwind · empowered in " + XTW.windup + " s", 700); blip(520, 0.1, "sine", 0.08); return true; }
@@ -9909,11 +9909,11 @@ function jCbSmoke(L, c) { // the smoke where a Cloudburst landed (centre between
 // a projectile that becomes a brief vision-blocking cloud on impact, curved toward the crosshair while C is held; 200 credits, 2 charges,
 // radius 3.35 m, 2.5 s including the 0.6 s deployment, 2 s max air time. Now: the projectile is a small wind orb (bright core, pale-blue
 // halo, two spinning swirl bands, a soft streak behind it); the cloud is Jett's white / ice-blue puff (lumpy: the 3.35 m body plus
-// eight overlapping puffs on its surface and two slow swirl bands, all on the smoke's own fading material) that billows out over the
+// eight overlapping puffs inside it, all on the smoke's own fading material; abilfix 2026-10-27 dropped the swirl bands) that billows out over the
 // 0.6 s deployment; a soft whoosh on the throw and an airy pop on impact; bot Jetts THROW it (a ballistic lob at their choke, steered
 // by nothing) and remote players' Cloudbursts (online rows / P2P) use the same projectile and cloud. Sight blocking is unchanged (s.r).
 const XCB = { geo: null, dep: 0.6 };
-function xCbGeo() { return XCB.geo || (XCB.geo = { core: new THREE.SphereGeometry(0.11, 14, 10), halo: new THREE.SphereGeometry(0.22, 14, 10), band: new THREE.TorusGeometry(0.2, 0.018, 6, 28), streak: new THREE.ConeGeometry(0.12, 0.9, 10, 1, true), puff: new THREE.SphereGeometry(1, 16, 12), swirl: new THREE.TorusGeometry(3.4, 0.22, 8, 48) }); }
+function xCbGeo() { return XCB.geo || (XCB.geo = { core: new THREE.SphereGeometry(0.11, 14, 10), halo: new THREE.SphereGeometry(0.22, 14, 10), band: new THREE.TorusGeometry(0.2, 0.018, 6, 28), streak: new THREE.ConeGeometry(0.12, 0.9, 10, 1, true), puff: new THREE.SphereGeometry(1, 16, 12) }); }
 function xCbProj() { // the thrown Cloudburst: a small wind orb (non-pooled group; jRel just removes it)
   const G = xCbGeo(), g = new THREE.Group(), mk = (geo, mat) => { const o = new THREE.Mesh(geo, mat); o.raycast = () => {}; o.frustumCulled = false; g.add(o); return o; };
   mk(G.core, jMat("cbcore", () => new THREE.MeshBasicMaterial({ color: 0xf4fbff })));
@@ -9924,12 +9924,14 @@ function xCbProj() { // the thrown Cloudburst: a small wind orb (non-pooled grou
 function xCbSpin(m, v, dt) { const U = m && m.userData.cb; if (!U) return; U.b1.rotation.y += dt * 14; U.b1.rotation.x += dt * 5; U.b2.rotation.z += dt * 11;
   if (v) { const s = Math.hypot(v[0], v[1], v[2]) || 1; XCB.q = XCB.q || new THREE.Quaternion(); XCB.u = XCB.u || new THREE.Vector3(); XCB.u.set(-v[0] / s, -v[1] / s, -v[2] / s);
     U.st.quaternion.setFromUnitVectors(XCB.y || (XCB.y = new THREE.Vector3(0, 1, 0)), XCB.u); U.st.position.copy(XCB.u).multiplyScalar(0.5); } }
-function xCbCloud(x, y, z, dur) { // Jett's cloud: the 3.35 m smoke body (sight / minimap read s.r) + puffs + swirl bands on its own material
+function xCbCloud(x, y, z, dur) { // Jett's cloud: the 3.35 m smoke body (sight / minimap read s.r) + puffs on its own material
   const G = xCbGeo(), m = jM(smokeGeo, xSmokeM("sjx", 0xeef6ff, 0x9ed8ff)); m.position.set(x, y, z); scene.add(m); const kids = [];
   const P = [[0.78, 0.35, 0.1], [-0.72, 0.3, 0.35], [0.15, 0.4, -0.8], [-0.2, 0.25, 0.82], [0.55, -0.35, -0.55], [-0.6, -0.3, -0.45], [0.05, 0.85, 0.05], [0.45, -0.2, 0.7]];
-  P.forEach((q, i) => { const o = new THREE.Mesh(G.puff, m.material), r = 1.2 + (i % 3) * 0.3; o.position.set(q[0] * 2.8, q[1] * 2.5, q[2] * 2.8); o.scale.setScalar(r); o.raycast = () => {}; m.add(o); kids.push(o); });
-  for (const [rx, rz] of [[1.15, 0.2], [-0.5, 1.0]]) { const o = new THREE.Mesh(G.swirl, m.material); o.rotation.set(rx, 0, rz); o.raycast = () => {}; o.userData.sw = 1; m.add(o); kids.push(o); }
-  m.userData.kids = kids; J.smokes.push({ m, p: m.position, t: dur, r: xSmk(m, XSMR.Jett), dep: XCB.dep, cb: 1 }); SFX.ab("cbPop", m.position); return m;
+  // puffs stay inside the 3.35 m sight radius (centre offset + puff radius <= 3.3 m in the smoke's own 4 m-geometry space scaled by
+  // s.r / 4): the cloud reads as one round, lumpy burst of the size that blocks sight. The two 3.4 m swirl rings (a planet-ring
+  // look Valorant's Cloudburst does not have) are gone.
+  P.forEach((q, i) => { const o = new THREE.Mesh(G.puff, m.material), r = 1.0 + (i % 3) * 0.2; o.position.set(q[0] * 2.2, q[1] * 2.0, q[2] * 2.2); o.scale.setScalar(r); o.raycast = () => {}; m.add(o); kids.push(o); });
+  m.userData.kids = kids; J.smokes.push({ m, p: m.position, t: dur, r: xSmk(m, XSMR.Jett), dep: XCB.dep, cb: 1, fo: 0.15 }); // fo: wiki "once it expires, the smoke will instantly dissipate" SFX.ab("cbPop", m.position); return m;
 }
 // a bot Jett's Cloudburst: lobbed from its eye to land at q (Valorant's own throw, no steering), the cloud where it lands
 function xCbBotThrow(b, q) {
@@ -9946,7 +9948,7 @@ function jTick(dt) {
   if (J.dash && player.hp <= 0) J.dash = null; // a Tailwind dash ends with Jett
   if (J.tw) { J.tw.arm -= dt; if ((J.tw.t -= dt) <= 0 || player.hp <= 0) { J.tw = null; if (player.hp > 0) say("Tailwind faded", 700); } } // the 7.5 s window ran out (or Jett died): the charge is gone
   XSU.value += dt;
-  J.smokes = J.smokes.filter((s) => { s.t -= dt; s.m.material.opacity = 0.6 * Math.min(1, s.t / 0.5); const sm = s.m.material.uniforms; if (sm) { sm.uO.value = s.m.material.opacity / 0.6; s.a = (s.a || 0) + dt; const k = Math.min(1, s.a / (s.dep || 0.3)); if (s.cb && s.m.userData.kids) for (const o of s.m.userData.kids) if (o.userData.sw) o.rotation.y += dt * 0.9; const g = 0.3 + 0.7 * (1 - (1 - k) ** 3), sx = (s.r || 4) / 4; if (s.cyl) s.m.scale.set(sx, g, sx); else s.m.scale.setScalar(sx * g); } if (s.t > 0) return true; jRel(s.m); return false; });
+  J.smokes = J.smokes.filter((s) => { s.t -= dt; s.m.material.opacity = 0.6 * Math.min(1, s.t / (s.fo || 0.5)); const sm = s.m.material.uniforms; if (sm) { sm.uO.value = s.m.material.opacity / 0.6; s.a = (s.a || 0) + dt; const k = Math.min(1, s.a / (s.dep || 0.3)); if (s.cb && s.m.userData.kids) for (const o of s.m.userData.kids) if (o.userData.sw) o.rotation.y += dt * 0.9; const g = 0.3 + 0.7 * (1 - (1 - k) ** 3), sx = (s.r || 4) / 4; if (s.cyl) s.m.scale.set(sx, g, sx); else s.m.scale.setScalar(sx * g); } if (s.t > 0) return true; jRel(s.m); return false; });
   jCbTick(dt); jFxTick(dt); sgTick(dt); rsTick(dt); for (const b of bots) xBJettMove(b, dt); for (const a of allies) xBJettMove(a, dt); bcTick(dt); xDartRmTick(dt); xBTurTick(dt); xBSwTick(dt);
   const hn = $("hint"); if (hn && J.pick !== "Jett" && hn.textContent.includes(KITS.Jett.h)) hn.textContent = hn.textContent.replace(KITS.Jett.h, K().h);
   const u = K().u, cq = ["jQ", J.q, J.q + "", J.cd.q / 0.6], ce = ["jE", J.e, J.e ? "1" : "Used", J.cd.e / 0.4];
@@ -11619,7 +11621,7 @@ html.xt-nocm .x-cmb{display:none!important}
     if (k === "reload") { kd("KeyR"); return ku("KeyR"); }
     if (k === "buy") { kd("KeyB"); return ku("KeyB"); }
     if (k === "inspect") { kd("KeyY"); return ku("KeyY"); }
-    if (k === "c" || k === "q" || k === "e" || k === "x") { const c = "Key" + k.toUpperCase(); kd(c); return ku(c); }
+    if (k === "c" || k === "q" || k === "e" || k === "x") return kd("Key" + k.toUpperCase()); // held until the finger lifts (release): Valorant HOLD-the-ability-key casts (Jett Cloudburst curve) work on touch
     if (k === "pause") return pause();
     if (k === "drills") return rgOpen("xRg");
     if (k === "ping") { kd("KeyZ"); return ku("KeyZ"); }
@@ -11637,6 +11639,7 @@ html.xt-nocm .x-cmb{display:none!important}
     if (k === "fire2") k = "fire";
     if (k === "fire") { fireHeld = false; try { AM.fire = false; } catch (e) {} if (kLP) { clearTimeout(kLP); kLP = 0; shoot(); } }
     if (k === "jump") ku("Space"); if (k === "duck") ku("ControlLeft"); if (k === "plant") ku("Digit4"); if (k === "use") ku("KeyF");
+    if (k === "c" || k === "q" || k === "e" || k === "x") ku("Key" + k.toUpperCase());
   }
   // weapon strip: the slots this mode has, as [slot, label, key]; tapping a slot sends that slot's number key (rebinds,
   // ability equip and the buy menu see it like a key press). Aim Training cycles its guns as the old swap button did.
@@ -11690,7 +11693,7 @@ html.xt-nocm .x-cmb{display:none!important}
   T.addEventListener("pointermove", (e) => {
     const p = P[e.pointerId]; if (!p) return;
     if (p.t === "ed") { custom = true; L[p.k].x = Math.max(2, Math.min(98, e.clientX / innerWidth * 100)); L[p.k].y = Math.max(2, Math.min(98, e.clientY / innerHeight * 100)); return render(); }
-    if (p.t === "aim" || (p.t === "btn" && (p.k === "fire" || p.k === "fire2"))) { aim(e.clientX - p.x, e.clientY - p.y); p.x = e.clientX; p.y = e.clientY; return; }
+    if (p.t === "aim" || (p.t === "btn" && (p.k === "fire" || p.k === "fire2" || p.k === "c" || p.k === "q" || p.k === "e" || p.k === "x"))) { aim(e.clientX - p.x, e.clientY - p.y); p.x = e.clientX; p.y = e.clientY; return; } // dragging off a held ability button aims (curve a Cloudburst with the same thumb)
     if (p.t === "joy") {
       const dx = e.clientX - p.ox, dy = e.clientY - p.oy, m = Math.hypot(dx, dy) || 1, c = Math.min(m, 55), n = c / 55, ux = dx / m, uy = dy / m;
       Jk.style.transform = `translate(${ux * c}px,${uy * c}px)`;
@@ -14896,8 +14899,8 @@ function netClearEffects(){document.getElementById('netBlind')?.remove();for(con
 // Others' Cloudbursts from the snapshot: the projectile while it flies (s 0), then the smoke where the server landed it (s 1,
 // once per id, tl seconds left). Our own Cloudburst flies locally (jCbTick) and is skipped here.
 function netSyncCb(rows){const seen=new Set();for(const e of rows){if(e.kind!=='cb'||!Number.isFinite(e.id)||e.o===MP.me||!Array.isArray(e.p)||e.p.length!==3||!e.p.every(Number.isFinite))continue;seen.add(e.id);let c=netCbs.get(e.id);if(!c){c={m:null,s:false};netCbs.set(e.id,c);}
- if(e.s!==1){if(!c.m){c.m=jM(orbGeo,jMat('cbp',()=>new THREE.MeshBasicMaterial({color:0xdbe6f2})));c.m.scale.setScalar(.8);scene.add(c.m);}c.m.position.set(e.p[0],e.p[1],e.p[2]);continue;}
- if(c.m){jRel(c.m);c.m=null;}if(!c.s){c.s=true;const u=allies.find(x=>x&&x.nid===e.o),al=!!u;enSmoke(e.p[0],e.p[2],al,Math.max(.1,Math.min(Cloudburst.CB.life,Number.isFinite(e.tl)?e.tl:Cloudburst.CB.life)),e.p[1],XSMR.Jett);try{feed('Jett ▸ Cloudburst');}catch(err){}}}
+ if(e.s!==1){if(!c.m){c.m=xCbProj();scene.add(c.m);c.q=e.p.slice();}const v=c.q?[e.p[0]-c.q[0],e.p[1]-c.q[1],e.p[2]-c.q[2]]:null;c.q=e.p.slice();c.m.position.set(e.p[0],e.p[1],e.p[2]);if(v&&Math.hypot(v[0],v[1],v[2])>1e-4)xCbSpin(c.m,v,1/30);continue;}/* the same wind orb as our own / bots' (xCbProj), not a grey ball */
+ if(c.m){jRel(c.m);c.m=null;}if(!c.s){c.s=true;const u=allies.find(x=>x&&x.nid===e.o),al=!!u;void al;xCbCloud(e.p[0],e.p[1],e.p[2],Math.max(.1,Math.min(Cloudburst.CB.life,Number.isFinite(e.tl)?e.tl:Cloudburst.CB.life)));/* Jett's own cloud (xCbCloud), as offline: not the grey controller smoke */try{feed('Jett ▸ Cloudburst');}catch(err){}}}
  for(const [id,c]of netCbs)if(!seen.has(id)){if(c.m)jRel(c.m);netCbs.delete(id);}}
 // Persistent devices from the snapshot (server devices.js deviceRows: {kind:'dev', d, o, tm, p, q, yaw, hp, fp}): others' Turret,
 // Alarmbot, Trapwire, Trademark, Blast Pack, Spycam and Owl Drone drawn with the offline placeholders and swapped for their real
@@ -15594,18 +15597,29 @@ if(window.requestIdleCallback)requestIdleCallback(()=>{xHitInit();try{xCrUi();}c
 // projectile is thrown forward; holding the ability key turns it into a missile that follows the crosshair; on release
 // it falls again (gravity), and it cannot be steered again after that. It becomes the smoke where it hits a surface or
 // after 2 s in the air (wiki "maximum travel time in air"); smoke 2.5 s (includes 0.6 s deployment), radius 3.35 m.
-// Throw speed, steer speed and gravity are not on the wiki: this project's values (a flat tap lands ~10 m ahead).
+// Throw speed, steer speed, turn rate and gravity are not on the wiki: this project's values (a flat tap lands ~10 m ahead).
+// Steering CURVES the flight (playvalorant.com Jett: "HOLD the ability key to curve the cloud in the direction of your
+// crosshair"): the velocity turns toward the crosshair at most CB.turn rad/s (~230 deg/s, a ~3.5 m turning circle at 14 m/s),
+// it no longer snaps onto the crosshair in one step (user 2026-10-27 "Jett's smoke C ability isn't supposed to be like that").
+// The projectile leaves Jett's throwing hand (CB.hand: forward / right / down of the eye), not the middle of the screen.
 (function(root,factory){if(typeof module==='object'&&module.exports)module.exports=factory();else root.Cloudburst=factory();})(typeof globalThis!=='undefined'?globalThis:this,function(){
  'use strict';
- const CB={speed:18,steer:14,g:9,maxT:2,life:2.5,radius:3.35,lo:1.5,hi:4,back:.3};
+ const CB={speed:18,steer:14,turn:4,g:9,maxT:2,life:2.5,radius:3.35,lo:1.5,hi:4,back:.3,hand:[.35,.16,-.2]};
  // o: eye [x,y,z], d: unit aim. held: the key is down at the cast (it is, for a key press); it drops for good on release.
- function start(o,d){return {o:[o[0],o[1],o[2]],p:[o[0],o[1],o[2]],v:[d[0]*CB.speed,d[1]*CB.speed,d[2]*CB.speed],t:0,held:true};}
+ // hand(o, d): the throwing hand for eye o and unit aim d (forward CB.hand[0], right CB.hand[1], up CB.hand[2] in the view frame)
+function hand(o,d){const f=CB.hand,h=Math.hypot(d[0],d[2]),r=h>1e-6?[-d[2]/h,0,d[0]/h]:[1,0,0],u=[r[1]*d[2]-r[2]*d[1],r[2]*d[0]-r[0]*d[2],r[0]*d[1]-r[1]*d[0]];
+ return [o[0]+d[0]*f[0]+r[0]*f[1]+u[0]*f[2],o[1]+d[1]*f[0]+r[1]*f[1]+u[1]*f[2],o[2]+d[2]*f[0]+r[2]*f[1]+u[2]*f[2]];}
+function start(o,d){const p=hand(o,d);return {o:[o[0],o[1],o[2]],p,v:[d[0]*CB.speed,d[1]*CB.speed,d[2]*CB.speed],t:0,held:true};}
+// turn unit vector a toward unit vector b by at most ang radians (slerp in their plane; b exactly when within ang)
+function turnToward(a,b,ang){const c=Math.max(-1,Math.min(1,a[0]*b[0]+a[1]*b[1]+a[2]*b[2])),th=Math.acos(c);if(th<=ang||th<1e-6)return [b[0],b[1],b[2]];
+ let w=[b[0]-a[0]*c,b[1]-a[1]*c,b[2]-a[2]*c],wl=Math.hypot(w[0],w[1],w[2]);if(wl<1e-6){w=Math.abs(a[1])<.9?[a[2],0,-a[0]]:[0,a[2],-a[1]];wl=Math.hypot(w[0],w[1],w[2])||1;}
+ const k=Math.cos(ang),q=Math.sin(ang)/wl;return [a[0]*k+w[0]*q,a[1]*k+w[1]*q,a[2]*k+w[2]*q];}
  // One step. aim: the caster's current unit aim while the key is held, null otherwise (ends steering for good).
  // ray(o,d,max) -> hit distance (Infinity / > max: none); ground(x,z,y) -> floor height under y (or -Infinity).
  // Returns the landing point [x,y,z] (the projectile stops) or null while it flies.
  function step(st,dt,aim,ray,ground){
   if(!(dt>0))return null;
-  if(st.held&&aim&&aim.every(Number.isFinite)){const l=Math.hypot(aim[0],aim[1],aim[2])||1;st.v=[aim[0]/l*CB.steer,aim[1]/l*CB.steer,aim[2]/l*CB.steer];}
+  if(st.held&&aim&&aim.every(Number.isFinite)){const l=Math.hypot(aim[0],aim[1],aim[2])||1,vl=Math.hypot(st.v[0],st.v[1],st.v[2])||1,n=turnToward([st.v[0]/vl,st.v[1]/vl,st.v[2]/vl],[aim[0]/l,aim[1]/l,aim[2]/l],CB.turn*dt);st.v=[n[0]*CB.steer,n[1]*CB.steer,n[2]*CB.steer];}
   else{st.held=false;st.v[1]-=CB.g*dt;}
   const p=st.p,q=[p[0]+st.v[0]*dt,p[1]+st.v[1]*dt,p[2]+st.v[2]*dt],s=[q[0]-p[0],q[1]-p[1],q[2]-p[2]],len=Math.hypot(s[0],s[1],s[2])||1e-9,u=[s[0]/len,s[1]/len,s[2]/len];
   let hit=ray?ray(p,u,len):Infinity;if(!(Number.isFinite(hit)&&hit<=len))hit=null;
@@ -15616,7 +15630,7 @@ if(window.requestIdleCallback)requestIdleCallback(()=>{xHitInit();try{xCrUi();}c
  }
  // Smoke centre height for a landing point: between floor + lo and floor + hi (a floor landing still smokes at head height).
  function centreY(y,floor){const f=Number.isFinite(floor)?floor:0;return Math.max(f+CB.lo,Math.min(f+CB.hi,y));}
- return {CB,start,step,centreY};
+ return {CB,start,step,centreY,hand,turnToward};
 });
 // Valorant ability layer (work/ability_equip_runtime.js, installed by work/install_valorant.py).
 // Keys: Valorant's defaults are C (ability 1), Q (ability 2), E (signature), X (ultimate); crouch is Ctrl. The game listens

@@ -155,7 +155,7 @@ const fails=[];const fail=s=>{fails.push(s);if(VERBOSE)console.log('FAIL',s);};c
   H.key('KeyC',true);await adv(100);eq(xe('J.cbs.map(c=>c.st.held)'),[false,true],'pressing C again throws the second charge; the first is not steered again (wiki)');H.key('KeyC',false);
   for(let i=0;i<60&&xe('J.cbs.length');i++)await adv(50);eq(xe('J.cbs.length'),0,'landed (2 s cap)');
   // shared flight: a 2 s cap in the air while steered, smoke centre floor + 1.5 .. + 4
-  eq(xe('(()=>{const st=Cloudburst.start([0,1.6,0],[0,0,-1]);let n=0,L=null;while(!L&&n++<500)L=Cloudburst.step(st,1/60,[0,0,-1],null,()=>0);return [Math.round(st.t*10)/10,Math.round(-L[2])];})()'),[2,28],'held straight: 2 s in the air, 28 m');
+  eq(xe('(()=>{const st=Cloudburst.start([0,1.6,0],[0,0,-1]);let n=0,L=null;while(!L&&n++<500)L=Cloudburst.step(st,1/60,[0,0,-1],null,()=>0);return [Math.round(st.t*10)/10,Math.round(-L[2])];})()'),[2,29],'held straight: 2 s in the air, 28 m from the hand (0.35 m ahead of the eye, vendor Cloudburst.hand)');
   eq(xe('[Cloudburst.centreY(0.2,0),Cloudburst.centreY(3,0),Cloudburst.centreY(9,0),Cloudburst.centreY(7,6.4)]'),[1.5,3,4,7.9],'smoke centre between floor + 1.5 and + 4');
   // online (trusted server): others' Cloudburst from the snapshot fx rows: projectile, then the smoke once, then gone
   const n0=xe('J.smokes.length');xe('netSyncEffects([{id:77,kind:"cb",o:-5,p:[1,2,3],s:0}]);true');eq(xe('[netCbs.has(77),!!netCbs.get(77).m,J.smokes.length]'),[true,true,n0],'fx cb row: projectile drawn');

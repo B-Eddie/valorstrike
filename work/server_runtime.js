@@ -198,8 +198,8 @@ function netClearEffects(){document.getElementById('netBlind')?.remove();for(con
 // Others' Cloudbursts from the snapshot: the projectile while it flies (s 0), then the smoke where the server landed it (s 1,
 // once per id, tl seconds left). Our own Cloudburst flies locally (jCbTick) and is skipped here.
 function netSyncCb(rows){const seen=new Set();for(const e of rows){if(e.kind!=='cb'||!Number.isFinite(e.id)||e.o===MP.me||!Array.isArray(e.p)||e.p.length!==3||!e.p.every(Number.isFinite))continue;seen.add(e.id);let c=netCbs.get(e.id);if(!c){c={m:null,s:false};netCbs.set(e.id,c);}
- if(e.s!==1){if(!c.m){c.m=jM(orbGeo,jMat('cbp',()=>new THREE.MeshBasicMaterial({color:0xdbe6f2})));c.m.scale.setScalar(.8);scene.add(c.m);}c.m.position.set(e.p[0],e.p[1],e.p[2]);continue;}
- if(c.m){jRel(c.m);c.m=null;}if(!c.s){c.s=true;const u=allies.find(x=>x&&x.nid===e.o),al=!!u;enSmoke(e.p[0],e.p[2],al,Math.max(.1,Math.min(Cloudburst.CB.life,Number.isFinite(e.tl)?e.tl:Cloudburst.CB.life)),e.p[1],XSMR.Jett);try{feed('Jett ▸ Cloudburst');}catch(err){}}}
+ if(e.s!==1){if(!c.m){c.m=xCbProj();scene.add(c.m);c.q=e.p.slice();}const v=c.q?[e.p[0]-c.q[0],e.p[1]-c.q[1],e.p[2]-c.q[2]]:null;c.q=e.p.slice();c.m.position.set(e.p[0],e.p[1],e.p[2]);if(v&&Math.hypot(v[0],v[1],v[2])>1e-4)xCbSpin(c.m,v,1/30);continue;}/* the same wind orb as our own / bots' (xCbProj), not a grey ball */
+ if(c.m){jRel(c.m);c.m=null;}if(!c.s){c.s=true;const u=allies.find(x=>x&&x.nid===e.o),al=!!u;void al;xCbCloud(e.p[0],e.p[1],e.p[2],Math.max(.1,Math.min(Cloudburst.CB.life,Number.isFinite(e.tl)?e.tl:Cloudburst.CB.life)));/* Jett's own cloud (xCbCloud), as offline: not the grey controller smoke */try{feed('Jett ▸ Cloudburst');}catch(err){}}}
  for(const [id,c]of netCbs)if(!seen.has(id)){if(c.m)jRel(c.m);netCbs.delete(id);}}
 // Persistent devices from the snapshot (server devices.js deviceRows: {kind:'dev', d, o, tm, p, q, yaw, hp, fp}): others' Turret,
 // Alarmbot, Trapwire, Trademark, Blast Pack, Spycam and Owl Drone drawn with the offline placeholders and swapped for their real
