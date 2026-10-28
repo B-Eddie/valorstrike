@@ -35,12 +35,12 @@ for(const map of ['ascent','bind']){const nav=JSON.parse(fs.readFileSync(path.jo
  const W=(near,pth)=>{let acc=0;for(let k=0;k<20000;k++){const p=pts[k%pts.length];acc+=near(C,p[0],p[1],p[2]);}for(let k=0;k<40;k++){const [s,e]=pairs[k];acc+=pth(C,s,e,new Set(['-']))[0]|0;}return acc;};
  await sleep();gcs=0;const t0=Date.now();W(X.refNear,X.refPath);await sleep();const gOld=gcs,tOld=Date.now()-t0;gcs=0;const t1=Date.now();W(X.nmNear,X.nmPath);await sleep();const gNew=gcs,tNew=Date.now()-t1;
  assert(gNew<=gOld,map+': fewer young-gen GCs ('+gOld+' -> '+gNew+')');out.push(map+' '+pts.length*3+' nmNear + '+(pairs.length+banned)+' A* identical, workload young-gen GCs '+gOld+' -> '+gNew+' ('+tOld+' -> '+tNew+' ms)');}
-// nmBlocked: one reused callback object, same blocking answers as the per-call closures.
-{const src=nm.slice(nm.indexOf('var NM_Q='),nm.indexOf('\n}',nm.indexOf('function nmBlocked('))+2);
- class V{constructor(){this.x=0;this.y=0;this.z=0;}set(x,y,z){this.x=x;this.y=y;this.z=z;return this;}}class Box3{constructor(){this.min=new V();this.max=new V();}}class Line3{constructor(){this.start=new V();this.end=new V();}}
- const tri=(cy,d)=>({a:{y:cy},b:{y:cy},c:{y:cy},closestPointToSegment:()=>d});const seen=new Set();let tris=[];
- const bvh={shapecast(cb){seen.add(cb);cb.intersectsBounds({intersectsBox:()=>true});for(const t of tris)if(cb.intersectsTriangle(t))return true;return false;}};
- const c2={Math,Number,window:{},THREE:{Box3,Line3,Vector3:V},nmHeight:()=>0};vm.createContext(c2);vm.runInContext(src+'\n'+REF.blk+'\nglobalThis.B=nmBlocked;globalThis.R=refBlocked;',c2);const C={bvh};
- const cases=[[[],false],[[tri(5,.1)],true],[[tri(0.01,.1)],false],[[tri(5,.44)],false],[[tri(5,.437)],true],[[tri(0.02,.5),tri(3,.2)],true]];
- for(const [ts,want] of cases){tris=ts;assert.equal(c2.B(C,0,0,.45,0),want);assert.equal(c2.R(C,0,0,.45,0),want);}assert(seen.size===1+cases.length,'nmBlocked reuses one callback object (reference allocates one per call)');}
-console.log('Nav GC: '+out.join('; ')+'; nmBlocked one callback object');})().catch(e=>{console.error(e);process.exit(1);});
+// nmBlocked: one reused triangle callback (Q.tf) handed to nmShapeAny (perf2: allocation-free port of MeshBVH.shapecast,
+// with nmTriSegNear for the per-triangle distance). The old stand-in triangles here (a fixed closestPointToSegment result)
+// cannot drive the exact geometric test any more; nmBlocked's answers are checked against the library's shapecast +
+// closestPointToSegment on the real Ascent / Split collision worlds in work/test_bvh_alloc.cjs.
+{const blk=nm.slice(nm.indexOf('function nmBlocked('),nm.indexOf('\n}',nm.indexOf('function nmBlocked('))+2);
+ assert.match(blk,/nmShapeAny\(C\.bvh,Q\.box,Q\.tf\|\|\(Q\.tf=/,'nmBlocked passes one reused triangle callback to nmShapeAny');
+ assert.doesNotMatch(blk,/C\.bvh\.shapecast\(/,'nmBlocked no longer calls MeshBVH.shapecast (typed-array views + closures per call)');
+ assert.match(blk,/nmTriSegNear\(t,Q\.line,Q\.r\)/,'per-triangle test is the exact port');}
+console.log('Nav GC: '+out.join('; ')+'; nmBlocked one reused triangle callback via nmShapeAny');})().catch(e=>{console.error(e);process.exit(1);});
