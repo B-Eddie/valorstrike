@@ -51,8 +51,8 @@ const res={};
  xe('bots.forEach(b=>{b.cd=1e9});allies.forEach(a=>{a.cd=1e9});try{xHitInit()}catch(e){}true');
  // contact moments
  const one=async(i,hp)=>{if(!xe(`(()=>{const L=bots.filter(x=>x.alive);const b=L[${i}]||null;if(!b)return 0;window.__qaB=b;return 1;})()`))return null;
-  xe(place);xe(`__qaB.hp=${hp};fcd=0;__recReset();__REC.on=true;true`);emu();if(PROF==='shoot')await profStart();const a=process.hrtime.bigint();xe('shoot(false)');const shot=Number(process.hrtime.bigint()-a)/1e6;if(PROF==='shoot')await profStop('',1);const fr=[];const E={prog:0,tex:0};
-  for(let k=0;k<3;k++){const t=process.hrtime.bigint();H.advance(17);fr.push(+(Number(process.hrtime.bigint()-t)/1e6).toFixed(2));const e=emu();E.prog+=e.prog;E.tex+=e.tex;}
+  xe(place);xe(`__qaB.hp=${hp};fcd=0;__recReset();__REC.on=true;true`);emu();const pk=PROF==='killframe'&&hp<=1||PROF==='hitframe'&&hp>1;if(PROF==='shoot'||pk)await profStart();const a=process.hrtime.bigint();xe('shoot(false)');const shot=Number(process.hrtime.bigint()-a)/1e6;if(PROF==='shoot')await profStop('',1);const fr=[];const E={prog:0,tex:0};
+  for(let k=0;k<3;k++){const t=process.hrtime.bigint();H.advance(17);fr.push(+(Number(process.hrtime.bigint()-t)/1e6).toFixed(2));const e=emu();E.prog+=e.prog;E.tex+=e.tex;}if(pk)await profStop('',1);
   xe('__REC.on=false;true');const R=JSON.parse(xe('JSON.stringify(__recTop(8))'));
   return {name:xe('__qaB.name'),shot:+shot.toFixed(2),frames:fr,hp:xe('__qaB.hp'),obj:R.total,...E,sites:R.top};};
  const SC=(process.env.SCEN||'first,live,shot').split(',');
@@ -63,6 +63,7 @@ const res={};
  if(PROF==='first')res.profFirst=await profStop('first hits + kills');
  if(process.env.RCLOG){res.rcl=JSON.parse(xe('JSON.stringify(__RCL)'));console.log('slow raycasts',res.rcl.length);res.rcl.slice(0,30).forEach(r=>console.log(' ',JSON.stringify(r)));}
  if(PROF==='shoot')res.profShoot=await profStop('shoot() calls of first hits / second hits / kills',2);
+ if(PROF==='killframe'||PROF==='hitframe')res.profFrames=await profStop(PROF+': the shot and the 3 frames after it',2);
  for(let i=0;i<300;i++)H.advance(17); // let corpses settle (ragdoll)
  xe('window.__qaB=null;true');}
  // live fire vs aim (bots never shoot back, hp topped up)
