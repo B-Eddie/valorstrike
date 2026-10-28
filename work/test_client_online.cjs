@@ -95,7 +95,7 @@ Math.random=mulberry(SEED*104729+1);require('vm').runInContext(`Math.random=(${m
  // bounded during the outage and the recovered page must retain its authoritative body, inventory and input sequence.
  H.setPhase('online recovery');xe(`mpCreate(false,'tdm')`);await until(()=>xe('MP.st')==='room',8000,'room');const code=xe('MP.code');join(code,'FuzzD','Jett','PageQA');await until(()=>xe('(MP.room&&MP.room.pl||[]).length')===2,8000,'joined');xe('mpStart()');
  await until(()=>xe('MP.st')==='game'&&xe('NET.ready'),20000,'start');await step(1000);const room=cluster.room(code),id=xe('MP.me'),unit=room.sim.units.find(u=>u.id===id);
- unit.invulnerableUntil=room.sim.time+200;unit.hp=73;unit.ammo=7;unit.credits=2222;
+ room.sim.spawnRooms=false;/* the TDM spawn room heals hp back to 100: this checks recovery keeps the body as set, so take the room out (as test-tdm-abilities does) */unit.invulnerableUntil=room.sim.time+200;unit.hp=73;unit.ammo=7;unit.credits=2222;
  const pageSocket=()=>[...room.sessions].find(([w,s])=>s.u?.id===id)?.[0];
  const recovered=()=>xe('MP.st==="game"&&NET.ready&&!NET.reconnecting');
  const preserved=()=>{assert.equal(xe('MP.me'),id);assert.equal(room.sim.units.find(u=>u.id===id),unit);assert.equal(unit.hp,73);assert.equal(unit.ammo,7);assert.equal(unit.credits,2222);assert(xe('running'),'match stays mounted');};
