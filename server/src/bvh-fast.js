@@ -18,7 +18,7 @@ export function fastBVH(bvh){
  // candidate results of the recursion live in slots: distance, triangle, point
  // (the ray lives in an object's double fields: a double stored into a closure variable is boxed on every store)
  let D=new Float64Array(64),Tt=new Int32Array(64),X=new Float64Array(192);
- const S={ox:.5,oy:.5,oz:.5,dx:.5,dy:.5,dz:.5,near:.5,far:.5,side:0,n:0};
+ const S={ox:.5,oy:.5,oz:.5,dx:.5,dy:.5,dz:.5,near:.5,far:.5,max:.5/* a caller's own limit (world.rayClear), not the library's far */,side:0,n:0};
  const slot=()=>{const k=S.n++;if(k>=D.length){const m=D.length*2,D2=new Float64Array(m),T2=new Int32Array(m),X2=new Float64Array(m*3);D2.set(D);T2.set(Tt);X2.set(X);D=D2;Tt=T2;X=X2;}return k;};
  // intersectClosestTri: intersectTri -> checkIntersection (Ray.intersectTriangle, origin.distanceTo, near / far)
  const leaf=(off,cnt)=>{const ox=S.ox,oy=S.oy,oz=S.oz,dx=S.dx,dy=S.dy,dz=S.dz,side=S.side,near=S.near,far=S.far,cull=side!==T.DoubleSide,back=side===T.BackSide;let best=-1,dist=Infinity;

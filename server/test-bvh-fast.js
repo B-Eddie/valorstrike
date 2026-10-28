@@ -12,7 +12,7 @@
 //  - bytes allocated per ray / ground / blocked call (young generation big enough that no scavenge runs while measuring).
 import cp from 'node:child_process';
 if(!process.execArgv.some(a=>/semi-space/.test(a))){const r=cp.spawnSync(process.execPath,['--max-semi-space-size=256',...process.argv.slice(1)],{stdio:'inherit'});process.exit(r.status==null?1:r.status);}
-import fs from 'node:fs/promises';import assert from 'node:assert/strict';import v8 from 'node:v8';import * as T from 'three';import {loadWorld} from './src/world.js';import Motor from './src/motor.cjs';
+import fs from 'node:fs/promises';import assert from 'node:assert/strict';import v8 from 'node:v8';import * as T from 'three';import {loadWorld} from './src/world.js';import Motor from './src/motor.cjs';import {pairSees,segClear,FOG,fogHyp2,fogHyp3} from './src/fog.js';
 const assets={async fetch(r){try{return new Response(await fs.readFile('public'+new URL(r.url).pathname));}catch(e){return new Response('',{status:404});}}};
 const MAPS=process.env.MAPS==='all'?['ascent','bind','breeze','haven','lotus','split']:(process.env.MAPS||'ascent,split').split(',');
 let seed=11;const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647;const out=[];
@@ -29,6 +29,9 @@ const same=(a,b,what)=>{if(Object.is(a,b))return;assert.deepEqual(a,b,what);};
 // bytes per call: warmed up first (compiling f allocates); allocated = heap growth + whatever the GCs during the run freed
 // (v8.GCProfiler); the queries sit in tagged arrays so a call passes already-boxed numbers and only the query's own garbage counts
 const alloc=(f,n)=>{for(let i=0;i<30000;i++)f(i);const g=new v8.GCProfiler();g.start();const h0=v8.getHeapStatistics().used_heap_size;for(let i=0;i<n;i++)f(i);const h1=v8.getHeapStatistics().used_heap_size,st=g.stop();let freed=0;for(const e of st.statistics)freed+=e.beforeGC.heapStatistics.usedHeapSize-e.afterGC.heapStatistics.usedHeapSize;return Math.max(0,h1-h0+freed)/n;};
+{// fog's Math.hypot ports == V8's builtin, bit for bit
+ const sp=[0,-0,1,-1,.5,3,4,1e-300,-1e-300,5e-324,1e300,-1e308,1.7976931348623157e308,Infinity,-Infinity,NaN,2**-1074,123.456,-0.0001];const r=()=>{const k=rnd();return k<.1?sp[Math.floor(rnd()*sp.length)]:(rnd()-.5)*10**Math.floor(rnd()*12-6);};
+ for(let k=0;k<200000;k++){const x=r(),y=r(),z=r();if(!Object.is(fogHyp2(x,z),Math.hypot(x,z)))assert.fail(`hyp2(${x},${z}) ${fogHyp2(x,z)} vs ${Math.hypot(x,z)}`);if(!Object.is(fogHyp3(x,y,z),Math.hypot(x,y,z)))assert.fail(`hyp3(${x},${y},${z}) ${fogHyp3(x,y,z)} vs ${Math.hypot(x,y,z)}`);}}
 for(const map of MAPS){const W=await loadWorld(assets,map);assert(W.bvh,'world exposes its collision BVH (W.bvh) for this check');assert.equal(typeof W.nearValidScan,'function','world.nearValidScan (the full scan nearValid must equal)');
  const R=reference(W,map),N=W.nav.nodes,valid=N.map((_,i)=>i).filter(i=>!W.nav.valid||W.nav.valid[i]),pick=()=>N[valid[Math.floor(rnd()*valid.length)]];
  const dirs=[[0,-1,0],[0,1,0],[1,0,0],[-1,0,0],[0,0,1],[0,0,-1],[0,0,0]];
@@ -45,6 +48,16 @@ for(const map of MAPS){const W=await loadWorld(assets,map);assert(W.bvh,'world e
  for(let k=0;k<5000;k++){const p=pick(),far=k%10===0?300:30,x=p[0]+(rnd()-.5)*far,z=p[2]+(rnd()-.5)*far,y=k%3?p[1]+(rnd()-.5)*6:undefined;assert.equal(W.nearValid(x,z,y),W.nearValidScan(x,z,y),`${map} nearValid(${x},${z},${y})`);}
  for(let k=0;k<500;k++){const p=pick();assert.equal(W.nearValid(p[0],p[2],p[1]),W.nearValidScan(p[0],p[2],p[1]));assert.equal(W.nearValid(p[0],p[2]),W.nearValidScan(p[0],p[2]));}
  for(const [x,z,y] of [[NaN,0,0],[0,NaN,0],[Infinity,0,0],[0,0,NaN],[1e9,-1e9,0]])assert.equal(W.nearValid(x,z,y),W.nearValidScan(x,z,y),'nearValid edge '+[x,z,y]);
+ // fog of war pairSees (allocation-free rewrite) == the original eyes / points / segClear loops: same answer, same ray count
+ const eyesR=u=>{const y=u.y+1.6-(u.ch||0),out=[[u.x,y,u.z]],vx=u.vx||0,vz=u.vz||0;if(vx*vx+vz*vz>.25)out.push([u.x+vx*FOG.ahead,y,u.z+vz*FOG.ahead]);return out;};
+ const pointsR=(u,o)=>{let dx=u.x-o[0],dz=u.z-o[2];const l=Math.hypot(dx,dz)||1;dx/=l;dz/=l;const sx=-dz*FOG.pad,sz=dx*FOG.pad,top=1.65-(u.ch||0),y=u.y,out=[[u.x,y+top,u.z],[u.x,y+1.05,u.z],[u.x+sx,y+1.2,u.z+sz],[u.x-sx,y+1.2,u.z-sz],[u.x,y+.4,u.z]];const vx=u.vx||0,vz=u.vz||0;if(vx*vx+vz*vz>.25){const x=u.x+vx*FOG.ahead,z=u.z+vz*FOG.ahead;out.push([x,y+top,z],[x+sx,y+1.1,z+sz],[x-sx,y+1.1,z-sz]);}return out;};
+ const pairR=(sim,a,b)=>{for(const [s,t] of [[a,b],[b,a]])for(const e of eyesR(s))for(const p of pointsR(t,e)){sim.fogRays=(sim.fogRays||0)+1;if(segClear(sim,e,p))return true;}return false;};
+ const unit=()=>{const p=pick(),mv=rnd()<.5;return {x:p[0]+(rnd()-.5)*3,y:p[1],z:p[2]+(rnd()-.5)*3,vx:mv?(rnd()-.5)*12:0,vz:mv?(rnd()-.5)*12:0,ch:rnd()<.3?.45:0};};
+ let seenN=0;const simA={world:W,fogRays:0},simB={world:W,fogRays:0},simC={world:{ray:W.ray},fogRays:0};
+ for(let k=0;k<3000;k++){const a=unit(),b=k%3?unit():{...a,x:a.x+(rnd()-.5)*20,z:a.z+(rnd()-.5)*20};const x=pairSees(simA,a,b),y=pairR(simB,a,b),z=pairSees(simC,a,b);assert.equal(x,y,`${map} pairSees ${JSON.stringify([a,b])}`);assert.equal(z,y,'pairSees on a world without rayClear (fallback)');assert.equal(simA.fogRays,simB.fogRays,`${map} fog ray count`);if(x)seenN++;}
+ assert(seenN>200&&seenN<2900,'pairSees answers both ways ('+seenN+')');
+ const FU=Array.from({length:64},()=>[unit(),unit()]);const aFog=alloc(i=>{const q=FU[i%64];pairSees(simA,q[0],q[1]);},5000);
+ out.push(`${map} pairSees ${aFog.toFixed(0)} B/call`);assert(aFog<=48,`${map}: fog pairSees allocates ${aFog.toFixed(0)} B per call`);
  // allocation per call
  const qo=Q.map(q=>q[0]),qd=Q.map(q=>q[1]),P=valid.map(i=>{const p=N[i];return [p[0]+.3,p[1]+.5,p[2]-.2,.4,'tagged'];});
  const aRay=alloc(i=>W.ray(qo[i%qo.length],qd[i%qd.length],30),20000),aGround=alloc(i=>{const p=P[i%P.length];W.ground(p[0],p[2],p[1]);},20000),aBlocked=alloc(i=>{const p=P[i%P.length];W.blocked(p[0],p[2],p[3],p[1]);},20000),aNear=alloc(i=>{const p=P[i%P.length];W.nearValid(p[0],p[2],p[1]);},20000);
@@ -52,4 +65,4 @@ for(const map of MAPS){const W=await loadWorld(assets,map);assert(W.bvh,'world e
  out.push(`${map} B/call ray ${aRay.toFixed(0)} (library ${ref.toFixed(0)}) ground ${aGround.toFixed(0)} blocked ${aBlocked.toFixed(0)} nearValid ${aNear.toFixed(0)}`);
  assert(aRay<=16,`${map}: world.ray allocates ${aRay.toFixed(0)} B per call (library ${ref.toFixed(0)})`);assert(aGround<=16,`${map}: world.ground allocates ${aGround.toFixed(0)} B per call`);assert(aBlocked<=32,`${map}: world.blocked allocates ${aBlocked.toFixed(0)} B per call`);assert(aNear<=16,`${map}: world.nearValid allocates ${aNear.toFixed(0)} B per call`);
 }
-console.log('Server world queries: ray / rayN / ground / blocked / ceiling == library, nearValid == full scan, allocation-free; '+out.join('; '));
+console.log('Server world queries: ray / rayN / ground / blocked / ceiling == library, nearValid == full scan, fog pairSees == original, allocation-free; '+out.join('; '));

@@ -17,6 +17,7 @@
 // Vision is per team (per player in Deathmatch): a teammate's sight is yours (minimap). Enemy devices (deviceRows) and
 // Barrier Orbs (fx 'barrier') follow the same sight test; static ones stay once seen, Owl Drone / Blast Pack use the grace.
 import {barrierPoints} from './abilities.js';import {devicePoints,DEV_ROWS} from './devices.js';
+export {hyp2 as fogHyp2,hyp3 as fogHyp3};
 export const FOG=Object.freeze({ahead:.4,pad:.45,grace:1,step:30,run:3.6,shot:50,shotFor:1,near:3,killer:3,devNear:6,cast:30});
 const MOVING=new Set(['owl','blastpack','cloudburst']);
 export function fogGroup(sim,u){return sim.mode==='dm'?'u'+u.id:'t'+u.team;}
@@ -28,7 +29,24 @@ function eyes(u){const y=u.y+1.6-(u.ch||0),out=[[u.x,y,u.z]],vx=u.vx||0,vz=u.vz|
 function points(u,o){let dx=u.x-o[0],dz=u.z-o[2];const l=Math.hypot(dx,dz)||1;dx/=l;dz/=l;const sx=-dz*FOG.pad,sz=dx*FOG.pad,top=1.65-(u.ch||0),y=u.y,out=[[u.x,y+top,u.z],[u.x,y+1.05,u.z],[u.x+sx,y+1.2,u.z+sz],[u.x-sx,y+1.2,u.z-sz],[u.x,y+.4,u.z]];
  const vx=u.vx||0,vz=u.vz||0;if(vx*vx+vz*vz>.25){const x=u.x+vx*FOG.ahead,z=u.z+vz*FOG.ahead;out.push([x,y+top,z],[x+sx,y+1.1,z+sz],[x-sx,y+1.1,z-sz]);}return out;}
 export function segClear(sim,o,p){const q=[p[0]-o[0],p[1]-o[1],p[2]-o[2]],len=Math.hypot(q[0],q[1],q[2]);if(len<.05)return true;const w=sim.baseWorld||sim.world,r=w&&w.ray;/* the map only: Barrier Orbs and smokes never hide (conservative, and a device is never behind its own barrier) */if(typeof r!=='function')return true;return r(o,[q[0]/len,q[1]/len,q[2]/len],len-.05)===Infinity;}
-export function pairSees(sim,a,b){for(const [s,t] of [[a,b],[b,a]])for(const e of eyes(s))for(const p of points(t,e)){sim.fogRays=(sim.fogRays||0)+1;if(segClear(sim,e,p))return true;}return false;}
+export function pairSees(sim,a,b){const w=sim.baseWorld||sim.world;if(w&&typeof w.rayClear==='function'&&w.rayS&&typeof w.ray==='function')return pairSeesF(sim,w,a,b)||pairSeesF(sim,w,b,a);for(const [s,t] of [[a,b],[b,a]])for(const e of eyes(s))for(const p of points(t,e)){sim.fogRays=(sim.fogRays||0)+1;if(segClear(sim,e,p))return true;}return false;}
+// perf3: pairSees without its per-call arrays (eyes, points, the ray's offset / direction: ~200 KB per server tick in a 5v5):
+// the same eyes and points, written out into scratch buffers in the same order, each test segClear's arithmetic with the
+// ray handed to the world through its ray state (world.rayS / rayClear = ray(o, d, len - .05) === Infinity)
+const FE=new Float64Array(6),FP=new Float64Array(24);
+// Math.hypot of 2 / 3 terms as V8's builtin computes it (max scaling, Kahan sum: bit-identical, test-bvh-fast.js checks), without
+// the builtin's per-call argument array (~70 B); non-finite or zero inputs take the builtin (the unary + keeps the result an untagged double)
+function hyp2(x,z){const a=Math.abs(x),b=Math.abs(z),m=a>b?a:b;if(m>0&&m<Infinity&&b===b){const qa=a/m,qb=b/m;return Math.sqrt(qa*qa+qb*qb)*m;}return +Math.hypot(x,z);}
+function hyp3(x,y,z){const a=Math.abs(x),b=Math.abs(y),c=Math.abs(z);let m=a>b?a:b;if(c>m)m=c;if(m>0&&m<Infinity&&a===a&&b===b&&c===c){let q=a/m,u=q*q,s=u,k=0;q=b/m;u=q*q-k;let p=s+u;k=(p-s)-u;s=p;q=c/m;u=q*q-k;p=s+u;s=p;return Math.sqrt(s)*m;}return +Math.hypot(x,y,z);}
+function pairSeesF(sim,w,s,t){const ne=eyesF(s);for(let i=0;i<ne;i++){const np=pointsF(t,i),ex=FE[i*3],ey=FE[i*3+1],ez=FE[i*3+2];
+  for(let k=0;k<np;k++){sim.fogRays=(sim.fogRays||0)+1;const q0=FP[k*3]-ex,q1=FP[k*3+1]-ey,q2=FP[k*3+2]-ez,len=hyp3(q0,q1,q2);if(len<.05)return true;
+   const R=w.rayS;R.ox=ex;R.oy=ey;R.oz=ez;R.dx=q0/len;R.dy=q1/len;R.dz=q2/len;R.max=len-.05;if(w.rayClear())return true;}}return false;}
+// eyes(u) into FE (count)
+function eyesF(u){const y=u.y+1.6-(u.ch||0),vx=u.vx||0,vz=u.vz||0;FE[0]=u.x;FE[1]=y;FE[2]=u.z;if(vx*vx+vz*vz>.25){FE[3]=u.x+vx*FOG.ahead;FE[4]=y;FE[5]=u.z+vz*FOG.ahead;return 2;}return 1;}
+// points(u, eye i of FE) into FP (count)
+function pointsF(u,i){let dx=u.x-FE[i*3],dz=u.z-FE[i*3+2];const l=hyp2(dx,dz)||1;dx/=l;dz/=l;const sx=-dz*FOG.pad,sz=dx*FOG.pad,top=1.65-(u.ch||0),y=u.y;
+ FP[0]=u.x;FP[1]=y+top;FP[2]=u.z;FP[3]=u.x;FP[4]=y+1.05;FP[5]=u.z;FP[6]=u.x+sx;FP[7]=y+1.2;FP[8]=u.z+sz;FP[9]=u.x-sx;FP[10]=y+1.2;FP[11]=u.z-sz;FP[12]=u.x;FP[13]=y+.4;FP[14]=u.z;
+ const vx=u.vx||0,vz=u.vz||0;if(vx*vx+vz*vz>.25){const x=u.x+vx*FOG.ahead,z=u.z+vz*FOG.ahead;FP[15]=x;FP[16]=y+top;FP[17]=z;FP[18]=x+sx;FP[19]=y+1.1;FP[20]=z+sz;FP[21]=x-sx;FP[22]=y+1.1;FP[23]=z-sz;return 8;}return 5;}
 const near3=(a,b,r)=>(a.x-b.x)**2+(a.y-b.y)**2+(a.z-b.z)**2<=r*r;
 // One pass per simulation time: which enemy ids (and which enemy effect ids to hide) each group gets.
 export function fogPass(sim,snap){const F=sim.fog||(sim.fog={t:-1,n:0,pairs:new Map(),rel:new Map(),hide:new Map()});if(F.t===sim.time)return F;F.t=sim.time;F.n++;const now=sim.time,U=sim.units,byName=new Map(U.map(u=>[u.name,u]));

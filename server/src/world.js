@@ -32,6 +32,9 @@ export async function loadWorld(assets,key){
  const c0=v=>v===undefined?0:v,setRay=(o,d)=>{RS.ox=c0(o[0]);RS.oy=c0(o[1]);RS.oz=c0(o[2]);RS.dx=c0(d[0]);RS.dy=c0(d[1]);RS.dz=c0(d[2]);RS.side=T.DoubleSide;RS.near=0;RS.far=Infinity;};
  const ray=(o,d,max=Infinity)=>{setRay(o,d);const h=FQ.cast();return h&&h.distance<max?h.distance:Infinity;};
  // ray with the surface normal (Sova bolt bounces): {distance, normal:[x,y,z]} | null
+ // rayClear(): the ray the caller wrote into rayS (ox oy oz / dx dy dz, and max) has no hit closer than max - ray(o, d, max)
+ // === Infinity (side DoubleSide, no near / far, as ray) without the arrays or a boxed double (fog of war's sight tests)
+ const rayClear=()=>{RS.side=T.DoubleSide;RS.near=0;RS.far=Infinity;const h=FQ.cast();return !(h&&h.distance<RS.max);};
  const rayN=(o,d,max=Infinity)=>{setRay(o,d);const h=FQ.cast();if(!h||!(h.distance<=max))return null;const n=h.face&&h.face.normal;return {distance:h.distance,normal:n?[n.x,n.y,n.z]:null};};
  const seen=new Set(),components=[];for(let i=0;i<nav.nodes.length;i++){if(seen.has(i)||!nav.valid[i])continue;const c=[i];seen.add(i);for(let k=0;k<c.length;k++)for(const j of nav.adj[c[k]])if(!seen.has(j)&&nav.valid[j]){seen.add(j);c.push(j);}components.push(c);}components.sort((a,b)=>b.length-a.length);const playable=components[0],allowed=new Set(playable);
  // Nearest playable node. A uniform grid over the playable nodes replaces the full scan (bots call this on every
@@ -60,5 +63,5 @@ export async function loadWorld(assets,key){
     const L=vcells[j*VW+i];for(let m=0;m<L.length;m++){const k=L[m],p=nav.nodes[allValid[k]],v=(p[0]-x)**2+(p[2]-z)**2+(fy?2*(p[1]-y)**2:0);if(v<d||(v===d&&k<bestK)){bestK=k;d=v;}}}}}
   return bestK<0?-1:allValid[bestK];};
 
- const plantAt=(x,z)=>{const t=map.transform,p=map.apiProjection,ca=Math.cos(t.angle),sa=Math.sin(t.angle),sx=ca*x-sa*z+t.cx,sz=sa*x+ca*z+t.cz,u=Math.floor((sx*100*p.xMultiplier+p.xScalarToAdd)*1024),v=Math.floor((-sz*100*p.yMultiplier+p.yScalarToAdd)*1024);for(const row of plants.rows[v]||[])if(u>=row[0]&&u<row[1])return row[2];return '';};return {plantAt,ground,blocked,leash,ropes,ropeLinks,ray,rayN,near,nearValid,nearValidScan,nearScan,bvh,nav,map,playable,allowed,bytes:geometry.attributes.position.array.byteLength+index.byteLength+roots.reduce((a,r)=>a+r.byteLength,0),ceiling:(x,z,l,h)=>ray([x,l+.01,z],[0,1,0],h-l)<Infinity};
+ const plantAt=(x,z)=>{const t=map.transform,p=map.apiProjection,ca=Math.cos(t.angle),sa=Math.sin(t.angle),sx=ca*x-sa*z+t.cx,sz=sa*x+ca*z+t.cz,u=Math.floor((sx*100*p.xMultiplier+p.xScalarToAdd)*1024),v=Math.floor((-sz*100*p.yMultiplier+p.yScalarToAdd)*1024);for(const row of plants.rows[v]||[])if(u>=row[0]&&u<row[1])return row[2];return '';};return {plantAt,ground,blocked,leash,ropes,ropeLinks,ray,rayN,rayS:RS,rayClear,near,nearValid,nearValidScan,nearScan,bvh,nav,map,playable,allowed,bytes:geometry.attributes.position.array.byteLength+index.byteLength+roots.reduce((a,r)=>a+r.byteLength,0),ceiling:(x,z,l,h)=>ray([x,l+.01,z],[0,1,0],h-l)<Infinity};
 }
