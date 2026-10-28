@@ -1933,6 +1933,9 @@ const WEAP = { Vandal: { mag: 25, rate: 9.75, body: 40, head: 160, legs: 34, rec
   Operator: { mag: 5, rate: 0.6, body: 150, head: 255, legs: 120, rec: 1.5, vol: 0.3, f: 90, semi: 1 }, Classic: { mag: 12, rate: 6.75, body: 26, head: 78, legs: 22, ff: [22, 66, 18], ffd: 30, rec: 0.5, vol: 0.22, f: 260, semi: 1 },
   Sheriff: { mag: 6, rate: 4, body: 55, head: 159, legs: 46, ff: [50, 145, 42], ffd: 30, rec: 1.3, vol: 0.28, f: 140, semi: 1 }, Spectre: { mag: 30, rate: 13.333, body: 26, head: 78, legs: 22, ff: [22, 66, 18], ffd: 15, ff2: [20, 60, 17], ffd2: 30, rec: 0.45, vol: 0.16, f: 280 },
   Guardian: { mag: 12, rate: 5.25, body: 65, head: 195, legs: 48, rec: 0.9, vol: 0.26, f: 150, semi: 1 },
+  // Bandit (sidearm, v12.00) / Warden (rifle, v13.06): wiki.playvalorant.com/en-us/Bandit, /Warden + valorant-api (= weapons.json); Bandit semi 0-10 / 10-30 / 30-50 m bands, Warden auto, no falloff
+  Bandit: { mag: 8, rate: 5.1, body: 39, head: 152, legs: 33, ff: [39, 128, 33], ffd: 10, ff2: [34, 112, 28], ffd2: 30, rec: 0.8, vol: 0.24, f: 200, semi: 1 },
+  Warden: { mag: 18, rate: 6.5, body: 50, head: 200, legs: 42, rec: 0.9, vol: 0.28, f: 160 },
   Marshal: { mag: 5, rate: 1.5, body: 101, head: 202, legs: 85, rec: 1.2, vol: 0.28, f: 110, semi: 1 }, Bulldog: { mag: 24, rate: 10, body: 35, head: 115, legs: 29, rec: 0.8, vol: 0.26, f: 190 },
   Stinger: { mag: 20, rate: 16, body: 27, head: 67, legs: 22, ff: [23, 57, 19], ffd: 15, rec: 0.55, vol: 0.15, f: 290 }, Frenzy: { mag: 15, rate: 10, body: 26, head: 78, legs: 22, ff: [21, 63, 17], ffd: 20, rec: 0.5, vol: 0.18, f: 270 },
   // shotguns: body/head/legs = per pellet, pel pellets per shell inside cone (rad); alt = Bucky ADS tight slug-ish spread
@@ -1953,7 +1956,7 @@ function xCadOwed() { try { return window.ValorantFeel.cadenceOwed(XCAD, wName()
 function xCadRate(w, base) { let g = null; try { g = window.ValorantFeel.cadenceGap(XCAD, w, xCadAds(), performance.now() / 1000); } catch (e) {} return g != null ? 1 / g : base; }
 function xRate(W) { const w = Object.keys(WEAP).find((k) => WEAP[k] === W); return xCadRate(w, W.rate); }
 // Valorant reload times (s), one per gun; Ares / Odin / Outlaw keep their own rld above
-{ const RLD = { Classic: 1.75, Shorty: 1.75, Frenzy: 1.5, Ghost: 1.5, Sheriff: 2.25, Stinger: 2.25, Spectre: 2.25, Bucky: 2.5, Judge: 2.2, Bulldog: 2.5, Guardian: 2.5, Phantom: 2.5, Vandal: 2.5, Marshal: 2.5, Operator: 3.7 };
+{ const RLD = { Classic: 1.75, Shorty: 1.75, Frenzy: 1.5, Ghost: 1.5, Bandit: 1.5, Sheriff: 2.25, Stinger: 2.25, Spectre: 2.25, Bucky: 2.5, Judge: 2.2, Bulldog: 2.5, Guardian: 2.5, Warden: 2.5, Phantom: 2.5, Vandal: 2.5, Marshal: 2.5, Operator: 3.7 };
   for (const n in RLD) if (WEAP[n] && !WEAP[n].rld) WEAP[n].rld = RLD[n]; }
 // per-round reloads (wiki Bucky "0.5 per shell", Marshal "0.5 per bullet"; a shot interrupts it); Outlaw 2.3 s one barrel / 3.8 s both. = server RELOAD_ROUND / reloadTime
 const XRLP = { Bucky: 0.5, Marshal: 0.5 };
@@ -2138,7 +2141,7 @@ const GUNS = {
 function xStepMetal(y) { let nm = false; try { nm = typeof nmActive === "function" && !!nmActive(); } catch (e) {} return !nm && y > 0.4; }
 const SFX = {
   stepR: 30,
-  gun(w, o, v) { if (!sOk()) return; if (!o && !sCap("me", 4, 0.12)) return; if (/^(Shorty|Bucky|Judge)$/.test(w)) return GUNS.shotgun(o, v || 1, w !== "Judge"); if (/^(Ares|Odin)$/.test(w)) return GUNS.lmg(o, (v || 1) * (w === "Odin" ? 1.1 : 1)); (GUNS[w] || (/Ghost|Frenzy|Shorty/.test(w) ? GUNS.Classic : /Judge|Bucky|Marshal|Outlaw/.test(w) ? GUNS.Sheriff : /Stinger/.test(w) ? GUNS.Spectre : GUNS.Vandal))(o, v || 1); },
+  gun(w, o, v) { if (!sOk()) return; if (!o && !sCap("me", 4, 0.12)) return; if (/^(Shorty|Bucky|Judge)$/.test(w)) return GUNS.shotgun(o, v || 1, w !== "Judge"); if (/^(Ares|Odin)$/.test(w)) return GUNS.lmg(o, (v || 1) * (w === "Odin" ? 1.1 : 1)); (GUNS[w] || (/Ghost|Frenzy|Shorty|Bandit/.test(w) ? GUNS.Classic : /Judge|Bucky|Marshal|Outlaw/.test(w) ? GUNS.Sheriff : /Stinger/.test(w) ? GUNS.Spectre : GUNS.Vandal))(o, v || 1); },
   reload() {}, // reload sounds now fire from the reload keyframes (SFX.rs, called by xRld)
   rs(k) { if (!sOk() || !sCap("rs", 2, 0.12)) return; // reload steps, fired by the reload keyframes: mag out (click + slide), mag in (thunk + latch), bolt (rack back + forward)
     if (k === "out") { sNz(0, 0.025, "bandpass", 2000, 1600, 0.3, 0, 4); sNz(0.02, 0.09, "bandpass", 900, 1800, 0.1, 0, 2); }
@@ -2582,7 +2585,7 @@ const gBarrel = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.04, 0.35), gunDark)
 const gMag = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.16, 0.08), gunDark); gMag.position.set(0, -0.12, -0.05); gMag.rotation.x = 0.2;
 const gScope = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.22, 10), gunDark); gScope.rotation.x = Math.PI / 2; gScope.position.set(0, 0.09, -0.05);
 gun.add(gBody, gBarrel, gMag, gScope); gun.position.set(0.22, -0.2, -0.45); camera.add(gun);
-const GUN_SHAPE = { Vandal: [1, 1, 0.5], Phantom: [1, 0.9, 0.55], Operator: [1.1, 1.5, 0.5], Classic: [0.6, 0.35, 0.45], Sheriff: [0.7, 0.5, 0.45], Spectre: [0.85, 0.6, 0.42], Guardian: [1, 1.35, 0.45], Marshal: [1, 1.4, 0.45], Bulldog: [1, 0.85, 0.5], Stinger: [0.85, 0.5, 0.42], Frenzy: [0.6, 0.3, 0.45], Shorty: [0.6, 0.4, 0.5], Bucky: [1, 1.2, 0.5], Judge: [0.95, 0.75, 0.55], Ares: [1.1, 1.1, 0.6], Odin: [1.15, 1.25, 0.65] };
+const GUN_SHAPE = { Vandal: [1, 1, 0.5], Phantom: [1, 0.9, 0.55], Operator: [1.1, 1.5, 0.5], Classic: [0.6, 0.35, 0.45], Sheriff: [0.7, 0.5, 0.45], Bandit: [0.65, 0.4, 0.45], Spectre: [0.85, 0.6, 0.42], Guardian: [1, 1.35, 0.45], Warden: [1, 1.1, 0.5], Marshal: [1, 1.4, 0.45], Bulldog: [1, 0.85, 0.5], Stinger: [0.85, 0.5, 0.42], Frenzy: [0.6, 0.3, 0.45], Shorty: [0.6, 0.4, 0.5], Bucky: [1, 1.2, 0.5], Judge: [0.95, 0.75, 0.55], Ares: [1.1, 1.1, 0.6], Odin: [1.15, 1.25, 0.65] };
 let kick = 0, rw = "pri", kSwing = 0;
 const slots = { pri: {}, pis: {} };
 const wName = () => mode === "aim" && typeof AIM_W !== "undefined" && AIM_W[AM.w] && AIM_W[AM.w] !== "Knife" ? AIM_W[AM.w] : mode === "five" ? (rw === "pis" || !FV.pri ? FV.sec : FV.pri) : rw === "pis" ? "Classic" : mode === "rifle" ? RF.w : S.weapon;
@@ -3250,7 +3253,7 @@ function kfPush(d) {
 const DIFF = { easy: { spread: 1.8, cd: 1.5, dmg: 0.6, speed: 0.8, rt: 400, ae: 2.2, bu: [2, 3], hs: 0.1 }, normal: { spread: 1, cd: 1, dmg: 1, speed: 1, rt: 260, ae: 1.3, bu: [3, 5], hs: 0.2 }, hard: { spread: 0.6, cd: 0.7, dmg: 1.3, speed: 1.15, rt: 160, ae: 0.8, bu: [3, 5], hs: 0.35 } };
 const MAG = () => WEAP[wName()].mag;
 // reserve ammo per gun (wiki.playvalorant.com/en-us/<Weapon> "Reserve"; = server RESERVE): was 3 magazines for every gun
-const XRSV = { Classic: 36, Shorty: 6, Frenzy: 45, Ghost: 39, Sheriff: 24, Stinger: 60, Spectre: 90, Bucky: 10, Judge: 15, Bulldog: 72, Guardian: 36, Phantom: 60, Vandal: 50, Marshal: 15, Outlaw: 10, Operator: 10, Ares: 100, Odin: 200 };
+const XRSV = { Classic: 36, Shorty: 6, Frenzy: 45, Ghost: 39, Bandit: 24, Sheriff: 24, Stinger: 60, Spectre: 90, Bucky: 10, Judge: 15, Bulldog: 72, Guardian: 36, Warden: 36, Phantom: 60, Vandal: 50, Marshal: 15, Outlaw: 10, Operator: 10, Ares: 100, Odin: 200 };
 const xRsv = (n) => XRSV[n] != null ? XRSV[n] : WEAP[n] && WEAP[n].mag ? WEAP[n].mag * 3 : 0;
 score = score || { you: 0, bots: 0 };
 function xPLock() { // touch devices have no mouse pointer to lock; skip, and swallow the async NotAllowedError so it never surfaces as an error toast
@@ -3492,7 +3495,7 @@ var XLDH = []; // enemy Lockdown hitboxes, added to the player's gun raycast
 function xLdh() { for (let i = XLDH.length - 1; i >= 0; i--) { const m = XLDH[i]; if (!m.parent) continue; let o = m, live = true; while (o.parent) { if (!o.visible) live = false; o = o.parent; } if (o !== scene || !live) XLDH.splice(i, 1); } return XLDH; }
 // wallbangs: pen tier per gun (max wall m, damage mult); one reverse raycast per shot measures the wall, the hit beyond comes from the shot's own sorted hit list
 const XPN = { H: { t: 0.6, k: 0.75 }, M: { t: 0.35, k: 0.5 }, L: { t: 0.15, k: 0.5 } }, XWR = new THREE.Raycaster(), XWV = new THREE.Vector3(), XWD = new THREE.Vector3(), XWA = [], XWH = [];
-function xPen(n) { return /^(Odin|Ares|Sheriff|Operator|Guardian|Outlaw)$/.test(n) ? XPN.H : /^(Vandal|Phantom|Bulldog|Ghost|Marshal)$/.test(n) ? XPN.M : XPN.L; } // official tiers, as the server (weapons.json wallPenetration)
+function xPen(n) { return /^(Odin|Ares|Sheriff|Operator|Guardian|Outlaw)$/.test(n) ? XPN.H : /^(Vandal|Phantom|Bulldog|Ghost|Marshal|Bandit|Warden)$/.test(n) ? XPN.M : XPN.L; } // official tiers, as the server (weapons.json wallPenetration)
 function xWkDmg(W, part, dist, k) { return Math.round(wDmg(W, part, dist) * k); } // one bullet, k = wallbang multiplier (the feel layer floors raw x k, as the server)
 function xThin(o, pt, dir, t) { // exit hit if the wall along dir is thinner than t, else null; XWD = -dir afterwards
   XWV.copy(pt).addScaledVector(dir, t); XWD.copy(dir).negate(); XWR.set(XWV, XWD); XWR.near = 0; XWR.far = t; XWA.length = 0;
@@ -3806,6 +3809,7 @@ Object.assign(XGB, {
   const sp = XGB.Spectre, gu = XGB.Guardian, op = XGB.Operator;
   XGB.Spectre = (g, t, d) => { const r = sp(g, t, d); g.children.forEach((o) => { if (o.geometry === xBG(0.04, 0.2, 0.05)) { o.scale.y = 0.6; o.position.y = -0.09; } }); gB(g, 0.038, 0.09, 0.05, d, 0, -0.17, -0.085, -0.35); return r; }; // short curved mag
   XGB.Guardian = (g, t, d) => { const r = gu(g, t, d); gC(g, 0.018, 0.26, xBlk, 0, 0.12, -0.08, 10); gC(g, 0.024, 0.03, xBlk, 0, 0.12, -0.22, 10); gC(g, 0.02, 0.004, xLens, 0, 0.12, -0.237, 10); gB(g, 0.015, 0.03, 0.02, d, 0, 0.1, -0.1); return r; }; // thin scope
+  XGB.Bandit = XGB.Sheriff; XGB.Warden = XGB.Vandal; // procedural stand-ins (the native Kingdom Archives models replace them once loaded)
   XGB.Operator = (g, t, d) => { const r = op(g, t, d); gB(g, 0.012, 0.2, 0.012, d, 0.03, -0.07, -0.74, 0.35); gB(g, 0.012, 0.2, 0.012, d, -0.03, -0.07, -0.74, 0.35); gB(g, 0.05, 0.02, 0.04, d, 0, 0.02, -0.7); return r; }; // bipod
 }
 const XGC = {}; // one built template per weapon; every viewmodel / bot / drop gets a clone sharing its geometry + materials
@@ -3870,7 +3874,7 @@ const XTR = {
 // named sub-meshes ("mag", "bolt"/"slide", "cylinder") on each code-built viewmodel; reuse any the builder already named
 const XRP = {};
 XGUNS.forEach((w) => {
-  const g = VMS[w], mz = g.userData.mz || -0.5, L = Math.abs(mz), pis = /^(Classic|Sheriff|Ghost|Frenzy|Shorty)$/.test(w);
+  const g = VMS[w], mz = g.userData.mz || -0.5, L = Math.abs(mz), pis = /^(Classic|Sheriff|Ghost|Bandit|Frenzy|Shorty)$/.test(w);
   const mk = (geo, x, y, z) => { const m = new THREE.Mesh(geo, gunDark); m.position.set(x, y, z); m.raycast = XNR; return m; };
   const P = { cls: /^(Operator|Marshal|Outlaw)$/.test(w) ? "op" : w === "Sheriff" ? "sheriff" : pis ? "pistol" : "rifle" };
   if (w !== "Sheriff") {
@@ -3893,7 +3897,7 @@ XGUNS.forEach((w) => {
 // CC0 gun models (Quaternius, see models/LICENSES.txt): fetched once on the first mode launch (xGo), normalized to each procedural gun's
 // length / muzzle / bore so hands, muzzle flash and reload tracks still fit; any weapon whose file fails keeps the procedural XGB model
 var XGM = { ld: false, rdy: false, T: {}, src: {}, live: [], sk: {}, mats: {},
-  F: { Classic: "valorant/classic", Shorty: "valorant/shorty", Frenzy: "valorant/frenzy", Ghost: "valorant/ghost", Sheriff: "valorant/sheriff", Stinger: "valorant/stinger", Spectre: "valorant/spectre", Bucky: "valorant/bucky", Judge: "valorant/judge", Bulldog: "valorant/bulldog", Guardian: "valorant/guardian", Phantom: "valorant/phantom", Vandal: "valorant/vandal", Marshal: "valorant/marshal", Outlaw: "valorant/outlaw", Operator: "valorant/operator", Ares: "valorant/ares", Odin: "valorant/odin", Knife: "valorant/melee" },
+  F: { Classic: "valorant/classic", Shorty: "valorant/shorty", Frenzy: "valorant/frenzy", Ghost: "valorant/ghost", Bandit: "valorant/bandit", Sheriff: "valorant/sheriff", Stinger: "valorant/stinger", Spectre: "valorant/spectre", Bucky: "valorant/bucky", Judge: "valorant/judge", Bulldog: "valorant/bulldog", Guardian: "valorant/guardian", Warden: "valorant/warden", Phantom: "valorant/phantom", Vandal: "valorant/vandal", Marshal: "valorant/marshal", Outlaw: "valorant/outlaw", Operator: "valorant/operator", Ares: "valorant/ares", Odin: "valorant/odin", Knife: "valorant/melee" },
   V: {} };
 function xGmFiles() { const o = {}; for (const w in XGM.F) o[XGM.F[w]] = "models/" + XGM.F[w] + ".glb"; return o; }
 function xGmLoad() {
@@ -4853,7 +4857,7 @@ var ads = 0; // 0 hip, 1 light ADS (1.25x), 2 Operator scope; every mode but Sur
 function setScope(on) {
   du.scoped = !!on && running && mode === "duel" && du.w === "op" && du.reload <= 0 && du.wait <= 0;
   const gm = mode !== "duel" && mode !== "surf", w = gm && player ? (xTdfOp() ? "Operator" : wName()) : "";
-  ads = du.scoped ? 2 : !!on && !(xCU > performance.now()) && running && gm && player && player.hp > 0 && rw !== "knife" && reloading <= 0 && !(mode === "five" && FV.buy > 0 && FV.menu) ? (w === "Operator" || w === "Marshal" || w === "Outlaw" ? 2 : { Vandal: 1, Phantom: 1, Spectre: 1, Stinger: 1, Sheriff: 1, Guardian: 1, Bulldog: 1, Bucky: 1, Ares: 1, Odin: 1 }[w] || 0) : 0;
+  ads = du.scoped ? 2 : !!on && !(xCU > performance.now()) && running && gm && player && player.hp > 0 && rw !== "knife" && reloading <= 0 && !(mode === "five" && FV.buy > 0 && FV.menu) ? (w === "Operator" || w === "Marshal" || w === "Outlaw" ? 2 : { Vandal: 1, Phantom: 1, Spectre: 1, Stinger: 1, Sheriff: 1, Guardian: 1, Warden: 1, Bulldog: 1, Bucky: 1, Ares: 1, Odin: 1 }[w] || 0) : 0;
   camera.fov = ads === 2 ? (w === "Operator" ? 33 : 24) : ads === 1 ? 63 : 75; camera.updateProjectionMatrix(); // fallback only: the SCOPE pass wrapper sets the real per-weapon zoom and eases it
   hudS($("scope"), "display", ads === 2 ? "block" : "none"); hudS($("cross"), "display", ads === 2 ? "none" : ""); // perf pass 145: diffed
   const dead = mode !== "duel" && player && player.hp <= 0;
@@ -5030,7 +5034,7 @@ function xBuildTeams() { let me = "Jett"; try { me = J.pick || "Jett"; } catch (
   let en = []; try { en = xDraw(5, F_MATES.slice()); } catch (e) {} if (!en || en.length !== 5 || new Set(en).size !== 5) en = xDraw(5, []); // no shared names with mates, so the scoreboard keeps 10 distinct rows
   F_EN.splice(0, F_EN.length, ...en); xTmLocked = false; }
 const FV = { you: 0, them: 0, atk: true, cr: 800, buy: 0, pri: null, sec: "Classic", menu: false, sp: { st: "", site: "" }, to: 0, cat: 0, bs: {}, alive: false, arm: 0 }; xFvOK = true;
-const BUY = [["Sidearms", [["Classic", 0], ["Shorty", 300], ["Frenzy", 450], ["Ghost", 500], ["Sheriff", 800]]], ["SMGs", [["Stinger", 1100], ["Spectre", 1600]]], ["Rifles", [["Bulldog", 2050], ["Guardian", 2250], ["Phantom", 2900], ["Vandal", 2900]]], ["Snipers", [["Marshal", 950], ["Outlaw", 2400], ["Operator", 4700]]], ["Armor", [["Light Armor", 400, 25], ["Regen Shield", 650, 25], ["Heavy Armor", 1000, 50]]], ["Shotguns", [["Bucky", 850], ["Judge", 1850]]], ["Machine guns", [["Ares", 1600], ["Odin", 3200]]]];
+const BUY = [["Sidearms", [["Classic", 0], ["Shorty", 300], ["Frenzy", 450], ["Ghost", 500], ["Bandit", 600], ["Sheriff", 800]]], ["SMGs", [["Stinger", 1100], ["Spectre", 1600]]], ["Rifles", [["Bulldog", 2050], ["Guardian", 2250], ["Warden", 2900], ["Phantom", 2900], ["Vandal", 2900]]], ["Snipers", [["Marshal", 950], ["Outlaw", 2400], ["Operator", 4700]]], ["Armor", [["Light Armor", 400, 25], ["Regen Shield", 650, 25], ["Heavy Armor", 1000, 50]]], ["Shotguns", [["Bucky", 850], ["Judge", 1850]]], ["Machine guns", [["Ares", 1600], ["Odin", 3200]]]];
 const capC = (n) => Math.min(9000, n);
 const BUY_SIL = { // look pass: flat white gun silhouettes, viewBox 64 x 20
   Classic: "M20 5h22v4H32l-2 9h-6l2-9h-6z",
@@ -5040,6 +5044,8 @@ const BUY_SIL = { // look pass: flat white gun silhouettes, viewBox 64 x 20
   Frenzy: "M18 5h26v4H35l-1 3h-2l-2 6h-6l2-6h-2l-1-3h-5z",
   Ghost: "M4 6h16V5h26v4H35l-2 9h-6l2-9h-5l-1-1H20V8H4z",
   Guardian: "M0 7h12l2-2h40v3h10v2H50v2H36l-3 7h-5l2-7h-8l-2 4H6l3-4H0z",
+  Warden: "M0 7h12l2-2h36v3h14v2H48v2H34l-3 7h-5l2-7h-4v5h-4v-5h-2l-2 4H4l3-4H0z",
+  Bandit: "M18 5h28v4H34l-2 9h-6l2-9h-2l-2-1h-6z",
   Phantom: "M0 7h10l2-2h32v2h8v1h12v3H44v2H34l-3 7h-5l2-7h-7l-2 2H5l3-3H0z",
   Vandal: "M0 7h12l2-2h34v3h14v2H48v2H34l-3 7h-5l2-7h-8l-2 4H4l3-4H0z",
   Operator: "M0 8h12v-1h6V3h18v4h-4v1h32v2H34v2H24l-2 6h-5l2-6H6l-4 3H0z",
@@ -5080,11 +5086,11 @@ function xRollSmall() { let me = "Jett"; try { me = J.pick || "Jett"; } catch (e
   if (!ok) MATES.splice(0, MATES.length, ...xDraw(2, [me])); }
 function fBotBuy(n) { // rifle + heavy shields at 3900+, else Spectre or Sheriff, else save
   const s = FV.bs[n]; if (!s.alive) { s.w = "Classic"; s.arm = 0; s.rgn = undefined; } const c0 = s.cr;
-  const rifle = () => /^(Vandal|Phantom|Bulldog|Marshal|Operator|Odin)$/.test(s.w), prim = () => rifle() || /^(Judge|Bucky|Ares)$/.test(s.w);
+  const rifle = () => /^(Vandal|Phantom|Warden|Bulldog|Marshal|Operator|Odin)$/.test(s.w), prim = () => rifle() || /^(Judge|Bucky|Ares)$/.test(s.w);
   const def = F_MATES.includes(n) ? !FV.atk : FV.atk;
   if (!rifle() && def && s.cr >= 4200 && Math.random() < 0.08) { s.w = "Odin"; s.cr -= 3200; } // defence full buy: Odin rarely (8%)
   else if (!prim() && s.cr >= 1600 && s.cr < 3900 && Math.random() < 0.15) { s.w = "Ares"; s.cr -= 1600; } // half-buy: Ares 15%
-  else if (!rifle() && s.cr >= 3900) { s.w = Math.random() < 0.5 ? "Vandal" : "Phantom"; s.cr -= 2900; }
+  else if (!rifle() && s.cr >= 3900) { const y = Math.random(); s.w = y < 0.5 ? "Vandal" : y < 0.9 ? "Phantom" : "Warden"; s.cr -= 2900; } // Warden 10 % of rifle buys (= server bot-brain buyFor)
   else if (!prim() && def && s.cr >= 1850 && Math.random() < 0.25) { s.w = "Judge"; s.cr -= 1850; } // defence half-buy: Judge 25%
   else if (!rifle() && s.cr >= 2050 && Math.random() < 0.4) { s.w = "Bulldog"; s.cr -= 2050; } // half-buy: Bulldog sometimes
   else if (!rifle() && s.cr >= 1350 && Math.random() < 0.06) { s.w = "Marshal"; s.cr -= 950; } // Marshal rarely
@@ -5093,6 +5099,7 @@ function fBotBuy(n) { // rifle + heavy shields at 3900+, else Spectre or Sheriff
   else if (!/^(Spectre|Stinger)$/.test(s.w) && s.cr >= 1100 && s.cr < 3900 && Math.random() < 0.3) { s.cr -= 1100; s.w = "Stinger"; } // force-buy: Stinger 30%
   else if (s.w !== "Spectre" && s.cr >= 1600) { s.cr -= 1600; s.w = "Spectre"; }
   else if (s.w === "Classic" && s.cr >= 450 && s.cr < 1600 && Math.random() < 0.3) { s.cr -= 450; s.w = "Frenzy"; } // pistol/eco: Frenzy 30%
+  else if (s.w === "Classic" && s.cr >= 600 && s.cr < 1600 && Math.random() < 0.3) { s.cr -= 600; s.w = "Bandit"; } // pistol/eco: Bandit 30% of the rest
   else if (s.w === "Classic" && xChHH(n)) { s.w = WEAP.Headhunter ? "Headhunter" : "Sheriff"; s.hh = 1; } // eco: bot Chamber takes his free Headhunter
   else if (s.w === "Classic" && s.cr >= 800) { s.cr -= 800; s.w = "Sheriff"; }
   try { xBBuy(n, s); } catch (e) {} // abilities: same charges and credit costs as the player's KITS
@@ -5104,7 +5111,7 @@ function fBotBuy(n) { // rifle + heavy shields at 3900+, else Spectre or Sheriff
 // different weapon for the same slot (or heavy over light shields) refunds the one bought this round first, as in Valorant.
 const BUY_COLS = [[0, "Sidearms"], [1, "SMGs"], [5, "Shotguns"], [2, "Rifles"], [3, "Snipers"], [6, "Heavies"]];
 const bItem = (n) => BUY.flatMap((c) => c[1]).find((x) => x[0] === n);
-const bSide = (n) => /^(Classic|Shorty|Frenzy|Ghost|Sheriff)$/.test(n);
+const bSide = (n) => /^(Classic|Shorty|Frenzy|Ghost|Bandit|Sheriff)$/.test(n);
 function bLog() { const r = FV.you + FV.them; if (!FV.bt || FV.btR !== r) { FV.bt = []; FV.btR = r; FV.req = null; FV.reqBy = null; FV.reqNo = false; } return FV.bt; }
 function bBack(n, c) { try { if (c > 0 && SB[n]) SB[n].sp = Math.max(0, (SB[n].sp || 0) - c); } catch (e) {} }
 function bMin() { if (FV.rep) return repCr(FV.you + FV.them + 1); const lb = [1900, 2400, 2900][Math.min((FV.lsY || 0) + 1, 3) - 1]; return capC((FV.sw ? 4000 : FV.cr) + lb); } // credits next round if this one is lost (loss bonus)
@@ -10144,8 +10151,8 @@ window.addEventListener("keydown", (e) => { // G: throw the Spike 2 m forward
   fsM.position.set(s.x, 0.4, s.z); fsM.visible = true; fsSet(); feed("You dropped the Spike");
 });
 // Weapon drops (5v5 / Swiftplay / Spike Rush): a death drops the primary (or sidearm) as a floor gun; pooled ≤16 meshes, cleared every round
-const XD = { L: [], P: [], n: 0, f: 0, geo: null, mat: null, SIDE: { Classic: 1, Shorty: 1, Frenzy: 1, Ghost: 1, Sheriff: 1 },
-  R: { Classic: 0, Shorty: 1, Frenzy: 2, Ghost: 3, Sheriff: 4, Stinger: 5, Bucky: 6, Spectre: 7, Judge: 8, Bulldog: 9, Marshal: 10, Ares: 11, Guardian: 12, Odin: 13, Outlaw: 13, Phantom: 14, Vandal: 14, Operator: 15 } };
+const XD = { L: [], P: [], n: 0, f: 0, geo: null, mat: null, SIDE: { Classic: 1, Shorty: 1, Frenzy: 1, Ghost: 1, Bandit: 1, Sheriff: 1 },
+  R: { Classic: 0, Shorty: 1, Frenzy: 2, Ghost: 3, Bandit: 3.5, Sheriff: 4, Stinger: 5, Bucky: 6, Spectre: 7, Judge: 8, Bulldog: 9, Marshal: 10, Ares: 11, Guardian: 12, Odin: 13, Outlaw: 13, Warden: 14, Phantom: 14, Vandal: 14, Operator: 15 } };
 const xdOn = () => mode === "five" && !FV.dm && !(typeof NET !== "undefined" && NET.socket); // online rooms: the server owns floor guns (netFloor in the online block)
 const xdRank = (w) => (w ? (XD.R[w] != null ? XD.R[w] : 5) : -1);
 function xdMesh() {
@@ -10765,7 +10772,7 @@ skGroups();
 }; }
 // FEEL pass: Valorant ADS. Per-weapon zoom, 0.12 s eased FOV + viewmodel, Vandal/Phantom edge tint, ADS fire rate x0.9, move x0.76, kick x0.85; Classic alt = 3-round burst, Sheriff no alt; Operator unchanged
 var xAD = { k: 0, p: 0, z: 63, f: 75, tint: false, bs: 0, bt: 0 };
-const XZ = { Vandal: 1.25, Phantom: 1.25, Bulldog: 1.25, Guardian: 1.5, Spectre: 1.15, Stinger: 1.15, Bucky: 1.15, Ares: 1.25, Odin: 1.25 };
+const XZ = { Vandal: 1.25, Phantom: 1.25, Bulldog: 1.25, Guardian: 1.5, Warden: 2, Spectre: 1.15, Stinger: 1.15, Bucky: 1.15, Ares: 1.25, Odin: 1.25 };
 // SCOPE pass: one zoom state owns camera.fov. xSC.z = current zoom (1 = 75° hip), eased to xSC.tz in 0.12 s in / 0.09 s out; forced unscopes snap
 var XSZ = { Operator: [2.5, 5], Marshal: [3.5], Outlaw: [3.5] }, xSC = { lv: 0, z: 1, z0: 1, tz: 1, t: 1, soft: 0 };
 function xSCf(z) { return (2 * Math.atan(Math.tan((37.5 * Math.PI) / 180) / z) * 180) / Math.PI; } // zoom -> vertical FOV
@@ -12148,7 +12155,7 @@ html.xt-nocm .x-cmb{display:none!important}
 })();
 // ---- DEATHMATCH: Val-style FFA on the 5v5 map/bot/weapon systems (mode "five" + FV.dm) ----
 const DM = { win: 40, len: 540, k: {}, d: {}, menu: false, prt: 0, pp: 0, ph: 0, lbT: 0, over: null, el: null, lb: null, lbS: "", pts: null };
-const DM_C = { Rifles: ["Bulldog", "Guardian", "Phantom", "Vandal"], SMGs: ["Stinger", "Spectre"], Snipers: ["Marshal", "Outlaw", "Operator"], Sidearms: ["Classic", "Shorty", "Frenzy", "Ghost", "Sheriff"] };
+const DM_C = { Rifles: ["Bulldog", "Guardian", "Warden", "Phantom", "Vandal"], SMGs: ["Stinger", "Spectre"], Snipers: ["Marshal", "Outlaw", "Operator"], Sidearms: ["Classic", "Shorty", "Frenzy", "Ghost", "Bandit", "Sheriff"] };
 Object.keys(DM_C).forEach((c) => { DM_C[c] = DM_C[c].filter((n) => !!WEAP[n]); });
 const DM_BW = ["Vandal", "Phantom", "Vandal", "Phantom", "Spectre", "Guardian", "Operator", "Sheriff"].filter((n) => !!WEAP[n]);
 const dmBW = () => DM_BW[Math.floor(Math.random() * DM_BW.length)] || "Classic";
@@ -12156,7 +12163,7 @@ const dmBW = () => DM_BW[Math.floor(Math.random() * DM_BW.length)] || "Classic";
 // VALORANT stages (wiki.playvalorant.com/en-us/Team_Deathmatch: stages 1-3 75 s each, stage 4 345 s; each stage its own guns):
 // a Stage 1 sidearm is kept all match, from Stage 2 the gun comes from the CURRENT stage only (Bandit is not in this game).
 // Same table and rule as the server (simulation.js TDM_STAGES / tdmStage / tdmAllowed). tdmTier() = the stage index 0-3.
-const TDM_C = { "Stage 1": ["Classic", "Frenzy", "Ghost"], "Stage 2": ["Sheriff", "Stinger", "Ares"], "Stage 3": ["Spectre", "Ares", "Bulldog", "Guardian"], "Stage 4": ["Phantom", "Vandal"] };
+const TDM_C = { "Stage 1": ["Classic", "Frenzy", "Ghost", "Bandit"], "Stage 2": ["Sheriff", "Stinger", "Ares"], "Stage 3": ["Spectre", "Ares", "Bulldog", "Guardian"], "Stage 4": ["Phantom", "Vandal"] };
 Object.keys(TDM_C).forEach((c) => { TDM_C[c] = TDM_C[c].filter((n) => !!WEAP[n]); });
 const TDM_T = { "Stage 1": 0, "Stage 2": 1, "Stage 3": 2, "Stage 4": 3 }, TDM_AT = [0, 75, 150, 225];
 const TDM_BW = Object.keys(TDM_C).map((c) => TDM_C[c]);
@@ -12164,7 +12171,7 @@ const tdmTier = () => { const e = DM.len - timeLeft; return e >= 225 ? 3 : e >= 
 // TDM armour by loadout (wiki Team_Deathmatch: "The amount of armor or shield a player has each stage depends on the gun they have
 // chosen for that stage"): r = Regen Shield (25 + 50 pool), l = Light 25, h = Heavy 50, 0 = none. A gun outside the stage's table
 // (no stage pick yet) takes its Stage 1 armour. = server/src/simulation.js TDM_ARMOR / tdmArmor (work/test_tdm_armor_offline.cjs).
-const TDM_ARM = [{ Classic: "r", Frenzy: 0, Ghost: 0 }, { Sheriff: "l", Stinger: "h", Ares: "l" }, { Spectre: "h", Ares: "h", Bulldog: "h", Guardian: "l" }, { Phantom: "h", Vandal: "h" }];
+const TDM_ARM = [{ Classic: "r", Frenzy: 0, Ghost: 0, Bandit: 0 }, { Sheriff: "l", Stinger: "h", Ares: "l" }, { Spectre: "h", Ares: "h", Bulldog: "h", Guardian: "l" }, { Phantom: "h", Vandal: "h" }];
 function tdmArmOf(t, w) { const T = TDM_ARM[Math.max(0, Math.min(3, t | 0))], k = Object.prototype.hasOwnProperty.call(T, w) ? T[w] : (TDM_ARM[0][w] ?? 0); return k === "r" ? { a: 25, rg: XRGN.pool } : { a: k === "h" ? 50 : k === "l" ? 25 : 0, rg: undefined }; }
 function tdmArmSet(u, w) { if (!FV.tdm || FV.esc || !u) return; const A = tdmArmOf(tdmTier(), w); u.armor = A.a; u.rgn = A.rg; u.rgnAt = 0; }
 const tdmOk = (n, st) => n === "Knife" || TDM_C["Stage 1"].includes(n) || TDM_BW[st].includes(n);
@@ -12393,7 +12400,7 @@ function dmProtHud() { const on = running && mode === "five" && FV.dm && !!playe
 // ---- SPIKE RUSH: 5v5 systems, first to 4 (max 7), no economy, one random gun for everyone each round, every attacker carries a Spike ----
 // Weapons and shields by round of the half (wiki Spike_Rush "Weapons"; = server/src/modes.js SR_LOADOUT): round 1 any sidearm, no
 // shields; round 2 a primary of 2050 or less, Light (25); round 3 and the Endgame a primary of 2250 or more, Heavy (50).
-const SR_LOAD = [{ w: ["Classic", "Shorty", "Frenzy", "Ghost", "Sheriff"], a: 0 }, { w: ["Stinger", "Spectre", "Bucky", "Judge", "Bulldog", "Marshal", "Ares"], a: 25 }, { w: ["Guardian", "Phantom", "Vandal", "Outlaw", "Operator", "Odin"], a: 50 }];
+const SR_LOAD = [{ w: ["Classic", "Shorty", "Frenzy", "Ghost", "Bandit", "Sheriff"], a: 0 }, { w: ["Stinger", "Spectre", "Bucky", "Judge", "Bulldog", "Marshal", "Ares"], a: 25 }, { w: ["Guardian", "Warden", "Phantom", "Vandal", "Outlaw", "Operator", "Odin"], a: 50 }];
 const srLoad = () => { const n = FV.you + FV.them; return SR_LOAD[n >= 6 ? 2 : n % 3]; }; // n rounds played: 3-3 -> Endgame (round-3 set)
 const SR_SIDE = SR_LOAD[0].w;
 const SR = { orbs: [], geo: null, mat: null };
@@ -12588,11 +12595,11 @@ try {
 // Quaternius-body arms were removed with the stand-in rigs; only the per-weapon grip geometry and rest offsets remain.
 // per weapon, VMS model space (metres, barrel -Z, +Y up): right grip top z,y, grip bottom z,y, left support z,y, left type (r handguard, p cup the right hand, f vertical foregrip + its bottom z,y)
 var FPG = {
-  Classic: [-0.007, -0.017, 0.004, -0.126, 0, 0, "p"], Sheriff: [0.022, -0.029, 0.089, -0.15, 0, 0, "p"], Ghost: [-0.033, -0.036, 0, -0.171, 0, 0, "p"],
+  Classic: [-0.007, -0.017, 0.004, -0.126, 0, 0, "p"], Sheriff: [0.022, -0.029, 0.089, -0.15, 0, 0, "p"], Ghost: [-0.033, -0.036, 0, -0.171, 0, 0, "p"], Bandit: [0.022, -0.029, 0.089, -0.15, 0, 0, "p"] /* = Sheriff grip until measured on the native model */,
   Frenzy: [-0.004, -0.014, 0.022, -0.107, 0, 0, "p"], Shorty: [0.033, -0.007, 0.1, -0.057, 0, 0, "p"],
   Spectre: [-0.056, -0.043, -0.022, -0.171, -0.34, -0.035, "r"], Stinger: [-0.056, -0.021, -0.044, -0.15, -0.333, -0.03, "f", -0.336, -0.12],
   Bucky: [0.111, 0, 0.156, -0.05, -0.3, -0.029, "r"], Judge: [0.044, 0.007, 0.078, -0.036, -0.289, -0.014, "r"],
-  Bulldog: [0.011, -0.036, 0.067, -0.129, -0.267, -0.007, "r"], Phantom: [0.056, -0.05, 0.122, -0.179, -0.289, -0.029, "r"], Vandal: [0.078, -0.043, 0.122, -0.143, -0.278, -0.017, "r"],
+  Bulldog: [0.011, -0.036, 0.067, -0.129, -0.267, -0.007, "r"], Phantom: [0.056, -0.05, 0.122, -0.179, -0.289, -0.029, "r"], Vandal: [0.078, -0.043, 0.122, -0.143, -0.278, -0.017, "r"], Warden: [0.078, -0.043, 0.122, -0.143, -0.278, -0.017, "r"] /* = Vandal grip until measured */,
   Guardian: [0.144, -0.036, 0.178, -0.086, -0.267, -0.047, "r"], Marshal: [0.089, -0.029, 0.144, -0.1, -0.267, -0.026, "r"], Outlaw: [0.116, -0.021, 0.138, -0.079, -0.222, -0.017, "r"],
   Operator: [0.122, -0.05, 0.189, -0.164, -0.311, -0.036, "r"], Ares: [0.067, -0.043, 0.1, -0.15, -0.311, -0.031, "r"], Odin: [0.044, -0.064, 0.133, -0.207, -0.4, 0.005, "r"] };
 // per-class viewmodel rest offset on top of VMP (camera space, metres; ry inward yaw): sidearms sit lower and further right than rifles, arm out toward the corner (Valorant's
@@ -15135,7 +15142,7 @@ let netWeapon='',netReload=false,netEquipWant=null,netEquipUntil=0,netRec=false;
 // viewmodel / HUD are rebuilt (onSkin) even when that slot was already in hand. DM / TDM used to write every server gun into
 // the primary slot without onSkin, so the viewmodel and the HUD gun name kept the previous gun (online 'ghost' report: a
 // pistol in hand with a primary named on the HUD) while shots used the server's gun.
-const NET_SIDEARMS=['Classic','Shorty','Frenzy','Ghost','Sheriff'];
+const NET_SIDEARMS=['Classic','Shorty','Frenzy','Ghost','Bandit','Sheriff'];
 function netAdoptWeapon(n){if(!WEAP[n])return;const slot=NET_SIDEARMS.includes(n)?'pis':'pri';netRec=true;try{if((slot==='pri'?FV.pri:FV.sec)!==n)bEquip(n,slot);if(rw!==slot)swapW(slot);else{onSkin();try{setScope(false);}catch(er){}updHud();}}finally{netRec=false;}}
 // A Deathmatch / TDM loadout pick (dmGive: the loadout menu, the TDM stage switch) changes the gun without swapW, so its equip
 // went out only with the next 50 ms input tick and a snapshot that landed first (still naming the old gun) put the old gun
@@ -15383,7 +15390,7 @@ const NET_MODE_DESC={dm:'Deathmatch · free-for-all · first to 40 kills · 9:00
 // the left hand onto the weapon's own Left_Hand_Target socket with two-bone IK, hands are oriented to the gun,
 // and fingers curl from their bind pose (index finger along the trigger). One-shots that move the arms
 // (reload, cast, throw, plant), the knife and deaths fade the grip out to the authored clip.
-var XGRIP = { side: { Classic: 1, Shorty: 1, Frenzy: 1, Ghost: 1, Sheriff: 1 }, err: 0,
+var XGRIP = { side: { Classic: 1, Shorty: 1, Frenzy: 1, Ghost: 1, Bandit: 1, Sheriff: 1 }, err: 0,
   // curl angles (rad) for joints 1..3 per finger
   curl: { rifleR: { Index: [0.25, 0.55, 0.35], Middle: [1.15, 1.25, 0.8], Ring: [1.2, 1.25, 0.8], Pinky: [1.25, 1.2, 0.8], Thumb: [0.15, 0.35, 0.3] },
     rifleL: { Index: [0.85, 0.95, 0.6], Middle: [0.9, 1.0, 0.7], Ring: [0.95, 1.0, 0.7], Pinky: [1.0, 1.0, 0.7], Thumb: [0.3, 0.35, 0.25] },
@@ -15866,7 +15873,7 @@ function xEqT(k) { const t = XAB_EQT[J.pick]; return (t && t[k]) || XABT.draw; }
 // weapon ... at its normal, fast, or instant equip time"). Was a flat 0.45 s, gun usable at once after it. Empress +10 %.
 const XAB_UNEQ = { Jett: { c: 0.25, e: 0.2 }, Phoenix: { c: 0.5, q: 0.7, e: 0.48 }, Sova: { c: 0.7, q: 0.7, e: 0.7, x: 1 }, Sage: { c: 0.7, q: 0.4, e: 0.7, x: 1 }, Reyna: { c: 0.5, q: 0.5, e: 0.6 }, Omen: { c: 0.7, q: 0.7, e: 0.7 }, Killjoy: { c: 0.7, q: 0.75, e: 0.7, x: 0.15 }, Raze: { c: 0, q: 0.7, e: 0.7 }, Skye: { e: 0.85, x: 0.55 }, Breach: { c: 0.7, q: 0.7, e: 0.7, x: 0.4 }, Cypher: { c: 0.7, q: 0.7, e: 0.7, x: 1 }, Chamber: { c: 0.7, e: 0.6 } };
 const XAB_REEQI = { Phoenix: "e", Reyna: "c", Chamber: "e" };
-const XAB_REEQ = { Classic: [0.45, 0.15], Shorty: [0.45, 0.15], Frenzy: [0.45, 0.15], Ghost: [0.45, 0.15], Sheriff: [0.6, 0.2], Stinger: [0.45, 0.15], Spectre: [0.45, 0.15], Bucky: [0.6, 0.2], Judge: [0.6, 0.2], Bulldog: [0.6, 0.2], Guardian: [0.6, 0.2], Phantom: [0.6, 0.2], Vandal: [0.6, 0.2], Marshal: [0.6, 0.2], Outlaw: [0.6, 0.2], Operator: [0.9, 0.5], Ares: [0.75, 0.25], Odin: [0.75, 0.25], Knife: [0.3, 0] };
+const XAB_REEQ = { Classic: [0.45, 0.15], Shorty: [0.45, 0.15], Frenzy: [0.45, 0.15], Ghost: [0.45, 0.15], Bandit: [0.45, 0.15], Sheriff: [0.6, 0.2], Stinger: [0.45, 0.15], Spectre: [0.45, 0.15], Bucky: [0.6, 0.2], Judge: [0.6, 0.2], Bulldog: [0.6, 0.2], Guardian: [0.6, 0.2], Warden: [0.6, 0.2], Phantom: [0.6, 0.2], Vandal: [0.6, 0.2], Marshal: [0.6, 0.2], Outlaw: [0.6, 0.2], Operator: [0.9, 0.5], Ares: [0.75, 0.25], Odin: [0.75, 0.25], Knife: [0.3, 0] };
 function xUneqT(k, ag = J.pick) { const t = XAB_UNEQ[ag]; return t && Number.isFinite(t[k]) ? t[k] : XABT.rec; }
 function xReeqT(k, w, ag = J.pick) { const r = XAB_REEQ[w] || XAB_REEQ.Classic, i = (XAB_REEQI[ag] || "").includes(k); let s = 1; try { s = xStimK() || 1; } catch (e) {} return r[i ? 1 : 0] / s; }
 function xEqWeap() { try { return vfWeapon(); } catch (e) { return typeof rw !== "undefined" && rw === "knife" ? "Knife" : "Classic"; } }
@@ -16980,15 +16987,15 @@ if (typeof xUbPost === "function") { const hp0 = xUbPost; xUbPost = function (M)
  // the shop has them. def: defending (Operator / Odin / Judge more likely).
  function buyFor(call,credits,P,rand,def){
   const out={weapon:null,side:null,armor:null};let c=credits;const take=(k,n,p)=>{if(c>=p){out[k]=n;c-=p;return true;}return false;};
-  if(call==='pistol'){const x=rand();if(x<.4)take('armor','light',400);else if(x<.65)take('side','Ghost',500);else if(x<.8)take('side','Sheriff',800);else if(x<.9)take('side','Frenzy',450);return out;}
+  if(call==='pistol'){const x=rand();if(x<.4)take('armor','light',400);else if(x<.65)take('side','Ghost',500);else if(x<.8)take('side','Sheriff',800);else if(x<.9)take('side','Frenzy',450);else take('side','Bandit',600);return out;}
   if(call==='save'){if(c>=3400&&rand()<.3)take('side','Sheriff',800);return out;}
-  if(call==='eco'){const x=rand();if(x<.35)take('side','Sheriff',800);else if(x<.6)take('side','Ghost',500);else if(x<.75)take('weapon','Stinger',1100);if(rand()<.5)take('armor','light',400);return out;}
+  if(call==='eco'){const x=rand();if(x<.35)take('side','Sheriff',800);else if(x<.6)take('side','Ghost',500);else if(x<.75)take('weapon','Stinger',1100);else if(x<.85)take('side','Bandit',600);if(rand()<.5)take('armor','light',400);return out;}
   if(call==='force'||call==='half'){const x=rand();
    if(x<.3)take('weapon','Spectre',1600);else if(x<.5)take('weapon','Bulldog',2050);else if(x<.62)take('weapon',def?'Judge':'Stinger',def?1850:1100);else if(x<.72)take('weapon','Marshal',950);else if(x<.82)take('weapon','Ares',1600);else take('weapon','Spectre',1600);
    take('armor',c>=1000+(call==='half'?400:0)?'heavy':'light',c>=1000?1000:400);return out;}
   // full
   const x=rand(),awp=(def?.16:.08)+P.patience*.08;
-  if(c>=5700&&x<awp){take('weapon','Operator',4700);}else if(def&&c>=4200&&x<awp+.05)take('weapon','Odin',3200);else take('weapon',rand()<.55?'Vandal':'Phantom',2900);
+  if(c>=5700&&x<awp){take('weapon','Operator',4700);}else if(def&&c>=4200&&x<awp+.05)take('weapon','Odin',3200);else{const y=rand();take('weapon',y<.5?'Vandal':y<.9?'Phantom':'Warden',2900);}/* Warden 10 % of rifle buys (inferred: a newer, less picked rifle; no published pick rate used) */
   if(!take('armor','heavy',1000))take('armor','light',400);if(c>=800&&rand()<.25)take('side',rand()<.5?'Sheriff':'Ghost',rand()<.5?800:500);
   return out;
  }

@@ -2,8 +2,8 @@
 // looking at and swaps it with the gun in that slot (the old one lands where the new one lay). Walking over a
 // gun with that slot empty picks it up. The server owns every floor gun, its ammo and every swap.
 import {weapons,reserveOf,stimK} from './simulation.js';
-export const SIDEARMS=new Set(['Classic','Shorty','Frenzy','Ghost','Sheriff']);
-const RANK={Classic:0,Shorty:1,Frenzy:2,Ghost:3,Sheriff:4,Stinger:5,Bucky:6,Spectre:7,Judge:8,Bulldog:9,Marshal:10,Ares:11,Guardian:12,Odin:13,Outlaw:13,Phantom:14,Vandal:14,Operator:15};
+export const SIDEARMS=new Set(['Classic','Shorty','Frenzy','Ghost','Bandit','Sheriff']);
+const RANK={Classic:0,Shorty:1,Frenzy:2,Ghost:3,Bandit:3.5,Sheriff:4,Stinger:5,Bucky:6,Spectre:7,Judge:8,Bulldog:9,Marshal:10,Ares:11,Guardian:12,Odin:13,Outlaw:13,Warden:14,Phantom:14,Vandal:14,Operator:15};
 export const FLOOR_LIMIT=24,PICK_RANGE=2.5,AUTO_RANGE=1,DROPPER_GRACE=1.5;
 const droppable=w=>typeof w==='string'&&w!=='Knife'&&Object.hasOwn(weapons,w)&&!weapons[w].abilityOnly;
 const slotOf=w=>SIDEARMS.has(w)?'secondary':'primary';

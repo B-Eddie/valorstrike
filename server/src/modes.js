@@ -59,10 +59,10 @@ export class EscalationSimulation extends Simulation{
 }
 
 // ---- Spike round variants ----
-const SIDEARMS=['Classic','Shorty','Frenzy','Ghost','Sheriff'];
+const SIDEARMS=['Classic','Shorty','Frenzy','Ghost','Bandit','Sheriff'];
 // Spike Rush loadouts (wiki Spike_Rush "Weapons"): round 1 any sidearm (the game's Bandit is not in this game) with no shields;
 // round 2 a primary of 2050 or less with Light (25); round 3 and Endgame a primary of 2250 or more with Heavy (50).
-export const SR_LOADOUT=Object.freeze([{w:SIDEARMS,a:0},{w:['Stinger','Spectre','Bucky','Judge','Bulldog','Marshal','Ares'],a:25},{w:['Guardian','Phantom','Vandal','Outlaw','Operator','Odin'],a:50}]);
+export const SR_LOADOUT=Object.freeze([{w:SIDEARMS,a:0},{w:['Stinger','Spectre','Bucky','Judge','Bulldog','Marshal','Ares'],a:25},{w:['Guardian','Warden','Phantom','Vandal','Outlaw','Operator','Odin'],a:50}]);
 // Per round in the half (1-based) and Endgame. credits: 'set' replaces, 'add' adds (cap 9000).
 export const VARIANT_RULES=Object.freeze({
  // Swiftplay: first to 5, 4-round halves, 4-4 goes to an Endgame round 9. Ult: 2 points at the start of each half (3 for 9-point
@@ -144,7 +144,7 @@ export class VariantSpikeSimulation extends SpikeSimulation{
 // a draw). A seat left empty (the player left; a dropped connection keeps the unit for the resume window) pauses the match
 // ('wait'): the player rejoining restarts the round (score kept); after 60 s the one still there wins by forfeit.
 export const SKM=Object.freeze({win:5,buyFirst:15,buy:3,end:3,armor:50,cap:1200,forfeit:60,loadHold:20,kit:Object.freeze({pri:'Vandal',sec:'Classic'})});
-const SKM_SIDE=Object.freeze(['Classic','Shorty','Frenzy','Ghost','Sheriff']);
+const SKM_SIDE=Object.freeze(['Classic','Shorty','Frenzy','Ghost','Bandit','Sheriff']);
 export class SkirmishSimulation extends Simulation{
  constructor(world,mode='skm',map='ascent',random=Math.random){super(world,'skm',map,random);this.gm='skm';this.maxHumans=2;this.minHumans=2;this.noBots=true;this.matchLen=SKM.cap;this.remaining=SKM.cap;this.maxKills=Infinity;this.roundWin=SKM.win;this.skm=this.skmFresh();}
  skmFresh(){return {r:0,sc:[0,0],ph:'room',t:0,lw:-1,why:'',at:0,waitAt:0,ld:0};}

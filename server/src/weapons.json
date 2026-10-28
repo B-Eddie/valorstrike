@@ -109,6 +109,37 @@
         }
       ]
     },
+    "Warden": {
+      "fireRate": 6.5,
+      "magazineSize": 18,
+      "runSpeedMultiplier": 0.8,
+      "equipTimeSeconds": 1,
+      "reloadTimeSeconds": 2.5,
+      "firstBulletAccuracy": 0.15,
+      "shotgunPelletCount": 1,
+      "wallPenetration": "EWallPenetrationDisplayType::Medium",
+      "feature": null,
+      "fireMode": null,
+      "altFireType": "EWeaponAltFireDisplayType::ADS",
+      "adsStats": {
+        "zoomMultiplier": 2,
+        "fireRate": 6.5,
+        "runSpeedMultiplier": 0.76,
+        "burstCount": 1,
+        "firstBulletAccuracy": 0.04
+      },
+      "altShotgunStats": null,
+      "airBurstStats": null,
+      "damageRanges": [
+        {
+          "rangeStartMeters": 0,
+          "rangeEndMeters": 50,
+          "headDamage": 200,
+          "bodyDamage": 50,
+          "legDamage": 42
+        }
+      ]
+    },
     "Bulldog": {
       "fireRate": 10,
       "magazineSize": 24,
@@ -323,6 +354,45 @@
           "headDamage": 66,
           "bodyDamage": 22,
           "legDamage": 18.7
+        }
+      ]
+    },
+    "Bandit": {
+      "fireRate": 5.1,
+      "magazineSize": 8,
+      "runSpeedMultiplier": 0.85,
+      "equipTimeSeconds": 0.75,
+      "reloadTimeSeconds": 1.5,
+      "firstBulletAccuracy": 0.275,
+      "shotgunPelletCount": -1,
+      "wallPenetration": "EWallPenetrationDisplayType::Medium",
+      "feature": null,
+      "fireMode": "EWeaponFireModeDisplayType::SemiAutomatic",
+      "altFireType": null,
+      "adsStats": null,
+      "altShotgunStats": null,
+      "airBurstStats": null,
+      "damageRanges": [
+        {
+          "rangeStartMeters": 0,
+          "rangeEndMeters": 10,
+          "headDamage": 152,
+          "bodyDamage": 39,
+          "legDamage": 33
+        },
+        {
+          "rangeStartMeters": 10,
+          "rangeEndMeters": 30,
+          "headDamage": 128,
+          "bodyDamage": 39,
+          "legDamage": 33
+        },
+        {
+          "rangeStartMeters": 30,
+          "rangeEndMeters": 50,
+          "headDamage": 112,
+          "bodyDamage": 34,
+          "legDamage": 28
         }
       ]
     },

@@ -31,7 +31,7 @@ has it, we don't), **note** (unpublished / approximation).
 
 | Item | 13.09 | Ours | Status |
 |---|---|---|---|
-| Warden: pitch recoil smoothed, 2nd-bullet error .25 -> .2, 3rd .6 -> .5 | [P1309] | no Warden in game | missing (see 1.2) |
+| Warden: pitch recoil smoothed, 2nd-bullet error .25 -> .2, 3rd .6 -> .5 | [P1309] | Warden added (see 1.2); per-bullet error steps not modelled (our spray = bloom per shot) | **FIXED** (gun added) / note |
 | Clove Pick-me-up 15 % -> 10 %, Not Dead Yet kill reward; Hush (new agent) | [P1309] | agents not in game | n/a |
 | Jett passive removed from the buy menu | [P1309] | Drift not listed in our buy menu (`buyMenu` lists C/Q/E only) | match |
 | Haste / Snapshot buff names + Haste timer bar | [P1309] | Jett/Raze have no Haste abilities; Neural Theft / Spycam reveal not renamed | note (UI wording; HUD lane) |
@@ -64,8 +64,8 @@ server) and the shared motor `vendor/valorant-feel.js` (= `server/src/motor.cjs`
 
 | Item | VALORANT | Ours | Status / action |
 |---|---|---|---|
-| **Bandit** (Sidearm, 600, Medium pen, semi 5.1/s, mag 8 / reserve 24, reload 1.5, equip .75/.45/.15, run 5.4, dmg 0-10 m 152/39/33, 10-30 m 128/39/33, 30-50 m 112/34/28, spread .275/.21 -> 1.97/1.48, +.5/1.2/2.7/7, recovery .4) | [W-Bandit] (12.00, buffed 13.00); also TDM Stage 1 + Spike Rush round 1 option | not in the game (no model, stats, buy slot) | **missing** - models exist at kingdomarchives.com/modelviewer/bandit (HTTP 200, same source as our 19 weapon models). Action: dedicated weapon-add lane (import model + FP clips, calibration rows, motor SPREAD/REC, prices, buy-menu slot, bots, TDM/SR loadouts, audio, kill-feed icon, tests) |
-| **Warden** (Rifle, 2900, Medium pen, auto 6.5/s, mag 18 / reserve 36, reload 2.5, equip 1/.6/.2, run 5.4, ADS 2x zoom x0.76 move, dmg 0-50 m 200/50/42 no falloff, spread .15/.13 -> 1/.85 (ADS .04/.034 -> 1.02/.87), +.8/3/6/10; 13.09: 2nd/3rd bullet error .2/.5) | [W-Warden], [P1309] | not in the game | **missing** - same action as Bandit (kingdomarchives.com/modelviewer/warden HTTP 200) |
+| **Bandit** (Sidearm, 600, Medium pen, semi 5.1/s, mag 8 / reserve 24, reload 1.5, equip .75/.45/.15, run 5.4, dmg 0-10 m 152/39/33, 10-30 m 128/39/33, 30-50 m 112/34/28, spread .275/.21 -> 1.97/1.48, +.5/1.2/2.7/7, recovery .4) | [W-Bandit] (12.00, buffed 13.00); TDM Stage 1 (no armour) + Spike Rush round 1 option | was not in the game | **FIXED** (parity-2): native model + FP/GN clips (Kingdom Archives), weapons.json / calibration (valorant-api), motor SPREAD + RECOVERY .4, prices, RESERVE, re-equip, sidearm slot (server floor/spike/modes, page bSide/XD/XGRIP/NET), buy menu (6 sidearms), bots (server bot-brain pistol/eco, page fBotBuy), TDM Stage 1, Spike Rush round 1, DM list. Tests `server/test-wiki-weapons.js`, `work/test_bandit_warden.cjs` (red before) |
+| **Warden** (Rifle, 2900, Medium pen, auto 6.5/s, mag 18 / reserve 36, reload 2.5, equip 1/.6/.2, run 5.4, ADS 2x zoom x0.76 move, dmg 0-50 m 200/50/42 no falloff, spread .15/.13 -> 1/.85 (ADS .04/.034 -> 1.02/.87), +.8/3/6/10; 13.09: 2nd/3rd bullet error .2/.5) | [W-Warden], [P1309] | was not in the game | **FIXED** (parity-2): same pipeline; spray rifle, ADS 2x (XZ), Spike Rush round 3 (>= 2250 rule; the wiki list predates it), bots 10 % of rifle buys (inferred). Notes: recoil weights (REC Bandit .8 / Warden .9) and FP grip rows (= Sheriff / Vandal) are approximations; fire / reload audio uses the procedural fallback (no reviewed Bandit / Warden cuts in `audio/manifest.json` yet); no skins catalog entries |
 
 ## 2. Armour / health
 
@@ -134,8 +134,7 @@ server) and the shared motor `vendor/valorant-feel.js` (= `server/src/motor.cjs`
 
 ## Fix plan (priority gunplay > economy > round flow > movement > misc)
 
-1. Gunplay: no value gaps in the 18 existing guns. Bandit + Warden are missing content - too large for this lane's
-   remaining budget alongside the gates; scoped as a follow-up "weapon-add" lane (model source verified).
+1. Gunplay: no value gaps in the 18 existing guns. Bandit + Warden added in vs-lane-parity2 (see 1.2).
 2. Economy: offline Swiftplay credits + ult + buy phase (page), server Swiftplay Endgame ult.
 3. Round flow: ult-orb 2 s capture + removal on plant (page).
 4. TDM per-loadout armour (server + page) if budget remains.

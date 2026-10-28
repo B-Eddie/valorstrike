@@ -5,7 +5,8 @@
 // prices, RESERVE, reloadTime) and on the page (its calibration file is weapons.json byte for byte; the buy menu prices;
 // XRSV). Plus the Outlaw's 13.01 scoped bloom (max spread 0 -> 2.25 deg, 0.15 s recovery; the second scoped shot at the
 // 2.75/s cadence ~2.14 deg) through the shared motor and a real server shot, unscoped unchanged; server motor == page motor.
-// Not in the game: the Warden (new rifle on the wiki); see the report.
+// Bandit (sidearm, v12.00, buffed v13.00) and Warden (rifle, v13.06, buffed v13.09): wiki.playvalorant.com/en-us/Bandit and
+// /en-us/Warden fetched 2026-10-28 (parity lane), stats = valorant-api.com/v1/weapons.
 import assert from 'node:assert/strict';import fs from 'node:fs';import {createRequire} from 'node:module';import Motor from './src/motor.cjs';
 import {Simulation,weapons,RESERVE,RELOAD_ROUND,reloadTime} from './src/simulation.js';
 const require=createRequire(import.meta.url),root=new URL('..',import.meta.url).pathname;
@@ -15,6 +16,7 @@ const WIKI={
  Shorty:[300,3,null,2,6,1.75,.75,5.4,15,[[0,7,22,11,9],[7,15,12,6,5],[15,50,6,3,2]]],
  Frenzy:[450,10,null,15,45,1.5,1,5.73,1,[[0,20,78,26,22],[20,50,63,21,17]]],
  Ghost:[500,6.75,null,13,39,1.5,.75,5.73,1,[[0,30,105,30,25],[30,50,87,25,21]]],
+ Bandit:[600,5.1,null,8,24,1.5,.75,5.73,1,[[0,10,152,39,33],[10,30,128,39,33],[30,50,112,34,28]]],
  Sheriff:[800,4,null,6,24,2.25,1,5.4,1,[[0,30,159,55,46],[30,50,145,50,42]]],
  Stinger:[1100,16,8.471,20,60,2.25,.75,5.73,1,[[0,15,67,27,22],[15,50,57,23,19]]],
  Spectre:[1600,13.33,12,30,90,2.25,.75,5.73,1,[[0,15,78,26,22],[15,30,66,22,18],[30,50,60,20,17]]],
@@ -22,6 +24,7 @@ const WIKI={
  Judge:[1850,3.5,null,5,15,2.2,1,5.06,12,[[0,10,34,17,14],[10,15,20,10,8],[15,50,14,7,5]]],
  Bulldog:[2050,10,6.316,24,72,2.5,1,5.4,1,[[0,50,115,35,29]]],
  Guardian:[2250,5.25,5.25,12,36,2.5,1,5.4,1,[[0,50,195,65,48]]],
+ Warden:[2900,6.5,6.5,18,36,2.5,1,5.4,1,[[0,50,200,50,42]]],
  Phantom:[2900,11,9.9,30,60,2.5,1,5.4,1,[[0,20,156,39,33],[20,50,140,35,29]]],
  Vandal:[2900,9.75,8.775,25,50,2.5,1,5.4,1,[[0,50,160,40,34]]],
  Marshal:[950,1.5,1.2,5,15,2.5,1.25,5.4,1,[[0,50,202,101,85]]],
@@ -31,7 +34,7 @@ const WIKI={
  Odin:[3200,12,15.6,100,200,5,1.25,5.13,1,[[0,30,95,38,32],[30,50,77,31,26]]]};
 const r2=n=>Math.round(n*100)/100,r3=n=>Math.round(n*1000)/1000;
 const guns=Object.keys(weapons).filter(w=>w!=='Knife'&&!weapons[w].abilityOnly).sort();
-assert.deepEqual(guns,Object.keys(WIKI).sort(),'the game\'s guns = the wiki table (Warden not in the game)');
+assert.deepEqual(guns,Object.keys(WIKI).sort(),'the game\'s guns = the wiki table (20 guns incl. Bandit + Warden)');
 // Server prices (spike.js buy table) and the page buy menu.
 const spike=fs.readFileSync(root+'server/src/spike.js','utf8'),PRICES=Function('return '+spike.match(/const prices=(\{[^}]*\})/)[1])();
 const html=fs.readFileSync(root+'index.html','utf8');
@@ -51,6 +54,9 @@ assert.equal(reloadTime({weapon:'Outlaw',ammo:1}),2.3,'Outlaw one barrel 2.3 s')
 {const g={window:{}};Function('window',fs.readFileSync(root+'models/valorant/weapon-calibration.js','utf8'))(g.window);
  assert.deepEqual(g.window.VALORANT_WEAPON_STATS,JSON.parse(fs.readFileSync(root+'server/src/weapons.json','utf8')),'page calibration == weapons.json');
  assert.deepEqual(Function('return '+html.match(/const XRSV = (\{[^}]*\});/)[1])(),{...RESERVE},'page XRSV == RESERVE');}
+// Bandit / Warden spread rows (wiki "Spread values"): Bandit .275/.21 -> 1.97/1.48, +.5/1.2/2.7/7, no ADS; Warden .15/.13 -> 1/.85,
+// +.8/3/6/10, ADS .04/.034 -> 1.02/.87; recovery Bandit .4 (v13.00 buff .45 -> .4).
+assert.deepEqual(Motor.SPREAD.Bandit,[.275,.21,1.97,1.48,.5,1.2,2.7,7]);assert.deepEqual(Motor.SPREAD.Warden,[.15,.13,1,.85,.8,3,6,10,.04,.034,1.02,.87]);assert.equal(Motor.recoveryTime('Bandit'),.4);
 // Outlaw 13.01 bloom: scoped first shot 0 deg; the second scoped shot (1/2.75 s later) ~2.14 deg; the bloom holds 2.25 deg for the
 // 0.15 s recovery; the spray resets after .375 s; unscoped spread stays 3.5 deg every shot.
 {const deg=t=>Math.atan(t)*180/Math.PI,p=weapons.Outlaw;

@@ -11,6 +11,6 @@ def run(slug):
     if not dest.exists():dest.write_bytes(fetch(a['Path']+a['File']+'.glb'))
  (OUT/'animations'/(slug+'.json')).write_text(json.dumps(out,indent=2));return slug
 if __name__=='__main__':
- slugs=['classic','shorty','frenzy','ghost','sheriff','stinger','spectre','bucky','judge','bulldog','guardian','phantom','vandal','marshal','outlaw','operator','ares','odin','melee']
+ slugs=['classic','shorty','frenzy','ghost','bandit','sheriff','stinger','spectre','bucky','judge','bulldog','guardian','warden','phantom','vandal','marshal','outlaw','operator','ares','odin','melee']
  with cf.ThreadPoolExecutor(max_workers=6) as ex:
   for s in ex.map(run,slugs):print(s,flush=True)

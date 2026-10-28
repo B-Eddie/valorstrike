@@ -41,7 +41,7 @@ def build(slug):
  return slug+' '+str(p.stat().st_size)
 if __name__=='__main__':
  import sys
- slugs=sys.argv[1:] or ['jett','phoenix','sova','sage','reyna','raze','killjoy','omen','skye','chamber','breach','cypher','classic','shorty','frenzy','ghost','sheriff','stinger','spectre','bucky','judge','bulldog','guardian','phantom','vandal','marshal','outlaw','operator','ares','odin','melee']
+ slugs=sys.argv[1:] or ['jett','phoenix','sova','sage','reyna','raze','killjoy','omen','skye','chamber','breach','cypher','classic','shorty','frenzy','ghost','bandit','sheriff','stinger','spectre','bucky','judge','bulldog','guardian','warden','phantom','vandal','marshal','outlaw','operator','ares','odin','melee']
  with cf.ThreadPoolExecutor(max_workers=6) as ex:
   jobs={ex.submit(build,s):s for s in slugs}
   for f in cf.as_completed(jobs):

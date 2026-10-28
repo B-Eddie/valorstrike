@@ -247,9 +247,9 @@ function step(P,input,dt,world){
 // max (Ares: min) spread standing / crouched, then the movement penalties added on top, crouch-walking / walking / running /
 // airborne. Rows with an ADS (alt-fire) entry list its first / max standing / crouched; the movement penalties are shared.
 // Scoped snipers have 0 first-shot spread but keep the full movement / airborne penalty.
-const SPREAD={Classic:[.4,.3,1.8,1.35,.5,1.1,2.3,7],Shorty:[4,3.4,4,3.4,.5,1,2,4],Frenzy:[.65,.55,1.7,1.45,.5,.8,2,7],Ghost:[.3,.23,1.65,1.24,.5,1.1,2.3,7],Sheriff:[.25,.19,2.75,2.06,.5,1.2,3,7],
+const SPREAD={Classic:[.4,.3,1.8,1.35,.5,1.1,2.3,7],Shorty:[4,3.4,4,3.4,.5,1,2,4],Frenzy:[.65,.55,1.7,1.45,.5,.8,2,7],Ghost:[.3,.23,1.65,1.24,.5,1.1,2.3,7],Bandit:[.275,.21,1.97,1.48,.5,1.2,2.7,7],Sheriff:[.25,.19,2.75,2.06,.5,1.2,3,7],
  Stinger:[.65,.55,1.5,1.28,.15,1,2.5,10,.35,.26,2.74,2.06],Spectre:[.4,.34,1.4,1.19,.15,1,2.5,10,.25,.21,1.25,1.06],Bucky:[3,2.55,3,2.55,.5,1,2,4],Judge:[2.5,2.12,4,3.4,.5,1,2,4],
- Bulldog:[.3,.26,1.25,1.06,.8,3,6,10,.1,.08,1.5,1.12],Guardian:[.1,.09,1.58,1.34,.8,3,6,10,0,0,1.48,1.25],Phantom:[.2,.17,.9,.76,.8,3,6,10,.11,.09,.91,.78],Vandal:[.25,.21,1,.85,.8,3,6,10,.157,.13,1.02,.87],
+ Bulldog:[.3,.26,1.25,1.06,.8,3,6,10,.1,.08,1.5,1.12],Guardian:[.1,.09,1.58,1.34,.8,3,6,10,0,0,1.48,1.25],Warden:[.15,.13,1,.85,.8,3,6,10,.04,.034,1.02,.87],Phantom:[.2,.17,.9,.76,.8,3,6,10,.11,.09,.91,.78],Vandal:[.25,.21,1,.85,.8,3,6,10,.157,.13,1.02,.87],
  Marshal:[1,.9,1,.9,7.5,10,15,20,0,0,0,0],Outlaw:[3.5,3.15,3.5,3.15,7.5,10,15,20,0,0,2.25,2.25],Operator:[5,4.5,5,4.5,7.5,10,15,15,0,0,0,0],Ares:[1,.6,.7,.42,.4,3,6.5,10,.9,.54,.55,.33],Odin:[.8,.48,1.3,.78,.4,3,6.5,10,.79,.47,1.36,.82]};
 const rad=d=>Math.tan(d*Math.PI/180);
 function spreadRow(state,weapon,stats){const T=SPREAD[weapon];if(!T)return null;const ads=!!(state.ads&&stats&&stats.adsStats&&T.length>8),o=ads?8:0,cr=!!state.cr;return {first:T[o+(cr?1:0)],max:T[o+(cr?3:2)],T};}
@@ -278,11 +278,12 @@ function bloomCap(state,weapon,stats){const row=spreadRow(state,weapon,stats);re
 // (REC, x.85 crouched, x.85 aiming), sideways drift from the 8th shot, bloom +.0015/shot (cap .024) that recovers over
 // .375 s (Vandal) / .35 s (Phantom) / .28 s; a pause over .375 s or a weapon change starts a fresh spray. Offsets are
 // tangent-plane radians in the shot's right / up basis; random only picks the drift side, so the climb is identical.
-const REC={Vandal:1,Phantom:.6,Operator:1.5,Classic:.5,Sheriff:1.3,Spectre:.45,Guardian:.9,Marshal:1.2,Bulldog:.8,Stinger:.55,Frenzy:.5,Shorty:1.2,Bucky:1.4,Judge:1.1,Ares:.7,Odin:.75,Ghost:.55,Outlaw:1.4};
-const SPRAY_RIFLES=['Vandal','Phantom','Bulldog','Guardian'];
+const REC={Vandal:1,Phantom:.6,Operator:1.5,Classic:.5,Sheriff:1.3,Spectre:.45,Guardian:.9,Marshal:1.2,Bulldog:.8,Stinger:.55,Frenzy:.5,Shorty:1.2,Bucky:1.4,Judge:1.1,Ares:.7,Odin:.75,Ghost:.55,Outlaw:1.4,Bandit:.8,Warden:.9};/* Bandit / Warden weights: an approximation like the rest (Riot publishes deltas only: Bandit v13.00 'pitch recoil at max down 4 -> 3', Warden v13.09 'pitch recoil smoothed') */
+const SPRAY_RIFLES=['Vandal','Phantom','Bulldog','Guardian','Warden'];
 function sprayReset(R,w,t){if(R.lastWeapon!==w||t-(R.shot||0)>.375){R.sequence=0;R.recoilX=R.recoilY=R.bloom=0;}R.lastWeapon=w;}
-// Gun recovery time (wiki update history: Vandal .375, Phantom / Bulldog / Guardian .35, Stinger .4; others keep .28).
-const RECOVERY={Vandal:.375,Phantom:.35,Bulldog:.35,Guardian:.35,Stinger:.4,Outlaw:.15};
+// Gun recovery time (wiki update history: Vandal .375, Phantom / Bulldog / Guardian .35, Stinger .4, Bandit .4 (v13.00 .45 -> .4);
+// others keep .28; the Warden's is unpublished).
+const RECOVERY={Vandal:.375,Phantom:.35,Bulldog:.35,Guardian:.35,Stinger:.4,Outlaw:.15,Bandit:.4};
 // Outlaw (patch 13.01): alt-fire max spread 0 -> 2.25 deg and recovery 0.1 -> 0.15 s after the first shot. Its first shot fills the
 // bloom to the max (ADS 2.25 deg over 0; unscoped max = first, nothing to add) and the bloom holds for the 0.15 s recovery, then
 // eases out by the next shot at the 2.75/s cadence only to the measured 2.14 deg (wiki note): BLOOM_HOLD keeps it, decaying

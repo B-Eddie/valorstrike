@@ -40,7 +40,7 @@ assert.deepEqual({...HEALTH_PACK},{life:8,hp:50,armor:25,r:.5,cap:100,armorCap:5
 {const s=new Simulation(W,'tdm','ascent',()=>.5);s.add('p','Jett',true);s.start(false);assert.equal(s.snapshot().hpk,undefined,'no packs outside Deathmatch');}
 // 2. Team Deathmatch stages [TDM] [VG]
 assert.deepEqual([...TDM_STAGE_AT],[0,75,150,225]);assert.equal(570-TDM_STAGE_AT[3],345,'Stage 4 345 s');
-assert.deepEqual(TDM_STAGES.map(a=>[...a]),[['Classic','Frenzy','Ghost'],['Sheriff','Stinger','Ares'],['Spectre','Ares','Bulldog','Guardian'],['Phantom','Vandal']]);
+assert.deepEqual(TDM_STAGES.map(a=>[...a]),[['Classic','Frenzy','Ghost','Bandit'],/* wiki Team_Deathmatch: Bandit added to Stage 1, no armour */['Sheriff','Stinger','Ares'],['Spectre','Ares','Bulldog','Guardian'],['Phantom','Vandal']]);
 assert.deepEqual([0,74.9,75,149.9,150,224.9,225,569].map(tdmStage),[0,0,1,1,2,2,3,3]);
 assert(tdmAllowed('Ghost',3)&&tdmAllowed('Knife',2)&&!tdmAllowed('Operator',3)&&!tdmAllowed('Stinger',2)&&tdmAllowed('Ares',2));
 {const s=new Simulation(W,'tdm','ascent',()=>.5),p=s.add('p','Jett',true);const bots=[];for(let i=0;i<3;i++)bots.push(s.add('b'+i,'Sage',false));s.start(false);
@@ -78,7 +78,7 @@ assert.equal(DEFUSE_CANCEL,.2);
  assert.equal(A(0,'Classic'),JSON.stringify({a:25,rg:RGN.pool}),'Stage 1 Classic: Regen Shield');assert.equal(A(0,'Ghost'),'{"a":0,"rg":null}');assert.equal(A(0,'Frenzy'),'{"a":0,"rg":null}');
  assert.equal(A(1,'Sheriff'),'{"a":25,"rg":null}');assert.equal(A(1,'Stinger'),'{"a":50,"rg":null}');assert.equal(A(1,'Ares'),'{"a":25,"rg":null}');
  assert.equal(A(2,'Ares'),'{"a":50,"rg":null}','Ares is Heavy in Stage 3');assert.equal(A(2,'Guardian'),'{"a":25,"rg":null}');assert.equal(A(2,'Spectre'),'{"a":50,"rg":null}');assert.equal(A(2,'Bulldog'),'{"a":50,"rg":null}');
- assert.equal(A(3,'Vandal'),'{"a":50,"rg":null}');assert.equal(A(3,'Phantom'),'{"a":50,"rg":null}');
+ assert.equal(A(0,'Bandit'),'{"a":0,"rg":null}','Bandit: no armour');assert.equal(A(3,'Vandal'),'{"a":50,"rg":null}');assert.equal(A(3,'Phantom'),'{"a":50,"rg":null}');
  assert.equal(A(2,'Classic'),A(0,'Classic'),'no stage pick yet: the Stage 1 sidearm\'s armour');assert.equal(A(3,'Ghost'),A(0,'Ghost'));
  const s=createSim(W,'tdm','ascent',()=>.5),p=s.add('p','Jett',true),b=s.add('b0','Sage',false);assert.equal(s.loadoutArmor,true,'TDM rooms (createSim) use loadout armour');s.start(false);
  assert.equal(p.armor,25,'human on the Classic: 25 Regen Shield');assert.equal(p.rgn,RGN.pool);b.weapon='Ghost';s.spawn(b);assert.equal(b.armor,0,'Ghost: no armour');assert.equal(b.rgn,null);

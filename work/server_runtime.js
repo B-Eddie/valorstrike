@@ -263,7 +263,7 @@ let netWeapon='',netReload=false,netEquipWant=null,netEquipUntil=0,netRec=false;
 // viewmodel / HUD are rebuilt (onSkin) even when that slot was already in hand. DM / TDM used to write every server gun into
 // the primary slot without onSkin, so the viewmodel and the HUD gun name kept the previous gun (online 'ghost' report: a
 // pistol in hand with a primary named on the HUD) while shots used the server's gun.
-const NET_SIDEARMS=['Classic','Shorty','Frenzy','Ghost','Sheriff'];
+const NET_SIDEARMS=['Classic','Shorty','Frenzy','Ghost','Bandit','Sheriff'];
 function netAdoptWeapon(n){if(!WEAP[n])return;const slot=NET_SIDEARMS.includes(n)?'pis':'pri';netRec=true;try{if((slot==='pri'?FV.pri:FV.sec)!==n)bEquip(n,slot);if(rw!==slot)swapW(slot);else{onSkin();try{setScope(false);}catch(er){}updHud();}}finally{netRec=false;}}
 // A Deathmatch / TDM loadout pick (dmGive: the loadout menu, the TDM stage switch) changes the gun without swapW, so its equip
 // went out only with the next 50 ms input tick and a snapshot that landed first (still naming the old gun) put the old gun

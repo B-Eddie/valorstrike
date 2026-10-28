@@ -5,7 +5,7 @@
 // the left hand onto the weapon's own Left_Hand_Target socket with two-bone IK, hands are oriented to the gun,
 // and fingers curl from their bind pose (index finger along the trigger). One-shots that move the arms
 // (reload, cast, throw, plant), the knife and deaths fade the grip out to the authored clip.
-var XGRIP = { side: { Classic: 1, Shorty: 1, Frenzy: 1, Ghost: 1, Sheriff: 1 }, err: 0,
+var XGRIP = { side: { Classic: 1, Shorty: 1, Frenzy: 1, Ghost: 1, Bandit: 1, Sheriff: 1 }, err: 0,
   // curl angles (rad) for joints 1..3 per finger
   curl: { rifleR: { Index: [0.25, 0.55, 0.35], Middle: [1.15, 1.25, 0.8], Ring: [1.2, 1.25, 0.8], Pinky: [1.25, 1.2, 0.8], Thumb: [0.15, 0.35, 0.3] },
     rifleL: { Index: [0.85, 0.95, 0.6], Middle: [0.9, 1.0, 0.7], Ring: [0.95, 1.0, 0.7], Pinky: [1.0, 1.0, 0.7], Thumb: [0.3, 0.35, 0.25] },

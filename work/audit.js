@@ -1210,7 +1210,7 @@ if (!NO3) {
       xe("FV.cr = 9000; FV.buy = 20; FV.menu = true; buyRender(); true"); const b = Array.from(doc.querySelectorAll("#xBG button[data-n]")).find((x) => x.dataset.n === n);
       if (!b || b.disabled) { if (!(b && b.classList.contains("on"))) bad.push(n + " button disabled"); continue; }
       b.click(); advance(10); const own = xe(`FV.pri === ${JSON.stringify(n)} || FV.sec === ${JSON.stringify(n)}`); if (!own && !b.classList.contains("on")) { bad.push(n + " not bought"); continue; }
-      const side = /^(Classic|Shorty|Frenzy|Ghost|Sheriff)$/.test(n); if (side && xe("FV.sec") !== n) bad.push(n + " (sidearm) went to the primary slot");
+      const side = /^(Classic|Shorty|Frenzy|Ghost|Bandit|Sheriff)$/.test(n); if (side && xe("FV.sec") !== n) bad.push(n + " (sidearm) went to the primary slot");
       const r = xe(`(() => { FV.buy = 0; FV.menu = false; buyMenu(false); const sl = FV.sec === ${JSON.stringify(n)} ? "pis" : "pri"; swapW(sl); VM.sw = 0; if (wName() !== ${JSON.stringify(n)}) return "wName " + wName(); reloading = 0; fcd = 0; player.hp = 100;
         const a0 = ammo; shoot(); if (!(ammo < a0)) return "shot did not use ammo " + a0 + "->" + ammo; updHud(); xHud(); const hud = String(document.getElementById("xMag").textContent).trim(); if (hud !== String(ammo) && hud !== "…") return "HUD mag " + hud + " vs " + ammo;
         reloading = 0; const r0 = rsv; window.dispatchEvent(Object.assign(new Event("keydown"), { code: "KeyR", key: "r" })); window.dispatchEvent(Object.assign(new Event("keyup"), { code: "KeyR", key: "r" })); if (!(reloading > 0)) return "R did not reload";

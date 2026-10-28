@@ -89,7 +89,7 @@ if '<script src="models/valorant/manifest.js"></script>' not in s:s=s.replace('<
 # Find the actual three script tag, which may use an onerror handler.
 if '<script src="models/valorant/manifest.js"></script>' not in s:s=s.replace('<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js"></script>','<script src="models/valorant/manifest.js"></script>\n<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js"></script>')
 start=s.index('  F: { Classic:',s.index('var XGM ='));end=s.index('\nfunction xGmFiles',start)
-weapons='Classic Shorty Frenzy Ghost Sheriff Stinger Spectre Bucky Judge Bulldog Guardian Phantom Vandal Marshal Outlaw Operator Ares Odin Knife'.split()
+weapons='Classic Shorty Frenzy Ghost Bandit Sheriff Stinger Spectre Bucky Judge Bulldog Guardian Warden Phantom Vandal Marshal Outlaw Operator Ares Odin Knife'.split()
 s=s[:start]+'  F: { '+', '.join(w+': "valorant/'+('melee' if w=='Knife' else w.lower())+'"' for w in weapons)+' },\n  V: {} };'+s[end:]
 s=s.replace('XGM.src[k] = g && g.scene; done();','XV.guns[k] = g; XGM.src[k] = g && xvStatic(g, XV.config[k.split("/").pop()]); done();')
 s=s.replace('else rot.rotation.y = Math.PI / 2; // source guns point +X with +Y up; the knife blade points +Y','else rot.rotation.y = -Math.PI / 2; // native Valorant weapons point -X')

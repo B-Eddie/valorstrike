@@ -15,7 +15,7 @@ Object.assign(a,{weapon:'Vandal',ammo:25,fireAt:0,input:{fire:true,heavy:true}})
 console.log('Weapons: knife light 50 front / 100 back at 2/s, heavy (kh) 75 front / 150 back, 1 s cooldown, no headshot bonus (wiki Melee); kh ignored for guns');}
 {// Reserve ammo per gun = the wiki infobox "Reserve" (wiki.playvalorant.com/en-us/<Weapon>, retrieved 2026-10-25; e.g. Vandal
 // 75 -> 50 in v3.0): spawn, buy, swap and the floor gun default all use it (was 3 magazines for every gun).
-const WIKI={Classic:36,Shorty:6,Frenzy:45,Ghost:39,Sheriff:24,Stinger:60,Spectre:90,Bucky:10,Judge:15,Bulldog:72,Guardian:36,Phantom:60,Vandal:50,Marshal:15,Outlaw:10,Operator:10,Ares:100,Odin:200};
+const WIKI={Classic:36,Shorty:6,Frenzy:45,Ghost:39,Bandit:24,Sheriff:24,Stinger:60,Spectre:90,Bucky:10,Judge:15,Bulldog:72,Guardian:36,Warden:36,Phantom:60,Vandal:50,Marshal:15,Outlaw:10,Operator:10,Ares:100,Odin:200};
 const {RESERVE,reserveOf,weapons:WS}=await import('./src/simulation.js');const {SpikeSimulation}=await import('./src/spike.js');
 assert.deepEqual({...RESERVE},WIKI);for(const w of Object.keys(WIKI)){assert.ok(WS[w],w);assert.equal(reserveOf(w),WIKI[w],w);}
 assert.equal(reserveOf('Knife'),WS.Knife.magazineSize*3,'not a gun: unchanged');

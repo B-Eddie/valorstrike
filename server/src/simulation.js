@@ -25,8 +25,8 @@ export function matchSeconds(mode){return mode==='dm'?540:570;}
 // Team Deathmatch stages (wiki.playvalorant.com/en-us/Team_Deathmatch "Team Deathmatches are split into four stages; the first
 // three stages are 75 seconds each, and Stage 4 is 345 seconds"; valorant.gs/rules HURMGameMode Stage 1-3 75s, Stage 4 347.7s).
 // Each stage has its own guns (wiki Loadout tables): every player keeps a Stage 1 sidearm and, from Stage 2, carries a gun of the
-// CURRENT stage only (Bandit, a Stage 1 choice, is not in this game). Replaces the old 2-step unlock at 120 / 300 s.
-export const TDM_STAGES=Object.freeze([['Classic','Frenzy','Ghost'],['Sheriff','Stinger','Ares'],['Spectre','Ares','Bulldog','Guardian'],['Phantom','Vandal']].map(a=>Object.freeze(a)));
+// CURRENT stage only. Replaces the old 2-step unlock at 120 / 300 s.
+export const TDM_STAGES=Object.freeze([['Classic','Frenzy','Ghost','Bandit'],['Sheriff','Stinger','Ares'],['Spectre','Ares','Bulldog','Guardian'],['Phantom','Vandal']].map(a=>Object.freeze(a)));
 export const TDM_STAGE_AT=Object.freeze([0,75,150,225]);
 export function tdmStage(elapsed){return elapsed>=225?3:elapsed>=150?2:elapsed>=75?1:0;}
 export function tdmAllowed(name,stage){return name==='Knife'||TDM_STAGES[0].includes(name)||TDM_STAGES[stage].includes(name);}
@@ -35,7 +35,7 @@ export function tdmAllowed(name,stage){return name==='Knife'||TDM_STAGES[0].incl
 // Sphere Radius 50 uu = 0.5 m pickup sphere). The wiki says "fully restores"; the game files' 50 / 25 are used here.
 export const HEALTH_PACK=Object.freeze({life:8,hp:50,armor:25,r:.5,cap:100,armorCap:50});
 // The pack rule a mode plays with (null: no packs). Escalation (server/src/modes.js ESC_PACK) sets its own.
-export const RESERVE=Object.freeze({Classic:36,Shorty:6,Frenzy:45,Ghost:39,Sheriff:24,Stinger:60,Spectre:90,Bucky:10,Judge:15,Bulldog:72,Guardian:36,Phantom:60,Vandal:50,Marshal:15,Outlaw:10,Operator:10,Ares:100,Odin:200});
+export const RESERVE=Object.freeze({Classic:36,Shorty:6,Frenzy:45,Ghost:39,Bandit:24,Sheriff:24,Stinger:60,Spectre:90,Bucky:10,Judge:15,Bulldog:72,Guardian:36,Warden:36,Phantom:60,Vandal:50,Marshal:15,Outlaw:10,Operator:10,Ares:100,Odin:200});
 export const reserveOf=w=>RESERVE[w]??(weapons[w]?weapons[w].magazineSize*3:0);/* not a gun (Knife, ability weapons): as before */
 // Armor (wiki.playvalorant.com/en-us/Armor_and_Shield; v9.10 renamed Light / Heavy Shields to Light / Heavy Armor and added the
 // Regen Shield): Light 25 / Heavy 50 absorb 66%; the Regen Shield holds 25, absorbs 100%, and refills from a 50 pool (u.rgn,
@@ -45,7 +45,7 @@ export const RGN=Object.freeze({cap:25,pool:50,delay:3,rate:12.5});
 // TDM armour by loadout (wiki Team_Deathmatch Loadout tables: "The amount of armor or shield a player has each stage depends on the
 // gun they have chosen for that stage"): per stage, gun -> 'r' Regen Shield (25 + 50 pool), 'l' Light 25, 'h' Heavy 50, 0 none.
 // A gun not in the stage's table (no stage pick yet: a Stage 1 sidearm in hand) takes its Stage 1 armour. = page TDM_ARM.
-export const TDM_ARMOR=Object.freeze([{Classic:'r',Frenzy:0,Ghost:0},{Sheriff:'l',Stinger:'h',Ares:'l'},{Spectre:'h',Ares:'h',Bulldog:'h',Guardian:'l'},{Phantom:'h',Vandal:'h'}]);
+export const TDM_ARMOR=Object.freeze([{Classic:'r',Frenzy:0,Ghost:0,Bandit:0},{Sheriff:'l',Stinger:'h',Ares:'l'},{Spectre:'h',Ares:'h',Bulldog:'h',Guardian:'l'},{Phantom:'h',Vandal:'h'}]);
 export function tdmArmor(stage,weapon){const T=TDM_ARMOR[Math.max(0,Math.min(3,stage|0))];const k=Object.hasOwn(T,weapon)?T[weapon]:TDM_ARMOR[0][weapon]??0;return k==='r'?{a:RGN.cap,rg:RGN.pool}:{a:k==='h'?50:k==='l'?25:0,rg:null};}
 // Per-round reloads (wiki Bucky "0.5 per shell", Marshal "0.5 per bullet"): one round per step, a shot interrupts the reload.
 // Outlaw (wiki): 2.3 s for one barrel, 3.8 s for both. = page XRLP / xRT.

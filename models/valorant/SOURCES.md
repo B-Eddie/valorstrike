@@ -8,7 +8,7 @@ Source: [Kingdom Archives model gallery](https://kingdomarchives.com/models).
 Each `<name>.json` records the source model path, material texture paths, animation names, constraints and first-person settings from `https://kingdomarchives.com/modelviewer/<name>`. `animations/<weapon>.json` records the matching first-person and weapon clip sets from `https://kingdomarchives.com/modelviewer/jett-fp?held=<weapon>`.
 
 - All 12 playable agents have individual textured third-person models and individual first-person arm rigs.
-- All 19 arsenal slots (including the knife) use their corresponding VALORANT weapon model. The native first-person equip, idle, fire, reload and inspect clips are included where supplied by the source. Magazines and weapon attachments follow the source's bone constraints.
+- All 21 arsenal slots (including the knife; Bandit and Warden added 2026-10-28) use their corresponding VALORANT weapon model. The native first-person equip, idle, fire, reload and inspect clips are included where supplied by the source. Magazines and weapon attachments follow the source's bone constraints.
 - Physical ability devices include the Spike, Killjoy Turret / Alarmbot / Lockdown, Raze Boom Bot / Blast Pack / Paint Shells / Showstopper, Sova arrows, Chamber Trademark / Rendezvous, Skye Guiding Light / Trailblazer, and Cypher Spycam / Trapwire anchors.
 - Original character-select and ability animation clips remain in the downloaded agent/device GLBs.
 

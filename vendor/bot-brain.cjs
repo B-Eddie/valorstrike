@@ -351,15 +351,15 @@
  // the shop has them. def: defending (Operator / Odin / Judge more likely).
  function buyFor(call,credits,P,rand,def){
   const out={weapon:null,side:null,armor:null};let c=credits;const take=(k,n,p)=>{if(c>=p){out[k]=n;c-=p;return true;}return false;};
-  if(call==='pistol'){const x=rand();if(x<.4)take('armor','light',400);else if(x<.65)take('side','Ghost',500);else if(x<.8)take('side','Sheriff',800);else if(x<.9)take('side','Frenzy',450);return out;}
+  if(call==='pistol'){const x=rand();if(x<.4)take('armor','light',400);else if(x<.65)take('side','Ghost',500);else if(x<.8)take('side','Sheriff',800);else if(x<.9)take('side','Frenzy',450);else take('side','Bandit',600);return out;}
   if(call==='save'){if(c>=3400&&rand()<.3)take('side','Sheriff',800);return out;}
-  if(call==='eco'){const x=rand();if(x<.35)take('side','Sheriff',800);else if(x<.6)take('side','Ghost',500);else if(x<.75)take('weapon','Stinger',1100);if(rand()<.5)take('armor','light',400);return out;}
+  if(call==='eco'){const x=rand();if(x<.35)take('side','Sheriff',800);else if(x<.6)take('side','Ghost',500);else if(x<.75)take('weapon','Stinger',1100);else if(x<.85)take('side','Bandit',600);if(rand()<.5)take('armor','light',400);return out;}
   if(call==='force'||call==='half'){const x=rand();
    if(x<.3)take('weapon','Spectre',1600);else if(x<.5)take('weapon','Bulldog',2050);else if(x<.62)take('weapon',def?'Judge':'Stinger',def?1850:1100);else if(x<.72)take('weapon','Marshal',950);else if(x<.82)take('weapon','Ares',1600);else take('weapon','Spectre',1600);
    take('armor',c>=1000+(call==='half'?400:0)?'heavy':'light',c>=1000?1000:400);return out;}
   // full
   const x=rand(),awp=(def?.16:.08)+P.patience*.08;
-  if(c>=5700&&x<awp){take('weapon','Operator',4700);}else if(def&&c>=4200&&x<awp+.05)take('weapon','Odin',3200);else take('weapon',rand()<.55?'Vandal':'Phantom',2900);
+  if(c>=5700&&x<awp){take('weapon','Operator',4700);}else if(def&&c>=4200&&x<awp+.05)take('weapon','Odin',3200);else{const y=rand();take('weapon',y<.5?'Vandal':y<.9?'Phantom':'Warden',2900);}/* Warden 10 % of rifle buys (inferred: a newer, less picked rifle; no published pick rate used) */
   if(!take('armor','heavy',1000))take('armor','light',400);if(c>=800&&rand()<.25)take('side',rand()<.5?'Sheriff':'Ghost',rand()<.5?800:500);
   return out;
  }
