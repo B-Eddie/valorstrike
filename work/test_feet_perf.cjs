@@ -13,11 +13,38 @@
 const cp = require('child_process');
 if (!process.execArgv.some((a) => /semi-space/.test(a))) { const r = cp.spawnSync(process.execPath, ['--max-semi-space-size=256', __filename], { stdio: 'inherit' }); process.exit(r.status == null ? 1 : r.status); }
 const v8 = require('v8'), assert = require('assert/strict'), { performance } = require('perf_hooks');
-const { boot } = require('./page_harness.cjs');
+const { boot } = require('./page_harness.cjs'), fs = require('fs'), path = require('path');
 const tick = () => new Promise((r) => setImmediate(r));
 const N = +(process.env.N || 20000);
+console.warn = ((w) => (...a) => { if (!/boneTransform/.test(String(a[0]))) w(...a); })(console.warn);
+// 0) pose: the whole pass (body drop, leg IK, smoothing) of the shipped block (work/feet_runtime_ref.js) and of the current
+// one, on the same native rigs driven the same way over stairs, a slope, a ledge, bumps and airborne spans with idle / walk /
+// run / crouch clips (stand-in floor bvh, the library-probe path of both): every leg and Splitter bone world matrix and both
+// foot offsets equal bit for bit, every frame.
+async function poseEquivalence() {
+  const G = await import(path.join(__dirname, '..', 'server/tools/grip-view.mjs')), T = require('./rig_harness.cjs').T;
+  let floor = () => 0; const C = { bvh: { raycastFirst: (r) => { const y = floor(r.origin.x, r.origin.z); return y < r.origin.y ? { point: { y }, face: { normal: { y: 1 } } } : null; } } };
+  const ref = G.runtime({ feet: true, C, feetSrc: fs.readFileSync(path.join(__dirname, 'feet_runtime_ref.js'), 'utf8') }), cur = G.runtime({ feet: true, C });
+  const floors = [['flat', () => 0], ['stairs', (x, z) => Math.floor((x + z * 0.3 + 0.37) / 0.3) * 0.15], ['slope', (x, z) => 0.22 * x - 0.1 * z], ['ledge', (x) => (x > 0.05 ? 1.5 : 0)], ['bumps', (x, z) => 0.08 * Math.sin(7 * x) * Math.cos(5 * z)], ['down-stairs', (x) => -Math.floor(Math.max(0, x + 0.4) / 0.28) * 0.17]];
+  let frames = 0, planted = 0, air = 0;
+  for (const [agent, weapon] of [['jett', 'vandal'], ['breach', 'classic'], ['sage', 'operator']]) {
+    const A = await G.build(agent, weapon, ref), B = await G.build(agent, weapon, cur), bones = (R) => ['Splitter', 'L_Hip', 'L_Knee', 'L_Foot', 'R_Hip', 'R_Knee', 'R_Foot'].map((n) => R.bone(n)), BA = bones(A), BB = bones(B);
+    for (const lo of ['idle', 'walk', 'run', 'crouch']) for (const [fn, f] of floors) {
+      floor = f; A.play(lo, 'aim'); B.play(lo, 'aim'); for (const R of [A, B]) { R.M.m.position.set(-0.6, 0, -0.2); R.M.m.rotation.y = 0.3; if (R.X.ft) { R.X.ft.d[0] = R.X.ft.d[1] = 0; } R.X.air = false; }
+      for (let i = 0; i < 90; i++) {
+        const airNow = i >= 50 && i < 58, dt = [1 / 60, 1 / 30, 1 / 144][i % 3];
+        for (const R of [A, B]) { R.X.air = airNow; R.M.m.position.x += (lo === 'run' ? 2.4 : lo === 'idle' ? 0.3 : 1.1) * dt; R.M.m.position.y = airNow ? 0.3 : 0; R.step(1, dt, dt); }
+        frames++; if (airNow) air++; if (A.X.ftRestore) planted++;
+        const wa = new T.Vector3(); for (let j = 0; j < 7; j++) { const ea = BA[j].matrixWorld.elements, eb = BB[j].matrixWorld.elements; for (let e = 0; e < 16; e++) if (!Object.is(ea[e], eb[e])) throw new Error(`pose differs: ${agent} ${lo} ${fn} frame ${i} bone ${j} element ${e}: ${ea[e]} vs ${eb[e]}`); }
+        for (let s = 0; s < 2; s++) if (!Object.is(A.X.ft.d[s], B.X.ft.d[s]) || A.X.ftRestore !== B.X.ftRestore) throw new Error(`foot offsets differ: ${agent} ${lo} ${fn} frame ${i}`);
+      }
+    }
+  }
+  return `pose: ${frames} frames (${planted} with the body dropped, ${air} airborne) bit-identical to the shipped block`;
+}
 (async () => {
-  const out = [];
+  const out = [await poseEquivalence()];
+  console.log(out[0]);
   for (const MAP of (process.env.MAPS || 'ascent,split').split(',')) {
     const H = boot({ real3: true, seed: 3, native: true, fastGlobal: true }), xe = H.xe;
     xe(`J.pick="Jett";FV.pick=${JSON.stringify(MAP)};FV.srOn=0;FV.repOn=0;window.xSwift=0;xLob0=false;startFive();true`);

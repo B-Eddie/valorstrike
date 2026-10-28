@@ -5,7 +5,7 @@
 // ran for, xfGround calls and the BVH casts they made. REC=path writes, every frame, the world matrices of each agent's
 // Splitter, hips, knees and feet plus the two smoothed foot offsets (computed from the local transforms up the parent
 // chain, without touching any matrixWorld), so two trees can be compared bit for bit (work/feet_equiv_compare.cjs).
-//   MAP=ascent WARM=20 SECS=40 SEED=3 [LOD=all|page] [REC=/path.bin] [OUT=/path.json] node work/bench_feet.cjs
+//   MAP=ascent WARM=20 SECS=40 SEED=3 [SCRIPT=1] [LOD=all|page] [REC=/path.bin] [OUT=/path.json] node work/bench_feet.cjs
 const fs = require('fs'), path = require('path'), v8 = require('v8'), { performance } = require('perf_hooks');
 const { boot } = require('./page_harness.cjs'), inspector = require('inspector');
 const PROF = process.env.PROF || ''; // PROF=1: V8 CPU profile of the measured frames, self time inside the foot-planting pass by function
@@ -28,6 +28,10 @@ function stats(a) { if (!a.length) return { n: 0 }; const s = [...a].sort((x, y)
   console.error('agent rigs', rigs, xe('JSON.stringify({running,b:bots.length,a:allies.length,xs:typeof xfPose,ft:bots.concat(allies).map(b=>!!(b.xm&&b.xm.sx)).join()})'));
   // LOD=all: every living agent is animated (no frustum / distance cull in xSolTick) and foot-planted (XFT.lod) each frame
   if (LOD === 'all') xe(`XFT.lod=1e9;XS.lod=1e9;xSolTick.F={f:new THREE.Frustum(),m:new THREE.Matrix4(),s:new THREE.Sphere(new THREE.Vector3(),1.3),n:0};xSolTick.F.f.intersectsSphere=()=>true;true`);
+  // SCRIPT=1: scripted stance on top of the bots' own play: each unit crouches (b.cr, the bots' crouch-spray flag) 1.5 s of
+  // every 5 s, staggered per unit, so crouch / crouch-walk poses are recorded too (offline bots have no jump input; airborne
+  // spans come from the maps' drops, and work/test_feet_perf.cjs drives airborne frames on the rigs directly)
+  if (process.env.SCRIPT === '1') xe(`(()=>{let f=0;(window.XHK||(window.XHK=[])).push(()=>{try{if(!running)return;f++;const U=bots.concat(allies);for(let i=0;i<U.length;i++){const b=U[i];if(b&&b.alive)b.cr=(f+i*37)%300<90;}}catch(e){}});return true;})()`);
   // keep the player alive (god mode, no input) so the match and the camera keep going
   xe(`(window.XHK||(window.XHK=[])).push(()=>{try{if(running&&player&&player.hp<60)player.hp=100;}catch(e){}});true`);
   // instrumentation: wall time in xfPose, agents per frame, xfGround calls, BVH casts (C.bvh.raycastFirst or nmRayFirst / xfRay if present)
@@ -36,7 +40,7 @@ function stats(a) { if (!a.length) return { n: 0 }; const s = [...a].sort((x, y)
     xfPose=function(){if(!S.on)return P0.apply(this,arguments);const a=__hr();try{return P0.apply(this,arguments);}finally{S.ms+=__hr()-a;S.n++;}};
     xfGround=function(){S.g++;S.inG=true;try{return G0.apply(this,arguments);}finally{S.inG=false;}};
     const C=nmActive(),B=C.bvh,rf=B.raycastFirst;B.raycastFirst=function(){if(S.inG)S.c++;return rf.apply(this,arguments);};
-    for(const k of ['nmRayFirst','xfRay'])if(typeof window[k]==='function'){const f=window[k];window[k]=function(){if(S.inG)S.c++;return f.apply(this,arguments);};}
+    if(typeof xfCast==='function'){const f=xfCast;xfCast=function(){if(S.inG)S.c++;return f.apply(this,arguments);};}
     return true;})()`);
   // recorder: 10 unit slots x (7 bones x 16 + 2) doubles per frame; NaN for a slot without a planted rig
   const PER = 7 * 16 + 2, SLOTS = 10;
@@ -77,11 +81,18 @@ function stats(a) { if (!a.length) return { n: 0 }; const s = [...a].sort((x, y)
     let k=0;for(let r=0;r<n;r++)for(const s of S){if(on){xfPose(s.M,1/60,C);k++;}const F=s.X.ft;F.d[0]=s.d[0];F.d[1]=s.d[1];F.split.position.copy(s.sp);s.X.ftRestore=false;for(let i=0;i<2;i++){const L=F.legs[i];L.up.quaternion.copy(s.q[i][0]);L.lo.quaternion.copy(s.q[i][1]);L.hand.quaternion.copy(s.q[i][2]);}}return [k,S.length];};true`);
   xe('__FS.on=false;true');
   xe('__AL2(300,1);__AL2(300,0);true');
-  const meas = (on) => { let best = Infinity, bestB = Infinity, k = 0; for (let r = 0; r < 5; r++) { const h0 = v8.getHeapStatistics().used_heap_size, a = performance.now(); const res = xe(`__AL2(200,${on})`); const t = performance.now() - a, d = v8.getHeapStatistics().used_heap_size - h0; k = res[0] || res[1] * 200; best = Math.min(best, t / k); if (d >= 0) bestB = Math.min(bestB, d / k); } return [best, bestB]; };
+  const ns = () => v8.getHeapSpaceStatistics().find((x) => x.space_name === 'new_space').space_used_size; // young-generation bytes (no scavenge inside a batch with the big semi-space)
+  const meas = (on) => { let best = Infinity, bestB = Infinity, k = 0; for (let r = 0; r < 7; r++) { const h0 = ns(), a = performance.now(); const res = xe(`__AL2(200,${on})`); const t = performance.now() - a, d = ns() - h0; k = res[0] || res[1] * 200; best = Math.min(best, t / k); if (d >= 0) bestB = Math.min(bestB, d / k); } return [best, bestB]; };
   const on = meas(1), off = meas(0);
+  // HEAP=1: sampling heap profile of the isolated xfPose loop: allocation sites (bytes per agent call)
+  let heap = null;
+  if (process.env.HEAP === '1') { const hs = new inspector.Session(); hs.connect(); const hp = (m, p) => new Promise((ok, no) => hs.post(m, p || {}, (e, r) => (e ? no(e) : ok(r))));
+    await hp('HeapProfiler.enable'); await hp('HeapProfiler.startSampling', { samplingInterval: 64, includeObjectsCollectedByMajorGC: true, includeObjectsCollectedByMinorGC: true }); const k = xe('__AL2(400,1)')[0]; const { profile } = await hp('HeapProfiler.stopSampling');
+    const site = new Map(); (function walk(n, stack) { const f = (n.callFrame.functionName || '(anon)') + ':' + (n.callFrame.lineNumber + 1), st = stack.concat(f); const b = (n.selfSize || 0); if (b) { const key = st.slice(-4).join(' < '); site.set(key, (site.get(key) || 0) + b); } for (const c of n.children || []) walk(c, st); })(profile.head, []);
+    heap = [...site].sort((a, b) => b[1] - a[1]).slice(0, 15).map(([key, b]) => [key, +(b / k).toFixed(1)]); }
   const iso = { usPerAgentCall: +((on[0] - off[0]) * 1000).toFixed(2), msPer5: +((on[0] - off[0]) * 5).toFixed(4), bytesPerAgentCall: Number.isFinite(on[1]) ? +(on[1] - (Number.isFinite(off[1]) ? off[1] : 0)).toFixed(1) : null };
   const res = { map: MAP, seed: SEED, warm: WARM, secs: SECS, lod: LOD, rigs, frames: N, frameMs: stats(frame), feetMsPerFrame: stats(fms), agentsPerFrame: stats(fn), feetMsPer5Agents: stats(per5), usPerAgentCall: +((tms / Math.max(1, calls)) * 1000).toFixed(2),
-    groundCallsPerAgent: +(fg.reduce((x, y) => x + y, 0) / Math.max(1, calls)).toFixed(3), castsPerAgent: +(fc.reduce((x, y) => x + y, 0) / Math.max(1, calls)).toFixed(3), isolated: iso, prof,
+    groundCallsPerAgent: +(fg.reduce((x, y) => x + y, 0) / Math.max(1, calls)).toFixed(3), castsPerAgent: +(fc.reduce((x, y) => x + y, 0) / Math.max(1, calls)).toFixed(3), isolated: iso, prof, heap,
     diag: { solTicksPerFrame: diag.st / N, mixersPerFrame: diag.mx / N, ubPostPerFrame: diag.post / N }, coverage: { agentFrames: calls, air: cov.air, crouch: cov.crouch, moving: cov.moving, bodyDropped: cov.planted }, errors: (H.errors || []).slice(0, 5).map((e) => String(e && (e.message || e.e || e)).slice(0, 200)) };
   if (rec) { fs.writeFileSync(REC, Buffer.from(rec.buffer)); res.rec = { path: REC, slots: SLOTS, per: PER }; }
   const txt = JSON.stringify(res, null, 1); if (OUT) fs.writeFileSync(OUT, txt);
