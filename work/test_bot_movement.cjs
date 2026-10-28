@@ -55,6 +55,6 @@ for(const u of ['a','b']){
 }
 // Reused deathmatch bot objects must start their new life without the previous strafe velocity.
 const spawn=html.slice(html.indexOf('function dmSpawnB('),html.indexOf('// a DM unit that is alive',html.indexOf('function dmSpawnB(')));
-Object.assign(c,{dmSpot:()=>[10,20],FV:{tdm:false},dmBW:()=>'Vandal',performance:{now:()=>0},dmLive:()=>{},Math});
+Object.assign(c,{dmSpot:()=>[10,20],FV:{tdm:false},dmBW:()=>'Vandal',performance:{now:()=>0},dmLive:()=>{},tdmArmSet:()=>{},Math});
 vm.runInContext(spawn,c);const reborn={g:{position:{}},smMotor:{vx:5,vz:1},svx:1,svz:1};c.dmSpawnB(reborn);assert.equal(reborn.smMotor,null);assert.equal(reborn.spd,0);
 console.log('bot stop/peek rhythm: '+rows.join('; ')+'; counter-strafe, stationary jiggle holds, diagonal cap, Vandal/Operator accuracy gates passed');
