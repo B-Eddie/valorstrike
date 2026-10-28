@@ -74,13 +74,13 @@ jobs:
   client:
     name: client (shard ${{ matrix.shard }}/4)
     runs-on: ubuntu-latest
-    # 45: work/test_spawn_barrier_tall_client.cjs (page-motor ledge / ability runs at every spawn wall, all six maps) adds
-    # ~10-25 min to whichever shard it lands in (shard 1 of 4 today; ~28 min on the loaded 2-core dev box).
+    # work/test_spawn_barrier_tall_client.cjs (page-motor ledge / ability runs at every spawn wall, all six maps) runs alone in
+    # the 'solo' job (QA_SOLO): in the modulo pool it pushed shard 1 to 38 of 45 min (run 40643297614).
     timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
-        shard: [0, 1, 2, 3]
+        shard: ['0', '1', '2', '3', 'solo']
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -120,6 +120,7 @@ jobs:
         env:
           SHARD_TOTAL: '4'
           SHARD_INDEX: ${{ matrix.shard }}
+          QA_SOLO: test_spawn_barrier_tall_client.cjs
           QA_PERF_RETRY: '1' # test_round_start_perf / test_frame_perf only: one rerun after a wall-clock failure
         run: |
           QA_LIST=1 node ../work/test_all.cjs

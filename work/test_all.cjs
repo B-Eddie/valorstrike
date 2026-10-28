@@ -5,9 +5,13 @@ const fs=require('node:fs'),path=require('node:path'),{spawnSync}=require('node:
 const KNOWN=new Set([]);const root=path.join(__dirname,'..'),files=fs.readdirSync(__dirname).filter(f=>/^test_.*\.cjs$/.test(f)&&f!=='test_all.cjs'&&f!=='test_slice.cjs'&&(process.env.QA_ALL||!KNOWN.has(f))).sort().concat('test_feel.js');let passed=0;const failed=[];
 // CI sharding: SHARD_TOTAL=N SHARD_INDEX=i (0-based) runs the files whose position k in the sorted list has k % N == i;
 // QA_LIST=1 prints the selected files and exits. Both unset = every file, as before.
-const shardTotal=Number(process.env.SHARD_TOTAL||1),shardIndex=Number(process.env.SHARD_INDEX||0);
+// QA_SOLO=a.cjs,b.cjs takes those (slow) files out of the modulo pool; SHARD_INDEX=solo then runs exactly them (CI's own job).
+const solo=new Set((process.env.QA_SOLO||'').split(',').map(f=>f.trim()).filter(Boolean)),soloRun=process.env.SHARD_INDEX==='solo';
+for(const f of solo)if(!files.includes(f)){console.error('QA_SOLO names a file that is not in the run:',f);process.exit(2);}
+const shardTotal=Number(process.env.SHARD_TOTAL||1),shardIndex=soloRun?0:Number(process.env.SHARD_INDEX||0);
+if(soloRun&&!solo.size){console.error('SHARD_INDEX=solo needs QA_SOLO');process.exit(2);}
 if(!Number.isInteger(shardTotal)||shardTotal<1||!Number.isInteger(shardIndex)||shardIndex<0||shardIndex>=shardTotal){console.error('bad SHARD_INDEX/SHARD_TOTAL',process.env.SHARD_INDEX,process.env.SHARD_TOTAL);process.exit(2);}
-const selected=files.filter((f,k)=>k%shardTotal===shardIndex);if(process.env.QA_LIST){console.log(selected.join('\n'));process.exit(0);}
+const pool=files.filter(f=>!solo.has(f)),selected=soloRun?files.filter(f=>solo.has(f)):pool.filter((f,k)=>k%shardTotal===shardIndex);if(process.env.QA_LIST){console.log(selected.join('\n'));process.exit(0);}
 // QA_PERF_RETRY=1 (CI only): the wall-clock perf regressions below are rerun once after a failure (slow shared runners); a pass
 // on the rerun counts. No other file is ever retried.
 const PERF_RETRY=new Set(['test_round_start_perf.cjs','test_frame_perf.cjs']);
