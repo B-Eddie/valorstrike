@@ -108,4 +108,55 @@ window.xTac = { open: xTacOpen, close: xTacClose, confirm: xTacConfirm, cancel: 
   }
   return ok0.apply(this, arguments);
 }; }
+// ---- Aimed placement + placement indicators (Valorant: "While equipped, his crosshair will be replaced with an indicator to place
+// ... The crosshair will turn [colour] if it is placed on a viable position ... and will turn red for unviable positions").
+// Before: Alarmbot / Turret went 1.5 m in front of Killjoy whatever she aimed at, Trademark and the Rendezvous anchor at Chamber's
+// feet, Sage's Barrier 2.5 m ahead - and none of the placed abilities showed where they would land. Now they go where the
+// crosshair meets the floor, up to each ability's wiki max (XPLACE), an indicator shows that spot while the ability is equipped
+// (cyan / agent colour = viable, red = not), and a cast on an unviable spot is refused (the ability stays in hand). The trusted
+// server places with the same rule (server/src/abilities.js aimFloor / PLACE_MAX).
+const XPLACE = { // wiki max cast distance (m) and indicator radius (m) per agent+key
+  Omen: { c: [15, 0.55, 0x8a6bff] }, Killjoy: { q: [10, 0.4, 0xf2c230], e: [4.5, 0.5, 0xf2c230] }, Sage: { c: [15, 0, 0x7fe0ff] },
+  Chamber: { c: [12, 0.45, 0xd8b04a], e: [8.5, 0.7, 0xd8b04a] }, Cypher: { q: [15, 3.72, 0x3fd0c0] } };
+// the floor point under the crosshair within max m (ray to the map, 0.5 m short of a hit, else max along the aim), pulled off walls;
+// ok: on the nav mesh (native: a nav node within 1.5 m, playable) and not inside a wall
+function xAimPlace(max) {
+  const o = pEye(), d = jAim(); ray.set(o, d); ray.far = max; const h = ray.intersectObjects(solids)[0], t = h ? Math.max(0, h.distance - 0.5) : max;
+  let x = o.x + d.x * t, z = o.z + d.z * t; const y0 = o.y + d.y * t; let y = xFy(x, z, Math.min(y0, o.y) + 0.1);
+  for (let i = 0; i < 24 && blocked(x, z, 0.3, y); i++) { const vx = player.x - x, vz = player.z - z, l = Math.hypot(vx, vz) || 1; if (l < 0.3) break; x += (vx / l) * 0.25; z += (vz / l) * 0.25; y = xFy(x, z, Math.min(y0, o.y) + 0.1); }
+  return { x, y, z, ok: xPlaceOk(x, z, y) };
+}
+function xPlaceOk(x, z, y) { if (!Number.isFinite(x) || !Number.isFinite(z) || !Number.isFinite(y)) return false; const C = typeof nmActive === "function" && nmActive();
+  if (C) { const ni = nmNear(C, x, z); if (ni < 0 || Math.hypot(C.nav.nodes[ni][0] - x, C.nav.nodes[ni][2] - z) > 1.5 || (C.playable && !C.playable[ni]) || Math.abs(C.nav.nodes[ni][1] - y) > 2.5) return false; }
+  return !blocked(x, z, 0.3, y); }
+// Killjoy Alarmbot / Turret: at the crosshair (10 m / 4.5 m); Lockdown keeps its short plant in front of her (wiki 0.5 m)
+{ const op0 = okPlace; okPlace = function (geo, c, dist) {
+  const max = geo === kjBox ? XPLACE.Killjoy.q[0] : geo === kjTur ? XPLACE.Killjoy.e[0] : 0; if (!max) return op0.apply(this, arguments);
+  const q = xAimPlace(max), m = new THREE.Mesh(geo, okMat(c)); m.position.set(q.x, q.y + geo.parameters.height / 2, q.z); m.rotation.y = yaw; scene.add(m); return m; }; }
+// refuse a placed cast on an unviable spot before any charge is spent (Valorant keeps the ability in hand; the equip flow sees no cast)
+function xPlaceRefuse(ag, k) { const P = XPLACE[ag] && XPLACE[ag][k]; if (!P) return false; let ok;
+  if (ag === "Omen") { const g = okGround(P[0]); ok = !!okFtsValid(g.x, g.z); } else ok = xAimPlace(P[0]).ok;
+  if (ok) return false; try { sgNo(); } catch (e) {} say("Can't place there", 700); return true; }
+{ const ok1 = okKey; okKey = function (code) { const k = code && code[3] && code[3].toLowerCase();
+  if (J.pick === "Killjoy" && (k === "q" && J.q >= 1 || k === "e" && J.e >= 1) && xPlaceRefuse("Killjoy", k)) return;
+  if (J.pick === "Omen" && k === "c" && !J.om && J.c >= 1 && J.cd.c <= 0 && xPlaceRefuse("Omen", "c")) return;
+  return ok1.apply(this, arguments); }; }
+{ const sg1 = sgKey; sgKey = function (code) { if (code === "KeyC" && J.c >= 1 && J.cd.c <= 0 && xPlaceRefuse("Sage", "c")) return; return sg1.apply(this, arguments); }; }
+{ const bc1 = bcKey; bcKey = function (code) { if (J.pick === "Chamber" && (code === "KeyC" && J.c >= 1 && J.cd.c <= 0 && xPlaceRefuse("Chamber", "c") || code === "KeyE" && !BC.an && !(J.cd.e > 0) && xPlaceRefuse("Chamber", "e"))) return; return bc1.apply(this, arguments); }; }
+// the indicator: a floor ring (radius XPLACE[1]; Sage: the 10.4 m wall line across the aim) while the ability is equipped
+const XPI = { ring: null, line: null, mat: null };
+function xPlaceSpot(ag, k) { const P = XPLACE[ag] && XPLACE[ag][k]; if (!P) return null;
+  if (ag === "Omen") { const g = okGround(P[0]), v = okFtsValid(g.x, g.z); return { x: g.x, z: g.z, y: v ? v.y : xFy(g.x, g.z, player.y + 0.1), ok: !!v, r: P[1], c: P[2] }; }
+  if (ag === "Chamber" && k === "e" && BC.an) return null;
+  const q = xAimPlace(P[0]); q.r = P[1]; q.c = P[2]; if (ag === "Sage") q.wall = 10.4; return q; }
+function xPlaceTick() {
+  const q = J.eq, show = q && (q.st === "draw" || q.st === "ready" || q.st === "hold") && running && player && player.hp > 0 && jOn(), s = show ? xPlaceSpot(J.pick, q.k) : null;
+  if (!XPI.ring) { XPI.mat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.85, depthWrite: false, side: THREE.DoubleSide }); XPI.ring = new THREE.Mesh(new THREE.RingGeometry(0.82, 1, 40), XPI.mat); XPI.ring.rotation.x = -Math.PI / 2; XPI.ring.name = "xPlaceRing"; XPI.ring.raycast = () => {}; XPI.line = new THREE.Mesh(new THREE.BoxGeometry(1, 0.06, 0.12), XPI.mat); XPI.line.name = "xPlaceLine"; XPI.line.raycast = () => {}; }
+  if (!s) { if (XPI.ring.parent) scene.remove(XPI.ring); if (XPI.line.parent) scene.remove(XPI.line); XPI.s = null; return; }
+  XPI.s = s; XPI.mat.color.setHex(s.ok ? s.c : 0xff4655);
+  if (s.wall) { if (XPI.ring.parent) scene.remove(XPI.ring); if (!XPI.line.parent) scene.add(XPI.line); XPI.line.scale.set(s.wall, 1, 1); XPI.line.position.set(s.x, s.y + 0.05, s.z); XPI.line.rotation.set(0, yaw, 0); }
+  else { if (XPI.line.parent) scene.remove(XPI.line); if (!XPI.ring.parent) scene.add(XPI.ring); XPI.ring.scale.setScalar(Math.max(0.3, s.r)); XPI.ring.position.set(s.x, s.y + 0.05, s.z); }
+}
+(window.XHK || (window.XHK = [])).push(function xPlaceHook() { try { xPlaceTick(); } catch (e) { xE(e); } });
+window.xPlace = { aim: xAimPlace, ok: xPlaceOk, spot: xPlaceSpot, tick: xPlaceTick, st: XPI, max: XPLACE };
 // ---- END ABILITY TARGETING ----

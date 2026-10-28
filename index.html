@@ -8563,7 +8563,7 @@ function sgKey(code) {
   if (code === "KeyC") {
     if (J.c < 1 || J.cd.c > 0) return sgNo(); sgWallEnd(); J.c--; J.cd.c = 0.6;
     const ice = sgKey.ice || (sgKey.ice = new THREE.MeshPhongMaterial({ color: 0xc8f6ff, emissive: 0x1f6f95, specular: 0xffffff, shininess: 120, flatShading: true, transparent: true, opacity: 0.9 })); ice.opacity = 0.9;
-    const p = new THREE.Vector3(P.x + fx * 2.5, 1.5, P.z + fz * 2.5);
+    const q = xAimPlace(XPLACE.Sage.c[0]), p = new THREE.Vector3(q.x, 1.5, q.z); // at the crosshair up to 15 m (wiki Barrier_Orb v11.04), was 2.5 m ahead
     J.sw = xBarMake(p, yaw, ice, true, { arr: solids }); SFX.wall(); say("Barrier Orb · 4 x 400 HP, 600 once fortified (2 s) · 40 s", 900);
   }
   if (code === "KeyQ") {
@@ -8936,7 +8936,7 @@ function rsKey(code) {
   }
   if (code === "KeyE") {
     if (RS.hk) return hkPop();
-    if (J.e < 1 || J.cd.e > 0) return no(); J.e--; J.cd.e = J.e < 1 ? 50 : 0.6; const d = jAim(); // Guiding Light: last charge recharges in 50 s (wiki.playvalorant.com/en-us/Skye)
+    if (J.e < 1 || J.cd.e > 0) return no(); J.e--; J.cd.e = J.e < 1 ? 50 : 0.6; const d = jAim(); // Guiding Light: last charge recharges in 50 s (wiki.playvalorant.com/en-us/Skye; patch 13.00 initiator signatures 60 -> 50 s)
     RS.hk = { m: rsMesh(0xffe27a, 1.4, pEye().clone().addScaledVector(d, 0.8)), d, t: XGL.life }; say("Guiding Light · E to flash", 800); blip(1200, 0.15, "sine", 0.12);
   }
   if (code === "KeyX") {
@@ -9012,7 +9012,7 @@ function rsSl(u) {
   if (J.pick === "Raze") return [["jC", J.c || RS.bb.length, RS.bb.length ? "Rolling" : J.c + "", J.cd.c / 0.6], ["jQ", J.q || RS.pk.length, RS.pk.length ? "Detonate" : J.q + "", J.cd.q / 0.6],
     ["jE", J.e, J.e ? "1" : J.tk + "/2 kills", J.cd.e / 0.4], ["jX", RS.ss || J.ult >= u, RS.ss ? Math.ceil(RS.sst) + " s" : J.ult + "/" + u, RS.ss ? 0 : 1 - J.ult / u]];
   return [["jC", J.c || !!RS.rg, RS.rg ? Math.ceil(RS.rg.pool) + " HP" : J.c + "", RS.rg ? 1 - RS.rg.pool / 100 : J.cd.c / 0.6], ["jQ", J.q || !!J.dr, J.dr ? Math.ceil(J.dr.t) + " s" : J.q + "", J.dr ? 1 - J.dr.t / 6 : J.cd.q / 0.6],
-    ["jE", J.e || !!RS.hk, RS.hk ? "Flash" : J.e > 0 ? J.e + "" : Math.ceil(J.cd.e) + " s", J.cd.e > 1 ? J.cd.e / 50 : J.cd.e / 0.6], ["jX", RS.sk.length || J.ult >= u, RS.sk.length ? RS.sk.length + " seekers" : J.ult + "/" + u, RS.sk.length ? 0 : 1 - J.ult / u]];
+    ["jE", J.e || !!RS.hk, RS.hk ? "Flash" : J.e > 0 ? J.e + "" : Math.ceil(J.cd.e) + " s", J.cd.e > 1 ? J.cd.e / 60 : J.cd.e / 0.6], ["jX", RS.sk.length || J.ult >= u, RS.sk.length ? RS.sk.length + " seekers" : J.ult + "/" + u, RS.sk.length ? 0 : 1 - J.ult / u]];
 }
 // ---- Breach + Chamber kits (player), ability viewmodels, Trailblazer creature, nearsight, kill-feed names ----
 const BC = { as: [], tm: [], sf: [], an: null, td: 0, eq: "", cd: 0, vm: "", fq: [] }; // fq: Fault Line / Rolling Thunder waiting out their windup
@@ -9218,8 +9218,8 @@ function bcKey(code) {
   }
   if (code === "KeyC") {
     if (J.c < 1 || J.cd.c > 0) return no(); J.c--; J.cd.c = 0.6;
-    const m = new THREE.Mesh(orbGeo, okMat(0xd8b04a)); m.scale.set(1.6, 0.5, 1.6); m.position.set(P.x, xFy(P.x, P.z) + 0.12, P.z); scene.add(m);
-    BC.tm.push({ m, p: new RV(P.x, xFy(P.x, P.z) + 0.5, P.z), arm: XAB_WIND.trademark, wu: 0 }); say("Trademark set · scans 10 m, slows 50 % in 6 m", 900); blip(620, 0.12, "triangle", 0.12);
+    const tq = xAimPlace(XPLACE.Chamber.c[0]), m = new THREE.Mesh(orbGeo, okMat(0xd8b04a)); m.scale.set(1.6, 0.5, 1.6); m.position.set(tq.x, tq.y + 0.12, tq.z); scene.add(m); // at the crosshair up to 12 m (wiki Trademark), was at his feet
+    BC.tm.push({ m, p: new RV(tq.x, tq.y + 0.5, tq.z), arm: XAB_WIND.trademark, wu: 0 }); say("Trademark set · scans 10 m, slows 50 % in 6 m", 900); blip(620, 0.12, "triangle", 0.12);
   }
   if (code === "KeyQ") {
     if (BC.eq === "hp") { BC.eq = ""; return say("Headhunter holstered", 600); }
@@ -9228,8 +9228,8 @@ function bcKey(code) {
   if (code === "KeyE") {
     if (!BC.an) {
       if (J.cd.e > 0) return no(), say("Rendezvous " + Math.ceil(J.cd.e) + " s", 700);
-      const m = new THREE.Mesh(ringGeo, fireMat(0xd8b04a, 0.8)); m.rotation.x = -Math.PI / 2; m.position.set(P.x, P.y + 0.06, P.z); scene.add(m);
-      BC.an = { x: P.x, y: P.y, z: P.z, m }; say("Rendezvous anchor · E within " + XPAR2.rdv + " m to return", 900); return blip(700, 0.1, "sine", 0.12);
+      const aq = xAimPlace(XPLACE.Chamber.e[0]), m = new THREE.Mesh(ringGeo, fireMat(0xd8b04a, 0.8)); m.rotation.x = -Math.PI / 2; m.position.set(aq.x, aq.y + 0.06, aq.z); scene.add(m); // at the crosshair up to 8.5 m (wiki Rendezvous), was at his feet
+      BC.an = { x: aq.x, y: aq.y, z: aq.z, m }; say("Rendezvous anchor · E within " + XPAR2.rdv + " m to return", 900); return blip(700, 0.1, "sine", 0.12);
     }
     if (Math.hypot(P.x - BC.an.x, P.z - BC.an.z) > XPAR2.rdv) return no(), say("Rendezvous · more than " + XPAR2.rdv + " m from anchor", 800);
     if (BC.rdv) return; BC.rdv = { t: XPAR2.rdvT, x: BC.an.x, y: BC.an.y || 0, z: BC.an.z, m: BC.an.m }; BC.an = null; J.cd.e = 30; SFX.tp(); say("Rendezvous", 600); // 1.3 s teleport (wiki; server pendingTeleport rendezvous)
@@ -21832,6 +21832,57 @@ window.xTac = { open: xTacOpen, close: xTacClose, confirm: xTacConfirm, cancel: 
   }
   return ok0.apply(this, arguments);
 }; }
+// ---- Aimed placement + placement indicators (Valorant: "While equipped, his crosshair will be replaced with an indicator to place
+// ... The crosshair will turn [colour] if it is placed on a viable position ... and will turn red for unviable positions").
+// Before: Alarmbot / Turret went 1.5 m in front of Killjoy whatever she aimed at, Trademark and the Rendezvous anchor at Chamber's
+// feet, Sage's Barrier 2.5 m ahead - and none of the placed abilities showed where they would land. Now they go where the
+// crosshair meets the floor, up to each ability's wiki max (XPLACE), an indicator shows that spot while the ability is equipped
+// (cyan / agent colour = viable, red = not), and a cast on an unviable spot is refused (the ability stays in hand). The trusted
+// server places with the same rule (server/src/abilities.js aimFloor / PLACE_MAX).
+const XPLACE = { // wiki max cast distance (m) and indicator radius (m) per agent+key
+  Omen: { c: [15, 0.55, 0x8a6bff] }, Killjoy: { q: [10, 0.4, 0xf2c230], e: [4.5, 0.5, 0xf2c230] }, Sage: { c: [15, 0, 0x7fe0ff] },
+  Chamber: { c: [12, 0.45, 0xd8b04a], e: [8.5, 0.7, 0xd8b04a] }, Cypher: { q: [15, 3.72, 0x3fd0c0] } };
+// the floor point under the crosshair within max m (ray to the map, 0.5 m short of a hit, else max along the aim), pulled off walls;
+// ok: on the nav mesh (native: a nav node within 1.5 m, playable) and not inside a wall
+function xAimPlace(max) {
+  const o = pEye(), d = jAim(); ray.set(o, d); ray.far = max; const h = ray.intersectObjects(solids)[0], t = h ? Math.max(0, h.distance - 0.5) : max;
+  let x = o.x + d.x * t, z = o.z + d.z * t; const y0 = o.y + d.y * t; let y = xFy(x, z, Math.min(y0, o.y) + 0.1);
+  for (let i = 0; i < 24 && blocked(x, z, 0.3, y); i++) { const vx = player.x - x, vz = player.z - z, l = Math.hypot(vx, vz) || 1; if (l < 0.3) break; x += (vx / l) * 0.25; z += (vz / l) * 0.25; y = xFy(x, z, Math.min(y0, o.y) + 0.1); }
+  return { x, y, z, ok: xPlaceOk(x, z, y) };
+}
+function xPlaceOk(x, z, y) { if (!Number.isFinite(x) || !Number.isFinite(z) || !Number.isFinite(y)) return false; const C = typeof nmActive === "function" && nmActive();
+  if (C) { const ni = nmNear(C, x, z); if (ni < 0 || Math.hypot(C.nav.nodes[ni][0] - x, C.nav.nodes[ni][2] - z) > 1.5 || (C.playable && !C.playable[ni]) || Math.abs(C.nav.nodes[ni][1] - y) > 2.5) return false; }
+  return !blocked(x, z, 0.3, y); }
+// Killjoy Alarmbot / Turret: at the crosshair (10 m / 4.5 m); Lockdown keeps its short plant in front of her (wiki 0.5 m)
+{ const op0 = okPlace; okPlace = function (geo, c, dist) {
+  const max = geo === kjBox ? XPLACE.Killjoy.q[0] : geo === kjTur ? XPLACE.Killjoy.e[0] : 0; if (!max) return op0.apply(this, arguments);
+  const q = xAimPlace(max), m = new THREE.Mesh(geo, okMat(c)); m.position.set(q.x, q.y + geo.parameters.height / 2, q.z); m.rotation.y = yaw; scene.add(m); return m; }; }
+// refuse a placed cast on an unviable spot before any charge is spent (Valorant keeps the ability in hand; the equip flow sees no cast)
+function xPlaceRefuse(ag, k) { const P = XPLACE[ag] && XPLACE[ag][k]; if (!P) return false; let ok;
+  if (ag === "Omen") { const g = okGround(P[0]); ok = !!okFtsValid(g.x, g.z); } else ok = xAimPlace(P[0]).ok;
+  if (ok) return false; try { sgNo(); } catch (e) {} say("Can't place there", 700); return true; }
+{ const ok1 = okKey; okKey = function (code) { const k = code && code[3] && code[3].toLowerCase();
+  if (J.pick === "Killjoy" && (k === "q" && J.q >= 1 || k === "e" && J.e >= 1) && xPlaceRefuse("Killjoy", k)) return;
+  if (J.pick === "Omen" && k === "c" && !J.om && J.c >= 1 && J.cd.c <= 0 && xPlaceRefuse("Omen", "c")) return;
+  return ok1.apply(this, arguments); }; }
+{ const sg1 = sgKey; sgKey = function (code) { if (code === "KeyC" && J.c >= 1 && J.cd.c <= 0 && xPlaceRefuse("Sage", "c")) return; return sg1.apply(this, arguments); }; }
+{ const bc1 = bcKey; bcKey = function (code) { if (J.pick === "Chamber" && (code === "KeyC" && J.c >= 1 && J.cd.c <= 0 && xPlaceRefuse("Chamber", "c") || code === "KeyE" && !BC.an && !(J.cd.e > 0) && xPlaceRefuse("Chamber", "e"))) return; return bc1.apply(this, arguments); }; }
+// the indicator: a floor ring (radius XPLACE[1]; Sage: the 10.4 m wall line across the aim) while the ability is equipped
+const XPI = { ring: null, line: null, mat: null };
+function xPlaceSpot(ag, k) { const P = XPLACE[ag] && XPLACE[ag][k]; if (!P) return null;
+  if (ag === "Omen") { const g = okGround(P[0]), v = okFtsValid(g.x, g.z); return { x: g.x, z: g.z, y: v ? v.y : xFy(g.x, g.z, player.y + 0.1), ok: !!v, r: P[1], c: P[2] }; }
+  if (ag === "Chamber" && k === "e" && BC.an) return null;
+  const q = xAimPlace(P[0]); q.r = P[1]; q.c = P[2]; if (ag === "Sage") q.wall = 10.4; return q; }
+function xPlaceTick() {
+  const q = J.eq, show = q && (q.st === "draw" || q.st === "ready" || q.st === "hold") && running && player && player.hp > 0 && jOn(), s = show ? xPlaceSpot(J.pick, q.k) : null;
+  if (!XPI.ring) { XPI.mat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.85, depthWrite: false, side: THREE.DoubleSide }); XPI.ring = new THREE.Mesh(new THREE.RingGeometry(0.82, 1, 40), XPI.mat); XPI.ring.rotation.x = -Math.PI / 2; XPI.ring.name = "xPlaceRing"; XPI.ring.raycast = () => {}; XPI.line = new THREE.Mesh(new THREE.BoxGeometry(1, 0.06, 0.12), XPI.mat); XPI.line.name = "xPlaceLine"; XPI.line.raycast = () => {}; }
+  if (!s) { if (XPI.ring.parent) scene.remove(XPI.ring); if (XPI.line.parent) scene.remove(XPI.line); XPI.s = null; return; }
+  XPI.s = s; XPI.mat.color.setHex(s.ok ? s.c : 0xff4655);
+  if (s.wall) { if (XPI.ring.parent) scene.remove(XPI.ring); if (!XPI.line.parent) scene.add(XPI.line); XPI.line.scale.set(s.wall, 1, 1); XPI.line.position.set(s.x, s.y + 0.05, s.z); XPI.line.rotation.set(0, yaw, 0); }
+  else { if (XPI.line.parent) scene.remove(XPI.line); if (!XPI.ring.parent) scene.add(XPI.ring); XPI.ring.scale.setScalar(Math.max(0.3, s.r)); XPI.ring.position.set(s.x, s.y + 0.05, s.z); }
+}
+(window.XHK || (window.XHK = [])).push(function xPlaceHook() { try { xPlaceTick(); } catch (e) { xE(e); } });
+window.xPlace = { aim: xAimPlace, ok: xPlaceOk, spot: xPlaceSpot, tick: xPlaceTick, st: XPI, max: XPLACE };
 // ---- END ABILITY TARGETING ----
 xReady = true; // every mode is initialised; lobby launches may now start them
 { let rb = null; try { rb = sessionStorage.getItem("vs.retry"); sessionStorage.removeItem("vs.retry"); } catch (e) {} // Retry on the engine error reloaded the page: relaunch the same mode
