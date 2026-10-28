@@ -24,7 +24,7 @@ console.warn=((w)=>(...a)=>{if(!/boneTransform/.test(String(a[0])))w(...a);})(co
  let pending={},loads=[];const mkF=(ag,w)=>{const root={visible:true,parent:null,traverse(){},scale:{set(){}},position:{set(){},y:0}};return {root,ag,w,am:{update(){},stopAllAction(){}},gm:{update(){},stopAllAction(){}},entries:[],kind:null,age:0,origin:{x:0,y:0,z:0}};};
  const camera={fov:70,children:[],add(o){this.children.push(o);o.parent=this;},remove(o){this.children=this.children.filter(x=>x!==o);o.parent=null;}};
  const c={THREE:T,console,Math,Promise,Map,Set,String,XV:{config:{},failures:{},hidden:[],fp:null,fpLoad:null,event:null},camera,running:true,player:{hp:100},gun:{visible:true,children:[obj()]},knife:{visible:false,children:[obj()]},muzzle:null,
-  BC:{},J:{pick:'Jett'},XCA:{},VMA:{R:obj(),L:obj()},KARM:obj(),VM:{},mode:'tdm',reloading:0,kSwing:0,wName:()=>c.cur,FPG:{Vandal:1,Classic:1,Sheriff:1},vmFire(){},vmTick(){},cur:'Vandal'};
+  BC:{},J:{pick:'Jett'},XCA:{},VMA:{R:obj(),L:obj()},KARM:obj(),VM:{},mode:'tdm',reloading:0,kSwing:0,wName:()=>c.cur,FPG:{Vandal:1,Classic:1,Sheriff:1},vmFire(){},vmTick(){},cur:'Vandal',xAD:{k:0}/* page global (index.html var xAD): the viewmodel tick reads the ADS blend */};
  vm.createContext(c);vm.runInContext('function fpaWeap(){return FPG[cur]?cur:"Vandal";}\n'+src.slice(a,b).replace(/\{const fire=vmFire[\s\S]*$/,''),c);
  c.xvFPLoad=(ag,w)=>{loads.push(ag+'|'+w);return new Promise((res,rej)=>{pending[ag+'|'+w]={res:()=>res(mkF(ag,w)),rej};});};
  c.xvFPPlay=(F,k)=>{F.kind=k;F.played=(F.played||[]).concat(k);};
@@ -50,5 +50,7 @@ console.warn=((w)=>(...a)=>{if(!/boneTransform/.test(String(a[0])))w(...a);})(co
  for(const k of ['Breach|Vandal','Breach|Knife','Breach|Classic'])pending[k].res();await flush();await flush();tick();
  assert.equal(c.XV.fp.ag,'Breach');assert.equal(c.XV.fp.w,'Vandal');assert.deepEqual(c.XV.fp.played.slice(0,1),['equip'],'new agent rig equips');assert(!camera.children.includes(vandal.root)&&camera.children.includes(c.XV.fp.root),'old agent rig detached');
  c.J.pick='Jett';tick();await flush();await flush();tick();assert.equal(c.XV.fp,vandal,'switching back reuses the cached Jett rig');
+ // ADS optic alignment: the ScopeTarget socket is looked up once per viewmodel while aiming (absence cached), not walked every frame.
+ {let walks=0;c.XV.fp.ws={getObjectByName(){walks++;return null;}};delete c.XV.fp.sight;tick();assert.equal(walks,0,'no socket search at hip');c.xAD.k=1;tick();tick();tick();assert.equal(walks,2,'ScopeTarget + ScopeTargetSocket searched once');c.xAD.k=0;}
  console.log('native first-person arms ok');
 })().catch(e=>{console.error(e);process.exit(1);});

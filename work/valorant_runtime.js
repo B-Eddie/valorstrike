@@ -340,7 +340,9 @@ function xvFPTick(dt) {
   const s=Math.tan(THREE.MathUtils.degToRad(camera.fov/2))/Math.tan(THREE.MathUtils.degToRad(43.383/2));F.root.scale.set(s,s,1);F.root.position.set(F.origin.x*s,F.origin.y*s,F.origin.z);F.root.position.y+=Math.sin(VM.bob||0)*.003*(1-xAD.k);
   // Align the authored optic socket to the camera's centre ray, in camera space.
   // Keep depth unchanged so zoom cannot pull the weapon through the near plane.
-  const sight=F.sight||(F.sight=F.ws.getObjectByName('ScopeTarget')||F.ws.getObjectByName('ScopeTargetSocket'));
+  // Looked up once per viewmodel while aiming (null cached: most guns have no optic socket), never a per-frame tree walk.
+  if(xAD.k>0&&F.sight===undefined)F.sight=F.ws&&(F.ws.getObjectByName('ScopeTarget')||F.ws.getObjectByName('ScopeTargetSocket'))||null;
+  const sight=F.sight;
   if(sight&&xAD.k>0){F.root.updateMatrixWorld(true);const q=F.sightPoint||(F.sightPoint=new THREE.Vector3());sight.getWorldPosition(q);camera.worldToLocal(q);F.root.position.x-=q.x*xAD.k;F.root.position.y-=q.y*xAD.k;}
 }
 {const fire=vmFire;vmFire=function(){const r=fire.apply(this,arguments);XV.event='fire';return r;};const tick=vmTick;vmTick=function(dt){(XV.hidden||[]).forEach(([o,v])=>o.visible=v);XV.hidden=[];tick(dt);try{xvFPTick(Math.min(.1,dt||.016));}catch(e){if(!XV.fpErr){XV.fpErr=String(e);console.warn('native viewmodel',e);}}};}
