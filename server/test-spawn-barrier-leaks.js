@@ -5,9 +5,15 @@
 // wall line outside its own zone. Static: every panel's top is above a jump from the highest floor reachable beside it, its
 // foot under the doorway floor (+0.3 m). The page runs the same walls through its own collision at 30 / 10 fps
 // (work/test_spawn_barrier_leaks_client.cjs).
+// barrier-3 (user: "Make barriers higher in buy phase, I can jump past one in Haven"): walls stand to the sky as Valorant's -
+// every top >= the map's highest valid navigation node + 8 m; reach() (walk / jump up 1.45 m / drop / crouch, on the leash,
+// from the playable nodes of each own zone) gets no cell out; ledgeRuns() from the highest reachable places beside each
+// wall (boxes, ledges, stairs, roofs) - jump spam, crouch-jump, an Updraft launch, a Tailwind dash - get none out; and the
+// server refuses every agent's C / Q / E / X in the buy phase (castAbility0: sim.buy > 0). Red on 1588582 (Haven attacker
+// east door jumped from its ledge, roofs beside walls, Haven defenders' west corridor with no wall).
 //   SBL_MAPS=breeze,haven narrows the maps (default: all six).
 import fs from 'node:fs';import {createRequire} from 'node:module';
-import {loadWorld} from './src/world.js';import {escapes,heights} from './tools/spawn-barrier-probe.mjs';
+import {loadWorld} from './src/world.js';import {escapes,heights,reach,ledgeRuns} from './tools/spawn-barrier-probe.mjs';import {SpikeSimulation} from './src/spike.js';
 process.chdir(new URL('.',import.meta.url).pathname);
 const SB=createRequire(import.meta.url)('../vendor/spawn-barriers.cjs');
 const assets={fetch:async r=>new Response(await fs.promises.readFile('public'+new URL(r.url).pathname))};
@@ -16,6 +22,16 @@ for(const key of maps){const w=await loadWorld(assets,key);
  const H=heights(w,key,SB);for(const h of H){if(!h.okTop)fails.push(key+' '+h.side+' panel '+h.panel+': top '+h.y[1]+' < reachable floor '+h.reach.toFixed(2)+' + jump '+(h.needTop-h.reach).toFixed(2));if(!h.okFoot)fails.push(key+' '+h.side+' panel '+h.panel+': foot '+h.y[0]+' over the doorway floor '+h.floor.toFixed(2));}
  const {runs,leaks}=escapes(w,key,SB);const row=key+': '+H.length+' panels, '+runs+' escape runs, '+leaks.length+' out';out.push(row);if(process.env.VERBOSE)console.log(row);
  if(leaks.length){const by={};for(const l of leaks){const k=l.side+' piece '+l.piece+' (panel '+l.panel+')';(by[k]=by[k]||[]).push(l);}for(const k in by)fails.push(key+' '+k+': '+by[k].length+' x, e.g. '+JSON.stringify(by[k][0]));}
- if(runs<100)fails.push(key+': too few runs ('+runs+')');}
+ if(runs<100)fails.push(key+': too few runs ('+runs+')');
+ // barrier-3: tops to the sky, reach flood, ledge / ability runs
+ let navTop=-Infinity;w.nav.nodes.forEach((p,i)=>{if(!w.nav.valid||w.nav.valid[i])navTop=Math.max(navTop,p[1]);});
+ for(const p of SB.pieces(key))if(p.y1<navTop+8)fails.push(key+' '+p.side+' wall ('+p.ax+','+p.az+'): top '+p.y1+' < highest floor '+navTop.toFixed(2)+' + 8');
+ const keep={},RR=reach(w,key,SB,{keep});if(RR.leaks.length)fails.push(key+' reach: '+RR.leaks.length+' cells out, e.g. '+JSON.stringify(RR.leaks[0]));
+ const LR=ledgeRuns(w,key,SB,keep,{per:+process.env.SBL_PER||10});if(LR.leaks.length)fails.push(key+' ledge / ability runs: '+LR.leaks.length+' out, e.g. '+JSON.stringify(LR.leaks.slice(0,2)));if(LR.runs<40)fails.push(key+': too few ledge runs ('+LR.runs+')');
+ out[out.length-1]+=', reach '+RR.cells+' cells / '+RR.leaks.length+' out, '+LR.runs+' ledge / ability runs / '+LR.leaks.length+' out';}
+// abilities refused in the buy phase (every agent, C / Q / E / X): Updraft / Tailwind / Satchel / teleports never start there
+{const w=await loadWorld(assets,maps[0]);const s=new SpikeSimulation(w,'five',maps[0],()=>.5),u=s.add('one');s.add('two');s.start(false);let n=0;
+ for(const ag of ['Jett','Phoenix','Sova','Sage','Reyna','Omen','Killjoy','Raze','Skye','Breach','Chamber','Cypher']){u.agent=ag;u.ability={...u.ability,c:2,q:2,e:2,ult:9,cool:{}};for(const k of ['c','q','e','x']){s.buy=20;const y=u.y,vy=u.vy;if(s.command(u,{t:'ab',k}))fails.push('buy phase: '+ag+' '+k+' cast');if(u.pendingTeleport||u.dash||u.vy!==vy||u.y!==y)fails.push('buy phase: '+ag+' '+k+' moved');n++;}}
+ out.push('buy phase: '+n+' ability casts refused');}
 if(fails.length){console.log('FAIL spawn walls on the server ('+fails.length+'):\n - '+fails.join('\n - '));process.exit(1);}
 console.log('test-spawn-barrier-leaks: PASS\n  '+out.join('\n  '));

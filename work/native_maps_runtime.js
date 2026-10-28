@@ -412,7 +412,7 @@ function nmOobWatch(C){if((typeof NET!=='undefined'&&NET.socket)||(typeof MP!=='
 // a scan line drifting up, brighter rim along every edge and a glow line on the floor, team tinted (your spawn teal, the
 // enemy's red), drawn from both sides without writing depth (it never hides a wall behind it). While the buy phase runs
 // they stand; at round start (the SFX.roundStart stinger) they flash, sink into the floor and fade out in
-// SpawnBarriers.DROP s (drop(t): alpha, sink, glow), then hide. Meshes are built once per map and reused every round.
+// SpawnBarriers.DROP s (drop(t, height): alpha, sink by the wall's whole height, glow), then hide. Meshes are built once per map and reused every round.
 var XSBV={key:'',g:null,list:[],on:false,t:0,last:0,mat:null};
 function xSbMat(){if(XSBV.mat)return XSBV.mat;const fs='uniform float uT;uniform float uA;uniform float uG;uniform vec3 uC;varying vec2 vU;varying vec2 vM;'+
  'float hx(vec2 p){p=abs(p);return max(dot(p,vec2(0.5,0.866025)),p.x);}'+
@@ -427,7 +427,7 @@ function xSbBuild(C){for(const m of XSBV.list){if(m.parent)m.parent.remove(m);m.
   const mat=new THREE.ShaderMaterial({transparent:true,depthWrite:false,side:THREE.DoubleSide,blending:THREE.AdditiveBlending,uniforms:u,
    vertexShader:'uniform float uLen;uniform float uH;varying vec2 vU;varying vec2 vM;void main(){vU=uv;vM=vec2(uv.x*uLen,uv.y*uH);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',
    fragmentShader:'uniform float uLen;uniform float uH;'+xSbMat()});
-  const m=new THREE.Mesh(geo,mat);m.position.set((P.ax+P.bx)/2,P.y0+h/2,(P.az+P.bz)/2);m.rotation.y=-Math.atan2(P.tz,P.tx);m.renderOrder=6;m.frustumCulled=false;m.visible=false;m.raycast=()=>{};m.userData.xNoMerge=1;m.userData.sb={side:P.side,y:P.y0+h/2};XSBV.list.push(m);}
+  const m=new THREE.Mesh(geo,mat);m.position.set((P.ax+P.bx)/2,P.y0+h/2,(P.az+P.bz)/2);m.rotation.y=-Math.atan2(P.tz,P.tx);m.renderOrder=6;m.frustumCulled=false;m.visible=false;m.raycast=()=>{};m.userData.xNoMerge=1;m.userData.sb={side:P.side,y:P.y0+h/2,h};XSBV.list.push(m);}
  return XSBV.list;}
 // tint by team: the walls of your own spawn teal, the enemy's red
 function xSbTint(){const own=FV.atk?'atk':'def';for(const m of XSBV.list)m.material.uniforms.uC.value.set(m.userData.sb.side===own?0x35e0c8:0xff4655);}
@@ -435,9 +435,9 @@ function xSbTick(){const now=performance.now(),dt=Math.min(.1,(now-(XSBV.last||n
  try{C=nmActive();on=!!(C&&running&&mode==='five'&&!FV.dm&&FV.buy>0&&window.SpawnBarriers&&SpawnBarriers.has(C.key));}catch(e){return;}
  if(on){if(XSBV.key!==C.key||!XSBV.list.length)xSbBuild(C);if(!XSBV.on)xSbTint();XSBV.on=true;XSBV.t=-1;for(const m of XSBV.list){if(m.parent!==scene)scene.add(m);m.visible=true;m.position.y=m.userData.sb.y;const U=m.material.uniforms;U.uA.value=1;U.uG.value=0;U.uT.value=now*.001;}return;}
  if(XSBV.on){XSBV.on=false;XSBV.t=0;}/* the round started: the walls drop */
- if(XSBV.t>=0&&XSBV.list.length){let ok=false;try{ok=running&&mode==='five';}catch(e){}XSBV.t+=dt;const d=SpawnBarriers.drop(XSBV.t);
+ if(XSBV.t>=0&&XSBV.list.length){let ok=false;try{ok=running&&mode==='five';}catch(e){}XSBV.t+=dt;
   if(!ok||XSBV.t>=SpawnBarriers.DROP){for(const m of XSBV.list)m.visible=false;XSBV.t=-1;return;}
-  for(const m of XSBV.list){m.position.y=m.userData.sb.y-d.sink;const U=m.material.uniforms;U.uA.value=d.alpha;U.uG.value=d.glow;U.uT.value=now*.001;}}}
+  for(const m of XSBV.list){const d=SpawnBarriers.drop(XSBV.t,m.userData.sb.h);/* sinks its own height (sky-tall walls) */m.position.y=m.userData.sb.y-d.sink;const U=m.material.uniforms;U.uA.value=d.alpha;U.uG.value=d.glow;U.uT.value=now*.001;}}}
 (window.XHK||(window.XHK=[])).push(xSbTick);
 window.xSbVis=XSBV;
 // ---- END ORIGINAL VALORANT MAPS ----

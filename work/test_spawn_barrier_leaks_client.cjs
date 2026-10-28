@@ -24,10 +24,9 @@ const fnBlock=s=>{const i=html.indexOf(s);if(i<0)throw Error('page function miss
 const sbSrc=fs.readFileSync(path.join(root,'vendor/spawn-barriers.cjs'),'utf8').trimEnd();if(!html.includes(sbSrc))throw Error('index.html does not carry vendor/spawn-barriers.cjs verbatim (run python3 work/install_valorant.py)');
 const page=[line('const NM_NONE=[];'),line('function nmCellNum(C){'),line('function nmNear(C,x,z,y,yBand){'),line('function nmHeight(C,x,z,y){'),line('var NM_Q='),fnBlock('function nmBlocked(C,x,z,r,y,height=1.8){'),line('function nmLeash(C,x,z,y,x0,z0){'),line('function nmConnected(C){')].join('\n');
 const tree=k=>{const b=f=>fs.readFileSync(path.join(srv,'public/worlds',k,f)),p=b('position.bin'),ix=b('index.bin'),g=new T.BufferGeometry();g.setAttribute('position',new T.BufferAttribute(new Float32Array(p.buffer.slice(p.byteOffset,p.byteOffset+p.byteLength)),3));g.setIndex(new T.BufferAttribute(new Uint32Array(ix.buffer.slice(ix.byteOffset,ix.byteOffset+ix.byteLength)),1));const meta=JSON.parse(b('meta.json')),roots=[];for(let n=0;n<meta.roots;n++){const r=b('bvh'+n+'.bin');roots.push(r.buffer.slice(r.byteOffset,r.byteOffset+r.byteLength));}return MeshBVH.deserialize({index:g.index.array,roots},g,{setIndex:false});};
-// KNOWN OPEN (reported, not failed): Bind attacker east door (panel 1, z 5.25) also stands over a lower floor (~6.1 m, zone A on
-// the navigation) 2.4 m under its foot (8.52); from there a run goes under the panel (page motor, 30 fps). Lowering the foot
-// opens more lower-level ways out west of the panel (server probe), so that level needs its own panel - not done yet.
-const KNOWN={bind:{atk:[1]}},known=[];
+// barrier-3: Bind attackers' east door (panel 1) KNOWN gap closed - its foot goes down to the trench floor - 0.4 (5.69);
+// runs start only where a player can stand (on the leash, beside a playable navigation node of that level), as the server probe.
+const KNOWN={},known=[];
 const FULL=!!process.env.SBL_FULL,SAMPLE={breeze:{atk:[3],def:[4]},haven:{atk:[3]},bind:{atk:[1,4]},lotus:{atk:[0,2]}};
 const MAPS=(process.env.SBL_MAPS||(FULL?'ascent,bind,breeze,haven,lotus,split':Object.keys(SAMPLE).join(','))).split(',');
 if(!fs.existsSync(path.join(srv,'public/worlds',MAPS[0],'bvh0.bin'))){console.log('test_spawn_barrier_leaks_client: SKIP (no server/public/worlds collision: npm run build:worlds)');process.exit(0);}
@@ -47,6 +46,7 @@ for(const map of MAPS){
  // panels as polylines (signed distance: + spawn side)
  const polys=[];for(const side of ['atk','def'])for(const P of SB.DATA[map][side]){const segs=[];for(let i=1;i<P.p.length;i++){const [ax,az]=P.p[i-1],[bx,bz]=P.p[i],len=Math.hypot(bx-ax,bz-az);if(len<1e-6)continue;const tx=(bx-ax)/len,tz=(bz-az)/len;segs.push({ax,az,len,tx,tz,nx:-tz*P.in,nz:tx*P.in});}polys.push({side,P,segs});}
  const sdist=(poly,x,z)=>{let best=null;for(const s of poly.segs){const t=Math.max(0,Math.min(s.len,(x-s.ax)*s.tx+(z-s.az)*s.tz)),px=s.ax+s.tx*t,pz=s.az+s.tz*t,d=Math.hypot(x-px,z-pz);if(!best||d<best.d-1e-9)best={d,sg:(x-px)*s.nx+(z-pz)*s.nz>=0?1:-1};}return best.d*best.sg;};
+ const onPlayable=(x,z,y)=>{let b=Infinity,dy=0;for(let dx=-1;dx<=1;dx++)for(let dz=-1;dz<=1;dz++)for(const i of C.cells.get((Math.floor(x/2)+dx)+','+(Math.floor(z/2)+dz))||[]){const n=N[i];if(Math.abs(n[1]-y)>1.6)continue;const d=Math.hypot(n[0]-x,n[2]-z);if(d<b){b=d;dy=Math.abs(n[1]-y);}}return b<=1.2&&dy<=.6;};/* server escapes(): nearest playable node of the level within 1.2 m, 0.6 m up / down */
  const zoneAt=(x,z,y,r=1.5)=>{const i=nmNear(x,z,y);return i>=0&&Math.hypot(N[i][0]-x,N[i][2]-z)<r?Z[i]:'';};
  let runs=0,static_=0;const leaks=[];const T0=Date.now();
  const pick=(side,k)=>FULL||!!(SAMPLE[map]&&SAMPLE[map][side]&&SAMPLE[map][side].includes(k));
@@ -60,8 +60,8 @@ for(const map of MAPS){
   const L=SB.pieces(map).filter(p=>p.side===side),owner=[];mine.forEach((o,k)=>o.segs.forEach(()=>owner.push(k)));
   for(const [pi,p] of L.entries()){if(!pick(side,owner[pi]))continue;if(process.env.SBL_V)console.error(map,side,pi,runs,leaks.length,((Date.now()-T0)/1000).toFixed(0)+'s');const ends=[-1,-.3,p.len+.3,p.len+1],ts=ends.slice();if(FULL)for(let t=.75;t<p.len;t+=1.5)ts.push(t);const runs_=[];for(const t of ts)for(const R of RUNS){if(R[2]===10&&!ends.includes(t))continue;if(!FULL&&R[2]===10&&R[0]!=='fj')continue;runs_.push([t,...R]);}
    /* hugging the wall towards an end (20 deg into it, jump spam): rounds an end that stops short of the room's wall */for(const [t,dir] of [[p.len-3,1],[p.len-1.5,1],[3,-1],[1.5,-1]])if(t>0&&t<p.len)runs_.push([t,'hug'+(dir>0?'+':'-')+'j',.7,30]);
-   for(const [t,pat,din,fps] of runs_){
-   const sx=p.ax+p.tx*t+p.nx*din,sz=p.az+p.tz*t+p.nz*din,gy=nmHeight(sx,sz,p.y0+1.4);if(!Number.isFinite(gy)||Math.abs(gy-p.y0)>2.5)continue;if(nmBlocked(sx,sz,.42,gy,1.8))continue;if(!own.includes(zoneAt(sx,sz,gy)))continue;
+   for(const [t,pat,din,fps] of runs_)for(const qy of [1.4,3.4]){/* as the server probe: from the floor over the foot and one 3.4 m up (a foot lowered to a trench: Bind attackers' east door) */
+   const sx=p.ax+p.tx*t+p.nx*din,sz=p.az+p.tz*t+p.nz*din,gy=nmHeight(sx,sz,p.y0+qy);if(!Number.isFinite(gy)||gy<p.y0-2.5||gy>p.y0+4)continue;if(qy>2&&Math.abs(gy-nmHeight(sx,sz,p.y0+1.4))<.5)continue;if(nmBlocked(sx,sz,.42,gy,1.8))continue;if(!own.includes(zoneAt(sx,sz,gy)))continue;if(!nmLeash(sx,sz,gy))continue;if(!onPlayable(sx,sz,gy))continue;
    let dx=-p.nx,dz=-p.nz;if(pat.startsWith('l45')){dx=-p.nx*.707-p.tx*.707;dz=-p.nz*.707-p.tz*.707;}if(pat.startsWith('r45')){dx=-p.nx*.707+p.tx*.707;dz=-p.nz*.707+p.tz*.707;}if(pat.startsWith('hug')){const g=pat[3]==='+'?1:-1;dx=p.tx*g*.94-p.nx*.34;dz=p.tz*g*.94-p.nz*.34;}
    const P={x:sx,y:gy,z:sz,vx:0,vz:0,vy:0},dt=1/fps,j=pat.includes('j'),c=pat.includes('c');let px=sx,pz=sz,esc=null,hx=sx,hz=sz,ht=0;runs++;
    const Tmax=pat.startsWith('hug')?5:4;for(let k=0;k*dt<Tmax;k++){if(k*dt-ht>=1.5){if(Math.hypot(P.x-hx,P.z-hz)<.1)break;/* held: no progress for 1.5 s */hx=P.x;hz=P.z;ht=k*dt;}const tt=k*dt;if(pat.startsWith('hug')&&tt>=2.5){dx=-p.nx;dz=-p.nz;}/* along the wall to its end, then out */VF.step(P,{x:dx,z:dz,jump:j&&(tt%.4<.2),duck:c,walk:false,speed:6.75,tag:1,hold:false,use:false,f:1,pitch:0},dt,world);

@@ -43,7 +43,11 @@ for(const key of maps){
  assert(hits>=P.length*2,key+' walls block on the page');
  // 2. round start drop
  ctx.FV.buy=0;let lastA=2,lastY=Infinity,flash=0;for(let k=0;k<Math.ceil(SB.DROP/.05)-1;k++){frame(.05);const m=M[0],U=m.material.uniforms;if(!m.visible)break;assert(U.uA.value<=lastA+1e-12,key+' fades');assert(m.position.y<=lastY+1e-12,key+' sinks');lastA=U.uA.value;lastY=m.position.y;flash=Math.max(flash,U.uG.value);}
- assert(flash>1,key+' flashes as it drops');frame(.1);frame(.1);assert(M.every(m=>!m.visible),key+' hidden after the drop');
+ assert(flash>1,key+' flashes as it drops');
+ /* barrier-3: sky-tall walls (12 - 22 m) sink their whole height: on the last visible frame every wall's top is within a quarter of its height over its foot, and alpha is near 0 */
+ M.forEach((m,i)=>{if(!m.visible)return;const p=P[i],h=p.y1-p.y0,top=m.position.y+h/2;assert(top-p.y0<=h*.25+1e-6,key+' wall '+i+' (h '+h.toFixed(1)+') sunk to '+(top-p.y0).toFixed(2)+' m over its foot near the end of the drop');assert(m.material.uniforms.uA.value<.05,key+' wall '+i+' faded');});
+ P.forEach((p,i)=>{const h=p.y1-p.y0;assert(h-SB.drop(SB.DROP,h).sink<=1e-9,key+' wall '+i+' fully under its foot at DROP');});
+ frame(.1);frame(.1);assert(M.every(m=>!m.visible),key+' hidden after the drop');
  {const p=P[0],mx=(p.ax+p.bx)/2,mz=(p.az+p.bz)/2;assert.equal(ctx.nmBlocked(C,mx,mz,.4,p.y0+.4,1.8),false,key+' no collision after the drop');ctx.FV.buy=5;ctx.FV.dm=true;assert.equal(ctx.nmBlocked(C,mx,mz,.4,p.y0+.4,1.8),false,key+' none in deathmatch');ctx.FV.dm=false;}
  // next buy phase, sides swapped: shown again, tints swap
  ctx.FV.buy=30;ctx.FV.atk=false;frame(.016);assert(M.every(m=>m.visible&&m.material.uniforms.uA.value===1),key+' back next round');

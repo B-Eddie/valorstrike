@@ -23,6 +23,7 @@ const assets={fetch:async r=>new Response(await fs.promises.readFile('public'+ne
 const maps=(process.env.SB_MAPS||'ascent,bind,breeze,haven,lotus,split').split(','),out=[];
 // 5. drop curve
 {const a=SB.drop(0),b=SB.drop(SB.DROP),m=SB.drop(SB.DROP/2);assert.equal(a.alpha,1);assert.equal(a.sink,0);assert.equal(b.alpha,0);assert(b.sink>=2.4);assert(m.alpha<1&&m.alpha>0&&m.sink>0&&m.sink<b.sink);
+ for(const h of [3,12,22]){const e=SB.drop(SB.DROP,h);assert(e.sink>=h-1e-9&&e.alpha===0,'a '+h+' m wall sinks its whole height and is gone at DROP');assert(SB.drop(SB.DROP/2,h).sink<h);}/* barrier-3: sky-tall walls */
  let last=2;for(let t=0;t<=SB.DROP+1e-9;t+=SB.DROP/20){const d=SB.drop(t);assert(d.alpha<=last+1e-12,'fades monotonically');last=d.alpha;}}
 const yawTo=(u,dx,dz)=>Math.atan2(-dx,-dz);/* page / server look: forward = (-sin, -cos) */
 for(const key of maps){const w=await loadWorld(assets,key),row=[key];assert(SB.has(key),key+': no spawn walls');
