@@ -10045,7 +10045,7 @@ function jCbSmoke(L, c) { // the smoke where a Cloudburst landed (centre between
 // 0.6 s deployment; a soft whoosh on the throw and an airy pop on impact; bot Jetts THROW it (a ballistic lob at their choke, steered
 // by nothing) and remote players' Cloudbursts (online rows / P2P) use the same projectile and cloud. Sight blocking is unchanged (s.r).
 const XCB = { geo: null, dep: 0.6 };
-function xCbGeo() { return XCB.geo || (XCB.geo = { core: new THREE.SphereGeometry(0.11, 14, 10), halo: new THREE.SphereGeometry(0.22, 14, 10), band: new THREE.TorusGeometry(0.2, 0.018, 6, 28), streak: new THREE.ConeGeometry(0.12, 0.9, 10, 1, true), puff: new THREE.SphereGeometry(1, 16, 12) }); }
+function xCbGeo() { return XCB.geo || (XCB.geo = ((G) => { for (const k in G) G[k].userData.shared = true; return G; })({ core: new THREE.SphereGeometry(0.11, 14, 10), halo: new THREE.SphereGeometry(0.22, 14, 10), band: new THREE.TorusGeometry(0.2, 0.018, 6, 28), streak: new THREE.ConeGeometry(0.12, 0.9, 10, 1, true), puff: new THREE.SphereGeometry(1, 16, 12) })); } // cached once, kept on purpose (userData.shared)
 function xCbProj() { // the thrown Cloudburst: a small wind orb (non-pooled group; jRel just removes it)
   const G = xCbGeo(), g = new THREE.Group(), mk = (geo, mat) => { const o = new THREE.Mesh(geo, mat); o.raycast = () => {}; o.frustumCulled = false; g.add(o); return o; };
   mk(G.core, jMat("cbcore", () => new THREE.MeshBasicMaterial({ color: 0xf4fbff })));
@@ -15926,7 +15926,7 @@ function xDarkPt(md) { const o = pEye(), d = jAim(), p = o.addScaledVector(d, md
 let xDarkMesh = null;
 function xDarkShow(q) { const on = q && xEqHold(q) === "mark" && q.st !== "rel" && q.st !== "rec" && Number.isFinite(q.md);
   if (!on) { if (xDarkMesh) { xDarkMesh.visible = false; if (xDarkMesh.parent) xDarkMesh.parent.remove(xDarkMesh); } return; } // out of the scene when not shown: nothing of a cast left after the round reset
-  if (!xDarkMesh) { xDarkMesh = new THREE.Mesh(new THREE.SphereGeometry(XSMR.Omen, 18, 12), new THREE.MeshBasicMaterial({ color: 0x5ab4ff, wireframe: true, transparent: true, opacity: 0.45, depthTest: false, depthWrite: false })); xDarkMesh.renderOrder = 998; xDarkMesh.raycast = () => {}; }
+  if (!xDarkMesh) { xDarkMesh = new THREE.Mesh(new THREE.SphereGeometry(XSMR.Omen, 18, 12), new THREE.MeshBasicMaterial({ color: 0x5ab4ff, wireframe: true, transparent: true, opacity: 0.45, depthTest: false, depthWrite: false })); xDarkMesh.renderOrder = 998; xDarkMesh.raycast = () => {}; xDarkMesh.geometry.userData.shared = true; /* one cached marker, kept on purpose */ }
   if (xDarkMesh.parent !== scene) scene.add(xDarkMesh);
   const p = xDarkPt(q.md); xDarkMesh.position.set(p.x, p.y, p.z); xDarkMesh.visible = true; }
 function xEqHoldPw(q) { const h = q && q.st === "hold" ? q.h : 0; return xEqHold(q) === "fault" ? Math.max(0, Math.min(1, h / XFAULT.charge)) : SovaBolt.power(h); }
