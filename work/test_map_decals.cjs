@@ -5,7 +5,7 @@
 const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),assert=require('node:assert/strict');
 const root=path.join(__dirname,'..'),src=fs.readFileSync(path.join(__dirname,'native_maps_runtime.js'),'utf8'),html=fs.readFileSync(path.join(root,'index.html'),'utf8');
 const sharp=require(path.join(root,'server/node_modules/sharp')),THREE=require(require.resolve('three',{paths:[path.join(root,'server')]}));
-assert(/const st=m\.map&&nmTexStats\(m\.map\.image\);nmDecalApply\(out,nmDecalStyle\(m\.name,st\)\);nmFoliageApply\(out,m\.name,st\);return out;/.test(src),'map material converter does not apply decal/foliage handling');
+assert(/const st=m\.map&&nmTexStats\(m\.map\.image\);nmDecalApply\(out,nmDecalStyle\(m\.name,st\)\);nmFoliageApply\(out,m\.name,st\);(?:if\(miss&&\(out\.alphaTest>0\|\|out\.transparent\)\)\{out\.visible=false;[^}]*\}\/\*[^*]*\*\/)?return out;/.test(src),'map material converter does not apply decal/foliage handling');
 assert(html.includes('function nmDecalStyle(name,stats)'),'decal handling missing from the generated page');
 const line=re=>{const m=src.match(re);assert(m,'missing '+re);return m[0];};const pick=(n)=>{const a=src.indexOf('function '+n+'(');return src.slice(a,src.indexOf('\n',a));};
 let raw=null;const document={createElement:()=>({getContext:()=>({drawImage(){},getImageData:()=>({data:raw})})})};
