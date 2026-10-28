@@ -57,19 +57,33 @@ const XAB_EQ = { // agent -> key -> ready-to-equip test (a charge to spend and n
   Raze: { c: () => J.c >= 1 && J.cd.c <= 0 && !RS.bb.length, q: () => J.q >= 1 && J.cd.q <= 0 && !RS.pk.length, e: () => J.e >= 1 && J.cd.e <= 0 },
   Skye: { e: () => J.e >= 1 && J.cd.e <= 0 && !RS.hk, x: () => !RS.sk.length && J.ult >= K().u },
   Breach: { c: () => J.c >= 1 && J.cd.c <= 0, q: () => J.q >= 1 && J.cd.q <= 0, e: () => J.cd.e <= 0, x: () => J.ult >= K().u },
-  Cypher: { c: () => J.c >= 1 && J.cd.c <= 0, q: () => J.q >= 1 && J.cd.q <= 0, e: () => !BC.cam && !BC.cv, x: () => J.ult >= K().u },
+  Cypher: { c: () => J.c >= 1 && J.cd.c <= 0, e: () => !BC.cam && !BC.cv, x: () => J.ult >= K().u }, // Cyber Cage (Q): instant toss / activate (cyCageKey)
   Chamber: { c: () => J.c >= 1 && J.cd.c <= 0 && !BC.tm.length, e: () => !BC.an && J.cd.e <= 0 },
 };
 // Hold abilities: FIRE pressed with the ability out starts a HOLD (st "hold", q.h s held), releasing FIRE throws.
 //  bow (Sova Shock Bolt / Recon Bolt): the hold charges the bolt (SovaBolt.power), ALT FIRE adds a bounce (0 -> 1 -> 2 -> 0).
 //  fault (Breach Fault Line): the hold extends the quake, XFAULT.min -> max m over XFAULT.charge s (xEqHoldPw); ALT FIRE does nothing.
-const XAB_HOLD = { Sova: { q: "bow", e: "bow" }, Breach: { e: "fault" } };
+//  mark (Omen Dark Cover, wiki Dark_Cover): the smoke marker sits on the aim line XDARK-style; HOLD FIRE pushes it farther, HOLD ALT FIRE pulls
+//   it closer (through walls, XDARK.min..max = server abilities.js DARK); E (the ability key again) or a quick FIRE tap casts. The marker
+//   (xDarkMesh, a 4.1 m outline seen through walls) shows where the smoke lands: on the aim line, sunk to the floor below (wiki: "the smoke
+//   will sink vertically" onto a horizontal surface). Was: E + FIRE put the smoke at the first wall within 30 m, 1.5-4 m high.
+const XAB_HOLD = { Sova: { q: "bow", e: "bow" }, Breach: { e: "fault" }, Omen: { e: "mark" } };
+var XDARK = { max: 80, min: 1, rate: 20, tap: 0.2, def: 30, lift: 1.7 }; // = server DARK (max / min / rate); lift = server SMOKE.lift (centre above the floor)
+function xDarkInit(q) { const o = pEye(), d = jAim(); ray.set(o, d); ray.far = XDARK.max; const h = ray.intersectObjects(solids)[0]; q.md = Math.max(XDARK.min, Math.min(XDARK.max, h ? h.distance - 0.5 : XDARK.def)); } // starts at the wall under the crosshair
+function xDarkPt(md) { const o = pEye(), d = jAim(), p = o.addScaledVector(d, md); let g = NaN; try { g = groundAt(p.x, p.z, 0.2, p.y); } catch (e) {} if (!Number.isFinite(g) || g > p.y) g = Math.min(p.y, player.y || 0); return { x: p.x, y: g + XDARK.lift, z: p.z, f: g }; } // sunk to the floor below the marker
+let xDarkMesh = null;
+function xDarkShow(q) { const on = q && xEqHold(q) === "mark" && q.st !== "rel" && q.st !== "rec" && Number.isFinite(q.md);
+  if (!on) { if (xDarkMesh) { xDarkMesh.visible = false; if (xDarkMesh.parent) xDarkMesh.parent.remove(xDarkMesh); } return; } // out of the scene when not shown: nothing of a cast left after the round reset
+  if (!xDarkMesh) { xDarkMesh = new THREE.Mesh(new THREE.SphereGeometry(XSMR.Omen, 18, 12), new THREE.MeshBasicMaterial({ color: 0x5ab4ff, wireframe: true, transparent: true, opacity: 0.45, depthTest: false, depthWrite: false })); xDarkMesh.renderOrder = 998; xDarkMesh.raycast = () => {}; }
+  if (xDarkMesh.parent !== scene) scene.add(xDarkMesh);
+  const p = xDarkPt(q.md); xDarkMesh.position.set(p.x, p.y, p.z); xDarkMesh.visible = true; }
 function xEqHoldPw(q) { const h = q && q.st === "hold" ? q.h : 0; return xEqHold(q) === "fault" ? Math.max(0, Math.min(1, h / XFAULT.charge)) : SovaBolt.power(h); }
 function xEqHold(q) { const t = q && XAB_HOLD[J.pick]; return (t && t[q.k]) || ""; }
 // J.eq: null | { k, code, st: "draw" | "ready" | "hold" | "rel" | "rec", t, alt, buf, h (held s), bn (bounces) }
 function xEqMode(code) { const t = XAB_EQ[J.pick], k = code && code[3] && code[3].toLowerCase(), f = t && t[k]; try { return !!(f && f()); } catch (e) { return false; } }
 function xEqFire(alt) { // FIRE / ALT FIRE while an ability is out: true when the click belonged to the ability
   const q = J.eq; if (!q) return false; const hk = xEqHold(q);
+  if (hk === "mark") { if (q.st === "ready" || (q.st === "mark" && q.dir !== (alt ? -1 : 1))) { if (!Number.isFinite(q.md)) xDarkInit(q); q.st = "mark"; q.dir = alt ? -1 : 1; q.h = 0; } else if (q.st === "draw") q.buf = alt ? 2 : 1; return true; } // Dark Cover: FIRE / ALT FIRE move the marker (xEqTick)
   if (hk === "fault" && alt) return true; // Fault Line has no alternate
   if (hk === "bow" && alt) { if (q.st !== "rel" && q.st !== "rec") { q.bn = ((q.bn | 0) + 1) % 3; try { blip(500 + q.bn * 180, 0.05, "triangle", 0.1); } catch (e) {} } return true; } // ALT FIRE: one more bounce
   if (hk && !alt) { if (q.st === "ready") { q.st = "hold"; q.h = 0; } else if (q.st === "draw") q.buf = 1; return true; } // FIRE down: start the hold
@@ -79,7 +93,8 @@ function xEqCast(q) { // the throw leaves the hand: the kit's own cast (offline 
   const a0 = J.abAlt, m0 = typeof mpAltHeld !== "undefined" ? mpAltHeld : false, s0 = xCaSig(); J.abAlt = !!q.alt; try { if (q.alt) mpAltHeld = true; } catch (e) {}
   const hk = xEqHold(q); XABT.bolt = hk === "bow" ? { pw: SovaBolt.power(q.h), b: SovaBolt.bounces(q.bn) } : null; // read by jArrow and the cast message (mpCastSelf)
   XABT.hold = hk === "fault" ? { pw: Math.max(0, Math.min(1, q.h / XFAULT.charge)) } : null; // Fault Line charge: read by bcKey, mpCastSelf and the server intent
-  XABT.casting = true; try { xEqKey0(q.code); } catch (e) { xE(e); } finally { XABT.casting = false; XABT.bolt = null; XABT.hold = null; J.abAlt = a0; try { mpAltHeld = m0; } catch (e) {} }
+  XABT.mark = hk === "mark" && Number.isFinite(q.md) ? { d: q.md, p: xDarkPt(q.md) } : null; // Dark Cover marker: read by okKey (offline smoke) and mpCastSelf (dist / p)
+  XABT.casting = true; try { xEqKey0(q.code); } catch (e) { xE(e); } finally { XABT.casting = false; XABT.bolt = null; XABT.hold = null; XABT.mark = null; J.abAlt = a0; try { mpAltHeld = m0; } catch (e) {} }
   try { xCaEnd(); } catch (e) {} // the equip viewmodel plays the release; the old one-shot cast gesture would replay it
   return xCaSig() !== s0 || !xEqMode(q.code); // false: the kit refused (no target / no room): Valorant keeps it in hand
 }
@@ -87,6 +102,10 @@ function xEqTick(dt) {
   const q = J.eq; if (!q) return;
   if (!jOn() || !running || !player || player.hp <= 0 || (mode === "five" && FV.buy > 0)) { J.eq = null; return; }
   if (q.st === "hold") { q.h += dt; if (!fireHeld) { q.st = "rel"; q.t = XABT.rel; q.alt = false; } return; } // releasing FIRE throws
+  if (xEqHold(q) === "mark" && q.st !== "rel" && q.st !== "rec" && !Number.isFinite(q.md) && q.st !== "draw") xDarkInit(q);
+  if (q.st === "mark") { const held = q.dir > 0 ? fireHeld : typeof mpAltHeld !== "undefined" && mpAltHeld; q.h += dt; // Dark Cover: a quick FIRE tap casts; holding moves the marker
+    if (held && q.h > XDARK.tap) q.md = Math.max(XDARK.min, Math.min(XDARK.max, q.md + q.dir * XDARK.rate * dt));
+    if (!held) { if (q.dir > 0 && q.h <= XDARK.tap) { q.st = "rel"; q.t = XABT.rel; q.alt = false; } else q.st = "ready"; } return; }
   q.t -= dt; if (q.t > 0) return;
   if (q.st === "draw") { q.st = "ready"; q.t = 0; if (q.buf) { const a = q.buf === 2; q.buf = 0; xEqFire(a); } }
   else if (q.st === "rel") { if (xEqCast(q)) { q.st = "rec"; q.t = q.rec = xUneqT(q.k); } else { q.st = "ready"; q.t = 0; } }
@@ -95,6 +114,7 @@ function xEqTick(dt) {
 const xEqKey0 = jKey;
 jKey = function (code) {
   if (XABT.casting || !jOn() || typeof code !== "string" || !/^Key[CQEX]$/.test(code) || (mode === "five" && FV.buy > 0)) return xEqKey0.apply(this, arguments);
+  if (J.eq && J.eq.code === code && xEqHold(J.eq) === "mark" && (J.eq.st === "ready" || J.eq.st === "mark")) { if (!Number.isFinite(J.eq.md)) xDarkInit(J.eq); J.eq.st = "rel"; J.eq.t = XABT.rel; J.eq.alt = false; return true; } // Dark Cover: E again sends the smoke to the marker
   if (J.eq && J.eq.code === code && J.eq.st !== "rec") { if (J.eq.st !== "rel" && J.eq.st !== "hold") J.eq = null; return true; } // same key again: put it away
   if (J.eq && J.eq.st === "rel") return true; // mid-throw
   if (J.eq && J.eq.st === "hold") return true; // drawing the bow / holding: finish it first
@@ -166,7 +186,7 @@ function xCbHintTick() {
 }
 try { const st = document.createElement("style"); st.textContent = "#xCbH{position:fixed;left:50%;top:calc(50% + 30px);transform:translateX(-50%);display:none;gap:46px;pointer-events:none;z-index:6;font:700 11px/1 sans-serif;letter-spacing:.08em;color:#fff;text-shadow:0 0 3px #000,0 0 2px #000}#xCbH.on{display:flex}#xCbH span:first-child{color:#ffe7a0}#xCbH span:last-child{color:#ffb060}";
   document.head.appendChild(st); const d = document.createElement("div"); d.id = "xCbH"; d.innerHTML = "<span>\u25C0 L-CLICK</span><span>R-CLICK \u25B6</span>"; (document.getElementById("game") || document.body).appendChild(d); } catch (e) {}
-{ const t0 = jTick; jTick = function (dt) { const v = t0.apply(this, arguments); try { xEqTick(dt); xEqHud(); xBowHud(); } catch (e) { J.eq = null; } try { xInstTick(dt); } catch (e) { XABT.inst = null; } try { xCbHintTick(); } catch (e) { if (XCBH.g) XCBH.g.visible = false; } return v; }; }
+{ const t0 = jTick; jTick = function (dt) { const v = t0.apply(this, arguments); try { xEqTick(dt); xEqHud(); xBowHud(); xDarkShow(J.eq); } catch (e) { J.eq = null; } try { xInstTick(dt); } catch (e) { XABT.inst = null; } try { xCbHintTick(); } catch (e) { if (XCBH.g) XCBH.g.visible = false; } return v; }; }
 // First person: the agent's native arms draw the ability (work/ability_fp_runtime.js, ABILITY FIRST PERSON).
 // ---- Third person: others see the throw. A cast relayed for another unit (online relay / trusted-server replay, mpFx)
 // plays the rig's throw / cast one-shot (upper-body rigs) or the right-arm swing (skinned rigs), typed like the first person.

@@ -31,5 +31,8 @@
   return {end:p,t,pts:pts.map(a=>a.map(r)),tr,n};
  }
  function at(tr,t,out){let i=1;while(i<tr.length-1&&tr[i][3]<t)i++;const a=tr[i-1],b=tr[i]||a,k=b[3]>a[3]?Math.max(0,Math.min(1,(t-a[3])/(b[3]-a[3]))):1;out[0]=a[0]+(b[0]-a[0])*k;out[1]=a[1]+(b[1]-a[1])*k;out[2]=a[2]+(b[2]-a[2])*k;return out;}
- return {BOLT,power,bounces,speed,path,at};
+ // Sage Slow Orb (wiki Slow_Orb: Class 3 projectile, "detonates on contact with horizontal terrain"): the uncharged (Class 3) bolt arc, no
+ // bounce; a wall contact drops it straight down to the floor below. Returns {end, t (flight + drop), tr}.
+ function orb(o,d,rayN,ground){const P=path(o,d,0,0,rayN,ground);if(P.n&&P.n[1]<.7&&ground){const gy=ground(P.end[0],P.end[2],P.end[1]);if(Number.isFinite(gy)&&gy<P.end[1]){const h=P.end[1]-gy,dt=Math.sqrt(2*h/BOLT.g),r=v=>Math.round(v*1000)/1000;P.t=r(P.t+dt);P.end=[P.end[0],r(gy),P.end[2]];P.tr.push([P.end[0],P.end[1],P.end[2],P.t]);}}return P;}
+ return {BOLT,power,bounces,speed,path,at,orb};
 });

@@ -8717,8 +8717,9 @@ function okKey(code) {
     }
     if (code === "KeyE") {
       if (J.e < 1 || J.cd.e > 0) return sgNo(), say("Dark Cover · next charge " + Math.ceil(40 - (J.oe || 0)) + " s", 800); J.e--; J.cd.e = 0.6;
-      const o = pEye(), d = jAim(); ray.set(o, d); ray.far = 30; const h = ray.intersectObjects(solids)[0];
-      const p = h ? h.point.clone().addScaledVector(d, -0.5) : o.clone().addScaledVector(d, 30); p.y = Math.max(1.5, Math.min(p.y, 4));
+      const o = pEye(), d = jAim(), mk = typeof XABT !== "undefined" && XABT.mark; let p;
+      if (mk) p = new THREE.Vector3(mk.p.x, mk.p.y, mk.p.z); // Dark Cover marker (ability_equip_runtime.js XDARK / xDarkPt): on the aim line through walls, sunk to the floor below
+      else { ray.set(o, d); ray.far = 30; const h = ray.intersectObjects(solids)[0]; p = h ? h.point.clone().addScaledVector(d, -0.5) : o.clone().addScaledVector(d, 30); p.y = Math.max(1.5, Math.min(p.y, 4)); }
       const m = jM(smokeGeo, xSmokeM("s3x", 0x22183a, 0x8a5cff));
       m.position.copy(p); scene.add(m); J.smokes.push({ m, p: m.position, t: 15, r: xSmk(m, XSMR.Omen) }); SFX.smoke();
     }
@@ -9302,6 +9303,7 @@ function cyWire(cx, cz, ax, az, own) { // wire across (ax,az) between the neares
 function cyD(W, x, z) { const dx = W.b.x - W.a.x, dz = W.b.z - W.a.z, l = dx * dx + dz * dz || 1, t = Math.max(0, Math.min(1, ((x - W.a.x) * dx + (z - W.a.z) * dz) / l)); return Math.hypot(W.a.x + dx * t - x, W.a.z + dz * t - z); }
 function cyTick(dt) {
   if (BC.cv) { if (player.hp <= 0 || !BC.cam || J.pick !== "Cypher") BC.cv = false; else { player.x = BC.cvx; player.z = BC.cvz; } }
+  cyCageTick(dt);
   if (BC.cam) { BC.cam.dep = Math.max(0, (BC.cam.dep || 0) - dt); BC.cam.dcd = Math.max(0, (BC.cam.dcd || 0) - dt); } // Spycam deploy (1.15 s) and dart cooldown (6 s)
   if (!BC.cw.length) return;
   const arr = BC.cw, len = arr.length; let k = 0; // perf: in-place compaction instead of .filter, no per-think allocations
@@ -9341,7 +9343,46 @@ function cyKeep(W, dt) {
 // Neural Theft (server ults.js ULT.theft, wiki Neural_Theft): corpse within 18 m, reveals at 2 s and 6 s (2nd reveal 4 s after the 1st), 1.6 s each;
 // CYNT.g changes on every round clear so pulses from a cast in an earlier round never fire (Cypher's own death does not cancel them, v7.07).
 const CYNT = { reach: 18, at: [2, 6], reveal: 1.6, g: 0 };
-function cyClear() { CYNT.g++; BC.cw.forEach(cyRm); BC.cw = []; if (BC.cam) scene.remove(BC.cam.m); BC.cam = null; BC.cv = false; }
+// Cyber Cage (wiki.playvalorant.com/en-us/Cyber_Cage; = server abilities.js CAGE / cageCast / tickCage): Q INSTANTLY tosses the cage as a
+// projectile (CYCG.speed along the aim, gravity; project values, the wiki gives none) that lands on the floor and waits, inactive (Cypher
+// sees his own), until activated: Q while looking at a placed cage (within CYCG.aim rad of the crosshair, in sight) activates it - the
+// 3.72 m / 7.25 s hollow cylinder - spending nothing; with no charge left Q activates the placed cage nearest the crosshair. J.cyc: placed
+// and flying cages, cleared each round (cyClear). Online: the toss and the activation each send Q (the trusted server runs the same rule;
+// P2P peers get the cast at activation only, with the cage's point). Was: Q equipped, FIRE placed an already-active cage 15 m ahead.
+const CYCG = { speed: 10, g: 9.81, aim: 0.12, maxT: 3 };
+function cyCageAng(o, d, c) { const qx = c.p.x - o.x, qy = c.p.y + 0.2 - o.y, qz = c.p.z - o.z, l = Math.hypot(qx, qy, qz) || 1; return Math.acos(Math.max(-1, Math.min(1, (qx * d.x + qy * d.y + qz * d.z) / l))); }
+function cyCageNet(p) { try { if (typeof MP !== "undefined" && MP.on && MP.st === "game" && (p || (typeof NET !== "undefined" && NET.socket))) mpCastSelf("q", p || null); } catch (e) { xE(e); } }
+function cyCageOn(c) {
+  J.cyc.splice(J.cyc.indexOf(c), 1); scene.remove(c.m);
+  const m = jM(cageGeo, xSmokeM("cyq", 0x5a6a6c, 0x3fd0c0)); m.position.set(c.p.x, c.p.y, c.p.z); scene.add(m); J.smokes.push({ m, p: m.position, t: 7.25, r: xCage(m, XSMR.Cypher), cyl: CYCAGE.h }); SFX.smoke(); say("Cyber Cage · 7 s", 600);
+  cyCageNet(m.position);
+}
+function cyCageKey() {
+  if (J.cd.q > 0 || player.hp <= 0) return sgNo(); J.cyc = J.cyc || [];
+  const o = pEye(), d = jAim(), placed = J.cyc.filter((c) => c.landed); let best = null, ba = Infinity;
+  placed.forEach((c) => { const a = cyCageAng(o, d, c); if (a < CYCG.aim && a < ba && los(o, PF_A.set(c.p.x, c.p.y + 0.2, c.p.z))) { best = c; ba = a; } });
+  if (best) { J.cd.q = 0.3; return cyCageOn(best); }
+  if (J.q >= 1) { J.q--; J.cd.q = 0.3; const p = o.clone().addScaledVector(d, 0.4); p.y -= 0.3;
+    const m = new THREE.Mesh(xG("Box", 0.22, 0.12, 0.22), fireMat(0x3fd0c0, 0.9)); m.position.copy(p); scene.add(m);
+    J.cyc.push({ p: p.clone(), v: d.clone().multiplyScalar(CYCG.speed), m, born: 0, landed: false }); blip(520, 0.08, "triangle", 0.1); say("Cyber Cage tossed · Q at it to activate", 900); cyCageNet(null); return;
+  }
+  if (placed.length) { J.cd.q = 0.3; let n = placed[0], na = Infinity; placed.forEach((c) => { const a = cyCageAng(o, d, c); if (a < na) { na = a; n = c; } }); return cyCageOn(n); }
+  return sgNo();
+}
+function cyCageTick(dt) {
+  if (!J.cyc || !J.cyc.length) return;
+  J.cyc.forEach((c) => { if (c.landed) return; c.born += dt;
+    for (let t = 0, h = Math.min(dt, 0.02); t < dt - 1e-9 && !c.landed; t += h) {
+      const nx = c.p.x + c.v.x * h, ny = c.p.y + c.v.y * h, nz = c.p.z + c.v.z * h;
+      if (blocked(nx, nz, 0.1, ny)) { c.v.x = c.v.z = 0; } else { c.p.x = nx; c.p.z = nz; } // off a wall: drops
+      c.p.y = ny; c.v.y -= CYCG.g * h; const g = groundAt(c.p.x, c.p.z, 0.2, c.p.y + 0.3);
+      if (Number.isFinite(g) && c.p.y <= g && c.v.y <= 0) { c.p.y = g; c.landed = true; }
+    }
+    if (!c.landed && c.born > CYCG.maxT) { const g = groundAt(c.p.x, c.p.z, 0.2, c.p.y + 0.3); if (Number.isFinite(g)) c.p.y = g; c.landed = true; }
+    c.m.position.copy(c.p); if (c.landed) c.m.position.y += 0.06; // the cage sits on the floor (c.p = the floor point)
+  });
+}
+function cyClear() { CYNT.g++; BC.cw.forEach(cyRm); BC.cw = []; (J.cyc || []).forEach((c) => scene.remove(c.m)); J.cyc = []; if (BC.cam) scene.remove(BC.cam.m); BC.cam = null; BC.cv = false; }
 function cyVy() { return BC.cam.yw + yaw - BC.cam.y0; }
 function cyVp() { return Math.max(-1.2, Math.min(1.2, pitch - BC.cam.pp)); }
 function cyDart() {
@@ -9360,8 +9401,7 @@ function cyKey(code) {
     cyWire(cx, cz, -fz, fx, null); say("Trapwire set · slows and reveals the first enemy across", 900); blip(620, 0.12, "triangle", 0.12);
   }
   if (code === "KeyQ") {
-    if (J.q < 1 || J.cd.q > 0) return no(); J.q--; J.cd.q = 0.6;
-    const p = okGround(15), m = jM(cageGeo, xSmokeM("cyq", 0x5a6a6c, 0x3fd0c0)); m.position.set(p.x, groundAt(p.x, p.z, 0.2, (P.y || 0) + 1), p.z); scene.add(m); J.smokes.push({ m, p: m.position, t: 7.25, r: xCage(m, XSMR.Cypher), cyl: CYCAGE.h }); SFX.smoke(); say("Cyber Cage · 7 s", 600);
+    return cyCageKey(); // instant toss / activate (Valorant: no equip-then-fire)
   }
   if (code === "KeyE") {
     if (!BC.cam) {
@@ -13257,12 +13297,14 @@ function mpBolt(m) { const pw = +m.pw, b = +m.b; return Number.isFinite(pw) || N
 let mpAltHeld = false; addEventListener("mousedown", (e) => { if (e.button === 2) mpAltHeld = true; }, true); addEventListener("mouseup", (e) => { if (e.button === 2) mpAltHeld = false; }, true); addEventListener("blur", () => { mpAltHeld = false; });
 function mpCastSelf(k, p) { const m = { t: MP.role === "host" ? "ac" : "ab", k, ag: J.pick || "Jett", o: mpR3(pEye()), d: mpR3(jAim()), ts: Math.round(performance.now()) }; if (p) m.p = mpR3(p); // p: where a P2P Cloudburst landed
   if (J.pick === "Sova" && (k === "q" || k === "e") && typeof XABT !== "undefined" && XABT.bolt) { m.pw = +XABT.bolt.pw.toFixed(3); m.b = XABT.bolt.b; } // bolt HOLD charge + ALT FIRE bounces (server: vendor/sova-bolt.cjs)
+  if (J.pick === "Omen" && k === "e" && typeof XABT !== "undefined" && XABT.mark) m.dist = +XABT.mark.d.toFixed(2); // Dark Cover marker distance along the aim (server: abilities.js DARK)
   if (J.pick === "Breach" && k === "e" && typeof XABT !== "undefined" && XABT.hold) m.pw = +XABT.hold.pw.toFixed(3); // Fault Line HOLD FIRE charge (server: abilities.js faultLen)
   if (J.pick === "Phoenix" && k === "e") m.l = mpAltHeld ? 0 : 1; // Curveball: FIRE curves left (default), ALT FIRE held curves right (Valorant); the server reads m.l
   if (MP.role === "host") { m.i = 0; mpCastOut(m, null); } else mpSend(MP.hc, m); }
 { const k0 = jKey; jKey = function (code) { // own cast (a charge or the ult spent): client asks the host, host relays
   if (!(MP.on && MP.st === "game" && mode === "five" && (MP.role === "host" || MP.cl) && typeof code === "string" && /^Key[CQEX]$/.test(code))) return k0.apply(this, arguments);
   const k = code[3].toLowerCase(), c0 = J.c, q0 = J.q, e0 = J.e, u0 = J.ult, r = k0.apply(this, arguments);
+  if (J.pick === "Cypher" && k === "q") return r; // Cyber Cage sends its own toss / activation (cyCageNet)
   if (k === "x" ? J.ult < u0 : J.c < c0 || J.q < q0 || J.e < e0) { const cb = k === "c" && J.pick === "Jett" && !(typeof NET !== "undefined" && NET.socket) && J.cbs[J.cbs.length - 1]; // P2P Cloudburst: sent where it lands (jCbSmoke); the trusted server flies its own
     if (cb) cb.net = 1; else { try { mpCastSelf(k); } catch (e) { xE(e); } } }
   return r; }; }
@@ -15598,7 +15640,10 @@ if(window.requestIdleCallback)requestIdleCallback(()=>{xHitInit();try{xCrUi();}c
   return {end:p,t,pts:pts.map(a=>a.map(r)),tr,n};
  }
  function at(tr,t,out){let i=1;while(i<tr.length-1&&tr[i][3]<t)i++;const a=tr[i-1],b=tr[i]||a,k=b[3]>a[3]?Math.max(0,Math.min(1,(t-a[3])/(b[3]-a[3]))):1;out[0]=a[0]+(b[0]-a[0])*k;out[1]=a[1]+(b[1]-a[1])*k;out[2]=a[2]+(b[2]-a[2])*k;return out;}
- return {BOLT,power,bounces,speed,path,at};
+ // Sage Slow Orb (wiki Slow_Orb: Class 3 projectile, "detonates on contact with horizontal terrain"): the uncharged (Class 3) bolt arc, no
+ // bounce; a wall contact drops it straight down to the floor below. Returns {end, t (flight + drop), tr}.
+ function orb(o,d,rayN,ground){const P=path(o,d,0,0,rayN,ground);if(P.n&&P.n[1]<.7&&ground){const gy=ground(P.end[0],P.end[2],P.end[1]);if(Number.isFinite(gy)&&gy<P.end[1]){const h=P.end[1]-gy,dt=Math.sqrt(2*h/BOLT.g),r=v=>Math.round(v*1000)/1000;P.t=r(P.t+dt);P.end=[P.end[0],r(gy),P.end[2]];P.tr.push([P.end[0],P.end[1],P.end[2],P.t]);}}return P;}
+ return {BOLT,power,bounces,speed,path,at,orb};
 });
 // Jett Cloudburst flight, shared by the offline client (inlined by work/install_valorant.py as window.Cloudburst) and the
 // trusted server (server/src/abilities.js). Valorant (wiki.playvalorant.com/en-us/Cloudburst): cast INSTANTLY, the
@@ -15698,19 +15743,33 @@ const XAB_EQ = { // agent -> key -> ready-to-equip test (a charge to spend and n
   Raze: { c: () => J.c >= 1 && J.cd.c <= 0 && !RS.bb.length, q: () => J.q >= 1 && J.cd.q <= 0 && !RS.pk.length, e: () => J.e >= 1 && J.cd.e <= 0 },
   Skye: { e: () => J.e >= 1 && J.cd.e <= 0 && !RS.hk, x: () => !RS.sk.length && J.ult >= K().u },
   Breach: { c: () => J.c >= 1 && J.cd.c <= 0, q: () => J.q >= 1 && J.cd.q <= 0, e: () => J.cd.e <= 0, x: () => J.ult >= K().u },
-  Cypher: { c: () => J.c >= 1 && J.cd.c <= 0, q: () => J.q >= 1 && J.cd.q <= 0, e: () => !BC.cam && !BC.cv, x: () => J.ult >= K().u },
+  Cypher: { c: () => J.c >= 1 && J.cd.c <= 0, e: () => !BC.cam && !BC.cv, x: () => J.ult >= K().u }, // Cyber Cage (Q): instant toss / activate (cyCageKey)
   Chamber: { c: () => J.c >= 1 && J.cd.c <= 0 && !BC.tm.length, e: () => !BC.an && J.cd.e <= 0 },
 };
 // Hold abilities: FIRE pressed with the ability out starts a HOLD (st "hold", q.h s held), releasing FIRE throws.
 //  bow (Sova Shock Bolt / Recon Bolt): the hold charges the bolt (SovaBolt.power), ALT FIRE adds a bounce (0 -> 1 -> 2 -> 0).
 //  fault (Breach Fault Line): the hold extends the quake, XFAULT.min -> max m over XFAULT.charge s (xEqHoldPw); ALT FIRE does nothing.
-const XAB_HOLD = { Sova: { q: "bow", e: "bow" }, Breach: { e: "fault" } };
+//  mark (Omen Dark Cover, wiki Dark_Cover): the smoke marker sits on the aim line XDARK-style; HOLD FIRE pushes it farther, HOLD ALT FIRE pulls
+//   it closer (through walls, XDARK.min..max = server abilities.js DARK); E (the ability key again) or a quick FIRE tap casts. The marker
+//   (xDarkMesh, a 4.1 m outline seen through walls) shows where the smoke lands: on the aim line, sunk to the floor below (wiki: "the smoke
+//   will sink vertically" onto a horizontal surface). Was: E + FIRE put the smoke at the first wall within 30 m, 1.5-4 m high.
+const XAB_HOLD = { Sova: { q: "bow", e: "bow" }, Breach: { e: "fault" }, Omen: { e: "mark" } };
+var XDARK = { max: 80, min: 1, rate: 20, tap: 0.2, def: 30, lift: 1.7 }; // = server DARK (max / min / rate); lift = server SMOKE.lift (centre above the floor)
+function xDarkInit(q) { const o = pEye(), d = jAim(); ray.set(o, d); ray.far = XDARK.max; const h = ray.intersectObjects(solids)[0]; q.md = Math.max(XDARK.min, Math.min(XDARK.max, h ? h.distance - 0.5 : XDARK.def)); } // starts at the wall under the crosshair
+function xDarkPt(md) { const o = pEye(), d = jAim(), p = o.addScaledVector(d, md); let g = NaN; try { g = groundAt(p.x, p.z, 0.2, p.y); } catch (e) {} if (!Number.isFinite(g) || g > p.y) g = Math.min(p.y, player.y || 0); return { x: p.x, y: g + XDARK.lift, z: p.z, f: g }; } // sunk to the floor below the marker
+let xDarkMesh = null;
+function xDarkShow(q) { const on = q && xEqHold(q) === "mark" && q.st !== "rel" && q.st !== "rec" && Number.isFinite(q.md);
+  if (!on) { if (xDarkMesh) { xDarkMesh.visible = false; if (xDarkMesh.parent) xDarkMesh.parent.remove(xDarkMesh); } return; } // out of the scene when not shown: nothing of a cast left after the round reset
+  if (!xDarkMesh) { xDarkMesh = new THREE.Mesh(new THREE.SphereGeometry(XSMR.Omen, 18, 12), new THREE.MeshBasicMaterial({ color: 0x5ab4ff, wireframe: true, transparent: true, opacity: 0.45, depthTest: false, depthWrite: false })); xDarkMesh.renderOrder = 998; xDarkMesh.raycast = () => {}; }
+  if (xDarkMesh.parent !== scene) scene.add(xDarkMesh);
+  const p = xDarkPt(q.md); xDarkMesh.position.set(p.x, p.y, p.z); xDarkMesh.visible = true; }
 function xEqHoldPw(q) { const h = q && q.st === "hold" ? q.h : 0; return xEqHold(q) === "fault" ? Math.max(0, Math.min(1, h / XFAULT.charge)) : SovaBolt.power(h); }
 function xEqHold(q) { const t = q && XAB_HOLD[J.pick]; return (t && t[q.k]) || ""; }
 // J.eq: null | { k, code, st: "draw" | "ready" | "hold" | "rel" | "rec", t, alt, buf, h (held s), bn (bounces) }
 function xEqMode(code) { const t = XAB_EQ[J.pick], k = code && code[3] && code[3].toLowerCase(), f = t && t[k]; try { return !!(f && f()); } catch (e) { return false; } }
 function xEqFire(alt) { // FIRE / ALT FIRE while an ability is out: true when the click belonged to the ability
   const q = J.eq; if (!q) return false; const hk = xEqHold(q);
+  if (hk === "mark") { if (q.st === "ready" || (q.st === "mark" && q.dir !== (alt ? -1 : 1))) { if (!Number.isFinite(q.md)) xDarkInit(q); q.st = "mark"; q.dir = alt ? -1 : 1; q.h = 0; } else if (q.st === "draw") q.buf = alt ? 2 : 1; return true; } // Dark Cover: FIRE / ALT FIRE move the marker (xEqTick)
   if (hk === "fault" && alt) return true; // Fault Line has no alternate
   if (hk === "bow" && alt) { if (q.st !== "rel" && q.st !== "rec") { q.bn = ((q.bn | 0) + 1) % 3; try { blip(500 + q.bn * 180, 0.05, "triangle", 0.1); } catch (e) {} } return true; } // ALT FIRE: one more bounce
   if (hk && !alt) { if (q.st === "ready") { q.st = "hold"; q.h = 0; } else if (q.st === "draw") q.buf = 1; return true; } // FIRE down: start the hold
@@ -15720,7 +15779,8 @@ function xEqCast(q) { // the throw leaves the hand: the kit's own cast (offline 
   const a0 = J.abAlt, m0 = typeof mpAltHeld !== "undefined" ? mpAltHeld : false, s0 = xCaSig(); J.abAlt = !!q.alt; try { if (q.alt) mpAltHeld = true; } catch (e) {}
   const hk = xEqHold(q); XABT.bolt = hk === "bow" ? { pw: SovaBolt.power(q.h), b: SovaBolt.bounces(q.bn) } : null; // read by jArrow and the cast message (mpCastSelf)
   XABT.hold = hk === "fault" ? { pw: Math.max(0, Math.min(1, q.h / XFAULT.charge)) } : null; // Fault Line charge: read by bcKey, mpCastSelf and the server intent
-  XABT.casting = true; try { xEqKey0(q.code); } catch (e) { xE(e); } finally { XABT.casting = false; XABT.bolt = null; XABT.hold = null; J.abAlt = a0; try { mpAltHeld = m0; } catch (e) {} }
+  XABT.mark = hk === "mark" && Number.isFinite(q.md) ? { d: q.md, p: xDarkPt(q.md) } : null; // Dark Cover marker: read by okKey (offline smoke) and mpCastSelf (dist / p)
+  XABT.casting = true; try { xEqKey0(q.code); } catch (e) { xE(e); } finally { XABT.casting = false; XABT.bolt = null; XABT.hold = null; XABT.mark = null; J.abAlt = a0; try { mpAltHeld = m0; } catch (e) {} }
   try { xCaEnd(); } catch (e) {} // the equip viewmodel plays the release; the old one-shot cast gesture would replay it
   return xCaSig() !== s0 || !xEqMode(q.code); // false: the kit refused (no target / no room): Valorant keeps it in hand
 }
@@ -15728,6 +15788,10 @@ function xEqTick(dt) {
   const q = J.eq; if (!q) return;
   if (!jOn() || !running || !player || player.hp <= 0 || (mode === "five" && FV.buy > 0)) { J.eq = null; return; }
   if (q.st === "hold") { q.h += dt; if (!fireHeld) { q.st = "rel"; q.t = XABT.rel; q.alt = false; } return; } // releasing FIRE throws
+  if (xEqHold(q) === "mark" && q.st !== "rel" && q.st !== "rec" && !Number.isFinite(q.md) && q.st !== "draw") xDarkInit(q);
+  if (q.st === "mark") { const held = q.dir > 0 ? fireHeld : typeof mpAltHeld !== "undefined" && mpAltHeld; q.h += dt; // Dark Cover: a quick FIRE tap casts; holding moves the marker
+    if (held && q.h > XDARK.tap) q.md = Math.max(XDARK.min, Math.min(XDARK.max, q.md + q.dir * XDARK.rate * dt));
+    if (!held) { if (q.dir > 0 && q.h <= XDARK.tap) { q.st = "rel"; q.t = XABT.rel; q.alt = false; } else q.st = "ready"; } return; }
   q.t -= dt; if (q.t > 0) return;
   if (q.st === "draw") { q.st = "ready"; q.t = 0; if (q.buf) { const a = q.buf === 2; q.buf = 0; xEqFire(a); } }
   else if (q.st === "rel") { if (xEqCast(q)) { q.st = "rec"; q.t = q.rec = xUneqT(q.k); } else { q.st = "ready"; q.t = 0; } }
@@ -15736,6 +15800,7 @@ function xEqTick(dt) {
 const xEqKey0 = jKey;
 jKey = function (code) {
   if (XABT.casting || !jOn() || typeof code !== "string" || !/^Key[CQEX]$/.test(code) || (mode === "five" && FV.buy > 0)) return xEqKey0.apply(this, arguments);
+  if (J.eq && J.eq.code === code && xEqHold(J.eq) === "mark" && (J.eq.st === "ready" || J.eq.st === "mark")) { if (!Number.isFinite(J.eq.md)) xDarkInit(J.eq); J.eq.st = "rel"; J.eq.t = XABT.rel; J.eq.alt = false; return true; } // Dark Cover: E again sends the smoke to the marker
   if (J.eq && J.eq.code === code && J.eq.st !== "rec") { if (J.eq.st !== "rel" && J.eq.st !== "hold") J.eq = null; return true; } // same key again: put it away
   if (J.eq && J.eq.st === "rel") return true; // mid-throw
   if (J.eq && J.eq.st === "hold") return true; // drawing the bow / holding: finish it first
@@ -15807,7 +15872,7 @@ function xCbHintTick() {
 }
 try { const st = document.createElement("style"); st.textContent = "#xCbH{position:fixed;left:50%;top:calc(50% + 30px);transform:translateX(-50%);display:none;gap:46px;pointer-events:none;z-index:6;font:700 11px/1 sans-serif;letter-spacing:.08em;color:#fff;text-shadow:0 0 3px #000,0 0 2px #000}#xCbH.on{display:flex}#xCbH span:first-child{color:#ffe7a0}#xCbH span:last-child{color:#ffb060}";
   document.head.appendChild(st); const d = document.createElement("div"); d.id = "xCbH"; d.innerHTML = "<span>\u25C0 L-CLICK</span><span>R-CLICK \u25B6</span>"; (document.getElementById("game") || document.body).appendChild(d); } catch (e) {}
-{ const t0 = jTick; jTick = function (dt) { const v = t0.apply(this, arguments); try { xEqTick(dt); xEqHud(); xBowHud(); } catch (e) { J.eq = null; } try { xInstTick(dt); } catch (e) { XABT.inst = null; } try { xCbHintTick(); } catch (e) { if (XCBH.g) XCBH.g.visible = false; } return v; }; }
+{ const t0 = jTick; jTick = function (dt) { const v = t0.apply(this, arguments); try { xEqTick(dt); xEqHud(); xBowHud(); xDarkShow(J.eq); } catch (e) { J.eq = null; } try { xInstTick(dt); } catch (e) { XABT.inst = null; } try { xCbHintTick(); } catch (e) { if (XCBH.g) XCBH.g.visible = false; } return v; }; }
 // First person: the agent's native arms draw the ability (work/ability_fp_runtime.js, ABILITY FIRST PERSON).
 // ---- Third person: others see the throw. A cast relayed for another unit (online relay / trusted-server replay, mpFx)
 // plays the rig's throw / cast one-shot (upper-body rigs) or the right-arm swing (skinned rigs), typed like the first person.

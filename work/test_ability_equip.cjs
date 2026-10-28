@@ -134,7 +134,7 @@ const fails=[];const fail=s=>{fails.push(s);if(VERBOSE)console.log('FAIL',s);};c
  // ---- Cyber Cage: hollow open-ended cylinder (wiki r 3.72 m, centred on the cage), drawn and sight-checked as one (server cageBlocks) ----
  {const dsrc=require('fs').readFileSync(require('path').join(__dirname,'../server/src/devices.js'),'utf8');eq(xe('CYCAGE.h'),+dsrc.match(/cage:\{life:7\.25,h:([\d.]+)\}/)[1],'client CYCAGE.h == server DEV.cage.h');
   eq(xe('[cageGeo.type,cageGeo.parameters.openEnded,cageGeo.parameters.radiusTop,cageGeo.parameters.height]'),['CylinderGeometry',true,4,2*xe('CYCAGE.h')],'cage mesh: open-ended cylinder');
-  await live();pick('Cypher');await adv(200);const n0=xe('J.smokes.length');await tap('KeyQ');await adv(600);await click(0);await adv(900);
+  await live();pick('Cypher');await adv(200);const n0=xe('J.smokes.length');xe('J.q=1;J.cd.q=0;true');await tap('KeyQ');await adv(2000);xe('J.cd.q=0;true');await tap('KeyQ');await adv(900);/* Cyber Cage: Q tosses, Q again (no charge) activates the landed cage (test_cyber_cage.cjs) */
   const cg=xe(`(()=>{const s=J.smokes[${n0}];return s&&[s.cyl,s.r,s.m.geometry.type,+s.m.scale.x.toFixed(3),+s.m.scale.y.toFixed(3),+s.m.scale.z.toFixed(3),+(s.m.position.y-groundAt(s.p.x,s.p.z,0.2,(player.y||0)+1)).toFixed(2)];})()`);
   eq(cg,[5,3.72,'CylinderGeometry',0.93,1,0.93,0],'player Cyber Cage: cylinder r 3.72 m, full height after the bloom, centred on the floor');
   // a sphere smoke keeps its per-ability radius through the bloom (the tick used to reset the scale to the 4 m mesh)

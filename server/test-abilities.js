@@ -4,9 +4,9 @@ const ry=new SpikeSimulation(W),reyna=ry.add('r','Reyna');ry.add('enemy');ry.sta
 // Sage Slow Orb (wiki Slow_Orb: 7 s, 50 % slow, affects allies and self) = the offline field (index.html sgKey Q: 3.5 m, 7 s, sgSlow 0.5 for everyone in it).
 {const {SLOW_ORB}=await import('./src/abilities.js');assert.deepEqual(SLOW_ORB,{life:7,radius:3.5,factor:.5});
  const t=new SpikeSimulation(W),sg=t.add('sg','Sage'),foe=t.add('foe'),mate=t.add('mate'),far=t.add('far');t.start(false);t.buy=0;mate.team=sg.team;foe.team=far.team=1-sg.team;Object.assign(sg,{x:0,y:0,z:0,look:0,pitch:0});sg.ability.q=2;
- assert.equal(t.command(sg,{t:'ab',k:'q'}),true);const e=t.effects.find(e=>e.kind==='slow');assert.ok(e&&e.orb,'Slow Orb field');assert.ok(Math.abs(e.until-t.time-7)<1e-9,'7 s');assert.equal(e.radius,3.5);
+ assert.equal(t.command(sg,{t:'ab',k:'q'}),true);const e=t.effects.find(e=>e.kind==='slow');assert.ok(e&&e.orb,'Slow Orb field');assert.ok(Math.abs(e.until-e.at-7)<1e-9,'7 s from landing (thrown orb: test-sloworb.js)');assert.equal(e.radius,3.5);
  Object.assign(foe,{x:e.p[0]+2,y:e.p[1],z:e.p[2]});Object.assign(mate,{x:e.p[0]-3,y:e.p[1],z:e.p[2]});Object.assign(sg,{x:e.p[0],y:e.p[1],z:e.p[2]+1});Object.assign(far,{x:e.p[0],y:e.p[1],z:e.p[2]+3.8});
- tickAbilities(t,.05);assert.deepEqual([foe,mate,sg,far].map(v=>v.orbSlowUntil>t.time),[true,true,true,false],'everyone within 3.5 m (enemy, ally, Sage herself), nobody 3.8 m out');assert.ok(!(foe.slowUntil>t.time),'not the generic 65 % slow');
+ t.time=e.at;/* the thrown orb has landed */tickAbilities(t,.05);assert.deepEqual([foe,mate,sg,far].map(v=>v.orbSlowUntil>t.time),[true,true,true,false],'everyone within 3.5 m (enemy, ally, Sage herself), nobody 3.8 m out');assert.ok(!(foe.slowUntil>t.time),'not the generic 65 % slow');
  assert.ok(t.roundState(foe).status.oslow>0,'status oslow for the client prediction');
  const inputs=new Map();t.motor=(u,input)=>inputs.set(u,input);foe.weapon=far.weapon='Classic';for(const v of [foe,far])t.command(v,{t:'in',seq:1,r:0,p:0,f:1});t.step(.05);const W0=6.75*weapons.Classic.runSpeedMultiplier;
  assert.ok(Math.abs(inputs.get(foe).speed-W0*.5)<1e-9,'half speed in the field: '+inputs.get(foe).speed);assert.ok(Math.abs(inputs.get(far).speed-W0)<1e-9,'full speed outside');
