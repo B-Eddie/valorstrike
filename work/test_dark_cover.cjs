@@ -11,7 +11,7 @@ const through=async agent=>{for(let t=0;t<30000;t+=100){if(xe('running')&&!xe('!
 const tap=async(code,ms=60)=>{H.key(code,true);await adv(ms);H.key(code,false);await adv(60);};
 (async()=>{
  xe('FV.pick="ascent";true');H.$('pm5v5').click();await adv(50);assert.ok(await through('Omen'),'offline 5v5 started');
- xe('FV.buy=0.05;true');await adv(1500);xe('bots.forEach(b=>{b.cd=1e9;b.hp=1e9});allies.forEach(a=>{a.cd=1e9});true');
+ xe('FV.buy=0.05;true');await adv(1500);xe('bots.forEach(b=>{b.cd=1e9;b.hp=1e9});allies.forEach(a=>{a.cd=1e9});xBUse=function(){return false;};true');/* no bot ability casts (a bot Omen's Dark Cover would add to J.smokes) */
  assert.equal(xe('JSON.stringify([XDARK.max,XDARK.min,XDARK.rate])'),'[80,1,20]','= server DARK');assert.equal(xe('xEqHold({k:"e"})||XAB_HOLD.Omen.e'),'mark');
  const smokes=()=>xe('J.smokes.length'),eqs=()=>xe('J.eq&&{st:J.eq.st,md:J.eq.md}');
  // 1. equip: marker shown; HOLD FIRE pushes it out, HOLD ALT FIRE pulls it in; neither casts
