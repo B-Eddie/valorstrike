@@ -86,7 +86,7 @@ server) and the shared motor `vendor/valorant-feel.js` (= `server/src/motor.cjs`
 | Swiftplay buy phase 45 s on the first round of each half | = Unrated rule (server `modes.js:71`) | page: 45 s only on round 1 (n=0/12/24), 30 s on Swiftplay round 5 | **FIXED** (page) |
 | Spike Rush: no credits; round 1 any sidearm / no shields, round 2 primary <= 2050 / Light, round 3 + Endgame primary >= 2250 / Heavy; kill + death ult points x2; Endgame everyone 3 short; no starting ult | wiki Spike_Rush | server `modes.js:64-75, 105-110` match; **page**: any primary every round, Heavy always, ults started at half, kills/deaths +1 | **FIXED** (page `SR_LOAD` = server `SR_LOADOUT`, ult x2 player + bots, Endgame 3 short) |
 | Spike Rush powerup orbs: 1-5 a round at fixed spots, 5 effect types | wiki Spike_Rush | server 1-5 random +1 ult (no effects); page 4 fixed orbs +1 ult | note (effects not implemented; spots unpublished) |
-| Ult orbs in Unrated online | [W-Orbs] (2 orbs every round) | server five-mode has no ult orbs (page offline has them) | gap - online server change (orb pickups + snapshot rows); listed for a follow-up lane |
+| Ult orbs in Unrated online | [W-Orbs] (2 orbs every round; Unrated / Competitive / Swiftplay / Replication, not Spike Rush) | server five-mode had no ult orbs (page offline only) | **FIXED** dcf2218 (`server/src/ultorbs.js`: 2 per round, 2 s interact channel standing / not firing, +1 ult, gone after capture / plant / end phase; bots 1 in 5 walk over; snapshot `uo` / `uoc` drawn by `work/server_runtime.js` nmUltOrbs; Spike Rush none) |
 
 ## 4. Round flow / Spike
 
@@ -97,7 +97,7 @@ server) and the shared motor `vendor/valorant-feel.js` (= `server/src/motor.cjs`
 | Beep cadence 1 / .5 (<20 s) / .25 (<10) / .15 (<5) / .1 (<1) | valorant.gs rules | same (81a6514) | match ("double / triple beep" wording = the faster cadence; single tone per beep kept: note) |
 | Plant/defuse rooted, can rotate; plant audio cue to players in range | [W-Spike] | rooted (input hold), cue sounds | match |
 | Ult orb capture: 2 s channel, unequip + crouch, gone on plant / round end | [W-Orbs] | page offline: **3 s** hold, orbs stayed after the plant | **FIXED** (2 s, removed on plant) |
-| Orb positions: outside A and B sites (Haven / Lotus: A and C) | [W-Orbs] | page SPOTS by callout (Haven "window mid" + "c long", Lotus "b main" + "c link", others mid/B-ish) | gap - positions not sourced per map (no published coordinates); left |
+| Orb positions: outside A and B sites (Haven / Lotus: A and C) | [W-Orbs] | page SPOTS by legacy callout lists (other maps' coordinates on native maps: wrong place, y 0) | **FIXED** dcf2218 for native maps: server `ORB_SPOTS` = page `XUO_SPOTS` (pinned in `server/test-ult-orbs.js`), the passageway callout outside each site (Haven / Lotus A + C), on the nearest nav node at floor height; exact spots are a note (Riot publishes none) |
 
 ## 5. Movement constants (motor; locomotion animations are the user's and untouched)
 
@@ -123,7 +123,8 @@ server) and the shared motor `vendor/valorant-feel.js` (= `server/src/motor.cjs`
 | TDM 100 kills / 570 s, stages 75/75/75/345 with stage guns, 1.5 s respawn | [W-TDM] | `simulation.js:24-32` | match |
 | **TDM armour per loadout**: S1 Classic Regen Shield, Frenzy/Ghost/Bandit none; S2 Sheriff Light, Stinger Heavy, Ares Light; S3 Spectre/Ares/Bulldog Heavy, Guardian Light; S4 Phantom/Vandal Heavy | [W-TDM] Loadout tables | everyone kept Heavy (50) in every stage | **FIXED** (server `TDM_ARMOR`/`tdmArmor` in `simulation.js` spawn + stage re-arm; page `TDM_ARM`/`tdmArmSet` in `dmSpawnB`/`dmSpawnP`/`tdmStageArm`; worker redeploy) |
 | TDM kill heal | none in VALORANT (healing = Recovery Orbs) [W-TDM] | page offline topped the killer up to 100 HP / 50 armour (server never did) | **FIXED** (page: removed) |
-| TDM weapon spawners, recovery orbs, TDM ult orbs | [W-TDM], [W-Orbs] | not in the game | missing (content) |
+| TDM Recovery Orbs: 6 s buff restoring health + loadout armour (not the Regen pool), respawn 30 s, ally zone | [W-TDM] Orbs | not in the game | **FIXED** 44dcb01 (server `server/src/tdmorbs.js` real TDM rooms, snapshot `tro` / `trz`; page offline + online draw in `work/game_rules_runtime.js` TDMREC). Note (unpublished, inferred): full bar over the 6 s, 0.9 m reach, hurt-only pickup, 3 m / 6 s zone, spots = 4 named callouts per map (Riot's TDM maps are not in the game) |
+| TDM weapon spawners (stage guns with their own ammo), TDM ult orbs (10 points) | [W-TDM] | not in the game | missing - spawners: content + stage-swap rules; ult orbs wait for TDM ultimates online (6.) |
 
 ## 8. Kill feed / audio
 
@@ -147,6 +148,11 @@ Results of each fix: see "Commits" below (filled in as they land).
 - 6b8b106 ult orbs 2 s channel, gone on plant (page) - `work/test_ult_orb_rules.cjs` (red before)
 - 125b772 TDM armour by loadout (server + page), no offline TDM kill heal - `work/test_tdm_armor_offline.cjs` (red before), `server/test-game-rules.js`
 - e8a11a0 Spike Rush loadouts / shields / ult x2 / Endgame (page) - `work/test_spike_rush_offline_rules.cjs` (red before)
+- 2e9ef95 TDM loadout armour only for real TDM rooms (createSim) - `server/test-gunplay.js`
+- 058aedb Bandit + Warden (server + page + models) - `work/test_bandit_warden.cjs` (red before), server weapon tests
+- dcf2218 ult orbs online (server `ultorbs.js`) + client draw + offline native-map orb spots - `server/test-ult-orbs.js`, `work/test_ult_orb_rules.cjs` (native part red before)
+- 48b4471 bot benchmark fights keep the Vandal (`server/tools/bot-benchmarks.mjs` Stage 4; failing `test-bot-human` after Bandit joined TDM Stage 1)
+- 44dcb01 TDM Recovery Orbs (server `tdmorbs.js` + page offline / online draw) - `server/test-tdm-orbs.js`, `work/test_tdm_recovery_orbs.cjs` (red before)
 
 ## Follow-up: Bandit + Warden weapon-add lane (not done here)
 
@@ -162,4 +168,3 @@ slot (`BUY MENU FIT` block; VALORANT: 6 sidearms, 5 rifles), audio (`audio/manif
 kill-feed icon, skins catalog (`server/src/skins.json`), tests pinning 18 guns (`server/test-weapons.js`,
 `test-wiki-weapons.js`, `test-spread.js`, `work/test_weapon_values.cjs`, `test_loadout.cjs`, `test_buy_menu_fit.cjs`,
 `work/audit.js`, `work/verify_valorant.js`). Worker redeploy needed (weapons.json / motor).
-
