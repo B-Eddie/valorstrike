@@ -15,6 +15,7 @@ import assert from 'node:assert/strict';
 import {EscalationSimulation,VariantSpikeSimulation,ESC_LEVELS,ESC_PACK,SR_LOADOUT,createSim} from './src/modes.js';
 import {Simulation,reserveOf,weapons} from './src/simulation.js';
 import {fogView} from './src/fog.js';
+import {TdmSimulation} from './src/tdm.js';
 import {SpikeSimulation} from './src/spike.js';
 import kits from './src/kits.json' with {type:'json'};
 import {localCluster} from './tools/local-cluster.mjs';
@@ -22,7 +23,7 @@ const out=[],note=s=>{out.push(s);if(process.env.VERBOSE)console.log(s);};
 const W={map:{attacker:[0,0,0],defender:[0,0,-40],sites:{A:[0,0,0]}},nav:{nodes:[[0,0,0],[0,0,-40],[30,0,-20],[-30,0,-20]],adj:[[1,2,3],[0,2,3],[0,1],[0,1]]},playable:[0,1,2,3],allowed:new Set([0,1,2,3]),near:(x,z)=>z<-20?1:0,ground:()=>0,blocked:()=>false,ray:()=>Infinity,plantAt:(x,z)=>Math.hypot(x,z)<3?'A':null};
 let seed=1;const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647;
 // ---- 1. Escalation ----
-{assert(createSim(W,'esc','ascent')instanceof EscalationSimulation);assert(createSim(W,'swift','ascent')instanceof VariantSpikeSimulation);assert(createSim(W,'five','ascent')instanceof SpikeSimulation);assert.equal(createSim(W,'tdm','ascent').constructor,Simulation);
+{assert(createSim(W,'esc','ascent')instanceof EscalationSimulation);assert(createSim(W,'swift','ascent')instanceof VariantSpikeSimulation);assert(createSim(W,'five','ascent')instanceof SpikeSimulation);assert(createSim(W,'tdm','ascent') instanceof TdmSimulation,'TDM: respawn TDM with abilities (tdm.js)');
  const s=new EscalationSimulation(W,'esc','ascent',rnd),a=s.add('A','Jett'),b=s.add('C','Sage'),a2=s.add('B','Sova'),b2=s.add('D','Omen');s.start(false);
  assert.equal(ESC_LEVELS.length,12);assert.deepEqual([ESC_LEVELS[0],ESC_LEVELS[11]],['Odin','Knife']);assert.equal(s.mode,'esc');assert.equal(s.gm,'esc');assert.equal(s.remaining,600);
  assert.equal(a.team,0);assert.equal(b.team,1);for(const u of [a,a2,b,b2])assert.equal(u.weapon,'Odin','level 1 = Odin');

@@ -54,7 +54,7 @@ function nclWk(v){return typeof v==='string'&&nclHas.call(WEAP,v);}/* own weapon
 // Snapshot-shaped frames ('s', and 'end' / 're', which the page replays through the snapshot path): everything iterated.
 function nclSnap(m){m.u=nclKeep(m.u,nclRow);m.k=nclKd(m.k);m.d=nclKd(m.d);m.ev=nclKeep(m.ev,nclEv);if(m.fx!==undefined)m.fx=nclKeep(m.fx,nclFx);if(m.fw!==undefined)m.fw=nclKeep(m.fw,nclFw);if(m.tl!==undefined&&!nclNum(m.tl))delete m.tl;}
 // Round state (alone, or inside 'start' / 'ao'): the spike row, and the per-agent state the page walks (Reyna souls, ability block, statuses).
-function nclRs(r){if(!nclObj(r)||!Array.isArray(r.sp)||r.sp.length<9)return null;if(r.ld!==undefined){if(!Array.isArray(r.ld))r.ld=[null,'Classic'];else r.ld=[nclWk(r.ld[0])?r.ld[0]:null,nclWk(r.ld[1])?r.ld[1]:'Classic'];}if(r.tw!==undefined&&!(r.tw===null||nclWk(r.tw)))r.tw=null;if(r.status!==undefined&&!nclObj(r.status))delete r.status;if(r.channel!==undefined&&!nclObj(r.channel))r.channel=null;
+function nclRs(r){if(!nclObj(r)||r.tab!==1&&(!Array.isArray(r.sp)||r.sp.length<9))return null;/* tab 1: an online TDM round state (server tdm.js: abilities only, no Spike row) */if(r.ld!==undefined){if(!Array.isArray(r.ld))r.ld=[null,'Classic'];else r.ld=[nclWk(r.ld[0])?r.ld[0]:null,nclWk(r.ld[1])?r.ld[1]:'Classic'];}if(r.tw!==undefined&&!(r.tw===null||nclWk(r.tw)))r.tw=null;if(r.status!==undefined&&!nclObj(r.status))delete r.status;if(r.channel!==undefined&&!nclObj(r.channel))r.channel=null;
   if(r.ab!==undefined){if(!nclObj(r.ab))delete r.ab;else{if(r.ab.cool!==undefined&&!nclObj(r.ab.cool))delete r.ab.cool;if(r.ab.anchor!=null&&!nclVec(r.ab.anchor))r.ab.anchor=null;}}
   if(r.reyna!==undefined&&r.reyna!==null){if(!nclObj(r.reyna))r.reyna=null;else r.reyna.souls=nclKeep(r.reyna.souls,nclSoul);}
   r.rv=nclKeep(r.rv,nclRv);if(r.cr!==undefined)r.cr=nclKd(r.cr);if(r.sc!==undefined&&!(Array.isArray(r.sc)&&r.sc.length===2&&r.sc.every(nclNum)))return null;
@@ -65,7 +65,8 @@ function nclRs(r){if(!nclObj(r)||!Array.isArray(r.sp)||r.sp.length<9)return null
   if(r.status){const S=r.status,o={};for(const k in S)if(nclHas.call(S,k)){const v=S[k];o[k]=nclNum(v)?nclCl(v,0,60):0;}r.status=o;}
   if(r.channel)r.channel={kind:nclStr(r.channel.kind)?r.channel.kind:'',remaining:nclNum(r.channel.remaining)?nclCl(r.channel.remaining,0,30):0};
   if(r.ab){const a=r.ab;for(let i=0;i<NCL_AB.length;i++){const T=NCL_AB[i],k=T[0];if(a[k]!==undefined&&!(typeof a[k]==='boolean')){if(nclNum(a[k]))a[k]=nclCl(a[k],T[1],T[2]);else delete a[k];}}if(a.cool)for(const k of Object.keys(a.cool)){if(nclNum(a.cool[k]))a.cool[k]=nclCl(a.cool[k],0,1e7);else delete a.cool[k];}}
-  {const p=r.sp;r.sp=[nclStr(p[0])?p[0]:'',nclNum(p[1])?Math.floor(p[1]):-1,nclNum(p[2])?nclCl(p[2],-1e4,1e4):0,nclNum(p[3])?nclCl(p[3],-1e4,1e4):0,nclNum(p[4])?nclCl(p[4],0,1e4):0,nclNum(p[5])?nclCl(p[5],0,1e4):0,nclNum(p[6])?nclCl(p[6],0,1e4):0,nclStr(p[7])?p[7]:'',p[8]===1||p[8]===true?1:0];}
+  if(r.tp!==undefined){if(nclNum(r.tp))r.tp=nclCl(r.tp,0,200);else delete r.tp;}if(r.uc!==undefined){if(nclNum(r.uc))r.uc=nclCl(r.uc,1,200);else delete r.uc;}
+  if(r.sp){const p=r.sp;r.sp=[nclStr(p[0])?p[0]:'',nclNum(p[1])?Math.floor(p[1]):-1,nclNum(p[2])?nclCl(p[2],-1e4,1e4):0,nclNum(p[3])?nclCl(p[3],-1e4,1e4):0,nclNum(p[4])?nclCl(p[4],0,1e4):0,nclNum(p[5])?nclCl(p[5],0,1e4):0,nclNum(p[6])?nclCl(p[6],0,1e4):0,nclStr(p[7])?p[7]:'',p[8]===1||p[8]===true?1:0];}
   return r;}
 function netConnect(create,code,publicRoom){
  if(create&&['ascent','bind','haven','split','lotus','breeze','random'].includes(window.xQMap))MP.map=window.xQMap;

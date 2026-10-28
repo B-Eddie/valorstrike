@@ -105,5 +105,32 @@ if (typeof startFive === 'function') { const f1 = startFive; startFive = functio
 if (typeof mpCliSnap === 'function') { const c1 = mpCliSnap; mpCliSnap = function (m) { const r = c1.apply(this, arguments);
   try { if (m && Array.isArray(m.tro)) tdmRecSync(m.tro, m.trz); else if (m && Array.isArray(m.u) && TDMREC.L.length && dmPackOnline()) tdmRecClear(); } catch (e) {}
   return r; }; }
+// TDM abilities and ultimates (wiki.playvalorant.com/en-us/Team_Deathmatch "Abilities", fetched 2026-10-28) = server/src/tdmabil.js
+// (TDM_CD / TDM_ULT, pinned by work/test_tdm_abilities_offline.cjs): charges recharge on the TDM cooldown table (seconds per use);
+// the signature starts full (+50 % of the next when it holds two), basics at 50 %; no buying, no 2-kill signature refill; ult points
+// from kills (3) and TDM Ultimate Orbs (10) up to the TDM cost, shown as the kit's pips (J.ult = floor(points / cost * pips), full at
+// the cost); a death gives none. Offline: the player (bots keep the page's 40 s bot refill, tdmAb). Online (server tdm.js, rs tab 1):
+// the server keeps the charges and points (rs ab / tp / uc); the page turns its abilities on for the match and sends its casts.
+var TDMAB = { kill: 3, orb: 10, k: 0,
+  cd: { Jett: { c: 29, q: 44, e: 44, sig: 'e' }, Phoenix: { c: 48, q: 54, e: 44, sig: 'q' }, Sova: { c: 51, q: 26, e: 48, sig: 'e' }, Sage: { c: 94, q: 51, e: 22, sig: 'e' }, Reyna: { c: 51, q: 44, sig: 'q' }, Omen: { c: 33, q: 73, e: 65, sig: 'e' }, Killjoy: { c: 54, q: 44, e: 36, sig: 'e' }, Raze: { c: 48, q: 26, e: 58, sig: 'e' }, Skye: { c: 65, q: 51, e: 44, sig: 'e' }, Breach: { c: 58, q: 44, e: 55, sig: 'e' }, Cypher: { c: 29, q: 58, e: 22, sig: 'e' }, Chamber: { c: 46, q: 9, e: 51, sig: 'e' } },
+  ult: { Jett: 60, Phoenix: 70, Sova: 70, Sage: 50, Reyna: 80, Omen: 60, Killjoy: 90, Raze: 80, Skye: 70, Breach: 90, Cypher: 50, Chamber: 70 } };
+window.xTdmAb = TDMAB;
+function tdmAbNet() { return (typeof NET !== 'undefined' && NET && NET.socket) || (typeof MP !== 'undefined' && MP && MP.on); }
+function tdmAbOn() { return typeof FV !== 'undefined' && !!FV.dm && !!FV.tdm && !FV.esc && typeof J !== 'undefined' && !!J.on && !tdmAbNet(); }
+function tdmAbMax(k) { const M = K().mx || {}; return k === 'e' ? (M.e || 1) : (M[k] || 0); }
+function tdmAbCost() { return TDMAB.ult[J.pick] || TDMAB.ult.Jett; }
+function tdmAbPips() { const c = tdmAbCost(), n = K().u; return (J.tp || 0) >= c ? n : Math.floor((J.tp || 0) / c * n); }
+function tdmAbInit() { const T = TDMAB.cd[J.pick] || TDMAB.cd.Jett; J.tdp = {}; for (const k of ['c', 'q', 'e']) { if (!(T[k] > 0)) continue; const mx = tdmAbMax(k); if (!(mx > 0)) continue; if (k === T.sig) { J[k] = 1; J.tdp[k] = mx > 1 ? 0.5 : 0; } else { J[k] = 0; J.tdp[k] = 0.5; } } J.tp = 0; J.ult = 0; J.tdU = 0; J.tk = 0; }
+function tdmAbPts(n) { const was = J.ult; J.tp = Math.min(tdmAbCost(), (J.tp || 0) + n); J.ult = tdmAbPips(); J.tdU = J.ult; if (was < K().u && J.ult >= K().u) try { SFX.ult(); } catch (e) {} }
+function tdmAbTick(dt) { if (!J.tdp) tdmAbInit(); const T = TDMAB.cd[J.pick] || TDMAB.cd.Jett;
+  if ((J.ult || 0) < (J.tdU || 0)) J.tp = 0; /* the ult was cast */ J.ult = tdmAbPips(); J.tdU = J.ult;
+  for (const k of ['c', 'q', 'e']) { const cd = T[k]; if (!(cd > 0)) continue; const mx = tdmAbMax(k); if (!((J[k] || 0) < mx)) { J.tdp[k] = 0; continue; } J.tdp[k] = (J.tdp[k] || 0) + dt / cd; if (J.tdp[k] >= 1) { J[k] = Math.min(mx, (J[k] || 0) + 1); J.tdp[k] = J[k] < mx ? J.tdp[k] - 1 : 0; try { xAbIcons(); } catch (e) {} } } }
+if (typeof startTDM === 'function') { const s2 = startTDM; startTDM = function () { J.tdp = null; return s2.apply(this, arguments); }; }
+if (typeof tdmAb === 'function') { const a2 = tdmAb; tdmAb = function () { const keep = J.tdp ? [J.c, J.q, J.e] : null; const r = a2.apply(this, arguments); try { if (tdmAbOn()) { if (keep) [J.c, J.q, J.e] = keep; else tdmAbInit(); } } catch (e) {} return r; }; }
+if (typeof tdmTick === 'function') { const t2 = tdmTick; tdmTick = function (dt) { const r = t2.apply(this, arguments); try { if (tdmAbOn() && running) tdmAbTick(window.xLdOn ? 0 : dt); } catch (e) {} return r; }; }
+if (typeof jKill === 'function') { const k2 = jKill; jKill = function () { if (!tdmAbOn()) return k2.apply(this, arguments); tdmAbPts(TDMAB.kill); if (J.pick === 'Jett' && J.bsOn) J.bs = 5; /* Blade Storm kill refresh; no 2-kill signature refill in TDM */ }; }
+if (typeof jUlt === 'function') { const u2 = jUlt; jUlt = function () { if (tdmAbOn()) return; /* TDM: no ult point for a death (kills: jKill above, orbs: tdmAbPts) */ return u2.apply(this, arguments); }; }
+if (typeof feed === 'function') { const f2 = feed; feed = function (s) { if (s === 'Ability charges refilled' && tdmAbOn()) return; return f2.apply(this, arguments); }; }
+if (typeof mpCliRS === 'function') { const r2 = mpCliRS; mpCliRS = function (r) { try { if (r && r.tab === 1 && typeof NET !== 'undefined' && NET.socket && MP.st === 'game' && FV.tdm && !FV.esc && !J.on && KITS[J.pick]) { J.on = true; J.bs = 0; J.bsOn = false; J.tk = 0; J.cd = { c: 0, q: 0, e: 0, x: 0 }; J.hs = ''; NET.tab = 1; try { xAbIcons(); } catch (e) {} } } catch (e) {} return r2.apply(this, arguments); }; }
 window.xDmPacks = DMPK; window.xEscPacks = ESCPK;
 // ---- END GAME RULES ----
