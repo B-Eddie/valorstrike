@@ -5,6 +5,8 @@
 //     after the 1.85 s server channel the dart is gone (no dart effect on the player, chip cleared); letting go early resets it.
 //  B. Tailwind (page player is Jett, real E key): the chip reads "TAILWIND <windup>s" during the 1 s windup, then
 //     "TAILWIND READY · E TO DASH <n>s" for the 7.5 s window; a second E dashes (server tailwind cleared, the player moved).
+//  NOTE 2026-10-28 (lane-hud): part B is historical. Tailwind no longer shows in the #netSt chip; it is the bar above the E
+//     icon (xAbTm reads NET.tw; work/test_hud_ability_timer.cjs), as VALORANT draws it.
 // Usage: bash hk_out/start.sh bridge; (cd <repo> && node work/browser_online_dart_tw.cjs out.json)   ROOT=<repo> serves index.html
 const PW='/workspace/work/pw/node_modules/playwright';process.env.PLAYWRIGHT_BROWSERS_PATH=process.env.PLAYWRIGHT_BROWSERS_PATH||'/workspace/work/pw/browsers';
 process.env.LD_LIBRARY_PATH=(process.env.LD_LIBRARY_PATH||'')+':/workspace/work/pw/libs';

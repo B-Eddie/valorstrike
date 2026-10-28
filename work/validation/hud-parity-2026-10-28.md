@@ -67,3 +67,15 @@ lines. Rifles/pistols/snipers unchanged (VALORANT code-0 defaults: inner 0.8/6/2
 - Healing teal tint on top-bar health bars (11.10) not implemented.
 - No real-browser screenshot (Chromium not allowed on this box for this lane); geometry checked by static CSS tests and a
   PIL mock render of the computed boxes (`/workspace/work/qa/hud/mock-*.png`).
+
+## Implemented (branch lane-hud, local only)
+
+| Commit | What | Test (red before) |
+|---|---|---|
+| df3c375 | Ability timers above the icon (Tailwind windup/window, Run It Back, Owl Drone; online NET.tw; touch E button), teal charges, online debuff chip restyle, Tailwind out of the red banner | work/test_hud_ability_timer.cjs, work/test_net_status.cjs updated |
+| ffcfcdd | Pickup prompt = VALORANT interaction prompt (centred below crosshair, key cap, uppercase, contrast plate; no key on touch) | work/test_hud_pickup_prompt.cjs |
+| c086a41 | Shotgun ring crosshair (VALORANT default) + "Override all primary crosshairs with my primary crosshair" setting (off) | work/test_crosshair_shotgun.cjs |
+
+Gates: regen byte-identical x2, git diff --check, motor==vendor; client HUD / touch / minimap / killfeed / spike / ability
+equip / client_abilities (all 12 agents, in chunks) / online abilities (Jett, Phoenix, Sova) / online spike HUD / client
+lifecycle green (/workspace/work/qa/hud/results.txt). No server change. No real-browser render (mock only).
