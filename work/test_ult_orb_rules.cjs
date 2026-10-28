@@ -8,7 +8,22 @@ const i=html.indexOf('// feel pass: ultimate orbs (5v5).');assert(i>=0,'orb bloc
 assert(/const CAP = 2;/.test(blk),'2 s capture channel');
 assert(!/>= 3\)|hold \/ 3|bh >= 3/.test(blk),'no 3 s hold left (player or bot)');
 assert((blk.match(/CAP/g)||[]).length>=4,'player hold, progress bar and bot hold all use CAP');
-const {boot}=require('./page_harness.cjs');const H=boot({real3:true,seed:5}),xe=H.xe;
+const {boot}=require('./page_harness.cjs');
+// Native maps (the real Ascent geometry, page_harness native:true): the orbs stand on the server's callouts (XUO_SPOTS ==
+// server/src/ultorbs.js ORB_SPOTS, pinned by server/test-ult-orbs.js) at the nav floor's height; they used the legacy procedural
+// maps' callout coordinates at y 0 (somewhere else, under the floor). Run in a child process (one page per process).
+if(process.env.UO_NATIVE){const H=boot({real3:true,seed:5,native:true}),xe=H.xe;
+ const adv=async ms=>{for(let t=0;t<ms;t+=50){H.advance(Math.min(50,ms-t)-1e-6);await new Promise(r=>setImmediate(r));}};
+ (async()=>{xe('J.pick="Jett";FV.pick="ascent";FV.srOn=0;FV.repOn=0;window.xSwift=0;xLob0=false;startFive();true');await adv(400);
+  for(let k=0;k<400&&!xe('!!(typeof nmActive==="function"&&nmActive()&&running)');k++)await adv(200);assert(xe('!!nmActive()'),'native Ascent loaded');
+  const r=JSON.parse(xe('JSON.stringify({o:xOrbs.map(o=>({on:o.on,x:o.x,y:o.y,z:o.z,gy:o.g.position.y})),c:XUO_SPOTS.ascent.map(n=>(nmActive().meta.callouts.find(q=>q.name===n)||{}).position)})'));
+  r.o.forEach((o,i)=>{const c=r.c[i];assert(o.on&&c,'orb '+i+' out on its callout');assert(Math.hypot(o.x-c[0],o.z-c[2])<1.5,'orb '+i+' at '+XUO_SPOTS_NAME(i)+' ('+[o.x,o.z]+' vs '+[c[0],c[2]]+')');
+   assert(Math.abs(o.y-c[1])<1&&o.y>1,'orb '+i+' at the floor height ('+o.y+' vs callout '+c[1]+')');assert.equal(o.gy,o.y,'drawn at that height');});
+  console.log('ult orbs (native Ascent): on A Main / B Main at floor height');process.exit(0);})().catch(e=>{console.error(e);process.exit(1);});
+ function XUO_SPOTS_NAME(i){return ['A Main','B Main'][i];}
+ return;}
+{const r=require('child_process').spawnSync(process.execPath,[__filename],{env:{...process.env,UO_NATIVE:'1'},stdio:'inherit'});assert.equal(r.status,0,'native-map orb placement');}
+const H=boot({real3:true,seed:5}),xe=H.xe;
 const adv=async ms=>{for(let t=0;t<ms;t+=50){H.advance(Math.min(50,ms-t)-1e-6);await new Promise(r=>setImmediate(r));}};
 (async()=>{xe('J.pick="Jett";FV.pick="ascent";FV.srOn=0;FV.repOn=0;window.xSwift=0;xLob0=false;startFive();true');await adv(400);
  for(let k=0;k<200&&!xe('running');k++)await adv(200);assert(xe('running'),'round live');

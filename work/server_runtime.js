@@ -439,8 +439,20 @@ function nmVarHud(rs){const el=nmHudEl(),n={swift:'SWIFTPLAY',sr:'SPIKE RUSH',re
 const NM_ORBS=new Map();
 function nmOrbs(list){const keep=new Set();for(const o of list){if(!Array.isArray(o)||o.length<4||![1,2,3].every(i=>Number.isFinite(o[i])))continue;keep.add(o[0]);if(NM_ORBS.has(o[0]))continue;try{const m=new THREE.Mesh(new THREE.OctahedronGeometry(o[4]?0.45:0.35),new THREE.MeshBasicMaterial({color:o[4]?0xffd34d:0xb48cff}));m.position.set(o[1],o[2]+1,o[3]);scene.add(m);NM_ORBS.set(o[0],m);}catch(e){}}
  for(const [id,m]of NM_ORBS)if(!keep.has(id)){try{scene.remove(m);m.geometry.dispose();m.material.dispose();}catch(e){}NM_ORBS.delete(id);}}
-function nmGmClear(){MP.escLv=null;nmOrbs([]);const el=document.getElementById('xGmHud');if(el)el.style.display='none';}
-setInterval(()=>{try{for(const m of NM_ORBS.values())m.rotation.y+=.1;if(!MP.on||MP.st!=='game'){const el=document.getElementById('xGmHud');if(el&&el.style.display!=='none'){el.style.display='none';nmOrbs([]);}}}catch(e){}},100);
+// Ultimate orbs from the server (server/src/ultorbs.js; Unrated / Swiftplay / Replication): rs.uo [[id, x, y, z, channelled 0..1]] on
+// the nav floor, rs.uoc this player's own 2 s channel (hold F, standing). The offline orb block stands down while connected.
+// One shared geometry / material (never disposed: userData.shared), one mesh per orb id, the channel bar like the offline one.
+const NM_UO=new Map();let nmUoG=null,nmUoM=null,nmUoB=null;
+function nmUoBar(){if(!nmUoB){nmUoB=document.body.appendChild(document.createElement('div'));nmUoB.className='x-orbBar';nmUoB.id='xUoBar';nmUoB.style.cssText='position:fixed;left:50%;top:60%;width:120px;height:6px;margin-left:-60px;border-radius:3px;background:rgba(255,255,255,.18);z-index:61;display:none;overflow:hidden';const b=nmUoB.appendChild(document.createElement('b'));b.style.cssText='display:block;height:100%;width:0;background:#9ffff0';}return nmUoB;}
+function nmUltOrbs(rs){const list=Array.isArray(rs&&rs.uo)?rs.uo:[],keep=new Set();
+ for(const o of list){if(!Array.isArray(o)||o.length<4||![1,2,3].every(i=>Number.isFinite(o[i])))continue;keep.add(o[0]);let m=NM_UO.get(o[0]);
+  if(!m){try{if(!nmUoG){nmUoG=new THREE.OctahedronGeometry(.22,0);nmUoG.userData.shared=true;nmUoM=new THREE.MeshBasicMaterial({color:0x9ffff0,transparent:true,opacity:.95});}m=new THREE.Mesh(nmUoG,nmUoM);m.scale.set(1,1.5,1);m.raycast=()=>{};scene.add(m);NM_UO.set(o[0],m);}catch(e){continue;}}
+  m.position.set(o[1],o[2]+1.1,o[3]);}
+ for(const [id,m]of NM_UO)if(!keep.has(id)){try{scene.remove(m);}catch(e){}NM_UO.delete(id);}
+ const c=+(rs&&rs.uoc)||0,bar=c>0||nmUoB?nmUoBar():null;if(bar){bar.style.display=c>0?'block':'none';if(c>0)bar.firstChild.style.width=Math.min(100,c*100)+'%';}}
+{const nmUo0=mpCliRS;mpCliRS=function(rs){try{nmUltOrbs(rs);}catch(e){}return nmUo0.apply(this,arguments);};}
+function nmGmClear(){MP.escLv=null;nmOrbs([]);nmUltOrbs(null);const el=document.getElementById('xGmHud');if(el)el.style.display='none';}
+setInterval(()=>{try{for(const m of NM_ORBS.values())m.rotation.y+=.1;for(const m of NM_UO.values())m.rotation.y+=.1;if(!MP.on||MP.st!=='game'){if(NM_UO.size)nmUltOrbs(null);const el=document.getElementById('xGmHud');if(el&&el.style.display!=='none'){el.style.display='none';nmOrbs([]);}}}catch(e){}},100);
 
 // ---- SKIRMISH 1v1 (online only; server/src/modes.js SkirmishSimulation) ----
 // Two players, one per team, no bots, elimination rounds without the Spike, first to 5. The page plays its Deathmatch path (free

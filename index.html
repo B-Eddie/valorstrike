@@ -13449,7 +13449,11 @@ window.xMP = { quick: mpQuick, create: mpCreate, join: mpJoin, start: mpStart, l
 (function () {
   const CAP = 2;
   if (typeof THREE === "undefined" || typeof scene === "undefined") return;
-  const SPOTS = { ascent: [["market"], ["b main"]], bind: [["hookah"], ["a lobby"]], haven: [["window", "mid"], ["c long"]], split: [["mid bottom"], ["b lobby"]], lotus: [["b main"], ["c link"]], breeze: [["mid bottom"], ["a cave"]] };
+  const SPOTS = { ascent: [["market"], ["b main"]], bind: [["hookah"], ["a lobby"]], haven: [["window", "mid"], ["c long"]], split: [["mid bottom"], ["b lobby"]], lotus: [["b main"], ["c link"]], breeze: [["mid bottom"], ["a cave"]] }; // legacy (procedural) maps only
+  // Native maps: the server's spots (server/src/ultorbs.js ORB_SPOTS; wiki Orbs: passageways just outside A and B, Haven / Lotus A and C),
+  // read from the map's own callout table (nmActive().meta.callouts, world coordinates with height). The legacy callout lists are in the
+  // old procedural maps' coordinates, so on a native map the orbs stood somewhere else, at y 0 under the floor.
+  const XUO_SPOTS = { ascent: ["A Main", "B Main"], bind: ["A Short", "B Long"], haven: ["A Long", "C Long"], split: ["A Ramps", "B Alley"], lotus: ["A Main", "C Mound"], breeze: ["A Shop", "B Elbow"] }; window.XUO_SPOTS = XUO_SPOTS;
   const LISTS = { breeze: typeof BREEZE_CALLOUTS !== "undefined" ? BREEZE_CALLOUTS : [], ascent: typeof CALLOUTS !== "undefined" ? CALLOUTS : [], bind: typeof BIND_CALLOUTS !== "undefined" ? BIND_CALLOUTS : [], haven: typeof HAVEN_CALLOUTS !== "undefined" ? HAVEN_CALLOUTS : [], split: typeof SPLIT_CALLOUTS !== "undefined" ? SPLIT_CALLOUTS : [], lotus: typeof LOTUS_CALLOUTS !== "undefined" ? LOTUS_CALLOUTS : [] };
   const coreM = new THREE.MeshBasicMaterial({ color: 0x9ffff0, transparent: true, opacity: 0.95, blending: THREE.AdditiveBlending, depthWrite: false });
   const ringM = new THREE.MeshBasicMaterial({ color: 0x3ff2d8, transparent: true, opacity: 0.32, depthWrite: false, side: THREE.DoubleSide });
@@ -13458,7 +13462,7 @@ window.xMP = { quick: mpQuick, create: mpCreate, join: mpJoin, start: mpStart, l
     const g = new THREE.Group(), c = new THREE.Mesh(coreG, coreM), r = new THREE.Mesh(ringG, ringM);
     c.scale.set(1, 1.5, 1); c.raycast = r.raycast = () => {}; r.rotation.x = -Math.PI / 2; r.position.y = 0.04; g.add(c, r); g.visible = false; scene.add(g);
     const d = document.createElement("i"); d.className = "x-orbDot"; document.body.appendChild(d);
-    return { g, c, d, x: 0, z: 0, on: false, hold: 0, bh: 0, bb: null };
+    return { g, c, d, x: 0, y: 0, z: 0, on: false, hold: 0, bh: 0, bb: null };
   });
   window.xOrbs = O; // drawn by minimap() with its own transform
   const st = document.createElement("style");
@@ -13479,7 +13483,11 @@ window.xMP = { quick: mpQuick, create: mpCreate, join: mpJoin, start: mpStart, l
   function reset() {
     const map = typeof FV !== "undefined" ? FV.map : "ascent", list = LISTS[map] || [], sp = SPOTS[map] || [];
     try { bx1 = bz1 = 1e9; bx2 = bz2 = -1e9; boxes.forEach((b) => { bx1 = Math.min(bx1, b.x1); bx2 = Math.max(bx2, b.x2); bz1 = Math.min(bz1, b.z1); bz2 = Math.max(bz2, b.z2); }); } catch (e) {}
-    O.forEach((o, i) => { const c = sp[i] && find(list, sp[i]); o.on = !!c; o.hold = o.bh = 0; o.bb = null; if (c) { o.x = c[1]; o.z = c[2]; o.g.position.set(o.x, 0, o.z); } o.g.visible = o.on; });
+    let NC = null, NV = null; try { const C = typeof nmActive === "function" && nmActive(); NC = C && C.meta && Array.isArray(C.meta.callouts) ? C.meta.callouts : null; NV = C; } catch (e) {}
+    O.forEach((o, i) => { o.hold = o.bh = 0; o.bb = null;
+      if (NC) { const nm = (XUO_SPOTS[map] || [])[i], c = nm && NC.find((q) => q.name === nm); o.on = !!(c && c.position); if (o.on) { let q = c.position; try { const k = nmNear(NV, q[0], q[2], q[1]); if (k >= 0 && NV.nav.nodes[k]) q = NV.nav.nodes[k]; } catch (e) {} o.x = q[0]; o.y = q[1]; o.z = q[2]; } } // on the nav node nearest the callout, as the server (W.near)
+      else { const c = sp[i] && find(list, sp[i]); o.on = !!c; if (c) { o.x = c[1]; o.y = 0; o.z = c[2]; } }
+      if (o.on) o.g.position.set(o.x, o.y, o.z); o.g.visible = o.on; });
     botList().forEach((b) => { b.xOrb = null; if (b && b.g && Math.random() < 0.2) { let best = null, bd = 1e9; O.forEach((o) => { if (!o.on) return; const d = Math.hypot(o.x - b.g.position.x, o.z - b.g.position.z); if (d < bd) { bd = d; best = o; } }); if (best && bd < 45) b.xOrb = best; } });
   }
   function take(o, who) {
@@ -13489,14 +13497,14 @@ window.xMP = { quick: mpQuick, create: mpCreate, join: mpJoin, start: mpStart, l
   if (typeof fRound === "function") { const f0 = fRound; fRound = function () { const r = f0.apply(this, arguments); reset(); return r; }; }
   function tick() {
     const now = performance.now(), dt = Math.min(0.05, lastT ? (now - lastT) / 1000 : 0); lastT = now;
-    const live = typeof mode !== "undefined" && mode === "five" && running && !paused && player;
+    const live = typeof mode !== "undefined" && mode === "five" && running && !paused && player && !(typeof NET !== "undefined" && NET.socket); // online: the server's orbs (server_runtime.js nmUltOrbs)
     near = null;
-    if (!live) { if (fr++ % 30 === 0) { for (let i = 0; i < 2; i++) { O[i].d.style.display = "none"; if (typeof mode !== "undefined" && mode !== "five") O[i].g.visible = false; } ub.style.display = bar.style.display = "none"; } return; }
+    if (!live) { if (fr++ % 30 === 0) { for (let i = 0; i < 2; i++) { O[i].d.style.display = "none"; if ((typeof mode !== "undefined" && mode !== "five") || (typeof NET !== "undefined" && NET.socket)) { O[i].g.visible = false; O[i].on = false; } } ub.style.display = bar.style.display = "none"; } return; }
     const t = now / 1000, mmOn = (fr++ % 6 === 0), R = mmOn && typeof MM !== "undefined" && MM && MM.offsetParent ? MM.getBoundingClientRect() : null;
     for (let i = 0; i < 2; i++) {
       const o = O[i]; if (!o.on) continue;
       o.c.position.y = 1.1 + Math.sin(t * 2 + i) * 0.12; o.c.rotation.y = t * 1.6 + i;
-      if (player.hp > 0 && Math.hypot(player.x - o.x, player.z - o.z) < 1.6) near = o;
+      if (player.hp > 0 && Math.hypot(player.x - o.x, player.z - o.z) < 1.6 && Math.abs((player.y || 0) - o.y) < 2) near = o;
     }
     for (let i = 0; i < 2; i++) { const o = O[i]; if (o !== near) o.hold = 0; }
     if (FV.sp && FV.sp.st === "plant") { for (let i = 0; i < 2; i++) { const o = O[i]; if (o.on) { o.on = false; o.g.visible = false; o.d.style.display = "none"; } } near = null; } // planted: orbs gone
@@ -15318,8 +15326,20 @@ function nmVarHud(rs){const el=nmHudEl(),n={swift:'SWIFTPLAY',sr:'SPIKE RUSH',re
 const NM_ORBS=new Map();
 function nmOrbs(list){const keep=new Set();for(const o of list){if(!Array.isArray(o)||o.length<4||![1,2,3].every(i=>Number.isFinite(o[i])))continue;keep.add(o[0]);if(NM_ORBS.has(o[0]))continue;try{const m=new THREE.Mesh(new THREE.OctahedronGeometry(o[4]?0.45:0.35),new THREE.MeshBasicMaterial({color:o[4]?0xffd34d:0xb48cff}));m.position.set(o[1],o[2]+1,o[3]);scene.add(m);NM_ORBS.set(o[0],m);}catch(e){}}
  for(const [id,m]of NM_ORBS)if(!keep.has(id)){try{scene.remove(m);m.geometry.dispose();m.material.dispose();}catch(e){}NM_ORBS.delete(id);}}
-function nmGmClear(){MP.escLv=null;nmOrbs([]);const el=document.getElementById('xGmHud');if(el)el.style.display='none';}
-setInterval(()=>{try{for(const m of NM_ORBS.values())m.rotation.y+=.1;if(!MP.on||MP.st!=='game'){const el=document.getElementById('xGmHud');if(el&&el.style.display!=='none'){el.style.display='none';nmOrbs([]);}}}catch(e){}},100);
+// Ultimate orbs from the server (server/src/ultorbs.js; Unrated / Swiftplay / Replication): rs.uo [[id, x, y, z, channelled 0..1]] on
+// the nav floor, rs.uoc this player's own 2 s channel (hold F, standing). The offline orb block stands down while connected.
+// One shared geometry / material (never disposed: userData.shared), one mesh per orb id, the channel bar like the offline one.
+const NM_UO=new Map();let nmUoG=null,nmUoM=null,nmUoB=null;
+function nmUoBar(){if(!nmUoB){nmUoB=document.body.appendChild(document.createElement('div'));nmUoB.className='x-orbBar';nmUoB.id='xUoBar';nmUoB.style.cssText='position:fixed;left:50%;top:60%;width:120px;height:6px;margin-left:-60px;border-radius:3px;background:rgba(255,255,255,.18);z-index:61;display:none;overflow:hidden';const b=nmUoB.appendChild(document.createElement('b'));b.style.cssText='display:block;height:100%;width:0;background:#9ffff0';}return nmUoB;}
+function nmUltOrbs(rs){const list=Array.isArray(rs&&rs.uo)?rs.uo:[],keep=new Set();
+ for(const o of list){if(!Array.isArray(o)||o.length<4||![1,2,3].every(i=>Number.isFinite(o[i])))continue;keep.add(o[0]);let m=NM_UO.get(o[0]);
+  if(!m){try{if(!nmUoG){nmUoG=new THREE.OctahedronGeometry(.22,0);nmUoG.userData.shared=true;nmUoM=new THREE.MeshBasicMaterial({color:0x9ffff0,transparent:true,opacity:.95});}m=new THREE.Mesh(nmUoG,nmUoM);m.scale.set(1,1.5,1);m.raycast=()=>{};scene.add(m);NM_UO.set(o[0],m);}catch(e){continue;}}
+  m.position.set(o[1],o[2]+1.1,o[3]);}
+ for(const [id,m]of NM_UO)if(!keep.has(id)){try{scene.remove(m);}catch(e){}NM_UO.delete(id);}
+ const c=+(rs&&rs.uoc)||0,bar=c>0||nmUoB?nmUoBar():null;if(bar){bar.style.display=c>0?'block':'none';if(c>0)bar.firstChild.style.width=Math.min(100,c*100)+'%';}}
+{const nmUo0=mpCliRS;mpCliRS=function(rs){try{nmUltOrbs(rs);}catch(e){}return nmUo0.apply(this,arguments);};}
+function nmGmClear(){MP.escLv=null;nmOrbs([]);nmUltOrbs(null);const el=document.getElementById('xGmHud');if(el)el.style.display='none';}
+setInterval(()=>{try{for(const m of NM_ORBS.values())m.rotation.y+=.1;for(const m of NM_UO.values())m.rotation.y+=.1;if(!MP.on||MP.st!=='game'){if(NM_UO.size)nmUltOrbs(null);const el=document.getElementById('xGmHud');if(el&&el.style.display!=='none'){el.style.display='none';nmOrbs([]);}}}catch(e){}},100);
 
 // ---- SKIRMISH 1v1 (online only; server/src/modes.js SkirmishSimulation) ----
 // Two players, one per team, no bots, elimination rounds without the Spike, first to 5. The page plays its Deathmatch path (free

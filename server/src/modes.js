@@ -60,7 +60,7 @@ export class EscalationSimulation extends Simulation{
 
 // ---- Spike round variants ----
 const SIDEARMS=['Classic','Shorty','Frenzy','Ghost','Bandit','Sheriff'];
-// Spike Rush loadouts (wiki Spike_Rush "Weapons"): round 1 any sidearm (the game's Bandit is not in this game) with no shields;
+// Spike Rush loadouts (wiki Spike_Rush "Weapons"): round 1 any sidearm (Bandit included) with no shields;
 // round 2 a primary of 2050 or less with Light (25); round 3 and Endgame a primary of 2250 or more with Heavy (50).
 export const SR_LOADOUT=Object.freeze([{w:SIDEARMS,a:0},{w:['Stinger','Spectre','Bucky','Judge','Bulldog','Marshal','Ares'],a:25},{w:['Guardian','Warden','Phantom','Vandal','Outlaw','Operator','Odin'],a:50}]);
 // Per round in the half (1-based) and Endgame. credits: 'set' replaces, 'add' adds (cap 9000).
