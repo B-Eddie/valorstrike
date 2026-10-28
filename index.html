@@ -1123,6 +1123,10 @@ body:has(#game .x-top.x-bpo) #xAnn.buy{display:none!important}
 /* online debuff status (Vulnerable / Trapwire / tracking dart): small dark plate with a red edge above the ability row */
 .x-nst{pointer-events:none;position:fixed;left:50%;bottom:128px;transform:translateX(-50%);z-index:61;padding:5px 12px 5px 10px;border-left:3px solid #ff4655;background:rgba(15,25,30,.62);color:#ece8e1;font:500 12px/1 var(--hf,Arial,sans-serif);letter-spacing:.1em;text-transform:uppercase;text-shadow:0 1px 2px rgba(0,0,0,.6);white-space:nowrap}
 @media (pointer:coarse){.x-nst{bottom:auto;top:calc(50% + 92px)}}
+/* floor-gun pickup prompt = VALORANT interaction prompt (8.07: higher contrast, short text): centred just below the crosshair */
+#xdPrompt.x-int{position:fixed;left:50%;top:calc(50% + max(56px,9vh));transform:translateX(-50%);z-index:60;align-items:center;gap:9px;padding:5px 26px;background:linear-gradient(90deg,transparent,rgba(12,20,24,.5) 22%,rgba(12,20,24,.5) 78%,transparent);color:#ece8e1;font:600 13px/1 var(--hf,Arial,sans-serif);letter-spacing:.12em;text-transform:uppercase;text-shadow:0 1px 3px rgba(0,0,0,.85);pointer-events:none;white-space:nowrap}
+#xdPrompt .x-key{display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 4px;box-sizing:border-box;border-radius:2px;background:#ece8e1;color:#0f1923;font:700 12px/1 var(--hf,Arial,sans-serif);letter-spacing:0;text-shadow:none;box-shadow:0 1px 3px rgba(0,0,0,.6)}
+@media (pointer:coarse){#xdPrompt .x-key{display:none}#xdPrompt.x-int{font-size:12px}}
 </style>
 
 </head>
@@ -10128,7 +10132,7 @@ function xdPrompt() { // "[F] Pick up Vandal" under the crosshair while a floor 
   const list = running && !paused && player && player.hp > 0 ? (typeof xdFloorList === "function" ? xdFloorList() : (xdOn() ? XD.L : null)) : null;
   const d = list && list.length && running && !paused && player && player.hp > 0 && !(FV && FV.menu) ? xdLook(list) : null;
   if (!d) { if (el && el.style.display !== "none") el.style.display = "none"; return null; }
-  if (!el) { el = document.createElement("div"); el.id = "xdPrompt"; el.setAttribute("role", "status"); el.style.cssText = "position:fixed;left:50%;top:calc(50% + 46px);transform:translateX(-50%);z-index:60;display:none;align-items:center;gap:8px;padding:6px 12px;background:rgba(15,25,35,.72);color:#ece8e1;font:600 14px/1 Arial,sans-serif;letter-spacing:.04em;pointer-events:none;white-space:nowrap"; el.innerHTML = '<b style="display:inline-grid;place-items:center;min-width:22px;height:22px;border:1px solid #ece8e1;font-size:12px">F</b><span></span>'; document.body.append(el); xdPrompt.el = el; }
+  if (!el) { el = document.createElement("div"); el.id = "xdPrompt"; el.setAttribute("role", "status"); el.className = "x-int"; el.style.display = "none"; el.innerHTML = '<b class="x-key">F</b><span></span>'; document.body.append(el); xdPrompt.el = el; } // VALORANT interaction prompt look: <style id="xHudParity">
   const text = "Pick up " + d.w; if (el.lastChild.textContent !== text) el.lastChild.textContent = text; if (el.style.display !== "flex") el.style.display = "flex"; return d;
 }
 (function xdPromptLoop() { (window.XHK || (window.XHK = [])).push(() => { try { xdPrompt(); } catch (e) {} }); })(); // per-frame perf: ticked from the main loop's screen hooks (was a second, always-on rAF chain)
