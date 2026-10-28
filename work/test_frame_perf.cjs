@@ -16,7 +16,8 @@ assert(!/px=W\/\(MM\.getBoundingClientRect\(\)\.width/.test(nm),'minimap width n
  class V{constructor(x=0,y=0,z=0){this.x=x;this.y=y;this.z=z;}set(x,y,z){this.x=x;this.y=y;this.z=z;return this;}}
  class Ray{constructor(o,d){rays++;this.origin=o;this.direction=d;}}
  const floors=[3,1.2,-0.5],bvh={raycastFirst(r){const f=floors.find(y=>y<r.origin.y);return f==null?null:{point:{y:f},face:{normal:{y:f===1.2?0.2:1}}};}};
- const C={nav:{nodes:[[0,2,0]]},bvh},ctx={Math,Number,THREE:{Ray,Vector3:V,DoubleSide:2},nmNear:()=>0,Error};vm.createContext(ctx);vm.runInContext(nm.slice(a,b),ctx);
+ class S{} /* stand-ins: the NM_Q line (BVH query helpers, perf2) builds scratch objects at load; a stand-in bvh takes its raycastFirst fallback */
+ const C={nav:{nodes:[[0,2,0]]},bvh},ctx={Math,Number,WeakMap,Float64Array,Int32Array,Uint32Array,Uint16Array,THREE:{Ray,Vector3:V,Box3:S,Line3:S,Matrix4:S,Triangle:S,DoubleSide:2,BackSide:1},nmNear:()=>0,Error};vm.createContext(ctx);vm.runInContext(nm.split('\n').find(l=>l.startsWith('var NM_Q=')),ctx);rays=0;vm.runInContext(nm.slice(a,b),ctx);
  assert.equal(ctx.nmHeight(C,0,0,3.5),3);assert.equal(ctx.nmHeight(C,0,0,1.5),-0.5,'steep face skipped');assert.equal(ctx.nmHeight(C,0,0,3.5),3);assert.equal(rays,1,'one scratch ray for every call');}
 // Minimap: getBoundingClientRect at most once per second of draws.
 {const a=nm.indexOf('function nmMapProjection('),b=nm.indexOf('\n{const map=minimap',a);let rects=0,now=0;

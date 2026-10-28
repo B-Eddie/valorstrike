@@ -40,6 +40,7 @@ const ctx={Math,Number,Infinity,NaN,Map,Set,Array,Object,JSON,Uint8Array,Int32Ar
 ctx.window=ctx.globalThis=ctx;vm.createContext(ctx);vm.runInContext(vendor,ctx);assert(ctx.ValorantFeel&&ctx.ValorantFeel.ROPES,'motor in the page context');
 const pre=`
 function nmClimbOk(C,a,b){const N=C.nav.nodes;return N[b][1]-N[a][1]<=.6;}
+${nmSrc.split('\n').find(l=>l.startsWith('var NM_Q='))}
 ${fn(nmSrc,'nmConnected')}
 ${fn(nmSrc,'nmPath')}
 function nmNear3(x,z,y){return __near(x,z,y);}
