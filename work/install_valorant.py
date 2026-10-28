@@ -79,7 +79,12 @@ block+='\n'+(root/'work/ability_anim_runtime.js').read_text().rstrip('\n')
 # Ability targeting (work/ability_target_runtime.js), last: the tactical map overlay (From the Shadows) as the outermost okKey wrapper.
 ta2='// ---- ABILITY TARGETING ----';tb2='// ---- END ABILITY TARGETING ----'
 if ta2 in s:s=s[:s.index(ta2)]+s[s.index(tb2)+len(tb2):]
-block+='\n'+(root/'work/ability_target_runtime.js').read_text().rstrip('\n');mark='xReady = true; // every mode is initialised; lobby launches may now start them';s=s.replace(mark,block+'\n'+mark)
+block+='\n'+(root/'work/ability_target_runtime.js').read_text().rstrip('\n')
+# Death parity (work/death_runtime.js), last: outermost kill / allyDie / xDie / fSpawn / xVis / xKLDie / xKLReset wrappers; corpse lifetime (xdpGone, read by repair_runtime),
+# thrown floor guns, the first-person death camera (xDcCam, called by the frame) and the killer portrait / N toggle on the combat report.
+da2='// ---- DEATH PARITY ----';db2='// ---- END DEATH PARITY ----'
+if da2 in s:s=s[:s.index(da2)]+s[s.index(db2)+len(db2):]
+block+='\n'+(root/'work/death_runtime.js').read_text().rstrip('\n');mark='xReady = true; // every mode is initialised; lobby launches may now start them';s=s.replace(mark,block+'\n'+mark)
 if '<script src="models/valorant/manifest.js"></script>' not in s:s=s.replace('<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>','<script src="models/valorant/manifest.js"></script>\n<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>')
 # Find the actual three script tag, which may use an onerror handler.
 if '<script src="models/valorant/manifest.js"></script>' not in s:s=s.replace('<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js"></script>','<script src="models/valorant/manifest.js"></script>\n<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js"></script>')

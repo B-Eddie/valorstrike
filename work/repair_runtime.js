@@ -131,7 +131,7 @@ function xrSolve(R,dt){
   for(const a of R.list){let vx=(a.p.x-a.old.x)*.99,vy=(a.p.y-a.old.y)*.99,vz=(a.p.z-a.old.z)*.99;const m=Math.hypot(vx,vy,vz);if(m>maxStep){const k=maxStep/m;vx*=k;vy*=k;vz*=k;}a.old.copy(a.p);a.p.x+=vx;a.p.y+=vy-g;a.p.z+=vz;}
   for(let it=0;it<10;it++){
    for(const L of R.links){const A=L.A,B=L.B,dx=B.p.x-A.p.x,dy=B.p.y-A.p.y,dz=B.p.z-A.p.z,len=Math.sqrt(dx*dx+dy*dy+dz*dz);if(len<1e-7)continue;const t=len<L.lo?L.lo:len>L.hi?L.hi:len;if(t===len)continue;const k=(len-t)/len*.5;A.p.x+=dx*k;A.p.y+=dy*k;A.p.z+=dz*k;B.p.x-=dx*k;B.p.y-=dy*k;B.p.z-=dz*k;}
-   xrKnees(R);
+   if(R.time<2)xrKnees(R); // death parity: the knee nudge adds 4 mm per iteration for ever on a folded leg; after the fall it only kept a lying body creeping across the floor
    for(const a of R.list){const lim=a.floor+(a.rd||a.r);if(a.p.y<lim){a.p.y=lim;if(a.old.y<lim)a.old.y=lim+(a.old.y-lim)*.2;a.old.x+=(a.p.x-a.old.x)*.35;a.old.z+=(a.p.z-a.old.z)*.35;}}
   }
  }
@@ -155,8 +155,10 @@ function xrPose(R){
 const XR_DRAPE_GAP=.03;
 function xrDrape(R){
  if(!R.drape||!R.drape.length)return;const [p,c,d,w]=XR_V,[q,pq,wq]=XR_Q;
- for(const D of R.drape){const b=D.bone,lim=D.J.floor+XR_DRAPE_GAP;D.child.getWorldPosition(c);if(!(c.y<lim))continue;b.getWorldPosition(p);d.copy(c).sub(p);const len=d.length();if(len<1e-6)continue;
-  let dy=Math.min(lim-p.y,len*.98);if(dy<=d.y)continue;const hx=d.x,hz=d.z,hl=Math.hypot(hx,hz),h=Math.sqrt(Math.max(0,len*len-dy*dy));
+ for(const D of R.drape){const b=D.bone,lim=D.J.floor+XR_DRAPE_GAP;D.child.getWorldPosition(c);b.getWorldPosition(p);d.copy(c).sub(p);const len=d.length();if(len<1e-6)continue;let dy;
+  // death parity: a long chain (Sova's cloak) standing up off a body lying on the floor (its root's authored offset follows the chest, which can
+  // roll) is laid back down on the floor; a root deep under the floor lifts its child at most to 67 deg instead of straight up (a 1 m spike).
+  if(c.y<lim){dy=Math.min(lim-p.y,len*.92);if(dy<=d.y)continue;}else if(len>.12&&d.y>len*.45&&p.y-D.J.floor<.45){dy=Math.max(lim-p.y,-len*.98);if(dy>=d.y)continue;}else continue;const hx=d.x,hz=d.z,hl=Math.hypot(hx,hz),h=Math.sqrt(Math.max(0,len*len-dy*dy));
   if(hl>1e-6)w.set(hx/hl*h,dy,hz/hl*h);else w.set(h,dy,0);q.setFromUnitVectors(d.multiplyScalar(1/len),w.multiplyScalar(1/len));
   b.getWorldQuaternion(wq).premultiply(q);b.parent.getWorldQuaternion(pq);b.quaternion.copy(pq.invert().multiply(wq));b.updateMatrixWorld(true);}
 }
@@ -177,7 +179,8 @@ function xrRagdollTick(M,dt,wall){
  return R.time<3.2&&R.rest<.4;
 }
 {const die=xDie;xDie=function(b){const r=die.apply(this,arguments);if(b&&b.xm&&b.xm.dead){b.xm.diedAt=b.xm.diedAt||performance.now();}return r;};}
-{const visual=xVis;xVis=function(dt){const now=performance.now();for(let i=XDEAD.length-1;i>=0;i--){const e=XDEAD[i],age=(now-(e.c.diedAt||now))/1000;if(age>4){scene.remove(e.c.m);scene.remove(e.gn);xDisp(e.gn);const j=XSOL.mx.indexOf(e.c);if(j>=0)XSOL.mx.splice(j,1);XDEAD.splice(i,1);}else e.t=Math.max(e.t,age);}return visual(dt);};}
+{const visual=xVis;xVis=function(dt){const now=performance.now();for(let i=XDEAD.length-1;i>=0;i--){const e=XDEAD[i],age=(now-(e.c.diedAt||now))/1000;// corpse lifetime: work/death_runtime.js decides (xdpGone: round modes keep bodies until the round resets); kept bodies hold e.t under the base loop's 3 s ring fade
+ if(typeof xdpGone==='function'?xdpGone(e,age):age>4){scene.remove(e.c.m);scene.remove(e.gn);xDisp(e.gn);const j=XSOL.mx.indexOf(e.c);if(j>=0)XSOL.mx.splice(j,1);XDEAD.splice(i,1);}else e.t=typeof xdpGone==='function'?Math.min(2.5,age):Math.max(e.t,age);}return visual(dt);};}
 // perf (kill cost): a built corpse re-solves at most 30 times a second (15 beyond 35 m from the camera); the skipped
 // real time is passed on, so it falls exactly as fast. At most XR_ACT.max bodies simulate at once: when a fifth body
 // drops, the oldest one that has been falling for over a second freezes where it lies (settled bodies already stop).
