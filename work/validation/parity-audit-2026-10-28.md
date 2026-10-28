@@ -113,7 +113,7 @@ server) and the shared motor `vendor/valorant-feel.js` (= `server/src/motor.cjs`
 | Item | VALORANT | Ours | Status |
 |---|---|---|---|
 | +1 kill, +1 death by enemy, +1 orb, +1 plant, +1 defuse; costs per agent (Jett 8, Phoenix 7, Sova 8, Sage 7, Reyna 7, Omen 7, Killjoy 9, Raze 8, Skye 8, Breach 8, Cypher 7, Chamber 8) | [W-Unrated], valorant.gs agents | `server/src/kits.json`, `ults.js`, `spike.js:127` | match |
-| TDM: 3 points per kill, 10 per ult orb; abilities recharge over time | [W-TDM] | online TDM (`simulation.js`) has no abilities/ults at all; offline TDM ult +1 per kill | gap - TDM abilities online is a server feature, not a constant; listed |
+| TDM: 3 points per kill, 10 per ult orb; abilities recharge over time (per-ability TDM cooldown table, signature 1 +50 % / basics 50 % at the start, TDM ult costs) | [W-TDM] Abilities | online TDM (`simulation.js`) had no abilities/ults; offline TDM ult +1 per kill, 40 s full refill | **FIXED** ed9a124 (server `tdm.js` TdmSimulation + `tdmabil.js`; page TDMAB player) + 934a5a7 (page bots / allies on the same table, no 2-kill refill). Not built: "All abilities in Team Deathmatch cannot be cast in spawn" ([W-Abilities] https://wiki.playvalorant.com/en-us/Abilities, verified 2026-10-28) - this game's TDM has no spawn-room region (Riot's TDM maps are not in the game; no 15 s spawn protection / spawn damage either); server TDM bots cast no abilities |
 
 ## 7. DM / TDM
 
@@ -124,7 +124,8 @@ server) and the shared motor `vendor/valorant-feel.js` (= `server/src/motor.cjs`
 | **TDM armour per loadout**: S1 Classic Regen Shield, Frenzy/Ghost/Bandit none; S2 Sheriff Light, Stinger Heavy, Ares Light; S3 Spectre/Ares/Bulldog Heavy, Guardian Light; S4 Phantom/Vandal Heavy | [W-TDM] Loadout tables | everyone kept Heavy (50) in every stage | **FIXED** (server `TDM_ARMOR`/`tdmArmor` in `simulation.js` spawn + stage re-arm; page `TDM_ARM`/`tdmArmSet` in `dmSpawnB`/`dmSpawnP`/`tdmStageArm`; worker redeploy) |
 | TDM kill heal | none in VALORANT (healing = Recovery Orbs) [W-TDM] | page offline topped the killer up to 100 HP / 50 armour (server never did) | **FIXED** (page: removed) |
 | TDM Recovery Orbs: 6 s buff restoring health + loadout armour (not the Regen pool), respawn 30 s, ally zone | [W-TDM] Orbs | not in the game | **FIXED** 44dcb01 (server `server/src/tdmorbs.js` real TDM rooms, snapshot `tro` / `trz`; page offline + online draw in `work/game_rules_runtime.js` TDMREC). Note (unpublished, inferred): full bar over the 6 s, 0.9 m reach, hurt-only pickup, 3 m / 6 s zone, spots = 4 named callouts per map (Riot's TDM maps are not in the game) |
-| TDM weapon spawners (stage guns with their own ammo), TDM ult orbs (10 points) | [W-TDM] | not in the game | missing - spawners: content + stage-swap rules; ult orbs wait for TDM ultimates online (6.) |
+| TDM Ultimate Orbs: 10 points, "all spawn onto the map together periodically", contact + ally zone giving the same points | [W-TDM] Orbs, [W-Orbs] | not in the game | **FIXED** 9075207 (server `tdmorbs.js` TDM_UO for TdmSimulation, snapshot `tuo` / `tuz`; page TDMUO offline + online draw). INFERRED (unpublished): wave timing = first wave at 30 s, then every 60 s (all orbs together; an orb not taken stays up until taken); spots = the Unrated orb callouts (`ORB_SPOTS`, two per map; Riot's TDM maps are not in the game); zone 3 m / 6 s, each ally +10 once; offline a bot taking one only removes it (page bots have no TDM points) |
+| TDM weapon spawners (stage guns with their own ammo; can switch back on stage change; drop = gone; Odin with reduced reserve) | [W-TDM] Weapon spawners | not in the game | **SKIPPED** (d): the guns per stage are published but the spawner spots, respawn timer and pickup rule are not, and Riot's TDM maps are not in the game, so any placement would be invented |
 
 ## 8. Kill feed / audio
 
@@ -153,6 +154,9 @@ Results of each fix: see "Commits" below (filled in as they land).
 - dcf2218 ult orbs online (server `ultorbs.js`) + client draw + offline native-map orb spots - `server/test-ult-orbs.js`, `work/test_ult_orb_rules.cjs` (native part red before)
 - 48b4471 bot benchmark fights keep the Vandal (`server/tools/bot-benchmarks.mjs` Stage 4; failing `test-bot-human` after Bandit joined TDM Stage 1)
 - 44dcb01 TDM Recovery Orbs (server `tdmorbs.js` + page offline / online draw) - `server/test-tdm-orbs.js`, `work/test_tdm_recovery_orbs.cjs` (red before)
+- ed9a124 (lane-parity4) TDM abilities + ultimates online (server `tdm.js` / `tdmabil.js`, page TDMAB) - `server/test-tdm-abilities.js`, `work/test_tdm_abilities_offline.cjs` (red before)
+- 934a5a7 offline TDM bots recharge on the TDM table, no 2-kill refill (page) - `work/test_tdm_abilities_offline.cjs` D (red before)
+- 9075207 TDM Ultimate Orbs (server `tdmorbs.js` TDM_UO + page TDMUO) - `server/test-tdm-ult-orbs.js`, `work/test_tdm_ult_orbs.cjs` (both red before)
 
 ## Follow-up: Bandit + Warden weapon-add lane (not done here)
 

@@ -21194,6 +21194,39 @@ if (typeof tdmTick === 'function') { const t3 = tdmTick; tdmTick = function (dt)
 if (typeof xBKill === 'function') { const b3 = xBKill; xBKill = function (by) { if (!tdmBotOn()) return b3.apply(this, arguments); if (!by || typeof by !== 'string' || !jOn()) return; let u = null; for (const x of bots) if (x.name === by) u = x; if (!u) for (const x of allies) if (x.name === by) u = x;
   if (u && u.ab && u.ab.tw) u.ab.tw.k = (u.ab.tw.k || 0) + 1; /* Tailwind entry bookkeeping only: no 2-kill signature refill in TDM */ }; }
 if (typeof mpCliRS === 'function') { const r2 = mpCliRS; mpCliRS = function (r) { try { if (r && r.tab === 1 && typeof NET !== 'undefined' && NET.socket && MP.st === 'game' && FV.tdm && !FV.esc && !J.on && KITS[J.pick]) { J.on = true; J.bs = 0; J.bsOn = false; J.tk = 0; J.cd = { c: 0, q: 0, e: 0, x: 0 }; J.hs = ''; NET.tab = 1; try { xAbIcons(); } catch (e) {} } } catch (e) {} return r2.apply(this, arguments); }; }
+// TDM Ultimate Orbs (wiki Team_Deathmatch / Orbs, fetched 2026-10-28) = server/src/tdmorbs.js TDM_UO: all spawn together periodically
+// at fixed spots; contact (no channel) = 10 points and a zone that gives each ally the same 10 once. Inferred (unpublished): waves at
+// 30 s then every 60 s, spots = the Unrated orb callouts (XUO_SPOTS = server ORB_SPOTS), zone 3 m / 6 s. Offline the player's points
+// (tdmAbPts); a bot or ally taking one only removes it (page bots have no TDM points). Online: the snapshot's tuo / tuz rows.
+var TDMUO = { pts: 10, first: 30, every: 60, r: 0.9, dy: 1.8, zone: 3, zoneLife: 6, L: [], Z: [], key: null, t: 0, wave: 0, geo: null, mat: null, zg: null, zm: null };
+window.xTdmUo = TDMUO;
+function tdmUoMesh() { if (!TDMUO.geo) { TDMUO.geo = new THREE.IcosahedronGeometry(0.28, 0); TDMUO.mat = new THREE.MeshBasicMaterial({ color: 0xffd34d, transparent: true, opacity: 0.95 }); TDMUO.zg = new THREE.RingGeometry(TDMUO.zone - 0.12, TDMUO.zone, 40); TDMUO.zm = new THREE.MeshBasicMaterial({ color: 0xffd34d, transparent: true, opacity: 0.3, side: THREE.DoubleSide, depthWrite: false }); }
+  const g = new THREE.Group(), c = new THREE.Mesh(TDMUO.geo, TDMUO.mat); c.position.y = 1; c.raycast = () => {}; g.add(c); g.name = 'xTdmUo'; return g; }
+function tdmUoClear() { for (const o of TDMUO.L) if (o.g && o.g.parent) o.g.parent.remove(o.g); for (const z of TDMUO.Z) if (z.g && z.g.parent) z.g.parent.remove(z.g); TDMUO.L.length = 0; TDMUO.Z.length = 0; TDMUO.key = null; TDMUO.wave = 0; TDMUO.t = 0; }
+function tdmUoAdd(id, x, y, z) { const o = { id, x, y, z, up: false, g: null }; try { o.g = tdmUoMesh(); o.g.position.set(x, y, z); o.g.visible = false; scene.add(o.g); } catch (e) { o.g = null; } TDMUO.L.push(o); return o; }
+function tdmUoZone(x, y, z, team, until) { const Z = { x, y, z, team, until, got: new Set(), g: null }; try { tdmUoMesh(); Z.g = new THREE.Mesh(TDMUO.zg, TDMUO.zm); Z.g.rotation.x = -Math.PI / 2; Z.g.position.set(x, y + 0.05, z); Z.g.raycast = () => {}; scene.add(Z.g); } catch (e) { Z.g = null; } TDMUO.Z.push(Z); return Z; }
+function tdmUoReset(C) { tdmUoClear(); TDMUO.key = C; const map = typeof FV !== 'undefined' ? FV.map : '', calls = C && C.meta && Array.isArray(C.meta.callouts) ? C.meta.callouts : [], S = window.XUO_SPOTS || {};
+  (S[map] || []).forEach((name, id) => { const c = calls.find((q) => q.name === name); if (!c || !c.position) return; let q = c.position; try { const k = nmNear(C, q[0], q[2], q[1]); if (k >= 0 && C.nav.nodes[k]) q = C.nav.nodes[k]; } catch (e) {} tdmUoAdd(id, q[0], q[1], q[2]); }); }
+function tdmUoTick(dt) { // offline
+  let C = null; try { C = typeof nmActive === 'function' ? nmActive() : null; } catch (e) {} if (!C) { if (TDMUO.L.length) tdmUoClear(); return; } if (TDMUO.key !== C) tdmUoReset(C);
+  const T = (TDMUO.t += dt), w = T < TDMUO.first - 1e-9 ? 0 : 1 + Math.floor((T - TDMUO.first + 1e-9) / TDMUO.every);
+  if (w > TDMUO.wave) { TDMUO.wave = w; for (const o of TDMUO.L) o.up = true; try { feed('Ultimate orbs are up'); } catch (e) {} }
+  const U = tdmRecUnits();
+  for (const o of TDMUO.L) { if (o.g) { o.g.visible = o.up; o.g.children[0].rotation.y += dt * 2; } if (!o.up) continue;
+    for (const e of U) { if (Math.hypot(e.x - o.x, e.z - o.z) > TDMUO.r || Math.abs(e.y - o.y) > TDMUO.dy) continue; o.up = false; if (o.g) o.g.visible = false; const Z = tdmUoZone(o.x, o.y, o.z, e.team, T + TDMUO.zoneLife); Z.got.add(e.u); if (e.u === player) { tdmAbPts(TDMUO.pts); try { say('Ult orb · +' + TDMUO.pts + ' points', 900); } catch (er) {} } break; } }
+  for (let i = TDMUO.Z.length - 1; i >= 0; i--) { const z = TDMUO.Z[i]; if (z.until <= T) { if (z.g && z.g.parent) z.g.parent.remove(z.g); TDMUO.Z.splice(i, 1); continue; }
+    if (z.team === 0 && !z.got.has(player) && player && player.hp > 0 && Math.hypot(player.x - z.x, player.z - z.z) <= TDMUO.zone && Math.abs((player.y || 0) - z.y) <= TDMUO.dy) { z.got.add(player); tdmAbPts(TDMUO.pts); try { say('Ult orb zone · +' + TDMUO.pts + ' points', 900); } catch (er) {} } } }
+function tdmUoSync(tuo, tuz) { // online: tuo [[id, x, y, z, up]], tuz [[x, y, z, s left, team]]
+  const seen = new Set(); for (const r of tuo) { if (!Array.isArray(r) || ![1, 2, 3].every((i) => Number.isFinite(r[i]))) continue; seen.add(r[0]); let o = TDMUO.L.find((q) => q.id === r[0]); if (!o) o = tdmUoAdd(r[0], +r[1], +r[2], +r[3]); o.up = r[4] === 1; if (o.g) { o.g.visible = o.up; o.g.children[0].rotation.y += 0.08; } }
+  for (const o of TDMUO.L.slice()) if (!seen.has(o.id)) { if (o.g && o.g.parent) o.g.parent.remove(o.g); TDMUO.L.splice(TDMUO.L.indexOf(o), 1); }
+  for (const z of TDMUO.Z) if (z.g && z.g.parent) z.g.parent.remove(z.g); TDMUO.Z.length = 0; for (const r of (Array.isArray(tuz) ? tuz : [])) if (Array.isArray(r) && [0, 1, 2].every((i) => Number.isFinite(r[i]))) tdmUoZone(+r[0], +r[1], +r[2], r[4], +r[3]); }
+if (typeof tdmTick === 'function') { const t4 = tdmTick; tdmTick = function (dt) { const r = t4.apply(this, arguments); try { if (tdmAbOn() && running) tdmUoTick(window.xLdOn ? 0 : dt); } catch (e) {} return r; }; }
+if (typeof dmGo === 'function') { const g3 = dmGo; dmGo = function () { tdmUoClear(); return g3.apply(this, arguments); }; }
+if (typeof dmEnd === 'function') { const e3 = dmEnd; dmEnd = function () { tdmUoClear(); return e3.apply(this, arguments); }; }
+if (typeof startFive === 'function') { const f3 = startFive; startFive = function () { tdmUoClear(); return f3.apply(this, arguments); }; }
+if (typeof mpCliSnap === 'function') { const c3 = mpCliSnap; mpCliSnap = function (m) { const r = c3.apply(this, arguments);
+  try { if (m && Array.isArray(m.tuo)) tdmUoSync(m.tuo, m.tuz); else if (m && Array.isArray(m.u) && TDMUO.L.length && tdmAbNet()) tdmUoClear(); } catch (e) {}
+  return r; }; }
 window.xDmPacks = DMPK; window.xEscPacks = ESCPK;
 // ---- END GAME RULES ----
 // ---- ROCKLAN MOVEMENT ----
