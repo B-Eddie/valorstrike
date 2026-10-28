@@ -69,7 +69,7 @@ const fn=name=>between('function '+name+'(','\nfunction ');
  P.DM.pp=now()+1500;P.api.dmProtHud();assert.equal(els.length,1);assert.equal(els[0].hidden,false);assert.equal(els[0].textContent,'SPAWN PROTECTED');
  P.performance.t+=1600;P.api.dmProtHud();assert.equal(els[0].hidden,true);P.DM.pp=now()+1000;P.player.hp=0;P.api.dmProtHud();assert.equal(els[0].hidden,true,'chip must not show while dead');
  // ---- Offline respawn resets movement state and starts protection; death says "respawning".
- {const R={player:{x:5,z:5,hp:0,armor:0,y:3,vy:-2,vx:4,vz:-3,ch:.45,st:2,air:true},DM:{prt:0},dmSpot:()=>[1,2],dmAmmo(){},xKLReset(){R.kl=1;},setScope(){},updHud(){},performance:{now:()=>5000},Math,yaw:0,pitch:0};vm.createContext(R);vm.runInContext(fn('dmSpawnP')+';dmSpawnP();',R);
+ {const R={player:{x:5,z:5,hp:0,armor:0,y:3,vy:-2,vx:4,vz:-3,ch:.45,st:2,air:true},DM:{prt:0},dmSpot:()=>[1,2],dmAmmo(){},tdmArmSet(){},tdmTier:()=>0,TDM_BW:[[]],FV:{},xKLReset(){R.kl=1;},setScope(){},updHud(){},performance:{now:()=>5000},Math,yaw:0,pitch:0};vm.createContext(R);vm.runInContext(fn('dmSpawnP')+';dmSpawnP();',R);
   assert.deepEqual([R.player.x,R.player.z,R.player.hp,R.player.armor,R.player.vx,R.player.vz,R.player.ch,R.player.st,R.player.air],[1,2,100,50,0,0,0,0,false]);assert.equal(R.DM.pp,7000);assert.equal(R.kl,1);}
  assert(h.includes('DM.prt = 1.5; DM.pp = 0; if (DM.menu) dmMenu(false); if (!XTKILL) dmScore(by, "You"); say("You died · respawning", 1400);'),'DM death does not announce the respawn');
  // ---- Online client self rows: respawn mirrors protection, damage/death close the loadout.

@@ -120,7 +120,8 @@ server) and the shared motor `vendor/valorant-feel.js` (= `server/src/motor.cjs`
 |---|---|---|---|
 | DM 40 kills / 540 s, 1.5 s respawn, health pack 8 s +50 HP / +25 armour | [W-DM], valorant.gs | `simulation.js:24,36` | match |
 | TDM 100 kills / 570 s, stages 75/75/75/345 with stage guns, 1.5 s respawn | [W-TDM] | `simulation.js:24-32` | match |
-| **TDM armour per loadout**: S1 Classic Regen Shield, Frenzy/Ghost/Bandit none; S2 Sheriff Light, Stinger Heavy, Ares Light; S3 Spectre/Ares/Bulldog Heavy, Guardian Light; S4 Phantom/Vandal Heavy | [W-TDM] Loadout tables | everyone keeps Heavy (50) in every stage | gap (FIX candidate; server + page) |
+| **TDM armour per loadout**: S1 Classic Regen Shield, Frenzy/Ghost/Bandit none; S2 Sheriff Light, Stinger Heavy, Ares Light; S3 Spectre/Ares/Bulldog Heavy, Guardian Light; S4 Phantom/Vandal Heavy | [W-TDM] Loadout tables | everyone kept Heavy (50) in every stage | **FIXED** (server `TDM_ARMOR`/`tdmArmor` in `simulation.js` spawn + stage re-arm; page `TDM_ARM`/`tdmArmSet` in `dmSpawnB`/`dmSpawnP`/`tdmStageArm`; worker redeploy) |
+| TDM kill heal | none in VALORANT (healing = Recovery Orbs) [W-TDM] | page offline topped the killer up to 100 HP / 50 armour (server never did) | **FIXED** (page: removed) |
 | TDM weapon spawners, recovery orbs, TDM ult orbs | [W-TDM], [W-Orbs] | not in the game | missing (content) |
 
 ## 8. Kill feed / audio

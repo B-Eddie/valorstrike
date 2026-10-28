@@ -12160,6 +12160,12 @@ Object.keys(TDM_C).forEach((c) => { TDM_C[c] = TDM_C[c].filter((n) => !!WEAP[n])
 const TDM_T = { "Stage 1": 0, "Stage 2": 1, "Stage 3": 2, "Stage 4": 3 }, TDM_AT = [0, 75, 150, 225];
 const TDM_BW = Object.keys(TDM_C).map((c) => TDM_C[c]);
 const tdmTier = () => { const e = DM.len - timeLeft; return e >= 225 ? 3 : e >= 150 ? 2 : e >= 75 ? 1 : 0; };
+// TDM armour by loadout (wiki Team_Deathmatch: "The amount of armor or shield a player has each stage depends on the gun they have
+// chosen for that stage"): r = Regen Shield (25 + 50 pool), l = Light 25, h = Heavy 50, 0 = none. A gun outside the stage's table
+// (no stage pick yet) takes its Stage 1 armour. = server/src/simulation.js TDM_ARMOR / tdmArmor (work/test_tdm_armor_offline.cjs).
+const TDM_ARM = [{ Classic: "r", Frenzy: 0, Ghost: 0 }, { Sheriff: "l", Stinger: "h", Ares: "l" }, { Spectre: "h", Ares: "h", Bulldog: "h", Guardian: "l" }, { Phantom: "h", Vandal: "h" }];
+function tdmArmOf(t, w) { const T = TDM_ARM[Math.max(0, Math.min(3, t | 0))], k = Object.prototype.hasOwnProperty.call(T, w) ? T[w] : (TDM_ARM[0][w] ?? 0); return k === "r" ? { a: 25, rg: XRGN.pool } : { a: k === "h" ? 50 : k === "l" ? 25 : 0, rg: undefined }; }
+function tdmArmSet(u, w) { if (!FV.tdm || FV.esc || !u) return; const A = tdmArmOf(tdmTier(), w); u.armor = A.a; u.rgn = A.rg; u.rgnAt = 0; }
 const tdmOk = (n, st) => n === "Knife" || TDM_C["Stage 1"].includes(n) || TDM_BW[st].includes(n);
 const tdmBW = () => { const a = TDM_BW[tdmTier()]; return a[Math.floor(Math.random() * a.length)] || "Classic"; };
 function tdmTot() { let t = DM.k["You"] || 0, r = 0; for (const a of allies) t += DM.k[a.name] || 0; for (const b of bots) r += DM.k[b.name] || 0; return [t, r]; }
@@ -12199,7 +12205,7 @@ function tdmStageArm(t) {
   if (FV.pri && !tdmOk(FV.pri, t)) { FV.pri = null; if (rw === "pri") { rw = "pis"; ammo = slots.pis && slots.pis.ammo != null ? slots.pis.ammo : WEAP[FV.sec].mag; rsv = slots.pis && slots.pis.rsv != null ? slots.pis.rsv : xRsv(FV.sec); reloading = 0; try { onSkin(); setScope(false); updHud(); } catch (e) {} } slots.pri = {}; }
   if (FV.sec && !tdmOk(FV.sec, t)) FV.sec = "Classic";
   DM.stAt = t; DM.stT = performance.now() + 3000;
-  try { srAll().forEach((b) => { if (b && TDM_BW[t].length && !TDM_BW[t].includes(b.w)) b.w = TDM_BW[t][Math.floor(Math.random() * TDM_BW[t].length)] || "Classic"; }); } catch (e) {}
+  try { srAll().forEach((b) => { if (b && TDM_BW[t].length && !TDM_BW[t].includes(b.w)) { b.w = TDM_BW[t][Math.floor(Math.random() * TDM_BW[t].length)] || "Classic"; if (b.alive) tdmArmSet(b, b.w); } }); } catch (e) {}
 }
 function tdmStageForce() { // the forced switch after the stage prompt
   if (!DM.stT || performance.now() < DM.stT) return; DM.stT = 0; const t = DM.stAt; if (t !== tdmTier() || !t || !player || player.hp <= 0) return;
@@ -12267,7 +12273,7 @@ function dmSpot(me) { // the candidate farthest from every living enemy (small j
 function dmSpawnB(b) {
   const [x, z] = dmSpot(b); b.g.position.x = x; b.g.position.z = z;
   Object.assign(b, { hp: 100, armor: 50, alive: true, cd: 0.8 + Math.random() * 0.6, w: FV.tdm ? tdmBW() : dmBW(), pp: performance.now() + 2000, drt: 0, xTt: null, see: 0, bn: 0, xaimOn: false, smMotor: null, svx: 0, svz: 0, spd: 0, sf: 0, mv: false });
-  if (b.xr) b.xr.length = 0; dmLive(b);
+  if (b.xr) b.xr.length = 0; tdmArmSet(b, b.w); dmLive(b);
 }
 // a DM unit that is alive must be in the scene with a live agent model: xDie hands the old model to the corpse fade (XDEAD) and sets b.xd,
 // which made xVisB skip the unit forever after its first death (invisible hitbox). Drop the corpse's model so xVisB builds a fresh one.
@@ -12279,13 +12285,13 @@ function dmLive(b) {
 }
 function dmSpawnP() {
   const [x, z] = dmSpot(player); Object.assign(player, { x, z, hp: 100, armor: 50, y: 0, vy: 0, vx: 0, vz: 0, ch: 0, st: 0, air: false }); yaw = Math.atan2(x, z); pitch = 0;
+  tdmArmSet(player, tdmTier() && FV.pri && TDM_BW[tdmTier()].includes(FV.pri) ? FV.pri : FV.sec); // TDM: armour of this stage's loadout
   DM.pp = performance.now() + 2000; DM.prt = 0; dmAmmo(); try { xKLReset(); } catch (e) {} setScope(false); updHud();
 }
 function dmScore(by, victim) {
   DM.k[by] = (DM.k[by] || 0) + 1; DM.d[victim] = (DM.d[victim] || 0) + 1;
-  if (FV.tdm && !FV.esc) { // TDM: the killer is topped up (Deathmatch and Escalation drop a health pack on the victim instead: GAME RULES block, dmPack*)
-    if (by === "You") { if (player.hp > 0) { player.hp = 100; player.armor = 50; updHud(); } }
-    else { const k = bots.find((x) => x.name === by); if (k && k.alive) { k.hp = 100; k.armor = 50; } } }
+  // TDM: no kill heal (VALORANT heals only through Recovery Orbs, not in this game; the server never topped up). Deathmatch and
+  // Escalation drop a health pack on the victim instead: GAME RULES block, dmPack*.
   if (FV.tdm) { const T = tdmTot(); if (!DM.over && (T[0] >= DM.win || T[1] >= DM.win)) DM.over = T[0] >= DM.win ? "t" : "r"; tdmTS(); }
   else if (DM.k[by] >= DM.win && !DM.over) DM.over = by;
 }

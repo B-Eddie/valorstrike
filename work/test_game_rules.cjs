@@ -44,7 +44,7 @@ function page(over){const added=[],removed=[];class O{constructor(){this.positio
  P.player.hp=10;P.player.x=4;P.player.z=-2;P.dmTick(0.05);assert.equal(P.player.hp,10,'online: no local pickup (server authoritative)');
  P.mpCliSnap({u:[],hpk:[[8,4,1,9,0,9,1.9]]});assert.deepEqual(J(D.L.map(k=>k.id)),[8],'a pack the server dropped is removed');P.mpCliSnap({u:[]});assert.equal(D.L.length,0,'no hpk in a Deathmatch snapshot: none left');}
 // base: Deathmatch no longer heals the killer; TDM still does
-{const i=h.indexOf('function dmScore(by, victim) {'),j=h.indexOf('\nfunction dmRank',i),f=h.slice(i,j);assert(/if \(FV\.tdm && !FV\.esc\) \{ \/\/ TDM: the killer is topped up[\s\S]*player\.hp = 100; player\.armor = 50;/.test(f),'TDM kill top-up kept, Deathmatch / Escalation use packs');}
+{const i=h.indexOf('function dmScore(by, victim) {'),j=h.indexOf('\nfunction dmRank',i),f=h.slice(i,j);assert(!/player\.hp = 100; player\.armor = 50;/.test(f)&&/TDM: no kill heal/.test(f),'no kill heal in any mode (VALORANT TDM heals via Recovery Orbs only, wiki Team_Deathmatch; vs-lane-parity), Deathmatch / Escalation use packs');}
 // ---- defuse cancel window offline
 assert(h.includes('const DEF_CANCEL = 0.2; let defG = 0;'),'shared 0.2 s window');
 assert(h.includes('const DEF_CANCEL = 0.2; let defG = 0;\nfunction xDefRel(inRange) {'),'release test shared by all three offline paths');

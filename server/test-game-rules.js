@@ -9,7 +9,7 @@
 //  [P103] https://playvalorant.com/en-us/news/game-updates/valorant-patch-notes-1-03/ ("Unrated will still use the original
 //         Sudden Death format"; win-by-two Overtime is Competitive)
 import assert from 'node:assert/strict';
-import {Simulation,HEALTH_PACK,TDM_STAGES,TDM_STAGE_AT,tdmStage,tdmAllowed} from './src/simulation.js';
+import {Simulation,HEALTH_PACK,TDM_STAGES,TDM_STAGE_AT,tdmStage,tdmAllowed,tdmArmor,RGN} from './src/simulation.js';
 import {SpikeSimulation,DEFUSE_CANCEL} from './src/spike.js';
 import {fogView} from './src/fog.js';
 const W={map:{attacker:[0,0,0],defender:[0,0,-10],sites:{A:[0,0,0]}},nav:{nodes:[[0,0,0],[0,0,-10]],adj:[[1],[0]]},playable:[0,1],allowed:new Set([0,1]),near:(x,z)=>z<-5?1:0,ground:()=>0,blocked:()=>false,ray:()=>Infinity};
@@ -70,4 +70,18 @@ assert.equal(DEFUSE_CANCEL,.2);
  assert(s.command(m,{t:'in',seq:2,r:0,p:0,ads:1}));assert.equal(s.roundState(a).pov[m.id][0],1,'first zoom');
  assert(s.command(m,{t:'in',seq:3,r:0,p:0,ads:0,az:1}));assert.equal(m.input.zoom2,false,'az without ads is ignored');assert.equal(s.roundState(a).pov[m.id][0],0);
  m.weapon='Vandal';assert(s.command(m,{t:'in',seq:4,r:0,p:0,ads:1,az:1}));assert.equal(s.roundState(a).pov[m.id][0],1,'only the Operator has a second zoom');}
+// TDM armour by loadout (wiki Team_Deathmatch Loadout tables, vs-lane-parity 2026-10-28): "The amount of armor or shield a player
+// has each stage depends on the gun they have chosen for that stage." S1 Classic Regen Shield, Frenzy / Ghost none; S2 Sheriff
+// Light, Stinger Heavy, Ares Light; S3 Spectre / Ares / Bulldog Heavy, Guardian Light; S4 Phantom / Vandal Heavy.
+{const A=(st,w)=>JSON.stringify(tdmArmor(st,w));
+ assert.equal(A(0,'Classic'),JSON.stringify({a:25,rg:RGN.pool}),'Stage 1 Classic: Regen Shield');assert.equal(A(0,'Ghost'),'{"a":0,"rg":null}');assert.equal(A(0,'Frenzy'),'{"a":0,"rg":null}');
+ assert.equal(A(1,'Sheriff'),'{"a":25,"rg":null}');assert.equal(A(1,'Stinger'),'{"a":50,"rg":null}');assert.equal(A(1,'Ares'),'{"a":25,"rg":null}');
+ assert.equal(A(2,'Ares'),'{"a":50,"rg":null}','Ares is Heavy in Stage 3');assert.equal(A(2,'Guardian'),'{"a":25,"rg":null}');assert.equal(A(2,'Spectre'),'{"a":50,"rg":null}');assert.equal(A(2,'Bulldog'),'{"a":50,"rg":null}');
+ assert.equal(A(3,'Vandal'),'{"a":50,"rg":null}');assert.equal(A(3,'Phantom'),'{"a":50,"rg":null}');
+ assert.equal(A(2,'Classic'),A(0,'Classic'),'no stage pick yet: the Stage 1 sidearm\'s armour');assert.equal(A(3,'Ghost'),A(0,'Ghost'));
+ const s=new Simulation(W,'tdm','ascent',()=>.5),p=s.add('p','Jett',true),b=s.add('b0','Sage',false);s.start(false);
+ assert.equal(p.armor,25,'human on the Classic: 25 Regen Shield');assert.equal(p.rgn,RGN.pool);b.weapon='Ghost';s.spawn(b);assert.equal(b.armor,0,'Ghost: no armour');assert.equal(b.rgn,null);
+ s.remaining=570-225.01;s.step(.05);assert(['Phantom','Vandal'].includes(b.weapon));assert.equal(b.armor,50,'Stage 4 re-arm brings Heavy');
+ assert(s.command(p,{t:'equip',w:'Vandal'}));p.armor=10;s.spawn(p);assert.equal(p.armor,50,'Stage 4 respawn with the Vandal: Heavy');assert.equal(p.rgn,null);
+ const d=new Simulation(W,'dm','ascent',()=>.5),q=d.add('q','Jett',true);d.start(false);assert.equal(q.armor,50,'Deathmatch keeps Heavy');}
 console.log('Game rules: DM health packs (8 s, +50 HP / +25 armour, 0.5 m sphere, victim spot, fog), TDM 4 stages 75/75/75/345 s with per-stage guns (server re-arm, equip rule), defuse cancel window 0.2 s, Unrated Endgame round 25 (same sides, 5000, ults kept, 13-12), Operator second zoom in spectate pov');
