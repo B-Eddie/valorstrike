@@ -159,4 +159,18 @@ function xPlaceTick() {
 }
 (window.XHK || (window.XHK = [])).push(function xPlaceHook() { try { xPlaceTick(); } catch (e) { xE(e); } });
 window.xPlace = { aim: xAimPlace, ok: xPlaceOk, spot: xPlaceSpot, tick: xPlaceTick, st: XPI, max: XPLACE };
+// ---- From the Shadows online: the trusted server roots Omen through the 1.5 s windup (origin) and the 2.5 s Shade (target) and sends him
+// back when the Shade is hit or X is pressed again (server tickShadows / shadeCancel; roundState channel {kind:'shadows', shade}). The page
+// holds still too, so prediction does not walk off and get snapped back; offline the same rule is okTick's J.fts (ftsPin / ftsCancel).
+const XFTS = { ph: "", p: null };
+function xFtsNetTick() {
+  const on = typeof NET !== "undefined" && NET.socket && J.pick === "Omen" && player && player.hp > 0, ch = on && typeof netChannel !== "undefined" && netChannel && netChannel.kind === "shadows" && netChannel.remaining > 0 ? netChannel : null;
+  if (!ch) { if (XFTS.ph) { XFTS.ph = ""; XFTS.p = null; if (typeof XABA !== "undefined") XABA.ftsT = 0; } return; } // over or cancelled: the FP channel pose ends with it
+  const ph = ch.shade ? "shade" : "wind";
+  if (XFTS.ph !== ph) { XFTS.ph = ph; XFTS.p = ph === "wind" ? [player.x, player.y, player.z] : null; }
+  if (!XFTS.p) { const d = typeof XABA !== "undefined" && XABA.sent && Array.isArray(XABA.sent.p) ? XABA.sent.p : null; if (d && Math.hypot(player.x - d[0], player.z - d[1]) > 1.5) return; XFTS.p = [player.x, player.y, player.z]; } // Shade: hold where the server's snap put him
+  player.x = XFTS.p[0]; player.y = XFTS.p[1]; player.z = XFTS.p[2]; player.vx = player.vz = 0;
+}
+(window.XHK || (window.XHK = [])).push(function xFtsHook() { try { xFtsNetTick(); } catch (e) { xE(e); } });
+window.xFts = { tick: xFtsNetTick, st: XFTS };
 // ---- END ABILITY TARGETING ----

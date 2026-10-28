@@ -13,7 +13,7 @@ const assert=require('assert/strict'),path=require('path');const {boot}=require(
  const C=J('XPAR2');
  assert.deepEqual(C.shock,P.shock,'Shock Bolt server = offline');
  assert.deepEqual([C.ash.dmg,C.ash.n,C.ash.gap,C.ash.r],[P.aftershock.damage,P.aftershock.ticks,P.aftershock.gap,P.aftershock.radius],'Aftershock server = offline');
- assert.equal(C.heal,P.heal.sage,'Healing Orb');assert.equal(C.step,P.step.time,'Shrouded Step');assert.equal(C.shadows,P.shadows,'From the Shadows');
+ assert.equal(C.heal,P.heal.sage,'Healing Orb');assert.equal(C.step,P.step.time,'Shrouded Step');assert.equal(C.shadows,P.shadows,'From the Shadows');assert.equal(C.shadeAt,P.shadeAt,'From the Shadows windup 1.5 s, then the Shade (wiki)');
  assert.equal(C.rdv,P.rendezvous,'Rendezvous');assert.equal(C.tail,P.tail,'Tailwind');assert.deepEqual(J('XTW'),P.tailwind,'Tailwind windup / window: page XTW = server PARITY.tailwind');assert.deepEqual(P.tailwind,{windup:1,window:7.5},'Tailwind 1 s windup, 7.5 s window (wiki v7.04)');assert.equal(C.ld,32.5,'Lockdown 32.5 m (wiki)');const CP=J('XPS');for(const k of Object.keys(S.PAINT))assert.equal(CP[k],S.PAINT[k],'Paint Shells '+k+' server = offline');assert.equal(C.regrow,20,'Regrowth 20 HP/s (wiki)');
  // the same falloff curve on both sides
  for(let d=0;d<=5;d+=.125){const a=S.aoeFall(d,P.shock),b=xe('xAoeFall('+d+',XPAR2.shock)');assert.ok(Math.abs(a-b)<1e-9,'falloff at '+d+' m: server '+a+' offline '+b);}

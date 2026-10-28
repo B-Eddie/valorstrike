@@ -8653,6 +8653,7 @@ function sgTick(dt) {
   if (J.emp > 0 && !(P.hp > 0)) { J.emp = 0; $("xEmp").classList.remove("on"); } // Empress (current Valorant): lasts until death (round reset clears it in sgClear)
   okTick(dt);
 }
+{ const h0 = hurt; hurt = function (t, n, by) { if (t === player && n > 0 && J.pick === "Omen" && J.fts && J.fts.shade && jOn() && ftsCancel("Shade hit · teleport stopped")) return; return h0.apply(this, arguments); }; } // From the Shadows: a hit on the Shade cancels it, no damage (wiki)
 { const h0 = hurt; hurt = function (t, n, by) { if (t === player && J.dis > 0 && J.pick === "Reyna" && jOn()) return; return h0(t, t && t.vul > 0 && bots.includes(t) ? n * 2 : n, by); }; } // Killjoy Alarmbot: Vulnerable takes double · Reyna Dismiss: intangible, no damage // Killjoy Alarmbot: Vulnerable takes double
 function sgClear() {
   sgWallEnd(); (J.slz || []).concat(J.so || [], J.leer || []).forEach((s) => scene.remove(s.m));
@@ -8699,7 +8700,7 @@ function okFtsValid(x, z) {
 function okFtsAt(x, z) {
   if (!J.ftp || !running || player.hp <= 0) return false;
   const v = okFtsValid(x, z); if (!v) return sgNo(), say("Can't go there · pick an open spot", 900), false;
-  J.ftp = false; MM.style.pointerEvents = ""; J.ult = 0; J.fts = { t: XPAR2.shadows, x: v.x, z: v.z, y: v.y, m: okMark(v.x, v.z, 0x6a4cff) }; J.fts.m.position.y = v.y + 0.06;
+  J.ftp = false; MM.style.pointerEvents = ""; J.ult = 0; J.fts = { t: XPAR2.shadows, x: v.x, z: v.z, y: v.y, ox: player.x, oy: player.y, oz: player.z, shade: false, m: okMark(v.x, v.z, 0x6a4cff) }; J.fts.m.position.y = v.y + 0.06;
   say("From the Shadows · " + XPAR2.shadows + " s", 1000); blip(300, 0.5, "sawtooth", 0.15); SFX.ab("shadows"); xPLock(); return true;
 }
 function okKey(code) {
@@ -8722,7 +8723,7 @@ function okKey(code) {
       m.position.copy(p); scene.add(m); J.smokes.push({ m, p: m.position, t: 15, r: xSmk(m, XSMR.Omen) }); SFX.smoke();
     }
     if (code === "KeyX") {
-      if (J.fts) return say("From the Shadows · " + Math.ceil(J.fts.t) + " s", 700);
+      if (J.fts) { if (J.fts.shade) return void ftsCancel("Teleport stopped"); return say("From the Shadows · " + Math.ceil(J.fts.t) + " s", 700); } // X as a Shade cancels; nothing in the windup
       if (J.ftp) { J.ftp = false; MM.style.pointerEvents = ""; say("From the Shadows cancelled", 700); xPLock(); return; }
       if (J.ult < K().u) return sgNo(), say("From the Shadows " + J.ult + "/" + K().u, 800);
       if (!MM.okB) { MM.okB = 1; MM.addEventListener("click", okMMClick); }
@@ -8758,11 +8759,18 @@ function okHitBy(o, dt) { // enemies that see a placed device shoot it
   const e = PF_C.set(o.p.x, xFy(o.p.x, o.p.z, o.p.y) + 0.6, o.p.z);
   bots.forEach((b) => { if (!b.alive || b.blind > 0 || b.det > 0) return; const q = b.g.position; if (Math.hypot(q.x - e.x, q.z - e.z) < 30 && los(PF_A.set(q.x, (q.y || 0) + 1.7, q.z), e)) o.hp -= 12 * dt; });
 }
+function ftsPin(x, y, z) { const P = player; P.x = x; P.y = y; P.z = z; P.vx = P.vz = 0; P.vy = 0; }
+function ftsCancel(why) { const F = J.fts; if (!F || !F.shade) return false; ftsPin(F.ox, F.oy, F.oz); okRm(F); J.fts = null; say(why || "Teleport stopped", 800); try { SFX.tp(); } catch (e) {} return true; } // back where he cast it; the ult stays spent (wiki v1.0)
 function okTick(dt) {
   const P = player, alive = P.hp > 0, V = THREE.Vector3;
   bots.forEach((b) => { if (b.vul > 0) b.vul -= dt; if (b.det > 0) b.det -= dt; });
   if (J.om) { J.om.t -= dt; if (J.om.t <= 0) { if (alive) { P.x = J.om.x; P.z = J.om.z; P.y = J.om.y || 0; P.vy = 0; SFX.tp(); } okRm(J.om); J.om = null; } }
-  if (J.fts) { J.fts.t -= dt; if (!alive) { okRm(J.fts); J.fts = null; } else if (J.fts.t <= 0) { P.x = J.fts.x; P.z = J.fts.z; P.y = J.fts.y || 0; P.vy = 0; okRm(J.fts); J.fts = null; say("From the Shadows", 700); SFX.tp(); SFX.ab("shadows"); } }
+  if (J.fts) { const F = J.fts; F.t -= dt; if (!Number.isFinite(F.ox)) { F.ox = P.x; F.oy = P.y; F.oz = P.z; F.shade = !!F.shade; } // From the Shadows (wiki): 1.5 s rooted windup at the origin, then 2.5 s as a rooted Shade at the target (a hit or X again sends him back: ftsCancel); real at 4 s
+    if (!alive) { okRm(F); J.fts = null; }
+    else if (!F.shade && XPAR2.shadows - F.t < XPAR2.shadeAt) ftsPin(F.ox, F.oy, F.oz);
+    else if (!F.shade) { if (blocked(F.x, F.z, 0.43, F.y || 0)) { ftsPin(F.ox, F.oy, F.oz); okRm(F); J.fts = null; say("Teleport stopped", 700); } else { F.shade = true; ftsPin(F.x, F.y || 0, F.z); SFX.tp(); SFX.ab("shadows"); say("Shade · a hit or X sends you back", 900); } }
+    else if (F.t > 0) ftsPin(F.x, F.y || 0, F.z);
+    else { ftsPin(F.x, F.y || 0, F.z); okRm(F); J.fts = null; say("From the Shadows", 700); } }
   if (J.ftp && !alive) { J.ftp = false; MM.style.pointerEvents = ""; }
   if (J.pick === "Omen" && J.e < (J.oeM || 1)) { J.oe = (J.oe || 0) + dt; if (J.oe >= 40) { J.e++; J.oe = 0; say("Dark Cover charge ready", 700); } } // 40 s recharge, back up to the charges owned this round
   prune(J.par, (s) => {
@@ -13168,7 +13176,7 @@ var XTW = { windup: 1, window: 7.5 };
 // The online page predicts with the same record and sends f / s / r with its E so the server dashes the same way.
 function jDashKeys() { return { f: (keys.KeyW ? 1 : 0) - (keys.KeyS ? 1 : 0), s: (keys.KeyD ? 1 : 0) - (keys.KeyA ? 1 : 0), r: yaw }; }
 function jDash(k = jDashKeys()) { return window.ValorantFeel.dash(k.f, k.s, k.r, XPAR2.tail, XPAR2.dashTime); } // Jett Tailwind (wiki v7.04): 1 s windup, 7.5 s empowered window (= server PARITY.tailwind)
-var XPAR2 = { shock: { inner: 1.5, outer: 4, max: 75, min: 1 }, ash: { dmg: 80, n: 2, gap: 0.6, r: 3 }, heal: 100, regrow: 20, step: 1.2, shadows: 4, rdv: 18, rdvT: 1.3, rez: { w: 2, r: 1.3, reach: 12 }, ld: 32.5, tail: 11, dashTime: 0.45 }; // rdvT: Rendezvous 1.3 s teleport; rez: Resurrection 2 s windup + 1.3 s revive, 12 m (wiki; server PARITY.rdvTime / rez)
+var XPAR2 = { shock: { inner: 1.5, outer: 4, max: 75, min: 1 }, ash: { dmg: 80, n: 2, gap: 0.6, r: 3 }, heal: 100, regrow: 20, step: 1.2, shadows: 4, shadeAt: 1.5, rdv: 18, rdvT: 1.3, rez: { w: 2, r: 1.3, reach: 12 }, ld: 32.5, tail: 11, dashTime: 0.45 }; // rdvT: Rendezvous 1.3 s teleport; rez: Resurrection 2 s windup + 1.3 s revive, 12 m (wiki; server PARITY.rdvTime / rez)
 // Raze Paint Shells (wiki Paint_Shells Stats; server abilities.js PAINT / paintSubs): 2.25 s fuse, 55 inside 2.5 m -> 1 at the 5.5 m edge, then
 // 4 sub-munitions 0.667 s later (5.25 m edge) 2.5 m out on the diagonals. xPsFall(sub): the damage by distance.
 var XPS = { inner: 2.5, outer: 5.5, subOuter: 5.25, max: 55, min: 1, fuse: 2.25, subFuse: 0.667, subs: 4, spread: 2.5 };
@@ -21883,6 +21891,20 @@ function xPlaceTick() {
 }
 (window.XHK || (window.XHK = [])).push(function xPlaceHook() { try { xPlaceTick(); } catch (e) { xE(e); } });
 window.xPlace = { aim: xAimPlace, ok: xPlaceOk, spot: xPlaceSpot, tick: xPlaceTick, st: XPI, max: XPLACE };
+// ---- From the Shadows online: the trusted server roots Omen through the 1.5 s windup (origin) and the 2.5 s Shade (target) and sends him
+// back when the Shade is hit or X is pressed again (server tickShadows / shadeCancel; roundState channel {kind:'shadows', shade}). The page
+// holds still too, so prediction does not walk off and get snapped back; offline the same rule is okTick's J.fts (ftsPin / ftsCancel).
+const XFTS = { ph: "", p: null };
+function xFtsNetTick() {
+  const on = typeof NET !== "undefined" && NET.socket && J.pick === "Omen" && player && player.hp > 0, ch = on && typeof netChannel !== "undefined" && netChannel && netChannel.kind === "shadows" && netChannel.remaining > 0 ? netChannel : null;
+  if (!ch) { if (XFTS.ph) { XFTS.ph = ""; XFTS.p = null; if (typeof XABA !== "undefined") XABA.ftsT = 0; } return; } // over or cancelled: the FP channel pose ends with it
+  const ph = ch.shade ? "shade" : "wind";
+  if (XFTS.ph !== ph) { XFTS.ph = ph; XFTS.p = ph === "wind" ? [player.x, player.y, player.z] : null; }
+  if (!XFTS.p) { const d = typeof XABA !== "undefined" && XABA.sent && Array.isArray(XABA.sent.p) ? XABA.sent.p : null; if (d && Math.hypot(player.x - d[0], player.z - d[1]) > 1.5) return; XFTS.p = [player.x, player.y, player.z]; } // Shade: hold where the server's snap put him
+  player.x = XFTS.p[0]; player.y = XFTS.p[1]; player.z = XFTS.p[2]; player.vx = player.vz = 0;
+}
+(window.XHK || (window.XHK = [])).push(function xFtsHook() { try { xFtsNetTick(); } catch (e) { xE(e); } });
+window.xFts = { tick: xFtsNetTick, st: XFTS };
 // ---- END ABILITY TARGETING ----
 xReady = true; // every mode is initialised; lobby launches may now start them
 { let rb = null; try { rb = sessionStorage.getItem("vs.retry"); sessionStorage.removeItem("vs.retry"); } catch (e) {} // Retry on the engine error reloaded the page: relaunch the same mode
