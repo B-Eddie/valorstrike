@@ -18,8 +18,8 @@ const fs=require('fs'),path=require('path'),vm=require('vm'),assert=require('ass
 const root=path.join(__dirname,'..');const THREE=require(path.join(root,'server/node_modules/three/build/three.cjs'));
 const RT=fs.readFileSync(process.env.RT||path.join(__dirname,'native_maps_runtime.js'),'utf8');
 const fn=name=>{const m=new RegExp('^function '+name+'\\(.*$','m').exec(RT);assert(m,'runtime has function '+name);return m[0];};
-const vars=(RT.match(/^var NM_(?:TERRAIN|ZBIAS|ZLEVELS)=.*$/mg)||[]).join('\n');
-const opt=['nmTerrain'].filter(n=>new RegExp('^function '+n+'\\(','m').test(RT)).map(fn);
+const vars=(RT.match(/^var NM_(?:TERRAIN|ZBIAS|ZLEVELS|OVERLAY|GROUND\w*)=.*$/mg)||[]).join('\n');
+const opt=['nmTerrain','nmGroundLayer','nmGroundApply'].filter(n=>new RegExp('^function '+n+'\\(','m').test(RT)).map(fn);
 const ctx={THREE,renderer:{capabilities:{getMaxAnisotropy:()=>16}},console};vm.createContext(ctx);
 vm.runInContext([vars,...opt,...['nmDecalStyle','nmFoliageCut','nmFoliageApply','nmDecalApply','nmTexMissingMark','nmPrepareScene'].map(fn),'function nmTexStats(img){return img&&img.st||null;}'].join('\n'),ctx);
 const DATA=JSON.parse(fs.readFileSync(path.join(__dirname,'validation/map/ground-materials.json'),'utf8'));
