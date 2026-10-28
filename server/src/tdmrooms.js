@@ -9,4 +9,6 @@ export function roomTick(sim,u,dt){if(!sim.spawnRooms||!u.alive||u.loading)retur
  if(!home){if(!u.roomLeft)u.protectedUntil=0;u.roomLeft=true;}
  if(u.roomSafe){u.invulnerableUntil=sim.time+.1;if(sim.time-u.roomEntered<=TDM_ROOM.grace){u.hp=Math.min(100,u.hp+TDM_ROOM.heal*dt);const cap=sim.roomArmor(u);u.armor=Math.min(cap,u.armor+TDM_ROOM.heal*dt);}else{u.hp=Math.max(0,u.hp-TDM_ROOM.damage*dt);if(!u.hp){u.alive=false;u.deaths++;u.respawnAt=sim.time+1.5;sim.events.push(['k','Spawn room',u.name,0,'Ability']);}}}else if(u.invulnerableUntil<=sim.time+.101)u.invulnerableUntil=0;
 }
-export function roomBlocked(sim,u,x,z,r,y){if(!sim.spawnRooms)return false;for(let team=0;team<2;team++){if(team===u.team&&!u.roomLeft)continue;const p=roomAnchor(sim,team);if(Math.abs(y-p[1])<TDM_ROOM.height&&hyp2(x-p[0],z-p[2])<TDM_ROOM.radius+r)return true;}return false;}
+// Enemy rooms keep the whole capsule out; the own room, once left, refuses only re-entry (centre back inside, the inRoom test),
+// so a unit just past its edge, still within one capsule radius of it, can walk away instead of being held there.
+export function roomBlocked(sim,u,x,z,r,y){if(!sim.spawnRooms)return false;for(let team=0;team<2;team++){const own=team===u.team;if(own&&!u.roomLeft)continue;const p=roomAnchor(sim,team);if(Math.abs(y-p[1])<TDM_ROOM.height&&hyp2(x-p[0],z-p[2])<TDM_ROOM.radius+(own?0:r))return true;}return false;}
