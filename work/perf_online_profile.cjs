@@ -23,7 +23,13 @@ const gcDuring = (a, b) => gcs.some((g) => g[0] <= b && g[0] + g[1] >= a);
 Math.random = mulberry(SEED * 104729 + 1);
 (async () => {
   const H = boot({ real3: true, seed: SEED, native: NATIVE, fastGlobal: process.env.FAST !== '0' }), xe = H.xe;
-  xe(`{const g=document.getElementById.bind(document),C=new Map();document.getElementById=function(id){const e=C.get(id);if(e&&e.id===id)return e;const r=g(id);if(r)C.set(id,r);return r;};}true`);
+  // getElementById: the fake DOM walks the whole tree per call; cache hits (as perf_match_profile.cjs) and misses (until the
+  // DOM gains an element or an id: _ins / innerHTML / id / setAttribute), so a page lookup of an absent element (#netSt,
+  // #xdPrompt before first use) costs what it costs in a browser rather than a tree walk per frame
+  xe(`{const g=document.getElementById.bind(document),C=new Map(),M=new Map(),P=Object.getPrototypeOf(document.body);let ver=0;
+   for(const k of ['_ins','setAttribute']){const f=P[k];if(typeof f==='function')P[k]=function(){ver++;return f.apply(this,arguments);};}
+   for(const k of ['innerHTML','id','outerHTML']){let o=P,d=null;while(o&&!(d=Object.getOwnPropertyDescriptor(o,k)))o=Object.getPrototypeOf(o);if(d&&d.set)Object.defineProperty(P,k,{configurable:true,enumerable:d.enumerable,get:d.get,set(v){ver++;d.set.call(this,v);}});}
+   document.getElementById=function(id){const e=C.get(id);if(e&&e.id===id)return e;if(M.get(id)===ver)return null;const r=g(id);if(r)C.set(id,r);else M.set(id,ver);return r;};}true`);
   try { xe(fs.readFileSync(path.join(__dirname, '..', 'vendor', 'hit-impact.js'), 'utf8') + ';true'); } catch (e) {}
   if (process.env.EMU !== '0') xe(fs.readFileSync(path.join(__dirname, 'perf_render_emu.js'), 'utf8') + ';true');
   xe('try{xGQApply("medium")}catch(e){};true');
