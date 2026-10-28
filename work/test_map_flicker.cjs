@@ -36,7 +36,7 @@ const PER=+process.env.PER||150,VIEWS=+process.env.VIEWS||12,PIX=+process.env.PI
 const NM_ZFIX=process.env.ZFIX?JSON.parse(fs.readFileSync(process.env.ZFIX,'utf8')):JSON.parse(line(/^var NM_ZFIX=(.*);$/m).slice('var NM_ZFIX='.length,-1));
 const zb=(process.env.ZBIAS?'var NM_ZBIAS='+process.env.ZBIAS+';':(src.match(/^var NM_ZBIAS=.*;$/m)||[''])[0])+'\n'+(src.match(/^var NM_ZLEVELS=.*;$/m)||[''])[0];
 const api=new Function('THREE','NM_ZFIX',zb+'\n'+['nmZFixApply','nmDecalApply'].map(pick).join('\n')+'\nreturn {nmZFixApply,nmDecalApply};')(THREE,NM_ZFIX);
-const DECAL=/Decal|Floater/i,TERRAIN=/Floor|Ground|(?:Stone|Brick|Dirt|Gravel|Tile|Grass|Jam|Stairs).*Grass|Grass.*Stone|Blendable.*Gravel/i;
+const DECAL=/Decal|Floater/i,TERRAIN=/Floor|Ground|(?:Stone|Brick|Dirt|Gravel|Tile|Grass|Jam|Stairs).*Grass|Grass.*Stone|Blendable.*Gravel|^Grass_M\d+_/i;/* = NM_TERRAIN */
 const SEE=/Glass|Window|Water|Puddle|Foliage|Leaves|Leaf|Plant(?!er)|Bush|Vine|Ivy|Fern|Shrub|Creeper|Moss|Flower|Tree|Palm|Grass_M0_Cards|Cards|Wires?|Cable|Vista|Sky|Cloud|LightCone|Godray|Volumetric|Fog|Smoke|Dust|Particle|Fence|Chain|Net|Grate|Mesh/i;
 function materials(key,prims){const byName=new Map(),scene=new THREE.Group();for(const p of prims){if(byName.has(p.name))continue;const m=new THREE.MeshLambertMaterial({name:p.name,side:THREE.DoubleSide});if(DECAL.test(p.name))api.nmDecalApply(m,'decal');byName.set(p.name,m);scene.add(new THREE.Mesh(new THREE.BufferGeometry(),m));}
  api.nmZFixApply(scene,key);const out=new Map();let id=0;
