@@ -99,7 +99,7 @@ export class VariantSpikeSimulation extends SpikeSimulation{
    if(this.gm==='swift'&&rih===1&&!end)A.ult=Math.max(A.ult||0,Math.min(K.u,K.u>=9?3:2));
    if(this.gm==='sr'||this.gm==='rep'){const M=K.mx||{};A.c=M.c||0;A.q=M.q||0;if(M.e!=null)A.e=M.e;}
    if(this.gm==='rep'&&r>1&&!end)gainUlt(u,1);
-   if(end&&(this.gm==='sr'||this.gm==='swift'||this.gm==='rep'))A.ult=Math.max(A.ult||0,K.u-3);}
+   if(end&&(this.gm==='sr'||this.gm==='rep'))A.ult=Math.max(A.ult||0,K.u-3);/* Swiftplay Endgame keeps ult points as they are (wiki Swiftplay: its only ult rule is 2 per half) */}
   if(this.gm==='sr')this.srRound(r,end);
   }
  // Spike Rush: one random gun for everyone this round, shields by round, Spike with any attacker, ult orbs on the map.

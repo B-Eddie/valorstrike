@@ -5061,6 +5061,12 @@ function getLossBonus(team) { // credits `team` gets next round if it loses it: 
   const st = (en ? FV.lsT : FV.lsY) || 0; return LOSS_B[Math.min(st + 1, 3) - 1]; }
 window.getLossBonus = getLossBonus;
 function fKC(n) { if (XTKILL) return; if (mode === "five" && FV.bs[n]) FV.bs[n].cr = capC(FV.bs[n].cr + 200); }
+// Swiftplay (wiki Swiftplay / Credits; Riot 2022 year-end post): credits are set by the round in the half, the same for both
+// teams, no loss-streak bonus: round 1 800 (fEco), round 2 +2400 (+600 to the team that won round 1), rounds 3 and 4 +4250;
+// kill 200 / plant 300 still paid; Endgame (4-4) 5000. = server/src/modes.js VARIANT_RULES.swift.
+function fSwCr(cr, rih, won) { return capC(cr + (rih === 2 ? 2400 + (won ? 600 : 0) : 4250)); }
+// Swiftplay ult: every player starts each half with 2 ult points (3 for a 9-point ultimate); a higher charge is kept.
+function fSwUlt(cur, cost) { return Math.max(cur || 0, Math.min(cost, cost >= 9 ? 3 : 2)); }
 function fEco() { // match start and side swap: everyone back to 800 and a Classic
   FV.cr = 800; FV.pri = null; FV.sec = "Classic"; FV.alive = false; FV.arm = 0; FV.rgn = undefined; FV.bs = {}; FV.bt = []; FV.req = null; FV.reqBy = null;
   F_EN.concat(F_MATES).forEach((n) => FV.bs[n] = { cr: 800, w: "Classic", arm: 0, alive: false });
@@ -8097,7 +8103,7 @@ function fRound() {
   if (!FV.alive) { FV.pri = null; FV.sec = "Classic"; FV.arm = 0; FV.rgn = undefined; } // died last round: back to a Classic
   const pz0 = FV.atk ? xSpawn(FV.map).atk : xSpawn(FV.map).def;
   player = { x: 0, z: pz0, hp: 100, armor: FV.arm, rgn: FV.rgn, y: 0, vy: 0, ch: 0, st: 0 }; yaw = FV.atk ? 0 : Math.PI; pitch = 0;
-  timeLeft = 100; FV.buy = FV.you + FV.them === 0 || (FV.rep && FV.you + FV.them === 4) || FV.you + FV.them === 12 || (FV.you + FV.them === 24 && !FV.sw && !FV.sr) ? 45 : 30; if (FV.rep) timeLeft = 80; /* Replication rounds 80 s */ /* 45 s: first buy phase of each half and of overtime (rounds 1, 13, 25; wiki Unrated, = server buyPhaseSeconds) */ defuseT = 0; kSwing = 0;
+  timeLeft = 100; FV.buy = FV.you + FV.them === 0 || ((FV.rep || FV.sw) && FV.you + FV.them === 4) || FV.you + FV.them === 12 || (FV.you + FV.them === 24 && !FV.sw && !FV.sr) ? 45 : 30; if (FV.rep) timeLeft = 80; /* Replication rounds 80 s */ /* 45 s: first buy phase of each half and of overtime (rounds 1, 13, 25; wiki Unrated, = server buyPhaseSeconds) */ defuseT = 0; kSwing = 0;
   // Sniper hold cache is per round by design: drop it so a new round never inherits stale spots.
   XSN.m.clear();
   fSpawn(); $("feed").innerHTML = ""; $("defuse").style.display = "none";
@@ -10363,11 +10369,12 @@ function fCheck(win, text, title) {
   if (FV.surr) {} else if (win) FV.you++; else FV.them++; // surrender: final score stays as it stood
   FV.lsY = win ? 0 : (FV.lsY || 0) + 1; FV.lsT = win ? (FV.lsT || 0) + 1 : 0; // loss streaks: 1900 / 2400 / 2900
   const lb = (s) => LOSS_B[Math.min(s, 3) - 1];
-  const swB = FV.sw ? 4000 : null; // Swiftplay: 4000 each round plus that round's economy, capped (pistol round 5 resets via fEco on the swap)
-  FV.cr = capC((swB ?? FV.cr) + (win ? 3000 : fSurvLoss(FV.atk, player.hp > 0) ? 1000 : lb(FV.lsY))); FV.alive = player.hp > 0; FV.arm = FV.alive ? player.armor || 0 : 0; FV.rgn = FV.alive ? player.rgn : undefined;
-  bots.concat(allies).forEach((u) => { const st = FV.bs[u.name], w2 = allies.includes(u) ? win : !win; if (!st) return; st.cr = capC((swB ?? st.cr) + (w2 ? 3000 : fSurvLoss(allies.includes(u) ? FV.atk : !FV.atk, !!u.alive) ? 1000 : lb(allies.includes(u) ? FV.lsY : FV.lsT))); st.alive = u.alive; st.arm = u.alive ? u.armor || 0 : 0; st.rgn = u.alive ? u.rgn : undefined; });
+  const swR = FV.sw ? ((FV.you + FV.them) % 4) + 1 : 0; // Swiftplay: the next round's number in its half (1 = after the swap: fEco)
+  const pay = (c, w2, surv, ls) => swR ? (swR === 1 ? c : fSwCr(c, swR, w2)) : capC(c + (w2 ? 3000 : surv ? 1000 : lb(ls)));
+  FV.cr = pay(FV.cr, win, fSurvLoss(FV.atk, player.hp > 0), FV.lsY); FV.alive = player.hp > 0; FV.arm = FV.alive ? player.armor || 0 : 0; FV.rgn = FV.alive ? player.rgn : undefined;
+  bots.concat(allies).forEach((u) => { const st = FV.bs[u.name], w2 = allies.includes(u) ? win : !win; if (!st) return; st.cr = pay(st.cr, w2, fSurvLoss(allies.includes(u) ? FV.atk : !FV.atk, !!u.alive), allies.includes(u) ? FV.lsY : FV.lsT); st.alive = u.alive; st.arm = u.alive ? u.armor || 0 : 0; st.rgn = u.alive ? u.rgn : undefined; });
   const n = FV.you + FV.them, over = FV.surr ? true : FV.sw ? Math.max(FV.you, FV.them) >= 5 : FV.sr ? Math.max(FV.you, FV.them) >= (FV.srWin || 4) : Math.max(FV.you, FV.them) >= FIVE_WIN, ot = !FV.sr && !FV.sw && !over && n === 24, swap = !over && (FV.sw ? n === 4 : FV.sr ? n === 3 : n === 12); // Unrated: first to 13; at 12-12 one Endgame (Sudden Death) round on the same sides decides (wiki Unrated; Competitive's win-by-two Overtime is not this mode)
-  if (FV.sw && !over) { try { jUlt(); } catch (e) {} bots.concat(allies).forEach((u) => { try { if (window.xBotUltGain) window.xBotUltGain(u.name); } catch (e) {} }); } // +1 ult point per round
+  const swEnd = FV.sw && n === 8 && !over; // Swiftplay 4-4: Endgame (sudden death) round 9, 5000 each (ults: 2 per half only, set in fSwHalf)
   xRes(win, text, over, !FV.surr && FV.you > FV.them, title);
   if (!over) { if (FV.sw) xCue(FV.you, FV.them, 4, 5); else if (FV.sr) xCue(FV.you, FV.them, 3, 4); else if (n < 24) xCue(FV.you, FV.them, 12, FIVE_WIN);
     else { annc("SUDDEN DEATH", 2000, { c: "loss", s: "mp" }); annc("MATCH POINT", 2000, { c: "loss", s: "mp" }); } } // 12-12: the next round wins the match
@@ -10375,6 +10382,7 @@ function fCheck(win, text, title) {
   FV.to = setTimeout(() => {
     $("xBan").style.display = "none";
     if (!over) { if (swap) { FV.atk = !FV.atk; FV.lsY = FV.lsT = 0; if (!ot) fEco(); }
+      if (swEnd) { FV.cr = 5000; Object.values(FV.bs).forEach((s) => s.cr = 5000); FV.lsY = FV.lsT = 0; }
       if (ot) { FV.cr = 5000; Object.values(FV.bs).forEach((s) => s.cr = 5000); FV.lsY = FV.lsT = 0; } // Endgame round 25: 5000 credits each, loss streaks reset, same sides, ult points carry over (wiki Unrated names no ult rule)
       return fRound(); }
     const won = !FV.surr && FV.you > FV.them; if (won) stats.w++; showStats();
@@ -11968,6 +11976,12 @@ html.xt-nocm .x-cmb{display:none!important}
   function unit(n) { if (!n || n === "You") return null; for (const x of bots) if (x && x.name === n) return x; if (typeof allies !== "undefined") for (const x of allies) if (x && x.name === n) return x; return null; }
   window.xBotUltGain = (n) => { try { gain(n); } catch (e) {} }; // ult orbs captured by bots feed this same counter
   window.xBotUltCost = (a) => (KITS[a] ? KITS[a].u : 0);
+  // Swiftplay: at the start of each half (rounds 1 and 5, not the Endgame) everyone holds at least 2 ult points (3 for a 9-point
+  // ultimate): wiki Swiftplay, Riot 2022 year-end post. Runs after fRound has seated this round's bots / allies.
+  function fSwHalf() { if (typeof mode === "undefined" || mode !== "five" || !FV.sw) return; const n = FV.you + FV.them; if (n % 4 === 0 && n < 8) {
+    try { if (jOn()) J.ult = fSwUlt(J.ult, K().u); } catch (e) {}
+    bots.concat(typeof allies !== "undefined" ? allies : []).forEach((u) => { if (!u || !u.name) return; const a = xAg(u), m = (KITS[a] && KITS[a].u) || 7; XU.c[u.name] = fSwUlt(XU.c[u.name], m); }); } }
+  if (typeof fRound === "function") { const f0 = fRound; fRound = function () { const r = f0.apply(this, arguments); try { fSwHalf(); } catch (e) {} return r; }; }
   window.xBotUC = XU.c; window.xBotUB = XU.b; /* Blade Storm TP (ability_fp_runtime xBtpK) reads the active bot ults */ // shared bot ult charge (bot Chamber's Tour De Force reads it, cost 8)
   function gain(n) { const u = unit(n); if (!u) return; const a = xAg(u), m = (KITS[a] && KITS[a].u) || 7; XU.c[n] = Math.min(m, (XU.c[n] || 0) + 1); } // agents without a bot ult still charge (scoreboard pips); think1 only fires PTS agents
   const k0 = kill; kill = function (b, hs, by, w) { const was = b && b.alive; const r = k0.apply(this, arguments); if (was && b && !b.alive) { try { const tk = XTKILL || by === "Spike" || by === "Fall"; if (mode === "five" && !tk) gain(b.name); if (!XTKILL) gain(by); delete XU.b[b.name]; ribEnd(b); } catch (e) {} } return r; };
