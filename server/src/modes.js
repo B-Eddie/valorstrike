@@ -186,5 +186,5 @@ export function createSim(world,mode,map,random){
  if(mode==='skm')return new SkirmishSimulation(world,'skm',map,random);
  if(SPIKE_VARIANTS.includes(mode))return new VariantSpikeSimulation(world,mode,map,random);
  if(mode==='five')return new SpikeSimulation(world,mode,map,random);
- const sim=new Simulation(world,mode,map,random);if(mode==='tdm')sim.loadoutArmor=true;/* TDM armour by loadout (simulation.js tdmArmor) */return sim;}
+ const sim=new Simulation(world,mode,map,random);if(mode==='tdm'){sim.loadoutArmor=true;/* TDM armour by loadout (simulation.js tdmArmor) */sim.tdmOrbs=true;/* Recovery Orbs (tdmorbs.js) */}return sim;}
 export const simMode=sim=>sim?.gm||sim?.mode;
