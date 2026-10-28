@@ -54,6 +54,8 @@ player.tagT=0;c.NET.inLog=[];snap([hit(5)],self(9,.01));assert.equal(player.tagT
 // far shotgun pellets: soft ramp (server tagSoft), never replacing a hard tag already on
 player.tagT=0;player.tagK=1;snap([hit(6,15)],null);assert.equal(player.tagS,1);assert.equal(player.tagK,.7);assert.equal(player.tagT,.5);
 player.tagT=.3;player.tagK=.275;player.tagS=0;snap([hit(6,15)],null);assert.equal(player.tagK,.275,'soft pellets never weaken a hard tag');assert.equal(player.tagT,.3);
+// a hard hit replaces a soft ramp (server: tagSoft 0, a fresh window)
+player.tagT=.45;player.tagS=1;player.tagK=.7;c.NET.inLog=[{seq:7,t:now-100}];snap([hit(5)],self(7,.02));assert.equal(player.tagS,0);assert(Math.abs(player.tagT-.42)<1e-9);c.NET.inLog=[];
 // close shotgun pellets: hard
 player.tagT=0;snap([hit(7,15)],null);assert.equal(player.tagS,0);assert.equal(player.tagK,.275);
 // a window wholly in the past (huge ping): nothing left to mirror
