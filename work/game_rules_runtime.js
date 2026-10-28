@@ -179,5 +179,51 @@ if (typeof startFive === 'function') { const f3 = startFive; startFive = functio
 if (typeof mpCliSnap === 'function') { const c3 = mpCliSnap; mpCliSnap = function (m) { const r = c3.apply(this, arguments);
   try { if (m && Array.isArray(m.tuo)) tdmUoSync(m.tuo, m.tuz); else if (m && Array.isArray(m.u) && TDMUO.L.length && tdmAbNet()) tdmUoClear(); } catch (e) {}
   return r; }; }
+// Spike Rush Powerup Orbs (wiki.playvalorant.com/en-us/Spike_Rush "Powerup Orbs", fetched 2026-10-28) = server/src/srpowerups.js
+// (SR_PW / srPickSet / srOrbTypes, pinned by work/test_sr_powerups_page.cjs): five effects chosen at the start (Ultimate always, one
+// of Crippling Decay / Paranoia - at most once a round - and three of the built ones); each orb a type from that set; a capture =
+// +1 ult point (the Ultimate orb: full) plus its effect. Offline the player captures (page bots / allies do not): Damage Amp (+30 %
+// of the player's gun damage for the round), Health Regen (player and allies 10 HP/s for 20 s out of combat: no damage taken, no shot
+// for 3 s), Crippling Decay (after 3 s every enemy bot -50 HP, never below 1, given back 8 s later), Paranoia (after 3 s, 8 s; page
+// bots have no vision model: only the feed line), Combat Stim (a 6 m beacon for 12 s at the capture point: stim x1.1 inside, xStimK),
+// Weapon Upgrade (next round's set; round 3 / Endgame Operator or Odin; with an Operator: a sidearm). Golden Gun, Tracer Rounds, Twin
+// Hunters are not built (not in the draw). Online the server runs them: orb rows carry the type (o[5]) and the round state's pw the
+// player's active ones (HUD line, stim; work/server_runtime.js nmOrbs / nmVarHud).
+// Inferred (unpublished, in the audit): out of combat = 3 s, decay never kills and is given back, the Stim beacon 6 m / 12 s at x1.1.
+var SRPW = { amp: { k: 1.3 }, regen: { rate: 10, life: 20, calm: 3 }, decay: { delay: 3, life: 8, hp: 50 }, paranoia: { delay: 3, life: 8 }, stim: { radius: 6, life: 12 },
+  pool: ['stim', 'amp', 'regen', 'upgrade'], names: { ult: 'Ultimate', amp: 'Damage Amp', regen: 'Health Regen', decay: 'Crippling Decay', paranoia: 'Paranoia', stim: 'Combat Stim', upgrade: 'Weapon Upgrade' },
+  col: { ult: 0xffd34d, amp: 0xff5a4e, regen: 0x5dff9a, decay: 0x9b59ff, paranoia: 0x6a5acd, stim: 0x47c8ff, upgrade: 0xf2f2f2 },
+  set: null, t: 0, ampOn: false, regenUntil: 0, hitAt: -1e9, shotAt: -1e9, lastHp: 100, beacons: [], pend: [], dec: [], stimOn: false, mine: 0, net: [] };
+window.xSrPw = SRPW;
+function srPwPickSet(rnd) { const pool = SRPW.pool.slice(), set = ['ult', rnd() < 0.5 ? 'decay' : 'paranoia']; while (set.length < 5 && pool.length) set.push(pool.splice(Math.floor(rnd() * pool.length), 1)[0]); return set; }
+function srPwTypes(set, n, rnd) { const out = []; for (let i = 0; i < n; i++) { const ok = set.filter((t) => !((t === 'decay' || t === 'paranoia') && out.includes(t))); out.push(ok[Math.floor(rnd() * ok.length)]); } return out; }
+function srPwRound() { SRPW.ampOn = false; SRPW.regenUntil = 0; SRPW.beacons.length = 0; SRPW.pend.length = 0; SRPW.stimOn = false; for (const d of SRPW.dec) if (d.b && d.b.alive) d.b.hp = Math.min(100, d.b.hp + d.amt); SRPW.dec.length = 0; }
+function srPwGive() { const L = srLoad(), li = Math.max(0, SR_LOAD.indexOf(L)); let w, slot = 'pri';
+  if (li >= 2) { if (FV.pri === 'Operator') { const S = SR_SIDE.filter((x) => x !== 'Classic' && x !== FV.sec); w = S[Math.floor(Math.random() * S.length)] || 'Sheriff'; slot = 'pis'; } else w = Math.random() < 0.5 ? 'Operator' : 'Odin'; }
+  else { const N = SR_LOAD[li + 1].w; w = N[Math.floor(Math.random() * N.length)]; }
+  try { bEquip(w, slot); swapW(slot); } catch (e) {} return w; }
+function srPwTake(o) { const ty = o.type || 'ult';
+  if (ty === 'ult') { const was = J.ult; J.ult = K().u; if (was < K().u) try { SFX.ult(); } catch (e) {} } else { try { jUlt(); } catch (e) {} }
+  if (ty === 'amp') SRPW.ampOn = true;
+  else if (ty === 'regen') SRPW.regenUntil = SRPW.t + SRPW.regen.life;
+  else if (ty === 'decay' || ty === 'paranoia') SRPW.pend.push({ ty, at: SRPW.t + SRPW[ty].delay });
+  else if (ty === 'stim') SRPW.beacons.push({ x: o.x, z: o.z, until: SRPW.t + SRPW.stim.life });
+  let extra = ''; if (ty === 'upgrade') extra = ' · ' + srPwGive();
+  try { feed('You took a power orb · ' + (SRPW.names[ty] || ty) + extra); say((SRPW.names[ty] || ty) + extra, 1200); } catch (e) {} }
+function srPwTick(dt) { const T = (SRPW.t += dt);
+  if (player.hp < SRPW.lastHp - 1e-9) SRPW.hitAt = T; /* a shot: the shoot wrapper below */
+  if (player.hp > 0) for (let i = SR.orbs.length - 1; i >= 0; i--) { const o = SR.orbs[i]; if (Math.hypot(player.x - o.x, player.z - o.z) < 1.6) { try { if (o.m) scene.remove(o.m); } catch (e) {} SR.orbs.splice(i, 1); srPwTake(o); } }
+  for (const e of SRPW.pend.splice(0)) { if (e.at > T) { SRPW.pend.push(e); continue; } if (e.ty === 'decay') { for (const b of bots) if (b && b.alive) { const d = Math.max(0, Math.min(SRPW.decay.hp, b.hp - 1)); b.hp -= d; SRPW.dec.push({ b, amt: d, until: T + SRPW.decay.life }); } try { feed('Crippling Decay hits the enemy team'); } catch (er) {} } else { try { feed('Paranoia hits the enemy team'); } catch (er) {} } }
+  for (let i = SRPW.dec.length - 1; i >= 0; i--) { const d = SRPW.dec[i]; if (d.until > T) continue; if (d.b && d.b.alive) d.b.hp = Math.min(100, d.b.hp + d.amt); SRPW.dec.splice(i, 1); }
+  if (SRPW.regenUntil > T) { if (player.hp > 0 && player.hp < 100 && T - SRPW.hitAt >= SRPW.regen.calm && T - SRPW.shotAt >= SRPW.regen.calm) { player.hp = Math.min(100, player.hp + SRPW.regen.rate * dt); try { updHud(); } catch (e) {} } for (const a of allies) if (a && a.alive && a.hp < 100) a.hp = Math.min(100, a.hp + SRPW.regen.rate * dt); }
+  SRPW.beacons = SRPW.beacons.filter((b) => b.until > T); SRPW.stimOn = player.hp > 0 && SRPW.beacons.some((b) => Math.hypot(player.x - b.x, player.z - b.z) <= SRPW.stim.radius);
+  SRPW.lastHp = player.hp; }
+if (typeof startSR === 'function') { const s4 = startSR; startSR = function () { SRPW.set = srPwPickSet(Math.random); SRPW.t = 0; srPwRound(); return s4.apply(this, arguments); }; }
+if (typeof srOrbs === 'function') { const o4 = srOrbs; srOrbs = function (on) { const r = o4.apply(this, arguments); try { srPwRound(); if (on) { if (!SRPW.set) SRPW.set = srPwPickSet(Math.random); const T = srPwTypes(SRPW.set, SR.orbs.length, Math.random); SR.orbs.forEach((o, i) => { o.type = T[i]; try { if (o.m) o.m.material = new THREE.MeshBasicMaterial({ color: SRPW.col[o.type] || 0xb48cff }); } catch (e) {} }); } } catch (e) {} return r; }; }
+if (typeof srTick === 'function') { const k4 = srTick; srTick = function (dt) { try { if (!(typeof NET !== 'undefined' && NET && NET.socket)) srPwTick(window.xLdOn ? 0 : dt); } catch (e) {} return k4.apply(this, arguments); }; }
+if (typeof shoot === 'function') { const h4 = shoot; shoot = function () { SRPW.mine++; SRPW.shotAt = SRPW.t; try { return h4.apply(this, arguments); } finally { SRPW.mine--; } }; }
+if (typeof wDmg === 'function') { const w4 = wDmg; wDmg = function () { const n = w4.apply(this, arguments); try { if (SRPW.mine > 0 && SRPW.ampOn && srOn() && !(typeof NET !== 'undefined' && NET && NET.socket)) return Math.floor(n * SRPW.amp.k + 1e-9); } catch (e) {} return n; }; }
+if (typeof xStimK === 'function') { const x4 = xStimK; xStimK = function () { try { const on = typeof NET !== 'undefined' && NET && NET.socket; if (on ? SRPW.net.includes('stim') : SRPW.stimOn && srOn()) return 1.1; } catch (e) {} return x4.apply(this, arguments); }; }
+if (typeof mpCliRS === 'function') { const r4 = mpCliRS; mpCliRS = function (r) { try { if (r && typeof NET !== 'undefined' && NET.socket) SRPW.net = Array.isArray(r.pw) ? r.pw.filter((x) => typeof x === 'string') : []; } catch (e) {} return r4.apply(this, arguments); }; }
 window.xDmPacks = DMPK; window.xEscPacks = ESCPK;
 // ---- END GAME RULES ----

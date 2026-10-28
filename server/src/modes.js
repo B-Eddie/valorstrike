@@ -10,6 +10,7 @@ import {Simulation,weapons,reserveOf} from './simulation.js';
 import {TdmSimulation} from './tdm.js';
 import {SpikeSimulation} from './spike.js';
 import {gainUlt,initAbilities} from './abilities.js';
+import {srPickSet,srOrbTypes,srEffect,srTick,srReset,srActive} from './srpowerups.js';
 import kits from './kits.json' with {type:'json'};
 
 export const SPIKE_VARIANTS=Object.freeze(['swift','sr','rep']);
@@ -106,10 +107,15 @@ export class VariantSpikeSimulation extends SpikeSimulation{
  // Spike Rush: one random gun for everyone this round, shields by round, Spike with any attacker, ult orbs on the map.
  srRound(r,end){const L=SR_LOADOUT[end?2:Math.min(2,this.inHalf(r)-1)],w=L.w[Math.floor(this.random()*L.w.length)];this.srGun=w;
   for(const u of this.units){const side=SIDEARMS.includes(w);u.primary=side?null:w;u.secondary=side?w:'Classic';u.weapon=w;const g=weapons[w];u.ammo=g.magazineSize;u.inventory={[w]:g.magazineSize};u.reserve=reserveOf(w);u.reserves={[w]:u.reserve};if(!side){u.inventory.Classic=weapons.Classic.magazineSize;u.reserves.Classic=reserveOf('Classic');}u.armor=L.a;u.rgn=null;u.purchases=[];}
-  // Powerup orbs: 1-5 a round (wiki), each +1 ult point when touched; one of them is the Full Ultimate orb (always in the set).
+  // Powerup orbs (wiki Spike_Rush, server/src/srpowerups.js): the game's set of five chosen once (Ultimate always + Crippling Decay or
+  // Paranoia + built effects), 1-5 orbs a round typed from it (Decay / Paranoia at most once); any capture +1 ult point plus its effect.
+  if(!this.srSet)this.srSet=srPickSet(this.random);this.srLi=end?2:Math.min(2,this.inHalf(r)-1);srReset(this);
   const W=this.world,N=W.nav?.nodes||[],P=W.playable||[],n=1+Math.floor(this.random()*5);this.orbs=[];
-  for(let k=0;k<40&&this.orbs.length<n&&P.length;k++){const p=N[P[Math.floor(this.random()*P.length)]];if(!p||this.orbs.some(o=>Math.hypot(o.x-p[0],o.z-p[2])<12))continue;this.orbs.push({id:k,x:p[0],y:p[1],z:p[2],full:this.orbs.length===0?1:0});}}
+  for(let k=0;k<40&&this.orbs.length<n&&P.length;k++){const p=N[P[Math.floor(this.random()*P.length)]];if(!p||this.orbs.some(o=>Math.hypot(o.x-p[0],o.z-p[2])<12))continue;this.orbs.push({id:k,x:p[0],y:p[1],z:p[2],full:0,type:''});}
+  srOrbTypes(this.srSet,this.orbs.length,this.random).forEach((t,i)=>{this.orbs[i].type=t;this.orbs[i].full=t==='ult'?1:0;});}
  command(u,m){if(this.rules.noBuy&&['buy','sell'].includes(m?.t))return false;return super.command(u,m);}
+ // Spike Rush Damage Amp (+30 % gun damage for the round) and the Health Regen out-of-combat clock (last hit taken).
+ applyHit(u,target,part,raw,...rest){if(this.gm==='sr'){if(u&&u.srAmp&&u.srAmp===this.round)raw*=1.3;if(target)target.srHit=this.time;}return super.applyHit(u,target,part,raw,...rest);}
  finishRound(winner,text){if(this.roundDelay>0)return;const before=new Map(this.units.map(u=>[u,u.credits]));super.finishRound(winner,text);this.lastWinner=winner;
   if(this.rules.credits||this.rules.noBuy)for(const u of this.units)u.credits=before.get(u)??u.credits;/* round-outcome money comes from the round table at the next round start */
   const e=this.roundEvents.at(-1);if(e&&e.t==='re')e.o=this.variantOver()?1:0;}
@@ -120,7 +126,8 @@ export class VariantSpikeSimulation extends SpikeSimulation{
   if(this.gm==='sr')this.srSpike();
   super.step(dt);
   if(seen)for(const u of this.units){const n=(u.kills||0)+(u.deaths||0)-(u.noUltDeaths||0),was=seen.get(u);if(was!==undefined&&n>was)gainUlt(u,n-was);/* kill and death ult points x2 */}
-  if(this.gm==='sr'&&this.orbs.length&&!(this.buy>0))for(const u of this.units){if(!u.alive||u.loading)continue;for(let i=this.orbs.length-1;i>=0;i--){const o=this.orbs[i];if(Math.hypot(u.x-o.x,u.z-o.z)<1.6&&Math.abs(u.y-o.y)<2){this.orbs.splice(i,1);const K=kits[u.agent]||kits.Jett;if(o.full&&u.ability)u.ability.ult=K.u;else gainUlt(u,1);this.events.push(['orb',u.name,o.full?1:0]);}}}
+  if(this.gm==='sr'&&this.orbs.length&&!(this.buy>0))for(const u of this.units){if(!u.alive||u.loading)continue;for(let i=this.orbs.length-1;i>=0;i--){const o=this.orbs[i];if(Math.hypot(u.x-o.x,u.z-o.z)<1.6&&Math.abs(u.y-o.y)<2){this.orbs.splice(i,1);const K=kits[u.agent]||kits.Jett;if(o.full&&u.ability)u.ability.ult=K.u;else gainUlt(u,1);srEffect(this,u,o.type,o,SR_LOADOUT);this.events.push(['orb',u.name,o.full?1:0,o.type||'']);}}}
+  if(this.gm==='sr')srTick(this,d);
   if(this.rules.flashguard)this.flashguard();}
  // Spike Rush: every attacker carries a Spike. Modelled as the one Spike moving to whichever living attacker needs it: one standing
  // in a site (the one already planting keeps it), else the carrier, else any living attacker (no dropped Spike to walk back to).
@@ -130,7 +137,7 @@ export class VariantSpikeSimulation extends SpikeSimulation{
  // the guard is cleared on the next tick, 50 ms).
  flashguard(){const F=this.rules.flashguard;for(const u of this.units){const blind=u.blindUntil>this.time;if(u.fgUntil>this.time){if(blind)u.blindUntil=this.time;u.fgBlind=false;continue;}
   if(blind&&!u.fgBlind){u.fgOn=(u.fgOn||[]).filter(t=>this.time-t<=F.window);u.fgOn.push(this.time);if(u.fgOn.length>=2){u.fgUntil=this.time+F.dur;u.fgOn=[];this.events.push(['fg',u.name]);}}u.fgBlind=blind;}}
- roundState(u){const r=super.roundState(u);r.gm=this.gm;r.win=this.rules.win;r.half=this.rules.half;if(this.gm==='sr'){r.orb=this.buy>3?[]:this.orbs.map(o=>[o.id,Math.round(o.x*100)/100,Math.round(o.y*100)/100,Math.round(o.z*100)/100,o.full]);r.gun=this.srGun||null;}if(this.gm==='rep'&&this.repAgent)r.rag=this.repAgent[u.team]||null;if(u.fgUntil>this.time)r.fg=Math.round((u.fgUntil-this.time)*100)/100;return r;}
+ roundState(u){const r=super.roundState(u);r.gm=this.gm;r.win=this.rules.win;r.half=this.rules.half;if(this.gm==='sr'){r.orb=this.buy>3?[]:this.orbs.map(o=>[o.id,Math.round(o.x*100)/100,Math.round(o.y*100)/100,Math.round(o.z*100)/100,o.full,o.type||'']);r.gun=this.srGun||null;r.pw=srActive(this,u);}if(this.gm==='rep'&&this.repAgent)r.rag=this.repAgent[u.team]||null;if(u.fgUntil>this.time)r.fg=Math.round((u.fgUntil-this.time)*100)/100;return r;}
 }
 
 // ---- Skirmish 1v1 ('skm') ----

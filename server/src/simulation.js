@@ -53,7 +53,7 @@ export function tdmArmor(stage,weapon){const T=TDM_ARMOR[Math.max(0,Math.min(3,s
 export const RELOAD_ROUND=Object.freeze({Bucky:.5,Marshal:.5});
 // Reyna's Empress Combat Stim (wiki, v11.08): +10% fire rate, reload, equip (and recovery) speed (was +15 / 25 / 25 %). The page
 // applies the same factor (work/feel_runtime.js xStimK).
-export const STIM=1.1;export const stimK=u=>u&&u.empress?STIM:1;
+export const STIM=1.1;export const stimK=u=>u&&(u.empress||u.srStim)?STIM:1;/* Reyna Empress; Spike Rush Combat Stim beacon (srpowerups.js) */
 export const reloadTime=u=>(RELOAD_ROUND[u.weapon]??(u.weapon==='Outlaw'?(weapons.Outlaw.magazineSize-u.ammo>=2?3.8:2.3):weapons[u.weapon].reloadTimeSeconds))/stimK(u);
 // Shotgun hit past 10 m (patch 1.07): 30% slow for .5 s easing back to full speed instead of the standard tag (.275 for .5 s).
 export function tagHit(sim,t,p,d){if((p.shotgunPelletCount||1)>1&&d>10){if(t.tagUntil>sim.time&&!t.tagSoft)return;t.tagSoft=1;}else t.tagSoft=0;t.tagUntil=sim.time+.5;}
