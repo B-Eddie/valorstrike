@@ -46,7 +46,8 @@ jobs:
   server:
     name: server (npm test)
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # 45: test-spawn-barrier-leaks.js (escape / reach / ledge runs at every spawn wall, all six maps) grew with the sky walls.
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -73,7 +74,9 @@ jobs:
   client:
     name: client (shard ${{ matrix.shard }}/4)
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # 45: work/test_spawn_barrier_tall_client.cjs (page-motor ledge / ability runs at every spawn wall, all six maps) adds
+    # ~10-25 min to whichever shard it lands in (shard 1 of 4 today; ~28 min on the loaded 2-core dev box).
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
