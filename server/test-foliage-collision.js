@@ -22,7 +22,7 @@ for(const k of MAPS){const dir=path.join(here,'../models/valorant/maps',k),c=fs.
  let end=0,sum=0;for(let r=0;r<n;r++){const s=e.readUInt32LE(4+r*8),l=e.readUInt32LE(8+r*8);assert.ok(l>0&&s>=end&&s+l<=tris,k+': run '+r+' sorted, disjoint, in range');end=s+l;sum+=l;}
  assert.ok(sum<tris*.6,k+': excludes '+sum+' of '+tris+' triangles (foliage only, never most of the map; Lotus is ~50%: its beach-cabbage beds alone are ~28% of collision.bin)');}
 // [map, x, floorY, z, what]: plant / decor centres beside playable navigation that blocked a standing capsule before
-const FREE=[['lotus',-43.35,4.34,-1.32,'C Main lilypad'],['lotus',40.85,7.61,-43.1,'A fern'],['lotus',-43.5,5.06,3.5,'C jasmine (C ramp, floor 4.93 m)'],
+const FREE=[['lotus',-43.35,4.34,-1.32,'C Main lilypad'],['lotus',40.85,7.61,-43.1,'A fern'],['lotus',-43.0,4.93,3.6,'C ramp jasmine / beach cabbage (0.5 m east of the old -43.5,3.5 fixture, which sits under the C Main rock overhang at 6.2 m that has collision since map-render-walls)'],
  ['breeze',-9.54,4.2,49.97,'beach cabbage'],['breeze',7.8,8.06,-31.78,'agave'],['breeze',0.26,8.08,-41.12,'morning glory'],['breeze',30.97,6.3,38.55,'banana plant'],
  ['bind',9.82,4.67,68.04,'dry desert bush'],['bind',7.12,4.99,56.06,'desert plant'],['bind',-9.71,7.22,16.78,'desert plant C'],
  ['haven',15.06,8.05,32.66,'bush'],['haven',-7.77,6.04,18.36,'potted plant leaves'],['haven',-16.01,5.95,29.43,'potted plant']];
