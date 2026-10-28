@@ -119,4 +119,11 @@ ha3='<script>/* perf2: allocation-free Math.hypot.'
 if ha3 in s:i3=s.index(ha3);s=s[:i3]+s[s.index('</script>\n',i3)+len('</script>\n'):]
 va3='<script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };</script>\n'
 s=s.replace(va3,va3+'<script>'+(root/'work/hypot_runtime.js').read_text().rstrip('\n')+'</script>\n',1)
+# Asset loader retry + concurrency cap (work/loader_retry_runtime.js): its own inline <script> right after GLTFLoader.js (it replaces
+# three's ImageBitmapLoader / ImageLoader / FileLoader .load before any glTF load starts). Re-inserted on every run.
+la3='<script>// ---- LOADER RETRY ----'
+if la3 in s:i3=s.index(la3);s=s[:i3]+s[s.index('</script>\n',i3)+len('</script>\n'):]
+ga3='<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js"></script>\n'
+assert s.count(ga3)==1,'GLTFLoader script tag'
+s=s.replace(ga3,ga3+'<script>'+(root/'work/loader_retry_runtime.js').read_text().rstrip('\n')+'</script>\n',1)
 p.write_text(s)
