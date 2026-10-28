@@ -16224,25 +16224,48 @@ if (typeof xUbPost === "function") { const hp0 = xUbPost; xUbPost = function (M)
  const grids=new WeakMap();
  function hash(s){let h=2166136261;for(const c of String(s)){h=Math.imul(h^c.charCodeAt(0),16777619);}return h>>>0;}
  function grid(nav){let cells=grids.get(nav);if(cells)return cells;cells=new Map();nav.nodes.forEach((p,i)=>{const key=Math.floor(p[0]/3)+','+Math.floor(p[2]/3);if(!cells.has(key))cells.set(key,[]);cells.get(key).push(i);});grids.set(nav,cells);return cells;}
- function length(nav,p){let d=0;for(let i=1;i<p.length;i++){const a=nav.nodes[p[i-1]],b=nav.nodes[p[i]];d+=Math.hypot(a[0]-b[0],a[2]-b[2]);}return d;}
+ function length(nav,p){let d=0;for(let i=1;i<p.length;i++){const a=nav.nodes[p[i-1]],b=nav.nodes[p[i]];d+=hyp(a[0]-b[0],a[2]-b[2]);}return d;}
  // edgeOk(a,b) (optional): directed edge filter, e.g. the client's instinct climb rule (dy > 0.321 must pass nmClimbOk).
+ // perf2: per-nav scratch (cost / prev / closed arrays and a typed index/score heap) reused across searches, and the
+ // banned-edge string built only when the set has entries: the old search allocated three node-sized typed arrays plus an
+ // [i,s] pair per push (~2 MB per call on an 11k-node map, a GC per re-route). Same pushes, pops, comparisons and order.
+ const scratch=new WeakMap();
+ function newScratch(n){return {n,g:new Float64Array(n),prev:new Int32Array(n),closed:new Uint8Array(n),pen:new Float64Array(n),tl:new Int32Array(256),tn:0,hi:new Int32Array(1024),hs:new Float64Array(1024),busy:false};}
+ // Math.hypot(x, z) computed as V8's builtin does it (max scaling + Kahan sum; with two terms the compensation is exactly 0
+ // after the first, so qa*qa+qb*qb is the same op sequence): bit-identical, and inlinable without boxing (the builtin copies its
+ // arguments into a new array per call; route calls it ~3x per edge it relaxes). Zero / Infinity / NaN go to the builtin: a
+ // constant Infinity / NaN return (or the page's JS Math.hypot inlined here without the unary +) would make the inlined
+ // result a tagged value and box every hypot.
+ function hyp(x,z){const a=Math.abs(x),b=Math.abs(z),m=a>b?a:b;if(m>0&&m<Infinity&&a===a){const qa=a/m,qb=b/m;return Math.sqrt(qa*qa+qb*qb)*m;}return +Math.hypot(x,z);}
  function route(nav,base,seed,peers=[],allowed=null,banned=null,edgeOk=null){
   if(base.length<3)return base;
-  const N=nav.nodes,start=base[0],end=base[base.length-1],cells=grid(nav),penalty=new Map();
+  const N=nav.nodes,start=base[0],end=base[base.length-1],cells=grid(nav),ban=banned&&banned.size?banned:null;
+  let S=scratch.get(nav);if(!S||S.n!==N.length){S=newScratch(N.length);scratch.set(nav,S);}
+  if(S.busy)S=newScratch(N.length);/* re-entered from an edge filter (or a filter threw mid-search): private arrays */
+  S.busy=true;try{
+  // peer-lane penalty per node (was a Map): pen[] stays all-zero between searches; tl lists what this search touched
+  const pen=S.pen;let tl=S.tl,tn=0;
   for(const peer of peers){if(!peer||!peer.path)continue;for(let k=1;k<Math.min(24,peer.path.length);k+=3){const q=N[peer.path[k]];if(!q)continue;const cx=Math.floor(q[0]/3),cz=Math.floor(q[2]/3);
-   for(let x=cx-1;x<=cx+1;x++)for(let z=cz-1;z<=cz+1;z++)for(const i of cells.get(x+','+z)||[]){const p=N[i],d=Math.hypot(p[0]-q[0],p[2]-q[2]);if(d<2.4&&Math.abs(p[1]-q[1])<1)penalty.set(i,Math.min(5,(penalty.get(i)||0)+(2.4-d)*1.5));}
+   for(let x=cx-1;x<=cx+1;x++)for(let z=cz-1;z<=cz+1;z++){const L=cells.get(x+','+z);if(L)for(let t=0;t<L.length;t++){const i=L[t],p=N[i],d=hyp(p[0]-q[0],p[2]-q[2]);if(d<2.4&&Math.abs(p[1]-q[1])<1){
+    if(pen[i]===0){if(tn===tl.length){const nt=new Int32Array(tn*2);nt.set(tl);tl=S.tl=nt;}tl[tn++]=i;S.tn=tn;}pen[i]=Math.min(5,pen[i]+(2.4-d)*1.5);}}}
   }}
-  const phase=(hash(seed)%65536)/65536*Math.PI*2,g=new Float64Array(N.length).fill(Infinity),prev=new Int32Array(N.length).fill(-1),closed=new Uint8Array(N.length),heap=[];
-  const h=i=>Math.hypot(N[i][0]-N[end][0],N[i][2]-N[end][2]);
-  const push=(i,s)=>{let k=heap.length;heap.push([i,s]);while(k){const p=(k-1)>>1;if(heap[p][1]<=s)break;heap[k]=heap[p];k=p;}heap[k]=[i,s];};
-  const pop=()=>{const first=heap[0],last=heap.pop();if(heap.length){let k=0;while(k*2+1<heap.length){let c=k*2+1;if(c+1<heap.length&&heap[c+1][1]<heap[c][1])c++;if(heap[c][1]>=last[1])break;heap[k]=heap[c];k=c;}heap[k]=last;}return first[0];};
-  g[start]=0;push(start,h(start));let steps=0;
-  while(heap.length&&steps++<N.length*6){const a=pop();if(closed[a])continue;if(a===end){const out=[];for(let i=end;i>=0;i=prev[i])out.push(i);out.reverse();return length(nav,out)<=length(nav,base)*1.5+2?out:base;}closed[a]=1;
-   for(const b of nav.adj[a]){if(closed[b]||(allowed&&!allowed(b))||(banned&&banned.has(a+'>'+b))||(edgeOk&&!edgeOk(a,b)))continue;const p=N[b],q=N[a],d=Math.hypot(p[0]-q[0],p[2]-q[2]),lane=.22*(1+Math.sin(p[0]*.17+p[2]*.13+phase));
-    const nearGoal=h(b)<2.5,c=g[a]+d*(1+lane+(nearGoal?0:penalty.get(b)||0))+Math.abs(p[1]-q[1])*.2;
-    if(c<g[b]){g[b]=c;prev[b]=a;push(b,c+h(b));}
+  const phase=(hash(seed)%65536)/65536*Math.PI*2,g=S.g.fill(Infinity),prev=S.prev.fill(-1),closed=S.closed.fill(0),ne=N[end],ex=ne[0],ez=ne[2];let hi=S.hi,hs=S.hs,hn=1,steps=0,res=base;
+  g[start]=0;hi[0]=start;hs[0]=hyp(N[start][0]-ex,N[start][2]-ez);
+  while(hn&&steps++<N.length*6){
+   // pop (binary min-heap on (index, score) typed arrays; same sift order as the old [i,s] heap)
+   const a=hi[0];hn--;if(hn){const li=hi[hn],ls=hs[hn];let k=0;while(k*2+1<hn){let c=k*2+1;if(c+1<hn&&hs[c+1]<hs[c])c++;if(hs[c]>=ls)break;hi[k]=hi[c];hs[k]=hs[c];k=c;}hi[k]=li;hs[k]=ls;}
+   if(closed[a])continue;if(a===end){const out=[];for(let i=end;i>=0;i=prev[i])out.push(i);out.reverse();res=length(nav,out)<=length(nav,base)*1.5+2?out:base;break;}closed[a]=1;
+   const q=N[a],qx=q[0],qy=q[1],qz=q[2],ga=g[a],Aa=nav.adj[a];
+   for(let j=0;j<Aa.length;j++){const b=Aa[j];if(closed[b]||(allowed&&!allowed(b))||(ban&&ban.has(a+'>'+b))||(edgeOk&&!edgeOk(a,b)))continue;const p=N[b],px=p[0],pz=p[2],d=hyp(px-qx,pz-qz),lane=.22*(1+Math.sin(px*.17+pz*.13+phase));
+    const hb=hyp(px-ex,pz-ez),c=ga+d*(1+lane+(hb<2.5?0:pen[b]))+Math.abs(p[1]-qy)*.2;
+    if(c<g[b]){g[b]=c;prev[b]=a;const s=c+hb;
+     // push
+     if(hn===hi.length){const ni=new Int32Array(hn*2),ns=new Float64Array(hn*2);ni.set(hi);ns.set(hs);hi=S.hi=ni;hs=S.hs=ns;}
+     let k=hn++;while(k){const pk=(k-1)>>1;if(hs[pk]<=s)break;hi[k]=hi[pk];hs[k]=hs[pk];k=pk;}hi[k]=b;hs[k]=s;}
    }
-  }return base;
+  }
+  return res;
+  }finally{const pen=S.pen,tl=S.tl;for(let t=0;t<S.tn;t++)pen[tl[t]]=0;S.tn=0;S.busy=false;}
  }
  // Soft steering away from nearby bodies; deterministic right-of-way prevents mirror oscillation.
  // radius (default 1.35 m body clearance) widens it into teammate spacing; out (optional [x,z]) avoids an allocation.
@@ -16261,7 +16284,7 @@ if (typeof xUbPost === "function") { const hp0 = xUbPost; xUbPost = function (M)
    let g=Infinity;for(const q of taken)if(q)g=Math.min(g,Math.hypot(p[0]-q[0],p[2]-q[2]));if(g>=gap)return i;if(g>bestGap){bestGap=g;best=i;}}
   return best;
  }
- return {route,steer,hash,length,rng,spot};
+ return {route,steer,hash,length,rng,spot,hyp};
 });
 // Shared client/server bot decisions (UMD: the server imports it, index.html inlines it in the BOT VARIETY block and
 // reads window.BotBrain). Pure and seeded: the same seed replays the same personality, round strategy, buy, reaction
