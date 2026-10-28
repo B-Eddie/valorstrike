@@ -82,14 +82,14 @@ const res={};
  xe(`window.__qaHit=0;{const h=hurt;hurt=function(t,n,by){if(t===player)__qaHit++;return h.apply(this,arguments);};}true`);
  const shotStep=fire=>`(()=>{const b=window.__qaS&&window.__qaS.alive?window.__qaS:(window.__qaS=bots.find(x=>x.alive));if(!b)return 0;for(const o of bots)if(o!==b)o.cd=1e9;
    if(!${fire})b.cd=1e9;else if(b.cd>1e8)b.cd=0;b.hp=100;const q=b.g.position;
-   let best=null;const ry=b.g.rotation.y+Math.PI;for(let k=0;k<8;k++){const a=ry+(k%2?1:-1)*Math.floor((k+1)/2)*0.3,x=q.x+Math.sin(a)*9,z=q.z+Math.cos(a)*9,y=q.y;if(los(new THREE.Vector3(x,y+1.6,z),new THREE.Vector3(q.x,q.y+1.3,q.z))){best=[x,y,z,a];break;}}
-   if(!best)best=[q.x+9,q.y,q.z,0];player.x=best[0];player.y=best[1];player.z=best[2];player.vx=player.vz=0;if(player.hp<60)player.hp=100;player.alive=true;
+   let best=null;const ry=b.g.rotation.y+Math.PI*${+(process.env.SHOTF||0)};for(let k=0;k<8;k++){const a=ry+(k%2?1:-1)*Math.floor((k+1)/2)*0.3,x=q.x+Math.sin(a)*9,z=q.z+Math.cos(a)*9,y=q.y;if(los(new THREE.Vector3(x,y+1.6,z),new THREE.Vector3(q.x,q.y+1.3,q.z))){best=[x,y,z,a];break;}}
+   if(!best)best=[q.x+9,q.y,q.z,0];player.x=best[0];player.y=best[1];player.z=best[2];player.vx=player.vz=0;if(window.__qaPh!=null&&player.hp<__qaPh)__qaHit++;if(player.hp<500)player.hp=1000;window.__qaPh=player.hp;
    const dx=q.x-best[0],dz=q.z-best[2];yaw=Math.atan2(-dx,-dz);pitch=0;fireHeld=false;return 1;})()`;
  const shot=async(kind,n)=>{const st=shotStep(kind==='shot');for(let i=0;i<30;i++){xe(st);H.advance(17);}xe('__qaHit=0;__recReset();__REC.on=true;true');const ts=[];
   const pv=PROF===kind&&!shot[kind];if(pv){shot[kind]=1;await profStart();}
   for(let i=0;i<n;i++){xe(st);const a=process.hrtime.bigint();H.advance(17);ts.push(Number(process.hrtime.bigint()-a)/1e6);}
   const prof=pv?await profStop(kind):null;xe('__REC.on=false;true');const R=JSON.parse(xe('JSON.stringify(__recTop(10))'));
-  const r={kind,frames:n,hitsOnPlayer:xe('__qaHit'),...stat(ts),objPerFrame:+(R.total/n).toFixed(2),sites:R.top.map(([k,v])=>[+(v/n).toFixed(2),k])};console.log('being-shot',JSON.stringify(r));if(prof)r.prof=prof;return r;};
+  const r={kind,frames:n,hitsOnPlayer:xe('__qaHit'),bot:JSON.parse(xe('JSON.stringify({n:__qaS.name,see:__qaS.see,cd:__qaS.cd,xs:__qaS.xs,xSe:__qaS.xSe,blind:__qaS.blind,d:Math.hypot(__qaS.g.position.x-player.x,__qaS.g.position.z-player.z),ry:__qaS.g.rotation.y,php:player.hp,run:running,buy:FV.buy})')),...stat(ts),objPerFrame:+(R.total/n).toFixed(2),sites:R.top.map(([k,v])=>[+(v/n).toFixed(2),k])};console.log('being-shot',JSON.stringify(r));if(prof)r.prof=prof;return r;};
  res.shot=[];if(SC.includes('shot'))for(const k of ['calm','shot','calm','shot'])res.shot.push(await shot(k,F));
  res.running=xe('running');
  if(OUT)fs.writeFileSync(OUT,JSON.stringify(res,null,1));
