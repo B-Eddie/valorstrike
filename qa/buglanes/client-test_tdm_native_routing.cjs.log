@@ -1,0 +1,1 @@
+TDM/DM hunt goal keys on FV.dm; native nmNext validates the first hop, skips blocked hops, and steers at the goal when no hop clears

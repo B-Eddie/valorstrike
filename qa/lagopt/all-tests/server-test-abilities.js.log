@@ -1,0 +1,15 @@
+Ability authority checks passed: buy cost/caps, buy-phase cast rejection, no unearned ult, server-derived origin/aim, limited dash, server area damage and once-only kill
+Sage Slow Orb: 7 s, 3.5 m, half speed for everyone in it (enemies, allies, Sage), oslow status; a stronger slow wins
+Signature recharge timers server owned; Reyna Devour/Dismiss share charge pool and free round charge
+Sage heal targets hurt aimed teammate; invalid casts keep charge; resurrection preserves corpse location with no freearmor/loadout reset
+Flash resolves once after delay, requires facing+LOS and sends server status instead of continuous arbitrary blind
+Chamber Rendezvous: first E places the anchor at the server crosshair floor point (8.5 m max) without teleport/spend, return within 18 m after the 1.3 s teleport lands on the anchor floor, cooldown 30 s, forged target ignored
+Breach Fault Line (after the 1.1 s windup): wiki strip 8 m ahead, 8 m wide, 8-56 m long from the HOLD FIRE charge (pw in the intent, clamped, junk/missing = full, echoed on the ac event), not generic area slow, rejects behind/outside/allies and recharges 50s
+Concuss fire is server-limited to80%rate and disables ADS; normal fire resumes afterward
+Omen ult validates walkable minimap target, consumes earned points, 1.5 s windup then Shade at the target until 4 s, reconciliation, death cancels; never generic blast
+Omen Step uses server aim/15m/1.2 s channel, walkable elevated target, no anchor/instant movement, blocks overlapping cast
+Jett Tailwind: first E spends the charge, 1 s windup, 7.5 s window, E dashes (once), lost when unused / on death / round reset; current server input direction/fallback, 11 m (wiki) capsule collision limit, 0.45 s dash (24.4 m/s, input ignored, no seq bump, page keys / yaw), respawn clears it; Updraft matches project impulse, never client coordinates
+Sage selected heal follows moving target, never dead target; resurrection uses project5m aimed range and preserves points for invalid long-range corpse
+Skye Regrowth follows caster18m, excludes self/enemies, shares100HPpool, toggles/resumes without extra charge, stops spent
+Regrowth stops on caster death
+Spike motor honors current-input ADS weapon speed, concuss disables ADS, slow stacks, expired input cannot retain ADS

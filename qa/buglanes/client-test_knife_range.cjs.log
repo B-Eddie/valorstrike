@@ -1,0 +1,1 @@
+knife range: client KNIFE_RANGE 2 m (shoot / duel / aim) == server KNIFE_RANGE 2 m (trace + damage row); server last hit with the target 2.15 m away, none at 3 m

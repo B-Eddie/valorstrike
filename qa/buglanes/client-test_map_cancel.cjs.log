@@ -1,0 +1,1 @@
+Selecting already-loaded map cancels pending other map; stale load disposes resources, cannot overwrite active map or show error overlay

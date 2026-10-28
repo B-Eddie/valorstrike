@@ -1,0 +1,4 @@
+Weapons: shotgun pellets use one round/shot event, kill credited once; knife range enforced without ammo depletion
+Weapons: knife light 50 front / 100 back at 2/s, heavy (kh) 75 front / 150 back, 1 s cooldown, no headshot bonus (wiki Melee); kh ignored for guns
+Weapons: reserve ammo per gun = wiki (18 guns), on buy
+Weapons: Bucky / Marshal reload one round per .5 s and a shot interrupts it, Outlaw 2.3 / 3.8 s, shotgun hits past 10 m = 30% slow easing out

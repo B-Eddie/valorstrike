@@ -1,0 +1,2 @@
+gNav: unreachable goals route to the closest reachable node; reachable goals unchanged; no park-on-start
+gNav height-aware attach: units never route via nodes on another floor

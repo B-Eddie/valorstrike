@@ -1,0 +1,2 @@
+Directory self-stats require bearer identity, expose no tokens/id; presence counts active connected human sessions including private rooms without exposing them
+Directory persistence/idempotency passed using in-memory storage double; live completed-match durability remains unverified

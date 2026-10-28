@@ -337,7 +337,11 @@ function xvFPTick(dt) {
   if(rp>=0){XV.event=null;xvFPPlay(F,'reload',rp);}else if(VM.ins>0&&F.kind!=='inspect')xvFPPlay(F,'inspect');else if(XV.event){F.kind=null;xvFPPlay(F,XV.event);XV.event=null;}else if(F.kind==='inspect'&&VM.ins<=0)xvFPPlay(F,'idle');else if(F.kind==='reload'||(F.kind!=='idle'&&F.age>(F.duration||(F.action?F.action.getClip().duration:.4))))xvFPPlay(F,'idle');
   F.am.update(dt);F.gm.update(dt);if(rp>=0)xvFPPlay(F,'reload',rp);F.age+=dt;
   // Match the source's narrower viewmodel FOV while keeping the game's world-camera FOV.
-  const s=Math.tan(THREE.MathUtils.degToRad(camera.fov/2))/Math.tan(THREE.MathUtils.degToRad(43.383/2));F.root.scale.set(s,s,1);F.root.position.set(F.origin.x*s,F.origin.y*s,F.origin.z);F.root.position.y+=Math.sin(VM.bob||0)*.003;
+  const s=Math.tan(THREE.MathUtils.degToRad(camera.fov/2))/Math.tan(THREE.MathUtils.degToRad(43.383/2));F.root.scale.set(s,s,1);F.root.position.set(F.origin.x*s,F.origin.y*s,F.origin.z);F.root.position.y+=Math.sin(VM.bob||0)*.003*(1-xAD.k);
+  // Align the authored optic socket to the camera's centre ray, in camera space.
+  // Keep depth unchanged so zoom cannot pull the weapon through the near plane.
+  const sight=F.sight||(F.sight=F.ws.getObjectByName('ScopeTarget')||F.ws.getObjectByName('ScopeTargetSocket'));
+  if(sight&&xAD.k>0){F.root.updateMatrixWorld(true);const q=F.sightPoint||(F.sightPoint=new THREE.Vector3());sight.getWorldPosition(q);camera.worldToLocal(q);F.root.position.x-=q.x*xAD.k;F.root.position.y-=q.y*xAD.k;}
 }
 {const fire=vmFire;vmFire=function(){const r=fire.apply(this,arguments);XV.event='fire';return r;};const tick=vmTick;vmTick=function(dt){(XV.hidden||[]).forEach(([o,v])=>o.visible=v);XV.hidden=[];tick(dt);try{xvFPTick(Math.min(.1,dt||.016));}catch(e){if(!XV.fpErr){XV.fpErr=String(e);console.warn('native viewmodel',e);}}};}
 // Replace generic imported map props and box cover while retaining the existing collision/navigation layout.

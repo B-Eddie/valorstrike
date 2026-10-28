@@ -1,0 +1,71 @@
+{
+  "fixture": "model only: 200 recorded real-simulation TDM snapshots for one of five clients, constant link rate; no RTT variance, congestion control, retransmission or physical network. Full/delta use identical frames.",
+  "rates": {
+    "16KiBps": {
+      "before": {
+        "sent": 81,
+        "coalesced": 119,
+        "totalBytes": 171496,
+        "stateAgeMs": {
+          "p50": 949.92431640625,
+          "p95": 1264.62158203125,
+          "max": 1294.19921875
+        }
+      },
+      "after": {
+        "sent": 197,
+        "coalesced": 3,
+        "totalBytes": 120119,
+        "stateAgeMs": {
+          "p50": 76.2548828125,
+          "p95": 262.64404296875,
+          "max": 469.57763671875
+        }
+      }
+    },
+    "32KiBps": {
+      "before": {
+        "sent": 155,
+        "coalesced": 45,
+        "totalBytes": 328322,
+        "stateAgeMs": {
+          "p50": 434.073486328125,
+          "p95": 717.3681640625,
+          "max": 757.48046875
+        }
+      },
+      "after": {
+        "sent": 198,
+        "coalesced": 2,
+        "totalBytes": 120792,
+        "stateAgeMs": {
+          "p50": 58.00537109375,
+          "p95": 79.68505859375,
+          "max": 404.788818359375
+        }
+      }
+    },
+    "64KiBps": {
+      "before": {
+        "sent": 199,
+        "coalesced": 1,
+        "totalBytes": 421409,
+        "stateAgeMs": {
+          "p50": 72.2418212890625,
+          "p95": 159.76318359375,
+          "max": 371.1279296875
+        }
+      },
+      "after": {
+        "sent": 199,
+        "coalesced": 1,
+        "totalBytes": 121470,
+        "stateAgeMs": {
+          "p50": 49.002685546875,
+          "p95": 70.975341796875,
+          "max": 351.16943359375
+        }
+      }
+    }
+  }
+}

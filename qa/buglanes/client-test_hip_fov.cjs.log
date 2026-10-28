@@ -1,0 +1,1 @@
+test_hip_fov: PASS (1920x969 was 109.0 deg horizontal, now 103; bob 2.92 Hz at 5.4 m/s, was 5.84 Hz)

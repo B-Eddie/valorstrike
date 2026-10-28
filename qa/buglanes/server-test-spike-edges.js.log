@@ -1,0 +1,11 @@
+Spike edge checks passed: finite reserve/reload, equip lock, armor exact name, halftime reset, balanced late seat waits for next round
+Spike refund regression: no free restored weapon/armor from out-of-order sells; loading/dead refund and post-round ability rejected
+Spike weapon rewards: each shotgun kill credited, agent ult cap respected
+Spike drop survives next tick without auto-pickup by sender; ability refund changes charge/credits exactly once
+Defenders do not receive hidden Spike carrier/site/coordinates before plant
+Buy-phase server boundary matches client/native visual zedge, not unrelated12m spawn circle; releases at phaseend
+Buy-boundary projection never places capsule into world solid
+Spike loading hold: capped at 15 s per player and per round, late loader sits the round out and returns next round
+Spike seats: a leaver's seat bot takes over the living body; a rejoin gives up a dead bot before a living one
+Sidearm-only round: equip of an empty slot / malformed name refused, the simulation keeps ticking
+Armor v9.10: Light / Heavy Armor names (old Shields names refused), Regen Shield 650 = 25 at 100%, 3 s refill from a 50 pool, sell / replace restore, rows[21] pool, round carry, death clears

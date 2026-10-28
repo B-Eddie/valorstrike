@@ -1,0 +1,1 @@
+Omen online From the Shadows sends the tactical-map spot as intent only (rounded [x, z]); invalid spot / buy phase send nothing; offline falls through

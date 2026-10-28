@@ -27,7 +27,7 @@
    peek:{jiggle:.2+pa*.6,wide:.15+ag*.8,tight:.5,hold:.1+pa*.5},
    angle:r()<.5?'close':'long',head:.25+acc*.4,
    turn:turnRate(sensOf(seed),.6+ag*.08+r()*.2),                // rad/s: how fast the bot can swing its crosshair, from its mouse sensitivity and hand speed (a 180 takes ~0.25-0.45 s)
-   lag:.05+(1-acc)*.09+r()*.03,                                    // s: tracking lag on a moving target (aims where it was), settles with P.settle
+   lag:.07+(1-acc)*.12+r()*.04,                                    // s: tracking lag on a moving target (aims where it was), settles with P.settle
    sens:sensOf(seed),dpi:SENS.dpi};
 
  }
@@ -100,7 +100,7 @@
   for(let i=0;i<n;i++){const off=Math.abs(wrapA(ang[i]-heading));if(dep[i]>=25&&off<.6){const sc=.6*Math.cos(off)/(12+3);if(sc>bs){bs=sc;best=ang[i];}}}
   return best;}
  function trackLag(P,t){return (P.lag||.08)*(.35+.65*Math.exp(-Math.max(0,t)/((P.settle||.25)*2)));}
- // ---- Human aim (default: a mid-ranked player, think Gold-Plat; LEVEL easy / hard scale it) ----
+ // ---- Human aim (default: a mid-ranked player, think Silver; LEVEL easy / hard scale it) ----
  // A fight's crosshair path is a planned human flick, not a laser: aimPlan() takes where the crosshair is when the enemy
  // appears (e0 = crosshair minus the aim point, radians yaw / pitch) and aimAt(A, t) returns the error at t s into the fight:
  //  - until A.start (the reaction) the crosshair stays where it was;
@@ -116,8 +116,8 @@
  function level(name){return LEVEL[name]||LEVEL.normal;}
  // Per-bot aim traits (pure, from P.seed on a separate stream: personality() draws are unchanged).
  function aimTraits(P){const r=rng(((P.seed>>>0)^0x51ed270b)>>>0),acc=P.accuracy==null?.6:P.accuracy;
-  return {headAim:.22+acc*.15+r()*.06,neckAim:.3+r()*.15,place:.01+(1-acc)*.012+r()*.005,over:.04+r()*.08,fitts:.045+(1-acc)*.035+r()*.015,
-   trem:.003+(1-acc)*.006,pull:.25+acc*.25+r()*.1,eager:.6+r()*.8+(P.aggression||0)*.4,discipline:clamp(.45+(P.patience==null?.5:P.patience)*.35+r()*.15,0,.97),idle:Math.atan2(AIM_H.head-1.6,15)-(.004+(1-acc)*.016+r()*.01)};}
+  return {headAim:.22+acc*.15+r()*.06,neckAim:.3+r()*.15,place:.014+(1-acc)*.017+r()*.007,over:.04+r()*.08,fitts:.045+(1-acc)*.035+r()*.015,
+   trem:.004+(1-acc)*.008,pull:.2+acc*.2+r()*.08,eager:.6+r()*.8+(P.aggression||0)*.4,discipline:clamp(.45+(P.patience==null?.5:P.patience)*.35+r()*.15,0,.97),idle:Math.atan2(AIM_H.head-1.6,15)-(.004+(1-acc)*.016+r()*.01)};}
  const AIM_H={head:1.8,neck:1.45,chest:1.2}; // metres above the feet, standing (server hitboxes: head sphere centre 1.815, body capsule top ~1.6)
  function aimHeight(P,rand,lvl,pre){const A=aimTraits(P),L=level(lvl),x=rand(),h=Math.min(.85,A.headAim*L.head*(pre?1.8:1));return x<h?'head':x<h+(1-h)*A.neckAim?'neck':'chest';}
  function gauss(rand){return (rand()+rand()+rand()+rand()-2)*1.732;}
@@ -140,7 +140,7 @@
   else{const q=s-A.T1-A.T2,k=.7+.3*Math.exp(-q/A.settle);y=A.res[0]*k+A.trem*Math.sin(q*6.1+A.ph);p=A.res[1]*k+A.trem*.7*Math.sin(q*4.3+A.ph*1.7);}
   o[0]=y;o[1]=p;return o;}
  // May the trigger go now? err: the current crosshair error (rad); the first shot goes once within eager x half-width.
- function readyToFire(A,err,dist,t){if(!A)return false;if(t!=null&&A.fireAt&&t-A.start>=A.fireAt)return true;return Math.abs(err)<A.eager*.5*halfWidth(dist);}
+ function readyToFire(A,err,dist,t){if(!A)return false;const ready=t!=null&&t>=A.start&&t-A.start>=A.fireAt;return ready&&Math.abs(err)<.08;}
  // Resting crosshair pitch while moving / holding (rad): head height at ~15 m with this bot's own placement error, mostly a
  // little low (a mid-ranked player's crosshair drifts toward the neck), so fights start near the head, not on it. A fight
  // that starts on a pre-aimed angle more often stays at head height (aimHeight pre).
@@ -436,7 +436,7 @@
  // to shoot, or null. Threats first: an incoming Boom Bot, a Lockdown, a Turret that can fire on the bot, then the trap /
  // information devices near it (Alarmbot, Trademark, Trapwire, Spycam), a Nanoswarm it found; a Sage Barrier only when it
  // blocks the bot's route (blocking) and is close: a barrier off to the side is walked around, not shot.
- const SHOOT_UTIL={boombot:{range:15,pri:6},lockdown:{range:30,pri:5},turret:{range:30,pri:4},alarmbot:{range:12,pri:3},trademark:{range:12,pri:3},trapwire:{range:12,pri:3},spycam:{range:20,pri:2},owl:{range:20,pri:2},nanoswarm:{range:8,pri:1},barrier:{range:14,pri:0,block:true}};
+ const SHOOT_UTIL={hunter:{range:20,pri:6},boombot:{range:15,pri:6},lockdown:{range:30,pri:5},turret:{range:30,pri:4},alarmbot:{range:12,pri:3},trademark:{range:12,pri:3},trapwire:{range:12,pri:3},spycam:{range:20,pri:2},owl:{range:20,pri:2},nanoswarm:{range:8,pri:1},barrier:{range:14,pri:0,block:true}};
  function shootUtility(c){let best=null,bs=-Infinity;for(const x of c||[]){const S=SHOOT_UTIL[x&&x.kind];if(!S||!x.los||!(x.d<=S.range)||(S.block&&!x.blocking))continue;const sc=S.pri*100-x.d;if(sc>bs){bs=sc;best=x;}}return best;}
 
  // Jett Tailwind for bots (server spike.js botUtility and the offline index.html xBJett share it). The first E arms it at

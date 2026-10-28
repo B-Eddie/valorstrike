@@ -1,0 +1,3 @@
+knife back-stab: facing away -> back-stab OK; facing player -> no back-stab OK
+Bug-lane runtime functions: {"golden":"function","hunter":"function","rooms":"function","input":"function","grip":"function"}
+errors: [{"phase":"load","where":"script","msg":"unexpected external script models/valorant/agents/manifest.js"}] xErr: []

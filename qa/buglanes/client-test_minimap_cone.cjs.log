@@ -1,0 +1,1 @@
+Minimap view cone: wedge = current yaw and horizontal FOV (103 deg hip, narrower scoped, hidden when dead); enemies only when an ally has LOS AND has them in view (player camera FOV, teammates 103 deg cone), none behind / beside / walled / for dead mates; red marker, last-seen "?" fades over 3 s

@@ -1,0 +1,1 @@
+network smoothing: 299 render frames under 40–125 ms ordered jitter at 4.86–5.94 m/s; source spacing, bounded extrapolation, spawn/duplicate reset, batched reconciliation, historical lookup and missing-history recovery passed (max 60 Hz correction 1.25 cm)

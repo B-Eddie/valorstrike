@@ -114,6 +114,7 @@ export class VariantSpikeSimulation extends SpikeSimulation{
   for(let k=0;k<40&&this.orbs.length<n&&P.length;k++){const p=N[P[Math.floor(this.random()*P.length)]];if(!p||this.orbs.some(o=>Math.hypot(o.x-p[0],o.z-p[2])<12))continue;this.orbs.push({id:k,x:p[0],y:p[1],z:p[2],full:0,type:''});}
   srOrbTypes(this.srSet,this.orbs.length,this.random).forEach((t,i)=>{this.orbs[i].type=t;this.orbs[i].full=t==='ult'?1:0;});}
  command(u,m){if(this.rules.noBuy&&['buy','sell'].includes(m?.t))return false;return super.command(u,m);}
+ onGunKill(u,v){super.onGunKill(u,v);if(this.gm==='sr'&&u.srGolden===this.round&&u.weapon==='Sheriff'){u.reserve++;u.reserves.Sheriff=u.reserve;}}
  // Spike Rush Damage Amp (+30 % gun damage for the round) and the Health Regen out-of-combat clock (last hit taken).
  applyHit(u,target,part,raw,...rest){if(this.gm==='sr'){if(u&&u.srAmp&&u.srAmp===this.round)raw*=1.3;if(target)target.srHit=this.time;}return super.applyHit(u,target,part,raw,...rest);}
  finishRound(winner,text){if(this.roundDelay>0)return;const before=new Map(this.units.map(u=>[u,u.credits]));super.finishRound(winner,text);this.lastWinner=winner;
@@ -137,7 +138,7 @@ export class VariantSpikeSimulation extends SpikeSimulation{
  // the guard is cleared on the next tick, 50 ms).
  flashguard(){const F=this.rules.flashguard;for(const u of this.units){const blind=u.blindUntil>this.time;if(u.fgUntil>this.time){if(blind)u.blindUntil=this.time;u.fgBlind=false;continue;}
   if(blind&&!u.fgBlind){u.fgOn=(u.fgOn||[]).filter(t=>this.time-t<=F.window);u.fgOn.push(this.time);if(u.fgOn.length>=2){u.fgUntil=this.time+F.dur;u.fgOn=[];this.events.push(['fg',u.name]);}}u.fgBlind=blind;}}
- roundState(u){const r=super.roundState(u);r.gm=this.gm;r.win=this.rules.win;r.half=this.rules.half;if(this.gm==='sr'){r.orb=this.buy>3?[]:this.orbs.map(o=>[o.id,Math.round(o.x*100)/100,Math.round(o.y*100)/100,Math.round(o.z*100)/100,o.full,o.type||'']);r.gun=this.srGun||null;r.pw=srActive(this,u);}if(this.gm==='rep'&&this.repAgent)r.rag=this.repAgent[u.team]||null;if(u.fgUntil>this.time)r.fg=Math.round((u.fgUntil-this.time)*100)/100;return r;}
+ roundState(u){const r=super.roundState(u);r.gm=this.gm;r.win=this.rules.win;r.half=this.rules.half;if(this.gm==='sr'){r.orb=this.buy>3?[]:this.orbs.map(o=>[o.id,Math.round(o.x*100)/100,Math.round(o.y*100)/100,Math.round(o.z*100)/100,o.full,o.type||'']);r.gun=this.srGun||null;r.pw=srActive(this,u);r.gg=u.srGolden===this.round&&u.weapon==='Sheriff'&&!u.headhunter?1:0;}if(this.gm==='rep'&&this.repAgent)r.rag=this.repAgent[u.team]||null;if(u.fgUntil>this.time)r.fg=Math.round((u.fgUntil-this.time)*100)/100;return r;}
 }
 
 // ---- Skirmish 1v1 ('skm') ----

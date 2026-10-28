@@ -1,0 +1,10 @@
+Error: ENOENT: no such file or directory, open '/home/hatch/workspace/valorstrike-gpt-temp/server/node_modules/three/build/three.cjs'
+    at Object.readFileSync (node:fs:483:20)
+    at threeDir (/home/hatch/workspace/valorstrike-gpt-temp/work/page_harness.cjs:10:15)
+    at boot (/home/hatch/workspace/valorstrike-gpt-temp/work/page_harness.cjs:31:16)
+    at /home/hatch/workspace/valorstrike-gpt-temp/work/test_devour_empress.cjs:10:10 {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/home/hatch/workspace/valorstrike-gpt-temp/server/node_modules/three/build/three.cjs'
+}

@@ -1,0 +1,1 @@
+Nav GC: ascent nmPath 1957 B/search (route ~86 nodes); ascent 4500 nmNear + 120 A* identical, workload young-gen GCs 4 -> 0 (5056 -> 5048 ms); bind nmPath 2256 B/search (route ~101 nodes); bind 4500 nmNear + 120 A* identical, workload young-gen GCs 4 -> 0 (6023 -> 5931 ms); nmBlocked one reused triangle callback via nmShapeAny

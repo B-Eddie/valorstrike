@@ -1,0 +1,87 @@
+{
+  "method": "Median of three quiet, alternating baseline/final runs; the initial unmodified baseline is also retained as before.json. Tick percentiles are medians of per-run percentiles, not pooled. Node v24.22.1, synthetic flat collision unless specified; no FPS or real network measured.",
+  "dm": {
+    "before": {
+      "tickMeanMs": 1.1070374199999984,
+      "tickP99Ms": 6.398275000000012,
+      "largestTickMs": 26.60184400000003,
+      "wireMeanBytesPerTick": 8050.663333333333,
+      "wireMaxBytesPerTick": 9035,
+      "errors": 0
+    },
+    "after": {
+      "tickMeanMs": 1.0403508400000017,
+      "tickP99Ms": 3.7126589999999737,
+      "largestTickMs": 19.086189999999988,
+      "wireMeanBytesPerTick": 2911.221666666667,
+      "wireMaxBytesPerTick": 5175,
+      "errors": 0
+    }
+  },
+  "tdm": {
+    "before": {
+      "tickMeanMs": 1.5682950600000054,
+      "tickP99Ms": 4.599290999999994,
+      "largestTickMs": 23.181334000000106,
+      "wireMeanBytesPerTick": 10705.143333333333,
+      "wireMaxBytesPerTick": 11645,
+      "errors": 0
+    },
+    "after": {
+      "tickMeanMs": 1.637594494999995,
+      "tickP99Ms": 5.870200999999952,
+      "largestTickMs": 22.75294000000008,
+      "wireMeanBytesPerTick": 3163.5933333333332,
+      "wireMaxBytesPerTick": 5183,
+      "errors": 0
+    }
+  },
+  "five": {
+    "before": {
+      "tickMeanMs": 0.4492995633333256,
+      "tickP99Ms": 2.4119049999999334,
+      "largestTickMs": 8.003727000000254,
+      "wireMeanBytesPerTick": 11341.181666666667,
+      "wireMaxBytesPerTick": 11889,
+      "errors": 0
+    },
+    "after": {
+      "tickMeanMs": 0.4640900666666592,
+      "tickP99Ms": 1.6411259999999857,
+      "largestTickMs": 12.768936999999823,
+      "wireMeanBytesPerTick": 1480.1866666666667,
+      "wireMaxBytesPerTick": 3800,
+      "errors": 0
+    }
+  },
+  "spawn": {
+    "before": {
+      "meanMs": 0.6666019149999943,
+      "p99Ms": 3.2130279999996674,
+      "BperCall": 568630.38,
+      "gcCount": 34,
+      "queriesPer200Calls": 23000
+    },
+    "after": {
+      "meanMs": 0.016657055000000583,
+      "p99Ms": 0.05747699999983524,
+      "BperCall": 21842.368,
+      "gcCount": 2,
+      "queriesPer200Calls": 0
+    }
+  },
+  "client": {
+    "before": {
+      "snapshotMeanMs": 0.1541701388564769,
+      "snapshotP99Ms": 0.3574169999999981,
+      "interpolationMeanMs": 0.01974017791666643,
+      "heapBperFrame": 2781.8566666666666
+    },
+    "after": {
+      "snapshotMeanMs": 0.173812301050174,
+      "snapshotP99Ms": 0.313590999999974,
+      "interpolationMeanMs": 0.020551617083333393,
+      "heapBperFrame": 2585.3553333333334
+    }
+  }
+}

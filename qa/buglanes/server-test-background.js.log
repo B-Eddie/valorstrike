@@ -1,0 +1,1 @@
+Background tab: hidden clients signal vis, keep their seat through once-a-minute throttling and Worker heartbeats, held input released; silent sessions still dropped at 45 s visible / 150 s hidden; slow loads kept while progressing, closed as 'Load timed out' when stalled/silent/capped

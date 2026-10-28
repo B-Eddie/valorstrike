@@ -1,0 +1,1 @@
+Server effect adapter: Barrier Orb = 4 segments (XBAR = server BARRIER), position/elevation, stable group across snapshots, per-segment gaps and collision, rotated wall, removal + netClearEffects dispose every segment

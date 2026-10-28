@@ -1,0 +1,1 @@
+Net drop (client): no-welcome worker kept 60 s in a match and the lobby (pi heartbeat), 1006 drop retried with backoff through a 45 s outage and resumed the same seat, 90 s give-up names code + attempts, rate-limit close reconnects, Room full / Resume expired final with code

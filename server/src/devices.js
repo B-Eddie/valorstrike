@@ -35,10 +35,10 @@ export const DEV={
 // (barrierRay, segments). Owl Drone / Spycam: a body effect ('owl' 100 HP over the aim point, 'spycam' 1 HP where it was placed)
 // beside their 'dart'; a body shot down before the dart has tagged anyone ends the dart. Bots shoot these down
 // (spike.js shootUtility, vendor/bot-brain.cjs shootUtility); the offline game uses the same HP (index.html XSHOOT).
-export const SHOOT={boombot:{hp:60,y:.2,r:.4},turret:{hp:100,y:.45,r:.45},alarmbot:{hp:20,y:.3,r:.35},trademark:{hp:20,y:.2,r:.3},nanoswarm:{hp:20,y:.1,r:.3},trapwire:{hp:20,y:.3,r:.2,ends:true},blastpack:{hp:20,y:0,r:.25},spycam:{hp:1,y:0,r:.25},owl:{hp:100,y:0,r:.45}};/* Spycam 1 HP, Owl Drone 100 HP (wiki Spycam / Owl_Drone, v9.0) */
+export const SHOOT={hunter:{hp:150,y:.4,r:.45},boombot:{hp:60,y:.2,r:.4},turret:{hp:100,y:.45,r:.45},alarmbot:{hp:20,y:.3,r:.35},trademark:{hp:20,y:.2,r:.3},nanoswarm:{hp:20,y:.1,r:.3},trapwire:{hp:20,y:.3,r:.2,ends:true},blastpack:{hp:20,y:0,r:.25},spycam:{hp:1,y:0,r:.25},owl:{hp:100,y:0,r:.45}};/* Spycam 1 HP, Owl Drone 100 HP (wiki Spycam / Owl_Drone, v9.0) */
 // Snapshot rows for the persistent devices the online client draws as their real models (server_runtime.js netSyncDevices):
 // {id, kind:'dev', d: device kind, o: owner id, tm: team, p (cm), q: Trapwire's other anchor, yaw, hp}.
-export const DEV_ROWS=new Set(['turret','alarmbot','trapwire','trademark','blastpack','spycam','owl']);
+export const DEV_ROWS=new Set(['hunter','turret','alarmbot','trapwire','trademark','blastpack','spycam','owl']);
 const cm=v=>v.map(n=>Math.round(n*100)/100);
 export function deviceRows(sim){const out=[];for(const e of sim.effects){if(!DEV_ROWS.has(e.kind)||!(e.until>=sim.time)||!(deviceHp(e)>0||e.field)||!Array.isArray(e.p))continue;/* a spent Trademark still sends its slow field (hp 0, fp) */const r={id:e.id,kind:'dev',d:e.kind,o:e.owner,tm:e.team,p:cm(e.p),hp:Math.round(deviceHp(e))};if(e.q)r.q=cm(e.q);if(Number.isFinite(e.yaw))r.yaw=Math.round(e.yaw*1000)/1000;if(e.kind==='trademark'&&e.field&&Array.isArray(e.fp))r.fp=cm(e.fp);/* the 6 m slow field under the spotted enemy */out.push(r);}return out;}
 export function deviceHp(e){const S=SHOOT[e.kind];return S?(e.hp??S.hp):0;}

@@ -1,0 +1,3 @@
+Lag hot paths: 1000 spawn selections match the original with occupancy/RNG; static queries zero, dynamic/collision/anchor invalidation; fog-safe deltas; legacy; retained events; resync; send failure; bounded diagnostics
+Room queries: 10k native-math parity cases; motor: 3k exact paired steps with jumps/crouch/room blockers, plus exception restoration
+Opt-in server tick breakdown, simulation/snapshot/fanout, message counts and exact UTF-8 byte instrumentation execute without faults

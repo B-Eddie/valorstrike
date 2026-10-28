@@ -1,0 +1,1 @@
+Loading waits for async map success; failure releases overlay; all six map modes preserve queue tile

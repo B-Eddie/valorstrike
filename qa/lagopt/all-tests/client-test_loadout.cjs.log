@@ -1,0 +1,1 @@
+Actual loadout function enforces the four TDM stages (Stage 1 sidearm all match, current stage only from Stage 2, stage pick kept), rejects prototype names, preserves other slot live ammo; Deathmatch unlocked

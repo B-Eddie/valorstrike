@@ -19,7 +19,7 @@
 import {barrierPoints} from './abilities.js';import {hyp2,hyp3} from './hyp.js';/* Math.hypot without the builtin's per-call argument array, bit-identical (hyp.js) */import {devicePoints,DEV_ROWS} from './devices.js';
 export {hyp2 as fogHyp2,hyp3 as fogHyp3};
 export const FOG=Object.freeze({ahead:.4,pad:.45,grace:1,step:30,run:3.6,shot:50,shotFor:1,near:3,killer:3,devNear:6,cast:30});
-const MOVING=new Set(['owl','blastpack','cloudburst']);
+const MOVING=new Set(['owl','hunter','blastpack','cloudburst']);
 export function fogGroup(sim,u){return sim.mode==='dm'?'u'+u.id:'t'+u.team;}
 const rowGroup=(sim,r)=>sim.mode==='dm'?'u'+r[0]:'t'+r[1];
 const live=u=>u&&u.alive&&!u.loading;

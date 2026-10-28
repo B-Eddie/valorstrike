@@ -1,0 +1,1 @@
+Online startup waits for scene + loading overlay; Cancel is not mistaken for error, cancelled sessions stop polling; room creation/quick match honor selected map

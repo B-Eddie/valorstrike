@@ -1,0 +1,1 @@
+Client diagnostics off by default; idempotent start, bounded 600-sample percentiles, CPU/gap/render/queue/RTT reporting, stop restores functions and receiver/return semantics; embedded source parity

@@ -1,0 +1,8 @@
+{"frames":3000,"fullBytes":5941697,"deltaBytes":1507933,"savedPct":74.62117304197774,"checks":"exact full-frame and post-validator parity; mutable state; roster/order/reset; deletes; periodic keyframes; malformed patches and bounded resync; baseline isolation/prototype keys"}
+Lag hot paths: 1000 spawn selections match the original with occupancy/RNG; static queries zero, dynamic/collision/anchor invalidation; fog-safe deltas; legacy; retained events; resync; send failure; bounded diagnostics
+Room queries: 10k native-math parity cases; motor: 3k exact paired steps with jumps/crouch/room blockers, plus exception restoration
+Opt-in server tick breakdown, simulation/snapshot/fanout, message counts and exact UTF-8 byte instrumentation execute without faults
+Client cached lookups: 300 snapshot/event sequences match original across joins, leaves, rename, empty/rebuilt rosters and reused ids
+Client diagnostics off by default; idempotent start, bounded 600-sample percentiles, CPU/gap/render/queue/RTT reporting, stop restores functions and receiver/return semantics; embedded source parity
+remote interp: arrival +-25: 2.76..38.36 sd 60%; server 50ms: 4.86..5.94 sd 6.6% delay 173ms; server 100ms: 4.86..5.94 sd 7.5% delay 193ms; server 150ms: 4.86..5.94 sd 7.8% delay 210ms; p2p 50ms: 4.86..5.94 sd 6.6% delay 173ms; p2p 100ms: 4.86..5.94 sd 7.5% delay 193ms; p2p 150ms: 4.86..5.94 sd 7.8% delay 210ms; 100ms+2%loss: max 5.94 m/s, 24 frozen frames, delay 239ms; 150ms+5%loss: max 5.94 m/s, 47 frozen frames, delay 277ms
+3000 final decoded worker frames exactly match original full-state frames: unit state, fog, events, round state, clocks and scores

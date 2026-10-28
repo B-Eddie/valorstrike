@@ -1,0 +1,1 @@
+Shot path: pooled target lists (xTgtA/xTgtB via xShotTgts), no per-shot concat/filter/flatMap, scratch Vector2, solids-first layout preserved

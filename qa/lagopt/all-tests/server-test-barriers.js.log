@@ -1,0 +1,2 @@
+Sage wall: server-derived placement, oriented collision, elevation, LOS/bullet block; wiki 4 x 2.6 m segments, 400 HP each, +200 at 2 s (damage before stays), a broken segment is a gap, the wall ends with the last one
+Shot first hitting player in front of barrier does not also damage barrier

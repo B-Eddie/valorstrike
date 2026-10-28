@@ -3764,7 +3764,7 @@ function vmTick(dt) {
   const bx = Math.sin(VM.bob) * 0.014 * VM.bobA + idx, by = -Math.abs(Math.cos(VM.bob)) * 0.016 * VM.bobA + idy;
   if (P && P.hp > 0 && VMA.col !== P) { VMA.col = P; try { if (xVmAg((J && J.pick) || "Jett")) throw 0; const c = P.agentCol || P.col || P.color; if (c && c.length) xVmCol(c[0], c[1], c[2]); else if (c != null) xVmCol(null, null, c); } catch (e) {} }
   const vo = typeof vmOff === "function" ? vmOff() : { x: 0, y: 0, z: 0, ry: 0 }, vk = 1 - xAD.k; // per-class rest (sidearms lower-right), faded out by ADS
-  gun.position.set(vo.x * vk + VMP.x + bx - VM.lx * 0.022 - ie * 0.1 - xAD.k * (VMP.x - 0.05), vo.y * vk + VMP.y + by + VM.ly * 0.018 - dip * 0.16 - sw * 0.3 + ie * 0.05 + xAD.k * 0.03, vo.z * vk + VMP.z + kick * 0.06 + ie * 0.05 + xAD.k * 0.03); // ADS: centred, slightly low
+  gun.position.set(vo.x * vk + VMP.x + bx - VM.lx * 0.022 - ie * 0.1 - xAD.k * VMP.x, vo.y * vk + VMP.y + by + VM.ly * 0.018 - dip * 0.16 - sw * 0.3 + ie * 0.05 + xAD.k * 0.03, vo.z * vk + VMP.z + kick * 0.06 + ie * 0.05 + xAD.k * 0.03); // ADS: centred, slightly low
   gun.rotation.set(kick * 0.12 - dip * 0.5 + sw * 0.6 + ie * 0.15 + tl * 0.3, (VMP.ry + vo.ry) * (1 - xAD.k) - VM.lx * 0.06 + ie * 1.25 - tl * 0.2, VM.lx * 0.04 + dip * 0.35 + bx * 2 + ie * 0.4 - tl * 0.6);
   try { xRld(rp, dt); } catch (e) {}
   knife.position.x = 0.23 + bx - VM.sx * 0.025; knife.position.y = -0.2 + by - sw * 0.3;
@@ -5262,7 +5262,7 @@ function xWOwn(n) { return typeof n === "string" && Object.prototype.hasOwnPrope
 function bEquip(n, sl) {
   const m = WEAP[n].mag; if (sl === "pis") FV.sec = n; else FV.pri = n;
   slots[sl] = { ammo: m, rsv: xRsv(n) };
-  if (rw === sl) { ammo = m; rsv = xRsv(n); reloading = 0; } else if (sl === "pri") swapW("pri");
+  if (rw === sl) { ammo = m; rsv = xRsv(n); reloading = 0; onSkin(); updHud(); } else if (sl === "pri") swapW("pri");
 }
 function bUndo(e) { // weapon entry: slot back to what it held before, refund whoever paid
   const sl = e.sl;
@@ -8481,7 +8481,7 @@ for (const a in ABI_M) ABI_M[a] = (ABI_M[a] + " ult").split(" ");
 function abIco(a, i) { const t = (ABI_M[a] || ABI_M.Jett)[i] || "ult"; return '<svg class="x-aic" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + ABI_SVG[t] + "</svg>"; }
 function xTbIco() { const a = J.pick || "Jett"; ["c", "q", "e", "x"].forEach((k, i) => { const b = document.querySelector(`.tb[data-k="${k}"]`); if (!b || b.dataset.ag === a) return; b.dataset.ag = a; b.classList.add("x-ti"); b.innerHTML = abIco(a, i) + `<small class="x-tl">${k.toUpperCase()}</small>`; }); }
 function xAbIcons() { const a = J.pick || "Jett"; if (xAbIcons.a !== a) { xAbIcons.a = a; ["jC", "jQ", "jE", "jX"].forEach((id, i) => { const s = $(id); if (!s) return; let d = s.querySelector(".x-ai"); if (!d) { d = document.createElement("div"); d.className = "x-ai"; s.insertBefore(d, s.querySelector("span")); } d.innerHTML = abIco(a, i); }); } xTbIco(); }
-const jOn = () => J.on && (mode === "retake" || mode === "five");
+const jOn = () => J.on && (mode === "retake" || mode === "five") && !(typeof FV !== "undefined" && FV.dm && (!FV.tdm || FV.esc));
 const smokeGeo = new THREE.SphereGeometry(4, 22, 16);
 // Smoke radius per ability (wiki.playvalorant.com, fetched 2026-10-25): Cloudburst 3.35 m, Dark Cover 4.1 m, Cyber Cage 3.72 m;
 // server abilities.js SMOKE.r is the same table. The 4 m sphere is scaled to it; sight (jBlock) and the minimap read s.r.
@@ -8497,9 +8497,9 @@ function xCageHit(s, a, d, max) { const r = s.r || XSMR.Cypher, ox = a.x - s.p.x
   return (t1 >= 0 && t1 <= max && Math.abs(a.y + d.y * t1 - s.p.y) <= s.cyl) || (t2 >= 0 && t2 <= max && Math.abs(a.y + d.y * t2 - s.p.y) <= s.cyl); }
 // look pass: Valorant-style ability VFX — own shaders/geometry, pooled via jMat, no extra lights or shadows
 const XSU = { value: 0 }; // shared smoke clock
-function xSmokeM(k, c, r) { return jMat(k, () => { const m = new THREE.ShaderMaterial({ uniforms: { uT: XSU, uO: { value: 1 }, uC: { value: new THREE.Color(c) }, uR: { value: new THREE.Color(r) } }, transparent: true, depthWrite: false, side: THREE.DoubleSide,
-  vertexShader: "uniform float uT;varying vec3 vN;varying vec3 vV;varying vec3 vP;void main(){vec3 p=position;float w=sin(p.x*1.3+uT*1.7)*sin(p.y*1.1+uT*1.3)*sin(p.z*1.7+uT);p+=normal*w*0.22;vP=p;vec4 mv=modelViewMatrix*vec4(p,1.0);vV=-mv.xyz;vN=normalMatrix*normal;gl_Position=projectionMatrix*mv;}",
-  fragmentShader: "uniform float uT;uniform float uO;uniform vec3 uC;uniform vec3 uR;varying vec3 vN;varying vec3 vV;varying vec3 vP;void main(){float f=pow(1.0-abs(dot(normalize(vN),normalize(vV))),2.4);float n=sin(vP.x*1.9+uT*0.9)*sin(vP.y*2.3-uT*0.7)*sin(vP.z*1.7+uT*0.5);vec3 c=mix(uC,uR,f)*(0.92+0.1*n)+uR*f*0.55;gl_FragColor=vec4(c,clamp(uO,0.0,1.0)*(0.94+0.06*f));}" }); m.opacity = 0.6; m.userData.xs = 1; return m; }); }
+function xSmokeM(k, c, r) { return jMat(k, () => { const m = new THREE.ShaderMaterial({ uniforms: { uT: XSU, uO: { value: 1 }, uC: { value: new THREE.Color(c) }, uR: { value: new THREE.Color(r) } }, transparent: false, depthWrite: true, side: THREE.DoubleSide,
+  vertexShader: "uniform float uT;varying vec3 vN;varying vec3 vV;varying vec3 vP;void main(){vec3 p=position;float w=sin(p.x*1.3+uT*1.7)*sin(p.y*1.1+uT*1.3)*sin(p.z*1.7+uT);p+=normal*w*0.0;vP=p;vec4 mv=modelViewMatrix*vec4(p,1.0);vV=-mv.xyz;vN=normalMatrix*normal;gl_Position=projectionMatrix*mv;}",
+  fragmentShader: "uniform float uT;uniform float uO;uniform vec3 uC;uniform vec3 uR;varying vec3 vN;varying vec3 vV;varying vec3 vP;void main(){float f=pow(1.0-abs(dot(normalize(vN),normalize(vV))),2.4);float n=sin(vP.x*1.9+uT*0.9)*sin(vP.y*2.3-uT*0.7)*sin(vP.z*1.7+uT*0.5);vec3 c=mix(uC,uR,f)*(0.92+0.1*n)+uR*f*0.55;gl_FragColor=vec4(c,1.0);}" }); m.opacity = 0.6; m.userData.xs = 1; return m; }); }
 const xRcnGeo = new THREE.RingGeometry(0.9, 1, 64), xKjBand = new THREE.BoxGeometry(1, 0.07, 1), xKjMat = new THREE.MeshBasicMaterial({ color: 0xffd21a }), sgShard = new THREE.BoxGeometry(1.55, 1, 0.55);
 const xAdd = (k, c, o) => jMat(k, () => new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: o, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide }));
 function xKjAcc(m, s) { [0.18, -0.12].forEach((y, i) => { const b = new THREE.Mesh(xKjBand, xKjMat); b.scale.set(s * (1.06 - i * 0.02), 1, s * (1.06 - i * 0.02)); b.position.y = y * s * 2; b.raycast = () => {}; m.add(b); }); }
@@ -10029,7 +10029,7 @@ function xBJettMove(b, dt) { // per frame for every bot: the Tailwind dash and t
     if (!Number.isFinite(f) || f < U.y0 - 12) f = U.y0; if (q.y <= f) { q.y = f; b.xup = null; } }
 }
 function botAb(b, dt, see, tg, from) {
-  if (!jOn()) return; // abilities live with the agent kit (Retake + 5v5)
+  if (!jOn() || (typeof NET !== "undefined" && NET.socket)) return; // online bots are simulated only by the server
   const A = b.ab || (b.ab = { t: 0, smk: true, cb: 2, rb: true, rbT: 2 + Math.random() * 6, saw: false });
   A.t += dt; const peek = see && !A.saw; A.saw = see; const al = allies.indexOf(b) >= 0, ag = xBAg(b), ch = xBCh(b); // team-agnostic: ally bots cast at enemy bots
   if (see && tg) { A.lkx = tg.x; A.lkz = tg.z; A.lkt = 0; } else if (A.lkt != null) A.lkt += dt;
@@ -10229,15 +10229,22 @@ function xAbTm() { const T = xAbTmv(), E = xAbTm.e || (xAbTm.e = {}); // per fra
     const p = Math.max(0, Math.min(1, v.p)).toFixed(3); if (el.style.getPropertyValue("--tm") !== p) el.style.setProperty("--tm", p);
     if (!el.classList.contains("x-tmon")) el.classList.add("x-tmon"); if (el.classList.contains("x-tmw") !== !!v.w) el.classList.toggle("x-tmw", !!v.w); }
   return T; }
+function jSmokeTick(dt) {
+  XSU.value += dt;
+  J.smokes = J.smokes.filter((s) => { s.t -= dt; s.m.material.opacity = 0.6 * Math.min(1, s.t / (s.fo || 0.5)); const sm = s.m.material.uniforms; if (sm) { sm.uO.value = s.m.material.opacity / 0.6; s.a = (s.a || 0) + dt; const k = Math.min(1, s.a / (s.dep || 0.3)); if (s.cb && s.m.userData.kids) for (const o of s.m.userData.kids) if (o.userData.sw) o.rotation.y += dt * 0.9; const g = 0.3 + 0.7 * (1 - (1 - k) ** 3), sx = (s.r || 4) / 4; if (s.cyl) s.m.scale.set(sx, g, sx); else s.m.scale.setScalar(sx * g); } if (s.t > 0) return true; jRel(s.m); return false; });
+}
 function jTick(dt) {
+  jSmokeTick(dt);
   const on = jOn() && running && $("game").style.display !== "none";
-  $("xAb").classList.toggle("on", on); if (!on) return;
+  $("xAb").classList.toggle("on", on); if (!on) { // disabled kits still retire stale visual entities
+    for(const key of ['walls','zones','orbs','arrows','fx','cbs'])if(Array.isArray(J[key]))J[key]=J[key].filter(e=>{if(Number.isFinite(e.t))e.t-=dt;if(e.t>0)return true;if(e.m)jRel(e.m);return false;});
+    return;
+  }
   for (const k in J.cd) J.cd[k] = Math.max(0, J.cd[k] - dt);
   if (J.bsU > 0 && (J.bsU -= dt) <= 0) { J.bsU = 0; if (rw === "knife" && !J.bsOn && player.hp > 0 && !(typeof NET !== "undefined" && NET.socket)) swapW(mode === "five" && !FV.pri ? "pis" : "pri"); } // Blade Storm burst unequip done: the gun comes back (online: the server state swaps)
   if (J.dash && player.hp <= 0) J.dash = null; // a Tailwind dash ends with Jett
   if (J.tw) { J.tw.arm -= dt; if ((J.tw.t -= dt) <= 0 || player.hp <= 0) { J.tw = null; if (player.hp > 0) say("Tailwind faded", 700); } } // the 7.5 s window ran out (or Jett died): the charge is gone
-  XSU.value += dt;
-  J.smokes = J.smokes.filter((s) => { s.t -= dt; s.m.material.opacity = 0.6 * Math.min(1, s.t / (s.fo || 0.5)); const sm = s.m.material.uniforms; if (sm) { sm.uO.value = s.m.material.opacity / 0.6; s.a = (s.a || 0) + dt; const k = Math.min(1, s.a / (s.dep || 0.3)); if (s.cb && s.m.userData.kids) for (const o of s.m.userData.kids) if (o.userData.sw) o.rotation.y += dt * 0.9; const g = 0.3 + 0.7 * (1 - (1 - k) ** 3), sx = (s.r || 4) / 4; if (s.cyl) s.m.scale.set(sx, g, sx); else s.m.scale.setScalar(sx * g); } if (s.t > 0) return true; jRel(s.m); return false; });
+
   jCbTick(dt); jFxTick(dt); sgTick(dt); rsTick(dt); for (const b of bots) xBJettMove(b, dt); for (const a of allies) xBJettMove(a, dt); bcTick(dt); xDartRmTick(dt); xBTurTick(dt); xBSwTick(dt);
   const hn = $("hint"); if (hn && J.pick !== "Jett" && hn.textContent.includes(KITS.Jett.h)) hn.textContent = hn.textContent.replace(KITS.Jett.h, K().h);
   const u = K().u, cq = ["jQ", J.q, J.q + "", J.cd.q / 0.6], ce = ["jE", J.e, J.e ? "1" : "Used", J.cd.e / 0.4];
@@ -10807,7 +10814,7 @@ function sbLoadout(n, friendly, living) {
   const sil = typeof BUY_SIL !== "undefined" && BUY_SIL[w];
   return `<span class="x-sbload" title="${hudEscape(w)}${arm ? " · " + arm + " shields" : ""}">${arm ? '<svg class="x-sbshield" viewBox="0 0 20 24" aria-label="Shields"><path d="M10 2l8 3v7c0 5-5 8-8 10-3-2-8-5-8-10V5z" fill="none" stroke="currentColor" stroke-width="2"/></svg>' : ""}${sil ? `<svg viewBox="0 0 64 20" aria-label="${hudEscape(w)}"><path d="${sil}" fill="currentColor"/></svg>` : hudEscape(w)}</span>`;
 }
-function sbPing(n) { try { if (typeof MP !== "undefined" && MP.on) { if (n === "You") return Math.max(0, Math.round(MP.ping || 0)); const u = sbUnit(n); if (u && u.hum) return Math.max(0, Math.round(u.ping || 0)); } } catch (e) {} return "—"; }
+function sbPing(n) { try { if (typeof MP !== "undefined" && MP.on) { if (n === "You") return Math.max(0, Math.round(MP.ping || 0)); const u = sbUnit(n); if (u && u.hum) return u.ping == null ? "—" : Math.max(1, Math.round(u.ping)); } } catch (e) {} return "—"; }
 
 function sbUnit(n) { try { return kfAll().find((x) => x && x.name === n) || null; } catch (e) { return null; } }
 function sbUlt(n) { // [charge, max]: the player's real ult charge; bots only if they carry one
@@ -10921,9 +10928,9 @@ function xSCgo(z, snap) { if (snap) { xSC.z = xSC.z0 = xSC.tz = z; xSC.t = 1; ca
 function xADu(dt) {
   if (xSC.t < 1) { xSC.t = Math.min(1, xSC.t + dt / (xSC.tz > xSC.z0 ? 0.12 : 0.09)); const e = 1 - Math.pow(1 - xSC.t, 3); xSC.z = xSC.z0 + (xSC.tz - xSC.z0) * e; }
   const f = xSCf(xSC.z); if (Math.abs(camera.fov - f) > 1e-4) { camera.fov = xAD.f = f; camera.updateProjectionMatrix(); } // also self-heals any stray FOV write
-  const t = 0; // no rifle ADS mini sight: Valorant keeps the normal crosshair when you ADS
-  if (xAD.p !== t) { xAD.p = t > xAD.p ? Math.min(1, xAD.p + dt / 0.12) : Math.max(0, xAD.p - dt / 0.09); const p = xAD.p; xAD.k = t ? 1 - Math.pow(1 - p, 3) : p * p * (3 - 2 * p); }
-  const el = $("xAdsT"); if (el) hudS(el, "opacity", xAD.k > 0.001 ? xAD.k.toFixed(2) : "0");
+  const t = ads === 1 && XZ[xSCw()] && xSCw() !== "Bucky" ? 1 : 0; // rifle sights align while the normal crosshair stays visible
+  if (xAD.to !== t) { xAD.from = xAD.k; xAD.to = t; xAD.at = 0; } xAD.at = Math.min(1, (xAD.at || 0) + dt / (t > xAD.from ? 0.12 : 0.09)); const ae = 1 - Math.pow(1 - xAD.at, 3); xAD.k = xAD.p = xAD.from + (t - xAD.from) * ae;
+  const el = $("xAdsT"); if (el) hudS(el, "opacity", "0");
 }
 // Classic ALT FIRE spread (wiki.playvalorant.com/en-us/Classic "Spread values", Alt Fire row): 1.9 deg first burst (1.71 crouched,
 // x0.9), max 5.78 (5.21); movement penalties crouch-walk 0 / walk 0.6 / run 1.5 / airborne 2.25 (ramped like the primary). Back-to-back
@@ -10942,10 +10949,10 @@ function xBurst() { // Classic ALT FIRE (wiki.playvalorant.com/en-us/Classic, va
   const was = ads, sn = !!XSZ[mode === "duel" ? (du.w === "op" ? "Operator" : "") : w];
   if (on && sn && was !== 2 && (mode === "duel" ? du.bolt > 0 : mode === "aim" ? AM.cd > 0 : fcd > 0)) return; // no scoping in while the bolt cycles
   s1(on);
-  if (ads === 1 && (w === "Sheriff" || w === "Classic" || w === "Frenzy")) ads = 0;
+  if (ads === 1 && !XZ[w]) ads = 0;
   if (ads === 2 && !sn && mode !== "duel") ads = 1; // only real snipers get the lens
   if (ads !== 2) xSC.lv = 0; else if (was !== 2 || !xSC.lv) xSC.lv = 1;
-  const zs = XSZ[mode === "duel" ? "Operator" : w], z = ads === 2 && zs ? zs[Math.min(zs.length, xSC.lv) - 1] : ads === 1 ? XZ[w] || 1.25 : 1;
+  const zs = XSZ[mode === "duel" ? "Operator" : w], z = ads === 2 && zs ? zs[Math.min(zs.length, xSC.lv) - 1] : ads === 1 && w !== "Bucky" ? XZ[w] || 1 : 1;
   xAD.z = xSCf(z); xAD.tint = ads === 1 && (w === "Vandal" || w === "Phantom");
   xSCgo(z, !xSC.soft && !on); // right-click eases both ways; forced unscopes (reload, switch, death, round end, lobby) snap back to 75°
   if (!xSC.soft && !on) xAD.p = xAD.k = 0;
@@ -12296,7 +12303,7 @@ html.xt-nocm .x-cmb{display:none!important}
 })();
 // ---- DEATHMATCH: Val-style FFA on the 5v5 map/bot/weapon systems (mode "five" + FV.dm) ----
 const DM = { win: 40, len: 540, k: {}, d: {}, menu: false, prt: 0, pp: 0, ph: 0, lbT: 0, over: null, el: null, lb: null, lbS: "", pts: null };
-const DM_C = { Rifles: ["Bulldog", "Guardian", "Warden", "Phantom", "Vandal"], SMGs: ["Stinger", "Spectre"], Snipers: ["Marshal", "Outlaw", "Operator"], Sidearms: ["Classic", "Shorty", "Frenzy", "Ghost", "Bandit", "Sheriff"] };
+const DM_C = { Rifles: ["Bulldog", "Guardian", "Warden", "Phantom", "Vandal"], SMGs: ["Stinger", "Spectre"], Snipers: ["Marshal", "Outlaw", "Operator"], Shotguns: ["Bucky", "Judge"], Heavies: ["Ares", "Odin"], Sidearms: ["Classic", "Shorty", "Frenzy", "Ghost", "Bandit", "Sheriff"] };
 Object.keys(DM_C).forEach((c) => { DM_C[c] = DM_C[c].filter((n) => !!WEAP[n]); });
 const DM_BW = ["Vandal", "Phantom", "Vandal", "Phantom", "Spectre", "Guardian", "Operator", "Sheriff"].filter((n) => !!WEAP[n]);
 const dmBW = () => DM_BW[Math.floor(Math.random() * DM_BW.length)] || "Classic";
@@ -12552,7 +12559,7 @@ function srOrbs(on) {
   [[-14, 0], [14, 0], [0, -12], [0, 12]].forEach(([x, z]) => {
     let p = [x, z]; try { p = xClear(x, z); } catch (e) {}
     const o = { x: p[0], z: p[1], m: null };
-    try { SR.geo = SR.geo || new THREE.OctahedronGeometry(0.35); SR.mat = SR.mat || new THREE.MeshBasicMaterial({ color: 0xb48cff }); o.m = new THREE.Mesh(SR.geo, SR.mat); o.m.position.set(o.x, 1, o.z); scene.add(o.m); } catch (e) {}
+    try { SR.geo = SR.geo || new THREE.OctahedronGeometry(0.35); SR.mat = SR.mat || new THREE.MeshBasicMaterial({ color: 0xb48cff }); o.m = new THREE.Mesh(SR.geo, SR.mat); o.y = groundAt(o.x, o.z, 0.2, player ? player.y || 0 : 0); o.m.position.set(o.x, o.y + 0.35, o.z); scene.add(o.m); } catch (e) {}
     SR.orbs.push(o);
   });
 }
@@ -13023,7 +13030,10 @@ function mpCliKD(k, d) { DM.k = {}; DM.d = {}; for (const n in k || {}) DM.k[mpI
   try { for (const n in SB) { SB[n].k = DM.k[n] || 0; SB[n].d = DM.d[n] || 0; } } catch (e) {} }
 function mpCliSnap(m) {
   if (!running || MP.st !== "game") return;
-  const now = performance.now(), seen = new Set(), units = new Map(bots.concat(allies).map((u) => [u.nid, u]));
+  const now = performance.now(), seen = mpCliSnap.seen || (mpCliSnap.seen = new Set()), units = mpCliSnap.units || (mpCliSnap.units = new Map());
+  seen.clear(); let count = 0, changed = false;
+  for (const L of [bots, allies]) for (const u of L) { count++; if (units.get(u.nid) !== u) changed = true; }
+  if (changed || units.size !== count) { units.clear(); for (const L of [bots, allies]) for (const u of L) units.set(u.nid, u); }
   // Preserve the server's sample spacing: packets delivered together after jitter must not become simultaneous poses.
   // A minimum observed clock offset removes clock skew without treating network delay as movement time.
   const stamped = Number.isFinite(m.serverTime) || Number.isFinite(m.c), stamp = Number.isFinite(m.serverTime) ? m.serverTime : stamped ? m.c : now; // P2P host snapshots carry the host clock (c)
@@ -13043,7 +13053,7 @@ function mpCliSnap(m) {
   for (const e of m.u || []) {
     if (e[0] === MP.me) { mpCliSelf(e); continue; }
     seen.add(e[0]); let u = units.get(e[0]);
-    if (!u) { const ally = (FV.tdm || MP.m5) && e[1] === MP.team; u = mpMkUnit(e, ally); (ally ? allies : bots).push(u); try { SB[u.name] = SB[u.name] || { k: 0, d: 0, a: 0, fb: 0, pd: 0, hs: 0, dmg: 0, pl: 0, sp: 0, ping: 0 }; } catch (er) {} }
+    if (!u) { const ally = (FV.tdm || MP.m5) && e[1] === MP.team; u = mpMkUnit(e, ally); (ally ? allies : bots).push(u); units.set(u.nid, u); try { SB[u.name] = SB[u.name] || { k: 0, d: 0, a: 0, fb: 0, pd: 0, hs: 0, dmg: 0, pl: 0, sp: 0, ping: 0 }; } catch (er) {} }
     const n = mpClean(e[2]); if (n && n !== u.name) { mpRename(u, n); XBA[n] = XAG[e[3]] ? e[3] : u.agent; }
     if (XAG[e[3]] && e[3] !== u.agent) { u.agent = e[3]; XBA[u.name] = e[3]; mpDropModel(u); }
     u.hum = e[12]; u.w = e[11]; u.armor = e[9]; u.ping = e[13];
@@ -13062,13 +13072,13 @@ function mpCliSnap(m) {
       if (B.length > 32) B.shift();
     }
   }
-  for (const L of [bots, allies]) for (let i = L.length - 1; i >= 0; i--) if (!seen.has(L[i].nid)) { scene.remove(L[i].g); L.splice(i, 1); }
+  for (const L of [bots, allies]) for (let i = L.length - 1; i >= 0; i--) if (!seen.has(L[i].nid)) { scene.remove(L[i].g); units.delete(L[i].nid); L.splice(i, 1); }
   mpCliKD(m.k, m.d);
   for (const v of m.ev || []) try {
     if (v[0] === "k") { const k = mpIn(v[1] || v[4] || "Utility"), d = mpIn(v[2]); /* blank killer: ownerless utility from an older server */ kfeed(k, d, !!v[3], v[4], v.length > 5 ? v[5] : null); if (d === "You") { try { xKLDie(k, v[4]); } catch (e) {} stats.d++; } if (k === "You") { stats.k++; if (v[3]) stats.hs = (stats.hs || 0) + 1; try { jKill(); } catch (e) {} } }
     else if (v[0] === "n") feed(v[1]);
     else if (v[0] === "sp") { feed(mpIn(v[2]) + " planted the Spike on " + v[3]); say("Spike planted · " + v[3], 1500); try { SFX.planted(); } catch (e) {} }
-    else if (v[0] === "s" && v[1] !== MP.me) { const u = bots.concat(allies).find((x) => x.nid === v[1]); if (u && u.alive && !u.fog) SFX.at(u.g.position, WEAP[v[2]] || v[2] === "Blade Storm" ? v[2] : "Vandal"); } // Blade Storm: a knife throw (ability_fp_runtime SFX.at route), not a Vandal
+    else if (v[0] === "s" && v[1] !== MP.me) { const u = units.get(v[1]); if (u && u.alive && !u.fog) SFX.at(u.g.position, WEAP[v[2]] || v[2] === "Blade Storm" ? v[2] : "Vandal"); } // Blade Storm: a knife throw (ability_fp_runtime SFX.at route), not a Vandal
   } catch (e) {}
   try { showStats(); } catch (e) {}
 }
@@ -13211,21 +13221,22 @@ function mpUI() {
   const room = mpEl("xOnRoom"); if (room) { const was = room.hidden; room.hidden = !inR;
     if (was && inR) { // a room just appeared: bring it into the panel's scrollport so the Start/Leave controls are never clipped below the fold (960x600 queue panel overflow)
       try { room.scrollIntoView({ block: "start" }); } catch (e) {} } }
+  const nameInput = mpEl("xOnName"); if(nameInput) nameInput.disabled = inR;
   const set = (id, t) => { const e = mpEl(id); if (e && e.textContent !== t) e.textContent = t; };
   box.querySelectorAll("[data-om]").forEach((b) => { b.setAttribute("aria-pressed", b.dataset.om === MP.mode ? "true" : "false"); b.disabled = busy || (inR && !(MP.role === "host" && !MP.pub)); });
   if (!inR) { mpMsg(MP.msg); return; }
   set("xOnCodeT", MP.pub ? "PUBLIC" : MP.code || "—"); const cp = mpEl("xOnCopy"); if (cp) cp.hidden = MP.pub || !MP.code;
   set("xOnRoomM", (MP.mode === "five" ? "Unrated (Spike) · 5v5" : MP.mode === "tdm" ? "Team Deathmatch" : "Deathmatch") + " · " + ((R && R.map) || MP.map || "ascent").replace(/^./, (c) => c.toUpperCase()) + (MP.pub && R && R.cd > 0 && (R.st || MP.st) === "room" ? " · starts in " + R.cd + " s" : "") + ((R && R.st) === "game" ? " · match in progress" : ""));
   const ul = mpEl("xOnList"); if (ul && R) { const s = R.pl.map((p) => p.n + "|" + p.p + "|" + p.h).join(","); if (ul.dataset.s !== s) { ul.dataset.s = s; ul.textContent = "";
-    R.pl.forEach((p) => { const li = document.createElement("li"), b = document.createElement("b"), sm = document.createElement("small"); b.textContent = p.n + (p.n === MP.name ? " (you)" : ""); sm.textContent = p.h ? "HOST" : p.p + " ms"; li.append(b, sm); ul.appendChild(li); });
-    for (let i = R.pl.length; i < MP_MAX; i++) { const li = document.createElement("li"), b = document.createElement("b"); li.className = "bot"; b.textContent = "Bot"; li.appendChild(b); ul.appendChild(li); } } }
+    R.pl.forEach((p) => { const li = document.createElement("li"), b = document.createElement("b"), sm = document.createElement("small"); b.textContent = p.n + (p.n === MP.name ? " (you)" : ""); sm.textContent = (p.h ? "HOST · " : "") + (p.p == null ? "Measuring…" : p.p + " ms"); li.append(b, sm); ul.appendChild(li); });
+    for (let i = R.pl.length; R.botsEnabled !== false && i < MP_MAX; i++) { const li = document.createElement("li"), b = document.createElement("b"); li.className = "bot"; b.textContent = "Bot"; li.appendChild(b); ul.appendChild(li); } } }
   const host = MP.role === "host", st = mpEl("xOnStart"); if (st) { st.hidden = !host; st.disabled = MP.st === "game" || !!MP.starting; st.textContent = MP.pub ? "Start now" : "Start"; }
   const ms = mpEl("xOnMap"); if (ms) { ms.disabled = !host || MP.pub; if (ms.value !== MP.map) ms.value = MP.map; }
   if (!host) set("xOnWait", MP.st === "post" ? "Match over · waiting for the host" : "Waiting for the host to start"); else set("xOnWait", "");
   mpMsg(MP.msg);
 }
 try {
-  const nm = mpEl("xOnName"); if (nm) { nm.value = MP.name; nm.addEventListener("input", () => { const v = mpClean(nm.value); if (v) MP.name = v; }); }
+  const nm = mpEl("xOnName"); if (nm) { nm.value = MP.name; nm.addEventListener("input", () => { const v = mpClean(nm.value); if (MP.on) { nm.value = MP.name; return; } if (v) MP.name = v; }); }
   mpEl("xOn").querySelectorAll("[data-om]").forEach((b) => b.addEventListener("click", () => { MP.mode = b.dataset.om; if (MP.role === "host") mpRoomCast(); mpUI(); }));
   mpEl("xOnQuick").addEventListener("click", () => mpQuick(MP.mode));
   mpEl("xOnCreate").addEventListener("click", () => mpCreate(false, MP.mode));
@@ -14204,7 +14215,11 @@ function xvFPTick(dt) {
   if(rp>=0){XV.event=null;xvFPPlay(F,'reload',rp);}else if(VM.ins>0&&F.kind!=='inspect')xvFPPlay(F,'inspect');else if(XV.event){F.kind=null;xvFPPlay(F,XV.event);XV.event=null;}else if(F.kind==='inspect'&&VM.ins<=0)xvFPPlay(F,'idle');else if(F.kind==='reload'||(F.kind!=='idle'&&F.age>(F.duration||(F.action?F.action.getClip().duration:.4))))xvFPPlay(F,'idle');
   F.am.update(dt);F.gm.update(dt);if(rp>=0)xvFPPlay(F,'reload',rp);F.age+=dt;
   // Match the source's narrower viewmodel FOV while keeping the game's world-camera FOV.
-  const s=Math.tan(THREE.MathUtils.degToRad(camera.fov/2))/Math.tan(THREE.MathUtils.degToRad(43.383/2));F.root.scale.set(s,s,1);F.root.position.set(F.origin.x*s,F.origin.y*s,F.origin.z);F.root.position.y+=Math.sin(VM.bob||0)*.003;
+  const s=Math.tan(THREE.MathUtils.degToRad(camera.fov/2))/Math.tan(THREE.MathUtils.degToRad(43.383/2));F.root.scale.set(s,s,1);F.root.position.set(F.origin.x*s,F.origin.y*s,F.origin.z);F.root.position.y+=Math.sin(VM.bob||0)*.003*(1-xAD.k);
+  // Align the authored optic socket to the camera's centre ray, in camera space.
+  // Keep depth unchanged so zoom cannot pull the weapon through the near plane.
+  const sight=F.sight||(F.sight=F.ws.getObjectByName('ScopeTarget')||F.ws.getObjectByName('ScopeTargetSocket'));
+  if(sight&&xAD.k>0){F.root.updateMatrixWorld(true);const q=F.sightPoint||(F.sightPoint=new THREE.Vector3());sight.getWorldPosition(q);camera.worldToLocal(q);F.root.position.x-=q.x*xAD.k;F.root.position.y-=q.y*xAD.k;}
 }
 {const fire=vmFire;vmFire=function(){const r=fire.apply(this,arguments);XV.event='fire';return r;};const tick=vmTick;vmTick=function(dt){(XV.hidden||[]).forEach(([o,v])=>o.visible=v);XV.hidden=[];tick(dt);try{xvFPTick(Math.min(.1,dt||.016));}catch(e){if(!XV.fpErr){XV.fpErr=String(e);console.warn('native viewmodel',e);}}};}
 // Replace generic imported map props and box cover while retaining the existing collision/navigation layout.
@@ -14749,7 +14764,7 @@ xTag=function(t){if(!t)return;t.tagT=.5;t.tagK=.275;t.tagS=0;};
 moveP=function(dt,run,hold){
  const P=player;if(!P)return;const w=vfWeapon(),p=vfProfile(w),kn=w==='Knife',kk=J.dr?{}:keys,fx=-Math.sin(yaw),fz=-Math.cos(yaw);let x=0,z=0;if(kk.KeyW){x+=fx;z+=fz;}if(kk.KeyS){x-=fx;z-=fz;}if(kk.KeyA){x+=fz;z-=fx;}if(kk.KeyD){x-=fz;z+=fx;}
  P.tagT=Math.max(0,(P.tagT||0)-dt);let speed=6.75*(kn?1:p.runSpeedMultiplier||.8)*(ads&&p.adsStats?p.adsStats.runSpeedMultiplier:1);const dis=J.dis>0;/* Reyna's Dismiss: 12 m/s top speed (wiki v8.11; server reyna.js DISMISS), intangible - no slow, no tag */if(dis)speed=12;else if(typeof sgSlow==='function')speed*=sgSlow(P);
- const native=typeof nmActive==='function'&&nmActive(),world={ground:(x,z,y)=>groundAt(x,z,.3,y),blocked:(x,z,r,y,h)=>native?sgBlk(x,z,r,y)||nmBlocked(native,x,z,r,y,h):blocked(x,z,r,y),leash:native?(x,z,y,x0,z0)=>nmLeash(native,x,z,y,x0,z0):null,ceiling:native?(x,z,low,high)=>{const ray=moveP.cr||(moveP.cr=new THREE.Ray(new THREE.Vector3(),new THREE.Vector3(0,1,0)));ray.origin.set(x,low+.01,z);ray.direction.set(0,1,0);const hit=nmRayFirst(native.bvh,ray,THREE.DoubleSide);return !!hit&&hit.distance<high-low;}:null/* perf2: one scratch ray, allocation-free cast */,ropes:native&&native.ropes||null};/* rope ascenders (shared motor ROPES; native_maps_runtime nmRopes) */
+ const native=typeof nmActive==='function'&&nmActive(),world={ground:(x,z,y)=>groundAt(x,z,.3,y),blocked:(x,z,r,y,h)=>(typeof tdmRoomBlock==='function'&&tdmRoomBlock(P,x,z,r,y))|| (native?sgBlk(x,z,r,y)||nmBlocked(native,x,z,r,y,h):blocked(x,z,r,y)),leash:native?(x,z,y,x0,z0)=>nmLeash(native,x,z,y,x0,z0):null,ceiling:native?(x,z,low,high)=>{const ray=moveP.cr||(moveP.cr=new THREE.Ray(new THREE.Vector3(),new THREE.Vector3(0,1,0)));ray.origin.set(x,low+.01,z);ray.direction.set(0,1,0);const hit=nmRayFirst(native.bvh,ray,THREE.DoubleSide);return !!hit&&hit.distance<high-low;}:null/* perf2: one scratch ray, allocation-free cast */,ropes:native&&native.ropes||null};/* rope ascenders (shared motor ROPES; native_maps_runtime nmRopes) */
  const dsh=!!J.dash,bx0=P.x,bz0=P.z;if(dsh){x=0;z=0;}/* Jett Tailwind dash: movement keys are ignored while it runs (server the same) */
  const result=VF.model.step(P,{x,z,jump:!!kk.Space,duck:!!(kk.ControlLeft||kk.ControlRight),walk:!!(kk.ShiftLeft||kk.ShiftRight),speed,tag:dis?1:xTagK(P),hold:!!hold||!!J.dr,use:!!kk.KeyF,f:(kk.KeyW?1:0)-(kk.KeyS?1:0),pitch:typeof pitch==='number'?pitch:0},dt,world);/* use / f / pitch: rope ascenders (Use grabs, W / S climb look-relative); the server reads the same from its input message (u, f, p) */
  if(dsh&&!VF.model.dashStep(P,J.dash,dt,world))J.dash=null;
@@ -15049,7 +15064,7 @@ MP_V=2;
 // WebSocket is reliable and ordered: never queue obsolete movement behind a slow uplink. Keep click pulses until an
 // input can actually be sent. Commands stay reliable; only replaceable input/heartbeat traffic is skipped under pressure.
 function netSend(m){const ws=NET.socket;if(!ws||ws.readyState!==1)return false;if((m.t==='in'||m.t==='hb'||m.t==='pi')&&ws.bufferedAmount>16384){if(m.t==='in'){NET.firePend=NET.firePend||m.fire;NET.firePendH=NET.firePendH||m.kh;}return false;}try{if(Number.isSafeInteger(NET.ack)&&['in','hb','pi','ready'].includes(m.t))m={...m,q:NET.ack};ws.send(JSON.stringify(m));return true;}catch(e){return false;}}
-const netReset0=mpReset;mpReset=function(){const ws=NET.socket;NET.socket=null;clearTimeout(NET.retryTimer);NET.retryTimer=0;NET.epoch=(NET.epoch||0)+1;NET.reconnecting=false;NET.resume=null;NET.ack=null;NET.openAt=NET.lastSeen=NET.watchAt=NET.retryUntil=NET.loadAt=NET.lpAt=NET.hbAt=0;NET.recoverGame=NET.recoverLoading=false;NET.ready=false;NET.latest=null;NET.tw=null;NET.dashUntil=0;NET.inLog=[];NET.path=[];NET.correction=null;MP.snapClock=null;netSkyeState=null;netReyna=null;netChannel=null;netReynaClear();netClearEffects();const hud=mpEl('xMpHud');if(hud)hud.style.display='none';netWeapon='';netReload=false;NET.hid=0;if(ws)try{ws.close();}catch(e){}return netReset0();};
+const netReset0=mpReset;mpReset=function(){const ws=NET.socket;NET.socket=null;clearTimeout(NET.retryTimer);NET.retryTimer=0;NET.epoch=(NET.epoch||0)+1;NET.reconnecting=false;NET.resume=null;NET.ack=null;NET.wireBase=null;NET.openAt=NET.lastSeen=NET.watchAt=NET.retryUntil=NET.loadAt=NET.lpAt=NET.hbAt=0;NET.recoverGame=NET.recoverLoading=false;NET.ready=false;NET.tab=0;NET.latest=null;NET.tw=null;NET.dashUntil=0;NET.inLog=[];NET.path=[];NET.correction=null;MP.snapClock=null;netSkyeState=null;netReyna=null;netChannel=null;netReynaClear();netClearEffects();const hud=mpEl('xMpHud');if(hud)hud.style.display='none';netWeapon='';netReload=false;NET.hid=0;if(ws)try{ws.close();}catch(e){}return netReset0();};
 let netSessionToken=null,netTokenRequest=null,netTokenPersistent=true;
 async function netProfileToken(){if(netSessionToken)return netSessionToken;try{netSessionToken=localStorage.getItem('vs.serverToken');}catch(e){}if(netSessionToken)return netSessionToken;if(!netTokenRequest)netTokenRequest=(async()=>{try{const r=await fetch(NET.url+'/profile',typeof AbortSignal!=='undefined'&&AbortSignal.timeout?{signal:AbortSignal.timeout(6000)}:undefined);if(!r.ok)return null;const p=await r.json();if(typeof p.token!=='string'||!p.token)return null;netSessionToken=p.token;try{localStorage.setItem('vs.serverToken',p.token);}catch(e){netTokenPersistent=false;}return p.token;}catch(e){return null;}finally{netTokenRequest=null;}})();return netTokenRequest;}
 // Server frames are shape-checked before anything stores or replays them (the frame loop re-reads NET.latest and round
@@ -15103,6 +15118,34 @@ function nclRs(r){if(!nclObj(r)||r.tab!==1&&(!Array.isArray(r.sp)||r.sp.length<9
   if(r.tp!==undefined){if(nclNum(r.tp))r.tp=nclCl(r.tp,0,200);else delete r.tp;}if(r.uc!==undefined){if(nclNum(r.uc))r.uc=nclCl(r.uc,1,200);else delete r.uc;}
   if(r.sp){const p=r.sp;r.sp=[nclStr(p[0])?p[0]:'',nclNum(p[1])?Math.floor(p[1]):-1,nclNum(p[2])?nclCl(p[2],-1e4,1e4):0,nclNum(p[3])?nclCl(p[3],-1e4,1e4):0,nclNum(p[4])?nclCl(p[4],0,1e4):0,nclNum(p[5])?nclCl(p[5],0,1e4):0,nclNum(p[6])?nclCl(p[6],0,1e4):0,nclStr(p[7])?p[7]:'',p[8]===1||p[8]===true?1:0];}
   return r;}
+// Session-local lossless state decoder. Private rows are updated only after validating every patch;
+// presentation rows and mutable round-state objects are copied before validation/gameplay handlers.
+function netReceive(data){let m;try{m=JSON.parse(data);}catch{return null;}m=netDecode(m);return m?netClean(m):null;}
+function netDecode(m){
+ if(!m||typeof m!=='object')return m;
+ if(m.t==='start'){NET.wireBase=null;return m;}
+ if(m.t!=='s'&&m.t!=='sd')return m;
+ if(m.t==='s'&&!Number.isSafeInteger(m.q))return m; // Older workers keep the original validator path.
+ let raw=m;
+ if(m.t==='sd'){
+  const old=NET.wireBase;
+  if(!old||m.b!==old.q||!Number.isSafeInteger(m.q)||m.q<=m.b||!nclObj(m.c)||!Array.isArray(m.u)||!Array.isArray(m.ev))return netDeltaMiss();
+  if(m.r!==undefined&&(!Array.isArray(m.r)||!m.r.every(nclStr))||m.rr!==undefined&&(!Array.isArray(m.rr)||!m.rr.every(nclStr))||m.rs!==undefined&&!nclObj(m.rs))return netDeltaMiss();
+  // Spread creates own data properties, including '__proto__'; never use Object.assign on wire keys.
+  raw={...old,...m.c,t:'s',q:m.q,u:old.u,ev:m.ev};
+  if(m.r)for(const k of m.r){if(['t','q','u','ev'].includes(k))return netDeltaMiss();delete raw[k];}
+  // Validate the entire patch set first so a malformed packet cannot partially modify the baseline.
+  for(const p of m.u){if(!Array.isArray(p)||p.length<3||p.length%2!==1||!Number.isInteger(p[0])||p[0]<0||p[0]>=raw.u.length)return netDeltaMiss();const row=raw.u[p[0]];for(let i=1;i<p.length;i+=2){const k=p[i],v=p[i+1];if(!Number.isInteger(k)||k<=0||k>=row.length||(k===1||k>=4&&k<=9||k===14)&&!nclNum(v)||(k===2||k===3||k===11)&&!nclStr(v))return netDeltaMiss();}}
+  for(const p of m.u){const row=raw.u[p[0]];for(let i=1;i<p.length;i+=2)row[p[i]]=p[i+1];}
+  if(m.rs!==undefined){raw.rs={...old.rs,...m.rs};if(m.rr)for(const k of m.rr)delete raw.rs[k];}
+ }
+ if(!Array.isArray(raw.u)||!raw.u.every(nclRow))return netDeltaMiss();
+ if(Number.isSafeInteger(raw.q))NET.wireBase=raw;
+ const out={...raw,u:raw.u.map(r=>r.slice())};
+ if(nclObj(raw.rs)){const r=out.rs={...raw.rs};if(nclObj(r.ab)){r.ab={...r.ab};if(nclObj(r.ab.cool))r.ab.cool={...r.ab.cool};}if(nclObj(r.reyna))r.reyna={...r.reyna};if(nclObj(r.cr))r.cr={...r.cr};}
+ return out;
+}
+function netDeltaMiss(){NET.wireBase=null;const now=performance.now();if(!(now-(NET.resyncAt||-1e9)<1000)){NET.resyncAt=now;netSend({t:'resync'});}return null;}
 function netConnect(create,code,publicRoom){
  if(create&&['ascent','bind','haven','split','lotus','breeze','random'].includes(window.xQMap))MP.map=window.xQMap;
  mpReset();NET.seatTries=0;NET.seat=null;MP.st='conn';mpMsg(create?'Creating server room…':'Joining server room…');mpUI();NET.host=create;
@@ -15112,11 +15155,11 @@ function netOpenSocket(create,code,publicRoom){
  const q=new URLSearchParams({code,create:create?'1':'0',mode:MP.mode,map:MP.map==='random'?['ascent','bind','haven','split','lotus','breeze'][Math.floor(Math.random()*6)]:MP.map,public:publicRoom?'1':'0'});
  if(NET.reconnecting&&NET.resume)q.set('resume',NET.resume);
  let ws;try{ws=new WebSocket(NET.url.replace(/^http/,'ws')+'/connect?'+q);}catch(e){return netFinishConnection({code:1006,reason:''});}
- const old=NET.socket;NET.socket=ws;NET.openAt=NET.lastSeen=performance.now();NET.ack=null;NET.welcomed=false;
+ const old=NET.socket;NET.socket=ws;NET.openAt=NET.lastSeen=performance.now();NET.ack=null;NET.wireBase=null;NET.resyncAt=0;NET.welcomed=false;
  if(old&&old!==ws)try{old.close();}catch(e){}
- ws.onopen=async()=>{const token=await netProfileToken();if(NET.socket===ws){netSend({t:'hi',n:MP.name,ag:J.pick||'Jett',token,resume:NET.resume||undefined,batch:1,ack:1,sk:typeof xskWire==='function'?xskWire():undefined});netHbStart();}};
+ ws.onopen=async()=>{const token=await netProfileToken();if(NET.socket===ws){netSend({t:'hi',n:MP.name,ag:J.pick||'Jett',token,resume:NET.resume||undefined,batch:1,ack:1,delta:1,sk:typeof xskWire==='function'?xskWire():undefined});netHbStart();}};
  ws.onmessage=e=>{
-  if(NET.socket!==ws)return;let m;try{m=JSON.parse(e.data);}catch(e){return;}m=netClean(m);if(!m)return;
+  if(NET.socket!==ws)return;const m=netReceive(e.data);if(!m)return;
   NET.lastSeen=MP.last=performance.now();
   try{netOnMsg(m);}catch(err){NET.dropped=(NET.dropped||0)+1;const w=String(err&&err.message||err).slice(0,160)+' @'+m.t;NET.drops=NET.drops||[];if(NET.drops.length<20&&!NET.drops.includes(w))NET.drops.push(w);}
  };
@@ -15124,11 +15167,11 @@ function netOpenSocket(create,code,publicRoom){
   /* Seated: 'welcome', or for a worker that never sends one (the deployed worker as of 2026-10-26 sends hello / room / start / s
      only) the room, the match start or a snapshot. The 20 s handshake watchdog used to fire on those workers mid-round (queue 1e). */
   if(m.t==='room'||m.t==='start'||m.t==='s')NET.welcomed=true;
-  if(m.t==='hello'||m.t==='hb')return;
+  if(m.t==='ping'){netSend({t:'pong',c:m.c});return;}if(m.t==='hello'||m.t==='hb')return;
   if((m.t==='sk'||m.t==='sks'||m.t==='skr')&&typeof xskNet==='function')return xskNet(m);
   if(m.t==='welcome'){NET.welcomed=true;if(typeof m.resume==='string')NET.resume=m.resume;MP.name=String(m.name);MP.me=m.you;const input=mpEl('xOnName');if(input)input.value=MP.name;return;}
   if(m.t==='room'){
-   MP.on=true;MP.role='client';MP.room=m;MP.mode=m.mode;MP.map=m.map;if(MP.st!=='game'&&MP.st!=='post')MP.st='room';NET.host=!!m.pl.find(p=>p.n===MP.name&&p.h);
+   MP.on=true;MP.role='client';MP.room=m;MP.mode=m.mode;MP.map=m.map;if(MP.st!=='game'&&MP.st!=='post')MP.st='room';NET.host=!!m.pl.find(p=>(p.id!=null?p.id===MP.me:p.n===MP.name)&&p.h);
    if(NET.reconnecting&&!NET.recoverGame&&!NET.recoverLoading){NET.reconnecting=false;NET.retryUntil=0;}
    mpMsg(NET.reconnecting?'Reconnecting to game server…':'Connected to game server');return mpUI();
   }
@@ -15150,7 +15193,7 @@ function netOpenSocket(create,code,publicRoom){
   if(m.t==='s'){
    if(Number.isSafeInteger(m.q)&&m.q>=0)NET.ack=m.q;
    NET.latest=m;NET.receivedAt=performance.now();NET.serverAge=Date.now()-m.serverTime;NET.tickMs=m.tickMs;
-   if(NET.ready){mpCliMsg(m);if(m.rs)mpCliRS(m.rs);netSyncEffects(m.fx||[]);netSeatCheck(m);}return;
+   if(NET.ready){mpCliMsg(m);if(m.rs)mpCliRS(m.rs);netSyncEffects(m.fx||[]);netSyncSmokes(m.fx||[]);netSeatCheck(m);}return;
   }
   if(m.t==='ac'&&m.ag==='Sage'&&m.k==='c')return;
   if(m.t==='ao'){if(m.rs)mpCliRS(m.rs);if(!m.ok&&m.k==='e'&&J.pick==='Jett'&&J.dash){J.dash=null;NET.dashUntil=0;}if(!m.ok){sgNo();say('Ability unavailable or target invalid',1000);}else if(J.pick==='Omen'&&(m.k==='x'||m.k==='c'))say(m.k==='x'?'From the Shadows · 4 s':'Shrouded Step · 1.2 s',1000);return;}
@@ -15227,6 +15270,8 @@ mpJoin=function(code){code=String(code||'').toUpperCase();if(!/^[A-HJ-NP-Z2-9]{6
 mpQuick=async function(mode){MP.mode=mode||MP.mode;mpMsg('Finding a live server room…');try{const r=await fetch(NET.url+'/rooms'),data=await r.json(),room=data.rooms.find(r=>r.mode===MP.mode&&r.players<10&&(window.xQMap==='random'||r.map===(window.xQMap||MP.map)));if(room)netConnect(false,room.code,true);else mpCreate(true,MP.mode);}catch(e){mpMsg('Room list unavailable. Try a private room.');}};
 mpStart=function(){if(NET.host&&MP.st==='room')netSend({t:'start'});};
 const netUI0=mpUI;mpUI=function(){netUI0();const start=mpEl('xOnStart');if(start){start.hidden=!NET.host;start.disabled=MP.st!=='room';}const map=mpEl('xOnMap');if(map){map.disabled=!!MP.on;/* outside a room it is the lobby map choice that Create / Quick Match use (window.xQMap); in a room, the room's map */if(!MP.on&&typeof window.xQMap==='string'&&map.value!==window.xQMap)map.value=window.xQMap;}const wait=mpEl('xOnWait');if(wait&&NET.host)wait.textContent='Server room ready';document.querySelectorAll('#xOn [data-om]').forEach(b=>{b.disabled=MP.on;});};
+// Bots are a room setting; the server independently checks the leader and lobby phase.
+const netBotsUI0=mpUI;mpUI=function(){netBotsUI0();const box=mpEl('xOnRoom');if(!box)return;let row=mpEl('xOnBotsRow'),input=mpEl('xOnBots');if(!row){row=document.createElement('label');row.id='xOnBotsRow';input=document.createElement('input');input.id='xOnBots';input.type='checkbox';input.addEventListener('change',()=>netSend({t:'bots',on:!!input.checked}));row.appendChild(input);row.appendChild(document.createTextNode(' Bots'));box.appendChild(row);}row.hidden=!NET.host||!netFeat('bots')||MP.mode==='skm';input.disabled=MP.st!=='room';input.checked=!(MP.room&&MP.room.botsEnabled===false);};
 // Movement reconciliation: the server echoes the last input it applied (row[19]) and how long it has applied it (row[20]).
 // The page keeps its predicted path and the send time of every input, and compares the server position with where its own
 // prediction was at that moment, not with where it is now. The current position runs ahead of every snapshot by the round
@@ -15242,11 +15287,11 @@ function netCorrect(dt){const C=NET.correction;if(!C||!player)return;dt=Math.max
 function netTwReady(){const T=NET.tw;if(!T||J.dash)return false;const el=(performance.now()-T.at)/1000;return T.a-el<=0&&T.u-el>0;}/* server status: Tailwind windup over, window still open */
 {const move0=moveP;moveP=function(){if(NET.socket)netCorrect(arguments[0]);const r=move0.apply(this,arguments);if(NET.socket&&player){const now=typeof XRT!=='undefined'&&XRT.at!=null?XRT.at:performance.now();NET.path.push({t:now,x:player.x,y:player.y||0,z:player.z});while(NET.path.length&&NET.path[0].t<now-5000)NET.path.shift();}return r;};}
 function netReconcile(e,ref){const ex=e[4]-ref.x,ey=e[5]-ref.y,ez=e[6]-ref.z,eh=Math.hypot(ex,ez);if(NET.dashUntil>performance.now()&&eh<2.5&&Math.abs(ey)<1){NET.correction=null;return 'dash';}/* predicted dash has a different tick phase: wait until it settles */if(eh>1||Math.abs(ey)>1){NET.correction=null;player.x+=ex;player.y+=ey;player.z+=ez;netShiftPath(ex,ey,ez);return 'snap';}NET.correction={x:eh<.05?0:ex,y:Math.abs(ey)<.15?0:ey,z:eh<.05?0:ez};if(!NET.correction.x&&!NET.correction.y&&!NET.correction.z){NET.correction=null;return 'kept';}return 'eased';}
-const netSelf0=mpCliSelf;mpCliSelf=function(e){const seq=MP.sq;netSelf0(e);if(!NET.socket)return;const ref=seq===e[14]?netPredicted(e[19],e[20]):null;if(seq!==e[14]){player.x=e[4];player.y=e[5];player.z=e[6];NET.path.length=0;NET.correction=null;}else if(ref)NET.lastFix=netReconcile(e,ref);else{NET.correction=null;NET.lastFix='waiting';/* startup/resume/stall: wait for an acknowledged predicted sample; comparing a past snapshot with today's position reintroduces rubber-banding */}if(netEquipWant&&(e[11]===netEquipWant||performance.now()>netEquipUntil))netEquipWant=null;const held=rw==='knife'?'Knife':wName();/* a swap the server has not applied yet: its snapshots still name the old gun (and its ammo) for a round trip; reverting to it lost the swap (netWeapon was reset, so the equip was never sent) */
+const netSelf0=mpCliSelf;mpCliSelf=function(e){if(Number.isFinite(e[13])&&e[13]>0)MP.ping=e[13];const seq=MP.sq;netSelf0(e);if(!NET.socket)return;const ref=seq===e[14]?netPredicted(e[19],e[20]):null;if(seq!==e[14]){player.x=e[4];player.y=e[5];player.z=e[6];NET.path.length=0;NET.correction=null;}else if(ref)NET.lastFix=netReconcile(e,ref);else{NET.correction=null;NET.lastFix='waiting';/* startup/resume/stall: wait for an acknowledged predicted sample; comparing a past snapshot with today's position reintroduces rubber-banding */}if(netEquipWant&&(e[11]===netEquipWant||performance.now()>netEquipUntil))netEquipWant=null;const held=rw==='knife'?'Knife':wName();/* a swap the server has not applied yet: its snapshots still name the old gun (and its ammo) for a round trip; reverting to it lost the swap (netWeapon was reset, so the equip was never sent) */
  /* TDM: a primary the current stage does not allow (the page's own start loadout) is not ours: 1 would equip a gun the server refuses *//* not in Escalation (it plays this TDM path with the server's level guns, none of them TDM stage guns) and never the gun the server says we hold (e[11]): dropping it made netAdoptWeapon put it back on every snapshot (20 Hz re-equip: the draw never finished, no shot, the viewmodel rebuilt each time) */if(typeof FV!=='undefined'&&FV.tdm&&!MP.m5&&MP.gm!=='esc'&&FV.pri&&FV.pri!==e[11]&&typeof tdmOk==='function'&&!tdmOk(FV.pri,tdmTier())&&!netEquipWant){const was=rw==='pri';FV.pri=null;if(was){netRec=true;try{swapW('pis');}finally{netRec=false;}}slots.pri={};}
  if(!netEquipWant&&e[11]&&WEAP[e[11]]&&wName()!==e[11]&&rw!=='knife'){netAdoptWeapon(e[11]);netWeapon=e[11];}const same=(rw==='knife'?'Knife':wName())===e[11];/* ammo only for the gun the server holds: mid-swap it was the other gun's, written into this slot */if(same&&e[16]!=null&&MP.m5){rsv=e[16];if(slots[rw])slots[rw].rsv=rsv;}if(same&&e[15]!=null&&!(reloading>0)){/* reloading > 0, not truthiness: a finished reload can leave it a hair below 0 */if(rw!=='knife')ammo=e[15];if(slots[rw])slots[rw].ammo=ammo;}updHud();};
 const netWalls=new Map(),netCbs=new Map();/* Jett Cloudburst rows (fx kind 'cb'): id -> {m: projectile mesh, s: smoked} */
-function netClearEffects(){document.getElementById('netBlind')?.remove();for(const m of netWalls.values()){scene.remove(m);m.children.forEach(q=>{q.geometry.dispose();q.material.dispose();});}netWalls.clear();for(const id of [...netDevs.keys()])netDevDrop(id);netOwnDevs.clear();}/* a barrier is a Group of segment meshes (no geometry of its own) */
+function netClearEffects(){for(const c of netCbs.values())if(c.m)jRel(c.m);netCbs.clear();for(const S of J.smokes||[])if(S.netId!=null)jRel(S.m);if(J.smokes)J.smokes=J.smokes.filter(S=>S.netId==null);document.getElementById('netBlind')?.remove();for(const m of netWalls.values()){scene.remove(m);m.children.forEach(q=>{q.geometry.dispose();q.material.dispose();});}netWalls.clear();for(const id of [...netDevs.keys()])netDevDrop(id);netOwnDevs.clear();}/* a barrier is a Group of segment meshes (no geometry of its own) */
 // Others' Cloudbursts from the snapshot: the projectile while it flies (s 0), then the smoke where the server landed it (s 1,
 // once per id, tl seconds left). Our own Cloudburst flies locally (jCbTick) and is skipped here.
 function netSyncCb(rows){const seen=new Set();for(const e of rows){if(e.kind!=='cb'||!Number.isFinite(e.id)||e.o===MP.me||!Array.isArray(e.p)||e.p.length!==3||!e.p.every(Number.isFinite))continue;seen.add(e.id);let c=netCbs.get(e.id);if(!c){c={m:null,s:false};netCbs.set(e.id,c);}
@@ -15256,14 +15301,15 @@ function netSyncCb(rows){const seen=new Set();for(const e of rows){if(e.kind!=='
 // Persistent devices from the snapshot (server devices.js deviceRows: {kind:'dev', d, o, tm, p, q, yaw, hp, fp}): others' Turret,
 // Alarmbot, Trapwire, Trademark, Blast Pack, Spycam and Owl Drone drawn with the offline placeholders and swapped for their real
 // models (xvDevice, as xvDevicesTick does offline). Our own are drawn by the local cast. A row that stops coming is removed.
-const netDevs=new Map(),NET_DEV={turret:['turret',.9],alarmbot:['alarmbot',.45],trademark:['trademark',.3],blastpack:['blast-pack',.22],spycam:['spycam',.25],owl:['owl-drone',.35],trapwire:['trapwire',.2]};
+const netDevs=new Map(),NET_DEV={hunter:null,turret:['turret',.9],alarmbot:['alarmbot',.45],trademark:['trademark',.3],blastpack:['blast-pack',.22],spycam:['spycam',.25],owl:['owl-drone',.35],trapwire:['trapwire',.2]};
 function netDevPart(kind,al){const col=al?0x3fb4ff:0xff4655;let m,own=false;
+ if(kind==='hunter')return srHunterMesh(col);
  if(kind==='turret')m=new THREE.Mesh(kjTur,okMat(col));else if(kind==='alarmbot')m=new THREE.Mesh(kjBox,okMat(col));
  else if(kind==='trademark'){m=new THREE.Mesh(orbGeo,okMat(0xd8b04a));m.scale.set(1.6,.5,1.6);}
  else if(kind==='blastpack'||kind==='owl'){m=new THREE.Mesh(orbGeo,okMat(kind==='owl'?0x45d0ff:0xffb21f));m.scale.setScalar(kind==='owl'?.5:.25);}
  else{m=new THREE.Mesh(new THREE.BoxGeometry(kind==='spycam'?.25:.2,kind==='spycam'?.25:.2,kind==='spycam'?.25:.2),okMat(kind==='spycam'?0x3fd0c0:0xe8e8e4));own=true;}
  m.userData.netDev=kind;m.userData.ownGeo=own;m.raycast=()=>{};scene.add(m);const D=NET_DEV[kind];try{if(D&&typeof xvDevice==='function')xvDevice(m,D[0],kind==='blastpack'||kind==='owl'?D[1]/Math.max(.01,m.scale.y):D[1]);/* as xvDevicesTick: the pack's height is divided by its placeholder scale, the Trademark's is not */}catch(err){}return m;}
-function netDevFree(m){if(!m)return;scene.remove(m);try{if(typeof xvDeviceReset==='function')xvDeviceReset(m);}catch(err){}if(m.material&&!m.userData.shared)m.material.dispose();/* fireMat is a shared cache */if(m.userData.ownGeo&&m.geometry)m.geometry.dispose();}
+function netDevFree(m){if(!m)return;if(m.userData.hunter){scene.remove(m);m.traverse(o=>{if(o.isMesh){o.geometry.dispose();o.material.dispose();}});return;}scene.remove(m);try{if(typeof xvDeviceReset==='function')xvDeviceReset(m);}catch(err){}if(m.material&&!m.userData.shared)m.material.dispose();/* fireMat is a shared cache */if(m.userData.ownGeo&&m.geometry)m.geometry.dispose();}
 function netDevDrop(id){const d=netDevs.get(id);if(!d)return;d.parts.forEach(netDevFree);netDevs.delete(id);}
 // Our own devices are drawn by the local cast, which never learns that the server destroyed one (shot down, Spycam / Owl
 // Drone bodies, a detonated or expired Blast Pack): it stayed drawn (and the Spycam viewable) until round end. A device
@@ -15278,8 +15324,8 @@ function netOwnGone(d){const p=d.p,nr=(o,r)=>!!o&&Number.isFinite(o.x)&&Math.hyp
  else if(d.k==='trapwire'){const i=BC.cw.findIndex(W=>nr(W.a,2.5)||nr(W.b,2.5));if(i>=0){cyRm(BC.cw[i]);BC.cw.splice(i,1);}}
  else if(d.k==='blastpack'){const i=RS.pk.findIndex(o=>o.m&&nr(o.m.position,4));if(i>=0){scene.remove(RS.pk[i].m);RS.pk.splice(i,1);}}
  else if(d.k==='owl'){if(J.dr&&!J.dr.tb&&J.dr.t>.4)drEnd();}}
-function netSyncDevices(rows){const seen=new Set(),own=new Set();for(const r of rows){if(r.kind!=='dev'||!Object.hasOwn(NET_DEV,r.d)||!Number.isFinite(r.id)||!Array.isArray(r.p)||r.p.length!==3||!r.p.every(Number.isFinite))continue;if(r.o===MP.me){own.add(r.id);netOwnDevs.set(r.id,{k:r.d,p:r.p.slice()});continue;}/* our own: the local cast draws it (netOwnGone takes it away when the server's row stops) */
-  seen.add(r.id);let d=netDevs.get(r.id);if(d&&d.k!==r.d){netDevDrop(r.id);d=null;}const al=allies.some(a=>a&&a.nid===r.o);
+function netSyncDevices(rows){const seen=new Set(),own=new Set();for(const r of rows){if(r.kind!=='dev'||!Object.hasOwn(NET_DEV,r.d)||!Number.isFinite(r.id)||!Array.isArray(r.p)||r.p.length!==3||!r.p.every(Number.isFinite))continue;if(r.o===MP.me&&r.d!=='hunter'){own.add(r.id);netOwnDevs.set(r.id,{k:r.d,p:r.p.slice()});continue;}/* our own: the local cast draws it (netOwnGone takes it away when the server's row stops) */
+  seen.add(r.id);let d=netDevs.get(r.id);if(d&&d.k!==r.d){netDevDrop(r.id);d=null;}const al=r.tm===MP.team||allies.some(a=>a&&a.nid===r.o);
   if(!d){d={k:r.d,parts:[],al};if(r.d==='trapwire'){d.parts.push(netDevPart('trapwire',al),netDevPart('trapwire',al));const w=new THREE.Mesh(new THREE.BoxGeometry(.03,.03,1),okMat(0x3fd0c0));w.userData.ownGeo=true;w.raycast=()=>{};scene.add(w);d.parts.push(w);}else d.parts.push(netDevPart(r.d,al));netDevs.set(r.id,d);}
   const [x,y,z]=r.p,m=d.parts[0];d.hp=+r.hp||0;
   if(r.d==='trapwire'){const q=Array.isArray(r.q)&&r.q.length===3&&r.q.every(Number.isFinite)?r.q:r.p,w=d.parts[2];m.position.set(x,y+.3,z);d.parts[1].position.set(q[0],q[1]+.3,q[2]);w.position.set((x+q[0])/2,(y+q[1])/2+.3,(z+q[2])/2);w.scale.z=Math.max(.05,Math.hypot(q[0]-x,q[2]-z));w.rotation.y=Math.atan2(q[0]-x,q[2]-z);continue;}
@@ -15293,7 +15339,8 @@ const netSgBlk0=sgBlk;sgBlk=function(x,z,r,y=0){if(!NET.socket)return netSgBlk0(
 const netShoot0=shoot;shoot=function(){if(NET.socket&&(netReyna?.dismiss>0||netChannel?.remaining>0))return false;const before=ammo,k0=kSwing,ss=typeof RS!=='undefined'&&RS.ss,r=netShoot0.apply(this,arguments);const swung=rw==='knife'&&kSwing!==k0,rocket=ss&&!RS.ss;/* Showstopper: the click that launched the rocket is one fire pulse (the server's launcher fires on it; a semi-auto gun sends no held fire) */if(NET.socket&&MP.st==='game'&&(swung||rocket||(rw!=='knife'&&ammo<before))){NET.firePulse=performance.now()+80;NET.fireHeavy=swung&&kHv===1?NET.firePulse:0;/* ...and stays pending until an input message carried it: on a slow page the next 50 ms input tick runs after the frame, past the 80 ms window (online Showstopper launched no rocket) */NET.firePend=1;NET.firePendH=NET.fireHeavy?1:0;if(typeof xAD!=='undefined'&&xAD.bs&&rw!=='knife'){NET.altPulse=NET.firePulse;NET.firePendA=1;}/* qa-36: Classic ALT FIRE (xBurst) - the server fires the 3 rounds at once on alt:1 */if(rocket)NET.ssFiredAt=performance.now();}return r;}; // knife: one pulse per swing the client actually started (a click during a swing sent a pulse the server could turn into an extra hit); a heavy swing sends kh so the server applies the heavy cooldown/damage
 /* window, not document: the keymap layer re-sends a rebound key on window only (it never reaches document) */addEventListener('keydown',e=>{if(e.code!=='KeyR'||!(NET.socket&&MP.st==='game')||xKbSkip(e)||e.repeat)return;netSend({t:'reload'});if(reloading>0)netReload=true;/* the page's own R handler already started the local reload: the loop must not send it again */});
 // Camera, server shots and bots all treat positive pitch as looking up; send it unchanged.
-function netInputMsg(kk,w){const seq=++NET.seq;const log=NET.inLog||(NET.inLog=[]);log.push({seq,t:performance.now()});if(log.length>240)log.shift();const fp=NET.firePend,fh=NET.firePendH,fa=NET.firePendA;NET.firePend=NET.firePendH=NET.firePendA=0;/* a pending click rides this message once */return {t:'in',seq,r:yaw,p:pitch,f:(kk.KeyW?1:0)-(kk.KeyS?1:0),s:(kk.KeyD?1:0)-(kk.KeyA?1:0),j:kk.Space?1:0,c:kk.ControlLeft||kk.ControlRight?1:0,w:kk.ShiftLeft||kk.ShiftRight?1:0,ads:ads?1:0,az:ads===2&&w==='Operator'&&typeof xSC!=='undefined'&&xSC.lv===2?1:0/* Operator second zoom (5x): teammates spectating see it (roundState pov ADS 2) */,h4:kk.Digit4||kk.Numpad4?1:0,fire:(w!=='Knife'&&!WEAP[w]?.semi&&fireHeld)||NET.firePulse>performance.now()||fp?1:0,kh:NET.fireHeavy>performance.now()||fh?1:0,alt:NET.altPulse>performance.now()||fa?1:0,cb:J.pick==='Jett'&&kk.KeyC?1:0/* Cloudburst steering: C held */,u:kk.KeyF?1:0/* Use held: grabs / lets go of a rope ascender (shared motor) */};} // a held knife click is one swing on the client, so it is a pulse (not held fire) online
+function netInputMsg(kk,w){const seq=++NET.seq;const log=NET.inLog||(NET.inLog=[]);log.push({seq,t:performance.now()});if(log.length>240)log.shift();const fp=NET.firePend,fh=NET.firePendH,fa=NET.firePendA;NET.firePend=NET.firePendH=NET.firePendA=0;/* a pending click rides this message once */return {t:'in',seq,view:typeof MP==='undefined'?100:Math.max(100,Math.min(220,MP.snapClock?.delay||MP.DELAY||100)),r:yaw,p:pitch,f:(kk.KeyW?1:0)-(kk.KeyS?1:0),s:(kk.KeyD?1:0)-(kk.KeyA?1:0),j:kk.Space?1:0,c:kk.ControlLeft||kk.ControlRight?1:0,w:kk.ShiftLeft||kk.ShiftRight?1:0,ads:ads?1:0,az:ads===2&&w==='Operator'&&typeof xSC!=='undefined'&&xSC.lv===2?1:0/* Operator second zoom (5x): teammates spectating see it (roundState pov ADS 2) */,h4:kk.Digit4||kk.Numpad4?1:0,fire:(w!=='Knife'&&!WEAP[w]?.semi&&fireHeld)||NET.firePulse>performance.now()||fp?1:0,kh:NET.fireHeavy>performance.now()||fh?1:0,alt:NET.altPulse>performance.now()||fa?1:0,cb:J.pick==='Jett'&&kk.KeyC?1:0/* Cloudburst steering: C held */,u:kk.KeyF?1:0/* Use held: grabs / lets go of a rope ascender (shared motor) */};} // a held knife click is one swing on the client, so it is a pulse (not held fire) online
+function netSyncSmokes(rows){const seen=new Set();for(const e of rows){if(e.kind!=='smoke'||!Number.isFinite(e.id)||!Array.isArray(e.p)||e.p.length!==3||!e.p.every(Number.isFinite)||!Number.isFinite(e.r)||e.r<=0||e.r>12||!Number.isFinite(e.tl)||!(e.tl>0))continue;seen.add(e.id);let S=J.smokes.find(s=>s.netId===e.id);if(!S)S=J.smokes.find(s=>s.netId==null&&!s.cb&&Math.hypot(s.p.x-e.p[0],s.p.y-e.p[1],s.p.z-e.p[2])<1);if(!S){netSmoke0(e.p[0],e.p[2],false,e.tl,e.p[1],e.r,e.cyl);S=J.smokes[J.smokes.length-1];}for(const other of J.smokes)if(other!==S&&other.netId==null&&!other.cb&&Math.hypot(other.p.x-e.p[0],other.p.y-e.p[1],other.p.z-e.p[2])<1)other.t=0;S.netId=e.id;S.t=e.tl;S.p.set(...e.p);S.a=1;S.m.scale.set(e.r/4,e.cyl?1:e.r/4,e.r/4);}J.smokes=J.smokes.filter(s=>{if(s.netId==null||seen.has(s.netId))return true;jRel(s.m);return false;});}
 let netWeapon='',netReload=false,netEquipWant=null,netEquipUntil=0,netRec=false;
 // The gun the server holds, in hand on the page: a sidearm goes in the sidearm slot, anything else in the primary slot, and the
 // viewmodel / HUD are rebuilt (onSkin) even when that slot was already in hand. DM / TDM used to write every server gun into
@@ -15307,7 +15354,7 @@ function netAdoptWeapon(n){if(!WEAP[n])return;const slot=NET_SIDEARMS.includes(n
 if(typeof dmGive==='function'){const netDmGive0=dmGive;dmGive=function(n){const r=netDmGive0.apply(this,arguments);if(r!==false&&!netRec&&NET.socket&&NET.socket.readyState===1&&MP.st==='game'&&NET.ready){const w=rw==='knife'?'Knife':wName();netWeapon=w;netSend({t:'equip',w});netEquipWant=w;netEquipUntil=performance.now()+1000;}return r;};}
 // A local swap sends its equip at once and holds the snapshot reconcile (above) until the server names that gun or 1 s passes.
 const netSwap0=swapW;swapW=function(s){const r=netSwap0.apply(this,arguments);if(!netRec&&NET.socket&&NET.socket.readyState===1&&MP.st==='game'&&NET.ready){const w=rw==='knife'?'Knife':wName();if(w!==netWeapon){netWeapon=w;netSend({t:'equip',w});netEquipWant=w;netEquipUntil=performance.now()+1000;}}return r;};
-setInterval(()=>{if(!NET.socket||NET.socket.readyState!==1||!MP.on||NET.reconnecting)return;const now=performance.now();if(MP.st==='game'&&running&&!window.xLdOn&&!NET.ready){NET.ready=true;NET.readyAt=now;NET.loadAt=0;MP.last=now;netSend({t:'ready'});if(NET.latest)mpCliMsg(NET.latest);}if(!NET.ready){/* Still loading the match: tell the server every 5 s how far along we are, so a slow load is kept rather than dropped at the 180 s idle limit. */if(NET.loadAt&&!(now-(NET.lpAt||0)<5000)){NET.lpAt=now;const f=v=>Number.isFinite(v)?Math.round(Math.max(0,Math.min(1,v))*1000)/1000:-1;let m=-1;try{m=f(NM.loaded);}catch(e){}netSend({t:'lp',p:f(window.xLdAgFrac),m});}return;}if((document.hidden?1:0)!==(NET.hid||0))netVisibility();const loading=reloading>0;if(loading&&!netReload)netSend({t:'reload'});netReload=loading;const kk=keys||{},w=rw==='knife'?'Knife':wName();if(w!==netWeapon){netWeapon=w;netSend({t:'equip',w});}netSend(netInputMsg(kk,w));},50);
+setInterval(()=>{if(!NET.socket||NET.socket.readyState!==1||!MP.on||NET.reconnecting)return;const now=performance.now();if(MP.st==='game'&&running&&!window.xLdOn&&!NET.ready){NET.ready=true;NET.readyAt=now;NET.loadAt=0;MP.last=now;netSend({t:'ready'});if(NET.latest)mpCliMsg(NET.latest);}if(!NET.ready){/* Still loading the match: tell the server every 5 s how far along we are, so a slow load is kept rather than dropped at the 180 s idle limit. */if(NET.loadAt&&!(now-(NET.lpAt||0)<5000)){NET.lpAt=now;const f=v=>Number.isFinite(v)?Math.round(Math.max(0,Math.min(1,v))*1000)/1000:-1;let m=-1;try{m=f(NM.loaded);}catch(e){}netSend({t:'lp',p:f(window.xLdAgFrac),m});}return;}if((document.hidden?1:0)!==(NET.hid||0))netVisibility();const loading=reloading>0;if(loading&&!netReload)netSend({t:'reload'});netReload=loading;const kk=keys||{},w=rw==='knife'?'Knife':wName();if(w!==netWeapon){netWeapon=w;netSend({t:'equip',w});}netSend(netInputMsg(kk,w));},1000/60);
 setInterval(netTransportTick,1000);
 // Background-tab liveness. Hidden tabs throttle setInterval (about 1 Hz, then once a minute), which starved the
 // server's idle check and dropped players who switched tabs. The client tells the server when the tab hides
@@ -15320,11 +15367,11 @@ function netVisibility(){if(!MP.on||!NET.socket||NET.socket.readyState!==1)retur
 document.addEventListener('visibilitychange',netVisibility);
 // Online 5v5 Omen From the Shadows: the picked spot (tactical map, work/ability_target_runtime.js, or the legacy minimap) goes to the trusted
 // server as p [x, z] (it checks the nav mesh and lands Omen at the floor there); the page only checks the spot and closes the pick.
-const netOmenFts0=okFtsAt;okFtsAt=function(x,z){if(!(NET.socket&&MP.st==='game'&&MP.m5&&J.pick==='Omen'))return netOmenFts0(x,z);if(!J.ftp||!running||player.hp<=0||FV.buy>0)return false;const v=okFtsValid(x,z);if(!v){sgNo();say("Can't go there · pick an open spot",900);return false;}netSend({t:'ab',k:'x',p:[Math.round(v.x*100)/100,Math.round(v.z*100)/100]});J.ftp=false;MM.style.pointerEvents='';xPLock();return true;};
+const netOmenFts0=okFtsAt;okFtsAt=function(x,z){if(!(NET.socket&&MP.st==='game'&&(MP.m5||NET.tab)&&J.pick==='Omen'))return netOmenFts0(x,z);if(!J.ftp||!running||player.hp<=0||FV.buy>0)return false;const v=okFtsValid(x,z);if(!v){sgNo();say("Can't go there · pick an open spot",900);return false;}netSend({t:'ab',k:'x',p:[Math.round(v.x*100)/100,Math.round(v.z*100)/100]});J.ftp=false;MM.style.pointerEvents='';xPLock();return true;};
 // Anchor placement/return have no local charge delta. Send intent before legacy optimistic movement.
 // Chamber Headhunter (Q) is the server's: each press takes one charge and swaps in a 1-round Sheriff (Q again puts it
 // away and refunds the round). The local overlay (BC.eq 'hp') only drew the HUD; online fire went to the held gun.
-const netAbilityKey0=jKey;jKey=function(code){if(NET.socket&&MP.st==='game'&&MP.m5&&(J.pick==='Reyna'&&['KeyC','KeyQ','KeyE','KeyX'].includes(code)||(J.pick==='Chamber'||J.pick==='Breach')&&code==='KeyE'||J.pick==='Chamber'&&code==='KeyQ'||J.pick==='Omen'&&code==='KeyC'||J.pick==='Jett'&&(code==='KeyQ'||code==='KeyE'||code==='KeyX')||J.pick==='Skye'&&code==='KeyC')){if(running&&player.hp>0&&FV.buy<=0){const m={t:'ab',k:code[3].toLowerCase()};if(J.pick==='Jett'&&code==='KeyE'&&netTwReady()){const d=jDashKeys();m.f=d.f;m.s=d.s;m.r=+d.r.toFixed(4);J.dash=jDash(d);NET.tw=null;NET.dashUntil=performance.now()+XPAR2.dashTime*1000+250;}/* Tailwind dash predicted at once (the server runs the same shared-motor dash from these keys / yaw) */if(J.pick==='Breach'&&code==='KeyE'&&typeof XABT!=='undefined'&&XABT.hold)m.pw=+XABT.hold.pw.toFixed(3);/* Fault Line HOLD FIRE charge */netSend(m);}return;}return netAbilityKey0.apply(this,arguments);};
+const netAbilityKey0=jKey;jKey=function(code){if(NET.socket&&MP.st==='game'&&(MP.m5||NET.tab)&&(J.pick==='Reyna'&&['KeyC','KeyQ','KeyE','KeyX'].includes(code)||(J.pick==='Chamber'||J.pick==='Breach')&&code==='KeyE'||J.pick==='Chamber'&&code==='KeyQ'||J.pick==='Omen'&&code==='KeyC'||J.pick==='Jett'&&(code==='KeyQ'||code==='KeyE'||code==='KeyX')||J.pick==='Skye'&&code==='KeyC')){if(running&&player.hp>0&&FV.buy<=0){const m={t:'ab',k:code[3].toLowerCase()};if(J.pick==='Jett'&&code==='KeyE'&&netTwReady()){const d=jDashKeys();m.f=d.f;m.s=d.s;m.r=+d.r.toFixed(4);J.dash=jDash(d);NET.tw=null;NET.dashUntil=performance.now()+XPAR2.dashTime*1000+250;}/* Tailwind dash predicted at once (the server runs the same shared-motor dash from these keys / yaw) */if(J.pick==='Breach'&&code==='KeyE'&&typeof XABT!=='undefined'&&XABT.hold)m.pw=+XABT.hold.pw.toFixed(3);/* Fault Line HOLD FIRE charge */netSend(m);}return;}return netAbilityKey0.apply(this,arguments);};
 function netChamberAnchor(A,time){if(J.pick!=='Chamber')return;J.cd.e=Math.max(0,(A.cool?.e||0)-time);const a=A.anchor;if(!Array.isArray(a)){if(BC.an){scene.remove(BC.an.m);BC.an=null;}return;}if(!BC.an){const m=new THREE.Mesh(ringGeo,fireMat(0xd8b04a,.8));m.rotation.x=-Math.PI/2;scene.add(m);BC.an={m};}BC.an.x=a[0];BC.an.y=a[1];BC.an.z=a[2];BC.an.m.position.set(a[0],a[1]+.06,a[2]);}
 // Online Showstopper: the launcher's 1.4 s equip and 10 s window run on the server's clock (status ssr = equip left, ssu =
 // window left). The page counted RS.ssd / RS.sst down by its clamped frame dt (<= 0.1 s), so on a ~1 frame/s page the local
@@ -15423,8 +15470,8 @@ const netSgSl0=sgSl;sgSl=function(u,cq){if(!(NET.socket&&J.pick==='Reyna'&&netRe
 
 
 // Throw intent carries no damage, victim, position or remaining-knife claims.
-const netThrow0=jThrow;jThrow=function(){if(!(NET.socket&&MP.st==='game'&&MP.m5))return netThrow0.apply(this,arguments);if(!running||player.hp<=0||FV.buy>0||!J.bsOn||J.bs<1||J.cd.x>0)return;J.cd.x=1/6;/* server Blade Storm fireRate 6 (wiki) */netSend({t:'blade'});kick=1;SFX.ab('bsThrow');};
-const netBurst0=jBurst;jBurst=function(){if(!(NET.socket&&MP.st==='game'&&MP.m5))return netBurst0.apply(this,arguments);if(!running||player.hp<=0||FV.buy>0||!J.bsOn||J.bs<1||J.cd.x>0)return;J.cd.x=XBSD.un;J.bsU=XBSD.un;/* server fireBladeBurst: 0.45 s burst unequip */netSend({t:'blade',alt:1});kick=1;SFX.ab('bsThrow');};
+const netThrow0=jThrow;jThrow=function(){if(!(NET.socket&&MP.st==='game'&&(MP.m5||NET.tab)))return netThrow0.apply(this,arguments);if(!running||player.hp<=0||FV.buy>0||!J.bsOn||J.bs<1||J.cd.x>0)return;J.cd.x=1/6;/* server Blade Storm fireRate 6 (wiki) */netSend({t:'blade'});kick=1;SFX.ab('bsThrow');};
+const netBurst0=jBurst;jBurst=function(){if(!(NET.socket&&MP.st==='game'&&(MP.m5||NET.tab)))return netBurst0.apply(this,arguments);if(!running||player.hp<=0||FV.buy>0||!J.bsOn||J.bs<1||J.cd.x>0)return;J.cd.x=XBSD.un;J.bsU=XBSD.un;/* server fireBladeBurst: 0.45 s burst unequip */netSend({t:'blade',alt:1});kick=1;SFX.ab('bsThrow');};
 
 // ---- PARTY MODES (modes-1, user 2026-10-26: "add more gamemodes for multiplayer and make it so you can change gamemode when in a team") ----
 // The server room is the party. Its leader (host) picks the mode and map from the Online panel while the party is in the lobby; the
@@ -15474,7 +15521,7 @@ function nmEscHud(E){if(!Array.isArray(E.lv)||!Array.isArray(E.pt))return;const 
 function nmVarHud(rs){const el=nmHudEl(),n={swift:'SWIFTPLAY',sr:'SPIKE RUSH',rep:'REPLICATION'}[rs.gm];if(!n)return;let t=n+' · FIRST TO '+(rs.win|0);if(rs.gm==='sr'&&typeof rs.gun==='string')t+=' · '+rs.gun.toUpperCase()+' FOR EVERYONE';if(rs.gm==='rep'&&typeof rs.rag==='string')t+=' · ALL '+rs.rag.toUpperCase();if(rs.fg>0)t+=' · FLASHGUARD '+Math.ceil(rs.fg)+'s';if(rs.gm==='sr'&&Array.isArray(rs.pw)&&rs.pw.length){const N=window.xSrPw&&xSrPw.names||{};t+=' · '+rs.pw.filter(x=>typeof x==='string'&&N[x]).map(x=>N[x].toUpperCase()).join(' · ');}/* active Spike Rush powerups (server srpowerups.js srActive) */if(el.textContent!==t)el.textContent=t;el.style.display='block';if(rs.gm==='sr')nmOrbs(Array.isArray(rs.orb)?rs.orb:[]);}
 const NM_ORBS=new Map();
 // Spike Rush powerup orbs: o[5] the type (server srpowerups.js), coloured as the offline ones (game_rules_runtime.js SRPW.col); keyed by id + type.
-function nmOrbs(list){const keep=new Set(),C=window.xSrPw&&xSrPw.col||{};for(const o of list){if(!Array.isArray(o)||o.length<4||![1,2,3].every(i=>Number.isFinite(o[i])))continue;const ty=typeof o[5]==='string'?o[5]:'',key=o[0]+':'+ty+(o[4]?':f':'');keep.add(key);if(NM_ORBS.has(key))continue;try{const m=new THREE.Mesh(new THREE.OctahedronGeometry(o[4]?0.45:0.35),new THREE.MeshBasicMaterial({color:C[ty]||(o[4]?0xffd34d:0xb48cff)}));m.userData.srType=ty;m.position.set(o[1],o[2]+1,o[3]);scene.add(m);NM_ORBS.set(key,m);}catch(e){}}
+function nmOrbs(list){const keep=new Set(),C=window.xSrPw&&xSrPw.col||{};for(const o of list){if(!Array.isArray(o)||o.length<4||![1,2,3].every(i=>Number.isFinite(o[i])))continue;const ty=typeof o[5]==='string'?o[5]:'',key=o[0]+':'+ty+(o[4]?':f':'');keep.add(key);if(NM_ORBS.has(key))continue;try{const m=new THREE.Mesh(new THREE.OctahedronGeometry(o[4]?0.45:0.35),new THREE.MeshBasicMaterial({color:C[ty]||(o[4]?0xffd34d:0xb48cff)}));m.userData.srType=ty;m.position.set(o[1],o[2]+(o[4]?0.45:0.35),o[3]);scene.add(m);NM_ORBS.set(key,m);}catch(e){}}
  for(const [id,m]of NM_ORBS)if(!keep.has(id)){try{scene.remove(m);m.geometry.dispose();m.material.dispose();}catch(e){}NM_ORBS.delete(id);}}
 // Ultimate orbs from the server (server/src/ultorbs.js; Unrated / Swiftplay / Replication): rs.uo [[id, x, y, z, channelled 0..1]] on
 // the nav floor, rs.uoc this player's own 2 s channel (hold F, standing). The offline orb block stands down while connected.
@@ -15484,7 +15531,7 @@ function nmUoBar(){if(!nmUoB){nmUoB=document.body.appendChild(document.createEle
 function nmUltOrbs(rs){const list=Array.isArray(rs&&rs.uo)?rs.uo:[],keep=new Set();
  for(const o of list){if(!Array.isArray(o)||o.length<4||![1,2,3].every(i=>Number.isFinite(o[i])))continue;keep.add(o[0]);let m=NM_UO.get(o[0]);
   if(!m){try{if(!nmUoG){nmUoG=new THREE.OctahedronGeometry(.22,0);nmUoG.userData.shared=true;nmUoM=new THREE.MeshBasicMaterial({color:0x9ffff0,transparent:true,opacity:.95});}m=new THREE.Mesh(nmUoG,nmUoM);m.scale.set(1,1.5,1);m.raycast=()=>{};scene.add(m);NM_UO.set(o[0],m);}catch(e){continue;}}
-  m.position.set(o[1],o[2]+1.1,o[3]);}
+  m.position.set(o[1],o[2]+0.33,o[3]);}
  for(const [id,m]of NM_UO)if(!keep.has(id)){try{scene.remove(m);}catch(e){}NM_UO.delete(id);}
  const c=+(rs&&rs.uoc)||0,bar=c>0||nmUoB?nmUoBar():null;if(bar){bar.style.display=c>0?'block':'none';if(c>0)bar.firstChild.style.width=Math.min(100,c*100)+'%';}}
 {const nmUo0=mpCliRS;mpCliRS=function(rs){try{nmUltOrbs(rs);}catch(e){}return nmUo0.apply(this,arguments);};}
@@ -15551,6 +15598,21 @@ function nmSkmHud(K){if(!K||!Array.isArray(K.sc))return;const prev=MP.skm;MP.skm
 const NET_MODE_DESC={dm:'Deathmatch · free-for-all · first to 40 kills · 9:00',tdm:'Team Deathmatch · 5v5 · first team to 100 kills · weapons upgrade every stage · 9:30',five:'Unrated · plant or defuse the Spike · first to 13 rounds',esc:'Escalation · weapons change each level · first team through all 12 levels · 10:00',swift:'Swiftplay · plant or defuse the Spike · first to 5 rounds',sr:'Spike Rush · everyone carries a Spike, one random gun each round · first to 4 rounds',rep:'Replication · each team plays one agent · first to 5 rounds',skm:'Skirmish 1v1 · elimination rounds, free loadout, no abilities · first to 5 rounds'};
 {const u0=mpUI;mpUI=function(){u0.apply(this,arguments);try{const e=mpEl('xOnDesc');if(e){const t=NET_MODE_DESC[MP.mode]||'';if(e.textContent!==t)e.textContent=t;}}catch(er){}};}
 
+// Opt-in local browser capture. No telemetry endpoint, no timers, fixed memory, no wrappers while disabled.
+(function(){
+ const series=new Map(),undo=[];let active=false,observer=null,frameAt=0,packetAt=0;
+ function sample(name,value){if(!active||!Number.isFinite(value))return;let s=series.get(name);if(!s){s={v:new Float64Array(600),n:0,total:0,max:0};series.set(name,s);}s.v[s.n++%600]=value;s.total+=value;s.max=Math.max(s.max,value);}
+ function wrap(o,key,name,after){if(!o||typeof o[key]!=='function')return;const original=o[key],wrapped=function(){const t=performance.now();try{return original.apply(this,arguments);}finally{sample(name,performance.now()-t);if(after)after(t,arguments);}};o[key]=wrapped;undo.push(()=>{if(o[key]===wrapped)o[key]=original;});}
+ const api={get active(){return active;},sample,start(){if(active)return;series.clear();frameAt=packetAt=0;active=true;
+  wrap(globalThis,'loop','frameCpuMs',t=>{if(frameAt)sample('frameGapMs',t-frameAt);frameAt=t;try{if(typeof NET!=='undefined'&&NET.socket){sample('uplinkBufferedBytes',NET.socket.bufferedAmount||0);if(NET.receivedAt)sample('snapshotAgeMs',performance.now()-NET.receivedAt);}if(typeof MP!=='undefined'){if(Number.isFinite(MP.ping))sample('rttMs',MP.ping);if(MP.snapClock){sample('interpolationDelayMs',MP.snapClock.delay);sample('jitterMs',MP.snapClock.jitter);}}}catch{}});
+  for(const [key,name]of [['xSimRun','simulationMs'],['xHud','hudMs'],['mpCliSnap','snapshotApplyMs'],['mpInterp','remoteInterpolationMs'],['netSyncEffects','effectSyncMs'],['netSyncSmokes','smokeSyncMs'],['xvLoad','assetRequestCpuMs']])wrap(globalThis,key,name);
+  wrap(globalThis,'netReceive','snapshotParseDecodeCleanMs',(t,args)=>{if(packetAt)sample('incomingMessageGapMs',t-packetAt);packetAt=t;if(typeof args[0]==='string')sample('incomingMessageChars',args[0].length);});
+  if(typeof renderer!=='undefined')wrap(renderer,'render','renderSubmitMs');
+  if(typeof PerformanceObserver==='function')try{observer=new PerformanceObserver(list=>{for(const e of list.getEntries())sample('longTaskMs',e.duration);});observer.observe({entryTypes:['longtask']});}catch{}
+ },stop(){if(!active)return;active=false;while(undo.length)undo.pop()();observer?.disconnect();observer=null;},report(){const out={note:'Local CPU wall times; render submission excludes asynchronous GPU time. Frame gaps include scheduling, GC and other tasks. Recent percentiles cover at most 600 samples per series.',active};for(const [name,s]of series){const v=Array.from(s.v.subarray(0,Math.min(600,s.n))).sort((a,b)=>a-b);out[name]={count:s.n,mean:s.total/s.n,max:s.max,recentP50:v[v.length>>1],recentP95:v[Math.floor(v.length*.95)],recentP99:v[Math.floor(v.length*.99)]};}return out;}};
+ window.VSLag=api;
+})();
+
 // ---- END TRUSTED ONLINE SERVER ----
 
 // ---- WEAPON GRIP ----
@@ -15572,7 +15634,7 @@ function xgSockets(gl) {
   sc.updateMatrixWorld(true); const at = (n) => { const o = xvFind(sc, n); return o ? o.getWorldPosition(new THREE.Vector3()).toArray() : null; };
   const s = { lh: at('Left_Hand_Target') || at('Left_Hand_TargetSocket'), tr: at('Trigger'), mz: at('MuzzlePoint') || at('Muzzle') }; mx.stopAllAction(); return s;
 }
-// Template space (the xGun group: muzzle toward -Z): right-hand grip just behind/below the trigger, left-hand socket, stock end.
+// Template space (the xGun group: muzzle toward -Z): right-hand grip just behind/below the trigger, left-hand socket, stock end. Authored support sockets, rather than a rifle offset, select each gun type's grip.
 function xgTemplate(T, w) {
   let inner = null; T.traverse((o) => { if (!inner && o.userData && o.userData.sock) inner = o; }); T.updateMatrixWorld(true);
   const box = new THREE.Box3().setFromObject(inner ? inner.parent : T), v = new THREE.Vector3(), by = T.userData.my != null ? T.userData.my : (box.min.y + box.max.y) / 2, s = inner && inner.userData.sock;
@@ -15627,7 +15689,19 @@ function xgCurl(A, set, k, n) { const axis = XGRIP.ax || (XGRIP.ax = new THREE.V
   axis.crossVectors(k, n).normalize(); for (const F of A.fingers) { const ang = (set[F.f] || [0, 0, 0])[F.j - 1]; F.bn.quaternion.copy(F.rest); xgWorldQ(F.bn.parent, pq); la.copy(axis).applyQuaternion(pq.invert()); q.setFromAxisAngle(la, ang); F.bn.quaternion.premultiply(q); F.bn.updateMatrixWorld(true); } }
 function xgTarget(M) { const X = M.sx; if (M.dead || X.dd || M.w === 'Knife' || X.uo === 'reload' || X.uo === 'cast' || X.uo === 'throw' || (X.w && X.w.plant > 0.05)) return 0; return 1; }
 function xgGrip(M) { let g = null; M.gun.traverse((o) => { if (!g && o.userData && o.userData.grip) g = o.userData.grip; }); return g; }
+// A model persists across purchases, secondary swaps and Escalation levels. Replace only
+// the gun under its existing holder; keep the body's mixers and locomotion untouched.
+function xgHeldSync(M) {
+  const u=M.unit;if(!u||M.dead||u.bsW||!M.gun)return;
+  const w=typeof xWeapOf==='function'?xWeapOf(u):u.w;if(!w||w===M.w)return;
+  const old=M.gun,parent=old.parent;if(!parent)return;
+  const next=xGun(w),G=M.sx&&M.sx.grip;
+  next.position.copy(G?G.gp:old.position);next.quaternion.copy(G?G.gq:old.quaternion);next.scale.copy(G?G.gs:old.scale);next.visible=old.visible;
+  parent.remove(old);parent.add(next);M.gun=next;M.w=w;
+  if(G){G.last=null;G.w=0;G.gp.copy(next.position);G.gq.copy(next.quaternion);G.gs.copy(next.scale);G.slide=0;}
+}
 function xgPose(M, dt) {
+  xgHeldSync(M);
   const X = M.sx; if (!X || !X.sc || !M.gun || !M.valorant) return; const G = X.grip || xgSetup(M); if (!G.ok) return;
   const want = xgTarget(M), grip = want ? xgGrip(M) : null; G.w += ((grip ? 1 : 0) - G.w) * Math.min(1, (dt || 1 / 60) * 12); if (G.w < 0.01) { G.w = 0; M.gun.position.copy(G.gp); M.gun.quaternion.copy(G.gq); return; }
   const g = grip || G.last; if (!g) return; G.last = g;
@@ -16833,7 +16907,7 @@ if (typeof xUbPost === "function") { const hp0 = xUbPost; xUbPost = function (M)
    peek:{jiggle:.2+pa*.6,wide:.15+ag*.8,tight:.5,hold:.1+pa*.5},
    angle:r()<.5?'close':'long',head:.25+acc*.4,
    turn:turnRate(sensOf(seed),.6+ag*.08+r()*.2),                // rad/s: how fast the bot can swing its crosshair, from its mouse sensitivity and hand speed (a 180 takes ~0.25-0.45 s)
-   lag:.05+(1-acc)*.09+r()*.03,                                    // s: tracking lag on a moving target (aims where it was), settles with P.settle
+   lag:.07+(1-acc)*.12+r()*.04,                                    // s: tracking lag on a moving target (aims where it was), settles with P.settle
    sens:sensOf(seed),dpi:SENS.dpi};
 
  }
@@ -16906,7 +16980,7 @@ if (typeof xUbPost === "function") { const hp0 = xUbPost; xUbPost = function (M)
   for(let i=0;i<n;i++){const off=Math.abs(wrapA(ang[i]-heading));if(dep[i]>=25&&off<.6){const sc=.6*Math.cos(off)/(12+3);if(sc>bs){bs=sc;best=ang[i];}}}
   return best;}
  function trackLag(P,t){return (P.lag||.08)*(.35+.65*Math.exp(-Math.max(0,t)/((P.settle||.25)*2)));}
- // ---- Human aim (default: a mid-ranked player, think Gold-Plat; LEVEL easy / hard scale it) ----
+ // ---- Human aim (default: a mid-ranked player, think Silver; LEVEL easy / hard scale it) ----
  // A fight's crosshair path is a planned human flick, not a laser: aimPlan() takes where the crosshair is when the enemy
  // appears (e0 = crosshair minus the aim point, radians yaw / pitch) and aimAt(A, t) returns the error at t s into the fight:
  //  - until A.start (the reaction) the crosshair stays where it was;
@@ -16922,8 +16996,8 @@ if (typeof xUbPost === "function") { const hp0 = xUbPost; xUbPost = function (M)
  function level(name){return LEVEL[name]||LEVEL.normal;}
  // Per-bot aim traits (pure, from P.seed on a separate stream: personality() draws are unchanged).
  function aimTraits(P){const r=rng(((P.seed>>>0)^0x51ed270b)>>>0),acc=P.accuracy==null?.6:P.accuracy;
-  return {headAim:.22+acc*.15+r()*.06,neckAim:.3+r()*.15,place:.01+(1-acc)*.012+r()*.005,over:.04+r()*.08,fitts:.045+(1-acc)*.035+r()*.015,
-   trem:.003+(1-acc)*.006,pull:.25+acc*.25+r()*.1,eager:.6+r()*.8+(P.aggression||0)*.4,discipline:clamp(.45+(P.patience==null?.5:P.patience)*.35+r()*.15,0,.97),idle:Math.atan2(AIM_H.head-1.6,15)-(.004+(1-acc)*.016+r()*.01)};}
+  return {headAim:.22+acc*.15+r()*.06,neckAim:.3+r()*.15,place:.014+(1-acc)*.017+r()*.007,over:.04+r()*.08,fitts:.045+(1-acc)*.035+r()*.015,
+   trem:.004+(1-acc)*.008,pull:.2+acc*.2+r()*.08,eager:.6+r()*.8+(P.aggression||0)*.4,discipline:clamp(.45+(P.patience==null?.5:P.patience)*.35+r()*.15,0,.97),idle:Math.atan2(AIM_H.head-1.6,15)-(.004+(1-acc)*.016+r()*.01)};}
  const AIM_H={head:1.8,neck:1.45,chest:1.2}; // metres above the feet, standing (server hitboxes: head sphere centre 1.815, body capsule top ~1.6)
  function aimHeight(P,rand,lvl,pre){const A=aimTraits(P),L=level(lvl),x=rand(),h=Math.min(.85,A.headAim*L.head*(pre?1.8:1));return x<h?'head':x<h+(1-h)*A.neckAim?'neck':'chest';}
  function gauss(rand){return (rand()+rand()+rand()+rand()-2)*1.732;}
@@ -16946,7 +17020,7 @@ if (typeof xUbPost === "function") { const hp0 = xUbPost; xUbPost = function (M)
   else{const q=s-A.T1-A.T2,k=.7+.3*Math.exp(-q/A.settle);y=A.res[0]*k+A.trem*Math.sin(q*6.1+A.ph);p=A.res[1]*k+A.trem*.7*Math.sin(q*4.3+A.ph*1.7);}
   o[0]=y;o[1]=p;return o;}
  // May the trigger go now? err: the current crosshair error (rad); the first shot goes once within eager x half-width.
- function readyToFire(A,err,dist,t){if(!A)return false;if(t!=null&&A.fireAt&&t-A.start>=A.fireAt)return true;return Math.abs(err)<A.eager*.5*halfWidth(dist);}
+ function readyToFire(A,err,dist,t){if(!A)return false;const ready=t!=null&&t>=A.start&&t-A.start>=A.fireAt;return ready&&Math.abs(err)<.08;}
  // Resting crosshair pitch while moving / holding (rad): head height at ~15 m with this bot's own placement error, mostly a
  // little low (a mid-ranked player's crosshair drifts toward the neck), so fights start near the head, not on it. A fight
  // that starts on a pre-aimed angle more often stays at head height (aimHeight pre).
@@ -17242,7 +17316,7 @@ if (typeof xUbPost === "function") { const hp0 = xUbPost; xUbPost = function (M)
  // to shoot, or null. Threats first: an incoming Boom Bot, a Lockdown, a Turret that can fire on the bot, then the trap /
  // information devices near it (Alarmbot, Trademark, Trapwire, Spycam), a Nanoswarm it found; a Sage Barrier only when it
  // blocks the bot's route (blocking) and is close: a barrier off to the side is walked around, not shot.
- const SHOOT_UTIL={boombot:{range:15,pri:6},lockdown:{range:30,pri:5},turret:{range:30,pri:4},alarmbot:{range:12,pri:3},trademark:{range:12,pri:3},trapwire:{range:12,pri:3},spycam:{range:20,pri:2},owl:{range:20,pri:2},nanoswarm:{range:8,pri:1},barrier:{range:14,pri:0,block:true}};
+ const SHOOT_UTIL={hunter:{range:20,pri:6},boombot:{range:15,pri:6},lockdown:{range:30,pri:5},turret:{range:30,pri:4},alarmbot:{range:12,pri:3},trademark:{range:12,pri:3},trapwire:{range:12,pri:3},spycam:{range:20,pri:2},owl:{range:20,pri:2},nanoswarm:{range:8,pri:1},barrier:{range:14,pri:0,block:true}};
  function shootUtility(c){let best=null,bs=-Infinity;for(const x of c||[]){const S=SHOOT_UTIL[x&&x.kind];if(!S||!x.los||!(x.d<=S.range)||(S.block&&!x.blocking))continue;const sc=S.pri*100-x.d;if(sc>bs){bs=sc;best=x;}}return best;}
 
  // Jett Tailwind for bots (server spike.js botUtility and the offline index.html xBJett share it). The first E arms it at
@@ -21221,8 +21295,9 @@ function dmPackMesh() { // a small green kit with a white cross, slowly turning
 }
 function dmPackDrop(x, y, z, id) {
   if (![x, y, z].every(Number.isFinite)) return null;
+  if (!dmPackOnline()) try { const C=typeof nmActive==='function'&&nmActive(); const floor=C?nmHeight(C,x,z,y):groundAt(x,z,0.2,y); if(Number.isFinite(floor)&&floor<=y+0.32)y=floor; } catch(e) {}
   const k = { id: id != null ? id : ++DMPK.seq, x, y, z, t: dmPackRule().life, g: null };
-  try { k.g = dmPackMesh(); k.g.position.set(x, y + 0.2, z); scene.add(k.g); } catch (e) { k.g = null; }
+  try { k.g = dmPackMesh(); k.g.position.set(x, y + 0.11, z); scene.add(k.g); } catch (e) { k.g = null; }
   DMPK.L.push(k); return k;
 }
 function dmPackKill(k) { const i = DMPK.L.indexOf(k); if (i >= 0) DMPK.L.splice(i, 1); if (k && k.g && k.g.parent) k.g.parent.remove(k.g); }
@@ -21383,13 +21458,12 @@ if (typeof mpCliSnap === 'function') { const c3 = mpCliSnap; mpCliSnap = functio
 // of the player's gun damage for the round), Health Regen (player and allies 10 HP/s for 20 s out of combat: no damage taken, no shot
 // for 3 s), Crippling Decay (after 3 s every enemy bot -50 HP, never below 1, given back 8 s later), Paranoia (after 3 s, 8 s; page
 // bots have no vision model: only the feed line), Combat Stim (a 6 m beacon for 12 s at the capture point: stim x1.1 inside, xStimK),
-// Weapon Upgrade (next round's set; round 3 / Endgame Operator or Odin; with an Operator: a sidearm). Golden Gun, Tracer Rounds, Twin
-// Hunters are not built (not in the draw). Online the server runs them: orb rows carry the type (o[5]) and the round state's pw the
+// Weapon Upgrade (next round's set; round 3 / Endgame Operator or Odin; with an Operator: a sidearm). Golden Gun and Twin Hunters are implemented below; Tracer Rounds remain outside the draw. Online the server runs them: orb rows carry the type (o[5]) and the round state's pw the
 // player's active ones (HUD line, stim; work/server_runtime.js nmOrbs / nmVarHud).
 // Inferred (unpublished, in the audit): out of combat = 3 s, decay never kills and is given back, the Stim beacon 6 m / 12 s at x1.1.
 var SRPW = { amp: { k: 1.3 }, regen: { rate: 10, life: 20, calm: 3 }, decay: { delay: 3, life: 8, hp: 50 }, paranoia: { delay: 3, life: 8 }, stim: { radius: 6, life: 12 },
-  pool: ['stim', 'amp', 'regen', 'upgrade'], names: { ult: 'Ultimate', amp: 'Damage Amp', regen: 'Health Regen', decay: 'Crippling Decay', paranoia: 'Paranoia', stim: 'Combat Stim', upgrade: 'Weapon Upgrade' },
-  col: { ult: 0xffd34d, amp: 0xff5a4e, regen: 0x5dff9a, decay: 0x9b59ff, paranoia: 0x6a5acd, stim: 0x47c8ff, upgrade: 0xf2f2f2 },
+  pool: ['stim', 'amp', 'regen', 'upgrade', 'golden', 'hunters'], names: { ult: 'Ultimate', amp: 'Damage Amp', regen: 'Health Regen', decay: 'Crippling Decay', paranoia: 'Paranoia', stim: 'Combat Stim', upgrade: 'Weapon Upgrade', golden: 'Golden Gun', hunters: 'Twin Hunters' },
+  col: { ult: 0xffd34d, amp: 0xff5a4e, regen: 0x5dff9a, decay: 0x9b59ff, paranoia: 0x6a5acd, stim: 0x47c8ff, upgrade: 0xf2f2f2, golden: 0xffcc42, hunters: 0x71c9d8 },
   set: null, t: 0, ampOn: false, regenUntil: 0, hitAt: -1e9, shotAt: -1e9, lastHp: 100, beacons: [], pend: [], dec: [], stimOn: false, mine: 0, net: [] };
 window.xSrPw = SRPW;
 function srPwPickSet(rnd) { const pool = SRPW.pool.slice(), set = ['ult', rnd() < 0.5 ? 'decay' : 'paranoia']; while (set.length < 5 && pool.length) set.push(pool.splice(Math.floor(rnd() * pool.length), 1)[0]); return set; }
@@ -21423,6 +21497,53 @@ if (typeof wDmg === 'function') { const w4 = wDmg; wDmg = function () { const n 
 if (typeof xStimK === 'function') { const x4 = xStimK; xStimK = function () { try { const on = typeof NET !== 'undefined' && NET && NET.socket; if (on ? SRPW.net.includes('stim') : SRPW.stimOn && srOn()) return 1.1; } catch (e) {} return x4.apply(this, arguments); }; }
 if (typeof mpCliRS === 'function') { const r4 = mpCliRS; mpCliRS = function (r) { try { if (r && typeof NET !== 'undefined' && NET.socket) SRPW.net = Array.isArray(r.pw) ? r.pw.filter((x) => typeof x === 'string') : []; } catch (e) {} return r4.apply(this, arguments); }; }
 window.xDmPacks = DMPK; window.xEscPacks = ESCPK;
+// parity6: Golden Gun uses the native Sheriff (one chambered round, two reserves,
+// lethal hits, accurate while moving); this flag never changes the wire weapon names.
+function srGoldenOn(){return !!(SRPW.golden&&wName()==='Sheriff'&&player&&player.hp>0);}
+function srGoldenSet(on){on=!!on;if(on===!!SRPW.golden)return;SRPW.golden=on;const W=WEAP.Sheriff;if(on){SRPW.sheriff={mag:W.mag,rate:W.rate,rld:W.rld};W.mag=1;W.rate=1;W.rld=1;}else if(SRPW.sheriff){Object.assign(W,SRPW.sheriff);SRPW.sheriff=null;}}
+if(typeof vfProfile==='function'){const p0=vfProfile;vfProfile=function(w){const p=p0.apply(this,arguments);return w==='Sheriff'&&srGoldenOn()?{...p,magazineSize:1,fireRate:1,reloadTimeSeconds:1,firstBulletAccuracy:0,ignoreMovementSpread:true,adsStats:null}:p;};}
+if(typeof wDmg==='function'){const d0=wDmg;wDmg=function(){if(SRPW.mine>0&&srGoldenOn())return 800;return d0.apply(this,arguments);};}
+if(typeof gSpread==='function'&&typeof gFire==='function'){const s0=gSpread;gSpread=function(w,W,B){if(!B&&srGoldenOn())return 0;return s0.apply(this,arguments);};const f0=gFire;gFire=function(d){if(srGoldenOn())return d;return f0.apply(this,arguments);};}
+if(typeof jKill==='function'){const k0=jKill;jKill=function(){const r=k0.apply(this,arguments);if(srGoldenOn()&&!tdmAbNet()){rsv++;if(slots.pis)slots.pis.rsv=rsv;}return r;};}
+if(typeof srPwRound==='function'){const r0=srPwRound;srPwRound=function(){srGoldenSet(false);srHuntersClear();return r0.apply(this,arguments);};}
+if(typeof srPwTake==='function'){const t0=srPwTake;srPwTake=function(o){const r=t0.apply(this,arguments);if(o.type==='golden'){srGoldenSet(true);bEquip('Sheriff','pis');swapW('pis');ammo=1;rsv=2;slots.pis={ammo:1,rsv:2};onSkin();updHud();}if(o.type==='hunters')srHuntersSpawn();return r;};}
+if(typeof mpCliRS==='function'){const r0=mpCliRS;mpCliRS=function(r){if(r&&tdmAbNet()){srGoldenSet(r.gg===1);tdmRoomHint(r);}return r0.apply(this,arguments);};}
+if(typeof mpReset==='function'){const r0=mpReset;mpReset=function(){srGoldenSet(false);srHuntersClear();tdmRoomsClear();return r0.apply(this,arguments);};}
+// Distinct wolf silhouettes, built locally; no external model download is required.
+function srHunterMesh(col){const g=new THREE.Group();g.userData.hunter=true;const part=(geo,x,y,z)=>{const m=new THREE.Mesh(geo,new THREE.MeshBasicMaterial({color:col||0x71c9d8}));m.position.set(x,y,z);m.raycast=()=>{};g.add(m);return m;};part(new THREE.BoxGeometry(.42,.36,.8),0,.4,0);part(new THREE.BoxGeometry(.34,.32,.4),0,.65,.45);for(const x of [-.13,.13]){part(new THREE.ConeGeometry(.09,.24,4),x,.91,.42);for(const z of [-.25,.25])part(new THREE.BoxGeometry(.1,.28,.1),x,.17,z);}part(new THREE.ConeGeometry(.12,.48,6),0,.45,-.55).rotation.x=-.8;g.name='Twin Hunter';scene.add(g);return g;}
+var SRH={L:[],seq:0};
+function srHuntersClear(){for(const h of SRH.L){if(h.m){scene.remove(h.m);h.m.traverse(o=>{if(o.isMesh){o.geometry.dispose();o.material.dispose();}});}}SRH.L=[];}
+function srHuntersSpawn(){const T=bots.filter(b=>b.alive&&b.g).sort((a,b)=>a.g.position.distanceTo(new THREE.Vector3(player.x,player.y||0,player.z))-b.g.position.distanceTo(new THREE.Vector3(player.x,player.y||0,player.z)));for(const b of T.slice(0,2)){const h={id:++SRH.seq,b,hp:150,t:15,m:srHunterMesh(),route:[],next:0};h.m.position.set(player.x,player.y||0,player.z);SRH.L.push(h);}}
+function srHuntersTick(dt){let C=null;try{C=nmActive();}catch(e){}for(const h of SRH.L){h.t-=dt;if(h.hp<=0||h.t<=0)continue;if(!h.b?.alive)h.b=bots.find(b=>b.alive&&!SRH.L.some(o=>o!==h&&o.b===b));if(!h.b){h.t=0;continue;}const p=h.m.position,v=h.b.g.position,eye=new THREE.Vector3(p.x,p.y+.5,p.z),dest=new THREE.Vector3(v.x,v.y+.5,v.z),clear=los(eye,dest);
+ if(p.distanceTo(v)<1&&clear){h.b.blind=Math.max(h.b.blind||0,4);h.b.srHunterSlow=4;h.t=0;continue;}let q=v;
+ if(!clear&&C){if(h.next<=0){const a=nmNear(C,p.x,p.z,p.y),b=nmNear(C,v.x,v.z,v.y);h.route=a>=0&&b>=0?nmPath(C,a,b).slice():[];h.next=.5;}h.next-=dt;while(h.route.length&&Math.hypot(C.nav.nodes[h.route[0]][0]-p.x,C.nav.nodes[h.route[0]][2]-p.z)<.45)h.route.shift();if(!h.route.length)continue;const a=C.nav.nodes[h.route[0]];q={x:a[0],y:a[1],z:a[2]};}
+ const dx=q.x-p.x,dz=q.z-p.z,l=Math.hypot(dx,dz)||1,k=Math.min(l,7*dt)/l,x=p.x+dx*k,z=p.z+dz*k,y=C?nmHeight(C,x,z,p.y):groundAt(x,z,.2,p.y);if(Math.abs(y-p.y)<1.2&&!blocked(x,z,.2,y)){p.set(x,y,z);h.m.rotation.y=Math.atan2(dx,dz);}}
+ const dead=SRH.L.filter(h=>h.t<=0||h.hp<=0),alive=SRH.L.filter(h=>h.t>0&&h.hp>0);SRH.L=dead;srHuntersClear();SRH.L=alive;for(const b of bots)if(b.srHunterSlow>0)b.srHunterSlow=Math.max(0,b.srHunterSlow-dt);}
+if(typeof srPwTick==='function'){const t0=srPwTick;srPwTick=function(dt){const r=t0.apply(this,arguments);srHuntersTick(dt);return r;};}
+if(typeof xUtilCands==='function'){const c0=xUtilCands;xUtilCands=function(en){const L=c0.apply(this,arguments);if(en&&!tdmAbNet())for(const h of SRH.L)if(h.hp>0&&h.t>0){const p=h.m.position;L.push({kind:'hunter',o:h,x:p.x,y:p.y+.4,z:p.z,hit:n=>h.hp-=n,d:0,los:false,blocking:false});}return L;};}
+if(typeof sgSlow==='function'){const s0=sgSlow;sgSlow=function(p){const b=bots.find(b=>b.g?.position===p);return s0.apply(this,arguments)*(b?.srHunterSlow>0?.5:1);};}
+// Gold tint follows the active native weapon and restores the model's own colours.
+if(typeof vmTick==='function'){const v0=vmTick;vmTick=function(){const r=v0.apply(this,arguments);const F=XV.fp;if(F&&F.ws){const gold=srGoldenOn()&&F.w==='Sheriff';if(F.gold!==gold){F.gold=gold;F.ws.traverse(o=>{if(o.isMesh)for(const m of [].concat(o.material||[])){if(!m.color)continue;m.userData=m.userData||{};if(m.userData.srBase==null)m.userData.srBase=m.color.getHex();m.color.setHex(gold?0xffcc42:m.userData.srBase);}});}}return r;};}
+// Adapted TDM spawn-room zones, shared dimensions with server/src/tdmrooms.js.
+var TDMROOM={defs:[],M:[],t:0,last:null};
+function tdmRoomsOn(){return !!(FV.dm&&FV.tdm&&!FV.esc);}
+function tdmRoomDefs(){if(!tdmRoomsOn())return [];if(tdmAbNet())return TDMROOM.defs;const C=typeof nmActive==='function'&&nmActive();return C?[C.meta.attacker.concat([5,0]),C.meta.defender.concat([5,1])]:[];}
+function tdmRoomTeam(u){return u===player?tdmAbNet()?MP.team:0:allies.includes(u)?0:1;}
+function tdmRoomInside(p,d){return Math.hypot(p.x-d[0],p.z-d[2])<d[3]&&Math.abs((p.y||0)-d[1])<3;}
+function tdmRoomBlock(u,x,z,r,y){const team=tdmRoomTeam(u);return tdmRoomDefs().some(d=>(d[4]!==team||u.tdmRoomLeft)&&Math.hypot(x-d[0],z-d[2])<d[3]+r&&Math.abs(y-d[1])<3);}
+function tdmRoomsClear(){for(const m of TDMROOM.M){scene.remove(m);m.geometry.dispose();m.material.dispose();}TDMROOM.M=[];TDMROOM.defs=[];TDMROOM.last=null;const h=document.getElementById('xTdmSpawnHint');if(h)h.style.display='none';}
+function tdmRoomsDraw(defs){const key=JSON.stringify(defs);if(TDMROOM.last===key)return;for(const m of TDMROOM.M){scene.remove(m);m.geometry.dispose();m.material.dispose();}TDMROOM.M=[];TDMROOM.last=key;for(const d of defs){const m=new THREE.Mesh(new THREE.RingGeometry(d[3]-.08,d[3],48),new THREE.MeshBasicMaterial({color:d[4]===tdmRoomTeam(player)?0x55cfff:0xff4655,side:THREE.DoubleSide,transparent:true,opacity:.65,depthWrite:false}));m.rotation.x=-Math.PI/2;m.position.set(d[0],d[1]+.05,d[2]);m.raycast=()=>{};scene.add(m);TDMROOM.M.push(m);}}
+function tdmRoomState(u,dt){const p=u===player?u:u.g.position,home=tdmRoomDefs().find(d=>d[4]===tdmRoomTeam(u));if(!home)return false;if(!tdmRoomInside(p,home)){u.tdmRoomLeft=true;u.tdmSafe=false;return false;}if(u.tdmRoomLeft)return false;u.tdmSafe=true;if(u.tdmRoomAt==null)u.tdmRoomAt=TDMROOM.t;if(TDMROOM.t-u.tdmRoomAt<=15){u.hp=Math.min(100,u.hp+100*dt);const cap=tdmRecCap(u);u.armor=Math.min(cap,(u.armor||0)+100*dt);if(u===player)updHud();}else{u.hp=Math.max(0,u.hp-10*dt);if(u.hp<=0&&u===player)pDie('Spawn room','Ability');else if(u.hp<=0&&u.alive){u.alive=false;dmScore('Spawn room',u.name);}}return true;}
+if(typeof tdmTick==='function'){const t0=tdmTick;tdmTick=function(dt){const r=t0.apply(this,arguments);if(!tdmRoomsOn()){if(TDMROOM.M.length)tdmRoomsClear();return r;}tdmRoomsDraw(tdmRoomDefs());if(!tdmAbNet()){TDMROOM.t+=dt;for(const u of [player,...allies,...bots])if(u===player?u.hp>0:u.alive)tdmRoomState(u,dt);}return r;};}
+function tdmRoomPlace(u){if(tdmAbNet()||!tdmRoomsOn())return;const C=typeof nmActive==='function'&&nmActive(),d=tdmRoomDefs().find(d=>d[4]===tdmRoomTeam(u));if(!C||!d)return;const nodes=C.nav.nodes.filter(p=>Math.hypot(p[0]-d[0],p[2]-d[2])<d[3]-.5&&Math.abs(p[1]-d[1])<1&&!nmBlocked(C,p[0],p[2],.43,p[1],1.92));const p=nodes[Math.floor(Math.random()*nodes.length)]||d;if(u===player){u.x=p[0];u.y=p[1];u.z=p[2];}else u.g.position.set(p[0],p[1],p[2]);}
+function tdmRoomHint(r){let el=document.getElementById('xTdmSpawnHint');const on=r.tab===1&&Number.isFinite(r.room);if(!el&&on){el=document.createElement('div');el.id='xTdmSpawnHint';el.style.cssText='position:fixed;top:130px;left:50%;transform:translateX(-50%);color:#c9f4ff;background:#0f1923cc;padding:6px 12px;z-index:60;pointer-events:none;font:12px sans-serif';document.body.appendChild(el);}if(el){el.style.display=on?'block':'none';if(on)el.textContent=r.room>0?'Spawn room · '+Math.ceil(r.room)+' s · Leave to fight':'Spawn room · Taking damage · leave now';}if(r.tab===1&&player)player.tdmRoomLeft=!on;}
+function tdmRoomReset(u){u.tdmRoomAt=null;u.tdmRoomLeft=false;u.tdmSafe=false;}
+if(typeof dmSpawnP==='function'){const p0=dmSpawnP;dmSpawnP=function(){tdmRoomReset(player);const r=p0.apply(this,arguments);tdmRoomPlace(player);return r;};const b0=dmSpawnB;dmSpawnB=function(b){tdmRoomReset(b);const r=b0.apply(this,arguments);tdmRoomPlace(b);return r;};}
+if(typeof shoot==='function'){const s0=shoot;shoot=function(){if(tdmRoomsOn()&&tdmRoomDefs().some(d=>tdmRoomInside(player,d)))return;return s0.apply(this,arguments);};}
+if(typeof botCanShoot==='function'){const s0=botCanShoot;botCanShoot=function(b){if(tdmRoomsOn()&&tdmRoomDefs().some(d=>tdmRoomInside(b.g.position,d)))return false;return s0.apply(this,arguments);};}
+if(typeof hurt==='function'){const h0=hurt;hurt=function(b){if(tdmRoomsOn()&&b?.tdmSafe)return;return h0.apply(this,arguments);};}
+if(typeof mpCliSnap==='function'){const m0=mpCliSnap;mpCliSnap=function(m){if(m&&Array.isArray(m.trm))TDMROOM.defs=m.trm.filter(d=>Array.isArray(d)&&d.length===5&&d.every(Number.isFinite)&&d[3]>0&&d[3]<=10);return m0.apply(this,arguments);};}
+
 // ---- END GAME RULES ----
 // ---- ROCKLAN MOVEMENT ----
 // Movement-only overlay. The original mixed animation library and upper-body actions stay intact.

@@ -1,0 +1,4 @@
+Touch layout: 14 screens (portrait 360x740-412x915, landscape 568x320-1280x720) with every button inside and none overlapping; portrait layout; rotation re-fit; portrait play allowed
+Touch: relock() never takes pointer lock on a touch screen
+Touch: portrait HUD (top bar fits, subtitle/minimap/feed/team panel stacked clear of the touch buttons at 360x740, 390x844, 412x915)
+Touch: portrait 360x740 / 390x844 / 412x915 and iPhone portrait notch (390x844, 393x852, 430x932, 375x812): buttons inside the safe area, menu / feed / team panel / abilities stacked, bottom cluster clear of the risen health, credits + ammo and weapon strip

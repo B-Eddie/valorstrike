@@ -1,0 +1,1 @@
+Online handshake survives blocked storage, reuses session identity, deduplicates concurrent token calls, honors saved token, fails without fabricated identity

@@ -1,0 +1,2 @@
+dmPts: spawn candidates filtered to playable nav - island callouts excluded, main area kept, fallback safe
+dmPts native path: candidates are playable nav nodes, islands excluded by construction

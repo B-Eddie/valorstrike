@@ -1,0 +1,1 @@
+online devices: Turret / Alarmbot / Trapwire / Trademark / Blast Pack / Spycam / Owl Drone rows -> real models (xvDevice, offline heights), own skipped, ally / enemy colour, Trapwire anchors + wire, spent Trademark field, freed when gone (own geometry only), malformed rows ignored, netClearEffects; end to end from the real server snapshot

@@ -17,7 +17,7 @@ function xgSockets(gl) {
   sc.updateMatrixWorld(true); const at = (n) => { const o = xvFind(sc, n); return o ? o.getWorldPosition(new THREE.Vector3()).toArray() : null; };
   const s = { lh: at('Left_Hand_Target') || at('Left_Hand_TargetSocket'), tr: at('Trigger'), mz: at('MuzzlePoint') || at('Muzzle') }; mx.stopAllAction(); return s;
 }
-// Template space (the xGun group: muzzle toward -Z): right-hand grip just behind/below the trigger, left-hand socket, stock end.
+// Template space (the xGun group: muzzle toward -Z): right-hand grip just behind/below the trigger, left-hand socket, stock end. Authored support sockets, rather than a rifle offset, select each gun type's grip.
 function xgTemplate(T, w) {
   let inner = null; T.traverse((o) => { if (!inner && o.userData && o.userData.sock) inner = o; }); T.updateMatrixWorld(true);
   const box = new THREE.Box3().setFromObject(inner ? inner.parent : T), v = new THREE.Vector3(), by = T.userData.my != null ? T.userData.my : (box.min.y + box.max.y) / 2, s = inner && inner.userData.sock;
@@ -72,7 +72,19 @@ function xgCurl(A, set, k, n) { const axis = XGRIP.ax || (XGRIP.ax = new THREE.V
   axis.crossVectors(k, n).normalize(); for (const F of A.fingers) { const ang = (set[F.f] || [0, 0, 0])[F.j - 1]; F.bn.quaternion.copy(F.rest); xgWorldQ(F.bn.parent, pq); la.copy(axis).applyQuaternion(pq.invert()); q.setFromAxisAngle(la, ang); F.bn.quaternion.premultiply(q); F.bn.updateMatrixWorld(true); } }
 function xgTarget(M) { const X = M.sx; if (M.dead || X.dd || M.w === 'Knife' || X.uo === 'reload' || X.uo === 'cast' || X.uo === 'throw' || (X.w && X.w.plant > 0.05)) return 0; return 1; }
 function xgGrip(M) { let g = null; M.gun.traverse((o) => { if (!g && o.userData && o.userData.grip) g = o.userData.grip; }); return g; }
+// A model persists across purchases, secondary swaps and Escalation levels. Replace only
+// the gun under its existing holder; keep the body's mixers and locomotion untouched.
+function xgHeldSync(M) {
+  const u=M.unit;if(!u||M.dead||u.bsW||!M.gun)return;
+  const w=typeof xWeapOf==='function'?xWeapOf(u):u.w;if(!w||w===M.w)return;
+  const old=M.gun,parent=old.parent;if(!parent)return;
+  const next=xGun(w),G=M.sx&&M.sx.grip;
+  next.position.copy(G?G.gp:old.position);next.quaternion.copy(G?G.gq:old.quaternion);next.scale.copy(G?G.gs:old.scale);next.visible=old.visible;
+  parent.remove(old);parent.add(next);M.gun=next;M.w=w;
+  if(G){G.last=null;G.w=0;G.gp.copy(next.position);G.gq.copy(next.quaternion);G.gs.copy(next.scale);G.slide=0;}
+}
 function xgPose(M, dt) {
+  xgHeldSync(M);
   const X = M.sx; if (!X || !X.sc || !M.gun || !M.valorant) return; const G = X.grip || xgSetup(M); if (!G.ok) return;
   const want = xgTarget(M), grip = want ? xgGrip(M) : null; G.w += ((grip ? 1 : 0) - G.w) * Math.min(1, (dt || 1 / 60) * 12); if (G.w < 0.01) { G.w = 0; M.gun.position.copy(G.gp); M.gun.quaternion.copy(G.gq); return; }
   const g = grip || G.last; if (!g) return; G.last = g;

@@ -1,0 +1,157 @@
+[
+  {
+    "suite": "server-test-release-gate.cjs",
+    "exit": 0,
+    "seconds": 0.358
+  },
+  {
+    "suite": "server-test.js",
+    "exit": 0,
+    "seconds": 0.156
+  },
+  {
+    "suite": "server-test-network.js",
+    "exit": 1,
+    "seconds": 0.259
+  },
+  {
+    "suite": "server-test-reconnect.js",
+    "exit": 0,
+    "seconds": 0.172
+  },
+  {
+    "suite": "server-test-netdrop.js",
+    "exit": 1,
+    "seconds": 0.579
+  },
+  {
+    "suite": "server-test-bug-lanes.js",
+    "exit": 0,
+    "seconds": 0.42
+  },
+  {
+    "suite": "server-test-bot-tactics.js",
+    "exit": 0,
+    "seconds": 0.236
+  },
+  {
+    "suite": "server-test-bot-brain.js",
+    "exit": 1,
+    "seconds": 0.122
+  },
+  {
+    "suite": "server-test-bot-perception.js",
+    "exit": 0,
+    "seconds": 2.031
+  },
+  {
+    "suite": "server-test-bot-shoot-utility.js",
+    "exit": 0,
+    "seconds": 0.169
+  },
+  {
+    "suite": "server-test-two-player.js",
+    "exit": 1,
+    "seconds": 0.09
+  },
+  {
+    "suite": "server-test-perf.js",
+    "exit": 1,
+    "seconds": 0.091
+  },
+  {
+    "suite": "server-test-bvh-fast.js",
+    "exit": 1,
+    "seconds": 0.092
+  },
+  {
+    "suite": "server-test-tick-alloc.js",
+    "exit": 1,
+    "seconds": 0.097
+  },
+  {
+    "suite": "server-test-bundle.cjs",
+    "exit": 1,
+    "seconds": 0.093
+  },
+  {
+    "suite": "server-test-soak.js",
+    "exit": 1,
+    "seconds": 0.107
+  },
+  {
+    "suite": "client-test_net_transport.cjs",
+    "exit": 0,
+    "seconds": 0.155
+  },
+  {
+    "suite": "client-test_net_drop.cjs",
+    "exit": 0,
+    "seconds": 0.142
+  },
+  {
+    "suite": "client-test_net_stall.cjs",
+    "exit": 0,
+    "seconds": 3.296
+  },
+  {
+    "suite": "client-test_net_clean_alloc.cjs",
+    "exit": 0,
+    "seconds": 2.355
+  },
+  {
+    "suite": "client-test_net_clean_rs.cjs",
+    "exit": 0,
+    "seconds": 0.101
+  },
+  {
+    "suite": "client-test_net_reconcile.cjs",
+    "exit": 0,
+    "seconds": 0.349
+  },
+  {
+    "suite": "client-test_network_smoothing.cjs",
+    "exit": 0,
+    "seconds": 0.131
+  },
+  {
+    "suite": "client-test_remote_interp.cjs",
+    "exit": 1,
+    "seconds": 0.087
+  },
+  {
+    "suite": "client-test_frame_perf.cjs",
+    "exit": 0,
+    "seconds": 0.122
+  },
+  {
+    "suite": "client-test_hypot.cjs",
+    "exit": 1,
+    "seconds": 3.465
+  },
+  {
+    "suite": "client-test_agent_preload.cjs",
+    "exit": 0,
+    "seconds": 0.119
+  },
+  {
+    "suite": "client-test_map_load_stall.cjs",
+    "exit": 0,
+    "seconds": 0.093
+  },
+  {
+    "suite": "client-test_round_start_perf.cjs",
+    "exit": 1,
+    "seconds": 0.092
+  },
+  {
+    "suite": "client-test_client_online.cjs",
+    "exit": 1,
+    "seconds": 1.333
+  },
+  {
+    "suite": "client-test_bug_lanes.cjs",
+    "exit": 0,
+    "seconds": 0.411
+  }
+]

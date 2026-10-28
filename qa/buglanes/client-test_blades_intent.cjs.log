@@ -1,0 +1,1 @@
+Blade Storm client sends cadence-limited throw intent without local ammo/damage/kill claims; buy/death gate and offline behavior preserved; ALT FIRE sends {t:blade,alt:1} once per burst (0.45 s unequip)

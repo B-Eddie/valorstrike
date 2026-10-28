@@ -1,0 +1,1 @@
+Minimap icons: agent portraits on team rings (you white, teammates teal / ally colour, spotted enemies red / enemy colour) with facing pointers; unspotted and fogged enemies hidden; dot fallback for missing / failed art; X for the dead; portraits cut once per agent (no per-frame Image / canvas); blockout minimap the same

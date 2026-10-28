@@ -1,0 +1,1 @@
+Release gate: production wrangler sets no Spike/local-origin vars and the worker never imports tools/ (browser-bridge is local only); Spike requires explicit opt-in; loopback origins require local opt-in and reject lookalikes; loading sockets retain 180 s timeout

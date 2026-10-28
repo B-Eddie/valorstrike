@@ -1,0 +1,21 @@
+{
+  label: 'paired-before',
+  node: 'v24.22.1',
+  fixture: '9 remotes, 144 Hz scripted frames, snapshot every 7 frames (~20.6 Hz), VM CPU only; includes harness overhead; no animation/model/render work',
+  ms: {
+    snapshot: {
+      mean: 0.22681895974329036,
+      p95: 0.3336420000000544,
+      p99: 2.244984000000045,
+      max: 18.602793999999903
+    },
+    interpolate: {
+      mean: 0.027738740583333643,
+      p95: 0.026088999999956286,
+      p99: 0.0792189999999664,
+      max: 20.41657900000007
+    }
+  },
+  heapBytesPerFrame: 2754.07,
+  gcs: 15
+}

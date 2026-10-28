@@ -1,0 +1,1 @@
+Math.hypot patch: 3000000 two- and 1000000 three-argument calls bit-identical to the engine builtin; 48.1 -> 15.83 B allocated per call

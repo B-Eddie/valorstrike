@@ -1,0 +1,1 @@
+map leash: shared rule (core/rim/void/wall top/updraft), motor containment, client + server wiring

@@ -1,0 +1,21 @@
+{
+  label: 'final',
+  node: 'v24.22.1',
+  fixture: '9 remotes, 144 Hz scripted frames, snapshot every 7 frames (~20.6 Hz), VM CPU only; includes harness overhead; no animation/model/render work',
+  ms: {
+    snapshot: {
+      mean: 0.19691417502917116,
+      p95: 0.2595900000000029,
+      p99: 0.3684130000000323,
+      max: 8.833684000000062
+    },
+    interpolate: {
+      mean: 0.023722129916667476,
+      p95: 0.03226899999992838,
+      p99: 0.0407910000000129,
+      max: 13.62909000000002
+    }
+  },
+  heapBytesPerFrame: 2534.6053333333334,
+  gcs: 8
+}

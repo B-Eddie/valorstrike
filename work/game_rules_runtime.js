@@ -24,8 +24,9 @@ function dmPackMesh() { // a small green kit with a white cross, slowly turning
 }
 function dmPackDrop(x, y, z, id) {
   if (![x, y, z].every(Number.isFinite)) return null;
+  if (!dmPackOnline()) try { const C=typeof nmActive==='function'&&nmActive(); const floor=C?nmHeight(C,x,z,y):groundAt(x,z,0.2,y); if(Number.isFinite(floor)&&floor<=y+0.32)y=floor; } catch(e) {}
   const k = { id: id != null ? id : ++DMPK.seq, x, y, z, t: dmPackRule().life, g: null };
-  try { k.g = dmPackMesh(); k.g.position.set(x, y + 0.2, z); scene.add(k.g); } catch (e) { k.g = null; }
+  try { k.g = dmPackMesh(); k.g.position.set(x, y + 0.11, z); scene.add(k.g); } catch (e) { k.g = null; }
   DMPK.L.push(k); return k;
 }
 function dmPackKill(k) { const i = DMPK.L.indexOf(k); if (i >= 0) DMPK.L.splice(i, 1); if (k && k.g && k.g.parent) k.g.parent.remove(k.g); }
@@ -186,13 +187,12 @@ if (typeof mpCliSnap === 'function') { const c3 = mpCliSnap; mpCliSnap = functio
 // of the player's gun damage for the round), Health Regen (player and allies 10 HP/s for 20 s out of combat: no damage taken, no shot
 // for 3 s), Crippling Decay (after 3 s every enemy bot -50 HP, never below 1, given back 8 s later), Paranoia (after 3 s, 8 s; page
 // bots have no vision model: only the feed line), Combat Stim (a 6 m beacon for 12 s at the capture point: stim x1.1 inside, xStimK),
-// Weapon Upgrade (next round's set; round 3 / Endgame Operator or Odin; with an Operator: a sidearm). Golden Gun, Tracer Rounds, Twin
-// Hunters are not built (not in the draw). Online the server runs them: orb rows carry the type (o[5]) and the round state's pw the
+// Weapon Upgrade (next round's set; round 3 / Endgame Operator or Odin; with an Operator: a sidearm). Golden Gun and Twin Hunters are implemented below; Tracer Rounds remain outside the draw. Online the server runs them: orb rows carry the type (o[5]) and the round state's pw the
 // player's active ones (HUD line, stim; work/server_runtime.js nmOrbs / nmVarHud).
 // Inferred (unpublished, in the audit): out of combat = 3 s, decay never kills and is given back, the Stim beacon 6 m / 12 s at x1.1.
 var SRPW = { amp: { k: 1.3 }, regen: { rate: 10, life: 20, calm: 3 }, decay: { delay: 3, life: 8, hp: 50 }, paranoia: { delay: 3, life: 8 }, stim: { radius: 6, life: 12 },
-  pool: ['stim', 'amp', 'regen', 'upgrade'], names: { ult: 'Ultimate', amp: 'Damage Amp', regen: 'Health Regen', decay: 'Crippling Decay', paranoia: 'Paranoia', stim: 'Combat Stim', upgrade: 'Weapon Upgrade' },
-  col: { ult: 0xffd34d, amp: 0xff5a4e, regen: 0x5dff9a, decay: 0x9b59ff, paranoia: 0x6a5acd, stim: 0x47c8ff, upgrade: 0xf2f2f2 },
+  pool: ['stim', 'amp', 'regen', 'upgrade', 'golden', 'hunters'], names: { ult: 'Ultimate', amp: 'Damage Amp', regen: 'Health Regen', decay: 'Crippling Decay', paranoia: 'Paranoia', stim: 'Combat Stim', upgrade: 'Weapon Upgrade', golden: 'Golden Gun', hunters: 'Twin Hunters' },
+  col: { ult: 0xffd34d, amp: 0xff5a4e, regen: 0x5dff9a, decay: 0x9b59ff, paranoia: 0x6a5acd, stim: 0x47c8ff, upgrade: 0xf2f2f2, golden: 0xffcc42, hunters: 0x71c9d8 },
   set: null, t: 0, ampOn: false, regenUntil: 0, hitAt: -1e9, shotAt: -1e9, lastHp: 100, beacons: [], pend: [], dec: [], stimOn: false, mine: 0, net: [] };
 window.xSrPw = SRPW;
 function srPwPickSet(rnd) { const pool = SRPW.pool.slice(), set = ['ult', rnd() < 0.5 ? 'decay' : 'paranoia']; while (set.length < 5 && pool.length) set.push(pool.splice(Math.floor(rnd() * pool.length), 1)[0]); return set; }
@@ -226,4 +226,51 @@ if (typeof wDmg === 'function') { const w4 = wDmg; wDmg = function () { const n 
 if (typeof xStimK === 'function') { const x4 = xStimK; xStimK = function () { try { const on = typeof NET !== 'undefined' && NET && NET.socket; if (on ? SRPW.net.includes('stim') : SRPW.stimOn && srOn()) return 1.1; } catch (e) {} return x4.apply(this, arguments); }; }
 if (typeof mpCliRS === 'function') { const r4 = mpCliRS; mpCliRS = function (r) { try { if (r && typeof NET !== 'undefined' && NET.socket) SRPW.net = Array.isArray(r.pw) ? r.pw.filter((x) => typeof x === 'string') : []; } catch (e) {} return r4.apply(this, arguments); }; }
 window.xDmPacks = DMPK; window.xEscPacks = ESCPK;
+// parity6: Golden Gun uses the native Sheriff (one chambered round, two reserves,
+// lethal hits, accurate while moving); this flag never changes the wire weapon names.
+function srGoldenOn(){return !!(SRPW.golden&&wName()==='Sheriff'&&player&&player.hp>0);}
+function srGoldenSet(on){on=!!on;if(on===!!SRPW.golden)return;SRPW.golden=on;const W=WEAP.Sheriff;if(on){SRPW.sheriff={mag:W.mag,rate:W.rate,rld:W.rld};W.mag=1;W.rate=1;W.rld=1;}else if(SRPW.sheriff){Object.assign(W,SRPW.sheriff);SRPW.sheriff=null;}}
+if(typeof vfProfile==='function'){const p0=vfProfile;vfProfile=function(w){const p=p0.apply(this,arguments);return w==='Sheriff'&&srGoldenOn()?{...p,magazineSize:1,fireRate:1,reloadTimeSeconds:1,firstBulletAccuracy:0,ignoreMovementSpread:true,adsStats:null}:p;};}
+if(typeof wDmg==='function'){const d0=wDmg;wDmg=function(){if(SRPW.mine>0&&srGoldenOn())return 800;return d0.apply(this,arguments);};}
+if(typeof gSpread==='function'&&typeof gFire==='function'){const s0=gSpread;gSpread=function(w,W,B){if(!B&&srGoldenOn())return 0;return s0.apply(this,arguments);};const f0=gFire;gFire=function(d){if(srGoldenOn())return d;return f0.apply(this,arguments);};}
+if(typeof jKill==='function'){const k0=jKill;jKill=function(){const r=k0.apply(this,arguments);if(srGoldenOn()&&!tdmAbNet()){rsv++;if(slots.pis)slots.pis.rsv=rsv;}return r;};}
+if(typeof srPwRound==='function'){const r0=srPwRound;srPwRound=function(){srGoldenSet(false);srHuntersClear();return r0.apply(this,arguments);};}
+if(typeof srPwTake==='function'){const t0=srPwTake;srPwTake=function(o){const r=t0.apply(this,arguments);if(o.type==='golden'){srGoldenSet(true);bEquip('Sheriff','pis');swapW('pis');ammo=1;rsv=2;slots.pis={ammo:1,rsv:2};onSkin();updHud();}if(o.type==='hunters')srHuntersSpawn();return r;};}
+if(typeof mpCliRS==='function'){const r0=mpCliRS;mpCliRS=function(r){if(r&&tdmAbNet()){srGoldenSet(r.gg===1);tdmRoomHint(r);}return r0.apply(this,arguments);};}
+if(typeof mpReset==='function'){const r0=mpReset;mpReset=function(){srGoldenSet(false);srHuntersClear();tdmRoomsClear();return r0.apply(this,arguments);};}
+// Distinct wolf silhouettes, built locally; no external model download is required.
+function srHunterMesh(col){const g=new THREE.Group();g.userData.hunter=true;const part=(geo,x,y,z)=>{const m=new THREE.Mesh(geo,new THREE.MeshBasicMaterial({color:col||0x71c9d8}));m.position.set(x,y,z);m.raycast=()=>{};g.add(m);return m;};part(new THREE.BoxGeometry(.42,.36,.8),0,.4,0);part(new THREE.BoxGeometry(.34,.32,.4),0,.65,.45);for(const x of [-.13,.13]){part(new THREE.ConeGeometry(.09,.24,4),x,.91,.42);for(const z of [-.25,.25])part(new THREE.BoxGeometry(.1,.28,.1),x,.17,z);}part(new THREE.ConeGeometry(.12,.48,6),0,.45,-.55).rotation.x=-.8;g.name='Twin Hunter';scene.add(g);return g;}
+var SRH={L:[],seq:0};
+function srHuntersClear(){for(const h of SRH.L){if(h.m){scene.remove(h.m);h.m.traverse(o=>{if(o.isMesh){o.geometry.dispose();o.material.dispose();}});}}SRH.L=[];}
+function srHuntersSpawn(){const T=bots.filter(b=>b.alive&&b.g).sort((a,b)=>a.g.position.distanceTo(new THREE.Vector3(player.x,player.y||0,player.z))-b.g.position.distanceTo(new THREE.Vector3(player.x,player.y||0,player.z)));for(const b of T.slice(0,2)){const h={id:++SRH.seq,b,hp:150,t:15,m:srHunterMesh(),route:[],next:0};h.m.position.set(player.x,player.y||0,player.z);SRH.L.push(h);}}
+function srHuntersTick(dt){let C=null;try{C=nmActive();}catch(e){}for(const h of SRH.L){h.t-=dt;if(h.hp<=0||h.t<=0)continue;if(!h.b?.alive)h.b=bots.find(b=>b.alive&&!SRH.L.some(o=>o!==h&&o.b===b));if(!h.b){h.t=0;continue;}const p=h.m.position,v=h.b.g.position,eye=new THREE.Vector3(p.x,p.y+.5,p.z),dest=new THREE.Vector3(v.x,v.y+.5,v.z),clear=los(eye,dest);
+ if(p.distanceTo(v)<1&&clear){h.b.blind=Math.max(h.b.blind||0,4);h.b.srHunterSlow=4;h.t=0;continue;}let q=v;
+ if(!clear&&C){if(h.next<=0){const a=nmNear(C,p.x,p.z,p.y),b=nmNear(C,v.x,v.z,v.y);h.route=a>=0&&b>=0?nmPath(C,a,b).slice():[];h.next=.5;}h.next-=dt;while(h.route.length&&Math.hypot(C.nav.nodes[h.route[0]][0]-p.x,C.nav.nodes[h.route[0]][2]-p.z)<.45)h.route.shift();if(!h.route.length)continue;const a=C.nav.nodes[h.route[0]];q={x:a[0],y:a[1],z:a[2]};}
+ const dx=q.x-p.x,dz=q.z-p.z,l=Math.hypot(dx,dz)||1,k=Math.min(l,7*dt)/l,x=p.x+dx*k,z=p.z+dz*k,y=C?nmHeight(C,x,z,p.y):groundAt(x,z,.2,p.y);if(Math.abs(y-p.y)<1.2&&!blocked(x,z,.2,y)){p.set(x,y,z);h.m.rotation.y=Math.atan2(dx,dz);}}
+ const dead=SRH.L.filter(h=>h.t<=0||h.hp<=0),alive=SRH.L.filter(h=>h.t>0&&h.hp>0);SRH.L=dead;srHuntersClear();SRH.L=alive;for(const b of bots)if(b.srHunterSlow>0)b.srHunterSlow=Math.max(0,b.srHunterSlow-dt);}
+if(typeof srPwTick==='function'){const t0=srPwTick;srPwTick=function(dt){const r=t0.apply(this,arguments);srHuntersTick(dt);return r;};}
+if(typeof xUtilCands==='function'){const c0=xUtilCands;xUtilCands=function(en){const L=c0.apply(this,arguments);if(en&&!tdmAbNet())for(const h of SRH.L)if(h.hp>0&&h.t>0){const p=h.m.position;L.push({kind:'hunter',o:h,x:p.x,y:p.y+.4,z:p.z,hit:n=>h.hp-=n,d:0,los:false,blocking:false});}return L;};}
+if(typeof sgSlow==='function'){const s0=sgSlow;sgSlow=function(p){const b=bots.find(b=>b.g?.position===p);return s0.apply(this,arguments)*(b?.srHunterSlow>0?.5:1);};}
+// Gold tint follows the active native weapon and restores the model's own colours.
+if(typeof vmTick==='function'){const v0=vmTick;vmTick=function(){const r=v0.apply(this,arguments);const F=XV.fp;if(F&&F.ws){const gold=srGoldenOn()&&F.w==='Sheriff';if(F.gold!==gold){F.gold=gold;F.ws.traverse(o=>{if(o.isMesh)for(const m of [].concat(o.material||[])){if(!m.color)continue;m.userData=m.userData||{};if(m.userData.srBase==null)m.userData.srBase=m.color.getHex();m.color.setHex(gold?0xffcc42:m.userData.srBase);}});}}return r;};}
+// Adapted TDM spawn-room zones, shared dimensions with server/src/tdmrooms.js.
+var TDMROOM={defs:[],M:[],t:0,last:null};
+function tdmRoomsOn(){return !!(FV.dm&&FV.tdm&&!FV.esc);}
+function tdmRoomDefs(){if(!tdmRoomsOn())return [];if(tdmAbNet())return TDMROOM.defs;const C=typeof nmActive==='function'&&nmActive();return C?[C.meta.attacker.concat([5,0]),C.meta.defender.concat([5,1])]:[];}
+function tdmRoomTeam(u){return u===player?tdmAbNet()?MP.team:0:allies.includes(u)?0:1;}
+function tdmRoomInside(p,d){return Math.hypot(p.x-d[0],p.z-d[2])<d[3]&&Math.abs((p.y||0)-d[1])<3;}
+function tdmRoomBlock(u,x,z,r,y){const team=tdmRoomTeam(u);return tdmRoomDefs().some(d=>(d[4]!==team||u.tdmRoomLeft)&&Math.hypot(x-d[0],z-d[2])<d[3]+r&&Math.abs(y-d[1])<3);}
+function tdmRoomsClear(){for(const m of TDMROOM.M){scene.remove(m);m.geometry.dispose();m.material.dispose();}TDMROOM.M=[];TDMROOM.defs=[];TDMROOM.last=null;const h=document.getElementById('xTdmSpawnHint');if(h)h.style.display='none';}
+function tdmRoomsDraw(defs){const key=JSON.stringify(defs);if(TDMROOM.last===key)return;for(const m of TDMROOM.M){scene.remove(m);m.geometry.dispose();m.material.dispose();}TDMROOM.M=[];TDMROOM.last=key;for(const d of defs){const m=new THREE.Mesh(new THREE.RingGeometry(d[3]-.08,d[3],48),new THREE.MeshBasicMaterial({color:d[4]===tdmRoomTeam(player)?0x55cfff:0xff4655,side:THREE.DoubleSide,transparent:true,opacity:.65,depthWrite:false}));m.rotation.x=-Math.PI/2;m.position.set(d[0],d[1]+.05,d[2]);m.raycast=()=>{};scene.add(m);TDMROOM.M.push(m);}}
+function tdmRoomState(u,dt){const p=u===player?u:u.g.position,home=tdmRoomDefs().find(d=>d[4]===tdmRoomTeam(u));if(!home)return false;if(!tdmRoomInside(p,home)){u.tdmRoomLeft=true;u.tdmSafe=false;return false;}if(u.tdmRoomLeft)return false;u.tdmSafe=true;if(u.tdmRoomAt==null)u.tdmRoomAt=TDMROOM.t;if(TDMROOM.t-u.tdmRoomAt<=15){u.hp=Math.min(100,u.hp+100*dt);const cap=tdmRecCap(u);u.armor=Math.min(cap,(u.armor||0)+100*dt);if(u===player)updHud();}else{u.hp=Math.max(0,u.hp-10*dt);if(u.hp<=0&&u===player)pDie('Spawn room','Ability');else if(u.hp<=0&&u.alive){u.alive=false;dmScore('Spawn room',u.name);}}return true;}
+if(typeof tdmTick==='function'){const t0=tdmTick;tdmTick=function(dt){const r=t0.apply(this,arguments);if(!tdmRoomsOn()){if(TDMROOM.M.length)tdmRoomsClear();return r;}tdmRoomsDraw(tdmRoomDefs());if(!tdmAbNet()){TDMROOM.t+=dt;for(const u of [player,...allies,...bots])if(u===player?u.hp>0:u.alive)tdmRoomState(u,dt);}return r;};}
+function tdmRoomPlace(u){if(tdmAbNet()||!tdmRoomsOn())return;const C=typeof nmActive==='function'&&nmActive(),d=tdmRoomDefs().find(d=>d[4]===tdmRoomTeam(u));if(!C||!d)return;const nodes=C.nav.nodes.filter(p=>Math.hypot(p[0]-d[0],p[2]-d[2])<d[3]-.5&&Math.abs(p[1]-d[1])<1&&!nmBlocked(C,p[0],p[2],.43,p[1],1.92));const p=nodes[Math.floor(Math.random()*nodes.length)]||d;if(u===player){u.x=p[0];u.y=p[1];u.z=p[2];}else u.g.position.set(p[0],p[1],p[2]);}
+function tdmRoomHint(r){let el=document.getElementById('xTdmSpawnHint');const on=r.tab===1&&Number.isFinite(r.room);if(!el&&on){el=document.createElement('div');el.id='xTdmSpawnHint';el.style.cssText='position:fixed;top:130px;left:50%;transform:translateX(-50%);color:#c9f4ff;background:#0f1923cc;padding:6px 12px;z-index:60;pointer-events:none;font:12px sans-serif';document.body.appendChild(el);}if(el){el.style.display=on?'block':'none';if(on)el.textContent=r.room>0?'Spawn room · '+Math.ceil(r.room)+' s · Leave to fight':'Spawn room · Taking damage · leave now';}if(r.tab===1&&player)player.tdmRoomLeft=!on;}
+function tdmRoomReset(u){u.tdmRoomAt=null;u.tdmRoomLeft=false;u.tdmSafe=false;}
+if(typeof dmSpawnP==='function'){const p0=dmSpawnP;dmSpawnP=function(){tdmRoomReset(player);const r=p0.apply(this,arguments);tdmRoomPlace(player);return r;};const b0=dmSpawnB;dmSpawnB=function(b){tdmRoomReset(b);const r=b0.apply(this,arguments);tdmRoomPlace(b);return r;};}
+if(typeof shoot==='function'){const s0=shoot;shoot=function(){if(tdmRoomsOn()&&tdmRoomDefs().some(d=>tdmRoomInside(player,d)))return;return s0.apply(this,arguments);};}
+if(typeof botCanShoot==='function'){const s0=botCanShoot;botCanShoot=function(b){if(tdmRoomsOn()&&tdmRoomDefs().some(d=>tdmRoomInside(b.g.position,d)))return false;return s0.apply(this,arguments);};}
+if(typeof hurt==='function'){const h0=hurt;hurt=function(b){if(tdmRoomsOn()&&b?.tdmSafe)return;return h0.apply(this,arguments);};}
+if(typeof mpCliSnap==='function'){const m0=mpCliSnap;mpCliSnap=function(m){if(m&&Array.isArray(m.trm))TDMROOM.defs=m.trm.filter(d=>Array.isArray(d)&&d.length===5&&d.every(Number.isFinite)&&d[3]>0&&d[3]<=10);return m0.apply(this,arguments);};}
+
 // ---- END GAME RULES ----

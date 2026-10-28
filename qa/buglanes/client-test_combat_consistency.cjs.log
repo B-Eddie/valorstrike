@@ -1,0 +1,3 @@
+Combat consistency: server hit volumes = client bone hitboxes, shared official penetration tiers, render-matched smoke, online statuses server-owned, remote crouch/pitch rows applied
+Wallbang damage: 261 weapon x band x part x k cases = server floor(raw x k) (79 differed under the old rounding)
+Shotgun damage: 63 gun x range x part cases (one pellet in the player's loop, expected pellets for a bot's shot), Bucky alt falloff kept

@@ -1,0 +1,6 @@
+HUD v2: xHudV2 after xHudV, bundled fonts (no network), portraits (agent / dead / ult), buy-phase timer + label, Spike slot intact
+HUD v2: shield states, ability slot hooks + equipped outline, charge pips on compact screens
+HUD v2: ammo beside the abilities on desktop, credits glyph
+HUD v2: kill feed portraits, skull headshot, wallbang mark, own-kill outline
+HUD v2: round banners
+HUD v2: online kill feed wallbang mark from the server kill event

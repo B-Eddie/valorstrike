@@ -1,0 +1,1 @@
+{"frames":3000,"fullBytes":5941697,"deltaBytes":1507933,"savedPct":74.62117304197774,"checks":"exact full-frame and post-validator parity; mutable state; roster/order/reset; deletes; periodic keyframes; malformed patches and bounded resync; baseline isolation/prototype keys"}

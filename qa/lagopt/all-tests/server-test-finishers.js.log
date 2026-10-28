@@ -1,0 +1,2 @@
+Finishers: server last-opponent gate, validated skin/weapon, Phoenix exclusion, round dedupe and cosmetic-only state
+Finisher integration: actual Spike gun kill emits the server-owned event

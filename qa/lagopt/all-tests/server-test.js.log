@@ -1,0 +1,4 @@
+authority tests passed: ignored damage/teleport/credit claims, monotonic input, speed, server ray/damage/scoring, walls, reload and cadence
+Inherited prototype names cannot select a weapon
+Name collision suffix advances, including user-supplied numbered names
+TDM server enforces the 4 loadout stages (75 / 150 / 225 s) with a Classic start

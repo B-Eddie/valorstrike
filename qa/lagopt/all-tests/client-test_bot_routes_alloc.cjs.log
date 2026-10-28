@@ -1,0 +1,12 @@
+ascent 2233.7 5.3
+bind 2501.6 5.5
+breeze 2608.0 5.4
+haven 2024.6 5.2
+lotus 2208.1 5.6
+split 2869.7 6.4
+ascent: 50 routes identical (50 re-routed, 0 kept the base); 2234 KB -> 5.3 KB allocated per route
+bind: 50 routes identical (50 re-routed, 0 kept the base); 2502 KB -> 5.5 KB allocated per route
+breeze: 50 routes identical (50 re-routed, 0 kept the base); 2608 KB -> 5.4 KB allocated per route
+haven: 50 routes identical (50 re-routed, 0 kept the base); 2025 KB -> 5.2 KB allocated per route
+lotus: 50 routes identical (50 re-routed, 0 kept the base); 2208 KB -> 5.6 KB allocated per route
+split: 50 routes identical (50 re-routed, 0 kept the base); 2870 KB -> 6.4 KB allocated per route

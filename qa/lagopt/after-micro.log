@@ -1,0 +1,7 @@
+{
+  label: 'after',
+  node: 'v24.22.1',
+  fixture: 'actual TDM motor, static flat collision; 100k warmed calls; no snapshots, browser or network',
+  motor: { us: 1.1426354000000003, B: 963.70784, gcs: 23 },
+  roomBlocked: { us: 0.06426467000000002, B: 0.15064, gcs: 0 }
+}

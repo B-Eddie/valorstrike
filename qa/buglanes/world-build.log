@@ -1,0 +1,48 @@
+node:internal/modules/cjs/loader:1568
+  throw err;
+  ^
+
+Error: Cannot find module 'three'
+Require stack:
+- /home/hatch/workspace/valorstrike-gpt-temp/server/build-world.cjs
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1564:15)
+    at wrapResolveFilename (node:internal/modules/cjs/loader:1118:27)
+    at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1142:10)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1169:12)
+    at Module._load (node:internal/modules/cjs/loader:1341:5)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)
+    at Module.require (node:internal/modules/cjs/loader:1674:12)
+    at require (node:internal/modules/helpers:157:16)
+    at Object.<anonymous> (/home/hatch/workspace/valorstrike-gpt-temp/server/build-world.cjs:5:26)
+    at Module._compile (node:internal/modules/cjs/loader:1929:14) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [
+    '/home/hatch/workspace/valorstrike-gpt-temp/server/build-world.cjs'
+  ]
+}
+
+Node.js v24.22.1
+node:child_process:982
+    throw err;
+    ^
+
+Error: Command failed: /usr/bin/node build-world.cjs ascent
+    at genericNodeError (node:internal/errors:986:15)
+    at wrappedFn (node:internal/errors:540:14)
+    at checkExecSyncError (node:child_process:943:11)
+    at execFileSync (node:child_process:979:15)
+    at Object.<anonymous> (/home/hatch/workspace/valorstrike-gpt-temp/server/build-all.cjs:1:141)
+    at Module._compile (node:internal/modules/cjs/loader:1929:14)
+    at Object..js (node:internal/modules/cjs/loader:2060:10)
+    at Module.load (node:internal/modules/cjs/loader:1651:32)
+    at Module._load (node:internal/modules/cjs/loader:1443:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:261:19) {
+  status: 1,
+  signal: null,
+  output: [ null, null, null ],
+  pid: 12,
+  stdout: null,
+  stderr: null
+}
+
+Node.js v24.22.1

@@ -1,0 +1,21 @@
+{
+  label: 'after-r1',
+  node: 'v24.22.1',
+  fixture: '9 remotes, 144 Hz scripted frames, snapshot every 7 frames (~20.6 Hz), VM CPU only; page Math.hypot shim installed; includes harness overhead; no animation/model/render work',
+  ms: {
+    snapshot: {
+      mean: 0.1732904253208884,
+      p95: 0.2548430000000508,
+      p99: 0.29129800000004025,
+      max: 0.8428570000000377
+    },
+    interpolate: {
+      mean: 0.020551617083333393,
+      p95: 0.022743999999988773,
+      p99: 0.03368999999997868,
+      max: 1.7294190000000071
+    }
+  },
+  heapBytesPerFrame: 2585.9473333333335,
+  gcs: 8
+}

@@ -1,0 +1,1 @@
+Online silence vs main-thread stall: a 12 s stalled frame keeps a live connection (client and host peers), real 10 s silence still drops, hidden tabs unchanged

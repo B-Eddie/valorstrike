@@ -1,0 +1,39 @@
+{
+  "fixture": "One-client replay of 200 frozen TDM snapshots, prebuilt wire strings, 8k warmed parse/validation calls per measurement; after includes delta reconstruction and private baseline copies; no rendering or network.",
+  "dm": {
+    "before": {
+      "us": 23.758305874999998,
+      "B": 4711.844,
+      "gcs": 4
+    },
+    "after": {
+      "us": 47.57203737500001,
+      "B": 8902.434,
+      "gcs": 8
+    }
+  },
+  "tdm": {
+    "before": {
+      "us": 92.981184625,
+      "B": 5826.578,
+      "gcs": 3
+    },
+    "after": {
+      "us": 57.19971337499999,
+      "B": 8451.19,
+      "gcs": 4
+    }
+  },
+  "five": {
+    "before": {
+      "us": 64.01721399999997,
+      "B": 6099.708,
+      "gcs": 3
+    },
+    "after": {
+      "us": 68.06665275,
+      "B": 7678.086,
+      "gcs": 4
+    }
+  }
+}

@@ -1,0 +1,8 @@
+  ascent: 0 valid island nodes >4u off the largest component, worst 0.0u - all spared by valid coverage
+  bind: 284 valid island nodes >4u off the largest component, worst 30.2u - all spared by valid coverage
+  breeze: 81 valid island nodes >4u off the largest component, worst 9.3u - all spared by valid coverage
+  haven: 10 valid island nodes >4u off the largest component, worst 4.8u - all spared by valid coverage
+  lotus: 38 valid island nodes >4u off the largest component, worst 11.7u - all spared by valid coverage
+  split: 8 valid island nodes >4u off the largest component, worst 4.5u - all spared by valid coverage
+OOB destinations: teleporter entries/exits, sites and spawns sit within 1.5 of valid nav on all six maps
+OOB far-island survival: every valid node off the largest component stays inside watch coverage on all six maps

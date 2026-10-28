@@ -1,0 +1,23 @@
+Math.hypot patch: 3000000 two- and 1000000 three-argument calls bit-identical to the engine builtin; 48.0 -> 16.52 B allocated per call
+node:internal/assert/utils:77
+    throw err;
+    ^
+
+AssertionError [ERR_ASSERTION]: patched Math.hypot allocates 16.52 B per call (engine builtin 48.0)
+    at Object.<anonymous> (/home/hatch/workspace/valorstrike-gpt-temp/work/test_hypot.cjs:41:1)
+    at Module._compile (node:internal/modules/cjs/loader:1929:14)
+    at Object..js (node:internal/modules/cjs/loader:2060:10)
+    at Module.load (node:internal/modules/cjs/loader:1651:32)
+    at Module._load (node:internal/modules/cjs/loader:1443:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)
+    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+    at node:internal/main/run_main_module:33:47 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+
+Node.js v24.22.1

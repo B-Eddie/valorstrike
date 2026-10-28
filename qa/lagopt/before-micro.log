@@ -1,0 +1,7 @@
+{
+  label: 'before',
+  node: 'v24.22.1',
+  fixture: 'actual TDM motor, static flat collision; 100k warmed calls; no snapshots, browser or network',
+  motor: { us: 1.53275993, B: 1113.14904, gcs: 26 },
+  roomBlocked: { us: 0.10101580000000013, B: 192.13896, gcs: 4 }
+}

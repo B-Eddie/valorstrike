@@ -1,0 +1,1 @@
+Audio autoplay: no AudioContext before the first user activation (boot / lobby sounds skipped, touchstart / mouseup ignored); first keydown creates one running context inside the gesture; sounds heard

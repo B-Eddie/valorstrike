@@ -16,7 +16,7 @@ const W={map:{attacker:[0,0,0],defender:[0,0,-30],sites:{A:[0,0,-30]}},nav:{node
  assert.equal(S([{kind:'turret',d:10,los:true},{kind:'boombot',d:12,los:true}]).kind,'boombot','an incoming Boom Bot first');
  assert.equal(S([{kind:'alarmbot',d:13,los:true}]),null,'trap devices within 12 m');
  assert.equal(S([{kind:'trapwire',d:8,los:true},{kind:'trademark',d:4,los:true}]).kind,'trademark','same priority: the nearer');
- assert.deepEqual(Object.fromEntries(Object.entries(SHOOT).map(([k,v])=>[k,v.hp])),{boombot:60,turret:100,alarmbot:20,trademark:20,nanoswarm:20,trapwire:20,blastpack:20,spycam:1,owl:100},'wiki device HP');}
+ assert.deepEqual(Object.fromEntries(Object.entries(SHOOT).map(([k,v])=>[k,v.hp])),{hunter:150,boombot:60,turret:100,alarmbot:20,trademark:20,nanoswarm:20,trapwire:20,blastpack:20,spycam:1,owl:100},'wiki device HP');}
 const mk=(agent='Jett')=>{const s=new SpikeSimulation(W,'five','ascent',()=>.5);const b=s.add('bot','Jett',false),kj=s.add('kj',agent);s.start(false);s.buy=0;s.roundDelay=0;
  Object.assign(b,{x:0,y:0,z:0,look:0,pitch:0,weapon:'Vandal',ammo:25,reserve:50,fireAt:0,alive:true,hp:100});if(b.team===kj.team){kj.team=1-b.team;}Object.assign(kj,{x:40,y:0,z:40,alive:true});return {s,b,kj};};
 const run=(s,b,sec,goal)=>{for(let i=0;i<sec*20;i++){s.time+=.05;if(s.shootUtility(b,goal)&&b.input.fire)s.fire(b);if(s.time>=b.reloadAt&&b.reloadAt)s.finishReload(b);}};

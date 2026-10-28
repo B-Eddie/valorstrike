@@ -14,7 +14,7 @@ assert.deepEqual(TDM_ULT,{Jett:60,Phoenix:70,Sova:70,Sage:50,Reyna:80,Omen:60,Ki
 assert.deepEqual([TDM_PTS.kill,TDM_PTS.orb],[3,10],'3 per kill, 10 per orb');
 const nodes=[[0,0,0],[0,0,-10],[0,0,-40]];
 const W={map:{attacker:[0,0,0],defender:[0,0,-40],sites:{A:[0,0,0]},callouts:[]},nav:{nodes,adj:[[1],[0,2],[1]]},playable:[0,1,2],allowed:new Set([0,1,2]),near:(x,z)=>z<-25?2:z<-5?1:0,ground:()=>0,blocked:()=>false,ray:()=>Infinity};
-const room=(a='Jett',b='Omen')=>{const s=createSim(W,'tdm','ascent',()=>.5);const p=s.add('p',a,true,0),e=s.add('e',b,true,1);s.start(false);return {s,p,e};};
+const room=(a='Jett',b='Omen')=>{const s=createSim(W,'tdm','ascent',()=>.5);const p=s.add('p',a,true,0),e=s.add('e',b,true,1);s.spawnRooms=false;s.start(false);return {s,p,e};};
 const park=(s,u,x,z)=>Object.assign(u,{x,z,y:0,vx:0,vz:0,vy:0,input:{},inputAt:s.time});
 const run=(s,sec,f)=>{for(let t=0;t<sec-1e-9;t+=.05){f&&f();s.step(.05);}};
 // start charges
@@ -65,7 +65,7 @@ const run=(s,sec,f)=>{for(let t=0;t<sec-1e-9;t+=.05){f&&f();s.step(.05);}};
  const context={DurableObject:class{constructor(ctx,env){this.ctx=ctx;this.env=env;}},crypto:globalThis.crypto,Date:FakeDate,URL,performance,setInterval:()=>1,clearInterval(){},Map,JSON,Number,Object,console:{error(){},warn(){},log(){}},kits:JSON.parse(fs.readFileSync(new URL('./src/kits.json',import.meta.url),'utf8'))};
  vm.createContext(context);vm.runInContext(source.slice(source.indexOf('export class GameRoom')).replace('export class','class')+';globalThis.GameRoom=GameRoom;',context);
  const room=new context.GameRoom({waitUntil(){}},{DIRECTORY:{idFromName:()=>'',get:()=>({fetch:async()=>new Response('{}',{status:401})})}});room.advertise=()=>{};room.saveResults=async()=>{};
- room.sim=createSim(W,'tdm','ascent',()=>.5);const u=room.sim.add('A','Jett',true,0);u.loading=false;room.sim.add('B','Omen',true,1).loading=false;room.sim.start(false);room.last=now;room.code='TDMAB1';
+ room.sim=createSim(W,'tdm','ascent',()=>.5);room.sim.spawnRooms=false;const u=room.sim.add('A','Jett',true,0);u.loading=false;room.sim.add('B','Omen',true,1).loading=false;room.sim.start(false);room.last=now;room.code='TDMAB1';
  const ws={frames:[],closed:null,send(d){this.frames.push(JSON.parse(d));},close(){}};room.sessions.set(ws,{id:'A',u,window:now,count:0,last:now,ready:true,resume:'r-A'});
  await room.message(ws,JSON.stringify({t:'ab',k:'e'}));const ao=ws.frames.find(m=>m.t==='ao');assert(ao&&ao.ok===true&&ao.k==='e','ability reply (ao) in TDM');assert(ao.rs&&ao.rs.ab&&ao.rs.uc===60,'with the round state (ab, TDM ult cost)');
  const ws2={frames:[],closed:null,send(d){this.frames.push(JSON.parse(d));},close(){}};const u2=room.sim.units.find(v=>v.name==='B');room.sessions.set(ws2,{id:'B',u:u2,window:now,count:0,last:now,ready:true,resume:'r-B'});room.begin(ws2,true);const st=ws2.frames.find(m=>m.t==='start');assert(st&&st.tab===1&&st.rs&&st.rs.tab===1,'start: tab 1 + round state');room.sessions.get(ws2).ready=true;

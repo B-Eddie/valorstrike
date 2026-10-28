@@ -1,0 +1,1 @@
+Online transport: same-seat recovery without scene reload, stale callbacks ignored, bounded retries/cancellation, wake-up grace, snapshot acknowledgments/batched round-state, congestion coalescing and send-race handling
