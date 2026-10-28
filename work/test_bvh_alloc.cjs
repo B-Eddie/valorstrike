@@ -76,6 +76,16 @@ const tick = () => new Promise((r) => setImmediate(r));
     // MeshBVH.shapecast + ExtendedTriangle.closestPointToSegment cost ~600-970 B/call here (JIT-dependent); what is left is
     // the call's own boxed arguments and ValorantFeel.clipBlocked (vendor motor, shared with the server, untouched)
     assert(bB < 200, MAP + ': nmBlocked allocates ' + bB.toFixed(1) + ' B/call (bound 200)');
+    // 2b) perf3: nmBlocked's per-triangle test (NM_Q.tf -> the exact closestPointToSegment port) must not allocate: the port is
+    // too large to inline, so passing r as a double argument boxed it on every triangle (16 B x every candidate triangle of every
+    // motor / bot / online-prediction capsule test: ~40 KB per frame of the online page's own movement). r now rides in NMB.tsr.
+    xe(`window.__TT=[];{const C=nmActive(),g=C.bvh.geometry,P=g.attributes.position.array,I=g.index.array,N=C.nav.nodes;for(let i=0;i<4000;i++){const t=new MeshBVHLib.ExtendedTriangle(),k=(i*7919%(I.length/3))*3;t.a.fromArray(P,I[k]*3);t.b.fromArray(P,I[k+1]*3);t.c.fromArray(P,I[k+2]*3);t.needsUpdate=true;__TT.push(t);}}
+      window.__TF=function(n){let acc=0;for(let k=0;k<n;k++){const t=__TT[k%4000];/* a capsule standing on the triangle's first corner: the plane / extent early-outs pass, the port runs */nmBlocked(nmActive(),t.a.x+.1,t.a.z-.1,.35,t.a.y-.5,1.8);if(NM_Q.tf(t))acc++;}return acc;};__TF(8000);true`);
+    const v8g = (code, n) => { const g = new v8.GCProfiler(); g.start(); const h0 = v8.getHeapStatistics().used_heap_size; xe(code); const h1 = v8.getHeapStatistics().used_heap_size, st = g.stop(); let fr = 0; for (const e of st.statistics) fr += e.beforeGC.heapStatistics.usedHeapSize - e.afterGC.heapStatistics.usedHeapSize; return Math.max(0, h1 - h0 + fr) / n; };
+    xe(`window.__TB=function(n){let acc=0;for(let k=0;k<n;k++){const t=__TT[k%4000];nmBlocked(nmActive(),t.a.x+.1,t.a.z-.1,.35,t.a.y-.5,1.8);}return acc;};__TB(8000);true`);
+    const triB = v8g('__TF(20000);true', 20000) - v8g('__TB(20000);true', 20000);
+    out.push(`${MAP}: nmBlocked per-triangle test ${triB.toFixed(1)} B/triangle`);
+    assert(triB < 6, MAP + ': nmBlocked\'s per-triangle test (NM_Q.tf) allocates ' + triB.toFixed(1) + ' B per triangle (bound 6)');
   }
   console.log(out.join('\n'));
   process.exit(0);

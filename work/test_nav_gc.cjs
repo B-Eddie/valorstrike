@@ -42,5 +42,5 @@ for(const map of ['ascent','bind']){const nav=JSON.parse(fs.readFileSync(path.jo
 {const blk=nm.slice(nm.indexOf('function nmBlocked('),nm.indexOf('\n}',nm.indexOf('function nmBlocked('))+2);
  assert.match(blk,/nmShapeAny\(C\.bvh,Q\.box,Q\.tf\|\|\(Q\.tf=/,'nmBlocked passes one reused triangle callback to nmShapeAny');
  assert.doesNotMatch(blk,/C\.bvh\.shapecast\(/,'nmBlocked no longer calls MeshBVH.shapecast (typed-array views + closures per call)');
- assert.match(blk,/nmTriSegNear\(t,Q\.line,Q\.r\)/,'per-triangle test is the exact port');}
+ assert.match(blk,/nmTsn\(t,Q\.line\)/,'per-triangle test is the exact port (nmTsn: nmTriSegNear with r in NMB.tsr, perf3)');assert.match(blk,/NMB\.tsr=Q\.r;/,'nmBlocked hands r to the port through NMB.tsr');}
 console.log('Nav GC: '+out.join('; ')+'; nmBlocked one reused triangle callback via nmShapeAny');})().catch(e=>{console.error(e);process.exit(1);});
