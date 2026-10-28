@@ -3532,6 +3532,10 @@ function xhErr(w, W) { const all = gSpread(w, W); let still = all, moving = all;
 // Shotgun ring radius (px): the current pellet cone (gSpread, tan) projected with the camera's vertical FOV on this viewport, 0 for other guns or with the override on
 const XSGUN = { Shorty: 1, Bucky: 1, Judge: 1 };
 function xhSg(w, W) { if (!XSGUN[w] || S.xc.sgOv) return 0; let k = 0; try { k = gSpread(w, W); } catch (e) { return 0; } const fov = (typeof camera !== "undefined" && camera && camera.fov) || 75, h = innerHeight || 720; return Math.min(98, Math.max(2, k * (h / 2) / Math.tan(fov * Math.PI / 360))); }
+// The gun whose movement / firing error and shotgun ring the crosshair shows; '' when none is up (VALORANT: the knife, an
+// equipped ability and the spike plant / defuse - knife up here - show the plain primary crosshair lines). wName() names the
+// primary even with the knife out, so the ring stayed on the knife (user 2026-10-28).
+function xhWeap() { if (mode === "aim" && typeof aimW === "function") return aimW(); if (mode === "duel") return typeof du !== "undefined" && du && du.w === "op" ? "Operator" : ""; if (rw === "knife" || (J && J.eq)) return ""; return wName(); }
 const PIN = { Vandal: 1, Phantom: 1, Guardian: 1, Sheriff: 1, Operator: 1, Marshal: 1, Bulldog: 1 };
 // fidelity 2: standing first-shot error (rad, ~Val degrees) and run-spread scale per gun (player); rifles fall apart on the run, SMGs hold up
 const FSA = { Vandal: 0.0044, Phantom: 0.0035, Guardian: 0.0017, Sheriff: 0.0044, Bulldog: 0.0052, Operator: 0, Marshal: 0 }, MVK = { Vandal: 1.6, Phantom: 1.6, Bulldog: 1.5, Guardian: 1.8, Ares: 1.3, Odin: 1.3, Spectre: 0.55, Stinger: 0.6, Frenzy: 0.7, Classic: 0.7, Ghost: 0.8 };
@@ -4776,7 +4780,7 @@ function loop() {
       if (XOB.orb && !J.dr) camera.rotation.set(XOB.orb.p, XOB.orb.yw, 0, "YXZ"); else if (XOB.fp && !J.dr) camera.rotation.set(XOB.fpP, XOB.fpY, 0, "YXZ"); else { const cq = xCU > 0 ? xCon() : 0; if (xCOn && cq <= 0) xConEnd(); camera.rotation.set(pitch + rcl, yaw - rclH, cq > 0 ? Math.sin(performance.now() * 0.0042) * 0.02618 * Math.min(1, cq * 4) : 0, "YXZ"); } camera.updateMatrixWorld(); sfxL();
       try { if (mode !== "duel" && player.hp <= 0 && typeof xDcCam === "function" && xDcCam(dt)) camera.updateMatrixWorld(); } catch (e) { xE(e); } // VALORANT death camera (work/death_runtime.js): pulls out of the body and looks at the killer until the teammate spectate takes over
       try { xObsHide(XOB.fp && !J.dr ? XOB.fp : null); } catch (e) { xE(e); }
-      const cw = mode === "aim" && typeof aimW === "function" ? aimW() : wName(), CW = WEAP[cw];
+      const cw = xhWeap(), CW = cw ? WEAP[cw] : null;
       const xe = S.xhd !== false && CW && running ? xhErr(cw, CW) : null, tm = xe ? xe.m : 0, tf = xe ? xe.f : 0;
       VM.xh = (VM.xh || 0) + (tm - (VM.xh || 0)) * Math.min(1, dt * (tm > (VM.xh || 0) ? 30 : 22)); VM.xf = (VM.xf || 0) + (tf - (VM.xf || 0)) * Math.min(1, dt * (tf > (VM.xf || 0) ? 30 : 22)); // opens fast, closes fast
       const sgt = CW && running ? xhSg(cw, CW) : 0; VM.sg = sgt ? (VM.sg || sgt) + (sgt - (VM.sg || sgt)) * Math.min(1, dt * 22) : 0; // shotgun ring radius (px), eased like the lines
