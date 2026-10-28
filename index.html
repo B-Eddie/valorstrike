@@ -13424,8 +13424,11 @@ window.addEventListener("keydown", (e) => { // G with the Spike: ask the host to
 }, true);
 window.xMP = { quick: mpQuick, create: mpCreate, join: mpJoin, start: mpStart, leave: mpLeave, ui: mpUI, get S() { return MP; }, unit: mpUnit };
 // fidelity 2: the ult-orb block lives inside the game scope (as a separate <script> it could not see scene/FV and never ran)
-// feel pass: ultimate orbs (5v5). 2 contested orbs per round, hold F / Use 3 s for +1 ult point. Pooled meshes, shared materials, no per-frame allocs.
+// feel pass: ultimate orbs (5v5). 2 contested orbs per round, hold F / Use 2 s for +1 ult point. Pooled meshes, shared materials, no per-frame allocs.
+// VALORANT (wiki.playvalorant.com/en-us/Orbs): a 2 s capture channel; captured orbs are gone for the round, and every orb disappears
+// once the Spike is planted (vs-lane-parity 2026-10-28; was a 3 s hold and orbs that stayed after the plant).
 (function () {
+  const CAP = 2;
   if (typeof THREE === "undefined" || typeof scene === "undefined") return;
   const SPOTS = { ascent: [["market"], ["b main"]], bind: [["hookah"], ["a lobby"]], haven: [["window", "mid"], ["c long"]], split: [["mid bottom"], ["b lobby"]], lotus: [["b main"], ["c link"]], breeze: [["mid bottom"], ["a cave"]] };
   const LISTS = { breeze: typeof BREEZE_CALLOUTS !== "undefined" ? BREEZE_CALLOUTS : [], ascent: typeof CALLOUTS !== "undefined" ? CALLOUTS : [], bind: typeof BIND_CALLOUTS !== "undefined" ? BIND_CALLOUTS : [], haven: typeof HAVEN_CALLOUTS !== "undefined" ? HAVEN_CALLOUTS : [], split: typeof SPLIT_CALLOUTS !== "undefined" ? SPLIT_CALLOUTS : [], lotus: typeof LOTUS_CALLOUTS !== "undefined" ? LOTUS_CALLOUTS : [] };
@@ -13477,11 +13480,12 @@ window.xMP = { quick: mpQuick, create: mpCreate, join: mpJoin, start: mpStart, l
       if (player.hp > 0 && Math.hypot(player.x - o.x, player.z - o.z) < 1.6) near = o;
     }
     for (let i = 0; i < 2; i++) { const o = O[i]; if (o !== near) o.hold = 0; }
-    if (near && held) { near.hold += dt; if (near.hold >= 3) take(near, null); }
+    if (FV.sp && FV.sp.st === "plant") { for (let i = 0; i < 2; i++) { const o = O[i]; if (o.on) { o.on = false; o.g.visible = false; o.d.style.display = "none"; } } near = null; } // planted: orbs gone
+    if (near && held) { near.hold += dt; if (near.hold >= CAP) take(near, null); }
     const showBar = !!(near && near.on && near.hold > 0);
-    bar.style.display = showBar ? "block" : "none"; if (showBar) barF.style.width = Math.min(100, near.hold / 3 * 100) + "%";
+    bar.style.display = showBar ? "block" : "none"; if (showBar) barF.style.width = Math.min(100, near.hold / CAP * 100) + "%";
     ub.style.display = touch && near && near.on && !window.xTUse ? "block" : "none"; // touch: the context USE (F) button captures instead
-    // bots: ~20% walk to their nearby orb while no enemy is known, then hold 3 s
+    // bots: ~20% walk to their nearby orb while no enemy is known, then hold CAP (2 s)
     if (FV.buy > 0) return;
     const bl = typeof bots !== "undefined" ? bots : null;
     for (let k = 0; k < 2; k++) {
@@ -13491,7 +13495,7 @@ window.xMP = { quick: mpQuick, create: mpCreate, join: mpJoin, start: mpStart, l
         if (b.xSe || b.see > 0) { b.xOrb = null; continue; } // bot AI: xSe = has LOS to its current target (xTt), see = seconds seeing it
         const p = b.g.position, dx = o.x - p.x, dz = o.z - p.z, d = Math.hypot(dx, dz);
         if (d > 0.8) { const s = Math.min(d, 3 * dt), nx = p.x + dx / d * s, nz = p.z + dz / d * s; if (typeof blocked !== "function" || !blocked(nx, nz, 0.4)) { p.x = nx; p.z = nz; } else b.xOrb = null; o.bb = null; }
-        else { if (o.bb !== b) { o.bb = b; o.bh = 0; } o.bh += dt; if (o.bh >= 3) { b.xOrb = null; take(o, b); } }
+        else { if (o.bb !== b) { o.bb = b; o.bh = 0; } o.bh += dt; if (o.bh >= CAP) { b.xOrb = null; take(o, b); } }
       }
     }
   }
