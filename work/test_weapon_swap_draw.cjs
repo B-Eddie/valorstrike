@@ -16,7 +16,7 @@ const assert=require('assert/strict'),fs=require('fs'),path=require('path'),vm=r
  let pending={},loads=[];const mkF=(ag,w)=>{const root={visible:false,parent:null,traverse(){},scale:{set(){}},position:{set(){},y:0}};return {root,ag,w,am:{update(){},stopAllAction(){}},gm:{update(){},stopAllAction(){}},entries:[],kind:null,age:0,origin:{x:0,y:0,z:0}};};
  const camera={fov:70,children:[],add(o){if(o.parent)o.parent.remove(o);this.children.push(o);o.parent=this;},remove(o){this.children=this.children.filter(x=>x!==o);o.parent=null;}};
  const c={THREE:T,console,Math,Promise,Map,Set,String,XV:{config:{},failures:{},hidden:[],fp:null,fpLoad:null,event:null},camera,running:true,player:{hp:100},gun:{visible:true,children:[obj()]},knife:{visible:false,children:[obj()]},muzzle:null,
-  BC:{},J:{pick:'Jett'},XCA:{},VMA:{R:obj(),L:obj()},KARM:obj(),VM:{},mode:'tdm',reloading:0,kSwing:0,FPG:{Vandal:1,Classic:1,Sheriff:1,Ghost:1},vmFire(){},vmTick(){},cur:'Vandal'};
+  BC:{},J:{pick:'Jett'},XCA:{},VMA:{R:obj(),L:obj()},KARM:obj(),VM:{},mode:'tdm',reloading:0,kSwing:0,FPG:{Vandal:1,Classic:1,Sheriff:1,Ghost:1},vmFire(){},vmTick(){},cur:'Vandal',xAD:{k:0}/* page global (index.html var xAD): the viewmodel tick reads the ADS blend */};
  vm.createContext(c);vm.runInContext('function fpaWeap(){return FPG[cur]?cur:"Vandal";}\n'+src.slice(a,b).replace(/\{const fire=vmFire[\s\S]*$/,''),c);
  c.xvFPLoad=(ag,w)=>{loads.push(ag+'|'+w);return new Promise((res,rej)=>{pending[ag+'|'+w]={res:()=>res(mkF(ag,w)),rej};});};
  c.xvFPPlay=(F,k)=>{F.kind=k;F.played=(F.played||[]).concat(k);};
