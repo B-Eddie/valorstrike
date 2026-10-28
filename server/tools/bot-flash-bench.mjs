@@ -26,7 +26,8 @@ function trial(k,agent,cover){const {W,C}=world(cover),s=new SpikeSimulation(W,u
  Object.assign(c,{x:o[0],y:0,z:o[2],pitch:0,loading:false});c.ability={...c.ability,q:1,e:1,c:1};
  const key=agent==='Phoenix'?'e':agent==='Breach'?'q':'e';v.weapon='Vandal';v.primary='Vandal';v.ammo=25;
  if(!cover){/* fight: the bot has the caster in sight and is fighting it for 0.6 s before the throw */const h=c.hp;for(let i=0;i<Math.round(.6/DT);i++){c.input={};c.inputAt=s.time;c.hp=1e9;s.step(DT);}c.hp=h;s.events.length=0;if(!v.sawTarget)return null;}
- if(!s.command(c,{t:'ab',k:key,d:[d[0],0,d[2]]}))return null;const e=s.effects.find(x=>x.kind==='flash');if(!e)return null;
+ /* the open bench world has no wall for a human Breach's Flashpoint to pass through (abilities.js breachWall): cast it with the bot rule (the aim point) */
+ const hu=c.human;if(agent==='Breach')c.human=false;const ok=s.command(c,{t:'ab',k:key,d:[d[0],0,d[2]]});c.human=hu;if(!ok)return null;const e=s.effects.find(x=>x.kind==='flash');if(!e)return null;
  // the bot faces the real pop point within 25 deg
  const q=[e.p[0]-v.x,e.p[2]-v.z],toward=Math.atan2(-q[0],-q[1]);v.look=toward+(r()-.5)*.87;v.pitch=0;
  const R={agent,cover,dist:Math.hypot(q[0],q[1]),windup:e.at-s.time,read:false,blind:0,acts:null,shots:0,moved:0,turned:0};const y0=v.look;let x0=null,shot0=0,maxT=0;

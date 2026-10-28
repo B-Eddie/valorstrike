@@ -177,4 +177,31 @@ function xFtsNetTick() {
 }
 (window.XHK || (window.XHK = [])).push(function xFtsHook() { try { xFtsNetTick(); } catch (e) { xE(e); } });
 window.xFts = { tick: xFtsNetTick, st: XFTS };
+// ---- Surface placement indicators (Valorant: the crosshair becomes an indicator, coloured on a viable spot, red on an unviable one):
+//  Cypher Trapwire (C): the wire line between its two anchors (cyWireSpot: 20 m reach, 15 m wire); Spycam (E): a disc on the wall facing out
+//  (cyCamSpot: vertical terrain within 20 m, <= 4.5 m up); Reyna Leer (C): the eye's spot 10 m ahead (ryLeerSpot); Breach Aftershock (C) /
+//  Flashpoint (Q): a ring on the near face where the crosshair meets the wall and a floor ring where the charge comes out on the far side
+//  (bcWallSpot: 35 m reach, 10 m through). Shown while the ability is in hand (J.eq drawing / ready); was: none of these showed anything.
+const XSURF = { Cypher: { c: "wire", e: "cam" }, Reyna: { c: "leer" }, Breach: { c: "breach", q: "breach" } };
+const XSI = { m: {} };
+function xSurfMesh(name, geo) { /* geo: a factory, called once */ let m = XSI.m[name]; if (!m) { m = XSI.m[name] = new THREE.Mesh(geo(), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.85, depthWrite: false, side: THREE.DoubleSide })); m.name = name; m.raycast = () => {}; } return m; }
+function xSurfShow(m, on) { if (on && !m.parent) scene.add(m); else if (!on && m.parent) scene.remove(m); }
+function xSurfSpot() { const q = J.eq, t = q && XSURF[J.pick], kind = t && t[q.k]; if (!kind) return null;
+  try { if (kind === "wire") return Object.assign({ kind }, cyWireSpot() || { ok: false, none: true }); if (kind === "cam") return Object.assign({ kind }, cyCamSpot() || { ok: false, none: true });
+    if (kind === "leer") return Object.assign({ kind }, ryLeerSpot()); const b = bcWallSpot(); return { kind, near: b && b.near, far: b && b.far, ok: !!(b && b.far), none: !b }; } catch (e) { xE(e); return null; } }
+function xSurfTick() {
+  const q = J.eq, show = q && (q.st === "draw" || q.st === "ready" || q.st === "hold") && running && player && player.hp > 0 && jOn(), s = show ? xSurfSpot() : null; XSI.s = s;
+  const line = xSurfMesh("xSurfWire", () => new THREE.BoxGeometry(1, 0.05, 0.05)), cam = xSurfMesh("xSurfCam", () => new THREE.RingGeometry(0.12, 0.3, 24)), eye = xSurfMesh("xSurfLeer", () => new THREE.RingGeometry(0.35, 0.5, 24)),
+    nr = xSurfMesh("xSurfNear", () => new THREE.RingGeometry(0.4, 0.55, 32)), fr = xSurfMesh("xSurfFar", () => new THREE.RingGeometry(0.8, 1, 40)), bad = 0xff4655;
+  xSurfShow(line, !!s && s.kind === "wire" && !s.none); xSurfShow(cam, !!s && s.kind === "cam" && !s.none); xSurfShow(eye, !!s && s.kind === "leer"); xSurfShow(nr, !!s && s.kind === "breach" && !!s.near); xSurfShow(fr, !!s && s.kind === "breach" && !!s.far);
+  if (!s) return;
+  if (s.kind === "wire" && !s.none) { const L = Math.hypot(s.a.x - s.b.x, s.a.z - s.b.z); line.material.color.setHex(s.ok ? 0x3fd0c0 : bad); line.scale.set(L, 1, 1); line.position.set((s.a.x + s.b.x) / 2, s.fy + 0.35, (s.a.z + s.b.z) / 2); line.rotation.set(0, Math.atan2(-(s.a.z - s.b.z), s.a.x - s.b.x), 0); }
+  if (s.kind === "cam" && !s.none) { cam.material.color.setHex(s.ok ? 0x3fd0c0 : bad); cam.position.set(s.x, s.y, s.z); cam.lookAt(s.x + s.nx, s.y + s.ny, s.z + s.nz); }
+  if (s.kind === "leer") { eye.material.color.setHex(0xc04cff); eye.position.set(s.x, s.y, s.z); eye.lookAt(pEye()); }
+  if (s.kind === "breach") { const c = s.ok ? 0xf2a93a : bad; nr.material.color.setHex(c); fr.material.color.setHex(c);
+    if (s.near) { const n = s.near; nr.position.set(n.x + (n.nx || 0) * 0.03, n.y + (n.ny || 0) * 0.03, n.z + (n.nz || 0) * 0.03); nr.lookAt(n.x + (n.nx || 0), n.y + (n.ny || 0), n.z + (n.nz || 0)); }
+    if (s.far) { fr.position.set(s.far.x, s.far.y + 0.05, s.far.z); fr.rotation.set(-Math.PI / 2, 0, 0); } }
+}
+(window.XHK || (window.XHK = [])).push(function xSurfHook() { try { xSurfTick(); } catch (e) { xE(e); } });
+window.xSurf = { spot: xSurfSpot, tick: xSurfTick, st: XSI };
 // ---- END ABILITY TARGETING ----

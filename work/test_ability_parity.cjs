@@ -26,7 +26,7 @@ const assert=require('assert/strict'),path=require('path');const {boot}=require(
   s.effects.push({id:99,kind:'blast',owner:o.id,team:o.team,p:[0,1,0],until:s.time+1,radius:P.shock.outer,damage:P.shock.max,fall:P.shock,at:s.time});
   S.tickAbilities(s,0);assert.deepEqual(v.map(u=>Math.round(u.hp)),[25,62,100],'server Shock Bolt 75 / 38 / 0');
   // server Aftershock (Breach C): 2.2 s windup, then 80, 0.6 s later 80 again, inside 3 m only
-  const b=new SpikeSimulation(W),br=b.add('br','Breach'),in1=b.add('in'),out=b.add('out');b.start(false);b.buy=0;Object.assign(br,{x:0,y:0,z:0,look:0,pitch:0});br.ability.c=1;
+  const b=new SpikeSimulation(W),br=b.add('br','Breach',false)/* bot rule: a human Breach needs a wall to cast through (server/test-breach-wall.js); this open fixture has none */,in1=b.add('in'),out=b.add('out');b.start(false);b.buy=0;Object.assign(br,{x:0,y:0,z:0,look:0,pitch:0});br.ability.c=1;
   assert.equal(b.command(br,{t:'ab',k:'c'}),true);const e=b.effects.find(e=>e.kind==='blast');assert.equal(e.radius,3);assert.equal(e.damage,80);
   Object.assign(in1,{x:e.p[0]+2.5,y:e.p[1],z:e.p[2],hp:100,armor:0,team:'X'});Object.assign(out,{x:e.p[0]+3.5,y:e.p[1],z:e.p[2],hp:100,armor:0,team:'X'});const t0=e.at;
   b.time=t0-.01;S.tickAbilities(b,0);assert.equal(in1.hp,100);b.time=t0;S.tickAbilities(b,0);assert.equal(in1.hp,20);b.time=t0+.59;S.tickAbilities(b,0);assert.equal(in1.hp,20);

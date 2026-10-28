@@ -48,7 +48,7 @@ assert.equal(DEV.hotHands.damage,60,'Hot Hands 60/s');assert.equal(DEV.nanoswarm
  t.time+=.375;tickAbilities(t,.1);assert.equal(f.radius,4.5,'full size');assert(foe.hp<100,'4 m out burns once reached');const h=foe.hp;t.time=f.until+.01;tickAbilities(t,.1);assert.equal(foe.hp,h,'gone after 4 s');}
 // per-ability windups (wiki): FIRE -> effect = the client's 0.2 s hand release + the server fuse; arm / equip times from the cast
 assert.deepEqual(WINDUP,{aftershock:2.2,flashpoint:.5,faultLine:1.1,rollingThunder:1.2,curveball:.6,leer:.4,lockdown:13,trapwire:.7,trademark:2,blastPack:1.5,showstopper:1.4,tourDeForce:2.3});assert.equal(XAB_REL,.2);
-{const br=s.add('br','Breach');br.alive=true;Object.assign(br.ability,{c:1,q:1,e:1});br.cool={};s.time+=1;
+{const br=s.add('br','Breach',false);/* bot rule: a human Breach needs a wall to cast through (test-breach-wall.js); this open fixture has none */br.alive=true;Object.assign(br.ability,{c:1,q:1,e:1});br.cool={};s.time+=1;
  assert.equal(s.command(br,{t:'ab',k:'c'}),true,'Aftershock');const a=s.effects.filter(e=>e.kind==='blast').pop();assert(Math.abs(a.at-s.time-wf('aftershock'))<1e-9&&a.until>a.at,'Aftershock fuse 2.2 - 0.2 s');
  s.time+=1;assert.equal(s.command(br,{t:'ab',k:'q'}),true,'Flashpoint');const f=s.effects.filter(e=>e.kind==='flash').pop();assert(Math.abs(f.at-s.time-.3)<1e-9&&f.until>f.at,'Flashpoint fuse 0.5 - 0.2 s');
  s.time+=1;assert.equal(s.command(br,{t:'ab',k:'e'}),true,'Fault Line');assert(Math.abs(br.fault.at-s.time-.9)<1e-9,'Fault Line 1.1 - 0.2 s');}
