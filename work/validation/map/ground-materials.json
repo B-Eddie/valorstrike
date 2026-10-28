@@ -1,0 +1,4400 @@
+{
+ "ascent": {
+  "nodes": 11277,
+  "ground": {
+   "ABombsite_0_M0_TarpCratesUp_MI": {
+    "n": 12,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "ABuilding_0_M0_TrimKitA_MI": {
+    "n": 20,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "ARamp_0_M0_Metal_Trim_MI": {
+    "n": 40,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "ARubble_0_M0_BrokenTilesB_MI": {
+    "n": 19,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "AScaffold_7_M0_Planks_MI": {
+    "n": 89,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Arch_1_M0_MidA_MI": {
+    "n": 13,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "AtkWell_1_M0_VeniceRound_MI": {
+    "n": 8,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "AtkWell_1_M1_StairA_MudBlend_MI": {
+    "n": 16,
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 0.91
+    }
+   },
+   "AtkWell_3_M0_Base_MI": {
+    "n": 8,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Awning_1_M0_MI": {
+    "n": 7,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "BMainArchway_0_MI": {
+    "n": 29,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "BalconyA_M0_MI": {
+    "n": 6,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Bench_0_M0_MI": {
+    "n": 25,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Blendable_M3_GravelDarkDirt_MI": {
+    "n": 105,
+    "stats": {
+     "minAlpha": 72,
+     "white": 0,
+     "cut": 0.664
+    }
+   },
+   "Blendable_M3_GravelGrass_MI": {
+    "n": 45,
+    "stats": {
+     "minAlpha": 72,
+     "white": 0,
+     "cut": 0.664
+    }
+   },
+   "Brick_1_M0_StoneCinderBlockDirt_MI": {
+    "n": 67,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Brick_M13_ArcSmallTilesGrass_MI": {
+    "n": 89,
+    "stats": {
+     "minAlpha": 21,
+     "white": 0,
+     "cut": 0.48
+    }
+   },
+   "Brick_M5_BrokenOrder_MI": {
+    "n": 152,
+    "stats": {
+     "minAlpha": 20,
+     "white": 0,
+     "cut": 0.801
+    }
+   },
+   "Brick_M6_HerringBoneAsphalt_MI": {
+    "n": 465,
+    "stats": {
+     "minAlpha": 29,
+     "white": 0,
+     "cut": 0.328
+    }
+   },
+   "Brick_M6_HerringBoneBroken_MI": {
+    "n": 1042,
+    "stats": {
+     "minAlpha": 29,
+     "white": 0,
+     "cut": 0.328
+    }
+   },
+   "Brick_M6_HerringBoneGrass_MI": {
+    "n": 277,
+    "stats": {
+     "minAlpha": 29,
+     "white": 0,
+     "cut": 0.328
+    }
+   },
+   "Brick_M6_HerringBoneWater_MI": {
+    "n": 286,
+    "stats": {
+     "minAlpha": 29,
+     "white": 0,
+     "cut": 0.328
+    }
+   },
+   "Concrete_M3_Broken_MI": {
+    "n": 7,
+    "stats": {
+     "minAlpha": 38,
+     "white": 0,
+     "cut": 0.973
+    }
+   },
+   "Construction_M0_WalkwayFenceVent_MI": {
+    "n": 98,
+    "stats": {
+     "minAlpha": 62,
+     "white": 0,
+     "cut": 0.313
+    }
+   },
+   "CrateTop_0_M0_FilledApplesOrange2_MI": {
+    "n": 6,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Crate_0_Wood_MI": {
+    "n": 5,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Crate_1_M0_Wood_MI": {
+    "n": 8,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Crate_1_M2_Wood_MI": {
+    "n": 16,
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 0.98
+    }
+   },
+   "Dirt_M1_GravelSmallGrass_MI": {
+    "n": 15,
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 0.586
+    }
+   },
+   "Dirt_M1_GravelWater_MI": {
+    "n": 67,
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 0.586
+    }
+   },
+   "GlassShardGlowMint_0_MI": {
+    "n": 27,
+    "stats": {
+     "minAlpha": 180,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Glass_M0D_MI": {
+    "n": 10,
+    "stats": {
+     "minAlpha": 215,
+     "white": 1,
+     "cut": 0
+    }
+   },
+   "Gondola_1_M0_ServiceBuilding_MI": {
+    "n": 23,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Grass_M0_A_MI": {
+    "n": 106,
+    "stats": {
+     "minAlpha": 80,
+     "white": 0,
+     "cut": 0.988
+    }
+   },
+   "Grass_M0_Dirtblend_A": {
+    "n": 640,
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 0.586
+    }
+   },
+   "Gravel_0_M0_PebblesRocks_MI": {
+    "n": 37,
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 0.66
+    }
+   },
+   "Islands_1_Hospital_MI": {
+    "n": 17,
+    "stats": {
+     "minAlpha": 72,
+     "white": 0,
+     "cut": 0.465
+    }
+   },
+   "Kingdom_0_M0_FusionGenerator_MI": {
+    "n": 26,
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 0.988
+    }
+   },
+   "Kingdom_0_M0_MetalLight_MI": {
+    "n": 354,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Marble_M0_DirtyWarn_MI": {
+    "n": 28,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Marble_M0_WornTrim_MI": {
+    "n": 7,
+    "stats": {
+     "minAlpha": 74,
+     "white": 0,
+     "cut": 0.48
+    }
+   },
+   "MarketVendor_0_M0_MI": {
+    "n": 62,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Metal_M5_KingdomMetalTrim_MI": {
+    "n": 89,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "MidBuilding_5_M0_Transformer_MI": {
+    "n": 6,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "ModernTech_10_M5_PanelRectangleMedium_MI": {
+    "n": 6,
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 1
+    }
+   },
+   "ModernTech_10_M7_PanelSquareSmall_MI": {
+    "n": 7,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "ModernTech_7_M6_SolarPanelKitG_MI": {
+    "n": 15,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Mud_M0_A_MI": {
+    "n": 13,
+    "stats": {
+     "minAlpha": 72,
+     "white": 0,
+     "cut": 0.465
+    }
+   },
+   "Mud_M0_MI": {
+    "n": 652,
+    "stats": {
+     "minAlpha": 22,
+     "white": 0,
+     "cut": 0.719
+    }
+   },
+   "Mud_M3_MudAlphaBlend_MI": {
+    "n": 9,
+    "stats": {
+     "minAlpha": 72,
+     "white": 0,
+     "cut": 0.465
+    }
+   },
+   "Papers_0_M0_MI": {
+    "n": 59,
+    "stats": {
+     "minAlpha": 132,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Plaster_M0_ASiteWallPeeling_MI": {
+    "n": 26,
+    "stats": {
+     "minAlpha": 48,
+     "white": 0,
+     "cut": 0.555
+    }
+   },
+   "Plaster_M0_WallPeelingLargeStone_MI": {
+    "n": 22,
+    "stats": {
+     "minAlpha": 9,
+     "white": 0,
+     "cut": 0.445
+    }
+   },
+   "RCrate_0_MI": {
+    "n": 18,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "SewerGrate_0_MI": {
+    "n": 5,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "SewerGrate_1_MI": {
+    "n": 13,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "SewerGrate_2_MI": {
+    "n": 10,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "StoneBrickCover_0_MI": {
+    "n": 34,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "StoneThin_0_MI": {
+    "n": 10,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Stone_M1_SquareTilesDirt_MI": {
+    "n": 344,
+    "stats": {
+     "minAlpha": 96,
+     "white": 0,
+     "cut": 0.512
+    }
+   },
+   "Stone_M1_SquareTiles_MI": {
+    "n": 573,
+    "stats": {
+     "minAlpha": 96,
+     "white": 0,
+     "cut": 0.512
+    }
+   },
+   "Stone_M2_DarkBlend_MI": {
+    "n": 63,
+    "stats": {
+     "minAlpha": 79,
+     "white": 0,
+     "cut": 0.492
+    }
+   },
+   "Stone_M2_Dark_MI": {
+    "n": 20,
+    "stats": {
+     "minAlpha": 79,
+     "white": 0,
+     "cut": 0.492
+    }
+   },
+   "Stone_M2_MI": {
+    "n": 530,
+    "stats": {
+     "minAlpha": 79,
+     "white": 0,
+     "cut": 0.492
+    }
+   },
+   "Stone_M2_StepsDarkStone_MI": {
+    "n": 46,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Stone_M2_Steps_MI": {
+    "n": 275,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Stone_M3_Old_Floor_MI": {
+    "n": 9,
+    "stats": {
+     "minAlpha": 101,
+     "white": 0,
+     "cut": 0.219
+    }
+   },
+   "Stone_M4_StoneTileMossBlend": {
+    "n": 809,
+    "stats": {
+     "minAlpha": 31,
+     "white": 0,
+     "cut": 0.969
+    }
+   },
+   "Stone_M6_LargeBricks_MI": {
+    "n": 52,
+    "stats": {
+     "minAlpha": 68,
+     "white": 0,
+     "cut": 0.051
+    }
+   },
+   "Stone_Old_FloorGrass_M0_MI": {
+    "n": 1069,
+    "stats": {
+     "minAlpha": 33,
+     "white": 0,
+     "cut": 0.648
+    }
+   },
+   "Stone_Old_Floor_M0_MI": {
+    "n": 248,
+    "stats": {
+     "minAlpha": 33,
+     "white": 0,
+     "cut": 0.648
+    }
+   },
+   "Stucco_M0_White_MI": {
+    "n": 6,
+    "stats": {
+     "minAlpha": 74,
+     "white": 0,
+     "cut": 0.48
+    }
+   },
+   "SwitchRoom_0_Boat_MI": {
+    "n": 22,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "SwitchRoom_0_Tarp_MI": {
+    "n": 9,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Terracotta_M0_RoofTileGrey_MI": {
+    "n": 73,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0.125,
+     "cut": 0
+    }
+   },
+   "Terracotta_M0_RoofTile_MI": {
+    "n": 30,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0.125,
+     "cut": 0
+    }
+   },
+   "Tile_M0_TilesBasicSmallDarkA_MI": {
+    "n": 151,
+    "stats": {
+     "minAlpha": 9,
+     "white": 0,
+     "cut": 0.879
+    }
+   },
+   "Tile_M0_TilesBasicSmallWaterBlend_MI": {
+    "n": 58,
+    "stats": {
+     "minAlpha": 9,
+     "white": 0,
+     "cut": 0.879
+    }
+   },
+   "Tile_M0_TilesBasicSmall_MI": {
+    "n": 455,
+    "stats": {
+     "minAlpha": 9,
+     "white": 0,
+     "cut": 0.879
+    }
+   },
+   "TrashGround_0_M0_MI": {
+    "n": 7,
+    "stats": {
+     "minAlpha": 141,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Vino_2_M0_Chair_MI": {
+    "n": 7,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Vino_3_M0_TableBlue_MI": {
+    "n": 8,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Wood_M12_WoodTrimLightA_MI": {
+    "n": 12,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Wood_M1_Solid_MI": {
+    "n": 8,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Wood_M2_SlattedWood_MI": {
+    "n": 221,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Wood_M4_PlywoodTile_MI": {
+    "n": 296,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   }
+  },
+  "cards": {
+   "Foliage_9_M0_Ivy_MI": {
+    "n": 12,
+    "kind": "foliage",
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 0.637
+    }
+   },
+   "Garden_0_M0_PlantPotted_MI": {
+    "n": 6,
+    "kind": "foliage",
+    "stats": {
+     "minAlpha": 46,
+     "white": 0,
+     "cut": 0.043
+    }
+   },
+   "Grass_M0_Cards_MI": {
+    "n": 141,
+    "kind": "card",
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 0.91
+    }
+   },
+   "Plant_0_M0_Dead_MI": {
+    "n": 25,
+    "kind": "foliage",
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 0.555
+    }
+   },
+   "Plant_0_M0_corner_MI": {
+    "n": 11,
+    "kind": "foliage",
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 0.555
+    }
+   },
+   "Tree_3_M1_Conifer_MI": {
+    "n": 24,
+    "kind": "foliage",
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 0.828
+    }
+   }
+  },
+  "overlay": {
+   "Fish_BloodCard_MI": {
+    "n": 19,
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 0.73
+    }
+   },
+   "Puddle_1_M0_MI": {
+    "n": 46,
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 0.773
+    }
+   },
+   "WiresDark_0_MI": {
+    "n": 13,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   }
+  }
+ },
+ "bind": {
+  "nodes": 13250,
+  "ground": {
+   "ABuildingRocks_0_M0_BasillicaMediumShards_MI": {
+    "n": 30,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "ARubble_0_M0_BrokenTilesA_MI": {
+    "n": 7,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "AtlasLogo_0_MI": {
+    "n": 56,
+    "stats": {
+     "minAlpha": 0,
+     "white": 0.065,
+     "cut": 0.859
+    }
+   },
+   "BathHouse_0_M0_TowelD_MI": {
+    "n": 12,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Bricks_1_M0_RoofEdgeDetail_MI": {
+    "n": 6,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Bricks_6_M0_GroundBreakup_MI": {
+    "n": 43,
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 0.484
+    }
+   },
+   "Ceramic_M0_SquareTilePristine_MI": {
+    "n": 318,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "ColorPalette_M0_DarkMetal_MI": {
+    "n": 146,
+    "stats": {
+     "minAlpha": 255,
+     "white": 1,
+     "cut": 0
+    }
+   },
+   "ColorPalette_M0_GreyDark": {
+    "n": 9,
+    "stats": {
+     "minAlpha": 255,
+     "white": 1,
+     "cut": 0
+    }
+   },
+   "Concrete_M2_LargeSquareTilesC_MI": {
+    "n": 812,
+    "stats": {
+     "minAlpha": 35,
+     "white": 0,
+     "cut": 0.996
+    }
+   },
+   "Construction_M0_WalkwayFenceVent_MI": {
+    "n": 196,
+    "stats": {
+     "minAlpha": 62,
+     "white": 0,
+     "cut": 0.313
+    }
+   },
+   "Construction_M0_WalkwayMat_MI": {
+    "n": 72,
+    "stats": {
+     "minAlpha": 62,
+     "white": 0,
+     "cut": 0.313
+    }
+   },
+   "CoverObject_5_M1_JerseyBarrier_MI": {
+    "n": 16,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Crate_1_M2_Wood_MI": {
+    "n": 25,
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 0.98
+    }
+   },
+   "Elevator_M0_Details_MI": {
+    "n": 16,
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 0.801
+    }
+   },
+   "FTBox_0_M0_C_MI": {
+    "n": 8,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "FTDoor_0_M0_C_MI": {
+    "n": 33,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "GlassShardMint_0_MI": {
+    "n": 16,
+    "stats": {
+     "minAlpha": 180,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Glass_M0D_MI": {
+    "n": 12,
+    "stats": {
+     "minAlpha": 215,
+     "white": 1,
+     "cut": 0
+    }
+   },
+   "KingdomTech_0_APCB_M0_MI": {
+    "n": 6,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "KingdomTech_0_APC_M0_MI": {
+    "n": 23,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Kingdom_0_M0_Metal_MI": {
+    "n": 20,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Kingdom_3_M0_ConstructionBarrier_MI": {
+    "n": 49,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Kingdom_M0_Concrete_MI": {
+    "n": 8,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Metal_0_M0_CorrugatedMetal_MI": {
+    "n": 49,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Metal_M5_KingdomMetalTrimConstruction_MI": {
+    "n": 25,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Metal_M5_KingdomMetalTrim_Int_MI": {
+    "n": 66,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Metal_M5_KingdomMetalTrim_MI": {
+    "n": 58,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Papers_0_M0_AntiKingdom_MI": {
+    "n": 16,
+    "stats": {
+     "minAlpha": 120,
+     "white": 0,
+     "cut": 0.004
+    }
+   },
+   "Papers_0_M0_MI": {
+    "n": 13,
+    "stats": {
+     "minAlpha": 132,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "RCrate_0_MI": {
+    "n": 24,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Roadkit_2_M0_CansA_MI": {
+    "n": 9,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Rock_M0_ChippedSurface_MI": {
+    "n": 172,
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 1
+    }
+   },
+   "Rock_M2_RocksDesertAlphaBlend_MI": {
+    "n": 34,
+    "stats": {
+     "minAlpha": 7,
+     "white": 0,
+     "cut": 0.98
+    }
+   },
+   "Rocks_1_M0_MediumChunk_MI": {
+    "n": 74,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Rug_0_M0_AreaRugA_Orange_MI": {
+    "n": 41,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Rug_0_M0_FloorRectangleA_MI": {
+    "n": 46,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Rug_0_M0_FloorRectangleB_MI": {
+    "n": 51,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Sand_M1_SandWoodB_MI": {
+    "n": 121,
+    "stats": {
+     "minAlpha": 8,
+     "white": 0,
+     "cut": 0.992
+    }
+   },
+   "Sand_M2_SandWhispyCurvesPlain_MI": {
+    "n": 1727,
+    "stats": {
+     "minAlpha": 255,
+     "white": 1,
+     "cut": 0
+    }
+   },
+   "Sand_M2_SandWhispyCurves_MI": {
+    "n": 1910,
+    "stats": {
+     "minAlpha": 7,
+     "white": 0,
+     "cut": 0.98
+    }
+   },
+   "Sand_M3_CobbleStoneSand_MI": {
+    "n": 119,
+    "stats": {
+     "minAlpha": 79,
+     "white": 0,
+     "cut": 0.492
+    }
+   },
+   "Sand_M3_SandPackedDirt_MI": {
+    "n": 1760,
+    "stats": {
+     "minAlpha": 88,
+     "white": 0,
+     "cut": 0.082
+    }
+   },
+   "Sand_M3_SandWhispyTiles_MI_UBER": {
+    "n": 911,
+    "stats": {
+     "minAlpha": 4,
+     "white": 0,
+     "cut": 0.891
+    }
+   },
+   "Sand_M5_SandSkirts_MI": {
+    "n": 436,
+    "stats": {
+     "minAlpha": 88,
+     "white": 0,
+     "cut": 0.082
+    }
+   },
+   "Stone_M8_StoneRoundWallPlasterBlendOrange_MI": {
+    "n": 12,
+    "stats": {
+     "minAlpha": 22,
+     "white": 0,
+     "cut": 0.723
+    }
+   },
+   "Stone_M8_StoneRoundWallPlasterBlend_MI": {
+    "n": 31,
+    "stats": {
+     "minAlpha": 22,
+     "white": 0,
+     "cut": 0.723
+    }
+   },
+   "SwitchRoom_M1_0_Tarp_MI": {
+    "n": 6,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "TarpCrate_0_M0_MI": {
+    "n": 5,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "TeleporterReceiver_10_M0_MainA2_MI": {
+    "n": 147,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "TeleporterReceiver_10_M0_MainA3_MI": {
+    "n": 48,
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 0.992
+    }
+   },
+   "Tile_M2_Tile_MI": {
+    "n": 175,
+    "stats": {
+     "minAlpha": 6,
+     "white": 0,
+     "cut": 0.992
+    }
+   },
+   "Tile_M4_KingdomFloorTile_MI": {
+    "n": 629,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Tile_M5_StarShape_MI": {
+    "n": 945,
+    "stats": {
+     "minAlpha": 35,
+     "white": 0,
+     "cut": 0.793
+    }
+   },
+   "Tile_M6_MoroccanA_MI": {
+    "n": 530,
+    "stats": {
+     "minAlpha": 157,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Tile_M6_MoroccanB_MI": {
+    "n": 88,
+    "stats": {
+     "minAlpha": 157,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Tile_M6_MoroccanDamagedA_MI": {
+    "n": 268,
+    "stats": {
+     "minAlpha": 105,
+     "white": 0,
+     "cut": 0.039
+    }
+   },
+   "Tile_M6_MoroccanDamagedB_MI": {
+    "n": 16,
+    "stats": {
+     "minAlpha": 105,
+     "white": 0,
+     "cut": 0.039
+    }
+   },
+   "Trim_0_M0_BuildingTrim_MI": {
+    "n": 167,
+    "stats": {
+     "minAlpha": 154,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "WoodBox_0_M0_DarkB_MI": {
+    "n": 7,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Wood_M10_WoodBSite_MI": {
+    "n": 97,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Wood_M10_WoodSoftHooka_MI": {
+    "n": 11,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Wood_M3_Dark_AOBlue_MI": {
+    "n": 9,
+    "stats": {
+     "minAlpha": 98,
+     "white": 0,
+     "cut": 0.039
+    }
+   },
+   "Wood_M3_Dark_MI": {
+    "n": 5,
+    "stats": {
+     "minAlpha": 98,
+     "white": 0,
+     "cut": 0.039
+    }
+   },
+   "Wood_M3_Orange_MI": {
+    "n": 8,
+    "stats": {
+     "minAlpha": 98,
+     "white": 0,
+     "cut": 0.039
+    }
+   }
+  },
+  "cards": {
+   "Decal_0_CardWallTrimR_MI": {
+    "n": 26,
+    "kind": "decal",
+    "stats": null
+   },
+   "Floater_15_M0_AsphaltPotholes_MI_UBER": {
+    "n": 77,
+    "kind": "decal",
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 0.621
+    }
+   },
+   "Floater_17_M0_KingdomTechSmall_MI": {
+    "n": 5,
+    "kind": "decal",
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 0.559
+    }
+   },
+   "Foliage_1_M0_VegetationLeaves_MI": {
+    "n": 11,
+    "kind": "foliage",
+    "stats": {
+     "minAlpha": 0,
+     "white": 0.385,
+     "cut": 0.875
+    }
+   },
+   "Grass_4_Dry_MI": {
+    "n": 8,
+    "kind": "card",
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 0.977
+    }
+   },
+   "Plant_0_M0_DesertPlantA_MI": {
+    "n": 16,
+    "kind": "foliage",
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 0.508
+    }
+   },
+   "Spice_M0_SpiceDecal_MI": {
+    "n": 8,
+    "kind": "decal",
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 0.645
+    }
+   },
+   "Tree_1_M0_PalmA_Leaves_MI": {
+    "n": 20,
+    "kind": "foliage",
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 0.219
+    }
+   }
+  },
+  "overlay": {
+   "Puddle_2_M0_MI": {
+    "n": 32,
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 0.773
+    }
+   },
+   "TireTrack_0_M0_A_MI": {
+    "n": 49,
+    "stats": {
+     "minAlpha": 0,
+     "white": 1,
+     "cut": 0.988
+    }
+   },
+   "Wires_2_M0_RebelWiresMaskC_MI": {
+    "n": 78,
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 0.938
+    }
+   }
+  }
+ },
+ "breeze": {
+  "nodes": 14790,
+  "ground": {
+   "ABuildingRocks_0_M0_BasillicaMediumShards_MI": {
+    "n": 345,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Blendable_M3_GravelGrassSat_MI": {
+    "n": 740,
+    "stats": {
+     "minAlpha": 72,
+     "white": 0,
+     "cut": 0.664
+    }
+   },
+   "BoardKit_0_M0_OldDamaged_MI": {
+    "n": 15,
+    "stats": {
+     "minAlpha": 60,
+     "white": 0,
+     "cut": 1
+    }
+   },
+   "BoatHouse_10_M0_Dock_MI": {
+    "n": 120,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Brick_1_M0_StoneCinderBlock_MI": {
+    "n": 7,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Brick_M14_CastleWallBasicBlendDarkTan_MI": {
+    "n": 43,
+    "stats": {
+     "minAlpha": 24,
+     "white": 0,
+     "cut": 0.668
+    }
+   },
+   "Brick_M14_CastleWallBasicBlendDark_MI": {
+    "n": 387,
+    "stats": {
+     "minAlpha": 24,
+     "white": 0,
+     "cut": 0.668
+    }
+   },
+   "Brick_M14_CastleWallBasicBlendDarkest_MI": {
+    "n": 414,
+    "stats": {
+     "minAlpha": 24,
+     "white": 0,
+     "cut": 0.668
+    }
+   },
+   "Brick_M14_CastleWallBasicBlendLightTan_MI": {
+    "n": 394,
+    "stats": {
+     "minAlpha": 24,
+     "white": 0,
+     "cut": 0.668
+    }
+   },
+   "Brick_M14_CastleWallStuccoBlendGrey_MI": {
+    "n": 7,
+    "stats": {
+     "minAlpha": 24,
+     "white": 0,
+     "cut": 0.668
+    }
+   },
+   "Bricks_6_M0_GroundBreakupVert_MI": {
+    "n": 16,
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 0.484
+    }
+   },
+   "Cannon_0_M0_A_MI": {
+    "n": 9,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "ColorPalette_M0_DualityBClothBlueDark_MI": {
+    "n": 23,
+    "stats": {
+     "minAlpha": 255,
+     "white": 1,
+     "cut": 0
+    }
+   },
+   "Concrete_M4_LargeSlabs_MI": {
+    "n": 129,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Concrete_M7_PouredConcreteWhiteChipsSandBlend_MI": {
+    "n": 1071,
+    "stats": {
+     "minAlpha": 35,
+     "white": 0,
+     "cut": 0.996
+    }
+   },
+   "Construction_M0_WalkwayFenceVent_MI": {
+    "n": 42,
+    "stats": {
+     "minAlpha": 62,
+     "white": 0,
+     "cut": 0.313
+    }
+   },
+   "Container_1_M0_ShippingD1_MI": {
+    "n": 7,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Container_M0_MetalShippingD1_MI": {
+    "n": 6,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Crate_1_M2_Wood_MI": {
+    "n": 8,
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 0.98
+    }
+   },
+   "Grass_M0_A_MI": {
+    "n": 13,
+    "stats": {
+     "minAlpha": 80,
+     "white": 0,
+     "cut": 0.988
+    }
+   },
+   "Gravel_0_M0_PebblesRocks_MI": {
+    "n": 17,
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 0.66
+    }
+   },
+   "Metal_0_M0_CorrugatedMetal_MI": {
+    "n": 127,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Metal_0_M0_CorrugatedMetal_MI_UBER": {
+    "n": 20,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Metal_M10_GroundTrimVents_MI": {
+    "n": 184,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Metal_M14_LabKingdomMechanical_MI": {
+    "n": 32,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Metal_M14_PaintedKingdomTrimDark_MI": {
+    "n": 131,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Metal_M14_PaintedKingdomTrim_MI": {
+    "n": 423,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Metal_M21_ScrapJunkPanelsAFlat_MI": {
+    "n": 23,
+    "stats": {
+     "minAlpha": 10,
+     "white": 0,
+     "cut": 0.988
+    }
+   },
+   "Metal_M21_ScrapJunkPanelsA_MI": {
+    "n": 331,
+    "stats": {
+     "minAlpha": 19,
+     "white": 0,
+     "cut": 0.891
+    }
+   },
+   "Metal_M21_ScrapJunkPanelsBPaintedGreen_MI": {
+    "n": 7,
+    "stats": {
+     "minAlpha": 21,
+     "white": 0,
+     "cut": 0.887
+    }
+   },
+   "Metal_M21_ScrapJunkPanelsB_MI": {
+    "n": 45,
+    "stats": {
+     "minAlpha": 74,
+     "white": 0,
+     "cut": 0.758
+    }
+   },
+   "Metal_M21_ScrapJunkPanelsC_MI": {
+    "n": 371,
+    "stats": {
+     "minAlpha": 91,
+     "white": 0,
+     "cut": 0.25
+    }
+   },
+   "Metal_M21_ScrapJunkRustTrim_MI": {
+    "n": 42,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Metal_M21_ScrapJunkTileA_MI": {
+    "n": 5,
+    "stats": {
+     "minAlpha": 79,
+     "white": 0,
+     "cut": 0.094
+    }
+   },
+   "Metal_M21_ScrapJunkTrimA_MI": {
+    "n": 87,
+    "stats": {
+     "minAlpha": 57,
+     "white": 0,
+     "cut": 0.125
+    }
+   },
+   "Metal_M21_ScrapJunkTrimB_MI": {
+    "n": 25,
+    "stats": {
+     "minAlpha": 57,
+     "white": 0,
+     "cut": 0.125
+    }
+   },
+   "Metal_M3_CorregatedRoof_MI": {
+    "n": 12,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Metal_M5_KingdomMetalTrim_MI": {
+    "n": 8,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "MidChurch_0_M0_WindowRound_MI": {
+    "n": 6,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Pipe_6_M0_KitA_MI": {
+    "n": 6,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "PirateCrateA_InteriorBrighter_MI": {
+    "n": 23,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Plaster_M0_OldWorn_MI": {
+    "n": 5,
+    "stats": {
+     "minAlpha": 0,
+     "white": 0.281,
+     "cut": 0.645
+    }
+   },
+   "Prop_0_M0_Tire_MI": {
+    "n": 6,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Prop_9_M0_CrateA_MI": {
+    "n": 17,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Rock_5_M0_BeachMedChunkA_MI": {
+    "n": 50,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Rock_5_M0_BeachSmChunkA_MI": {
+    "n": 31,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Rock_5_M1_DirtBlend_MI": {
+    "n": 154,
+    "stats": {
+     "minAlpha": 15,
+     "white": 0,
+     "cut": 0.426
+    }
+   },
+   "Rock_6_M0_CoverBlockA_MI": {
+    "n": 8,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Rock_6_M0_CoverBlockB_MI": {
+    "n": 17,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "RotatingDoor_0_M0_StorageInterior_MI": {
+    "n": 5,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Sand_M2_SandWhispyCurves_MI": {
+    "n": 9,
+    "stats": {
+     "minAlpha": 7,
+     "white": 0,
+     "cut": 0.98
+    }
+   },
+   "Sand_M6_BeachSandBlend_MI": {
+    "n": 672,
+    "stats": {
+     "minAlpha": 34,
+     "white": 1,
+     "cut": 0.82
+    }
+   },
+   "Sand_M6_BeachSandBrickBlendB_MI": {
+    "n": 566,
+    "stats": {
+     "minAlpha": 95,
+     "white": 1,
+     "cut": 1
+    }
+   },
+   "Sand_M6_BeachSandGravelBlend_MI": {
+    "n": 2088,
+    "stats": {
+     "minAlpha": 72,
+     "white": 0,
+     "cut": 0.664
+    }
+   },
+   "Sand_M6_BeachSandSkirt_MI": {
+    "n": 190,
+    "stats": {
+     "minAlpha": 95,
+     "white": 1,
+     "cut": 1
+    }
+   },
+   "Sand_M6_BeachSand_MI": {
+    "n": 69,
+    "stats": {
+     "minAlpha": 34,
+     "white": 1,
+     "cut": 0.82
+    }
+   },
+   "Sand_M6_BeachWetSandBlend_MI": {
+    "n": 1401,
+    "stats": {
+     "minAlpha": 34,
+     "white": 1,
+     "cut": 0.82
+    }
+   },
+   "StoneBrickCover_0_MI": {
+    "n": 47,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "StoneLight_M2_MI": {
+    "n": 51,
+    "stats": {
+     "minAlpha": 79,
+     "white": 0,
+     "cut": 0.492
+    }
+   },
+   "Stone_M0_LooseRoundStoneGrassBlendLight_MI": {
+    "n": 296,
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 0.344
+    }
+   },
+   "Stone_M1_GratingMetalStone_MI": {
+    "n": 14,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Stone_M2_DarkBlend_MI": {
+    "n": 13,
+    "stats": {
+     "minAlpha": 79,
+     "white": 0,
+     "cut": 0.492
+    }
+   },
+   "Stone_M2_MI": {
+    "n": 30,
+    "stats": {
+     "minAlpha": 79,
+     "white": 0,
+     "cut": 0.492
+    }
+   },
+   "Stone_M7_CanalStone_MI": {
+    "n": 38,
+    "stats": {
+     "minAlpha": 72,
+     "white": 0,
+     "cut": 0.465
+    }
+   },
+   "Stone_Old_FloorGrassLight_M0_MI": {
+    "n": 305,
+    "stats": {
+     "minAlpha": 33,
+     "white": 0,
+     "cut": 0.648
+    }
+   },
+   "Stone_Old_FloorGrass_M0_MI": {
+    "n": 188,
+    "stats": {
+     "minAlpha": 33,
+     "white": 0,
+     "cut": 0.648
+    }
+   },
+   "Stone_Old_FloorGravelSandLight_M0_MI": {
+    "n": 335,
+    "stats": {
+     "minAlpha": 33,
+     "white": 0,
+     "cut": 0.648
+    }
+   },
+   "Stone_Old_FloorGravel_M0_MI": {
+    "n": 214,
+    "stats": {
+     "minAlpha": 33,
+     "white": 0,
+     "cut": 0.648
+    }
+   },
+   "Stone_Old_FloorRocksLight_M0_MI": {
+    "n": 48,
+    "stats": {
+     "minAlpha": 33,
+     "white": 0,
+     "cut": 0.648
+    }
+   },
+   "Stone_Old_FloorRocks_M0_MI": {
+    "n": 271,
+    "stats": {
+     "minAlpha": 33,
+     "white": 0,
+     "cut": 0.648
+    }
+   },
+   "Stone_Old_Floor_M0_MI": {
+    "n": 153,
+    "stats": {
+     "minAlpha": 33,
+     "white": 0,
+     "cut": 0.648
+    }
+   },
+   "Stucco_M0_White_MI": {
+    "n": 174,
+    "stats": {
+     "minAlpha": 74,
+     "white": 0,
+     "cut": 0.48
+    }
+   },
+   "SwitchRoom_0_Boat_MI": {
+    "n": 6,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "SwitchRoom_0_Tarp_MI": {
+    "n": 16,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Vino_1_M0_WineBarrel_MI": {
+    "n": 6,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "WoodBox_0_M0_MI": {
+    "n": 22,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Wood_M10_WoodPlanks_MI": {
+    "n": 216,
+    "stats": {
+     "minAlpha": 8,
+     "white": 0,
+     "cut": 0.992
+    }
+   },
+   "Wood_M15_OldSplinteredPlanksA_MI": {
+    "n": 182,
+    "stats": {
+     "minAlpha": 72,
+     "white": 0,
+     "cut": 0.121
+    }
+   },
+   "Wood_M15_OldSplinteredRedPlanksDarkerDU_MI": {
+    "n": 37,
+    "stats": {
+     "minAlpha": 72,
+     "white": 0,
+     "cut": 0.121
+    }
+   },
+   "Wood_M15_OldSplintered_MI": {
+    "n": 28,
+    "stats": {
+     "minAlpha": 79,
+     "white": 0,
+     "cut": 0.129
+    }
+   },
+   "Wood_M16_DeckA_MI": {
+    "n": 6,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Wood_M1_Solid_MI": {
+    "n": 24,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Wood_M2_Broken_MI": {
+    "n": 5,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Wood_M2_SlattedWood_MI": {
+    "n": 6,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "WorldGridMaterial": {
+    "n": 10,
+    "stats": null
+   }
+  },
+  "cards": {
+   "Container_1_M0_Decals_MI": {
+    "n": 29,
+    "kind": "decal",
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 0.508
+    }
+   },
+   "Floater_15_M0_AsphaltPotholes_MI": {
+    "n": 7,
+    "kind": "decal",
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 0.621
+    }
+   },
+   "Grass_4_Small_MI": {
+    "n": 9,
+    "kind": "card",
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 0.977
+    }
+   },
+   "Grass_M0_CardsLighter_MI": {
+    "n": 109,
+    "kind": "card",
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 0.91
+    }
+   },
+   "Grass_M0_Cards_MI": {
+    "n": 21,
+    "kind": "card",
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 0.91
+    }
+   },
+   "Plant_0_M0_BeachCabbage_MI": {
+    "n": 318,
+    "kind": "foliage",
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 0.633
+    }
+   },
+   "Plant_0_M0_MorningGlory_MI": {
+    "n": 311,
+    "kind": "foliage",
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 0.68
+    }
+   },
+   "Tree_0_M0_Bananna_MI": {
+    "n": 36,
+    "kind": "foliage",
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 0.461
+    }
+   },
+   "Tree_0_M1_Palm_MI": {
+    "n": 34,
+    "kind": "foliage",
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 0.113
+    }
+   }
+  },
+  "overlay": {
+   "Wires_2_M0_RebelWiresMaskC_MI": {
+    "n": 13,
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 0.938
+    }
+   }
+  }
+ },
+ "haven": {
+  "nodes": 11729,
+  "ground": {
+   "ARubble_0_M0_BrokenTilesA_MI": {
+    "n": 27,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Ash_M0_AshPowderAlpha_MI": {
+    "n": 227,
+    "stats": {
+     "minAlpha": 11,
+     "white": 1,
+     "cut": 0.738
+    }
+   },
+   "Ash_M1_PackedDirt_MI": {
+    "n": 462,
+    "stats": {
+     "minAlpha": 14,
+     "white": 0,
+     "cut": 0.996
+    }
+   },
+   "Awning_1_M0_ASiteRed_MI": {
+    "n": 48,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Basalt_0_EmissiveBlendA_MI": {
+    "n": 15,
+    "stats": null
+   },
+   "Beam_0_M0_RoofSupport_MI": {
+    "n": 5,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Blendable_M3_Gravel_MI": {
+    "n": 293,
+    "stats": {
+     "minAlpha": 72,
+     "white": 0,
+     "cut": 0.664
+    }
+   },
+   "Box_7_M0_RebelMetalCrates_MI": {
+    "n": 12,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Brick_0_M0_GardenPlanter_MI": {
+    "n": 64,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Brick_M10_LongBrickBlendPlasterWarmOrange_MI": {
+    "n": 8,
+    "stats": {
+     "minAlpha": 58,
+     "white": 1,
+     "cut": 0.465
+    }
+   },
+   "CircleWall_0_M0_BombsiteB_MI": {
+    "n": 7,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "ColorPalette_M0_AsiteTertiary_MI": {
+    "n": 16,
+    "stats": {
+     "minAlpha": 255,
+     "white": 1,
+     "cut": 0
+    }
+   },
+   "ColorPalette_M0_AsiteWoodDark_MI": {
+    "n": 8,
+    "stats": {
+     "minAlpha": 255,
+     "white": 1,
+     "cut": 0
+    }
+   },
+   "ColorPalette_M0_CsiteWood_MI": {
+    "n": 66,
+    "stats": {
+     "minAlpha": 255,
+     "white": 1,
+     "cut": 0
+    }
+   },
+   "ColorPalette_M0_DualityBClothBlueDark_MI": {
+    "n": 29,
+    "stats": {
+     "minAlpha": 255,
+     "white": 1,
+     "cut": 0
+    }
+   },
+   "ColorPalette_M0_DualityBClothBlueDarker_MI": {
+    "n": 31,
+    "stats": {
+     "minAlpha": 255,
+     "white": 1,
+     "cut": 0
+    }
+   },
+   "Construction_M0_WalkwayFenceVent_MI": {
+    "n": 30,
+    "stats": {
+     "minAlpha": 62,
+     "white": 0,
+     "cut": 0.313
+    }
+   },
+   "Construction_M0_WalkwayMat_MI": {
+    "n": 16,
+    "stats": {
+     "minAlpha": 62,
+     "white": 0,
+     "cut": 0.313
+    }
+   },
+   "Crate_0_M0_HayA_MI": {
+    "n": 30,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Crate_1_M2_Wood_MI": {
+    "n": 19,
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 0.98
+    }
+   },
+   "Detail_1_M1_NorbuBagum_MI": {
+    "n": 5,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Dirt_M1_PackedDirtBlend_MI": {
+    "n": 161,
+    "stats": {
+     "minAlpha": 88,
+     "white": 0,
+     "cut": 0.082
+    }
+   },
+   "Dirt_M2_PackedDirt_MI": {
+    "n": 14,
+    "stats": {
+     "minAlpha": 88,
+     "white": 0,
+     "cut": 0.082
+    }
+   },
+   "Doorway_1_M0_FrameDetailB_ASite_MI": {
+    "n": 126,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Elevator_M0_Details_MI": {
+    "n": 16,
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 0.801
+    }
+   },
+   "FTDoor_0_M0_A_MI": {
+    "n": 21,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Flag_1_M0_Small_MI1": {
+    "n": 14,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Garage_0_M0_ShrineA_MI": {
+    "n": 6,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "GlassShardGlowMint_0_MI": {
+    "n": 8,
+    "stats": {
+     "minAlpha": 180,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Glass_M0D_MI": {
+    "n": 163,
+    "stats": {
+     "minAlpha": 215,
+     "white": 1,
+     "cut": 0
+    }
+   },
+   "Gravel_0_M0_PebblesRocks_MI": {
+    "n": 28,
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 0.66
+    }
+   },
+   "Metal_M11_LargePanelBasicRough_MI": {
+    "n": 19,
+    "stats": {
+     "minAlpha": 48,
+     "white": 0,
+     "cut": 0.453
+    }
+   },
+   "Metal_M11_LargePanelBasic_MI": {
+    "n": 53,
+    "stats": {
+     "minAlpha": 48,
+     "white": 0,
+     "cut": 0.453
+    }
+   },
+   "Metal_M3_TrimPainted_MI": {
+    "n": 9,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Metal_M3_Trim_MI": {
+    "n": 9,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Metal_M4_Trim_MI": {
+    "n": 8,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Metal_M5_KingdomMetalTrimConstruction_MI": {
+    "n": 107,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Metal_M5_KingdomMetalTrim_Light_Int_MI": {
+    "n": 5,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Meteor_0_M0_Box_MI": {
+    "n": 16,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Prop_12_M0_HayC_MI": {
+    "n": 11,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Prop_1_M0_Horn_MI": {
+    "n": 7,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Prop_22_M1_PapersA_MI": {
+    "n": 25,
+    "stats": {
+     "minAlpha": 133,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Prop_6_M0_GrainBin_MI": {
+    "n": 5,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Prop_9_M0_CrateA_MI": {
+    "n": 6,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "RCrate_0_MI": {
+    "n": 5,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Rug_2_M0_LargeA_MI": {
+    "n": 75,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Sack_0_M0_MoroccanGrainC_MI": {
+    "n": 7,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Slate_M0_SlateRoofTilesBrown_MI": {
+    "n": 174,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "SmallFlagsMovement_0_M0_MI": {
+    "n": 5,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "SolarPanel_M0_Blue_MI": {
+    "n": 33,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Stairs_0_M0_Stone_MI": {
+    "n": 180,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "StoneBrickCover_0_MI": {
+    "n": 20,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "StoneLight_M2_MI": {
+    "n": 7,
+    "stats": {
+     "minAlpha": 79,
+     "white": 0,
+     "cut": 0.492
+    }
+   },
+   "Stone_M0_DirtGrassBlend_MI": {
+    "n": 614,
+    "stats": {
+     "minAlpha": 14,
+     "white": 0,
+     "cut": 0.328
+    }
+   },
+   "Stone_M1_RoughStoneTilesGrassBlendST_MI": {
+    "n": 258,
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 0.758
+    }
+   },
+   "Stone_M1_RoughStoneTilesGrassBlend_MI": {
+    "n": 1531,
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 0.758
+    }
+   },
+   "Stone_M1_SquareTilesGrass_MI": {
+    "n": 199,
+    "stats": {
+     "minAlpha": 96,
+     "white": 0,
+     "cut": 0.512
+    }
+   },
+   "Stone_M1_SquareTiles_MI": {
+    "n": 325,
+    "stats": {
+     "minAlpha": 96,
+     "white": 0,
+     "cut": 0.512
+    }
+   },
+   "Stone_M2_MI": {
+    "n": 114,
+    "stats": {
+     "minAlpha": 79,
+     "white": 0,
+     "cut": 0.492
+    }
+   },
+   "Stone_M2_WornStoneTIle_MI": {
+    "n": 120,
+    "stats": {
+     "minAlpha": 45,
+     "white": 0,
+     "cut": 0.637
+    }
+   },
+   "Straw_M0_ThatchedRoof_MI": {
+    "n": 32,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "TarpCrateDesat_0_M0_MI": {
+    "n": 13,
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 0.566
+    }
+   },
+   "TarpCrate_0_M0_MI": {
+    "n": 22,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "TechElement_23_M0_WallPanel_MI": {
+    "n": 6,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Tech_0_M0_RebelSupplyCargoStraps_MI": {
+    "n": 19,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Tile_M1_BrickPatternSlateBroken_MI": {
+    "n": 541,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Tile_M1_BrickPatternSlate_MI": {
+    "n": 1585,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Tile_M2_TileDarkSand_MI": {
+    "n": 255,
+    "stats": {
+     "minAlpha": 35,
+     "white": 0,
+     "cut": 0.996
+    }
+   },
+   "Tile_M7_BasicSquare_MI": {
+    "n": 69,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Tree_2_M0_Trunk_MI": {
+    "n": 19,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "WoodBox_0_M0_MI": {
+    "n": 7,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Wood_2_M0_Log_MI": {
+    "n": 9,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Wood_M0_DisheveledPlanksBrown_MI": {
+    "n": 966,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Wood_M0_DisheveledPlanksRed_MI": {
+    "n": 399,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Wood_M0_DisheveledPlanks_MI": {
+    "n": 184,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Wood_M10_WoodPlanks_MI": {
+    "n": 404,
+    "stats": {
+     "minAlpha": 8,
+     "white": 0,
+     "cut": 0.992
+    }
+   },
+   "Wood_M10_WoodSoftCherry_MI": {
+    "n": 10,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Wood_M15_OldSplinteredBrownOrangePlain_MI": {
+    "n": 47,
+    "stats": {
+     "minAlpha": 79,
+     "white": 0,
+     "cut": 0.129
+    }
+   },
+   "Wood_M15_OldSplinteredDark_MI1": {
+    "n": 181,
+    "stats": {
+     "minAlpha": 79,
+     "white": 0,
+     "cut": 0.129
+    }
+   },
+   "Wood_M15_OldSplinteredRedPaint_MI": {
+    "n": 16,
+    "stats": {
+     "minAlpha": 79,
+     "white": 0,
+     "cut": 0.129
+    }
+   },
+   "Wood_M15_OldSplinteredRed_MI": {
+    "n": 9,
+    "stats": {
+     "minAlpha": 79,
+     "white": 0,
+     "cut": 0.129
+    }
+   },
+   "Wood_M2_SlattedWood_MI": {
+    "n": 13,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Wood_M9_LargeWoodBeamDark_MI": {
+    "n": 18,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Wood_M9_LargeWoodBeamPaintBlue_MI": {
+    "n": 14,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Wood_M9_LargeWoodBeamPaintOrange_MI": {
+    "n": 6,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Wood_M9_LargeWoodBeamPaintRed_MI": {
+    "n": 11,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Wood_M9_LargeWoodBeam_MI": {
+    "n": 82,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   }
+  },
+  "cards": {
+   "Floater_12_M0_HayCard_MI": {
+    "n": 104,
+    "kind": "decal",
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 0.926
+    }
+   },
+   "Foliage_0_M0_MI": {
+    "n": 28,
+    "kind": "foliage",
+    "stats": {
+     "minAlpha": 0,
+     "white": 1,
+     "cut": 0.891
+    }
+   },
+   "Foliage_1_M0_VegetationLeavesTEMP_MI": {
+    "n": 26,
+    "kind": "foliage",
+    "stats": {
+     "minAlpha": 0,
+     "white": 0.385,
+     "cut": 0.875
+    }
+   },
+   "Foliage_1_M0_VegetationLeaves_MI": {
+    "n": 40,
+    "kind": "foliage",
+    "stats": {
+     "minAlpha": 0,
+     "white": 0.385,
+     "cut": 0.875
+    }
+   },
+   "Grass_4_Small_MI": {
+    "n": 6,
+    "kind": "card",
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 0.977
+    }
+   },
+   "Plant_0_M0_Bush_MI": {
+    "n": 5,
+    "kind": "foliage",
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 0.574
+    }
+   },
+   "Plant_0_M0_Dead_MI": {
+    "n": 290,
+    "kind": "foliage",
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 0.555
+    }
+   },
+   "Plant_0_M0_corner_MI": {
+    "n": 31,
+    "kind": "foliage",
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 0.555
+    }
+   },
+   "Pot_1_M0_PlantAlpha_MI": {
+    "n": 13,
+    "kind": "foliage",
+    "stats": {
+     "minAlpha": 46,
+     "white": 0,
+     "cut": 0.043
+    }
+   }
+  },
+  "overlay": {
+   "Paint_M0_AsphaltStreetB_MI": {
+    "n": 39,
+    "stats": {
+     "minAlpha": 35,
+     "white": 0,
+     "cut": 0.934
+    }
+   },
+   "Puddle_2_M0_MI": {
+    "n": 24,
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 0.773
+    }
+   },
+   "TireTrack_0_M0_A_MI": {
+    "n": 22,
+    "stats": {
+     "minAlpha": 0,
+     "white": 1,
+     "cut": 0.988
+    }
+   },
+   "Wires_2_M0_RebelWiresMaskC_MI": {
+    "n": 90,
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 0.938
+    }
+   }
+  }
+ },
+ "lotus": {
+  "nodes": 9416,
+  "ground": {
+   "Blendable_M3_GravelGrassSoftdark_MI": {
+    "n": 5,
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 0.586
+    }
+   },
+   "Blendable_M3_GravelGrass_MI": {
+    "n": 169,
+    "stats": {
+     "minAlpha": 72,
+     "white": 0,
+     "cut": 0.664
+    }
+   },
+   "Grass_M0_A_MI": {
+    "n": 60,
+    "stats": {
+     "minAlpha": 80,
+     "white": 0,
+     "cut": 0.988
+    }
+   },
+   "Gravel_0_M0_PebblesRocks_MI": {
+    "n": 22,
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 0.66
+    }
+   },
+   "Jam_M0_GravelGrass_MI": {
+    "n": 1327,
+    "stats": {
+     "minAlpha": 72,
+     "white": 0,
+     "cut": 0.664
+    }
+   },
+   "M_Jam_Water_CSite_FloorStone": {
+    "n": 17,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Mud_M0_MI": {
+    "n": 373,
+    "stats": {
+     "minAlpha": 22,
+     "white": 0,
+     "cut": 0.719
+    }
+   },
+   "Prop_0_M0_BSiteCenterA_MI": {
+    "n": 11,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Prop_0_M0_FloorPlatformA_MI1": {
+    "n": 151,
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 1
+    }
+   },
+   "Prop_0_M0_FloorPlatformB_MI1": {
+    "n": 47,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Prop_0_M0_LillyPad_MI": {
+    "n": 55,
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 0.402
+    }
+   },
+   "Prop_0_M0_WoodCrateB_MI": {
+    "n": 18,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Rock_6_M0_CoverBlockALight_MI": {
+    "n": 9,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Rock_6_M0_CoverBlockBLight_MI": {
+    "n": 21,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Rock_7_M1_CanyonMedChunkCBW_MI": {
+    "n": 40,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Rock_7_M1_CanyonSmChunkABW_MI": {
+    "n": 13,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Rock_8_M1_RockWallA_Orange_MI": {
+    "n": 7,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Rock_9_M1_RockACliff_Blend_MI": {
+    "n": 7,
+    "stats": {
+     "minAlpha": 13,
+     "white": 0,
+     "cut": 0.59
+    }
+   },
+   "Rock_9_M2_RockACliff_Blend_MI": {
+    "n": 6,
+    "stats": {
+     "minAlpha": 13,
+     "white": 0,
+     "cut": 0.59
+    }
+   },
+   "Sand_M8_SandJamWavy_MI": {
+    "n": 269,
+    "stats": {
+     "minAlpha": 95,
+     "white": 0,
+     "cut": 1
+    }
+   },
+   "Stairs_0_M0_JamStoneDirt_MI": {
+    "n": 34,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Stairs_0_M0_StoneDirtGrassBlend_MI": {
+    "n": 92,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Stairs_0_M0_StoneDirt_MI": {
+    "n": 61,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Stone_M0_FloorBlendMoss_MI": {
+    "n": 37,
+    "stats": {
+     "minAlpha": 13,
+     "white": 0,
+     "cut": 0.59
+    }
+   },
+   "Stone_M0_FloorBlend_MI": {
+    "n": 342,
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 0.367
+    }
+   },
+   "Stone_M0_JamPillarB_MI": {
+    "n": 82,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Stone_M0_JamPillarC_MI": {
+    "n": 38,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Stone_M0_JamRockBlendTrimGreyC_MI": {
+    "n": 8,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Stone_M0_StoneBrickGrassBlend_MI": {
+    "n": 240,
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 1
+    }
+   },
+   "Stone_M0_StoneBricksBlueB_MI": {
+    "n": 504,
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 1
+    }
+   },
+   "Stone_M0_StoneBricksBlueC_MI": {
+    "n": 124,
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 1
+    }
+   },
+   "Stone_M0_WallExteriorAMossBlendA_MI": {
+    "n": 17,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Stone_M0_WallExteriorA_MI": {
+    "n": 116,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Stone_M0_WallExteriorC_MI": {
+    "n": 11,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Stone_M0_WallExteriorLightA_MI": {
+    "n": 9,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Stone_M1_RockBlendTrimMoss_MI": {
+    "n": 25,
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 0.953
+    }
+   },
+   "Stone_M1_RockBlendTrim_BlueLight_MI": {
+    "n": 164,
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 0.953
+    }
+   },
+   "Stone_M1_WallExteriorA_MI": {
+    "n": 184,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Stone_M2_PatternTrimA_MI": {
+    "n": 23,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Stone_M2_PatternTrim_Flipped_MI": {
+    "n": 7,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Stone_M2_RockBlendTrimGrey_MI": {
+    "n": 80,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Stone_M2_RockBlendTrim_MI": {
+    "n": 361,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "TempleCrateA_MI": {
+    "n": 59,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Tile_M11_TempleClean_MI": {
+    "n": 132,
+    "stats": {
+     "minAlpha": 173,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Tile_M11_TempleDarkerB_MI": {
+    "n": 499,
+    "stats": {
+     "minAlpha": 99,
+     "white": 0,
+     "cut": 0.039
+    }
+   },
+   "Tile_M11_TempleFloorGrassBlendB_MI": {
+    "n": 50,
+    "stats": {
+     "minAlpha": 99,
+     "white": 0,
+     "cut": 0.039
+    }
+   },
+   "Tile_M11_TempleFloorMudBlend_MI": {
+    "n": 208,
+    "stats": {
+     "minAlpha": 22,
+     "white": 0,
+     "cut": 0.719
+    }
+   },
+   "Tile_M11_TempleStoneBrickSandBlend_MI": {
+    "n": 219,
+    "stats": {
+     "minAlpha": 95,
+     "white": 0,
+     "cut": 1
+    }
+   },
+   "Tile_M11_Temple_MI": {
+    "n": 2335,
+    "stats": {
+     "minAlpha": 95,
+     "white": 0,
+     "cut": 1
+    }
+   },
+   "Tree_1_M0_VistaTreeTrunkAMoss_MI": {
+    "n": 6,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Wood_M15_OldSplinteredPlanksAJam_MI": {
+    "n": 196,
+    "stats": {
+     "minAlpha": 72,
+     "white": 0,
+     "cut": 0.121
+    }
+   }
+  },
+  "cards": {
+   "Grass_M0_Cards_MI": {
+    "n": 117,
+    "kind": "card",
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 0.91
+    }
+   },
+   "Plant_0_M0_BeachCabbage_MI": {
+    "n": 11,
+    "kind": "foliage",
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 0.633
+    }
+   },
+   "Plant_0_M0_DeadFlowers_MI": {
+    "n": 40,
+    "kind": "foliage",
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 0.555
+    }
+   },
+   "Plant_0_M0_ShrubFallen_MI": {
+    "n": 13,
+    "kind": "foliage",
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 0.633
+    }
+   },
+   "Plant_0_M0_Shrub_MI": {
+    "n": 6,
+    "kind": "foliage",
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 0.633
+    }
+   },
+   "Plant_1_M1_MossOvergrowth_MI": {
+    "n": 113,
+    "kind": "foliage",
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 0.383
+    }
+   },
+   "Plant_3_M0_Fern_MI": {
+    "n": 15,
+    "kind": "foliage",
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 0.676
+    }
+   },
+   "VinesTech_0_M0_CablesMoss_MI": {
+    "n": 5,
+    "kind": "foliage",
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 1
+    }
+   },
+   "Vines_0_M0_BigVinesShadow_MI": {
+    "n": 27,
+    "kind": "foliage",
+    "stats": {
+     "minAlpha": 128,
+     "white": 0,
+     "cut": 0
+    }
+   }
+  },
+  "overlay": {
+   "Puddle_0_MudBrownJam_M0_MI": {
+    "n": 97,
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 0.773
+    }
+   },
+   "Puddle_2Jam_M0_MI": {
+    "n": 15,
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 0.773
+    }
+   },
+   "Wires_2_M0_RebelWiresMaskC_MI": {
+    "n": 6,
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 0.938
+    }
+   }
+  }
+ },
+ "split": {
+  "nodes": 11729,
+  "ground": {
+   "AScaffold_4_M0_ClothWrapD_MI": {
+    "n": 21,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "AScaffold_7_M0_Planks_MI": {
+    "n": 7,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Asphalt_M1_WornStreetDirt_MI": {
+    "n": 41,
+    "stats": {
+     "minAlpha": 84,
+     "white": 0,
+     "cut": 0.863
+    }
+   },
+   "Asphalt_M1_WornStreet_MI": {
+    "n": 942,
+    "stats": {
+     "minAlpha": 84,
+     "white": 0,
+     "cut": 0.863
+    }
+   },
+   "Bench_0_M0_MI": {
+    "n": 6,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "BoatHouse_10_M0_Dock_MI": {
+    "n": 5,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Cart_2_M0_CrabPile_MI": {
+    "n": 6,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "CautionTape_0_M0_Doorway_MI": {
+    "n": 8,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "ColorPalette_M0_ASiteKitchen_MI": {
+    "n": 5,
+    "stats": {
+     "minAlpha": 255,
+     "white": 1,
+     "cut": 0
+    }
+   },
+   "Concrete_M2_LargeSquareTilesB_MI": {
+    "n": 187,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Concrete_M2_LargeSquareTilesB_MI_UBER": {
+    "n": 83,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Concrete_M2_LargeSquareTilesSingle_MI_UBER": {
+    "n": 630,
+    "stats": {
+     "minAlpha": 35,
+     "white": 0,
+     "cut": 0.996
+    }
+   },
+   "Concrete_M2_LargeSquareTiles_MI_UBER": {
+    "n": 11,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Concrete_M2_LargeSquareTilesc_MI_UBER": {
+    "n": 179,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Concrete_M2_LargeSquareTilesc_MI_UBER_V2": {
+    "n": 668,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Concrete_M3_LargeSquareTiles_MI": {
+    "n": 255,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Concrete_M3_StreetSidewalksDark_MI": {
+    "n": 5,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Concrete_M3_StreetSidewalks_MI": {
+    "n": 619,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Concrete_M4_BasicNew_MI": {
+    "n": 99,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Concrete_M7_PouredConcreteWhiteChips_Dark_MI": {
+    "n": 348,
+    "stats": {
+     "minAlpha": 80,
+     "white": 0,
+     "cut": 1
+    }
+   },
+   "Concrete_M7_PouredConcreteWhiteChips_MI": {
+    "n": 61,
+    "stats": {
+     "minAlpha": 80,
+     "white": 0,
+     "cut": 1
+    }
+   },
+   "Concrete_M8_PouredConcreteThreeSplit_MI": {
+    "n": 79,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Concrete_M9_PouredLargeSlab_MI": {
+    "n": 26,
+    "stats": {
+     "minAlpha": 76,
+     "white": 0,
+     "cut": 1
+    }
+   },
+   "Construction_4_M0_WrapRough_MI": {
+    "n": 163,
+    "stats": {
+     "minAlpha": 255,
+     "white": 1,
+     "cut": 0
+    }
+   },
+   "Construction_M0_CautionTapeDamage_MI": {
+    "n": 6,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Construction_M0_WalkwayFenceVent_MI": {
+    "n": 124,
+    "stats": {
+     "minAlpha": 62,
+     "white": 0,
+     "cut": 0.313
+    }
+   },
+   "Construction_M0_WalkwayMat_MI": {
+    "n": 31,
+    "stats": {
+     "minAlpha": 62,
+     "white": 0,
+     "cut": 0.313
+    }
+   },
+   "CoverObject_5_M0_JerseyBarrier_MI_UBER": {
+    "n": 13,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Crate_6_M0_KingdomA_MI": {
+    "n": 41,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Crate_6_M0_KingdomB_MI": {
+    "n": 17,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "FTBox_0_M0_C_MI": {
+    "n": 10,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Glass_M0D_MI": {
+    "n": 86,
+    "stats": {
+     "minAlpha": 215,
+     "white": 1,
+     "cut": 0
+    }
+   },
+   "Gravel_0_M0_PebblesRocksGrey_MI": {
+    "n": 25,
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 0.66
+    }
+   },
+   "Gravel_M1_PebblesMudBlend_MI": {
+    "n": 42,
+    "stats": {
+     "minAlpha": 72,
+     "white": 0,
+     "cut": 0.664
+    }
+   },
+   "Gravel_M1_PebblesMud_MI": {
+    "n": 212,
+    "stats": {
+     "minAlpha": 72,
+     "white": 0,
+     "cut": 0.664
+    }
+   },
+   "Kingdom_3_M0_ConstructionBarrierLighter_MI": {
+    "n": 9,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Kingdom_8_M0_WallAsset_MI": {
+    "n": 24,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Kingdom_8_M1_WallAsset_MI": {
+    "n": 6,
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 0.98
+    }
+   },
+   "Marble_M0_WhiteBlackStriationsDark_MI": {
+    "n": 14,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Marble_M0_WhiteBlackStriationsTile_MI": {
+    "n": 5,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Metal_0_M0_CorrugatedMetal_MI_UBER": {
+    "n": 34,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Metal_M10_GroundTrimVents_MI": {
+    "n": 48,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Metal_M11_LargePanelBasicRough_MI": {
+    "n": 386,
+    "stats": {
+     "minAlpha": 48,
+     "white": 0,
+     "cut": 0.453
+    }
+   },
+   "Metal_M11_LargePanelBasic_MI": {
+    "n": 44,
+    "stats": {
+     "minAlpha": 48,
+     "white": 0,
+     "cut": 0.453
+    }
+   },
+   "Metal_M2_Trim_NonMetal": {
+    "n": 10,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Metal_M3_CorregatedRoof_MI": {
+    "n": 111,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Metal_M3_CorregatedRoof_MI_uber": {
+    "n": 437,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Metal_M5_KingdomMetalTrimConstruction_MI": {
+    "n": 48,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Metal_M5_KingdomMetalTrimConstruction_White_MI": {
+    "n": 37,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Metal_M6_PanelMetalKingdom": {
+    "n": 269,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Metal_M7_LongPanelKingdom": {
+    "n": 51,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Metal_M7_LongPanelKingdomLight": {
+    "n": 1283,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Metal_M8_KingdomBuildingCommercialLighter_MI": {
+    "n": 6,
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 1
+    }
+   },
+   "Metal_M8_KingdomBuildingCommercialWarm_MI": {
+    "n": 66,
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 1
+    }
+   },
+   "Metal_M8_KingdomBuildingCommercial_Dark_MI": {
+    "n": 82,
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 1
+    }
+   },
+   "Metal_M8_KingdomBuildingCommercial_MI": {
+    "n": 140,
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 1
+    }
+   },
+   "Metal_M9_KingdomLargeSeamedPanel_MI": {
+    "n": 68,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Mud_Water": {
+    "n": 262,
+    "stats": {
+     "minAlpha": 22,
+     "white": 0,
+     "cut": 0.719
+    }
+   },
+   "Papers_0_M0_MI": {
+    "n": 36,
+    "stats": {
+     "minAlpha": 132,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Planter_0_M0_A_MI": {
+    "n": 18,
+    "stats": {
+     "minAlpha": 64,
+     "white": 0,
+     "cut": 0.012
+    }
+   },
+   "Plaster_M5_PaintedBuildingLargeSquareB_MI": {
+    "n": 16,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Plaster_M5_PaintedBuildingLargeSquareC_MI": {
+    "n": 6,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Rainpipe_0_MI": {
+    "n": 28,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "RamenShop_0_M0_Fridge_MI": {
+    "n": 7,
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 1
+    }
+   },
+   "Roadkit_2_M0_CansA_MI": {
+    "n": 7,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Roof_20_M0_RoofTilesJapaneseSkirt_MI": {
+    "n": 68,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "SewerGrate_M0_KingdomClean_MI": {
+    "n": 12,
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 0.359
+    }
+   },
+   "Sewer_0_M0_GrateA_MI": {
+    "n": 8,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Shell_8_SewerScrollA_MAT": {
+    "n": 16,
+    "stats": {
+     "minAlpha": 0,
+     "white": 1,
+     "cut": 0.934
+    }
+   },
+   "StoneBrickCover_0_MI": {
+    "n": 12,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Stone_M0_LooseRoundStoneGrassBlend_MI": {
+    "n": 20,
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 0.344
+    }
+   },
+   "Stone_M0_SquareTiles_MI": {
+    "n": 81,
+    "stats": {
+     "minAlpha": 31,
+     "white": 0,
+     "cut": 0.969
+    }
+   },
+   "Stone_M2_StepsGrey_MI": {
+    "n": 150,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Stone_M2_Steps_MI1": {
+    "n": 5,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "StreetMarkers_0_M0_MI": {
+    "n": 15,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "SwitchRoom_0_Tarp_MI": {
+    "n": 6,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "TechElement_40_M0_PhotoBooth_MI_UBER": {
+    "n": 10,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Tech_0_RoofVent_MI": {
+    "n": 7,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Tile_M8_MediumDarkBasic_MI": {
+    "n": 654,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Tile_M8_MediumLightBasic_MI": {
+    "n": 45,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Tile_M9_OldBackAlley_MI": {
+    "n": 386,
+    "stats": {
+     "minAlpha": 37,
+     "white": 0,
+     "cut": 0.418
+    }
+   },
+   "Vendor_0_M0_StreetCartA_MI": {
+    "n": 21,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Vent_0_TechKitA_M0": {
+    "n": 43,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Wood_M0_Planks_MI": {
+    "n": 370,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Wood_M14_CleanSlattedOffsetDark_MI": {
+    "n": 177,
+    "stats": {
+     "minAlpha": 118,
+     "white": 0,
+     "cut": 0.027
+    }
+   },
+   "Wood_M14_CleanSlattedOffsetRough_MI": {
+    "n": 41,
+    "stats": {
+     "minAlpha": 118,
+     "white": 0,
+     "cut": 0.027
+    }
+   },
+   "Wood_M14_CleanSlattedOffset_MI": {
+    "n": 17,
+    "stats": {
+     "minAlpha": 118,
+     "white": 0,
+     "cut": 0.027
+    }
+   },
+   "Wood_M15Blue_OldSplintered_MI": {
+    "n": 7,
+    "stats": {
+     "minAlpha": 79,
+     "white": 0,
+     "cut": 0.129
+    }
+   },
+   "Wood_M15_OldSplinteredDark_MI1": {
+    "n": 17,
+    "stats": {
+     "minAlpha": 79,
+     "white": 0,
+     "cut": 0.129
+    }
+   },
+   "Wood_M15_OldSplinteredRed_MI": {
+    "n": 68,
+    "stats": {
+     "minAlpha": 79,
+     "white": 0,
+     "cut": 0.129
+    }
+   },
+   "Wood_M15_OldSplintered_MI": {
+    "n": 23,
+    "stats": {
+     "minAlpha": 79,
+     "white": 0,
+     "cut": 0.129
+    }
+   },
+   "Wood_M1_Solid_MI": {
+    "n": 14,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Wood_M2_SlattedWood_MI": {
+    "n": 15,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   },
+   "Wood_M3_Slats_MI": {
+    "n": 5,
+    "stats": {
+     "minAlpha": 255,
+     "white": 0,
+     "cut": 0
+    }
+   }
+  },
+  "cards": {
+   "Decal_01_M0_KingdomA": {
+    "n": 9,
+    "kind": "decal",
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 0.887
+    }
+   },
+   "Floater_15_M0_AsphaltPotholes_MI": {
+    "n": 92,
+    "kind": "decal",
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 0.621
+    }
+   },
+   "Floater_17_M0_KingdomTechSmallRough_MI": {
+    "n": 6,
+    "kind": "decal",
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 0.559
+    }
+   },
+   "Floater_17_M0_KingdomTechSmall_MI": {
+    "n": 22,
+    "kind": "decal",
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 0.559
+    }
+   },
+   "Foliage_9_M0_Ivy_MI": {
+    "n": 13,
+    "kind": "foliage",
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 0.637
+    }
+   },
+   "Grass_M0_Cards_MI": {
+    "n": 46,
+    "kind": "card",
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 0.91
+    }
+   },
+   "Plant_0_M0_DeadFlowers_MI": {
+    "n": 32,
+    "kind": "foliage",
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 0.555
+    }
+   },
+   "Plant_0_M0_Dead_MI": {
+    "n": 68,
+    "kind": "foliage",
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 0.555
+    }
+   },
+   "Plant_0_M0_DesertPlantA_MI": {
+    "n": 9,
+    "kind": "foliage",
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 0.508
+    }
+   },
+   "Tree_1_M3_FlowerD_MI": {
+    "n": 43,
+    "kind": "foliage",
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 0.281
+    }
+   },
+   "Tree_3_M1_Conifer_MI": {
+    "n": 78,
+    "kind": "foliage",
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 0.828
+    }
+   }
+  },
+  "overlay": {
+   "Fish_BloodCard_MI": {
+    "n": 17,
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 0.73
+    }
+   },
+   "Paint_M0_AsphaltStreet_MI": {
+    "n": 68,
+    "stats": {
+     "minAlpha": 35,
+     "white": 0,
+     "cut": 0.934
+    }
+   },
+   "Puddle_2_M0_MI": {
+    "n": 113,
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 0.773
+    }
+   },
+   "Wires_2_M0_RebelWiresMaskC_MI": {
+    "n": 26,
+    "stats": {
+     "minAlpha": 0,
+     "white": 0,
+     "cut": 0.938
+    }
+   }
+  }
+ }
+}
