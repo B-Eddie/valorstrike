@@ -84,7 +84,8 @@ server) and the shared motor `vendor/valorant-feel.js` (= `server/src/motor.cjs`
 | **Swiftplay ult** (offline page): 2 points at the start of each half (3 for 9-point ults), no other bonus | [W-Swift], [P-YE22] | page: +1 point after every round, none at half start | **FIXED** (page) |
 | Swiftplay Endgame ult (server): none listed (Unrated keeps ults) | [W-Swift] lists all differences from Unrated | server `modes.js:102` set swift ults to "3 short" at Endgame (Spike Rush rule copied) | **FIXED** (server; worker redeploy) |
 | Swiftplay buy phase 45 s on the first round of each half | = Unrated rule (server `modes.js:71`) | page: 45 s only on round 1 (n=0/12/24), 30 s on Swiftplay round 5 | **FIXED** (page) |
-| Spike Rush: no credits, loadout per round, orbs 1-5 | wiki Spike Rush | server `modes.js:64-75, 105-110` | match (server); page SR not re-audited |
+| Spike Rush: no credits; round 1 any sidearm / no shields, round 2 primary <= 2050 / Light, round 3 + Endgame primary >= 2250 / Heavy; kill + death ult points x2; Endgame everyone 3 short; no starting ult | wiki Spike_Rush | server `modes.js:64-75, 105-110` match; **page**: any primary every round, Heavy always, ults started at half, kills/deaths +1 | **FIXED** (page `SR_LOAD` = server `SR_LOADOUT`, ult x2 player + bots, Endgame 3 short) |
+| Spike Rush powerup orbs: 1-5 a round at fixed spots, 5 effect types | wiki Spike_Rush | server 1-5 random +1 ult (no effects); page 4 fixed orbs +1 ult | note (effects not implemented; spots unpublished) |
 | Ult orbs in Unrated online | [W-Orbs] (2 orbs every round) | server five-mode has no ult orbs (page offline has them) | gap - online server change (orb pickups + snapshot rows); listed for a follow-up lane |
 
 ## 4. Round flow / Spike

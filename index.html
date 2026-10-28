@@ -3129,7 +3129,7 @@ function xTagK(t) { if (!t || !(t.tagT > 0)) return 1; if (!t.tagS) return t.tag
 function xTag(t, n) { if (!t) return; t.tagS = 0; const k = n < 30 ? 0.5 : 0.28; if (!(t.tagT > 0) || k < t.tagK) t.tagK = k; t.tagT = 0.5; } // tagging: 0.5 s, rifle hits slow 72%
 function pDie(by, w) {
   if (jRib()) return; // Phoenix Run It Back
-  try { if (mode === "five" && !XTKILL && by !== "Fall" && by !== "Spike") jUlt(); } catch (e) {} // +1 ult point per death to an enemy (not a fall, the Spike or a teamkill)
+  try { if (mode === "five" && !XTKILL && by !== "Fall" && by !== "Spike") { jUlt(); if (FV.sr && !FV.dm) jUlt(); } } catch (e) {} // +1 ult point per death to an enemy (not a fall, the Spike or a teamkill); Spike Rush +2 (wiki)
   fKC(by); player.hp = 0; defuseT = 0; reloading = 0; if (by !== "Spike") stats.d++; /* the Spike is no KDA death (wiki Spike, patch 1.11) */ sbKill(by, "You", false); if (w) kfeed(by, "You", false, w); else feed(by + " ▸ You"); showStats(); setScope(false);
   if (!allies.some((a) => a.alive)) return end(false, "You were eliminated by " + by);
   say("You died · spectating your team", 1800);
@@ -9941,7 +9941,7 @@ function jRound(match) { // each round start in Retake and 5v5
 }
 function jUlt() { if (jOn()) { const u = K().u, was = J.ult; J.ult = Math.min(u, J.ult + 1); if (was < u && J.ult >= u) SFX.ult(); } }
 function jKill() {
-  if (!jOn()) return; jUlt();
+  if (!jOn()) return; jUlt(); if (mode === "five" && FV.sr && !FV.dm) jUlt(); // Spike Rush: kills give 2 ult points (wiki Spike_Rush)
   if (J.pick === "Raze" && J.e < 1 && ++J.tk >= 2) { J.e = 1; J.tk = 0; say("Paint Shells ready", 700); }
   if (J.pick === "Phoenix" && J.e < 1 && ++J.tk >= 2) { J.e = 1; J.tk = 0; say("Curveball ready", 700); }
   if (J.pick !== "Jett") return;
@@ -11983,10 +11983,11 @@ html.xt-nocm .x-cmb{display:none!important}
     bots.concat(typeof allies !== "undefined" ? allies : []).forEach((u) => { if (!u || !u.name) return; const a = xAg(u), m = (KITS[a] && KITS[a].u) || 7; XU.c[u.name] = fSwUlt(XU.c[u.name], m); }); } }
   if (typeof fRound === "function") { const f0 = fRound; fRound = function () { const r = f0.apply(this, arguments); try { fSwHalf(); } catch (e) {} return r; }; }
   window.xBotUC = XU.c; window.xBotUB = XU.b; /* Blade Storm TP (ability_fp_runtime xBtpK) reads the active bot ults */ // shared bot ult charge (bot Chamber's Tour De Force reads it, cost 8)
-  function gain(n) { const u = unit(n); if (!u) return; const a = xAg(u), m = (KITS[a] && KITS[a].u) || 7; XU.c[n] = Math.min(m, (XU.c[n] || 0) + 1); } // agents without a bot ult still charge (scoreboard pips); think1 only fires PTS agents
-  const k0 = kill; kill = function (b, hs, by, w) { const was = b && b.alive; const r = k0.apply(this, arguments); if (was && b && !b.alive) { try { const tk = XTKILL || by === "Spike" || by === "Fall"; if (mode === "five" && !tk) gain(b.name); if (!XTKILL) gain(by); delete XU.b[b.name]; ribEnd(b); } catch (e) {} } return r; };
-  const a0 = allyDie; allyDie = function (a, by, w) { const was = a && a.alive; const r = a0.apply(this, arguments); if (was) { try { const tk = XTKILL || by === "Spike" || by === "Fall"; if (mode === "five" && !tk) gain(a.name); if (!XTKILL) gain(by); delete XU.b[a.name]; ribEnd(a); } catch (e) {} } return r; };
-  const p0 = pDie; pDie = function (by, w) { try { if (!XTKILL && !(jOn() && J.rib > 0 && J.ribP)) gain(by); } catch (e) {} return p0.apply(this, arguments); }; // killing the player inside Run It Back is no kill: no ult point for the bot
+  function gain(n, k) { const u = unit(n); if (!u) return; const a = xAg(u), m = (KITS[a] && KITS[a].u) || 7; XU.c[n] = Math.min(m, (XU.c[n] || 0) + (k || 1)); }
+  const kd = () => (mode === "five" && FV.sr && !FV.dm ? 2 : 1); // Spike Rush: kills and deaths give 2 ult points each (wiki Spike_Rush) // agents without a bot ult still charge (scoreboard pips); think1 only fires PTS agents
+  const k0 = kill; kill = function (b, hs, by, w) { const was = b && b.alive; const r = k0.apply(this, arguments); if (was && b && !b.alive) { try { const tk = XTKILL || by === "Spike" || by === "Fall"; if (mode === "five" && !tk) gain(b.name, kd()); if (!XTKILL) gain(by, kd()); delete XU.b[b.name]; ribEnd(b); } catch (e) {} } return r; };
+  const a0 = allyDie; allyDie = function (a, by, w) { const was = a && a.alive; const r = a0.apply(this, arguments); if (was) { try { const tk = XTKILL || by === "Spike" || by === "Fall"; if (mode === "five" && !tk) gain(a.name, kd()); if (!XTKILL) gain(by, kd()); delete XU.b[a.name]; ribEnd(a); } catch (e) {} } return r; };
+  const p0 = pDie; pDie = function (by, w) { try { if (!XTKILL && !(jOn() && J.rib > 0 && J.ribP)) gain(by, kd()); } catch (e) {} return p0.apply(this, arguments); }; // killing the player inside Run It Back is no kill: no ult point for the bot
   const f0 = feed; feed = function (t) { try { const m = typeof t === "string" && /^(.+?) planted the Spike/.exec(t); if (m) gain(m[1]); } catch (e) {} return f0.apply(this, arguments); };
   const e0 = end; end = function (w, text) { try { const m = /^(.+?) defused the spike/i.exec(text || ""); if (m) gain(m[1]); } catch (e) {} return e0.apply(this, arguments); };
   const h0 = hurt; hurt = function (t, n, by) { const m = by && XU.b[by]; return h0.call(this, t, m ? n * m : n, by); };
@@ -12390,7 +12391,11 @@ function dmProtHud() { const on = running && mode === "five" && FV.dm && !!playe
 { const l0 = $("lobbyBtn").onclick; $("lobbyBtn").onclick = function () { // leaving mid buy phase (pause → home) left the buy / free-gun overlays (children of <body>, not #game) open over the lobby with FV.menu stuck on
   try { FV.menu = false; DM.menu = false; $("xBuy").classList.remove("on"); if (DM.el) DM.el.classList.remove("on"); XWS.hide(); } catch (e) {} try { xKLReset(); } catch (e) {} try { xdClear(); } catch (e) {} try { jClear(); } catch (e) {} return l0 && l0.apply(this, arguments); }; } // + floor guns (scene-level meshes) were only cleared by fRound / non-5v5 tick: they stayed on the map in DM / TDM, Surf, Aim and Duel; + ability objects (jClear): an enemy Boom Bot rolling when you left a Retake stayed in the scene and in the gun raycast's XLDH list into Surf / Aim (test_client_lifecycle, hk-31)
 // ---- SPIKE RUSH: 5v5 systems, first to 4 (max 7), no economy, one random gun for everyone each round, every attacker carries a Spike ----
-const SR_G = ["Vandal", "Phantom", "Bulldog", "Guardian", "Spectre", "Stinger", "Operator", "Marshal", "Outlaw", "Judge", "Bucky", "Ares", "Odin"].filter((n) => WEAP[n]);
+// Weapons and shields by round of the half (wiki Spike_Rush "Weapons"; = server/src/modes.js SR_LOADOUT): round 1 any sidearm, no
+// shields; round 2 a primary of 2050 or less, Light (25); round 3 and the Endgame a primary of 2250 or more, Heavy (50).
+const SR_LOAD = [{ w: ["Classic", "Shorty", "Frenzy", "Ghost", "Sheriff"], a: 0 }, { w: ["Stinger", "Spectre", "Bucky", "Judge", "Bulldog", "Marshal", "Ares"], a: 25 }, { w: ["Guardian", "Phantom", "Vandal", "Outlaw", "Operator", "Odin"], a: 50 }];
+const srLoad = () => { const n = FV.you + FV.them; return SR_LOAD[n >= 6 ? 2 : n % 3]; }; // n rounds played: 3-3 -> Endgame (round-3 set)
+const SR_SIDE = SR_LOAD[0].w;
 const SR = { orbs: [], geo: null, mat: null };
 const srOn = () => mode === "five" && FV.sr && !FV.dm;
 function srOrbs(on) {
@@ -12405,20 +12410,21 @@ function srOrbs(on) {
 }
 function startSR() { FV.srOn = 1; startFive(); }
 function srAll() { const a = []; try { a.push(...bots); } catch (e) {} try { a.push(...allies); } catch (e) {} return a; } // every bot and ally (the player is separate)
-{ const b0 = fBotBuy; fBotBuy = function (n) { return srOn() ? { w: FV.srG || "Vandal", arm: 50 } : FV.bs?.[n]?.alive === undefined && !FV.bs?.[n] ? { w: "Classic", arm: 0 } : b0.apply(this, arguments); }; } // no economy entry yet: skip the buy, pistol only
+{ const b0 = fBotBuy; fBotBuy = function (n) { return srOn() ? { w: FV.srG || "Vandal", arm: srLoad().a } : FV.bs?.[n]?.alive === undefined && !FV.bs?.[n] ? { w: "Classic", arm: 0 } : b0.apply(this, arguments); }; } // no economy entry yet: skip the buy, pistol only
 { const r0 = fRound; fRound = function () {
   if (!srOn()) return r0.apply(this, arguments);
   const first = FV.you + FV.them === 0;
-  FV.srG = SR_G[Math.floor(Math.random() * SR_G.length)] || "Vandal"; FV.alive = true; FV.pri = FV.srG; FV.sec = "Classic"; FV.arm = 50;
+  const LD = srLoad(), endg = FV.you + FV.them >= 6; const LP = LD.w.filter((n) => WEAP[n]); FV.srG = LP[Math.floor(Math.random() * LP.length)] || LD.w[0]; FV.alive = true;
+  if (SR_SIDE.includes(FV.srG)) { FV.pri = null; FV.sec = FV.srG; } else { FV.pri = FV.srG; FV.sec = "Classic"; } FV.arm = LD.a; FV.rgn = undefined;
   const keepUC = !first && window.xBotUC ? Object.assign({}, window.xBotUC) : null, keepCU = new Map(); try { srAll().forEach((b) => { if (b && b.ab && b.ab.cu != null) keepCU.set(b, b.ab.cu); }); } catch (e) {}
   r0.apply(this, arguments);
   if (keepUC) try { Object.assign(window.xBotUC, keepUC); } catch (e) {} // bot ults carry over between rounds
-  FV.buy = 0; FV.menu = false; try { buyMenu(false); } catch (e) {} player.armor = 50;
-  try { const M = K().mx; J.c = M.c; J.q = M.q; if (M.e != null) J.e = M.e; if (first) J.ult = Math.ceil(K().u / 2); } catch (e) {} // every kit (Killjoy and Chamber too) keeps C/Q charges in J.c / J.q
+  FV.buy = 0; FV.menu = false; try { buyMenu(false); } catch (e) {} player.armor = LD.a; player.rgn = undefined;
+  try { const M = K().mx; J.c = M.c; J.q = M.q; if (M.e != null) J.e = M.e; if (endg) J.ult = Math.max(J.ult || 0, K().u - 3); } catch (e) {} // no starting ult; the Endgame starts everyone 3 short (wiki) // every kit (Killjoy and Chamber too) keeps C/Q charges in J.c / J.q
   try { srAll().forEach((b) => { if (!b) return; const A = b.ab || (b.ab = { t: 0, saw: false, rbT: 2 + Math.random() * 6 }); A.smk = true; A.cb = 2; A.rb = true; xBFill(b); // bots: full charges every round (full KITS charges)
     if (A.sq != null) { A.sq = 2; A.sp = 100; A.srg = 0; A.srgB = 0; } if (A.bq != null) { A.bq = 2; A.be = 1; } A.bas = null; A.rzb = null; // Skye Guiding Light + Regrowth, Breach Flashpoint + Fault Line
     if (A.tm && A.tm.f) A.tm.f.t = 0.01; A.tm = null; A.ct = null; A.cy = null; if (keepCU.has(b)) A.cuK = keepCU.get(b); // Chamber: Trademark re-placed, ult kept; Cypher Trapwire re-placed
-    if (!first) return; let a = null; try { a = xAg(b); } catch (e) {} const c = typeof window.xBotUltCost === "function" ? window.xBotUltCost(a) : 0; if (c && window.xBotUC) window.xBotUC[b.name] = Math.ceil(c / 2); }); } catch (e) {} // bot ults start at half
+    b.armor = LD.a; b.rgn = undefined; if (!endg) return; let a = null; try { a = xAg(b); } catch (e) {} const c = typeof window.xBotUltCost === "function" ? window.xBotUltCost(a) : 0; if (c && window.xBotUC) window.xBotUC[b.name] = Math.max(window.xBotUC[b.name] || 0, c - 3); }); } catch (e) {} // bots: shields of the round; Endgame 3 short of the ult
   FV.srWin = 4; try { srAll().forEach((u) => { if (u && u !== player && u.alive !== false && u.hp !== 0) u.w = FV.srG; }); const A = fAtk(); srAll().concat([player]).forEach((u) => { if (u) u.spike = A.includes(u); }); } catch (e) {}
   srOrbs(true); say("Spike Rush · " + FV.srG + " for everyone · every attacker has a Spike", 1800); updHud();
 }; }
