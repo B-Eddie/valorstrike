@@ -9,7 +9,8 @@ const root=path.join(__dirname,'..'),html=fs.readFileSync(path.join(root,'index.
  const a=html.indexOf('const XAB_UNEQ = '),b=html.indexOf('const XAB_EQ = {',a);assert(a>0&&b>a,'client tables found (index.html regenerated)');
  const t0=html.indexOf('function xEqTick(dt) {'),t1=html.indexOf('\nconst xEqKey0',t0);assert(t0>0&&t1>t0,'xEqTick');
  const c={J:{pick:'Phoenix',eq:null},XABT:{rec:.45,rel:.2,draw:.5},VM:{sw:0,swT:0,ins:0},Math,Number,running:true,player:{hp:100},mode:'five',FV:{buy:0},fireHeld:false,jOn:()=>true,xEqCast:()=>true,W:'Vandal',stim:1};
- c.vfWeapon=()=>c.W;c.xStimK=()=>c.stim;vm.createContext(c);vm.runInContext(html.slice(a,b)+'\n'+html.slice(t0,t1)+';globalThis.T={XAB_UNEQ,XAB_REEQI,XAB_REEQ,xUneqT,xReeqT,xEqTick};',c);
+ c.vfWeapon=()=>c.W;c.xStimK=()=>c.stim;vm.createContext(c);const line=k=>{const i=html.indexOf(k);assert(i>0,k);return html.slice(i,html.indexOf('\n',i));};// xEqTick reads xEqHold (hold-type abilities: Sova bow, Breach Fault Line, Omen Dark Cover marker)
+ vm.runInContext(html.slice(a,b)+'\n'+line('const XAB_HOLD = ')+'\n'+line('function xEqHold(q) {')+'\n'+html.slice(t0,t1)+';globalThis.T={XAB_UNEQ,XAB_REEQI,XAB_REEQ,xUneqT,xReeqT,xEqTick};',c);
  const T=c.T,plain=o=>JSON.parse(JSON.stringify(o));
  assert.deepEqual(plain(T.XAB_UNEQ),plain(W.UNEQUIP),'page unequip table = server UNEQUIP');assert.deepEqual(plain(T.XAB_REEQI),plain(W.REEQ_INSTANT),'instant re-equip abilities');assert.deepEqual(plain(T.XAB_REEQ),plain(W.REEQUIP),'weapon fast / instant equip');
  for(const [ag,ks] of Object.entries(A.ABILITY_EQUIP))for(const k of ks)assert(Number.isFinite(T.XAB_UNEQ[ag][k]),ag+' '+k);
