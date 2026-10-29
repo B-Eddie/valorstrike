@@ -526,6 +526,27 @@ function xhpAngles(C,x,y,z,atk){const k=C.key+'|'+Math.round(x)+','+Math.round(z
    const yaw=Math.atan2(pt[0]-x,pt[2]-z),sc=w/(4+d)*30;let dup=null;for(const a of A)if(Math.abs(xAng(a.yaw-yaw))<.3){dup=a;break;}if(dup){dup.w+=sc*.5;continue;}A.push({yaw,x:pt[0],y:pt[1],z:pt[2],d,w:sc});}
   A.sort((a,b)=>b.w-a.w);if(A.length>3)A.length=3;}catch(e){}
  if(XHP.cache.size>600)XHP.cache.clear();XHP.cache.set(k,A);return A;}
+// Round-start warm-up (roundstart; user, 75 Hz: "When round starts, it goes down to 30fps"): on the first action frames
+// every bot standing on its goal asked xhpAngles for its corners at once, and each new corner set searches up to five
+// map-wide A* routes (to the enemy spawn, every site, mid): ~40 ms of a ~60 ms round-start frame in the page harness.
+// In the last XHPW.win s of the buy phase those routes - from the nav node each live unit has stood on for XHPW.still
+// frames (lined up at its spot), to its side's sources in xhpAngles' order - go into nmPath's route cache, at most one
+// search per frame. The search
+// runs with the spawn walls down (NMB.sbOff), as nmBlocked sees them once the buy clock ends, so the cache holds exactly
+// the route the round-start frame would search (nmPath: nav graph + per-edge climb memo); only when it is found moves.
+var XHPW={win:8,still:12,key:'',src:null,n:0,at:new WeakMap()};
+function xhpWarm(){try{
+ if(mode!=='five'||FV.dm||!running||paused||!(FV.buy>0)||FV.buy>XHPW.win||window.xLdOn||!window.BotBrain||typeof nmActive!=='function')return;
+ const C=nmActive();if(!C||!C.meta||!C.nav)return;
+ if(XHPW.key!==C.key||!XHPW.src){XHPW.key=C.key;const S=[];for(const atk of [false,true]){const L=[],en=atk?C.meta.defender:C.meta.attacker,srcs=[en];for(const n in C.meta.sites)srcs.push(C.meta.sites[n]);srcs.push(xbvMid(C));
+   for(const q of srcs){const e=nmNear(C,q[0],q[2],q[1]);if(e>=0)L.push(e);}S.push(L);}XHPW.src=S;}
+ const nb=bots.length,nu=nb+allies.length,NL=C.nav.nodes.length;let todo=null,ts=-1,te=-1;
+ for(let j=0;j<nu;j++){const u=j<nb?bots[j]:allies[j-nb];if(!u||u.alive===false||!u.g)continue;
+  const p=u.g.position,s=nmNear(C,p.x,p.z,p.y);let w=XHPW.at.get(u);if(!w)XHPW.at.set(u,w={s:-1,f:0});if(w.s!==s){w.s=s;w.f=0;continue;}if(++w.f<XHPW.still||todo||s<0)continue; /* still walking to its spot: its node is not the round-start node yet */
+  const L=XHPW.src[(j<nb?!FV.atk:FV.atk)?1:0];for(let k=0;k<L.length;k++){const e=L[k];if(e!==s&&!NM.routeCache.has(s*NL+e)){todo=u;ts=s;te=e;break;}}}
+ if(todo){NMB.sbOff=1;try{nmPath(C,ts,te);}finally{NMB.sbOff=0;}XHPW.n++;} /* one search a frame */
+}catch(e){NMB.sbOff=0;}}
+(window.XHK||(window.XHK=[])).push(xhpWarm);
 // re-seat target near the hold's base spot that still sees the main angle (null = stay)
 function xhpSeat(C,u,H,team){const r=xhpRand(u),base=[H.bx,H.by,H.bz],q0=u.g.position;if(r()<.4&&Math.hypot(H.bx-q0.x,H.bz-q0.z)>1.2)return [H.bx,H.bz];/* back to the first spot (only when off it: standing on it, pick another seat) */const taken=[];for(const v of team)if(v!==u&&v.alive&&v.g)taken.push([v.g.position.x,v.g.position.y,v.g.position.z]);
  const a0=H.ang&&H.ang[0];for(let t=0;t<3;t++){const q=xbvSpot(C,base,taken,r,{rMin:1.2,rMax:3.5,gap:1.8});if(!q)continue;if(!a0||los(new RV(q[0],q[1]+1.5,q[2]),new RV(a0.x,a0.y,a0.z)))return [q[0],q[2]];}return null;}
