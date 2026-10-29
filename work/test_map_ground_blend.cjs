@@ -44,8 +44,9 @@ function prepare(defs,names,stats,loaded){const json={materials:defs},assoc=new 
   assoc.set(m,{materials:i});const o=new THREE.Mesh(new THREE.PlaneGeometry(1,1),m);o.castShadow=true;o.name=nm;scene.add(o);byName[nm]=o;}
  ctx.gl={scene,parser:{json,associations:assoc}};vm.runInContext('nmTexMissingMark(gl);nmPrepareScene(gl.scene)',ctx);return byName;}
 function compiled(m){const sh={vertexShader:LAMBERT.vertexShader,fragmentShader:LAMBERT.fragmentShader,uniforms:{}};if(typeof m.onBeforeCompile==='function')m.onBeforeCompile(sh,{});return sh;}
-// flat-colour RGB + a real height mask in alpha (16x16 Lanczos read: layer textures RGB std <= 5, alpha std >= 9.8)
-const flat=s=>!!(s&&s.lum<6&&s.alpha>=8&&s.am>=25);
+// flat-colour RGB + a real height mask in alpha. The page's canvas read point-samples (layer textures RGB std up to
+// ~9 there, 1-5 on this Lanczos read); textured ground has RGB std 15-45. Alpha std >= 9.8 on every layer texture.
+const flat=s=>!!(s&&s.lum<10&&s.alpha>=8&&s.am>=25);
 (async()=>{const bad=[];const tally={layer:0,second:0,plain:0,overlay:0};const must={'ascent/Grass_M0_Dirtblend_A':'grass','ascent/Grass_M0_A_MI':'','breeze/Grass_M0_A_MI':'','lotus/Grass_M0_A_MI':'','lotus/Jam_M0_GravelGrass_MI':'grass','breeze/Blendable_M3_GravelGrassSat_MI':'grass','ascent/Stone_M4_StoneTileMossBlend':'moss','ascent/Brick_M6_HerringBoneBroken_MI':'','bind/Tile_M5_StarShape_MI':''};const seen={};
  for(const key of MAPS){const dir=path.join(root,'models/valorant/maps',key),g=JSON.parse(fs.readFileSync(path.join(dir,'scene.gltf'),'utf8')),defs=g.materials,D=DATA[key];
   const surf=defs.map(d=>d.name).filter(n=>/^Grass_M\d+_/i.test(n)&&!/Cards/i.test(n));const ground=[...new Set([...Object.keys(D.ground),...surf])],overlay=Object.keys(D.overlay||{});
