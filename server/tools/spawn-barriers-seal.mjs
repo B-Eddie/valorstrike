@@ -30,7 +30,11 @@ const assets={fetch:async r=>new Response(await fs.promises.readFile('public'+ne
 // Ascent attacker spawn, east door (panel 3, barrier-3): its west end (x 32.6) stopped 1.3 m short of the doorway's west wall
 // (x ~31.3) under a 13 m overhang; the page's motor (30 fps) Updrafted over the 2 m box at the end and came down in the
 // neutral area (work/test_spawn_barrier_tall_client.cjs). The panel runs on into that wall, to x 30.81.
-export const FIX={ascent:{atk:{3:{p:[[30.81,8.36],[41.7,7.14]]}}},bind:{atk:{1:{p:[[-28.5,5.25],[-20.82,5.25]],y0:5.69}}},breeze:{atk:{3:{p:[[25.5,13],[32,13]],in:1}}},haven:{atk:{3:{p:[[8.41,26],[20.75,26]]}}},
+// Bind defender spawn, panel 2 (z -15, x 10.5 -> 15.75): its east end stopped half-way over a 2.5 m box (top 10.4, x ~15 - 17)
+// in front of the 15.8 m building wall (x 17); with the jump-feel air control (3.5 -> 12, 9952f26) the page's motor (30 fps)
+// Updrafted off the box beside the end and steered round it into the neutral area (work/test_spawn_barrier_tall_client.cjs:
+// out N 1.50 m past at 14.11, 10.84, -13.50). The panel runs on over the box into that wall, to x 17.25.
+export const FIX={ascent:{atk:{3:{p:[[30.81,8.36],[41.7,7.14]]}}},bind:{atk:{1:{p:[[-28.5,5.25],[-20.82,5.25]],y0:5.69}},def:{2:{p:[[10.5,-15],[17.25,-15]]}}},breeze:{atk:{3:{p:[[25.5,13],[32,13]],in:1}}},haven:{atk:{3:{p:[[8.41,26],[20.75,26]]}}},
  lotus:{atk:{0:{p:[[-18.75,29.25],[-18.75,40.24],[-17.25,40.24]],y:[4.38,11.33]},2:{p:[[-5.26,29],[2.2,29]],y:[5.9,12]}}}};
 const r2=v=>Math.round(v*100)/100;
 // ---- barrier-3: walls up to the sky (user: "Make barriers higher in buy phase, I can jump past one in Haven") ----
