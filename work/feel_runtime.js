@@ -107,6 +107,17 @@ function vfViewTick(F,dt){const P=player,V=VF_VIEW;if(!F||!P)return;dt=Math.max(
 }
 // Preload the selected loadout to reduce fallback frames during weapon switches.
 var VF_RIGS=new Map(),VF_PENDING=new Map();{const load=xvFPLoad;xvFPLoad=function(ag,w){const key=xvFPKey(ag,w);if(VF_RIGS.has(key)){const F=VF_RIGS.get(key);VF_RIGS.delete(key);VF_RIGS.set(key,F);return Promise.resolve(F);}if(VF_PENDING.has(key))return VF_PENDING.get(key);const pending=load(ag,w).then(F=>{VF_RIGS.set(key,F);while(VF_RIGS.size>6){const [k,old]=VF_RIGS.entries().next().value;if(old===XV.fp){VF_RIGS.delete(k);VF_RIGS.set(k,old);continue;}VF_RIGS.delete(k);vfDisposeRig(old);}return F;}).finally(()=>VF_PENDING.delete(key));VF_PENDING.set(key,pending);return pending;};}
+// Spikes (drawcalls; program count 46 -> 51 mid-match): the viewmodel pass draws VF_VIEW.scene under its own two lights, so
+// its programs differ from the world's and were linked on the first frame a viewmodel showed - mid-match. vfWarm compiles
+// that scene with every viewmodel built so far in it (each hidden part shown) and uploads their textures: at the load
+// warm-up (xPrecompile) and again whenever a viewmodel finishes building (xvFPGet), never on its first drawn frame.
+function vfWarm(r,only){r=r||(typeof renderer!=='undefined'?renderer:null);if(!r||!r.compile)return 0;const V=VF_VIEW.scene,add=[],hid=[],roots=new Set();
+  if(only){if(only.root)roots.add(only.root);}else{try{for(const F of XVFP.c.values())if(F&&F.root)roots.add(F.root);}catch(e){}try{for(const F of VF_RIGS.values())if(F&&F.root)roots.add(F.root);}catch(e){}try{if(XV.fp&&XV.fp.root)roots.add(XV.fp.root);}catch(e){}}
+  for(const R of roots)if(R.parent!==V){add.push([R,R.parent,R.visible,R.parent?R.parent.children.indexOf(R):-1]);V.add(R);R.visible=true;}
+  V.traverse(o=>{if(!o.visible&&o!==V){hid.push(o);o.visible=true;}});let n=0;
+  try{r.compile(V,VF_VIEW.camera);if(r.initTexture)V.traverse(o=>{if(!o.material)return;for(const m of [].concat(o.material))if(m)for(const k of ['map','emissiveMap','alphaMap','normalMap','aoMap'])if(m[k]&&m[k].image){r.initTexture(m[k]);n++;}});}catch(e){console.warn('viewmodel warmup',e);}
+  for(const o of hid)o.visible=false;for(let i=add.length-1;i>=0;i--){const [R,p,v,k]=add[i];V.remove(R);R.visible=v;if(p){p.add(R);p.children.pop();p.children.splice(k,0,R);}}return n;}
+{const get=xvFPGet;xvFPGet=function(){const P=get.apply(this,arguments);return P&&P.then?P.then(F=>{try{if(F&&F.root&&!F.vfWarm){F.vfWarm=1;vfWarm(null,F);}}catch(e){}return F;}):P;};}
 function vfDisposeRig(F){if(F.root.parent)F.root.parent.remove(F.root);F.am.stopAllAction();F.gm.stopAllAction();F.root.traverse(o=>{if(o.isMesh)[].concat(o.material||[]).forEach(m=>m.dispose());});}
 xvFPClear=function(F){if(!F)return;if(F.root.parent)F.root.parent.remove(F.root);F.root.visible=false;F.am.stopAllAction();F.gm.stopAllAction();};
 {const tick=xvFPTick;xvFPTick=function(dt){tick(dt);const F=XV.fp;if(!F)return;vfViewTick(F,dt);if(F.root.visible){if(!F.kind)xvFPPlay(F,VM.sw>0?'equip':'idle');if(VF.prefetch!==F.ag){VF.prefetch=F.ag;for(const w of ['Knife',mode==='five'?(FV.sec||'Classic'):'Classic',mode==='five'?(FV.pri||'Vandal'):'Vandal'])if(w!==F.w)xvFPLoad(F.ag,w).catch(()=>{});}}

@@ -11553,12 +11553,17 @@ function xWarmLazy() { const warm = []; try {
   if (typeof xBlob !== "undefined" && xBlob.mat && xBlob.mat.map && renderer.initTexture) renderer.initTexture(xBlob.mat.map); // its program is the shared basic+map one; only the texture was new
   if (typeof muzzle !== "undefined" && muzzle.material.map && renderer.initTexture) renderer.initTexture(muzzle.material.map); // first-person muzzle flash: uploaded on the first shot otherwise
   for (const m of warm) scene.add(m); } catch (e) {} return warm; }
+// drawcalls spikes: upload every texture the warm-up scene holds (hidden effect / ability parts included), so none is first
+// uploaded on the frame it is first drawn; three skips a texture already at its current version
+// (skip: the native map root - its textures are uploaded by the map loader's own budgeted pass)
+function xWarmTex(root, skip) { if (!renderer.initTexture) return; const seen = new Set(), walk = (o) => { if (o === skip) return; if (o.material) for (const m of [].concat(o.material)) if (m && !seen.has(m)) { seen.add(m); for (const k of ["map", "emissiveMap", "alphaMap", "normalMap", "aoMap", "lightMap"]) { const t = m[k]; if (t && t.image && !t.isRenderTargetTexture && !t.isDataArrayTexture) renderer.initTexture(t); } } for (let i = 0; i < o.children.length; i++) walk(o.children[i]); }; walk(root); }
 function xPrecompile() { // once per loaded map: build every shader program up front (no first-shot / first-ability hitch)
   xPC = true; const hid = [];
   try { xMatShare(); } catch (e) {}
   const warm = xWarmLazy();
-  try { if (!BFX.ok) bfxInit(); scene.traverse((o) => { if (!o.visible && o !== scene) { hid.push(o); o.visible = true; } }); renderer.compile(scene, camera); } catch (e) {}
+  try { if (!BFX.ok) bfxInit(); scene.traverse((o) => { if (!o.visible && o !== scene) { hid.push(o); o.visible = true; } }); renderer.compile(scene, camera); xWarmTex(scene); } catch (e) {}
   hid.forEach((o) => { o.visible = false; }); // warm-up only: restore hidden ability/effect meshes
+  try { if (typeof vfWarm === "function") vfWarm(); } catch (e) {} // viewmodel pass (its own scene + lights)
   for (const m of warm) scene.remove(m);
 }
 // Loading-gate bridge: run the same warm-up behind the loading screen instead of on the first
@@ -11589,7 +11594,7 @@ function xGate() {
 }
 let xAcc = 0;
 const XRF = { a: new Float32Array(31), i: 0, n: 0, ms: 1000 / 60, k: 0 }; // display refresh: median of the last 31 rAF intervals (re-sorted every 15 frames)
-function xRefresh(dt) { if (!(dt > 2 && dt < 100)) return; const R = XRF; R.a[R.i] = dt; R.i = (R.i + 1) % 31; if (R.n < 31) R.n++; if (++R.k % 15) return; const b = Array.prototype.slice.call(R.a, 0, R.n).sort((x, y) => x - y); R.ms = b[b.length >> 1]; }
+function xRefresh(dt) { if (!(dt > 2 && dt < 100)) return; const R = XRF; R.a[R.i] = dt; R.i = (R.i + 1) % 31; if (R.n < 31) R.n++; if (++R.k % 15) return; const b = R.b || (R.b = new Float32Array(31)), v = b.subarray(0, R.n); v.set(R.a.subarray(0, R.n)); v.sort(); R.ms = v[R.n >> 1]; } // no per-call arrays (typed sort is numeric)
 // FPS limit vs the measured refresh (pure; work/test_frame_governor.cjs): a cap gates rendering only below the screen's rate
 function xCapGates(cap, refreshMs) { return cap > 0 && 1000 / refreshMs > cap * 1.05; }
 const xPRMax = () => { const d = devicePixelRatio || 1, p = Math.min((XS.res === "retina" ? d : 1) * (XS.scale === "auto" ? 1 : +XS.scale), XS.prc || 9); return XS.res !== "retina" && matchMedia("(pointer: coarse)").matches ? Math.min(p, d, 1.5) : p; };
@@ -14848,7 +14853,7 @@ window.xNativeMaps={state:NM,ensure:nmEnsure,cancel:nmCancel,near:nmNear,path:nm
 // lines, localized hit impacts, spark/decal pools): without them the first shot / first hit of a match compiled their
 // programs mid-fight. Only invisible leaf objects parented to the scene are flipped (never the hidden collision meshes
 // inside the map group, whose programs nothing ever draws).
-{const precompile=xPrecompile;xPrecompile=function(){if(!nmActive())return precompile();xPC=true;const hid=[],warm=typeof xWarmLazy==='function'?xWarmLazy():[];try{if(!BFX.ok)bfxInit();if(typeof xHitInit==='function')xHitInit();for(const o of scene.children)if(!o.visible&&(o.isMesh||o.isLine||o.isPoints||o.isSprite)){hid.push(o);o.visible=true;}/* the first-person muzzle flash (hidden Sprite under the gun under the camera) was compiled by the first shot of the match */if(typeof muzzle!=='undefined'&&muzzle)for(let o=muzzle;o&&o!==scene;o=o.parent)if(!o.visible){hid.push(o);o.visible=true;}renderer.compile(scene,camera);}catch(e){console.warn('Native shader warmup',e);}for(const o of hid)o.visible=false;for(const m of warm)scene.remove(m);};}
+{const precompile=xPrecompile;xPrecompile=function(){if(!nmActive())return precompile();xPC=true;const hid=[],warm=typeof xWarmLazy==='function'?xWarmLazy():[];try{if(!BFX.ok)bfxInit();if(typeof xHitInit==='function')xHitInit();scene.traverse(o=>{if(!o.visible&&o!==scene){hid.push(o);o.visible=true;}});/* drawcalls spikes: every hidden part at any depth (ability props on rigs, effect pools, LOD-hidden map pieces), not only the scene's direct children *//* the first-person muzzle flash (hidden Sprite under the gun under the camera) was compiled by the first shot of the match */if(typeof muzzle!=='undefined'&&muzzle)for(let o=muzzle;o&&o!==scene;o=o.parent)if(!o.visible){hid.push(o);o.visible=true;}renderer.compile(scene,camera);if(typeof xWarmTex==='function')xWarmTex(scene,NM.current&&NM.current.M&&NM.current.M.g);}catch(e){console.warn('Native shader warmup',e);}for(const o of hid)o.visible=false;try{if(typeof vfWarm==='function')vfWarm();}catch(e){}for(const m of warm)scene.remove(m);};}
 function nmNearV(C,x,z){if(!C.cellsV){C.cellsV=new Map();C.nav.nodes.forEach((p,i)=>{if(C.nav.valid&&!C.nav.valid[i])return;const k=(Math.floor(p[0]/2)+8192)*16384+Math.floor(p[2]/2)+8192;/* perf2: Smi key */if(!C.cellsV.has(k))C.cellsV.set(k,[]);C.cellsV.get(k).push(i);});}/* perf-1: numeric cell keys as nmNear (was a 'gx,gz' string per probed cell) */let best=-1,bd=Infinity;const gx=Math.floor(x/2),gz=Math.floor(z/2);for(let ring=0;ring<=8;ring++){for(let dx=-ring;dx<=ring;dx++)for(let dz=-ring;dz<=ring;dz++){if(ring&&Math.abs(dx)!==ring&&Math.abs(dz)!==ring)continue;const L=C.cellsV.get((gx+dx+8192)*16384+gz+dz+8192)||NM_NONE;for(let j=0;j<L.length;j++){const i=L[j],p=C.nav.nodes[i],d=(p[0]-x)**2+(p[2]-z)**2;if(d<bd){bd=d;best=i;}}}if(best>=0&&ring>1&&bd<(ring*2-2)**2)break;}if(best<0)for(let i=0;i<C.nav.nodes.length;i++){if(C.nav.valid&&!C.nav.valid[i])continue;const p=C.nav.nodes[i],d=(p[0]-x)**2+(p[2]-z)**2;if(d<bd){bd=d;best=i;}}return best;}
 // coverage, with no way back. A grounded actor with no playable nav node within 4 units gets a
 // warning, then dies after 2 s - genre-standard kill-floor behavior. Back in coverage resets the
@@ -14999,6 +15004,17 @@ function vfViewTick(F,dt){const P=player,V=VF_VIEW;if(!F||!P)return;dt=Math.max(
 }
 // Preload the selected loadout to reduce fallback frames during weapon switches.
 var VF_RIGS=new Map(),VF_PENDING=new Map();{const load=xvFPLoad;xvFPLoad=function(ag,w){const key=xvFPKey(ag,w);if(VF_RIGS.has(key)){const F=VF_RIGS.get(key);VF_RIGS.delete(key);VF_RIGS.set(key,F);return Promise.resolve(F);}if(VF_PENDING.has(key))return VF_PENDING.get(key);const pending=load(ag,w).then(F=>{VF_RIGS.set(key,F);while(VF_RIGS.size>6){const [k,old]=VF_RIGS.entries().next().value;if(old===XV.fp){VF_RIGS.delete(k);VF_RIGS.set(k,old);continue;}VF_RIGS.delete(k);vfDisposeRig(old);}return F;}).finally(()=>VF_PENDING.delete(key));VF_PENDING.set(key,pending);return pending;};}
+// Spikes (drawcalls; program count 46 -> 51 mid-match): the viewmodel pass draws VF_VIEW.scene under its own two lights, so
+// its programs differ from the world's and were linked on the first frame a viewmodel showed - mid-match. vfWarm compiles
+// that scene with every viewmodel built so far in it (each hidden part shown) and uploads their textures: at the load
+// warm-up (xPrecompile) and again whenever a viewmodel finishes building (xvFPGet), never on its first drawn frame.
+function vfWarm(r,only){r=r||(typeof renderer!=='undefined'?renderer:null);if(!r||!r.compile)return 0;const V=VF_VIEW.scene,add=[],hid=[],roots=new Set();
+  if(only){if(only.root)roots.add(only.root);}else{try{for(const F of XVFP.c.values())if(F&&F.root)roots.add(F.root);}catch(e){}try{for(const F of VF_RIGS.values())if(F&&F.root)roots.add(F.root);}catch(e){}try{if(XV.fp&&XV.fp.root)roots.add(XV.fp.root);}catch(e){}}
+  for(const R of roots)if(R.parent!==V){add.push([R,R.parent,R.visible,R.parent?R.parent.children.indexOf(R):-1]);V.add(R);R.visible=true;}
+  V.traverse(o=>{if(!o.visible&&o!==V){hid.push(o);o.visible=true;}});let n=0;
+  try{r.compile(V,VF_VIEW.camera);if(r.initTexture)V.traverse(o=>{if(!o.material)return;for(const m of [].concat(o.material))if(m)for(const k of ['map','emissiveMap','alphaMap','normalMap','aoMap'])if(m[k]&&m[k].image){r.initTexture(m[k]);n++;}});}catch(e){console.warn('viewmodel warmup',e);}
+  for(const o of hid)o.visible=false;for(let i=add.length-1;i>=0;i--){const [R,p,v,k]=add[i];V.remove(R);R.visible=v;if(p){p.add(R);p.children.pop();p.children.splice(k,0,R);}}return n;}
+{const get=xvFPGet;xvFPGet=function(){const P=get.apply(this,arguments);return P&&P.then?P.then(F=>{try{if(F&&F.root&&!F.vfWarm){F.vfWarm=1;vfWarm(null,F);}}catch(e){}return F;}):P;};}
 function vfDisposeRig(F){if(F.root.parent)F.root.parent.remove(F.root);F.am.stopAllAction();F.gm.stopAllAction();F.root.traverse(o=>{if(o.isMesh)[].concat(o.material||[]).forEach(m=>m.dispose());});}
 xvFPClear=function(F){if(!F)return;if(F.root.parent)F.root.parent.remove(F.root);F.root.visible=false;F.am.stopAllAction();F.gm.stopAllAction();};
 {const tick=xvFPTick;xvFPTick=function(dt){tick(dt);const F=XV.fp;if(!F)return;vfViewTick(F,dt);if(F.root.visible){if(!F.kind)xvFPPlay(F,VM.sw>0?'equip':'idle');if(VF.prefetch!==F.ag){VF.prefetch=F.ag;for(const w of ['Knife',mode==='five'?(FV.sec||'Classic'):'Classic',mode==='five'?(FV.pri||'Vandal'):'Vandal'])if(w!==F.w)xvFPLoad(F.ag,w).catch(()=>{});}}

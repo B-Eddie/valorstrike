@@ -41,11 +41,13 @@ const GLHOOK=()=>{const E=window.__GE=[];window.__GF=0;window.__glLive=false;con
   // program names: three passes the material to getProgram; tag the link with the material being drawn
   await X(`{const P=renderer.properties;const r0=renderer.render;window.__progName='';const C=renderer.compile;renderer.compile=function(){window.__progName='compile()';try{return C.apply(this,arguments);}finally{window.__progName='';}};}1`);
   await X(`{window.__rt=[];const r0=renderer.render;renderer.render=function(s,c){const t=performance.now();const x=r0.call(this,s,c);if(s===scene&&c===camera)window.__rt.push([window.__GF,+(performance.now()-t).toFixed(1),this.info.render.calls]);return x;};}1`);
-  await page.waitForTimeout(3000);await X('window.__glLive=true;window.__GE.length=0;1');
+  // new programs per phase: renderer.info.programs entries not seen before (name + the distinguishing parts of their cache key)
+  await X(`window.__pseen=new Set(renderer.info.programs.map(p=>p.id));window.__pnew=()=>{const o=[];for(const p of renderer.info.programs)if(!__pseen.has(p.id)){__pseen.add(p.id);o.push((p.name||'')+' | '+String(p.cacheKey).replace(/,(false|0|undefined|null|)(?=,)/g,'').slice(0,260));}return o;};1`);
+  await page.waitForTimeout(3000);await X('window.__glLive=true;window.__GE.length=0;window.__pnew();1');
   const phase=async(name,js,ms)=>{const f0=await X('window.__GF');if(js)await X(js).catch(e=>R.errors.push(name+': '+String(e).slice(0,200)));await page.waitForTimeout(ms);const f1=await X('window.__GF');
    const ev=JSON.parse(await X(`JSON.stringify(window.__GE.splice(0))`)),lt=JSON.parse(await X('JSON.stringify(window.__lt.splice(0))')),rt=JSON.parse(await X('JSON.stringify(window.__rt.splice(0))'));
    const sum=k=>ev.filter(e=>e[1]===k);const p={name,frames:f1-f0,links:sum('link').length,linkMs:+sum('link').reduce((a,e)=>a+e[2],0).toFixed(1),linkMax:Math.max(0,...sum('link').map(e=>e[2])),uploads:ev.filter(e=>/^tex/.test(e[1])).length,uploadMs:+ev.filter(e=>/^tex/.test(e[1])).reduce((a,e)=>a+e[2],0).toFixed(1),uploadSizes:[...new Set(ev.filter(e=>/^tex/.test(e[1])).map(e=>e[3]))].slice(0,12),bigBuffers:sum('bufferData').length,longTasks:lt.length,longMax:Math.max(0,...lt.map(x=>x[1])),calls:rt.length?rt[rt.length-1][2]:null,renderMsMean:rt.length?+(rt.reduce((a,x)=>a+x[1],0)/rt.length).toFixed(1):null,events:ev.slice(0,40)};
-   R.phases.push(p);log(name,JSON.stringify(Object.assign({},p,{events:undefined})));fs.writeFileSync(OUT,JSON.stringify(R,null,1));return p;};
+   p.newPrograms=JSON.parse(await X('JSON.stringify(window.__pnew())'));p.programs=await X('renderer.info.programs.length');R.phases.push(p);log(name,JSON.stringify(Object.assign({},p,{events:undefined})));fs.writeFileSync(OUT,JSON.stringify(R,null,1));return p;};
   await phase('idle spawn',null,5000);
   await phase('buy vandal',`(()=>{try{fBuy('Vandal');}catch(e){}return 1;})()`,6000);
   const C0=JSON.parse(await X(`JSON.stringify({site:NM.current.siteGoals,b:NM.current.bounds})`));const site=C0.site.A||C0.site[Object.keys(C0.site)[0]],cx=(C0.b.x1+C0.b.x2)/2,cz=(C0.b.z1+C0.b.z2)/2,yw=Math.atan2(-(cx-site[0]),-(cz-site[1]));
