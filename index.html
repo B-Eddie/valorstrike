@@ -22137,7 +22137,7 @@ function xrmPlantSetup(X) {
 function xrmPlantRelease(P) { if(P){P.side=null;P.age=0;P.active=false;P.clamped=false;} }
 function xrmPlantPoint(L,out) {
   const W=L.probe;if(!W)return L.hand.getWorldPosition(out);
-  W.o.skeleton.update();out.fromBufferAttribute(W.o.geometry.attributes.position,W.i);
+  out.fromBufferAttribute(W.o.geometry.attributes.position,W.i);
   const skin=W.o.applyBoneTransform||W.o.boneTransform;skin.call(W.o,W.i,out);return out.applyMatrix4(W.o.matrixWorld);
 }
 function xrmPlantRestore(X) {

@@ -17,16 +17,20 @@
 // render pass overwrites - that write is exactly what was removed.
 // Also counted: skeleton updates per agent per frame inside xSolTick, A vs B (B's extra updates = the probe skins the plant
 // did, which must be > 0, i.e. the probe path ran).
-// MUTATE=probe (the plant reads the foot bone instead of its sole probe) or MUTATE=eps (a probe point 1e-9 m off) runs A
-// with that change: the run must then fail (exit 1).
+// Mutation self-check (run by hand): MUTATE=probe (the plant reads the foot bone instead of its sole probe), MUTATE=eps (a probe
+// point 1e-9 m off) and MUTATE=stale (both copies skin the probe from skeleton.boneMatrices, so the removed update would matter)
+// must each make the run fail (exit 1).
 const assert=require('assert/strict');const {runtime,script,T}=require('./pose_chain_harness.cjs');
 const SHIPPED="const W=L.probe;if(!W)return L.hand.getWorldPosition(out);\n  out.fromBufferAttribute(W.o.geometry.attributes.position,W.i);";
 const BEFORE="const W=L.probe;if(!W)return L.hand.getWorldPosition(out);\n  W.o.skeleton.update();out.fromBufferAttribute(W.o.geometry.attributes.position,W.i);";
 const MUT={probe:["const W=L.probe;if(!W)return","const W=null;if(!W)return"],
- eps:["skin.call(W.o,W.i,out);return out.applyMatrix4(W.o.matrixWorld);","skin.call(W.o,W.i,out);out.applyMatrix4(W.o.matrixWorld);out.x+=1e-9;return out;"]};
+ eps:["skin.call(W.o,W.i,out);return out.applyMatrix4(W.o.matrixWorld);","skin.call(W.o,W.i,out);out.applyMatrix4(W.o.matrixWorld);out.x+=1e-9;return out;"],
+ // both copies skin the probe from skeleton.boneMatrices (what skeleton.update writes) instead of bone.matrixWorld: then the
+ // update is NOT redundant and A, which no longer runs it, reads last frame's bone matrices
+ stale:["const skin=W.o.applyBoneTransform||W.o.boneTransform;skin.call(W.o,W.i,out);","{const a=W.o.geometry.attributes,bm=W.o.skeleton.boneMatrices,b=out.clone().applyMatrix4(W.o.bindMatrix),t=new THREE.Vector3(),m=new THREE.Matrix4(),si=new THREE.Vector4().fromBufferAttribute(a.skinIndex,W.i),sw=new THREE.Vector4().fromBufferAttribute(a.skinWeight,W.i);out.set(0,0,0);for(let k=0;k<4;k++){const w=sw.getComponent(k);if(w){m.fromArray(bm,si.getComponent(k)*16);out.addScaledVector(t.copy(b).applyMatrix4(m),w);}}out.applyMatrix4(W.o.bindMatrixInverse);}",true]};
 const one=(s,a,b,what)=>{assert.equal(s.split(a).length,2,what+': '+a.slice(0,70));return s.replace(a,b);};
 const shipped=(n,s)=>{if(n!=='movement')return s;one(s,SHIPPED,SHIPPED,'shipped movement code');const m=MUT[process.env.MUTATE];return m?one(s,m[0],m[1],'mutation '+process.env.MUTATE):s;};
-const before=(n,s)=>n==='movement'?one(s,SHIPPED,BEFORE,'shipped movement code'):s;
+const before=(n,s)=>{if(n!=='movement')return s;s=one(s,SHIPPED,BEFORE,'shipped movement code');const m=MUT[process.env.MUTATE];return m&&m[2]?one(s,m[0],m[1],'mutation '+process.env.MUTATE):s;};
 const stairs=(x,z)=>Math.max(0,Math.min(12,Math.floor((z-3)/.32)))*.16+(x>6?.4:0);
 const same=(x,y)=>Object.is(x,y);
 let checks=0,verts=0,frames=0;const SK={A:0,B:0,agentFrames:0};
