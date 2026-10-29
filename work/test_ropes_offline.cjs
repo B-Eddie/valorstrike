@@ -60,6 +60,7 @@ function xUbPre(M){}function xUbPost(M){}
 var mmx=null,MM={width:200,height:200};function nmMapProjection(C,W,H){return {X:x=>x,Z:z=>z};}function nmMinimap(C){nmMinimap.last=performance.now()+1;nmMinimap.cw=200;}
 var XGRIP={};
 ${fn(grip,'xgWorldQ')}
+${fn(grip,'xgWP')}
 ${fn(grip,'xgSetWorldQ')}
 ${fn(grip,'xgIK')}
 `;
