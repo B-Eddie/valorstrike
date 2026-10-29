@@ -96,9 +96,10 @@ const sig=(P,U,a,b,c,extra)=>[a,b,c].map(v=>[P[v*3],P[v*3+1],P[v*3+2],U[v*2],U[v
  else console.log('B: r149 three not found (REAL3_DIR) - shader hook check skipped');
  assert(html.includes('var NM_ARR={')&&html.includes('function nmArrayScene(')&&html.includes('nmArrayScene(root)'),'generated page lacks the texture-array runtime (run work/install_valorant.py)');}
 // ---- C. budget (offline frame model)
-// Ceilings per map (draw calls of the map per frame, 16 x 8 views; measured 29 Oct 2026, ~10% headroom). Before
-// (NM_OPT, no arrays): ascent 299 avg / 453 worst, bind ~205, haven 200 / 306, split ~270, lotus ~140, breeze ~240.
-const BUDGET={ascent:{avg:110,worst:165},bind:{avg:110,worst:165},haven:{avg:110,worst:165},split:{avg:110,worst:165},lotus:{avg:110,worst:165},breeze:{avg:110,worst:165}};
+// Ceilings per map (map draw calls per frame, 16 x 8 views, NM_ARR.chunks 110; measured 29 Oct 2026, ~15% headroom).
+// Before (NM_OPT, no arrays) -> after: ascent 299 / 458 worst -> 78 / 99, bind 231 / 368 -> 63 / 89, haven 204 / 305 -> 77 / 110,
+// split 306 / 470 -> 81 / 104, lotus 154 / 241 -> 68 / 98, breeze 257 / 448 -> 68 / 98; average triangles down 3-31%.
+const BUDGET={ascent:{avg:92,worst:120},bind:{avg:75,worst:105},haven:{avg:90,worst:128},split:{avg:95,worst:122},lotus:{avg:80,worst:115},breeze:{avg:80,worst:115}};
 if(!process.env.VIEWS)process.env.VIEWS='16';
 const {loadRender,root:mroot}=await import(path.join(root,'server/tools/map-render.mjs')),{views,count,sphereOf}=await import(path.join(root,'server/tools/map-perf.mjs'));
 const B=new Function('NM_SMALL','NM_ARR',['nmDetailDistance','nmChunkPlan','nmCentroids','nmArrSize','nmArrBuckets'].map(fn).join('\n')+'\nreturn {nmDetailDistance,nmChunkPlan,nmArrSize,nmArrBuckets};')(NM_SMALL,NM_ARR);
@@ -115,6 +116,6 @@ for(const key of MAPS){const R=loadRender(key,{bvh:false}),V=views(key),z=ZF[key
  const before=run(items.map(it=>Object.assign({},it,{key:it.own})),NM_OPT),after=run(items,Object.assign({},NM_OPT,{total:NM_ARR.chunks}));
  rows.push({key,arrays:arrays.length,groups:new Set(items.map(i=>i.key)).size,before,after});console.log(key,'arrays',arrays.length,'calls avg',before.calls,'->',after.calls,'worst',before.worstCalls,'->',after.worstCalls,'tris avg',before.tris,'->',after.tris,'objects',before.objects,'->',after.objects);
  const b=BUDGET[key];assert(after.calls<=b.avg,key+': average map draw calls '+after.calls+' > '+b.avg);assert(after.worstCalls<=b.worst,key+': worst-view map draw calls '+after.worstCalls+' > '+b.worst);
- assert(after.tris<=before.tris*1.02,key+': texture-array chunks draw more triangles on average ('+after.tris+' vs '+before.tris+')');}
+ assert(after.tris<=before.tris,key+': texture-array chunks draw more triangles on average ('+after.tris+' vs '+before.tris+')');}
 if(process.env.JSON)fs.writeFileSync(process.env.JSON,JSON.stringify(rows,null,1));
 console.log('test_map_drawcalls OK');})().catch(e=>{console.error(e);process.exit(1);});

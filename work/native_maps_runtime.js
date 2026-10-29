@@ -147,11 +147,11 @@ function nmMatKey(m){return [m.type,m.map?m.map.uuid:'',m.color?m.color.getHexSt
 // each mesh carries a palette index (vertex attribute nmM -> RGBA32F palette texel: the material colour + its layer).
 // Materials then differ only by GL state (array, alpha test, polygon offset level, cut-out, detail distance), so the
 // chunk plan merges them into a few dozen groups and cuts those into NM_ARR.chunks spatial chunks (frustum culling and
-// the detail distances keep working; offline model server/tools/map-perf.mjs ARR=1: Ascent 299 -> ~95 calls average,
+// the detail distances keep working; offline model in work/test_map_drawcalls.cjs: Ascent 299 -> 78 calls average,
 // fewer triangles too because the chunks are tighter). The fragment colour is the same product as before
 // (diffuse x texel); decals, blended, texture-missing, untextured and shared-geometry meshes keep their own material.
 // Render-only: collision, raycasts and the nav use the collision mesh, never these meshes. WebGL1: unchanged.
-var NM_ARR={on:true,chunks:140,smallPiece:24000,minExact:6,layers:256,pw:256};
+var NM_ARR={on:true,chunks:110,smallPiece:24000,minExact:6,layers:256,pw:256};
 function nmArrOk(){try{const r=typeof renderer!=='undefined'?renderer:null,g=r&&r.getContext&&r.getContext();return !!(NM_ARR.on&&THREE.DataArrayTexture&&r&&r.capabilities&&r.capabilities.isWebGL2&&r.properties&&g&&typeof g.texStorage3D==='function'&&typeof g.texSubImage3D==='function'&&typeof g.generateMipmap==='function');}catch(e){return false;}}
 // final layer size of a texture: the same cap nmBudget applies (small = only decals / materials under 300 triangles use it)
 function nmArrSize(w,h,small,cap){const c=small?(cap?Math.min(cap,256):256):cap;if(c&&Math.max(w,h)>c){const s=c/Math.max(w,h);return [Math.max(1,Math.round(w*s)),Math.max(1,Math.round(h*s))];}return [w,h];}
