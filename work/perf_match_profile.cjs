@@ -57,6 +57,11 @@ const GROUPS = [
   if (process.env.NOFIRE === '1') xe('window.__NOFIRE=1;true'); // NOFIRE=1: same pilot (aims at the same enemies), trigger never pulled
   // measured phase
   if (PROF) { await post('Profiler.enable'); await post('Profiler.setSamplingInterval', { interval: 250 }); await post('HeapProfiler.enable'); await post('HeapProfiler.startSampling', { samplingInterval: 16384, includeObjectsCollectedByMajorGC: true, includeObjectsCollectedByMinorGC: true }); await post('Profiler.start'); }
+  // SPIKES=1: per-frame ms of the main loop sections (globals wrapped by name; nested calls count in both), reported for spike frames
+  const SPN = process.env.SPIKES ? (process.env.SPIKES === '1' ? 'xSimRun,fiveTick,tick,xbbTick,botRun,xHud,vmTick,xAssist,jTick,nmMinimap,nmCull,xSolTick,xdTick,bfxTick,xKF,xRoundEnd,fiveRoundStart,fiveRound,xBuyTick,xBlobs,xVisB,netTick' : process.env.SPIKES).split(',') : [];
+  if (SPN.length) xe(`{window.__SP={};const W=${JSON.stringify(SPN)};window.__SPW=[];for(const n of W){let f;try{f=eval(n);}catch(e){continue;}if(typeof f!=='function')continue;const g=function(){const t=performance.now();try{return f.apply(this,arguments);}finally{window.__SP[n]=(window.__SP[n]||0)+performance.now()-t;}};try{eval(n+'=g');window.__SPW.push(n);}catch(e){}}
+   const r0=renderer.render;renderer.render=function(){const t=performance.now();try{return r0.apply(this,arguments);}finally{window.__SP.render=(window.__SP.render||0)+performance.now()-t;}};
+   (window.XHK||(window.XHK=[])).forEach((h,i)=>{window.XHK[i]=function(){const t=performance.now();try{return h.apply(this,arguments);}finally{const k='XHK:'+(h.name||i);window.__SP[k]=(window.__SP[k]||0)+performance.now()-t;}};});}true`);
   xe('__PS.live=true;__PS.endFrame();true');
   const N = SECS * 60, ms = new Float64Array(N), alloc = new Float64Array(N).fill(NaN), t0s = new Float64Array(N), t1s = new Float64Array(N), emu = [];
   let longFr = 0, kills0 = xe('typeof XKF!=="undefined"?0:0');
@@ -65,7 +70,7 @@ const GROUPS = [
     H.frameMs(1000 / 60);
     const b = performance.now(), h1 = v8.getHeapStatistics().used_heap_size;
     ms[i] = b - a; t0s[i] = a; t1s[i] = b; alloc[i] = h1 - h0; // a negative delta = a GC ran; dropped below with the GC timeline
-    emu.push(xe('JSON.stringify(__PS.endFrame())'));
+    emu.push(xe('JSON.stringify(Object.assign(__PS.endFrame(),window.__SP?{sp:(()=>{const o=window.__SP;window.__SP={};return o;})()}:{}))'));
     if ((i & 7) === 7) await tick();
   }
   await tick(); await tick();
