@@ -47,7 +47,7 @@ const GLHOOK=()=>{const E=window.__GE=[];window.__GF=0;window.__glLive=false;con
    const sum=k=>ev.filter(e=>e[1]===k);const p={name,frames:f1-f0,links:sum('link').length,linkMs:+sum('link').reduce((a,e)=>a+e[2],0).toFixed(1),linkMax:Math.max(0,...sum('link').map(e=>e[2])),uploads:ev.filter(e=>/^tex/.test(e[1])).length,uploadMs:+ev.filter(e=>/^tex/.test(e[1])).reduce((a,e)=>a+e[2],0).toFixed(1),uploadSizes:[...new Set(ev.filter(e=>/^tex/.test(e[1])).map(e=>e[3]))].slice(0,12),bigBuffers:sum('bufferData').length,longTasks:lt.length,longMax:Math.max(0,...lt.map(x=>x[1])),calls:rt.length?rt[rt.length-1][2]:null,renderMsMean:rt.length?+(rt.reduce((a,x)=>a+x[1],0)/rt.length).toFixed(1):null,events:ev.slice(0,40)};
    R.phases.push(p);log(name,JSON.stringify(Object.assign({},p,{events:undefined})));fs.writeFileSync(OUT,JSON.stringify(R,null,1));return p;};
   await phase('idle spawn',null,5000);
-  await phase('buy vandal',`(()=>{try{if(typeof xBuy==='function')xBuy('vandal');else if(typeof buyW==='function')buyW('vandal');}catch(e){}return 1;})()`,6000);
+  await phase('buy vandal',`(()=>{try{fBuy('Vandal');}catch(e){}return 1;})()`,6000);
   const C0=JSON.parse(await X(`JSON.stringify({site:NM.current.siteGoals,b:NM.current.bounds})`));const site=C0.site.A||C0.site[Object.keys(C0.site)[0]],cx=(C0.b.x1+C0.b.x2)/2,cz=(C0.b.z1+C0.b.z2)/2,yw=Math.atan2(-(cx-site[0]),-(cz-site[1]));
   await phase('to A site',`(()=>{const C=NM.current;player.x=${site[0]};player.z=${site[1]};player.y=nmHeight(C,${site[0]},${site[1]});yaw=${yw};pitch=0;window.__pin={x:${site[0]},z:${site[1]},yaw:${yw}};(window.XHK||(window.XHK=[])).push(()=>{const q=window.__pin;if(!q||!player)return;player.x=q.x;player.z=q.z;if(player.hp<60)player.hp=100;});return 1;})()`,6000);
   const place=`(()=>{FV.buy=0;const C=NM.current,fx=-Math.sin(yaw),fz=-Math.cos(yaw);let i=0;for(const b of bots.concat(allies.slice(0,Math.max(0,${N}-bots.length)))){if(!b.g)continue;if(!b.alive&&typeof b.hp!=='undefined'){continue;}const d=5+1.4*i,s=((i%2)?1:-1)*(0.8+0.5*i);const x=player.x+fx*d+fz*s,z=player.z+fz*d-fx*s;try{b.g.position.set(x,nmHeight(C,x,z,player.y+1),z);}catch(e){}if(++i>=${N})break;}return i;})()`;
@@ -59,8 +59,8 @@ const GLHOOK=()=>{const E=window.__GE=[];window.__GF=0;window.__glLive=false;con
    for(const [g,u] of U)if(u.n)out.perUnit.push(u.n);out.units=out.perUnit.length;try{VF_VIEW.scene.traverseVisible(o=>{if(o.isMesh)out.fp++;});}catch(e){}return JSON.stringify(out);})()`));log('many by',JSON.stringify(R.manyBy));
   await page.screenshot({path:SHOT+TAG+'-many-'+MAP+'.jpg',type:'jpeg',quality:70,timeout:300000}).catch(()=>{});
   for(const k of ['KeyC','KeyQ','KeyE']){await phase('ability '+k,null,10);await page.keyboard.press(k).catch(()=>{});await page.mouse.click(W/2,H/2).catch(()=>{});await page.waitForTimeout(3500);await phase('after '+k,null,1500);}
-  await phase('knife',`(()=>{try{if(typeof sw==='function')sw('knife');}catch(e){}return 1;})()`,4000);
-  await phase('rifle again',`(()=>{try{if(typeof sw==='function')sw('primary');}catch(e){}window.__fireOn=0;fireHeld=false;return 1;})()`,4000);
+  await phase('knife',`(()=>{try{swapW('knife');}catch(e){}return 1;})()`,4000);
+  await phase('rifle again',`(()=>{try{swapW('pri');}catch(e){}window.__fireOn=0;fireHeld=false;return 1;})()`,4000);
  }catch(e){R.fail=String(e).slice(0,300);log('FAIL',R.fail);}
  fs.writeFileSync(OUT,JSON.stringify(R,null,1));await browser.close();if(s1)s1.close();if(s2)s2.close();log('done');process.exit(0);
 })().catch(e=>{R.errors.push(String(e).slice(0,400));fs.writeFileSync(OUT,JSON.stringify(R,null,1));process.exit(1);});
