@@ -9,6 +9,8 @@
 //  2. page (work/page_harness.cjs, native Ascent + collision BVH, offline 5v5): no A* search runs inside xhpAngles on the
 //     round-start frame (xhpWarm puts those routes in the cache during the last seconds of the buy phase, spawn walls off
 //     as the action phase searches them), and the cache is not wiped on that frame;
+//     nor any corner set's sight rays (xhpWarm works out each still unit's set for its exact position; xhpAngles takes it on a
+//     miss for that same position only);
 //  3. same game: every unit's position / facing / hp from the last 9 s of the buy phase to 10 s into the round is identical
 //     with the warm-up off (XHPW.win = 0) - the routes are only found earlier, never different.
 const fs=require('fs'),path=require('path'),vm=require('vm'),assert=require('assert/strict');const root=path.join(__dirname,'..');
@@ -43,19 +45,20 @@ async function run(win){const H=boot({real3:true,seed:3,native:true,fastGlobal:t
  for(let i=0;i<400&&!xe('!!(typeof nmActive==="function"&&nmActive()&&running)');i++)await adv(200);assert(xe('!!nmActive()'),'native Ascent loaded');
  if(win!=null)xe('XHPW.win='+win+';true');
  // A* searches (not served by a cache) made inside xhpAngles, and route-cache wipes, per frame
- xe(`(()=>{const W=window.__RS={inX:0,xA:0,miss:0,wipe:0};const np=nmPath;nmPath=function(C,s,e,b){const z=NM.routeCache.size,k=s*C.nav.nodes.length+e,hit=!(b&&b.size)&&NM.routeCache.has(k)||!!(b&&b.size&&NM.banCache&&NM.banCache.size&&[...NM.banCache.keys()].some(q=>q.startsWith(k+'|')));const r=np.apply(this,arguments);if(!hit){W.miss++;if(W.inX)W.xA++;}if(NM.routeCache.size<z-1)W.wipe++;return r;};
+ xe(`(()=>{const W=window.__RS={inX:0,xA:0,xc:0,miss:0,wipe:0};if(typeof xhpCalc==='function'){const xc=xhpCalc;xhpCalc=function(){if(W.inX)W.xc++;return xc.apply(this,arguments);};}else W.xc=-1;const np=nmPath;nmPath=function(C,s,e,b){const z=NM.routeCache.size,k=s*C.nav.nodes.length+e,hit=!(b&&b.size)&&NM.routeCache.has(k)||!!(b&&b.size&&NM.banCache&&NM.banCache.size&&[...NM.banCache.keys()].some(q=>q.startsWith(k+'|')));const r=np.apply(this,arguments);if(!hit){W.miss++;if(W.inX)W.xA++;}if(NM.routeCache.size<z-1)W.wipe++;return r;};
   const xa=xhpAngles;xhpAngles=function(){W.inX++;try{return xa.apply(this,arguments);}finally{W.inX--;}};return true;})()`);
  const SIG=`(()=>{const r=v=>Math.round(v*1e4);const o=[r(player.x),r(player.z)];for(const b of bots.concat(allies)){const p=b.g&&b.g.position;o.push(b.alive?1:0,b.hp|0,p?r(p.x):0,p?r(p.z):0,b.g?r(b.g.rotation.y):0);}return o.join(",");})()`;
  const sig=[];let prev=xe('FV.buy'),start=-1,trans=null,after=0;
- for(let i=0;i<6000;i++){if(start<0||i>start+2)xe('__RS.xA=0;__RS.miss=0;__RS.wipe=0;true');H.frameMs(1000/60);const buy=xe('FV.buy');
+ for(let i=0;i<6000;i++){if(start<0||i>start+2)xe('__RS.xA=0;__RS.xc=__RS.xc<0?-1:0;__RS.miss=0;__RS.wipe=0;true');H.frameMs(1000/60);const buy=xe('FV.buy');
   if(buy<=9)sig.push(xe(SIG));if(start<0&&prev>0&&!(buy>0))start=i;if(start>=0&&i===start+2)trans=JSON.parse(xe('JSON.stringify(__RS)'));/* the frame the clock runs out and the two after it (the bots' first action tick) */prev=buy;if(start>=0&&++after>=600)break;if((i&7)===7)await tick();}
  assert(start>=0,'round started');const errs=(H.errors||[]).filter(e=>!/\[object Object\]/.test(String(e&&(e.message||e.e||e))));
- return {trans,sig,start,errs:errs.length,warmed:xe('typeof XHPW!=="undefined"?XHPW.n:-1')};}
+ return {trans,sig,start,errs:errs.length,warmed:xe('typeof XHPW!=="undefined"?XHPW.n:-1'),sets:xe('typeof XHPW!=="undefined"&&XHPW.hit!=null?XHPW.hit:-1')};}
 (async()=>{const a=await run(null);
  assert.equal(a.errs,0,'no page errors');
  assert.equal(a.trans.xA,0,'no A* search inside xhpAngles on the round-start frames ('+a.trans.xA+' of '+a.trans.miss+' searches; warmed '+a.warmed+')');
  assert.equal(a.trans.wipe,0,'route cache not wiped on the round-start frame');
+ assert(a.sets>0,'corner sets worked out in the buy phase are used at round start ('+a.sets+')');assert.equal(a.trans.xc,0,'no corner set (sight rays) worked out inside xhpAngles on the round-start frames ('+a.trans.xc+')');
  const b=await run(0);assert.equal(b.start,a.start,'same round-start frame');assert.equal(b.sig.length,a.sig.length,'same frames');
  for(let i=0;i<a.sig.length;i++)assert.equal(a.sig[i],b.sig[i],'frame '+i+' (round start at '+(a.start)+'): unit states identical with the warm-up off');
- console.log('Round-start routes: round-start frame '+a.trans.miss+' searches, 0 in xhpAngles (warm-up off: '+b.trans.xA+' of '+b.trans.miss+'), '+a.warmed+' routes warmed in the buy phase; '+a.sig.length+' frames identical with the warm-up off');process.exit(0);
+ console.log('Round-start routes: round-start frame '+a.trans.miss+' searches, 0 in xhpAngles (warm-up off: '+b.trans.xA+' of '+b.trans.miss+'), '+a.warmed+' routes warmed in the buy phase, '+a.sets+' corner sets taken from it (warm-up off: '+b.trans.xc+' worked out on the round-start frames); '+a.sig.length+' frames identical with the warm-up off');process.exit(0);
 })().catch(e=>{console.error(e);process.exit(1);});
