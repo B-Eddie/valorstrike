@@ -5,6 +5,7 @@
 // Black flicker = a pixel that is near-black (max channel <= 24) in one frame while, in another frame, no near-black pixel is
 // within 2 px and the pixel itself is lit (luma >= 48): the 2 px dilation absorbs sub-pixel parallax of real dark edges.
 // Contact sheets of the worst views are written for a human look.
+//   TOGGLE=1: each view twice, wall-overlay colour lift (userData.nmLift) off = "before", on = "after" (tot in byVar).
 //   ROOT=<tree> PORT=8877 MAPS=ascent,bind Q=low|medium|high SPOTS=24 node work/browser_blackwalls_probe.cjs out.json shotdir
 const PW='/workspace/work/pw/node_modules/playwright';process.env.PLAYWRIGHT_BROWSERS_PATH=process.env.PLAYWRIGHT_BROWSERS_PATH||'/workspace/work/pw/browsers';
 process.env.LD_LIBRARY_PATH=(process.env.LD_LIBRARY_PATH||'')+':/workspace/work/pw/libs';
@@ -35,7 +36,7 @@ const log=(k,v)=>{R.steps.push([((Date.now()-t00)/1000).toFixed(1),k,v]);fs.writ
   await X(`{if(!window.__r0){window.__r0=renderer.render;renderer.render=function(sc,c){if(sc===scene&&!window.__probe)return;return window.__r0.call(this,sc,c);};const h=hurt;hurt=function(t){if(t===player)return;return h.apply(this,arguments);};}}1`);
   await new Promise(r=>setTimeout(r,1500));
   const info=JSON.parse(await X(`JSON.stringify({near:camera.near,far:camera.far,fov:camera.fov,fog:scene.fog?[scene.fog.near,scene.fog.far]:null,pr:renderer.getPixelRatio(),db:(()=>{const g=renderer.getContext();return g.getParameter(g.DEPTH_BITS);})(),shadow:renderer.shadowMap.enabled,aa:renderer.getContext().getContextAttributes().antialias,tex:NM.texMissing||0})`));
-  const M={info,views:[],tot:{px:0,flick:0,black:0}};R.maps[MAP]=M;log(MAP+' loaded',info);
+  const M={info,views:[],tot:{px:0,flick:0,black:0},byVar:{}};R.maps[MAP]=M;log(MAP+' loaded',info);
   for(let s=0;s<SPOTS;s++){
    const v=JSON.parse(await X(`(()=>{const C=NM.current,N=C.nav.nodes;let seed=${s*7919+13};const rnd=()=>((seed=(seed*1103515245+12345)%2147483648)/2147483648);
      const pick=N[Math.floor(rnd()*N.length)];const eye=new THREE.Vector3(pick[0],pick[1]+1.6,pick[2]);
@@ -44,6 +45,7 @@ const log=(k,v)=>{R.steps.push([((Date.now()-t00)/1000).toFixed(1),k,v]);fs.writ
      if(!best)return JSON.stringify({skip:1});
      window.__v={eye,a:best.a,pt:best.pt};return JSON.stringify({eye:[eye.x,eye.y,eye.z].map(x=>+x.toFixed(2)),yaw:+best.a.toFixed(3),pitch:+best.pt.toFixed(3),hit:+best.hit.toFixed(1)});})()`));
    if(v.skip)continue;
+   for(const VAR of (process.env.TOGGLE?['before','after']:[''])){if(VAR)await X(`(()=>{const on=${VAR==='after'};let n=0;const seen=new Set();NM.current.M.g.traverse(o=>{if(!o.isMesh)return;for(const m of [].concat(o.material)){const k=m.userData&&m.userData.nmLift;if(!k||seen.has(m))continue;seen.add(m);const cur=!m.userData.nmLiftOff;if(cur!==on){m.color.multiplyScalar(on?k:1/k);m.userData.nmLiftOff=!on;}n++;}});return n;})()`);
    const frames=[];
    for(let f=0;f<F;f++){
     const url=await X(`(()=>{const V=window.__v;for(const u of [...(typeof bots!=='undefined'?bots:[]),...(typeof allies!=='undefined'?allies:[])])if(u&&u.g)u.g.visible=false;if(typeof player!=='undefined'&&player.g)player.g.visible=false;
@@ -64,10 +66,10 @@ const log=(k,v)=>{R.steps.push([((Date.now()-t00)/1000).toFixed(1),k,v]);fs.writ
      // where flicker pixels are, which frames are black there (sample up to 6)
      const ex=[];for(let i=0;i<n&&ex.length<6;i+=1)if(fl[i]&&(i%97===0||ex.length<2&&i%13===0))ex.push({x:i%w,y:Math.floor(i/w),seq:blk.map(b=>b[i]).join(''),lum:lum.map(l=>l[i]).join(',')});
      return {flick,black,n,heat:c.toDataURL('image/png'),ex};},frames);
-   M.tot.px+=st.n;M.tot.flick+=st.flick;M.tot.black+=st.black;
-   const tag=`${MAP}-${Q}-s${s}`;const rec={s,...v,flick:st.flick,black:st.black,ex:st.ex};
+   M.tot.px+=st.n;M.tot.flick+=st.flick;M.tot.black+=st.black;if(VAR){const b=M.byVar[VAR]||(M.byVar[VAR]={px:0,flick:0,black:0});b.px+=st.n;b.flick+=st.flick;b.black+=st.black;}
+   const tag=`${MAP}-${Q}-s${s}${VAR?'-'+VAR:''}`;const rec={s,VAR,...v,flick:st.flick,black:st.black,ex:st.ex};
    if(st.flick>0||s<3||process.env.ALLSHOTS){fs.writeFileSync(SHOT+tag+'-f0.png',Buffer.from(frames[0].split(',')[1],'base64'));fs.writeFileSync(SHOT+tag+'-f1.png',Buffer.from(frames[1].split(',')[1],'base64'));fs.writeFileSync(SHOT+tag+'-heat.png',Buffer.from(st.heat.split(',')[1],'base64'));rec.shot=tag;}
-   M.views.push(rec);log(`${MAP} s${s}`,{hit:v.hit,flick:st.flick,black:st.black});
+   M.views.push(rec);log(`${MAP} s${s} ${VAR}`,{hit:v.hit,flick:st.flick,black:st.black});}
   }
   log(MAP+' total',M.tot);
  }
