@@ -104,6 +104,26 @@ const sig=(P,U,a,b,c,extra)=>[a,b,c].map(v=>[P[v*3],P[v*3+1],P[v*3+2],U[v*2],U[v
   assert(ch.every(o=>!o.material.nmArrTex||!o.material.userData.groundLayer),'array material carries a ground layer');
   const sh={vertexShader:THREE.ShaderLib.lambert.vertexShader,fragmentShader:THREE.ShaderLib.lambert.fragmentShader,uniforms:{}};by(gm)[0].material.onBeforeCompile(sh,{});assert(/texture2D\(map,[^;]*\)\.a/.test(sh.fragmentShader)&&sh.uniforms.gbAm,'ground layer chunk lost its blend shader');
   console.log('A ok: ground layer / custom shader kept off the arrays (',by(gm).length+by(cm).length+by(sm).length,'chunks )');}
+  // overlay-dark x drawcalls: a black wall overlay lifted by nmFoliageApply (userData.nmLift, colour multiplied past 1) keeps its
+  // lift when it joins a texture array - the RGBA32F palette carries the lifted colour unclamped - and never shares a palette
+  // entry / material key with the unlifted twin on the same texture
+ {const r5=fakeRenderer(true),A5=api(r5,0),S5=scene(),FA=new Function('THREE',[fn('nmFoliageCut'),fn('nmFoliageApply')].join('\n')+'\nreturn nmFoliageApply;')(THREE);
+  const iv=S5.tex[4].clone();iv.source=new THREE.Source(fakeImage(512,512,'ivy'));
+  const mkIvy=()=>{const m=new THREE.MeshLambertMaterial({name:'Ivy_M0',map:iv,color:0xffffff,side:THREE.DoubleSide,alphaTest:.45});m.userData.cutout=true;return m;};
+  const lit=FA(mkIvy(),'Ivy_M0',{lin:.02,lum:3,alpha:200,am:60}),flat=mkIvy();
+  assert(lit.userData.nmLift>1&&Math.max(lit.color.r,lit.color.g,lit.color.b)>1,'nmFoliageApply did not lift the dark ivy past colour 1 (test premise)');
+  const key0=A5.nmMatKey(flat),same=mkIvy();same.color.copy(lit.color);assert.notEqual(A5.nmMatKey(same),A5.nmMatKey(lit),'nmMatKey ignores nmLift');assert.notEqual(key0,A5.nmMatKey(lit),'lifted / unlifted ivy share a material key');
+  assert.equal(A5.nmArrEligible(lit),true,'a lifted cut-out overlay is not texture-array eligible (test premise: it must merge)');
+  const quad=(m,x)=>{const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(new Float32Array([x,0,0,x+1,0,0,x,0,1,x+1,0,1]),3));g.setAttribute('normal',new THREE.BufferAttribute(new Float32Array(12).fill(.577),3));g.setAttribute('uv',new THREE.BufferAttribute(new Float32Array([0,0,1,0,0,1,1,1]),2));g.setIndex(new THREE.BufferAttribute(new Uint32Array([0,1,2,1,3,2]),1));const o=new THREE.Mesh(g,m);o.userData.nmSrcName='Ivy_M0';S5.g.add(o);return o;};
+  quad(lit,600);quad(lit,610);quad(flat,620);
+  const o5=A5.nmOptimizeScene(S5.g);assert(o5.arrays,'arrays built');const want={lit:lit.color.clone(),flat:flat.color.clone()};let nLit=0,nFlat=0;
+  for(const o of S5.g.userData.nmChunks){const m=o.material;if(!m.nmArrTex)continue;const M=o.geometry.attributes.nmM.array,pal=m.nmPalTex.image.data,L=m.nmArrTex.userData.nmLayers,P=o.geometry.attributes.position.array,I=o.geometry.index.array;
+   assert(pal instanceof Float32Array&&m.nmPalTex.type===THREE.FloatType,'palette is not float: a lifted colour > 1 would clamp');
+   for(let t=0;t<I.length;t+=3){const pi=M[I[t]];if(L[pal[pi*4+3]].source.data.tag!=='ivy')continue;const x=P[I[t]*3],c=x>=620?want.flat:want.lit;
+    for(const [j,ch] of [[0,'r'],[1,'g'],[2,'b']])assert(Math.abs(pal[pi*4+j]-c[ch])<1e-6,'ivy at x '+x.toFixed(1)+' palette '+ch+' '+pal[pi*4+j]+' != '+c[ch]+(x>=620?' (unlifted)':' (lifted: lift lost in the array)'));
+    assert.equal(m.alphaTest,.45,'arrayed ivy lost its cut-out');if(x>=620)nFlat++;else nLit++;}}
+  assert.equal(nLit,4,'lifted ivy triangles not on the array path');assert.equal(nFlat,2,'unlifted ivy triangles not on the array path');
+  console.log('A ok: lifted overlay keeps its lift on the texture array (nmLift',lit.userData.nmLift+', colour',lit.color.r.toFixed(3)+')');}
  console.log('A ok: arrays',opt.arrays,'chunks',opt.chunks,'materials',arrMats.size);}
 // ---- B. shader + page
 {const d=process.env.REAL3_DIR||'/workspace/work/qa',f=path.join(d,'three.min.js');let T=null;if(!process.env.QA_THREE160&&fs.existsSync(f)){const ctx={self:{},window:{},console};ctx.globalThis=ctx;vm.createContext(ctx);vm.runInContext(fs.readFileSync(f,'utf8'),ctx);T=ctx.THREE||ctx.self.THREE||ctx.window.THREE;}
