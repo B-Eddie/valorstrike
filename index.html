@@ -11581,7 +11581,7 @@ function xGate() {
   const dt = now - xLastT; xLastT = now; xRefresh(dt);
   // drawcalls: a cap at or above the display's refresh never gates (a 60 cap on a 75 Hz screen skipped 1 vsync in 5 = an uneven
   // 60 with a 27 ms hole every 5th frame); the refresh is the median rAF interval, so a cap only throttles a faster screen
-  if (!cap || 1000 / XRF.ms <= cap * 1.05) { xAcc = 0; return false; }
+  if (!xCapGates(cap, XRF.ms)) { xAcc = 0; return false; }
   const iv = 1000 / cap; xAcc += dt; // accumulated time: render once a full interval has built up, skip otherwise (no allocs)
   if (xAcc < iv - 1) return true;
   xAcc -= iv; if (xAcc > iv) xAcc = 0;
@@ -11590,34 +11590,42 @@ function xGate() {
 let xAcc = 0;
 const XRF = { a: new Float32Array(31), i: 0, n: 0, ms: 1000 / 60, k: 0 }; // display refresh: median of the last 31 rAF intervals (re-sorted every 15 frames)
 function xRefresh(dt) { if (!(dt > 2 && dt < 100)) return; const R = XRF; R.a[R.i] = dt; R.i = (R.i + 1) % 31; if (R.n < 31) R.n++; if (++R.k % 15) return; const b = Array.prototype.slice.call(R.a, 0, R.n).sort((x, y) => x - y); R.ms = b[b.length >> 1]; }
+// FPS limit vs the measured refresh (pure; work/test_frame_governor.cjs): a cap gates rendering only below the screen's rate
+function xCapGates(cap, refreshMs) { return cap > 0 && 1000 / refreshMs > cap * 1.05; }
 const xPRMax = () => { const d = devicePixelRatio || 1, p = Math.min((XS.res === "retina" ? d : 1) * (XS.scale === "auto" ? 1 : +XS.scale), XS.prc || 9); return XS.res !== "retina" && matchMedia("(pointer: coarse)").matches ? Math.min(p, d, 1.5) : p; };
 // Frame governor (drawcalls; user: "i want it to have a steady max fps"): holds the display's refresh rate. The refresh is
 // measured from rAF intervals (XRF, never hardcoded); a frame "misses" when its interval is over 1.5 refresh intervals (a
 // dropped vsync). MISS_N misses inside the last WIN rendered frames step the render pixel ratio down 10% of the ceiling
-// (the quality preset / render scale the user chose stays the ceiling; floor XG.floor of it, never under 0.5 CSS px);
-// after XG.wait ms without a miss it steps back up 10%. Hysteresis: a step down within 2.5 s of a step up doubles the
+// (the quality preset / render scale the user chose stays the ceiling; floor XGV.floor of it, never under 0.5 CSS px);
+// after XGV.wait ms without a miss it steps back up 10%. Hysteresis: a step down within 2.5 s of a step up doubles the
 // wait before the next step up (up to 60 s), a long clean run halves it again (down to 3 s). Runs only in a live,
 // uncovered, unpaused match; off when a lower FPS limit gates rendering; vs.gov = "0" turns it off (Video: Dynamic res).
 let xAdPR = Infinity, xAdT = performance.now(), xAdN = 0; // xAdPR: the governor's pixel ratio (Infinity = the ceiling)
-const xPRFloor = (m) => Math.min(m, Math.max(0.5, m * XG.floor));
-const XG = { on: (() => { try { return localStorage.getItem("vs.gov") !== "0"; } catch (e) { return true; } })(), floor: 0.6, win: 40, missN: 4, f: new Uint8Array(40), fi: 0, misses: 0, last: 0, up: 0, down: 0, wait: 3000, clean: 0, steps: 0, hold: 0 };
-const xPR = () => { const m = xPRMax(); return (XG.on || XS.scale === "auto") ? Math.max(xPRFloor(m), Math.min(m, xAdPR)) : m; };
-function xGovReset(now) { XG.f.fill(0); XG.misses = 0; XG.clean = now; XG.hold = now + 600; } // after a resize / pause / load the next frames are not representative
+const XGV = { on: (() => { try { return localStorage.getItem("vs.gov") !== "0"; } catch (e) { return true; } })(), floor: 0.6, win: 40, missN: 4, f: new Uint8Array(40), fi: 0, misses: 0, last: 0, up: 0, down: 0, wait: 3000, clean: 0, steps: 0, hold: 0 };
+const xPRFloor = (m) => Math.min(m, Math.max(0.5, m * XGV.floor));
+const xPR = () => { const m = xPRMax(); return (XGV.on || XS.scale === "auto") ? Math.max(xPRFloor(m), Math.min(m, xAdPR)) : m; };
+function xGovReset(now) { xGovClear(XGV, now); }
+function xGovClear(G, now) { G.f.fill(0); G.misses = 0; G.clean = now; G.hold = now + 600; } // after a resize / pause / load the next frames are not representative
+// One governor frame (pure: state G, the frame's interval dt, the measured refresh, current / ceiling / floor pixel ratio).
+// Returns the new governor pixel ratio (Infinity = back at the ceiling) when it steps, else undefined.
+function xGovTick(G, now, dt, refreshMs, cur, m, lo) {
+  if (now < G.hold) return;
+  const miss = dt > refreshMs * 1.5 ? 1 : 0; G.misses += miss - G.f[G.fi]; G.f[G.fi] = miss; G.fi = (G.fi + 1) % G.win; if (miss) G.clean = now;
+  if (G.misses >= G.missN && cur > lo + 0.001) {
+    if (now - G.up < 2500) G.wait = Math.min(60000, G.wait * 2); // stepped up into a miss: wait longer before trying again
+    G.down = now; G.steps++; xGovClear(G, now); return Math.max(lo, Math.round((cur - m * 0.1) * 100) / 100); }
+  if (cur < m - 0.001 && now - G.clean > G.wait && now - G.down > G.wait) {
+    const nx = Math.round((cur + m * 0.1) * 100) / 100; G.up = now; G.steps++; xGovClear(G, now); return nx >= m - 0.001 ? Infinity : nx; }
+  if (now - G.clean > 20000 && G.wait > 3000) { G.wait = Math.max(3000, G.wait / 2); G.clean = now; }
+}
 function xAdapt() {
-  const now = performance.now(), dt = now - (XG.last || now); XG.last = now; xAdN++;
+  const now = performance.now(), dt = now - (XGV.last || now); XGV.last = now; xAdN++;
   if (now - xAdT >= 2000) { xAdN = 0; xAdT = now; }
-  if (!(XG.on || XS.scale === "auto")) { if (xAdPR !== Infinity) { xAdPR = Infinity; resize(); } return; }
+  if (!(XGV.on || XS.scale === "auto")) { if (xAdPR !== Infinity) { xAdPR = Infinity; resize(); } return; }
   let live = false; try { live = running && !paused && !document.hidden && !window.xLdOn && !xCov(); } catch (e) {}
-  const cap = XS.cap === "auto" ? 0 : +XS.cap; if (!live || (cap && 1000 / XRF.ms > cap * 1.05) || dt > 250) { xGovReset(now); return; } // gated by a lower FPS limit, or a stall (tab switch, GC of a load): not judged
-  if (now < XG.hold) return;
-  const miss = dt > XRF.ms * 1.5 ? 1 : 0; XG.misses += miss - XG.f[XG.fi]; XG.f[XG.fi] = miss; XG.fi = (XG.fi + 1) % XG.win; if (miss) XG.clean = now;
-  const m = xPRMax(), cur = xPR(), lo = xPRFloor(m);
-  if (XG.misses >= XG.missN && cur > lo + 0.001) {
-    if (now - XG.up < 2500) XG.wait = Math.min(60000, XG.wait * 2); // stepped up into a miss: wait longer before trying again
-    xAdPR = Math.max(lo, Math.round((cur - m * 0.1) * 100) / 100); XG.down = now; XG.steps++; resize(); xGovReset(now); return; }
-  if (cur < m - 0.001 && now - XG.clean > XG.wait && now - XG.down > XG.wait) {
-    const nx = Math.round((cur + m * 0.1) * 100) / 100; xAdPR = nx >= m - 0.001 ? Infinity : nx; XG.up = now; XG.steps++; resize(); xGovReset(now); return; }
-  if (now - XG.clean > 20000 && XG.wait > 3000) { XG.wait = Math.max(3000, XG.wait / 2); XG.clean = now; }
+  const cap = XS.cap === "auto" ? 0 : +XS.cap; if (!live || xCapGates(cap, XRF.ms) || dt > 250) { xGovReset(now); return; } // gated by a lower FPS limit, or a stall (tab switch, GC of a load): not judged
+  const m = xPRMax(), nx = xGovTick(XGV, now, dt, XRF.ms, xPR(), m, xPRFloor(m));
+  if (nx !== undefined) { xAdPR = nx; resize(); }
 }
 document.addEventListener("visibilitychange", () => {
   try { if (typeof ac !== "undefined" && ac) { if (document.hidden) { const p = ac.suspend(); if (p && p.catch) p.catch(() => {}); } else audKick(true); } } catch (e) {} // a refused resume (iOS) is retried on the next tap, never thrown
@@ -11707,8 +11715,8 @@ function xRemake() { // anti-aliasing can only be set when a renderer is made, s
   renderer = r; xBind(r.domElement); xApplyShadows(); resize(); applyBright(); xPC = false; // new context: precompile again
 }
 xSeg("xFpsL", (v) => { XS.cap = v; try { localStorage.setItem("vs.cap", v); } catch (e) {} });
-xSeg("xGov", (v) => { XG.on = v === "1"; try { localStorage.setItem("vs.gov", v); } catch (e) {} xAdPR = Infinity; xGovReset(performance.now()); xSegOn("xGov", v); resize(); }); // frame governor (xAdapt)
-try { xSegOn("xGov", XG.on ? "1" : "0"); } catch (e) {}
+xSeg("xGov", (v) => { XGV.on = v === "1"; try { localStorage.setItem("vs.gov", v); } catch (e) {} xAdPR = Infinity; xGovReset(performance.now()); xSegOn("xGov", v); resize(); }); // frame governor (xAdapt)
+try { xSegOn("xGov", XGV.on ? "1" : "0"); } catch (e) {}
 xSeg("xRes", (v) => { XS.res = v; xVidSave(); resize(); });
 xSeg("xRsc", (v) => { XS.scale = v; xAAMem.rs = v; try { localStorage.setItem("vs.rs", v); } catch (e) {} xRscSync(); resize(); });
 function xRscSync() { try { $("xRsc").querySelectorAll("button").forEach((b) => b.classList.toggle("on", b.dataset.v === XS.scale)); } catch (e) {} }
