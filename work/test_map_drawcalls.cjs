@@ -84,6 +84,26 @@ const sig=(P,U,a,b,c,extra)=>[a,b,c].map(v=>[P[v*3],P[v*3+1],P[v*3+2],U[v*2],U[v
  const del=gl.deleted.length;for(const t of arrs)t.dispose();assert.equal(gl.deleted.length,del+2,'dispose leaves the GL texture');
  // WebGL1: nothing changes
  const r3=fakeRenderer(false),A3=api(r3,0),S3=scene(),before=new Set();S3.g.traverse(o=>{if(o.isMesh)before.add(o.material);});const o3=A3.nmOptimizeScene(S3.g);assert.equal(o3.arrays,null);S3.g.traverse(o=>{if(o.isMesh){assert(!o.material.nmArrTex);assert(!o.geometry.attributes.nmM);}});
+ // groundblend: a ground layer (nmGroundApply: userData.groundLayer, its own onBeforeCompile reading the map's alpha) and
+ // any other material with its own onBeforeCompile keep their material on the WebGL2 array path - an array material would
+ // replace their shader (the ground drew as a flat colour again) - and their source is not arrayed for anyone
+ {const r4=fakeRenderer(true),A4=api(r4,0),S4=scene(),G=new Function('THREE',[...(src.match(/^var NM_GROUND\w*=.*$/mg)||[]),fn('nmGroundLayer'),fn('nmGroundApply')].join('\n')+'\nreturn nmGroundApply;')(THREE);
+  const mk=tag=>{const t=S4.tex[2].clone();t.source=new THREE.Source(fakeImage(512,512,tag));return t;};
+  const gm=G(new THREE.MeshLambertMaterial({name:'Grass_M0_Dirtblend_A',map:mk('ground'),side:THREE.DoubleSide}),'Grass_M0_Dirtblend_A',{lum:2,alpha:40,am:120});
+  assert(gm.userData.groundLayer&&Object.prototype.hasOwnProperty.call(gm,'onBeforeCompile'),'nmGroundApply did not make a ground layer');
+  const cm=new THREE.MeshLambertMaterial({name:'Custom_M0',map:mk('custom'),side:THREE.DoubleSide});cm.onBeforeCompile=sh=>{sh.fragmentShader='/*custom*/\n'+sh.fragmentShader;};
+  const sm=new THREE.MeshLambertMaterial({name:'Wall_sharesground',map:gm.map,side:THREE.DoubleSide});/* a plain material on the ground layer's texture */
+  assert.equal(A4.nmArrEligible(gm),false,'a ground layer (userData.groundLayer) is texture-array eligible: merged into an array it loses its blend shader');
+  assert.equal(A4.nmArrEligible(cm),false,'a material with its own onBeforeCompile is texture-array eligible: the array shader replaces it');
+  const tri=(m,x)=>{const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(new Float32Array([x,0,0,x+1,0,0,x,0,1,x+1,0,1]),3));g.setAttribute('normal',new THREE.BufferAttribute(new Float32Array(12).fill(.577),3));g.setAttribute('uv',new THREE.BufferAttribute(new Float32Array([0,0,1,0,0,1,1,1]),2));g.setIndex(new THREE.BufferAttribute(new Uint32Array([0,1,2,1,3,2]),1));const o=new THREE.Mesh(g,m);S4.g.add(o);return o;};
+  tri(gm,500);tri(gm,510);tri(cm,520);tri(sm,530);
+  const o4=A4.nmOptimizeScene(S4.g);assert(o4.arrays,'arrays still built for the rest of the scene');
+  const ch=S4.g.userData.nmChunks,by=m=>ch.filter(o=>o.material===m);
+  for(const [m,n,what] of [[gm,4,'ground layer'],[cm,2,'custom-shader material'],[sm,2,'plain material on the ground layer texture']]){const c=by(m);assert(c.length>0,what+' was re-bound to a texture-array material');
+   assert.equal(c.reduce((a,o)=>a+o.geometry.index.count/3,0),n,what+' triangles lost / duplicated');for(const o of c)assert(!o.geometry.attributes.nmM,what+' got a palette attribute');}
+  assert(ch.every(o=>!o.material.nmArrTex||!o.material.userData.groundLayer),'array material carries a ground layer');
+  const sh={vertexShader:THREE.ShaderLib.lambert.vertexShader,fragmentShader:THREE.ShaderLib.lambert.fragmentShader,uniforms:{}};by(gm)[0].material.onBeforeCompile(sh,{});assert(/texture2D\(map,[^;]*\)\.a/.test(sh.fragmentShader)&&sh.uniforms.gbAm,'ground layer chunk lost its blend shader');
+  console.log('A ok: ground layer / custom shader kept off the arrays (',by(gm).length+by(cm).length+by(sm).length,'chunks )');}
  console.log('A ok: arrays',opt.arrays,'chunks',opt.chunks,'materials',arrMats.size);}
 // ---- B. shader + page
 {const d=process.env.REAL3_DIR||'/workspace/work/qa',f=path.join(d,'three.min.js');let T=null;if(!process.env.QA_THREE160&&fs.existsSync(f)){const ctx={self:{},window:{},console};ctx.globalThis=ctx;vm.createContext(ctx);vm.runInContext(fs.readFileSync(f,'utf8'),ctx);T=ctx.THREE||ctx.self.THREE||ctx.window.THREE;}
@@ -99,10 +119,19 @@ const sig=(P,U,a,b,c,extra)=>[a,b,c].map(v=>[P[v*3],P[v*3+1],P[v*3+2],U[v*2],U[v
 // Ceilings per map (map draw calls per frame, 16 x 8 views, NM_ARR.chunks 110; measured 29 Oct 2026, ~15% headroom).
 // Before (NM_OPT, no arrays) -> after: ascent 299 / 458 worst -> 78 / 99, bind 231 / 368 -> 63 / 89, haven 204 / 305 -> 77 / 110,
 // split 306 / 470 -> 81 / 104, lotus 154 / 241 -> 68 / 98, breeze 257 / 448 -> 68 / 98; average triangles down 3-31%.
+// groundblend (29 Oct 2026): ground layers (nmGroundApply, own blend shader) stay off the arrays, one group each in the same
+// NM_ARR.chunks budget, so the arrayed groups get fewer spatial splits: ascent 78 / 99 -> 80 / 110 calls, average triangles
+// 2.86 M -> 3.29 M (+15%, the only map above its no-array plan; split +0.2%). Calls are what the user hit (600 calls, 30 fps);
+// giving each ground group its own chunk slot instead costs ascent 105 / 142 calls for 2.90 M triangles. Triangle check:
+// average not above the no-array plan by more than TRIS_SLACK.
+const TRIS_SLACK=1.2;
 const BUDGET={ascent:{avg:92,worst:120},bind:{avg:75,worst:105},haven:{avg:90,worst:128},split:{avg:95,worst:122},lotus:{avg:80,worst:115},breeze:{avg:80,worst:115}};
 if(!process.env.VIEWS)process.env.VIEWS='16';
 const {loadRender,root:mroot}=await import(path.join(root,'server/tools/map-render.mjs')),{views,count,sphereOf}=await import(path.join(root,'server/tools/map-perf.mjs'));
 const B=new Function('NM_SMALL','NM_ARR',['nmDetailDistance','nmChunkPlan','nmCentroids','nmArrSize','nmArrBuckets'].map(fn).join('\n')+'\nreturn {nmDetailDistance,nmChunkPlan,nmArrSize,nmArrBuckets};')(NM_SMALL,NM_ARR);
+const GB=new Function([...(src.match(/^var NM_GROUND\w*=.*$/mg)||[]),fn('nmGroundLayer')].join('\n')+'\nreturn {nmGroundLayer};')();
+let texRaw=null;const sharp=require(path.join(root,'server/node_modules/sharp')),pageStats=new Function('document',fn('nmTexStats')+';return nmTexStats;')({createElement:()=>({getContext:()=>({drawImage(){},getImageData:()=>({data:texRaw})})})});
+const texStats=async f=>{texRaw=new Uint8ClampedArray(await sharp(f).ensureAlpha().resize(16,16,{fit:'fill'}).raw().toBuffer());return pageStats({width:16});};
 const ZF=JSON.parse(src.match(/var NM_ZFIX=(\{.*?\});\n/s)[1]);
 const png=f=>{const b=Buffer.alloc(24),fd=fs.openSync(f,'r');fs.readSync(fd,b,0,24,0);fs.closeSync(fd);return [b.readUInt32BE(16),b.readUInt32BE(20)];};
 const FOL=/Plant(?!er)|Vines|Foliage|Leaf|Leaves|Fern|Shrub|Creeper|Bush|MossOvergrowth|Flower|Ivy|Canopy|TreeCard|Conifer|Arborvitae|Palm|Bonsai|Bananna|Agave|Cabbage|Jasmine|Philodendron|MorningGlory|Cables/i,NOFOL=/Blend|Trunk|Bark|Planter|Wall|Floor|Stone|Rock|Tile|Brick|Plaster|Mural|Decal|Floater|Light|Lamp|Glass|Sack|Graffiti|Vista_2_M1/i;
@@ -110,12 +139,15 @@ const MAPS=(process.env.MAPS||'ascent,bind,haven,split,lotus,breeze').split(',')
 for(const key of MAPS){const R=loadRender(key,{bvh:false}),V=views(key),z=ZF[key]||{o:[]},lv=new Map();z.o.forEach((l,i)=>{for(const n of l)lv.set(n,i+1);});
  const srcs=[],sIx=new Map();for(const p of R.prims)if(p.tex!=null){const s=R.g.textures[p.tex].source;if(!sIx.has(s)){const [w,h]=png(mroot(key)+R.g.images[s].uri),wh=B.nmArrSize(w,h,false,0);sIx.set(s,srcs.length);srcs.push({w:wh[0],h:wh[1],e:1});}}
  const arrays=B.nmArrBuckets(srcs,NM_ARR.minExact,NM_ARR.layers),arrOf=new Map();arrays.forEach((a,ai)=>a.ids.forEach(i=>arrOf.set(i,ai)));
+ // groundblend: ground layers (the page's nmGroundLayer name + nmTexStats flat-RGB / alpha-mask rule on the texture) keep
+ // their own material and shader, and their texture is not arrayed for anyone (nmArrayScene's shared-source rule)
+ const gl=new Set(),glSrc=new Set();for(const p of R.prims){if(p.tex==null||p.alpha==='MASK'||p.alpha==='BLEND'||/Decal|Floater/i.test(p.name)||GB.nmGroundLayer(p.name)===null)continue;const s=R.g.textures[p.tex].source,st=await texStats(mroot(key)+R.g.images[s].uri);if(st&&st.lum<10&&st.alpha>=8&&st.am>=25){gl.add(p);glSrc.add(s);}}
  const items=R.prims.map((p,k)=>{const decal=/Decal|Floater/i.test(p.name),cut=p.alpha==='MASK'||(FOL.test(p.name)&&!NOFOL.test(p.name));const own='m'+p.material;const s=p.tex!=null?R.g.textures[p.tex].source:null;
-  const ak=decal||s==null?own:'a'+arrOf.get(sIx.get(s))+'|'+(cut?1:0)+'|'+(lv.get(p.name)||0)+'|'+B.nmDetailDistance(p.name,false,cut);return {key:ak,own,name:p.name,pos:R.pos,index:R.index,tri0:p.tri0,tris:p.tris,decal,cutout:cut};});
+  const ak=decal||s==null||gl.has(p)||glSrc.has(s)?own:'a'+arrOf.get(sIx.get(s))+'|'+(cut?1:0)+'|'+(lv.get(p.name)||0)+'|'+B.nmDetailDistance(p.name,false,cut);return {key:ak,own,k,name:p.name,pos:R.pos,index:R.index,tri0:p.tri0,tris:p.tris,decal,cutout:cut};});
  const run=(its,opt)=>{const plan=B.nmChunkPlan(its,opt),objs=plan.map(o=>{let n=0;for(const q of o.parts)n+=q.tris?q.tris.length:its[q.item].tris;const ids=new Uint32Array(n);let k=0;for(const q of o.parts){const it=its[q.item];if(q.tris)for(const t of q.tris)ids[k++]=it.tri0+t;else for(let t=0;t<it.tris;t++)ids[k++]=it.tri0+t;}const s=sphereOf(R.pos,R.index,ids);return {c:s.c,r:s.r,tris:n,maxDist:o.maxDist};});return Object.assign({objects:objs.length},count(objs,V));};
  const before=run(items.map(it=>Object.assign({},it,{key:it.own})),NM_OPT),after=run(items,Object.assign({},NM_OPT,{total:NM_ARR.chunks}));
- rows.push({key,arrays:arrays.length,groups:new Set(items.map(i=>i.key)).size,before,after});console.log(key,'arrays',arrays.length,'calls avg',before.calls,'->',after.calls,'worst',before.worstCalls,'->',after.worstCalls,'tris avg',before.tris,'->',after.tris,'objects',before.objects,'->',after.objects);
+ rows.push({key,arrays:arrays.length,groups:new Set(items.map(i=>i.key)).size,groundLayers:gl.size,before,after});console.log(key,'arrays',arrays.length,'ground layers',gl.size,'calls avg',before.calls,'->',after.calls,'worst',before.worstCalls,'->',after.worstCalls,'tris avg',before.tris,'->',after.tris,'objects',before.objects,'->',after.objects);
  const b=BUDGET[key];assert(after.calls<=b.avg,key+': average map draw calls '+after.calls+' > '+b.avg);assert(after.worstCalls<=b.worst,key+': worst-view map draw calls '+after.worstCalls+' > '+b.worst);
- assert(after.tris<=before.tris,key+': texture-array chunks draw more triangles on average ('+after.tris+' vs '+before.tris+')');}
+ assert(after.tris<=before.tris*TRIS_SLACK,key+': texture-array chunks draw more triangles on average ('+after.tris+' vs '+before.tris+' x '+TRIS_SLACK+')');}
 if(process.env.JSON)fs.writeFileSync(process.env.JSON,JSON.stringify(rows,null,1));
 console.log('test_map_drawcalls OK');})().catch(e=>{console.error(e);process.exit(1);});
