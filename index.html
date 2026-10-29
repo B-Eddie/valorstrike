@@ -14172,6 +14172,20 @@ function xvCull(list) { const v = new THREE.Vector3(), out = [], sk = [];
   for (const [o, g] of sk) { const s = g.userData.xvCull; if (!s) continue;
     g.boundingSphere = s.clone(); if ('boundingSphere' in o) o.boundingSphere = s.clone(); o.frustumCulled = true; out.push(o); }
   return out; }
+// Skinned meshes of one agent that ride the same bones with bit-identical inverse bind matrices share one Skeleton (user: "fps
+// 60 -> 20 when I meet many enemies"). SkeletonUtils.clone gives every mesh its own copy, so the renderer rebuilt the same
+// bone matrices and uploaded the same bone texture (64 x 64 RGBA float, 64 KB) once per mesh per frame: 3 times for most
+// agents. Shared, it does it once; each mesh still has its own bind matrix, and its bone matrices hold the same floats
+// (work/test_pose_equivalence.cjs compares every mesh's bone matrices with the unshared rig).
+function xvShareSkeletons(sc) {
+  const list = []; sc.traverse((o) => { if (o.isSkinnedMesh && o.skeleton) list.push(o); });
+  const same = (a, b) => { if (a === b) return true; if (a.bones.length !== b.bones.length || a.boneInverses.length !== a.bones.length || b.boneInverses.length !== b.bones.length) return false;
+    for (let i = 0; i < a.bones.length; i++) { if (a.bones[i] !== b.bones[i]) return false; const e = a.boneInverses[i].elements, f = b.boneInverses[i].elements; for (let k = 0; k < 16; k++) { const x = e[k], y = f[k]; if (x !== y || (x === 0 && 1 / x !== 1 / y)) return false; } }
+    return true; };
+  const kept = []; let n = 0;
+  for (const o of list) { const k = kept.find((s) => same(s, o.skeleton)); if (k) { if (k !== o.skeleton) { o.skeleton = k; n++; } } else kept.push(o.skeleton); }
+  return n;
+}
 function xvAgent(M, kit) {
   XUB.up ||= new THREE.Vector3(0,1,0); XUB.rt ||= new THREE.Vector3(1,0,0);
   if (M.dead || M.valorant) return;
@@ -14179,7 +14193,7 @@ function xvAgent(M, kit) {
   if (M.gun && M.gun.parent) { M.m.add(M.gun); M.gun.position.set(-.1, 1.22, .32); }
   if (M.sx && M.sx.sc && M.sx.sc.parent) M.m.remove(M.sx.sc.parent);
   const old = XSOL.mx.indexOf(M); if (old >= 0) XSOL.mx.splice(old, 1);
-  const sc = THREE.SkeletonUtils.clone(kit.gl.scene), wr = new THREE.Group(); wr.name = 'valorant-agent'; wr.add(sc);
+  const sc = THREE.SkeletonUtils.clone(kit.gl.scene), wr = new THREE.Group(); wr.name = 'valorant-agent'; wr.add(sc); xvShareSkeletons(sc);
   sc.updateMatrixWorld(true); const bx = new THREE.Box3().setFromObject(sc), scale = 1.92 / (bx.max.y - bx.min.y); wr.scale.setScalar(scale); wr.position.y = -bx.min.y * scale;
   const inGun = (o) => { for (let p = o; p; p = p.parent) if (p === M.gun) return true; return false; };
   M.m.traverse((o) => { if (o.isMesh && o !== M.ring && !inGun(o)) o.visible = false; });
@@ -14210,7 +14224,57 @@ function xvAttach(M) {
 // over the floor, from xUbAnim) the body is lifted just enough that its lowest point meets the floor. Higher, no correction. The shift moves
 // the rig wrapper (all skin influences together) so helper-bone weights cannot leave a foot floating;
 // older stub rigs fall back to Splitter or pelvis.
-{const pre=xUbPre,post=xUbPost;xUbPre=function(M){const X=M.sx;if(X&&X.contactRestore){(X.contactRoot||X.cs||X.b.pelvis).position.copy(X.contactRestore);X.contactRestore=null;}return pre(M);};xUbPost=function(M){post(M);const X=M.sx;if(!X||!X.nativeContact||X.dd||M.dead||X.lo||(X.w.plant||0)>.01||!X.contactProbes.length)return;M.m.updateMatrixWorld(true);const v=X.contactV,inv=X.contactInv.copy(X.sc.matrixWorld).invert();let low=Infinity;for(const {o,indices}of X.contactProbes){o.skeleton.update();for(const i of indices){v.fromBufferAttribute(o.geometry.attributes.position,i);o.boneTransform(i,v);v.applyMatrix4(o.matrixWorld).applyMatrix4(inv);low=Math.min(low,v.y);}}let lift=0;const c=X.contactLift,a=X.a.run;if(c&&a&&(X.w.run||0)>.001){const t=a.time%c.times[c.times.length-1];let i=0;while(i<c.times.length-2&&c.times[i+1]<t)i++;const f=(t-c.times[i])/Math.max(.00001,c.times[i+1]-c.times[i]);lift=Math.min(.02,Math.max(0,(c.values[i]*(1-f)+c.values[i+1]*f)*.15))*(X.w.run||0);}let dy=X.contactFloor+lift-low;if(X.air)dy-=(X.airH||0)/Math.max(1e-6,X.sc.getWorldScale(X.contactScale).y);if(!Number.isFinite(dy)||Math.abs(dy)>.5||X.air&&dy<=0)return;X.contactRestore=(X.contactRoot||X.cs||X.b.pelvis).position.clone();(X.contactRoot||X.cs||X.b.pelvis).getWorldPosition(v);const shift=X.contactShift.set(0,1,0).transformDirection(X.sc.matrixWorld).multiplyScalar(Math.abs(dy)*X.sc.getWorldScale(X.contactScale).y);if(dy<0)shift.negate();v.add(shift);(X.contactRoot||X.cs||X.b.pelvis).position.copy((X.contactRoot||X.cs||X.b.pelvis).parent.worldToLocal(v));M.m.updateMatrixWorld(true);};}
+{const pre=xUbPre,post=xUbPost;xUbPre=function(M){const X=M.sx;if(X){X.mwOk=false;if(X.contactRestore){(X.contactRoot||X.cs||X.b.pelvis).position.copy(X.contactRestore);X.contactRestore=null;}}return pre(M);};xUbPost=function(M){post(M);const X=M.sx;if(!X||!X.nativeContact||X.dd||M.dead||X.lo||(X.w.plant||0)>.01||!X.contactProbes.length)return;xvContactPass(M,X);const v=X.contactV,inv=X.contactInv.copy(X.sc.matrixWorld).invert();let low=Infinity;for(const {o,indices}of X.contactProbes){for(const i of indices){v.fromBufferAttribute(o.geometry.attributes.position,i);o.boneTransform(i,v);v.applyMatrix4(o.matrixWorld).applyMatrix4(inv);low=Math.min(low,v.y);}}let lift=0;const c=X.contactLift,a=X.a.run;if(c&&a&&(X.w.run||0)>.001){const t=a.time%c.times[c.times.length-1];let i=0;while(i<c.times.length-2&&c.times[i+1]<t)i++;const f=(t-c.times[i])/Math.max(.00001,c.times[i+1]-c.times[i]);lift=Math.min(.02,Math.max(0,(c.values[i]*(1-f)+c.values[i+1]*f)*.15))*(X.w.run||0);}let dy=X.contactFloor+lift-low;if(X.air)dy-=(X.airH||0)/Math.max(1e-6,X.sc.getWorldScale(X.contactScale).y);if(!Number.isFinite(dy)||Math.abs(dy)>.5||X.air&&dy<=0)return;X.contactRestore=(X.contactRestoreV||(X.contactRestoreV=new THREE.Vector3())).copy((X.contactRoot||X.cs||X.b.pelvis).position);(X.contactRoot||X.cs||X.b.pelvis).getWorldPosition(v);const shift=X.contactShift.set(0,1,0).transformDirection(X.sc.matrixWorld).multiplyScalar(Math.abs(dy)*X.sc.getWorldScale(X.contactScale).y);if(dy<0)shift.negate();v.add(shift);(X.contactRoot||X.cs||X.b.pelvis).position.copy((X.contactRoot||X.cs||X.b.pelvis).parent.worldToLocal(v));M.m.updateMatrixWorld(true);X.mwOk=true;};}
+// Pose matrix reuse (user, 28 Oct 2026: "fps 60 -> 20 when I meet many enemies"). Each pose follow-up used to bring the agent's
+// whole tree up to date again (contact probe, crouch IK, every bone chain the grip IK read: ~2.2k node updates per agent per
+// frame on a ~280-node rig). Now, with the same floats everywhere (work/test_pose_equivalence.cjs):
+//  - the contact probe reads only its probe vertices' weighted bones, their meshes, the skin root and the contact root: it
+//    updates just those nodes and their ancestors in the tree, parents first, as M.m.updateMatrixWorld(true) would
+//    (xvContactPass); skinning reads bone.matrixWorld (three's boneTransform), so it no longer runs skeleton.update() (the
+//    renderer rebuilds the bone matrices for its frame anyway);
+//  - X.mwOk: true while the whole tree is current relative to M.m.parent's world matrix and nothing has moved since (set
+//    after a whole-tree pass, cleared in xUbPre and before any write that is not followed by a subtree update). The
+//    crouch IK skips its own pass when it is set, and the weapon grip (work/grip_runtime.js XGRIP.cur) reads world matrices
+//    directly instead of walking bone chains when it is set and xvFresh(M.m) holds.
+var XVF = { a: [], m: null, l: null, v: null };
+// true when each ancestor a chain walk from o refreshes (updateWorldMatrix(true, false): parents while matrixWorldAutoUpdate)
+// already holds exactly the world matrix the walk would compute (same floats, sign of zero included)
+function xvFresh(o) {
+  const a = XVF.a, m = XVF.m || (XVF.m = new THREE.Matrix4()), l = XVF.l || (XVF.l = new THREE.Matrix4()); let n = 0;
+  for (let p = o.parent; p !== null && p.matrixWorldAutoUpdate === true; p = p.parent) a[n++] = p;
+  for (let i = n - 1; i >= 0; i--) {
+    const p = a[i], L = p.matrixAutoUpdate ? l.compose(p.position, p.quaternion, p.scale) : p.matrix, W = p.parent === null ? L : m.multiplyMatrices(p.parent.matrixWorld, L), e = W.elements, f = p.matrixWorld.elements;
+    for (let k = 0; k < 16; k++) { const x = e[k], y = f[k]; if (x !== y || (x === 0 && 1 / x !== 1 / y)) { for (let j = 0; j < n; j++) a[j] = null; return false; } }
+  }
+  for (let j = 0; j < n; j++) a[j] = null; return true;
+}
+// three's own updateMatrixWorld on Object3D, or SkinnedMesh's (which re-inverts the bind matrix): nodes xvContactPass can mirror
+function xvPlainNode(o) { let p = Object.getPrototypeOf(o); while (p && !Object.prototype.hasOwnProperty.call(p, 'updateMatrixWorld')) p = Object.getPrototypeOf(p); return !!p && !Object.prototype.hasOwnProperty.call(o, 'updateMatrixWorld') && (Object.prototype.hasOwnProperty.call(p, 'traverse') || (o.isSkinnedMesh === true && Object.prototype.hasOwnProperty.call(p, 'bind'))); }
+// the nodes the contact probe reads, with their ancestors up to M.m, parents first; null if any of them is outside M.m or not plain
+function xvContactNodes(M, X) {
+  const set = new Set(), w = XVF.v || (XVF.v = new THREE.Vector4()), i4 = new THREE.Vector4();
+  const add = (o) => { const up = []; for (let n = o; n; n = n.parent) { up.push(n); if (n === M.m) break; } if (up[up.length - 1] !== M.m) return false; for (const n of up) set.add(n); return true; };
+  let ok = add(X.sc) && add(X.contactRoot || X.cs || X.b.pelvis);
+  for (const { o, indices } of X.contactProbes) {
+    ok = ok && add(o); const G = o.geometry, si = G.attributes.skinIndex, sw = G.attributes.skinWeight, bones = o.skeleton && o.skeleton.bones; if (!si || !sw || !bones) return null;
+    for (const i of indices) { w.fromBufferAttribute(sw, i); i4.fromBufferAttribute(si, i); for (let k = 0; k < 4; k++) if (w.getComponent(k) !== 0) { const b = bones[i4.getComponent(k)]; ok = ok && !!b && add(b); } }
+  }
+  if (!ok) return null; const out = [...set]; if (!out.every(xvPlainNode)) return null;
+  const depth = (n) => { let d = 0; for (; n !== M.m; n = n.parent) d++; return d; }, D = new Map(out.map((n) => [n, depth(n)]));
+  return out.sort((a, b) => D.get(a) - D.get(b));
+}
+// M.m.updateMatrixWorld(true), for the nodes the contact probe reads (the rest of the tree is brought up to date right after the
+// shift, or by the crouch IK's pass)
+function xvContactPass(M, X) {
+  if (X.contactNodes === undefined) X.contactNodes = xvContactNodes(M, X);
+  const L = X.contactNodes; if (L === null) { M.m.updateMatrixWorld(true); X.mwOk = true; return; }
+  for (let i = 0; i < L.length; i++) { const n = L[i];
+    if (n.matrixAutoUpdate) n.updateMatrix();
+    if (n.parent === null) n.matrixWorld.copy(n.matrix); else n.matrixWorld.multiplyMatrices(n.parent.matrixWorld, n.matrix);
+    n.matrixWorldNeedsUpdate = false;
+    if (n.isSkinnedMesh === true) { if (n.bindMode === 'attached') n.bindMatrixInverse.copy(n.matrixWorld).invert(); else if (n.bindMode === 'detached') n.bindMatrixInverse.copy(n.bindMatrix).invert(); }
+  }
+}
 // Native first-person rigs and their matching weapon animation clips. The virtual source camera faces +X.
 function xvFPPlay(F, kind, time) {
   const key = kind === 'idle' ? 'Idle' : kind.charAt(0).toUpperCase()+kind.slice(1), a = F.entries.find((e)=>e.Translatable === key) || F.entries.find((e)=>e.Translatable.startsWith(key));
@@ -15053,7 +15117,10 @@ xUbPost=function(M){
   X.ncIK={ik:Array.from({length:9},()=>new THREE.Vector3()),q:[new THREE.Quaternion(),new THREE.Quaternion()]};
  }
  if(!X.ncBone||!X.ncSpine||!X.ncHead||X.ncLegs.some(L=>!L.up||!L.lo||!L.hand))return;
- M.m.updateMatrixWorld(true);const v=X.ncV,root=M.m.getWorldPosition(X.ncR).y,head=X.ncHead.getWorldPosition(v).y-root,cb=Math.max(0,Math.min(1,X.cb||0));
+ // the native foot contact pass (valorant_runtime) usually just left the whole tree current (X.mwOk): this pass would rewrite the same floats
+ // xvFresh: M.m's ancestors hold what a chain walk recomputes, so the chain walks below leave the tree consistent and the
+ // closing pass after the IK (every write below is followed by an update of the subtree it moves) would rewrite the same floats
+ if(!X.mwOk){M.m.updateMatrixWorld(true);X.mwOk=true;}X.ncFresh=typeof xvFresh==='function'&&xvFresh(M.m);const v=X.ncV,root=M.m.getWorldPosition(X.ncR).y,head=X.ncHead.getWorldPosition(v).y-root,cb=Math.max(0,Math.min(1,X.cb||0));
  if(cb<.001){if(!X.air&&!X.lo&&(X.w.idle||0)>.9&&Number.isFinite(head))X.ncStand=X.ncStand==null?head:X.ncStand+(head-X.ncStand)*.2;return;}
  if(X.air||X.lo||(X.w.plant||0)>.01)return;
  const want=(X.ncStand==null?XRC.stand:X.ncStand)-XRC.drop*cb,delta=Math.max(-XRC.max,Math.min(XRC.max,want-head));
@@ -15065,10 +15132,10 @@ xUbPost=function(M){
   if(L.pole.lengthSq()<1e-8)L.pole.set(0,0,1).transformDirection(M.m.matrixWorld);L.pole.normalize();
   [L.up,L.lo,L.hand].forEach((bone,i)=>L.saved[i].copy(bone.quaternion));
  }
- X.ncRestore=[X.ncBone,X.ncSpine].map(bone=>[bone,bone.position.clone()]);
+ X.mwOk=false;X.ncRestore=[X.ncBone,X.ncSpine].map(bone=>[bone,bone.position.clone()]);
  for(const [bone] of X.ncRestore){bone.getWorldPosition(v);v.y+=delta;bone.position.copy(bone.parent.worldToLocal(v));bone.updateMatrixWorld(true);}
  for(const L of X.ncLegs){xgIK(L,L.target,L.pole,X.ncIK);xgSetWorldQ(L.hand,L.fq);}
- M.m.updateMatrixWorld(true);
+ if(!X.ncFresh)M.m.updateMatrixWorld(true);X.mwOk=true;
 };}
 // perf (shooting-at-enemies lag): runs twice a frame per rig (after the xVisB move, after the xSolTick pose). Head / Pelvis are
 // cached per rig and only their own ancestor chains are brought up to date (was a skeleton search by name and two whole-rig
@@ -15839,20 +15906,24 @@ function xgSetup(M) {
   G.v = Array.from({ length: 12 }, () => new THREE.Vector3()); G.ik = Array.from({ length: 9 }, () => new THREE.Vector3()); G.q = Array.from({ length: 6 }, () => new THREE.Quaternion()); G.m = Array.from({ length: 6 }, () => new THREE.Matrix4());
   G.t1 = new THREE.Vector3(); G.t2 = new THREE.Vector3(); G.p1 = new THREE.Vector3(); G.p2 = new THREE.Vector3(); G.saved = new Map(); G.ok = true; return G;
 }
-function xgWorldQ(o, q) { o.updateWorldMatrix(true, false); const p = XGRIP.p || (XGRIP.p = new THREE.Vector3()), s = XGRIP.s || (XGRIP.s = new THREE.Vector3()); o.matrixWorld.decompose(p, q, s); return q; }
+function xgWorldQ(o, q) { if (!XGRIP.cur) o.updateWorldMatrix(true, false); const p = XGRIP.p || (XGRIP.p = new THREE.Vector3()), s = XGRIP.s || (XGRIP.s = new THREE.Vector3()); o.matrixWorld.decompose(p, q, s); return q; }
+// World position for the grip: XGRIP.cur (set by the xUbPost wrapper below when the native contact / crouch IK passes left the
+// whole tree current and M.m's ancestors are fresh, xvFresh) means every matrixWorld already holds what the chain walk of
+// getWorldPosition / updateWorldMatrix(true, false) would recompute; each grip step updates the subtree it moves.
+function xgWP(o, v) { return XGRIP.cur ? v.setFromMatrixPosition(o.matrixWorld) : o.getWorldPosition(v); }
 // Set a bone's world rotation (parent's world rotation divided out).
 function xgSetWorldQ(bn, qw) { const pq = xgWorldQ(bn.parent, XGRIP.pq || (XGRIP.pq = new THREE.Quaternion())); bn.quaternion.copy(pq.invert().multiply(qw)); bn.updateMatrixWorld(true); }
 // Two-bone IK: upper/lower bones swing (minimal rotation) so the hand bone reaches target; pole bends the elbow.
 function xgIK(A, target, pole, G) {
   const K = G.ik, [a, bb, c, d, e, t] = K, q = G.q[0], qw = G.q[1];
-  A.up.getWorldPosition(a); A.lo.getWorldPosition(bb); A.hand.getWorldPosition(c);
+  xgWP(A.up, a); xgWP(A.lo, bb); xgWP(A.hand, c);
   const L1 = a.distanceTo(bb), L2 = bb.distanceTo(c); d.subVectors(target, a); let dist = d.length(); if (dist < 1e-5) return; d.divideScalar(dist);
   dist = Math.max(Math.abs(L1 - L2) + 1e-3, Math.min((L1 + L2) * 0.999, dist));
   e.copy(pole).addScaledVector(d, -pole.dot(d)); if (e.lengthSq() < 1e-8) e.set(0, -1, 0); e.normalize();
   const cosA = Math.max(-1, Math.min(1, (L1 * L1 + dist * dist - L2 * L2) / (2 * L1 * dist))), sinA = Math.sqrt(1 - cosA * cosA);
   const elbow = K[6].copy(a).addScaledVector(d, L1 * cosA).addScaledVector(e, L1 * sinA); t.copy(a).addScaledVector(d, dist);
   q.setFromUnitVectors(K[7].subVectors(bb, a).normalize(), K[8].subVectors(elbow, a).normalize()); xgSetWorldQ(A.up, xgWorldQ(A.up, qw).premultiply(q));
-  A.lo.getWorldPosition(bb); A.hand.getWorldPosition(c);
+  xgWP(A.lo, bb); xgWP(A.hand, c);
   q.setFromUnitVectors(K[7].subVectors(c, bb).normalize(), K[8].subVectors(t, bb).normalize()); xgSetWorldQ(A.lo, xgWorldQ(A.lo, qw).premultiply(q));
 }
 // Desired hand world rotation from knuckle direction k and palm normal n (world, orthonormalised here).
@@ -15873,12 +15944,12 @@ function xgHeldSync(M) {
   if(G){G.last=null;G.w=0;G.gp.copy(next.position);G.gq.copy(next.quaternion);G.gs.copy(next.scale);G.slide=0;}
 }
 function xgPose(M, dt) {
-  xgHeldSync(M);
+  const held = M.gun; xgHeldSync(M); if (M.gun !== held) { XGRIP.cur = false; if (M.sx) M.sx.mwOk = false; } // a new gun is not placed yet
   const X = M.sx; if (!X || !X.sc || !M.gun || !M.valorant) return; const G = X.grip || xgSetup(M); if (!G.ok) return;
-  const want = xgTarget(M), grip = want ? xgGrip(M) : null; G.w += ((grip ? 1 : 0) - G.w) * Math.min(1, (dt || 1 / 60) * 12); if (G.w < 0.01) { G.w = 0; M.gun.position.copy(G.gp); M.gun.quaternion.copy(G.gq); return; }
+  const want = xgTarget(M), grip = want ? xgGrip(M) : null; G.w += ((grip ? 1 : 0) - G.w) * Math.min(1, (dt || 1 / 60) * 12); if (G.w < 0.01) { G.w = 0; M.gun.position.copy(G.gp); M.gun.quaternion.copy(G.gq); X.mwOk = false; return; }
   const g = grip || G.last; if (!g) return; G.last = g;
   for (const bn of G.R.bones.concat(G.L.bones)) { let s = G.saved.get(bn); if (!s) G.saved.set(bn, (s = new THREE.Quaternion())); s.copy(bn.quaternion); }
-  const V = G.v, root = M.m; root.updateWorldMatrix(true, false); const rq = xgWorldQ(root, G.q[2]);
+  const V = G.v, root = M.m; if (!XGRIP.cur) root.updateWorldMatrix(true, false); const rq = xgWorldQ(root, G.q[2]);
   const axis = (x, y, z, out) => out.set(x, y, z).applyQuaternion(rq); // agent frame (+Z forward, +X the agent's left) to world
   const p = Math.max(-1.5, Math.min(1.5, X.pit || 0)), D = X.aim ? V[9].set(X.aim.x, X.aim.y, X.aim.z).normalize() : axis(0, Math.sin(p), Math.cos(p), V[9]).normalize(), up = axis(0, 1, 0, V[10]); up.addScaledVector(D, -up.dot(D)).normalize();
   if (up.lengthSq() < 1e-8) axis(0, 0, -1, up).addScaledVector(D, -up.dot(D)).normalize(); // directly above/below: retain a stable gun frame
@@ -15886,10 +15957,10 @@ function xgPose(M, dt) {
   const zg = V[11].copy(D).negate(), xg = G.v[3].crossVectors(up, zg).normalize(), Rg = G.m[0].makeBasis(xg, up, zg), gq = G.q[3].setFromRotationMatrix(Rg);
   const gp = G.v[4], tmp = G.v[5];
   if (g.side) { // sidearm: arms extended, grip ahead of the shoulders' midpoint
-    G.R.up.getWorldPosition(gp); G.L.up.getWorldPosition(tmp); gp.add(tmp).multiplyScalar(0.5).addScaledVector(D, 0.44).addScaledVector(axis(0, -1, 0, tmp), 0.06).addScaledVector(axis(-1, 0, 0, tmp), 0.03);
+    xgWP(G.R.up, gp); xgWP(G.L.up, tmp); gp.add(tmp).multiplyScalar(0.5).addScaledVector(D, 0.44).addScaledVector(axis(0, -1, 0, tmp), 0.06).addScaledVector(axis(-1, 0, 0, tmp), 0.03);
     gp.sub(tmp.fromArray(g.rh).applyQuaternion(gq));
   } else { // long gun: stock in the right shoulder pocket
-    G.R.up.getWorldPosition(gp); gp.addScaledVector(axis(1, 0, 0, tmp), 0.06).addScaledVector(axis(0, -1, 0, tmp), 0.05).addScaledVector(axis(0, 0, 1, tmp), 0.1);
+    xgWP(G.R.up, gp); gp.addScaledVector(axis(1, 0, 0, tmp), 0.06).addScaledVector(axis(0, -1, 0, tmp), 0.05).addScaledVector(axis(0, 0, 1, tmp), 0.1);
     gp.sub(tmp.fromArray(g.st).applyQuaternion(gq));
   }
   const toW = (a, out) => out.fromArray(a).applyQuaternion(gq).add(gp), gl = (x, y, z, out) => out.set(x, y, z).applyQuaternion(gq);
@@ -15898,22 +15969,22 @@ function xgPose(M, dt) {
   const wt = toW(g.rh, G.v[2]).addScaledVector(kR, -0.06).addScaledVector(nR, -0.02);
   xgIK(G.R, G.t1.copy(wt), axis(g.side ? -0.5 : -0.7, -1, g.side ? 0 : -0.2, G.p1).normalize(), G); xgSetWorldQ(G.R.hand, hq); xgCurl(G.R, XGRIP.curl.rifleR, kR, nR);
   // the gun rides the solved right hand (unreachable targets keep the gun in the hand, not floating)
-  const hw = XGRIP.hw || (XGRIP.hw = new THREE.Vector3()); G.R.hand.getWorldPosition(hw); gp.add(hw.sub(wt));
-  M.gun.parent.updateWorldMatrix(true, false); const local = G.m[1].compose(gp, gq, XGRIP.one || (XGRIP.one = new THREE.Vector3(1, 1, 1))).premultiply(G.m[2].copy(M.gun.parent.matrixWorld).invert());
+  const hw = XGRIP.hw || (XGRIP.hw = new THREE.Vector3()); xgWP(G.R.hand, hw); gp.add(hw.sub(wt));
+  if (!XGRIP.cur) M.gun.parent.updateWorldMatrix(true, false); const local = G.m[1].compose(gp, gq, XGRIP.one || (XGRIP.one = new THREE.Vector3(1, 1, 1))).premultiply(G.m[2].copy(M.gun.parent.matrixWorld).invert());
   local.decompose(M.gun.position, M.gun.quaternion, tmp); M.gun.scale.copy(G.gs); M.gun.updateMatrixWorld(true);
   // left hand: support under the handguard at the weapon's socket, or cupping the right hand on a sidearm
   let kL, nL, lt;
   if (g.side || !g.lh) { kL = gl(0, -0.6, -1, G.v[0]).normalize(); nL = gl(1, 0, 0, G.v[1]); lt = toW(g.rh, G.v[2]).addScaledVector(gl(-1, 0, 0, tmp), 0.035).addScaledVector(kL, -0.05); }
   else { kL = gl(0.55, 0, -1, G.v[0]).normalize(); nL = gl(0.5, 1, 0, G.v[1]).normalize(); lt = toW(g.lh, G.v[2]).addScaledVector(kL, -0.06).addScaledVector(nL, -0.03); }
   if (!g.side && g.lh) { // short arms / long guns: slide the support hand back along the handguard until the arm reaches
-    const sh = G.L.up.getWorldPosition(G.v[6]), reach = (G.reach || (G.reach = G.L.up.getWorldPosition(G.v[7]).distanceTo(G.L.lo.getWorldPosition(G.v[8])) + G.L.lo.getWorldPosition(G.v[8]).distanceTo(G.L.hand.getWorldPosition(G.v[7])))) * 0.985;
+    const sh = xgWP(G.L.up, G.v[6]), reach = (G.reach || (G.reach = xgWP(G.L.up, G.v[7]).distanceTo(xgWP(G.L.lo, G.v[8])) + xgWP(G.L.lo, G.v[8]).distanceTo(xgWP(G.L.hand, G.v[7])))) * 0.985;
     const ax = gl(0, 0, 1, G.v[7]), rel = G.v[8].subVectors(lt, sh), bq = rel.dot(ax), cq = rel.lengthSq() - reach * reach;
     if (cq > 0) { const disc = bq * bq - cq, lim = Math.max(0, (g.rh[2] - g.lh[2]) - 0.1); const sl = disc >= 0 ? Math.min(lim, -bq - Math.sqrt(disc) > 0 ? -bq - Math.sqrt(disc) : -bq + Math.sqrt(disc)) : Math.min(lim, Math.max(0, -bq)); if (sl > 0) lt.addScaledVector(ax, sl); G.slide = sl > 0 ? sl : 0; } else G.slide = 0;
   }
   xgHandQ(G.L, kL, nL, hq); xgIK(G.L, G.t2.copy(lt), axis(g.side ? 0.5 : 0.4, -1, 0, G.p2).normalize(), G); xgSetWorldQ(G.L.hand, hq); xgCurl(G.L, g.side || !g.lh ? XGRIP.curl.pistolL : XGRIP.curl.rifleL, kL, nL);
-  if (G.w < 0.999) { for (const [bn, s] of G.saved) bn.quaternion.slerp(s, 1 - G.w); M.gun.position.lerp(G.gp, 1 - G.w); M.gun.quaternion.slerp(G.gq, 1 - G.w); }
+  if (G.w < 0.999) { for (const [bn, s] of G.saved) bn.quaternion.slerp(s, 1 - G.w); M.gun.position.lerp(G.gp, 1 - G.w); M.gun.quaternion.slerp(G.gq, 1 - G.w); X.mwOk = false; } // blended bones: matrices not refreshed
 }
-{ const post = xUbPost; xUbPost = function (M) { post(M); if (M && M.valorant && M.sx && !M.dead) try { xgPose(M, 1 / 60); } catch (e) { if (!XGRIP.err++) console.warn('weapon grip disabled for a frame', e); } }; }
+{ const post = xUbPost; xUbPost = function (M) { post(M); if (M && M.valorant && M.sx && !M.dead) { const X = M.sx; XGRIP.cur = X.mwOk === true && typeof xvFresh === 'function' && xvFresh(M.m); try { xgPose(M, 1 / 60); } catch (e) { X.mwOk = false; if (!XGRIP.err++) console.warn('weapon grip disabled for a frame', e); } finally { XGRIP.cur = false; } } }; }
 // ---- END WEAPON GRIP ----
 // ---- FOOT PLANTING ----
 // Feet on terrain (ledger row 6). Native locomotion clips are authored on flat ground, so on stairs, slopes and

@@ -25,7 +25,10 @@ xUbPost=function(M){
   X.ncIK={ik:Array.from({length:9},()=>new THREE.Vector3()),q:[new THREE.Quaternion(),new THREE.Quaternion()]};
  }
  if(!X.ncBone||!X.ncSpine||!X.ncHead||X.ncLegs.some(L=>!L.up||!L.lo||!L.hand))return;
- M.m.updateMatrixWorld(true);const v=X.ncV,root=M.m.getWorldPosition(X.ncR).y,head=X.ncHead.getWorldPosition(v).y-root,cb=Math.max(0,Math.min(1,X.cb||0));
+ // the native foot contact pass (valorant_runtime) usually just left the whole tree current (X.mwOk): this pass would rewrite the same floats
+ // xvFresh: M.m's ancestors hold what a chain walk recomputes, so the chain walks below leave the tree consistent and the
+ // closing pass after the IK (every write below is followed by an update of the subtree it moves) would rewrite the same floats
+ if(!X.mwOk){M.m.updateMatrixWorld(true);X.mwOk=true;}X.ncFresh=typeof xvFresh==='function'&&xvFresh(M.m);const v=X.ncV,root=M.m.getWorldPosition(X.ncR).y,head=X.ncHead.getWorldPosition(v).y-root,cb=Math.max(0,Math.min(1,X.cb||0));
  if(cb<.001){if(!X.air&&!X.lo&&(X.w.idle||0)>.9&&Number.isFinite(head))X.ncStand=X.ncStand==null?head:X.ncStand+(head-X.ncStand)*.2;return;}
  if(X.air||X.lo||(X.w.plant||0)>.01)return;
  const want=(X.ncStand==null?XRC.stand:X.ncStand)-XRC.drop*cb,delta=Math.max(-XRC.max,Math.min(XRC.max,want-head));
@@ -37,10 +40,10 @@ xUbPost=function(M){
   if(L.pole.lengthSq()<1e-8)L.pole.set(0,0,1).transformDirection(M.m.matrixWorld);L.pole.normalize();
   [L.up,L.lo,L.hand].forEach((bone,i)=>L.saved[i].copy(bone.quaternion));
  }
- X.ncRestore=[X.ncBone,X.ncSpine].map(bone=>[bone,bone.position.clone()]);
+ X.mwOk=false;X.ncRestore=[X.ncBone,X.ncSpine].map(bone=>[bone,bone.position.clone()]);
  for(const [bone] of X.ncRestore){bone.getWorldPosition(v);v.y+=delta;bone.position.copy(bone.parent.worldToLocal(v));bone.updateMatrixWorld(true);}
  for(const L of X.ncLegs){xgIK(L,L.target,L.pole,X.ncIK);xgSetWorldQ(L.hand,L.fq);}
- M.m.updateMatrixWorld(true);
+ if(!X.ncFresh)M.m.updateMatrixWorld(true);X.mwOk=true;
 };}
 // perf (shooting-at-enemies lag): runs twice a frame per rig (after the xVisB move, after the xSolTick pose). Head / Pelvis are
 // cached per rig and only their own ancestor chains are brought up to date (was a skeleton search by name and two whole-rig

@@ -50,20 +50,24 @@ function xgSetup(M) {
   G.v = Array.from({ length: 12 }, () => new THREE.Vector3()); G.ik = Array.from({ length: 9 }, () => new THREE.Vector3()); G.q = Array.from({ length: 6 }, () => new THREE.Quaternion()); G.m = Array.from({ length: 6 }, () => new THREE.Matrix4());
   G.t1 = new THREE.Vector3(); G.t2 = new THREE.Vector3(); G.p1 = new THREE.Vector3(); G.p2 = new THREE.Vector3(); G.saved = new Map(); G.ok = true; return G;
 }
-function xgWorldQ(o, q) { o.updateWorldMatrix(true, false); const p = XGRIP.p || (XGRIP.p = new THREE.Vector3()), s = XGRIP.s || (XGRIP.s = new THREE.Vector3()); o.matrixWorld.decompose(p, q, s); return q; }
+function xgWorldQ(o, q) { if (!XGRIP.cur) o.updateWorldMatrix(true, false); const p = XGRIP.p || (XGRIP.p = new THREE.Vector3()), s = XGRIP.s || (XGRIP.s = new THREE.Vector3()); o.matrixWorld.decompose(p, q, s); return q; }
+// World position for the grip: XGRIP.cur (set by the xUbPost wrapper below when the native contact / crouch IK passes left the
+// whole tree current and M.m's ancestors are fresh, xvFresh) means every matrixWorld already holds what the chain walk of
+// getWorldPosition / updateWorldMatrix(true, false) would recompute; each grip step updates the subtree it moves.
+function xgWP(o, v) { return XGRIP.cur ? v.setFromMatrixPosition(o.matrixWorld) : o.getWorldPosition(v); }
 // Set a bone's world rotation (parent's world rotation divided out).
 function xgSetWorldQ(bn, qw) { const pq = xgWorldQ(bn.parent, XGRIP.pq || (XGRIP.pq = new THREE.Quaternion())); bn.quaternion.copy(pq.invert().multiply(qw)); bn.updateMatrixWorld(true); }
 // Two-bone IK: upper/lower bones swing (minimal rotation) so the hand bone reaches target; pole bends the elbow.
 function xgIK(A, target, pole, G) {
   const K = G.ik, [a, bb, c, d, e, t] = K, q = G.q[0], qw = G.q[1];
-  A.up.getWorldPosition(a); A.lo.getWorldPosition(bb); A.hand.getWorldPosition(c);
+  xgWP(A.up, a); xgWP(A.lo, bb); xgWP(A.hand, c);
   const L1 = a.distanceTo(bb), L2 = bb.distanceTo(c); d.subVectors(target, a); let dist = d.length(); if (dist < 1e-5) return; d.divideScalar(dist);
   dist = Math.max(Math.abs(L1 - L2) + 1e-3, Math.min((L1 + L2) * 0.999, dist));
   e.copy(pole).addScaledVector(d, -pole.dot(d)); if (e.lengthSq() < 1e-8) e.set(0, -1, 0); e.normalize();
   const cosA = Math.max(-1, Math.min(1, (L1 * L1 + dist * dist - L2 * L2) / (2 * L1 * dist))), sinA = Math.sqrt(1 - cosA * cosA);
   const elbow = K[6].copy(a).addScaledVector(d, L1 * cosA).addScaledVector(e, L1 * sinA); t.copy(a).addScaledVector(d, dist);
   q.setFromUnitVectors(K[7].subVectors(bb, a).normalize(), K[8].subVectors(elbow, a).normalize()); xgSetWorldQ(A.up, xgWorldQ(A.up, qw).premultiply(q));
-  A.lo.getWorldPosition(bb); A.hand.getWorldPosition(c);
+  xgWP(A.lo, bb); xgWP(A.hand, c);
   q.setFromUnitVectors(K[7].subVectors(c, bb).normalize(), K[8].subVectors(t, bb).normalize()); xgSetWorldQ(A.lo, xgWorldQ(A.lo, qw).premultiply(q));
 }
 // Desired hand world rotation from knuckle direction k and palm normal n (world, orthonormalised here).
@@ -84,12 +88,12 @@ function xgHeldSync(M) {
   if(G){G.last=null;G.w=0;G.gp.copy(next.position);G.gq.copy(next.quaternion);G.gs.copy(next.scale);G.slide=0;}
 }
 function xgPose(M, dt) {
-  xgHeldSync(M);
+  const held = M.gun; xgHeldSync(M); if (M.gun !== held) { XGRIP.cur = false; if (M.sx) M.sx.mwOk = false; } // a new gun is not placed yet
   const X = M.sx; if (!X || !X.sc || !M.gun || !M.valorant) return; const G = X.grip || xgSetup(M); if (!G.ok) return;
-  const want = xgTarget(M), grip = want ? xgGrip(M) : null; G.w += ((grip ? 1 : 0) - G.w) * Math.min(1, (dt || 1 / 60) * 12); if (G.w < 0.01) { G.w = 0; M.gun.position.copy(G.gp); M.gun.quaternion.copy(G.gq); return; }
+  const want = xgTarget(M), grip = want ? xgGrip(M) : null; G.w += ((grip ? 1 : 0) - G.w) * Math.min(1, (dt || 1 / 60) * 12); if (G.w < 0.01) { G.w = 0; M.gun.position.copy(G.gp); M.gun.quaternion.copy(G.gq); X.mwOk = false; return; }
   const g = grip || G.last; if (!g) return; G.last = g;
   for (const bn of G.R.bones.concat(G.L.bones)) { let s = G.saved.get(bn); if (!s) G.saved.set(bn, (s = new THREE.Quaternion())); s.copy(bn.quaternion); }
-  const V = G.v, root = M.m; root.updateWorldMatrix(true, false); const rq = xgWorldQ(root, G.q[2]);
+  const V = G.v, root = M.m; if (!XGRIP.cur) root.updateWorldMatrix(true, false); const rq = xgWorldQ(root, G.q[2]);
   const axis = (x, y, z, out) => out.set(x, y, z).applyQuaternion(rq); // agent frame (+Z forward, +X the agent's left) to world
   const p = Math.max(-1.5, Math.min(1.5, X.pit || 0)), D = X.aim ? V[9].set(X.aim.x, X.aim.y, X.aim.z).normalize() : axis(0, Math.sin(p), Math.cos(p), V[9]).normalize(), up = axis(0, 1, 0, V[10]); up.addScaledVector(D, -up.dot(D)).normalize();
   if (up.lengthSq() < 1e-8) axis(0, 0, -1, up).addScaledVector(D, -up.dot(D)).normalize(); // directly above/below: retain a stable gun frame
@@ -97,10 +101,10 @@ function xgPose(M, dt) {
   const zg = V[11].copy(D).negate(), xg = G.v[3].crossVectors(up, zg).normalize(), Rg = G.m[0].makeBasis(xg, up, zg), gq = G.q[3].setFromRotationMatrix(Rg);
   const gp = G.v[4], tmp = G.v[5];
   if (g.side) { // sidearm: arms extended, grip ahead of the shoulders' midpoint
-    G.R.up.getWorldPosition(gp); G.L.up.getWorldPosition(tmp); gp.add(tmp).multiplyScalar(0.5).addScaledVector(D, 0.44).addScaledVector(axis(0, -1, 0, tmp), 0.06).addScaledVector(axis(-1, 0, 0, tmp), 0.03);
+    xgWP(G.R.up, gp); xgWP(G.L.up, tmp); gp.add(tmp).multiplyScalar(0.5).addScaledVector(D, 0.44).addScaledVector(axis(0, -1, 0, tmp), 0.06).addScaledVector(axis(-1, 0, 0, tmp), 0.03);
     gp.sub(tmp.fromArray(g.rh).applyQuaternion(gq));
   } else { // long gun: stock in the right shoulder pocket
-    G.R.up.getWorldPosition(gp); gp.addScaledVector(axis(1, 0, 0, tmp), 0.06).addScaledVector(axis(0, -1, 0, tmp), 0.05).addScaledVector(axis(0, 0, 1, tmp), 0.1);
+    xgWP(G.R.up, gp); gp.addScaledVector(axis(1, 0, 0, tmp), 0.06).addScaledVector(axis(0, -1, 0, tmp), 0.05).addScaledVector(axis(0, 0, 1, tmp), 0.1);
     gp.sub(tmp.fromArray(g.st).applyQuaternion(gq));
   }
   const toW = (a, out) => out.fromArray(a).applyQuaternion(gq).add(gp), gl = (x, y, z, out) => out.set(x, y, z).applyQuaternion(gq);
@@ -109,20 +113,20 @@ function xgPose(M, dt) {
   const wt = toW(g.rh, G.v[2]).addScaledVector(kR, -0.06).addScaledVector(nR, -0.02);
   xgIK(G.R, G.t1.copy(wt), axis(g.side ? -0.5 : -0.7, -1, g.side ? 0 : -0.2, G.p1).normalize(), G); xgSetWorldQ(G.R.hand, hq); xgCurl(G.R, XGRIP.curl.rifleR, kR, nR);
   // the gun rides the solved right hand (unreachable targets keep the gun in the hand, not floating)
-  const hw = XGRIP.hw || (XGRIP.hw = new THREE.Vector3()); G.R.hand.getWorldPosition(hw); gp.add(hw.sub(wt));
-  M.gun.parent.updateWorldMatrix(true, false); const local = G.m[1].compose(gp, gq, XGRIP.one || (XGRIP.one = new THREE.Vector3(1, 1, 1))).premultiply(G.m[2].copy(M.gun.parent.matrixWorld).invert());
+  const hw = XGRIP.hw || (XGRIP.hw = new THREE.Vector3()); xgWP(G.R.hand, hw); gp.add(hw.sub(wt));
+  if (!XGRIP.cur) M.gun.parent.updateWorldMatrix(true, false); const local = G.m[1].compose(gp, gq, XGRIP.one || (XGRIP.one = new THREE.Vector3(1, 1, 1))).premultiply(G.m[2].copy(M.gun.parent.matrixWorld).invert());
   local.decompose(M.gun.position, M.gun.quaternion, tmp); M.gun.scale.copy(G.gs); M.gun.updateMatrixWorld(true);
   // left hand: support under the handguard at the weapon's socket, or cupping the right hand on a sidearm
   let kL, nL, lt;
   if (g.side || !g.lh) { kL = gl(0, -0.6, -1, G.v[0]).normalize(); nL = gl(1, 0, 0, G.v[1]); lt = toW(g.rh, G.v[2]).addScaledVector(gl(-1, 0, 0, tmp), 0.035).addScaledVector(kL, -0.05); }
   else { kL = gl(0.55, 0, -1, G.v[0]).normalize(); nL = gl(0.5, 1, 0, G.v[1]).normalize(); lt = toW(g.lh, G.v[2]).addScaledVector(kL, -0.06).addScaledVector(nL, -0.03); }
   if (!g.side && g.lh) { // short arms / long guns: slide the support hand back along the handguard until the arm reaches
-    const sh = G.L.up.getWorldPosition(G.v[6]), reach = (G.reach || (G.reach = G.L.up.getWorldPosition(G.v[7]).distanceTo(G.L.lo.getWorldPosition(G.v[8])) + G.L.lo.getWorldPosition(G.v[8]).distanceTo(G.L.hand.getWorldPosition(G.v[7])))) * 0.985;
+    const sh = xgWP(G.L.up, G.v[6]), reach = (G.reach || (G.reach = xgWP(G.L.up, G.v[7]).distanceTo(xgWP(G.L.lo, G.v[8])) + xgWP(G.L.lo, G.v[8]).distanceTo(xgWP(G.L.hand, G.v[7])))) * 0.985;
     const ax = gl(0, 0, 1, G.v[7]), rel = G.v[8].subVectors(lt, sh), bq = rel.dot(ax), cq = rel.lengthSq() - reach * reach;
     if (cq > 0) { const disc = bq * bq - cq, lim = Math.max(0, (g.rh[2] - g.lh[2]) - 0.1); const sl = disc >= 0 ? Math.min(lim, -bq - Math.sqrt(disc) > 0 ? -bq - Math.sqrt(disc) : -bq + Math.sqrt(disc)) : Math.min(lim, Math.max(0, -bq)); if (sl > 0) lt.addScaledVector(ax, sl); G.slide = sl > 0 ? sl : 0; } else G.slide = 0;
   }
   xgHandQ(G.L, kL, nL, hq); xgIK(G.L, G.t2.copy(lt), axis(g.side ? 0.5 : 0.4, -1, 0, G.p2).normalize(), G); xgSetWorldQ(G.L.hand, hq); xgCurl(G.L, g.side || !g.lh ? XGRIP.curl.pistolL : XGRIP.curl.rifleL, kL, nL);
-  if (G.w < 0.999) { for (const [bn, s] of G.saved) bn.quaternion.slerp(s, 1 - G.w); M.gun.position.lerp(G.gp, 1 - G.w); M.gun.quaternion.slerp(G.gq, 1 - G.w); }
+  if (G.w < 0.999) { for (const [bn, s] of G.saved) bn.quaternion.slerp(s, 1 - G.w); M.gun.position.lerp(G.gp, 1 - G.w); M.gun.quaternion.slerp(G.gq, 1 - G.w); X.mwOk = false; } // blended bones: matrices not refreshed
 }
-{ const post = xUbPost; xUbPost = function (M) { post(M); if (M && M.valorant && M.sx && !M.dead) try { xgPose(M, 1 / 60); } catch (e) { if (!XGRIP.err++) console.warn('weapon grip disabled for a frame', e); } }; }
+{ const post = xUbPost; xUbPost = function (M) { post(M); if (M && M.valorant && M.sx && !M.dead) { const X = M.sx; XGRIP.cur = X.mwOk === true && typeof xvFresh === 'function' && xvFresh(M.m); try { xgPose(M, 1 / 60); } catch (e) { X.mwOk = false; if (!XGRIP.err++) console.warn('weapon grip disabled for a frame', e); } finally { XGRIP.cur = false; } } }; }
 // ---- END WEAPON GRIP ----

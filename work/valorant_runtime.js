@@ -260,6 +260,20 @@ function xvCull(list) { const v = new THREE.Vector3(), out = [], sk = [];
   for (const [o, g] of sk) { const s = g.userData.xvCull; if (!s) continue;
     g.boundingSphere = s.clone(); if ('boundingSphere' in o) o.boundingSphere = s.clone(); o.frustumCulled = true; out.push(o); }
   return out; }
+// Skinned meshes of one agent that ride the same bones with bit-identical inverse bind matrices share one Skeleton (user: "fps
+// 60 -> 20 when I meet many enemies"). SkeletonUtils.clone gives every mesh its own copy, so the renderer rebuilt the same
+// bone matrices and uploaded the same bone texture (64 x 64 RGBA float, 64 KB) once per mesh per frame: 3 times for most
+// agents. Shared, it does it once; each mesh still has its own bind matrix, and its bone matrices hold the same floats
+// (work/test_pose_equivalence.cjs compares every mesh's bone matrices with the unshared rig).
+function xvShareSkeletons(sc) {
+  const list = []; sc.traverse((o) => { if (o.isSkinnedMesh && o.skeleton) list.push(o); });
+  const same = (a, b) => { if (a === b) return true; if (a.bones.length !== b.bones.length || a.boneInverses.length !== a.bones.length || b.boneInverses.length !== b.bones.length) return false;
+    for (let i = 0; i < a.bones.length; i++) { if (a.bones[i] !== b.bones[i]) return false; const e = a.boneInverses[i].elements, f = b.boneInverses[i].elements; for (let k = 0; k < 16; k++) { const x = e[k], y = f[k]; if (x !== y || (x === 0 && 1 / x !== 1 / y)) return false; } }
+    return true; };
+  const kept = []; let n = 0;
+  for (const o of list) { const k = kept.find((s) => same(s, o.skeleton)); if (k) { if (k !== o.skeleton) { o.skeleton = k; n++; } } else kept.push(o.skeleton); }
+  return n;
+}
 function xvAgent(M, kit) {
   XUB.up ||= new THREE.Vector3(0,1,0); XUB.rt ||= new THREE.Vector3(1,0,0);
   if (M.dead || M.valorant) return;
@@ -267,7 +281,7 @@ function xvAgent(M, kit) {
   if (M.gun && M.gun.parent) { M.m.add(M.gun); M.gun.position.set(-.1, 1.22, .32); }
   if (M.sx && M.sx.sc && M.sx.sc.parent) M.m.remove(M.sx.sc.parent);
   const old = XSOL.mx.indexOf(M); if (old >= 0) XSOL.mx.splice(old, 1);
-  const sc = THREE.SkeletonUtils.clone(kit.gl.scene), wr = new THREE.Group(); wr.name = 'valorant-agent'; wr.add(sc);
+  const sc = THREE.SkeletonUtils.clone(kit.gl.scene), wr = new THREE.Group(); wr.name = 'valorant-agent'; wr.add(sc); xvShareSkeletons(sc);
   sc.updateMatrixWorld(true); const bx = new THREE.Box3().setFromObject(sc), scale = 1.92 / (bx.max.y - bx.min.y); wr.scale.setScalar(scale); wr.position.y = -bx.min.y * scale;
   const inGun = (o) => { for (let p = o; p; p = p.parent) if (p === M.gun) return true; return false; };
   M.m.traverse((o) => { if (o.isMesh && o !== M.ring && !inGun(o)) o.visible = false; });
@@ -298,7 +312,57 @@ function xvAttach(M) {
 // over the floor, from xUbAnim) the body is lifted just enough that its lowest point meets the floor. Higher, no correction. The shift moves
 // the rig wrapper (all skin influences together) so helper-bone weights cannot leave a foot floating;
 // older stub rigs fall back to Splitter or pelvis.
-{const pre=xUbPre,post=xUbPost;xUbPre=function(M){const X=M.sx;if(X&&X.contactRestore){(X.contactRoot||X.cs||X.b.pelvis).position.copy(X.contactRestore);X.contactRestore=null;}return pre(M);};xUbPost=function(M){post(M);const X=M.sx;if(!X||!X.nativeContact||X.dd||M.dead||X.lo||(X.w.plant||0)>.01||!X.contactProbes.length)return;M.m.updateMatrixWorld(true);const v=X.contactV,inv=X.contactInv.copy(X.sc.matrixWorld).invert();let low=Infinity;for(const {o,indices}of X.contactProbes){o.skeleton.update();for(const i of indices){v.fromBufferAttribute(o.geometry.attributes.position,i);o.boneTransform(i,v);v.applyMatrix4(o.matrixWorld).applyMatrix4(inv);low=Math.min(low,v.y);}}let lift=0;const c=X.contactLift,a=X.a.run;if(c&&a&&(X.w.run||0)>.001){const t=a.time%c.times[c.times.length-1];let i=0;while(i<c.times.length-2&&c.times[i+1]<t)i++;const f=(t-c.times[i])/Math.max(.00001,c.times[i+1]-c.times[i]);lift=Math.min(.02,Math.max(0,(c.values[i]*(1-f)+c.values[i+1]*f)*.15))*(X.w.run||0);}let dy=X.contactFloor+lift-low;if(X.air)dy-=(X.airH||0)/Math.max(1e-6,X.sc.getWorldScale(X.contactScale).y);if(!Number.isFinite(dy)||Math.abs(dy)>.5||X.air&&dy<=0)return;X.contactRestore=(X.contactRoot||X.cs||X.b.pelvis).position.clone();(X.contactRoot||X.cs||X.b.pelvis).getWorldPosition(v);const shift=X.contactShift.set(0,1,0).transformDirection(X.sc.matrixWorld).multiplyScalar(Math.abs(dy)*X.sc.getWorldScale(X.contactScale).y);if(dy<0)shift.negate();v.add(shift);(X.contactRoot||X.cs||X.b.pelvis).position.copy((X.contactRoot||X.cs||X.b.pelvis).parent.worldToLocal(v));M.m.updateMatrixWorld(true);};}
+{const pre=xUbPre,post=xUbPost;xUbPre=function(M){const X=M.sx;if(X){X.mwOk=false;if(X.contactRestore){(X.contactRoot||X.cs||X.b.pelvis).position.copy(X.contactRestore);X.contactRestore=null;}}return pre(M);};xUbPost=function(M){post(M);const X=M.sx;if(!X||!X.nativeContact||X.dd||M.dead||X.lo||(X.w.plant||0)>.01||!X.contactProbes.length)return;xvContactPass(M,X);const v=X.contactV,inv=X.contactInv.copy(X.sc.matrixWorld).invert();let low=Infinity;for(const {o,indices}of X.contactProbes){for(const i of indices){v.fromBufferAttribute(o.geometry.attributes.position,i);o.boneTransform(i,v);v.applyMatrix4(o.matrixWorld).applyMatrix4(inv);low=Math.min(low,v.y);}}let lift=0;const c=X.contactLift,a=X.a.run;if(c&&a&&(X.w.run||0)>.001){const t=a.time%c.times[c.times.length-1];let i=0;while(i<c.times.length-2&&c.times[i+1]<t)i++;const f=(t-c.times[i])/Math.max(.00001,c.times[i+1]-c.times[i]);lift=Math.min(.02,Math.max(0,(c.values[i]*(1-f)+c.values[i+1]*f)*.15))*(X.w.run||0);}let dy=X.contactFloor+lift-low;if(X.air)dy-=(X.airH||0)/Math.max(1e-6,X.sc.getWorldScale(X.contactScale).y);if(!Number.isFinite(dy)||Math.abs(dy)>.5||X.air&&dy<=0)return;X.contactRestore=(X.contactRestoreV||(X.contactRestoreV=new THREE.Vector3())).copy((X.contactRoot||X.cs||X.b.pelvis).position);(X.contactRoot||X.cs||X.b.pelvis).getWorldPosition(v);const shift=X.contactShift.set(0,1,0).transformDirection(X.sc.matrixWorld).multiplyScalar(Math.abs(dy)*X.sc.getWorldScale(X.contactScale).y);if(dy<0)shift.negate();v.add(shift);(X.contactRoot||X.cs||X.b.pelvis).position.copy((X.contactRoot||X.cs||X.b.pelvis).parent.worldToLocal(v));M.m.updateMatrixWorld(true);X.mwOk=true;};}
+// Pose matrix reuse (user, 28 Oct 2026: "fps 60 -> 20 when I meet many enemies"). Each pose follow-up used to bring the agent's
+// whole tree up to date again (contact probe, crouch IK, every bone chain the grip IK read: ~2.2k node updates per agent per
+// frame on a ~280-node rig). Now, with the same floats everywhere (work/test_pose_equivalence.cjs):
+//  - the contact probe reads only its probe vertices' weighted bones, their meshes, the skin root and the contact root: it
+//    updates just those nodes and their ancestors in the tree, parents first, as M.m.updateMatrixWorld(true) would
+//    (xvContactPass); skinning reads bone.matrixWorld (three's boneTransform), so it no longer runs skeleton.update() (the
+//    renderer rebuilds the bone matrices for its frame anyway);
+//  - X.mwOk: true while the whole tree is current relative to M.m.parent's world matrix and nothing has moved since (set
+//    after a whole-tree pass, cleared in xUbPre and before any write that is not followed by a subtree update). The
+//    crouch IK skips its own pass when it is set, and the weapon grip (work/grip_runtime.js XGRIP.cur) reads world matrices
+//    directly instead of walking bone chains when it is set and xvFresh(M.m) holds.
+var XVF = { a: [], m: null, l: null, v: null };
+// true when each ancestor a chain walk from o refreshes (updateWorldMatrix(true, false): parents while matrixWorldAutoUpdate)
+// already holds exactly the world matrix the walk would compute (same floats, sign of zero included)
+function xvFresh(o) {
+  const a = XVF.a, m = XVF.m || (XVF.m = new THREE.Matrix4()), l = XVF.l || (XVF.l = new THREE.Matrix4()); let n = 0;
+  for (let p = o.parent; p !== null && p.matrixWorldAutoUpdate === true; p = p.parent) a[n++] = p;
+  for (let i = n - 1; i >= 0; i--) {
+    const p = a[i], L = p.matrixAutoUpdate ? l.compose(p.position, p.quaternion, p.scale) : p.matrix, W = p.parent === null ? L : m.multiplyMatrices(p.parent.matrixWorld, L), e = W.elements, f = p.matrixWorld.elements;
+    for (let k = 0; k < 16; k++) { const x = e[k], y = f[k]; if (x !== y || (x === 0 && 1 / x !== 1 / y)) { for (let j = 0; j < n; j++) a[j] = null; return false; } }
+  }
+  for (let j = 0; j < n; j++) a[j] = null; return true;
+}
+// three's own updateMatrixWorld on Object3D, or SkinnedMesh's (which re-inverts the bind matrix): nodes xvContactPass can mirror
+function xvPlainNode(o) { let p = Object.getPrototypeOf(o); while (p && !Object.prototype.hasOwnProperty.call(p, 'updateMatrixWorld')) p = Object.getPrototypeOf(p); return !!p && !Object.prototype.hasOwnProperty.call(o, 'updateMatrixWorld') && (Object.prototype.hasOwnProperty.call(p, 'traverse') || (o.isSkinnedMesh === true && Object.prototype.hasOwnProperty.call(p, 'bind'))); }
+// the nodes the contact probe reads, with their ancestors up to M.m, parents first; null if any of them is outside M.m or not plain
+function xvContactNodes(M, X) {
+  const set = new Set(), w = XVF.v || (XVF.v = new THREE.Vector4()), i4 = new THREE.Vector4();
+  const add = (o) => { const up = []; for (let n = o; n; n = n.parent) { up.push(n); if (n === M.m) break; } if (up[up.length - 1] !== M.m) return false; for (const n of up) set.add(n); return true; };
+  let ok = add(X.sc) && add(X.contactRoot || X.cs || X.b.pelvis);
+  for (const { o, indices } of X.contactProbes) {
+    ok = ok && add(o); const G = o.geometry, si = G.attributes.skinIndex, sw = G.attributes.skinWeight, bones = o.skeleton && o.skeleton.bones; if (!si || !sw || !bones) return null;
+    for (const i of indices) { w.fromBufferAttribute(sw, i); i4.fromBufferAttribute(si, i); for (let k = 0; k < 4; k++) if (w.getComponent(k) !== 0) { const b = bones[i4.getComponent(k)]; ok = ok && !!b && add(b); } }
+  }
+  if (!ok) return null; const out = [...set]; if (!out.every(xvPlainNode)) return null;
+  const depth = (n) => { let d = 0; for (; n !== M.m; n = n.parent) d++; return d; }, D = new Map(out.map((n) => [n, depth(n)]));
+  return out.sort((a, b) => D.get(a) - D.get(b));
+}
+// M.m.updateMatrixWorld(true), for the nodes the contact probe reads (the rest of the tree is brought up to date right after the
+// shift, or by the crouch IK's pass)
+function xvContactPass(M, X) {
+  if (X.contactNodes === undefined) X.contactNodes = xvContactNodes(M, X);
+  const L = X.contactNodes; if (L === null) { M.m.updateMatrixWorld(true); X.mwOk = true; return; }
+  for (let i = 0; i < L.length; i++) { const n = L[i];
+    if (n.matrixAutoUpdate) n.updateMatrix();
+    if (n.parent === null) n.matrixWorld.copy(n.matrix); else n.matrixWorld.multiplyMatrices(n.parent.matrixWorld, n.matrix);
+    n.matrixWorldNeedsUpdate = false;
+    if (n.isSkinnedMesh === true) { if (n.bindMode === 'attached') n.bindMatrixInverse.copy(n.matrixWorld).invert(); else if (n.bindMode === 'detached') n.bindMatrixInverse.copy(n.bindMatrix).invert(); }
+  }
+}
 // Native first-person rigs and their matching weapon animation clips. The virtual source camera faces +X.
 function xvFPPlay(F, kind, time) {
   const key = kind === 'idle' ? 'Idle' : kind.charAt(0).toUpperCase()+kind.slice(1), a = F.entries.find((e)=>e.Translatable === key) || F.entries.find((e)=>e.Translatable.startsWith(key));

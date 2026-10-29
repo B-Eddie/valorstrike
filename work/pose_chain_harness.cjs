@@ -12,28 +12,32 @@ const {T,parse}=require('./valorant_rigs');const root=path.join(__dirname,'..');
 const read=f=>fs.readFileSync(path.join(root,f),'utf8');
 const cut=(s,a,b)=>{const i=s.indexOf(a),j=s.indexOf(b,i);if(i<0||j<0)throw Error('missing source '+a);return s.slice(i,j);};
 // edit(name, source) -> source: lets a test run a variant of one piece (e.g. the code before a change)
-async function runtime({edit=(n,s)=>s,floor=null}={}){
+async function runtime({edit=(n,s)=>s,floor=null,thisContext=false}={}){
+ // thisContext: run in the main context (fast globals, as in a browser; one runtime per process) - for timing only
  const html=read('index.html'),base=path.dirname(require.resolve('three',{paths:[path.join(root,'server')]}));
  const SkeletonUtils=await import(pathToFileURL(path.join(base,'../examples/jsm/utils/SkeletonUtils.js')).href);
  const floorAt=floor||((x,z)=>0);
  const c={THREE:{...T,SkeletonUtils},console,performance:{now:()=>0},Math,Number,Map,Set,WeakMap,Array,Object,JSON,Float32Array,Float64Array,Int32Array,Uint16Array,Uint32Array,Infinity,NaN,isNaN,
-  XSOL:{mx:[]},XNR(){},xRimM(){},XGM:{T:{}},mode:'dm',FV:{},WEAP:{},xFvOK:false,window:{},
+  XS:{lod:40},XSOL:{mx:[]},XNR(){},xRimM(){},XGM:{T:{}},mode:'dm',FV:{},WEAP:{},xFvOK:false,window:{},
   groundAt:(x,z)=>floorAt(x,z),camera:new T.PerspectiveCamera(70,16/9,.05,500)};
  // feet_runtime floor probe: a bvh stand-in without packed roots takes the library path (raycastFirst)
  c.nmActive=()=>({bvh:{raycastFirst:(R)=>{const y=floorAt(R.origin.x,R.origin.z);return y<=R.origin.y?{point:{y},face:{normal:{y:1}}}:null;}}});
- vm.createContext(c);
+ const run=(code,o)=>thisContext?vm.runInThisContext(code,o):vm.runInContext(code,c,o);
+ if(thisContext){for(const k in c)if(!(k in globalThis)||k==="camera")globalThis[k]=c[k];}else vm.createContext(c);
  const src='function xvStatic(){}function xGmTpl(){}function xGmSwap(){}function xvFind(){return null;}\n'+
   edit('core',cut(html,'var XUB =','// any weapon sound'))+'\n'+edit('sol',cut(html,'function xSolTick(','// agent root:'))+'\n'+
   cut(html,'function xvaClips(','function xvaParse(')+'\n'+edit('agent',cut(html,'function xvCull(','// #11: no stand-in'))+'\n'+
   edit('contact',cut(html,'{const pre=xUbPre,post=xUbPost;','// Native first-person'))+'\n'+
   edit('crouch',cut(html,'// Native rigs (nativeContact)','{const update=xVisB;'))+'\n'+
   edit('grip',read('work/grip_runtime.js'))+'\n'+edit('feet',read('work/feet_runtime.js'))+'\n';
- vm.runInContext(src,c,{filename:'pose_chain'});
+ run(src,{filename:'pose_chain'});
  const b=fs.readFileSync(path.join(root,'models/valorant/agents/locomotion.bin')),mb=fs.readFileSync(path.join(root,'models/valorant/movement/movement.bin'));
  c.packed={h:JSON.parse(read('models/valorant/agents/locomotion.json')),f:new Float32Array(b.buffer.slice(b.byteOffset,b.byteOffset+b.byteLength))};
  c.packed.movement={h:JSON.parse(read('models/valorant/movement/movement.json')),f:new Float32Array(mb.buffer.slice(mb.byteOffset,mb.byteOffset+mb.byteLength))};
- vm.runInContext(edit('movement',read('work/rocklan_movement_runtime.js'))+'\n;globalThis.api={xvaKit,xvAgent,xUbAnim,xSolTick,xrHitboxes,xUbPre,xUbPost};',c,{filename:'pose_chain_movement'});
- const scene=new T.Scene();scene.add(c.camera);const units=[];let frameNo=0;
+ if(thisContext)globalThis.packed=c.packed;
+ run(edit('movement',read('work/rocklan_movement_runtime.js'))+'\n;globalThis.api={xvaKit,xvAgent,xUbAnim,xSolTick,xrHitboxes,xUbPre,xUbPost};',{filename:'pose_chain_movement'});
+ if(thisContext)c.api=globalThis.api;
+ const scene=new T.Scene();scene.add(c.camera);const units=[];
  const kits={};
  async function agent(slug,{x=0,z=0,yaw=0,w='Vandal'}={}){
   const gl=kits[slug]||(kits[slug]=await parse(path.join(root,'models/valorant/agents',slug+'.glb')));
@@ -50,17 +54,19 @@ async function runtime({edit=(n,s)=>s,floor=null}={}){
  // one game frame: units move (s.x / s.z / s.y / s.yaw / s.cr / s.pit / s.shoot / s.reload / s.knife / s.dead), xUbAnim per
  // unit, xSolTick, then the render pass
  function frame(dt,states,{render=true,hooks={}}={}){
-  frameNo++;
-  for(const s of states){const u=s.unit,P=u.g.position;
+   for(const s of states){const u=s.unit,P=u.g.position;
    const y=s.y!=null?s.y:floorAt(s.x,s.z)+(s.lift||0);P.set(s.x,y,s.z);if(s.yaw!=null)u.g.rotation.y=s.yaw;u.cr=!!s.cr;u.M.xap=s.pit||0;
    if(s.shoot)u.xsh=(u.xsh||0)+1;if(s.reload!=null)u.xAmRn=s.reload;u.M.w=s.knife?'Knife':'Vandal';if(s.dead&&!u.M.dead){u.M.dead=1;}
    const sp=Math.hypot(P.x-u.last.x,P.z-u.last.z)/dt;u.last.copy(P);
    if(!u.M.dead)c.api.xUbAnim(u,u.M,sp,dt);}
   if(hooks.sol)hooks.sol(true);c.api.xSolTick(dt);if(hooks.sol)hooks.sol(false);
-  if(render){if(hooks.render)hooks.render(true);scene.updateMatrixWorld();for(const u of units)for(const o of u.skins)if(o.skeleton.frame!==frameNo){o.skeleton.update();o.skeleton.frame=frameNo;}if(hooks.render)hooks.render(false);}
+  if(render)draw(hooks);
  }
+ // what WebGLRenderer does to the rigs each frame: scene.updateMatrixWorld(), then each skeleton once (skeleton.frame)
+ let drawNo=0;
+ function draw(hooks={}){drawNo++;if(hooks.render)hooks.render(true);scene.updateMatrixWorld();for(const u of units)for(const o of u.skins)if(o.skeleton.frame!==drawNo){o.skeleton.update();o.skeleton.frame=drawNo;}if(hooks.render)hooks.render(false);}
  function nodes(u){let n=0;u.M.m.traverse(()=>n++);return n;}
- return {c,T,scene,units,agent,frame,nodes,camera:c.camera,floorAt};
+ return {c,T,scene,units,agent,frame,draw,nodes,camera:c.camera,floorAt};
 }
 // the game's movement script for a unit: 12 phases (stand, walk, jog, strafes, backpedal, crouch, crouch-walk, jump, stairs,
 // turn in place, aim sweep, knife), offset per unit so units are in different phases on the same frame
