@@ -4,7 +4,7 @@
 //  1. wiring: the block is the generated copy and the last block; moveP calls xcPlayer right after the motor / dash step and
 //     before the online wrapper records the predicted path (so the reconcile compares a pushed prediction with the pushed
 //     server); tick / fiveTick / duelTick and xSmV are wrapped; locomotion animation functions are not touched.
-//  2. player: walking into a bot stops at 2 x bodyR (the bot is not shoved), off-centre slides past, dead / not-yet-spawned
+//  2. player: walking into a bot stops at 2 x bodyR (the bot is not shoved), off-centre slides past, dead / online-driven off the trusted server
 //     (nt) / fog-parked units and Reyna's Dismiss do not block, the aim range has no collision.
 //  3. prediction = server: the page's player step (Motor.step + xcPlayer against the drawn unit) = the server Simulation's
 //     human (Motor.step + bodies) tick by tick, so an online walk into a unit does not rubber-band.
@@ -44,7 +44,7 @@ const dist=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
  for(let k=0;k<120;k++){stepP(c,P,1,0);min=Math.min(min,dist(P,b.g.position));}
  assert(min>=MIN,`player walking into a bot stops at the contact (min ${min.toFixed(3)})`);assert(P.x>3-R2-.02,`reaches it (${P.x.toFixed(3)})`);assert.deepEqual([b.g.position.x,b.g.position.z],[3,0],'the bot is not shoved');
  Object.assign(P,pl(0,.3));min=1e9;for(let k=0;k<120;k++){stepP(c,P,1,0);min=Math.min(min,dist(P,b.g.position));}assert(min>=MIN&&P.x>4,`off-centre: slides past (min ${min.toFixed(3)}, x ${P.x.toFixed(2)})`);
- for(const [label,set,undo] of [['dead bot',()=>{b.alive=false;},()=>{b.alive=true;}],['not-yet-spawned bot (nt)',()=>{b.nt=true;},()=>{b.nt=false;}],['fog-parked unit',()=>{b.fog=1;},()=>{b.fog=0;}],['player in Dismiss',()=>{vm.runInContext('J.dis=1',c);},()=>{vm.runInContext('J.dis=0',c);}],['aim range',()=>{vm.runInContext("mode='aim'",c);},()=>{vm.runInContext("mode='five'",c);}]]){
+ for(const [label,set,undo] of [['dead bot',()=>{b.alive=false;},()=>{b.alive=true;}],['online-driven unit (nt) off the server',()=>{b.nt=true;},()=>{b.nt=false;}],['fog-parked unit',()=>{b.fog=1;},()=>{b.fog=0;}],['player in Dismiss',()=>{vm.runInContext('J.dis=1',c);},()=>{vm.runInContext('J.dis=0',c);}],['aim range',()=>{vm.runInContext("mode='aim'",c);},()=>{vm.runInContext("mode='five'",c);}]]){
   Object.assign(P,pl(0,0));set();for(let k=0;k<120;k++)stepP(c,P,1,0);undo();assert(P.x>4,`${label}: no collision (x ${P.x.toFixed(2)})`);}}
 // 3. prediction = server
 (async()=>{
