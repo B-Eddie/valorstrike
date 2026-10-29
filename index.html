@@ -14345,10 +14345,12 @@ function nmFoliageCut(name,stats){return !!(stats&&stats.cut>=.02&&/Plant(?!er)|
 // darkened again by the export's 0.53 tint (~0.07). Lit like the plaster under them (map meshes take the same hemisphere +
 // sun, no GI bounce) a shaded wall gives plaster ~123/255 but these 11-36/255: hard near-black shapes, and the alpha-cut
 // ivy shimmered black/white at LOW (no AA) under the slightest camera motion. Their colour is lifted so the texture's mean
-// linear albedo (nmTexStats .lin x the material colour) reaches 0.18 (gain capped at x2.5); shape, alpha and hue are kept.
+// linear albedo (nmTexStats .lin x the material colour) reaches 0.35 for painted decals (gain <= x5: faded grey / colour
+// paint that reads as a mural in shade and sun; 0.18 still drew the cups 35/255 next to 123/255 plaster) and 0.22 for ivy /
+// creeper cards (gain <= x3: dark green leaves, not black); shape, alpha and hue are kept.
 // Only Decal_-named paint and Ivy / Creeper cards: grime masks ('mask'), Floater_ overlays (asphalt potholes, hay,
 // broken lights are meant dark), "Shadow" vines and every other material are untouched.
-function nmFoliageApply(mat,name,stats){if(!mat.transparent&&!(mat.alphaTest>0)&&nmFoliageCut(name,stats)){mat.alphaTest=.45;mat.userData.cutout=true;}const c=mat.color;if(stats&&stats.lin>0&&c&&(mat.userData.decal==='decal'&&/Decal/i.test(name||'')||mat.alphaTest>0&&/Ivy|Creeper/i.test(name||'')&&!/Shadow/i.test(name))){const a=stats.lin*(.2126*c.r+.7152*c.g+.0722*c.b);if(a>0&&a<.18){const k=Math.min(2.5,.18/a);c.multiplyScalar(k);mat.userData.nmLift=+k.toFixed(3);}}return mat;}
+function nmFoliageApply(mat,name,stats){if(!mat.transparent&&!(mat.alphaTest>0)&&nmFoliageCut(name,stats)){mat.alphaTest=.45;mat.userData.cutout=true;}const c=mat.color;if(stats&&stats.lin>0&&c&&(mat.userData.decal==='decal'&&/Decal/i.test(name||'')||mat.alphaTest>0&&/Ivy|Creeper/i.test(name||'')&&!/Shadow/i.test(name))){const dec=mat.userData.decal==='decal',lo=dec?.35:.22,a=stats.lin*(.2126*c.r+.7152*c.g+.0722*c.b);if(a>0&&a<lo){const k=Math.min(dec?5:3,lo/a);c.multiplyScalar(k);mat.userData.nmLift=+k.toFixed(3);}}return mat;}
 // Layer depth bias ("wall / floor textures disappear at certain angles", every map): z-fight layers (nmZFixApply, levels
 // 1..5) and decals (then level 2, now NM_ZLEVELS+1) were pulled forward with glPolygonOffset(-level, -level). The factor term is level x the
 // triangle's own depth slope per pixel, i.e. it grows with the viewing angle: at oblique / grazing views it pulled a
