@@ -57,7 +57,7 @@ export class EscalationSimulation extends Simulation{
   if(this.esc.lv.some(l=>l>=ESC_LEVELS.length))this.phase='post';
   // time out: furthest along wins (levels, then points on the level); scores carry the points as a fraction for the result
   if(this.phase==='post')this.scores=[this.esc.lv[0]+this.esc.pt[0]/100,this.esc.lv[1]+this.esc.pt[1]/100];}
- snapshot(){const s=super.snapshot();s.esc={lv:[...this.esc.lv],pt:[...this.esc.pt],w:[0,1].map(t=>ESC_LEVELS[Math.min(this.esc.lv[t],ESC_LEVELS.length-1)]),n:[escNeed(Math.min(this.esc.lv[0],11)),escNeed(Math.min(this.esc.lv[1],11))]};return s;}
+ snapshot(){const s=super.snapshot();s.ts=[this.scores[0]|0,this.scores[1]|0];s.esc={lv:[...this.esc.lv],pt:[...this.esc.pt],w:[0,1].map(t=>ESC_LEVELS[Math.min(this.esc.lv[t],ESC_LEVELS.length-1)]),n:[escNeed(Math.min(this.esc.lv[0],11)),escNeed(Math.min(this.esc.lv[1],11))]};return s;}
 }
 
 // ---- Spike round variants ----

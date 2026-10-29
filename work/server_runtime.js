@@ -551,6 +551,17 @@ function nmSkmHud(K){if(!K||!Array.isArray(K.sc))return;const prev=MP.skm;MP.skm
  $('againBtn').textContent='Play again';$('result').style.display='flex';
  if(window.xCareerRec)try{const m=R.find(r=>r.n==='You')||{};xCareerRec({result:won?'win':draw?'draw':'loss',mode:'escalation',map:(typeof F_MAPN!=='undefined'&&F_MAPN[FV.map])||FV.map,score:'Lv '+lvT(0)+' – '+lvT(1),kills:m.k,deaths:m.d});}catch(e){}};}
 {const x1=mpReset;mpReset=function(){MP.escS=null;return x1.apply(this,arguments);};}
+// Team score (mpsweep): a human who leaves hands the seat to a bot with 0 kills (a rejoin starts at 0 again) while the server
+// keeps the team score, but tdmTot summed the units still in the room: the top HUD and the end screen dropped the leaver's
+// kills (a match the team led could end as a Defeat). The server's team score (ts, own team first here) is the total; a
+// server without it: the kills of a unit that left stay in its team's total.
+{const m0=mpCliMsg;mpCliMsg=function(m){if(!(m&&(m.t==='s'||m.t==='end')&&NET.socket&&MP.cl&&MP.st==='game'))return m0.apply(this,arguments);
+ if(Array.isArray(m.ts)&&m.ts.length===2&&m.ts.every(n=>Number.isFinite(n)&&n>=0))MP.ts=[m.ts[0]|0,m.ts[1]|0];else MP.ts=null;
+ const r=m0.apply(this,arguments);
+ try{if(FV.tdm&&DM.k){const G=MP.tkGone||(MP.tkGone=[0,0]),P=MP.tkPrev||(MP.tkPrev=new Map()),al=new Set(allies.map(a=>a.name));al.add('You');for(const [n,v] of P)if(!(n in DM.k))G[v[0]]+=v[1];P.clear();for(const n in DM.k)P.set(n,[al.has(n)?0:1,DM.k[n]|0]);}}catch(e){}
+ return r;};}
+{const t0=tdmTot;tdmTot=function(){if(MP.cl&&NET.socket){if(Array.isArray(MP.ts)){const me=MP.team===1?1:0;return [MP.ts[me],MP.ts[1-me]];}const r=t0.apply(this,arguments),G=MP.tkGone;return G?[r[0]+G[0],r[1]+G[1]]:r;}return t0.apply(this,arguments);};}
+{const x2=mpReset;mpReset=function(){MP.ts=null;MP.tkGone=null;MP.tkPrev=null;return x2.apply(this,arguments);};}
 // Online panel: say why Skirmish is greyed out on a server that does not offer it (and that it is 1v1 when it is selected)
 {const u0=mpUI;mpUI=function(){u0.apply(this,arguments);try{const box=mpEl('xOn'),b=box&&box.querySelector('[data-om="skm"]');if(!b)return;let n=document.getElementById('xOnSkm');
   const off=!netModeOk('skm'),sel=MP.mode==='skm'&&!!MP.on,t=off?SKM_MSG:sel?'Skirmish 1v1 · two players, one per team · no bots · first to 5 rounds':'';

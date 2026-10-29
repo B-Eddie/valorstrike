@@ -36,7 +36,7 @@ export class TdmSimulation extends SpikeSimulation{
   const shooters=[];for(const u of this.units){if(u.loading)continue;if(!u.alive){if(this.time>=u.respawnAt)this.spawn(u);continue;}roomTick(this,u,dt);if(!u.alive)continue;this.unitTick(u,dt,shooters);roomTick(this,u,0);if(!u.alive&&!(u.respawnAt>this.time))u.respawnAt=this.time+1.5;/* a fall / out of bounds inside unitTick */}
   this.fireTick(shooters);recTick(this,dt);tickAbilities(this,dt);tdmAbTick(this,dt);tdmUltTick(this);/* TDM Ultimate Orbs (after the kill points, so a wave's +10 adds on top) */
   if(this.remaining<=0||this.scores.some(n=>n>=this.maxKills))this.phase='post';}
- snapshot(){const s=super.snapshot();delete s.fw;s.tuo=tdmUltRows(this);s.tuz=tdmUltZoneRows(this);s.trm=this.spawnRooms?[0,1].map(t=>[...roomAnchor(this,t),TDM_ROOM.radius,t]):[];return s;}
+ snapshot(){const s=super.snapshot();delete s.fw;s.ts=[this.scores[0]|0,this.scores[1]|0];/* team score: the page's own sum over the units in the room lost a leaver's kills */s.tuo=tdmUltRows(this);s.tuz=tdmUltZoneRows(this);s.trm=this.spawnRooms?[0,1].map(t=>[...roomAnchor(this,t),TDM_ROOM.radius,t]):[];return s;}
  // The round-state message carries what the page needs for its abilities (no buy phase, scores, Spike or credits in TDM):
  // the kit charges / ult pips (ab), the ult points and the TDM cost (tp / uc), statuses, channels; tab 1 marks it (the page's validator takes it without a Spike row).
  roundState(u){const r=super.roundState(u);for(const k of ['b','bl','ld','sc','atk','me','cr','rv','orb','uo','uoc','sp','gm'])delete r[k];r.tab=1;r.room=this.spawnRooms&&u.roomSafe?Math.max(0,TDM_ROOM.grace-(this.time-u.roomEntered)):null;r.tl=this.remaining;r.tp=u.ability?.tp||0;r.uc=tdmCost(u);return r;}
