@@ -537,6 +537,20 @@ function nmSkmHud(K){if(!K||!Array.isArray(K.sc))return;const prev=MP.skm;MP.skm
  if(DM.lb)DM.lb.style.display='none';$('againBtn').textContent='Play again';$('result').style.display='flex';
  if(window.xCareerRec)try{const me=R.find(r=>r.n==='You')||{};xCareerRec({result:won?'win':draw?'draw':'loss',mode:'skirmish',map:(typeof F_MAPN!=='undefined'&&F_MAPN[FV.map])||FV.map,score:mine+' – '+theirs,kills:me.k,deaths:me.d});}catch(e){}};}
 {const x0=mpReset;mpReset=function(){MP.skm=null;return x0.apply(this,arguments);};}
+// End frame (mpsweep): the server names the leader in `over` whatever ended the match (worker.js: TDM / Escalation by team
+// score, Deathmatch the top killer), so a match that ran out of time read "Enemy team reached 100 kills · 5–6". Only a target
+// reached before the clock ran out keeps `over` (the end frame's tl is the match clock left: 0 when the time ran out).
+// Online Escalation plays the TDM path (FV.esc off): its own end screen from the server's levels, never Team Deathmatch's.
+{const m0=mpCliMsg;mpCliMsg=function(m){if(m&&(m.t==='s'||m.t==='end')&&m.esc&&Array.isArray(m.esc.lv))MP.escS=m.esc;if(m&&m.t==='end'&&NET.socket&&!m.skm&&!(m.tl>0))m.over=null;return m0.apply(this,arguments);};}
+{const e0=dmEnd;dmEnd=function(){if(!(MP.cl&&NET.socket&&MP.gm==='esc'&&MP.escS))return e0.apply(this,arguments);if(!running)return;running=false;fireHeld=false;if(DM.menu)dmMenu(false);FV.menu=false;
+ const E=MP.escS,me=MP.team===1?1:0,L=[E.lv[me]|0,E.lv[1-me]|0],P=Array.isArray(E.pt)?[E.pt[me]|0,E.pt[1-me]|0]:[0,0],top=12,fin=L[0]>=top?0:L[1]>=top?1:-1,sc=t=>L[t]*100+P[t],won=fin>=0?fin===0:sc(0)>sc(1),draw=fin<0&&sc(0)===sc(1),R=dmRank(),lvT=t=>Math.min(top,L[t]+1);
+ const why=(fin>=0?(fin===0?'Your team':'Enemy team')+' finished the knife level':'Time up')+' · level '+lvT(0)+' vs '+lvT(1);
+ if(DM.ts)DM.ts.style.display='none';if(DM.lb)DM.lb.style.display='none';DM.over=null;if(won)stats.w++;try{showStats();}catch(e){}if(document.pointerLockElement)document.exitPointerLock();try{SFX.fanfare(won);}catch(e){}
+ $('resTitle').textContent=won?'Victory':draw?'DRAW':'Defeat';$('resTitle').style.color=won?'#5fffb0':draw?'#f2f4f7':'#ff4655';
+ $('resText').innerHTML='Escalation · '+why+'<ol class="x-dmr">'+R.map((r,i)=>'<li'+(r.n==='You'?' class="me"':'')+'><span>'+(i+1)+'</span><b>'+r.n+'</b><em>'+r.k+' K · '+r.d+' D</em></li>').join('')+'</ol>';
+ $('againBtn').textContent='Play again';$('result').style.display='flex';
+ if(window.xCareerRec)try{const m=R.find(r=>r.n==='You')||{};xCareerRec({result:won?'win':draw?'draw':'loss',mode:'escalation',map:(typeof F_MAPN!=='undefined'&&F_MAPN[FV.map])||FV.map,score:'Lv '+lvT(0)+' – '+lvT(1),kills:m.k,deaths:m.d});}catch(e){}};}
+{const x1=mpReset;mpReset=function(){MP.escS=null;return x1.apply(this,arguments);};}
 // Online panel: say why Skirmish is greyed out on a server that does not offer it (and that it is 1v1 when it is selected)
 {const u0=mpUI;mpUI=function(){u0.apply(this,arguments);try{const box=mpEl('xOn'),b=box&&box.querySelector('[data-om="skm"]');if(!b)return;let n=document.getElementById('xOnSkm');
   const off=!netModeOk('skm'),sel=MP.mode==='skm'&&!!MP.on,t=off?SKM_MSG:sel?'Skirmish 1v1 · two players, one per team · no bots · first to 5 rounds':'';
