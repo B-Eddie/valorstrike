@@ -15850,6 +15850,15 @@ function nmSkmHud(K){if(!K||!Array.isArray(K.sc))return;const prev=MP.skm;MP.skm
  $('againBtn').textContent='Play again';$('result').style.display='flex';
  if(window.xCareerRec)try{const m=R.find(r=>r.n==='You')||{};xCareerRec({result:won?'win':draw?'draw':'loss',mode:'escalation',map:(typeof F_MAPN!=='undefined'&&F_MAPN[FV.map])||FV.map,score:'Lv '+lvT(0)+' – '+lvT(1),kills:m.k,deaths:m.d});}catch(e){}};}
 {const x1=mpReset;mpReset=function(){MP.escS=null;return x1.apply(this,arguments);};}
+// Online Escalation top HUD (mpsweep): the team bar read Team Deathmatch's "<kills> FIRST TO 100 <kills>" and the subtitle
+// "Team Deathmatch · first to 100"; now the offline Escalation bar (each team's level, its gun and the progress to the next
+// level) from the server's levels, and the Escalation subtitle.
+{const s2=tdmTS;tdmTS=function(){if(!(MP.cl&&NET.socket&&MP.gm==='esc'&&MP.escS&&DM.ts))return s2.apply(this,arguments);const E=MP.escS,me=MP.team===1?1:0;
+ const bar=(i,cls)=>{const t=i?1-me:me,lv=Math.max(0,Math.min(12,E.lv[t]|0)),need=Array.isArray(E.n)&&E.n[t]>0?E.n[t]:7,pt=Array.isArray(E.pt)?Math.max(0,+E.pt[t]||0):0,p=Math.min(100,(lv+Math.min(1,pt/need))/12*100),w=Array.isArray(E.w)?mpClean(String(E.w[t]||'')):'';return '<span class="x-escl '+cls+'"><b>'+Math.min(12,lv+1)+'</b><small>'+w+'</small><span class="x-escb"><i style="width:'+p.toFixed(1)+'%"></i></span></span>';};
+ const h=bar(0,'t')+'<span>LEVEL / 12</span>'+bar(1,'r');if(h!==DM.tsS){DM.tsS=h;DM.ts.innerHTML=h;}};}
+{const m1=mpCliMsg;mpCliMsg=function(m){const r=m1.apply(this,arguments);if(m&&m.t==='s'&&m.esc&&MP.gm==='esc'&&NET.socket)try{tdmTS();}catch(e){}return r;};}
+{const h1=xHud;xHud=function(){const r=h1.apply(this,arguments);if(MP.cl&&NET.socket&&MP.gm==='esc'&&MP.st==='game')try{setT('xSub','Escalation · '+((typeof F_MAPN!=='undefined'&&F_MAPN[FV.map])||'Ascent')+' · first to the last level');}catch(e){}return r;};}
+{const l1=dmLB;dmLB=function(){const r=l1.apply(this,arguments);if(MP.cl&&NET.socket&&MP.gm==='esc'&&DM.lb)try{const h=DM.lb.querySelector('.x-dmlb__h');if(h)h.textContent='ESCALATION · kills';}catch(e){}return r;};}
 // Team score (mpsweep): a human who leaves hands the seat to a bot with 0 kills (a rejoin starts at 0 again) while the server
 // keeps the team score, but tdmTot summed the units still in the room: the top HUD and the end screen dropped the leaver's
 // kills (a match the team led could end as a Defeat). The server's team score (ts, own team first here) is the total; a
