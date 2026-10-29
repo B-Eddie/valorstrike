@@ -99,4 +99,8 @@ const next=(s,w)=>{s.finishRound(w,'Attackers eliminated');for(let i=0;i<200&&s.
  // the leader leaving cancels a queue
  const code2='PARTYB',X=new Cl('Lead').hook({create:1,code:code2,mode:'dm',map:'ascent'});await until(()=>X.room,8000,'room2');const Y=new Cl('Mate').hook({code:code2});await until(()=>Y.room&&Y.room.pl.length===2,8000,'join2');X.send({t:'queue'});await until(()=>Y.room.q>0,2000,'q2');X.send({t:'bye'});await until(()=>Y.last('qx'),3000,'leader left');assert.match(Y.last('qx').why,/leader left/);assert(Y.room.pl.find(p=>p.n===Y.room.pl[0].n).h===1,'the member becomes leader');
  note('worker: health modes / features, leader-only switching with re-seating and new ids, live room to members, queue countdown, cancel on mode change / leader cancel / leader leaving, queued start uses mode + map');}
+// ---- team score in the frame (mpsweep): ts = sim.scores, kept when the scorer leaves (the page summed the units in the room) ----
+for(const m of ['tdm','esc']){seed=9;const s=createSim(W,m,'ascent');s.random=rnd;const a=s.add('A','Jett'),b=s.add('C','Sage');s.start(false);s.scores=[7,3];
+ assert.deepEqual(s.snapshot().ts,[7,3],m+': frame carries the team score');const i=s.units.indexOf(a);s.units.splice(i,1);assert.deepEqual(s.snapshot().ts,[7,3],m+': team score stays when its scorer leaves');}
+note('team score (ts) in TDM / Escalation frames, kept when the scorer leaves');
 console.log('test-modes: PASS\n  '+out.join('\n  '));
