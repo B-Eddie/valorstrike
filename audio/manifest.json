@@ -585,26 +585,28 @@
    ]
   },
   "standard/Knife/knife": {
-   "url": "audio/standard-Knife-knife.afdc87f0cd98.mp3",
-   "sha256": "afdc87f0cd9884366ff11d0c00309f3c06bc0a630896d86ff9fc0d8d1ef3af9e",
-   "bytes": 5789,
-   "duration": 0.4,
-   "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/aefe0720-5997-4a4e-8b6c-56a0d00573eb_default_universal.mp4",
-   "cut": [
-    0.6554920634920635,
-    0.4
-   ]
+   "url": "audio/standard-Knife-knife.7ecc9c0c4d3c.mp3",
+   "sha256": "7ecc9c0c4d3c56533b9d2411b158df1b351814390670450c08a83ef21ae3f4e5",
+   "bytes": 4514,
+   "duration": 0.150476,
+   "source": "https://raw.githubusercontent.com/Jai-R-Mehta/VallyBoard/e8630a8940f0840ef584062abe1f54e1a34696d2/app/src/main/res/raw/knifeswing.mp3",
+   "sourceRepository": "Jai-R-Mehta/VallyBoard",
+   "sourceCommit": "e8630a8940f0840ef584062abe1f54e1a34696d2",
+   "sourcePath": "app/src/main/res/raw/knifeswing.mp3",
+   "sourceBlobSha1": "cc0ac4cbe8041a2c2a409435e2109c0bff854839",
+   "conversion": "none; original MP3 bytes"
   },
   "standard/Knife/equip": {
-   "url": "audio/standard-Knife-equip.d2fa1858b1ed.mp3",
-   "sha256": "d2fa1858b1ed511010db43cd6a56185835bf10c4da5e43da6a94925e02a0d590",
-   "bytes": 9237,
-   "duration": 0.7,
-   "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/aefe0720-5997-4a4e-8b6c-56a0d00573eb_default_universal.mp4",
-   "cut": [
-    0.05,
-    0.7
-   ]
+   "url": "audio/standard-Knife-equip.be068e441fcb.mp3",
+   "sha256": "be068e441fcb6be362d1d26b0afcee5262db2d10033237d342b3ebb29e6c10d5",
+   "bytes": 5292,
+   "duration": 0.203469,
+   "source": "https://raw.githubusercontent.com/Jai-R-Mehta/VallyBoard/e8630a8940f0840ef584062abe1f54e1a34696d2/app/src/main/res/raw/knifepullout.mp3",
+   "sourceRepository": "Jai-R-Mehta/VallyBoard",
+   "sourceCommit": "e8630a8940f0840ef584062abe1f54e1a34696d2",
+   "sourcePath": "app/src/main/res/raw/knifepullout.mp3",
+   "sourceBlobSha1": "39634c951930ebf94eaccd5e4f8707f2718c376f",
+   "conversion": "none; original MP3 bytes"
   },
   "standard/Knife/inspect": {
    "url": "audio/standard-Knife-inspect.d2eb59933de2.mp3",
@@ -3269,15 +3271,16 @@
    ]
   },
   "ui/click_001": {
-   "url": "audio/ui-click_001.b4f701b1e2cd.mp3",
-   "sha256": "b4f701b1e2cdd3c79c013b59bddc4f39ae0a667321d5312fd159028ab44d20fc",
-   "bytes": 1924,
-   "duration": 0.09712,
-   "source": "https://kenney.nl/media/pages/assets/interface-sounds/fa43c1dd4d-1677589452/kenney_interface-sounds.zip",
-   "cut": [
-    0,
-    null
-   ]
+   "url": "audio/ui-click_001.d12426a85fb8.mp3",
+   "sha256": "d12426a85fb8f08a6c18d8713017d5bb249e63e3e471f170e6772ab4f6100c62",
+   "bytes": 2156,
+   "duration": 0.089375,
+   "source": "https://raw.githubusercontent.com/Dartsgame974/SpikeMedia/0d0505fc199f3915c6db2d51864b091dd6e4f7b5/Valorantek/SFX/SFX/Shop%20In%20Game/ui_menu_button_click_03%20%28SFX%29.mp3",
+   "sourceRepository": "Dartsgame974/SpikeMedia",
+   "sourceCommit": "0d0505fc199f3915c6db2d51864b091dd6e4f7b5",
+   "sourcePath": "Valorantek/SFX/SFX/Shop In Game/ui_menu_button_click_03 (SFX).mp3",
+   "sourceBlobSha1": "e3ecb06436086b24d2fe47830bdd1152102013ed",
+   "conversion": "none; original MP3 bytes"
   },
   "ui/click_002": {
    "url": "audio/ui-click_002.85d698b60c62.mp3",
@@ -5546,15 +5549,16 @@
    ]
   },
   "ability/tShot": {
-   "url": "audio/ability-tShot.8c1ff2833b7e.mp3",
-   "sha256": "8c1ff2833b7e974281799e8cc44be2c1a1c8cbb31f99672e1cd900ce41e8f686",
-   "bytes": 21452,
-   "duration": 1.720272,
-   "source": "https://wiki.playvalorant.com/en-us/images/Turret_Showcase.mp4?2d3b3",
-   "cut": [
-    7.579755102040816,
-    2.0
-   ]
+   "url": "audio/ability-tShot.2fb9bc4c9f4f.mp3",
+   "sha256": "2fb9bc4c9f4f0a93f519963eac22d0af85fd82bc8d0234cc9d10c52a0430716b",
+   "bytes": 11324,
+   "duration": 1.2,
+   "source": "https://raw.githubusercontent.com/Dartsgame974/SpikeMedia/0d0505fc199f3915c6db2d51864b091dd6e4f7b5/Characters/Events_Char_Killjoy_SFX/Abilities/Turret/Characters/_Char_Killjoy/Turret/Killjoy_Abil_Turret_Fire_Front_01%20%28SFX%29.mp3",
+   "sourceRepository": "Dartsgame974/SpikeMedia",
+   "sourceCommit": "0d0505fc199f3915c6db2d51864b091dd6e4f7b5",
+   "sourcePath": "Characters/Events_Char_Killjoy_SFX/Abilities/Turret/Characters/_Char_Killjoy/Turret/Killjoy_Abil_Turret_Fire_Front_01 (SFX).mp3",
+   "sourceBlobSha1": "b63d1cdcaecd859991d2981db2c2fc7d315de2cc",
+   "conversion": "none; original MP3 bytes"
   },
   "ability/alarm": {
    "url": "audio/ability-alarm.ba2ecd1e9758.mp3",
@@ -5579,15 +5583,16 @@
    ]
   },
   "ability/nano": {
-   "url": "audio/ability-nano.c760abc266ab.mp3",
-   "sha256": "c760abc266ab99561418c671a366560f57a3317354222c134be48c0b5e4ca2f4",
-   "bytes": 24901,
-   "duration": 2.0,
-   "source": "https://wiki.playvalorant.com/en-us/images/Nanoswarm_Showcase.mp4?2fb10",
-   "cut": [
-    5.773859410430839,
-    2.0
-   ]
+   "url": "audio/ability-nano.d82e8d65c371.mp3",
+   "sha256": "d82e8d65c3716e3fbe7bc2899966ffeb2e2410a32872cb455cabcc32c3108b1e",
+   "bytes": 21068,
+   "duration": 1.066667,
+   "source": "https://raw.githubusercontent.com/Dartsgame974/SpikeMedia/0d0505fc199f3915c6db2d51864b091dd6e4f7b5/Characters/Events_Char_Killjoy_SFX/Abilities/Swarm/Characters/_Char_Killjoy/Nanoswarm/Killjoy_Abil_NanoSwarm_Explode_01%20%28SFX%29.mp3",
+   "sourceRepository": "Dartsgame974/SpikeMedia",
+   "sourceCommit": "0d0505fc199f3915c6db2d51864b091dd6e4f7b5",
+   "sourcePath": "Characters/Events_Char_Killjoy_SFX/Abilities/Swarm/Characters/_Char_Killjoy/Nanoswarm/Killjoy_Abil_NanoSwarm_Explode_01 (SFX).mp3",
+   "sourceBlobSha1": "a0c378d7e6353ffbb6b5192976bf156a708baeff",
+   "conversion": "none; original MP3 bytes"
   },
   "ability/lockdown": {
    "url": "audio/ability-lockdown.fb36111ff37e.mp3",
@@ -5599,6 +5604,366 @@
     6.167963718820862,
     2.0
    ]
+  },
+  "ability/dash": {
+   "url": "audio/ability-dash.a97c9fa62b96.mp3",
+   "sha256": "a97c9fa62b964c341974f1cdb6306b24833273a1c4c7c653c04f07f8f72142ad",
+   "bytes": 20444,
+   "duration": 1.009813,
+   "source": "https://raw.githubusercontent.com/Dartsgame974/SpikeMedia/0d0505fc199f3915c6db2d51864b091dd6e4f7b5/Characters/Events_Char_Wushu_SFX/Abilities/E/Characters/_Char_Wushu/E/Wushu_AbilE_Forward_1P_01%20%28SFX%29.mp3",
+   "sourceRepository": "Dartsgame974/SpikeMedia",
+   "sourceCommit": "0d0505fc199f3915c6db2d51864b091dd6e4f7b5",
+   "sourcePath": "Characters/Events_Char_Wushu_SFX/Abilities/E/Characters/_Char_Wushu/E/Wushu_AbilE_Forward_1P_01 (SFX).mp3",
+   "sourceBlobSha1": "c21f96969990179a962f8fe8ab9a4ce3f9ebfd57",
+   "conversion": "none; original MP3 bytes"
+  },
+  "ability/updraft": {
+   "url": "audio/ability-updraft.dd83b2e283f6.mp3",
+   "sha256": "dd83b2e283f6f1a288c147dbfbdce662102b53d8cc30dd9da53c3c209fd92402",
+   "bytes": 46316,
+   "duration": 2.230958,
+   "source": "https://raw.githubusercontent.com/Dartsgame974/SpikeMedia/0d0505fc199f3915c6db2d51864b091dd6e4f7b5/Characters/Events_Char_Wushu_SFX/Abilities/Q/Characters/_Char_Wushu/Q/Wushu_AbilQ_Cast_1P_01%20%28SFX%29.mp3",
+   "sourceRepository": "Dartsgame974/SpikeMedia",
+   "sourceCommit": "0d0505fc199f3915c6db2d51864b091dd6e4f7b5",
+   "sourcePath": "Characters/Events_Char_Wushu_SFX/Abilities/Q/Characters/_Char_Wushu/Q/Wushu_AbilQ_Cast_1P_01 (SFX).mp3",
+   "sourceBlobSha1": "e1950dcc47c5b28f011f23f58390cc123c03e0a9",
+   "conversion": "none; original MP3 bytes"
+  },
+  "ability/bsDraw": {
+   "url": "audio/ability-bsDraw.d7add5553061.mp3",
+   "sha256": "d7add5553061d028373eabc5644fdbb77db89feb477b67325242fcb8de251df3",
+   "bytes": 52820,
+   "duration": 2.46625,
+   "source": "https://raw.githubusercontent.com/Dartsgame974/SpikeMedia/0d0505fc199f3915c6db2d51864b091dd6e4f7b5/Characters/Events_Char_Wushu_SFX/Abilities/X/Characters/_Char_Wushu/Beta/Wushu_AbilX_Equip_1P_01%20%28SFX%29.mp3",
+   "sourceRepository": "Dartsgame974/SpikeMedia",
+   "sourceCommit": "0d0505fc199f3915c6db2d51864b091dd6e4f7b5",
+   "sourcePath": "Characters/Events_Char_Wushu_SFX/Abilities/X/Characters/_Char_Wushu/Beta/Wushu_AbilX_Equip_1P_01 (SFX).mp3",
+   "sourceBlobSha1": "5feebeb9f012749273988fde32660841b791e463",
+   "conversion": "none; original MP3 bytes"
+  },
+  "ability/bsThrow": {
+   "url": "audio/ability-bsThrow.bab6801e9af9.mp3",
+   "sha256": "bab6801e9af9abf85526d7494a8fdcd0d66e46e39b3002c0b2f8670b8bdd3433",
+   "bytes": 12284,
+   "duration": 0.500167,
+   "source": "https://raw.githubusercontent.com/Dartsgame974/SpikeMedia/0d0505fc199f3915c6db2d51864b091dd6e4f7b5/Characters/Events_Char_Wushu_SFX/Abilities/X/Characters/_Char_Wushu/Beta/Wushu_AbilX_Cast_Dagger_1P_01%20%28SFX%29.mp3",
+   "sourceRepository": "Dartsgame974/SpikeMedia",
+   "sourceCommit": "0d0505fc199f3915c6db2d51864b091dd6e4f7b5",
+   "sourcePath": "Characters/Events_Char_Wushu_SFX/Abilities/X/Characters/_Char_Wushu/Beta/Wushu_AbilX_Cast_Dagger_1P_01 (SFX).mp3",
+   "sourceBlobSha1": "a96dfde60c9c3b6b0f6d50539f2be5c76c590148",
+   "conversion": "none; original MP3 bytes"
+  },
+  "ability/cbThrow": {
+   "url": "audio/ability-cbThrow.3619bfcbfdf5.mp3",
+   "sha256": "3619bfcbfdf5a0b864f43e0cb76a105491f473dd86ba2a23548379b18215839a",
+   "bytes": 6903,
+   "duration": 0.5139,
+   "source": "https://raw.githubusercontent.com/Dartsgame974/SpikeMedia/0d0505fc199f3915c6db2d51864b091dd6e4f7b5/Characters/Events_Char_Wushu_SFX/Abilities/Grenade/Characters/_Char_Wushu/Grenade/Wushu_Grenade_Cast_3P_01%20%28SFX%29.mp3",
+   "sourceRepository": "Dartsgame974/SpikeMedia",
+   "sourceCommit": "0d0505fc199f3915c6db2d51864b091dd6e4f7b5",
+   "sourcePath": "Characters/Events_Char_Wushu_SFX/Abilities/Grenade/Characters/_Char_Wushu/Grenade/Wushu_Grenade_Cast_3P_01 (SFX).mp3",
+   "sourceBlobSha1": "389d5c15942172d70b7a4a50fbde5673daa069f6",
+   "conversion": "none; original MP3 bytes"
+  },
+  "ability/cbPop": {
+   "url": "audio/ability-cbPop.914988521d38.mp3",
+   "sha256": "914988521d38fdbb12570c764bf0ca4605885d3aa8bc21f54c3a4ef4dc30deee",
+   "bytes": 38292,
+   "duration": 1.693878,
+   "source": "https://raw.githubusercontent.com/Dartsgame974/SpikeMedia/0d0505fc199f3915c6db2d51864b091dd6e4f7b5/Characters/Events_Char_Wushu_SFX/Abilities/Grenade/Characters/_Char_Wushu/Grenade/Wushu_Grenade_Explode_01%20%28SFX%29.mp3",
+   "sourceRepository": "Dartsgame974/SpikeMedia",
+   "sourceCommit": "0d0505fc199f3915c6db2d51864b091dd6e4f7b5",
+   "sourcePath": "Characters/Events_Char_Wushu_SFX/Abilities/Grenade/Characters/_Char_Wushu/Grenade/Wushu_Grenade_Explode_01 (SFX).mp3",
+   "sourceBlobSha1": "b8f1f73b0e60f79913ddec811c24ab0a6e7d7b73",
+   "conversion": "none; original MP3 bytes"
+  },
+  "ability/bow": {
+   "url": "audio/ability-bow.2a2288681dd6.mp3",
+   "sha256": "2a2288681dd660e0278b9519d228c2d69235f32519d192f4b82eac5be87a7633",
+   "bytes": 20300,
+   "duration": 1.181333,
+   "source": "https://raw.githubusercontent.com/Dartsgame974/SpikeMedia/0d0505fc199f3915c6db2d51864b091dd6e4f7b5/Characters/Events_Char_Hunter_SFX/Abilities/Characters/_Char_Hunter/TEMP/Abil_Q/Hunter_AbilQ_Cast_01%20%28SFX%29.mp3",
+   "sourceRepository": "Dartsgame974/SpikeMedia",
+   "sourceCommit": "0d0505fc199f3915c6db2d51864b091dd6e4f7b5",
+   "sourcePath": "Characters/Events_Char_Hunter_SFX/Abilities/Characters/_Char_Hunter/TEMP/Abil_Q/Hunter_AbilQ_Cast_01 (SFX).mp3",
+   "sourceBlobSha1": "f158db4691227b8e26d586d75b85679d336fc076",
+   "conversion": "none; original MP3 bytes"
+  },
+  "ability/shock": {
+   "url": "audio/ability-shock.5bcc66a79d3c.mp3",
+   "sha256": "5bcc66a79d3c43917a3ebf5e9921f2d244af83f9bd99b414732ec3e3f70596ae",
+   "bytes": 24428,
+   "duration": 1.981563,
+   "source": "https://raw.githubusercontent.com/Dartsgame974/SpikeMedia/0d0505fc199f3915c6db2d51864b091dd6e4f7b5/Characters/Events_Char_Hunter_SFX/Abilities/Characters/_Char_Hunter/Abil_4/TEMP/Hunter_S0_AB_4_ShockBolt_Explode_01%20%28SFX%29.mp3",
+   "sourceRepository": "Dartsgame974/SpikeMedia",
+   "sourceCommit": "0d0505fc199f3915c6db2d51864b091dd6e4f7b5",
+   "sourcePath": "Characters/Events_Char_Hunter_SFX/Abilities/Characters/_Char_Hunter/Abil_4/TEMP/Hunter_S0_AB_4_ShockBolt_Explode_01 (SFX).mp3",
+   "sourceBlobSha1": "12ee4d97d6b467ea6163a2d6a4fe5d4da2cb8405",
+   "conversion": "none; original MP3 bytes"
+  },
+  "ability/recon": {
+   "url": "audio/ability-recon.6b85cb74c51d.mp3",
+   "sha256": "6b85cb74c51dbf24b5fde43d2ffaf77d489c560f119b52746d3e73d298982af0",
+   "bytes": 54212,
+   "duration": 2.237792,
+   "source": "https://raw.githubusercontent.com/Dartsgame974/SpikeMedia/0d0505fc199f3915c6db2d51864b091dd6e4f7b5/Characters/Events_Char_Hunter_SFX/Abilities/Characters/_Char_Joules/Abil_Q/Abil_Joules_Q_Sonar_Ping_01%20%28SFX%29.mp3",
+   "sourceRepository": "Dartsgame974/SpikeMedia",
+   "sourceCommit": "0d0505fc199f3915c6db2d51864b091dd6e4f7b5",
+   "sourcePath": "Characters/Events_Char_Hunter_SFX/Abilities/Characters/_Char_Joules/Abil_Q/Abil_Joules_Q_Sonar_Ping_01 (SFX).mp3",
+   "sourceBlobSha1": "fe7751910333c381a4b850c96ba7b687499c48be",
+   "conversion": "none; original MP3 bytes"
+  },
+  "ability/drone": {
+   "url": "audio/ability-drone.594a1e4bf692.mp3",
+   "sha256": "594a1e4bf692db72b5da26be0caa8326f28df91dfa62a21453d7ff7f4fdfd430",
+   "bytes": 29060,
+   "duration": 1.433333,
+   "source": "https://raw.githubusercontent.com/Dartsgame974/SpikeMedia/0d0505fc199f3915c6db2d51864b091dd6e4f7b5/Characters/Events_Char_Hunter_SFX/Abilities/E_ReconDrone/Characters/_Char_Hunter/Drone/Hunter_ReconDrone_Deploy_Element_1P_01%20%28SFX%29.mp3",
+   "sourceRepository": "Dartsgame974/SpikeMedia",
+   "sourceCommit": "0d0505fc199f3915c6db2d51864b091dd6e4f7b5",
+   "sourcePath": "Characters/Events_Char_Hunter_SFX/Abilities/E_ReconDrone/Characters/_Char_Hunter/Drone/Hunter_ReconDrone_Deploy_Element_1P_01 (SFX).mp3",
+   "sourceBlobSha1": "a21a4ec2319a4bf87f9806a7d9430ff4138b9a7e",
+   "conversion": "none; original MP3 bytes"
+  },
+  "ability/omenStep": {
+   "url": "audio/ability-omenStep.85917b01dc8c.mp3",
+   "sha256": "85917b01dc8c4f53cc8831e575e7e502197c4af31d42eb4a9ef60b48c2c69c8b",
+   "bytes": 77780,
+   "duration": 3.825625,
+   "source": "https://raw.githubusercontent.com/Dartsgame974/SpikeMedia/0d0505fc199f3915c6db2d51864b091dd6e4f7b5/Characters/Events_Char_Wraith_SFX/Abil_E_ShadowStep/Characters/_Char_Wraith/_Wraith_E_ShortTeleport/Wraith_Teleport_1p_Depart_and_Arrive%20%28SFX%29.mp3",
+   "sourceRepository": "Dartsgame974/SpikeMedia",
+   "sourceCommit": "0d0505fc199f3915c6db2d51864b091dd6e4f7b5",
+   "sourcePath": "Characters/Events_Char_Wraith_SFX/Abil_E_ShadowStep/Characters/_Char_Wraith/_Wraith_E_ShortTeleport/Wraith_Teleport_1p_Depart_and_Arrive (SFX).mp3",
+   "sourceBlobSha1": "2933910246747efe3d7262588ab3450484fabe6d",
+   "conversion": "none; original MP3 bytes"
+  },
+  "ability/paranoia": {
+   "url": "audio/ability-paranoia.e6bfaf919e7c.mp3",
+   "sha256": "e6bfaf919e7cda15788247f852b682b2a1f56aaac8e4b80b59a2d4b6e1bb133b",
+   "bytes": 68252,
+   "duration": 3.257292,
+   "source": "https://raw.githubusercontent.com/Dartsgame974/SpikeMedia/0d0505fc199f3915c6db2d51864b091dd6e4f7b5/Characters/Events_Char_Wraith_SFX/Abil_Q_DarkVisage/Characters/_Char_Wraith/_Wraith_Abil_Q/Wraith_Q_Cast_1P%20%28SFX%29.mp3",
+   "sourceRepository": "Dartsgame974/SpikeMedia",
+   "sourceCommit": "0d0505fc199f3915c6db2d51864b091dd6e4f7b5",
+   "sourcePath": "Characters/Events_Char_Wraith_SFX/Abil_Q_DarkVisage/Characters/_Char_Wraith/_Wraith_Abil_Q/Wraith_Q_Cast_1P (SFX).mp3",
+   "sourceBlobSha1": "24e3385a0defbe1b9646d8c31e769d51a84c75ac",
+   "conversion": "none; original MP3 bytes"
+  },
+  "ability/shadows": {
+   "url": "audio/ability-shadows.3d2b80ff078d.mp3",
+   "sha256": "3d2b80ff078db56da00c005ae56096751717ac173db19c17f6cd6e22ecf7a9d4",
+   "bytes": 53348,
+   "duration": 2.656813,
+   "source": "https://raw.githubusercontent.com/Dartsgame974/SpikeMedia/0d0505fc199f3915c6db2d51864b091dd6e4f7b5/Characters/Events_Char_Wraith_SFX/Abil_GlobalTeleport/Characters/_Char_Wraith/_Wraith_Abil_GlobalTeleport/Wraith_Abil_GlobalTeleport_Activate_1P%20%28SFX%29.mp3",
+   "sourceRepository": "Dartsgame974/SpikeMedia",
+   "sourceCommit": "0d0505fc199f3915c6db2d51864b091dd6e4f7b5",
+   "sourcePath": "Characters/Events_Char_Wraith_SFX/Abil_GlobalTeleport/Characters/_Char_Wraith/_Wraith_Abil_GlobalTeleport/Wraith_Abil_GlobalTeleport_Activate_1P (SFX).mp3",
+   "sourceBlobSha1": "3bcd949a64815a0f8af434fbca422583be1805cb",
+   "conversion": "none; original MP3 bytes"
+  },
+  "ability/blaze": {
+   "url": "audio/ability-blaze.208f5001937c.mp3",
+   "sha256": "208f5001937c32d4aa03502e821549c766549656bae672adb59eccb9a34f6367",
+   "bytes": 27020,
+   "duration": 2.618396,
+   "source": "https://raw.githubusercontent.com/Dartsgame974/SpikeMedia/0d0505fc199f3915c6db2d51864b091dd6e4f7b5/Characters/Events_Char_Phoenix_SFX/Q/Characters/Phoenix/AbilQ/Phoenix_Wall_Form_TP_V2_A%20%28SFX%29.mp3",
+   "sourceRepository": "Dartsgame974/SpikeMedia",
+   "sourceCommit": "0d0505fc199f3915c6db2d51864b091dd6e4f7b5",
+   "sourcePath": "Characters/Events_Char_Phoenix_SFX/Q/Characters/Phoenix/AbilQ/Phoenix_Wall_Form_TP_V2_A (SFX).mp3",
+   "sourceBlobSha1": "a49660316a71687cb738365c98a5e04cf35a0e95",
+   "conversion": "none; original MP3 bytes"
+  },
+  "ability/rewind": {
+   "url": "audio/ability-rewind.0c5a0a9ce1ee.mp3",
+   "sha256": "0c5a0a9ce1ee0ee12b92ffcc20f31474e87b7b0183b09630c3491c89f5ae72ce",
+   "bytes": 58700,
+   "duration": 3.105729,
+   "source": "https://raw.githubusercontent.com/Dartsgame974/SpikeMedia/0d0505fc199f3915c6db2d51864b091dd6e4f7b5/Characters/Events_Char_Phoenix_SFX/X/Characters/Phoenix/AbilX/Phoenix_Ultimate_Cast_Comp_FP_V3%20%28SFX%29.mp3",
+   "sourceRepository": "Dartsgame974/SpikeMedia",
+   "sourceCommit": "0d0505fc199f3915c6db2d51864b091dd6e4f7b5",
+   "sourcePath": "Characters/Events_Char_Phoenix_SFX/X/Characters/Phoenix/AbilX/Phoenix_Ultimate_Cast_Comp_FP_V3 (SFX).mp3",
+   "sourceBlobSha1": "affc2ba0b11af260e3f8a26c7dd025cc4b186449",
+   "conversion": "none; original MP3 bytes"
+  },
+  "ability/rewindBack": {
+   "url": "audio/ability-rewindBack.1fdb445e3065.mp3",
+   "sha256": "1fdb445e30655cb073c5b764a6560539ea0afae423e82745ef7744cbd0d98dbf",
+   "bytes": 37724,
+   "duration": 1.745771,
+   "source": "https://raw.githubusercontent.com/Dartsgame974/SpikeMedia/0d0505fc199f3915c6db2d51864b091dd6e4f7b5/Characters/Events_Char_Phoenix_SFX/X/Characters/Phoenix/AbilX/Phoenix_Ultimate_FormReturn_Comp_FP%20%28SFX%29.mp3",
+   "sourceRepository": "Dartsgame974/SpikeMedia",
+   "sourceCommit": "0d0505fc199f3915c6db2d51864b091dd6e4f7b5",
+   "sourcePath": "Characters/Events_Char_Phoenix_SFX/X/Characters/Phoenix/AbilX/Phoenix_Ultimate_FormReturn_Comp_FP (SFX).mp3",
+   "sourceBlobSha1": "b53356731dd204757125eb1dea37e7139b0d94ae",
+   "conversion": "none; original MP3 bytes"
+  },
+  "ability/leer": {
+   "url": "audio/ability-leer.d9a97202a240.mp3",
+   "sha256": "d9a97202a2407c7dc88f57351cd12f52bbdb04d1133703f0c811ec6dd9d66e8c",
+   "bytes": 13532,
+   "duration": 0.560813,
+   "source": "https://raw.githubusercontent.com/Dartsgame974/SpikeMedia/0d0505fc199f3915c6db2d51864b091dd6e4f7b5/Characters/Events_Char_Vampire_SFX/AbilC/Characters/_Char_ResetCarry/Abil_C/Vampire_Nearsight_Cast_FP_V1%20%28SFX%29.mp3",
+   "sourceRepository": "Dartsgame974/SpikeMedia",
+   "sourceCommit": "0d0505fc199f3915c6db2d51864b091dd6e4f7b5",
+   "sourcePath": "Characters/Events_Char_Vampire_SFX/AbilC/Characters/_Char_ResetCarry/Abil_C/Vampire_Nearsight_Cast_FP_V1 (SFX).mp3",
+   "sourceBlobSha1": "b074f84702dfff647ba5b9111fe822dcc7b6f85a",
+   "conversion": "none; original MP3 bytes"
+  },
+  "ability/devour": {
+   "url": "audio/ability-devour.6ef7869c5d03.mp3",
+   "sha256": "6ef7869c5d0374a4dd86ab7f812b45512ccce3503d33b24e014275a50d01aede",
+   "bytes": 39524,
+   "duration": 1.6,
+   "source": "https://raw.githubusercontent.com/Dartsgame974/SpikeMedia/0d0505fc199f3915c6db2d51864b091dd6e4f7b5/Characters/Events_Char_Vampire_SFX/AbilQ/Characters/_Char_ResetCarry/Abil_Q/Vampire_BloodPoolHeal_Cast_1P_01%20%28SFX%29.mp3",
+   "sourceRepository": "Dartsgame974/SpikeMedia",
+   "sourceCommit": "0d0505fc199f3915c6db2d51864b091dd6e4f7b5",
+   "sourcePath": "Characters/Events_Char_Vampire_SFX/AbilQ/Characters/_Char_ResetCarry/Abil_Q/Vampire_BloodPoolHeal_Cast_1P_01 (SFX).mp3",
+   "sourceBlobSha1": "3e8d9bde5cea40a3ed46bf57c6879091c35dff65",
+   "conversion": "none; original MP3 bytes"
+  },
+  "ability/dismiss": {
+   "url": "audio/ability-dismiss.dbf1b284dfa3.mp3",
+   "sha256": "dbf1b284dfa3bd9da361f81954e49d1ec3c2c9327d1dc1712920822a290ed487",
+   "bytes": 39668,
+   "duration": 1.9,
+   "source": "https://raw.githubusercontent.com/Dartsgame974/SpikeMedia/0d0505fc199f3915c6db2d51864b091dd6e4f7b5/Characters/Events_Char_Vampire_SFX/AbilE/Characters/_Char_ResetCarry/Abil_E/Vampire_BloodPoolEscape_Cast_1P_01%20%28SFX%29.mp3",
+   "sourceRepository": "Dartsgame974/SpikeMedia",
+   "sourceCommit": "0d0505fc199f3915c6db2d51864b091dd6e4f7b5",
+   "sourcePath": "Characters/Events_Char_Vampire_SFX/AbilE/Characters/_Char_ResetCarry/Abil_E/Vampire_BloodPoolEscape_Cast_1P_01 (SFX).mp3",
+   "sourceBlobSha1": "c36e045f2510b8069fbebfa5ea2cfe9bd53106dd",
+   "conversion": "none; original MP3 bytes"
+  },
+  "ability/empress": {
+   "url": "audio/ability-empress.217d95bc4e76.mp3",
+   "sha256": "217d95bc4e761ecc4fe028137d118f615b05df3eb0c815c0728a5d8cf878de22",
+   "bytes": 75428,
+   "duration": 2.8,
+   "source": "https://raw.githubusercontent.com/Dartsgame974/SpikeMedia/0d0505fc199f3915c6db2d51864b091dd6e4f7b5/Characters/Events_Char_Vampire_SFX/AbilX/Characters/_Char_ResetCarry/Abil_X/Vampire_AbilX_Cast_1P_01%20%28SFX%29.mp3",
+   "sourceRepository": "Dartsgame974/SpikeMedia",
+   "sourceCommit": "0d0505fc199f3915c6db2d51864b091dd6e4f7b5",
+   "sourcePath": "Characters/Events_Char_Vampire_SFX/AbilX/Characters/_Char_ResetCarry/Abil_X/Vampire_AbilX_Cast_1P_01 (SFX).mp3",
+   "sourceBlobSha1": "ff15b9b45463cdd21ab05d0cab3b615ae85dd193",
+   "conversion": "none; original MP3 bytes"
+  },
+  "ability/slow": {
+   "url": "audio/ability-slow.60c38c54921b.mp3",
+   "sha256": "60c38c54921bba6657b6422e5050266449fa681d3eb8e9c8248af0ddb66623d9",
+   "bytes": 33452,
+   "duration": 2.909083,
+   "source": "https://raw.githubusercontent.com/Dartsgame974/SpikeMedia/0d0505fc199f3915c6db2d51864b091dd6e4f7b5/Characters/Events_Char_Thorne_SFX/4/Characters/_Char_Thorne/Slow/thorne_abil4_explode_01%20%28SFX%29.mp3",
+   "sourceRepository": "Dartsgame974/SpikeMedia",
+   "sourceCommit": "0d0505fc199f3915c6db2d51864b091dd6e4f7b5",
+   "sourcePath": "Characters/Events_Char_Thorne_SFX/4/Characters/_Char_Thorne/Slow/thorne_abil4_explode_01 (SFX).mp3",
+   "sourceBlobSha1": "52ed5e45046f7c5a419a4b15ffd7201b4557e8a8",
+   "conversion": "none; original MP3 bytes"
+  },
+  "ability/choir": {
+   "url": "audio/ability-choir.61a3c081b42e.mp3",
+   "sha256": "61a3c081b42eb30607f38bc4d8bb19d310ac4675fb776fe94fce6938f1e2caca",
+   "bytes": 127700,
+   "duration": 5.614396,
+   "source": "https://raw.githubusercontent.com/Dartsgame974/SpikeMedia/0d0505fc199f3915c6db2d51864b091dd6e4f7b5/Characters/Events_Char_Thorne_SFX/X/Characters/_Char_Thorne/Res/Thorne_Abil_Res_01%20%28SFX%29.mp3",
+   "sourceRepository": "Dartsgame974/SpikeMedia",
+   "sourceCommit": "0d0505fc199f3915c6db2d51864b091dd6e4f7b5",
+   "sourcePath": "Characters/Events_Char_Thorne_SFX/X/Characters/_Char_Thorne/Res/Thorne_Abil_Res_01 (SFX).mp3",
+   "sourceBlobSha1": "8ffdad30d9d439758f36a8a69dba181ea3e17194",
+   "conversion": "none; original MP3 bytes"
+  },
+  "event/roundLoss": {
+   "url": "audio/event-roundLoss.8890e9d54d02.mp3",
+   "sha256": "8890e9d54d02530dc14b315338a2f18dada6a9ced32c67a5764a07a59dca7d11",
+   "bytes": 75572,
+   "duration": 4.050229,
+   "source": "https://raw.githubusercontent.com/Dartsgame974/SpikeMedia/0d0505fc199f3915c6db2d51864b091dd6e4f7b5/Valorantek/SFX/SFX/Round/UI_RoundLost_01%20%28SFX%29.mp3",
+   "sourceRepository": "Dartsgame974/SpikeMedia",
+   "sourceCommit": "0d0505fc199f3915c6db2d51864b091dd6e4f7b5",
+   "sourcePath": "Valorantek/SFX/SFX/Round/UI_RoundLost_01 (SFX).mp3",
+   "sourceBlobSha1": "cc5ba427b7941bd04f15db471733fb0c8192c076",
+   "conversion": "none; original MP3 bytes"
+  },
+  "event/matchVictory": {
+   "url": "audio/event-matchVictory.d976227d366b.mp3",
+   "sha256": "d976227d366bd1409151e29e50bffbedc116cfa8034ddf67372dcb062174cbdb",
+   "bytes": 143876,
+   "duration": 9.475875,
+   "source": "https://raw.githubusercontent.com/Dartsgame974/SpikeMedia/0d0505fc199f3915c6db2d51864b091dd6e4f7b5/Valorantek/SFX/SFX/Win%20%26%20Loose/UI_EOG_Victory_SFX_V2%20%28SFX%29.mp3",
+   "sourceRepository": "Dartsgame974/SpikeMedia",
+   "sourceCommit": "0d0505fc199f3915c6db2d51864b091dd6e4f7b5",
+   "sourcePath": "Valorantek/SFX/SFX/Win & Loose/UI_EOG_Victory_SFX_V2 (SFX).mp3",
+   "sourceBlobSha1": "a2844f4f96ddb9ae9b8414b73e91c205f756fb5d",
+   "conversion": "none; original MP3 bytes"
+  },
+  "event/matchDefeat": {
+   "url": "audio/event-matchDefeat.e1e4d7572487.mp3",
+   "sha256": "e1e4d7572487ed9b8cd39ed146eaf975e2e26e26703be9ec2b9a339aba90b1d5",
+   "bytes": 126596,
+   "duration": 7.524875,
+   "source": "https://raw.githubusercontent.com/Dartsgame974/SpikeMedia/0d0505fc199f3915c6db2d51864b091dd6e4f7b5/Valorantek/SFX/SFX/Win%20%26%20Loose/UI_EOG_Defeat_SFX_V2%20%28SFX%29.mp3",
+   "sourceRepository": "Dartsgame974/SpikeMedia",
+   "sourceCommit": "0d0505fc199f3915c6db2d51864b091dd6e4f7b5",
+   "sourcePath": "Valorantek/SFX/SFX/Win & Loose/UI_EOG_Defeat_SFX_V2 (SFX).mp3",
+   "sourceBlobSha1": "06c99da813aae940ecd7e45644a3793d11e1a059",
+   "conversion": "none; original MP3 bytes"
+  },
+  "feedback/kill": {
+   "url": "audio/feedback-kill.582584f91be7.mp3",
+   "sha256": "582584f91be75335741f92132a2d2f56b32fde778501297c079f962520b72dbf",
+   "bytes": 34364,
+   "duration": 2.154667,
+   "source": "https://raw.githubusercontent.com/Dartsgame974/SpikeMedia/0d0505fc199f3915c6db2d51864b091dd6e4f7b5/Valorantek/SFX/SFX/Kill/Ares_UI_Stinger_KillConfirm_03_2015_09_21%20%28SFX%29.mp3",
+   "sourceRepository": "Dartsgame974/SpikeMedia",
+   "sourceCommit": "0d0505fc199f3915c6db2d51864b091dd6e4f7b5",
+   "sourcePath": "Valorantek/SFX/SFX/Kill/Ares_UI_Stinger_KillConfirm_03_2015_09_21 (SFX).mp3",
+   "sourceBlobSha1": "901a0dcec836d4be5a94d243cec7ce4b5698484e",
+   "conversion": "none; original MP3 bytes"
+  },
+  "feedback/body": {
+   "url": "audio/feedback-body.f1abc801971a.mp3",
+   "sha256": "f1abc801971a008715b8214104f341d0514c4f70499fd10663a671117837a465",
+   "bytes": 5084,
+   "duration": 0.362667,
+   "source": "https://raw.githubusercontent.com/Dartsgame974/SpikeMedia/0d0505fc199f3915c6db2d51864b091dd6e4f7b5/Characters/Events_Char_Aggrobot_SFX/Aggrobot_Shared/Shared/Weapons/_Bullet_Hit_Confirms/Ares_Impact_Bullet_Flesh_1_2015_03_17b%20%28SFX%29.mp3",
+   "sourceRepository": "Dartsgame974/SpikeMedia",
+   "sourceCommit": "0d0505fc199f3915c6db2d51864b091dd6e4f7b5",
+   "sourcePath": "Characters/Events_Char_Aggrobot_SFX/Aggrobot_Shared/Shared/Weapons/_Bullet_Hit_Confirms/Ares_Impact_Bullet_Flesh_1_2015_03_17b (SFX).mp3",
+   "sourceBlobSha1": "d570fa8f5a9a517b933ebb6c87be415877428160",
+   "conversion": "none; original MP3 bytes"
+  },
+  "feedback/damage": {
+   "url": "audio/feedback-damage.409644b54f91.mp3",
+   "sha256": "409644b54f916308588b1b7b630d212c83a770e5c714aa5f3214bf5a8bced2da",
+   "bytes": 9356,
+   "duration": 0.484146,
+   "source": "https://raw.githubusercontent.com/Dartsgame974/SpikeMedia/0d0505fc199f3915c6db2d51864b091dd6e4f7b5/Characters/Events_Char_Killjoy_SFX/Abilities/Turret/Weapons/_Bullet_Hit_Confirms/Bullet_Impact_Victim/Impact_Bullet_Flesh_Blood_Victim_01%20%28SFX%29.mp3",
+   "sourceRepository": "Dartsgame974/SpikeMedia",
+   "sourceCommit": "0d0505fc199f3915c6db2d51864b091dd6e4f7b5",
+   "sourcePath": "Characters/Events_Char_Killjoy_SFX/Abilities/Turret/Weapons/_Bullet_Hit_Confirms/Bullet_Impact_Victim/Impact_Bullet_Flesh_Blood_Victim_01 (SFX).mp3",
+   "sourceBlobSha1": "af8331dfa9a4c0470142fd27b33a06faeef5ae60",
+   "conversion": "none; original MP3 bytes"
+  },
+  "event/boom": {
+   "url": "audio/event-boom.bab2ff66d45c.mp3",
+   "sha256": "bab2ff66d45c7d81bf2b394274d99026db1a52db253334f2fbe4641396484399",
+   "bytes": 31292,
+   "duration": 2.437938,
+   "source": "https://raw.githubusercontent.com/Dartsgame974/SpikeMedia/0d0505fc199f3915c6db2d51864b091dd6e4f7b5/Valorantek/SFX/Spike/Operations/Rad_Trans_Stage_5%20%28SFX%29.mp3",
+   "sourceRepository": "Dartsgame974/SpikeMedia",
+   "sourceCommit": "0d0505fc199f3915c6db2d51864b091dd6e4f7b5",
+   "sourcePath": "Valorantek/SFX/Spike/Operations/Rad_Trans_Stage_5 (SFX).mp3",
+   "sourceBlobSha1": "bc86392c91b776816b0cdcd13e5b28d30c2b81d2",
+   "conversion": "none; original MP3 bytes"
+  },
+  "standard/Knife/knifeHeavy": {
+   "url": "audio/standard-Knife-knifeHeavy.bc7a18f6ba87.mp3",
+   "sha256": "bc7a18f6ba87a86ea434d7c88275e3e53493bc09a62bdb09e2083264c890e241",
+   "bytes": 5661,
+   "duration": 0.20542,
+   "source": "https://raw.githubusercontent.com/Jai-R-Mehta/VallyBoard/e8630a8940f0840ef584062abe1f54e1a34696d2/app/src/main/res/raw/knifestab.mp3",
+   "sourceRepository": "Jai-R-Mehta/VallyBoard",
+   "sourceCommit": "e8630a8940f0840ef584062abe1f54e1a34696d2",
+   "sourcePath": "app/src/main/res/raw/knifestab.mp3",
+   "sourceBlobSha1": "a9b24eaf4bad29551774f757424f011a0db0b6c6",
+   "conversion": "none; original MP3 bytes"
   }
  },
  "weapons": {
@@ -5695,7 +6060,8 @@
   "Knife": {
    "knife": "standard/Knife/knife",
    "equip": "standard/Knife/equip",
-   "inspect": "standard/Knife/inspect"
+   "inspect": "standard/Knife/inspect",
+   "knifeHeavy": "standard/Knife/knifeHeavy"
   }
  },
  "skins": {
@@ -5719,7 +6085,8 @@
    "Knife": {
     "knife": "prime/Knife/knife",
     "equip": "prime/Knife/equip",
-    "inspect": "prime/Knife/inspect"
+    "inspect": "prime/Knife/inspect",
+    "knifeHeavy": "prime/Knife/knife"
    }
   },
   "blastx": {
@@ -5750,14 +6117,16 @@
    "Knife": {
     "knife": "blastx/Knife/knife",
     "equip": "blastx/Knife/equip",
-    "inspect": "blastx/Knife/inspect"
+    "inspect": "blastx/Knife/inspect",
+    "knifeHeavy": "blastx/Knife/knife"
    }
   },
   "blackmarket": {
    "Knife": {
     "knife": "blackmarket/Knife/knife",
     "equip": "blackmarket/Knife/equip",
-    "inspect": "blackmarket/Knife/inspect"
+    "inspect": "blackmarket/Knife/inspect",
+    "knifeHeavy": "blackmarket/Knife/knife"
    }
   }
  },
@@ -5768,30 +6137,34 @@
   "nanoSet": "ability/nanoSet",
   "nano": "ability/nano",
   "lockdown": "ability/lockdown",
-  "dash": "scifi/thrusterFire_000",
-  "updraft": "scifi/thrusterFire_001",
-  "bsDraw": "scifi/laserRetro_002",
-  "bsThrow": "scifi/laserSmall_001",
-  "bow": "impact/impactWood_light_000",
-  "shock": "scifi/laserLarge_000",
-  "recon": "scifi/computerNoise_002",
-  "drone": "scifi/engineCircular_000",
-  "omenStep": "scifi/forceField_003",
-  "paranoia": "scifi/forceField_004",
-  "shadows": "scifi/spaceEngineSmall_000",
-  "blaze": "scifi/thrusterFire_003",
-  "rewind": "scifi/spaceEngine_000",
-  "rewindBack": "scifi/forceField_000",
-  "leer": "scifi/slime_000",
-  "devour": "scifi/forceField_001",
-  "dismiss": "scifi/forceField_003",
-  "empress": "scifi/spaceEngineLow_001",
-  "slow": "impact/impactGlass_medium_000",
-  "choir": "ui/confirmation_004"
+  "dash": "ability/dash",
+  "updraft": "ability/updraft",
+  "bsDraw": "ability/bsDraw",
+  "bsThrow": "ability/bsThrow",
+  "bow": "ability/bow",
+  "shock": "ability/shock",
+  "recon": "ability/recon",
+  "drone": "ability/drone",
+  "omenStep": "ability/omenStep",
+  "paranoia": "ability/paranoia",
+  "shadows": "ability/shadows",
+  "blaze": "ability/blaze",
+  "rewind": "ability/rewind",
+  "rewindBack": "ability/rewindBack",
+  "leer": "ability/leer",
+  "devour": "ability/devour",
+  "dismiss": "ability/dismiss",
+  "empress": "ability/empress",
+  "slow": "ability/slow",
+  "choir": "ability/choir",
+  "cbThrow": "ability/cbThrow",
+  "cbPop": "ability/cbPop"
  },
  "sources": {
   "Riot": "Original game audio extracted from publicly downloadable Riot skin previews and VALORANT Wiki media. \u00a9 Riot Games.",
   "Kenney": "Recorded CC0 impact, sci-fi and interface assets; license files alongside the audio.",
-  "OpenGameArt": "CC0 wind by SketchMan3 / JaggedStone and dripping water by Independent.nu / qubodup. Source pages: https://opengameart.org/content/wind-whoosh-loop and https://opengameart.org/content/dripping-water-loop."
+  "OpenGameArt": "CC0 wind by SketchMan3 / JaggedStone and dripping water by Independent.nu / qubodup. Source pages: https://opengameart.org/content/wind-whoosh-loop and https://opengameart.org/content/dripping-water-loop.",
+  "SpikeMedia": "Original VALORANT game audio from Dartsgame974/SpikeMedia; pinned source commit, path and Git blob hash per entry. Riot Games owns the game audio.",
+  "VallyBoard": "Standard knife swing/equip/stab from Jai-R-Mehta/VallyBoard; pinned source commit, path and Git blob hash per entry. Riot Games owns the game audio."
  }
 }

@@ -1,0 +1,74 @@
+{
+ "initial_mp3s": 509,
+ "final_mp3s": 539,
+ "initial_directory_files": 515,
+ "initial_audio_bytes": 7456088,
+ "final_audio_bytes": 8851708,
+ "existing_mp3_replaced": 5,
+ "new_mp3_slots": 30,
+ "retained_Riot_origin": 200,
+ "retained_generic": 304,
+ "slot_rows": 645,
+ "categories": {
+  "ability": {
+   "VALORANT-origin-cut-review": 4,
+   "replaced": 2,
+   "added": 22
+  },
+  "ambient": {
+   "not-found": 2
+  },
+  "blackmarket": {
+   "already-VALORANT-origin": 3
+  },
+  "blastx": {
+   "already-VALORANT-origin": 25
+  },
+  "death": {
+   "already-VALORANT-origin": 36
+  },
+  "event": {
+   "added": 4
+  },
+  "feedback": {
+   "added": 3
+  },
+  "impact": {
+   "not-found": 130
+  },
+  "prime": {
+   "already-VALORANT-origin": 17
+  },
+  "scifi": {
+   "not-found": 73
+  },
+  "standard": {
+   "already-VALORANT-origin": 53,
+   "replaced": 2,
+   "wrong-slot-review": 1,
+   "added": 1
+  },
+  "ui": {
+   "not-found": 99,
+   "replaced": 1
+  },
+  "voice": {
+   "already-VALORANT-origin": 61
+  }
+ },
+ "slot_status_counts": {
+  "already-VALORANT-origin": 200,
+  "not-found": 75,
+  "replaced": 5,
+  "added": 32,
+  "wrong-slot-review": 1,
+  "inherited-standard-already-VALORANT-origin": 206,
+  "inherited-standard-not-found": 78,
+  "not-found-exact-heavy": 3,
+  "inherited-standard-replaced": 12,
+  "inherited-standard-added": 6,
+  "inherited-standard-wrong-slot-review": 6,
+  "VALORANT-origin-cut-review": 4,
+  "not-found-synth": 17
+ }
+}

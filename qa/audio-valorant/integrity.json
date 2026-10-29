@@ -1,0 +1,15 @@
+{
+ "manifest_entries": 539,
+ "all_content_hashes": true,
+ "all_filename_hashes": true,
+ "all_byte_lengths": true,
+ "all_35_new_source_blob_hashes": true,
+ "embedded_manifest_identical": true,
+ "embedded_runtime_identical": true,
+ "runtime_changes_only_reviewed_reference_substitutions": true,
+ "baseline_all_509_decoded_without_errors": true,
+ "all_35_installed_mp3s_decoded_without_errors": true,
+ "rejected_planted_beep_candidate_not_installed": true,
+ "skin_heavy_routes_preserved": true,
+ "new_audio_conversions": "none"
+}

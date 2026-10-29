@@ -1,0 +1,345 @@
+{
+  "method": "flat collision-free world; actual shared motor, 128 Hz unless specified; run-up 1 s; time/displacement include the landing sample; fall speed is last airborne sample; steering isolated at y=1000 m",
+  "constants": {
+    "stepHeight": 0.4,
+    "knifeSpeed": 6.75,
+    "walk": 0.6,
+    "crouch": 0.37037037037037035,
+    "accelTime": 0.288,
+    "crouchAccelTime": 0.472,
+    "frictionScale": 7.3625,
+    "frictionFlat": 46.5,
+    "airAcceleration": 3.5,
+    "jumpSpeed": 6.902,
+    "gravity": 20.45,
+    "landingLock": 0.2,
+    "landSpreadTime": 0.225,
+    "landSpread": 7,
+    "crouchEye": 0.45,
+    "crouchDown": 0.276,
+    "crouchUp": 0.276,
+    "deadzone": 0.275,
+    "operatorDeadzone": 0.15,
+    "eyeHeight": 1.6,
+    "referenceAspect": 1.7777777777777777,
+    "horizontalFov": 103,
+    "verticalFov": 70.53280043291676,
+    "stride": 1.85,
+    "stepRun": 0.65,
+    "bodyR": 0.35,
+    "bodySep": 3,
+    "bodyLip": 0.1,
+    "bodyLook": 1.05
+  },
+  "analytic": {
+    "apexM": 1.1647335941320294,
+    "apexTimeS": 0.3375061124694377,
+    "airTimeS": 0.6750122249388754,
+    "rifleDistanceM": 3.645066014669927,
+    "knifeDistanceM": 4.556332518337409,
+    "impactSpeedMps": 6.902
+  },
+  "arcs": [
+    {
+      "hz": 30,
+      "rifle": {
+        "apexM": 1.164555555555556,
+        "apexTimeS": 0.3333333333333333,
+        "airTimeS": 0.7,
+        "distanceM": 3.7799999999999567,
+        "lastAirborneVyMps": -6.731333333333321,
+        "landingSpeedMps": 5.4,
+        "landingTimerRecoveryMs": 200,
+        "landingAccuracyRecoveryMs": 233.33333333333334,
+        "reJumpAfterReleaseMs": 66.66666666666667,
+        "landImpact": 0.7003999999999987
+      },
+      "knife": {
+        "apexM": 1.164555555555556,
+        "apexTimeS": 0.3333333333333333,
+        "airTimeS": 0.7,
+        "distanceM": 4.724999999999993,
+        "lastAirborneVyMps": -6.731333333333321,
+        "landingSpeedMps": 6.75,
+        "landingTimerRecoveryMs": 200,
+        "landingAccuracyRecoveryMs": 233.33333333333334,
+        "reJumpAfterReleaseMs": 66.66666666666667,
+        "landImpact": 0.7003999999999987
+      }
+    },
+    {
+      "hz": 60,
+      "rifle": {
+        "apexM": 1.1645555555555573,
+        "apexTimeS": 0.3333333333333333,
+        "airTimeS": 0.6833333333333333,
+        "distanceM": 3.6900000000000217,
+        "lastAirborneVyMps": -6.731333333333333,
+        "landingSpeedMps": 5.4,
+        "landingTimerRecoveryMs": 200,
+        "landingAccuracyRecoveryMs": 233.33333333333334,
+        "reJumpAfterReleaseMs": 33.333333333333336,
+        "landImpact": 0.6958555555555554
+      },
+      "knife": {
+        "apexM": 1.1645555555555573,
+        "apexTimeS": 0.3333333333333333,
+        "airTimeS": 0.6833333333333333,
+        "distanceM": 4.612499999999956,
+        "lastAirborneVyMps": -6.731333333333333,
+        "landingSpeedMps": 6.75,
+        "landingTimerRecoveryMs": 200,
+        "landingAccuracyRecoveryMs": 233.33333333333334,
+        "reJumpAfterReleaseMs": 33.333333333333336,
+        "landImpact": 0.6958555555555554
+      }
+    },
+    {
+      "hz": 128,
+      "rifle": {
+        "apexM": 1.1647084350585932,
+        "apexTimeS": 0.3359375,
+        "airTimeS": 0.6796875,
+        "distanceM": 3.6703124999999908,
+        "lastAirborneVyMps": -6.837843750000009,
+        "landingSpeedMps": 5.4,
+        "landingTimerRecoveryMs": 203.125,
+        "landingAccuracyRecoveryMs": 226.5625,
+        "reJumpAfterReleaseMs": 15.625,
+        "landImpact": 0.6997609375000009
+      },
+      "knife": {
+        "apexM": 1.1647084350585932,
+        "apexTimeS": 0.3359375,
+        "airTimeS": 0.6796875,
+        "distanceM": 4.587890625,
+        "lastAirborneVyMps": -6.837843750000009,
+        "landingSpeedMps": 6.75,
+        "landingTimerRecoveryMs": 203.125,
+        "landingAccuracyRecoveryMs": 226.5625,
+        "reJumpAfterReleaseMs": 15.625,
+        "landImpact": 0.6997609375000009
+      }
+    },
+    {
+      "hz": 144,
+      "rifle": {
+        "apexM": 1.164655044367282,
+        "apexTimeS": 0.3402777777777778,
+        "airTimeS": 0.6805555555555556,
+        "distanceM": 3.674999999999965,
+        "lastAirborneVyMps": -6.873347222222237,
+        "landingSpeedMps": 5.4,
+        "landingTimerRecoveryMs": 201.38888888888889,
+        "landingAccuracyRecoveryMs": 229.16666666666666,
+        "reJumpAfterReleaseMs": 13.88888888888889,
+        "landImpact": 0.7015361111111126
+      },
+      "knife": {
+        "apexM": 1.164655044367282,
+        "apexTimeS": 0.3402777777777778,
+        "airTimeS": 0.6805555555555556,
+        "distanceM": 4.59375,
+        "lastAirborneVyMps": -6.873347222222237,
+        "landingSpeedMps": 6.75,
+        "landingTimerRecoveryMs": 201.38888888888889,
+        "landingAccuracyRecoveryMs": 229.16666666666666,
+        "reJumpAfterReleaseMs": 13.88888888888889,
+        "landImpact": 0.7015361111111126
+      }
+    },
+    {
+      "hz": 240,
+      "rifle": {
+        "apexM": 1.1647335937500005,
+        "apexTimeS": 0.3375,
+        "airTimeS": 0.6791666666666667,
+        "distanceM": 3.667500000000005,
+        "lastAirborneVyMps": -6.901749999999974,
+        "landingSpeedMps": 5.4,
+        "landingTimerRecoveryMs": 200,
+        "landingAccuracyRecoveryMs": 225,
+        "reJumpAfterReleaseMs": 8.333333333333334,
+        "landImpact": 0.6986958333333307
+      },
+      "knife": {
+        "apexM": 1.1647335937500005,
+        "apexTimeS": 0.3375,
+        "airTimeS": 0.6791666666666667,
+        "distanceM": 4.584374999999955,
+        "lastAirborneVyMps": -6.901749999999974,
+        "landingSpeedMps": 6.75,
+        "landingTimerRecoveryMs": 200,
+        "landingAccuracyRecoveryMs": 225,
+        "reJumpAfterReleaseMs": 8.333333333333334,
+        "landImpact": 0.6986958333333307
+      }
+    }
+  ],
+  "turn90": {
+    "samples": [
+      {
+        "timeS": 0.125,
+        "vx": 5.09064078323089,
+        "vz": 0.30935921676911443,
+        "speed": 5.100032030183106,
+        "angleDeg": 3.477598775068403
+      },
+      {
+        "timeS": 0.25,
+        "vx": 4.7812815664617805,
+        "vz": 0.6187184335382284,
+        "speed": 4.821147780123237,
+        "angleDeg": 7.373346173117832
+      },
+      {
+        "timeS": 0.5,
+        "vx": 4.162563132923561,
+        "vz": 1.2374368670764555,
+        "speed": 4.342600814670214,
+        "angleDeg": 16.55603557367988
+      }
+    ],
+    "crossedS": 1.09375,
+    "reachedTargetS": 2.1875
+  },
+  "reverse": {
+    "samples": [
+      {
+        "timeS": 0.125,
+        "vx": 4.9625,
+        "vz": 0,
+        "speed": 4.9625,
+        "angleDeg": 0
+      },
+      {
+        "timeS": 0.25,
+        "vx": 4.525,
+        "vz": 0,
+        "speed": 4.525,
+        "angleDeg": 0
+      },
+      {
+        "timeS": 0.5,
+        "vx": 3.6500000000000004,
+        "vz": 0,
+        "speed": 3.6500000000000004,
+        "angleDeg": 0
+      }
+    ],
+    "crossedS": 1.546875,
+    "reachedTargetS": 3.0859375
+  },
+  "coast": {
+    "samples": [
+      {
+        "timeS": 0.125,
+        "vx": 5.4,
+        "vz": 0,
+        "speed": 5.4,
+        "angleDeg": 0
+      },
+      {
+        "timeS": 0.25,
+        "vx": 5.4,
+        "vz": 0,
+        "speed": 5.4,
+        "angleDeg": 0
+      },
+      {
+        "timeS": 0.5,
+        "vx": 5.4,
+        "vz": 0,
+        "speed": 5.4,
+        "angleDeg": 0
+      }
+    ],
+    "crossedS": null,
+    "reachedTargetS": null
+  },
+  "standingAirStart": [
+    {
+      "timeS": 0.125,
+      "vx": 0.4375,
+      "distanceM": 0.02734375
+    },
+    {
+      "timeS": 0.25,
+      "vx": 0.875,
+      "distanceM": 0.109375
+    },
+    {
+      "timeS": 0.5,
+      "vx": 1.75,
+      "distanceM": 0.4375
+    }
+  ],
+  "moveAndJumpFromRest": [
+    {
+      "timeS": 0.125,
+      "vx": 0.14648437500000003,
+      "distanceM": 0.018882751464843753
+    },
+    {
+      "timeS": 0.25,
+      "vx": 0.14648437500000003,
+      "distanceM": 0.03719329833984376
+    },
+    {
+      "timeS": 0.5,
+      "vx": 0.14648437500000003,
+      "distanceM": 0.07381439208984376
+    }
+  ],
+  "falls": [
+    {
+      "heightM": 10,
+      "timeS": 0.9921875,
+      "lastAirborneFallSpeedMps": 20.130468749999988,
+      "dropM": 10
+    },
+    {
+      "heightM": 20,
+      "timeS": 1.40625,
+      "lastAirborneFallSpeedMps": 28.598046874999913,
+      "dropM": 20
+    }
+  ],
+  "camera": {
+    "peakDipM": -0.015610481878042932,
+    "settleS": 0.4140625,
+    "settleDefinition": "|dip| < 1 mm and |vertical camera velocity| < 1 cm/s"
+  },
+  "bufferedHops": [
+    {
+      "hz": 30,
+      "jumps": 6,
+      "landings": 1,
+      "midAirRelaunches": 4
+    },
+    {
+      "hz": 60,
+      "jumps": 6,
+      "landings": 0,
+      "midAirRelaunches": 5
+    },
+    {
+      "hz": 128,
+      "jumps": 6,
+      "landings": 2,
+      "midAirRelaunches": 3
+    },
+    {
+      "hz": 144,
+      "jumps": 6,
+      "landings": 1,
+      "midAirRelaunches": 4
+    },
+    {
+      "hz": 240,
+      "jumps": 6,
+      "landings": 0,
+      "midAirRelaunches": 5
+    }
+  ]
+}

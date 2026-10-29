@@ -7,7 +7,10 @@
 // ~0.20 m), jump launch 6.902 m/s under 20.45 m/s^2 gravity (1.165 m apex, 0.675 s airtime), crouch-walk 2.5 m/s with the
 // knife (0.37x) and a 0.276 s crouch. Walk is 0.6x (Riot's 2020 weapon data: Classic run 5.73 / walk 3.43 m/s). Air speed
 // never exceeds melee speed (patch 12.09) and landing keeps momentum (no landing slowdown in VALORANT).
-const C={stepHeight:.4,knifeSpeed:6.75,walk:.6,crouch:2.5/6.75,accelTime:.288,crouchAccelTime:.472,frictionScale:7.3625,frictionFlat:46.5,airAcceleration:3.5,jumpSpeed:6.902,gravity:20.45,landingLock:.2,landSpreadTime:.225,landSpread:7,crouchEye:.45,crouchDown:.276,crouchUp:.276,deadzone:.275,operatorDeadzone:.15,eyeHeight:1.6,referenceAspect:16/9,horizontalFov:103};
+// Air steering is a feel approximation: 12 m/s^2 redirects a rifle run through 90 degrees in ~0.64 s,
+// within one ordinary jump, while remaining weaker than grounded acceleration (18.75 m/s^2).
+// Keep the measured vertical arc and momentum-preserving landing; do not add air drag or a landing movement lock.
+const C={stepHeight:.4,knifeSpeed:6.75,walk:.6,crouch:2.5/6.75,accelTime:.288,crouchAccelTime:.472,frictionScale:7.3625,frictionFlat:46.5,airAcceleration:12,jumpSpeed:6.902,gravity:20.45,landingLock:.2,landSpreadTime:.225,landSpread:7,crouchEye:.45,crouchDown:.276,crouchUp:.276,deadzone:.275,operatorDeadzone:.15,eyeHeight:1.6,referenceAspect:16/9,horizontalFov:103};
 C.verticalFov=2*Math.atan(Math.tan(C.horizontalFov*Math.PI/360)/C.referenceAspect)*180/Math.PI;
 function approach(v,t,d){return v<t?Math.min(t,v+d):Math.max(t,v-d);}
 function damp(v,t,k,dt){return t+(v-t)*Math.exp(-k*dt);}
@@ -197,7 +200,9 @@ function step(P,input,dt,world){
   let mx=input.x||0,mz=input.z||0,l=Math.hypot(mx,mz);if(l>1){mx/=l;mz/=l;l=1;}
   const duckK=1-(1-C.crouch)*(P.ch||0)/C.crouchEye,max=input.speed*Math.min(duckK,input.walk?C.walk:1)*(input.tag||1);let tx=input.hold?0:mx*max,tz=input.hold?0:mz*max;
   let v;if(grounded){const ck=(P.ch||0)/C.crouchEye,accel=max/Math.max(1e-3,C.accelTime+(C.crouchAccelTime-C.accelTime)*ck);v=groundMove(P,tx,tz,Math.max(1e-3,accel),h);}
-  else{if(!l){tx=P.vx||0;tz=P.vz||0;}const cap=Math.min(C.knifeSpeed*(input.tag||1),Math.max(P.takeoffSpeed||input.speed,.1)),s=Math.hypot(tx,tz);if(s>cap){tx*=cap/s;tz*=cap/s;}v=velocity(P.vx||0,P.vz||0,tx,tz,C.airAcceleration,h);P.vx=v.vx;P.vz=v.vz;}
+  // Starting a jump during acceleration must not lock steering to that first substep's tiny speed.
+  // Allow the current stance's speed as a target, preserve faster takeoff momentum, and retain the melee/tag ceiling.
+  else{if(!l){tx=P.vx||0;tz=P.vz||0;}const cap=Math.min(C.knifeSpeed*(input.tag||1),Math.max(P.takeoffSpeed||0,max,.1)),s=Math.hypot(tx,tz);if(s>cap){tx*=cap/s;tz*=cap/s;}v=velocity(P.vx||0,P.vz||0,tx,tz,C.airAcceleration,h);P.vx=v.vx;P.vz=v.vz;}
   const height=1.8-(P.ch||0);
   const moveAxis=(dx,dz)=>{const x=P.x+dx,z=P.z+dz;if(world.leash&&!world.leash(x,z,P.y,P.x,P.z))return false;if(!world.blocked(x,z,.4,P.y,height)){P.x=x;P.z=z;return true;}
    // Already embedded a few mm (a capsule pressed into a wall that leans in over uneven paving): the 0.5 mm sub-steps of a
@@ -229,7 +234,9 @@ function step(P,input,dt,world){
   // part of the walk sub-step to sub-step (the push into the wall is what the next acceleration adds back, and is clipped again).
   if(!okx||!okz){const sl=slide(P,world,okx?0:v.dx,okz?0:v.dz,height);if(sl){P.x+=sl[0];P.z+=sl[1];if(sl[4]){const k=Math.max(0,vx0*sl[2]+vz0*sl[3]);P.vx=sl[2]*k;P.vz=sl[3]*k;}}}
   let gy=world.ground(P.x,P.z,P.y),vy=P.vy||0;
-  if(grounded&&P.jumpBuffer>0&&!input.hold){vy=C.jumpSpeed;P.jumpBuffer=0;P.takeoffSpeed=Math.hypot(P.vx,P.vz);P.air=true;jumped=true;}
+  // The grounded probe has 2.5 cm of tolerance for walking over seams. A buffered air press must wait for
+  // actual contact: using that tolerance to jump again skipped the landing event on repeated hops.
+  if(grounded&&(!P.air||P.y<=gy+.00001)&&P.jumpBuffer>0&&!input.hold){vy=C.jumpSpeed;P.jumpBuffer=0;P.takeoffSpeed=Math.hypot(P.vx,P.vz);P.air=true;jumped=true;}
   const oldY=P.y;let next=P.y+vy*h-.5*C.gravity*h*h;vy-=C.gravity*h;
   if(vy>0&&world.ceiling&&world.ceiling(P.x,P.z,P.y+height,next+height)){vy=0;next=P.y;}
   // Rising into geometry beside the axis (an overhang, a wall lip) the centre ceiling ray misses: stop at the highest free height.

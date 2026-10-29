@@ -1,0 +1,22 @@
+{
+ "command": "npm ci --ignore-scripts --no-audit --no-fund --cache /tmp/valorstrike-npm-cache",
+ "cwd": "server",
+ "result": "Registry fetches repeatedly failed with EPERM; interrupted remaining retries with Ctrl-C (exit 130)",
+ "example_url": "https://registry.npmjs.org/three/-/three-0.160.1.tgz",
+ "partial_node_modules": "removed; absent at baseline",
+ "npm_test": {
+  "command": "npm test",
+  "cwd": "server",
+  "exit_code": 1,
+  "passed_before_stop": [
+   "test.js",
+   "test-spike.js",
+   "test-directory.cjs",
+   "test-abilities.js",
+   "test-ability-equip.js"
+  ],
+  "stopped_at": "test-placement.js",
+  "error": "ERR_MODULE_NOT_FOUND: Cannot find package '/home/hatch/workspace/valorstrike-sounds/server/node_modules/three/index.js' imported from server/src/world.js"
+ },
+ "browser": "No interactive in-game listening test performed; audio unlock/autoplay tests use the existing fake Web Audio/page harness"
+}

@@ -1,0 +1,130 @@
+[
+  {
+    "file": "work/test_jump_feel.cjs",
+    "cwd": ".",
+    "status": 0,
+    "signal": null,
+    "summary": "53 jump-feel checks passed, including per-tick prediction/authority parity at 30/60/128/144/240 Hz",
+    "outcome": "pass"
+  },
+  {
+    "file": "work/test_feel.js",
+    "cwd": ".",
+    "status": 0,
+    "signal": null,
+    "summary": "74 movement and accuracy checks passed",
+    "outcome": "pass"
+  },
+  {
+    "file": "work/test_net_reconcile.cjs",
+    "cwd": ".",
+    "status": 0,
+    "signal": null,
+    "summary": "net reconcile: 118 snapshots, 0 snaps, max vertical pull 0.000 m, max horizontal fix 0.000 m (legacy: 20 snaps, 0.44 m drop); Tailwind dash 40 ms / 50 ms ticks: 0 snaps over 8 press phases (max 0.73 m off at equal input time), +60 ms ab jitter 0 snaps (no hold: 2 snaps)",
+    "outcome": "pass"
+  },
+  {
+    "file": "work/test_game_rules.cjs",
+    "cwd": ".",
+    "status": 0,
+    "signal": null,
+    "summary": "Client game rules: DM health packs offline (drop on the victim, +50 / +25, 0.85 m reach, 8 s, not in TDM), Escalation packs offline (10 s, full health / armour / ammo, allies too) and online (server hpk rows drawn, no local pickup), DM kill no longer heals; defuse cancel window 0.2 s in 5v5 / Retake / drill; Operator second zoom sent (az) and shown in the spectate POV",
+    "outcome": "pass"
+  },
+  {
+    "file": "work/test_movement_sampling.cjs",
+    "cwd": ".",
+    "status": 1,
+    "signal": null,
+    "summary": "Error: Cannot find module 'three'",
+    "outcome": "blocked: missing three dependency"
+  },
+  {
+    "file": "work/test_tp_jump.cjs",
+    "cwd": ".",
+    "status": 1,
+    "signal": null,
+    "summary": "Error: Cannot find module 'three'",
+    "outcome": "blocked: missing three dependency"
+  },
+  {
+    "file": "test-parity-rules.js",
+    "cwd": "server",
+    "status": 0,
+    "signal": null,
+    "summary": "Parity rules: lost-round survivors 1000 (attacker without plant at time-out, defender after detonation), Shorty 300; fall damage 15 at 8 m to 100 at 17 m (health only); detonation kills within 32.5 m, no credit, no death ult point (nor for fall damage); Endgame round 25: 5000, same sides, ults carried over",
+    "outcome": "pass"
+  },
+  {
+    "file": "test-game-rules.js",
+    "cwd": "server",
+    "status": 0,
+    "signal": null,
+    "summary": "Game rules: DM health packs (8 s, +50 HP / +25 armour, 0.5 m sphere, victim spot, fog), TDM 4 stages 75/75/75/345 s with per-stage guns (server re-arm, equip rule), defuse cancel window 0.2 s, Unrated Endgame round 25 (same sides, 5000, ults kept, 13-12), Operator second zoom in spectate pov",
+    "outcome": "pass"
+  },
+  {
+    "file": "test-spread.js",
+    "cwd": "server",
+    "status": 0,
+    "signal": null,
+    "summary": "Spread: movement penalty ramps with speed (deadzone to full), landing +7 deg for .225 s; wiki first-shot / crouch / crouch-walk / walk / run / airborne for 18 guns hip + ADS; online jumping scoped Operator spreads over the 15 deg airborne cone, still = dead centre; spray error capped at the published max (Ares min); recovery times; running recoil x1.8 / x1.5",
+    "outcome": "pass"
+  },
+  {
+    "file": "test-wall-slide.js",
+    "cwd": "server",
+    "status": 1,
+    "signal": null,
+    "summary": "Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'three' imported from /home/hatch/workspace/valorstrike-sounds/server/src/world.js",
+    "outcome": "blocked: missing three dependency"
+  },
+  {
+    "file": "test-ropes.js",
+    "cwd": "server",
+    "status": 1,
+    "signal": null,
+    "summary": "Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'three' imported from /home/hatch/workspace/valorstrike-sounds/server/src/world.js",
+    "outcome": "blocked: missing three dependency"
+  },
+  {
+    "file": "test-stairs.js",
+    "cwd": "server",
+    "status": 1,
+    "signal": null,
+    "summary": "Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'three' imported from /home/hatch/workspace/valorstrike-sounds/server/src/world.js",
+    "outcome": "blocked: missing three dependency"
+  },
+  {
+    "file": "test-collision-parity.js",
+    "cwd": "server",
+    "status": 1,
+    "signal": null,
+    "summary": "Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'three' imported from /home/hatch/workspace/valorstrike-sounds/server/src/world.js",
+    "outcome": "blocked: missing three dependency"
+  },
+  {
+    "file": "test-bodies.js",
+    "cwd": "server",
+    "status": 0,
+    "signal": null,
+    "summary": "Character collision tests passed: walk-in stop / slide / head-on, bots pass (open, off-centre, corridor), spike round + buy, dead / loading / Dismiss, motor rules, prediction = server",
+    "outcome": "pass"
+  },
+  {
+    "file": "test-traversal.js",
+    "cwd": "server",
+    "status": 1,
+    "signal": null,
+    "summary": "Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'three' imported from /home/hatch/workspace/valorstrike-sounds/server/src/world.js",
+    "outcome": "blocked: missing three dependency"
+  },
+  {
+    "file": "test-release-gate.cjs",
+    "cwd": "server",
+    "status": 0,
+    "signal": null,
+    "summary": "Release gate: production wrangler sets no Spike/local-origin vars and the worker never imports tools/ (browser-bridge is local only); Spike requires explicit opt-in; loopback origins require local opt-in and reject lookalikes; loading sockets retain 180 s timeout",
+    "outcome": "pass"
+  }
+]

@@ -1,0 +1,18 @@
+{
+  "changedExistingFiles": [
+    "GAME_FEEL.md",
+    "vendor/valorant-feel.js",
+    "server/src/motor.cjs"
+  ],
+  "missingFiles": [],
+  "audioFilesVerifiedUnchanged": 545,
+  "indexHtmlUnchanged": true,
+  "nonJumpConstantsChanged": [],
+  "constantsChanged": [
+    {
+      "key": "airAcceleration",
+      "before": 3.5,
+      "after": 12
+    }
+  ]
+}

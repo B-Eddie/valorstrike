@@ -1,0 +1,30 @@
+[
+ {
+  "label": "Riot weapon API",
+  "url": "https://valorant-api.com/v1/weapons",
+  "exit_code": 7,
+  "stderr": "curl: (7) Failed to connect to hatch-egress-proxy port 3128 after 0 ms: Couldn't connect to server",
+  "downloaded": false
+ },
+ {
+  "label": "Existing Riot Vandal preview",
+  "url": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/197511ac-4d5a-97fc-78f8-feb5d090dd20_default_universal.mp4",
+  "exit_code": 7,
+  "stderr": "curl: (7) Failed to connect to hatch-egress-proxy port 3128 after 0 ms: Couldn't connect to server",
+  "downloaded": false
+ },
+ {
+  "label": "Default inspect/equip lead",
+  "url": "https://wiki.playvalorant.com/en-us/Warden",
+  "exit_code": 7,
+  "stderr": "curl: (7) Failed to connect to hatch-egress-proxy port 3128 after 0 ms: Couldn't connect to server",
+  "downloaded": false
+ },
+ {
+  "label": "Surface footsteps port",
+  "url": "https://gamebanana.com/sounds/77804",
+  "exit_code": 7,
+  "stderr": "curl: (7) Failed to connect to hatch-egress-proxy port 3128 after 0 ms: Couldn't connect to server",
+  "downloaded": false
+ }
+]

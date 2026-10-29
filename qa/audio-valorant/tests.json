@@ -1,0 +1,30 @@
+[
+ {
+  "command": "node work/test_game_audio.cjs",
+  "cwd": "/home/hatch/workspace/valorstrike-sounds",
+  "exit_code": 0,
+  "stdout": "Audio: 539 hashed downloads; 19 weapon profiles, native skin cues, shared master, voice/panner limits, mute/background/cancel and cold-request behavior\n",
+  "stderr": ""
+ },
+ {
+  "command": "node work/test_audio_unlock.cjs",
+  "cwd": "/home/hatch/workspace/valorstrike-sounds",
+  "exit_code": 0,
+  "stdout": "Audio unlock: iOS Safari (refused start retried, interrupted + hidden contexts resumed on the next touchend, 7 outside-gesture refusals caught, no toast) and Chrome (gesture / keydown resume) - one AudioContext, sounds heard after every recovery\n",
+  "stderr": ""
+ },
+ {
+  "command": "node work/test_audio_autoplay.cjs",
+  "cwd": "/home/hatch/workspace/valorstrike-sounds",
+  "exit_code": 0,
+  "stdout": "Audio autoplay: no AudioContext before the first user activation (boot / lobby sounds skipped, touchstart / mouseup ignored); first keydown creates one running context inside the gesture; sounds heard\n",
+  "stderr": ""
+ },
+ {
+  "command": "node test-release-gate.cjs",
+  "cwd": "/home/hatch/workspace/valorstrike-sounds/server",
+  "exit_code": 0,
+  "stdout": "Release gate: production wrangler sets no Spike/local-origin vars and the worker never imports tools/ (browser-bridge is local only); Spike requires explicit opt-in; loopback origins require local opt-in and reject lookalikes; loading sockets retain 180 s timeout\n",
+  "stderr": ""
+ }
+]
