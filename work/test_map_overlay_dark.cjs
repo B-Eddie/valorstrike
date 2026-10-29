@@ -15,8 +15,8 @@ const root=path.join(__dirname,'..');const THREE=require(path.join(root,'server/
 const sharp=require(path.join(root,'server/node_modules/sharp'));
 const RT=fs.readFileSync(process.env.RT||path.join(__dirname,'native_maps_runtime.js'),'utf8');
 const fn=name=>{const m=new RegExp('^function '+name+'\\(.*$','m').exec(RT);assert(m,'runtime has function '+name);return m[0];};
-const vars=(RT.match(/^var NM_(?:TERRAIN|ZBIAS|ZLEVELS)=.*$/mg)||[]).join('\n');
-const opt=['nmTerrain','nmTexMissingMark'].filter(n=>new RegExp('^function '+n+'\\(','m').test(RT)).map(fn);
+const vars=(RT.match(/^var NM_(?:TERRAIN|ZBIAS|ZLEVELS|OVERLAY|GROUND\w*)=.*$/mg)||[]).join('\n');
+const opt=['nmTerrain','nmTexMissingMark','nmGroundLayer','nmGroundApply'].filter(n=>new RegExp('^function '+n+'\\(','m').test(RT)).map(fn);
 let raw=null;const document={createElement:()=>({getContext:()=>({drawImage(){},getImageData:()=>({data:raw})})})};
 const ctx={THREE,document,Math,renderer:{capabilities:{getMaxAnisotropy:()=>16}},console};vm.createContext(ctx);
 vm.runInContext([vars,...opt,...['nmTexStats','nmDecalStyle','nmFoliageCut','nmFoliageApply','nmDecalApply','nmPrepareScene'].map(fn)].join('\n')+'\nglobalThis.api={nmPrepareScene};',ctx);
