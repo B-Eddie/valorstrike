@@ -58,9 +58,10 @@ async function nmEnsure(key){
 function nmTexStats(img){try{if(!img||!(img.width>0))return null;const n=16,c=document.createElement('canvas');c.width=c.height=n;const x=c.getContext('2d',{willReadFrequently:true});x.drawImage(img,0,0,n,n);const d=x.getImageData(0,0,n,n).data;let lo=255,cover=0,white=0,cut=0,sl=0,sl2=0,sa=0,sa2=0;for(let i=0;i<d.length;i+=4){const a=d[i+3],l=.3*d[i]+.59*d[i+1]+.11*d[i+2];lo=Math.min(lo,a);if(a<128)cut++;if(a>32){cover++;if(Math.min(d[i],d[i+1],d[i+2])>220)white++;}sl+=l;sl2+=l*l;sa+=a;sa2+=a*a;}const N=n*n;return {minAlpha:lo,white:cover?white/cover:0,cut:cut/N,lum:Math.sqrt(Math.max(0,sl2/N-(sl/N)**2)),alpha:Math.sqrt(Math.max(0,sa2/N-(sa/N)**2)),am:sa/N};}catch(e){return null;}}
 // groundblend: floor overlays exported OPAQUE although their alpha is their shape (puddles, tyre tracks, street paint,
 // blood cards, masked floor wires; 'overlay' in work/validation/map/ground-materials.json) drew as solid quads on the
+// (street paint, Paint_*, is the stripe geometry itself with a wear mask in alpha: a ground layer, nmGroundApply)
 // ground. They are decals too: white tyre-track masks darken the floor like a grime mask, puddles as a translucent sky-tinted water
 // film ('wet'), the rest keep their colour.
-var NM_OVERLAY=/Puddle|TireTrack|^Paint_|BloodCard|Wires\w*Mask/i;
+var NM_OVERLAY=/Puddle|TireTrack|BloodCard|Wires\w*Mask/i;
 function nmDecalStyle(name,stats){const ov=NM_OVERLAY.test(name||'');if(!(ov||/Decal|Floater/i.test(name||''))||!stats||stats.minAlpha>=250)return null;return (/Floater/i.test(name)||ov)&&stats.white>.9?'mask':/Puddle/i.test(name)?'wet':'decal';}
 // Foliage cut-outs: plants, vines, moss overgrowth, leaves, ferns and tree cards are also exported OPAQUE (only
 // some foliage keeps alphaMode MASK) although their textures carry the leaf silhouette in alpha, so vines and moss
@@ -203,7 +204,7 @@ function nmTerrain(name){return NM_TERRAIN.test(name||'')&&!/Cards|Decal|Floater
 // leaf detail only: small grass patches turned to dirt with a dirt layer). Material-level (onBeforeCompile on the existing Lambert
 // material: 3-4 texture taps, no per-frame JS); textured ground, a failed texture and non-ground materials stay plain.
 // work/test_map_ground_blend.cjs.
-var NM_GROUND=/^(?:Grass|Dirt|Mud|Sand|Gravel|Blendable|Jam|Ash|Asphalt|Tile|Stone|StoneBrickWall|Brick|Bricks|Concrete|Rock|Cobble|Rubble)_/i;
+var NM_GROUND=/^(?:Paint|Grass|Dirt|Mud|Sand|Gravel|Blendable|Jam|Ash|Asphalt|Tile|Stone|StoneBrickWall|Brick|Bricks|Concrete|Rock|Cobble|Rubble)_/i;
 var NM_GROUND_B={grass:[0x4d5a30,.2],moss:[0x4a5531,.26]};
 var NM_GROUND_FS='#ifdef USE_MAP\nvec4 gbT=texture2D(map,GBUV);float gbh=gbT.a;\nfloat gbe=texture2D(map,GBUV+vec2(-gbTx,gbTx)).a-texture2D(map,GBUV+vec2(gbTx,-gbTx)).a;\nvec3 gbC=gbT.rgb*clamp(1.+1.15*(gbh-gbAm)+2.2*gbe,.4,1.65)*mix(.72,1.,smoothstep(.02,.22,gbh));\nif(gbCov>0.){float gbn=gbN(vGbW.xz*.21)*.6+gbN(vGbW.xz*.63+17.)*.28+gbN(vGbW.xz*1.9+5.)*.12,gbt=.5+(.5-gbCov)*.4;\ngbC=mix(gbC,gbB*(.7+.6*texture2D(map,GBUV*2.37+.31).a),smoothstep(gbt-.03,gbt+.03,gbn+(gbAm-gbh)*.55));}\ndiffuseColor*=vec4(gbC,1.);\n#endif';
 function nmGroundLayer(name){name=name||'';if(!NM_GROUND.test(name)||/Cards|Clump|^Grass_\d|Decal|Floater|Puddle/i.test(name))return null;return /^Grass_M\d+_A(?:_MI)?$/i.test(name)?'':/Grass/i.test(name)?'grass':/Moss/i.test(name)?'moss':'';}

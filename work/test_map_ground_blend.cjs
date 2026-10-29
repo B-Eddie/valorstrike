@@ -11,8 +11,8 @@
 //     grass / moss blends also get their second layer (a grass or moss layer height-blended in by the mask);
 //   * textured ground (RGB carries the detail) and every non-ground material are untouched; a ground layer whose texture
 //     failed draws plain (no map, no layer shader);
-//   * floor overlays exported OPAQUE whose alpha is their shape (puddles, tyre tracks, street paint, blood cards, masked
-//     floor wires: 'overlay' in work/validation/map/ground-materials.json) are decals - alpha from the texture, blended,
+//   * street paint (Paint_*: the stripe geometry, alpha = wear) is a worn opaque ground layer;
+//   * floor overlays exported OPAQUE whose alpha is their shape (puddles, tyre tracks, blood cards, masked floor wires: 'overlay' in work/validation/map/ground-materials.json) are decals - alpha from the texture, blended,
 //     no depth write, depth-step polygon offset (mapdouble/decal rule), no shadow; not drawn when their texture fails.
 //   node work/test_map_ground_blend.cjs        (RT=path runs it against another runtime file)
 'use strict';
@@ -29,7 +29,7 @@ const ctx={THREE,document,renderer:{capabilities:{getMaxAnisotropy:()=>16}},cons
 vm.runInContext([vars,...opt,...['nmTexStats','nmDecalStyle','nmFoliageCut','nmFoliageApply','nmDecalApply','nmTexMissingMark','nmPrepareScene'].map(fn),'var nmTexStatsReal=nmTexStats;nmTexStats=function(img){return img&&img.st||null;};'].join('\n'),ctx);
 const DATA=JSON.parse(fs.readFileSync(path.join(__dirname,'validation/map/ground-materials.json'),'utf8'));
 // ground-layer families (surface materials), as opposed to wood / metal / plaster / props
-const GROUND_NAME=/^(?:Grass|Dirt|Mud|Sand|Gravel|Blendable|Jam|Ash|Asphalt|Tile|Stone|StoneBrickWall|Brick|Bricks|Concrete|Rock|Cobble|Rubble)_/i;
+const GROUND_NAME=/^(?:Paint|Grass|Dirt|Mud|Sand|Gravel|Blendable|Jam|Ash|Asphalt|Tile|Stone|StoneBrickWall|Brick|Bricks|Concrete|Rock|Cobble|Rubble)_/i;
 const MAPS=['ascent','bind','breeze','haven','lotus','split'];
 // a real three r147 lambert program, as WebGLPrograms hands it to onBeforeCompile
 const LAMBERT={vertexShader:THREE.ShaderLib.lambert.vertexShader,fragmentShader:THREE.ShaderLib.lambert.fragmentShader,uniforms:{}};
@@ -66,7 +66,10 @@ const flat=s=>!!(s&&s.lum<10&&s.alpha>=8&&s.am>=25);
   const F=prepare(defs,ground,stats,false);for(const nm of ground){const m=F[nm].material;if(m.userData&&m.userData.groundLayer)bad.push(`${key} ground ${nm}, texture FAILED: layer shader without a map`);if(m.alphaTest>0||m.transparent||m.visible===false)bad.push(`${key} ground ${nm}, texture FAILED: not drawn opaque`);}
   // overlays
   const O=prepare(defs,overlay,stats,true),OF=prepare(defs,overlay,stats,false);
-  for(const nm of overlay){const s=stats[nm],o=O[nm],m=o.material;if(!s||s.minAlpha>=250){if(m.transparent)bad.push(`${key} overlay ${nm}: texture has no alpha yet drawn blended`);continue;}
+  for(const nm of overlay){const s=stats[nm],o=O[nm],m=o.material;
+   // street paint (Paint_*) is the stripe / marking geometry itself; its alpha is a wear mask (min alpha 35): a worn opaque ground layer
+   if(/^Paint_/i.test(nm)){if(!(m.userData.groundLayer&&!m.transparent&&!(m.alphaTest>0)&&m.visible!==false))bad.push(`${key} street paint ${nm}: not an opaque worn ground layer (transparent ${m.transparent}, layer ${!!m.userData.groundLayer})`);else tally.overlay++;continue;}
+   if(!s||s.minAlpha>=250){if(m.transparent)bad.push(`${key} overlay ${nm}: texture has no alpha yet drawn blended`);continue;}
    if(!(m.userData.decal&&m.transparent&&m.depthWrite===false&&m.alphaTest>0&&m.polygonOffset&&m.polygonOffsetFactor===0&&m.polygonOffsetUnits<0&&!o.castShadow))bad.push(`${key} overlay ${nm} (${D.overlay[nm].n} nodes, ${(s.cut*100).toFixed(0)} % of its texels under half alpha): drawn as a solid quad - decal ${m.userData.decal||'none'} transparent ${m.transparent} depthWrite ${m.depthWrite} polygonOffset ${m.polygonOffset} castShadow ${o.castShadow}`);
    else tally.overlay++;
    const mf=OF[nm].material;if(mf.visible!==false)bad.push(`${key} overlay ${nm}, texture FAILED: still drawn (solid quad without its alpha)`);}}
