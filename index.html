@@ -1692,7 +1692,7 @@ body:has(#game .x-top.x-bpo) #xAnn.buy{display:none!important}
   <div data-sp="v" id="xVid" role="tabpanel" aria-label="Video" hidden>
   <div class="srow x-sr"><span class="st-l">Graphics quality <b id="vGQ">HIGH</b></span><div class="seg" id="xGQ"><button data-v="low">Low</button><button data-v="medium">Medium</button><button data-v="high" class="on">High</button></div></div>
   <div class="srow x-sr"><span class="st-l">Limit FPS</span><div class="seg" id="xFpsL"><button data-v="auto">Auto</button><button data-v="0" class="on">Off</button><button data-v="60">60</button><button data-v="120">120</button><button data-v="144">144</button></div></div>
-  <div class="srow x-sr"><span class="st-l">Dynamic resolution</span><div class="seg" id="xGov"><button data-v="1" class="on">On</button><button data-v="0">Off</button></div></div>
+  <div class="srow x-sr"><span class="st-l">Dynamic resolution</span><div class="seg" id="xGov"><button data-v="1">On</button><button data-v="0" class="on">Off</button></div></div>
   <div class="srow">Show FPS and ping<div class="seg" data-key="fps"><button data-v="0" class="on">Off</button><button data-v="1">On</button></div></div>
   <div class="st-sl"><div class="srow"><label for="sBri">Brightness</label><b id="vBri">1.00</b></div><input type="range" id="sBri" min="50" max="150" step="1" value="100" /></div>
   <div class="srow x-sr"><span class="st-l">Resolution</span><div class="seg" id="xRes"><button data-v="std">Standard</button><button data-v="retina" class="on">Native (sharp)</button></div></div>
@@ -11604,9 +11604,9 @@ const xPRMax = () => { const d = devicePixelRatio || 1, p = Math.min((XS.res ===
 // (the quality preset / render scale the user chose stays the ceiling; floor XGV.floor of it, never under 0.5 CSS px);
 // after XGV.wait ms without a miss it steps back up 10%. Hysteresis: a step down within 2.5 s of a step up doubles the
 // wait before the next step up (up to 60 s), a long clean run halves it again (down to 3 s). Runs only in a live,
-// uncovered, unpaused match; off when a lower FPS limit gates rendering; vs.gov = "0" turns it off (Video: Dynamic res).
+// uncovered, unpaused match; off when a lower FPS limit gates rendering; OFF by default (renders the sharp 1:1 ceiling); vs.gov = "1" turns it on (Video: Dynamic res).
 let xAdPR = Infinity, xAdT = performance.now(), xAdN = 0; // xAdPR: the governor's pixel ratio (Infinity = the ceiling)
-const XGV = { on: (() => { try { return localStorage.getItem("vs.gov") !== "0"; } catch (e) { return true; } })(), floor: 0.6, win: 40, missN: 4, f: new Uint8Array(40), fi: 0, misses: 0, last: 0, up: 0, down: 0, wait: 3000, clean: 0, steps: 0, hold: 0 };
+const XGV = { on: (() => { try { return localStorage.getItem("vs.gov") === "1"; } catch (e) { return false; } })(), /* OFF by default (user: render sharp, 1:1): only vs.gov = "1" (Video: Dynamic resolution On) turns it on */ floor: 0.6, win: 40, missN: 4, f: new Uint8Array(40), fi: 0, misses: 0, last: 0, up: 0, down: 0, wait: 3000, clean: 0, steps: 0, hold: 0 };
 const xPRFloor = (m) => Math.min(m, Math.max(0.5, m * XGV.floor));
 const xPR = () => { const m = xPRMax(); return (XGV.on || XS.scale === "auto") ? Math.max(xPRFloor(m), Math.min(m, xAdPR)) : m; };
 function xGovReset(now) { xGovClear(XGV, now); }

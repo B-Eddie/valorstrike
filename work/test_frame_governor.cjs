@@ -18,7 +18,7 @@ const dup=Object.entries(decl).filter(([,v])=>v.length>1);assert.deepEqual(dup,[
 const fn=nm=>{const i=html.indexOf('\nfunction '+nm+'(');assert(i>=0,nm+' missing');let d=0,j=html.indexOf('{',i);for(;j<html.length;j++){if(html[j]==='{')d++;else if(html[j]==='}'&&!--d)break;}return html.slice(i+1,j+1);};
 const {xCapGates,xGovTick,xGovClear}=new Function(['xCapGates','xGovTick','xGovClear'].map(fn).join('\n')+'\nreturn {xCapGates,xGovTick,xGovClear};')();
 const decl0=html.match(/const XGV = \{[^\n]*\};/);assert(decl0,'governor state XGV missing');
-const G0=()=>{const G=new Function('localStorage','return '+decl0[0].slice('const XGV = '.length,-1))({getItem:()=>null});assert.equal(G.on,true,'dynamic resolution defaults on');return G;};
+const G0=()=>{const mk=ls=>new Function('localStorage','return '+decl0[0].slice('const XGV = '.length,-1))(ls),G=mk({getItem:()=>null});assert.equal(G.on,false,'dynamic resolution defaults OFF (user: render sharp, 1:1)');assert.equal(mk({getItem:k=>k==='vs.gov'?'1':null}).on,true,'Dynamic resolution On (vs.gov=1) remembered');return G;};
 const hz=r=>1000/r;
 assert.equal(xCapGates(0,hz(75)),false,'no cap');
 assert.equal(xCapGates(60,hz(60)),false,'60 cap on 60 Hz');
