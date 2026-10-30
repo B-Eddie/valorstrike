@@ -44,13 +44,13 @@ function xbReady(u,d){if(!u.xbAP)return true;const e=BotBrain.aimAt(u.xbAP,u.see
 // (BotBrain.aimAt: reaction, min-jerk flick, overshoot, correction, resting error that keeps settling while tracking) minus
 // the tracking lag on a target moving across the view (BotBrain.trackLag / trackTurn, from the target's angular speed),
 // through the bot's own turn rate / hand acceleration (BotBrain.turnStep). xbShot then fires along THAT view: spread +
-// the uncontrolled spray climb (bSpread, minus the share this bot pulls down) are the only things between the crosshair
+// the spray recoil (bSpread: the server's motor spread + bloom + recoil, after the server bot's pull) are the only things between the crosshair
 // and the bullet. Was: the shot built its own direction from the target (plan error, lag, spot) while the visible yaw was
 // a separate turn-limited copy and the pitch aimed at the eye / chest regardless of the plan, and the tracer (bfxBot) was
 // a random ray along the body's facing from the hip, level - so neither the spectator's crosshair nor the tracer showed
 // where the shot went. u.xbLS keeps the last shot's eye ray (origin, direction, length) for the tracer.
 function xbEye(u,o){const q=u.g.position;o.x=q.x;o.y=(q.y||0)+1.6;o.z=q.z;return o;}
-const XB_EO={x:0,y:0,z:0};
+const XB_EO={x:0,y:0,z:0};let XB_PR=null,XB_PU=null;
 function xbView(u,t,tx,ty,tz,tch,dt){const B=xbBrain(u);if(!B||!u.xbAP||!u.g)return false;const o=xbEye(u,XB_EO),dx=tx-o.x,dz=tz-o.z,d=Math.hypot(dx,dz)||.01,see=u.see||u.ts||0;
  const e=BotBrain.aimAt(u.xbAP,see,XB_E),want=Math.atan2(dx,dz),tm=performance.now()/1000;
  const S=u.xbTrk&&u.xbTrk.tg===t?u.xbTrk:(u.xbTrk={tg:t});let w=0;if(S.vw!=null&&dt>0){const r=Math.atan2(Math.sin(want-S.vw),Math.cos(want-S.vw))/dt;S.av=(S.av==null?r:S.av+(r-S.av)*Math.min(1,dt*12));w=S.av;}S.vw=want;
@@ -63,7 +63,7 @@ function xbView(u,t,tx,ty,tz,tch,dt){const B=xbBrain(u);if(!B||!u.xbAP||!u.g)ret
 // the bot has no human aim model (the old fallback in the fire loops).
 function xbShot(u,tg,from,w,W,d,D){const B=xbBrain(u);if(!B||!u.xbAP)return undefined;const t=tg.t,pl=t===player,fy=pl?(player.y||0):t&&t.g?t.g.position.y:0,ch=pl?(player.ch||0):t&&t.cr?.28:0;
  const o=xbEye(u,XB_EO),ry=u.g.rotation.y,vp=Number.isFinite(u.xbVP)?u.xbVP:0,cp=Math.cos(vp),aim=(XB_AIM||(XB_AIM=new THREE.Vector3())).set(Math.sin(ry)*cp,Math.sin(vp),Math.cos(ry)*cp);
- const sn=u.sn||0;bSpread(u,w,W,aim,d,D);/* spread + uncontrolled climb ... */if(u.xbPull&&sn>0){const k=D&&D.ae?D.ae/1.3:1,r=w==='Vandal'?1:w==='Phantom'?.7:0,ck=u.cr&&!u.mv?.85:1,vy=ck*(r?Math.min(sn,6)*.0065*r:Math.min(sn,6)*.004*(W.rec||1))*k*.6;aim.y-=vy*u.xbPull*BotBrain.sprayFade(sn);/* control fades over a long spray (BotBrain.sprayFade, = server sprayPull) */aim.normalize();}/* ... minus the part this bot drags down */
+ const S=u.xsp,tm=performance.now()/1000,rc=u.xbPull&&S&&S.lastWeapon===w&&tm-(S.shot??-9)<.3?u.xbPull*BotBrain.sprayFade(S.sequence||0):0;if(rc){/* the recoil pull of the server bot (Simulation.bot: its view drops rc x the spray's recoilY and leans .6 rc x recoilX against the drift, rc = BotBrain.sprayPull = recoilPull x sprayFade, while the last shot is < 0.3 s old) */const r=(XB_PR||(XB_PR=new THREE.Vector3())).set(-aim.z,0,aim.x);if(r.lengthSq()<1e-9)r.set(1,0,0);r.normalize();const q=(XB_PU||(XB_PU=new THREE.Vector3())).crossVectors(r,aim).normalize(),kx=-.6*rc*(S.recoilX||0),ky=-rc*(S.recoilY||0);aim.x+=r.x*kx+q.x*ky;aim.y+=r.y*kx+q.y*ky;aim.z+=r.z*kx+q.z*ky;aim.normalize();}bSpread(u,w,W,aim,d,D);/* then the server's gun (index.html bSpread = simulation fire: Motor spread + bloom + spray recoil) */
  const L=u.xbLS||(u.xbLS={o:{x:0,y:0,z:0},d:{x:0,y:0,z:1},len:0,at:-1,hit:null});L.o.x=o.x;L.o.y=o.y;L.o.z=o.z;L.d.x=aim.x;L.d.y=aim.y;L.d.z=aim.z;L.at=performance.now();L.hit=null;
  const dx=tg.x-o.x,dz=tg.z-o.z,ah=Math.hypot(aim.x,aim.z)||1e-6,s=(dx*aim.x+dz*aim.z)/ah;if(s<=0){L.len=80;if(u.xbTrP){u.xbTrP=0;xbTracer(u);}return null;}const k2=s/ah,qx=o.x+aim.x*k2,qy=o.y+aim.y*k2,qz=o.z+aim.z*k2;
  const lat=Math.hypot(qx-tg.x,qz-tg.z);let part=BotBrain.hitPart(lat,qy-fy,ch);L.hit=part;L.len=part?Math.hypot(qx-o.x,qy-o.y,qz-o.z):80;

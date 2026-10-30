@@ -3563,14 +3563,25 @@ function gSpread0(w, W, B) {
   const s = (m + (sp < 3 ? sp * 0.3 : Math.min(sp, 10)) * 0.0042 * W.rec) * (P.cr && still ? 0.85 : 1); // crouched + stationary: ~15% tighter
   return s * (ad === 2 ? 0.15 : ad === 1 ? 0.55 : 1) + (snp && ad !== 2 ? (w === "Operator" ? 0.09 + (fast || P.air ? 0.05 : 0) : 0.035 + (fast || P.air ? 0.06 : 0)) : 0); // unscoped snipers loose; unscoped Operator ~5° (very inaccurate)
 }
-// bots: same spread + spray climb, scaled by difficulty aim error; spray resets after a 0.35 s pause
+// bots: the server bots' gun (server/src/simulation.js fire(), shared motor vendor/valorant-feel.js = server/src/motor.cjs):
+// cone = Motor.spread (published first-shot spread + crouch / walk / run ramp on the bot's speed fraction sf, airborne, rope)
+// + Motor.sprayBloom; Motor.sprayStep climbs / drifts the shot (weight REC x.85 crouched x recoilMove) and grows the bloom
+// up to Motor.bloomCap; a pause over 0.375 s or a weapon change starts a fresh spray (sprayReset); the shot is a disk sample
+// of the cone plus the recoil offset in its right / up basis, as on the server. Blade Storm knives: no spread / recoil (server
+// abilityOnly + ignoreMovementSpread). b.xsp keeps the spray state, b.sn the bullets in it, b.lt the time since the last shot.
+// Was (bot-spray): gSpread + .0025 / shot bloom + .004 (1 + .05 d) range term, x difficulty D.ae (1.3 normal), uniform on each
+// world axis, its own .0065 x .6 climb + sine sway - ~3-4x the server's cone (offline 7+ bullet sprays at 15 m hit ~1/3 as often).
+const XBS_R = new THREE.Vector3(), XBS_U = new THREE.Vector3(), XBS_Y = new THREE.Vector3(0, 1, 0);
 function bSpread(b, w, W, dir, d, D) {
-  if ((b.lt || 9) > 0.35) b.sn = 0;
-  const ck = b.cr && !b.mv ? 0.85 : 1; // crouched + stationary: same accuracy / recoil bonus as the player
-  const n = b.sn || 0, s = ((w === "Blade Storm" ? 0 : gSpread(w, W, { mv: b.mv, n })) + 0.004 * (1 + d * 0.05)) * D.ae * ck, r = w === "Vandal" ? 1 : w === "Phantom" ? 0.7 : 0;
-  const vy = ck * (r ? Math.min(n, 6) * 0.0065 * r : Math.min(n, 6) * 0.004 * W.rec) * D.ae * 0.6, hx = r && n > 6 ? Math.sin((n - 6) * 0.6) * 0.016 * r * D.ae : 0;
-  dir.x += (Math.random() - 0.5) * s * 2 + hx; dir.y += (Math.random() - 0.5) * s * 2 + vy; dir.z += (Math.random() - 0.5) * s * 2; dir.normalize();
-  b.sn = n + 1; b.lt = 0;
+  const M = window.ValorantFeel, t = performance.now() / 1000, R = b.xsp || (b.xsp = {});
+  M.sprayReset(R, w, t);
+  if (w === "Blade Storm") { b.sn = 0; b.lt = 0; return; }
+  const P = (window.VALORANT_WEAPON_STATS && window.VALORANT_WEAPON_STATS.weapons[w]) || {}, st = { sf: b.sf != null ? b.sf : b.mv ? 1 : 0, mv: !!b.mv, cr: !!b.cr, wk: !!b.wk, air: !!b.air, ls: 0, rope: b.rope || 0, ads: 0 };
+  const cone = M.spread(st, w, P) + M.sprayBloom(R, w, t);
+  M.sprayStep(R, w, (M.REC[w] != null ? M.REC[w] : 1) * (b.cr ? 0.85 : 1) * M.recoilMove(st, w), t, Math.random, M.bloomCap(st, w, P));
+  const r = XBS_R.crossVectors(dir, XBS_Y); if (r.lengthSq() < 1e-6) r.set(1, 0, 0); r.normalize(); const u = XBS_U.crossVectors(r, dir).normalize(), [x, y] = M.disk();
+  const kx = x * cone + R.recoilX, ky = y * cone + R.recoilY; dir.x += r.x * kx + u.x * ky; dir.y += r.y * kx + u.y * ky; dir.z += r.z * kx + u.z * ky; dir.normalize();
+  b.sn = R.sequence; b.lt = 0;
 }
 function gFire(d, w, W) {
   const s = gSpread(w, W), n = spray, r = w === "Vandal" ? 1 : w === "Phantom" ? 0.7 : 0, am = (ads === 2 ? 0.3 : ads === 1 ? ((W && W.adsK) || 0.85) : 1) * (player && player.cr && !player.mv && !player.air ? 0.85 : 1); // crouched + stationary: lower recoil
@@ -17934,13 +17945,13 @@ function xbReady(u,d){if(!u.xbAP)return true;const e=BotBrain.aimAt(u.xbAP,u.see
 // (BotBrain.aimAt: reaction, min-jerk flick, overshoot, correction, resting error that keeps settling while tracking) minus
 // the tracking lag on a target moving across the view (BotBrain.trackLag / trackTurn, from the target's angular speed),
 // through the bot's own turn rate / hand acceleration (BotBrain.turnStep). xbShot then fires along THAT view: spread +
-// the uncontrolled spray climb (bSpread, minus the share this bot pulls down) are the only things between the crosshair
+// the spray recoil (bSpread: the server's motor spread + bloom + recoil, after the server bot's pull) are the only things between the crosshair
 // and the bullet. Was: the shot built its own direction from the target (plan error, lag, spot) while the visible yaw was
 // a separate turn-limited copy and the pitch aimed at the eye / chest regardless of the plan, and the tracer (bfxBot) was
 // a random ray along the body's facing from the hip, level - so neither the spectator's crosshair nor the tracer showed
 // where the shot went. u.xbLS keeps the last shot's eye ray (origin, direction, length) for the tracer.
 function xbEye(u,o){const q=u.g.position;o.x=q.x;o.y=(q.y||0)+1.6;o.z=q.z;return o;}
-const XB_EO={x:0,y:0,z:0};
+const XB_EO={x:0,y:0,z:0};let XB_PR=null,XB_PU=null;
 function xbView(u,t,tx,ty,tz,tch,dt){const B=xbBrain(u);if(!B||!u.xbAP||!u.g)return false;const o=xbEye(u,XB_EO),dx=tx-o.x,dz=tz-o.z,d=Math.hypot(dx,dz)||.01,see=u.see||u.ts||0;
  const e=BotBrain.aimAt(u.xbAP,see,XB_E),want=Math.atan2(dx,dz),tm=performance.now()/1000;
  const S=u.xbTrk&&u.xbTrk.tg===t?u.xbTrk:(u.xbTrk={tg:t});let w=0;if(S.vw!=null&&dt>0){const r=Math.atan2(Math.sin(want-S.vw),Math.cos(want-S.vw))/dt;S.av=(S.av==null?r:S.av+(r-S.av)*Math.min(1,dt*12));w=S.av;}S.vw=want;
@@ -17953,7 +17964,7 @@ function xbView(u,t,tx,ty,tz,tch,dt){const B=xbBrain(u);if(!B||!u.xbAP||!u.g)ret
 // the bot has no human aim model (the old fallback in the fire loops).
 function xbShot(u,tg,from,w,W,d,D){const B=xbBrain(u);if(!B||!u.xbAP)return undefined;const t=tg.t,pl=t===player,fy=pl?(player.y||0):t&&t.g?t.g.position.y:0,ch=pl?(player.ch||0):t&&t.cr?.28:0;
  const o=xbEye(u,XB_EO),ry=u.g.rotation.y,vp=Number.isFinite(u.xbVP)?u.xbVP:0,cp=Math.cos(vp),aim=(XB_AIM||(XB_AIM=new THREE.Vector3())).set(Math.sin(ry)*cp,Math.sin(vp),Math.cos(ry)*cp);
- const sn=u.sn||0;bSpread(u,w,W,aim,d,D);/* spread + uncontrolled climb ... */if(u.xbPull&&sn>0){const k=D&&D.ae?D.ae/1.3:1,r=w==='Vandal'?1:w==='Phantom'?.7:0,ck=u.cr&&!u.mv?.85:1,vy=ck*(r?Math.min(sn,6)*.0065*r:Math.min(sn,6)*.004*(W.rec||1))*k*.6;aim.y-=vy*u.xbPull*BotBrain.sprayFade(sn);/* control fades over a long spray (BotBrain.sprayFade, = server sprayPull) */aim.normalize();}/* ... minus the part this bot drags down */
+ const S=u.xsp,tm=performance.now()/1000,rc=u.xbPull&&S&&S.lastWeapon===w&&tm-(S.shot??-9)<.3?u.xbPull*BotBrain.sprayFade(S.sequence||0):0;if(rc){/* the recoil pull of the server bot (Simulation.bot: its view drops rc x the spray's recoilY and leans .6 rc x recoilX against the drift, rc = BotBrain.sprayPull = recoilPull x sprayFade, while the last shot is < 0.3 s old) */const r=(XB_PR||(XB_PR=new THREE.Vector3())).set(-aim.z,0,aim.x);if(r.lengthSq()<1e-9)r.set(1,0,0);r.normalize();const q=(XB_PU||(XB_PU=new THREE.Vector3())).crossVectors(r,aim).normalize(),kx=-.6*rc*(S.recoilX||0),ky=-rc*(S.recoilY||0);aim.x+=r.x*kx+q.x*ky;aim.y+=r.y*kx+q.y*ky;aim.z+=r.z*kx+q.z*ky;aim.normalize();}bSpread(u,w,W,aim,d,D);/* then the server's gun (index.html bSpread = simulation fire: Motor spread + bloom + spray recoil) */
  const L=u.xbLS||(u.xbLS={o:{x:0,y:0,z:0},d:{x:0,y:0,z:1},len:0,at:-1,hit:null});L.o.x=o.x;L.o.y=o.y;L.o.z=o.z;L.d.x=aim.x;L.d.y=aim.y;L.d.z=aim.z;L.at=performance.now();L.hit=null;
  const dx=tg.x-o.x,dz=tg.z-o.z,ah=Math.hypot(aim.x,aim.z)||1e-6,s=(dx*aim.x+dz*aim.z)/ah;if(s<=0){L.len=80;if(u.xbTrP){u.xbTrP=0;xbTracer(u);}return null;}const k2=s/ah,qx=o.x+aim.x*k2,qy=o.y+aim.y*k2,qz=o.z+aim.z*k2;
  const lat=Math.hypot(qx-tg.x,qz-tg.z);let part=BotBrain.hitPart(lat,qy-fy,ch);L.hit=part;L.len=part?Math.hypot(qx-o.x,qy-o.y,qz-o.z):80;

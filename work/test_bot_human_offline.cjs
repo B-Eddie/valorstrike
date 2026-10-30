@@ -1,14 +1,14 @@
 // Offline enemy bots aim like mid-ranked players with the same model as the server (bots-human-1; vendor/bot-brain.cjs):
 // the BOT VARIETY block's xbEngage(ctx) / xbFaceAim / xbReady / xbShot run here in a vm with THREE, and the base loop's wiring
 // is pinned. Checks: reaction off-angle / flash costs, the visible yaw flicks (eases in and out, turn-rate limited, never a
-// snap), a new pull waits for the flick, shots are judged against the server hit volumes (head share of hits 12-28 %,
-// accuracy falls with range), the recoil pull is partial, a sloppy fight may fire before stopping, difficulty scales it.
+// snap), a new pull waits for the flick, shots are judged against the server hit volumes (head share of hits 12-38 %,
+// accuracy falls with range; bot-spray: head share 12-38 % = the server's all-hits window), the recoil pull is partial, a sloppy fight may fire before stopping, difficulty scales it.
 // bot-gun: the shots fire along the bot's view, steered every frame by xbView (flick plan + tracking lag through the
 // turn / acceleration limits); targets in front of the bot (+z).
 // bots-tune-1: trigger pulls are the server's BotBrain.firePattern mix by range (xbBurst), spray control fades over a long
 // spray (BotBrain.sprayFade), the visible yaw is acceleration-limited (BotBrain.turnStep with the bot's xTurnSt).
 const fs=require('fs'),path=require('path'),vm=require('vm'),assert=require('assert/strict');const root=path.join(__dirname,'..');
-const THREE=require(path.join(root,'server/node_modules/three/build/three.cjs'));
+const THREE=require(path.join(root,'server/node_modules/three/build/three.cjs')),MO=require(path.join(root,'vendor/valorant-feel.js'));
 const html=fs.readFileSync(path.join(root,'index.html'),'utf8'),A='// ---- BOT VARIETY ----',Z='// ---- END BOT VARIETY ----',i=html.indexOf(A),j=html.indexOf(Z,i);assert(i>=0&&j>i,'bot variety block');
 const block=html.slice(i,j+Z.length);
 // base loop wiring (enemy bots)
@@ -16,12 +16,14 @@ for(const w of ['xbEngage(b, b.pre, { off: Math.abs(oy), e0y: oy, d, flashed:','
  '(botStopped(b) || b.xbSl)'/* 83b0d90: weapon deadzone stop (was BOT_STOP 1.4 m/s) */,'(b.bn > 0 || typeof xbReady !== "function" || xbReady(b, d))','b.see = see && !(b.blind > 0) ?','if (b.blind > 0) b.xbFl = performance.now();'])assert(html.includes(w),'wired: '+w);
 assert(!/if \(see\) b\.g\.rotation\.y = Math\.atan2\(dx, dz\);/.test(html),'enemy bots no longer snap their yaw onto the target');
 for(const w of ['b.bn = typeof xbBurst === "function" ? xbBurst(b, d, W) :','(b.xbPz != null ? Math.max(1 / (W.rate || 4), b.xbPz) :'])assert(html.includes(w),'wired: '+w);
-for(const w of ['aim.y-=vy*u.xbPull*BotBrain.sprayFade(sn);','u.xTurnSt||(u.xTurnSt={v:0})'])assert(block.includes(w),'block: '+w);
+for(const w of ['rc=u.xbPull&&S&&S.lastWeapon===w&&tm-(S.shot??-9)<.3?u.xbPull*BotBrain.sprayFade(S.sequence||0):0;','bSpread(u,w,W,aim,d,D);','u.xTurnSt||(u.xTurnSt={v:0})'])assert(block.includes(w),'block: '+w);
+// bot-spray: the page's bSpread is the server's gun (shared motor spread + bloom + spray recoil), pinned; the stand-in below runs the same motor
+for(const w of ['M.sprayStep(R, w, (M.REC[w] != null ? M.REC[w] : 1) * (b.cr ? 0.85 : 1) * M.recoilMove(st, w), t, Math.random, M.bloomCap(st, w, P));','const cone = M.spread(st, w, P) + M.sprayBloom(R, w, t);'])assert(html.includes(w),'bSpread: '+w);
 let now=0,rnd=1;const R=()=>{rnd=(rnd*16807)%2147483647;return rnd/2147483647;};
 const ctx={Math:Object.assign(Object.create(Math),{random:R}),Object,Number,Infinity,Set,Map,WeakMap,Array,Float64Array,Int32Array,Uint8Array,THREE,performance:{now:()=>now},window:{xBotSeed:77},mode:'five',running:true,
  player:{hp:100,x:0,y:0,z:0,ch:0},allies:[],bots:[],timeLeft:100,S:{diff:'normal'},FV:{you:0,them:0,map:'ascent',atk:true,dm:false,sp:null},x2:(o,x,z)=>{if(!o)return [x,z];o[0]=x;o[1]=z;return o;},nmActive:()=>null,xSmV:(u,dt,vx,vz)=>[vx,vz],xGoal:(u,t,a,o)=>o,nmClimbOk:()=>false,nmPath:()=>[0],nmNext:()=>[0],
- // bSpread stand-in: Vandal first-shot spread (0.25 deg) and the page's uncontrolled rifle climb (index.html bSpread: 0.0065 rad / shot up to 6, x0.6)
- bSpread:(b,w,W,dir,d,D)=>{if((b.lt||9)>.35)b.sn=0;const n=b.sn||0,s=.0044*(D&&D.ae?D.ae/1.3:1)*(b.mv?8:1),vy=Math.min(n,6)*.0065*.6*(D&&D.ae?D.ae/1.3:1);dir.x+=(R()-.5)*s*2;dir.y+=(R()-.5)*s*2+vy;dir.z+=(R()-.5)*s*2;dir.normalize();b.sn=n+1;b.lt=0;}};
+ // bSpread stand-in: the page's bSpread (= server fire) on the shared motor - spread + bloom from the spray state b.xsp, the spray's climb / drift, a disk sample of the cone (seeded)
+ bSpread:(b,w,W,dir,d,D)=>{const t=now/1000,Rs=b.xsp||(b.xsp={});MO.sprayReset(Rs,w,t);const st={sf:b.mv?1:0,mv:!!b.mv,cr:!!b.cr,ads:0},cone=MO.spread(st,w,{})+MO.sprayBloom(Rs,w,t);MO.sprayStep(Rs,w,(MO.REC[w]??1)*(b.cr?.85:1)*MO.recoilMove(st,w),t,R,MO.bloomCap(st,w,{}));const r=new THREE.Vector3(-dir.z,0,dir.x).normalize(),q=new THREE.Vector3().crossVectors(r,dir).normalize(),[x,y]=MO.disk(R),kx=x*cone+Rs.recoilX,ky=y*cone+Rs.recoilY;dir.x+=r.x*kx+q.x*ky;dir.y+=r.y*kx+q.y*ky;dir.z+=r.z*kx+q.z*ky;dir.normalize();b.sn=Rs.sequence;b.lt=0;}};
 ctx.globalThis=ctx;vm.createContext(ctx);vm.runInContext(block+'\n;globalThis.BotBrain=BotBrain;',ctx);Object.assign(ctx.window,{BotRoutes:ctx.BotRoutes,BotBrain:ctx.BotBrain});
 const B=ctx.BotBrain,mean=a=>a.reduce((s,v)=>s+v,0)/a.length,out=[];
 const NAMES=['Jett','Omen','Raze','Sova','Sage','Reyna','Phoenix','Breach','Cypher','Skye'];
@@ -46,7 +48,7 @@ function shoot(dist,diff){ctx.S.diff=diff||'normal';const st={shots:0,head:0,bod
   ctx.xbEngage(u,true,{off:.2,e0y:.2,d:dist});u.see=u.rtE+.05;let n=0,next=0;while(u.see<1.6){ctx.xbView(u,ctx.player,tg.x,0,tg.z,ctx.player.ch||0,1/60);/* bot-gun: the view (xbView) is what the shot fires along */if(u.see>=next&&(n||ctx.xbReady(u,dist))){const p=ctx.xbShot(u,tg,from,'Vandal',{rec:1},dist,{ae:1.3,rt:260});st.shots++;if(n===0){st.first++;if(p)st.firstHit++;}if(p)st[p]++;n++;next=u.see+(dist>20?.4:.103);}u.see+=1/60;now+=1000/60;}}
  st.hits=st.head+st.body+st.legs;st.acc=st.hits/st.shots;st.hs=st.head/Math.max(1,st.hits);return st;}
 {const S={};for(const d of [8,15,25,40])S[d]=shoot(d);const H=[8,15,25,40].reduce((s,d)=>s+S[d].head,0),T=[8,15,25,40].reduce((s,d)=>s+S[d].hits,0);
- assert(H/T>.12&&H/T<.28,'headshot share 12-28 % of hits ('+(H/T*100).toFixed(1)+' %)');assert(S[8].acc>S[25].acc&&S[25].acc>S[40].acc,'accuracy falls with range');
+ /* bot-spray: the shots now use the server's gun (motor spread + bloom + recoil, was ~3-4x wider), so the hits land where the crosshair is as on the server: this row (all hits over 1.6 s of fire, no kill) is the server's all-hits HS window: test-bot-human 12-36 % (33 % there), test-bot-aim-kpi long duels 12-38 %; was 12-28 % with the wide offline cone (offline now 36 %) */assert(H/T>.12&&H/T<.38,'headshot share 12-38 % of hits, = the server all-hits window ('+(H/T*100).toFixed(1)+' %)');assert(S[8].acc>S[25].acc&&S[25].acc>S[40].acc,'accuracy falls with range');
  assert(S[40].firstHit/S[40].first<.5,'first shot at 40 m usually misses ('+(S[40].firstHit/S[40].first*100).toFixed(0)+' %)');
  const E=shoot(15,'easy'),Hd=shoot(15,'hard');assert(E.acc<S[15].acc&&Hd.acc>S[15].acc,'difficulty scales accuracy (easy '+(E.acc*100).toFixed(0)+' / normal '+(S[15].acc*100).toFixed(0)+' / hard '+(Hd.acc*100).toFixed(0)+' %)');ctx.S.diff='normal';
  // crouching target: the head drops with it
