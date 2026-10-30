@@ -4104,20 +4104,32 @@ function xGmReady() {
   try { xVM(); } catch (e) {}
 }
 { const f0 = vmFire; vmFire = function () { f0.apply(this, arguments); try { let w = mode === "duel" ? "Operator" : wName(); const g = VMS[w] || VMS.Vandal; if (g && g.userData.xGm) muzzle.position.y = g.userData.my; } catch (e) {} }; }
-const XRL = { k: null, last: -1, fx: [] };
+const XRL = { k: null, last: -1, fx: [], dm: new Map(), du: new Set() };
+// eventperf (user 2026-10-29 "check every event for lag"): the reload's falling magazine (xDrop) drew a transparent clone of the
+// mag's material that was made on every reload and disposed 0.7 s later. A transparent clone is its own shader program (OPAQUE is
+// part of the program), so the first reload linked it mid-fight and each later reload linked it again (the dispose had released it).
+// The clones are now pooled per source material and kept (each reuse is re-copied from the source, so it looks exactly as a fresh
+// clone did), and xWarmLazy shows one per magazine material to the per-map precompile.
+function xDropMat(x) {
+  if (Array.isArray(x)) return x.map(xDropMat); if (!x || typeof x.clone !== "function") return x;
+  let L = XRL.dm.get(x); if (!L) XRL.dm.set(x, (L = []));
+  let n = null; for (const c of L) if (!XRL.du.has(c)) { n = c; break; }
+  if (n) n.copy(x); else { n = x.clone() || x; if (n === x) return x; L.push(n); }
+  n.transparent = true; return n;
+}
 function xRst() { for (const n in XRP) ["mag", "bolt", "cyl"].forEach((s) => { const o = XRP[n][s]; if (o) { o.position.copy(o.userData.b0); o.rotation.copy(o.userData.r0); o.visible = true; } }); XRL.k = null; XRL.last = -1; }
 function xDrop(m) { // detached clone of the mag falls with gravity and fades out
   if (!m || typeof m.clone !== "function") return;
   const c = m.clone(); if (!c) return; m.updateMatrixWorld(true); m.matrixWorld.decompose(c.position, c.quaternion, c.scale); c.visible = true;
-  const fm = (x) => { if (Array.isArray(x)) return x.map(fm); if (!x || typeof x.clone !== "function") return x; const n = x.clone() || x; n.transparent = true; return n; };
-  c.traverse((o) => { if (o.material) o.material = fm(o.material); });
-  scene.add(c); XRL.fx.push({ m: c, vy: -0.4, t: 0 });
+  const use = [], mark = (x) => { if (Array.isArray(x)) x.forEach(mark); else if (x && x.isMaterial) { XRL.du.add(x); use.push(x); } };
+  c.traverse((o) => { if (o.material) { o.material = xDropMat(o.material); mark(o.material); } });
+  scene.add(c); XRL.fx.push({ m: c, vy: -0.4, t: 0, use });
 }
 function xFx(dt) {
   for (let i = XRL.fx.length - 1; i >= 0; i--) {
     const f = XRL.fx[i]; f.t += dt; f.vy -= 9.8 * dt; f.m.position.y += f.vy * dt; f.m.rotation.x += dt * 3;
     const op = Math.max(0, 1 - f.t / 0.7); f.m.traverse((o) => { if (o.material) o.material.opacity = op; });
-    if (f.t > 0.7) { scene.remove(f.m); f.m.traverse((o) => o.material && o.material.dispose()); XRL.fx.splice(i, 1); }
+    if (f.t > 0.7) { scene.remove(f.m); if (f.use) f.use.forEach((m) => XRL.du.delete(m)); XRL.fx.splice(i, 1); } // pooled clones go back to the pool (kept compiled)
   }
 }
 function xRld(rp, dt) {
@@ -11550,6 +11562,7 @@ let xLastT = 0, xPrev = "", xPC = false;
 const XWARM = (() => { try { const m = new THREE.Mesh(orbGeo, xSmokeM("xWarm", 0x808080, 0x808080)); m.frustumCulled = false; m.raycast = () => {}; return m; } catch (e) { return null; } })(); // made once at page load, reused by every precompile
 function xWarmLazy() { const warm = []; try {
   if (XWARM) warm.push(XWARM);
+  try { for (const w in XRP) { const g = XRP[w].mag; if (g) g.traverse((o) => { if (!o.isMesh || !o.material) return; const m = new THREE.Mesh(o.geometry, xDropMat(o.material)); m.frustumCulled = false; m.raycast = () => {}; warm.push(m); }); } } catch (e) {} // reload magazine drops (xDrop): their pooled transparent clones
   if (typeof xBlob !== "undefined" && xBlob.mat && xBlob.mat.map && renderer.initTexture) renderer.initTexture(xBlob.mat.map); // its program is the shared basic+map one; only the texture was new
   if (typeof muzzle !== "undefined" && muzzle.material.map && renderer.initTexture) renderer.initTexture(muzzle.material.map); // first-person muzzle flash: uploaded on the first shot otherwise
   for (const m of warm) scene.add(m); } catch (e) {} return warm; }
