@@ -23,13 +23,15 @@ async function run(name,opt){
  const touchOnly=async el=>{for(const t of ['pointerdown','touchstart','touchend','pointerup'])H.dispatch(el,H.mkEvent(t,{touches:[],changedTouches:[{identifier:1,clientX:100,clientY:100}]}));await tick(60);}; // in-game touch controls: no click follows
  const state=()=>{const c=A.ctx();return c?c.state:'none';};
  const heard=async()=>{const a0=A.audible;xe('try{SFX.low()}catch(e){};try{SFX.empty()}catch(e){};try{blip(500,0.05)}catch(e){};true');await tick(60);return A.audible-a0;};
- // 1. sound button (lobby): click it like a phone does (touch sequence + click)
- const b=H.$('sndBtn');await tap(b);H.dispatch(b,H.mkEvent('click'));await tick(200);
- check(xe('S.muted')===false,`${name}: sound button did not unmute`);
+ // 1. default-on sound: the first tap unlocks audio without toggling it off. If a future persisted setting starts
+ // muted, use the button once to enable it and still assert the same contract.
+ const b=H.$('sndBtn');if(xe('S.muted')){await tap(b);H.dispatch(b,H.mkEvent('click'));}else{await tap(cv);}await tick(200);
+ check(xe('S.muted')===false,`${name}: sound did not remain enabled by default`);
  if(opt.rejectFirst)check(state()!=='running',`${name}: fake did not refuse the first start (test setup)`);
  // 2. a refused start is retried on the next tap (iOS: a touch on the game canvas, no click)
  await touchOnly(cv);
  check(state()==='running',`${name}: context not running after the next tap (state ${state()}, resume calls ${A.resumeCalls}, contexts ${A.contexts.length})`);
+ check(JSON.stringify(xe('master.outs.map(n=>n.kind)'))==='["comp"]',`${name}: master bus limiter is missing`);
  check(await heard()>0,`${name}: no sound heard after unlock`);
  // 3. 'interrupted' (iOS call / Siri / lock screen): no sound queued while interrupted, back on the next tap
  xe('GA.buffers.set("ui/tick_001",ac.createBuffer(1,4800,48000));true');const p0=xe('GA.plays');

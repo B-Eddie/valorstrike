@@ -10,6 +10,7 @@ const {boot}=require('./page_harness.cjs');const FA=require('./fake_audio.cjs');
 const unhandled=[];process.on('unhandledRejection',e=>unhandled.push(String((e&&e.message)||e)));
 (async()=>{
  const H=boot({real3:false,seed:5});const A=FA.install(H,{});const xe=H.xe,e0=H.errors.length;
+ assert.equal(xe('S.muted'),false,'sound is enabled by default');assert.equal(H.$('sndBtn').getAttribute('aria-pressed'),'true','sound button starts on');
  const tick=async ms=>{for(let t=0;t<ms;t+=50){H.advance(Math.min(50,ms-t));A.tick(0.05);await new Promise(r=>setImmediate(r));}};
  xe('ac=undefined;master=undefined;S.muted=false;true');await tick(200);
  // sounds with no gesture yet: lobby / boot paths
