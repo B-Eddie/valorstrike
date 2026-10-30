@@ -30,7 +30,9 @@ const place=`(()=>{const b=bots.find(x=>x.alive);if(!b)return 0;window.__qaB=b;b
  xe('FV.buy=0.05;true');await adv(1500);xe('bots.forEach(b=>{b.cd=1e9});allies.forEach(a=>{a.cd=1e9});true');
  // --- 1b-perf: first hits and first kill after the map is up
  const g0=G();let first=0;const per=[];
- for(let k=0;k<10;k++){if(!xe(place))break;const a=process.hrtime.bigint();xe('shoot(false)');const ms=Number(process.hrtime.bigint()-a)/1e6;if(!k)first=ms;else per.push(ms);H.advance(17);await new Promise(r=>setImmediate(r));}
+ // stop once two bots are down (the kill path is covered): the wallbang checks below need two living bots, and how many of the
+ // ten shots kill depends on the seeded spread / headshots (a54532f's default-on sound draws from the same Math.random: 4 kills, none left)
+ for(let k=0;k<10;k++){if(k&&xe('bots.filter(b=>!b.alive).length')>=2)break;if(!xe(place))break;const a=process.hrtime.bigint();xe('shoot(false)');const ms=Number(process.hrtime.bigint()-a)/1e6;if(!k)first=ms;else per.push(ms);H.advance(17);await new Promise(r=>setImmediate(r));}
  const g1=G(),kills=xe('bots.filter(b=>!b.alive).length');
  console.log(`first shot into a bot ${first.toFixed(1)} ms, next ${per.length} shots mean ${(per.reduce((a,b)=>a+b,0)/per.length).toFixed(2)} ms (${kills} kills); new materials ${g1.mat-g0.mat}, geometries ${g1.geo-g0.geo}, textures ${g1.tex-g0.tex}, big-geometry bounds ${g1.big-g0.big}`);
  assert.ok(kills>=2,'the hits killed bots (kill path covered)');
