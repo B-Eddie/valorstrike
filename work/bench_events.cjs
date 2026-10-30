@@ -28,6 +28,8 @@ xe(`window.__REC={on:false,n:0,sites:new Map(),dom:0,html:0,txt:0};{const site=(
  if(d&&d.set)Object.defineProperty(p,'innerHTML',{get:d.get,set(v){if(__REC.on)__REC.html++;d.set.call(this,v);},configurable:true});}
  window.__recTop=(n)=>{const a=[...__REC.sites].sort((x,y)=>y[1]-x[1]).slice(0,n||8);return {total:__REC.n,dom:__REC.dom,html:__REC.html,top:a};};window.__recReset=()=>{__REC.n=0;__REC.dom=0;__REC.html=0;__REC.sites=new Map();};true`);
 xe(fs.readFileSync(path.join(__dirname,'perf_render_emu.js'),'utf8')+';true');
+// --inject file.js: extra page code (e.g. timing wrappers) evaluated after the recorder; window.__INJ() (if defined) is added to each row as 'inj'
+const INJ=arg('--inject');if(INJ){require('vm').runInContext('globalThis',H.context).__rnow=()=>Number(process.hrtime.bigint())/1e6;xe(fs.readFileSync(INJ,'utf8')+';true');}
 const emu=()=>JSON.parse(xe('JSON.stringify(__PS.endFrame())'));
 // page function hits per frame (which events ran in a frame)
 xe(`window.__EV=[];{const wrap=(n)=>{const f=window[n];if(typeof f!=="function")return;const W=function(){__EV.push(n);return f.apply(this,arguments);};try{window[n]=W;eval(n+'=W');}catch(e){}};
@@ -56,10 +58,11 @@ async function win(name,{pre,trig,n=60,step,post}={}){
  for(let i=0;i<n;i++){if(step)await step(i);const pa=PF.now(),c0=process.cpuUsage(),a=process.hrtime.bigint();H.advance(17);const ms=Number(process.hrtime.bigint()-a)/1e6;const cu=process.cpuUsage(c0);CPU.push((cu.user+cu.system)/1000);FT.push([pa,PF.now()]);fr.push(ms);const e=emu();E.prog+=e.prog||0;E.tex+=e.tex||0;E.geo+=e.geo||0;maxCalls=Math.max(maxCalls,e.calls||0);
   const ev=xe('__EV.splice(0).join(",")');if(ev)evAt.push(i+':'+ev);if(pv&&i===PROFN-1){RES.prof=RES.prof||{};RES.prof[name]=await profStop(name);}if(i%10===9)await tick();}
  await new Promise(r=>setTimeout(r,5));const gcF=FT.map(([a,b])=>GCE.filter(g=>g[0]<b&&g[0]+g[1]>a).reduce((t,g)=>t+g[1],0));const gcW=GCE.filter(g=>g[0]>=W0).reduce((t,g)=>t+g[1],0);
- xe('__REC.on=false;true');const PN=JSON.parse(xe('JSON.stringify(__PS.progNew.map(p=>p.obj+" | "+p.key.slice(0,60)))'));xe('__PS.live=false;true');const R=JSON.parse(xe('JSON.stringify(__recTop(6))'));
+ xe('__REC.on=false;true');const PN=JSON.parse(xe('JSON.stringify(__PS.progNew.map(p=>p.obj+" | "+p.key.slice(0,160)))'));xe('__PS.live=false;true');const R=JSON.parse(xe('JSON.stringify(__recTop(6))'));
  const imax=fr.indexOf(Math.max(...fr)),frx=fr.map((x,i)=>x-gcF[i]),sx=[...frx].sort((a,b)=>a-b);const s=[...fr].sort((a,b)=>a-b),f0=fr[0]+tt;
  const row={name,trig:+tt.toFixed(1),first:+f0.toFixed(1),p50:+pct(s,.5).toFixed(1),p99:+pct(s,.99).toFixed(1),max:+Math.max(s[s.length-1],f0).toFixed(1),long25:fr.filter((x,i)=>x+(i?0:tt)>25).length,
   cpuMax:+Math.max(...CPU.slice(1),CPU[0]+tcpu).toFixed(1),cpuP50:+pct([...CPU].sort((a,b)=>a-b),.5).toFixed(1),cpuL25:CPU.filter((x,i)=>x+(i?0:tcpu)>25).length,cpuFirst:+(CPU[0]+tcpu).toFixed(1),maxNoGC:+Math.max(sx[sx.length-1],frx[0]+tt).toFixed(1),long25x:frx.filter((x,i)=>x+(i?0:tt)>25).length,gcMaxFrame:+gcF[imax].toFixed(1),gcms:+gcW.toFixed(1),prog:E.prog,progs:PN.slice(0,4),tex:E.tex,geo:E.geo,calls:maxCalls,obj:R.total,dom:R.dom,html:R.html,ev:evAt.slice(0,6).join(' '),top:R.top.map(([k,v])=>v+' '+k.slice(0,160))};
+ if(INJ)row.inj=JSON.parse(xe('JSON.stringify(typeof __INJ==="function"?__INJ():null)'));
  if(post)Object.assign(row,await post());
  RES.events.push(row);console.log('EV',JSON.stringify({...row,top:row.top.slice(0,3)}));if(OUT)fs.writeFileSync(OUT,JSON.stringify(RES,null,1));return row;}
 // helpers (page side)
@@ -77,6 +80,9 @@ xe(`window.__qa={
  const T0=Date.now();
  xe(`FV.pick=${JSON.stringify(MAP)};true`);H.$('pm5v5').click();await adv(50);if(!(await through()))throw Error('match did not start');
  for(let i=0;i<3000&&xe('bots.concat(allies).some(b=>b.xm&&!b.xm.valorant)');i++){H.advance(17);await new Promise(r=>setTimeout(r,10));}
+ // the real loading gate loads the agents first, builds the match, then runs xWarmShaders behind the overlay; the harness stubs
+ // the agent wait (rigs come in after the match starts), so run the warm-up here, once the rigs are in, as the gate would
+ xe('xPC=false;if(typeof window.xWarmShaders==="function")window.xWarmShaders();true');
  RES.pick=xe('J.pick');RES.gq=xe('(()=>{try{return localStorage.getItem("vs.gq")}catch(e){return "?"}})()');RES.xs=xe('JSON.stringify({prc:XS.prc,shd:XS.shd,shm:XS.shm,aa:XS.aa,lod:XS.lod,res:XS.res})');
  RES.rigs=xe('bots.concat(allies).filter(b=>b.xm&&b.xm.valorant).length');console.log('agent',RES.pick,'rigs',RES.rigs,'preset',RES.gq,RES.xs);
  // ---- calm buy phase + buy-phase end

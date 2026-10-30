@@ -181,6 +181,21 @@ function xrRagdollTick(M,dt,wall){
  let e=0;for(const a of R.list)e+=a.p.distanceToSquared(a.old);R.rest=e<1e-7*R.list.length?R.rest+dt:0;
  return R.time<3.2&&R.rest<.4;
 }
+// eventperf (user 2026-10-29 "check every event for lag"): the first corpses of a match were built by cold code - xrRagdoll /
+// xrSupports (6000 skinned contact samples) / xrSolve / xrPose run in the interpreter until V8 has seen them a dozen times, and
+// each agent's sample list (xrSampleList) was made at its first death: 10-25 ms per kill early in a match instead of ~2 ms, so a
+// multi-kill or a Spike detonation over several bodies was a 50-200 ms frame. xrWarm runs that same code behind the loading
+// screen (xWarmShaders) on the living rigs and throws the result away: xrRagdoll / xrSupports only read the pose (they refresh
+// matrixWorld / boneMatrices from the unchanged local transforms, as the next render does), xrSolve moves only the scratch
+// particles, and every bone xrPose turns is put back to its exact position / quaternion / scale afterwards. Each rig's
+// sample list stays cached (per geometry, as a death would have left it). Contact points and corpses are unchanged.
+const XR_WARM={n:12,ms:400,runs:0,calls:0,last:0};
+function xrWarm(){const t0=performance.now();let calls=0;try{const L=(typeof XSOL!=='undefined'?XSOL.mx:[]).filter(M=>M&&M.valorant&&!M.dead&&M.sx&&M.sx.sc&&M.m);if(!L.length)return 0;
+ for(let k=0;k<Math.max(XR_WARM.n,L.length);k++){if(k>=L.length&&performance.now()-t0>XR_WARM.ms)break;const M=L[k%L.length];const bones=[];M.sx.sc.traverse(b=>{if(b.isBone)bones.push([b,b.position.clone(),b.quaternion.clone(),b.scale.clone()]);});
+  try{const R=xrRagdoll(M);calls++;if(R){xrSolve(R,1/60);xrPose(R);}}catch(e){}
+  for(const [b,p,q,s]of bones){b.position.copy(p);b.quaternion.copy(q);b.scale.copy(s);}M.m.updateMatrixWorld(true);}
+ }catch(e){}XR_WARM.runs++;XR_WARM.calls+=calls;XR_WARM.last=performance.now()-t0;return calls;}
+if(typeof window!=='undefined'){const warm=window.xWarmShaders;if(typeof warm==='function')window.xWarmShaders=function(){const go=running&&!xPC;const r=warm.apply(this,arguments);if(go)xrWarm();return r;};}
 {const die=xDie;xDie=function(b){const r=die.apply(this,arguments);if(b&&b.xm&&b.xm.dead){b.xm.diedAt=b.xm.diedAt||performance.now();}return r;};}
 {const visual=xVis;xVis=function(dt){const now=performance.now();for(let i=XDEAD.length-1;i>=0;i--){const e=XDEAD[i],age=(now-(e.c.diedAt||now))/1000;// corpse lifetime: work/death_runtime.js decides (xdpGone: round modes keep bodies until the round resets); kept bodies hold e.t under the base loop's 3 s ring fade
  if(typeof xdpGone==='function'?xdpGone(e,age):age>4){scene.remove(e.c.m);scene.remove(e.gn);xDisp(e.gn);const j=XSOL.mx.indexOf(e.c);if(j>=0)XSOL.mx.splice(j,1);XDEAD.splice(i,1);}else e.t=typeof xdpGone==='function'?Math.min(2.5,age):Math.max(e.t,age);}return visual(dt);};}
