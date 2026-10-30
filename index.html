@@ -17166,7 +17166,12 @@ if (typeof xUbPost === "function") { const hp0 = xUbPost; xUbPost = function (M)
  'use strict';
  const grids=new WeakMap();
  function hash(s){let h=2166136261;for(const c of String(s)){h=Math.imul(h^c.charCodeAt(0),16777619);}return h>>>0;}
- function grid(nav){let cells=grids.get(nav);if(cells)return cells;cells=new Map();nav.nodes.forEach((p,i)=>{const key=Math.floor(p[0]/3)+','+Math.floor(p[2]/3);if(!cells.has(key))cells.set(key,[]);cells.get(key).push(i);});grids.set(nav,cells);return cells;}
+ function grid(nav){let cells=grids.get(nav);if(cells)return cells;cells=new Map();nav.nodes.forEach((p,i)=>{const key=floor(p[0]/3)+','+floor(p[2]/3);if(!cells.has(key))cells.set(key,[]);cells.get(key).push(i);});grids.set(nav,cells);return cells;}
+ // repath: the Math builtins route / hyp / length / grid use, read once when the module loads (route named the global Math per relaxed
+ // edge - free behind a browser's inline cache, but a lookup through the context in a node vm page harness: ~61k-248k per
+ // search). Same functions, same arithmetic: routes bit-identical (work/test_repath_equivalence.cjs). Math.hypot stays a call-time
+ // read (the page swaps in its allocation-free hypot, work/hypot_runtime.js; only zero / Infinity / NaN reach it here).
+ const abs=Math.abs,sqrt=Math.sqrt,floor=Math.floor,min=Math.min,sin=Math.sin,PI=Math.PI;
  function length(nav,p){let d=0;for(let i=1;i<p.length;i++){const a=nav.nodes[p[i-1]],b=nav.nodes[p[i]];d+=hyp(a[0]-b[0],a[2]-b[2]);}return d;}
  // edgeOk(a,b) (optional): directed edge filter, e.g. the client's instinct climb rule (dy > 0.321 must pass nmClimbOk).
  // perf2: per-nav scratch (cost / prev / closed arrays and a typed index/score heap) reused across searches, and the
@@ -17179,7 +17184,7 @@ if (typeof xUbPost === "function") { const hp0 = xUbPost; xUbPost = function (M)
  // arguments into a new array per call; route calls it ~3x per edge it relaxes). Zero / Infinity / NaN go to the builtin: a
  // constant Infinity / NaN return (or the page's JS Math.hypot inlined here without the unary +) would make the inlined
  // result a tagged value and box every hypot.
- function hyp(x,z){const a=Math.abs(x),b=Math.abs(z),m=a>b?a:b;if(m>0&&m<Infinity&&a===a){const qa=a/m,qb=b/m;return Math.sqrt(qa*qa+qb*qb)*m;}return +Math.hypot(x,z);}
+ function hyp(x,z){const a=abs(x),b=abs(z),m=a>b?a:b;if(m>0&&m<Infinity&&a===a){const qa=a/m,qb=b/m;return sqrt(qa*qa+qb*qb)*m;}return +Math.hypot(x,z);}
  function route(nav,base,seed,peers=[],allowed=null,banned=null,edgeOk=null){
   if(base.length<3)return base;
   const N=nav.nodes,start=base[0],end=base[base.length-1],cells=grid(nav),ban=banned&&banned.size?banned:null;
@@ -17188,19 +17193,19 @@ if (typeof xUbPost === "function") { const hp0 = xUbPost; xUbPost = function (M)
   S.busy=true;try{
   // peer-lane penalty per node (was a Map): pen[] stays all-zero between searches; tl lists what this search touched
   const pen=S.pen;let tl=S.tl,tn=0;
-  for(const peer of peers){if(!peer||!peer.path)continue;for(let k=1;k<Math.min(24,peer.path.length);k+=3){const q=N[peer.path[k]];if(!q)continue;const cx=Math.floor(q[0]/3),cz=Math.floor(q[2]/3);
-   for(let x=cx-1;x<=cx+1;x++)for(let z=cz-1;z<=cz+1;z++){const L=cells.get(x+','+z);if(L)for(let t=0;t<L.length;t++){const i=L[t],p=N[i],d=hyp(p[0]-q[0],p[2]-q[2]);if(d<2.4&&Math.abs(p[1]-q[1])<1){
-    if(pen[i]===0){if(tn===tl.length){const nt=new Int32Array(tn*2);nt.set(tl);tl=S.tl=nt;}tl[tn++]=i;S.tn=tn;}pen[i]=Math.min(5,pen[i]+(2.4-d)*1.5);}}}
+  for(const peer of peers){if(!peer||!peer.path)continue;for(let k=1;k<min(24,peer.path.length);k+=3){const q=N[peer.path[k]];if(!q)continue;const cx=floor(q[0]/3),cz=floor(q[2]/3);
+   for(let x=cx-1;x<=cx+1;x++)for(let z=cz-1;z<=cz+1;z++){const L=cells.get(x+','+z);if(L)for(let t=0;t<L.length;t++){const i=L[t],p=N[i],d=hyp(p[0]-q[0],p[2]-q[2]);if(d<2.4&&abs(p[1]-q[1])<1){
+    if(pen[i]===0){if(tn===tl.length){const nt=new Int32Array(tn*2);nt.set(tl);tl=S.tl=nt;}tl[tn++]=i;S.tn=tn;}pen[i]=min(5,pen[i]+(2.4-d)*1.5);}}}
   }}
-  const phase=(hash(seed)%65536)/65536*Math.PI*2,g=S.g.fill(Infinity),prev=S.prev.fill(-1),closed=S.closed.fill(0),ne=N[end],ex=ne[0],ez=ne[2];let hi=S.hi,hs=S.hs,hn=1,steps=0,res=base;
+  const phase=(hash(seed)%65536)/65536*PI*2,g=S.g.fill(Infinity),prev=S.prev.fill(-1),closed=S.closed.fill(0),ne=N[end],ex=ne[0],ez=ne[2];let hi=S.hi,hs=S.hs,hn=1,steps=0,res=base;
   g[start]=0;hi[0]=start;hs[0]=hyp(N[start][0]-ex,N[start][2]-ez);
   while(hn&&steps++<N.length*6){
    // pop (binary min-heap on (index, score) typed arrays; same sift order as the old [i,s] heap)
    const a=hi[0];hn--;if(hn){const li=hi[hn],ls=hs[hn];let k=0;while(k*2+1<hn){let c=k*2+1;if(c+1<hn&&hs[c+1]<hs[c])c++;if(hs[c]>=ls)break;hi[k]=hi[c];hs[k]=hs[c];k=c;}hi[k]=li;hs[k]=ls;}
    if(closed[a])continue;if(a===end){const out=[];for(let i=end;i>=0;i=prev[i])out.push(i);out.reverse();res=length(nav,out)<=length(nav,base)*1.5+2?out:base;break;}closed[a]=1;
    const q=N[a],qx=q[0],qy=q[1],qz=q[2],ga=g[a],Aa=nav.adj[a];
-   for(let j=0;j<Aa.length;j++){const b=Aa[j];if(closed[b]||(allowed&&!allowed(b))||(ban&&ban.has(a+'>'+b))||(edgeOk&&!edgeOk(a,b)))continue;const p=N[b],px=p[0],pz=p[2],d=hyp(px-qx,pz-qz),lane=.22*(1+Math.sin(px*.17+pz*.13+phase));
-    const hb=hyp(px-ex,pz-ez),c=ga+d*(1+lane+(hb<2.5?0:pen[b]))+Math.abs(p[1]-qy)*.2;
+   for(let j=0;j<Aa.length;j++){const b=Aa[j];if(closed[b]||(allowed&&!allowed(b))||(ban&&ban.has(a+'>'+b))||(edgeOk&&!edgeOk(a,b)))continue;const p=N[b],px=p[0],pz=p[2],d=hyp(px-qx,pz-qz),lane=.22*(1+sin(px*.17+pz*.13+phase));
+    const hb=hyp(px-ex,pz-ez),c=ga+d*(1+lane+(hb<2.5?0:pen[b]))+abs(p[1]-qy)*.2;
     if(c<g[b]){g[b]=c;prev[b]=a;const s=c+hb;
      // push
      if(hn===hi.length){const ni=new Int32Array(hn*2),ns=new Float64Array(hn*2);ni.set(hi);ns.set(hs);hi=S.hi=ni;hs=S.hs=ns;}
