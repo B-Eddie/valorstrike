@@ -3221,7 +3221,7 @@ function xKLui() { if (xKL.el && xKL.el.parentNode && xKL.t && xKL.nm && xKL.w &
   document.body.appendChild(c); document.body.appendChild(s); xKL.el = c; xKL.sl = s;
   const q = (k) => c.querySelector(k); xKL.t = q("i"); xKL.nm = q("b"); xKL.w = q(".x-kb__r span"); const dd = c.querySelectorAll("dd"); xKL.dd = dd[0]; xKL.tk = dd[1]; xKL.sn = s.querySelector("span"); }
 function xKLfx(on) { try { const cv = renderer.domElement; cv.style.transition = "filter .35s ease-out"; cv.style.filter = on ? "saturate(.12) brightness(.55)" : ""; } catch (e) {} }
-function xKLDie(by, w) { if (!xKLm()) return; xKLui(); xKL.on = true; xKL.st = 0; xKL.sp = false; xKL.cur = null; xKL.si = 0; xKL.sj = 0; xKL.kb = null;
+function xKLDie(by, w) { if (!xKLm()) return; xKL.by = by; xKL.bw = w; xKL.byT = performance.now(); xKLui(); xKL.on = true; xKL.st = 0; xKL.sp = false; xKL.cur = null; xKL.si = 0; xKL.sj = 0; xKL.kb = null;
   let k = null; try { if (typeof bots !== "undefined") for (const b of bots) if (b.name === by) { k = b; break; } } catch (e) {} xKL.kb = k;
   const ag = String((k && (xAg(k) || k.ag)) || by || "?"); let h = 0; for (let i = 0; i < ag.length; i++) h = (h * 31 + ag.charCodeAt(i)) % 360;
   if (xKL.t) { xKL.t.textContent = ag.slice(0, 2).toUpperCase(); xKL.t.style.background = "hsl(" + h + ",45%,32%)"; }
@@ -3230,7 +3230,8 @@ function xKLDie(by, w) { if (!xKLm()) return; xKLui(); xKL.on = true; xKL.st = 0
   if (xKL.dd) xKL.dd.textContent = Math.round(e.dd) + " dmg · " + e.dh + " hits · " + e.dhs + " HS"; if (xKL.tk) xKL.tk.textContent = Math.round(e.td) + " dmg · " + e.th + " hits · " + e.ths + " HS";
   if (xKL.el) xKL.el.classList.add("on"); xKLfx(true); }
 function xKLReset() { try { if (typeof XOB !== "undefined" && XOB.hm) { XOB.hm.visible = true; XOB.hm = null; } } catch (e) {} xKL.p = player; xKL.n = 0; xKL.st = 0; xKL.on = false; xKL.sp = false; xKL.cur = null; xHS = false; if (xKL.el) { xKL.el.classList.remove("on"); xKL.sl.classList.remove("on"); xKLfx(false); } }
-function xSpec(dt) { if (!xKL.on) return xSpecPick(); xKL.st += dt; if (xKL.st < 2) return null;
+function xSpec(dt) { if (!xKL.on) { if (!(xKLm() && player && player.hp <= 0)) return xSpecPick(); const rec = xKL.by != null && performance.now() - (xKL.byT || 0) < 4000; xKLDie(rec ? xKL.by : null, rec ? xKL.bw : null); if (!rec) xKL.st = 2; } // dead with no spectate state: the kill message came ahead of the death (online: the server's kill event before the own row's hp 0 - the alive frame between reset it) or never came. Spectate properly (xKL.sp: HUD, POV, click / Space switching all read it), not a teammate camera through xSpecPick with the death-frame HUD and dead clicks; the killed-by card when the killer is known
+  xKL.st += dt; if (xKL.st < 2) return null;
   if (!xKL.sp) { xKL.sp = true; xKL.cur = undefined; /* write the label now: it kept the previous death's text */ xKLfx(false); xKL.el.classList.remove("on"); xKL.sl.classList.add("on"); try { if (document.pointerLockElement) document.exitPointerLock(); } catch (e) {} } // free the cursor so the 3rd-person button can be clicked; pointerlockchange does not pause while spectating
   const a = xSpecPick(); if (a !== xKL.cur) { xKL.cur = a; if (xKL.sn) xKL.sn.textContent = a ? "SPECTATING " + String(a.name).toUpperCase() : "NO TEAMMATES ALIVE"; } return a; }
 // Spectating stays on the followed player until they die or the player cycles (click / Space step from them, as VALORANT):
