@@ -2137,7 +2137,7 @@ function audKick(gesture) { // resume a context that is not running; outside a g
 }
 function audio() {
   if (!ac) { const A = window.AudioContext || window.webkitAudioContext; if (!A || !audAct()) return; // no context before the first user activation
-    try { ac = new A(); master = ac.createGain(); const limiter = ac.createDynamicsCompressor ? ac.createDynamicsCompressor() : null; if (limiter) { limiter.threshold.value = -6; limiter.knee.value = 12; limiter.ratio.value = 8; limiter.attack.value = 0.003; limiter.release.value = 0.25; master.connect(limiter); limiter.connect(ac.destination); } else master.connect(ac.destination); } catch (e) { ac = undefined; master = undefined; AUD.fails++; AUD.err = String((e && e.message) || e); return; } // retried on the next call / gesture; limiter contains measured multi-voice peak summation
+    try { ac = new A(); master = ac.createGain(); const limiter = ac.createDynamicsCompressor ? ac.createDynamicsCompressor() : null; if (limiter) { limiter.threshold.value = -6; limiter.knee.value = 12; limiter.ratio.value = 8; limiter.attack.value = 0.003; limiter.release.value = 0.25; master.connect(limiter); limiter.connect(ac.destination); } else master.connect(ac.destination); AUD.bus = limiter || ac.destination; } catch (e) { ac = undefined; master = undefined; AUD.fails++; AUD.err = String((e && e.message) || e); return; } // retried on the next call / gesture; limiter contains measured multi-voice peak summation
     try { ac.addEventListener("statechange", () => { if (ac && ac.state !== "running" && !document.hidden) audKick(false); }); } catch (e) {} }
   master.gain.value = S.muted ? 0 : S.vol / 100; audKick(AUD.gest > 0);
 }
@@ -4410,15 +4410,16 @@ let xSpPh = 0, xSpOn = false;
   spike.traverse((o) => { if (o !== spike && o.isMesh) o.raycast = XNR; }); }
 // perf pass 18: the per-frame effects pass allocates nothing (no concat/closures/Vector3) and has no silent try/catch;
 // feel pass: clutch (last alive vs 1+) HUD + audio. Nodes built once, curve preallocated, no per-frame allocation
-const XCL = { on: false, n: -1, ban: false, el: null, lp: null, amb: null, env: null, vol: null, dr: null, nx: 0, cv: new Float32Array(64) };
+const XCL = { on: false, n: -1, ban: false, el: null, lp: null, amb: null, env: null, vol: null, dr: null, nx: 0, ce: 0, cv: new Float32Array(64) };
 for (let i = 0; i < 64; i++) { const t = i / 63 * 0.42; XCL.cv[i] = Math.exp(-(((t - 0.035) / 0.03) ** 2)) + 0.6 * Math.exp(-(((t - 0.2) / 0.035) ** 2)); }
 XCL.cv[63] = 0;
 function xClAud() {
   if (XCL.lp) return true; if (!ac || !master) return false;
   const lp = ac.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 20000; lp.Q.value = 0.5;
-  master.disconnect(); master.connect(lp); lp.connect(ac.destination); XCL.lp = lp;
+  const bus = AUD.bus && AUD.bus.context === ac ? AUD.bus : ac.destination; // the master-bus limiter stays last (was master -> lowpass -> destination, which dropped it for the rest of the session)
+  master.disconnect(); master.connect(lp); lp.connect(bus); XCL.lp = lp;
   XCL.amb = ac.createGain(); XCL.amb.gain.value = 0.5; XCL.amb.connect(master); // ambience duck bus (-50%)
-  XCL.vol = ac.createGain(); XCL.vol.gain.value = 0; XCL.vol.connect(ac.destination); // heartbeat sits after the lowpass so it stays clear
+  XCL.vol = ac.createGain(); XCL.vol.gain.value = 0; XCL.vol.connect(bus); // heartbeat sits after the lowpass so it stays clear (into the limiter)
   XCL.env = ac.createGain(); XCL.env.gain.value = 0; XCL.env.connect(XCL.vol);
   const o1 = ac.createOscillator(), o2 = ac.createOscillator(); o1.type = o2.type = "sine"; o1.frequency.value = 52; o2.frequency.value = 78;
   const g2 = ac.createGain(); g2.gain.value = 0.45; o1.connect(XCL.env); o2.connect(g2); g2.connect(XCL.env); o1.start(); o2.start();
@@ -4442,7 +4443,7 @@ function xClTick() {
     if (on && !XCL.ban) { XCL.ban = true; annc("LAST ALIVE", 1600, { c: "loss", sub: "1 v " + n }); }
     if (ac && xClAud()) {
       const t = ac.currentTime; XCL.lp.frequency.cancelScheduledValues(t); XCL.lp.frequency.setTargetAtTime(on ? 1800 : 20000, t, on ? 0.15 : 0.25);
-      if (!on) { XCL.env.gain.cancelScheduledValues(t); XCL.env.gain.setValueAtTime(0, t); XCL.vol.gain.setValueAtTime(0, t); }
+      if (!on) { XCL.vol.gain.cancelScheduledValues(t); XCL.vol.gain.setValueAtTime(0, t); } // silence on the volume only: a heartbeat curve may still be running on XCL.env (it ends on 0), and Firefox throws NotSupportedError "Can't add events during a curve event" for any event inside it, even after cancelScheduledValues
       XCL.nx = t + 0.25; xClDuck(on);
     }
   }
@@ -4450,9 +4451,9 @@ function xClTick() {
   if (n !== XCL.n && XCL.el) { XCL.n = n; XCL.el.textContent = "1 v " + n; }
   if (!ac || !XCL.lp) return; xClDuck(true);
   const t = ac.currentTime; if (t < XCL.nx - 0.05) return;
-  const pl = mode === "five" ? !!(FV.sp && FV.sp.st === "plant") : mode === "retake", st = Math.max(t, XCL.nx);
+  const pl = mode === "five" ? !!(FV.sp && FV.sp.st === "plant") : mode === "retake", st = Math.max(t, XCL.nx, XCL.ce || 0); // never overlap the last curve (Firefox: "Can't add curve events that overlap other events")
   XCL.vol.gain.setValueAtTime(S.muted ? 0 : 0.2 * S.vol / 100, st);
-  XCL.env.gain.setValueCurveAtTime(XCL.cv, st, 0.42); XCL.nx = st + (pl ? 0.52 : 0.92); // faster heartbeat once the Spike is down
+  XCL.env.gain.setValueCurveAtTime(XCL.cv, st, 0.42); XCL.ce = st + 0.42; XCL.nx = st + (pl ? 0.52 : 0.92); // faster heartbeat once the Spike is down
 }
 function xClPos() { // 1vN label sits 8 px under the score bar's measured bottom edge (CSS var --x-top-b)
   try { const b = document.querySelector("#game .x-top") || document.querySelector(".x-top"); if (!b || !b.getBoundingClientRect) return;
@@ -21463,7 +21464,7 @@ function gaPump(){while(GA.busy<4&&GA.queue.length){const j=GA.queue.shift();GA.
 function gaDecode(key){if(GA.buffers.has(key)){const b=GA.buffers.get(key);GA.buffers.delete(key);GA.buffers.set(key,b);return Promise.resolve(b);}if(GA.pending.has(key))return GA.pending.get(key);
  if(typeof ac==='undefined'||!ac)return Promise.reject(Error('Audio locked'));
  const context=ac,p=gaFetch(key).then(bytes=>new Promise((resolve,reject)=>{GA.decodeQueue=GA.decodeQueue||[];GA.decodeQueue.push({context,bytes,resolve,reject});gaDecodePump();})).then(b=>{const size=b.length*b.numberOfChannels*4;while(GA.bytes+size>GA.limit&&GA.buffers.size){const k=GA.buffers.keys().next().value,o=GA.buffers.get(k);GA.bytes-=o.length*o.numberOfChannels*4;GA.buffers.delete(k);}GA.buffers.set(key,b);GA.bytes+=size;return b;}).catch(e=>{GA.errors[key]=String(e);throw e;}).finally(()=>GA.pending.delete(key));GA.pending.set(key,p);return p;}
-function gaDecodePump(){GA.decoding=GA.decoding||0;while(GA.decoding<2&&GA.decodeQueue&&GA.decodeQueue.length){const j=GA.decodeQueue.shift();GA.decoding++;new Promise((resolve,reject)=>j.context.decodeAudioData(j.bytes.slice(0),resolve,reject)).then(j.resolve,j.reject).finally(()=>{GA.decoding--;gaDecodePump();});}}
+function gaDecodePump(){GA.decoding=GA.decoding||0;while(GA.decoding<2&&GA.decodeQueue&&GA.decodeQueue.length){const j=GA.decodeQueue.shift();GA.decoding++;new Promise((resolve,reject)=>{const r=j.context.decodeAudioData(j.bytes.slice(0),resolve,reject);if(r&&r.catch)r.catch(()=>{});/* Chrome / Firefox also reject the returned promise when the bytes do not decode: unhandled, that was the "Something broke: EncodingError" toast; the error callback above carries the failure */}).then(j.resolve,j.reject).finally(()=>{GA.decoding--;gaDecodePump();});}}
 function gaWarm(key){if(!gaFile(key))return;gaFetch(key).then(()=>{if(typeof ac!=='undefined'&&ac&&!S.muted)return gaDecode(key);}).catch(()=>{});}
 function gaNodeOK(n){return !!n&&(!n.context||n.context===ac);}
 function gaConnect(n,target){if(!gaNodeOK(n)||!gaNodeOK(target))throw Error('Audio graph context changed');return n.connect(target);}
