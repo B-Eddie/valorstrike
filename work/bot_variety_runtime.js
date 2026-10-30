@@ -33,18 +33,59 @@ function xbBurst(u,d,W){const B=window.BotBrain&&xbBrain(u);if(!B){u.xbPz=null;r
 function xbFaceAim(u,want,dt){const B=xbBrain(u);if(!B||!u.xbAP||!u.g)return want;const e=BotBrain.aimAt(u.xbAP,u.see||0,XB_E);return BotBrain.turnStep(B,u.g.rotation.y,want+e[0],dt,u.xTurnSt||(u.xTurnSt={v:0})).yaw;}
 // A new trigger pull: once the bot believes it is on target (end of its flick / correction) or the crosshair passes close.
 function xbReady(u,d){if(!u.xbAP)return true;const e=BotBrain.aimAt(u.xbAP,u.see||0,XB_E);return BotBrain.readyToFire(u.xbAP,Math.hypot(e[0],e[1]),d,u.see||0);}
-// One shot of an enemy bot with the human aim model: the crosshair sits at the fight's body spot (head / neck / chest) on the
-// target's real height (crouch lowers it), spread + spray climb (bSpread, minus the share this bot pulls down), the planned
-// flick error and the tracking lag; the ray is then tested against the server's hit volumes (BotBrain.hitPart) at the
-// target. Returns 'head' | 'body' | 'legs' | null (miss).
+// The bot's crosshair (bot-gun, user 2026-10-29: "their aim is like purposely bad ... the bullet is [not] coming out of the
+// right place ... their shots aren't going to their crosshair"). One direction is the bot's view: its yaw (u.g.rotation.y,
+// what the third-person body / gun and the spectator's first-person camera use) and its pitch (u.xbVP -> u.xaim, read by
+// xObsPitch and the third-person gun pitch). xbView steers it every frame of a fight: toward the fight's body spot
+// (head / neck / chest on the target's real height, crouch lowers it) plus the planned human flick error
+// (BotBrain.aimAt: reaction, min-jerk flick, overshoot, correction, resting error that keeps settling while tracking) minus
+// the tracking lag on a target moving across the view (BotBrain.trackLag / trackTurn, from the target's angular speed),
+// through the bot's own turn rate / hand acceleration (BotBrain.turnStep). xbShot then fires along THAT view: spread +
+// the uncontrolled spray climb (bSpread, minus the share this bot pulls down) are the only things between the crosshair
+// and the bullet. Was: the shot built its own direction from the target (plan error, lag, spot) while the visible yaw was
+// a separate turn-limited copy and the pitch aimed at the eye / chest regardless of the plan, and the tracer (bfxBot) was
+// a random ray along the body's facing from the hip, level - so neither the spectator's crosshair nor the tracer showed
+// where the shot went. u.xbLS keeps the last shot's eye ray (origin, direction, length) for the tracer.
+function xbEye(u,o){const q=u.g.position;o.x=q.x;o.y=(q.y||0)+1.6;o.z=q.z;return o;}
+const XB_EO={x:0,y:0,z:0};
+function xbView(u,t,tx,ty,tz,tch,dt){const B=xbBrain(u);if(!B||!u.xbAP||!u.g)return false;const o=xbEye(u,XB_EO),dx=tx-o.x,dz=tz-o.z,d=Math.hypot(dx,dz)||.01,see=u.see||u.ts||0;
+ const e=BotBrain.aimAt(u.xbAP,see,XB_E),want=Math.atan2(dx,dz),tm=performance.now()/1000;
+ const S=u.xbTrk&&u.xbTrk.tg===t?u.xbTrk:(u.xbTrk={tg:t});let w=0;if(S.vw!=null&&dt>0){const r=Math.atan2(Math.sin(want-S.vw),Math.cos(want-S.vw))/dt;S.av=(S.av==null?r:S.av+(r-S.av)*Math.min(1,dt*12));w=S.av;}S.vw=want;
+ const lg=Math.max(-3,Math.min(3,w))*BotBrain.trackLag(B,see)+BotBrain.trackTurn(B,S,w,tm);u.xLag=lg;/* the crosshair runs behind a target crossing the view; a direction change is seen late */
+ const tr=u.xTurnSt||(u.xTurnSt={v:0});u.g.rotation.y=BotBrain.turnStep(B,u.g.rotation.y,want+e[0]-lg,dt||.016,tr).yaw;
+ const h=BotBrain.AIM_H[u.xbSpot]||1.3,sy=(ty||0)+h-(tch||0)*h/1.8;u.xbVP=Math.atan2(sy-o.y,d)+e[1];
+ const A=u.xaim||(u.xaim={x:0,y:0,z:1}),cp=Math.cos(u.xbVP),ry=u.g.rotation.y;A.x=Math.sin(ry)*cp;A.y=Math.sin(u.xbVP);A.z=Math.cos(ry)*cp;u.xaimOn=true;return true;}
+// One shot along the bot's crosshair (xbView): spread + the spray climb this bot does not pull down, then tested against
+// the server's hit volumes (BotBrain.hitPart) at the target. Returns 'head' | 'body' | 'legs' | null (miss), undefined when
+// the bot has no human aim model (the old fallback in the fire loops).
 function xbShot(u,tg,from,w,W,d,D){const B=xbBrain(u);if(!B||!u.xbAP)return undefined;const t=tg.t,pl=t===player,fy=pl?(player.y||0):t&&t.g?t.g.position.y:0,ch=pl?(player.ch||0):t&&t.cr?.28:0;
- const h=BotBrain.AIM_H[u.xbSpot]||1.3,aim=(XB_AIM||(XB_AIM=new THREE.Vector3())).set(tg.x-from.x,fy+h-ch*h/1.8-from.y,tg.z-from.z).normalize();
+ const o=xbEye(u,XB_EO),ry=u.g.rotation.y,vp=Number.isFinite(u.xbVP)?u.xbVP:0,cp=Math.cos(vp),aim=(XB_AIM||(XB_AIM=new THREE.Vector3())).set(Math.sin(ry)*cp,Math.sin(vp),Math.cos(ry)*cp);
  const sn=u.sn||0;bSpread(u,w,W,aim,d,D);/* spread + uncontrolled climb ... */if(u.xbPull&&sn>0){const k=D&&D.ae?D.ae/1.3:1,r=w==='Vandal'?1:w==='Phantom'?.7:0,ck=u.cr&&!u.mv?.85:1,vy=ck*(r?Math.min(sn,6)*.0065*r:Math.min(sn,6)*.004*(W.rec||1))*k*.6;aim.y-=vy*u.xbPull*BotBrain.sprayFade(sn);/* control fades over a long spray (BotBrain.sprayFade, = server sprayPull) */aim.normalize();}/* ... minus the part this bot drags down */
- const e=BotBrain.aimAt(u.xbAP,u.see||0,XB_E),yaw=Math.atan2(aim.x,aim.z),tm=performance.now()/1000;let lg=0;if(u.xaT!=null&&tm>u.xaT&&tm-u.xaT<.5){const wv=Math.atan2(Math.sin(yaw-u.xaY),Math.cos(yaw-u.xaY))/(tm-u.xaT);lg=Math.max(-3,Math.min(3,wv))*BotBrain.trackLag(B,u.see||0);}u.xaY=yaw;u.xaT=tm;u.xLag=lg;
- /* direction changes seen late (BotBrain.trackTurn, = server): the target's own angular speed from its move since the last shot */{const S=u.xbTrk&&u.xbTrk.tg===t?u.xbTrk:(u.xbTrk={tg:t}),gx=tg.x-from.x,gz=tg.z-from.z;let w=0;if(S.px!=null&&tm>S.pt&&tm-S.pt<.5){const vx=(tg.x-S.px)/(tm-S.pt),vz=(tg.z-S.pz)/(tm-S.pt);w=(gz*vx-gx*vz)/Math.max(1,gx*gx+gz*gz);}S.px=tg.x;S.pz=tg.z;S.pt=tm;lg-=BotBrain.trackTurn(B,S,w,tm);}
- const hl=Math.hypot(aim.x,aim.z)||1,hx=-aim.z/hl,hz=aim.x/hl,ey=-e[0]+lg;/* yaw + plan error, minus the lag */aim.x+=hx*ey;aim.z+=hz*ey;aim.y+=e[1];aim.normalize();
- const dx=tg.x-from.x,dz=tg.z-from.z,ah=Math.hypot(aim.x,aim.z)||1e-6,s=(dx*aim.x+dz*aim.z)/ah;if(s<=0)return null;const k2=s/ah,qx=from.x+aim.x*k2,qy=from.y+aim.y*k2,qz=from.z+aim.z*k2;
- const lat=Math.hypot(qx-tg.x,qz-tg.z);return BotBrain.hitPart(lat,qy-fy,ch);}
+ const L=u.xbLS||(u.xbLS={o:{x:0,y:0,z:0},d:{x:0,y:0,z:1},len:0,at:-1,hit:null});L.o.x=o.x;L.o.y=o.y;L.o.z=o.z;L.d.x=aim.x;L.d.y=aim.y;L.d.z=aim.z;L.at=performance.now();L.hit=null;
+ const dx=tg.x-o.x,dz=tg.z-o.z,ah=Math.hypot(aim.x,aim.z)||1e-6,s=(dx*aim.x+dz*aim.z)/ah;if(s<=0){L.len=80;if(u.xbTrP){u.xbTrP=0;xbTracer(u);}return null;}const k2=s/ah,qx=o.x+aim.x*k2,qy=o.y+aim.y*k2,qz=o.z+aim.z*k2;
+ const lat=Math.hypot(qx-tg.x,qz-tg.z);let part=BotBrain.hitPart(lat,qy-fy,ch);L.hit=part;L.len=part?Math.hypot(qx-o.x,qy-o.y,qz-o.z):80;
+ if(u.xbTrP){u.xbTrP=0;xbTracer(u);if(part&&L.hit===null)part=null;/* a wall before the body stopped it */}if(part&&pl)u._xSeen=performance.now();return part;}
+// The tracer of a fight shot (bfxBot runs from SFX.at, before the loop calls xbShot): deferred to the end of xbShot and
+// drawn from the third-person gun's muzzle (u.xm.gun: MuzzlePoint / the template's -Z bore end) to where the eye ray of
+// the shot ends - on the target's hit volume, else the first wall along it (bullet hole / Lotus wall as before) - so the
+// tracer leaves the gun and lands where the spectator's crosshair + spread put it.
+function xbTrDefer(u){if(!u||u.nt||!u.xbAP||u.bsW||!((u.see||0)>0||(u.ts||0)>0)||typeof xbShot!=='function')return false;u.xbTrP=1;return true;}
+var XB_TR=null;
+function xbMuzzle(u,out){try{const M=u.xm,g=M&&M.gun;if(!g||!g.matrixWorld)return null;const ud=g.userData||{};out.set(0,Number.isFinite(ud.my)?ud.my:0,Number.isFinite(ud.mz)?ud.mz:-.5);g.updateWorldMatrix(true,false);g.localToWorld(out);return Number.isFinite(out.x)&&Number.isFinite(out.y)&&Number.isFinite(out.z)?out:null;}catch(e){return null;}}
+function xbTracer(u){const L=u.xbLS;if(!L)return;const T=XB_TR||(XB_TR={m:new THREE.Vector3(),o:new THREE.Vector3(),d:new THREE.Vector3(),e:new THREE.Vector3(),rc:new THREE.Raycaster(),hl:[]});
+ T.o.set(L.o.x,L.o.y,L.o.z);T.d.set(L.d.x,L.d.y,L.d.z);let len=L.net?L.len:L.hit?L.len:80,h=null;
+ if(L.net){try{T.rc.set(T.o,T.d);T.rc.near=0;T.rc.far=len+.3;T.hl.length=0;for(const x of T.rc.intersectObjects(solids,true,T.hl)){const ud=x.object&&x.object.userData;if(ud&&(ud.bot||ud.aim))continue;if(Math.abs(x.distance-len)<.5){h=x;len=x.distance;}break;}}catch(e){h=null;}}
+ else try{T.rc.set(T.o,T.d);T.rc.near=0;T.rc.far=len;T.hl.length=0;for(const x of T.rc.intersectObjects(solids,true,T.hl)){const ud=x.object&&x.object.userData;if(ud&&(ud.bot||ud.aim))continue;if(L.hit&&x.distance>len-.35)break;h=x;break;}if(h){len=h.distance;L.hit=null;}}catch(e){h=null;}
+ T.e.copy(T.o).addScaledVector(T.d,len);const m=xbMuzzle(u,T.m)||T.m.copy(T.o);const dir=T.e.clone().sub(m),dl=dir.length()||1e-6;dir.multiplyScalar(1/dl);L.mz=[m.x,m.y,m.z];L.end=[T.e.x,T.e.y,T.e.z];
+ try{bFx(m,dir,h||undefined,dl);}catch(e){}
+ if(L.net)return;
+ try{if(h&&typeof xBotWall==='function')xBotWall(u,T.o,T.d,h);}catch(e){}
+ try{if(typeof LG!=='undefined'&&LG.on&&typeof xLBotWallDmg==='function')xLBotWallDmg(T.o,T.d,len,30);}catch(e){}}
+// Online: a remote unit's shot as the server fired it ('s' event + direction + reach, simulation.js fire): the tracer from
+// its drawn third-person muzzle to its drawn eye + that ray (the spectator's camera sits at that eye looking along the
+// server's view), a bullet hole where the ray ends on a wall. Knife swings draw none.
+function xbNetTracer(u){const N=u.nShot;N.on=0;if(!(N.len>0)||N.w==='Knife'||N.w==='Blade Storm')return N.w==='Knife';const q=u.g.position,ch=u.cr?.45:0;
+ const L=u.xbLS||(u.xbLS={o:{x:0,y:0,z:0},d:{x:0,y:0,z:1},len:0,at:-1,hit:null});L.o.x=q.x;L.o.y=(q.y||0)+1.6-ch;L.o.z=q.z;const dl=Math.hypot(N.d[0],N.d[1],N.d[2])||1;L.d.x=N.d[0]/dl;L.d.y=N.d[1]/dl;L.d.z=N.d[2]/dl;L.len=N.len;L.hit=null;L.net=1;L.at=performance.now();xbTracer(u);L.net=0;return true;}
 var XB_AIM=null; // scratch vector, made on first use (the block also runs without THREE in tests)
 const XB_E=[0,0];
 // settle the crosshair error onto a shot direction (yaw around up, pitch on y), scaled by the difficulty aim error

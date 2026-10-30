@@ -3,6 +3,8 @@
 // is pinned. Checks: reaction off-angle / flash costs, the visible yaw flicks (eases in and out, turn-rate limited, never a
 // snap), a new pull waits for the flick, shots are judged against the server hit volumes (head share of hits 12-28 %,
 // accuracy falls with range), the recoil pull is partial, a sloppy fight may fire before stopping, difficulty scales it.
+// bot-gun: the shots fire along the bot's view, steered every frame by xbView (flick plan + tracking lag through the
+// turn / acceleration limits); targets in front of the bot (+z).
 // bots-tune-1: trigger pulls are the server's BotBrain.firePattern mix by range (xbBurst), spray control fades over a long
 // spray (BotBrain.sprayFade), the visible yaw is acceleration-limited (BotBrain.turnStep with the bot's xTurnSt).
 const fs=require('fs'),path=require('path'),vm=require('vm'),assert=require('assert/strict');const root=path.join(__dirname,'..');
@@ -40,8 +42,8 @@ const NAMES=['Jett','Omen','Raze','Sova','Sage','Reyna','Phoenix','Breach','Cyph
  const v={name:'Bot Raze',g:{rotation:{y:1.05}},see:0};ctx.xbEngage(v,false,{off:1.05,e0y:1.05,d:15});v.see=v.rtE*1.05;assert(!ctx.xbReady(v,15),'no new pull mid-flick');v.see=3;assert(ctx.xbReady(v,15),'fires once on target');}
 // 3. shots against the player standing at range (no strafe): server hit volumes
 function shoot(dist,diff){ctx.S.diff=diff||'normal';const st={shots:0,head:0,body:0,legs:0,first:0,firstHit:0};
- for(let k=0;k<NAMES.length*12;k++){const u={name:'Bot '+NAMES[k%NAMES.length]+'#'+k,g:{rotation:{y:.2}},see:0,cr:false,mv:false},tg={t:ctx.player,x:0,z:-dist},from={x:0,y:1.7,z:0};ctx.player.y=0;
-  ctx.xbEngage(u,true,{off:.2,e0y:.2,d:dist});u.see=u.rtE+.05;let n=0;while(u.see<1.6){if(ctx.xbReady(u,dist)||n){const p=ctx.xbShot(u,tg,from,'Vandal',{rec:1},dist,{ae:1.3,rt:260});st.shots++;if(n===0){st.first++;if(p)st.firstHit++;}if(p)st[p]++;n++;u.see+=dist>20?.4:.103;now+=dist>20?400:103;}else{u.see+=1/60;now+=16;}}}
+ for(let k=0;k<NAMES.length*12;k++){const u={name:'Bot '+NAMES[k%NAMES.length]+'#'+k,g:{rotation:{y:.2},position:{x:0,y:0,z:0}},see:0,cr:false,mv:false},tg={t:ctx.player,x:0,z:dist},from={x:0,y:1.6,z:0};ctx.player.y=0;
+  ctx.xbEngage(u,true,{off:.2,e0y:.2,d:dist});u.see=u.rtE+.05;let n=0,next=0;while(u.see<1.6){ctx.xbView(u,ctx.player,tg.x,0,tg.z,ctx.player.ch||0,1/60);/* bot-gun: the view (xbView) is what the shot fires along */if(u.see>=next&&(n||ctx.xbReady(u,dist))){const p=ctx.xbShot(u,tg,from,'Vandal',{rec:1},dist,{ae:1.3,rt:260});st.shots++;if(n===0){st.first++;if(p)st.firstHit++;}if(p)st[p]++;n++;next=u.see+(dist>20?.4:.103);}u.see+=1/60;now+=1000/60;}}
  st.hits=st.head+st.body+st.legs;st.acc=st.hits/st.shots;st.hs=st.head/Math.max(1,st.hits);return st;}
 {const S={};for(const d of [8,15,25,40])S[d]=shoot(d);const H=[8,15,25,40].reduce((s,d)=>s+S[d].head,0),T=[8,15,25,40].reduce((s,d)=>s+S[d].hits,0);
  assert(H/T>.12&&H/T<.28,'headshot share 12-28 % of hits ('+(H/T*100).toFixed(1)+' %)');assert(S[8].acc>S[25].acc&&S[25].acc>S[40].acc,'accuracy falls with range');
@@ -51,12 +53,13 @@ function shoot(dist,diff){ctx.S.diff=diff||'normal';const st={shots:0,head:0,bod
  ctx.player.ch=.45;const C=shoot(15);ctx.player.ch=0;assert(C.hits>0,'hits a crouching target');
  out.push('shots: HS '+(H/T*100).toFixed(0)+' % of hits; accuracy 8/15/25/40 m '+[8,15,25,40].map(d=>(S[d].acc*100).toFixed(0)).join('/')+' %; first shot at 40 m '+(S[40].firstHit/S[40].first*100).toFixed(0)+' %; easy/normal/hard 15 m '+[E,S[15],Hd].map(s=>(s.acc*100).toFixed(0)).join('/')+' %');}
 // bots-tune-2: a strafing (ADAD) target at 15 m is hit less - after each reversal the crosshair keeps going the old way
-// (BotBrain.trackTurn, = server test-bot-human strafing row; x0.80 before it, x0.61 with it); the shots are 103 ms apart, the target reverses every 0.45-0.7 s
-{const ST={hits:0,shots:0};for(let k=0;k<NAMES.length*12;k++){const u={name:'Bot '+NAMES[k%NAMES.length]+'#'+k,g:{rotation:{y:.2}},see:0,cr:false,mv:false},tg={t:ctx.player,x:0,z:-15},from={x:0,y:1.7,z:0};
+// (BotBrain.trackTurn, = server test-bot-human strafing row; x0.80 before it, x0.61 with it); bot-gun: the lag is now the view's (xbView, frame by
+// frame through the turn limits): x0.77-0.87, window x0.5-0.9 (= server test-bot-human x0.55-0.9); the shots are 103 ms apart, the target reverses every 0.45-0.7 s
+{const ST={hits:0,shots:0};for(let k=0;k<NAMES.length*12;k++){const u={name:'Bot '+NAMES[k%NAMES.length]+'#'+k,g:{rotation:{y:.2},position:{x:0,y:0,z:0}},see:0,cr:false,mv:false},tg={t:ctx.player,x:0,z:15},from={x:0,y:1.6,z:0};
   let vx=0,side=1,flip=.45+(k%10)/40,n=0;ctx.xbEngage(u,true,{off:.2,e0y:.2,d:15});u.see=u.rtE+.05;
   const adv=dt=>{for(let q=0;q<dt;q+=1/120){flip-=1/120;if(flip<=0){side=-side;flip=.45+((k*37+q*1e3)%10)/40;}vx+=Math.max(-1,Math.min(1,(side*5.4-vx)/(5.4*1/120/.12)))*5.4/120/.12;tg.x+=vx/120;}};
-  while(u.see<1.6){if(ctx.xbReady(u,15)||n){const p=ctx.xbShot(u,tg,from,'Vandal',{rec:1},15,{ae:1.3,rt:260});ST.shots++;if(p)ST.hits++;n++;u.see+=.103;now+=103;adv(.103);}else{u.see+=1/60;now+=16;adv(1/60);}}}
- const still=shoot(15),r=(ST.hits/ST.shots)/still.acc;assert(r>.5&&r<.75,'ADAD target at 15 m hit less, not never ('+(ST.hits/ST.shots*100).toFixed(0)+' % vs '+(still.acc*100).toFixed(0)+' % standing, x'+r.toFixed(2)+')');
+  let next=0;while(u.see<1.6){ctx.xbView(u,ctx.player,tg.x,0,tg.z,0,1/60);if(u.see>=next&&(n||ctx.xbReady(u,15))){const p=ctx.xbShot(u,tg,from,'Vandal',{rec:1},15,{ae:1.3,rt:260});ST.shots++;if(p)ST.hits++;n++;next=u.see+.103;}u.see+=1/60;now+=1000/60;adv(1/60);}}
+ const still=shoot(15),r=(ST.hits/ST.shots)/still.acc;assert(r>.5&&r<.9,'ADAD target at 15 m hit less, not never ('+(ST.hits/ST.shots*100).toFixed(0)+' % vs '+(still.acc*100).toFixed(0)+' % standing, x'+r.toFixed(2)+')');
  out.push('ADAD 15 m '+(ST.hits/ST.shots*100).toFixed(0)+' % vs standing '+(still.acc*100).toFixed(0)+' %');}
 // 4. discipline: some fights fire on the move, not all
 {let sl=0,n=0;for(const nm of NAMES){const u={name:'Bot '+nm+' d'};for(let k=0;k<20;k++){ctx.xbEngage(u,true,{off:.1,e0y:.1,d:15});n++;if(u.xbSl)sl++;}}assert(sl/n>.05&&sl/n<.6,'some fights are not counter-strafed ('+(sl/n*100).toFixed(0)+' %)');out.push('sloppy fights '+(sl/n*100).toFixed(0)+' %');}
