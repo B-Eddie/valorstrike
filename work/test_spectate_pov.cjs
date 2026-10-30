@@ -48,8 +48,10 @@ for(let i=0;i<10;i++)tick();assert.equal(F.kind,'idle','idle after the equip');
 // fire: a shot at the teammate's spot, not one elsewhere
 c.bfxBot({x:-5,z:-5});tick();assert.equal(F.kind,'idle','enemy shot: nothing');c.bfxBot({x:5.2,z:5});tick();assert.equal(plays[plays.length-1],'fire','teammate shot: fire');
 // offline reload: the mag running dry
-mate.xAmW='Vandal';mate.xAm=1;tick();mate.xAm=0;tick();assert.match(plays[plays.length-1],/^reload@/,'mag dry: reload');
+mate.xAm={w:'Vandal',mag:1,res:50,rl:0,rd:0};tick();mate.xAm.mag=0;tick();assert.match(plays[plays.length-1],/^reload@/,'mag dry: reload');
 for(let i=0;i<60;i++)tick();assert.equal(F.kind,'idle','reload ends');
+// offline reload on BOT AMMO's own clock (b.xAm: its magazine state object): the clip follows the reload's progress, ends with it
+mate.xAm={w:'Vandal',mag:10,res:50,rl:2.5,rd:2.5};tick();assert.match(plays[plays.length-1],/^reload@0\.0/,'BOT AMMO reload: reload clip from its start '+plays[plays.length-1]);mate.xAm.rl=1.25;tick();assert.match(plays[plays.length-1],/^reload@0\.5/,'half way '+plays[plays.length-1]);mate.xAm.rl=0;mate.xAm.mag=25;for(let i=0;i<3;i++)tick();assert.equal(F.kind,'idle','BOT AMMO reload done: idle');
 // offline flash: b.blind -> white overlay
 mate.blind=1.5;tick();const bl=c.xSpectatePov.bl;assert.ok(bl&&+bl.style.opacity>0.9,'blinded teammate: white screen');mate.blind=0;tick();assert.equal(bl.style.opacity,'0');
 // online: server pov (ADS / blind / reload), ammo from rows

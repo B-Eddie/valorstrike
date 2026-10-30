@@ -24,20 +24,20 @@ const fails=[];const ok=(c,m)=>{if(!c)fails.push(m);};
   a.alive=true;a.hp=100;a.w=${JSON.stringify(W)};a.xAm=null;b.alive=true;b.hp=100;b.w="Vandal";a.g.position.set(player.x,a.g.position.y,player.z);b.g.position.set(player.x,b.g.position.y,player.z-12);
   window.__N=0;const s0=SFX.at;SFX.at=function(p,w){if(p===__A.g.position)__N++;return s0.apply(this,arguments);};
   timeLeft=999;hurt(player,500,b.name);pDie(b.name,"Classic");return 1})()`);
- const S=[];let typeBad=0,hudBad=[],grow=[],reloads=0,rlStart=null,rlDur=[];
+ const S=[];let typeBad=0,hudBad=[],grow=[],reloads=0,rlDur=[];
  for(let t=0;t<30000;t+=50){await adv(50);xe('timeLeft=999;__A.hp=100;__B.hp=100;__A.alive=true;__B.alive=true;true');
-  const r=JSON.parse(xe(`JSON.stringify({sp:!!xKL.sp,cur:xKL.cur&&xKL.cur.name,ty:typeof __A.xAm,st:__A.xAm&&typeof __A.xAm==='object'?[__A.xAm.w,__A.xAm.mag,__A.xAm.res,__A.xAm.rl]:null,mag:document.getElementById('xMag').textContent,rs:document.getElementById('xRs').textContent,wn:document.getElementById('xWn').textContent,n:__N})`));
+  const r=JSON.parse(xe(`JSON.stringify({sp:!!xKL.sp,cur:xKL.cur&&xKL.cur.name,ty:typeof __A.xAm,st:__A.xAm&&typeof __A.xAm==='object'?[__A.xAm.w,__A.xAm.mag,__A.xAm.res,__A.xAm.rl,__A.xAm.rd]:null,mag:document.getElementById('xMag').textContent,rs:document.getElementById('xRs').textContent,wn:document.getElementById('xWn').textContent,n:__N})`));
   if(r.ty!=='object'&&r.ty!=='undefined'&&!(r.ty==='object'&&r.st===null))typeBad++;
   const p=S[S.length-1];
-  if(r.st&&p&&p.st&&r.st[0]===p.st[0]){if(r.st[1]>p.st[1]&&!(p.st[3]>0))grow.push([t,p.st,r.st]);if(r.st[3]>0&&!(p.st[3]>0)){reloads++;rlStart=t;}if(!(r.st[3]>0)&&p.st[3]>0&&rlStart!=null){rlDur.push((t-rlStart)/1000);rlStart=null;}}
+  if(r.st&&p&&p.st&&r.st[0]===p.st[0]){if(r.st[1]>p.st[1]&&!(p.st[3]>0&&p.st[3]<=0.2))grow.push([t,p.st,r.st]);/* refilled only as a reload runs out (game time can step past one 50 ms frame) */if(r.st[3]>0&&!(p.st[3]>0)){reloads++;rlDur.push(r.st[4]);}}
   if(r.sp&&r.cur===xe('__A.name')&&r.st&&t>3000){const want=r.st[3]>0?'…':String(r.st[1]);if(r.mag!==want&&!(r.st[3]>0&&r.mag===String(r.st[1])))hudBad.push([t,'mag',r.mag,want]);if(r.rs!==String(r.st[2]))hudBad.push([t,'rs',r.rs,r.st[2]]);if(r.wn!==r.st[0])hudBad.push([t,'wn',r.wn,r.st[0]]);}
-  S.push(r);}
+  S.push(r);if(process.env.DBG&&r.st)console.log(t,JSON.stringify(r.st),r.mag,r.rs);}
  const L=S[S.length-1];
  ok(S.some(r=>r.sp&&r.cur===xe('__A.name')),'spectating the teammate');
  ok(typeBad===0,'the teammate\'s magazine state stays BOT AMMO\'s object (overwritten by a number '+typeBad+' times)');
  ok(grow.length===0,'the magazine never refills without a reload: '+JSON.stringify(grow.slice(0,4)));
  ok(reloads>=2,'reloads seen: '+reloads);
- ok(rlDur.length>0&&rlDur.every(d=>Math.abs(d-rld)<=0.16),'each reload takes the gun\'s reload time '+rld+' s: '+JSON.stringify(rlDur));
+ ok(rlDur.length>0&&rlDur.every(d=>Math.abs(d-rld)<=1e-6),'each reload takes the gun\'s reload time '+rld+' s (game time): '+JSON.stringify(rlDur));
  ok(L.n<=mag+res,'5v5 finite reserve: at most '+(mag+res)+' shots ('+L.n+')');
  ok(L.st&&L.st[1]===0&&L.st[2]===0,'the reserve ran dry: '+JSON.stringify(L.st));
  ok(hudBad.length===0,'spectator HUD shows the teammate\'s true magazine / reserve / gun: '+JSON.stringify(hudBad.slice(0,5))+' ('+hudBad.length+')');

@@ -3262,7 +3262,6 @@ const XSG = {}; function xSpecGuard(a) { const q = a.g.position, G = a.xSG || (a
   if (!(Math.hypot(G.x - q.x, G.z - q.z) < 0.5) || n - G.t > 250) { G.x = q.x; G.z = q.z; G.t = n; const C = typeof nmActive === "function" ? nmActive() : null; G.y = -Infinity;
     if (C) { G.y = xSpecFloor(q.x, q.z, q.y || 0); try { const r = XSG.r || (XSG.r = new THREE.Ray(new THREE.Vector3(), new THREE.Vector3(0, 1, 0))); r.origin.set(q.x, (q.y || 0) + 0.05, q.z); const h = nmRayFirst(C.bvh, r, THREE.DoubleSide); if (h && h.face && h.face.normal.y > 0.45 && h.point.y - (q.y || 0) < 4.5) G.y = Math.max(G.y, h.point.y); } catch (e) {} } } return G.y; } // a floor face just above the target (its top seen from below): the target is under the floor (bad height), guard from that floor
 function xObsHide(a) { const m = a && a.alive !== false && a.xm && !a.xm.dead && a.xm.m ? a.xm.m : null; if (XOB.hm === m) return; if (XOB.hm) XOB.hm.visible = true; XOB.hm = m; if (m) m.visible = false; }
-{ const b0 = bfxBot; bfxBot = function (p) { try { if (p && typeof allies !== "undefined") for (const u of allies) if (u.alive && Math.hypot(u.g.position.x - p.x, u.g.position.z - p.z) < 0.6) { const m = (WEAP[u.w || "Classic"] || {}).mag || 12; if (u.xAmW !== (u.w || "Classic") || !(u.xAm > 0)) { u.xAm = m; u.xAmW = u.w || "Classic"; } u.xAm--; break; } } catch (e) {} return b0.apply(this, arguments); }; } // spectated teammate's mag count (refills when empty)
 // Valorant tagging: a bullet hit slows the target for 0.25 s; heavy (28%) for big hits, lighter (50%) for sidearm / SMG body shots
 // shotgun hit past 10 m (patch 1.07, wiki Bucky / Judge / Shorty): 30% slow for 0.5 s easing back to full speed, not the standard tag. = server tagHit / tagMul
 function xTagAt(t, n, w, d) { if (!t) return; const W = WEAP[w]; if (!(W && W.pel > 1 && d > 10)) return xTag(t, n); if (t.tagT > 0 && !t.tagS) return; t.tagT = 0.5; t.tagK = 0.7; t.tagS = 1; }
@@ -4970,7 +4969,7 @@ function tick(dt) {
     if (a.xk == null && a.xj == null && !a.xup) p.y = groundAt(p.x, p.z, 0.3, p.y + 0.01); // allies climb steps like bots (Split B stairs: carrier stuck on step 1 at y 0)
     botStep(a, dt, Math.hypot(p.x - ax0, p.z - az0), a.cr || a.wk, a.spd); // ally footsteps: same rule and pooled step voices
     a.cd -= dt; a.lt = (a.lt || 0) + dt; // lt: time since its last shot (bSpread: the spray count resets after 0.35 s)
-    if (tg && a.cd <= 0 && a.xs && !(a.pk === 3 && a.mv) && botStopped(a) && (a.bn > 0 || typeof xbReady !== "function" || xbReady(a, td)) && !(a.rtE && typeof xbRt === "function" && a.ts * 1000 < xbRt(a, null)) && (typeof xbTurned !== "function" || xbTurned(a)) && (typeof xbLosNow !== "function" || xbLosNow(from, XTK.q.set(tg.g.position.x, (tg.g.position.y || 0) + 1.5, tg.g.position.z)) || ((a.xTg = null), (a.xTh = 0), false))) { // fresh line of sight for every shot (BOT VARIETY perception) // no shot mid-swing (BOT VARIETY turn rate) // allies react like enemy bots (no instant first shot) // tight peek: fully stopped first
+    if (tg && a.cd <= 0 && a.xs && !(typeof xbAmBlocked === "function" && xbAmBlocked(a)) /* empty / reloading: no shot (BOT AMMO; allies fired through it) */ && !(a.pk === 3 && a.mv) && botStopped(a) && (a.bn > 0 || typeof xbReady !== "function" || xbReady(a, td)) && !(a.rtE && typeof xbRt === "function" && a.ts * 1000 < xbRt(a, null)) && (typeof xbTurned !== "function" || xbTurned(a)) && (typeof xbLosNow !== "function" || xbLosNow(from, XTK.q.set(tg.g.position.x, (tg.g.position.y || 0) + 1.5, tg.g.position.z)) || ((a.xTg = null), (a.xTh = 0), false))) { // fresh line of sight for every shot (BOT VARIETY perception) // no shot mid-swing (BOT VARIETY turn rate) // allies react like enemy bots (no instant first shot) // tight peek: fully stopped first
       const abs = xBsBot(a), aw = abs ? "Blade Storm" : a.w || "Vandal", AW = abs ? XBSB : WEAP[aw] || WEAP.Vandal, AD = DIFF.normal; a.bsW = abs; // Blade Storm out: a knife (XBSB)
       if (!(a.bn > 0)) a.bn = typeof xbBurst === "function" ? xbBurst(a, td, AW) : 1; /* tap / burst / spray by range (BOT VARIETY xbBurst = BotBrain.firePattern), as enemy bots: was one shot every 0.8-1.6 s at any range */
       a.bn--; if (!abs && typeof xbAmFire === "function") xbAmFire(a, aw, tg); /* one round (BOT AMMO) */ a.cd = abs ? 1 / XBSB.rate + Math.random() * 0.3 : a.bn > 0 ? 1 / (AW.rate || 4) : a.xbPz != null ? Math.max(1 / (AW.rate || 4), a.xbPz) : 0.8 + Math.random() * 0.8; SFX.at(p, aw); if (a.pp) dmFired(a);
@@ -11429,7 +11428,6 @@ function xObsTick(force) { const on = xObsShow(); if (XOB.el.classList.contains(
 (window.XHK || (window.XHK = [])).push(() => xObsTick(false));
 // observer hardening: leaving the match (lobby / result screen hides #game) while dead drops the KILLED BY card, SPECTATING label, grey filter and any hidden teammate model
 (window.XHK || (window.XHK = [])).push(() => { try { if ((xKL.on || XOB.hm) && $("game").style.display === "none") xKLReset(); } catch (e) {} });
-{ const h0 = xHud; xHud = function () { const r = h0.apply(this, arguments); try { const a = player && player.hp <= 0 && xKL.sp ? xKL.cur : null; if (a && a.alive) { const w = a.w || "Classic", W = WEAP[w] || {}; setT("xWn", w); setT("xMag", a.xAmW === w && a.xAm > 0 ? a.xAm : W.mag || "—"); setT("xRs", W.mag ? xRsv(w) : "—"); setT("xHp", Math.max(0, Math.ceil(a.hp))); setT("xArm", Math.ceil(a.armor || 0)); } } catch (e) {} return r; }; } // spectated teammate's weapon / ammo / health in the HUD
 // ---- Settings: FPS limit, resolution, render scale, anti-aliasing, aim assist, shadows ----
 const XS = { cap: "auto", res: xLowDev ? "std" : "retina", scale: "1", aa: xAA0, aim: "aim", shd: "off" }; // sharp by default: native device pixels (desktop) and never below 1:1 CSS pixels
 // ---- Keybinds: XS.keys maps logical action -> physical code; one capture-phase lookup at the keydown entry translates to the game's default codes ----
@@ -21578,9 +21576,9 @@ function xspvDrop() { const F = XSPV.F; XSPV.F = null; XSPV.key = null; XSPV.u =
   if (F.xspvEvicted) { F.xspvEvicted = 0; try { xvFPClear(F); } catch (e) {} } }
 // one shot of the followed teammate (bfxBot is called at the shooter's spot: offline mate shots, online 's' events)
 if (typeof bfxBot === 'function') { const b0 = bfxBot; bfxBot = function (p) { try { const a = xspvTarget(); if (a && p && Math.hypot(a.g.position.x - p.x, a.g.position.z - p.z) < 0.6) XSPV.fire++; } catch (e) {} return b0.apply(this, arguments); }; }
-// online: the server's per-teammate view state, and each teammate's ammo (row [15]) for the HUD / reload cue
+// online: the server's per-teammate view state, and each teammate's ammo (row [15]) and reserve (row [16]) for the HUD / reload cue
 if (typeof mpCliRS === 'function') { const r0 = mpCliRS; mpCliRS = function (m) { const r = r0.apply(this, arguments); try { XSPV.pov = m && m.pov && typeof m.pov === 'object' ? m.pov : {}; XSPV.povAt = performance.now(); } catch (e) {} return r; }; }
-if (typeof mpCliSnap === 'function') { const s0 = mpCliSnap; mpCliSnap = function (m) { const r = s0.apply(this, arguments); try { if (m && Array.isArray(m.u)) for (const e of m.u) { if (!Array.isArray(e) || e[0] === MP.me || !Number.isFinite(e[15])) continue; const u = allies.find((x) => x.nid === e[0]); if (u) u.nam = e[15]; } } catch (e) {} return r; }; }
+if (typeof mpCliSnap === 'function') { const s0 = mpCliSnap; mpCliSnap = function (m) { const r = s0.apply(this, arguments); try { if (m && Array.isArray(m.u)) for (const e of m.u) { if (!Array.isArray(e) || e[0] === MP.me || !Number.isFinite(e[15])) continue; const u = allies.find((x) => x.nid === e[0]); if (u) { u.nam = e[15]; if (Number.isFinite(e[16])) u.nrs = e[16]; } } } catch (e) {} return r; }; }
 function xspvPov(a) { const p = a && a.nid != null && XSPV.pov ? XSPV.pov[a.nid] : null; if (!Array.isArray(p)) return null; const age = (performance.now() - XSPV.povAt) / 1000; return { ads: p[0] === 2 ? 2 : p[0] ? 1 : 0, blind: Math.max(0, (+p[1] || 0) - age), rl: Math.max(0, (+p[2] || 0) - age) }; }
 function xspvBlind(v) { let el = XSPV.bl; if (!el && !(v > 0)) return; if (!el) { el = XSPV.bl = document.createElement('div'); el.id = 'xSpvBlind'; el.style.cssText = 'pointer-events:none;position:fixed;inset:0;z-index:110;background:#fff;opacity:0'; document.body.appendChild(el); }
   const o = v > 0 ? Math.min(1, v / 1.5).toFixed(2) : '0'; if (el.style.opacity !== o) el.style.opacity = o; }
@@ -21595,12 +21593,15 @@ function xspvTick(dt) {
   if (XSPV.key !== key || XSPV.u !== a) { const same = XSPV.u === a; xspvDrop(); XSPV.key = key; XSPV.u = a; XSPV.w = w; XSPV.fire = 0; XSPV.eq = 1; void same;
     if (!XSPV.fail[key] && !(XV.failures && XV.failures[key])) { XSPV.ov = sk; let P = null; try { P = xvFPGet(ag, w); } catch (e) { XSPV.fail[key] = String(e); } finally { XSPV.ov = null; }
       if (P) P.then((F) => { if (XSPV.key !== key) return; XSPV.F = F; F.kind = null; F.age = 0; xvFPPlay(F, 'equip'); xspvLayer(F); }).catch((e) => { XSPV.fail[key] = String(e); }); } }
-  // ammo -> reload cue (offline: the mag ran dry; online: the server's reload clock when it is in, else the mag refilling)
-  const am = online && Number.isFinite(a.nam) ? a.nam : a.xAmW === w && Number.isFinite(a.xAm) ? a.xAm : null, W = WEAP[w] || {}, rlT = W.rld || 2;
-  if (pov && pov.rl > 0) { if (!(XSPV.rl > 0)) XSPV.rlT = Math.max(pov.rl, rlT); XSPV.rl = pov.rl; }
+  // ammo -> reload cue (offline: BOT AMMO's reload clock, else the mag running dry; online: the server's reload clock when it is in, else the mag refilling)
+  const am = online && Number.isFinite(a.nam) ? a.nam : a.xAm && typeof a.xAm === 'object' && a.xAm.w === w ? a.xAm.mag : null, W = WEAP[w] || {}, rlT = W.rld || 2;
+  const BA = !online && a.xAm && typeof a.xAm === 'object' && a.xAm.w === w ? a.xAm : null; // offline: BOT AMMO's own reload clock
+  if (BA && BA.rl > 0) { XSPV.rl = BA.rl; XSPV.rlT = Math.max(BA.rl, BA.rd || rlT); }
+  else if (BA && XSPV.rlBA) { XSPV.rl = 0; }
+  else if (pov && pov.rl > 0) { if (!(XSPV.rl > 0)) XSPV.rlT = Math.max(pov.rl, rlT); XSPV.rl = pov.rl; }
   else if (am != null && XSPV.am != null && w !== 'Knife' && ((am === 0 && XSPV.am > 0) || (am > XSPV.am && !online)) && !(XSPV.rl > 0)) { XSPV.rl = XSPV.rlT = rlT; }
   else if (XSPV.rl > 0) XSPV.rl = Math.max(0, XSPV.rl - dt);
-  XSPV.am = am;
+  XSPV.am = am; XSPV.rlBA = !!(BA && BA.rl > 0);
   xspvZoom(w, pov ? pov.ads : 0); xspvBlind(pov ? pov.blind : a.blind > 0 ? a.blind : 0);
   const F = XSPV.F; if (!F || XSPV.key !== key) return;
   F.root.visible = !XSPV.scope; xspvLayer(F);
@@ -21619,8 +21620,43 @@ function xspvTick(dt) {
   const s = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) / Math.tan(THREE.MathUtils.degToRad(43.383 / 2)); F.root.scale.set(1, s, s); F.root.position.set(F.origin.x * s, F.origin.y * s, F.origin.z);
 }
 { const t0 = vmTick; vmTick = function (dt) { const r = t0.apply(this, arguments); try { xspvTick(Math.min(0.1, dt || 0.016)); } catch (e) { if (!XSPV.err) { XSPV.err = String(e); console.warn('spectate pov', e); } } return r; }; }
-// the spectated teammate's ammo in the HUD online (index.html's xHud wrapper counts offline shots in a.xAm)
-{ const h0 = xHud; xHud = function () { const r = h0.apply(this, arguments); try { const a = xspvTarget(); if (a && typeof MP !== 'undefined' && MP.on && Number.isFinite(a.nam)) setT('xMag', a.nam); } catch (e) {} return r; }; }
+// The spectator HUD (user 2026-10-29: "after i die, it sometimes shows the HUD from right when i died when im spectating"):
+// while the player is dead and spectating, the bottom HUD is the followed teammate's live state every frame - weapon,
+// magazine ("…" while reloading, as the player's own), reserve, health, armour and their agent's abilities (charges,
+// ult points) - and never the player's own values frozen at the death frame. Offline the magazine / reserve / reload are
+// BOT AMMO's real state (xbAm); online rows [15] / [16] and the server's reload clock (pov[id][2]); offline ability
+// charges from the bot kit (xBCh), online the kit's names only (the server sends no teammate charges), ult points
+// from sbUlt. With nobody left to follow the weapon / ammo read "—" and the ability bar is hidden.
+var XSPH = { on: false, ag: null, el: null };
+function xsphTarget() { try { if (!running || !player || player.hp > 0 || !xKL.sp || mode === 'duel') return null; const a = xKL.cur; return a && a.alive && allies.indexOf(a) >= 0 ? a : null; } catch (e) { return null; } }
+function xsphSpec() { try { return !!(running && player && player.hp <= 0 && xKL.sp && mode !== 'duel'); } catch (e) { return false; } }
+function xsphAmmo(a, w) { // [mag text, reserve text]
+  if (w === 'Knife') return ['—', '—'];
+  const online = typeof MP !== 'undefined' && MP.on;
+  if (online) { const pv = xspvPov(a), rl = pv && pv.rl > 0; return [rl ? '…' : Number.isFinite(a.nam) ? a.nam : '—', Number.isFinite(a.nrs) ? a.nrs : '—']; }
+  let A = null; try { A = typeof xbAm === 'function' ? xbAm(a) : null; } catch (e) {}
+  if (!A || !A.w || A.w === 'Knife') return ['—', '—'];
+  return [A.rl > 0 && !(typeof XRLP !== 'undefined' && XRLP[A.w]) ? '…' : A.mag, A.res]; }
+function xsphKit(a) { // the followed teammate's abilities in the player's ability bar (#xAb)
+  const ab = $('xAb'); if (!ab) return; let ag = 'Jett'; try { ag = xspvAgent(a); } catch (e) {} const K = (typeof KITS !== 'undefined' && KITS[ag]) || null;
+  ab.classList.add('on'); ab.classList.add('x-spec'); if (XSPH.ag !== ag) { XSPH.ag = ag; ab.setAttribute('aria-label', ag + ' abilities (spectating)'); ['jC', 'jQ', 'jE', 'jX'].forEach((id, i) => { const el = $(id); if (!el) return; const sp = el.querySelector('span'); if (sp && K && K.n) sp.textContent = K.n[i]; let d = el.querySelector('.x-ai'); if (!d) { d = document.createElement('div'); d.className = 'x-ai'; el.insertBefore(d, sp); } try { d.innerHTML = abIco(ag, i); } catch (e) {} }); try { xAbIcons.a = null; } catch (e) {} }
+  const online = typeof MP !== 'undefined' && MP.on; let C = null; if (!online) try { C = typeof xBCh === 'function' ? xBCh(a) : null; } catch (e) {}
+  const mx = (K && K.mx) || {}; [['jC', 'c'], ['jQ', 'q'], ['jE', 'e']].forEach(([id, k]) => { const el = $(id); if (!el) return; const em = el.querySelector('em'), n = C ? Math.max(0, C[k] | 0) : null; if (em) em.textContent = n == null ? '' : String(n);
+    el.classList.toggle('off', n === 0); el.classList.toggle('rdy', false); el.classList.toggle('x-empty', n === 0); el.classList.remove('x-tmon'); const ei = el.querySelector('i'); if (ei) ei.style.setProperty('--p', '0');
+    const pp = el.querySelector('.x-pp'); if (pp) { const m = Math.min(4, Math.max(n || 0, mx[k] || 1)); if (pp.childElementCount !== m) pp.innerHTML = '<s></s>'.repeat(m); for (let i = 0; i < m; i++) pp.children[i].className = n != null && i < n ? 'on' : ''; } });
+  const x = $('jX'); if (x) { let u = [0, 0]; try { u = sbUlt(a.name); } catch (e) {} const em = x.querySelector('em'), rdy = u[1] > 0 && u[0] >= u[1]; if (em) em.textContent = u[1] > 0 ? u[0] + '/' + u[1] : ''; x.classList.toggle('rdy', rdy); x.classList.toggle('off', !rdy); x.classList.remove('x-tmon'); const ei = x.querySelector('i'); if (ei) ei.style.setProperty('--p', u[1] > 0 ? (1 - u[0] / u[1]).toFixed(3) : '1'); x.setAttribute('data-pips', u[0] + '/' + u[1]); const pp = document.getElementById('xPips'); if (pp) pp.innerHTML = ''; } }
+function xsphOff() { if (!XSPH.on) return; XSPH.on = false; XSPH.ag = null; try { const ab = $('xAb'); if (ab) { ab.classList.remove('x-spec'); ab.setAttribute('aria-label', (J.pick || 'Jett') + ' abilities'); } ['jC', 'jQ', 'jE', 'jX'].forEach((id, i) => { const sp = $(id) && $(id).querySelector('span'); if (sp) sp.textContent = K().n[i]; }); xAbIcons.a = null; xAbIcons(); J.hs = ''; xHud.ux = null; } catch (e) {} }
+function xsphHud() {
+  if (!xsphSpec()) { xsphOff(); return; }
+  XSPH.on = true; const a = xsphTarget();
+  if (!a) { setT('xWn', '—'); setT('xMag', '—'); setT('xRs', '—'); setT('xHp', 0); setT('xArm', 0); const ab = $('xAb'); if (ab) ab.classList.remove('on'); return; }
+  const w = xspvWeap(a), am = xsphAmmo(a, w);
+  setT('xWn', w); setT('xMag', am[0]); setT('xRs', am[1]); setT('xHp', Math.max(0, Math.ceil(a.hp || 0))); setT('xArm', Math.ceil(a.armor || 0)); try { $('xHp').classList.toggle('lo', a.hp <= 30); } catch (e) {}
+  xsphKit(a); }
+{ const h0 = xHud; xHud = function () { const r = h0.apply(this, arguments); try { xsphHud(); } catch (e) { if (!XSPH.err) { XSPH.err = String(e); console.warn('spectate hud', e); } } return r; }; }
+// jTick re-shows the player's own kit every frame (#xAb .on): keep the spectated teammate's while spectating
+if (typeof jTick === 'function') { const j0 = jTick; jTick = function () { const r = j0.apply(this, arguments); try { if (XSPH.on && xsphSpec()) { const ab = $('xAb'); if (ab) ab.classList.toggle('on', !!xsphTarget()); } } catch (e) {} return r; }; }
+window.xSpectateHud = XSPH;
 window.xSpectatePov = XSPV;
 // ---- END SPECTATE POV ----
 // ---- ENEMY INFO ----
