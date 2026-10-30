@@ -65,7 +65,7 @@ const G={map:{attacker:[-14,0,0],defender:[14,0,-28],sites:{A:[-8,0,-14],B:[8,0,
  assert.ok(looks[0]<=P.brain.turn*.05+1e-9&&P.brain.turn>=7&&P.brain.turn<=14,'a 180 takes several ticks ('+looks[0].toFixed(2)+' rad in the first 50 ms, '+P.brain.turn.toFixed(1)+' rad/s)');assert.equal(fireTurning,0,'no shots while still swinging');
  assert.ok(Math.abs(Math.atan2(Math.sin(b.look),Math.cos(b.look)))<.2,'on target after the swing');
  for(let i=0;i<20;i++){s.time+=.05;s.bot(b);}/* settle on the still target first */let sum=0,n=0;for(let i=0;i<60;i++){s.time+=.05;t.vx=6;t.vz=0;t.x+=6*.05;s.bot(b);if(i<10)continue;const exact=Math.atan2(-(t.x-b.x),-(t.z-b.z)),err=Math.atan2(Math.sin(b.look-exact),Math.cos(b.look-exact));sum+=err;n++;}
- const lagRad=sum/n;assert.ok(Math.abs(lagRad)>.004,'the crosshair trails a strafing target ('+lagRad.toFixed(4)+' rad)');
+ const lagRad=sum/n;/* bot-gun: a long track keeps refining (BotBrain TRACK.floor 0.2 of the first lag, was 0.35): 1-3 s into it the view still trails by ~3.6 mrad (was ~6) */assert.ok(Math.abs(lagRad)>.003,'the crosshair trails a strafing target ('+lagRad.toFixed(4)+' rad)');
  out.push('turn '+P.brain.turn.toFixed(1)+' rad/s, tracking lag '+(Math.abs(lagRad)*1000).toFixed(1)+' mrad');}
 // 4. Plan utility ("use utility before entry"): pure timing, then a real Ascent match where casts follow the plan
 {const P=B.personality(B.hash('Bot Omen')),ex={type:'execute',utilFirst:true,executeAt:20,site:'A',other:'B'};

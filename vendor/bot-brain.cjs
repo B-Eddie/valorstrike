@@ -99,7 +99,10 @@
    const ni=a<b?i:i+1,fi=a<b?i+1:i,e=ang[ni]+(ang[fi]-ang[ni])*.35,off=Math.abs(wrapA(e-heading)),w=Math.cos(Math.min(1.45,off))**1.5,sc=w/(near+3);if(sc>bs){bs=sc;best=e;}}
   for(let i=0;i<n;i++){const off=Math.abs(wrapA(ang[i]-heading));if(dep[i]>=25&&off<.6){const sc=.6*Math.cos(off)/(12+3);if(sc>bs){bs=sc;best=ang[i];}}}
   return best;}
- function trackLag(P,t){return (P.lag||.08)*(.35+.65*Math.exp(-Math.max(0,t)/((P.settle||.25)*2)));}
+ function trackLag(P,t){return (P.lag||.08)*(TRACK.floor+(1-TRACK.floor)*Math.exp(-Math.max(0,t)/((P.settle||.25)*2)));}
+ // bot-gun: tracking a visible target keeps getting better with time - the lag left after a long track is TRACK.floor of
+ // the first one (was 0.35)
+ const TRACK={floor:.2};
  // ---- Human aim (default: a mid-ranked player, think Silver; LEVEL easy / hard scale it) ----
  // A fight's crosshair path is a planned human flick, not a laser: aimPlan() takes where the crosshair is when the enemy
  // appears (e0 = crosshair minus the aim point, radians yaw / pitch) and aimAt(A, t) returns the error at t s into the fight:
@@ -115,8 +118,12 @@
  const LEVEL={easy:{rt:1.3,err:1.7,head:.55,pull:.65,disc:.75},normal:{rt:1,err:1,head:1,pull:1,disc:1},hard:{rt:.82,err:.6,head:1.4,pull:1.2,disc:1.15}};
  function level(name){return LEVEL[name]||LEVEL.normal;}
  // Per-bot aim traits (pure, from P.seed on a separate stream: personality() draws are unchanged).
+ // bot-gun (user 2026-10-29 "their aim is like purposely bad"): fitts 0.03-0.067 s/bit (was 0.045-0.095) and the
+ // correction 50-120 ms (was 70-160 ms, aimPlan T2) - a 23 deg flick + correction in ~0.3 s, so an average player's first hit
+ // lands ~0.7 s (10 m) / 0.8 s (15 m) / 0.95 s (20 m) after first sight (server/test-bot-aim-kpi.js); reaction (REACT) and
+ // the hand's turn rate / acceleration caps unchanged, resting placement error unchanged (still vs strafing target ratio).
  function aimTraits(P){const r=rng(((P.seed>>>0)^0x51ed270b)>>>0),acc=P.accuracy==null?.6:P.accuracy;
-  return {headAim:.22+acc*.15+r()*.06,neckAim:.3+r()*.15,place:.014+(1-acc)*.017+r()*.007,over:.04+r()*.08,fitts:.045+(1-acc)*.035+r()*.015,
+  return {headAim:.22+acc*.15+r()*.06,neckAim:.3+r()*.15,place:.014+(1-acc)*.017+r()*.007,over:.04+r()*.08,fitts:.03+(1-acc)*.025+r()*.012,
    trem:.004+(1-acc)*.008,pull:.2+acc*.2+r()*.08,eager:.6+r()*.8+(P.aggression||0)*.4,discipline:clamp(.45+(P.patience==null?.5:P.patience)*.35+r()*.15,0,.97),idle:Math.atan2(AIM_H.head-1.6,15)-(.004+(1-acc)*.016+r()*.01)};}
  const AIM_H={head:1.8,neck:1.45,chest:1.2}; // metres above the feet, standing (server hitboxes: head sphere centre 1.815, body capsule top ~1.6)
  function aimHeight(P,rand,lvl,pre){const A=aimTraits(P),L=level(lvl),x=rand(),h=Math.min(.85,A.headAim*L.head*(pre?1.8:1));return x<h?'head':x<h+(1-h)*A.neckAim?'neck':'chest';}
@@ -127,17 +134,22 @@
  function aimPlan(P,rand,e0y,e0p,dist,ctx){ctx=ctx||{};const A=aimTraits(P),L=level(ctx.level),mag=Math.hypot(e0y||0,e0p||0),w=halfWidth(dist);
   const T1=Math.max(mag/Math.max(.5,(P.turn||10)*.9),Math.sqrt(5.77*mag/turnAcc(P)),/* min-jerk peak acceleration 5.77 mag / T^2 within the hand's */(.06+A.fitts*Math.log2(1+mag/w))*(.85+rand()*.3)*L.rt),big=mag>w*2.5;
   const sd=A.place*L.err*(ctx.moving?1.5:1)*(.65+.35*Math.min(1,w/.03)),/* players aim finer (and slower, Fitts) at a small far target */res=[gauss(rand)*sd,gauss(rand)*sd*.6-sd*.25],over=big?A.over*(.6+rand()*.8):0;
-  return planFire({start:Math.max(0,ctx.start||0),e0:[e0y||0,e0p||0],T1,T2:big?.07+rand()*.09:0,o:big?[-(e0y||0)*over+res[0]*1.6,-(e0p||0)*over+res[1]*1.6]:[res[0],res[1]],res,
+  return planFire({start:Math.max(0,ctx.start||0),e0:[e0y||0,e0p||0],T1,T2:big?.05+rand()*.07:0,o:big?[-(e0y||0)*over+res[0]*1.6,-(e0p||0)*over+res[1]*1.6]:[res[0],res[1]],res,
    trem:A.trem*L.err,ph:rand()*6.283,settle:.3+rand()*.35,eager:A.eager*Math.sqrt(L.err),w,fireAt:0},P,rand);}
  // When the player believes the crosshair is on: the end of the flick (eager players, before the correction) or the end of
  // the correction (careful ones), plus a beat; A.fireAt in s after the reaction. The residual error is not perceived, so
  // the shot goes regardless of it (that is what misses at range).
  function planFire(A,P,rand){const e=aimTraits(P).eager;A.fireAt=A.T1*(.8+rand()*.2)+(e>1.1&&rand()<.6?0:A.T2)+rand()*.06;return A;}
+ // Tracking settles (bot-gun, user 2026-10-29 "their aim isn't improving as they have more time"): after the correction the
+ // resting error keeps shrinking toward AIMSET.floor of itself over A.settle (0.3-0.65 s) - a player holding a visible
+ // target refines onto it within ~0.3-0.8 s - with the tremor on top; was a floor of 70 %, so the settled crosshair stayed
+ // up to a body width off at 15 m for the whole fight.
+ const AIMSET={floor:.3};
  function aimAt(A,t,out){const o=out||[0,0];if(!A){o[0]=o[1]=0;return o;}const s=t-A.start;let y,p;
   if(s<=0){y=A.e0[0];p=A.e0[1];}
   else if(s<A.T1){const k=mj(s/A.T1);y=A.e0[0]+(A.o[0]-A.e0[0])*k;p=A.e0[1]+(A.o[1]-A.e0[1])*k;}
   else if(s<A.T1+A.T2){const k=mj((s-A.T1)/A.T2);y=A.o[0]+(A.res[0]-A.o[0])*k;p=A.o[1]+(A.res[1]-A.o[1])*k;}
-  else{const q=s-A.T1-A.T2,k=.7+.3*Math.exp(-q/A.settle);y=A.res[0]*k+A.trem*Math.sin(q*6.1+A.ph);p=A.res[1]*k+A.trem*.7*Math.sin(q*4.3+A.ph*1.7);}
+  else{const q=s-A.T1-A.T2,k=AIMSET.floor+(1-AIMSET.floor)*Math.exp(-q/A.settle);y=A.res[0]*k+A.trem*Math.sin(q*6.1+A.ph);p=A.res[1]*k+A.trem*.7*Math.sin(q*4.3+A.ph*1.7);}
   o[0]=y;o[1]=p;return o;}
  // May the trigger go now? err: the current crosshair error (rad); the first shot goes once within eager x half-width.
  function readyToFire(A,err,dist,t){if(!A)return false;const ready=t!=null&&t>=A.start&&t-A.start>=A.fireAt;return ready&&Math.abs(err)<.08;}
@@ -160,13 +172,17 @@
   if(!auto)return {kind:'tap',shots:1,pause:.12+rand()*.25+(dist>25?.1:0)};
   const b=dist<=FIRE.near.d?FIRE.near:dist<=FIRE.mid.d?FIRE.mid:FIRE.far,tb=P.tapBias==null?.5:P.tapBias,pt=b.p[0]*(.6+tb*.8),pb=b.p[1],x=rand(),far=b===FIRE.far;
   if(x<pt)return {kind:'tap',shots:1,pause:.25+rand()*.25+(far?.1:0)};
-  if(x<pt+pb)return {kind:'burst',shots:2+Math.floor(rand()*(far?2:3)),pause:.22+rand()*.2+(far?.1:0)};
-  return {kind:'spray',shots:b.spray[0]+Math.floor(rand()*(b.spray[1]-b.spray[0]+1)),pause:b===FIRE.near?.06+rand()*.12:.3+rand()*.25}; // past 15 m a spray lets the recoil reset (~0.3-0.55 s) before the next pull // up close a spray barely lets go before the next
+  if(x<pt+pb)return {kind:'burst',shots:2+Math.floor(rand()*(far?2:3)),pause:FIRE.reset+rand()*.2+(far?.1:0)};
+  return {kind:'spray',shots:b.spray[0]+Math.floor(rand()*(b.spray[1]-b.spray[0]+1)),pause:b===FIRE.near?FIRE.reset-.1+rand()*.2:FIRE.reset+.02+rand()*.25}; // a spray lets go before the next pull: past 15 m long enough for the recoil to reset, up close 0.3-0.5 s (mostly a reset)
  }
  // Spray control fades over a long spray (bots-tune-1): the share of the climb pulled down (recoilPull) holds for the first
  // FIRE.fade[0] bullets, then drops FIRE.fade[1] per bullet to at least FIRE.fade[2] of it - a mid-ranked player loses the
  // pattern after ~6 bullets, so bullets 10+ mostly miss past close range. n = 0-based bullet index in the spray.
  FIRE.fade=[5,.12,.3];
+ // Past 15 m a burst / spray lets the recoil reset before the next pull (bot-gun): the server's spray pattern resets after
+ // 0.375 s without a shot (motor sprayReset), the page's bot spray after 0.35 s (bSpread); pauses of 0.22-0.42 s chained
+ // most bursts into one ever-climbing spray, so the longer a fight ran the worse the bot shot.
+ FIRE.reset=.4;
  function sprayFade(n){return n<=FIRE.fade[0]?1:Math.max(FIRE.fade[2],1-(n-FIRE.fade[0])*FIRE.fade[1]);}
  function sprayPull(P,lvl,n){return recoilPull(P,lvl)*sprayFade(n||0);}
  // How to take a corner the bot cannot see past yet.

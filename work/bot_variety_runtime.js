@@ -18,7 +18,7 @@ function xbRand(u){return u.xbr||(u.xbr=BotRoutes.rng(BotRoutes.hash((u.name||''
 // aimHeight body spot, recoilPull, discipline: a sloppy fight fires before the counter-strafe has stopped it).
 function xbLvl(){try{return S&&S.diff||'normal';}catch(e){return 'normal';}}
 function xbEngage(u,pre,ctx){const B=xbBrain(u);if(!B){u.rtE=.26;u.xhE=null;u.stand=.35;u.xbAP=null;return;}const r=xbRand(u);
- if(ctx){const L=xbLvl(),k=(BotBrain.LEVEL[L]||BotBrain.LEVEL.normal).rt;u.rtE=BotBrain.reaction(B,r,{pre:!!pre,off:ctx.off,flashed:!!ctx.flashed});u.xhE=BotBrain.crosshair(B,r,!!pre);
+ if(ctx){u.bn=0;u.xbTrk=null;/* a new fight (bot-gun): no burst left over from the last one fires before this flick (allies kept u.bn across targets / lost sight: first shots 0.5+ rad off the crosshair), and the tracking lag starts from this fight's target motion (u.xbTrk kept the last bearing it saw the target at: a re-peek read the jump as a 3 rad/s crossing -> 0.1-0.17 rad lag on the first shots) */const L=xbLvl(),k=(BotBrain.LEVEL[L]||BotBrain.LEVEL.normal).rt;u.rtE=BotBrain.reaction(B,r,{pre:!!pre,off:ctx.off,flashed:!!ctx.flashed});u.xhE=BotBrain.crosshair(B,r,!!pre);
   u.xbSpot=BotBrain.aimHeight(B,r,L);const d=ctx.d||15,h=BotBrain.AIM_H[u.xbSpot]||1.3;u.xbAP=BotBrain.aimPlan(B,r,ctx.e0y||0,BotBrain.idlePitch(B)-Math.atan2(h-1.6,d),d,{start:u.rtE*k,level:L});
   u.xbPull=BotBrain.recoilPull(B,L);u.xbSl=r()>BotBrain.discipline(B,L);u.stand=B.stand*(.8+r()*.4);u.rtX=1;return;}
  u.rtE=BotBrain.reaction(B,r);u.xhE=BotBrain.crosshair(B,r,!!pre);u.xbAP=null;u.rtX=0;u.stand=B.stand*(.8+r()*.4);}
@@ -32,7 +32,10 @@ function xbBurst(u,d,W){const B=window.BotBrain&&xbBrain(u);if(!B){u.xbPz=null;r
 // Visible yaw while fighting: the planned flick (min-jerk, overshoot, correction) at the bot's own turn rate, not a snap.
 function xbFaceAim(u,want,dt){const B=xbBrain(u);if(!B||!u.xbAP||!u.g)return want;const e=BotBrain.aimAt(u.xbAP,u.see||0,XB_E);return BotBrain.turnStep(B,u.g.rotation.y,want+e[0],dt,u.xTurnSt||(u.xTurnSt={v:0})).yaw;}
 // A new trigger pull: once the bot believes it is on target (end of its flick / correction) or the crosshair passes close.
-function xbReady(u,d){if(!u.xbAP)return true;const e=BotBrain.aimAt(u.xbAP,u.see||0,XB_E);return BotBrain.readyToFire(u.xbAP,Math.hypot(e[0],e[1]),d,u.see||0);}
+// The error is the drawn view's (bot-gun, = server: u.look vs the target): yaw u.g.rotation.y against the bearing xbView last
+// steered toward (u.xbTrk.vw), so a view still behind the plan (turn rate / tracking lag) holds the pull - was the plan's
+// own error, and first bullets left up to 0.15 rad off mid-turn.
+function xbReady(u,d){if(!u.xbAP)return true;const e=BotBrain.aimAt(u.xbAP,u.see||0,XB_E),S=u.xbTrk,ey=S&&S.vw!=null&&u.g?Math.atan2(Math.sin(u.g.rotation.y-S.vw),Math.cos(u.g.rotation.y-S.vw)):e[0];return BotBrain.readyToFire(u.xbAP,Math.hypot(ey,e[1]),d,u.see||0);}
 // The bot's crosshair (bot-gun, user 2026-10-29: "their aim is like purposely bad ... the bullet is [not] coming out of the
 // right place ... their shots aren't going to their crosshair"). One direction is the bot's view: its yaw (u.g.rotation.y,
 // what the third-person body / gun and the spectator's first-person camera use) and its pitch (u.xbVP -> u.xaim, read by
