@@ -7,7 +7,8 @@
 //    faceIndex, object) for 1500 random rays x {all hits, firstHitOnly}, through Raycaster.intersectObjects too;
 //  - a hit still in the array when the array is filled again without emptying is never overwritten; after emptying, the
 //    same objects are reused;
-//  - bytes allocated per pooled all-hits ray ~0 (young generation big enough that no scavenge runs while measuring);
+//  - bytes allocated per pooled all-hits ray: only the array's own regrown backing store (young generation big enough that no
+//    scavenge runs while measuring);
 //  - shoot() / xThin empty their pooled arrays before each fill (the pool's contract).
 const cp = require('child_process');
 if (!process.execArgv.some((a) => /semi-space/.test(a))) { const r = cp.spawnSync(process.execPath, ['--max-semi-space-size=256', __filename], { stdio: 'inherit' }); process.exit(r.status == null ? 1 : r.status); }
@@ -52,11 +53,13 @@ const tick = () => new Promise((r) => setImmediate(r));
   xe(`window.__W=function(n,pool){const C=nmActive(),M=C.M.solids[0],Q=__Q,RC=window.__RC||(window.__RC=new THREE.Raycaster()),A=pool?(window.__PA||(window.__PA=xRayPool([]))):(window.__FA||(window.__FA=[]));RC.far=200;RC.firstHitOnly=false;let h=0;
     for(let k=0;k<n;k++){const q=Q[k%Q.length];RC.ray.origin.set(q[0],q[1],q[2]);RC.ray.direction.set(q[3]-.5,(q[4]-.5)*.3,q[5]-.5).normalize();A.length=0;M.raycast(RC,A);h+=A.length;}return h;};__W(3000,true);__W(3000,false);__W(3000,true);__W(3000,false);true`);
   const v8 = require('v8'), heap = () => v8.getHeapStatistics().used_heap_size;
-  const meas = (pool) => { const best = []; for (let r = 0; r < 3; r++) { const h0 = heap(); const hits = xe(`__W(3000,${pool})`); best.push([(heap() - h0) / 3000, hits / 3000]); } return best.sort((a, b) => a[0] - b[0])[0]; };
+  const meas = (pool) => { const best = []; for (let r = 0; r < 6; r++) { const h0 = heap(); const hits = xe(`__W(3000,${pool})`); const d = heap() - h0; if (d >= 0) best.push([d / 3000, hits / 3000]); } assert(best.length, 'a scavenge ran during every measurement'); return best.sort((a, b) => a[0] - b[0])[0]; }; // a rep a scavenge ran in (negative delta) is skipped, as test_bvh_alloc
   const fresh = meas(false), pooled = meas(true);
   console.log(`bytes per 200 m all-hits ray (${fresh[1].toFixed(2)} hits each): fresh array ${fresh[0].toFixed(1)}, pooled ${pooled[0].toFixed(1)}`);
   assert(fresh[0] > 100, 'the measurement sees the fresh hits (' + fresh[0].toFixed(1) + ' B per ray)');
-  assert(pooled[0] < 16, 'a pooled all-hits ray allocates nothing per hit (' + pooled[0].toFixed(1) + ' B per ray)');
+  // what is left is the array's own backing store: `length = 0` frees it and the next push regrows it (~150 B for ~6 hits, the
+  // same with or without the pool); the hits themselves (a hit + face + two Vector3, ~360 B each with the library's boxed numbers) are gone
+  assert(pooled[0] < 200 && pooled[0] * 8 < fresh[0], 'a pooled all-hits ray allocates nothing per hit (' + pooled[0].toFixed(1) + ' B per ray, fresh ' + fresh[0].toFixed(1) + ')');
   console.log(`Ray pool (${MAP}): ${eq[0]} raycasts (${eq[1]} hits, ${eq[2]} multi-hit) identical to fresh hits and the library, ${keep[0]} refills keep the hits in the array, ${keep[1]} reused after emptying; ${fresh[0].toFixed(0)} -> ${pooled[0].toFixed(1)} B per ray`);
   process.exit(0);
 })().catch((e) => { console.error(e); process.exit(1); });
