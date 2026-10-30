@@ -15,4 +15,7 @@ assert.match(tg,/xTgtB/,'xShotTgts builds the dropped-gun list into pooled xTgtB
 // Layout contract the patched Raycaster.intersectObjects relies on: solids first, hitboxes after.
 const order=shoot.indexOf('solids.length')<shoot.indexOf('b.alive');
 assert(order,'solids are pushed before bot hitboxes (spatial-cell fast path identity check)');
-console.log('Shot path: pooled target lists (xTgtA/xTgtB via xShotTgts), no per-shot concat/filter/flatMap, scratch Vector2, solids-first layout preserved');
+// repath: the feel layer's gFire (work/feel_runtime.js, the gFire every gun shot runs) built its spread / recoil basis from three
+// new Vector3 per shot (right, the world up it crossed with, up); scratch vectors give the same basis.
+{const a=s.indexOf('gFire=function(d,w,W){');assert(a>=0,'feel gFire');const g=s.slice(a,s.indexOf('\n};',a));assert.doesNotMatch(g,/new THREE\.Vector3/,'gFire allocates its spread basis per shot');}
+console.log('Shot path: pooled target lists (xTgtA/xTgtB via xShotTgts), no per-shot concat/filter/flatMap, scratch Vector2, solids-first layout preserved, feel gFire basis in scratch vectors');
