@@ -3651,12 +3651,13 @@ function xLdh() { for (let i = XLDH.length - 1; i >= 0; i--) { const m = XLDH[i]
 // recycled hit objects instead of a hit + face + two Vector3 per wall triangle crossed (GC in long sprays). Contract: empty the array before each fill and
 // never keep a hit past the next fill of the same array (both are read within one shot: bFx / xSurfHit copy the point, decals keep only .object).
 function xRayPool(a) { Object.defineProperty(a, 'xPool', { value: { h: [], m: new WeakMap(), st: [], g: 0, k: 0 } }); return a; }
-const XPN = { H: { t: 0.6, k: 0.75 }, M: { t: 0.35, k: 0.5 }, L: { t: 0.15, k: 0.5 } }, XWR = new THREE.Raycaster(), XWV = new THREE.Vector3(), XWD = new THREE.Vector3(), XWA = xRayPool([]), XWH = xRayPool([]);
+const XPN = { H: { t: 0.6, k: 0.75 }, M: { t: 0.35, k: 0.5 }, L: { t: 0.15, k: 0.5 } }, XWR = new THREE.Raycaster(), XWV = new THREE.Vector3(), XWD = new THREE.Vector3(), XWA = [], XWH = [];
 function xPen(n) { return /^(Odin|Ares|Sheriff|Operator|Guardian|Outlaw)$/.test(n) ? XPN.H : /^(Vandal|Phantom|Bulldog|Ghost|Marshal|Bandit|Warden)$/.test(n) ? XPN.M : XPN.L; } // official tiers, as the server (weapons.json wallPenetration)
 function xWkDmg(W, part, dist, k) { return Math.round(wDmg(W, part, dist) * k); } // one bullet, k = wallbang multiplier (the feel layer floors raw x k, as the server)
 function xThin(o, pt, dir, t) { // exit hit if the wall along dir is thinner than t, else null; XWD = -dir afterwards
   XWV.copy(pt).addScaledVector(dir, t); XWD.copy(dir).negate(); XWR.set(XWV, XWD); XWR.near = 0; XWR.far = t; XWA.length = 0;
   XWR.intersectObject(o, false, XWA); const ex = XWA[0]; return ex && t - ex.distance > 0.001 ? ex : null; }
+xRayPool(XWA); xRayPool(XWH); // repath: pooled hit lists (see xRayPool)
 function xWall(hit, dir, w) {
   const u = hit.object.userData || {}; if (u.bot || u.sw || u.ld || u.aim || solids.indexOf(hit.object) < 0) return null; // static map mesh only
   const ex = xThin(hit.object, hit.point, dir, xPen(w).t); if (!ex) return null;
