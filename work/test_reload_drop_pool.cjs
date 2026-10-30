@@ -21,7 +21,7 @@ const assert=require('assert/strict'),fs=require('fs'),path=require('path');cons
  // dispose spy on every material
  xe('window.__disp=0;{const d=THREE.Material.prototype.dispose;THREE.Material.prototype.dispose=function(){if((XRL.du&&XRL.du.has(this))||(window.__dropMats&&__dropMats.has(this)))__disp++;return d.apply(this,arguments);};}window.__dropMats=new Set();true');
  const drop=()=>JSON.parse(xe(`(()=>{const P=XRP.Vandal;xDrop(P.mag);const f=XRL.fx[XRL.fx.length-1];const ms=[];f.m.traverse(o=>{if(o.material)[].concat(o.material).forEach(m=>{ms.push(m);__dropMats.add(m);});});
-   window.__last=ms;const src=[];P.mag.traverse(o=>{if(o.material)[].concat(o.material).forEach(m=>src.push(m));});return JSON.stringify({n:ms.length,ids:ms.map(m=>m.uuid),tr:ms.every(m=>m.transparent),op:ms.map(m=>m.opacity),srcOp:src.map(m=>m.opacity),same:ms.some(m=>src.includes(m))});})()`));
+   window.__last=ms;const src=[];P.mag.traverse(o=>{if(o.material)[].concat(o.material).forEach(m=>src.push(m));});const R=window.__reg||(window.__reg=[]);return JSON.stringify({n:ms.length,ids:ms.map(m=>{let i=R.indexOf(m);if(i<0)i=R.push(m)-1;return i;}),tr:ms.every(m=>m.transparent),op:ms.map(m=>m.opacity),srcOp:src.map(m=>m.opacity),same:ms.some(m=>src.includes(m))});})()`));
  const fade=async()=>{for(let i=0;i<50;i++){xe('xFx(0.02);true');}};
  const a=drop();assert.ok(a.n>0,'the drop carries a material');assert.ok(a.tr,'drop clones are transparent');assert.ok(!a.same,'the source material itself is never faded');
  await fade();assert.equal(xe('XRL.fx.length'),0,'drop faded out and left the scene');

@@ -33,8 +33,10 @@ const assert=require('assert/strict');const {boot}=require('./page_harness.cjs')
  const cached0=xe(`XSOL.mx.filter(M=>M&&M.valorant&&!M.dead&&M.sx).slice(1).every(M=>{let ok=true;M.sx.sc.traverse(o=>{if(o.isSkinnedMesh&&o.geometry.attributes.skinIndex&&!XR_SL.has(o.geometry))ok=false;});return ok;})`);
  assert.equal(typeof xe('typeof XR_WARM==="undefined"?null:XR_WARM.n'),'number','xrWarm exists (XR_WARM)');
  const calls0=xe('XR_WARM.calls');
+ xe('window.__rn=0;{const r=Math.random;Math.random=function(){__rn++;return r.apply(this,arguments);};}true'); // the seeded game generator's draws (test_warm_rng)
  xe('xPC=false;window.xWarmShaders();true');
  const calls=xe('XR_WARM.calls')-calls0,warmMs=xe('XR_WARM.last');
+ assert.equal(xe('__rn'),0,'the corpse warm-up draws nothing from the seeded game generator (it runs under xNoRng)');
  assert.ok(calls>=xe('XR_WARM.n'),'xWarmShaders ran the corpse warm-up: '+calls+' builds');
  const miss=JSON.parse(xe(`JSON.stringify(XSOL.mx.filter(M=>M&&M.valorant&&!M.dead&&M.sx).filter(M=>{let ok=true;M.sx.sc.traverse(o=>{if(o.isSkinnedMesh&&o.visible!==false&&o.geometry.attributes.skinIndex&&!XR_SL.has(o.geometry))ok=false;});return !ok;}).map(M=>M.ag||'?'))`));
  assert.deepEqual(miss,[],'every living rig has its sample list cached after the warm-up');

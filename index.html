@@ -4114,7 +4114,7 @@ function xDropMat(x) {
   if (Array.isArray(x)) return x.map(xDropMat); if (!x || typeof x.clone !== "function") return x;
   let L = XRL.dm.get(x); if (!L) XRL.dm.set(x, (L = []));
   let n = null; for (const c of L) if (!XRL.du.has(c)) { n = c; break; }
-  if (n) n.copy(x); else { n = x.clone() || x; if (n === x) return x; L.push(n); }
+  if (n) { n.copy(x); n.uuid = THREE.MathUtils.generateUUID(); } else { n = x.clone() || x; if (n === x) return x; L.push(n); } // a reuse takes a fresh uuid as the old per-reload clone did: the seeded game draws the same numbers (test_warm_rng)
   n.transparent = true; return n;
 }
 function xRst() { for (const n in XRP) ["mag", "bolt", "cyl"].forEach((s) => { const o = XRP[n][s]; if (o) { o.position.copy(o.userData.b0); o.rotation.copy(o.userData.r0); o.visible = true; } }); XRL.k = null; XRL.last = -1; }
@@ -11565,7 +11565,13 @@ let xLastT = 0, xPrev = "", xPC = false;
 // the GPU in the fight) and the agent blob shadow (Medium "Map only" shadows: its 64 px texture was uploaded at the round's first
 // blob; uploaded here, no extra mesh). Returns the warm-up meshes, already in the scene; the caller removes them after compiling.
 const XWARM = (() => { try { const m = new THREE.Mesh(orbGeo, xSmokeM("xWarm", 0x808080, 0x808080)); m.frustumCulled = false; m.raycast = () => {}; return m; } catch (e) { return null; } })(); // made once at page load, reused by every precompile
-function xWarmLazy() { const warm = []; try {
+// Warm-ups run on their own generator: every new three object takes its uuid from Math.random, and the offline match plays from
+// that same generator, so a warm mesh built mid-match (each map's precompile) shifted every later draw (07f8f8e: a different
+// seeded match than before the warm-up). xNoRng runs fn with Math.random swapped for a private one and puts the game's back.
+const XWRNG = (() => { let a = 0x2545f491; return () => { a = (a + 0x6d2b79f5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; })();
+function xNoRng(fn) { const r = Math.random; Math.random = XWRNG; try { return fn(); } finally { Math.random = r; } }
+function xWarmLazy() { return xNoRng(xWarmLazy0); }
+function xWarmLazy0() { const warm = []; try {
   if (XWARM) warm.push(XWARM);
   if (XWARM_BAR) warm.push(XWARM_BAR); // Barrier Orb segments (xBarMake: clones of its material, same program)
   try { for (const w in XRP) { const g = XRP[w].mag; if (g) g.traverse((o) => { if (!o.isMesh || !o.material) return; const m = new THREE.Mesh(o.geometry, xDropMat(o.material)); m.frustumCulled = false; m.raycast = () => {}; warm.push(m); }); } } catch (e) {} // reload magazine drops (xDrop): their pooled transparent clones
@@ -15316,7 +15322,7 @@ function xrWarm(){const t0=performance.now();let calls=0;try{const L=(typeof XSO
   try{const R=xrRagdoll(M);calls++;if(R){xrSolve(R,1/60);xrPose(R);}}catch(e){}
   for(const [b,p,q,s]of bones){b.position.copy(p);b.quaternion.copy(q);b.scale.copy(s);}M.m.updateMatrixWorld(true);}
  }catch(e){}XR_WARM.runs++;XR_WARM.calls+=calls;XR_WARM.last=performance.now()-t0;return calls;}
-if(typeof window!=='undefined'){const warm=window.xWarmShaders;if(typeof warm==='function')window.xWarmShaders=function(){const go=running&&!xPC;const r=warm.apply(this,arguments);if(go)xrWarm();return r;};}
+if(typeof window!=='undefined'){const warm=window.xWarmShaders;if(typeof warm==='function')window.xWarmShaders=function(){const go=running&&!xPC;const r=warm.apply(this,arguments);if(go){if(typeof xNoRng==='function')xNoRng(xrWarm);else xrWarm();}return r;};}
 {const die=xDie;xDie=function(b){const r=die.apply(this,arguments);if(b&&b.xm&&b.xm.dead){b.xm.diedAt=b.xm.diedAt||performance.now();}return r;};}
 {const visual=xVis;xVis=function(dt){const now=performance.now();for(let i=XDEAD.length-1;i>=0;i--){const e=XDEAD[i],age=(now-(e.c.diedAt||now))/1000;// corpse lifetime: work/death_runtime.js decides (xdpGone: round modes keep bodies until the round resets); kept bodies hold e.t under the base loop's 3 s ring fade
  if(typeof xdpGone==='function'?xdpGone(e,age):age>4){scene.remove(e.c.m);scene.remove(e.gn);xDisp(e.gn);const j=XSOL.mx.indexOf(e.c);if(j>=0)XSOL.mx.splice(j,1);XDEAD.splice(i,1);}else e.t=typeof xdpGone==='function'?Math.min(2.5,age):Math.max(e.t,age);}return visual(dt);};}
