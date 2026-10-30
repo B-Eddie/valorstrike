@@ -8736,6 +8736,10 @@ const sgWallGeo = new THREE.BoxGeometry(6, 3, 0.4), slowGeo = new THREE.CircleGe
 // bots' (XBSW) barriers: w.m is the group, w.sm the segment meshes (in solids, userData.sw = owner tag, userData.si = index), w.seg their HP.
 var XBAR = { len: 10.4, segs: 4, h: 3, th: 0.4, hp: 400, fort: 200, fortAt: 2, life: 40 };
 const sgSegGeo = new THREE.BoxGeometry(XBAR.len / XBAR.segs + 0.02, XBAR.h, XBAR.th); // 1 cm overlap: no seam a ray can slip through
+// Barrier Orb ice (the player's sgKey.ice, the bots' xBBarrier.ice): one recipe, so xWarmLazy can show the same program to
+// the per-map precompile (flat-shaded transparent phong was linked by the first wall of the match, player's or a bot Sage's).
+function sgIceMat() { return new THREE.MeshPhongMaterial({ color: 0xc8f6ff, emissive: 0x1f6f95, specular: 0xffffff, shininess: 120, flatShading: true, transparent: true, opacity: 0.9 }); }
+function sgIce() { return sgKey.ice || (sgKey.ice = sgIceMat()); }
 function xBarMake(p, yaw, mat, tag, extra) { const g = new THREE.Group(), w = Object.assign({ m: g, sm: [], seg: [], p, ax: Math.cos(yaw), az: -Math.sin(yaw), t: XBAR.life, ft: XBAR.fortAt, hp: XBAR.hp * XBAR.segs }, extra || {}), sw = XBAR.len / XBAR.segs;
   for (let i = 0; i < XBAR.segs; i++) { const m = new THREE.Mesh(sgSegGeo, mat.clone()); m.position.set(-XBAR.len / 2 + (i + 0.5) * sw, 0, 0); m.userData.sw = tag === undefined ? w : tag; m.userData.si = i;
     const h = [3.15, 3.55, 3.3, 3.6][i % 4], sh = new THREE.Mesh(sgShard, m.material); sh.scale.y = h; sh.position.set(0, -XBAR.h / 2 + h / 2, 0); sh.rotation.set(0.04 * (i % 2 ? -1 : 1), 0, 0.04); sh.raycast = () => {}; m.add(sh);
@@ -8763,7 +8767,7 @@ function sgKey(code) {
   const P = player, fx = -Math.sin(yaw), fz = -Math.cos(yaw);
   if (code === "KeyC") {
     if (J.c < 1 || J.cd.c > 0) return sgNo(); sgWallEnd(); J.c--; J.cd.c = 0.6;
-    const ice = sgKey.ice || (sgKey.ice = new THREE.MeshPhongMaterial({ color: 0xc8f6ff, emissive: 0x1f6f95, specular: 0xffffff, shininess: 120, flatShading: true, transparent: true, opacity: 0.9 })); ice.opacity = 0.9;
+    const ice = sgIce(); ice.opacity = 0.9;
     const q = xAimPlace(XPLACE.Sage.c[0]), p = new THREE.Vector3(q.x, 1.5, q.z); // at the crosshair up to 15 m (wiki Barrier_Orb v11.04), was 2.5 m ahead
     const by = typeof XABT !== "undefined" && Number.isFinite(XABT.face) ? XABT.face : yaw; // the indicator's angle (C again 90 deg / HOLD ALT FIRE: xRot*), else across the aim
     J.sw = xBarMake(p, by, ice, true, { arr: solids }); SFX.wall(); say("Barrier Orb · 4 x 400 HP, 600 once fortified (2 s) · 40 s", 900);
@@ -9971,7 +9975,7 @@ var XBSW = []; // bot Sage barriers (var: sgBlk may run before this line)
 function xBSwD(w, x, z) { return xBarD(w, x, z); }
 function xBSwBlk(x, z, r, y) { y = y || 0; for (let i = 0; i < XBSW.length; i++) { const w = XBSW[i], low = w.p.y - 1.5; if (y >= low + 2.5 || y + 1.8 <= low) continue; if (xBSwD(w, x, z) < r + 0.2) return true; } return false; }
 function xBBarrier(b, al, from, tx, tz) { for (let i = XBSW.length - 1; i >= 0; i--) if (XBSW[i].own === b) xBSwGone(XBSW[i]); // one barrier per Sage
-  const P = xBWallAt(from, tx, tz, 2.5), ice = xBBarrier.ice || (xBBarrier.ice = new THREE.MeshPhongMaterial({ color: 0xc8f6ff, emissive: 0x1f6f95, specular: 0xffffff, shininess: 120, flatShading: true, transparent: true, opacity: 0.9 }));
+  const P = xBWallAt(from, tx, tz, 2.5), ice = xBBarrier.ice || (xBBarrier.ice = sgIceMat());
   const w = xBarMake(new THREE.Vector3(P.x, P.y + 1.5, P.z), P.yaw, ice, undefined, { own: b, en: !al }); XBSW.push(w); try { SFX.wall(); } catch (er) {} feed("Sage ▸ Barrier Orb"); return w; }
 function xBSwGone(w) { xBarGone(w); const j = XBSW.indexOf(w); if (j >= 0) XBSW.splice(j, 1); }
 function xBSwDmg(w, n, si) { if (XBSW.indexOf(w) < 0) return; if (xBarHit(w, si, n)) { xBSwGone(w); feed("Sage ▸ Barrier broken"); blip(300, 0.25, "square", 0.12); } }
@@ -11562,6 +11566,7 @@ let xLastT = 0, xPrev = "", xPC = false;
 const XWARM = (() => { try { const m = new THREE.Mesh(orbGeo, xSmokeM("xWarm", 0x808080, 0x808080)); m.frustumCulled = false; m.raycast = () => {}; return m; } catch (e) { return null; } })(); // made once at page load, reused by every precompile
 function xWarmLazy() { const warm = []; try {
   if (XWARM) warm.push(XWARM);
+  try { const m = new THREE.Mesh(sgSegGeo, sgIce()); m.frustumCulled = false; m.raycast = () => {}; warm.push(m); } catch (e) {} // Barrier Orb segments (xBarMake: clones of this, same program)
   try { for (const w in XRP) { const g = XRP[w].mag; if (g) g.traverse((o) => { if (!o.isMesh || !o.material) return; const m = new THREE.Mesh(o.geometry, xDropMat(o.material)); m.frustumCulled = false; m.raycast = () => {}; warm.push(m); }); } } catch (e) {} // reload magazine drops (xDrop): their pooled transparent clones
   if (typeof xBlob !== "undefined" && xBlob.mat && xBlob.mat.map && renderer.initTexture) renderer.initTexture(xBlob.mat.map); // its program is the shared basic+map one; only the texture was new
   if (typeof muzzle !== "undefined" && muzzle.material.map && renderer.initTexture) renderer.initTexture(muzzle.material.map); // first-person muzzle flash: uploaded on the first shot otherwise
