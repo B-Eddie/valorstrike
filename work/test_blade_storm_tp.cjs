@@ -63,7 +63,7 @@ const fs=require('fs'),vm=require('vm'),path=require('path'),assert=require('ass
   const wd=H.match(/function wDmg\(W, zone, dist\) \{[^\n]*\n[^\n]*\}/)[0];const WD=vm.runInNewContext(wd+';wDmg',{WEAP:{},xPelOn:false});for(const d of [2,30,80])assert.deepEqual(['body','head','legs'].map(z=>WD(B,z,d)),[50,150,42.5],'knife damage at '+d+' m (no falloff)');
   assert(H.includes('const bsw = xBsBot(b), w = bsw ? "Blade Storm" : b.w || "Classic", W = bsw ? XBSB : WEAP[w] || WEAP.Classic'),'enemy bot shot: knives while Blade Storm is out');
   assert(H.includes('aw = abs ? "Blade Storm" : a.w || "Vandal", AW = abs ? XBSB : WEAP[aw] || WEAP.Vandal')&&H.includes('SFX.at(p, aw)')&&H.includes('AW = abs ? XBSB : WEAP[a.w || "Vandal"]'),'ally bot shot: knives');
-  assert(H.includes('(w === "Blade Storm" ? 0 : gSpread(w, W, { mv: b.mv, n }))'),'knives: no movement spread (server ignoreMovementSpread)');
+  assert(H.includes('if (w === "Blade Storm") { b.sn = 0; b.lt = 0; return; }'),'knives: no spread / spray recoil (server abilityOnly + ignoreMovementSpread: cone 0; bot-spray: bSpread is the server gun)');
   assert(H.includes('WEAP[v[2]] || v[2] === "Blade Storm" ? v[2] : "Vandal"'),'online shot event: Blade Storm routed, not Vandal');
   assert(H.includes('if (b.bsW && window.xBotUB && xBotUB[b.name]) return "Blade Storm";'),'kill feed: Blade Storm');
   const xs=H.match(/function xBsBot\(b\) \{[^\n]*\}/)[0];const ctx={NET:{socket:null},xBtpK:u=>u.k};const f=vm.runInNewContext(xs+';xBsBot',ctx);assert.equal(f({k:3}),true);assert.equal(f({k:0}),false);assert.equal(f({k:3,nt:1}),false,'remote units: server decides');ctx.NET.socket={};assert.equal(f({k:3}),false,'online: server bots');}
