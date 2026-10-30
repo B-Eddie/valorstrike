@@ -11570,14 +11570,13 @@ const XWARM = (() => { try { const m = new THREE.Mesh(orbGeo, xSmokeM("xWarm", 0
 // seeded match than before the warm-up). xNoRng runs fn with Math.random swapped for a private one and puts the game's back.
 const XWRNG = (() => { let a = 0x2545f491; return () => { a = (a + 0x6d2b79f5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; })();
 function xNoRng(fn) { const r = Math.random; Math.random = XWRNG; try { return fn(); } finally { Math.random = r; } }
-function xWarmLazy() { return xNoRng(xWarmLazy0); }
-function xWarmLazy0() { const warm = []; try {
+function xWarmLazy() { return xNoRng(() => { const warm = []; try {
   if (XWARM) warm.push(XWARM);
   if (XWARM_BAR) warm.push(XWARM_BAR); // Barrier Orb segments (xBarMake: clones of its material, same program)
   try { for (const w in XRP) { const g = XRP[w].mag; if (g) g.traverse((o) => { if (!o.isMesh || !o.material) return; const m = new THREE.Mesh(o.geometry, xDropMat(o.material)); m.frustumCulled = false; m.raycast = () => {}; warm.push(m); }); } } catch (e) {} // reload magazine drops (xDrop): their pooled transparent clones
   if (typeof xBlob !== "undefined" && xBlob.mat && xBlob.mat.map && renderer.initTexture) renderer.initTexture(xBlob.mat.map); // its program is the shared basic+map one; only the texture was new
   if (typeof muzzle !== "undefined" && muzzle.material.map && renderer.initTexture) renderer.initTexture(muzzle.material.map); // first-person muzzle flash: uploaded on the first shot otherwise
-  for (const m of warm) scene.add(m); } catch (e) {} return warm; }
+  for (const m of warm) scene.add(m); } catch (e) {} return warm; }); }
 // drawcalls spikes: upload every texture the warm-up scene holds (hidden effect / ability parts included), so none is first
 // uploaded on the frame it is first drawn; three skips a texture already at its current version
 // (skip: the native map root - its textures are uploaded by the map loader's own budgeted pass)
