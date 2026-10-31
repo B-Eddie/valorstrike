@@ -354,19 +354,24 @@
  // jams behind its slowest member (Breeze defender ramp: all five share one spawn exit).
  function follow(px,pz,vx,vz,mates){const l=Math.hypot(vx,vz);if(l<1e-6)return 1;const hx=vx/l,hz=vz/l;let k=1;for(const m of mates){const dx=m[0]-px,dz=m[1]-pz,d=Math.hypot(dx,dz);if(d<.3||d>RESPOND.follow||(m[2]!=null&&m[2]<RESPOND.pass))continue;const ahead=(dx*hx+dz*hz)/d;if(ahead>.6)k=Math.min(k,.55);}return k;}
  // ---- Economy ----
- // Team call for the round from every member's credits, the loss streak and the round number.
+ // Team call for the round from every member's credits, the loss streak and the round number. A team on a win (lossStreak 0)
+ // with BUYK.bonus+ average credits buys (lane-botfeel3): the pistol-round winners' bonus round is SMGs / shotguns / armour,
+ // never a save - a save / eco is how a LOSING team builds to a full buy (132dc0e called 'eco' ~55 % for any 2500-3900 team).
+ const BUYK={bonus:2400};
  function teamBuy(credits,lossStreak,round,rand,half=12){
   const n=credits.length||1,avg=credits.reduce((s,v)=>s+v,0)/n,low=Math.min(...credits);
   if(round===1||round===half+1)return 'pistol';
   if(avg>=3900&&low>=2900)return 'full';
   if(avg>=3900)return rand()<.6?'full':'half';
+  if(!lossStreak&&avg>=BUYK.bonus)return 'half';
   if(avg>=2500)return rand()<.45?'half':lossStreak>=2?'force':'eco';
   if(lossStreak>=3&&rand()<.55)return 'force';
   return rand()<.15?'force':rand()<.75?'eco':'save';
  }
  // What one bot buys for the team call. Returns {weapon|null, side|null, armor:'heavy'|'light'|null}; weapon names as
- // the shop has them. def: defending (Operator / Odin / Judge more likely).
- function buyFor(call,credits,P,rand,def){
+ // the shop has them. def: defending (Operator / Odin / Judge more likely). A full call that leaves this bot short of a rifle
+ // (under 2900) buys from the half-buy shop - the best gun it can afford - not heavy armour on a Classic (lane-botfeel3).
+ function buyFor(call,credits,P,rand,def){if(call==='full'&&credits<2900)call='half';
   const out={weapon:null,side:null,armor:null};let c=credits;const take=(k,n,p)=>{if(c>=p){out[k]=n;c-=p;return true;}return false;};
   if(call==='pistol'){const x=rand();if(x<.4)take('armor','light',400);else if(x<.65)take('side','Ghost',500);else if(x<.8)take('side','Sheriff',800);else if(x<.9)take('side','Frenzy',450);else take('side','Bandit',600);return out;}
   if(call==='save'){if(c>=3400&&rand()<.3)take('side','Sheriff',800);return out;}
@@ -656,5 +661,5 @@
  // st {contactD (m to the freshest remembered enemy, null: none), see, trading, wide, carrier, rush}.
  const WALK={range:16};
  function quiet(st){if(!st||st.see||st.trading||st.wide||st.carrier||st.rush)return false;return st.contactD!=null&&st.contactD<WALK.range;}
- return {hash,rng,clamp,pickW,REACT,personality,reaction,crosshair,crosshairAt,firePattern,peek,attackPlan,defensePlan,roles,teamBuy,buyFor,onMateDeath,onSound,ATTACK,DEFENSE,utility,UTIL,UTILX,teamGap,fightCast,turnStep,trackLag,wrapA,SPIKE,plantSpot,postPlant,retake,postPlay,SHOOT_UTIL,shootUtility,TAILWIND,tailwindDash,tailwindKeys,LEVEL,level,aimTraits,AIM_H,aimHeight,halfWidth,aimPlan,aimAt,readyToFire,planFire,idlePitch,recoilPull,discipline,hitPart,BUY,buyArea,buyRoute,buyExit,buySpot,buyWander,buyHold,buyNew,buyTick,buyNext,buySep,SENS,cm360,sensOf,turnRate,SENSE,inView,audible,earSpot,memNew,memNote,memForget,memBest,repeek,mayFire,nextShot,areas,DFORM,GAP,midPoint,RESPOND,nearest,tradeSpot,follow,buyNear,buyCross,reactR,reacts,FIRE,sprayFade,sprayPull,turnAcc,trackTurn,cornerPick,FLASH,flashRead,blindPlay,PEEK,peekStep,RELOAD,reloadPlay,reloadBack,trailNote,reloadSpot,TRADE,WALK,quiet};
+ return {hash,rng,clamp,pickW,REACT,personality,reaction,crosshair,crosshairAt,firePattern,peek,attackPlan,defensePlan,roles,teamBuy,buyFor,BUYK,onMateDeath,onSound,ATTACK,DEFENSE,utility,UTIL,UTILX,teamGap,fightCast,turnStep,trackLag,wrapA,SPIKE,plantSpot,postPlant,retake,postPlay,SHOOT_UTIL,shootUtility,TAILWIND,tailwindDash,tailwindKeys,LEVEL,level,aimTraits,AIM_H,aimHeight,halfWidth,aimPlan,aimAt,readyToFire,planFire,idlePitch,recoilPull,discipline,hitPart,BUY,buyArea,buyRoute,buyExit,buySpot,buyWander,buyHold,buyNew,buyTick,buyNext,buySep,SENS,cm360,sensOf,turnRate,SENSE,inView,audible,earSpot,memNew,memNote,memForget,memBest,repeek,mayFire,nextShot,areas,DFORM,GAP,midPoint,RESPOND,nearest,tradeSpot,follow,buyNear,buyCross,reactR,reacts,FIRE,sprayFade,sprayPull,turnAcc,trackTurn,cornerPick,FLASH,flashRead,blindPlay,PEEK,peekStep,RELOAD,reloadPlay,reloadBack,trailNote,reloadSpot,TRADE,WALK,quiet};
 });
