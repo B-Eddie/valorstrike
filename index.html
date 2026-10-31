@@ -9383,7 +9383,7 @@ function xBotDmg(t, n, by, w) { try { if (t === player) { hurt(player, n, by); r
   if (see && tg) { A.rlk = { x: tg.x, z: tg.z, t: 0 }; return; }
   if (!A.rzb || !A.rlk || (A.rlk.t += dt) > 6) return;
   const dx = A.rlk.x - from.x, dz = A.rlk.z - from.z, l = Math.hypot(dx, dz) || 1; if (l < 4 || l > 28 || Math.random() > dt * 1.5) return;
-  if (!xBUse(b, "c")) { if (!(xBCh(b).c >= 1)) A.rzb = 0; return; } A.rzb = 0; // a held cast (a mate just threw: xbuOk) tries again const fx = dx / l, fz = dz / l, p = new RV(from.x + fx, xFy(from.x + fx, from.z + fz, from.y) + 0.4, from.z + fz); /* Boom Bot (C) bought */ if (blocked(p.x, p.z, 0.3, 0)) p.set(from.x, xFy(from.x, from.z, from.y) + 0.4, from.z);
+  if (!xBUse(b, "c")) { if (!(xBCh(b).c >= 1)) A.rzb = 0; return; } A.rzb = 0; /* a held cast (a mate just threw: xbuOk) tries again */ const fx = dx / l, fz = dz / l, p = new RV(from.x + fx, xFy(from.x + fx, from.z + fz, from.y) + 0.4, from.z + fz); /* Boom Bot (C) bought */ if (blocked(p.x, p.z, 0.3, 0)) p.set(from.x, xFy(from.x, from.z, from.y) + 0.4, from.z);
   RS.bb.push(xBbShootable({ m: rsMesh(0xff8a1f, 1.6, p), dx: fx, dz: fz, t: XBB.life, hp: XBB.hp, own: b, en: !al })); feed("Raze ▸ Boom Bot"); try { XCUE.play("bbGo", { x: p.x, y: 0.4, z: p.z }); } catch (e) {} }; }
 // bot Breach (team-agnostic): Aftershock once per round, through the wall onto an enemy who just ducked behind cover, or (attacking) onto the planted Spike once a defender is defusing it
 // (lane-botutil: was the defenders' cast onto their own planted Spike, into nobody). xBAsSpot(atk, spike position or null, from, defusing, last-seen record) -> {x, z, wall} or null
