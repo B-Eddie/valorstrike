@@ -26,13 +26,13 @@ const SECS=+(process.env.SECS||420),SEED=+(process.env.SEED||3),MAP=process.env.
  const ECO=[],ROUT={},seen=new Set();let curRd=null,t0=0,cells={};
  const flush=()=>{if(curRd==null)return;for(const n in cells){const c=cells[n];(ROUT[c.key]||(ROUT[c.key]=[])).push({round:curRd,id:n,cells:[...c.s]});}cells={};};
  for(let k=0;k<SECS*5;k++){await adv(200);
-  const r=JSON.parse(xe(`JSON.stringify((()=>{const o={buy:FV.buy,run:running,rd:FV.you+FV.them,atk:FV.atk,site:FV.sp.site,tl:timeLeft,u:[],call:[XBV.call&&XBV.call[true]?XBV.call[true].c:null,XBV.call&&XBV.call[false]?XBV.call[false].c:null]};
+  const r=JSON.parse(xe(`JSON.stringify((()=>{const o={buy:FV.buy,run:running,rd:FV.you+FV.them,atk:FV.atk,site:FV.sp.site,tl:timeLeft,u:[],call:[XBV.call&&XBV.call[true]?XBV.call[true].c:null,XBV.call&&XBV.call[false]?XBV.call[false].c:null],ls:[FV.lsY||0,FV.lsT||0]};
    for(const [L,tm] of [[allies,'A'],[bots,'B']])for(const u of L){if(!u||!u.g)continue;const s=FV.bs&&FV.bs[u.name];o.u.push({n:tm+u.name,tm,al:!!u.alive,x:u.g.position.x,z:u.g.position.z,w:s?s.w:null});}return o;})())`));
   if(xe('player.hp>0'))xe('pDie(null,"Vandal");true');
   if(r.buy>0||!r.run)continue;
   if(r.rd!==curRd){flush();curRd=r.rd;t0=k;
    for(const tm of ['A','B']){const L=r.u.filter(u=>u.tm===tm),q={rifle:0,smg:0,pistol:0};for(const u of L){if(RIFLE.has(u.w))q.rifle++;else if(SMG.has(u.w))q.smg++;else q.pistol++;}
-    const atk=tm==='A'?r.atk:!r.atk;ECO.push({round:r.rd+1,team:tm,atk,call:tm==='A'?r.call[0]:r.call[1],...q,mixed:r.rd!==0&&r.rd!==12&&q.rifle>0&&q.pistol>0});}}
+    const atk=tm==='A'?r.atk:!r.atk;ECO.push({round:r.rd+1,team:tm,atk,call:tm==='A'?r.call[0]:r.call[1],ls:tm==='A'?r.ls[0]:r.ls[1],...q,mixed:r.rd!==0&&r.rd!==12&&q.rifle>0&&q.pistol>0});}}
   const rt=(k-t0)*.2;if(rt<=35&&(k-t0)%2===0)for(const u of r.u){if(!u.al)continue;const atk=u.tm==='A'?r.atk:!r.atk,key=u.tm+'|'+(atk?'A':'D')+'|'+r.site;const c=cells[u.n]||(cells[u.n]={key,s:new Set()});c.s.add(Math.round(u.x/5)+','+Math.round(u.z/5));}}
  flush();
  const Q=JSON.parse(xe('JSON.stringify(QB3)'));
@@ -44,7 +44,7 @@ const SECS=+(process.env.SECS||420),SEED=+(process.env.SEED||3),MAP=process.env.
  const ay=Q.xh.map(x=>Math.abs(x.yaw)),calls={};for(const e of ECO){const k=(e.atk?'A':'D')+':'+e.call;calls[k]=(calls[k]||0)+1;}
  const out={seed:SEED,secs:SECS,side:'offline',rounds:Q.end.length,
   xhFights:Q.xh.length,xhYawMedDeg:med(ay),xhYawUnder10Pct:pc(ay.filter(x=>x<10).length,ay.length),xhPrePct:pc(Q.xh.filter(x=>x.pre).length,Q.xh.length),
-  ecoCalls:calls,ecoMixedPct:pc(ECO.filter(e=>e.mixed).length,ECO.filter(e=>e.round!==1&&e.round!==13).length),
+  ecoCalls:calls,ecoWinnerSaveCalls:ECO.filter(e=>e.round!==1&&e.round!==13&&e.ls===0&&(e.call==='eco'||e.call==='save')).length,ecoWinnerRounds:ECO.filter(e=>e.round!==1&&e.round!==13&&e.ls===0).length,ecoMixedPct:pc(ECO.filter(e=>e.mixed).length,ECO.filter(e=>e.round!==1&&e.round!==13).length),
   endings:Q.end.map(e=>e.text),atkAliveAtEnd:Q.end.map(e=>e.atkAlive),
   atkPrePlantDeaths:Q.death.length,hopelessDeaths:Q.death.filter(d=>d.left<20&&d.def-(d.atk-1)>=2).length,lateDeathsUnder20:Q.death.filter(d=>d.left<20).length,
   routeMateJaccardMean:mean(mates),routeSelfJaccardMean:mean(self),routePairsMates:mates.length,routePairsSelf:self.length,errors:H.errors.length,eco:ECO,deaths:Q.death,xh:Q.xh};

@@ -6,9 +6,16 @@
 //     the Spike lay dropped on A: 6 / 22 rounds ended "Time ran out", 4 / 21 on seed 5). Now the errand channels from where
 //     goalPath leaves it (ULT_ORB.reach, inside the 1.6 m capture radius) and an errand that has not captured within
 //     ULT_ORB.give s is dropped (a player gives up an orb they cannot get).
+//  2. a team that just won does not save: BotBrain.teamBuy called 'eco' 55 % of the time for a team at 2500-3900 average
+//     whatever the last round did, so the pistol-round winners (3300-3800 each) sat on Classics in the bonus round (132dc0e
+//     seed 3 / 5: round 2 attackers 'eco' on both). Now a team on a win (lossStreak 0) with BUYK.bonus+ average buys
+//     ('half': SMGs / shotguns / armour, the bonus round), and a full-buy call never leaves a bot standing with a Classic
+//     because it is short of a rifle: it takes the best it can afford (BotBrain.buyFor 'full' falls back to the half-buy
+//     shop), as players on a full buy do. The losing side keeps its eco / save / force mix.
 import assert from 'node:assert/strict';
 import {SpikeSimulation} from './src/spike.js';
 import {ULT_ORB} from './src/ultorbs.js';
+import BotBrain from '../vendor/bot-brain.cjs';
 // ---- 1. ult-orb errand ----
 {const calls=[{name:'A Main',position:[10,0,0]},{name:'B Main',position:[-10,0,0]}],nodes=[[0,0,0],[0,0,-10],[10,0,0],[-10,0,0],[10,0,1.15]];
  const W={map:{attacker:[0,0,0],defender:[0,0,-10],sites:{A:[0,0,-20]},callouts:calls},nav:{nodes,adj:[[1,2,3],[0],[0,4],[0],[2]]},playable:[0,1,2,3,4],allowed:new Set([0,1,2,3,4]),near:(x,z)=>{let b=0,d=1e9;nodes.forEach((p,i)=>{const e=Math.hypot(p[0]-x,p[2]-z);if(e<d){d=e;b=i;}});return b;},ground:()=>0,blocked:()=>false,ray:()=>Infinity};
@@ -24,4 +31,15 @@ import {ULT_ORB} from './src/ultorbs.js';
   const b=s.units.find(u=>((u.id*7919+s.round*104729)%100)/100<ULT_ORB.botChance);s.canSee=()=>false;for(const u of s.units)if(u!==b)Object.assign(u,{x:0,z:-40,input:{}});
   s.bot=function(u){if(u!==b)return;SpikeSimulation.prototype.bot.call(this,u);Object.assign(u,{x:10,z:3,vx:0,vz:0});/* pinned 3 m away */};Object.assign(b,{x:10,z:3,y:0,vx:0,vz:0,air:false,react:null});
   for(let t=0;t<ULT_ORB.give+1;t+=.05)s.step(.05);assert.equal(b.orbGo,null,'an orb errand that never captures is dropped after ULT_ORB.give s');}}
-console.log('Bot feel 3: (1) ult-orb errand never freezes 0.96-1.2 m off the orb (channels from goalPath\'s stop, gives up after ULT_ORB.give s)');
+// ---- 2. team economy: the winners buy, nobody full-buys with a Classic ----
+{assert(BotBrain.BUYK&&BotBrain.BUYK.bonus>=2000&&BotBrain.BUYK.bonus<=2900,'BotBrain.BUYK.bonus: average credits from which a winning team buys');
+ const calls=(cr,ls,round)=>{const o={};for(let i=0;i<400;i++){const c=BotBrain.teamBuy(cr,ls,round,BotBrain.rng(BotBrain.hash('eco|'+i)),12);o[c]=(o[c]||0)+1;}return o;};
+ const win2=calls([3700,3300,3700,3800,3700],0,2),win14=calls([3600,3900,3800,4000,3500],0,14),winMid=calls([2600,2900,2700,3100,3000],0,8);
+ for(const [k,o] of [['round 2 pistol winners',win2],['round 14 pistol winners',win14],['a win mid-half',winMid]])assert(!o.eco&&!o.save,k+': never eco / save on a win with money ('+JSON.stringify(o)+')');
+ const lose2=calls([2300,2100,2300,2300,2500],1,2);assert((lose2.eco||0)+(lose2.save||0)>=240,'pistol losers still mostly save / eco ('+JSON.stringify(lose2)+')');
+ const lose3=calls([3300,3000,3200,3400,3100],1,5);assert(lose3.eco>100,'a team that lost the last round at 3000+ still ecos often ('+JSON.stringify(lose3)+')');
+ assert.equal(calls([800,800,800,800,800],0,1).pistol,400,'pistol round');
+ // full call, a bot short of a rifle: buys the best it can afford, not heavy armour on a Classic
+ const P=BotBrain.personality(7);for(let i=0;i<60;i++){const b=BotBrain.buyFor('full',2600,P,BotBrain.rng(i+1),i%2===0);assert(b.weapon,'full call at 2600: a weapon ('+JSON.stringify(b)+')');}
+ for(let i=0;i<60;i++){const b=BotBrain.buyFor('full',4000,P,BotBrain.rng(i+1),false);assert(['Vandal','Phantom','Warden','Operator','Odin'].includes(b.weapon),'full call at 4000: a rifle as before');}}
+console.log('Bot feel 3: (2) a team on a win buys (bonus round, no eco / save), a full call short of a rifle buys the best it can afford; (1) ult-orb errand never freezes 0.96-1.2 m off the orb (channels from goalPath\'s stop, gives up after ULT_ORB.give s)');
