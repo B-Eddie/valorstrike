@@ -12,7 +12,15 @@
 //     TRADE.lag late (its eyes still on the body, its spray resetting: BotBrain.reaction ctx.postKill)
 //  4. moving quietly (BotBrain.quiet / WALK): out of a fight, with an enemy it knows of within WALK.range m, a Spike-mode bot
 //     shift-walks (silent) instead of running at it; never while trading, swinging wide, carrying the Spike, or seeing it
-// Shared decision: vendor/bot-brain.cjs reloadPlay / reloadBack (the page's BOT VARIETY block uses the same module).
+//  5. utility like a player (lane-botutil; fc92208: ~0.9 casts per bot-round offline, server casts a third of its utility
+//     mid-fight - Sage heals, Skye / Phoenix flashes after the enemy already saw them, Cypher recon): utility goes out BEFORE a
+//     peek (BotBrain.utility phase 'peek': a contact lost from sight 0.4-4 s ago, 5-24 m away, is flashed / stunned / shocked
+//     before the re-peek), never into nothing (no contact, no plan: no cast), mid-fight only what still does something
+//     (BotBrain.fightCast: a molly / slow / stun in reach, the Jett dash; no heal, recon, trap, smoke unless hurt, flash only on
+//     the first sight), post-plant smokes the retake (a defender coming, no defuse yet) and mollies the Spike once the defuse
+//     starts, and a team never dumps its utility at once (BotBrain.teamGap: UTILX.gap s between mates' casts, UTILX.burst
+//     per UTILX.win s; self casts - dash, updraft, heal - exempt)
+// Shared decision: vendor/bot-brain.cjs reloadPlay / reloadBack / utility / teamGap / fightCast (the page's BOT VARIETY block uses the same module).
 import assert from 'node:assert/strict';import {createRequire} from 'node:module';
 import {Simulation} from './src/simulation.js';import {SpikeSimulation} from './src/spike.js';import {persona,botView} from './src/bots.js';
 const B=createRequire(import.meta.url)('../vendor/bot-brain.cjs'),out=[];
@@ -95,4 +103,39 @@ const nodes2=nodes,G2=(ray)=>({map:{attacker:[-20,0,20],defender:[20,0,-20],site
  assert.ok(f1>=15&&w1===f1,'a heard enemy 10 m away: it walks ('+w1+' of '+f1+' moving ticks)');assert.ok(f0>=15&&w0===0,'nothing known: it runs ('+w0+' of '+f0+')');
  assert.ok(w3===0,'a contact past WALK.range: it runs ('+w3+' of '+f3+')');assert.ok(ft>=15&&wt===0,'a trade is run ('+wt+' of '+ft+')');
  out.push(`quiet: walks ${w1}/${f1} ticks with a contact 10 m away, runs with none / far / trading`);}
+// 5. utility like a player
+{assert.equal(typeof B.UTILX,'object','BotBrain.UTILX');assert.equal(typeof B.teamGap,'function','BotBrain.teamGap');assert.equal(typeof B.fightCast,'function','BotBrain.fightCast');
+ const X=B.UTILX,t=50;assert.equal(B.teamGap([],t,'flash'),true,'nobody cast: go');assert.equal(B.teamGap([t-X.gap*.5],t,'flash'),false,'a mate cast just now: wait');
+ assert.equal(B.teamGap([t-X.gap*.5],t,'dash'),true,'a self cast (dash) never waits');assert.equal(B.teamGap([t-X.gap*.5],t,'heal'),true,'a heal never waits');
+ assert.equal(B.teamGap([t-X.gap-.1,t-X.gap-.2].slice(0,X.burst),t,'smoke'),false,'UTILX.burst casts inside UTILX.win s: wait');assert.equal(B.teamGap([t-X.win-1],t,'smoke'),true,'an old cast: go');
+ assert.equal(B.fightCast('heal',{dist:6}),false,'no heal mid-fight');assert.equal(B.fightCast('recon',{dist:10}),false,'no recon mid-fight');assert.equal(B.fightCast('trap',{dist:10}),false,'no trap mid-fight');
+ assert.equal(B.fightCast('smoke',{dist:10}),false,'no smoke mid-fight');assert.equal(B.fightCast('smoke',{dist:10,hurt:true}),true,'hurt: smoke off to get out');
+ assert.equal(B.fightCast('flash',{dist:10}),false,'a flash after the enemy saw it blinds nobody');assert.equal(B.fightCast('flash',{dist:10,peek:true}),true,'on the first sight: a pop flash');
+ assert.equal(B.fightCast('fire',{dist:8}),true,'a molly on the enemy in reach');assert.equal(B.fightCast('fire',{dist:X.fight.fire+5}),false,'out of reach: no molly');assert.equal(B.fightCast('dash',{dist:8}),true,'the Jett dash');
+ const P=B.personality(B.hash('Bot Phoenix')),df={type:'standard'},pk=B.utility(P,{atk:false,plan:df,info:false,siteDist:12,contact:{d:12,age:1}});
+ assert.ok(pk&&pk.phase==='peek'&&pk.aim==='contact'&&pk.want[0]==='flash','a contact lost from sight 1 s ago, 12 m away: utility before the re-peek ('+JSON.stringify(pk)+')');
+ for(const c of [{d:X.peek.max+6,age:1},{d:12,age:X.peek.age[1]+2},{d:12,age:X.peek.age[0]*.5},{d:X.peek.min*.5,age:1}])assert.equal(B.utility(P,{atk:false,plan:df,info:false,siteDist:12,contact:c}),null,'too far / too old / just now / too close: nothing ('+JSON.stringify(c)+')');
+ assert.equal(B.utility(P,{atk:false,plan:df,info:false,siteDist:12}),null,'no contact, no information: keep it (no utility into nothing)');
+ assert.equal(B.utility(P,{atk:false,plan:df,info:false,siteDist:12,contact:{d:12,age:1},used:X.peek.max&&3}),null,'three casts this round: keep the rest');
+ const ex={type:'default',utilFirst:false,executeAt:30,site:'A',other:'B'};assert.equal((B.utility(P,{atk:true,plan:ex,role:{},rt:10,siteDist:40,contact:{d:10,age:1}})||{}).phase,'peek','an attacker meeting a contact mid-map also flashes it');
+ assert.equal(B.utility(P,{atk:true,plan:ex,role:{lurk:true},rt:10,siteDist:40,contact:{d:10,age:1}}),null,'a lurker stays quiet');
+ const dfz=B.utility(P,{atk:true,planted:true,threat:true,defusing:true,spikeDist:9});assert.ok(dfz&&dfz.phase==='post'&&dfz.want[0]==='fire'&&dfz.aim==='spike','the defuse started: molly the Spike ('+JSON.stringify(dfz)+')');
+ const thr=B.utility(P,{atk:true,planted:true,threat:true,spikeDist:9});assert.ok(thr&&thr.phase==='post'&&thr.want[0]==='smoke'&&!thr.want.includes('fire')&&thr.aim==='threat','a defender coming, no defuse: smoke the retake, no molly into an empty Spike ('+JSON.stringify(thr)+')');
+ // server wiring: a wall at z = -11 hides the contact (14 m down the lane); short throws stay clear
+ const wallRay=(o,d,max)=>{if(!(d[2]<-1e-6))return Infinity;const k=(-11-o[2])/d[2];return k>=0&&k<max?k:Infinity;};
+ const mk=(seed,agent,mem,extra)=>{const s=new SpikeSimulation(G2(wallRay),'five','ascent',B.rng(seed)),b=s.add('Bot '+agent,agent,false),e=s.add('Enemy','Jett',true);
+  s.phase='game';s.round=2;s.atk=1;s.buy=0;s.roundDelay=0;Object.assign(b,{team:0,x:0,y:0,z:0,look:0,alive:true,hp:100});Object.assign(e,{team:1,x:0,y:0,z:-14,alive:true,hp:100});
+  s.spike={st:'carry',carrier:e.id,x:-18,y:0,z:18,t:45,pt:0,dt:0,site:'A'};s.remaining=80;s.time=30;if(mem)B.memNote(b.mem||(b.mem=B.memNew()),e.id,0,0,-14,s.time-1,'seen');if(extra)extra(s,b,e);
+  const casts=[];const c0=s.command.bind(s);s.command=(u,m)=>{const r=c0(u,m);if(m&&m.t==='ab'&&r)casts.push({id:u.id,t:s.time,k:m.k,look:u.look});return r;};return {s,b,e,casts};};
+ const run=(R,n)=>{for(let i=0;i<n;i++){R.s.time+=.05;R.s.bot(R.b);R.s.events.length=0;}return R.casts;};
+ let pre=0,toward=0;for(let k=0;k<6;k++){const R=mk(300+k,'Phoenix',true),c=run(R,50);if(c.length){pre++;if(Math.abs(Math.atan2(Math.sin(c[0].look),Math.cos(c[0].look)))<.35)toward++;}}
+ assert.ok(pre>=5,'a Phoenix that lost sight of an enemy 14 m down the lane 1 s ago flashes it before re-peeking ('+pre+' of 6)');assert.equal(toward,pre,'thrown toward the contact ('+toward+' of '+pre+')');
+ let blind=0;for(let k=0;k<6;k++)blind+=run(mk(310+k,'Phoenix',false),50).length;assert.equal(blind,0,'nothing known: no flash into nothing ('+blind+')');
+ let heal=0,flash=0;for(let k=0;k<6;k++){for(const ag of ['Sage','Phoenix']){const R=mk(320+k,ag,false);R.b.hp=40;const P2=persona(R.s,R.b);R.s.botUtility(R.b,R.e,14,P2,9);if(R.casts.length){if(ag==='Sage')heal++;else flash++;}}}
+ assert.equal(heal,0,'mid-fight a Sage does not heal ('+heal+')');assert.equal(flash,0,'nor flashes an enemy that already sees it ('+flash+')');
+ // two Phoenix with the same fresh contact: the second waits UTILX.gap after the first
+ let gaps=[];for(let k=0;k<5;k++){const R=mk(340+k,'Phoenix',true),b2=R.s.add('Bot Phoenix2','Phoenix',false);Object.assign(b2,{team:0,x:3,y:0,z:0,look:0,alive:true,hp:100});B.memNote(b2.mem=B.memNew(),R.e.id,0,0,-14,R.s.time-1,'seen');
+  for(let i=0;i<80;i++){R.s.time+=.05;R.s.bot(R.b);R.s.bot(b2);R.s.events.length=0;}const ts=R.casts.map(c=>c.t).sort((a,b)=>a-b);if(ts.length>=2)gaps.push(ts[1]-ts[0]);else if(ts.length===1)gaps.push(Infinity);}
+ assert.ok(gaps.length===5&&gaps.every(g=>g>=X.gap-1e-6),'two mates with one contact never flash together (gaps '+gaps.map(g=>g.toFixed(2))+' >= '+X.gap+' s)');
+ out.push(`utility: pre-peek flash ${pre}/6 toward the contact, none into nothing, no mid-fight heal / late flash, mates ${gaps.map(g=>Number.isFinite(g)?g.toFixed(1):'-')} s apart`);}
 console.log('Bot feel (server): '+out.join('; '));

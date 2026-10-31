@@ -14,6 +14,12 @@
 //     and a killer's next fight inside TRADE.focus s of its kill reacts TRADE.lag later (BotBrain.reaction ctx.postKill)
 //  4. moving quietly (BotBrain.quiet / WALK, = server): unsighted with an enemy it knows of within WALK.range m a 5v5 bot
 //     shift-walks (was 12 m); never while trading, swinging wide or carrying the Spike
+//  5. utility like a player (lane-botutil, = server; fc92208 seed 3: 0.85 casts per bot-round): direct - a contact lost from
+//     sight 1 s ago 12 m away gets plan utility before the re-peek (xbvUtil phase 'peek' aimed at it), nothing known gets
+//     none; mates keep BotBrain.UTILX.gap s between casts (xbuOk; self casts exempt); a flash after the enemy already saw the
+//     bot is rare (BotBrain.UTILX.flashOnSight, was 25 % of new sightings); Breach Aftershock goes on the Spike for the
+//     attackers once the defuse starts (xBAsSpot; it was the defenders' cast onto their own retake); live - casts per
+//     bot-round stay plausible and few casts land with 2+ mates casting in the same 2 s
 //   node work/test_bot_feel_offline.cjs        (SECS=260 SEED=3 by default: lane-botfeel2 trades changed the seed-3 rounds, 200 s gave 24 reload samples)
 const assert=require('assert/strict');const {boot}=require('./page_harness.cjs');
 const SECS=+(process.env.SECS||260),SEED=+(process.env.SEED||3);
@@ -72,6 +78,27 @@ const SECS=+(process.env.SECS||260),SEED=+(process.env.SEED||3);
  // 4. direct: walking
  assert.deepEqual(T.walk,[true,true,false,false,false],'walks with a contact inside WALK.range, runs far / seeing / trading: '+JSON.stringify(T.walk));
  console.log('4. direct: walk '+JSON.stringify(T.walk));
+ // 5. direct: utility like a player
+ const U5=JSON.parse(xe(`JSON.stringify((()=>{const o={fn:typeof BotBrain.UTILX==='object'&&typeof BotBrain.teamGap==='function'&&typeof BotBrain.fightCast==='function'&&typeof xbuOk==='function'&&typeof xBAsSpot==='function'};if(!o.fn)return o;
+  const al=FV.atk?false:true,D=(al?allies:bots).filter(u=>u&&u.g&&u.alive),b=D[0];if(!b){o.short=1;return o;}const p=b.g.position,live=xbLive;xbLive=()=>true;const sv=b.xMem;
+  const X=xbvUtilX(b);o.X=!!X;if(!X){xbLive=live;return o;}const U=X.U,su=[U.it,U.at,U.used];
+  const ask=()=>{U.it=null;U.at=0;U.used=0;const it=xbvUtil(b,false,null);return it?{ph:it.phase,dx:+(it.x-p.x).toFixed(2),dz:+(it.z-p.z).toFixed(2)}:null;};
+  b.xMem=BotBrain.memNew();BotBrain.memNote(b.xMem,'player',p.x+12,0,p.z,xbNow()-1,'seen');o.peek=ask();
+  b.xMem=BotBrain.memNew();o.none=ask();b.xMem=sv;[U.it,U.at,U.used]=su;xbLive=live;
+  const T=window.XBU,sT=T&&JSON.stringify(T);const now=performance.now();o.gap=[xbuOk(b,'flash')];xbuNote(D[1]||b,'flash');o.gap.push(xbuOk(b,'flash'),xbuOk(b,'dash'));if(T&&sT){const r=JSON.parse(sT);for(const k in r)T[k]=r[k];}
+  o.as=[xBAsSpot(false,{x:0,z:0},{x:5,z:0},true,null),xBAsSpot(true,{x:0,z:0},{x:9,z:0},true,null),xBAsSpot(true,{x:0,z:0},{x:9,z:0},false,null)].map(v=>v?[+v.x.toFixed(1),+v.z.toFixed(1)]:null);
+  // a flash after the enemy already saw the bot
+  const A=b.ab||(b.ab={t:0}),ch=xBCh(b),e0=ch.e,q0=ch.q,c0=ch.c,orbs=J.orbs.length;let fl=0;const N=200;const tg={x:p.x+10,z:p.z,y:0,t:null};
+  for(let i=0;i<N;i++){A.flT=0;A.t=100;ch.e=1;ch.q=1;ch.c=1;if(xBFl(b,A,true,true,tg,p.clone(),'e',al,0xffffff,'orb','test',800))fl++;}
+  for(let i=orbs;i<J.orbs.length;i++)try{scene.remove(J.orbs[i].m);}catch(e){}J.orbs.length=orbs;ch.e=e0;ch.q=q0;ch.c=c0;o.fl=fl/N;o.flCap=BotBrain.UTILX.flashOnSight;return o;})())`));
+ assert(U5.fn,'BotBrain.UTILX / teamGap / fightCast + BOT VARIETY xbuOk / xBAsSpot on the page');assert(!U5.short&&U5.X,'a living defender with plan utility state');
+ assert(U5.peek&&U5.peek.ph==='peek'&&Math.abs(U5.peek.dx-12)<.6&&Math.abs(U5.peek.dz)<.6,'a contact lost from sight 1 s ago 12 m away: utility at it before the re-peek: '+JSON.stringify(U5.peek));
+ assert.equal(U5.none,null,'nothing known: no utility into nothing');
+ assert.deepEqual(U5.gap,[true,false,true],'a mate cast just now: the flash waits, the dash does not ('+U5.gap+')');
+ assert.deepEqual(U5.as,[null,[0,0],null],'Aftershock: never the defenders on their own retake, the attackers on the Spike once the defuse starts, not before: '+JSON.stringify(U5.as));
+ assert(U5.fl<=U5.flCap*1.8+.02,'a flash after the enemy already saw it is rare ('+(U5.fl*100).toFixed(1)+' % of sightings, cap '+U5.flCap+'; was 25 %)');
+ console.log('5. direct: pre-peek '+JSON.stringify(U5.peek)+', none into nothing, team gap '+U5.gap+', Aftershock '+JSON.stringify(U5.as)+', flash on sight '+(U5.fl*100).toFixed(1)+' %');
+ xe(`(()=>{const Q=window.QBU5={c:[],rounds:new Set(),br:0};const u0=xBUse;xBUse=function(b,k){const r=u0.apply(this,arguments);try{if(r&&!(FV.buy>0)&&b&&b.g){const al=allies.indexOf(b)>=0,now=performance.now();Q.c.push({al,now,mc:Q.c.filter(c=>c.al===al&&now-c.now<2000&&c.n!==b.name).length,n:b.name});}}catch(e){}return r;};return true;})()`);
  // live 5v5, the player dead: every fight bot vs bot
  const prev=new Map(),S={rl:0,rlSee:0,rlSeeBack:0};
  for(let k=0;k<SECS*5;k++){await adv(200);
@@ -79,12 +106,17 @@ const SECS=+(process.env.SECS||260),SEED=+(process.env.SEED||3);
    for(const [L,tm] of [[allies,'A'],[bots,'B']])for(const u of L){if(!u||!u.g||!u.alive)continue;const p=u.g.position,see=(u.see||u.ts||0)>0;o.u.push({n:tm+u.name,x:p.x,z:p.z,see,tg:see?tp(u.xTt||u.xTg):null,rl:!!(u.xAm&&u.xAm.rl>0)});}return o;})())`));
   if(r.buy>0||!r.run){prev.clear();continue;}
   if(xe('player.hp>0'))xe('pDie(null,"Vandal");true');
+  xe(`(()=>{const rd=FV.you+FV.them;if(!QBU5.rounds.has(rd)){QBU5.rounds.add(rd);QBU5.br+=bots.concat(allies).filter(u=>u&&u.alive).length;}return true;})()`);
   for(const u of r.u){const p=prev.get(u.n);prev.set(u.n,u);if(!p)continue;const vx=(u.x-p.x)/.2,vz=(u.z-p.z)/.2,sp=Math.hypot(vx,vz);
    if(u.rl){S.rl++;if(u.see){S.rlSee++;if(u.tg&&sp>.5){const dx=u.tg[0]-u.x,dz=u.tg[1]-u.z,d=Math.hypot(dx,dz)||1;if((vx*dx+vz*dz)/(d*sp)<-.3)S.rlSeeBack++;}}}}}
  const pc=(a,b)=>b?a/b*100:0;
  console.log(`1. live: reload samples ${S.rl}, in an enemy's sight ${pc(S.rlSee,S.rl).toFixed(1)} %, backing away ${pc(S.rlSeeBack,S.rlSee).toFixed(1)} % of those`);
  assert(S.rl>=25,'bots reload in the live rounds ('+S.rl+' samples of 0.2 s; seed 3 runs saw 34-105)');
  if(S.rlSee>=8)assert(pc(S.rlSeeBack,S.rlSee)>=30,`a reload in an enemy's sight is spent backing away (${pc(S.rlSeeBack,S.rlSee).toFixed(1)} % >= 30 %, above every 09a42d4 seed; 09a42d4 seeds 3/5/7: 7 / 23 / 8 %)`);
+ const Q5=JSON.parse(xe('JSON.stringify({n:QBU5.c.length,br:QBU5.br,burst:QBU5.c.filter(c=>c.mc>=2).length})')),cpr=Q5.br?Q5.n/Q5.br:0;
+ console.log(`5. live: ${Q5.n} casts in ${Q5.br} bot-rounds (${cpr.toFixed(2)} per bot-round), ${Q5.burst} with 2+ mates casting in the same 2 s`);
+ assert(Q5.br>=20&&cpr>=.4&&cpr<=2.5,'casts per bot-round stay plausible ('+cpr.toFixed(2)+'; fc92208 0.85)');
+ assert(Q5.burst<=Math.max(1,Q5.n*.1),'few casts with 2+ mates casting in the same 2 s ('+Q5.burst+' of '+Q5.n+')');
  assert(H.errors.length<=1,'no page errors: '+JSON.stringify(H.errors.slice(1,3)));
  console.log('bots feel like players (reload, corner holds) ok');process.exit(0);
 })().catch(e=>{console.error(e);process.exit(1);});
