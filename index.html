@@ -14420,7 +14420,7 @@ function xvFPWarm(ag,w){const id=xvFPKey(ag,w);if(XVFP.warm===id)return;XVFP.war
 // ms). No rig is built here (the rig caches keep their sizes and evictions); nothing is made outside the loaders.
 function xvFPList(){const L=[];if(mode==='five'&&typeof BUY!=='undefined'){for(const c of BUY)for(const it of c[1])if(it.length===2&&WEAP[it[0]])L.push(it[0]);}else L.push(fpaWeap(),'Classic');L.push('Knife');return [...new Set(L)];}
 function xvFPPreload(onProgress){const ag=(J&&J.pick)||'Jett',L=xvFPList(),total=L.length;let i=0,done=0;
-  const one=()=>{if(i>=L.length)return Promise.resolve();const w=L[i++];let P;try{P=xvFPData(ag,w);}catch(e){P=Promise.reject(e);} // Bandit / Warden: no skins-table entry (xskAsset throws)
+  const one=()=>{if(i>=L.length)return Promise.resolve();const w=L[i++];let P;try{P=xvFPData(ag,w);}catch(e){P=Promise.reject(e);} // a weapon with no skins-table entry would throw in xskAsset (Bandit / Warden did until lane-skins); skipped, never stalls the gate
     return P.then(D=>{if(typeof vfWarm==='function'&&D.weapon&&D.weapon.scene)vfWarm(null,{root:D.weapon.scene});},()=>{}).then(()=>{done++;if(onProgress)try{onProgress({done,total});}catch(e){}return one();});};
   // and each gun's third-person model (XGM.T: the template every agent's / dropped gun is cloned from, sharing its geometry):
   // a bot's first buy of a gun drew it for the first time mid-round (Ghost: 3 new geometries)
@@ -18844,6 +18844,7 @@ var XSK_CAT = {
     "Shorty",
     "Frenzy",
     "Ghost",
+    "Bandit",
     "Sheriff"
    ]
   ],
@@ -18866,6 +18867,7 @@ var XSK_CAT = {
    [
     "Bulldog",
     "Guardian",
+    "Warden",
     "Phantom",
     "Vandal"
    ]
@@ -18934,6 +18936,14 @@ var XSK_CAT = {
      "icon": "models/valorant/skins/icons/6e236924d463ed12.png",
      "iconSource": "https://media.valorant-api.com/weaponskins/1c63b43b-43c4-04e4-01c9-7aa1bffa5ac1/displayicon.png"
     },
+    "Bandit": {
+     "n": "Bandit",
+     "ch": [
+      "Base"
+     ],
+     "icon": "models/valorant/skins/icons/74d4dcb9be57d993.png",
+     "iconSource": "https://media.valorant-api.com/weaponskins/b576b9f1-407d-310a-6009-6287fb6829bc/displayicon.png"
+    },
     "Sheriff": {
      "n": "Sheriff",
      "ch": [
@@ -18989,6 +18999,14 @@ var XSK_CAT = {
      ],
      "icon": "models/valorant/skins/icons/6e236924d463ed12.png",
      "iconSource": "https://media.valorant-api.com/weaponskins/3bf1e8e0-47e8-f27a-6054-929575f41a54/displayicon.png"
+    },
+    "Warden": {
+     "n": "Warden",
+     "ch": [
+      "Base"
+     ],
+     "icon": "models/valorant/skins/icons/6ab98baa0a8667d3.png",
+     "iconSource": "https://media.valorant-api.com/weaponskins/61d99a36-4033-0fa9-2c94-71aaf901e120/displayicon.png"
     },
     "Phantom": {
      "n": "Phantom",

@@ -2,7 +2,7 @@
 const fs=require('fs'),vm=require('vm'),assert=require('assert/strict');
 const cat=JSON.parse(fs.readFileSync('server/src/skins.json')),src=fs.readFileSync('work/skins_runtime.js','utf8').replace('/*SKINS_JSON*/null',JSON.stringify(cat));
 const store={};const ctx={window:{},document:{getElementById:()=>null,body:null},localStorage:{getItem:k=>store[k],setItem:(k,v)=>store[k]=v},performance:{now:()=>100},setTimeout,clearTimeout,addEventListener(){},console,Map,Set,Promise,bots:[],allies:[]};ctx.window=ctx;vm.createContext(ctx);vm.runInContext(src,ctx);
-assert.equal(ctx.XSK.weapons.length,19);assert(ctx.xskValidFor('Vandal','prime.3'));assert(ctx.xskValidFor('Judge','mk-vii-liberty.1'));assert(!ctx.xskValidFor('Phantom','prime'));assert(!ctx.xskValidFor('Vandal','reaver'));assert(!ctx.xskValidFor('Vandal','__proto__'));
+assert.equal(ctx.XSK.weapons.length,21); // 19 + Bandit + Warden (lane-skins)assert(ctx.xskValidFor('Vandal','prime.3'));assert(ctx.xskValidFor('Judge','mk-vii-liberty.1'));assert(!ctx.xskValidFor('Phantom','prime'));assert(!ctx.xskValidFor('Vandal','reaver'));assert(!ctx.xskValidFor('Vandal','__proto__'));
 assert(!ctx.xskEquip('Vandal','prime'));ctx.xskGive('Vandal','prime');assert(ctx.xskEquip('Vandal','prime.2'));assert.equal(ctx.xskGet('Vandal'),'prime.2');ctx.xskLoad();assert.equal(ctx.xskGet('Vandal'),'prime.2');assert.equal(ctx.xskWire().Vandal,'prime.2');
 ctx.xskNet({t:'sks',m:{4:{Vandal:'prime.3',Phantom:'prime'}}});assert.equal(ctx.xskNetGet(4,'Vandal'),'prime.3');assert.equal(ctx.xskNetGet(4,'Phantom'),'standard');
 for(const [category,weapons]of cat.categories){const h=ctx.xskColHTML();assert(h.includes(category));for(const w of weapons)assert(h.includes('data-w="'+w+'"'));}

@@ -7,7 +7,7 @@ from import_valorant import *
 import html, time
 
 DEST=OUT/'skins'; DEST.mkdir(exist_ok=True)
-CATS=[["Sidearms",["Classic","Shorty","Frenzy","Ghost","Sheriff"]],["SMGs",["Stinger","Spectre"]],["Shotguns",["Bucky","Judge"]],["Rifles",["Bulldog","Guardian","Phantom","Vandal"]],["Sniper Rifles",["Marshal","Outlaw","Operator"]],["Heavy",["Ares","Odin"]],["Melee",["Knife"]]]
+CATS=[["Sidearms",["Classic","Shorty","Frenzy","Ghost","Bandit","Sheriff"]],["SMGs",["Stinger","Spectre"]],["Shotguns",["Bucky","Judge"]],["Rifles",["Bulldog","Guardian","Warden","Phantom","Vandal"]],["Sniper Rifles",["Marshal","Outlaw","Operator"]],["Heavy",["Ares","Odin"]],["Melee",["Knife"]]]
 NAMES={'prime':'Prime','blastx':'BlastX','blackmarket':'Black.Market','dotexe':'.EXE','ego':'Ego','galleria':'Galleria','kingdom':'Kingdom','sakura':'Sakura','smite':'Smite','yoonseul':'Yoonseul','aerosol':'Aerosol','wasteland':'Wasteland','wayfinder':'Wayfinder','rush':'Rush','task-force-809':'Task Force 809','prism':'Prism','varnish':'Varnish','mk-vii-liberty':'MK.VII Liberty','silkleaf':'SilkLeaf'}
 
 def embedded(g,blob,data,kind):

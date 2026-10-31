@@ -416,7 +416,7 @@ function xvFPWarm(ag,w){const id=xvFPKey(ag,w);if(XVFP.warm===id)return;XVFP.war
 // ms). No rig is built here (the rig caches keep their sizes and evictions); nothing is made outside the loaders.
 function xvFPList(){const L=[];if(mode==='five'&&typeof BUY!=='undefined'){for(const c of BUY)for(const it of c[1])if(it.length===2&&WEAP[it[0]])L.push(it[0]);}else L.push(fpaWeap(),'Classic');L.push('Knife');return [...new Set(L)];}
 function xvFPPreload(onProgress){const ag=(J&&J.pick)||'Jett',L=xvFPList(),total=L.length;let i=0,done=0;
-  const one=()=>{if(i>=L.length)return Promise.resolve();const w=L[i++];let P;try{P=xvFPData(ag,w);}catch(e){P=Promise.reject(e);} // Bandit / Warden: no skins-table entry (xskAsset throws)
+  const one=()=>{if(i>=L.length)return Promise.resolve();const w=L[i++];let P;try{P=xvFPData(ag,w);}catch(e){P=Promise.reject(e);} // a weapon with no skins-table entry would throw in xskAsset (Bandit / Warden did until lane-skins); skipped, never stalls the gate
     return P.then(D=>{if(typeof vfWarm==='function'&&D.weapon&&D.weapon.scene)vfWarm(null,{root:D.weapon.scene});},()=>{}).then(()=>{done++;if(onProgress)try{onProgress({done,total});}catch(e){}return one();});};
   // and each gun's third-person model (XGM.T: the template every agent's / dropped gun is cloned from, sharing its geometry):
   // a bot's first buy of a gun drew it for the first time mid-round (Ghost: 3 new geometries)

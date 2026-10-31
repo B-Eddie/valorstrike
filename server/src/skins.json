@@ -9,6 +9,7 @@
     "Shorty",
     "Frenzy",
     "Ghost",
+    "Bandit",
     "Sheriff"
    ]
   ],
@@ -31,6 +32,7 @@
    [
     "Bulldog",
     "Guardian",
+    "Warden",
     "Phantom",
     "Vandal"
    ]
@@ -99,6 +101,14 @@
      "icon": "models/valorant/skins/icons/6e236924d463ed12.png",
      "iconSource": "https://media.valorant-api.com/weaponskins/1c63b43b-43c4-04e4-01c9-7aa1bffa5ac1/displayicon.png"
     },
+    "Bandit": {
+     "n": "Bandit",
+     "ch": [
+      "Base"
+     ],
+     "icon": "models/valorant/skins/icons/74d4dcb9be57d993.png",
+     "iconSource": "https://media.valorant-api.com/weaponskins/b576b9f1-407d-310a-6009-6287fb6829bc/displayicon.png"
+    },
     "Sheriff": {
      "n": "Sheriff",
      "ch": [
@@ -154,6 +164,14 @@
      ],
      "icon": "models/valorant/skins/icons/6e236924d463ed12.png",
      "iconSource": "https://media.valorant-api.com/weaponskins/3bf1e8e0-47e8-f27a-6054-929575f41a54/displayicon.png"
+    },
+    "Warden": {
+     "n": "Warden",
+     "ch": [
+      "Base"
+     ],
+     "icon": "models/valorant/skins/icons/6ab98baa0a8667d3.png",
+     "iconSource": "https://media.valorant-api.com/weaponskins/61d99a36-4033-0fa9-2c94-71aaf901e120/displayicon.png"
     },
     "Phantom": {
      "n": "Phantom",

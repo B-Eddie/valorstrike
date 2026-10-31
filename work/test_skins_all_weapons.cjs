@@ -64,6 +64,15 @@ for (const w of all) check(F[w] && fs.existsSync('models/' + F[w] + '.glb'), w +
   warmed.length = 0; await fpCtx.xvFPPreload();
   const slug = (w) => w === 'Knife' ? 'melee' : w.toLowerCase();
   for (const w of all) check(warmed.includes(slug(w)), w + ': not preloaded/warmed behind the loading screen');
+  // 6. Real native rig through three.js (server/tools/fp-view.mjs runs the production xvFPLoad / xvFPPlay) with the skin the
+  // skins table resolves: authored arms + weapon + Idle / Equip / Fire / Reload / Inspect clips for every gun.
+  let FP = null; try { FP = await import('../server/tools/fp-view.mjs'); } catch (e) { console.log('  (real rig stage skipped: ' + e.message.split('\n')[0] + ')'); }
+  if (FP) for (const w of all) {
+    try { const id = ctx.xskGet(w), R = await FP.build('jett', slug(w), FP.runtime({ id, asset: ctx.xskAsset(w, id) })), kinds = FP.anims(R);
+      check(R.F.ws.children.length > 0, w + ': native rig has no weapon mesh');
+      for (const k of ['Idle', 'Equip', 'Inspect'].concat(w === 'Knife' ? [] : ['Fire', 'Reload'])) check(kinds.includes(k), w + ': native rig lacks ' + k); }
+    catch (e) { failures.push(w + ': real native rig build failed: ' + e.message); }
+  }
   if (failures.length) { console.error('FAIL\n  ' + failures.join('\n  ')); process.exit(1); }
-  console.log('Skins/FP/TP/preload: all ' + all.length + ' buyable weapons (' + all.join(', ') + ') have a skins entry, a native FP rig, a TP model and are preloaded');
+  console.log('Skins/FP/TP/preload: all ' + all.length + ' buyable weapons (' + all.join(', ') + ') have a skins entry, a native FP rig' + (FP ? ' (built through three.js)' : '') + ', a TP model and are preloaded');
 })().catch((e) => { console.error(e); process.exit(1); });
