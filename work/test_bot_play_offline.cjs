@@ -11,7 +11,7 @@
 //  3. pre-aim at first contact: a holding bot's view is already near the enemy when the fight starts (BotBrain.reaction /
 //     crosshair get the pre-aimed bonus), much nearer than a bot that is walking.
 //  4. fire mode by range: the trigger pulls (BotBrain.firePattern through xbBurst) are sprays up close and taps / bursts
-//     far, in the live fights and in a direct draw at fixed ranges.
+//     far, in the live fights (automatic guns only: a semi-auto pull is a tap by necessity) and in a direct draw at fixed ranges.
 //  5. stopped before each shot: every shot of a disciplined fight leaves at or under the accuracy deadzone (botStopped:
 //     the counter-strafe has stopped it); only the fights a bot plays sloppy (xbSl, BotBrain.discipline) may fire moving.
 // Human limits stay: reactions and turn rates are the shared model's (not touched here); no shot through a wall.
@@ -26,7 +26,7 @@ const SECS=+(process.env.SECS||180),SEED=+(process.env.SEED||3);
  // instruments: new fights (xbEngage ctx.off = |view - enemy| at the start), trigger pulls (xbBurst range + kind), shots (SFX.at from a bot)
  xe(`(()=>{const Q=window.QPL={eng:[],pull:[],shot:[]};
   const e0=xbEngage;xbEngage=function(u,pre,ctx){try{if(ctx&&u&&u.g&&mode==='five'&&!(FV.buy>0)){const H=u.xHp;Q.eng.push({off:ctx.off,hold:!!(H&&!H.seat&&H.ang&&H.ang.length&&!(u.spd>.5)),walk:(u.spd||0)>1.5,d:ctx.d});}}catch(e){}return e0.apply(this,arguments);};
-  if(typeof xbBurst==='function'){const b0=xbBurst;xbBurst=function(u,d,W){const n=b0.apply(this,arguments);try{if(!(FV.buy>0))Q.pull.push({d,k:u.xbPat||null,n});}catch(e){}return n;};}
+  if(typeof xbBurst==='function'){const b0=xbBurst;xbBurst=function(u,d,W){const n=b0.apply(this,arguments);try{if(!(FV.buy>0))Q.pull.push({d,k:u.xbPat||null,n,semi:!!(W&&W.semi)});}catch(e){}return n;};}
   const s0=SFX.at;SFX.at=function(p,w){try{if(p&&!(FV.buy>0)&&w!=='Spike'&&w!=='Blade Storm'){let u=null;for(const v of bots.concat(allies))if(v&&v.g&&v.g.position===p){u=v;break;}if(u)Q.shot.push({st:botStopped(u),sl:!!u.xbSl,sf:+(u.sf||0).toFixed(2)});}}catch(e){}return s0.apply(this,arguments);};return true;})()`);
  const prev=new Map(),still=new Map(),acc={atk:[0,0],def:[0,0]},hold={n:0,on:0,corners:new Map(),seats:new Map()};let longStill=0,stillN=0,staleHold=0;
  for(let k=0;k<SECS*5;k++){await adv(200);
@@ -62,8 +62,8 @@ const SECS=+(process.env.SECS||180),SEED=+(process.env.SEED||3);
  if(hE.length>=4)assert(med(hE)<=.35,`a holding bot is pre-aimed at first contact (median ${deg(med(hE))} deg <= 20 deg)`);
  assert(med(Q.eng.map(e=>e.off))<=.6,`first contact within the pre-aimed cone overall (median ${deg(med(Q.eng.map(e=>e.off)))} deg <= 34 deg)`);
  // 4. fire mode by range (live pulls + a direct draw)
- const band=(lo,hi)=>Q.pull.filter(p=>p.d>=lo&&p.d<hi),share=(L,k)=>L.length?L.filter(p=>p.k===k).length/L.length*100:0,near=band(0,10),far=band(20,99);
- console.log(`4. live trigger pulls ${Q.pull.length}: < 10 m n ${near.length} spray ${share(near,'spray').toFixed(0)} % tap ${share(near,'tap').toFixed(0)} %; >= 20 m n ${far.length} spray ${share(far,'spray').toFixed(0)} % tap+burst ${(share(far,'tap')+share(far,'burst')).toFixed(0)} %`);
+ const band=(lo,hi)=>Q.pull.filter(p=>p.d>=lo&&p.d<hi),share=(L,k)=>L.length?L.filter(p=>p.k===k).length/L.length*100:0,near=band(0,10).filter(p=>!p.semi),far=band(20,99).filter(p=>!p.semi),semiN=Q.pull.filter(p=>p.semi).length;/* a semi-auto gun (Classic, Sheriff, Guardian, Marshal...) never sprays: its pulls say nothing about fire mode by range */
+ console.log(`4. live trigger pulls ${Q.pull.length} (${semiN} semi-auto, left out): automatic < 10 m n ${near.length} spray ${share(near,'spray').toFixed(0)} % tap ${share(near,'tap').toFixed(0)} %; >= 20 m n ${far.length} spray ${share(far,'spray').toFixed(0)} % tap+burst ${(share(far,'tap')+share(far,'burst')).toFixed(0)} %`);
  const D=JSON.parse(xe(`JSON.stringify((()=>{const u=bots.concat(allies).find(v=>v&&v.g),o={};for(const d of [5,25,40]){const c={tap:0,burst:0,spray:0};for(let i=0;i<400;i++){xbBurst(u,d,WEAP.Vandal);c[u.xbPat]=(c[u.xbPat]||0)+1;}o[d]=c;}return o;})())`));
  console.log('   direct draw (Vandal, 400 each): '+Object.entries(D).map(([d,c])=>d+' m tap/burst/spray '+c.tap+'/'+c.burst+'/'+c.spray).join(', '));
  assert(D[5].spray>D[40].spray*1.5,'more sprays at 5 m than at 40 m');assert(D[40].tap+D[40].burst>D[5].tap+D[5].burst,'more taps / bursts at 40 m than at 5 m');
