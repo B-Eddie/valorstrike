@@ -13,7 +13,7 @@ function threeDir(){
  fs.writeFileSync(path.join(dir,'SkeletonUtils.js'),'THREE.SkeletonUtils={clone:function(o){return o.clone(true);}};');
  return {dir,rev:'160'};
 }
-function boot({real3=false,seed=1,coarse=false,ls=null,native=false,fastGlobal=false}={}){
+function boot({real3=false,seed=1,coarse=false,ls=null,native=false,fastGlobal=false,glb=false}={}){
  const audit=fs.readFileSync(path.join(__dirname,'audit.js'),'utf8');let src=audit.slice(0,audit.indexOf('// ---------- audit ----------')).replace(/^"use strict";/,'');
  // coarse: a touch device ((pointer: coarse) matches), so the page builds and shows its touch controls
  if(coarse)src=src.replace('matchMedia: () => ({ matches: false,','matchMedia: (q) => ({ matches: /coarse/.test(String(q)),');
@@ -55,6 +55,13 @@ function boot({real3=false,seed=1,coarse=false,ls=null,native=false,fastGlobal=f
  if(native){const root=path.join(__dirname,'..');Object.assign(H.win,{AbortController,AbortSignal});H.win.fetch=async(u)=>{u=String(u);let f=null;const w=/\/worlds\/([a-z]+)\/(.+)$/.exec(u);
    if(w)f=path.join(root,'server/public/worlds',w[1],w[2]);else if(!/^[a-z]+:/i.test(u))f=path.join(root,u.split('?')[0]);
    if(!f||!fs.existsSync(f))return new Response('',{status:404});return new Response(fs.readFileSync(f),{status:200});};
+  // glb (opt-in: off by default, every other test keeps the 404 models): serve the repo's .glb assets to the page's GLTFLoader
+  // too. Its FileLoader fetches a Request (the default fetch above stringifies it to "[object Request]" -> 404), and its
+  // binary check is `data instanceof ArrayBuffer` in the page realm (a Node-realm ArrayBuffer read as JSON -> "Unsupported
+  // asset"), so the body is copied into a page-realm ArrayBuffer.
+  if(glb){const f0=H.win.fetch,PA=vm.runInContext('ArrayBuffer',H.context),PU=vm.runInContext('Uint8Array',H.context);H.win.fetch=async(u,o)=>{if(u&&typeof u==='object'&&u.url)u=String(u.url).replace(BASE,'');const r=await f0(u,o);if(!r.ok)return r;
+   const ab=await r.arrayBuffer(),pa=new PA(ab.byteLength);new PU(pa).set(new Uint8Array(ab));const txt=()=>new TextDecoder().decode(ab);
+   return {ok:true,status:200,statusText:'OK',url:String(u),headers:new Headers(),arrayBuffer:async()=>pa,text:async()=>txt(),json:async()=>JSON.parse(txt()),blob:async()=>new Blob([ab])};};}
   H.xe('nmLoadScene=function(){return Promise.resolve({scene:new THREE.Group(),animations:[]});};window.xvAgentsReady=xvAgentsReady=function(){return Promise.resolve([]);};xvPreloadAgents=function(){};true');}
  else H.xe('nmEnsure=function(){return Promise.resolve(null);};window.xvAgentsReady=xvAgentsReady=function(){return Promise.resolve([]);};xvPreloadAgents=function(){};true');
  // getComputedStyle from inline styles (the audit's returns "" for everything, so the page's results-screen flag read
