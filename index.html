@@ -5041,14 +5041,27 @@ function tick(dt) {
 // ---- Operator Duel: 1v1 vs a bot, Operator + knife, first to 7 kills ----
 const RETAKE_HINT = $("hint").textContent;
 // controls hint: shown when a match starts (or its text changes), faded out after 8 s of live play so it never sits over the lower-right gun; back next time the game screen opens
-var XHN = { t0: 0, txt: "", off: false, MS: 8000 };
+var XHN = { t0: 0, txt: "", off: false, MS: 8000, lt: 0 };
 // buy-phase banner subtitle (#game .x-top.x-bpo::after): the side's objective for a first-time player, then the buy key (rebindable)
 function xBuyObj() { let k = "B"; try { if (typeof xKbName === "function" && XS && XS.keys && XS.keys.buy) k = xKbName(XS.keys.buy); } catch (e) {} return (FV.atk ? "ATTACK · PLANT THE SPIKE ON A SITE (HOLD 4)" : "DEFEND · STOP THE PLANT · DEFUSE WITH 4") + " · PRESS " + String(k).toUpperCase() + " TO BUY"; }
+// round start line (the buy phase ends): a spike round tells a first-time player the side's job for ~2.6 s; deathmatch / TDM / Escalation keep the plain "Round start"
+function xRsLine() {
+  try {
+    if (typeof FV === "undefined" || !FV || FV.dm || !FV.sp) return ["Round start", 900];
+    if (!FV.atk) return ["Hold the sites · stop the plant", 2600];
+    let k = "4"; try { if (XS && XS.keys && XS.keys.plant && typeof xKbName === "function") k = xKbName(XS.keys.plant); } catch (e) {} // plant is fixed on 4 today; named from the keymap if it ever becomes rebindable
+    const s = FV.sp, c = s.st === "carry" ? s.c : null;
+    if (c && c === player) return ["You have the Spike · hold " + k + " on a site", 2600];
+    const n = c ? (typeof fName === "function" ? fName(c) : c.name) : "";
+    return [n ? "Spike with " + n + " · push a site together" : "Find the Spike · push a site together", 2600];
+  } catch (e) { return ["Round start", 900]; }
+}
 function xHintTick(now) {
   const h = $("hint"), g = $("game"); if (!h || !g) return;
   if (g.style.display === "none") { if (XHN.t0 || XHN.off) { XHN.t0 = 0; XHN.txt = ""; XHN.off = false; h.style.opacity = ""; } return; }
+  const t = now != null ? now : performance.now(), lt = XHN.lt || t; XHN.lt = t;
+  if (window.xLdOn) { if (XHN.t0 && !XHN.off) XHN.t0 += t - lt; return; } // loading screen up: the 8 s holds (counts only once it hides)
   if (!running) return; // between rounds: the timer holds
-  const t = now != null ? now : performance.now();
   if (!XHN.t0 || h.textContent !== XHN.txt) { XHN.t0 = t; XHN.txt = h.textContent; if (XHN.off) { XHN.off = false; h.style.opacity = ""; } }
   else if (!XHN.off && t - XHN.t0 >= XHN.MS) { XHN.off = true; h.style.transition = "opacity .6s ease"; h.style.opacity = "0"; }
 }
@@ -10535,7 +10548,7 @@ function fiveTick(dt) {
     if (player.hp > 0 && !FV.menu) moveP(dt, 6.75, false);
     if (!(typeof xSbOn === "function" && xSbOn())) { const e = xSpawn(FV.map).edge; player.z = FV.atk ? Math.max(e, player.z) : Math.min(-e, player.z); } // native maps: the spawn walls (nmBlocked) hold the player; this plane is the legacy maps' fallback
     $("timer").textContent = bpT(); if (FV.menu) $("xBT").textContent = "00:" + String(Math.max(0, Math.ceil(FV.buy))).padStart(2, "0");
-    if (FV.buy <= 0) { FV.buy = 0; buyMenu(false); say("Round start", 900); SFX.roundStart(); updHud(); }
+    if (FV.buy <= 0) { FV.buy = 0; buyMenu(false); say(...xRsLine()); SFX.roundStart(); updHud(); }
     return;
   }
   XNF++; // replan budget (xPath: 2 per step) follows the sim step, not only the render frame
@@ -13526,7 +13539,7 @@ function mpCliTick5(dt) { // client: own movement + HUD; the host owns rounds, s
     if (player.hp > 0 && !FV.menu) moveP(dt, 6.75, false);
     if (!(typeof xSbOn === "function" && xSbOn())) { const e = xSpawn(FV.map).edge; player.z = FV.atk ? Math.max(e, player.z) : Math.min(-e, player.z); } // native maps: the spawn walls (nmBlocked) hold the player; this plane is the legacy maps' fallback
     $("timer").textContent = bpT(); if (FV.menu) $("xBT").textContent = "00:" + String(Math.max(0, Math.ceil(FV.buy))).padStart(2, "0");
-    if (FV.buy <= 0) { buyMenu(false); say("Round start", 900); try { SFX.roundStart(); } catch (e) {} updHud(); }
+    if (FV.buy <= 0) { buyMenu(false); say(...xRsLine()); try { SFX.roundStart(); } catch (e) {} updHud(); }
     return;
   }
   tick(dt); if (!running) return;
