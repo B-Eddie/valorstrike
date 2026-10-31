@@ -19,4 +19,7 @@ assert.ok(!(ctx.allies[2].blind>0),'a teammate never blinded stays unblinded');
 // the spectate overlay follows the teammate's blind: none left -> no white screen
 const sp=fs.readFileSync(path.join(root,'work/spectate_runtime.js'),'utf8');
 assert.match(sp,/xspvBlind\(pov \? pov\.blind : a\.blind > 0 \? a\.blind : 0\)/,'spectate overlay reads the teammate\'s .blind');
+// with the agent kits off (jOn() false: J.on off, deathmatch...) jTick returns before jFxTick: blind must still wear off there
+{const a=html.indexOf('function jTick(dt) {'),b=html.indexOf('if (!on) {',a),e=html.indexOf('return;',b);assert(a>0&&b>a&&e>b,'jTick kits-off branch missing');
+ const br=html.slice(b,e);assert.match(br,/b\.blind -= dt/,'kits off: enemy bots\' blind wears off');assert.match(br,/a\.blind -= dt/,'kits off: teammates\' blind wears off');}
 console.log('test_ally_blind_decay: PASS');

@@ -8751,6 +8751,7 @@ function jFxTick(dt) {
   if (J.rib > 0) { J.rib -= dt; if (J.rib <= 0) { J.rib = 0; scene.remove(J.ribM); } }
   if (J.rvT > 0) { J.rvT -= dt; if (J.rvT <= 0) jUnreveal(); }
   bots.forEach((b) => { if (b.blind > 0) b.blind -= dt; });
+  if (typeof allies !== "undefined") for (let i = 0; i < allies.length; i++) { const a = allies[i]; if (a && a.blind > 0) a.blind -= dt; } // teammates' blind / concuss (enemy Trailblazer, Rolling Thunder, Twin Hunters) wears off too: spectate paints #xSpvBlind from it
 }
 // ---- Sage + Reyna kits (player) ----
 const sgWallGeo = new THREE.BoxGeometry(6, 3, 0.4), slowGeo = new THREE.CircleGeometry(3.5, 32);
@@ -10278,6 +10279,7 @@ function jTick(dt) {
   jSmokeTick(dt);
   const on = jOn() && running && $("game").style.display !== "none";
   $("xAb").classList.toggle("on", on); if (!on) { // disabled kits still retire stale visual entities
+    if (dt > 0) { for (const b of bots) if (b && b.blind > 0) b.blind -= dt; if (typeof allies !== "undefined") for (const a of allies) if (a && a.blind > 0) a.blind -= dt; } // blind / concuss wears off with the kits off too (jFxTick is skipped): spectating a once-concussed teammate stayed white
     for(const key of ['walls','zones','orbs','arrows','fx','cbs'])if(Array.isArray(J[key]))J[key]=J[key].filter(e=>{if(Number.isFinite(e.t))e.t-=dt;if(e.t>0)return true;if(e.m)jRel(e.m);return false;});
     return;
   }
