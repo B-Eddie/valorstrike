@@ -371,12 +371,18 @@ function xvFPPlay(F, kind, time) {
   if (time != null) { if(F.action) F.action.time = Math.min(F.action.getClip().duration-.001,Math.max(0,time)*F.action.getClip().duration); if(F.gaction) F.gaction.time = Math.min(F.gaction.getClip().duration-.001,Math.max(0,time)*F.gaction.getClip().duration); F.am.update(0); F.gm.update(0); }
 }
 function xvFPKey(ag,w){const s=typeof xskGet==='function'?xskGet(w):'standard';return ag+'|'+w+(s==='standard'?'':'|'+s);}
-function xvFPLoad(ag,w) {
+// The assets one native rig is built from: the skin's metadata, the agent's -fp arms, the weapon glTF and the weapon's FP_ / GN_
+// animation files (all through xvLoad's cache). Shared by xvFPLoad (build) and xvFPPreload (loading gate).
+function xvFPData(ag,w) {
   const skin=typeof xskGet==='function'?xskGet(w):'standard',asset=typeof xskAsset==='function'?xskAsset(w,skin):null;
   return (asset?xskModelData(asset):Promise.resolve(null)).then(meta=>{
   const slug=asset?asset.model:(w==='Knife'?'melee':w.toLowerCase()), cfg=meta?meta.fp:XV.config.weaponAnimations && XV.config.weaponAnimations[slug]; if(!cfg || !cfg.WEAPONS_ANIMS_JSON) return Promise.reject(new Error('No native animation set for '+w));
   const entries=cfg.WEAPONS_ANIMS_JSON.Animations, files=[...new Set(entries.concat(cfg.MODEL_HELD_JSON.Animations||[]).filter(a=>a.File).map(a=>a.File))];
-  return Promise.all([xvLoad(ag.toLowerCase()+'-fp'),xvLoad(slug),...files.map(f=>xvLoad('animations/'+f))]).then(([arms,weapon,...anims])=>{
+  return Promise.all([xvLoad(ag.toLowerCase()+'-fp'),xvLoad(slug),...files.map(f=>xvLoad('animations/'+f))]).then(([arms,weapon,...anims])=>({skin,cfg,entries,files,arms,weapon,anims}));
+  });
+}
+function xvFPLoad(ag,w) {
+  return xvFPData(ag,w).then(({skin,cfg,entries,files,arms,weapon,anims})=>{
     const sc=THREE.SkeletonUtils.clone(arms.scene), ws=THREE.SkeletonUtils.clone(weapon.scene), holder=sc.getObjectByName((cfg.MODEL_HELD_JSON.Settings.FP||{}).Bone||'R_WeaponMaster'); if(!holder)throw new Error('weapon attachment missing');
     xvConstraints(ws,cfg.MODEL_HELD_JSON,true); holder.add(ws); const rot=(cfg.MODEL_HELD_JSON.Settings.FP||{}).Rotation||{X:0,Y:90,Z:0}; ws.rotation.set(rot.X*Math.PI/180,rot.Y*Math.PI/180,rot.Z*Math.PI/180);
     const root=new THREE.Group();root.name='valorant-viewmodel';root.add(sc);root.rotation.y=Math.PI/2;
@@ -385,7 +391,6 @@ function xvFPLoad(ag,w) {
     fclips.forEach(c=>ac[c.name]=am.clipAction(c));gclips.forEach(c=>gc[c.name]=gm.clipAction(c));
     const F={root,sc,ws,am,gm,ac,gc,entries,ag,w,skin,kind:null,age:0};xvFPPlay(F,'idle');am.update(0);gm.update(0);sc.updateMatrixWorld(true);
     const cam=sc.getObjectByName('Camera');const pos=cam?cam.getWorldPosition(new THREE.Vector3()):new THREE.Vector3(0,1.67,0);root.position.copy(pos).negate();F.origin=root.position.clone();xvFPPlay(F,'equip');return F;
-  });
   });
 }
 function xvFPClear(F){if(!F)return;if(F.root.parent)F.root.parent.remove(F.root);F.am.stopAllAction();F.gm.stopAllAction();F.root.traverse(o=>{if(o.isMesh)[].concat(o.material||[]).forEach(m=>m.dispose());});}
@@ -401,6 +406,21 @@ function xvFPGet(ag,w){const key=xvFPKey(ag,w),F=XVFP.c.get(key);if(F){XVFP.c.de
 function xvFPPeek(ag,w){const key=xvFPKey(ag,w),F=XVFP.c.get(key)||(typeof VF_RIGS!=='undefined'&&VF_RIGS.get(key));return F&&F.root?F:null;}
 function xvFPSwap(F){if(XV.fp&&XV.fp!==F&&XV.fp.root.parent)XV.fp.root.parent.remove(XV.fp.root);XV.fp=F;F.kind=null;F.age=0;xvFPPlay(F,'equip');camera.add(F.root);}
 function xvFPWarm(ag,w){const id=xvFPKey(ag,w);if(XVFP.warm===id)return;XVFP.warm=id;for(const x of [w,'Knife','Classic']){const key=xvFPKey(ag,x);if(!XV.failures[key])xvFPGet(ag,x).catch(e=>{XV.failures[key]=String(e);});}}
+// First draw of a newly bought / swapped-to gun (gundraw, 2026-10-30): only the held weapon, the knife and the Classic were
+// loaded at match start (xvFPWarm), so the first buy of any other gun loaded and parsed its FP_ / GN_ animation files
+// mid-round (GLTFLoader builds every keyframe track on the main thread: 70-200 ms CPU per gun in the node harness) and the
+// frame after its rig was built uploaded the weapon's skinned geometry and linked its viewmodel-pass program (Phantom: its
+// red-dot sight). The loading gate (xMatchLoad) runs xvFPPreload behind the overlay: every gun this mode can hold has its
+// rig assets in xvLoad's cache, and each weapon model is queued for one viewmodel-pass warm draw (vfWarm / vfWarmFlush: its
+// geometry, textures and programs, shared with every rig cloned from it). A buy / swap then only clones the rig (a few
+// ms). No rig is built here (the rig caches keep their sizes and evictions); nothing is made outside the loaders.
+function xvFPList(){const L=[];if(mode==='five'&&typeof BUY!=='undefined'){for(const c of BUY)for(const it of c[1])if(it.length===2&&WEAP[it[0]])L.push(it[0]);}else L.push(fpaWeap(),'Classic');L.push('Knife');return [...new Set(L)];}
+function xvFPPreload(onProgress){const ag=(J&&J.pick)||'Jett',L=xvFPList(),total=L.length;let i=0,done=0;
+  const one=()=>{if(i>=L.length)return Promise.resolve();const w=L[i++];let P;try{P=xvFPData(ag,w);}catch(e){P=Promise.reject(e);} // Bandit / Warden: no skins-table entry (xskAsset throws)
+    return P.then(D=>{if(typeof vfWarm==='function'&&D.weapon&&D.weapon.scene)vfWarm(null,{root:D.weapon.scene});},()=>{}).then(()=>{done++;if(onProgress)try{onProgress({done,total});}catch(e){}return one();});};
+  // and each gun's third-person model (XGM.T: the template every agent's / dropped gun is cloned from, sharing its geometry):
+  // a bot's first buy of a gun drew it for the first time mid-round (Ghost: 3 new geometries)
+  return Promise.all([one(),one(),one()]).then(()=>{try{if(typeof vfWarm==='function'&&typeof XGM!=='undefined'&&XGM.rdy)for(const w of L)if(XGM.T[w])vfWarm(null,{root:XGM.T[w]});}catch(e){}return total;});} // three loads in flight at a time
 // Knife light swings run Valorant's looping three-swing combo (wiki Melee: "the primary slash has a three swing combo that
 // loops"): the authored clips chain (Attack 1 ends with the hand out right, Attack 2 slashes back across to the left,
 // Attack 3 returns right; each starts where the previous ends), so a swing within XVK.chain s of the previous light swing continues the combo,
@@ -446,7 +466,7 @@ function xvMapCover(g) {
 }
 {const use=useMap;useMap=function(n){const r=use.apply(this,arguments);try{xvMapCover(MAPS[n]&&MAPS[n].g);}catch(e){}return r;};}
 window.xValorantAssets={state:XV,agentAssets:XVA,agentsReady:xvAgentsReady,agentProgress:xvAgentProgress,load:xvLoad,loadAgent:xvAgentLoad,loadFP:xvFPLoad,fpCache:XVFP,scene,camera,renderer,agents:()=>XSOL.mx,probe:()=>({running,mode,agent:J.pick,weapon:fpaWeap(),nativeAgents:XSOL.mx.filter(m=>m.valorant).length,agentKits:Object.keys(XVA.kits).length,nativeFP:XV.fp&&XV.fp.ag+' '+XV.fp.w,failures:XV.failures})};
-window.xvAgentsReady=xvAgentsReady;
+window.xvAgentsReady=xvAgentsReady;window.xvFPPreload=xvFPPreload; // the loading gate (xMatchLoad) preloads the first-person guns
 window.xvRoster=xvRoster;
 // Start downloading every agent as soon as the lobby is up (idle slot right after first paint), last pick first.
 {const go=()=>{let a='Jett';try{a=(typeof S!=='undefined'&&S&&S.lastAg)||localStorage.getItem('vs.lastAg')||a;}catch(e){}try{xvPreloadAgents(xvAgentName(a));}catch(e){console.warn('agent preload',e);}};if(window.requestIdleCallback)requestIdleCallback(go,{timeout:300});else setTimeout(go,0);}

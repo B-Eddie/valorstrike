@@ -10,7 +10,8 @@
 // through the real loading gate, then in the buy phase for each gun bought (primaries swap in, sidearms by key 2), from
 // the buy until its native rig is on screen and a few frames after:
 //  - no glTF parse (its arms / weapon / animation files were all loaded behind the overlay)
-//  - no new shader program, no new geometry buffer, no texture upload (perf_render_emu counts, live phase only)
+//  - no new shader program, no texture upload (perf_render_emu counts, live phase only), and no new geometry buffer for any
+//    gun: the rig on screen, the static viewmodels, and every agent's third-person gun (bots buy too)
 // Bandit and Warden are left out: they have no entry in the skins table (xskAsset throws), so they never get a native rig.
 //   node work/test_gun_draw_warm.cjs
 const assert=require('assert/strict'),fs=require('fs'),path=require('path');
@@ -22,6 +23,16 @@ xe(`xvaParse=function(buf){return new Promise((res,rej)=>{const L=new THREE.GLTF
 xe(fs.readFileSync(path.join(__dirname,'perf_render_emu.js'),'utf8')+';true'); // before the match: the gate's warm draws are seen
 xe(`window.__GD={parse:0,clone:0};{const P=THREE.GLTFLoader.prototype,p=P.parse;P.parse=function(){if(__PS.live)__GD.parse++;return p.apply(this,arguments);};
  const c=THREE.SkeletonUtils.clone;THREE.SkeletonUtils.clone=function(){if(__PS.live)__GD.clone++;return c.apply(this,arguments);};}true`);
+// gun geometry: every geometry the first-person rigs and third-person guns draw (the weapon glTFs, the XGM third-person
+// templates every agent's / dropped gun is cloned from, the static viewmodels, the rigs built so far); one not yet uploaded
+// before the buy (or new since) that is uploaded by the end of the window counts. (The emulator's total also counts things
+// that are not guns - an agent's first blob shadow - which is printed, not asserted.)
+xe(`window.__gdGeos=()=>{const S=new Set(),add=o=>{if(o)o.traverse(x=>{if(x.isMesh&&x.geometry)S.add(x.geometry);});};
+ for(const k in XV.guns)add(XV.guns[k]&&XV.guns[k].scene);for(const k in XGM.T)add(XGM.T[k]);add(gun);add(knife);
+ for(const F of XVFP.c.values())add(F&&F.root);for(const F of VF_RIGS.values())add(F&&F.root);if(XV.fp)add(XV.fp.root);
+ for(const a of [].concat(bots,allies))if(a&&a.g)a.g.traverse(x=>{if(x.name==='xglb')add(x);});return S;};
+ window.__gdSnap=()=>{const S=__gdGeos();window.__gdK=S;window.__gdC=new Set([...S].filter(g=>!__PS.geo.has(g)));};
+ window.__gdCold=()=>{const out=[];for(const g of __gdGeos())if(__PS.geo.has(g)&&(__gdC.has(g)||!__gdK.has(g)))out.push(g.name||g.type);return out;};true`);
 (async()=>{
  xe('FV.pick="ascent";true');H.$('pm5v5').click();await adv(50);
  let ok=false;for(let t=0;t<60000;t+=100){if(xe('running')&&!xe('!!window.xLdOn')&&!H.shown('pre')&&!H.shown('xAg')){ok=true;break;}
@@ -34,22 +45,23 @@ xe(`window.__GD={parse:0,clone:0};{const P=THREE.GLTFLoader.prototype,p=P.parse;
  xe('for(const b of bots)b.cd=1e9;for(const a of allies)a.cd=1e9;FV.buy=1e4;FV.cr=1e6;player.hp=1e4;true');await adv(300);
  const res=[];
  for(const [w,key] of [['Vandal'],['Sheriff','Digit2'],['Phantom'],['Ghost','Digit2'],['Operator'],['Spectre'],['Judge'],['Odin']]){
-  xe('__PS.endFrame();__PS.live=true;__GD.parse=0;__GD.clone=0;FV.cr=1e6;FV.buy=1e4;player.hp=1e4;true');
+  xe('__PS.endFrame();__PS.live=true;__GD.parse=0;__GD.clone=0;FV.cr=1e6;FV.buy=1e4;player.hp=1e4;__gdSnap();true');
   const E={prog:0,geo:0,tex:0},progs=[];
-  xe(`fBuy(${JSON.stringify(w)});true`);if(key){H.key(key,true);H.key(key,false);}
-  let on=-1;for(let i=0;i<400;i++){H.advance(17);await tick();await sleep(2);const e=JSON.parse(xe('JSON.stringify(__PS.endFrame())'));E.prog+=e.prog||0;E.geo+=e.geo||0;E.tex+=e.tex||0;
+  const c0=process.cpuUsage();let fmax=0;xe(`fBuy(${JSON.stringify(w)});true`);if(key){H.key(key,true);H.key(key,false);}
+  let on=-1;for(let i=0;i<400;i++){const f0=process.cpuUsage();H.advance(17);await tick();await sleep(2);const fc=process.cpuUsage(f0);fmax=Math.max(fmax,(fc.user+fc.system)/1000);const e=JSON.parse(xe('JSON.stringify(__PS.endFrame())'));E.prog+=e.prog||0;E.geo+=e.geo||0;E.tex+=e.tex||0;
    if(on<0&&xe(`!!(XV.fp&&XV.fp.w===${JSON.stringify(w)}&&XV.fp.root.visible)`))on=i;if(on>=0&&i>=on+6)break;}
   progs.push(...JSON.parse(xe('JSON.stringify(__PS.progNew.splice(0).map(p=>p.obj+" | "+p.key.slice(0,100)))')));
-  const G=JSON.parse(xe('JSON.stringify(__GD)'));xe('__PS.live=false;true');
-  const r={w,onFrame:on,parse:G.parse,clone:G.clone,...E,progs:progs.slice(0,2)};res.push(r);console.log('GUN',JSON.stringify(r));
+  const G=JSON.parse(xe('JSON.stringify(Object.assign(__GD,{gunGeo:__gdCold()}))'));xe('__PS.live=false;true');
+  const cu=process.cpuUsage(c0);// cpu: main-thread CPU ms from the buy to 6 frames after the rig shows; fmax: the worst one frame (sim + emulated render + promise work), reported only
+  const r={w,onFrame:on,parse:G.parse,clone:G.clone,gunGeo:G.gunGeo,...E,cpu:Math.round((cu.user+cu.system)/1000),fmax:Math.round(fmax),progs:progs.slice(0,2)};res.push(r);console.log('GUN',JSON.stringify(r));
  }
  for(const r of res){
   assert(r.onFrame>=0,`${r.w}: native rig on screen after the buy`);
   assert.equal(r.parse,0,`${r.w}: no glTF parse mid-round (arms / weapon / animations loaded behind the loading overlay)`);
   assert.equal(r.prog,0,`${r.w}: no shader program linked by its first draw (${r.progs.join(' ; ')})`);
-  assert.equal(r.geo,0,`${r.w}: no geometry buffer uploaded by its first draw`);
+  assert.deepEqual(r.gunGeo,[],`${r.w}: no gun geometry buffer uploaded by its first draw (first-person rig or any agent's third-person gun)`);
   assert.equal(r.tex,0,`${r.w}: no texture uploaded by its first draw`);
  }
- assert.deepEqual(H.errors.slice(0,3),[],'no page errors');
+ assert.deepEqual(H.errors.filter(e=>!/unexpected external script/.test(e.msg)).slice(0,3),[],'no page errors'); // the harness loader's own agents/manifest.js notice is not a page error
  console.log('test_gun_draw_warm: PASS');process.exit(0);
 })().catch(e=>{console.error(e);process.exit(1);});

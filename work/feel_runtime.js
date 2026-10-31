@@ -119,13 +119,14 @@ var VF_RIGS=new Map(),VF_PENDING=new Map();{const load=xvFPLoad;xvFPLoad=functio
 function vfWarm(r,only){const add=R=>{if(R&&!VF_WARMQ.includes(R))VF_WARMQ.push(R);};
   if(only){add(only.root);}else{try{for(const F of XVFP.c.values())if(F&&F.root)add(F.root);}catch(e){}try{for(const F of VF_RIGS.values())if(F&&F.root)add(F.root);}catch(e){}try{if(XV.fp&&XV.fp.root)add(XV.fp.root);}catch(e){}}
   return VF_WARMQ.length;}
-function vfWarmFlush(r,draw){const V=VF_VIEW.scene,roots=VF_WARMQ.splice(0),add=[],hid=[];let n=0;
+function vfWarmFlush(r,draw){const V=VF_VIEW.scene,roots=VF_WARMQ.splice(0),add=[],hid=[],cul=[];let n=0;
   for(const R of roots)if(R.parent!==V){add.push([R,R.parent,R.visible,R.parent?R.parent.children.indexOf(R):-1]);V.add(R);R.visible=true;}
-  V.traverse(o=>{if(!o.visible&&o!==V){hid.push(o);o.visible=true;}if(o.isMesh)n++;});
+  // a weapon glTF queued by the loading gate (xvFPPreload) keeps its frustum culling (its rigs turn it off): off for this draw
+  V.traverse(o=>{if(!o.visible&&o!==V){hid.push(o);o.visible=true;}if(o.isMesh){n++;if(o.frustumCulled){cul.push(o);o.frustumCulled=false;}}});
   const sc=r.getScissor(new THREE.Vector4()),st=r.getScissorTest(),auto=r.autoClear;
   try{r.autoClear=false;r.setScissorTest(true);r.setScissor(0,0,1,1);VF_VIEW.camera.aspect=camera.aspect;VF_VIEW.camera.updateProjectionMatrix();draw(V,VF_VIEW.camera);}catch(e){console.warn('viewmodel warmup',e);}
   finally{r.setScissor(sc);r.setScissorTest(st);r.autoClear=auto;}
-  for(const o of hid)o.visible=false;for(let i=add.length-1;i>=0;i--){const [R,p,v,k]=add[i];V.remove(R);R.visible=v;if(p){p.add(R);p.children.pop();p.children.splice(k,0,R);}}return n;}
+  for(const o of hid)o.visible=false;for(const o of cul)o.frustumCulled=true;for(let i=add.length-1;i>=0;i--){const [R,p,v,k]=add[i];V.remove(R);R.visible=v;if(p){p.add(R);p.children.pop();p.children.splice(k,0,R);}}return n;}
 {const get=xvFPGet;xvFPGet=function(){const P=get.apply(this,arguments);return P&&P.then?P.then(F=>{try{if(F&&F.root&&!F.vfWarm){F.vfWarm=1;vfWarm(null,F);}}catch(e){}return F;}):P;};}
 function vfDisposeRig(F){if(F.root.parent)F.root.parent.remove(F.root);F.am.stopAllAction();F.gm.stopAllAction();F.root.traverse(o=>{if(o.isMesh)[].concat(o.material||[]).forEach(m=>m.dispose());});}
 xvFPClear=function(F){if(!F)return;if(F.root.parent)F.root.parent.remove(F.root);F.root.visible=false;F.am.stopAllAction();F.gm.stopAllAction();};
