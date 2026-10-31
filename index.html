@@ -9383,20 +9383,21 @@ function xBotDmg(t, n, by, w) { try { if (t === player) { hurt(player, n, by); r
   if (see && tg) { A.rlk = { x: tg.x, z: tg.z, t: 0 }; return; }
   if (!A.rzb || !A.rlk || (A.rlk.t += dt) > 6) return;
   const dx = A.rlk.x - from.x, dz = A.rlk.z - from.z, l = Math.hypot(dx, dz) || 1; if (l < 4 || l > 28 || Math.random() > dt * 1.5) return;
-  if (!xBUse(b, "c")) { A.rzb = 0; return; } A.rzb = 0; const fx = dx / l, fz = dz / l, p = new RV(from.x + fx, xFy(from.x + fx, from.z + fz, from.y) + 0.4, from.z + fz); /* Boom Bot (C) bought */ if (blocked(p.x, p.z, 0.3, 0)) p.set(from.x, xFy(from.x, from.z, from.y) + 0.4, from.z);
+  if (!xBUse(b, "c")) { if (!(xBCh(b).c >= 1)) A.rzb = 0; return; } A.rzb = 0; // a held cast (a mate just threw: xbuOk) tries again const fx = dx / l, fz = dz / l, p = new RV(from.x + fx, xFy(from.x + fx, from.z + fz, from.y) + 0.4, from.z + fz); /* Boom Bot (C) bought */ if (blocked(p.x, p.z, 0.3, 0)) p.set(from.x, xFy(from.x, from.z, from.y) + 0.4, from.z);
   RS.bb.push(xBbShootable({ m: rsMesh(0xff8a1f, 1.6, p), dx: fx, dz: fz, t: XBB.life, hp: XBB.hp, own: b, en: !al })); feed("Raze ▸ Boom Bot"); try { XCUE.play("bbGo", { x: p.x, y: 0.4, z: p.z }); } catch (e) {} }; }
-// bot Breach (team-agnostic): Aftershock once per round, through the wall onto an enemy who just ducked behind cover, or onto the Spike once the other team has planted
+// bot Breach (team-agnostic): Aftershock once per round, through the wall onto an enemy who just ducked behind cover, or (attacking) onto the planted Spike once a defender is defusing it
+// (lane-botutil: was the defenders' cast onto their own planted Spike, into nobody). xBAsSpot(atk, spike position or null, from, defusing, last-seen record) -> {x, z, wall} or null
+function xBAsSpot(atk, sp, from, du, blk) { if (blk && blk.t > 0.6 && blk.t < 5) return { x: blk.x, z: blk.z, wall: true }; if (atk && sp && du) return { x: sp.x, z: sp.z, wall: false }; return null; }
 { const b0 = botAb; botAb = function (b, dt, see, tg, from) { b0(b, dt, see, tg, from);
   if (!jOn() || !running || !b.ab || !b.g || (b.name !== "Breach" && xAgOf(b.name) !== "Breach")) return; const A = b.ab, al = allies.indexOf(b) >= 0;
   if (A.bas == null) { A.bas = 1; A.blk = null; }
   if (see && tg) { A.blk = { x: tg.x, z: tg.z, t: 0 }; return; }
   if (!A.bas) return; if (A.blk) A.blk.t += dt;
-  let s = null, wall = false; const def = mode === "five" && FV.atk !== al;
-  if (A.blk && A.blk.t > 0.6 && A.blk.t < 5) { s = A.blk; wall = true; }
-  else if (def && xBPl() && typeof spike !== "undefined" && spike.parent) s = spike.position;
+  const sp = xBPl() && typeof spike !== "undefined" && spike.parent ? spike.position : null, du = !!(mode === "five" && FV.sp && FV.sp.du);
+  const s = xBAsSpot(xBAtk(al), sp, from, du, A.blk), wall = !!(s && s.wall);
   if (!s) return; const l = Math.hypot(s.x - from.x, s.z - from.z); if (l < 5 || l > 18 || Math.random() > dt * 1.2) return;
   if (wall && los(new RV(from.x, 1.4, from.z), new RV(s.x, 1, s.z))) return; // behind cover only
-  if (!xBUse(b, "c")) { A.bas = 0; return; } A.bas = 0; const p = { x: s.x, z: s.z }, m = jM(zoneGeo, fireMat(0xff9a3a, 0.35)); /* Aftershock (C) bought */ m.rotation.x = -Math.PI / 2; m.scale.setScalar(3 / 2.5); m.position.set(p.x, 0.06, p.z); scene.add(m);
+  if (!xBUse(b, "c")) { if (!(xBCh(b).c >= 1)) A.bas = 0; return; } A.bas = 0; const p = { x: s.x, z: s.z }, m = jM(zoneGeo, fireMat(0xff9a3a, 0.35)); /* Aftershock (C) bought */ m.rotation.x = -Math.PI / 2; m.scale.setScalar(3 / 2.5); m.position.set(p.x, 0.06, p.z); scene.add(m);
   BC.as.push({ p, m, t: XAB_WIND.aftershock, n: XPAR2.ash.n, own: b, en: !al }); feed("Breach ▸ Aftershock"); try { XCUE.play("asArm", { x: p.x, y: 1, z: p.z }); } catch (e) {} }; } // 2 bursts of 80 (wiki v7.04; was 3)
 // bot Sage (team-agnostic): Healing Orb (E, 45 s recharge) as the player's: a hurt ally (below 70 HP, within 20 m) 100 HP over 5 s, else herself 50 HP over 5 s; after 3 s with no enemy in sight
 { const b0 = botAb; botAb = function (b, dt, see, tg, from) { b0(b, dt, see, tg, from);
@@ -9978,7 +9979,7 @@ function xBFlash(b, al, from, tx, tz, col, key, nm, hz) { // shared bot flash: s
   const cb = /Curveball/.test(nm), m = cb ? xCbOrb(from) : jM(orbGeo, jMat(key, () => new THREE.MeshBasicMaterial({ color: col }))); if (!cb) { m.position.copy(from); scene.add(m); } J.orbs.push({ m, a: from.clone(), b: e, t: 0, en: !al, w: cb ? XAB_WIND.curveball : 0.5, cb: cb ? 1 : 0, bl: cb && !al ? XCBF.blind : 0 }); feed(nm); blip(hz, 0.12, "sine", 0.12); } // Curveball: the big flare; an enemy one flashes the player 1.5 s
 function xBFl(b, A, see, peek, tg, from, k, al, col, key, nm, hz) { // flash before peeking (pre-peek on the last-seen spot), rarely on a surprise peek
   if ((A.flT || 0) > A.t) return false; let tx, tz;
-  if (!see && xBPre(A, from) && Math.random() < 0.06) { tx = A.lkx; tz = A.lkz; } else if (peek && tg && Math.random() < 0.25) { tx = tg.x; tz = tg.z; } else return false;
+  if (!see && xBPre(A, from) && Math.random() < 0.06) { tx = A.lkx; tz = A.lkz; } else if (peek && tg && Math.random() < ((window.BotBrain && BotBrain.UTILX) ? BotBrain.UTILX.flashOnSight : 0.1)) { tx = tg.x; tz = tg.z; } else return false; // a flash after the enemy already saw the bot blinds nobody: only a rare pop on the first sight (BotBrain.UTILX.flashOnSight; was 25 %)
   if (!xBUse(b, k)) return false; A.flT = A.t + 3; xBFlash(b, al, from, tx, tz, col, key, nm, hz); return true; }
 function xRzShells(A, x, z) { // Raze Paint Shells (E, charge already spent) landing at x, z: as the player's (XPS: 2.25 s fuse, 55 -> 1 by distance, 4 sub-munitions 0.667 s later)
   if (!A.pq) A.pq = []; A.ps = 0; const c = new THREE.Vector3(x, 0.3, z); A.pq.push({ p: c, t: XPS.fuse, r: XPS.outer, c: 0xffb21f, f: xPsFall(false) });
@@ -10128,7 +10129,8 @@ function botAb(b, dt, see, tg, from) {
   if (ag === "Sova" && A.t > A.rbT && ch.e >= 1) { // Recon Bolt: attackers recon the site before entering, defenders the attackers' approach
     const at = xBAtk(al), S = xBSite(b, al, from), d = Math.hypot(S.x - from.x, S.z - from.z);
     let sx, sz; if (at) { sx = S.x; sz = S.z; } else if (mode === "five") { sx = 0; sz = FV.map === "bind" ? 30 : 12; } else { sx = 0; sz = 6; }
-    if ((!at || mode !== "five" || d < 40) && xBUse(b, "e")) { A.rbT = A.t + 8; const o = from.clone(), e = new THREE.Vector3(sx + (Math.random() - 0.5) * 6, 0.3, sz + (Math.random() - 0.5) * 4);
+    const info = at || mode !== "five" || 100 - timeLeft < 15 || (typeof xbBest === "function" && (() => { const c = xbBest(b, 8); return !!c && Math.hypot(c.x - from.x, c.z - from.z) < 35; })()); // defenders: the opening info bolt, later only toward an enemy it knows of (lane-botutil: no bolt into an empty map)
+    if ((!at || mode !== "five" || d < 40) && info && xBUse(b, "e")) { A.rbT = A.t + 8; const o = from.clone(), e = new THREE.Vector3(sx + (Math.random() - 0.5) * 6, 0.3, sz + (Math.random() - 0.5) * 4);
       const m = jBolt(al ? 0x3fb4ff : 0xff4655, o, e); J.arrows.push({ m, a: o, b: e, t: 0, dur: Math.max(0.05, o.distanceTo(e) / 45), kind: al ? "recon" : "erecon" }); feed("Sova ▸ Recon Bolt"); }
   }
   if (ag === "Raze") { // Paint Shells (E, 1 free + 1 per 2 kills) on clustered enemies: 55 + 4 sub-bombs of 55, as the player's
@@ -17711,20 +17713,37 @@ if (typeof xUbPost === "function") { const hp0 = xUbPost; xUbPost = function (M)
  // (defenders slow / burn / wall off the push on their site: Sage Slow Orb then Barrier Orb, Phoenix Hot Hands then Blaze), 'retake' (defenders flash / recon the planted site before going in). aim: 'site' | 'other' |
  // 'spike' | 'info'. Lurkers stay quiet. The ability itself (charges, values, effect) is the caller's existing logic.
  const UTIL={entry:['smoke','flash','recon','drone','stun','shock','fire'],entryFirst:['flash','drone','recon','smoke','stun','shock'],fake:['smoke','flash','recon','stun'],
-  post:['fire','grenade','turret','trap','slow','shock','stun','wall'],delay:['slow','fire','wall','smoke','stun','flash','trap','shock','grenade','recon'],retake:['flash','recon','drone','stun','smoke','shock']};
+  post:['fire','grenade','turret','trap','slow','shock','stun','wall'],postSmoke:['smoke','flash','stun','shock','slow','wall'],peek:['flash','stun','shock','fire','slow','drone','recon'],delay:['slow','fire','wall','smoke','stun','flash','trap','shock','grenade','recon'],retake:['flash','recon','drone','stun','smoke','shock']};
  function utility(P,ctx){
   const used=ctx.used||0,pl=ctx.plan,e=ctx.role||{};
   if(ctx.atk){
-   if(ctx.planted)return used<3&&ctx.threat&&ctx.spikeDist<16?{phase:'post',want:UTIL.post,aim:'spike'}:null;
+   // post-plant (lane-botutil): the defuse started -> molly / grenade the Spike (the defuser sits on it); a defender only coming
+   // -> smoke / flash its way in (aim 'threat': the caller's seen / heard spot of it, else the Spike), no molly into an empty Spike
+   if(ctx.planted)return used<3&&ctx.threat&&ctx.spikeDist<16?ctx.defusing?{phase:'post',want:UTIL.post,aim:'spike'}:{phase:'post',want:UTIL.postSmoke,aim:'threat'}:null;
    if(!pl||e.lurk||!(ctx.rt>=0))return null;
    if(e.fakeGroup)return used<1&&pl.rotateAt&&ctx.rt>=pl.rotateAt-6&&ctx.rt<pl.rotateAt&&ctx.otherDist<30?{phase:'fake',want:UTIL.fake,aim:'other'}:null;
-   if(!pl.utilFirst||used>=2)return null;
    const at=pl.type==='rush'?0:Math.max(0,pl.executeAt-3);
-   return ctx.rt>=at&&ctx.siteDist<30&&ctx.siteDist>6?{phase:'entry',want:e.entry||(P&&P.aggression>.7)?UTIL.entryFirst:UTIL.entry,aim:'site'}:null;
+   if(pl.utilFirst&&used<2&&ctx.rt>=at&&ctx.siteDist<30&&ctx.siteDist>6)return {phase:'entry',want:e.entry||(P&&P.aggression>.7)?UTIL.entryFirst:UTIL.entry,aim:'site'};
+   return peekCall(ctx,used);
   }
-  if(ctx.planted)return used<2&&ctx.spikeDist<26&&ctx.spikeDist>7?{phase:'retake',want:UTIL.retake,aim:'spike'}:null;
-  return used<2&&ctx.info&&ctx.siteDist<28?{phase:'delay',want:UTIL.delay,aim:'info'}:null;
+  if(ctx.planted)return used<2&&ctx.spikeDist<26&&ctx.spikeDist>7?{phase:'retake',want:UTIL.retake,aim:'spike'}:peekCall(ctx,used);
+  return used<2&&ctx.info&&ctx.siteDist<28?{phase:'delay',want:UTIL.delay,aim:'info'}:peekCall(ctx,used);
  }
+ // ---- Utility like a player (lane-botutil) ----
+ // Before a peek: a contact (ctx.contact {d m, age s}: the enemy this bot last saw / heard, out of sight now) lost UTILX.peek.age
+ // s ago within UTILX.peek.min..max m is flashed / stunned / shocked before the re-peek (a player who just lost an enemy round
+ // a corner throws a flash over it and swings), up to 3 casts a round. Nothing known: nothing thrown (no utility into empty space).
+ // teamGap(times, now, kind): times = the team's recent cast times (s); a mate cast under UTILX.gap s ago, or UTILX.burst casts
+ // inside UTILX.win s, holds the next one (players call and stagger: smoke, then the flash a second later, not five at once);
+ // self casts (UTILX.self) never wait. fightCast(kind, ctx {dist, hurt, peek}): what still does something mid-fight (the enemy
+ // already sees this bot): a molly / slow / stun / shock / grenade within its reach (UTILX.fight m), the Jett dash / Updraft;
+ // a smoke only to get out hurt, a flash only as a pop on the first sight (ctx.peek); never a heal, recon, drone, trap or turret.
+ // flashOnSight: share of first sightings that still get that pop flash (was 25 % offline).
+ const UTILX={gap:1.2,win:3,burst:2,self:['dash','updraft','heal','leer','dismiss','teleport','headhun'],
+  peek:{min:5,max:24,age:[.4,4],used:3},fight:{fire:13,slow:15,stun:20,shock:40,grenade:16,satchel:8,dash:99,updraft:99},flashOnSight:.1};
+ function peekCall(ctx,used){const c=ctx.contact,K=UTILX.peek;if(!c||used>=K.used||!(c.d>=K.min&&c.d<=K.max&&c.age>=K.age[0]&&c.age<=K.age[1]))return null;return {phase:'peek',want:UTIL.peek,aim:'contact'};}
+ function teamGap(times,now,kind){if(kind&&UTILX.self.includes(kind))return true;let n=0;for(const t of times||[]){const a=now-t;if(!(a>=0)||a>UTILX.win)continue;if(a<UTILX.gap)return false;n++;}return n<UTILX.burst;}
+ function fightCast(kind,ctx){ctx=ctx||{};if(kind==='smoke')return !!ctx.hurt;if(kind==='flash')return !!ctx.peek;const R=UTILX.fight[kind];return R!=null&&!(ctx.dist>R);}
  // ---- Spike play ----
  // Valorant Spike: 45 s fuse, 7 s defuse, progress kept at the 3.5 s half when a defender lets go after it.
  const SPIKE={fuse:45,defuse:7,half:3.5};
@@ -17952,7 +17971,7 @@ if (typeof xUbPost === "function") { const hp0 = xUbPost; xUbPost = function (M)
  // st {contactD (m to the freshest remembered enemy, null: none), see, trading, wide, carrier, rush}.
  const WALK={range:16};
  function quiet(st){if(!st||st.see||st.trading||st.wide||st.carrier||st.rush)return false;return st.contactD!=null&&st.contactD<WALK.range;}
- return {hash,rng,clamp,pickW,REACT,personality,reaction,crosshair,crosshairAt,firePattern,peek,attackPlan,defensePlan,roles,teamBuy,buyFor,onMateDeath,onSound,ATTACK,DEFENSE,utility,UTIL,turnStep,trackLag,wrapA,SPIKE,plantSpot,postPlant,retake,postPlay,SHOOT_UTIL,shootUtility,TAILWIND,tailwindDash,tailwindKeys,LEVEL,level,aimTraits,AIM_H,aimHeight,halfWidth,aimPlan,aimAt,readyToFire,planFire,idlePitch,recoilPull,discipline,hitPart,BUY,buyArea,buyRoute,buyExit,buySpot,buyWander,buyHold,buyNew,buyTick,buyNext,buySep,SENS,cm360,sensOf,turnRate,SENSE,inView,audible,earSpot,memNew,memNote,memForget,memBest,repeek,mayFire,nextShot,areas,DFORM,GAP,midPoint,RESPOND,nearest,tradeSpot,follow,buyNear,buyCross,reactR,reacts,FIRE,sprayFade,sprayPull,turnAcc,trackTurn,cornerPick,FLASH,flashRead,blindPlay,PEEK,peekStep,RELOAD,reloadPlay,reloadBack,trailNote,reloadSpot,TRADE,WALK,quiet};
+ return {hash,rng,clamp,pickW,REACT,personality,reaction,crosshair,crosshairAt,firePattern,peek,attackPlan,defensePlan,roles,teamBuy,buyFor,onMateDeath,onSound,ATTACK,DEFENSE,utility,UTIL,UTILX,teamGap,fightCast,turnStep,trackLag,wrapA,SPIKE,plantSpot,postPlant,retake,postPlay,SHOOT_UTIL,shootUtility,TAILWIND,tailwindDash,tailwindKeys,LEVEL,level,aimTraits,AIM_H,aimHeight,halfWidth,aimPlan,aimAt,readyToFire,planFire,idlePitch,recoilPull,discipline,hitPart,BUY,buyArea,buyRoute,buyExit,buySpot,buyWander,buyHold,buyNew,buyTick,buyNext,buySep,SENS,cm360,sensOf,turnRate,SENSE,inView,audible,earSpot,memNew,memNote,memForget,memBest,repeek,mayFire,nextShot,areas,DFORM,GAP,midPoint,RESPOND,nearest,tradeSpot,follow,buyNear,buyCross,reactR,reacts,FIRE,sprayFade,sprayPull,turnAcc,trackTurn,cornerPick,FLASH,flashRead,blindPlay,PEEK,peekStep,RELOAD,reloadPlay,reloadBack,trailNote,reloadSpot,TRADE,WALK,quiet};
 });
 // Spawn barriers (Valorant's buy-phase walls), shared by the server (spike.js world, bots.js) and the page (UMD:
 // index.html inlines it in the BOT VARIETY block and reads window.SpawnBarriers; native_maps_runtime nmBlocked and the
@@ -18276,8 +18295,11 @@ function xbvUtil(b,see,tg,X){
  const sp=planted&&typeof spike!=='undefined'&&spike&&spike.parent?spike.position:planted&&s.x!=null?{x:s.x,z:s.z}:null,spd=sp?Math.hypot(sp.x-p.x,sp.z-p.z):Infinity;
  let threat=false;if(atk&&sp)threat=!!s.du||s.dt>0||!!(see&&tg&&Math.hypot(tg.x-sp.x,tg.z-sp.z)<12)||!!(b.hearT>0&&b.hear&&Math.hypot(b.hear[0]-sp.x,b.hear[1]-sp.z)<12);
  const I=!atk&&!planted?xbvInfo(X.team,C):null,info=!!(I&&I.site===(P.rotSite||P.site)&&now-I.at<8000);
- const call=BotBrain.utility(xbBrain(b),{atk,plan:S.plan,role:P.role,rt:100-timeLeft,siteDist:dist(site),otherDist:dist(other),planted,spikeDist:spd,threat,info,used:U.used});
- if(!call)return U.it=null;let t=call.aim==='spike'?[sp.x,0,sp.z]:call.aim==='other'?other:call.aim==='info'?(I&&I.x!=null?[I.x,0,I.z]:site):site;if(!t)return U.it=null;
+ // lane-botutil: the enemy it just lost round a corner (BotBrain.utility 'peek': utility before the re-peek), the defuse, where a retaker comes from
+ const cm=!see&&typeof xbBest==='function'?xbBest(b,BotBrain.UTILX.peek.age[1]):null,contact=cm?{d:Math.hypot(cm.x-p.x,cm.z-p.z),age:xbNow()-cm.t}:null;
+ const thr=atk&&sp?(s.du&&s.du.g?s.du.g.position:see&&tg&&Math.hypot(tg.x-sp.x,tg.z-sp.z)<12?tg:b.hearT>0&&b.hear&&Math.hypot(b.hear[0]-sp.x,b.hear[1]-sp.z)<12?{x:b.hear[0],z:b.hear[1]}:null):null;
+ const call=BotBrain.utility(xbBrain(b),{atk,plan:S.plan,role:P.role,rt:100-timeLeft,siteDist:dist(site),otherDist:dist(other),planted,spikeDist:spd,threat,defusing:!!s.du,info,used:U.used,contact});
+ if(!call)return U.it=null;let t=call.aim==='spike'?[sp.x,0,sp.z]:call.aim==='threat'?(thr?[thr.x,0,thr.z]:[sp.x,0,sp.z]):call.aim==='contact'?[cm.x,0,cm.z]:call.aim==='other'?other:call.aim==='info'?(I&&I.x!=null?[I.x,0,I.z]:site):site;if(!t)return U.it=null;
  return U.it={phase:call.phase,want:call.want,x:t[0],z:t[2],until:now+2500};}
 function xbvUsed(b,X,it,kind){X.U.used++;X.U.it=null;X.U.at=performance.now()+1200+X.U.rand()*1500;(XBV.ulog||(XBV.ulog=[])).push({name:b.name,phase:it?it.phase:'post',kind,t:100-timeLeft,atk:X.atk});if(XBV.ulog.length>200)XBV.ulog.shift();}
 // smokes (Jett Cloudburst, Omen Dark Cover): toward the plan target in the entry / fake / delay / retake phases; attackers on a
@@ -18328,6 +18350,17 @@ if(typeof SFX!=='undefined')['at','step'].forEach(k=>{const f=SFX[k];if(f)SFX[k]
 if(typeof SFX!=='undefined'&&SFX.selfStep){const f=SFX.selfStep;SFX.selfStep=function(){const r=f.apply(this,arguments);try{if(running&&player&&player.hp>0&&typeof xHear==='function'){const k0=XBH.k;XBH.k='step';try{xHear({x:player.x,z:player.z});}finally{XBH.k=k0;}}}catch(e){}return r;};}
 // a bot's ability cast is heard within 30 m by the other team
 if(typeof xBUse==='function'){const f=xBUse;xBUse=function(b){const r=f.apply(this,arguments);try{if(r&&b&&b.g)xbvCast(b.g.position);}catch(e){}return r;};}
+// Staggered team utility (lane-botutil, BotBrain.teamGap as the server's SpikeSimulation.teamCasts): in a native-map 5v5 a bot's
+// cast waits while a mate threw under UTILX.gap s ago (or UTILX.burst inside UTILX.win s) - players call and stagger, five
+// casts in one second never happen; self casts (dash, updraft, heal ...) and set-ups (trap, turret, Killjoy's Nanoswarm) never wait.
+// The held caller keeps its charge and tries again on its own timing.
+var XBU=window.XBU={};
+function xbuKind(b,k){const ag=typeof xBAg==='function'?xBAg(b):null,ty=ag&&XBV_TY[ag];return ty?ty['cqe'.indexOf(k)]||null:null;}
+function xbuLive(){return !!(window.BotBrain&&BotBrain.teamGap&&running&&mode==='five'&&!FV.dm&&!(FV.buy>0)&&typeof nmActive==='function'&&nmActive());}
+function xbuOk(b,kind){if(!window.BotBrain||!BotBrain.teamGap)return true;const L=XBU[allies.indexOf(b)>=0?1:0]||[];return BotBrain.teamGap(L,performance.now()/1000,kind);}
+function xbuNote(b,kind){if(kind&&window.BotBrain&&BotBrain.UTILX&&BotBrain.UTILX.self.includes(kind))return;const t=performance.now()/1000,i=allies.indexOf(b)>=0?1:0,L=XBU[i]||(XBU[i]=[]);while(L.length&&(t-L[0]>BotBrain.UTILX.win||L[0]>t))L.shift();L.push(t);}
+if(typeof xBUse==='function'){const f=xBUse;xBUse=function(b,k){let kind=null;try{if(b&&xbuLive()){kind=xbuKind(b,k);const setup=kind==='trap'||kind==='turret'||(kind==='fire'&&xBAg(b)==='Killjoy');if(!setup&&xBCh(b)[k]>=1&&!xbuOk(b,kind))return false;}}catch(e){}
+ const r=f.apply(this,arguments);try{if(r&&b&&kind)xbuNote(b,kind);}catch(e){}return r;};}
 // ... and so is the player's (bots-tune-1): any charge or the ult spent this frame (quick-cast, equip-flow release, recast)
 function xbvCast(p){if(!p||typeof xHear!=='function')return;const k0=XBH.k,w0=XBH.w;XBH.k='cast';XBH.w=null;try{xHear({x:p.x,y:p.y||0,z:p.z});}finally{XBH.k=k0;XBH.w=w0;}}
 function xbvPCast(){if(typeof J==='undefined'||!J||typeof player==='undefined'||!player)return;const n=(+J.c||0)+(+J.q||0)+(+J.e||0),u=+J.ult||0,was=XBH.pc;XBH.pc={n,u,live:running&&player.hp>0&&!(mode==='five'&&(FV.buy>0||FV.esc))};

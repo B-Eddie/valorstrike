@@ -78,19 +78,20 @@ const SECS=+(process.env.SECS||260),SEED=+(process.env.SEED||3);
  // 4. direct: walking
  assert.deepEqual(T.walk,[true,true,false,false,false],'walks with a contact inside WALK.range, runs far / seeing / trading: '+JSON.stringify(T.walk));
  console.log('4. direct: walk '+JSON.stringify(T.walk));
- // 5. direct: utility like a player
+ // 5. direct: utility like a player (in the action phase: plan utility is off in the buy phase)
+ for(let i=0;i<300&&xe('FV.buy>0||!running');i++)await adv(200);if(xe('player.hp>0'))xe('pDie(null,"Vandal");true');
  const U5=JSON.parse(xe(`JSON.stringify((()=>{const o={fn:typeof BotBrain.UTILX==='object'&&typeof BotBrain.teamGap==='function'&&typeof BotBrain.fightCast==='function'&&typeof xbuOk==='function'&&typeof xBAsSpot==='function'};if(!o.fn)return o;
   const al=FV.atk?false:true,D=(al?allies:bots).filter(u=>u&&u.g&&u.alive),b=D[0];if(!b){o.short=1;return o;}const p=b.g.position,live=xbLive;xbLive=()=>true;const sv=b.xMem;
   const X=xbvUtilX(b);o.X=!!X;if(!X){xbLive=live;return o;}const U=X.U,su=[U.it,U.at,U.used];
   const ask=()=>{U.it=null;U.at=0;U.used=0;const it=xbvUtil(b,false,null);return it?{ph:it.phase,dx:+(it.x-p.x).toFixed(2),dz:+(it.z-p.z).toFixed(2)}:null;};
   b.xMem=BotBrain.memNew();BotBrain.memNote(b.xMem,'player',p.x+12,0,p.z,xbNow()-1,'seen');o.peek=ask();
   b.xMem=BotBrain.memNew();o.none=ask();b.xMem=sv;[U.it,U.at,U.used]=su;xbLive=live;
-  const T=window.XBU,sT=T&&JSON.stringify(T);const now=performance.now();o.gap=[xbuOk(b,'flash')];xbuNote(D[1]||b,'flash');o.gap.push(xbuOk(b,'flash'),xbuOk(b,'dash'));if(T&&sT){const r=JSON.parse(sT);for(const k in r)T[k]=r[k];}
+  const T=window.XBU,sT=T&&JSON.stringify(T);if(T)for(const k in T)T[k]=[];o.gap=[xbuOk(b,'flash')];xbuNote(D[1]||b,'flash');o.gap.push(xbuOk(b,'flash'),xbuOk(b,'dash'));
   o.as=[xBAsSpot(false,{x:0,z:0},{x:5,z:0},true,null),xBAsSpot(true,{x:0,z:0},{x:9,z:0},true,null),xBAsSpot(true,{x:0,z:0},{x:9,z:0},false,null)].map(v=>v?[+v.x.toFixed(1),+v.z.toFixed(1)]:null);
   // a flash after the enemy already saw the bot
   const A=b.ab||(b.ab={t:0}),ch=xBCh(b),e0=ch.e,q0=ch.q,c0=ch.c,orbs=J.orbs.length;let fl=0;const N=200;const tg={x:p.x+10,z:p.z,y:0,t:null};
-  for(let i=0;i<N;i++){A.flT=0;A.t=100;ch.e=1;ch.q=1;ch.c=1;if(xBFl(b,A,true,true,tg,p.clone(),'e',al,0xffffff,'orb','test',800))fl++;}
-  for(let i=orbs;i<J.orbs.length;i++)try{scene.remove(J.orbs[i].m);}catch(e){}J.orbs.length=orbs;ch.e=e0;ch.q=q0;ch.c=c0;o.fl=fl/N;o.flCap=BotBrain.UTILX.flashOnSight;return o;})())`));
+  for(let i=0;i<N;i++){A.flT=0;A.t=100;ch.e=1;ch.q=1;ch.c=1;if(T)for(const k in T)T[k]=[];if(xBFl(b,A,true,true,tg,p.clone(),'e',al,0xffffff,'orb','test',800))fl++;}
+  for(let i=orbs;i<J.orbs.length;i++)try{scene.remove(J.orbs[i].m);}catch(e){}J.orbs.length=orbs;ch.e=e0;ch.q=q0;ch.c=c0;if(T&&sT){const r=JSON.parse(sT);for(const k in T)T[k]=r[k]||[];}o.fl=fl/N;o.flCap=BotBrain.UTILX.flashOnSight;return o;})())`));
  assert(U5.fn,'BotBrain.UTILX / teamGap / fightCast + BOT VARIETY xbuOk / xBAsSpot on the page');assert(!U5.short&&U5.X,'a living defender with plan utility state');
  assert(U5.peek&&U5.peek.ph==='peek'&&Math.abs(U5.peek.dx-12)<.6&&Math.abs(U5.peek.dz)<.6,'a contact lost from sight 1 s ago 12 m away: utility at it before the re-peek: '+JSON.stringify(U5.peek));
  assert.equal(U5.none,null,'nothing known: no utility into nothing');

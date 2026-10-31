@@ -263,8 +263,11 @@ function xbvUtil(b,see,tg,X){
  const sp=planted&&typeof spike!=='undefined'&&spike&&spike.parent?spike.position:planted&&s.x!=null?{x:s.x,z:s.z}:null,spd=sp?Math.hypot(sp.x-p.x,sp.z-p.z):Infinity;
  let threat=false;if(atk&&sp)threat=!!s.du||s.dt>0||!!(see&&tg&&Math.hypot(tg.x-sp.x,tg.z-sp.z)<12)||!!(b.hearT>0&&b.hear&&Math.hypot(b.hear[0]-sp.x,b.hear[1]-sp.z)<12);
  const I=!atk&&!planted?xbvInfo(X.team,C):null,info=!!(I&&I.site===(P.rotSite||P.site)&&now-I.at<8000);
- const call=BotBrain.utility(xbBrain(b),{atk,plan:S.plan,role:P.role,rt:100-timeLeft,siteDist:dist(site),otherDist:dist(other),planted,spikeDist:spd,threat,info,used:U.used});
- if(!call)return U.it=null;let t=call.aim==='spike'?[sp.x,0,sp.z]:call.aim==='other'?other:call.aim==='info'?(I&&I.x!=null?[I.x,0,I.z]:site):site;if(!t)return U.it=null;
+ // lane-botutil: the enemy it just lost round a corner (BotBrain.utility 'peek': utility before the re-peek), the defuse, where a retaker comes from
+ const cm=!see&&typeof xbBest==='function'?xbBest(b,BotBrain.UTILX.peek.age[1]):null,contact=cm?{d:Math.hypot(cm.x-p.x,cm.z-p.z),age:xbNow()-cm.t}:null;
+ const thr=atk&&sp?(s.du&&s.du.g?s.du.g.position:see&&tg&&Math.hypot(tg.x-sp.x,tg.z-sp.z)<12?tg:b.hearT>0&&b.hear&&Math.hypot(b.hear[0]-sp.x,b.hear[1]-sp.z)<12?{x:b.hear[0],z:b.hear[1]}:null):null;
+ const call=BotBrain.utility(xbBrain(b),{atk,plan:S.plan,role:P.role,rt:100-timeLeft,siteDist:dist(site),otherDist:dist(other),planted,spikeDist:spd,threat,defusing:!!s.du,info,used:U.used,contact});
+ if(!call)return U.it=null;let t=call.aim==='spike'?[sp.x,0,sp.z]:call.aim==='threat'?(thr?[thr.x,0,thr.z]:[sp.x,0,sp.z]):call.aim==='contact'?[cm.x,0,cm.z]:call.aim==='other'?other:call.aim==='info'?(I&&I.x!=null?[I.x,0,I.z]:site):site;if(!t)return U.it=null;
  return U.it={phase:call.phase,want:call.want,x:t[0],z:t[2],until:now+2500};}
 function xbvUsed(b,X,it,kind){X.U.used++;X.U.it=null;X.U.at=performance.now()+1200+X.U.rand()*1500;(XBV.ulog||(XBV.ulog=[])).push({name:b.name,phase:it?it.phase:'post',kind,t:100-timeLeft,atk:X.atk});if(XBV.ulog.length>200)XBV.ulog.shift();}
 // smokes (Jett Cloudburst, Omen Dark Cover): toward the plan target in the entry / fake / delay / retake phases; attackers on a
@@ -315,6 +318,17 @@ if(typeof SFX!=='undefined')['at','step'].forEach(k=>{const f=SFX[k];if(f)SFX[k]
 if(typeof SFX!=='undefined'&&SFX.selfStep){const f=SFX.selfStep;SFX.selfStep=function(){const r=f.apply(this,arguments);try{if(running&&player&&player.hp>0&&typeof xHear==='function'){const k0=XBH.k;XBH.k='step';try{xHear({x:player.x,z:player.z});}finally{XBH.k=k0;}}}catch(e){}return r;};}
 // a bot's ability cast is heard within 30 m by the other team
 if(typeof xBUse==='function'){const f=xBUse;xBUse=function(b){const r=f.apply(this,arguments);try{if(r&&b&&b.g)xbvCast(b.g.position);}catch(e){}return r;};}
+// Staggered team utility (lane-botutil, BotBrain.teamGap as the server's SpikeSimulation.teamCasts): in a native-map 5v5 a bot's
+// cast waits while a mate threw under UTILX.gap s ago (or UTILX.burst inside UTILX.win s) - players call and stagger, five
+// casts in one second never happen; self casts (dash, updraft, heal ...) and set-ups (trap, turret, Killjoy's Nanoswarm) never wait.
+// The held caller keeps its charge and tries again on its own timing.
+var XBU=window.XBU={};
+function xbuKind(b,k){const ag=typeof xBAg==='function'?xBAg(b):null,ty=ag&&XBV_TY[ag];return ty?ty['cqe'.indexOf(k)]||null:null;}
+function xbuLive(){return !!(window.BotBrain&&BotBrain.teamGap&&running&&mode==='five'&&!FV.dm&&!(FV.buy>0)&&typeof nmActive==='function'&&nmActive());}
+function xbuOk(b,kind){if(!window.BotBrain||!BotBrain.teamGap)return true;const L=XBU[allies.indexOf(b)>=0?1:0]||[];return BotBrain.teamGap(L,performance.now()/1000,kind);}
+function xbuNote(b,kind){if(kind&&window.BotBrain&&BotBrain.UTILX&&BotBrain.UTILX.self.includes(kind))return;const t=performance.now()/1000,i=allies.indexOf(b)>=0?1:0,L=XBU[i]||(XBU[i]=[]);while(L.length&&(t-L[0]>BotBrain.UTILX.win||L[0]>t))L.shift();L.push(t);}
+if(typeof xBUse==='function'){const f=xBUse;xBUse=function(b,k){let kind=null;try{if(b&&xbuLive()){kind=xbuKind(b,k);const setup=kind==='trap'||kind==='turret'||(kind==='fire'&&xBAg(b)==='Killjoy');if(!setup&&xBCh(b)[k]>=1&&!xbuOk(b,kind))return false;}}catch(e){}
+ const r=f.apply(this,arguments);try{if(r&&b&&kind)xbuNote(b,kind);}catch(e){}return r;};}
 // ... and so is the player's (bots-tune-1): any charge or the ult spent this frame (quick-cast, equip-flow release, recast)
 function xbvCast(p){if(!p||typeof xHear!=='function')return;const k0=XBH.k,w0=XBH.w;XBH.k='cast';XBH.w=null;try{xHear({x:p.x,y:p.y||0,z:p.z});}finally{XBH.k=k0;XBH.w=w0;}}
 function xbvPCast(){if(typeof J==='undefined'||!J||typeof player==='undefined'||!player)return;const n=(+J.c||0)+(+J.q||0)+(+J.e||0),u=+J.ult||0,was=XBH.pc;XBH.pc={n,u,live:running&&player.hp>0&&!(mode==='five'&&(FV.buy>0||FV.esc))};

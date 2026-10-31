@@ -398,20 +398,37 @@
  // (defenders slow / burn / wall off the push on their site: Sage Slow Orb then Barrier Orb, Phoenix Hot Hands then Blaze), 'retake' (defenders flash / recon the planted site before going in). aim: 'site' | 'other' |
  // 'spike' | 'info'. Lurkers stay quiet. The ability itself (charges, values, effect) is the caller's existing logic.
  const UTIL={entry:['smoke','flash','recon','drone','stun','shock','fire'],entryFirst:['flash','drone','recon','smoke','stun','shock'],fake:['smoke','flash','recon','stun'],
-  post:['fire','grenade','turret','trap','slow','shock','stun','wall'],delay:['slow','fire','wall','smoke','stun','flash','trap','shock','grenade','recon'],retake:['flash','recon','drone','stun','smoke','shock']};
+  post:['fire','grenade','turret','trap','slow','shock','stun','wall'],postSmoke:['smoke','flash','stun','shock','slow','wall'],peek:['flash','stun','shock','fire','slow','drone','recon'],delay:['slow','fire','wall','smoke','stun','flash','trap','shock','grenade','recon'],retake:['flash','recon','drone','stun','smoke','shock']};
  function utility(P,ctx){
   const used=ctx.used||0,pl=ctx.plan,e=ctx.role||{};
   if(ctx.atk){
-   if(ctx.planted)return used<3&&ctx.threat&&ctx.spikeDist<16?{phase:'post',want:UTIL.post,aim:'spike'}:null;
+   // post-plant (lane-botutil): the defuse started -> molly / grenade the Spike (the defuser sits on it); a defender only coming
+   // -> smoke / flash its way in (aim 'threat': the caller's seen / heard spot of it, else the Spike), no molly into an empty Spike
+   if(ctx.planted)return used<3&&ctx.threat&&ctx.spikeDist<16?ctx.defusing?{phase:'post',want:UTIL.post,aim:'spike'}:{phase:'post',want:UTIL.postSmoke,aim:'threat'}:null;
    if(!pl||e.lurk||!(ctx.rt>=0))return null;
    if(e.fakeGroup)return used<1&&pl.rotateAt&&ctx.rt>=pl.rotateAt-6&&ctx.rt<pl.rotateAt&&ctx.otherDist<30?{phase:'fake',want:UTIL.fake,aim:'other'}:null;
-   if(!pl.utilFirst||used>=2)return null;
    const at=pl.type==='rush'?0:Math.max(0,pl.executeAt-3);
-   return ctx.rt>=at&&ctx.siteDist<30&&ctx.siteDist>6?{phase:'entry',want:e.entry||(P&&P.aggression>.7)?UTIL.entryFirst:UTIL.entry,aim:'site'}:null;
+   if(pl.utilFirst&&used<2&&ctx.rt>=at&&ctx.siteDist<30&&ctx.siteDist>6)return {phase:'entry',want:e.entry||(P&&P.aggression>.7)?UTIL.entryFirst:UTIL.entry,aim:'site'};
+   return peekCall(ctx,used);
   }
-  if(ctx.planted)return used<2&&ctx.spikeDist<26&&ctx.spikeDist>7?{phase:'retake',want:UTIL.retake,aim:'spike'}:null;
-  return used<2&&ctx.info&&ctx.siteDist<28?{phase:'delay',want:UTIL.delay,aim:'info'}:null;
+  if(ctx.planted)return used<2&&ctx.spikeDist<26&&ctx.spikeDist>7?{phase:'retake',want:UTIL.retake,aim:'spike'}:peekCall(ctx,used);
+  return used<2&&ctx.info&&ctx.siteDist<28?{phase:'delay',want:UTIL.delay,aim:'info'}:peekCall(ctx,used);
  }
+ // ---- Utility like a player (lane-botutil) ----
+ // Before a peek: a contact (ctx.contact {d m, age s}: the enemy this bot last saw / heard, out of sight now) lost UTILX.peek.age
+ // s ago within UTILX.peek.min..max m is flashed / stunned / shocked before the re-peek (a player who just lost an enemy round
+ // a corner throws a flash over it and swings), up to 3 casts a round. Nothing known: nothing thrown (no utility into empty space).
+ // teamGap(times, now, kind): times = the team's recent cast times (s); a mate cast under UTILX.gap s ago, or UTILX.burst casts
+ // inside UTILX.win s, holds the next one (players call and stagger: smoke, then the flash a second later, not five at once);
+ // self casts (UTILX.self) never wait. fightCast(kind, ctx {dist, hurt, peek}): what still does something mid-fight (the enemy
+ // already sees this bot): a molly / slow / stun / shock / grenade within its reach (UTILX.fight m), the Jett dash / Updraft;
+ // a smoke only to get out hurt, a flash only as a pop on the first sight (ctx.peek); never a heal, recon, drone, trap or turret.
+ // flashOnSight: share of first sightings that still get that pop flash (was 25 % offline).
+ const UTILX={gap:1.2,win:3,burst:2,self:['dash','updraft','heal','leer','dismiss','teleport','headhun'],
+  peek:{min:5,max:24,age:[.4,4],used:3},fight:{fire:13,slow:15,stun:20,shock:40,grenade:16,satchel:8,dash:99,updraft:99},flashOnSight:.1};
+ function peekCall(ctx,used){const c=ctx.contact,K=UTILX.peek;if(!c||used>=K.used||!(c.d>=K.min&&c.d<=K.max&&c.age>=K.age[0]&&c.age<=K.age[1]))return null;return {phase:'peek',want:UTIL.peek,aim:'contact'};}
+ function teamGap(times,now,kind){if(kind&&UTILX.self.includes(kind))return true;let n=0;for(const t of times||[]){const a=now-t;if(!(a>=0)||a>UTILX.win)continue;if(a<UTILX.gap)return false;n++;}return n<UTILX.burst;}
+ function fightCast(kind,ctx){ctx=ctx||{};if(kind==='smoke')return !!ctx.hurt;if(kind==='flash')return !!ctx.peek;const R=UTILX.fight[kind];return R!=null&&!(ctx.dist>R);}
  // ---- Spike play ----
  // Valorant Spike: 45 s fuse, 7 s defuse, progress kept at the 3.5 s half when a defender lets go after it.
  const SPIKE={fuse:45,defuse:7,half:3.5};
@@ -639,5 +656,5 @@
  // st {contactD (m to the freshest remembered enemy, null: none), see, trading, wide, carrier, rush}.
  const WALK={range:16};
  function quiet(st){if(!st||st.see||st.trading||st.wide||st.carrier||st.rush)return false;return st.contactD!=null&&st.contactD<WALK.range;}
- return {hash,rng,clamp,pickW,REACT,personality,reaction,crosshair,crosshairAt,firePattern,peek,attackPlan,defensePlan,roles,teamBuy,buyFor,onMateDeath,onSound,ATTACK,DEFENSE,utility,UTIL,turnStep,trackLag,wrapA,SPIKE,plantSpot,postPlant,retake,postPlay,SHOOT_UTIL,shootUtility,TAILWIND,tailwindDash,tailwindKeys,LEVEL,level,aimTraits,AIM_H,aimHeight,halfWidth,aimPlan,aimAt,readyToFire,planFire,idlePitch,recoilPull,discipline,hitPart,BUY,buyArea,buyRoute,buyExit,buySpot,buyWander,buyHold,buyNew,buyTick,buyNext,buySep,SENS,cm360,sensOf,turnRate,SENSE,inView,audible,earSpot,memNew,memNote,memForget,memBest,repeek,mayFire,nextShot,areas,DFORM,GAP,midPoint,RESPOND,nearest,tradeSpot,follow,buyNear,buyCross,reactR,reacts,FIRE,sprayFade,sprayPull,turnAcc,trackTurn,cornerPick,FLASH,flashRead,blindPlay,PEEK,peekStep,RELOAD,reloadPlay,reloadBack,trailNote,reloadSpot,TRADE,WALK,quiet};
+ return {hash,rng,clamp,pickW,REACT,personality,reaction,crosshair,crosshairAt,firePattern,peek,attackPlan,defensePlan,roles,teamBuy,buyFor,onMateDeath,onSound,ATTACK,DEFENSE,utility,UTIL,UTILX,teamGap,fightCast,turnStep,trackLag,wrapA,SPIKE,plantSpot,postPlant,retake,postPlay,SHOOT_UTIL,shootUtility,TAILWIND,tailwindDash,tailwindKeys,LEVEL,level,aimTraits,AIM_H,aimHeight,halfWidth,aimPlan,aimAt,readyToFire,planFire,idlePitch,recoilPull,discipline,hitPart,BUY,buyArea,buyRoute,buyExit,buySpot,buyWander,buyHold,buyNew,buyTick,buyNext,buySep,SENS,cm360,sensOf,turnRate,SENSE,inView,audible,earSpot,memNew,memNote,memForget,memBest,repeek,mayFire,nextShot,areas,DFORM,GAP,midPoint,RESPOND,nearest,tradeSpot,follow,buyNear,buyCross,reactR,reacts,FIRE,sprayFade,sprayPull,turnAcc,trackTurn,cornerPick,FLASH,flashRead,blindPlay,PEEK,peekStep,RELOAD,reloadPlay,reloadBack,trailNote,reloadSpot,TRADE,WALK,quiet};
 });
