@@ -1,7 +1,10 @@
 // UI layout checks (headless Chromium, real page): queue tabs fit, Custom GO filled, Custom card badges clear of titles, Settings Colourblind HUD row,
 // controls key caps, buy-phase objective subtitle, HUD ability keys, buy cards + team rows unclipped, pause Surrender note layout,
 // teammate blind wears off / no white spectate overlay, results not covered by the spectate bar or the combat report;
-// lane 3: Settings Enemy highlight colour on one line, HUD scales with the screen (1080p / 1440p) without panel overlaps, Killjoy's 9 ult pips fit the scoreboard. Exit 0 = all pass.
+// lane 3: Settings Enemy highlight colour on one line, HUD scales with the screen (1080p / 1440p) without panel overlaps, Killjoy's 9 ult pips fit the scoreboard;
+// lane 4: Collection cards show each gun's own render (no grey placeholder) at a readable size, Online mode buttons wrap evenly (no lone button),
+// Store featured bundle shows its guns, scoreboard / MVP agent portraits fill their tiles, buy menu sidearm cards fit their column with even
+// silhouettes, the combat report does not cover the enemy roster. Exit 0 = all pass.
 //   ROOT=<repo> PORT=<port> [LEG=lobby] node work/browser_ui_layout.cjs <outdir> <prefix> [WxH] [map]
 // A static server must serve ROOT on 127.0.0.1:PORT (python3 -m http.server PORT --bind 127.0.0.1 -d ROOT).
 const PW='/workspace/work/pw/node_modules/playwright';process.env.PLAYWRIGHT_BROWSERS_PATH=process.env.PLAYWRIGHT_BROWSERS_PATH||'/workspace/work/pw/browsers';
@@ -63,6 +66,22 @@ const log=(k,v)=>{R.steps.push([((Date.now()-t0)/1000).toFixed(1),k,v]);fs.write
  const L6=await J(`(()=>{const B=[...document.querySelectorAll('#mSet #xEnC button')];const r=B.map(b=>b.getBoundingClientRect());return {n:B.length,tops:r.map(q=>Math.round(q.top)),h:r.map(q=>Math.round(q.height)),wrap:B.filter(b=>b.scrollWidth>b.clientWidth+1).map(b=>b.textContent)}})()`);
  check('settings Enemy highlight colour on one line',L6.n===3&&new Set(L6.tops).size===1&&L6.h.every(h=>h<=48)&&L6.wrap.length===0,L6);
  await click('#mSet [data-close]');await page.waitForTimeout(300);
+ // L8 Online mode buttons (8 modes) wrap evenly: rows hold the same number of buttons (+-1), never one left alone on its own row
+ const L8=await J(`(()=>{const B=[...document.querySelectorAll('#xQueue .x-qon__seg button')].filter(b=>b.offsetParent);const rows={};B.forEach(b=>{const t=Math.round(b.getBoundingClientRect().top);rows[t]=(rows[t]||0)+1;});const c=Object.values(rows);return {n:B.length,rows:c}})()`);
+ check('online mode buttons wrap evenly (no lone button on a row)',L8.n>=6&&Math.max(...L8.rows)-Math.min(...L8.rows)<=1&&Math.min(...L8.rows)>=2,L8);
+ // L7 Collection: every weapon card shows that gun's own render (18 standard guns shared Riot's grey "X" placeholder; only Bandit / Warden / Outlaw had art), large enough to read
+ await X(`xskOpen('col');1`);await page.waitForTimeout(800);
+ const L7=await J(`(()=>{const C=[...document.querySelectorAll('#xSk .xsk-wc')];const u=C.map(c=>{const i=c.querySelector('i');const b=i.style.background,k=b.indexOf('url(');return k<0?'':b.slice(k+4,b.indexOf(')',k)).replace(/["']/g,'')});const r=C.map(c=>c.querySelector('i').getBoundingClientRect());return {n:C.length,uniq:new Set(u.filter(Boolean)).size,miss:C.filter((c,k)=>!u[k]).map(c=>c.dataset.w),iw:Math.round(Math.min(...r.map(q=>q.width))),ih:Math.round(Math.min(...r.map(q=>q.height)))}})()`);
+ check('collection: each gun card shows its own render, readable size',L7.n>=20&&L7.uniq===L7.n&&L7.miss.length===0&&L7.iw>=84&&L7.ih>=34,L7);
+ const L7b=await J(`[...document.querySelectorAll('#xSk .xsk-wc')].map(c=>{const r=c.getBoundingClientRect(),q=c.querySelector('b');return {w:c.dataset.w,o:q.scrollWidth>q.clientWidth+1||q.getBoundingClientRect().right>r.right-4}}).filter(x=>x.o).map(x=>x.w)`);
+ check('collection: gun names fit their cards (bigger renders)',L7b.length===0,L7b);
+ if(process.env.SHOT)await shot('layout-collection');
+ // L9 Store: the featured bundle shows its guns (the banner's right half was an empty gradient)
+ await X(`xskAct('tab',null,'store');1`);await page.waitForTimeout(800);
+ const L9=await J(`(()=>{const f=document.querySelector('#xSk .xsk-feat'),fr=f.getBoundingClientRect();const I=[...f.querySelectorAll('*')].filter(e=>getComputedStyle(e).backgroundImage.includes('url(')||e.tagName==='IMG').map(e=>e.getBoundingClientRect()).filter(q=>q.width>=60&&q.height>=24);return {n:I.length,right:I.filter(q=>q.left>=fr.left+fr.width*0.45&&q.right<=fr.right+1).length}})()`);
+ check('store: featured bundle shows its guns',L9.n>=2&&L9.right>=2,L9);
+ if(process.env.SHOT)await shot('layout-store');
+ await X(`xskClose();1`);await page.waitForTimeout(300);
  if(process.env.LEG!=='lobby'){
   await X(`FV.pick='${MAP}';J.pick='Killjoy';window.xSwift=false;setTimeout(()=>xGo(startFive),0);1`);
   await page.waitForFunction(()=>window.__xe('running&&!window.xLdOn&&bots.length>0'),null,{timeout:900000,polling:2000}).catch(e=>log('start wait',String(e).slice(0,160)));
@@ -93,16 +112,25 @@ const log=(k,v)=>{R.steps.push([((Date.now()-t0)/1000).toFixed(1),k,v]);fs.write
   const M10=await J(`[...document.querySelectorAll('#xBoard td.ul')].filter(td=>td.offsetParent).map(td=>{const s=td.querySelector('.x-sbp'),a=td.getBoundingClientRect(),cs=getComputedStyle(td),i=[...s.children].map(e=>e.getBoundingClientRect());const l=Math.min(...i.map(q=>q.left)),r=Math.max(...i.map(q=>q.right));return {n:s.children.length,in:[Math.round(a.left+parseFloat(cs.paddingLeft)),Math.round(a.right-parseFloat(cs.paddingRight))],pips:[Math.round(l),Math.round(r)]}})`);
   const M10b=M10.filter(r=>r.n&&(r.pips[0]<r.in[0]-0.5||r.pips[1]>r.in[1]+0.5));
   check('scoreboard: Killjoy ult pips fit the ULT column',M10.some(r=>r.n===9)&&M10b.length===0,{rows:M10.length,nine:M10.filter(r=>r.n===9).length,bad:M10b.slice(0,3)});
+  // M11 scoreboard agent portraits fill their tiles (agent select's generic .x-ag rule leaked 10 px padding + a border onto them: a 12 px face in a 36 px box)
+  const M11=await J(`[...document.querySelectorAll('#xBoard .x-ag')].filter(e=>e.offsetParent).map(e=>{const a=e.getBoundingClientRect(),i=e.querySelector('img'),q=i?i.getBoundingClientRect():{width:0};return {w:Math.round(a.width),iw:Math.round(q.width),pad:getComputedStyle(e).paddingLeft}})`);
+  check('scoreboard: agent portraits fill their tiles',M11.length>=10&&M11.every(r=>r.iw>=r.w*0.85&&r.w>=30),{n:M11.length,bad:M11.filter(r=>!(r.iw>=r.w*0.85&&r.w>=30)).slice(0,3)});
   if(process.env.SHOT)await shot('layout-scoreboard',true);
   await page.keyboard.up('Tab');await frames(2);
   // M1 buy menu: no clipped (ellipsised) text on the weapon cards
-  await page.keyboard.press('b');await frames(3);
+  // the buy phase was cut to 0.2 s for M8, so B no longer opened the menu (M1 / M1b measured nothing): reopen it with buy time left
+  await X(`FV.buy=Math.max(FV.buy,20);buyMenu(true);1`).catch(()=>{});await frames(3);
   const M1=await J(`[...document.querySelectorAll('#xBuy .xb-card small,#xBuy .xb-card em,#xBuy .xb-rqb')].filter(e=>e.offsetParent&&e.getClientRects().length&&getComputedStyle(e).display!=='none'&&e.scrollWidth>e.clientWidth+1).map(e=>e.className+':'+e.textContent)`);
   check('buy cards: no clipped text',M1.length===0,M1);
   // M1b team loadout rows: the gun + armour read in full (were "Classic · 2…")
   const M1b=await J(`[...document.querySelectorAll('#xBuy .xb-team li small,#xBuy .xb-team li .xb-ld')].filter(e=>e.offsetParent&&e.scrollWidth>e.clientWidth+1).map(e=>e.className+':'+e.textContent)`);
   check('buy team loadout rows: no clipped text',M1b.length===0,M1b);
-  await page.keyboard.press('b');await frames(2);
+  // M12 buy menu sidearms: six cards in a five-track column pushed the Sheriff into an implicit taller row past the column (Sheriff silhouette 4x the other pistols)
+  const M12=await J(`(()=>{const col=[...document.querySelectorAll('#xBuy .x-bc')].find(c=>c.querySelector('[data-n="Classic"]'));if(!col)return {none:1};const cr=col.getBoundingClientRect(),C=[...col.querySelectorAll('.xb-card>button[data-n]')];const R=C.map(b=>{const r=b.getBoundingClientRect(),p=b.querySelector('svg path'),q=p?p.getBoundingClientRect():{width:0};return {n:b.dataset.n,h:Math.round(r.height),b:Math.round(r.bottom),sw:Math.round(q.width)}});return {n:R.length,colB:Math.round(cr.bottom),R}})()`);
+  const M12h=M12.R?M12.R.map(r=>r.h):[],M12w=M12.R?M12.R.map(r=>r.sw):[];
+  check('buy sidearms: cards fit the column, even heights and silhouettes',M12.n===6&&M12.R.every(r=>r.b<=M12.colB+1)&&Math.max(...M12h)-Math.min(...M12h)<=2&&Math.min(...M12w)>=24&&Math.max(...M12w)<=Math.min(...M12w)*2,M12); // 2x: the art itself spans 22 (Classic) .. 42 (Ghost + suppressor) units; the bug was a 4x Sheriff
+  if(process.env.SHOT)await shot('layout-buymenu',true);
+  await X(`buyMenu(false);FV.buy=Math.min(FV.buy,0.2);1`).catch(()=>{});await frames(2);
   // M2 pause: the Surrender note ("Available from round 4") sits under the Surrender label, left aligned with it
   await page.keyboard.press('Escape');await frames(3);
   const M2=await J(`(()=>{const b=$('xSurr'),s=b.querySelector('small');if(b.hidden||!s)return {hidden:b.hidden,s:!!s};const a=b.getBoundingClientRect(),q=s.getBoundingClientRect(),cs=getComputedStyle(b);return {bt:a.bottom-parseFloat(cs.paddingBottom),sb:q.bottom,bl:a.left+parseFloat(cs.paddingLeft),sl:q.left}})()`);
@@ -118,11 +146,22 @@ const log=(k,v)=>{R.steps.push([((Date.now()-t0)/1000).toFixed(1),k,v]);fs.write
   await frames(10);if(process.env.SHOT)await shot('layout-spectate',true);
   const M7=await J(`(()=>{const e=document.getElementById('xSpvBlind');return {op:e?+e.style.opacity:0}})()`);
   check('spectating a teammate: no white blind overlay',M7.op===0,M7);
+  // M13 combat report (shown after a death) does not sit on the spectate side panels / enemy roster column at the right edge (it covered Killjoy / Chamber rows); only #xObs text counts (a transient ROUND WIN banner is not the roster)
+  // the bot kill above does not always register headless (no spectate state): force the death the combat report follows (a dealt + a taken row, then xKLDie), and the spectate side panels
+  const M13f=await J(`(()=>{const c=document.querySelector('.x-cbt');if(c&&c.classList.contains('on')&&xKL.sp)return 'natural';const b=bots.find(q=>q.alive)||bots[0];if(player.hp>0){xKLog(b,undefined,48);player.hp=0;}xKLog(player,b.name,140);if(!xKL.on)xKLDie(b.name,'Vandal');return 'forced'})()`).catch(e=>String(e).slice(0,120));
+  await page.waitForFunction(()=>window.__xe('xKL.sp&&!!document.querySelector("#xObs.on")'),null,{timeout:30000,polling:500}).catch(()=>{});
+  const M13s=await J(`(()=>{if(!xKL.sp){xKL.sp=true;xObsTick(true);}return {sp:xKL.sp,obs:!!document.querySelector('#xObs.on'),cbt:!!document.querySelector('.x-cbt.on')}})()`).catch(e=>String(e).slice(0,120));log('M13 state',{M13f,M13s});await frames(3);
+  const M13=await J(`(()=>{const c=document.querySelector('.x-cbt');if(!c||!c.classList.contains('on'))return {on:false};const r=c.getBoundingClientRect(),hit=new Set();const vis=e=>{for(let x=e;x&&x!==document.body;x=x.parentElement){const cs=getComputedStyle(x);if(cs.display==='none'||cs.visibility==='hidden'||+cs.opacity<0.05)return false;}return true;};
+    for(const e of document.querySelectorAll('#xObs *')){if(c.contains(e)||e.contains(c)||e.tagName==='CANVAS')continue;const own=[...e.childNodes].some(n=>n.nodeType===3&&n.textContent.trim())||e.tagName==='IMG';if(!own)continue;const q=e.getBoundingClientRect();if(q.width<2||q.height<2||q.right<=r.left+1||q.left>=r.right-1||q.bottom<=r.top+1||q.top>=r.bottom-1)continue;if(vis(e))hit.add((e.id||String(e.className).slice(0,20)||e.tagName)+':'+e.textContent.trim().slice(0,16));}return {on:true,box:[Math.round(r.left),Math.round(r.top),Math.round(r.right),Math.round(r.bottom)],under:[...hit].slice(0,8)}})()`);
+  check('combat report does not cover the enemy roster',M13.on===true&&M13.under.length===0,M13);
   await X(`FV.you=12;bots.forEach(b=>{if(b.alive)hurt(b,999,allies[0]?allies[0].name:'You');});1`).catch(()=>{});
   await page.waitForFunction(()=>window.__xe('$("result").style.display==="flex"'),null,{timeout:600000,polling:1000}).catch(e=>log('result wait',String(e).slice(0,120)));await frames(3);
   const M3=await J(`(()=>{const hit=id=>{const r=$(id).getBoundingClientRect();const e=document.elementFromPoint(r.x+r.width/2,r.y+r.height/2);return e===$(id)||$(id).contains(e)?'ok':(e&&(e.className||e.id||e.tagName))};const sp=document.querySelector('.x-sp');const cb=document.querySelector('.x-cbt');return {again:hit('againBtn'),lobby:hit('lobbyBtn'),sp:sp?getComputedStyle(sp).display:'none',cbt:cb?getComputedStyle(cb).display:'none'}})()`);
   check('results: Play again and Lobby are not covered',M3.again==='ok'&&M3.lobby==='ok'&&M3.sp==='none',M3);
   check('results: no combat report card over the results',M3.cbt==='none',M3);
+  // M14 results MVP cards: the agent portrait fills its 52 px tile (same leaked agent-select padding as the scoreboard)
+  const M14=await J(`[...document.querySelectorAll('#result .x-mvp .x-ag')].filter(e=>e.offsetParent).map(e=>{const a=e.getBoundingClientRect(),i=e.querySelector('img'),q=i?i.getBoundingClientRect():{width:0};return {w:Math.round(a.width),iw:Math.round(q.width)}})`);
+  check('results: MVP portraits fill their tiles',M14.length>=1&&M14.every(r=>r.iw>=r.w*0.85),M14);
   if(process.env.SHOT)await shot('layout-results',true);
  }
  const bad=checks.filter(c=>c[1]!=='pass');log('summary',{pass:checks.length-bad.length,fail:bad.length});
