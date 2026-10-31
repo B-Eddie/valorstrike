@@ -56,10 +56,16 @@ import BotBrain from '../vendor/bot-brain.cjs';
   for(const site of Object.keys(W.map.sites))for(let rd=1;rd<=24;rd++){S.round=rd;S.spike.site=site;for(const team of [0,1]){const u=S.units.find(v=>v.team===team);S.atk=team;u.plan=null;const L=(await import('./src/bots.js')).plan(S,u);L.plantSite=null;const p=S.plantGoal(u);
     assert(p,map+' '+site+' round '+rd+': a plant spot');picks++;const bad=RING.filter(([dx,dz])=>S.siteAt({x:p[0]+dx*1.05,y:p[1],z:p[2]+dz*1.05})!==site).length;if(bad)shallow.push(map+' '+site+' r'+rd+' t'+team+' '+bad+'/8');}}}
  assert.equal(shallow.length,0,'every plant spot lies 1.05 m+ inside the plant zone (goalPath stops an exact goal up to 1 m short): '+shallow.length+'/'+picks+' on the edge, e.g. '+shallow.slice(0,4).join(', '));
- // Ascent seed 5 round 19 (132dc0e): the carrier froze at (46.0, -27.0) on A, just outside the zone, for 60 s. From there it now plants.
- {const W=await loadWorld(assets,'ascent'),S=new SpikeSimulation(W,'five','ascent',()=>.5);S.start(true);S.buy=0;S.roundDelay=0;S.canSee=()=>false;
-  for(let rd=1;rd<=8;rd++){S.round=rd;const car=S.units.find(v=>v.team===S.atk);for(const u of S.units){u.plan=null;u.react=null;if(u!==car)Object.assign(u,{x:0,z:u.team===S.atk?50:-50,input:{}});}
-   S.spike={st:'carry',carrier:car.id,x:46,y:10.07,z:-27,t:45,pt:0,dt:0,site:'A'};Object.assign(car,{x:46,y:10.07,z:-27,vx:0,vz:0,vy:0,air:false,alive:true,hp:100});car.orbR=S.round;car.orbGo=null;
-   S.bot=function(u){return u===car?SpikeSimulation.prototype.bot.call(this,u):undefined;};let n=0;for(;n<240&&S.spike.st==='carry';n++)S.step(.05);
-   assert.equal(S.spike.st,'plant','round '+rd+': the carrier at the A edge planted within 12 s (was: stood still outside the zone)');}}}
+ // The freeze itself (132dc0e Ascent seed 5 round 19, carrier Omen 60 s at (46.0, -27.0) on A): a plant spot on the zone edge
+ // (nav node (46, -27.25), the drawn spot of that round) and the carrier stopped 0.9 m off it, just outside the zone. A spot
+ // the carrier reached without being in the zone is re-picked (deep), so it walks on and plants.
+ {const W=await loadWorld(assets,'ascent'),S=new SpikeSimulation(W,'five','ascent',()=>.5);S.start(true);S.buy=0;S.roundDelay=0;S.remaining=45;/* 55 s in: the staged default is over */S.canSee=()=>false;
+  const car=S.units.find(v=>v.team===S.atk),N=W.nav.nodes,e=N[W.near(46,-27.25,10.07)];
+  let out=null;for(let k=0;k<32&&!out;k++){const x=e[0]+Math.cos(k*Math.PI/16)*.9,z=e[2]+Math.sin(k*Math.PI/16)*.9,n=N[W.near(x,z,e[1])];if(!S.siteAt({x,y:e[1],z})&&n&&Math.abs(n[1]-e[1])<.3&&!W.blocked(x,z,.45,e[1]))out=[x,z];}
+  assert(out,'a standing point 0.9 m off the edge node, outside the zone');
+  for(const u of S.units){u.plan=null;u.react=null;if(u!==car)Object.assign(u,{x:0,z:u.team===S.atk?50:-50,input:{}});}
+  S.spike={st:'carry',carrier:car.id,x:out[0],y:e[1],z:out[1],t:45,pt:0,dt:0,site:'A'};Object.assign(car,{x:out[0],y:e[1],z:out[1],vx:0,vz:0,vy:0,air:false,alive:true,hp:100});car.orbR=S.round;car.orbGo=null;
+  const L=(await import('./src/bots.js')).plan(S,car);L.plantSite='A';L.plantP=[e[0],e[1],e[2]];L.plantKind='default';
+  S.bot=function(u){return u===car?SpikeSimulation.prototype.bot.call(this,u):undefined;};let n=0;for(;n<240&&S.spike.st==='carry';n++)S.step(.05);
+  assert.equal(S.spike.st,'plant','a carrier stopped 0.9 m off an edge plant spot, outside the zone, plants within 12 s (was: stood there all round)');}}
 console.log('Bot feel 3: (3) every plant spot 1.05 m+ inside the zone, the carrier never stands on the edge; (2) a team on a win buys (bonus round, no eco / save), a full call short of a rifle buys the best it can afford; (1) ult-orb errand never freezes 0.96-1.2 m off the orb (channels from goalPath\'s stop, gives up after ULT_ORB.give s)');

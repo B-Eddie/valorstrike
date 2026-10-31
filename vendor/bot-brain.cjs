@@ -441,6 +441,11 @@
  // 'default' (the usual spot, within 2 m of the centre), 'safe' (2.5-5.5 m toward the attackers' entrance, out of the
  // retake's sight), 'open' (2.5-5.5 m toward the defenders' side, in sight of the post-plant spots). side: -1..1 sideways
  // share. Patient bots lean safe.
+ // A plant spot must lie PLANT.in m+ inside the plant zone (lane-botfeel3): a carrier walks an exact goal to ~1 m short of it,
+ // and a spot on the zone's edge left it standing just outside - not planting, not walking - all round. plantDeep(inZone, x, z)
+ // -> how many of the PLANT.ring points PLANT.in m around (x, z) are in the zone (-1: (x, z) itself is not); deep = PLANT.ring.length.
+ const PLANT={in:1.1,ring:[[1,0],[.7071,.7071],[0,1],[-.7071,.7071],[-1,0],[-.7071,-.7071],[0,-1],[.7071,-.7071]]};
+ function plantDeep(inZone,x,z){if(!inZone(x,z))return -1;let k=0;for(const q of PLANT.ring)if(inZone(x+q[0]*PLANT.in,z+q[1]*PLANT.in))k++;return k;}
  function plantSpot(rand,P){const x=rand(),p=P?P.patience:.5,ws=.3*(.6+p*.8),kind=x<.42?'default':x<.42+ws?'safe':'open';return {kind,r:kind==='default'?rand()*2:2.5+rand()*3,side:rand()*2-1};}
  // Post-plant crossfire for n attackers: angles (rad) around the Spike, 0 = from the Spike toward the attackers' side, spread
  // over ~125 degrees so two of them cross any defuser, each at its own range: close (5-9 m, on site) or far (11-17 m, off the
@@ -661,5 +666,5 @@
  // st {contactD (m to the freshest remembered enemy, null: none), see, trading, wide, carrier, rush}.
  const WALK={range:16};
  function quiet(st){if(!st||st.see||st.trading||st.wide||st.carrier||st.rush)return false;return st.contactD!=null&&st.contactD<WALK.range;}
- return {hash,rng,clamp,pickW,REACT,personality,reaction,crosshair,crosshairAt,firePattern,peek,attackPlan,defensePlan,roles,teamBuy,buyFor,BUYK,onMateDeath,onSound,ATTACK,DEFENSE,utility,UTIL,UTILX,teamGap,fightCast,turnStep,trackLag,wrapA,SPIKE,plantSpot,postPlant,retake,postPlay,SHOOT_UTIL,shootUtility,TAILWIND,tailwindDash,tailwindKeys,LEVEL,level,aimTraits,AIM_H,aimHeight,halfWidth,aimPlan,aimAt,readyToFire,planFire,idlePitch,recoilPull,discipline,hitPart,BUY,buyArea,buyRoute,buyExit,buySpot,buyWander,buyHold,buyNew,buyTick,buyNext,buySep,SENS,cm360,sensOf,turnRate,SENSE,inView,audible,earSpot,memNew,memNote,memForget,memBest,repeek,mayFire,nextShot,areas,DFORM,GAP,midPoint,RESPOND,nearest,tradeSpot,follow,buyNear,buyCross,reactR,reacts,FIRE,sprayFade,sprayPull,turnAcc,trackTurn,cornerPick,FLASH,flashRead,blindPlay,PEEK,peekStep,RELOAD,reloadPlay,reloadBack,trailNote,reloadSpot,TRADE,WALK,quiet};
+ return {hash,rng,clamp,pickW,REACT,personality,reaction,crosshair,crosshairAt,firePattern,peek,attackPlan,defensePlan,roles,teamBuy,buyFor,BUYK,onMateDeath,onSound,ATTACK,DEFENSE,utility,UTIL,UTILX,teamGap,fightCast,turnStep,trackLag,wrapA,SPIKE,plantSpot,PLANT,plantDeep,postPlant,retake,postPlay,SHOOT_UTIL,shootUtility,TAILWIND,tailwindDash,tailwindKeys,LEVEL,level,aimTraits,AIM_H,aimHeight,halfWidth,aimPlan,aimAt,readyToFire,planFire,idlePitch,recoilPull,discipline,hitPart,BUY,buyArea,buyRoute,buyExit,buySpot,buyWander,buyHold,buyNew,buyTick,buyNext,buySep,SENS,cm360,sensOf,turnRate,SENSE,inView,audible,earSpot,memNew,memNote,memForget,memBest,repeek,mayFire,nextShot,areas,DFORM,GAP,midPoint,RESPOND,nearest,tradeSpot,follow,buyNear,buyCross,reactR,reacts,FIRE,sprayFade,sprayPull,turnAcc,trackTurn,cornerPick,FLASH,flashRead,blindPlay,PEEK,peekStep,RELOAD,reloadPlay,reloadBack,trailNote,reloadSpot,TRADE,WALK,quiet};
 });

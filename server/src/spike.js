@@ -193,11 +193,17 @@ export class SpikeSimulation extends Simulation{
   u.utilShot={id:pick.e.id,kind:pick.kind,at:this.time};return true;}
  // ---- Spike play (vendor/bot-brain.cjs plantSpot / postPlant / postPlay / retake) ----
  // The carrier's plant spot this round: default (near the centre), safe (toward the attackers' entrance) or open (toward the
- // defenders' side), the nearest plantable nav node (shrunk toward the centre until it is inside the plant zone).
- plantGoal(u){const sp=this.spike,W=this.world,L=plan(this,u),c=W.map.sites[sp.site];if(!c)return null;if(L.plantSite===sp.site)return L.plantP;L.plantSite=sp.site;L.plantP=null;
+ // defenders' side), the nearest plantable nav node (shrunk toward the centre until it is inside the plant zone) that lies
+ // BotBrain.PLANT.in m+ inside it (BotBrain.plantDeep, lane-botfeel3; else the nearest such node within 14 m): the carrier stops an exact goal up to 1 m short,
+ // and an edge spot left it standing just outside the zone all round. A spot it reached without being in the zone is re-picked.
+ plantGoal(u){const sp=this.spike,W=this.world,L=plan(this,u),c=W.map.sites[sp.site];if(!c)return null;if(L.plantSite===sp.site&&!(L.plantP&&(L.plantRe||0)<2&&!this.siteAt(u)&&Math.hypot(L.plantP[0]-u.x,L.plantP[2]-u.z)<1.3&&(L.plantRe=(L.plantRe||0)+1)))return L.plantP;/* lane-botfeel3: reached its spot (goalPath stops 1 m short) without being in the zone: re-pick a deep one */L.plantSite=sp.site;L.plantP=null;
   const r=BotBrain.rng(BotBrain.hash('plant|'+sp.site+'|'+this.round+'|'+u.team+'|'+botSeed(this))),Q=BotBrain.plantSpot(r,persona(this,u).brain),to=Q.kind==='safe'?W.map.attacker:Q.kind==='open'?W.map.defender:null;
   let dx,dz;if(to){dx=to[0]-c[0];dz=to[2]-c[2];}else{const a=r()*Math.PI*2;dx=Math.cos(a);dz=Math.sin(a);}const l=Math.hypot(dx,dz)||1;dx/=l;dz/=l;
-  for(const f of [1,.7,.4,0]){const x=c[0]+(dx*Q.r-dz*Q.side*1.5)*f,z=c[2]+(dz*Q.r+dx*Q.side*1.5)*f,n=W.nav.nodes[W.near(x,z,c[1])];if(n&&this.siteAt({x:n[0],y:n[1],z:n[2]})===sp.site){L.plantP=[n[0],n[1],n[2]];L.plantKind=f?Q.kind:'default';break;}}
+  const deep=n=>BotBrain.plantDeep((x,z)=>this.siteAt({x,y:n[1],z})===sp.site,n[0],n[2]),RING=BotBrain.PLANT.ring.length;/* lane-botfeel3: ring points inside the zone (8 = the carrier stops inside wherever goalPath leaves it) */
+  for(const f of [1,.7,.4,0]){const x=c[0]+(dx*Q.r-dz*Q.side*1.5)*f,z=c[2]+(dz*Q.r+dx*Q.side*1.5)*f,n=W.nav.nodes[W.near(x,z,c[1])];if(n&&deep(n)===RING){L.plantP=[n[0],n[1],n[2]];L.plantKind=f?Q.kind:'default';break;}}
+  if(!L.plantP){/* no deep node on the drawn line: the nearest deep nav node to the drawn spot within 14 m of the centre (else the deepest) */const x0=c[0]+dx*Q.r-dz*Q.side*1.5,z0=c[2]+dz*Q.r+dx*Q.side*1.5,N=W.nav.nodes;let best=null,bs=-Infinity;
+   const I=W.playable&&W.playable.length?W.playable:N.map((_,i)=>i);for(const i of I){const n=N[i];if(!n||Math.hypot(n[0]-c[0],n[2]-c[2])>14||Math.abs(n[1]-c[1])>2||(W.allowed&&!W.allowed.has(i)))continue;const k=deep(n);if(k<0)continue;const sc=k*100-Math.hypot(n[0]-x0,n[2]-z0);if(sc>bs){bs=sc;best=n;}}
+   if(best){L.plantP=[best[0],best[1],best[2]];L.plantKind=Q.kind;/* the nearest deep node to the drawn spot keeps its kind */}}
   const G=this.plantLog||(this.plantLog=[]);if(L.plantP&&!G.some(e=>e.round===this.round&&e.team===u.team)){G.push({round:this.round,team:u.team,site:sp.site,kind:L.plantKind,p:[...L.plantP]});if(G.length>200)G.shift();}
   return L.plantP;}
  // Plant once on the spot, or after 3 s inside the site (spot unreachable / contested), or when time is short or a fight is on.

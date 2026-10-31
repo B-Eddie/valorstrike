@@ -17756,6 +17756,11 @@ if (typeof xUbPost === "function") { const hp0 = xUbPost; xUbPost = function (M)
  // 'default' (the usual spot, within 2 m of the centre), 'safe' (2.5-5.5 m toward the attackers' entrance, out of the
  // retake's sight), 'open' (2.5-5.5 m toward the defenders' side, in sight of the post-plant spots). side: -1..1 sideways
  // share. Patient bots lean safe.
+ // A plant spot must lie PLANT.in m+ inside the plant zone (lane-botfeel3): a carrier walks an exact goal to ~1 m short of it,
+ // and a spot on the zone's edge left it standing just outside - not planting, not walking - all round. plantDeep(inZone, x, z)
+ // -> how many of the PLANT.ring points PLANT.in m around (x, z) are in the zone (-1: (x, z) itself is not); deep = PLANT.ring.length.
+ const PLANT={in:1.1,ring:[[1,0],[.7071,.7071],[0,1],[-.7071,.7071],[-1,0],[-.7071,-.7071],[0,-1],[.7071,-.7071]]};
+ function plantDeep(inZone,x,z){if(!inZone(x,z))return -1;let k=0;for(const q of PLANT.ring)if(inZone(x+q[0]*PLANT.in,z+q[1]*PLANT.in))k++;return k;}
  function plantSpot(rand,P){const x=rand(),p=P?P.patience:.5,ws=.3*(.6+p*.8),kind=x<.42?'default':x<.42+ws?'safe':'open';return {kind,r:kind==='default'?rand()*2:2.5+rand()*3,side:rand()*2-1};}
  // Post-plant crossfire for n attackers: angles (rad) around the Spike, 0 = from the Spike toward the attackers' side, spread
  // over ~125 degrees so two of them cross any defuser, each at its own range: close (5-9 m, on site) or far (11-17 m, off the
@@ -17976,7 +17981,7 @@ if (typeof xUbPost === "function") { const hp0 = xUbPost; xUbPost = function (M)
  // st {contactD (m to the freshest remembered enemy, null: none), see, trading, wide, carrier, rush}.
  const WALK={range:16};
  function quiet(st){if(!st||st.see||st.trading||st.wide||st.carrier||st.rush)return false;return st.contactD!=null&&st.contactD<WALK.range;}
- return {hash,rng,clamp,pickW,REACT,personality,reaction,crosshair,crosshairAt,firePattern,peek,attackPlan,defensePlan,roles,teamBuy,buyFor,BUYK,onMateDeath,onSound,ATTACK,DEFENSE,utility,UTIL,UTILX,teamGap,fightCast,turnStep,trackLag,wrapA,SPIKE,plantSpot,postPlant,retake,postPlay,SHOOT_UTIL,shootUtility,TAILWIND,tailwindDash,tailwindKeys,LEVEL,level,aimTraits,AIM_H,aimHeight,halfWidth,aimPlan,aimAt,readyToFire,planFire,idlePitch,recoilPull,discipline,hitPart,BUY,buyArea,buyRoute,buyExit,buySpot,buyWander,buyHold,buyNew,buyTick,buyNext,buySep,SENS,cm360,sensOf,turnRate,SENSE,inView,audible,earSpot,memNew,memNote,memForget,memBest,repeek,mayFire,nextShot,areas,DFORM,GAP,midPoint,RESPOND,nearest,tradeSpot,follow,buyNear,buyCross,reactR,reacts,FIRE,sprayFade,sprayPull,turnAcc,trackTurn,cornerPick,FLASH,flashRead,blindPlay,PEEK,peekStep,RELOAD,reloadPlay,reloadBack,trailNote,reloadSpot,TRADE,WALK,quiet};
+ return {hash,rng,clamp,pickW,REACT,personality,reaction,crosshair,crosshairAt,firePattern,peek,attackPlan,defensePlan,roles,teamBuy,buyFor,BUYK,onMateDeath,onSound,ATTACK,DEFENSE,utility,UTIL,UTILX,teamGap,fightCast,turnStep,trackLag,wrapA,SPIKE,plantSpot,PLANT,plantDeep,postPlant,retake,postPlay,SHOOT_UTIL,shootUtility,TAILWIND,tailwindDash,tailwindKeys,LEVEL,level,aimTraits,AIM_H,aimHeight,halfWidth,aimPlan,aimAt,readyToFire,planFire,idlePitch,recoilPull,discipline,hitPart,BUY,buyArea,buyRoute,buyExit,buySpot,buyWander,buyHold,buyNew,buyTick,buyNext,buySep,SENS,cm360,sensOf,turnRate,SENSE,inView,audible,earSpot,memNew,memNote,memForget,memBest,repeek,mayFire,nextShot,areas,DFORM,GAP,midPoint,RESPOND,nearest,tradeSpot,follow,buyNear,buyCross,reactR,reacts,FIRE,sprayFade,sprayPull,turnAcc,trackTurn,cornerPick,FLASH,flashRead,blindPlay,PEEK,peekStep,RELOAD,reloadPlay,reloadBack,trailNote,reloadSpot,TRADE,WALK,quiet};
 });
 // Spawn barriers (Valorant's buy-phase walls), shared by the server (spike.js world, bots.js) and the page (UMD:
 // index.html inlines it in the BOT VARIETY block and reads window.SpawnBarriers; native_maps_runtime nmBlocked and the
@@ -18417,7 +18422,10 @@ function xbvPlantPt(C,u,s){
  const k=xbvKey()+'|'+s.site;if(s.xpK===k)return s.xpP;s.xpK=k;s.xpP=null;const S=C.meta.sites,c=xbvSiteCenter(C,s.site,true);if(!S[s.site])return null;
  const r=BotRoutes.rng(BotRoutes.hash(xbvSeed()+'|plant|'+k)),Q=BotBrain.plantSpot(r,xbBrain(u)),to=Q.kind==='safe'?C.meta.attacker:Q.kind==='open'?C.meta.defender:null;
  let dx,dz;if(to){dx=to[0]-c[0];dz=to[2]-c[2];}else{const a=r()*Math.PI*2;dx=Math.cos(a);dz=Math.sin(a);}const l=Math.hypot(dx,dz)||1;dx/=l;dz/=l;
- for(const f of [1,.7,.4,0]){const q=xbvSpot(C,[c[0]+(dx*Q.r-dz*Q.side*1.5)*f,c[1],c[2]+(dz*Q.r+dx*Q.side*1.5)*f],[],r,{rMin:0,rMax:1.2,gap:0});if(q&&(typeof inSite!=='function'||inSite({x:q[0],z:q[2]})===s.site)){s.xpP=q;s.xpKind=f?Q.kind:'default';break;}}
+ let fb=null;for(const f of [1,.7,.4,0]){const q=xbvSpot(C,[c[0]+(dx*Q.r-dz*Q.side*1.5)*f,c[1],c[2]+(dz*Q.r+dx*Q.side*1.5)*f],[],r,{rMin:0,rMax:1.2,gap:0});if(q&&(typeof inSite!=='function'||inSite({x:q[0],z:q[2]})===s.site)){if(!fb)fb=[q,f];if(typeof inSite==='function'&&BotBrain.plantDeep((x,z)=>inSite({x,z})===s.site,q[0],q[2])!==BotBrain.PLANT.ring.length)continue;/* lane-botfeel3: PLANT.in m+ inside the zone (= server plantGoal); else the first in-zone pick */s.xpP=q;s.xpKind=f?Q.kind:'default';break;}}
+ if(!s.xpP&&fb&&typeof inSite==='function'&&C.nav&&C.nav.nodes){/* no deep spot on the drawn line: the nearest deep nav node to the drawn spot within 14 m of the centre (= server plantGoal) */const x0=c[0]+dx*Q.r-dz*Q.side*1.5,z0=c[2]+dz*Q.r+dx*Q.side*1.5,N=C.nav.nodes;let bs=-Infinity;
+  for(let j=0;j<N.length;j++){const n=N[j];if(!n||(C.playable&&!C.playable[j])||Math.hypot(n[0]-c[0],n[2]-c[2])>14||Math.abs(n[1]-c[1])>2)continue;const k=BotBrain.plantDeep((x,z)=>inSite({x,z})===s.site,n[0],n[2]);if(k<0)continue;const sc=k*100-Math.hypot(n[0]-x0,n[2]-z0);if(sc>bs){bs=sc;s.xpP=[n[0],n[1],n[2]];s.xpKind=Q.kind;}}}
+ if(!s.xpP&&fb){s.xpP=fb[0];s.xpKind=fb[1]?Q.kind:'default';}
  if(s.xpP){(XBV.plog||(XBV.plog=[])).push({k,site:s.site,kind:s.xpKind,p:s.xpP.slice()});if(XBV.plog.length>100)XBV.plog.shift();}return s.xpP;}
 if(typeof xPlantOk==='function'){const po0=xPlantOk;xPlantOk=function(c,p){const s=FV.sp;if(!xbvSp()||!c||c===player||!s.xpP||s.xpK!==xbvKey()+'|'+s.site)return po0.apply(this,arguments);
  const now=performance.now();if(s.xpIn==null||s.xpInK!==s.xpK){s.xpIn=now;s.xpInK=s.xpK;}return Math.hypot(s.xpP[0]-p.x,s.xpP[2]-p.z)<1.6||now-s.xpIn>3000||timeLeft<15||c.see>0;};}
