@@ -5,9 +5,14 @@
 //     behind) - instead of strafing / standing in the enemy's sight (09a42d4 offline: 10-23 % of reload time in sight, backing 7-23 % of it)
 //  2. and it does not re-peek mid-reload: unsighted, reloading, with a remembered enemy within RELOAD.hold m, it holds the
 //     angle until the magazine is back, then pushes again (the carrier and far contacts are not held)
+//  3. trading like a player (lane-botfeel2; a8c64fa offline 5v5: 10.5 % of deaths traded within 3 s, real players far more):
+//     the trader goes for the actual killer (u.lastKiller, the killfeed name; was: the enemy nearest the body), knows its
+//     spot (the shots / the call: a 'heard' memory, so it comes round the corner pre-aimed), swings it wide (BotBrain.peek
+//     ctx.trade: no hold / jiggle while a trade is on), and the killer's next fight within TRADE.focus s of its kill starts
+//     TRADE.lag late (its eyes still on the body, its spray resetting: BotBrain.reaction ctx.postKill)
 // Shared decision: vendor/bot-brain.cjs reloadPlay / reloadBack (the page's BOT VARIETY block uses the same module).
 import assert from 'node:assert/strict';import {createRequire} from 'node:module';
-import {Simulation} from './src/simulation.js';import {persona,botView} from './src/bots.js';
+import {Simulation} from './src/simulation.js';import {SpikeSimulation} from './src/spike.js';import {persona,botView} from './src/bots.js';
 const B=createRequire(import.meta.url)('../vendor/bot-brain.cjs'),out=[];
 const nodes=[],adj=[];for(let i=0;i<21;i++)for(let j=0;j<21;j++){nodes.push([i*2-20,0,-j*2+20]);const k=i*21+j,a=[];if(i>0)a.push(k-21);if(i<20)a.push(k+21);if(j>0)a.push(k-1);if(j<20)a.push(k+1);adj.push(a);}
 const all=nodes.map((_,i)=>i),near=(x,z)=>{let b=0,d=Infinity;for(const i of all){const n=nodes[i],v=(n[0]-x)**2+(n[2]-z)**2;if(v<d){d=v;b=i;}}return b;};
@@ -51,4 +56,29 @@ function tick(s,b,dt=.05,move=false){s.time+=dt;if(b.reloadAt&&s.time>=b.reloadA
  assert.ok(n>150&&held/n>=.95,`unsighted mid-reload with a contact 16 m away it holds (${(held/n*100).toFixed(0)} % of ${n} ticks >= 95 %)`);
  assert.ok(moved>=60,'and pushes again once the magazine is back ('+moved+' moving ticks)');
  out.push(`reload unsighted: holds ${(held/n*100).toFixed(0)} %, then moves`);}
+// 3. trading like a player
+const nodes2=nodes,G2=(ray)=>({map:{attacker:[-20,0,20],defender:[20,0,-20],sites:{A:[-8,0,0],B:[8,0,0]}},nav:{nodes:nodes2,adj},playable:all,allowed:new Set(all),near,ground:()=>0,blocked:()=>false,ray:ray||(()=>1)});
+{assert.equal(typeof B.TRADE,'object','BotBrain.TRADE');const P0=B.personality(B.hash('Bot Omen'));
+ for(let k=0;k<40;k++)assert.equal(B.peek(P0,B.rng(k),{trade:true}),'wide','a trade is swung wide, never held / jiggled');
+ for(let k=0;k<10;k++)assert.ok(['jiggle','hold'].includes(B.peek(P0,B.rng(k),{trade:true,sniper:true})),'except into an Operator');
+ let slow=0;for(let k=0;k<30;k++){const a=B.reaction(P0,B.rng(k),{pre:true,off:.1}),b=B.reaction(P0,B.rng(k),{pre:true,off:.1,postKill:true});if(b>=a+B.TRADE.lag[0]-1e-9)slow++;}
+ assert.equal(slow,30,'a killer\'s next fight right after its kill starts at least TRADE.lag late');
+ let toKiller=0,trades=0,mem=0;for(let k=0;k<16;k++){const s=new SpikeSimulation(G2(),'five','ascent',B.rng(40+k)),v=s.add('Bot V'+k,'Sage',false),m=s.add('Bot M'+k,'Omen',false),kl=s.add('Killer','Jett',true),e2=s.add('Other','Raze',true);
+  s.phase='game';s.round=2;s.atk=1;s.buy=0;Object.assign(v,{team:0,x:0,y:0,z:-10,alive:true,hp:100});Object.assign(m,{team:0,x:4,y:0,z:-10,alive:true,hp:100});
+  Object.assign(kl,{team:1,x:0,y:0,z:-24,alive:true,hp:100});Object.assign(e2,{team:1,x:-6,y:0,z:-12,alive:true,hp:100});s.spike={st:'carry',carrier:kl.id,x:0,y:0,z:0,t:45,pt:0,dt:0,site:'A'};s.remaining=80;
+  s.time=1;s.botSense();v.alive=false;v.hp=0;v.lastKiller=kl.id;s.time=1.05;s.botSense();
+  if(m.react&&m.react.kind==='trade'){trades++;if(Math.hypot(m.react.x-kl.x,m.react.z-kl.z)<1.5)toKiller++;const c=m.mem&&m.mem.c[kl.id];if(c&&Math.hypot(c.x-kl.x,c.z-kl.z)<1.5)mem++;}}
+ assert.ok(trades>=8,'most mates 4 m from a death go for the trade ('+trades+' of 16)');
+ assert.equal(toKiller,trades,'the trade goes for the killer (killfeed), not the enemy nearest the body ('+toKiller+' of '+trades+')');
+ assert.equal(mem,trades,'the trader knows the killer\'s spot (pre-aims it): '+mem+' of '+trades);
+ // the trade swing: a trader clearing the corner onto the killer swings wide; the same bots without a trade draw their own mix
+ const clear=(o,d,max)=>o[0]>.8?Infinity:1;let wide=0,styles=new Set();for(let k=0;k<12;k++)for(const tr of [true,false]){const s=new SpikeSimulation(G2(clear),'five','ascent',B.rng(70+k)),m=s.add('Bot P'+k,'Omen',false),kl=s.add('Killer','Jett',true);
+  s.phase='game';s.round=2;s.atk=1;s.buy=0;s.time=5;Object.assign(m,{team:0,x:0,y:0,z:0,look:0,alive:true,hp:100,input:{forward:1}});Object.assign(kl,{team:1,x:0,y:0,z:-6,alive:true,hp:100});
+  B.memNote(m.mem=B.memNew(),kl.id,0,0,-6,s.time,'heard');if(tr)m.react={kind:'trade',x:0,y:0,z:-6,until:s.time+3};const P=persona(s,m);s.peekMove(m,P);const st=m.pkSt&&m.pkSt.style;if(tr){if(st==='wide')wide++;}else if(st)styles.add(st);}
+ assert.equal(wide,12,'a trader swings the corner wide ('+wide+' of 12)');assert.ok(styles.size>=2,'without a trade the peek mix stays ('+[...styles]+')');
+ // the killer's attention: a kill stamps killAt; its next reaction inside TRADE.focus is later
+ let late=0;for(let k=0;k<8;k++){const r=[];for(const pk of [false,true]){const {s,t,b}=duo(k);if(pk)b.killAt=s.time-.3;tick(s,b);r.push(b.reactionAt-b.engagedAt);}if(r[1]>=r[0]+B.TRADE.lag[0]-1e-6)late++;}
+ assert.equal(late,8,'a fight 0.3 s after its kill reacts TRADE.lag later ('+late+' of 8)');
+ {const {s,t,b}=duo(0);t.hp=1;t.armor=0;s.applyHit(b,t,'body',50,[0,1.6,0],[0,0,-1],12,null,{});assert.ok(!t.alive&&b.killAt===s.time,'a kill stamps the killer\'s killAt');}
+ out.push(`trades: ${trades}/16 go, all for the killer with its spot known; trade peeks wide ${wide}/12; post-kill reaction later ${late}/8`);}
 console.log('Bot feel (server): '+out.join('; '));

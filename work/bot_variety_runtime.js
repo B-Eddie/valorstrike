@@ -18,7 +18,7 @@ function xbRand(u){return u.xbr||(u.xbr=BotRoutes.rng(BotRoutes.hash((u.name||''
 // aimHeight body spot, recoilPull, discipline: a sloppy fight fires before the counter-strafe has stopped it).
 function xbLvl(){try{return S&&S.diff||'normal';}catch(e){return 'normal';}}
 function xbEngage(u,pre,ctx){const B=xbBrain(u);if(!B){u.rtE=.26;u.xhE=null;u.stand=.35;u.xbAP=null;return;}const r=xbRand(u);
- if(ctx){u.bn=0;u.xbTrk=null;/* a new fight (bot-gun): no burst left over from the last one fires before this flick (allies kept u.bn across targets / lost sight: first shots 0.5+ rad off the crosshair), and the tracking lag starts from this fight's target motion (u.xbTrk kept the last bearing it saw the target at: a re-peek read the jump as a 3 rad/s crossing -> 0.1-0.17 rad lag on the first shots) */const L=xbLvl(),k=(BotBrain.LEVEL[L]||BotBrain.LEVEL.normal).rt;u.rtE=BotBrain.reaction(B,r,{pre:!!pre,off:ctx.off,flashed:!!ctx.flashed});u.xhE=BotBrain.crosshair(B,r,!!pre);
+ if(ctx){u.bn=0;u.xbTrk=null;/* a new fight (bot-gun): no burst left over from the last one fires before this flick (allies kept u.bn across targets / lost sight: first shots 0.5+ rad off the crosshair), and the tracking lag starts from this fight's target motion (u.xbTrk kept the last bearing it saw the target at: a re-peek read the jump as a 3 rad/s crossing -> 0.1-0.17 rad lag on the first shots) */const L=xbLvl(),k=(BotBrain.LEVEL[L]||BotBrain.LEVEL.normal).rt;u.rtE=BotBrain.reaction(B,r,{pre:!!pre,off:ctx.off,flashed:!!ctx.flashed,postKill:xbNow()-(u.xKillT==null?-1e9:u.xKillT)<BotBrain.TRADE.focus});/* lane-botfeel2: right after its own kill the next fight reacts TRADE.lag late (= server) */u.xhE=BotBrain.crosshair(B,r,!!pre);
   u.xbSpot=BotBrain.aimHeight(B,r,L);const d=ctx.d||15,h=BotBrain.AIM_H[u.xbSpot]||1.3;u.xbAP=BotBrain.aimPlan(B,r,ctx.e0y||0,BotBrain.idlePitch(B)-Math.atan2(h-1.6,d),d,{start:u.rtE*k,level:L});
   u.xbPull=BotBrain.recoilPull(B,L);u.xbSl=r()>BotBrain.discipline(B,L);u.stand=B.stand*(.8+r()*.4);u.rtX=1;return;}
  u.rtE=BotBrain.reaction(B,r);u.xhE=BotBrain.crosshair(B,r,!!pre);u.xbAP=null;u.rtX=0;u.stand=B.stand*(.8+r()*.4);}
@@ -203,18 +203,24 @@ if(typeof nmPath==='function'&&typeof nmNext==='function'){/* native maps presen
   // the buy phase: the barrier line-up keeps its own spacing)
   if(window.BotBrain&&!(FV.buy>0)&&!(FV.sp&&FV.sp.c===u)){const M=XBV.fm||(XBV.fm=[]);M.length=0;for(const t of team)if(t!==u&&t.alive&&t.g&&(t.spd||0)>1)M.push([t.g.position.x,t.g.position.z,performance.now()-(t.xFol||-1e9)<300?9:t.spd]);/* a mate held back by its own follow counts as running */if(M.length){const k=BotBrain.follow(u.g.position.x,u.g.position.z,vx,vz,M);if(k<1){vx*=k;vz*=k;u.xFol=performance.now();}}}}
  return sm.call(this,u,dt,vx,vz,speed);};}
-// Trades (bots-spread-1, as the server's botSense): when a teammate dies, at most BotBrain.RESPOND.trade of the mates within
-// 15 m (the nearest; mates already trading / pushing count) push the killer's spot for 4 s, the second one GAP m to the
-// side of it; everyone else holds where they stand facing the fight for 1.2 s (was: every mate within 15 m ran at the
-// killer's spot, so one pick pulled the whole team into one clump). Native-map / scripted 5v5 with BotBrain only.
+// Trades (bots-spread-1, as the server's botSense): when a teammate dies, the mates within BotBrain.TRADE.range m whose
+// BotBrain.onMateDeath draw says trade - of the BotBrain.RESPOND.trade nearest (mates already trading / pushing count; a
+// near mate whose draw says no is not replaced by a farther one) - push the killer's spot for 4 s, the second one GAP m to the side of it; everyone else holds where they stand facing the
+// fight for 1.2 s (was: every mate within 15 m ran at the killer's spot, so one pick pulled the whole team into one clump).
+// lane-botfeel2 (= server): the killer is the one the killfeed names (u.xKb, stamped by kill / allyDie below; else the enemy
+// nearest the body), and each trader gets its spot as a 'heard' memory (it comes round the corner pre-aimed on it); the
+// draw, not distance alone, picks who goes (was: the two nearest within 15 m always). Native-map / scripted 5v5 with BotBrain only.
 if(typeof xTradeChk==='function'){const tc0=xTradeChk;xTradeChk=function(team,foes,live){
  if(!window.BotBrain||mode!=='five'||FV.dm)return tc0.apply(this,arguments);const now=performance.now(),T=XBV.tq||(XBV.tq=[0,0]);
  for(let i=0;i<team.length;i++){const u=team[i];
-  if(u.wasA&&!u.alive){const q=u.g.position;let kx=0,kz=0,has=false,kd=1e9;
-   for(let j=0;j<foes.length;j++){const f=foes[j];if(live&&!f.alive)continue;const fx=live?f.g.position.x:f.x,fz=live?f.g.position.z:f.z,d=Math.hypot(fx-q.x,fz-q.z);if(d<kd){kd=d;kx=fx;kz=fz;has=true;}}
-   if(has){const near=[];let busy=0;for(let j=0;j<team.length;j++){const m=team[j];if(!m.alive||m===u)continue;if(m.trT>0){busy++;continue;}const d=Math.hypot(m.g.position.x-q.x,m.g.position.z-q.z);if(d<15)near.push({id:j,d,m});}
-    const go=BotBrain.nearest(near,BotBrain.RESPOND.trade-busy);let k=busy;near.sort((a,b)=>a.d-b.d);
-    for(const c of near){const m=c.m;if(go.has(c.id)){const t=BotBrain.tradeSpot(k++,m.g.position.x,m.g.position.z,kx,kz,T);m.tr=[t[0],t[1]];m.trT=4;m.np=null;m.xHold=null;}
+  if(u.wasA&&!u.alive){const q=u.g.position;let kx=0,kz=0,has=false,kd=1e9,kn=null,kf=null;
+  if(u.xKb!=null)for(let j=0;j<foes.length;j++){const f=foes[j],t=live?f:f.t;if(live&&!f.alive)continue;if(t&&(t===player?u.xKb==='You':t.name===u.xKb)){kn=f;break;}}
+   for(let j=0;j<foes.length;j++){const f=foes[j];if(live&&!f.alive)continue;if(kn&&f!==kn)continue;const fx=live?f.g.position.x:f.x,fz=live?f.g.position.z:f.z,d=Math.hypot(fx-q.x,fz-q.z);if(d<kd){kd=d;kx=fx;kz=fz;has=true;kf=f;}}
+   const kt=kf?(live?kf:kf.t):null,kId=kt?(kt===player?'player':kt.name):null;
+   if(has){const near=[];let busy=0,al=0;for(let j=0;j<team.length;j++)if(team[j].alive)al++;for(let j=0;j<team.length;j++){const m=team[j];if(!m.alive||m===u)continue;if(m.trT>0){busy++;continue;}const d=Math.hypot(m.g.position.x-q.x,m.g.position.z-q.z),B=xbBrain(m);
+     if(d<BotBrain.TRADE.range&&(!B||BotBrain.onMateDeath(B,xbTrRand(m),d,al)==='trade'))near.push({id:j,d,m});else if(d<BotBrain.TRADE.range)near.push({id:j,d,m,no:1});}
+    const g0=BotBrain.nearest(near,BotBrain.RESPOND.trade-busy),go=new Set(near.filter(c=>!c.no&&g0.has(c.id)).map(c=>c.id));/* the nearest mates are the ones who can trade; one whose draw says no is not replaced by a farther one (no extra bodies on the contact) */let k=busy;near.sort((a,b)=>a.d-b.d);
+    for(const c of near){const m=c.m;if(go.has(c.id)){const t=BotBrain.tradeSpot(k++,m.g.position.x,m.g.position.z,kx,kz,T);m.tr=[t[0],t[1]];m.trT=4;m.np=null;m.xHold=null;if(kId)BotBrain.memNote(xbMem(m),kId,kx,(kt&&kt.g?kt.g.position.y:0)||0,kz,xbNow(),'heard');}
      else{m.xHold={until:now+1200,x:kx,z:kz};m.hear=m.hear||[0,0];m.hear[0]=kx;m.hear[1]=kz;m.hearT=Math.max(m.hearT||0,1.2);}}
     (XBV.tlog||(XBV.tlog=[])).push({n:near.length,go:go.size});if(XBV.tlog.length>200)XBV.tlog.shift();}}
   u.wasA=u.alive;}};}
@@ -658,8 +664,17 @@ function xbPkRand(u){return u.xbPkR||(u.xbPkR=BotRoutes.rng(BotRoutes.hash((u.na
 function xbPkPick(b,ew,tm,wp){const B=xbBrain(b);if(!B)return null;const p=b.g.position;let mate=false;
  for(const o of tm)if(o!==b&&o.alive&&o.g&&Math.abs(o.g.position.x-p.x)+Math.abs(o.g.position.z-p.z)<6){mate=true;break;}
  if(!mate&&wp&&player&&player.hp>0&&Math.hypot(player.x-p.x,player.z-p.z)<6)mate=true;
- const sp=typeof FV!=='undefined'&&FV&&FV.sp,car=mode==='five'&&!!sp&&sp.st==='carry'&&sp.c===b,r=xbPkRand(b),st=BotBrain.peek(B,r,{mate,sniper:ew==='Operator'||ew==='Marshal',carrier:car});
+ const sp=typeof FV!=='undefined'&&FV&&FV.sp,car=mode==='five'&&!!sp&&sp.st==='carry'&&sp.c===b,r=xbPkRand(b),st=BotBrain.peek(B,r,{mate,sniper:ew==='Operator'||ew==='Marshal',carrier:car,trade:b.trT>0});
  b.pkH=BotBrain.PEEK.hold[0]+r()*(BotBrain.PEEK.hold[1]-BotBrain.PEEK.hold[0]);return XPK_K[st]||3;}
-if(typeof xPeekThink==='function'){const pk0=xPeekThink;xPeekThink=function(b,dt,see,fresh,d,ew,tm,wp){const k0=b?b.pk:0,r=pk0.apply(this,arguments);try{if(b&&b.g&&!k0&&b.pk&&window.BotBrain){const k=xbPkPick(b,ew,tm||[],wp);if(k===4){b.pk=4;b.pkP=0;b.pkN=0;}}}catch(e){}return r;};}
+if(typeof xPeekThink==='function'){const pk0=xPeekThink;xPeekThink=function(b,dt,see,fresh,d,ew,tm,wp){const k0=b?b.pk:0,r=pk0.apply(this,arguments);try{if(b&&b.g&&!k0&&b.pk&&window.BotBrain){const k=xbPkPick(b,ew,tm||[],wp);if(k===4){b.pk=4;b.pkP=0;b.pkN=0;}else if(k===2&&b.trT>0){b.pk=2;b.pkP=0;b.pkN=0;}/* lane-botfeel2: a trade is swung wide */}}catch(e){}return r;};}
 if(typeof xPeekMove==='function'){const pm0=xPeekMove;xPeekMove=function(b,dt,d,dx,dz,vx,vz){if(b&&b.pk===4&&d<9){b.pkP=(b.pkP||0)+dt;if(b.pkP<(b.pkH||1.5)){XPK_V[0]=0;XPK_V[1]=0;return XPK_V;}b.pk=3;b.pkP=0;}return pm0.apply(this,arguments);};}
+// (6) Trading like a player (lane-botfeel2; BotBrain.TRADE, = server SpikeSimulation.botSense / Simulation.applyHit): kill /
+// allyDie stamp the victim with its killer's name (u.xKb: the killfeed, read by the trade wrapper above) and the killer bot
+// with the time of its kill (u.xKillT: its next fight inside TRADE.focus s reacts late, xbEngage); a trader (trT) clearing the
+// corner onto the killer swings wide (BotBrain.peek ctx.trade; into an Operator it still jiggles / holds). The trade draw runs
+// on its own seeded per-bot stream (xbTrRand), so the other per-bot streams are untouched.
+function xbTrRand(u){return u.xbTrR||(u.xbTrR=BotRoutes.rng(BotRoutes.hash((u.name||'')+'|trade|'+xbvSeed()+'|'+xbvKey())));}
+function xbKillStamp(v,by){try{if(!v||v.alive||!window.BotBrain)return;v.xKb=by;const now=xbNow();for(const L of [bots,allies])for(const o of L)if(o&&o.name===by&&o.alive){o.xKillT=now;return;}}catch(e){}}
+if(typeof kill==='function'){const k0=kill;kill=function(b,hs,by){const al=b&&b.alive,r=k0.apply(this,arguments);if(al&&b&&!b.alive)xbKillStamp(b,by||'You');return r;};}
+if(typeof allyDie==='function'){const a0=allyDie;allyDie=function(a,by){const al=a&&a.alive,r=a0.apply(this,arguments);if(al&&a&&!a.alive)xbKillStamp(a,by);return r;};}
 // ---- END BOT VARIETY ----

@@ -8,9 +8,13 @@
 //  2. corner holds drawn like the server's (BotBrain.peek): a new peek onto a known contact holds the angle when the bot's
 //     personality draws a hold (09a42d4: 0 holds in 150 live fights); a hold stands on the angle PEEK.hold s, then peeks tight;
 //     other draws keep the page's own pick (no jiggle without a sniper); against an Operator only jiggle / hold
-//   node work/test_bot_feel_offline.cjs        (SECS=200 SEED=3 by default)
+//  3. trading like a player (lane-botfeel2; a8c64fa seed 3: 10.5 % of deaths traded within 3 s): the trader goes for the
+//     actual killer (the killfeed name, u.xKb; was the enemy nearest the body) from up to BotBrain.TRADE.range m (was 15), knows
+//     its spot (a 'heard' memory: it comes round the corner pre-aimed), swings the corner wide (pk 2; jiggle into an Operator),
+//     and a killer's next fight inside TRADE.focus s of its kill reacts TRADE.lag later (BotBrain.reaction ctx.postKill)
+//   node work/test_bot_feel_offline.cjs        (SECS=260 SEED=3 by default: lane-botfeel2 trades changed the seed-3 rounds, 200 s gave 24 reload samples)
 const assert=require('assert/strict');const {boot}=require('./page_harness.cjs');
-const SECS=+(process.env.SECS||200),SEED=+(process.env.SEED||3);
+const SECS=+(process.env.SECS||260),SEED=+(process.env.SEED||3);
 (async()=>{
  const H=boot({real3:true,seed:SEED,native:true}),xe=H.xe,adv=async ms=>{for(let t=0;t<ms;t+=50){H.advance(Math.min(50,ms-t)-1e-6);await new Promise(r=>setImmediate(r));}};
  xe(`J.pick="Jett";FV.pick="ascent";FV.srOn=0;FV.repOn=0;window.xSwift=0;window.xBotSeed=${SEED};xLob0=false;startFive();true`);
@@ -41,6 +45,26 @@ const SECS=+(process.env.SECS||200),SEED=+(process.env.SEED||3);
  assert(!P.k[1]&&(P.k[4]||0)>0&&(P.k[2]||0)+(P.k[3]||0)>0,'without a sniper: holds are drawn, the rest keep the page\'s wide / tight pick, no jiggle: '+JSON.stringify(P.k));
  assert(!P.sn[2]&&!P.sn[3]&&(P.sn[1]||0)>(P.sn[4]||0),'against an Operator: jiggle (mostly) or hold, no wide / tight swing: '+JSON.stringify(P.sn));
  assert(P.hold.still>=1.0&&P.hold.still<=1.31&&P.hold.after===3,'a hold stands still on the angle for its time, then peeks tight: '+JSON.stringify(P.hold));
+ // 3. direct: trades
+ const T=JSON.parse(xe(`JSON.stringify((()=>{const o={fn:typeof BotBrain.TRADE==='object'};if(!o.fn)return o;const R=BotBrain.TRADE.range;
+  const A=allies.filter(u=>u&&u.g&&u.alive),E=bots.filter(u=>u&&u.g&&u.alive);if(A.length<2||E.length<2){o.short=1;return o;}
+  const v=A[0],m=A[1],k=E[0],e2=E[1],sv=[v,m,k,e2].map(u=>[u.g.position.x,u.g.position.z,u.alive,u.wasA,u.trT,u.tr,u.xMem,u.xHold,u.xKb]),others=A.slice(2).map(u=>[u,u.alive]);
+  for(const [u] of others)u.alive=false;const live=xbLive;xbLive=()=>true;
+  const put=(u,x,z)=>{u.g.position.x=x;u.g.position.z=z;};const vx=v.g.position.x,vz=v.g.position.z;
+  put(m,vx+R-2,vz);put(k,vx,vz-14);put(e2,vx-5,vz-3);m.trT=0;m.xMem=BotBrain.memNew();v.wasA=true;v.alive=false;v.xKb=k.name;m.wasA=true;
+  xTradeChk(allies,bots,true);o.tr=m.trT>0?[+(m.tr[0]-k.g.position.x).toFixed(2),+(m.tr[1]-k.g.position.z).toFixed(2)]:null;
+  const c=xbBest(m,BotBrain.SENSE.hunt);o.mem=c?[+(c.x-k.g.position.x).toFixed(2),+(c.z-k.g.position.z).toFixed(2)]:null;
+  // peek kinds while trading
+  const pk={},sn={};for(let i=0;i<40;i++){m.pk=0;m.pkTh=0;m.trT=3;xPeekThink(m,.2,false,false,8,'Vandal',allies,true);pk[m.pk]=(pk[m.pk]||0)+1;m.pk=0;m.pkTh=0;xPeekThink(m,.2,false,false,8,'Operator',allies,true);sn[m.pk]=(sn[m.pk]||0)+1;}o.pk=pk;o.sn=sn;m.pk=0;m.trT=0;
+  // post-kill reaction
+  let a=0,b=0;const n=200;for(let i=0;i<n;i++){m.xKillT=-1e9;xbEngage(m,true,{off:.1,d:15});a+=m.rtE;m.xKillT=xbNow()-.3;xbEngage(m,true,{off:.1,d:15});b+=m.rtE;}o.rt=[+(a/n).toFixed(3),+(b/n).toFixed(3)];o.lag=BotBrain.TRADE.lag[0];m.xKillT=-1e9;
+  for(const [u,al] of others)u.alive=al;xbLive=live;[v,m,k,e2].forEach((u,i)=>{const q=sv[i];put(u,q[0],q[1]);u.alive=q[2];u.wasA=q[3];u.trT=q[4];u.tr=q[5];u.xMem=q[6];u.xHold=q[7];u.xKb=q[8];});return o;})())`));
+ assert(T.fn,'BotBrain.TRADE on the page');assert(!T.short,'two allies and two enemies alive for the trade check');
+ assert(T.tr&&Math.hypot(T.tr[0],T.tr[1])<.6,'a mate TRADE.range-2 m from the body trades the killer (killfeed), not the enemy nearest the body: '+JSON.stringify(T.tr));
+ assert(T.mem&&Math.hypot(T.mem[0],T.mem[1])<.6,'the trader knows the killer\'s spot: '+JSON.stringify(T.mem));
+ assert.deepEqual(T.pk,{2:40},'a trader swings the corner wide: '+JSON.stringify(T.pk));assert(!T.sn[2]&&!T.sn[3],'into an Operator it jiggles: '+JSON.stringify(T.sn));
+ assert(T.rt[1]>=T.rt[0]+T.lag*.9,'a killer\'s next fight 0.3 s after its kill reacts later: '+T.rt);
+ console.log('3. direct: trade the killer '+JSON.stringify(T.tr)+', its spot known, peeks '+JSON.stringify(T.pk)+', post-kill reaction '+T.rt);
  // live 5v5, the player dead: every fight bot vs bot
  const prev=new Map(),S={rl:0,rlSee:0,rlSeeBack:0};
  for(let k=0;k<SECS*5;k++){await adv(200);

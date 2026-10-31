@@ -17317,9 +17317,10 @@ if (typeof xUbPost === "function") { const hp0 = xUbPost; xUbPost = function (M)
  // ctx.pre false (crosshair not on the angle) +30-70 ms, ctx.off (rad between the view and the enemy) > 0.6 +50-110 ms,
  // > 1.4 (from the side) +80-160 ms more, > 2.4 (behind) +100-200 ms more (the turn itself is aimPlan / turnStep), ctx.flashed
  // (blind until just now) +120-220 ms, ctx.peeked (a bot holding still sees a bot that is peeking it at speed: peeker's advantage,
- // PEEK.adv) +70-100 ms; ctx.k scales the whole draw (difficulty).
+ // PEEK.adv) +70-100 ms, ctx.postKill (its kill was under TRADE.focus s ago: eyes still on the body) +TRADE.lag; ctx.k scales
+ // the whole draw (difficulty).
  function reaction(P,rand,ctx){const j=(rand()+rand()+rand()-1.5)*1.4;let t=clamp(P.react+j*P.reactJit*2,REACT[0],REACT[1]);
-  if(ctx){const off=Math.abs(ctx.off||0);if(!ctx.pre)t+=.03+rand()*.04;if(off>.6)t+=.05+rand()*.06;if(off>1.4)t+=.08+rand()*.08;if(off>2.4)t+=.1+rand()*.1;if(ctx.flashed)t+=.12+rand()*.1;if(ctx.peeked)t+=PEEK.adv[0]+rand()*(PEEK.adv[1]-PEEK.adv[0]);t*=ctx.k||1;}
+  if(ctx){const off=Math.abs(ctx.off||0);if(!ctx.pre)t+=.03+rand()*.04;if(off>.6)t+=.05+rand()*.06;if(off>1.4)t+=.08+rand()*.08;if(off>2.4)t+=.1+rand()*.1;if(ctx.flashed)t+=.12+rand()*.1;if(ctx.peeked)t+=PEEK.adv[0]+rand()*(PEEK.adv[1]-PEEK.adv[0]);if(ctx.postKill)t+=TRADE.lag[0]+rand()*(TRADE.lag[1]-TRADE.lag[0]);t*=ctx.k||1;}
   return t;}
  // Flashes (bots-tune-4, item 3): a mid-ranked human who sees an enemy flash coming (the orb in flight toward them, a
  // Curveball bending round the corner in front of them) turns away if they read it in time; mid-fight they often miss it
@@ -17468,7 +17469,7 @@ if (typeof xUbPost === "function") { const hp0 = xUbPost; xUbPost = function (M)
  function sprayFade(n){return n<=FIRE.fade[0]?1:Math.max(FIRE.fade[2],1-(n-FIRE.fade[0])*FIRE.fade[1]);}
  function sprayPull(P,lvl,n){return recoilPull(P,lvl)*sprayFade(n||0);}
  // How to take a corner the bot cannot see past yet.
- function peek(P,rand,ctx={}){if(ctx.sniper)return rand()<.75?'jiggle':'hold';const w=Object.assign({},P.peek);if(ctx.mate)w.wide+=.6;if(ctx.carrier)return 'tight';return pickW(rand,w);}
+ function peek(P,rand,ctx={}){if(ctx.sniper)return rand()<.75?'jiggle':'hold';if(ctx.trade&&!ctx.carrier)return 'wide';/* lane-botfeel2: a trade is swung at once, wide (the killer's crosshair is on the body), never held or jiggled */const w=Object.assign({},P.peek);if(ctx.mate)w.wide+=.6;if(ctx.carrier)return 'tight';return pickW(rand,w);}
  // Peeking a known contact (bots-tune-4, item 3b; the page's xPeekThink / xPeekMove draw the same kinds): clearing a corner onto
  // a remembered, unseen enemy within PEEK.range m, a bot takes the corner one of peek()'s ways, drawn once per contact: jiggle = out PEEK.jig[0]
  // s, back PEEK.jig[1] s, wait PEEK.jig[2] s (info / bait, a short exposure the holder rarely converts), PEEK.jigN times, then a
@@ -17662,8 +17663,9 @@ if (typeof xUbPost === "function") { const hp0 = xUbPost; xUbPost = function (M)
   return out;
  }
  // ---- Reactions ----
- // A teammate died at dist metres: trade (push the killer), fall back, or hold. Returns 'trade' | 'fallback' | 'hold'.
- function onMateDeath(P,rand,dist,alive){if(dist>18)return 'hold';const t=P.aggression*.8+(alive>=3?.15:0)-(dist>12?.2:0);const x=rand();return x<t?'trade':x<t+P.patience*.5?'fallback':'hold';}
+ // A teammate died at dist metres: trade (push the killer), fall back, or hold. Returns 'trade' | 'fallback' | 'hold'. Within
+ // 10 m most go (65-95 % by aggression), farther out about half, past TRADE.range m nobody.
+ function onMateDeath(P,rand,dist,alive){if(dist>TRADE.range)return 'hold';const t=.45+P.aggression*.5+(alive>=3?.1:0)-(dist>10?.25:0);/* lane-botfeel2: a mate close to the death nearly always swings for the trade (was aggression*.8 + .15: 7 of 16 mates 4 m away went) */const x=rand();return x<t?'trade':x<t+P.patience*.5?'fallback':'hold';}
  // A sound heard (gunshot / running footsteps): 'turn' (face it, keep going), 'hold' (stop and hold that angle) or 'push'.
  function onSound(P,rand,kind,dist){const x=rand();if(kind==='shot'&&dist<20&&x<P.aggression*.35)return 'push';return x<P.patience*.6?'hold':'turn';}
  // ---- Utility timing ("use utility before entry") ----
@@ -17905,7 +17907,14 @@ if (typeof xUbPost === "function") { const hp0 = xUbPost; xUbPost = function (M)
  // the enemy at (tx, tz); free(x, z) (optional): the first of away / +-45 / +-90 deg whose point RELOAD.probe m out is free
  function reloadBack(x,z,cx,cz,tx,tz,free){if(cx!=null&&cz!=null){const ex=cx-x,ez=cz-z,l=Math.hypot(ex,ez);if(l>.4&&l<RELOAD.back)return [ex/l,ez/l];}const ax=x-tx,az=z-tz,l=Math.hypot(ax,az)||1,ux=ax/l,uz=az/l;
   if(free)for(const a of RELOAD.turn){const c=Math.cos(a),s=Math.sin(a),vx=ux*c-uz*s,vz=ux*s+uz*c;if(free(x+vx*RELOAD.probe,z+vz*RELOAD.probe))return [vx,vz];}return [ux,uz];}
- return {hash,rng,clamp,pickW,REACT,personality,reaction,crosshair,crosshairAt,firePattern,peek,attackPlan,defensePlan,roles,teamBuy,buyFor,onMateDeath,onSound,ATTACK,DEFENSE,utility,UTIL,turnStep,trackLag,wrapA,SPIKE,plantSpot,postPlant,retake,postPlay,SHOOT_UTIL,shootUtility,TAILWIND,tailwindDash,tailwindKeys,LEVEL,level,aimTraits,AIM_H,aimHeight,halfWidth,aimPlan,aimAt,readyToFire,planFire,idlePitch,recoilPull,discipline,hitPart,BUY,buyArea,buyRoute,buyExit,buySpot,buyWander,buyHold,buyNew,buyTick,buyNext,buySep,SENS,cm360,sensOf,turnRate,SENSE,inView,audible,earSpot,memNew,memNote,memForget,memBest,repeek,mayFire,nextShot,areas,DFORM,GAP,midPoint,RESPOND,nearest,tradeSpot,follow,buyNear,buyCross,reactR,reacts,FIRE,sprayFade,sprayPull,turnAcc,trackTurn,cornerPick,FLASH,flashRead,blindPlay,PEEK,peekStep,RELOAD,reloadPlay,reloadBack,trailNote,reloadSpot};
+ // Trading like a player (lane-botfeel2; a8c64fa offline 5v5: 10.5-15 % of deaths traded within 3 s, real teams trade far
+ // more). A teammate dies: the mates who go for the trade (onMateDeath / RESPOND.trade, from up to TRADE.range m) go for the
+ // KILLER - the killfeed names it and the shots placed it, so they know its spot (a 'heard' memory: they come round the
+ // corner pre-aimed on it, not on the enemy nearest the body) - and swing it wide right away (peek ctx.trade). The killer's
+ // next fight inside TRADE.focus s of its kill starts TRADE.lag s late (reaction ctx.postKill): its eyes are still on the body
+ // and the spray resetting, which is the window a trade lives in. Pure; the callers keep their own kill stamps.
+ const TRADE={range:18,focus:1.5,lag:[.08,.16]};
+ return {hash,rng,clamp,pickW,REACT,personality,reaction,crosshair,crosshairAt,firePattern,peek,attackPlan,defensePlan,roles,teamBuy,buyFor,onMateDeath,onSound,ATTACK,DEFENSE,utility,UTIL,turnStep,trackLag,wrapA,SPIKE,plantSpot,postPlant,retake,postPlay,SHOOT_UTIL,shootUtility,TAILWIND,tailwindDash,tailwindKeys,LEVEL,level,aimTraits,AIM_H,aimHeight,halfWidth,aimPlan,aimAt,readyToFire,planFire,idlePitch,recoilPull,discipline,hitPart,BUY,buyArea,buyRoute,buyExit,buySpot,buyWander,buyHold,buyNew,buyTick,buyNext,buySep,SENS,cm360,sensOf,turnRate,SENSE,inView,audible,earSpot,memNew,memNote,memForget,memBest,repeek,mayFire,nextShot,areas,DFORM,GAP,midPoint,RESPOND,nearest,tradeSpot,follow,buyNear,buyCross,reactR,reacts,FIRE,sprayFade,sprayPull,turnAcc,trackTurn,cornerPick,FLASH,flashRead,blindPlay,PEEK,peekStep,RELOAD,reloadPlay,reloadBack,trailNote,reloadSpot,TRADE};
 });
 // Spawn barriers (Valorant's buy-phase walls), shared by the server (spike.js world, bots.js) and the page (UMD:
 // index.html inlines it in the BOT VARIETY block and reads window.SpawnBarriers; native_maps_runtime nmBlocked and the
@@ -17984,7 +17993,7 @@ function xbRand(u){return u.xbr||(u.xbr=BotRoutes.rng(BotRoutes.hash((u.name||''
 // aimHeight body spot, recoilPull, discipline: a sloppy fight fires before the counter-strafe has stopped it).
 function xbLvl(){try{return S&&S.diff||'normal';}catch(e){return 'normal';}}
 function xbEngage(u,pre,ctx){const B=xbBrain(u);if(!B){u.rtE=.26;u.xhE=null;u.stand=.35;u.xbAP=null;return;}const r=xbRand(u);
- if(ctx){u.bn=0;u.xbTrk=null;/* a new fight (bot-gun): no burst left over from the last one fires before this flick (allies kept u.bn across targets / lost sight: first shots 0.5+ rad off the crosshair), and the tracking lag starts from this fight's target motion (u.xbTrk kept the last bearing it saw the target at: a re-peek read the jump as a 3 rad/s crossing -> 0.1-0.17 rad lag on the first shots) */const L=xbLvl(),k=(BotBrain.LEVEL[L]||BotBrain.LEVEL.normal).rt;u.rtE=BotBrain.reaction(B,r,{pre:!!pre,off:ctx.off,flashed:!!ctx.flashed});u.xhE=BotBrain.crosshair(B,r,!!pre);
+ if(ctx){u.bn=0;u.xbTrk=null;/* a new fight (bot-gun): no burst left over from the last one fires before this flick (allies kept u.bn across targets / lost sight: first shots 0.5+ rad off the crosshair), and the tracking lag starts from this fight's target motion (u.xbTrk kept the last bearing it saw the target at: a re-peek read the jump as a 3 rad/s crossing -> 0.1-0.17 rad lag on the first shots) */const L=xbLvl(),k=(BotBrain.LEVEL[L]||BotBrain.LEVEL.normal).rt;u.rtE=BotBrain.reaction(B,r,{pre:!!pre,off:ctx.off,flashed:!!ctx.flashed,postKill:xbNow()-(u.xKillT==null?-1e9:u.xKillT)<BotBrain.TRADE.focus});/* lane-botfeel2: right after its own kill the next fight reacts TRADE.lag late (= server) */u.xhE=BotBrain.crosshair(B,r,!!pre);
   u.xbSpot=BotBrain.aimHeight(B,r,L);const d=ctx.d||15,h=BotBrain.AIM_H[u.xbSpot]||1.3;u.xbAP=BotBrain.aimPlan(B,r,ctx.e0y||0,BotBrain.idlePitch(B)-Math.atan2(h-1.6,d),d,{start:u.rtE*k,level:L});
   u.xbPull=BotBrain.recoilPull(B,L);u.xbSl=r()>BotBrain.discipline(B,L);u.stand=B.stand*(.8+r()*.4);u.rtX=1;return;}
  u.rtE=BotBrain.reaction(B,r);u.xhE=BotBrain.crosshair(B,r,!!pre);u.xbAP=null;u.rtX=0;u.stand=B.stand*(.8+r()*.4);}
@@ -18169,18 +18178,24 @@ if(typeof nmPath==='function'&&typeof nmNext==='function'){/* native maps presen
   // the buy phase: the barrier line-up keeps its own spacing)
   if(window.BotBrain&&!(FV.buy>0)&&!(FV.sp&&FV.sp.c===u)){const M=XBV.fm||(XBV.fm=[]);M.length=0;for(const t of team)if(t!==u&&t.alive&&t.g&&(t.spd||0)>1)M.push([t.g.position.x,t.g.position.z,performance.now()-(t.xFol||-1e9)<300?9:t.spd]);/* a mate held back by its own follow counts as running */if(M.length){const k=BotBrain.follow(u.g.position.x,u.g.position.z,vx,vz,M);if(k<1){vx*=k;vz*=k;u.xFol=performance.now();}}}}
  return sm.call(this,u,dt,vx,vz,speed);};}
-// Trades (bots-spread-1, as the server's botSense): when a teammate dies, at most BotBrain.RESPOND.trade of the mates within
-// 15 m (the nearest; mates already trading / pushing count) push the killer's spot for 4 s, the second one GAP m to the
-// side of it; everyone else holds where they stand facing the fight for 1.2 s (was: every mate within 15 m ran at the
-// killer's spot, so one pick pulled the whole team into one clump). Native-map / scripted 5v5 with BotBrain only.
+// Trades (bots-spread-1, as the server's botSense): when a teammate dies, the mates within BotBrain.TRADE.range m whose
+// BotBrain.onMateDeath draw says trade - of the BotBrain.RESPOND.trade nearest (mates already trading / pushing count; a
+// near mate whose draw says no is not replaced by a farther one) - push the killer's spot for 4 s, the second one GAP m to the side of it; everyone else holds where they stand facing the
+// fight for 1.2 s (was: every mate within 15 m ran at the killer's spot, so one pick pulled the whole team into one clump).
+// lane-botfeel2 (= server): the killer is the one the killfeed names (u.xKb, stamped by kill / allyDie below; else the enemy
+// nearest the body), and each trader gets its spot as a 'heard' memory (it comes round the corner pre-aimed on it); the
+// draw, not distance alone, picks who goes (was: the two nearest within 15 m always). Native-map / scripted 5v5 with BotBrain only.
 if(typeof xTradeChk==='function'){const tc0=xTradeChk;xTradeChk=function(team,foes,live){
  if(!window.BotBrain||mode!=='five'||FV.dm)return tc0.apply(this,arguments);const now=performance.now(),T=XBV.tq||(XBV.tq=[0,0]);
  for(let i=0;i<team.length;i++){const u=team[i];
-  if(u.wasA&&!u.alive){const q=u.g.position;let kx=0,kz=0,has=false,kd=1e9;
-   for(let j=0;j<foes.length;j++){const f=foes[j];if(live&&!f.alive)continue;const fx=live?f.g.position.x:f.x,fz=live?f.g.position.z:f.z,d=Math.hypot(fx-q.x,fz-q.z);if(d<kd){kd=d;kx=fx;kz=fz;has=true;}}
-   if(has){const near=[];let busy=0;for(let j=0;j<team.length;j++){const m=team[j];if(!m.alive||m===u)continue;if(m.trT>0){busy++;continue;}const d=Math.hypot(m.g.position.x-q.x,m.g.position.z-q.z);if(d<15)near.push({id:j,d,m});}
-    const go=BotBrain.nearest(near,BotBrain.RESPOND.trade-busy);let k=busy;near.sort((a,b)=>a.d-b.d);
-    for(const c of near){const m=c.m;if(go.has(c.id)){const t=BotBrain.tradeSpot(k++,m.g.position.x,m.g.position.z,kx,kz,T);m.tr=[t[0],t[1]];m.trT=4;m.np=null;m.xHold=null;}
+  if(u.wasA&&!u.alive){const q=u.g.position;let kx=0,kz=0,has=false,kd=1e9,kn=null,kf=null;
+  if(u.xKb!=null)for(let j=0;j<foes.length;j++){const f=foes[j],t=live?f:f.t;if(live&&!f.alive)continue;if(t&&(t===player?u.xKb==='You':t.name===u.xKb)){kn=f;break;}}
+   for(let j=0;j<foes.length;j++){const f=foes[j];if(live&&!f.alive)continue;if(kn&&f!==kn)continue;const fx=live?f.g.position.x:f.x,fz=live?f.g.position.z:f.z,d=Math.hypot(fx-q.x,fz-q.z);if(d<kd){kd=d;kx=fx;kz=fz;has=true;kf=f;}}
+   const kt=kf?(live?kf:kf.t):null,kId=kt?(kt===player?'player':kt.name):null;
+   if(has){const near=[];let busy=0,al=0;for(let j=0;j<team.length;j++)if(team[j].alive)al++;for(let j=0;j<team.length;j++){const m=team[j];if(!m.alive||m===u)continue;if(m.trT>0){busy++;continue;}const d=Math.hypot(m.g.position.x-q.x,m.g.position.z-q.z),B=xbBrain(m);
+     if(d<BotBrain.TRADE.range&&(!B||BotBrain.onMateDeath(B,xbTrRand(m),d,al)==='trade'))near.push({id:j,d,m});else if(d<BotBrain.TRADE.range)near.push({id:j,d,m,no:1});}
+    const g0=BotBrain.nearest(near,BotBrain.RESPOND.trade-busy),go=new Set(near.filter(c=>!c.no&&g0.has(c.id)).map(c=>c.id));/* the nearest mates are the ones who can trade; one whose draw says no is not replaced by a farther one (no extra bodies on the contact) */let k=busy;near.sort((a,b)=>a.d-b.d);
+    for(const c of near){const m=c.m;if(go.has(c.id)){const t=BotBrain.tradeSpot(k++,m.g.position.x,m.g.position.z,kx,kz,T);m.tr=[t[0],t[1]];m.trT=4;m.np=null;m.xHold=null;if(kId)BotBrain.memNote(xbMem(m),kId,kx,(kt&&kt.g?kt.g.position.y:0)||0,kz,xbNow(),'heard');}
      else{m.xHold={until:now+1200,x:kx,z:kz};m.hear=m.hear||[0,0];m.hear[0]=kx;m.hear[1]=kz;m.hearT=Math.max(m.hearT||0,1.2);}}
     (XBV.tlog||(XBV.tlog=[])).push({n:near.length,go:go.size});if(XBV.tlog.length>200)XBV.tlog.shift();}}
   u.wasA=u.alive;}};}
@@ -18624,10 +18639,19 @@ function xbPkRand(u){return u.xbPkR||(u.xbPkR=BotRoutes.rng(BotRoutes.hash((u.na
 function xbPkPick(b,ew,tm,wp){const B=xbBrain(b);if(!B)return null;const p=b.g.position;let mate=false;
  for(const o of tm)if(o!==b&&o.alive&&o.g&&Math.abs(o.g.position.x-p.x)+Math.abs(o.g.position.z-p.z)<6){mate=true;break;}
  if(!mate&&wp&&player&&player.hp>0&&Math.hypot(player.x-p.x,player.z-p.z)<6)mate=true;
- const sp=typeof FV!=='undefined'&&FV&&FV.sp,car=mode==='five'&&!!sp&&sp.st==='carry'&&sp.c===b,r=xbPkRand(b),st=BotBrain.peek(B,r,{mate,sniper:ew==='Operator'||ew==='Marshal',carrier:car});
+ const sp=typeof FV!=='undefined'&&FV&&FV.sp,car=mode==='five'&&!!sp&&sp.st==='carry'&&sp.c===b,r=xbPkRand(b),st=BotBrain.peek(B,r,{mate,sniper:ew==='Operator'||ew==='Marshal',carrier:car,trade:b.trT>0});
  b.pkH=BotBrain.PEEK.hold[0]+r()*(BotBrain.PEEK.hold[1]-BotBrain.PEEK.hold[0]);return XPK_K[st]||3;}
-if(typeof xPeekThink==='function'){const pk0=xPeekThink;xPeekThink=function(b,dt,see,fresh,d,ew,tm,wp){const k0=b?b.pk:0,r=pk0.apply(this,arguments);try{if(b&&b.g&&!k0&&b.pk&&window.BotBrain){const k=xbPkPick(b,ew,tm||[],wp);if(k===4){b.pk=4;b.pkP=0;b.pkN=0;}}}catch(e){}return r;};}
+if(typeof xPeekThink==='function'){const pk0=xPeekThink;xPeekThink=function(b,dt,see,fresh,d,ew,tm,wp){const k0=b?b.pk:0,r=pk0.apply(this,arguments);try{if(b&&b.g&&!k0&&b.pk&&window.BotBrain){const k=xbPkPick(b,ew,tm||[],wp);if(k===4){b.pk=4;b.pkP=0;b.pkN=0;}else if(k===2&&b.trT>0){b.pk=2;b.pkP=0;b.pkN=0;}/* lane-botfeel2: a trade is swung wide */}}catch(e){}return r;};}
 if(typeof xPeekMove==='function'){const pm0=xPeekMove;xPeekMove=function(b,dt,d,dx,dz,vx,vz){if(b&&b.pk===4&&d<9){b.pkP=(b.pkP||0)+dt;if(b.pkP<(b.pkH||1.5)){XPK_V[0]=0;XPK_V[1]=0;return XPK_V;}b.pk=3;b.pkP=0;}return pm0.apply(this,arguments);};}
+// (6) Trading like a player (lane-botfeel2; BotBrain.TRADE, = server SpikeSimulation.botSense / Simulation.applyHit): kill /
+// allyDie stamp the victim with its killer's name (u.xKb: the killfeed, read by the trade wrapper above) and the killer bot
+// with the time of its kill (u.xKillT: its next fight inside TRADE.focus s reacts late, xbEngage); a trader (trT) clearing the
+// corner onto the killer swings wide (BotBrain.peek ctx.trade; into an Operator it still jiggles / holds). The trade draw runs
+// on its own seeded per-bot stream (xbTrRand), so the other per-bot streams are untouched.
+function xbTrRand(u){return u.xbTrR||(u.xbTrR=BotRoutes.rng(BotRoutes.hash((u.name||'')+'|trade|'+xbvSeed()+'|'+xbvKey())));}
+function xbKillStamp(v,by){try{if(!v||v.alive||!window.BotBrain)return;v.xKb=by;const now=xbNow();for(const L of [bots,allies])for(const o of L)if(o&&o.name===by&&o.alive){o.xKillT=now;return;}}catch(e){}}
+if(typeof kill==='function'){const k0=kill;kill=function(b,hs,by){const al=b&&b.alive,r=k0.apply(this,arguments);if(al&&b&&!b.alive)xbKillStamp(b,by||'You');return r;};}
+if(typeof allyDie==='function'){const a0=allyDie;allyDie=function(a,by){const al=a&&a.alive,r=a0.apply(this,arguments);if(al&&a&&!a.alive)xbKillStamp(a,by);return r;};}
 // ---- END BOT VARIETY ----
 // ---- BOT AMMO ----
 // Offline bots (enemy + ally) carry real magazines, reserve ammo and per-weapon reload times, like the server's bots

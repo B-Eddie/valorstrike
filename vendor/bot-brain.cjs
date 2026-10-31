@@ -35,9 +35,10 @@
  // ctx.pre false (crosshair not on the angle) +30-70 ms, ctx.off (rad between the view and the enemy) > 0.6 +50-110 ms,
  // > 1.4 (from the side) +80-160 ms more, > 2.4 (behind) +100-200 ms more (the turn itself is aimPlan / turnStep), ctx.flashed
  // (blind until just now) +120-220 ms, ctx.peeked (a bot holding still sees a bot that is peeking it at speed: peeker's advantage,
- // PEEK.adv) +70-100 ms; ctx.k scales the whole draw (difficulty).
+ // PEEK.adv) +70-100 ms, ctx.postKill (its kill was under TRADE.focus s ago: eyes still on the body) +TRADE.lag; ctx.k scales
+ // the whole draw (difficulty).
  function reaction(P,rand,ctx){const j=(rand()+rand()+rand()-1.5)*1.4;let t=clamp(P.react+j*P.reactJit*2,REACT[0],REACT[1]);
-  if(ctx){const off=Math.abs(ctx.off||0);if(!ctx.pre)t+=.03+rand()*.04;if(off>.6)t+=.05+rand()*.06;if(off>1.4)t+=.08+rand()*.08;if(off>2.4)t+=.1+rand()*.1;if(ctx.flashed)t+=.12+rand()*.1;if(ctx.peeked)t+=PEEK.adv[0]+rand()*(PEEK.adv[1]-PEEK.adv[0]);t*=ctx.k||1;}
+  if(ctx){const off=Math.abs(ctx.off||0);if(!ctx.pre)t+=.03+rand()*.04;if(off>.6)t+=.05+rand()*.06;if(off>1.4)t+=.08+rand()*.08;if(off>2.4)t+=.1+rand()*.1;if(ctx.flashed)t+=.12+rand()*.1;if(ctx.peeked)t+=PEEK.adv[0]+rand()*(PEEK.adv[1]-PEEK.adv[0]);if(ctx.postKill)t+=TRADE.lag[0]+rand()*(TRADE.lag[1]-TRADE.lag[0]);t*=ctx.k||1;}
   return t;}
  // Flashes (bots-tune-4, item 3): a mid-ranked human who sees an enemy flash coming (the orb in flight toward them, a
  // Curveball bending round the corner in front of them) turns away if they read it in time; mid-fight they often miss it
@@ -186,7 +187,7 @@
  function sprayFade(n){return n<=FIRE.fade[0]?1:Math.max(FIRE.fade[2],1-(n-FIRE.fade[0])*FIRE.fade[1]);}
  function sprayPull(P,lvl,n){return recoilPull(P,lvl)*sprayFade(n||0);}
  // How to take a corner the bot cannot see past yet.
- function peek(P,rand,ctx={}){if(ctx.sniper)return rand()<.75?'jiggle':'hold';const w=Object.assign({},P.peek);if(ctx.mate)w.wide+=.6;if(ctx.carrier)return 'tight';return pickW(rand,w);}
+ function peek(P,rand,ctx={}){if(ctx.sniper)return rand()<.75?'jiggle':'hold';if(ctx.trade&&!ctx.carrier)return 'wide';/* lane-botfeel2: a trade is swung at once, wide (the killer's crosshair is on the body), never held or jiggled */const w=Object.assign({},P.peek);if(ctx.mate)w.wide+=.6;if(ctx.carrier)return 'tight';return pickW(rand,w);}
  // Peeking a known contact (bots-tune-4, item 3b; the page's xPeekThink / xPeekMove draw the same kinds): clearing a corner onto
  // a remembered, unseen enemy within PEEK.range m, a bot takes the corner one of peek()'s ways, drawn once per contact: jiggle = out PEEK.jig[0]
  // s, back PEEK.jig[1] s, wait PEEK.jig[2] s (info / bait, a short exposure the holder rarely converts), PEEK.jigN times, then a
@@ -380,8 +381,9 @@
   return out;
  }
  // ---- Reactions ----
- // A teammate died at dist metres: trade (push the killer), fall back, or hold. Returns 'trade' | 'fallback' | 'hold'.
- function onMateDeath(P,rand,dist,alive){if(dist>18)return 'hold';const t=P.aggression*.8+(alive>=3?.15:0)-(dist>12?.2:0);const x=rand();return x<t?'trade':x<t+P.patience*.5?'fallback':'hold';}
+ // A teammate died at dist metres: trade (push the killer), fall back, or hold. Returns 'trade' | 'fallback' | 'hold'. Within
+ // 10 m most go (65-95 % by aggression), farther out about half, past TRADE.range m nobody.
+ function onMateDeath(P,rand,dist,alive){if(dist>TRADE.range)return 'hold';const t=.45+P.aggression*.5+(alive>=3?.1:0)-(dist>10?.25:0);/* lane-botfeel2: a mate close to the death nearly always swings for the trade (was aggression*.8 + .15: 7 of 16 mates 4 m away went) */const x=rand();return x<t?'trade':x<t+P.patience*.5?'fallback':'hold';}
  // A sound heard (gunshot / running footsteps): 'turn' (face it, keep going), 'hold' (stop and hold that angle) or 'push'.
  function onSound(P,rand,kind,dist){const x=rand();if(kind==='shot'&&dist<20&&x<P.aggression*.35)return 'push';return x<P.patience*.6?'hold':'turn';}
  // ---- Utility timing ("use utility before entry") ----
@@ -623,5 +625,12 @@
  // the enemy at (tx, tz); free(x, z) (optional): the first of away / +-45 / +-90 deg whose point RELOAD.probe m out is free
  function reloadBack(x,z,cx,cz,tx,tz,free){if(cx!=null&&cz!=null){const ex=cx-x,ez=cz-z,l=Math.hypot(ex,ez);if(l>.4&&l<RELOAD.back)return [ex/l,ez/l];}const ax=x-tx,az=z-tz,l=Math.hypot(ax,az)||1,ux=ax/l,uz=az/l;
   if(free)for(const a of RELOAD.turn){const c=Math.cos(a),s=Math.sin(a),vx=ux*c-uz*s,vz=ux*s+uz*c;if(free(x+vx*RELOAD.probe,z+vz*RELOAD.probe))return [vx,vz];}return [ux,uz];}
- return {hash,rng,clamp,pickW,REACT,personality,reaction,crosshair,crosshairAt,firePattern,peek,attackPlan,defensePlan,roles,teamBuy,buyFor,onMateDeath,onSound,ATTACK,DEFENSE,utility,UTIL,turnStep,trackLag,wrapA,SPIKE,plantSpot,postPlant,retake,postPlay,SHOOT_UTIL,shootUtility,TAILWIND,tailwindDash,tailwindKeys,LEVEL,level,aimTraits,AIM_H,aimHeight,halfWidth,aimPlan,aimAt,readyToFire,planFire,idlePitch,recoilPull,discipline,hitPart,BUY,buyArea,buyRoute,buyExit,buySpot,buyWander,buyHold,buyNew,buyTick,buyNext,buySep,SENS,cm360,sensOf,turnRate,SENSE,inView,audible,earSpot,memNew,memNote,memForget,memBest,repeek,mayFire,nextShot,areas,DFORM,GAP,midPoint,RESPOND,nearest,tradeSpot,follow,buyNear,buyCross,reactR,reacts,FIRE,sprayFade,sprayPull,turnAcc,trackTurn,cornerPick,FLASH,flashRead,blindPlay,PEEK,peekStep,RELOAD,reloadPlay,reloadBack,trailNote,reloadSpot};
+ // Trading like a player (lane-botfeel2; a8c64fa offline 5v5: 10.5-15 % of deaths traded within 3 s, real teams trade far
+ // more). A teammate dies: the mates who go for the trade (onMateDeath / RESPOND.trade, from up to TRADE.range m) go for the
+ // KILLER - the killfeed names it and the shots placed it, so they know its spot (a 'heard' memory: they come round the
+ // corner pre-aimed on it, not on the enemy nearest the body) - and swing it wide right away (peek ctx.trade). The killer's
+ // next fight inside TRADE.focus s of its kill starts TRADE.lag s late (reaction ctx.postKill): its eyes are still on the body
+ // and the spray resetting, which is the window a trade lives in. Pure; the callers keep their own kill stamps.
+ const TRADE={range:18,focus:1.5,lag:[.08,.16]};
+ return {hash,rng,clamp,pickW,REACT,personality,reaction,crosshair,crosshairAt,firePattern,peek,attackPlan,defensePlan,roles,teamBuy,buyFor,onMateDeath,onSound,ATTACK,DEFENSE,utility,UTIL,turnStep,trackLag,wrapA,SPIKE,plantSpot,postPlant,retake,postPlay,SHOOT_UTIL,shootUtility,TAILWIND,tailwindDash,tailwindKeys,LEVEL,level,aimTraits,AIM_H,aimHeight,halfWidth,aimPlan,aimAt,readyToFire,planFire,idlePitch,recoilPull,discipline,hitPart,BUY,buyArea,buyRoute,buyExit,buySpot,buyWander,buyHold,buyNew,buyTick,buyNext,buySep,SENS,cm360,sensOf,turnRate,SENSE,inView,audible,earSpot,memNew,memNote,memForget,memBest,repeek,mayFire,nextShot,areas,DFORM,GAP,midPoint,RESPOND,nearest,tradeSpot,follow,buyNear,buyCross,reactR,reacts,FIRE,sprayFade,sprayPull,turnAcc,trackTurn,cornerPick,FLASH,flashRead,blindPlay,PEEK,peekStep,RELOAD,reloadPlay,reloadBack,trailNote,reloadSpot,TRADE};
 });

@@ -226,16 +226,16 @@ export class SpikeSimulation extends Simulation{
  // within 35 m, running footsteps within 16 m: hold the angle, glance or push) and defender information (attackers seen
  // or heard near a site: rotators rotate there after their own delay).
  botSense(){if(this._senseT===this.time)return;this._senseT=this.time;hearTick(this);/* castAt stamps for the cast reactions */const U=this.units,sites=this.world.map.sites,names=Object.keys(sites);
-  for(const d of U){const was=d._wasAlive;d._wasAlive=d.alive;if(!(was&&!d.alive))continue;let k=null,kd=Infinity;for(const e of U)if(e.alive&&e.team!==d.team){const q=Math.hypot(e.x-d.x,e.z-d.z);if(q<kd){kd=q;k=e;}}
+  for(const d of U){const was=d._wasAlive;d._wasAlive=d.alive;if(!(was&&!d.alive))continue;let k=U.find(e=>e.alive&&e.team!==d.team&&d.lastKiller!=null&&e.id===d.lastKiller)||null,kd=Infinity;/* lane-botfeel2: the killer the killfeed names; else the enemy nearest the body */if(!k)for(const e of U)if(e.alive&&e.team!==d.team){const q=Math.hypot(e.x-d.x,e.z-d.z);if(q<kd){kd=q;k=e;}}
    const alive=U.filter(v=>v.alive&&v.team===d.team).length;
-   // at most RESPOND.trade of the mates that want to trade go (the nearest; already-trading mates count), the second one
+   // at most RESPOND.trade of the mates that want to trade go (of the nearest; already-trading mates count), the second one
    // GAP m to the side of the killer's spot; the rest hold their spot facing the fight (bots-spread-1: no team collapse)
-   const want=[];
-   for(const m of U){if(!m.alive||m.human||m.team!==d.team||m.sawTarget)continue;const dist=Math.hypot(m.x-d.x,m.z-d.z),P=persona(this,m),c=BotBrain.onMateDeath(P.brain,P.r,dist,alive);if(c==='hold'||!k)continue;
+   const want=[],cand=[];
+   for(const m of U){if(!m.alive||m.human||m.team!==d.team||m.sawTarget)continue;const dist=Math.hypot(m.x-d.x,m.z-d.z),P=persona(this,m),c=BotBrain.onMateDeath(P.brain,P.r,dist,alive);if(dist<=BotBrain.TRADE.range&&!(m.react&&m.react.kind==='trade'&&m.react.until>this.time))cand.push({id:m.id,d:dist});if(c==='hold'||!k)continue;
     if(c==='trade')want.push({m,P,id:m.id,d:dist});
     else{const dx=m.x-k.x,dz=m.z-k.z,l=Math.hypot(dx,dz)||1,n=this.world.nav.nodes[this.world.near(m.x+dx/l*6,m.z+dz/l*6,m.y)];if(n)m.react={kind:'fallback',x:n[0],y:n[1],z:n[2],until:this.time+1.5+P.r()*1.5};}}
-   if(want.length){const busy=U.filter(v=>v.alive&&v.team===d.team&&v.react&&v.react.kind==='trade'&&v.react.until>this.time&&!want.some(w=>w.m===v)).length,go=BotBrain.nearest(want,BotBrain.RESPOND.trade-busy);let j=busy;
-    for(const w of want.sort((a,b)=>a.d-b.d)){const m=w.m,P=w.P;if(go.has(m.id)){const q=BotBrain.tradeSpot(j++,m.x,m.z,k.x,k.z),n=j>1?this.world.nav.nodes[this.world.near(q[0],q[1],k.y)]:null;m.react={kind:'trade',x:n?n[0]:k.x,y:n?n[1]:k.y,z:n?n[2]:k.z,until:this.time+2.5+P.r()*1.5};}
+   if(want.length){const busy=U.filter(v=>v.alive&&v.team===d.team&&v.react&&v.react.kind==='trade'&&v.react.until>this.time&&!want.some(w=>w.m===v)).length,g0=BotBrain.nearest(cand,BotBrain.RESPOND.trade-busy),go=new Set(want.filter(w=>g0.has(w.id)).map(w=>w.id));/* lane-botfeel2 (= page): the nearest mates are the ones who can trade; one whose draw says no is not replaced by a farther one */let j=busy;
+    for(const w of want.sort((a,b)=>a.d-b.d)){const m=w.m,P=w.P;if(go.has(m.id)){const q=BotBrain.tradeSpot(j++,m.x,m.z,k.x,k.z),n=j>1?this.world.nav.nodes[this.world.near(q[0],q[1],k.y)]:null;m.react={kind:'trade',x:n?n[0]:k.x,y:n?n[1]:k.y,z:n?n[2]:k.z,until:this.time+2.5+P.r()*1.5};BotBrain.memNote(m.mem||(m.mem=BotBrain.memNew()),k.id,k.x,k.y,k.z,this.time,'heard');/* lane-botfeel2: the killer's spot (shots / call): it comes round the corner pre-aimed on it */}
      else m.react={kind:'hold',x:k.x,z:k.z,duck:false,until:this.time+.8+P.r()*.8};}
     (this.tradeLog||(this.tradeLog=[])).push({round:this.round,team:d.team,want:want.length,go:go.size});if(this.tradeLog.length>200)this.tradeLog.shift();}}
   for(const m of U){if(!m.alive||m.human||m.sawTarget||(m.react&&m.react.until>this.time))continue;let best=null,bd=Infinity;
