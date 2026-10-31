@@ -677,4 +677,11 @@ function xbTrRand(u){return u.xbTrR||(u.xbTrR=BotRoutes.rng(BotRoutes.hash((u.na
 function xbKillStamp(v,by){try{if(!v||v.alive||!window.BotBrain)return;v.xKb=by;const now=xbNow();for(const L of [bots,allies])for(const o of L)if(o&&o.name===by&&o.alive){o.xKillT=now;return;}}catch(e){}}
 if(typeof kill==='function'){const k0=kill;kill=function(b,hs,by){const al=b&&b.alive,r=k0.apply(this,arguments);if(al&&b&&!b.alive)xbKillStamp(b,by||'You');return r;};}
 if(typeof allyDie==='function'){const a0=allyDie;allyDie=function(a,by){const al=a&&a.alive,r=a0.apply(this,arguments);if(al&&a&&!a.alive)xbKillStamp(a,by);return r;};}
+// (7) Moving quietly (lane-botfeel2; BotBrain.quiet / WALK, = server SpikeSimulation.bot): in a 5v5 round an unsighted bot with
+// an enemy it knows of (its memory: d is xbKnown's distance, 1e9 when it knows nothing) within WALK.range m shift-walks (silent
+// footsteps; was 12 m) - not while trading (trT), swinging wide / jiggling (pk 2 / 1), carrying the Spike, or when the clock
+// forces a run (a defender with under 20 s of fuse, an attacker stopping a defuse). Scoped holders keep walking as before.
+if(typeof botWalk==='function'){const bw0=botWalk;botWalk=function(u,see,d){if(!window.BotBrain||mode!=='five'||FV.dm||!u||u.scp)return bw0.apply(this,arguments);
+ const sp=FV.sp,atk=allies.indexOf(u)>=0?!!FV.atk:!FV.atk,rush=!!sp&&sp.st==='plant'&&(atk?!!sp.du:(sp.t||0)<20);
+ return BotBrain.quiet({contactD:d<1e8?d:null,see:!!see,trading:u.trT>0,wide:u.pk===2||u.pk===1,carrier:!!sp&&sp.st==='carry'&&sp.c===u,rush});};}
 // ---- END BOT VARIETY ----
