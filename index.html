@@ -92,6 +92,7 @@ button{font:inherit;text-transform:inherit;letter-spacing:inherit;cursor:pointer
 #xAdsT:before{width:22px;height:22px;box-sizing:border-box;border:1.5px solid rgba(236,232,225,.9);box-shadow:0 0 0 1px rgba(0,0,0,.45),inset 0 0 0 1px rgba(0,0,0,.35)}
 #xAdsT:after{width:4px;height:4px;background:#ff4655;box-shadow:0 0 0 1px rgba(0,0,0,.6)} /* rifle/SMG ADS mini sight (replaces the crosshair while ADS) */
 #result{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:rgba(15,25,35,.92);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);z-index:20;text-align:center}
+body:has(#result[style*="flex"]) .x-sp{display:none!important} /* UI lane: the spectate bar (z 60) sat on top of Play again / Lobby once the match ended while dead */
 #result h2{font-size:clamp(48px,10vw,110px);font-weight:900}
 #result p{font-size:18px;opacity:.8}
 #result.x-glerr p{text-transform:none;letter-spacing:.02em;max-width:640px;line-height:1.45} /* engine error: one sentence-case body in every mode */
@@ -260,6 +261,7 @@ button{font:inherit;text-transform:inherit;letter-spacing:inherit;cursor:pointer
 #xWatch{order:1}#xGear{order:2}#xSurr{order:3}#xPow{order:4}
 #xWatch::after{content:"Resume"}#xGear::after{content:"Settings"}#xSurr::after{content:"Surrender"}#xPow::after{content:"Leave match"}
 #xSurr small{display:block;font:var(--type-caption);letter-spacing:.04em;text-transform:none;opacity:.7}
+#xPause .x-icons #xSurr:not([hidden]){display:flex!important;flex-direction:column;align-items:flex-start;text-align:left}#xPause .x-icons #xSurr::after{order:1}#xPause .x-icons #xSurr small{order:2;margin:2px 0 0;padding:0;text-align:left} /* UI lane: the "Available from round 4" note goes under the Surrender label, left aligned (it sat above it, indented) */
 #xSv{position:fixed;top:118px;left:50%;transform:translateX(-50%);z-index:30;display:none;padding:10px 22px;background:rgba(10,12,16,.82);border-left:4px solid var(--red);color:var(--bone);font:800 18px/1.2 var(--sans);letter-spacing:.12em;text-transform:uppercase;pointer-events:none;white-space:nowrap}
 #xSv.on{display:block}
 .x-tabs{display:flex;border-bottom:1px solid rgba(236,232,225,.2)}
@@ -330,7 +332,7 @@ button{font:inherit;text-transform:inherit;letter-spacing:inherit;cursor:pointer
 #xBuy .x-tp{display:inline-flex;align-items:center;gap:calc(var(--xb-u)*.5 + 1px);font-size:var(--xb-f1);font-weight:700;letter-spacing:.04em;color:var(--bone);font-variant-numeric:tabular-nums;white-space:nowrap}
 #xBuy .x-tp .x-cg{width:calc(var(--xb-f1)*.75);height:calc(var(--xb-f1)*.75)}
 #xBuy .xb-rq{position:absolute;min-height:0;display:inline-flex;align-items:center;right:var(--xb-cp);bottom:var(--xb-cp);z-index:1;margin:0;padding:0 calc(var(--xb-u)*.75);height:calc(var(--xb-f2)*1.4 + 2px);font-size:calc(var(--xb-f2) - 1px);font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--xb-t);background:rgba(10,16,22,.9);border:1px solid rgba(25,211,197,.55);border-radius:2px;cursor:pointer}
-#xBuy .xb-card:has(.xb-rq) .xb-ft small{padding-right:calc(var(--xb-f2)*6)}/* the meta line stops short of the Request button */
+#xBuy .xb-card:has(.xb-rq) .xb-ft small,#xBuy .xb-ft:has(em) small{display:none}/* UI lane: a card that carries a Request button or an Equipped / Owned / From tag drops the ammo line (it was ellipsised to "12 rds · 2…" next to it, and the tag to "EQUIP…"); the tag / button then has the row *//* the meta line stops short of the Request button */
 #xBuy .xb-rq:hover,#xBuy .xb-rq:focus-visible{background:rgba(25,211,197,.2);outline:0}
 #xBuy .xb-card>button.xb-a{grid-template-columns:auto minmax(0,1fr) auto;grid-template-rows:auto auto;grid-template-areas:"ic nm kb" "ft ft ft";align-content:space-between}
 #xBuy .xb-a .x-aic{grid-area:ic;align-self:start;width:calc(var(--xb-f1)*1.4);height:calc(var(--xb-f1)*1.4);margin:0}
@@ -1149,9 +1151,9 @@ body:has(#game .x-top.x-bpo) #xAnn.buy{display:none!important}
 .x-q[hidden]{display:none}
 .x-qx{position:absolute;top:16px;right:16px;z-index:2;width:44px;height:44px;display:grid;place-items:center;background:none;border:1px solid rgba(236,232,225,.18);color:#ece8e1;font-size:22px;line-height:1;cursor:pointer;opacity:.8}
 .x-qx:hover,.x-qx:focus-visible{opacity:1;border-color:#ff4655}
-.x-qtabs{flex:none;display:flex;flex-wrap:nowrap;gap:0 28px;margin:-8px 56px 0 0;border-bottom:1px solid rgba(236,232,225,.14);overflow-x:auto;overflow-y:hidden;scrollbar-width:none}
+.x-qtabs{flex:none;display:flex;flex-wrap:nowrap;gap:0 18px;margin:-8px 56px 0 0;border-bottom:1px solid rgba(236,232,225,.14);overflow-x:auto;overflow-y:hidden;scrollbar-width:none}
 .x-qtabs::-webkit-scrollbar{display:none}
-.x-qtabs button{flex:none;min-height:44px;padding:0;background:none;border:0;border-bottom:2px solid transparent;color:rgba(255,255,255,.55);font:inherit;font-size:13px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;white-space:nowrap;cursor:pointer;transition:color .15s}
+.x-qtabs button{flex:none;min-height:44px;padding:0;background:none;border:0;border-bottom:2px solid transparent;color:rgba(255,255,255,.55);font:inherit;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;cursor:pointer;transition:color .15s}
 .x-qtabs button:hover{color:rgba(255,255,255,.85)}
 .x-qtabs button.on{color:#fff;border-bottom-color:#ff4655}
 .x-qbody{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:24px;align-items:start;min-width:0}
@@ -1228,6 +1230,7 @@ body:has(#game .x-top.x-bpo) #xAnn.buy{display:none!important}
 #lobby .x-h::before{content:"";width:8px;height:8px;background:#ff4655;flex:none}
 #lobby .x-h small{letter-spacing:.06em;opacity:.7}
 #lobby .ic,#lobby .snd,#lobby .go,#lobby .x-get,#lobby .lnk{border-radius:0}
+#lobby .x-q .feat .go{background:#ff4655;color:#fff;font-size:20px;letter-spacing:.2em;padding:14px 44px;transition:filter .15s}#lobby .x-q .feat .go:hover,#lobby .x-q .feat .go:focus-visible{filter:brightness(1.15);transform:none} /* UI lane: Custom tab Retake GO was ink-on-dark (read as plain text) */
 /* client lobby layout: slim nav, agent center, news bottom-left, missions bottom-right (8px scale, one font stack) */
 #lobby{--x-f:Geist,"Segoe UI",system-ui,-apple-system,Roboto,Helvetica,Arial,sans-serif;--x-ink:#ece8e1;--x-dim:rgba(236,232,225,.64);--x-line:rgba(236,232,225,.16);--x-red:#ff4655;--x-bg:rgba(15,25,35,.85);font-family:var(--x-f);padding:0;overflow:hidden}
 #lobby button,#lobby h1,#lobby h2,#lobby h3,#lobby h4,#lobby p,#lobby small{font-family:var(--x-f)}
@@ -5319,7 +5322,7 @@ function bTeam() {
   const mates = (typeof F_MATES !== "undefined" ? F_MATES : []).map((m) => { const s = FV.bs[m] || { cr: 0, w: "Classic", arm: 0 }; let a = m; try { a = xAgOf(m); } catch (e) {}
     return `<li><span class="xb-ag"><b>${m}</b>${a !== m ? `<small>${a}</small>` : ""}</span><span class="x-tp"><i class="x-cg"></i>${s.cr}</span>${ld(s.w || "Classic", s.arm || 0)}${FV.reqBy === m && FV.req ? `<em>Bought your ${FV.req}</em>` : ""}</li>`; }).join("");
   const sel = FV.sel && WEAP[FV.sel] && FV.sel !== FV.pri && FV.sel !== FV.sec && !(FV.req === FV.sel && FV.reqBy) ? FV.sel : "";
-  return `<h4>Team loadout</h4><ul>${me}${mates}</ul><button type="button" id="xBRq" class="xb-rqb" data-rq="${sel}"${sel ? "" : " disabled"}>${sel ? (FV.req === sel ? "Requested " : "Request ") + sel : "Hover a weapon to request it"}</button>`;
+  return `<h4>Team loadout</h4><ul>${me}${mates}</ul><button type="button" id="xBRq" class="xb-rqb" data-rq="${sel}"${sel ? "" : " disabled"}>${sel ? (FV.req === sel ? "Requested " : "Request ") + sel : "Hover a gun to request"}</button>`;
 }
 function buyRender() {
   bLog();
