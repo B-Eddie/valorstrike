@@ -1115,6 +1115,24 @@ body:has(#result[style*="flex"]) .x-cbt{display:none!important} /* the combat re
    rounded corners, so the corner panels keep their height (the touch cluster above them is placed for it); in portrait the
    indicator spans the bottom corners and the health / credits + ammo blocks rise above it */
 @media (orientation:portrait){#game .hud.x-bl,#game .x-brs{margin-bottom:var(--sa-b)}}
+/* UI lane 3: the HUD is laid out in fixed pixels for ~720p, so at 1080p / 1440p the minimap, vitals, abilities, ammo, credits,
+   kill feed and timer strip read small. Desktop screens scale those panels by --hs with CSS zoom: zoom scales a panel's own px
+   offsets with it (bottom:16px, translateX(calc(-100% - 168px)), left:calc(50% + 168px)) while the 50% anchors stay at the
+   screen centre, so the centre-relative layout keeps its gaps at every step. Touch / narrow / short layouts keep --hs 1. */
+#game{--hs:1}
+@media (min-width:1500px) and (min-height:860px) and (pointer:fine){#game{--hs:1.15}}
+@media (min-width:1760px) and (min-height:1000px) and (pointer:fine){#game{--hs:1.25}}
+@media (min-width:2200px) and (min-height:1240px) and (pointer:fine){#game{--hs:1.4}}
+@media (min-width:2500px) and (min-height:1400px) and (pointer:fine){#game{--hs:1.5}}
+#game .hud.x-top,#game #xSub,#game .hud.x-bl,#game .hud.x-ab,#game .x-brs,#game #xMap,#game .hud.x-fw,#game #xSpkC{zoom:var(--hs)} /* the ammo panel .x-br sits inside .x-brs (credits) and takes its zoom from there; zooming it too compounded to 1.56x */
+/* Settings: the Enemy highlight colour segment (three long accessibility labels) wrapped to two lines in the 3fr column; its row
+   gives the label only what it needs, so the segment fits on one line wherever the settings panel is wide enough */
+#mSet .srow.x-sr{grid-template-columns:auto minmax(0,1fr)}
+#mSet .srow.x-sr .seg button{white-space:nowrap}
+/* Scoreboard ULT column: Killjoy's 9 pips (5 px diamonds, 1 px margins, 3 px gaps = 87 px) overflowed the 84 px inside the
+   104 px column and were cut with an ellipsis */
+#xBoard .x-sbt td.ul{text-overflow:clip}
+@media(min-width:601px){#xBoard .x-sbt td.ul{padding:0 6px}#xBoard .x-sbp{gap:2px}} /* <= 600 px keeps its 3 px pips / 1 px gaps (54 px in 60) */
 </style>
 <style id="xHudParity">
 /* VALORANT HUD parity (work/validation/hud-parity-2026-10-28.md). After xHudNative so these rules win. */

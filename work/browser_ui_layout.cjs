@@ -76,15 +76,18 @@ const log=(k,v)=>{R.steps.push([((Date.now()-t0)/1000).toFixed(1),k,v]);fs.write
   const M5=await J(`[...document.querySelectorAll('#game .x-ab .x-as>b')].map(b=>{const cs=getComputedStyle(b);return {k:b.textContent,fs:parseFloat(cs.fontSize),op:+cs.opacity}})`);
   check('HUD ability key letters readable',M5.length===4&&M5.every(r=>r.fs>=13&&r.op>=0.95),M5);
   // M8 HUD scale: the fixed-pixel HUD read small on big screens; at >= 1000 px tall (1080p / 1440p) the panels are scaled up (minimap, vitals, timer strip), 720p unchanged
-  await X(`FV.buy=Math.min(FV.buy,0.2);for(let i=0;i<4;i++)kfeed(i%2?allies[i%allies.length].name:'You',bots[i%bots.length].name,i%2===0,'Vandal');1`).catch(()=>{});await frames(20);
-  const M8=await J(`(()=>{const R=s=>{const e=document.querySelector(s);if(!e)return null;const cs=getComputedStyle(e);if(cs.display==='none'||cs.visibility==='hidden')return null;const r=e.getBoundingClientRect();return r.width>0&&r.height>0?[Math.round(r.left),Math.round(r.top),Math.round(r.right),Math.round(r.bottom)]:null};
+  await X(`FV.buy=Math.min(FV.buy,0.2);1`).catch(()=>{});await frames(20);
+  const KF=`try{for(let i=0;i<4;i++)kfeed(i%2?allies[i%allies.length].name:'You',bots[i%bots.length].name,i%2===0,'Vandal')}catch(e){}`; // kill feed rows fade in seconds: added inside the measuring call
+  const M8=await J(`(()=>{${KF};const R=s=>{const e=document.querySelector(s);if(!e)return null;const cs=getComputedStyle(e);if(cs.display==='none'||cs.visibility==='hidden')return null;const r=e.getBoundingClientRect();return r.width>0&&r.height>0?[Math.round(r.left),Math.round(r.top),Math.round(r.right),Math.round(r.bottom)]:null};
     const P={map:R('#game #xMap'),top:R('#game .hud.x-top'),hp:R('#game .hud.x-bl'),ab:R('#game .hud.x-ab'),ammo:R('#game .hud.x-br'),cr:R('#game .x-brs'),feed:R('#game #feed')};return {vw:innerWidth,vh:innerHeight,P}})()`);
   const p=M8.P,big=M8.vh>=1000&&M8.vw>=1700,w=r=>r?r[2]-r[0]:0,h=r=>r?r[3]-r[1]:0;
   check('HUD scales with the screen (bigger at 1080p / 1440p, 720p unchanged)',!!(p.map&&p.top&&p.hp)&&(big?(w(p.map)>=190&&h(p.top)>=45&&h(p.hp)>=68):(w(p.map)<=170&&h(p.hp)<=64)),{big,map:w(p.map),top:h(p.top),hp:h(p.hp)});
   const ks=Object.keys(p).filter(k=>p[k]),ov=[];for(let i=0;i<ks.length;i++)for(let j=i+1;j<ks.length;j++){const a=p[ks[i]],b=p[ks[j]];if(a[0]<b[2]-1&&a[2]>b[0]+1&&a[1]<b[3]-1&&a[3]>b[1]+1)ov.push(ks[i]+'/'+ks[j]);}
   const off=ks.filter(k=>p[k][0]<0||p[k][1]<0||p[k][2]>M8.vw||p[k][3]>M8.vh);
-  check('HUD panels do not overlap and stay on screen',ks.length>=6&&ov.length===0&&off.length===0,{n:ks.length,ov,off,p});
-  if(process.env.SHOT)await shot('layout-hud',true);
+  check('HUD panels do not overlap and stay on screen',ks.length>=7&&ov.length===0&&off.length===0,{n:ks.length,ov,off,p});
+  // vitals and ammo are one band either side of the abilities: same height, bottoms level (a compounded zoom made the ammo 1.56x)
+  check('HUD vitals and ammo panels level',!!(p.hp&&p.ammo)&&Math.abs(h(p.hp)-h(p.ammo))<=4&&Math.abs(p.hp[3]-p.ammo[3])<=8,{hp:p.hp,ammo:p.ammo});
+  if(process.env.SHOT){await X(KF+';1').catch(()=>{});await shot('layout-hud',true);}
   // M10 scoreboard: Killjoy's 9 ult pips fit the ULT column (overflowed the 104 px column and were clipped)
   await page.keyboard.down('Tab');await frames(3);
   const M10=await J(`[...document.querySelectorAll('#xBoard td.ul')].filter(td=>td.offsetParent).map(td=>{const s=td.querySelector('.x-sbp'),a=td.getBoundingClientRect(),cs=getComputedStyle(td),i=[...s.children].map(e=>e.getBoundingClientRect());const l=Math.min(...i.map(q=>q.left)),r=Math.max(...i.map(q=>q.right));return {n:s.children.length,in:[Math.round(a.left+parseFloat(cs.paddingLeft)),Math.round(a.right-parseFloat(cs.paddingRight))],pips:[Math.round(l),Math.round(r)]}})`);
