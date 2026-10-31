@@ -54,9 +54,9 @@ assert.ok(rad(core)>=1,'glow reaches >= 1 m: '+rad(core).toFixed(2));assert.ok(c
 {const b=bot(-2.5,0,-1,Math.PI);ctx.bots=[b];ctx.player.hp=0;ctx.orbTick(1);assert.equal(ctx.J.orbs.length,0);assert.equal(b.blind,1.5,'the cast Curveball blinds a bot looking at the pop');}
 console.log('Curveball flash: bots (floor-height eye, facing > 0.5, 30 m) and the player 1.5 s full + 1 s fade, faint when turned away, enemy Curveball 1.5 s, big glowing orb');
 // --- curve hint (ability_equip_runtime.js): while Curveball is in hand, two arcs = the cast's own path, FIRE left / ALT FIRE right
-{const hs=cut('var XCBH =','\ntry { const st = document.createElement("style"); st.textContent = "#xCbH');
+{const hs=cut('var XCBH =','\ntry { const st = document.createElement("style"); st.textContent = "#xCbHint');
  const hel={classList:{s:new Set(),contains(k){return this.s.has(k);},toggle(k,v){v?this.s.add(k):this.s.delete(k);}}};
- const added=[];Object.assign(ctx,{running:true,J:Object.assign(ctx.J,{pick:'Phoenix',eq:null}),$:id=>id==='xCbH'?hel:el,scene:{add:g=>{added.push(g);g.parent=ctx.scene;},remove:g=>{g.parent=null;}}});ctx.player.hp=100;ctx.yaw=0;
+ const added=[];Object.assign(ctx,{running:true,J:Object.assign(ctx.J,{pick:'Phoenix',eq:null}),$:id=>id==='xCbHint'?hel:el,scene:{add:g=>{added.push(g);g.parent=ctx.scene;},remove:g=>{g.parent=null;}}});ctx.player.hp=100;ctx.yaw=0;
  vm.runInContext(hs.replace(/^var /gm,'var '),ctx);
  const o=new THREE.Vector3(0,1.6,0),L=ctx.xCbHintPts(o,0,-1,-1,10),R=ctx.xCbHintPts(o,0,-1,1,10),c=ctx.phCurve(o,0,-1,-1);
  assert.ok(L[9].distanceTo(c.end)<1e-6,'left arc ends at the FIRE pop point');assert.ok(Math.abs(L[9].x+2.5)<1e-6&&Math.abs(R[9].x-2.5)<1e-6,'FIRE arc ends 2.5 m left, ALT FIRE arc 2.5 m right');
@@ -67,7 +67,7 @@ console.log('Curveball flash: bots (floor-height eye, facing > 0.5, 30 m) and th
  {const g0=ctx.XCBH.g;g0.parent=null;ctx.xCbHintTick();assert.equal(ctx.XCBH.g,g0,'same hint group after a scene clear (no new geometry per match)');assert.equal(added.filter(x=>x===g0).length,2,'re-added to the scene');}
  ctx.J.eq.st='rel';ctx.xCbHintTick();assert.equal(ctx.XCBH.g.visible,false,'gone once thrown');assert.equal(ctx.XCBH.g.parent,null,'out of the scene once hidden (a round reset leaves nothing behind: test_client_abilities)');assert.equal(hel.classList.contains('on'),false);
  ctx.J.eq={k:'c',st:'ready'};ctx.xCbHintTick();assert.equal(ctx.XCBH.g.visible,false,'not for Blaze');ctx.J.pick='Skye';ctx.J.eq={k:'e',st:'ready'};ctx.xCbHintTick();assert.equal(ctx.XCBH.g.visible,false,'Phoenix only');
- assert.match(html,/id = "xCbH"; d\.innerHTML = "<span>\\u25C0 L-CLICK<\/span><span>R-CLICK \\u25B6<\/span>"/,'HUD tag text');
+ assert.match(html,/id = "xCbHint"; d\.innerHTML = "<span>\\u25C0 L-CLICK<\/span><span>R-CLICK \\u25B6<\/span>"/,'HUD tag text');
  assert.match(html,/try \{ xCbHintTick\(\); \}/,'ticked from jTick');}
 // --- online flash screen: fully white while the server says blinded, 1 s fade after (was opacity = blind / 1.5)
 {const f=cut('function netBlindCss(','\n');const c2=vm.createContext({});vm.runInContext(f,c2);const e={style:{}};

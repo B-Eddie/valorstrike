@@ -16652,13 +16652,13 @@ function xCbHintBuild() { // two arcs of small additive dots (index 0 = FIRE / l
   scene.add(g); return (XCBH.g = g);
 }
 function xCbHintTick() {
-  const on = xCbHintOn(), el = $("xCbH"); if (el && el.classList.contains("on") !== on) el.classList.toggle("on", on);
+  const on = xCbHintOn(), el = $("xCbHint"); if (el && el.classList.contains("on") !== on) el.classList.toggle("on", on);
   if (!on) { if (XCBH.g) { XCBH.g.visible = false; if (XCBH.g.parent) XCBH.g.parent.remove(XCBH.g); } return; } // out of the scene while unused (round reset leaves nothing behind); re-added on the next hold
   const g = XCBH.g && XCBH.g.parent ? XCBH.g : xCbHintBuild(), o = pEye(), fx = -Math.sin(yaw), fz = -Math.cos(yaw); g.visible = true;
   [-1, 1].forEach((side, s) => { const P = xCbHintPts(o, fx, fz, side, XCBH.n); XCBH.d[s].forEach((m, i) => m.position.copy(P[i]).setY(P[i].y - 0.22 * (1 - i / (XCBH.n - 1)))); }); // starts a little under the crosshair (the hand), meets the true pop point
 }
-try { const st = document.createElement("style"); st.textContent = "#xCbH{position:fixed;left:50%;top:calc(50% + 30px);transform:translateX(-50%);display:none;gap:46px;pointer-events:none;z-index:6;font:700 11px/1 sans-serif;letter-spacing:.08em;color:#fff;text-shadow:0 0 3px #000,0 0 2px #000}#xCbH.on{display:flex}#xCbH span:first-child{color:#ffe7a0}#xCbH span:last-child{color:#ffb060}";
-  document.head.appendChild(st); const d = document.createElement("div"); d.id = "xCbH"; d.innerHTML = "<span>\u25C0 L-CLICK</span><span>R-CLICK \u25B6</span>"; (document.getElementById("game") || document.body).appendChild(d); } catch (e) {}
+try { const st = document.createElement("style"); st.textContent = "#xCbHint{position:fixed;left:50%;top:calc(50% + 30px);transform:translateX(-50%);display:none;gap:46px;pointer-events:none;z-index:6;font:700 11px/1 sans-serif;letter-spacing:.08em;color:#fff;text-shadow:0 0 3px #000,0 0 2px #000}#xCbHint.on{display:flex}#xCbHint span:first-child{color:#ffe7a0}#xCbHint span:last-child{color:#ffb060}";
+  document.head.appendChild(st); const d = document.createElement("div"); d.id = "xCbHint"; d.innerHTML = "<span>\u25C0 L-CLICK</span><span>R-CLICK \u25B6</span>"; (document.getElementById("game") || document.body).appendChild(d); } catch (e) {}
 { const t0 = jTick; jTick = function (dt) { const v = t0.apply(this, arguments); try { xEqTick(dt); xEqHud(); xBowHud(); xDarkShow(J.eq); } catch (e) { J.eq = null; } try { xInstTick(dt); } catch (e) { XABT.inst = null; } try { xCbHintTick(); } catch (e) { if (XCBH.g) XCBH.g.visible = false; } return v; }; }
 // First person: the agent's native arms draw the ability (work/ability_fp_runtime.js, ABILITY FIRST PERSON).
 // ---- Third person: others see the throw. A cast relayed for another unit (online relay / trusted-server replay, mpFx)
