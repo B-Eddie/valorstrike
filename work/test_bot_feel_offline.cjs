@@ -5,6 +5,9 @@
 //     xFight backs toward the spot it peeked from (its unseen trail u.xbTr) or away (a free side with a wall behind), never strafes; unsighted mid-reload with a remembered enemy
 //     close it holds (xbReHold); live 5v5 - of the reload time spent in an enemy's sight, most is spent backing away
 //     (09a42d4 seeds 3/5/7: 7 / 23 / 8 %)
+//  2. corner holds drawn like the server's (BotBrain.peek): a new peek onto a known contact holds the angle when the bot's
+//     personality draws a hold (09a42d4: 0 holds in 150 live fights); a hold stands on the angle PEEK.hold s, then peeks tight;
+//     other draws keep the page's own pick (no jiggle without a sniper); against an Operator only jiggle / hold
 //   node work/test_bot_feel_offline.cjs        (SECS=200 SEED=3 by default)
 const assert=require('assert/strict');const {boot}=require('./page_harness.cjs');
 const SECS=+(process.env.SECS||200),SEED=+(process.env.SEED||3);
@@ -29,6 +32,15 @@ const SECS=+(process.env.SECS||200),SEED=+(process.env.SEED||3);
  assert(D.hold===true,'unsighted mid-reload, a remembered enemy 10 m away: hold');assert.deepEqual(D.unAfter,[0,0],'its unseen trail gets the spot where it stands');
  assert(D.noHold===false,'not reloading: no hold');assert(D.farHold===false,'a far contact: no hold');
  console.log('1. direct: back-off toward the peek spot '+D.cover.slice(0,2)+', away '+D.away.slice(0,2)+', unsighted hold ok');
+ // 2. direct: peek kinds
+ const P=JSON.parse(xe(`JSON.stringify((()=>{const o={k:{},sn:{},hold:null};const L=bots.filter(u=>u&&u.g&&u.alive);
+  for(const b of L){const sv=[b.pk,b.pkTh,b.pkP,b.xbPkR];for(let i=0;i<60;i++){b.pk=0;b.pkTh=0;xPeekThink(b,.2,false,false,10,'Vandal',bots,false);o.k[b.pk]=(o.k[b.pk]||0)+1;}
+   for(let i=0;i<30;i++){b.pk=0;b.pkTh=0;xPeekThink(b,.2,false,false,10,'Operator',bots,false);o.sn[b.pk]=(o.sn[b.pk]||0)+1;}[b.pk,b.pkTh,b.pkP,b.xbPkR]=sv;}
+  const b=L[0],sv=[b.pk,b.pkP,b.pkH];b.pk=4;b.pkP=0;b.pkH=1.2;let still=0,t=0;for(;t<3&&b.pk===4;t+=.1){const v=xPeekMove(b,.1,6,0,6,1,0);if(!v[0]&&!v[1])still+=.1;}o.hold={still:+still.toFixed(2),after:b.pk};[b.pk,b.pkP,b.pkH]=sv;return o;})())`));
+ console.log('2. direct: peek kinds (1 jiggle / 2 wide / 3 tight / 4 hold) '+JSON.stringify(P.k)+', vs an Operator '+JSON.stringify(P.sn)+', hold '+JSON.stringify(P.hold));
+ assert(!P.k[1]&&(P.k[4]||0)>0&&(P.k[2]||0)+(P.k[3]||0)>0,'without a sniper: holds are drawn, the rest keep the page\'s wide / tight pick, no jiggle: '+JSON.stringify(P.k));
+ assert(!P.sn[2]&&!P.sn[3]&&(P.sn[1]||0)>(P.sn[4]||0),'against an Operator: jiggle (mostly) or hold, no wide / tight swing: '+JSON.stringify(P.sn));
+ assert(P.hold.still>=1.0&&P.hold.still<=1.31&&P.hold.after===3,'a hold stands still on the angle for its time, then peeks tight: '+JSON.stringify(P.hold));
  // live 5v5, the player dead: every fight bot vs bot
  const prev=new Map(),S={rl:0,rlSee:0,rlSeeBack:0};
  for(let k=0;k<SECS*5;k++){await adv(200);
@@ -43,5 +55,5 @@ const SECS=+(process.env.SECS||200),SEED=+(process.env.SEED||3);
  assert(S.rl>=40,'bots reload in the live rounds ('+S.rl+')');
  if(S.rlSee>=8)assert(pc(S.rlSeeBack,S.rlSee)>=30,`a reload in an enemy's sight is spent backing away (${pc(S.rlSeeBack,S.rlSee).toFixed(1)} % >= 30 %, above every 09a42d4 seed; 09a42d4 seeds 3/5/7: 7 / 23 / 8 %)`);
  assert(H.errors.length<=1,'no page errors: '+JSON.stringify(H.errors.slice(1,3)));
- console.log('bots feel like players (reload) ok');process.exit(0);
+ console.log('bots feel like players (reload, corner holds) ok');process.exit(0);
 })().catch(e=>{console.error(e);process.exit(1);});

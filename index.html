@@ -18576,6 +18576,21 @@ function xbReBack(u,tx,tz){u.xbRc=0;if(!window.BotBrain||!u.g||!xbReloading(u)||
 function xbReHold(u){if(!u||!u.g||!window.BotBrain)return false;u.xbRc=0;const p=u.g.position;u.xbTr=BotBrain.trailNote(u.xbTr||[],p.x,p.z,xbNow());if(!xbReloading(u))return false;
  const sp=typeof FV!=='undefined'&&FV&&FV.sp,car=mode==='five'&&!!sp&&sp.st==='carry'&&sp.c===u,k=xbBest(u,BotBrain.SENSE.hunt);
  return BotBrain.reloadPlay({reloading:true,seen:false,contactD:k?Math.hypot(k.x-p.x,k.z-p.z):null,carrier:car})==='hold';}
+// (5) Corner holds drawn like the server's (lane-botfeel; BotBrain.peek / PEEK, = server Simulation.peekMove). xPeekThink
+// never held an angle, so offline bots never waited on a corner (09a42d4 seeds 3/5/7: 0 holds in 150 fights). A new peek onto a known
+// contact now draws its kind from the bot's personality (BotBrain.peek: P.peek weights, +wide with a mate within 6 m, a sniper: jiggle /
+// hold, the Spike carrier: tight) on its own seeded stream (u.xbPkR: the other per-bot streams are untouched); when it draws a hold
+// (pk 4) the bot stands on the angle PEEK.hold s, then peeks tight; any other draw keeps xPeekThink's own jiggle / wide / tight
+// (the full personality jiggle / wide draw made first contacts land far off the crosshair: test_bot_play_offline median 36 deg > 34).
+const XPK_K={jiggle:1,wide:2,tight:3,hold:4},XPK_V=[0,0];
+function xbPkRand(u){return u.xbPkR||(u.xbPkR=BotRoutes.rng(BotRoutes.hash((u.name||'')+'|pk|'+xbvSeed()+'|'+xbvKey())));}
+function xbPkPick(b,ew,tm,wp){const B=xbBrain(b);if(!B)return null;const p=b.g.position;let mate=false;
+ for(const o of tm)if(o!==b&&o.alive&&o.g&&Math.abs(o.g.position.x-p.x)+Math.abs(o.g.position.z-p.z)<6){mate=true;break;}
+ if(!mate&&wp&&player&&player.hp>0&&Math.hypot(player.x-p.x,player.z-p.z)<6)mate=true;
+ const sp=typeof FV!=='undefined'&&FV&&FV.sp,car=mode==='five'&&!!sp&&sp.st==='carry'&&sp.c===b,r=xbPkRand(b),st=BotBrain.peek(B,r,{mate,sniper:ew==='Operator'||ew==='Marshal',carrier:car});
+ b.pkH=BotBrain.PEEK.hold[0]+r()*(BotBrain.PEEK.hold[1]-BotBrain.PEEK.hold[0]);return XPK_K[st]||3;}
+if(typeof xPeekThink==='function'){const pk0=xPeekThink;xPeekThink=function(b,dt,see,fresh,d,ew,tm,wp){const k0=b?b.pk:0,r=pk0.apply(this,arguments);try{if(b&&b.g&&!k0&&b.pk&&window.BotBrain){const k=xbPkPick(b,ew,tm||[],wp);if(k===4){b.pk=4;b.pkP=0;b.pkN=0;}}}catch(e){}return r;};}
+if(typeof xPeekMove==='function'){const pm0=xPeekMove;xPeekMove=function(b,dt,d,dx,dz,vx,vz){if(b&&b.pk===4&&d<9){b.pkP=(b.pkP||0)+dt;if(b.pkP<(b.pkH||1.5)){XPK_V[0]=0;XPK_V[1]=0;return XPK_V;}b.pk=3;b.pkP=0;}return pm0.apply(this,arguments);};}
 // ---- END BOT VARIETY ----
 // ---- BOT AMMO ----
 // Offline bots (enemy + ally) carry real magazines, reserve ammo and per-weapon reload times, like the server's bots
