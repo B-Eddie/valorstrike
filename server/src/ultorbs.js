@@ -8,7 +8,9 @@
 // passageway outside each site - an inference from the wiki rule, shared with the offline page (index.html XUO_SPOTS, pinned equal
 // by server/test-ult-orbs.js). The orb sits on the nav node nearest that callout.
 import {gainUlt} from './abilities.js';
-export const ULT_ORB=Object.freeze({cap:2,r:1.6,dy:2,botChance:.2,botRange:45});
+// reach: a bot channels from within 1.4 m (goalPath leaves a loose goal up to 1.2 m short; the capture radius r is 1.6 m), give: s an
+// errand may take before the bot gives the orb up (lane-botfeel3: bots froze 0.96-1.2 m off an orb for the rest of the round).
+export const ULT_ORB=Object.freeze({cap:2,r:1.6,dy:2,botChance:.2,botRange:45,reach:1.4,give:12});
 export const ORB_SPOTS=Object.freeze({ascent:['A Main','B Main'],bind:['A Short','B Long'],haven:['A Long','C Long'],split:['A Ramps','B Alley'],lotus:['A Main','C Mound'],breeze:['A Shop','B Elbow']});
 // The round's orbs: [{id, x, y, z, by: unit id channelling, t: seconds channelled}] (empty when the map has no callout table).
 export function ultOrbSpawn(sim){const W=sim.world,calls=W.map?.callouts||[],names=ORB_SPOTS[sim.map]||[],N=W.nav?.nodes||[];sim.ultOrbs=[];
@@ -30,12 +32,14 @@ export function ultOrbTick(sim,dt){const O=sim.ultOrbs;if(!O?.length)return;
  for(const u of sim.units)if(u.orbT>0&&!O.some(o=>o.by===u.id))u.orbT=0;}
 // Bots: about one in five walks to the nearest orb within 45 m at the start of the action phase (deterministic per bot and round, no
 // draw from the room's random stream), unless it carries the Spike; channels it while no enemy is in sight; an enemy seen or the
-// orb gone drops the errand. Returns true (channelling: the bot's input is set), an orb to walk to, or null.
+// orb gone drops the errand, and so does an errand not captured within ULT_ORB.give s. It channels from ULT_ORB.reach m (was
+// r * 0.6 = 0.96 m, inside goalPath's 1.2 m loose stop: a bot could stand still short of it all round). Returns true (channelling: the bot's input is set), an orb to walk to, or null.
 export function ultOrbBot(sim,u){const O=sim.ultOrbs;if(!O?.length||u.human||sim.buy>0)return null;const sp=sim.spike;
- if(u.orbR!==sim.round){u.orbR=sim.round;u.orbGo=null;if(((u.id*7919+sim.round*104729)%100)/100<ULT_ORB.botChance){let best=null,bd=ULT_ORB.botRange;for(const o of O){const d=Math.hypot(o.x-u.x,o.z-u.z);if(d<bd){bd=d;best=o;}}u.orbGo=best?best.id:null;}}
+ if(u.orbR!==sim.round){u.orbR=sim.round;u.orbGo=null;u.orbAt=null;if(((u.id*7919+sim.round*104729)%100)/100<ULT_ORB.botChance){let best=null,bd=ULT_ORB.botRange;for(const o of O){const d=Math.hypot(o.x-u.x,o.z-u.z);if(d<bd){bd=d;best=o;}}u.orbGo=best?best.id:null;}}
  if(u.orbGo==null)return null;const o=O.find(q=>q.id===u.orbGo);if(!o||sp?.carrier===u.id||sp?.st==='plant'){u.orbGo=null;return null;}
+ if(u.orbAt==null)u.orbAt=sim.time;if(!(u.orbT>0)&&sim.time-u.orbAt>ULT_ORB.give){u.orbGo=null;return null;}/* not captured in time (blocked, contested): given up */
  const eye=[u.x,u.y+1.6-(u.ch||0),u.z];if(sim.units.some(v=>v!==u&&v.alive&&!v.loading&&v.team!==u.team&&Math.hypot(v.x-u.x,v.z-u.z)<55&&sim.canSee(u,v,eye,[v.x,v.y+1.1,v.z]))){u.orbGo=null;return null;}
- if(Math.hypot(u.x-o.x,u.z-o.z)<ULT_ORB.r*.6&&Math.abs(u.y-o.y)<ULT_ORB.dy){u.input={interact:true};u.inputAt=sim.time;return true;}
+ if(Math.hypot(u.x-o.x,u.z-o.z)<ULT_ORB.reach&&Math.abs(u.y-o.y)<ULT_ORB.dy){u.input={interact:true};u.inputAt=sim.time;return true;}
  return o;}
 // Snapshot rows (roundState): uo [[id, x, y, z, channelled 0..1]] (none in the round's end phase or once planted), uoc = this
 // player's own channel 0..1.
