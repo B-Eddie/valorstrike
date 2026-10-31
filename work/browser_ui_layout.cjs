@@ -1,6 +1,7 @@
 // UI layout checks (headless Chromium, real page): queue tabs fit, Custom GO filled, Custom card badges clear of titles, Settings Colourblind HUD row,
 // controls key caps, buy-phase objective subtitle, HUD ability keys, buy cards + team rows unclipped, pause Surrender note layout,
-// teammate blind wears off / no white spectate overlay, results not covered by the spectate bar or the combat report. Exit 0 = all pass.
+// teammate blind wears off / no white spectate overlay, results not covered by the spectate bar or the combat report;
+// lane 3: Settings Enemy highlight colour on one line, HUD scales with the screen (1080p / 1440p) without panel overlaps, Killjoy's 9 ult pips fit the scoreboard. Exit 0 = all pass.
 //   ROOT=<repo> PORT=<port> [LEG=lobby] node work/browser_ui_layout.cjs <outdir> <prefix> [WxH] [map]
 // A static server must serve ROOT on 127.0.0.1:PORT (python3 -m http.server PORT --bind 127.0.0.1 -d ROOT).
 const PW='/workspace/work/pw/node_modules/playwright';process.env.PLAYWRIGHT_BROWSERS_PATH=process.env.PLAYWRIGHT_BROWSERS_PATH||'/workspace/work/pw/browsers';
@@ -57,11 +58,16 @@ const log=(k,v)=>{R.steps.push([((Date.now()-t0)/1000).toFixed(1),k,v]);fs.write
  await X(`(document.querySelector('#xSTab button[data-st="c"]')||{click(){}}).click();1`);await page.waitForTimeout(300);
  const L5=await J(`(()=>{const B=[...document.querySelectorAll('#xKb button')];return {n:B.length,big:B.map(b=>{const k=b.querySelector('b'),l=b.querySelector('span');return {k:k.textContent,kf:parseFloat(getComputedStyle(k).fontSize),lf:parseFloat(getComputedStyle(l).fontSize),cl:b.scrollWidth>b.clientWidth+1}}).filter(r=>r.kf>r.lf*1.2||r.kf>15||r.cl).slice(0,6)}})()`);
  check('controls key caps not oversized',L5.n>10&&L5.big.length===0,L5);
+ // L6 Settings > General: the Enemy highlight colour segment (Red / Yellow (Deuteranopia) / Purple (Tritanopia)) sits on one line, no wrapped button
+ await X(`(document.querySelector('#xSTab button[data-st="g"]')||document.querySelector('#xSTab button')||{click(){}}).click();1`);await page.waitForTimeout(300);
+ const L6=await J(`(()=>{const B=[...document.querySelectorAll('#mSet #xEnC button')];const r=B.map(b=>b.getBoundingClientRect());return {n:B.length,tops:r.map(q=>Math.round(q.top)),h:r.map(q=>Math.round(q.height)),wrap:B.filter(b=>b.scrollWidth>b.clientWidth+1).map(b=>b.textContent)}})()`);
+ check('settings Enemy highlight colour on one line',L6.n===3&&new Set(L6.tops).size===1&&L6.h.every(h=>h<=48)&&L6.wrap.length===0,L6);
  await click('#mSet [data-close]');await page.waitForTimeout(300);
  if(process.env.LEG!=='lobby'){
-  await X(`FV.pick='${MAP}';window.xSwift=false;setTimeout(()=>xGo(startFive),0);1`);
+  await X(`FV.pick='${MAP}';J.pick='Killjoy';window.xSwift=false;setTimeout(()=>xGo(startFive),0);1`);
   await page.waitForFunction(()=>window.__xe('running&&!window.xLdOn&&bots.length>0'),null,{timeout:900000,polling:2000}).catch(e=>log('start wait',String(e).slice(0,160)));
   await gate();await X('window.__nr=1;1');await frames(3);
+  log('kit',await J(`({pick:J.pick,on:J.on,jOn:jOn(),u:sbUlt('You')})`).catch(e=>String(e)));
   // M4 buy phase: the banner's subtitle tells a first-time player what the round is about, readable (was 10 px "PRESS B TO BUY")
   const M4=await J(`(()=>{const t=document.querySelector('#game .x-top');const cs=getComputedStyle(t,'::after');return {bpo:t.classList.contains('x-bpo'),c:cs.content,fs:parseFloat(cs.fontSize)}})()`);
   check('buy phase subtitle: objective + B to buy, readable',M4.bpo&&/SPIKE/i.test(M4.c)&&/\bB\b/.test(M4.c)&&M4.fs>=13,M4);
@@ -69,6 +75,23 @@ const log=(k,v)=>{R.steps.push([((Date.now()-t0)/1000).toFixed(1),k,v]);fs.write
   // M5 HUD: ability key letters are readable (were 11 px at 80 % opacity, grey on the map)
   const M5=await J(`[...document.querySelectorAll('#game .x-ab .x-as>b')].map(b=>{const cs=getComputedStyle(b);return {k:b.textContent,fs:parseFloat(cs.fontSize),op:+cs.opacity}})`);
   check('HUD ability key letters readable',M5.length===4&&M5.every(r=>r.fs>=13&&r.op>=0.95),M5);
+  // M8 HUD scale: the fixed-pixel HUD read small on big screens; at >= 1000 px tall (1080p / 1440p) the panels are scaled up (minimap, vitals, timer strip), 720p unchanged
+  await X(`FV.buy=Math.min(FV.buy,0.2);for(let i=0;i<4;i++)kfeed(i%2?allies[i%allies.length].name:'You',bots[i%bots.length].name,i%2===0,'Vandal');1`).catch(()=>{});await frames(20);
+  const M8=await J(`(()=>{const R=s=>{const e=document.querySelector(s);if(!e)return null;const cs=getComputedStyle(e);if(cs.display==='none'||cs.visibility==='hidden')return null;const r=e.getBoundingClientRect();return r.width>0&&r.height>0?[Math.round(r.left),Math.round(r.top),Math.round(r.right),Math.round(r.bottom)]:null};
+    const P={map:R('#game #xMap'),top:R('#game .hud.x-top'),hp:R('#game .hud.x-bl'),ab:R('#game .hud.x-ab'),ammo:R('#game .hud.x-br'),cr:R('#game .x-brs'),feed:R('#game #feed')};return {vw:innerWidth,vh:innerHeight,P}})()`);
+  const p=M8.P,big=M8.vh>=1000&&M8.vw>=1700,w=r=>r?r[2]-r[0]:0,h=r=>r?r[3]-r[1]:0;
+  check('HUD scales with the screen (bigger at 1080p / 1440p, 720p unchanged)',!!(p.map&&p.top&&p.hp)&&(big?(w(p.map)>=190&&h(p.top)>=45&&h(p.hp)>=68):(w(p.map)<=170&&h(p.hp)<=64)),{big,map:w(p.map),top:h(p.top),hp:h(p.hp)});
+  const ks=Object.keys(p).filter(k=>p[k]),ov=[];for(let i=0;i<ks.length;i++)for(let j=i+1;j<ks.length;j++){const a=p[ks[i]],b=p[ks[j]];if(a[0]<b[2]-1&&a[2]>b[0]+1&&a[1]<b[3]-1&&a[3]>b[1]+1)ov.push(ks[i]+'/'+ks[j]);}
+  const off=ks.filter(k=>p[k][0]<0||p[k][1]<0||p[k][2]>M8.vw||p[k][3]>M8.vh);
+  check('HUD panels do not overlap and stay on screen',ks.length>=6&&ov.length===0&&off.length===0,{n:ks.length,ov,off,p});
+  if(process.env.SHOT)await shot('layout-hud',true);
+  // M10 scoreboard: Killjoy's 9 ult pips fit the ULT column (overflowed the 104 px column and were clipped)
+  await page.keyboard.down('Tab');await frames(3);
+  const M10=await J(`[...document.querySelectorAll('#xBoard td.ul')].filter(td=>td.offsetParent).map(td=>{const s=td.querySelector('.x-sbp'),a=td.getBoundingClientRect(),cs=getComputedStyle(td),i=[...s.children].map(e=>e.getBoundingClientRect());const l=Math.min(...i.map(q=>q.left)),r=Math.max(...i.map(q=>q.right));return {n:s.children.length,in:[Math.round(a.left+parseFloat(cs.paddingLeft)),Math.round(a.right-parseFloat(cs.paddingRight))],pips:[Math.round(l),Math.round(r)]}})`);
+  const M10b=M10.filter(r=>r.n&&(r.pips[0]<r.in[0]-0.5||r.pips[1]>r.in[1]+0.5));
+  check('scoreboard: Killjoy ult pips fit the ULT column',M10.some(r=>r.n===9)&&M10b.length===0,{rows:M10.length,nine:M10.filter(r=>r.n===9).length,bad:M10b.slice(0,3)});
+  if(process.env.SHOT)await shot('layout-scoreboard',true);
+  await page.keyboard.up('Tab');await frames(2);
   // M1 buy menu: no clipped (ellipsised) text on the weapon cards
   await page.keyboard.press('b');await frames(3);
   const M1=await J(`[...document.querySelectorAll('#xBuy .xb-card small,#xBuy .xb-card em,#xBuy .xb-rqb')].filter(e=>e.offsetParent&&e.getClientRects().length&&getComputedStyle(e).display!=='none'&&e.scrollWidth>e.clientWidth+1).map(e=>e.className+':'+e.textContent)`);
