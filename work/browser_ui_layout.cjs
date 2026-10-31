@@ -83,8 +83,8 @@ const log=(k,v)=>{R.steps.push([((Date.now()-t0)/1000).toFixed(1),k,v]);fs.write
   check('pause Surrender note under its label and aligned',!!M2.sb&&Math.abs(M2.sb-M2.bt)<=2&&Math.abs(M2.sl-M2.bl)<=2,M2);
   await page.keyboard.press('Escape');await frames(2);
   // M6 teammates' blind / concuss wears off (was never counted down: spectating a once-concussed teammate = white screen)
-  await X(`allies.forEach(a=>{a.blind=0.3;});1`).catch(()=>{});await frames(60);
-  const M6=await J(`allies.map(a=>+(a.blind||0).toFixed(2))`);
+  const M6p=await J(`(()=>{const p0=paused;if(paused)resume();allies.forEach(a=>{a.blind=0.3;});return {p0,p:paused,run:running,jOn:jOn(),Jon:!!J.on,mode}})()`).catch(e=>String(e));await frames(60); // the pause menu's Escape may not unpause headless (no pointer lock): jTick runs with dt 0 while paused
+  const M6=await J(`allies.map(a=>+(a.blind||0).toFixed(2))`);log('M6 state',M6p);
   check('teammate blind wears off',M6.length>0&&M6.every(v=>v<=0),M6);
   // M3 results after dying: the spectate bar must not sit on top of Play again / Lobby
   await X(`hurt(player,999,bots[0].name);if(player.hp<=0)pDie(bots[0].name,xWeapOf(bots[0]));1`).catch(()=>{});await frames(10);
