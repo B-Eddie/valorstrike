@@ -12,6 +12,11 @@
 //     ('half': SMGs / shotguns / armour, the bonus round), and a full-buy call never leaves a bot standing with a Classic
 //     because it is short of a rifle: it takes the best it can afford (BotBrain.buyFor 'full' falls back to the half-buy
 //     shop), as players on a full buy do. The losing side keeps its eco / save / force mix.
+//  3. the carrier plants: plantGoal took any nav node inside the plant zone, and the carrier walks an exact goal only to 1 m
+//     short of it, so a spot within 1 m of the zone's edge left it standing just OUTSIDE the zone - not planting (siteAt false),
+//     not walking (arrived) - until the round ran out (132dc0e Ascent seed 5 round 19: the carrier on A's edge 60 s, three
+//     attackers alive at 'Time ran out'; Ascent's A centre itself lies on the zone edge). Now a plant spot lies 1.05 m+ inside
+//     the zone (every point of a 1.05 m ring is plantable; the nearest such nav node when the drawn spot is not).
 import assert from 'node:assert/strict';
 import {SpikeSimulation} from './src/spike.js';
 import {ULT_ORB} from './src/ultorbs.js';
@@ -42,4 +47,19 @@ import BotBrain from '../vendor/bot-brain.cjs';
  // full call, a bot short of a rifle: buys the best it can afford, not heavy armour on a Classic
  const P=BotBrain.personality(7);for(let i=0;i<60;i++){const b=BotBrain.buyFor('full',2600,P,BotBrain.rng(i+1),i%2===0);assert(b.weapon,'full call at 2600: a weapon ('+JSON.stringify(b)+')');}
  for(let i=0;i<60;i++){const b=BotBrain.buyFor('full',4000,P,BotBrain.rng(i+1),false);assert(['Vandal','Phantom','Warden','Operator','Odin'].includes(b.weapon),'full call at 4000: a rifle as before');}}
-console.log('Bot feel 3: (2) a team on a win buys (bonus round, no eco / save), a full call short of a rifle buys the best it can afford; (1) ult-orb errand never freezes 0.96-1.2 m off the orb (channels from goalPath\'s stop, gives up after ULT_ORB.give s)');
+// ---- 3. the carrier plants: no standing on the plant-zone edge ----
+{const fsp=(await import('node:fs/promises')).default,{loadWorld}=await import('./src/world.js');
+ const assets={async fetch(r){try{return new Response(await fsp.readFile(new URL('./public'+new URL(r.url).pathname,import.meta.url)));}catch(e){return new Response('',{status:404});}}};
+ const RING=[];for(let k=0;k<8;k++)RING.push([Math.cos(k*Math.PI/4),Math.sin(k*Math.PI/4)]);
+ let picks=0,shallow=[];
+ for(const map of ['ascent','bind','haven']){const W=await loadWorld(assets,map),S=new SpikeSimulation(W,'five',map,()=>.5);S.start(true);S.buy=0;S.roundDelay=0;
+  for(const site of Object.keys(W.map.sites))for(let rd=1;rd<=24;rd++){S.round=rd;S.spike.site=site;for(const team of [0,1]){const u=S.units.find(v=>v.team===team);S.atk=team;u.plan=null;const L=(await import('./src/bots.js')).plan(S,u);L.plantSite=null;const p=S.plantGoal(u);
+    assert(p,map+' '+site+' round '+rd+': a plant spot');picks++;const bad=RING.filter(([dx,dz])=>S.siteAt({x:p[0]+dx*1.05,y:p[1],z:p[2]+dz*1.05})!==site).length;if(bad)shallow.push(map+' '+site+' r'+rd+' t'+team+' '+bad+'/8');}}}
+ assert.equal(shallow.length,0,'every plant spot lies 1.05 m+ inside the plant zone (goalPath stops an exact goal up to 1 m short): '+shallow.length+'/'+picks+' on the edge, e.g. '+shallow.slice(0,4).join(', '));
+ // Ascent seed 5 round 19 (132dc0e): the carrier froze at (46.0, -27.0) on A, just outside the zone, for 60 s. From there it now plants.
+ {const W=await loadWorld(assets,'ascent'),S=new SpikeSimulation(W,'five','ascent',()=>.5);S.start(true);S.buy=0;S.roundDelay=0;S.canSee=()=>false;
+  for(let rd=1;rd<=8;rd++){S.round=rd;const car=S.units.find(v=>v.team===S.atk);for(const u of S.units){u.plan=null;u.react=null;if(u!==car)Object.assign(u,{x:0,z:u.team===S.atk?50:-50,input:{}});}
+   S.spike={st:'carry',carrier:car.id,x:46,y:10.07,z:-27,t:45,pt:0,dt:0,site:'A'};Object.assign(car,{x:46,y:10.07,z:-27,vx:0,vz:0,vy:0,air:false,alive:true,hp:100});car.orbR=S.round;car.orbGo=null;
+   S.bot=function(u){return u===car?SpikeSimulation.prototype.bot.call(this,u):undefined;};let n=0;for(;n<240&&S.spike.st==='carry';n++)S.step(.05);
+   assert.equal(S.spike.st,'plant','round '+rd+': the carrier at the A edge planted within 12 s (was: stood still outside the zone)');}}}
+console.log('Bot feel 3: (3) every plant spot 1.05 m+ inside the zone, the carrier never stands on the edge; (2) a team on a win buys (bonus round, no eco / save), a full call short of a rifle buys the best it can afford; (1) ult-orb errand never freezes 0.96-1.2 m off the orb (channels from goalPath\'s stop, gives up after ULT_ORB.give s)');
