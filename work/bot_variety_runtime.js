@@ -634,4 +634,17 @@ function xbUnembed(u,dt){if(!u||!u.g||u.nt||u.xk!=null||u.xj!=null||u.ku>0||u.xu
  if(best<0)return false;const n=N[best];(XBV.emlog||(XBV.emlog=[])).push({name:u.name,from:[+p.x.toFixed(2),+p.y.toFixed(2),+p.z.toFixed(2)],to:best});if(XBV.emlog.length>100)XBV.emlog.shift();
  p.x=n[0];p.y=n[1];p.z=n[2];u.np=null;u.uw=null;u.usP=null;if(u.smMotor){u.smMotor.vx=0;u.smMotor.vz=0;}return true;}
 if(typeof xUn==='function'){const un0=xUn;xUn=function(u,dt,vx,vz){try{xbUnembed(u,dt);}catch(e){}return un0.apply(this,arguments);};}
+// (4) Reloading like a player (lane-botfeel; = server Simulation botReloading / botReloadHold, shared BotBrain.reloadPlay /
+// reloadBack / trailNote / reloadSpot). A bot whose gun is reloading (BOT AMMO A.rl; a per-round reload with rounds left
+// still fires) while it sees the enemy backs off - toward where it peeked from (u.xbTr: its unseen trail) when that is close,
+// else straight away (to a free side when a wall is behind) - instead of strafing / standing in the enemy's sight (xFight ->
+// u.xbRc, the fight loops' stand-still skips it); unsighted mid-reload with a remembered enemy within RELOAD.hold m it holds
+// the angle (no re-peek) until reloaded. xbReHold runs every unsighted frame of the fight loops and keeps the trail.
+const XRB_V=[0,0];
+function xbReloading(u){const A=u&&!u.nt&&u.xAm;return !!A&&A.rl>0&&!(typeof XRLP!=='undefined'&&XRLP[A.w]&&A.mag>0);}
+function xbReBack(u,tx,tz){u.xbRc=0;if(!window.BotBrain||!u.g||!xbReloading(u)||BotBrain.reloadPlay({reloading:true,seen:true})!=='back')return null;const p=u.g.position,c=BotBrain.reloadSpot(u.xbTr,p.x,p.z),y=p.y,
+ v=BotBrain.reloadBack(p.x,p.z,c?c[0]:null,c?c[1]:null,tx,tz,(x,z)=>!blocked(x,z,.45,y));XRB_V[0]=v[0];XRB_V[1]=v[1];u.xbRc=1;return XRB_V;}
+function xbReHold(u){if(!u||!u.g||!window.BotBrain)return false;u.xbRc=0;const p=u.g.position;u.xbTr=BotBrain.trailNote(u.xbTr||[],p.x,p.z,xbNow());if(!xbReloading(u))return false;
+ const sp=typeof FV!=='undefined'&&FV&&FV.sp,car=mode==='five'&&!!sp&&sp.st==='carry'&&sp.c===u,k=xbBest(u,BotBrain.SENSE.hunt);
+ return BotBrain.reloadPlay({reloading:true,seen:false,contactD:k?Math.hypot(k.x-p.x,k.z-p.z):null,carrier:car})==='hold';}
 // ---- END BOT VARIETY ----

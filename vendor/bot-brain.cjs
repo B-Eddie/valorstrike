@@ -609,5 +609,19 @@
  function mayFire(visibleFor,reactionS,losNow){return !!losNow&&visibleFor>=Math.max(REACT[0],reactionS||0);}
  // Fire-rate cap: never faster than the gun (Vandal 9.75 rounds/s). Returns the earliest next shot time.
  function nextShot(t,rate){return t+1/Math.max(.1,rate||1);}
- return {hash,rng,clamp,pickW,REACT,personality,reaction,crosshair,crosshairAt,firePattern,peek,attackPlan,defensePlan,roles,teamBuy,buyFor,onMateDeath,onSound,ATTACK,DEFENSE,utility,UTIL,turnStep,trackLag,wrapA,SPIKE,plantSpot,postPlant,retake,postPlay,SHOOT_UTIL,shootUtility,TAILWIND,tailwindDash,tailwindKeys,LEVEL,level,aimTraits,AIM_H,aimHeight,halfWidth,aimPlan,aimAt,readyToFire,planFire,idlePitch,recoilPull,discipline,hitPart,BUY,buyArea,buyRoute,buyExit,buySpot,buyWander,buyHold,buyNew,buyTick,buyNext,buySep,SENS,cm360,sensOf,turnRate,SENSE,inView,audible,earSpot,memNew,memNote,memForget,memBest,repeek,mayFire,nextShot,areas,DFORM,GAP,midPoint,RESPOND,nearest,tradeSpot,follow,buyNear,buyCross,reactR,reacts,FIRE,sprayFade,sprayPull,turnAcc,trackTurn,cornerPick,FLASH,flashRead,blindPlay,PEEK,peekStep};
+ // Reloading like a player (lane-botfeel): never in the enemy's sight - back off toward where it peeked from (reloadSpot: the
+ // newest spot of its unseen trail RELOAD.min..RELOAD.back m away: the corner is between them again), else straight away from
+ // the enemy (turned up to 90 deg to the first free side when a wall is behind) - and no re-peek mid-reload: unsighted with a
+ // remembered enemy within RELOAD.hold m it holds the angle until the magazine is back. The Spike carrier keeps its path.
+ // st {reloading, seen, contactD (m, the freshest remembered enemy), carrier}.
+ const RELOAD={back:10,hold:25,min:1.5,step:.25,keep:12,probe:1,turn:[0,.785,-.785,1.571,-1.571]};
+ function reloadPlay(st){if(!st||!st.reloading)return null;if(st.seen)return 'back';if(!st.carrier&&st.contactD!=null&&st.contactD<RELOAD.hold)return 'hold';return null;}
+ // unseen trail T: [[x, z, t], ...] newest last, one point per RELOAD.step s while the bot sees no one, the last RELOAD.keep kept
+ function trailNote(T,x,z,t){const L=T.length?T[T.length-1]:null;if(L&&t-L[2]<RELOAD.step&&t>=L[2])return T;if(T.length>=RELOAD.keep){const o=T.shift();o[0]=x;o[1]=z;o[2]=t;T.push(o);}else T.push([x,z,t]);return T;}
+ function reloadSpot(T,x,z){if(!T)return null;for(let i=T.length-1;i>=0;i--){const q=T[i],d=Math.hypot(q[0]-x,q[1]-z);if(d>=RELOAD.min)return d<RELOAD.back?q:null;}return null;}
+ // unit world direction (x, z) of the back-off from (x, z): toward the spot (cx, cz) when 0.4..RELOAD.back m away, else away from
+ // the enemy at (tx, tz); free(x, z) (optional): the first of away / +-45 / +-90 deg whose point RELOAD.probe m out is free
+ function reloadBack(x,z,cx,cz,tx,tz,free){if(cx!=null&&cz!=null){const ex=cx-x,ez=cz-z,l=Math.hypot(ex,ez);if(l>.4&&l<RELOAD.back)return [ex/l,ez/l];}const ax=x-tx,az=z-tz,l=Math.hypot(ax,az)||1,ux=ax/l,uz=az/l;
+  if(free)for(const a of RELOAD.turn){const c=Math.cos(a),s=Math.sin(a),vx=ux*c-uz*s,vz=ux*s+uz*c;if(free(x+vx*RELOAD.probe,z+vz*RELOAD.probe))return [vx,vz];}return [ux,uz];}
+ return {hash,rng,clamp,pickW,REACT,personality,reaction,crosshair,crosshairAt,firePattern,peek,attackPlan,defensePlan,roles,teamBuy,buyFor,onMateDeath,onSound,ATTACK,DEFENSE,utility,UTIL,turnStep,trackLag,wrapA,SPIKE,plantSpot,postPlant,retake,postPlay,SHOOT_UTIL,shootUtility,TAILWIND,tailwindDash,tailwindKeys,LEVEL,level,aimTraits,AIM_H,aimHeight,halfWidth,aimPlan,aimAt,readyToFire,planFire,idlePitch,recoilPull,discipline,hitPart,BUY,buyArea,buyRoute,buyExit,buySpot,buyWander,buyHold,buyNew,buyTick,buyNext,buySep,SENS,cm360,sensOf,turnRate,SENSE,inView,audible,earSpot,memNew,memNote,memForget,memBest,repeek,mayFire,nextShot,areas,DFORM,GAP,midPoint,RESPOND,nearest,tradeSpot,follow,buyNear,buyCross,reactR,reacts,FIRE,sprayFade,sprayPull,turnAcc,trackTurn,cornerPick,FLASH,flashRead,blindPlay,PEEK,peekStep,RELOAD,reloadPlay,reloadBack,trailNote,reloadSpot};
 });

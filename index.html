@@ -4891,8 +4891,8 @@ function tick(dt) {
     if (see) { // duel: stand for the first bullets, then counter-strafe 0.3-0.6 s, stop, shoot again
       b.flip = (b.flip || 0.5) - dt; if (b.flip <= 0) { b.strafe *= -1; b.flip = 0.3 + Math.random() * 0.3; } // all modes, 5v5 included
       [vx, vz] = xFight(b, dt, tg.x, tg.z, d);
-      if ((mode !== "five" || b.hp >= 40) && ((b.see || 0) < (b.stand || 0.35) || b.flip < 0.1 || b.scp)) vx = vz = 0; // scoped holders stay put; b.stand: this bot's own stand-still before strafing
-      if (b.pk === 2 && (b.see || 0) < 0.2) { vx = (-dz / d) * b.strafe; vz = (dx / d) * b.strafe; } // carry the wide swing through
+      if ((mode !== "five" || b.hp >= 40) && !b.xbRc && ((b.see || 0) < (b.stand || 0.35) || b.flip < 0.1 || b.scp)) vx = vz = 0; // scoped holders stay put; b.stand: this bot's own stand-still before strafing
+      if (b.pk === 2 && (b.see || 0) < 0.2 && !b.xbRc) { vx = (-dz / d) * b.strafe; vz = (dx / d) * b.strafe; } // carry the wide swing through
     }
     else if (true) {
       let gx = tg.x, gz = tg.z; if (typeof xbHunt === "function") [gx, gz] = xbHunt(b, tg, XG_V); /* out of sight: last-known contact / roam, never the enemy's real spot (BOT VARIETY perception) */ if (b.trT > 0) { b.trT -= dt; [gx, gz] = b.tr; } else if (mode === "five" && !FV.dm) { const o = xGoal(b, bots, !FV.atk, XG_V); if (o) [gx, gz] = o; }
@@ -4900,6 +4900,7 @@ function tick(dt) {
       (b.xUg || (b.xUg = [0, 0]))[0] = gx; b.xUg[1] = gz; // where it is heading (xUtilAcross: is a barrier across its way)
       const ex = gx - p.x, ez = gz - p.z, ed = Math.hypot(ex, ez) || 0.01; if (ed > 0.5) { vx = ex / ed; vz = ez / ed; }
       [vx, vz] = xPeekMove(b, dt, kd, kx, kz, vx, vz);
+      if (typeof xbReHold === "function" && xbReHold(b)) vx = vz = 0; // mid-reload with an enemy remembered close: hold the angle, no re-peek (BOT VARIETY, = server)
     } else { vx = (-dz / d) * b.strafe * 0.5; vz = (dx / d) * b.strafe * 0.5; }
     if (!(b.det > 0)) [vx, vz] = xUn(b, dt, vx, vz);
     if (see && b.bn > 0 && d > 20) vx = vz = 0; // stop to tap/burst at range
@@ -4966,8 +4967,8 @@ function tick(dt) {
     const sx = gx - p.x, sz = gz - p.z, sd = Math.hypot(sx, sz), f5 = mode === "five";
     a.ts = tg ? (a.ts || 0) + dt : 0;
     if (tg) { const q = tg.g.position; if (!(typeof xbView === "function" && xbView(a, tg, q.x, q.y || 0, q.z, tg.cr ? 0.28 : 0, dt))) { a.g.rotation.y = typeof xbFaceAim === "function" ? xbFaceAim(a, Math.atan2(q.x - p.x, q.z - p.z), dt) : Math.atan2(q.x - p.x, q.z - p.z); xBotAim(a, XTK.q.set(q.x, q.y + 1.5 - (a.hd === false ? 0.45 : 0), q.z), from); } a.flip -= dt; if (a.flip <= 0) { a.strafe *= -1; a.flip = f5 ? 0.3 + Math.random() * 0.3 : 0.8 + Math.random(); } [vx, vz] = xFight(a, dt, q.x, q.z, td || 0.01);
-      if (f5 && a.hp >= 40 && (a.ts < (a.stand || 0.35) || a.flip < 0.1 || a.scp)) vx = vz = 0; // 5v5: stop for the first shots, counter-strafe 0.3-0.6 s, stop again
-      if (a.pk === 2 && a.ts < 0.2) { vx = (-pdz / pd) * a.strafe; vz = (pdx / pd) * a.strafe; } } // carry the wide swing through
+      if (f5 && a.hp >= 40 && !a.xbRc && (a.ts < (a.stand || 0.35) || a.flip < 0.1 || a.scp)) vx = vz = 0; // 5v5: stop for the first shots, counter-strafe 0.3-0.6 s, stop again
+      if (a.pk === 2 && a.ts < 0.2 && !a.xbRc) { vx = (-pdz / pd) * a.strafe; vz = (pdx / pd) * a.strafe; } } // carry the wide swing through
     else if (tg) {
       const q = tg.g.position, dx = q.x - p.x, dz = q.z - p.z, d = td || 0.01;
       a.g.rotation.y = Math.atan2(dx, dz);
@@ -4975,6 +4976,7 @@ function tick(dt) {
       vx = (-dz / d) * a.strafe * 0.5; vz = (dx / d) * a.strafe * 0.5;
     } else if (sd > (mode === "five" ? 0.5 : rf ? 3 : 0.6)) { vx = sx / sd; vz = sz / sd; a.g.rotation.y = Math.atan2(vx, vz); }
     if (!tg && pe) [vx, vz] = xPeekMove(a, dt, apd, apx, apz, vx, vz);
+    if (!tg && typeof xbReHold === "function" && xbReHold(a)) vx = vz = 0; // mid-reload with an enemy remembered close: hold, no re-peek (BOT VARIETY)
     [vx, vz] = xUn(a, dt, vx, vz);
     if (!tg) xFace(a, dt, vx, vz); a.cr = !!tg && td < 8 && !!a.crR; a.mv = !!(vx || vz); // crouch-spray up close, 30% of fights
     { const pg = window.xPG; if (!tg && pg && pg.ex > 0 && performance.now() < pg.ex && Math.abs(vx) + Math.abs(vz) < 0.15) a.g.rotation.y = Math.atan2(pg.x - p.x, pg.z - p.z); } // idle allies turn toward an enemy ping
@@ -8191,6 +8193,7 @@ function xStep(u, dt) { // scripted links (teleporter pad 0.5 s, Hookah window j
 }
 function xFight(u, dt, tx, tz, d) { // peek-strafe, stop dead to fire; below 40 HP fall back to cover
   const p = u.g.position; u.xs = false;
+  { const rb = typeof xbReBack === "function" ? xbReBack(u, tx, tz) : null; if (rb) { XF_V[0] = rb[0]; XF_V[1] = rb[1]; return XF_V; } } // reloading in the enemy's sight: back off to where it peeked from (BOT VARIETY xbReBack, = server)
   if (u.hp < 40) {
     u.xcT = (u.xcT || 0) - dt;
     if (!u.xc || u.xcT <= 0) { u.xc = xCover(p.x, p.z, tx, tz, 12) || [p.x - ((tx - p.x) / d) * 6, p.z - ((tz - p.z) / d) * 6]; u.xcT = 1.2; }
@@ -17851,7 +17854,21 @@ if (typeof xUbPost === "function") { const hp0 = xUbPost; xUbPost = function (M)
  function mayFire(visibleFor,reactionS,losNow){return !!losNow&&visibleFor>=Math.max(REACT[0],reactionS||0);}
  // Fire-rate cap: never faster than the gun (Vandal 9.75 rounds/s). Returns the earliest next shot time.
  function nextShot(t,rate){return t+1/Math.max(.1,rate||1);}
- return {hash,rng,clamp,pickW,REACT,personality,reaction,crosshair,crosshairAt,firePattern,peek,attackPlan,defensePlan,roles,teamBuy,buyFor,onMateDeath,onSound,ATTACK,DEFENSE,utility,UTIL,turnStep,trackLag,wrapA,SPIKE,plantSpot,postPlant,retake,postPlay,SHOOT_UTIL,shootUtility,TAILWIND,tailwindDash,tailwindKeys,LEVEL,level,aimTraits,AIM_H,aimHeight,halfWidth,aimPlan,aimAt,readyToFire,planFire,idlePitch,recoilPull,discipline,hitPart,BUY,buyArea,buyRoute,buyExit,buySpot,buyWander,buyHold,buyNew,buyTick,buyNext,buySep,SENS,cm360,sensOf,turnRate,SENSE,inView,audible,earSpot,memNew,memNote,memForget,memBest,repeek,mayFire,nextShot,areas,DFORM,GAP,midPoint,RESPOND,nearest,tradeSpot,follow,buyNear,buyCross,reactR,reacts,FIRE,sprayFade,sprayPull,turnAcc,trackTurn,cornerPick,FLASH,flashRead,blindPlay,PEEK,peekStep};
+ // Reloading like a player (lane-botfeel): never in the enemy's sight - back off toward where it peeked from (reloadSpot: the
+ // newest spot of its unseen trail RELOAD.min..RELOAD.back m away: the corner is between them again), else straight away from
+ // the enemy (turned up to 90 deg to the first free side when a wall is behind) - and no re-peek mid-reload: unsighted with a
+ // remembered enemy within RELOAD.hold m it holds the angle until the magazine is back. The Spike carrier keeps its path.
+ // st {reloading, seen, contactD (m, the freshest remembered enemy), carrier}.
+ const RELOAD={back:10,hold:25,min:1.5,step:.25,keep:12,probe:1,turn:[0,.785,-.785,1.571,-1.571]};
+ function reloadPlay(st){if(!st||!st.reloading)return null;if(st.seen)return 'back';if(!st.carrier&&st.contactD!=null&&st.contactD<RELOAD.hold)return 'hold';return null;}
+ // unseen trail T: [[x, z, t], ...] newest last, one point per RELOAD.step s while the bot sees no one, the last RELOAD.keep kept
+ function trailNote(T,x,z,t){const L=T.length?T[T.length-1]:null;if(L&&t-L[2]<RELOAD.step&&t>=L[2])return T;if(T.length>=RELOAD.keep){const o=T.shift();o[0]=x;o[1]=z;o[2]=t;T.push(o);}else T.push([x,z,t]);return T;}
+ function reloadSpot(T,x,z){if(!T)return null;for(let i=T.length-1;i>=0;i--){const q=T[i],d=Math.hypot(q[0]-x,q[1]-z);if(d>=RELOAD.min)return d<RELOAD.back?q:null;}return null;}
+ // unit world direction (x, z) of the back-off from (x, z): toward the spot (cx, cz) when 0.4..RELOAD.back m away, else away from
+ // the enemy at (tx, tz); free(x, z) (optional): the first of away / +-45 / +-90 deg whose point RELOAD.probe m out is free
+ function reloadBack(x,z,cx,cz,tx,tz,free){if(cx!=null&&cz!=null){const ex=cx-x,ez=cz-z,l=Math.hypot(ex,ez);if(l>.4&&l<RELOAD.back)return [ex/l,ez/l];}const ax=x-tx,az=z-tz,l=Math.hypot(ax,az)||1,ux=ax/l,uz=az/l;
+  if(free)for(const a of RELOAD.turn){const c=Math.cos(a),s=Math.sin(a),vx=ux*c-uz*s,vz=ux*s+uz*c;if(free(x+vx*RELOAD.probe,z+vz*RELOAD.probe))return [vx,vz];}return [ux,uz];}
+ return {hash,rng,clamp,pickW,REACT,personality,reaction,crosshair,crosshairAt,firePattern,peek,attackPlan,defensePlan,roles,teamBuy,buyFor,onMateDeath,onSound,ATTACK,DEFENSE,utility,UTIL,turnStep,trackLag,wrapA,SPIKE,plantSpot,postPlant,retake,postPlay,SHOOT_UTIL,shootUtility,TAILWIND,tailwindDash,tailwindKeys,LEVEL,level,aimTraits,AIM_H,aimHeight,halfWidth,aimPlan,aimAt,readyToFire,planFire,idlePitch,recoilPull,discipline,hitPart,BUY,buyArea,buyRoute,buyExit,buySpot,buyWander,buyHold,buyNew,buyTick,buyNext,buySep,SENS,cm360,sensOf,turnRate,SENSE,inView,audible,earSpot,memNew,memNote,memForget,memBest,repeek,mayFire,nextShot,areas,DFORM,GAP,midPoint,RESPOND,nearest,tradeSpot,follow,buyNear,buyCross,reactR,reacts,FIRE,sprayFade,sprayPull,turnAcc,trackTurn,cornerPick,FLASH,flashRead,blindPlay,PEEK,peekStep,RELOAD,reloadPlay,reloadBack,trailNote,reloadSpot};
 });
 // Spawn barriers (Valorant's buy-phase walls), shared by the server (spike.js world, bots.js) and the page (UMD:
 // index.html inlines it in the BOT VARIETY block and reads window.SpawnBarriers; native_maps_runtime nmBlocked and the
@@ -18546,6 +18563,19 @@ function xbUnembed(u,dt){if(!u||!u.g||u.nt||u.xk!=null||u.xj!=null||u.ku>0||u.xu
  if(best<0)return false;const n=N[best];(XBV.emlog||(XBV.emlog=[])).push({name:u.name,from:[+p.x.toFixed(2),+p.y.toFixed(2),+p.z.toFixed(2)],to:best});if(XBV.emlog.length>100)XBV.emlog.shift();
  p.x=n[0];p.y=n[1];p.z=n[2];u.np=null;u.uw=null;u.usP=null;if(u.smMotor){u.smMotor.vx=0;u.smMotor.vz=0;}return true;}
 if(typeof xUn==='function'){const un0=xUn;xUn=function(u,dt,vx,vz){try{xbUnembed(u,dt);}catch(e){}return un0.apply(this,arguments);};}
+// (4) Reloading like a player (lane-botfeel; = server Simulation botReloading / botReloadHold, shared BotBrain.reloadPlay /
+// reloadBack / trailNote / reloadSpot). A bot whose gun is reloading (BOT AMMO A.rl; a per-round reload with rounds left
+// still fires) while it sees the enemy backs off - toward where it peeked from (u.xbTr: its unseen trail) when that is close,
+// else straight away (to a free side when a wall is behind) - instead of strafing / standing in the enemy's sight (xFight ->
+// u.xbRc, the fight loops' stand-still skips it); unsighted mid-reload with a remembered enemy within RELOAD.hold m it holds
+// the angle (no re-peek) until reloaded. xbReHold runs every unsighted frame of the fight loops and keeps the trail.
+const XRB_V=[0,0];
+function xbReloading(u){const A=u&&!u.nt&&u.xAm;return !!A&&A.rl>0&&!(typeof XRLP!=='undefined'&&XRLP[A.w]&&A.mag>0);}
+function xbReBack(u,tx,tz){u.xbRc=0;if(!window.BotBrain||!u.g||!xbReloading(u)||BotBrain.reloadPlay({reloading:true,seen:true})!=='back')return null;const p=u.g.position,c=BotBrain.reloadSpot(u.xbTr,p.x,p.z),y=p.y,
+ v=BotBrain.reloadBack(p.x,p.z,c?c[0]:null,c?c[1]:null,tx,tz,(x,z)=>!blocked(x,z,.45,y));XRB_V[0]=v[0];XRB_V[1]=v[1];u.xbRc=1;return XRB_V;}
+function xbReHold(u){if(!u||!u.g||!window.BotBrain)return false;u.xbRc=0;const p=u.g.position;u.xbTr=BotBrain.trailNote(u.xbTr||[],p.x,p.z,xbNow());if(!xbReloading(u))return false;
+ const sp=typeof FV!=='undefined'&&FV&&FV.sp,car=mode==='five'&&!!sp&&sp.st==='carry'&&sp.c===u,k=xbBest(u,BotBrain.SENSE.hunt);
+ return BotBrain.reloadPlay({reloading:true,seen:false,contactD:k?Math.hypot(k.x-p.x,k.z-p.z):null,carrier:car})==='hold';}
 // ---- END BOT VARIETY ----
 // ---- BOT AMMO ----
 // Offline bots (enemy + ally) carry real magazines, reserve ammo and per-weapon reload times, like the server's bots

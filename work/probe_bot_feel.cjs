@@ -6,7 +6,8 @@
 //           the share of in-sight reload time spent backing away from the enemy
 //   low hp: hp < 40 and in sight: share backing away / moving toward
 //   clumping: nearest living teammate distance (median, share < 2 m), share of bots with 2+ mates within 4 m
-//   idle: still >= 8 s not fighting, wall stare (unsighted, standing, facing a wall within 1.2 m)
+//   idle: still >= 8 s not fighting, wall stare (unsighted, standing, its eye-level view blocked within 1.2 m: a wall,
+//         not a box it looks over)
 //   trades: share of deaths whose killer died to the victim's team within 3 s; deaths with a mate within 15 m
 //   abilities: casts per bot-round (xBUse), peek kinds at new fights (pk 1 jiggle / 2 wide / 3 tight / 0 none)
 //   sounds: hearing onsets; running (loud) while a remembered enemy is within 15 m and unsighted
@@ -34,7 +35,7 @@ const SECS=+(process.env.SECS||240),SEED=+(process.env.SEED||3),MAP=process.env.
   const r=JSON.parse(xe(`JSON.stringify((()=>{const o={buy:FV.buy,run:running,rd:FV.you+FV.them,u:[]};
    const tp=t=>!t?null:t===player?[player.x,player.z]:t.g?[t.g.position.x,t.g.position.z]:t.x!=null?[t.x,t.z]:null;
    for(const [L,tm] of [[allies,'A'],[bots,'B']])for(const u of L){if(!u||!u.g||!u.alive)continue;const p=u.g.position,A=u.xAm,see=(u.see||u.ts||0)>0,tg=see?tp(u.xTt||u.xTg):null;
-    let wall=99;if(!see){const y=u.g.rotation.y,cx=Math.sin(y),cz=Math.cos(y);for(let s=.3;s<=1.2;s+=.3)if(blocked(p.x+cx*s,p.z+cz*s,.05,p.y)){wall=s;break;}}
+    let wall=99;if(!see){const y=u.g.rotation.y,cx=Math.sin(y),cz=Math.cos(y),E=window.QBFv||(window.QBFv=[new THREE.Vector3(),new THREE.Vector3()]),ey=(p.y||0)+1.6;E[0].set(p.x,ey,p.z);for(let s=.4;s<=1.2;s+=.4){E[1].set(p.x+cx*s,ey,p.z+cz*s);if(!losRaw(E[0],E[1])){wall=s;break;}}}
     let kn=null;try{const c=typeof xbBest==='function'?xbBest(u,BotBrain.SENSE.hunt):null;if(c)kn=Math.hypot(c.x-p.x,c.z-p.z);}catch(e){}
     o.u.push({n:tm+u.name,tm,x:p.x,z:p.z,hp:u.hp,see,tg,rl:!!(A&&A.rl>0),spd:u.spd||0,wall,hear:(u.hearT||0)>0,kn,wk:u.wk||0,cr:!!u.cr});}return o;})())`));
   if(r.buy>0||!r.run){prev.clear();still.clear();continue;}
