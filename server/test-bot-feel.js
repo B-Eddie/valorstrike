@@ -10,6 +10,8 @@
 //     spot (the shots / the call: a 'heard' memory, so it comes round the corner pre-aimed), swings it wide (BotBrain.peek
 //     ctx.trade: no hold / jiggle while a trade is on), and the killer's next fight within TRADE.focus s of its kill starts
 //     TRADE.lag late (its eyes still on the body, its spray resetting: BotBrain.reaction ctx.postKill)
+//  4. moving quietly (BotBrain.quiet / WALK): out of a fight, with an enemy it knows of within WALK.range m, a Spike-mode bot
+//     shift-walks (silent) instead of running at it; never while trading, swinging wide, carrying the Spike, or seeing it
 // Shared decision: vendor/bot-brain.cjs reloadPlay / reloadBack (the page's BOT VARIETY block uses the same module).
 import assert from 'node:assert/strict';import {createRequire} from 'node:module';
 import {Simulation} from './src/simulation.js';import {SpikeSimulation} from './src/spike.js';import {persona,botView} from './src/bots.js';
@@ -81,4 +83,16 @@ const nodes2=nodes,G2=(ray)=>({map:{attacker:[-20,0,20],defender:[20,0,-20],site
  assert.equal(late,8,'a fight 0.3 s after its kill reacts TRADE.lag later ('+late+' of 8)');
  {const {s,t,b}=duo(0);t.hp=1;t.armor=0;s.applyHit(b,t,'body',50,[0,1.6,0],[0,0,-1],12,null,{});assert.ok(!t.alive&&b.killAt===s.time,'a kill stamps the killer\'s killAt');}
  out.push(`trades: ${trades}/16 go, all for the killer with its spot known; trade peeks wide ${wide}/12; post-kill reaction later ${late}/8`);}
+// 4. moving quietly near a known enemy
+{assert.equal(typeof B.quiet,'function','BotBrain.quiet');const W=B.WALK.range;
+ assert.equal(B.quiet({contactD:W-4}),true,'a contact inside WALK.range: walk');assert.equal(B.quiet({contactD:W+6}),false,'a far contact: run');assert.equal(B.quiet({contactD:null}),false,'nothing known: run');
+ for(const k of ['see','trading','wide','carrier'])assert.equal(B.quiet({contactD:W-4,[k]:true}),false,k+': run');
+ const run=(memD,extra)=>{const s=new SpikeSimulation(G2(),'five','ascent',B.rng(5)),b=s.add('Bot Sage','Sage',false),e=s.add('Enemy','Jett',true);
+  s.phase='game';s.round=2;s.atk=1;s.buy=0;Object.assign(b,{team:0,x:16,y:0,z:-16,look:0,alive:true,hp:100});Object.assign(e,{team:1,x:-18,y:0,z:18,alive:true,hp:100});
+  s.spike={st:'carry',carrier:e.id,x:0,y:0,z:0,t:45,pt:0,dt:0,site:'A'};s.remaining=80;s.time=30;if(extra)extra(s,b,e);let w=0,f=0;
+  for(let i=0;i<20;i++){s.time+=.05;if(memD)B.memNote(b.mem||(b.mem=B.memNew()),e.id,b.x-memD*.7,0,b.z+memD*.7,s.time,'heard');s.bot(b);if(b.input.forward){f++;if(b.input.walk)w++;}}return [w,f];};
+ const [w1,f1]=run(10),[w0,f0]=run(null),[w3,f3]=run(W+10),[wt,ft]=run(10,(s,b)=>{b.react={kind:'trade',x:-8,y:0,z:0,until:s.time+5};});
+ assert.ok(f1>=15&&w1===f1,'a heard enemy 10 m away: it walks ('+w1+' of '+f1+' moving ticks)');assert.ok(f0>=15&&w0===0,'nothing known: it runs ('+w0+' of '+f0+')');
+ assert.ok(w3===0,'a contact past WALK.range: it runs ('+w3+' of '+f3+')');assert.ok(ft>=15&&wt===0,'a trade is run ('+wt+' of '+ft+')');
+ out.push(`quiet: walks ${w1}/${f1} ticks with a contact 10 m away, runs with none / far / trading`);}
 console.log('Bot feel (server): '+out.join('; '));
