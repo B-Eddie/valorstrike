@@ -648,6 +648,29 @@ function xhpYaw(u,dt,vx,vz){if(!xhpOn(u))return null;const p=u.g.position,now=pe
  const y=BotBrain.cornerPick(XHP.ANG,XHP.DEP,hd);u.xhpC={t:now,h:hd,y:y==null?hd:y};return u.xhpC.y;}
 if(typeof xFace==='function'){const f0=xFace;xFace=function(u,dt,vx,vz){if(u&&u.g&&!(u.hearT>0)&&!(typeof xbGlance==='function'&&xbGlance(u))){let t=null;try{t=xhpYaw(u,dt,vx,vz);}catch(e){t=null;}
   if(t!=null){const y=typeof xbFaceTo==='function'?xbFaceTo(u,t,dt):null;u.g.rotation.y=y!==null?y:u.g.rotation.y+xAng(t-u.g.rotation.y)*Math.min(1,dt*8);return;}}return f0.apply(this,arguments);};}
+// (2b) Pre-aiming what it heard or last saw (lane-preaim; integrate-16 probe: offline crosshair within 10 deg of the enemy at
+// a fresh fight 37 % vs the server's 48 %). Off-fight the view went to the raw spot of a sound (xHear: hearT) or of the
+// freshest contact (xbGlance) - a spot behind cover, so the enemy came round the corner 13-50 deg off it (seed 3: 42 of 53
+// fresh fights started in hear mode, 11 under 10 deg). Now it goes to the corner that enemy has to come round: the nav route
+// from the bot to the spot, first break of the bot's eye line, at head height (BotBrain.pathCorner; the spot itself when the
+// route is in view, the raw spot when no corner fits: another floor, a wall at the shoulder). Same information as before (the
+// spot it heard / remembered), at the bot's own turn rate and hand acceleration (xbFaceTo), a little off like a player's
+// (BotBrain.preAimErr, own seeded stream: no draw taken from xbRand). A route search (nmPath, cached)
+// and its eye-line rays run only when the bot's or the spot's nav node changes, at most XPA.max a frame (else the last
+// corner while the spot is within 3 m of it, else the raw spot).
+var XPA={f:-1,n:0,max:2,P:null,Q:null};
+function xpaCorner(u,tx,ty,tz){const C=nmActive();if(!C||!C.nav)return null;const p=u.g.position,s=nmNear(C,p.x,p.z,p.y),e=nmNear(C,tx,tz,Number.isFinite(ty)?ty:p.y);if(s<0||e<0)return null;
+ const K=u.xpaK,key=s*C.nav.nodes.length+e;if(K&&K.C===C&&K.key===key)return K.pt;
+ if(XPA.f!==XNF){XPA.f=XNF;XPA.n=0;}if(XPA.n>=XPA.max)return K&&K.C===C&&Math.hypot(K.tx-tx,K.tz-tz)<3?K.pt:null;XPA.n++;
+ const N=C.nav.nodes,R=s===e?[s]:nmPath(C,s,e),pts=[[p.x,p.y,p.z]];if(!R||!R.length||R[R.length-1]!==e){u.xpaK={C,key,tx,tz,pt:null};return null;}
+ for(let i=1;i<R.length;i++)pts.push(N[R[i]]);pts.push([tx,Number.isFinite(ty)?ty:N[e][1],tz]);
+ const eye=XPA.P||(XPA.P=new RV()),q=XPA.Q||(XPA.Q=new RV());eye.set(p.x,p.y+1.5,p.z);
+ const pt=BotBrain.pathCorner(pts,n=>los(eye,q.set(n[0],n[1]+1.5,n[2]))),B=xbBrain(u);u.xpaK={C,key,tx,tz,pt,o:B?BotBrain.preAimErr(B,BotRoutes.rng(BotRoutes.hash((u.name||'')+'|pre|'+key))):0};return pt;}
+// the spot to pre-aim: a fresh sound (hearT; its height when xHear below noted it, a trade / hold spot has none) else the freshest contact; null = none
+function xpaSpot(u){if(u.hearT>0&&u.hear){const H=u.xpaH;return [u.hear[0],H&&H[0]===u.hear[0]&&H[2]===u.hear[1]?H[1]:null,u.hear[1]];}const c=typeof xbGlance==='function'?xbGlance(u):null;return c?[c.x,c.y,c.z]:null;}
+if(typeof xHear==='function'){const h0=xHear;xHear=function(p){const r=h0.apply(this,arguments);try{if(p&&Number.isFinite(p.y))for(const L of [bots,allies])for(const u of L)if(u&&u.hearT>=1.2&&u.hear&&u.hear[0]===p.x&&u.hear[1]===p.z)u.xpaH=[p.x,p.y,p.z];}catch(e){}return r;};}
+if(typeof xFace==='function'){const f1=xFace;xFace=function(u,dt,vx,vz){if(u&&u.g&&xhpOn(u)){let k=null;try{const S=xpaSpot(u);k=S&&xpaCorner(u,S[0],S[1],S[2]);}catch(e){k=null;}
+  const p=u.g.position,y=k?xbFaceTo(u,Math.atan2(k[0]-p.x,k[2]-p.z)+(u.xpaK&&u.xpaK.o||0),dt):null;if(y!==null){if(u.hearT>0)u.hearT-=dt;u.g.rotation.y=y;u.xpaA=k;return;}}if(u)u.xpaA=null;return f1.apply(this,arguments);};}
 // (3) Out of the geometry. A bot whose capsule ends up inside the map (snapped onto a crate lip / ledge by the floor
 // follow, or spawned against one: every axis move then reads blocked and it stands there for the rest of the round - one
 // defender on Ascent did on 55b5ef7) is put back on the nearest clear navigation node within 3 m after 0.6 s stuck.

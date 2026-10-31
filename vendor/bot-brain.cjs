@@ -100,6 +100,23 @@
    const ni=a<b?i:i+1,fi=a<b?i+1:i,e=ang[ni]+(ang[fi]-ang[ni])*.35,off=Math.abs(wrapA(e-heading)),w=Math.cos(Math.min(1.45,off))**1.5,sc=w/(near+3);if(sc>bs){bs=sc;best=e;}}
   for(let i=0;i<n;i++){const off=Math.abs(wrapA(ang[i]-heading));if(dep[i]>=25&&off<.6){const sc=.6*Math.cos(off)/(12+3);if(sc>bs){bs=sc;best=ang[i];}}}
   return best;}
+ // Pre-aim the angle a heard / remembered enemy comes from (lane-preaim). A sound or a last-known spot behind cover is
+ // not where the enemy shows up: it comes into view where its way to the bot leaves cover. pts: nav points [x, y, z] of the
+ // route from the bot's own spot (pts[0]) to the contact's (last); vis(q): a clear eye line from the bot to q at head
+ // height. Walked back from the contact (the route it would take to the bot), the first point in view is where it appears:
+ // the aim point is the midpoint of that point and the hidden one before it, at head height (the contact's spot itself
+ // when it is in view). The route is cut where it climbs / drops more than PRE.dy m (another floor) or runs past PRE.run m:
+ // walked back from there. null (keep looking at the spot): no point in view, or the corner under PRE.near m away (a wall
+ // at the shoulder, no angle to pre-aim). Returns [x, y, z] or null.
+ const PRE={head:1.5,near:2.5,dy:3,run:40,err:2};
+ // a held corner is an average player's, not a pixel: a yaw offset per corner, PRE.err x the bot's placement error (aimTraits
+ // place, 0.8-2.2 deg) as one standard deviation
+ function preAimErr(P,rand){return gauss(rand)*aimTraits(P).place*PRE.err;}
+ function pathCorner(pts,vis,o){o=o||PRE;if(!pts||pts.length<2)return null;const s=pts[0],near=o.near??PRE.near,dy=o.dy??PRE.dy,run=o.run??PRE.run,head=o.head??PRE.head;
+  let m=pts.length-1;for(let i=1;i<pts.length;i++){const q=pts[i];if(Math.abs(q[1]-s[1])>dy||Math.hypot(q[0]-s[0],q[2]-s[2])>run){m=i-1;break;}}
+  if(m<1)return null;if(m===pts.length-1&&vis(pts[m])){const e=pts[m];return [e[0],e[1]+head,e[2]];}
+  for(let i=m-1;i>=1;i--){const q=pts[i];if(!vis(q))continue;const h=pts[i+1],c=[(q[0]+h[0])/2,(q[1]+h[1])/2+head,(q[2]+h[2])/2];return Math.hypot(c[0]-s[0],c[2]-s[2])<near?null:c;}
+  return null;}
  function trackLag(P,t){return (P.lag||.08)*(TRACK.floor+(1-TRACK.floor)*Math.exp(-Math.max(0,t)/((P.settle||.25)*2)));}
  // bot-gun: tracking a visible target keeps getting better with time - the lag left after a long track is TRACK.floor of
  // the first one (was 0.35)
@@ -666,5 +683,5 @@
  // st {contactD (m to the freshest remembered enemy, null: none), see, trading, wide, carrier, rush}.
  const WALK={range:16};
  function quiet(st){if(!st||st.see||st.trading||st.wide||st.carrier||st.rush)return false;return st.contactD!=null&&st.contactD<WALK.range;}
- return {hash,rng,clamp,pickW,REACT,personality,reaction,crosshair,crosshairAt,firePattern,peek,attackPlan,defensePlan,roles,teamBuy,buyFor,BUYK,onMateDeath,onSound,ATTACK,DEFENSE,utility,UTIL,UTILX,teamGap,fightCast,turnStep,trackLag,wrapA,SPIKE,plantSpot,PLANT,plantDeep,postPlant,retake,postPlay,SHOOT_UTIL,shootUtility,TAILWIND,tailwindDash,tailwindKeys,LEVEL,level,aimTraits,AIM_H,aimHeight,halfWidth,aimPlan,aimAt,readyToFire,planFire,idlePitch,recoilPull,discipline,hitPart,BUY,buyArea,buyRoute,buyExit,buySpot,buyWander,buyHold,buyNew,buyTick,buyNext,buySep,SENS,cm360,sensOf,turnRate,SENSE,inView,audible,earSpot,memNew,memNote,memForget,memBest,repeek,mayFire,nextShot,areas,DFORM,GAP,midPoint,RESPOND,nearest,tradeSpot,follow,buyNear,buyCross,reactR,reacts,FIRE,sprayFade,sprayPull,turnAcc,trackTurn,cornerPick,FLASH,flashRead,blindPlay,PEEK,peekStep,RELOAD,reloadPlay,reloadBack,trailNote,reloadSpot,TRADE,WALK,quiet};
+ return {hash,rng,clamp,pickW,REACT,personality,reaction,crosshair,crosshairAt,firePattern,peek,attackPlan,defensePlan,roles,teamBuy,buyFor,BUYK,onMateDeath,onSound,ATTACK,DEFENSE,utility,UTIL,UTILX,teamGap,fightCast,turnStep,trackLag,wrapA,SPIKE,plantSpot,PLANT,plantDeep,postPlant,retake,postPlay,SHOOT_UTIL,shootUtility,TAILWIND,tailwindDash,tailwindKeys,LEVEL,level,aimTraits,AIM_H,aimHeight,halfWidth,aimPlan,aimAt,readyToFire,planFire,idlePitch,recoilPull,discipline,hitPart,BUY,buyArea,buyRoute,buyExit,buySpot,buyWander,buyHold,buyNew,buyTick,buyNext,buySep,SENS,cm360,sensOf,turnRate,SENSE,inView,audible,earSpot,memNew,memNote,memForget,memBest,repeek,mayFire,nextShot,areas,DFORM,GAP,midPoint,RESPOND,nearest,tradeSpot,follow,buyNear,buyCross,reactR,reacts,FIRE,sprayFade,sprayPull,turnAcc,trackTurn,cornerPick,PRE,pathCorner,preAimErr,FLASH,flashRead,blindPlay,PEEK,peekStep,RELOAD,reloadPlay,reloadBack,trailNote,reloadSpot,TRADE,WALK,quiet};
 });

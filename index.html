@@ -5019,7 +5019,7 @@ function tick(dt) {
       a.g.rotation.y = Math.atan2(dx, dz);
       a.flip -= dt; if (a.flip <= 0) { a.strafe *= -1; a.flip = 0.8 + Math.random(); }
       vx = (-dz / d) * a.strafe * 0.5; vz = (dx / d) * a.strafe * 0.5;
-    } else if (sd > (mode === "five" ? 0.5 : rf ? 3 : 0.6)) { vx = sx / sd; vz = sz / sd; a.g.rotation.y = Math.atan2(vx, vz); }
+    } else if (sd > (mode === "five" ? 0.5 : rf ? 3 : 0.6)) { vx = sx / sd; vz = sz / sd; if (!f5 || typeof xbFaceTo !== "function") a.g.rotation.y = Math.atan2(vx, vz); } // 5v5: the off-fight view is xFace's alone (as enemy bots: corner / sound / contact / held angle at the bot's own turn rate, BOT VARIETY); the snap onto the path heading here ran first, so an ally's crosshair never got more than one turn step off its path (lane-preaim)
     if (!tg && pe) [vx, vz] = xPeekMove(a, dt, apd, apx, apz, vx, vz);
     if (!tg && typeof xbReHold === "function" && xbReHold(a)) vx = vz = 0; // mid-reload with an enemy remembered close: hold, no re-peek (BOT VARIETY)
     [vx, vz] = xUn(a, dt, vx, vz);
@@ -17480,6 +17480,23 @@ if (typeof xUbPost === "function") { const hp0 = xUbPost; xUbPost = function (M)
    const ni=a<b?i:i+1,fi=a<b?i+1:i,e=ang[ni]+(ang[fi]-ang[ni])*.35,off=Math.abs(wrapA(e-heading)),w=Math.cos(Math.min(1.45,off))**1.5,sc=w/(near+3);if(sc>bs){bs=sc;best=e;}}
   for(let i=0;i<n;i++){const off=Math.abs(wrapA(ang[i]-heading));if(dep[i]>=25&&off<.6){const sc=.6*Math.cos(off)/(12+3);if(sc>bs){bs=sc;best=ang[i];}}}
   return best;}
+ // Pre-aim the angle a heard / remembered enemy comes from (lane-preaim). A sound or a last-known spot behind cover is
+ // not where the enemy shows up: it comes into view where its way to the bot leaves cover. pts: nav points [x, y, z] of the
+ // route from the bot's own spot (pts[0]) to the contact's (last); vis(q): a clear eye line from the bot to q at head
+ // height. Walked back from the contact (the route it would take to the bot), the first point in view is where it appears:
+ // the aim point is the midpoint of that point and the hidden one before it, at head height (the contact's spot itself
+ // when it is in view). The route is cut where it climbs / drops more than PRE.dy m (another floor) or runs past PRE.run m:
+ // walked back from there. null (keep looking at the spot): no point in view, or the corner under PRE.near m away (a wall
+ // at the shoulder, no angle to pre-aim). Returns [x, y, z] or null.
+ const PRE={head:1.5,near:2.5,dy:3,run:40,err:2};
+ // a held corner is an average player's, not a pixel: a yaw offset per corner, PRE.err x the bot's placement error (aimTraits
+ // place, 0.8-2.2 deg) as one standard deviation
+ function preAimErr(P,rand){return gauss(rand)*aimTraits(P).place*PRE.err;}
+ function pathCorner(pts,vis,o){o=o||PRE;if(!pts||pts.length<2)return null;const s=pts[0],near=o.near??PRE.near,dy=o.dy??PRE.dy,run=o.run??PRE.run,head=o.head??PRE.head;
+  let m=pts.length-1;for(let i=1;i<pts.length;i++){const q=pts[i];if(Math.abs(q[1]-s[1])>dy||Math.hypot(q[0]-s[0],q[2]-s[2])>run){m=i-1;break;}}
+  if(m<1)return null;if(m===pts.length-1&&vis(pts[m])){const e=pts[m];return [e[0],e[1]+head,e[2]];}
+  for(let i=m-1;i>=1;i--){const q=pts[i];if(!vis(q))continue;const h=pts[i+1],c=[(q[0]+h[0])/2,(q[1]+h[1])/2+head,(q[2]+h[2])/2];return Math.hypot(c[0]-s[0],c[2]-s[2])<near?null:c;}
+  return null;}
  function trackLag(P,t){return (P.lag||.08)*(TRACK.floor+(1-TRACK.floor)*Math.exp(-Math.max(0,t)/((P.settle||.25)*2)));}
  // bot-gun: tracking a visible target keeps getting better with time - the lag left after a long track is TRACK.floor of
  // the first one (was 0.35)
@@ -18046,7 +18063,7 @@ if (typeof xUbPost === "function") { const hp0 = xUbPost; xUbPost = function (M)
  // st {contactD (m to the freshest remembered enemy, null: none), see, trading, wide, carrier, rush}.
  const WALK={range:16};
  function quiet(st){if(!st||st.see||st.trading||st.wide||st.carrier||st.rush)return false;return st.contactD!=null&&st.contactD<WALK.range;}
- return {hash,rng,clamp,pickW,REACT,personality,reaction,crosshair,crosshairAt,firePattern,peek,attackPlan,defensePlan,roles,teamBuy,buyFor,BUYK,onMateDeath,onSound,ATTACK,DEFENSE,utility,UTIL,UTILX,teamGap,fightCast,turnStep,trackLag,wrapA,SPIKE,plantSpot,PLANT,plantDeep,postPlant,retake,postPlay,SHOOT_UTIL,shootUtility,TAILWIND,tailwindDash,tailwindKeys,LEVEL,level,aimTraits,AIM_H,aimHeight,halfWidth,aimPlan,aimAt,readyToFire,planFire,idlePitch,recoilPull,discipline,hitPart,BUY,buyArea,buyRoute,buyExit,buySpot,buyWander,buyHold,buyNew,buyTick,buyNext,buySep,SENS,cm360,sensOf,turnRate,SENSE,inView,audible,earSpot,memNew,memNote,memForget,memBest,repeek,mayFire,nextShot,areas,DFORM,GAP,midPoint,RESPOND,nearest,tradeSpot,follow,buyNear,buyCross,reactR,reacts,FIRE,sprayFade,sprayPull,turnAcc,trackTurn,cornerPick,FLASH,flashRead,blindPlay,PEEK,peekStep,RELOAD,reloadPlay,reloadBack,trailNote,reloadSpot,TRADE,WALK,quiet};
+ return {hash,rng,clamp,pickW,REACT,personality,reaction,crosshair,crosshairAt,firePattern,peek,attackPlan,defensePlan,roles,teamBuy,buyFor,BUYK,onMateDeath,onSound,ATTACK,DEFENSE,utility,UTIL,UTILX,teamGap,fightCast,turnStep,trackLag,wrapA,SPIKE,plantSpot,PLANT,plantDeep,postPlant,retake,postPlay,SHOOT_UTIL,shootUtility,TAILWIND,tailwindDash,tailwindKeys,LEVEL,level,aimTraits,AIM_H,aimHeight,halfWidth,aimPlan,aimAt,readyToFire,planFire,idlePitch,recoilPull,discipline,hitPart,BUY,buyArea,buyRoute,buyExit,buySpot,buyWander,buyHold,buyNew,buyTick,buyNext,buySep,SENS,cm360,sensOf,turnRate,SENSE,inView,audible,earSpot,memNew,memNote,memForget,memBest,repeek,mayFire,nextShot,areas,DFORM,GAP,midPoint,RESPOND,nearest,tradeSpot,follow,buyNear,buyCross,reactR,reacts,FIRE,sprayFade,sprayPull,turnAcc,trackTurn,cornerPick,PRE,pathCorner,preAimErr,FLASH,flashRead,blindPlay,PEEK,peekStep,RELOAD,reloadPlay,reloadBack,trailNote,reloadSpot,TRADE,WALK,quiet};
 });
 // Spawn barriers (Valorant's buy-phase walls), shared by the server (spike.js world, bots.js) and the page (UMD:
 // index.html inlines it in the BOT VARIETY block and reads window.SpawnBarriers; native_maps_runtime nmBlocked and the
@@ -18755,6 +18772,29 @@ function xhpYaw(u,dt,vx,vz){if(!xhpOn(u))return null;const p=u.g.position,now=pe
  const y=BotBrain.cornerPick(XHP.ANG,XHP.DEP,hd);u.xhpC={t:now,h:hd,y:y==null?hd:y};return u.xhpC.y;}
 if(typeof xFace==='function'){const f0=xFace;xFace=function(u,dt,vx,vz){if(u&&u.g&&!(u.hearT>0)&&!(typeof xbGlance==='function'&&xbGlance(u))){let t=null;try{t=xhpYaw(u,dt,vx,vz);}catch(e){t=null;}
   if(t!=null){const y=typeof xbFaceTo==='function'?xbFaceTo(u,t,dt):null;u.g.rotation.y=y!==null?y:u.g.rotation.y+xAng(t-u.g.rotation.y)*Math.min(1,dt*8);return;}}return f0.apply(this,arguments);};}
+// (2b) Pre-aiming what it heard or last saw (lane-preaim; integrate-16 probe: offline crosshair within 10 deg of the enemy at
+// a fresh fight 37 % vs the server's 48 %). Off-fight the view went to the raw spot of a sound (xHear: hearT) or of the
+// freshest contact (xbGlance) - a spot behind cover, so the enemy came round the corner 13-50 deg off it (seed 3: 42 of 53
+// fresh fights started in hear mode, 11 under 10 deg). Now it goes to the corner that enemy has to come round: the nav route
+// from the bot to the spot, first break of the bot's eye line, at head height (BotBrain.pathCorner; the spot itself when the
+// route is in view, the raw spot when no corner fits: another floor, a wall at the shoulder). Same information as before (the
+// spot it heard / remembered), at the bot's own turn rate and hand acceleration (xbFaceTo), a little off like a player's
+// (BotBrain.preAimErr, own seeded stream: no draw taken from xbRand). A route search (nmPath, cached)
+// and its eye-line rays run only when the bot's or the spot's nav node changes, at most XPA.max a frame (else the last
+// corner while the spot is within 3 m of it, else the raw spot).
+var XPA={f:-1,n:0,max:2,P:null,Q:null};
+function xpaCorner(u,tx,ty,tz){const C=nmActive();if(!C||!C.nav)return null;const p=u.g.position,s=nmNear(C,p.x,p.z,p.y),e=nmNear(C,tx,tz,Number.isFinite(ty)?ty:p.y);if(s<0||e<0)return null;
+ const K=u.xpaK,key=s*C.nav.nodes.length+e;if(K&&K.C===C&&K.key===key)return K.pt;
+ if(XPA.f!==XNF){XPA.f=XNF;XPA.n=0;}if(XPA.n>=XPA.max)return K&&K.C===C&&Math.hypot(K.tx-tx,K.tz-tz)<3?K.pt:null;XPA.n++;
+ const N=C.nav.nodes,R=s===e?[s]:nmPath(C,s,e),pts=[[p.x,p.y,p.z]];if(!R||!R.length||R[R.length-1]!==e){u.xpaK={C,key,tx,tz,pt:null};return null;}
+ for(let i=1;i<R.length;i++)pts.push(N[R[i]]);pts.push([tx,Number.isFinite(ty)?ty:N[e][1],tz]);
+ const eye=XPA.P||(XPA.P=new RV()),q=XPA.Q||(XPA.Q=new RV());eye.set(p.x,p.y+1.5,p.z);
+ const pt=BotBrain.pathCorner(pts,n=>los(eye,q.set(n[0],n[1]+1.5,n[2]))),B=xbBrain(u);u.xpaK={C,key,tx,tz,pt,o:B?BotBrain.preAimErr(B,BotRoutes.rng(BotRoutes.hash((u.name||'')+'|pre|'+key))):0};return pt;}
+// the spot to pre-aim: a fresh sound (hearT; its height when xHear below noted it, a trade / hold spot has none) else the freshest contact; null = none
+function xpaSpot(u){if(u.hearT>0&&u.hear){const H=u.xpaH;return [u.hear[0],H&&H[0]===u.hear[0]&&H[2]===u.hear[1]?H[1]:null,u.hear[1]];}const c=typeof xbGlance==='function'?xbGlance(u):null;return c?[c.x,c.y,c.z]:null;}
+if(typeof xHear==='function'){const h0=xHear;xHear=function(p){const r=h0.apply(this,arguments);try{if(p&&Number.isFinite(p.y))for(const L of [bots,allies])for(const u of L)if(u&&u.hearT>=1.2&&u.hear&&u.hear[0]===p.x&&u.hear[1]===p.z)u.xpaH=[p.x,p.y,p.z];}catch(e){}return r;};}
+if(typeof xFace==='function'){const f1=xFace;xFace=function(u,dt,vx,vz){if(u&&u.g&&xhpOn(u)){let k=null;try{const S=xpaSpot(u);k=S&&xpaCorner(u,S[0],S[1],S[2]);}catch(e){k=null;}
+  const p=u.g.position,y=k?xbFaceTo(u,Math.atan2(k[0]-p.x,k[2]-p.z)+(u.xpaK&&u.xpaK.o||0),dt):null;if(y!==null){if(u.hearT>0)u.hearT-=dt;u.g.rotation.y=y;u.xpaA=k;return;}}if(u)u.xpaA=null;return f1.apply(this,arguments);};}
 // (3) Out of the geometry. A bot whose capsule ends up inside the map (snapped onto a crate lip / ledge by the floor
 // follow, or spawned against one: every axis move then reads blocked and it stands there for the rest of the round - one
 // defender on Ascent did on 55b5ef7) is put back on the nearest clear navigation node within 3 m after 0.6 s stuck.
