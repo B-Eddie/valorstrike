@@ -67,7 +67,7 @@ const fails=[];const ok=(c,m)=>{if(!c)fails.push(m);};
   xe('botCanShoot=__bc0;true');
   // Deathmatch: timed sink-out
   xe('dmStart0&&startDM();true');await adv(600);for(let i=0;i<60&&!xe('running&&FV.dm&&player.hp>0');i++)await adv(200);
-  for(let i=0;i<60&&!xe('bots.some(u=>u.alive&&u.xm)');i++)await adv(200); // Deathmatch bots get their agent model once spawned in
+  for(let i=0;i<60&&!xe('!window.xLdOn&&bots.some(u=>u.alive&&u.xm)');i++)await adv(200); // Deathmatch bots get their agent model once spawned in; the loading gate builds the models behind its overlay (c6464d2 xWarmShaders), so also wait for the overlay to hide (the loop draws / ticks nothing while it is up)
   if(xe('running&&FV.dm&&bots.some(u=>u.alive&&u.xm)')){xe('window.__bc1=botCanShoot;botCanShoot=()=>false;true');
    xe(`(()=>{const b=bots.find(u=>u.alive&&u.xm);player.x=b.g.position.x+5;player.z=b.g.position.z;window.__dmb=b;kill(b,false,undefined,'Vandal');return 1})()`);await adv(300);
    const y0=xe('(()=>{const e=XDEAD.find(x=>x.u===__dmb);return e?e.c.m.position.y:null})()');ok(y0!=null,'Deathmatch corpse made');
