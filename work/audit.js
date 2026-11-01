@@ -131,7 +131,7 @@ class El extends Node_ {
   getElementsByTagName(t) { return this.querySelectorAll(t); }
   click() { if (this.disabled) return; dispatch(this, mkEvent("click")); }
   focus() { doc.activeElement = this; } blur() { if (doc.activeElement === this) doc.activeElement = doc.body; }
-  scrollIntoView() {} scrollTo() {} animate() { return { finished: Promise.resolve(), cancel() {}, onfinish: null }; }
+  scrollIntoView() {} scrollTo() {} animate() { return { finished: Promise.resolve(), cancel() {}, play() {}, pause() {}, finish() {}, currentTime: 0, playState: "running", onfinish: null }; }
   getBoundingClientRect() { return { x: 0, y: 0, left: 0, top: 0, right: 200, bottom: 100, width: 200, height: 100 }; }
   getClientRects() { return [this.getBoundingClientRect()]; }
   get clientWidth() { return this.tagName === "CANVAS" ? this.width : 200; } get clientHeight() { return this.tagName === "CANVAS" ? this.height : 100; }
