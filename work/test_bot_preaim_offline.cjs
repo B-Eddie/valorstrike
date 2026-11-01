@@ -58,21 +58,20 @@ const {boot}=require('./page_harness.cjs');
   return S;})())`));
  assert(S.length>=12,'enough staged scenes ('+S.length+')');
  const run=async(heard,tag)=>{const res=[];xe('__E.length=0;true');
-  for(let s=0;s<Math.min(S.length,+(process.env.NS||99));s++){const c=S[s];
+  for(let s=0;s<S.length;s++){const c=S[s];
    xe(`(()=>{const a=__A,b=__B,c=${JSON.stringify(c)};window.__rec=null;window.__c=c;b.g.position.set(c.b[0],c.b[1],c.b[2]);a.g.position.set(c.a[0],c.a[1],c.a[2]);a.alive=true;a.hp=100;b.alive=true;b.hp=100;
     a.xMem=null;a.hear=null;a.hearT=0;a.xHold=null;a.xHp=null;a.trT=0;a.see=0;a.xTg=null;a.xpaK=null;a.xpaH=null;a.g.rotation.y=Math.atan2(c.b[0]-c.a[0],c.b[2]-c.a[2])+Math.PI*(${s}%2?.75:-.75);return 1;})()`);
    await adv(300);
    // 1 s of running footsteps at its start spot (heard 9-22 m away), then 0.4 s quiet, then the silent walk into view
    xe(`window.__rec={s:${s}};window.__tmax=0;true`);
    for(let t=0;t<1000;t+=50){if(heard&&t%300===0)xe('SFX.step({x:__B.g.position.x,y:__B.g.position.y,z:__B.g.position.z});true');await adv(50);xe(`(()=>{const a=__A;a.g.position.set(__c.a[0],__c.a[1],__c.a[2]);timeLeft=999;return 1})()`);}
-   for(let t=0;t<400;t+=50){await adv(50);xe(`(()=>{const a=__A;a.g.position.set(__c.a[0],__c.a[1],__c.a[2]);timeLeft=999;return 1})()`);}if(process.env.DBG)console.log('scene',s,tag,xe(`JSON.stringify({hearT:__A.hearT,ry:+__A.g.rotation.y.toFixed(2),raw:+Math.atan2(__c.b[0]-__c.a[0],__c.b[2]-__c.a[2]).toFixed(2),xpaA:__A.xpaA,see:__A.see,E:__E.length,alive:[__A.alive,__B.alive],run:running,pos:[__A.g.position.x,__A.g.position.z]})`));
+   for(let t=0;t<400;t+=50){await adv(50);xe(`(()=>{const a=__A;a.g.position.set(__c.a[0],__c.a[1],__c.a[2]);timeLeft=999;return 1})()`);}
    const R=c.route.slice(Math.max(0,c.k-3));let seg=0,f=0; /* it has crept up quietly: the walk starts 3 route nodes before it comes into view (inside the bot's 3 s glance at what it heard) */
    for(let t=0;t<6000&&!xe(`__E.some(e=>e.s===${s})`);t+=50){const y0=xe('__A.g.rotation.y');f+=2.9*.05;while(seg<R.length-1){const L=Math.hypot(R[seg+1][0]-R[seg][0],R[seg+1][2]-R[seg][2]);if(f<=L)break;f-=L;seg++;}
     const p=seg<R.length-1?(()=>{const A0=R[seg],A1=R[seg+1],L=Math.hypot(A1[0]-A0[0],A1[2]-A0[2])||1,k=Math.min(1,f/L);return [A0[0]+(A1[0]-A0[0])*k,A0[1]+(A1[1]-A0[1])*k,A0[2]+(A1[2]-A0[2])*k];})():R[R.length-1];
     xe(`__B.g.position.set(${p[0]},${p[1]},${p[2]});true`);await adv(50);H.__drift=Math.max(H.__drift||0,xe('Math.hypot(__A.g.position.x-__c.a[0],__A.g.position.z-__c.a[2])'));xe(`(()=>{const a=__A;a.g.position.set(__c.a[0],__c.a[1],__c.a[2]);timeLeft=999;return 1})()`);
-    if(process.env.DBG2)console.log('  t',t,xe(`JSON.stringify({ry:+__A.g.rotation.y.toFixed(2),hT:+(__A.hearT||0).toFixed(2),gl:(()=>{const c=xbGlance(__A);return c&&[+c.x.toFixed(1),c.y,+c.z.toFixed(1),c.kind]})(),xpaA:__A.xpaA,K:__A.xpaK&&__A.xpaK.key,see:__A.see,tg:!!__A.xTg,xHold:!!__A.xHold})`));
     if(!xe('__A.see>0'))H.__mx=Math.max(H.__mx||0,Math.abs(xe(`xAng(__A.g.rotation.y-(${y0}))`))/.05);}
-   const e=JSON.parse(xe(`JSON.stringify(__E.find(e=>e.s===${s})||null)`));res.push(e?Math.abs(e.yaw)*180/Math.PI:null);if(process.env.DBG)console.log(' ->',e&&(e.yaw*180/Math.PI).toFixed(1),xe(`JSON.stringify({ry:+__A.g.rotation.y.toFixed(2),A:[+__A.g.position.x.toFixed(1),+__A.g.position.z.toFixed(1)],B:[+__B.g.position.x.toFixed(1),+__B.g.position.y.toFixed(1),+__B.g.position.z.toFixed(1)],appear:__c.route[__c.k],xpaA:__A.xpaA,hearT:+(__A.hearT||0).toFixed(2),gl:!!xbGlance(__A),mem:__A.xMem&&Object.values(__A.xMem.c).map(c=>[+c.x.toFixed(1),+c.z.toFixed(1),c.kind])})`));
+   const e=JSON.parse(xe(`JSON.stringify(__E.find(e=>e.s===${s})||null)`));res.push(e?Math.abs(e.yaw)*180/Math.PI:null);
    xe('window.__rec=null;__B.g.position.set(__B.g.position.x+300,__B.g.position.y,__B.g.position.z+300);true');await adv(600);}
   return res;};
  const heard=await run(true,'heard');const silent=await run(false,'silent');
