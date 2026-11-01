@@ -4734,6 +4734,14 @@ function xFpsText(fps, ms, worst, ping, calls, tris, w, h, pr, dpr) { return Mat
 // each per-frame subsystem runs in its own try/catch, so one failure shows the error toast and the rest of the frame still runs
 const xE = (e) => { if (window.xErr) window.xErr(e); else console.error(e); };
 let xPzT = 0; const xCovEl = ["lobby", "xAg", "pre"].map((id) => document.getElementById(id)).filter(Boolean);
+// gpu lane step 5 (buy menu lag, user 1 Nov 2026: "Opening the buy menu also causes lag"): the open buy menu covers the screen with an 88 % panel over a
+// 3 px backdrop blur, and the compositor recomputes that blur whenever anything under it changes - every world frame (stub-GL Chromium 1080: 8.3 fps
+// closed -> 1.4-1.8 fps open). In the offline buy phase everyone is frozen in spawn (bots do not tick; the player does not move while the menu is up
+// and the cursor is free), so the world behind the menu redraws at most 10 fps, as behind the pause menu (perf pass 15): the blur is recomputed at
+// most 10 x a second. The menu, the sim and the round / buy timer still run every frame; the first frame after opening draws the world. Online play
+// and the deathmatch menu (others keep moving behind it) are untouched. work/test_buy_menu_cost.cjs
+let xBmT = 0;
+function xBmHold() { if (!(FV.menu && mode === "five" && FV.buy > 0 && !FV.dm && !(typeof MP !== "undefined" && MP && MP.cl) && running && !paused)) { xBmT = 0; return false; } const pn = performance.now(); if (xBmT && pn - xBmT < 98) return true; xBmT = pn; return false; }
 // perf pass 16: the lobby covers the game from first load (its CSS shows it, not an inline style) until a mode launches via xGo
 let xLob0 = true; const xResEl = document.getElementById("result"), xSetEl = document.getElementById("mSet");
 // perf pass 18: renamed from a second xVis that shadowed the per-frame effects pass (it threw on getComputedStyle(dt) every frame)
@@ -4861,6 +4869,7 @@ function loop() {
   } catch (e) { xE(e); }
   try { xVis(rt); } catch (e) { xE(e); }
   try { xSolTick(rt); } catch (e) { xE(e); }
+  try { if (xBmHold()) return; } catch (e) { xE(e); } // gpu lane step 5: buy menu open in the offline buy phase -> the world behind it redraws at most 10 fps
   try { renderer.render(scene, camera); } catch (e) { xE(e); }
 }
 const XTK = { defs: [], pool: [], pt: new THREE.Vector3(), aim: new THREE.Vector3(), mv: new THREE.Vector3(), q: new THREE.Vector3() }; // perf pass 9: tick scratch
