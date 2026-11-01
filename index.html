@@ -157,7 +157,7 @@ body:has(#result[style*="flex"]) .x-sp{display:none!important} /* UI lane: the s
 .mapc{width:min(460px,100%);border:1px solid rgba(236,232,225,.25);background:linear-gradient(135deg,#2a3b4a,#16232f);padding:22px;text-align:left;display:flex;flex-direction:column;gap:8px;border-left:4px solid var(--red)}
 .mapc h3{font-size:40px;font-weight:900;line-height:1}.mapc small{font-size:12px;letter-spacing:.14em;opacity:.85}.mapc p{font-size:14px;text-transform:none;letter-spacing:.02em;opacity:.85}
 #score{left:50%;top:70px;transform:translateX(-50%);font-size:14px;opacity:.85}
-#fps{left:12px;top:12px;font-size:12px;display:none;background:rgba(15,25,35,.7);padding:4px 8px}
+#fps{left:12px;top:12px;font-size:12px;display:none;background:rgba(15,25,35,.7);padding:4px 8px;white-space:pre}
 #rot{display:none;position:fixed;inset:0;z-index:100;background:var(--ink);flex-direction:column;align-items:center;justify-content:center;gap:16px;font-size:22px;font-weight:800;text-align:center;padding:30px}
 #rot svg{width:64px;height:64px}
 @media (orientation:portrait) and (max-width:820px){#rot{display:flex}}html.portrait-ok #rot{display:none!important} /* row 7: the player chose to play in portrait (touch layout fits portrait) */
@@ -3505,6 +3505,7 @@ function updHud() {
 }
 
 addEventListener("keydown", (e) => {
+  if (e.code === "F9" && !e.repeat) { e.preventDefault(); try { const b = document.querySelector('.seg[data-key="fps"] button[data-v="' + (S.fps ? "0" : "1") + '"]'); if (b) b.click(); } catch (er) {} return; } // gpu lane: performance readout on / off (same setting as Settings > Show FPS and ping)
   if (paused) return;
   keys[e.code] = true;
   if (running && (e.code === "Space" || e.ctrlKey)) e.preventDefault();
@@ -4726,7 +4727,10 @@ function xVisB(b, dt, now, isAlly) {
     M.bd.position.y = Math.sin(now * 2.2) * 0.008 * (1 - b.xwk) + Math.abs(Math.cos(b.xph)) * 0.03 * b.xwk;
     M.bd.rotation.y = Math.sin(now * 0.7 + b.xph) * 0.04 * (1 - b.xwk);
 }
-const clock = new THREE.Clock(); let fr = 0, fpsT = performance.now();
+const clock = new THREE.Clock(); let fr = 0, fpsT = performance.now(); let xFpsL = 0, xFpsW = 0; // gpu lane: last rAF time / worst frame of the readout window
+// FPS readout text (Settings: Show FPS and ping; F9): average FPS + frame ms, the window's worst frame (stutter), ping, world draw calls /
+// triangles, the drawing buffer and its pixel ratio vs the screen's devicePixelRatio (work/test_fps_readout.cjs)
+function xFpsText(fps, ms, worst, ping, calls, tris, w, h, pr, dpr) { return Math.round(fps) + " FPS · " + ms.toFixed(1) + " ms (worst " + Math.round(worst) + ") · " + ping + " ms ping\n" + calls + " calls · " + (tris / 1e6).toFixed(2) + "M tris · " + w + "×" + h + " @" + +pr.toFixed(2) + " (DPR " + +dpr.toFixed(2) + ")"; }
 // each per-frame subsystem runs in its own try/catch, so one failure shows the error toast and the rest of the frame still runs
 const xE = (e) => { if (window.xErr) window.xErr(e); else console.error(e); };
 let xPzT = 0; const xCovEl = ["lobby", "xAg", "pre"].map((id) => document.getElementById(id)).filter(Boolean);
@@ -4825,7 +4829,7 @@ function loop() {
   try { if (ads && mode !== "duel" && (reloading > 0 || !running || !player || player.hp <= 0 || rw === "knife")) setScope(false); } catch (e) { xE(e); }
   try { vmTick(Math.max(dt, rt)); } catch (e) { xE(e); } // equip / inspect timers on real time
   try { if (kSwing <= 0) kHv = 0; const kk = kHv ? Math.sin(Math.PI * Math.max(0, kSwing)) : kick; knife.rotation.x = 0.15 - kk * 0.9; knife.position.z = -0.38 - kick * 0.12; if (VM.ins > 0) xKnIns(); else if (knife.rotation.z || knife.rotation.y !== 0.25) { knife.rotation.y = 0.25; knife.rotation.z = 0; } } catch (e) { xE(e); }
-  try { if (S.fps) { fr++; const now = performance.now(); if (now - fpsT > 500) { $("fps").textContent = Math.round(fr * 1000 / (now - fpsT)) + " FPS · " + xPing() + " ms · " + renderer.info.render.calls + " calls"; fr = 0; fpsT = now; } } } catch (e) { xE(e); }
+  try { if (S.fps) { fr++; const now = performance.now(); if (xFpsL && now - xFpsL > xFpsW) xFpsW = now - xFpsL; xFpsL = now; if (now - fpsT > 500) { const i = renderer.info.render, el = renderer.domElement; $("fps").textContent = xFpsText(fr * 1000 / (now - fpsT), (now - fpsT) / fr, xFpsW, xPing(), i.calls, i.triangles, el.width, el.height, renderer.getPixelRatio(), devicePixelRatio || 1); fr = 0; fpsT = now; xFpsW = 0; } } else xFpsL = 0; } catch (e) { xE(e); }
   try {
     if (player) {
       let cx = player.x, cy = 1.6 - (player.ch || 0) + (player.y || 0) + (player.eyeOffset || 0) + (typeof vfCamDip === "function" ? vfCamDip(running && !paused ? dt : 0) : 0), cz = player.z; // + VALORANT landing view dip (spring, <= 2.5 cm)
