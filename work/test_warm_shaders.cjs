@@ -4,8 +4,10 @@ const fs = require('fs'), assert = require('assert/strict');
 const s = fs.readFileSync('index.html', 'utf8');
 
 // bridge: defined next to xPrecompile, guarded, runs precompile + one warm render
-assert(/window\.xWarmShaders = function \(\) \{\n  if \(!running \|\| xPC\) return;/.test(s), 'xWarmShaders bridge defined with running/xPC guard');
-assert(/window\.xWarmShaders[\s\S]{0,220}xPrecompile\(\)/.test(s), 'bridge runs xPrecompile');
+// gpu lane step 4 (c6464d2): the bridge no longer returns when xPC is set (xGate precompiles on the first running frame, before the
+// gate built the held rigs / agent bodies); it builds the agent bodies (xVisB, dt 0), clears xPC and precompiles again over everything
+assert(/window\.xWarmShaders = function \(\) \{\n  if \(!running\) return;/.test(s), 'xWarmShaders bridge defined with running guard');
+assert(/window\.xWarmShaders[\s\S]{0,600}xPC = false; try \{ xPrecompile\(\); \}/.test(s), 'bridge clears xPC and runs xPrecompile');
 assert(/window\.xWarmShaders[\s\S]{0,400}renderer\.render\(scene, camera\)/.test(s), 'bridge runs one warm render (texture upload)');
 
 // gate: warm step sits between the match-build fn and fill()/ready() in the load chain
