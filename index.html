@@ -393,11 +393,13 @@ body:has(#result[style*="flex"]) .x-sp{display:none!important} /* UI lane: the s
 #xAg h2{font-size:clamp(36px,7vw,72px);font-weight:900;letter-spacing:.08em;color:#bfe6ff}
 .x-agr{font-size:13px;letter-spacing:.12em;opacity:.75}
 .x-agc{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
-.x-ag{width:112px;height:140px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:2px;padding:10px;font:800 15px var(--f);letter-spacing:.1em;color:var(--bone);background:linear-gradient(180deg,var(--c,#3a4a5a),#0f1923);border:2px solid rgba(236,232,225,.18);cursor:pointer;position:relative}
-.x-ag i{position:absolute;top:14px;left:0;right:0;font:900 52px var(--f);font-style:normal;opacity:.9}
-.x-ag small{font-size:12px;opacity:.7;letter-spacing:.08em}
-.x-ag.on{border-color:var(--bone);box-shadow:0 0 0 2px var(--red)}
-.x-ag:disabled{cursor:not-allowed;filter:grayscale(.8);opacity:.5}
+/* lane-ui4: agent select tiles only (.x-agc); the bare .x-ag selector also hit the portrait tiles of the scoreboard, the results MVP cards and
+   the roster rows (padding 10px + border + gradient: a 12 px face in a 36 px box) */
+.x-agc .x-ag{width:112px;height:140px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:2px;padding:10px;font:800 15px var(--f);letter-spacing:.1em;color:var(--bone);background:linear-gradient(180deg,var(--c,#3a4a5a),#0f1923);border:2px solid rgba(236,232,225,.18);cursor:pointer;position:relative}
+.x-agc .x-ag i{position:absolute;top:14px;left:0;right:0;font:900 52px var(--f);font-style:normal;opacity:.9}
+.x-agc .x-ag small{font-size:12px;opacity:.7;letter-spacing:.08em}
+.x-agc .x-ag.on{border-color:var(--bone);box-shadow:0 0 0 2px var(--red)}
+.x-agc .x-ag:disabled{cursor:not-allowed;filter:grayscale(.8);opacity:.5}
 #xAg{justify-content:space-between;gap:12px}
 .x-agm{flex:1;width:100%;max-width:1200px;min-height:0;display:grid;grid-template-columns:230px 1fr;gap:20px}
 .x-tm{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;justify-content:center;gap:8px}
@@ -1052,7 +1054,7 @@ body:has(#game .x-top.x-bpo) #xAnn.buy{display:none!important}
 #game #xCr{font-family:Arial,sans-serif;font-size:14px}
 #game #defuse{background:rgba(14,25,29,.55);font:12px Arial,sans-serif;border-top:1px solid #ffffff70}
 #game #defuse .bar i{background:#ecfff6;box-shadow:none}
-#xBoard .x-ag img,#xResB .x-ag img{display:block;width:100%;height:100%;object-fit:cover}
+#xBoard .x-ag img,#xResB .x-ag img,.x-mvp .x-ag img{display:block;width:100%;height:100%;object-fit:cover}#xBoard .x-ag,.x-mvp .x-ag{overflow:hidden;background:rgba(15,25,35,.55)}
 #xBoard .x-sbload{display:flex;align-items:center;justify-content:flex-end;gap:12px;color:#f2f8f5}
 #xBoard .x-sbload svg{width:76px;height:24px;flex:none}
 #xBoard .x-sbload .x-sbshield{width:15px;height:19px}
