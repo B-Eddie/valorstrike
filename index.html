@@ -11667,9 +11667,15 @@ function xPrecompile() { // once per loaded map: build every shader program up f
 // Loading-gate bridge: run the same warm-up behind the loading screen instead of on the first
 // playable frame (xGate would otherwise fire it in-match = the early-match hitch). The extra
 // renderer.render uploads textures too; the opaque overlay hides the warm frame.
+// Late programs (gpu lane step 4): xGate runs the precompile on the first frame a match is running, before the gate has
+// loaded the guns and built the held rigs, and the loop draws nothing (no agent bodies built by xVis, no viewmodel warm
+// draw) until the overlay hides: the agents' bodies, the held rigs and the queued weapon models linked their programs on
+// the first frames of the match. The gate's warm step now builds the agent bodies the first frame would build (xVisB,
+// dt 0) and runs the precompile again over everything, then the warm frame (it also flushes the viewmodel warm queue).
 window.xWarmShaders = function () {
-  if (!running || xPC) return;
-  try { xPrecompile(); } catch (e) {}
+  if (!running) return;
+  try { const now = performance.now() / 1000; for (let i = 0; i < bots.length; i++) xVisB(bots[i], 0, now, false); for (let i = 0; i < allies.length; i++) xVisB(allies[i], 0, now, true); if (typeof xDbOK !== "undefined" && xDbOK && duelBot) xVisB(duelBot, 0, now, false); } catch (e) {}
+  xPC = false; try { xPrecompile(); } catch (e) {}
   try { renderer.render(scene, camera); } catch (e) {}
 };
 const xSeg = (id, fn) => $(id).querySelectorAll("button").forEach((b) => b.addEventListener("click", () => fn(b.dataset.v)));
@@ -14431,6 +14437,13 @@ function xvFPPreload(onProgress){const ag=(J&&J.pick)||'Jett',L=xvFPList(),total
   // and each gun's third-person model (XGM.T: the template every agent's / dropped gun is cloned from, sharing its geometry):
   // a bot's first buy of a gun drew it for the first time mid-round (Ghost: 3 new geometries)
   return Promise.all([one(),one(),one()]).then(()=>{try{if(typeof vfWarm==='function'&&typeof XGM!=='undefined'&&XGM.rdy)for(const w of L)if(XGM.T[w])vfWarm(null,{root:XGM.T[w]});}catch(e){}return total;});} // three loads in flight at a time
+// Late programs (gpu lane step 4, user 31 Oct 2026 "unplayable" lag): the held rigs (agent arms + gun, built by xvFPWarm once
+// the match runs) landed after the gate's warm draw, so the first frames of the match linked their viewmodel-pass programs
+// (real renderer probe: the held Classic's body / magazine / Tritium sights + the agent's FP arms). The loading gate builds
+// them first (the same xvFPGet calls xvFPWarm makes, same keys and caches; xvFPWarm then finds them done) and its warm draw
+// (xWarmShaders -> vfWarmFlush) draws them once in the viewmodel pass behind the overlay.
+function xvFPRigs(){const ag=(J&&J.pick)||'Jett',w=fpaWeap();XVFP.warm=xvFPKey(ag,w);
+  return Promise.all([w,'Knife','Classic'].map(x=>{const key=xvFPKey(ag,x);if(XV.failures[key])return null;return xvFPGet(ag,x).catch(e=>{XV.failures[key]=String(e);});}));}
 // Knife light swings run Valorant's looping three-swing combo (wiki Melee: "the primary slash has a three swing combo that
 // loops"): the authored clips chain (Attack 1 ends with the hand out right, Attack 2 slashes back across to the left,
 // Attack 3 returns right; each starts where the previous ends), so a swing within XVK.chain s of the previous light swing continues the combo,
@@ -14476,7 +14489,7 @@ function xvMapCover(g) {
 }
 {const use=useMap;useMap=function(n){const r=use.apply(this,arguments);try{xvMapCover(MAPS[n]&&MAPS[n].g);}catch(e){}return r;};}
 window.xValorantAssets={state:XV,agentAssets:XVA,agentsReady:xvAgentsReady,agentProgress:xvAgentProgress,load:xvLoad,loadAgent:xvAgentLoad,loadFP:xvFPLoad,fpCache:XVFP,scene,camera,renderer,agents:()=>XSOL.mx,probe:()=>({running,mode,agent:J.pick,weapon:fpaWeap(),nativeAgents:XSOL.mx.filter(m=>m.valorant).length,agentKits:Object.keys(XVA.kits).length,nativeFP:XV.fp&&XV.fp.ag+' '+XV.fp.w,failures:XV.failures})};
-window.xvAgentsReady=xvAgentsReady;window.xvFPPreload=xvFPPreload; // the loading gate (xMatchLoad) preloads the first-person guns
+window.xvAgentsReady=xvAgentsReady;window.xvFPPreload=xvFPPreload;window.xvFPRigs=xvFPRigs; // the loading gate (xMatchLoad) preloads the first-person guns
 window.xvRoster=xvRoster;
 // Start downloading every agent as soon as the lobby is up (idle slot right after first paint), last pick first.
 {const go=()=>{let a='Jett';try{a=(typeof S!=='undefined'&&S&&S.lastAg)||localStorage.getItem('vs.lastAg')||a;}catch(e){}try{xvPreloadAgents(xvAgentName(a));}catch(e){console.warn('agent preload',e);}};if(window.requestIdleCallback)requestIdleCallback(go,{timeout:300});else setTimeout(go,0);}
@@ -23672,7 +23685,15 @@ xReady = true; // every mode is initialised; lobby launches may now start them
         setTimeout(fin, 8000);
         try { window.xvFPPreload(function (p) { if (id === loadId) xLdSet("xLdAg", "textContent", p.done < p.total ? "LOADING WEAPONS " + p.done + "/" + p.total : ""); }).then(fin, fin); } catch (e) { fin(); } });
     };
-    var go = function () { return (wait ? wait.then(fn) : Promise.resolve().then(fn)).then(guns).then(warm).then(function(v){if(id===loadId){if(!title)fill();ready();}return v;},function(err){if(id===loadId)failed();if(err&&err.name==='AbortError')return;throw err;}); };
+    // late programs: the held rigs (agent arms + gun: held weapon, knife, Classic) are built behind the overlay too, so the
+    // warm draw below links their viewmodel-pass programs instead of the first frames of the match; capped like guns
+    var rigs = function (v) {
+      if (id !== loadId || typeof window.xvFPRigs !== "function") return v;
+      return new Promise(function (r) { var done = false, fin = function () { if (done) return; done = true; r(v); };
+        setTimeout(fin, 6000);
+        try { window.xvFPRigs().then(fin, fin); } catch (e) { fin(); } });
+    };
+    var go = function () { return (wait ? wait.then(fn) : Promise.resolve().then(fn)).then(guns).then(rigs).then(warm).then(function(v){if(id===loadId){if(!title)fill();ready();}return v;},function(err){if(id===loadId)failed();if(err&&err.name==='AbortError')return;throw err;}); };
     return sync || built(map) ? go() : new Promise(function(resolve,reject){requestAnimationFrame(function(){requestAnimationFrame(function(){go().then(resolve,reject);});});});
   };
   window.xCancelMatchLoad = function(){++loadId;failed();};

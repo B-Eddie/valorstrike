@@ -421,6 +421,13 @@ function xvFPPreload(onProgress){const ag=(J&&J.pick)||'Jett',L=xvFPList(),total
   // and each gun's third-person model (XGM.T: the template every agent's / dropped gun is cloned from, sharing its geometry):
   // a bot's first buy of a gun drew it for the first time mid-round (Ghost: 3 new geometries)
   return Promise.all([one(),one(),one()]).then(()=>{try{if(typeof vfWarm==='function'&&typeof XGM!=='undefined'&&XGM.rdy)for(const w of L)if(XGM.T[w])vfWarm(null,{root:XGM.T[w]});}catch(e){}return total;});} // three loads in flight at a time
+// Late programs (gpu lane step 4, user 31 Oct 2026 "unplayable" lag): the held rigs (agent arms + gun, built by xvFPWarm once
+// the match runs) landed after the gate's warm draw, so the first frames of the match linked their viewmodel-pass programs
+// (real renderer probe: the held Classic's body / magazine / Tritium sights + the agent's FP arms). The loading gate builds
+// them first (the same xvFPGet calls xvFPWarm makes, same keys and caches; xvFPWarm then finds them done) and its warm draw
+// (xWarmShaders -> vfWarmFlush) draws them once in the viewmodel pass behind the overlay.
+function xvFPRigs(){const ag=(J&&J.pick)||'Jett',w=fpaWeap();XVFP.warm=xvFPKey(ag,w);
+  return Promise.all([w,'Knife','Classic'].map(x=>{const key=xvFPKey(ag,x);if(XV.failures[key])return null;return xvFPGet(ag,x).catch(e=>{XV.failures[key]=String(e);});}));}
 // Knife light swings run Valorant's looping three-swing combo (wiki Melee: "the primary slash has a three swing combo that
 // loops"): the authored clips chain (Attack 1 ends with the hand out right, Attack 2 slashes back across to the left,
 // Attack 3 returns right; each starts where the previous ends), so a swing within XVK.chain s of the previous light swing continues the combo,
@@ -466,7 +473,7 @@ function xvMapCover(g) {
 }
 {const use=useMap;useMap=function(n){const r=use.apply(this,arguments);try{xvMapCover(MAPS[n]&&MAPS[n].g);}catch(e){}return r;};}
 window.xValorantAssets={state:XV,agentAssets:XVA,agentsReady:xvAgentsReady,agentProgress:xvAgentProgress,load:xvLoad,loadAgent:xvAgentLoad,loadFP:xvFPLoad,fpCache:XVFP,scene,camera,renderer,agents:()=>XSOL.mx,probe:()=>({running,mode,agent:J.pick,weapon:fpaWeap(),nativeAgents:XSOL.mx.filter(m=>m.valorant).length,agentKits:Object.keys(XVA.kits).length,nativeFP:XV.fp&&XV.fp.ag+' '+XV.fp.w,failures:XV.failures})};
-window.xvAgentsReady=xvAgentsReady;window.xvFPPreload=xvFPPreload; // the loading gate (xMatchLoad) preloads the first-person guns
+window.xvAgentsReady=xvAgentsReady;window.xvFPPreload=xvFPPreload;window.xvFPRigs=xvFPRigs; // the loading gate (xMatchLoad) preloads the first-person guns
 window.xvRoster=xvRoster;
 // Start downloading every agent as soon as the lobby is up (idle slot right after first paint), last pick first.
 {const go=()=>{let a='Jett';try{a=(typeof S!=='undefined'&&S&&S.lastAg)||localStorage.getItem('vs.lastAg')||a;}catch(e){}try{xvPreloadAgents(xvAgentName(a));}catch(e){console.warn('agent preload',e);}};if(window.requestIdleCallback)requestIdleCallback(go,{timeout:300});else setTimeout(go,0);}
