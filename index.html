@@ -496,8 +496,10 @@ body:has(#result[style*="flex"]) .x-sp{display:none!important} /* UI lane: the s
 .x-ki span.on{display:flex;animation:x-kipop .22s ease-out}
 .x-ki svg{width:16px;height:16px}.x-ki .x-sk{display:none}.x-ki span.hs .x-sk{display:block}.x-ki span.hs .x-kx{display:none}.x-ki span.hs{border-color:#ffd54a;background:rgba(120,20,30,.85)}
 @keyframes x-kipop{0%{transform:scale(1.7);opacity:0}100%{transform:scale(1);opacity:1}}
-.x-da{position:fixed;left:50%;top:50%;width:62vmin;height:62vmin;margin:-31vmin 0 0 -31vmin;border-radius:50%;border-top:7px solid rgba(255,40,55,.95);pointer-events:none;opacity:0;will-change:opacity,transform;contain:strict;-webkit-mask:linear-gradient(90deg,transparent 22%,#000 40%,#000 60%,transparent 78%);mask:linear-gradient(90deg,transparent 22%,#000 40%,#000 60%,transparent 78%)}
-.x-da{border-top-color:var(--x-enemy,#ff4655)}
+/* gpu lane ("lags when I'm getting shot at"): the composited, animated layer is only the box the visible crescent occupies (the mask keeps 22-78% of the circle's width; the crescent is <= .1715 r + 6 px tall there), rotated about the circle centre; the circle + mask (.x-dai) is painted into it once instead of being a 62 vmin masked layer (render surface + mask pass every frame). work/test_hit_overlay_cost.cjs */
+.x-da{position:fixed;left:50%;top:50%;width:34.72vmin;height:calc(5.32vmin + 9px);margin:-31vmin 0 0 -17.36vmin;transform-origin:17.36vmin 31vmin;overflow:hidden;pointer-events:none;opacity:0;will-change:opacity,transform;contain:strict}
+.x-dai{position:absolute;left:-13.64vmin;top:0;width:62vmin;height:62vmin;border-radius:50%;border-top:7px solid rgba(255,40,55,.95);-webkit-mask:linear-gradient(90deg,transparent 22%,#000 40%,#000 60%,transparent 78%);mask:linear-gradient(90deg,transparent 22%,#000 40%,#000 60%,transparent 78%)}
+.x-dai{border-top-color:var(--x-enemy,#ff4655)}
 .x-hm.hs i{background:var(--x-enemy,#ff4655)}
 body.x-cbh .x-sbbar .tl,body.x-cbh .x-tdms .t,body.x-cbh .x-ann.win{color:#3d8bff}
 body.x-cbh .x-sbbar .rd,body.x-cbh .x-tdms .r,body.x-cbh .x-ann.loss,body.x-cbh #game .x-top .x-en b{color:#ff9f1c}
@@ -3849,7 +3851,7 @@ const XKI = { n: 0, t: 0, el: null, s: [], da: [], di: 0 };
     em.innerHTML = '<svg viewBox="0 0 64 64" aria-hidden="true">' + seg.join("") + '<path class="cr" d="M32 12l18 20-18 20-18-20z"/></svg><b>0</b><svg class="x-kih" viewBox="0 0 16 16" fill="none" stroke="#ffd54a" stroke-width="1.8"><circle cx="8" cy="8" r="5"/><circle cx="8" cy="8" r="1.2" fill="#ffd54a"/><path d="M8 0v3M8 13v3M0 8h3M13 8h3"/></svg>';
     r.appendChild(em); r.appendChild(row); XKI.em = em; XKI.sg = Array.from(em.querySelectorAll(".sg")); XKI.nb = em.querySelector("b"); }
   xo.appendChild(r); XKI.el = r;
-  for (let i = 0; i < 4; i++) { const d = document.createElement("div"); d.className = "x-da"; d.setAttribute("aria-hidden", "true"); xo.appendChild(d); XKI.da.push(d); } }
+  for (let i = 0; i < 4; i++) { const d = document.createElement("div"); d.className = "x-da"; d.setAttribute("aria-hidden", "true"); const c = document.createElement("i"); c.className = "x-dai"; d.appendChild(c); xo.appendChild(d); XKI.da.push(d); } } // arc layer = the crescent's box; .x-dai = the masked circle painted into it
 function xKiReset() { XKI.n = 0; XKI.el.classList.remove("on"); for (const s of XKI.s) s.classList.remove("on", "hs"); if (XKI.em) { XKI.em.classList.remove("hs"); XKI.nb.textContent = "0"; XKI.sg.forEach((g) => g.classList.remove("on", "last")); } }
 function xKiAdd(hs) {
   if (XKI.n >= 5) xKiReset(); const i = XKI.n++, s = XKI.s[i]; s.classList.toggle("hs", !!hs); xRestart(s, "on", 1); XKI.el.classList.add("on"); // kill cost: DOM writes only, no style/layout read
