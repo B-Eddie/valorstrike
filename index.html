@@ -5019,7 +5019,7 @@ function tick(dt) {
       a.g.rotation.y = Math.atan2(dx, dz);
       a.flip -= dt; if (a.flip <= 0) { a.strafe *= -1; a.flip = 0.8 + Math.random(); }
       vx = (-dz / d) * a.strafe * 0.5; vz = (dx / d) * a.strafe * 0.5;
-    } else if (sd > (mode === "five" ? 0.5 : rf ? 3 : 0.6)) { vx = sx / sd; vz = sz / sd; if (!f5 || typeof xbFaceTo !== "function") a.g.rotation.y = Math.atan2(vx, vz); } // 5v5: the off-fight view is xFace's alone (as enemy bots: corner / sound / contact / held angle at the bot's own turn rate, BOT VARIETY); the snap onto the path heading here ran first, so an ally's crosshair never got more than one turn step off its path (lane-preaim)
+    } else if (sd > (mode === "five" ? 0.5 : rf ? 3 : 0.6)) { vx = sx / sd; vz = sz / sd; if (!f5 || typeof xbFaceTo !== "function" || !a.xpaA) a.g.rotation.y = Math.atan2(vx, vz); } // 5v5: while xFace pre-aims a corner (a.xpaA: a fresh sound / contact, BOT VARIETY 2b) the view is xFace's alone, at the bot's own turn rate; the snap onto the path heading here ran first, so an ally's crosshair never got more than one turn step toward that corner (lane-preaim). Otherwise it still walks looking down its path
     if (!tg && pe) [vx, vz] = xPeekMove(a, dt, apd, apx, apz, vx, vz);
     if (!tg && typeof xbReHold === "function" && xbReHold(a)) vx = vz = 0; // mid-reload with an enemy remembered close: hold, no re-peek (BOT VARIETY)
     [vx, vz] = xUn(a, dt, vx, vz);
@@ -17488,9 +17488,10 @@ if (typeof xUbPost === "function") { const hp0 = xUbPost; xUbPost = function (M)
  // when it is in view). The route is cut where it climbs / drops more than PRE.dy m (another floor) or runs past PRE.run m:
  // walked back from there. null (keep looking at the spot): no point in view, or the corner under PRE.near m away (a wall
  // at the shoulder, no angle to pre-aim). Returns [x, y, z] or null.
- const PRE={head:1.5,near:2.5,dy:3,run:40,err:2};
+ const PRE={head:1.5,near:2.5,dy:3,run:40,err:5};
  // a held corner is an average player's, not a pixel: a yaw offset per corner, PRE.err x the bot's placement error (aimTraits
- // place, 0.8-2.2 deg) as one standard deviation
+ // place, 0.8-2.2 deg) as one standard deviation (err 5: ~7 deg sd; at err 2 offline crosshair-within-10-deg at a fresh
+ // fight overshot the server's 48 % - seeds 3+5 60 %)
  function preAimErr(P,rand){return gauss(rand)*aimTraits(P).place*PRE.err;}
  function pathCorner(pts,vis,o){o=o||PRE;if(!pts||pts.length<2)return null;const s=pts[0],near=o.near??PRE.near,dy=o.dy??PRE.dy,run=o.run??PRE.run,head=o.head??PRE.head;
   let m=pts.length-1;for(let i=1;i<pts.length;i++){const q=pts[i];if(Math.abs(q[1]-s[1])>dy||Math.hypot(q[0]-s[0],q[2]-s[2])>run){m=i-1;break;}}

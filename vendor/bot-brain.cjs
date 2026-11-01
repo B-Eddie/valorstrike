@@ -108,9 +108,10 @@
  // when it is in view). The route is cut where it climbs / drops more than PRE.dy m (another floor) or runs past PRE.run m:
  // walked back from there. null (keep looking at the spot): no point in view, or the corner under PRE.near m away (a wall
  // at the shoulder, no angle to pre-aim). Returns [x, y, z] or null.
- const PRE={head:1.5,near:2.5,dy:3,run:40,err:2};
+ const PRE={head:1.5,near:2.5,dy:3,run:40,err:5};
  // a held corner is an average player's, not a pixel: a yaw offset per corner, PRE.err x the bot's placement error (aimTraits
- // place, 0.8-2.2 deg) as one standard deviation
+ // place, 0.8-2.2 deg) as one standard deviation (err 5: ~7 deg sd; at err 2 offline crosshair-within-10-deg at a fresh
+ // fight overshot the server's 48 % - seeds 3+5 60 %)
  function preAimErr(P,rand){return gauss(rand)*aimTraits(P).place*PRE.err;}
  function pathCorner(pts,vis,o){o=o||PRE;if(!pts||pts.length<2)return null;const s=pts[0],near=o.near??PRE.near,dy=o.dy??PRE.dy,run=o.run??PRE.run,head=o.head??PRE.head;
   let m=pts.length-1;for(let i=1;i<pts.length;i++){const q=pts[i];if(Math.abs(q[1]-s[1])>dy||Math.hypot(q[0]-s[0],q[2]-s[2])>run){m=i-1;break;}}
