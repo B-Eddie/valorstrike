@@ -32,5 +32,5 @@ const o=(decl(da,'transform-origin')||'').split(/\s+/).map(len);assert(Math.abs(
 assert.equal(len(decl(da,'margin-top')||decl(da,'margin').split(/\s+/)[0]),-r,'arc layer top is not the circle top');
 // pooled DOM, built once: 4 arcs, each with its circle child
 const b=s.slice(s.indexOf('const XKI = {'),s.indexOf('function xKiReset'));assert.match(b,/x-dai/,'arcs are built without the inner circle');
-const f=s.slice(s.indexOf('function xDmgArc('),s.indexOf('\n}',s.indexOf('function xDmgArc('))+2);assert.match(f,/rotate\(/);assert.match(f,/xRestart\(d, "on"\)/);
+const f=s.slice(s.indexOf('function xDmgArc('),s.indexOf('\n}',s.indexOf('function xDmgArc('))+2);assert.match(f,/rotate\(/);assert.match(f,/xDaPlay\(d\)/); /* perf2: restart through the arc's persistent Web Animation (work/test_hit_arc_flush.cjs), xRestart fallback */
 console.log('test_hit_overlay_cost OK');

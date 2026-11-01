@@ -3877,10 +3877,15 @@ function xDmgFlash() { // hurt overlay: on for 150 ms after the last hit; one pe
   const g = xDmgFlash.el || (xDmgFlash.el = $("dmg")); if (g.style.opacity !== "1") g.style.opacity = 1; // inline-style read: no layout
   clearTimeout(xDmgFlash.t); xDmgFlash.t = setTimeout(() => { g.style.opacity = 0; }, 150);
 }
+// perf2: each arc owns one persistent Web Animation = `.x-da.on` (@keyframes x-dafade 0% opacity 1 -> 100% 0, .6s ease-out, forwards);
+// a hit rewinds and plays it. The class restart took xRestart's getAnimations() branch on every hit after the 4th of a match, and
+// getAnimations() flushes style (work/test_hit_arc_flush.cjs). Same fade, no style flush, no class toggle.
+const XDA_K = [{ opacity: 1, easing: "ease-out" }, { opacity: 0 }], XDA_T = { duration: 600, fill: "forwards" };
+function xDaPlay(d) { if (!d.animate) return xRestart(d, "on"); const a = d.xA || (d.xA = d.animate(XDA_K, XDA_T)); a.currentTime = 0; a.play(); }
 function xDmgArc(ax, az) { // screen angle toward the attacker; camera forward (-sin yaw, -cos yaw), right (cos yaw, -sin yaw)
   const dx = ax - camera.position.x, dz = az - camera.position.z, cy = Math.cos(yaw), sy = Math.sin(yaw);
   const a = Math.atan2(dx * cy - dz * sy, -dx * sy - dz * cy), d = XKI.da[XKI.di++ % XKI.da.length];
-  d.style.transform = "rotate(" + a.toFixed(3) + "rad)"; xRestart(d, "on");
+  d.style.transform = "rotate(" + a.toFixed(3) + "rad)"; xDaPlay(d);
 }
 { const s0 = start; start = function () { xKiReset(); return s0.apply(this, arguments); }; }
 { const r0 = fRound; fRound = function () { xKiReset(); return r0.apply(this, arguments); }; }
