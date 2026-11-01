@@ -1850,6 +1850,10 @@ body:has(#result[style*="flex"]) .x-cbt{display:none!important} /* the combat re
     @media (max-width:1366px){.x-obc{width:224px}.x-obn{max-width:88px}}
     @media (max-width:820px){.x-obs{top:max(232px,calc(50% - 70px));padding:0 8px;font-size:11px}.x-obc{width:148px;gap:2px}.x-obr{height:26px;gap:4px;padding:0 4px}.x-oba{width:18px;height:18px;font-size:11px}.x-obw,.x-obu{display:none}.x-obn{max-width:72px}.x-obm p{margin-bottom:2px}}
     @media (max-height:560px){.x-obs.on{display:none}}
+    /* lane-ui4: the combat report (right:24px; top:38%, 300 px) sat on the enemy team column (right 12px, 240 / 224 / 148 px wide) while the side panels show: it moves to the column's left */
+    @media (min-height:561px){body:has(#xObs.on) .x-cbt{right:264px}}
+    @media (min-height:561px) and (max-width:1366px){body:has(#xObs.on) .x-cbt{right:248px}}
+    @media (min-height:561px) and (max-width:820px){body:has(#xObs.on) .x-cbt{right:168px;width:min(300px,calc(100vw - 336px))}}
     .x-ann.pulse .x-ant{animation:xAnP .6s ease-in-out infinite alternate}
     @keyframes xAnP{to{opacity:.55;text-shadow:0 0 24px #ff4655}}
     @media (prefers-reduced-motion:reduce){.x-ann{transition:none;transform:none}.x-ann.pulse .x-ant{animation:none}}
