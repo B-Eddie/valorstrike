@@ -20,6 +20,8 @@ def enrich(cat):
   weapon=next(x for x in api if x['displayName']==('Melee' if w=='Knife' else w))
   row=next((x for x in weapon['skins'] if x['uuid']==weapon['defaultSkinUuid']),None)
   if row:
-   url=row.get('displayIcon') or row['chromas'][0].get('fullRender')
+   # the default skin's own displayIcon is Riot's grey "X" placeholder for every weapon released with the game (only Bandit,
+   # Warden, Outlaw have a real one), so the chroma's full render (the factory-finish gun) comes first
+   url=row['chromas'][0].get('fullRender') or row.get('displayIcon')
    if url:jobs.append((s,url))
  with concurrent.futures.ThreadPoolExecutor(max_workers=6) as pool:list(pool.map(run,jobs))

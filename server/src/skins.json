@@ -74,32 +74,32 @@
      "ch": [
       "Base"
      ],
-     "icon": "models/valorant/skins/icons/6e236924d463ed12.png",
-     "iconSource": "https://media.valorant-api.com/weaponskins/24aee897-4cdc-b0fd-e596-1ba90fa6d1b2/displayicon.png"
+     "icon": "models/valorant/skins/icons/7073e2725f9760a6.png",
+     "iconSource": "https://media.valorant-api.com/weaponskinchromas/4b2d5b4f-4955-4208-286c-abadec250cdd/fullrender.png"
     },
     "Shorty": {
      "n": "Shorty",
      "ch": [
       "Base"
      ],
-     "icon": "models/valorant/skins/icons/6e236924d463ed12.png",
-     "iconSource": "https://media.valorant-api.com/weaponskins/48ad078a-4dae-2b85-a945-f4b6d1efecbb/displayicon.png"
+     "icon": "models/valorant/skins/icons/f41e217d0b6769d0.png",
+     "iconSource": "https://media.valorant-api.com/weaponskinchromas/95608504-4c8b-1408-1612-0f8200421c49/fullrender.png"
     },
     "Frenzy": {
      "n": "Frenzy",
      "ch": [
       "Base"
      ],
-     "icon": "models/valorant/skins/icons/6e236924d463ed12.png",
-     "iconSource": "https://media.valorant-api.com/weaponskins/f06657f3-48b6-6314-7235-a9a2749df5b9/displayicon.png"
+     "icon": "models/valorant/skins/icons/c487d9d6912ea536.png",
+     "iconSource": "https://media.valorant-api.com/weaponskinchromas/dc99ed5a-4d75-87a0-c921-75963ea3c1e1/fullrender.png"
     },
     "Ghost": {
      "n": "Ghost",
      "ch": [
       "Base"
      ],
-     "icon": "models/valorant/skins/icons/6e236924d463ed12.png",
-     "iconSource": "https://media.valorant-api.com/weaponskins/1c63b43b-43c4-04e4-01c9-7aa1bffa5ac1/displayicon.png"
+     "icon": "models/valorant/skins/icons/c7116621332e8d37.png",
+     "iconSource": "https://media.valorant-api.com/weaponskinchromas/947a28b6-4e0f-61fb-e795-bc9a5e7b7129/fullrender.png"
     },
     "Bandit": {
      "n": "Bandit",
@@ -107,63 +107,63 @@
       "Base"
      ],
      "icon": "models/valorant/skins/icons/74d4dcb9be57d993.png",
-     "iconSource": "https://media.valorant-api.com/weaponskins/b576b9f1-407d-310a-6009-6287fb6829bc/displayicon.png"
+     "iconSource": "https://media.valorant-api.com/weaponskinchromas/ff308f94-427d-e6d3-8fcb-258f5d4c2c29/fullrender.png"
     },
     "Sheriff": {
      "n": "Sheriff",
      "ch": [
       "Base"
      ],
-     "icon": "models/valorant/skins/icons/6e236924d463ed12.png",
-     "iconSource": "https://media.valorant-api.com/weaponskins/1ef6ba68-4dbe-30c7-6bc8-93a6c6f13f04/displayicon.png"
+     "icon": "models/valorant/skins/icons/2d28ce54b1480683.png",
+     "iconSource": "https://media.valorant-api.com/weaponskinchromas/5a59bd61-48a9-af61-c00f-4aa21deca9a8/fullrender.png"
     },
     "Stinger": {
      "n": "Stinger",
      "ch": [
       "Base"
      ],
-     "icon": "models/valorant/skins/icons/6e236924d463ed12.png",
-     "iconSource": "https://media.valorant-api.com/weaponskins/940fb417-4a9c-3004-41f5-3e8f1f4178b2/displayicon.png"
+     "icon": "models/valorant/skins/icons/5a6c0a2db127c273.png",
+     "iconSource": "https://media.valorant-api.com/weaponskinchromas/31bb2115-4c62-d37c-43c4-11b8fee7f212/fullrender.png"
     },
     "Spectre": {
      "n": "Spectre",
      "ch": [
       "Base"
      ],
-     "icon": "models/valorant/skins/icons/6e236924d463ed12.png",
-     "iconSource": "https://media.valorant-api.com/weaponskins/f01d1307-4299-42f5-2c5e-7dab7e69ab19/displayicon.png"
+     "icon": "models/valorant/skins/icons/d1191b8e279678a0.png",
+     "iconSource": "https://media.valorant-api.com/weaponskinchromas/a9aaccca-4cdc-02ea-1d7e-89bbacecc0e2/fullrender.png"
     },
     "Bucky": {
      "n": "Bucky",
      "ch": [
       "Base"
      ],
-     "icon": "models/valorant/skins/icons/6e236924d463ed12.png",
-     "iconSource": "https://media.valorant-api.com/weaponskins/70c97fb2-4d79-d4bb-5173-a1888cd4bfd9/displayicon.png"
+     "icon": "models/valorant/skins/icons/9586838ddbcf52d7.png",
+     "iconSource": "https://media.valorant-api.com/weaponskinchromas/3d8ffcfe-4786-0180-42d7-e1be18dd1cab/fullrender.png"
     },
     "Judge": {
      "n": "Judge",
      "ch": [
       "Base"
      ],
-     "icon": "models/valorant/skins/icons/6e236924d463ed12.png",
-     "iconSource": "https://media.valorant-api.com/weaponskins/acd26127-48ff-8b9e-7ba6-b989af8a4b24/displayicon.png"
+     "icon": "models/valorant/skins/icons/d21be7f648f00f2d.png",
+     "iconSource": "https://media.valorant-api.com/weaponskinchromas/b71ae8d6-44bb-aa4c-0d2a-dc9ed9e66410/fullrender.png"
     },
     "Bulldog": {
      "n": "Bulldog",
      "ch": [
       "Base"
      ],
-     "icon": "models/valorant/skins/icons/6e236924d463ed12.png",
-     "iconSource": "https://media.valorant-api.com/weaponskins/724a7f42-4315-eccf-0e76-77bdd3ec2e09/displayicon.png"
+     "icon": "models/valorant/skins/icons/69edf04c2fb162ad.png",
+     "iconSource": "https://media.valorant-api.com/weaponskinchromas/bf35f404-4a14-6953-ced2-5bafd21639a0/fullrender.png"
     },
     "Guardian": {
      "n": "Guardian",
      "ch": [
       "Base"
      ],
-     "icon": "models/valorant/skins/icons/6e236924d463ed12.png",
-     "iconSource": "https://media.valorant-api.com/weaponskins/3bf1e8e0-47e8-f27a-6054-929575f41a54/displayicon.png"
+     "icon": "models/valorant/skins/icons/68e4e91c71fd19cf.png",
+     "iconSource": "https://media.valorant-api.com/weaponskinchromas/0f934388-418a-a9e7-42a7-21b27402e46c/fullrender.png"
     },
     "Warden": {
      "n": "Warden",
@@ -171,31 +171,31 @@
       "Base"
      ],
      "icon": "models/valorant/skins/icons/6ab98baa0a8667d3.png",
-     "iconSource": "https://media.valorant-api.com/weaponskins/61d99a36-4033-0fa9-2c94-71aaf901e120/displayicon.png"
+     "iconSource": "https://media.valorant-api.com/weaponskinchromas/44b01f26-4569-0161-681f-e2a677f317ff/fullrender.png"
     },
     "Phantom": {
      "n": "Phantom",
      "ch": [
       "Base"
      ],
-     "icon": "models/valorant/skins/icons/6e236924d463ed12.png",
-     "iconSource": "https://media.valorant-api.com/weaponskins/337cb216-4a6e-d85d-88c2-f29ab317784c/displayicon.png"
+     "icon": "models/valorant/skins/icons/b71ab0895866c04c.png",
+     "iconSource": "https://media.valorant-api.com/weaponskinchromas/52221ba2-4e4c-ec76-8c81-3483506d5242/fullrender.png"
     },
     "Vandal": {
      "n": "Vandal",
      "ch": [
       "Base"
      ],
-     "icon": "models/valorant/skins/icons/6e236924d463ed12.png",
-     "iconSource": "https://media.valorant-api.com/weaponskins/27f21d97-4c4b-bd1c-1f08-31830ab0be84/displayicon.png"
+     "icon": "models/valorant/skins/icons/916773d3c2c12223.png",
+     "iconSource": "https://media.valorant-api.com/weaponskinchromas/19629ae1-4996-ae98-7742-24a240d41f99/fullrender.png"
     },
     "Marshal": {
      "n": "Marshal",
      "ch": [
       "Base"
      ],
-     "icon": "models/valorant/skins/icons/6e236924d463ed12.png",
-     "iconSource": "https://media.valorant-api.com/weaponskins/fd44b2d5-49ee-77ab-fa56-588f3ac0c268/displayicon.png"
+     "icon": "models/valorant/skins/icons/10f1eaf79ef94fde.png",
+     "iconSource": "https://media.valorant-api.com/weaponskinchromas/1afec971-4170-f29b-1c94-07a0eff270ab/fullrender.png"
     },
     "Outlaw": {
      "n": "Outlaw",
@@ -203,39 +203,39 @@
       "Base"
      ],
      "icon": "models/valorant/skins/icons/b71794394efdc88d.png",
-     "iconSource": "https://media.valorant-api.com/weaponskins/740b9572-44b1-57bf-767e-6aa01811f94d/displayicon.png"
+     "iconSource": "https://media.valorant-api.com/weaponskinchromas/66c8d241-4f7c-6652-3aaa-51bafffbd493/fullrender.png"
     },
     "Operator": {
      "n": "Operator",
      "ch": [
       "Base"
      ],
-     "icon": "models/valorant/skins/icons/6e236924d463ed12.png",
-     "iconSource": "https://media.valorant-api.com/weaponskins/d1f2920f-469a-3431-ad96-96afbd0017f2/displayicon.png"
+     "icon": "models/valorant/skins/icons/cc6b101b606eecca.png",
+     "iconSource": "https://media.valorant-api.com/weaponskinchromas/4914f50d-49f9-6424-ca80-9486c45a138d/fullrender.png"
     },
     "Ares": {
      "n": "Ares",
      "ch": [
       "Base"
      ],
-     "icon": "models/valorant/skins/icons/6e236924d463ed12.png",
-     "iconSource": "https://media.valorant-api.com/weaponskins/5305d9c4-4f46-fbf4-9e9a-dea772c263b5/displayicon.png"
+     "icon": "models/valorant/skins/icons/54ea1860c934702b.png",
+     "iconSource": "https://media.valorant-api.com/weaponskinchromas/b33de820-4061-8b85-31ce-808f1a2c58f5/fullrender.png"
     },
     "Odin": {
      "n": "Odin",
      "ch": [
       "Base"
      ],
-     "icon": "models/valorant/skins/icons/6e236924d463ed12.png",
-     "iconSource": "https://media.valorant-api.com/weaponskins/f454efd1-49cb-372f-7096-d394df615308/displayicon.png"
+     "icon": "models/valorant/skins/icons/4399ad8277fefbe1.png",
+     "iconSource": "https://media.valorant-api.com/weaponskinchromas/2f93861d-4b2f-2175-af0c-3ba0c736e257/fullrender.png"
     },
     "Knife": {
      "n": "Knife",
      "ch": [
       "Base"
      ],
-     "icon": "models/valorant/skins/icons/6e236924d463ed12.png",
-     "iconSource": "https://media.valorant-api.com/weaponskins/12cc9ed2-4430-d2fe-3064-f7a19b1ba7c7/displayicon.png"
+     "icon": "models/valorant/skins/icons/60aa1248e4463b2e.png",
+     "iconSource": "https://media.valorant-api.com/weaponskinchromas/cac83e5c-47a1-3519-5420-1db1fdbc4892/fullrender.png"
     }
    }
   },
