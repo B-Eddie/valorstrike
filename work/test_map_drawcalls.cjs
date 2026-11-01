@@ -19,15 +19,15 @@
 //     map draw calls under the ceilings below, and average triangles not above the plan without arrays.
 //  MAPS=ascent,... limits part C (default all six); VIEWS (default 16 points x 8 headings).
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
-const root=path.join(__dirname,'..'),src=fs.readFileSync(path.join(__dirname,'native_maps_runtime.js'),'utf8'),html=fs.readFileSync(path.join(root,'index.html'),'utf8');
+const root=path.join(__dirname,'..'),src=fs.readFileSync(process.env.RUNTIME||path.join(__dirname,'native_maps_runtime.js'),'utf8'),html=fs.readFileSync(path.join(root,'index.html'),'utf8');
 const THREE=require(require.resolve('three',{paths:[path.join(root,'server')]}));
 assert(/var NM_ARR=\{/.test(src),'runtime has no texture-array plan (NM_ARR): every map material is its own draw call');
 // one top-level function (sync or async) up to the next top-level declaration / comment line
 const fn=n=>{let i=src.indexOf('\nfunction '+n+'(');if(i<0)i=src.indexOf('\nasync function '+n+'(');assert(i>=0,n+' missing');i++;const re=/\n(?:function |async function |var |\/\/ |\(window)/g;re.lastIndex=i+1;const m=re.exec(src);return src.slice(i,m?m.index:src.length);};
 const val=n=>eval('('+src.match(new RegExp('var '+n+'=(\\{[^}]*\\})'))[1]+')');
-const NM_ARR=val('NM_ARR'),NM_OPT=val('NM_OPT'),NM_SMALL=val('NM_SMALL');
-const NAMES=['nmArrOk','nmArrSize','nmArrBuckets','nmArrState','nmArrEligible','nmArrShader','nmArrMaterial','nmArrayScene','nmArrDispose','nmArrUpload','nmArrFit','nmMatKey','nmDetailDistance','nmChunkPlan','nmCentroids','nmSphere','nmGather','nmOffset','nmCopy3','nmCopy2','nmCopyN','nmSmallDist','nmDetailSplit','nmOptimizeScene','nmBytes','nmTexBytes','nmDropArray','nmTexUploaded','nmShrink','nmPackGeometry','nmBudget','nmUpload'];
-function api(renderer,cap){return new Function('THREE','NM_ARR','NM_OPT','NM_SMALL','renderer','nmQuality','nmTexCap','createImageBitmap','document',NAMES.map(fn).join('\n')+'\nreturn {'+NAMES.join(',')+'};')(THREE,NM_ARR,NM_OPT,NM_SMALL,renderer,()=>'high',()=>cap,async(img,o)=>fakeImage(o.resizeWidth,o.resizeHeight,img.tag+'>'+o.resizeWidth+'x'+o.resizeHeight),undefined);}
+const NM_ARR=val('NM_ARR'),NM_OPT=val('NM_OPT'),NM_SMALL=val('NM_SMALL'),NM_STRIP=/var NM_STRIP=\{/.test(src)?val('NM_STRIP'):{on:false};
+const NAMES=['nmArrOk','nmArrSize','nmArrBuckets','nmArrState','nmArrEligible','nmArrShader','nmArrMaterial','nmArrayScene','nmArrDispose','nmArrUpload','nmArrFit','nmMatKey','nmDetailDistance','nmChunkPlan','nmSpanOver','nmCentroids','nmSphere','nmGather','nmOffset','nmCopy3','nmCopy2','nmCopyN','nmSmallDist','nmDetailSplit','nmOptimizeScene','nmStrips','nmStripBuild','nmStripChunk','nmRunRange','nmRunReset','nmBytes','nmTexBytes','nmDropArray','nmTexUploaded','nmShrink','nmPackGeometry','nmBudget','nmUpload'];
+function api(renderer,cap){return new Function('THREE','NM_ARR','NM_OPT','NM_SMALL','NM_STRIP','renderer','nmQuality','nmTexCap','createImageBitmap','document',NAMES.map(fn).join('\n')+'\nreturn {'+NAMES.join(',')+'};')(THREE,NM_ARR,NM_OPT,NM_SMALL,NM_STRIP,renderer,()=>'high',()=>cap,async(img,o)=>fakeImage(o.resizeWidth,o.resizeHeight,img.tag+'>'+o.resizeWidth+'x'+o.resizeHeight),undefined);}
 function fakeImage(w,h,tag){return {width:w,height:h,tag,closed:false,close(){this.closed=true;}};}
 function fakeGL(){const C={TEXTURE_2D_ARRAY:35866,SRGB8_ALPHA8:35907,RGBA8:32856,RGBA:6408,UNSIGNED_BYTE:5121,UNPACK_FLIP_Y_WEBGL:37440,UNPACK_PREMULTIPLY_ALPHA_WEBGL:37441,UNPACK_ALIGNMENT:3317,TEXTURE_MIN_FILTER:10241,TEXTURE_MAG_FILTER:10240,TEXTURE_WRAP_S:10242,TEXTURE_WRAP_T:10243,LINEAR:9729,LINEAR_MIPMAP_LINEAR:9987,REPEAT:10497,MAX_ARRAY_TEXTURE_LAYERS:35071};
  const log=[];let n=0;const gl=Object.assign({},C,{log,deleted:[],getParameter:p=>p===C.MAX_ARRAY_TEXTURE_LAYERS?2048:0,createTexture:()=>({id:++n}),bindTexture:(t,x)=>log.push(['bind',x&&x.id]),texStorage3D:(...a)=>log.push(['storage',...a]),texSubImage3D:(...a)=>log.push(['sub',a[4],a[5],a[6],a[10]]),pixelStorei:(k,v)=>log.push(['px',k,v]),generateMipmap:t=>log.push(['mip',t]),texParameteri:(...a)=>log.push(['param',...a]),texParameterf:()=>{},deleteTexture:t=>gl.deleted.push(t.id)});return gl;}
@@ -48,7 +48,8 @@ function scene(){let seed=5;const R=()=>{seed=(seed*1664525+1013904223)>>>0;retu
  return {g,tex,meta,meshes,kept:[dm,mm,s1,s2,um],sharedSrc:tex[1].source};}
 const sig=(P,U,a,b,c,extra)=>[a,b,c].map(v=>[P[v*3],P[v*3+1],P[v*3+2],U[v*2],U[v*2+1]].map(x=>x.toFixed(4)).join(',')).join(';')+'|'+extra;
 (async()=>{
-{const r=fakeRenderer(true),A=api(r,0),S=scene();const want=new Map();
+const ONLY=process.env.ONLY||'';/* ONLY=C: the offline budget alone (e.g. RUNTIME=<older runtime> ONLY=C shows the budget red on it) */
+if(!ONLY||ONLY.includes('A')){const r=fakeRenderer(true),A=api(r,0),S=scene();const want=new Map();
  for(const q of S.meta){const g=q.o.geometry,P=g.attributes.position.array,U=g.attributes.uv.array,I=g.index.array;for(let t=0;t<I.length;t+=3){const s=sig(P,U,I[t],I[t+1],I[t+2],q.src===S.sharedSrc?'plain':q.src.data.tag+'#'+q.color.getHexString());want.set(s,(want.get(s)||0)+1);}}
  for(const o of [S.kept[2],S.kept[3]]){const g=o.geometry,P=g.attributes.position.array,U=g.attributes.uv.array,I=g.index.array;for(let t=0;t<I.length;t+=3){const s=sig(P,U,I[t],I[t+1],I[t+2],'plain');want.set(s,(want.get(s)||0)+1);}}
  const keptMats=S.kept.map(o=>o.material);
@@ -126,7 +127,7 @@ const sig=(P,U,a,b,c,extra)=>[a,b,c].map(v=>[P[v*3],P[v*3+1],P[v*3+2],U[v*2],U[v
   console.log('A ok: lifted overlay keeps its lift on the texture array (nmLift',lit.userData.nmLift+', colour',lit.color.r.toFixed(3)+')');}
  console.log('A ok: arrays',opt.arrays,'chunks',opt.chunks,'materials',arrMats.size);}
 // ---- B. shader + page
-{const d=process.env.REAL3_DIR||'/workspace/work/qa',f=path.join(d,'three.min.js');let T=null;if(!process.env.QA_THREE160&&fs.existsSync(f)){const ctx={self:{},window:{},console};ctx.globalThis=ctx;vm.createContext(ctx);vm.runInContext(fs.readFileSync(f,'utf8'),ctx);T=ctx.THREE||ctx.self.THREE||ctx.window.THREE;}
+if(!ONLY||ONLY.includes('B')){const d=process.env.REAL3_DIR||'/workspace/work/qa',f=path.join(d,'three.min.js');let T=null;if(!process.env.QA_THREE160&&fs.existsSync(f)){const ctx={self:{},window:{},console};ctx.globalThis=ctx;vm.createContext(ctx);vm.runInContext(fs.readFileSync(f,'utf8'),ctx);T=ctx.THREE||ctx.self.THREE||ctx.window.THREE;}
  if(T&&T.REVISION==='149'){const L=T.ShaderLib.lambert,sh={vertexShader:L.vertexShader,fragmentShader:L.fragmentShader,uniforms:{}},m={nmArrTex:{a:1},nmPalTex:{p:1}};
   const A=new Function('THREE','NM_ARR',fn('nmArrShader')+';return nmArrShader;')(T,NM_ARR);A.call(m,sh);
   assert(sh.uniforms.nmArr.value===m.nmArrTex&&sh.uniforms.nmPal.value===m.nmPalTex,'uniforms');
@@ -145,16 +146,35 @@ const sig=(P,U,a,b,c,extra)=>[a,b,c].map(v=>[P[v*3],P[v*3+1],P[v*3+2],U[v*2],U[v
 // giving each ground group its own chunk slot instead costs ascent 105 / 142 calls for 2.90 M triangles. Triangle check:
 // average not above the no-array plan by more than TRIS_SLACK.
 const TRIS_SLACK=1.2;
-const BUDGET={ascent:{avg:92,worst:120},bind:{avg:75,worst:105},haven:{avg:90,worst:128},split:{avg:95,worst:122},lotus:{avg:80,worst:115},breeze:{avg:80,worst:115}};
+// gpu lane (31 Oct 2026, user: "so laggy it's unplayable" on LOW, worst "when I'm getting shot at"): the 110-chunk plan left
+// map-wide pieces (Ascent: one window-frame chunk 647 k triangles), so frustum culling dropped almost nothing - Ascent LOW 1080
+// drew 2.98 M map triangles at spawn (real renderer.info, qa/gpu/gpu_views.cjs) and the model above 3.29 M of 3.32 M per view.
+// NM_STRIP cuts pieces to <= 20 m (5000-triangle floor) and draws each run of visible neighbouring chunks of one material as
+// one call (nmStrips / nmRuns). The draw-call ceilings are RAISED DELIBERATELY from the 110-chunk plan's (ascent 92 / 120,
+// bind 75 / 105, haven 90 / 128, split 95 / 122, lotus 80 / 115, breeze 80 / 115): culled pieces cost more calls, and ~130
+// calls is far below the 600 the user hit while the triangles drawn halve. Measured with strips (avg / worst calls, avg
+// triangles; before in brackets): ascent 131 / 177, 1.46 M (80 / 110, 3.29 M); bind 85 / 122, 1.00 M (68 / 92, 2.05 M);
+// haven 99 / 151, 1.78 M (79 / 107, 3.17 M); split 109 / 145, 1.42 M (81 / 105, 2.66 M); lotus 82 / 113, 1.02 M (73 / 105,
+// 1.90 M); breeze 92 / 135, 1.01 M (72 / 101, 2.16 M). Ceilings ~15% above; tris: the average triangles drawn per view.
+const BUDGET={ascent:{avg:150,worst:200,tris:1.6e6},bind:{avg:100,worst:140,tris:1.15e6},haven:{avg:115,worst:175,tris:2.05e6},split:{avg:125,worst:170,tris:1.63e6},lotus:{avg:95,worst:130,tris:1.17e6},breeze:{avg:106,worst:155,tris:1.16e6}};
 if(!process.env.VIEWS)process.env.VIEWS='16';
 const {loadRender,root:mroot}=await import(path.join(root,'server/tools/map-render.mjs')),{views,count,sphereOf}=await import(path.join(root,'server/tools/map-perf.mjs'));
-const B=new Function('NM_SMALL','NM_ARR',['nmDetailDistance','nmChunkPlan','nmCentroids','nmArrSize','nmArrBuckets'].map(fn).join('\n')+'\nreturn {nmDetailDistance,nmChunkPlan,nmArrSize,nmArrBuckets};')(NM_SMALL,NM_ARR);
+const B=new Function('NM_SMALL','NM_ARR',['nmDetailDistance','nmChunkPlan','nmCentroids','nmArrSize','nmArrBuckets'].concat(NM_STRIP.on?['nmSpanOver']:[]).map(fn).join('\n')+'\nreturn {nmDetailDistance,nmChunkPlan,nmArrSize,nmArrBuckets};')(NM_SMALL,NM_ARR);
 const GB=new Function([...(src.match(/^var NM_GROUND\w*=.*$/mg)||[]),fn('nmGroundLayer')].join('\n')+'\nreturn {nmGroundLayer};')();
 let texRaw=null;const sharp=require(path.join(root,'server/node_modules/sharp')),pageStats=new Function('document',fn('nmTexStats')+';return nmTexStats;')({createElement:()=>({getContext:()=>({drawImage(){},getImageData:()=>({data:texRaw})})})});
 const texStats=async f=>{texRaw=new Uint8ClampedArray(await sharp(f).ensureAlpha().resize(16,16,{fit:'fill'}).raw().toBuffer());return pageStats({width:16});};
 const ZF=JSON.parse(src.match(/var NM_ZFIX=(\{.*?\});\n/s)[1]);
 const png=f=>{const b=Buffer.alloc(24),fd=fs.openSync(f,'r');fs.readSync(fd,b,0,24,0);fs.closeSync(fd);return [b.readUInt32BE(16),b.readUInt32BE(20)];};
 const FOL=/Plant(?!er)|Vines|Foliage|Leaf|Leaves|Fern|Shrub|Creeper|Bush|MossOvergrowth|Flower|Ivy|Canopy|TreeCard|Conifer|Arborvitae|Palm|Bonsai|Bananna|Agave|Cabbage|Jasmine|Philodendron|MorningGlory|Cables/i,NOFOL=/Blend|Trunk|Bark|Planter|Wall|Floor|Stone|Rock|Tile|Brick|Plaster|Mural|Decal|Floater|Light|Lamp|Glass|Sack|Graffiti|Vista_2_M1/i;
+// gpu lane (31 Oct 2026, NM_STRIP): what the page submits with strips - nmStrips' grouping (consecutive plan chunks of one
+// key, not a kept whole mesh, not blended, two or more) and nmRuns' draws (each run of consecutive visible chunks of a strip
+// is ONE draw); the camera / frustum / distance rule is map-perf's count(). calls / worstCalls = draws; chunks = visible chunks.
+function runs(objs,V){const cam=new THREE.PerspectiveCamera(70.5,16/9,.05,500),fr=new THREE.Frustum(),m=new THREE.Matrix4(),sp=new THREE.Sphere();cam.fov=2*Math.atan(Math.tan(103*Math.PI/360)/(16/9))*180/Math.PI;cam.updateProjectionMatrix();
+ const sid=new Int32Array(objs.length).fill(-1),ok=o=>!o.whole&&!o.decal;let ns=0;for(let i=0;i<objs.length;){let j=i+1;if(ok(objs[i]))while(j<objs.length&&ok(objs[j])&&objs[j].key===objs[i].key)j++;if(j-i>=2){for(let k=i;k<j;k++)sid[k]=ns;ns++;}i=j;}
+ let calls=0,chunks=0,worst=0;for(const v of V){cam.position.set(...v.p);cam.rotation.set(0,v.yaw,0);cam.updateMatrixWorld(true);m.multiplyMatrices(cam.projectionMatrix,cam.matrixWorldInverse);fr.setFromProjectionMatrix(m);let c=0,prev=false;
+  objs.forEach((o,i)=>{let vis=!(o.maxDist&&Math.hypot(o.c[0]-v.p[0],o.c[1]-v.p[1],o.c[2]-v.p[2])-o.r>o.maxDist);if(vis){sp.center.set(...o.c);sp.radius=o.r;vis=fr.intersectsSphere(sp);}
+   if(vis){chunks++;if(!(prev&&sid[i]>=0&&sid[i]===sid[i-1]))c++;}prev=vis;});calls+=c;if(c>worst)worst=c;}
+ return {calls:Math.round(calls/V.length),worstCalls:worst,chunks:Math.round(chunks/V.length),strips:ns};}
 const MAPS=(process.env.MAPS||'ascent,bind,haven,split,lotus,breeze').split(',');const rows=[];
 for(const key of MAPS){const R=loadRender(key,{bvh:false}),V=views(key),z=ZF[key]||{o:[]},lv=new Map();z.o.forEach((l,i)=>{for(const n of l)lv.set(n,i+1);});
  const srcs=[],sIx=new Map();for(const p of R.prims)if(p.tex!=null){const s=R.g.textures[p.tex].source;if(!sIx.has(s)){const [w,h]=png(mroot(key)+R.g.images[s].uri),wh=B.nmArrSize(w,h,false,0);sIx.set(s,srcs.length);srcs.push({w:wh[0],h:wh[1],e:1});}}
@@ -164,10 +184,10 @@ for(const key of MAPS){const R=loadRender(key,{bvh:false}),V=views(key),z=ZF[key
  const gl=new Set(),glSrc=new Set();for(const p of R.prims){if(p.tex==null||p.alpha==='MASK'||p.alpha==='BLEND'||/Decal|Floater/i.test(p.name)||GB.nmGroundLayer(p.name)===null)continue;const s=R.g.textures[p.tex].source,st=await texStats(mroot(key)+R.g.images[s].uri);if(st&&st.lum<10&&st.alpha>=8&&st.am>=25){gl.add(p);glSrc.add(s);}}
  const items=R.prims.map((p,k)=>{const decal=/Decal|Floater/i.test(p.name),cut=p.alpha==='MASK'||(FOL.test(p.name)&&!NOFOL.test(p.name));const own='m'+p.material;const s=p.tex!=null?R.g.textures[p.tex].source:null;
   const ak=decal||s==null||gl.has(p)||glSrc.has(s)?own:'a'+arrOf.get(sIx.get(s))+'|'+(cut?1:0)+'|'+(lv.get(p.name)||0)+'|'+B.nmDetailDistance(p.name,false,cut);return {key:ak,own,k,name:p.name,pos:R.pos,index:R.index,tri0:p.tri0,tris:p.tris,decal,cutout:cut};});
- const run=(its,opt)=>{const plan=B.nmChunkPlan(its,opt),objs=plan.map(o=>{let n=0;for(const q of o.parts)n+=q.tris?q.tris.length:its[q.item].tris;const ids=new Uint32Array(n);let k=0;for(const q of o.parts){const it=its[q.item];if(q.tris)for(const t of q.tris)ids[k++]=it.tri0+t;else for(let t=0;t<it.tris;t++)ids[k++]=it.tri0+t;}const s=sphereOf(R.pos,R.index,ids);return {c:s.c,r:s.r,tris:n,maxDist:o.maxDist};});return Object.assign({objects:objs.length},count(objs,V));};
- const before=run(items.map(it=>Object.assign({},it,{key:it.own})),NM_OPT),after=run(items,Object.assign({},NM_OPT,{total:NM_ARR.chunks}));
+ const run=(its,opt,strip)=>{const plan=B.nmChunkPlan(its,opt),objs=plan.map(o=>{let n=0;for(const q of o.parts)n+=q.tris?q.tris.length:its[q.item].tris;const ids=new Uint32Array(n);let k=0;for(const q of o.parts){const it=its[q.item];if(q.tris)for(const t of q.tris)ids[k++]=it.tri0+t;else for(let t=0;t<it.tris;t++)ids[k++]=it.tri0+t;}const s=sphereOf(R.pos,R.index,ids);return {c:s.c,r:s.r,tris:n,maxDist:o.maxDist,key:o.key,whole:o.parts.length===1&&!o.parts[0].tris,decal:its[o.parts[0].item].decal};});return Object.assign({objects:objs.length},count(objs,V),strip?runs(objs,V):{});};
+ const before=run(items.map(it=>Object.assign({},it,{key:it.own})),NM_OPT),after=run(items,Object.assign({},NM_OPT,{total:NM_ARR.chunks},NM_STRIP.on?{span:NM_STRIP.span,spanTris:NM_STRIP.tris}:null),NM_STRIP.on);
  rows.push({key,arrays:arrays.length,groups:new Set(items.map(i=>i.key)).size,groundLayers:gl.size,before,after});console.log(key,'arrays',arrays.length,'ground layers',gl.size,'calls avg',before.calls,'->',after.calls,'worst',before.worstCalls,'->',after.worstCalls,'tris avg',before.tris,'->',after.tris,'objects',before.objects,'->',after.objects);
  const b=BUDGET[key];assert(after.calls<=b.avg,key+': average map draw calls '+after.calls+' > '+b.avg);assert(after.worstCalls<=b.worst,key+': worst-view map draw calls '+after.worstCalls+' > '+b.worst);
- assert(after.tris<=before.tris*TRIS_SLACK,key+': texture-array chunks draw more triangles on average ('+after.tris+' vs '+before.tris+' x '+TRIS_SLACK+')');}
+ assert(after.tris<=b.tris,key+': average map triangles drawn per view '+after.tris+' > '+b.tris+' (frustum culling defeated: pieces too large)');assert(after.tris<=before.tris*TRIS_SLACK,key+': texture-array chunks draw more triangles on average ('+after.tris+' vs '+before.tris+' x '+TRIS_SLACK+')');}
 if(process.env.JSON)fs.writeFileSync(process.env.JSON,JSON.stringify(rows,null,1));
 console.log('test_map_drawcalls OK');})().catch(e=>{console.error(e);process.exit(1);});
