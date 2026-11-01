@@ -11491,7 +11491,7 @@ xLocEl.className = "x-loc"; xLocEl.setAttribute("aria-live", "off");
 xLocEl.style.cssText = "position:fixed;z-index:6;pointer-events:none;font:600 12px/1 var(--sans);letter-spacing:.12em;text-transform:uppercase;color:#ece8e1;text-shadow:0 1px 2px rgba(0,0,0,.8);text-align:center;display:none";
 document.body.appendChild(xLocEl);
 xLocEl.xT = ""; xLocEl.xK = "";
-setInterval(() => {
+function xLocTick() {
   const g = $("game"), on = !!(g && g.classList.contains("x-mm") && player && !g.hidden && g.offsetParent !== null);
   let t = "";
   if (on) { const sp = player.hp <= 0 && xKL.sp && xKL.cur && xKL.cur.alive && xKL.cur.g ? xKL.cur.g.position : player; /* spectated teammate, else own spot */ t = xLoc(sp.x, sp.z); }
@@ -11501,7 +11501,11 @@ setInterval(() => {
     const r = MM.getBoundingClientRect(), k = Math.round(r.left) + "," + Math.round(r.bottom) + "," + Math.round(r.width);
     if (xLocEl.xK !== k) { xLocEl.xK = k; xLocEl.style.left = Math.round(r.left) + "px"; xLocEl.style.top = Math.round(r.bottom + 6) + "px"; xLocEl.style.width = Math.round(r.width) + "px"; }
   }
-}, 250);
+}
+// 4 Hz; the offsetParent / minimap rect reads run just after a frame is drawn (rAF -> setTimeout 0), when layout is already clean,
+// instead of at a random point between frames where they forced a synchronous layout every tick (perf2)
+xLocEl.xP = 0;
+setInterval(() => { if (xLocEl.xP) return; xLocEl.xP = 1; requestAnimationFrame(() => setTimeout(() => { xLocEl.xP = 0; xLocTick(); }, 0)); }, 250);
 // ---- observer pass: Rotate minimap setting (vs.minirot, default on) + team side panels (spectating / buy phase) + spectated teammate's HUD ----
 function xMiniRotLoad() { let v = null; try { v = localStorage.getItem("vs.minirot"); } catch (e) {} if (v == null && xAAMem.minirot != null) v = xAAMem.minirot; XOB.mr = v !== "0"; const cb = $("xMiniRot"); if (cb) cb.checked = XOB.mr; return XOB.mr; }
 { xMiniRotLoad(); const cb = $("xMiniRot"); if (cb) cb.onchange = () => { XOB.mr = !!cb.checked; const v = XOB.mr ? "1" : "0"; xAAMem.minirot = v; try { localStorage.setItem("vs.minirot", v); } catch (e) {} }; }
