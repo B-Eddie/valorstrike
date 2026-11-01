@@ -10,7 +10,8 @@
 // The sim, the round / buy timer and the menu itself still run every frame; the first frame after opening and every frame
 // after closing draw the world.
 // Checks:
-// 1. CSS: the look is kept - #xBuy still has the 88 % panel and the 3 px backdrop blur, and is display:none when closed.
+// 1. CSS: the look is kept - #xBuy still has the 88 % panel and is display:none when closed. (The 3 px backdrop blur was
+//    removed later, perf2, user-approved 1 Nov 2026, so online is smooth too: work/test_buy_menu_no_backdrop.cjs.)
 // 2. Real page (page_harness, offline 5v5 buy phase), 60 frames of 1/60 s each: menu closed - the world draws every frame;
 //    menu open - it draws on the opening frame and then at most 10 per second (red before: 60), the sim (round / buy timer)
 //    still runs every frame; closed again - every frame. Online (MP.cl) and the deathmatch menu are untouched.
@@ -18,7 +19,7 @@
 const fs=require('fs'),path=require('path'),assert=require('assert/strict');
 const html=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
 // ---------- 1. look kept ----------
-assert.match(html,/#xBuy\{font-family:Arial,sans-serif!important;[^}]*background:rgba\(12,25,28,\.88\)!important;backdrop-filter:blur\(3px\)!important\}/,'#xBuy keeps its 88 % panel and 3 px backdrop blur');
+assert.match(html,/#xBuy\{font-family:Arial,sans-serif!important;[^}]*background:rgba\(12,25,28,\.88\)!important;[^}]*\}/,'#xBuy keeps its 88 % panel');
 assert.match(html,/#xBuy\{position:fixed;inset:0;z-index:25;display:none;/,'#xBuy is display:none when closed (no layer left behind)');
 assert.match(html,/#xBuy\.on\{display:grid;/,'#xBuy.on shows the menu');
 // ---------- 2. real page ----------
