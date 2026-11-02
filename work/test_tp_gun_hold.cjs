@@ -7,8 +7,8 @@
 //  - the gun is drawn at its world length: native model length x (0.95 m / native Vandal), so the guns keep VALORANT's own
 //    proportions to each other (Vandal 0.95 m, Classic 0.23 m, Sheriff 0.32 m, Operator 1.28 m) - within 3 %;
 //  - the right palm is on the grip (4 cm), the barrel points along the aim (2 deg);
-//  - long guns: the support palm is on the weapon's own Left_Hand_Target (handguard) socket (7 cm), not slid back onto the
-//    magazine; sidearms: the support hand cups the right hand (8 cm);
+//  - long guns: the support palm is on the handguard line (6 cm) at most 35 % of the way back from the weapon's own
+//    Left_Hand_Target socket toward the grip - not slid back onto the magazine; sidearms: the support hand cups the right hand (8 cm);
 //  - reload (one-shots that used to drop the grip): the gun stays in the right hand (5 cm), canted forward-down off the aim
 //    (10-60 deg) and not flung up, the support hand goes to the gun (on the receiver / magazine, 12 cm of the gun's lower line).
 //   node work/test_tp_gun_hold.cjs
@@ -38,12 +38,14 @@ const WEAPONS=(process.env.WEAPONS||'Vandal,Phantom,Sheriff,Classic,Operator,Ban
    const len=PL[w]*R.M.gun.getWorldScale(V()).x;
    const dir=V().set(0,0,-1).transformDirection(R.M.gun.matrixWorld),aim=V().set(0,Math.sin(pit),Math.cos(pit)),aimDeg=dir.angleTo(aim)*180/Math.PI;
    const right=palm(R,'R').distanceTo(at(R,g.rh));
-   const left=g.side||!g.lh?palm(R,'L').distanceTo(palm(R,'R')):palm(R,'L').distanceTo(at(R,g.lh));
-   if(pit===0&&st==='idle')console.log(tag.padEnd(22),'len',len.toFixed(3),'want',want.toFixed(3),'right',right.toFixed(3),'left',left.toFixed(3),'slide',(R.X.grip.slide||0).toFixed(3),'aim',aimDeg.toFixed(1));
+   // long guns: the support palm's place along the handguard (0 = the Left_Hand_Target socket, 1 = back at the grip) and its distance off that line
+   let left,back=0;if(g.side||!g.lh)left=palm(R,'L').distanceTo(palm(R,'R'));else{const L0=at(R,g.lh),R0=at(R,g.rh),ax=V().subVectors(R0,L0),n=ax.length();ax.divideScalar(n);const d=V().subVectors(palm(R,'L'),L0);back=d.dot(ax)/n;left=d.addScaledVector(ax,-d.dot(ax)).length();}
+   if(pit===0&&st==='idle')console.log(tag.padEnd(22),'len',len.toFixed(3),'want',want.toFixed(3),'right',right.toFixed(3),'left',left.toFixed(3),'back',back.toFixed(2),'slide',(R.X.grip.slide||0).toFixed(3),'aim',aimDeg.toFixed(1));
    ok(Math.abs(len/want-1)<0.03,tag+' gun drawn at its world length '+want.toFixed(3)+' m (drawn '+len.toFixed(3)+')');
    ok(right<0.04,tag+' right palm on the grip ('+right.toFixed(3)+')');
    ok(aimDeg<2,tag+' barrel along the aim ('+aimDeg.toFixed(1)+' deg)');
-   ok(left<(g.side||!g.lh?0.08:0.07),tag+(g.side||!g.lh?' support hand cups the right hand':' support palm on the handguard socket')+' ('+left.toFixed(3)+')');
+   if(g.side||!g.lh)ok(left<0.08,tag+' support hand cups the right hand ('+left.toFixed(3)+')');
+   else ok(left<0.06&&back<0.35,tag+' support palm on the handguard, not slid back to the magazine ('+left.toFixed(3)+' m off, '+(back*100).toFixed(0)+' % back from the socket)');
   }
   // reload: still held
   R.play('idle','aim');R.X.pit=0;R.step(30);R.play('idle','reload');R.X.pit=0;R.step(18);R.M.m.updateMatrixWorld(true);

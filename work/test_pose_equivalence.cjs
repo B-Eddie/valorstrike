@@ -36,7 +36,7 @@ const REV=[
  ['grip',"xgWP(A.up, a); xgWP(A.lo, bb); xgWP(A.hand, c);","A.up.getWorldPosition(a); A.lo.getWorldPosition(bb); A.hand.getWorldPosition(c);"],
  ['grip',"  xgWP(A.lo, bb); xgWP(A.hand, c);\n","  A.lo.getWorldPosition(bb); A.hand.getWorldPosition(c);\n"],
  ['grip',"  const held = M.gun; xgHeldSync(M); if (M.gun !== held) { XGRIP.cur = false; if (M.sx) M.sx.mwOk = false; } // a new gun is not placed yet\n","  xgHeldSync(M);\n"],
- ['grip',"M.gun.quaternion.copy(G.gq); X.mwOk = false; return; }","M.gun.quaternion.copy(G.gq); return; }"],
+ ['grip',"xgScale(M, G, grip || G.last || xgGrip(M)); X.mwOk = false; return; }","xgScale(M, G, grip || G.last || xgGrip(M)); return; }"],
  ['grip',"root = M.m; if (!XGRIP.cur) root.updateWorldMatrix(true, false);","root = M.m; root.updateWorldMatrix(true, false);"],
  ['grip',"xgWP(G.R.up, gp); xgWP(G.L.up, tmp); gp.add(tmp)","G.R.up.getWorldPosition(gp); G.L.up.getWorldPosition(tmp); gp.add(tmp)"],
  ['grip',"xgWP(G.R.up, gp); gp.addScaledVector(axis(1, 0, 0, tmp)","G.R.up.getWorldPosition(gp); gp.addScaledVector(axis(1, 0, 0, tmp)"],
