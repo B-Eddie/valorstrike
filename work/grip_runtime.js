@@ -37,7 +37,7 @@ function xgTemplate(T, w) {
 // --- per-agent setup: bones, bind-pose finger rotations and hand axes ---
 function xgSetup(M) {
   const X = M.sx, sc = X.sc, b = (n) => sc.getObjectByName(n), G = { ok: false, w: 0 }; X.grip = G;
-  const arm = (s) => ({ up: b(s + '_Shoulder'), lo: b(s + '_Elbow'), hand: b(s + '_Hand'), sh: b(s + '_Shoulder') });
+  const arm = (s) => ({ up: b(s + '_Shoulder'), lo: b(s + '_Elbow'), hand: b(s + '_Hand'), sh: b(s + '_Shoulder'), cl: b(s + '_Clavicle') });
   G.R = arm('R'); G.L = arm('L'); if (!G.R.hand || !G.L.hand || !G.R.up || !G.L.up || !G.R.lo || !G.L.lo || !M.gun) return G;
   let skin = null; sc.traverse((o) => { if (!skin && o.isSkinnedMesh && o.skeleton) skin = o.skeleton; });
   const bindW = new Map(); if (skin) skin.bones.forEach((bn, i) => bindW.set(bn, new THREE.Matrix4().copy(skin.boneInverses[i]).invert()));
@@ -47,7 +47,7 @@ function xgSetup(M) {
     const k = mid.position.clone().normalize(), s = pk.position.clone().sub(ix.position).normalize(), n = side === 'R' ? new THREE.Vector3().crossVectors(k, s) : new THREE.Vector3().crossVectors(s, k);
     n.addScaledVector(k, -n.dot(k)).normalize(); A.basis = new THREE.Matrix4().makeBasis(k, n, new THREE.Vector3().crossVectors(k, n)); A.basisT = A.basis.clone().transpose();
     A.fingers = []; for (const f of XG_FINGERS) for (let j = 1; j <= 3; j++) { const bn = b(side + '_' + f + j); if (bn) A.fingers.push({ bn, f, j, rest: bindLocal(bn) }); }
-    A.bones = [A.up, A.lo, A.hand].concat(A.fingers.map((x) => x.bn));
+    A.bones = [A.up, A.lo, A.hand].concat(A.fingers.map((x) => x.bn)); if (side === 'L' && A.cl) A.bones.push(A.cl);
   }
   // Arm and finger bones join the restore-before-mixer set so procedural rotations never stack.
   let i = 0; for (const bn of G.R.bones.concat(G.L.bones)) { const key = 'grip' + i++; X.b[key] = bn; if (X.sv) { X.sv[key] = bn.quaternion.clone(); X.svOn[key] = 1; } }
@@ -80,6 +80,20 @@ function xgHandQ(A, k, n, out) { const t = XGRIP.t || (XGRIP.t = new THREE.Vecto
 function xgCurl(A, set, k, n) { const axis = XGRIP.ax || (XGRIP.ax = new THREE.Vector3()), pq = XGRIP.cq || (XGRIP.cq = new THREE.Quaternion()), q = XGRIP.cq2 || (XGRIP.cq2 = new THREE.Quaternion()), la = XGRIP.la || (XGRIP.la = new THREE.Vector3());
   axis.crossVectors(k, n).normalize(); for (const F of A.fingers) { const ang = (set[F.f] || [0, 0, 0])[F.j - 1]; F.bn.quaternion.copy(F.rest); xgWorldQ(F.bn.parent, pq); la.copy(axis).applyQuaternion(pq.invert()); q.setFromAxisAngle(la, ang); F.bn.quaternion.premultiply(q); F.bn.updateMatrixWorld(true); } }
 function xgTarget(M) { const X = M.sx; if (M.dead || X.dd || M.w === 'Knife' || X.uo === 'reload' || X.uo === 'cast' || X.uo === 'throw' || (X.w && X.w.plant > 0.05)) return 0; return 1; }
+// Support-side shoulder reach: the run / crouch clips swing the left shoulder back, leaving a long gun's handguard socket out of
+// the arm's reach (the hand then slid back onto the magazine). Turn the left clavicle toward the target, up to XGRIP.clMax rad,
+// just enough for the arm (shoulder -> elbow -> hand) to reach; the clavicle is restored before every mixer pass like the arm.
+XGRIP.clMax = 0.6;
+function xgReach(G, lt) {
+  const A = G.L, cl = A.cl; if (!cl || !cl.parent) return; const T = XGRIP.rv || (XGRIP.rv = Array.from({ length: 5 }, () => new THREE.Vector3())), c = xgWP(cl, T[0]), sh = xgWP(A.up, T[1]);
+  const reach = (G.reach || (G.reach = sh.distanceTo(xgWP(A.lo, T[2])) + xgWP(A.lo, T[2]).distanceTo(xgWP(A.hand, T[3])))) * 0.985;
+  if (sh.distanceTo(lt) <= reach) return; const r0 = T[2].subVectors(sh, c), q = XGRIP.rq0 || (XGRIP.rq0 = new THREE.Quaternion()), qf = XGRIP.rq || (XGRIP.rq = new THREE.Quaternion()), qi = XGRIP.rqi || (XGRIP.rqi = new THREE.Quaternion()), t = T[3];
+  q.setFromUnitVectors(t.copy(r0).normalize(), T[4].copy(lt).sub(c).normalize()); const full = 2 * Math.acos(Math.min(1, Math.abs(q.w))); if (full < 1e-4) return;
+  let lo = 0, hi = Math.min(1, XGRIP.clMax / full); for (let i = 0; i < 7; i++) { const m = (lo + hi) / 2; qf.identity().slerp(q, m); t.copy(r0).applyQuaternion(qf).add(c); if (t.distanceTo(lt) > reach) lo = m; else hi = m; }
+  qf.identity().slerp(q, hi); const pq = xgWorldQ(cl.parent, qi), lq = XGRIP.rq2 || (XGRIP.rq2 = new THREE.Quaternion()); lq.copy(pq).invert().multiply(qf).multiply(pq); cl.quaternion.premultiply(lq);
+  // only the chain the arm IK reads (clavicle -> shoulder -> elbow -> hand) is refreshed here; the IK's own shoulder update refreshes the rest
+  for (const o of [cl, A.up, A.lo, A.hand]) { o.updateMatrix(); o.matrixWorld.multiplyMatrices(o.parent.matrixWorld, o.matrix); }
+}
 // the held gun's world size (also while the grip is faded out: a reload never pops the gun back to the viewmodel size)
 function xgScale(M, G, g) { if (M.gun && G.gs) M.gun.scale.copy(G.gs).multiplyScalar((g && g.s) || 1); }
 function xgGrip(M) { let g = null; M.gun.traverse((o) => { if (!g && o.userData && o.userData.grip) g = o.userData.grip; }); return g; }
@@ -127,6 +141,7 @@ function xgPose(M, dt) {
   let kL, nL, lt;
   if (g.side || !g.lh) { kL = gl(0, -0.6, -1, G.v[0]).normalize(); nL = gl(1, 0, 0, G.v[1]); lt = toW(g.rh, G.v[2]).addScaledVector(gl(-1, 0, 0, tmp), 0.035).addScaledVector(kL, -0.05); }
   else { kL = gl(0.55, 0, -1, G.v[0]).normalize(); nL = gl(0.5, 1, 0, G.v[1]).normalize(); lt = toW(g.lh, G.v[2]).addScaledVector(kL, -0.06).addScaledVector(nL, -0.03); }
+  if (!g.side && g.lh) xgReach(G, lt); // the support shoulder comes forward (clavicle) when the handguard is out of reach
   if (!g.side && g.lh) { // short arms / long guns: slide the support hand back along the handguard until the arm reaches
     const sh = xgWP(G.L.up, G.v[6]), reach = (G.reach || (G.reach = xgWP(G.L.up, G.v[7]).distanceTo(xgWP(G.L.lo, G.v[8])) + xgWP(G.L.lo, G.v[8]).distanceTo(xgWP(G.L.hand, G.v[7])))) * 0.985;
     const ax = gl(0, 0, 1, G.v[7]), rel = G.v[8].subVectors(lt, sh), bq = rel.dot(ax), cq = rel.lengthSq() - reach * reach;
