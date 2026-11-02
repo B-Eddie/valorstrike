@@ -13302,8 +13302,11 @@ function mpInterp(u, now) {
   const B = u.nb; if (!B || !B.length || !u.alive) return;
   const C = B[0].clock && MP.snapClock, target = C ? now - C.offset - C.delay : now - MP.DELAY;
   const elapsed = u.nrAt == null ? 0 : Math.max(0, now - u.nrAt);
-  // A changing jitter buffer must not reverse the render clock or race through a burst of queued snapshots.
-  let rt = u.nr == null || elapsed > 1000 ? target : u.nr + Math.max(elapsed * .9, Math.min(elapsed * 1.1, target - u.nr));
+  // A changing jitter buffer must not reverse the render clock or race through a burst of queued snapshots: the clock runs at
+  // 0.9-1.1x. The rate follows the error proportionally (25 ms behind / ahead = the 10 % bound): the target moves a few ms with
+  // every snapshot (jitter estimate, minimum-offset clock), and jumping to the bounds for those drew a steady run at 0.9x / 1.1x
+  // frame to frame (net lane, work/test_remote_interp_steady.cjs).
+  let rt = u.nr == null || elapsed > 1000 ? target : u.nr + elapsed * (1 + Math.max(-.1, Math.min(.1, (target - u.nr - elapsed) / 250)));
   // Starved (a lost packet held back by TCP, a long stall): the render clock stops at the 50 ms extrapolation bound instead of
   // running on (it jumped the unit ahead by the whole stall when the data resumed), and the buffer widens by the shortfall.
   const nw = B[B.length - 1].t;
