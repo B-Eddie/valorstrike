@@ -9,8 +9,9 @@
 //  - the right palm is on the grip (4 cm), the barrel points along the aim (2 deg);
 //  - long guns: the support palm is on the handguard line (6 cm) at most 35 % of the way back from the weapon's own
 //    Left_Hand_Target socket toward the grip - not slid back onto the magazine; sidearms: the support hand cups the right hand (8 cm);
-//  - reload (one-shots that used to drop the grip): the gun stays in the right hand (5 cm), canted forward-down off the aim
-//    (10-60 deg) and not flung up, the support hand goes to the gun (on the receiver / magazine, 12 cm of the gun's lower line).
+//  - reload (the one-shot that used to drop the grip), every frame of it: the gun stays in the right hand (5 cm), canted off the
+//    aim (10-60 deg) and not flung up (barrel dir.y < 0.2); the support hand works at the gun (comes within 10 cm of its lower
+//    line, never farther than 35 cm), then the grip is back.
 //   node work/test_tp_gun_hold.cjs
 const assert=require('assert/strict'),fs=require('fs'),path=require('path'),vm=require('vm');const root=path.join(__dirname,'..');
 const _w=console.warn;console.warn=(...a)=>{if(!/boneTransform/.test(String(a[0])))_w(...a);};
@@ -47,14 +48,16 @@ const WEAPONS=(process.env.WEAPONS||'Vandal,Phantom,Sheriff,Classic,Operator,Ban
    if(g.side||!g.lh)ok(left<0.08,tag+' support hand cups the right hand ('+left.toFixed(3)+')');
    else ok(left<0.06&&back<0.35,tag+' support palm on the handguard, not slid back to the magazine ('+left.toFixed(3)+' m off, '+(back*100).toFixed(0)+' % back from the socket)');
   }
-  // reload: still held
-  R.play('idle','aim');R.X.pit=0;R.step(30);R.play('idle','reload');R.X.pit=0;R.step(18);R.M.m.updateMatrixWorld(true);
-  {const g=Tg.userData.grip,tag=w+'/reload';const dir=V().set(0,0,-1).transformDirection(R.M.gun.matrixWorld),deg=dir.angleTo(V().set(0,0,1))*180/Math.PI;
-   const right=palm(R,'R').distanceTo(at(R,g.rh));const ln=new THREE.Line3(at(R,[0,g.rh[1],g.rh[2]]),at(R,[0,g.rh[1],g.mz!=null?g.mz:g.rh[2]-0.3])),lp=palm(R,'L'),left=ln.closestPointToPoint(lp,true,V()).distanceTo(lp);
-   console.log(tag.padEnd(22),'right',right.toFixed(3),'cant',deg.toFixed(1),'dirY',dir.y.toFixed(2),'left',left.toFixed(3));
-   ok(right<0.05,tag+' gun stays in the right hand ('+right.toFixed(3)+')');
-   ok(deg>10&&deg<60&&dir.y<0.2,tag+' gun canted forward-down, not flung ('+deg.toFixed(1)+' deg, dir.y '+dir.y.toFixed(2)+')');
-   ok(left<0.12,tag+' support hand at the gun ('+left.toFixed(3)+')');}
+  // reload (2 s here, the harness's fallback length): sampled every frame after a 0.25 s blend-in
+  R.play('idle','aim');R.X.pit=0;R.step(30);R.play('idle','reload');R.X.pit=0;
+  {const g=Tg.userData.grip,tag=w+'/reload';let rMax=0,cMin=180,cMax=0,yMax=-1,lMin=9,lMax=0;
+   for(let f=0;f<57;f++){R.step(1);if(f<8)continue;R.M.m.updateMatrixWorld(true);const dir=V().set(0,0,-1).transformDirection(R.M.gun.matrixWorld),deg=dir.angleTo(V().set(0,0,1))*180/Math.PI;
+    const right=palm(R,'R').distanceTo(at(R,g.rh));const ln=new THREE.Line3(at(R,[0,g.rh[1],g.rh[2]]),at(R,[0,g.rh[1],g.mz!=null?g.mz:g.rh[2]-0.3])),lp=palm(R,'L'),left=ln.closestPointToPoint(lp,true,V()).distanceTo(lp);
+    rMax=Math.max(rMax,right);cMin=Math.min(cMin,deg);cMax=Math.max(cMax,deg);yMax=Math.max(yMax,dir.y);lMin=Math.min(lMin,left);lMax=Math.max(lMax,left);}
+   console.log(tag.padEnd(22),'right<=',rMax.toFixed(3),'cant',cMin.toFixed(1)+'-'+cMax.toFixed(1),'dirY<=',yMax.toFixed(2),'left',lMin.toFixed(3)+'-'+lMax.toFixed(3));
+   ok(rMax<0.05,tag+' gun stays in the right hand ('+rMax.toFixed(3)+')');
+   ok(cMin>10&&cMax<60&&yMax<0.2,tag+' gun canted off the aim, not flung ('+cMin.toFixed(1)+'-'+cMax.toFixed(1)+' deg, dir.y <= '+yMax.toFixed(2)+')');
+   ok(lMin<0.1&&lMax<0.35,tag+' support hand works at the gun (closest '+lMin.toFixed(3)+', farthest '+lMax.toFixed(3)+')');}
   R.play('idle','aim');R.step(30);ok(R.X.grip.w>0.99,w+' grip back after the reload');
  }
  if(fails.length){console.error('FAIL '+fails.length+'\n'+fails.slice(0,60).join('\n'));process.exit(1);}

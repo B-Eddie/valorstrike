@@ -1,7 +1,7 @@
 // Third-person weapon grip regression (ledger row 4): with the game's own rig/upper-body code and
 // work/grip_runtime.js, both hands stay on the gun (right on the grip, left on the handguard or cupping a
 // sidearm), the muzzle follows the aim pitch, fingers curl, the pose never stacks across frames, and the grip
-// fades out for reload and the knife. Also checks the generated index.html carries the grip block verbatim.
+// fades out for the knife; a reload keeps the gun in the right hand (work/test_tp_gun_hold.cjs checks the reload pose). Also checks the generated index.html carries the grip block verbatim.
 const assert=require('assert/strict'),fs=require('fs'),path=require('path');const root=path.join(__dirname,'..');
 const _w=console.warn,_l=console.log;console.warn=(...a)=>{if(!/boneTransform/.test(String(a[0])))_w(...a);};
 (async()=>{
@@ -24,8 +24,8 @@ const _w=console.warn,_l=console.log;console.warn=(...a)=>{if(!/boneTransform/.t
   assert(q.angleTo(R.bone('R_Middle2').quaternion)<1e-3,'finger pose stable');
   const fing=R.X.grip.R.fingers.find(f=>f.f==='Middle'&&f.j===2);assert(fing.bn.quaternion.angleTo(fing.rest)>0.8,agent+'/'+weapon+' middle finger curls round the grip');
  }
- // Reload and knife hand the arms back to the authored clip (grip weight fades to zero).
- const R=await G.build('jett','vandal',api);R.play('idle','reload');R.step(30);assert.equal(R.X.grip.w,0,'reload fades the grip out');assert(G.measure(R).right>0.1,'reload clip moves the hand off the grip');
+ // The knife hands the arms back to the authored clip (grip weight fades to zero); a reload keeps the gun gripped.
+ const R=await G.build('jett','vandal',api);R.play('idle','reload');R.step(30);assert(R.X.grip.w>0.99,'a reload keeps the grip (third-person reload pose)');assert(G.measure(R).right<0.04,'reload: the gun stays in the right hand');
  R.play('idle','aim');R.step(30);assert(R.X.grip.w>0.99,'grip returns after reload');
  R.M.w='Knife';R.play('idle','knife');R.step(30);assert.equal(R.X.grip.w,0,'knife is not gripped two-handed');
  R.M.w='Vandal';R.M.dead=1;R.step(5);R.M.dead=0;

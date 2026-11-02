@@ -16190,7 +16190,7 @@ function xgIK(A, target, pole, G) {
 function xgHandQ(A, k, n, out) { const t = XGRIP.t || (XGRIP.t = new THREE.Vector3()), m = XGRIP.hm || (XGRIP.hm = new THREE.Matrix4()); n.addScaledVector(k, -n.dot(k)).normalize(); t.crossVectors(k, n); m.makeBasis(k, n, t).multiply(A.basisT); return out.setFromRotationMatrix(m); }
 function xgCurl(A, set, k, n) { const axis = XGRIP.ax || (XGRIP.ax = new THREE.Vector3()), pq = XGRIP.cq || (XGRIP.cq = new THREE.Quaternion()), q = XGRIP.cq2 || (XGRIP.cq2 = new THREE.Quaternion()), la = XGRIP.la || (XGRIP.la = new THREE.Vector3());
   axis.crossVectors(k, n).normalize(); for (const F of A.fingers) { const ang = (set[F.f] || [0, 0, 0])[F.j - 1]; F.bn.quaternion.copy(F.rest); xgWorldQ(F.bn.parent, pq); la.copy(axis).applyQuaternion(pq.invert()); q.setFromAxisAngle(la, ang); F.bn.quaternion.premultiply(q); F.bn.updateMatrixWorld(true); } }
-function xgTarget(M) { const X = M.sx; if (M.dead || X.dd || M.w === 'Knife' || X.uo === 'reload' || X.uo === 'cast' || X.uo === 'throw' || (X.w && X.w.plant > 0.05)) return 0; return 1; }
+function xgTarget(M) { const X = M.sx; if (M.dead || X.dd || M.w === 'Knife' || X.uo === 'cast' || X.uo === 'throw' || (X.w && X.w.plant > 0.05)) return 0; return 1; }
 // Support-side shoulder reach: the run / crouch clips swing the left shoulder back, leaving a long gun's handguard socket out of
 // the arm's reach (the hand then slid back onto the magazine). Turn the left clavicle toward the target, up to XGRIP.clMax rad,
 // just enough for the arm (shoulder -> elbow -> hand) to reach; the clavicle is restored before every mixer pass like the arm.
@@ -16204,6 +16204,22 @@ function xgReach(G, lt) {
   qf.identity().slerp(q, hi); const pq = xgWorldQ(cl.parent, qi), lq = XGRIP.rq2 || (XGRIP.rq2 = new THREE.Quaternion()); lq.copy(pq).invert().multiply(qf).multiply(pq); cl.quaternion.premultiply(lq);
   // only the chain the arm IK reads (clavicle -> shoulder -> elbow -> hand) is refreshed here; the IK's own shoulder update refreshes the rest
   for (const o of [cl, A.up, A.lo, A.hand]) { o.updateMatrix(); o.matrixWorld.multiplyMatrices(o.parent.matrixWorld, o.matrix); }
+}
+// Reload pose (third person, every gun; the native set has only a pistol reload clip). The gun stays in the right hand, its
+// muzzle dipped and rolled (magazine toward the support side); the support hand leaves the handguard (long guns) or the right
+// hand (sidearms) for the magazine well, pulls the magazine down and away, comes back with the new one and returns.
+// rp: 0..1 through the reload. Offsets in metres in the gun's frame (+Y up, -Z muzzle), world size.
+XGRIP.rld = 2; XGRIP.rldL = { dip: 0.42, roll: -0.38 }; XGRIP.rldS = { dip: 0.3, roll: -0.3 };
+function xgReload(G, g, rp, rw, gs, kL, nL, lt, toW, gl) {
+  const T = XGRIP.rlv || (XGRIP.rlv = Array.from({ length: 4 }, () => new THREE.Vector3())), mw = toW(g.rh, T[0]);
+  if (g.side) mw.add(gl(0, -0.085, 0.01, T[1])); else mw.add(gl(0, -0.07, -0.11, T[1])); // the magazine well: the grip's foot / ahead of the trigger guard
+  // 0-.2 to the well, .2-.45 magazine out (down and back toward the belt), .45-.7 new magazine up, .7-.85 seat it, .85-1 back
+  const ss = (a, b, x) => { const t = Math.max(0, Math.min(1, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+  const go = ss(0, 0.2, rp) * (1 - ss(0.85, 1, rp)), drop = ss(0.2, 0.36, rp) * (1 - ss(0.45, 0.68, rp));
+  const tgt = T[2].copy(mw).add(gl(0, -0.2 * drop, 0.08 * drop, T[3]));
+  lt.lerp(tgt, go * rw);
+  // palm up under the magazine, knuckles toward the muzzle
+  const k2 = gl(0.25, 0.1, -1, T[3]).normalize(); kL.lerp(k2, go * rw).normalize(); const n2 = gl(0.2, 1, 0, T[1]).normalize(); nL.lerp(n2, go * rw).normalize();
 }
 // the held gun's world size (also while the grip is faded out: a reload never pops the gun back to the viewmodel size)
 function xgScale(M, G, g) { if (M.gun && G.gs) M.gun.scale.copy(G.gs).multiplyScalar((g && g.s) || 1); }
@@ -16224,6 +16240,12 @@ function xgPose(M, dt) {
   const X = M.sx; if (!X || !X.sc || !M.gun || !M.valorant) return; const G = X.grip || xgSetup(M); if (!G.ok) return;
   const want = xgTarget(M), grip = want ? xgGrip(M) : null; G.w += ((grip ? 1 : 0) - G.w) * Math.min(1, (dt || 1 / 60) * 12); if (G.w < 0.01) { G.w = 0; M.gun.position.copy(G.gp); M.gun.quaternion.copy(G.gq); xgScale(M, G, grip || G.last || xgGrip(M)); X.mwOk = false; return; }
   const g = grip || G.last; if (!g) return; G.last = g; const gs = g.s || 1;
+  // reload: the native set only has a pistol reload clip, which (with the grip faded out) flipped every gun 44 deg up out of the
+  // hand. Now the gun stays gripped and the reload is posed here: rw blends in / out, rp runs 0..1 over the reload (X.ut left).
+  const pdt = Number.isFinite(X.poseDt) && X.poseDt > 0 ? X.poseDt : dt || 1 / 60, rl = X.uo === 'reload';
+  if (rl) { if (!G.rl) { G.rl = 1; G.re = 0; } G.re += pdt; } else G.rl = 0;
+  G.rw = (G.rw || 0) + ((rl ? 1 : 0) - (G.rw || 0)) * Math.min(1, pdt * 10); if (G.rw < 1e-3) G.rw = 0;
+  const rw = G.rw, rp = rl ? Math.min(1, G.re / Math.max(0.3, G.re + (X.ut > 0 ? X.ut : Math.max(0, XGRIP.rld - G.re)))) : 1;
   for (const bn of G.R.bones.concat(G.L.bones)) { let s = G.saved.get(bn); if (!s) G.saved.set(bn, (s = new THREE.Quaternion())); s.copy(bn.quaternion); }
   const V = G.v, root = M.m; if (!XGRIP.cur) root.updateWorldMatrix(true, false); const rq = xgWorldQ(root, G.q[2]);
   const axis = (x, y, z, out) => out.set(x, y, z).applyQuaternion(rq); // agent frame (+Z forward, +X the agent's left) to world
@@ -16231,12 +16253,14 @@ function xgPose(M, dt) {
   if (up.lengthSq() < 1e-8) axis(0, 0, -1, up).addScaledVector(D, -up.dot(D)).normalize(); // directly above/below: retain a stable gun frame
   // gun frame: local -Z along the aim, +Y up
   const zg = V[11].copy(D).negate(), xg = G.v[3].crossVectors(up, zg).normalize(), Rg = G.m[0].makeBasis(xg, up, zg), gq = G.q[3].setFromRotationMatrix(Rg);
+  if (rw) { const R = XGRIP.rld3 || (XGRIP.rld3 = { q: new THREE.Quaternion(), a: new THREE.Vector3() }), C = g.side ? XGRIP.rldS : XGRIP.rldL; // muzzle dips, the gun rolls its magazine toward the support hand
+    gq.multiply(R.q.setFromAxisAngle(R.a.set(1, 0, 0), -C.dip * rw)).multiply(R.q.setFromAxisAngle(R.a.set(0, 0, 1), C.roll * rw)); }
   const gp = G.v[4], tmp = G.v[5];
   if (g.side) { // sidearm: arms extended, grip ahead of the shoulders' midpoint
-    xgWP(G.R.up, gp); xgWP(G.L.up, tmp); gp.add(tmp).multiplyScalar(0.5).addScaledVector(D, 0.44).addScaledVector(axis(0, -1, 0, tmp), 0.06).addScaledVector(axis(-1, 0, 0, tmp), 0.03);
+    xgWP(G.R.up, gp); xgWP(G.L.up, tmp); gp.add(tmp).multiplyScalar(0.5).addScaledVector(D, 0.44 - 0.16 * rw).addScaledVector(axis(0, -1, 0, tmp), 0.06 + 0.1 * rw).addScaledVector(axis(-1, 0, 0, tmp), 0.03);
     gp.sub(tmp.fromArray(g.rh).multiplyScalar(gs).applyQuaternion(gq));
   } else { // long gun: stock in the right shoulder pocket
-    xgWP(G.R.up, gp); gp.addScaledVector(axis(1, 0, 0, tmp), 0.06).addScaledVector(axis(0, -1, 0, tmp), 0.05).addScaledVector(axis(0, 0, 1, tmp), 0.1);
+    xgWP(G.R.up, gp); gp.addScaledVector(axis(1, 0, 0, tmp), 0.06 + 0.03 * rw).addScaledVector(axis(0, -1, 0, tmp), 0.05 + 0.06 * rw).addScaledVector(axis(0, 0, 1, tmp), 0.1);
     gp.sub(tmp.fromArray(g.st).multiplyScalar(gs).applyQuaternion(gq));
   }
   const toW = (a, out) => out.fromArray(a).multiplyScalar(gs).applyQuaternion(gq).add(gp), gl = (x, y, z, out) => out.set(x, y, z).applyQuaternion(gq);
@@ -16252,8 +16276,9 @@ function xgPose(M, dt) {
   let kL, nL, lt;
   if (g.side || !g.lh) { kL = gl(0, -0.6, -1, G.v[0]).normalize(); nL = gl(1, 0, 0, G.v[1]); lt = toW(g.rh, G.v[2]).addScaledVector(gl(-1, 0, 0, tmp), 0.035).addScaledVector(kL, -0.05); }
   else { kL = gl(0.55, 0, -1, G.v[0]).normalize(); nL = gl(0.5, 1, 0, G.v[1]).normalize(); lt = toW(g.lh, G.v[2]).addScaledVector(kL, -0.06).addScaledVector(nL, -0.03); }
+  if (rw) xgReload(G, g, rp, rw, gs, kL, nL, lt, toW, gl);
   if (!g.side && g.lh) xgReach(G, lt); // the support shoulder comes forward (clavicle) when the handguard is out of reach
-  if (!g.side && g.lh) { // short arms / long guns: slide the support hand back along the handguard until the arm reaches
+  if (!g.side && g.lh && rw < 0.5) { // short arms / long guns: slide the support hand back along the handguard until the arm reaches
     const sh = xgWP(G.L.up, G.v[6]), reach = (G.reach || (G.reach = xgWP(G.L.up, G.v[7]).distanceTo(xgWP(G.L.lo, G.v[8])) + xgWP(G.L.lo, G.v[8]).distanceTo(xgWP(G.L.hand, G.v[7])))) * 0.985;
     const ax = gl(0, 0, 1, G.v[7]), rel = G.v[8].subVectors(lt, sh), bq = rel.dot(ax), cq = rel.lengthSq() - reach * reach;
     if (cq > 0) { const disc = bq * bq - cq, lim = Math.max(0, (g.rh[2] - g.lh[2]) * gs - 0.1); const sl = disc >= 0 ? Math.min(lim, -bq - Math.sqrt(disc) > 0 ? -bq - Math.sqrt(disc) : -bq + Math.sqrt(disc)) : Math.min(lim, Math.max(0, -bq)); if (sl > 0) lt.addScaledVector(ax, sl); G.slide = sl > 0 ? sl : 0; } else G.slide = 0;
