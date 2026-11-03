@@ -15950,7 +15950,10 @@ setInterval(netTransportTick,1000);
 // dedicated Worker timer, with the transport timer as fallback when Workers are unavailable.
 let netHbWorker=null;
 function netHbTick(){if(MP.on&&NET.socket&&NET.socket.readyState===1)netSend({t:'hb'});}
-function netHbStart(){if(netHbWorker!==null)return;try{const url=URL.createObjectURL(new Blob(['setInterval(()=>postMessage(0),2000)'],{type:'text/javascript'}));netHbWorker=new Worker(url);URL.revokeObjectURL(url);netHbWorker.onmessage=netHbTick;}catch(e){netHbWorker=false;}}
+// The heartbeat worker's blob URL is revoked only once the worker has run (its first tick) or after 60 s: revoking it right
+// after new Worker() relies on the browser resolving the URL synchronously, and a WebKit build that fetches the worker
+// script later finds it gone (no heartbeat while the tab is hidden -> the room drops the player). A failed worker is reported.
+function netHbStart(){if(netHbWorker!==null)return;try{let url=URL.createObjectURL(new Blob(['setInterval(()=>postMessage(0),2000)'],{type:'text/javascript'}));const drop=()=>{if(url){try{URL.revokeObjectURL(url);}catch(e){}url=null;}};netHbWorker=new Worker(url);setTimeout(drop,60000);netHbWorker.onmessage=e=>{drop();netHbTick(e);};netHbWorker.onerror=e=>{drop();try{if(window.xCrash)xCrash.log('hb-worker',(e&&e.message)||'worker failed to load',false);}catch(x){}};}catch(e){netHbWorker=false;}}
 function netVisibility(){if(!MP.on||!NET.socket||NET.socket.readyState!==1)return;const h=document.hidden?1:0;NET.hid=h;if(h){for(const k in keys)keys[k]=false;fireHeld=false;NET.firePulse=0;NET.firePend=NET.firePendH=0;if(NET.ready)netSend(netInputMsg({},netWeapon||'Knife'));netHbStart();}netSend({t:'vis',h});}
 document.addEventListener('visibilitychange',netVisibility);
 // Online 5v5 Omen From the Shadows: the picked spot (tactical map, work/ability_target_runtime.js, or the legacy minimap) goes to the trusted
