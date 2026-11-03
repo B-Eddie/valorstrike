@@ -14881,7 +14881,7 @@ function nmMatKey(m){return [m.type,m.map?m.map.uuid:'',m.color?m.color.getHexSt
 // fewer triangles too because the chunks are tighter). The fragment colour is the same product as before
 // (diffuse x texel); decals, blended, texture-missing, untextured and shared-geometry meshes keep their own material.
 // Render-only: collision, raycasts and the nav use the collision mesh, never these meshes. WebGL1: unchanged.
-var NM_ARR={on:true,chunks:110,smallPiece:24000,minExact:6,layers:256,pw:256};
+var NM_ARR={on:true,chunks:110,smallPiece:24000,minExact:6,layers:256,pw:256,ios:false};
 // gpu lane (user 31 Oct 2026: "so laggy it's unplayable" even on LOW; Ascent LOW 1080 drew 3.39 M triangles at the attacker
 // spawn and 2.90 M facing the map edge): the chunk plan's 110-chunk budget left pieces spanning the whole map (one window-frame
 // chunk 647 k triangles), so frustum culling dropped almost nothing (offline model: 3.29 M of 3.32 M drawn on average).
@@ -14892,6 +14892,36 @@ var NM_ARR={on:true,chunks:110,smallPiece:24000,minExact:6,layers:256,pw:256};
 // drawRange). Offline model (test_map_drawcalls part C, Ascent): 80 calls / 3.29 M triangles -> 131 draws / 1.46 M (worst 177).
 // Render-only (collision / raycasts / nav use the collision mesh). Proxies never cast shadows (native map meshes never did).
 var NM_STRIP={on:true,span:20,tris:5000};
+// ios lane (user, 3 Nov 2026: on an iPhone every mode but the aim trainer - offline 5v5 included - crashed with "Script error",
+// i.e. an exception inside the cross-origin three.min.js during the full-map pipeline, which the aim trainer skips). The texture-
+// array path (f690d54) is the WebGL2 feature set only full maps use: TEXTURE_2D_ARRAY sRGB storage filled by texSubImage3D from
+// <img> / canvas sources (Safari's GLTFLoader path; Chromium uploads ImageBitmaps), GPU mipmaps of an sRGB array, an RGBA32F
+// palette fetched in the VERTEX shader, sampler2DArray + flat varyings. iOS WebKit (every iOS browser) therefore draws the map
+// with the per-texture 2D materials it had before the arrays (the same textures, colours and Lambert shading: the array path is
+// the same product, diffuse x texel), and on every other browser the array build is gated by a probe run once per GL context:
+// limits (sampler units, vertex texture units, layers, texture size), one test layer uploaded the way the map's layers are (the
+// map's own first image when given: same source type), mipmaps, the palette format and the array shader compiled and linked;
+// a throw or any gl.getError() -> the 2D path. NM_ARR_PROBE.why says which check failed (shown in NM stats).
+var NM_ARR_PROBE={gl:null,ok:false,why:''};
+function nmIOSWebKit(nav){nav=nav||(typeof navigator!=='undefined'?navigator:null);if(!nav)return false;const ua=String(nav.userAgent||'');return /iP(hone|ad|od)/.test(ua)||(/Macintosh/.test(ua)&&(nav.maxTouchPoints|0)>1);}
+function nmArrProbe(gl,img){const C=NM_ARR_PROBE;if(C.gl===gl)return C.ok;/* once per GL context (a restored / remade context probes again) */C.gl=gl;C.ok=false;C.why='';const bad=w=>{C.why=w;return false;};const made=[],sh=[];let prog=null;
+ try{if(NM_ARR.ios===false&&nmIOSWebKit())return bad('ios-webkit');const P=k=>+gl.getParameter(k)||0;
+  if(P(gl.MAX_TEXTURE_IMAGE_UNITS)<2)return bad('texture units');if(P(gl.MAX_VERTEX_TEXTURE_IMAGE_UNITS)<1)return bad('vertex texture units');if(P(gl.MAX_ARRAY_TEXTURE_LAYERS)<2)return bad('array layers');
+  for(let i=0;i<16&&gl.getError();i++);/* earlier errors are not ours */
+  const w=img&&img.width>0?img.width:4,h=img&&img.height>0?img.height:4,mx=P(gl.MAX_TEXTURE_SIZE);if(mx&&Math.max(w,h)>mx)return bad('texture size');
+  let src=img;if(!src){const d=typeof document!=='undefined'&&document&&document.createElement?document.createElement('canvas'):null,c=d&&d.getContext?(d.width=w,d.height=h,d.getContext('2d')):null;if(c){c.fillStyle='#fff';c.fillRect(0,0,w,h);src=d;}}
+  const t=gl.createTexture();made.push(t);gl.bindTexture(gl.TEXTURE_2D_ARRAY,t);gl.texStorage3D(gl.TEXTURE_2D_ARRAY,Math.floor(Math.log2(Math.max(w,h)))+1,gl.SRGB8_ALPHA8,w,h,2);
+  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,false);gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL,false);gl.pixelStorei(gl.UNPACK_ALIGNMENT,4);
+  if(src)gl.texSubImage3D(gl.TEXTURE_2D_ARRAY,0,0,0,1,w,h,1,gl.RGBA,gl.UNSIGNED_BYTE,src);else gl.texSubImage3D(gl.TEXTURE_2D_ARRAY,0,0,0,1,w,h,1,gl.RGBA,gl.UNSIGNED_BYTE,new Uint8Array(w*h*4));
+  gl.generateMipmap(gl.TEXTURE_2D_ARRAY);let e=gl.getError();if(e)return bad('array upload 0x'+e.toString(16));
+  const pt=gl.createTexture();made.push(pt);gl.bindTexture(gl.TEXTURE_2D,pt);gl.texStorage2D(gl.TEXTURE_2D,1,gl.RGBA32F,1,1);gl.texSubImage2D(gl.TEXTURE_2D,0,0,0,1,1,gl.RGBA,gl.FLOAT,new Float32Array(4));e=gl.getError();if(e)return bad('palette 0x'+e.toString(16));
+  const V='#version 300 es\nin float nmM;uniform highp sampler2D nmPal;flat out vec4 vNmP;out vec2 vUv;void main(){int nmI=int(nmM+.5);vNmP=texelFetch(nmPal,ivec2(nmI%'+NM_ARR.pw+',nmI/'+NM_ARR.pw+'),0);vUv=vec2(nmM);gl_Position=vec4(nmM);}',
+   F='#version 300 es\nprecision highp float;uniform highp sampler2DArray nmArr;flat in vec4 vNmP;in vec2 vUv;out vec4 o;void main(){o=texture(nmArr,vec3(vUv,vNmP.a))*vec4(vNmP.rgb,1.);}';
+  prog=gl.createProgram();for(const [k,src2] of [[gl.VERTEX_SHADER,V],[gl.FRAGMENT_SHADER,F]]){const x=gl.createShader(k);sh.push(x);gl.shaderSource(x,src2);gl.compileShader(x);if(!gl.getShaderParameter(x,gl.COMPILE_STATUS))return bad('array shader: '+String(gl.getShaderInfoLog(x)||'compile').slice(0,120));gl.attachShader(prog,x);}
+  gl.linkProgram(prog);if(!gl.getProgramParameter(prog,gl.LINK_STATUS))return bad('array program: '+String(gl.getProgramInfoLog(prog)||'link').slice(0,120));e=gl.getError();if(e)return bad('gl 0x'+e.toString(16));
+  C.ok=true;return true;
+ }catch(x){return bad('throw: '+String(x&&x.message||x).slice(0,120));}
+ finally{try{for(const x of sh)gl.deleteShader(x);if(prog)gl.deleteProgram(prog);for(const t of made)gl.deleteTexture(t);gl.bindTexture(gl.TEXTURE_2D_ARRAY,null);gl.bindTexture(gl.TEXTURE_2D,null);for(let i=0;i<16&&gl.getError();i++);}catch(x){}try{if(typeof renderer!=='undefined'&&renderer&&renderer.resetState)renderer.resetState();}catch(x){}}}
 function nmArrOk(){try{const r=typeof renderer!=='undefined'?renderer:null,g=r&&r.getContext&&r.getContext();return !!(NM_ARR.on&&THREE.DataArrayTexture&&r&&r.capabilities&&r.capabilities.isWebGL2&&r.properties&&g&&typeof g.texStorage3D==='function'&&typeof g.texSubImage3D==='function'&&typeof g.generateMipmap==='function');}catch(e){return false;}}
 // final layer size of a texture: the same cap nmBudget applies (small = only decals / materials under 300 triangles use it)
 function nmArrSize(w,h,small,cap){const c=small?(cap?Math.min(cap,256):256):cap;if(c&&Math.max(w,h)>c){const s=c/Math.max(w,h);return [Math.max(1,Math.round(w*s)),Math.max(1,Math.round(h*s))];}return [w,h];}
@@ -14913,8 +14943,10 @@ function nmArrayScene(root){if(!nmArrOk())return null;const gl=renderer.getConte
  root.traverse(o=>{if(o.isMesh&&o.geometry)uses.set(o.geometry,(uses.get(o.geometry)||0)+1);});
  root.traverse(o=>{if(!o.isMesh)return;const g=o.geometry,uv=g&&g.attributes&&g.attributes.uv,ok=!o.isSkinnedMesh&&!o.isInstancedMesh&&!Array.isArray(o.material)&&uses.get(g)===1&&g.index&&g.attributes.position&&!g.attributes.nmM&&uv&&!uv.isInterleavedBufferAttribute&&uv.itemSize===2&&!g.morphAttributes.position;
   for(const m of [].concat(o.material||[])){const s=m&&m.map&&m.map.source;if(!(ok&&nmArrEligible(m))){if(s)bad.add(s);continue;}const k=nmMatKey(m);keyTris.set(k,(keyTris.get(k)||0)+g.index.count/3);if(!srcKeys.has(s)){srcKeys.set(s,new Set());srcTex.set(s,m.map);}srcKeys.get(s).add(k);list.push(o);}});
- const srcs=[...srcKeys.keys()].filter(s=>!bad.has(s));if(!srcs.length)return null;
+ const mxT=+gl.getParameter(gl.MAX_TEXTURE_SIZE)||0,srcs=[...srcKeys.keys()].filter(s=>!bad.has(s));if(!srcs.length)return null;
+ /* ios lane: the probe uploads the map's first image as a test layer (same source type as the layers); a failure keeps the 2D materials */if(!nmArrProbe(gl,srcs[0].data))return null;
  const sizes=srcs.map(s=>{const img=s.data,sm=[...srcKeys.get(s)].every(k=>keyTris.get(k)<300),wh=nmArrSize(img.width,img.height,sm,cap);return {w:wh[0],h:wh[1],e:srcTex.get(s).encoding};});
+ /* a layer larger than MAX_TEXTURE_SIZE (or a square bucket over it) cannot be stored: the whole map keeps its 2D materials (three resizes those) */if(mxT&&sizes.some(z=>Math.max(z.w,z.h)>mxT)){NM_ARR_PROBE.why='layer over MAX_TEXTURE_SIZE';return null;}
  const arrays=nmArrBuckets(sizes,NM_ARR.minExact,maxL),where=new Map();
  arrays.forEach((a,ai)=>{const t=new THREE.DataArrayTexture(null,a.W,a.H,a.ids.length),t0=srcTex.get(srcs[a.ids[0]]);t.encoding=a.e;t.anisotropy=t0.anisotropy;t.userData.nmArrId=ai+1;t.userData.nmLayers=a.ids.map(i=>({source:srcs[i],w:sizes[i].w,h:sizes[i].h,image:null}));t.name='nmArr'+(ai+1)+' '+a.W+'x'+a.H+'x'+a.ids.length;t.addEventListener('dispose',nmArrDispose);a.tex=t;a.ids.forEach((i,l)=>where.set(srcs[i],[ai,l]));});
  const pal=[],palIx=new Map(),plan=[];
