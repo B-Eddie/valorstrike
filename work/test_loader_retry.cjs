@@ -83,7 +83,7 @@ function textured(gl){const out=[];gl.scene.traverse(o=>{if(o.isMesh)out[+o.mate
  { const html=fs.readFileSync(path.join(root,'index.html'),'utf8');const a=html.indexOf('// ---- LOADER RETRY ----'),b=html.indexOf('// ---- END LOADER RETRY ----');
    assert(a>0&&b>a,'index.html carries the LOADER RETRY block (run python3 work/install_valorant.py)');
    assert.equal(html.slice(a,b+'// ---- END LOADER RETRY ----'.length),RT.trimEnd(),'installed block == work/loader_retry_runtime.js');
-   const g=html.indexOf('examples/js/loaders/GLTFLoader.js"></script>'),m=html.indexOf('const $ = (id) => document.getElementById(id);');
+   const g=html.indexOf('examples/js/loaders/GLTFLoader.js" crossorigin="anonymous"></script>'),m=html.indexOf('const $ = (id) => document.getElementById(id);');
    assert(g>0&&g<a,'runs after GLTFLoader.js');assert(m>b,'runs before the game script');
    assert.equal(html.split('// ---- LOADER RETRY ----').length,2,'installed once'); }
  const base='models/valorant/maps/test/';

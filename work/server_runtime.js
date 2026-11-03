@@ -105,6 +105,7 @@ function netOpenSocket(create,code,publicRoom){
  const q=new URLSearchParams({code,create:create?'1':'0',mode:MP.mode,map:MP.map==='random'?['ascent','bind','haven','split','lotus','breeze'][Math.floor(Math.random()*6)]:MP.map,public:publicRoom?'1':'0'});
  if(NET.reconnecting&&NET.resume)q.set('resume',NET.resume);
  let ws;try{ws=new WebSocket(NET.url.replace(/^http/,'ws')+'/connect?'+q);}catch(e){return netFinishConnection({code:1006,reason:''});}
+ try{ws.addEventListener('close',e=>{try{if(window.xCrash)xCrash.ws(e.code,e.reason);}catch(x){}});}catch(e){}/* crash report: every online socket close, code + reason */
  const old=NET.socket;NET.socket=ws;NET.openAt=NET.lastSeen=performance.now();NET.ack=null;NET.wireBase=null;NET.resyncAt=0;NET.welcomed=false;
  if(old&&old!==ws)try{old.close();}catch(e){}
  ws.onopen=async()=>{const token=await netProfileToken();if(NET.socket===ws){netSend({t:'hi',n:MP.name,ag:J.pick||'Jett',token,resume:NET.resume||undefined,batch:1,ack:1,delta:1,sk:typeof xskWire==='function'?xskWire():undefined});netHbStart();}};
@@ -126,6 +127,7 @@ function netOpenSocket(create,code,publicRoom){
    mpMsg(NET.reconnecting?'Reconnecting to game server…':'Connected to game server');return mpUI();
   }
   if(m.t==='start'){
+   try{if(window.xCrash)xCrash.stage('online-start');}catch(e){}
    const resume=NET.reconnecting&&m.you===NET.resumeMe&&(NET.recoverGame||NET.recoverLoading);
    NET.reconnecting=false;NET.retryUntil=0;NET.inLog=[];NET.path=[];NET.correction=null;MP.snapClock=null;NET.latest=null;NET.lpAt=0;NET.seat=null;
    MP.hc={open:true,send(m){if(m.t!=='hit'&&(m.t!=='in'||Number.isSafeInteger(m.seq)))netSend(m);}};
@@ -597,4 +599,6 @@ const NET_MODE_DESC={dm:'Deathmatch · free-for-all · first to 40 kills · 9:00
  window.VSLag=api;
 })();
 
+// crash report: a match the client lost (host / server gone, mpLost) is logged with its reason before the page goes back to the menu
+{const lost0=mpLost;mpLost=function(why){try{if(window.xCrash&&(MP.st==='game'||MP.st==='post'||window.xLdOn))xCrash.log('match-lost',why||'connection lost',true);}catch(e){}return lost0.apply(this,arguments);};}
 // ---- END TRUSTED ONLINE SERVER ----

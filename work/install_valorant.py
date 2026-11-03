@@ -1,6 +1,9 @@
 from pathlib import Path
 import re
 root=Path(__file__).resolve().parents[1];p=root/'index.html';s=p.read_text()
+# CDN scripts carry crossorigin="anonymous" (added last, below); strip it first so every exact tag match in this script still holds.
+CDN=['https://unpkg.com/three@0.149.0/build/three.min.js','https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js','https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/utils/SkeletonUtils.js','https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js']
+for u in CDN:s=s.replace('<script src="'+u+'" crossorigin="anonymous"></script>','<script src="'+u+'"></script>')
 a='// ---- VALORANT ASSET INTEGRATION ----';b='// ---- END VALORANT ASSET INTEGRATION ----'
 if a in s:s=s[:s.index(a)]+s[s.index(b)+len(b):]
 block=(root/'work/valorant_runtime.js').read_text();
@@ -126,4 +129,12 @@ if la3 in s:i3=s.index(la3);s=s[:i3]+s[s.index('</script>\n',i3)+len('</script>\
 ga3='<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js"></script>\n'
 assert s.count(ga3)==1,'GLTFLoader script tag'
 s=s.replace(ga3,ga3+'<script>'+(root/'work/loader_retry_runtime.js').read_text().rstrip('\n')+'</script>\n',1)
+# Crash report (work/crash_report_runtime.js): its own inline <script> first after the analytics stub, so it records errors,
+# WebGL context loss and the load stage from the very start (iOS user 2026-11-03: online match -> black screen / menu / "Script error").
+ca3='<script>// ---- CRASH REPORT ----'
+if ca3 in s:i3=s.index(ca3);s=s[:i3]+s[s.index('</script>\n',i3)+len('</script>\n'):]
+s=s.replace(va3,va3+'<script>'+(root/'work/crash_report_runtime.js').read_text().rstrip('\n')+'</script>\n',1)
+# Cross-origin CDN scripts load with CORS (unpkg / jsDelivr answer Access-Control-Allow-Origin: *): an exception thrown inside
+# three.js / GLTFLoader / SkeletonUtils reaches window.onerror with its real message and line instead of WebKit's muted "Script error."
+for u in CDN:s=s.replace('<script src="'+u+'"></script>','<script src="'+u+'" crossorigin="anonymous"></script>')
 p.write_text(s)

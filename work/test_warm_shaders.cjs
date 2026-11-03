@@ -12,7 +12,7 @@ assert(/window\.xWarmShaders[\s\S]{0,400}renderer\.render\(scene, camera\)/.test
 
 // gate: warm step sits between the match-build fn and fill()/ready() in the load chain
 assert(/var warm = function \(v\) \{ \/\/ compile shaders \+ upload textures behind the overlay/.test(s), 'warm step defined');
-assert(/\.then\(warm\)\.then\(function\(v\)\{if\(id===loadId\)\{if\(!title\)fill\(\);ready\(\);\}/.test(s), 'warm runs after fn, before fill/ready');
+assert(/\.then\(warm\)\.then\(function\(v\)\{if\(id===loadId\)\{if\(!title\)fill\(\);ready\(\);/.test(s), 'warm runs after fn, before fill/ready');
 assert(/xLdSet\("xLdAg", "textContent", "PREPARING/.test(s), 'status text shown while warming');
 
 // unchanged behavior: xGate still fires xPrecompile when xPC is false (probe/direct-start path)

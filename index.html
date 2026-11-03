@@ -6,6 +6,116 @@
 <title>VALORSTRIKE</title>
 <link rel="icon" href="/favicon.ico" sizes="any" />
 <script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };</script>
+<script>// ---- CRASH REPORT ----
+// loadfast / iOS (user 2026-11-03: on an iPhone, Safari and Arc - both WebKit - an online match shows a black screen or goes
+// back to the menu; nothing reproduces in Chromium here). This script runs first (its own inline <script> right after the
+// analytics stub) and keeps a small crash record in localStorage ('vs.crash') that survives a tab the OS killed and reloaded:
+//  - window 'error' and 'unhandledrejection' events,
+//  - webglcontextlost / webglcontextrestored on every WebGL canvas (getContext is wrapped to watch the canvas), with a
+//    named error (WebGLContextLost) and, when the context is not restored within XCR.restoreMs, a clear on-screen message
+//    with Reload instead of a silent black screen,
+//  - shader compile / link failures (three's 'THREE.WebGLProgram: Shader Error' console.error, and getProgramParameter
+//    LINK_STATUS false),
+//  - online socket closes (code + reason, server_runtime calls xCrash.ws),
+//  - the last load stage reached (xCrash.stage: match load, map download / prepare / upload, weapons, warm, playable),
+//  - the device's GL renderer string and limits (first WebGL context).
+// A match (xCrash.begin) that ends without xCrash.end (back to the menu cleanly), or that saw a context loss / fatal error,
+// leaves a report; the next menu load shows a small dismissible "Last match ended: <reason>" note with a Copy button.
+(function () {
+  'use strict';
+  var G = window, KEY = 'vs.crash', MAX = 40;
+  var XCR = G.xCrash = { restoreMs: 4000, rec: null, shown: null, lostT: 0 };
+  function now() { return Date.now(); }
+  function load() { try { var s = G.localStorage && G.localStorage.getItem(KEY); return s ? JSON.parse(s) : null; } catch (e) { return null; } }
+  function save() { try { if (G.localStorage) G.localStorage.setItem(KEY, JSON.stringify(XCR.rec)); } catch (e) {} }
+  function str(x, n) { try { x = x == null ? '' : typeof x === 'string' ? x : x && x.message ? (x.name && x.name !== 'Error' ? x.name + ': ' : '') + x.message : JSON.stringify(x); } catch (e) { x = String(x); } return String(x).slice(0, n || 300); }
+  var prev = load();
+  XCR.prev = prev;
+  XCR.rec = { v: 1, at: now(), ua: str(G.navigator && G.navigator.userAgent, 200), inMatch: false, clean: true, stage: 'page', stageAt: now(), ev: [], gl: null, mem: null };
+  try { var dm = G.navigator && G.navigator.deviceMemory; if (dm) XCR.rec.mem = dm; } catch (e) {}
+  XCR.log = function (type, detail, fatal) {
+    var r = XCR.rec; r.ev.push({ t: now() - r.at, type: type, d: str(detail, 400), stage: r.stage, f: fatal ? 1 : 0 }); if (r.ev.length > MAX) r.ev.splice(0, r.ev.length - MAX);
+    if (fatal && r.inMatch) r.fatal = { type: type, d: str(detail, 200), stage: r.stage }; save();
+  };
+  XCR.stage = function (s) { var r = XCR.rec; if (r.stage === s) return; r.stage = String(s).slice(0, 60); r.stageAt = now(); save(); };
+  XCR.begin = function (what) { var r = XCR.rec; r.inMatch = true; r.clean = false; r.fatal = null; r.match = String(what || '').slice(0, 60); r.matchAt = now(); XCR.stage('match-load'); };
+  XCR.end = function () { var r = XCR.rec; if (!r.inMatch) return; r.inMatch = false; r.clean = !r.fatal; XCR.stage('menu'); };
+  XCR.ws = function (code, reason) { var abn = code !== 1000 && code !== 1001; XCR.log('ws-close', code + (reason ? ' ' + reason : ''), abn && code !== 4000); };
+  // ---- the report for a page load: what the previous page left ----
+  XCR.reason = function (p) {
+    if (!p) return null;
+    if (p.fatal) { var f = p.fatal; return f.type === 'webglcontextlost' ? 'graphics context lost (WebGLContextLost) during ' + f.stage : f.type + ': ' + f.d + ' (' + f.stage + ')'; }
+    if (p.inMatch && !p.clean) return 'the page closed or reloaded during ' + (p.stage || 'the match') + ' (the browser may have run out of memory)';
+    return null;
+  };
+  XCR.text = function (p) { p = p || XCR.prev; try { return JSON.stringify(p, null, 1); } catch (e) { return String(p); } };
+  // ---- GL: watch every WebGL canvas, record the device limits once ----
+  function glInfo(gl) {
+    if (XCR.rec.gl || !gl || typeof gl.getParameter !== 'function') return;
+    try { var x = gl.getExtension('WEBGL_debug_renderer_info'), P = function (k) { try { return gl.getParameter(k); } catch (e) { return null; } };
+      XCR.rec.gl = { v2: typeof G.WebGL2RenderingContext !== 'undefined' && gl instanceof G.WebGL2RenderingContext, ver: P(gl.VERSION), vendor: x ? P(x.UNMASKED_VENDOR_WEBGL) : P(gl.VENDOR), renderer: x ? P(x.UNMASKED_RENDERER_WEBGL) : P(gl.RENDERER),
+        maxTex: P(gl.MAX_TEXTURE_SIZE), units: P(gl.MAX_TEXTURE_IMAGE_UNITS), vunits: P(gl.MAX_VERTEX_TEXTURE_IMAGE_UNITS), layers: gl.MAX_ARRAY_TEXTURE_LAYERS ? P(gl.MAX_ARRAY_TEXTURE_LAYERS) : null,
+        fvec: P(gl.MAX_FRAGMENT_UNIFORM_VECTORS), vvec: P(gl.MAX_VERTEX_UNIFORM_VECTORS), rb: P(gl.MAX_RENDERBUFFER_SIZE), dpr: G.devicePixelRatio || 1 }; save(); } catch (e) {}
+  }
+  function msgBox(on) {
+    var d = G.document; if (!d || !d.body) return; var e = d.getElementById('xCtxLost');
+    if (!on) { if (e) e.style.display = 'none'; return; }
+    if (!e) { e = d.createElement('div'); e.id = 'xCtxLost'; e.setAttribute('role', 'alert');
+      e.style.cssText = 'position:fixed;inset:0;z-index:9500;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:#0f1923;color:#ece8e1;font:600 18px Arial;text-align:center;padding:24px';
+      e.innerHTML = '<span>The browser reset the graphics (WebGL context lost).</span><small style="font-weight:400;font-size:14px;max-width:460px">This usually means the device ran low on graphics memory. Reload to continue.</small>';
+      var b = d.createElement('button'); b.textContent = 'Reload'; b.style.cssText = 'padding:12px 30px;background:#ff4655;color:#fff;border:0;cursor:pointer;font:700 15px Arial';
+      b.onclick = function () { try { G.location.reload(); } catch (x) {} }; e.appendChild(b); d.body.appendChild(e); }
+    e.style.display = 'flex';
+  }
+  XCR.watch = function (canvas, gl) {
+    if (!canvas || canvas.xCrW) return; canvas.xCrW = 1; glInfo(gl);
+    canvas.addEventListener('webglcontextlost', function () {
+      var e = new Error('WebGL context lost during ' + XCR.rec.stage); e.name = 'WebGLContextLost'; XCR.lost = e; XCR.log('webglcontextlost', e, true);
+      try { console.error(e); } catch (x) {}
+      clearTimeout(XCR.lostT); XCR.lostT = setTimeout(function () { if (XCR.lost) msgBox(true); }, XCR.restoreMs); // not restored: say so, offer Reload (no silent black screen)
+    }, false);
+    canvas.addEventListener('webglcontextrestored', function () { XCR.lost = null; clearTimeout(XCR.lostT); msgBox(false); XCR.log('webglcontextrestored', XCR.rec.stage, false); }, false);
+  };
+  if (G.HTMLCanvasElement && HTMLCanvasElement.prototype.getContext) {
+    var gc0 = HTMLCanvasElement.prototype.getContext;
+    HTMLCanvasElement.prototype.getContext = function (type) { var c = gc0.apply(this, arguments); if (c && /webgl/i.test(String(type))) { try { XCR.watch(this, c); } catch (e) {} } return c; };
+  }
+  ['WebGLRenderingContext', 'WebGL2RenderingContext'].forEach(function (n) { var C = G[n]; if (!C || !C.prototype.getProgramParameter) return; var p0 = C.prototype.getProgramParameter;
+    C.prototype.getProgramParameter = function (prog, pname) { var v = p0.apply(this, arguments); if (pname === 0x8B82 && v === false && !(this.isContextLost && this.isContextLost())) { var info = ''; try { info = this.getProgramInfoLog(prog); } catch (e) {} XCR.log('shader-link', info || 'program link failed', true); } return v; }; });
+  if (G.console && console.error) { var ce0 = console.error; console.error = function () { try { var a = arguments[0], s = typeof a === 'string' ? a : a && a.message; if (s && /WebGLProgram|Shader Error|shader/i.test(s)) XCR.log('shader', Array.prototype.slice.call(arguments).map(function (x) { return str(x, 150); }).join(' '), true); } catch (e) {} return ce0.apply(this, arguments); }; }
+  // A script error: its message, and where it came from even when WebKit mutes the message to "Script error." (a cross-origin
+  // script without CORS): file, line, column, and the stack's first frames when there is an Error object.
+  G.addEventListener('error', function (e) {
+    if (e && e.target && e.target !== G && !e.error && !e.message) return; // a resource (img / script) load error, not a script exception
+    var er = e && e.error, m = str(er || (e && e.message) || 'error', 240), at = (e && e.filename ? e.filename : '?') + ':' + ((e && e.lineno) || 0) + ':' + ((e && e.colno) || 0);
+    var st = er && er.stack ? String(er.stack).split('\n').slice(0, 4).join(' | ').slice(0, 300) : '';
+    XCR.log('error', m + ' @ ' + at + (st ? ' :: ' + st : '') + (/^Script error\.?$/.test(String(e && e.message)) ? ' [muted cross-origin]' : ''), true);
+  }, true);
+  G.addEventListener('unhandledrejection', function (e) { var r = e && e.reason; if (r && (r.name === 'AbortError')) return; XCR.log('unhandledrejection', r, true); });
+  G.addEventListener('pagehide', function () { XCR.log('pagehide', XCR.rec.stage, false); });
+  // ---- the note on the next menu load ----
+  XCR.note = function () {
+    var p = XCR.prev, why = XCR.reason(p), d = G.document; if (!why || !d || !d.body || d.getElementById('xCrNote')) return null;
+    var e = d.createElement('div'); e.id = 'xCrNote'; e.setAttribute('role', 'status');
+    e.style.cssText = 'position:fixed;left:50%;bottom:24px;transform:translateX(-50%);max-width:min(92vw,560px);z-index:60;background:rgba(15,25,35,.94);color:#ece8e1;border-left:4px solid #ff4655;padding:10px 12px 10px 16px;font:700 13px Arial;line-height:1.4;display:flex;gap:10px;align-items:center';
+    var t = d.createElement('span'); t.textContent = 'Last match ended: ' + why; t.style.flex = '1'; e.appendChild(t);
+    var cp = d.createElement('button'); cp.type = 'button'; cp.textContent = 'Copy'; cp.dataset.copy = '1';
+    var x = d.createElement('button'); x.type = 'button'; x.textContent = '\u00d7'; x.setAttribute('aria-label', 'Dismiss'); x.dataset.dismiss = '1';
+    [cp, x].forEach(function (b) { b.style.cssText = 'background:transparent;color:#ece8e1;border:1px solid rgba(236,232,225,.35);padding:4px 10px;cursor:pointer;font:700 12px Arial'; e.appendChild(b); });
+    cp.onclick = function () { var s = XCR.text(p); var ok = function () { cp.textContent = 'Copied'; };
+      try { if (G.navigator.clipboard && G.navigator.clipboard.writeText) return G.navigator.clipboard.writeText(s).then(ok, function () { fallback(s); ok(); }); } catch (er) {} fallback(s); ok(); };
+    function fallback(s) { try { var a = d.createElement('textarea'); a.value = s; a.style.cssText = 'position:fixed;left:-9999px'; d.body.appendChild(a); a.select(); d.execCommand && d.execCommand('copy'); a.remove(); } catch (er) {} }
+    x.onclick = function () { e.remove(); XCR.prev = null; };
+    d.body.appendChild(e); XCR.shown = why; return e;
+  };
+  // A match the player left normally: back on the menu after it was playable. A load that never became playable keeps its
+  // record (a crash during the load is the case this is for); a lost match logged 'match-lost' (fatal) before it got here.
+  XCR.poll = function () { var r = XCR.rec, d = G.document, l = d && d.getElementById('lobby'); if (r.inMatch && r.stage === 'playable' && l && l.style.display === 'flex') XCR.end(); };
+  setInterval(XCR.poll, 2000);
+  save();
+  if (G.document) { if (G.document.readyState === 'loading') G.document.addEventListener('DOMContentLoaded', function () { XCR.note(); }); else XCR.note(); }
+})();
+// ---- END CRASH REPORT ----</script>
 <script>/* perf2: allocation-free Math.hypot. V8's builtin (Chrome, Edge, Node, Cloudflare Workers) copies its arguments into a fresh
    FixedDoubleArray on every call - the page calls Math.hypot from ~450 sites (bots, nav, motor, abilities, HUD), ~30 KB of
    garbage per frame in a 5v5 (80 -> 16 B per call: the boxed result is what is left). Two / three arguments run V8's own algorithm (ToNumber in order, Infinity before NaN, max
@@ -1946,14 +2056,14 @@ body:has(#result[style*="flex"]) .x-cbt{display:none!important} /* the combat re
 </style>
 <div class="x-cm" id="xCm" aria-hidden="true"><div class="x-cm__c">COMMS</div></div>
 <button type="button" class="x-cmb" id="xCmB" aria-label="Comms wheel: hold, slide, release">COMMS</button>
-<script src="https://unpkg.com/three@0.149.0/build/three.min.js"></script>
+<script src="https://unpkg.com/three@0.149.0/build/three.min.js" crossorigin="anonymous"></script>
 <script src="models/valorant/manifest.js"></script>
 <script src="vendor/hit-impact.js"></script>
 <script src="models/valorant/agents/manifest.js"></script>
 <script src="vendor/valorant-feel.js"></script>
 <script src="models/valorant/weapon-calibration.js"></script>
 <script src="vendor/three-mesh-bvh.umd.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js" crossorigin="anonymous"></script>
 <script>// ---- LOADER RETRY ----
 // Map / agent / weapon asset fetches: a concurrency cap and retries (user 2026-10-28, Firefox on the live page: a map load
 // logged ~75x "THREE.GLTFLoader: Couldn't load texture textures/<hash>.png" and 5x "Uncaught (in promise) TypeError: Error in
@@ -2081,7 +2191,7 @@ body:has(#result[style*="flex"]) .x-cbt{display:none!important} /* the combat re
   LR.installed = true;
 })();
 // ---- END LOADER RETRY ----</script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/utils/SkeletonUtils.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/utils/SkeletonUtils.js" crossorigin="anonymous"></script>
 <script>
 (function () {
 const $ = (id) => document.getElementById(id);
@@ -14587,7 +14697,7 @@ async function nmEnsure(key){
  // load timeout = 120 s WITHOUT PROGRESS (a fetch finishing, a glTF asset loading, a prepare phase), capped at 10 min overall:
  // a slow device that keeps progressing is no longer failed at a fixed 120 s (browser-found: SwiftShader Ascent load took 92-130 s).
  let timeout=0;const tStart=Date.now(),arm=()=>{if(committed||failed)return;clearTimeout(timeout);timeout=setTimeout(()=>controller.abort(new Error('Map loading timed out. Please retry.')),Math.max(0,Math.min(NM_STALL_MS,NM_CAP_MS-(Date.now()-tStart))));};arm();NM.kick=t=>{if(t===ticket)arm();};
- nmOverlay(key.charAt(0).toUpperCase()+key.slice(1));
+ nmOverlay(key.charAt(0).toUpperCase()+key.slice(1));try{if(window.xCrash)xCrash.stage('map-download');}catch(e){}
  const promise=(async()=>{const base='models/valorant/maps/'+key+'/';const read=url=>fetch(base+url,{signal:controller.signal}).then(r=>{if(!r.ok)throw new Error(url+' '+r.status);arm();return r;});
   const tLoad=nmNow(),aborted=new Promise((_,reject)=>controller.signal.addEventListener('abort',()=>reject(controller.signal.reason||new Error('Map selection changed')),{once:true}));
   const [meta,nav,geometry,gl,plants]=await Promise.race([aborted,Promise.all([read('map.json').then(r=>r.json()),read('navigation.json').then(r=>r.json()),nmCollision(key,controller.signal).catch(async e=>{if(controller.signal.aborted)throw e;const bytes=await read('collision.bin').then(r=>r.arrayBuffer()),patch=await fetch(base+'collision-patch.bin',{signal:controller.signal}).then(r=>r.ok?r.arrayBuffer():null,()=>null),exclude=await fetch(base+'collision-exclude.bin',{signal:controller.signal}).then(r=>r.ok?r.arrayBuffer():null,()=>null),{positions,indices}=nmRawCollision(bytes,patch,exclude),g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(positions,3));g.setIndex(new THREE.BufferAttribute(indices,1));g.boundsTree=new MeshBVHLib.MeshBVH(g,{maxLeafTris:12,maxDepth:64,strategy:MeshBVHLib.CENTER});return g;}).then(g=>{loadedGeometry=g;if(failed||controller.signal.aborted){release();throw controller.signal.reason||new Error('Map selection changed');}return g;}),((__vsLightOn())?Promise.resolve({scene:new THREE.Group()}):nmLoadScene(base,ticket)).then(gl=>{loadedScene=gl.scene;if(failed||controller.signal.aborted){release();throw controller.signal.reason||new Error('Map selection changed');}return gl;}),read('plants.json').then(r=>r.json())])]);
@@ -14596,14 +14706,14 @@ async function nmEnsure(key){
   arm();NM.progress.querySelector('small').textContent='Preparing the map…';await new Promise(r=>setTimeout(r,20));if(ticket!==NM.ticket){release();throw new Error('Map selection changed');}
   const collision=new THREE.Mesh(geometry,new THREE.MeshBasicMaterial({side:THREE.DoubleSide,visible:false}));collision.name='native-collision';collision.raycast=nmCollisionRaycast;/* perf2: MeshBVHLib.acceleratedRaycast semantics, allocating only the hits it returns */
   const root=xMG();root.name='native-'+key;root.userData.nativeMap=key;root.visible=false;root.add(gl.scene,collision);const M={g:root,solids:[collision],boxes:[],built:1,native:true};
-  const t0=nmNow();nmPrepareScene(gl.scene);nmZFixApply(gl.scene,key);const mapOpt=nmOptimizeScene(gl.scene);arm();NM.progress.querySelector('small').textContent='Fitting the map to this device…';const mem=await nmBudget(gl.scene,nmTexCap());if(ticket!==NM.ticket){release();throw new Error('Map selection changed');}mem.optimizer=mapOpt;mem.prepareMs=Math.round(nmNow()-t0);mem.loadMs=Math.round(t0-tLoad);
+  try{if(window.xCrash)xCrash.stage('map-prepare');}catch(e){}const t0=nmNow();nmPrepareScene(gl.scene);nmZFixApply(gl.scene,key);const mapOpt=nmOptimizeScene(gl.scene);arm();NM.progress.querySelector('small').textContent='Fitting the map to this device…';const mem=await nmBudget(gl.scene,nmTexCap());if(ticket!==NM.ticket){release();throw new Error('Map selection changed');}mem.optimizer=mapOpt;mem.prepareMs=Math.round(nmNow()-t0);mem.loadMs=Math.round(t0-tLoad);
   const C={key,meta,nav,plants,M,geometry,bvh:geometry.boundsTree,image:new Image(),cells:new Map(),cellSize:2,scene:gl.scene,memory:mem,cullAt:null};mem.collisionBytes=nmBytes(geometry);C.image.src=base+'minimap.png';if(typeof nmRopes==='function')nmRopes(C,root);/* rope ascenders: nav links before the playable set (server world.js the same), rope meshes */nmConnected(C);root.add(nmSkirt(nmSkirtSpec(nav.nodes,C.playable)));nav.nodes.forEach((p,i)=>{if(!C.playable[i])return;const k=Math.floor(p[0]/2)+','+Math.floor(p[2]/2);if(!C.cells.has(k))C.cells.set(k,[]);C.cells.get(k).push(i);});
   nmSiteGoals(C);
   // Only the original playable footprint defines navigation/minimap bounds; vista geometry is still rendered.
   const X=nav.nodes.filter((_,i)=>C.playable[i]).map(p=>p[0]),Z=nav.nodes.filter((_,i)=>C.playable[i]).map(p=>p[2]);C.bounds={x1:Math.min(...X)-3,x2:Math.max(...X)+3,z1:Math.min(...Z)-3,z2:Math.max(...Z)+3};
   const b=C.bounds;M.boxes.push({x1:b.x1,x2:b.x2,z1:b.z1,z2:b.z1,h:0},{x1:b.x1,x2:b.x2,z1:b.z2,z2:b.z2,h:0});
   if(NM.current){const old=NM.current;if(fsM.parent)fsM.parent.remove(fsM);if(spike.parent&&spike.parent===old.M.g)spike.parent.remove(spike);nmFree(old);for(const k in FMAP)if(FMAP[k]===old.M){const g=new THREE.Group();g.visible=false;FMAP[k]={g,solids:[],boxes:[],built:0};}}
-  committed=true;loadedScene=loadedGeometry=null;NM.current=C;NM.routeCache.clear();if(NM.banCache)NM.banCache.clear();try{for(const sp of nav.spawnNodes||[])for(const st of Object.values(nav.siteNodes||{}))nmPath(C,sp,st);}catch(e){} /* pre-warm routes + climb memo behind the loading overlay (measured up to 102ms cold on ascent under SwiftShader); the map list is the pre-warm set, loader/cache behavior unchanged */scene.add(root);NM.progress.querySelector('small').textContent='Uploading map textures…';const t1=nmNow();await nmUpload(mem.textures,()=>ticket===NM.ticket);mem.uploadMs=Math.round(nmNow()-t1);if(ticket===NM.ticket)nmOverlay(null);return C;
+  committed=true;loadedScene=loadedGeometry=null;NM.current=C;NM.routeCache.clear();if(NM.banCache)NM.banCache.clear();try{for(const sp of nav.spawnNodes||[])for(const st of Object.values(nav.siteNodes||{}))nmPath(C,sp,st);}catch(e){} /* pre-warm routes + climb memo behind the loading overlay (measured up to 102ms cold on ascent under SwiftShader); the map list is the pre-warm set, loader/cache behavior unchanged */scene.add(root);NM.progress.querySelector('small').textContent='Uploading map textures…';try{if(window.xCrash)xCrash.stage('map-upload');}catch(e){}const t1=nmNow();await nmUpload(mem.textures,()=>ticket===NM.ticket);mem.uploadMs=Math.round(nmNow()-t1);if(ticket===NM.ticket)nmOverlay(null);return C;
  })().catch(e=>{failed=true;controller.abort(e);if(!committed)release();if(ticket===NM.ticket)nmOverlay(key,true);console.error('Original map load failed',key,e);throw e;}).finally(()=>{clearTimeout(timeout);if(NM.pending&&NM.pending.ticket===ticket)NM.pending=null;});NM.pending={key,ticket,promise,controller};return promise;
 }
 // Decals and floaters (#lotus-white): the ports export every Decal_/Floater_ material as OPAQUE although
@@ -15622,6 +15732,7 @@ function netOpenSocket(create,code,publicRoom){
  const q=new URLSearchParams({code,create:create?'1':'0',mode:MP.mode,map:MP.map==='random'?['ascent','bind','haven','split','lotus','breeze'][Math.floor(Math.random()*6)]:MP.map,public:publicRoom?'1':'0'});
  if(NET.reconnecting&&NET.resume)q.set('resume',NET.resume);
  let ws;try{ws=new WebSocket(NET.url.replace(/^http/,'ws')+'/connect?'+q);}catch(e){return netFinishConnection({code:1006,reason:''});}
+ try{ws.addEventListener('close',e=>{try{if(window.xCrash)xCrash.ws(e.code,e.reason);}catch(x){}});}catch(e){}/* crash report: every online socket close, code + reason */
  const old=NET.socket;NET.socket=ws;NET.openAt=NET.lastSeen=performance.now();NET.ack=null;NET.wireBase=null;NET.resyncAt=0;NET.welcomed=false;
  if(old&&old!==ws)try{old.close();}catch(e){}
  ws.onopen=async()=>{const token=await netProfileToken();if(NET.socket===ws){netSend({t:'hi',n:MP.name,ag:J.pick||'Jett',token,resume:NET.resume||undefined,batch:1,ack:1,delta:1,sk:typeof xskWire==='function'?xskWire():undefined});netHbStart();}};
@@ -15643,6 +15754,7 @@ function netOpenSocket(create,code,publicRoom){
    mpMsg(NET.reconnecting?'Reconnecting to game server…':'Connected to game server');return mpUI();
   }
   if(m.t==='start'){
+   try{if(window.xCrash)xCrash.stage('online-start');}catch(e){}
    const resume=NET.reconnecting&&m.you===NET.resumeMe&&(NET.recoverGame||NET.recoverLoading);
    NET.reconnecting=false;NET.retryUntil=0;NET.inLog=[];NET.path=[];NET.correction=null;MP.snapClock=null;NET.latest=null;NET.lpAt=0;NET.seat=null;
    MP.hc={open:true,send(m){if(m.t!=='hit'&&(m.t!=='in'||Number.isSafeInteger(m.seq)))netSend(m);}};
@@ -16114,6 +16226,8 @@ const NET_MODE_DESC={dm:'Deathmatch · free-for-all · first to 40 kills · 9:00
  window.VSLag=api;
 })();
 
+// crash report: a match the client lost (host / server gone, mpLost) is logged with its reason before the page goes back to the menu
+{const lost0=mpLost;mpLost=function(why){try{if(window.xCrash&&(MP.st==='game'||MP.st==='post'||window.xLdOn))xCrash.log('match-lost',why||'connection lost',true);}catch(e){}return lost0.apply(this,arguments);};}
 // ---- END TRUSTED ONLINE SERVER ----
 
 // ---- WEAPON GRIP ----
@@ -23789,10 +23903,10 @@ xReady = true; // every mode is initialised; lobby launches may now start them
   var built = function (k) { try { return !FMAP[k] || FMAP[k].built; } catch (e) { return true; } };
   var loadId = 0;
   var run = function (fn, map, mode, sync, title) {
-    var id = ++loadId;show(map, mode, title);
+    var id = ++loadId;show(map, mode, title);try { if (window.xCrash) xCrash.begin((mode || title || "match") + " " + map); } catch (e) {} // crash report: a match load starts
     var wait = agents(id, mode); if (wait) wait.catch(function () {});
     var warm = function (v) { // compile shaders + upload textures behind the overlay, not on the first playable frame
-      if (id !== loadId || typeof window.xWarmShaders !== "function") return v;
+      if (id !== loadId || typeof window.xWarmShaders !== "function") return v;try { if (window.xCrash) xCrash.stage("warm"); } catch (e) {}
       xLdSet("xLdAg", "textContent", "PREPARING\u2026");
       return new Promise(function (r) { var done = false, fin = function () { if (done) return; done = true;
         if (id === loadId) { try { window.xWarmShaders(); } catch (e) {} } // re-checked: a superseded/abandoned load warms nothing and never reaches ready()
@@ -23803,7 +23917,7 @@ xReady = true; // every mode is initialised; lobby launches may now start them
     // gundraw: every gun the mode can hold is loaded behind the overlay (xvFPPreload), so the first buy / swap of a gun no
     // longer parses its animation files and uploads its model mid-round; capped (a slow network never holds the overlay)
     var guns = function (v) {
-      if (id !== loadId || typeof window.xvFPPreload !== "function") return v;
+      if (id !== loadId || typeof window.xvFPPreload !== "function") return v;try { if (window.xCrash) xCrash.stage("weapons"); } catch (e) {}
       return new Promise(function (r) { var done = false, fin = function () { if (done) return; done = true; r(v); };
         setTimeout(fin, 8000);
         try { window.xvFPPreload(function (p) { if (id === loadId) xLdSet("xLdAg", "textContent", p.done < p.total ? "LOADING WEAPONS " + p.done + "/" + p.total : ""); }).then(fin, fin); } catch (e) { fin(); } });
@@ -23811,12 +23925,12 @@ xReady = true; // every mode is initialised; lobby launches may now start them
     // late programs: the held rigs (agent arms + gun: held weapon, knife, Classic) are built behind the overlay too, so the
     // warm draw below links their viewmodel-pass programs instead of the first frames of the match; capped like guns
     var rigs = function (v) {
-      if (id !== loadId || typeof window.xvFPRigs !== "function") return v;
+      if (id !== loadId || typeof window.xvFPRigs !== "function") return v;try { if (window.xCrash) xCrash.stage("rigs"); } catch (e) {}
       return new Promise(function (r) { var done = false, fin = function () { if (done) return; done = true; r(v); };
         setTimeout(fin, 6000);
         try { window.xvFPRigs().then(fin, fin); } catch (e) { fin(); } });
     };
-    var go = function () { return (wait ? wait.then(fn) : Promise.resolve().then(fn)).then(guns).then(rigs).then(warm).then(function(v){if(id===loadId){if(!title)fill();ready();}return v;},function(err){if(id===loadId)failed();if(err&&err.name==='AbortError')return;throw err;}); };
+    var go = function () { return (wait ? wait.then(fn) : Promise.resolve().then(fn)).then(guns).then(rigs).then(warm).then(function(v){if(id===loadId){if(!title)fill();ready();try{if(window.xCrash)xCrash.stage("playable");}catch(e){}}return v;},function(err){if(id===loadId){failed();try{if(window.xCrash&&!(err&&err.name==='AbortError'))xCrash.log('match-load-failed',err,true);}catch(e){}}if(err&&err.name==='AbortError')return;throw err;}); };
     return sync || built(map) ? go() : new Promise(function(resolve,reject){requestAnimationFrame(function(){requestAnimationFrame(function(){go().then(resolve,reject);});});});
   };
   window.xCancelMatchLoad = function(){++loadId;failed();};
