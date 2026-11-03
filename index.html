@@ -24087,10 +24087,10 @@ xReady = true; // every mode is initialised; lobby launches may now start them
   var built = function (k) { try { return !FMAP[k] || FMAP[k].built; } catch (e) { return true; } };
   var loadId = 0;
   var run = function (fn, map, mode, sync, title) {
-    var id = ++loadId;show(map, mode, title);
+    var id = ++loadId;show(map, mode, title);try { if (window.xCrash) xCrash.begin((mode || title || "match") + " " + map); } catch (e) {} // crash report: a match load starts
     var wait = agents(id, mode); if (wait) wait.catch(function () {});
     var warm = function (v) { // compile shaders + upload textures behind the overlay, not on the first playable frame
-      if (id !== loadId || typeof window.xWarmShaders !== "function") return v;
+      if (id !== loadId || typeof window.xWarmShaders !== "function") return v;try { if (window.xCrash) xCrash.stage("warm"); } catch (e) {}
       xLdSet("xLdAg", "textContent", "PREPARING\u2026");
       // iOS warm crash: the textures / geometry the warm frame needs go up a few MB per frame first (xWarmStaged, capped)
       var staged = null; try { if (typeof window.xWarmStaged === "function") staged = window.xWarmStaged(function () { return id === loadId; }); } catch (e) {}
@@ -24103,7 +24103,7 @@ xReady = true; // every mode is initialised; lobby launches may now start them
     // gundraw: every gun the mode can hold is loaded behind the overlay (xvFPPreload), so the first buy / swap of a gun no
     // longer parses its animation files and uploads its model mid-round; capped (a slow network never holds the overlay)
     var guns = function (v) {
-      if (id !== loadId || typeof window.xvFPPreload !== "function") return v;
+      if (id !== loadId || typeof window.xvFPPreload !== "function") return v;try { if (window.xCrash) xCrash.stage("weapons"); } catch (e) {}
       return new Promise(function (r) { var done = false, fin = function () { if (done) return; done = true; r(v); };
         setTimeout(fin, 8000);
         try { window.xvFPPreload(function (p) { if (id === loadId) xLdSet("xLdAg", "textContent", p.done < p.total ? "LOADING WEAPONS " + p.done + "/" + p.total : ""); }).then(fin, fin); } catch (e) { fin(); } });
@@ -24111,12 +24111,12 @@ xReady = true; // every mode is initialised; lobby launches may now start them
     // late programs: the held rigs (agent arms + gun: held weapon, knife, Classic) are built behind the overlay too, so the
     // warm draw below links their viewmodel-pass programs instead of the first frames of the match; capped like guns
     var rigs = function (v) {
-      if (id !== loadId || typeof window.xvFPRigs !== "function") return v;
+      if (id !== loadId || typeof window.xvFPRigs !== "function") return v;try { if (window.xCrash) xCrash.stage("rigs"); } catch (e) {}
       return new Promise(function (r) { var done = false, fin = function () { if (done) return; done = true; r(v); };
         setTimeout(fin, 6000);
         try { window.xvFPRigs().then(fin, fin); } catch (e) { fin(); } });
     };
-    var go = function () { return (wait ? wait.then(fn) : Promise.resolve().then(fn)).then(guns).then(rigs).then(warm).then(function(v){if(id===loadId){if(!title)fill();ready();}return v;},function(err){if(id===loadId)failed();if(err&&err.name==='AbortError')return;throw err;}); };
+    var go = function () { return (wait ? wait.then(fn) : Promise.resolve().then(fn)).then(guns).then(rigs).then(warm).then(function(v){if(id===loadId){if(!title)fill();ready();try{if(window.xCrash)xCrash.stage("playable");}catch(e){}}return v;},function(err){if(id===loadId){failed();try{if(window.xCrash&&!(err&&err.name==='AbortError'))xCrash.log('match-load-failed',err,true);}catch(e){}}if(err&&err.name==='AbortError')return;throw err;}); };
     return sync || built(map) ? go() : new Promise(function(resolve,reject){requestAnimationFrame(function(){requestAnimationFrame(function(){go().then(resolve,reject);});});});
   };
   window.xCancelMatchLoad = function(){++loadId;failed();};
