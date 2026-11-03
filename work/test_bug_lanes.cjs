@@ -26,7 +26,7 @@ function cut(s,a,b){const i=s.indexOf(a),j=s.indexOf(b,i);assert(i>=0&&j>i,a);re
  P.x=1;P.tdmRoomLeft=false;c.Hn({tab:1,room:NaN});assert.equal(P.tdmRoomLeft,false,'a late rs without the room timer does not mark a player still inside as left');
  P.tdmRoomLeft=true;c.Hn({tab:1,room:12});assert.equal(P.tdmRoomLeft,false,'the server room timer (respawn in the room) clears left');}
 // Host uses stable ids; player input includes the actual interpolation delay and sends at 60 Hz.
-assert(net.includes('p.id===MP.me'));assert(net.includes("netSend({t:'pong',c:m.c})"));assert(net.includes('},1000/60)'));assert(net.includes("view:typeof MP==='undefined'?100:Math.max(100,Math.min(220,MP.snapClock?.delay"));
+assert(net.includes('p.id===MP.me'));assert(net.includes("netSend({t:'pong',c:m.c})"));assert(net.includes('},1000/60)'));assert(net.includes("view:typeof MP==='undefined'?100:Math.max(30,Math.min(220,MP.snapClock?.delay"),'input view = the page\'s real interpolation delay, floor 30 ms (net 4: 50 ms at 40 Hz, 35 at 60 Hz)');
 assert(net.includes('o[2]+0.33'),'ult orb rests at half-height');assert(net.includes('o[2]+(o[4]?0.45:0.35)'),'SR orb rests at half-height');
 for(const file of ['server_runtime.js','grip_runtime.js','game_rules_runtime.js'])assert(html.includes(fs.readFileSync(__dirname+'/'+file,'utf8').trimEnd()),file+' generated verbatim');
 console.log('Client bug lanes: twenty free guns, disabled-kit expiry, opaque smoke shader, ADS in/out, active-secondary refresh, third-person weapon swaps preserve body/holder, real native sockets for all guns, stable host ids, ping echo, 60 Hz input and grounded orbs. Native rendered screenshots remain a separate check.');
