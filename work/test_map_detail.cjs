@@ -60,7 +60,7 @@ const gltfTris=key=>{const g=JSON.parse(fs.readFileSync(path.join(root,'models/v
 for(const key of MAPS){const f=path.join(root,'models/valorant/maps',key,'detail.json');assert(fs.existsSync(f),key+' detail.json missing');const d=JSON.parse(fs.readFileSync(f,'utf8')),T=gltfTris(key),drop=(NM_ZFIX[key]||{}).d||{};assert.equal(d.v,1);
  let small=0;for(const [name,e] of Object.entries(d.m)){assert(T[name]!=null,key+' '+name+' not in scene.gltf');assert.equal(e.n,T[name]-(drop[name]||[]).length,key+' '+name+' triangle count');let last=-1;for(let k=0;k<e.s.length;k+=2){assert(e.s[k]>last&&e.s[k+1]>0&&e.s[k]+e.s[k+1]<=e.n,key+' '+name+' run');last=e.s[k]+e.s[k+1];small+=e.s[k+1];}}
  assert.equal(small,d.small,key+' small count');assert(d.small<d.total*.4,key+': small props are a minority');}
-for(const s of [src,html]){assert(/\.loadAsync\(base\+'scene\.gltf'\)\.then\(gl=>\{nmTexMissingMark\(gl\);\/\*[^*]*\*\/return nmDetailFetch\(base\)\.then\(d=>\{gl\.scene\.userData\.nmDetail=d;return gl;\}\);\}\);/.test(s),'loader does not attach detail.json');
+for(const s of [src,html]){assert(/\.loadAsync\(base\+'scene\.gltf'\)\.then\(gl=>\{nmTexMissingMark\(gl\);(?:nmParserRelease\(gl\);)?(?:\/\*[^*]*\*\/)+return nmDetailFetch\(base\)\.then\(d=>\{gl\.scene\.userData\.nmDetail=d;return gl;\}\);\}\);/.test(s),'loader does not attach detail.json');
  assert(/function nmDetailFetch\(base\)\{if\(typeof fetch!=='function'\|\|!nmSmallDist\(\)\)return Promise\.resolve\(null\);return fetch\(base\+'detail\.json'\)/.test(s),'detail.json fetch (skipped on HIGH)');}
 console.log('B. detail.json for '+MAPS.length+' maps matches scene.gltf; loader wired');
 // ---- C. budget (offline frame model)
