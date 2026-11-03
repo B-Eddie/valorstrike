@@ -5,6 +5,7 @@
 // later draw: 07f8f8e's per-precompile warm meshes + reused drop clones played a different seeded match than 9af6813
 // (test_bot_play_offline seed 3: near pulls n 1 -> 8, its live spray check then failed on a match base never played).
 // Checks on the real page (offline 5v5, real three scene graph), counting the draws of the page's own Math.random:
+//  - the gate's staged upload before the warm-up (window.xWarmStaged, iOS warm crash) draws none
 //  - the loading gate's warm-up (window.xWarmShaders: xPrecompile + xWarmLazy warm meshes + xrWarm corpse warm) draws none
 //  - a reload's magazine drop (xDrop) draws exactly what the pre-pool xDrop drew (mesh clone + one fresh material clone
 //    per material), on the first drop, a reused pooled clone, and an overlapping drop
@@ -22,6 +23,11 @@ const assert=require('assert/strict');const {boot}=require('./page_harness.cjs')
  assert.ok(xe('!!(XRP.Vandal&&XRP.Vandal.mag)'),'the Vandal viewmodel has a magazine (the drop / warm list have something to do)');
  // count the page generator's draws (a warm-up that swaps in its own generator is not counted: that is the point)
  xe('window.__rn=0;{const r=Math.random;Math.random=function(){__rn++;return r.apply(this,arguments);};}true');
+ // 0. the gate's staged upload before it (xWarmStaged: initTexture + shared-geometry proxies, a frame between steps): no draws
+ xe('window.__ws=null;__rn=0;window.xWarmStaged(()=>true).then(R=>{window.__ws={n:__rn,R};});true');for(let t=0;t<200&&!xe('!!window.__ws');t++)await adv(50);
+ const ws=JSON.parse(xe('JSON.stringify(window.__ws)'));console.log(`staged warm-up: ${ws&&ws.n} draws (${ws&&ws.R.steps.length} steps, ${ws&&ws.R.tex} textures, ${ws&&ws.R.geo} geometries)`);
+ assert.ok(ws,'xWarmStaged never finished');assert.ok(ws.R.tex>0&&ws.R.steps.length>0,'xWarmStaged staged nothing');
+ assert.equal(ws.n,0,'the staged warm-up (xWarmStaged) draws nothing from the seeded game generator');
  // 1. the loading gate's warm-up
  const w=JSON.parse(xe(`(()=>{xPC=false;const r0=typeof XR_WARM!=='undefined'?XR_WARM.runs:-1,mags=[];for(const k in XRP)if(XRP[k].mag)mags.push(k);__rn=0;window.xWarmShaders();
    return JSON.stringify({n:__rn,pc:xPC,xr:typeof XR_WARM!=='undefined'?XR_WARM.runs-r0:-1,mags:mags.length});})()`));

@@ -11874,6 +11874,79 @@ window.xWarmShaders = function () {
   xPC = false; try { xPrecompile(); } catch (e) {}
   try { renderer.render(scene, camera); } catch (e) {}
 };
+// ---- WARM STAGED ----
+// iOS warm crash (Jeff, 3 Nov 2026: Safari 27 on an iPhone killed the tab in the loading gate's warm step, ~35 s into Ascent,
+// no JS error - a WebContent process kill). The warm step (xWarmShaders -> xPrecompile + one draw) uploaded every texture and
+// buffer the first frames need in ONE synchronous frame: ~300 MB of non-map textures (agents ~115 MB, held / effect / ability
+// parts ~210 MB), ~166 MB of map geometry, 33 programs, 3-5.5 s with no yield. xWarmStaged runs first, behind the same overlay:
+// it builds the agent bodies the warm step would build (same calls, same order), then uploads the textures that step uploads
+// (renderer.initTexture: scene minus the native map root - the map loader uploads its own - , the warm-up meshes, the queued
+// viewmodel rigs) and the geometry its draw uploads (what the camera's frame draws, every queued viewmodel rig part) through
+// proxies sharing each geometry, drawn 3 vertices each into a 1x1 target - in steps of at most XWST.mb MB, a frame (or 50 ms
+// timer: a hidden tab has no frames) between steps, the whole thing capped at XWST.cap s (the warm step then uploads whatever
+// is left, as before). The warm step finds everything at its current version (three skips it): the same textures, buffers
+// and programs, drawn the same way - only spread out.
+const XWST = { mb: 24, cap: 12, last: null };
+function xwsTexBytes(t) { try {
+  const im = t.image;
+  if (t.isCubeTexture && Array.isArray(im)) { let b = 0; for (const f of im) b += ((f && f.width) || 0) * ((f && f.height) || 0) * 4; return b * (t.generateMipmaps ? 4 / 3 : 1); }
+  if (t.isCompressedTexture && t.mipmaps && t.mipmaps.length) { let b = 0; for (const m of t.mipmaps) b += m && m.data ? m.data.byteLength : 0; return b; }
+  const w = (im && (im.width || im.videoWidth)) || 0, h = (im && (im.height || im.videoHeight)) || 0, d = (im && im.depth) || 1;
+  const bpp = t.type === THREE.FloatType ? 16 : t.type === THREE.HalfFloatType ? 8 : 4, mip = t.generateMipmaps && t.minFilter !== THREE.NearestFilter && t.minFilter !== THREE.LinearFilter ? 4 / 3 : 1;
+  return w * h * d * bpp * mip; } catch (e) { return 0; } }
+function xwsGeoBytes(g) { let b = 0; const seen = new Set(), one = (a) => { if (!a) return; const x = a.isInterleavedBufferAttribute ? a.data : a; if (seen.has(x)) return; seen.add(x); b += x.array ? x.array.byteLength : 0; };
+  for (const k in g.attributes) one(g.attributes[k]); for (const k in g.morphAttributes) for (const a of g.morphAttributes[k]) one(a); one(g.index); return b; }
+function xwsTexOf(m, add) { for (const k in m) { const t = m[k]; if (t && t.isTexture) add(t); } const u = m.uniforms; if (u) for (const k in u) { const v = u[k] && u[k].value; if (v && v.isTexture) add(v); else if (Array.isArray(v)) for (const x of v) if (x && x.isTexture) add(x); } }
+function xwsTexWalk(root, skip, add) { if (!root) return; const seen = new Set(), walk = (o) => { if (o === skip) return; if (o.material) for (const m of [].concat(o.material)) if (m && !seen.has(m)) { seen.add(m); xwsTexOf(m, add); } for (let i = 0; i < o.children.length; i++) walk(o.children[i]); }; walk(root); }
+// all: every mesh (a viewmodel rig: its warm draw shows each hidden part); else what the camera's frame draws (visible chain, layers, frustum)
+function xwsGeoWalk(root, cam, add, all) { if (!root) return; const F = new THREE.Frustum();
+  if (!all && cam) { cam.updateMatrixWorld(); F.setFromProjectionMatrix(new THREE.Matrix4().multiplyMatrices(cam.projectionMatrix, cam.matrixWorldInverse)); }
+  const walk = (o) => { if (!all && o.visible === false) return;
+    if (o.isMesh && o.geometry && o.geometry.isBufferGeometry && o.geometry.attributes.position) { let ok = true; if (!all && cam) { try { ok = (!o.layers || o.layers.test(cam.layers)) && (!o.frustumCulled || F.intersectsObject(o)); } catch (e) { ok = true; } } if (ok) add(o.geometry); }
+    for (let i = 0; i < o.children.length; i++) walk(o.children[i]); };
+  walk(root); }
+// items [kind 0 texture | 1 geometry, object, bytes] -> steps of at most mb MB (an item bigger than that is a step of its own)
+function xwsSteps(items, mb) { const cap = mb * 1048576, steps = []; let cur = [], b = 0;
+  for (const it of items) { if (cur.length && b + it[2] > cap) { steps.push(cur); cur = []; b = 0; } cur.push(it); b += it[2]; }
+  if (cur.length) steps.push(cur); return steps; }
+function xwsYield(fn) { let d = false; const f = () => { if (!d) { d = true; fn(); } }; setTimeout(f, 50); try { requestAnimationFrame(f); } catch (e) {} }
+function xWarmStaged(alive) {
+  const t0 = performance.now(), R = (XWST.last = { steps: [], mb: [], capped: false, ms: 0, tex: 0, geo: 0 });
+  if (!running || typeof renderer === "undefined" || !renderer || !renderer.initTexture) return Promise.resolve(R);
+  // 1. the agent bodies the warm step builds (xVisB, dt 0) and the native-map precompile's effect pools: same calls, same order
+  try { const now = performance.now() / 1000; for (let i = 0; i < bots.length; i++) xVisB(bots[i], 0, now, false); for (let i = 0; i < allies.length; i++) xVisB(allies[i], 0, now, true); if (typeof xDbOK !== "undefined" && xDbOK && duelBot) xVisB(duelBot, 0, now, false); } catch (e) {}
+  const nm = typeof nmActive === "function" && nmActive();
+  try { if (nm) { if (typeof BFX !== "undefined" && !BFX.ok && typeof bfxInit === "function") bfxInit(); if (typeof xHitInit === "function") xHitInit(); } } catch (e) {}
+  // 2. what the warm step uploads
+  const T = [], G = [], sT = new Set(), sG = new Set();
+  const addT = (t) => { if (!t || sT.has(t) || t.isRenderTargetTexture || t.isDataArrayTexture || t.isVideoTexture || !(t.version > 0)) return; sT.add(t); T.push(t); };
+  const addG = (g) => { if (!g || sG.has(g)) return; sG.add(g); G.push(g); };
+  const skip = (nm && typeof NM !== "undefined" && NM.current && NM.current.M && NM.current.M.g) || null;
+  xNoRng(() => { let warm = []; try { if (typeof xWarmLazy === "function") warm = xWarmLazy() || []; } catch (e) {}
+    try { xwsTexWalk(scene, skip, addT); } catch (e) {} for (const m of warm) scene.remove(m); });
+  const vf = []; try { if (typeof VF_WARMQ !== "undefined") vf.push(...VF_WARMQ); } catch (e) {}
+  try { for (const F of XVFP.c.values()) if (F && F.root) vf.push(F.root); } catch (e) {} try { for (const F of VF_RIGS.values()) if (F && F.root) vf.push(F.root); } catch (e) {} try { if (XV.fp && XV.fp.root) vf.push(XV.fp.root); } catch (e) {}
+  for (const r of vf) { try { xwsTexWalk(r, null, addT); xwsGeoWalk(r, null, addG, true); } catch (e) {} }
+  try { scene.onBeforeRender(renderer, scene, camera, null); } catch (e) {} // the frame's own culling (native map chunks) for this camera
+  try { scene.updateMatrixWorld(); xwsGeoWalk(scene, camera, addG, false); } catch (e) {}
+  const items = []; for (const t of T) items.push([0, t, xwsTexBytes(t)]); for (const g of G) items.push([1, g, xwsGeoBytes(g)]);
+  R.tex = T.length; R.geo = G.length; const steps = xwsSteps(items, XWST.mb);
+  // 3. one step per frame
+  let rt = null, pm = null, ps = null, pc = null, i = 0; const gl = renderer.getContext && renderer.getContext();
+  const draw = (list) => { if (!list.length) return;
+    if (!rt) { rt = new THREE.WebGLRenderTarget(1, 1, { depthBuffer: false }); pm = new THREE.MeshBasicMaterial({ colorWrite: false, depthTest: false, depthWrite: false }); ps = new THREE.Scene(); pc = new THREE.OrthographicCamera(); }
+    const keep = []; for (const g of list) { const m = new THREE.Mesh(g, pm); m.frustumCulled = false; ps.add(m); const n = g.index ? g.index.count : g.attributes.position.count; keep.push([g, g.drawRange.start, g.drawRange.count]); g.drawRange.start = 0; g.drawRange.count = Math.min(3, n); }
+    const prev = renderer.getRenderTarget(); try { renderer.setRenderTarget(rt); renderer.render(ps, pc); } catch (e) {} finally { renderer.setRenderTarget(prev); for (const [g, s, c] of keep) { g.drawRange.start = s; g.drawRange.count = c; } ps.clear(); } };
+  return new Promise((done) => {
+    const fin = () => { try { if (rt) rt.dispose(); if (pm) pm.dispose(); } catch (e) {} R.ms = Math.round(performance.now() - t0); done(R); };
+    const step = () => { if ((alive && !alive()) || !running || i >= steps.length) return fin(); if (performance.now() - t0 > XWST.cap * 1000) { R.capped = true; return fin(); }
+      const s = steps[i++], geo = []; let b = 0;
+      xNoRng(() => { for (const it of s) { b += it[2]; if (it[0] === 0) { try { renderer.initTexture(it[1]); } catch (e) {} } else geo.push(it[1]); } draw(geo); });
+      try { if (gl && gl.flush) gl.flush(); } catch (e) {} R.steps.push(s.length); R.mb.push(+(b / 1048576).toFixed(1)); xwsYield(step); };
+    xwsYield(step); });
+}
+window.xWarmStaged = xWarmStaged;
+// ---- END WARM STAGED ----
 const xSeg = (id, fn) => $(id).querySelectorAll("button").forEach((b) => b.addEventListener("click", () => fn(b.dataset.v)));
 function xStill() {
   const k = player && running ? [player.x, player.y, player.z, yaw, pitch].map((v) => (+v || 0).toFixed(3)).join() + fireHeld + Object.values(keys).some(Boolean) : "idle";
@@ -24017,11 +24090,13 @@ xReady = true; // every mode is initialised; lobby launches may now start them
     var warm = function (v) { // compile shaders + upload textures behind the overlay, not on the first playable frame
       if (id !== loadId || typeof window.xWarmShaders !== "function") return v;
       xLdSet("xLdAg", "textContent", "PREPARING\u2026");
-      return new Promise(function (r) { var done = false, fin = function () { if (done) return; done = true;
+      // iOS warm crash: the textures / geometry the warm frame needs go up a few MB per frame first (xWarmStaged, capped)
+      var staged = null; try { if (typeof window.xWarmStaged === "function") staged = window.xWarmStaged(function () { return id === loadId; }); } catch (e) {}
+      return Promise.resolve(staged).then(null, function () {}).then(function () { if (id !== loadId) return v; return new Promise(function (r) { var done = false, fin = function () { if (done) return; done = true;
         if (id === loadId) { try { window.xWarmShaders(); } catch (e) {} } // re-checked: a superseded/abandoned load warms nothing and never reaches ready()
         xLdSet("xLdAg", "textContent", ""); r(v); };
         setTimeout(fin, 4000); // rAF stops in a hidden tab: never leave the overlay stuck on the warm step
-        requestAnimationFrame(function () { requestAnimationFrame(fin); }); });
+        requestAnimationFrame(function () { requestAnimationFrame(fin); }); }); });
     };
     // gundraw: every gun the mode can hold is loaded behind the overlay (xvFPPreload), so the first buy / swap of a gun no
     // longer parses its animation files and uploads its model mid-round; capped (a slow network never holds the overlay)
