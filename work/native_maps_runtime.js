@@ -25,6 +25,7 @@ async function nmEnsure(key){
  if(NM.current&&NM.current.key===key){if(NM.pending){nmCancel(false);}return NM.current;}
  if(NM.pending&&NM.pending.key===key)return NM.pending.promise;
  if(NM.pending)nmCancel(false);
+ if(window.xMapPrefetch&&xMapPrefetch.key&&xMapPrefetch.key!==key)xMapPrefetch.stop();/* loadfast: a room prefetch of another map is dropped (its bodies released, its fetches aborted); the same map's is consumed by the glTF loaders (loader_retry_runtime PF.take) */
  const ticket=++NM.ticket,controller=new AbortController();let loadedGeometry=null,loadedScene=null,committed=false,failed=false;
  const release=()=>{if(loadedScene||loadedGeometry){nmFree({M:{g:loadedScene||new THREE.Group()},geometry:loadedGeometry});loadedScene=loadedGeometry=null;}};
  // load timeout = 120 s WITHOUT PROGRESS (a fetch finishing, a glTF asset loading, a prepare phase), capped at 10 min overall:
@@ -47,7 +48,7 @@ async function nmEnsure(key){
   const b=C.bounds;M.boxes.push({x1:b.x1,x2:b.x2,z1:b.z1,z2:b.z1,h:0},{x1:b.x1,x2:b.x2,z1:b.z2,z2:b.z2,h:0});
   if(NM.current){const old=NM.current;if(fsM.parent)fsM.parent.remove(fsM);if(spike.parent&&spike.parent===old.M.g)spike.parent.remove(spike);nmFree(old);for(const k in FMAP)if(FMAP[k]===old.M){const g=new THREE.Group();g.visible=false;FMAP[k]={g,solids:[],boxes:[],built:0};}}
   committed=true;loadedScene=loadedGeometry=null;NM.current=C;NM.routeCache.clear();if(NM.banCache)NM.banCache.clear();try{for(const sp of nav.spawnNodes||[])for(const st of Object.values(nav.siteNodes||{}))nmPath(C,sp,st);}catch(e){} /* pre-warm routes + climb memo behind the loading overlay (measured up to 102ms cold on ascent under SwiftShader); the map list is the pre-warm set, loader/cache behavior unchanged */scene.add(root);NM.progress.querySelector('small').textContent='Uploading map textures…';try{if(window.xCrash)xCrash.stage('map-upload');}catch(e){}const t1=nmNow();await nmUpload(mem.textures,()=>ticket===NM.ticket);mem.uploadMs=Math.round(nmNow()-t1);if(ticket===NM.ticket)nmOverlay(null);return C;
- })().catch(e=>{failed=true;controller.abort(e);if(!committed)release();if(ticket===NM.ticket)nmOverlay(key,true);console.error('Original map load failed',key,e);throw e;}).finally(()=>{clearTimeout(timeout);if(NM.pending&&NM.pending.ticket===ticket)NM.pending=null;});NM.pending={key,ticket,promise,controller};return promise;
+ })().catch(e=>{failed=true;controller.abort(e);if(!committed)release();if(ticket===NM.ticket)nmOverlay(key,true);console.error('Original map load failed',key,e);throw e;}).finally(()=>{clearTimeout(timeout);if(NM.pending&&NM.pending.ticket===ticket)NM.pending=null;if(window.xMapPrefetch&&xMapPrefetch.key===key)xMapPrefetch.stop();/* loaded, failed or cancelled: nothing of the prefetch is held past the load */});NM.pending={key,ticket,promise,controller};return promise;
 }
 // Decals and floaters (#lotus-white): the ports export every Decal_/Floater_ material as OPAQUE although
 // their textures carry the cut-out in alpha, so murals drew as rectangles and destruction/edge-wear masks

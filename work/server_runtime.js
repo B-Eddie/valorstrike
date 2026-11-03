@@ -123,6 +123,8 @@ function netOpenSocket(create,code,publicRoom){
   if(m.t==='welcome'){NET.welcomed=true;if(typeof m.resume==='string')NET.resume=m.resume;MP.name=String(m.name);MP.me=m.you;const input=mpEl('xOnName');if(input)input.value=MP.name;return;}
   if(m.t==='room'){
    MP.on=true;MP.role='client';MP.room=m;MP.mode=m.mode;MP.map=m.map;if(MP.st!=='game'&&MP.st!=='post')MP.st='room';NET.host=!!m.pl.find(p=>(p.id!=null?p.id===MP.me:p.n===MP.name)&&p.h);
+   /* loadfast 1: the room's map is known now, the match starts after the countdown: fetch its geometry + textures meanwhile (xMapPrefetch, loader_retry_runtime); a new map replaces the prefetch, a map already in memory needs none */
+   try{if(window.xMapPrefetch&&MP.st==='room'&&typeof m.map==='string'&&!(NM.current&&NM.current.key===m.map)&&!(typeof __vsLightOn==='function'&&__vsLightOn()))xMapPrefetch.start(m.map);}catch(e){}
    if(NET.reconnecting&&!NET.recoverGame&&!NET.recoverLoading){NET.reconnecting=false;NET.retryUntil=0;}
    mpMsg(NET.reconnecting?'Reconnecting to game server…':'Connected to game server');return mpUI();
   }
@@ -604,4 +606,6 @@ const NET_MODE_DESC={dm:'Deathmatch · free-for-all · first to 40 kills · 9:00
 
 // crash report: a match the client lost (host / server gone, mpLost) is logged with its reason before the page goes back to the menu
 {const lost0=mpLost;mpLost=function(why){try{if(window.xCrash&&(MP.st==='game'||MP.st==='post'||window.xLdOn))xCrash.log('match-lost',why||'connection lost',true);}catch(e){}return lost0.apply(this,arguments);};}
+// loadfast 1: leaving / losing the room drops the map prefetch (in-flight fetches aborted, held bodies released)
+{const pf0=mpReset;mpReset=function(){try{if(window.xMapPrefetch)xMapPrefetch.stop();}catch(e){}return pf0.apply(this,arguments);};}
 // ---- END TRUSTED ONLINE SERVER ----
