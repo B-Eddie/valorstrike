@@ -48,7 +48,9 @@ Math.random=mulberry(SEED*104729+1);require('vm').runInContext(`Math.random=(${m
  const tap=async code=>{key(code,true);await step(50);key(code,false);await step(50);};
  // The harness page sits behind a cover overlay (no renderer), so its rAF loop never runs the match tick: the test drives
  // the page's own fiveTick / vmTick at 50 ms once the match is live (movement, reload timer, held fire -> shoot -> gFire, equip time).
- let drive=false;const step=async ms=>{for(let t=0;t<ms;t+=50){if(xe('MP.code'))codes.add(xe('MP.code'));await settle();await cluster.advance(50);H.advance(50);if(drive)xe('fiveTick(0.05);vmTick(0.05);true');}};
+ // 25 ms lockstep (the 40 Hz room's step): at 50 ms page frames the page fired a Vandal every 100 ms while the 40 Hz server keeps its
+ // 102.6 ms cadence, so the page emptied the magazine one shot ahead of the server (net 3).
+ let drive=false;const step=async ms=>{for(let t=0;t<ms;t+=25){if(xe('MP.code'))codes.add(xe('MP.code'));await settle();await cluster.advance(25);H.advance(25);if(drive)xe('fiveTick(0.025);vmTick(0.025);true');}};
  const until=async(cond,ms,what)=>{for(let t=0;t<ms;t+=50){if(cond())return true;await step(50);}fail('timed out: '+what);return false;};
  const humans=[];const join=(code,name,agent)=>{const h=new ScriptedHuman({name,agent,world,target:null});codes.add(code);pending++;let settled=false;const done=()=>{if(!settled){settled=true;pending--;}};const s=cluster.connect({code});h.attach(s);s.on('message',m=>h.receive(m));s.on('open',()=>{done();h.hello();});s.on('error',done);humans.push(h);return h;};
  xe(`J.pick='Jett';MP.name='PageQA';window.xQMap='ascent';MP.map='ascent';mpCreate(false,'five')`);

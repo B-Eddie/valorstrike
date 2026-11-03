@@ -30,7 +30,9 @@ Math.random=mulberry(7);const H=boot({real3:true,seed:31,native:true});
  H.win.__ls=new Map();H.win.__ls.getItem=k=>H.win.__ls.has(k)?H.win.__ls.get(k):null;H.win.__ls.setItem=(k,v)=>H.win.__ls.set(k,String(v));H.win.__ls.removeItem=k=>H.win.__ls.delete(k);
  const errs0=H.errors.length,x0=H.xErrCalls.length;let tgt=null;
  // lockstep: one server tick, then the page brought to exactly the same elapsed time (H.advance(50) runs 4 frames = 66.7 ms)
- const step=async ms=>{for(let t=0;t<ms;t+=50){if(xe('MP.code'))codes.add(xe('MP.code'));await settle();await cluster.advance(50);if(tgt==null)tgt=xe('performance.now()');tgt+=50;const d=tgt-xe('performance.now()');if(d>1)H.advance(d);for(let i=0;i<3;i++)await new Promise(r=>setImmediate(r));}};
+ // in 25 ms slices (the 40 Hz room's step, net 3): 50 ms slices put the server a whole step ahead of the page, so a mid-slice
+ // snapshot's input time + age lay past the page's clock and read as 0.135 m corrections (5.4 m/s x 25 ms)
+ const step=async ms=>{for(let t=0;t<ms;t+=25){if(xe('MP.code'))codes.add(xe('MP.code'));await settle();await cluster.advance(25);if(tgt==null)tgt=xe('performance.now()');tgt+=25;const d=tgt-xe('performance.now()');if(d>1)H.advance(d);for(let i=0;i<3;i++)await new Promise(r=>setImmediate(r));}};
  const until=async(c,ms,w)=>{for(let t=0;t<ms;t+=50){if(c())return;await step(50);}throw Error('timed out: '+w+' (MP.st '+xe('MP.st')+' msg '+xe('MP.msg')+')');};
  const peer=(q,name)=>{codes.add(q.code);pending++;let settled=false;const done=()=>{if(!settled){settled=true;pending--;}};const s=cluster.connect(q);const h={room:null,send:m=>s.send(JSON.stringify(m))};s.on('message',m=>{if(m.t==='room')h.room=m;if(m.t==='start')h.send({t:'ready'});});s.on('open',()=>{done();h.send({t:'hi',n:name,ag:'Sova'});});s.on('error',done);return h;};
  xe("MP.name='PageLead';window.xQMap='ascent';MP.map='ascent';mpCreate(false,'skm');true");
