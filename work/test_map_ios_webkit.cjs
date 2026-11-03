@@ -13,6 +13,7 @@
 //  6. gl.getError after the sRGB array storage / mipmaps: 2D path
 //  7. the array shader (sampler2DArray, texelFetch of the RGBA32F palette) fails to link: 2D path
 //  8. sampler limits: iOS 16 / 16 units -> arrays; no vertex texture units -> 2D path
+//  9. <img> sources resized on canvases past WebKit's canvas-memory limit (getContext('2d') null), LOW cap: still loads
 // RUNTIME=<older native_maps_runtime.js> shows it red (no probe: 2, 4-8 fail).
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 const root=path.join(__dirname,'..'),src=fs.readFileSync(process.env.RUNTIME||path.join(__dirname,'native_maps_runtime.js'),'utf8');
@@ -21,7 +22,7 @@ const fn=n=>{let i=src.indexOf('\nfunction '+n+'(');if(i<0)i=src.indexOf('\nasyn
 const val=n=>{const m=src.match(new RegExp('var '+n+'=(\\{[^}]*\\})'));return m?eval('('+m[1]+')'):null;};
 const NM_ARR=val('NM_ARR'),NM_OPT=val('NM_OPT'),NM_SMALL=val('NM_SMALL'),NM_STRIP=val('NM_STRIP')||{on:false};
 const NAMES=['nmArrOk','nmArrProbe','nmIOSWebKit','nmArrSize','nmArrBuckets','nmArrState','nmArrEligible','nmArrShader','nmArrMaterial','nmArrayScene','nmArrDispose','nmArrUpload','nmArrFit','nmMatKey','nmDetailDistance','nmChunkPlan','nmSpanOver','nmCentroids','nmSphere','nmGather','nmOffset','nmCopy3','nmCopy2','nmCopyN','nmSmallDist','nmDetailSplit','nmOptimizeScene','nmStrips','nmStripBuild','nmStripChunk','nmRunRange','nmRunReset','nmBytes','nmTexBytes','nmDropArray','nmTexUploaded','nmShrink','nmPackGeometry','nmBudget','nmUpload'].filter(n=>fn(n));
-function api(renderer,nav){return new Function('THREE','NM_ARR','NM_OPT','NM_SMALL','NM_STRIP','NM_ARR_PROBE','renderer','nmQuality','nmTexCap','createImageBitmap','document','navigator',NAMES.map(fn).join('\n')+'\nreturn {'+NAMES.join(',')+'};')(THREE,NM_ARR,NM_OPT,NM_SMALL,NM_STRIP,{gl:null,ok:false,why:''},renderer,()=>'medium',()=>0,async(img,o)=>fakeImage(o.resizeWidth,o.resizeHeight,img.tag+'>'+o.resizeWidth),undefined,nav);}
+function api(renderer,nav,doc,cap){return new Function('THREE','NM_ARR','NM_OPT','NM_SMALL','NM_STRIP','NM_ARR_PROBE','renderer','nmQuality','nmTexCap','createImageBitmap','document','navigator',NAMES.map(fn).join('\n')+'\nreturn {'+NAMES.join(',')+'};')(THREE,NM_ARR,NM_OPT,NM_SMALL,NM_STRIP,{gl:null,ok:false,why:''},renderer,()=>'medium',()=>cap||0,async(img,o)=>fakeImage(o.resizeWidth,o.resizeHeight,img.tag+'>'+o.resizeWidth),doc,nav);}
 function fakeImage(w,h,tag){return {width:w,height:h,tag,close(){this.closed=true;}};}
 const K={TEXTURE_2D_ARRAY:35866,TEXTURE_2D:3553,SRGB8_ALPHA8:35907,RGBA8:32856,RGBA32F:34836,FLOAT:5126,RGBA:6408,UNSIGNED_BYTE:5121,UNPACK_FLIP_Y_WEBGL:37440,UNPACK_PREMULTIPLY_ALPHA_WEBGL:37441,UNPACK_ALIGNMENT:3317,TEXTURE_MIN_FILTER:10241,TEXTURE_MAG_FILTER:10240,TEXTURE_WRAP_S:10242,TEXTURE_WRAP_T:10243,LINEAR:9729,LINEAR_MIPMAP_LINEAR:9987,REPEAT:10497,MAX_ARRAY_TEXTURE_LAYERS:35071,MAX_TEXTURE_IMAGE_UNITS:34930,MAX_VERTEX_TEXTURE_IMAGE_UNITS:35660,MAX_TEXTURE_SIZE:3379,VERTEX_SHADER:35633,FRAGMENT_SHADER:35632,COMPILE_STATUS:35713,LINK_STATUS:35714};
 // o: {layers, size, units, vunits, subThrows, errAfter: 'storage'|'mip', link:false}
@@ -33,9 +34,9 @@ function fakeGL(o){o=o||{};let n=0,err=0;const log=[];const P={[K.MAX_ARRAY_TEXT
   createProgram:()=>({}),createShader:k=>({k}),shaderSource(){},compileShader(){},getShaderParameter:()=>true,getShaderInfoLog:()=>'',attachShader(){},linkProgram(){},getProgramParameter:()=>o.link!==false,getProgramInfoLog:()=>o.link===false?"ERROR: sampler2DArray":'',deleteShader(){},deleteProgram(){}});
  return gl;}
 function fakeRenderer(o){const gl=fakeGL(o),props=new WeakMap();return {gl,uploads:[],capabilities:{isWebGL2:true,getMaxAnisotropy:()=>16},properties:{get:x=>{let p=props.get(x);if(!p)props.set(x,p={});return p;}},extensions:{has:()=>false},resetState(){},initTexture(t){if(!t.image&&!(t.source&&t.source.data))throw new Error('no image');this.uploads.push(t);},getContext(){return gl;}};}
-function scene(){let seed=7;const R=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296;};const g=new THREE.Group(),tex=[];
+function scene(img){img=img||fakeImage;let seed=7;const R=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296;};const g=new THREE.Group(),tex=[];
  const sizes=[];for(let i=0;i<12;i++)sizes.push([512,512]);for(let i=0;i<8;i++)sizes.push([256,256]);
- sizes.forEach(([w,h],i)=>{const t=new THREE.Texture(fakeImage(w,h,'t'+i));t.flipY=false;t.wrapS=t.wrapT=THREE.RepeatWrapping;t.minFilter=THREE.LinearMipmapLinearFilter;t.magFilter=THREE.LinearFilter;t.encoding=THREE.sRGBEncoding;t.anisotropy=4;tex.push(t);});
+ sizes.forEach(([w,h],i)=>{const t=new THREE.Texture(img(w,h,'t'+i));t.flipY=false;t.wrapS=t.wrapT=THREE.RepeatWrapping;t.minFilter=THREE.LinearMipmapLinearFilter;t.magFilter=THREE.LinearFilter;t.encoding=THREE.sRGBEncoding;t.anisotropy=4;tex.push(t);});
  let tris=0;for(let i=0;i<40;i++){const P=[],U=[],I=[],nt=120+Math.floor(R()*40),x=(i%8)*40-160,z=Math.floor(i/8)*40-100;for(let k=0;k<nt;k++){const bx=x+R()*20,bz=z+R()*20,y=R()*5;for(let j=0;j<3;j++){P.push(bx+R()*2,y+R(),bz+R()*2);U.push(R(),R());}I.push(k*3,k*3+1,k*3+2);}tris+=nt;
   const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.BufferAttribute(new Float32Array(P),3));geo.setAttribute('normal',new THREE.BufferAttribute(new Float32Array(P.length).fill(.577),3));geo.setAttribute('uv',new THREE.BufferAttribute(new Float32Array(U),2));geo.setIndex(new THREE.BufferAttribute(new Uint32Array(I),1));
   const m=new THREE.MeshLambertMaterial({name:'Wall_'+i,map:tex[i%tex.length],color:[0xffffff,0xd0d0d0][i%2],side:THREE.DoubleSide});if(i%5===3){m.alphaTest=.45;m.userData.cutout=true;}g.add(new THREE.Mesh(geo,m));}
@@ -45,8 +46,8 @@ const NAV={desk:{userAgent:'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (
  ipad:{userAgent:'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.1 Safari/605.1.15',maxTouchPoints:5},
  macSafari:{userAgent:'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.1 Safari/605.1.15',maxTouchPoints:0}};
 // loads the synthetic map through the pipeline; returns what was drawn and how
-async function load(o,nav){const r=fakeRenderer(o),A=api(r,nav||NAV.desk),S=scene();let opt;
- opt=A.nmOptimizeScene(S.g);r.gl.log.length=0;/* the probe's own test layer is not the map's */const mem=await A.nmBudget(S.g,0);await A.nmUpload(mem.textures,()=>true);
+async function load(o,nav,doc,cap,img){const r=fakeRenderer(o),A=api(r,nav||NAV.desk,doc,cap),S=scene(img);let opt;
+ opt=A.nmOptimizeScene(S.g);r.gl.log.length=0;/* the probe's own test layer is not the map's */const mem=await A.nmBudget(S.g,cap||0);await A.nmUpload(mem.textures,()=>true);
  let tris=0,arrayed=0,plain=0,untex=0;const arrays=new Set();
  S.g.traverse(m=>{if(!m.isMesh||m.visible===false)return;const g=m.geometry,mat=m.material;const n=(m.userData.nmChunk&&m.userData.nmChunk.tris!=null)?0:0;if(mat.nmArrTex){arrayed++;arrays.add(mat.nmArrTex);}else if(mat.map)plain++;else untex++;});
  for(const c of (S.g.userData.nmChunks||[]))tris+=(c.geometry.index?c.geometry.index.count:0)/3;
@@ -67,5 +68,7 @@ function twoD(L,label){loaded(L,label);assert.equal(L.arrays.length,0,label+': t
  {const L=await load({link:false},NAV.desk);twoD(L,'array shader link fails');res.link='2D';}
  {const L=await load({units:16,vunits:16},NAV.desk);loaded(L,'16 units');assert(L.arrays.length>=2,'iOS-like 16 sampler units are enough for the arrays');res.units16={arrays:L.arrays.length};}
  {const L=await load({vunits:0},NAV.desk);twoD(L,'no vertex texture units');res.vunits0='2D';}
+ // 9. per-texture canvases past WebKit's canvas-memory limit (getContext('2d') -> null), <img> sources (no close: the canvas path), LOW cap 256
+ {const doc={createElement:()=>({width:0,height:0,getContext:()=>null})},el=(w,h,tag)=>({width:w,height:h,tag});for(const k of ['iphone','desk']){const L=await load({},NAV[k],doc,256,el);loaded(L,'canvas limit '+k);if(k==='iphone')assert(L.uploads2D>=20,'canvas limit: 2D textures not uploaded');}res.canvasNull='loads';}
  console.log(JSON.stringify(res));console.log('test_map_ios_webkit OK');
 })().catch(e=>{console.error(e.stack||e);process.exit(1);});

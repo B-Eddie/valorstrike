@@ -14969,7 +14969,7 @@ async function nmArrUpload(t,live){const r=renderer,gl=r.getContext(),L=t.userDa
  const an=r.extensions&&r.extensions.has('EXT_texture_filter_anisotropic')?r.extensions.get('EXT_texture_filter_anisotropic'):null;if(an&&t.anisotropy>1)gl.texParameterf(gl.TEXTURE_2D_ARRAY,an.TEXTURE_MAX_ANISOTROPY_EXT,Math.min(t.anisotropy,r.capabilities.getMaxAnisotropy()));
  r.resetState();P.__webglTexture=tex;P.__webglInit=true;P.__version=0;t.userData.nmGL=tex;t.userData.nmLayers=null;}
 // Layer images at their array size (nmBudget, async): the cap resize of nmShrink, or a resample into a square bucket.
-async function nmArrFit(image,W,H){if(image.width===W&&image.height===H)return image;if(typeof image.close==='function'&&typeof createImageBitmap==='function'){const out=await createImageBitmap(image,{resizeWidth:W,resizeHeight:H,resizeQuality:'high',premultiplyAlpha:'none',colorSpaceConversion:'none'});return out;}const c=document.createElement('canvas');c.width=W;c.height=H;c.getContext('2d').drawImage(image,0,0,W,H);return c;}
+async function nmArrFit(image,W,H){if(image.width===W&&image.height===H)return image;if(typeof image.close==='function'&&typeof createImageBitmap==='function'){const out=await createImageBitmap(image,{resizeWidth:W,resizeHeight:H,resizeQuality:'high',premultiplyAlpha:'none',colorSpaceConversion:'none'});return out;}const c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');if(!x){c.width=c.height=0;return image;}/* no 2D context (WebKit canvas-memory limit): the layer is left empty rather than the load thrown */x.drawImage(image,0,0,W,H);return c;}
 // Builds the chunk meshes of nmChunkPlan from the scene's meshes (positions/normals/uvs copied per chunk, vertices
 // re-indexed), replaces the source meshes, frees their geometry and the duplicate materials. Runs once per prepared
 // scene, before nmBudget packs the geometry and drops the CPU copies.
@@ -15098,7 +15098,7 @@ function nmPackGeometry(g){const before=nmBytes(g);if(!g.boundingSphere)g.comput
  for(const k in g.attributes)g.attributes[k].onUpload(nmDropArray);if(g.index)g.index.onUpload(nmDropArray);g.userData.nmReleased=true;return [before,nmBytes(g)];}
 async function nmShrink(image,cap){const w=image.width,h=image.height,s=cap/Math.max(w,h),W=Math.max(1,Math.round(w*s)),H=Math.max(1,Math.round(h*s));
  if(typeof image.close==='function'&&typeof createImageBitmap==='function'){const out=await createImageBitmap(image,{resizeWidth:W,resizeHeight:H,resizeQuality:'high',premultiplyAlpha:'none',colorSpaceConversion:'none'});image.close();return out;}
- const c=document.createElement('canvas');c.width=W;c.height=H;c.getContext('2d').drawImage(image,0,0,W,H);return c;}
+ const c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');if(!x){c.width=c.height=0;return image;}/* ios lane: WebKit returns no 2D context past its canvas-memory limit - keep the full-size image (three uploads it) */x.drawImage(image,0,0,W,H);return c;}
 function nmTexUploaded(t){const s=t.source,left=(s.nmRefs||1)-1;s.nmRefs=left;t.onUpdate=null;if(left>0)return;const d=s.data;if(d&&typeof d.close==='function')d.close();else if(d&&typeof d.getContext==='function'&&d.width>0)d.width=d.height=0;/* a resize canvas (WebKit's <img> path: no ImageBitmap) keeps its backing store until GC and WebKit caps canvas memory per page: emptied once the GPU has it */s.data=null;}
 async function nmBudget(root,cap){const mem={cap,geometry:[0,0],texture:[0,0],textures:[],meshes:0};const seen=new Set(),sources=new Map(),small=new Map(),arrs=[];
  root.traverse(o=>{if(!o.isMesh)return;mem.meshes++;if(!seen.has(o.geometry)){seen.add(o.geometry);const [a,b]=nmPackGeometry(o.geometry);mem.geometry[0]+=a;mem.geometry[1]+=b;}for(const m of [].concat(o.material||[]))for(const k in m){const t=m[k];if(t&&t.isTexture&&t.userData&&(t.userData.nmLayers||t.userData.nmArrPal)){if(!seen.has(t)){seen.add(t);arrs.push(t);}continue;}if(t&&t.isTexture){const s=t.source,sm=!!(m.userData&&(m.userData.decal||(m.userData.nmTris>0&&m.userData.nmTris<300)));small.set(s,(small.has(s)?small.get(s):true)&&sm);if(seen.has(t))continue;seen.add(t);mem.textures.push(t);if(!sources.has(s))sources.set(s,[]);sources.get(s).push(t);}}});
@@ -24012,10 +24012,10 @@ xReady = true; // every mode is initialised; lobby launches may now start them
   var built = function (k) { try { return !FMAP[k] || FMAP[k].built; } catch (e) { return true; } };
   var loadId = 0;
   var run = function (fn, map, mode, sync, title) {
-    var id = ++loadId;show(map, mode, title);try { if (window.xCrash) xCrash.begin((mode || title || "match") + " " + map); } catch (e) {} // crash report: a match load starts
+    var id = ++loadId;show(map, mode, title);
     var wait = agents(id, mode); if (wait) wait.catch(function () {});
     var warm = function (v) { // compile shaders + upload textures behind the overlay, not on the first playable frame
-      if (id !== loadId || typeof window.xWarmShaders !== "function") return v;try { if (window.xCrash) xCrash.stage("warm"); } catch (e) {}
+      if (id !== loadId || typeof window.xWarmShaders !== "function") return v;
       xLdSet("xLdAg", "textContent", "PREPARING\u2026");
       return new Promise(function (r) { var done = false, fin = function () { if (done) return; done = true;
         if (id === loadId) { try { window.xWarmShaders(); } catch (e) {} } // re-checked: a superseded/abandoned load warms nothing and never reaches ready()
@@ -24026,7 +24026,7 @@ xReady = true; // every mode is initialised; lobby launches may now start them
     // gundraw: every gun the mode can hold is loaded behind the overlay (xvFPPreload), so the first buy / swap of a gun no
     // longer parses its animation files and uploads its model mid-round; capped (a slow network never holds the overlay)
     var guns = function (v) {
-      if (id !== loadId || typeof window.xvFPPreload !== "function") return v;try { if (window.xCrash) xCrash.stage("weapons"); } catch (e) {}
+      if (id !== loadId || typeof window.xvFPPreload !== "function") return v;
       return new Promise(function (r) { var done = false, fin = function () { if (done) return; done = true; r(v); };
         setTimeout(fin, 8000);
         try { window.xvFPPreload(function (p) { if (id === loadId) xLdSet("xLdAg", "textContent", p.done < p.total ? "LOADING WEAPONS " + p.done + "/" + p.total : ""); }).then(fin, fin); } catch (e) { fin(); } });
@@ -24034,12 +24034,12 @@ xReady = true; // every mode is initialised; lobby launches may now start them
     // late programs: the held rigs (agent arms + gun: held weapon, knife, Classic) are built behind the overlay too, so the
     // warm draw below links their viewmodel-pass programs instead of the first frames of the match; capped like guns
     var rigs = function (v) {
-      if (id !== loadId || typeof window.xvFPRigs !== "function") return v;try { if (window.xCrash) xCrash.stage("rigs"); } catch (e) {}
+      if (id !== loadId || typeof window.xvFPRigs !== "function") return v;
       return new Promise(function (r) { var done = false, fin = function () { if (done) return; done = true; r(v); };
         setTimeout(fin, 6000);
         try { window.xvFPRigs().then(fin, fin); } catch (e) { fin(); } });
     };
-    var go = function () { return (wait ? wait.then(fn) : Promise.resolve().then(fn)).then(guns).then(rigs).then(warm).then(function(v){if(id===loadId){if(!title)fill();ready();try{if(window.xCrash)xCrash.stage("playable");}catch(e){}}return v;},function(err){if(id===loadId){failed();try{if(window.xCrash&&!(err&&err.name==='AbortError'))xCrash.log('match-load-failed',err,true);}catch(e){}}if(err&&err.name==='AbortError')return;throw err;}); };
+    var go = function () { return (wait ? wait.then(fn) : Promise.resolve().then(fn)).then(guns).then(rigs).then(warm).then(function(v){if(id===loadId){if(!title)fill();ready();}return v;},function(err){if(id===loadId)failed();if(err&&err.name==='AbortError')return;throw err;}); };
     return sync || built(map) ? go() : new Promise(function(resolve,reject){requestAnimationFrame(function(){requestAnimationFrame(function(){go().then(resolve,reject);});});});
   };
   window.xCancelMatchLoad = function(){++loadId;failed();};
