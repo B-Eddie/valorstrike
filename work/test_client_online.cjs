@@ -104,7 +104,7 @@ Math.random=mulberry(SEED*104729+1);require('vm').runInContext(`Math.random=(${m
  linkDelay=80;await step(5000);assert(recovered(),'160 ms round-trip delay keeps the match connected');preserved();linkDelay=0;await step(500);
  {const stale=sockets.at(-1),received=stale.snapshots||0,before=room.metrics.coalesced;blackholes.add(stale);await step(33000);blackholes.delete(stale);
   await until(recovered,8000,'half-open socket recovery');preserved();assert.notEqual(sockets.at(-1),stale,'watchdog replaces a blackholed transport');
-  assert((stale.snapshots||0)-received<=room.constructor.FLOW.window+2,'blackholed client cannot queue unbounded snapshots');assert(room.metrics.coalesced>before,'server coalesced stale state during the outage');}
+  assert((stale.snapshots||0)-received<=(room.flowWindow||room.constructor.FLOW.window)+2,/* the ack window keeps its time (400 ms) at the room's rate: 8 at 20 Hz, 16 at 40 Hz */'blackholed client cannot queue unbounded snapshots');assert(room.metrics.coalesced>before,'server coalesced stale state during the outage');}
  // Cancelling while a retry is pending must not reopen a socket or restart the match later.
  {const ws=pageSocket();ws.close(1001,'temporary link loss');room.drop(ws,true);await step(50);assert(xe('NET.reconnecting'));const count=sockets.length;xe('mpReset();try{toLobby()}catch(e){}');await step(5000);assert.equal(sockets.length,count,'reset cancels pending reconnect');assert.equal(xe('NET.socket'),null);}
  // Deliberate departure, protocol refusal and an expired resume capability remain terminal.
