@@ -49,13 +49,17 @@ const NAMES=['Bot Sage','Bot Omen','Bot Raze','Bot Sova','Bot Breach','Bot Phoen
  assert.equal(B.hitPart(0,1.82),'head');assert.equal(B.hitPart(0,1.2),'body');assert.equal(B.hitPart(0,.5),'legs');assert.equal(B.hitPart(.5,1.2),null);assert.equal(B.hitPart(0,1.82-.45,.45),'head','crouch lowers the head');
  out.push('aim spot head '+(spots.head/tot*100).toFixed(0)+' % / neck '+(spots.neck/tot*100).toFixed(0)+' % / chest '+(spots.chest/tot*100).toFixed(0)+' %, recoil pull '+Math.min(...pulls).toFixed(2)+'-'+Math.max(...pulls).toFixed(2));}
 // 4. Real server fights on a flat grid (no walls): bot vs a target, 2 s each
+// at the room's step (worker.js GameRoom.TICK: 40 Hz; the bot brain decides every 50 ms of it, Simulation.think). These ran at
+// 1/60 s with the brain every step, which no room did; with the brain at its 20 Hz an ADAD target flipping between decisions
+// at 1/60 s is hit .52-.54 of a standing one's (bounds .55-.9), at 1/40 s .57 and at 20 Hz (.05) .57.
+const DT=1/40;
 const nodes=[],adj=[];for(let i=0;i<15;i++)for(let j=0;j<15;j++){nodes.push([i*2-14,0,-j*2]);const k=i*15+j,a=[];if(i>0)a.push(k-15);if(i<14)a.push(k+15);if(j>0)a.push(k-1);if(j<14)a.push(k+1);adj.push(a);}
 const all=nodes.map((_,i)=>i),near=(x,z)=>{let b=0,d=Infinity;for(const i of all){const n=nodes[i],v=(n[0]-x)**2+(n[2]-z)**2;if(v<d){d=v;b=i;}}return b;};
 const G={map:{attacker:[-14,0,0],defender:[14,0,-28],sites:{A:[-8,0,-14],B:[8,0,-14]}},nav:{nodes,adj},playable:all,allowed:new Set(all),near,ground:()=>0,blocked:()=>false,ray:()=>Infinity};
 function fight(k,dist,off,strafe){const s=new Simulation(G,'tdm','ascent',B.rng(1000+k)),t=s.add('Target','Jett',true),b=s.add(NAMES[k%NAMES.length],'Sage',false);s.phase='game';s.remaining=1e9;s.matchLen=1e9+300;s.stage=3;/* TDM Stage 4 (rifles) for the whole fight: no stage re-arm of the Vandal */s.maxKills=1e9;
  Object.assign(t,{team:1,x:0,y:0,z:-dist,hp:1e9,armor:0,look:0,loading:false,protectedUntil:0,invulnerableUntil:0});Object.assign(b,{team:0,x:0,y:0,z:0,look:off,weapon:'Vandal',ammo:1e9,loading:false,protectedUntil:0});
  b.persona=null;persona(s,b).r=B.rng(k*7+3);b.pitch=B.idlePitch(persona(s,b).brain);const R={shots:0,head:0,body:0,legs:0,first:null,dmg:0,ttk:-1};let side=1,flip=0;
- for(let i=0;i<120;i++){if(strafe){flip-=1/60;if(flip<=0){side=-side;flip=.45+((i*37)%10)/40;}}t.input=strafe?{side}:{};t.inputAt=s.time;t.hp=1e9;b.ammo=1e9;s.step(1/60);
+ for(let i=0;i<2/DT;i++){if(strafe){flip-=DT;if(flip<=0){side=-side;flip=.45+((i*37)%10)/40;}}t.input=strafe?{side}:{};t.inputAt=s.time;t.hp=1e9;b.ammo=1e9;s.step(DT);
   for(const e of s.events){if(e[0]==='s'&&e[1]===b.id){R.shots++;if(R.first===null)R.first='miss';}if(e[0]==='h'&&e[1]===b.id){const p=e[3]?'head':e[9]===2?'legs':'body';R[p]++;if(R.ttk<0){R.hk=(R.hk||0)+(p==='head'?1:0);R.nk=(R.nk||0)+1;}if(R.first==='miss'&&R.shots===1)R.first=p;R.dmg+=e[5];if(R.ttk<0&&R.dmg>=150)R.ttk=s.time;}}s.events.length=0;}
  return R;}
 const stats={};

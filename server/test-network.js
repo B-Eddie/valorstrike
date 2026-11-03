@@ -1,4 +1,5 @@
 // Virtual-clock transport regressions: bounded backpressure, burst recovery, fixed steps and same-seat resume.
+// These pin the room at TICK_HZ=20 (the old fixed rate, still the env override); the 60 Hz default is checked at the end.
 import fs from 'node:fs';
 import vm from 'node:vm';
 import assert from 'node:assert/strict';
@@ -12,7 +13,7 @@ vm.createContext(context);
 vm.runInContext(source.slice(source.indexOf('export class GameRoom')).replace('export class','class')+';globalThis.GameRoom=GameRoom;',context);
 const {GameRoom}=context;
 const W={map:{attacker:[0,0,0],defender:[0,0,-10],sites:{A:[0,0,0]}},nav:{nodes:[[0,0,0],[0,0,-10]],adj:[[1],[0]]},playable:[0,1],near:(x,z)=>z<-5?1:0,ground:()=>0,blocked:()=>false,ray:()=>Infinity};
-function fresh(){const room=new GameRoom({waitUntil(){}},{DIRECTORY:{idFromName:()=>'',get:()=>({fetch:async()=>new Response('{}',{status:401})})}});room.advertise=()=>{};room.saveResults=async()=>{};room.sim=new Simulation(W);room.sim.start(false);room.last=now;return room;}
+function fresh(env={TICK_HZ:'20'}){const room=new GameRoom({waitUntil(){}},{...env,DIRECTORY:{idFromName:()=>'',get:()=>({fetch:async()=>new Response('{}',{status:401})})}});room.advertise=()=>{};room.saveResults=async()=>{};room.sim=new Simulation(W);room.sim.start(false);room.last=now;return room;}
 function seat(room,name='Agent',extra={}){const ws={frames:[],closed:null,send(data){this.frames.push(JSON.parse(data));},close(code,reason){this.closed={code,reason};}},u=room.sim.add(name);u.loading=false;room.sessions.set(ws,{id:name,u,window:now,count:0,last:now,ready:true,...extra});return ws;}
 function pending(room){const ws={frames:[],closed:null,send(data){this.frames.push(JSON.parse(data));},close(code,reason){this.closed={code,reason};}};room.sessions.set(ws,{id:'new',u:null,last:now,ready:false});return ws;}
 const msg=(room,ws,m)=>room.message(ws,JSON.stringify(m));
@@ -37,7 +38,17 @@ const advance=(room,ms)=>{const end=now+ms;while(now<end){now=Math.min(end,now+5
 {const room=fresh(),ws=seat(room,'Waiting',{resume:'lobby-resume',ready:false,loadStarted:now});room.sim.phase='room';for(let i=0;i<110;i++){advance(room,2000);await msg(room,ws,{t:'hb'});}assert.equal(ws.closed,null,'healthy lobby stays connected beyond the 180 s loading deadline');room.drop(ws,true);const back=pending(room);await msg(room,back,{t:'hi',resume:'lobby-resume',batch:1,ack:1});assert.equal(back.frames.find(m=>m.t==='welcome').resumed,1);assert.equal(back.frames.some(m=>m.t==='start'),false,'lobby resume does not start a match');assert.equal(room.sim.phase,'room');}
 // Round state batches only when negotiated, and wire rounding leaves authoritative state untouched.
 {const room=fresh(),ws=seat(room,'Wire',{batch:true});room.sim.mode='five';const value={t:'rs',tm:1.249999999999973,tl:99.85000000000002,status:{blind:.299999999999998,slow:0},sp:['plant',1,1.12345678,2,42.29999999999997,0,0,'A',1]};room.sim.roundState=()=>value;room.state(ws,room.sessions.get(ws),{t:'s',u:[],ev:[]},now);assert.equal(ws.frames.length,1);assert.equal(ws.frames[0].rs.status.blind,.3);assert.equal(value.status.blind,.299999999999998);assert(JSON.stringify(ws.frames[0].rs).length<JSON.stringify(value).length*.8);const old=seat(room,'Legacy');room.state(old,room.sessions.get(old),{t:'s',u:[],ev:[]},now);assert.deepEqual(old.frames.map(m=>m.t),['s','rs']);}
-console.log('Network: foreground pause + bidirectional heartbeat, burst tolerance + sustained rate limit, bounded snapshot queue + retained events, hidden bandwidth, fixed 20 Hz bounded catch-up, same-seat resume + stale-socket takeover + expiry, negotiated Spike batching + wire precision');
+// 40 Hz is the default rate (net lane); 60 Hz (TICK_HZ=60, the fastest allowed): exact 1/60 s steps, a frame per step and none on a timer tick with no step, the ack
+// window and keyframe / advert periods keep their time (24 frames = 400 ms in flight), TICK_HZ out of range falls back.
+{assert.equal(fresh({}).hz,40);assert.equal(fresh({TICK_HZ:'30'}).hz,30);assert.equal(fresh({TICK_HZ:'500'}).hz,40);assert.equal(fresh({TICK_HZ:'x'}).hz,40);assert.equal(fresh({}).flowWindow,16);
+ const room=fresh({TICK_HZ:'60'}),ws=seat(room),steps=[];assert.equal(room.tickMs,1000/60);assert.equal(room.flowWindow,24);assert.equal(room.keyframe,300);assert.equal(room.advertEvery,300);
+ const step0=room.sim.step.bind(room.sim);room.sim.step=dt=>{steps.push(dt);step0(dt);};
+ for(let i=0;i<60;i++)for(const ms of [16,17,17]){now+=ms;room.tick();}assert.equal(steps.length,180);assert(steps.every(dt=>dt===1/60));
+ const frames=ws.frames.filter(m=>m.t==='s');assert.equal(frames.length,180,'one frame per 1/60 s step');assert(frames.every(f=>f.tickIntervalMs===16.667));
+ const n=frames.length;now+=5;room.tick();assert.equal(steps.length,180);assert.equal(ws.frames.filter(m=>m.t==='s').length,n,'a timer tick with no sim step sends no duplicate frame');
+ const flow=fresh({TICK_HZ:'60'}),fw=seat(flow,'Flow60',{ackMode:true,sent:0,acked:0});for(let i=0;i<120;i++){now+=1000/60;flow.tick();}assert.equal(fw.frames.filter(m=>m.t==='s').length,24,'60 Hz ack window: 24 frames (400 ms) in flight');
+ const old=fresh();assert.equal(old.hz,20);const ow=seat(old);for(let i=0;i<20;i++){now+=50;old.tick();}assert(ow.frames.filter(m=>m.t==='s').every(f=>f.tickIntervalMs===50),'TICK_HZ=20 rooms still say 50 ms');}
+console.log('Network: foreground pause + bidirectional heartbeat, burst tolerance + sustained rate limit, bounded snapshot queue + retained events, hidden bandwidth, fixed-step bounded catch-up at 20 Hz and 60 Hz (40 Hz default) (no duplicate frames, 400 ms ack window), same-seat resume + stale-socket takeover + expiry, negotiated Spike batching + wire precision');
 // Real request admission/auth/socket events: a full 10-human room must admit only the bearer of an existing resume token.
 {
  const {localCluster}=await import('./tools/local-cluster.mjs');

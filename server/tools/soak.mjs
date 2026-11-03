@@ -82,7 +82,10 @@ export async function soakRun({map='ascent',mode='dm',seconds=120,humans=3,seed=
  // own caps (BotBrain personality turn, turnAcc). Skips deaths, respawns, round changes and teleports (> 2.5 m in a tick).
  const YAW=new Map(),wrapA=a=>Math.atan2(Math.sin(a),Math.cos(a));
  function yawTrack(sim){const Y=stats.yaw||(stats.yaw={maxV:0,maxA:0,maxVk:0,maxAk:0,n:0,overV:0,overA:0,worst:null});
-  for(const u of sim.units){if(u.human)continue;const t=sim.time,q=YAW.get(u.id),fresh={t,look:u.look,x:u.x,z:u.z,v:null,round:sim.round};
+  // 60 Hz rooms (net lane): a bot's hand turns per brain decision (every 50 ms, Simulation.think), so it is sampled on its own
+  // decision steps - the 50 ms spacing its turn rate / acceleration caps are defined over, as every step at 20 Hz.
+  const dec=(sim.thinkDt??.05)>(sim.tickDt||.05)+1e-9;
+  for(const u of sim.units){if(u.human)continue;const t=sim.time;if(dec&&u.thinkAt!=null&&Math.abs(u.thinkAt-(sim.thinkDt??.05)-t)>1e-6)continue;const q=YAW.get(u.id),fresh={t,look:u.look,x:u.x,z:u.z,v:null,round:sim.round};
    if(!u.alive||u.loading||!Number.isFinite(u.look)||!q||q.round!==sim.round||!(t>q.t)||t-q.t>.25||Math.hypot(u.x-q.x,u.z-q.z)>2.5){YAW.set(u.id,fresh);continue;}
    const dt=t-q.t,v=wrapA(u.look-q.look)/dt,a=q.v==null?0:Math.abs(v-q.v)/dt,B=persona(sim,u).brain,vk=Math.abs(v)/(B.turn||10),ak=a/BotBrain.turnAcc(B);Y.n++;
    Y.maxV=Math.max(Y.maxV,Math.abs(v));Y.maxA=Math.max(Y.maxA,a);Y.maxVk=Math.max(Y.maxVk,vk);if(ak>Y.maxAk){Y.maxAk=ak;Y.worst={name:u.name,v:+v.toFixed(2),a:+a.toFixed(0),cap:+BotBrain.turnAcc(B).toFixed(0),saw:!!u.sawTarget,t:+t.toFixed(2)};}
