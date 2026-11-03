@@ -16,7 +16,9 @@ assert(/\.then\(warm\)\.then\(function\(v\)\{if\(id===loadId\)\{if\(!title\)fill
 assert(/xLdSet\("xLdAg", "textContent", "PREPARING/.test(s), 'status text shown while warming');
 
 // unchanged behavior: xGate still fires xPrecompile when xPC is false (probe/direct-start path)
-assert(/if \(!running\) xPC = false; else if \(!xPC\) xPrecompile\(\);/.test(s), 'xGate fallback intact');
+// iOS warm crash: not while the gate's overlay is up (its warm step precompiles after the staged upload)
+assert(/if \(!running\) xPC = false; else if \(!xPC && !window\.xLdOn\) xPrecompile\(\);/.test(s), 'xGate fallback intact (outside the loading gate)');
+assert(/window\.xWarmStaged\(function \(\) \{ return id === loadId; \}\)[\s\S]{0,300}window\.xWarmShaders\(\)/.test(s), 'the gate stages the uploads (xWarmStaged) before the warm step');
 // hardening: cancel during warm runs nothing (id re-check), hidden-tab rAF starvation cannot stick the overlay (timeout fallback)
 assert(/var done = false, fin = function \(\) \{ if \(done\) return; done = true;/.test(s), 'single-fire fin guard');
 assert(/if \(id === loadId\) \{ try \{ window\.xWarmShaders\(\); \} catch \(e\) \{\} \}/.test(s), 'load id re-checked at warm time');

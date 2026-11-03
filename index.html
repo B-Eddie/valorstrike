@@ -11954,7 +11954,9 @@ function xStill() {
 }
 function xGate() {
   const now = performance.now();
-  if (!running) xPC = false; else if (!xPC) xPrecompile();
+  // iOS warm crash: not while the loading gate is up - its warm step (xWarmStaged, then xWarmShaders) precompiles behind the overlay
+  // once the textures are up a few MB per frame; this one uploaded every scene texture in the first running frame
+  if (!running) xPC = false; else if (!xPC && !window.xLdOn) xPrecompile();
   const cap = XS.cap === "auto" ? (xStill() ? 60 : 0) : +XS.cap; // 0 = no cap (browser still limits to the screen rate)
   const dt = now - xLastT; xLastT = now; xRefresh(dt);
   // drawcalls: a cap at or above the display's refresh never gates (a 60 cap on a 75 Hz screen skipped 1 vsync in 5 = an uneven
