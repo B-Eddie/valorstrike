@@ -5,7 +5,7 @@
 // programs, and the world draws split by source by replaying three's culling (visible chain + frustumCulled sphere test
 // + one draw per material group): native map chunks (texture-array / own material), agents (bots / allies), other;
 // FP pass meshes; rAF frame time over 4 s. Screenshot per view.
-//   VS_ROOT=<worktree> MAPS=ascent,bind GQ=medium TAG=after node work/browser_drawcalls.cjs out.json
+//   VS_ROOT=<worktree> MAPS=ascent,bind GQ=medium TAG=after [UA=...] node work/browser_drawcalls.cjs out.json
 const PW='/workspace/work/pw/node_modules/playwright';process.env.PLAYWRIGHT_BROWSERS_PATH=process.env.PLAYWRIGHT_BROWSERS_PATH||'/workspace/work/pw/browsers';
 process.env.LD_LIBRARY_PATH=(process.env.LD_LIBRARY_PATH||'')+':/workspace/work/pw/libs';
 const {chromium}=require(PW),fs=require('fs'),path=require('path'),http=require('http');
@@ -27,7 +27,7 @@ const BREAK=`(()=>{const out={map:{arr:0,own:0,tris:0},agents:0,agentTris:0,othe
 (async()=>{
  const s1=await serve(PORT,ROOT,false),s2=await serve(8787,path.join(ROOT,'server','public'),true);R.worlds=!!s2;
  const browser=await chromium.launch({headless:true,args:['--no-sandbox','--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader','--disable-dev-shm-usage','--ignore-gpu-blocklist','--in-process-gpu','--renderer-process-limit=1']});
- for(const map of MAPS){const ctx=await browser.newContext({viewport:{width:W,height:H},deviceScaleFactor:1});
+ for(const map of MAPS){const ctx=await browser.newContext(Object.assign({viewport:{width:W,height:H},deviceScaleFactor:1},process.env.UA?{userAgent:process.env.UA}:{}));/* UA=<user agent>: e.g. an iPhone's (the iOS WebKit map path) */
   await ctx.addInitScript(gq=>{try{localStorage.setItem('vs.gq',gq);localStorage.setItem('vs.gqb',gq);}catch(e){}window.__ft=[];let last=0;const f=t=>{if(last)window.__ft.push(t-last);last=t;requestAnimationFrame(f);};requestAnimationFrame(f);},GQ);
   await ctx.route(/^https?:\/\/(unpkg\.com|cdn\.jsdelivr\.net)\//,r=>{const f=r.request().url().split('/').pop().split('?')[0];if(LOCAL[f])return r.fulfill({path:LOCAL[f],contentType:'application/javascript',headers:{'access-control-allow-origin':'*'}});return r.continue();});
   await ctx.route(new RegExp('127\\.0\\.0\\.1:'+PORT+'/(index\\.html)?(\\?.*)?$'),r=>r.fulfill({body:fs.readFileSync(ROOT+'/index.html','utf8').replace('window.xValorantFeel={','window.__xe=s=>eval(s);window.xValorantFeel={'),contentType:'text/html'}));
