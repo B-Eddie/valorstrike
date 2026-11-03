@@ -5,7 +5,8 @@
 // programs, and the world draws split by source by replaying three's culling (visible chain + frustumCulled sphere test
 // + one draw per material group): native map chunks (texture-array / own material), agents (bots / allies), other;
 // FP pass meshes; rAF frame time over 4 s. Screenshot per view.
-//   VS_ROOT=<worktree> MAPS=ascent,bind GQ=medium TAG=after [UA=...] node work/browser_drawcalls.cjs out.json
+//   VS_ROOT=<worktree> MAPS=ascent,bind GQ=medium TAG=after [UA=...] [FLOW=gate] node work/browser_drawcalls.cjs out.json
+// FLOW=gate starts the match through the loading gate (window.xMatchLoad, as agent select does) instead of xGo(startFive)
 const PW='/workspace/work/pw/node_modules/playwright';process.env.PLAYWRIGHT_BROWSERS_PATH=process.env.PLAYWRIGHT_BROWSERS_PATH||'/workspace/work/pw/browsers';
 process.env.LD_LIBRARY_PATH=(process.env.LD_LIBRARY_PATH||'')+':/workspace/work/pw/libs';
 const {chromium}=require(PW),fs=require('fs'),path=require('path'),http=require('http');
@@ -37,7 +38,7 @@ const BREAK=`(()=>{const out={map:{arr:0,own:0,tris:0},agents:0,agentTris:0,othe
   try{
    await page.goto('http://127.0.0.1:'+PORT+'/',{waitUntil:'domcontentloaded'});await page.waitForFunction(()=>window.__xe&&window.xValorantAssets,null,{timeout:300000,polling:1000});
    await page.getByRole('button',{name:'Got it',exact:true}).click({timeout:5000}).catch(()=>{});
-   await X(`J.pick='Jett';FV.pick=${JSON.stringify(map)};FV.srOn=0;FV.repOn=0;setTimeout(()=>xGo(startFive),0);1`);const tl=Date.now();
+   await X(`J.pick='Jett';FV.pick=${JSON.stringify(map)};FV.srOn=0;FV.repOn=0;setTimeout(()=>xGo(${process.env.FLOW==='gate'?'function(){return window.xMatchLoad(function(){return startFive();},FV.pick,undefined,true);}':'startFive'}),0);1`);const tl=Date.now();
    await page.waitForFunction(()=>window.__xe('!!(running&&!window.xLdOn&&NM.current&&NM.current.key&&bots.length>0&&!(NM.progress&&NM.progress.style.display==="flex"))'),null,{timeout:900000,polling:2000});
    res.loadS=Math.round((Date.now()-tl)/1000);await page.waitForTimeout(6000);
    res.mem=JSON.parse(await X(`JSON.stringify((()=>{const m=NM.current.memory||{};return {opt:m.optimizer,arrays:m.arrays||0,tex:m.texture,uploadMs:m.uploadMs,prepareMs:m.prepareMs,progs:(renderer.info.programs||[]).length,gl2:renderer.capabilities.isWebGL2};})())`));log(map,'loaded',res.loadS+'s',JSON.stringify(res.mem));
