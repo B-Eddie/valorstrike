@@ -6,7 +6,7 @@
 // nmBudget, nmUpload complete, every triangle is still drawn, every textured mesh keeps a texture (array layer or its own
 // 2D texture) - and the array path is only used where it works:
 //  1. desktop WebGL2: arrays built (unchanged path)
-//  2. iOS WebKit user agent (iPhone, iPadOS desktop UA): 2D materials, no texStorage3D
+//  2. iOS WebKit user agent (iPhone, iPadOS desktop UA): the map loads; arrays when the probe passes, 2D when it fails
 //  3. MAX_ARRAY_TEXTURE_LAYERS 4 (iOS-like low limit): every array within the limit
 //  4. MAX_TEXTURE_SIZE 256 under 512 px textures: no array over the limit (2D path)
 //  5. texSubImage3D from an image / canvas throws: 2D path (a test layer is probed before the map is re-bound)
@@ -59,7 +59,7 @@ function twoD(L,label){loaded(L,label);assert.equal(L.arrays.length,0,label+': t
 (async()=>{const res={};
  {const L=await load({},NAV.desk);loaded(L,'desktop');assert(L.arrays.length>=2,'desktop WebGL2 must keep the texture arrays');assert.equal(L.plain,0,'desktop: a mesh left on its 2D material');res.desktop={arrays:L.arrays.length};}
  {const L=await load({},NAV.macSafari);loaded(L,'mac safari');assert(L.arrays.length>=2,'desktop Safari keeps the arrays (probe passes)');}
- for(const k of ['iphone','ipad']){const L=await load({},NAV[k]);twoD(L,k);res[k]='2D';}
+ for(const k of ['iphone','ipad']){const L=await load({},NAV[k]);loaded(L,k);assert(L.arrays.length>=2,k+': the probe passes, the arrays are used');const F=await load({subThrows:true},NAV[k]);twoD(F,k+' probe fails');res[k]={arrays:L.arrays.length,probeFail:'2D'};}
  {const L=await load({layers:4},NAV.desk);loaded(L,'layers 4');for(const a of L.arrays)assert(a.image.depth<=4,'array over MAX_ARRAY_TEXTURE_LAYERS');for(const s of L.storage)assert(s[3]<=4);res.layers4={arrays:L.arrays.length};}
  {const L=await load({size:256},NAV.desk);for(const s of L.storage)assert(Math.max(s[1],s[2])<=256,'array storage over MAX_TEXTURE_SIZE: '+s);twoD(L,'max texture size 256');res.size256='2D';}
  {const L=await load({subThrows:true},NAV.desk);twoD(L,'texSubImage3D throws');res.subThrows='2D';}
@@ -69,6 +69,6 @@ function twoD(L,label){loaded(L,label);assert.equal(L.arrays.length,0,label+': t
  {const L=await load({units:16,vunits:16},NAV.desk);loaded(L,'16 units');assert(L.arrays.length>=2,'iOS-like 16 sampler units are enough for the arrays');res.units16={arrays:L.arrays.length};}
  {const L=await load({vunits:0},NAV.desk);twoD(L,'no vertex texture units');res.vunits0='2D';}
  // 9. per-texture canvases past WebKit's canvas-memory limit (getContext('2d') -> null), <img> sources (no close: the canvas path), LOW cap 256
- {const doc={createElement:()=>({width:0,height:0,getContext:()=>null})},el=(w,h,tag)=>({width:w,height:h,tag});for(const k of ['iphone','desk']){const L=await load({},NAV[k],doc,256,el);loaded(L,'canvas limit '+k);if(k==='iphone')assert(L.uploads2D>=20,'canvas limit: 2D textures not uploaded');}res.canvasNull='loads';}
+ {const doc={createElement:()=>({width:0,height:0,getContext:()=>null})},el=(w,h,tag)=>({width:w,height:h,tag});for(const k of ['iphone','desk']){const L=await load({},NAV[k],doc,256,el);loaded(L,'canvas limit '+k);if(k==='iphone')assert(L.arrays.length>=1||L.uploads2D>=20,'canvas limit: neither the arrays nor the 2D textures were uploaded');}res.canvasNull='loads';}
  console.log(JSON.stringify(res));console.log('test_map_ios_webkit OK');
 })().catch(e=>{console.error(e.stack||e);process.exit(1);});

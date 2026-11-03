@@ -154,7 +154,7 @@ function nmMatKey(m){return [m.type,m.map?m.map.uuid:'',m.color?m.color.getHexSt
 // fewer triangles too because the chunks are tighter). The fragment colour is the same product as before
 // (diffuse x texel); decals, blended, texture-missing, untextured and shared-geometry meshes keep their own material.
 // Render-only: collision, raycasts and the nav use the collision mesh, never these meshes. WebGL1: unchanged.
-var NM_ARR={on:true,chunks:110,smallPiece:24000,minExact:6,layers:256,pw:256,ios:false};
+var NM_ARR={on:true,chunks:110,smallPiece:24000,minExact:6,layers:256,pw:256,ios:true};
 // gpu lane (user 31 Oct 2026: "so laggy it's unplayable" even on LOW; Ascent LOW 1080 drew 3.39 M triangles at the attacker
 // spawn and 2.90 M facing the map edge): the chunk plan's 110-chunk budget left pieces spanning the whole map (one window-frame
 // chunk 647 k triangles), so frustum culling dropped almost nothing (offline model: 3.29 M of 3.32 M drawn on average).
@@ -169,9 +169,9 @@ var NM_STRIP={on:true,span:20,tris:5000};
 // i.e. an exception inside the cross-origin three.min.js during the full-map pipeline, which the aim trainer skips). The texture-
 // array path (f690d54) is the WebGL2 feature set only full maps use: TEXTURE_2D_ARRAY sRGB storage filled by texSubImage3D from
 // <img> / canvas sources (Safari's GLTFLoader path; Chromium uploads ImageBitmaps), GPU mipmaps of an sRGB array, an RGBA32F
-// palette fetched in the VERTEX shader, sampler2DArray + flat varyings. iOS WebKit (every iOS browser) therefore draws the map
-// with the per-texture 2D materials it had before the arrays (the same textures, colours and Lambert shading: the array path is
-// the same product, diffuse x texel), and on every other browser the array build is gated by a probe run once per GL context:
+// palette fetched in the VERTEX shader, sampler2DArray + flat varyings. The array build is gated by a probe run once per GL
+// context on every browser, iOS WebKit included (NM_ARR.ios=false would force every iOS browser onto the per-texture 2D
+// materials: the same textures, colours and Lambert shading; the iPhone crash was the warm frame's upload, not the arrays):
 // limits (sampler units, vertex texture units, layers, texture size), one test layer uploaded the way the map's layers are (the
 // map's own first image when given: same source type), mipmaps, the palette format and the array shader compiled and linked;
 // a throw or any gl.getError() -> the 2D path. NM_ARR_PROBE.why says which check failed (shown in NM stats).
