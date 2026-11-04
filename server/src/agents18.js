@@ -163,7 +163,7 @@ export function cast18(sim,u,m,o,d,push){
    else fx(sim,u,'bassq',[u.x,u.y,u.z],.8,C.bassq.dist,{at:sim.time+.6,yaw:u.look});
    cast(sim,u,k,o,d,p);return true;}
   case 'Viper':{spend();
-   if(k==='c')fx(sim,u,'fire',p,C.snake.life,C.snake.r,{rate:C.snake.rate,vuln:C.snake.vuln});
+   if(k==='c')fx(sim,u,'fire',p,C.snake.life,C.snake.r,{rate:C.snake.rate,vuln:C.snake.vuln,sub:'snake'});
    else if(k==='q'){A.cloud=p;fx(sim,u,'emitter',p,3600,0,{kind0:'pcloud'});}
    else if(k==='e'){A.screen=[u.x,u.y,u.z,u.look];fx(sim,u,'emitter',[u.x,u.y,u.z],3600,0,{kind0:'tscreen',yaw:u.look});}
    else{A.pit=[u.x,u.y,u.z];fx(sim,u,'pit',[u.x,u.y+.1,u.z],3600,C.pit.r);}
