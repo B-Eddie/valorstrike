@@ -16296,7 +16296,7 @@ function netDevPart(kind,al){const col=al?0x3fb4ff:0xff4655;let m,own=false;
  else{m=new THREE.Mesh(new THREE.BoxGeometry(kind==='spycam'?.25:.2,kind==='spycam'?.25:.2,kind==='spycam'?.25:.2),okMat(kind==='spycam'?0x3fd0c0:0xe8e8e4));own=true;}
  m.userData.netDev=kind;m.userData.ownGeo=own;m.raycast=()=>{};scene.add(m);const D=NET_DEV[kind];try{if(D&&typeof xvDevice==='function')xvDevice(m,D[0],kind==='blastpack'||kind==='owl'?D[1]/Math.max(.01,m.scale.y):D[1]);/* as xvDevicesTick: the pack's height is divided by its placeholder scale, the Trademark's is not */}catch(err){}return m;}
 function netDevFree(m){if(!m)return;if(m.userData.hunter){scene.remove(m);m.traverse(o=>{if(o.isMesh){o.geometry.dispose();o.material.dispose();}});return;}scene.remove(m);try{if(typeof xvDeviceReset==='function')xvDeviceReset(m);}catch(err){}if(m.material&&!m.userData.shared)m.material.dispose();/* fireMat is a shared cache */if(m.userData.ownGeo&&m.geometry)m.geometry.dispose();}
-function netDevDrop(id){const d=netDevs.get(id);if(!d)return;d.parts.forEach(netDevFree);netDevs.delete(id);}
+function netDevDrop(id){const d=netDevs.get(id);if(!d)return;if(d.k==='blastpack'&&d.parts[0]){try{const q=d.parts[0].position;rzFire(new THREE.Vector3(q.x,q.y+.1,q.z),4,'pack');}catch(e){}}d.parts.forEach(netDevFree);netDevs.delete(id);}
 // Our own devices are drawn by the local cast, which never learns that the server destroyed one (shot down, Spycam / Owl
 // Drone bodies, a detonated or expired Blast Pack): it stayed drawn (and the Spycam viewable) until round end. A device
 // row of ours the server stops sending now takes the local one nearest its last server position away (2.5 m; 4 m for a
