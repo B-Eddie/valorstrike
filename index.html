@@ -9396,6 +9396,13 @@ function sgSl(u, cq) {
 // ---- Raze + Skye kits (player) ----
 const RS = { pj: [], bb: [], pk: [], sk: [], hk: null, rg: null, kb: null, ss: 0, sst: 0 }, RV = THREE.Vector3;
 function rsMesh(c, s, p) { const m = new THREE.Mesh(orbGeo, okMat(c)); m.scale.setScalar(s); m.position.copy(p); scene.add(m); return m; }
+function rsBotMesh(p) { // Boom Bot: dark teal faceted ball, orange belt and side panels, glowing yellow face (ref wiki clip Boom_Bot_Showcase)
+  const g = new THREE.Group(), body = new THREE.Mesh(new THREE.DodecahedronGeometry(0.38, 0), new THREE.MeshStandardMaterial({ color: 0x5a9aa2, emissive: 0x123a42, roughness: 0.6, metalness: 0.2, flatShading: true }));
+  const belt = new THREE.Mesh(new THREE.TorusGeometry(0.385, 0.04, 6, 20), new THREE.MeshBasicMaterial({ color: 0xff8a1f })); belt.rotation.x = Math.PI / 2;
+  const face = new THREE.Mesh(new THREE.CircleGeometry(0.13, 6), new THREE.MeshBasicMaterial({ color: 0xffd23a })); face.position.set(0, 0.04, 0.345); face.rotation.x = -0.1;
+  const pan = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.16, 0.06), new THREE.MeshBasicMaterial({ color: 0xe0701a })); pan.position.set(0.34, 0.1, -0.08); pan.rotation.y = 1.2; const pan2 = pan.clone(); pan2.position.x = -0.34; pan2.rotation.y = -1.2;
+  g.add(body, belt, face, pan, pan2); g.position.copy(p); scene.add(g); return g;
+}
 function rsObj(kind, c, s, spd, up) { const o = pEye().clone(), d = jAim(); return { m: rsMesh(c, s, o.clone().addScaledVector(d, 0.6)), v: d.clone().multiplyScalar(spd).add(new RV(0, up, 0)), t: 0, kind }; }
 function rsFly(o, dt, g) { // simple bouncing projectile; true on contact
   o.v.y -= g * dt; const p = o.m.position, nx = p.x + o.v.x * dt, nz = p.z + o.v.z * dt, ny = p.y + o.v.y * dt; let hit = false;
@@ -9516,7 +9523,7 @@ function rsKey(code) {
   if (J.pick === "Raze") {
     if (code === "KeyC") {
       if (J.c < 1 || J.cd.c > 0) return no(); J.c--; J.cd.c = 0.6; let d = 1.2; while (d > 0 && blocked(P.x + fx * d, P.z + fz * d, 0.3, 0)) d -= 0.3;
-      RS.bb.push({ m: rsMesh(0xff8a1f, 1.6, new RV(P.x + fx * d, xFy(P.x + fx * d, P.z + fz * d) + 0.4, P.z + fz * d)), dx: fx, dz: fz, t: XBB.life, hp: XBB.hp }); say("Boom Bot · seeking", 700); blip(520, 0.15, "square", 0.12); try { XCUE.play("whir"); } catch (e) {}
+      RS.bb.push({ m: rsBotMesh(new RV(P.x + fx * d, xFy(P.x + fx * d, P.z + fz * d) + 0.4, P.z + fz * d)), dx: fx, dz: fz, t: XBB.life, hp: XBB.hp }); say("Boom Bot · seeking", 700); blip(520, 0.15, "square", 0.12); try { XCUE.play("whir"); } catch (e) {}
     }
     if (code === "KeyQ") {
       if (RS.pk.length) return rsPack();
@@ -9702,7 +9709,7 @@ function xBotDmg(t, n, by, w) { try { if (t === player) { hurt(player, n, by); r
   if (!A.rzb || !A.rlk || (A.rlk.t += dt) > 6) return;
   const dx = A.rlk.x - from.x, dz = A.rlk.z - from.z, l = Math.hypot(dx, dz) || 1; if (l < 4 || l > 28 || Math.random() > dt * 1.5) return;
   if (!xBUse(b, "c")) { if (!(xBCh(b).c >= 1)) A.rzb = 0; return; } A.rzb = 0; /* a held cast (a mate just threw: xbuOk) tries again */ const fx = dx / l, fz = dz / l, p = new RV(from.x + fx, xFy(from.x + fx, from.z + fz, from.y) + 0.4, from.z + fz); /* Boom Bot (C) bought */ if (blocked(p.x, p.z, 0.3, 0)) p.set(from.x, xFy(from.x, from.z, from.y) + 0.4, from.z);
-  RS.bb.push(xBbShootable({ m: rsMesh(0xff8a1f, 1.6, p), dx: fx, dz: fz, t: XBB.life, hp: XBB.hp, own: b, en: !al })); feed("Raze ▸ Boom Bot"); try { XCUE.play("bbGo", { x: p.x, y: 0.4, z: p.z }); } catch (e) {} }; }
+  RS.bb.push(xBbShootable({ m: rsBotMesh(p), dx: fx, dz: fz, t: XBB.life, hp: XBB.hp, own: b, en: !al })); feed("Raze ▸ Boom Bot"); try { XCUE.play("bbGo", { x: p.x, y: 0.4, z: p.z }); } catch (e) {} }; }
 // bot Breach (team-agnostic): Aftershock once per round, through the wall onto an enemy who just ducked behind cover, or (attacking) onto the planted Spike once a defender is defusing it
 // (lane-botutil: was the defenders' cast onto their own planted Spike, into nobody). xBAsSpot(atk, spike position or null, from, defusing, last-seen record) -> {x, z, wall} or null
 function xBAsSpot(atk, sp, from, du, blk) { if (blk && blk.t > 0.6 && blk.t < 5) return { x: blk.x, z: blk.z, wall: true }; if (atk && sp && du) return { x: sp.x, z: sp.z, wall: false }; return null; }
