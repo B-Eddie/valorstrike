@@ -17,7 +17,7 @@ const A18C = { star: { wellPull: 2, wellVuln: 2, wellR: 3.5, novaDelay: 1.25, no
  prowler: { life: 3, speed: 9, near: 2.5 }, seize: { r: 4.5, tether: 4, decay: 70 }, haunt: { r: 25, reveal: 12 }, nightfall: { dist: 25, w: 14, decay: 70 },
  mosh: { r: 5, life: 3, dps: 20, boom: 70 }, wing: { life: 5, speed: 9, concuss: 3.5 }, dizzy: { life: 2.5, blind: 1.5, r: 15 }, thrash: { r: 6, detain: 6 }, globule: { reclaim: 10 },
  frag: { r: 5, pulses: 4, gap: 1, dmg: 40 }, fdrive: { blind: 2.25, delay: 1.6 }, zero: { r: 15, supp: 8 }, nullcmd: { life: 10, pulse: 3, r: 20 },
- sdrone: { life: 8, r: 12, reveal: 3, supp: 6 }, sd: { r: 4, concuss: 3, dmg: 40 }, salvo: { r: 6, pulses: 3, gap: 0.8, dmg: 55 }, armag: { len: 40, w: 12, dmg: 120 },
+ sdrone: { life: 8, r: 12, reveal: 3, supp: 6 }, sd: { r: 4, concuss: 3, dmg: 40 }, salvo: { r: 6, pulses: 3, gap: 0.8, dmg: 55 }, armag: { len: 32, w: 12, dmg: 60, segs: 16, seg: 2, ticks: 4, tick: 0.25, gap: 0.25, wind: 3.08 },
  mesh: { life: 30, len: 7.5 }, sensor: { life: 30, r: 8, concuss: 3 }, gnet: { r: 6, life: 8 }, annih: { range: 20, detain: 7 },
  xcut: { range: 25 }, choke: { life: 30, r: 6, decay: 60, slow: 2 }, cept: { life: 30, r: 10 }, evo: { life: 12, hps: 10 },
  vine: { life: 30, r: 6, dps: 15 }, shear: { life: 30, r: 2.5, wall: 8 }, rose: { life: 30, blind: 2, r: 20 }, garden: { r: 20, jam: 8 } };
@@ -59,7 +59,7 @@ function a18TacLocal(k, p) { // offline mirror of the server's m.p casts
     else a18Smoke(q, C.star.nebulaLife, C.star.nebulaR, 0x7a4fd0, 0xc9a8f2);
     SFX.ab("updraft"); return; }
   if (k === "e") { J.e--; for (let i = 0; i + 1 < p.length && i < 4; i += 2) a18Fx({ kind: "pulses", p: new THREE.Vector3(p[i], 0, p[i + 1]), t: 0.6, gap: C.salvo.gap, left: C.salvo.pulses, r: C.salvo.r, dmg: C.salvo.dmg, name: "Guided Salvo" }); SFX.ab("cbPop", player); return; }
-  const q = new THREE.Vector3(p[0], 0, p[1]), dd = new THREE.Vector3(p[0] - player.x, 0, p[1] - player.z); J.ult = 0; if (dd.lengthSq() < 1e-6) dd.set(-Math.sin(yaw || 0), 0, -Math.cos(yaw || 0)); a18Fx({ kind: "armag", p: q, d: dd.normalize(), t: 0.8 });
+  const q = new THREE.Vector3(p[0], 0, p[1]), dd = new THREE.Vector3(p[0] - player.x, 0, p[1] - player.z); J.ult = 0; if (dd.lengthSq() < 1e-6) dd.set(-Math.sin(yaw || 0), 0, -Math.cos(yaw || 0)); a18Fx({ kind: "armag", p: q, d: dd.normalize(), t: C.armag.wind });
 }
 function a18StarNear(x, z, r) { let best = null, bd = r; const L = J.a18 && J.a18.starList || []; for (const s of L) { const d = Math.hypot(s.x - x, s.z - z); if (d < bd) { bd = d; best = s; } } return best; }
 function a18StarDrop(s0) { const L = J.a18.starList; const i = L.indexOf(s0); if (i >= 0) L.splice(i, 1); if (s0.fx) s0.fx.gone = true; }
@@ -207,7 +207,7 @@ function a18Key(code) {
       if (k === "c") a18Orb(p, 0.5, () => { for (const b of a18BotsIn(p, C.sdrone.r)) { b.mark = C.sdrone.reveal; b.blind = Math.max(b.blind || 0, 1); } SFX.ab("cbPop", p); });
       else if (k === "q") a18Orb(p, 0.4, () => { for (const b of a18BotsIn(p, C.sd.r)) { jHit(b, C.sd.dmg, "Special Delivery"); b.blind = Math.max(b.blind || 0, C.sd.concuss); } SFX.ab("cbPop", p); });
       else if (k === "e") a18Fx({ kind: "pulses", p, t: 0.6, gap: C.salvo.gap, left: C.salvo.pulses, r: C.salvo.r, dmg: C.salvo.dmg, name: "Guided Salvo" });
-      else a18Fx({ kind: "armag", p: new THREE.Vector3(P.x, 0, P.z), d: new THREE.Vector3(d.x, 0, d.z).normalize(), t: 0.8 });
+      else a18Fx({ kind: "armag", p: new THREE.Vector3(P.x, 0, P.z), d: new THREE.Vector3(d.x, 0, d.z).normalize(), t: C.armag.wind });
       return true; }
     case "Deadlock": { spend();
       if (k === "c") { const w = a18Ring(p, C.mesh.len / 2, 0x4a9af0, 0.6); a18Fx({ kind: "meshw", m: w, t: C.mesh.life }); }
@@ -307,8 +307,9 @@ function a18Tick(dt) {
       case "pulses": if (e.t <= 0) { for (const b of a18BotsIn(e.p, e.r)) jHit(b, e.dmg, e.name); SFX.ab("cbPop", e.p); const bm = a18Ring(e.p, e.r, e.name === "Guided Salvo" ? 0xff6a3a : 0xffa03a, 0.75); try { const gy = groundAt(e.p.x, e.p.z, 0.3, typeof player !== "undefined" ? player.y : 3); if (Number.isFinite(gy)) bm.position.y = gy + 0.06; } catch (err) {} a18Fx({ kind: "burst", m: bm, t: 0.45 }); if (--e.left > 0) e.t = e.gap; else keep = false; } break;
       case "burst": if (e.t <= 0) { jRel(e.m); keep = false; } break; /* short-lived impact ring (Guided Salvo / FRAG/ment detonations had no mesh at all) */
       case "boom": if (e.t <= 0) { for (const b of a18BotsIn(e.p, e.r)) jHit(b, e.dmg, e.name); keep = false; } break;
-      case "armag": if (e.t <= 0) { for (const b of a18StripBots(e.p, e.d, C.armag.len, C.armag.w)) jHit(b, C.armag.dmg, "Armageddon"); SFX.flash(); const w = new THREE.Mesh(new THREE.BoxGeometry(C.armag.w, 2.2, 1.2), new THREE.MeshLambertMaterial({ color: 0xff5a2a, transparent: true, opacity: 0.55 })); w.rotation.y = Math.atan2(e.d.x, e.d.z); const gy0 = (() => { try { const g = groundAt(e.p.x, e.p.z, 0.3, typeof player !== "undefined" ? player.y : 3); return Number.isFinite(g) ? g : 0; } catch (err) { return 0; } })(); w.position.set(e.p.x, gy0 + 1.1, e.p.z); scene.add(w); a18Fx({ kind: "armagwave", m: w, p: e.p.clone(), d: e.d.clone(), left: C.armag.len, speed: C.armag.len / 1.4 }); keep = false; } break;
-      case "armagwave": { const s = e.speed * dt; e.p.addScaledVector(e.d, s); e.left -= s; let gy = 0; try { const g = groundAt(e.p.x, e.p.z, 0.3, typeof player !== "undefined" ? player.y : 3); if (Number.isFinite(g)) gy = g; } catch (err) {} e.m.position.set(e.p.x, gy + 1.1, e.p.z); if (e.left <= 0) { jRel(e.m); keep = false; } break; } /* sweeping fire front, same approximation as the online A18VIS wave - not Riot's per-explosion chain */
+      case "armag": if (e.t <= 0) { SFX.flash(); a18Fx({ kind: "armagchain", p: e.p.clone(), d: e.d.clone(), age: 0, fired: [], grp: a18ArmagGroup(e.p.x, e.p.z, e.d.x, e.d.z, false) }); keep = false; } break;
+      /* wiki Armageddon: 16 segments x 2 m, 12 m wide; segment i starts 0.25 s after i-1 and detonates 4x at 0.25 s for 60 each (offline mirror of server agents18.js) */
+      case "armagchain": { e.age += dt; const AG = C.armag; let done = true; for (let i = 0; i < AG.segs; i++) for (let j = 0; j < AG.ticks; j++) { const id = i * AG.ticks + j; if (e.fired[id]) continue; done = false; if (e.age < i * AG.gap + j * AG.tick) continue; e.fired[id] = 1; const o = new THREE.Vector3(e.p.x + e.d.x * AG.seg * i, 0, e.p.z + e.d.z * AG.seg * i); for (const b of a18StripBots(o, e.d, AG.seg, AG.w)) jHit(b, AG.dmg, "Armageddon"); e.grp.flash[i] = 0.25; } for (let i = 0; i < AG.segs; i++) { const f = e.grp.flash[i] || 0; e.grp.flash[i] = Math.max(0, f - dt); e.grp.segs[i].material.opacity = 0.12 + 0.7 * Math.min(1, e.grp.flash[i] / 0.25); } if (done && e.age > AG.segs * AG.gap + AG.ticks * AG.tick) { a18ArmagFree(e.grp); keep = false; } break; }
       case "nightfall": if (e.t <= 0) { for (const b of a18StripBots(e.p, e.d, C.nightfall.dist, C.nightfall.w)) { a18DecayB(b, C.nightfall.decay); b.mark = C.nightfall.decay ? 12 : 0; } SFX.ab("cbPop", e.p); keep = false; } break;
       case "decoy": { e.p.addScaledVector(e.d, C.fakeout.speed * dt); if (e.m) { e.m.position.set(e.p.x, 1, e.p.z); scene.add(e.m); } if (e.t <= 0) { if (e.m) jRel(e.m); a18Blind(e.p, C.blindside.blind); keep = false; } break; }
       case "seeker": { const t = e.tg; if (!t || !t.alive) { keep = false; break; } const d = [t.g.position.x - e.p.x, t.g.position.z - e.p.z], l = Math.hypot(d[0], d[1]); if (l < 0.8 || e.t <= 0) { if (e.near) t.blind = Math.max(t.blind || 0, e.near); if (e.conc) t.blind = Math.max(t.blind || 0, e.conc); keep = false; } else { e.p.x += d[0] / l * e.sp * dt; e.p.z += d[1] / l * e.sp * dt; } break; }
@@ -344,11 +345,19 @@ const a18TickJ = jTick; jTick = function (dt) { a18TickJ(dt); try { a18Tick(dt);
 // Shapes follow the offline a18 visuals: clouds for fields/smokes, flat rings for zones/pulses, walls for
 // barriers, small meshes for devices/movers. Colors match the offline casts above.
 const A18VIS = { star: ["star", 0xb9a7ff, .9], divide: ["wall", 0x9a6ff0, .5], conting: ["wall", 0x6a9af0, .45], fastlane: ["wall", 0x3a8af0, .45], shear: ["wall", 0xd04a8a, .5], tscreen: ["wall", 0x7ac24a, .4],
- tide: ["wave", 0x3fd0c0, .5], reckon: ["wave", 0x3fd0c0, .6], bassq: ["wave", 0x3fd0c0, .5], nightfall: ["wave", 0x241a40, .7], armag: ["wave", 0xff5a2a, .55], surge: ["wave", 0x3fd0c0, .5], paths: ["ring", 0xf0c04a, .5],
+ tide: ["wave", 0x3fd0c0, .5], reckon: ["wave", 0x3fd0c0, .6], bassq: ["wave", 0x3fd0c0, .5], nightfall: ["wave", 0x241a40, .7], armag: ["armag", 0xff5a2a, .55], surge: ["wave", 0x3fd0c0, .5], paths: ["ring", 0xf0c04a, .5],
  pit: ["cloud", 0x6ab23a, .4], cove: ["cloud", 0x3fd0c0, .4], garden: ["cloud", 0xd04a8a, .35], choke: ["cloud", 0x8a6af0, .4], vine: ["cloud", 0xd04a8a, .4], gnet: ["cloud", 0x6a4af0, .5], seize: ["cloud", 0x4a2a8a, .5], mosh: ["cloud", 0xff7a1a, .5], fire: ["cloud", 0xff5a1a, .5], orbital: ["cloud", 0xff8a3a, .45], frag: ["cloud", 0xffa03a, .45], salvo: ["cloud", 0xff6a3a, .5], snake: ["cloud", 0x6ab23a, .45], susp: ["cloud", 0xc04af0, .35],
  gwell: ["ring", 0x8a6af0, .6], nova: ["ring", 0xb08af0, .6], pull: ["ring", 0x8a6af0, .5], displ: ["ring", 0x9a6ff0, .5], stim: ["ring", 0xf0e0b0, .5], mpulse: ["ring", 0x3fd0c0, .55], nullcmd: ["ring", 0x8a2af0, .45], haunt: ["ring", 0xd04a8a, .45], blast: ["ring", 0xff8a5a, .6], sd: ["ring", 0x3fd0c0, .55], sensor: ["ring", 0xf0c04a, .4], undercut: ["ring", 0x6a9af0, .55], satur: ["ring", 0xf0c04a, .5], zero: ["ring", 0x8a2af0, .5],
  emitter: ["dev", 0x8a6af0], ceptor: ["dev", 0x3fd0c0], rose: ["dev", 0xd04a8a], sdrone: ["dev", 0x3fd0c0], xcut: ["dev", 0x3fd0c0], mesh: ["dev", 0xc0c8d0], sensor2: ["dev", 0xf0c04a],
  gatefake: ["ring", 0x8a92ff, .5], seeker: ["orb", 0x3fd0c0], decoy: ["orb", 0x8a92ff], dizzy: ["orb", 0x3fd0c0], anni: ["orb", 0xff4a6a], wing: ["orb", 0x3fd0c0] };
+
+// Armageddon strike path: 16 boxes (2 m x 12 m), one per segment, lit while that segment detonates. Used offline and by the online fx row.
+function a18ArmagGroup(px, pz, dx, dz, online) {
+  const AG = A18C.armag, grp = new THREE.Group(), segs = []; const rot = Math.atan2(dx, dz);
+  for (let i = 0; i < AG.segs; i++) { const m = new THREE.Mesh(new THREE.BoxGeometry(AG.w, 2.4, AG.seg * 0.92), new THREE.MeshBasicMaterial({ color: 0xff5a2a, transparent: true, opacity: 0.12, depthWrite: false })); m.rotation.y = rot; const cx = px + dx * AG.seg * (i + 0.5), cz = pz + dz * AG.seg * (i + 0.5); let gy = 0; try { const g = groundAt(cx, cz, 0.3, typeof player !== "undefined" ? player.y : 3); if (Number.isFinite(g)) gy = g; } catch (err) {} m.position.set(cx, gy + 1.2, cz); grp.add(m); segs.push(m); }
+  scene.add(grp); return { grp, segs, flash: [] };
+}
+function a18ArmagFree(g) { if (!g) return; scene.remove(g.grp); for (const m of g.segs) { m.geometry.dispose(); m.material.dispose(); } }
 const a18Net = new Map(); // server effect id -> {m, kind}
 function a18NetMesh(kind, e) {
   const v = A18VIS[kind] || ["orb", 0xc0c8d0]; const [shape, col, op] = v; let m;
@@ -361,10 +370,11 @@ function a18NetMesh(kind, e) {
   else { m = jM(smokeGeo, xSmokeM("a18net" + (a18NetMesh.n = (a18NetMesh.n || 0) + 1), col, col)); m.material.opacity = op; m.position.set(e.p[0], (e.p[1] || 0) + 1.5, e.p[2]); m.scale.setScalar((e.r || 4) / 4); }
   scene.add(m); return m;
 }
-function a18NetFree(r) { if (!r.m) return; if (r.kind === "duel") a18ArenaFree(r.m); else jRel(r.m); }
+function a18NetFree(r) { if (r.kind === "armag") { a18ArmagFree(r.ag); return; } if (!r.m) return; if (r.kind === "duel") a18ArenaFree(r.m); else jRel(r.m); }
 function a18NetSync(rows) {
   const seen = new Set();
   for (const e of rows) { if (e && e.kind === "duel" && Number.isFinite(e.id) && Array.isArray(e.p) && e.p.length === 3) { seen.add(e.id); if (!a18Net.has(e.id)) a18Net.set(e.id, { m: a18ArenaShell(e.p[0]), kind: "duel" }); continue; }
+    if (e && e.kind === "armag" && Number.isFinite(e.id) && Array.isArray(e.p) && e.p.length === 3 && Number.isFinite(e.yaw) && Number.isFinite(e.tl)) { seen.add(e.id); let r = a18Net.get(e.id); if (!r) { r = { kind: "armag", ag: a18ArmagGroup(e.p[0], e.p[2], -Math.sin(e.yaw), -Math.cos(e.yaw), true) }; a18Net.set(e.id, r); } const AG = A18C.armag, el = AG.wind + (AG.segs - 1) * AG.gap + AG.ticks * AG.tick + 0.2 - e.tl; for (let i = 0; i < AG.segs; i++) { let lit = 0; for (let j = 0; j < AG.ticks; j++) { const dt0 = el - (AG.wind + i * AG.gap + j * AG.tick); if (dt0 >= 0 && dt0 < 0.25) lit = Math.max(lit, 1 - dt0 / 0.25); } r.ag.segs[i].material.opacity = 0.12 + 0.7 * lit; } continue; }
     if (!e || !A18VIS[e.kind] || !Number.isFinite(e.id) || !Array.isArray(e.p) || e.p.length !== 3) continue; seen.add(e.id);
     let r = a18Net.get(e.id); if (!r) { r = { m: a18NetMesh(e.kind, e), kind: e.kind }; a18Net.set(e.id, r); }
     else if (r.m) { const k = A18VIS[e.kind][0]; if (k === "orb" || k === "wave" || k === "dev" || k === "star") r.m.position.set(e.p[0], k === "orb" ? (e.p[1] || 0) + 1 : k === "star" ? (e.p[1] || 0) + 1.4 : r.m.position.y === 1.1 ? 1.1 : (e.p[1] || 0) + .3, e.p[2]); else r.m.position.x = e.p[0], r.m.position.z = e.p[2]; if (Number.isFinite(e.yaw) && k === "wall") r.m.rotation.y = -e.yaw; } }

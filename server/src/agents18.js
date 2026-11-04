@@ -54,7 +54,7 @@ export const A18={
  mosh:{r:5,life:3,dps:20,boom:70},wing:{life:5,speed:9,concuss:3.5,r:3},dizzy:{life:2.5,blind:1.5,r:15},thrash:{r:6,detain:6,dash:12},/* Gekko; globule reclaim: used basics return after 10 s at the drop point (lightweight: auto-return) */
  globule:{reclaim:10},
  frag:{r:5,pulses:4,gap:1,dmg:40},fdrive:{blind:2.25,delay:1.6},zero:{r:15,supp:8},nullcmd:{life:10,pulse:3,r:20,supp:8},/* KAY/O (downed state not modelled) */
- sdrone:{life:8,r:12,reveal:3,supp:6},sd:{r:4,concuss:3,dmg:40},salvo:{r:6,pulses:3,gap:.8,dmg:55},armag:{len:40,w:12,dmg:120},/* Tejo */
+ sdrone:{life:8,r:12,reveal:3,supp:6},sd:{r:4,concuss:3,dmg:40},salvo:{r:6,pulses:3,gap:.8,dmg:55},armag:{len:32,w:12,dmg:60,segs:16,seg:2,ticks:4,tick:.25,gap:.25,wind:3.08},/* Tejo */
  mesh:{life:30,len:7.5,h:3,hp:680},/* Barrier Mesh: nodes form movement-blocking segments */
  sensor:{life:30,r:8,concuss:3},gnet:{r:6,life:8,slowK:.35},/* Deadlock */
  annih:{range:20,w:3,detain:7,dmg:70},/* Annihilation (wiki): 600 HP cocoon - teammates shoot it to free the captive; the wire snaps on death / lost link, kills at the wire end */
@@ -121,7 +121,7 @@ export function cast18(sim,u,m,o,d,push){
    A.e--;A.cool.e=sim.time+.3;for(const q of pts)fx(sim,u,'salvo',q,C.salvo.pulses*C.salvo.gap+1,C.salvo.r,{at:sim.time+.6,next:sim.time+.6,left:C.salvo.pulses});
    cast(sim,u,k,o,d,pts[0]);return true;}
   if(k==='x'){if(A.ult<K.u)return false;A.ult=0;const q=[Math.max(-200,Math.min(200,m.p[0])),0,Math.max(-200,Math.min(200,m.p[1]))],yaw=Math.atan2(-(q[0]-u.x),-(q[2]-u.z));
-   fx(sim,u,'armag',q,1,C.armag.len,{at:sim.time+.8,yaw});cast(sim,u,k,o,d,q);return true;}}
+   fx(sim,u,'armag',q,C.armag.wind+(C.armag.segs-1)*C.armag.gap+C.armag.ticks*C.armag.tick+.2,C.armag.len,{at:sim.time+C.armag.wind,yaw,fired:[]});cast(sim,u,k,o,d,q);return true;}}
  if(ag==='Clove'&&k==='x'&&!u.alive){/* Not Dead Yet: cast from death within the window */if(!(A.ult>=K.u)||!u.ndyDead||sim.time>u.ndyDead+C.ndy.window)return false;A.ult=0;u.ndy={at:sim.time+C.ndy.channel};u.invulnerableUntil=sim.time+C.ndy.channel;cast(sim,u,k,[u.x,u.y+1,u.z],[0,0,-1],[u.x,u.y,u.z]);return true;}
  // charge accounting mirrors castAbility0's rules for the 18: ult points, star pool, per-key charges
  if(k==='x'){if(A.ult<K.u)return false;}
@@ -220,7 +220,7 @@ export function cast18(sim,u,m,o,d,push){
    if(k==='c')fx(sim,u,'sdrone',p,C.sdrone.life,C.sdrone.r,{at:sim.time+.5});
    else if(k==='q')fx(sim,u,'blast',p,.5,C.sd.r,{concuss:C.sd.concuss,damage:C.sd.dmg,at:sim.time+.4});
    else if(k==='e')fx(sim,u,'salvo',p,C.salvo.pulses*C.salvo.gap+1,C.salvo.r,{at:sim.time+.6,next:sim.time+.6,left:C.salvo.pulses});
-   else fx(sim,u,'armag',[u.x,u.y,u.z],1,C.armag.len,{at:sim.time+.8,yaw:u.look});
+   else fx(sim,u,'armag',[u.x,u.y,u.z],C.armag.wind+(C.armag.segs-1)*C.armag.gap+C.armag.ticks*C.armag.tick+.2,C.armag.len,{at:sim.time+C.armag.wind,yaw:u.look,fired:[]});
    cast(sim,u,k,o,d,p);return true;}
   case 'Deadlock':{spend();
    if(k==='c')fx(sim,u,'barrier',p,C.mesh.life,C.mesh.len/2,{seg:[C.mesh.hp],hp:C.mesh.hp,yaw:u.look,mesh:1,h:C.mesh.h});
@@ -269,7 +269,10 @@ export function tick18(sim,dt){
    case 'paths':if(!e.done&&T>=e.at){e.done=true;for(const v of enemies(sim,own))if(inR(v,e.p,e.radius))status(v,'hinderUntil',e.hinder,sim);}break;
    case 'frag':case 'salvo':{const K=e.kind==='frag'?C.frag:C.salvo;if(T>=e.next){e.next+=K.gap;e.left--;for(const v of enemies(sim,own))if(inR(v,e.p,e.radius))dmg18.f(sim,own,v,K.dmg);}break;}
    case 'sdrone':if(!e.done&&T>=e.at){e.done=true;for(const v of enemies(sim,own))if(inR(v,e.p,e.radius)){status(v,'revealedUntil',C.sdrone.reveal,sim);status(v,'concussUntil',C.sdrone.supp,sim);}}break;
-   case 'armag':if(!e.done&&T>=e.at){e.done=true;for(const v of enemies(sim,own))if(strip({x:e.p[0],z:e.p[2],look:e.yaw},v,{dist:C.armag.len,w:C.armag.w}))dmg18.f(sim,own,v,C.armag.dmg);gone.push(e);}break;
+   case 'armag':{/* wiki Armageddon: 16 segments x 2 m (32 m), 12 m wide; segment i starts 0.25 s after segment i-1, each detonates 4x at 0.25 s for 60 */
+    const AG=C.armag,fw=[-Math.sin(e.yaw),-Math.cos(e.yaw)];for(let i=0;i<AG.segs;i++)for(let j=0;j<AG.ticks;j++){const id=i*AG.ticks+j;if(e.fired[id]||T<e.at+i*AG.gap+j*AG.tick)continue;e.fired[id]=1;
+     for(const v of enemies(sim,own)){const q0=v.x-e.p[0],q1=v.z-e.p[2],f=q0*fw[0]+q1*fw[1];
+      const sx=q0*-Math.cos(e.yaw)+q1*Math.sin(e.yaw);if(f>=i*AG.seg&&f<(i+1)*AG.seg&&Math.abs(sx)<AG.w/2)dmg18.f(sim,own,v,AG.dmg);}}break;}
    case 'gnet':if(!e.done&&T>=e.at){e.done=true;for(const v of enemies(sim,own))if(inR(v,e.p,e.radius)){const d=[e.p[0]-v.x,e.p[2]-v.z],l=Math.hypot(...d)||1;v.x+=d[0]/l*Math.min(l,3);v.z+=d[1]/l*Math.min(l,3);status(v,'tetheredUntil',e.until-T,sim);}}break;
    case 'sensor':if(!e.done&&T>e.until-C.sensor.life+1){const t=enemies(sim,own).find(v=>inR(v,e.p,e.armR));if(t){e.done=true;for(const v of enemies(sim,own))if(inR(v,e.p,e.armR))status(v,'concussUntil',C.sensor.concuss,sim);gone.push(e);}}break;
    case 'choke':{const t=enemies(sim,own).find(v=>inR(v,e.p,e.armR));if(t&&!e.done){e.done=true;for(const v of enemies(sim,own))if(inR(v,e.p,e.armR)){decay(sim,v,C.choke.decay);status(v,'hinderUntil',C.choke.slow,sim);}gone.push(e);}break;}
