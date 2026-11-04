@@ -3,8 +3,9 @@
 // The real kits pick these spots on an overhead map (wiki.playvalorant.com Astra / Tejo, fetched 2026-11-03).
 // Checked:
 //  * Astra X with the ult ready opens the xTac overlay as "Astral Form"; C / Q / E arm a star type while it is up
-//  * a map click places the armed star AT THE CLICKED POINT (Nebula smoke / Gravity Well fx), spends one star,
-//    and keeps the map open; X inside the map arms Cosmic Divide: two clicks spend the ult and close it
+//  * a bare map click places a persistent Star AT THE CLICKED POINT (spends one star, map stays open); C/Q/E arm,
+//    clicking the placed Star activates the effect AT THE STAR and consumes it; clicking a Star unarmed dissipates it;
+//    X inside the map arms Cosmic Divide: two clicks spend the ult and close it
 //  * Esc closes the map (ult kept); X without the ult does not open it
 //  * Tejo E opens the map: two clicks fire both salvos at the picked points for one charge; E again after one
 //    click launches a single salvo; X opens Armageddon and the click sets its origin (direction Tejo -> point)
@@ -37,18 +38,33 @@ const node=async label=>xe(`(()=>{const C=nmActive();let best=null,bd=-1;C.nav.n
  xe(`J.ult=K().u;true`);await tap('KeyX');s=st();
  check(s.on&&H.shown('xTac')&&s.mode==='astra','X with the ult ready opens Astral Form on the map overlay');
  const stars0=s.stars;
- // default arm is Nebula (E): a click places the smoke at the clicked point and keeps the map open
- await moveTo(P0.x,P0.z);const sm0=xe('J.smokes.length');await click(0);s=st();
- const smk=xe('J.smokes.length?({x:J.smokes[J.smokes.length-1].m.position.x,z:J.smokes[J.smokes.length-1].m.position.z}):null');
+ // a bare click places a persistent Star at the clicked point and keeps the map open (wiki Stars)
+ await moveTo(P0.x,P0.z);await click(0);s=st();
  check(s.on&&s.mode==='astra','the map stays open after placing a star');
  check(s.stars===stars0-1,'placing a star spends one star');
- check(smk&&Math.hypot(smk.x-P0.x,smk.z-P0.z)<1,'the Nebula smoke lands at the clicked point '+JSON.stringify(smk));
- // arm Gravity Well with C: the click makes a gwell at the point
- await tap('KeyC');check(xe('A18TAC.arm')==='c','C arms Gravity Well while the map is up');
+ const st0=xe('J.a18.starList.length?({n:J.a18.starList.length,x:J.a18.starList[0].x,z:J.a18.starList[0].z}):null');
+ check(st0&&st0.n===1&&Math.hypot(st0.x-P0.x,st0.z-P0.z)<1,'a persistent Star marker sits at the clicked point '+JSON.stringify(st0));
+ // arm Nebula with E and click the placed Star: the smoke lands AT THE STAR and consumes it
+ await tap('KeyE');check(xe('A18TAC.arm')==='e','E arms Nebula while the map is up');
+ const sm0=xe('J.smokes.length');await moveTo(P0.x,P0.z);await click(0);s=st();
+ const smk=xe('J.smokes.length?({x:J.smokes[J.smokes.length-1].m.position.x,z:J.smokes[J.smokes.length-1].m.position.z}):null');
+ check(xe('J.smokes.length')>sm0&&smk&&Math.hypot(smk.x-P0.x,smk.z-P0.z)<1,'Nebula activates on the placed star '+JSON.stringify(smk));
+ check(xe('J.a18.starList.length')===0,'activating consumes the placed star');
+ check(s.stars===stars0-1,'activation consumes the placed star, not the pool');
+ // place a second Star elsewhere, arm Gravity Well, click it: gwell at the star
  const P1=xe(`(()=>{const C=nmActive();for(const n of C.nav.nodes){const d=Math.hypot(n[0]-(${P0.x}),n[2]-(${P0.z}));if(d>12&&d<40)return {x:n[0],z:n[2]};}return null;})()`);
- const fx0=xe('(J.a18fx||[]).length');await moveTo(P1.x,P1.z);await click(0);s=st();
- const gw=xe(`(J.a18fx||[]).slice(${fx0}).map(f=>({kind:f.kind,x:f.p&&f.p.x,z:f.p&&f.p.z}))`);
- check(gw.length===1&&gw[0].kind==='gwell'&&Math.hypot(gw[0].x-P1.x,gw[0].z-P1.z)<1,'a Gravity Well lands at the second clicked point '+JSON.stringify(gw));
+ await moveTo(P1.x,P1.z);await click(0);check(xe('J.a18.starList.length')===1,'second Star placed elsewhere');
+ await tap('KeyC');check(xe('A18TAC.arm')==='c','C arms Gravity Well while the map is up');
+ await moveTo(P1.x,P1.z);await click(0);s=st();
+ const gw=xe(`(J.a18fx||[]).filter(f=>f.kind==='gwell').map(f=>({kind:f.kind,x:f.p&&f.p.x,z:f.p&&f.p.z}))`);
+ check(gw.length===1&&Math.hypot(gw[0].x-P1.x,gw[0].z-P1.z)<1,'a Gravity Well activates on the placed star '+JSON.stringify(gw));
+ check(xe('J.a18.starList.length')===0,'the second star is consumed');
+ // dissipate: a bare click on a placed Star recalls it; it reforms in the pool after 1.25 s
+ xe('J.a18.stars=1;true'); // a bought star (the two placements emptied the round pool)
+ await moveTo(P0.x,P0.z);await click(0);check(xe('J.a18.starList.length')===1,'third Star placed for dissipate');
+ const sb=xe('J.a18.stars');await moveTo(P0.x,P0.z);await click(0);
+ check(xe('J.a18.starList.length')===0,'clicking a placed Star dissipates it');
+ await adv(1600);check(xe('J.a18.stars')===sb+1,'the dissipated Star reforms in the pool');
  // X inside the map arms Cosmic Divide: two clicks spend the ult and close the map
  await tap('KeyX');check(JSON.stringify(xe('A18TAC.wall'))==='[]','X inside Astral Form arms Cosmic Divide');
  await moveTo(P0.x,P0.z);await click(0);s=st();check(s.on,'the first Divide click keeps the map open');
@@ -90,7 +106,7 @@ const node=async label=>xe(`(()=>{const C=nmActive();let best=null,bd=-1;C.nav.n
  await tap('KeyX');await moveTo(P0.x,P0.z);await click(0);await moveTo(P1.x,P1.z);await click(0);await adv(60);
  let sent=xe('__qaSent.filter(m=>m.t==="ab")');
  check(sent.length===3&&sent[0].k==='x'&&!sent[0].p,'online: opening Astral Form sends a bare x '+JSON.stringify(sent));
- check(sent[1]&&sent[1].k==='e'&&Math.hypot(sent[1].p[0]-P0.x,sent[1].p[1]-P0.z)<1,'online: a star click sends the point '+JSON.stringify(sent[1]));
+ check(sent[1]&&sent[1].k==='s'&&Math.hypot(sent[1].p[0]-P0.x,sent[1].p[1]-P0.z)<1,'online: a star-placement click sends the point '+JSON.stringify(sent[1]));
  check(sent[2]&&sent[2].k==='x'&&sent[2].p.length===4&&Math.hypot(sent[2].p[0]-P0.x,sent[2].p[1]-P0.z)<1&&Math.hypot(sent[2].p[2]-P1.x,sent[2].p[3]-P1.z)<1,'online: the Divide sends both ends '+JSON.stringify(sent[2]));
  check(xe('J.ult')===xe('K().u')&&xe('J.a18.stars')===stars0,'online: the client spends nothing itself');
  xe('__qaSent.length=0;J.pick="Tejo";a18Reset();J.e=1;J.ult=K().u;true');await tap('KeyE');await moveTo(P0.x,P0.z);await click(0);await moveTo(P1.x,P1.z);await click(0);await adv(60);
@@ -104,5 +120,5 @@ const node=async label=>xe(`(()=>{const C=nmActive();let best=null,bd=-1;C.nav.n
  const errs=H.errors.filter(e=>!/WebGL|AudioContext|fetch|unexpected external script/i.test(String(e.msg||e)));
  check(errs.length===0&&H.xErrCalls.length===0,'no page errors '+JSON.stringify(errs.slice(0,3))+JSON.stringify(H.xErrCalls.slice(0,3)));
  if(fails.length){console.log(fails.length+' FAILED');process.exit(1);}
- console.log('PASS astra/tejo tactical map: Astral Form opens, stars land at clicked points (one star each, map stays open), Cosmic Divide two-click, Esc cancel, no ult = no map; Tejo salvo two-pick + single-launch, Armageddon origin+direction; online picks ride m.p with no local spend');process.exit(0);
+ console.log('PASS astra/tejo tactical map: Astral Form opens, bare clicks place persistent Stars (one star each, map stays open), armed C/Q/E activate the placed Star (consumed), dissipate reforms the star, Cosmic Divide two-click, Esc cancel, no ult = no map; Tejo salvo two-pick + single-launch, Armageddon origin+direction; online picks ride m.p with no local spend');process.exit(0);
 })().catch(e=>{console.error(e);process.exit(1);});

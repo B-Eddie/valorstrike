@@ -3,7 +3,7 @@
 // Iso, Neon, Waylay, Yoru, Fade, Gekko, KAY/O, Tejo, Deadlock, Veto, Vyse). Mirrors server/src/agents18.js (same
 // wiki.playvalorant.com constants, fetched 2026-11-03); known deviations are listed in work/agents18-notes.md.
 const A18SET = new Set(["Astra", "Brimstone", "Clove", "Harbor", "Miks", "Viper", "Hush", "Iso", "Neon", "Waylay", "Yoru", "Fade", "Gekko", "KAY/O", "Tejo", "Deadlock", "Veto", "Vyse"]);
-const A18C = { star: { wellPull: 2, wellVuln: 2, wellR: 3.5, novaDelay: 1.25, novaConcuss: 4, novaR: 4.5, nebulaLife: 14.25, nebulaR: 4.1, divideLife: 21 },
+const A18C = { star: { wellPull: 2, wellVuln: 2, wellR: 3.5, novaDelay: 1.25, novaConcuss: 4, novaR: 4.5, nebulaLife: 14.25, nebulaR: 4.1, divideLife: 21, placeR: 2.5, selectR: 6, dissipateDelay: 1.25, fakeNebula: 0.75 },
  stim: { life: 12.5, r: 4 }, incend: { life: 7, r: 4.5, rate: 60 }, skysmoke: { life: 19.25, r: 4.15 }, orbital: { delay: 2, life: 4, r: 5, dps: 150 },
  pmu: { haste: 4, overheal: 50, window: 12 }, meddle: { r: 4.5, decay: 70 }, ruse: { life: 12.75, r: 4.15 }, ndy: { channel: 3.3, window: 12 },
  surge: { r: 4.5, near: 2, slow: 2 }, tide: { dist: 45, life: 12, slow: 2, w: 2, speed: 6 }, cove: { life: 12, r: 4.1 }, reckon: { dist: 30, near: 3, slow: 4, speed: 7 },
@@ -22,7 +22,7 @@ const A18C = { star: { wellPull: 2, wellVuln: 2, wellR: 3.5, novaDelay: 1.25, no
  xcut: { range: 25 }, choke: { life: 30, r: 6, decay: 60, slow: 2 }, cept: { life: 30, r: 10 }, evo: { life: 12, hps: 10 },
  vine: { life: 30, r: 6, dps: 15 }, shear: { life: 30, r: 2.5, wall: 8 }, rose: { life: 30, blind: 2, r: 20 }, garden: { r: 20, jam: 8 } };
 J.a18 = null; // per-agent state (stars, fuel, anchors, slides), reset by a18Reset on the pick / round reset hooks
-function a18Reset() { const a = J.pick; J.a18 = { stars: a === "Astra" ? 2 : 0, fuel: a === "Viper" || a === "Neon" ? A18C.fuel.max : 0, slides: 1, slideK: 0, /* wiki v9.11: one slide charge */ cloud: 0, screen: 0, pit: 0, gate: 0, gateTp: 0, mark: 0, rose: 0, xcut: 0, gear: 0, drift: 0, od: 0, evo: 0, shield: 0, duel: 0, ndyT: 0, haste: 0, stim: 0, decay: 0, decayAmt: 0, jam: 0, supp: 0 }; }
+function a18Reset() { const a = J.pick; J.a18 = { starList: [], starBack: 0, stars: a === "Astra" ? 2 : 0, fuel: a === "Viper" || a === "Neon" ? A18C.fuel.max : 0, slides: 1, slideK: 0, /* wiki v9.11: one slide charge */ cloud: 0, screen: 0, pit: 0, gate: 0, gateTp: 0, mark: 0, rose: 0, xcut: 0, gear: 0, drift: 0, od: 0, evo: 0, shield: 0, duel: 0, ndyT: 0, haste: 0, stim: 0, decay: 0, decayAmt: 0, jam: 0, supp: 0 }; }
 function a18Aim(dist) { const o = pEye(), d = jAim(); ray.set(o, d); ray.far = dist || 14; const h = ray.intersectObjects(solids)[0]; const t = h ? Math.max(0, h.distance - 0.5) : (dist || 14); const p = o.clone().addScaledVector(d, t); p.y = Math.max(0.05, p.y); return p; }
 function a18Smoke(p, dur, r, c1, c2) { const m = jM(smokeGeo, xSmokeM("a18" + (a18Smoke.n = (a18Smoke.n || 0) + 1), c1, c2)); m.position.set(p.x, p.y + 1.7, p.z); scene.add(m); J.smokes.push({ m, p: m.position, t: dur, r: xSmk(m, r) }); SFX.smoke(); return m; }
 function a18Zone(p, life, r, rate, name, col) { const m = jM(zoneGeo, fireMat(col || 0xff5a1a, 0.55)); m.rotation.x = -Math.PI / 2; m.position.set(p.x, 0.05, p.z); m.scale.setScalar(r / 2.5); scene.add(m); J.zones.push({ m, p: p.clone(), t: life, R: 0, r0: r, rate, name }); return m; }
@@ -44,8 +44,15 @@ function a18TacLocal(k, p) { // offline mirror of the server's m.p casts
   const A = J.a18, C = A18C;
   if (J.pick === "Astra") {
     if (k === "x") { const x1 = p[0], z1 = p[1], x2 = p[2], z2 = p[3], cx = (x1 + x2) / 2, cz = (z1 + z2) / 2, half = Math.max(4, Math.hypot(x2 - x1, z2 - z1) / 2); J.ult = 0; const m = a18Ring(new THREE.Vector3(cx, 0, cz), Math.min(half, 60), 0x9a6ff0, 0.5); a18Fx({ kind: "div", m, t: C.star.divideLife }); SFX.ab("updraft"); say("Cosmic Divide", 900); return; }
-    if (A.stars < 1) { blip(120, 0.08, "square", 0.1); return; }
-    A.stars--; const q = new THREE.Vector3(p[0], 0, p[1]);
+    if (k === "s") { // place a persistent Star, or dissipate one that is clicked (wiki Stars / Nebula-Dissipate)
+      const s0 = a18StarNear(p[0], p[1], C.star.placeR);
+      if (s0) { a18StarDrop(s0); a18Smoke(new THREE.Vector3(s0.x, 0, s0.z), C.star.fakeNebula, C.star.nebulaR, 0x7a4fd0, 0xc9a8f2); A.starBack = performance.now() / 1000 + C.star.dissipateDelay; SFX.ab("updraft"); say("Dissipate", 700); return; }
+      if (A.stars < 1) { blip(120, 0.08, "square", 0.1); return; }
+      A.stars--; const m = new THREE.Mesh(new THREE.OctahedronGeometry(0.35), new THREE.MeshLambertMaterial({ color: 0xb9a7ff, emissive: 0xb9a7ff, emissiveIntensity: 0.5 })); m.position.set(p[0], 1.4, p[1]); scene.add(m);
+      const fx0 = { kind: "star", m, t: 400 }; a18Fx(fx0); A.starList.push({ x: p[0], z: p[1], fx: fx0 }); SFX.ab("updraft"); say("Star placed", 700); return; }
+    const s0 = a18StarNear(p[0], p[1], C.star.selectR); // c/q/e activate the placed star nearest the click
+    if (!s0) { blip(120, 0.08, "square", 0.1); say("No Star there", 700); return; }
+    a18StarDrop(s0); const q = new THREE.Vector3(s0.x, 0, s0.z);
     if (k === "c") a18Fx({ kind: "gwell", p: q, t: 0.75, life: C.star.wellPull });
     else if (k === "q") a18Fx({ kind: "nova", p: q, t: C.star.novaDelay });
     else a18Smoke(q, C.star.nebulaLife, C.star.nebulaR, 0x7a4fd0, 0xc9a8f2);
@@ -53,19 +60,26 @@ function a18TacLocal(k, p) { // offline mirror of the server's m.p casts
   if (k === "e") { J.e--; for (let i = 0; i + 1 < p.length && i < 4; i += 2) a18Fx({ kind: "pulses", p: new THREE.Vector3(p[i], 0, p[i + 1]), t: 0.6, gap: C.salvo.gap, left: C.salvo.pulses, r: C.salvo.r, dmg: C.salvo.dmg, name: "Guided Salvo" }); SFX.ab("cbPop", player); return; }
   const q = new THREE.Vector3(p[0], 0, p[1]), dd = new THREE.Vector3(p[0] - player.x, 0, p[1] - player.z); J.ult = 0; if (dd.lengthSq() < 1e-6) dd.set(-Math.sin(yaw || 0), 0, -Math.cos(yaw || 0)); a18Fx({ kind: "armag", p: q, d: dd.normalize(), t: 0.8 });
 }
+function a18StarNear(x, z, r) { let best = null, bd = r; const L = J.a18 && J.a18.starList || []; for (const s of L) { const d = Math.hypot(s.x - x, s.z - z); if (d < bd) { bd = d; best = s; } } return best; }
+function a18StarDrop(s0) { const L = J.a18.starList; const i = L.indexOf(s0); if (i >= 0) L.splice(i, 1); if (s0.fx) s0.fx.gone = true; }
+function a18StarPts() { const out = []; for (const [, r] of a18Net) if (r.kind === "star" && r.m) out.push([r.m.position.x, r.m.position.z]); if (J.a18 && J.a18.starList) for (const s of J.a18.starList) out.push([s.x, s.z]); return out; }
 function a18Tac(k) { // true = key consumed; "no" = resources short; false = not applicable (legacy maps fall through)
   const C = A18C, on = typeof XTAC !== "undefined" && XTAC.on;
   if (J.pick === "Astra") {
     if (on && A18TAC.mode === "astra") {
-      if (k === "c" || k === "q" || k === "e") { A18TAC.arm = k; A18TAC.wall = null; say({ c: "Gravity Well", q: "Nova Pulse", e: "Nebula" }[k] + " armed · click the map", 900); return true; }
-      if (k === "x") { A18TAC.wall = []; say("Cosmic Divide · click both ends", 900); return true; }
+      if (k === "c" || k === "q" || k === "e") { A18TAC.arm = A18TAC.arm === k ? null : k; A18TAC.wall = null; say(A18TAC.arm ? { c: "Gravity Well", q: "Nova Pulse", e: "Nebula" }[A18TAC.arm] + " armed · click a placed Star" : "Click places a Star · click a Star to dissipate", 900); return true; }
+      if (k === "x") { A18TAC.wall = []; A18TAC.arm = null; say("Cosmic Divide · click both ends", 900); return true; }
       return true; } // swallow other keys while the map is up
     if (k !== "x") return false;
     if (J.ult < K().u) return "no";
-    A18TAC.mode = "astra"; A18TAC.wall = null; A18TAC.arm = "e";
-    if (!xTacOpen({ name: "Astral Form", color: "#b9a7ff", range: 0, key: "X", valid: (x, z) => ({ x, y: 0, z }),
-      confirm: (x, z) => { if (A18TAC.wall) { A18TAC.wall.push(x, z); if (A18TAC.wall.length < 4) { say("Click the wall's other end", 900); return false; } const pts = A18TAC.wall.slice(); A18TAC.mode = null; A18TAC.wall = null; a18TacSend("x", pts); return true; } const arm = A18TAC.arm; a18TacSend(arm, [x, z]); say({ c: "Gravity Well", q: "Nova Pulse", e: "Nebula" }[arm], 700); return false; },
-      cancel: () => { if (A18TAC.mode) { A18TAC.mode = null; A18TAC.wall = null; if (NET.socket && MP.st === "game" && (MP.m5 || NET.tab)) netSend({ t: "ab", k: "x" }); } } })) { A18TAC.mode = null; return false; }
+    A18TAC.mode = "astra"; A18TAC.wall = null; A18TAC.arm = null;
+    if (!xTacOpen({ name: "Astral Form", color: "#b9a7ff", range: 0, key: "X", valid: (x, z) => ({ x, y: 0, z }), marks: () => a18StarPts(),
+      confirm: (x, z) => { if (A18TAC.wall) { A18TAC.wall.push(x, z); if (A18TAC.wall.length < 4) { say("Click the wall's other end", 900); return false; } const pts = A18TAC.wall.slice(); A18TAC.mode = null; A18TAC.wall = null; a18TacSend("x", pts); return true; }
+        if (A18TAC.arm) { const pts = a18StarPts(); let near = false; for (const q of pts) if (Math.hypot(q[0] - x, q[1] - z) < A18C.star.selectR) { near = true; break; }
+          if (!near) { say("No Star there · click a placed Star", 900); return false; }
+          const arm = A18TAC.arm; A18TAC.arm = null; a18TacSend(arm, [x, z]); say({ c: "Gravity Well", q: "Nova Pulse", e: "Nebula" }[arm], 700); return false; }
+        a18TacSend("s", [x, z]); return false; },
+      cancel: () => { if (A18TAC.mode) { A18TAC.mode = null; A18TAC.wall = null; A18TAC.arm = null; if (NET.socket && MP.st === "game" && (MP.m5 || NET.tab)) netSend({ t: "ab", k: "x" }); } } })) { A18TAC.mode = null; return false; }
     if (NET.socket && MP.st === "game" && (MP.m5 || NET.tab)) netSend({ t: "ab", k: "x" }); // the server gates map-placed stars on its own Astral Form state
     return true; }
   if (J.pick === "Tejo") {
@@ -93,7 +107,7 @@ function a18Key(code) {
   if (P.hp <= 0) return true;
   if (A.supp > 0) return no();
   if (a === "Astra" || a === "Tejo") { const r = a18Tac(k); if (r === true) return true; if (r === "no") return no(); }
-  const chargeOk = k === "x" ? J.ult >= K().u : (a === "Astra" ? A.stars > 0 : J[k] > 0);
+  const chargeOk = k === "x" ? J.ult >= K().u : (a === "Astra" ? true : J[k] > 0); // Astra: the placed-star check inside the case is the gate, not the pool
   if (a === "Viper" && (k === "q" && A.cloud || k === "e" && A.screen || k === "x" && A.pit)) { J.cd[k] = 0.6; if (k === "q") A.cloudOn = !A.cloudOn; else if (k === "e") A.toxOn = !A.toxOn; else { A.pit = 0; if (A.pitM) { jRel(A.pitM); A.pitM = 0; } } return true; }
   if (a === "Vyse" && k === "e" && A.rose) { const p = A.rose; A.rose = 0; a18Blind(p, C.rose.blind); SFX.flash(); return true; }
   if (a === "Veto" && k === "c" && A.xcut) { P.x = A.xcut.x; P.z = A.xcut.z; P.y = A.xcut.y; A.xcut = 0; SFX.ab("dash"); return true; }
@@ -104,11 +118,14 @@ function a18Key(code) {
   const p = a18Aim(14), d = jAim();
   const spend = () => { if (k === "x") J.ult = 0; else if (a === "Astra") A.stars--; else J[k]--; J.cd[k] = 0.6; };
   switch (a) {
-    case "Astra": { spend();
-      if (k === "c") a18Fx({ kind: "gwell", p, t: 0.75, life: C.star.wellPull });
-      else if (k === "q") a18Fx({ kind: "nova", p, t: C.star.novaDelay });
-      else if (k === "e") a18Smoke(p, C.star.nebulaLife, C.star.nebulaR, 0x7a4fd0, 0xc9a8f2);
-      else { const m = a18Ring(new THREE.Vector3(P.x, 0, P.z), 30, 0x9a6ff0, 0.5); a18Fx({ kind: "div", m, t: C.star.divideLife }); }
+    case "Astra": {
+      if (k === "x") { spend(); const m = a18Ring(new THREE.Vector3(P.x, 0, P.z), 30, 0x9a6ff0, 0.5); a18Fx({ kind: "div", m, t: C.star.divideLife }); SFX.ab("updraft"); return true; }
+      const s0 = a18StarNear(p.x, p.z, 1e9); // c/q/e activate the placed Star nearest the crosshair (wiki Stars)
+      if (!s0) return no();
+      a18StarDrop(s0); const q = new THREE.Vector3(s0.x, 0, s0.z);
+      if (k === "c") a18Fx({ kind: "gwell", p: q, t: 0.75, life: C.star.wellPull });
+      else if (k === "q") a18Fx({ kind: "nova", p: q, t: C.star.novaDelay });
+      else a18Smoke(q, C.star.nebulaLife, C.star.nebulaR, 0x7a4fd0, 0xc9a8f2);
       SFX.ab("updraft"); return true; }
     case "Brimstone": { spend();
       if (k === "c") { const m = a18Ring(p, C.stim.r, 0xffc04a, 0.5); a18Fx({ kind: "stimz", m, p, t: C.stim.life }); }
@@ -246,6 +263,8 @@ const a18Los0 = los; los = function (a, b) { const ia = a18ArenaIn(a[0], a[2]), 
   const d = [q[0] / len, q[1] / len, q[2] / len]; return a18ArenaCast([a[0] - a18ArenaCell(a[0]), a[1], a[2]], d, Math.max(0, len - 0.4)) === Infinity; };
 function a18Duel(t) { const A = J.a18, C = A18C; A.duel = C.kc.duel; A.duelT = t; t.duel = C.kc.duel; t.supp = C.kc.supp; const p = new THREE.Vector3(player.x, player.y, player.z); A.duelHome = p; t.duelHome = t.g.position.clone(); A.duelM = a18ArenaShell(A18_ARENA_X); player.x = A18_ARENA_X - 4; player.y = 0.1; player.z = 0; player.vy = 0; t.g.position.set(A18_ARENA_X + 4, 0.1, 0); say("Kill Contract", 1000); SFX.ab("rewind"); }
 function a18Tick(dt) {
+  { const A = J.a18; if (A && A.starBack && performance.now() / 1000 >= A.starBack) { A.starBack = 0; A.stars = Math.min(4, A.stars + 1); say("Star reformed", 700); } } // Dissipate: the star returns after 1.25 s (wiki Nebula)
+
   if (!J.a18) return; const A = J.a18, C = A18C, P = player, T = dt;
   A.haste = Math.max(0, A.haste - dt); A.stim = Math.max(0, A.stim - dt); A.jam = Math.max(0, A.jam - dt); A.supp = Math.max(0, A.supp - dt);
   if (A.gateTp > 0) { A.gateTp -= dt; if (A.gateTp <= 0 && A.gate) { P.x = A.gate.x; P.y = A.gate.y; P.z = A.gate.z; A.gate = 0; SFX.ab("dash"); } }
@@ -288,6 +307,7 @@ function a18Tick(dt) {
       case "ceptor": if (e.t <= 0) { jRel(e.m); keep = false; } break;
       case "ncmd": { e.next -= dt; if (e.next <= 0) { e.next = C.nullcmd.pulse; for (const b of a18BotsIn(new THREE.Vector3(P.x, 0, P.z), C.nullcmd.r)) b.supp = C.zero.supp; } if (e.t <= 0) { jRel(e.m); keep = false; } break; }
       case "anni": { const t = e.tg; if (!t || !t.alive || e.t <= 0) { if (t && t.alive && e.t <= 0) jHit(t, 999, "Annihilate"); keep = false; break; } const d = [P.x - t.g.position.x, P.z - t.g.position.z], l = Math.hypot(d[0], d[1]) || 1; if (l > 1.2) { t.g.position.x += d[0] / l * 2.5 * dt; t.g.position.z += d[1] / l * 2.5 * dt; } break; }
+      case "star": if (e.t <= 0 || e.gone) { if (e.m) jRel(e.m); keep = false; } break;
       default: if (e.pop) { if (e.m) e.m.position && null; if (e.t <= 0) { e.pop(); if (e.m) jRel(e.m); keep = false; } } else if (e.t <= 0) keep = false;
     }
     if (keep) F[w++] = e; else if (e.m && !e.popped && e.kind === undefined) jRel(e.m);
@@ -312,7 +332,7 @@ const a18TickJ = jTick; jTick = function (dt) { a18TickJ(dt); try { a18Tick(dt);
 // netSyncEffects, and the rs status block (supp/jam/hind/haste/stim/decay, spike.js roundState) on the HUD.
 // Shapes follow the offline a18 visuals: clouds for fields/smokes, flat rings for zones/pulses, walls for
 // barriers, small meshes for devices/movers. Colors match the offline casts above.
-const A18VIS = { divide: ["wall", 0x9a6ff0, .5], conting: ["wall", 0x6a9af0, .45], fastlane: ["wall", 0x3a8af0, .45], shear: ["wall", 0xd04a8a, .5], tscreen: ["wall", 0x7ac24a, .4],
+const A18VIS = { star: ["star", 0xb9a7ff, .9], divide: ["wall", 0x9a6ff0, .5], conting: ["wall", 0x6a9af0, .45], fastlane: ["wall", 0x3a8af0, .45], shear: ["wall", 0xd04a8a, .5], tscreen: ["wall", 0x7ac24a, .4],
  tide: ["wave", 0x3fd0c0, .5], reckon: ["wave", 0x3fd0c0, .6], bassq: ["wave", 0x3fd0c0, .5], nightfall: ["wave", 0x241a40, .7], armag: ["wave", 0xff5a2a, .55], surge: ["wave", 0x3fd0c0, .5], paths: ["ring", 0xf0c04a, .5],
  pit: ["cloud", 0x6ab23a, .4], cove: ["cloud", 0x3fd0c0, .4], garden: ["cloud", 0xd04a8a, .35], choke: ["cloud", 0x8a6af0, .4], vine: ["cloud", 0xd04a8a, .4], gnet: ["cloud", 0x6a4af0, .5], seize: ["cloud", 0x4a2a8a, .5], mosh: ["cloud", 0xff7a1a, .5], fire: ["cloud", 0xff5a1a, .5], orbital: ["cloud", 0xff8a3a, .45], frag: ["cloud", 0xffa03a, .45], salvo: ["cloud", 0xff6a3a, .5], snake: ["cloud", 0x6ab23a, .45], susp: ["cloud", 0xc04af0, .35],
  gwell: ["ring", 0x8a6af0, .6], nova: ["ring", 0xb08af0, .6], pull: ["ring", 0x8a6af0, .5], displ: ["ring", 0x9a6ff0, .5], stim: ["ring", 0xf0e0b0, .5], mpulse: ["ring", 0x3fd0c0, .55], nullcmd: ["ring", 0x8a2af0, .45], haunt: ["ring", 0xd04a8a, .45], blast: ["ring", 0xff8a5a, .6], sd: ["ring", 0x3fd0c0, .55], sensor: ["ring", 0xf0c04a, .4], undercut: ["ring", 0x6a9af0, .55], satur: ["ring", 0xf0c04a, .5], zero: ["ring", 0x8a2af0, .5],
@@ -325,6 +345,7 @@ function a18NetMesh(kind, e) {
   else if (shape === "wave") { m = new THREE.Mesh(new THREE.BoxGeometry(e.r && e.r > 2 ? e.r * 2 : 8, 2.2, 1.2), new THREE.MeshLambertMaterial({ color: col, transparent: true, opacity: op })); m.position.set(e.p[0], 1.1, e.p[2]); }
   else if (shape === "ring") { m = jM(ringGeo, fireMat(col, op)); m.rotation.x = -Math.PI / 2; m.position.set(e.p[0], .06, e.p[2]); m.scale.setScalar(e.r || 4); }
   else if (shape === "dev") { m = new THREE.Mesh(new THREE.BoxGeometry(.5, .5, .5), new THREE.MeshLambertMaterial({ color: col, emissive: col, emissiveIntensity: .4 })); m.position.set(e.p[0], (e.p[1] || 0) + .3, e.p[2]); }
+  else if (shape === "star") { m = new THREE.Mesh(new THREE.OctahedronGeometry(0.35), new THREE.MeshLambertMaterial({ color: col, emissive: col, emissiveIntensity: 0.5 })); m.position.set(e.p[0], (e.p[1] || 0) + 1.4, e.p[2]); }
   else if (shape === "orb") { m = new THREE.Mesh(orbGeo, new THREE.MeshLambertMaterial({ color: col, emissive: col, emissiveIntensity: .5 })); m.position.set(e.p[0], (e.p[1] || 0) + 1, e.p[2]); }
   else { m = jM(smokeGeo, xSmokeM("a18net" + (a18NetMesh.n = (a18NetMesh.n || 0) + 1), col, col)); m.material.opacity = op; m.position.set(e.p[0], (e.p[1] || 0) + 1.5, e.p[2]); m.scale.setScalar((e.r || 4) / 4); }
   scene.add(m); return m;
@@ -335,7 +356,7 @@ function a18NetSync(rows) {
   for (const e of rows) { if (e && e.kind === "duel" && Number.isFinite(e.id) && Array.isArray(e.p) && e.p.length === 3) { seen.add(e.id); if (!a18Net.has(e.id)) a18Net.set(e.id, { m: a18ArenaShell(e.p[0]), kind: "duel" }); continue; }
     if (!e || !A18VIS[e.kind] || !Number.isFinite(e.id) || !Array.isArray(e.p) || e.p.length !== 3) continue; seen.add(e.id);
     let r = a18Net.get(e.id); if (!r) { r = { m: a18NetMesh(e.kind, e), kind: e.kind }; a18Net.set(e.id, r); }
-    else if (r.m) { const k = A18VIS[e.kind][0]; if (k === "orb" || k === "wave" || k === "dev") r.m.position.set(e.p[0], k === "orb" ? (e.p[1] || 0) + 1 : r.m.position.y === 1.1 ? 1.1 : (e.p[1] || 0) + .3, e.p[2]); else r.m.position.x = e.p[0], r.m.position.z = e.p[2]; if (Number.isFinite(e.yaw) && k === "wall") r.m.rotation.y = -e.yaw; } }
+    else if (r.m) { const k = A18VIS[e.kind][0]; if (k === "orb" || k === "wave" || k === "dev" || k === "star") r.m.position.set(e.p[0], k === "orb" ? (e.p[1] || 0) + 1 : k === "star" ? (e.p[1] || 0) + 1.4 : r.m.position.y === 1.1 ? 1.1 : (e.p[1] || 0) + .3, e.p[2]); else r.m.position.x = e.p[0], r.m.position.z = e.p[2]; if (Number.isFinite(e.yaw) && k === "wall") r.m.rotation.y = -e.yaw; } }
   for (const [id, r] of a18Net) if (!seen.has(id)) { a18NetFree(r); a18Net.delete(id); }
 }
 const a18FxSync0 = netSyncEffects; netSyncEffects = function (rows) { a18FxSync0(rows); try { a18NetSync(rows); } catch (e) { xE(e); } };

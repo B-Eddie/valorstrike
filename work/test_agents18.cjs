@@ -28,6 +28,7 @@ const fails=[];const fail=s=>{fails.push(s);console.log('FAIL',s);};
   // basics: each spends its charge or records state
   for(const [code,slot] of [['KeyC','c'],['KeyQ','q'],['KeyE','e']]){
    xe(`J.${slot}=1;J.cd.${slot}=0;true`);if(a==='Clove'&&slot==='c')xe('J.lastKillT=performance.now()/1000;true');
+   if(a==='Astra')xe('J.a18.starList.push({x:player.x+3,z:player.z,fx:null});true'); // Astra C/Q/E activate a placed Star (wiki Stars): nothing happens without one
    const before=xe(`JSON.stringify([J.${slot},(J.a18fx||[]).length,J.smokes.length,J.zones.length,J.a18.stars])`);
    await tap(code,120);await adv(150);
    const after=xe(`JSON.stringify([J.${slot},(J.a18fx||[]).length,J.smokes.length,J.zones.length,J.a18.stars])`);

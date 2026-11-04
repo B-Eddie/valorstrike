@@ -8,11 +8,11 @@ import Motor from './motor.cjs';
 import {ARENA_X,ARENA_STRIDE,ARENA_HALF} from './arena.js';
 import kits from './kits.json' with {type:'json'};
 export const AG18={Astra:1,Brimstone:1,Clove:1,Harbor:1,Miks:1,Viper:1,Hush:1,Iso:1,Neon:1,Waylay:1,Yoru:1,Fade:1,Gekko:1,'KAY/O':1,Tejo:1,Deadlock:1,Veto:1,Vyse:1};
-export const A18_NET_KINDS=new Set(['gwell','nova','stim','fire','orbital','conting','undercut','fastlane','blast','tide','reckon','cove','mpulse','bassq','snake','pit','susp','pull','decoy','seeker','seize','haunt','nightfall','mosh','dizzy','frag','nullcmd','sdrone','sd','salvo','armag','mesh','sensor','gnet','xcut','choke','ceptor','vine','rose','garden','paths','anni','gatefake','duel']);/* effect kinds the online client renders (work/agents18_runtime.js A18VIS) */
+export const A18_NET_KINDS=new Set(['star','gwell','nova','stim','fire','orbital','conting','undercut','fastlane','blast','tide','reckon','cove','mpulse','bassq','snake','pit','susp','pull','decoy','seeker','seize','haunt','nightfall','mosh','dizzy','frag','nullcmd','sdrone','sd','salvo','armag','mesh','sensor','gnet','xcut','choke','ceptor','vine','rose','garden','paths','anni','gatefake','duel']);/* effect kinds the online client renders (work/agents18_runtime.js A18VIS) */
 export const TYPES18={Astra:['pull','concuss','smoke'],Brimstone:['stim','fire','smoke'],Clove:['haste','decay','smoke'],Harbor:['surge','wall','cove'],Miks:['mpulse','harmonize','smoke'],Viper:['snakebite','smoke','wall'],Hush:['flow','flash','pull'],Iso:['wall','undercut','shield'],Neon:['wall','concuss','haste'],Waylay:['hinder','dash','teleport'],Yoru:['decoy','flash','teleport'],Fade:['prowler','tether','recon'],Gekko:['mosh','wingman','flash'],'KAY/O':['frag','flash','suppress'],Tejo:['drone','concuss','salvo'],Deadlock:['mesh','sensor','gravnet'],Veto:['crosscut','choke','interceptor'],Vyse:['vine','shear','arcrose']};
 // Wiki stats per ability (fetched 2026-11-03), project-lightweight where noted:
 export const A18={
- star:{max:4,cost:150,wellPull:2,wellVuln:2,wellR:3.5,novaDelay:1.25,novaConcuss:4,novaR:4.5,nebulaLife:14.25,nebulaR:4.1,divideLife:21},/* wiki Gravity_Well/Nova_Pulse/Nebula/Cosmic_Divide */
+ star:{max:4,cost:150,wellPull:2,wellVuln:2,wellR:3.5,novaDelay:1.25,novaConcuss:4,novaR:4.5,nebulaLife:14.25,nebulaR:4.1,divideLife:21,placeR:2.5,selectR:6,dissipateDelay:1.25,fakeNebula:.75},/* wiki Gravity_Well/Nova_Pulse/Nebula/Cosmic_Divide/Stars: stars place from Astral Form and persist; C/Q/E activate a placed star (consumed); Dissipate (click a placed star) returns it after 1.25 s past a brief fake Nebula */
  stim:{life:12.5,r:4,k:1.15},/* Stim Beacon: 15 % speed + rapidfire zone 12.5 s */
  incend:{life:7,r:4.5,rate:60},/* wiki Incendiary 60/s */
  skysmoke:{life:19.25,r:4.15,max:3},/* wiki Sky_Smoke */
@@ -62,7 +62,7 @@ export const A18={
  evo:{life:12,hps:10},/* Evolution: stim + 10/s heal + debuff immunity (weapon damage still lands) */
  vine:{life:30,r:6,slowK:.4,dps:15},shear:{life:30,r:2.5,wall:8},rose:{life:30,blind:2,r:20},garden:{r:20,jam:8},/* Vyse */
 };
-export function init18(u,A){if(!AG18[u.agent])return;A.slides=u.agent==='Neon'?1:0;/* wiki High Gear v9.11: 2 >>> 1 slide charge */A.slideKills=0;A.stars=u.agent==='Astra'?2:0;A.fuel=(u.agent==='Viper'||u.agent==='Neon')?A18.fuel.max:0;A.globules=0;A.astral=false;u.astralForm=false;/* Astra: 2 Stars a round (wiki Stars); Viper/Neon: full fuel tank */A.toxOn=false;A.cloudOn=false;A.gate=null;A.marker=null;A.decoy=null;u.isoShield=0;u.driftUntil=0;u.evoUntil=0;u.suppressUntil=0;u.jamUntil=0;u.hinderUntil=0;u.deafenUntil=0;u.levUntil=0;u.decayUntil=0;u.decayAmt=0;u.hasteUntil=0;u.stimUntil=0;u.gravUntil=0;u.ndy=null;u.overheal=0;}
+export function init18(u,A){if(!AG18[u.agent])return;A.slides=u.agent==='Neon'?1:0;/* wiki High Gear v9.11: 2 >>> 1 slide charge */A.slideKills=0;A.stars=u.agent==='Astra'?2:0;A.fuel=(u.agent==='Viper'||u.agent==='Neon')?A18.fuel.max:0;A.globules=0;A.astral=false;u.astralForm=false;u.starBackAt=0;/* Astra: 2 Stars a round (wiki Stars); Viper/Neon: full fuel tank */A.toxOn=false;A.cloudOn=false;A.gate=null;A.marker=null;A.decoy=null;u.isoShield=0;u.driftUntil=0;u.evoUntil=0;u.suppressUntil=0;u.jamUntil=0;u.hinderUntil=0;u.deafenUntil=0;u.levUntil=0;u.decayUntil=0;u.decayAmt=0;u.hasteUntil=0;u.stimUntil=0;u.gravUntil=0;u.ndy=null;u.overheal=0;}
 const eye=u=>[u.x,u.y+1.6-(u.ch||0),u.z];
 const aim=u=>[-Math.sin(u.look)*Math.cos(u.pitch||0),Math.sin(u.pitch||0),-Math.cos(u.look)*Math.cos(u.pitch||0)];
 const enemies=(sim,u)=>sim.units.filter(v=>v!==u&&v.team!==u.team&&v.alive&&!v.loading);
@@ -73,6 +73,7 @@ function dmg(sim,u,v,n){/* lazy import cycle guard: abilities.js passes its abil
 export const dmg18={f:null};
 function status(v,key,seconds,sim){v[key]=Math.max(v[key]||0,sim.time+seconds);}
 function decay(sim,v,amt){if(v.evoUntil>sim.time)return;v.decayAmt=Math.min(99,(v.decayUntil>sim.time?v.decayAmt:0)+amt);status(v,'decayUntil',8,sim);v.hp=Math.max(1,v.hp-amt);}
+function ownStarNear(sim,u,p,r){let best=null,bd=r;for(const e of sim.effects){if(e.kind!=='star'||e.owner!==u.id)continue;const d=Math.hypot(e.p[0]-p[0],e.p[2]-p[2]);if(d<bd){bd=d;best=e;}}return best;}/* a placed Astral Star is an fx row 'star' owned by the caster */
 function land(sim,u,range){/* crosshair floor point, as aimFloor's simple form */const o=eye(u),d=aim(u),hit=sim.world.ray(o,d,range),t=Number.isFinite(hit)?Math.max(0,hit-.5):range;let x=o[0]+d[0]*t,z=o[2]+d[2]*t,g=sim.world.ground(x,z,Math.min(o[1]+d[1]*t,o[1])+.1);if(!Number.isFinite(g)){g=u.y;}return [x,g+.1,z];}
 // Signature restock timers (s), extending the abilities.js map; duelist 2-kill resets are in reward18.
 export const RESTOCK18={Harbor:40,'KAY/O':40,Fade:40,Gekko:0,Viper:0,Neon:0,Iso:0,Waylay:0,Hush:0,Yoru:0,Deadlock:0,Veto:0,Vyse:0};
@@ -92,7 +93,7 @@ export function cast18(sim,u,m,o,d,push){
  if(ag==='Yoru'&&k==='e'&&A.gate){/* Gatecrash (wiki): recast teleports in 1.2 s total (0.5 s windup + 0.7 s arrival); USE (m.fk) fakes it - the same audio cue, no teleport, the anchor survives, and a 30 s decal marks the fake (v4.04) */
   if(m.fk===1){fx(sim,u,'gatefake',[...A.gate.p],30,1.2,{at:sim.time});cast(sim,u,k,o,d,[...A.gate.p]);return true;}
   u.pendingTeleport={kind:'gatecrash',p:[...A.gate.p],at:sim.time+1.2};A.gate=null;cast(sim,u,k,o,d,[...u.pendingTeleport.p]);return true;}
- if(ag==='Astra'&&u.human){/* Astral Form (wiki Astral_Form/Cosmic_Divide): X opens the map view; c/q/e land a star on the picked point, X places Cosmic Divide across its two picked points and exits, X with no points just exits */
+ if(ag==='Astra'&&u.human){/* Astral Form (wiki Astral_Form/Stars/Cosmic_Divide): X opens the map view; a map click (k 's') places a persistent Star, or dissipates one clicked; c/q/e on the map activate the placed star nearest the click; X across two points places Cosmic Divide and exits, X alone exits */
   const mp=Array.isArray(m.p)&&m.p.length>=2&&m.p.slice(0,2).every(Number.isFinite)?[Math.max(-200,Math.min(200,m.p[0])),0,Math.max(-200,Math.min(200,m.p[1]))]:null;
   if(k==='x'){
    if(!A.astral){if(A.ult<K.u)return false;A.astral=true;u.astralForm=true;return true;}
@@ -100,11 +101,20 @@ export function cast18(sim,u,m,o,d,push){
     A.astral=false;u.astralForm=false;A.ult=0;const cx=(x1+x2)/2,cz=(z1+z2)/2,yaw=Math.atan2(-(x2-x1),-(z2-z1)),half=Math.max(4,Math.hypot(x2-x1,z2-z1)/2);
     fx(sim,u,'divide',[cx,0,cz],C.star.divideLife,half,{yaw});cast(sim,u,k,o,d,[cx,0,cz]);return true;}
    A.astral=false;u.astralForm=false;return true;}
-  if(A.astral&&mp){if(A.stars<1)return false;A.stars--;A.cool[k]=sim.time+.3;
-   if(k==='c')fx(sim,u,'gwell',mp,C.star.wellPull,C.star.wellR,{at:sim.time+.75});
-   else if(k==='q')fx(sim,u,'nova',mp,C.star.novaDelay,C.star.novaR,{at:sim.time+C.star.novaDelay});
-   else if(k==='e')fx(sim,u,'smoke',mp,C.star.nebulaLife,C.star.nebulaR);
-   cast(sim,u,k,o,d,mp);return true;}}
+  if(k==='s'){if(!A.astral||!mp)return false;/* Stars place only from the Astral Form map (wiki Stars) */
+   const s0=ownStarNear(sim,u,mp,C.star.placeR);
+   if(s0){/* Dissipate (wiki Nebula): click a placed star - brief fake Nebula, the star returns after 1.25 s */
+    sim.effects=sim.effects.filter(e=>e!==s0);fx(sim,u,'smoke',s0.p,C.star.fakeNebula,C.star.nebulaR);u.starBackAt=sim.time+C.star.dissipateDelay;cast(sim,u,k,o,d,s0.p);return true;}
+   if(A.stars<1)return false;A.stars--;A.cool[k]=sim.time+.3;
+   fx(sim,u,'star',mp,400,1,{born:sim.time});cast(sim,u,k,o,d,mp);return true;}
+  if(A.astral&&mp&&(k==='c'||k==='q'||k==='e')){/* activate the placed star nearest the clicked point (wiki: C/Q/E target a Star, any range) */
+   const s0=ownStarNear(sim,u,mp,C.star.selectR);if(!s0)return false;
+   sim.effects=sim.effects.filter(e=>e!==s0);A.cool[k]=sim.time+.3;const q=s0.p;
+   if(k==='c')fx(sim,u,'gwell',q,C.star.wellPull,C.star.wellR,{at:sim.time+.75});
+   else if(k==='q')fx(sim,u,'nova',q,C.star.novaDelay,C.star.novaR,{at:sim.time+C.star.novaDelay});
+   else fx(sim,u,'smoke',q,C.star.nebulaLife,C.star.nebulaR);
+   cast(sim,u,k,o,d,q);return true;}
+  if(A.astral)return false;}
  if(ag==='Tejo'&&u.human&&Array.isArray(m.p)&&m.p.length>=2&&m.p.every(Number.isFinite)){/* Guided Salvo (wiki): up to two map-picked strikes; Armageddon: map-picked origin, wave from Tejo through it */
   if(k==='e'){if(!(A.e>0))return false;const pts=[];for(let i=0;i+1<m.p.length&&pts.length<2;i+=2)pts.push([Math.max(-200,Math.min(200,m.p[i])),0,Math.max(-200,Math.min(200,m.p[i+1]))]);
    A.e--;A.cool.e=sim.time+.3;for(const q of pts)fx(sim,u,'salvo',q,C.salvo.pulses*C.salvo.gap+1,C.salvo.r,{at:sim.time+.6,next:sim.time+.6,left:C.salvo.pulses});
@@ -114,17 +124,23 @@ export function cast18(sim,u,m,o,d,push){
  if(ag==='Clove'&&k==='x'&&!u.alive){/* Not Dead Yet: cast from death within the window */if(!(A.ult>=K.u)||!u.ndyDead||sim.time>u.ndyDead+C.ndy.window)return false;A.ult=0;u.ndy={at:sim.time+C.ndy.channel};u.invulnerableUntil=sim.time+C.ndy.channel;cast(sim,u,k,[u.x,u.y+1,u.z],[0,0,-1],[u.x,u.y,u.z]);return true;}
  // charge accounting mirrors castAbility0's rules for the 18: ult points, star pool, per-key charges
  if(k==='x'){if(A.ult<K.u)return false;}
- else if(ag==='Astra'){if(A.stars<1)return false;}
+ else if(ag==='Astra'){/* placed-star activation gates inside the case; the pool only buys new stars */}
  else if(!(A[k]>0))return false;
  const p=land(sim,u,14);
  const spend=()=>{if(k==='x')A.ult=0;else if(ag==='Astra')A.stars--;else A[k]--;A.cool[k]=sim.time+.3;};
  switch(ag){
-  case 'Astra':{spend();
-   if(k==='c'){fx(sim,u,'gwell',p,C.star.wellPull,C.star.wellR,{at:sim.time+.75});}
-   else if(k==='q'){fx(sim,u,'nova',p,C.star.novaDelay,C.star.novaR,{at:sim.time+C.star.novaDelay});}
-   else if(k==='e'){fx(sim,u,'smoke',p,C.star.nebulaLife,C.star.nebulaR);}
-   else{fx(sim,u,'divide',[u.x,u.y,u.z],C.star.divideLife,60,{yaw:u.look});}/* Cosmic Divide: an indestructible sound/vision wall across the map (lightweight: a long barrier line through the aim point) */
-   cast(sim,u,k,o,d,p);return true;}
+  case 'Astra':{
+   if(k==='x'){spend();fx(sim,u,'divide',[u.x,u.y,u.z],C.star.divideLife,60,{yaw:u.look});/* Cosmic Divide: an indestructible sound/vision wall across the map (lightweight: a long barrier line through the aim point) */
+    cast(sim,u,k,o,d,p);return true;}
+   if(k==='s')return false;
+   const s0=ownStarNear(sim,u,p,1e9);/* activation targets the star nearest the crosshair point, unlimited range (wiki Stars) */
+   if(!s0){if(u.human||A.stars<1)return false;/* a bot without a placed star places one at its aim point first */
+    A.stars--;A.cool[k]=sim.time+.3;fx(sim,u,'star',p,400,1,{born:sim.time});cast(sim,u,k,o,d,p);return true;}
+   sim.effects=sim.effects.filter(e=>e!==s0);A.cool[k]=sim.time+.3;const q=s0.p;
+   if(k==='c'){fx(sim,u,'gwell',q,C.star.wellPull,C.star.wellR,{at:sim.time+.75});}
+   else if(k==='q'){fx(sim,u,'nova',q,C.star.novaDelay,C.star.novaR,{at:sim.time+C.star.novaDelay});}
+   else{fx(sim,u,'smoke',q,C.star.nebulaLife,C.star.nebulaR);}
+   cast(sim,u,k,o,d,q);return true;}
   case 'Brimstone':{spend();
    if(k==='c')fx(sim,u,'stim',p,C.stim.life,C.stim.r);
    else if(k==='q')fx(sim,u,'fire',p,C.incend.life,C.incend.r,{rate:C.incend.rate});
@@ -231,6 +247,7 @@ const strip=(u,v,C)=>{const q=[v.x-u.x,v.z-u.z],f=q[0]*-Math.sin(u.look)+q[1]*-M
 // Per-frame effect + status simulation for the 18. Called from simulation.tick after unitTick.
 export function tick18(sim,dt){
  const T=sim.time,gone=[];
+ for(const u of sim.units){const A=u.ability;if(A&&u.agent==='Astra'&&u.starBackAt&&T>=u.starBackAt){u.starBackAt=0;A.stars=Math.min(A18.star.max,A.stars+1);}}/* a dissipated Star reforms in the pool (wiki Nebula/Dissipate) */
  for(const e of sim.effects){if(!e.ag||!AG18[e.ag])continue;const C=A18,own=sim.units.find(n=>n.id===e.owner);if(e.until<T){if(e.ag==='Gekko'){const k=e.kind==='mosh'?'c':e.kind==='dizzy'?'e':e.wing?'q':0;if(own&&k&&!own.ability['re_'+k])own.ability['re_'+k]=T+A18.globule.reclaim;}continue;}
   switch(e.kind){
    case 'gwell':{for(const v of enemies(sim,own||{}))if(inR(v,e.p,e.radius)){const d=[e.p[0]-v.x,e.p[2]-v.z],l=Math.hypot(...d)||1;v.x+=d[0]/l*4*dt;v.z+=d[1]/l*4*dt;status(v,'vulnerableUntil',2,sim);}break;}

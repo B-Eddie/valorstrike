@@ -3,8 +3,9 @@
 //   Room 1: A (Iso) vs B (Jett), no bots. A walks to B (nav graph), aims, Kill Contract: BOTH clients must see
 //     both combatants at the pocket-arena cell (x ~= ARENA_X +/- 4) and a 'duel' fx row; A then kills B inside
 //     the duel, the duel ends and A is returned to the map.
-//   Room 2: A (Astra) vs B, no bots. A enters Astral Form (QA_ULT hook) and casts Gravity Well at B through the
-//     map path (ab c with m.p): BOTH clients must see the 'gwell' fx row at B's position.
+//   Room 2: A (Astra) vs B, no bots. A enters Astral Form (QA_ULT hook), places a persistent Star at B through
+//     the map (ab s with m.p), then activates Gravity Well ON that star (ab c): BOTH clients must see the 'star'
+//     marker, then the 'gwell' fx row at B's position with the marker consumed.
 // Run: npm run dev with QA vars (work/test-two-client-18.sh or CI), then node test-two-client-18.js
 import WebSocket from 'ws';
 import assert from 'node:assert/strict';
@@ -126,17 +127,22 @@ setTimeout(() => { console.error('GLOBAL TIMEOUT'); process.exit(1); }, 240000);
   clearInterval(ping); A.ws.close(); B.ws.close();
 }
 
-// ---- Room 2: Astra Astral Form + map-placed Gravity Well, visible to both clients
+// ---- Room 2: Astra Astral Form: a persistent Star is placed on the map (both clients see the marker), then
+// Gravity Well activates ON the placed star (both clients see the gwell row and the marker consumed)
 {
   const { A, B, ping } = await room('Astra', 'Jett');
   await sleep(6000);
   const { a, b } = await approach(A, B, 18);
   A.send({ t: 'ab', k: 'x' }); // Astral Form (QA_ULT charged)
   await sleep(400);
-  A.send({ t: 'ab', k: 'c', p: [b.x, b.z] }); // Gravity Well placed through the map
-  const seen = () => ['A', 'B'].every((n) => false) || [A, B].every((c) => (c.snap.fx || []).some((f) => f.kind === 'gwell' && Math.hypot(f.p[0] - b.x, f.p[2] - b.z) < 3));
-  await until(seen, 'both clients see the gwell fx row at B', 15000);
-  console.log('astra star online: Astral Form opened, Gravity Well fx row at B visible to both clients');
+  A.send({ t: 'ab', k: 's', p: [b.x, b.z] }); // place a persistent Star at B through the map
+  const starSeen = () => [A, B].every((c) => (c.snap.fx || []).some((f) => f.kind === 'star' && Math.hypot(f.p[0] - b.x, f.p[2] - b.z) < 3));
+  await until(starSeen, 'both clients see the placed star marker at B', 15000);
+  console.log('astra star online: Astral Form opened, persistent star marker at B visible to both clients');
+  A.send({ t: 'ab', k: 'c', p: [b.x, b.z] }); // Gravity Well activates on the placed star
+  const seen = () => [A, B].every((c) => (c.snap.fx || []).some((f) => f.kind === 'gwell' && Math.hypot(f.p[0] - b.x, f.p[2] - b.z) < 3) && !(c.snap.fx || []).some((f) => f.kind === 'star'));
+  await until(seen, 'both clients see the gwell fx row at B and the star marker consumed', 15000);
+  console.log('astra star online: Gravity Well activated on the placed star, marker consumed on both clients');
   clearInterval(ping); A.ws.close(); B.ws.close();
 }
 console.log('two-client agents18: PASS');

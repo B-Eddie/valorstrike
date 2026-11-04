@@ -21,12 +21,16 @@ for(const a of Object.keys(AG18)){assert.ok(kits[a],a+' in kits.json');assert.ok
  assert.equal(cast18(s,u,{k:'c'},O,D),false,'no charge, no cast');
  u.ability.c=3;assert.equal(cast18(s,u,{k:'c'},O,D),true,'cast lands');assert.equal(u.ability.c,2,'one charge spent');}
 
-// Astra: 2 stars a round, casts spend stars not charges
+// Astra: 2 stars a round; a cast with no placed star places one (bot path), the next cast activates it
 {const s=mkSim(),u=mk('Astra',0,1);s.units=[u];initAbilities(u,true);
  assert.equal(u.ability.stars,2,'2 stars (wiki Stars)');
- assert.equal(cast18(s,u,{k:'e'},O,D),true);assert.equal(u.ability.stars,1,'star spent');
- assert.equal(cast18(s,u,{k:'c'},O,D),true);assert.equal(u.ability.stars,0);
- assert.equal(cast18(s,u,{k:'q'},O,D),false,'no stars, no cast');}
+ assert.equal(cast18(s,u,{k:'e'},O,D),true);assert.equal(u.ability.stars,1,'one star placed from the pool');
+ assert.ok(s.effects.some(e=>e.kind==='star'&&e.owner===u.id),'a persistent star marker exists');
+ assert.equal(cast18(s,u,{k:'e'},O,D),true);assert.equal(u.ability.stars,1,'activating consumes the placed star, not the pool');
+ assert.ok(s.effects.some(e=>e.kind==='smoke')&&!s.effects.some(e=>e.kind==='star'),'Nebula at the star, marker consumed');
+ assert.equal(cast18(s,u,{k:'c'},O,D),true,'bot places its last star');assert.equal(u.ability.stars,0);
+ assert.equal(cast18(s,u,{k:'q'},O,D),true,'that placed star still activates');
+ assert.equal(cast18(s,u,{k:'q'},O,D),false,'pool empty and nothing placed: no cast');}
 
 // Iso Kill Contract: the duel runs in the analytic pocket arena (arena.js) - both combatants are pulled to the
 // cell, the walls/floor/cover work there, duel damage lands, outsiders are locked out, both return home
@@ -128,9 +132,19 @@ for(const a of Object.keys(AG18)){assert.ok(kits[a],a+' in kits.json');assert.ok
 // point; Cosmic Divide spans its two picked points and spends the ult; exiting without points spends nothing
 {const s=mkSim(),a2=mk('Astra',0,17,0,true);s.units=[a2];initAbilities(a2,true);a2.ability.ult=kits['Astra'].u;
  assert.equal(cast18(s,a2,{k:'x'},O,D),true,'enters Astral Form');assert.ok(a2.astralForm&&a2.ability.astral,'in the form');
- assert.equal(cast18(s,a2,{k:'e',p:[30,40]},O,D),true,'star placed from the map');
- const sm=s.effects.find(e=>e.kind==='smoke');assert.ok(sm&&Math.abs(sm.p[0]-30)<.01&&Math.abs(sm.p[2]-40)<.01,'the smoke lands at (30,40), not the aim point');
- assert.equal(a2.ability.stars,1,'one star spent');
+ assert.equal(cast18(s,a2,{k:'e',p:[30,40]},O,D),false,'no placed star near the click: Nebula does not cast');
+ assert.equal(cast18(s,a2,{k:'s',p:[30,40]},O,D),true,'a map click places a persistent star');
+ const st=s.effects.find(e=>e.kind==='star');assert.ok(st&&Math.abs(st.p[0]-30)<.01&&Math.abs(st.p[2]-40)<.01,'the star sits at (30,40)');
+ assert.equal(a2.ability.stars,1,'one star spent from the pool');
+ assert.equal(cast18(s,a2,{k:'e',p:[37,44]},O,D),false,'6 m away is outside the select radius');
+ assert.equal(cast18(s,a2,{k:'e',p:[31,41]},O,D),true,'clicking near the star activates Nebula on it');
+ const sm=s.effects.find(e=>e.kind==='smoke');assert.ok(sm&&Math.abs(sm.p[0]-30)<.01&&Math.abs(sm.p[2]-40)<.01,'the smoke lands at the star, not the aim point');
+ assert.ok(!s.effects.some(e=>e.kind==='star'),'the placed star is consumed');
+ assert.equal(cast18(s,a2,{k:'s',p:[50,50]},O,D),true,'second star placed');
+ assert.equal(cast18(s,a2,{k:'s',p:[50.5,50.5]},O,D),true,'clicking the placed star dissipates it');
+ assert.ok(!s.effects.some(e=>e.kind==='star'),'dissipated marker gone');
+ assert.equal(a2.starBackAt>s.time,true,'the star reforms after a delay');
+ run(s,200);assert.equal(a2.ability.stars,1,'the dissipated star returns to the pool');
  assert.equal(cast18(s,a2,{k:'x',p:[0,0,60,0]},O,D),true,'Cosmic Divide across two points');
  const dv=s.effects.find(e=>e.kind==='divide');assert.ok(dv,'the wall exists');
  assert.ok(Math.abs(dv.p[0]-30)<.01&&Math.abs(dv.p[2]-0)<.01,'midpoint between the picks');
