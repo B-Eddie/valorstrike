@@ -3154,100 +3154,100 @@
    "o": 0
   },
   "prime/kill1": {
-   "sha256": "6050e4c8c8e55d2a93941ce8ed220607dd75cda1b01e8913e38f3140a66cb4bc",
+   "sha256": "27809dee329afdecfc34f4289454b8ecf9fd018a8f2c635840618e893efdbeb5",
    "role": "kill",
-   "lufs": -12.82,
-   "peak": 1.39,
-   "g": -3.2,
-   "o": 0.013
+   "lufs": -16.49,
+   "peak": -1.95,
+   "g": 0.5,
+   "o": 0.012
   },
   "prime/kill2": {
-   "sha256": "4d3a873b13cc6cd9b5552f60881b04de43ce68d6ecd9841fc969ce4a549ef34d",
+   "sha256": "33ab4b8f1764b114a72fc8fd3bde84f9136b56320f5290f16930f9f8ceabbcb9",
    "role": "kill",
-   "lufs": -13.09,
-   "peak": 1.58,
-   "g": -2.9,
-   "o": 0.009
+   "lufs": -16.35,
+   "peak": -1.94,
+   "g": 0.4,
+   "o": 0.005
   },
   "prime/kill3": {
-   "sha256": "f9e1293c6998d9b29e33c644f9c013f1dcac1b40d97a00077cc3ba2f21cc9cf4",
+   "sha256": "88e5e51946e189b53e5334aede38756f69ff7f187ebbfcbf4c591ebb985cbc90",
    "role": "kill",
-   "lufs": -13.45,
-   "peak": 1.61,
-   "g": -2.6,
-   "o": 0.009
+   "lufs": -16.43,
+   "peak": -1.92,
+   "g": 0.4,
+   "o": 0.005
   },
   "prime/kill4": {
-   "sha256": "470a062ba6474446dca53eedf3b16f3bef111b168e861d24961a2270630bc06b",
+   "sha256": "aea7673e68ade11efa375f293d9c876fff5fb69254a146a1517c30689082f54d",
    "role": "kill",
-   "lufs": -12.63,
-   "peak": 1.36,
-   "g": -3.4,
-   "o": 0.009
+   "lufs": -17.64,
+   "peak": -2.01,
+   "g": 1.6,
+   "o": 0.006
   },
   "prime/kill5": {
-   "sha256": "0acac2904434ebc38b32609c44171ef0441b527615196de8e74df39dacfb1201",
+   "sha256": "0ba17c37d7190be58320e79a9af9e01f9f68938942e7106b88beacb542a6d4f3",
    "role": "kill",
-   "lufs": -9.51,
-   "peak": 1.69,
-   "g": -6.5,
-   "o": 0.008
+   "lufs": -12.8,
+   "peak": -1.87,
+   "g": -3.2,
+   "o": 0.006
   },
   "prime/finisher": {
-   "sha256": "12623f5c95aa0c6e1d96dad69db9e8854ff62d5eea2701e23bdeb843c89a145c",
+   "sha256": "f1d71b0f78a75d951fefded9891e8f50f9181d8d5a3be44e475c2987896e09a8",
    "role": "kill",
-   "lufs": -13.09,
-   "peak": -0.5,
-   "g": -2.9,
-   "o": 0.011
+   "lufs": -14.36,
+   "peak": -1.97,
+   "g": -1.6,
+   "o": 0.006
   },
   "blastx/kill1": {
-   "sha256": "4b44396cf6133dee8b2138d448cd9c49e82143968a1621377021fc5f625a2098",
+   "sha256": "9a250c1ba7f57a2c4587a66cad87cbc85f8ab6110aee3f939681a19b1dbfe58e",
    "role": "kill",
-   "lufs": -10.39,
-   "peak": 2.39,
-   "g": -5.6,
-   "o": 0.023
+   "lufs": -15,
+   "peak": -1.91,
+   "g": -1,
+   "o": 0.021
   },
   "blastx/kill2": {
-   "sha256": "b975eecf3360b79183e78e5667083bb78fea0e1d3f2097be12d755d2ccd5f628",
+   "sha256": "4ec6f834f66fc1a98bbc082e9de966aced3de9e5a712ce8995329b9b5bf4d1b6",
    "role": "kill",
-   "lufs": -10.21,
-   "peak": 1.54,
-   "g": -5.8,
-   "o": 0.025
+   "lufs": -14.79,
+   "peak": -1.9,
+   "g": -1.2,
+   "o": 0.022
   },
   "blastx/kill3": {
-   "sha256": "4da2383bd6896f8c58ea0ca9e704d82eab52eea6fa222c43aba8aa7e3c578082",
+   "sha256": "508ec0deb3a57bea09d72d5dd21999fdae5f69513d12fc07877851b26ff55366",
    "role": "kill",
-   "lufs": -10.26,
-   "peak": 1.67,
-   "g": -5.7,
+   "lufs": -14.14,
+   "peak": -2.05,
+   "g": -1.9,
    "o": 0.014
   },
   "blastx/kill4": {
-   "sha256": "a5a8f2c1d2143744f27679b8a05fb722c5605150f5bb96c0e1dad72becadfd59",
+   "sha256": "392edbc121b4d9799d073ffaadb1179ffa990a5b1a99e57abe6fdedf98a016eb",
    "role": "kill",
-   "lufs": -10.31,
-   "peak": 2.03,
-   "g": -5.7,
+   "lufs": -14.62,
+   "peak": -1.89,
+   "g": -1.4,
    "o": 0.013
   },
   "blastx/kill5": {
-   "sha256": "3f0c694227e74bd4f49cbdc1a7268b9d888f6d5f75aa85d438f6d1a4420f63f3",
+   "sha256": "2bafc6bdde1b8f0a2a59cbcaa8bfe7a291fc06bd4521a11f0d2727a0e6839e29",
    "role": "kill",
-   "lufs": -9.27,
-   "peak": 2.45,
-   "g": -6.7,
-   "o": 0.016
+   "lufs": -14.2,
+   "peak": -1.94,
+   "g": -1.8,
+   "o": 0.019
   },
   "blastx/finisher": {
-   "sha256": "2c7793387806f1f1110a038f653d0709ac200c1486785969ab1f6753c66dfbcf",
+   "sha256": "39f1bc387d60f70f045241781735f52a4ff9dbe9f7a2d7ae912f9a384bdc4d4c",
    "role": "kill",
    "lufs": -14.41,
-   "peak": -1.46,
+   "peak": -1.97,
    "g": -1.6,
-   "o": 0.011
+   "o": 0.005
   },
   "ambient/wind": {
    "sha256": "d20bf7b0c2e98b1a1eef02376cd7e27b4de860f083c387321b8459a8d4e83d82",
@@ -3266,788 +3266,788 @@
    "o": 0
   },
   "voice/AnnouncerAce1": {
-   "sha256": "c53ffcbeaa841980233b2144082dcc7a728e06d0cfe17900f64586846e13935e",
+   "sha256": "bedde8c38dab4dd3b1919b90d84c2a40862a76cd4fb1e563c523b04d71cf9a0a",
    "role": "voice",
-   "lufs": -19.14,
-   "peak": -6.82,
-   "g": 1.1,
-   "o": 0.028
+   "lufs": -14.11,
+   "peak": -1.94,
+   "g": -3.9,
+   "o": 0.023
   },
   "voice/AnnouncerAce2": {
-   "sha256": "fe35065840e3faec42f7e5e78bea78fb4c4f536c2a74bb0f51e8a25b9676fb04",
+   "sha256": "f85e3c30775c8c4f1d190251cc0c96d90fba35c5cc0caeacc0327e7efb5c9a4e",
    "role": "voice",
-   "lufs": -17.92,
-   "peak": -6.71,
-   "g": -0.1,
-   "o": 0.028
+   "lufs": -13.1,
+   "peak": -1.97,
+   "g": -4.9,
+   "o": 0.023
   },
   "voice/AnnouncerAttackerWin1": {
-   "sha256": "3aa040bb29685f40d44c09e624154cb52b17887876fbec05bb9516bfa624406c",
+   "sha256": "5fdcb032bad78168427a0dc34f57f9f58153769c8011c4363f96a3b73cd768d9",
    "role": "voice",
-   "lufs": -18.3,
-   "peak": -5.89,
-   "g": 0.3,
-   "o": 0.031
-  },
-  "voice/AnnouncerAttackerWin2": {
-   "sha256": "7ee2b6e5f27f4964a12fa96a6d1e8b4c5ad0fc72a575ff73e3640492e48892c3",
-   "role": "voice",
-   "lufs": -18.5,
-   "peak": -5.39,
-   "g": 0.5,
-   "o": 0.027
-  },
-  "voice/AnnouncerClutch1": {
-   "sha256": "94006947b5faa9924b6df1031ff4892c362e1ec5da93d57384efdad92b3dc5a5",
-   "role": "voice",
-   "lufs": -18.56,
-   "peak": -6.95,
-   "g": 0.6,
-   "o": 0.028
-  },
-  "voice/AnnouncerClutch2": {
-   "sha256": "7e3e9cbcedf367eb3eb0e09e3187a5403f374a80514bfe6224b1b64ba76fa06c",
-   "role": "voice",
-   "lufs": -17.36,
-   "peak": -6.74,
-   "g": -0.6,
-   "o": 0.028
-  },
-  "voice/AnnouncerDeathmatch1": {
-   "sha256": "1b18dbef9c94b78cf302afea2b5ea7d3ce64c730699325a50824b1d440e612f3",
-   "role": "voice",
-   "lufs": -20.61,
-   "peak": -7.26,
-   "g": 2.6,
-   "o": 0.028
-  },
-  "voice/AnnouncerDefenderWin1": {
-   "sha256": "947e0a7c56a8e417700bf505b9c080c447cc10c49cbcfa168e7f1fa757771a80",
-   "role": "voice",
-   "lufs": -17.16,
-   "peak": -7.56,
-   "g": -0.8,
-   "o": 0.04
-  },
-  "voice/AnnouncerDefenderWin2": {
-   "sha256": "c9463c26748fa05cb7f6005b72d76525b52e8cfc638163500b3cdbeac74f76c6",
-   "role": "voice",
-   "lufs": -17.58,
-   "peak": -5.94,
-   "g": -0.4,
-   "o": 0.032
-  },
-  "voice/AnnouncerEndgame1": {
-   "sha256": "02a818d1e7b315b96ea51a5ea33eccf4ccea5230eae880408b73c2e8e6196c24",
-   "role": "voice",
-   "lufs": -17.85,
-   "peak": -6.36,
-   "g": -0.1,
-   "o": 0.028
-  },
-  "voice/AnnouncerEnteringEndgame": {
-   "sha256": "3c9c41a0432eb5ad49a4507e8ad797de10672a72bb2684504c41e374ae8abf00",
-   "role": "voice",
-   "lufs": -18.36,
-   "peak": -6.77,
-   "g": 0.4,
-   "o": 0.003
-  },
-  "voice/AnnouncerFastMultikill1": {
-   "sha256": "b4445be00af2bd820c000b83b8e497c8e91b9d4887b3ed857eb6c392f58baa9b",
-   "role": "voice",
-   "lufs": -17.29,
-   "peak": -5.55,
-   "g": -0.7,
-   "o": 0.034
-  },
-  "voice/AnnouncerFight1": {
-   "sha256": "36326f5d693adad659fd072fff8deeac6484f24cd143f4fb759d3bb39f2048ba",
-   "role": "voice",
-   "lufs": -19.53,
-   "peak": -5.66,
-   "g": 1.5,
-   "o": 0.032
-  },
-  "voice/AnnouncerFiveKillsLeft1": {
-   "sha256": "57ce0858b99a8718867f9922106a1e644b13cee74805bae33078121f325079ca",
-   "role": "voice",
-   "lufs": -17.3,
-   "peak": -5.41,
-   "g": -0.7,
-   "o": 0.032
-  },
-  "voice/AnnouncerFlawless1": {
-   "sha256": "39f1a235630f71e46c99c8e059df137b0bcecd77fae34b49371c487693fd5d37",
-   "role": "voice",
-   "lufs": -17.49,
-   "peak": -6.73,
-   "g": -0.5,
-   "o": 0.041
-  },
-  "voice/AnnouncerFlawless2": {
-   "sha256": "574a5b67c6c9471477ce68e4df3df9d68ff78fdb094657c8acdeeb4c8c9c4359",
-   "role": "voice",
-   "lufs": -18.04,
-   "peak": -6,
-   "g": 0,
-   "o": 0.028
-  },
-  "voice/AnnouncerFlawlessTeamAce1": {
-   "sha256": "aea2ab3dcbbb8ed3d447cb7aec02a8611e2d949a9dd8bbd11de33ce9ac19078f",
-   "role": "voice",
-   "lufs": -17.95,
-   "peak": -6.79,
-   "g": -0.1,
-   "o": 0.054
-  },
-  "voice/AnnouncerKillingSpree1": {
-   "sha256": "854539e80b6ae32b97cfd9b40e016f22b813b049e9b834c62ff907020d883066",
-   "role": "voice",
-   "lufs": -17.63,
-   "peak": -6.11,
-   "g": -0.4,
-   "o": 0.029
-  },
-  "voice/AnnouncerLastPlayerLeft1": {
-   "sha256": "4ed23bc471f0a05fc3539377cc84b81029f875671dda4fbf465763ee43ee8d60",
-   "role": "voice",
-   "lufs": -19.12,
-   "peak": -5.3,
-   "g": 1.1,
-   "o": 0.027
-  },
-  "voice/AnnouncerLastRoundOfHalf1": {
-   "sha256": "b1a281f12b7aa48adabade28509bb05e2af50a589860ac70bff99c9330ca248f",
-   "role": "voice",
-   "lufs": -17.82,
-   "peak": -5.43,
-   "g": -0.2,
-   "o": 0.032
-  },
-  "voice/AnnouncerLastRoundOfHalf2": {
-   "sha256": "c8aa64c2497c507c99f662c0eef7e879741f4266076f7ef1c89c5e9e76c158a3",
-   "role": "voice",
-   "lufs": -18.46,
-   "peak": -5.09,
-   "g": 0.5,
-   "o": 0.028
-  },
-  "voice/AnnouncerMatchFound1": {
-   "sha256": "7ae66f02668f1d3ec763cf1c6225652df62a7819a171a34c4e1b77758290804d",
-   "role": "voice",
-   "lufs": -18.73,
-   "peak": -5.42,
-   "g": 0.7,
-   "o": 0.038
-  },
-  "voice/AnnouncerMatchPoint1": {
-   "sha256": "d9451a78a24b2e6c5728e8e59712d2d86d1295d6fbb33bc33bbc392ce77896a5",
-   "role": "voice",
-   "lufs": -19.18,
-   "peak": -5.19,
-   "g": 1.2,
-   "o": 0.046
-  },
-  "voice/AnnouncerMatchStarting": {
-   "sha256": "3359ce18ffd22e76327ab007cfffef9532b668b2ac9d5e8eefff8a2fd87ccd1d",
-   "role": "voice",
-   "lufs": -19.44,
-   "peak": -6.18,
-   "g": 1.4,
-   "o": 0.015
-  },
-  "voice/AnnouncerNewStage1": {
-   "sha256": "2e1559339edca102d3c69493247dd40246ce07b1b6c243d889216941fd23aba4",
-   "role": "voice",
-   "lufs": -23.01,
-   "peak": -13.31,
-   "g": 5,
-   "o": 0.011
-  },
-  "voice/AnnouncerNewStage2": {
-   "sha256": "6c676192d117904d59f2c413efd23a159c5f1e6352917d821e283c09d8ba467e",
-   "role": "voice",
-   "lufs": -23.98,
-   "peak": -12.49,
-   "g": 6,
-   "o": 0.012
-  },
-  "voice/AnnouncerNewStage3": {
-   "sha256": "5ee089632e5f333408828809974ba7478bf334749a37e3746608a0d891cdd9c0",
-   "role": "voice",
-   "lufs": -24.88,
-   "peak": -12.2,
-   "g": 6.9,
-   "o": 0.011
-  },
-  "voice/AnnouncerNewStage4": {
-   "sha256": "678b86e79ef026e13d56fd6a911b08e1c81f24f7fe2c9f688456249da4e97883",
-   "role": "voice",
-   "lufs": -24.11,
-   "peak": -12.07,
-   "g": 6.1,
-   "o": 0.007
-  },
-  "voice/AnnouncerOneEnemyLeft1": {
-   "sha256": "50194c1e2c09509a00f9bf5c54b841b9d822a6d9e03361f2bf84ba3af4995e02",
-   "role": "voice",
-   "lufs": -18.18,
-   "peak": -6,
-   "g": 0.2,
-   "o": 0.028
-  },
-  "voice/AnnouncerOneKillLeft1": {
-   "sha256": "4250f590156867d0c9b27243c21c77927a2854630dc726b815d9225d0b243df4",
-   "role": "voice",
-   "lufs": -16.76,
-   "peak": -5.6,
-   "g": -1.2,
-   "o": 0.042
-  },
-  "voice/AnnouncerOneMinuteLeft1": {
-   "sha256": "3b3162946cd6bd1aa58454d662923ece1ac5ec3aed2699c0841e9a135436e10c",
-   "role": "voice",
-   "lufs": -16.74,
-   "peak": -6.12,
-   "g": -1.3,
-   "o": 0.032
-  },
-  "voice/AnnouncerOvertime1": {
-   "sha256": "41ac055a21f524acd7ed0469d5dcdefab2bca805781df96cd82bc30f12f032cd",
-   "role": "voice",
-   "lufs": -18.01,
-   "peak": -6.24,
-   "g": 0,
-   "o": 0.028
-  },
-  "voice/AnnouncerPenta1": {
-   "sha256": "50b667baa00d1549faa5ec53cbfda717ae9feec263c78fb01e78ebe1b89ab701",
-   "role": "voice",
-   "lufs": -17.23,
-   "peak": -5.58,
-   "g": -0.8,
-   "o": 0.03
-  },
-  "voice/AnnouncerPenta2": {
-   "sha256": "eba0346a7d540baf76d06d82b91ddd44bf6e247d1e4bee28aff164cb606db671",
-   "role": "voice",
-   "lufs": -18.05,
-   "peak": -6.15,
-   "g": 0.1,
-   "o": 0.028
-  },
-  "voice/AnnouncerPlayerReviving": {
-   "sha256": "6327f6567fb4629bcf06a6f8b16632c5bfbf3293555d8751ba301830114e8c61",
-   "role": "voice",
-   "lufs": -17.5,
-   "peak": -5.43,
-   "g": -0.5,
-   "o": 0.012
-  },
-  "voice/AnnouncerQuadra1": {
-   "sha256": "7f3bc31bdb9ff3afd23aca6efd271c9323f30e3ec3aa1c8a2f91f4fe09cfd523",
-   "role": "voice",
-   "lufs": -16.3,
-   "peak": -5.7,
-   "g": -1.7,
-   "o": 0.03
-  },
-  "voice/AnnouncerQuadra2": {
-   "sha256": "ea75a835100d44228f4bd20ceff3c2b1fc4a8a5ed0841bb486bdca1a4ae9dcdd",
-   "role": "voice",
-   "lufs": -17.09,
-   "peak": -6.26,
-   "g": -0.9,
-   "o": 0.03
-  },
-  "voice/AnnouncerSelectWarning1": {
-   "sha256": "a21d0e521b14cce3c917b203d6cac95b68a5be1a4c8cc1f737f41b4d5d4d8c03",
-   "role": "voice",
-   "lufs": -18.57,
-   "peak": -5.42,
-   "g": 0.6,
-   "o": 0.052
-  },
-  "voice/AnnouncerSelectWarning2": {
-   "sha256": "a18fae669891b954f1849cbe30caf2ce4263b400aa9d42957644aebb71b91779",
-   "role": "voice",
-   "lufs": -17.11,
-   "peak": -6.52,
-   "g": -0.9,
-   "o": 0.032
-  },
-  "voice/AnnouncerSpikeCarrierKilled1": {
-   "sha256": "57107e939e0a0d666fa78d7e8e6393518813c099aee4d6189b49bf5ae346c7a2",
-   "role": "voice",
-   "lufs": -16.94,
-   "peak": -5.47,
-   "g": -1.1,
-   "o": 0.036
-  },
-  "voice/AnnouncerSpikeDownA1": {
-   "sha256": "6548a1b6de11eec109efde4538d603ac71d56407a995d4a3dc5e797759a9af8c",
-   "role": "voice",
-   "lufs": -18.16,
-   "peak": -5.3,
-   "g": 0.2,
-   "o": 0.04
-  },
-  "voice/AnnouncerSpikeDownASpawn1": {
-   "sha256": "2b0b5b8ce1d087f30f4aa3a82da4112e15c97ac36ff9ec42adf56ce0112a9d64",
-   "role": "voice",
-   "lufs": -19.07,
-   "peak": -5.06,
-   "g": 1.1,
-   "o": 0.035
-  },
-  "voice/AnnouncerSpikeDownB1": {
-   "sha256": "1c3d4cefab2f87236003bd5294c10a83f38c01c506b31af80b3f8ceadf49d7aa",
-   "role": "voice",
-   "lufs": -18.54,
-   "peak": -5.85,
-   "g": 0.5,
-   "o": 0.035
-  },
-  "voice/AnnouncerSpikeDownC1": {
-   "sha256": "d9d7b024904fd5ae8303b41b1594c6aff3cc3efa7a19352010fc7abbbb311001",
-   "role": "voice",
-   "lufs": -18.8,
-   "peak": -5.39,
-   "g": 0.8,
-   "o": 0.036
-  },
-  "voice/AnnouncerSpikeDownDSpawn1": {
-   "sha256": "b85d31df508e31e8427f0bd1de1ab05c4fc1777935c39ed2dcd6568c003b3562",
-   "role": "voice",
-   "lufs": -19.15,
-   "peak": -5.51,
-   "g": 1.1,
-   "o": 0.033
-  },
-  "voice/AnnouncerSpikeDownMid1": {
-   "sha256": "7a20c6960a4d30b259f43cc1c167d251d51497de5c838bba67c5e80f3c09e905",
-   "role": "voice",
-   "lufs": -18.72,
-   "peak": -5.91,
-   "g": 0.7,
-   "o": 0.033
-  },
-  "voice/AnnouncerSpikePlanted1": {
-   "sha256": "4f1df7198cbbd13b6d2676309430325a50d9dda3f30c236a324d6bee4daca238",
-   "role": "voice",
-   "lufs": -18.51,
-   "peak": -5.4,
-   "g": 0.5,
-   "o": 0.028
-  },
-  "voice/AnnouncerSpikePlanted2": {
-   "sha256": "2d73ce657a5455e41283a68741cc1da45b6d59238798537f75a4639b69923343",
-   "role": "voice",
-   "lufs": -19.9,
-   "peak": -5.39,
-   "g": 1.9,
-   "o": 0.028
-  },
-  "voice/AnnouncerSpikePlanterKilled1": {
-   "sha256": "a5e5127c7819b03761e09b91885bed827be88549a8322d2454627fd8fda506b5",
-   "role": "voice",
-   "lufs": -19.58,
-   "peak": -6.13,
-   "g": 1.6,
-   "o": 0.043
-  },
-  "voice/AnnouncerSpikePlanterKilled2": {
-   "sha256": "66d92de10ead9593249be65a2b61f27f1a321193d56918609413a1a8e18e203e",
-   "role": "voice",
-   "lufs": -18.61,
-   "peak": -5.28,
-   "g": 0.6,
-   "o": 0.028
-  },
-  "voice/AnnouncerSpikeRush1": {
-   "sha256": "7560d440273da629bdf6d67a9955979b610565bdf1b27b678587b3b910da1f3b",
-   "role": "voice",
-   "lufs": -18.27,
-   "peak": -5.95,
-   "g": 0.3,
-   "o": 0.043
-  },
-  "voice/AnnouncerSwitchSides1": {
-   "sha256": "6435a0152d4e709d5233a1b0bd566ea525b593ddfbfe488a5197d602c2be65c7",
-   "role": "voice",
-   "lufs": -19.22,
-   "peak": -5.37,
-   "g": 1.2,
-   "o": 0.046
-  },
-  "voice/AnnouncerTeamAce1": {
-   "sha256": "7d995564ac0f289a62c9624ac8696a36bbca176b87af57a0c676b0c4d8896f70",
-   "role": "voice",
-   "lufs": -18.05,
-   "peak": -7.38,
-   "g": 0.1,
-   "o": 0.03
-  },
-  "voice/AnnouncerTenKillsLeft1": {
-   "sha256": "8a396d01337cf7e118e70d5cdbf61f7bec006a0d2621d94bce7241450817a40e",
-   "role": "voice",
-   "lufs": -17.77,
-   "peak": -5.96,
-   "g": -0.2,
-   "o": 0.029
-  },
-  "voice/AnnouncerTenSecondsLeft1": {
-   "sha256": "b239370de32c7d5ed77aee2738e83fee9c11993b8150c7c8b38bcc732925602a",
-   "role": "voice",
-   "lufs": -19.82,
-   "peak": -6.14,
-   "g": 1.8,
+   "lufs": -14.46,
+   "peak": -1.93,
+   "g": -3.5,
    "o": 0.026
   },
-  "voice/AnnouncerThirtySecondsLeft1": {
-   "sha256": "600138a5c67a965b70e26181a51b0fb37cbac58169808cb9416a75bb23e3f944",
+  "voice/AnnouncerAttackerWin2": {
+   "sha256": "2c2a37945ab95958cd0aff8bc331990deb48c9b5e35c537a85eaeefe3bebf23f",
    "role": "voice",
-   "lufs": -18.63,
-   "peak": -5.74,
-   "g": 0.6,
-   "o": 0.029
+   "lufs": -15.16,
+   "peak": -1.97,
+   "g": -2.8,
+   "o": 0.022
+  },
+  "voice/AnnouncerClutch1": {
+   "sha256": "9e9b4437abffa779f2d91a9f3ca958ab0fe35b9677be8f9997c4bae2cbef5af8",
+   "role": "voice",
+   "lufs": -13.5,
+   "peak": -1.96,
+   "g": -4.5,
+   "o": 0.022
+  },
+  "voice/AnnouncerClutch2": {
+   "sha256": "1f6292f46afdd0ea28f5d64a080a51673735392149c148acdaa67c0b7cfbeee4",
+   "role": "voice",
+   "lufs": -12.37,
+   "peak": -1.91,
+   "g": -5.6,
+   "o": 0.021
+  },
+  "voice/AnnouncerDeathmatch1": {
+   "sha256": "b20d9f7570b94ec90e83f798e4eaaf8d9d5e5df6abbfbc56a80da87c47861075",
+   "role": "voice",
+   "lufs": -15.34,
+   "peak": -1.97,
+   "g": -2.7,
+   "o": 0.023
+  },
+  "voice/AnnouncerDefenderWin1": {
+   "sha256": "01a8392bc8709afed03963411464ba294d1db76a750efec923cb542eef905932",
+   "role": "voice",
+   "lufs": -11.55,
+   "peak": -1.97,
+   "g": -6.4,
+   "o": 0.032
+  },
+  "voice/AnnouncerDefenderWin2": {
+   "sha256": "520c88a21a9ce0398499db5f68d30636057733568656060854a4c4ec768662c6",
+   "role": "voice",
+   "lufs": -13.53,
+   "peak": -1.91,
+   "g": -4.5,
+   "o": 0.027
+  },
+  "voice/AnnouncerEndgame1": {
+   "sha256": "cc93fcf066b4b57666c36df9447d0c1e574503c141a0446afd477434fd09c417",
+   "role": "voice",
+   "lufs": -13.41,
+   "peak": -1.96,
+   "g": -4.6,
+   "o": 0.023
+  },
+  "voice/AnnouncerEnteringEndgame": {
+   "sha256": "db05c849f0a2d28f09ca01169f7dd4a513a35eb621c0b14506e38309e0a0e12d",
+   "role": "voice",
+   "lufs": -13.24,
+   "peak": -2.01,
+   "g": -4.8,
+   "o": 0
+  },
+  "voice/AnnouncerFastMultikill1": {
+   "sha256": "e0d621c3b326450f36d6e043f15652b987d4b3f87994d5f13130de59bead0550",
+   "role": "voice",
+   "lufs": -13.75,
+   "peak": -1.92,
+   "g": -4.3,
+   "o": 0.027
+  },
+  "voice/AnnouncerFight1": {
+   "sha256": "d5b29e45243540717405566ff2130f6672e0e273468d7074fc8f8808262c242b",
+   "role": "voice",
+   "lufs": -15.77,
+   "peak": -1.95,
+   "g": -2.2,
+   "o": 0.025
+  },
+  "voice/AnnouncerFiveKillsLeft1": {
+   "sha256": "f54b55961897a740d56e23565ae0816f2be6a271cebcb8577b63f836cdd95be1",
+   "role": "voice",
+   "lufs": -13.85,
+   "peak": -1.95,
+   "g": -4.2,
+   "o": 0.027
+  },
+  "voice/AnnouncerFlawless1": {
+   "sha256": "a52fcb90a6b72c65758bf8b5d5dcdf90b01a58a5ceac31225ffb50802b2fdbc2",
+   "role": "voice",
+   "lufs": -12.85,
+   "peak": -1.91,
+   "g": -5.2,
+   "o": 0.036
+  },
+  "voice/AnnouncerFlawless2": {
+   "sha256": "4543a64494c95ea1e769a0105c372e77164e2347c9907e72af6f3cca86a8b1e0",
+   "role": "voice",
+   "lufs": -14.04,
+   "peak": -1.96,
+   "g": -4,
+   "o": 0.023
+  },
+  "voice/AnnouncerFlawlessTeamAce1": {
+   "sha256": "e87ebaf03466b078dd8c66d8f5ce83c166482ee72f701f85bcb82aa326d7364d",
+   "role": "voice",
+   "lufs": -12.99,
+   "peak": -1.94,
+   "g": -5,
+   "o": 0.042
+  },
+  "voice/AnnouncerKillingSpree1": {
+   "sha256": "d91f37c80aa4d9715f018c773fc0f0f1b274e2ea77b75bfd99c10e7dc0bacc5f",
+   "role": "voice",
+   "lufs": -13.35,
+   "peak": -1.95,
+   "g": -4.7,
+   "o": 0.024
+  },
+  "voice/AnnouncerLastPlayerLeft1": {
+   "sha256": "34f66b080ce8487784c5c218d044b644111ff3691a731b11d81fd7a35fd44147",
+   "role": "voice",
+   "lufs": -15.78,
+   "peak": -1.93,
+   "g": -2.2,
+   "o": 0.019
+  },
+  "voice/AnnouncerLastRoundOfHalf1": {
+   "sha256": "883c76decea5e9b8a224e340692e337fd896269bf099f86a2daf7f9a08c6831f",
+   "role": "voice",
+   "lufs": -14.3,
+   "peak": -1.94,
+   "g": -3.7,
+   "o": 0.027
+  },
+  "voice/AnnouncerLastRoundOfHalf2": {
+   "sha256": "f7d86d57ca4b2d791420b2ac70a611f3e0d53b1be1489e3707965c48bca64f37",
+   "role": "voice",
+   "lufs": -15.22,
+   "peak": -1.96,
+   "g": -2.8,
+   "o": 0.023
+  },
+  "voice/AnnouncerMatchFound1": {
+   "sha256": "6ddc6b71b1b99811c7d1bcff87af86f5a6065aca14e39bc17fd83c601a35b9ea",
+   "role": "voice",
+   "lufs": -15.26,
+   "peak": -1.94,
+   "g": -2.7,
+   "o": 0.032
+  },
+  "voice/AnnouncerMatchPoint1": {
+   "sha256": "5ec0a72014f7535066fc4233317c8e938f6ce53572f1c36a5935cfb3023d63b0",
+   "role": "voice",
+   "lufs": -16.27,
+   "peak": -1.97,
+   "g": -1.7,
+   "o": 0.037
+  },
+  "voice/AnnouncerMatchStarting": {
+   "sha256": "4536ceb673910663ad00c8dc30ed145f4fbf247b8b05518dd08cf8c8241eb79e",
+   "role": "voice",
+   "lufs": -15.28,
+   "peak": -1.96,
+   "g": -2.7,
+   "o": 0.004
+  },
+  "voice/AnnouncerNewStage1": {
+   "sha256": "b19483fa93b65fa7d81011e8b071dc1e50f82a12c4373a49f2febeacc6704cd9",
+   "role": "voice",
+   "lufs": -11.56,
+   "peak": -2.03,
+   "g": -6.4,
+   "o": 0.003
+  },
+  "voice/AnnouncerNewStage2": {
+   "sha256": "839c1c2382ae368d26a89d7bfcda36b1acf31b7a499ff345786e059334e063dc",
+   "role": "voice",
+   "lufs": -13.12,
+   "peak": -1.86,
+   "g": -4.9,
+   "o": 0.003
+  },
+  "voice/AnnouncerNewStage3": {
+   "sha256": "3aa47c85ad4bf01db29806867a93a771ff85da8239978b4bea453c91d402f399",
+   "role": "voice",
+   "lufs": -14.54,
+   "peak": -1.92,
+   "g": -3.5,
+   "o": 0.004
+  },
+  "voice/AnnouncerNewStage4": {
+   "sha256": "722f8e461cf7b5c92427fc0b5d31d39f12fb42d3f4037e4d2b75b7751761691d",
+   "role": "voice",
+   "lufs": -13.92,
+   "peak": -1.96,
+   "g": -4.1,
+   "o": 0
+  },
+  "voice/AnnouncerOneEnemyLeft1": {
+   "sha256": "ac3df080c1443ea733d2359a8a9874dea396a1768a44040d596a2b7e6f41051c",
+   "role": "voice",
+   "lufs": -14.11,
+   "peak": -1.94,
+   "g": -3.9,
+   "o": 0.023
+  },
+  "voice/AnnouncerOneKillLeft1": {
+   "sha256": "01f75f944215a141a707e9f4a397173646d81448b716cb2344e55a45a3698262",
+   "role": "voice",
+   "lufs": -13.04,
+   "peak": -1.94,
+   "g": -5,
+   "o": 0.035
+  },
+  "voice/AnnouncerOneMinuteLeft1": {
+   "sha256": "b59deafac04947078cb73b248d027254c34d2a7c6972a503f2441710156864d8",
+   "role": "voice",
+   "lufs": -12.5,
+   "peak": -1.94,
+   "g": -5.5,
+   "o": 0.026
+  },
+  "voice/AnnouncerOvertime1": {
+   "sha256": "c8c517618dc24b5ec90d538f90fc5a75da145582f7af18c11889ed5727ef4b48",
+   "role": "voice",
+   "lufs": -13.58,
+   "peak": -1.95,
+   "g": -4.4,
+   "o": 0.022
+  },
+  "voice/AnnouncerPenta1": {
+   "sha256": "765fc29a7c62929f1377ab1b11c6ce02f3d90b8b61076f4018185262d751947a",
+   "role": "voice",
+   "lufs": -13.68,
+   "peak": -1.95,
+   "g": -4.3,
+   "o": 0.024
+  },
+  "voice/AnnouncerPenta2": {
+   "sha256": "583a3078d97b9ce929408c0184a5a1f930a85ed0d24a3f0a89559b82d1d64269",
+   "role": "voice",
+   "lufs": -14.2,
+   "peak": -1.97,
+   "g": -3.8,
+   "o": 0.022
+  },
+  "voice/AnnouncerPlayerReviving": {
+   "sha256": "ce350768b8f9697f6442941bef739c24abfdd99dd4a0bef3d21c9587af787ff5",
+   "role": "voice",
+   "lufs": -14.05,
+   "peak": -1.93,
+   "g": -3.9,
+   "o": 0.006
+  },
+  "voice/AnnouncerQuadra1": {
+   "sha256": "5dde7feffd6f4d7aebf5740f8d305b8c7df76ce07f2c2145d6e2d60e44847b71",
+   "role": "voice",
+   "lufs": -12.5,
+   "peak": -1.95,
+   "g": -5.5,
+   "o": 0.024
+  },
+  "voice/AnnouncerQuadra2": {
+   "sha256": "736be3a733fccdd21f460f24512521d0e89575de3e8227c5a1e520168043b26c",
+   "role": "voice",
+   "lufs": -12.73,
+   "peak": -1.95,
+   "g": -5.3,
+   "o": 0.025
+  },
+  "voice/AnnouncerSelectWarning1": {
+   "sha256": "4f6d271e8758cd1d565c769791f944ef94c6f1810fd80a94c32d1cb2cc74071a",
+   "role": "voice",
+   "lufs": -14.98,
+   "peak": -1.94,
+   "g": -3,
+   "o": 0.045
+  },
+  "voice/AnnouncerSelectWarning2": {
+   "sha256": "867e04844dc91130363d62929fb6ff84726a9a08c73f9926a842a27ffbe86958",
+   "role": "voice",
+   "lufs": -12.49,
+   "peak": -1.95,
+   "g": -5.5,
+   "o": 0.027
+  },
+  "voice/AnnouncerSpikeCarrierKilled1": {
+   "sha256": "ada7586cc90b9ec7f8adde80bb7649b1628d0bcb2939fe39c9abe196b7c00fa1",
+   "role": "voice",
+   "lufs": -13.49,
+   "peak": -1.97,
+   "g": -4.5,
+   "o": 0.03
+  },
+  "voice/AnnouncerSpikeDownA1": {
+   "sha256": "f5db05497b6ce6267b487ffb262e5debc5d59f33e0d3557b4ce84c06be069fbd",
+   "role": "voice",
+   "lufs": -14.59,
+   "peak": -1.94,
+   "g": -3.4,
+   "o": 0.035
+  },
+  "voice/AnnouncerSpikeDownASpawn1": {
+   "sha256": "c22546178db750a2e4c0ad8f77e3cb1879de5c36cd9668398f3bdec3f740ee35",
+   "role": "voice",
+   "lufs": -15.97,
+   "peak": -1.99,
+   "g": -2,
+   "o": 0.027
+  },
+  "voice/AnnouncerSpikeDownB1": {
+   "sha256": "53131f0479f39758facf322bcbd5347bc415b83c999bcebfd38e2adae07182e4",
+   "role": "voice",
+   "lufs": -14.74,
+   "peak": -1.95,
+   "g": -3.3,
+   "o": 0.03
+  },
+  "voice/AnnouncerSpikeDownC1": {
+   "sha256": "283881348d5cb26713e89f5b332c7c593787aabf5d3d0d52c27a1f3d34c600b3",
+   "role": "voice",
+   "lufs": -15.32,
+   "peak": -1.93,
+   "g": -2.7,
+   "o": 0.028
+  },
+  "voice/AnnouncerSpikeDownDSpawn1": {
+   "sha256": "bb7ee2ad94e7119ce373c015bd8901be16236cf3160e3bce19b2723176879c62",
+   "role": "voice",
+   "lufs": -15.71,
+   "peak": -1.94,
+   "g": -2.3,
+   "o": 0.025
+  },
+  "voice/AnnouncerSpikeDownMid1": {
+   "sha256": "242739511a256c05253ab728a67d71f6a164397f0b68507b5e769b936422527e",
+   "role": "voice",
+   "lufs": -14.76,
+   "peak": -1.96,
+   "g": -3.2,
+   "o": 0.027
+  },
+  "voice/AnnouncerSpikePlanted1": {
+   "sha256": "2352d8624088f1711e3f4bc30313743b81268e0961569d952be31bedab6a8efb",
+   "role": "voice",
+   "lufs": -15.2,
+   "peak": -1.95,
+   "g": -2.8,
+   "o": 0.023
+  },
+  "voice/AnnouncerSpikePlanted2": {
+   "sha256": "f5b277aee683065009af98c8ee8edb0addde475b99c1fc52ffc5dd97b3786e86",
+   "role": "voice",
+   "lufs": -16.26,
+   "peak": -1.95,
+   "g": -1.7,
+   "o": 0.023
+  },
+  "voice/AnnouncerSpikePlanterKilled1": {
+   "sha256": "c14d673103d42a2ee3dd3c455031a6a732c4842e6516eec09a64931f857ee031",
+   "role": "voice",
+   "lufs": -15.46,
+   "peak": -1.89,
+   "g": -2.5,
+   "o": 0.033
+  },
+  "voice/AnnouncerSpikePlanterKilled2": {
+   "sha256": "089ba9aa71c6a528417086bb970126d4edff179de37be30d843d1610f54c7cca",
+   "role": "voice",
+   "lufs": -15.31,
+   "peak": -1.92,
+   "g": -2.7,
+   "o": 0.023
+  },
+  "voice/AnnouncerSpikeRush1": {
+   "sha256": "39cd5299cb78152586f4974538608b97d4d3fcd850c32ada1cdcf4581ae538ea",
+   "role": "voice",
+   "lufs": -14.17,
+   "peak": -1.91,
+   "g": -3.8,
+   "o": 0.033
+  },
+  "voice/AnnouncerSwitchSides1": {
+   "sha256": "74bc56376ee0827442dc28186988fccf513a4dc9a7a8f8f4316da412c93b74d3",
+   "role": "voice",
+   "lufs": -15.86,
+   "peak": -1.94,
+   "g": -2.1,
+   "o": 0.039
+  },
+  "voice/AnnouncerTeamAce1": {
+   "sha256": "1c973bebfec85d54d63d56957feae528bf5ef885721a18e8a0201285d57dfe24",
+   "role": "voice",
+   "lufs": -12.75,
+   "peak": -1.94,
+   "g": -5.3,
+   "o": 0.025
+  },
+  "voice/AnnouncerTenKillsLeft1": {
+   "sha256": "d43f7d2db06bde38cf799ccab3b8f6bcd32742d3b351acf8b0b900550f6e0705",
+   "role": "voice",
+   "lufs": -13.76,
+   "peak": -1.96,
+   "g": -4.2,
+   "o": 0.024
+  },
+  "voice/AnnouncerTenSecondsLeft1": {
+   "sha256": "e6855cf6fe674707a6c44a9d035d1bb82f04b25d0c0252c8f5c9166ae2bd522b",
+   "role": "voice",
+   "lufs": -15.76,
+   "peak": -1.94,
+   "g": -2.2,
+   "o": 0.021
+  },
+  "voice/AnnouncerThirtySecondsLeft1": {
+   "sha256": "af88bade6fe352445f04244fc230ef10a3567a427281bdd79e2a5d7aff49a396",
+   "role": "voice",
+   "lufs": -14.9,
+   "peak": -2,
+   "g": -3.1,
+   "o": 0.024
   },
   "voice/AnnouncerThrifty1": {
-   "sha256": "78ce44c099375d38c3601950048ddf22e071c1aa0ccaafcc5532c56bcd957c3e",
+   "sha256": "b8dfa89a9e2a8a8c405926ec23266af1c83e686ae8df22fcebb090e10676c2fb",
    "role": "voice",
-   "lufs": -17.23,
-   "peak": -6.17,
-   "g": -0.8,
-   "o": 0.062
+   "lufs": -12.99,
+   "peak": -1.97,
+   "g": -5,
+   "o": 0.046
   },
   "voice/AnnouncerThrifty2": {
-   "sha256": "d9d3e8adc1b400f0b67e16798ddcb90b494cc1075bfb1eb617664a504438d495",
+   "sha256": "a0975777ce95c144efd188f4ca8251d1673e023f7cf7572e7c3a46a89aed6548",
    "role": "voice",
-   "lufs": -18.65,
-   "peak": -6.38,
-   "g": 0.6,
-   "o": 0.028
+   "lufs": -14.23,
+   "peak": -1.94,
+   "g": -3.8,
+   "o": 0.022
   },
   "voice/AnnouncerTriple1": {
-   "sha256": "3a0d962bdfc7095fdb992494e6d2c2c0f04e4071d31bfff6027e740c4ede7046",
+   "sha256": "57947e85754202d0ae515492f2a64a6d239dce3c43915a99b0cd0eea3c1a1d8c",
    "role": "voice",
-   "lufs": -17.83,
-   "peak": -6.9,
-   "g": -0.2,
-   "o": 0.028
+   "lufs": -13.11,
+   "peak": -1.98,
+   "g": -4.9,
+   "o": 0.023
   },
   "voice/AnnouncerTriple2": {
-   "sha256": "8732a4ba2301e64b0c2d5e054072e6485aab679db6da896034d3c73a2cf51519",
+   "sha256": "6819dfdbd7c0240bd853097af512d6add74d3cc0de791ab57899d91a9c73fb4d",
    "role": "voice",
-   "lufs": -19.46,
-   "peak": -6.17,
-   "g": 1.5,
-   "o": 0.031
+   "lufs": -15.08,
+   "peak": -1.94,
+   "g": -2.9,
+   "o": 0.025
   },
   "voice/AnnouncerWarmup1": {
-   "sha256": "f30c3733b9100c4135c9379b37c571be8db2754549e40412251fd94b6e99c0c6",
+   "sha256": "11d6fa1b0483670e2c01452cbc68f7bd0a9c7da4da81f6e7f7256ff144dc0540",
    "role": "voice",
-   "lufs": -17.84,
-   "peak": -6.69,
-   "g": -0.2,
-   "o": 0.034
+   "lufs": -13.02,
+   "peak": -1.93,
+   "g": -5,
+   "o": 0.029
   },
   "death/Jett0": {
-   "sha256": "ee7c4c66730cba6da0e1149c442a8c8666b1b1c2f50f14c343f0b42a75de1579",
+   "sha256": "01605ec620088cd200c86593255b29f8f705808ac91e1fe1d91bbb240cd17a16",
    "role": "death",
-   "lufs": -14.6,
-   "peak": -0.54,
-   "g": -2.4,
+   "lufs": -16.02,
+   "peak": -1.95,
+   "g": -1,
    "o": 0
   },
   "death/Jett1": {
-   "sha256": "b7ce2a119c60537aba3d763d739307b1e4ed6899c9304955d4b2b43188fac587",
+   "sha256": "2915dae43a8256184f8e358e0474f5f7de478abc100578a67b19d812fe85e87a",
    "role": "death",
-   "lufs": -14.56,
-   "peak": -0.41,
-   "g": -2.4,
-   "o": 0.003
+   "lufs": -15.98,
+   "peak": -1.94,
+   "g": -1,
+   "o": 0
   },
   "death/Jett2": {
-   "sha256": "bbcd38791ac4bab0a17244864f5514f6368619fbb7e4e96645bcb64e67fc78eb",
+   "sha256": "6cef86445fa2c8031f59542ce99c4fd80b00651ea5884a1661cc1d7a5f658cd3",
    "role": "death",
-   "lufs": -14.11,
-   "peak": -0.73,
-   "g": -2.9,
+   "lufs": -15.54,
+   "peak": -1.88,
+   "g": -1.5,
    "o": 0
   },
   "death/Phoenix0": {
-   "sha256": "93942feba2a97304ccaec900adb02e956036de584b647f620e3e8725eb3d7f1c",
+   "sha256": "9215ecc6d59046b51c7c84b8a62360a16bb1f2a5401d28011b0d81401516472e",
    "role": "death",
-   "lufs": -14.24,
-   "peak": -0.5,
-   "g": -2.8,
-   "o": 0.004
-  },
-  "death/Phoenix1": {
-   "sha256": "83a8446dff351bc724e10ba6568cb62bee1a373b52e0284f46de561679349a5c",
-   "role": "death",
-   "lufs": -14.51,
-   "peak": -0.6,
-   "g": -2.5,
-   "o": 0.005
-  },
-  "death/Phoenix2": {
-   "sha256": "479f95fc6f3e4bb6d11886ffd809273fc8d75ed179ee6524df04ec8dcdbe2749",
-   "role": "death",
-   "lufs": -13.37,
-   "peak": -0.52,
-   "g": -3.6,
-   "o": 0.004
-  },
-  "death/Sova0": {
-   "sha256": "a0974ee85a5e2d2791c492da77ccff206d85d0ed78a6b6c924116a1264500f02",
-   "role": "death",
-   "lufs": -15.56,
-   "peak": -0.59,
+   "lufs": -15.63,
+   "peak": -1.91,
    "g": -1.4,
    "o": 0
   },
-  "death/Sova1": {
-   "sha256": "fff04f2a6ca061c1ee4e03e9f369cd00ba8a3a863c67eacbd1e2b70b05fc16b8",
+  "death/Phoenix1": {
+   "sha256": "be5684c2e45e2e8d5bde8778d62ff5f06aa46e5c18283caf5696f916e5ee7b07",
    "role": "death",
-   "lufs": -17.11,
-   "peak": -0.36,
-   "g": 0.1,
-   "o": 0.004
+   "lufs": -15.95,
+   "peak": -1.97,
+   "g": -1.1,
+   "o": 0
+  },
+  "death/Phoenix2": {
+   "sha256": "9228f2597b51b0cfb4d87feceb3913f2b07c7fdc1aafa66410dd25c3ced4053d",
+   "role": "death",
+   "lufs": -14.8,
+   "peak": -1.96,
+   "g": -2.2,
+   "o": 0
+  },
+  "death/Sova0": {
+   "sha256": "9c76514a6aad5206871a2cd98210a80c4736a6ba7268d56351cda820e94a7341",
+   "role": "death",
+   "lufs": -16.95,
+   "peak": -1.93,
+   "g": -0.1,
+   "o": 0
+  },
+  "death/Sova1": {
+   "sha256": "9b5a7ae3ac27990c275f035fae5f5dc2510a73da639a25a051781e0d1ac37f2b",
+   "role": "death",
+   "lufs": -18.55,
+   "peak": -1.95,
+   "g": 1.6,
+   "o": 0
   },
   "death/Sova2": {
-   "sha256": "50aef489b6fcd5a9833bcf478d1516d079373c865a01d53c5a3cae1ff673cad5",
+   "sha256": "0af066112e29740545eaeeb8a635adab6d62977cbf9f187034f453ce05569535",
    "role": "death",
-   "lufs": -17.11,
-   "peak": -0.53,
-   "g": 0.1,
+   "lufs": -18.43,
+   "peak": -1.93,
+   "g": 1.4,
    "o": 0
   },
   "death/Sage0": {
-   "sha256": "f9f2d83ab44442645690218e25d7f9322acc6b56f0abf55a13537620df5f61ed",
+   "sha256": "047a5303275ff36d74557a18ec0127ea807ee6341b333769928b3953759c0630",
    "role": "death",
-   "lufs": -14.79,
-   "peak": -0.49,
-   "g": -2.2,
-   "o": 0.003
+   "lufs": -16.18,
+   "peak": -1.99,
+   "g": -0.8,
+   "o": 0
   },
   "death/Sage1": {
-   "sha256": "e572b00b49b4414f7c234181c172e416a4b1a33b3f4a38bf55e0d9848713e77e",
+   "sha256": "8696ce653fa5da1fb9a7a0290f231b60b07fec68ac5e1dee6ae6ffc660799c30",
    "role": "death",
-   "lufs": -13.77,
-   "peak": -0.46,
-   "g": -3.2,
+   "lufs": -15.18,
+   "peak": -1.89,
+   "g": -1.8,
    "o": 0
   },
   "death/Sage2": {
-   "sha256": "58d0740a8d68ffd99ddd71384300c7d5313a544aa23ffb33d48baa3c5e997471",
+   "sha256": "c232bff0b365209ec0b27df92428d7268b0c5b19e8337befa61be3b305618e3c",
    "role": "death",
-   "lufs": -14.73,
-   "peak": -0.38,
-   "g": -2.3,
-   "o": 0.004
+   "lufs": -16.18,
+   "peak": -1.93,
+   "g": -0.8,
+   "o": 0
   },
   "death/Reyna0": {
-   "sha256": "de77ff76fbcd20fcd1a51d4b657a9928ad8ad7ebb5286e7ac085c255c4de6a97",
+   "sha256": "e6780762c98dad94b2f2fb41a55966c6ac58479fc373f271e5ec0b3eef2b261a",
    "role": "death",
-   "lufs": -16.71,
-   "peak": -0.74,
-   "g": -0.3,
-   "o": 0.037
+   "lufs": -18.15,
+   "peak": -1.91,
+   "g": 1.1,
+   "o": 0.032
   },
   "death/Reyna1": {
-   "sha256": "d317261cb1588d7b4f20891de90a24c6738a9d1e30c596c70aca6cbe8f41e5ca",
+   "sha256": "d789039e9c0aa40b22f103a7986e1a02e475314f8d0a365c44df3bf06fab846e",
    "role": "death",
-   "lufs": -16.76,
-   "peak": -0.68,
-   "g": -0.2,
-   "o": 0.014
+   "lufs": -18.16,
+   "peak": -1.98,
+   "g": 1.2,
+   "o": 0.009
   },
   "death/Reyna2": {
-   "sha256": "ab2905ccc49eecc80bc97c6b3ea30ce4b59eb603e9e7cb67fa03c4db26bf924e",
+   "sha256": "a66ba7e352514454d6c44703769b4f4a9eebdc2f2f76f2279a6adcd172870c36",
    "role": "death",
-   "lufs": -15.03,
-   "peak": -0.62,
-   "g": -2,
-   "o": 0.013
-  },
-  "death/Raze0": {
-   "sha256": "bf3c37bcb931abc5ce2d6995700fa2a1f3e6f6fb3b8530b4a421408b08987e3d",
-   "role": "death",
-   "lufs": -16.08,
-   "peak": -0.52,
-   "g": -0.9,
-   "o": 0.004
-  },
-  "death/Raze1": {
-   "sha256": "ae55225f5035d80c1328085f03463bff10827483ec91c018445d36f4621f3d97",
-   "role": "death",
-   "lufs": -16.37,
-   "peak": -0.44,
-   "g": -0.6,
-   "o": 0.004
-  },
-  "death/Raze2": {
-   "sha256": "a39785a956939625492dbfe099cd7ee063f9ff25b8dc3c017c787186f21af5b7",
-   "role": "death",
-   "lufs": -16.23,
-   "peak": -0.51,
-   "g": -0.8,
-   "o": 0.004
-  },
-  "death/Killjoy0": {
-   "sha256": "ef1a802ef335be7b3af5e70d5dc422ee7431cc248e2a1e1bdfdadcfc58c04d34",
-   "role": "death",
-   "lufs": -10.35,
-   "peak": -0.43,
-   "g": -6.7,
-   "o": 0.005
-  },
-  "death/Killjoy1": {
-   "sha256": "6c8b5800dc2a7e25888b7bc3036beabf57ecfd51222d096fa84bd56acdc70ffa",
-   "role": "death",
-   "lufs": -12.72,
-   "peak": -0.62,
-   "g": -4.3,
+   "lufs": -16.47,
+   "peak": -1.93,
+   "g": -0.5,
    "o": 0.008
   },
-  "death/Killjoy2": {
-   "sha256": "e583133289f5304cc81411cb1e655da9c9ae569195ef1bd19dcf6505259440b6",
+  "death/Raze0": {
+   "sha256": "1f07571f1aa3ba3faf1180ffaeba77b92b591e4cb69e9f1597a7ac77b28dd4f8",
    "role": "death",
-   "lufs": -9.33,
-   "peak": -0.64,
-   "g": -7.7,
-   "o": 0.005
+   "lufs": -17.46,
+   "peak": -1.93,
+   "g": 0.5,
+   "o": 0
   },
-  "death/Omen0": {
-   "sha256": "2ad46eae899781e59c1f89637a1ce57ca723598aea9291779e6bacf6c0183072",
+  "death/Raze1": {
+   "sha256": "68ee6b9ba155752929b51a4fde5239ba05716d7eb91861f3528aff1c843e81c5",
    "role": "death",
-   "lufs": -12.28,
-   "peak": -0.62,
-   "g": -4.7,
-   "o": 0.006
+   "lufs": -17.83,
+   "peak": -1.9,
+   "g": 0.8,
+   "o": 0
   },
-  "death/Omen1": {
-   "sha256": "bfe987a94195a2a1ef614aa7e49a460ed76cc9ef52dc97309828e08e55d8de6d",
+  "death/Raze2": {
+   "sha256": "aefc33c0984444d8c266b8c0fff4c018bfedde070695a76b84db3d45cea13e42",
    "role": "death",
-   "lufs": -14.58,
-   "peak": -0.42,
-   "g": -2.4,
-   "o": 0.013
+   "lufs": -17.63,
+   "peak": -1.86,
+   "g": 0.6,
+   "o": 0
   },
-  "death/Omen2": {
-   "sha256": "14d3d980536aee46e2305abacd70b4cf9f65dcb5b7d74b0c3c89d979dfe6c4bf",
+  "death/Killjoy0": {
+   "sha256": "e8312f2975439bb8562833c5d5b27dfdc8a9f662eb5a02d44b8a9bb44914d185",
    "role": "death",
-   "lufs": -11.29,
-   "peak": -0.8,
-   "g": -5.7,
-   "o": 0.007
+   "lufs": -11.77,
+   "peak": -1.92,
+   "g": -5.2,
+   "o": 0
   },
-  "death/Skye0": {
-   "sha256": "d42b129de9c7e54dbef529ca5e174be9f010caa6a36d722a2528f8707a306870",
+  "death/Killjoy1": {
+   "sha256": "c012d269a8ffedd560fd5427fa098544bb7ee5415cda5695845ee352abec53f4",
    "role": "death",
-   "lufs": -15.37,
-   "peak": -0.63,
-   "g": -1.6,
-   "o": 0.006
-  },
-  "death/Skye1": {
-   "sha256": "0e94442ea737544ddbf82d913d76b401237520c5a8350acd40599787813ada5b",
-   "role": "death",
-   "lufs": -15.87,
-   "peak": -0.57,
-   "g": -1.1,
-   "o": 0.004
-  },
-  "death/Skye2": {
-   "sha256": "b00f22a2cd4de8a84a78116da93a1747a5d7f15204ea612673c1d9d0b6417aa3",
-   "role": "death",
-   "lufs": -15.19,
-   "peak": -1.08,
-   "g": -1.8,
-   "o": 0.019
-  },
-  "death/Chamber0": {
-   "sha256": "a114c96e4cb16c9618d6e956f3f9b665c8fe3fa0faf84d8395dd7f566d98f66c",
-   "role": "death",
-   "lufs": -16.48,
-   "peak": -4.41,
-   "g": -0.5,
-   "o": 0.031
-  },
-  "death/Chamber1": {
-   "sha256": "1870305d94b4db29fce27031371f12bda3fa0f28c211c71818394640d30bceb9",
-   "role": "death",
-   "lufs": -17.95,
-   "peak": -6.76,
-   "g": 0.9,
-   "o": 0.03
-  },
-  "death/Chamber2": {
-   "sha256": "b6c53dc9848590b51eb9d7c04c1f4bbff82b35f2b7bdfa49ca256a3cbc4d46de",
-   "role": "death",
-   "lufs": -17.29,
-   "peak": -4.67,
-   "g": 0.3,
-   "o": 0.033
-  },
-  "death/Breach0": {
-   "sha256": "ea6b8a361b97b243a9ade0315c5caa7d443b4c9ef854614017527606368cc298",
-   "role": "death",
-   "lufs": -15.88,
-   "peak": -0.48,
-   "g": -1.1,
-   "o": 0.004
-  },
-  "death/Breach1": {
-   "sha256": "d94024b775d309d931883e95490d7e79c03f4d3cf58048bb6f024405210a0d10",
-   "role": "death",
-   "lufs": -14.31,
-   "peak": -0.37,
-   "g": -2.7,
-   "o": 0.004
-  },
-  "death/Breach2": {
-   "sha256": "2aea7d4b3182ac40568e72f860b70abe08702b53d89cdab7c0a74e4aa65b5dfe",
-   "role": "death",
-   "lufs": -13.68,
-   "peak": -0.35,
-   "g": -3.3,
+   "lufs": -14.13,
+   "peak": -1.92,
+   "g": -2.9,
    "o": 0.003
   },
-  "death/Cypher0": {
-   "sha256": "664b026724f05ce0ca5fb1406aaefc92bccd744c37327dbe2e2e4d7414053616",
+  "death/Killjoy2": {
+   "sha256": "6ff4011c4a070cb09f40d799e13f0d3f7aa72565600df5cb162cfa1f96fb9d74",
    "role": "death",
-   "lufs": -17.04,
-   "peak": -0.37,
-   "g": 0,
+   "lufs": -10.72,
+   "peak": -1.87,
+   "g": -6.3,
+   "o": 0
+  },
+  "death/Omen0": {
+   "sha256": "8585a092057322f7285eb39020f65bf86d7aab650270207d6ba8d56517c0bd36",
+   "role": "death",
+   "lufs": -13.7,
+   "peak": -1.98,
+   "g": -3.3,
+   "o": 0
+  },
+  "death/Omen1": {
+   "sha256": "53779f28169d6c3971e706a8394ae8b6cb3247f038a1de8ca145921945964010",
+   "role": "death",
+   "lufs": -16.03,
+   "peak": -1.93,
+   "g": -1,
+   "o": 0.008
+  },
+  "death/Omen2": {
+   "sha256": "9875c103ddeee36bfdabbcad758aa92bfd746043fa5e8794436bd6652027205b",
+   "role": "death",
+   "lufs": -12.71,
+   "peak": -1.99,
+   "g": -4.3,
+   "o": 0
+  },
+  "death/Skye0": {
+   "sha256": "ff96559b53cd90498216ade91ceca9e7d0c9091d2128bebe652f4ad4797defbe",
+   "role": "death",
+   "lufs": -16.81,
+   "peak": -2.01,
+   "g": -0.2,
+   "o": 0
+  },
+  "death/Skye1": {
+   "sha256": "3b13ab738a2f0826d0ae02afee2e1bb21ab2da181b9f7c23caaddab2aa848b66",
+   "role": "death",
+   "lufs": -17.27,
+   "peak": -1.96,
+   "g": 0.3,
+   "o": 0
+  },
+  "death/Skye2": {
+   "sha256": "ff7a4a966fd45ffe350450fc6adc25543310a1fb4f6d25e89b61b2d69d2dba58",
+   "role": "death",
+   "lufs": -16.57,
+   "peak": -1.89,
+   "g": -0.4,
+   "o": 0.014
+  },
+  "death/Chamber0": {
+   "sha256": "bec5a9df86f5eecd11107bf466329d35df7139b43306c797018f204e2c498aaf",
+   "role": "death",
+   "lufs": -14.15,
+   "peak": -1.98,
+   "g": -2.8,
+   "o": 0.026
+  },
+  "death/Chamber1": {
+   "sha256": "bcddba9b08b6bcda698ca800f6702c1955204b834957523bbdd1eca07c3c4afc",
+   "role": "death",
+   "lufs": -13.23,
+   "peak": -1.93,
+   "g": -3.8,
+   "o": 0.024
+  },
+  "death/Chamber2": {
+   "sha256": "5e3badbe9660b6c9c9fd4c2e8692d71d802cb8afd02c3520f3715dd4c6d23ae6",
+   "role": "death",
+   "lufs": -14.88,
+   "peak": -1.93,
+   "g": -2.1,
+   "o": 0.028
+  },
+  "death/Breach0": {
+   "sha256": "d9ccb5cb0f1f17ecf425431a2f0052f14ea8516daf08efb0470cbb40ebc7eb39",
+   "role": "death",
+   "lufs": -17.29,
+   "peak": -1.92,
+   "g": 0.3,
+   "o": 0
+  },
+  "death/Breach1": {
+   "sha256": "38bea0227ba32ae1b16408681dd21d53e235ee2513ecb7fdf05f9a571e25315e",
+   "role": "death",
+   "lufs": -15.74,
+   "peak": -1.95,
+   "g": -1.3,
+   "o": 0
+  },
+  "death/Breach2": {
+   "sha256": "a87803453799751433a3a1c9192b74b9835b0fe4619963e4b9d0f10bae81f208",
+   "role": "death",
+   "lufs": -15.09,
+   "peak": -2.02,
+   "g": -1.9,
+   "o": 0
+  },
+  "death/Cypher0": {
+   "sha256": "b16c5838a7cf0ef1f832ad8bc64274b3e9892109f20fce1da2856fc1cb75ec7d",
+   "role": "death",
+   "lufs": -18.42,
+   "peak": -1.92,
+   "g": 1.4,
    "o": 0
   },
   "death/Cypher1": {
-   "sha256": "31fe4212e14ea0205b9de5118e89b6ca7fe759d0b55d54fa9ce749d6f7ad3331",
+   "sha256": "fbf2f247a549a164030b7652f9710cfac1d9ed0ff3200b5c1d39a5dafd0f8600",
    "role": "death",
-   "lufs": -14.31,
-   "peak": -0.56,
-   "g": -2.7,
-   "o": 0.007
+   "lufs": -15.78,
+   "peak": -1.94,
+   "g": -1.2,
+   "o": 0.002
   },
   "death/Cypher2": {
-   "sha256": "395fb71821c5d9f077c9e36bfee9ed155b9898c676aad322c7192b58957b3a75",
+   "sha256": "16631db5cccfe20c59bfa798506810b31e92e4597cced45e49736fa4171af4a8",
    "role": "death",
-   "lufs": -15.18,
-   "peak": -0.61,
-   "g": -1.8,
-   "o": 0.008
+   "lufs": -16.58,
+   "peak": -1.89,
+   "g": -0.4,
+   "o": 0.004
   },
   "ability/turret": {
-   "sha256": "8c1ff2833b7e974281799e8cc44be2c1a1c8cbb31f99672e1cd900ce41e8f686",
+   "sha256": "3e2931e7a0b82f2e9b4163df589911cd4066f37ccd6aaa4f30ce21b824183bc8",
    "role": "ability",
-   "lufs": -14.37,
-   "peak": -0.03,
-   "g": -1.6,
-   "o": 0.006
+   "lufs": -16.39,
+   "peak": -1.94,
+   "g": 0.4,
+   "o": 0.004
   },
   "ability/tShot": {
    "sha256": "2fb9bc4c9f4f0a93f519963eac22d0af85fd82bc8d0234cc9d10c52a0430716b",
@@ -4058,20 +4058,20 @@
    "o": 0
   },
   "ability/alarm": {
-   "sha256": "ba2ecd1e9758054b950e19dfb62ef0573ad7978d13449aecc32f5060ffe1d229",
+   "sha256": "c3dddb5f1f774e6255a1c27b5e94b403c14c0d065c145db896a686fe0c64d8b7",
    "role": "ability",
-   "lufs": -14.76,
-   "peak": 0.2,
-   "g": -1.2,
-   "o": 0.005
+   "lufs": -17.12,
+   "peak": -1.92,
+   "g": 1.1,
+   "o": 0
   },
   "ability/nanoSet": {
-   "sha256": "c760abc266ab99561418c671a366560f57a3317354222c134be48c0b5e4ca2f4",
+   "sha256": "348df0d3da8ada4c0d5495a9f3a21470cf730a31aaa47bdd09bb10bcd57456ca",
    "role": "ability",
-   "lufs": -16.25,
-   "peak": -1.98,
-   "g": 0.3,
-   "o": 0.003
+   "lufs": -16.13,
+   "peak": -1.9,
+   "g": 0.1,
+   "o": 0
   },
   "ability/nano": {
    "sha256": "d82e8d65c3716e3fbe7bc2899966ffeb2e2410a32872cb455cabcc32c3108b1e",
@@ -4082,12 +4082,12 @@
    "o": 0.002
   },
   "ability/lockdown": {
-   "sha256": "fb36111ff37e7ae9003f40c4a5040956416fe4b4da9bae79afb9aca8585e8b40",
+   "sha256": "0372b450417e7d8ef00508f6b3621dd76351e2d3d53b0bd6337e7af6c474b7b0",
    "role": "ability",
-   "lufs": -15.59,
-   "peak": -3.8,
-   "g": -0.4,
-   "o": 0.002
+   "lufs": -13.71,
+   "peak": -1.97,
+   "g": -2.3,
+   "o": 0
   },
   "ability/dash": {
    "sha256": "a97c9fa62b964c341974f1cdb6306b24833273a1c4c7c653c04f07f8f72142ad",
