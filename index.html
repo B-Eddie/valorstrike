@@ -9611,6 +9611,7 @@ function xBAsSpot(atk, sp, from, du, blk) { if (blk && blk.t > 0.6 && blk.t < 5)
   A.hoU = 1; A.hoT = t; A.hoL = XPAR2.heal; A.hoR = A.hoL / 5; feed("Sage ▸ Healing Orb"); try { SFX.heal(); } catch (e) {}
   try { const x = t === "p" ? player.x : t.g.position.x, z = t === "p" ? player.z : t.g.position.z, m = new THREE.Mesh(xG("Box", 1.2, 0.05, 1.2), fireMat(0x5fe0d0, 0.4)); m.position.set(x, 0.05, z); jFx(m, 5); } catch (e) {} }; }
 // bot Chamber (team-agnostic): Trademark on a flank lane when defending, Tour De Force on a far enemy once charged (buy hook skipped)
+window.xBotTdf = (u) => { const A = u && u.ab; if (!A || A.ct == null || A.tdf) return 0; A.tdf = XTDF.rounds; A.tdT = XAB_WIND.tourDeForce; feed("Chamber ▸ Tour De Force"); return 1; };
 { const b0 = botAb; botAb = function (b, dt, see, tg, from) { b0(b, dt, see, tg, from);
   if (!jOn() || !running || !b.ab || !b.g || (b.name !== "Chamber" && xAgOf(b.name) !== "Chamber")) return; const A = b.ab, al = allies.indexOf(b) >= 0;
   if (A.ct == null) { A.ct = 1; A.cu = A.cuK || 0; A.cuK = 0; A.tm = null; A.tdf = 0;
@@ -9623,7 +9624,7 @@ function xBAsSpot(atk, sp, from, du, blk) { if (blk && blk.t > 0.6 && blk.t < 5)
     if ((T.arm -= dt) <= 0) { const cands = (al ? bots : allies).filter((t) => t && t.alive && t.g).map((t) => [t.g.position.x, t.g.position.z, t]); if (!al && player.hp > 0) cands.push([player.x, player.z, player]);
       const c = bcTmScan(T, cands, dt); if (c) { bcTmField(c[0], c[1], c[2] === player ? player.y : c[2].g.position.y); if (c[2] === player) say("Slowed by Trademark", 900); T.f.t = 0.01; A.tm = null; feed("Chamber ▸ Trademark triggered"); blip(300, 0.3, "square", 0.12); } } }
   // Tour De Force (= server ULT.tdf / page XTDF): 5 rounds, 2.3 s summon, then 0.9 shots / s at enemies in sight; a kill leaves the 6 m, 4 s, 50 % field
-  const UC = window.xBotUC; if (!A.tdf && UC && (UC[b.name] || 0) >= KITS.Chamber.u && see && tg && tg.x !== undefined && Math.hypot(tg.x - from.x, tg.z - from.z) > 20 && Math.random() < dt * 2) { UC[b.name] = 0; A.tdf = XTDF.rounds; A.tdT = XAB_WIND.tourDeForce; feed("Chamber ▸ Tour De Force"); }
+  // the cast itself is the FEEL bot-ult think (BotBrain.ultCall / ultReady, bug lane 2026-11-03), through window.xBotTdf
   if (!A.tdf) return; A.tdT -= dt; if (A.tdT > 0 || !see || !tg || tg.x === undefined) return;
   A.tdf--; A.tdT = 1 / XTDF.rate; const o = from.clone(), e = new THREE.Vector3(tg.x, (tg.y || 0) + 1.4, tg.z); jFx(jBolt(0xd4a640, o, e), 0.25); blip(120, 0.4, "sawtooth", 0.2);
   xAoe(b, e, 0.9, XTDF.body, "Tour De Force");
@@ -12534,7 +12535,7 @@ html.xt-nocm .x-cmb{display:none!important}
 })();
 // FEEL pass: bot ultimates (team-agnostic). Charge +1 per kill, death, plant, defuse; think at 10 Hz; pooled vectors, tracers via bFx
 (function () {
-  const PTS = {}; ["Breach", "Raze", "Jett", "Sova", "Phoenix", "Reyna", "Omen", "Sage", "Killjoy"].forEach((a) => { PTS[a] = KITS[a].u; }); // ult points straight from KITS (the player's kit)
+  const PTS = {}; ["Breach", "Raze", "Jett", "Sova", "Phoenix", "Reyna", "Omen", "Sage", "Killjoy", "Skye", "Cypher", "Chamber"].forEach((a) => { PTS[a] = KITS[a].u; }); // bug lane 2026-11-03: Skye / Cypher had no bot ult; Chamber casts here too (its Tour De Force shots stay in the Chamber kit, A.tdf) // ult points straight from KITS (the player's kit)
   const XU = { c: Object.create(null), b: Object.create(null) }, V1 = new THREE.Vector3(), V2 = new THREE.Vector3(), V3 = new THREE.Vector3(), DIR = new THREE.Vector3(), HIT = { point: V2 }, TP = { x: 0, z: 0 };
   const st = document.createElement("style"); st.textContent = ".kf.x-ult span{color:var(--red,#ff4655);font-weight:600;letter-spacing:.04em}"; document.head.appendChild(st);
   function unit(n) { if (!n || n === "You") return null; for (const x of bots) if (x && x.name === n) return x; if (typeof allies !== "undefined") for (const x of allies) if (x && x.name === n) return x; return null; }
@@ -12612,16 +12613,44 @@ html.xt-nocm .x-cmb{display:none!important}
   }
   window.xBotBreachUlt = (u, en) => (near(u, en, false, 60) ? (breach(u, en), 1) : 0); // test hooks: the real ults at the nearest enemy
   window.xBotRazeUlt = (u, en) => (near(u, en, false, 60) ? (raze(u, en), 1) : 0);
-  function use(u, a, en) {
-    if (a === "Breach") { if (!near(u, en, true, XRT2.near + XRT2.len) || tD <= XRT2.near) return 0; breach(u, en); return 1; } // the strip starts 8 m ahead
-    if (a === "Raze") { if (!near(u, en, true, 35)) return 0; if (cluster(en, 5) < 2 && Math.random() > 0.12) return 0; raze(u, en); return 1; }
+  // bug lane 2026-11-03 ("the bots aren't using their ultimates"): the situation comes from the shared BotBrain.ultCall (the server
+  // bots use the same) and has to hold for BotBrain.ultReady's drawn delay (human timing; the old checks cast the 100 ms tick a
+  // situation appeared, or at a 12-25 % roll per tick). What a bot knows is what it sees (line of sight) or remembers (xbBest:
+  // seen / heard, never the real position). use() then casts the kit's real ult at that.
+  function want(u, a, en) { const p = u.g.position, sees = near(u, en, true, 80), dist = sees ? tD : null, s = { see: !!sees, dist };
+    const m = typeof xbBest === "function" ? xbBest(u, BB().ULTX.memAge) : null; if (m) { s.memD = Math.hypot(m.x - p.x, m.z - p.z); s.memAge = xbNow() - m.t; XM.x = m.x; XM.z = m.z; }
+    const fv = typeof FV !== "undefined" ? FV : null; s.planted = mode === "five" ? !!(fv && fv.sp && fv.sp.st === "plant") : false; s.atk = mode === "five" && fv ? (FV.atk !== !en) : false;
+    if (s.planted && spike.parent) s.spikeD = Math.hypot(spike.position.x - p.x, spike.position.z - p.z);
+    if (a === "Sage") { const d = deadNear(u, en); if (d) s.mateCorpseD = Math.hypot(d.x - p.x, d.z - p.z); }
+    if (a === "Cypher") { const d = foeDead(u, en); if (d) s.foeCorpseD = Math.hypot(d.x - p.x, d.z - p.z); }
+    return BB().ultCall(a, s); }
+  const XM = { x: 0, z: 0 }, BB = () => window.BotBrain;
+  function foeDead(u, en) { const p = u.g.position; let b = null, bd = BB().ULTX.corpse.Cypher; for (const d of DEAD) { if (d.en === en || (d.pl ? player.hp > 0 : d.u.alive)) continue; const l = Math.hypot(d.x - p.x, d.z - p.z); if (l < bd) { bd = l; b = d; } } return b; }
+  function memAt(u, en) { TP.x = XM.x; TP.z = XM.z; tD = Math.hypot(XM.x - u.g.position.x, XM.z - u.g.position.z); return true; }
+  function skye(u, en) { // Seekers: the 3 nearest enemies, tracked to them at 12 m/s (15 m max travel time), then 3 s Nearsight + 5 s 60 % slow (server ULT.seekers)
+    const p = u.g.position, L = en ? [player].concat(typeof allies !== "undefined" ? allies : []) : bots, g = XRCN.g;
+    const al = L.filter((t) => (t === player ? t.hp > 0 : t.alive && t.g)).map((t) => [t, t === player ? Math.hypot(t.x - p.x, t.z - p.z) : Math.hypot(t.g.position.x - p.x, t.g.position.z - p.z)]).sort((x, y) => x[1] - y[1]).slice(0, 3);
+    if (!al.length) return 0; try { SFX.ab("seekers", p); } catch (e) {}
+    for (const [t, d] of al) setTimeout(() => { if (g !== XRCN.g || !running) return; if (t === player) { if (player.hp > 0) { pNs(3); say("Nearsighted by Seekers", 900); } } else if (t.alive) { t.blind = Math.max(t.blind || 0, 3); t.ns = 3; t.sks = Math.max(t.sks || 0, 5); } }, Math.min(15, d / 12) * 1000);
+    return 1; }
+  function cypher(u, en) { // Neural Theft on a fallen enemy: every living enemy revealed twice (2 s and 6 s after the cast, 1.6 s each: server ULT.theft / CYNT)
+    const g = XRCN.g; for (const at of CYNT.at) setTimeout(() => { if (g !== XRCN.g || !running || !u.alive) return;
+      if (en) { if (player && player.hp > 0) { try { say("Revealed by Neural Theft", 900); enRvFx(); } catch (e) {} } for (const b of bots) if (b.alive) b.cd = Math.min(b.cd, 0.3); }
+      else { const l = bots.filter((b) => b.alive && b.g); try { cyReveal(l, CYNT.reveal); } catch (e) {} } }, at * 1000);
+    try { SFX.ab("theft", u.g.position); } catch (e) {} return 1; }
+  function use(u, a, en, w) {
+    if (a === "Breach") { if (w === "mem") memAt(u, en); else if (!near(u, en, true, XRT2.near + XRT2.len)) return 0; breach(u, en); return 1; }
+    if (a === "Raze") { if (w === "mem") memAt(u, en); else if (!near(u, en, true, 35)) return 0; raze(u, en); return 1; }
     if (a === "Jett") { if (!near(u, en, true, 25)) return 0; XU.b[u.name] = 1; u.bsK = 5; u.bsEnd = 0; u.bsSn = u.xsh || 0; return 1; } // Blade Storm: 5 knives (ability_fp_runtime xBtpShots: one per shot, a kill refills, over at 0); XU.b = 1: no damage multiplier, the knives deal knife damage (XBSB: 50 body, x3 head, x0.85 legs)
-    if (a === "Sova") { if (!near(u, en, false, 80) || Math.random() > 0.25) return 0; sova(u, en); return 1; }
-    if (a === "Reyna") { if (XU.b[u.name] || !near(u, en, true, 30)) return 0; XU.b[u.name] = 1.1; return 1; } // Empress: +10% fire rate (v11.08) (as the player's, dealt as damage output) until death
-    if (a === "Phoenix") { if (u.xrib || !near(u, en, true, 30)) return 0; ribStart(u); return 1; } // Run It Back: 10 s, back to the marker at full HP on death
-    if (a === "Sage") { if (u.xrs) return 0; const d = deadNear(u, en); if (d) u.xrs = { d, t: 0, w: 0 }; return 0; } // charge spent on revive
-    if (a === "Omen") { if (u.xom || near(u, en, true, 30) || Math.random() > 0.15) return 0; return omenCast(u, en); }
+    if (a === "Sova") { memAt(u, en); sova(u, en); return 1; }
+    if (a === "Reyna") { if (XU.b[u.name]) return 0; XU.b[u.name] = 1.1; return 1; } // Empress: +10% fire rate (v11.08) (as the player's, dealt as damage output) until death
+    if (a === "Phoenix") { if (u.xrib) return 0; ribStart(u); return 1; } // Run It Back: 10 s, back to the marker at full HP on death
+    if (a === "Sage") { if (u.xrs) return 0; const d = deadNear(u, en); if (d) { u.xrs = { d, t: 0, w: 0 }; return 2; } return 0; } // walks over; the charge is spent on the revive (sageTick)
+    if (a === "Omen") { if (u.xom) return 0; return omenCast(u, en); }
     if (a === "Killjoy") return kjCast(u, en);
+    if (a === "Skye") return skye(u, en);
+    if (a === "Cypher") return foeDead(u, en) ? cypher(u, en) : 0;
+    if (a === "Chamber") return typeof window.xBotTdf === "function" ? window.xBotTdf(u) : 0; // Tour De Force: the Chamber kit's own summon + shots (A.tdf)
     return 0;
   }
   // ---- Sage / Killjoy / Omen bot ults: dead list, pooled devices and shades, all ticked by the same 10 Hz think ----
@@ -12706,8 +12735,9 @@ html.xt-nocm .x-cmb{display:none!important}
   function tick2(u, en) { if (!u) return; if (u.xdt > 0) u.xdt -= 0.1; if (u.xrib && (u.xrib.t -= 0.1) <= 0) ribEnd(u); sageTick(u, en); omenTick(u); }
   setInterval(function () { try { if (!running || !player) return; if (pDt > 0) { pDt -= 0.1; try { fireHeld = false; } catch (e) {} }
     for (const b of bots) tick2(b, true); if (typeof allies !== "undefined") for (const x of allies) tick2(x, false); for (const o of LDP) ldTick(o); } catch (e) {} }, 100);
-  function think1(u, en) { if (!u || !u.alive || !u.g || u.nt) return; const a = xAg(u), m = PTS[a]; if (!m || (XU.c[u.name] || 0) < m) return;
-    if (use(u, a, en)) { XU.c[u.name] = 0; say2(u, a, en); } }
+  function think1(u, en) { if (!u || !u.alive || !u.g || u.nt || !window.BotBrain) return; const a = xAg(u), m = PTS[a], st = u.xuSt || (u.xuSt = {}); if (!m || (XU.c[u.name] || 0) < m || (mode === "five" && FV.buy > 0) || u.xrs) { st.k = null; return; }
+    const w = want(u, a, en); if (!BB().ultReady(st, xbNow(), w, Math.random)) return; st.k = null;
+    const r = use(u, a, en, w); if (r === 1) { XU.c[u.name] = 0; say2(u, a, en); } }
   setInterval(function () { try { if (!running || !player) return; for (const b of bots) think1(b, true); if (typeof allies !== "undefined") for (const x of allies) think1(x, false); } catch (e) {} }, 100);
 })();
 // ---- DEATHMATCH: Val-style FFA on the 5v5 map/bot/weapon systems (mode "five" + FV.dm) ----
@@ -18470,7 +18500,30 @@ if (typeof xUbPost === "function") { const hp0 = xUbPost; xUbPost = function (M)
  // st {contactD (m to the freshest remembered enemy, null: none), see, trading, wide, carrier, rush}.
  const WALK={range:16};
  function quiet(st){if(!st||st.see||st.trading||st.wide||st.carrier||st.rush)return false;return st.contactD!=null&&st.contactD<WALK.range;}
- return {hash,rng,clamp,pickW,REACT,personality,reaction,crosshair,crosshairAt,firePattern,peek,attackPlan,defensePlan,roles,teamBuy,buyFor,BUYK,onMateDeath,onSound,ATTACK,DEFENSE,utility,UTIL,UTILX,teamGap,fightCast,turnStep,trackLag,wrapA,SPIKE,plantSpot,PLANT,plantDeep,postPlant,retake,postPlay,SHOOT_UTIL,shootUtility,TAILWIND,tailwindDash,tailwindKeys,LEVEL,level,aimTraits,AIM_H,aimHeight,halfWidth,aimPlan,aimAt,readyToFire,planFire,idlePitch,recoilPull,discipline,hitPart,BUY,buyArea,buyRoute,buyExit,buySpot,buyWander,buyHold,buyNew,buyTick,buyNext,buySep,SENS,cm360,sensOf,turnRate,SENSE,inView,audible,earSpot,memNew,memNote,memForget,memBest,repeek,mayFire,nextShot,areas,DFORM,GAP,midPoint,RESPOND,nearest,tradeSpot,follow,buyNear,buyCross,reactR,reacts,FIRE,sprayFade,sprayPull,turnAcc,trackTurn,cornerPick,PRE,pathCorner,preAimErr,FLASH,flashRead,blindPlay,PEEK,peekStep,RELOAD,reloadPlay,reloadBack,trailNote,reloadSpot,TRADE,WALK,quiet};
+ // Ultimates (bug lane 2026-11-03, user: "the bots aren't using their ultimates"). One decision for the server bots and the
+ // page's offline bots: with the ult charged, which situation calls for it. 'enemy': an enemy in sight inside the agent's
+ // band (Blade Storm / Empress / Run It Back / Rolling Thunder / a long Tour De Force are fight ults); 'mem': no enemy
+ // in sight, a remembered one (seen / heard within ULTX.memAge s; never the real position) inside the band (Hunter's Fury
+ // and Seekers reach round corners, Rolling Thunder goes through walls, Run It Back before a re-peek, the Showstopper (1.4 s)
+ // and Tour De Force (2.3 s) equipped behind cover before the re-peek: drawn mid-fight the bot died holding them); 'mateCorpse' (Sage:
+ // a dead teammate close by, no enemy in sight); 'foeCorpse' (Cypher: a dead enemy close by); 'spike' (Killjoy: Lockdown
+ // on a planted Spike it plays around; Omen: From the Shadows to a far planted Spike on a retake; 'mem' for Omen = behind
+ // a remembered enemy 20-60 m off, the flank).
+ // s {see, dist, memD, memAge, planted, atk, spikeD, mateCorpseD, foeCorpseD}. Pure.
+ const ULTX={delay:[.45,1.3],memAge:6,see:{Jett:[0,25],Reyna:[0,30],Phoenix:[0,30],Breach:[9,38],Chamber:[30,70]},
+  mem:{Sova:[8,60],Skye:[4,35],Breach:[10,38],Phoenix:[0,12],Raze:[6,35],Chamber:[10,60],Omen:[20,60]},corpse:{Sage:15,Cypher:16},kj:30,omen:[28,95]};
+ function ultCall(agent,s){if(!s)return null;const S=ULTX.see[agent];if(S&&s.see&&s.dist>=S[0]&&s.dist<=S[1])return 'enemy';
+  const M=ULTX.mem[agent];if(M&&!s.see&&s.memD!=null&&s.memAge<=ULTX.memAge&&s.memD>=M[0]&&s.memD<=M[1])return 'mem';
+  if(agent==='Sage'&&!s.see&&s.mateCorpseD!=null&&s.mateCorpseD<=ULTX.corpse.Sage)return 'mateCorpse';
+  if(agent==='Cypher'&&!s.see&&s.foeCorpseD!=null&&s.foeCorpseD<=ULTX.corpse.Cypher)return 'foeCorpse';
+  if(agent==='Killjoy'&&s.planted&&s.spikeD!=null&&s.spikeD<=ULTX.kj)return 'spike';
+  if(agent==='Omen'&&!s.see&&s.planted&&!s.atk&&s.spikeD!=null&&s.spikeD>=ULTX.omen[0]&&s.spikeD<=ULTX.omen[1])return 'spike';
+  return null;}
+ // Human timing: the same call has to hold for a drawn ULTX.delay before the cast (a player sees the moment, decides,
+ // presses X); a different call or none restarts it. st {k, at} per bot; rnd() draws the delay (called once per new call).
+ function ultReady(st,t,want,rnd){if(!st)return false;if(!want){st.k=null;return false;}
+  if(st.k!==want){st.k=want;const r=typeof rnd==='function'?rnd():.5;st.at=t+ULTX.delay[0]+clamp(r,0,1)*(ULTX.delay[1]-ULTX.delay[0]);return false;}return t>=st.at;}
+ return {hash,rng,clamp,pickW,REACT,personality,reaction,crosshair,crosshairAt,firePattern,peek,attackPlan,defensePlan,roles,teamBuy,buyFor,BUYK,onMateDeath,onSound,ATTACK,DEFENSE,utility,UTIL,UTILX,teamGap,fightCast,turnStep,trackLag,wrapA,SPIKE,plantSpot,PLANT,plantDeep,postPlant,retake,postPlay,SHOOT_UTIL,shootUtility,TAILWIND,tailwindDash,tailwindKeys,LEVEL,level,aimTraits,AIM_H,aimHeight,halfWidth,aimPlan,aimAt,readyToFire,planFire,idlePitch,recoilPull,discipline,hitPart,BUY,buyArea,buyRoute,buyExit,buySpot,buyWander,buyHold,buyNew,buyTick,buyNext,buySep,SENS,cm360,sensOf,turnRate,SENSE,inView,audible,earSpot,memNew,memNote,memForget,memBest,repeek,mayFire,nextShot,areas,DFORM,GAP,midPoint,RESPOND,nearest,tradeSpot,follow,buyNear,buyCross,reactR,reacts,FIRE,sprayFade,sprayPull,turnAcc,trackTurn,cornerPick,PRE,pathCorner,preAimErr,FLASH,flashRead,blindPlay,PEEK,peekStep,RELOAD,reloadPlay,reloadBack,trailNote,reloadSpot,TRADE,WALK,quiet,ULTX,ultCall,ultReady};
 });
 // Spawn barriers (Valorant's buy-phase walls), shared by the server (spike.js world, bots.js) and the page (UMD:
 // index.html inlines it in the BOT VARIETY block and reads window.SpawnBarriers; native_maps_runtime nmBlocked and the

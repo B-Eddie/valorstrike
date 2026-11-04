@@ -26,7 +26,7 @@ export class TdmSimulation extends SpikeSimulation{
  // Reuse the per-unit collision view. The closure still reads current room state and base blockers.
  motor(u,input,dt){const W=this.world;if(!this.spawnRooms)return super.motor(u,input,dt);this.roomMotorViews??=new WeakMap();let view=this.roomMotorViews.get(u);if(!view||Object.getPrototypeOf(view)!==W){view=Object.create(W);view.blocked=(x,z,r,y,h)=>roomBlocked(this,u,x,z,r,y)||W.blocked(x,z,r,y,h);this.roomMotorViews.set(u,view);}this.world=view;try{return super.motor(u,input,dt);}finally{this.world=W;}}
  fire(u){if(this.spawnRooms&&inRoom(this,u))return false;return super.fire(u);}
- bot(u){return Simulation.prototype.bot.call(this,u);}
+ bot(u){if(!u.human&&this.botUlt(u))return;/* ultimates (spike.js botUlt) */return Simulation.prototype.bot.call(this,u);}
  release(){}
  command(u,m){if(m?.t==='ab'){if(this.phase!=='game'||this.spawnRooms&&inRoom(this,u))return false;const A=u.ability,r=castAbility(this,u,m);if(r&&m.k==='x'&&A&&!(A.ult>0)){A.tp=0;A.tdUlt=0;}return r;}
   if(m?.t==='blade')return this.fireBlade(u,m.alt===1||m.alt===true);
