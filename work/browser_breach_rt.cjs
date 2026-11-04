@@ -49,8 +49,8 @@ const log=(k,v)=>{R.steps.push([+((Date.now()-t00)/1000).toFixed(1),k,typeof v==
  await X('window.__ts=8;1');
  await X(`bcCone({x:${V.x},z:${V.z},ry:${V.yaw}});1`);
  await X('window.__shotHold=1;1');
- log('rt step',await X('window.__frz=0.02;let i=0;for(;i<200&&!(J.a18fx||[]).some(f=>f.kind==="armagboom");i++)xSimStep(0.05);JSON.stringify({steps:i,q:BC.fq.length,fx:(J.a18fx||[]).map(f=>f.kind)})'));
- for(let k=0;k<5;k++)await X('xSimStep(0.05);1');
+ log('rt step',await X('window.__frz=0.02;let i=0;for(;i<200&&(J.a18fx||[]).filter(f=>f.kind==="quakefx").length<3;i++)xSimStep(0.05);JSON.stringify({steps:i,q:BC.fq.length,fx:(J.a18fx||[]).map(f=>f.kind)})'));
+ for(let k=0;k<4;k++)await X('xSimStep(0.05);1');
  await cap('breach_rt_impact');log('rt','captured');
  await browser.close();
 })().catch(e=>{log('FATAL',String(e.stack||e).slice(0,400));process.exit(1);});
