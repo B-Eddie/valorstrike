@@ -36,6 +36,12 @@ jobs:
           cache-dependency-path: server/package-lock.json
       - run: npm ci --no-audit --no-fund
         working-directory: server
+        
+      - run: npm run build:worlds
+      
+        working-directory: server
+
+
       - run: |
           mkdir -p "$HOME/pw" "$HOME/qa" && cd "$HOME/pw" && npm init -y >/dev/null && npm i playwright-core --no-audit --no-fund >/dev/null
           cp "$GITHUB_WORKSPACE"/work/two-browser/qa/*.js "$HOME/qa/"
