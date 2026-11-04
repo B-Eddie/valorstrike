@@ -1,0 +1,53 @@
+{
+  "Model": {
+    "Path": "../uploads/models/agents_fp/astra_fp/",
+    "Name": "astra_fp.glb"
+  },
+  "Settings": {
+    "Type": "1P",
+    "FOV": 43.383066656235656,
+    "CameraPosition": {
+      "X": 0,
+      "Y": 1,
+      "Z": 0
+    },
+    "CameraParent": "Camera",
+    "ShadowHeight": 0
+  },
+  "Animations": [],
+  "Materials": [
+    {
+      "Name": "FP_Rift_S0_MI",
+      "Type": "PBR",
+      "DF": "../uploads/models/agents_fp/astra_fp/textures/DF.png",
+      "ORM": "../uploads/models/agents_fp/astra_fp/textures/ORM.png",
+      "EM": "../uploads/models/agents_fp/astra_fp/textures/EM.png",
+      "NM": "../uploads/models/agents_fp/astra_fp/textures/NM.png",
+      "Metallic": 1,
+      "Roughness": 1
+    },
+    {
+      "Name": "FP_Rift_S0_MI_Invis",
+      "Type": "Disabled"
+    },
+    {
+      "Name": "FP_Rift_SO_R_Arm_MI",
+      "Type": "PBR",
+      "DF": "../uploads/models/agents_fp/astra_fp/textures/DF.png",
+      "ORM": "../uploads/models/agents_fp/astra_fp/textures/ORM.png",
+      "EM": "../uploads/models/agents_fp/astra_fp/textures/EM.png",
+      "NM": "../uploads/models/agents_fp/astra_fp/textures/NM.png",
+      "Metallic": 1,
+      "Roughness": 1,
+      "Emissive": {
+        "Color": {
+          "R": 1,
+          "G": 1,
+          "B": 1
+        },
+        "ColorSpace": "sRGB",
+        "Intensity": 1
+      }
+    }
+  ]
+}

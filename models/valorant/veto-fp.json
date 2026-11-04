@@ -1,0 +1,63 @@
+{
+  "Model": {
+    "Path": "../uploads/models/agents_fp/veto_fp/",
+    "Name": "veto_fp.glb"
+  },
+  "Settings": {
+    "Type": "1P",
+    "FOV": 43.383066656235656,
+    "CameraPosition": {
+      "X": 0,
+      "Y": 1,
+      "Z": 0
+    },
+    "OrbitTarget": {
+      "X": 0,
+      "Y": 1,
+      "Z": 0
+    },
+    "CameraParent": "Camera",
+    "ShadowHeight": 0
+  },
+  "Animations": [],
+  "Materials": [
+    {
+      "Name": "FP_Pine_S0_MI",
+      "Type": "PBR",
+      "DF": "../uploads/models/agents_fp/veto_fp/textures/df.png",
+      "ORM": "../uploads/models/agents_fp/veto_fp/textures/orm.png",
+      "EM": "../uploads/models/agents_fp/veto_fp/textures/em.png",
+      "NM": "../uploads/models/agents_fp/veto_fp/textures/nm.png",
+      "Metallic": 1,
+      "Roughness": 1,
+      "Emissive": {
+        "Color": {
+          "R": 1,
+          "G": 1,
+          "B": 1
+        },
+        "ColorSpace": "sRGB",
+        "Intensity": 1
+      }
+    },
+    {
+      "Name": "FP_Pine_S0_Sym_MI",
+      "Type": "PBR",
+      "DF": "../uploads/models/agents/veto/textures/sym_df.png",
+      "ORM": "../uploads/models/agents/veto/textures/sym_orm.png",
+      "EM": "../uploads/models/agents/veto/textures/sym_em.png",
+      "NM": "../uploads/models/agents/veto/textures/sym_nm.png",
+      "Metallic": 1,
+      "Roughness": 1,
+      "Emissive": {
+        "Color": {
+          "R": 1,
+          "G": 1,
+          "B": 1
+        },
+        "Intensity": 5,
+        "ColorSpace": "sRGB"
+      }
+    }
+  ]
+}

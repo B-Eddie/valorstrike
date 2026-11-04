@@ -1,0 +1,77 @@
+{
+  "Model": {
+    "Path": "../uploads/models/agents_fp/yoru_fp/",
+    "Name": "yoru_fp.glb"
+  },
+  "Settings": {
+    "Type": "1P",
+    "FOV": 43.383066656235656,
+    "CameraPosition": {
+      "X": 0,
+      "Y": 1,
+      "Z": 0
+    },
+    "CameraParent": "Camera",
+    "ShadowHeight": 0
+  },
+  "Animations": [
+    {
+      "Name": "FP_Stealth_S0_X_Invis_Equip_Idle",
+      "Translatable": "Idle",
+      "State": "DEFAULT",
+      "HeldItem": "dimensional-drift",
+      "IsHeldDefault": true,
+      "WeaponAnimName": "AB_Stealth_S0_X_Invis_Equip_Idle",
+      "Type": "Internal",
+      "SequenceLength": 4
+    },
+    {
+      "Name": "FP_Stealth_S0_X_Invis_Equip",
+      "Translatable": "Equip",
+      "State": "DEFAULT",
+      "HeldItem": "dimensional-drift",
+      "WeaponAnimName": "AB_Stealth_S0_X_Invis_Equip",
+      "Type": "Internal",
+      "SequenceLength": 2.6666667
+    },
+    {
+      "Name": "FP_Stealth_S0_X_Invis_Activate",
+      "Translatable": "Cast",
+      "State": "DEFAULT",
+      "HeldItem": "dimensional-drift",
+      "WeaponAnimName": "AB_Stealth_S0_X_Invis_Activate",
+      "Type": "Internal",
+      "SequenceLength": 2
+    },
+    {
+      "Name": "FP_Stealth_S0_X_Invis_Activate_Idle",
+      "Translatable": "Idle Cloaked",
+      "State": "CLOAKED",
+      "HeldItem": "dimensional-drift",
+      "WeaponAnimName": "Idle",
+      "Type": "Internal",
+      "SequenceLength": 2
+    },
+    {
+      "Name": "FP_StealthPrototype_S0_X_DimensionalStep_DeCloak",
+      "Translatable": "Decloaking",
+      "State": "CLOAKED",
+      "HeldItem": "dimensional-drift",
+      "WeaponAnimName": "Idle",
+      "Type": "Internal",
+      "SequenceLength": 0.8
+    }
+  ],
+  "Materials": [
+    {
+      "Name": "FP_Stealth_S0_MI",
+      "Type": "PBR",
+      "DF": "../uploads/models/agents_fp/yoru_fp/textures/DF.png",
+      "ORM": "../uploads/models/agents_fp/yoru_fp/textures/ORM.png",
+      "EM": "../uploads/models/agents_fp/yoru_fp/textures/EM.png",
+      "NM": "../uploads/models/agents_fp/yoru_fp/textures/NM.png",
+      "Metallic": 1,
+      "Roughness": 1
+    }
+  ]
+}

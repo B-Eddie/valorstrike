@@ -1,0 +1,30 @@
+{
+  "Model": {
+    "Path": "../uploads/models/agents_fp/neon_fp/",
+    "Name": "neon_fp.glb"
+  },
+  "Settings": {
+    "Type": "1P",
+    "FOV": 43.383066656235656,
+    "CameraPosition": {
+      "X": 0,
+      "Y": 1,
+      "Z": 0
+    },
+    "CameraParent": "Camera",
+    "ShadowHeight": 0
+  },
+  "Animations": [],
+  "Materials": [
+    {
+      "Name": "FP_Sprinter_S0_MI",
+      "Type": "PBR",
+      "DF": "../uploads/models/agents_fp/neon_fp/textures/DF.png",
+      "ORM": "../uploads/models/agents_fp/neon_fp/textures/ORM.png",
+      "EM": "../uploads/models/agents_fp/neon_fp/textures/EM.png",
+      "NM": "../uploads/models/agents_fp/neon_fp/textures/NM.png",
+      "Metallic": 1,
+      "Roughness": 1
+    }
+  ]
+}

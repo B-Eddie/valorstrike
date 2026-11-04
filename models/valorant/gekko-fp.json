@@ -1,0 +1,147 @@
+{
+  "Model": {
+    "Path": "../uploads/models/agents_fp/gekko_fp/",
+    "Name": "gekko_fp.glb",
+    "SpecialMaterial": "FP_AggroBot_S0_MI",
+    "SpecialMaterialIndex": 1
+  },
+  "Settings": {
+    "Type": "1P",
+    "FOV": 43.383066656235656,
+    "CameraPosition": {
+      "X": 0,
+      "Y": 1,
+      "Z": 0
+    },
+    "OrbitTarget": {
+      "X": 0,
+      "Y": 1,
+      "Z": 0
+    },
+    "CameraParent": "Camera",
+    "ShadowHeight": 0
+  },
+  "Animations": [
+    {
+      "Name": "FP_AggroBot_S0_4_Bubbletov_Idle",
+      "Translatable": "Idle",
+      "HeldItem": "mosh-pit",
+      "IsHeldDefault": true,
+      "WeaponAnimName": "AB_AggroBot_S0_4_Bubbletov_Idle",
+      "Type": "Internal",
+      "SequenceLength": 4
+    },
+    {
+      "Name": "FP_AggroBot_S0_4_Bubbletov_Equip",
+      "Translatable": "Equip",
+      "HeldItem": "mosh-pit",
+      "WeaponAnimName": "AB_AggroBot_S0_4_Bubbletov_Equip",
+      "Type": "Internal",
+      "SequenceLength": 1.3
+    },
+    {
+      "Name": "FP_AggroBot_S0_4_Bubbletov_ThrowOver",
+      "Translatable": "Throw",
+      "HeldItem": "mosh-pit",
+      "WeaponAnimName": "Idle",
+      "Type": "Internal",
+      "SequenceLength": 0.9166667
+    },
+    {
+      "Name": "FP_AggroBot_S0_4_Bubbletov_ThrowUnder",
+      "Translatable": "Short Throw",
+      "HeldItem": "mosh-pit",
+      "WeaponAnimName": "Idle",
+      "Type": "Internal",
+      "SequenceLength": 1.15
+    },
+    {
+      "Name": "FP_AggroBot_S0_E_BabyZamboni_Idle",
+      "Translatable": "Idle",
+      "HeldItem": "baby-dizzy",
+      "IsHeldDefault": true,
+      "WeaponAnimName": "AB_AggroBot_S0_E_BabyZamboni_Idle",
+      "Type": "Internal",
+      "SequenceLength": 10
+    },
+    {
+      "Name": "FP_AggroBot_S0_E_BabyZamboni_Equip",
+      "Translatable": "Equip",
+      "HeldItem": "baby-dizzy",
+      "WeaponAnimName": "AB_AggroBot_S0_E_BabyZamboni_Equip",
+      "Type": "Internal",
+      "SequenceLength": 1.25
+    },
+    {
+      "Name": "FP_AggroBot_S0_E_BabyZamboni_Cast",
+      "Translatable": "Cast",
+      "HeldItem": "baby-dizzy",
+      "WeaponAnimName": "AB_AggroBot_S0_E_BabyZamboni_Cast",
+      "Type": "Internal",
+      "SequenceLength": 1
+    },
+    {
+      "Name": "FP_AggroBot_S0_Q_BabySpikebot_Idle",
+      "Translatable": "Idle",
+      "HeldItem": "baby-wingman",
+      "IsHeldDefault": true,
+      "WeaponAnimName": "AB_AggroBot_S0_Q_BabySpikebot_Idle",
+      "Type": "Internal",
+      "SequenceLength": 7.8
+    },
+    {
+      "Name": "FP_AggroBot_S0_Q_BabySpikebot_Equip",
+      "Translatable": "Equip",
+      "HeldItem": "baby-wingman",
+      "WeaponAnimName": "AB_AggroBot_S0_Q_BabySpikebot_Equip",
+      "Type": "Internal",
+      "SequenceLength": 1.3333334
+    },
+    {
+      "Name": "FP_AggroBot_S0_Q_BabySpikebot_Cast",
+      "Translatable": "Cast",
+      "HeldItem": "baby-wingman",
+      "WeaponAnimName": "Idle",
+      "Type": "Internal",
+      "SequenceLength": 0.8333333
+    },
+    {
+      "Name": "FP_AggroBot_S0_X_BabyShark_Idle",
+      "Translatable": "Idle",
+      "HeldItem": "baby-thrash",
+      "IsHeldDefault": true,
+      "WeaponAnimName": "AB_AggroBot_S0_X_BabyShark_Idle",
+      "Type": "Internal",
+      "SequenceLength": 8
+    },
+    {
+      "Name": "FP_AggroBot_S0_X_BabyShark_Equip",
+      "Translatable": "Equip",
+      "HeldItem": "baby-thrash",
+      "WeaponAnimName": "Idle",
+      "Type": "Internal",
+      "SequenceLength": 1.3333334
+    },
+    {
+      "Name": "FP_AggroBot_S0_X_BabyShark_Cast",
+      "Translatable": "Cast",
+      "HeldItem": "baby-thrash",
+      "WeaponAnimName": "AB_AggroBot_S0_E_BabyZamboni_Cast",
+      "Type": "Internal",
+      "SequenceLength": 0.8333333
+    }
+  ],
+  "Materials": [
+    {
+      "Name": "FP_AggroBot_S0_MI",
+      "Type": "PBR",
+      "DF": "../uploads/models/agents_fp/gekko_fp/textures/DF.png",
+      "ORM": "../uploads/models/agents_fp/gekko_fp/textures/ORM.png",
+      "EM": "../uploads/models/agents_fp/gekko_fp/textures/EM.png",
+      "NM": "../uploads/models/agents_fp/gekko_fp/textures/NM.png",
+      "DecalDF": "../uploads/models/agents_fp/gekko_fp/textures/Decal_DF.png",
+      "Metallic": 1,
+      "Roughness": 1
+    }
+  ]
+}

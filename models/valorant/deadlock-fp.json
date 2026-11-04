@@ -1,0 +1,144 @@
+{
+  "Model": {
+    "Path": "../uploads/models/agents_fp/deadlock_fp/",
+    "Name": "deadlock_fp.glb"
+  },
+  "Settings": {
+    "Type": "1P",
+    "FOV": 43.383066656235656,
+    "CameraPosition": {
+      "X": 0,
+      "Y": 1,
+      "Z": 0
+    },
+    "CameraParent": "Camera",
+    "ShadowHeight": 0
+  },
+  "Animations": [
+    {
+      "Name": "FP_Cable_S0_4_NetToss_IdlePose",
+      "Translatable": "Idle",
+      "HeldItem": "gravnet",
+      "IsHeldDefault": true,
+      "WeaponAnimName": "AB_Cable_S0_4_NetToss_Idle",
+      "Type": "Internal",
+      "SequenceLength": 0.083333336
+    },
+    {
+      "Name": "FP_Cable_S0_4_NetToss_Equip",
+      "Translatable": "Equip",
+      "HeldItem": "gravnet",
+      "WeaponAnimName": "AB_Cable_S0_4_NetToss_Equip",
+      "Type": "Internal",
+      "SequenceLength": 1.6666666
+    },
+    {
+      "Name": "FP_Cable_S0_4_NetToss_OverhandThrow",
+      "Translatable": "Throw",
+      "HeldItem": "gravnet",
+      "WeaponAnimName": "AB_Cable_S0_4_NetToss_Idle",
+      "Type": "Internal",
+      "SequenceLength": 1
+    },
+    {
+      "Name": "FP_Cable_S0_4_NetToss_UnderHandThrow",
+      "Translatable": "Short Throw",
+      "HeldItem": "gravnet",
+      "WeaponAnimName": "AB_Cable_S0_4_NetToss_Idle",
+      "Type": "Internal",
+      "SequenceLength": 1
+    },
+    {
+      "Name": "FP_Cable_S0_E_CableJam_Idle",
+      "Translatable": "Idle",
+      "HeldItem": "barrier-mesh",
+      "IsHeldDefault": true,
+      "WeaponAnimName": "AB_Cable_S0_E_CableJam_Idle",
+      "Type": "Internal",
+      "SequenceLength": 4
+    },
+    {
+      "Name": "FP_Cable_S0_E_CableJam_Equip",
+      "Translatable": "Equip",
+      "HeldItem": "barrier-mesh",
+      "WeaponAnimName": "AB_Cable_S0_E_CableJam_Equip",
+      "Type": "Internal",
+      "SequenceLength": 2
+    },
+    {
+      "Name": "FP_Cable_S0_E_CableJam_Throw",
+      "Translatable": "Throw",
+      "HeldItem": "barrier-mesh",
+      "WeaponAnimName": "AB_Cable_S0_E_CableJam_Throw",
+      "Type": "Internal",
+      "SequenceLength": 1
+    },
+    {
+      "Name": "FP_Cable_S0_X_Ultimate_Idle",
+      "Translatable": "Idle",
+      "HeldItem": "annihilation",
+      "IsHeldDefault": true,
+      "WeaponAnimName": "AB_Cable_S0_X_Ultimate_Idle",
+      "Type": "Internal",
+      "SequenceLength": 5
+    },
+    {
+      "Name": "FP_Cable_S0_X_Ultimate_Equip",
+      "Translatable": "Equip",
+      "HeldItem": "annihilation",
+      "WeaponAnimName": "AB_Cable_S0_X_Ultimate_Equip",
+      "Type": "Internal",
+      "SequenceLength": 1.8333334
+    },
+    {
+      "Name": "FP_Cable_S0_X_Ultimate_Fire",
+      "Translatable": "Fire",
+      "HeldItem": "annihilation",
+      "WeaponAnimName": "AB_Cable_S0_X_Ultimate_Fire",
+      "Type": "Internal",
+      "SequenceLength": 0.8333333
+    },
+    {
+      "Name": "FP_Cable_S0_Q_SoundSensor_Idle",
+      "Translatable": "Idle",
+      "HeldItem": "sonic-sensor",
+      "IsHeldDefault": true,
+      "WeaponAnimName": "AB_Cable_S0_Q_SoundSensor_Idle",
+      "Type": "Internal",
+      "SequenceLength": 2
+    },
+    {
+      "Name": "FP_Cable_S0_Q_SoundSensor_Equip",
+      "Translatable": "Equip",
+      "HeldItem": "sonic-sensor",
+      "WeaponAnimName": "AB_Cable_S0_Q_SoundSensor_Equip",
+      "Type": "Internal",
+      "SequenceLength": 1.6666666
+    },
+    {
+      "Name": "FP_Cable_S0_Q_SoundSensor_Throw",
+      "Translatable": "Throw",
+      "HeldItem": "sonic-sensor",
+      "WeaponAnimName": "AB_Cable_S0_Q_SoundSensor_Throw",
+      "Type": "Internal",
+      "SequenceLength": 0.98333335
+    }
+  ],
+  "Materials": [
+    {
+      "Name": "FP_Cable_S0_MI",
+      "Type": "PBR",
+      "DF": "../uploads/models/agents_fp/deadlock_fp/textures/DF.png",
+      "ORM": "../uploads/models/agents_fp/deadlock_fp/textures/ORM.png",
+      "EM": "../uploads/models/agents_fp/deadlock_fp/textures/EM.png",
+      "NM": "../uploads/models/agents_fp/deadlock_fp/textures/NM.png",
+      "Metallic": 1,
+      "Roughness": 1
+    },
+    {
+      "Name": "1P_Cable_GloveScreen_MI",
+      "Type": "SimpleTexture",
+      "DF": "../uploads/models/agents_fp/deadlock_fp/textures/Screen_DF.png"
+    }
+  ]
+}

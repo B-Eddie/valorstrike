@@ -1,0 +1,50 @@
+{
+  "Model": {
+    "Path": "../uploads/models/agents_fp/waylay_fp/",
+    "Name": "waylay_fp.glb"
+  },
+  "Settings": {
+    "Type": "1P",
+    "FOV": 43.383066656235656,
+    "CameraPosition": {
+      "X": 0,
+      "Y": 1,
+      "Z": 0
+    },
+    "CameraParent": "Camera",
+    "ShadowHeight": 0
+  },
+  "Animations": [],
+  "Materials": [
+    {
+      "Name": "FP_Terra_S0_Arm_Base_MI",
+      "Type": "PBR",
+      "DF": "../uploads/models/agents_fp/waylay_fp/textures/DF.png",
+      "ORM": "../uploads/models/agents_fp/waylay_fp/textures/ORM.png",
+      "EM": "../uploads/models/agents_fp/waylay_fp/textures/EM.png",
+      "NM": "../uploads/models/agents_fp/waylay_fp/textures/NM.png",
+      "Metallic": 1,
+      "Roughness": 1
+    },
+    {
+      "Name": "TP_Terra_S0_MI",
+      "Type": "PBR",
+      "DF": "../uploads/models/agents_fp/waylay_fp/textures/TP_DF.png",
+      "ORM": "../uploads/models/agents_fp/waylay_fp/textures/TP_ORM.png",
+      "EM": "../uploads/models/agents_fp/waylay_fp/textures/TP_EM.png",
+      "NM": "../uploads/models/agents_fp/waylay_fp/textures/TP_NM.png",
+      "Metallic": 1,
+      "Roughness": 1
+    },
+    {
+      "Name": "FP_Terra_S0_Floaters_MI",
+      "Type": "PBR",
+      "DF": "../uploads/models/agents/waylay/textures/tattoos_df.png",
+      "ORM": "../uploads/models/agents/waylay/textures/tattoos_orm.png",
+      "EM": "../uploads/models/agents/waylay/textures/tattoos_em.png",
+      "NM": "../uploads/models/agents/waylay/textures/tattoos_nm.png",
+      "Metallic": 1,
+      "Roughness": 1
+    }
+  ]
+}
