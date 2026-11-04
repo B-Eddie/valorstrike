@@ -53,8 +53,11 @@ function omxCss() { if (document.getElementById("omxCss")) return; const s = doc
   ".omxVPhase{background:radial-gradient(120% 120% at 50% 50%,rgba(10,9,30,0) 30%,rgba(10,9,30,.66) 100%),radial-gradient(60% 90% at 20% 30%,rgba(24,20,64,.35) 0%,rgba(24,20,64,0) 70%),rgba(14,12,38,.52);transition:opacity .25s;animation:omxDriftA 9s linear infinite}" +
   ".omxVPhase.on{opacity:1}";
   (document.head || document.documentElement).appendChild(s); }
-function omxVeil(kind) { try { omxCss(); const d = document.createElement("div"); d.className = "omxV omxV" + kind; document.body.appendChild(d); d.style.opacity = "1"; // instant-on, as the clip's smoke envelops in one cut; the fade-out below is stepped
-  const ms = kind === "Shade" ? 2400 : 1150; setTimeout(() => { let o = 1; const iv = setInterval(() => { o -= 0.17; if (o <= 0) { clearInterval(iv); try { d.remove(); } catch (e) {} } else d.style.opacity = String(o); }, 50); }, ms - 300); } catch (e) {} }
+// Veil lifetime uses the same effect clock as meshes, so slowed game time stays aligned.
+function omxVeil(kind,seconds) {try{omxCss();const d=document.createElement('div');d.className='omxV omxV'+kind;document.body.appendChild(d);d.style.opacity='1';
+  const life=seconds|| (kind==='Shade'?2.5:1.15);
+  return omxFx(life,[],(dt,age)=>{d.style.opacity=String(Math.min(1,Math.max(0,(life-age)/.25)));},()=>d.remove());
+}catch(e){return null;}}
 // ---- tendril burst, shared by Shrouded Step and From the Shadows ----
 function omxTendrils(p, n, h, spread, converge, ttl) { const G = omxGeos(), grp = new THREE.Group(); grp.position.set(p.x, (p.y || 0), p.z);
   for (let i = 0; i < n; i++) { const a = (i / n) * Math.PI * 2 + i * 0.7, m = new THREE.Mesh(G.plane, omxMat("ten" + i % 3, omxTENDRIL, i * 1.31));
@@ -78,23 +81,23 @@ function omxStepArrive(p) { try { if (omxNearPlayer(p, 2.5)) omxVeil("Step"); re
 function omxRibbonGeo() { if (omxGeo.ribbon) return omxGeo.ribbon;
   const pos=[], uv=[], ind=[], N=48;
   for(let i=0;i<=N;i++) { const u=i/N, a=(-.55+u*1.05)*Math.PI;
-    for(let j=0;j<2;j++) { const r=1+(j-.5)*.24*(.55+.45*Math.sin(u*Math.PI));
-      pos.push(Math.cos(a)*r,Math.sin(a)*r,Math.sin(u*Math.PI)*.75);uv.push(u,j); }
+    for(let j=0;j<2;j++) { const r=1+.045*Math.sin(u*11.0)+.025*Math.sin(u*29.0)+(j-.5)*.40*(.40+.60*Math.sin(u*Math.PI));
+      pos.push(Math.cos(a)*r,Math.sin(a)*r,Math.sin(u*Math.PI)*.75+.13*Math.sin(u*23.0));uv.push(u,j); }
     if(i<N){const k=i*2;ind.push(k,k+1,k+2,k+1,k+3,k+2);} }
   const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));g.setIndex(ind);g.computeVertexNormals();omxGeo.ribbon=g;return g; }
-const omxRIBBON="uniform float uT;uniform float uP;uniform float uSeed;varying vec2 vUv;void main(){float across=sin(vUv.y*3.14159);float ends=smoothstep(0.0,.14,vUv.x)*(1.0-smoothstep(.79,1.0,vUv.x));float ridge=pow(1.0-vUv.y,3.0);vec3 col=mix(vec3(.23,.13,.48),vec3(.12,.72,1.0),ridge);float a=across*ends*(.75+.2*sin(vUv.x*13.0-uT*6.0+uSeed))*(1.0-uP);if(a<.003)discard;gl_FragColor=vec4(col,a);}";
+const omxRIBBON="uniform float uT;uniform float uP;uniform float uSeed;varying vec2 vUv;void main(){float x=vUv.x,y=vUv.y;float edge=.075*sin(x*41.0+uSeed)+.04*sin(x*83.0-uT*2.0);float across=smoothstep(edge,edge+.12,y)*(1.0-smoothstep(.72+edge,1.0,y));float ends=smoothstep(0.0,.12,x)*(1.0-smoothstep(.73,1.0,x));vec2 hole=vec2((x-.38-.08*sin(uSeed*3.0))/.07,(y-.50)/.22);float tear=smoothstep(.75,1.12,length(hole));vec2 slit=vec2((x-.68)/.025,(y-.64)/.27);tear*=smoothstep(.7,1.05,length(slit));float ridge=pow(1.0-y,2.0);vec3 col=mix(vec3(.25,.14,.50),vec3(.10,.74,1.0),ridge);float a=across*ends*tear*(.80+.18*sin(x*13.0-uT*6.0+uSeed))*(1.0-uP);if(a<.003)discard;gl_FragColor=vec4(col,a);}";
 function omxParanoiaBolt(o,d,t) { try { const G=omxGeos(), dir=new THREE.Vector3(d.x,d.y||0,d.z).normalize(),origin=new THREE.Vector3(o.x,o.y,o.z);
   const grp=new THREE.Group();grp.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1),dir);
   const ribbons=[]; for(let i=0;i<3;i++){ const m=new THREE.Mesh(omxRibbonGeo(),omxMat('ribbon',omxRIBBON,i));m.scale.set(2.2-i*.22,1.35+i*.12,1);m.rotation.z=i*Math.PI*.67;m.position.z=-i*.40;grp.add(m);ribbons.push(m); }
-  const core=new THREE.Mesh(G.sph,omxBasic(0x43d8ff,.9,true));core.scale.setScalar(.13);grp.add(core);
-  const glow=new THREE.Mesh(G.sph,omxBasic(0x257de8,.18,true));glow.scale.setScalar(.30);grp.add(glow);
+  const core=new THREE.Mesh(G.sph,omxBasic(0x43d8ff,.9,true));core.scale.setScalar(.07);grp.add(core);
+  const glow=new THREE.Mesh(G.sph,omxBasic(0x257de8,.10,true));glow.scale.setScalar(.20);grp.add(glow);
   const age0=Number.isFinite(t)&&t>0?t:0, SPEED=20,RANGE=25;
   const update=(dt,age)=>{const a=age+age0,dist=Math.min(RANGE,a*SPEED),fade=dist>=RANGE?Math.max(0,1-(a-RANGE/SPEED)/.20):1;
     grp.position.copy(origin).addScaledVector(dir,dist);
     // Fade in at the true projectile position, rather than advancing its clock or origin.
     const reveal=Math.min(1,dist/2.7);grp.visible=dist>.15;
     ribbons.forEach((m,i)=>{m.rotation.z=i*Math.PI*.67+Math.sin(a*4+i)*.14;m.material.uniforms.uP.value=1-fade*reveal;});
-    core.material.opacity=.9*fade*reveal;glow.material.opacity=.18*fade*reveal;};
+    core.material.opacity=.9*fade*reveal;glow.material.opacity=.10*fade*reveal;};
   const h=omxFx(Math.max(.01,1.45-age0),[grp],update);update(0,0);return h;
  } catch(e){try{window.omxErr=String(e&&e.stack||e).slice(0,300);xE(e);}catch(e2){}return null;} }
 // Integration hook for a round reset/cancel. Game logic must call this at its reset boundary.
@@ -109,9 +112,9 @@ function omxCoverDome(p, r, seconds) { try { const G = omxGeos(), R = r || 4.1, 
     dome.scale.setScalar(Math.max(0.001, s)); dome.material.uniforms.uP.value = die; dome.rotation.y += dt * 0.05;
     ring.material.opacity = 0.12 * (1 - die) * grow; ring.scale.setScalar(Math.max(0.001, s));
     wisps.forEach((w, i) => { const a = omxU.value * 0.35 + (i / 3) * Math.PI * 2; w.position.set(p.x + Math.cos(a) * s * 0.85, p.y - R * 0.3 + Math.sin(omxU.value * 0.9 + i) * 0.15, p.z + Math.sin(a) * s * 0.85); w.rotation.y = -a + Math.PI / 2; w.material.uniforms.uP.value = die; }); }); } catch (e) { try { window.omxErr = String(e && e.stack || e).slice(0, 300); xE(e); } catch (e2) {} return null; } }
-function omxShadowsTP(p) { try { const own = omxNearPlayer(p, 3.5); if (own) omxVeil("Shade");
+function omxShadowsTP(p, options) { try { const own = options && typeof options.caster === "boolean" ? options.caster : omxNearPlayer(p, 3.5); const veil = own ? omxVeil("Shade", options && options.seconds) : null;
   const fx = omxTendrils(p, 8, 2.6, 0.7, true, 1.1), G = omxGeos();
-  if (own) return fx; // the caster sees the mist veil + tendrils; the rift is for observing the teleport
+  if (own) { fx.veil = veil; return fx; } // caller can omxEnd(fx.veil) when Shade ends/cancels
   const rift = new THREE.Mesh(G.sph, omxBasic(0x6a4cff, 0.7, true)); rift.scale.set(0.3, 0.9, 0.3); rift.position.set(p.x, (p.y || 0) + 0.9, p.z); scene.add(rift); fx.fx.objs.push(rift);
   const core = new THREE.Mesh(G.sph, omxBasic(0x45d0ff, 0.9, true)); core.scale.set(0.09, 0.45, 0.09); core.position.copy(rift.position); scene.add(core); fx.fx.objs.push(core);
   const tick0 = fx.fx.tick; fx.fx.tick = (dt, age, k) => { tick0(dt, age, k); rift.material.opacity = 0.7 * Math.max(0, 1 - age / 0.35); rift.scale.y = 0.9 + age * 1.2; core.material.opacity = 0.9 * Math.max(0, 1 - age / 0.25); };

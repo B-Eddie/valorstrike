@@ -8895,7 +8895,7 @@ function jUnreveal() { J.rv.forEach((b) => (b.rvO || []).forEach((o) => o.parent
 // every round clear so pulses of a bolt from an earlier round never fire.
 const XRCN = { pulses: [0.9, 2.5], radius: 30, reveal: 0.75, g: 0 }, XRCN_V = [new THREE.Vector3(), new THREE.Vector3()];
 function xRcnSees(p, x, y, z) { return Math.hypot(x - p.x, z - p.z) < XRCN.radius && los(XRCN_V[0].set(p.x, p.y + 0.5, p.z), XRCN_V[1].set(x, y, z)); }
-function xRcnRings(p, en) { [[15, 0.9], [9, 0.6]].forEach(([g, t], i) => { const m = jM(xRcnGeo, xAdd((en ? "ercn" : "rcn") + i, en ? 0xff5a2a : 0x3fb4ff, 0.85 - i * 0.25)); m.rotation.x = -Math.PI / 2; m.position.set(p.x, 0.12 + i * 0.02, p.z); jFx(m, t).g = g; }); }
+function xRcnRings(p, en) { try { svxReconPulse(p, en); return; } catch (e) {} [[15, 0.9], [9, 0.6]].forEach(([g, t], i) => { const m = jM(xRcnGeo, xAdd((en ? "ercn" : "rcn") + i, en ? 0xff5a2a : 0x3fb4ff, 0.85 - i * 0.25)); m.rotation.x = -Math.PI / 2; m.position.set(p.x, 0.12 + i * 0.02, p.z); jFx(m, t).g = g; }); }
 function jReveal(p) { const g = XRCN.g; p = p.clone(); XRCN.pulses.forEach((t) => setTimeout(() => { if (g === XRCN.g) jRcnPulse(p); }, t * 1000)); }
 function jRcnPulse(p) {
   jUnreveal(); J.rvT = XRCN.reveal;
@@ -8956,7 +8956,7 @@ function xBoltRay(o, d, max) { ray.set(xBoltV[0].set(o[0], o[1], o[2]), xBoltV[1
 function xBoltPath(o, d, pw, nb) { return SovaBolt.path([o.x, o.y, o.z], [d.x, d.y, d.z], pw, nb, xBoltRay, (x, z, y) => groundAt(x, z, 0.05, y)); }
 function jArrow(kind) { // XABT.bolt: the charge / bounces of the equip-flow HOLD (none: a full-charge, no-bounce bolt)
   const o = pEye(), d = jAim(), B = (typeof XABT !== "undefined" && XABT.bolt) || { pw: 1, b: 0 }, P = xBoltPath(o, d, B.pw, B.b);
-  const e = new THREE.Vector3(P.end[0], P.end[1], P.end[2]), m = jBolt(kind === "shock" ? 0x7fd8ff : 0x45d0ff, o, e);
+  const e = new THREE.Vector3(P.end[0], P.end[1], P.end[2]), m = jBolt(kind === "shock" ? 0x7fd8ff : 0x45d0ff, o, e); try { svxBoltFlight(m, kind); } catch (e2) {}
   J.arrows.push({ m, a: o, b: e, t: 0, dur: Math.max(0.05, P.t), kind, tr: P.tr, nb: B.b }); SFX.ab("bow");
   { const at = e.clone(); setTimeout(() => SFX.ab(kind === "shock" ? "shock" : "recon", at), Math.max(0.05, P.t) * 1000); }
 }
@@ -8977,7 +8977,7 @@ function jBeam() {
   bots.forEach((b) => { if (!b.alive) return; const v = new THREE.Vector3(b.g.position.x, 1.1, b.g.position.z).sub(o), t = v.dot(d); if (t > 0 && t < L && v.addScaledVector(d, -t).length() < XHFU.r) { jHit(b, XHFU.dmg, "Hunter's Fury"); hit.push(b); } });
   xHfRv(hit);
   xFFArea("You", false, "Hunter's Fury", XHFU.dmg, (x, z) => { const v = new THREE.Vector3(x, 1.1, z).sub(o), t = v.dot(d); return t > 0 && t < L && v.addScaledVector(d, -t).length() < XHFU.r; }); // allies: a third, no reveal
-  const m = jM(beamGeo, fireMat(0x45d0ff, 0.85)); m.scale.z = L; o.y -= 0.2; m.position.copy(o).addScaledVector(d, L / 2); m.lookAt(o.clone().addScaledVector(d, L)); jFx(m, 0.35);
+  o.y -= 0.2; try { svxFuryBeam(o, d, o.clone().addScaledVector(d, L)); } catch (e) { const m = jM(beamGeo, fireMat(0x45d0ff, 0.85)); m.scale.z = L; m.position.copy(o).addScaledVector(d, L / 2); m.lookAt(o.clone().addScaledVector(d, L)); jFx(m, 0.35); }
 }
 function phCurve(o, fx, fz, side, out) { // Curveball path: mid = up to 5 m ahead (0.4 m short of a wall), end = up to 2.5 m to the side (side -1 left, 1 right)
   // combat lane: out (optional, the per-frame Curveball hint) = a reused { mid, end } written in place, with scratch direction vectors
@@ -9020,7 +9020,7 @@ function svKey(code) {
   if (code === "KeyC") {
     if (J.dr) return drEnd();
     if (J.c < 1 || J.cd.c > 0) return no(); J.c--; J.cd.c = 0.6;
-    J.dr = { x: player.x, y: player.y + 1.4, z: player.z, t: XOWL.life, dcd: 0, yw: yaw, pt: pitch }; fireHeld = false; setScope(false);
+    try { svxOwlLaunch(pEye(), jAim()); } catch (e) {} J.dr = { x: player.x, y: player.y + 1.4, z: player.z, t: XOWL.life, dcd: 0, yw: yaw, pt: pitch }; fireHeld = false; setScope(false);
     $("xDr").classList.add("on"); say("Owl Drone · WASD fly · click dart · C to return", 1400); blip(500, 0.2, "sine", 0.15); SFX.ab("drone"); return;
   }
   if (J.dr) return;
@@ -9053,13 +9053,14 @@ function jFxTick(dt) { try { blzTick(dt); } catch (e) {}
       if (o.cb) o.m.scale.setScalar(XCBF.orb * (1 + 0.12 * Math.sin(o.t * 38))); // the flare flickers in flight
       if (o.t < ow) { A[k++] = o; continue; } jRel(o.m); o.en ? enPop(o.b, o.bl, o.bf) : jPop(o.b); }
     A.length = k; }
+  try { if (!omxGT) omxUseGameTick(); omxTick(dt); } catch (e) {}
   if (J.dr) drTick(dt);
   J.arrows = J.arrows.filter((a) => {
     a.t += dt; xBoltMove(a); if (a.t < a.dur) return true; jRel(a.m);
     if (a.kind === "dart") { if (a.tg && a.tg.alive) drTag(a.tg); }
     else if (a.kind === "erecon") enRecon(a.b);
     else if (a.kind === "recon") jReveal(a.b);
-    else { blip(160, 0.3, "square", 0.2); const m = jM(smokeGeo, fireMat(0x7fd8ff, 0.4)); m.scale.setScalar(0.75); m.position.copy(a.b); jFx(m, 0.35); const F = XPAR2.shock; if (a.own) { if (!a.nd) mpAreaHit(a, a.b.x, a.b.z, F.outer, F.max, "Shock Bolt", null, (d) => xAoeFall(d, F)); } else { bots.forEach((b) => { if (!b.alive) return; const d = PF_B.set(b.g.position.x, 1, b.g.position.z).distanceTo(a.b); if (d < F.outer) jHit(b, xAoeFall(d, F), "Shock Bolt"); }); xFFArea("You", false, "Shock Bolt", F.max, (x, z) => { const d = PF_B.set(x, 1, z).distanceTo(a.b); return d < F.outer && xAoeFall(d, F) / F.max; }); } } // 75 inside 1.5 m -> 1 at 4 m (XPAR2.shock)
+    else { blip(160, 0.3, "square", 0.2); try { svxShockBurst(a.b); } catch (e) { const m = jM(smokeGeo, fireMat(0x7fd8ff, 0.4)); m.scale.setScalar(0.75); m.position.copy(a.b); jFx(m, 0.35); } const F = XPAR2.shock; if (a.own) { if (!a.nd) mpAreaHit(a, a.b.x, a.b.z, F.outer, F.max, "Shock Bolt", null, (d) => xAoeFall(d, F)); } else { bots.forEach((b) => { if (!b.alive) return; const d = PF_B.set(b.g.position.x, 1, b.g.position.z).distanceTo(a.b); if (d < F.outer) jHit(b, xAoeFall(d, F), "Shock Bolt"); }); xFFArea("You", false, "Shock Bolt", F.max, (x, z) => { const d = PF_B.set(x, 1, z).distanceTo(a.b); return d < F.outer && xAoeFall(d, F) / F.max; }); } } // 75 inside 1.5 m -> 1 at 4 m (XPAR2.shock)
     return false;
   });
   J.fx = J.fx.filter((f) => { f.t -= dt; if (f.g) f.m.scale.setScalar(0.5 + f.g * (1 - Math.max(0, f.t / f.t0))); f.m.material.opacity = f.o * Math.max(0, f.t / f.t0); if (f.t > 0) return true; jRel(f.m); return false; });
@@ -9318,17 +9319,17 @@ function okHitBy(o, dt) { // enemies that see a placed device shoot it
   bots.forEach((b) => { if (!b.alive || b.blind > 0 || b.det > 0) return; const q = b.g.position; if (Math.hypot(q.x - e.x, q.z - e.z) < 30 && los(PF_A.set(q.x, (q.y || 0) + 1.7, q.z), e)) o.hp -= 12 * dt; });
 }
 function ftsPin(x, y, z) { const P = player; P.x = x; P.y = y; P.z = z; P.vx = P.vz = 0; P.vy = 0; }
-function ftsCancel(why) { const F = J.fts; if (!F || !F.shade) return false; ftsPin(F.ox, F.oy, F.oz); okRm(F); J.fts = null; say(why || "Teleport stopped", 800); try { SFX.tp(); } catch (e) {} return true; } // back where he cast it; the ult stays spent (wiki v1.0)
+function ftsCancel(why) { const F = J.fts; if (!F || !F.shade) return false; try { omxEnd(F.veil); } catch (e) {} ftsPin(F.ox, F.oy, F.oz); okRm(F); J.fts = null; say(why || "Teleport stopped", 800); try { SFX.tp(); } catch (e) {} return true; } // back where he cast it; the ult stays spent (wiki v1.0)
 function okTick(dt) {
   const P = player, alive = P.hp > 0, V = THREE.Vector3;
   bots.forEach((b) => { if (b.vul > 0) b.vul -= dt; if (b.det > 0) b.det -= dt; });
   if (J.om) { J.om.t -= dt; if (J.om.t <= 0) { if (alive) { try { omxStepVanish({ x: P.x, y: P.y, z: P.z }); omxStepArrive({ x: J.om.x, y: J.om.y || 0, z: J.om.z }); } catch (e) {} P.x = J.om.x; P.z = J.om.z; P.y = J.om.y || 0; P.vy = 0; SFX.tp(); } try { omxEnd(J.om.h); } catch (e) {} okRm(J.om); J.om = null; } }
   if (J.fts) { const F = J.fts; F.t -= dt; if (!Number.isFinite(F.ox)) { F.ox = P.x; F.oy = P.y; F.oz = P.z; F.shade = !!F.shade; } // From the Shadows (wiki): 1.5 s rooted windup at the origin, then 2.5 s as a rooted Shade at the target (a hit or X again sends him back: ftsCancel); real at 4 s
-    if (!alive) { okRm(F); J.fts = null; }
+    if (!alive) { try { omxEnd(F.veil); } catch (e) {} okRm(F); J.fts = null; }
     else if (!F.shade && XPAR2.shadows - F.t < XPAR2.shadeAt) ftsPin(F.ox, F.oy, F.oz);
-    else if (!F.shade) { if (blocked(F.x, F.z, 0.43, F.y || 0)) { ftsPin(F.ox, F.oy, F.oz); okRm(F); J.fts = null; say("Teleport stopped", 700); } else { F.shade = true; try { omxShadowsTP({ x: F.ox, y: F.oy, z: F.oz }); omxShadowsTP({ x: F.x, y: F.y || 0, z: F.z }); } catch (e) {} ftsPin(F.x, F.y || 0, F.z); SFX.tp(); SFX.ab("shadows"); say("Shade · a hit or X sends you back", 900); } }
+    else if (!F.shade) { if (blocked(F.x, F.z, 0.43, F.y || 0)) { ftsPin(F.ox, F.oy, F.oz); okRm(F); J.fts = null; say("Teleport stopped", 700); } else { F.shade = true; try { omxShadowsTP({ x: F.ox, y: F.oy, z: F.oz }, { caster: false }); const hh = omxShadowsTP({ x: F.x, y: F.y || 0, z: F.z }, { caster: true, seconds: F.t }); F.veil = hh && hh.veil; window.__ftsEnter = { t: F.t, n: (window.__ftsEnter && window.__ftsEnter.n || 0) + 1 }; } catch (e) {} ftsPin(F.x, F.y || 0, F.z); SFX.tp(); SFX.ab("shadows"); say("Shade · a hit or X sends you back", 900); } }
     else if (F.t > 0) ftsPin(F.x, F.y || 0, F.z);
-    else { ftsPin(F.x, F.y || 0, F.z); okRm(F); J.fts = null; say("From the Shadows", 700); } }
+    else { try { omxEnd(F.veil); } catch (e) {} ftsPin(F.x, F.y || 0, F.z); okRm(F); J.fts = null; say("From the Shadows", 700); } }
   if (J.ftp && !alive) { J.ftp = false; MM.style.pointerEvents = ""; }
   if (J.pick === "Omen" && J.e < (J.oeM || 1)) { J.oe = (J.oe || 0) + dt; if (J.oe >= 40) { J.e++; J.oe = 0; say("Dark Cover charge ready", 700); } } // 40 s recharge, back up to the charges owned this round
   prune(J.par, (s) => {
@@ -17965,8 +17966,11 @@ function omxCss() { if (document.getElementById("omxCss")) return; const s = doc
   ".omxVPhase{background:radial-gradient(120% 120% at 50% 50%,rgba(10,9,30,0) 30%,rgba(10,9,30,.66) 100%),radial-gradient(60% 90% at 20% 30%,rgba(24,20,64,.35) 0%,rgba(24,20,64,0) 70%),rgba(14,12,38,.52);transition:opacity .25s;animation:omxDriftA 9s linear infinite}" +
   ".omxVPhase.on{opacity:1}";
   (document.head || document.documentElement).appendChild(s); }
-function omxVeil(kind) { try { omxCss(); const d = document.createElement("div"); d.className = "omxV omxV" + kind; document.body.appendChild(d); d.style.opacity = "1"; // instant-on, as the clip's smoke envelops in one cut; the fade-out below is stepped
-  const ms = kind === "Shade" ? 2400 : 1150; setTimeout(() => { let o = 1; const iv = setInterval(() => { o -= 0.17; if (o <= 0) { clearInterval(iv); try { d.remove(); } catch (e) {} } else d.style.opacity = String(o); }, 50); }, ms - 300); } catch (e) {} }
+// Veil lifetime uses the same effect clock as meshes, so slowed game time stays aligned.
+function omxVeil(kind,seconds) {try{omxCss();const d=document.createElement('div');d.className='omxV omxV'+kind;document.body.appendChild(d);d.style.opacity='1';
+  const life=seconds|| (kind==='Shade'?2.5:1.15);
+  return omxFx(life,[],(dt,age)=>{d.style.opacity=String(Math.min(1,Math.max(0,(life-age)/.25)));},()=>d.remove());
+}catch(e){return null;}}
 // ---- tendril burst, shared by Shrouded Step and From the Shadows ----
 function omxTendrils(p, n, h, spread, converge, ttl) { const G = omxGeos(), grp = new THREE.Group(); grp.position.set(p.x, (p.y || 0), p.z);
   for (let i = 0; i < n; i++) { const a = (i / n) * Math.PI * 2 + i * 0.7, m = new THREE.Mesh(G.plane, omxMat("ten" + i % 3, omxTENDRIL, i * 1.31));
@@ -17990,23 +17994,23 @@ function omxStepArrive(p) { try { if (omxNearPlayer(p, 2.5)) omxVeil("Step"); re
 function omxRibbonGeo() { if (omxGeo.ribbon) return omxGeo.ribbon;
   const pos=[], uv=[], ind=[], N=48;
   for(let i=0;i<=N;i++) { const u=i/N, a=(-.55+u*1.05)*Math.PI;
-    for(let j=0;j<2;j++) { const r=1+(j-.5)*.24*(.55+.45*Math.sin(u*Math.PI));
-      pos.push(Math.cos(a)*r,Math.sin(a)*r,Math.sin(u*Math.PI)*.75);uv.push(u,j); }
+    for(let j=0;j<2;j++) { const r=1+.045*Math.sin(u*11.0)+.025*Math.sin(u*29.0)+(j-.5)*.40*(.40+.60*Math.sin(u*Math.PI));
+      pos.push(Math.cos(a)*r,Math.sin(a)*r,Math.sin(u*Math.PI)*.75+.13*Math.sin(u*23.0));uv.push(u,j); }
     if(i<N){const k=i*2;ind.push(k,k+1,k+2,k+1,k+3,k+2);} }
   const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));g.setIndex(ind);g.computeVertexNormals();omxGeo.ribbon=g;return g; }
-const omxRIBBON="uniform float uT;uniform float uP;uniform float uSeed;varying vec2 vUv;void main(){float across=sin(vUv.y*3.14159);float ends=smoothstep(0.0,.14,vUv.x)*(1.0-smoothstep(.79,1.0,vUv.x));float ridge=pow(1.0-vUv.y,3.0);vec3 col=mix(vec3(.23,.13,.48),vec3(.12,.72,1.0),ridge);float a=across*ends*(.75+.2*sin(vUv.x*13.0-uT*6.0+uSeed))*(1.0-uP);if(a<.003)discard;gl_FragColor=vec4(col,a);}";
+const omxRIBBON="uniform float uT;uniform float uP;uniform float uSeed;varying vec2 vUv;void main(){float x=vUv.x,y=vUv.y;float edge=.075*sin(x*41.0+uSeed)+.04*sin(x*83.0-uT*2.0);float across=smoothstep(edge,edge+.12,y)*(1.0-smoothstep(.72+edge,1.0,y));float ends=smoothstep(0.0,.12,x)*(1.0-smoothstep(.73,1.0,x));vec2 hole=vec2((x-.38-.08*sin(uSeed*3.0))/.07,(y-.50)/.22);float tear=smoothstep(.75,1.12,length(hole));vec2 slit=vec2((x-.68)/.025,(y-.64)/.27);tear*=smoothstep(.7,1.05,length(slit));float ridge=pow(1.0-y,2.0);vec3 col=mix(vec3(.25,.14,.50),vec3(.10,.74,1.0),ridge);float a=across*ends*tear*(.80+.18*sin(x*13.0-uT*6.0+uSeed))*(1.0-uP);if(a<.003)discard;gl_FragColor=vec4(col,a);}";
 function omxParanoiaBolt(o,d,t) { try { const G=omxGeos(), dir=new THREE.Vector3(d.x,d.y||0,d.z).normalize(),origin=new THREE.Vector3(o.x,o.y,o.z);
   const grp=new THREE.Group();grp.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1),dir);
   const ribbons=[]; for(let i=0;i<3;i++){ const m=new THREE.Mesh(omxRibbonGeo(),omxMat('ribbon',omxRIBBON,i));m.scale.set(2.2-i*.22,1.35+i*.12,1);m.rotation.z=i*Math.PI*.67;m.position.z=-i*.40;grp.add(m);ribbons.push(m); }
-  const core=new THREE.Mesh(G.sph,omxBasic(0x43d8ff,.9,true));core.scale.setScalar(.13);grp.add(core);
-  const glow=new THREE.Mesh(G.sph,omxBasic(0x257de8,.18,true));glow.scale.setScalar(.30);grp.add(glow);
+  const core=new THREE.Mesh(G.sph,omxBasic(0x43d8ff,.9,true));core.scale.setScalar(.07);grp.add(core);
+  const glow=new THREE.Mesh(G.sph,omxBasic(0x257de8,.10,true));glow.scale.setScalar(.20);grp.add(glow);
   const age0=Number.isFinite(t)&&t>0?t:0, SPEED=20,RANGE=25;
   const update=(dt,age)=>{const a=age+age0,dist=Math.min(RANGE,a*SPEED),fade=dist>=RANGE?Math.max(0,1-(a-RANGE/SPEED)/.20):1;
     grp.position.copy(origin).addScaledVector(dir,dist);
     // Fade in at the true projectile position, rather than advancing its clock or origin.
     const reveal=Math.min(1,dist/2.7);grp.visible=dist>.15;
     ribbons.forEach((m,i)=>{m.rotation.z=i*Math.PI*.67+Math.sin(a*4+i)*.14;m.material.uniforms.uP.value=1-fade*reveal;});
-    core.material.opacity=.9*fade*reveal;glow.material.opacity=.18*fade*reveal;};
+    core.material.opacity=.9*fade*reveal;glow.material.opacity=.10*fade*reveal;};
   const h=omxFx(Math.max(.01,1.45-age0),[grp],update);update(0,0);return h;
  } catch(e){try{window.omxErr=String(e&&e.stack||e).slice(0,300);xE(e);}catch(e2){}return null;} }
 // Integration hook for a round reset/cancel. Game logic must call this at its reset boundary.
@@ -18021,9 +18025,9 @@ function omxCoverDome(p, r, seconds) { try { const G = omxGeos(), R = r || 4.1, 
     dome.scale.setScalar(Math.max(0.001, s)); dome.material.uniforms.uP.value = die; dome.rotation.y += dt * 0.05;
     ring.material.opacity = 0.12 * (1 - die) * grow; ring.scale.setScalar(Math.max(0.001, s));
     wisps.forEach((w, i) => { const a = omxU.value * 0.35 + (i / 3) * Math.PI * 2; w.position.set(p.x + Math.cos(a) * s * 0.85, p.y - R * 0.3 + Math.sin(omxU.value * 0.9 + i) * 0.15, p.z + Math.sin(a) * s * 0.85); w.rotation.y = -a + Math.PI / 2; w.material.uniforms.uP.value = die; }); }); } catch (e) { try { window.omxErr = String(e && e.stack || e).slice(0, 300); xE(e); } catch (e2) {} return null; } }
-function omxShadowsTP(p) { try { const own = omxNearPlayer(p, 3.5); if (own) omxVeil("Shade");
+function omxShadowsTP(p, options) { try { const own = options && typeof options.caster === "boolean" ? options.caster : omxNearPlayer(p, 3.5); const veil = own ? omxVeil("Shade", options && options.seconds) : null;
   const fx = omxTendrils(p, 8, 2.6, 0.7, true, 1.1), G = omxGeos();
-  if (own) return fx; // the caster sees the mist veil + tendrils; the rift is for observing the teleport
+  if (own) { fx.veil = veil; return fx; } // caller can omxEnd(fx.veil) when Shade ends/cancels
   const rift = new THREE.Mesh(G.sph, omxBasic(0x6a4cff, 0.7, true)); rift.scale.set(0.3, 0.9, 0.3); rift.position.set(p.x, (p.y || 0) + 0.9, p.z); scene.add(rift); fx.fx.objs.push(rift);
   const core = new THREE.Mesh(G.sph, omxBasic(0x45d0ff, 0.9, true)); core.scale.set(0.09, 0.45, 0.09); core.position.copy(rift.position); scene.add(core); fx.fx.objs.push(core);
   const tick0 = fx.fx.tick; fx.fx.tick = (dt, age, k) => { tick0(dt, age, k); rift.material.opacity = 0.7 * Math.max(0, 1 - age / 0.35); rift.scale.y = 0.9 + age * 1.2; core.material.opacity = 0.9 * Math.max(0, 1 - age / 0.25); };
@@ -18040,6 +18044,245 @@ function omxCoverAim(on, p, r) { try { if (!on) { if (omxAimFx) { omxEnd(omxAimF
   if (p) { omxAimFx.shell.position.set(p.x, p.y, p.z); omxAimFx.ring.position.set(p.x, p.y - R * 0.42 + 0.08, p.z); }
   return omxAimFx.h; } catch (e) { try { window.omxErr = String(e && e.stack || e).slice(0, 300); xE(e); } catch (e2) {} return null; } }
 // ---- END OMEN FX ----
+// ---- SOVA FX ----
+// Faithful Sova ability visuals, reference-grounded in the wiki showcase clips viewed 2026-11-04
+// (wiki.playvalorant.com/en-us/Owl_Drone, /Shock_Bolt, /Recon_Bolt, /Hunter's_Fury, images/<Name>_Showcase.mp4):
+//   Shock Bolt: blue-white electric burst - bright core, expanding energy shell, flat + upright rings, crackle arcs, sparks.
+//   Recon Bolt: expanding blue sonar sphere with a dotted grid (orange-red for an enemy bolt); enemies revealed in ORANGE.
+//   Hunter's Fury: huge wall-piercing lightning blast - white-blue core beam, jagged arc planes, floating shards.
+//   Owl Drone: blue hologram flash at the gauntlet on launch; bolts/darts fly as glowing orbs with a rune ring.
+// Pure client fx: damage, reveal, timing and sound stay in the caller. Self-cleaning via jFx / bounded rAF shards.
+// Installed after ability_fp_runtime.js. Globals used (read-only): THREE, scene, camera, jM, jMat, xAdd, jFx, groundAt, xE.
+//
+// Integration wiring (integrator owns index.html):
+//   1. Shock Bolt land (arrow tick, kind "shock" branch, and the bot xBShock landing): replace the flat smoke puff
+//      `const m = jM(smokeGeo, fireMat(0x7fd8ff, 0.4)); ... jFx(m, 0.35);` with `svxShockBurst(a.b);`
+//   2. Recon pulse: in xRcnRings(p, en) replace the two flat rings with `svxReconPulse(p, en)` (or call it alongside).
+//   3. Hunter's Fury: in jBeam replace the `jM(beamGeo, fireMat(0x45d0ff, 0.85))` block with `svxFuryBeam(o, d, null);`
+//      and in the online mpCastFx "beam"/sovaBlast path call the same with the row's origin/dir.
+//   4. Bolt/dart flight: after each jBolt(...) for Sova kinds in jArrow / drDart / xBShock / xBRecon call
+//      `svxBoltFlight(m, kind)` (kind "shock" | "recon" | "dart") so the projectile reads as a glowing orb.
+//   5. Owl Drone cast (svKey KeyC, after J.dr is set): `svxOwlLaunch(pEye(), jAim());`
+//   6. Reveal outline: swap rvMat for svxRvMat (orange, as the clips) in jRcnPulse / xHfRv, or recolor rvMat.
+//   7. Optional: svxBowAttach(viewmodelGroup) adds the nock glow + charge ring; drive handle.setCharge(0..1)
+//      from the bow equip/charge flow (XABT.bolt.pw).
+const svxC = {
+  sph: null, ring: null, plane: null, beam: null, shard: null,
+  texBolt: null, texDots: null,
+  anim: [], raf: 0,
+  up: null, v0: null, v1: null,
+};
+function svxGeo() {
+  if (svxC.sph) return;
+  svxC.sph = new THREE.SphereGeometry(1, 20, 14);
+  svxC.ring = new THREE.RingGeometry(0.86, 1, 48);
+  svxC.plane = new THREE.PlaneGeometry(1, 1);
+  svxC.beam = new THREE.BoxGeometry(0.35, 0.35, 1);
+  svxC.cone = new THREE.CylinderGeometry(3.2, 1.4, 1, 14, 1, true); svxC.cone.rotateX(Math.PI / 2); // +Z axis, widening downrange
+  svxC.shard = new THREE.BoxGeometry(0.07, 0.16, 0.04);
+  svxC.up = new THREE.Vector3(0, 1, 0);
+  svxC.v0 = new THREE.Vector3();
+  svxC.v1 = new THREE.Vector3();
+}
+function svxTexBoltF() { // jagged vertical lightning, white core on transparent blue (tints via material color)
+  if (svxC.texBolt) return svxC.texBolt;
+  const c = document.createElement("canvas"); c.width = 128; c.height = 512; const g = c.getContext("2d");
+  g.clearRect(0, 0, 128, 512);
+  const bolt = (x0, w, a) => {
+    g.strokeStyle = "rgba(255,255,255," + a + ")"; g.lineWidth = w; g.lineCap = "round"; g.beginPath();
+    let x = x0, y = 0; g.moveTo(x, y);
+    while (y < 512) { y += 24 + Math.random() * 30; x = Math.max(8, Math.min(120, x + (Math.random() - 0.5) * 56)); g.lineTo(x, y); }
+    g.stroke();
+  };
+  for (let i = 0; i < 3; i++) { bolt(34 + i * 30, 7, 0.22); bolt(34 + i * 30, 2.6, 0.95); }
+  svxC.texBolt = new THREE.CanvasTexture(c);
+  if (THREE.SRGBColorSpace) svxC.texBolt.colorSpace = THREE.SRGBColorSpace;
+  svxC.texBolt.wrapS = svxC.texBolt.wrapT = THREE.RepeatWrapping;
+  return svxC.texBolt;
+}
+function svxTexDotsF() { // concentric dashed sonar rings + radial dot grid
+  if (svxC.texDots) return svxC.texDots;
+  const c = document.createElement("canvas"); c.width = 512; c.height = 512; const g = c.getContext("2d");
+  g.clearRect(0, 0, 512, 512);
+  g.strokeStyle = "rgba(255,255,255,0.9)"; g.lineWidth = 3; g.setLineDash([10, 14]);
+  for (let r = 60; r <= 250; r += 48) { g.beginPath(); g.arc(256, 256, r, 0, 6.2832); g.stroke(); }
+  g.setLineDash([]);
+  g.fillStyle = "rgba(255,255,255,0.85)";
+  for (let i = 0; i < 24; i++) { const a = i / 24 * 6.2832; for (let r = 84; r <= 250; r += 96) { g.beginPath(); g.arc(256 + Math.cos(a) * r, 256 + Math.sin(a) * r, 3, 0, 6.2832); g.fill(); } }
+  svxC.texDots = new THREE.CanvasTexture(c);
+  if (THREE.SRGBColorSpace) svxC.texDots.colorSpace = THREE.SRGBColorSpace;
+  return svxC.texDots;
+}
+// pooled one-shot part: grows 0.5 -> 0.5+g over t seconds while fading out (jFx semantics); self-cleaning
+function svxPart(geo, mat, p, t, g) {
+  const m = jM(geo, mat);
+  m.position.copy(p);
+  m.raycast = () => {};
+  const f = jFx(m, t);
+  if (g) f.g = g;
+  return m;
+}
+function svxMatTex(key, tex, col, op, repY) {
+  return jMat(key, () => {
+    const t = tex.clone(); t.needsUpdate = true; if (repY) t.repeat.set(1, repY);
+    return new THREE.MeshBasicMaterial({ map: t, color: col, transparent: true, opacity: op, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, fog: false, toneMapped: false });
+  });
+}
+function svxMatShell(key, col, op, front) {
+  return jMat(key, () => new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: op, depthWrite: false, blending: THREE.AdditiveBlending, side: front ? THREE.FrontSide : THREE.DoubleSide, fog: false, toneMapped: false }));
+}
+// ---- Shock Bolt: the blue-white electric sphere + rings + crackle (clip frames 7-10) ----
+function svxShockBurst(p) {
+  try {
+    svxGeo();
+    const core = svxPart(svxC.sph, xAdd("svxShkCore", 0xd8f2ff, 0.6), p, 0.5, 0);
+    core.scale.setScalar(0.55);
+    svxPart(svxC.sph, svxMatShell("svxShkShell", 0x4fc3ff, 0.35), p, 0.5, 2.1); // energy shell out to ~2.6 m
+    const rg = svxPart(svxC.ring, xAdd("svxShkRingG", 0x7fd8ff, 0.85), svxC.v0.set(p.x, p.y + 0.06, p.z), 0.55, 4.2);
+    rg.rotation.x = -Math.PI / 2;
+    const rv = svxPart(svxC.ring, xAdd("svxShkRingV", 0x9fe4ff, 0.8), p, 0.42, 2.6); // the upright ring of the clip
+    rv.lookAt(camera.position);
+    for (let i = 0; i < 2; i++) { // crackle arcs, two rolled additive planes
+      const a = svxPart(svxC.plane, svxMatTex("svxShkArc" + i, svxTexBoltF(), 0x8fd4ff, 0.5), p, 0.4 + i * 0.06, 0);
+      a.scale.setScalar(2.6 + i * 0.8);
+      a.lookAt(camera.position);
+      a.rotateZ(Math.random() * 6.2832);
+    }
+    svxShards(p, null, 7, 0x9fdcff, 5.5, 0.45, 2.2); // electric sparks
+  } catch (e) { xE(e); }
+}
+// ---- Recon Bolt: expanding blue sonar sphere with a dotted grid (enemy bolt: red-orange) ----
+function svxReconPulse(p, en) {
+  try {
+    svxGeo();
+    const col = en ? 0xff5a2a : 0x3fb4ff, k = en ? "E" : "";
+    const core = svxPart(svxC.sph, xAdd("svxRcnC" + k, en ? 0xffb08a : 0xd8f2ff, 0.7), p, 0.35, 0);
+    core.scale.setScalar(0.5);
+    svxPart(svxC.sph, svxMatShell("svxRcnSh" + k, col, 0.09, true), p, 0.75, 29.5); // sonar shell to the 30 m reveal radius (XRCN.radius)
+    let gy = NaN;
+    try { gy = groundAt(p.x, p.z, 0.05, p.y); } catch (e) {}
+    const hp = svxPart(svxC.plane, svxMatTex("svxRcnH" + k, svxTexDotsF(), col, 0.32), svxC.v0.set(p.x, (Number.isFinite(gy) ? gy : p.y) + 0.14, p.z), 0.75, 59.5);
+    hp.rotation.x = -Math.PI / 2;
+    for (let i = 0; i < 2; i++) { // crossed vertical grid planes through the bolt: the 3D lattice of the clip
+      const vp = svxPart(svxC.plane, svxMatTex("svxRcnV" + i + k, svxTexDotsF(), col, 0.18), p, 0.75, 59.5);
+      vp.rotation.y = i * Math.PI / 2 + 0.4;
+    }
+  } catch (e) { xE(e); }
+}
+// ---- Hunter's Fury: the huge wall-piercing lightning blast (66 m, XHFU.len; wiki/server) ----
+function svxFuryBeam(o, d, hitPoint) {
+  try {
+    svxGeo();
+    const L = 66, dir = svxC.v1.copy(d).normalize().clone();
+    const end = o.clone().addScaledVector(dir, L);
+    const mz = svxPart(svxC.sph, xAdd("svxFuryMz", 0xd8f2ff, 0.35), svxC.v0.copy(o).addScaledVector(dir, 2.0), 0.2, 0);
+    mz.scale.setScalar(0.25);
+    const core = svxPart(svxC.cone, xAdd("svxFuryCore", 0xbfe9ff, 0.14), o, 0.6, 0); // widening energy cone of the clip
+    core.scale.set(1, 1, L - 2.5);
+    core.position.copy(o).addScaledVector(dir, 2.5 + (L - 2.5) / 2);
+    core.lookAt(end);
+    const hot = svxPart(svxC.beam, xAdd("svxFuryHot", 0xe8f7ff, 0.7), o, 0.5, 0); // hot thin core inside the cone
+    hot.scale.set(0.5, 0.5, L - 2.5);
+    hot.position.copy(o).addScaledVector(dir, 2.5 + (L - 2.5) / 2);
+    hot.lookAt(end);
+    for (let i = 0; i < 3; i++) { // jagged arc planes, rolled around the blast axis
+      const a = svxPart(svxC.plane, svxMatTex("svxFuryArc" + i, svxTexBoltF(), i ? 0x7fd4ff : 0xcfefff, 0.55, 8), o, 0.55, 0);
+      a.scale.set(2.4, L - 5, 1);
+      a.position.copy(o).addScaledVector(dir, 5 + (L - 5) / 2);
+      a.quaternion.setFromUnitVectors(svxC.up, dir);
+      a.rotateY(i * 2.1);
+    }
+    svxShards(o, dir, 9, 0x9fdcff, 2.5, 0.8, 40); // floating charge shards along the path
+  } catch (e) { xE(e); }
+}
+// ---- Owl Drone: the blue hologram flash as it leaves the gauntlet ----
+function svxOwlLaunch(p, d) {
+  try {
+    svxGeo();
+    const fw = svxC.v1.copy(d).normalize();
+    const rt = new THREE.Vector3().crossVectors(fw, svxC.up).normalize(); // screen-right of the aim
+    const at = svxC.v0.copy(p).addScaledVector(fw, 1.6).addScaledVector(rt, 0.3);
+    at.y -= 0.18;
+    const core = svxPart(svxC.sph, xAdd("svxOwlCore", 0xbfe9ff, 0.45), at, 0.4, 0);
+    core.scale.setScalar(0.12);
+    const ring = svxPart(svxC.ring, xAdd("svxOwlRing", 0x4fc3ff, 0.7), at, 0.5, 0.5);
+    ring.lookAt(camera.position);
+    svxShards(at, null, 2, 0x7fd4ff, 0.9, 0.4, 0.5);
+  } catch (e) { xE(e); }
+}
+// ---- bolt / dart in flight: a glowing orb with a rune ring, as the clips (kids of the caller's jBolt mesh) ----
+function svxBoltFlight(m, kind) {
+  try {
+    svxGeo();
+    const col = kind === "shock" ? 0x7fd8ff : kind === "dart" ? 0x8fe0ff : 0x45d0ff;
+    const gm = svxMatShell("svxBoltGlow" + kind, col, 0.85);
+    const glow = new THREE.Mesh(svxC.sph, gm);
+    glow.scale.setScalar(0.17); glow.raycast = () => {}; glow.renderOrder = 2;
+    const ring = new THREE.Mesh(svxC.ring, gm);
+    ring.scale.setScalar(0.45); ring.raycast = () => {}; ring.renderOrder = 2;
+    m.add(glow); m.add(ring); ring.lookAt(camera.position);
+    m.userData.kids = (m.userData.kids || []).concat([glow, ring]); // jRel strips kids when the bolt lands
+  } catch (e) { xE(e); }
+}
+// ---- bow viewmodel: nock glow + charge ring (integrator drives setCharge with XABT.bolt.pw) ----
+function svxBowAttach(viewmodelGroup) {
+  svxGeo();
+  const grp = new THREE.Group(); grp.name = "svx-bow";
+  const nock = new THREE.Mesh(svxC.sph, svxMatShell("svxBowNock", 0x7fd8ff, 0.9));
+  nock.scale.setScalar(0.05); nock.raycast = () => {}; nock.renderOrder = 12;
+  const ring = new THREE.Mesh(svxC.ring, svxMatShell("svxBowRing", 0x9fe4ff, 0.8));
+  ring.scale.setScalar(0.1); ring.visible = false; ring.raycast = () => {}; ring.renderOrder = 12;
+  grp.add(nock); grp.add(ring);
+  (viewmodelGroup || scene).add(grp);
+  return {
+    g: grp,
+    setCharge(p) { // 0..1 bow charge: the rune ring tightens and brightens as the clip's charge circles
+      const on = p > 0.02;
+      ring.visible = on;
+      if (on) { ring.scale.setScalar(0.16 - 0.07 * p); ring.material.opacity = 0.35 + 0.55 * p; }
+      nock.scale.setScalar(0.04 + 0.04 * p);
+    },
+  };
+}
+// ---- orange reveal outline of the clips (swap for the red rvMat; BackSide shell over body+head) ----
+const svxRvMat = new THREE.MeshBasicMaterial({ color: 0xff7a1a, transparent: true, opacity: 0.55, depthTest: false, depthWrite: false, side: THREE.BackSide });
+// ---- bounded rAF shards (sparks / floating charge shards); shared materials, scale-fade, hard cap ----
+function svxShards(p, dir, n, col, spd, life, spread) {
+  svxGeo();
+  if (svxC.anim.length > 48) return; // bounded: never pile up across bursts
+  const mat = svxMatShell("svxShard" + col, col, 0.85);
+  for (let i = 0; i < n; i++) {
+    const m = new THREE.Mesh(svxC.shard, mat);
+    m.raycast = () => {};
+    const along = dir ? Math.random() * spread : 0;
+    m.position.set(
+      p.x + (dir ? dir.x * along : 0) + (Math.random() - 0.5) * (dir ? 2.4 : 0.4),
+      Math.max(0.1, p.y + (dir ? dir.y * along : 0) + (Math.random() - 0.5) * 2.2),
+      p.z + (dir ? dir.z * along : 0) + (Math.random() - 0.5) * (dir ? 2.4 : 0.4));
+    const a = Math.random() * 6.2832, up = dir ? 1.1 : 0.5;
+    scene.add(m);
+    svxC.anim.push({ m, t0: performance.now(), pt: performance.now(), life: life * 1000, s: 0.8 + Math.random() * 0.7,
+      v: new THREE.Vector3(Math.cos(a) * spd * (dir ? 0.25 : 1), up * (0.6 + Math.random()), Math.sin(a) * spd * (dir ? 0.25 : 1)),
+      rx: (Math.random() - 0.5) * 0.3, ry: (Math.random() - 0.5) * 0.3 });
+  }
+  if (!svxC.raf) svxC.raf = requestAnimationFrame(svxAnimTick);
+}
+function svxAnimTick() {
+  const A = svxC.anim;
+  if (!A.length) { svxC.raf = 0; return; }
+  svxC.raf = requestAnimationFrame(svxAnimTick);
+  const now = performance.now();
+  for (let i = A.length - 1; i >= 0; i--) {
+    const s = A[i], u = (now - s.t0) / s.life;
+    if (u >= 1) { scene.remove(s.m); A.splice(i, 1); continue; }
+    const dt = Math.min(0.1, (now - s.pt) / 1000); s.pt = now;
+    s.m.position.addScaledVector(s.v, dt);
+    s.v.y -= 2.5 * dt; // sparks sink a little
+    s.m.rotation.x += s.rx; s.m.rotation.y += s.ry;
+    s.m.scale.setScalar(s.s * (1 - u * 0.7));
+  }
+}
+// ---- END SOVA FX ----
 // ---- BOT VARIETY ----
 // Shared client/server routing and spacing. Costs are preferences, never permanent blockers.
 (function(root,factory){if(typeof module==='object'&&module.exports)module.exports=factory();else root.BotRoutes=factory();})(typeof globalThis!=='undefined'?globalThis:this,function(){
