@@ -3,6 +3,7 @@
 import assert from 'node:assert';
 import {AG18,TYPES18,A18,init18,cast18,tick18,reward18} from './src/agents18.js';
 import {initAbilities,types,abilityDamage} from './src/abilities.js';
+import {Simulation,weapons} from './src/simulation.js';
 import kits from './src/kits.json' with {type:'json'};
 
 const world={ray:()=>Infinity,ground:()=>0,blocked:()=>false,near:()=>0,nav:{nodes:[[0,0,0]]}};
@@ -50,7 +51,13 @@ for(const a of Object.keys(AG18)){assert.ok(kits[a],a+' in kits.json');assert.ok
  const ally=mk('Sage',0,7,k.x+1);ally.input={use:true};s.units.push(ally);initAbilities(ally,true);
  run(s,110);assert.ok(k.alive&&k.hp===100,'an ally channel revives him at 100');
  ally.input={};const k2=mk('KAY/O',0,9,50);s.units.push(k2);initAbilities(k2,true);k2.nullCmdUntil=s.time+1;k2.hp=5;
- abilityDamage(s,e,k2,50);run(s,310);assert.ok(!k2.alive&&k2.deaths===1,'the bleedout kills');}
+ abilityDamage(s,e,k2,50);run(s,310);assert.ok(!k2.alive&&k2.deaths===1,'the bleedout kills');
+ const k3=mk('KAY/O',0,11,60);s.units.push(k3);initAbilities(k3,true);k3.nullCmdUntil=s.time+20;k3.hp=5;abilityDamage(s,e,k3,50);
+ assert.equal(k3.kayoDown.hp,850,'850 HP core (wiki Downed Health)');
+ Simulation.prototype.applyHit.call(s,e,k3,'body',400,[e.x,e.y+1.6,e.z],[1,0,0],2,2,weapons.Vandal);assert.ok(k3.kayoDown&&k3.kayoDown.hp===450,'the core takes gun damage');
+ const u0=k3.kayoDown.until;const al2=mk('Sage',0,12,k3.x+1);al2.input={use:true};s.units.push(al2);initAbilities(al2,true);run(s,20);
+ assert.ok(k3.kayoDown.until>u0,'stabilizing pauses the countdown (wiki)');al2.input={};
+ Simulation.prototype.applyHit.call(s,e,k3,'body',500,[e.x,e.y+1.6,e.z],[1,0,0],2,2,weapons.Vandal);assert.ok(!k3.alive&&k3.deaths===1&&e.kills>0,'destroying the core kills with credit');}
 
 // Deadlock Annihilate: 600 HP cocoon, the pull, the rescue, the kill
 {const s=mkSim(),dl=mk('Deadlock',0,7),vic=mk('Jett',1,8,10);s.units=[dl,vic];initAbilities(dl,true);initAbilities(vic,true);dl.ability.ult=kits.Deadlock.u;
@@ -69,5 +76,10 @@ for(const a of Object.keys(AG18)){assert.ok(kits[a],a+' in kits.json');assert.ok
 {const s=mkSim(),u=mk('Gekko',0,15);s.units=[u];initAbilities(u,true);u.ability.c=1;
  cast18(s,u,{k:'c'},O,D);assert.equal(u.ability.c,0);run(s,Math.ceil((A18.mosh.life+1+A18.globule.reclaim)/.05)+10);
  assert.equal(u.ability.c,1,'globule reclaim returns the charge');}
+
+// Miks Bassquake (wiki): 40 m 60 deg cone, 5 m knockback, 8 s deafen + slow
+{const s=mkSim(),m=mk('Miks',0,13),e=mk('Jett',1,14,0);e.z=-10;s.units=[m,e];/* look 0 faces -z: the cone covers him */initAbilities(m,true);initAbilities(e,true);m.ability.ult=kits.Miks.u;
+ assert.equal(cast18(s,m,{k:'x'},[m.x,m.y+1.6,m.z],[1,0,0]),true,'Bassquake cast');run(s,30);
+ assert.ok(e.deafenUntil>s.time,'deafened 8 s');assert.ok(e.hinderUntil>s.time,'slowed 8 s');}
 
 console.log('agents18: registration, charge/star gates, Iso duel isolation + return, Neon fuel/slide/reset, KAY/O downed/revive/bleedout, Deadlock cocoon pull/rescue/kill, suppress gate, Gekko globule reclaim');

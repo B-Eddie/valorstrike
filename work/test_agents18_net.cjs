@@ -43,6 +43,7 @@ api.a18NetSync([{id:4,kind:'mosh',p:[0,0,0],r:5,tl:3}]);api.netClearEffects();as
 api.netStatusChips({vulnerable:0,tether:0,supp:2.5,jam:1.5,hind:1.2,haste:3,stim:1,decay:40});
 const t=els.netSt.textContent;
 for(const x of['SUPPRESSED 2.5s','JAMMED 1.5s','HINDERED 1.2s','HASTE 3.0s','STIM','DECAYING 40 HP'])assert(t.includes(x),'chip: '+x);
+api.netStatusChips({vulnerable:0,tether:0,deaf:6});assert(els.netSt.textContent.includes('DEAFENED 6.0s'),'Bassquake deafen chip');
 assert(ctx.player.tagT>=1.2,'hinder feeds slow prediction');
 api.netStatusChips({vulnerable:0,tether:0});
 assert.equal(els.netSt.style.display,'none','chips hide when clear');

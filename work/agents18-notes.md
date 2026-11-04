@@ -50,3 +50,8 @@ mesh) and movers (decoy/seeker/dizzy/anni cocoon) following the server position 
 block drives HUD chips: SUPPRESSED / JAMMED / HINDERED (also client slow prediction) / HASTE / STIM /
 DECAYING HP. Coverage: work/test_agents18_net.cjs. Remaining online limits: KAY/O's downed body uses the
 normal prone render (no dedicated pose), Iso's duel arena is the four barrier walls at his position.
+
+
+## Closed 2026-11-03 (wiki pass 2)
+- **Miks Bassquake**: now full wiki spec (Bassquake page, fetched 2026-11-03): 40m range, 46° cone, 5m knockback, 8s slow AND 8s deafen. Deafen is modeled as a full master-mix duck for the duration (server sends `deaf` in rs status; client shows a DEAFENED chip and ducks audio). No per-source muffling bus exists in the sound engine, so a full duck is the closest faithful model.
+- **KAY/O NULL/cmd downed core**: the downed core is shootable per wiki (850 HP; destroyed => death with kill credit to the shooter). Revive is the wiki 2-step: 1.5s Stabilization + 1.55s reboot (v10.06) = 3.05s channel, and channeling pauses the 15s bleedout countdown (stabilize pauses the countdown per wiki).
