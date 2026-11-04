@@ -24037,7 +24037,7 @@ const A18C = { star: { wellPull: 2, wellVuln: 2, wellR: 3.5, novaDelay: 1.25, no
  fakeout: { life: 10, speed: 4.5 }, blindside: { blind: 1.5, delay: 0.6 }, gcrash: { life: 20, range: 30 }, drift: { life: 10 },
  prowler: { life: 3, speed: 9, near: 2.5 }, seize: { r: 4.5, tether: 4, decay: 70 }, haunt: { r: 25, reveal: 12 }, nightfall: { dist: 25, w: 14, decay: 70 },
  mosh: { r: 5, life: 3, dps: 20, boom: 70 }, wing: { life: 5, speed: 9, concuss: 3.5 }, dizzy: { life: 2.5, blind: 1.5, r: 15 }, thrash: { r: 6, detain: 6 }, globule: { reclaim: 10 },
- frag: { r: 5, pulses: 4, gap: 1, dmg: 40 }, fdrive: { blind: 2.25, delay: 1.6 }, zero: { r: 15, supp: 8 }, nullcmd: { life: 10, pulse: 3, r: 20 },
+ frag: { r: 4, inner: 1, pulses: 4, gap: 1, dmg: 60, dmgOut: 25, wind: 0.5 }, fdrive: { blind: 2.25, delay: 1.6 }, zero: { r: 15, supp: 8 }, nullcmd: { life: 10, pulse: 3, r: 20 },
  sdrone: { life: 8, r: 12, reveal: 3, supp: 6 }, sd: { r: 4, concuss: 3, dmg: 40 }, salvo: { r: 4.5, inner: 2.5, pulses: 3, gap: 0.8, dmg: 65, dmgOut: 50, wind: 1.25, fly: 30 }, armag: { len: 32, w: 12, dmg: 60, segs: 16, seg: 2, ticks: 4, tick: 0.25, gap: 0.25, wind: 3.08 },
  mesh: { life: 30, len: 7.5 }, sensor: { life: 30, r: 8, concuss: 3 }, gnet: { r: 6, life: 8 }, annih: { range: 20, detain: 7 },
  xcut: { range: 25 }, choke: { life: 30, r: 6, decay: 60, slow: 2 }, cept: { life: 30, r: 10 }, evo: { life: 12, hps: 10 },
@@ -24219,7 +24219,7 @@ function a18Key(code) {
       else a18Orb(p, 0.7, () => { for (const b of a18BotsIn(p, C.thrash.r)) b.teth = C.thrash.detain; SFX.ab("cbPop", p); });
       return true; }
     case "KAY/O": { spend();
-      if (k === "c") a18Fx({ kind: "pulses", p, t: 0.5, gap: C.frag.gap, left: C.frag.pulses, r: C.frag.r, dmg: C.frag.dmg, name: "FRAG/ment" });
+      if (k === "c") a18Frag(p);
       else if (k === "q") a18Orb(p, C.fdrive.delay, () => a18Blind(p, C.fdrive.blind));
       else if (k === "e") a18Orb(p, 0.4, () => { for (const b of a18BotsIn(p, C.zero.r)) b.supp = C.zero.supp; SFX.ab("cbPop", p); });
       else { A.stim = C.nullcmd.life; A.ncmd = C.nullcmd.life; const m = a18Ring(new THREE.Vector3(P.x, 0, P.z), C.nullcmd.r, 0x8a2af0, 0.4); a18Fx({ kind: "ncmd", m, t: C.nullcmd.life, next: C.nullcmd.pulse }); }
@@ -24406,6 +24406,13 @@ function a18Salvo(p) {
   for (const [r, op] of [[S.r, 0.35], [S.inner, 0.55]]) { const m = a18Ring(p, r, 0xff6a3a, op); try { const gy = groundAt(p.x, p.z, 0.3, typeof player !== "undefined" ? player.y : 3); if (Number.isFinite(gy)) m.position.y = gy + 0.05; } catch (err) {} a18Fx({ kind: "burst", m, t: delay }); }
   return o;
 }
+// KAY/O FRAG/ment (wiki): 0.5 s windup after landing, 4 pulses 1 s apart, inner 1 m 60 falling to 25 at 4 m; allies (1/3) and self too.
+function a18Frag(p) {
+  const F = A18C.frag;
+  const o = a18Fx({ kind: "pulses", p, t: F.wind, gap: F.gap, left: F.pulses, r: F.r, inner: F.inner, dmg: F.dmg, dmgOut: F.dmgOut, name: "FRAG/ment" });
+  for (const [r, op] of [[F.r, 0.3], [F.inner, 0.5]]) { const m = a18Ring(p, r, 0xffa03a, op); try { const gy = groundAt(p.x, p.z, 0.3, typeof player !== "undefined" ? player.y : 3); if (Number.isFinite(gy)) m.position.y = gy + 0.05; } catch (err) {} a18Fx({ kind: "burst", m, t: F.wind }); }
+  return o;
+}
 const a18Net = new Map(); // server effect id -> {m, kind}
 function a18NetMesh(kind, e) {
   const v = A18VIS[kind] || ["orb", 0xc0c8d0]; const [shape, col, op] = v; let m;
@@ -24423,8 +24430,8 @@ function a18NetSync(rows) {
   const seen = new Set();
   for (const e of rows) { if (e && e.kind === "duel" && Number.isFinite(e.id) && Array.isArray(e.p) && e.p.length === 3) { seen.add(e.id); if (!a18Net.has(e.id)) a18Net.set(e.id, { m: a18ArenaShell(e.p[0]), kind: "duel" }); continue; }
     if (e && e.kind === "armag" && Number.isFinite(e.id) && Array.isArray(e.p) && e.p.length === 3 && Number.isFinite(e.yaw) && Number.isFinite(e.tl)) { seen.add(e.id); let r = a18Net.get(e.id); if (!r) { r = { kind: "armag", ag: a18ArmagGroup(e.p[0], e.p[2], -Math.sin(e.yaw), -Math.cos(e.yaw), true) }; a18Net.set(e.id, r); } const AG = A18C.armag, el = AG.wind + (AG.segs - 1) * AG.gap + AG.ticks * AG.tick + 0.2 - e.tl; let spawned = 0; for (let i = 0; i < AG.segs; i++) for (let j = 0; j < AG.ticks; j++) { const id = i * AG.ticks + j, dt0 = el - (AG.wind + i * AG.gap + j * AG.tick); if (dt0 < 0 || r.ag.fired[id]) continue; r.ag.fired[id] = 1; if (dt0 > 0.6 || spawned > 6) continue; spawned++; const fw = [-Math.sin(e.yaw), -Math.cos(e.yaw)]; for (let b = 0; b < 2; b++) { const f = (i + Math.random()) * AG.seg, sd = (Math.random() - 0.5) * (AG.w - 2), x = e.p[0] + fw[0] * f - fw[1] * sd, z = e.p[2] + fw[1] * f + fw[0] * sd; let gy = 0; try { const g = groundAt(x, z, 0.3, typeof player !== "undefined" ? player.y : 3); if (Number.isFinite(g)) gy = g; } catch (err) {} a18ArmagBoom(x, gy, z); } } continue; }
-    if (e && e.kind === "salvo" && Number.isFinite(e.id) && Array.isArray(e.p) && e.p.length === 3 && Number.isFinite(e.tl)) { seen.add(e.id); const S = A18C.salvo; let r = a18Net.get(e.id); if (!r) { const ms = []; for (const [rad, op] of [[S.r, 0.35], [S.inner, 0.55]]) { const m = a18Ring({ x: e.p[0], z: e.p[2] }, rad, 0xff6a3a, op); try { const gy = groundAt(e.p[0], e.p[2], 0.3, e.p[1] + 1); if (Number.isFinite(gy)) m.position.y = gy + 0.05; } catch (err) {} ms.push(m); } r = { kind: "salvo", ms, n: 0 }; a18Net.set(e.id, r); }
-      const el = e.w > 0 ? -e.w : S.pulses * S.gap + 1 - e.tl; while (r.n < S.pulses && el >= r.n * S.gap) { r.n++; let gy = e.p[1]; try { const g = groundAt(e.p[0], e.p[2], 0.3, e.p[1] + 1); if (Number.isFinite(g)) gy = g; } catch (err) {} a18ArmagBoom(e.p[0], gy, e.p[2], 1.3); } continue; }
+    if (e && (e.kind === "salvo" || e.kind === "frag") && Number.isFinite(e.id) && Array.isArray(e.p) && e.p.length === 3 && Number.isFinite(e.tl)) { seen.add(e.id); const S = e.kind === "frag" ? A18C.frag : A18C.salvo; let r = a18Net.get(e.id); if (!r) { const ms = []; for (const [rad, op] of [[S.r, 0.35], [S.inner, 0.55]]) { const m = a18Ring({ x: e.p[0], z: e.p[2] }, rad, e.kind === "frag" ? 0xffa03a : 0xff6a3a, op); try { const gy = groundAt(e.p[0], e.p[2], 0.3, e.p[1] + 1); if (Number.isFinite(gy)) m.position.y = gy + 0.05; } catch (err) {} ms.push(m); } r = { kind: "salvo", ms, n: 0 }; a18Net.set(e.id, r); }
+      const el = e.w > 0 ? -e.w : S.pulses * S.gap + 1 - e.tl; /* both rows last pulses*gap+1 s after landing */ while (r.n < S.pulses && el >= r.n * S.gap) { r.n++; let gy = e.p[1]; try { const g = groundAt(e.p[0], e.p[2], 0.3, e.p[1] + 1); if (Number.isFinite(g)) gy = g; } catch (err) {} a18ArmagBoom(e.p[0], gy, e.p[2], e.kind === "frag" ? 0.8 : 1.3); } continue; }
     if (!e || !A18VIS[e.kind] || !Number.isFinite(e.id) || !Array.isArray(e.p) || e.p.length !== 3) continue; seen.add(e.id);
     let r = a18Net.get(e.id); if (!r) { r = { m: a18NetMesh(e.kind, e), kind: e.kind }; a18Net.set(e.id, r); }
     else if (r.m) { const k = A18VIS[e.kind][0]; if (k === "orb" || k === "wave" || k === "dev" || k === "star") r.m.position.set(e.p[0], k === "orb" ? (e.p[1] || 0) + 1 : k === "star" ? (e.p[1] || 0) + 1.4 : r.m.position.y === 1.1 ? 1.1 : (e.p[1] || 0) + .3, e.p[2]); else r.m.position.x = e.p[0], r.m.position.z = e.p[2]; if (Number.isFinite(e.yaw) && k === "wall") r.m.rotation.y = -e.yaw; } }

@@ -171,6 +171,14 @@ for(const a of Object.keys(AG18)){assert.ok(kits[a],a+' in kits.json');assert.ok
  run(s,30);assert.equal(hp(a),0,'no damage during flight + windup');
  run(s,12);assert.equal(hp(a),65,'inner radius (2 m): 65');assert.ok(Math.abs(hp(b)-57.5)<.01,'3.5 m: halfway 57.5, got '+hp(b));assert.equal(hp(d),50,'edge (4.5 m): 50');assert.equal(hp(c),0,'5 m: outside');
  run(s,60);assert.equal(hp(a),195,'3 pulses (65 x 3) then it stops');}
+// KAY/O FRAG/ment (wiki.playvalorant.com/en-us/FRAG/ment): 0.5 s windup, 4 ticks 1 s apart, inner 1 m = 60, outer 4 m falls to 25 at the edge, nothing beyond; allies/self reduced.
+{const s=mkSim(),k=mk('KAY/O',0,50,0,true),a=mk('Jett',1,51,0),b=mk('Jett',1,52,0),d=mk('Jett',1,53,0),c=mk('Jett',1,54,0),al=mk('Jett',0,55,0);
+ for(const v of [a,b,c,d,al,k]){v.hp=1000;v.mx=1000;v.armor=0;}a.z=20.5;b.z=22.5;d.z=24;c.z=25;al.z=20.5;k.z=0;s.units=[k,a,b,d,c,al];initAbilities(k,true);k.ability.c=1;
+ cast18(s,k,{k:'c'},O,D);const hp=v=>1000-v.hp;const fe=s.effects.find(e=>e.kind==='frag');assert.ok(fe,'frag landed');for(const [v,dz] of [[a,.5],[b,2.5],[d,4],[c,5],[al,.5]]){v.x=fe.p[0];v.z=fe.p[2]+dz;v.y=fe.p[1];}
+ run(s,8);assert.equal(hp(a),0,'no damage during the 0.5 s windup');
+ run(s,4);assert.equal(hp(a),60,'inner (0.5 m): 60');assert.ok(Math.abs(hp(b)-42.5)<.01,'2.5 m: 42.5, got '+hp(b));assert.equal(hp(d),25,'edge (4 m): 25');assert.equal(hp(c),0,'5 m: none');
+ assert.ok(hp(al)>0&&hp(al)<60,'ally takes reduced damage, got '+hp(al));
+ run(s,200);assert.equal(hp(a),240,'4 ticks x 60 then it stops');}
 // Armageddon (wiki.playvalorant.com/en-us/Armageddon): 3.08 s windup, 16 segments x 2 m (32 m) x 12 m wide, segment i starts
 // 0.25 s after segment i-1, each segment detonates 4 times 0.25 s apart for 60 - a chain, not one instant strip.
 {const s=mkSim(),t2=mk('Tejo',0,19,0,true),n=mk('Jett',1,30,0),f2=mk('Jett',1,31,0),o=mk('Jett',1,32,40),w2=mk('Jett',1,33,7),al=mk('Jett',0,34,0);

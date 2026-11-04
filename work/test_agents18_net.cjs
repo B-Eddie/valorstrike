@@ -19,7 +19,7 @@ const ctx=vm.createContext({document,performance:{now:()=>now},say:(t,ms)=>said.
  console,player:{tagT:0,tagK:0,tagS:0},
  jM:(g,m)=>new Mesh(g,m),ringGeo:{},smokeGeo:{},orbGeo:{},fireMat:(c,o)=>({color:c,opacity:o}),xSmokeM:(n,c1,c2)=>({name:n,opacity:1}),
  scene:{add(m){}},jRel:m=>{ctx.__rel=(ctx.__rel||0)+1;},xE:e=>{throw e;}});
-vm.runInContext('const A18C={salvo:{r:4.5,inner:2.5,pulses:3,gap:0.8}};let __booms=0;function a18Fx(o){if(o.kind==="armagboom")__booms++}function a18Ring(){return {}}function groundAt(){return 0}let netVulnAt=0,netTetherAt=0,netDetainAt=0;function netSyncEffects(rows){}function netClearEffects(){}\n'+orig+'\n'+block+'\nthis.__api={a18NetSync,a18Net,netStatusChips,netClearEffects,A18VIS};',ctx);
+vm.runInContext('const A18C={salvo:{r:4.5,inner:2.5,pulses:3,gap:0.8},frag:{r:4,inner:1,pulses:4,gap:1}};let __booms=0;function a18Fx(o){if(o.kind==="armagboom")__booms++}function a18Ring(){return {}}function groundAt(){return 0}let netVulnAt=0,netTetherAt=0,netDetainAt=0;function netSyncEffects(rows){}function netClearEffects(){}\n'+orig+'\n'+block+'\nthis.__api={a18NetSync,a18Net,netStatusChips,netClearEffects,A18VIS};',ctx);
 const api=ctx.__api;
 // fields / devices render and follow server rows
 api.a18NetSync([{id:1,kind:'pit',p:[1,0,2],r:9,tl:10},{id:2,kind:'sdrone',p:[3,0,4],tl:8}]);
@@ -43,6 +43,13 @@ assert.equal(api.a18Net.size,0,'gone rows dropped');
  api.a18NetSync([{id:20,kind:'salvo',p:[0,0,0],r:4.5,tl:3.4-1.7,w:0}]);assert.equal(booms(),3,'pulse 3');
  api.a18NetSync([{id:20,kind:'salvo',p:[0,0,0],r:4.5,tl:0.5,w:0}]);assert.equal(booms(),3,'no repeats');
  const r0=ctx.__rel||0;api.a18NetSync([]);assert.equal(ctx.__rel-r0,2,'rings released');}
+// KAY/O FRAG/ment row: 4 pulses 1 s apart after the 0.5 s windup (w), rings now
+{const booms=()=>vm.runInContext('__booms',ctx);const b0=booms();
+ api.a18NetSync([{id:21,kind:'frag',p:[0,0,0],r:4,tl:5.5,w:0.5}]);assert.equal(booms()-b0,0,'no blast during windup');
+ api.a18NetSync([{id:21,kind:'frag',p:[0,0,0],r:4,tl:5,w:0}]);assert.equal(booms()-b0,1);
+ api.a18NetSync([{id:21,kind:'frag',p:[0,0,0],r:4,tl:3.95,w:0}]);assert.equal(booms()-b0,2);
+ api.a18NetSync([{id:21,kind:'frag',p:[0,0,0],r:4,tl:1.9,w:0}]);assert.equal(booms()-b0,4,'all 4 pulses, none more');
+ api.a18NetSync([]);}
 // unknown kinds are left to the base sync
 api.a18NetSync([{id:9,kind:'barrier',p:[0,0,0]}]);assert.equal(api.a18Net.size,0,'barrier stays with netSyncEffects');
 // clear hook releases everything
