@@ -95,7 +95,7 @@ let firstCast = true;
 async function step(A, B, label, s) {
   const tag = label + ' ' + s.k + (s.fx ? '->' + s.fx : ' (self/status)');
   if (s.approach) { await approach(A, B, s.approach); console.log(tag + ': approached to ' + s.approach + 'm'); }
-  if (s.los) { await seekLos(A, B); console.log(tag + ': line of sight established (both unfogged)'); }
+  if (s.los) { await seekLos(A, B, s.near); console.log(tag + ': line of sight established (both unfogged' + (s.near ? ', within ' + s.near + 'm' : '') + ')'); }
   let m = await cast(A, s.k, s.extra || {});
   if (!m.ok && firstCast) { await sleep(2000); m = await cast(A, s.k, s.extra || {}); } // buy-phase race on the first cast
   firstCast = false;
@@ -152,10 +152,10 @@ async function tpStep(A, B, label, s) {
   console.log(tag + ': teleport live on both clients (jump ' + jump.toFixed(1) + 'm' + (s.back ? ', back at the marker' : ' to the anchor') + ', B unfogged and matching)');
 }
 // walk A toward B until A's client sees B unfogged (pairSees is symmetric: then B also sees A)
-async function seekLos(A, B) {
+async function seekLos(A, B, near) {
   const t0 = Date.now();
   while (Date.now() - t0 < 30000) {
-    const rb = A.row(B.id); if (!hidden(rb)) { await sleep(300); return; }
+    const rb = A.row(B.id); if (!hidden(rb) && (!near || dist(rowPos(A.row(A.id)), rowPos(rb)) <= near)) { await sleep(300); return; }
     const a = rowPos(A.row(A.id)), b = rowPos(B.row(B.id));
     const pts = bfsPath(a, b); const wp = pts && pts.find((p) => dist(a, p) > 1.5) || b;
     A.input(Math.atan2(-(wp.x - a.x), -(wp.z - a.z)), 0, 1, false);
@@ -178,7 +178,7 @@ const CASES = {
   Gekko:     [ {k:'c',fx:'mosh'}, {k:'q',fx:'seeker'}, {k:'e',fx:'dizzy'}, {k:'x',fx:'blast'} ],
   'KAY/O':   [ {k:'c',fx:'frag'}, {k:'q'}, {k:'e',fx:'blast'}, {k:'x',fx:'nullcmd'} ],
   Tejo:      [ {k:'c',fx:'sdrone'}, {k:'q',fx:'blast'}, {k:'e',fx:'salvo'}, {k:'x',fx:'armag'} ],
-  Deadlock:  [ {k:'x',fx:'anni',los:true}, {k:'c',fx:'barrier',los:true}, {k:'q',fx:'sensor'}, {k:'e',fx:'gnet'} ],
+  Deadlock:  [ {k:'x',fx:'anni',los:true,near:12}, {k:'c',fx:'barrier',los:true}, {k:'q',fx:'sensor'}, {k:'e',fx:'gnet'} ],
   Veto:      [ {k:'c',tp:'fwd',anchorFx:'xcut'}, {k:'q',fx:'choke'}, {k:'e',fx:'ceptor'}, {k:'x'} ],
   Vyse:      [ {k:'c',fx:'vine'}, {k:'q',fx:'shear'}, {k:'e',fx:'rose',recastConsumes:true}, {k:'x',fx:'garden'} ],
 };
