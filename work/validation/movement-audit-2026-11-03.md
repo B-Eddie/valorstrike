@@ -111,3 +111,13 @@ not modelled here (unchanged).
 - Unchanged: grounded crouch (base kept), already-crouched jump (no tuck), counter-strafe, crouch fatigue, jump arc, air cap.
 - Not modelled: Unreal's rounded capsule bottom (an "edge pop" when un-crouching with a box edge inside the bottom hemisphere);
   our collision capsule is flat-bottomed.
+
+## Integration follow-ups (bugs-int, 2026-11-04)
+
+The crouch drop now reaches every consumer of the old 0.45 m: the page's rendered crouch on native rigs (`work/repair_runtime.js`
+`XRC.drop`, and the retargeted-rig `standHead - drop x cb`) is 0.40 m so the bone-following head hitbox matches the server's
+`hitboxes.js` CROUCH (`work/test_native_crouch.cjs` reads `Motor.C.crouchEye`), and the server's wire crouch fraction (row [17])
+is `ch / Motor.C.crouchEye` (was `ch / 0.45`, so a full crouch sent 0.89). Consequence of the tag curve on the server aim KPI: the
+20 m median first hit moved one 0.05 s step, 0.95 -> 1.00 s, at the "<= 1.0 s" bound (`server/test-bot-aim-kpi.js` gets the 10 m
+float margin). The legacy pre-motor movement fallback in index.html (`P.vy = 6.6`, `ct = cr ? 0.45 : 0`) is dead code under the
+shared motor and was left alone. Locomotion clips untouched.

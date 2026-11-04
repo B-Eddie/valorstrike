@@ -2,6 +2,8 @@
 'use strict';
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto'),vm=require('node:vm');
 const {runtime,build,T,root}=require('./rocklan_movement_harness.cjs');
+// CE: the crouch drop = shared motor C.crouchEye (measured 0.40 m since 2026-11-04, was 0.45): repair_runtime XRC.drop follows it
+const CE=require('../server/src/motor.cjs').C.crouchEye;
 const OUT=path.join(root,'models/valorant/movement'),PACK=process.env.ROCKLAN_PACK||'/home/hatch/workspace/valorstrike-refresh/rocklan-pack';
 // The source pack (6,195 files, not in the repo) only exists on the authoring machine: without it the baked-data checks still run
 // and the PSA source-hash / sample-equality checks are skipped (and reported), so CI and other machines can run this test.
@@ -126,7 +128,7 @@ async function rigs(){
   for(const opt of [{speed:3.24},{speed:5.4,angle:Math.PI/2},{speed:5.4,angle:Math.PI},{speed:0,cr:true},{speed:2,cr:true,angle:Math.PI*1.5}]){
    R.advance(50,opt);
    for(let i=0;i<20;i++){R.advance(1,opt);waist(R,slug);contact=Math.max(contact,Math.abs(R.sole()));assert(Math.abs(R.sole())<.025,slug+' locomotion support-foot contact '+R.sole());}
-   if(opt.cr)near(R.at('Head').y-R.M.m.position.y,stand-.45,.02,slug+' crouch head drop');
+   if(opt.cr)near(R.at('Head').y-R.M.m.position.y,stand-CE,.02,slug+' crouch head drop');
   }
   R.advance(90);near(R.at('Head').y-R.M.m.position.y,stand,.02,slug+' stand-up height restored');
   rows.push({slug,maxContactCm:+(contact*100).toFixed(3)});
