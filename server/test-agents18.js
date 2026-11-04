@@ -95,4 +95,8 @@ for(const a of Object.keys(AG18)){assert.ok(kits[a],a+' in kits.json');assert.ok
  assert.ok(y.pendingTeleport&&Math.abs(y.pendingTeleport.at-s.time-1.2)<.01,'1.2 s wiki teleport timing');
  assert.ok(!y.ability.gate,'the anchor is spent by the real teleport');
  assert.ok(Math.abs(y.pendingTeleport.p[0]-gp[0])<.01&&Math.abs(y.pendingTeleport.p[2]-gp[2])<.01,'to the anchor');}
+// Yoru Dimensional Drift: no gunfire while drifting (wiki: unable to equip any weapons)
+{const s=mkSim(),y=mk('Yoru',0,16);s.units=[y];initAbilities(y,true);y.ability.ult=kits.Yoru.u;y.weapon='Vandal';y.ammo=30;
+ assert.equal(cast18(s,y,{k:'x'},O,D),true,'drift cast');assert.ok(y.driftUntil>s.time,'drifting');y.input={fire:true};
+ assert.equal(Simulation.prototype.fire.call(s,y),false,'no gunfire in Dimensional Drift');}
 console.log('agents18: registration, charge/star gates, Iso duel isolation + return, Neon fuel/slide/reset, KAY/O downed/revive/bleedout, Deadlock cocoon pull/rescue/kill, suppress gate, Gekko globule reclaim, Miks Bassquake deafen/slow, Yoru Gatecrash fake + 1.2 s timing');

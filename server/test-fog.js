@@ -61,6 +61,13 @@ const adv=(s,t)=>{s.time+=t;};
  assert.notEqual(row(view(s,c),b)[22],1,'C sees B');assert.equal(row(view(s,a),b)[22],1,'A does not get C\'s sight in DM');}
 // 13. out of the match phase nothing is fogged; fogRow keeps the row length (27: [24] Blade Storm knives, [25] rope ascender, test-ropes.js, [26] Spike action, work/test_spike_anim.cjs)
 {const {s,a,b}=setup();s.phase='post';assert.equal(row(view(s,a),b)[22],0);assert.equal(fogRow(s.rows()[0]).length,27);{const r=s.rows()[0].slice();r[24]=5;r[25]=3;const f=fogRow(r);assert.equal(f[24],0);assert.equal(f[25],0);}}
+// 13b. Dimensional Drift (wiki): a drifting Yoru is unseen by enemies - sight, proximity and reveals never mark him;
+// his running footsteps are heard only within 15 m (update history); he still sees out
+{const {s,a,b}=setup();b.agent='Yoru';b.z=20;b.driftUntil=s.time+10;adv(s,.05);assert.equal(row(view(s,a),b)[22],1,'drifting: in sight yet hidden');assert.notEqual(row(view(s,b),a)[22],1,'the drifter still sees out');
+ const g=setup();g.b.agent='Yoru';g.b.z=20;g.b.driftUntil=g.s.time+10;g.b.revealedUntil=g.s.time+2;adv(g.s,.05);assert.equal(row(view(g.s,g.a),g.b)[22],1,'a drifter is not revealed (intangible, update history)');
+ const h=setup();h.b.agent='Yoru';h.a.x=-1;h.b.x=1;h.b.driftUntil=h.s.time+10;adv(h.s,.05);assert.equal(row(view(h.s,h.a),h.b)[22],1,'drifting: even 2 m away, unseen');
+ const e=setup();e.b.agent='Yoru';e.b.driftUntil=e.s.time+10;e.b.vx=5.4;e.b.x=4;adv(e.s,.05);assert.notEqual(row(view(e.s,e.a),e.b)[22],1,'drift footsteps heard within 15 m');
+ const d=setup();d.b.agent='Yoru';d.b.driftUntil=d.s.time+10;d.b.vx=5.4;adv(d.s,.05);assert.equal(row(view(d.s,d.a),d.b)[22],1,'drift footsteps past 15 m: silent');}
 // 14. the real worker tick sends each session its own view (GameRoom.view -> fogView)
 {const source=fs.readFileSync('src/worker.js','utf8'),code=source.slice(source.indexOf('export class GameRoom')).replace('export class','class')+';globalThis.GameRoom=GameRoom;';
  const context={DurableObject:class{constructor(ctx,env){this.ctx=ctx;this.env=env;}},crypto:globalThis.crypto,Date,URL,performance,setInterval,clearInterval,Map,Set,JSON,Number,Object,Math,Array,fogView,fogCast};vm.createContext(context);vm.runInContext(code,context);

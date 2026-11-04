@@ -54,9 +54,11 @@ export function fogPass(sim,snap){const F=sim.fog||(sim.fog={t:-1,n:0,pairs:new 
  for(let i=0;i<L.length;i++)for(let j=i+1;j<L.length;j++){const a=L[i],b=L[j],ga=fogGroup(sim,a),gb=fogGroup(sim,b);if(ga===gb)continue;
   const key=a.id<b.id?a.id+':'+b.id:b.id+':'+a.id,last=F.pairs.get(key)??-1e9;let seen=false;
   if(near3(a,b,FOG.near))seen=true;else if(now-last<=FOG.grace||((F.n+a.id+b.id)&1)===0)seen=pairSees(sim,a,b);
-  if(seen){F.pairs.set(key,now);mark(ga,b.id);mark(gb,a.id);}}
+  const ad=(a.driftUntil||0)>now,bd=(b.driftUntil||0)>now;/* Dimensional Drift (wiki): unseen by enemies - no sight or proximity relevance TO a drifter, and he does not body-block; he still sees out */
+  if(seen){F.pairs.set(key,now);if(!bd)mark(ga,b.id);if(!ad)mark(gb,a.id);}}
  for(const v of L){const g=fogGroup(sim,v),run=typeof sim.loud==='function'?sim.loud(v):Math.hypot(v.vx||0,v.vz||0)>FOG.run&&!(v.input&&(v.input.walk||v.input.duck))/* the row's [23] footsteps flag */,shot=now-(v.fogShotAt??-1e9)<=FOG.shotFor,cast=now-(v.fogCastAt??-1e9)<=FOG.shotFor,rev=(v.revealedUntil||0)>now;
-  for(const a of L){const ga=fogGroup(sim,a);if(ga===g)continue;if(rev||(run&&near3(a,v,FOG.step))||(shot&&near3(a,v,FOG.shot))||(cast&&near3(a,v,FOG.cast)))mark(ga,v.id,rev?Math.max(now,v.revealedUntil):now+FOG.grace);}}
+  const vd=(v.driftUntil||0)>now;/* drift: intangible ("no longer revealed to enemies"), footsteps heard within 15 m (wiki Dimensional Drift update history), cast audio cues still carry */
+  for(const a of L){const ga=fogGroup(sim,a);if(ga===g)continue;if((!vd&&rev)||(run&&near3(a,v,vd?15:FOG.step))||(!vd&&shot&&near3(a,v,FOG.shot))||(cast&&near3(a,v,FOG.cast)))mark(ga,v.id,rev&&!vd?Math.max(now,v.revealedUntil):now+FOG.grace);}}
  // enemy devices / barriers
  for(const g of groups)F.hide.set(g,new Set());
  for(const e of sim.effects||[]){const dev=DEV_ROWS.has(e.kind),bar=e.kind==='barrier',cb=e.kind==='cloudburst'/* Jett's Cloudburst in flight (fx 'cb' s 0): it leaves the caster's eye */;if(!(dev||bar||cb)||!Array.isArray(e.p))continue;const pts=cb?[e.p.slice()]:bar?(e.hp>0?barrierPoints(e):[]):devicePoints(e).concat(e.field&&Array.isArray(e.fp)?[[e.fp[0],e.fp[1]+.3,e.fp[2]]]:[]);if(!pts.length)pts.push([e.p[0],e.p[1]+.3,e.p[2]]);
