@@ -8813,7 +8813,22 @@ function blazeWall(x, y, z, fx, fz, o) { // o: extra fields (own, en, nd, loc); 
   const l = Math.hypot(fx, fz) || 1; fx /= l; fz /= l; let len = XBLZ.length;
   for (let d = 0.25; d <= XBLZ.length + 1; d += 0.25) if (blocked(x + fx * d, z + fz * d, 0.05, y)) { len = Math.max(1, d - 0.3); break; }
   const h = Math.max(0, (len - 1) / 2), w = Object.assign({ p: new THREE.Vector3(x + fx * (1 + h), y + 1.5, z + fz * (1 + h)), ax: fx, az: fz, h, t: XBLZ.life }, o || {});
-  w.m = jM(blazeGeo, fireMat(0xff7a1a, 0.7)); w.m.position.copy(w.p); w.m.rotation.y = Math.atan2(fx, fz); w.m.scale.z = Math.max(0.05, 2 * h); scene.add(w.m); J.walls.push(w); return w; }
+  w.m = jM(blzPlane(), blzMat()); w.m.position.copy(w.p); w.m.rotation.y = Math.atan2(fx, fz) + Math.PI / 2; w.m.scale.set(Math.max(0.05, 2 * h), 1, 1); scene.add(w.m); J.walls.push(w); return w; }
+// Phoenix Blaze look (wiki Blaze_Showcase.mp4): a translucent coral-red sheet of flame with lighter flowing swirls, a jagged torn top edge and a
+// bright fire line along the base. One shared scrolling flame texture + plane (the wall stretches it along its length).
+let BLZ = null;
+function blzPlane() { return BLZ ? BLZ.g : (blzMat(), BLZ.g); }
+function blzMat() {
+  if (BLZ) return BLZ.m;
+  const c = document.createElement("canvas"); c.width = 256; c.height = 256; const g = c.getContext("2d"); g.clearRect(0, 0, 256, 256);
+  const gr = g.createLinearGradient(0, 256, 0, 0); gr.addColorStop(0, "rgba(255,190,60,1)"); gr.addColorStop(0.1, "rgba(255,110,50,0.95)"); gr.addColorStop(0.55, "rgba(240,70,60,0.85)"); gr.addColorStop(1, "rgba(225,60,75,0.7)"); g.fillStyle = gr; g.fillRect(0, 0, 256, 256);
+  g.lineCap = "round";
+  for (let i = 0; i < 12; i++) { let x = Math.random() * 256, y = 256; g.strokeStyle = "rgba(255," + (140 + (Math.random() * 50 | 0)) + ",80," + (0.45 + Math.random() * 0.3) + ")"; g.lineWidth = 8 + Math.random() * 12; g.beginPath(); g.moveTo(x, y); while (y > 20) { const nx = x + (Math.random() - 0.5) * 70, ny = y - 50 - Math.random() * 40; g.quadraticCurveTo(x + (Math.random() - 0.5) * 60, (y + ny) / 2, nx, ny); x = nx; y = ny; } g.stroke(); }
+  g.globalCompositeOperation = "destination-out"; /* torn top: flame tongues */ g.fillStyle = "#000"; let x0 = 0; while (x0 < 256) { const wdt = 10 + Math.random() * 22, hh = 8 + Math.random() * 60; g.beginPath(); g.moveTo(x0, 0); g.lineTo(x0 + wdt / 2, hh); g.lineTo(x0 + wdt, 0); g.fill(); x0 += wdt * 0.8; }
+  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(3, 1); if (THREE.SRGBColorSpace) t.colorSpace = THREE.SRGBColorSpace; else if (THREE.sRGBEncoding) t.encoding = THREE.sRGBEncoding;
+  BLZ = { t, g: new THREE.PlaneGeometry(1, 3), m: new THREE.MeshBasicMaterial({ map: t, transparent: true, depthWrite: false, side: THREE.DoubleSide, fog: false, toneMapped: false }) }; BLZ.m.userData.pk = null; return BLZ.m;
+}
+function blzTick(dt) { if (BLZ) BLZ.t.offset.x += dt * 0.35; }
 const ringGeo = new THREE.RingGeometry(0.5, 0.85, 24), arrowGeo = new THREE.BoxGeometry(0.07, 0.07, 0.7), beamGeo = new THREE.BoxGeometry(0.12, 0.12, 1);
 const rvMat = new THREE.MeshBasicMaterial({ color: 0xff2030, transparent: true, opacity: 0.5, depthTest: false, depthWrite: false, side: THREE.BackSide });
 // perf pass 11: ability fx reuse pooled meshes + materials (shared geometry), returned to the pool when the effect ends
@@ -8982,11 +8997,11 @@ function svKey(code) {
     J.ult = 0; J.hf = XHFU.n; J.hfT = XHFU.win; say("Hunter's Fury · 3 shots", 1000); jBeam();
   }
 }
-function jFxTick(dt) {
+function jFxTick(dt) { try { blzTick(dt); } catch (e) {}
   const P = player, alive = P.hp > 0, heal = (r) => { if (alive) P.hp = Math.min(100, P.hp + r * dt); }; // Blaze / Hot Hands: XBLZ.heal / XHOT.heal
   if (J.hf > 0 && ((J.hfT -= dt) <= 0 || !alive)) { J.hf = 0; J.hfT = 0; } // Hunter's Fury: unfired charges lost 6 s after the cast or on death
   { const A = J.walls, n = A.length; let k = 0; // in-place compaction, no per-frame closures
-    for (let i = 0; i < n; i++) { const w = A[i]; w.t -= dt; w.m.material.opacity = 0.7 * Math.min(1, w.t / 0.5);
+    for (let i = 0; i < n; i++) { const w = A[i]; w.t -= dt; if (!w.m.material.map) w.m.material.opacity = 0.7 * Math.min(1, w.t / 0.5); else if (w.t < 0.5) w.m.scale.y = Math.max(0.05, w.t / 0.5);
       if (w.own) { if (!w.nd) { mpAreaHit(w, 0, 0, XBLZ.width, XBLZ.damage * dt, "Blaze", w); const o = w.own; if (o.alive && o.g && segD(o.g.position.x, o.g.position.z, w) < XBLZ.width) o.hp = Math.min(100, o.hp + XBLZ.heal * dt); } } // online remote cast: team-aware, host only
       else { for (let j = 0; j < bots.length; j++) { const b = bots[j]; if (b.alive && segD(b.g.position.x, b.g.position.z, w) < XBLZ.width) jHit(b, XBLZ.damage * dt, "Blaze"); } xFFArea("You", false, "Blaze", XBLZ.damage * dt, (x, z) => segD(x, z, w) < XBLZ.width);
       if (segD(P.x, P.z, w) < XBLZ.width) heal(XBLZ.heal); } if (w.t > 0) A[k++] = w; else jRel(w.m); }

@@ -10,3 +10,7 @@ Sources: wiki.playvalorant.com/en-us/<Ability> pages + images/<Ability>_Showcase
 ## Tejo / KAY/O - see agents18-notes.md (Salvo missile speed unsourced, FRAG arc not drawn, VFX primitives, self multiplier unsourced).
 
 ## Not yet audited vs wiki clips (base abilities): Jett, Phoenix, Sova, Sage, Reyna, Omen, Killjoy, Raze, Skye, Cypher, (then the rest).
+
+## Phoenix - Blaze (R 2026-11-04, Blaze_Showcase.mp4 viewed)
+- V: coral flame sheet with orange swirls, jagged top, bright base, scrolling texture (blzMat/blzPlane; shared material, fog/tonemap off). Used by player, bot and online walls (all call blazeWall). Captured side-on (work/browser_phoenix_blaze.cjs), viewed.
+- G: no arm/viewmodel flame effect, no growth animation as the wall rises (clip shows it shooting up), no heat distortion, damage-visual on hit not checked; numbers (XBLZ) previously audited. Hot Hands, Curveball, Run It Back not audited.
