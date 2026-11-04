@@ -34,5 +34,5 @@ const qa=async js=>{const r=await fetch('http://127.0.0.1:8787/__qa',{method:'PO
  log('both in game',[await A.X('MP.st'),await B.X('MP.st')]);
  const T={A,B,code,qa,log,check,R,browser,SHOT};
  if(process.env.SCEN)await require(process.env.SCEN)(T);
- await browser.close();log('done',1);
+ if(process.env.HOLD)await new Promise(r=>setTimeout(r,+process.env.HOLD));await browser.close();log('done',1);
 })().catch(e=>{R.errors.push('FATAL '+String(e.stack||e).slice(0,600));log('fatal',String(e).slice(0,200));process.exit(1);});
