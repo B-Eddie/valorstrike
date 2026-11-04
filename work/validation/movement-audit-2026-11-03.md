@@ -78,3 +78,14 @@ the tag slow (`server/src/simulation.js:62` `tagMul`, page `xTag` in `work/feel_
 3. `airAcceleration` 12 (Jeff's value) has no source; leave unless a measurement turns up.
 4. `stepHeight` 0.40, eye 1.6 / capsule 1.8, crouch-fatigue numbers, counter-strafe extra = unsourced approximations; informational.
 5. `landingLock` 0.2 is dead (nothing reads `lp` for movement or spread) - remove or wire up?
+
+## Shipped in lane-move (crouch-jump, additive)
+
+- Motor `airCrouch()` (both copies): airborne crouch keeps the capsule centre; feet +0.225 m at a full tuck, eye -0.225 m
+  (grounded crouch -0.45 m); standing up in the air lowers the feet, onto a box / floor below them if one is there (lands);
+  blocked (ceiling / wall) = stays crouched. fallTop moves with the feet (no extra fall damage from a tuck).
+- Reach: plain jump 1.16 m box, crouch-jump 1.38 m (synthetic box, rifle or knife speed). Real geometry: Breeze ledge at
+  (-4.25, 4.02, 29.75) facing +45 deg, 1.38 m.
+- Unchanged: grounded crouch (base kept), already-crouched jump (no tuck), counter-strafe, crouch fatigue, jump arc, air cap.
+- Not modelled: Unreal's rounded capsule bottom (an "edge pop" when un-crouching with a box edge inside the bottom hemisphere);
+  our collision capsule is flat-bottomed.
