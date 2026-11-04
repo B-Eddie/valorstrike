@@ -8,7 +8,7 @@ import kits from './src/kits.json' with {type:'json'};
 
 const world={ray:()=>Infinity,ground:()=>0,blocked:()=>false,near:()=>0,nav:{nodes:[[0,0,0]]}};
 const mkSim=()=>({time:0,effects:[],castEvents:[],units:[],world,effectSeq:0,events:[],scores:{},mode:'spike'});
-const mk=(agent,team,id,x=0)=>({id,agent,team,alive:true,x,y:0,z:0,look:0,pitch:0,ch:0,hp:100,mx:100,armor:0,name:agent+id,ability:null,kills:0,deaths:0,credits:0,input:{},vx:0,vz:0});
+const mk=(agent,team,id,x=0,human=false)=>({id,agent,team,alive:true,human,x,y:0,z:0,look:0,pitch:0,ch:0,hp:100,mx:100,armor:0,name:agent+id,ability:null,kills:0,deaths:0,credits:0,input:{},vx:0,vz:0});
 const run=(sim,n,dt=.05)=>{for(let i=0;i<n;i++){sim.time+=dt;tick18(sim,dt);}};
 const O=[0,1.6,0],D=[1,0,0];
 
@@ -99,4 +99,29 @@ for(const a of Object.keys(AG18)){assert.ok(kits[a],a+' in kits.json');assert.ok
 {const s=mkSim(),y=mk('Yoru',0,16);s.units=[y];initAbilities(y,true);y.ability.ult=kits.Yoru.u;y.weapon='Vandal';y.ammo=30;
  assert.equal(cast18(s,y,{k:'x'},O,D),true,'drift cast');assert.ok(y.driftUntil>s.time,'drifting');y.input={fire:true};
  assert.equal(Simulation.prototype.fire.call(s,y),false,'no gunfire in Dimensional Drift');}
+// Astra Astral Form (human): X enters the map view; stars land on the picked point and spend stars, not the aim
+// point; Cosmic Divide spans its two picked points and spends the ult; exiting without points spends nothing
+{const s=mkSim(),a2=mk('Astra',0,17,0,true);s.units=[a2];initAbilities(a2,true);a2.ability.ult=kits['Astra'].u;
+ assert.equal(cast18(s,a2,{k:'x'},O,D),true,'enters Astral Form');assert.ok(a2.astralForm&&a2.ability.astral,'in the form');
+ assert.equal(cast18(s,a2,{k:'e',p:[30,40]},O,D),true,'star placed from the map');
+ const sm=s.effects.find(e=>e.kind==='smoke');assert.ok(sm&&Math.abs(sm.p[0]-30)<.01&&Math.abs(sm.p[2]-40)<.01,'the smoke lands at (30,40), not the aim point');
+ assert.equal(a2.ability.stars,1,'one star spent');
+ assert.equal(cast18(s,a2,{k:'x',p:[0,0,60,0]},O,D),true,'Cosmic Divide across two points');
+ const dv=s.effects.find(e=>e.kind==='divide');assert.ok(dv,'the wall exists');
+ assert.ok(Math.abs(dv.p[0]-30)<.01&&Math.abs(dv.p[2]-0)<.01,'midpoint between the picks');
+ assert.ok(Math.abs(dv.radius-30)<.01,'half the span');assert.ok(!a2.astralForm&&a2.ability.ult===0,'ult spent, form closed');
+ assert.equal(cast18(s,a2,{k:'x'},O,D),false,'no ult, no re-entry');}
+{const s=mkSim(),a2=mk('Astra',0,18,0,true);s.units=[a2];initAbilities(a2,true);a2.ability.ult=kits['Astra'].u;
+ cast18(s,a2,{k:'x'},O,D);Object.assign(a2,{weapon:'Vandal',ammo:30,input:{fire:true}});
+ assert.equal(Simulation.prototype.fire.call(s,a2),false,'no gunfire in Astral Form (wiki: unable to equip weapons)');
+ assert.equal(cast18(s,a2,{k:'x'},O,D),true,'X again exits');assert.ok(!a2.astralForm&&a2.ability.ult===kits['Astra'].u,'exit spends nothing');}
+// Tejo Guided Salvo: up to two map-picked strike points; Armageddon: map-picked origin, wave aimed from Tejo through it
+{const s=mkSim(),t2=mk('Tejo',0,19,0,true);s.units=[t2];initAbilities(t2,true);t2.ability.ult=kits.Tejo.u;
+ assert.equal(cast18(s,t2,{k:'e',p:[10,10,20,25]},O,D),true,'two-point salvo');
+ const sv=s.effects.filter(e=>e.kind==='salvo');assert.equal(sv.length,2,'both strikes');
+ assert.ok(sv.some(e=>Math.abs(e.p[0]-10)<.01&&Math.abs(e.p[2]-10)<.01)&&sv.some(e=>Math.abs(e.p[0]-20)<.01&&Math.abs(e.p[2]-25)<.01),'at the picked points');
+ assert.equal(t2.ability.e,0,'one charge spent for the cast');
+ assert.equal(cast18(s,t2,{k:'x',p:[0,30]},O,D),true,'Armageddon at the picked origin');
+ const ar=s.effects.find(e=>e.kind==='armag');assert.ok(ar&&Math.abs(ar.p[2]-30)<.01,'origin moved to the pick');
+ assert.ok(Math.abs(ar.yaw-Math.atan2(-(0-t2.x),-(30-t2.z)))<.001,'wave from Tejo through the pick');}
 console.log('agents18: registration, charge/star gates, Iso duel isolation + return, Neon fuel/slide/reset, KAY/O downed/revive/bleedout, Deadlock cocoon pull/rescue/kill, suppress gate, Gekko globule reclaim, Miks Bassquake deafen/slow, Yoru Gatecrash fake + 1.2 s timing');

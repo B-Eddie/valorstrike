@@ -33,6 +33,58 @@ function a18BotsIn(p, r, dy) { const out = []; for (const b of bots) if (b.alive
 function a18StripBots(p, d, dist, w) { const out = []; for (const b of bots) if (b.alive) { const q = [b.g.position.x - p.x, b.g.position.z - p.z], f = q[0] * d.x + q[1] * d.z, s = q[0] * -d.z + q[1] * d.x; if (f > 0 && f < dist && Math.abs(s) < w / 2) out.push(b); } return out; }
 function a18Blind(p, bl) { xFlashBots(p, bl); const e = pEyeTo(PE_V), v = p.clone().sub(e), l = v.length() || 0.01; if (player.hp > 0 && l < 30 && v.dot(jAim()) / l > 0.5 && los(e, p)) xFlashPlayer(p, bl); }
 function a18Ring(p, r, col, op) { const m = new THREE.Mesh(ringGeo, fireMat(col || 0xff9a3a, op == null ? 0.9 : op)); m.rotation.x = -Math.PI / 2; m.position.set(p.x, 0.06, p.z); m.scale.setScalar(r); scene.add(m); return m; }
+// Tactical-map targeting for Astra (Astral Form) and Tejo (Guided Salvo / Armageddon). The real kits place
+// stars, salvos and the Armageddon origin from an overhead tactical view (wiki.playvalorant.com Astra "placed
+// through the Astral Form map", Tejo "select target locations on a tactical map", fetched 2026-11-03), so these
+// casts open the shared xTac overlay (work/ability_target_runtime.js) instead of throwing from the hand.
+// Online the picked points ride the cast message as m.p (server human-only branches); offline they cast locally.
+const A18TAC = { mode: null, arm: "e", wall: null, pts: null };
+function a18TacSend(k, p) { if (NET.socket && MP.st === "game" && (MP.m5 || NET.tab)) { const m = { t: "ab", k }; if (p) m.p = p; netSend(m); } else a18TacLocal(k, p); }
+function a18TacLocal(k, p) { // offline mirror of the server's m.p casts
+  const A = J.a18, C = A18C;
+  if (J.pick === "Astra") {
+    if (k === "x") { const x1 = p[0], z1 = p[1], x2 = p[2], z2 = p[3], cx = (x1 + x2) / 2, cz = (z1 + z2) / 2, half = Math.max(4, Math.hypot(x2 - x1, z2 - z1) / 2); J.ult = 0; const m = a18Ring(new THREE.Vector3(cx, 0, cz), Math.min(half, 60), 0x9a6ff0, 0.5); a18Fx({ kind: "div", m, t: C.star.divideLife }); SFX.ab("updraft"); say("Cosmic Divide", 900); return; }
+    if (A.stars < 1) { blip(120, 0.08, "square", 0.1); return; }
+    A.stars--; const q = new THREE.Vector3(p[0], 0, p[1]);
+    if (k === "c") a18Fx({ kind: "gwell", p: q, t: 0.75, life: C.star.wellPull });
+    else if (k === "q") a18Fx({ kind: "nova", p: q, t: C.star.novaDelay });
+    else a18Smoke(q, C.star.nebulaLife, C.star.nebulaR, 0x7a4fd0, 0xc9a8f2);
+    SFX.ab("updraft"); return; }
+  if (k === "e") { J.e--; for (let i = 0; i + 1 < p.length && i < 4; i += 2) a18Fx({ kind: "pulses", p: new THREE.Vector3(p[i], 0, p[i + 1]), t: 0.6, gap: C.salvo.gap, left: C.salvo.pulses, r: C.salvo.r, dmg: C.salvo.dmg, name: "Guided Salvo" }); SFX.ab("cbPop", player); return; }
+  const q = new THREE.Vector3(p[0], 0, p[1]), dd = new THREE.Vector3(p[0] - player.x, 0, p[1] - player.z); J.ult = 0; if (dd.lengthSq() < 1e-6) dd.set(-Math.sin(yaw || 0), 0, -Math.cos(yaw || 0)); a18Fx({ kind: "armag", p: q, d: dd.normalize(), t: 0.8 });
+}
+function a18Tac(k) { // true = key consumed; "no" = resources short; false = not applicable (legacy maps fall through)
+  const C = A18C, on = typeof XTAC !== "undefined" && XTAC.on;
+  if (J.pick === "Astra") {
+    if (on && A18TAC.mode === "astra") {
+      if (k === "c" || k === "q" || k === "e") { A18TAC.arm = k; A18TAC.wall = null; say({ c: "Gravity Well", q: "Nova Pulse", e: "Nebula" }[k] + " armed · click the map", 900); return true; }
+      if (k === "x") { A18TAC.wall = []; say("Cosmic Divide · click both ends", 900); return true; }
+      return true; } // swallow other keys while the map is up
+    if (k !== "x") return false;
+    if (J.ult < K().u) return "no";
+    A18TAC.mode = "astra"; A18TAC.wall = null; A18TAC.arm = "e";
+    if (!xTacOpen({ name: "Astral Form", color: "#b9a7ff", range: 0, key: "X", valid: (x, z) => ({ x, y: 0, z }),
+      confirm: (x, z) => { if (A18TAC.wall) { A18TAC.wall.push(x, z); if (A18TAC.wall.length < 4) { say("Click the wall's other end", 900); return false; } const pts = A18TAC.wall.slice(); A18TAC.mode = null; A18TAC.wall = null; a18TacSend("x", pts); return true; } const arm = A18TAC.arm; a18TacSend(arm, [x, z]); say({ c: "Gravity Well", q: "Nova Pulse", e: "Nebula" }[arm], 700); return false; },
+      cancel: () => { if (A18TAC.mode) { A18TAC.mode = null; A18TAC.wall = null; if (NET.socket && MP.st === "game" && (MP.m5 || NET.tab)) netSend({ t: "ab", k: "x" }); } } })) { A18TAC.mode = null; return false; }
+    if (NET.socket && MP.st === "game" && (MP.m5 || NET.tab)) netSend({ t: "ab", k: "x" }); // the server gates map-placed stars on its own Astral Form state
+    return true; }
+  if (J.pick === "Tejo") {
+    if (on && A18TAC.mode === "salvo") { if (k === "e" && A18TAC.pts && A18TAC.pts.length) { const pts = A18TAC.pts.slice(); xTacCancel(false); a18TacSend("e", pts); } return true; }
+    if (on && A18TAC.mode === "armag") return true;
+    if (k === "e") { if (!(J.e > 0)) return "no";
+      A18TAC.mode = "salvo"; A18TAC.pts = [];
+      if (!xTacOpen({ name: "Guided Salvo", color: "#ff8a5a", range: 0, key: "E", valid: (x, z) => ({ x, y: 0, z }),
+        confirm: (x, z) => { A18TAC.pts.push(x, z); if (A18TAC.pts.length < 4) { say("Click a second target · press E to launch one", 900); return false; } const pts = A18TAC.pts.slice(); A18TAC.mode = null; A18TAC.pts = null; a18TacSend("e", pts); return true; },
+        cancel: () => { A18TAC.mode = null; A18TAC.pts = null; } })) { A18TAC.mode = null; return false; }
+      return true; }
+    if (k === "x") { if (J.ult < K().u) return "no";
+      A18TAC.mode = "armag";
+      if (!xTacOpen({ name: "Armageddon", color: "#ff5a2a", range: 0, key: "X", valid: (x, z) => ({ x, y: 0, z }),
+        confirm: (x, z) => { A18TAC.mode = null; a18TacSend("x", [x, z]); return true; },
+        cancel: () => { A18TAC.mode = null; } })) { A18TAC.mode = null; return false; }
+      return true; }
+    return false; }
+  return false; }
 function a18Key(code) {
   const k = code === "KeyC" ? "c" : code === "KeyQ" ? "q" : code === "KeyE" ? "e" : "x", A = J.a18, C = A18C, a = J.pick, P = player;
   const no = () => (blip(120, 0.08, "square", 0.1), true);
@@ -40,6 +92,7 @@ function a18Key(code) {
     if (J.ult < K().u) return no(); J.ult = 0; A.ndyT = 0; A.ndy = C.ndy.channel; say("Not Dead Yet", 900); SFX.ab("rewind"); return true; }
   if (P.hp <= 0) return true;
   if (A.supp > 0) return no();
+  if (a === "Astra" || a === "Tejo") { const r = a18Tac(k); if (r === true) return true; if (r === "no") return no(); }
   const chargeOk = k === "x" ? J.ult >= K().u : (a === "Astra" ? A.stars > 0 : J[k] > 0);
   if (a === "Viper" && (k === "q" && A.cloud || k === "e" && A.screen || k === "x" && A.pit)) { J.cd[k] = 0.6; if (k === "q") A.cloudOn = !A.cloudOn; else if (k === "e") A.toxOn = !A.toxOn; else { A.pit = 0; if (A.pitM) { jRel(A.pitM); A.pitM = 0; } } return true; }
   if (a === "Vyse" && k === "e" && A.rose) { const p = A.rose; A.rose = 0; a18Blind(p, C.rose.blind); SFX.flash(); return true; }
@@ -219,7 +272,7 @@ const a18Round0 = jRound; jRound = function (match) { a18Round0(match); if (A18S
 // kill credit: signature 2-kill resets (Iso Double Tap, Waylay Refract, Yoru Gatecrash), Neon slide charges, Clove Pick-me-up window
 const a18Kill0 = jKill; jKill = function () { a18Kill0(); if (!A18SET.has(J.pick) || !J.a18) return; const A = J.a18; J.lastKillT = performance.now() / 1000; if (["Iso", "Waylay", "Yoru"].includes(J.pick) && J.e < 1 && ++J.tk >= 2) { J.e = 1; J.tk = 0; say(K().n[2] + " ready", 700); } if (J.pick === "Neon" && A.slides < 1 && ++A.slideK >= 2) { A.slides = 1; A.slideK = 0; } };
 // hook the key dispatch and the frame tick (same wrapper pattern as the other runtime blocks)
-const a18KeyJ = jKey; jKey = function (code) { if (A18SET.has(J.pick)) { if (NET.socket && MP.st === "game" && (MP.m5 || NET.tab)) { if (running && player.hp > 0 && FV.buy <= 0 && ["KeyC", "KeyQ", "KeyE", "KeyX"].includes(code)) netSend({ t: "ab", k: code[3].toLowerCase() }); return; } if (!J.a18) a18Reset(); return a18Key(code), true; } return a18KeyJ(code); };
+const a18KeyJ = jKey; jKey = function (code) { if (A18SET.has(J.pick)) { if (NET.socket && MP.st === "game" && (MP.m5 || NET.tab)) { if (["KeyC", "KeyQ", "KeyE", "KeyX"].includes(code)) { const k0 = code[3].toLowerCase(); if ((J.pick === "Astra" || J.pick === "Tejo") && a18Tac(k0)) return; if (running && player.hp > 0 && FV.buy <= 0) netSend({ t: "ab", k: k0 }); } return; } if (!J.a18) a18Reset(); return a18Key(code), true; } return a18KeyJ(code); };
 // USE fakes Gatecrash (wiki: the same audio cue, no teleport, a 30 s decal); online the server decides whether an anchor is up
 const a18Use0 = xdUse; xdUse = function () { if (J.pick === "Yoru") { if (NET.socket && MP.st === "game" && (MP.m5 || NET.tab)) { if (running && player.hp > 0 && FV.buy <= 0) netSend({ t: "ab", k: "e", fk: 1 }); return true; } if (J.a18 && J.a18.gate && !(J.a18.gateTp > 0)) { const g = J.a18.gate; SFX.ab("dash"); a18Fx({ kind: "gfk", m: a18Ring(new THREE.Vector3(g.x, 0, g.z), 1.2, 0x8a92ff, 0.6), t: 30 }); say("Fake teleport", 900); return true; } } return a18Use0.apply(this, arguments); };
 const a18TickJ = jTick; jTick = function (dt) { a18TickJ(dt); try { a18Tick(dt); } catch (e) { xE(e); } };

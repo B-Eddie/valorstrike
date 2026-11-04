@@ -61,7 +61,7 @@ export const A18={
  evo:{life:12,hps:10},/* Evolution: stim + 10/s heal + debuff immunity (weapon damage still lands) */
  vine:{life:30,r:6,slowK:.4,dps:15},shear:{life:30,r:2.5,wall:8},rose:{life:30,blind:2,r:20},garden:{r:20,jam:8},/* Vyse */
 };
-export function init18(u,A){if(!AG18[u.agent])return;A.slides=u.agent==='Neon'?1:0;/* wiki High Gear v9.11: 2 >>> 1 slide charge */A.slideKills=0;A.stars=u.agent==='Astra'?2:0;A.fuel=(u.agent==='Viper'||u.agent==='Neon')?A18.fuel.max:0;A.globules=0;/* Astra: 2 Stars a round (wiki Stars); Viper/Neon: full fuel tank */A.toxOn=false;A.cloudOn=false;A.gate=null;A.marker=null;A.decoy=null;u.isoShield=0;u.driftUntil=0;u.evoUntil=0;u.suppressUntil=0;u.jamUntil=0;u.hinderUntil=0;u.deafenUntil=0;u.levUntil=0;u.decayUntil=0;u.decayAmt=0;u.hasteUntil=0;u.stimUntil=0;u.gravUntil=0;u.ndy=null;u.overheal=0;}
+export function init18(u,A){if(!AG18[u.agent])return;A.slides=u.agent==='Neon'?1:0;/* wiki High Gear v9.11: 2 >>> 1 slide charge */A.slideKills=0;A.stars=u.agent==='Astra'?2:0;A.fuel=(u.agent==='Viper'||u.agent==='Neon')?A18.fuel.max:0;A.globules=0;A.astral=false;u.astralForm=false;/* Astra: 2 Stars a round (wiki Stars); Viper/Neon: full fuel tank */A.toxOn=false;A.cloudOn=false;A.gate=null;A.marker=null;A.decoy=null;u.isoShield=0;u.driftUntil=0;u.evoUntil=0;u.suppressUntil=0;u.jamUntil=0;u.hinderUntil=0;u.deafenUntil=0;u.levUntil=0;u.decayUntil=0;u.decayAmt=0;u.hasteUntil=0;u.stimUntil=0;u.gravUntil=0;u.ndy=null;u.overheal=0;}
 const eye=u=>[u.x,u.y+1.6-(u.ch||0),u.z];
 const aim=u=>[-Math.sin(u.look)*Math.cos(u.pitch||0),Math.sin(u.pitch||0),-Math.cos(u.look)*Math.cos(u.pitch||0)];
 const enemies=(sim,u)=>sim.units.filter(v=>v!==u&&v.team!==u.team&&v.alive&&!v.loading);
@@ -91,6 +91,25 @@ export function cast18(sim,u,m,o,d,push){
  if(ag==='Yoru'&&k==='e'&&A.gate){/* Gatecrash (wiki): recast teleports in 1.2 s total (0.5 s windup + 0.7 s arrival); USE (m.fk) fakes it - the same audio cue, no teleport, the anchor survives, and a 30 s decal marks the fake (v4.04) */
   if(m.fk===1){fx(sim,u,'gatefake',[...A.gate.p],30,1.2,{at:sim.time});cast(sim,u,k,o,d,[...A.gate.p]);return true;}
   u.pendingTeleport={kind:'gatecrash',p:[...A.gate.p],at:sim.time+1.2};A.gate=null;cast(sim,u,k,o,d,[...u.pendingTeleport.p]);return true;}
+ if(ag==='Astra'&&u.human){/* Astral Form (wiki Astral_Form/Cosmic_Divide): X opens the map view; c/q/e land a star on the picked point, X places Cosmic Divide across its two picked points and exits, X with no points just exits */
+  const mp=Array.isArray(m.p)&&m.p.length>=2&&m.p.slice(0,2).every(Number.isFinite)?[Math.max(-200,Math.min(200,m.p[0])),0,Math.max(-200,Math.min(200,m.p[1]))]:null;
+  if(k==='x'){
+   if(!A.astral){if(A.ult<K.u)return false;A.astral=true;u.astralForm=true;return true;}
+   if(Array.isArray(m.p)&&m.p.length>=4&&m.p.slice(0,4).every(Number.isFinite)){const x1=Math.max(-200,Math.min(200,m.p[0])),z1=Math.max(-200,Math.min(200,m.p[1])),x2=Math.max(-200,Math.min(200,m.p[2])),z2=Math.max(-200,Math.min(200,m.p[3]));
+    A.astral=false;u.astralForm=false;A.ult=0;const cx=(x1+x2)/2,cz=(z1+z2)/2,yaw=Math.atan2(-(x2-x1),-(z2-z1)),half=Math.max(4,Math.hypot(x2-x1,z2-z1)/2);
+    fx(sim,u,'divide',[cx,0,cz],C.star.divideLife,half,{yaw});cast(sim,u,k,o,d,[cx,0,cz]);return true;}
+   A.astral=false;u.astralForm=false;return true;}
+  if(A.astral&&mp){if(A.stars<1)return false;A.stars--;A.cool[k]=sim.time+.3;
+   if(k==='c')fx(sim,u,'gwell',mp,C.star.wellPull,C.star.wellR,{at:sim.time+.75});
+   else if(k==='q')fx(sim,u,'nova',mp,C.star.novaDelay,C.star.novaR,{at:sim.time+C.star.novaDelay});
+   else if(k==='e')fx(sim,u,'smoke',mp,C.star.nebulaLife,C.star.nebulaR);
+   cast(sim,u,k,o,d,mp);return true;}}
+ if(ag==='Tejo'&&u.human&&Array.isArray(m.p)&&m.p.length>=2&&m.p.every(Number.isFinite)){/* Guided Salvo (wiki): up to two map-picked strikes; Armageddon: map-picked origin, wave from Tejo through it */
+  if(k==='e'){if(!(A.e>0))return false;const pts=[];for(let i=0;i+1<m.p.length&&pts.length<2;i+=2)pts.push([Math.max(-200,Math.min(200,m.p[i])),0,Math.max(-200,Math.min(200,m.p[i+1]))]);
+   A.e--;A.cool.e=sim.time+.3;for(const q of pts)fx(sim,u,'salvo',q,C.salvo.pulses*C.salvo.gap+1,C.salvo.r,{at:sim.time+.6,next:sim.time+.6,left:C.salvo.pulses});
+   cast(sim,u,k,o,d,pts[0]);return true;}
+  if(k==='x'){if(A.ult<K.u)return false;A.ult=0;const q=[Math.max(-200,Math.min(200,m.p[0])),0,Math.max(-200,Math.min(200,m.p[1]))],yaw=Math.atan2(-(q[0]-u.x),-(q[2]-u.z));
+   fx(sim,u,'armag',q,1,C.armag.len,{at:sim.time+.8,yaw});cast(sim,u,k,o,d,q);return true;}}
  if(ag==='Clove'&&k==='x'&&!u.alive){/* Not Dead Yet: cast from death within the window */if(!(A.ult>=K.u)||!u.ndyDead||sim.time>u.ndyDead+C.ndy.window)return false;A.ult=0;u.ndy={at:sim.time+C.ndy.channel};u.invulnerableUntil=sim.time+C.ndy.channel;cast(sim,u,k,[u.x,u.y+1,u.z],[0,0,-1],[u.x,u.y,u.z]);return true;}
  // charge accounting mirrors castAbility0's rules for the 18: ult points, star pool, per-key charges
  if(k==='x'){if(A.ult<K.u)return false;}
