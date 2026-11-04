@@ -12661,7 +12661,7 @@ html.xt-nocm .x-cmb{display:none!important}
     if (a === "Phoenix") { if (u.xrib) return 0; ribStart(u); return 1; } // Run It Back: 10 s, back to the marker at full HP on death
     if (a === "Sage") { if (u.xrs) return 0; const d = deadNear(u, en); if (d) { u.xrs = { d, t: 0, w: 0 }; return 2; } return 0; } // walks over; the charge is spent on the revive (sageTick)
     if (a === "Omen") { if (u.xom) return 0; return omenCast(u, en); }
-    if (a === "Killjoy") return kjCast(u, en);
+    if (a === "Killjoy") return kjCast(u, en, w);
     if (a === "Skye") return skye(u, en);
     if (a === "Cypher") return foeDead(u, en) ? cypher(u, en) : 0;
     if (a === "Chamber") return typeof window.xBotTdf === "function" ? window.xBotTdf(u) : 0; // Tour De Force: the Chamber kit's own summon + shots (A.tdf)
@@ -12705,8 +12705,8 @@ html.xt-nocm .x-cmb{display:none!important}
     if ((s.t += 0.1) < XPAR2.rez.w + XPAR2.rez.r - 1e-6) return; u.xrs = null; revive(d); /* 2 s windup + 1.3 s revive (wiki) */ XU.c[u.name] = 0; say2(u, "Sage", en); }
   function free(o) { if (!o.on) return; o.on = false; scene.remove(o.m); scene.remove(o.r); if (o.hb) { const i = XLDH.indexOf(o.hb); if (i >= 0) XLDH.splice(i, 1); } }
   const LDHB_GEO = new THREE.BoxGeometry(0.8, 1, 0.8), LDHB_MAT = new THREE.MeshBasicMaterial({ visible: false }), LDR = new THREE.Raycaster();
-  function kjCast(u, en) { const fv = typeof FV !== "undefined" ? FV : null, pl = mode === "five" ? !!(fv && fv.sp && fv.sp.st === "plant") : mode === "retake"; if (!pl) return 0;
-    let sx, sz; if (spike.parent) { sx = spike.position.x; sz = spike.position.z; } else { const p = u.g.position, s = Math.hypot(SITES.A[0] - p.x, SITES.A[1] - p.z) < Math.hypot(SITES.B[0] - p.x, SITES.B[1] - p.z) ? SITES.A : SITES.B; sx = s[0]; sz = s[1]; }
+  function kjCast(u, en, w) { const fv = typeof FV !== "undefined" ? FV : null, pl = mode === "five" ? !!(fv && fv.sp && fv.sp.st === "plant") : mode === "retake"; if (!pl && w !== "mem") return 0;
+    let sx, sz; if (!pl) { sx = XM.x; sz = XM.z; } /* BotBrain.ultCall "mem": Lockdown on the remembered enemy's site / choke */ else if (spike.parent) { sx = spike.position.x; sz = spike.position.z; } else { const p = u.g.position, s = Math.hypot(SITES.A[0] - p.x, SITES.A[1] - p.z) < Math.hypot(SITES.B[0] - p.x, SITES.B[1] - p.z) ? SITES.A : SITES.B; sx = s[0]; sz = s[1]; }
     const p = u.g.position; if (Math.hypot(sx - p.x, sz - p.z) > 45) return 0; TP.x = sx; TP.z = sz; if (!cluster(en, 32)) return 0;
     let x = sx + (p.x - sx) * 0.25, z = sz + (p.z - sz) * 0.25; if (blocked(x, z, 0.5, 0)) { x = p.x; z = p.z; }
     let o = LDP.find((q) => !q.on); if (!o) { const m = new THREE.Mesh(kjLd, fireMat(0xf2c230, 1)), r = new THREE.Mesh(ldRing, fireMat(0xf2c230, 0.5)); r.rotation.x = -Math.PI / 2; o = { m, r, p: m.position }; LDP.push(o); }
@@ -18522,10 +18522,11 @@ if (typeof xUbPost === "function") { const hp0 = xUbPost; xUbPost = function (M)
  // and Tour De Force (2.3 s) equipped behind cover before the re-peek: drawn mid-fight the bot died holding them); 'mateCorpse' (Sage:
  // a dead teammate close by, no enemy in sight); 'foeCorpse' (Cypher: a dead enemy close by); 'spike' (Killjoy: Lockdown
  // on a planted Spike it plays around; Omen: From the Shadows to a far planted Spike on a retake; 'mem' for Omen = behind
- // a remembered enemy 20-60 m off, the flank).
+ // a remembered enemy 20-60 m off, the flank; Killjoy 'mem' = Lockdown on a site / choke a remembered enemy holds; Phoenix
+ // 'mem' up to 25 m = Run It Back before the peek; Skye's Seekers find a remembered enemy up to 50 m off).
  // s {see, dist, memD, memAge, planted, atk, spikeD, mateCorpseD, foeCorpseD}. Pure.
  const ULTX={delay:[.45,1.3],memAge:6,see:{Jett:[0,25],Reyna:[0,30],Phoenix:[0,30],Breach:[9,38],Chamber:[30,70]},
-  mem:{Sova:[8,60],Skye:[4,35],Breach:[10,38],Phoenix:[0,12],Raze:[6,35],Chamber:[10,60],Omen:[20,60]},corpse:{Sage:15,Cypher:16},kj:30,omen:[28,95]};
+  mem:{Sova:[8,60],Skye:[4,50],Breach:[10,38],Phoenix:[0,25],Raze:[6,35],Chamber:[10,60],Omen:[20,60],Killjoy:[8,30]},corpse:{Sage:15,Cypher:16},kj:30,omen:[28,95]};
  function ultCall(agent,s){if(!s)return null;const S=ULTX.see[agent];if(S&&s.see&&s.dist>=S[0]&&s.dist<=S[1])return 'enemy';
   const M=ULTX.mem[agent];if(M&&!s.see&&s.memD!=null&&s.memAge<=ULTX.memAge&&s.memD>=M[0]&&s.memD<=M[1])return 'mem';
   if(agent==='Sage'&&!s.see&&s.mateCorpseD!=null&&s.mateCorpseD<=ULTX.corpse.Sage)return 'mateCorpse';

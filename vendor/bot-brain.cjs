@@ -692,10 +692,11 @@
  // and Tour De Force (2.3 s) equipped behind cover before the re-peek: drawn mid-fight the bot died holding them); 'mateCorpse' (Sage:
  // a dead teammate close by, no enemy in sight); 'foeCorpse' (Cypher: a dead enemy close by); 'spike' (Killjoy: Lockdown
  // on a planted Spike it plays around; Omen: From the Shadows to a far planted Spike on a retake; 'mem' for Omen = behind
- // a remembered enemy 20-60 m off, the flank).
+ // a remembered enemy 20-60 m off, the flank; Killjoy 'mem' = Lockdown on a site / choke a remembered enemy holds; Phoenix
+ // 'mem' up to 25 m = Run It Back before the peek; Skye's Seekers find a remembered enemy up to 50 m off).
  // s {see, dist, memD, memAge, planted, atk, spikeD, mateCorpseD, foeCorpseD}. Pure.
  const ULTX={delay:[.45,1.3],memAge:6,see:{Jett:[0,25],Reyna:[0,30],Phoenix:[0,30],Breach:[9,38],Chamber:[30,70]},
-  mem:{Sova:[8,60],Skye:[4,35],Breach:[10,38],Phoenix:[0,12],Raze:[6,35],Chamber:[10,60],Omen:[20,60]},corpse:{Sage:15,Cypher:16},kj:30,omen:[28,95]};
+  mem:{Sova:[8,60],Skye:[4,50],Breach:[10,38],Phoenix:[0,25],Raze:[6,35],Chamber:[10,60],Omen:[20,60],Killjoy:[8,30]},corpse:{Sage:15,Cypher:16},kj:30,omen:[28,95]};
  function ultCall(agent,s){if(!s)return null;const S=ULTX.see[agent];if(S&&s.see&&s.dist>=S[0]&&s.dist<=S[1])return 'enemy';
   const M=ULTX.mem[agent];if(M&&!s.see&&s.memD!=null&&s.memAge<=ULTX.memAge&&s.memD>=M[0]&&s.memD<=M[1])return 'mem';
   if(agent==='Sage'&&!s.see&&s.mateCorpseD!=null&&s.mateCorpseD<=ULTX.corpse.Sage)return 'mateCorpse';
