@@ -1,7 +1,7 @@
 name: Visual two-browser
 
 # Free-tier visual evidence for Valorstrike abilities: two real rendered Chromium pages per scenario
-# against the local QA bridge (work/two-browser/tb.cjs). Screenshots are pushed to branch ci-ev-<run>-<name>.
+# against the local QA bridge (work/two-browser/tb.cjs). Screenshots are pushed to branch ci-ev-<run>-<name>. Now uploaded as artifacts; no branch push.
 on:
   push:
     branches: [instinct]
