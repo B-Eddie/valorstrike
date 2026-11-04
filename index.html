@@ -3712,7 +3712,7 @@ let drag = false;
 const xMD = (e) => {
   if (!running || paused || (mode === "five" && FV.menu)) return;
   if (player && player.hp <= 0 && xKL.sp) return; // spectating: clicks switch players (window handler) and must not re-lock the pointer
-  if (!document.pointerLockElement) { xPLock(); drag = true; }
+  if (!document.pointerLockElement) { xPLock(); if (typeof XPL !== "undefined" && XPL.ok && !matchMedia("(pointer: coarse)").matches) { XPL.hide(); return; } drag = true; } // the click that takes the mouse back only locks it (no shot); drag look stays for a browser that never granted the lock
   if (mode === "aim") { if (e.button === 2) { if (aimW() === "Knife") aimFire(true); else xScopeT(); } else if (e.button === 0) { AM.fire = true; aimFire(); } return; }
   if (mode === "surf") { if (e.button === 0 && kSwing <= 0) { kSwing = 0.45; kick = 1; blip(520, 0.06, "triangle", 0.15); } return; }
   if (e.button === 2 && mode !== "duel" && rw === "knife" && !J.dr && !(jOn() && J.bs > 0)) return shoot(true);
@@ -11485,6 +11485,20 @@ function pause() {
 function resume() { if (!paused) return; closeAll(); paused = false; $("xPause").classList.remove("on"); clock.getDelta(); if (!FV.menu) relock(); } // buy / free-gun menu still open (paused by alt-tab): keep the cursor free to click it
 function leave() { closeAll(); paused = false; $("xPause").classList.remove("on"); $("xBoard").classList.remove("on"); running = false; if (document.pointerLockElement) document.exitPointerLock(); $("lobbyBtn").onclick(); }
 document.addEventListener("pointerlockchange", () => { if (!document.pointerLockElement && inGame() && !paused && !FV.menu && !J.ftp && !(player && player.hp <= 0 && xKL.sp) && performance.now() - (FV.mt || 0) > 700) pause(); });
+// Mouse lock recovery (bug lane 2026-11-03, "the game is so buggy"): a browser grants requestPointerLock only inside a user
+// gesture (Firefox always; Chrome after the user left the lock with Esc), and Escape is not one. The next round after
+// spectating (a timer) and resume() on the Esc key asked outside a gesture: refused, nothing said so, the mouse did not turn
+// the view, and the click that took it back also fired. Now, once the lock has worked in this tab (XPL.ok), a game that
+// wants the mouse (in play, alive, no menu / pause / map / modal) and has no lock for 0.5 s shows "Click to aim", and the
+// click on the canvas that takes the lock back does not shoot (xMD).
+const XPL = { ok: false, el: null, t: 0,
+  want() { return XPL.ok && !matchMedia("(pointer: coarse)").matches && inGame() && !paused && !(mode === "five" && FV.menu) && !(typeof DM !== "undefined" && DM.menu) && !J.ftp && !!player && player.hp > 0 && !rgOn() && !(typeof XTAC !== "undefined" && XTAC.on) && !document.querySelector(".modal.on") && $("result").style.display !== "flex"; },
+  hide() { XPL.t = 0; if (XPL.el && !XPL.el.hidden) XPL.el.hidden = true; },
+  show() { let e = XPL.el; if (!e) { e = XPL.el = document.createElement("div"); e.id = "xLockHint"; e.className = "hud"; e.setAttribute("role", "status"); e.textContent = "Click to aim";
+      e.style.cssText = "left:50%;top:60%;transform:translate(-50%,-50%);padding:8px 18px;font-size:14px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#ece8e1;background:rgba(15,25,35,.8);border:1px solid rgba(236,232,225,.4);pointer-events:none;z-index:6;white-space:nowrap"; $("game").appendChild(e); }
+    if (e.hidden) e.hidden = false; } };
+document.addEventListener("pointerlockchange", () => { if (document.pointerLockElement) { XPL.ok = true; XPL.hide(); } });
+setInterval(() => { try { if (document.pointerLockElement || !XPL.want()) return XPL.hide(); XPL.t += 0.25; if (XPL.t >= 0.5) XPL.show(); } catch (e) {} }, 250);
 addEventListener("keydown", (e) => {
   if (xKbSkip(e)) return; // rebinding (Esc cancels the row, must not resume) or a key the keymap layer re-sends as its bound action
   if (e.key === "Escape" && FV.menu) { e.stopImmediatePropagation(); return buyMenu(false); }
