@@ -14157,6 +14157,7 @@ function mpCastIn(c, u, m) { // host: a client's cast
 }
 function mpCastFx(m) { // client: someone else's cast, visual only
   if (m.sub === "boom" && m.ag === "Raze" && m.k === "e" && m.i !== MP.me && Array.isArray(m.p) && MP.cl && MP.st === "game") { try { rzFire(mpV(m.p, new THREE.Vector3()), 5.4, "paint"); } catch (e) { xE(e); } return; }
+  if (m.sub === "boom" && m.ag === "Raze" && m.k === "x" && m.i !== MP.me && Array.isArray(m.p) && MP.cl && MP.st === "game") { try { rzFire(mpV(m.p, new THREE.Vector3()), XSS.outer, "show"); } catch (e) { xE(e); } return; } // server Showstopper rocket detonation seen by the other players (ults.js emits it; the owner already runs rsBoom locally)
   if (m.sub === "boom" && m.ag === "Raze" && m.k === "q" && Array.isArray(m.p) && MP.cl && MP.st === "game") { try { rzFire(mpV(m.p, new THREE.Vector3()), 4, "pack"); } catch (e) { xE(e); } return; } // server-confirmed Blast Pack detonation (all clients, incl. the caster)
   if (!MP.cl || MP.st !== "game" || m.i === MP.me || typeof m.k !== "string") return;
   const u = bots.find((x) => x && x.nid === m.i) || allies.find((x) => x && x.nid === m.i); if (!u || !u.g) return;
