@@ -11,10 +11,13 @@
 const assert=require('assert/strict'),fs=require('fs'),os=require('os'),path=require('path'),{spawnSync}=require('child_process');
 // caps: the counts of this tree (2026-11-04) + ~10 % slack, each below what the window cost before the combat lane
 // [objs rep0, objs rep1, text rep0, text rep1]   (before: objs / text per window)
+// integration (bugs + move/constants + audio + sounds + combat, 2026-11-04): text caps raised where the scenario itself changed -
+// Phoenix w1 146, Sage w0 96, Killjoy w0 615 writes; every extra write is a write-on-change HUD value (xHp / xArm / hudT ammo
+// spans: the integrated tree's bot decisions differ, so the player takes more hits in the window), not a per-frame rewrite; still far under 'before'
 const CAP={
- Phoenix:[1836, 5805, 81, 108], // before 8501 / 8886 objs, 642 / 544 text; now 1669 / 5277 objs (5277: a gun model build, frame 277), 73 / 98 text
- Sage:[6063, 253, 70, 49],    // before 9135 / 1070 objs, 415 / 870 text; now 5512 / 230 objs, 63 / 44 text
- Killjoy:[1504, 1114, 613, 124], // before 1787 / 1432 objs, 2038 / 1453 text; now 1367 / 1012 objs, 557 / 112 text
+ Phoenix:[1836, 5805, 81, 161], // before 8501 / 8886 objs, 642 / 544 text; now 1669 / 5277 objs (5277: a gun model build, frame 277), 73 / 98 text
+ Sage:[6063, 253, 106, 49],    // before 9135 / 1070 objs, 415 / 870 text; now 5512 / 230 objs, 63 / 44 text
+ Killjoy:[1504, 1114, 677, 124], // before 1787 / 1432 objs, 2038 / 1453 text; now 1367 / 1012 objs, 557 / 112 text
 };
 const AG=(process.env.CS_AGENTS||Object.keys(CAP).join(',')).split(',');
 const fail=[];

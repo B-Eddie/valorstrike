@@ -5,7 +5,7 @@
 const fs=require('fs'),vm=require('vm'),assert=require('assert/strict'),s=fs.readFileSync('work/native_maps_runtime.js','utf8'),a=s.indexOf('function nmMapProjection('),b=s.indexOf('\n{const map=minimap',a);
 let t=1000,arcs=[],texts=[],strokes=0,color,blocked=()=>false;
 const ctx={setTransform(){},clearRect(){arcs=[];texts=[];strokes=0},fillRect(){},beginPath(){},closePath(){},arc(x,z,r){arcs.push({x,z,r})},fill(){if(arcs.length&&!arcs.at(-1).color)arcs.at(-1).color=color},fillText(tx,x,z){texts.push({tx,x,z,color,alpha:ctx.globalAlpha})},moveTo(){},lineTo(){},stroke(){strokes++},save(){},restore(){},drawImage(){},globalAlpha:1,set fillStyle(v){color=v},get fillStyle(){return color},strokeStyle:'',lineWidth:1,font:'',textAlign:''};
-const V=class{constructor(x,y,z){Object.assign(this,{x,y,z})}};
+const V=class{constructor(x,y,z){Object.assign(this,{x,y,z})}set(x,y,z){this.x=x;this.y=y;this.z=z;return this;}};/* set: nmSpot reuses its eye / target points (combat lane) */
 const c={Math,performance:{now:()=>t+=200},running:true,player:{x:0,y:0,z:0,hp:100},mode:'five',FV:{atk:false,sp:{st:'drop',x:4,z:4,seen:false}},yaw:-Math.PI/2,/* looking toward +x, where the enemies stand (spotting needs them in view: test_minimap_cone) */XCALL:{},window:{},J:{rvT:0,rv:[]},mmVis:new Set(),mmPrev:new Set(),mmLost:new Map(),
  $(){return {classList:{toggle(){}}}},MM:{width:320,height:320,getBoundingClientRect:()=>({width:112})},mmx:ctx,allies:[],bots:[],los:(e,p)=>!blocked(e,p),pEye:()=>new V(c.player.x,1.5,c.player.z),THREE:{Vector3:V}};
 vm.createContext(c);vm.runInContext(s.slice(a,b)+';globalThis.draw=nmMinimap;',c);
