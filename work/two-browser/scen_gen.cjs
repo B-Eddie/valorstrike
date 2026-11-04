@@ -12,13 +12,18 @@ module.exports=async T=>{const {A,B,qa,code,log,check,SHOT}=T;const fs=require('
  const unp=()=>B.X('if(typeof paused!=="undefined"&&paused){const b=document.getElementById("xResume");if(b)b.click();}1').catch(()=>0);
  const snap=()=>qa(`const s=sim('${code}');const a=s.units.find(u=>u.name==='Alpha'),b=s.units.find(u=>u.name==='Bravo');return {t:+s.time.toFixed(2),a:{ab:a.ability,hp:a.hp,pos:[a.x,a.y,a.z].map(n=>+n.toFixed(1))},b:{hp:b.hp,pos:[b.x,b.y,b.z].map(n=>+n.toFixed(1)),flash:+(Math.max(0,(b.flashUntil||0)-s.time)).toFixed(2),conc:+(Math.max(0,(b.concussUntil||0)-s.time)).toFixed(2)},fx:s.effects.map(e=>e.kind+':'+(e.p?e.p.map(n=>Math.round(n)).join(','):'')),ev:(s.events||[]).slice(-6).map(e=>JSON.stringify(e).slice(0,100))};`);
  const cl=async P=>P.X(`JSON.stringify({a18:(J.a18fx||[]).map(f=>f.kind),net:(NET.fx||[]).map(f=>f.kind),eq:J.eq,ult:J.ult})`).catch(e=>String(e));
- const before=await snap();log('before',JSON.stringify(before));
+ await frz(false);const before=await snap();log('before',JSON.stringify(before));
  await A.page.bringToFront();await W(500);await unp();
  await A.page.keyboard.down(KEY);await W(120);await A.page.keyboard.up(KEY);await W(1600);
  log('after key (equipped?)',JSON.stringify({a:await cl(A),s:(await snap()).a.ab}));
  if(process.env.FIRE!=='0'){await A.page.mouse.down();await W(120);await A.page.mouse.up();}
- const t0=Date.now();let last=null;
- for(const [ms,n] of [[300,'a'],[900,'b'],[1800,'c'],[3000,'d'],[5000,'e'],[8000,'f']]){const w=ms-(Date.now()-t0);if(w>0)await W(w);const s=await snap();last=s;log('state '+n,JSON.stringify({t:s.t,ab:s.a.ab,b:s.b,fx:s.fx,ev:s.ev,A:await cl(A),B:await cl(B)}));await unp();await A.page.screenshot({path:SHOT+TAG+'_A_'+n+'.png'});await B.page.screenshot({path:SHOT+TAG+'_B_'+n+'.png'});}
+ const fr=P=>P.X('renderer.info.render.frame').catch(()=>0);
+ const waitFrames=async(P,n)=>{const f0=await fr(P);for(let i=0;i<120;i++){if((await fr(P))>=f0+n)return;await W(250);}};
+ const frz=v=>qa('C.freeze='+v+';return 1');
+ let last=null,prev=0;
+ // server time advances only inside the unfrozen windows; screenshots (slow in software GL) are taken with the room frozen
+ for(const [at,n] of [[0.4,'a'],[1.2,'b'],[2.5,'c'],[4,'d'],[7,'e'],[12,'f']]){await frz(false);await W((at-prev)*1000);prev=at;await frz(true);await waitFrames(A,3);await waitFrames(B,3);const s=await snap();last=s;log('state '+n+' @+'+at+'s',JSON.stringify({t:s.t,ab:s.a.ab,b:s.b,fx:s.fx,ev:s.ev,A:await cl(A),B:await cl(B)}));await unp();await A.page.screenshot({path:SHOT+TAG+'_A_'+n+'.png'});await B.page.screenshot({path:SHOT+TAG+'_B_'+n+'.png'});}
+ await frz(false);
  const ab0=before.a.ab,ab1=last.a.ab;const spent=['c','q','e'].some(k=>ab1[k]<ab0[k])||(ab1.ult<ab0.ult)||Object.keys(ab1.cool||{}).length>0;
  check('server: cast spent a charge/ult/cooldown (key '+KEY+')',spent,{before:ab0,after:ab1});
 };
