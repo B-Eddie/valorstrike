@@ -74,18 +74,31 @@ function omxStepMark(p) { try { const G = omxGeos();
     flame.material.uniforms.uP.value = k * k; core.material.opacity = 0.5 * (1 - k); }); } catch (e) { try { window.omxErr = String(e && e.stack || e).slice(0, 300); xE(e); } catch (e2) {} return null; } }
 function omxStepVanish(p) { try { if (omxNearPlayer(p, 2.5)) omxVeil("Step"); return omxTendrils(p, 6, 2.1, 0.55, false, 0.9); } catch (e) { try { window.omxErr = String(e && e.stack || e).slice(0, 300); xE(e); } catch (e2) {} return null; } }
 function omxStepArrive(p) { try { if (omxNearPlayer(p, 2.5)) omxVeil("Step"); return omxTendrils(p, 5, 1.7, 0.8, true, 0.7); } catch (e) { try { window.omxErr = String(e && e.stack || e).slice(0, 300); xE(e); } catch (e2) {} return null; } }
-function omxParanoiaBolt(o, d, t) { try { const G = omxGeos(), dir = d.clone ? d.clone().normalize() : new THREE.Vector3(d.x, d.y || 0, d.z).normalize();
-  const grp = new THREE.Group(); grp.position.set(o.x + dir.x * 2.7, o.y + dir.y * 2.7, o.z + dir.z * 2.7); grp.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1),dir);
-  const body = new THREE.Mesh(G.sph, omxMat("wave", omxWAVE, 0)); body.scale.set(2.3, 1.1, 0.7); grp.add(body);
-  const ring = new THREE.Mesh(G.torus, omxBasic(0x8a5cff, 0.9, true)); ring.scale.setScalar(1.15); ring.position.z = 1.35; grp.add(ring);
-  const wisps = []; for (let i = 0; i < 3; i++) { const w = new THREE.Mesh(G.plane, omxMat("ten" + i, omxTENDRIL, 3 + i * 2.1)); w.position.set((i - 1) * 1.1, 0.1 * (i % 2 ? 1 : -1), -0.7 - i * 0.45); w.scale.set(0.9, 1.4 - i * 0.25, 1); grp.add(w); wisps.push(w); }
-  const age0 = Number.isFinite(t) && t > 0 ? t : 0, SPEED = 20, RANGE = 25; // XPAR: 20 m/s for 25 m
-  return omxFx(1.6, [grp], (dt, age, k) => { const a = age + age0, dist = Math.min(RANGE, 2.7 + a * SPEED);
-    grp.position.set(o.x + dir.x * dist, o.y + dir.y * dist + Math.sin(a * 9) * 0.05, o.z + dir.z * dist);
-    const fade = dist >= RANGE ? Math.max(0, 1 - (a - RANGE / SPEED) / 0.35) : 1;
-    body.material.uniforms.uP.value = 1 - fade; // Keep ellipsoid upright in travel frame; rotating its nonuniform axes tilts the silhouette.
-    ring.material.opacity = 0.9 * fade * (0.7 + 0.3 * Math.sin(omxU.value * 10)); ring.rotation.z -= dt * 4;
-    wisps.forEach((w, i) => { w.material.uniforms.uP.value = 1 - fade; w.rotation.z = Math.sin(omxU.value * 5 + i) * 0.3; }); }); } catch (e) { try { window.omxErr = String(e && e.stack || e).slice(0, 300); xE(e); } catch (e2) {} return null; } }
+// Curved ribbon strips, not a filled ellipsoid. Shared parametric geometry has open gaps.
+function omxRibbonGeo() { if (omxGeo.ribbon) return omxGeo.ribbon;
+  const pos=[], uv=[], ind=[], N=48;
+  for(let i=0;i<=N;i++) { const u=i/N, a=(-.55+u*1.05)*Math.PI;
+    for(let j=0;j<2;j++) { const r=1+(j-.5)*.24*(.55+.45*Math.sin(u*Math.PI));
+      pos.push(Math.cos(a)*r,Math.sin(a)*r,Math.sin(u*Math.PI)*.75);uv.push(u,j); }
+    if(i<N){const k=i*2;ind.push(k,k+1,k+2,k+1,k+3,k+2);} }
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));g.setIndex(ind);g.computeVertexNormals();omxGeo.ribbon=g;return g; }
+const omxRIBBON="uniform float uT;uniform float uP;uniform float uSeed;varying vec2 vUv;void main(){float across=sin(vUv.y*3.14159);float ends=smoothstep(0.0,.14,vUv.x)*(1.0-smoothstep(.79,1.0,vUv.x));float ridge=pow(1.0-vUv.y,3.0);vec3 col=mix(vec3(.23,.13,.48),vec3(.12,.72,1.0),ridge);float a=across*ends*(.75+.2*sin(vUv.x*13.0-uT*6.0+uSeed))*(1.0-uP);if(a<.003)discard;gl_FragColor=vec4(col,a);}";
+function omxParanoiaBolt(o,d,t) { try { const G=omxGeos(), dir=new THREE.Vector3(d.x,d.y||0,d.z).normalize(),origin=new THREE.Vector3(o.x,o.y,o.z);
+  const grp=new THREE.Group();grp.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1),dir);
+  const ribbons=[]; for(let i=0;i<3;i++){ const m=new THREE.Mesh(omxRibbonGeo(),omxMat('ribbon',omxRIBBON,i));m.scale.set(2.2-i*.22,1.35+i*.12,1);m.rotation.z=i*Math.PI*.67;m.position.z=-i*.40;grp.add(m);ribbons.push(m); }
+  const core=new THREE.Mesh(G.sph,omxBasic(0x43d8ff,.9,true));core.scale.setScalar(.13);grp.add(core);
+  const glow=new THREE.Mesh(G.sph,omxBasic(0x257de8,.18,true));glow.scale.setScalar(.30);grp.add(glow);
+  const age0=Number.isFinite(t)&&t>0?t:0, SPEED=20,RANGE=25;
+  const update=(dt,age)=>{const a=age+age0,dist=Math.min(RANGE,a*SPEED),fade=dist>=RANGE?Math.max(0,1-(a-RANGE/SPEED)/.20):1;
+    grp.position.copy(origin).addScaledVector(dir,dist);
+    // Fade in at the true projectile position, rather than advancing its clock or origin.
+    const reveal=Math.min(1,dist/2.7);grp.visible=dist>.15;
+    ribbons.forEach((m,i)=>{m.rotation.z=i*Math.PI*.67+Math.sin(a*4+i)*.14;m.material.uniforms.uP.value=1-fade*reveal;});
+    core.material.opacity=.9*fade*reveal;glow.material.opacity=.18*fade*reveal;};
+  const h=omxFx(Math.max(.01,1.45-age0),[grp],update);update(0,0);return h;
+ } catch(e){try{window.omxErr=String(e&&e.stack||e).slice(0,300);xE(e);}catch(e2){}return null;} }
+// Integration hook for a round reset/cancel. Game logic must call this at its reset boundary.
+function omxReset(){omxCoverAim(false);while(omxLive.length)omxEnd({fx:omxLive[0]});document.querySelectorAll('.omxV').forEach(e=>e.remove());}
 function omxCoverDome(p, r, seconds) { try { const G = omxGeos(), R = r || 4.1, ttl = Math.max(0.8, seconds || 15);
   const dome = new THREE.Mesh(G.sph, omxMat("dome", omxDOME, 0)); dome.material.side = THREE.FrontSide; dome.position.set(p.x, p.y, p.z); dome.scale.setScalar(0.2 * R);
   const ring = new THREE.Mesh(G.torus, omxBasic(0x64567f, 0.12, false)); ring.rotation.x = Math.PI / 2; ring.scale.setScalar(R); ring.position.set(p.x, p.y - R * 0.42 + 0.08, p.z); // near the ground contact
