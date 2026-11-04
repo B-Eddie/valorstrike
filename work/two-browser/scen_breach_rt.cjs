@@ -12,10 +12,10 @@ const unp=()=>B.X('if(typeof paused!=="undefined"&&paused){const b=document.getE
  const before=await pos();log('before',JSON.stringify(before));
  await A.page.bringToFront();await new Promise(r=>setTimeout(r,500));await unp();
  await A.page.keyboard.down('KeyX');await new Promise(r=>setTimeout(r,120));await A.page.keyboard.up('KeyX');await new Promise(r=>setTimeout(r,1800));log('A eq',await A.X('JSON.stringify({eq:J.eq,ult:J.ult,bc:BC.eq})'));await A.page.mouse.down();await new Promise(r=>setTimeout(r,120));await A.page.mouse.up();
- const trace=[];const tr=setInterval(async()=>{try{trace.push(await qa(`const s=sim('${code}');const b=s.units.find(u=>u.name==='Bravo');const q=s.effects.find(e=>e.kind==='quake');return [+s.time.toFixed(2),+b.z.toFixed(1),q?q.i:-1];`));}catch(e){}},110);
+ await qa(`const s=sim('${code}');const b=s.units.find(u=>u.name==='Bravo');if(s.__h)clearInterval(s.__h);s.__tr=[];s.__h=setInterval(()=>{const q=s.effects.find(e=>e.kind==='quake');s.__tr.push([+s.time.toFixed(2),+b.z.toFixed(1),+(b.vz||0).toFixed(1),+b.y.toFixed(1),q?q.i:-1]);},40);return 1;`);
  const t0=Date.now();const caps=[[700,'a'],[1000,'b'],[1500,'c'],[2300,'d']];
  for(const [ms,n] of caps){const w=ms-(Date.now()-t0);if(w>0)await new Promise(r=>setTimeout(r,w));log('pos '+n,JSON.stringify(await pos()));await unp();await A.page.screenshot({path:SHOT+'rt_A_'+n+'.png'});await B.page.screenshot({path:SHOT+'rt_B_'+n+'.png'});}
- await new Promise(r=>setTimeout(r,1500));const after=await pos();log('after',JSON.stringify(after));
+ await new Promise(r=>setTimeout(r,1500));log('trace [t,z,vz,y,blasts]',JSON.stringify(await qa(`const s=sim('${code}');clearInterval(s.__h);return s.__tr.filter((r,i)=>i%2==0);`)));const after=await pos();log('after',JSON.stringify(after));
  check('server: B knocked back (moved >5 m from start toward -z)',Math.abs(after.b[1]-before.b[1])>5||before.b[1]!==after.b[1],{before:before.b,after:after.b});
  log('B client fx',await B.X(`JSON.stringify({net:(NET.fx||[]).map(f=>f.kind),a18:(J.a18fx||[]).map(f=>f.kind).slice(0,12)})`).catch(e=>String(e)));
  log('shots',SHOT);
