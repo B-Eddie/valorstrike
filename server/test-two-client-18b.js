@@ -101,7 +101,12 @@ async function step(A, B, label, s) {
   firstCast = false;
   if (!m.ok) console.log('REJECT-DIAG', tag, 'phase', A.snap && A.snap.phase, 'tl', A.snap && A.snap.tl, 'rs', JSON.stringify(m.rs && m.rs.ab));
   assert.ok(m.ok, tag + ': cast rejected (ao ok=false, rs=' + JSON.stringify(m.rs && m.rs.ab) + ')');
-  if (s.fx) { await until(() => fxBoth(A, B, s.fx), tag + ': ' + s.fx + ' fx row on both clients', 12000).catch((e) => {
+  if (s.fx && s.ownOnly) { // enemy-hidden rows (Vyse Shear): live on the caster, never sent to the enemy team until triggered
+    await until(() => fxOn(A, s.fx), tag + ': ' + s.fx + ' fx row on caster', 12000);
+    await sleep(700);
+    assert.ok(!fxOn(B, s.fx), tag + ': ' + s.fx + ' must NOT reach the enemy client (hidden trap)');
+    console.log(tag + ': ' + s.fx + ' fx row on caster only (enemy-hidden by design)'); }
+  else if (s.fx) { await until(() => fxBoth(A, B, s.fx), tag + ': ' + s.fx + ' fx row on both clients', 12000).catch((e) => {
     const dump = (c) => ({ meTeam: (c.row(c.id) || [])[1], meAlive: (c.row(c.id) || [])[3], other: ((c.snap.u.find((u) => u[0] !== c.id)) || []).slice(0, 8), fx: (c.snap.fx || []).map((f) => f.kind + '@' + (f.p || []).map((n) => Math.round(n)).join(',')), tl: c.snap.tl });
     console.log('FX-DUMP A:', JSON.stringify(dump(A)));
     console.log('FX-DUMP B:', JSON.stringify(dump(B)));
@@ -149,6 +154,7 @@ async function tpStep(A, B, label, s) {
   }
   A.input(0, 0, 0, false);
   assert.ok(ok, tag + ': teleported position not confirmed on both clients');
+  await sleep(700); // the server's pendingTeleport window (gatecrash ~0.5 s) must close before the next cast - casting mid-teleport is legitimately rejected
   console.log(tag + ': teleport live on both clients (jump ' + jump.toFixed(1) + 'm' + (s.back ? ', back at the marker' : ' to the anchor') + ', B unfogged and matching)');
 }
 // walk A toward B until A's client sees B unfogged (pairSees is symmetric: then B also sees A)
@@ -173,14 +179,14 @@ const CASES = {
   Iso:       [ {k:'c',fx:'conting'}, {k:'q',fx:'blast'} ], // x Kill Contract covered end-to-end in test-two-client-18.js
   Neon:      [ {k:'c',fx:'fastlane'}, {k:'q',fx:'blast'}, {k:'e'}, {k:'x'} ],
   Waylay:    [ {k:'c',fx:'blast'}, {k:'q'}, {k:'e',tp:'back'}, {k:'x',fx:'paths'} ],
-  Yoru:      [ {k:'c',fx:'decoy'}, {k:'q'}, {k:'x'}, {k:'e',tp:'fwd',fake:true} ],
+  Yoru:      [ {k:'c',fx:'decoy'}, {k:'q'}, {k:'e',tp:'fwd',fake:true}, {k:'x'} ],
   Fade:      [ {k:'c',fx:'seeker'}, {k:'q',fx:'seize'}, {k:'e',fx:'haunt'}, {k:'x',fx:'nightfall'} ],
   Gekko:     [ {k:'c',fx:'mosh'}, {k:'q',fx:'seeker'}, {k:'e',fx:'dizzy'}, {k:'x',fx:'blast'} ],
   'KAY/O':   [ {k:'c',fx:'frag'}, {k:'q'}, {k:'e',fx:'blast'}, {k:'x',fx:'nullcmd'} ],
   Tejo:      [ {k:'c',fx:'sdrone'}, {k:'q',fx:'blast'}, {k:'e',fx:'salvo'}, {k:'x',fx:'armag'} ],
   Deadlock:  [ {k:'x',fx:'anni',los:true,near:12}, {k:'c',fx:'barrier',los:true}, {k:'q',fx:'sensor'}, {k:'e',fx:'gnet'} ],
   Veto:      [ {k:'c',tp:'fwd',anchorFx:'xcut'}, {k:'q',fx:'choke'}, {k:'e',fx:'ceptor'}, {k:'x'} ],
-  Vyse:      [ {k:'c',fx:'vine'}, {k:'q',fx:'shear'}, {k:'e',fx:'rose',recastConsumes:true}, {k:'x',fx:'garden'} ],
+  Vyse:      [ {k:'c',fx:'vine'}, {k:'q',fx:'shear',ownOnly:true}, {k:'e',fx:'rose',recastConsumes:true}, {k:'x',fx:'garden'} ],
 };
 
 setTimeout(() => { console.error('GLOBAL TIMEOUT'); process.exit(1); }, Number(process.env.GTIMEOUT || 300000));

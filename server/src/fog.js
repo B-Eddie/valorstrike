@@ -99,7 +99,7 @@ export function fogView(sim,snap,viewer){if(!snap||!viewer||sim.phase!=='game'||
   the viewer when it died (as its corpse row), or the pack is within 12 m of the viewer (no line test: a near pack may be seen) */
  if(Array.isArray(snap.hpk)){const PK=new Map((sim.packs||[]).map(k=>[k.id,k]));out.hpk=snap.hpk.filter(r=>{if(!Array.isArray(r))return false;const k=PK.get(r[0]);return r[1]===viewer.id||r[2]===viewer.id||!!k&&rel&&rel.get(r[1])>=k.at-.05||Math.hypot(r[3]-viewer.x,r[5]-viewer.z)<=12;});}
  const hideFw=F.hideFw&&F.hideFw.get(g);if(Array.isArray(snap.fw)&&hideFw&&hideFw.size)out.fw=snap.fw.filter(r=>!(Array.isArray(r)&&hideFw.has(r[0])));
- if(Array.isArray(snap.fx)&&hide&&hide.size)out.fx=snap.fx.filter(r=>!(r&&hide.has(r.id)&&(r.kind==='dev'||r.kind==='barrier'||r.kind==='cb'&&r.s===0)));return out;}
+ if(Array.isArray(snap.fx))out.fx=snap.fx.filter(r=>{if(r&&r.kind==='shear'){const ow=r.o!=null?byId.get(r.o):null;if(!ow||fogGroup(sim,ow)!==g)return false;/* Vyse Shear: a hidden trap - the enemy team never gets the row until it triggers into a barrier (wiki) */}return !(r&&hide&&hide.size&&hide.has(r.id)&&(r.kind==='dev'||r.kind==='barrier'||r.kind==='cb'&&r.s===0));});return out;}
 // A cast event ('ac': caster id, agent, key, eye o, aim d, effect point p) as viewer may receive it. The caster's own team
 // (or the caster, in Deathmatch), and a group the caster is relevant to (seen, heard - a cast is heard within FOG.cast m
 // like a gunshot -, revealed, your killer) get it whole. Anyone else never gets the caster's eye or aim: if the effect
