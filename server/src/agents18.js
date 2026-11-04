@@ -7,6 +7,7 @@
 import Motor from './motor.cjs';
 import kits from './kits.json' with {type:'json'};
 export const AG18={Astra:1,Brimstone:1,Clove:1,Harbor:1,Miks:1,Viper:1,Hush:1,Iso:1,Neon:1,Waylay:1,Yoru:1,Fade:1,Gekko:1,'KAY/O':1,Tejo:1,Deadlock:1,Veto:1,Vyse:1};
+export const A18_NET_KINDS=new Set(['gwell','nova','stim','fire','orbital','conting','undercut','fastlane','blast','tide','reckon','cove','mpulse','bassq','snake','pit','susp','pull','decoy','seeker','seize','haunt','nightfall','mosh','dizzy','frag','nullcmd','sdrone','sd','salvo','armag','mesh','sensor','gnet','xcut','choke','ceptor','vine','rose','garden','paths','anni']);/* effect kinds the online client renders (work/agents18_runtime.js A18VIS) */
 export const TYPES18={Astra:['pull','concuss','smoke'],Brimstone:['stim','fire','smoke'],Clove:['haste','decay','smoke'],Harbor:['surge','wall','cove'],Miks:['mpulse','harmonize','smoke'],Viper:['snakebite','smoke','wall'],Hush:['flow','flash','pull'],Iso:['wall','undercut','shield'],Neon:['wall','concuss','haste'],Waylay:['hinder','dash','teleport'],Yoru:['decoy','flash','teleport'],Fade:['prowler','tether','recon'],Gekko:['mosh','wingman','flash'],'KAY/O':['frag','flash','suppress'],Tejo:['drone','concuss','salvo'],Deadlock:['mesh','sensor','gravnet'],Veto:['crosscut','choke','interceptor'],Vyse:['vine','shear','arcrose']};
 // Wiki stats per ability (fetched 2026-11-03), project-lightweight where noted:
 export const A18={
@@ -55,12 +56,12 @@ export const A18={
  sdrone:{life:8,r:12,reveal:3,supp:6},sd:{r:4,concuss:3,dmg:40},salvo:{r:6,pulses:3,gap:.8,dmg:55},armag:{len:40,w:12,dmg:120},/* Tejo */
  mesh:{life:30,len:7.5,h:3,hp:680},/* Barrier Mesh: nodes form movement-blocking segments */
  sensor:{life:30,r:8,concuss:3},gnet:{r:6,life:8,slowK:.35},/* Deadlock */
- annih:{range:20,w:3,detain:7,dmg:70},/* Annihilation: lightweight - cocoon = detain + 70 over the pull (no free-the-cocoon HP race) */
+ annih:{range:20,w:3,detain:7,dmg:70},/* Annihilation (wiki): 600 HP cocoon - teammates shoot it to free the captive; the wire snaps on death / lost link, kills at the wire end */
  xcut:{range:25},choke:{life:30,r:6,decay:60,slow:2},cept:{life:30,r:10},/* Veto */
  evo:{life:12,hps:10},/* Evolution: stim + 10/s heal + debuff immunity (weapon damage still lands) */
  vine:{life:30,r:6,slowK:.4,dps:15},shear:{life:30,r:2.5,wall:8},rose:{life:30,blind:2,r:20},garden:{r:20,jam:8},/* Vyse */
 };
-export function init18(u,A){if(!AG18[u.agent])return;A.slides=u.agent==='Neon'?2:0;A.slideKills=0;A.stars=u.agent==='Astra'?2:0;A.fuel=(u.agent==='Viper'||u.agent==='Neon')?A18.fuel.max:0;A.globules=0;/* Astra: 2 Stars a round (wiki Stars); Viper/Neon: full fuel tank */A.toxOn=false;A.cloudOn=false;A.gate=null;A.marker=null;A.decoy=null;u.isoShield=0;u.driftUntil=0;u.evoUntil=0;u.suppressUntil=0;u.jamUntil=0;u.hinderUntil=0;u.levUntil=0;u.decayUntil=0;u.decayAmt=0;u.hasteUntil=0;u.stimUntil=0;u.gravUntil=0;u.ndy=null;u.overheal=0;}
+export function init18(u,A){if(!AG18[u.agent])return;A.slides=u.agent==='Neon'?1:0;/* wiki High Gear v9.11: 2 >>> 1 slide charge */A.slideKills=0;A.stars=u.agent==='Astra'?2:0;A.fuel=(u.agent==='Viper'||u.agent==='Neon')?A18.fuel.max:0;A.globules=0;/* Astra: 2 Stars a round (wiki Stars); Viper/Neon: full fuel tank */A.toxOn=false;A.cloudOn=false;A.gate=null;A.marker=null;A.decoy=null;u.isoShield=0;u.driftUntil=0;u.evoUntil=0;u.suppressUntil=0;u.jamUntil=0;u.hinderUntil=0;u.levUntil=0;u.decayUntil=0;u.decayAmt=0;u.hasteUntil=0;u.stimUntil=0;u.gravUntil=0;u.ndy=null;u.overheal=0;}
 const eye=u=>[u.x,u.y+1.6-(u.ch||0),u.z];
 const aim=u=>[-Math.sin(u.look)*Math.cos(u.pitch||0),Math.sin(u.pitch||0),-Math.cos(u.look)*Math.cos(u.pitch||0)];
 const enemies=(sim,u)=>sim.units.filter(v=>v!==u&&v.team!==u.team&&v.alive&&!v.loading);
@@ -74,12 +75,12 @@ function decay(sim,v,amt){if(v.evoUntil>sim.time)return;v.decayAmt=Math.min(99,(
 function land(sim,u,range){/* crosshair floor point, as aimFloor's simple form */const o=eye(u),d=aim(u),hit=sim.world.ray(o,d,range),t=Number.isFinite(hit)?Math.max(0,hit-.5):range;let x=o[0]+d[0]*t,z=o[2]+d[2]*t,g=sim.world.ground(x,z,Math.min(o[1]+d[1]*t,o[1])+.1);if(!Number.isFinite(g)){g=u.y;}return [x,g+.1,z];}
 // Signature restock timers (s), extending the abilities.js map; duelist 2-kill resets are in reward18.
 export const RESTOCK18={Harbor:40,'KAY/O':40,Fade:40,Gekko:0,Viper:0,Neon:0,Iso:0,Waylay:0,Hush:0,Yoru:0,Deadlock:0,Veto:0,Vyse:0};
-export function reward18(u,A){/* 2-kill signature resets (wiki): Iso Double Tap, Waylay Refract, Yoru Gatecrash (E slots), Neon slide charges */if(['Iso','Waylay','Yoru'].includes(u.agent)&&A.e<1&&++A.signatureKills>=2){A.e=1;A.signatureKills=0;}if(u.agent==='Neon'&&(A.slides||0)<2&&++A.slideKills>=2){A.slides=2;A.slideKills=0;}}
+export function reward18(u,A){/* 2-kill signature resets (wiki): Iso Double Tap, Waylay Refract, Yoru Gatecrash (E slots), Neon slide charges */if(['Iso','Waylay','Yoru'].includes(u.agent)&&A.e<1&&++A.signatureKills>=2){A.e=1;A.signatureKills=0;}if(u.agent==='Neon'&&(A.slides||0)<1&&++A.slideKills>=2){A.slides=1;A.slideKills=0;}}
 // castAbility0 branch. Returns true when the cast was consumed. m: client intent (k, optional p/dist/alt/pw).
 export function cast18(sim,u,m,o,d,push){
  const k=m.k,A=u.ability,ag=u.agent,C=A18,K=kits[ag];
  if(u.suppressUntil>sim.time)return false;
- if(ag==='Neon'&&k==='e'&&u.gearOn&&m.alt===true){if((A.slides||0)<1)return false;A.slides--;u.dash=Motor.dash(m.f||1,0,u.look,6,.3);A.cool.e=sim.time+.3;cast(sim,u,k,o,d,[u.x,u.y,u.z]);return true;}/* High Gear ALT FIRE: slide (wiki High_Gear), 2 charges, 2-kill reset */
+ if(ag==='Neon'&&k==='e'&&u.gearOn&&m.alt===true){if((A.slides||0)<1)return false;A.slides--;u.gearOn=false;u.dash=Motor.dash(m.f||1,0,u.look,6,.3);A.cool.e=sim.time+.3;cast(sim,u,k,o,d,[u.x,u.y,u.z]);return true;}/* High Gear ALT FIRE: slide (wiki High_Gear: 1 charge v9.11, 2-kill reset, deactivates High Gear; Neon can fire during the slide, v8.11) */
  // charge accounting mirrors castAbility0's rules for the 18: ult points, star pool, per-key charges
  if(k==='x'){if(A.ult<K.u)return false;}
  else if(ag==='Astra'){if(A.stars<1)return false;}
@@ -141,9 +142,9 @@ export function cast18(sim,u,m,o,d,push){
    else{/* Kill Contract (wiki): the first enemy in the column is pulled into a walled 1v1 cell with Iso; suppress on entry, 13 s or a kill ends it */const t=enemies(sim,u).find(v=>{const q=[v.x-u.x,v.z-u.z],f=q[0]*d[0]+q[1]*d[2];return f>0&&f<C.kc.range&&Math.abs(q[0]*d[2]-q[1]*d[0])<C.kc.w/2;});if(!t)return false;duel18(sim,u,t,C);}
    cast(sim,u,k,o,d,p);return true;}
   case 'Neon':{spend();
-   if(k==='c')fx(sim,u,'fastlane',[u.x,u.y,u.z],C.fastlane.life,C.fastlane.dist,{yaw:u.look});
+   if(k==='c')fx(sim,u,'fastlane',[u.x,u.y,u.z],C.fastlane.life,C.fastlane.dist/2,{yaw:u.look});
    else if(k==='q'){fx(sim,u,'blast',p,.5,C.relay.r,{concuss:C.relay.concuss,at:sim.time+.4});}
-   else if(k==='e'){if(u.gearOn&&m.alt===true&&(A.slides||0)>0){A.slides--;u.dash=Motor.dash(m.f||1,0,u.look,6,.3);/* slide */}else u.gearOn=true;/* High Gear: haste while fuel lasts; ALT slides (2 charges, 2 kills reset) */}
+   else if(k==='e'){if(u.gearOn&&m.alt===true&&(A.slides||0)>0){A.slides--;u.gearOn=false;u.dash=Motor.dash(m.f||1,0,u.look,6,.3);/* slide: ends High Gear (wiki) */}else u.gearOn=true;/* High Gear: haste while fuel lasts; ALT slides (1 charge v9.11, 2 kills reset) */}
    else{u.overdriveUntil=sim.time+C.od.life;u.stimUntil=sim.time+C.od.life;}
    cast(sim,u,k,o,d,p);return true;}
   case 'Waylay':{spend();
@@ -186,7 +187,7 @@ export function cast18(sim,u,m,o,d,push){
    if(k==='c')fx(sim,u,'barrier',p,C.mesh.life,C.mesh.len/2,{seg:[C.mesh.hp],hp:C.mesh.hp,yaw:u.look,mesh:1,h:C.mesh.h});
    else if(k==='q')fx(sim,u,'sensor',p,C.sensor.life,0,{armR:C.sensor.r});
    else if(k==='e')fx(sim,u,'gnet',p,C.gnet.life,C.gnet.r,{at:sim.time+.5});
-   else{const t=enemies(sim,u).filter(v=>los(sim,eye(u),[v.x,v.y+1,v.z])&&Math.hypot(v.x-u.x,v.z-u.z)<C.annih.range).sort((a,b)=>Math.hypot(a.x-u.x,a.z-u.z)-Math.hypot(b.x-u.x,b.z-u.z))[0];if(t){t.anni={by:u.id,at:sim.time+C.annih.detain,hp:600};/* wiki Annihilate: 600 HP cocoon - teammates shoot it to free them */status(t,'tetheredUntil',C.annih.detain,sim);}}
+   else{const t=enemies(sim,u).filter(v=>los(sim,eye(u),[v.x,v.y+1,v.z])&&Math.hypot(v.x-u.x,v.z-u.z)<C.annih.range).sort((a,b)=>Math.hypot(a.x-u.x,a.z-u.z)-Math.hypot(b.x-u.x,b.z-u.z))[0];if(t){t.anni={by:u.id,at:sim.time+C.annih.detain,hp:600};/* wiki Annihilate: 600 HP cocoon - teammates shoot it to free them */status(t,'tetheredUntil',C.annih.detain,sim);fx(sim,u,'anni',[t.x,t.y,t.z],C.annih.detain,1.5);/* the cocoon, rendered online */}}
    cast(sim,u,k,o,d,p);return true;}
   case 'Veto':{spend();
    if(k==='c'){A.xcut=p;A.xcutReady=true;fx(sim,u,'xcut',p,3600,0);}
@@ -240,13 +241,13 @@ export function tick18(sim,dt){
    case 'seeker':{const t=sim.units.find(v=>v.id===e.target);if(!t||!t.alive){gone.push(e);break;}const d=[t.x-e.p[0],t.z-e.p[2]],l=Math.hypot(...d);if(l<.8||T>=e.at){if(e.prowler)status(t,'nearsightUntil',C.prowler.near,sim);else if(e.wing)status(t,'concussUntil',C.wing.concuss,sim);gone.push(e);}else e.p=[e.p[0]+d[0]/l*9*dt,e.p[1],e.p[2]+d[2]/l*9*dt];break;}
    case 'mosh':{for(const v of sim.units)if(v.alive&&inR(v,e.p,e.radius))dmg18.f(sim,own,v,C.mosh.dps*dt);if(!e.done&&T>=e.boomAt){e.done=true;for(const v of enemies(sim,own))if(inR(v,e.p,e.radius))dmg18.f(sim,own,v,C.mosh.boom);}break;}
    case 'dizzy':if(!e.done&&T>=e.at){e.done=true;for(const v of enemies(sim,own))if(inR(v,e.p,e.radius))status(v,'nearsightUntil',C.dizzy.blind,sim);}break;
-   case 'nullcmd':if(own&&T>=e.next){e.next+=C.nullcmd.pulse;for(const v of enemies(sim,own))if(inR(v,[own.x,own.y,own.z],e.radius,8))status(v,'suppressUntil',C.nullcmd.supp,sim);}break;
+   case 'nullcmd':if(own){e.p=[own.x,own.y,own.z];}if(own&&T>=e.next){e.next+=C.nullcmd.pulse;for(const v of enemies(sim,own))if(inR(v,[own.x,own.y,own.z],e.radius,8))status(v,'suppressUntil',C.nullcmd.supp,sim);}break;
    case 'nightfall':if(!e.done&&T>=e.at){e.done=true;for(const v of enemies(sim,own))if(strip({x:e.p[0],z:e.p[2],look:e.yaw},v,{dist:C.nightfall.dist,w:C.nightfall.w})){decay(sim,v,C.nightfall.decay);status(v,'revealedUntil',C.nightfall.mark,sim);}gone.push(e);}break;
    case 'haunt':case 'seize':if(!e.done&&T>=e.at){e.done=true;for(const v of enemies(sim,own))if(inR(v,e.p,e.radius)){if(e.kind==='haunt')status(v,'revealedUntil',C.haunt.reveal,sim);else{decay(sim,v,C.seize.decay);status(v,'tetheredUntil',C.seize.tether,sim);}}gone.push(e);}break;
   }}
  if(gone.length){for(const e of gone)if(e.ag==='Gekko'){const u=sim.units.find(n=>n.id===e.owner),k=e.kind==='mosh'?'c':e.kind==='dizzy'?'e':e.wing?'q':0;if(u&&k)u.ability['re_'+k]=T+A18.globule.reclaim;}sim.effects=sim.effects.filter(e=>!gone.includes(e));}
  // unit statuses
- for(const u of sim.units){const A=u.ability;if(!A)continue;if(u.isoDuel){const f=sim.units.find(n=>n.id===u.isoDuel.foe);if(T>=u.isoDuel.until||!f||!f.alive||!f.isoDuel){if(u.alive&&u.isoDuel.ret){[u.x,u.y,u.z]=u.isoDuel.ret;u.vy=0;}u.isoDuel=null;sim.effects=sim.effects.filter(e=>!e.duel);}}if(u.kayoDown){if(T>=u.kayoDown.until){u.kayoDown=null;u.deaths++;u.noUltDeaths=(u.noUltDeaths||0)+1;u.respawnAt=T+1.5;sim.events.push(['k','',u.name,0,'Ability']);}else{const r=sim.units.find(n=>n!==u&&n.team===u.team&&n.alive&&Math.hypot(n.x-u.x,n.z-u.z)<2&&(n.input||{}).use);if(r){u.kayoDown.prog+=dt;if(u.kayoDown.prog>=5){u.kayoDown=null;u.alive=true;u.hp=100;u.loading=false;}}else u.kayoDown.prog=0;}}if(u.anni){const dl=sim.units.find(n=>n.id===u.anni.by);if(!dl||!dl.alive||!los(sim,[dl.x,dl.y+1,dl.z],[u.x,u.y+1,u.z])||Math.hypot(u.x-dl.x,u.z-dl.z)>C_annih.range+5)u.anni=null;/* the wire snaps */else{if(T>=u.anni.at){dmg18.f(sim,dl,u,999);u.anni=null;}else{const d=[dl.x-u.x,dl.z-u.z],l=Math.hypot(...d);if(l>1.2){u.x+=d[0]/l*2.5*dt;u.z+=d[1]/l*2.5*dt;}}}}if(!AG18[u.agent])continue;u.stimOn=(u.stimUntil||0)>T||!!u.gearOn||(u.overdriveUntil||0)>T||(u.hasteUntil||0)>T;if(u.agent==='Clove'){if(u.alive)u.ndyDead=0;else if(!u.ndyDead&&!u.ndy)u.ndyDead=T;}
+ for(const u of sim.units){const A=u.ability;if(!A)continue;if(u.isoDuel){const f=sim.units.find(n=>n.id===u.isoDuel.foe);if(T>=u.isoDuel.until||!f||!f.alive||!f.isoDuel){if(u.alive&&u.isoDuel.ret){[u.x,u.y,u.z]=u.isoDuel.ret;u.vy=0;}u.isoDuel=null;sim.effects=sim.effects.filter(e=>!e.duel);}}if(u.kayoDown){if(T>=u.kayoDown.until){u.kayoDown=null;u.deaths++;u.noUltDeaths=(u.noUltDeaths||0)+1;u.respawnAt=T+1.5;sim.events.push(['k','',u.name,0,'Ability']);}else{const r=sim.units.find(n=>n!==u&&n.team===u.team&&n.alive&&Math.hypot(n.x-u.x,n.z-u.z)<2&&(n.input||{}).use);if(r){u.kayoDown.prog+=dt;if(u.kayoDown.prog>=5){u.kayoDown=null;u.alive=true;u.hp=100;u.loading=false;}}else u.kayoDown.prog=0;}}if(u.anni){const dl=sim.units.find(n=>n.id===u.anni.by);const ae=sim.effects.find(e=>e.kind==='anni'&&e.owner===u.anni.by);if(ae)ae.p=[u.x,u.y,u.z];if(!dl||!dl.alive||!los(sim,[dl.x,dl.y+1,dl.z],[u.x,u.y+1,u.z])||Math.hypot(u.x-dl.x,u.z-dl.z)>C_annih.range+5){u.anni=null;if(ae)sim.effects=sim.effects.filter(e=>e!==ae);}/* the wire snaps */else{if(T>=u.anni.at){dmg18.f(sim,dl,u,999);u.anni=null;sim.effects=sim.effects.filter(e=>e!==ae);}else{const d=[dl.x-u.x,dl.z-u.z],l=Math.hypot(...d);if(l>1.2){u.x+=d[0]/l*2.5*dt;u.z+=d[1]/l*2.5*dt;}}}}if(!AG18[u.agent])continue;u.stimOn=(u.stimUntil||0)>T||!!u.gearOn||(u.overdriveUntil||0)>T||(u.hasteUntil||0)>T;if(u.agent==='Clove'){if(u.alive)u.ndyDead=0;else if(!u.ndyDead&&!u.ndy)u.ndyDead=T;}
   if(u.decayUntil&&T>u.decayUntil&&u.decayAmt>0){const r=Math.min(u.decayAmt,40*dt);u.decayAmt-=r;u.hp=Math.min(u.mx,u.hp+r);}
   if(u.pendingTeleport&&T>=u.pendingTeleport.at){[u.x,u.y,u.z]=u.pendingTeleport.p;u.pendingTeleport=null;u.vy=0;}
   if(u.ndy&&T>=u.ndy.at){u.ndy=null;u.alive=true;u.hp=100;u.loading=false;}

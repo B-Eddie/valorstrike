@@ -40,8 +40,8 @@ for(const a of Object.keys(AG18)){assert.ok(kits[a],a+' in kits.json');assert.ok
  assert.equal(u.ability.fuel,A18.fuel.max,'full fuel');
  assert.equal(cast18(s,u,{k:'e'},O,D),true);run(s,20);
  assert.ok(u.ability.fuel<A18.fuel.max,'gear drains fuel');assert.ok(u.stimOn,'haste while geared');
- assert.equal(cast18(s,u,{k:'e',alt:true,f:1},O,D),true,'slide');assert.equal(u.ability.slides,1,'slide charge spent');
- u.ability.slides=0;u.ability.slideKills=1;reward18(u,u.ability);assert.equal(u.ability.slides,2,'2 kills reset the slides');}
+ assert.equal(cast18(s,u,{k:'e',alt:true,f:1},O,D),true,'slide');assert.equal(u.ability.slides,0,'the one slide charge spent (wiki v9.11)');assert.equal(u.gearOn,false,'the slide ends High Gear');
+ u.ability.slides=0;u.ability.slideKills=1;reward18(u,u.ability);assert.equal(u.ability.slides,1,'2 kills reset the slide');}
 
 // KAY/O NULL/cmd: downed, bled out, or revived
 {const s=mkSim(),k=mk('KAY/O',0,5),e=mk('Sage',1,6,3);s.units=[k,e];initAbilities(k,true);initAbilities(e,true);
