@@ -12,7 +12,7 @@ function arc(speed,rate){const P=run(fresh(),{...input,speed},1,rate),start=P.x;
   if(r.landed){land={time:(n+1)/rate,distance:P.x-start,speed:P.speed,lp:P.lp,ls:P.ls,impact:P.landImpact};break;}}
  if(!land)throw Error('No landing');
  const atLand={...P};let movementMs=0,accuracyMs=0;
- for(let n=0;n<rate;n++){M.step(P,{...input,speed},1/rate,world);if(!movementMs&&P.lp===0)movementMs=(n+1)*1000/rate;if(P.ls===0){accuracyMs=(n+1)*1000/rate;break;}}
+ for(let n=0;n<rate;n++){M.step(P,{...input,speed},1/rate,world);if(!movementMs)movementMs=(n+1)*1000/rate;/* no landing movement lock */if(P.ls===0){accuracyMs=(n+1)*1000/rate;break;}}
  // Release after impact, then press: no recovery lock on another jump.
  const J={...atLand};M.step(J,{...input,speed,jump:false},1/rate,world);
  const reJump=M.step(J,{...input,speed,jump:true},1/rate,world).jumped;

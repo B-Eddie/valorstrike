@@ -10,7 +10,7 @@ function extract(name){const s=src.indexOf('function '+name+'(');let d=0,e=-1;fo
 const nmQi = src.indexOf('var NM_Q='); eval(src.slice(nmQi, src.indexOf('\n', nmQi)));
 // hark-perf 762e33c: nmNear reads the numeric cell index (NM_NONE + nmCellNum, same line in the runtime)
 const nmNi = src.indexOf('const NM_NONE=[];function nmCellNum('); eval(src.slice(nmNi, src.indexOf('\n', nmNi)).replace('const NM_NONE=','var NM_NONE='));
-for (const fn of ['nmNear','nmHeight','nmBlocked']) eval(extract(fn));
+for (const fn of ['nmCellGrid','nmNear','nmHeight','nmBlocked']) eval(extract(fn));
 function loadMap(map){
   const W='server/public/worlds/'+map+'/';
   const meta=JSON.parse(fs.readFileSync(W+'meta.json','utf8'));

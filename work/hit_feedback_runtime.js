@@ -118,19 +118,19 @@ function netHitFeedback(e){
  if(e[10]===1){XHF.seq++;target.xBrk=XHF.seq;}
  const prev=MP.nc;MP.nc=true;try{vmHit(p,e[5],!!e[3],!!e[4],target,part);}finally{MP.nc=prev;}
 }
-// Online hits taken slow my own prediction as the server slows me (server tagHit / tagMul: 0.5 s at x0.275, a soft ramp
+// Online hits taken slow my own prediction as the server slows me (server tagHit / tagMul: x0.275 recovering over 0.75 s, a soft ramp
 // for shotgun pellets beyond 10 m that never weakens a hard tag). The client never mirrored it: it predicted full speed
 // while the server held the player back, ran ~2 m ahead per hit and netReconcile snapped it back on every hit taken
 // (user: "a lot of lag ... when bots' shots hit me"). Only the part of the window still ahead of the prediction is
 // mirrored: it opened by the server position this snapshot acknowledges (input seq row[19], sent at its inLog time,
 // + row[20] s), so the time since then was already predicted untagged and netReconcile eases that remainder.
 function netHitTagSelf(e,m){if(!netHitOk(e)||e[2]!==MP.me||e[1]===MP.me||!player||!(player.hp>0))return false;
- let rem=.5;const row=m&&Array.isArray(m.u)?m.u.find(r=>Array.isArray(r)&&r[0]===MP.me):null,log=typeof NET!=='undefined'&&NET.inLog;
- if(row&&row[19]>0&&Number.isFinite(row[20])&&log)for(let i=log.length-1;i>=0;i--)if(log[i].seq===row[19]){rem=.5-Math.max(0,(performance.now()-(log[i].t+row[20]*1000))/1000);break;}
+ const TT=typeof VF_C!=='undefined'&&VF_C.tagTime||.75;let rem=TT;const row=m&&Array.isArray(m.u)?m.u.find(r=>Array.isArray(r)&&r[0]===MP.me):null,log=typeof NET!=='undefined'&&NET.inLog;
+ if(row&&row[19]>0&&Number.isFinite(row[20])&&log)for(let i=log.length-1;i>=0;i--)if(log[i].seq===row[19]){rem=TT-Math.max(0,(performance.now()-(log[i].t+row[20]*1000))/1000);break;}
  if(!(rem>0))return false;
  const s=netHitUnit(e[1]),W=s&&typeof WEAP!=='undefined'?WEAP[s.w]:null,d=s&&s.g?Math.hypot(s.g.position.x-player.x,s.g.position.z-player.z):0;
- if(W&&W.pel>1&&d>10){if(player.tagT>0&&!player.tagS)return false;player.tagS=1;player.tagK=.7;player.tagT=rem;}
- else{const hard=player.tagT>0&&!player.tagS;player.tagS=0;player.tagK=.275;player.tagT=hard?Math.max(player.tagT,rem):rem;}
+ if(W&&W.pel>1&&d>10){if(player.tagT>0&&!player.tagS||rem-(TT-.5)<=0)return false;player.tagS=1;player.tagK=.7;player.tagT=rem-(TT-.5);}/* soft shotgun tag: 0.5 s (server tagHit) */
+ else{const hard=player.tagT>0&&!player.tagS;player.tagS=0;player.tagK=typeof VF_C!=='undefined'&&VF_C.tagMul||.275;player.tagT=hard?Math.max(player.tagT,rem):rem;}
  return true;}
 XHF.pass=0;
 {const snap=mpCliSnap;mpCliSnap=function(m){const on=typeof NET!=='undefined'&&NET.socket&&running&&MP.st==='game',ev=on&&m&&m.ev||null;

@@ -684,5 +684,29 @@
  // st {contactD (m to the freshest remembered enemy, null: none), see, trading, wide, carrier, rush}.
  const WALK={range:16};
  function quiet(st){if(!st||st.see||st.trading||st.wide||st.carrier||st.rush)return false;return st.contactD!=null&&st.contactD<WALK.range;}
- return {hash,rng,clamp,pickW,REACT,personality,reaction,crosshair,crosshairAt,firePattern,peek,attackPlan,defensePlan,roles,teamBuy,buyFor,BUYK,onMateDeath,onSound,ATTACK,DEFENSE,utility,UTIL,UTILX,teamGap,fightCast,turnStep,trackLag,wrapA,SPIKE,plantSpot,PLANT,plantDeep,postPlant,retake,postPlay,SHOOT_UTIL,shootUtility,TAILWIND,tailwindDash,tailwindKeys,LEVEL,level,aimTraits,AIM_H,aimHeight,halfWidth,aimPlan,aimAt,readyToFire,planFire,idlePitch,recoilPull,discipline,hitPart,BUY,buyArea,buyRoute,buyExit,buySpot,buyWander,buyHold,buyNew,buyTick,buyNext,buySep,SENS,cm360,sensOf,turnRate,SENSE,inView,audible,earSpot,memNew,memNote,memForget,memBest,repeek,mayFire,nextShot,areas,DFORM,GAP,midPoint,RESPOND,nearest,tradeSpot,follow,buyNear,buyCross,reactR,reacts,FIRE,sprayFade,sprayPull,turnAcc,trackTurn,cornerPick,PRE,pathCorner,preAimErr,FLASH,flashRead,blindPlay,PEEK,peekStep,RELOAD,reloadPlay,reloadBack,trailNote,reloadSpot,TRADE,WALK,quiet};
+ // Ultimates (bug lane 2026-11-03, user: "the bots aren't using their ultimates"). One decision for the server bots and the
+ // page's offline bots: with the ult charged, which situation calls for it. 'enemy': an enemy in sight inside the agent's
+ // band (Blade Storm / Empress / Run It Back / Rolling Thunder / a long Tour De Force are fight ults); 'mem': no enemy
+ // in sight, a remembered one (seen / heard within ULTX.memAge s; never the real position) inside the band (Hunter's Fury
+ // and Seekers reach round corners, Rolling Thunder goes through walls, Run It Back before a re-peek, the Showstopper (1.4 s)
+ // and Tour De Force (2.3 s) equipped behind cover before the re-peek: drawn mid-fight the bot died holding them); 'mateCorpse' (Sage:
+ // a dead teammate close by, no enemy in sight); 'foeCorpse' (Cypher: a dead enemy close by); 'spike' (Killjoy: Lockdown
+ // on a planted Spike it plays around; Omen: From the Shadows to a far planted Spike on a retake; 'mem' for Omen = behind
+ // a remembered enemy 20-60 m off, the flank; Killjoy 'mem' = Lockdown on a site / choke a remembered enemy holds; Phoenix
+ // 'mem' up to 25 m = Run It Back before the peek; Skye's Seekers find a remembered enemy up to 50 m off).
+ // s {see, dist, memD, memAge, planted, atk, spikeD, mateCorpseD, foeCorpseD}. Pure.
+ const ULTX={delay:[.45,1.3],memAge:6,see:{Jett:[0,25],Reyna:[0,30],Phoenix:[0,30],Breach:[9,38],Chamber:[30,70]},
+  mem:{Sova:[8,60],Skye:[4,50],Breach:[10,38],Phoenix:[0,25],Raze:[6,35],Chamber:[10,60],Omen:[20,60],Killjoy:[8,30]},corpse:{Sage:15,Cypher:16},kj:30,omen:[28,95]};
+ function ultCall(agent,s){if(!s)return null;const S=ULTX.see[agent];if(S&&s.see&&s.dist>=S[0]&&s.dist<=S[1])return 'enemy';
+  const M=ULTX.mem[agent];if(M&&!s.see&&s.memD!=null&&s.memAge<=ULTX.memAge&&s.memD>=M[0]&&s.memD<=M[1])return 'mem';
+  if(agent==='Sage'&&!s.see&&s.mateCorpseD!=null&&s.mateCorpseD<=ULTX.corpse.Sage)return 'mateCorpse';
+  if(agent==='Cypher'&&!s.see&&s.foeCorpseD!=null&&s.foeCorpseD<=ULTX.corpse.Cypher)return 'foeCorpse';
+  if(agent==='Killjoy'&&s.planted&&s.spikeD!=null&&s.spikeD<=ULTX.kj)return 'spike';
+  if(agent==='Omen'&&!s.see&&s.planted&&!s.atk&&s.spikeD!=null&&s.spikeD>=ULTX.omen[0]&&s.spikeD<=ULTX.omen[1])return 'spike';
+  return null;}
+ // Human timing: the same call has to hold for a drawn ULTX.delay before the cast (a player sees the moment, decides,
+ // presses X); a different call or none restarts it. st {k, at} per bot; rnd() draws the delay (called once per new call).
+ function ultReady(st,t,want,rnd){if(!st)return false;if(!want){st.k=null;return false;}
+  if(st.k!==want){st.k=want;const r=typeof rnd==='function'?rnd():.5;st.at=t+ULTX.delay[0]+clamp(r,0,1)*(ULTX.delay[1]-ULTX.delay[0]);return false;}return t>=st.at;}
+ return {hash,rng,clamp,pickW,REACT,personality,reaction,crosshair,crosshairAt,firePattern,peek,attackPlan,defensePlan,roles,teamBuy,buyFor,BUYK,onMateDeath,onSound,ATTACK,DEFENSE,utility,UTIL,UTILX,teamGap,fightCast,turnStep,trackLag,wrapA,SPIKE,plantSpot,PLANT,plantDeep,postPlant,retake,postPlay,SHOOT_UTIL,shootUtility,TAILWIND,tailwindDash,tailwindKeys,LEVEL,level,aimTraits,AIM_H,aimHeight,halfWidth,aimPlan,aimAt,readyToFire,planFire,idlePitch,recoilPull,discipline,hitPart,BUY,buyArea,buyRoute,buyExit,buySpot,buyWander,buyHold,buyNew,buyTick,buyNext,buySep,SENS,cm360,sensOf,turnRate,SENSE,inView,audible,earSpot,memNew,memNote,memForget,memBest,repeek,mayFire,nextShot,areas,DFORM,GAP,midPoint,RESPOND,nearest,tradeSpot,follow,buyNear,buyCross,reactR,reacts,FIRE,sprayFade,sprayPull,turnAcc,trackTurn,cornerPick,PRE,pathCorner,preAimErr,FLASH,flashRead,blindPlay,PEEK,peekStep,RELOAD,reloadPlay,reloadBack,trailNote,reloadSpot,TRADE,WALK,quiet,ULTX,ultCall,ultReady};
 });

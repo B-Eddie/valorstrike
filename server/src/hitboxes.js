@@ -2,10 +2,10 @@
 // hitboxes.json is sampled from the real agent rigs by work/build_hitbox_poses.cjs (model frame: +Y up, +Z facing).
 // The volume sizes mirror the client's bone-following hitboxes (work/repair_runtime.js xrHitboxes): a head sphere
 // 0.08 m above the Head bone, a body capsule from 0.06 m to 0.13 m below the Head bone, legs below the hip line.
-// Crouch lowers the head by the same amount the first-person eye drops (Motor ch, up to 0.45 m).
+// Crouch lowers the head by the same amount the first-person eye drops (Motor ch, up to Motor C.crouchEye = 0.40 m).
 import table from './hitboxes.json' with {type:'json'};
 export const HITBOX=table;
-const P=table.poses,V=table.volumes,CROUCH=.45;
+const P=table.poses,V=table.volumes,CROUCH=.4;/* = Motor C.crouchEye (Stark 40 u) */
 const mix=(a,b,t)=>a.map((n,i)=>n+(b[i]-n)*t);
 function blend(name,a,b,t){return {head:mix(a.head,b.head,t),pelvis:mix(a.pelvis,b.pelvis,t),neck:mix(a.neck,b.neck,t),name};}
 // Pose as the client animates it: xUbAnim walk/run blend by ground speed, crouch blend, fall pose while airborne.

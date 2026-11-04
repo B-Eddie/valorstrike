@@ -67,6 +67,16 @@ console.log('Curveball flash: bots (floor-height eye, facing > 0.5, 30 m) and th
  {const g0=ctx.XCBH.g;g0.parent=null;ctx.xCbHintTick();assert.equal(ctx.XCBH.g,g0,'same hint group after a scene clear (no new geometry per match)');assert.equal(added.filter(x=>x===g0).length,2,'re-added to the scene');}
  ctx.J.eq.st='rel';ctx.xCbHintTick();assert.equal(ctx.XCBH.g.visible,false,'gone once thrown');assert.equal(ctx.XCBH.g.parent,null,'out of the scene once hidden (a round reset leaves nothing behind: test_client_abilities)');assert.equal(hel.classList.contains('on'),false);
  ctx.J.eq={k:'c',st:'ready'};ctx.xCbHintTick();assert.equal(ctx.XCBH.g.visible,false,'not for Blaze');ctx.J.pick='Skye';ctx.J.eq={k:'e',st:'ready'};ctx.xCbHintTick();assert.equal(ctx.XCBH.g.visible,false,'Phoenix only');
+ // combat lane: the per-frame hint allocates nothing once warm (was 2 x (4 + 10) Vector3 + pEye per frame while Curveball is in hand);
+ // the reused-output path gives the very same points as a fresh call (bit-identical), and phCurve's out path the same curve
+ {{const wm=new THREE.Mesh(new THREE.BoxGeometry(1,4,1),new THREE.MeshBasicMaterial());wm.position.set(-1.2,1.6,-3.4);wm.updateMatrixWorld();ctx.solids.push(wm);}
+  const o2=new THREE.Vector3(0.3,1.6,0.2),buf=[];for(const [fx,fz] of [[0,-1],[-0.6,-0.8],[0.8,-0.6]])for(const sd of [-1,1]){const a=ctx.xCbHintPts(o2,fx,fz,sd,10),b=ctx.xCbHintPts(o2,fx,fz,sd,10,buf);
+   assert.ok(a.length===10&&b===buf&&b.length===10&&a.every((p,i)=>p.x===b[i].x&&p.y===b[i].y&&p.z===b[i].z),'reused-output hint points bit-identical to fresh ones');
+   const c1=ctx.phCurve(o2,fx,fz,sd),oo={mid:new THREE.Vector3(),end:new THREE.Vector3()},c2=ctx.phCurve(o2,fx,fz,sd,oo);assert.ok(c2===oo&&c1.mid.equals(c2.mid)&&c1.end.equals(c2.end),'phCurve out path = fresh path');}
+  ctx.solids.pop();ctx.J.pick='Phoenix';ctx.J.eq={k:'e',st:'ready'};ctx.xCbHintTick();ctx.xCbHintTick();
+  const T0=ctx.THREE;let nv=0;const CV=class extends THREE.Vector3{constructor(...a){super(...a);nv++;}};ctx.THREE=Object.assign(Object.create(THREE),{Vector3:CV});
+  const p0=ctx.XCBH.d[1][9].position.clone();for(let k=0;k<30;k++)ctx.xCbHintTick();ctx.THREE=T0;
+  assert.equal(nv,0,'Curveball hint: no Vector3 allocated per frame once warm (was ~29 per frame): '+nv);assert.ok(ctx.XCBH.d[1][9].position.equals(p0),'dots unchanged');ctx.J.eq=null;ctx.xCbHintTick();}
  assert.match(html,/id = "xCbHint"; d\.innerHTML = "<span>\\u25C0 L-CLICK<\/span><span>R-CLICK \\u25B6<\/span>"/,'HUD tag text');
  assert.match(html,/try \{ xCbHintTick\(\); \}/,'ticked from jTick');}
 // --- online flash screen: fully white while the server says blinded, 1 s fade after (was opacity = blind / 1.5)

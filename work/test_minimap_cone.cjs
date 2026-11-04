@@ -12,7 +12,7 @@ const ctx={setTransform(){},clearRect(){arcs=[];texts=[];paths=[]},fillRect(){},
  arc(x,z,r,a0,a1){const q={x,z,r,a0,a1};arcs.push(q);paths.at(-1)&&paths.at(-1).arcs.push(q)},fill(){const p=paths.at(-1);if(p)p.fill=color;if(arcs.length&&!arcs.at(-1).color)arcs.at(-1).color=color},
  fillText(tx,x,z){texts.push({tx,x,z,color,alpha:ctx.globalAlpha})},moveTo(x,z){paths.at(-1)&&paths.at(-1).lines.push([x,z])},lineTo(x,z){paths.at(-1)&&paths.at(-1).lines.push([x,z])},stroke(){},save(){},restore(){},drawImage(){},
  globalAlpha:1,set fillStyle(v){color=v},get fillStyle(){return color},strokeStyle:'',lineWidth:1,font:'',textAlign:''};
-const V=class{constructor(x,y,z){Object.assign(this,{x,y,z})}};
+const V=class{constructor(x,y,z){Object.assign(this,{x,y,z})}set(x,y,z){this.x=x;this.y=y;this.z=z;return this;}};/* set: nmSpot reuses its eye / target points (combat lane) */
 const c={Math,performance:{now:()=>t+=200},running:true,player:{x:0,y:0,z:0,hp:100},mode:'five',FV:{atk:false,sp:{st:'carry'}},yaw:0,XCALL:{},window:{},J:{rvT:0,rv:[]},mmVis:new Set(),mmPrev:new Set(),mmLost:new Map(),
  camera:{fov:70.53,aspect:16/9},$(){return {classList:{toggle(){}}}},MM:{width:320,height:320,getBoundingClientRect:()=>({width:112})},mmx:ctx,allies:[],bots:[],los:(e,p)=>!blocked(e,p),pEye:()=>new V(c.player.x,1.5,c.player.z),THREE:{Vector3:V}};
 vm.createContext(c);vm.runInContext(s.slice(a,b)+';globalThis.draw=nmMinimap;globalThis.spot=nmSpot;globalThis.half=typeof nmViewHalf==="function"?nmViewHalf:null;',c);

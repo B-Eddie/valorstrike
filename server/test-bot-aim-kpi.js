@@ -26,7 +26,7 @@ function duels(dist,N=20,secs=5){const shots=[],XH=[],first=[];
   for(const u of [a,b]){const q=shots.filter(x=>x.k===k&&x.u===u.id);if(q.length)first.push({shot:q[0].t,hit:(q.find(x=>x.hit)||{t:secs}).t});}}
  const md=a=>{a=a.slice().sort((x,y)=>x-y);return a[a.length>>1];},rate=(lo,hi)=>{const q=shots.filter(x=>x.t>=lo&&x.t<hi);return q.filter(x=>x.hit).length/Math.max(1,q.length);},on=(lo,hi)=>{const q=XH.filter(x=>x.t>=lo&&x.t<hi);return q.filter(x=>x.on).length/Math.max(1,q.length);};
  const hits=shots.filter(x=>x.hit);return {dist,shots:shots.length,minShot:Math.min(...first.map(f=>f.shot)),firstHit:md(first.map(f=>f.hit)),minHit:Math.min(...first.map(f=>f.hit)),early:rate(.5,1),late:rate(1.5,99),onEarly:on(.5,1),onLate:on(1.5,99),hs:hits.filter(x=>x.hit==='head').length/Math.max(1,hits.length)};}
-const R=[10,15,20].map(d=>duels(d)),cap={10:[.4,.8+1e-9],15:[.55,.85],20:[.4,1]},f=x=>(100*x).toFixed(0)+'%';
+const R=[10,15,20].map(d=>duels(d)),cap={10:[.4,.8+1e-9],15:[.55,.85],20:[.4,1+1e-9]}/* 20 m: '<= 1.0 s' with the 10 m float margin - a 0.05 s step median of 1.00 s summed from 20 steps lands at 1.0000000000000002 (movement measured values 2026-11-04: the 0.75 s linear tag recovery moved the 20 m median one step, 0.95 -> 1.00 s) */,f=x=>(100*x).toFixed(0)+'%';
 for(const r of R){const tag=r.dist+' m: ';
  assert.ok(r.shots>300,tag+'shots '+r.shots);
  assert.ok(r.minShot>=B.REACT[0]-1e-9,tag+'first shot before the reaction floor: '+r.minShot.toFixed(3)+' s');

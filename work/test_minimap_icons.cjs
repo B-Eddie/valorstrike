@@ -18,7 +18,7 @@ const ctx={setTransform(){},clearRect(){paths=[];draws=[]},fillRect(){},beginPat
  moveTo(x,z){paths.at(-1)&&paths.at(-1).lines.push([x,z])},lineTo(x,z){paths.at(-1)&&paths.at(-1).lines.push([x,z])},fillText(){},save(){},restore(){},clip(){},
  drawImage(img,x,z,w,h){draws.push({art:img&&img.art,x:x+(w||0)/2,z:z+(h||0)/2,w,ring:(lastArc()||{}).fill,alpha:ctx.globalAlpha})},
  globalAlpha:1,set fillStyle(v){color=v},get fillStyle(){return color},strokeStyle:'',lineWidth:1,font:'',textAlign:''};
-const V=class{constructor(x,y,z){Object.assign(this,{x,y,z})}};
+const V=class{constructor(x,y,z){Object.assign(this,{x,y,z})}set(x,y,z){this.x=x;this.y=y;this.z=z;return this;}};/* set: nmSpot reuses its eye / target points (combat lane) */
 class Img{constructor(){images++;this.complete=false;this.naturalWidth=0;this._src='';}set src(v){this._src=v;if(c.loadOK(v)){this.complete=true;this.naturalWidth=256;}else if(c.loadFail(v)){this.complete=true;this.naturalWidth=0;}}get src(){return this._src;}}
 const off=()=>{const cv={width:0,height:0,art:null};const x={save(){},restore(){},beginPath(){},arc(){},clip(){},fillRect(){},clearRect(){},fill(){},stroke(){},drawImage(img){cv.art=img.src;},set fillStyle(v){},globalAlpha:1};cv.getContext=()=>x;return cv;};
 const AG=/^(jett|phoenix|sova|sage|reyna|raze|killjoy|omen|skye|chamber|breach|cypher)$/;

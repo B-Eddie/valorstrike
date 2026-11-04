@@ -58,7 +58,7 @@ const rec=s=>JSON.parse(s.get('vs.crash'));
    for(const u of ['https://unpkg.com/three@0.149.0/build/three.min.js','https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js','https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/utils/SkeletonUtils.js']){
     assert(html.includes('<script src="'+u+'" crossorigin="anonymous"></script>'),u+' loads with CORS (crossorigin="anonymous"), not muted to "Script error."');}
    assert(!/<script src="https:\/\/[^"]+"><\/script>/.test(html),'no cross-origin script without crossorigin');
-   assert(/xCrash\.begin\(/.test(html)&&/xCrash\.stage\("playable"\)/.test(html)&&/xCrash\.stage\('map-download'\)/.test(html)&&/xCrash\.stage\('map-upload'\)/.test(html),'match / map load stages reported');
+   assert(/xCrash\.begin\(/.test(html)&&/xCrash\.stage\("playable"\)/.test(html)&&/xCrash\.stage\("weapons"\)/.test(html)&&/xCrash\.stage\("rigs"\)/.test(html)&&/xCrash\.stage\("warm"\)/.test(html)&&/xCrash\.stage\('map-download'\)/.test(html)&&/xCrash\.stage\('map-upload'\)/.test(html),'match / map load stages reported');
    assert(/ws\.addEventListener\('close',e=>\{try\{if\(window\.xCrash\)xCrash\.ws\(e\.code,e\.reason\)/.test(html),'online socket closes reported');
    assert(/mpLost=function\(why\)\{try\{if\(window\.xCrash/.test(html),'a lost match is reported'); }
  // 2. errors

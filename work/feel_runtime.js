@@ -23,7 +23,7 @@ xRate=function(W){const w=Object.keys(WEAP).find(k=>WEAP[k]===W),p=VF.profiles[w
 // 70.53 deg vertical (16:10 = 97 deg horizontal as in the game).
 function xHipVFov(a){a=a||(typeof camera!=='undefined'&&camera&&camera.aspect)||VF_C.referenceAspect;return a>VF_C.referenceAspect?2*Math.atan(Math.tan(VF_C.horizontalFov*Math.PI/360)/a)*180/Math.PI:VF_C.verticalFov;}
 xSCf=function(z){return 2*Math.atan(Math.tan(xHipVFov()*Math.PI/360)/z)*180/Math.PI;};
-xTag=function(t){if(!t)return;t.tagT=.5;t.tagK=.275;t.tagS=0;};
+xTag=function(t){if(!t)return;t.tagT=VF_C.tagTime;t.tagK=VF_C.tagMul;t.tagS=0;};/* x0.275 recovering over 0.75 s (shared motor tagK, = server tagMul) */
 // The motor owns all movement multipliers, avoiding stacked scope/weapon scaling.
 moveP=function(dt,run,hold){
  const P=player;if(!P)return;const w=vfWeapon(),p=vfProfile(w),kn=w==='Knife',kk=J.dr?{}:keys,fx=-Math.sin(yaw),fz=-Math.cos(yaw);let x=0,z=0;if(kk.KeyW){x+=fx;z+=fz;}if(kk.KeyS){x-=fx;z-=fz;}if(kk.KeyA){x+=fz;z-=fx;}if(kk.KeyD){x-=fz;z+=fx;}
