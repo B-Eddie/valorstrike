@@ -29,10 +29,10 @@ const svxC = {
 function svxGeo() {
   if (svxC.sph) return;
   svxC.sph = new THREE.SphereGeometry(1, 20, 14);
-  svxC.ring = new THREE.RingGeometry(0.86, 1, 48);
+  svxC.ring = new THREE.RingGeometry(0.93, 1, 48);
   svxC.plane = new THREE.PlaneGeometry(1, 1);
   svxC.beam = new THREE.BoxGeometry(0.35, 0.35, 1);
-  svxC.cone = new THREE.CylinderGeometry(3.2, 1.4, 1, 14, 1, true); svxC.cone.rotateX(Math.PI / 2); // +Z axis, widening downrange
+  svxC.cone = new THREE.CylinderGeometry(3.2, 1.4, 1, 24, 1, true); svxC.cone.rotateX(Math.PI / 2); // +Z axis, widening downrange
   svxC.shard = new THREE.BoxGeometry(0.07, 0.16, 0.04);
   svxC.up = new THREE.Vector3(0, 1, 0);
   svxC.v0 = new THREE.Vector3();
@@ -48,11 +48,27 @@ function svxTexBoltF() { // jagged vertical lightning, white core on transparent
     while (y < 512) { y += 24 + Math.random() * 30; x = Math.max(8, Math.min(120, x + (Math.random() - 0.5) * 56)); g.lineTo(x, y); }
     g.stroke();
   };
-  for (let i = 0; i < 3; i++) { bolt(34 + i * 30, 7, 0.22); bolt(34 + i * 30, 2.6, 0.95); }
+  for (let i = 0; i < 4; i++) { bolt(25 + i * 26, 5, 0.2); bolt(25 + i * 26, 2, 0.9); }
   svxC.texBolt = new THREE.CanvasTexture(c);
   if (THREE.SRGBColorSpace) svxC.texBolt.colorSpace = THREE.SRGBColorSpace;
   svxC.texBolt.wrapS = svxC.texBolt.wrapT = THREE.RepeatWrapping;
   return svxC.texBolt;
+}
+function svxTexBoltFat() { // one fat central jagged bolt: reads at beam scale, unlike the thin 4-bolt texture
+  if (svxC.texBoltF) return svxC.texBoltF;
+  const c = document.createElement("canvas"); c.width = 128; c.height = 512; const g = c.getContext("2d");
+  g.clearRect(0, 0, 128, 512);
+  const bolt = (w, a) => {
+    g.strokeStyle = "rgba(255,255,255," + a + ")"; g.lineWidth = w; g.lineCap = "round"; g.beginPath();
+    let x = 64, y = 0; g.moveTo(x, y);
+    while (y < 512) { y += 20 + Math.random() * 26; x = Math.max(14, Math.min(114, x + (Math.random() - 0.5) * 70)); g.lineTo(x, y); }
+    g.stroke();
+  };
+  bolt(34, 0.25); bolt(16, 0.55); bolt(6, 0.95);
+  svxC.texBoltF = new THREE.CanvasTexture(c);
+  if (THREE.SRGBColorSpace) svxC.texBoltF.colorSpace = THREE.SRGBColorSpace;
+  svxC.texBoltF.wrapS = svxC.texBoltF.wrapT = THREE.RepeatWrapping;
+  return svxC.texBoltF;
 }
 function svxTexDotsF() { // concentric dashed sonar rings + radial dot grid
   if (svxC.texDots) return svxC.texDots;
@@ -82,6 +98,12 @@ function svxMatTex(key, tex, col, op, repY) {
     return new THREE.MeshBasicMaterial({ map: t, color: col, transparent: true, opacity: op, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, fog: false, toneMapped: false });
   });
 }
+function svxMatTexN(key, tex, col, op, repY) {
+  return jMat(key, () => {
+    const t = tex.clone(); t.needsUpdate = true; if (repY) t.repeat.set(1, repY);
+    return new THREE.MeshBasicMaterial({ map: t, color: col, transparent: true, opacity: op, depthWrite: false, side: THREE.DoubleSide, fog: false, toneMapped: false });
+  });
+}
 function svxMatShell(key, col, op, front) {
   return jMat(key, () => new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: op, depthWrite: false, blending: THREE.AdditiveBlending, side: front ? THREE.FrontSide : THREE.DoubleSide, fog: false, toneMapped: false }));
 }
@@ -89,20 +111,22 @@ function svxMatShell(key, col, op, front) {
 function svxShockBurst(p) {
   try {
     svxGeo();
-    const core = svxPart(svxC.sph, xAdd("svxShkCore", 0xd8f2ff, 0.6), p, 0.5, 0);
-    core.scale.setScalar(0.55);
-    svxPart(svxC.sph, svxMatShell("svxShkShell", 0x4fc3ff, 0.35), p, 0.5, 2.1); // energy shell out to ~2.6 m
-    const rg = svxPart(svxC.ring, xAdd("svxShkRingG", 0x7fd8ff, 0.85), svxC.v0.set(p.x, p.y + 0.06, p.z), 0.55, 4.2);
+    const core = svxPart(svxC.sph, xAdd("svxShkCore", 0x9fdcff, 0.22), p, 0.35, 0); // small hot center
+    core.scale.setScalar(0.14);
+    const glow = svxPart(svxC.sph, xAdd("svxShkGlow", 0x2fa8f8, 0.3), p, 0.5, 0); // blue body of the burst
+    glow.scale.setScalar(0.42);
+    svxPart(svxC.sph, svxMatShell("svxShkShell", 0x2fa8f8, 0.18), p, 0.5, 1.8); // energy shell out to ~2.6 m
+    const rg = svxPart(svxC.ring, xAdd("svxShkRingG", 0x4fc3ff, 0.35), svxC.v0.set(p.x, p.y + 0.06, p.z), 0.55, 3.4);
     rg.rotation.x = -Math.PI / 2;
-    const rv = svxPart(svxC.ring, xAdd("svxShkRingV", 0x9fe4ff, 0.8), p, 0.42, 2.6); // the upright ring of the clip
+    const rv = svxPart(svxC.ring, xAdd("svxShkRingV", 0x4fc3ff, 0.2), p, 0.42, 2.2); // the upright ring of the clip
     rv.lookAt(camera.position);
-    for (let i = 0; i < 2; i++) { // crackle arcs, two rolled additive planes
-      const a = svxPart(svxC.plane, svxMatTex("svxShkArc" + i, svxTexBoltF(), 0x8fd4ff, 0.5), p, 0.4 + i * 0.06, 0);
-      a.scale.setScalar(2.6 + i * 0.8);
+    for (let i = 0; i < 3; i++) { // crackle arcs, rolled additive planes
+      const a = svxPart(svxC.plane, svxMatTex("svxShkArc" + i, svxTexBoltF(), 0x35a8f0, 0.25), p, 0.4 + i * 0.05, 0);
+      a.scale.setScalar(1.1 + i * 0.3);
       a.lookAt(camera.position);
       a.rotateZ(Math.random() * 6.2832);
     }
-    svxShards(p, null, 7, 0x9fdcff, 5.5, 0.45, 2.2); // electric sparks
+    svxShards(p, null, 6, 0x7fd4ff, 4.5, 0.45, 2.0); // electric sparks
   } catch (e) { xE(e); }
 }
 // ---- Recon Bolt: expanding blue sonar sphere with a dotted grid (enemy bolt: red-orange) ----
@@ -110,8 +134,8 @@ function svxReconPulse(p, en) {
   try {
     svxGeo();
     const col = en ? 0xff5a2a : 0x3fb4ff, k = en ? "E" : "";
-    const core = svxPart(svxC.sph, xAdd("svxRcnC" + k, en ? 0xffb08a : 0xd8f2ff, 0.7), p, 0.35, 0);
-    core.scale.setScalar(0.5);
+    const core = svxPart(svxC.sph, xAdd("svxRcnC" + k, en ? 0xffb08a : 0x9fdcff, 0.25), p, 0.35, 0);
+    core.scale.setScalar(0.25);
     svxPart(svxC.sph, svxMatShell("svxRcnSh" + k, col, 0.09, true), p, 0.75, 29.5); // sonar shell to the 30 m reveal radius (XRCN.radius)
     let gy = NaN;
     try { gy = groundAt(p.x, p.z, 0.05, p.y); } catch (e) {}
@@ -129,24 +153,27 @@ function svxFuryBeam(o, d, hitPoint) {
     svxGeo();
     const L = 66, dir = svxC.v1.copy(d).normalize().clone();
     const end = o.clone().addScaledVector(dir, L);
-    const mz = svxPart(svxC.sph, xAdd("svxFuryMz", 0xd8f2ff, 0.35), svxC.v0.copy(o).addScaledVector(dir, 2.0), 0.2, 0);
-    mz.scale.setScalar(0.25);
-    const core = svxPart(svxC.cone, xAdd("svxFuryCore", 0xbfe9ff, 0.14), o, 0.6, 0); // widening energy cone of the clip
+    const mz = svxPart(svxC.sph, xAdd("svxFuryMz", 0x4fb8f8, 0.28), svxC.v0.copy(o).addScaledVector(dir, 2.0), 0.35, 0);
+    mz.scale.setScalar(0.16);
+    const cm = jMat("svxFuryConeM", () => new THREE.MeshBasicMaterial({ color: 0x1f6fd8, transparent: true, opacity: 0.2, depthWrite: false, side: THREE.DoubleSide, fog: false, toneMapped: false })); // normal blending: additive washes out over bright sky
+    const core = svxPart(svxC.cone, cm, o, 0.55, 0); // widening energy cone of the clip
     core.scale.set(1, 1, L - 2.5);
     core.position.copy(o).addScaledVector(dir, 2.5 + (L - 2.5) / 2);
     core.lookAt(end);
-    const hot = svxPart(svxC.beam, xAdd("svxFuryHot", 0xe8f7ff, 0.7), o, 0.5, 0); // hot thin core inside the cone
-    hot.scale.set(0.5, 0.5, L - 2.5);
-    hot.position.copy(o).addScaledVector(dir, 2.5 + (L - 2.5) / 2);
+    const hot = svxPart(svxC.beam, xAdd("svxFuryHot", 0x9fdcff, 0.8), o, 0.5, 0); // hot thin core inside the cone
+    hot.scale.set(0.5, 0.5, L - 4);
+    hot.position.copy(o).addScaledVector(dir, 4 + (L - 4) / 2);
     hot.lookAt(end);
-    for (let i = 0; i < 3; i++) { // jagged arc planes, rolled around the blast axis
-      const a = svxPart(svxC.plane, svxMatTex("svxFuryArc" + i, svxTexBoltF(), i ? 0x7fd4ff : 0xcfefff, 0.55, 8), o, 0.55, 0);
-      a.scale.set(2.4, L - 5, 1);
-      a.position.copy(o).addScaledVector(dir, 5 + (L - 5) / 2);
+    for (let i = 0; i < 6; i++) { // jagged bolt blades: tilted outward so the far end swings ~4 m off-axis (the clip's radiating cone)
+      const Lp = 26;
+      const a = svxPart(svxC.plane, svxMatTexN("svxFuryArc" + i, svxTexBoltFat(), i ? 0x2a7fe8 : 0x7fc4ff, 0.8, 4), o, 0.6, 0);
+      a.scale.set(2.4, Lp, 1);
       a.quaternion.setFromUnitVectors(svxC.up, dir);
-      a.rotateY(i * 2.1);
+      a.rotateY(i * 1.047);
+      a.rotateX(0.3); // outward tilt: far end ~4 m off the beam axis, reads from caster and observer POV
+      a.position.copy(o).addScaledVector(dir, 4 + Lp / 2);
     }
-    svxShards(o, dir, 9, 0x9fdcff, 2.5, 0.8, 40); // floating charge shards along the path
+    svxShards(o, dir, 14, 0x66c8ff, 3.5, 0.9, 50); // floating charge shards along the path
   } catch (e) { xE(e); }
 }
 // ---- Owl Drone: the blue hologram flash as it leaves the gauntlet ----
@@ -168,12 +195,12 @@ function svxOwlLaunch(p, d) {
 function svxBoltFlight(m, kind) {
   try {
     svxGeo();
-    const col = kind === "shock" ? 0x7fd8ff : kind === "dart" ? 0x8fe0ff : 0x45d0ff;
-    const gm = svxMatShell("svxBoltGlow" + kind, col, 0.85);
+    const col = kind === "shock" ? 0x4fc3ff : kind === "dart" ? 0x5fd0ff : 0x35c0f0;
+    const gm = svxMatShell("svxBoltGlow" + kind, col, 0.5);
     const glow = new THREE.Mesh(svxC.sph, gm);
-    glow.scale.setScalar(0.17); glow.raycast = () => {}; glow.renderOrder = 2;
-    const ring = new THREE.Mesh(svxC.ring, gm);
-    ring.scale.setScalar(0.45); ring.raycast = () => {}; ring.renderOrder = 2;
+    glow.scale.setScalar(0.13); glow.raycast = () => {}; glow.renderOrder = 2;
+    const ring = new THREE.Mesh(svxC.ring, svxMatShell("svxBoltRing" + kind, col, 0.5));
+    ring.scale.setScalar(0.4); ring.raycast = () => {}; ring.renderOrder = 2;
     m.add(glow); m.add(ring); ring.lookAt(camera.position);
     m.userData.kids = (m.userData.kids || []).concat([glow, ring]); // jRel strips kids when the bolt lands
   } catch (e) { xE(e); }
@@ -208,7 +235,7 @@ function svxShards(p, dir, n, col, spd, life, spread) {
   for (let i = 0; i < n; i++) {
     const m = new THREE.Mesh(svxC.shard, mat);
     m.raycast = () => {};
-    const along = dir ? Math.random() * spread : 0;
+    const along = dir ? 4 + Math.random() * spread : 0;
     m.position.set(
       p.x + (dir ? dir.x * along : 0) + (Math.random() - 0.5) * (dir ? 2.4 : 0.4),
       Math.max(0.1, p.y + (dir ? dir.y * along : 0) + (Math.random() - 0.5) * 2.2),
