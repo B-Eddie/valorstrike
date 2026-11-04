@@ -2,7 +2,7 @@
 // Run: node test-agents18.js (part of npm test).
 import assert from 'node:assert';
 import {AG18,TYPES18,A18,init18,cast18,tick18,reward18} from './src/agents18.js';
-import {initAbilities,types,abilityDamage} from './src/abilities.js';
+import {initAbilities,types,abilityDamage,tickAbilities} from './src/abilities.js';
 import {Simulation,weapons} from './src/simulation.js';
 import {arenaWrap,ARENA_X,ARENA_STRIDE} from './src/arena.js';
 import kits from './src/kits.json' with {type:'json'};
@@ -164,3 +164,31 @@ for(const a of Object.keys(AG18)){assert.ok(kits[a],a+' in kits.json');assert.ok
  const ar=s.effects.find(e=>e.kind==='armag');assert.ok(ar&&Math.abs(ar.p[2]-30)<.01,'origin moved to the pick');
  assert.ok(Math.abs(ar.yaw-Math.atan2(-(0-t2.x),-(30-t2.z)))<.001,'wave from Tejo through the pick');}
 console.log('agents18: registration, charge/star gates, Iso pocket-arena duel isolation + return, Neon fuel/slide/reset, KAY/O downed/revive/bleedout, Deadlock cocoon pull/rescue/kill, suppress gate, Gekko globule reclaim, Miks Bassquake deafen/slow, Yoru Gatecrash fake + 1.2 s timing');
+
+// Regression (2026-11-04, fixed in 05efb5c): tickUlts' Skye-ult seeker handler used to hijack EVERY
+// kind:'seeker' effect, snapping Fade's Prowler and Gekko's Wingman onto their target on the first
+// live tick so they were consumed instantly and never worked online. Cast dispatch alone (tick18)
+// misses this class - drive the FULL tickAbilities loop (tickUlts + tick18, the live order).
+{const s=mkSim(),f=mk('Fade',0,1),j=mk('Jett',1,2,60);s.units=[f,j];initAbilities(f,true);initAbilities(j,true);f.ability.c=1;
+ assert.equal(cast18(s,f,{k:'c'},O,D),true,'prowler cast accepted');
+ const e0=s.effects.find(e=>e.kind==='seeker');assert.ok(e0&&e0.prowler,'prowler seeker spawned');
+ const d0=Math.hypot(j.x-e0.p[0],j.z-e0.p[2]);
+ for(let i=0;i<4;i++){s.time+=.05;tickAbilities(s,.05);}
+ const e1=s.effects.find(e=>e.kind==='seeker');
+ assert.ok(e1,'prowler survives the first ticks through the full tick loop (was: consumed on tick 1 by tickUlts)');
+ const d1=Math.hypot(j.x-e1.p[0],j.z-e1.p[2]);
+ assert.ok(d1<d0-.1&&d1>d0-2,'prowler advances from the caster toward the target instead of snapping onto it ('+d0.toFixed(1)+' -> '+d1.toFixed(1)+')');}
+{const s=mkSim(),g=mk('Gekko',0,1),j=mk('Jett',1,2,40);s.units=[g,j];initAbilities(g,true);initAbilities(j,true);g.ability.q=1;
+ assert.equal(cast18(s,g,{k:'q'},O,D),true,'wingman cast accepted');
+ for(let i=0;i<4;i++){s.time+=.05;tickAbilities(s,.05);}
+ const e1=s.effects.find(e=>e.kind==='seeker');
+ assert.ok(e1&&e1.wing,'wingman survives the first ticks through the full tick loop');
+ const d0=40,d1=Math.hypot(j.x-e1.p[0],j.z-e1.p[2]);
+ assert.ok(d1<d0-.1&&d1>d0-2,'wingman advances from the caster instead of snapping ('+d1.toFixed(1)+')');}
+{const s=mkSim(),sk=mk('Skye',0,1),j=mk('Jett',1,2,30);s.units=[sk,j];initAbilities(sk,true);initAbilities(j,true);
+ s.effects.push({id:99,kind:'seeker',owner:sk.id,ag:'Skye',team:0,p:[sk.x,sk.y+1,sk.z],until:s.time+3,radius:0,target:j.id,at:s.time+3});
+ s.time+=.05;tickAbilities(s,.05);
+ const e=s.effects.find(e=>e.kind==='seeker');
+ assert.ok(e,'Skye ult seeker still alive under the guard');
+ assert.equal(Math.hypot(j.x-e.p[0],j.z-e.p[2]),0,'Skye ult seeker still rides its target - the tickUlts path is preserved for real ult seekers');}
+console.log('test-agents18: ok (incl. tickUlts/tick18 seeker regression)');
