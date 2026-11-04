@@ -50,7 +50,7 @@ function bfsPath(from, to) { const s = nearNode(from), t = nearNode(to);
   const idx = []; for (let i = t; i !== -1; i = prev.get(i)) idx.push(i); idx.reverse();
   return idx.map((i) => ({ x: NAV.nodes[i][0], y: NAV.nodes[i][1], z: NAV.nodes[i][2] })).concat([to]); }
 
-async function room(agA, agB) {
+async function room(agA, agB, extraCount = 0) {
   const code = CODE();
   const A = client('A', `create=1&code=${code}&mode=five&map=${MAP}`);
   A.ws.on('open', () => A.send({ t: 'hi', n: 'AlphaQA', ag: agA }));
@@ -58,11 +58,18 @@ async function room(agA, agB) {
   const B = client('B', `code=${code}&mode=five&map=${MAP}`);
   B.ws.on('open', () => B.send({ t: 'hi', n: 'BravoQA', ag: agB }));
   await until(() => B.id !== null, 'B welcome', 15000);
-  const ping = setInterval(() => { A.send({ t: 'pi', c: 0 }); B.send({ t: 'pi', c: 0 }); }, 4000);
+  const extra = [];
+  for (let i = 0; i < extraCount; i++) { // filler clients (Gamma lands on A's team, Delta on B's, by join-order balancing): their team survives a kill, so combat does not end the round
+    const X = client('X' + i, `code=${code}&mode=five&map=${MAP}`);
+    X.ws.on('open', () => X.send({ t: 'hi', n: i ? 'DeltaQA' : 'GammaQA', ag: 'Jett' }));
+    await until(() => X.id !== null, 'extra welcome', 15000);
+    extra.push(X);
+  }
+  const ping = setInterval(() => { A.send({ t: 'pi', c: 0 }); B.send({ t: 'pi', c: 0 }); for (const X of extra) X.send({ t: 'pi', c: 0 }); }, 4000);
   const start = setInterval(() => A.send({ t: 'start' }), 500);
   await until(() => A.snap && B.snap && A.snap.phase === 'game', 'game snapshots on both', 20000);
   clearInterval(start);
-  return { A, B, ping };
+  return { A, B, ping, extra };
 }
 const dist = (a, b) => Math.hypot(a.x - b.x, a.z - b.z);
 async function approach(A, B, stop) {
@@ -79,6 +86,27 @@ async function approach(A, B, stop) {
   throw new Error('approach timeout');
 }
 
+// real gunfire: nav-walk into range (walls block bullets, so closing beats sniping through fog), then hold aim
+// on the victim's head and fire; if 4 s of fire deals no damage, close further. Death read from the victim's OWN snapshot (row[10]).
+async function kill(atk, vic) {
+  const t0 = Date.now(); let stop = 3, stallAt = 0, lastHp = 1e9;
+  while (Date.now() - t0 < 45000) {
+    const v = vic.row(vic.id);
+    if (v && !v[10]) { atk.input(0, 0, 0, false); return; }
+    const ar = atk.row(atk.id), vr = vic.row(vic.id);
+    if (!ar || !vr) { await sleep(120); continue; }
+    if (v && v[8] < lastHp - .5) { lastHp = v[8]; stallAt = Date.now(); } // damage progress resets the stall clock
+    const a = rowPos(ar), b = rowPos(vr), dx = b.x - a.x, dz = b.z - a.z, d = Math.hypot(dx, dz);
+    if (d > stop) { const pts = bfsPath(a, b); const wp = pts && pts.find((q) => Math.hypot(q.x - a.x, q.z - a.z) > 1.5) || b;
+      atk.input(Math.atan2(-(wp.x - a.x), -(wp.z - a.z)), 0, 1, false); stallAt = Date.now(); }
+    else { atk.input(Math.atan2(-dx, -dz), Math.atan2((b.y + 1.2) - (a.y + 1.6), d), 0, true);
+      if (!stallAt) stallAt = Date.now();
+      if (Date.now() - stallAt > 4000 && stop > 2.5) { stop = Math.max(2.5, stop - 3); stallAt = 0; } }
+    await sleep(120);
+  }
+  throw new Error('kill timeout');
+}
+
 // send one cast and wait for the server's ability-outcome for that key
 async function cast(A, k, extra = {}) {
   A.ao = null;
@@ -87,7 +115,8 @@ async function cast(A, k, extra = {}) {
   while (!A.ao || A.ao.k !== k) { if (Date.now() - t0 > 8000) throw new Error('no ao for ' + k); await sleep(100); }
   const m = A.ao; A.ao = null; return m;
 }
-const fxOn = (c, kind) => (c.snap && c.snap.fx || []).some((f) => f.kind === kind);
+const fxRow = (c, kind) => (c.snap && c.snap.fx || []).find((f) => f.kind === kind);
+const fxOn = (c, kind) => { const f = fxRow(c, kind); return !!f && (!Array.isArray(f.p) || f.p.every((n) => Number.isFinite(n))); }; // a NaN/null coordinate is a broken row, not a live one
 const fxBoth = (A, B, kind) => fxOn(A, kind) && fxOn(B, kind);
 const posOnBothNear = (A, B, p, r) => [A, B].every((c) => { const row = c.row(A.id); return row && Math.hypot(row[4] - p.x, row[6] - p.z) < r; });
 
@@ -113,6 +142,17 @@ async function step(A, B, label, s) {
     throw e; });
     console.log(tag + ': ' + s.fx + ' fx row live on both clients'); }
   else console.log(tag + ': accepted (ao ok, no world fx row by design)');
+  if (s.fx && s.moves && !s.ownOnly) { // mobile fx: finite movement on the wire; seekers must also close on the target
+    const r1 = fxRow(A, s.fx), bp = rowPos(B.row(B.id));
+    const d1 = s.towardB ? Math.hypot(r1.p[0] - bp.x, r1.p[2] - bp.z) : 0;
+    await sleep(500);
+    const r2 = fxRow(A, s.fx);
+    assert.ok(r2 && r2.p.every((n) => Number.isFinite(n)), tag + ': ' + s.fx + ' row must stay live and finite while moving');
+    const moved = Math.hypot(r2.p[0] - r1.p[0], r2.p[2] - r1.p[2]);
+    assert.ok(moved > .2, tag + ': ' + s.fx + ' must move on the wire (moved ' + moved.toFixed(2) + 'm in 0.5 s)');
+    if (s.towardB) { const d2 = Math.hypot(r2.p[0] - bp.x, r2.p[2] - bp.z);
+      assert.ok(d2 < d1 - .2, tag + ': ' + s.fx + ' must close on the target (' + d1.toFixed(1) + ' -> ' + d2.toFixed(1) + ')'); }
+    console.log(tag + ': ' + s.fx + ' moves ' + moved.toFixed(1) + 'm/0.5s on the wire' + (s.towardB ? ', closing on the target' : '')); }
   if (s.toggle) { await sleep(450); const m2 = await cast(A, s.k, s.extra || {}); // server per-key cool .3s assert.ok(m2.ok, tag + ': toggle recast rejected');
     await until(() => fxBoth(A, B, s.toggle), tag + ': toggle ' + s.toggle + ' fx row on both clients', 12000);
     console.log(tag + ': toggle on -> ' + s.toggle + ' fx row live on both clients'); }
@@ -172,16 +212,16 @@ async function seekLos(A, B, near) {
 const CASES = {
   Brimstone: [ {k:'c',fx:'stim'}, {k:'q',fx:'fire'}, {k:'e',fx:'smoke'}, {k:'x',fx:'orbital'} ],
   Clove:     [ {k:'q',fx:'blast'}, {k:'e',fx:'smoke'} ], // c Pick-me-up needs a kill in its window; x Not Dead Yet needs Clove dead - outside this suite's live-cast scope
-  Harbor:    [ {k:'c',fx:'blast'}, {k:'q',fx:'tide'}, {k:'e',fx:'cove'}, {k:'x',fx:'reckon'} ],
+  Harbor:    [ {k:'c',fx:'blast'}, {k:'q',fx:'tide',moves:true}, {k:'e',fx:'cove'}, {k:'x',fx:'reckon',moves:true} ],
   Miks:      [ {k:'c',fx:'mpulse'}, {k:'q'}, {k:'e',fx:'smoke'}, {k:'x',fx:'bassq'} ],
   Viper:     [ {k:'c',fx:'fire'}, {k:'q',toggle:'smoke'}, {k:'e',toggle:'tscreen'}, {k:'x',fx:'pit'} ],
-  Hush:      [ {k:'c'}, {k:'q'}, {k:'e',fx:'pull'}, {k:'x',fx:'susp'} ],
-  Iso:       [ {k:'c',fx:'conting'}, {k:'q',fx:'blast'} ], // x Kill Contract covered end-to-end in test-two-client-18.js
+  Hush:      [ {k:'c'}, {k:'q'}, {k:'e',fx:'pull'}, {k:'x',fx:'susp',moves:true} ],
+  Iso:       [ {k:'c',fx:'conting',moves:true}, {k:'q',fx:'blast'} ], // x Kill Contract covered end-to-end in test-two-client-18.js
   Neon:      [ {k:'c',fx:'fastlane'}, {k:'q',fx:'blast'}, {k:'e'}, {k:'x'} ],
   Waylay:    [ {k:'c',fx:'blast'}, {k:'q'}, {k:'e',tp:'back'}, {k:'x',fx:'paths'} ],
-  Yoru:      [ {k:'c',fx:'decoy'}, {k:'q'}, {k:'e',tp:'fwd',fake:true}, {k:'x'} ],
-  Fade:      [ {k:'c',fx:'seeker'}, {k:'q',fx:'seize'}, {k:'e',fx:'haunt'}, {k:'x',fx:'nightfall'} ],
-  Gekko:     [ {k:'c',fx:'mosh'}, {k:'q',fx:'seeker'}, {k:'e',fx:'dizzy'}, {k:'x',fx:'blast'} ],
+  Yoru:      [ {k:'c',fx:'decoy',moves:true}, {k:'q'}, {k:'e',tp:'fwd',fake:true}, {k:'x'} ],
+  Fade:      [ {k:'c',fx:'seeker',moves:true,towardB:true}, {k:'q',fx:'seize'}, {k:'e',fx:'haunt'}, {k:'x',fx:'nightfall'} ],
+  Gekko:     [ {k:'c',fx:'mosh'}, {k:'q',fx:'seeker',moves:true,towardB:true}, {k:'e',fx:'dizzy'}, {k:'x',fx:'blast'} ],
   'KAY/O':   [ {k:'c',fx:'frag'}, {k:'q'}, {k:'e',fx:'blast'}, {k:'x',fx:'nullcmd'} ],
   Tejo:      [ {k:'c',fx:'sdrone'}, {k:'q',fx:'blast'}, {k:'e',fx:'salvo'}, {k:'x',fx:'armag'} ],
   Deadlock:  [ {k:'x',fx:'anni',los:true,near:12}, {k:'c',fx:'barrier',los:true}, {k:'q',fx:'sensor'}, {k:'e',fx:'gnet'} ],
@@ -197,8 +237,9 @@ if (!names.length) { console.error('no matching agents'); process.exit(1); }
 console.log('agents this run: ' + names.join(', '));
 let pass = 0;
 for (const ag of names) {
-  const { A, B, ping } = await room(ag, 'Jett');
+  const { A, B, ping, extra } = await room(ag, 'Jett', ag === 'Clove' ? 2 : 0);
   A.send({ t: 'buy', n: 'ab:c' }); A.send({ t: 'buy', n: 'ab:q' }); // QA_BUY_SECONDS:4 window, QA_CREDITS funds
+  if (ag === 'Clove') { A.send({ t: 'buy', n: 'Spectre' }); B.send({ t: 'buy', n: 'Spectre' }); } // the combat block's duel: 30-round mags
   await sleep(5500); // buy phase over (round clock tl starts at 100)
   firstCast = true;
   for (const s of CASES[ag]) {
@@ -208,7 +249,26 @@ for (const ag of names) {
       await until(() => !fxOn(A, 'rose') && !fxOn(B, 'rose'), ag + ': rose consumed on both clients after the flash recast', 12000);
       console.log(ag + ' e recast: Arc Rose flashed, rose row consumed on both clients (flash itself is a server-side blind, no fx row by design)'); }
   }
-  clearInterval(ping); A.ws.close(); B.ws.close();
+  if (ag === 'Clove') { // combat/death coverage through legitimate play: filler clients keep both teams alive so the round survives kills
+    await seekLos(A, B, 12);
+    await kill(B, A); // x first: B must still be alive to kill A
+    await until(() => { const r = A.row(A.id); return r && !r[10]; }, 'Clove dead in own snapshot', 10000);
+    const deathPos = rowPos(A.row(A.id));
+    const mx = await cast(A, 'x');
+    assert.ok(mx.ok, 'Clove x: Not Dead Yet cast from death accepted (ndy window)');
+    await until(() => { const r = A.row(A.id); return r && r[10]; }, 'Clove alive again after the 3.3 s channel', 12000);
+    const rp = rowPos(A.row(A.id));
+    assert.ok(Math.hypot(rp.x - deathPos.x, rp.z - deathPos.z) < 1.5, 'Clove revived at the death spot, not at a spawn');
+    console.log('Clove x: real death -> Not Dead Yet cast from death -> self-revive at the death spot');
+    const pre = await cast(A, 'c');
+    assert.ok(!pre.ok, 'Clove c: rejected with no kill yet (Pick-me-up gate)');
+    await kill(A, B);
+    const post = await cast(A, 'c');
+    assert.ok(post.ok, 'Clove c: accepted after a legitimate kill inside the window');
+    await until(() => { const r = A.row(A.id); return r && r[8] === 150; }, 'Clove c: +50 overheal on the caster (hp 150)', 5000);
+    console.log('Clove c: Pick-me-up gated on a real kill; hp 100 -> 150 overheal on the caster');
+  }
+  clearInterval(ping); A.ws.close(); B.ws.close(); for (const X of extra || []) X.ws.close();
   pass++; console.log(ag + ': room PASS (' + pass + '/' + names.length + ')');
   await sleep(800);
 }
