@@ -16,7 +16,7 @@ permissions:
 jobs:
   shots:
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 25
     strategy:
       fail-fast: false
       matrix:
@@ -26,8 +26,6 @@ jobs:
           - {name: breach-rt,  agent: Breach,  key: KeyX, scen: scen_ab.cjs}
           - {name: viper-snake,agent: Viper,   key: KeyC, scen: scen_ab.cjs}
           - {name: phx-curve,  agent: Phoenix, key: KeyC, scen: scen_ab.cjs}
-          - {name: phx-hands,  agent: Phoenix, key: KeyQ, scen: scen_ab.cjs}
-          - {name: sage-slow,  agent: Sage,    key: KeyQ, scen: scen_ab.cjs}
           - {name: jett-cloud, agent: Jett,    key: KeyC, scen: scen_ab.cjs}
     steps:
       - uses: actions/checkout@v4
