@@ -106,7 +106,7 @@ export function packStick(sim,o,d){const B=DEV.blastPack;let p=o.map((n,i)=>n+d[
 export function packDamage(d){const B=DEV.blastPack;return d<=B.inner?B.max:d>=B.outer?0:B.max-(d-B.inner)/(B.outer-B.inner)*(B.max-B.min);}
 // Detonation: everyone within 5 m (Raze and allies too) is launched away from the pack (vy 11, 14 m/s out, as the offline rsPack);
 // enemies take packDamage once it has armed (1.5 s), never allies or Raze.
-export function packBoom(sim,e){const B=DEV.blastPack,owner=sim.units.find(u=>u.id===e.owner),armed=sim.time>=e.armAt;e.until=sim.time-1e-9;sim.fxSrc=e;
+export function packBoom(sim,e){const B=DEV.blastPack,owner=sim.units.find(u=>u.id===e.owner),armed=sim.time>=e.armAt;e.until=sim.time-1e-9;sim.fxSrc=e;sim.castEvents.push({t:'ac',i:e.owner,ag:'Raze',k:'q',sub:'boom',o:[...e.p],d:[0,0,1],p:[...e.p],ts:Math.round(sim.time*1000)});/* detonation event: the client plays the blast only on this, not when the row leaves view */
  for(const v of sim.units){if(!v.alive||v.loading)continue;const dx=v.x-e.p[0],dz=v.z-e.p[2],dy=v.y+1-e.p[1],d=Math.hypot(dx,dy,dz);if(d>=B.outer||Math.abs(v.y-e.p[1])>3)continue;
   const h=Math.hypot(dx,dz);let nx=dx/h,nz=dz/h;if(!(h>.3)){const f=fwd(v);nx=f[0];nz=f[2];}v.vx=nx*B.push;v.vz=nz*B.push;v.vy=B.vy;v.air=true;v.seq=(v.seq||0)+1;
   if(armed&&owner&&v.team!==e.team&&losClear(sim,[e.p[0],e.p[1]+.3,e.p[2]],chest(v)))abilityDamage(sim,owner,v,packDamage(d));}}

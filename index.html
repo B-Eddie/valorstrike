@@ -9410,7 +9410,7 @@ function xSsDmg(d) { return d <= XSS.inner ? XSS.max : d < XSS.outer ? XSS.max -
 let RZ = null;
 /* Raze Paint Shells / Blast Pack blasts (wiki Paint_Shells and Blast_Pack showcase clips, frames viewed): Paint Shells = lobed orange-red fireball,
    yellow-white core, ragged orange ground splat that stays a scorch, teal sparks; Blast Pack = a hard yellow-white flash with sharp star blades. */
-function rzFire(p, R, st) {
+function rzFire(p, R, st) { window.__rzN = (window.__rzN || 0) + 1;
   if (!RZ) {
     const c = document.createElement("canvas"); c.width = c.height = 256; const g = c.getContext("2d"); g.clearRect(0, 0, 256, 256);
     const gr = g.createRadialGradient(128, 128, 5, 128, 128, 100); gr.addColorStop(0, "rgba(40,18,8,0.85)"); gr.addColorStop(0.6, "rgba(90,40,14,0.55)"); gr.addColorStop(1, "rgba(60,30,10,0)"); g.fillStyle = gr; g.beginPath(); g.arc(128, 128, 100, 0, 6.3); g.fill();
@@ -14148,6 +14148,7 @@ function mpCastIn(c, u, m) { // host: a client's cast
   const out = { t: "ac", i: u.nid, ag, k, o: mpR3(o), d: mpR3(d), ts: +m.ts || 0 }; if (bo) { out.pw = bo.pw; out.b = bo.b; } if (cp) out.p = mpR3(cp); mpCastOut(out, c);
 }
 function mpCastFx(m) { // client: someone else's cast, visual only
+  if (m.sub === "boom" && m.ag === "Raze" && m.k === "q" && Array.isArray(m.p) && MP.cl && MP.st === "game") { try { rzFire(mpV(m.p, new THREE.Vector3()), 4, "pack"); } catch (e) { xE(e); } return; } // server-confirmed Blast Pack detonation (all clients, incl. the caster)
   if (!MP.cl || MP.st !== "game" || m.i === MP.me || typeof m.k !== "string") return;
   const u = bots.find((x) => x && x.nid === m.i) || allies.find((x) => x && x.nid === m.i); if (!u || !u.g) return;
   const o = mpV(m.o, new THREE.Vector3(u.g.position.x, 1.6, u.g.position.z)), d = mpDir(m.d, u), p = Array.isArray(m.p) ? mpV(m.p, new THREE.Vector3()) : null;
@@ -16296,7 +16297,7 @@ function netDevPart(kind,al){const col=al?0x3fb4ff:0xff4655;let m,own=false;
  else{m=new THREE.Mesh(new THREE.BoxGeometry(kind==='spycam'?.25:.2,kind==='spycam'?.25:.2,kind==='spycam'?.25:.2),okMat(kind==='spycam'?0x3fd0c0:0xe8e8e4));own=true;}
  m.userData.netDev=kind;m.userData.ownGeo=own;m.raycast=()=>{};scene.add(m);const D=NET_DEV[kind];try{if(D&&typeof xvDevice==='function')xvDevice(m,D[0],kind==='blastpack'||kind==='owl'?D[1]/Math.max(.01,m.scale.y):D[1]);/* as xvDevicesTick: the pack's height is divided by its placeholder scale, the Trademark's is not */}catch(err){}return m;}
 function netDevFree(m){if(!m)return;if(m.userData.hunter){scene.remove(m);m.traverse(o=>{if(o.isMesh){o.geometry.dispose();o.material.dispose();}});return;}scene.remove(m);try{if(typeof xvDeviceReset==='function')xvDeviceReset(m);}catch(err){}if(m.material&&!m.userData.shared)m.material.dispose();/* fireMat is a shared cache */if(m.userData.ownGeo&&m.geometry)m.geometry.dispose();}
-function netDevDrop(id){const d=netDevs.get(id);if(!d)return;if(d.k==='blastpack'&&d.parts[0]){try{const q=d.parts[0].position;rzFire(new THREE.Vector3(q.x,q.y+.1,q.z),4,'pack');}catch(e){}}d.parts.forEach(netDevFree);netDevs.delete(id);}
+function netDevDrop(id){const d=netDevs.get(id);if(!d)return;d.parts.forEach(netDevFree);netDevs.delete(id);}
 // Our own devices are drawn by the local cast, which never learns that the server destroyed one (shot down, Spycam / Owl
 // Drone bodies, a detonated or expired Blast Pack): it stayed drawn (and the Spycam viewable) until round end. A device
 // row of ours the server stops sending now takes the local one nearest its last server position away (2.5 m; 4 m for a
