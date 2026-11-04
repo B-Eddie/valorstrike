@@ -11108,7 +11108,7 @@ function xHud() {
 function sbScore() { try { if (mode === "five") return [FV.you, FV.them, F_MAPN[FV.map] || "Ascent"]; if (mode === "duel") return [du.you, du.them, "Operator Duel"]; if (mode === "rifle") return [RF.you, RF.them, "Ascent"]; } catch (e) {} return [score.you, score.bots, "Ascent · B Site"]; }
 function sbAcs(p) { const s = sbScore(), r = Math.max(1, s[0] + s[1]); return Math.round(((p.dmg || 0) + p.k * 50 + (p.a || 0) * 25) / r); }
 function sbTeams() { const MT = mode === "five" ? F_MATES : MATES; return [["You"].concat(MT.filter((n) => SB[n])), Object.keys(SB).filter((n) => n !== "You" && MT.indexOf(n) < 0)]; }
-function hudPortrait(ag) { const a = String(ag || "").toLowerCase(); return /^(jett|phoenix|sova|sage|reyna|raze|killjoy|omen|skye|chamber|breach|cypher|astra|brimstone|clove|harbor|miks|viper|hush|iso|neon|waylay|yoru|fade|gekko|kayo|tejo|deadlock|veto|vyse)$/.test(a) ? "models/valorant/agents/portraits/" + a + ".png" : ""; }
+function hudPortrait(ag) { const a = String(ag || "").toLowerCase().replace(/[^a-z0-9]/g, ""); return /^(jett|phoenix|sova|sage|reyna|raze|killjoy|omen|skye|chamber|breach|cypher|astra|brimstone|clove|harbor|miks|viper|hush|iso|neon|waylay|yoru|fade|gekko|kayo|tejo|deadlock|veto|vyse)$/.test(a) ? "models/valorant/agents/portraits/" + a + ".png" : ""; }
 function hudEscape(v) { return String(v == null ? "" : v).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
 function sbTile(n) { let ag = n; try { if (n === "You" && J.pick) ag = J.pick; else { const u = kfAll().find((x) => x && x.name === n); if (u) ag = xAg(u) || ag; } } catch (e) {} const src = hudPortrait(ag); return `<span class="x-ag" title="${hudEscape(ag)}">${src ? `<img src="${src}" alt="${hudEscape(ag)}" draggable="false">` : hudEscape(String(ag)[0])}</span>`; }
 function sbLoadout(n, friendly, living) {
@@ -14438,13 +14438,15 @@ function xvaKit(gl, L, slug) {
 }
 function xvaParse(buf) { return new Promise((res, rej) => new THREE.GLTFLoader().parse(buf, XVA.dir, res, rej)); }
 function xvAgentLoad(ag) {
-  if (XV.agents[ag]) return XV.agents[ag]; const slug = ag.toLowerCase();
+  if (XV.agents[ag]) return XV.agents[ag]; const slug = xvaSlug(ag);
   return XV.agents[ag] = xvaRetry(() => Promise.all([xvaFetch(slug + '.glb').then(xvaParse), xvaLoco()]).then(([gl, L]) => xvaKit(gl, L, slug)), ag)
     .then((kit) => { XVA.kits[ag] = kit; xvaNotify(); return kit; })
     .catch((e) => { delete XV.agents[ag]; console.warn('Valorant agent unavailable: ' + ag, e); throw e; });
 }
 function xvaAll() { return Object.keys(XUB_AG); }
-function xvaFilesOf(ags) { return ags.map((a) => a.toLowerCase() + '.glb').concat(['locomotion.json', 'locomotion.bin']); }
+// KAY/O's display name carries a slash; his files are kayo*.glb, so the slug strips every non-alphanumeric.
+function xvaSlug(ag) { return ag.toLowerCase().replace(/[^a-z0-9]/g, ''); }
+function xvaFilesOf(ags) { return ags.map((a) => xvaSlug(a) + '.glb').concat(['locomotion.json', 'locomotion.bin']); }
 // Progress over a set of agents: kits built, and bytes in hand against the manifest sizes.
 function xvAgentProgress(ags) {
   ags = ags || xvaAll(); const fs = xvaFilesOf(ags); let got = 0, total = 0;
@@ -14616,7 +14618,7 @@ function xvFPData(ag,w) {
   return (asset?xskModelData(asset):Promise.resolve(null)).then(meta=>{
   const slug=asset?asset.model:(w==='Knife'?'melee':w.toLowerCase()), cfg=meta?meta.fp:XV.config.weaponAnimations && XV.config.weaponAnimations[slug]; if(!cfg || !cfg.WEAPONS_ANIMS_JSON) return Promise.reject(new Error('No native animation set for '+w));
   const entries=cfg.WEAPONS_ANIMS_JSON.Animations, files=[...new Set(entries.concat(cfg.MODEL_HELD_JSON.Animations||[]).filter(a=>a.File).map(a=>a.File))];
-  return Promise.all([xvLoad(ag.toLowerCase()+'-fp'),xvLoad(slug),...files.map(f=>xvLoad('animations/'+f))]).then(([arms,weapon,...anims])=>({skin,cfg,entries,files,arms,weapon,anims}));
+  return Promise.all([xvLoad(xvaSlug(ag)+'-fp'),xvLoad(slug),...files.map(f=>xvLoad('animations/'+f))]).then(([arms,weapon,...anims])=>({skin,cfg,entries,files,arms,weapon,anims}));
   });
 }
 function xvFPLoad(ag,w) {

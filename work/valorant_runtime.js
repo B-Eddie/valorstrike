@@ -200,13 +200,15 @@ function xvaKit(gl, L, slug) {
 }
 function xvaParse(buf) { return new Promise((res, rej) => new THREE.GLTFLoader().parse(buf, XVA.dir, res, rej)); }
 function xvAgentLoad(ag) {
-  if (XV.agents[ag]) return XV.agents[ag]; const slug = ag.toLowerCase();
+  if (XV.agents[ag]) return XV.agents[ag]; const slug = xvaSlug(ag);
   return XV.agents[ag] = xvaRetry(() => Promise.all([xvaFetch(slug + '.glb').then(xvaParse), xvaLoco()]).then(([gl, L]) => xvaKit(gl, L, slug)), ag)
     .then((kit) => { XVA.kits[ag] = kit; xvaNotify(); return kit; })
     .catch((e) => { delete XV.agents[ag]; console.warn('Valorant agent unavailable: ' + ag, e); throw e; });
 }
 function xvaAll() { return Object.keys(XUB_AG); }
-function xvaFilesOf(ags) { return ags.map((a) => a.toLowerCase() + '.glb').concat(['locomotion.json', 'locomotion.bin']); }
+// KAY/O's display name carries a slash; his files are kayo*.glb, so the slug strips every non-alphanumeric.
+function xvaSlug(ag) { return ag.toLowerCase().replace(/[^a-z0-9]/g, ''); }
+function xvaFilesOf(ags) { return ags.map((a) => xvaSlug(a) + '.glb').concat(['locomotion.json', 'locomotion.bin']); }
 // Progress over a set of agents: kits built, and bytes in hand against the manifest sizes.
 function xvAgentProgress(ags) {
   ags = ags || xvaAll(); const fs = xvaFilesOf(ags); let got = 0, total = 0;
@@ -378,7 +380,7 @@ function xvFPData(ag,w) {
   return (asset?xskModelData(asset):Promise.resolve(null)).then(meta=>{
   const slug=asset?asset.model:(w==='Knife'?'melee':w.toLowerCase()), cfg=meta?meta.fp:XV.config.weaponAnimations && XV.config.weaponAnimations[slug]; if(!cfg || !cfg.WEAPONS_ANIMS_JSON) return Promise.reject(new Error('No native animation set for '+w));
   const entries=cfg.WEAPONS_ANIMS_JSON.Animations, files=[...new Set(entries.concat(cfg.MODEL_HELD_JSON.Animations||[]).filter(a=>a.File).map(a=>a.File))];
-  return Promise.all([xvLoad(ag.toLowerCase()+'-fp'),xvLoad(slug),...files.map(f=>xvLoad('animations/'+f))]).then(([arms,weapon,...anims])=>({skin,cfg,entries,files,arms,weapon,anims}));
+  return Promise.all([xvLoad(xvaSlug(ag)+'-fp'),xvLoad(slug),...files.map(f=>xvLoad('animations/'+f))]).then(([arms,weapon,...anims])=>({skin,cfg,entries,files,arms,weapon,anims}));
   });
 }
 function xvFPLoad(ag,w) {
