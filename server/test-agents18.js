@@ -165,15 +165,16 @@ for(const a of Object.keys(AG18)){assert.ok(kits[a],a+' in kits.json');assert.ok
  assert.ok(Math.abs(ar.yaw-Math.atan2(-(0-t2.x),-(30-t2.z)))<.001,'wave from Tejo through the pick');}
 // Armageddon (wiki.playvalorant.com/en-us/Armageddon): 3.08 s windup, 16 segments x 2 m (32 m) x 12 m wide, segment i starts
 // 0.25 s after segment i-1, each segment detonates 4 times 0.25 s apart for 60 - a chain, not one instant strip.
-{const s=mkSim(),t2=mk('Tejo',0,19,0,true),n=mk('Jett',1,30,0),f2=mk('Jett',1,31,0),o=mk('Jett',1,32,40),w2=mk('Jett',1,33,7);
- for(const v of [n,f2,o,w2]){v.hp=1000;v.mx=1000;}
- n.z=31;f2.z=61;o.z=20;o.x=0;w2.z=40;w2.x=7;s.units=[t2,n,f2,o,w2];initAbilities(t2,true);t2.ability.ult=kits.Tejo.u;
- cast18(s,t2,{k:'x',p:[0,30]},O,D);const hp=v=>1000-v.hp;
+{const s=mkSim(),t2=mk('Tejo',0,19,0,true),n=mk('Jett',1,30,0),f2=mk('Jett',1,31,0),o=mk('Jett',1,32,40),w2=mk('Jett',1,33,7),al=mk('Jett',0,34,0);
+ for(const v of [n,f2,o,w2,al,t2]){v.hp=1000;v.mx=1000;}t2.z=31;al.z=31.5;al.armor=0;t2.armor=0;
+ n.z=31;f2.z=61;o.z=20;o.x=0;w2.z=40;w2.x=7;s.units=[t2,n,f2,o,w2,al];initAbilities(t2,true);t2.ability.ult=kits.Tejo.u;t2.z=0;
+ cast18(s,t2,{k:'x',p:[0,30]},O,D);t2.z=31;const hp=v=>1000-v.hp;
  run(s,60);assert.equal(hp(n),0,'nothing before the 3.08 s windup ends');
  run(s,2);assert.equal(hp(n),60,'segment 0 first detonation (60) right after the windup');
  assert.equal(hp(f2),0,'far segments have not started');
  run(s,16);assert.equal(hp(n),240,'segment 0 detonates exactly 4 times (4 x 60)');
- run(s,200);assert.equal(hp(f2),240,'segment 15 (31 m out) also 4 x 60 later');assert.equal(hp(o),0,'behind the origin: no damage');assert.equal(hp(w2),0,'outside 12 m width (7 m aside): no damage');}
+ run(s,200);assert.equal(hp(f2),240,'segment 15 (31 m out) also 4 x 60 later');assert.equal(hp(o),0,'behind the origin: no damage');assert.equal(hp(w2),0,'outside 12 m width (7 m aside): no damage');
+ assert.equal(hp(t2),240,'wiki: affects self - Tejo standing in segment 0 takes 4 x 60');assert.ok(hp(al)>0&&hp(al)<240,'wiki: affects allies - reduced by the shared ally ability rule, got '+hp(al));}
 console.log('agents18: registration, charge/star gates, Iso pocket-arena duel isolation + return, Neon fuel/slide/reset, KAY/O downed/revive/bleedout, Deadlock cocoon pull/rescue/kill, suppress gate, Gekko globule reclaim, Miks Bassquake deafen/slow, Yoru Gatecrash fake + 1.2 s timing');
 
 // Regression (2026-11-04, fixed in 05efb5c): tickUlts' Skye-ult seeker handler used to hijack EVERY

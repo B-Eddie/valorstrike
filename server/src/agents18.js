@@ -271,7 +271,7 @@ export function tick18(sim,dt){
    case 'sdrone':if(!e.done&&T>=e.at){e.done=true;for(const v of enemies(sim,own))if(inR(v,e.p,e.radius)){status(v,'revealedUntil',C.sdrone.reveal,sim);status(v,'concussUntil',C.sdrone.supp,sim);}}break;
    case 'armag':{/* wiki Armageddon: 16 segments x 2 m (32 m), 12 m wide; segment i starts 0.25 s after segment i-1, each detonates 4x at 0.25 s for 60 */
     const AG=C.armag,fw=[-Math.sin(e.yaw),-Math.cos(e.yaw)];for(let i=0;i<AG.segs;i++)for(let j=0;j<AG.ticks;j++){const id=i*AG.ticks+j;if(e.fired[id]||T<e.at+i*AG.gap+j*AG.tick)continue;e.fired[id]=1;
-     for(const v of enemies(sim,own)){const q0=v.x-e.p[0],q1=v.z-e.p[2],f=q0*fw[0]+q1*fw[1];
+     for(const v of sim.units.filter(x=>x.alive&&!x.loading)){/* wiki: affects allies and self (ally damage uses the shared ability rule in abilityDamage) */const q0=v.x-e.p[0],q1=v.z-e.p[2],f=q0*fw[0]+q1*fw[1];
       const sx=q0*-Math.cos(e.yaw)+q1*Math.sin(e.yaw);if(f>=i*AG.seg&&f<(i+1)*AG.seg&&Math.abs(sx)<AG.w/2)dmg18.f(sim,own,v,AG.dmg);}}break;}
    case 'gnet':if(!e.done&&T>=e.at){e.done=true;for(const v of enemies(sim,own))if(inR(v,e.p,e.radius)){const d=[e.p[0]-v.x,e.p[2]-v.z],l=Math.hypot(...d)||1;v.x+=d[0]/l*Math.min(l,3);v.z+=d[1]/l*Math.min(l,3);status(v,'tetheredUntil',e.until-T,sim);}}break;
    case 'sensor':if(!e.done&&T>e.until-C.sensor.life+1){const t=enemies(sim,own).find(v=>inR(v,e.p,e.armR));if(t){e.done=true;for(const v of enemies(sim,own))if(inR(v,e.p,e.armR))status(v,'concussUntil',C.sensor.concuss,sim);gone.push(e);}}break;
