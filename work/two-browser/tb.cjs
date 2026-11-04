@@ -15,6 +15,8 @@ const qa=async js=>{const r=await fetch('http://127.0.0.1:8787/__qa',{method:'PO
   await ctx.addInitScript(()=>{try{localStorage.setItem('vs.gq','low');localStorage.setItem('vs.aa','0');}catch(e){}window.__vsLight=1;if(window.name==='')window.__vsNoAgents=true;});
   await ctx.route(/^https?:\/\/(unpkg\.com|cdn\.jsdelivr\.net)\//,r=>{const f=r.request().url().split('/').pop().split('?')[0];if(LOCAL[f])return r.fulfill({path:LOCAL[f],contentType:'application/javascript',headers:{'access-control-allow-origin':'*'}});return r.continue();});
   await ctx.route(/127\.0\.0\.1:8876\/(index\.html)?(\?.*)?$/,r=>{const h=fs.readFileSync(ROOT+'/index.html','utf8').replace('window.xValorantFeel={','window.__xe=s=>eval(s);window.xValorantFeel={');r.fulfill({body:h,contentType:'text/html'});});
+  if(process.env.REDUCED==='1')await ctx.route(/(agents\/[a-z]+\.glb|movement\.(json|bin)|locomotion\.bin|lobby-bg)/,r=>r.abort()); // REDUCED SCOPE: no agent models / movement clips (box has 2 GB; two full pages exceed it)
+  if(process.env.NOTEX&&process.env.NOTEX.includes(name))await ctx.route(/maps\/[a-z]+\/(textures\/|geometry-)/,r=>r.abort()); // REDUCED SCOPE: untextured map for this page
   const page=await ctx.newPage();await require(ROOT+'/work/pw_shot.cjs')(ctx,page);page.setDefaultTimeout(300000);
   page.on('pageerror',e=>R.errors.push(name+' pageerror '+String(e).slice(0,300)));
   page.on('console',m=>{if(m.type()==='error'&&!/ERR_CONNECTION_REFUSED|favicon/.test(m.text()))R.errors.push(name+' console '+m.text().slice(0,200));});
