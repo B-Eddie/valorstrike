@@ -10,7 +10,7 @@ const ALL=['Jett','Phoenix','Sova','Sage','Reyna','Omen','Killjoy','Raze','Skye'
 const AG=(process.env.WARM_AGENTS||ALL.join(',')).split(','),fail=[];
 for(const a of AG){
  const out=path.join(os.tmpdir(),'fw_'+process.pid+'_'+a+'.json');
- const r=spawnSync(process.execPath,['--expose-gc',path.join(__dirname,'bench_combat.cjs'),'--agent',a,'--reps','1','--frames','280','--json',out],{env:{...process.env,PROF:'0',SEED:'7'},encoding:'utf8',maxBuffer:64<<20});
+ const r=spawnSync(process.execPath,['--expose-gc',path.join(__dirname,'bench_combat.cjs'),'--agent',a,'--reps','1','--frames','280','--json',out],{env:{...process.env,PROF:'0',SEED:'7',KEEP_ROUND:'1'},encoding:'utf8',maxBuffer:64<<20});
  assert.equal(r.status,0,a+': bench_combat failed\n'+(r.stderr||'').slice(-2000));
  const d=JSON.parse(fs.readFileSync(out,'utf8'));fs.unlinkSync(out);const w=d.runs[0];
  assert.equal(d.pick,a,'played as '+a);

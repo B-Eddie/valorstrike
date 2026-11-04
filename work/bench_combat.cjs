@@ -74,6 +74,10 @@ xe(`window.__qa={
 // Hunter's Fury blasts, recasts). The gun fires whenever nothing is equipped. E0 shoots back (god-mode player),
 // E1 / E2 / two allies stand 6-14 m away with full charges and full ult points (their own logic decides what to cast).
 const ABIL={20:'KeyC',80:'KeyQ',140:'KeyE',200:'KeyX'};
+// KEEP_ROUND=1 (test_ability_first_cast_warm): enemies stay alive (hp >= 1000 every frame) so the round cannot end inside the window;
+// on the integrated tree (2026-11-04) Breach's allies eliminated the last 3 enemies by frame 107 and the buy phase refused Q / E / X.
+// Off by default: test_combat_stress_perf / --hash windows are unchanged.
+const KEEP=process.env.KEEP_ROUND==='1';
 async function stress(rep){
  // set the scene (not measured)
  xe(`(()=>{const M=K().mx;J.c=Math.max(J.c|0,M.c||1);J.q=Math.max(J.q|0,M.q||1);J.e=Math.max(J.e|0,M.e||1);J.ult=K().u;J.cd={c:0,q:0,e:0,x:0};__qa.god();
@@ -96,7 +100,7 @@ async function stress(rep){
   const eq=xe('!!(J.eq&&J.eq.st!=="rec")||!!J.bsOn||(typeof rw!=="undefined"&&rw==="knife")');
   if(eqT>=0&&(i===eqT+24||i===eqT+60)){setMouse(true);}else if(eqT>=0&&(i===eqT+28||i===eqT+64)){setMouse(false);}
   else if(!(eqT>=0&&i>=eqT&&i<eqT+70&&eq)){xe('if(window.__E0&&__E0.alive){__qa.aimAt(__E0);__E0.hp=100;__E0.cd=Math.min(__E0.cd,0.05);}ammo=Math.max(ammo,5);true');setMouse(true);}
-  xe('__qa.god();true');
+  xe(KEEP?'__qa.god();for(const b of bots)if(b&&b.alive&&b.hp<1000)b.hp=1000;true':'__qa.god();true');
   const pa=PF.now(),c0=process.threadCpuUsage(),a=process.hrtime.bigint();H.advance(17);const b=process.hrtime.bigint();const ms=Number(b-a)/1e6;const cu=process.threadCpuUsage(c0);
   fr.push(ms);cpu.push((cu.user+cu.system)/1000);T.push([pa,PF.now()]);TP.push([Number(a/1000n),Number(b/1000n)]);
   const e=emu();E.prog+=e.prog||0;E.tex+=e.tex||0;E.geo+=e.geo||0;per.push([e.prog||0,e.tex||0,e.geo||0]);
