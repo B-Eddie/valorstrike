@@ -86,13 +86,13 @@ const node=async label=>xe(`(()=>{const C=nmActive();let best=null,bd=-1;C.nav.n
  check(!s.on&&pl.length===2&&pl.every(f=>f.kind==='pulses')&&Math.hypot(pl[0].x-P0.x,pl[0].z-P0.z)<1&&Math.hypot(pl[1].x-P1.x,pl[1].z-P1.z)<1,'two clicks fire both salvos at the picked points '+JSON.stringify(pl));
  check(xe('J.e')===e0-1,'both salvos cost one charge');
  // single-salvo launch: one click then E again
- xe('J.e=1;true');await tap('KeyE');const fx2=xe('(J.a18fx||[]).length');await moveTo(P1.x,P1.z);await click(0);await tap('KeyE');s=st();
- const pl2=xe(`(J.a18fx||[]).slice(${fx2}).map(f=>({kind:f.kind,x:f.p&&f.p.x,z:f.p&&f.p.z}))`);
- check(!s.on&&pl2.length===1&&pl2[0].kind==='pulses'&&Math.hypot(pl2[0].x-P1.x,pl2[0].z-P1.z)<1,'E again after one click launches a single salvo '+JSON.stringify(pl2));
+ xe('(J.a18fx||[]).forEach(f=>{if(f.m)try{jRel(f.m)}catch(e){}});J.a18fx.length=0;J.e=1;true');await tap('KeyE');await moveTo(P1.x,P1.z);await click(0);await tap('KeyE');s=st();
+ const pl2=xe(`(J.a18fx||[]).filter(f=>f.kind==='pulses').map(f=>({kind:f.kind,x:f.p&&f.p.x,z:f.p&&f.p.z}))`); // clear-then-filter: impact 'burst' visuals share the fx list, so index slices drift
+ check(!s.on&&pl2.length===1&&Math.hypot(pl2[0].x-P1.x,pl2[0].z-P1.z)<1,'E again after one click launches a single salvo '+JSON.stringify(pl2));
  // Armageddon: X opens the map, the click sets the origin with the direction Tejo -> point
  xe('J.ult=K().u;true');await tap('KeyX');s=st();check(s.on&&s.mode==='armag','Tejo X opens Armageddon on the map overlay');
- const fx3=xe('(J.a18fx||[]).length');await moveTo(P0.x,P0.z);await click(0);s=st();
- const ar=xe(`(J.a18fx||[]).slice(${fx3}).map(f=>({kind:f.kind,x:f.p&&f.p.x,z:f.p&&f.p.z,dx:f.d&&f.d.x,dz:f.d&&f.d.z}))`);
+ xe('(J.a18fx||[]).forEach(f=>{if(f.m)try{jRel(f.m)}catch(e){}});J.a18fx.length=0;true');await moveTo(P0.x,P0.z);await click(0);s=st();
+ const ar=xe(`(J.a18fx||[]).filter(f=>f.kind==='armag').map(f=>({kind:f.kind,x:f.p&&f.p.x,z:f.p&&f.p.z,dx:f.d&&f.d.x,dz:f.d&&f.d.z}))`);
  const px=xe('player.x'),pz=xe('player.z');
  const dd=Math.hypot(P0.x-px,P0.z-pz);
  check(!s.on&&s.ult===0&&ar.length===1&&ar[0].kind==='armag'&&Math.hypot(ar[0].x-P0.x,ar[0].z-P0.z)<1,'Armageddon starts at the picked origin '+JSON.stringify(ar));
