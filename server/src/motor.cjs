@@ -180,6 +180,18 @@ function ropeStep(P,input,dt,world,press,usePress){const r=world.ropes[P.rope-1]
 // Nav links for bots: lower floor node <-> upper floor node of every rope (both ends on nodes ok(i) accepts).
 function ropeLinks(R,nodes,ok){const L=[];if(!R)return L;const pick=(x,y,z)=>{let b=-1,d=1.5*1.5;for(let i=0;i<nodes.length;i++){if(ok&&!ok(i))continue;const p=nodes[i];if(Math.abs(p[1]-y)>.5)continue;const e=(p[0]-x)**2+(p[2]-z)**2;if(e<d){d=e;b=i;}}return b;};
  R.forEach((r,k)=>{const a=pick(r.x,r.y0,r.z),b=pick(r.ex,r.y1,r.ez);if(a>=0&&b>=0&&a!==b)L.push({a,b,k,up:1},{a:b,b:a,k,up:0});});return L;}
+// Crouch-jump (VALORANT jump-crouch onto boxes). Airborne, a crouch change keeps the capsule's centre where it is (Unreal's
+// Crouch() / UnCrouch() keep the base only while walking): crouching tucks the feet up by half the height change and lowers the
+// head (and the eye: y + eyeHeight - ch) by the other half, so a box above the 1.165 m standing apex but below apex + 0.225 m
+// is reachable (tracker.gg 'How to jump higher in Valorant'; r/VALORANT 1u9h2co 'tuck our legs in'). Standing up in the air
+// extends the feet down again; over a box or floor the feet stop on it (Unreal's un-crouch sweeps down and stands there), the
+// extra lift smoothed through eyeOffset like a stair step. No room (ceiling, wall) = stay crouched, as on the ground.
+// fallTop moves with the feet, so fall damage measures the centre's drop (a tuck adds no fall height).
+function airCrouch(P,world,target,rate){const c0=P.ch||0,c1=approach(c0,target,rate);if(c1===c0)return;const d=(c1-c0)/2;
+ if(d>0){P.ch=c1;P.y+=d;if(P.fallTop!=null)P.fallTop+=d;return;}
+ const h1=1.8-c1,want=P.y+d,floor=world.ground(P.x,P.z,P.y+.05),y1=Math.max(want,floor);
+ if(world.blocked(P.x,P.z,VR,y1,h1))return;if(world.ceiling&&world.ceiling(P.x,P.z,P.y+1.8-c0,y1+h1))return;
+ P.ch=c1;if(P.fallTop!=null)P.fallTop+=d;if(y1>want)P.eyeOffset=(P.eyeOffset||0)-(y1-want);P.y=y1;}
 function step(P,input,dt,world){
  const dt0=Math.max(0,Math.min(.1,dt)),parts=Math.max(1,Math.ceil(dt0*128)),h=dt0/parts;let landed=false,jumped=false,drop=0;
  // Moved from outside the motor since the last step (a teleport, a rescue, a respawn): the fall starts over from here.
@@ -195,7 +207,8 @@ function step(P,input,dt,world){
   const floor=world.ground(P.x,P.z,P.y),grounded=(P.vy||0)<=0&&(P.y<=floor+.025||supported(P,world,P.y,1.8-(P.ch||0)));
   P.lp=Math.max(0,(P.lp||0)-h);P.ls=Math.max(0,(P.ls||0)-h);P.jumpBuffer=Math.max(0,(P.jumpBuffer||0)-h);P.duckFatigue=Math.max(0,(P.duckFatigue||0)-h*.55);
   if(!!input.duck!==!!P.duckHeld){if(input.duck)P.duckFatigue=Math.min(.65,(P.duckFatigue||0)+.08);P.duckHeld=!!input.duck;}
-  const chTarget=input.duck?C.crouchEye:0,allowed=chTarget>=(P.ch||0)||(!world.blocked(P.x,P.z,.4,P.y,C.eyeHeight+.2)&&(!world.ceiling||!world.ceiling(P.x,P.z,P.y+1.8-(P.ch||0),P.y+1.8)));if(allowed)P.ch=approach(P.ch||0,chTarget,C.crouchEye/((input.duck?C.crouchDown:C.crouchUp)*(1+(P.duckFatigue||0)))*h);
+  const chTarget=input.duck?C.crouchEye:0,chRate=C.crouchEye/((input.duck?C.crouchDown:C.crouchUp)*(1+(P.duckFatigue||0)))*h;
+  if(!grounded)airCrouch(P,world,chTarget,chRate);else{const allowed=chTarget>=(P.ch||0)||(!world.blocked(P.x,P.z,.4,P.y,C.eyeHeight+.2)&&(!world.ceiling||!world.ceiling(P.x,P.z,P.y+1.8-(P.ch||0),P.y+1.8)));if(allowed)P.ch=approach(P.ch||0,chTarget,chRate);}
   P.cr=(P.ch||0)>C.crouchEye*.5;P.wk=!!input.walk;
   let mx=input.x||0,mz=input.z||0,l=Math.hypot(mx,mz);if(l>1){mx/=l;mz/=l;l=1;}
   const duckK=1-(1-C.crouch)*(P.ch||0)/C.crouchEye,max=input.speed*Math.min(duckK,input.walk?C.walk:1)*(input.tag||1);let tx=input.hold?0:mx*max,tz=input.hold?0:mz*max;
