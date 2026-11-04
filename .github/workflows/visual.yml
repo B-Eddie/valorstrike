@@ -47,6 +47,9 @@ jobs:
           (cd server && nohup node tools/bridge-nobots.mjs > /tmp/bridge.log 2>&1 &)
           (nohup python3 -m http.server 8876 > /tmp/http.log 2>&1 &)
           sleep 5
+          
+          mkdir -p shots
+
           cd work/two-browser
           TEXCLOSE=1 AGENT_A=${{ matrix.agent }} AGENT_B=Jett SCEN=$PWD/${{ matrix.scen }} SHARECTX=1 MAP=lotus \
             KEY=${{ matrix.key }} TAG=${{ matrix.name }} BX=3 BZ=-9 timeout 1500 node tb.cjs "$GITHUB_WORKSPACE/shots/${{ matrix.name }}.json" || true
