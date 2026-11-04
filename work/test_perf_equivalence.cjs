@@ -18,7 +18,7 @@ for(const map of ['ascent','bind','haven','split','lotus','breeze']){
  const mk=()=>{const C={key:map,nav,meta,cells:new Map()};return C;};
  // ---- nmPath (typed heap) / nmNearV (numeric keys) vs the originals
  const X=ctxBase();X.nmClimbOk=climb;vm.createContext(X);
- vm.runInContext([one(nm,'function nmConnected('),one(nm,'const NM_NONE=[];function nmCellNum('),one(nm,'function nmNear('),CUR.path,CUR.nearV,REF.path,REF.nearV,'globalThis.F={nmConnected,nmNear,nmPath,nmNearV,refPath,refNearV};'].join('\n'),X);const F=X.F;
+ vm.runInContext([one(nm,'function nmConnected('),one(nm,'const NM_NONE=[];function nmCellNum('),upto(nm,'function nmCellGrid(C)','return best;}\n// Select only nearby upward support').replace('\n// Select only nearby upward support',''),CUR.path,CUR.nearV,REF.path,REF.nearV,'globalThis.F={nmConnected,nmNear,nmPath,nmNearV,refPath,refNearV};'].join('\n'),X);const F=X.F;
  const Cn=mk(),Cr=mk();F.nmConnected(Cn);Cr.playable=Cn.playable;for(const C of [Cn,Cr])N.forEach((p,i)=>{if(!C.playable[i])return;const k=Math.floor(p[0]/2)+','+Math.floor(p[2]/2);if(!C.cells.has(k))C.cells.set(k,[]);C.cells.get(k).push(i);});
  const play=[];for(let i=0;i<N.length;i++)if(Cn.playable[i])play.push(i);const pick=()=>play[Math.floor(rnd()*play.length)];
  let x1=1e9,x2=-1e9,z1=1e9,z2=-1e9;for(const p of N){x1=Math.min(x1,p[0]);x2=Math.max(x2,p[0]);z1=Math.min(z1,p[2]);z2=Math.max(z2,p[2]);}
