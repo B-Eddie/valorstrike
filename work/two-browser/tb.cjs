@@ -19,6 +19,7 @@ const qa=async js=>{const r=await fetch('http://127.0.0.1:8787/__qa',{method:'PO
   if(process.env.REDUCED==='1')await ctx.route(/(agents\/[a-z]+\.glb|movement\.(json|bin)|locomotion\.bin|lobby-bg)/,r=>r.abort()); // REDUCED SCOPE: no agent models / movement clips (box has 2 GB; two full pages exceed it)
   if(process.env.NOTEX&&process.env.NOTEX.includes(name))await ctx.route(/maps\/[a-z]+\/(textures\/)/,r=>r.abort()); // REDUCED SCOPE: untextured map for this page
   const page=await ctx.newPage();await require(ROOT+'/work/pw_shot.cjs')(ctx,page);page.setDefaultTimeout(300000);
+  if(process.env.TEXCAP)await page.addInitScript(cap=>{for(const P of [WebGLRenderingContext,WebGL2RenderingContext]){const g=P.prototype.getParameter;P.prototype.getParameter=function(p){return p===3379?cap:g.call(this,p);};}},+process.env.TEXCAP); // REDUCED SCOPE: textures downscaled to <=TEXCAP px by three.js
   await page.addInitScript(()=>{const m={},g=Storage.prototype.getItem,st=Storage.prototype.setItem;Storage.prototype.getItem=function(k){return k==='vs.serverToken'?(m[k]||null):g.call(this,k)};Storage.prototype.setItem=function(k,v){if(k==='vs.serverToken'){m[k]=v;return;}return st.call(this,k,v);};});
   page.on('pageerror',e=>R.errors.push(name+' pageerror '+String(e).slice(0,300)));
   page.on('console',m=>{if(m.type()==='error'&&!/ERR_CONNECTION_REFUSED|favicon/.test(m.text()))R.errors.push(name+' console '+m.text().slice(0,200));});
