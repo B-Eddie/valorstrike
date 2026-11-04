@@ -87,7 +87,7 @@ export function cast18(sim,u,m,o,d,push){
  if(ag==='Viper'&&k==='q'&&A.cloud){A.cloudOn=!A.cloudOn;A.cool.q=sim.time+.3;return true;}
  if(ag==='Viper'&&k==='e'&&A.screen){A.toxOn=!A.toxOn;A.cool.e=sim.time+.3;return true;}
  if(ag==='Viper'&&k==='x'&&A.pit){A.pit=null;sim.effects=sim.effects.filter(e=>!(e.kind==='pit'&&e.owner===u.id));A.cool.x=sim.time+.3;return true;}
- if(ag==='Vyse'&&k==='e'&&A.rose){const rp=A.rose;A.rose=null;A.e=0;A.cool.e=sim.time+.3;sim.effects=sim.effects.filter(e=>!(e.kind==='rose'&&e.owner===u.id));fx(sim,u,'flash',.25,30,{at:sim.time+.05,blind:A18.rose.blind,p:[...rp]});cast(sim,u,k,o,d,[...rp]);return true;}
+ if(ag==='Vyse'&&k==='e'&&A.rose){const rp=A.rose;A.rose=null;A.e=0;A.cool.e=sim.time+.3;sim.effects=sim.effects.filter(e=>!(e.kind==='rose'&&e.owner===u.id));fx(sim,u,'flash',[...rp],.25,30,{at:sim.time+.05,blind:A18.rose.blind});cast(sim,u,k,o,d,[...rp]);return true;}
  if(ag==='Veto'&&k==='c'&&A.xcutReady){u.pendingTeleport={kind:'xcut',p:[...A.xcut],at:sim.time+.3};A.xcut=null;A.xcutReady=false;sim.effects=sim.effects.filter(e=>!(e.kind==='xcut'&&e.owner===u.id));cast(sim,u,k,o,d,[...u.pendingTeleport.p]);return true;}
  if(ag==='Waylay'&&k==='e'&&A.marker){/* Refract: immune travel back (wiki) */A.cool.e=sim.time+.3;u.invulnerableUntil=Math.max(u.invulnerableUntil||0,sim.time+C.refract.travel);u.pendingTeleport={kind:'refract',p:[...A.marker],at:sim.time+C.refract.travel};A.marker=null;A.e=0;cast(sim,u,k,o,d,[...u.pendingTeleport.p]);return true;}
  if(ag==='Yoru'&&k==='e'&&A.gate){/* Gatecrash (wiki): recast teleports in 1.2 s total (0.5 s windup + 0.7 s arrival); USE (m.fk) fakes it - the same audio cue, no teleport, the anchor survives, and a 30 s decal marks the fake (v4.04) */
@@ -170,7 +170,7 @@ export function cast18(sim,u,m,o,d,push){
    cast(sim,u,k,o,d,p);return true;}
   case 'Hush':{spend();
    if(k==='c'){A.flowAnchor=[u.x,u.y,u.z];u.hushFlow={at:sim.time+C.flow.delay};if(u.air){u.vy=0;u.levUntil=Math.max(u.levUntil||0,sim.time+C.flow.delay);}}
-   else if(k==='q')fx(sim,u,'flash',C.flashb.delay+.2,30,{at:sim.time+C.flashb.delay,blind:C.flashb.blind,p:[...p]});
+   else if(k==='q')fx(sim,u,'flash',[...p],C.flashb.delay+.2,30,{at:sim.time+C.flashb.delay,blind:C.flashb.blind});
    else if(k==='e')fx(sim,u,'pull',p,C.displ.delay,C.displ.r,{at:sim.time+C.displ.delay,pull:C.displ.pull});
    else fx(sim,u,'susp',eye(u),C.susp.life,1,{d:aim(u),born:sim.time});
    cast(sim,u,k,o,d,p);return true;}
@@ -194,7 +194,7 @@ export function cast18(sim,u,m,o,d,push){
    cast(sim,u,k,o,d,p);return true;}
   case 'Yoru':{spend();
    if(k==='c')fx(sim,u,'decoy',[u.x,u.y,u.z],C.fakeout.life,0,{d:[aim(u)[0],0,aim(u)[2]],speed:C.fakeout.speed,ag:u.agent});
-   else if(k==='q')fx(sim,u,'flash',C.blindside.delay+.2,30,{at:sim.time+C.blindside.delay,blind:C.blindside.blind,p:[...p]});
+   else if(k==='q')fx(sim,u,'flash',[...p],C.blindside.delay+.2,30,{at:sim.time+C.blindside.delay,blind:C.blindside.blind});
    else if(k==='e')A.gate={p:[...land(sim,u,C.gcrash.range)],until:sim.time+C.gcrash.life};
    else{u.driftUntil=sim.time+C.drift.life;u.invulnerableUntil=Math.max(u.invulnerableUntil||0,sim.time+C.drift.life);}
    cast(sim,u,k,o,d,p);return true;}
@@ -212,7 +212,7 @@ export function cast18(sim,u,m,o,d,push){
    cast(sim,u,k,o,d,p);return true;}
   case 'KAY/O':{spend();
    if(k==='c')fx(sim,u,'frag',p,C.frag.pulses*C.frag.gap+1,C.frag.r,{at:sim.time+.5,next:sim.time+.5,left:C.frag.pulses});
-   else if(k==='q')fx(sim,u,'flash',C.fdrive.delay+.2,30,{at:sim.time+C.fdrive.delay,blind:C.fdrive.blind,p:[...p]});
+   else if(k==='q')fx(sim,u,'flash',[...p],C.fdrive.delay+.2,30,{at:sim.time+C.fdrive.delay,blind:C.fdrive.blind});
    else if(k==='e')fx(sim,u,'blast',p,.5,C.zero.r,{supp:C.zero.supp,at:sim.time+.4});
    else{u.stimUntil=sim.time+C.nullcmd.life;u.nullCmdUntil=sim.time+C.nullcmd.life+15;/* downed can outlive the pulse field (wiki NULL/cmd: downed 15 s, 850 HP, ally revive 5 s) */fx(sim,u,'nullcmd',[u.x,u.y,u.z],C.nullcmd.life,C.nullcmd.r,{next:sim.time+C.nullcmd.pulse});}
    cast(sim,u,k,o,d,p);return true;}
