@@ -65,7 +65,8 @@ const log=(k,v)=>{R.steps.push([+((Date.now()-t00)/1000).toFixed(1),k,typeof v==
  const ax=V.x+-Math.sin(V.yaw)*7,az=V.z+-Math.cos(V.yaw)*7;
  await X(`if(xTac.st.o.confirm(${ax},${az}))xTac.close();1`);
  log('armag fired',await X('JSON.stringify({on:xTac.on(),fx:(J.a18fx||[]).map(f=>f.kind)})'));
- log('armag step',await X('let i=0;for(;i<200&&!(J.a18fx||[]).some(f=>f.kind==="armagchain");i++)xSimStep(0.05);let j=0;for(;j<80&&(J.a18fx||[]).some(f=>f.kind==="armagchain"&&f.age<1.99);j++)xSimStep(0.05);JSON.stringify({windup_steps:i,chain_steps:j,fx:(J.a18fx||[]).map(f=>({k:f.kind,age:f.age&&+f.age.toFixed(2),fired:f.fired&&f.fired.filter(Boolean).length,op:f.grp&&f.grp.segs.map(m=>+m.material.opacity.toFixed(2))}))})'));
+ log('dbg',await X('(()=>{try{const g=a18ArmagGroup(0,0,1,0,false);a18ArmagFree(g);a18ArmagBoom(1,0,1);return "ok"}catch(e){return "ERR "+e.stack.slice(0,400)}})()'));
+ log('armag step',await X('let i=0;for(;i<200&&!(J.a18fx||[]).some(f=>f.kind==="armagchain");i++)xSimStep(0.05);let j=0;for(;j<80&&(J.a18fx||[]).some(f=>f.kind==="armagchain"&&f.age<2.1);j++)xSimStep(0.05);JSON.stringify({windup_steps:i,chain_steps:j,fx:(J.a18fx||[]).map(f=>({k:f.kind,age:f.age&&+f.age.toFixed(2),fired:f.fired&&f.fired.filter(Boolean).length,booms:(J.a18fx||[]).filter(g=>g.kind==="armagboom").length}))})'));
  await cap('tejo_armag_chain');
  log('done',await X('JSON.stringify({failures:String(xValorantAssets.probe().failures).slice(0,200)})'));
  await browser.close();process.exit(0);
