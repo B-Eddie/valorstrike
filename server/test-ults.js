@@ -63,7 +63,9 @@ assert.deepEqual([0,3.5,4,5.5,7,8].map(ssDamage),[150,150,150,90,0,0],'ssDamage:
  Object.assign(a,{x:2,y:0,z:-12});Object.assign(b,{x:14,y:0,z:-6});Object.assign(c,{x:0,y:0,z:6});Object.assign(mate,{x:0,y:0,z:-12});
  Object.assign(close,{x:0,y:0,z:-5});Object.assign(edge,{x:8.5,y:0,z:-38});Object.assign(side,{x:-9.6,y:0,z:-20});Object.assign(past,{x:0,y:0,z:-41});wall=1;u.ability.ult=9;
  assert.equal(cast(s,u),true);tick(s,.5);assert.ok(!(a.concussUntil>s.time),'windup');tick(s,.6);
- assert.ok(a.concussUntil>s.time+3&&a.concussUntil<=s.time+4,'concussed through the wall for 4 s');assert.ok(edge.concussUntil>s.time+3,'38 m ahead, 8.5 m aside: inside the strip');
+ assert.ok(!(a.concussUntil>s.time),'wiki chain: the 12 m slice has not blasted yet 0.1 s after the windup');tick(s,.4);
+ assert.ok(a.concussUntil>s.time+3&&a.concussUntil<=s.time+4,'concussed through the wall for 4 s by its slice blast');assert.ok(!(edge.concussUntil>s.time),'wiki chain: the 38 m slice blasts last (8 blasts 0.255 s apart)');
+ assert.ok(a.z<-12-6,'knocked back along the strip (7 m, wiki displacement), z='+a.z);tick(s,1.6);assert.ok(edge.concussUntil>s.time+1,'38 m ahead, 8.5 m aside: inside the strip, hit by the last blast');
  for(const v of [b,c,mate,close,side,past])assert.ok(!(v.concussUntil>s.time),v.name+' spared');}
 
 // Seekers: the three nearest living enemies are nearsighted when their seeker arrives; a fourth is not.
