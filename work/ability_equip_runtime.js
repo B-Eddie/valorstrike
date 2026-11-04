@@ -183,10 +183,13 @@ function xBowHud() { const q = J.eq, hk = q && q.st !== "rec" ? xEqHold(q) : "",
 // the cast flies (phCurve: 5 m ahead short of a wall, then 2.5 m aside) ending in a bright pop marker, plus a HUD tag under the
 // crosshair. Hidden as soon as the throw leaves the hand (rel / rec) or the ability is put away.
 var XCBH = { n: 10, u0: 0.18, g: null, d: [[], []] };
-function xCbHintPts(o, fx, fz, side, n) { // pure (tests): n points along the cast's quadratic path, from u0 (clear of the camera) to the pop
-  const c = phCurve(o, fx, fz, side), out = []; for (let i = 0; i < n; i++) { const u = XCBH.u0 + (1 - XCBH.u0) * (i / (n - 1)), w = 1 - u;
-    out.push(new THREE.Vector3(w * w * o.x + 2 * w * u * c.mid.x + u * u * c.end.x, w * w * o.y + 2 * w * u * c.mid.y + u * u * c.end.y, w * w * o.z + 2 * w * u * c.mid.z + u * u * c.end.z)); }
-  return out;
+// combat lane: out (optional) = a reused array of Vector3, written in place and grown to n (the per-frame hint passes XCBH.P[s]; was
+// n + 4 Vector3, a curve object and the arrays per side per frame); without it a fresh array as before. Same values either way.
+function xCbHintPts(o, fx, fz, side, n, out) { // pure (tests): n points along the cast's quadratic path, from u0 (clear of the camera) to the pop
+  const c = out ? phCurve(o, fx, fz, side, XCBH.c || (XCBH.c = { mid: new THREE.Vector3(), end: new THREE.Vector3() })) : phCurve(o, fx, fz, side); if (!out) out = [];
+  for (let i = 0; i < n; i++) { const u = XCBH.u0 + (1 - XCBH.u0) * (i / (n - 1)), w = 1 - u, x = w * w * o.x + 2 * w * u * c.mid.x + u * u * c.end.x, y = w * w * o.y + 2 * w * u * c.mid.y + u * u * c.end.y, z = w * w * o.z + 2 * w * u * c.mid.z + u * u * c.end.z;
+    if (out[i]) out[i].set(x, y, z); else out[i] = new THREE.Vector3(x, y, z); }
+  out.length = n; return out;
 }
 function xCbHintOn() { const q = J.eq; return !!(q && J.pick === "Phoenix" && q.k === "e" && (q.st === "draw" || q.st === "ready") && running && player && player.hp > 0); }
 function xCbHintBuild() { // two arcs of small additive dots (index 0 = FIRE / left, 1 = ALT FIRE / right), the last dot of each a bigger pop marker
@@ -199,8 +202,8 @@ function xCbHintBuild() { // two arcs of small additive dots (index 0 = FIRE / l
 function xCbHintTick() {
   const on = xCbHintOn(), el = $("xCbHint"); if (el && el.classList.contains("on") !== on) el.classList.toggle("on", on);
   if (!on) { if (XCBH.g) { XCBH.g.visible = false; if (XCBH.g.parent) XCBH.g.parent.remove(XCBH.g); } return; } // out of the scene while unused (round reset leaves nothing behind); re-added on the next hold
-  const g = XCBH.g && XCBH.g.parent ? XCBH.g : xCbHintBuild(), o = pEye(), fx = -Math.sin(yaw), fz = -Math.cos(yaw); g.visible = true;
-  [-1, 1].forEach((side, s) => { const P = xCbHintPts(o, fx, fz, side, XCBH.n); XCBH.d[s].forEach((m, i) => m.position.copy(P[i]).setY(P[i].y - 0.22 * (1 - i / (XCBH.n - 1)))); }); // starts a little under the crosshair (the hand), meets the true pop point
+  const g = XCBH.g && XCBH.g.parent ? XCBH.g : xCbHintBuild(), o = pEyeTo(XCBH.o || (XCBH.o = new THREE.Vector3())), fx = -Math.sin(yaw), fz = -Math.cos(yaw); g.visible = true;
+  const PP = XCBH.P || (XCBH.P = [[], []]); for (let s = 0; s < 2; s++) { const P = xCbHintPts(o, fx, fz, s ? 1 : -1, XCBH.n, PP[s]), D = XCBH.d[s]; for (let i = 0; i < D.length; i++) D[i].position.copy(P[i]).setY(P[i].y - 0.22 * (1 - i / (XCBH.n - 1))); } // starts a little under the crosshair (the hand), meets the true pop point
 }
 try { const st = document.createElement("style"); st.textContent = "#xCbHint{position:fixed;left:50%;top:calc(50% + 30px);transform:translateX(-50%);display:none;gap:46px;pointer-events:none;z-index:6;font:700 11px/1 sans-serif;letter-spacing:.08em;color:#fff;text-shadow:0 0 3px #000,0 0 2px #000}#xCbHint.on{display:flex}#xCbHint span:first-child{color:#ffe7a0}#xCbHint span:last-child{color:#ffb060}";
   document.head.appendChild(st); const d = document.createElement("div"); d.id = "xCbHint"; d.innerHTML = "<span>\u25C0 L-CLICK</span><span>R-CLICK \u25B6</span>"; (document.getElementById("game") || document.body).appendChild(d); } catch (e) {}
