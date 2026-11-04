@@ -15,8 +15,7 @@ const ctx={NM:{routeCache:new Map()},window:{}};/* perf3: the context's own Math
 // collision BVH (covered by test_nav_directionality / test_nav_allmaps); here a deterministic per-edge stand-in is shared by
 // nmPath and the reference so the pooled search is still checked route-for-route, filter included.
 ctx.nmClimbOk=(C,a,b)=>((a*7919+b*104729)%5)!==0;vm.createContext(ctx);vm.runInContext(fs.readFileSync(path.join(root,'work/hypot_runtime.js'),'utf8'),ctx);
-/* combat lane: nmNear is a multi-line block (nmCellGrid + nmNear) */const nearBlk=(()=>{const i=nm.indexOf('function nmCellGrid(C)'),j=nm.indexOf('\n// Select only nearby upward support',i);assert(i>=0&&j>i,'missing nmCellGrid / nmNear block');return nm.slice(i,j);})();
-vm.runInContext([one('const NM_NONE=[];function nmCellNum('),nearBlk,fn('function nmPath('),one('function nmConnected('),REF.near,REF.path,'globalThis.X={nmNear,nmPath,refNear,refPath,nmConnected};'].join('\n'),ctx);const X=ctx.X;
+vm.runInContext([one('const NM_NONE=[];function nmCellNum('),one('function nmNear('),fn('function nmPath('),one('function nmConnected('),REF.near,REF.path,'globalThis.X={nmNear,nmPath,refNear,refPath,nmConnected};'].join('\n'),ctx);const X=ctx.X;
 let seed=7;const rnd=()=>(seed=(seed*1103515245+12345)>>>0)/4294967296;
 let gcs=0;new PerformanceObserver(l=>{for(const e of l.getEntries())if(e.detail?e.detail.kind===1:e.kind===1)gcs++;}).observe({entryTypes:['gc']});
 const sleep=()=>new Promise(r=>setTimeout(r,20));
