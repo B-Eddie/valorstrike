@@ -29,7 +29,7 @@ for(const [agent,data]of Object.entries(header.agents)){
   }
  }
 }
-assert.equal(Object.keys(header.agents).length,12,'all game agent rigs retargeted');
+assert.equal(Object.keys(header.agents).length,30,'all game agent rigs retargeted');
 // Neutral source deltas must stay neutral on every retargeted rig. An absolute bind correction on
 // additive tracks passes normalization checks but rotates these bones and twists the body.
 let neutralDeltas=0;

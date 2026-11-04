@@ -5498,5 +5498,28 @@
     "Contact phases and contact speeds are estimates from retargeted foot trajectories, not authored source events.",
     "Animation-specific start, crouch-entry/exit and rope boundary timings are extrapolated blends.",
     "Exact parity with Riot gameplay is unproven."
-  ]
+  ],
+  "agentRowExtension": {
+    "agents": [
+      "astra",
+      "brimstone",
+      "viper",
+      "harbor",
+      "clove",
+      "miks",
+      "iso",
+      "neon",
+      "yoru",
+      "waylay",
+      "hush",
+      "fade",
+      "gekko",
+      "kayo",
+      "tejo",
+      "deadlock",
+      "vyse",
+      "veto"
+    ],
+    "method": "Derived from the baked jett rows (identity correction at the build reference) by per-bone rest-pose correction computed from each game-path agent GLB (models/valorant/agents/, the rigs the runtime animates): absolute q*corr, additive corr^-1*q*corr. Pelvis.position copied when the Splitter node matches jett, otherwise rotated into the agent Splitter frame via qX^-1*qJett (world-delta transfer; rest local translation is zero). The Rocklan pack was unavailable in this checkout; no new animation curves authored."
+  }
 }

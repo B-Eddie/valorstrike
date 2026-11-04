@@ -10390,6 +10390,7 @@ function jRound(match) { // each round start in Retake and 5v5
   ["jC", "jQ", "jE", "jX"].forEach((id, i) => { const sp = $(id) && $(id).querySelector("span"); if (sp) sp.textContent = K().n[i]; }); $("xAb").setAttribute("aria-label", (J.pick || "Jett") + " abilities"); J.hs = ""; xAbIcons();
 }
 function jUlt() { if (jOn()) { const u = K().u, was = J.ult; J.ult = Math.min(u, J.ult + 1); if (was < u && J.ult >= u) SFX.ult(); } }
+window.xUltFill = function () { try { J.ult = K().u; } catch (e) {} }; // QA/screenshot driver hook (same family as window.xBotUltGain): full ult charge without grind
 function jKill() {
   if (!jOn()) return; jUlt(); if (mode === "five" && FV.sr && !FV.dm) jUlt(); // Spike Rush: kills give 2 ult points (wiki Spike_Rush)
   if (J.pick === "Raze" && J.e < 1 && ++J.tk >= 2) { J.e = 1; J.tk = 0; say("Paint Shells ready", 700); }
@@ -22645,7 +22646,7 @@ if(typeof mpCliSnap==='function'){const m0=mpCliSnap;mpCliSnap=function(m){if(m&
 // ---- END GAME RULES ----
 // ---- ROCKLAN MOVEMENT ----
 // Movement-only overlay. The original mixed animation library and upper-body actions stay intact.
-var XRM = { assets: {"movement.json":{"bytes":2051123,"sha256":"7fee00be7eefb7e012d949b1275e841ffb25611c586b31ca89fec65824f831ff"},"movement.bin":{"bytes":5017120,"sha256":"43c0e3b4ed2f6a5a5b97bf58c64af468973daa2913953f13b4f0af5345eac3cd"}}, promise: null, dirs: ['N','NE','E','SE','S','SW','W','NW'] };
+var XRM = { assets: {"movement.json":{"bytes":5457345,"sha256":"6422dd1f26e51ed9e375354407c039bdc50d347707527e856c77774b6ce728a6"},"movement.bin":{"bytes":9714612,"sha256":"c352435f6ba45f22ddf57794daff008cde0af95e3361f911a84ab09128a22977"}}, promise: null, dirs: ['N','NE','E','SE','S','SW','W','NW'] };
 function xrmClamp(v, lo=0, hi=1) { return Math.max(lo, Math.min(hi, v)); }
 function xrmDirections(f, side) {
   const a = (Math.atan2(-side, f) / (Math.PI / 4) + 8) % 8, i = Math.floor(a), u = a - i;
