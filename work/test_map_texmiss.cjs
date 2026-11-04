@@ -19,7 +19,7 @@ const fn=name=>{const m=new RegExp('^function '+name+'\\(.*$','m').exec(RT);asse
 // nmLoadScene must hand the loaded glTF to nmTexMissingMark before the scene is prepared
 assert(/function nmLoadScene\([^\n]*nmTexMissingMark\(gl\)/.test(RT),'nmLoadScene marks the materials whose texture failed (nmTexMissingMark(gl)) once the glTF has loaded');
 const ctx={THREE,renderer:{capabilities:{getMaxAnisotropy:()=>16}},console};vm.createContext(ctx);
-vm.runInContext([...(RT.match(/^var NM_(?:TERRAIN|OVERLAY|GROUND\w*)=.*$/mg)||[]),...['nmGroundLayer','nmGroundApply'].filter(n=>new RegExp('^function '+n+'\\(','m').test(RT)).map(fn),...['nmTerrain','nmTexStats','nmDecalStyle','nmFoliageCut','nmFoliageApply','nmDecalApply','nmTexMissingMark','nmPrepareScene'].map(fn)].join('\n'),ctx);
+vm.runInContext([...(RT.match(/^var NM_(?:TERRAIN|OVERLAY|GROUND\w*)=.*$/mg)||[]),...['nmGroundLayer','nmGroundApply'].filter(n=>new RegExp('^function '+n+'\\(','m').test(RT)).map(fn),...['nmTerrain','nmTexStats','nmDecalStyle','nmFoliageCut','nmFoliageApply','nmDecalApply','nmTexMissingMark','nmTexStatsOf','nmPrepareScene'].map(fn)].join('\n'),ctx);
 // a glTF as GLTFLoader r147 leaves it: json.materials[i], parser.associations material -> {materials:i}; a failed texture = no map
 const tex=()=>{const t=new THREE.Texture({width:4,height:4});return t;};
 const defs=[

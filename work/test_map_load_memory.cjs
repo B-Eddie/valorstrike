@@ -39,7 +39,7 @@ const geo=gl=>{const out=[];gl.scene.traverse(o=>{if(o.isMesh)out.push([Array.fr
 async function collected(refs){for(let k=0;k<6;k++){gc();await tick(5);}return refs.filter(r=>r.deref()===undefined).length;}
 (async()=>{
  // 1. wiring
- { const ls=pick('nmLoadScene');assert(/L\.register\(nmBufRelease\)/.test(ls),'nmLoadScene registers nmBufRelease');assert(/nmTexMissingMark\(gl\);nmParserRelease\(gl\);/.test(ls),'nmLoadScene releases the parser after nmTexMissingMark');
+ { const ls=pick('nmLoadScene');assert(/L\.register\(nmBufRelease\)/.test(ls),'nmLoadScene registers nmBufRelease');assert(/nmTexMissingMark\(gl\);(nmTexUriMark\(gl\);)?nmParserRelease\(gl\);/.test(ls),'nmLoadScene releases the parser after nmTexMissingMark');
    const html=fs.readFileSync(path.join(root,'index.html'),'utf8');assert(html.includes(pick('nmBufRelease').trim())&&html.includes(pick('nmParserRelease').trim()),'installed in index.html (python3 work/install_valorant.py)'); }
  const base='models/valorant/maps/t/';
  // 2. baseline: the raw .bin buffers stay reachable through the parser while the result lives

@@ -21,7 +21,7 @@ const fn=name=>{const m=new RegExp('^function '+name+'\\(.*$','m').exec(RT);asse
 const vars=(RT.match(/^var NM_(?:TERRAIN|ZBIAS|ZLEVELS|OVERLAY|GROUND\w*)=.*$/mg)||[]).join('\n');
 const opt=['nmTerrain','nmGroundLayer','nmGroundApply'].filter(n=>new RegExp('^function '+n+'\\(','m').test(RT)).map(fn);
 const ctx={THREE,renderer:{capabilities:{getMaxAnisotropy:()=>16}},console};vm.createContext(ctx);
-vm.runInContext([vars,...opt,...['nmDecalStyle','nmFoliageCut','nmFoliageApply','nmDecalApply','nmTexMissingMark','nmPrepareScene'].map(fn),'function nmTexStats(img){return img&&img.st||null;}'].join('\n'),ctx);
+vm.runInContext([vars,...opt,...['nmDecalStyle','nmFoliageCut','nmFoliageApply','nmDecalApply','nmTexMissingMark','nmTexStatsOf','nmPrepareScene'].map(fn),'function nmTexStats(img){return img&&img.st||null;}'].join('\n'),ctx);
 const DATA=JSON.parse(fs.readFileSync(path.join(__dirname,'validation/map/ground-materials.json'),'utf8'));
 const MAPS=['ascent','bind','breeze','haven','lotus','split'];
 assert.deepEqual(Object.keys(DATA).sort(),MAPS,'walkable-surface data covers the six maps');

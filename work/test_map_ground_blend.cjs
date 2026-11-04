@@ -26,7 +26,7 @@ const vars=(RT.match(/^var NM_(?:TERRAIN|ZBIAS|ZLEVELS|OVERLAY|GROUND\w*)=.*$/mg
 const opt=['nmTerrain','nmGroundLayer','nmGroundApply'].filter(has).map(fn);
 let raw=null;const document={createElement:()=>({getContext:()=>({drawImage(){},getImageData:()=>({data:raw})})})};
 const ctx={THREE,document,renderer:{capabilities:{getMaxAnisotropy:()=>16}},console};vm.createContext(ctx);
-vm.runInContext([vars,...opt,...['nmTexStats','nmDecalStyle','nmFoliageCut','nmFoliageApply','nmDecalApply','nmTexMissingMark','nmPrepareScene'].map(fn),'var nmTexStatsReal=nmTexStats;nmTexStats=function(img){return img&&img.st||null;};'].join('\n'),ctx);
+vm.runInContext([vars,...opt,...['nmTexStats','nmDecalStyle','nmFoliageCut','nmFoliageApply','nmDecalApply','nmTexMissingMark','nmTexStatsOf','nmPrepareScene'].map(fn),'var nmTexStatsReal=nmTexStats;nmTexStats=function(img){return img&&img.st||null;};'].join('\n'),ctx);
 const DATA=JSON.parse(fs.readFileSync(path.join(__dirname,'validation/map/ground-materials.json'),'utf8'));
 // ground-layer families (surface materials), as opposed to wood / metal / plaster / props
 const GROUND_NAME=/^(?:Paint|Grass|Dirt|Mud|Sand|Gravel|Blendable|Jam|Ash|Asphalt|Tile|Stone|StoneBrickWall|Brick|Bricks|Concrete|Rock|Cobble|Rubble)_/i;

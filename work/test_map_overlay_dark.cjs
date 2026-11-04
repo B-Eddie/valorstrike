@@ -19,7 +19,7 @@ const vars=(RT.match(/^var NM_(?:TERRAIN|ZBIAS|ZLEVELS|OVERLAY|GROUND\w*)=.*$/mg
 const opt=['nmTerrain','nmTexMissingMark','nmGroundLayer','nmGroundApply'].filter(n=>new RegExp('^function '+n+'\\(','m').test(RT)).map(fn);
 let raw=null;const document={createElement:()=>({getContext:()=>({drawImage(){},getImageData:()=>({data:raw})})})};
 const ctx={THREE,document,Math,renderer:{capabilities:{getMaxAnisotropy:()=>16}},console};vm.createContext(ctx);
-vm.runInContext([vars,...opt,...['nmTexStats','nmDecalStyle','nmFoliageCut','nmFoliageApply','nmDecalApply','nmPrepareScene'].map(fn)].join('\n')+'\nglobalThis.api={nmPrepareScene};',ctx);
+vm.runInContext([vars,...opt,...['nmTexStats','nmDecalStyle','nmFoliageCut','nmFoliageApply','nmDecalApply','nmTexStatsOf','nmPrepareScene'].map(fn)].join('\n')+'\nglobalThis.api={nmPrepareScene};',ctx);
 const TEX=new Map();const lin=v=>(v/=255)<=.04045?v/12.92:Math.pow((v+.055)/1.055,2.4);
 (async()=>{let checked=0,lifted=0;const fails=[],kept=[];
  for(const key of ['ascent','bind','breeze','haven','lotus','split']){const dir=path.join(root,'models/valorant/maps',key),g=JSON.parse(fs.readFileSync(path.join(dir,'scene.gltf'),'utf8'));
