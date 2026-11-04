@@ -14148,6 +14148,7 @@ function mpCastIn(c, u, m) { // host: a client's cast
   const out = { t: "ac", i: u.nid, ag, k, o: mpR3(o), d: mpR3(d), ts: +m.ts || 0 }; if (bo) { out.pw = bo.pw; out.b = bo.b; } if (cp) out.p = mpR3(cp); mpCastOut(out, c);
 }
 function mpCastFx(m) { // client: someone else's cast, visual only
+  if (m.sub === "boom" && m.ag === "Raze" && m.k === "e" && m.i !== MP.me && Array.isArray(m.p) && MP.cl && MP.st === "game") { try { rzFire(mpV(m.p, new THREE.Vector3()), 5.4, "paint"); } catch (e) { xE(e); } return; }
   if (m.sub === "boom" && m.ag === "Raze" && m.k === "q" && Array.isArray(m.p) && MP.cl && MP.st === "game") { try { rzFire(mpV(m.p, new THREE.Vector3()), 4, "pack"); } catch (e) { xE(e); } return; } // server-confirmed Blast Pack detonation (all clients, incl. the caster)
   if (!MP.cl || MP.st !== "game" || m.i === MP.me || typeof m.k !== "string") return;
   const u = bots.find((x) => x && x.nid === m.i) || allies.find((x) => x && x.nid === m.i); if (!u || !u.g) return;
