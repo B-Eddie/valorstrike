@@ -378,7 +378,7 @@ function a18ArmagFree(g) { if (!g) return; scene.remove(g.grp); g.grp.traverse(o
 // Breach Rolling Thunder blast, built from the wiki showcase clip (Rolling_Thunder_Showcase.mp4): the ground fractures into dark cracks glowing orange,
 // jagged orange-yellow spikes burst up out of it, rock debris flies, dark grey smoke puffs rise. One call = one blast slice (w x seg m).
 let a18QkTex = null, a18QkCone = null, a18QkBox = null, a18QkSph = null;
-function a18QuakeBlast(cx, gy, cz, yaw, w, seg) {
+function a18QuakeBlast(cx, gy, cz, yaw, w, seg, fault) {
   if (!a18QkTex) {
     const c = document.createElement("canvas"); c.width = c.height = 256; const g = c.getContext("2d"); g.clearRect(0, 0, 256, 256); g.lineCap = "round";
     const crack = (x, y, a, len, wd, d) => { if (d > 3 || len < 8) return; const x2 = x + Math.cos(a) * len, y2 = y + Math.sin(a) * len;
@@ -394,12 +394,20 @@ function a18QuakeBlast(cx, gy, cz, yaw, w, seg) {
   const E = { kind: "quakefx", age: 0, life: 2.2, items: [], mats: { crack: new THREE.MeshBasicMaterial({ map: a18QkTex, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 }), spike: mk(0xff7a10, 1), spike2: mk(0xffc030, 1), rock: mk(0x3a2a20, 1), smoke: mk(0x666666, 0.4) } };
   const fx = -Math.sin(yaw), fz = -Math.cos(yaw), add = (m, o) => { scene.add(m); E.items.push(Object.assign({ m }, o)); return m; };
   const R = (a, b) => a + Math.random() * (b - a), P = (u, v) => [cx + fx * v - fz * u, cz + fz * v + fx * u]; /* u: across (w), v: along (seg) */
-  for (let k = 0; k < 3; k++) { const [x, z] = P(R(-w / 3, w / 3), R(-seg / 2, seg / 2)), m = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), E.mats.crack); m.rotation.x = -Math.PI / 2; m.rotation.z = Math.random() * 6.28; m.position.set(x, gy + 0.06 + k * 0.004, z); m.scale.setScalar(R(7, 10)); add(m, { t: "crack" }); }
-  for (let k = 0; k < 14; k++) { const [x, z] = P(R(-w / 2, w / 2), R(-seg * 0.75, seg * 0.75)), m = new THREE.Mesh(a18QkCone, k % 3 ? E.mats.spike : E.mats.spike2), h = R(1.6, 4.2); m.position.set(x, gy, z); m.rotation.set(R(-0.35, 0.35), R(0, 6.28), R(-0.35, 0.35)); m.scale.set(R(0.8, 1.8), 0.01, R(0.8, 1.8)); add(m, { t: "spike", h, d: R(0, 0.12) }); }
-  for (let k = 0; k < 16; k++) { const [x, z] = P(R(-w / 2, w / 2), R(-seg * 0.6, seg * 0.6)), m = new THREE.Mesh(a18QkBox, E.mats.rock); m.position.set(x, gy + 0.3, z); const s2 = R(0.12, 0.4); m.scale.set(s2, s2 * R(0.5, 1.2), s2 * R(0.7, 1.5)); add(m, { t: "rock", v: [R(-4, 4), R(5, 11), R(-4, 4)], r: [R(-9, 9), R(-9, 9), R(-9, 9)] }); }
-  for (let k = 0; k < 5; k++) { const [x, z] = P(R(-w / 2.5, w / 2.5), R(-seg / 2, seg / 2)), m = new THREE.Mesh(a18QkSph, E.mats.smoke); m.position.set(x, gy + 0.8, z); add(m, { t: "smoke", s0: R(0.4, 0.8), v: R(1.4, 2.6), d: R(0, 0.25) }); }
+  for (let k = 0; k < 3; k++) { const [x, z] = P(R(-w / 3, w / 3), R(-seg / 2, seg / 2)), m = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), E.mats.crack); m.rotation.x = -Math.PI / 2; m.rotation.z = Math.random() * 6.28; m.position.set(x, gy + 0.06 + k * 0.004, z); m.scale.setScalar(fault ? 5 : R(7, 10)); add(m, { t: "crack" }); }
+  for (let k = 0, nk = fault ? 4 : 14; k < nk; k++) { const [x, z] = P(R(-w / 2, w / 2), R(-seg * 0.75, seg * 0.75)), m = new THREE.Mesh(a18QkCone, k % 3 ? E.mats.spike : E.mats.spike2), h = R(1.6, 4.2); m.position.set(x, gy, z); m.rotation.set(R(-0.35, 0.35), R(0, 6.28), R(-0.35, 0.35)); m.scale.set(R(0.8, 1.8), 0.01, R(0.8, 1.8)); add(m, { t: "spike", h, d: R(0, 0.12) }); }
+  for (let k = 0, nk = fault ? 5 : 16; k < nk; k++) { const [x, z] = P(R(-w / 2, w / 2), R(-seg * 0.6, seg * 0.6)), m = new THREE.Mesh(a18QkBox, E.mats.rock); m.position.set(x, gy + 0.3, z); const s2 = R(0.12, 0.4); m.scale.set(s2, s2 * R(0.5, 1.2), s2 * R(0.7, 1.5)); add(m, { t: "rock", v: [R(-4, 4), R(5, 11), R(-4, 4)], r: [R(-9, 9), R(-9, 9), R(-9, 9)] }); }
+  for (let k = 0, nk = fault ? 0 : 5; k < nk; k++) { const [x, z] = P(R(-w / 2.5, w / 2.5), R(-seg / 2, seg / 2)), m = new THREE.Mesh(a18QkSph, E.mats.smoke); m.position.set(x, gy + 0.8, z); add(m, { t: "smoke", s0: R(0.4, 0.8), v: R(1.4, 2.6), d: R(0, 0.25) }); }
   a18Fx(E); return E;
 }
+
+// Breach Fault Line (wiki Fault_Line_Showcase.mp4): a yellow line, then the ground cracks open along it glowing orange with a few spikes, no smoke.
+function a18FaultVis(px, pz, fx, fz, nr, L, w) {
+  const yaw = Math.atan2(-fx, -fz), seg = 5, n = Math.max(1, Math.ceil(L / seg));
+  for (let i = 0; i < n; i++) { const v = nr + Math.min(L, i * seg + seg / 2), cx = px + fx * v, cz = pz + fz * v; let gy = typeof player !== "undefined" ? player.y : 0; try { const g = groundAt(cx, cz, 0.3, gy + 1); if (Number.isFinite(g)) gy = g; } catch (err) {} a18QuakeBlast(cx, gy, cz, yaw, w * 2, seg, true); }
+}
+// Breach Aftershock (wiki Aftershock_Showcase.mp4): a bright fireball with concentric expanding rings at the wall.
+function a18AfterBoom(x, y, z) { a18ArmagBoom(x, y - 1, z, 0.8); for (const r of [1.5, 3]) { const m = a18Ring({ x, z }, r, 0xffb040, 0.55); m.position.y = y - 0.9; a18Fx({ kind: "burst", m, t: 0.45 }); } }
 function a18ArmagBoom(x, gy, z, size) {
   size = size || 1;
   if (!a18BoomGeo) { a18BoomGeo = new THREE.SphereGeometry(1, 14, 10); a18BoomRing = new THREE.RingGeometry(0.85, 1, 28); a18BoomRing.rotateX(-Math.PI / 2); }

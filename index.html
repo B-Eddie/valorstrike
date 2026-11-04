@@ -9567,7 +9567,7 @@ function pNs(t) { const o = $("xNs"); o.classList.add("on"); clearTimeout(pNs.h)
   if (A.bw && (A.bwT -= dt) <= 0) { A.bw = 0; const F = A.bf, L = F.L || XFAULT.max, N = XFAULT.near, inS = (x, z) => { const vx = x - F.x, vz = z - F.z, a = vx * F.fx + vz * F.fz; return a > N && a < N + L && Math.abs(vx * F.fz - vz * F.fx) < XFAULT.width / 2; }; // wiki strip (XFAULT)
     (al ? bots : allies).forEach((t) => { if (t && t.alive && t.g && inS(t.g.position.x, t.g.position.z)) bcDaze(t, XFAULT.concuss); });
     if (!al && player.hp > 0 && inS(player.x, player.z)) { BC.pst = performance.now() + XFAULT.concuss * 1000; xConStart(XFAULT.concuss * 1000); say("Concussed by Fault Line", 900); }
-    const m = new THREE.Mesh(xG("Box", XFAULT.width, 0.25, L), fireMat(0xff9a3a, 0.45)); m.position.set(F.x + F.fx * (N + L / 2), 0.15, F.z + F.fz * (N + L / 2)); m.rotation.y = Math.atan2(F.fx, F.fz); jFx(m, 0.9); feed("Breach ▸ Fault Line"); } }; }
+    a18FaultVis(F.x, F.z, F.fx, F.fz, N, L, XFAULT.width / 2); feed("Breach ▸ Fault Line"); } }; }
 // bot Skye (team-agnostic): Guiding Light before a peek (2 charges), Regrowth from her 100 HP pool once a fight is over
 { const b0 = botAb; botAb = function (b, dt, see, tg, from) { b0(b, dt, see, tg, from);
   if (!jOn() || !running || !b.ab || (b.name !== "Skye" && xAgOf(b.name) !== "Skye")) return; const A = b.ab, al = allies.indexOf(b) >= 0;
@@ -9676,7 +9676,7 @@ function bcFlash(p) {
 }
 function bcLine(P, fx, fz, L, w, t, ry, nr) { // strip nr .. nr + L ahead of P along (fx, fz), w either side
   nr = nr || 0; let n = 0; bots.forEach((b) => { if (!b.alive) return; const vx = b.g.position.x - P.x, vz = b.g.position.z - P.z, a = vx * fx + vz * fz, s = Math.abs(vx * fz - vz * fx); if (a > nr && a < nr + L && s < w) { bcDaze(b, t); n++; } });
-  const m = new THREE.Mesh(new THREE.BoxGeometry(w * 2, 0.25, L), fireMat(0xff9a3a, 0.45)); m.position.set(P.x + fx * (nr + L / 2), 0.15, P.z + fz * (nr + L / 2)); m.rotation.y = ry ?? yaw; jFx(m, 0.9);
+  a18FaultVis(P.x, P.z, fx, fz, nr, L, w);
   blip(90, 0.5, "sawtooth", 0.22); try { shk = 0.25; } catch (e) {} say("Fault Line · " + n + " dazed " + t + " s", 900);
 }
 // Breach Rolling Thunder (wiki.playvalorant.com/en-us/Rolling_Thunder): a 32 m long, 18 m wide strip starting 8 m in front of
@@ -9779,7 +9779,7 @@ function bcTick(dt) {
   if (BC.fq.length) BC.fq = BC.fq.filter((q) => { if ((q.t -= dt) > 0) return true; if (q.k === "mfl") { mpFault(q); return false; } if (q.k === "rts") { bcSlice(q); return false; } if (player.hp > 0 && J.pick === "Breach") { if (q.k === "fl") bcLine(q, q.fx, q.fz, q.L, XFAULT.width / 2, XFAULT.concuss, q.ry, XFAULT.near); else bcCone(q); } return false; });
   BC.as = BC.as.filter((a) => {
     a.t -= dt; if (a.t > 0) return true;
-    const m = jM(smokeGeo, fireMat(0xff9a3a, 0.45)); m.scale.setScalar(0.75); m.position.set(a.p.x, 1, a.p.z); jFx(m, 0.35); blip(70, 0.3, "sawtooth", 0.2);
+    try { a18AfterBoom(a.p.x, (Number.isFinite(a.p.f) ? a.p.f : 0) + 1, a.p.z); } catch (e) {} blip(70, 0.3, "sawtooth", 0.2);
     if (a.own) { xBbTg(a).forEach((t) => { const q = xBbPos(t); if (q && Math.hypot(q.x - a.p.x, q.z - a.p.z) < 3) { xBotDmg(t, 80, a.own.name, "Aftershock"); if (t.alive && bots.indexOf(t) >= 0) flash(t); } }); xFFArea(a.own, a.en, "Aftershock", 80, (x, z) => Math.hypot(x - a.p.x, z - a.p.z) < 3); }
     else { bots.forEach((b) => { if (b.alive && Math.hypot(b.g.position.x - a.p.x, b.g.position.z - a.p.z) < 3) { jHit(b, 80, "Aftershock"); if (b.alive) flash(b); } }); xFFArea("You", false, "Aftershock", 80, (x, z) => Math.hypot(x - a.p.x, z - a.p.z) < 3); }
     if (--a.n > 0) { a.t = 0.6; return true; } scene.remove(a.m); return false;
@@ -14010,7 +14010,7 @@ function mpFault(q) { // a relayed Fault Line quake (online): the local player c
   const N = XFAULT.near, W = XFAULT.width / 2, inS = (x, z) => { const vx = x - q.x, vz = z - q.z, a = vx * q.fx + vz * q.fz; return a > N && a < N + q.L && Math.abs(vx * q.fz - vz * q.fx) < W; }, ffa = FV.dm && !FV.tdm;
   if ((q.en || ffa) && player.hp > 0 && inS(player.x, player.z)) { try { xConStart(XFAULT.concuss * 1000); } catch (e) {} }
   if (q.auth && q.u && q.u.alive) { const T = ffa || !q.en ? bots : allies; for (let j = 0; j < T.length; j++) { const t = T[j]; if (t && t !== q.u && t.alive && t.g && inS(t.g.position.x, t.g.position.z)) bcDaze(t, XFAULT.concuss); } }
-  const m = new THREE.Mesh(xG("Box", XFAULT.width, 0.25, Math.round(q.L)), fireMat(0xff9a3a, 0.45)); m.position.set(q.x + q.fx * (N + q.L / 2), 0.15, q.z + q.fz * (N + q.L / 2)); m.rotation.y = q.ry; jFx(m, 0.9);
+  a18FaultVis(q.x, q.z, q.fx, q.fz, N, Math.round(q.L), XFAULT.width / 2);
 }
 function mpFx(u, ag, k, o, d, auth, p, quiet) { // u: caster unit, o/d: eye + aim, p: exact target (bot casts), auth: host world (damage / heal / daze)
   const i = "cqex".indexOf(k); if (i < 0 || !u || !u.g) return; if (!Object.hasOwn(KITS, ag)) ag = "Jett";
@@ -24408,7 +24408,7 @@ function a18ArmagFree(g) { if (!g) return; scene.remove(g.grp); g.grp.traverse(o
 // Breach Rolling Thunder blast, built from the wiki showcase clip (Rolling_Thunder_Showcase.mp4): the ground fractures into dark cracks glowing orange,
 // jagged orange-yellow spikes burst up out of it, rock debris flies, dark grey smoke puffs rise. One call = one blast slice (w x seg m).
 let a18QkTex = null, a18QkCone = null, a18QkBox = null, a18QkSph = null;
-function a18QuakeBlast(cx, gy, cz, yaw, w, seg) {
+function a18QuakeBlast(cx, gy, cz, yaw, w, seg, fault) {
   if (!a18QkTex) {
     const c = document.createElement("canvas"); c.width = c.height = 256; const g = c.getContext("2d"); g.clearRect(0, 0, 256, 256); g.lineCap = "round";
     const crack = (x, y, a, len, wd, d) => { if (d > 3 || len < 8) return; const x2 = x + Math.cos(a) * len, y2 = y + Math.sin(a) * len;
@@ -24424,12 +24424,20 @@ function a18QuakeBlast(cx, gy, cz, yaw, w, seg) {
   const E = { kind: "quakefx", age: 0, life: 2.2, items: [], mats: { crack: new THREE.MeshBasicMaterial({ map: a18QkTex, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 }), spike: mk(0xff7a10, 1), spike2: mk(0xffc030, 1), rock: mk(0x3a2a20, 1), smoke: mk(0x666666, 0.4) } };
   const fx = -Math.sin(yaw), fz = -Math.cos(yaw), add = (m, o) => { scene.add(m); E.items.push(Object.assign({ m }, o)); return m; };
   const R = (a, b) => a + Math.random() * (b - a), P = (u, v) => [cx + fx * v - fz * u, cz + fz * v + fx * u]; /* u: across (w), v: along (seg) */
-  for (let k = 0; k < 3; k++) { const [x, z] = P(R(-w / 3, w / 3), R(-seg / 2, seg / 2)), m = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), E.mats.crack); m.rotation.x = -Math.PI / 2; m.rotation.z = Math.random() * 6.28; m.position.set(x, gy + 0.06 + k * 0.004, z); m.scale.setScalar(R(7, 10)); add(m, { t: "crack" }); }
-  for (let k = 0; k < 14; k++) { const [x, z] = P(R(-w / 2, w / 2), R(-seg * 0.75, seg * 0.75)), m = new THREE.Mesh(a18QkCone, k % 3 ? E.mats.spike : E.mats.spike2), h = R(1.6, 4.2); m.position.set(x, gy, z); m.rotation.set(R(-0.35, 0.35), R(0, 6.28), R(-0.35, 0.35)); m.scale.set(R(0.8, 1.8), 0.01, R(0.8, 1.8)); add(m, { t: "spike", h, d: R(0, 0.12) }); }
-  for (let k = 0; k < 16; k++) { const [x, z] = P(R(-w / 2, w / 2), R(-seg * 0.6, seg * 0.6)), m = new THREE.Mesh(a18QkBox, E.mats.rock); m.position.set(x, gy + 0.3, z); const s2 = R(0.12, 0.4); m.scale.set(s2, s2 * R(0.5, 1.2), s2 * R(0.7, 1.5)); add(m, { t: "rock", v: [R(-4, 4), R(5, 11), R(-4, 4)], r: [R(-9, 9), R(-9, 9), R(-9, 9)] }); }
-  for (let k = 0; k < 5; k++) { const [x, z] = P(R(-w / 2.5, w / 2.5), R(-seg / 2, seg / 2)), m = new THREE.Mesh(a18QkSph, E.mats.smoke); m.position.set(x, gy + 0.8, z); add(m, { t: "smoke", s0: R(0.4, 0.8), v: R(1.4, 2.6), d: R(0, 0.25) }); }
+  for (let k = 0; k < 3; k++) { const [x, z] = P(R(-w / 3, w / 3), R(-seg / 2, seg / 2)), m = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), E.mats.crack); m.rotation.x = -Math.PI / 2; m.rotation.z = Math.random() * 6.28; m.position.set(x, gy + 0.06 + k * 0.004, z); m.scale.setScalar(fault ? 5 : R(7, 10)); add(m, { t: "crack" }); }
+  for (let k = 0, nk = fault ? 4 : 14; k < nk; k++) { const [x, z] = P(R(-w / 2, w / 2), R(-seg * 0.75, seg * 0.75)), m = new THREE.Mesh(a18QkCone, k % 3 ? E.mats.spike : E.mats.spike2), h = R(1.6, 4.2); m.position.set(x, gy, z); m.rotation.set(R(-0.35, 0.35), R(0, 6.28), R(-0.35, 0.35)); m.scale.set(R(0.8, 1.8), 0.01, R(0.8, 1.8)); add(m, { t: "spike", h, d: R(0, 0.12) }); }
+  for (let k = 0, nk = fault ? 5 : 16; k < nk; k++) { const [x, z] = P(R(-w / 2, w / 2), R(-seg * 0.6, seg * 0.6)), m = new THREE.Mesh(a18QkBox, E.mats.rock); m.position.set(x, gy + 0.3, z); const s2 = R(0.12, 0.4); m.scale.set(s2, s2 * R(0.5, 1.2), s2 * R(0.7, 1.5)); add(m, { t: "rock", v: [R(-4, 4), R(5, 11), R(-4, 4)], r: [R(-9, 9), R(-9, 9), R(-9, 9)] }); }
+  for (let k = 0, nk = fault ? 0 : 5; k < nk; k++) { const [x, z] = P(R(-w / 2.5, w / 2.5), R(-seg / 2, seg / 2)), m = new THREE.Mesh(a18QkSph, E.mats.smoke); m.position.set(x, gy + 0.8, z); add(m, { t: "smoke", s0: R(0.4, 0.8), v: R(1.4, 2.6), d: R(0, 0.25) }); }
   a18Fx(E); return E;
 }
+
+// Breach Fault Line (wiki Fault_Line_Showcase.mp4): a yellow line, then the ground cracks open along it glowing orange with a few spikes, no smoke.
+function a18FaultVis(px, pz, fx, fz, nr, L, w) {
+  const yaw = Math.atan2(-fx, -fz), seg = 5, n = Math.max(1, Math.ceil(L / seg));
+  for (let i = 0; i < n; i++) { const v = nr + Math.min(L, i * seg + seg / 2), cx = px + fx * v, cz = pz + fz * v; let gy = typeof player !== "undefined" ? player.y : 0; try { const g = groundAt(cx, cz, 0.3, gy + 1); if (Number.isFinite(g)) gy = g; } catch (err) {} a18QuakeBlast(cx, gy, cz, yaw, w * 2, seg, true); }
+}
+// Breach Aftershock (wiki Aftershock_Showcase.mp4): a bright fireball with concentric expanding rings at the wall.
+function a18AfterBoom(x, y, z) { a18ArmagBoom(x, y - 1, z, 0.8); for (const r of [1.5, 3]) { const m = a18Ring({ x, z }, r, 0xffb040, 0.55); m.position.y = y - 0.9; a18Fx({ kind: "burst", m, t: 0.45 }); } }
 function a18ArmagBoom(x, gy, z, size) {
   size = size || 1;
   if (!a18BoomGeo) { a18BoomGeo = new THREE.SphereGeometry(1, 14, 10); a18BoomRing = new THREE.RingGeometry(0.85, 1, 28); a18BoomRing.rotateX(-Math.PI / 2); }
