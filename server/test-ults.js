@@ -65,7 +65,7 @@ assert.deepEqual([0,3.5,4,5.5,7,8].map(ssDamage),[150,150,150,90,0,0],'ssDamage:
  assert.equal(cast(s,u),true);tick(s,.5);assert.ok(!(a.concussUntil>s.time),'windup');tick(s,.6);
  assert.ok(!(a.concussUntil>s.time),'wiki chain: the 12 m slice has not blasted yet 0.1 s after the windup');tick(s,.4);
  assert.ok(a.concussUntil>s.time+3&&a.concussUntil<=s.time+4,'concussed through the wall for 4 s by its slice blast');assert.ok(!(edge.concussUntil>s.time),'wiki chain: the 38 m slice blasts last (8 blasts 0.255 s apart)');
- assert.ok(a.z<-12-6,'knocked back along the strip (7 m, wiki displacement), z='+a.z);tick(s,1.6);assert.ok(edge.concussUntil>s.time+1,'38 m ahead, 8.5 m aside: inside the strip, hit by the last blast');
+ {const tr=[];for(let i=0;i<14;i++){tick(s,.1);tr.push([+s.time.toFixed(2),+a.z.toFixed(1),+(a.vy||0).toFixed(1),s.effects.find(e=>e.kind==='quake')?.i??8]);}if(process.env.QTRACE)console.log('quake trace [t,z,vy,blasts]',JSON.stringify(tr));assert.ok(Math.abs(a.vz+14)<1e-9&&a.vy>0&&a.air,'launched along the strip (7 m over the 0.5 s Force Duration) and up (wiki: displacement 7 m, knocks up), vz='+a.vz);}tick(s,.2);assert.ok(edge.concussUntil>s.time+1,'38 m ahead, 8.5 m aside: inside the strip, hit by the last blast');
  for(const v of [b,c,mate,close,side,past])assert.ok(!(v.concussUntil>s.time),v.name+' spared');}
 
 // Seekers: the three nearest living enemies are nearsighted when their seeker arrives; a fourth is not.
