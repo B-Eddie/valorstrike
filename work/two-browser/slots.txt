@@ -1,6 +1,6 @@
-raze-pack|Phoenix|KeyE|scen_gen.cjs|FULLMAP=1 VW=960 VH=540 FIRE=1 BX=0 BZ=-12
-raze-shell|Breach|KeyX|scen_gen.cjs|FULLMAP=1 VW=960 VH=540 ULT=1 FIRE=0 BX=0 BZ=-14
-breach-rt|Viper|KeyC|scen_gen.cjs|FULLMAP=1 VW=960 VH=540 FIRE=1 BX=0 BZ=-12
-viper-snake|Phoenix|KeyC|scen_gen.cjs|FULLMAP=1 VW=960 VH=540 FIRE=0 BX=0 BZ=-12
-phx-curve|Reyna|KeyE|scen_gen.cjs|FULLMAP=1 VW=960 VH=540 FIRE=1 BX=0 BZ=-12
-jett-cloud|Raze|KeyQ|scen_gen.cjs|FULLMAP=1 VW=960 VH=540 FIRE=1 BX=0 BZ=-12
+raze-pack|Phoenix|KeyE|scen_gen.cjs|ABN=Curveball FULLMAP=1 VW=960 VH=540 FIRE=1 BX=0 BZ=-12
+raze-shell|Breach|KeyX|scen_gen.cjs|ABN=RollingThunder FULLMAP=1 VW=960 VH=540 ULT=1 FIRE=0 BX=0 BZ=-14
+breach-rt|Viper|KeyC|scen_gen.cjs|ABN=SnakeBite FULLMAP=1 VW=960 VH=540 FIRE=1 BX=0 BZ=-12
+viper-snake|Phoenix|KeyC|scen_gen.cjs|ABN=Blaze FULLMAP=1 VW=960 VH=540 FIRE=0 BX=0 BZ=-12
+phx-curve|Reyna|KeyC|scen_gen.cjs|ABN=Leer FULLMAP=1 VW=960 VH=540 FIRE=1 BX=0 BZ=-12
+jett-cloud|Raze|KeyQ|scen_gen.cjs|ABN=BlastPack FULLMAP=1 VW=960 VH=540 FIRE=1 BX=0 BZ=-12

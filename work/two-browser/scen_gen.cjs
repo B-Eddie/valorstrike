@@ -19,10 +19,10 @@ module.exports=async T=>{const {A,B,qa,code,log,check,SHOT}=T;const fs=require('
  if(process.env.FIRE!=='0'){await A.page.mouse.down();await W(120);await A.page.mouse.up();}
  const fr=P=>P.X('renderer.info.render.frame').catch(()=>0);
  const waitFrames=async(P,n)=>{const f0=await fr(P);for(let i=0;i<120;i++){if((await fr(P))>=f0+n)return;await W(250);}};
- const frz=v=>qa('C.freeze='+v+';return 1');
+ const frz=async v=>{await qa('C.freeze='+v+';return 1');await Promise.all([A,B].map(P=>P.X('window.__ts='+(v?0:1)+';1').catch(()=>0)));};
  let last=null,prev=0;
  // server time advances only inside the unfrozen windows; screenshots (slow in software GL) are taken with the room frozen
- for(const [at,n] of [[0.4,'a'],[1.2,'b'],[2.5,'c'],[4,'d'],[7,'e'],[12,'f']]){await frz(false);await W((at-prev)*1000);prev=at;await frz(true);await waitFrames(A,3);await waitFrames(B,3);const s=await snap();last=s;log('state '+n+' @+'+at+'s',JSON.stringify({t:s.t,ab:s.a.ab,b:s.b,fx:s.fx,ev:s.ev,A:await cl(A),B:await cl(B)}));await unp();await A.page.screenshot({path:SHOT+TAG+'_A_'+n+'.png'});await B.page.screenshot({path:SHOT+TAG+'_B_'+n+'.png'});}
+ for(const [at,n] of [[0.4,'a'],[1.2,'b'],[2.5,'c'],[4,'d'],[7,'e'],[12,'f']]){await frz(false);await W((at-prev)*1000);prev=at;await frz(true);await waitFrames(A,3);await waitFrames(B,3);const s=await snap();last=s;log('state '+n+' @+'+at+'s',JSON.stringify({t:s.t,clientNow:[await A.X('Math.round(performance.now())'),await B.X('Math.round(performance.now())')],frames:[await fr(A),await fr(B)],ab:s.a.ab,b:s.b,fx:s.fx,ev:s.ev,A:await cl(A),B:await cl(B)}));await unp();await A.page.screenshot({path:SHOT+TAG+'_A_'+n+'.png'});await B.page.screenshot({path:SHOT+TAG+'_B_'+n+'.png'});}
  await frz(false);
  const ab0=before.a.ab,ab1=last.a.ab;const spent=['c','q','e'].some(k=>ab1[k]<ab0[k])||(ab1.ult<ab0.ult)||Object.keys(ab1.cool||{}).length>0;
  check('server: cast spent a charge/ult/cooldown (key '+KEY+')',spent,{before:ab0,after:ab1});
