@@ -38,7 +38,7 @@ export const A18={
  conting:{dist:30,speed:6,w:8,h:3.5,life:8},/* Contingency: moving vision wall */
  undercut:{r:5,supp:4,vuln:4},/* Undercut: suppress + vulnerable */
  dtap:{channel:1,life:20},/* Double Tap: 1 s Focus, shield blocks one hit */
- kc:{range:40,w:4,life:8},/* Kill Contract: lightweight - the caught duelist is revealed+suppressed to Iso for 8 s (no pocket arena) */
+ kc:{range:40,w:4,life:8,duel:13,supp:4},/* Kill Contract: lightweight - the caught duelist is revealed+suppressed to Iso for 8 s (no pocket arena) */
  fastlane:{dist:30,gap:3,life:6},relay:{r:4.5,concuss:3.5},/* Neon */
  gear:{drain:10,regen:20,k:1.2},od:{life:10,dps:150,range:30},/* Overdrive: lightweight beam = high-dps ray while it lasts */
  satur:{r:4.5,hinder:4},ls:{dash:9,time:.35},/* Waylay Saturate / Lightspeed */
@@ -60,7 +60,7 @@ export const A18={
  evo:{life:12,hps:10},/* Evolution: stim + 10/s heal + debuff immunity (weapon damage still lands) */
  vine:{life:30,r:6,slowK:.4,dps:15},shear:{life:30,r:2.5,wall:8},rose:{life:30,blind:2,r:20},garden:{r:20,jam:8},/* Vyse */
 };
-export function init18(u,A){if(!AG18[u.agent])return;A.stars=u.agent==='Astra'?2:0;A.fuel=(u.agent==='Viper'||u.agent==='Neon')?A18.fuel.max:0;A.globules=0;/* Astra: 2 Stars a round (wiki Stars); Viper/Neon: full fuel tank */A.toxOn=false;A.cloudOn=false;A.gate=null;A.marker=null;A.decoy=null;u.isoShield=0;u.driftUntil=0;u.evoUntil=0;u.suppressUntil=0;u.jamUntil=0;u.hinderUntil=0;u.levUntil=0;u.decayUntil=0;u.decayAmt=0;u.hasteUntil=0;u.stimUntil=0;u.gravUntil=0;u.ndy=null;u.overheal=0;}
+export function init18(u,A){if(!AG18[u.agent])return;A.slides=u.agent==='Neon'?2:0;A.slideKills=0;A.stars=u.agent==='Astra'?2:0;A.fuel=(u.agent==='Viper'||u.agent==='Neon')?A18.fuel.max:0;A.globules=0;/* Astra: 2 Stars a round (wiki Stars); Viper/Neon: full fuel tank */A.toxOn=false;A.cloudOn=false;A.gate=null;A.marker=null;A.decoy=null;u.isoShield=0;u.driftUntil=0;u.evoUntil=0;u.suppressUntil=0;u.jamUntil=0;u.hinderUntil=0;u.levUntil=0;u.decayUntil=0;u.decayAmt=0;u.hasteUntil=0;u.stimUntil=0;u.gravUntil=0;u.ndy=null;u.overheal=0;}
 const eye=u=>[u.x,u.y+1.6-(u.ch||0),u.z];
 const aim=u=>[-Math.sin(u.look)*Math.cos(u.pitch||0),Math.sin(u.pitch||0),-Math.cos(u.look)*Math.cos(u.pitch||0)];
 const enemies=(sim,u)=>sim.units.filter(v=>v!==u&&v.team!==u.team&&v.alive&&!v.loading);
@@ -74,11 +74,12 @@ function decay(sim,v,amt){if(v.evoUntil>sim.time)return;v.decayAmt=Math.min(99,(
 function land(sim,u,range){/* crosshair floor point, as aimFloor's simple form */const o=eye(u),d=aim(u),hit=sim.world.ray(o,d,range),t=Number.isFinite(hit)?Math.max(0,hit-.5):range;let x=o[0]+d[0]*t,z=o[2]+d[2]*t,g=sim.world.ground(x,z,Math.min(o[1]+d[1]*t,o[1])+.1);if(!Number.isFinite(g)){g=u.y;}return [x,g+.1,z];}
 // Signature restock timers (s), extending the abilities.js map; duelist 2-kill resets are in reward18.
 export const RESTOCK18={Harbor:40,'KAY/O':40,Fade:40,Gekko:0,Viper:0,Neon:0,Iso:0,Waylay:0,Hush:0,Yoru:0,Deadlock:0,Veto:0,Vyse:0};
-export function reward18(u,A){/* 2-kill signature resets (wiki): Iso Double Tap, Waylay Refract, Yoru Gatecrash (E slots), Neon slide */if(['Iso','Waylay','Yoru'].includes(u.agent)&&A.e<1&&++A.signatureKills>=2){A.e=1;A.signatureKills=0;}}
+export function reward18(u,A){/* 2-kill signature resets (wiki): Iso Double Tap, Waylay Refract, Yoru Gatecrash (E slots), Neon slide charges */if(['Iso','Waylay','Yoru'].includes(u.agent)&&A.e<1&&++A.signatureKills>=2){A.e=1;A.signatureKills=0;}if(u.agent==='Neon'&&(A.slides||0)<2&&++A.slideKills>=2){A.slides=2;A.slideKills=0;}}
 // castAbility0 branch. Returns true when the cast was consumed. m: client intent (k, optional p/dist/alt/pw).
 export function cast18(sim,u,m,o,d,push){
  const k=m.k,A=u.ability,ag=u.agent,C=A18,K=kits[ag];
  if(u.suppressUntil>sim.time)return false;
+ if(ag==='Neon'&&k==='e'&&u.gearOn&&m.alt===true){if((A.slides||0)<1)return false;A.slides--;u.dash=Motor.dash(m.f||1,0,u.look,6,.3);A.cool.e=sim.time+.3;cast(sim,u,k,o,d,[u.x,u.y,u.z]);return true;}/* High Gear ALT FIRE: slide (wiki High_Gear), 2 charges, 2-kill reset */
  // charge accounting mirrors castAbility0's rules for the 18: ult points, star pool, per-key charges
  if(k==='x'){if(A.ult<K.u)return false;}
  else if(ag==='Astra'){if(A.stars<1)return false;}
@@ -137,12 +138,12 @@ export function cast18(sim,u,m,o,d,push){
    if(k==='c')fx(sim,u,'conting',[u.x,u.y,u.z],C.conting.dist/C.conting.speed,C.conting.w,{d:[aim(u)[0],0,aim(u)[2]],speed:C.conting.speed*(m.alt===true?.5:1),born:sim.time});
    else if(k==='q')fx(sim,u,'blast',p,.6,C.undercut.r,{supp:C.undercut.supp,vuln:C.undercut.vuln,at:sim.time+.5});
    else if(k==='e'){u.isoShield=1;u.dtShieldAt=sim.time+C.dtap.life;}
-   else{/* Kill Contract (lightweight): the first enemy in a 4 m column ahead is revealed + suppressed to Iso for 8 s */const t=enemies(sim,u).find(v=>{const q=[v.x-u.x,v.z-u.z],f=q[0]*d[0]+q[1]*d[2];return f>0&&f<C.kc.range&&Math.abs(q[0]*d[2]-q[1]*d[0])<C.kc.w/2;});if(t){status(t,'suppressUntil',C.kc.life,sim);status(t,'revealedUntil',C.kc.life,sim);u.isoShield=1;u.dtShieldAt=sim.time+C.kc.life;}}
+   else{/* Kill Contract (wiki): the first enemy in the column is pulled into a walled 1v1 cell with Iso; suppress on entry, 13 s or a kill ends it */const t=enemies(sim,u).find(v=>{const q=[v.x-u.x,v.z-u.z],f=q[0]*d[0]+q[1]*d[2];return f>0&&f<C.kc.range&&Math.abs(q[0]*d[2]-q[1]*d[0])<C.kc.w/2;});if(!t)return false;duel18(sim,u,t,C);}
    cast(sim,u,k,o,d,p);return true;}
   case 'Neon':{spend();
    if(k==='c')fx(sim,u,'fastlane',[u.x,u.y,u.z],C.fastlane.life,C.fastlane.dist,{yaw:u.look});
    else if(k==='q'){fx(sim,u,'blast',p,.5,C.relay.r,{concuss:C.relay.concuss,at:sim.time+.4});}
-   else if(k==='e')u.gearOn=true;/* High Gear: haste while fuel lasts */
+   else if(k==='e'){if(u.gearOn&&m.alt===true&&(A.slides||0)>0){A.slides--;u.dash=Motor.dash(m.f||1,0,u.look,6,.3);/* slide */}else u.gearOn=true;/* High Gear: haste while fuel lasts; ALT slides (2 charges, 2 kills reset) */}
    else{u.overdriveUntil=sim.time+C.od.life;u.stimUntil=sim.time+C.od.life;}
    cast(sim,u,k,o,d,p);return true;}
   case 'Waylay':{spend();
@@ -173,7 +174,7 @@ export function cast18(sim,u,m,o,d,push){
    if(k==='c')fx(sim,u,'frag',p,C.frag.pulses*C.frag.gap+1,C.frag.r,{at:sim.time+.5,next:sim.time+.5,left:C.frag.pulses});
    else if(k==='q')fx(sim,u,'flash',C.fdrive.delay+.2,30,{at:sim.time+C.fdrive.delay,blind:C.fdrive.blind,p:[...p]});
    else if(k==='e')fx(sim,u,'blast',p,.5,C.zero.r,{supp:C.zero.supp,at:sim.time+.4});
-   else{u.stimUntil=sim.time+C.nullcmd.life;fx(sim,u,'nullcmd',[u.x,u.y,u.z],C.nullcmd.life,C.nullcmd.r,{next:sim.time+C.nullcmd.pulse});}
+   else{u.stimUntil=sim.time+C.nullcmd.life;u.nullCmdUntil=sim.time+C.nullcmd.life+15;/* downed can outlive the pulse field (wiki NULL/cmd: downed 15 s, 850 HP, ally revive 5 s) */fx(sim,u,'nullcmd',[u.x,u.y,u.z],C.nullcmd.life,C.nullcmd.r,{next:sim.time+C.nullcmd.pulse});}
    cast(sim,u,k,o,d,p);return true;}
   case 'Tejo':{spend();
    if(k==='c')fx(sim,u,'sdrone',p,C.sdrone.life,C.sdrone.r,{at:sim.time+.5});
@@ -185,7 +186,7 @@ export function cast18(sim,u,m,o,d,push){
    if(k==='c')fx(sim,u,'barrier',p,C.mesh.life,C.mesh.len/2,{seg:[C.mesh.hp],hp:C.mesh.hp,yaw:u.look,mesh:1,h:C.mesh.h});
    else if(k==='q')fx(sim,u,'sensor',p,C.sensor.life,0,{armR:C.sensor.r});
    else if(k==='e')fx(sim,u,'gnet',p,C.gnet.life,C.gnet.r,{at:sim.time+.5});
-   else{const t=enemies(sim,u).filter(v=>los(sim,eye(u),[v.x,v.y+1,v.z])&&Math.hypot(v.x-u.x,v.z-u.z)<C.annih.range).sort((a,b)=>Math.hypot(a.x-u.x,a.z-u.z)-Math.hypot(b.x-u.x,b.z-u.z))[0];if(t){t.anni={by:u.id,at:sim.time+C.annih.detain};status(t,'tetheredUntil',C.annih.detain,sim);}}
+   else{const t=enemies(sim,u).filter(v=>los(sim,eye(u),[v.x,v.y+1,v.z])&&Math.hypot(v.x-u.x,v.z-u.z)<C.annih.range).sort((a,b)=>Math.hypot(a.x-u.x,a.z-u.z)-Math.hypot(b.x-u.x,b.z-u.z))[0];if(t){t.anni={by:u.id,at:sim.time+C.annih.detain,hp:600};/* wiki Annihilate: 600 HP cocoon - teammates shoot it to free them */status(t,'tetheredUntil',C.annih.detain,sim);}}
    cast(sim,u,k,o,d,p);return true;}
   case 'Veto':{spend();
    if(k==='c'){A.xcut=p;A.xcutReady=true;fx(sim,u,'xcut',p,3600,0);}
@@ -245,7 +246,7 @@ export function tick18(sim,dt){
   }}
  if(gone.length){for(const e of gone)if(e.ag==='Gekko'){const u=sim.units.find(n=>n.id===e.owner),k=e.kind==='mosh'?'c':e.kind==='dizzy'?'e':e.wing?'q':0;if(u&&k)u.ability['re_'+k]=T+A18.globule.reclaim;}sim.effects=sim.effects.filter(e=>!gone.includes(e));}
  // unit statuses
- for(const u of sim.units){const A=u.ability;if(!A||!AG18[u.agent])continue;u.stimOn=(u.stimUntil||0)>T||!!u.gearOn||(u.overdriveUntil||0)>T||(u.hasteUntil||0)>T;if(u.agent==='Clove'){if(u.alive)u.ndyDead=0;else if(!u.ndyDead&&!u.ndy)u.ndyDead=T;}
+ for(const u of sim.units){const A=u.ability;if(!A)continue;if(u.isoDuel){const f=sim.units.find(n=>n.id===u.isoDuel.foe);if(T>=u.isoDuel.until||!f||!f.alive||!f.isoDuel){if(u.alive&&u.isoDuel.ret){[u.x,u.y,u.z]=u.isoDuel.ret;u.vy=0;}u.isoDuel=null;sim.effects=sim.effects.filter(e=>!e.duel);}}if(u.kayoDown){if(T>=u.kayoDown.until){u.kayoDown=null;u.deaths++;u.noUltDeaths=(u.noUltDeaths||0)+1;u.respawnAt=T+1.5;sim.events.push(['k','',u.name,0,'Ability']);}else{const r=sim.units.find(n=>n!==u&&n.team===u.team&&n.alive&&Math.hypot(n.x-u.x,n.z-u.z)<2&&(n.input||{}).use);if(r){u.kayoDown.prog+=dt;if(u.kayoDown.prog>=5){u.kayoDown=null;u.alive=true;u.hp=100;u.loading=false;}}else u.kayoDown.prog=0;}}if(u.anni){const dl=sim.units.find(n=>n.id===u.anni.by);if(!dl||!dl.alive||!los(sim,[dl.x,dl.y+1,dl.z],[u.x,u.y+1,u.z])||Math.hypot(u.x-dl.x,u.z-dl.z)>C_annih.range+5)u.anni=null;/* the wire snaps */else{if(T>=u.anni.at){dmg18.f(sim,dl,u,999);u.anni=null;}else{const d=[dl.x-u.x,dl.z-u.z],l=Math.hypot(...d);if(l>1.2){u.x+=d[0]/l*2.5*dt;u.z+=d[1]/l*2.5*dt;}}}}if(!AG18[u.agent])continue;u.stimOn=(u.stimUntil||0)>T||!!u.gearOn||(u.overdriveUntil||0)>T||(u.hasteUntil||0)>T;if(u.agent==='Clove'){if(u.alive)u.ndyDead=0;else if(!u.ndyDead&&!u.ndy)u.ndyDead=T;}
   if(u.decayUntil&&T>u.decayUntil&&u.decayAmt>0){const r=Math.min(u.decayAmt,40*dt);u.decayAmt-=r;u.hp=Math.min(u.mx,u.hp+r);}
   if(u.pendingTeleport&&T>=u.pendingTeleport.at){[u.x,u.y,u.z]=u.pendingTeleport.p;u.pendingTeleport=null;u.vy=0;}
   if(u.ndy&&T>=u.ndy.at){u.ndy=null;u.alive=true;u.hp=100;u.loading=false;}
@@ -253,10 +254,21 @@ export function tick18(sim,dt){
   if(u.gearOn){A.fuel=Math.max(0,A.fuel-A18.gear.drain*dt);if(A.fuel<=0)u.gearOn=false;else u.hasteUntil=Math.max(u.hasteUntil||0,T+.3);}
   else if(u.agent==='Neon'&&A.fuel<A18.fuel.max)A.fuel=Math.min(A18.fuel.max,A.fuel+A18.gear.regen*dt);
   if(u.agent==='Viper'&&!A.cloudOn&&!A.toxOn&&A.fuel<A18.fuel.max)A.fuel=Math.min(A18.fuel.max,A.fuel+A18.fuel.regen*dt);
-  if(u.anni){const t=sim.units.find(v=>v.id===u.anni.by);if(!t||!t.alive||!los(sim,[t.x,t.y+1,t.z],[u.x,u.y+1,u.z])||Math.hypot(u.x-t.x,u.z-t.z)>C_annih.range+5)u.anni=null;else if(T>=u.anni.at){dmg18.f(sim,t,u,999);u.anni=null;}}
+  
   if(u.agent==='Gekko')for(const k of ['c','q','e'])if(A['re_'+k]&&T>=A['re_'+k]){A[k]=Math.min(1,A[k]+1);A['re_'+k]=0;}
   if(u.evoUntil&&T<u.evoUntil)u.hp=Math.min(u.mx,u.hp+A18.evo.hps*dt);
  }}
+// Iso Kill Contract pocket duel: both combatants teleported into a walled cell at a reserved far corner of the
+// map footprint (empty nav space), returned when it ends; while it runs only they can damage each other.
+export function duel18(sim,iso,t,C){const gy=sim.world.ground(iso.x,iso.z,iso.y+2);const base=[iso.x,Number.isFinite(gy)?gy:iso.y,iso.z];/* the pocket cell forms at Iso's ground spot */
+ const ret=[iso.x,iso.y,iso.z],retT=[t.x,t.y,t.z];
+ iso.isoDuel={foe:t.id,until:sim.time+C.kc.duel,ret};t.isoDuel={foe:iso.id,until:sim.time+C.kc.duel,ret:retT};
+ status(t,'suppressUntil',C.kc.supp,sim);status(t,'revealedUntil',C.kc.duel,sim);
+ [t.x,t.y,t.z]=[base[0]+2,base[1]+.1,base[2]];[iso.x,iso.y,iso.z]=[base[0]-2,base[1]+.1,base[2]];t.vy=iso.vy=0;
+ for(const w of [[0,4],[0,-4],[4,0],[-4,0]])fx(sim,iso,'barrier',[base[0]+w[0],base[1],base[2]+w[1]],C.kc.duel,3,{hp:1e9,seg:[1e9],yaw:w[0]?Math.PI/2:0,duel:1});
+ sim.castEvents.push({t:'ac',i:iso.id,ag:'Iso',k:'x',o:[iso.x,iso.y+1,iso.z],d:[1,0,0],p:[...base],ts:Math.round(sim.time*1000)});}
+// KAY/O NULL/cmd: lethal damage downs instead (850 pool bleeds over 15 s; an ally's USE channel revives at 100).
+export function downed18(sim,v){if(v.agent!=='KAY/O'||!(v.nullCmdUntil>sim.time)||v.kayoDown)return false;v.kayoDown={until:sim.time+15,prog:0};v.alive=false;v.hp=0;return true;}
 const C_annih=A18.annih;
 // Gekko globule expiry hook: call from effects sweep when an owned basic ends.
 export function globuleDrop(u,k){u.ability['re_'+k]=0;/* auto-return after reclaim window handled via effect expiry in simulation sweep */}
