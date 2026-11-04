@@ -224,7 +224,7 @@ const CASES = {
   Gekko:     [ {k:'c',fx:'mosh'}, {k:'q',fx:'seeker',moves:true,towardB:true}, {k:'e',fx:'dizzy'}, {k:'x',fx:'blast'} ],
   'KAY/O':   [ {k:'c',fx:'frag'}, {k:'q'}, {k:'e',fx:'blast'}, {k:'x',fx:'nullcmd'} ],
   Tejo:      [ {k:'c',fx:'sdrone'}, {k:'q',fx:'blast'}, {k:'e',fx:'salvo'}, {k:'x',fx:'armag'} ],
-  Deadlock:  [ {k:'x',fx:'anni',los:true,near:12}, {k:'c',fx:'barrier',los:true}, {k:'q',fx:'sensor'}, {k:'e',fx:'gnet'} ],
+  Deadlock:  [ {k:'x',fx:'anni',los:true,near:2}, /* Annihilate's server-side los() ray needs TRUE line of sight: fog unfog can be hearing-only through a wall; at 2 m no wall fits between */ {k:'c',fx:'barrier',los:true}, {k:'q',fx:'sensor'}, {k:'e',fx:'gnet'} ],
   Veto:      [ {k:'c',tp:'fwd',anchorFx:'xcut'}, {k:'q',fx:'choke'}, {k:'e',fx:'ceptor'}, {k:'x'} ],
   Vyse:      [ {k:'c',fx:'vine'}, {k:'q',fx:'shear',ownOnly:true}, {k:'e',fx:'rose',recastConsumes:true}, {k:'x',fx:'garden'} ],
 };
