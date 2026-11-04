@@ -8839,6 +8839,18 @@ function hhMat() {
   const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; if (THREE.SRGBColorSpace) t.colorSpace = THREE.SRGBColorSpace;
   HHM = { t, m: new THREE.MeshBasicMaterial({ map: t, transparent: true, depthWrite: false, side: THREE.DoubleSide, fog: false, toneMapped: false, polygonOffset: true, polygonOffsetFactor: -2 }) }; return HHM.m;
 }
+
+// Sage Slow Orb field (wiki Slow_Orb_Showcase.mp4): a spreading sheet of faceted cyan ice shards, bright teal with light facet edges.
+let SLM = null;
+function slowMat() {
+  if (SLM) return SLM.m;
+  const c = document.createElement("canvas"); c.width = c.height = 256; const g = c.getContext("2d");
+  const rg = g.createRadialGradient(128, 128, 10, 128, 128, 128); rg.addColorStop(0, "rgba(40,210,200,0.85)"); rg.addColorStop(0.85, "rgba(30,190,200,0.8)"); rg.addColorStop(1, "rgba(30,190,200,0)"); g.fillStyle = rg; g.fillRect(0, 0, 256, 256);
+  for (let i = 0; i < 90; i++) { const x = Math.random() * 256, y = Math.random() * 256, s = 14 + Math.random() * 26, a = Math.random() * 6.28; g.fillStyle = "rgba(" + (80 + (Math.random() * 120 | 0)) + "," + (230 + (Math.random() * 25 | 0)) + ",255," + (0.18 + Math.random() * 0.35) + ")"; g.strokeStyle = "rgba(210,255,255,0.55)"; g.lineWidth = 1.5; g.beginPath(); g.moveTo(x + Math.cos(a) * s, y + Math.sin(a) * s); g.lineTo(x + Math.cos(a + 2.2) * s * 0.7, y + Math.sin(a + 2.2) * s * 0.7); g.lineTo(x + Math.cos(a + 4.1) * s * 0.9, y + Math.sin(a + 4.1) * s * 0.9); g.closePath(); g.fill(); g.stroke(); }
+  g.globalCompositeOperation = "destination-in"; const em = g.createRadialGradient(128, 128, 90, 128, 128, 128); em.addColorStop(0, "rgba(0,0,0,1)"); em.addColorStop(1, "rgba(0,0,0,0)"); g.fillStyle = em; g.fillRect(0, 0, 256, 256);
+  const t = new THREE.CanvasTexture(c); if (THREE.SRGBColorSpace) t.colorSpace = THREE.SRGBColorSpace;
+  SLM = { t, m: new THREE.MeshBasicMaterial({ map: t, transparent: true, depthWrite: false, side: THREE.DoubleSide, fog: false, toneMapped: false, polygonOffset: true, polygonOffsetFactor: -2 }) }; return SLM.m;
+}
 function blzTick(dt) { if (BLZ) BLZ.t.offset.x += dt * 0.35; if (HHM) { HHM.t.offset.x += dt * 0.06; HHM.t.offset.y += dt * 0.04; } }
 const ringGeo = new THREE.RingGeometry(0.5, 0.85, 24), arrowGeo = new THREE.BoxGeometry(0.07, 0.07, 0.7), beamGeo = new THREE.BoxGeometry(0.12, 0.12, 1);
 const rvMat = new THREE.MeshBasicMaterial({ color: 0xff2030, transparent: true, opacity: 0.5, depthTest: false, depthWrite: false, side: THREE.BackSide });
@@ -9162,11 +9174,11 @@ function ryKey(code) {
   }
 }
 const sgOrbV = [0, 0, 0];
-function sgOrbLand(p) { const e = new THREE.Vector3(p[0], p[1] + 0.05, p[2]), m = new THREE.Mesh(slowGeo, fireMat(0x7fe0ff, 0.45)); m.rotation.x = -Math.PI / 2; m.position.copy(e); scene.add(m); J.slz.push({ m, p: e, t: 7 }); SFX.ab("slow", e); } // the 7 s field where the orb landed
+function sgOrbLand(p) { const e = new THREE.Vector3(p[0], p[1] + 0.05, p[2]), m = new THREE.Mesh(slowGeo, slowMat()); m.rotation.x = -Math.PI / 2; m.position.copy(e); scene.add(m); J.slz.push({ m, p: e, t: 7 }); SFX.ab("slow", e); } // the 7 s field where the orb landed
 function sgTick(dt) {
   const P = player;
   if (J.sw && xBarTick(J.sw, dt)) sgWallEnd();
-  prune(J.slz, (z) => { z.t -= dt; z.m.material.opacity = 0.45 * Math.min(1, z.t / 0.5); if (z.t > 0) return true; jRel(z.m); return false; });
+  prune(J.slz, (z) => { z.t -= dt; if (z.m.material.map) { z.a = (z.a || 0) + dt; z.m.scale.setScalar(Math.max(0.05, Math.min(1, z.a / 0.9)) * Math.min(1, z.t / 0.5)); } else z.m.material.opacity = 0.45 * Math.min(1, z.t / 0.5); if (z.t > 0) return true; jRel(z.m); return false; });
   if (J.sgo && J.sgo.length) prune(J.sgo, (g) => { g.t += dt; if (g.t < g.T) { const q = SovaBolt.at(g.tr, g.t, sgOrbV); g.m.position.set(q[0], q[1], q[2]); return true; } scene.remove(g.m); sgOrbLand(g.end); return false; }); // Slow Orbs in flight
   if (J.pick === "Sage" && J.e < 1 && J.cd.e <= 0) { J.e = 1; say("Healing Orb ready", 700); }
   if ((J.pick === "Sova" || J.pick === "Skye") && J.e < 1 && J.cd.e <= 0) { J.e = 1; say(J.pick === "Sova" ? "Recon Bolt ready" : "Guiding Light ready", 700); }
@@ -10256,7 +10268,7 @@ function xBLand(from, tx, tz, reach) { const dx = tx - from.x, dz = tz - from.z,
 function xBHotHands(b, al, from, tx, tz) { const L = xBLand(from, tx, tz, XBRCH.fire), c = new THREE.Vector3(L.x, (from.y || 0) + 0.05, L.z), m = jM(zoneGeo, hhMat());
   m.rotation.x = -Math.PI / 2; m.position.copy(c); m.scale.setScalar(0.01); scene.add(m); const z = { m, p: c, t: XHOT.life, R: XHOT.r, a: 0, own: b, en: !al, loc: 1 }; J.zones.push(z);
   feed("Phoenix ▸ Hot Hands"); blip(220, 0.3, "sawtooth", 0.1); return z; }
-function xBSlowOrb(b, al, from, tx, tz) { const L = xBLand(from, tx, tz, XBRCH.slow), e = new THREE.Vector3(L.x, (from.y || 0) + 0.05, L.z), m = new THREE.Mesh(slowGeo, fireMat(0x7fe0ff, 0.45));
+function xBSlowOrb(b, al, from, tx, tz) { const L = xBLand(from, tx, tz, XBRCH.slow), e = new THREE.Vector3(L.x, (from.y || 0) + 0.05, L.z), m = new THREE.Mesh(slowGeo, slowMat());
   m.rotation.x = -Math.PI / 2; m.position.copy(e); scene.add(m); const z = { m, p: e, t: 7, own: b }; (J.slz || (J.slz = [])).push(z); try { SFX.ab("slow", e); } catch (er) {} feed("Sage ▸ Slow Orb"); return z; }
 function xBShock(b, al, from, tx, tz) { const L = xBLand(from, tx, tz, XBRCH.shock), o = new THREE.Vector3(from.x, (from.y || 0) + 1.5, from.z), e = new THREE.Vector3(L.x, (from.y || 0) + 0.3, L.z);
   const a = { m: jBolt(0x7fd8ff, o, e), a: o, b: e, t: 0, dur: Math.max(0.05, o.distanceTo(e) / 45), kind: "shock", own: b, en: !al, loc: 1 }; J.arrows.push(a); feed("Sova ▸ Shock Bolt"); return a; }

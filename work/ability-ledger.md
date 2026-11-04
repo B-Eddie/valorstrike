@@ -18,3 +18,10 @@ Sources: wiki.playvalorant.com/en-us/<Ability> pages + images/<Ability>_Showcase
 ## Phoenix - Hot Hands (R, Hot_Hands_Showcase.mp4 viewed)
 - V: molten pool with bright vein cracks, slowly flowing (hhMat), used by player, bot and online 'fire' zones (Paint Shells and the pink rz variant unchanged). Captured, viewed (work/browser_phoenix_hh.cjs).
 - G: the thrown fireball projectile with trail/sparks is not drawn (clip shows a glowing ball arcing out of the hand); no hand fire viewmodel; on-hit burning visuals unchecked; online not captured in two pages.
+
+## Jett - Cloudburst: existing lumpy smoke body (xCbCloud) left as is; clip shows pale translucent bubble-like cloud, not re-compared pixel to pixel. Blade Storm (Blade_Storm_Showcase.mp4 viewed): mechanics exist; GAP: viewmodel shows the generic knife, clip shows silver kunai in both hands with cyan glow, blue-white wind arcs on throw, thin cyan tracer. Updraft/Tailwind not audited.
+
+## Sage - Slow Orb (R, Slow_Orb_Showcase.mp4 viewed)
+- V: faceted cyan ice-shard sheet that spreads over 0.9 s then shrinks away (slowMat, sgOrbLand + bot Slow Orb). Captured, viewed (work/browser_sage_slow.cjs).
+- G: 3D crystal shards standing up from the field are not built (flat texture only); orb in hand/flight (glowing teal sphere) not compared; online fx path shares sgOrbLand but not captured two-page. Barrier Orb, Healing Orb, Resurrection not audited.
+## Killjoy - Nanoswarm (clip viewed, Nanoswarm_Showcase.mp4): clip shows a pink/purple spiky crystalline burst then a ring zone on the ground; current offline zone is a flat 0xc8d23a green disc (WRONG COLOR/SHAPE vs clip). NOT fixed yet. Snake_Bite clip downloaded but not reviewed (flat 0x7fd84a disc suspected).
