@@ -18083,6 +18083,7 @@ const svxC = {
 function svxGeo() {
   if (svxC.sph) return;
   svxC.sph = new THREE.SphereGeometry(1, 20, 14);
+  svxC.sphHi = new THREE.SphereGeometry(1, 48, 32);
   svxC.ring = new THREE.RingGeometry(0.93, 1, 48);
   svxC.plane = new THREE.PlaneGeometry(1, 1);
   svxC.beam = new THREE.BoxGeometry(0.35, 0.35, 1);
@@ -18108,6 +18109,29 @@ function svxTexBoltF() { // jagged vertical lightning, white core on transparent
   svxC.texBolt.wrapS = svxC.texBolt.wrapT = THREE.RepeatWrapping;
   return svxC.texBolt;
 }
+function svxTexWisp() { // radial curved wisps: flowing electric curl, not straight bolts or flat rings
+  if (svxC.texWisp) return svxC.texWisp;
+  const c = document.createElement("canvas"); c.width = 256; c.height = 256; const g = c.getContext("2d");
+  g.clearRect(0, 0, 256, 256);
+  const wisp = (a0, curl, len, w, a) => {
+    g.strokeStyle = "rgba(255,255,255," + a + ")"; g.lineWidth = w; g.lineCap = "round"; g.beginPath();
+    let r = 14, th = a0, x = 128 + Math.cos(th) * r, y = 128 + Math.sin(th) * r;
+    g.moveTo(x, y);
+    while (r < len) {
+      r += 8 + Math.random() * 10; th += curl * (0.7 + Math.random() * 0.6);
+      x = 128 + Math.cos(th) * r + (Math.random() - 0.5) * 7; y = 128 + Math.sin(th) * r + (Math.random() - 0.5) * 7;
+      g.lineTo(x, y);
+    }
+    g.stroke();
+  };
+  for (let i = 0; i < 7; i++) {
+    const a0 = i * 0.897 + Math.random() * 0.5, curl = 0.05 + Math.random() * 0.06, len = 92 + Math.random() * 26;
+    wisp(a0, curl, len, 7, 0.16); wisp(a0, curl, len, 2.5, 0.85);
+  }
+  svxC.texWisp = new THREE.CanvasTexture(c);
+  if (THREE.SRGBColorSpace) svxC.texWisp.colorSpace = THREE.SRGBColorSpace;
+  return svxC.texWisp;
+}
 function svxTexBoltFat() { // one fat central jagged bolt: reads at beam scale, unlike the thin 4-bolt texture
   if (svxC.texBoltF) return svxC.texBoltF;
   const c = document.createElement("canvas"); c.width = 128; c.height = 512; const g = c.getContext("2d");
@@ -18118,7 +18142,7 @@ function svxTexBoltFat() { // one fat central jagged bolt: reads at beam scale, 
     while (y < 512) { y += 20 + Math.random() * 26; x = Math.max(14, Math.min(114, x + (Math.random() - 0.5) * 70)); g.lineTo(x, y); }
     g.stroke();
   };
-  bolt(34, 0.25); bolt(16, 0.55); bolt(6, 0.95);
+  bolt(26, 0.22); bolt(12, 0.5); bolt(5, 0.95);
   svxC.texBoltF = new THREE.CanvasTexture(c);
   if (THREE.SRGBColorSpace) svxC.texBoltF.colorSpace = THREE.SRGBColorSpace;
   svxC.texBoltF.wrapS = svxC.texBoltF.wrapT = THREE.RepeatWrapping;
@@ -18170,15 +18194,13 @@ function svxShockBurst(p) {
     const glow = svxPart(svxC.sph, xAdd("svxShkGlow", 0x2fa8f8, 0.3), p, 0.5, 0); // blue body of the burst
     glow.scale.setScalar(0.42);
     svxPart(svxC.sph, svxMatShell("svxShkShell", 0x2fa8f8, 0.18), p, 0.5, 1.8); // energy shell out to ~2.6 m
-    const rg = svxPart(svxC.ring, xAdd("svxShkRingG", 0x4fc3ff, 0.35), svxC.v0.set(p.x, p.y + 0.06, p.z), 0.55, 3.4);
-    rg.rotation.x = -Math.PI / 2;
-    const rv = svxPart(svxC.ring, xAdd("svxShkRingV", 0x4fc3ff, 0.2), p, 0.42, 2.2); // the upright ring of the clip
-    rv.lookAt(camera.position);
-    for (let i = 0; i < 3; i++) { // crackle arcs, rolled additive planes
-      const a = svxPart(svxC.plane, svxMatTex("svxShkArc" + i, svxTexBoltF(), 0x35a8f0, 0.25), p, 0.4 + i * 0.05, 0);
-      a.scale.setScalar(1.1 + i * 0.3);
+    const rg = svxPart(svxC.ring, xAdd("svxShkRingG", 0x4fc3ff, 0.25), svxC.v0.set(p.x, p.y + 0.06, p.z), 0.55, 3.0);
+    rg.rotation.x = -Math.PI / 2; // single faint ground shockwave ring, no Saturn pair
+    for (let i = 0; i < 2; i++) { // flowing curved wisps, billboarded (no straight bolt bars)
+      const a = svxPart(svxC.plane, svxMatTex("svxShkWisp" + i, svxTexWisp(), i ? 0x4fb8f8 : 0x7fd4ff, 0.5), p, 0.45 + i * 0.05, 0.6 + i * 0.4);
+      a.scale.setScalar(1.2 + i * 0.5);
       a.lookAt(camera.position);
-      a.rotateZ(Math.random() * 6.2832);
+      a.rotateZ(i * 1.9 + Math.random());
     }
     svxShards(p, null, 6, 0x7fd4ff, 4.5, 0.45, 2.0); // electric sparks
   } catch (e) { xE(e); }
@@ -18188,15 +18210,15 @@ function svxReconPulse(p, en) {
   try {
     svxGeo();
     const col = en ? 0xff5a2a : 0x3fb4ff, k = en ? "E" : "";
-    const core = svxPart(svxC.sph, xAdd("svxRcnC" + k, en ? 0xffb08a : 0x9fdcff, 0.25), p, 0.35, 0);
-    core.scale.setScalar(0.25);
-    svxPart(svxC.sph, svxMatShell("svxRcnSh" + k, col, 0.09, true), p, 0.75, 29.5); // sonar shell to the 30 m reveal radius (XRCN.radius)
+    const core = svxPart(svxC.sph, xAdd("svxRcnC" + k, en ? 0xffb08a : 0x9fdcff, 0.2), p, 0.35, 0);
+    core.scale.setScalar(0.2);
+    svxPart(svxC.sphHi, svxMatShell("svxRcnSh" + k, col, 0.05, true), p, 0.75, 29.5); // sonar shell to the 30 m reveal radius (XRCN.radius)
     let gy = NaN;
     try { gy = groundAt(p.x, p.z, 0.05, p.y); } catch (e) {}
-    const hp = svxPart(svxC.plane, svxMatTex("svxRcnH" + k, svxTexDotsF(), col, 0.32), svxC.v0.set(p.x, (Number.isFinite(gy) ? gy : p.y) + 0.14, p.z), 0.75, 59.5);
+    const hp = svxPart(svxC.plane, svxMatTex("svxRcnH" + k, svxTexDotsF(), col, 0.22), svxC.v0.set(p.x, (Number.isFinite(gy) ? gy : p.y) + 0.14, p.z), 0.75, 59.5);
     hp.rotation.x = -Math.PI / 2;
     for (let i = 0; i < 2; i++) { // crossed vertical grid planes through the bolt: the 3D lattice of the clip
-      const vp = svxPart(svxC.plane, svxMatTex("svxRcnV" + i + k, svxTexDotsF(), col, 0.18), p, 0.75, 59.5);
+      const vp = svxPart(svxC.plane, svxMatTex("svxRcnV" + i + k, svxTexDotsF(), col, 0.12), p, 0.75, 59.5);
       vp.rotation.y = i * Math.PI / 2 + 0.4;
     }
   } catch (e) { xE(e); }
@@ -18214,18 +18236,26 @@ function svxFuryBeam(o, d, hitPoint) {
     core.scale.set(1, 1, L - 2.5);
     core.position.copy(o).addScaledVector(dir, 2.5 + (L - 2.5) / 2);
     core.lookAt(end);
+    const glowCone = svxPart(svxC.cone, xAdd("svxFuryConeG", 0x55c8ff, 0.1), o, 0.55, 0); // additive luminosity layer
+    glowCone.scale.set(0.85, 0.85, L - 2.5);
+    glowCone.position.copy(core.position);
+    glowCone.lookAt(end);
     const hot = svxPart(svxC.beam, xAdd("svxFuryHot", 0x9fdcff, 0.8), o, 0.5, 0); // hot thin core inside the cone
     hot.scale.set(0.5, 0.5, L - 4);
     hot.position.copy(o).addScaledVector(dir, 4 + (L - 4) / 2);
     hot.lookAt(end);
     for (let i = 0; i < 6; i++) { // jagged bolt blades: tilted outward so the far end swings ~4 m off-axis (the clip's radiating cone)
       const Lp = 26;
-      const a = svxPart(svxC.plane, svxMatTexN("svxFuryArc" + i, svxTexBoltFat(), i ? 0x2a7fe8 : 0x7fc4ff, 0.8, 4), o, 0.6, 0);
-      a.scale.set(2.4, Lp, 1);
+      const a = svxPart(svxC.plane, svxMatTexN("svxFuryArc" + i, svxTexBoltFat(), 0x2a7fe8, 0.7, 4), o, 0.6, 0);
+      a.scale.set(1.9, Lp, 1);
       a.quaternion.setFromUnitVectors(svxC.up, dir);
       a.rotateY(i * 1.047);
       a.rotateX(0.3); // outward tilt: far end ~4 m off the beam axis, reads from caster and observer POV
       a.position.copy(o).addScaledVector(dir, 4 + Lp / 2);
+      const b = svxPart(svxC.plane, svxMatTex("svxFuryArcG" + i, svxTexBoltFat(), 0x66d4ff, 0.55, 4), o, 0.6, 0); // luminous additive twin over the shape layer
+      b.scale.set(1.7, Lp, 1);
+      b.quaternion.copy(a.quaternion);
+      b.position.copy(a.position);
     }
     svxShards(o, dir, 14, 0x66c8ff, 3.5, 0.9, 50); // floating charge shards along the path
   } catch (e) { xE(e); }
@@ -18285,7 +18315,7 @@ const svxRvMat = new THREE.MeshBasicMaterial({ color: 0xff7a1a, transparent: tru
 function svxShards(p, dir, n, col, spd, life, spread) {
   svxGeo();
   if (svxC.anim.length > 48) return; // bounded: never pile up across bursts
-  const mat = svxMatShell("svxShard" + col, col, 0.85);
+  const mat = svxMatShell("svxShard" + col, col, 0.55);
   for (let i = 0; i < n; i++) {
     const m = new THREE.Mesh(svxC.shard, mat);
     m.raycast = () => {};
@@ -18296,9 +18326,9 @@ function svxShards(p, dir, n, col, spd, life, spread) {
       p.z + (dir ? dir.z * along : 0) + (Math.random() - 0.5) * (dir ? 2.4 : 0.4));
     const a = Math.random() * 6.2832, up = dir ? 1.1 : 0.5;
     scene.add(m);
-    svxC.anim.push({ m, t0: performance.now(), pt: performance.now(), life: life * 1000, s: 0.8 + Math.random() * 0.7,
+    svxC.anim.push({ m, t0: performance.now(), pt: performance.now(), life: life * 1000, s: 0.5 + Math.random() * 0.5,
       v: new THREE.Vector3(Math.cos(a) * spd * (dir ? 0.25 : 1), up * (0.6 + Math.random()), Math.sin(a) * spd * (dir ? 0.25 : 1)),
-      rx: (Math.random() - 0.5) * 0.3, ry: (Math.random() - 0.5) * 0.3 });
+      rx: (Math.random() - 0.5) * 2.4, ry: (Math.random() - 0.5) * 2.4 });
   }
   if (!svxC.raf) svxC.raf = requestAnimationFrame(svxAnimTick);
 }
