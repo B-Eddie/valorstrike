@@ -8828,7 +8828,18 @@ function blzMat() {
   const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(3, 1); if (THREE.SRGBColorSpace) t.colorSpace = THREE.SRGBColorSpace; else if (THREE.sRGBEncoding) t.encoding = THREE.sRGBEncoding;
   BLZ = { t, g: new THREE.PlaneGeometry(1, 3), m: new THREE.MeshBasicMaterial({ map: t, transparent: true, depthWrite: false, side: THREE.DoubleSide, fog: false, toneMapped: false }) }; BLZ.m.userData.pk = null; return BLZ.m;
 }
-function blzTick(dt) { if (BLZ) BLZ.t.offset.x += dt * 0.35; }
+
+// Phoenix Hot Hands look (wiki Hot_Hands_Showcase.mp4): the ground becomes a pool of molten orange: a red-orange glow with bright flowing vein cracks.
+let HHM = null;
+function hhMat() {
+  if (HHM) return HHM.m;
+  const c = document.createElement("canvas"); c.width = c.height = 256; const g = c.getContext("2d"), rg = g.createRadialGradient(128, 128, 20, 128, 128, 128);
+  rg.addColorStop(0, "rgba(255,110,40,0.97)"); rg.addColorStop(0.8, "rgba(240,60,30,0.95)"); rg.addColorStop(1, "rgba(235,60,30,0)"); g.fillStyle = rg; g.fillRect(0, 0, 256, 256); g.lineCap = "round"; g.lineJoin = "round";
+  for (let i = 0; i < 60; i++) { let x = Math.random() * 256, y = Math.random() * 256, a = Math.random() * 6.28; g.strokeStyle = "rgba(255," + (130 + (Math.random() * 60 | 0)) + ",30," + (0.7 + Math.random() * 0.3) + ")"; g.lineWidth = 3 + Math.random() * 6; g.beginPath(); g.moveTo(x, y); for (let k = 0; k < 5; k++) { a += (Math.random() - 0.5) * 1.6; x += Math.cos(a) * (14 + Math.random() * 22); y += Math.sin(a) * (14 + Math.random() * 22); g.lineTo(x, y); } g.stroke(); }
+  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; if (THREE.SRGBColorSpace) t.colorSpace = THREE.SRGBColorSpace;
+  HHM = { t, m: new THREE.MeshBasicMaterial({ map: t, transparent: true, depthWrite: false, side: THREE.DoubleSide, fog: false, toneMapped: false, polygonOffset: true, polygonOffsetFactor: -2 }) }; return HHM.m;
+}
+function blzTick(dt) { if (BLZ) BLZ.t.offset.x += dt * 0.35; if (HHM) { HHM.t.offset.x += dt * 0.06; HHM.t.offset.y += dt * 0.04; } }
 const ringGeo = new THREE.RingGeometry(0.5, 0.85, 24), arrowGeo = new THREE.BoxGeometry(0.07, 0.07, 0.7), beamGeo = new THREE.BoxGeometry(0.12, 0.12, 1);
 const rvMat = new THREE.MeshBasicMaterial({ color: 0xff2030, transparent: true, opacity: 0.5, depthTest: false, depthWrite: false, side: THREE.BackSide });
 // perf pass 11: ability fx reuse pooled meshes + materials (shared geometry), returned to the pool when the effect ends
@@ -8970,7 +8981,7 @@ function phKey(code) {
     if (J.q < 1 || J.cd.q > 0) return no(); J.q--; J.cd.q = 0.6;
     ray.set(new THREE.Vector3(P.x, 1, P.z), new THREE.Vector3(fx, 0, fz)); ray.far = 5; const h = ray.intersectObjects(solids)[0];
     const dd = h ? Math.max(0, h.distance - 0.5) : 5, c = new THREE.Vector3(P.x + fx * dd, 0.05, P.z + fz * dd);
-    const m = jM(zoneGeo, fireMat(0xff5a1a, 0.55)); m.rotation.x = -Math.PI / 2; m.position.copy(c); m.scale.setScalar(0.01); scene.add(m); J.zones.push({ m, p: c, t: XHOT.life, R: XHOT.r, a: 0 }); blip(220, 0.3, "sawtooth", 0.1);
+    const m = jM(zoneGeo, hhMat()); m.rotation.x = -Math.PI / 2; m.position.copy(c); m.scale.setScalar(0.01); scene.add(m); J.zones.push({ m, p: c, t: XHOT.life, R: XHOT.r, a: 0 }); blip(220, 0.3, "sawtooth", 0.1);
   }
   if (code === "KeyX") {
     if (J.rib > 0) return say("Run It Back · " + Math.ceil(J.rib) + " s", 700);
@@ -10242,7 +10253,7 @@ const XBRCH = { fire: 13, slow: 15, shock: 40, flash: XPAR.range, smoke: 10, dro
 function xBLand(from, tx, tz, reach) { const dx = tx - from.x, dz = tz - from.z, l = Math.hypot(dx, dz) || 1, n = Math.min(l, reach), y = from.y || 0; let k = 0;
   for (let s = 0.5; s <= n + 1e-6; s += 0.5) { if (blocked(from.x + (dx / l) * s, from.z + (dz / l) * s, 0.3, y)) break; k = s; }
   return { x: from.x + (dx / l) * k, z: from.z + (dz / l) * k, fx: dx / l, fz: dz / l, k, l }; }
-function xBHotHands(b, al, from, tx, tz) { const L = xBLand(from, tx, tz, XBRCH.fire), c = new THREE.Vector3(L.x, (from.y || 0) + 0.05, L.z), m = jM(zoneGeo, fireMat(0xff5a1a, 0.55));
+function xBHotHands(b, al, from, tx, tz) { const L = xBLand(from, tx, tz, XBRCH.fire), c = new THREE.Vector3(L.x, (from.y || 0) + 0.05, L.z), m = jM(zoneGeo, hhMat());
   m.rotation.x = -Math.PI / 2; m.position.copy(c); m.scale.setScalar(0.01); scene.add(m); const z = { m, p: c, t: XHOT.life, R: XHOT.r, a: 0, own: b, en: !al, loc: 1 }; J.zones.push(z);
   feed("Phoenix ▸ Hot Hands"); blip(220, 0.3, "sawtooth", 0.1); return z; }
 function xBSlowOrb(b, al, from, tx, tz) { const L = xBLand(from, tx, tz, XBRCH.slow), e = new THREE.Vector3(L.x, (from.y || 0) + 0.05, L.z), m = new THREE.Mesh(slowGeo, fireMat(0x7fe0ff, 0.45));
@@ -14038,7 +14049,7 @@ function mpFx(u, ag, k, o, d, auth, p, quiet) { // u: caster unit, o/d: eye + ai
   else if (ty === "flash") { const ph = ag === "Phoenix", e = tg(ph ? 6 : 12, 0.4).clone(), m = ph ? xCbOrb(o) : jM(orbGeo, jMat("orb", () => new THREE.MeshBasicMaterial({ color: 0xfff2b0 }))); if (!ph) { m.position.copy(o); scene.add(m); } J.orbs.push({ m, a: o.clone(), b: e, t: 0, en, cb: ph ? 1 : 0 }); } // Curveball: the big flare (the blind itself is the server's)
   else if (ty === "fire" && ag === "Raze") { const e = tg(14, 0.4); mpPaint(e.x, e.z, groundAt(e.x, e.z, 0.2, (up.y || 0) + 1) || 0); } // Paint Shells: the bursts as they land (damage stays with the caster's own claims / the server)
   else if (ty === "fire") { const rz = false, e = p ? tg() : mpTgt(new THREE.Vector3(up.x, 1, up.z), MPC.d.set(d.x, 0, d.z).normalize(), 5, 0.5);
-    const c = new THREE.Vector3(e.x, 0.05, e.z), m = jM(zoneGeo, fireMat(rz ? 0xff4fa0 : 0xff5a1a, 0.55)); m.rotation.x = -Math.PI / 2; m.position.copy(c); scene.add(m);
+    const c = new THREE.Vector3(e.x, 0.05, e.z), m = jM(zoneGeo, rz ? fireMat(0xff4fa0, 0.55) : hhMat()); m.rotation.x = -Math.PI / 2; m.position.copy(c); scene.add(m);
     const z = { m, p: c, t: rz ? 1.5 : XHOT.life, own: u, en, nd: nd || rz }; if (!rz) { z.R = XHOT.r; z.a = 0; m.scale.setScalar(0.01); } J.zones.push(z); } // Hot Hands spreads like the player's // Paint Shells damage stays with the caster's own claims
   else if (ty === "wall") { const sg = ag === "Sage", f = MPC.d.set(d.x, 0, d.z); if (f.lengthSq() < 1e-6) f.set(Math.sin(up.y), 0, 1); f.normalize(); const yw = Math.atan2(-f.x, -f.z);
     if (!sg) blazeWall(up.x, up.y || 0, up.z, f.x, f.z, { own: u, en, nd }); // Blaze along the aim (XBLZ)
