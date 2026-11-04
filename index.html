@@ -10542,11 +10542,16 @@ function jTick(dt) {
   const PK = { jC: "c", jQ: "q", jE: "e" }, mx = K().mx || {}, pc = (id) => { const v = J[PK[id]]; return typeof v === "number" ? Math.max(0, v | 0) : v ? 1 : 0; }, pm = (id) => Math.min(4, Math.max(pc(id), mx[PK[id]] || (J.pick === "Omen" && id === "jE" ? 2 : 1)));
   xAbTm(); const st = JSON.stringify(sl.map((x) => [x[1], x[2], Math.round(x[3] * 40), PK[x[0]] ? pc(x[0]) + "/" + pm(x[0]) : 0])); if (st === J.hs) return; J.hs = st;
   sl.forEach(([id, ok, txt, cd]) => {
-    const el = $(id); if (!el) return; el.classList.toggle("off", !ok); el.classList.toggle("rdy", id === "jX" && !!ok); const em = el.querySelector("em"), ei = el.querySelector("i"); if (em) em.textContent = txt; if (ei) ei.style.setProperty("--p", Math.max(0, Math.min(1, cd)).toFixed(3));
+    // combat lane: the slot's children are looked up once (re-found if moved) and each text / class / --p is written only when it
+    // differs from what the DOM holds now (was: three querySelector + every slot's text, --p and pip classes rewritten on any
+    // change of any slot, i.e. every frame of a cooldown: same-value textContent writes replace the text node and dirty layout)
+    const el = $(id); if (!el) return; el.classList.toggle("off", !ok); el.classList.toggle("rdy", id === "jX" && !!ok); const Q = el.xAbQ || (el.xAbQ = {}); let em = Q.em, ei = Q.ei;
+    if (!em || em.parentNode !== el) em = Q.em = el.querySelector("em"); if (!ei || ei.parentNode !== el) ei = Q.ei = el.querySelector("i");
+    if (em && em.textContent !== String(txt)) em.textContent = txt; if (ei) { const pv = Math.max(0, Math.min(1, cd)).toFixed(3); if (ei.style.getPropertyValue("--p") !== pv) ei.style.setProperty("--p", pv); }
     if (!PK[id]) return; // charge pips under C / Q / E
-    const n = pc(id), m = pm(id); let pp = el.querySelector(".x-pp"); if (!pp) { pp = document.createElement("u"); pp.className = "x-pp"; pp.setAttribute("aria-hidden", "true"); el.appendChild(pp); }
+    const n = pc(id), m = pm(id); let pp = Q.pp; if (!pp || pp.parentNode !== el) pp = Q.pp = el.querySelector(".x-pp"); if (!pp) { pp = Q.pp = document.createElement("u"); pp.className = "x-pp"; pp.setAttribute("aria-hidden", "true"); el.appendChild(pp); }
     if (pp.childElementCount !== m) pp.innerHTML = "<s></s>".repeat(m);
-    for (let i = 0; i < m; i++) pp.children[i].className = i < n ? "on" : "";
+    for (let i = 0; i < m; i++) { const c = pp.children[i], w = i < n ? "on" : ""; if (c.className !== w) c.className = w; }
     el.classList.toggle("x-empty", n === 0 && !ok);
   });
 }
@@ -10750,7 +10755,7 @@ function fiveTick(dt) {
     FV.buy -= dt;
     if (player.hp > 0 && !FV.menu) moveP(dt, 6.75, false);
     if (!(typeof xSbOn === "function" && xSbOn())) { const e = xSpawn(FV.map).edge; player.z = FV.atk ? Math.max(e, player.z) : Math.min(-e, player.z); } // native maps: the spawn walls (nmBlocked) hold the player; this plane is the legacy maps' fallback
-    $("timer").textContent = bpT(); if (FV.menu) $("xBT").textContent = "00:" + String(Math.max(0, Math.ceil(FV.buy))).padStart(2, "0");
+    { const te = $("timer"), tv = bpT(); if (te.textContent !== tv) te.textContent = tv; } if (FV.menu) { const be = $("xBT"), bv = "00:" + String(Math.max(0, Math.ceil(FV.buy))).padStart(2, "0"); if (be.textContent !== bv) be.textContent = bv; } // combat lane: written only on change (same-value writes replace the text node)
     if (FV.buy <= 0) { FV.buy = 0; buyMenu(false); say(...xRsLine()); SFX.roundStart(); updHud(); }
     return;
   }
@@ -13876,7 +13881,7 @@ function mpCliTick5(dt) { // client: own movement + HUD; the host owns rounds, s
     FV.buy = Math.max(0, FV.buy - dt);
     if (player.hp > 0 && !FV.menu) moveP(dt, 6.75, false);
     if (!(typeof xSbOn === "function" && xSbOn())) { const e = xSpawn(FV.map).edge; player.z = FV.atk ? Math.max(e, player.z) : Math.min(-e, player.z); } // native maps: the spawn walls (nmBlocked) hold the player; this plane is the legacy maps' fallback
-    $("timer").textContent = bpT(); if (FV.menu) $("xBT").textContent = "00:" + String(Math.max(0, Math.ceil(FV.buy))).padStart(2, "0");
+    { const te = $("timer"), tv = bpT(); if (te.textContent !== tv) te.textContent = tv; } if (FV.menu) { const be = $("xBT"), bv = "00:" + String(Math.max(0, Math.ceil(FV.buy))).padStart(2, "0"); if (be.textContent !== bv) be.textContent = bv; } // combat lane: written only on change (same-value writes replace the text node)
     if (FV.buy <= 0) { buyMenu(false); say(...xRsLine()); try { SFX.roundStart(); } catch (e) {} updHud(); }
     return;
   }
@@ -15747,7 +15752,10 @@ const XR_LINKS=[['Pelvis','Spine2'],['Spine2','Spine4'],['Spine4','Neck'],['Neck
  ['Pelvis','Spine4',.82,1.02],['Spine2','Neck',.86,1.02],['Spine4','Head',.84,1.03],['Spine4','HeadEnd',.8,1.04],['L_Shoulder','L_Hand',.32,1],['R_Shoulder','R_Hand',.32,1],['L_Hip','L_Foot',.45,1],['R_Hip','R_Foot',.45,1],['L_Knee','L_Toe',.86,1.08],['R_Knee','R_Toe',.86,1.08],['Spine4','L_Knee',.55,1.25],['Spine4','R_Knee',.55,1.25],['Spine2','L_Elbow',.45,1.6],['Spine2','R_Elbow',.45,1.6],['L_Knee','R_Knee',.35,2.2],['L_Foot','R_Foot',.25,3]];
 const XR_AIM=[['Spine1','Spine4'],['Neck','Head'],['Head','HeadEnd'],['L_Clavicle','L_Shoulder'],['L_Shoulder','L_Elbow'],['L_Elbow','L_Hand'],['R_Clavicle','R_Shoulder'],['R_Shoulder','R_Elbow'],['R_Elbow','R_Hand'],['L_Hip','L_Knee'],['L_Knee','L_Foot'],['L_Foot','L_Toe'],['R_Hip','R_Knee'],['R_Knee','R_Foot'],['R_Foot','R_Toe']];
 const XR_RADIUS={Head:.11,HeadEnd:.1,Pelvis:.12,Spine2:.12,Spine4:.12,Neck:.07,L_Hand:.04,R_Hand:.04,L_Toe:.03,R_Toe:.03,L_Foot:.05,R_Foot:.05};
-function xrBasis(up,right,q){const u=up.clone().normalize(),r=right.clone().sub(u.clone().multiplyScalar(right.dot(u))).normalize(),f=new THREE.Vector3().crossVectors(r,u);return q.setFromRotationMatrix(new THREE.Matrix4().makeBasis(r,u,f));}
+// combat lane: scratch vectors / matrix (was 4 Vector3 + a Matrix4 per call, 2-3 calls per corpse per frame); the same operations in the same
+// order, so q is bit-identical. up / right are read before any scratch is written (callers may pass XR_BA / XR_BB).
+const XR_B={u:new THREE.Vector3(),r:new THREE.Vector3(),t:new THREE.Vector3(),f:new THREE.Vector3(),m:new THREE.Matrix4()},XR_BA=new THREE.Vector3(),XR_BB=new THREE.Vector3();
+function xrBasis(up,right,q){const B=XR_B,u=B.u.copy(up).normalize(),r=B.r.copy(right).sub(B.t.copy(u).multiplyScalar(right.dot(u))).normalize(),f=B.f.crossVectors(r,u);return q.setFromRotationMatrix(B.m.makeBasis(r,u,f));}
 function xrRagdoll(M,ground){
  M.m.updateMatrixWorld(true);const sc=M.sx.sc,P={},list=[],root=sc.getObjectByName('Splitter')||sc.getObjectByName('Pelvis');
  for(const n of XR_JOINTS){const b=sc.getObjectByName(n);if(!b)return null;const p=b.getWorldPosition(new THREE.Vector3());P[n]={n,b,p,old:p.clone(),r:XR_RADIUS[n]||.05,floor:-Infinity};list.push(P[n]);}
@@ -15783,6 +15791,9 @@ function xrSampleList(g,stride){let c=XR_SL.get(g);if(c&&c.stride===stride)retur
  c={stride,n,vi:new Int32Array(n),dom:new Int32Array(n),si:new Int32Array(n*4),sw:new Float32Array(n*4)};
  for(let i=0,s=0;i<ps.count;i+=stride,s++){let best=-1,bi=0;c.vi[s]=i;for(let k=0;k<4;k++){const w=XR_GC(sw,i,k),j=XR_GC(si,i,k);c.si[s*4+k]=j;c.sw[s*4+k]=w;if(w>best){best=w;bi=j;}}c.dom[s]=bi;}
  XR_SL.set(g,c);return c;}
+// combat lane: per-bone skinning matrices come from a pool reused mesh after mesh (each mesh's matrices are only read while that mesh is
+// sampled; was a new Matrix4 per bone per mesh, ~700 per kill); same products in the same order.
+const XR_SM={tmp:new THREE.Matrix4(),pre:new THREE.Matrix4(),m:[]};
 function xrSupports(R,sc,sim){
  const byBone=new Map(),J=new Map();for(const a of R.list)if(a.b)J.set(a.b,a);const owner=b=>{if(byBone.has(b))return byBone.get(b);let x=b;while(x&&!J.has(x))x=x.parent;const j=x?J.get(x):null;byBone.set(b,j);return j;};
  const inv=new Map();for(const a of R.list)if(a.b){a.b.updateWorldMatrix(true,false);inv.set(a,new THREE.Matrix4().copy(a.b.matrixWorld).invert());a.sup=XR_DIRS.map(()=>null);a.supD=XR_DIRS.map(()=>-Infinity);}
@@ -15792,8 +15803,8 @@ function xrSupports(R,sc,sim){
  // three's boneTransform but from per-bone matrices built once per mesh (world * bindMatrixInverse * bone * boneInverse
  // * bindMatrix), so the contact points are unchanged; joint positions are read once instead of per vertex.
  for(const o of meshes){o.updateMatrixWorld(true);o.skeleton.update();const ps=o.geometry.attributes.position,bt=o.applyBoneTransform||o.boneTransform;if(!bt)continue;
-  const S=xrSampleList(o.geometry,stride),sk=o.skeleton,bm=new Map(),tmp=new THREE.Matrix4(),pre=new THREE.Matrix4().multiplyMatrices(o.matrixWorld,o.bindMatrixInverse),bnd=o.bindMatrix;
-  const boneM=bi=>{let m=bm.get(bi);if(m!==undefined)return m;const b=sk.bones[bi],ib=sk.boneInverses[bi];m=b&&ib?new THREE.Matrix4().multiplyMatrices(pre,tmp.multiplyMatrices(b.matrixWorld,ib)).multiply(bnd).elements:null;bm.set(bi,m);return m;};
+  const S=xrSampleList(o.geometry,stride),sk=o.skeleton,bm=new Map(),tmp=XR_SM.tmp,pre=XR_SM.pre.multiplyMatrices(o.matrixWorld,o.bindMatrixInverse),bnd=o.bindMatrix;let bk=0;
+  const boneM=bi=>{let m=bm.get(bi);if(m!==undefined)return m;const b=sk.bones[bi],ib=sk.boneInverses[bi];m=b&&ib?(XR_SM.m[bk]||(XR_SM.m[bk]=new THREE.Matrix4())).multiplyMatrices(pre,tmp.multiplyMatrices(b.matrixWorld,ib)).multiply(bnd).elements:null;if(m)bk++;bm.set(bi,m);return m;};
   for(let s=0;s<S.n;s++){const bone=sk.bones[S.dom[s]];const a=bone&&owner(bone);if(!a||!a.sup)continue;
    const i=S.vi[s],px=ps.getX(i),py=ps.getY(i),pz=ps.getZ(i);let x=0,y=0,z=0,ok=true;
    for(let k=0;k<4;k++){const w=S.sw[s*4+k];if(!w)continue;const e=boneM(S.si[s*4+k]);if(!e){ok=false;break;}x+=w*(e[0]*px+e[4]*py+e[8]*pz+e[12]);y+=w*(e[1]*px+e[5]*py+e[9]*pz+e[13]);z+=w*(e[2]*px+e[6]*py+e[10]*pz+e[14]);}
@@ -15824,10 +15835,10 @@ function xrPose(R){
  const P=R.P,root=R.root,[v0,v1,v2,v3]=XR_V,[q,pq,wq]=XR_Q;
  const setWorldQ=(b,w)=>{b.parent.updateWorldMatrix(true,false);b.parent.getWorldQuaternion(pq);b.quaternion.copy(pq.invert().multiply(w));b.updateMatrixWorld(false);};
  // Root: orientation from the hip frame, position so the pelvis joint lands on its particle.
- xrBasis(P.Spine2.p.clone().sub(P.Pelvis.p),P.R_Hip.p.clone().sub(P.L_Hip.p),q).multiply(R.hipQ);setWorldQ(root,wq.copy(q).multiply(R.q0));
+ xrBasis(XR_BA.copy(P.Spine2.p).sub(P.Pelvis.p),XR_BB.copy(P.R_Hip.p).sub(P.L_Hip.p),q).multiply(R.hipQ);setWorldQ(root,wq.copy(q).multiply(R.q0));
  root.updateMatrixWorld(true);const pel=P.Pelvis.b.getWorldPosition(v0),delta=v1.copy(P.Pelvis.p).sub(pel),rw=root.getWorldPosition(v2).add(delta);root.position.copy(root.parent.worldToLocal(rw));root.updateMatrixWorld(true);
  const aim=(A)=>{const b=A.bone;b.updateWorldMatrix(true,false);const bp=b.getWorldPosition(v0),cur=v1.copy(A.off).applyMatrix4(b.matrixWorld).sub(bp),want=v2.copy(A.T.p).sub(bp);if(cur.lengthSq()<1e-10||want.lengthSq()<1e-10)return;q.setFromUnitVectors(cur.normalize(),want.normalize());b.getWorldQuaternion(wq);setWorldQ(b,wq.premultiply(q));};
- for(const A of R.aims){if(A.bone===R.chest)continue;aim(A);if(A.bone.name==='Spine1'){xrBasis(P.Neck.p.clone().sub(P.Spine4.p),P.R_Shoulder.p.clone().sub(P.L_Shoulder.p),q).multiply(R.chestQ);setWorldQ(R.chest,wq.copy(q).multiply(R.c0));}}
+ for(const A of R.aims){if(A.bone===R.chest)continue;aim(A);if(A.bone.name==='Spine1'){xrBasis(XR_BA.copy(P.Neck.p).sub(P.Spine4.p),XR_BB.copy(P.R_Shoulder.p).sub(P.L_Shoulder.p),q).multiply(R.chestQ);setWorldQ(R.chest,wq.copy(q).multiply(R.c0));}}
  root.updateMatrixWorld(true);xrDrape(R);
 }
 const XR_DRAPE_GAP=.03;
