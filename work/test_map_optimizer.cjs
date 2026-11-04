@@ -25,7 +25,7 @@ const NM_OPT={ratio:2,minPiece:2000};// synthetic scene is small: give the plann
 const NM_SMALL=eval('('+src.match(/var NM_SMALL=(\{[^}]*\})/)[1]+')');let GQ='medium';const nmQuality=()=>GQ;// the small-prop split is off without a detail table (this synthetic scene has none): test_map_detail.cjs covers it
 // NM_STRIP off here: this checks the plain chunk invariants (one mesh per chunk); test_map_strips.cjs covers the strips
 const NM_STRIP={on:false};
-const api=new Function('THREE','NM_OPT','NM_SMALL','nmQuality','NM_STRIP',['nmDetailDistance','nmChunkPlan','nmSpanOver','nmMatKey','nmCull','nmSphere','nmCentroids','nmGather','nmOffset','nmCopy3','nmCopy2','nmCopyN','nmSmallDist','nmDetailSplit','nmStripChunk','nmRunRange','nmRunReset'].map(pick).join('\n')+'\n'+block('nmOptimizeScene')+'\n'+block('nmStrips')+'\n'+block('nmStripBuild')+'\nreturn {nmDetailDistance,nmChunkPlan,nmMatKey,nmOptimizeScene,nmCull};')(THREE,NM_OPT,NM_SMALL,nmQuality,NM_STRIP);
+const api=new Function('THREE','NM_OPT','NM_SMALL','nmQuality','NM_STRIP',['nmDetailDistance','nmChunkPlan','nmSpanOver','nmMatKey','nmCull','nmSphere','nmCentroids','nmGather','nmOffset','nmCopy3','nmCopy2','nmCopyN','nmSmallDist','nmDetailSplit','nmStripChunk','nmRunRange','nmRunReset'].map(pick).join('\n')+'\n'+block('nmOptLast')+'\n'+block('nmOptRelease')+'\n'+block('nmOptimizeScene')+'\n'+block('nmStrips')+'\n'+block('nmStripBuild')+'\nreturn {nmDetailDistance,nmChunkPlan,nmMatKey,nmOptimizeScene,nmCull};')(THREE,NM_OPT,NM_SMALL,nmQuality,NM_STRIP);
 // synthetic scene: one mesh per source material, like scene.gltf
 let seed=5;const R=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296;};
 const tex=new THREE.Texture(),tex2=new THREE.Texture();

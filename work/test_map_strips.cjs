@@ -24,7 +24,7 @@ const NM_SMALL=val('NM_SMALL'),NM_STRIP=val('NM_STRIP');
 assert(NM_STRIP.on&&NM_STRIP.span>0&&NM_STRIP.span<=30,'strips off or pieces wider than 30 m');
 for(const s of [src,html])assert(s.includes('if(C&&C.M.g.visible){nmCull(C,cam);nmRuns(C,cam);}'),'render hook does not run nmCull then nmRuns');
 assert(html.includes('function nmRuns(')&&html.includes('var NM_STRIP={'),'generated page lacks the strips (run work/install_valorant.py)');
-const NAMES=['nmDetailDistance','nmChunkPlan','nmSpanOver','nmMatKey','nmCull','nmSphere','nmCentroids','nmGather','nmOffset','nmCopy3','nmCopy2','nmCopyN','nmSmallDist','nmDetailSplit','nmOptimizeScene','nmStrips','nmStripBuild','nmStripChunk','nmRunRange','nmRunReset','nmRuns'];
+const NAMES=['nmDetailDistance','nmChunkPlan','nmSpanOver','nmMatKey','nmCull','nmSphere','nmCentroids','nmGather','nmOffset','nmCopy3','nmCopy2','nmCopyN','nmSmallDist','nmDetailSplit','nmOptLast','nmOptRelease','nmOptimizeScene','nmStrips','nmStripBuild','nmStripChunk','nmRunRange','nmRunReset','nmRuns'];
 const NM_OPT={ratio:1,minPiece:2000};// synthetic scene: few source meshes
 const api=new Function('THREE','NM_OPT','NM_SMALL','NM_STRIP','nmQuality','var NM_RF=null;\n'+NAMES.map(fn).join('\n')+'\nreturn {'+NAMES.join(',')+'};')(THREE,NM_OPT,NM_SMALL,NM_STRIP,()=>'high');
 // the page passes span only on the texture-array path (WebGL2); this scene runs the plain path, so pass it the same way

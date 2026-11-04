@@ -29,8 +29,8 @@ function ctx(){
  return {c,raws};
 }
 // 2 buffers x 3 meshes: each mesh a position bufferView + an index bufferView (6 views per buffer)
-function gltf(files,base){const j={asset:{version:'2.0'},buffers:[],bufferViews:[],accessors:[],meshes:[],nodes:[],scenes:[{nodes:[]}],scene:0};
- for(let b=0;b<2;b++){const parts=[];let off=0;for(let m=0;m<3;m++){const n=300+m*7+b,P=new Float32Array(n*3);for(let i=0;i<P.length;i++)P[i]=Math.sin(i*0.37+m+b*3);const I=new Uint32Array((n-2)*3);for(let t=0;t<n-2;t++){I[t*3]=t;I[t*3+1]=t+1;I[t*3+2]=t+2;}
+function gltf(files,base,NB){const j={asset:{version:'2.0'},buffers:[],bufferViews:[],accessors:[],meshes:[],nodes:[],scenes:[{nodes:[]}],scene:0};
+ for(let b=0;b<(NB||2);b++){const parts=[];let off=0;for(let m=0;m<3;m++){const n=300+m*7+b,P=new Float32Array(n*3);for(let i=0;i<P.length;i++)P[i]=Math.sin(i*0.37+m+b*3);const I=new Uint32Array((n-2)*3);for(let t=0;t<n-2;t++){I[t*3]=t;I[t*3+1]=t+1;I[t*3+2]=t+2;}
    for(const [arr,tgt,acc] of [[P,34962,{componentType:5126,count:n,type:'VEC3',min:[-1,-1,-1],max:[1,1,1]}],[I,34963,{componentType:5125,count:I.length,type:'SCALAR'}]]){const by=Buffer.from(arr.buffer);j.bufferViews.push({buffer:b,byteOffset:off,byteLength:by.length,target:tgt});j.accessors.push({bufferView:j.bufferViews.length-1,...acc});parts.push(by);off+=by.length;}
    const a=j.accessors.length;j.meshes.push({primitives:[{attributes:{POSITION:a-2},indices:a-1}]});j.nodes.push({mesh:j.meshes.length-1});j.scenes[0].nodes.push(j.nodes.length-1);}
   const buf=Buffer.concat(parts);files.set(base+'geometry-0'+b+'.bin',buf);j.buffers.push({uri:'geometry-0'+b+'.bin',byteLength:buf.length});}
@@ -56,6 +56,14 @@ async function collected(refs){for(let k=0;k<6;k++){gc();await tick(5);}return r
    gl.scene.traverse(o=>{if(o.isMesh){o.geometry=new c.THREE.BufferGeometry();}});/* nmOptimizeScene: the source geometry is replaced by its chunks */
    const nv=await collected(views);assert.equal(nv,views.length,'bufferView copies collected once the source geometry is gone ('+nv+'/'+views.length+')');
    console.log(`  nmBufRelease + nmParserRelease: raw buffers 2/2 collected during the load, bufferView copies ${nv}/${views.length} collected after the merge, geometry identical`); }
+ { // 4. one buffer file at a time: at most two raw .bin files requested / held at once, fetched in file order, same geometry
+   const r0=ctx();gltf(r0.c.__files,base,4);const g0=geo(await new r0.c.THREE.GLTFLoader().loadAsync(base+'scene.gltf'));
+   const {c}=ctx();gltf(c.__files,base,4);let P0=null;const order=[],held=[];const f0=c.fetch;
+   c.fetch=async u=>{const k=String(typeof u==='string'?u:u.url);if(/\.bin$/.test(k)){order.push(+/geometry-0(\d)/.exec(k)[1]);let h=0;for(let q=0;q<4;q++)if(P0.cache.get('buffer:'+q)!==undefined)h++;held.push(h);}return f0(u);};
+   const L=new c.THREE.GLTFLoader();L.register(p=>{P0=p;return c.nmBufRelease(p);});const gl=await L.loadAsync(base+'scene.gltf');
+   assert.deepEqual(order,[0,1,2,3],'buffer files fetched once each, in order');assert(Math.max(...held)<=2,'at most two raw buffer files at once (held at each fetch: '+held.join(',')+')');
+   assert.equal(c.NM.bufSeq,4,'every file taken in its turn');assert.deepEqual(geo(gl),g0,'identical geometry (4 files)');
+   console.log('  nmBufRelease sequential: 4 buffer files fetched in order, raw files held at each fetch '+held.join(',')+', geometry identical'); }
  { // a parser without the cache API / an undefined gl are tolerated
    const {c}=ctx();assert.equal(c.nmParserRelease(null),false);assert.equal(c.nmParserRelease({}),false); }
  console.log('Map load memory: GLTFLoader raw buffers leave the parser cache as soon as their bufferViews are sliced, and the parser (bufferView copies, caches) is dropped once loaded; same geometry');
