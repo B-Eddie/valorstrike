@@ -1,0 +1,17 @@
+<!doctype html><html><head><meta charset="utf-8"><style>body{margin:0;background:#20242a;color:#eee;font:12px sans-serif}#grid{position:absolute;top:0;left:0}</style>
+<script type="importmap">{"imports":{"three":"/server/node_modules/three/build/three.module.js","three/addons/":"/server/node_modules/three/examples/jsm/"}}</script>
+</head><body><canvas id="grid" width="1536" height="1024"></canvas>
+<script type="module">
+import * as THREE from 'three';import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+const AG=['astra','brimstone','clove','harbor','miks','viper','hush','iso','neon','waylay','yoru','fade','gekko','kayo','tejo','deadlock','veto','vyse'];
+const W=1536,H=1024,COLS=6,ROWS=3,cw=W/COLS,ch=H/ROWS;
+const renderer=new THREE.WebGLRenderer({canvas:document.getElementById('grid'),antialias:true});renderer.setSize(W,H,false);
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x20242a);
+scene.add(new THREE.AmbientLight(0xffffff,1.2));const dl=new THREE.DirectionalLight(0xffffff,2);dl.position.set(3,6,5);scene.add(dl);
+const cam=new THREE.PerspectiveCamera(36,W/H,0.1,100);cam.position.set(0,0.9,34);cam.lookAt(0,0.7,0);
+const loader=new GLTFLoader();let done=0;const labels=[];
+for(let i=0;i<AG.length;i++){const x=(i%COLS-(COLS-1)/2)*5.6,y=(Math.floor(i/COLS)-1)*-4.6;
+ loader.load('/models/valorant/agents/'+AG[i]+'.glb',g=>{const o=g.scene;const box=new THREE.Box3().setFromObject(o);o.position.set(x-(box.min.x+box.max.x)/2,y-box.min.y,0);/* native Valorant scale (~1.8 m) */scene.add(o);fin(AG[i],true);},undefined,e=>fin(AG[i],false));}
+function fin(name,ok){done++;renderer.render(scene,cam);labels.push(name+(ok?'':' LOAD-FAIL'));document.title='loaded '+done+'/18 '+labels.join(',');if(done===18){renderer.render(scene,cam);document.title='DONE '+labels.join(',');}}
+
+</script></body></html>
