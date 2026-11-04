@@ -97,7 +97,7 @@ function xvStatic(gl, config) {
     geo.applyMatrix4(o.matrixWorld); geo.userData.shared = true; const mesh = new THREE.Mesh(geo, o.material); mesh.name = o.name; out.add(mesh);
   }); mx.stopAllAction(); return out;
 }
-function xvAgentName(n) { const a = xAgOf(n); return XUB_AG[a] ? a : Object.keys(XUB_AG)[String(n || '').split('').reduce((s,c) => s + c.charCodeAt(0), 0) % 12]; }
+function xvAgentName(n) { const a = xAgOf(n); return XUB_AG[a] ? a : Object.keys(XUB_AG)[String(n || '').split('').reduce((s,c) => s + c.charCodeAt(0), 0) % Object.keys(XUB_AG).length]; }
 // Agent assets (#10): optimized third-person models plus one shared locomotion file (work/build_agent_assets.cjs).
 // Every file is fetched in parallel from the moment the page opens, kept in Cache Storage under its content hash so
 // repeat visits skip the network, and integrity-checked before it is stored. Kits are built in pick order.
