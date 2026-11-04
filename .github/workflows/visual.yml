@@ -57,8 +57,7 @@ jobs:
           mkdir -p shots
 
           cd work/two-browser
-          TEXCLOSE=1 AGENT_A=${{ matrix.agent }} AGENT_B=Jett SCEN=$PWD/${{ matrix.scen }} SHARECTX=1 MAP=lotus \
-            KEY=${{ matrix.key }} TAG=${{ matrix.name }} BX=3 BZ=-9 timeout 1500 node tb.cjs "$GITHUB_WORKSPACE/shots/${{ matrix.name }}.json" || true
+          bash ci_run.sh ${{ matrix.name }}
       - uses: actions/upload-artifact@v4
         if: always()
         with:
