@@ -87,6 +87,10 @@ block+='\n'+(root/'work/ability_target_runtime.js').read_text().rstrip('\n')
 # thrown floor guns, the first-person death camera (xDcCam, called by the frame) and the killer portrait / N toggle on the combat report.
 da2='// ---- DEATH PARITY ----';db2='// ---- END DEATH PARITY ----'
 if da2 in s:s=s[:s.index(da2)]+s[s.index(db2)+len(db2):]
+# Agents 18 (work/agents18_runtime.js), last: the outermost jKey / jTick / jRound / jKill / hurt wrappers for the 18 added agents.
+g18a='// ---- AGENTS 18 ----';g18b='// ---- END AGENTS 18 ----'
+if g18a in s:s=s[:s.index(g18a)]+s[s.index(g18b)+len(g18b):]
+block+='\n'+(root/'work/agents18_runtime.js').read_text().rstrip('\n')
 block+='\n'+(root/'work/death_runtime.js').read_text().rstrip('\n');mark='xReady = true; // every mode is initialised; lobby launches may now start them';s=s.replace(mark,block+'\n'+mark)
 if '<script src="models/valorant/manifest.js"></script>' not in s:s=s.replace('<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>','<script src="models/valorant/manifest.js"></script>\n<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>')
 # Find the actual three script tag, which may use an onerror handler.
