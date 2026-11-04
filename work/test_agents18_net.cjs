@@ -14,12 +14,12 @@ const document={getElementById:id=>els[id]||null,createElement:t=>({tag:t,style:
 const realCreate=document.createElement;document.createElement=t=>{const e=realCreate(t);return new Proxy(e,{set(o,k,v){o[k]=v;if(k==='id')els[v]=o;return true;}});};
 const meshes=[];
 function Mesh(g,mt){this.geometry=g;this.material=mt;const p={x:0,y:0,z:0,set(x,y,z){p.x=x;p.y=y;p.z=z;}};this.position=p;this.rotation={x:0,y:0};this.scale={setScalar(s){this.s=s}};meshes.push(this);}
-const THREE={Mesh,BoxGeometry:class{constructor(...a){this.a=a}},MeshLambertMaterial:class{constructor(o){Object.assign(this,o)}}};
+const THREE={Mesh,BoxGeometry:class{constructor(...a){this.a=a}},MeshLambertMaterial:class{constructor(o){Object.assign(this,o)}},SphereGeometry:class{},RingGeometry:class{rotateX(){}},MeshBasicMaterial:class{constructor(o){Object.assign(this,o)}},AdditiveBlending:1,DoubleSide:2};
 const ctx=vm.createContext({document,performance:{now:()=>now},say:(t,ms)=>said.push(t),Math,NET:{},THREE,
  console,player:{tagT:0,tagK:0,tagS:0},
  jM:(g,m)=>new Mesh(g,m),ringGeo:{},smokeGeo:{},orbGeo:{},fireMat:(c,o)=>({color:c,opacity:o}),xSmokeM:(n,c1,c2)=>({name:n,opacity:1}),
  scene:{add(m){}},jRel:m=>{ctx.__rel=(ctx.__rel||0)+1;},xE:e=>{throw e;}});
-vm.runInContext('let netVulnAt=0,netTetherAt=0,netDetainAt=0;function netSyncEffects(rows){}function netClearEffects(){}\n'+orig+'\n'+block+'\nthis.__api={a18NetSync,a18Net,netStatusChips,netClearEffects,A18VIS};',ctx);
+vm.runInContext('const A18C={salvo:{r:4.5,inner:2.5,pulses:3,gap:0.8}};let __booms=0;function a18Fx(o){if(o.kind==="armagboom")__booms++}function a18Ring(){return {}}function groundAt(){return 0}let netVulnAt=0,netTetherAt=0,netDetainAt=0;function netSyncEffects(rows){}function netClearEffects(){}\n'+orig+'\n'+block+'\nthis.__api={a18NetSync,a18Net,netStatusChips,netClearEffects,A18VIS};',ctx);
 const api=ctx.__api;
 // fields / devices render and follow server rows
 api.a18NetSync([{id:1,kind:'pit',p:[1,0,2],r:9,tl:10},{id:2,kind:'sdrone',p:[3,0,4],tl:8}]);
@@ -35,6 +35,14 @@ assert.equal(api.a18Net.get(3).m.rotation.y,-1.1,'wall yaw applied');
 assert.equal(api.a18Net.size,1,'pit and sdrone released once the server stops sending them');assert.equal(ctx.__rel-rel0,2,'their meshes released');
 api.a18NetSync([]);
 assert.equal(api.a18Net.size,0,'gone rows dropped');
+// Guided Salvo row: ground rings now, one fireball per pulse as the server clock passes 0 / 0.8 / 1.6 s after landing
+{const f0=(ctx.__api.a18Net.size,0);const booms=()=>vm.runInContext('__booms',ctx);
+ api.a18NetSync([{id:20,kind:'salvo',p:[0,0,0],r:4.5,tl:3.4+1.0,w:1.0}]);assert.equal(api.a18Net.get(20).kind,'salvo');assert.equal(api.a18Net.get(20).ms.length,2,'outer + inner ring');assert.equal(booms(),0,'no blast before landing');
+ api.a18NetSync([{id:20,kind:'salvo',p:[0,0,0],r:4.5,tl:3.4,w:0}]);assert.equal(booms(),1,'pulse 1');
+ api.a18NetSync([{id:20,kind:'salvo',p:[0,0,0],r:4.5,tl:3.4-0.85,w:0}]);assert.equal(booms(),2,'pulse 2');
+ api.a18NetSync([{id:20,kind:'salvo',p:[0,0,0],r:4.5,tl:3.4-1.7,w:0}]);assert.equal(booms(),3,'pulse 3');
+ api.a18NetSync([{id:20,kind:'salvo',p:[0,0,0],r:4.5,tl:0.5,w:0}]);assert.equal(booms(),3,'no repeats');
+ const r0=ctx.__rel||0;api.a18NetSync([]);assert.equal(ctx.__rel-r0,2,'rings released');}
 // unknown kinds are left to the base sync
 api.a18NetSync([{id:9,kind:'barrier',p:[0,0,0]}]);assert.equal(api.a18Net.size,0,'barrier stays with netSyncEffects');
 // clear hook releases everything
