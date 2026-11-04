@@ -101,7 +101,11 @@ async function step(A, B, label, s) {
   firstCast = false;
   if (!m.ok) console.log('REJECT-DIAG', tag, 'phase', A.snap && A.snap.phase, 'tl', A.snap && A.snap.tl, 'rs', JSON.stringify(m.rs && m.rs.ab));
   assert.ok(m.ok, tag + ': cast rejected (ao ok=false, rs=' + JSON.stringify(m.rs && m.rs.ab) + ')');
-  if (s.fx) { await until(() => fxBoth(A, B, s.fx), tag + ': ' + s.fx + ' fx row on both clients', 12000);
+  if (s.fx) { await until(() => fxBoth(A, B, s.fx), tag + ': ' + s.fx + ' fx row on both clients', 12000).catch((e) => {
+    const dump = (c) => ({ meTeam: (c.row(c.id) || [])[1], meAlive: (c.row(c.id) || [])[3], other: ((c.snap.u.find((u) => u[0] !== c.id)) || []).slice(0, 8), fx: (c.snap.fx || []).map((f) => f.kind + '@' + (f.p || []).map((n) => Math.round(n)).join(',')), tl: c.snap.tl });
+    console.log('FX-DUMP A:', JSON.stringify(dump(A)));
+    console.log('FX-DUMP B:', JSON.stringify(dump(B)));
+    throw e; });
     console.log(tag + ': ' + s.fx + ' fx row live on both clients'); }
   else console.log(tag + ': accepted (ao ok, no world fx row by design)');
   if (s.toggle) { await sleep(450); const m2 = await cast(A, s.k, s.extra || {}); // server per-key cool .3s assert.ok(m2.ok, tag + ': toggle recast rejected');
@@ -174,7 +178,7 @@ const CASES = {
   Gekko:     [ {k:'c',fx:'mosh'}, {k:'q',fx:'seeker'}, {k:'e',fx:'dizzy'}, {k:'x',fx:'blast'} ],
   'KAY/O':   [ {k:'c',fx:'frag'}, {k:'q'}, {k:'e',fx:'blast'}, {k:'x',fx:'nullcmd'} ],
   Tejo:      [ {k:'c',fx:'sdrone'}, {k:'q',fx:'blast'}, {k:'e',fx:'salvo'}, {k:'x',fx:'armag'} ],
-  Deadlock:  [ {k:'c',fx:'barrier'}, {k:'q',fx:'sensor'}, {k:'e',fx:'gnet'}, {k:'x',fx:'anni',los:true} ],
+  Deadlock:  [ {k:'x',fx:'anni',los:true}, {k:'c',fx:'barrier',los:true}, {k:'q',fx:'sensor'}, {k:'e',fx:'gnet'} ],
   Veto:      [ {k:'c',tp:'fwd',anchorFx:'xcut'}, {k:'q',fx:'choke'}, {k:'e',fx:'ceptor'}, {k:'x'} ],
   Vyse:      [ {k:'c',fx:'vine'}, {k:'q',fx:'shear'}, {k:'e',fx:'rose',recastConsumes:true}, {k:'x',fx:'garden'} ],
 };
