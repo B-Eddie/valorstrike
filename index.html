@@ -552,6 +552,8 @@ body:has(#result[style*="flex"]) .x-sp{display:none!important} /* UI lane: the s
 @media (max-height:560px){#xAg{justify-content:flex-start;overflow-y:auto}#xAg>.x-agm{flex:none;min-height:auto;order:1}#xAg>.x-agc{flex:none;order:0}#xAg>#xAgL{position:sticky;bottom:0;z-index:2;flex:none;order:2;box-shadow:0 -10px 18px rgba(12,20,28,.85)}#xAg .x-agc .x-ag small{font-size:9px;overflow:hidden;text-overflow:clip;max-width:100%}} /* agent select on short screens: agent cards first, details scroll below them, LOCK IN stays reachable */
 .x-ab{left:50%;bottom:52px;transform:translateX(-50%);display:none;gap:8px}
 .x-ab.on{display:flex}
+.bfl{overflow:hidden;background:radial-gradient(circle,#fff 0,#ffe6d8 22%,#ffb8a0 70%,#f08070 100%)!important;box-shadow:inset 0 0 0 14px rgba(230,50,50,.55)}
+.bfl::after{content:'';position:absolute;inset:-50%;background:repeating-conic-gradient(from 0deg at 50% 50%,rgba(255,255,255,.85) 0 2deg,rgba(255,255,255,0) 2deg 9deg,rgba(255,200,170,.55) 9deg 10.5deg,rgba(255,255,255,0) 10.5deg 20deg);-webkit-mask:radial-gradient(circle,#000 0,transparent 62%);mask:radial-gradient(circle,#000 0,transparent 62%)}
 #game #xWh{position:fixed;inset:0;background:radial-gradient(circle,#fff 0,#fff 45%,#f2f6ff 100%);opacity:0;pointer-events:none;z-index:6}
 #game #xDr{position:fixed;inset:0;background:rgba(69,208,255,.16);box-shadow:inset 0 0 160px rgba(69,208,255,.6);opacity:0;pointer-events:none;z-index:5;transition:opacity .2s}
 #game #xDr.on{opacity:1}
@@ -8868,18 +8870,18 @@ function xCbOrb(p) { // the Curveball flare in flight: core + glow shells (child
   const kids = XCBF.glow.map((r, i) => { const h = new THREE.Mesh(cbOrbGeo, xCbGlowMat(i)); h.scale.setScalar(r / XCBF.orb); h.raycast = () => {}; h.renderOrder = 2; m.add(h); return h; });
   m.userData.kids = kids; scene.add(m); return m;
 }
-function xFlashScreen(hold, peak, fade) { // the white flash screen: peak opacity held for hold s, then faded over fade s; a weaker flash never cuts a stronger one short
+function xFlashScreen(hold, peak, fade, sty) { // the white flash screen: peak opacity held for hold s, then faded over fade s; a weaker flash never cuts a stronger one short
   const w = $("xWh"), t = performance.now(), F = xFlashScreen; if (!w) return;
   if (F.until > t && F.peak > peak) return;
   clearTimeout(F.k); F.until = t + hold * 1000; F.peak = peak;
-  w.style.background = "radial-gradient(circle, #fff 0, #fffaf0 40%, #ffd6a0 100%)"; w.style.transition = "none"; w.style.opacity = peak;
+  w.classList.toggle("bfl", sty === "breach"); if (sty !== "breach") w.style.background = "radial-gradient(circle, #fff 0, #fffaf0 40%, #ffd6a0 100%)"; else w.style.background = ""; w.style.transition = "none"; w.style.opacity = peak;
   F.k = setTimeout(() => { F.until = 0; F.peak = 0; w.style.transition = "opacity " + fade + "s ease-out"; w.style.opacity = 0; setTimeout(() => { if (!(F.until > 0)) w.style.background = ""; }, fade * 1000 + 50); }, hold * 1000);
 }
-function xFlashPlayer(p, bl) { // the player at a flash pop: looking at it -> full white for bl s + the 1 s fade; turned away (still in sight) -> faint and brief
+function xFlashPlayer(p, bl, sty) { // the player at a flash pop: looking at it -> full white for bl s + the 1 s fade; turned away (still in sight) -> faint and brief
   if (!(player.hp > 0)) return 0; const e = pEyeTo(PE_V), v = p.clone().sub(e), l = v.length() || 0.01;
   if (l >= XCBF.r || !los(e, p)) return 0; const c = v.dot(jAim()) / l;
-  if (c > XCBF.face) { xFlashScreen(bl, 1, XCBF.fade); return 2; }
-  xFlashScreen(XCBF.faintT, XCBF.faint * Math.max(0.3, (c + 1) / (1 + XCBF.face)), 0.3); return 1;
+  if (c > XCBF.face) { xFlashScreen(bl, 1, XCBF.fade, sty); return 2; }
+  xFlashScreen(XCBF.faintT, XCBF.faint * Math.max(0.3, (c + 1) / (1 + XCBF.face)), 0.3, sty); return 1;
 }
 function xFlashBots(p, bl) { // bots at a flash pop: in range, line of sight from their eye, facing > XCBF.face -> blind bl s (= server)
   let n = 0; const e = new THREE.Vector3();
@@ -8999,7 +9001,7 @@ function jFxTick(dt) {
   { const A = J.orbs, n = A.length; let k = 0;
     for (let i = 0; i < n; i++) { const o = A[i]; o.t += dt; const ow = o.w || 0.5, u = Math.min(1, o.t / ow); if (o.c) { const w = 1 - u; o.m.position.set(w * w * o.a.x + 2 * w * u * o.c.x + u * u * o.b.x, w * w * o.a.y + 2 * w * u * o.c.y + u * u * o.b.y, w * w * o.a.z + 2 * w * u * o.c.z + u * u * o.b.z); } else o.m.position.lerpVectors(o.a, o.b, u); // Curveball bends through its control point
       if (o.cb) o.m.scale.setScalar(XCBF.orb * (1 + 0.12 * Math.sin(o.t * 38))); // the flare flickers in flight
-      if (o.t < ow) { A[k++] = o; continue; } jRel(o.m); o.en ? enPop(o.b, o.bl) : jPop(o.b); }
+      if (o.t < ow) { A[k++] = o; continue; } jRel(o.m); o.en ? enPop(o.b, o.bl, o.bf) : jPop(o.b); }
     A.length = k; }
   if (J.dr) drTick(dt);
   J.arrows = J.arrows.filter((a) => {
@@ -10142,7 +10144,8 @@ function enSmoke(x, z, al, dur, y, r, cyl) { // y: smoke centre (default 1.8; a 
   const m = jM(cyl ? cageGeo : smokeGeo, al ? xSmokeM("s9a", 0x7fa6c2, 0xb8dcf2) : xSmokeM("s9x", 0x8a929a, 0xc9d2da)); // ally smokes take the team blue
   m.position.set(x, 1.8, z); scene.add(m); J.smokes.push({ m, p: m.position, t: dur || 7, r: cyl ? xCage(m, r || XSMR.Cypher) : xSmk(m, r || 4), cyl: cyl ? CYCAGE.h : 0 }); SFX.smoke(); if (Number.isFinite(y)) m.position.y = y; else if (cyl) m.position.y = 0;
 }
-function enPop(p, bl) { // bl: the flash's blind (an enemy bot's Curveball: XCBF.blind); other bot flashes keep their short screen flash
+function enPop(p, bl, bf) { if (bf) { SFX.flash(); try { a18Flare(p, 7); } catch (e) {} if (player.hp > 0 && !J.dr) xFlashPlayer(p, 2.25, "breach"); return; }
+   // bl: the flash's blind (an enemy bot's Curveball: XCBF.blind); other bot flashes keep their short screen flash
   SFX.flash(); const m = jM(orbGeo, xAdd("pcore", 0xfff6e8, 1)); m.scale.setScalar(bl ? XCBF.pop / 0.25 : 4); m.position.copy(p); jFx(m, 0.3);
   const hm = jM(smokeGeo, xAdd("phalo", 0xff9a40, 0.45)); hm.scale.setScalar(bl ? 0.4 : 0.3); hm.position.copy(p); jFx(hm, 0.3).g = 0.25;
   if (player.hp <= 0 || J.dr) return; if (bl) return void xFlashPlayer(p, bl); const e = pEyeTo(PE_V), v = p.clone().sub(e), l = v.length() || 0.01;
@@ -10204,7 +10207,7 @@ function xBChoke(b, al, from, A) { // smoke spot: attacking = on the site side o
 function xBPre(A, from) { return A.lkt != null && A.lkt > 0.4 && A.lkt < 4 && Math.hypot(A.lkx - from.x, A.lkz - from.z) < 24; } // enemy just went out of sight close by: flash, then re-peek
 function xBFlash(b, al, from, tx, tz, col, key, nm, hz) { // shared bot flash: same J.orbs projectile + pop as the player's (enPop on the player, jPop on enemy bots)
   const dx = tx - from.x, dz = tz - from.z, l = Math.hypot(dx, dz) || 1, k = Math.min(l, Math.max(1, l * 0.4) + 1), e = new THREE.Vector3(from.x + (dx / l) * k, (from.y || 1.7) + 0.3, from.z + (dz / l) * k); // pops at the thrower's eye height + 0.3 m (was a flat 2 m: under / inside upper floors)
-  const cb = /Curveball/.test(nm), m = cb ? xCbOrb(from) : jM(orbGeo, jMat(key, () => new THREE.MeshBasicMaterial({ color: col }))); if (!cb) { m.position.copy(from); scene.add(m); } J.orbs.push({ m, a: from.clone(), b: e, t: 0, en: !al, w: cb ? XAB_WIND.curveball : 0.5, cb: cb ? 1 : 0, bl: cb && !al ? XCBF.blind : 0 }); feed(nm); blip(hz, 0.12, "sine", 0.12); } // Curveball: the big flare; an enemy one flashes the player 1.5 s
+  const cb = /Curveball/.test(nm), m = cb ? xCbOrb(from) : jM(orbGeo, jMat(key, () => new THREE.MeshBasicMaterial({ color: col }))); if (!cb) { m.position.copy(from); scene.add(m); } J.orbs.push({ m, a: from.clone(), b: e, t: 0, en: !al, w: cb ? XAB_WIND.curveball : 0.5, cb: cb ? 1 : 0, bl: cb && !al ? XCBF.blind : 0, bf: /Flashpoint/.test(nm) ? 1 : 0 }); feed(nm); blip(hz, 0.12, "sine", 0.12); } // Curveball: the big flare; an enemy one flashes the player 1.5 s
 function xBFl(b, A, see, peek, tg, from, k, al, col, key, nm, hz) { // flash before peeking (pre-peek on the last-seen spot), rarely on a surprise peek
   if ((A.flT || 0) > A.t) return false; let tx, tz;
   if (!see && xBPre(A, from) && Math.random() < 0.06) { tx = A.lkx; tz = A.lkz; } else if (peek && tg && Math.random() < ((window.BotBrain && BotBrain.UTILX) ? BotBrain.UTILX.flashOnSight : 0.1)) { tx = tg.x; tz = tg.z; } else return false; // a flash after the enemy already saw the bot blinds nobody: only a rare pop on the first sight (BotBrain.UTILX.flashOnSight; was 25 %)
