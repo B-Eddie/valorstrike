@@ -22,7 +22,7 @@ const A18C = { star: { wellPull: 2, wellVuln: 2, wellR: 3.5, novaDelay: 1.25, no
  xcut: { range: 25 }, choke: { life: 30, r: 6, decay: 60, slow: 2 }, cept: { life: 30, r: 10 }, evo: { life: 12, hps: 10 },
  vine: { life: 30, r: 6, dps: 15 }, shear: { life: 30, r: 2.5, wall: 8 }, rose: { life: 30, blind: 2, r: 20 }, garden: { r: 20, jam: 8 } };
 J.a18 = null; // per-agent state (stars, fuel, anchors, slides), reset by a18Reset on the pick / round reset hooks
-function a18Reset() { const a = J.pick; J.a18 = { stars: a === "Astra" ? 2 : 0, fuel: a === "Viper" || a === "Neon" ? A18C.fuel.max : 0, slides: 1, slideK: 0, /* wiki v9.11: one slide charge */ cloud: 0, screen: 0, pit: 0, gate: 0, mark: 0, rose: 0, xcut: 0, gear: 0, drift: 0, od: 0, evo: 0, shield: 0, duel: 0, ndyT: 0, haste: 0, stim: 0, decay: 0, decayAmt: 0, jam: 0, supp: 0 }; }
+function a18Reset() { const a = J.pick; J.a18 = { stars: a === "Astra" ? 2 : 0, fuel: a === "Viper" || a === "Neon" ? A18C.fuel.max : 0, slides: 1, slideK: 0, /* wiki v9.11: one slide charge */ cloud: 0, screen: 0, pit: 0, gate: 0, gateTp: 0, mark: 0, rose: 0, xcut: 0, gear: 0, drift: 0, od: 0, evo: 0, shield: 0, duel: 0, ndyT: 0, haste: 0, stim: 0, decay: 0, decayAmt: 0, jam: 0, supp: 0 }; }
 function a18Aim(dist) { const o = pEye(), d = jAim(); ray.set(o, d); ray.far = dist || 14; const h = ray.intersectObjects(solids)[0]; const t = h ? Math.max(0, h.distance - 0.5) : (dist || 14); const p = o.clone().addScaledVector(d, t); p.y = Math.max(0.05, p.y); return p; }
 function a18Smoke(p, dur, r, c1, c2) { const m = jM(smokeGeo, xSmokeM("a18" + (a18Smoke.n = (a18Smoke.n || 0) + 1), c1, c2)); m.position.set(p.x, p.y + 1.7, p.z); scene.add(m); J.smokes.push({ m, p: m.position, t: dur, r: xSmk(m, r) }); SFX.smoke(); return m; }
 function a18Zone(p, life, r, rate, name, col) { const m = jM(zoneGeo, fireMat(col || 0xff5a1a, 0.55)); m.rotation.x = -Math.PI / 2; m.position.set(p.x, 0.05, p.z); m.scale.setScalar(r / 2.5); scene.add(m); J.zones.push({ m, p: p.clone(), t: life, R: 0, r0: r, rate, name }); return m; }
@@ -45,7 +45,7 @@ function a18Key(code) {
   if (a === "Vyse" && k === "e" && A.rose) { const p = A.rose; A.rose = 0; a18Blind(p, C.rose.blind); SFX.flash(); return true; }
   if (a === "Veto" && k === "c" && A.xcut) { P.x = A.xcut.x; P.z = A.xcut.z; P.y = A.xcut.y; A.xcut = 0; SFX.ab("dash"); return true; }
   if (a === "Waylay" && k === "e" && A.mark) { P.x = A.mark.x; P.y = A.mark.y; P.z = A.mark.z; A.mark = 0; J.e = 0; SFX.ab("dash"); return true; }
-  if (a === "Yoru" && k === "e" && A.gate) { P.x = A.gate.x; P.y = A.gate.y; P.z = A.gate.z; A.gate = 0; SFX.ab("dash"); return true; }
+  if (a === "Yoru" && k === "e" && A.gate && !(A.gateTp > 0)) { A.gateTp = 1.2; say("Gatecrash", 700); return true; } /* wiki: 1.2 s total (0.5 s windup + 0.7 s arrival); the move lands in a18Tick */
   if (a === "Neon" && k === "e" && A.gear > 0) { if (A.slides > 0) { A.slides--; A.gear = 0; J.dash = jDash(); SFX.ab("dash"); /* the slide ends High Gear (wiki); firing during it is allowed (v8.11) */ } return true; }
   if (!chargeOk || J.cd[k] > 0) return no();
   const p = a18Aim(14), d = jAim();
@@ -165,6 +165,7 @@ function a18Duel(t) { const A = J.a18, C = A18C; A.duel = C.kc.duel; A.duelT = t
 function a18Tick(dt) {
   if (!J.a18) return; const A = J.a18, C = A18C, P = player, T = dt;
   A.haste = Math.max(0, A.haste - dt); A.stim = Math.max(0, A.stim - dt); A.jam = Math.max(0, A.jam - dt); A.supp = Math.max(0, A.supp - dt);
+  if (A.gateTp > 0) { A.gateTp -= dt; if (A.gateTp <= 0 && A.gate) { P.x = A.gate.x; P.y = A.gate.y; P.z = A.gate.z; A.gate = 0; SFX.ab("dash"); } }
   if (A.drift > 0) A.drift -= dt; if (A.od > 0) A.od -= dt; if (A.evo > 0) { A.evo -= dt; if (P.hp > 0) P.hp = Math.min(100, P.hp + C.evo.hps * dt); }
   if (A.ncmd > 0) A.ncmd -= dt;
   if (A.shieldT > 0 && (A.shieldT -= dt) <= 0) A.shield = 0;
@@ -218,7 +219,9 @@ const a18Round0 = jRound; jRound = function (match) { a18Round0(match); if (A18S
 // kill credit: signature 2-kill resets (Iso Double Tap, Waylay Refract, Yoru Gatecrash), Neon slide charges, Clove Pick-me-up window
 const a18Kill0 = jKill; jKill = function () { a18Kill0(); if (!A18SET.has(J.pick) || !J.a18) return; const A = J.a18; J.lastKillT = performance.now() / 1000; if (["Iso", "Waylay", "Yoru"].includes(J.pick) && J.e < 1 && ++J.tk >= 2) { J.e = 1; J.tk = 0; say(K().n[2] + " ready", 700); } if (J.pick === "Neon" && A.slides < 1 && ++A.slideK >= 2) { A.slides = 1; A.slideK = 0; } };
 // hook the key dispatch and the frame tick (same wrapper pattern as the other runtime blocks)
-const a18KeyJ = jKey; jKey = function (code) { if (A18SET.has(J.pick)) { if (!J.a18) a18Reset(); return a18Key(code), true; } return a18KeyJ(code); };
+const a18KeyJ = jKey; jKey = function (code) { if (A18SET.has(J.pick)) { if (NET.socket && MP.st === "game" && (MP.m5 || NET.tab)) { if (running && player.hp > 0 && FV.buy <= 0 && ["KeyC", "KeyQ", "KeyE", "KeyX"].includes(code)) netSend({ t: "ab", k: code[3].toLowerCase() }); return; } if (!J.a18) a18Reset(); return a18Key(code), true; } return a18KeyJ(code); };
+// USE fakes Gatecrash (wiki: the same audio cue, no teleport, a 30 s decal); online the server decides whether an anchor is up
+const a18Use0 = xdUse; xdUse = function () { if (J.pick === "Yoru") { if (NET.socket && MP.st === "game" && (MP.m5 || NET.tab)) { if (running && player.hp > 0 && FV.buy <= 0) netSend({ t: "ab", k: "e", fk: 1 }); return true; } if (J.a18 && J.a18.gate && !(J.a18.gateTp > 0)) { const g = J.a18.gate; SFX.ab("dash"); a18Fx({ kind: "gfk", m: a18Ring(new THREE.Vector3(g.x, 0, g.z), 1.2, 0x8a92ff, 0.6), t: 30 }); say("Fake teleport", 900); return true; } } return a18Use0.apply(this, arguments); };
 const a18TickJ = jTick; jTick = function (dt) { a18TickJ(dt); try { a18Tick(dt); } catch (e) { xE(e); } };
 
 // ---- AGENTS 18 ONLINE ----
@@ -231,7 +234,7 @@ const A18VIS = { divide: ["wall", 0x9a6ff0, .5], conting: ["wall", 0x6a9af0, .45
  pit: ["cloud", 0x6ab23a, .4], cove: ["cloud", 0x3fd0c0, .4], garden: ["cloud", 0xd04a8a, .35], choke: ["cloud", 0x8a6af0, .4], vine: ["cloud", 0xd04a8a, .4], gnet: ["cloud", 0x6a4af0, .5], seize: ["cloud", 0x4a2a8a, .5], mosh: ["cloud", 0xff7a1a, .5], fire: ["cloud", 0xff5a1a, .5], orbital: ["cloud", 0xff8a3a, .45], frag: ["cloud", 0xffa03a, .45], salvo: ["cloud", 0xff6a3a, .5], snake: ["cloud", 0x6ab23a, .45], susp: ["cloud", 0xc04af0, .35],
  gwell: ["ring", 0x8a6af0, .6], nova: ["ring", 0xb08af0, .6], pull: ["ring", 0x8a6af0, .5], displ: ["ring", 0x9a6ff0, .5], stim: ["ring", 0xf0e0b0, .5], mpulse: ["ring", 0x3fd0c0, .55], nullcmd: ["ring", 0x8a2af0, .45], haunt: ["ring", 0xd04a8a, .45], blast: ["ring", 0xff8a5a, .6], sd: ["ring", 0x3fd0c0, .55], sensor: ["ring", 0xf0c04a, .4], undercut: ["ring", 0x6a9af0, .55], satur: ["ring", 0xf0c04a, .5], zero: ["ring", 0x8a2af0, .5],
  emitter: ["dev", 0x8a6af0], ceptor: ["dev", 0x3fd0c0], rose: ["dev", 0xd04a8a], sdrone: ["dev", 0x3fd0c0], xcut: ["dev", 0x3fd0c0], mesh: ["dev", 0xc0c8d0], sensor2: ["dev", 0xf0c04a],
- seeker: ["orb", 0x3fd0c0], decoy: ["orb", 0x8a92ff], dizzy: ["orb", 0x3fd0c0], anni: ["orb", 0xff4a6a], wing: ["orb", 0x3fd0c0] };
+ gatefake: ["ring", 0x8a92ff, .5], seeker: ["orb", 0x3fd0c0], decoy: ["orb", 0x8a92ff], dizzy: ["orb", 0x3fd0c0], anni: ["orb", 0xff4a6a], wing: ["orb", 0x3fd0c0] };
 const a18Net = new Map(); // server effect id -> {m, kind}
 function a18NetMesh(kind, e) {
   const v = A18VIS[kind] || ["orb", 0xc0c8d0]; const [shape, col, op] = v; let m;

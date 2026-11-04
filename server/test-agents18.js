@@ -82,4 +82,17 @@ for(const a of Object.keys(AG18)){assert.ok(kits[a],a+' in kits.json');assert.ok
  assert.equal(cast18(s,m,{k:'x'},[m.x,m.y+1.6,m.z],[1,0,0]),true,'Bassquake cast');run(s,30);
  assert.ok(e.deafenUntil>s.time,'deafened 8 s');assert.ok(e.hinderUntil>s.time,'slowed 8 s');}
 
-console.log('agents18: registration, charge/star gates, Iso duel isolation + return, Neon fuel/slide/reset, KAY/O downed/revive/bleedout, Deadlock cocoon pull/rescue/kill, suppress gate, Gekko globule reclaim');
+
+// Yoru Gatecrash: recast teleports on the wiki 1.2 s timing; USE fakes - audio cue + 30 s decal, anchor kept
+{const s=mkSim(),y=mk('Yoru',0,15);s.units=[y];initAbilities(y,true);
+ assert.equal(cast18(s,y,{k:'e'},O,D),true,'anchor out');const gp=[...y.ability.gate.p];
+ s.time+=1;/* past the 0.6 s recast cooldown */
+ assert.equal(cast18(s,y,{k:'e',fk:1},O,D),true,'USE fakes');
+ assert.ok(y.ability.gate,'the anchor survives a fake');
+ const gf=s.effects.find(e=>e.kind==='gatefake');assert.ok(gf&&gf.until-gf.at>=29.9&&gf.until-s.time<=30,'30 s fake decal (v4.04)');
+ assert.ok(Math.abs(y.x)<.01&&Math.abs(y.z)<.01,'no teleport on a fake');
+ s.time+=1;assert.equal(cast18(s,y,{k:'e'},O,D),true,'real recast');
+ assert.ok(y.pendingTeleport&&Math.abs(y.pendingTeleport.at-s.time-1.2)<.01,'1.2 s wiki teleport timing');
+ assert.ok(!y.ability.gate,'the anchor is spent by the real teleport');
+ assert.ok(Math.abs(y.pendingTeleport.p[0]-gp[0])<.01&&Math.abs(y.pendingTeleport.p[2]-gp[2])<.01,'to the anchor');}
+console.log('agents18: registration, charge/star gates, Iso duel isolation + return, Neon fuel/slide/reset, KAY/O downed/revive/bleedout, Deadlock cocoon pull/rescue/kill, suppress gate, Gekko globule reclaim, Miks Bassquake deafen/slow, Yoru Gatecrash fake + 1.2 s timing');

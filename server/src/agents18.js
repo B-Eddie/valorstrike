@@ -7,7 +7,7 @@
 import Motor from './motor.cjs';
 import kits from './kits.json' with {type:'json'};
 export const AG18={Astra:1,Brimstone:1,Clove:1,Harbor:1,Miks:1,Viper:1,Hush:1,Iso:1,Neon:1,Waylay:1,Yoru:1,Fade:1,Gekko:1,'KAY/O':1,Tejo:1,Deadlock:1,Veto:1,Vyse:1};
-export const A18_NET_KINDS=new Set(['gwell','nova','stim','fire','orbital','conting','undercut','fastlane','blast','tide','reckon','cove','mpulse','bassq','snake','pit','susp','pull','decoy','seeker','seize','haunt','nightfall','mosh','dizzy','frag','nullcmd','sdrone','sd','salvo','armag','mesh','sensor','gnet','xcut','choke','ceptor','vine','rose','garden','paths','anni']);/* effect kinds the online client renders (work/agents18_runtime.js A18VIS) */
+export const A18_NET_KINDS=new Set(['gwell','nova','stim','fire','orbital','conting','undercut','fastlane','blast','tide','reckon','cove','mpulse','bassq','snake','pit','susp','pull','decoy','seeker','seize','haunt','nightfall','mosh','dizzy','frag','nullcmd','sdrone','sd','salvo','armag','mesh','sensor','gnet','xcut','choke','ceptor','vine','rose','garden','paths','anni','gatefake']);/* effect kinds the online client renders (work/agents18_runtime.js A18VIS) */
 export const TYPES18={Astra:['pull','concuss','smoke'],Brimstone:['stim','fire','smoke'],Clove:['haste','decay','smoke'],Harbor:['surge','wall','cove'],Miks:['mpulse','harmonize','smoke'],Viper:['snakebite','smoke','wall'],Hush:['flow','flash','pull'],Iso:['wall','undercut','shield'],Neon:['wall','concuss','haste'],Waylay:['hinder','dash','teleport'],Yoru:['decoy','flash','teleport'],Fade:['prowler','tether','recon'],Gekko:['mosh','wingman','flash'],'KAY/O':['frag','flash','suppress'],Tejo:['drone','concuss','salvo'],Deadlock:['mesh','sensor','gravnet'],Veto:['crosscut','choke','interceptor'],Vyse:['vine','shear','arcrose']};
 // Wiki stats per ability (fetched 2026-11-03), project-lightweight where noted:
 export const A18={
@@ -81,12 +81,6 @@ export function cast18(sim,u,m,o,d,push){
  const k=m.k,A=u.ability,ag=u.agent,C=A18,K=kits[ag];
  if(u.suppressUntil>sim.time)return false;
  if(ag==='Neon'&&k==='e'&&u.gearOn&&m.alt===true){if((A.slides||0)<1)return false;A.slides--;u.gearOn=false;u.dash=Motor.dash(m.f||1,0,u.look,6,.3);A.cool.e=sim.time+.3;cast(sim,u,k,o,d,[u.x,u.y,u.z]);return true;}/* High Gear ALT FIRE: slide (wiki High_Gear: 1 charge v9.11, 2-kill reset, deactivates High Gear; Neon can fire during the slide, v8.11) */
- // charge accounting mirrors castAbility0's rules for the 18: ult points, star pool, per-key charges
- if(k==='x'){if(A.ult<K.u)return false;}
- else if(ag==='Astra'){if(A.stars<1)return false;}
- else if(!(A[k]>0))return false;
- const p=land(sim,u,14);
- const spend=()=>{if(k==='x')A.ult=0;else if(ag==='Astra')A.stars--;else A[k]--;A.cool[k]=sim.time+.3;};
  // recasts / toggles that spend nothing
  if(ag==='Viper'&&k==='q'&&A.cloud){A.cloudOn=!A.cloudOn;A.cool.q=sim.time+.3;return true;}
  if(ag==='Viper'&&k==='e'&&A.screen){A.toxOn=!A.toxOn;A.cool.e=sim.time+.3;return true;}
@@ -94,8 +88,16 @@ export function cast18(sim,u,m,o,d,push){
  if(ag==='Vyse'&&k==='e'&&A.rose){const rp=A.rose;A.rose=null;A.e=0;A.cool.e=sim.time+.3;sim.effects=sim.effects.filter(e=>!(e.kind==='rose'&&e.owner===u.id));fx(sim,u,'flash',.25,30,{at:sim.time+.05,blind:A18.rose.blind,p:[...rp]});cast(sim,u,k,o,d,[...rp]);return true;}
  if(ag==='Veto'&&k==='c'&&A.xcutReady){u.pendingTeleport={kind:'xcut',p:[...A.xcut],at:sim.time+.3};A.xcut=null;A.xcutReady=false;sim.effects=sim.effects.filter(e=>!(e.kind==='xcut'&&e.owner===u.id));cast(sim,u,k,o,d,[...u.pendingTeleport.p]);return true;}
  if(ag==='Waylay'&&k==='e'&&A.marker){/* Refract: immune travel back (wiki) */A.cool.e=sim.time+.3;u.invulnerableUntil=Math.max(u.invulnerableUntil||0,sim.time+C.refract.travel);u.pendingTeleport={kind:'refract',p:[...A.marker],at:sim.time+C.refract.travel};A.marker=null;A.e=0;cast(sim,u,k,o,d,[...u.pendingTeleport.p]);return true;}
- if(ag==='Yoru'&&k==='e'&&A.gate){/* Gatecrash recast: teleport to the anchor (INTERACT fake-out not modelled on server) */u.pendingTeleport={kind:'gatecrash',p:[...A.gate.p],at:sim.time+.3};A.gate=null;cast(sim,u,k,o,d,[...u.pendingTeleport.p]);return true;}
+ if(ag==='Yoru'&&k==='e'&&A.gate){/* Gatecrash (wiki): recast teleports in 1.2 s total (0.5 s windup + 0.7 s arrival); USE (m.fk) fakes it - the same audio cue, no teleport, the anchor survives, and a 30 s decal marks the fake (v4.04) */
+  if(m.fk===1){fx(sim,u,'gatefake',[...A.gate.p],30,1.2,{at:sim.time});cast(sim,u,k,o,d,[...A.gate.p]);return true;}
+  u.pendingTeleport={kind:'gatecrash',p:[...A.gate.p],at:sim.time+1.2};A.gate=null;cast(sim,u,k,o,d,[...u.pendingTeleport.p]);return true;}
  if(ag==='Clove'&&k==='x'&&!u.alive){/* Not Dead Yet: cast from death within the window */if(!(A.ult>=K.u)||!u.ndyDead||sim.time>u.ndyDead+C.ndy.window)return false;A.ult=0;u.ndy={at:sim.time+C.ndy.channel};u.invulnerableUntil=sim.time+C.ndy.channel;cast(sim,u,k,[u.x,u.y+1,u.z],[0,0,-1],[u.x,u.y,u.z]);return true;}
+ // charge accounting mirrors castAbility0's rules for the 18: ult points, star pool, per-key charges
+ if(k==='x'){if(A.ult<K.u)return false;}
+ else if(ag==='Astra'){if(A.stars<1)return false;}
+ else if(!(A[k]>0))return false;
+ const p=land(sim,u,14);
+ const spend=()=>{if(k==='x')A.ult=0;else if(ag==='Astra')A.stars--;else A[k]--;A.cool[k]=sim.time+.3;};
  switch(ag){
   case 'Astra':{spend();
    if(k==='c'){fx(sim,u,'gwell',p,C.star.wellPull,C.star.wellR,{at:sim.time+.75});}

@@ -38,7 +38,7 @@ assert.equal(api.a18Net.size,0,'gone rows dropped');
 // unknown kinds are left to the base sync
 api.a18NetSync([{id:9,kind:'barrier',p:[0,0,0]}]);assert.equal(api.a18Net.size,0,'barrier stays with netSyncEffects');
 // clear hook releases everything
-api.a18NetSync([{id:4,kind:'mosh',p:[0,0,0],r:5,tl:3}]);api.netClearEffects();assert.equal(api.a18Net.size,0,'netClearEffects clears a18 meshes');
+api.a18NetSync([{id:4,kind:'mosh',p:[0,0,0],r:5,tl:3},{id:5,kind:'gatefake',p:[2,0,3],r:1.2,tl:30}]);assert(api.a18Net.get(5),'Gatecrash fake decal renders');api.netClearEffects();assert.equal(api.a18Net.size,0,'netClearEffects clears a18 meshes');
 // status chips: the six agents18 statuses surface on the HUD
 api.netStatusChips({vulnerable:0,tether:0,supp:2.5,jam:1.5,hind:1.2,haste:3,stim:1,decay:40});
 const t=els.netSt.textContent;
