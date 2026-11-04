@@ -48,7 +48,7 @@ const log=(k,v)=>{R.steps.push([+((Date.now()-t00)/1000).toFixed(1),k,typeof v==
  await frames(2);
  const P=`new THREE.Vector3(${V.p1[0]},${V.y},${V.p1[1]})`;
  await X('J.ult=99;window.__ts=1;1');await new Promise(r=>setTimeout(r,1500));
- const keys=(process.env.KEYS||'KeyX').split(',');
+ const keys=(process.env.KEYS||'KeyX').split(process.env.KEYSEP||',');
  for(let i=0;i<keys.length;i++){const k=keys[i];if(k.startsWith('JS:')){await X(k.slice(3)+';1');}else if(k==='CLICK'){await page.mouse.down();await new Promise(r=>setTimeout(r,150));await page.mouse.up();}else{await page.keyboard.down(k);await new Promise(r=>setTimeout(r,150));await page.keyboard.up(k);}
   await new Promise(r=>setTimeout(r,+(process.env.GAP||1500)));await cap((process.env.TAG||'vm')+'_'+i);}
  await browser.close();

@@ -9445,7 +9445,7 @@ function rzFire(p, R, st) { window.__rzN = (window.__rzN || 0) + 1;
     requestAnimationFrame(step); }; step();
 }
 function rsBoom(p, r, dmg, w, c, direct, fall) { // fall: true = Showstopper falloff (xSsDmg), a function = damage by distance (Paint Shells xPsFall)
-  const e = new RV(p.x, Math.max(0.5, p.y), p.z); if (/^(Paint Shells|Blast Pack)$/.test(w)) { try { rzFire(p, r, w === "Blast Pack" ? "pack" : "paint"); } catch (er) { xE(er); } } else { const m = jM(smokeGeo, fireMat(c, 0.45)); m.scale.setScalar(r / 4); m.position.copy(e); jFx(m, 0.4); } const fd = fall === true ? xSsDmg : typeof fall === "function" ? fall : null;
+  const e = new RV(p.x, Math.max(0.5, p.y), p.z); if (/^(Paint Shells|Blast Pack|Showstopper)$/.test(w)) { try { rzFire(p, r, w === "Blast Pack" ? "pack" : "paint"); } catch (er) { xE(er); } } else { const m = jM(smokeGeo, fireMat(c, 0.45)); m.scale.setScalar(r / 4); m.position.copy(e); jFx(m, 0.4); } const fd = fall === true ? xSsDmg : typeof fall === "function" ? fall : null;
   blip(70 + Math.random() * 30, 0.45, "sawtooth", 0.22);
   bots.forEach((b) => { if (!b.alive) return; const q = new RV(b.g.position.x, (b.g.position.y || 0) + 1, b.g.position.z), d = q.distanceTo(e);
     if (!(dmg > 0)) {} else if (b === direct) jHit(b, dmg, w); else if (d < r && los(e, q)) jHit(b, fd ? fd(d) : dmg, w);
