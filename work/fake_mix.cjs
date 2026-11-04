@@ -27,7 +27,7 @@ function make(opt = {}) {
   const noop = function () {};
   const c = { window: {}, document: { hidden: false, addEventListener: noop }, S: { muted: false, vol: 70 }, ac, master, audio: noop,
     sPos(n, p) { n.positionX.value = p.x; n.positionY.value = p.y > 0.5 ? p.y : 1.5; n.positionZ.value = p.z; return n; }, sOk: () => true, sNz: noop, sTn: noop, blip: noop, annc: noop,
-    SFX: { gun: noop, at: noop, step: noop, selfStep: noop, ab: noop, knife: noop, knifeHeavy: noop, rs: noop, stinger: noop, fanfare: noop }, xDmgFlash: noop, ambTick: noop, AMB: {}, xHitSfx: noop, xHitKillSfx: noop, xKiAdd: noop, kill: noop, xskChanged: noop,
+    SFX: { gun: noop, at: noop, step: noop, selfStep: noop, ab: noop, knife: noop, knifeHeavy: noop, rs: noop, stinger: noop, fanfare: noop, low: noop, empty: noop, land: noop, plantBeep: noop, planted: noop, whir: noop, boom: noop, smoke: noop, flash: noop, tp: noop, wall: noop, heal: noop, ult: noop, buy: noop, lowT: noop, roundStart: noop, defHalf: noop }, xDmgFlash: noop, ambTick: noop, AMB: {}, xHitSfx: noop, xHitKillSfx: noop, xKiAdd: noop, kill: noop, xskChanged: noop,
     addEventListener: noop, setTimeout: noop, requestIdleCallback: noop, fetch: async () => ({ ok: false, status: 404 }), console, performance: { now: () => 0 },
     Map, Set, Promise, Number, Math, Array, Object, Error, JSON, Response: function () {}, bots: [], allies: [],
     running: true, paused: false, player: { hp: 100 }, reloading: 0, mode: 'retake', VM: { ins: 0 }, vfWeapon: () => c.held, held: 'Vandal', J: { pick: 'Jett' } };

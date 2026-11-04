@@ -4328,6 +4328,118 @@
    "peak": -22.55,
    "g": 18,
    "o": 0
+  },
+  "step/boot_000": {
+   "sha256": "271fe1cb2ec6f1d02f2f63884cdb5c4bd05a36aab39b691259897b80a5c0fd4d",
+   "role": "step",
+   "lufs": -23.44,
+   "peak": -1.92,
+   "g": 2.9,
+   "o": 0.003
+  },
+  "step/boot_001": {
+   "sha256": "307618b6b92b95673644364b9f1fa7492b4e3f5dc6dcf712b7127238edd15f83",
+   "role": "step",
+   "lufs": -21.3,
+   "peak": -1.85,
+   "g": 1.3,
+   "o": 0.005
+  },
+  "step/boot_002": {
+   "sha256": "0c4355c73cc951660a61e240ffd492808eb6bf4d3026e0bffdfbeedd65c6ba12",
+   "role": "step",
+   "lufs": -22.43,
+   "peak": -1.88,
+   "g": 2.4,
+   "o": 0.004
+  },
+  "step/boot_003": {
+   "sha256": "ef7eca5cbacc47b3b51bdd45ce826562f087de4276886e38ac33f420f129dcf8",
+   "role": "step",
+   "lufs": -22.31,
+   "peak": -1.93,
+   "g": 2.3,
+   "o": 0.002
+  },
+  "step/boot_004": {
+   "sha256": "01cd9b3682777d966f12c5df6e2c764a4633855c6cba7292595982d8a12a5427",
+   "role": "step",
+   "lufs": -22.18,
+   "peak": -1.92,
+   "g": 2.2,
+   "o": 0
+  },
+  "step/land": {
+   "sha256": "b9325bca3559c208d47a938db1f942356642ea939a1370f1f15bfa8efae2c3bc",
+   "role": "step",
+   "lufs": -19.49,
+   "peak": -1.93,
+   "g": -0.5,
+   "o": 0.003
+  },
+  "feedback/headshot": {
+   "sha256": "e6df18261b4ccc6f3ffa18ed807e5bea5dbc8fe3ac68eb1b7c7788735d56255f",
+   "role": "feedback",
+   "lufs": -18.97,
+   "peak": -1.94,
+   "g": 2.9,
+   "o": 0.005
+  },
+  "ability/smoke": {
+   "sha256": "1758211e9ed29c9afe6f236e724a18abf3d91bb9827c2705422d50008935e72c",
+   "role": "ability",
+   "lufs": -16.01,
+   "peak": -1.96,
+   "g": 0,
+   "o": 0
+  },
+  "ability/flash": {
+   "sha256": "d65c7a06db1a932defa0d1d25a390a4474f1ba86103376242352e063cc215f51",
+   "role": "ability",
+   "lufs": -15.13,
+   "peak": -1.96,
+   "g": -0.9,
+   "o": 0
+  },
+  "ability/tp": {
+   "sha256": "2415c90a56f7709243e23a49f8d2b643ff063ff863d1f14fb864e9a83e41fa99",
+   "role": "ability",
+   "lufs": -14.2,
+   "peak": -1.95,
+   "g": -1.8,
+   "o": 0.05
+  },
+  "ability/wall": {
+   "sha256": "52091d241d72e883d94ec13f871d88b8cebd08fa02e4319b2ba95a0ef7736d2b",
+   "role": "ability",
+   "lufs": -13.37,
+   "peak": -1.97,
+   "g": -2.6,
+   "o": 0
+  },
+  "ability/heal": {
+   "sha256": "49787f1c5739ea8a5249b0a0169181d86b4bb6a8fdc57f3114d23afbfb8adf70",
+   "role": "ability",
+   "lufs": -12.95,
+   "peak": -1.95,
+   "g": -3.1,
+   "o": 0
+  },
+  "event/roundNumber": {
+   "sha256": "f863db49bae0fd956fd68fd10355163075fcf31ffa4b64e372314b73b7cbacf7",
+   "role": "event",
+   "lufs": -16.38,
+   "peak": -2.32,
+   "g": 1.4,
+   "o": 0.014
+  },
+  "ui/roundTick": {
+   "sha256": "b51f595b8a09cc32f8f02cd1bae9b3ef9b797dffe419e17ad599b60098239880",
+   "role": "ui",
+   "lufs": -11.31,
+   "peak": -1.94,
+   "g": -8.7,
+   "o": 0
   }
  }
 }

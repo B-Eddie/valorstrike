@@ -6050,6 +6050,160 @@
    "sourcePath": "app/src/main/res/raw/knifestab.mp3",
    "sourceBlobSha1": "a9b24eaf4bad29551774f757424f011a0db0b6c6",
    "conversion": "none; original MP3 bytes"
+  },
+  "step/boot_000": {
+   "url": "audio/step-boot_000.271fe1cb2ec6.mp3",
+   "sha256": "271fe1cb2ec6f1d02f2f63884cdb5c4bd05a36aab39b691259897b80a5c0fd4d",
+   "bytes": 6720,
+   "duration": 0.312,
+   "source": "https://raw.githubusercontent.com/Dyrudis/vlr-guessr/c010400f214ec20025aa7aa21b08ba223b08ee49/public/footsteps/sounds/eefe93a9-d5f5-4d33-aa6a-b50b817ac25c.wav",
+   "cut": [
+    0.28099999999999997,
+    0.28
+   ],
+   "processing": "lane-sounds: cut 0.281+0.280 s, DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz"
+  },
+  "step/boot_001": {
+   "url": "audio/step-boot_001.307618b6b92b.mp3",
+   "sha256": "307618b6b92b95673644364b9f1fa7492b4e3f5dc6dcf712b7127238edd15f83",
+   "bytes": 6720,
+   "duration": 0.312,
+   "source": "https://raw.githubusercontent.com/Dyrudis/vlr-guessr/c010400f214ec20025aa7aa21b08ba223b08ee49/public/footsteps/sounds/eefe93a9-d5f5-4d33-aa6a-b50b817ac25c.wav",
+   "cut": [
+    0.581,
+    0.28
+   ],
+   "processing": "lane-sounds: cut 0.581+0.280 s, DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz"
+  },
+  "step/boot_002": {
+   "url": "audio/step-boot_002.0c4355c73cc9.mp3",
+   "sha256": "0c4355c73cc951660a61e240ffd492808eb6bf4d3026e0bffdfbeedd65c6ba12",
+   "bytes": 6720,
+   "duration": 0.312,
+   "source": "https://raw.githubusercontent.com/Dyrudis/vlr-guessr/c010400f214ec20025aa7aa21b08ba223b08ee49/public/footsteps/sounds/eefe93a9-d5f5-4d33-aa6a-b50b817ac25c.wav",
+   "cut": [
+    0.901,
+    0.28
+   ],
+   "processing": "lane-sounds: cut 0.901+0.280 s, DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz"
+  },
+  "step/boot_003": {
+   "url": "audio/step-boot_003.ef7eca5cbacc.mp3",
+   "sha256": "ef7eca5cbacc47b3b51bdd45ce826562f087de4276886e38ac33f420f129dcf8",
+   "bytes": 6720,
+   "duration": 0.312,
+   "source": "https://raw.githubusercontent.com/Dyrudis/vlr-guessr/c010400f214ec20025aa7aa21b08ba223b08ee49/public/footsteps/sounds/eefe93a9-d5f5-4d33-aa6a-b50b817ac25c.wav",
+   "cut": [
+    1.201,
+    0.268
+   ],
+   "processing": "lane-sounds: cut 1.201+0.268 s, DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz"
+  },
+  "step/boot_004": {
+   "url": "audio/step-boot_004.01cd9b368277.mp3",
+   "sha256": "01cd9b3682777d966f12c5df6e2c764a4633855c6cba7292595982d8a12a5427",
+   "bytes": 6720,
+   "duration": 0.312,
+   "source": "https://raw.githubusercontent.com/Dyrudis/vlr-guessr/c010400f214ec20025aa7aa21b08ba223b08ee49/public/footsteps/sounds/eefe93a9-d5f5-4d33-aa6a-b50b817ac25c.wav",
+   "cut": [
+    1.471,
+    0.28
+   ],
+   "processing": "lane-sounds: cut 1.471+0.280 s, DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz"
+  },
+  "step/land": {
+   "url": "audio/step-land.b9325bca3559.mp3",
+   "sha256": "b9325bca3559c208d47a938db1f942356642ea939a1370f1f15bfa8efae2c3bc",
+   "bytes": 7200,
+   "duration": 0.336,
+   "source": "https://raw.githubusercontent.com/Dyrudis/vlr-guessr/c010400f214ec20025aa7aa21b08ba223b08ee49/public/footsteps/sounds/4f1f1565-3251-4c1e-9ef0-4e51fff382df.wav",
+   "cut": [
+    0.281,
+    0.29
+   ],
+   "processing": "lane-sounds: cut 0.281+0.290 s, DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz"
+  },
+  "feedback/headshot": {
+   "url": "audio/feedback-headshot.e6df18261b4c.mp3",
+   "sha256": "e6df18261b4ccc6f3ffa18ed807e5bea5dbc8fe3ac68eb1b7c7788735d56255f",
+   "bytes": 17280,
+   "duration": 0.84,
+   "source": "https://raw.githubusercontent.com/Jai-R-Mehta/VallyBoard/e8630a8940f0840ef584062abe1f54e1a34696d2/app/src/main/res/raw/headshot.mp3",
+   "processing": "lane-sounds: DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz"
+  },
+  "ability/smoke": {
+   "url": "audio/ability-smoke.1758211e9ed2.mp3",
+   "sha256": "1758211e9ed29c9afe6f236e724a18abf3d91bb9827c2705422d50008935e72c",
+   "bytes": 38400,
+   "duration": 1.896,
+   "source": "https://raw.githubusercontent.com/Dartsgame974/SpikeMedia/0d0505fc199f3915c6db2d51864b091dd6e4f7b5/Characters/Events_Char_Sarge_SFX/Smoke/Characters/_Char_Sarge/Smoke/Sarge_Smoke_Form_2%20%28SFX%29.mp3",
+   "sourceRepository": "Dartsgame974/SpikeMedia",
+   "sourceCommit": "0d0505fc199f3915c6db2d51864b091dd6e4f7b5",
+   "processing": "lane-sounds: DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz"
+  },
+  "ability/flash": {
+   "url": "audio/ability-flash.d65c7a06db1a.mp3",
+   "sha256": "d65c7a06db1a932defa0d1d25a390a4474f1ba86103376242352e063cc215f51",
+   "bytes": 42240,
+   "duration": 2.088,
+   "source": "https://raw.githubusercontent.com/Dartsgame974/SpikeMedia/0d0505fc199f3915c6db2d51864b091dd6e4f7b5/Characters/Events_Char_Phoenix_SFX/E/Characters/Phoenix/AbilE/Phoenix_Flash_Explo_TP_V4_Alt1%20%28SFX%29.mp3",
+   "sourceRepository": "Dartsgame974/SpikeMedia",
+   "sourceCommit": "0d0505fc199f3915c6db2d51864b091dd6e4f7b5",
+   "processing": "lane-sounds: DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz"
+  },
+  "ability/tp": {
+   "url": "audio/ability-tp.2415c90a56f7.mp3",
+   "sha256": "2415c90a56f7709243e23a49f8d2b643ff063ff863d1f14fb864e9a83e41fa99",
+   "bytes": 81600,
+   "duration": 4.056,
+   "source": "https://raw.githubusercontent.com/Dartsgame974/SpikeMedia/0d0505fc199f3915c6db2d51864b091dd6e4f7b5/Characters/Events_Char_Wraith_SFX/Wraith_Ultimate/Characters/_Char_Wraith/_Wraith_Abil_GlobalTeleport/Wraith_Abil_GlobalTeleport_Arrive_1P%20%28SFX%29.mp3",
+   "sourceRepository": "Dartsgame974/SpikeMedia",
+   "sourceCommit": "0d0505fc199f3915c6db2d51864b091dd6e4f7b5",
+   "processing": "lane-sounds: DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz"
+  },
+  "ability/wall": {
+   "url": "audio/ability-wall.52091d241d72.mp3",
+   "sha256": "52091d241d72e883d94ec13f871d88b8cebd08fa02e4319b2ba95a0ef7736d2b",
+   "bytes": 94080,
+   "duration": 4.68,
+   "source": "https://raw.githubusercontent.com/Dartsgame974/SpikeMedia/0d0505fc199f3915c6db2d51864b091dd6e4f7b5/Characters/Events_Char_Thorne_SFX/E/Characters/_Char_Thorne/Wall/Thorne_Abil_Wall_Erupt_01%20%28SFX%29.mp3",
+   "sourceRepository": "Dartsgame974/SpikeMedia",
+   "sourceCommit": "0d0505fc199f3915c6db2d51864b091dd6e4f7b5",
+   "processing": "lane-sounds: DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz"
+  },
+  "ability/heal": {
+   "url": "audio/ability-heal.49787f1c5739.mp3",
+   "sha256": "49787f1c5739ea8a5249b0a0169181d86b4bb6a8fdc57f3114d23afbfb8adf70",
+   "bytes": 51360,
+   "duration": 2.544,
+   "source": "https://raw.githubusercontent.com/Dartsgame974/SpikeMedia/0d0505fc199f3915c6db2d51864b091dd6e4f7b5/Characters/Events_Char_Phoenix_SFX/Common/Characters/Phoenix/Abil_Common/Phoenix_Abil_Common_SelfHeal_FP_V2%20%28SFX%29.mp3",
+   "cut": [
+    0.0,
+    2.5
+   ],
+   "sourceRepository": "Dartsgame974/SpikeMedia",
+   "sourceCommit": "0d0505fc199f3915c6db2d51864b091dd6e4f7b5",
+   "processing": "lane-sounds: cut 0.000+2.500 s, DC removed, 1.5 ms fade in / 300 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz"
+  },
+  "event/roundNumber": {
+   "url": "audio/event-roundNumber.f863db49bae0.mp3",
+   "sha256": "f863db49bae0fd956fd68fd10355163075fcf31ffa4b64e372314b73b7cbacf7",
+   "bytes": 21120,
+   "duration": 1.032,
+   "source": "https://raw.githubusercontent.com/Dartsgame974/SpikeMedia/0d0505fc199f3915c6db2d51864b091dd6e4f7b5/Valorantek/SFX/SFX/Round/UI_RoundNumber_Appear_01%20%28SFX%29.mp3",
+   "sourceRepository": "Dartsgame974/SpikeMedia",
+   "sourceCommit": "0d0505fc199f3915c6db2d51864b091dd6e4f7b5",
+   "processing": "lane-sounds: DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz"
+  },
+  "ui/roundTick": {
+   "url": "audio/ui-roundTick.b51f595b8a09.mp3",
+   "sha256": "b51f595b8a09cc32f8f02cd1bae9b3ef9b797dffe419e17ad599b60098239880",
+   "bytes": 4800,
+   "duration": 0.216,
+   "source": "https://raw.githubusercontent.com/Dartsgame974/SpikeMedia/0d0505fc199f3915c6db2d51864b091dd6e4f7b5/Valorantek/SFX/SFX/Select%20Agent%20Menu/UI_CharacterSelect_TenSecondsLeft_Tick_01%20%28SFX%29.mp3",
+   "sourceRepository": "Dartsgame974/SpikeMedia",
+   "sourceCommit": "0d0505fc199f3915c6db2d51864b091dd6e4f7b5",
+   "processing": "lane-sounds: DC removed, 1.5 ms fade in / 10 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz"
   }
  },
  "weapons": {

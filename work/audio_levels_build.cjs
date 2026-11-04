@@ -21,7 +21,7 @@ function role(key) {
   if (k[0] === 'impact') return /^footstep_/.test(last) ? 'step' : 'impact';
   if (k[0] === 'scifi') return 'ability';
   if (/^(kill\d|finisher)$/.test(last)) return 'kill';
-  return { ui: 'ui', voice: 'voice', death: 'death', ability: 'ability', event: 'event', feedback: 'feedback' }[k[0]] || 'impact';
+  return { ui: 'ui', voice: 'voice', death: 'death', ability: 'ability', event: 'event', feedback: 'feedback', step: 'step' }[k[0]] || 'impact';
 }
 function build(rows) {
   const by = Object.fromEntries(rows.map((r) => [r.key, r])), files = {};
