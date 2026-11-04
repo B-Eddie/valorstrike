@@ -141,7 +141,7 @@ function svxMatPlasmaBall(col, hot) { // soft swirling electric orb: wisps curl 
   return new THREE.ShaderMaterial({
     uniforms: { uT: { value: 0 }, uOp: { value: 1 }, uCol: { value: new THREE.Color(col) }, uHot: { value: new THREE.Color(hot) } },
     vertexShader: svxVert,
-    fragmentShader: svxGLSLnoise + "uniform float uT,uOp;uniform vec3 uCol,uHot;varying vec2 vUv;\nvoid main(){\nvec2 p=vUv*2.0-1.0;float r=length(p);if(r>1.0)discard;\nfloat ang=atan(p.y,p.x);\nfloat sw=noise(vec2(ang*2.5+uT*0.7,r*3.0-uT*1.4))+0.5*noise(vec2(ang*5.0-uT*1.1,r*6.0+uT*0.9));\nfloat wisp=smoothstep(0.5,1.0,sw)*(1.0-r);\nfloat core=exp(-r*7.0)*0.9;\nfloat body=(1.0-r)*(1.0-r)*1.1;\nfloat rim=smoothstep(0.72,0.9,r)*smoothstep(1.0,0.9,r)*(0.45+0.8*sw);\nvec3 col=uCol*(body+wisp*1.8+rim*1.6)+uHot*core;\nfloat a=clamp(body+wisp+rim+core,0.0,1.0)*uOp*smoothstep(1.0,0.88,r);\ngl_FragColor=vec4(col*a,a);\n}",
+    fragmentShader: svxGLSLnoise + "uniform float uT,uOp;uniform vec3 uCol,uHot;varying vec2 vUv;\nvoid main(){\nvec2 p=vUv*2.0-1.0;float r=length(p);if(r>1.0)discard;\nfloat ang=atan(p.y,p.x);\nfloat sw=noise(vec2(ang*2.5+uT*0.7,r*3.0-uT*1.4))+0.5*noise(vec2(ang*5.0-uT*1.1,r*6.0+uT*0.9));\nfloat wisp=smoothstep(0.5,1.0,sw)*(1.0-r);\nfloat core=exp(-r*7.0)*0.9;\nfloat body=(1.0-r)*(1.0-r)*1.1;\nfloat rim=smoothstep(0.72,0.9,r)*smoothstep(1.0,0.9,r)*(0.45+0.8*sw);\nvec3 col=uCol*(body+wisp*1.8+rim*1.25)+uHot*core;\nfloat a=clamp(body+wisp+rim+core,0.0,1.0)*uOp*smoothstep(1.0,0.88,r);\ngl_FragColor=vec4(col*a,a);\n}",
     transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, fog: false,
   });
 }
@@ -157,7 +157,7 @@ function svxMatBolt(seed, additive, amp, sway) { // jagged animated lightning pa
   return new THREE.ShaderMaterial({
     uniforms: { uT: { value: 0 }, uOp: { value: 1 }, uSeed: { value: seed }, uAdd: { value: additive ? 1 : 0 }, uAmp: { value: amp || 0.3 }, uSway: { value: sway || 0 } },
     vertexShader: "uniform float uT,uSeed,uSway;varying vec2 vUv;\nvoid main(){\nvUv=uv;\nvec3 p=position;\nfloat v=uv.y;\np.x+=(sin(v*7.0+uSeed*37.0)+0.6*sin(v*13.0+uSeed*11.0+uT*3.0))*uSway*(0.25+0.75*v);\ngl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.0);\n}",
-    fragmentShader: "uniform float uT,uOp,uSeed,uAdd,uAmp;varying vec2 vUv;\nfloat h1(float n){return fract(sin(n*127.1+uSeed*311.7)*43758.5453);}\nvoid main(){\nfloat v=vUv.y,u=vUv.x;\nfloat seg=floor(v*6.0),f=fract(v*6.0);f=f*f*(3.0-2.0*f);\nfloat drift=floor(uT*16.0);\nfloat xc=0.5+uAmp*(mix(h1(seg+drift),h1(seg+1.0+drift),f)-0.5)+uAmp*0.4*(h1(seg*3.7+drift*1.3)-0.5);\nfloat d=abs(u-xc);\nfloat core=smoothstep(0.11,0.03,d);\nfloat glow=exp(-d*4.5)*0.75;\nfloat ends=smoothstep(0.0,0.04,v)*smoothstep(1.0,0.88,v);\nfloat flick=0.72+0.28*sin(uT*60.0+uSeed*47.0+v*30.0);\nfloat a=(core+glow)*ends*flick;\nif(uAdd>0.5){vec3 col=mix(vec3(0.30,0.62,1.0),vec3(1.0),core*0.55);gl_FragColor=vec4(col*a*uOp*1.1,a*uOp);}else{gl_FragColor=vec4(vec3(0.13,0.40,0.95)*(0.5+0.5*core),a*uOp*0.9);}\n}",
+    fragmentShader: "uniform float uT,uOp,uSeed,uAdd,uAmp;varying vec2 vUv;\nfloat h1(float n){return fract(sin(n*127.1+uSeed*311.7)*43758.5453);}\nvoid main(){\nfloat v=vUv.y,u=vUv.x;\nfloat seg=floor(v*6.0),f=fract(v*6.0);f=f*f*(3.0-2.0*f);\nfloat drift=floor(uT*16.0);\nfloat xc=0.5+uAmp*(mix(h1(seg+drift),h1(seg+1.0+drift),f)-0.5)+uAmp*0.4*(h1(seg*3.7+drift*1.3)-0.5);\nfloat d=abs(u-xc);\nfloat core=smoothstep(0.075,0.02,d);\nfloat glow=exp(-d*5.5)*0.55;\nfloat ends=smoothstep(0.0,0.04,v)*smoothstep(1.0,0.88,v)*smoothstep(0.0,0.14,u)*smoothstep(1.0,0.86,u);\nfloat flick=0.72+0.28*sin(uT*60.0+uSeed*47.0+v*30.0);\nfloat a=(core+glow)*ends*flick;\nif(uAdd>0.5){vec3 col=mix(vec3(0.30,0.62,1.0),vec3(1.0),core*0.55);gl_FragColor=vec4(col*a*uOp*0.85,a*uOp);}else{gl_FragColor=vec4(vec3(0.13,0.40,0.95)*(0.5+0.5*core),a*uOp*0.75);}\n}",
     transparent: true, depthWrite: false, blending: additive ? THREE.AdditiveBlending : THREE.NormalBlending, side: THREE.DoubleSide, fog: false,
   });
 }
@@ -250,24 +250,24 @@ function svxFuryBeam(o, d, hitPoint) {
     base.position.copy(o).addScaledVector(dir, 2.5 + (L - 2.5) / 2);
     base.lookAt(end);
     base.raycast = () => {}; base.renderOrder = 2;
-    svxFxShader(base, base.material, 0.6, 0.38);
+    svxFxShader(base, base.material, 0.6, 0.3);
     const cone = new THREE.Mesh(svxC.cone, svxMatPlasmaCone(0x2f9df0, 0x9fe4ff)); // additive flowing plasma glow on top
     cone.scale.set(0.92, 0.92, L - 2.5);
     cone.position.copy(o).addScaledVector(dir, 2.5 + (L - 2.5) / 2);
     cone.lookAt(end);
     cone.raycast = () => {}; cone.renderOrder = 3;
-    svxFxShader(cone, cone.material, 0.6, 0.55);
+    svxFxShader(cone, cone.material, 0.6, 0.45);
     const hot = svxPart(svxC.beam, xAdd("svxFuryHot", 0x9fdcff, 0.45), o, 0.5, 0); // hot thin core inside the cone
     hot.scale.set(0.3, 0.3, L - 4);
     hot.position.copy(o).addScaledVector(dir, 4 + (L - 4) / 2);
     hot.lookAt(end);
     const mz = svxPart(svxC.sphHi, xAdd("svxFuryMz", 0x4fb8f8, 0.2), svxC.v0.copy(o).addScaledVector(dir, 2.0), 0.3, 0);
     mz.scale.setScalar(0.12);
-    for (let i = 0; i < 7; i++) { // serpentine lightning strips running the full blast length, spread around the core
+    for (let i = 0; i < 5; i++) { // serpentine lightning strips running the full blast length, spread around the core
       svxBoltStrip(svxC.v0.copy(o).addScaledVector(dir, 1.5), dir, 62, 2.2 + Math.random() * 1.4, Math.random() * 90, 0.62, 0.46, { a: i * 0.8976 + Math.random() * 0.4, r: 0.5 + Math.random() * 0.9 }, 1.15);
     }
-    for (let i = 0; i < 3; i++) { // chaotic short arcs in the muzzle mass of the clip's first frames
-      svxBoltStrip(svxC.v0.copy(o).addScaledVector(dir, 0.8), dir, 9 + Math.random() * 5, 2.6 + Math.random() * 1.2, Math.random() * 90, 0.5, 0.62, { a: Math.random() * 6.28, r: 0.3 + Math.random() * 0.5 }, 1.9);
+    for (let i = 0; i < 2; i++) { // chaotic short arcs in the muzzle mass of the clip's first frames
+      svxBoltStrip(svxC.v0.copy(o).addScaledVector(dir, 0.8), dir, 8 + Math.random() * 4, 2.2 + Math.random() * 1.0, Math.random() * 90, 0.45, 0.5, { a: Math.random() * 6.28, r: 0.3 + Math.random() * 0.5 }, 1.6);
     }
     svxShards(o, dir, 10, 0x66c8ff, 3.5, 0.9, 40);
   } catch (e) { window.__svxErr = "fury: " + String(e && e.stack || e).slice(0, 300); xE(e); }
