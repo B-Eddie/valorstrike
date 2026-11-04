@@ -54,7 +54,7 @@ const log=(k,v)=>{R.steps.push([+((Date.now()-t00)/1000).toFixed(1),k,typeof v==
  await X(`if(xTac.st.o.confirm(${V.p2[0]},${V.p2[1]}))xTac.close();1`);
  log('salvo fired',await X('JSON.stringify({on:xTac.on(),fx:(J.a18fx||[]).map(f=>f.kind)})'));
  await X('window.__shotHold=1;1');
- log('salvo step',await X('window.__frz=0.02;let i=0;for(;i<40&&!(J.a18fx||[]).some(f=>f.kind==="burst");i++)xSimStep(0.05);JSON.stringify({steps:i,fx:(J.a18fx||[]).map(f=>({k:f.kind,t:f.t&&+f.t.toFixed(2)}))})'));
+ log('salvo step',await X('window.__frz=0.02;let i=0;for(;i<120&&!(J.a18fx||[]).some(f=>f.kind==="armagboom");i++)xSimStep(0.05);JSON.stringify({steps:i,fx:(J.a18fx||[]).map(f=>({k:f.kind,t:f.t&&+f.t.toFixed(2)}))})'));
  log('salvo impact',await X('JSON.stringify({ts:window.__ts,hooked:String(J.a18fx&&J.a18fx.push).includes("__frz"),fx:(J.a18fx||[]).map(f=>({k:f.kind,x:f.p&&+f.p.x.toFixed(1),z:f.p&&+f.p.z.toFixed(1),left:f.left}))})'));
  await cap('tejo_salvo_impact');
  await X('(J.a18fx||[]).forEach(f=>{if(f.m)try{jRel(f.m)}catch(e){}});J.a18fx.length=0;window.__ts=8;1');

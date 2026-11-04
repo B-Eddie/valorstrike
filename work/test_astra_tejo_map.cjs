@@ -82,7 +82,7 @@ const node=async label=>xe(`(()=>{const C=nmActive();let best=null,bd=-1;C.nav.n
  const fx1=xe('(J.a18fx||[]).length');await moveTo(P0.x,P0.z);await click(0);s=st();
  check(s.on&&s.mode==='salvo','the first salvo click keeps the map open for the second target');
  await moveTo(P1.x,P1.z);await click(0);s=st();
- const pl=xe(`(J.a18fx||[]).slice(${fx1}).map(f=>({kind:f.kind,x:f.p&&f.p.x,z:f.p&&f.p.z}))`);
+ const pl=xe(`(J.a18fx||[]).slice(${fx1}).filter(f=>f.kind!=='burst').map(f=>({kind:f.kind,x:f.p&&f.p.x,z:f.p&&f.p.z}))`);
  check(!s.on&&pl.length===2&&pl.every(f=>f.kind==='pulses')&&Math.hypot(pl[0].x-P0.x,pl[0].z-P0.z)<1&&Math.hypot(pl[1].x-P1.x,pl[1].z-P1.z)<1,'two clicks fire both salvos at the picked points '+JSON.stringify(pl));
  check(xe('J.e')===e0-1,'both salvos cost one charge');
  // single-salvo launch: one click then E again

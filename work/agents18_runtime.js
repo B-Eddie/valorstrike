@@ -17,7 +17,7 @@ const A18C = { star: { wellPull: 2, wellVuln: 2, wellR: 3.5, novaDelay: 1.25, no
  prowler: { life: 3, speed: 9, near: 2.5 }, seize: { r: 4.5, tether: 4, decay: 70 }, haunt: { r: 25, reveal: 12 }, nightfall: { dist: 25, w: 14, decay: 70 },
  mosh: { r: 5, life: 3, dps: 20, boom: 70 }, wing: { life: 5, speed: 9, concuss: 3.5 }, dizzy: { life: 2.5, blind: 1.5, r: 15 }, thrash: { r: 6, detain: 6 }, globule: { reclaim: 10 },
  frag: { r: 5, pulses: 4, gap: 1, dmg: 40 }, fdrive: { blind: 2.25, delay: 1.6 }, zero: { r: 15, supp: 8 }, nullcmd: { life: 10, pulse: 3, r: 20 },
- sdrone: { life: 8, r: 12, reveal: 3, supp: 6 }, sd: { r: 4, concuss: 3, dmg: 40 }, salvo: { r: 6, pulses: 3, gap: 0.8, dmg: 55 }, armag: { len: 32, w: 12, dmg: 60, segs: 16, seg: 2, ticks: 4, tick: 0.25, gap: 0.25, wind: 3.08 },
+ sdrone: { life: 8, r: 12, reveal: 3, supp: 6 }, sd: { r: 4, concuss: 3, dmg: 40 }, salvo: { r: 4.5, inner: 2.5, pulses: 3, gap: 0.8, dmg: 65, dmgOut: 50, wind: 1.25, fly: 30 }, armag: { len: 32, w: 12, dmg: 60, segs: 16, seg: 2, ticks: 4, tick: 0.25, gap: 0.25, wind: 3.08 },
  mesh: { life: 30, len: 7.5 }, sensor: { life: 30, r: 8, concuss: 3 }, gnet: { r: 6, life: 8 }, annih: { range: 20, detain: 7 },
  xcut: { range: 25 }, choke: { life: 30, r: 6, decay: 60, slow: 2 }, cept: { life: 30, r: 10 }, evo: { life: 12, hps: 10 },
  vine: { life: 30, r: 6, dps: 15 }, shear: { life: 30, r: 2.5, wall: 8 }, rose: { life: 30, blind: 2, r: 20 }, garden: { r: 20, jam: 8 } };
@@ -58,7 +58,7 @@ function a18TacLocal(k, p) { // offline mirror of the server's m.p casts
     else if (k === "q") a18Fx({ kind: "nova", p: q, t: C.star.novaDelay, m: a18Ring(q, C.star.novaR, 0xb08af0, 0.6) });
     else a18Smoke(q, C.star.nebulaLife, C.star.nebulaR, 0x7a4fd0, 0xc9a8f2);
     SFX.ab("updraft"); return; }
-  if (k === "e") { J.e--; for (let i = 0; i + 1 < p.length && i < 4; i += 2) a18Fx({ kind: "pulses", p: new THREE.Vector3(p[i], 0, p[i + 1]), t: 0.6, gap: C.salvo.gap, left: C.salvo.pulses, r: C.salvo.r, dmg: C.salvo.dmg, name: "Guided Salvo" }); SFX.ab("cbPop", player); return; }
+  if (k === "e") { J.e--; for (let i = 0; i + 1 < p.length && i < 4; i += 2) a18Salvo(new THREE.Vector3(p[i], 0, p[i + 1])); SFX.ab("cbPop", player); return; }
   const q = new THREE.Vector3(p[0], 0, p[1]), dd = new THREE.Vector3(p[0] - player.x, 0, p[1] - player.z); J.ult = 0; if (dd.lengthSq() < 1e-6) dd.set(-Math.sin(yaw || 0), 0, -Math.cos(yaw || 0)); a18Fx({ kind: "armag", p: q, d: dd.normalize(), t: C.armag.wind });
 }
 function a18StarNear(x, z, r) { let best = null, bd = r; const L = J.a18 && J.a18.starList || []; for (const s of L) { const d = Math.hypot(s.x - x, s.z - z); if (d < bd) { bd = d; best = s; } } return best; }
@@ -206,7 +206,7 @@ function a18Key(code) {
     case "Tejo": { spend();
       if (k === "c") a18Orb(p, 0.5, () => { for (const b of a18BotsIn(p, C.sdrone.r)) { b.mark = C.sdrone.reveal; b.blind = Math.max(b.blind || 0, 1); } SFX.ab("cbPop", p); });
       else if (k === "q") a18Orb(p, 0.4, () => { for (const b of a18BotsIn(p, C.sd.r)) { jHit(b, C.sd.dmg, "Special Delivery"); b.blind = Math.max(b.blind || 0, C.sd.concuss); } SFX.ab("cbPop", p); });
-      else if (k === "e") a18Fx({ kind: "pulses", p, t: 0.6, gap: C.salvo.gap, left: C.salvo.pulses, r: C.salvo.r, dmg: C.salvo.dmg, name: "Guided Salvo" });
+      else if (k === "e") a18Salvo(p);
       else a18Fx({ kind: "armag", p: new THREE.Vector3(P.x, 0, P.z), d: new THREE.Vector3(d.x, 0, d.z).normalize(), t: C.armag.wind });
       return true; }
     case "Deadlock": { spend();
@@ -304,12 +304,12 @@ function a18Tick(dt) {
       case "pull": if (e.t <= 0) { for (const b of a18BotsIn(e.p, C.displ.r)) { const d = [e.p.x - b.g.position.x, e.p.z - b.g.position.z], l = Math.hypot(d[0], d[1]) || 1; b.g.position.x += d[0] / l * Math.min(l, C.displ.pull); b.g.position.z += d[1] / l * Math.min(l, C.displ.pull); } keep = false; } break;
       case "susp": { e.p.addScaledVector(e.d, C.susp.speed * dt); const t = a18BotsIn(e.p, C.susp.r)[0]; if (t) { t.supp = 4; t.g.position.y += 2; keep = false; } else if (e.t <= 0) keep = false; break; }
       case "div": case "wallg": case "meshw": case "paths": case "garden": if (e.kind === "paths" && !e.done && e.t <= 0) { e.done = true; for (const b of a18BotsIn(e.p, C.cpaths.dist / 2)) b.hind = C.cpaths.hinder; } if (e.kind === "garden" && !e.done && e.t <= 0) { e.done = true; for (const b of a18BotsIn(e.p, C.garden.r)) b.jamB = C.garden.jam; } if (e.t <= 0) { if (e.m) jRel(e.m); keep = false; } break;
-      case "pulses": if (e.t <= 0) { for (const b of a18BotsIn(e.p, e.r)) jHit(b, e.dmg, e.name); SFX.ab("cbPop", e.p); const bm = a18Ring(e.p, e.r, e.name === "Guided Salvo" ? 0xff6a3a : 0xffa03a, 0.75); try { const gy = groundAt(e.p.x, e.p.z, 0.3, typeof player !== "undefined" ? player.y : 3); if (Number.isFinite(gy)) bm.position.y = gy + 0.06; } catch (err) {} a18Fx({ kind: "burst", m: bm, t: 0.45 }); if (--e.left > 0) e.t = e.gap; else keep = false; } break;
+      case "pulses": if (e.t <= 0) { const fall = d => e.inner == null ? e.dmg : d <= e.inner ? e.dmg : e.dmg - (e.dmg - e.dmgOut) * (d - e.inner) / (e.r - e.inner); for (const b of a18BotsIn(e.p, e.r)) jHit(b, fall(Math.hypot(b.g.position.x - e.p.x, b.g.position.z - e.p.z)), e.name); if (e.inner != null) { for (const al of allies) if (al && al.alive) { const dd = Math.hypot(al.g.position.x - e.p.x, al.g.position.z - e.p.z); if (dd <= e.r) jHit(al, fall(dd) / 3, e.name); } const dp = Math.hypot(P.x - e.p.x, P.z - e.p.z); if (P.hp > 0 && dp <= e.r) hurt(P, fall(dp), e.name); try { const gy0 = groundAt(e.p.x, e.p.z, 0.3, typeof player !== "undefined" ? player.y : 3); a18ArmagBoom(e.p.x, Number.isFinite(gy0) ? gy0 : 0, e.p.z, 1.3); } catch (err) {} } SFX.ab("cbPop", e.p); const bm = a18Ring(e.p, e.r, e.name === "Guided Salvo" ? 0xff6a3a : 0xffa03a, 0.75); try { const gy = groundAt(e.p.x, e.p.z, 0.3, typeof player !== "undefined" ? player.y : 3); if (Number.isFinite(gy)) bm.position.y = gy + 0.06; } catch (err) {} a18Fx({ kind: "burst", m: bm, t: 0.45 }); if (--e.left > 0) e.t = e.gap; else keep = false; } break;
       case "burst": if (e.t <= 0) { jRel(e.m); keep = false; } break; /* short-lived impact ring (Guided Salvo / FRAG/ment detonations had no mesh at all) */
       case "boom": if (e.t <= 0) { for (const b of a18BotsIn(e.p, e.r)) jHit(b, e.dmg, e.name); keep = false; } break;
       case "armag": if (e.t <= 0) { SFX.flash(); a18Fx({ kind: "armagchain", p: e.p.clone(), d: e.d.clone(), age: 0, fired: [], grp: a18ArmagGroup(e.p.x, e.p.z, e.d.x, e.d.z, false) }); keep = false; } break;
       /* wiki Armageddon: 16 segments x 2 m, 12 m wide; segment i starts 0.25 s after i-1 and detonates 4x at 0.25 s for 60 each (offline mirror of server agents18.js) */
-      case "armagboom": { e.age += dt; const u = Math.min(1, e.age / e.life), sc = 0.6 + u * 2.6; e.core.scale.setScalar(sc); e.core.material.opacity = 0.6 * Math.pow(1 - u, 1.4); e.core.material.color.setHex(u < 0.35 ? 0xffc040 : u < 0.7 ? 0xff7020 : 0xb02a10); e.ring.scale.setScalar(1 + u * 4.2); e.ring.material.opacity = 0.8 * (1 - u); if (u >= 1) { scene.remove(e.core); scene.remove(e.ring); e.core.material.dispose(); e.ring.material.dispose(); keep = false; } break; }
+      case "armagboom": { e.age += dt; const u = Math.min(1, e.age / e.life), sc = 0.6 + u * 2.6; e.core.scale.setScalar(sc * (e.size || 1)); e.core.material.opacity = 0.6 * Math.pow(1 - u, 1.4); e.core.material.color.setHex(u < 0.35 ? 0xffc040 : u < 0.7 ? 0xff7020 : 0xb02a10); e.ring.scale.setScalar((1 + u * 4.2) * (e.size || 1)); e.ring.material.opacity = 0.8 * (1 - u); if (u >= 1) { scene.remove(e.core); scene.remove(e.ring); e.core.material.dispose(); e.ring.material.dispose(); keep = false; } break; }
       case "armagchain": { e.age += dt; const AG = C.armag; let done = true; for (let i = 0; i < AG.segs; i++) for (let j = 0; j < AG.ticks; j++) { const id = i * AG.ticks + j; if (e.fired[id]) continue; done = false; if (e.age < i * AG.gap + j * AG.tick) continue; e.fired[id] = 1; const o = new THREE.Vector3(e.p.x + e.d.x * AG.seg * i, 0, e.p.z + e.d.z * AG.seg * i); for (const b of a18StripBots(o, e.d, AG.seg, AG.w)) jHit(b, AG.dmg, "Armageddon"); /* wiki: affects allies and self (allies take a third, the server abilityDamage rule) */ { const inS = (x, z) => { const f = (x - o.x) * e.d.x + (z - o.z) * e.d.z, sd = (x - o.x) * -e.d.z + (z - o.z) * e.d.x; return f > 0 && f < AG.seg && Math.abs(sd) < AG.w / 2; }; for (const al of allies) if (al && al.alive && inS(al.g.position.x, al.g.position.z)) jHit(al, AG.dmg / 3, "Armageddon"); if (P.hp > 0 && inS(P.x, P.z)) hurt(P, AG.dmg, "Armageddon"); } for (let b = 0; b < 2; b++) { const f = (i + Math.random()) * AG.seg, sd = (Math.random() - 0.5) * (AG.w - 2), x = e.p.x + e.d.x * f - e.d.z * sd, z = e.p.z + e.d.z * f + e.d.x * sd; let gy = 0; try { const g = groundAt(x, z, 0.3, typeof player !== "undefined" ? player.y : 3); if (Number.isFinite(g)) gy = g; } catch (err) {} a18ArmagBoom(x, gy, z); } } if (done && e.age > AG.segs * AG.gap + AG.ticks * AG.tick) { a18ArmagFree(e.grp); keep = false; } break; }
       case "nightfall": if (e.t <= 0) { for (const b of a18StripBots(e.p, e.d, C.nightfall.dist, C.nightfall.w)) { a18DecayB(b, C.nightfall.decay); b.mark = C.nightfall.decay ? 12 : 0; } SFX.ab("cbPop", e.p); keep = false; } break;
       case "decoy": { e.p.addScaledVector(e.d, C.fakeout.speed * dt); if (e.m) { e.m.position.set(e.p.x, 1, e.p.z); scene.add(e.m); } if (e.t <= 0) { if (e.m) jRel(e.m); a18Blind(e.p, C.blindside.blind); keep = false; } break; }
@@ -368,13 +368,22 @@ function a18ArmagGroup(px, pz, dx, dz, online) {
   scene.add(grp); return { grp, segs: [], flash: [], fired: [] };
 }
 function a18ArmagFree(g) { if (!g) return; scene.remove(g.grp); g.grp.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material) o.material.dispose(); }); }
-function a18ArmagBoom(x, gy, z) {
+function a18ArmagBoom(x, gy, z, size) {
+  size = size || 1;
   if (!a18BoomGeo) { a18BoomGeo = new THREE.SphereGeometry(1, 14, 10); a18BoomRing = new THREE.RingGeometry(0.85, 1, 28); a18BoomRing.rotateX(-Math.PI / 2); }
   const core = new THREE.Mesh(a18BoomGeo, new THREE.MeshBasicMaterial({ color: 0xffc040, transparent: true, opacity: 0.6, blending: THREE.AdditiveBlending, depthWrite: false }));
   core.position.set(x, gy + 1.0, z); scene.add(core);
   const ring = new THREE.Mesh(a18BoomRing, new THREE.MeshBasicMaterial({ color: 0xffe0a0, transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
   ring.position.set(x, gy + 0.1, z); scene.add(ring);
-  a18Fx({ kind: "armagboom", core, ring, age: 0, life: 0.55, t: 99 });
+  a18Fx({ kind: "armagboom", core, ring, size, age: 0, life: 0.55, t: 99 });
+}
+// Guided Salvo (wiki Guided_Salvo): missile flight (speed unsourced, 30 m/s placeholder) + 1.25 s windup, then 3 pulses 0.8 s apart; inner 2.5 m 65, outer 4.5 m 65->50;
+// affects allies (1/3) and self. A flat inner + outer marker shows the target through the windup.
+function a18Salvo(p) {
+  const S = A18C.salvo, d = Math.hypot(p.x - player.x, p.z - player.z), delay = d / S.fly + S.wind;
+  const o = a18Fx({ kind: "pulses", p, t: delay, gap: S.gap, left: S.pulses, r: S.r, inner: S.inner, dmg: S.dmg, dmgOut: S.dmgOut, name: "Guided Salvo" });
+  for (const [r, op] of [[S.r, 0.35], [S.inner, 0.55]]) { const m = a18Ring(p, r, 0xff6a3a, op); try { const gy = groundAt(p.x, p.z, 0.3, typeof player !== "undefined" ? player.y : 3); if (Number.isFinite(gy)) m.position.y = gy + 0.05; } catch (err) {} a18Fx({ kind: "burst", m, t: delay }); }
+  return o;
 }
 const a18Net = new Map(); // server effect id -> {m, kind}
 function a18NetMesh(kind, e) {

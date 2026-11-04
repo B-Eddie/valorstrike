@@ -54,7 +54,7 @@ export const A18={
  mosh:{r:5,life:3,dps:20,boom:70},wing:{life:5,speed:9,concuss:3.5,r:3},dizzy:{life:2.5,blind:1.5,r:15},thrash:{r:6,detain:6,dash:12},/* Gekko; globule reclaim: used basics return after 10 s at the drop point (lightweight: auto-return) */
  globule:{reclaim:10},
  frag:{r:5,pulses:4,gap:1,dmg:40},fdrive:{blind:2.25,delay:1.6},zero:{r:15,supp:8},nullcmd:{life:10,pulse:3,r:20,supp:8},/* KAY/O (downed state not modelled) */
- sdrone:{life:8,r:12,reveal:3,supp:6},sd:{r:4,concuss:3,dmg:40},salvo:{r:6,pulses:3,gap:.8,dmg:55},armag:{len:32,w:12,dmg:60,segs:16,seg:2,ticks:4,tick:.25,gap:.25,wind:3.08},/* Tejo */
+ sdrone:{life:8,r:12,reveal:3,supp:6},sd:{r:4,concuss:3,dmg:40},salvo:{r:4.5,inner:2.5,pulses:3,gap:.8,dmg:65,dmgOut:50,wind:1.25,fly:30},armag:{len:32,w:12,dmg:60,segs:16,seg:2,ticks:4,tick:.25,gap:.25,wind:3.08},/* Tejo */
  mesh:{life:30,len:7.5,h:3,hp:680},/* Barrier Mesh: nodes form movement-blocking segments */
  sensor:{life:30,r:8,concuss:3},gnet:{r:6,life:8,slowK:.35},/* Deadlock */
  annih:{range:20,w:3,detain:7,dmg:70},/* Annihilation (wiki): 600 HP cocoon - teammates shoot it to free the captive; the wire snaps on death / lost link, kills at the wire end */
@@ -118,7 +118,7 @@ export function cast18(sim,u,m,o,d,push){
   if(A.astral)return false;}
  if(ag==='Tejo'&&u.human&&Array.isArray(m.p)&&m.p.length>=2&&m.p.every(Number.isFinite)){/* Guided Salvo (wiki): up to two map-picked strikes; Armageddon: map-picked origin, wave from Tejo through it */
   if(k==='e'){if(!(A.e>0))return false;const pts=[];for(let i=0;i+1<m.p.length&&pts.length<2;i+=2)pts.push([Math.max(-200,Math.min(200,m.p[i])),0,Math.max(-200,Math.min(200,m.p[i+1]))]);
-   A.e--;A.cool.e=sim.time+.3;for(const q of pts)fx(sim,u,'salvo',q,C.salvo.pulses*C.salvo.gap+1,C.salvo.r,{at:sim.time+.6,next:sim.time+.6,left:C.salvo.pulses});
+   A.e--;A.cool.e=sim.time+.3;for(const q of pts){const dl=Math.hypot(q[0]-u.x,q[2]-u.z)/C.salvo.fly+C.salvo.wind;fx(sim,u,'salvo',q,dl+C.salvo.pulses*C.salvo.gap+1,C.salvo.r,{at:sim.time+dl,next:sim.time+dl,left:C.salvo.pulses});}
    cast(sim,u,k,o,d,pts[0]);return true;}
   if(k==='x'){if(A.ult<K.u)return false;A.ult=0;const q=[Math.max(-200,Math.min(200,m.p[0])),0,Math.max(-200,Math.min(200,m.p[1]))],yaw=Math.atan2(-(q[0]-u.x),-(q[2]-u.z));
    fx(sim,u,'armag',q,C.armag.wind+(C.armag.segs-1)*C.armag.gap+C.armag.ticks*C.armag.tick+.2,C.armag.len,{at:sim.time+C.armag.wind,yaw,fired:[]});cast(sim,u,k,o,d,q);return true;}}
@@ -219,7 +219,7 @@ export function cast18(sim,u,m,o,d,push){
   case 'Tejo':{spend();
    if(k==='c')fx(sim,u,'sdrone',p,C.sdrone.life,C.sdrone.r,{at:sim.time+.5});
    else if(k==='q')fx(sim,u,'blast',p,.5,C.sd.r,{concuss:C.sd.concuss,damage:C.sd.dmg,at:sim.time+.4});
-   else if(k==='e')fx(sim,u,'salvo',p,C.salvo.pulses*C.salvo.gap+1,C.salvo.r,{at:sim.time+.6,next:sim.time+.6,left:C.salvo.pulses});
+   else if(k==='e'){const dl=Math.hypot(p[0]-u.x,p[2]-u.z)/C.salvo.fly+C.salvo.wind;fx(sim,u,'salvo',p,dl+C.salvo.pulses*C.salvo.gap+1,C.salvo.r,{at:sim.time+dl,next:sim.time+dl,left:C.salvo.pulses});}
    else fx(sim,u,'armag',[u.x,u.y,u.z],C.armag.wind+(C.armag.segs-1)*C.armag.gap+C.armag.ticks*C.armag.tick+.2,C.armag.len,{at:sim.time+C.armag.wind,yaw:u.look,fired:[]});
    cast(sim,u,k,o,d,p);return true;}
   case 'Deadlock':{spend();
@@ -267,7 +267,9 @@ export function tick18(sim,dt){
    case 'conting':case 'tide':{e.p=[e.p[0]+e.d[0]*e.speed*dt,e.p[1],e.p[2]+e.d[2]*e.speed*dt];if(e.kind==='tide')for(const v of enemies(sim,own))if(inR(v,e.p,2))status(v,'hinderUntil',C.tide.slow,sim);break;}
    case 'reckon':{e.s=(e.s||0)+C.reckon.speed*dt;e.p=[e.p[0]+e.d[0]*C.reckon.speed*dt,e.p[1],e.p[2]+e.d[2]*C.reckon.speed*dt];for(const v of enemies(sim,own))if(!e.hit.includes(v.id)&&inR(v,e.p,C.reckon.near)){e.hit.push(v.id);status(v,'nearsightUntil',C.reckon.near,sim);status(v,'hinderUntil',C.reckon.slow,sim);}break;}
    case 'paths':if(!e.done&&T>=e.at){e.done=true;for(const v of enemies(sim,own))if(inR(v,e.p,e.radius))status(v,'hinderUntil',e.hinder,sim);}break;
-   case 'frag':case 'salvo':{const K=e.kind==='frag'?C.frag:C.salvo;if(T>=e.next){e.next+=K.gap;e.left--;for(const v of enemies(sim,own))if(inR(v,e.p,e.radius))dmg18.f(sim,own,v,K.dmg);}break;}
+   case 'salvo':{/* wiki Guided Salvo: missile flies, 1.25 s windup, 3 pulses 0.8 s apart; inner 2.5 m full 65, outer 4.5 m falls 65 -> 50 at the edge; affects allies/self */
+    if(T>=e.next&&e.left>0){e.next+=C.salvo.gap;e.left--;for(const v of sim.units.filter(x=>x.alive&&!x.loading)){const d=Math.hypot(v.x-e.p[0],v.z-e.p[2]);if(d>C.salvo.r)continue;const n=d<=C.salvo.inner?C.salvo.dmg:C.salvo.dmg-(C.salvo.dmg-C.salvo.dmgOut)*(d-C.salvo.inner)/(C.salvo.r-C.salvo.inner);dmg18.f(sim,own,v,n);}}break;}
+   case 'frag':{const K=e.kind==='frag'?C.frag:C.salvo;if(T>=e.next){e.next+=K.gap;e.left--;for(const v of enemies(sim,own))if(inR(v,e.p,e.radius))dmg18.f(sim,own,v,K.dmg);}break;}
    case 'sdrone':if(!e.done&&T>=e.at){e.done=true;for(const v of enemies(sim,own))if(inR(v,e.p,e.radius)){status(v,'revealedUntil',C.sdrone.reveal,sim);status(v,'concussUntil',C.sdrone.supp,sim);}}break;
    case 'armag':{/* wiki Armageddon: 16 segments x 2 m (32 m), 12 m wide; segment i starts 0.25 s after segment i-1, each detonates 4x at 0.25 s for 60 */
     const AG=C.armag,fw=[-Math.sin(e.yaw),-Math.cos(e.yaw)];for(let i=0;i<AG.segs;i++)for(let j=0;j<AG.ticks;j++){const id=i*AG.ticks+j;if(e.fired[id]||T<e.at+i*AG.gap+j*AG.tick)continue;e.fired[id]=1;

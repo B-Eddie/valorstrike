@@ -163,6 +163,14 @@ for(const a of Object.keys(AG18)){assert.ok(kits[a],a+' in kits.json');assert.ok
  assert.equal(cast18(s,t2,{k:'x',p:[0,30]},O,D),true,'Armageddon at the picked origin');
  const ar=s.effects.find(e=>e.kind==='armag');assert.ok(ar&&Math.abs(ar.p[2]-30)<.01,'origin moved to the pick');
  assert.ok(Math.abs(ar.yaw-Math.atan2(-(0-t2.x),-(30-t2.z)))<.001,'wave from Tejo through the pick');}
+// Guided Salvo (wiki.playvalorant.com/en-us/Guided_Salvo): 1.25 s windup after the missile lands, 3 pulses 0.8 s apart, inner 2.5 m = 65,
+// outer 4.5 m falls to 50 at the edge, outside 4.5 m nothing; affects allies/self (shared 1/3 ally rule). Missile speed is NOT sourced (30 m/s placeholder).
+{const s=mkSim(),t3=mk('Tejo',0,40,0,true),a=mk('Jett',1,41,0),b=mk('Jett',1,42,0),c=mk('Jett',1,43,0),d=mk('Jett',1,44,0);
+ for(const v of [a,b,c,d]){v.hp=1000;v.mx=1000;v.armor=0;}a.z=22;b.z=23.5;c.z=25;d.z=24.5;s.units=[t3,a,b,c,d];initAbilities(t3,true);
+ cast18(s,t3,{k:'e',p:[0,20]},O,D);const hp=v=>1000-v.hp;
+ run(s,30);assert.equal(hp(a),0,'no damage during flight + windup');
+ run(s,12);assert.equal(hp(a),65,'inner radius (2 m): 65');assert.ok(Math.abs(hp(b)-57.5)<.01,'3.5 m: halfway 57.5, got '+hp(b));assert.equal(hp(d),50,'edge (4.5 m): 50');assert.equal(hp(c),0,'5 m: outside');
+ run(s,60);assert.equal(hp(a),195,'3 pulses (65 x 3) then it stops');}
 // Armageddon (wiki.playvalorant.com/en-us/Armageddon): 3.08 s windup, 16 segments x 2 m (32 m) x 12 m wide, segment i starts
 // 0.25 s after segment i-1, each segment detonates 4 times 0.25 s apart for 60 - a chain, not one instant strip.
 {const s=mkSim(),t2=mk('Tejo',0,19,0,true),n=mk('Jett',1,30,0),f2=mk('Jett',1,31,0),o=mk('Jett',1,32,40),w2=mk('Jett',1,33,7),al=mk('Jett',0,34,0);
