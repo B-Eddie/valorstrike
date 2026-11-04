@@ -1366,7 +1366,7 @@ body:has(#result[style*="flex"]) .x-cbt{display:none!important} /* the combat re
 .x-mptag.al{color:#7fe8ff}.x-mptag.en{color:#ff6b78}
 .x-mpp{margin-left:6px;font-size:10px;opacity:.6;letter-spacing:.06em}
 @media(max-width:1024px){.x-qtabs{-webkit-mask-image:linear-gradient(90deg,#000 90%,transparent 99%);mask-image:linear-gradient(90deg,#000 90%,transparent 99%)} /* affordance: faded right edge signals more tabs when the strip overflows */}
-@media(max-width:820px){.x-q{padding:16px}.x-qbody{grid-template-columns:minmax(0,1fr)}.x-qmode{max-height:none;overflow:visible}.x-q .x-qcard h3{font-size:36px}.x-q .x-qcard p{white-space:normal}.x-qplay{width:100%}}
+@media(max-width:820px),(max-height:500px){.x-q{padding:16px}.x-qbody{grid-template-columns:minmax(0,1fr)}.x-qmode{max-height:none;overflow:visible}.x-q .x-qcard h3{font-size:36px}.x-q .x-qcard p{white-space:normal}.x-qplay{width:100%}}
 #lobby .card .new{border-radius:0;background:#ff4655;color:#0f1923;letter-spacing:.12em}
 #lobby .x-h{display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(236,232,225,.35);padding-bottom:8px}
 #lobby .x-h::before{content:"";width:8px;height:8px;background:#ff4655;flex:none}
@@ -1429,7 +1429,9 @@ body:has(#result[style*="flex"]) .x-cbt{display:none!important} /* the combat re
 #lobby .x-foot{grid-area:foot;margin:16px 0 0;text-align:center;font:400 12px/1.4 var(--x-f);color:rgba(236,232,225,.5)}
 #lobby .x-q:not([hidden]){position:absolute;z-index:8;top:72px;left:50%;transform:translateX(-50%);width:min(1040px,calc(100% - 32px));max-height:calc(100% - 88px);overflow:auto;margin:0;background:rgba(15,25,35,.97);border:1px solid var(--x-line)}
 @media(max-width:1100px){#lobby .x-xp,#lobby .x-mt span{display:none}#lobby .x-logo{min-width:0}#lobby .x-lnav button{padding:0 8px}}
-@media(max-width:820px){
+/* bug lane 2026-11-03: a phone in landscape (844x390, Firefox) is wider than 820 px but only ~390 px tall: the nav labels ran
+   together and the content sat under the header - the small-screen lobby applies at <= 500 px tall too */
+@media(max-width:820px),(max-height:500px){
 #lobby{overflow:auto}
 #lobby .x-lb{grid-template-columns:minmax(0,1fr);grid-template-rows:56px 360px auto auto auto;grid-template-areas:"nav" "stage" "news" "ms" "foot";row-gap:16px;padding:0 16px 16px}
 #lobby .x-bar{position:sticky;top:0;margin:0 -16px;padding:0 8px;gap:8px}
@@ -1446,7 +1448,7 @@ body:has(#result[style*="flex"]) .x-cbt{display:none!important} /* the combat re
 @media(max-width:560px){#lobby .x-logo{display:none}#lobby .x-ib{width:44px;height:44px}}
 #lobby .x-vh,#lobby .x-lnav button .x-nl.x-nl{position:static;width:auto;height:auto;overflow:visible;clip:auto}
 #lobby .x-vh{display:none}
-@media(max-width:820px){#lobby .x-lnav button:not(.x-np) .x-nl{display:none}}
+@media(max-width:820px),(max-height:500px){#lobby .x-lnav button:not(.x-np) .x-nl{display:none}}
 #lobby .x-news .x-tag{align-self:flex-start;color:#ece8e1;background:#0f1923;padding:4px 8px}
 #lobby .x-foot{color:rgba(236,232,225,.66)}
 .srow .seg button{min-height:44px}
