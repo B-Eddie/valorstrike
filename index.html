@@ -9264,11 +9264,11 @@ function okKey(code) {
   if (om) {
     if (code === "KeyC") {
       if (J.om || J.c < 1 || J.cd.c > 0) return sgNo(); J.c--; J.cd.c = 0.6;
-      const p = okGround(15); J.om = { t: XPAR2.step, x: p.x, z: p.z, y: xFy(p.x, p.z), m: okMark(p.x, p.z, 0x6a4cff) }; say("Shrouded Step · " + XPAR2.step + " s", 700); blip(260, 0.4, "sine", 0.15); SFX.ab("omenStep");
+      const p = okGround(15); J.om = { t: XPAR2.step, x: p.x, z: p.z, y: xFy(p.x, p.z), m: okMark(p.x, p.z, 0x6a4cff) }; try { J.om.m.visible = false; J.om.h = omxStepMark({ x: p.x, y: xFy(p.x, p.z), z: p.z }); } catch (e) {} say("Shrouded Step · " + XPAR2.step + " s", 700); blip(260, 0.4, "sine", 0.15); SFX.ab("omenStep");
     }
     if (code === "KeyQ") {
       if (J.q < 1 || J.cd.q > 0) return sgNo(); J.q--; J.cd.q = 0.6;
-      const fx = -Math.sin(yaw), fz = -Math.cos(yaw), m = new THREE.Mesh(parGeo, fireMat(0x2a1550, 0.6)); m.position.set(P.x + fx, 1.3, P.z + fz); m.rotation.y = yaw; scene.add(m);
+      const fx = -Math.sin(yaw), fz = -Math.cos(yaw), m = new THREE.Mesh(parGeo, fireMat(0x2a1550, 0.6)); m.position.set(P.x + fx, 1.3, P.z + fz); m.rotation.y = yaw; m.visible = false; scene.add(m); try { omxParanoiaBolt(pEye(), new THREE.Vector3(fx, 0, fz), 0); } catch (e) {}
       J.par.push({ m, fx, fz, t: 0, hit: new Set() }); say("Paranoia", 600); blip(140, 0.5, "sawtooth", 0.15); SFX.ab("paranoia");
     }
     if (code === "KeyE") {
@@ -9277,7 +9277,7 @@ function okKey(code) {
       if (mk) p = new THREE.Vector3(mk.p.x, mk.p.y, mk.p.z); // Dark Cover marker (ability_equip_runtime.js XDARK / xDarkPt): on the aim line through walls, sunk to the floor below
       else { ray.set(o, d); ray.far = 30; const h = ray.intersectObjects(solids)[0]; p = h ? h.point.clone().addScaledVector(d, -0.5) : o.clone().addScaledVector(d, 30); p.y = Math.max(1.5, Math.min(p.y, 4)); }
       const m = jM(smokeGeo, xSmokeM("s3x", 0x22183a, 0x8a5cff));
-      m.position.copy(p); scene.add(m); J.smokes.push({ m, p: m.position, t: 15, r: xSmk(m, XSMR.Omen) }); SFX.smoke();
+      m.position.copy(p); scene.add(m); J.smokes.push({ m, p: m.position, t: 15, r: xSmk(m, XSMR.Omen) }); try { m.visible = false; omxCoverDome(p, XSMR.Omen, 15); } catch (e) {} SFX.smoke();
     }
     if (code === "KeyX") {
       if (J.fts) { if (J.fts.shade) return void ftsCancel("Teleport stopped"); return say("From the Shadows · " + Math.ceil(J.fts.t) + " s", 700); } // X as a Shade cancels; nothing in the windup
@@ -9322,7 +9322,7 @@ function ftsCancel(why) { const F = J.fts; if (!F || !F.shade) return false; fts
 function okTick(dt) {
   const P = player, alive = P.hp > 0, V = THREE.Vector3;
   bots.forEach((b) => { if (b.vul > 0) b.vul -= dt; if (b.det > 0) b.det -= dt; });
-  if (J.om) { J.om.t -= dt; if (J.om.t <= 0) { if (alive) { P.x = J.om.x; P.z = J.om.z; P.y = J.om.y || 0; P.vy = 0; SFX.tp(); } okRm(J.om); J.om = null; } }
+  if (J.om) { J.om.t -= dt; if (J.om.t <= 0) { if (alive) { try { omxStepVanish({ x: P.x, y: P.y, z: P.z }); omxStepArrive({ x: J.om.x, y: J.om.y || 0, z: J.om.z }); } catch (e) {} P.x = J.om.x; P.z = J.om.z; P.y = J.om.y || 0; P.vy = 0; SFX.tp(); } try { omxEnd(J.om.h); } catch (e) {} okRm(J.om); J.om = null; } }
   if (J.fts) { const F = J.fts; F.t -= dt; if (!Number.isFinite(F.ox)) { F.ox = P.x; F.oy = P.y; F.oz = P.z; F.shade = !!F.shade; } // From the Shadows (wiki): 1.5 s rooted windup at the origin, then 2.5 s as a rooted Shade at the target (a hit or X again sends him back: ftsCancel); real at 4 s
     if (!alive) { okRm(F); J.fts = null; }
     else if (!F.shade && XPAR2.shadows - F.t < XPAR2.shadeAt) ftsPin(F.ox, F.oy, F.oz);
@@ -17910,6 +17910,123 @@ function xBtpHands(M, dt) {
 }
 if (typeof xUbPost === "function") { const hp0 = xUbPost; xUbPost = function (M) { hp0.apply(this, arguments); try { if (M && M.btp) xBtpHands(M, M.sx && M.sx.poseDt); } catch (e) { XBTP.err = String(e); } }; }
 // ---- END ABILITY FIRST PERSON ----
+// ---- OMEN FX ----
+// Omen ability visuals (work/omen_fx_runtime.js), reference-grounded in the wiki showcase clips
+// (wiki.playvalorant.com/en-us/images/Shrouded_Step_Showcase.mp4, Paranoia_Showcase.mp4,
+// Dark_Cover_Showcase.mp4, From_the_Shadows_Showcase.mp4; frame sheets reviewed 2026-11-04).
+// Procedural approximation, not extracted game assets. Main entries preserve game mechanics.
+// p is world-space smoke centre for CoverDome/CoverAim; ground-space point for teleport.
+// Paranoia t is elapsed seconds, optional. Returns handles accepted by omxEnd.
+// Optional omxCoverAim(on,p,r) controls targeting. omxUseGameTick() then omxTick(dt)
+// hands timing to game loop; otherwise a single rAF pump runs while effects exist.
+// Shared geometry/programs persist; cloned per-effect materials are disposed recursively.
+var omxU = { value: 0 }, omxLive = [], omxPumpOn = false, omxGT = null, omxGeo = null, omxProg = {};
+function omxNow() { try { return performance.now() / 1000; } catch (e) { return Date.now() / 1000; } }
+function omxGeos() { if (omxGeo) return omxGeo; omxGeo = {
+  sph: new THREE.SphereGeometry(1, 26, 18),
+  ring: new THREE.RingGeometry(0.74, 1, 48),
+  torus: new THREE.TorusGeometry(1, 0.07, 10, 48),
+  cone: new THREE.ConeGeometry(0.24, 1, 12, 6),
+  plane: new THREE.PlaneGeometry(1, 1.6, 1, 6) }; return omxGeo; }
+// shared shaders. uT = global clock, uP = effect progress 0..1, uSeed = per-mesh variation.
+function omxShader(k, frag) { if (omxProg[k]) return omxProg[k]; const m = new THREE.ShaderMaterial({
+  uniforms: { uT: omxU, uP: { value: 0 }, uSeed: { value: 0 }, uA: { value: 1 } },
+  vertexShader: "uniform float uT;uniform float uP;uniform float uSeed;varying vec3 vN;varying vec3 vV;varying vec3 vP;varying vec2 vUv;void main(){vUv=uv;vec3 p=position;vP=p;vec4 mv=modelViewMatrix*vec4(p,1.0);vV=-mv.xyz;vN=normalMatrix*normal;gl_Position=projectionMatrix*mv;}",
+  fragmentShader: frag, transparent: true, depthWrite: false, side: THREE.DoubleSide });
+  m.userData.omx = k; omxProg[k] = m; return m; }
+// dark shadow tendril: near-black navy body with a violet fresnel edge, wispy vertical falloff
+const omxTENDRIL = "uniform float uT;uniform float uP;uniform float uSeed;uniform float uA;varying vec3 vN;varying vec3 vV;varying vec3 vP;varying vec2 vUv;void main(){float f=pow(1.0-abs(dot(normalize(vN),normalize(vV))),1.6);float w=sin(vUv.y*9.0+uT*3.0+uSeed*7.0)*sin(vUv.x*5.0-uT*2.0+uSeed*3.0);vec3 c=mix(vec3(0.030,0.033,0.086),vec3(0.36,0.31,1.0),f)*(0.85+0.3*w);c+=vec3(0.27,0.82,1.0)*f*f*0.35;float width=0.24*(1.0-vUv.y*0.65);float curve=0.5+0.10*sin(vUv.y*7.0+uT*2.0+uSeed);float edge=1.0-smoothstep(width*0.35,width,abs(vUv.x-curve));float a=edge*smoothstep(0.0,0.18,vUv.y)*(1.0-smoothstep(0.55,1.0,vUv.y))*(0.55+0.45*w)*(1.0-uP)*uA;if(a<0.003)discard;gl_FragColor=vec4(c,a*0.9);}";
+// cyan-blue channel flame: bright core to transparent blue edge, flickering tip
+const omxFLAME = "uniform float uT;uniform float uP;uniform float uSeed;varying vec3 vN;varying vec3 vV;varying vec3 vP;varying vec2 vUv;void main(){float w=sin(vUv.y*7.0-uT*9.0+uSeed)*0.5+0.5;float f=pow(1.0-abs(dot(normalize(vN),normalize(vV))),1.2);vec3 c=mix(vec3(0.62,0.91,1.0),vec3(0.16,0.45,0.85),vUv.y)+vec3(0.2,0.5,0.9)*f;float a=smoothstep(0.0,0.25,vUv.y)*(1.0-smoothstep(0.6,1.0,vUv.y))*(0.55+0.45*w)*(1.0-uP);gl_FragColor=vec4(c,a);}";
+// paranoia wave body: deep violet, bright violet fresnel rim, faint cyan top edge, slow swirl
+const omxWAVE = "uniform float uT;uniform float uP;uniform float uSeed;varying vec3 vN;varying vec3 vV;varying vec3 vP;varying vec2 vUv;void main(){float f=pow(1.0-abs(dot(normalize(vN),normalize(vV))),1.9);float w=sin(vP.x*2.1+uT*2.6)*sin(vP.y*2.7-uT*1.9)*sin(vP.z*1.7+uT*2.2);vec3 c=mix(vec3(0.10,0.05,0.22),vec3(0.42,0.26,0.95),f)*(0.88+0.24*w);c+=vec3(0.27,0.82,1.0)*pow(f,3.0)*0.5;float a=(0.62+0.3*f)*(1.0-uP);gl_FragColor=vec4(c,a);}";
+// dark cover dome: opaque deep purple with slow swirl and a violet fresnel rim (transparent only while growing/dying)
+const omxDOME = "uniform float uT;uniform float uP;uniform float uSeed;varying vec3 vN;varying vec3 vV;varying vec3 vP;varying vec2 vUv;void main(){float f=pow(1.0-abs(dot(normalize(vN),normalize(vV))),2.2);float w=sin(vP.x*1.9+uT*0.8)*sin(vP.y*2.3-uT*0.6)*sin(vP.z*1.7+uT*0.5);float wisp=(1.0-smoothstep(0.0,0.35,vUv.y))*(0.5+0.5*sin(vUv.x*20.0+uT*1.4+w*3.0));vec3 c=mix(vec3(0.10,0.07,0.19),vec3(0.42,0.28,0.85),f)*(0.9+0.2*w);float bands=sin(vP.y*17.0+sin(vP.x*5.0+uT*.45)*2.0+sin(vP.z*5.0-uT*.35)*1.6);float cloud=smoothstep(0.0,0.8,bands)*.45; c=mix(c,vec3(.20,.17,.31),cloud);c+=vec3(0.24,0.19,0.38)*wisp*0.10;float a=(vUv.y<0.0)?0.0:(1.0-uP);gl_FragColor=vec4(c,a);}";
+// ringed dome edge (Dark Cover targeting): transparent shell, bright blue fresnel rim
+const omxEDGE = "uniform float uT;uniform float uP;uniform float uSeed;varying vec3 vN;varying vec3 vV;varying vec3 vP;varying vec2 vUv;void main(){float f=pow(1.0-abs(dot(normalize(vN),normalize(vV))),2.0);vec3 c=vec3(0.35,0.71,1.0)*(0.25+1.1*f);float a=0.08+0.75*f;gl_FragColor=vec4(c,a*(1.0-uP));}";
+function omxMat(k, shader, seed) { const m = omxShader(k, shader).clone(); m.uniforms.uT = omxU; if (seed !== undefined) m.uniforms.uSeed.value = seed; return m; }
+function omxBasic(c, o, add) { return new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: o, depthWrite: false, blending: add ? THREE.AdditiveBlending : THREE.NormalBlending, side: THREE.DoubleSide }); }
+function omxPush(fx) { if (omxLive.length > 24) { const o = omxLive.shift(); try { o.done(); } catch (e) {} } omxLive.push(fx); if (!omxGT && !omxPumpOn) { omxPumpOn = true; omxPump.last = omxNow(); requestAnimationFrame(omxPump); } return fx; }
+function omxPump() { if (omxGT) { omxPumpOn = false; return; } const now = omxNow(), dt = Math.min(0.1, Math.max(0.0005, now - (omxPump.last || now))); omxPump.last = now; omxU.value += dt;
+  for (let i = omxLive.length - 1; i >= 0; i--) { const fx = omxLive[i]; fx.age += dt; const k = Math.min(1, fx.age / fx.ttl); try { fx.tick(dt, fx.age, k); } catch (e) { try { xE(e); } catch (e2) {} }
+    if (fx.age >= fx.ttl) { try { fx.done(); } catch (e) {} omxLive.splice(i, 1); } }
+  if (omxLive.length) requestAnimationFrame(omxPump); else omxPumpOn = false; }
+function omxUseGameTick() { omxGT = true; omxPumpOn = false; } // integrator then calls omxTick(dt) per frame
+function omxTick(dt) { omxU.value += dt; for (let i = omxLive.length - 1; i >= 0; i--) { const fx = omxLive[i]; fx.age += dt; try { fx.tick(dt, fx.age, Math.min(1, fx.age / fx.ttl)); } catch (e) { try { xE(e); } catch (e2) {} } if (fx.age >= fx.ttl) { try { fx.done(); } catch (e) {} omxLive.splice(i, 1); } } }
+function omxEnd(h) { if (!h || !h.fx) return; const i = omxLive.indexOf(h.fx); if (i >= 0) omxLive.splice(i, 1); try { h.fx.done(); } catch (e) {} }
+function omxFx(ttl, objs, tick, done) { const fx = { age: 0, ttl, objs, tick, done: done || function () { objs.forEach((o) => { try { scene.remove(o); o.traverse((m) => { if (m.material && m.material.dispose) m.material.dispose(); }); } catch (e) {} }); } }; objs.forEach((o) => scene.add(o)); omxPush(fx); return { fx, end: function () { omxEnd(this); } }; }
+function omxNearPlayer(p, d) { try { return player && Math.hypot(player.x - p.x, player.z - p.z) < d; } catch (e) { return false; } }
+// ---- full-screen veils (DOM, CSS injected once) ----
+function omxCss() { if (document.getElementById("omxCss")) return; const s = document.createElement("style"); s.id = "omxCss"; s.textContent =
+  ".omxV{position:fixed;inset:0;pointer-events:none;z-index:6;background-repeat:no-repeat;background-size:180% 180%;background-position:center;opacity:0;transition:opacity .18s}" +
+  "@keyframes omxDriftA{0%{background-position:48% 48%,52% 52%,50% 50%}100%{background-position:52% 52%,48% 48%,51% 49%}}" +
+  ".omxVStep{background:radial-gradient(60% 90% at 20% 30%,rgba(16,14,42,.96) 0%,rgba(16,14,42,0) 70%),radial-gradient(70% 80% at 80% 60%,rgba(8,7,22,.97) 0%,rgba(8,7,22,0) 72%),radial-gradient(90% 60% at 50% 90%,rgba(26,20,60,.9) 0%,rgba(26,20,60,0) 70%),rgba(7,6,18,.86);animation:omxDriftA 1.1s linear forwards}" +
+  ".omxVShade{background:radial-gradient(70% 90% at 30% 40%,rgba(196,201,212,.9) 0%,rgba(196,201,212,0) 75%),radial-gradient(80% 80% at 75% 70%,rgba(176,182,196,.92) 0%,rgba(176,182,196,0) 70%),rgba(203,208,218,.72);animation:omxDriftA 2.3s linear forwards}" +
+  ".omxVPhase{background:radial-gradient(120% 120% at 50% 50%,rgba(10,9,30,0) 30%,rgba(10,9,30,.66) 100%),radial-gradient(60% 90% at 20% 30%,rgba(24,20,64,.35) 0%,rgba(24,20,64,0) 70%),rgba(14,12,38,.52);transition:opacity .25s;animation:omxDriftA 9s linear infinite}" +
+  ".omxVPhase.on{opacity:1}";
+  (document.head || document.documentElement).appendChild(s); }
+function omxVeil(kind) { try { omxCss(); const d = document.createElement("div"); d.className = "omxV omxV" + kind; document.body.appendChild(d); d.style.opacity = "1"; // instant-on, as the clip's smoke envelops in one cut; the fade-out below is stepped
+  const ms = kind === "Shade" ? 2400 : 1150; setTimeout(() => { let o = 1; const iv = setInterval(() => { o -= 0.17; if (o <= 0) { clearInterval(iv); try { d.remove(); } catch (e) {} } else d.style.opacity = String(o); }, 50); }, ms - 300); } catch (e) {} }
+// ---- tendril burst, shared by Shrouded Step and From the Shadows ----
+function omxTendrils(p, n, h, spread, converge, ttl) { const G = omxGeos(), grp = new THREE.Group(); grp.position.set(p.x, (p.y || 0), p.z);
+  for (let i = 0; i < n; i++) { const a = (i / n) * Math.PI * 2 + i * 0.7, m = new THREE.Mesh(G.plane, omxMat("ten" + i % 3, omxTENDRIL, i * 1.31));
+    m.position.set(Math.cos(a) * spread, h * 0.65, Math.sin(a) * spread); m.rotation.y = -a + Math.PI / 2; m.scale.set(0.5 + (i % 3) * 0.22, h, 1); m.userData.a = a; grp.add(m); }
+  const flash = new THREE.Mesh(G.sph, omxBasic(0x45d0ff, 0.55, true)); flash.scale.setScalar(0.45); flash.position.y = 0.5; grp.add(flash);
+  const fx = omxFx(ttl, [grp], (dt, age, k) => { grp.rotation.y += dt * (converge ? -2.6 : 2.2);
+    grp.children.forEach((m) => { if (m === flash) return; const r = converge ? spread * (1 - k * 0.8) : spread * (0.4 + k); m.position.x = Math.cos(m.userData.a) * r; m.position.z = Math.sin(m.userData.a) * r; m.position.y = h * (0.65 + k * 0.35); m.material.uniforms.uP.value = k; m.rotation.z = (converge ? -1 : 1) * 0.35 * k; });
+    flash.material.opacity = 0.55 * Math.max(0, 1 - age / 0.28); flash.scale.setScalar(0.45 + age * 1.1); });
+  return fx; }
+// ---- entries ----
+function omxStepMark(p) { try { const G = omxGeos();
+  const ring = new THREE.Mesh(G.ring, omxBasic(0x6a4cff, 0.85, true)); ring.rotation.x = -Math.PI / 2; ring.position.set(p.x, (p.y || 0) + 0.06, p.z); ring.scale.setScalar(0.9);
+  const flame = new THREE.Mesh(G.cone, omxMat("flame", omxFLAME, 0.7)); flame.position.set(p.x, (p.y || 0) + 0.55, p.z);
+  const core = new THREE.Mesh(G.sph, omxBasic(0x9fe8ff, 0.5, true)); core.scale.setScalar(0.16); core.position.set(p.x, (p.y || 0) + 0.3, p.z);
+  return omxFx(1.5, [ring, flame, core], (dt, age, k) => { const fl = 1 + Math.sin(omxU.value * 11) * 0.1; flame.scale.set(fl, 1 + Math.sin(omxU.value * 7.3) * 0.14, fl); flame.rotation.y += dt * 3;
+    ring.material.opacity = 0.85 * (0.6 + 0.4 * Math.sin(omxU.value * 6)) * (1 - k * k); ring.scale.setScalar(0.9 + 0.12 * Math.sin(omxU.value * 6));
+    flame.material.uniforms.uP.value = k * k; core.material.opacity = 0.5 * (1 - k); }); } catch (e) { try { window.omxErr = String(e && e.stack || e).slice(0, 300); xE(e); } catch (e2) {} return null; } }
+function omxStepVanish(p) { try { if (omxNearPlayer(p, 2.5)) omxVeil("Step"); return omxTendrils(p, 6, 2.1, 0.55, false, 0.9); } catch (e) { try { window.omxErr = String(e && e.stack || e).slice(0, 300); xE(e); } catch (e2) {} return null; } }
+function omxStepArrive(p) { try { if (omxNearPlayer(p, 2.5)) omxVeil("Step"); return omxTendrils(p, 5, 1.7, 0.8, true, 0.7); } catch (e) { try { window.omxErr = String(e && e.stack || e).slice(0, 300); xE(e); } catch (e2) {} return null; } }
+function omxParanoiaBolt(o, d, t) { try { const G = omxGeos(), dir = d.clone ? d.clone().normalize() : new THREE.Vector3(d.x, d.y || 0, d.z).normalize();
+  const grp = new THREE.Group(); grp.position.set(o.x + dir.x * 2.7, o.y + dir.y * 2.7, o.z + dir.z * 2.7); grp.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1),dir);
+  const body = new THREE.Mesh(G.sph, omxMat("wave", omxWAVE, 0)); body.scale.set(2.3, 1.1, 0.7); grp.add(body);
+  const ring = new THREE.Mesh(G.torus, omxBasic(0x8a5cff, 0.9, true)); ring.scale.setScalar(1.15); ring.position.z = 1.35; grp.add(ring);
+  const wisps = []; for (let i = 0; i < 3; i++) { const w = new THREE.Mesh(G.plane, omxMat("ten" + i, omxTENDRIL, 3 + i * 2.1)); w.position.set((i - 1) * 1.1, 0.1 * (i % 2 ? 1 : -1), -0.7 - i * 0.45); w.scale.set(0.9, 1.4 - i * 0.25, 1); grp.add(w); wisps.push(w); }
+  const age0 = Number.isFinite(t) && t > 0 ? t : 0, SPEED = 20, RANGE = 25; // XPAR: 20 m/s for 25 m
+  return omxFx(1.6, [grp], (dt, age, k) => { const a = age + age0, dist = Math.min(RANGE, 2.7 + a * SPEED);
+    grp.position.set(o.x + dir.x * dist, o.y + dir.y * dist + Math.sin(a * 9) * 0.05, o.z + dir.z * dist);
+    const fade = dist >= RANGE ? Math.max(0, 1 - (a - RANGE / SPEED) / 0.35) : 1;
+    body.material.uniforms.uP.value = 1 - fade; // Keep ellipsoid upright in travel frame; rotating its nonuniform axes tilts the silhouette.
+    ring.material.opacity = 0.9 * fade * (0.7 + 0.3 * Math.sin(omxU.value * 10)); ring.rotation.z -= dt * 4;
+    wisps.forEach((w, i) => { w.material.uniforms.uP.value = 1 - fade; w.rotation.z = Math.sin(omxU.value * 5 + i) * 0.3; }); }); } catch (e) { try { window.omxErr = String(e && e.stack || e).slice(0, 300); xE(e); } catch (e2) {} return null; } }
+function omxCoverDome(p, r, seconds) { try { const G = omxGeos(), R = r || 4.1, ttl = Math.max(0.8, seconds || 15);
+  const dome = new THREE.Mesh(G.sph, omxMat("dome", omxDOME, 0)); dome.material.side = THREE.FrontSide; dome.position.set(p.x, p.y, p.z); dome.scale.setScalar(0.2 * R);
+  const ring = new THREE.Mesh(G.torus, omxBasic(0x64567f, 0.12, false)); ring.rotation.x = Math.PI / 2; ring.scale.setScalar(R); ring.position.set(p.x, p.y - R * 0.42 + 0.08, p.z); // near the ground contact
+  const wisps = []; for (let i = 0; i < 3; i++) { const wm = omxMat("ten" + i, omxTENDRIL, 7 + i * 1.7); wm.uniforms.uA.value = 0.5; const w = new THREE.Mesh(G.plane, wm); w.scale.set(R * 0.35, R * 0.5, 1); wisps.push(w); }
+  wisps.forEach((w) => { w.position.set(p.x, p.y - R * 0.3, p.z); });
+  const objs = [dome, ring].concat(wisps);
+  return omxFx(ttl, objs, (dt, age, k) => { const grow = Math.min(1, age / 0.35), die = Math.max(0, (age - (ttl - 0.6)) / 0.6), s = R * (0.2 + 0.8 * grow) * (1 - die * die);
+    dome.scale.setScalar(Math.max(0.001, s)); dome.material.uniforms.uP.value = die; dome.rotation.y += dt * 0.05;
+    ring.material.opacity = 0.12 * (1 - die) * grow; ring.scale.setScalar(Math.max(0.001, s));
+    wisps.forEach((w, i) => { const a = omxU.value * 0.35 + (i / 3) * Math.PI * 2; w.position.set(p.x + Math.cos(a) * s * 0.85, p.y - R * 0.3 + Math.sin(omxU.value * 0.9 + i) * 0.15, p.z + Math.sin(a) * s * 0.85); w.rotation.y = -a + Math.PI / 2; w.material.uniforms.uP.value = die; }); }); } catch (e) { try { window.omxErr = String(e && e.stack || e).slice(0, 300); xE(e); } catch (e2) {} return null; } }
+function omxShadowsTP(p) { try { const own = omxNearPlayer(p, 3.5); if (own) omxVeil("Shade");
+  const fx = omxTendrils(p, 8, 2.6, 0.7, true, 1.1), G = omxGeos();
+  if (own) return fx; // the caster sees the mist veil + tendrils; the rift is for observing the teleport
+  const rift = new THREE.Mesh(G.sph, omxBasic(0x6a4cff, 0.7, true)); rift.scale.set(0.3, 0.9, 0.3); rift.position.set(p.x, (p.y || 0) + 0.9, p.z); scene.add(rift); fx.fx.objs.push(rift);
+  const core = new THREE.Mesh(G.sph, omxBasic(0x45d0ff, 0.9, true)); core.scale.set(0.09, 0.45, 0.09); core.position.copy(rift.position); scene.add(core); fx.fx.objs.push(core);
+  const tick0 = fx.fx.tick; fx.fx.tick = (dt, age, k) => { tick0(dt, age, k); rift.material.opacity = 0.7 * Math.max(0, 1 - age / 0.35); rift.scale.y = 0.9 + age * 1.2; core.material.opacity = 0.9 * Math.max(0, 1 - age / 0.25); };
+  return fx; } catch (e) { try { window.omxErr = String(e && e.stack || e).slice(0, 300); xE(e); } catch (e2) {} return null; } }
+// optional Dark Cover targeting view: phased navy tint + ringed dome edge at p
+var omxAimFx = null;
+function omxCoverAim(on, p, r) { try { if (!on) { if (omxAimFx) { omxEnd(omxAimFx.h); if (omxAimFx.veil) omxAimFx.veil.remove(); omxAimFx = null; } return null; }
+  const G = omxGeos(), R = r || 4.1;
+  if (!omxAimFx) { omxCss(); const veil = document.createElement("div"); veil.className = "omxV omxVPhase on"; document.body.appendChild(veil);
+    const shell = new THREE.Mesh(G.sph, omxMat("edge", omxEDGE, 0)); shell.scale.setScalar(R);
+    const ring = new THREE.Mesh(G.torus, omxBasic(0x5ab4ff, 0.85, true)); ring.rotation.x = Math.PI / 2; ring.scale.setScalar(R);
+    const h = omxFx(1e9, [shell, ring], () => {});
+    omxAimFx = { h, veil, shell, ring }; }
+  if (p) { omxAimFx.shell.position.set(p.x, p.y, p.z); omxAimFx.ring.position.set(p.x, p.y - R * 0.42 + 0.08, p.z); }
+  return omxAimFx.h; } catch (e) { try { window.omxErr = String(e && e.stack || e).slice(0, 300); xE(e); } catch (e2) {} return null; } }
+// ---- END OMEN FX ----
 // ---- BOT VARIETY ----
 // Shared client/server routing and spacing. Costs are preferences, never permanent blockers.
 (function(root,factory){if(typeof module==='object'&&module.exports)module.exports=factory();else root.BotRoutes=factory();})(typeof globalThis!=='undefined'?globalThis:this,function(){
