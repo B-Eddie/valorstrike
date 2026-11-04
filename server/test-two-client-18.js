@@ -100,12 +100,17 @@ setTimeout(() => { console.error('GLOBAL TIMEOUT'); process.exit(1); }, 240000);
     const fx = (c) => (c.snap.fx || []).some((f) => f.kind === 'duel' && Math.abs(f.p[0] - ARENA_X) < 2);
     return inA(A) && inA(B) && fx(A) && fx(B);
   };
+  const poll = setInterval(() => {
+    const ra = A.row(A.id), rbA = A.row(B.id), rbB = B.row(A.id);
+    console.log('poll A.me.x=' + (ra && ra[4]), 'A.seesB.x=' + (rbA && rbA[4]), 'B.seesA.x=' + (rbB && rbB[4]), 'fxA=' + (A.snap.fx || []).map((f) => f.kind).join('|'), 'fxB=' + (B.snap.fx || []).map((f) => f.kind).join('|'));
+  }, 1000);
   await until(seen, 'both clients see both combatants at the arena cell plus the duel fx row', 20000).catch((e) => {
     const dump = (c) => ({ me: c.row(c.id), other: c.row(c === A ? B.id : A.id), fx: (c.snap.fx || []).map((f) => f.kind + '@' + (f.p || []).map((n) => Math.round(n)).join(',')) });
     console.log('SEEN-FAIL A:', JSON.stringify(dump(A)));
     console.log('SEEN-FAIL B:', JSON.stringify(dump(B)));
     throw e;
   });
+  clearInterval(poll);
   console.log('iso duel online: both clients see A at x~' + (ARENA_X - 4) + ', B at x~' + (ARENA_X + 4) + ', duel fx row live');
   // finish the duel: B is suppressed on entry; A shoots B until the duel ends and A returns to the map
   const t0 = Date.now(); let ended = false;

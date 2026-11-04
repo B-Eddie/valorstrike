@@ -44,6 +44,10 @@ function pointsF(u,i){let dx=u.x-FE[i*3],dz=u.z-FE[i*3+2];const l=hyp2(dx,dz)||1
  FP[0]=u.x;FP[1]=y+top;FP[2]=u.z;FP[3]=u.x;FP[4]=y+1.05;FP[5]=u.z;FP[6]=u.x+sx;FP[7]=y+1.2;FP[8]=u.z+sz;FP[9]=u.x-sx;FP[10]=y+1.2;FP[11]=u.z-sz;FP[12]=u.x;FP[13]=y+.4;FP[14]=u.z;
  const vx=u.vx||0,vz=u.vz||0;if(vx*vx+vz*vz>.25){const x=u.x+vx*FOG.ahead,z=u.z+vz*FOG.ahead;FP[15]=x;FP[16]=y+top;FP[17]=z;FP[18]=x+sx;FP[19]=y+1.1;FP[20]=z+sz;FP[21]=x-sx;FP[22]=y+1.1;FP[23]=z-sz;return 8;}return 5;}
 const near3=(a,b,r)=>(a.x-b.x)**2+(a.y-b.y)**2+(a.z-b.z)**2<=r*r;
+// Iso Kill Contract: duel pairs see each other through the arena's own geometry, not the match map's. baseWorld
+// rays 10000 units outside the map are meaningless (the victim's snapshot masked Iso at 0,0,0 for the whole duel);
+// sim.world is the arena-wrapped world (arena.js), so its ray honours the cell walls and cover blocks exactly.
+function pairSeesDuel(sim,a,b){const w=sim.world;for(const [s,t]of[[a,b],[b,a]])for(const e of eyes(s))for(const p of points(t,e)){const q=[p[0]-e[0],p[1]-e[1],p[2]-e[2]],len=Math.hypot(q[0],q[1],q[2]);if(len<.05)return true;if(typeof w.ray==='function'&&w.ray(e,[q[0]/len,q[1]/len,q[2]/len],len-.05)===Infinity)return true;}return false;}
 // One pass per simulation time: which enemy ids (and which enemy effect ids to hide) each group gets.
 export function fogPass(sim,snap){const F=sim.fog||(sim.fog={t:-1,n:0,pairs:new Map(),rel:new Map(),hide:new Map()});if(F.t===sim.time)return F;F.t=sim.time;F.n++;const now=sim.time,U=sim.units,byName=new Map(U.map(u=>[u.name,u]));
  for(const e of sim.castEvents||[]){if(e&&e.t==='ac'&&e.sub!=='boom'){const u=U.find(v=>v.id===e.i);if(u)u.fogCastAt=now;}}/* a cast is heard like a gunshot (FOG.cast m) */
@@ -53,7 +57,8 @@ export function fogPass(sim,snap){const F=sim.fog||(sim.fog={t:-1,n:0,pairs:new 
  const L=U.filter(live);
  for(let i=0;i<L.length;i++)for(let j=i+1;j<L.length;j++){const a=L[i],b=L[j],ga=fogGroup(sim,a),gb=fogGroup(sim,b);if(ga===gb)continue;
   const key=a.id<b.id?a.id+':'+b.id:b.id+':'+a.id,last=F.pairs.get(key)??-1e9;let seen=false;
-  if(near3(a,b,FOG.near))seen=true;else if(now-last<=FOG.grace||((F.n+a.id+b.id)&1)===0)seen=pairSees(sim,a,b);
+  const duelPair=a.isoDuel&&b.isoDuel&&a.isoDuel.foe===b.id&&b.isoDuel.foe===a.id;/* Kill Contract: mutual arena visibility */
+  if(duelPair)seen=pairSeesDuel(sim,a,b);else if(near3(a,b,FOG.near))seen=true;else if(now-last<=FOG.grace||((F.n+a.id+b.id)&1)===0)seen=pairSees(sim,a,b);
   const ad=(a.driftUntil||0)>now,bd=(b.driftUntil||0)>now;/* Dimensional Drift (wiki): unseen by enemies - no sight or proximity relevance TO a drifter, and he does not body-block; he still sees out */
   if(seen){F.pairs.set(key,now);if(!bd)mark(ga,b.id);if(!ad)mark(gb,a.id);}}
  for(const v of L){const g=fogGroup(sim,v),run=typeof sim.loud==='function'?sim.loud(v):Math.hypot(v.vx||0,v.vz||0)>FOG.run&&!(v.input&&(v.input.walk||v.input.duck))/* the row's [23] footsteps flag */,shot=now-(v.fogShotAt??-1e9)<=FOG.shotFor,cast=now-(v.fogCastAt??-1e9)<=FOG.shotFor,rev=(v.revealedUntil||0)>now;
