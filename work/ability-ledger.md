@@ -25,3 +25,6 @@ Sources: wiki.playvalorant.com/en-us/<Ability> pages + images/<Ability>_Showcase
 - V: faceted cyan ice-shard sheet that spreads over 0.9 s then shrinks away (slowMat, sgOrbLand + bot Slow Orb). Captured, viewed (work/browser_sage_slow.cjs).
 - G: 3D crystal shards standing up from the field are not built (flat texture only); orb in hand/flight (glowing teal sphere) not compared; online fx path shares sgOrbLand but not captured two-page. Barrier Orb, Healing Orb, Resurrection not audited.
 ## Killjoy - Nanoswarm (Nanoswarm_Showcase.mp4 viewed): V: resting zone now magenta ring with teal rim and motes (nanoMat; captured, viewed, work/browser_killjoy_nano.cjs). GAP: the activation burst of magenta crystal spikes is not built; the zone is dull compared with the clip; the thrown canister look unchecked. Snake_Bite clip downloaded, not reviewed (flat 0x7fd84a disc suspected).
+
+## Viper Snake Bite
+- V: a18AcidPool (jagged translucent fronds burst, then a ragged lime pool with bubble rings), reference = wiki Snake_Bite showcase clip frames (viewed). Offline and online ('snake' fx row). Captured offline only (browser_viper_snake.cjs, reduced assets). Gaps: no projectile/canister flight (instant at aim point), no viewmodel hand animation, online two-page capture not done, pool size r=4 from existing constants (not re-verified), pool bubbles are static texture.
