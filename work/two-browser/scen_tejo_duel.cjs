@@ -18,5 +18,12 @@ module.exports=async T=>{const {A,B,qa,code,log,check,SHOT}=T;const fs=require('
  check('server applied damage or a Tejo effect to B',after.bhp<100||after.fx.length>0,after);
  const bseen=await B.X(`JSON.stringify({hp:typeof player!=='undefined'?player.hp:null,fx:(NET.fx||[]).length})`).catch(e=>String(e));log('B client',bseen);
  await A.page.screenshot({path:SHOT+'tb_A_after.png'});await B.page.screenshot({path:SHOT+'tb_B_after.png'});
+ await B.page.bringToFront();await new Promise(r=>setTimeout(r,2500));
+ log('B HUD after hit',await B.X(`JSON.stringify({hudHp:document.querySelector('#hp span').textContent,xHp:document.getElementById('xHp').textContent,shown:getComputedStyle(document.getElementById('xHp')).visibility,playerHp:player.hp,hpShown:getComputedStyle(document.getElementById('hp')).display,frame:renderer.info.render.frame})`));
+ await B.page.screenshot({path:SHOT+'tb_B_posthit.png'});
+ log('B cover',await B.X(`JSON.stringify({lob0:xLob0,res:xResUp(),setfull:xSetFull(),els:xCovEl.filter(e=>e.style.display==='flex').map(e=>e.id||e.className)})`));
+ log('A cover',await A.X(`JSON.stringify({lob0:xLob0,res:xResUp(),setfull:xSetFull(),els:xCovEl.filter(e=>e.style.display==='flex').map(e=>e.id||e.className)})`));
+ {const f=()=>B.X(`JSON.stringify([renderer.info.render.frame,document.getElementById('xHp').textContent,player.hp,Math.round(performance.now())])`);log('B loop a',await f());await new Promise(r=>setTimeout(r,3000));log('B loop b',await f());}
+ log('B xHud direct',await B.X(`xHud();JSON.stringify({xHp:document.getElementById('xHp').textContent,hp:player.hp,mode:mode,running:running,paused:paused,docHidden:document.hidden,vis:document.visibilityState})`));
  log('shots',SHOT);
 };
