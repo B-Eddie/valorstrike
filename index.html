@@ -8913,9 +8913,9 @@ const XLEER = 1.6; // Leer nearsights for 1.6 s once it arrives (wiki.playvalora
 // shells out to 1.1 m (was a bare 0.25 m bead); pop: the core flash.
 const XCBF = { blind: 1.5, fade: 1, face: 0.5, r: 30, faint: 0.35, faintT: 0.12, orb: 0.3, glow: [0.6, 1.1], pop: 1.6 };
 const cbOrbGeo = new THREE.SphereGeometry(1, 16, 12);
-function xCbGlowMat(i) { const a = xCbGlowMat.m || (xCbGlowMat.m = []); return a[i] || (a[i] = new THREE.MeshBasicMaterial({ color: i ? 0xff9a3c : 0xffe08a, transparent: true, opacity: i ? 0.28 : 0.55, depthWrite: false, blending: THREE.AdditiveBlending })); }
+function xCbGlowMat(i) { const a = xCbGlowMat.m || (xCbGlowMat.m = []); return a[i] || (a[i] = new THREE.MeshBasicMaterial({ color: i ? 0xff2a10 : 0xff6a30, transparent: true, opacity: i ? 0.35 : 0.7, depthWrite: false, fog: false, toneMapped: false })); }
 function xCbOrb(p) { // the Curveball flare in flight: core + glow shells (children, released with the orb by jRel via userData.kids)
-  const m = jM(cbOrbGeo, jMat("cbOrb", () => new THREE.MeshBasicMaterial({ color: 0xfffbea }))); m.scale.setScalar(XCBF.orb); m.position.copy(p);
+  const m = jM(cbOrbGeo, jMat("cbOrb", () => new THREE.MeshBasicMaterial({ color: 0xff3a1a, fog: false, toneMapped: false }))); m.scale.setScalar(XCBF.orb); m.position.copy(p);
   const kids = XCBF.glow.map((r, i) => { const h = new THREE.Mesh(cbOrbGeo, xCbGlowMat(i)); h.scale.setScalar(r / XCBF.orb); h.raycast = () => {}; h.renderOrder = 2; m.add(h); return h; });
   m.userData.kids = kids; scene.add(m); return m;
 }
@@ -8923,7 +8923,7 @@ function xFlashScreen(hold, peak, fade, sty) { // the white flash screen: peak o
   const w = $("xWh"), t = performance.now(), F = xFlashScreen; if (!w) return;
   if (F.until > t && F.peak > peak) return;
   clearTimeout(F.k); F.until = t + hold * 1000; F.peak = peak;
-  w.classList.toggle("bfl", sty === "breach"); if (sty !== "breach") w.style.background = "radial-gradient(circle, #fff 0, #fffaf0 40%, #ffd6a0 100%)"; else w.style.background = ""; w.style.transition = "none"; w.style.opacity = peak;
+  w.classList.toggle("bfl", sty === "breach"); if (sty === "phoenix") w.style.background = "radial-gradient(circle, #fff4e6 0, #ffd2a8 35%, #ff8c46 100%)"; else if (sty !== "breach") w.style.background = "radial-gradient(circle, #fff 0, #fffaf0 40%, #ffd6a0 100%)"; else w.style.background = ""; w.style.transition = "none"; w.style.opacity = peak;
   F.k = setTimeout(() => { F.until = 0; F.peak = 0; w.style.transition = "opacity " + fade + "s ease-out"; w.style.opacity = 0; setTimeout(() => { if (!(F.until > 0)) w.style.background = ""; }, fade * 1000 + 50); }, hold * 1000);
 }
 function xFlashPlayer(p, bl, sty) { // the player at a flash pop: looking at it -> full white for bl s + the 1 s fade; turned away (still in sight) -> faint and brief
@@ -8941,11 +8941,12 @@ function xFlashBots(p, bl) { // bots at a flash pop: in range, line of sight fro
   });
   return n;
 }
+function xCbRing(p) { const r = new THREE.Mesh(ringGeo, fireMat(0xfff0e0, 0.95)); r.position.copy(p); r.lookAt(camera.position); r.scale.setScalar(0.6); scene.add(r); const t0 = performance.now(), f = () => { const u = (performance.now() - t0) / 420; if (u >= 1) { scene.remove(r); r.material.dispose(); return; } r.scale.setScalar(0.6 + u * 2.4); r.material.opacity = 0.95 * (1 - u); requestAnimationFrame(f); }; f(); } /* Curveball pop: the thin white ring that opens around the flare (wiki clip) */
 function jPop(p) {
   SFX.flash(); const m = jM(orbGeo, xAdd("pcore", 0xfff6e8, 1)); m.scale.setScalar(XCBF.pop / 0.25); m.position.copy(p); jFx(m, 0.3);
   const hm = jM(smokeGeo, xAdd("phalo", 0xff9a40, 0.45)); hm.scale.setScalar(0.4); hm.position.copy(p); jFx(hm, 0.35).g = 0.25;
-  xFlashBots(p, XCBF.blind);
-  xFlashPlayer(p, XCBF.blind); // Phoenix's own flash blinds him too when he looks at it (friendlyfire Yes)
+  try { xCbRing(p); } catch (e) {} xFlashBots(p, XCBF.blind);
+  xFlashPlayer(p, XCBF.blind, "phoenix"); // Phoenix's own flash blinds him too when he looks at it (friendlyfire Yes)
 }
 // Sova bolt flight on the client: the shared SovaBolt.path (vendor/sova-bolt.cjs, the server flies the same one) against
 // the map's solids (face normals for the bounces) and the floor. pw 0..1 = HOLD FIRE charge, nb 0..2 = ALT FIRE bounces.
@@ -10197,7 +10198,7 @@ function enPop(p, bl, bf) { if (bf) { SFX.flash(); try { a18Flare(p, 7); } catch
    // bl: the flash's blind (an enemy bot's Curveball: XCBF.blind); other bot flashes keep their short screen flash
   SFX.flash(); const m = jM(orbGeo, xAdd("pcore", 0xfff6e8, 1)); m.scale.setScalar(bl ? XCBF.pop / 0.25 : 4); m.position.copy(p); jFx(m, 0.3);
   const hm = jM(smokeGeo, xAdd("phalo", 0xff9a40, 0.45)); hm.scale.setScalar(bl ? 0.4 : 0.3); hm.position.copy(p); jFx(hm, 0.3).g = 0.25;
-  if (player.hp <= 0 || J.dr) return; if (bl) return void xFlashPlayer(p, bl); const e = pEyeTo(PE_V), v = p.clone().sub(e), l = v.length() || 0.01;
+  if (player.hp <= 0 || J.dr) return; if (bl) { try { xCbRing(p); } catch (e) {} return void xFlashPlayer(p, bl, "phoenix"); } const e = pEyeTo(PE_V), v = p.clone().sub(e), l = v.length() || 0.01;
   if (l < 30 && v.dot(jAim()) / l > 0.5 && los(e, p)) { const w = $("xWh"); w.style.transition = "none"; w.style.opacity = 1; setTimeout(() => { w.style.transition = "opacity .8s"; w.style.opacity = 0; }, 450); }
 }
 function enRecon(p) { const g = XRCN.g; p = p.clone(); XRCN.pulses.forEach((t) => setTimeout(() => { if (g === XRCN.g) enRcnPulse(p); }, t * 1000)); }

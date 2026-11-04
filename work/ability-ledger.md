@@ -28,3 +28,8 @@ Sources: wiki.playvalorant.com/en-us/<Ability> pages + images/<Ability>_Showcase
 
 ## Viper Snake Bite
 - V: a18AcidPool (jagged translucent fronds burst, then a ragged lime pool with bubble rings), reference = wiki Snake_Bite showcase clip frames (viewed). Offline and online ('snake' fx row). Captured offline only (browser_viper_snake.cjs, reduced assets). Gaps: no projectile/canister flight (instant at aim point), no viewmodel hand animation, online two-page capture not done, pool size r=4 from existing constants (not re-verified), pool bubbles are static texture.
+
+## Phoenix Curveball
+- Ref: wiki Curveball_Showcase clip (frames viewed): red-orange swirling flare orb with hot core, streak trail, thin white ring at the pop, orange-tinted flash wash.
+- V now: red-orange orb (opaque core + 2 translucent shells, no sky wash-out), white ring pop (xCbRing), orange-tinted flash screen ('phoenix' style) offline player + bot (enPop bl). Captured offline reduced assets (cb_orb/cb_pop).
+- Gaps: orb is flat concentric discs, no swirl or streak trail; no throw hand pose/viewmodel; the online flash path (server blind) does not use the phoenix tint or ring; two-page capture not done; flash screen peak is opaque at the first frame (clip shows translucent wash).
