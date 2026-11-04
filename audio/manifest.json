@@ -2,587 +2,640 @@
  "v": 1,
  "files": {
   "standard/Classic/fire": {
-   "url": "audio/standard-Classic-fire.9a81589ac006.mp3",
-   "sha256": "9a81589ac00641978a0a1cb3f929026017450958837e7b9179fc0c704323366d",
-   "bytes": 4839,
-   "duration": 0.32,
+   "url": "audio/standard-Classic-fire.34ec5b875702.mp3",
+   "sha256": "34ec5b8757029526ded99ad1215659d5fbd3209fae794826a48c966790e1a036",
+   "bytes": 7680,
+   "duration": 0.36,
    "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/a73aac70-4273-acdf-9952-0db1202b2bb5_default_universal.mp4",
    "cut": [
     1.3439274376417234,
     0.32
-   ]
+   ],
+   "processing": "lane-sounds: re-cut from the source preview (AAC 48 kHz stereo -> mono mean), DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz (single lossy generation from the Riot source)"
   },
   "standard/Classic/reload": {
-   "url": "audio/standard-Classic-reload.350b93adfc51.mp3",
-   "sha256": "350b93adfc51f8f1e172035463c7b2cfa3aec635dcef78dde8978670ec28781a",
-   "bytes": 22393,
-   "duration": 1.8,
+   "url": "audio/standard-Classic-reload.4c3718788146.mp3",
+   "sha256": "4c371878814623c9c987dd135d57daf7636d23267e7fdc4f550f3a1da8534715",
+   "bytes": 36960,
+   "duration": 1.824,
    "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/a73aac70-4273-acdf-9952-0db1202b2bb5_default_universal.mp4",
    "cut": [
     9.7,
     1.8
-   ]
+   ],
+   "processing": "lane-sounds: re-cut from the source preview (AAC 48 kHz stereo -> mono mean), DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz (single lossy generation from the Riot source)"
   },
   "standard/Classic/equip": {
-   "url": "audio/standard-Classic-equip.911d960d2f4f.mp3",
-   "sha256": "911d960d2f4f102ef8e4c3a99dde9313a0a495c2c2480fa3db20b32356c11c53",
-   "bytes": 7660,
-   "duration": 0.55,
+   "url": "audio/standard-Classic-equip.1a3e501b39a7.mp3",
+   "sha256": "1a3e501b39a79f0a510286d6d717055b5431693ae4f3b030f4c4e727bc60f5ff",
+   "bytes": 12000,
+   "duration": 0.576,
    "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/a73aac70-4273-acdf-9952-0db1202b2bb5_default_universal.mp4",
    "cut": [
     0.1,
     0.55
-   ]
+   ],
+   "processing": "lane-sounds: re-cut from the source preview (AAC 48 kHz stereo -> mono mean), DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz (single lossy generation from the Riot source)"
   },
   "standard/Shorty/fire": {
-   "url": "audio/standard-Shorty-fire.57e613df2b39.mp3",
-   "sha256": "57e613df2b39a6568f62e68228864fe4c602949708df0f5f9b5a15c8cd2caa10",
-   "bytes": 4839,
-   "duration": 0.32,
+   "url": "audio/standard-Shorty-fire.44eb861191ea.mp3",
+   "sha256": "44eb861191ea214faf0d006b5a52ede2f2849ffa63e0e5f1df230f0a3c0cb8ab",
+   "bytes": 7680,
+   "duration": 0.36,
    "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/69698b55-4c05-f38e-ecc3-799de26d9796_default_universal.mp4",
    "cut": [
     6.337578231292517,
     0.32
-   ]
+   ],
+   "processing": "lane-sounds: re-cut from the source preview (AAC 48 kHz stereo -> mono mean), DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz (single lossy generation from the Riot source)"
   },
   "standard/Shorty/reload": {
-   "url": "audio/standard-Shorty-reload.60b6ca9db22b.mp3",
-   "sha256": "60b6ca9db22bb9187ff57f6e515449f14512839f13d63b2a256b2624290519eb",
-   "bytes": 21766,
-   "duration": 1.75,
+   "url": "audio/standard-Shorty-reload.b4bcfd5e64bd.mp3",
+   "sha256": "b4bcfd5e64bd5bcb4e23ef150751fe67199c49cbb65123e416ba0f7c429d513a",
+   "bytes": 36000,
+   "duration": 1.776,
    "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/69698b55-4c05-f38e-ecc3-799de26d9796_default_universal.mp4",
    "cut": [
     14.8,
     1.75
-   ]
+   ],
+   "processing": "lane-sounds: re-cut from the source preview (AAC 48 kHz stereo -> mono mean), DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz (single lossy generation from the Riot source)"
   },
   "standard/Shorty/equip": {
-   "url": "audio/standard-Shorty-equip.75511b091d92.mp3",
-   "sha256": "75511b091d923281a0b4ff6467bd562c7d17951f7f24b5237be3c39199e45b0b",
-   "bytes": 7660,
-   "duration": 0.55,
+   "url": "audio/standard-Shorty-equip.4190c42bcf9b.mp3",
+   "sha256": "4190c42bcf9bf1d00f8f7eb909c5fe9f720573df416fc265e46a9ef035a5cd88",
+   "bytes": 12000,
+   "duration": 0.576,
    "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/69698b55-4c05-f38e-ecc3-799de26d9796_default_universal.mp4",
    "cut": [
     0.1,
     0.55
-   ]
+   ],
+   "processing": "lane-sounds: re-cut from the source preview (AAC 48 kHz stereo -> mono mean), DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz (single lossy generation from the Riot source)"
   },
   "standard/Frenzy/fire": {
-   "url": "audio/standard-Frenzy-fire.48ecab76bb6b.mp3",
-   "sha256": "48ecab76bb6beb59a986b3533c7fc15b1b265fda75cb0b427a16a8e5c50eeb6f",
-   "bytes": 4839,
-   "duration": 0.32,
+   "url": "audio/standard-Frenzy-fire.5d18757a3b0c.mp3",
+   "sha256": "5d18757a3b0c50fab813d22cd4f06ccf3e32274f7a6c20491ce797a12d9eed4e",
+   "bytes": 7680,
+   "duration": 0.36,
    "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/bb83c26d-4173-b98c-a524-c89497bbd0c5_default_universal.mp4",
    "cut": [
     0.5457414965986395,
     0.32
-   ]
+   ],
+   "processing": "lane-sounds: re-cut from the source preview (AAC 48 kHz stereo -> mono mean), DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz (single lossy generation from the Riot source)"
   },
   "standard/Frenzy/reload": {
-   "url": "audio/standard-Frenzy-reload.1c8c1f727279.mp3",
-   "sha256": "1c8c1f727279c96558b4e731e277bddb80038b498f851519006618134d709782",
-   "bytes": 20199,
-   "duration": 1.6,
+   "url": "audio/standard-Frenzy-reload.ebb5cea37c65.mp3",
+   "sha256": "ebb5cea37c65c3e0c2f0b26d61459a31cd54afe531b7a7b9a0a013be5ae868a4",
+   "bytes": 33120,
+   "duration": 1.632,
    "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/bb83c26d-4173-b98c-a524-c89497bbd0c5_default_universal.mp4",
    "cut": [
     7.05,
     1.6
-   ]
+   ],
+   "processing": "lane-sounds: re-cut from the source preview (AAC 48 kHz stereo -> mono mean), DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz (single lossy generation from the Riot source)"
   },
   "standard/Frenzy/equip": {
-   "url": "audio/standard-Frenzy-equip.91d0320ad0b7.mp3",
-   "sha256": "91d0320ad0b7b55f8a309b6344caa19c9b982a874f1971bdae28e3dc257d0244",
-   "bytes": 7660,
-   "duration": 0.55,
+   "url": "audio/standard-Frenzy-equip.c8c349bcefea.mp3",
+   "sha256": "c8c349bcefea9cbf599163be00b67751969701c51bb54ed682f297c767be51e8",
+   "bytes": 12000,
+   "duration": 0.576,
    "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/bb83c26d-4173-b98c-a524-c89497bbd0c5_default_universal.mp4",
    "cut": [
     0.1,
     0.55
-   ]
+   ],
+   "processing": "lane-sounds: re-cut from the source preview (AAC 48 kHz stereo -> mono mean), DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz (single lossy generation from the Riot source)"
   },
   "standard/Ghost/fire": {
-   "url": "audio/standard-Ghost-fire.91b4257f8eae.mp3",
-   "sha256": "91b4257f8eaea4971c0865e96684028966a36d3e6d1b645c7848261b5f8faa77",
-   "bytes": 4839,
-   "duration": 0.32,
+   "url": "audio/standard-Ghost-fire.272b9eb34098.mp3",
+   "sha256": "272b9eb34098238549a816e5cd23a648a99840bd7dbefcbf36768a4944f3bab0",
+   "bytes": 7680,
+   "duration": 0.36,
    "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/fa654392-4fbe-1546-24be-7fa05098e9a3_default_universal.mp4",
    "cut": [
     1.1543582766439908,
     0.32
-   ]
+   ],
+   "processing": "lane-sounds: re-cut from the source preview (AAC 48 kHz stereo -> mono mean), DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz (single lossy generation from the Riot source)"
   },
   "standard/Ghost/reload": {
-   "url": "audio/standard-Ghost-reload.a384f8ce41e3.mp3",
-   "sha256": "a384f8ce41e38d55e72fcab0db0a926225bd0073374bcf83ba142d6330886d54",
-   "bytes": 22393,
-   "duration": 1.8,
+   "url": "audio/standard-Ghost-reload.c0c5ff4d8dac.mp3",
+   "sha256": "c0c5ff4d8dac13adf9f58b2660ef5ed516c5ac7229fc8dc0bd8e476664d11a82",
+   "bytes": 36960,
+   "duration": 1.824,
    "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/fa654392-4fbe-1546-24be-7fa05098e9a3_default_universal.mp4",
    "cut": [
     9.2,
     1.8
-   ]
+   ],
+   "processing": "lane-sounds: re-cut from the source preview (AAC 48 kHz stereo -> mono mean), DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz (single lossy generation from the Riot source)"
   },
   "standard/Ghost/equip": {
-   "url": "audio/standard-Ghost-equip.cae0c3fcb8c5.mp3",
-   "sha256": "cae0c3fcb8c58f363dd963801cb5c504d4ec8a79429d46c648e215d175d89ff3",
-   "bytes": 7660,
-   "duration": 0.55,
+   "url": "audio/standard-Ghost-equip.6ec03560a024.mp3",
+   "sha256": "6ec03560a0243386f477c877ded2767718d0160f494d0bc32ea547f6f6531f16",
+   "bytes": 12000,
+   "duration": 0.576,
    "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/fa654392-4fbe-1546-24be-7fa05098e9a3_default_universal.mp4",
    "cut": [
     0.1,
     0.55
-   ]
+   ],
+   "processing": "lane-sounds: re-cut from the source preview (AAC 48 kHz stereo -> mono mean), DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz (single lossy generation from the Riot source)"
   },
   "standard/Sheriff/fire": {
-   "url": "audio/standard-Sheriff-fire.64e43c8dc9f5.mp3",
-   "sha256": "64e43c8dc9f5cd3be69578bea9ef465c37de93ad1b84320d420412b03b99621b",
-   "bytes": 4839,
-   "duration": 0.32,
+   "url": "audio/standard-Sheriff-fire.618e8d424bf3.mp3",
+   "sha256": "618e8d424bf366a9a00a7c542f8c9682ea7311494cbca976366a4e06dd708bcc",
+   "bytes": 7680,
+   "duration": 0.36,
    "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/d404bf54-41a7-77f9-a107-22ae2abc9942_default_universal.mp4",
    "cut": [
     1.5634285714285714,
     0.32
-   ]
+   ],
+   "processing": "lane-sounds: re-cut from the source preview (AAC 48 kHz stereo -> mono mean), DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz (single lossy generation from the Riot source)"
   },
   "standard/Sheriff/reload": {
-   "url": "audio/standard-Sheriff-reload.9a7ee8b9ec02.mp3",
-   "sha256": "9a7ee8b9ec02b617fa63de2e06826dd561b9ee9b0d97eeed75e60c7967736b4d",
-   "bytes": 24901,
-   "duration": 2.0,
+   "url": "audio/standard-Sheriff-reload.7f52467507f1.mp3",
+   "sha256": "7f52467507f19efe31c6468737411b803296a23b78a310bd0bcc573d4853991c",
+   "bytes": 41280,
+   "duration": 2.04,
    "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/d404bf54-41a7-77f9-a107-22ae2abc9942_default_universal.mp4",
    "cut": [
     7.5,
     2
-   ]
+   ],
+   "processing": "lane-sounds: re-cut from the source preview (AAC 48 kHz stereo -> mono mean), DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz (single lossy generation from the Riot source)"
   },
   "standard/Sheriff/equip": {
-   "url": "audio/standard-Sheriff-equip.5a4e08455362.mp3",
-   "sha256": "5a4e08455362a68b88c7ca231b786a92253f2154781e734e995d4be83f7d07d6",
-   "bytes": 7660,
-   "duration": 0.55,
+   "url": "audio/standard-Sheriff-equip.3e1b29fd9dc3.mp3",
+   "sha256": "3e1b29fd9dc3c80b99ceb69928b43bd1b2a0121c4ffd315fa2961bea3aa4fe27",
+   "bytes": 12000,
+   "duration": 0.576,
    "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/d404bf54-41a7-77f9-a107-22ae2abc9942_default_universal.mp4",
    "cut": [
     0.1,
     0.55
-   ]
+   ],
+   "processing": "lane-sounds: re-cut from the source preview (AAC 48 kHz stereo -> mono mean), DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz (single lossy generation from the Riot source)"
   },
   "standard/Stinger/fire": {
-   "url": "audio/standard-Stinger-fire.e026f0cb5ef2.mp3",
-   "sha256": "e026f0cb5ef2088cc2f560fd36ff30ad0790f47814fbe8a1c3d68e8fc967b9f4",
-   "bytes": 4839,
-   "duration": 0.32,
+   "url": "audio/standard-Stinger-fire.eec591e80749.mp3",
+   "sha256": "eec591e80749bb598184b6eb4242151b8b740d8f8575b7d1edfcefdb7ea6daec",
+   "bytes": 7680,
+   "duration": 0.36,
    "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/028d98a7-4a8b-8851-572e-448ef90c81d6_default_universal.mp4",
    "cut": [
     0.25639909297052155,
     0.32
-   ]
+   ],
+   "processing": "lane-sounds: re-cut from the source preview (AAC 48 kHz stereo -> mono mean), DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz (single lossy generation from the Riot source)"
   },
   "standard/Stinger/reload": {
-   "url": "audio/standard-Stinger-reload.cdbebee0451f.mp3",
-   "sha256": "cdbebee0451f45f923f63a556250564184b8802183770f706e5e67c6ea6da2c1",
-   "bytes": 24901,
-   "duration": 2.0,
+   "url": "audio/standard-Stinger-reload.1a6718f804fc.mp3",
+   "sha256": "1a6718f804fc15beddbdd81931889cb22b0d12f492516e810b39b8562c5d0daa",
+   "bytes": 41280,
+   "duration": 2.04,
    "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/028d98a7-4a8b-8851-572e-448ef90c81d6_default_universal.mp4",
    "cut": [
     9.5,
     2
-   ]
+   ],
+   "processing": "lane-sounds: re-cut from the source preview (AAC 48 kHz stereo -> mono mean), DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz (single lossy generation from the Riot source)"
   },
   "standard/Stinger/equip": {
-   "url": "audio/standard-Stinger-equip.20b63c4a94be.mp3",
-   "sha256": "20b63c4a94bea0068ce08bbd6e1c6f5b97858e401e9889ab3fe3a5e72f32e0b1",
-   "bytes": 7660,
-   "duration": 0.55,
+   "url": "audio/standard-Stinger-equip.6895154185ef.mp3",
+   "sha256": "6895154185ef8b699ac7a9c9ef144483b5b8067ec3d08ece5e28736f433024f1",
+   "bytes": 12000,
+   "duration": 0.576,
    "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/028d98a7-4a8b-8851-572e-448ef90c81d6_default_universal.mp4",
    "cut": [
     0.1,
     0.55
-   ]
+   ],
+   "processing": "lane-sounds: re-cut from the source preview (AAC 48 kHz stereo -> mono mean), DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz (single lossy generation from the Riot source)"
   },
   "standard/Spectre/fire": {
-   "url": "audio/standard-Spectre-fire.c218ecfcb522.mp3",
-   "sha256": "c218ecfcb52285edaa9e1c70612eecc2ce8397d7efcf51589b8ca307c1d6982a",
-   "bytes": 4839,
-   "duration": 0.32,
+   "url": "audio/standard-Spectre-fire.234fd69f5d4a.mp3",
+   "sha256": "234fd69f5d4ad2d3848020b19da935d791e873cfb0d603fc954c1e334605c04a",
+   "bytes": 7680,
+   "duration": 0.36,
    "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/54455cfe-422b-be59-5850-168510be8372_default_universal.mp4",
    "cut": [
     0.2613877551020408,
     0.32
-   ]
+   ],
+   "processing": "lane-sounds: re-cut from the source preview (AAC 48 kHz stereo -> mono mean), DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz (single lossy generation from the Riot source)"
   },
   "standard/Spectre/reload": {
-   "url": "audio/standard-Spectre-reload.7ff90ed21087.mp3",
-   "sha256": "7ff90ed21087f29946d3244c0c73724e566c10ceb846e2ee094d0beef50433fa",
-   "bytes": 28035,
-   "duration": 2.25,
+   "url": "audio/standard-Spectre-reload.344d8fe2ae57.mp3",
+   "sha256": "344d8fe2ae57019df7d48643c9ed45d7aa50e21c8fb5aba1aa6c2ee216cf5919",
+   "bytes": 46080,
+   "duration": 2.28,
    "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/54455cfe-422b-be59-5850-168510be8372_default_universal.mp4",
    "cut": [
     15,
     2.25
-   ]
+   ],
+   "processing": "lane-sounds: re-cut from the source preview (AAC 48 kHz stereo -> mono mean), DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz (single lossy generation from the Riot source)"
   },
   "standard/Spectre/equip": {
-   "url": "audio/standard-Spectre-equip.e9c50e4301c6.mp3",
-   "sha256": "e9c50e4301c6cfb8e230be8c0760e092c643730f9028dcca30d4425a777464ad",
-   "bytes": 7660,
-   "duration": 0.55,
+   "url": "audio/standard-Spectre-equip.bc1b2f828127.mp3",
+   "sha256": "bc1b2f828127f68a08d54adca9a272a72a598003efbc6f8d6f381dd45b692fea",
+   "bytes": 12000,
+   "duration": 0.576,
    "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/54455cfe-422b-be59-5850-168510be8372_default_universal.mp4",
    "cut": [
     0.1,
     0.55
-   ]
+   ],
+   "processing": "lane-sounds: re-cut from the source preview (AAC 48 kHz stereo -> mono mean), DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz (single lossy generation from the Riot source)"
   },
   "standard/Bucky/fire": {
-   "url": "audio/standard-Bucky-fire.f0aadbc3ae5d.mp3",
-   "sha256": "f0aadbc3ae5d1c40d50e78a6b538c38f1a2dc7e26e22a4449685209dc4277a77",
-   "bytes": 4839,
-   "duration": 0.32,
+   "url": "audio/standard-Bucky-fire.fed64de630d2.mp3",
+   "sha256": "fed64de630d2ea1b81c9cde213dcd45c7b7f054bbe2f648ed60bb860ea223d50",
+   "bytes": 7680,
+   "duration": 0.36,
    "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/818b4325-4d79-82d3-b730-b4b3d45747a8_default_universal.mp4",
    "cut": [
     1.4536780045351474,
     0.32
-   ]
+   ],
+   "processing": "lane-sounds: re-cut from the source preview (AAC 48 kHz stereo -> mono mean), DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz (single lossy generation from the Riot source)"
   },
   "standard/Bucky/reload": {
-   "url": "audio/standard-Bucky-reload.59ff5aef4d67.mp3",
-   "sha256": "59ff5aef4d67423b6322c35ecc3fcea2321be7c515e684fa2d2296cc1d440c6f",
-   "bytes": 30857,
-   "duration": 2.5,
+   "url": "audio/standard-Bucky-reload.2194d497f554.mp3",
+   "sha256": "2194d497f5540befebaea0a04ef856fcea838f5101ff6f015e702133366d8286",
+   "bytes": 51360,
+   "duration": 2.544,
    "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/818b4325-4d79-82d3-b730-b4b3d45747a8_default_universal.mp4",
    "cut": [
     5.5,
     2.5
-   ]
+   ],
+   "processing": "lane-sounds: re-cut from the source preview (AAC 48 kHz stereo -> mono mean), DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz (single lossy generation from the Riot source)"
   },
   "standard/Bucky/equip": {
-   "url": "audio/standard-Bucky-equip.8f2035c1f6ca.mp3",
-   "sha256": "8f2035c1f6ca129a228222b897f4f77c9dd49a589039e38112ac431615e1f66f",
-   "bytes": 7660,
-   "duration": 0.55,
+   "url": "audio/standard-Bucky-equip.cf9b6065c972.mp3",
+   "sha256": "cf9b6065c9728015748c63356b59caa4fe78c5ae52db711fa2e8529cd823d0ea",
+   "bytes": 12000,
+   "duration": 0.576,
    "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/818b4325-4d79-82d3-b730-b4b3d45747a8_default_universal.mp4",
    "cut": [
     0.1,
     0.55
-   ]
+   ],
+   "processing": "lane-sounds: re-cut from the source preview (AAC 48 kHz stereo -> mono mean), DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz (single lossy generation from the Riot source)"
   },
   "standard/Judge/fire": {
-   "url": "audio/standard-Judge-fire.abf019488c31.mp3",
-   "sha256": "abf019488c31e1d5754b6c30be727b98c7d94dc9682b757d06a9e0683f1dbbe9",
-   "bytes": 4839,
-   "duration": 0.32,
+   "url": "audio/standard-Judge-fire.47ffb68dacc8.mp3",
+   "sha256": "47ffb68dacc8e90fac9124295522bfc97f56ac5c0004f41b888552730722d77b",
+   "bytes": 7680,
+   "duration": 0.36,
    "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/6b97476e-4226-6412-b6d6-99b0e18005a1_default_universal.mp4",
    "cut": [
     2.6908662131519274,
     0.32
-   ]
+   ],
+   "processing": "lane-sounds: re-cut from the source preview (AAC 48 kHz stereo -> mono mean), DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz (single lossy generation from the Riot source)"
   },
   "standard/Judge/reload": {
-   "url": "audio/standard-Judge-reload.a5b3ab1e2034.mp3",
-   "sha256": "a5b3ab1e20345018faf473ef908dae9f647a5192554483bd1fe67b5036486a18",
-   "bytes": 27408,
-   "duration": 2.2,
+   "url": "audio/standard-Judge-reload.35890287f715.mp3",
+   "sha256": "35890287f7159bf8e834001ec7786179e5227846dde5a52a0dd2d1b773a25aa7",
+   "bytes": 45120,
+   "duration": 2.232,
    "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/6b97476e-4226-6412-b6d6-99b0e18005a1_default_universal.mp4",
    "cut": [
     13,
     2.2
-   ]
+   ],
+   "processing": "lane-sounds: re-cut from the source preview (AAC 48 kHz stereo -> mono mean), DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz (single lossy generation from the Riot source)"
   },
   "standard/Bulldog/fire": {
-   "url": "audio/standard-Bulldog-fire.2093aee76224.mp3",
-   "sha256": "2093aee7622447702043fda39d30e2726c3d4e53e3c1c999e1ae10b93c59f34c",
-   "bytes": 4839,
-   "duration": 0.32,
+   "url": "audio/standard-Bulldog-fire.e420df40c740.mp3",
+   "sha256": "e420df40c740fe189add12235ce50f6a4402ec121d2cb39c25c7f76b005e4605",
+   "bytes": 7680,
+   "duration": 0.36,
    "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/15e02d4a-4f5a-f81c-006f-4c88a63ef529_default_universal.mp4",
    "cut": [
     1.4935873015873016,
     0.32
-   ]
+   ],
+   "processing": "lane-sounds: re-cut from the source preview (AAC 48 kHz stereo -> mono mean), DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz (single lossy generation from the Riot source)"
   },
   "standard/Bulldog/reload": {
-   "url": "audio/standard-Bulldog-reload.998419bffee8.mp3",
-   "sha256": "998419bffee89db7456296c8e1ed611f329308b1371267b01a66ce0b5b5a63f4",
-   "bytes": 27408,
-   "duration": 2.2,
+   "url": "audio/standard-Bulldog-reload.bc695267c886.mp3",
+   "sha256": "bc695267c886f8fed9bfe0b12b3a8fbb5f4623dddab18a091c33c9150b9a88c6",
+   "bytes": 45120,
+   "duration": 2.232,
    "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/15e02d4a-4f5a-f81c-006f-4c88a63ef529_default_universal.mp4",
    "cut": [
     14.1,
     2.2
-   ]
+   ],
+   "processing": "lane-sounds: re-cut from the source preview (AAC 48 kHz stereo -> mono mean), DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz (single lossy generation from the Riot source)"
   },
   "standard/Bulldog/equip": {
-   "url": "audio/standard-Bulldog-equip.20a39e99df37.mp3",
-   "sha256": "20a39e99df37460879d16e2d7138b1f4aa5dbbe8d5a442dc9365064eca72409f",
-   "bytes": 7660,
-   "duration": 0.55,
+   "url": "audio/standard-Bulldog-equip.a3c33901f08d.mp3",
+   "sha256": "a3c33901f08d2416448d3e4410ad8b58e318aa243b191b1fa6d20ae1c27c62db",
+   "bytes": 12000,
+   "duration": 0.576,
    "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/15e02d4a-4f5a-f81c-006f-4c88a63ef529_default_universal.mp4",
    "cut": [
     0.1,
     0.55
-   ]
+   ],
+   "processing": "lane-sounds: re-cut from the source preview (AAC 48 kHz stereo -> mono mean), DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz (single lossy generation from the Riot source)"
   },
   "standard/Guardian/fire": {
-   "url": "audio/standard-Guardian-fire.d9becca55763.mp3",
-   "sha256": "d9becca55763e17a58c8d06b6498074683745e3a3651360580675e0bac9b936b",
-   "bytes": 4839,
-   "duration": 0.32,
+   "url": "audio/standard-Guardian-fire.25e05f88a976.mp3",
+   "sha256": "25e05f88a976052e0214211e93883d3918dcaf7a3e3dab926f3f6e82b864b945",
+   "bytes": 7680,
+   "duration": 0.36,
    "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/6cac813b-459b-b909-090e-108a462da16e_default_universal.mp4",
    "cut": [
     1.6981224489795919,
     0.32
-   ]
+   ],
+   "processing": "lane-sounds: re-cut from the source preview (AAC 48 kHz stereo -> mono mean), DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz (single lossy generation from the Riot source)"
   },
   "standard/Guardian/reload": {
-   "url": "audio/standard-Guardian-reload.09290f41280a.mp3",
-   "sha256": "09290f41280ab9f8050bea41078fd3e2c9af64935bd4c1fe4ea669144651efb3",
-   "bytes": 23647,
-   "duration": 1.883333,
+   "url": "audio/standard-Guardian-reload.1a07cead8f3b.mp3",
+   "sha256": "1a07cead8f3be0badb5d3b55cf83c670369fb5ed2eb1c4051d60b39241302fe8",
+   "bytes": 38880,
+   "duration": 1.92,
    "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/6cac813b-459b-b909-090e-108a462da16e_default_universal.mp4",
    "cut": [
     9.3,
     1.8833329999999986
-   ]
+   ],
+   "processing": "lane-sounds: re-cut from the source preview (AAC 48 kHz stereo -> mono mean), DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz (single lossy generation from the Riot source)"
   },
   "standard/Guardian/equip": {
-   "url": "audio/standard-Guardian-equip.08adbd2c3eb2.mp3",
-   "sha256": "08adbd2c3eb22b685ad9a5d885c0a8ba8cd9e0239a41efc5e7068c76e7619044",
-   "bytes": 7660,
-   "duration": 0.55,
+   "url": "audio/standard-Guardian-equip.7972e32166cc.mp3",
+   "sha256": "7972e32166cc6e65552ea547c055bdc89384ecf20220ef9a171359623111bc97",
+   "bytes": 12000,
+   "duration": 0.576,
    "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/6cac813b-459b-b909-090e-108a462da16e_default_universal.mp4",
    "cut": [
     0.1,
     0.55
-   ]
+   ],
+   "processing": "lane-sounds: re-cut from the source preview (AAC 48 kHz stereo -> mono mean), DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz (single lossy generation from the Riot source)"
   },
   "standard/Phantom/fire": {
-   "url": "audio/standard-Phantom-fire.cb5510e0b6ae.mp3",
-   "sha256": "cb5510e0b6ae3998f2b8a417379047ebd7e271b1a80ba722fc392f24ab80b0dd",
-   "bytes": 4839,
-   "duration": 0.32,
+   "url": "audio/standard-Phantom-fire.5df5ea735715.mp3",
+   "sha256": "5df5ea7357150c4cabb39fa0b527aa341b4866729a57647ec6746fb52b69564a",
+   "bytes": 7680,
+   "duration": 0.36,
    "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/d48bfbfa-44e5-6cce-238a-a8885aebe65f_default_universal.mp4",
    "cut": [
     1.5634285714285714,
     0.32
-   ]
+   ],
+   "processing": "lane-sounds: re-cut from the source preview (AAC 48 kHz stereo -> mono mean), DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz (single lossy generation from the Riot source)"
   },
   "standard/Phantom/reload": {
-   "url": "audio/standard-Phantom-reload.acdca350d03d.mp3",
-   "sha256": "acdca350d03dacfeb3b6dc9b0d021a9fcc3ed603ef571f23800c7e579d533b65",
-   "bytes": 27408,
-   "duration": 2.2,
+   "url": "audio/standard-Phantom-reload.b4b78467ea4e.mp3",
+   "sha256": "b4b78467ea4e30636552567e3466a5ac629d357d9348b8d4b28d518a08af434f",
+   "bytes": 45120,
+   "duration": 2.232,
    "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/d48bfbfa-44e5-6cce-238a-a8885aebe65f_default_universal.mp4",
    "cut": [
     15.5,
     2.2
-   ]
+   ],
+   "processing": "lane-sounds: re-cut from the source preview (AAC 48 kHz stereo -> mono mean), DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz (single lossy generation from the Riot source)"
   },
   "standard/Phantom/equip": {
-   "url": "audio/standard-Phantom-equip.1e937df25e7b.mp3",
-   "sha256": "1e937df25e7bdc8250aeca9e1a6163a279c4f79c8393a47e6fecff42bea12a37",
-   "bytes": 7660,
-   "duration": 0.55,
+   "url": "audio/standard-Phantom-equip.fc4156cb93bd.mp3",
+   "sha256": "fc4156cb93bd8bfc1472ee5e1cba28051b49c1801c778fc4399efe3a3dcc8f1f",
+   "bytes": 12000,
+   "duration": 0.576,
    "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/d48bfbfa-44e5-6cce-238a-a8885aebe65f_default_universal.mp4",
    "cut": [
     0.1,
     0.55
-   ]
+   ],
+   "processing": "lane-sounds: re-cut from the source preview (AAC 48 kHz stereo -> mono mean), DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz (single lossy generation from the Riot source)"
   },
   "standard/Vandal/fire": {
-   "url": "audio/standard-Vandal-fire.571be8400178.mp3",
-   "sha256": "571be84001785ff11cafd33843f5a4eed2fc82d6d00845dd3024aa23c8159cc8",
-   "bytes": 4839,
-   "duration": 0.32,
+   "url": "audio/standard-Vandal-fire.4716fc6b1fde.mp3",
+   "sha256": "4716fc6b1fded7b9e07b51b1ee8fb0331c825695bb2db117431bcf2888e1ab18",
+   "bytes": 7680,
+   "duration": 0.36,
    "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/197511ac-4d5a-97fc-78f8-feb5d090dd20_default_universal.mp4",
    "cut": [
     1.593360544217687,
     0.32
-   ]
+   ],
+   "processing": "lane-sounds: re-cut from the source preview (AAC 48 kHz stereo -> mono mean), DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz (single lossy generation from the Riot source)"
   },
   "standard/Vandal/reload": {
-   "url": "audio/standard-Vandal-reload.7074236f8194.mp3",
-   "sha256": "7074236f81947d157a82b7807f6d64fbbb0adc71299d365a8fecef723281a0fe",
-   "bytes": 30857,
-   "duration": 2.5,
+   "url": "audio/standard-Vandal-reload.404075c64fcd.mp3",
+   "sha256": "404075c64fcddb049eb9c2a0915dcf78e5b02d13a3cb0bb0e805ac1449398166",
+   "bytes": 51360,
+   "duration": 2.544,
    "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/197511ac-4d5a-97fc-78f8-feb5d090dd20_default_universal.mp4",
    "cut": [
     10.1,
     2.5
-   ]
+   ],
+   "processing": "lane-sounds: re-cut from the source preview (AAC 48 kHz stereo -> mono mean), DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz (single lossy generation from the Riot source)"
   },
   "standard/Vandal/equip": {
-   "url": "audio/standard-Vandal-equip.07f7e7f88b38.mp3",
-   "sha256": "07f7e7f88b384191ee57f1a6a0d85657c9a2625d7a3ac9afb9090d8f32265583",
-   "bytes": 7660,
-   "duration": 0.55,
+   "url": "audio/standard-Vandal-equip.17da04c9f9cd.mp3",
+   "sha256": "17da04c9f9cd9e7ede4fcda6d7d7187d0333140f23f4c79ada5eeece56d86cca",
+   "bytes": 12000,
+   "duration": 0.576,
    "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/197511ac-4d5a-97fc-78f8-feb5d090dd20_default_universal.mp4",
    "cut": [
     0.1,
     0.55
-   ]
+   ],
+   "processing": "lane-sounds: re-cut from the source preview (AAC 48 kHz stereo -> mono mean), DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz (single lossy generation from the Riot source)"
   },
   "standard/Marshal/fire": {
-   "url": "audio/standard-Marshal-fire.a8f54e0cdb18.mp3",
-   "sha256": "a8f54e0cdb184300eb4e50e9a9ab5fcef597ce15beb7d63b8c6dc468b7d07233",
-   "bytes": 8610,
-   "duration": 0.65,
+   "url": "audio/standard-Marshal-fire.0a07b5e280a0.mp3",
+   "sha256": "0a07b5e280a059b48dad3301ac51ef07f72b9adf001f1cd4934a4aa6520afc72",
+   "bytes": 14400,
+   "duration": 0.696,
    "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/dd892622-45c7-26d4-3171-b3a99d828003_default_universal.mp4",
    "cut": [
     1.8926802721088436,
     0.65
-   ]
+   ],
+   "processing": "lane-sounds: re-cut from the source preview (AAC 48 kHz stereo -> mono mean), DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz (single lossy generation from the Riot source)"
   },
   "standard/Marshal/reload": {
-   "url": "audio/standard-Marshal-reload.b7a2d06c8bee.mp3",
-   "sha256": "b7a2d06c8bee676d00c921044feda4c5d8cec1e6e628791d2ba2331f118a2e5a",
-   "bytes": 24911,
-   "duration": 2.0,
+   "url": "audio/standard-Marshal-reload.14b77a4d8d41.mp3",
+   "sha256": "14b77a4d8d41b26438dfb5a7f42739e22e2bea69aea73d620588fac62a080e75",
+   "bytes": 41280,
+   "duration": 2.04,
    "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/dd892622-45c7-26d4-3171-b3a99d828003_default_universal.mp4",
    "cut": [
     10.8,
     2
-   ]
+   ],
+   "processing": "lane-sounds: re-cut from the source preview (AAC 48 kHz stereo -> mono mean), DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz (single lossy generation from the Riot source)"
   },
   "standard/Marshal/equip": {
-   "url": "audio/standard-Marshal-equip.fed82dc767b3.mp3",
-   "sha256": "fed82dc767b30b25e4fb98214ba5aaa843a07e16cbb337b35c9cc655f7d79831",
-   "bytes": 7670,
-   "duration": 0.55,
+   "url": "audio/standard-Marshal-equip.4bac09de7780.mp3",
+   "sha256": "4bac09de77805f3c31369e78f4e21fea1d6aeba4d1f0560287773d4d19c6ed15",
+   "bytes": 12000,
+   "duration": 0.576,
    "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/dd892622-45c7-26d4-3171-b3a99d828003_default_universal.mp4",
    "cut": [
     0.1,
     0.55
-   ]
+   ],
+   "processing": "lane-sounds: re-cut from the source preview (AAC 48 kHz stereo -> mono mean), DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz (single lossy generation from the Riot source)"
   },
   "standard/Outlaw/fire": {
-   "url": "audio/standard-Outlaw-fire.9126a8d2cd27.mp3",
-   "sha256": "9126a8d2cd277dda6dc074685d60a5337a5004911fa5a9ebb61df5ddc40be0ca",
-   "bytes": 4839,
-   "duration": 0.32,
+   "url": "audio/standard-Outlaw-fire.c97739e6580e.mp3",
+   "sha256": "c97739e6580ea6f40f959aea449977364ad560f9ad8ff177538428cc48226e91",
+   "bytes": 7680,
+   "duration": 0.36,
    "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/9a540ce9-45d7-5651-9324-e3afc351c777_default_universal.mp4",
    "cut": [
     1.483609977324263,
     0.32
-   ]
+   ],
+   "processing": "lane-sounds: re-cut from the source preview (AAC 48 kHz stereo -> mono mean), DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz (single lossy generation from the Riot source)"
   },
   "standard/Outlaw/reload": {
-   "url": "audio/standard-Outlaw-reload.0532bcb4f2e4.mp3",
-   "sha256": "0532bcb4f2e468faa45e0da06269c5f32343d5a58a34070a8a94da8b7574b130",
-   "bytes": 35872,
-   "duration": 2.900658,
+   "url": "audio/standard-Outlaw-reload.1dca7c4fdf7c.mp3",
+   "sha256": "1dca7c4fdf7c63dc41a25c3e5e37f7c2240b8f12c932d51ecacc679e0add5935",
+   "bytes": 59040,
+   "duration": 2.928,
    "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/9a540ce9-45d7-5651-9324-e3afc351c777_default_universal.mp4",
    "cut": [
     12.3,
     2.9
-   ]
+   ],
+   "processing": "lane-sounds: re-cut from the source preview (AAC 48 kHz stereo -> mono mean), DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz (single lossy generation from the Riot source)"
   },
   "standard/Outlaw/equip": {
-   "url": "audio/standard-Outlaw-equip.172d96e6771c.mp3",
-   "sha256": "172d96e6771c584f8ae3d62691ac5be07d393e3596c27154ac6537e88fae30eb",
-   "bytes": 7660,
-   "duration": 0.55,
+   "url": "audio/standard-Outlaw-equip.5f51f5e8ec8f.mp3",
+   "sha256": "5f51f5e8ec8f7b13f6f20eb06e530303446c405330c8dddf4457205d7216670f",
+   "bytes": 12000,
+   "duration": 0.576,
    "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/9a540ce9-45d7-5651-9324-e3afc351c777_default_universal.mp4",
    "cut": [
     0.1,
     0.55
-   ]
+   ],
+   "processing": "lane-sounds: re-cut from the source preview (AAC 48 kHz stereo -> mono mean), DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz (single lossy generation from the Riot source)"
   },
   "standard/Operator/fire": {
-   "url": "audio/standard-Operator-fire.d2c8e6ee6c64.mp3",
-   "sha256": "d2c8e6ee6c6422b5b8361a8406e6c95968dd2f2ff4fa38f4d3a9f755beeb7da7",
-   "bytes": 8600,
-   "duration": 0.65,
+   "url": "audio/standard-Operator-fire.70b5e4ab63ae.mp3",
+   "sha256": "70b5e4ab63ae5ecadac14824b329dbd6e42b5b7eb0deeae30cf1bf5a46fa880d",
+   "bytes": 14400,
+   "duration": 0.696,
    "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/0daab993-4a7c-3ee5-41d5-52af70473f24_default_universal.mp4",
    "cut": [
     2.6060589569160997,
     0.65
-   ]
+   ],
+   "processing": "lane-sounds: re-cut from the source preview (AAC 48 kHz stereo -> mono mean), DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz (single lossy generation from the Riot source)"
   },
   "standard/Operator/reload": {
-   "url": "audio/standard-Operator-reload.9942b576f53e.mp3",
-   "sha256": "9942b576f53e384e90845bea7e9642e1016e90c0c2f2da0232907f5a15bdc75b",
-   "bytes": 36812,
-   "duration": 3.0,
+   "url": "audio/standard-Operator-reload.8c437e297f6e.mp3",
+   "sha256": "8c437e297f6eb37c05d711262faa58f156f4221d94e58543ffb85d715bb7e4cc",
+   "bytes": 60960,
+   "duration": 3.024,
    "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/0daab993-4a7c-3ee5-41d5-52af70473f24_default_universal.mp4",
    "cut": [
     14,
     3
-   ]
+   ],
+   "processing": "lane-sounds: re-cut from the source preview (AAC 48 kHz stereo -> mono mean), DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz (single lossy generation from the Riot source)"
   },
   "standard/Operator/equip": {
-   "url": "audio/standard-Operator-equip.e54aa2dd037d.mp3",
-   "sha256": "e54aa2dd037d7d4aca2d72e9410e25cc1a23c4b3dd85190251cd58c50e4c7f42",
-   "bytes": 7660,
-   "duration": 0.55,
+   "url": "audio/standard-Operator-equip.fc132529fcae.mp3",
+   "sha256": "fc132529fcae7ec495ca321e7ec56c48b8c1ea087ea7a26442938c80dc440bdc",
+   "bytes": 12000,
+   "duration": 0.576,
    "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/0daab993-4a7c-3ee5-41d5-52af70473f24_default_universal.mp4",
    "cut": [
     0.1,
     0.55
-   ]
+   ],
+   "processing": "lane-sounds: re-cut from the source preview (AAC 48 kHz stereo -> mono mean), DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz (single lossy generation from the Riot source)"
   },
   "standard/Ares/fire": {
-   "url": "audio/standard-Ares-fire.7577f73d28ec.mp3",
-   "sha256": "7577f73d28ec962909e299491d1de565370abc0b5b471074c54ee8d5e752b531",
-   "bytes": 4839,
-   "duration": 0.32,
+   "url": "audio/standard-Ares-fire.179d5c804998.mp3",
+   "sha256": "179d5c80499800fdc47a18ccb81c274e1250d2dc200af48f0671784741486613",
+   "bytes": 7680,
+   "duration": 0.36,
    "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/dce84e7e-4496-33ef-ea78-6dbd3ffdf857_default_universal.mp4",
    "cut": [
     2.0573061224489795,
     0.32
-   ]
+   ],
+   "processing": "lane-sounds: re-cut from the source preview (AAC 48 kHz stereo -> mono mean), DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz (single lossy generation from the Riot source)"
   },
   "standard/Ares/reload": {
-   "url": "audio/standard-Ares-reload.30bdde04e0e6.mp3",
-   "sha256": "30bdde04e0e6888a54509696ff085bc30ee05c40c7370e5a751bb6bc30cad485",
-   "bytes": 30857,
-   "duration": 2.5,
+   "url": "audio/standard-Ares-reload.e6493e43468b.mp3",
+   "sha256": "e6493e43468bdacfee076691014685c93e907d89f7b0f1e5c271fd12170d54f0",
+   "bytes": 51360,
+   "duration": 2.544,
    "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/dce84e7e-4496-33ef-ea78-6dbd3ffdf857_default_universal.mp4",
    "cut": [
     15.1,
     2.5
-   ]
+   ],
+   "processing": "lane-sounds: re-cut from the source preview (AAC 48 kHz stereo -> mono mean), DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz (single lossy generation from the Riot source)"
   },
   "standard/Ares/equip": {
-   "url": "audio/standard-Ares-equip.ad5cde7e86a8.mp3",
-   "sha256": "ad5cde7e86a887aba08a6a636e4870b1430764411de039e62d055d1d4fbd8771",
-   "bytes": 7660,
-   "duration": 0.55,
+   "url": "audio/standard-Ares-equip.07a043664f3f.mp3",
+   "sha256": "07a043664f3f5438c0aa5b61511d7168cffdd46b88e827fa480433c4f581af58",
+   "bytes": 12000,
+   "duration": 0.576,
    "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/dce84e7e-4496-33ef-ea78-6dbd3ffdf857_default_universal.mp4",
    "cut": [
     0.1,
     0.55
-   ]
+   ],
+   "processing": "lane-sounds: re-cut from the source preview (AAC 48 kHz stereo -> mono mean), DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz (single lossy generation from the Riot source)"
   },
   "standard/Odin/fire": {
-   "url": "audio/standard-Odin-fire.1793c1d4989f.mp3",
-   "sha256": "1793c1d4989fccbac684468df95a72dd6e9f072184558bf90045a3812fe51b31",
-   "bytes": 4839,
-   "duration": 0.32,
+   "url": "audio/standard-Odin-fire.8970f8e69fc1.mp3",
+   "sha256": "8970f8e69fc1bc41c4bf9c0ad204e248e40ed694abfd6f5655e0137949f37ca2",
+   "bytes": 7680,
+   "duration": 0.36,
    "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/32f7797f-4491-e21f-e40b-cfb639df3c97_default_universal.mp4",
    "cut": [
     2.0423401360544218,
     0.32
-   ]
+   ],
+   "processing": "lane-sounds: re-cut from the source preview (AAC 48 kHz stereo -> mono mean), DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz (single lossy generation from the Riot source)"
   },
   "standard/Odin/reload": {
-   "url": "audio/standard-Odin-reload.0b4c75474ee7.mp3",
-   "sha256": "0b4c75474ee70b66b7c705d94bd7dd0e9f5e306145037e37165645dbbd915d45",
-   "bytes": 46530,
-   "duration": 3.8,
+   "url": "audio/standard-Odin-reload.dd57d1d38494.mp3",
+   "sha256": "dd57d1d38494ead6223e3fa3d6fb84fe9fc455af5a1d3883cc7a4ab874731384",
+   "bytes": 77280,
+   "duration": 3.84,
    "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/32f7797f-4491-e21f-e40b-cfb639df3c97_default_universal.mp4",
    "cut": [
     17.9,
     3.8
-   ]
+   ],
+   "processing": "lane-sounds: re-cut from the source preview (AAC 48 kHz stereo -> mono mean), DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz (single lossy generation from the Riot source)"
   },
   "standard/Odin/equip": {
-   "url": "audio/standard-Odin-equip.6d07f15fd0e7.mp3",
-   "sha256": "6d07f15fd0e7f0235df4060757c732e1ce20929fbef034110dfe322abeb520ba",
-   "bytes": 7660,
-   "duration": 0.55,
+   "url": "audio/standard-Odin-equip.772cda7f8a56.mp3",
+   "sha256": "772cda7f8a56f92aab11ec884846d9f89afd3a34bb7010427c5f9f5d059ff79c",
+   "bytes": 12000,
+   "duration": 0.576,
    "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/32f7797f-4491-e21f-e40b-cfb639df3c97_default_universal.mp4",
    "cut": [
     0.1,
     0.55
-   ]
+   ],
+   "processing": "lane-sounds: re-cut from the source preview (AAC 48 kHz stereo -> mono mean), DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz (single lossy generation from the Riot source)"
   },
   "standard/Knife/knife": {
    "url": "audio/standard-Knife-knife.7ecc9c0c4d3c.mp3",
@@ -620,367 +673,400 @@
    ]
   },
   "prime/Classic/fire": {
-   "url": "audio/prime-Classic-fire.8d794f1ddc40.mp3",
-   "sha256": "8d794f1ddc4018a5df56dbb6e25be85de9a5407a695e0bf82102fe4cb2087f05",
-   "bytes": 4849,
-   "duration": 0.32,
+   "url": "audio/prime-Classic-fire.a32f07778ad9.mp3",
+   "sha256": "a32f07778ad9509c18fccc4e46dc53ab9c173765f7eddd7d2d21882acf3744e8",
+   "bytes": 7680,
+   "duration": 0.36,
    "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/a670ee4b-a202-4c7f-8021-7e4e11840cff_default_universal.mp4",
    "cut": [
     0.29131972789115645,
     0.32
-   ]
+   ],
+   "processing": "lane-sounds: re-cut from the source preview (AAC 48 kHz stereo -> mono mean), DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz (single lossy generation from the Riot source)"
   },
   "prime/Classic/reload": {
-   "url": "audio/prime-Classic-reload.a6154e00406d.mp3",
-   "sha256": "a6154e00406dffd9514a6f5a23bca01f1a4a77fae16cdabc8b616c54212c197c",
-   "bytes": 21776,
-   "duration": 1.75,
+   "url": "audio/prime-Classic-reload.16c4d2a8e705.mp3",
+   "sha256": "16c4d2a8e705521a98cd76412b337c7931cd31745d3568c5c565a880641e8f13",
+   "bytes": 36000,
+   "duration": 1.776,
    "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/4c99c871-f3b6-4bcc-87ff-2c83adaac322_default_universal.mp4",
    "cut": [
     1.35,
     1.75
-   ]
+   ],
+   "processing": "lane-sounds: re-cut from the source preview (AAC 48 kHz stereo -> mono mean), DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz (single lossy generation from the Riot source)"
   },
   "prime/Spectre/fire": {
-   "url": "audio/prime-Spectre-fire.daaf354ffc8e.mp3",
-   "sha256": "daaf354ffc8e6c59ee99921ed5ab041154e42ea4d1aefaaf14ef058ddbe2543f",
-   "bytes": 4849,
-   "duration": 0.32,
+   "url": "audio/prime-Spectre-fire.02de52067d8c.mp3",
+   "sha256": "02de52067d8cadece171703b4ad9097124b5e08beab57df22aae41a5b845ae22",
+   "bytes": 7680,
+   "duration": 0.36,
    "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/f34ea8ed-01d5-4dd8-a59f-68fb31ecf23f_default_universal.mp4",
    "cut": [
     0.42601360544217687,
     0.32
-   ]
+   ],
+   "processing": "lane-sounds: re-cut from the source preview (AAC 48 kHz stereo -> mono mean), DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz (single lossy generation from the Riot source)"
   },
   "prime/Spectre/reload": {
-   "url": "audio/prime-Spectre-reload.de3015262cc5.mp3",
-   "sha256": "de3015262cc53f724fe726c86a6f98b588c1382b312a1fb5aea708dba6220b82",
-   "bytes": 28045,
-   "duration": 2.25,
+   "url": "audio/prime-Spectre-reload.7eb1aae26d7f.mp3",
+   "sha256": "7eb1aae26d7f309f4c08b889d5d586e2ed293f24354af80a36c7107f7c9a4db4",
+   "bytes": 46080,
+   "duration": 2.28,
    "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/924cdc06-0fff-4b95-9c34-1b170f37c488_default_universal.mp4",
    "cut": [
     1.35,
     2.25
-   ]
+   ],
+   "processing": "lane-sounds: re-cut from the source preview (AAC 48 kHz stereo -> mono mean), DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz (single lossy generation from the Riot source)"
   },
   "prime/Guardian/fire": {
-   "url": "audio/prime-Guardian-fire.5e12ca3660dd.mp3",
-   "sha256": "5e12ca3660dd251274351f11b9a7ff7d898ca642cdc3ace5b2cb8d85862c460b",
-   "bytes": 4849,
-   "duration": 0.32,
+   "url": "audio/prime-Guardian-fire.56c69ec3c327.mp3",
+   "sha256": "56c69ec3c327d071cb7b5af743cc2953734cc7dea57ec5f3e5ee672709066f2d",
+   "bytes": 7680,
+   "duration": 0.36,
    "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/26b4a8b8-b28f-493d-8f39-93d19f73a910_default_universal.mp4",
    "cut": [
     0.5656961451247166,
     0.32
-   ]
+   ],
+   "processing": "lane-sounds: re-cut from the source preview (AAC 48 kHz stereo -> mono mean), DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz (single lossy generation from the Riot source)"
   },
   "prime/Guardian/reload": {
-   "url": "audio/prime-Guardian-reload.15348a2a0ad9.mp3",
-   "sha256": "15348a2a0ad98d4dbfeccf571f9f292bf4e6f8efa87e566a8dbffdbc890d58f8",
-   "bytes": 30867,
-   "duration": 2.5,
+   "url": "audio/prime-Guardian-reload.43918f3d5341.mp3",
+   "sha256": "43918f3d5341d3f8ef9682cf5aed651a44de103242ace52f837a6db18c3ec0a6",
+   "bytes": 51360,
+   "duration": 2.544,
    "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/9de9bf52-dfca-4d99-8fd3-51a85ca3bcef_default_universal.mp4",
    "cut": [
     1.35,
     2.5
-   ]
+   ],
+   "processing": "lane-sounds: re-cut from the source preview (AAC 48 kHz stereo -> mono mean), DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz (single lossy generation from the Riot source)"
   },
   "prime/Vandal/fire": {
-   "url": "audio/prime-Vandal-fire.5b6334c68c5d.mp3",
-   "sha256": "5b6334c68c5d2cc0b03c0e298febab60329b1fccf13b7920279881f567c8fb4f",
-   "bytes": 4849,
-   "duration": 0.32,
+   "url": "audio/prime-Vandal-fire.96f698ddc7ed.mp3",
+   "sha256": "96f698ddc7ed30dbb542d55e3ab159b003d508b1651899fa127241dd5253fdba",
+   "bytes": 7680,
+   "duration": 0.36,
    "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/b3ac314b-100a-4822-8464-e0c861ca9171_default_universal.mp4",
    "cut": [
     0.41104761904761905,
     0.32
-   ]
+   ],
+   "processing": "lane-sounds: re-cut from the source preview (AAC 48 kHz stereo -> mono mean), DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz (single lossy generation from the Riot source)"
   },
   "prime/Vandal/reload": {
-   "url": "audio/prime-Vandal-reload.379cafd904cc.mp3",
-   "sha256": "379cafd904cc4e0039e9c6f4f17800128ab27f65f4d8a0f5db804ab6c086a600",
-   "bytes": 30867,
-   "duration": 2.5,
+   "url": "audio/prime-Vandal-reload.620b99763542.mp3",
+   "sha256": "620b99763542e09a41e409c9d2af274326f22b91cbb05283f7942981a6d34b9c",
+   "bytes": 51360,
+   "duration": 2.544,
    "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/3dce5c84-8554-4fba-aaa1-af725779014c_default_universal.mp4",
    "cut": [
     1.35,
     2.5
-   ]
+   ],
+   "processing": "lane-sounds: re-cut from the source preview (AAC 48 kHz stereo -> mono mean), DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz (single lossy generation from the Riot source)"
   },
   "prime/Knife/knife": {
-   "url": "audio/prime-Knife-knife.72dbd337e4e4.mp3",
-   "sha256": "72dbd337e4e459e80b0ee1effd15dbed32f7ccb44113d067127a103fad78f265",
-   "bytes": 6416,
-   "duration": 0.45,
+   "url": "audio/prime-Knife-knife.386e4041e9b3.mp3",
+   "sha256": "386e4041e9b3ccc99f24611c5dd3a61a5dd4af02ce30e8fe3e23821c2f49240d",
+   "bytes": 10080,
+   "duration": 0.48,
    "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/316137d8-1ce8-4f00-9ee5-97d3df6561de_default_universal.mp4",
    "cut": [
-    2.6,
+    3.99,
     0.45
-   ]
+   ],
+   "processing": "lane-sounds: re-cut from the source preview (AAC 48 kHz stereo -> mono mean), DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz (single lossy generation from the Riot source)"
   },
   "prime/Knife/equip": {
-   "url": "audio/prime-Knife-equip.cf6ad5cda74b.mp3",
-   "sha256": "cf6ad5cda74b7e706e51a756530c51d8a7282614cc2de2047cb5db9b351379ea",
-   "bytes": 10491,
-   "duration": 0.8,
+   "url": "audio/prime-Knife-equip.7641c7ebea4f.mp3",
+   "sha256": "7641c7ebea4f9329b97ad2f58a0db8f3f8dd277dd8285302fbc6a75f6ef739c6",
+   "bytes": 17280,
+   "duration": 0.84,
    "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/316137d8-1ce8-4f00-9ee5-97d3df6561de_default_universal.mp4",
    "cut": [
     0.05,
     0.8
-   ]
+   ],
+   "processing": "lane-sounds: re-cut from the source preview (AAC 48 kHz stereo -> mono mean), DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz (single lossy generation from the Riot source)"
   },
   "prime/Knife/inspect": {
-   "url": "audio/prime-Knife-inspect.a23d2c84cee7.mp3",
-   "sha256": "a23d2c84cee79c460950b2f85b06abc5ecf9ddca89d3fb2ecd0c8d57bbd4a37b",
-   "bytes": 36822,
-   "duration": 3.0,
+   "url": "audio/prime-Knife-inspect.0b7af42954f3.mp3",
+   "sha256": "0b7af42954f3b463fc206af07a22afcdc4ce4812559b0668fe4d1a09a98b131b",
+   "bytes": 36000,
+   "duration": 1.776,
    "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/316137d8-1ce8-4f00-9ee5-97d3df6561de_default_universal.mp4",
    "cut": [
-    5.0,
-    3
-   ]
+    1.85,
+    1.75
+   ],
+   "processing": "lane-sounds: re-cut from the source preview (AAC 48 kHz stereo -> mono mean), DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz (single lossy generation from the Riot source)"
   },
   "blastx/Frenzy/fire": {
-   "url": "audio/blastx-Frenzy-fire.e20c8258b241.mp3",
-   "sha256": "e20c8258b24168a91a704a23db1b8cd13eecda774a87eb1a31ea7bd0a6c503f5",
-   "bytes": 4525,
-   "duration": 0.3,
+   "url": "audio/blastx-Frenzy-fire.09d9211c2db7.mp3",
+   "sha256": "09d9211c2db7890ad670c7343b382d24f1c1deb1f7a8dc825c23de32ee282251",
+   "bytes": 7200,
+   "duration": 0.336,
    "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/473e874b-4ae3-4055-bfe5-b3a2745f99d3_default_universal.mp4",
    "cut": [
     4.8,
     0.3
-   ]
+   ],
+   "processing": "lane-sounds: re-cut from the source preview (AAC 48 kHz stereo -> mono mean), DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz (single lossy generation from the Riot source)"
   },
   "blastx/Frenzy/reload": {
-   "url": "audio/blastx-Frenzy-reload.60dda6732c1f.mp3",
-   "sha256": "60dda6732c1fb1a05616528cd0179b5029035107e16e413a622168d45a4eb727",
-   "bytes": 18945,
-   "duration": 1.5,
+   "url": "audio/blastx-Frenzy-reload.84218729745f.mp3",
+   "sha256": "84218729745f07b85559b034258cc2c31f0793e20fd799390b87bea19da7ae51",
+   "bytes": 31200,
+   "duration": 1.536,
    "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/473e874b-4ae3-4055-bfe5-b3a2745f99d3_default_universal.mp4",
    "cut": [
     1.2,
     1.5
-   ]
+   ],
+   "processing": "lane-sounds: re-cut from the source preview (AAC 48 kHz stereo -> mono mean), DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz (single lossy generation from the Riot source)"
   },
   "blastx/Frenzy/inspect": {
-   "url": "audio/blastx-Frenzy-inspect.fc554fb98a4b.mp3",
-   "sha256": "fc554fb98a4bbe3b199a818210926666de2c1bd5477a60aa9e9b3843173b2f4b",
-   "bytes": 27408,
-   "duration": 2.2,
+   "url": "audio/blastx-Frenzy-inspect.0bbdf69aedcd.mp3",
+   "sha256": "0bbdf69aedcd17d5e1bb989828f7267d6a046534929e783556e47090229e167c",
+   "bytes": 45120,
+   "duration": 2.232,
    "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/473e874b-4ae3-4055-bfe5-b3a2745f99d3_default_universal.mp4",
    "cut": [
     2.7,
     2.2
-   ]
+   ],
+   "processing": "lane-sounds: re-cut from the source preview (AAC 48 kHz stereo -> mono mean), DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz (single lossy generation from the Riot source)"
   },
   "blastx/Frenzy/equip": {
-   "url": "audio/blastx-Frenzy-equip.4951bf7cac14.mp3",
-   "sha256": "4951bf7cac1479735b848bee331e3b3f42716a935d3bb94af2f2b563a2eaed48",
-   "bytes": 12989,
-   "duration": 1.0,
+   "url": "audio/blastx-Frenzy-equip.6702fafdaf05.mp3",
+   "sha256": "6702fafdaf052e4360d6e55798091c6d3566c752ff68b9c3648a4a247dca029b",
+   "bytes": 21120,
+   "duration": 1.032,
    "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/b5492751-437c-b082-0455-00baa373f057_default_universal.mp4",
    "cut": [
     0.7,
     1
-   ]
+   ],
+   "processing": "lane-sounds: re-cut from the source preview (AAC 48 kHz stereo -> mono mean), DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz (single lossy generation from the Riot source)"
   },
   "blastx/Spectre/fire": {
-   "url": "audio/blastx-Spectre-fire.b9c428958cca.mp3",
-   "sha256": "b9c428958ccaf819a5dbcab2535b2dafaa9d2f8a4192974cb492c3f24ef44874",
-   "bytes": 2958,
-   "duration": 0.18,
+   "url": "audio/blastx-Spectre-fire.96fab3d0b31a.mp3",
+   "sha256": "96fab3d0b31ae947fc3a055eea196be91cb2150cfaf247c3e5d7cdd7b31ecdd7",
+   "bytes": 6240,
+   "duration": 0.288,
    "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/ab28036f-4e24-e01e-d808-e19448013b27_default_universal.mp4",
    "cut": [
-    5.9,
-    0.18
-   ]
+    5.765,
+    0.25
+   ],
+   "processing": "lane-sounds: re-cut from the source preview (AAC 48 kHz stereo -> mono mean), DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz (single lossy generation from the Riot source)"
   },
   "blastx/Spectre/reload": {
-   "url": "audio/blastx-Spectre-reload.f908c9bad4ce.mp3",
-   "sha256": "f908c9bad4cecd47561ba94647479865b17c76748734fe9b5b551f816756b4bc",
-   "bytes": 28035,
-   "duration": 2.25,
+   "url": "audio/blastx-Spectre-reload.1b738959ca2a.mp3",
+   "sha256": "1b738959ca2a71c8d05aff87d5bf99aaa5b7407e62fc950fae82bb438ca4a54b",
+   "bytes": 46080,
+   "duration": 2.28,
    "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/ab28036f-4e24-e01e-d808-e19448013b27_default_universal.mp4",
    "cut": [
     2.5,
     2.25
-   ]
+   ],
+   "processing": "lane-sounds: re-cut from the source preview (AAC 48 kHz stereo -> mono mean), DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz (single lossy generation from the Riot source)"
   },
   "blastx/Spectre/inspect": {
-   "url": "audio/blastx-Spectre-inspect.e1945623f9e3.mp3",
-   "sha256": "e1945623f9e33d8ec19eabd9dd1d3fa6a31aa32d72deb2d4343eb7119d425db7",
-   "bytes": 27408,
-   "duration": 2.2,
+   "url": "audio/blastx-Spectre-inspect.6f5db6328832.mp3",
+   "sha256": "6f5db632883286ac798996c186557ae1b24a3901a93ab89189aeb35ef7f5f271",
+   "bytes": 45120,
+   "duration": 2.232,
    "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/ab28036f-4e24-e01e-d808-e19448013b27_default_universal.mp4",
    "cut": [
     3.6,
     2.2
-   ]
+   ],
+   "processing": "lane-sounds: re-cut from the source preview (AAC 48 kHz stereo -> mono mean), DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz (single lossy generation from the Riot source)"
   },
   "blastx/Spectre/equip": {
-   "url": "audio/blastx-Spectre-equip.a4937d7ff4a5.mp3",
-   "sha256": "a4937d7ff4a5f067876d873805fa3a2ee0f5529fa84b9b25970be092ed199cdc",
-   "bytes": 16437,
-   "duration": 1.3,
+   "url": "audio/blastx-Spectre-equip.4641f86691cf.mp3",
+   "sha256": "4641f86691cfc1965f55339ede03c4c074cb4866eb77208137399f65e615404b",
+   "bytes": 27360,
+   "duration": 1.344,
    "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/7f861fa2-4e01-e055-3417-90b7ab944e4e_default_universal.mp4",
    "cut": [
     0.6,
     1.3
-   ]
+   ],
+   "processing": "lane-sounds: re-cut from the source preview (AAC 48 kHz stereo -> mono mean), DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz (single lossy generation from the Riot source)"
   },
   "blastx/Phantom/fire": {
-   "url": "audio/blastx-Phantom-fire.50270fa3e8be.mp3",
-   "sha256": "50270fa3e8be999efb9ac368a37852ebfb5059ad5097930d80da3a0bc4734408",
-   "bytes": 3271,
-   "duration": 0.2,
+   "url": "audio/blastx-Phantom-fire.e4c0c238fde1.mp3",
+   "sha256": "e4c0c238fde1d09d4eabfb0703bb52537f496395b046ea028fc93f1335ef16ae",
+   "bytes": 5280,
+   "duration": 0.24,
    "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/559dc2ec-425f-4b0f-fa23-c98619724994_default_universal.mp4",
    "cut": [
     6.0,
     0.2
-   ]
+   ],
+   "processing": "lane-sounds: re-cut from the source preview (AAC 48 kHz stereo -> mono mean), DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz (single lossy generation from the Riot source)"
   },
   "blastx/Phantom/reload": {
-   "url": "audio/blastx-Phantom-reload.52c02bee5a6e.mp3",
-   "sha256": "52c02bee5a6e2894311d938bea8cc4c2adfd8a37ba0b0140a93f3e8b11929dfc",
-   "bytes": 30857,
-   "duration": 2.5,
+   "url": "audio/blastx-Phantom-reload.71c68f82fe54.mp3",
+   "sha256": "71c68f82fe54ce3ec1641038bed7be485f80e0d3ddab952bf3d3f9f1a0f5902e",
+   "bytes": 51360,
+   "duration": 2.544,
    "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/559dc2ec-425f-4b0f-fa23-c98619724994_default_universal.mp4",
    "cut": [
     3.15,
     2.5
-   ]
+   ],
+   "processing": "lane-sounds: re-cut from the source preview (AAC 48 kHz stereo -> mono mean), DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz (single lossy generation from the Riot source)"
   },
   "blastx/Phantom/inspect": {
-   "url": "audio/blastx-Phantom-inspect.31f1394e58f5.mp3",
-   "sha256": "31f1394e58f55918734f84a599af4949c9d84f79116589849eec2a2a0ab5611c",
-   "bytes": 27408,
-   "duration": 2.2,
+   "url": "audio/blastx-Phantom-inspect.c3abf627f4c1.mp3",
+   "sha256": "c3abf627f4c13bbba309af59cbc173532e6fb728ea87a732cb278126dd9f7bd6",
+   "bytes": 45120,
+   "duration": 2.232,
    "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/559dc2ec-425f-4b0f-fa23-c98619724994_default_universal.mp4",
    "cut": [
     0.4,
     2.2
-   ]
+   ],
+   "processing": "lane-sounds: re-cut from the source preview (AAC 48 kHz stereo -> mono mean), DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz (single lossy generation from the Riot source)"
   },
   "blastx/Phantom/equip": {
-   "url": "audio/blastx-Phantom-equip.d06ff48dbc00.mp3",
-   "sha256": "d06ff48dbc00721fd1aa756cb0e6643c10c1cd026db42942aead2b9ea2530d7c",
-   "bytes": 16437,
-   "duration": 1.3,
+   "url": "audio/blastx-Phantom-equip.7bf5cff3e89c.mp3",
+   "sha256": "7bf5cff3e89c3a6ff5f72ea6971c512006230b49372a79a0e6cf81280227bfe7",
+   "bytes": 27360,
+   "duration": 1.344,
    "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/f492e257-48bc-ef29-5765-7382871d3375_default_universal.mp4",
    "cut": [
     0.65,
     1.3
-   ]
+   ],
+   "processing": "lane-sounds: re-cut from the source preview (AAC 48 kHz stereo -> mono mean), DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz (single lossy generation from the Riot source)"
   },
   "blastx/Odin/fire": {
-   "url": "audio/blastx-Odin-fire.d33c50bc86de.mp3",
-   "sha256": "d33c50bc86decf76fa264e06dd7446efb5a98ee4477caea7d417ba5cbb5d2cbc",
-   "bytes": 3271,
-   "duration": 0.2,
+   "url": "audio/blastx-Odin-fire.13162b9e214d.mp3",
+   "sha256": "13162b9e214de5e543e1615fc0d9f1e7f221544a2d475ca067a0a07c2d6d2942",
+   "bytes": 5280,
+   "duration": 0.24,
    "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/3d8cc4ea-4de2-4863-4c9c-c3b86cc6884c_default_universal.mp4",
    "cut": [
     10.8,
     0.2
-   ]
+   ],
+   "processing": "lane-sounds: re-cut from the source preview (AAC 48 kHz stereo -> mono mean), DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz (single lossy generation from the Riot source)"
   },
   "blastx/Odin/reload": {
-   "url": "audio/blastx-Odin-reload.fe12c819a8cf.mp3",
-   "sha256": "fe12c819a8cfeb283e0a2837358ebe3c72575963717eabbe8a24e55a8d75c8f7",
-   "bytes": 60950,
-   "duration": 5.0,
+   "url": "audio/blastx-Odin-reload.c0357af743a0.mp3",
+   "sha256": "c0357af743a05dea71804cedde5924515bd7275bd5be18241d354b6926739b94",
+   "bytes": 101280,
+   "duration": 5.04,
    "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/3d8cc4ea-4de2-4863-4c9c-c3b86cc6884c_default_universal.mp4",
    "cut": [
     4.2,
     5
-   ]
+   ],
+   "processing": "lane-sounds: re-cut from the source preview (AAC 48 kHz stereo -> mono mean), DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz (single lossy generation from the Riot source)"
   },
   "blastx/Odin/inspect": {
-   "url": "audio/blastx-Odin-inspect.8f5d39866211.mp3",
-   "sha256": "8f5d39866211f3fd4c0e11bad9007cd6a034b4dfb03ba0e53fcbb4517ce53353",
-   "bytes": 27408,
-   "duration": 2.2,
+   "url": "audio/blastx-Odin-inspect.88ccaff9b1b2.mp3",
+   "sha256": "88ccaff9b1b2480a7817462e8d78c6ecad8eba7b3335da58de87cbf1024f08a0",
+   "bytes": 45120,
+   "duration": 2.232,
    "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/3d8cc4ea-4de2-4863-4c9c-c3b86cc6884c_default_universal.mp4",
    "cut": [
     0.8,
     2.2
-   ]
+   ],
+   "processing": "lane-sounds: re-cut from the source preview (AAC 48 kHz stereo -> mono mean), DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz (single lossy generation from the Riot source)"
   },
   "blastx/Odin/equip": {
-   "url": "audio/blastx-Odin-equip.937cc2e3086a.mp3",
-   "sha256": "937cc2e3086a90ea7e2cfdf98086ca5097acaab72b846843033ed462508e6a0b",
-   "bytes": 17691,
-   "duration": 1.4,
+   "url": "audio/blastx-Odin-equip.50270d498f3d.mp3",
+   "sha256": "50270d498f3dd8aab391245eb46525d76a6e624d41bec8c3fc8d238d142af7d9",
+   "bytes": 29280,
+   "duration": 1.44,
    "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/c3008423-4a36-7d58-51f8-81a2eea188c3_default_universal.mp4",
    "cut": [
     0.7,
     1.4
-   ]
+   ],
+   "processing": "lane-sounds: re-cut from the source preview (AAC 48 kHz stereo -> mono mean), DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz (single lossy generation from the Riot source)"
   },
   "blastx/Knife/knife": {
-   "url": "audio/blastx-Knife-knife.e18da0d8858b.mp3",
-   "sha256": "e18da0d8858b32bf2253f434498ea7d15ba4c3b9f9ae70e3ee03c9138a0f97b2",
-   "bytes": 7033,
-   "duration": 0.5,
+   "url": "audio/blastx-Knife-knife.833630eadbd8.mp3",
+   "sha256": "833630eadbd858143e7a15a80f277f5ce5ef527baa3ae5c14023192308b0b408",
+   "bytes": 11040,
+   "duration": 0.528,
    "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/6070d73c-4c87-a0f8-51cc-458c92ec0370_default_universal.mp4",
    "cut": [
     0.9,
     0.5
-   ]
+   ],
+   "processing": "lane-sounds: re-cut from the source preview (AAC 48 kHz stereo -> mono mean), DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz (single lossy generation from the Riot source)"
   },
   "blastx/Knife/equip": {
-   "url": "audio/blastx-Knife-equip.cf609f4f64ff.mp3",
-   "sha256": "cf609f4f64ff15713c3de3f912adf5de2d59ef453a81f56dc56115785d29b40a",
-   "bytes": 10481,
-   "duration": 0.8,
+   "url": "audio/blastx-Knife-equip.c01f87908df9.mp3",
+   "sha256": "c01f87908df926fe8d0992aa5f202a520118aefab7868da6d26d0141ddcf5689",
+   "bytes": 17280,
+   "duration": 0.84,
    "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/6070d73c-4c87-a0f8-51cc-458c92ec0370_default_universal.mp4",
    "cut": [
     0.15,
     0.8
-   ]
+   ],
+   "processing": "lane-sounds: re-cut from the source preview (AAC 48 kHz stereo -> mono mean), DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz (single lossy generation from the Riot source)"
   },
   "blastx/Knife/inspect": {
-   "url": "audio/blastx-Knife-inspect.51ba4f9c0aec.mp3",
-   "sha256": "51ba4f9c0aeceefeca03454a313e67023b72f0a85ef3648914eb4b095782f803",
-   "bytes": 36812,
-   "duration": 3.0,
+   "url": "audio/blastx-Knife-inspect.f0953ac0431d.mp3",
+   "sha256": "f0953ac0431dad8f380ece37c98a21356f6f12df274e69fa9b3957eb6514410e",
+   "bytes": 60960,
+   "duration": 3.024,
    "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/6070d73c-4c87-a0f8-51cc-458c92ec0370_default_universal.mp4",
    "cut": [
     4.2,
     3
-   ]
+   ],
+   "processing": "lane-sounds: re-cut from the source preview (AAC 48 kHz stereo -> mono mean), DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz (single lossy generation from the Riot source)"
   },
   "blackmarket/Knife/knife": {
-   "url": "audio/blackmarket-Knife-knife.7a220ceabaec.mp3",
-   "sha256": "7a220ceabaec32ba8f209085bfcac42ce0f79e3a983528126f4d53b00f83ffcd",
-   "bytes": 7660,
-   "duration": 0.55,
+   "url": "audio/blackmarket-Knife-knife.be129b1a5186.mp3",
+   "sha256": "be129b1a518631bb157112e3fbe9e0837eb7931d304acc1479d3807a77d839a1",
+   "bytes": 12000,
+   "duration": 0.576,
    "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/2dd2d932-4484-4cfb-f66a-ac8bb8974f66_default_universal.mp4",
    "cut": [
     18.3,
     0.55
-   ]
+   ],
+   "processing": "lane-sounds: re-cut from the source preview (AAC 48 kHz stereo -> mono mean), DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz (single lossy generation from the Riot source)"
   },
   "blackmarket/Knife/equip": {
-   "url": "audio/blackmarket-Knife-equip.74826ded4a7c.mp3",
-   "sha256": "74826ded4a7ceeb1380c82efb30dd3d38c499b796fd81121f8ee5e101f5d5beb",
-   "bytes": 12989,
-   "duration": 1.0,
+   "url": "audio/blackmarket-Knife-equip.b99ec0cd8518.mp3",
+   "sha256": "b99ec0cd851879e2b19bac85311154be1ad41bbf3ff3447575495e34b214d12f",
+   "bytes": 21120,
+   "duration": 1.032,
    "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/2dd2d932-4484-4cfb-f66a-ac8bb8974f66_default_universal.mp4",
    "cut": [
     2.0,
     1
-   ]
+   ],
+   "processing": "lane-sounds: re-cut from the source preview (AAC 48 kHz stereo -> mono mean), DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz (single lossy generation from the Riot source)"
   },
   "blackmarket/Knife/inspect": {
-   "url": "audio/blackmarket-Knife-inspect.d885c07e2fd6.mp3",
-   "sha256": "d885c07e2fd635abe8cd3eb6fdb21720a2af0919d8ff018cfc3f01ad363c785b",
-   "bytes": 39320,
-   "duration": 3.2,
+   "url": "audio/blackmarket-Knife-inspect.83fae436ca45.mp3",
+   "sha256": "83fae436ca45e814048f535dfce81e835a86bca3f2c4e213dd76100a50c911d3",
+   "bytes": 65280,
+   "duration": 3.24,
    "source": "https://valorant.dyn.riotcdn.net/x/videos/release-13.08/2dd2d932-4484-4cfb-f66a-ac8bb8974f66_default_universal.mp4",
    "cut": [
     7.4,
     3.2
-   ]
+   ],
+   "processing": "lane-sounds: re-cut from the source preview (AAC 48 kHz stereo -> mono mean), DC removed, 1.5 ms fade in / 15 ms fade out, peak -1.5 dBFS, libmp3lame CBR 160 kbps mono 48 kHz (single lossy generation from the Riot source)"
   },
   "impact/footstep_carpet_000": {
    "url": "audio/impact-footstep_carpet_000.cd971b8f34cf.mp3",
