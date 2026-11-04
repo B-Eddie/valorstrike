@@ -1,0 +1,64 @@
+name: Visual two-browser
+
+# Free-tier visual evidence for Valorstrike abilities: two real rendered Chromium pages per scenario
+# against the local QA bridge (work/two-browser/tb.cjs). Screenshots are pushed to branch ci-ev-<run>-<name>.
+on:
+  push:
+    branches: [instinct]
+    paths:
+      - 'work/two-browser/**'
+      - '.github/workflows/visual.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  shots:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {name: raze-pack,  agent: Raze,    key: KeyQ, scen: scen_pack2.cjs}
+          - {name: raze-shell, agent: Raze,    key: KeyE, scen: scen_ps.cjs}
+          - {name: breach-rt,  agent: Breach,  key: KeyX, scen: scen_ab.cjs}
+          - {name: viper-snake,agent: Viper,   key: KeyC, scen: scen_ab.cjs}
+          - {name: phx-curve,  agent: Phoenix, key: KeyC, scen: scen_ab.cjs}
+          - {name: jett-cloud, agent: Jett,    key: KeyC, scen: scen_ab.cjs}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+      - run: npm ci --no-audit --no-fund
+        working-directory: server
+      - run: |
+          mkdir -p "$HOME/pw" "$HOME/qa" && cd "$HOME/pw" && npm init -y >/dev/null && npm i playwright-core --no-audit --no-fund >/dev/null
+          cp "$GITHUB_WORKSPACE"/work/two-browser/qa/*.js "$HOME/qa/"
+      - name: run scenario (full assets, two rendered pages)
+        env:
+          ROOT: ${{ github.workspace }}
+          SHOT: ${{ github.workspace }}/shots/
+        run: |
+          (cd server && nohup node tools/bridge-nobots.mjs > /tmp/bridge.log 2>&1 &)
+          (nohup python3 -m http.server 8876 > /tmp/http.log 2>&1 &)
+          sleep 5
+          cd work/two-browser
+          TEXCLOSE=1 AGENT_A=${{ matrix.agent }} AGENT_B=Jett SCEN=$PWD/${{ matrix.scen }} SHARECTX=1 MAP=lotus \
+            KEY=${{ matrix.key }} TAG=${{ matrix.name }} BX=3 BZ=-9 timeout 1500 node tb.cjs "$GITHUB_WORKSPACE/shots/${{ matrix.name }}.json" || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: shots-${{ matrix.name }}
+          path: shots/
+          retention-days: 7
+      - name: push evidence branch
+        if: always()
+        run: |
+          cd "$GITHUB_WORKSPACE" && git config user.name ci && git config user.email ci@example.invalid
+          git checkout -q --orphan "ci-ev-${{ github.run_id }}-${{ matrix.name }}" && git rm -rq --cached . >/dev/null 2>&1 || true
+          git add -f shots && git commit -qm "evidence ${{ matrix.name }}" && git push -q origin HEAD
