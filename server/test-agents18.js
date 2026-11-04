@@ -4,6 +4,7 @@ import assert from 'node:assert';
 import {AG18,TYPES18,A18,init18,cast18,tick18,reward18} from './src/agents18.js';
 import {initAbilities,types,abilityDamage} from './src/abilities.js';
 import {Simulation,weapons} from './src/simulation.js';
+import {arenaWrap,ARENA_X,ARENA_STRIDE} from './src/arena.js';
 import kits from './src/kits.json' with {type:'json'};
 
 const world={ray:()=>Infinity,ground:()=>0,blocked:()=>false,near:()=>0,nav:{nodes:[[0,0,0]]}};
@@ -27,14 +28,38 @@ for(const a of Object.keys(AG18)){assert.ok(kits[a],a+' in kits.json');assert.ok
  assert.equal(cast18(s,u,{k:'c'},O,D),true);assert.equal(u.ability.stars,0);
  assert.equal(cast18(s,u,{k:'q'},O,D),false,'no stars, no cast');}
 
-// Iso Kill Contract: walled 1v1 - duel damage lands, outsiders are locked out, both return home
+// Iso Kill Contract: the duel runs in the analytic pocket arena (arena.js) - both combatants are pulled to the
+// cell, the walls/floor/cover work there, duel damage lands, outsiders are locked out, both return home
 {const s=mkSim(),iso=mk('Iso',0,1),foe=mk('Jett',1,2,5);s.units=[iso,foe];initAbilities(iso,true);initAbilities(foe,true);iso.ability.ult=kits.Iso.u;
  assert.equal(cast18(s,iso,{k:'x'},O,D),true,'contract cast');
- assert.ok(iso.isoDuel&&foe.isoDuel,'both in the duel');assert.equal(foe.x,2,'the target is pulled into the cell');
+ assert.ok(iso.isoDuel&&foe.isoDuel,'both in the duel');
+ assert.equal(iso.x,ARENA_X-4,'Iso is pulled into the pocket cell');assert.equal(foe.x,ARENA_X+4,'the target is pulled in across the cell');
+ assert.equal(iso.y,.1)&&assert.equal(foe.z,0,'on the arena floor');
  abilityDamage(s,iso,foe,50);assert.equal(foe.hp,50,'duel damage lands');
  const out=mk('Sage',1,3,9);s.units.push(out);initAbilities(out,true);
  abilityDamage(s,out,iso,50);assert.equal(iso.hp,100,'an outsider cannot shoot into the duel');
  run(s,300);assert.ok(!iso.isoDuel&&!foe.isoDuel&&iso.x===0&&foe.x===5,'both return home when it ends');}
+{const w=arenaWrap({ray:()=>Infinity,ground:()=>0,blocked:()=>false,plantAt:()=>'A'});
+ assert.equal(w.ground(ARENA_X,0,2),0,'the arena floor carries the cell');
+ assert.ok(Math.abs(w.ground(ARENA_X+40,0,2)-(-8))<1e-9||w.ground(ARENA_X+40,0,2)<0,'off the platform is the void');
+ assert.ok(w.blocked(ARENA_X+14.8,0,.45,0),'the energy wall stops movement');
+ assert.ok(!w.blocked(ARENA_X,0,.45,0),'the cell floor is open');
+ assert.equal(w.ray([ARENA_X-10,1,0],[1,0,0]),25,'a shot across the cell hits the far wall');
+ assert.equal(w.ray([ARENA_X-10,5,0],[1,0,0]),Infinity,'above the walls the cell is open');
+ assert.ok(w.ray([ARENA_X-7.5,0.7,-5],[1,0,0])<Infinity,'a cover block stops a low shot');
+ assert.equal(w.plantAt(ARENA_X,0),'','no spike plant inside the duel');
+ assert.equal(w.ground(3,4,2),0,'map positions still reach the match world');}
+{const u=mk('Iso',0,1,ARENA_X-4);u.isoDuel={foe:2,until:9,ret:[0,0,0],slot:0};
+ const ctx={world:arenaWrap(world),time:0,events:[]};
+ assert.equal(Simulation.prototype.oobKill.call(ctx,u),false,'a duelist in the arena is not out of bounds');
+ u.isoDuel=null;ctx.time=1;Simulation.prototype.oobKill.call(ctx,u);ctx.time=4;assert.equal(Simulation.prototype.oobKill.call(ctx,u),true,'the same spot without a duel is out of bounds (warning, then the kill after 2 s)');}
+{const s=mkSim(),a=mk('Iso',0,1),b=mk('Jett',1,2,5),c=mk('Iso',0,3),d=mk('Jett',1,4,5);c.z=20;d.z=20;s.units=[a,b,c,d];
+ for(const u of s.units){initAbilities(u,true);if(u.agent==='Iso')u.ability.ult=kits.Iso.u;}
+ assert.equal(cast18(s,a,{k:'x'},O,D),true,'first contract');assert.equal(cast18(s,c,{k:'x'},O,D),true,'second contract at the same time');
+ assert.equal(a.isoDuel.slot,0,'first duel takes cell 0');assert.equal(c.isoDuel.slot,1,'the second duel takes the next cell');
+ assert.equal(c.x,ARENA_X+ARENA_STRIDE-4,'the second cell sits one stride over');
+ assert.ok(s.effects.filter(e=>e.kind==='duel').length===2,'both cells have an arena row');
+ run(s,300);assert.ok(s.units.every(u=>!u.isoDuel),'both duels end and return');}
 
 // Neon: High Gear drains fuel, ALT slides on a charge, 2 kills reset the slides
 {const s=mkSim(),u=mk('Neon',0,4);s.units=[u];initAbilities(u,true);
@@ -124,4 +149,4 @@ for(const a of Object.keys(AG18)){assert.ok(kits[a],a+' in kits.json');assert.ok
  assert.equal(cast18(s,t2,{k:'x',p:[0,30]},O,D),true,'Armageddon at the picked origin');
  const ar=s.effects.find(e=>e.kind==='armag');assert.ok(ar&&Math.abs(ar.p[2]-30)<.01,'origin moved to the pick');
  assert.ok(Math.abs(ar.yaw-Math.atan2(-(0-t2.x),-(30-t2.z)))<.001,'wave from Tejo through the pick');}
-console.log('agents18: registration, charge/star gates, Iso duel isolation + return, Neon fuel/slide/reset, KAY/O downed/revive/bleedout, Deadlock cocoon pull/rescue/kill, suppress gate, Gekko globule reclaim, Miks Bassquake deafen/slow, Yoru Gatecrash fake + 1.2 s timing');
+console.log('agents18: registration, charge/star gates, Iso pocket-arena duel isolation + return, Neon fuel/slide/reset, KAY/O downed/revive/bleedout, Deadlock cocoon pull/rescue/kill, suppress gate, Gekko globule reclaim, Miks Bassquake deafen/slow, Yoru Gatecrash fake + 1.2 s timing');

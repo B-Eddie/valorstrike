@@ -5,9 +5,10 @@
 // page on wiki.playvalorant.com (fetched 2026-11-03). Where the engine has no native concept (Astra stars, Viper fuel,
 // Gekko globules, Iso's duel arena) the mechanic says what it models; nothing is a hidden placeholder.
 import Motor from './motor.cjs';
+import {ARENA_X,ARENA_STRIDE,ARENA_HALF} from './arena.js';
 import kits from './kits.json' with {type:'json'};
 export const AG18={Astra:1,Brimstone:1,Clove:1,Harbor:1,Miks:1,Viper:1,Hush:1,Iso:1,Neon:1,Waylay:1,Yoru:1,Fade:1,Gekko:1,'KAY/O':1,Tejo:1,Deadlock:1,Veto:1,Vyse:1};
-export const A18_NET_KINDS=new Set(['gwell','nova','stim','fire','orbital','conting','undercut','fastlane','blast','tide','reckon','cove','mpulse','bassq','snake','pit','susp','pull','decoy','seeker','seize','haunt','nightfall','mosh','dizzy','frag','nullcmd','sdrone','sd','salvo','armag','mesh','sensor','gnet','xcut','choke','ceptor','vine','rose','garden','paths','anni','gatefake']);/* effect kinds the online client renders (work/agents18_runtime.js A18VIS) */
+export const A18_NET_KINDS=new Set(['gwell','nova','stim','fire','orbital','conting','undercut','fastlane','blast','tide','reckon','cove','mpulse','bassq','snake','pit','susp','pull','decoy','seeker','seize','haunt','nightfall','mosh','dizzy','frag','nullcmd','sdrone','sd','salvo','armag','mesh','sensor','gnet','xcut','choke','ceptor','vine','rose','garden','paths','anni','gatefake','duel']);/* effect kinds the online client renders (work/agents18_runtime.js A18VIS) */
 export const TYPES18={Astra:['pull','concuss','smoke'],Brimstone:['stim','fire','smoke'],Clove:['haste','decay','smoke'],Harbor:['surge','wall','cove'],Miks:['mpulse','harmonize','smoke'],Viper:['snakebite','smoke','wall'],Hush:['flow','flash','pull'],Iso:['wall','undercut','shield'],Neon:['wall','concuss','haste'],Waylay:['hinder','dash','teleport'],Yoru:['decoy','flash','teleport'],Fade:['prowler','tether','recon'],Gekko:['mosh','wingman','flash'],'KAY/O':['frag','flash','suppress'],Tejo:['drone','concuss','salvo'],Deadlock:['mesh','sensor','gravnet'],Veto:['crosscut','choke','interceptor'],Vyse:['vine','shear','arcrose']};
 // Wiki stats per ability (fetched 2026-11-03), project-lightweight where noted:
 export const A18={
@@ -39,7 +40,7 @@ export const A18={
  conting:{dist:30,speed:6,w:8,h:3.5,life:8},/* Contingency: moving vision wall */
  undercut:{r:5,supp:4,vuln:4},/* Undercut: suppress + vulnerable */
  dtap:{channel:1,life:20},/* Double Tap: 1 s Focus, shield blocks one hit */
- kc:{range:40,w:4,life:8,duel:13,supp:4},/* Kill Contract: lightweight - the caught duelist is revealed+suppressed to Iso for 8 s (no pocket arena) */
+ kc:{range:40,w:4,life:8,duel:13,supp:4},/* Kill Contract (wiki): the caught duelist is revealed to Iso and suppressed on entry; the duel runs 13 s in the pocket arena (arena.js) */
  fastlane:{dist:30,gap:3,life:6},relay:{r:4.5,concuss:3.5},/* Neon */
  gear:{drain:10,regen:20,k:1.2},od:{life:10,dps:150,range:30},/* Overdrive: lightweight beam = high-dps ray while it lasts */
  satur:{r:4.5,hinder:4},ls:{dash:9,time:.35},/* Waylay Saturate / Lightspeed */
@@ -268,7 +269,7 @@ export function tick18(sim,dt){
   }}
  if(gone.length){for(const e of gone)if(e.ag==='Gekko'){const u=sim.units.find(n=>n.id===e.owner),k=e.kind==='mosh'?'c':e.kind==='dizzy'?'e':e.wing?'q':0;if(u&&k)u.ability['re_'+k]=T+A18.globule.reclaim;}sim.effects=sim.effects.filter(e=>!gone.includes(e));}
  // unit statuses
- for(const u of sim.units){const A=u.ability;if(!A)continue;if(u.isoDuel){const f=sim.units.find(n=>n.id===u.isoDuel.foe);if(T>=u.isoDuel.until||!f||!f.alive||!f.isoDuel){if(u.alive&&u.isoDuel.ret){[u.x,u.y,u.z]=u.isoDuel.ret;u.vy=0;}u.isoDuel=null;sim.effects=sim.effects.filter(e=>!e.duel);}}if(u.kayoDown){if(T>=u.kayoDown.until){u.kayoDown=null;u.deaths++;u.noUltDeaths=(u.noUltDeaths||0)+1;u.respawnAt=T+1.5;sim.events.push(['k','',u.name,0,'Ability']);}else{const r=sim.units.find(n=>n!==u&&n.team===u.team&&n.alive&&Math.hypot(n.x-u.x,n.z-u.z)<2&&(n.input||{}).use);if(r){u.kayoDown.prog+=dt;u.kayoDown.until+=dt;/* stabilizing pauses the countdown (wiki) */if(u.kayoDown.prog>=3.05){/* 1.5 s stabilize + 1.55 s reboot (wiki v10.06) */u.kayoDown=null;u.alive=true;u.hp=100;u.loading=false;}}else u.kayoDown.prog=0;}}if(u.anni){const dl=sim.units.find(n=>n.id===u.anni.by);const ae=sim.effects.find(e=>e.kind==='anni'&&e.owner===u.anni.by);if(ae)ae.p=[u.x,u.y,u.z];if(!dl||!dl.alive||!los(sim,[dl.x,dl.y+1,dl.z],[u.x,u.y+1,u.z])||Math.hypot(u.x-dl.x,u.z-dl.z)>C_annih.range+5){u.anni=null;if(ae)sim.effects=sim.effects.filter(e=>e!==ae);}/* the wire snaps */else{if(T>=u.anni.at){dmg18.f(sim,dl,u,999);u.anni=null;sim.effects=sim.effects.filter(e=>e!==ae);}else{const d=[dl.x-u.x,dl.z-u.z],l=Math.hypot(...d);if(l>1.2){u.x+=d[0]/l*2.5*dt;u.z+=d[1]/l*2.5*dt;}}}}if(!AG18[u.agent])continue;u.stimOn=(u.stimUntil||0)>T||!!u.gearOn||(u.overdriveUntil||0)>T||(u.hasteUntil||0)>T;if(u.agent==='Clove'){if(u.alive)u.ndyDead=0;else if(!u.ndyDead&&!u.ndy)u.ndyDead=T;}
+ for(const u of sim.units){const A=u.ability;if(!A)continue;if(u.isoDuel){const f=sim.units.find(n=>n.id===u.isoDuel.foe);if(T>=u.isoDuel.until||!f||!f.alive||!f.isoDuel){const slot=u.isoDuel.slot;if(u.alive&&u.isoDuel.ret){[u.x,u.y,u.z]=u.isoDuel.ret;u.vy=0;}u.isoDuel=null;sim.effects=sim.effects.filter(e=>e.duelSlot!==slot);}}if(u.kayoDown){if(T>=u.kayoDown.until){u.kayoDown=null;u.deaths++;u.noUltDeaths=(u.noUltDeaths||0)+1;u.respawnAt=T+1.5;sim.events.push(['k','',u.name,0,'Ability']);}else{const r=sim.units.find(n=>n!==u&&n.team===u.team&&n.alive&&Math.hypot(n.x-u.x,n.z-u.z)<2&&(n.input||{}).use);if(r){u.kayoDown.prog+=dt;u.kayoDown.until+=dt;/* stabilizing pauses the countdown (wiki) */if(u.kayoDown.prog>=3.05){/* 1.5 s stabilize + 1.55 s reboot (wiki v10.06) */u.kayoDown=null;u.alive=true;u.hp=100;u.loading=false;}}else u.kayoDown.prog=0;}}if(u.anni){const dl=sim.units.find(n=>n.id===u.anni.by);const ae=sim.effects.find(e=>e.kind==='anni'&&e.owner===u.anni.by);if(ae)ae.p=[u.x,u.y,u.z];if(!dl||!dl.alive||!los(sim,[dl.x,dl.y+1,dl.z],[u.x,u.y+1,u.z])||Math.hypot(u.x-dl.x,u.z-dl.z)>C_annih.range+5){u.anni=null;if(ae)sim.effects=sim.effects.filter(e=>e!==ae);}/* the wire snaps */else{if(T>=u.anni.at){dmg18.f(sim,dl,u,999);u.anni=null;sim.effects=sim.effects.filter(e=>e!==ae);}else{const d=[dl.x-u.x,dl.z-u.z],l=Math.hypot(...d);if(l>1.2){u.x+=d[0]/l*2.5*dt;u.z+=d[1]/l*2.5*dt;}}}}if(!AG18[u.agent])continue;u.stimOn=(u.stimUntil||0)>T||!!u.gearOn||(u.overdriveUntil||0)>T||(u.hasteUntil||0)>T;if(u.agent==='Clove'){if(u.alive)u.ndyDead=0;else if(!u.ndyDead&&!u.ndy)u.ndyDead=T;}
   if(u.decayUntil&&T>u.decayUntil&&u.decayAmt>0){const r=Math.min(u.decayAmt,40*dt);u.decayAmt-=r;u.hp=Math.min(u.mx,u.hp+r);}
   if(u.pendingTeleport&&T>=u.pendingTeleport.at){[u.x,u.y,u.z]=u.pendingTeleport.p;u.pendingTeleport=null;u.vy=0;}
   if(u.ndy&&T>=u.ndy.at){u.ndy=null;u.alive=true;u.hp=100;u.loading=false;}
@@ -280,15 +281,19 @@ export function tick18(sim,dt){
   if(u.agent==='Gekko')for(const k of ['c','q','e'])if(A['re_'+k]&&T>=A['re_'+k]){A[k]=Math.min(1,A[k]+1);A['re_'+k]=0;}
   if(u.evoUntil&&T<u.evoUntil)u.hp=Math.min(u.mx,u.hp+A18.evo.hps*dt);
  }}
-// Iso Kill Contract pocket duel: both combatants teleported into a walled cell at a reserved far corner of the
-// map footprint (empty nav space), returned when it ends; while it runs only they can damage each other.
-export function duel18(sim,iso,t,C){const gy=sim.world.ground(iso.x,iso.z,iso.y+2);const base=[iso.x,Number.isFinite(gy)?gy:iso.y,iso.z];/* the pocket cell forms at Iso's ground spot */
+// Iso Kill Contract pocket duel (wiki Kill_Contract): both combatants are pulled into the analytic pocket arena
+// (arena.js - a flat walled cell far outside the match map), returned when it ends; while it runs only they can
+// damage each other (applyHit / abilityDamage). Simultaneous duels stack a cell every ARENA_STRIDE on x.
+export function duel18(sim,iso,t,C){
  const ret=[iso.x,iso.y,iso.z],retT=[t.x,t.y,t.z];
- iso.isoDuel={foe:t.id,until:sim.time+C.kc.duel,ret};t.isoDuel={foe:iso.id,until:sim.time+C.kc.duel,ret:retT};
+ const used=new Set();for(const u of sim.units)if(u.isoDuel)used.add(u.isoDuel.slot);
+ let slot=0;while(used.has(slot))slot++;
+ const ox=ARENA_X+slot*ARENA_STRIDE;
+ iso.isoDuel={foe:t.id,until:sim.time+C.kc.duel,ret,slot};t.isoDuel={foe:iso.id,until:sim.time+C.kc.duel,ret:retT,slot};
  status(t,'suppressUntil',C.kc.supp,sim);status(t,'revealedUntil',C.kc.duel,sim);
- [t.x,t.y,t.z]=[base[0]+2,base[1]+.1,base[2]];[iso.x,iso.y,iso.z]=[base[0]-2,base[1]+.1,base[2]];t.vy=iso.vy=0;
- for(const w of [[0,4],[0,-4],[4,0],[-4,0]])fx(sim,iso,'barrier',[base[0]+w[0],base[1],base[2]+w[1]],C.kc.duel,3,{hp:1e9,seg:[1e9],yaw:w[0]?Math.PI/2:0,duel:1});
- sim.castEvents.push({t:'ac',i:iso.id,ag:'Iso',k:'x',o:[iso.x,iso.y+1,iso.z],d:[1,0,0],p:[...base],ts:Math.round(sim.time*1000)});}
+ [t.x,t.y,t.z]=[ox+4,.1,0];[iso.x,iso.y,iso.z]=[ox-4,.1,0];t.vx=t.vz=t.vy=iso.vx=iso.vz=iso.vy=0;
+ fx(sim,iso,'duel',[ox,0,0],C.kc.duel,ARENA_HALF,{duelSlot:slot});/* clients render the arena shell at the cell origin */
+ sim.castEvents.push({t:'ac',i:iso.id,ag:'Iso',k:'x',o:[iso.x,iso.y+1,iso.z],d:[1,0,0],p:[ox,0,0],ts:Math.round(sim.time*1000)});}
 // KAY/O NULL/cmd: lethal damage downs instead (850 pool bleeds over 15 s; an ally's USE channel revives at 100).
 export function downed18(sim,v){if(v.agent!=='KAY/O'||!(v.nullCmdUntil>sim.time)||v.kayoDown)return false;v.kayoDown={until:sim.time+15,prog:0,hp:850};/* wiki NULL/cmd: 15 s bleedout, 850 HP core enemies can destroy */v.alive=false;v.hp=0;return true;}
 const C_annih=A18.annih;

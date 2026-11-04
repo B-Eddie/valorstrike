@@ -214,7 +214,37 @@ function a18Key(code) {
 }
 function a18Glob(k) { (J.a18gl = J.a18gl || {})[k] = A18C.globule.reclaim; }
 function a18DecayB(b, amt) { b.hp = Math.max(1, b.hp - amt * 0.5); } // offline bot decay: half lands now (bots have no decay regen model)
-function a18Duel(t) { const A = J.a18, C = A18C; A.duel = C.kc.duel; A.duelT = t; t.duel = C.kc.duel; t.supp = C.kc.supp; const p = new THREE.Vector3(player.x, 0, player.z); A.duelHome = p; t.duelHome = t.g.position.clone(); const m = a18Ring(p, 5, 0x6a9af0, 0.5); A.duelM = m; player.x += 2; t.g.position.x = p.x - 2; t.g.position.z = p.z; say("Kill Contract", 1000); SFX.ab("rewind"); }
+// Iso Kill Contract pocket arena - the client mirror of server/src/arena.js (same numbers): the duel cell is a
+// flat 30 x 30 platform with 4 m energy walls and two cover blocks, far outside every map (first cell at x = 10000,
+// simultaneous duels stack every 100). The page's movement / prediction / sight all funnel through the blocked /
+// groundAt / los globals, so wrapping those three covers the offline sim AND online reconciliation in the arena.
+const A18_ARENA_X = 10000, A18_ARENA_STRIDE = 100, A18_ARENA_REACH = 5000, A18_ARENA_HALF = 15, A18_ARENA_WALL_H = 4, A18_ARENA_COVER = [[-6, -5, 3, 2, 1.4], [6, 5, 3, 2, 1.4]];
+const a18ArenaIn = (x, z) => Math.abs(x) > A18_ARENA_REACH || Math.abs(z) > A18_ARENA_REACH;
+const a18ArenaCell = (x) => A18_ARENA_X + Math.round((x - A18_ARENA_X) / A18_ARENA_STRIDE) * A18_ARENA_STRIDE;
+function a18ArenaGround(x, z, y) { return Math.abs(x) <= A18_ARENA_HALF && Math.abs(z) <= A18_ARENA_HALF ? 0 : (y || 0) - 10; }
+function a18ArenaBlocked(x, z, r, y, h) { h = h || 1.8; if (x - r < -A18_ARENA_HALF || x + r > A18_ARENA_HALF || z - r < -A18_ARENA_HALF || z + r > A18_ARENA_HALF) return true;
+  for (const [cx, cz, w, d, hh] of A18_ARENA_COVER) if (y < hh && y + h > 0 && x + r > cx - w / 2 && x - r < cx + w / 2 && z + r > cz - d / 2 && z - r < cz + d / 2) return true; return false; }
+function a18ArenaCast(o, d, max) { let best = Infinity; // slab tests: floor, 4 walls, cover blocks (mirror of arena.js castA)
+  if (Math.abs(d[1]) > 1e-9) { const t = -o[1] / d[1]; if (t > 1e-6 && t < max) { const px = o[0] + d[0] * t, pz = o[2] + d[2] * t; if (Math.abs(px) <= A18_ARENA_HALF && Math.abs(pz) <= A18_ARENA_HALF) best = t; } }
+  for (const a of [0, 2]) for (const sg of [1, -1]) { const dd = d[a]; if (Math.abs(dd) < 1e-9) continue; const t = (sg * A18_ARENA_HALF - o[a]) / dd; if (t <= 1e-6 || t >= max) continue; const py = o[1] + d[1] * t, pq = o[2 - a] + d[2 - a] * t; if (py >= 0 && py <= A18_ARENA_WALL_H && Math.abs(pq) <= A18_ARENA_HALF && t < best) best = t; }
+  for (const [cx, cz, w, d2, hh] of A18_ARENA_COVER) { const mn = [cx - w / 2, 0, cz - d2 / 2], mx = [cx + w / 2, hh, cz + d2 / 2]; let t0 = 0, t1 = max, ok = true;
+    for (let a = 0; a < 3; a++) { if (Math.abs(d[a]) < 1e-9) { if (o[a] < mn[a] || o[a] > mx[a]) { ok = false; break; } continue; } let ta = (mn[a] - o[a]) / d[a], tb = (mx[a] - o[a]) / d[a]; if (ta > tb) { const q = ta; ta = tb; tb = q; } if (ta > t0) t0 = ta; if (tb < t1) t1 = tb; if (t0 > t1) { ok = false; break; } }
+    if (ok && t0 > 1e-6 && t0 < max && t0 < best) best = t0; }
+  return best; }
+function a18ArenaShell(ox) { // the visible cell: dark platform, glowing Iso-blue energy walls, two cover blocks
+  const g = new THREE.Group(); g.userData.jp = 1; /* not a pooled mesh: freed as a group */
+  const floor = new THREE.Mesh(new THREE.BoxGeometry(A18_ARENA_HALF * 2, 0.2, A18_ARENA_HALF * 2), new THREE.MeshLambertMaterial({ color: 0x232a36 })); floor.position.set(0, -0.1, 0); g.add(floor);
+  const wallM = () => new THREE.MeshBasicMaterial({ color: 0x4a6cf0, transparent: true, opacity: 0.22, side: THREE.DoubleSide, depthWrite: false });
+  for (const [rx, rz, ry] of [[0, -A18_ARENA_HALF, 0], [0, A18_ARENA_HALF, 0], [-A18_ARENA_HALF, 0, Math.PI / 2], [A18_ARENA_HALF, 0, Math.PI / 2]]) { const w = new THREE.Mesh(new THREE.PlaneGeometry(A18_ARENA_HALF * 2, A18_ARENA_WALL_H), wallM()); w.position.set(rx, A18_ARENA_WALL_H / 2, rz); w.rotation.y = ry; g.add(w); }
+  for (const [cx, cz, w, d, hh] of A18_ARENA_COVER) { const b = new THREE.Mesh(new THREE.BoxGeometry(w, hh, d), new THREE.MeshLambertMaterial({ color: 0x39445c, emissive: 0x1a2a6a, emissiveIntensity: 0.4 })); b.position.set(cx, hh / 2, cz); g.add(b); }
+  g.position.set(ox, 0, 0); scene.add(g); return g; }
+function a18ArenaFree(g) { if (!g) return; for (const c of [...g.children]) { g.remove(c); if (c.geometry && c.geometry.dispose) c.geometry.dispose(); const t = c.material; if (t && t.dispose) t.dispose(); } scene.remove(g); }
+const a18Blk0 = blocked; blocked = function (x, z, r, y) { return a18ArenaIn(x, z) ? a18ArenaBlocked(x - a18ArenaCell(x), z, r, y || 0, 1.8) : a18Blk0(x, z, r, y); };
+const a18Gnd0 = groundAt; groundAt = function (x, z, r, y) { return a18ArenaIn(x, z) ? a18ArenaGround(x - a18ArenaCell(x), z, y) : a18Gnd0(x, z, r, y); };
+const a18Los0 = los; los = function (a, b) { const ia = a18ArenaIn(a[0], a[2]), ib = a18ArenaIn(b[0], b[2]); if (ia !== ib) return false; if (!ia) return a18Los0(a, b);
+  const q = [b[0] - a[0], b[1] - a[1], b[2] - a[2]], len = Math.hypot(q[0], q[1], q[2]); if (len < 0.01) return true;
+  const d = [q[0] / len, q[1] / len, q[2] / len]; return a18ArenaCast([a[0] - a18ArenaCell(a[0]), a[1], a[2]], d, Math.max(0, len - 0.4)) === Infinity; };
+function a18Duel(t) { const A = J.a18, C = A18C; A.duel = C.kc.duel; A.duelT = t; t.duel = C.kc.duel; t.supp = C.kc.supp; const p = new THREE.Vector3(player.x, player.y, player.z); A.duelHome = p; t.duelHome = t.g.position.clone(); A.duelM = a18ArenaShell(A18_ARENA_X); player.x = A18_ARENA_X - 4; player.y = 0.1; player.z = 0; player.vy = 0; t.g.position.set(A18_ARENA_X + 4, 0.1, 0); say("Kill Contract", 1000); SFX.ab("rewind"); }
 function a18Tick(dt) {
   if (!J.a18) return; const A = J.a18, C = A18C, P = player, T = dt;
   A.haste = Math.max(0, A.haste - dt); A.stim = Math.max(0, A.stim - dt); A.jam = Math.max(0, A.jam - dt); A.supp = Math.max(0, A.supp - dt);
@@ -232,7 +262,7 @@ function a18Tick(dt) {
   if (A.fuel <= 0 && (A.cloudOn || A.toxOn)) { A.cloudOn = A.toxOn = 0; if (A.cloudM) { jRel(A.cloudM); A.cloudM = 0; } if (A.screenM) { jRel(A.screenM); A.screenM = 0; } }
   if (A.pit) { for (const b of a18BotsIn(new THREE.Vector3(P.x, 0, P.z), C.pit.r, 6)) { a18DecayB(b, C.pit.decay * dt); b.blind = Math.max(b.blind || 0, 0.5); } if (P.hp > 0) P.hp = Math.min(100, P.hp + 8 * dt); }
   if (J.a18gl) for (const k in J.a18gl) { J.a18gl[k] -= dt; if (J.a18gl[k] <= 0) { J[k] = Math.min(1, J[k] + 1); delete J.a18gl[k]; } }
-  if (A.duel > 0) { A.duel -= dt; const t = A.duelT; if (A.duel <= 0 || !t || !t.alive) { P.x = A.duelHome.x; P.z = A.duelHome.z; if (t && t.alive) { t.g.position.copy(t.duelHome); t.duel = 0; } if (A.duelM) { jRel(A.duelM); A.duelM = 0; } A.duel = 0; } }
+  if (A.duel > 0) { A.duel -= dt; const t = A.duelT; if (A.duel <= 0 || !t || !t.alive) { P.x = A.duelHome.x; P.y = A.duelHome.y; P.z = A.duelHome.z; P.vy = 0; if (t && t.alive) { t.g.position.copy(t.duelHome); t.duel = 0; } if (A.duelM) { a18ArenaFree(A.duelM); A.duelM = 0; } A.duel = 0; } }
   const F = J.a18fx; if (!F) return; let w = 0;
   for (let i = 0; i < F.length; i++) { const e = F[i]; e.t -= dt; let keep = true;
     switch (e.kind) {
@@ -299,15 +329,17 @@ function a18NetMesh(kind, e) {
   else { m = jM(smokeGeo, xSmokeM("a18net" + (a18NetMesh.n = (a18NetMesh.n || 0) + 1), col, col)); m.material.opacity = op; m.position.set(e.p[0], (e.p[1] || 0) + 1.5, e.p[2]); m.scale.setScalar((e.r || 4) / 4); }
   scene.add(m); return m;
 }
+function a18NetFree(r) { if (!r.m) return; if (r.kind === "duel") a18ArenaFree(r.m); else jRel(r.m); }
 function a18NetSync(rows) {
   const seen = new Set();
-  for (const e of rows) { if (!e || !A18VIS[e.kind] || !Number.isFinite(e.id) || !Array.isArray(e.p) || e.p.length !== 3) continue; seen.add(e.id);
+  for (const e of rows) { if (e && e.kind === "duel" && Number.isFinite(e.id) && Array.isArray(e.p) && e.p.length === 3) { seen.add(e.id); if (!a18Net.has(e.id)) a18Net.set(e.id, { m: a18ArenaShell(e.p[0]), kind: "duel" }); continue; }
+    if (!e || !A18VIS[e.kind] || !Number.isFinite(e.id) || !Array.isArray(e.p) || e.p.length !== 3) continue; seen.add(e.id);
     let r = a18Net.get(e.id); if (!r) { r = { m: a18NetMesh(e.kind, e), kind: e.kind }; a18Net.set(e.id, r); }
     else if (r.m) { const k = A18VIS[e.kind][0]; if (k === "orb" || k === "wave" || k === "dev") r.m.position.set(e.p[0], k === "orb" ? (e.p[1] || 0) + 1 : r.m.position.y === 1.1 ? 1.1 : (e.p[1] || 0) + .3, e.p[2]); else r.m.position.x = e.p[0], r.m.position.z = e.p[2]; if (Number.isFinite(e.yaw) && k === "wall") r.m.rotation.y = -e.yaw; } }
-  for (const [id, r] of a18Net) if (!seen.has(id)) { if (r.m) jRel(r.m); a18Net.delete(id); }
+  for (const [id, r] of a18Net) if (!seen.has(id)) { a18NetFree(r); a18Net.delete(id); }
 }
 const a18FxSync0 = netSyncEffects; netSyncEffects = function (rows) { a18FxSync0(rows); try { a18NetSync(rows); } catch (e) { xE(e); } };
-const a18ClearFx0 = netClearEffects; netClearEffects = function () { a18ClearFx0(); for (const [, r] of a18Net) if (r.m) jRel(r.m); a18Net.clear(); };
+const a18ClearFx0 = netClearEffects; netClearEffects = function () { a18ClearFx0(); for (const [, r] of a18Net) a18NetFree(r); a18Net.clear(); };
 // rs status: suppress (abilities locked), jam (devices jammed), hinder (slow), haste, stim, decaying HP
 const a18Chips0 = netStatusChips; netStatusChips = function (st) {
   const on = a18Chips0(st); let el = document.getElementById("netSt");
