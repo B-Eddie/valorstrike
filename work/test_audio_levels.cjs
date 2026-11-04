@@ -13,7 +13,7 @@ const html=fs.readFileSync(path.join(root,'index.html'),'utf8');assert(/var GA_L
 const F=make();const voice=()=>{const s=F.rec.sources[F.rec.sources.length-1];return s;};
 const level=s=>{const g=s.outs[0];const lin=g.gain.ev.filter(e=>e[0]==='linear'&&e[1]>0);return lin.length?lin[0][1]:g.gain.v;};
 const eff=[];for(const w of Object.keys(man.weapons)){const key=man.weapons[w].fire;if(!key||!key.startsWith('standard/'))continue;F.x('gaStop()');const n=F.rec.sources.length;F.x(`SFX.gun(${JSON.stringify(w)})`);assert.equal(F.rec.sources.length,n+1,'own '+w+' shot plays');const s=voice(),lv=level(s)/(s.playbackRate.v||1)**0;eff.push([w,L[key].lufs+20*Math.log10(lv/.65)]);
- assert(Math.abs(s.startArgs[1]-L[key].o)<1e-6,w+' fire starts at its trim '+L[key].o+' s (got '+s.startArgs[1]+')');}
+ assert(Math.abs((s.startArgs[1]||0)-L[key].o)<1e-6,w+' fire starts at its trim '+L[key].o+' s (got '+s.startArgs[1]+')');}
 const v=eff.map(e=>e[1]),spread=Math.max(...v)-Math.min(...v);console.log('standard fire loudness at playback: spread '+spread.toFixed(1)+' LU',eff.map(e=>e[0]+' '+e[1].toFixed(1)).join(', '));
 assert(eff.length===18&&spread<=6,'own gun loudness spread <= 6 LU (was 18.9 LU at one flat gain): '+spread.toFixed(1));
 F.c.held='Shorty';F.x('GA.lastWeapon="Vandal";gaTick()');const eq=F.rec.sources.find(s=>s.buffer&&s.buffer.duration===man.files[man.weapons.Shorty.equip].duration&&s.startArgs);assert(eq&&eq.startArgs[1]>0.19,'Shorty equip skips its 197 ms leading silence');

@@ -40,6 +40,9 @@ block+='\n'+(root/'work/skins_runtime.js').read_text().rstrip('\n').replace('/*S
 aa='// ---- DOWNLOADED GAME AUDIO ----';ab='// ---- END DOWNLOADED GAME AUDIO ----'
 if aa in s:s=s[:s.index(aa)]+s[s.index(ab)+len(ab):]
 block+='\n'+(root/'work/audio_runtime.js').read_text().rstrip('\n').replace('/*GAME_AUDIO_JSON*/null',__import__('json').dumps(__import__('json').loads((root/'audio/manifest.json').read_text()),separators=(',',':')))
+# Per-sound playback level / start trim (audio/levels.json, work/audio_levels_build.cjs): {key:[gain dB, trim s]}, entries that change nothing left out.
+_lv={k:[v['g'],v['o']] for k,v in __import__('json').loads((root/'audio/levels.json').read_text())['files'].items() if v['g'] or v['o']}
+block=block.replace('/*GAME_AUDIO_LEVELS*/null',__import__('json').dumps(_lv,separators=(',',':')),1)
 za='// ---- SKIN FINISHERS ----';zb='// ---- END SKIN FINISHERS ----'
 if za in s:s=s[:s.index(za)]+s[s.index(zb)+len(zb):]
 block+='\n'+(root/'work/finishers_runtime.js').read_text().rstrip('\n')
