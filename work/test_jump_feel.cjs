@@ -34,7 +34,7 @@ for(const hz of [30,60,128,144,240]){
  const J=run(fresh(),I,1,hz);let apex=0,land=null;
  for(let n=0;n<hz*2;n++){const out=M.step(J,{...I,jump:n===0},1/hz,W);apex=Math.max(apex,J.y);if(out.landed){land={t:(n+1)/hz,speed:J.speed,lp:J.lp,ls:J.ls};break;}}
  ok(land&&Math.abs(apex-1.165)<.004&&Math.abs(land.t-.675)<1/hz,`${hz} Hz: measured Valorant arc retained`);
- ok(Math.abs(land.speed-5.4)<1e-9&&land.lp>0&&land.ls>0,`${hz} Hz: landing preserves running momentum and accuracy recovery`);
+ ok(Math.abs(land.speed-5.4)<1e-9&&land.lp===undefined&&land.ls>0,`${hz} Hz: landing preserves running momentum (no landing movement lock: P.lp gone) and accuracy recovery`);
 }
 // Stance/weapon/tag targets still constrain a newly started jump; no jump grants knife speed to a slower stance.
 for(const [extra,cap] of [[{},5.4],[{walk:true},3.24],[{duck:true},2],[{tag:.275},1.485]]){

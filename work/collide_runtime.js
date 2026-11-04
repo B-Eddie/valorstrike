@@ -27,7 +27,7 @@ function xcHost() { try { return typeof MP !== "undefined" && !!MP.on && MP.role
 function xcSrv() { try { return typeof NET !== "undefined" && !!NET.socket && typeof MP !== "undefined" && !!MP.on; } catch (e) { return false; } }
 function xcLive(u) { return !!u && !!u.g && u.alive !== false && !(u.hp <= 0) && !u.nt && !u.fog && !(u.dis > 0); }
 // A unit as the motor sees it: feet position, crouch height (bots crouch as a flag, online rows as a fraction in u.ch).
-function xcBody(u) { const p = u.g.position, M = xcVF(), ce = M ? M.C.crouchEye : 0.45; const b = u.xcB || (u.xcB = { x: 0, y: 0, z: 0, ch: 0, vx: 0, vz: 0 }); b.x = p.x; b.y = p.y || 0; b.z = p.z; b.ch = typeof u.ch === "number" ? u.ch : u.cr ? ce : 0; return b; }
+function xcBody(u) { const p = u.g.position, M = xcVF(), ce = M ? M.C.crouchEye : 0.4; const b = u.xcB || (u.xcB = { x: 0, y: 0, z: 0, ch: 0, vx: 0, vz: 0 }); b.x = p.x; b.y = p.y || 0; b.z = p.z; b.ch = typeof u.ch === "number" ? u.ch : u.cr ? ce : 0; return b; }
 // The player's prediction: an online-driven unit (nt) counts only against the trusted server (whose step collides with it).
 function xcLiveP(u) { return !!u && !!u.g && u.alive !== false && !(u.hp <= 0) && !u.fog && !(u.dis > 0) && (!u.nt || xcSrv()); }
 function xcPlayerUnits() { const out = []; try { for (const u of bots) if (xcLiveP(u)) out.push(u); for (const u of allies) if (xcLiveP(u)) out.push(u); } catch (e) {} return out; }

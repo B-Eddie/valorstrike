@@ -1,11 +1,11 @@
 // Repair pass: bone-following damage volumes and joint-constrained corpse physics.
 // Retargeted crouch clips barely lower the native head. Correct their vertical root motion
 // after the mixer, then undo it before the next mixer evaluation.
-{const pre=xUbPre,post=xUbPost;xUbPre=function(M){const X=M.sx;if(X&&X.crouchRestore){X.crouchBone.position.copy(X.crouchRestore);X.crouchRestore=null;}return pre(M);};xUbPost=function(M){post(M);const X=M.sx;if(!M.valorant||!X||X.dd||M.dead||X.nativeContact)return;const head=X.sc.getObjectByName('Head'),pelvis=X.sc.getObjectByName('Root');X.crouchBone=pelvis;if(!head||!pelvis)return;M.m.updateMatrixWorld(true);const hp=head.getWorldPosition(new THREE.Vector3());if(X.standHead==null)X.standHead=hp.y-M.m.getWorldPosition(new THREE.Vector3()).y;const cb=Math.max(0,Math.min(1,X.cb||0));if(cb<.001)return;const desired=M.m.getWorldPosition(new THREE.Vector3()).y+X.standHead-.45*cb,delta=desired-hp.y;X.crouchRestore=pelvis.position.clone();const p=pelvis.getWorldPosition(new THREE.Vector3());p.y+=delta;pelvis.position.copy(pelvis.parent.worldToLocal(p));pelvis.updateMatrix();M.m.updateMatrixWorld(true);};}
+{const pre=xUbPre,post=xUbPost;xUbPre=function(M){const X=M.sx;if(X&&X.crouchRestore){X.crouchBone.position.copy(X.crouchRestore);X.crouchRestore=null;}return pre(M);};xUbPost=function(M){post(M);const X=M.sx;if(!M.valorant||!X||X.dd||M.dead||X.nativeContact)return;const head=X.sc.getObjectByName('Head'),pelvis=X.sc.getObjectByName('Root');X.crouchBone=pelvis;if(!head||!pelvis)return;M.m.updateMatrixWorld(true);const hp=head.getWorldPosition(new THREE.Vector3());if(X.standHead==null)X.standHead=hp.y-M.m.getWorldPosition(new THREE.Vector3()).y;const cb=Math.max(0,Math.min(1,X.cb||0));if(cb<.001)return;const desired=M.m.getWorldPosition(new THREE.Vector3()).y+X.standHead-.4*cb/* Motor C.crouchEye (measured 0.40 m, was 0.45) */,delta=desired-hp.y;X.crouchRestore=pelvis.position.clone();const p=pelvis.getWorldPosition(new THREE.Vector3());p.y+=delta;pelvis.position.copy(pelvis.parent.worldToLocal(p));pelvis.updateMatrix();M.m.updateMatrixWorld(true);};}
 // Native rigs (nativeContact): follow the pelvis first, then correct crouch height on both halves
 // of the waist. Save the feet before shifting and re-plant them with two-bone IK. Every offset
 // is restored before the mixer. Only idle frames may update the standing reference (jog bobs low).
-const XRC={drop:.45,stand:1.72,max:.3};
+const XRC={drop:.4,stand:1.72,max:.3};/* drop = Motor C.crouchEye (measured 0.40 m, was 0.45) */
 {const pre=xUbPre,post=xUbPost;
 xUbPre=function(M){
  const X=M&&M.sx,restore=X&&X.ncRestore;

@@ -10,7 +10,18 @@
 // Air steering is a feel approximation: 12 m/s^2 redirects a rifle run through 90 degrees in ~0.64 s,
 // within one ordinary jump, while remaining weaker than grounded acceleration (18.75 m/s^2).
 // Keep the measured vertical arc and momentum-preserving landing; do not add air drag or a landing movement lock.
-const C={stepHeight:.4,knifeSpeed:6.75,walk:.6,crouch:2.5/6.75,accelTime:.288,crouchAccelTime:.472,frictionScale:7.3625,frictionFlat:46.5,airAcceleration:12,jumpSpeed:6.902,gravity:20.45,landingLock:.2,landSpreadTime:.225,landSpread:7,crouchEye:.45,crouchDown:.276,crouchUp:.276,deadzone:.275,operatorDeadzone:.15,eyeHeight:1.6,referenceAspect:16/9,horizontalFov:103};
+const C={stepHeight:.4,knifeSpeed:6.75,walk:.6,crouch:2.5/6.75,accelTime:.288,crouchAccelTime:.472,frictionScale:7.3625,frictionFlat:46.5,airAcceleration:12,jumpSpeed:6.902,gravity:20.45,landSpreadTime:.225,landSpread:7,crouchEye:.4,crouchDown:.276,crouchUp:.276,deadzone:.275,operatorDeadzone:.15,eyeHeight:1.6,referenceAspect:16/9,horizontalFov:103};
+// Crouch eye drop 0.40 m (Stark, 'VALORANT Physics: Explained': 10 crouches step the crosshair down a 400 u square = 40 u per
+// crouch; was 0.45). The crouched capsule (1.8 - ch) and the crouched head hitbox (server/src/hitboxes.js CROUCH) follow it.
+// No landing movement lock (VALORANT has none; STARK measures momentum kept on landing): the old unread landingLock / P.lp is gone.
+// Tagging (game files, valorant.gs Vandal stability component: 'Min tagging speed 15%', 'Tagging: 0 s -> 0, 0.75 s -> 4.5, speed
+// override while tagged, by time since the hit'; wiki Weapons: 72.5 % slow): a hit drops the speed cap to tagMul (x0.275) and
+// it recovers linearly to full over tagTime (0.75 s, the file curve's span; linear = its two keys), never under tagMin (15 %).
+// tagK(k, left): the multiplier with `left` s of the tag remaining and k the hit's slow; a tag longer than tagTime (a status
+// slow) holds k until the last tagTime s. Shared by the server (simulation.js tagMul) and the page (xTagK) so prediction
+// and server agree.
+C.tagTime=.75;C.tagMul=.275;C.tagMin=.15;
+function tagK(k,left){if(!(left>0))return 1;const e=Math.max(0,Math.min(1,1-left/C.tagTime));return Math.max(C.tagMin,k+(1-k)*e);}
 C.verticalFov=2*Math.atan(Math.tan(C.horizontalFov*Math.PI/360)/C.referenceAspect)*180/Math.PI;
 function approach(v,t,d){return v<t?Math.min(t,v+d):Math.max(t,v-d);}
 function damp(v,t,k,dt){return t+(v-t)*Math.exp(-k*dt);}
@@ -164,7 +175,7 @@ function ropeFind(R,P){let best=-1,bd=Infinity;for(let k=0;k<R.length;k++){const
 // Climb direction -1..1: bots give input.climb; players give the forward axis (f, W = 1) and the camera pitch (+ up).
 function ropeClimb(input){if(input.climb!=null)return Math.max(-1,Math.min(1,+input.climb||0));const f=Math.max(-1,Math.min(1,+input.f||0));return (input.pitch||0)<-ROPE.down?-f:f;}
 function ropeLeave(P){P.rope=0;P.ropeT=0;P.ropeOut=null;P.ropeCd=ROPE.cooldown;P.ropeAt=null;}
-function ropeStep(P,input,dt,world,press,usePress){const r=world.ropes[P.rope-1];P.ropeT=(P.ropeT||0)+dt;P.lp=0;P.ls=0;P.jumpBuffer=0;P.vx=P.vz=0;
+function ropeStep(P,input,dt,world,press,usePress){const r=world.ropes[P.rope-1];P.ropeT=(P.ropeT||0)+dt;P.ls=0;P.jumpBuffer=0;P.vx=P.vz=0;
  P.ch=approach(P.ch||0,0,C.crouchEye/C.crouchUp*dt);P.cr=false;P.wk=!!input.walk;const out={landed:false,jumped:false,speed:0,drop:0,rope:true};
  const done=()=>{const s=Math.abs(P.vy||0);P.mv=s>.1;P.sf=s/Math.max(.001,input.speed||1);P.speed=s;out.speed=s;P.fallTop=P.y;P.fallY=P.y;P.fallDrop=0;P.ropeAt=P.rope?[P.x,P.y,P.z]:null;return out;};
  if(P.ropeOut!=null){/* stepping off at the top: up to ty at the rope, then across onto the ledge */P.ropeOut=Math.min(1,P.ropeOut+dt/ROPE.exit);const k=P.ropeOut;P.vy=0;P.x=r.x+(r.ex-r.x)*k;P.z=r.z+(r.ez-r.z)*k;P.y=r.ty;
@@ -205,7 +216,7 @@ function step(P,input,dt,world){
   if(P.rope){P.jumpBuffer=0;const parts=Math.max(1,Math.ceil(dt0*128)),h=dt0/parts;let o=null,j=false;for(let k=0;k<parts&&P.rope;k++){o=ropeStep(P,input,h,world,press&&k===0,usePress&&k===0);j=j||o.jumped;}if(o){o.jumped=j;if(!P.rope&&parts>1){/* let go mid-step: the rest of the step is ordinary movement */}return o;}}}
  for(let k=0;k<parts;k++){
   const floor=world.ground(P.x,P.z,P.y),grounded=(P.vy||0)<=0&&(P.y<=floor+.025||supported(P,world,P.y,1.8-(P.ch||0)));
-  P.lp=Math.max(0,(P.lp||0)-h);P.ls=Math.max(0,(P.ls||0)-h);P.jumpBuffer=Math.max(0,(P.jumpBuffer||0)-h);P.duckFatigue=Math.max(0,(P.duckFatigue||0)-h*.55);
+  P.ls=Math.max(0,(P.ls||0)-h);P.jumpBuffer=Math.max(0,(P.jumpBuffer||0)-h);P.duckFatigue=Math.max(0,(P.duckFatigue||0)-h*.55);
   if(!!input.duck!==!!P.duckHeld){if(input.duck)P.duckFatigue=Math.min(.65,(P.duckFatigue||0)+.08);P.duckHeld=!!input.duck;}
   const chTarget=input.duck?C.crouchEye:0,chRate=C.crouchEye/((input.duck?C.crouchDown:C.crouchUp)*(1+(P.duckFatigue||0)))*h;
   if(!grounded)airCrouch(P,world,chTarget,chRate);else{const allowed=chTarget>=(P.ch||0)||(!world.blocked(P.x,P.z,.4,P.y,C.eyeHeight+.2)&&(!world.ceiling||!world.ceiling(P.x,P.z,P.y+1.8-(P.ch||0),P.y+1.8)));if(allowed)P.ch=approach(P.ch||0,chTarget,chRate);}
@@ -254,7 +265,7 @@ function step(P,input,dt,world){
   if(vy>0&&world.ceiling&&world.ceiling(P.x,P.z,P.y+height,next+height)){vy=0;next=P.y;}
   // Rising into geometry beside the axis (an overhang, a wall lip) the centre ceiling ray misses: stop at the highest free height.
   if(next>oldY&&world.blocked(P.x,P.z,VR,next,height)&&!world.blocked(P.x,P.z,VR,oldY,height)){let lo=oldY,hi=next;for(let n=0;n<10;n++){const mid=(lo+hi)/2;if(world.blocked(P.x,P.z,VR,mid,height))hi=mid;else lo=mid;}next=lo;vy=Math.min(vy,0);}
-  if(next<=gy){next=gy;if(P.air&&vy<-.5){landed=true;P.lp=C.landingLock;P.ls=C.landSpreadTime;P.landImpact=Math.min(1,-vy/10);drop=Math.max(drop,(P.fallTop??oldY)-gy);}vy=0;}
+  if(next<=gy){next=gy;if(P.air&&vy<-.5){landed=true;P.ls=C.landSpreadTime;P.landImpact=Math.min(1,-vy/10);drop=Math.max(drop,(P.fallTop??oldY)-gy);}vy=0;}
   // Descending beside a riser must not settle the capsule inside the stair face.
   // (Thin probe up the wall, full radius in the last 45 cm above the floor so a landing beside a nosing never ends inside it.)
   if(next<oldY&&!world.blocked(P.x,P.z,VR,oldY,height)&&(world.blocked(P.x,P.z,VR,next,height)||(next-gy<.45&&world.blocked(P.x,P.z,.4,next,height)))){let lo=next,hi=oldY;for(let n=0;n<10;n++){const mid=(lo+hi)/2;if(world.blocked(P.x,P.z,.4,mid,height))lo=mid;else hi=mid;}next=hi;vy=0;}
@@ -403,5 +414,5 @@ function bodySteer(P,others,x,z){
  for(const Q of others){if(!Q||Q===P||!bodyMeet(P,Q))continue;const dx=Q.x-P.x,dz=Q.z-P.z,a=dx*ux+dz*uz,l=dx*rx+dz*rz;if(a<=0||a>=C.bodyLook||Math.abs(l)>=R2||a>=ahead)continue;ahead=a;side=l>.02?-1:1;}
  if(ahead===Infinity)return [x,z];
  const k=1.5*Math.min(1,(C.bodyLook-ahead)/(C.bodyLook-R2)),sx=ux+rx*side*k,sz=uz+rz*side*k,L=Math.hypot(sx,sz);return [sx*m/L,sz*m/L];}
-return {C,ROPES,ROPE,ropeFind,ropeLinks,step,dash,dashStep,runs,footfall,fallDamage,velocity,brake,groundMove,spread,bloomCap,SPREAD,CADENCE,cadenceShot,cadenceGap,cadenceOwed,CLASSIC_ALT,classicAltSpread,BUCKY_ALT,recoveryTime,recoilMove,disk,damp,approach,clipBlocked,CLIPS,REC,sprayReset,sprayBloom,sprayStep,leashGrid,leashOk,leashNear,bodies,bodySteer};
+return {C,tagK,ROPES,ROPE,ropeFind,ropeLinks,step,dash,dashStep,runs,footfall,fallDamage,velocity,brake,groundMove,spread,bloomCap,SPREAD,CADENCE,cadenceShot,cadenceGap,cadenceOwed,CLASSIC_ALT,classicAltSpread,BUCKY_ALT,recoveryTime,recoilMove,disk,damp,approach,clipBlocked,CLIPS,REC,sprayReset,sprayBloom,sprayStep,leashGrid,leashOk,leashNear,bodies,bodySteer};
 });

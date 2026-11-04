@@ -25,6 +25,12 @@ the tag slow (`server/src/simulation.js:62` `tagMul`, page `xTag` in `work/feel_
 - [CS-PL] https://esportnow.pl/blog/2025/06/14/kucanie-w-valorant-mechanika-ktora-moze-uratowac-runde/ (crouch spam slows
   the crouch after a few rapid toggles; secondary source, no numbers)
 
+- [TURBO] https://turbosmurfs.gg/article/how-to-improve-aim-in-valorant (quotes Riot_Classick's Phantom deceleration timings and
+  patch 1.02 tagging figures; secondary)
+- [UE-AIR] https://forums.unrealengine.com/t/how-does-valorant-handle-air-strafing/586555 (qualitative air steering; no value)
+- [UE-STEP] https://bugnet.io/blog/fix-unreal-character-movement-stuck-on-step-up (UE MaxStepHeight default ~45 cm; engine default)
+- [RVH] https://www.reddit.com/r/VALORANT/comments/1skgby1/eye_level_height (claims 1.96 m agent height, no method)
+
 ## Table
 
 | Constant | Ours | VALORANT | Source | Difference |
@@ -42,19 +48,19 @@ the tag slow (`server/src/simulation.js:62` `tagMul`, page `xTag` in `work/feel_
 | Ground acceleration | top speed in 0.288 s every stance (rifle 18.75, knife 23.44 m/s^2) | 0.288 s, accel scales with speed limit | STARK | match |
 | Crouched acceleration | 0.472 s | 0.472 s | STARK | match |
 | Release friction (stop) | dv/dt = -(7.3625 v + 46.5) -> rifle stop 84 ms / 0.203 m | S = 7.3625, F = 4650 u/s^2 (update block) | STARK | match |
-| Counter-strafe | friction + acceleration while reversing (rifle stop ~66 ms) | faster than release (no published figure) | STARK (qualitative) | behaviour match, value is ours |
+| Counter-strafe | friction + acceleration while reversing (rifle stop ~66 ms vs 84 ms released) | Riot_Classick (Riot dev, Phantom, as quoted by TURBO): counter-strafed 0.055 s to 61 % speed / 0.104 s to 25 % / 0.160 s full stop vs walk key, no counter-strafe 0.065 / 0.110 / 0.170 s | TURBO (secondary quote of a Riot post; the original post not found) | **no measurement found that fits our model**: the quoted times are about 2x STARK's release-stop (84 ms) and describe "walk key" releases, not a plain release, so they cannot be matched without breaking the STARK friction (a sourced match). Kept; noted as a conflicting source |
 | Jump launch / gravity | 6.902 m/s, 20.45 m/s^2 -> apex 1.165 m, airtime 0.675 s | 690.2 u/s, 2045 u/s^2 | STARK update | match |
 | Air speed cap | <= melee speed x tag, and <= max(takeoff, stance speed) | sprinting air speed = melee speed | P1209 | match |
-| Air acceleration / air control | 12 m/s^2 (Jeff 9952f26, was 3.5) | not published / not measured | - | UNSOURCED (Jeff's tuning, kept) |
+| Air acceleration / air control | 12 m/s^2 (Jeff 9952f26, was 3.5) | not published; no frame-by-frame or Unreal-unit measurement found (STARK measures ground only; UE-AIR forum thread describes VALORANT air steering qualitatively: velocity keeps its magnitude while turning) | STARK, UE-AIR | **no measurement found** - kept |
 | Landing slowdown | none (momentum kept) | none measured; RJ: landing on a box *edge* kills momentum (collision, not a rule) | STARK, RJ | match |
 | Landing accuracy | +7 deg for 0.225 s (`landSpread`, `landSpreadTime`) | +7 deg for 0.225 s (wiki); files: "Landing penalty 0.7 -> 0 over 0.23 s" (multiplier units) | W-WPN, GS | match (wiki); file curve units unclear |
-| `landingLock` 0.2 s | set on landing, read by nothing that moves (spread uses `ls`) | - | - | dead value, no effect |
+| `landingLock` 0.2 s | **removed** (2026-11-04): it was set on landing and read by nothing | VALORANT has no landing movement lock: STARK measures momentum kept on landing; landing only adds spread (+7 deg / 0.225 s, kept) | STARK, W-WPN | **changed: removed** (test: server/test-movement-measured.js 3, work/test_jump_feel.cjs) |
 | Crouch transition | 0.276 s down and up | 0.276 s | STARK | match |
-| Crouch eye drop | 0.45 m (`crouchEye`; also the capsule shrink) | crosshair drops 40 u = 0.40 m (10 crouches over a 400 u square) | STARK | **DIFF 0.05 m** (ours 12.5 % deeper) |
-| Standing eye / capsule | eye 1.6 m, capsule 1.8 m | STARK assumes 2.0 m player height (not measured); Riot unpublished | STARK | UNSOURCED |
-| Crouch spam | `duckFatigue` +0.08 per press (cap 0.65), decays 0.55/s, slows the transition by (1+fatigue) | anti-spam slowing exists (secondary source), numbers unpublished | CS-PL | behaviour present, values ours |
-| Tagging slow | x 0.275 (72.5 % slow) for 0.5 s; shotgun > 10 m 30 % eased | 72.5 % slow "for a brief period"; files: "Min tagging speed 15 %", tagging curve 0 -> 4.5 over 0.75 s | W-WPN, GS Vandal | slow % match; **duration 0.5 s is ours; file curve (0.75 s) suggests a longer, ramped recovery** |
-| Step height | 0.40 m (`stepHeight`, raised from 0.36 for the Lotus 0.373 m riser) | not published | - | UNSOURCED |
+| Crouch eye drop | **0.40 m** (was 0.45; `crouchEye`, the crouched capsule 1.8 - ch = 1.40 m, the crouched head hitbox `server/src/hitboxes.js` CROUCH, the page camera via P.ch, the air tuck 0.20 m) | crosshair drops 40 u = 0.40 m (10 crouches over a 400 u square) | STARK | **changed to match** (Jeff OK 2026-11-03; test: server/test-movement-measured.js 1). Side effect: crouch-jump reach 1.165 + 0.20 = 1.365 m (was 1.39) |
+| Standing eye / capsule | eye 1.6 m, capsule 1.8 m | STARK *assumes* a 200 u player ("given that a player's height is 200"), not measured; an r/VALORANT post says agents are 1.96 m with no method (RVH); Riot unpublished | STARK, RVH | **no measurement found** - kept |
+| Crouch spam | `duckFatigue` +0.08 per press (cap 0.65), decays 0.55/s, slows the transition by (1+fatigue) | anti-spam slowing exists (secondary source), numbers unpublished; no measurement found | CS-PL | **no measurement found** - kept |
+| Tagging slow | **x 0.275 at the hit, recovering linearly to full over 0.75 s, never under 15 %** (was a flat x 0.275 for 0.5 s; shared `Motor.tagK`, server `tagMul` = page `xTagK`; turret tag 0.5 -> 0.75 s); shotgun > 10 m 30 % eased over 0.5 s (patch 1.07) unchanged | game files: "Min tagging speed 15 %", Tagging curve "speed override while tagged, by time since the hit" 0 s -> 0, 0.75 s -> 4.5; wiki 72.5 % slow | GS Vandal, W-WPN | **changed to match** (Jeff OK 2026-11-03; test: server/test-movement-measured.js 2, 40 / 60 Hz server = prediction). Interpretation below |
+| Step height | 0.40 m (`stepHeight`, raised from 0.36 for the Lotus 0.373 m riser) | not published; no measurement found (UE5 default MaxStepHeight 45 cm is an engine default, not VALORANT data) | UE-STEP | **no measurement found** - kept (also: lowering it would break the Lotus 0.373 m riser) |
 | Ropes (Split ascenders) | 6.75 x 0.76 = 5.13 m/s, top speed in 0.1 s; walk x 0.6 | "about Operator run speed" | ROPE | match (accel is ours) |
 | Ladders | none | VALORANT has no ladders (files list a ladder recoil multiplier only) | GS Ares page | n/a |
 | Movement deadzone | 27.5 % (Operator 15 %) | 27.5 % / Operator 15 % | W-WPN, W-OP | match |
@@ -70,7 +76,23 @@ the tag slow (`server/src/simulation.js:62` `tagMul`, page `xTag` in `work/feel_
 - Jumping already crouched and standing up mid-air extends the legs downward (RJ: lower peak, lands on a box sooner).
 - Releasing crouch over a box drops the feet onto it (TRK step 3; Unreal's un-crouch sweeps down and stands on what it finds).
 
-## Constants awaiting Jeff's OK (not changed)
+## Changes after Jeff's OK (2026-11-03/04, "yes match" / "go through every value and change it so its valorant measured values")
+
+Changed: crouch eye 0.45 -> 0.40 m (capsule, crouched hitbox, camera and air tuck follow), tagging -> the game-file curve, the dead
+`landingLock` removed. Kept with "no measurement found": air acceleration 12, step height 0.40, standing eye 1.6 / capsule 1.8,
+crouch-spam fatigue, counter-strafe extra (conflicting secondary source, see the table). Every other motor constant was already a
+sourced match (table). Test: `server/test-movement-measured.js` (in `npm test`).
+
+Tagging interpretation. The files give two numbers: "Min tagging speed 15 %" and a two-key curve "Tagging: 0 s -> 0, 0.75 s -> 4.5"
+described as the speed override while tagged by time since the hit; the wiki gives the 72.5 % slow. The curve's y units are not
+documented (4.5 is not a multiplier; it may be a speed in m/s or an internal scale), so its absolute values are not used. Read:
+(1) the slow at the hit is the wiki's 72.5 % (x 0.275); (2) the tag lasts the curve's span, 0.75 s, and the slow lifts along it
+linearly (two keys = linear); (3) the cap never drops below 15 % of base speed (only binds if a stronger slow is passed in).
+Rejected readings: starting at 0 -> 15 % (ignores the wiki's 72.5 %, and Riot's patch 1.02 "70 % reduction"); 4.5 as m/s (would make
+the cap gun-independent and exceed knife-relative caps for some guns). Riot's patch 1.02 also cut wall-penetration tags to 25 %;
+not modelled here (unchanged).
+
+## Constants awaiting Jeff's OK (superseded by the section above)
 
 1. `crouchEye` 0.45 -> 0.40 m (STARK measured a 40 u crosshair drop). Also changes the crouched capsule height and every crouch
    head / hitbox height, so it touches combat parity; not done without approval.

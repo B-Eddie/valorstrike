@@ -19,7 +19,7 @@ function attempt(H,d,duck,hz,releaseAt){const W=box(H),P={x:0,y:0,z:0};let jumpe
   ok(!W.blocked(P.x,P.z,.38,P.y,1.8-(P.ch||0)),'capsule never ends inside the box');if(P.x>4.5)break;}
  return {P,onTop:P.x>3.3&&Math.abs(P.y-H)<.02,maxFeet,eye};}
 const sweep=(H,duck,hz,rel)=>{const r=[];for(let d=.2;d<=3;d+=.05){const a=attempt(H,d,duck,hz,rel);if(a.onTop)r.push(d);}return r;};
-// 1.30 m: above the standing apex (1.165 m), below apex + the 0.225 m tuck.
+// 1.30 m: above the standing apex (1.165 m), below apex + the half-crouch tuck (crouchEye 0.40 m / 2 = 0.20 m since the measured-values change; was 0.225).
 const H=1.30;
 for(const hz of [40,60,128,144]){
  ok(sweep(H,false,hz).length===0,`${hz} Hz: a 1.30 m box cannot be climbed with a plain jump`);
@@ -27,22 +27,22 @@ for(const hz of [40,60,128,144]){
  // stand up over the box: the feet drop onto it (the release-on-contact step of the trick)
  const rel=sweep(H,true,hz,3.45);ok(rel.length>0,`${hz} Hz: crouch-jump then release over the box lands standing on it`);
 }
-// Tuck height: a standing jump with crouch held from take-off peaks 0.225 m higher at the feet (centre unchanged).
+// Tuck height: a standing jump with crouch held from take-off peaks crouchEye/2 (0.20 m) higher at the feet (centre unchanged).
 {const flat={ground:()=>0,blocked:()=>false};let a=0,b=0,ca=0,cb=0;const P={x:0,y:0,z:0},Q={x:0,y:0,z:0};
  for(let n=0;n<128;n++){V.step(P,{x:0,z:0,speed:5.4,jump:n===0},1/128,flat);V.step(Q,{x:0,z:0,speed:5.4,jump:n===0,duck:n>0},1/128,flat);
   a=Math.max(a,P.y);b=Math.max(b,Q.y);ca=Math.max(ca,P.y+(1.8-(P.ch||0))/2);cb=Math.max(cb,Q.y+(1.8-(Q.ch||0))/2);}
- near(a,1.1647,.004,'plain jump apex');near(b-a,.225,.01,'air crouch lifts the feet by half the crouch (0.225 m)');near(cb,ca,.004,'capsule centre follows the same arc');
- // camera: grounded crouch drops the eye 0.45 m; an air crouch drops it 0.225 m relative to the standing jump
+ near(a,1.1647,.004,'plain jump apex');near(b-a,V.C.crouchEye/2,.01,'air crouch lifts the feet by half the crouch ('+(V.C.crouchEye/2).toFixed(3)+' m)');near(cb,ca,.004,'capsule centre follows the same arc');
+ // camera: grounded crouch drops the eye crouchEye (0.40 m); an air crouch drops it half that relative to the standing jump
  let ea=0,eb=0;const P2={x:0,y:0,z:0},Q2={x:0,y:0,z:0};for(let n=0;n<40;n++){V.step(P2,{x:0,z:0,speed:5.4,jump:n===0},1/128,flat);V.step(Q2,{x:0,z:0,speed:5.4,jump:n===0,duck:n>0},1/128,flat);}
- ea=P2.y+1.6-(P2.ch||0);eb=Q2.y+1.6-(Q2.ch||0);near(ea-eb,.225,.01,'air crouch camera drop is half the grounded drop');
+ ea=P2.y+1.6-(P2.ch||0);eb=Q2.y+1.6-(Q2.ch||0);near(ea-eb,V.C.crouchEye/2,.01,'air crouch camera drop is half the grounded drop');
  // already crouched before the jump: no tuck (the capsule base was on the floor), same feet apex as standing
  const R={x:0,y:0,z:0};for(let n=0;n<64;n++)V.step(R,{x:0,z:0,speed:5.4,duck:true},1/128,flat);let c=0;for(let n=0;n<128;n++){V.step(R,{x:0,z:0,speed:5.4,duck:true,jump:n===0},1/128,flat);c=Math.max(c,R.y);}
  near(c,a,.004,'crouched before the jump: feet apex as a standing jump');
- // ... and standing up mid-air extends the legs: the feet come down 0.225 m earlier than the centre arc
+ // ... and standing up mid-air extends the legs: the feet come down crouchEye/2 earlier than the centre arc
  const U={x:0,y:0,z:0};for(let n=0;n<64;n++)V.step(U,{x:0,z:0,speed:5.4,duck:true},1/128,flat);let land=null;for(let n=0;n<200&&land==null;n++){const r=V.step(U,{x:0,z:0,speed:5.4,duck:n<10,jump:n===0},1/128,flat);if(r.landed)land=n;}
  ok(land!=null&&land<86,'crouched jump + stand up mid-air lands sooner ('+land+' ticks vs 86)');
  // landing on the floor with the legs tucked is a landing (drop measured on the centre: no extra fall height from the tuck)
- const F={x:0,y:0,z:0};let r0=null;for(let n=0;n<200&&!r0;n++){const r=V.step(F,{x:0,z:0,speed:5.4,duck:n>0,jump:n===0},1/128,flat);if(r.landed)r0=r;}ok(r0&&Math.abs(r0.drop-.225-a)<.01||(r0&&r0.drop<=a+.235),'tucked landing reports a sane drop');}
+ const F={x:0,y:0,z:0};let r0=null;for(let n=0;n<200&&!r0;n++){const r=V.step(F,{x:0,z:0,speed:5.4,duck:n>0,jump:n===0},1/128,flat);if(r.landed)r0=r;}ok(r0&&Math.abs(r0.drop-V.C.crouchEye/2-a)<.01||(r0&&r0.drop<=a+.235),'tucked landing reports a sane drop');}
 // Related VALORANT behaviours (crouch spam, jump-peek, counter-strafe) still hold with the air tuck.
 {const flat={ground:()=>0,blocked:()=>false},sim=(P,I,sec,hz=128)=>{for(let n=0;n<Math.round(sec*hz);n++)V.step(P,typeof I==='function'?I(n):I,1/hz,flat);return P;};
  // counter-strafe stops a rifle run faster than releasing the keys (friction + acceleration vs friction)
