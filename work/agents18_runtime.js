@@ -48,13 +48,14 @@ function a18TacLocal(k, p) { // offline mirror of the server's m.p casts
       const s0 = a18StarNear(p[0], p[1], C.star.placeR);
       if (s0) { a18StarDrop(s0); a18Smoke(new THREE.Vector3(s0.x, 0, s0.z), C.star.fakeNebula, C.star.nebulaR, 0x7a4fd0, 0xc9a8f2); A.starBack = performance.now() / 1000 + C.star.dissipateDelay; SFX.ab("updraft"); say("Dissipate", 700); return; }
       if (A.stars < 1) { blip(120, 0.08, "square", 0.1); return; }
-      A.stars--; const m = new THREE.Mesh(new THREE.OctahedronGeometry(0.35), new THREE.MeshLambertMaterial({ color: 0xb9a7ff, emissive: 0xb9a7ff, emissiveIntensity: 0.5 })); m.position.set(p[0], 1.4, p[1]); scene.add(m);
-      const fx0 = { kind: "star", m, t: 400 }; a18Fx(fx0); A.starList.push({ x: p[0], z: p[1], fx: fx0 }); SFX.ab("updraft"); say("Star placed", 700); return; }
+      A.stars--; const gy = (() => { try { const g = groundAt(p[0], p[1], 0.3, typeof player !== "undefined" ? player.y : 3); return Number.isFinite(g) ? g : 0; } catch (e) { return 0; } })(); /* the marker and its activations sit on the real ground, not y=0 */
+      const m = new THREE.Mesh(new THREE.OctahedronGeometry(0.35), new THREE.MeshLambertMaterial({ color: 0xb9a7ff, emissive: 0xb9a7ff, emissiveIntensity: 0.5 })); m.position.set(p[0], gy + 1.4, p[1]); scene.add(m);
+      const fx0 = { kind: "star", m, t: 400 }; a18Fx(fx0); A.starList.push({ x: p[0], y: gy, z: p[1], fx: fx0 }); SFX.ab("updraft"); say("Star placed", 700); return; }
     const s0 = a18StarNear(p[0], p[1], C.star.selectR); // c/q/e activate the placed star nearest the click
     if (!s0) { blip(120, 0.08, "square", 0.1); say("No Star there", 700); return; }
-    a18StarDrop(s0); const q = new THREE.Vector3(s0.x, 0, s0.z);
-    if (k === "c") a18Fx({ kind: "gwell", p: q, t: 0.75, life: C.star.wellPull });
-    else if (k === "q") a18Fx({ kind: "nova", p: q, t: C.star.novaDelay });
+    a18StarDrop(s0); const q = new THREE.Vector3(s0.x, s0.y || 0, s0.z);
+    if (k === "c") a18Fx({ kind: "gwell", p: q, t: 0.75, life: C.star.wellPull, m: a18Ring(q, C.star.wellR, 0x8a6af0, 0.6) });
+    else if (k === "q") a18Fx({ kind: "nova", p: q, t: C.star.novaDelay, m: a18Ring(q, C.star.novaR, 0xb08af0, 0.6) });
     else a18Smoke(q, C.star.nebulaLife, C.star.nebulaR, 0x7a4fd0, 0xc9a8f2);
     SFX.ab("updraft"); return; }
   if (k === "e") { J.e--; for (let i = 0; i + 1 < p.length && i < 4; i += 2) a18Fx({ kind: "pulses", p: new THREE.Vector3(p[i], 0, p[i + 1]), t: 0.6, gap: C.salvo.gap, left: C.salvo.pulses, r: C.salvo.r, dmg: C.salvo.dmg, name: "Guided Salvo" }); SFX.ab("cbPop", player); return; }
@@ -122,9 +123,9 @@ function a18Key(code) {
       if (k === "x") { spend(); const m = a18Ring(new THREE.Vector3(P.x, 0, P.z), 30, 0x9a6ff0, 0.5); a18Fx({ kind: "div", m, t: C.star.divideLife }); SFX.ab("updraft"); return true; }
       const s0 = a18StarNear(p.x, p.z, 1e9); // c/q/e activate the placed Star nearest the crosshair (wiki Stars)
       if (!s0) return no();
-      a18StarDrop(s0); const q = new THREE.Vector3(s0.x, 0, s0.z);
-      if (k === "c") a18Fx({ kind: "gwell", p: q, t: 0.75, life: C.star.wellPull });
-      else if (k === "q") a18Fx({ kind: "nova", p: q, t: C.star.novaDelay });
+      a18StarDrop(s0); const q = new THREE.Vector3(s0.x, s0.y || 0, s0.z);
+      if (k === "c") a18Fx({ kind: "gwell", p: q, t: 0.75, life: C.star.wellPull, m: a18Ring(q, C.star.wellR, 0x8a6af0, 0.6) });
+      else if (k === "q") a18Fx({ kind: "nova", p: q, t: C.star.novaDelay, m: a18Ring(q, C.star.novaR, 0xb08af0, 0.6) });
       else a18Smoke(q, C.star.nebulaLife, C.star.nebulaR, 0x7a4fd0, 0xc9a8f2);
       SFX.ab("updraft"); return true; }
     case "Brimstone": { spend();
@@ -248,12 +249,20 @@ function a18ArenaCast(o, d, max) { let best = Infinity; // slab tests: floor, 4 
     for (let a = 0; a < 3; a++) { if (Math.abs(d[a]) < 1e-9) { if (o[a] < mn[a] || o[a] > mx[a]) { ok = false; break; } continue; } let ta = (mn[a] - o[a]) / d[a], tb = (mx[a] - o[a]) / d[a]; if (ta > tb) { const q = ta; ta = tb; tb = q; } if (ta > t0) t0 = ta; if (tb < t1) t1 = tb; if (t0 > t1) { ok = false; break; } }
     if (ok && t0 > 1e-6 && t0 < max && t0 < best) best = t0; }
   return best; }
-function a18ArenaShell(ox) { // the visible cell: dark platform, glowing Iso-blue energy walls, two cover blocks
+function a18ArenaShell(ox) { // the visible cell, styled toward the real Kill Contract arena (dark platform, glowing Iso-blue energy walls with a bright grid + top rail, two cover blocks); still an approximation, not Riot's hex-field shader
   const g = new THREE.Group(); g.userData.jp = 1; /* not a pooled mesh: freed as a group */
   const floor = new THREE.Mesh(new THREE.BoxGeometry(A18_ARENA_HALF * 2, 0.2, A18_ARENA_HALF * 2), new THREE.MeshLambertMaterial({ color: 0x232a36 })); floor.position.set(0, -0.1, 0); g.add(floor);
-  const wallM = () => new THREE.MeshBasicMaterial({ color: 0x4a6cf0, transparent: true, opacity: 0.22, side: THREE.DoubleSide, depthWrite: false });
-  for (const [rx, rz, ry] of [[0, -A18_ARENA_HALF, 0], [0, A18_ARENA_HALF, 0], [-A18_ARENA_HALF, 0, Math.PI / 2], [A18_ARENA_HALF, 0, Math.PI / 2]]) { const w = new THREE.Mesh(new THREE.PlaneGeometry(A18_ARENA_HALF * 2, A18_ARENA_WALL_H), wallM()); w.position.set(rx, A18_ARENA_WALL_H / 2, rz); w.rotation.y = ry; g.add(w); }
-  for (const [cx, cz, w, d, hh] of A18_ARENA_COVER) { const b = new THREE.Mesh(new THREE.BoxGeometry(w, hh, d), new THREE.MeshLambertMaterial({ color: 0x39445c, emissive: 0x1a2a6a, emissiveIntensity: 0.4 })); b.position.set(cx, hh / 2, cz); g.add(b); }
+  const edgeM = new THREE.MeshBasicMaterial({ color: 0x6a8cf0 });
+  for (const [ex, ez, ew, ed] of [[0, -A18_ARENA_HALF + .1, A18_ARENA_HALF * 2, .18], [0, A18_ARENA_HALF - .1, A18_ARENA_HALF * 2, .18], [-A18_ARENA_HALF + .1, 0, .18, A18_ARENA_HALF * 2], [A18_ARENA_HALF - .1, 0, .18, A18_ARENA_HALF * 2]]) { const e = new THREE.Mesh(new THREE.BoxGeometry(ew, .06, ed), edgeM); e.position.set(ex, .03, ez); g.add(e); } // glowing floor rim
+  const wallM = () => new THREE.MeshBasicMaterial({ color: 0x4a6cf0, transparent: true, opacity: 0.3, side: THREE.DoubleSide, depthWrite: false });
+  const lineM = () => new THREE.LineBasicMaterial({ color: 0x8ab0ff, transparent: true, opacity: .55 });
+  for (const [rx, rz, ry] of [[0, -A18_ARENA_HALF, 0], [0, A18_ARENA_HALF, 0], [-A18_ARENA_HALF, 0, Math.PI / 2], [A18_ARENA_HALF, 0, Math.PI / 2]]) {
+    const geo = new THREE.PlaneGeometry(A18_ARENA_HALF * 2, A18_ARENA_WALL_H, 8, 3);
+    const w = new THREE.Mesh(geo, wallM()); w.position.set(rx, A18_ARENA_WALL_H / 2, rz); w.rotation.y = ry; g.add(w);
+    const grid = new THREE.LineSegments(new THREE.WireframeGeometry(geo), lineM()); grid.position.copy(w.position); grid.rotation.y = ry; g.add(grid); // the energy-field shimmer
+    const rail = new THREE.Mesh(new THREE.BoxGeometry(A18_ARENA_HALF * 2, .12, .12), edgeM); rail.position.set(rx, A18_ARENA_WALL_H, rz); rail.rotation.y = ry; g.add(rail); }
+  for (const [cx, cz, w, d, hh] of A18_ARENA_COVER) { const b = new THREE.Mesh(new THREE.BoxGeometry(w, hh, d), new THREE.MeshLambertMaterial({ color: 0x39445c, emissive: 0x2a4aaa, emissiveIntensity: 0.55 })); b.position.set(cx, hh / 2, cz); g.add(b);
+    const be = new THREE.LineSegments(new THREE.EdgesGeometry(b.geometry), lineM()); be.position.copy(b.position); g.add(be); }
   g.position.set(ox, 0, 0); scene.add(g); return g; }
 function a18ArenaFree(g) { if (!g) return; for (const c of [...g.children]) { g.remove(c); if (c.geometry && c.geometry.dispose) c.geometry.dispose(); const t = c.material; if (t && t.dispose) t.dispose(); } scene.remove(g); }
 const a18Blk0 = blocked; blocked = function (x, z, r, y) { return a18ArenaIn(x, z) ? a18ArenaBlocked(x - a18ArenaCell(x), z, r, y || 0, 1.8) : a18Blk0(x, z, r, y); };
@@ -285,8 +294,8 @@ function a18Tick(dt) {
   const F = J.a18fx; if (!F) return; let w = 0;
   for (let i = 0; i < F.length; i++) { const e = F[i]; e.t -= dt; let keep = true;
     switch (e.kind) {
-      case "gwell": { for (const b of a18BotsIn(e.p, C.star.wellR)) { const d = [e.p.x - b.g.position.x, e.p.z - b.g.position.z], l = Math.hypot(d[0], d[1]) || 1; b.g.position.x += d[0] / l * 4 * dt; b.g.position.z += d[1] / l * 4 * dt; b.vuln = C.star.wellVuln; } if (e.t <= 0) keep = false; break; }
-      case "nova": if (e.t <= 0) { for (const b of a18BotsIn(e.p, C.star.novaR)) b.blind = Math.max(b.blind || 0, C.star.novaConcuss); SFX.ab("cbPop", e.p); keep = false; } break;
+      case "gwell": { for (const b of a18BotsIn(e.p, C.star.wellR)) { const d = [e.p.x - b.g.position.x, e.p.z - b.g.position.z], l = Math.hypot(d[0], d[1]) || 1; b.g.position.x += d[0] / l * 4 * dt; b.g.position.z += d[1] / l * 4 * dt; b.vuln = C.star.wellVuln; } if (e.t <= 0) { if (e.m) jRel(e.m); keep = false; } break; }
+      case "nova": if (e.t <= 0) { for (const b of a18BotsIn(e.p, C.star.novaR)) b.blind = Math.max(b.blind || 0, C.star.novaConcuss); SFX.ab("cbPop", e.p); if (e.m) jRel(e.m); keep = false; } break;
       case "stimz": if (Math.hypot(P.x - e.p.x, P.z - e.p.z) < C.stim.r && P.hp > 0) A.stim = Math.max(A.stim, 0.5); if (e.t <= 0) { jRel(e.m); keep = false; } break;
       case "orbital": if (e.t <= 0) { e.life -= dt; for (const b of a18BotsIn(e.p, C.orbital.r)) jHit(b, C.orbital.dps * dt, "Orbital Strike"); if (Math.hypot(P.x - e.p.x, P.z - e.p.z) < C.orbital.r && P.hp > 0) hurt(P, C.orbital.dps * dt, "Orbital Strike"); if (e.life <= 0) { jRel(e.m); keep = false; } } break;
       case "decay": if (e.t <= 0) { for (const b of a18BotsIn(e.p, e.r)) a18DecayB(b, e.amt); SFX.ab("cbPop", e.p); keep = false; } break;

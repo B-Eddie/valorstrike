@@ -95,6 +95,7 @@ export function cast18(sim,u,m,o,d,push){
   u.pendingTeleport={kind:'gatecrash',p:[...A.gate.p],at:sim.time+1.2};A.gate=null;cast(sim,u,k,o,d,[...u.pendingTeleport.p]);return true;}
  if(ag==='Astra'&&u.human){/* Astral Form (wiki Astral_Form/Stars/Cosmic_Divide): X opens the map view; a map click (k 's') places a persistent Star, or dissipates one clicked; c/q/e on the map activate the placed star nearest the click; X across two points places Cosmic Divide and exits, X alone exits */
   const mp=Array.isArray(m.p)&&m.p.length>=2&&m.p.slice(0,2).every(Number.isFinite)?[Math.max(-200,Math.min(200,m.p[0])),0,Math.max(-200,Math.min(200,m.p[1]))]:null;
+  if(mp){const gy=sim.world.ground(mp[0],mp[2],3);mp[1]=Number.isFinite(gy)?gy:0;}/* stars and their activations sit on the map's real ground, not y=0 */
   if(k==='x'){
    if(!A.astral){if(A.ult<K.u)return false;A.astral=true;u.astralForm=true;return true;}
    if(Array.isArray(m.p)&&m.p.length>=4&&m.p.slice(0,4).every(Number.isFinite)){const x1=Math.max(-200,Math.min(200,m.p[0])),z1=Math.max(-200,Math.min(200,m.p[1])),x2=Math.max(-200,Math.min(200,m.p[2])),z2=Math.max(-200,Math.min(200,m.p[3]));
