@@ -15443,9 +15443,12 @@ function nmViewHalf(){const c=typeof camera!=='undefined'&&camera;if(!c||!(c.fov
 function nmInCone(face,half,dx,dz,d){const o=face-Math.atan2(dx,dz);return Math.abs(Math.atan2(Math.sin(o),Math.cos(o)))<=half+(d>0?Math.atan(.3/Math.max(.5,d)):0);}
 function nmSpot(now){
  if(now-(nmSpot.t||0)<150&&nmSpot.v)return nmSpot.v;nmSpot.t=now;const V=THREE.Vector3,vis=new Set(),eyes=[];
- if(player.hp>0){const e=typeof pEye==='function'?pEye():new V(player.x,(player.y||0)+1.5,player.z),half=nmViewHalf(),face=yaw+Math.PI;e.see=(dx,dz,d)=>nmInCone(face,half,dx,dz,d);eyes.push(e);}
- for(const a of allies)if(a.alive){const e=new V(a.g.position.x,a.g.position.y+1.5,a.g.position.z);e.see=typeof xbInView==='function'?(dx,dz,d)=>xbInView(a,dx,dz,d):(dx,dz,d)=>nmInCone(a.g.rotation?a.g.rotation.y||0:0,103*Math.PI/360,dx,dz,d);eyes.push(e);}
- for(const b of bots){if(!b.alive||b.fog)continue;/* b.fog: hidden by the server's fog of war, its position is stale */const p=b.g.position,e=new V(p.x,p.y+1.4,p.z);for(const y of eyes){const dx=p.x-y.x,dz=p.z-y.z,d=Math.hypot(dx,dz);if(d<NM_SPOT_RANGE&&y.see(dx,dz,d)&&los(y,e)){vis.add(b);break;}}}
+ // combat lane: eye / target points come from a pool reused every refresh (los() keys them by value and keeps none; was a Vector3
+ // per eye and per enemy every 150 ms, ~600 per combat window); same values, same order.
+ const EP=nmSpot.ep||(nmSpot.ep=[]),ev=()=>EP[eyes.length]||(EP[eyes.length]=new V()),bt=nmSpot.bt||(nmSpot.bt=new V());
+ if(player.hp>0){const e=typeof pEyeTo==='function'?pEyeTo(ev()):typeof pEye==='function'?pEye():new V(player.x,(player.y||0)+1.5,player.z),half=nmViewHalf(),face=yaw+Math.PI;e.see=(dx,dz,d)=>nmInCone(face,half,dx,dz,d);eyes.push(e);}
+ for(const a of allies)if(a.alive){const e=ev().set(a.g.position.x,a.g.position.y+1.5,a.g.position.z);e.see=typeof xbInView==='function'?(dx,dz,d)=>xbInView(a,dx,dz,d):(dx,dz,d)=>nmInCone(a.g.rotation?a.g.rotation.y||0:0,103*Math.PI/360,dx,dz,d);eyes.push(e);}
+ for(const b of bots){if(!b.alive||b.fog)continue;/* b.fog: hidden by the server's fog of war, its position is stale */const p=b.g.position,e=bt.set(p.x,p.y+1.4,p.z);for(const y of eyes){const dx=p.x-y.x,dz=p.z-y.z,d=Math.hypot(dx,dz);if(d<NM_SPOT_RANGE&&y.see(dx,dz,d)&&los(y,e)){vis.add(b);break;}}}
  if(typeof J!=='undefined'&&J.rvT>0&&J.rv)for(const b of J.rv)if(b&&b.alive)vis.add(b);
  if(window.xPG)for(const q of window.xPG.s)if(q.b&&q.b.alive&&now<q.rv)vis.add(q.b);
  for(const b of bots)if(b.alive&&b.netRvUntil>now)vis.add(b); // online: server ult reveals (Hunter's Fury hits, Neural Theft)
@@ -17107,10 +17110,14 @@ var XDARK = { max: 80, min: 1, rate: 20, tap: 0.2, def: 30, lift: 1.7 }; // = se
 function xDarkInit(q) { const o = pEye(), d = jAim(); ray.set(o, d); ray.far = XDARK.max; const h = ray.intersectObjects(solids)[0]; q.md = Math.max(XDARK.min, Math.min(XDARK.max, h ? h.distance - 0.5 : XDARK.def)); } // starts at the wall under the crosshair
 function xDarkPt(md) { const o = pEye(), d = jAim(), p = o.addScaledVector(d, md); let g = NaN; try { g = groundAt(p.x, p.z, 0.2, p.y); } catch (e) {} if (!Number.isFinite(g) || g > p.y) g = Math.min(p.y, player.y || 0); return { x: p.x, y: g + XDARK.lift, z: p.z, f: g }; } // sunk to the floor below the marker
 let xDarkMesh = null;
+function xDarkMake() { if (!xDarkMesh) { xDarkMesh = new THREE.Mesh(new THREE.SphereGeometry(XSMR.Omen, 18, 12), new THREE.MeshBasicMaterial({ color: 0x5ab4ff, wireframe: true, transparent: true, opacity: 0.45, depthTest: false, depthWrite: false })); xDarkMesh.renderOrder = 998; xDarkMesh.raycast = () => {}; xDarkMesh.geometry.userData.shared = true; /* one cached marker, kept on purpose */ } return xDarkMesh; }
+// combat lane: the Dark Cover marker is built before the loading gate's precompile and drawn in its warm-up (xWarmLazy list: added
+// for the warm draw, removed after), so Omen's first E links no program mid-fight (its wireframe transparent basic program was
+// linked on the first hold: test_ability_first_cast_warm). Built only when the player is Omen (the only one who holds it).
+{ const w0 = xWarmLazy; xWarmLazy = function () { const warm = w0.apply(this, arguments); try { if (J && J.pick === "Omen") { const m = xDarkMake(); if (!m.parent) { m.visible = true; scene.add(m); warm.push(m); } } } catch (e) {} return warm; }; }
 function xDarkShow(q) { const on = q && xEqHold(q) === "mark" && q.st !== "rel" && q.st !== "rec" && Number.isFinite(q.md);
   if (!on) { if (xDarkMesh) { xDarkMesh.visible = false; if (xDarkMesh.parent) xDarkMesh.parent.remove(xDarkMesh); } return; } // out of the scene when not shown: nothing of a cast left after the round reset
-  if (!xDarkMesh) { xDarkMesh = new THREE.Mesh(new THREE.SphereGeometry(XSMR.Omen, 18, 12), new THREE.MeshBasicMaterial({ color: 0x5ab4ff, wireframe: true, transparent: true, opacity: 0.45, depthTest: false, depthWrite: false })); xDarkMesh.renderOrder = 998; xDarkMesh.raycast = () => {}; xDarkMesh.geometry.userData.shared = true; /* one cached marker, kept on purpose */ }
-  if (xDarkMesh.parent !== scene) scene.add(xDarkMesh);
+  xDarkMake(); if (xDarkMesh.parent !== scene) scene.add(xDarkMesh);
   const p = xDarkPt(q.md); xDarkMesh.position.set(p.x, p.y, p.z); xDarkMesh.visible = true; }
 function xEqHoldPw(q) { const h = q && q.st === "hold" ? q.h : 0; return xEqHold(q) === "fault" ? Math.max(0, Math.min(1, h / XFAULT.charge)) : SovaBolt.power(h); }
 function xEqHold(q) { const t = q && XAB_HOLD[J.pick]; return (t && t[q.k]) || ""; }

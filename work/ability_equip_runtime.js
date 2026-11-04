@@ -72,10 +72,14 @@ var XDARK = { max: 80, min: 1, rate: 20, tap: 0.2, def: 30, lift: 1.7 }; // = se
 function xDarkInit(q) { const o = pEye(), d = jAim(); ray.set(o, d); ray.far = XDARK.max; const h = ray.intersectObjects(solids)[0]; q.md = Math.max(XDARK.min, Math.min(XDARK.max, h ? h.distance - 0.5 : XDARK.def)); } // starts at the wall under the crosshair
 function xDarkPt(md) { const o = pEye(), d = jAim(), p = o.addScaledVector(d, md); let g = NaN; try { g = groundAt(p.x, p.z, 0.2, p.y); } catch (e) {} if (!Number.isFinite(g) || g > p.y) g = Math.min(p.y, player.y || 0); return { x: p.x, y: g + XDARK.lift, z: p.z, f: g }; } // sunk to the floor below the marker
 let xDarkMesh = null;
+function xDarkMake() { if (!xDarkMesh) { xDarkMesh = new THREE.Mesh(new THREE.SphereGeometry(XSMR.Omen, 18, 12), new THREE.MeshBasicMaterial({ color: 0x5ab4ff, wireframe: true, transparent: true, opacity: 0.45, depthTest: false, depthWrite: false })); xDarkMesh.renderOrder = 998; xDarkMesh.raycast = () => {}; xDarkMesh.geometry.userData.shared = true; /* one cached marker, kept on purpose */ } return xDarkMesh; }
+// combat lane: the Dark Cover marker is built before the loading gate's precompile and drawn in its warm-up (xWarmLazy list: added
+// for the warm draw, removed after), so Omen's first E links no program mid-fight (its wireframe transparent basic program was
+// linked on the first hold: test_ability_first_cast_warm). Built only when the player is Omen (the only one who holds it).
+{ const w0 = xWarmLazy; xWarmLazy = function () { const warm = w0.apply(this, arguments); try { if (J && J.pick === "Omen") { const m = xDarkMake(); if (!m.parent) { m.visible = true; scene.add(m); warm.push(m); } } } catch (e) {} return warm; }; }
 function xDarkShow(q) { const on = q && xEqHold(q) === "mark" && q.st !== "rel" && q.st !== "rec" && Number.isFinite(q.md);
   if (!on) { if (xDarkMesh) { xDarkMesh.visible = false; if (xDarkMesh.parent) xDarkMesh.parent.remove(xDarkMesh); } return; } // out of the scene when not shown: nothing of a cast left after the round reset
-  if (!xDarkMesh) { xDarkMesh = new THREE.Mesh(new THREE.SphereGeometry(XSMR.Omen, 18, 12), new THREE.MeshBasicMaterial({ color: 0x5ab4ff, wireframe: true, transparent: true, opacity: 0.45, depthTest: false, depthWrite: false })); xDarkMesh.renderOrder = 998; xDarkMesh.raycast = () => {}; xDarkMesh.geometry.userData.shared = true; /* one cached marker, kept on purpose */ }
-  if (xDarkMesh.parent !== scene) scene.add(xDarkMesh);
+  xDarkMake(); if (xDarkMesh.parent !== scene) scene.add(xDarkMesh);
   const p = xDarkPt(q.md); xDarkMesh.position.set(p.x, p.y, p.z); xDarkMesh.visible = true; }
 function xEqHoldPw(q) { const h = q && q.st === "hold" ? q.h : 0; return xEqHold(q) === "fault" ? Math.max(0, Math.min(1, h / XFAULT.charge)) : SovaBolt.power(h); }
 function xEqHold(q) { const t = q && XAB_HOLD[J.pick]; return (t && t[q.k]) || ""; }

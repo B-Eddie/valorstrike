@@ -587,9 +587,12 @@ function nmViewHalf(){const c=typeof camera!=='undefined'&&camera;if(!c||!(c.fov
 function nmInCone(face,half,dx,dz,d){const o=face-Math.atan2(dx,dz);return Math.abs(Math.atan2(Math.sin(o),Math.cos(o)))<=half+(d>0?Math.atan(.3/Math.max(.5,d)):0);}
 function nmSpot(now){
  if(now-(nmSpot.t||0)<150&&nmSpot.v)return nmSpot.v;nmSpot.t=now;const V=THREE.Vector3,vis=new Set(),eyes=[];
- if(player.hp>0){const e=typeof pEye==='function'?pEye():new V(player.x,(player.y||0)+1.5,player.z),half=nmViewHalf(),face=yaw+Math.PI;e.see=(dx,dz,d)=>nmInCone(face,half,dx,dz,d);eyes.push(e);}
- for(const a of allies)if(a.alive){const e=new V(a.g.position.x,a.g.position.y+1.5,a.g.position.z);e.see=typeof xbInView==='function'?(dx,dz,d)=>xbInView(a,dx,dz,d):(dx,dz,d)=>nmInCone(a.g.rotation?a.g.rotation.y||0:0,103*Math.PI/360,dx,dz,d);eyes.push(e);}
- for(const b of bots){if(!b.alive||b.fog)continue;/* b.fog: hidden by the server's fog of war, its position is stale */const p=b.g.position,e=new V(p.x,p.y+1.4,p.z);for(const y of eyes){const dx=p.x-y.x,dz=p.z-y.z,d=Math.hypot(dx,dz);if(d<NM_SPOT_RANGE&&y.see(dx,dz,d)&&los(y,e)){vis.add(b);break;}}}
+ // combat lane: eye / target points come from a pool reused every refresh (los() keys them by value and keeps none; was a Vector3
+ // per eye and per enemy every 150 ms, ~600 per combat window); same values, same order.
+ const EP=nmSpot.ep||(nmSpot.ep=[]),ev=()=>EP[eyes.length]||(EP[eyes.length]=new V()),bt=nmSpot.bt||(nmSpot.bt=new V());
+ if(player.hp>0){const e=typeof pEyeTo==='function'?pEyeTo(ev()):typeof pEye==='function'?pEye():new V(player.x,(player.y||0)+1.5,player.z),half=nmViewHalf(),face=yaw+Math.PI;e.see=(dx,dz,d)=>nmInCone(face,half,dx,dz,d);eyes.push(e);}
+ for(const a of allies)if(a.alive){const e=ev().set(a.g.position.x,a.g.position.y+1.5,a.g.position.z);e.see=typeof xbInView==='function'?(dx,dz,d)=>xbInView(a,dx,dz,d):(dx,dz,d)=>nmInCone(a.g.rotation?a.g.rotation.y||0:0,103*Math.PI/360,dx,dz,d);eyes.push(e);}
+ for(const b of bots){if(!b.alive||b.fog)continue;/* b.fog: hidden by the server's fog of war, its position is stale */const p=b.g.position,e=bt.set(p.x,p.y+1.4,p.z);for(const y of eyes){const dx=p.x-y.x,dz=p.z-y.z,d=Math.hypot(dx,dz);if(d<NM_SPOT_RANGE&&y.see(dx,dz,d)&&los(y,e)){vis.add(b);break;}}}
  if(typeof J!=='undefined'&&J.rvT>0&&J.rv)for(const b of J.rv)if(b&&b.alive)vis.add(b);
  if(window.xPG)for(const q of window.xPG.s)if(q.b&&q.b.alive&&now<q.rv)vis.add(q.b);
  for(const b of bots)if(b.alive&&b.netRvUntil>now)vis.add(b); // online: server ult reveals (Hunter's Fury hits, Neural Theft)

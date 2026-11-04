@@ -18,7 +18,7 @@ const AGENTS=['Jett','Phoenix','Sova','Sage','Reyna','Omen','Killjoy','Raze','Sk
 const A0=arg('--agent')||'Jett';
 if(A0==='all'||A0.includes(',')){ // one process per agent (each boots its own page), sequentially: one heavy process at a time on this box
  const {spawnSync}=require('child_process'),out=arg('--json'),all={};
- for(const a of (A0==='all'?AGENTS:A0.split(','))){const j=out?out.replace(/\.json$/,'')+'_'+a+'.json':null;const args=[__filename,'--agent',a];for(const k of ['--reps','--frames'])if(arg(k))args.push(k,arg(k));if(process.argv.includes('--hash'))args.push('--hash');if(j)args.push('--json',j);
+ for(const a of (A0==='all'?AGENTS:A0.split(','))){const j=out?out.replace(/\.json$/,'')+'_'+a+'.json':null;const args=[__filename,'--agent',a];for(const k of ['--reps','--frames','--inject'])if(arg(k))args.push(k,arg(k));if(process.argv.includes('--hash'))args.push('--hash');if(j)args.push('--json',j);
   const r=spawnSync(process.execPath,['--expose-gc',...args],{stdio:'inherit',env:process.env});if(j&&fs.existsSync(j))all[a]=JSON.parse(fs.readFileSync(j,'utf8'));if(r.status)console.log('agent',a,'exit',r.status);}
  if(out)fs.writeFileSync(out,JSON.stringify(all,null,1));process.exit(0);
 }
