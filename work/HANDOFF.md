@@ -44,3 +44,6 @@
 
 ## Deadlock Annihilation cocoon (online)
 Server already ships an 'anni' effect row (A18_NET_KINDS; p follows the captive, tl = remaining detain). The row is removed on detain end, wire snap (death / lost LOS / range) and the kill, so row drop is the end signal. Client a18NetSync now draws dlxAnniCocoon from the row (setPos follows p, dlxEnd on drop); own caster is skipped only while the local cast's cocoon is live. Test: work/test_deadlock_anni_client.cjs (stub module; no GL, not visual acceptance). Viewer net scenario for it not added yet.
+
+## Skye Guiding Light pop (online)
+Server (abilities.js) has no hawk flight: it pops a 'flash' effect row (ag Skye) at the aim point, blind after GUIDING.act 0.3 s. Client now draws skxHawkFlash once per row id for remote casters (own skipped; local hawk already popped). The hawk flight itself is NOT visible to remote players: that needs a sim change (flight path/time), which is a mechanics decision, not done. Heal beam (ty 'heal' rows) and Miks Harmonize (status only, local veil + pillar; no per-ally row) still open. Test: work/test_skye_pop_client.cjs (stub).
