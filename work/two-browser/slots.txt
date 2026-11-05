@@ -1,6 +1,6 @@
 raze-pack|Phoenix|KeyE|scen_gen.cjs|ABN=Curveball TIMES=0.3,0.6,0.9,1.2,1.6,2.5 FULLMAP=1 VW=960 VH=540 FIRE=1 BX=0 BZ=-12
 raze-shell|Breach|KeyX|scen_gen.cjs|ABN=RollingThunder FULLMAP=1 VW=960 VH=540 ULT=1 FIRE=1 BX=0 BZ=-14
 breach-rt|Viper|KeyC|scen_gen.cjs|ABN=SnakeBite FULLMAP=1 VW=960 VH=540 FIRE=1 BX=0 BZ=-12
-viper-snake|Phoenix|KeyC|scen_gen.cjs|ABN=Blaze FULLMAP=1 VW=960 VH=540 FIRE=1 BX=0 BZ=-12
+viper-snake|Phoenix|KeyC|scen_gen.cjs|ABN=Blaze GOD=1 FULLMAP=1 VW=960 VH=540 FIRE=1 BX=0 BZ=-12
 phx-curve|Reyna|KeyC|scen_gen.cjs|ABN=Leer FULLMAP=1 VW=960 VH=540 FIRE=1 BX=0 BZ=-12
 jett-cloud|Raze|KeyQ|scen_gen.cjs|ABN=BlastPack TIMES=1,3,4.2,4.6,5,5.5 FULLMAP=1 VW=960 VH=540 FIRE=1 BX=0 BZ=-12
