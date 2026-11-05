@@ -18825,8 +18825,9 @@ function rzxBoomBotBlast(p, r) { try { p = rzxP(p); const R = (r || 4) * 0.55, t
 
 // ---- Blast Pack ----
 // reference: small dark satchel with teal-green glowing accents + red armed blink, sticks where it lands;
-// detonation = red-orange flash into an orange lobed fireball with a yellow-white core, red-pink
-// fragments + teal shards; aftermath = teal-green splat/scorch lingering on the ground.
+// detonation = bright yellow-white flash + a compact burst of sharp angular YELLOW blades with
+// red-magenta ribbon streaks and minor teal sparks (no big fireball, no smoke);
+// aftermath = small teal spikes over a compact teal spiky ground splat.
 function rzxBlastPack(p) { try { const G = rzxGeos(), grp = new THREE.Group();
   const pack = new THREE.Mesh(G.box, new THREE.MeshBasicMaterial({ color: 0x1e2026, fog: true })); pack.scale.set(0.36, 0.15, 0.27); pack.position.y = 0.08;
   const strap = new THREE.Mesh(G.box, rzxBasic(0x111216, 1, false)); strap.scale.set(0.38, 0.04, 0.07); strap.position.y = 0.16;
@@ -18841,26 +18842,28 @@ function rzxBlastPack(p) { try { const G = rzxGeos(), grp = new THREE.Group();
     if (dying) grp.scale.setScalar(Math.max(0.01, left / fx.die)); }, { die: 0.2 });
   return h;
  } catch (e) { rzxLogErr(e); return null; } }
-function rzxPackBlast(p, r) { try { p = rzxP(p); const R = (r || 3.5) * 1.0, gy = rzxGround(p.x, p.z, p.y), ttl = 2.2;
-  const fb = rzxFireball({ x: p.x, y: gy, z: p.z }, R, 0xffd23a, 0xff5a1a, 0x3a2e28, ttl * 0.6); if (!fb) return null;
-  const flash = rzxSprite(0xff4a20, 0.95); flash.scale.setScalar(R * 2.2); flash.position.set(p.x, gy + R * 0.3, p.z); scene.add(flash);
-  const frags = rzxSparks({ x: p.x, y: gy + 0.3, z: p.z }, 8, 0xff4a6a, 7, 10, 0.7);
-  const shards = rzxSparks({ x: p.x, y: gy + 0.3, z: p.z }, 9, 0x2fe8b0, 6.5, 10, 0.8);
-  const spray = []; for (let i = 0; i < 14; i++) { const m = rzxSprite(i % 3 === 0 ? 0xff7a2a : 0xff2a3a, 0.6, rzxWedgeTex()); const a = (i / 14) * 6.3 + Math.random() * 0.3;
-    m.position.set(p.x + Math.cos(a) * R * 0.35, gy + R * (0.15 + Math.random() * 0.45), p.z + Math.sin(a) * R * 0.35);
-    m.scale.set(R * 0.5, R * (1.0 + Math.random() * 0.4), 1); m.material.rotation = a; scene.add(m); spray.push(m); }
-  const splat = rzxSplat(p, R * 1.0, rzxSplatTex("packSplat", "rgba(64,240,190,0.95)", "rgba(30,180,140,0.8)", "rgba(20,120,95,0)"), 2.0);
-  spray.forEach((m) => { const a = m.material.rotation; frags.push({ m, age: 0, ttl: 0.42, vx: Math.cos(a) * 2.8, vy: 1.0, vz: Math.sin(a) * 2.8, o0: 0.6 }); });
-  const yellow = rzxSparks({ x: p.x, y: gy + 0.3, z: p.z }, 6, 0xffd23a, 8, 9, 0.6);
-  frags.push.apply(frags, yellow);
+function rzxPackBlast(p, r) { try { p = rzxP(p); const R = (r || 3.5) * 1.0, gy = rzxGround(p.x, p.z, p.y), ttl = 1.9;
+  const flash = rzxSprite(0xffe86a, 0.9); flash.scale.setScalar(R * 0.8); flash.position.set(p.x, gy + R * 0.2, p.z); scene.add(flash);
+  const core = rzxSprite(0xfff2d0, 1); core.scale.setScalar(R * 0.42); core.position.set(p.x, gy + R * 0.2, p.z); scene.add(core);
+  const blades = []; for (let i = 0; i < 11; i++) { const m = rzxSprite(i % 4 === 0 ? 0xffe86a : (i % 2 ? 0xffd23a : 0xffc81a), 0.95, rzxWedgeTex(), false);
+    const a = Math.random() * 6.3, d = R * (0.03 + Math.random() * 0.15), h = R * (0.34 + Math.random() * 0.24);
+    m.position.set(p.x + Math.cos(a) * d, gy + h * 0.45, p.z + Math.sin(a) * d);
+    m.scale.set(R * (0.11 + Math.random() * 0.07), h, 1); m.material.rotation = (Math.random() - 0.5) * 0.6; scene.add(m); blades.push(m); }
+  const ribbons = rzxStreaks({ x: p.x, y: gy, z: p.z }, 4, 0xe8304a, R * 0.8, R * 0.7, 0.4, true).concat(rzxStreaks({ x: p.x, y: gy, z: p.z }, 3, 0xff2a5a, R * 0.7, R * 0.55, 0.35, true));
+  const frags = rzxSparks({ x: p.x, y: gy + 0.3, z: p.z }, 6, 0xff4a6a, 7, 10, 0.6);
+  const teal = rzxSparks({ x: p.x, y: gy + 0.3, z: p.z }, 4, 0x2fe8b0, 6, 10, 0.6);
+  const wisps = []; for (let i = 0; i < 2; i++) { const sm = rzxSprite(0x2a6a52, 0.4, rzxSmokeTex(), false); sm.position.set(p.x + (Math.random() - 0.5) * R * 0.3, gy + R * 0.3, p.z + (Math.random() - 0.5) * R * 0.3); sm.scale.setScalar(R * 0.3); scene.add(sm);
+    wisps.push({ m: sm, age: 0, ttl: 0.7, vx: (Math.random() - 0.5) * 0.5, vy: 0.9, vz: (Math.random() - 0.5) * 0.5, grow: 1.6, o0: 0.4 }); }
+  const splat = rzxSplat(p, R * 0.35, rzxSplatTex("packSplat", "rgba(64,240,190,0.95)", "rgba(30,180,140,0.8)", "rgba(20,120,95,0)"), 1.4); splat.mesh.material.opacity = 0;
   const spikes = []; { const G = rzxGeos(); for (let i = 0; i < 8; i++) { const sm = new THREE.Mesh(G.cone, new THREE.MeshBasicMaterial({ color: i % 2 ? 0x2fe8b0 : 0x17b184, transparent: true, opacity: 0.95, fog: true }));
-    const sa = Math.random() * 6.3, sd = R * (0.10 + Math.random() * 0.45);
+    const sa = Math.random() * 6.3, sd = R * (0.04 + Math.random() * 0.26);
     sm.position.set(p.x + Math.cos(sa) * sd, gy, p.z + Math.sin(sa) * sd);
-    sm.rotation.set((Math.random() - 0.5) * 0.5, Math.random() * 6.3, (Math.random() - 0.5) * 0.5);
-    sm.userData.h = R * (0.45 + Math.random() * 0.55); sm.scale.set(1.4 + Math.random(), 0.01, 1.4 + Math.random()); scene.add(sm); spikes.push(sm); } }
-  const parts = fb.parts.concat(frags, shards); parts.push({ m: flash, age: 0, ttl: 0.16, vy: 0, grow: 1.8, o0: 0.95 });
-  return rzxFx(ttl, [fb.grp, splat.mesh].concat(spikes), (dt, age) => { fb.tick(dt, age); splat.tick(dt, age); rzxPartTick(parts, dt);
-    spikes.forEach((sm) => { const k = Math.min(1, age / 0.14), fk = Math.max(0, 1 - Math.max(0, (age - 1.1) / 0.9));
+    sm.rotation.set((Math.random() - 0.5) * 0.6, Math.random() * 6.3, (Math.random() - 0.5) * 0.6);
+    sm.userData.h = R * (0.10 + Math.random() * 0.10); sm.scale.set(0.5 + Math.random() * 0.4, 0.01, 0.5 + Math.random() * 0.4); scene.add(sm); spikes.push(sm); } }
+  const parts = [{ m: flash, age: 0, ttl: 0.10, vy: 0, grow: 1.2, o0: 0.95 }, { m: core, age: 0, ttl: 0.3, vy: 0.5, grow: 0.6, o0: 1 }]
+    .concat(ribbons, frags, teal, wisps, blades.map((m) => ({ m, age: 0, ttl: 0.26, vx: 0, vy: 1.2, vz: 0, o0: 0.95 })));
+  return rzxFx(ttl, [splat.mesh].concat(spikes), (dt, age) => { if (age > 0.18) splat.tick(dt, age - 0.18); rzxPartTick(parts, dt);
+    spikes.forEach((sm) => { const k = Math.min(1, Math.max(0, (age - 0.18) / 0.14)), fk = Math.max(0, 1 - Math.max(0, (age - 1.1) / 0.8));
       sm.scale.y = Math.max(0.01, sm.userData.h * k); sm.position.y = gy + sm.scale.y * 0.5; sm.material.opacity = 0.95 * fk; }); }, { parts });
  } catch (e) { rzxLogErr(e); return null; } }
 
