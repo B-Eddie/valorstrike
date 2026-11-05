@@ -29979,6 +29979,15 @@ function a18NetMesh(kind, e) {
     else if (kind === "nova") h = asxNovaPulse(q, e.r || 4.5, { delay: Math.max(0.05, e.tl || 1) });
     else if (kind === "stim") h = brxStimBeacon(q, e.r || 4, Math.max(1, e.tl || 12));
     else if (kind === "orbital") h = brxOrbitalStrike(q, e.r || 5, { delay: 0.05, life: Math.max(1, e.tl || 4) });
+    else if (kind === "seize") { jxBind(m, fdxSeizePool({ x: q.x, y: q.y, z: q.z }, e.r || 4, Math.max(1, e.tl || 5)), 1); }
+    else if (kind === "mpulse") { jxBind(m, mkxMPulse({ x: q.x, y: q.y, z: q.z }, e.r || 5, Math.max(1, e.tl || 4)), 1); }
+    else if (kind === "ceptor") { jxBind(m, vtxInterceptor({ x: q.x, y: q.y, z: q.z }, e.r || 4, Math.max(1, e.tl || 12)), 1); }
+    else if (kind === "xcut") { jxBind(m, vtxCrosscut({ x: q.x, y: q.y, z: q.z }), 1); }
+    else if (kind === "vine") { jxBind(m, vyxRazorvine({ x: q.x, y: q.y, z: q.z }, e.r || 4, Math.max(1, e.tl || 6)), 1); }
+    else if (kind === "rose") { jxBind(m, vyxArcRose({ x: q.x, y: q.y, z: q.z }, Math.max(1, e.tl || 6)), 1); }
+    else if (kind === "garden") { jxBind(m, vyxSteelGarden({ x: q.x, y: q.y, z: q.z }, e.r || 6, Math.max(1, e.tl || 4)), 1); }
+    else if (kind === "shear") { jxBind(m, vyxShear({ x: q.x, y: q.y, z: q.z }, yw, 5, Math.max(1, e.tl || 5)), 1); }
+    else if (kind === "mesh") { jxBind(m, dlxBarrierMesh({ x: q.x, y: q.y, z: q.z }, yw, (e.r || 3.75) * 2, Math.max(1, e.tl || 30)), 1); }
     else if (kind === "mosh") { jxBind(m, gkxMoshPool({ x: q.x, y: q.y, z: q.z }, e.r || 3.5, Math.max(1, e.tl || 3.6)), 1); }
     else if (kind === "gnet") { jxBind(m, dlxGravNet({ x: q.x, y: q.y, z: q.z }, e.r || 6, Math.max(1.2, e.tl || 8)), 1); }
     else if (kind === "cove") { jxBind(m, hbxCove({ x: q.x, y: q.y + 1.7, z: q.z }, e.r || 4.5, Math.max(1, e.tl || 10)), 0); }

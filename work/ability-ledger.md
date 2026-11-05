@@ -130,3 +130,8 @@ Sources: wiki.playvalorant.com/en-us/<Ability> pages + images/<Ability>_Showcase
 - Local full-assets two-browser run is infeasible here (2 cores, ~2 GB, one full-map 960x540 slot did not finish in 105 s; background jobs die between calls, calls cap at 120 s). Reduced untextured runs would be code/runtime evidence only.
 - 10552c8 (online mosh/gnet module binding, remote Yoru generic flash suppressed) is NOT visually verified. ci27 (931260c) remains the latest capture: Jett outside occlusion restored (inside unchecked); Yoru, Sage, Deadlock, Gekko not accepted.
 - Sage Barrier Orb online: no server wall row was found by grep in server sources, so the barrier is likely not drawn for remote casts. Still open.
+
+## Online wiring batch (5:02 AM Nov 5, code only, NOT visually verified, CI billing-blocked)
+- a18NetMesh now binds module visuals (legacy mesh hidden) for server rows: seize (Fade pool), mpulse (Miks), ceptor and xcut (Veto), vine, rose, garden, shear (Vyse), mesh (Deadlock barrier). Plus mosh/gnet (10552c8). Test: work/test_agents18_net.cjs only (rows render, drop on removal); it does not check the pixels or yaw sign.
+- Yaw convention: shear/mesh pass e.yaw straight to the module as the local cast does (atan2(-d.x,-d.z)); the legacy wall mesh used -yaw, so orientation is unverified.
+- Still not wired online: Sage barrier (no server wall row found), Hush, Fade seekers/haunt/nightfall, Skye, Miks harmonize/bassquake/waveform, Veto others, Deadlock sensor/anni, plus the older list.
