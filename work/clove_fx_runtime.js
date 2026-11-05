@@ -89,11 +89,12 @@ function cvxPickMeUp(dur) { try { const ttl = Math.max(0.8, dur || 1.8);
   return cvxFx(ttl, [], (dt, age) => { el.style.opacity = String(Math.max(0, 1 - Math.max(0, (age - (ttl - 0.45)) / 0.45))); }, function done() { try { el.remove(); } catch (e) {} }); } catch (e) { try { window.cvxErr = String(e && e.stack || e).slice(0, 300); xE(e); } catch (e2) {} return null; } }
 // ---- Meddle: spiky orb while flying (setPos/end), purple splash + fragments on break ----
 function cvxMeddleOrb(p0) { try { const G = cvxGeos(), grp = new THREE.Group(); if (p0) grp.position.set(p0.x, p0.y || 1, p0.z);
-  const core = new THREE.Mesh(G.sphL, cvxMat("orb", cvxORB, Math.random() * 9)); core.scale.setScalar(0.22); grp.add(core);
-  const wings = []; for (let i = 0; i < 3; i++) { const w = new THREE.Mesh(G.plane, new THREE.MeshBasicMaterial({ map: cvxWingTex(), color: 0xffffff, transparent: true, opacity: 0.95, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, fog: false, toneMapped: false })); w.scale.set(0.55, 0.28, 1); w.userData.ph = i * 2.09; wings.push(w); grp.add(w); }
-  const ring = new THREE.Mesh(G.torus, cvxBasic(0xc06aff, 0.8, true)); ring.scale.setScalar(0.34); grp.add(ring);
+  const core = new THREE.Mesh(G.sphL, cvxMat("orb", cvxORB, Math.random() * 9)); core.scale.setScalar(0.34); grp.add(core);
+  const oglow = cvxSprite(cvxPuffTex(), 0xb070ff, 0.7, 1.5); grp.add(oglow);
+  const wings = []; for (let i = 0; i < 4; i++) { const w = new THREE.Mesh(G.plane, new THREE.MeshBasicMaterial({ map: cvxWingTex(), color: 0xffffff, transparent: true, opacity: 0.95, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, fog: false, toneMapped: false })); w.scale.set(0.85, 0.42, 1); w.userData.ph = i * 1.57; wings.push(w); grp.add(w); }
+  const ring = new THREE.Mesh(G.torus, cvxBasic(0xc06aff, 0.8, true)); ring.scale.setScalar(0.5); grp.add(ring);
   const fx = cvxFx(600, [grp], (dt) => { const t = cvxU.value; core.rotation.y += dt * 4; core.rotation.x += dt * 1.7;
-    wings.forEach((w) => { const a = t * 5 + w.userData.ph; w.position.set(Math.cos(a) * 0.3, Math.sin(t * 7 + w.userData.ph) * 0.08, Math.sin(a) * 0.3); w.rotation.y = -a; });
+    wings.forEach((w) => { const a = t * 5 + w.userData.ph; w.position.set(Math.cos(a) * 0.4, Math.sin(t * 7 + w.userData.ph) * 0.1, Math.sin(a) * 0.4); w.rotation.y = -a; });
     ring.rotation.x = t * 2.4; ring.rotation.y = t * 1.1; });
   return { fx: fx.fx, setPos: function (p) { try { grp.position.set(p.x, p.y, p.z); } catch (e) {} }, end: function () { fx.end(); } }; } catch (e) { try { window.cvxErr = String(e && e.stack || e).slice(0, 300); xE(e); } catch (e2) {} return null; } }
 function cvxMeddleBurst(p, r) { try { const R = r || 4.5, ttl = 4.8, G = cvxGeos(), grp = new THREE.Group(); grp.position.set(p.x, (p.y || 0) + 0.1, p.z);
@@ -117,8 +118,8 @@ function cvxRuseAt(p, dur, r) { let m = null; try { m = a18Smoke(p, dur, r, 0xb9
   return cvxRuse({ x: p.x, y: p.y || 0, z: p.z }, r, dur); }
 // ---- Not Dead Yet: white wisps rising, purple butterflies, vignette ----
 function cvxNotDeadYet(p, dur) { try { const ttl = Math.max(2, dur || 5.3), G = cvxGeos(), grp = new THREE.Group(); grp.position.set(p.x, (p.y || 0), p.z);
-  const wisps = []; for (let i = 0; i < 8; i++) { const w = cvxSprite(cvxPuffTex(), i % 2 ? 0xf4ecff : 0xd8b8ff, 0, 0.5 + (i % 3) * 0.3); w.userData = { a: i * 0.785, r0: 0.3 + (i % 3) * 0.25, sp: 0.5 + (i % 4) * 0.22, off: i * 0.13 }; wisps.push(w); grp.add(w); }
-  const flies = []; for (let i = 0; i < 5; i++) { const f = new THREE.Mesh(G.plane, new THREE.MeshBasicMaterial({ map: cvxButterflyTex(), color: 0xffffff, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, fog: false, toneMapped: false })); f.scale.set(0.34, 0.34, 1); f.userData = { a: i * 1.26, r0: 0.6 + (i % 3) * 0.4, sp: 0.7 + (i % 3) * 0.3, off: i * 0.21 }; flies.push(f); grp.add(f); }
+  const wisps = []; for (let i = 0; i < 10; i++) { const w = cvxSprite(cvxPuffTex(), i % 2 ? 0xf4ecff : 0xd8b8ff, 0, 0.34 + (i % 3) * 0.16); w.userData = { a: i * 0.628, r0: 0.18 + (i % 3) * 0.14, sp: 0.6 + (i % 4) * 0.25, off: i * 0.1 }; wisps.push(w); grp.add(w); }
+  const flies = []; for (let i = 0; i < 7; i++) { const f = new THREE.Mesh(G.plane, new THREE.MeshBasicMaterial({ map: cvxButterflyTex(), color: 0xffffff, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, fog: false, toneMapped: false })); f.scale.set(0.5, 0.5, 1); f.userData = { a: i * 0.9, r0: 0.5 + (i % 3) * 0.3, sp: 0.7 + (i % 3) * 0.3, off: i * 0.15 }; flies.push(f); grp.add(f); }
   const halo = new THREE.Mesh(G.ring, cvxBasic(0xe8d8ff, 0.8, true)); halo.rotation.x = -Math.PI / 2; halo.position.y = 0.1; grp.add(halo);
   let veil = null;
   if (player && Math.hypot(player.x - p.x, player.z - p.z) < 3.5) { veil = document.createElement("div"); veil.id = "cvxVeil"; veil.style.cssText = "position:fixed;inset:0;pointer-events:none;z-index:6;background:radial-gradient(70% 70% at 50% 50%,rgba(233,220,255,0) 45%,rgba(190,140,255,.30) 100%);transition:opacity .3s;opacity:0"; document.body.appendChild(veil); requestAnimationFrame(() => { veil.style.opacity = "1"; }); }

@@ -125,11 +125,11 @@ function hbxReckoning(p, yaw, dist, opts) { try { const o = opts || {}, D = dist
   const body = new THREE.Mesh(G.plane, hbxMat("wall", hbxWALL, Math.random() * 9)); body.scale.set(W, H, 1); body.position.y = H / 2; wave.add(body);
   const bodyBack = body.clone(); bodyBack.material = body.material; bodyBack.rotation.y = Math.PI; wave.add(bodyBack);
   const crest = new THREE.Mesh(G.plane, new THREE.MeshBasicMaterial({ map: hbxFoamTex(), transparent: true, opacity: 0.95, depthWrite: false, fog: false, side: THREE.DoubleSide })); crest.material.map = hbxFoamTex().clone(); crest.material.map.needsUpdate = true; crest.material.map.repeat.set(6, 1); crest.material.map.wrapS = THREE.RepeatWrapping; crest.scale.set(W, 1.0, 1); crest.position.y = H - 0.2; wave.add(crest);
-  const spray = []; for (let i = 0; i < 6; i++) { const s = hbxSprite(hbxPuffTex(), 0xbfeef2, 0.4, 1.1 + (i % 3) * 0.4); s.userData = { x0: (i / 5 - 0.5) * W, off: i * 0.16 }; spray.push(s); wave.add(s); }
+  const spray = []; for (let i = 0; i < 6; i++) { const s = hbxSprite(hbxPuffTex(), i % 2 ? 0xbfeef2 : 0xffd98a, 0.4, 1.1 + (i % 3) * 0.4); s.userData = { x0: (i / 5 - 0.5) * W, off: i * 0.16 }; spray.push(s); wave.add(s); } // gold-white trail spray (reference: golden streaks on the wavefront)
   return hbxFx(ttl, [grp], (dt, age) => { const t = hbxU.value;
     const mk = Math.min(1, age / 0.7); mand.scale.setScalar(0.5 + mk * 7); mand.material.uniforms.uP.value = mk;
     const wk = Math.max(0, age - 0.4); const d = Math.min(D, wk * speed); wave.position.z = -d; // forward is -z in the group's yaw frame
     const die = d >= D ? Math.min(1, (wk * speed - D) / 1.5) : 0;
-    body.material.uniforms.uP.value = die; crest.material.map.offset.x = t * 0.4; crest.material.opacity = 0.95 * (1 - die);
+    body.material.uniforms.uP.value = die; crest.material.color.setHex(0xffe9c0); crest.material.map.offset.x = t * 0.4; crest.material.opacity = 0.95 * (1 - die);
     spray.forEach((s) => { const ph = (t * 0.8 + s.userData.off) % 1; s.position.set(s.userData.x0, 0.4 + ph * 1.4, 0.4); s.material.opacity = 0.4 * (1 - die) * Math.sin(ph * Math.PI); }); }); } catch (e) { try { window.hbxErr = String(e && e.stack || e).slice(0, 300); xE(e); } catch (e2) {} return null; } }
 // ---- END HARBOR FX ----
