@@ -111,3 +111,9 @@ work/fx_viewer/gen_net2.cjs: the REAL a18NetSync/a18NetFree/netSyncSmokes/netSyn
 
 ### Ledger (13:26): Omen Step audio = implementation work, not built
 - Source (wiki Shrouded_Step): channel cue at the origin audible to ALL players; smaller cue on arrival, 12.5 m radius (verify again at implementation). Audio visibility is separate from visual visibility: it needs its own server gate (audible regardless of sight; positional rules unverified), NOT the sight-gated stepout/stepin events. No channel visual to be invented from source silence.
+
+## 13:28 Raze Boom Bot online (rows + module body)
+- Server: boombot added to DEV_ROWS (so the fog's enemy-device sight gating applies to it automatically). Row: p, yaw, hp, age, ph (0 patrol, 1 locked on an enemy, 2 windup, 4 detonated) + one-shot dn linger (.25 s, hp 0) - the blast no longer splices the effect silently (damage still lands once; e.dn guard stops a re-blast). Shot down / expired = the row just stops (no detonation signal; the client ends the body silently).
+- Client (index.html + work/server_runtime.js, parity ok): netSyncDevices draws rzxBoomBot body following the row, rzxBbDeploy only when age<0.6, rzxBbLock on ph 0->1 of a known row, rzxBoomBotBlast(p,6) once per dn; MP_ROWFX Raze:"c" skips the relayed generic ring. Own rows skipped.
+- Tests: server/test-boombot-rows.js, test-ults.js boombot assertion updated (dn linger), test-device-bodies DEV_ROWS list updated, work/test_net_boombot.cjs (real sync source, stub THREE/rzx). Real-GL: gen_net2 scenarios 10/11 (grid now 3x4, window 960x980) -> /downloads/fx_net5.png: bot body + lock sync + boom fireball render, errs=0, no leftovers. Bodies small; module look only, no game/occlusion.
+- Not done for Raze: local own-bot ghost when server shoots it (netOwnGone has no boombot case); Blast Pack remote body (blastpack row exists, uses generic orb), Paint Shells grenade trail, Showstopper rocket (rzxFireball/RocketTrail/ShowMuzzle uncalled).
