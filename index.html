@@ -10635,7 +10635,7 @@ function xCbCloud(x, y, z, dur) { // Jett's cloud: the 3.35 m smoke body (sight 
   // s.r / 4): the cloud reads as one round, lumpy burst of the size that blocks sight. The two 3.4 m swirl rings (a planet-ring
   // look Valorant's Cloudburst does not have) are gone.
   P.forEach((q, i) => { const o = new THREE.Mesh(G.puff, m.material), r = 1.0 + (i % 3) * 0.2; o.position.set(q[0] * 2.2, q[1] * 2.0, q[2] * 2.2); o.scale.setScalar(r); o.raycast = () => {}; m.add(o); kids.push(o); });
-  m.userData.kids = kids; J.smokes.push({ m, p: m.position, t: dur, r: xSmk(m, XSMR.Jett), dep: XCB.dep, cb: 1, fo: 0.15 }); try { if (jfxCbCloud(m.position, XSMR.Jett, dur)) { m.visible = false; try { jfxCbPop(m.position); } catch (e) {} } } catch (e) { try { xE(e); } catch (e2) {} } /* module cloud look; the smoke body stays for sight blocking */ // fo: wiki "once it expires, the smoke will instantly dissipate" SFX.ab("cbPop", m.position); return m;
+  m.userData.kids = kids; J.smokes.push({ m, p: m.position, t: dur, r: xSmk(m, XSMR.Jett), dep: XCB.dep, cb: 1, fo: 0.15 }); try { if (jfxCbCloud(m.position, XSMR.Jett, dur)) { /* body stays visible: it is the human player's occluder (ci21: enemy plainly visible through the module-only haze) */ try { jfxCbPop(m.position); } catch (e) {} } } catch (e) { try { xE(e); } catch (e2) {} } /* module cloud look; the smoke body stays for sight blocking */ // fo: wiki "once it expires, the smoke will instantly dissipate" SFX.ab("cbPop", m.position); return m;
 }
 // a bot Jett's Cloudburst: lobbed from its eye to land at q (Valorant's own throw, no steering), the cloud where it lands
 function xCbBotThrow(b, q) {
