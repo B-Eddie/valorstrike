@@ -13,7 +13,7 @@ module.exports=async T=>{const {A,B,qa,code,log,check,SHOT}=T;const fs=require('
  const unp=()=>B.X('if(typeof paused!=="undefined"&&paused){const b=document.getElementById("xResume");if(b)b.click();}1').catch(()=>0);
  const snap=()=>qa(`const s=sim('${code}');const a=s.units.find(u=>u.name==='Alpha'),b=s.units.find(u=>u.name==='Bravo');return {t:+s.time.toFixed(2),a:{ab:a.ability,hp:a.hp,pos:[a.x,a.y,a.z].map(n=>+n.toFixed(1))},b:{hp:b.hp,pos:[b.x,b.y,b.z].map(n=>+n.toFixed(1)),flash:+(Math.max(0,(b.flashUntil||0)-s.time)).toFixed(2),conc:+(Math.max(0,(b.concussUntil||0)-s.time)).toFixed(2)},fx:s.effects.map(e=>e.kind+':'+(e.p?e.p.map(n=>Math.round(n)).join(','):'')),ev:(s.events||[]).slice(-6).map(e=>JSON.stringify(e).slice(0,100))};`);
  const cl=async P=>P.X(`JSON.stringify({a18:(J.a18fx||[]).map(f=>f.kind),net:(NET.fx||[]).map(f=>f.kind),eq:J.eq,ult:J.ult})`).catch(e=>String(e));
- await frz(false);const before=await snap();log('before',JSON.stringify(before));
+ await frz(false);const before=await snap();const ab00=before.a.ab;log('before',JSON.stringify(before));
  await A.page.bringToFront();await W(500);await unp();
  await A.page.keyboard.down(KEY);await W(120);await A.page.keyboard.up(KEY);await W(400);
  // software GL: client frames take seconds, so the equip/draw timer lags the wall clock. Hold the server still, let the client clock run, and click only once the client says the ability is ready (or it already threw).
@@ -21,6 +21,8 @@ module.exports=async T=>{const {A,B,qa,code,log,check,SHOT}=T;const fs=require('
  log('equip wait done',eqs);await Promise.all([A,B].map(P=>P.X('window.__wsMute=false;1')));await qa('C.freeze=false;return 1');
  log('after key (equipped?)',JSON.stringify({a:await cl(A),s:(await snap()).a.ab}));
  if(process.env.FIRE!=='0'){await A.page.mouse.down();await W(120);await A.page.mouse.up();}
+ // the throw/cast message leaves on a later client frame (seconds in software GL); keep the room running and unmuted until the server has actually spent the charge, so the cast is not dropped by the freeze
+ {const spentNow=async()=>{const a=(await snap()).a.ab;return ['c','q','e'].some(k=>a[k]<ab00[k])||a.ult<ab00.ult||Object.keys(a.cool||{}).length>0;};let ok=false;for(let i=0;i<300&&!(ok=await spentNow());i++)await W(200);log('server spent after fire',ok);}
  const fr=P=>P.X('renderer.info.render.frame').catch(()=>0);
  const waitFrames=async(P,n)=>{const f0=await fr(P);for(let i=0;i<120;i++){if((await fr(P))>=f0+n)return;await W(250);}};
  let last=null,prev=0;
