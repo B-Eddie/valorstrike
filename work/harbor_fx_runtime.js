@@ -56,7 +56,7 @@ function hbxFoamTex() { if (hbxTex.foam) return hbxTex.foam; // ragged white foa
   for (let i = 0; i < 90; i++) { const x = Math.random() * 256, y = 18 + Math.random() * 34, r = 3 + Math.random() * 10, h = g.createRadialGradient(x, y, 0, x, y, r); h.addColorStop(0, "rgba(255,255,255,0.95)"); h.addColorStop(1, "rgba(255,255,255,0)"); g.fillStyle = h; g.beginPath(); g.arc(x, y, r, 0, 6.2832); g.fill(); }
   hbxTex.foam = new THREE.CanvasTexture(c); hbxTex.foam.wrapS = THREE.RepeatWrapping; return hbxTex.foam; }
 function hbxShader(k, frag) { if (hbxProg[k]) return hbxProg[k]; const m = new THREE.ShaderMaterial({
-  uniforms: { uT: { value: 0 }, uP: { value: 0 }, uSeed: { value: 0 }, uA: { value: 1 } },
+  uniforms: { uT: { value: 0 }, uP: { value: 0 }, uSeed: { value: 0 }, uA: { value: 1 }, uQ: { value: 1 } },
   vertexShader: "uniform float uT;uniform float uP;uniform float uSeed;varying vec3 vN;varying vec3 vV;varying vec3 vP;varying vec2 vUv;void main(){vUv=uv;vec3 p=position;vP=p;vec4 mv=modelViewMatrix*vec4(p,1.0);vV=-mv.xyz;vN=normalMatrix*normal;gl_Position=projectionMatrix*mv;}",
   fragmentShader: frag, transparent: true, depthWrite: false, side: THREE.DoubleSide, fog: false });
   m.userData.hbx = k; hbxProg[k] = m; return m; }
@@ -65,7 +65,7 @@ const hbxH2O = "float hh(vec3 p){p=fract(p*.3183099+vec3(.11,.23,.37));p*=17.0;r
 // whirlpool disc (polar): dark blue spiral arms churning inward
 const hbxPOOL = "uniform float uT;uniform float uP;uniform float uSeed;varying vec2 vUv;\nvoid main(){vec2 q=vUv*2.0-1.0;float r=length(q);if(r>1.0)discard;float a=atan(q.y,q.x);float sw=a+r*5.0-uT*2.6+uSeed;float arms=sin(sw*3.0)*.5+.5;vec3 c=mix(vec3(.02,.14,.30),vec3(.10,.38,.55),arms*smoothstep(1.0,.15,r));c=mix(c,vec3(.55,.85,.9),pow(arms,4.0)*.5*(1.0-r));c+=vec3(.75,.95,1.0)*smoothstep(.16,.02,r);float al=(.92)*(1.0-uP)*smoothstep(1.0,.94,r);gl_FragColor=vec4(c,al);}";
 // water body for wall/dome/orb: teal with caustic veins and soft rim
-const hbxWALL = "uniform float uT;uniform float uP;uniform float uSeed;varying vec3 vN;varying vec3 vV;varying vec3 vP;varying vec2 vUv;\n" + hbxH2O + "\nvoid main(){float facing=abs(dot(normalize(vN),normalize(vV)));float rim=pow(1.0-facing,1.5);vec2 q=vUv*vec2(2.2,7.0)+vec2(uSeed);float ca=causc(q+vec2(uT*.9,0.0),uT*.7);vec3 c=mix(vec3(.02,.30,.38),vec3(.08,.52,.58),ca);float v1=1.0-abs(2.0*hn(vec3(vUv*vec2(4.0,6.0),uT*.4)+uSeed)-1.0);c+=vec3(.55,1.0,.95)*pow(v1,7.0)*1.1;c=mix(c,vec3(.62,.95,.92),rim*.7);float al=(.72)*(1.0-uP);gl_FragColor=vec4(c,al);}";
+const hbxWALL = "uniform float uT;uniform float uP;uniform float uSeed;varying vec3 vN;varying vec3 vV;varying vec3 vP;varying vec2 vUv;\n" + hbxH2O + "\nvoid main(){float facing=abs(dot(normalize(vN),normalize(vV)));float rim=pow(1.0-facing,1.5);vec2 q=vUv*vec2(2.2,7.0)+vec2(uSeed);float ca=causc(q+vec2(uT*.9,0.0),uT*.7);vec3 c=mix(vec3(.02,.30,.38),vec3(.08,.52,.58),ca);float v1=1.0-abs(2.0*hn(vec3(vUv*vec2(10.0,16.0),uT*.4)+uSeed)-1.0);c+=vec3(.7,1.0,.95)*pow(v1,14.0)*.8;c=mix(c,vec3(.55,.85,.80),smoothstep(.45,.0,vUv.y)*.5);c=mix(c,vec3(.62,.95,.92),rim*.7);float al=(.72)*(1.0-uP);gl_FragColor=vec4(c,al);}";
 // cove dome: same water, plus golden shimmer band driven by uA (shielded)
 const hbxCOVE = "uniform float uT;uniform float uP;uniform float uSeed;uniform float uA;varying vec3 vN;varying vec3 vV;varying vec3 vP;varying vec2 vUv;\n" + hbxH2O + "\nvoid main(){float facing=abs(dot(normalize(vN),normalize(vV)));float rim=pow(1.0-facing,1.5);vec2 q=vUv*vec2(5.0,2.5)+vec2(uSeed);float ca=causc(q,uT);float facets=pow(causc(q*1.9+3.7,uT*1.4),2.0);vec3 c=mix(vec3(.02,.32,.40),vec3(.10,.58,.62),ca);c+=vec3(.5,.95,.9)*ca*.5;c+=vec3(.75,1.0,.98)*facets*.5;float v2=1.0-abs(2.0*hn(vec3(vUv*vec2(3.0,5.0),uT*.35)+uSeed)-1.0);c+=vec3(.6,1.0,.95)*pow(v2,7.0)*.5;float foam=rim*(.45+.55*hn(vP*4.0+uT*.15+uSeed));c=mix(c,vec3(.97,1.0,1.0),smoothstep(.35,.9,foam));float sh=uA*(.5+.5*sin(vUv.x*20.0-uT*3.0));c=mix(c,vec3(1.0,.85,.45),sh*rim*.8);float al=(.84+.1*uA)*(1.0-uP);gl_FragColor=vec4(c,al);}";
 // golden mandala swirl (polar), one flash
@@ -83,6 +83,8 @@ function hbxEnd(h) { if (!h || !h.fx) return; const i = hbxLive.indexOf(h.fx); i
 function hbxFx(ttl, objs, tick, done) { const fx = { age: 0, ttl, objs, tick, done: done || function () { objs.forEach((o) => { try { scene.remove(o); o.traverse((m) => { if (m.material && m.material.dispose && !m.material.userData.hbx) m.material.dispose(); if (m.userData.og && m.geometry && m.geometry.dispose) m.geometry.dispose(); }); } catch (e) {} }); } }; objs.forEach((o) => { o.traverse ? o.traverse((m) => { m.raycast = () => {}; }) : 0; scene.add(o); }); hbxPush(fx); return { fx, end: function () { hbxEnd(this); } }; }
 function hbxReset() { while (hbxLive.length) hbxEnd({ fx: hbxLive[0] }); }
 function hbxSprite(tex, col, op, scale) { const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, color: col, transparent: true, opacity: op, depthWrite: false, blending: THREE.AdditiveBlending, fog: false, toneMapped: false })); s.scale.setScalar(scale); return s; }
+// reckoning ground sheet: shallow water area with branching gold cracks, front revealed via uQ
+const hbxRECK = "uniform float uT;uniform float uP;uniform float uSeed;uniform float uQ;varying vec2 vUv;\n" + hbxH2O + "\nvoid main(){if(vUv.y>uQ)discard;float foamedge=1.0-smoothstep(uQ-.06,uQ,vUv.y);vec2 q=vUv*vec2(8.0,14.0)+vec2(uSeed);float v1=1.0-abs(2.0*hn(vec3(q,uT*.35))-1.0);float gold=pow(v1,9.0);vec3 c=mix(vec3(.03,.24,.30),vec3(.09,.42,.44),hn(vec3(q*.6,uT*.15))*.7);c+=vec3(1.0,.72,.28)*gold*.95;c=mix(c,vec3(.92,1.0,.98),foamedge*.4);gl_FragColor=vec4(c,(.85)*(1.0-uP));}";
 // ---- Storm Surge: thrown orb (setPos/end), then whirlpool + golden shockwave ----
 function hbxSurgeOrb(p0) { try { const G = hbxGeos(), grp = new THREE.Group(); if (p0) grp.position.set(p0.x, p0.y || 1, p0.z);
   const orb = new THREE.Mesh(G.sphL, hbxMat("wall", hbxWALL, Math.random() * 9)); orb.scale.setScalar(0.26); grp.add(orb);
@@ -104,12 +106,15 @@ function hbxHighTide(p0, yaw0, opts) { try { const o = opts || {}, ttl = Math.ma
   const RAD = W * 0.85, TH = W / RAD; // reference: thick curved shell, not a flat plane
   const wgeo = new THREE.CylinderGeometry(RAD, RAD, H, 24, 1, true, -TH / 2, TH);
   const wall = new THREE.Mesh(wgeo, hbxMat("wall", hbxWALL, Math.random() * 9)); wall.userData.og = true; wall.material.side = THREE.DoubleSide; wall.position.set(0, H / 2, -RAD); grp.add(wall);
-  const crests = []; for (let ci = 0; ci < 13; ci++) { const cs = hbxSprite(hbxFoamBlobTex(), 0xffffff, 0.9, 1.6 + (ci % 3) * 0.35); cs.material.rotation = ci * 1.3; cs.userData = { a: -TH / 2 + (ci / 12) * TH, off: ci * 0.17 }; crests.push(cs); grp.add(cs); }
+  const lipGeo = new THREE.CylinderGeometry(RAD + 0.15, RAD + 0.4, 0.85, 24, 1, true, -TH / 2, TH);
+  const lip = new THREE.Mesh(lipGeo, new THREE.MeshBasicMaterial({ map: hbxFoamTex(), color: 0xf2feff, transparent: true, opacity: 0.92, depthWrite: false, fog: false, side: THREE.DoubleSide })); lip.material.map = hbxFoamTex().clone(); lip.material.map.needsUpdate = true; lip.material.map.repeat.set(2, 1); lip.material.map.wrapS = THREE.RepeatWrapping; for (let li = 0; li < lipGeo.attributes.position.count; li++) { const ly = lipGeo.attributes.position.getY(li), lk = (ly + 0.425) / 0.85; lipGeo.attributes.position.setZ(li, lipGeo.attributes.position.getZ(li) + Math.max(0, lk) * Math.max(0, lk) * 1.3); }
+  lipGeo.computeVertexNormals(); lip.userData.og = true; lip.position.set(0, H - 0.42, -RAD + 0.15); grp.add(lip);
+  const crests = []; for (let ci = 0; ci < 7; ci++) { const cs = hbxSprite(hbxFoamBlobTex(), 0xffffff, 0.9, 1.2 + (ci % 3) * 0.35); cs.material.rotation = ci * 1.3; cs.userData = { a: -TH / 2 + (ci / 6) * TH, off: ci * 0.23 }; crests.push(cs); grp.add(cs); }
   const golds = []; for (let gi = 0; gi < 6; gi++) { const gs = hbxSprite(hbxPuffTex(), 0xffd070, 0.7, 0.7 + (gi % 2) * 0.3); gs.userData = { x0: (gi / 5 - 0.5) * W, off: gi * 0.37 }; golds.push(gs); grp.add(gs); }
   const base = []; for (let i = 0; i < 5; i++) { const s = hbxSprite(hbxPuffTex(), 0xbfeef2, 0.35, 0.9 + (i % 3) * 0.3); s.userData = { x0: (i / 4 - 0.5) * W, off: i * 0.19 }; base.push(s); grp.add(s); }
   if (p0) grp.position.set(p0.x, p0.y || 0, p0.z); grp.rotation.y = yaw0 || 0;
   const fx = hbxFx(ttl, [grp], (dt, age) => { const t = hbxU.value, die = Math.max(0, (age - (ttl - 0.8)) / 0.8), vis = 1 - die;
-    wall.material.uniforms.uP.value = die;
+    wall.material.uniforms.uP.value = die; lip.material.map.offset.x = t * 0.3; lip.material.opacity = 0.78 * vis;
     crests.forEach((cs) => { const cp = (t * 0.7 + cs.userData.off) % 1; cs.position.set(RAD * Math.sin(cs.userData.a), H - 0.55 + Math.sin(t * 2.2 + cs.userData.off * 7) * 0.1 + cp * 0.2, RAD * Math.cos(cs.userData.a) - RAD + 0.35 + cp * 0.2); cs.material.opacity = 0.85 * vis * Math.sin(cp * Math.PI); });
     golds.forEach((gs) => { const gp = (t * 0.9 + gs.userData.off) % 1; const ga = Math.asin(Math.max(-1, Math.min(1, gs.userData.x0 / RAD))); gs.position.set(gs.userData.x0, H - 0.4 + Math.sin(t * 3 + gs.userData.off * 9) * 0.35, RAD * Math.cos(ga) - RAD + 0.5); gs.material.opacity = 0.7 * vis * Math.sin(gp * Math.PI); });
     base.forEach((s) => { const ph = (t * 0.6 + s.userData.off) % 1; s.position.set(s.userData.x0, 0.3 + ph * 0.9, 0.3 + Math.sin(t * 2 + s.userData.off * 8) * 0.2); s.material.opacity = 0.35 * vis * Math.sin(ph * Math.PI); }); });
@@ -129,20 +134,20 @@ function hbxCove(p, r, life) { try { const R = r || 4.1, ttl = Math.max(1, life 
 function hbxCoveAt(p, dur, r) { let m = null; try { m = a18Smoke(p, dur, r, 0x2a7f8c, 0x9adfe8); m.visible = false; } catch (e) { try { xE(e); } catch (e2) {} }
   return hbxCove({ x: p.x, y: p.y || 0, z: p.z }, r, dur); }
 // ---- Reckoning: golden mandala flash, then a wide moving water wavefront ----
-function hbxReckoning(p, yaw, dist, opts) { try { const o = opts || {}, D = dist || 30, speed = o.speed || 7, ttl = D / speed + 2, G = hbxGeos(), grp = new THREE.Group(); grp.position.set(p.x, (p.y || 0), p.z); grp.rotation.y = yaw || 0;
+function hbxReckoning(p, yaw, dist, opts) { try { const o = opts || {}, D = dist || 30, speed = o.speed || 7, ttl = D / speed + 5.5, G = hbxGeos(), grp = new THREE.Group(); grp.position.set(p.x, (p.y || 0), p.z); grp.rotation.y = yaw || 0;
   const mand = new THREE.Mesh(G.circle, hbxMat("mandala", hbxMANDALA, Math.random() * 9)); mand.rotation.x = -Math.PI / 2; mand.position.y = 0.1; mand.scale.setScalar(0.5); grp.add(mand);
-  const W = o.width || 26, H = o.height || 1.7; // reference: low ground wavefront, not a wall
-  const wave = new THREE.Group(); grp.add(wave);
-  const body = new THREE.Mesh(G.plane, hbxMat("wall", hbxWALL, Math.random() * 9)); body.scale.set(W, H, 1); body.position.y = H / 2; wave.add(body);
-  const bodyBack = body.clone(); bodyBack.material = body.material; bodyBack.rotation.y = Math.PI; wave.add(bodyBack);
-  const crest = new THREE.Mesh(G.plane, new THREE.MeshBasicMaterial({ map: hbxFoamTex(), transparent: true, opacity: 0.95, depthWrite: false, fog: false, side: THREE.DoubleSide })); crest.material.map = hbxFoamTex().clone(); crest.material.map.needsUpdate = true; crest.material.map.repeat.set(6, 1); crest.material.map.wrapS = THREE.RepeatWrapping; crest.scale.set(W, 0.6, 1); crest.position.y = H * 0.85; wave.add(crest);
-  const rblobs = []; for (let ri = 0; ri < 11; ri++) { const rs = hbxSprite(hbxFoamBlobTex(), 0xffffff, 0.85, 1.0 + (ri % 3) * 0.3); rs.material.rotation = ri * 1.1; rs.userData = { x0: (ri / 10 - 0.5) * W, off: ri * 0.19 }; rblobs.push(rs); wave.add(rs); }
-  const spray = []; for (let i = 0; i < 6; i++) { const s = hbxSprite(hbxPuffTex(), i % 2 ? 0xbfeef2 : 0xffd98a, 0.4, 1.1 + (i % 3) * 0.4); s.userData = { x0: (i / 5 - 0.5) * W, off: i * 0.16 }; spray.push(s); wave.add(s); } // gold-white trail spray (reference: golden streaks on the wavefront)
+  const W = o.width || 26;
+  const area = new THREE.Mesh(G.plane, hbxMat("reck", hbxRECK, Math.random() * 9)); area.rotation.x = -Math.PI / 2; area.scale.set(W, D, 1); area.position.set(0, 0.12, -D / 2); area.material.uniforms.uQ.value = 0; grp.add(area);
+  const geys = []; for (let gi = 0; gi < 5; gi++) { const gz = -((gi + 0.7) / 5.6) * D, gx = (gi % 2 ? -1 : 1) * (W * 0.16 + (gi % 3) * 2.2);
+    const gm = new THREE.Mesh(G.sphL, hbxMat("wall", hbxWALL, Math.random() * 9)); gm.scale.set(1.1, 0.01, 1.1); gm.position.set(gx, 0, gz); grp.add(gm);
+    const gf = hbxSprite(hbxPuffTex(), 0xffd070, 0, 2.2); gf.position.set(gx, 0.6, gz); grp.add(gf);
+    geys.push({ m: gm, f: gf, z: gz }); }
+  const spray = []; for (let i = 0; i < 6; i++) { const s2 = hbxSprite(hbxPuffTex(), i % 2 ? 0xbfeef2 : 0xffd98a, 0.4, 1.1 + (i % 3) * 0.4); s2.userData = { x0: (i / 5 - 0.5) * W, off: i * 0.16 }; spray.push(s2); grp.add(s2); }
   return hbxFx(ttl, [grp], (dt, age) => { const t = hbxU.value;
     const mk = Math.min(1, age / 0.7); mand.scale.setScalar(0.5 + mk * 7); mand.material.uniforms.uP.value = mk;
-    const wk = Math.max(0, age - 0.4); const d = Math.min(D, wk * speed); wave.position.z = -d; // forward is -z in the group's yaw frame
-    const die = d >= D ? Math.min(1, (wk * speed - D) / 1.5) : 0;
-    body.material.uniforms.uP.value = die; crest.material.color.setHex(0xffe9c0); crest.material.map.offset.x = t * 0.4; crest.material.opacity = 0.95 * (1 - die);
-    spray.forEach((s) => { const ph = (t * 0.8 + s.userData.off) % 1; s.position.set(s.userData.x0, 0.4 + ph * 1.4, 0.4); s.material.opacity = 0.4 * (1 - die) * Math.sin(ph * Math.PI); });
-    rblobs.forEach((rs) => { const rp = (t * 0.8 + rs.userData.off) % 1; rs.position.set(rs.userData.x0, H - 0.25 + Math.sin(t * 2.5 + rs.userData.off * 8) * 0.15 + rp * 0.3, 0.3); rs.material.opacity = 0.85 * (1 - die) * Math.sin(rp * Math.PI); }); }); } catch (e) { try { window.hbxErr = String(e && e.stack || e).slice(0, 300); xE(e); } catch (e2) {} return null; } }
+    const wk = Math.max(0, age - 0.4); const d = Math.min(D, wk * speed);
+    const die = d >= D ? Math.min(1, (wk * speed - D) / 4.0) : 0;
+    area.material.uniforms.uQ.value = Math.max(0.001, d / D); area.material.uniforms.uP.value = die;
+    geys.forEach((g) => { const gph = Math.max(0, Math.min(1, (d - Math.abs(g.z)) / 2.5)); const h = Math.sin(gph * Math.PI) * 3.4; g.m.scale.set(0.7, Math.max(0.01, h * 0.55), 0.7); g.m.position.y = h * 0.55; g.m.material.uniforms.uP.value = die; g.f.material.opacity = 0.7 * Math.sin(gph * Math.PI) * (1 - die); });
+    spray.forEach((s2) => { const ph = (t * 0.8 + s2.userData.off) % 1; s2.position.set(s2.userData.x0, 0.4 + ph * 1.4, -d + 0.4); s2.material.opacity = 0.4 * (1 - die) * Math.sin(ph * Math.PI); }); }); } catch (e) { try { window.hbxErr = String(e && e.stack || e).slice(0, 300); xE(e); } catch (e2) {} return null; } }
 // ---- END HARBOR FX ----
