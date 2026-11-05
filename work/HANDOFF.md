@@ -70,3 +70,6 @@ Cage: already online (netSyncSmokes -> J.smokes -> cyxCage via the shared smoke 
 
 ### Reinjection parity (10:43)
 work/install_valorant.py rewrites index.html from work/*_runtime.js + vendor/*. Found 147 index.html lines that a reinstall would have erased (netSyncTrail/Regrowth/Waveform, a18DustTex, Skye hawk equip steering, agents18 edits). Synced them back into ability_equip_runtime.js, agents18_runtime.js, server_runtime.js, sova_fx_runtime.js. work/test_reinject_parity.cjs runs the installer on a temp copy and fails if any index.html line would disappear. Reverse direction is NOT clean: a reinstall would still ADD ~173 lines (newer vendor/sova-bolt.cjs svx helpers) to index.html - index.html was not re-generated here; do it deliberately and check the diff.
+
+### Killjoy online deploy look (10:59)
+netSyncDevices plays kjxAlarmbotPlace / kjxTurretDeploy once when a remote alarmbot/turret row is first seen (both index.html and work/server_runtime.js). Visual only; a row first seen mid-life replays the deploy (no row age on the wire). Not wired: Nanoswarm zone/activate (row 'nanoswarm' armed flag), Alarmbot alert/boom and Turret fire (no explicit server signals), Lockdown. Module is also not used offline for place/turret - this is online-only. Test: work/test_net_killjoy_deploy.cjs (stub).
