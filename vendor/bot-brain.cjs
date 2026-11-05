@@ -108,16 +108,27 @@
  // when it is in view). The route is cut where it climbs / drops more than PRE.dy m (another floor) or runs past PRE.run m:
  // walked back from there. null (keep looking at the spot): no point in view, or the corner under PRE.near m away (a wall
  // at the shoulder, no angle to pre-aim). Returns [x, y, z] or null.
- const PRE={head:1.5,near:2.5,dy:3,run:40,err:5};
+ const PRE={head:1.5,near:2.5,dy:3,run:40,err:3};
  // a held corner is an average player's, not a pixel: a yaw offset per corner, PRE.err x the bot's placement error (aimTraits
  // place, 0.8-2.2 deg) as one standard deviation (err 5: ~7 deg sd; at err 2 offline crosshair-within-10-deg at a fresh
- // fight overshot the server's 48 % - seeds 3+5 60 %)
+ // fight overshot the server's 48 % - seeds 3+5 60 %; bug lane 2026-11-03, "the bots aren't preaiming": err 3, ~4 deg sd - the
+ // median first-sight crosshair error was 11.5 deg on the server, Gold / Plat players sit near 6 deg (tracker.gg))
  function preAimErr(P,rand){return gauss(rand)*aimTraits(P).place*PRE.err;}
  function pathCorner(pts,vis,o){o=o||PRE;if(!pts||pts.length<2)return null;const s=pts[0],near=o.near??PRE.near,dy=o.dy??PRE.dy,run=o.run??PRE.run,head=o.head??PRE.head;
   let m=pts.length-1;for(let i=1;i<pts.length;i++){const q=pts[i];if(Math.abs(q[1]-s[1])>dy||Math.hypot(q[0]-s[0],q[2]-s[2])>run){m=i-1;break;}}
   if(m<1)return null;if(m===pts.length-1&&vis(pts[m])){const e=pts[m];return [e[0],e[1]+head,e[2]];}
   for(let i=m-1;i>=1;i--){const q=pts[i];if(!vis(q))continue;const h=pts[i+1],c=[(q[0]+h[0])/2,(q[1]+h[1])/2+head,(q[2]+h[2])/2];return Math.hypot(c[0]-s[0],c[2]-s[2])<near?null:c;}
   return null;}
+ // Route-ahead pre-aim (bug lane 2026-11-03, "the bots aren't preaiming"): walking its own route, a player checks where the
+ // route leaves its sight - the corner it is about to clear, where an enemy coming the other way shows up. pts: the bot's
+ // spot then its next nav points; vis(q): a clear eye line to q at head height. The first point out of sight -> the
+ // midpoint with the last one in view, at head height; a break under PRE.near m (a wall at the shoulder) is passed over to
+ // the next break; nothing breaks within PRE.run m -> the farthest point in view (the open lane ahead). Points another
+ // floor away (PRE.dy) end the walk. Returns [x, y, z] or null.
+ function routeCorner(pts,vis,o){o=o||PRE;if(!pts||pts.length<2)return null;const s=pts[0],near=o.near??PRE.near,dy=o.dy??PRE.dy,run=o.run??PRE.run,head=o.head??PRE.head;let last=null,L=0;
+  for(let i=1;i<pts.length;i++){const q=pts[i],p=pts[i-1];L+=Math.hypot(q[0]-p[0],q[2]-p[2]);if(Math.abs(q[1]-s[1])>dy||L>run)break;
+   if(vis(q)){last=q;continue;}const a=last||p,c=[(a[0]+q[0])/2,(a[1]+q[1])/2+head,(a[2]+q[2])/2];if(Math.hypot(c[0]-s[0],c[2]-s[2])>=near)return c;}
+  return last&&Math.hypot(last[0]-s[0],last[2]-s[2])>=near?[last[0],last[1]+head,last[2]]:null;}
  function trackLag(P,t){return (P.lag||.08)*(TRACK.floor+(1-TRACK.floor)*Math.exp(-Math.max(0,t)/((P.settle||.25)*2)));}
  // bot-gun: tracking a visible target keeps getting better with time - the lag left after a long track is TRACK.floor of
  // the first one (was 0.35)
@@ -187,8 +198,9 @@
  // 10 / 64 / 25 %), not one fixed pattern per range. FIRE.p = chance per trigger pull [tap, burst] (spray the rest), fitted so
  // the bullet shares land on those numbers once kills cut sprays short; tapBias tilts a bot toward taps. Semi-auto: taps.
  const FIRE={near:{d:15,p:[.01,.06],spray:[6,12]},mid:{d:30,p:[.07,.42],spray:[5,7]},far:{p:[.17,.7],spray:[5,7]}};
- function firePattern(P,rand,dist,auto){
+ function firePattern(P,rand,dist,auto,adad){
   if(!auto)return {kind:'tap',shots:1,pause:.12+rand()*.25+(dist>25?.1:0)};
+  if(adad&&dist>ADAD.mid[0]&&dist<=ADAD.mid[1])return {kind:'burst',shots:ADAD.burst[0]+Math.floor(rand()*(ADAD.burst[1]-ADAD.burst[0]+1)),pause:FIRE.reset+rand()*.2,adad:1}; // lane-adad (Jeff 2026-11-04): a disciplined ADAD fight at mid range (15-30 m: past the close band FIRE.near, whose sprays stay) fires a 2-3 round burst from each settled stop, then strafes the other way (adadStep), instead of a 0.3-1.2 s spray held from the stop; close range, sloppy fights and semi-autos (Operator / Sheriff / Marshal) unchanged
   const b=dist<=FIRE.near.d?FIRE.near:dist<=FIRE.mid.d?FIRE.mid:FIRE.far,tb=P.tapBias==null?.5:P.tapBias,pt=b.p[0]*(.6+tb*.8),pb=b.p[1],x=rand(),far=b===FIRE.far;
   if(x<pt)return {kind:'tap',shots:1,pause:.25+rand()*.25+(far?.1:0)};
   if(x<pt+pb)return {kind:'burst',shots:2+Math.floor(rand()*(far?2:3)),pause:FIRE.reset+rand()*.2+(far?.1:0)};
@@ -213,6 +225,30 @@
  // has to flick, and a teammate behind gets the trade); tight = run the path round the corner close to it, crosshair on the
  // spot (botView), and counter-strafe once it sees (the fight's disciplined stop); hold = wait PEEK.hold s for them to come, then tight. peekStep(S, dt, rand) -> {out: -1..1 along the out
  // side, path: share of the path move, walk}; S = {style, t} is the caller's per-contact state.
+ // ADAD (bug lane 2026-11-03, user: "the bots aren't ... strafing"): a fight is strafed the Valorant way - a strafe leg one
+ // way (ADAD.leg x the bot's strafeRhythm s), a counter-strafe to a stop (ADAD.stop s), shots only from the stop, then the
+ // next leg the other way (the same way ADAD.same of the time: not a metronome). ready: the bot would fire now (reacted, gun
+ // ready, crosshair near) -> the leg ends once it has run ADAD.min s (counter-strafe early to take the shot) and the stop
+ // waits up to ADAD.wait s more for the pull; firing: a pull is in progress -> the stop lasts until it ends. S = adadNew(rand, side, still) per fight (a bot that
+ // sees the enemy while standing - a held angle - starts in the stop: first shots from the hold, then the legs). adadStep(S, dt, rand, P, ready,
+ // firing) -> -1 / 0 / 1, the strafe direction across the line to the enemy (0 = stopped). The movement itself goes through
+ // the motor (acceleration / counter-strafe deceleration), the shot gate stays the caller's (stopped / sloppy).
+ const ADAD={leg:[.7,1.4],min:[.14,.24],stop:[.1,.2],same:.15,settle:.1,wait:.3,mid:[15,30],burst:[2,3],open:.9};
+ // ADAD.open (lane-adad, Jeff 2026-11-04: "a quick counter-strafe stop for bots already moving"): adadNew(.., still false, open
+ // true) = a disciplined bot that spots the enemy on the move keeps its own way across (S.m) until it has reacted (the caller's
+ // ready; capped at ADAD.open s), then one counter-strafe to a quick stop (ADAD.stop, settled after ADAD.settle; S.q until the
+ // caller's first pull) - not the standing hold's opening stop held to the first pull (0.45-0.9 s), which stays for bots that
+ // spot the enemy standing still (a held angle).
+ // ADAD.mid / ADAD.burst (lane-adad, Jeff 2026-11-04): between ADAD.mid m a disciplined fight's pull is a burst of ADAD.burst rounds
+ // (firePattern(.., adad)); the caller sets S.mb when it pulls one, and the leg after it always goes the other way.
+ // adadSet(S): the counter-strafe has settled (stopped ADAD.settle s): a disciplined fight's new pull waits for it (a shot in
+ // the first ticks of the stop still carries the leg's speed: 15 m accuracy 60 -> 54 %)
+ function adadSet(S){return !!S&&S.k==='stop'&&S.t>=ADAD.settle-1e-9;}
+ function adadNew(rand,side,still,open){const o=!still&&!!open,S={dir:side>0?1:side<0?-1:rand()<.5?-1:1,k:still?'stop':'leg',t:still?ADAD.settle:0,len:still?ADAD.stop[0]+rand()*(ADAD.stop[1]-ADAD.stop[0]):.2+rand()*.25,min:ADAD.min[0]+rand()*(ADAD.min[1]-ADAD.min[0]),flips:0};if(o){S.len=ADAD.open;S.m=1;S.o=1;}return S;}
+ function adadStep(S,dt,rand,P,ready,firing){S.t+=dt;
+  if(S.k==='leg'){if(S.t<S.len&&!(ready&&S.t>=S.min))return S.dir;if(S.o){S.o=0;S.q=1;}S.k='stop';S.t=0;S.len=ADAD.stop[0]+rand()*(ADAD.stop[1]-ADAD.stop[0]);return 0;}
+  if(firing||S.t<S.len||ready&&S.t<S.len+ADAD.wait)return 0;
+  const R=P&&P.strafeRhythm||.4;S.k='leg';S.t=0;S.len=R*(ADAD.leg[0]+rand()*(ADAD.leg[1]-ADAD.leg[0]));S.min=ADAD.min[0]+rand()*(ADAD.min[1]-ADAD.min[0]);if(rand()>=ADAD.same||S.mb){S.dir=-S.dir;S.flips++;}S.mb=0;return S.dir;}
  const PEEK={range:25,jig:[.15,.15,.2],jigN:3,hold:[1,2.5],adv:[.07,.1]};
  // PEEK.adv: peeker's advantage. Riot (technology.riotgames.com 'Peeking into VALORANT's Netcode'): the holder sees a peek
  // ~141 ms late at baseline, ~101 ms after their latency work at 60 FPS, ~71 ms at 144 FPS (network + buffering + frame). Bot
@@ -690,13 +726,16 @@
  // in sight, a remembered one (seen / heard within ULTX.memAge s; never the real position) inside the band (Hunter's Fury
  // and Seekers reach round corners, Rolling Thunder goes through walls, Run It Back before a re-peek, the Showstopper (1.4 s)
  // and Tour De Force (2.3 s) equipped behind cover before the re-peek: drawn mid-fight the bot died holding them); 'mateCorpse' (Sage:
- // a dead teammate close by, no enemy in sight); 'foeCorpse' (Cypher: a dead enemy close by); 'spike' (Killjoy: Lockdown
+ // a dead teammate within ULTX.corpse.Sage m, no enemy in sight - lane-adad: 15 -> 25 m, a Sage walks across a site to a
+ // body when nothing is in sight; at 15 m a lost-to-chaos round had bodies 20-30 m off for seconds and no rez); 'foeCorpse' (Cypher: a dead enemy close by); 'spike' (Killjoy: Lockdown
  // on a planted Spike it plays around; Omen: From the Shadows to a far planted Spike on a retake; 'mem' for Omen = behind
  // a remembered enemy 20-60 m off, the flank; Killjoy 'mem' = Lockdown on a site / choke a remembered enemy holds; Phoenix
- // 'mem' up to 25 m = Run It Back before the peek; Skye's Seekers find a remembered enemy up to 50 m off).
+ // 'mem' up to 25 m = Run It Back before the peek; Skye's Seekers find a remembered enemy up to 50 m off; Jett 'mem' up to
+ // 25 m = Blade Storm drawn behind cover before the re-peek - lane-adad: with the faster first-sight aim a close fight is over
+ // before the 0.45-1.3 s hesitation and the offline Jetts never cast).
  // s {see, dist, memD, memAge, planted, atk, spikeD, mateCorpseD, foeCorpseD}. Pure.
  const ULTX={delay:[.45,1.3],memAge:6,see:{Jett:[0,25],Reyna:[0,30],Phoenix:[0,30],Breach:[9,38],Chamber:[30,70]},
-  mem:{Sova:[8,60],Skye:[4,50],Breach:[10,38],Phoenix:[0,25],Raze:[6,35],Chamber:[10,60],Omen:[20,60],Killjoy:[8,30]},corpse:{Sage:15,Cypher:16},kj:30,omen:[28,95]};
+  mem:{Jett:[0,25],Sova:[8,60],Skye:[4,50],Breach:[10,38],Phoenix:[0,25],Raze:[6,35],Chamber:[10,60],Omen:[20,60],Killjoy:[8,30]},corpse:{Sage:25,Cypher:16},kj:30,omen:[28,95]};
  function ultCall(agent,s){if(!s)return null;const S=ULTX.see[agent];if(S&&s.see&&s.dist>=S[0]&&s.dist<=S[1])return 'enemy';
   const M=ULTX.mem[agent];if(M&&!s.see&&s.memD!=null&&s.memAge<=ULTX.memAge&&s.memD>=M[0]&&s.memD<=M[1])return 'mem';
   if(agent==='Sage'&&!s.see&&s.mateCorpseD!=null&&s.mateCorpseD<=ULTX.corpse.Sage)return 'mateCorpse';
@@ -708,5 +747,5 @@
  // presses X); a different call or none restarts it. st {k, at} per bot; rnd() draws the delay (called once per new call).
  function ultReady(st,t,want,rnd){if(!st)return false;if(!want){st.k=null;return false;}
   if(st.k!==want){st.k=want;const r=typeof rnd==='function'?rnd():.5;st.at=t+ULTX.delay[0]+clamp(r,0,1)*(ULTX.delay[1]-ULTX.delay[0]);return false;}return t>=st.at;}
- return {hash,rng,clamp,pickW,REACT,personality,reaction,crosshair,crosshairAt,firePattern,peek,attackPlan,defensePlan,roles,teamBuy,buyFor,BUYK,onMateDeath,onSound,ATTACK,DEFENSE,utility,UTIL,UTILX,teamGap,fightCast,turnStep,trackLag,wrapA,SPIKE,plantSpot,PLANT,plantDeep,postPlant,retake,postPlay,SHOOT_UTIL,shootUtility,TAILWIND,tailwindDash,tailwindKeys,LEVEL,level,aimTraits,AIM_H,aimHeight,halfWidth,aimPlan,aimAt,readyToFire,planFire,idlePitch,recoilPull,discipline,hitPart,BUY,buyArea,buyRoute,buyExit,buySpot,buyWander,buyHold,buyNew,buyTick,buyNext,buySep,SENS,cm360,sensOf,turnRate,SENSE,inView,audible,earSpot,memNew,memNote,memForget,memBest,repeek,mayFire,nextShot,areas,DFORM,GAP,midPoint,RESPOND,nearest,tradeSpot,follow,buyNear,buyCross,reactR,reacts,FIRE,sprayFade,sprayPull,turnAcc,trackTurn,cornerPick,PRE,pathCorner,preAimErr,FLASH,flashRead,blindPlay,PEEK,peekStep,RELOAD,reloadPlay,reloadBack,trailNote,reloadSpot,TRADE,WALK,quiet,ULTX,ultCall,ultReady};
+ return {hash,rng,clamp,pickW,REACT,personality,reaction,crosshair,crosshairAt,firePattern,peek,attackPlan,defensePlan,roles,teamBuy,buyFor,BUYK,onMateDeath,onSound,ATTACK,DEFENSE,utility,UTIL,UTILX,teamGap,fightCast,turnStep,trackLag,wrapA,SPIKE,plantSpot,PLANT,plantDeep,postPlant,retake,postPlay,SHOOT_UTIL,shootUtility,TAILWIND,tailwindDash,tailwindKeys,LEVEL,level,aimTraits,AIM_H,aimHeight,halfWidth,aimPlan,aimAt,readyToFire,planFire,idlePitch,recoilPull,discipline,hitPart,BUY,buyArea,buyRoute,buyExit,buySpot,buyWander,buyHold,buyNew,buyTick,buyNext,buySep,SENS,cm360,sensOf,turnRate,SENSE,inView,audible,earSpot,memNew,memNote,memForget,memBest,repeek,mayFire,nextShot,areas,DFORM,GAP,midPoint,RESPOND,nearest,tradeSpot,follow,buyNear,buyCross,reactR,reacts,FIRE,sprayFade,sprayPull,turnAcc,trackTurn,cornerPick,PRE,pathCorner,preAimErr,FLASH,flashRead,blindPlay,PEEK,peekStep,RELOAD,reloadPlay,reloadBack,trailNote,reloadSpot,TRADE,WALK,quiet,ULTX,ultCall,ultReady,ADAD,adadNew,adadStep,adadSet,routeCorner};
 });

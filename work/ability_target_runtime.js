@@ -120,8 +120,13 @@ const XPLACE = { // wiki max cast distance (m) and indicator radius (m) per agen
   Chamber: { c: [12, 0.45, 0xd8b04a], e: [8.5, 0.7, 0xd8b04a] }, Cypher: { q: [15, 3.72, 0x3fd0c0] } };
 // the floor point under the crosshair within max m (ray to the map, 0.5 m short of a hit, else max along the aim), pulled off walls;
 // ok: on the nav mesh (native: a nav node within 1.5 m, playable) and not inside a wall
+// lane-adad (test_combat_stress_perf): the placement preview runs every frame while a device is in hand - eye / aim from scratch
+// vectors (pEyeTo, jAim's formula) and the hit list pooled (xRayPool: recycled native-mesh hits, read before the next fill);
+// was 2 Vector3 + a hit (2 more) per frame. Same values.
+var XAP = { o: null, d: null, hl: null };
 function xAimPlace(max) {
-  const o = pEye(), d = jAim(); ray.set(o, d); ray.far = max; const h = ray.intersectObjects(solids)[0], t = h ? Math.max(0, h.distance - 0.5) : max;
+  const o = pEyeTo(XAP.o || (XAP.o = new THREE.Vector3())), d = (XAP.d || (XAP.d = new THREE.Vector3())).set(-Math.sin(yaw) * Math.cos(pitch), Math.sin(pitch), -Math.cos(yaw) * Math.cos(pitch)); ray.set(o, d); ray.far = max;
+  const hl = XAP.hl || (XAP.hl = typeof xRayPool === "function" ? xRayPool([]) : []); hl.length = 0; const h = ray.intersectObjects(solids, true, hl)[0], t = h ? Math.max(0, h.distance - 0.5) : max;
   let x = o.x + d.x * t, z = o.z + d.z * t; const y0 = o.y + d.y * t; let y = xFy(x, z, Math.min(y0, o.y) + 0.1);
   for (let i = 0; i < 24 && blocked(x, z, 0.3, y); i++) { const vx = player.x - x, vz = player.z - z, l = Math.hypot(vx, vz) || 1; if (l < 0.3) break; x += (vx / l) * 0.25; z += (vz / l) * 0.25; y = xFy(x, z, Math.min(y0, o.y) + 0.1); }
   return { x, y, z, ok: xPlaceOk(x, z, y) };

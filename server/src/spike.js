@@ -140,7 +140,7 @@ export class SpikeSimulation extends Simulation{
  // for being "killed by an enemy agent"); the dead lose their gear in finishRound.
  detonate(sp){for(const u of this.units){if(!u.alive||u.loading||Math.hypot(u.x-sp.x,(u.y||0)-(sp.y||0),u.z-sp.z)>SPIKE_RADIUS)continue;u.hp=0;u.alive=false;/* not a death (wiki Spike, patch 1.11: dying to the Spike no longer counts in KDA), so no ult point either */this.events.push(['k','',u.name,0,'Spike']);}}
  finishRound(winner,text){if(this.roundDelay>0)return;this.roundScores[winner]++;this.losses[winner]=0;this.losses[1-winner]++;for(const u of this.units){u.credits=Math.min(9000,u.credits+(u.team===winner?3000:survivorLoss(this,u,text)?1000:Math.min(2900,1900+(this.losses[u.team]-1)*500)));if(!u.alive&&!u.runItBack){/* a Phoenix inside Run It Back is coming back: he keeps his gear */u.primary=null;u.secondary='Classic';u.armor=0;u.rgn=null;}}this.roundDelay=POST_ROUND;this.roundEvents.push({t:'re',w:winner===0?1:0,tx:text,sc:[...this.roundScores],o:Math.max(...this.roundScores)>=13&&Math.abs(this.roundScores[0]-this.roundScores[1])>=2?1:0});}
- bot(u){const sp=this.spike,W=this.world;let goal=null;this.botSense();if(this.botDartRemove(u))return;const orb=ultOrbBot(this,u);if(orb===true)return;/* channelling an ult orb */if(!u.human&&this.botUlt(u))return;/* lining up / casting an ultimate (botUlt) */if(u.team===this.atk){if(sp.st==='carry'&&sp.carrier===u.id){const p=(!u.human&&this.plantGoal(u))||W.map.sites[sp.site];goal=p;if(this.siteAt(u)&&this.plantNow(u,p)){u.input={interact:true};u.inputAt=this.time;return;}}else if(sp.st==='drop')goal=[sp.x,sp.y,sp.z];else if(sp.st==='plant')goal=[sp.x+(u.id%3-1)*5,sp.y,sp.z+5];else goal=W.map.sites[sp.site];}else goal=sp.st==='plant'?[sp.x,sp.y,sp.z]:W.map.sites[Object.keys(W.map.sites)[u.id%Object.keys(W.map.sites).length]];
+ bot(u){const sp=this.spike,W=this.world;let goal=null;this.botSense();if(this.botDartRemove(u))return;const orb=ultOrbBot(this,u);if(orb===true)return;/* channelling an ult orb */if(!u.human&&this.botUlt(u)){u.lookOwn=this.time;return;}/* lining up / casting an ultimate (botUlt) */if(u.team===this.atk){if(sp.st==='carry'&&sp.carrier===u.id){const p=(!u.human&&this.plantGoal(u))||W.map.sites[sp.site];goal=p;if(this.siteAt(u)&&this.plantNow(u,p)){u.input={interact:true};u.inputAt=this.time;return;}}else if(sp.st==='drop')goal=[sp.x,sp.y,sp.z];else if(sp.st==='plant')goal=[sp.x+(u.id%3-1)*5,sp.y,sp.z+5];else goal=W.map.sites[sp.site];}else goal=sp.st==='plant'?[sp.x,sp.y,sp.z]:W.map.sites[Object.keys(W.map.sites)[u.id%Object.keys(W.map.sites).length]];
  // Variety: the round strategy's staged positions (defaults, fakes, lurks, splits, aggressive defenders), spread spots,
  // rotations on information, staggered starts (u.spread: the goal is already a spread nav spot, so no extra offset)
  u.spread=false;const carrier=sp.st==='carry'&&sp.carrier===u.id,loose0=!(sp.st==='drop'&&u.team===this.atk)&&!carrier;let loose=loose0;
@@ -165,7 +165,12 @@ export class SpikeSimulation extends Simulation{
  if(this.shootUtility(u,goal))return;/* no enemy in sight: shoot down enemy utility in the way (Boom Bot, Turret, Alarmbot, Trademark, Trapwire, Nanoswarm; a Sage Barrier across its way) */
  if(this.planUtility(u))return;/* lining up plan utility (smoke / flash / recon before the entry, post-plant mollies, defender delay) */
  // reactions: trade / fall back after a teammate dies, hold or push a sound (not the carrier, not a late retake)
- const R=u.react;if(R&&R.until>this.time&&!carrier&&!(sp.st==='drop'&&u.team===this.atk)&&!(sp.st==='plant'&&u.team!==this.atk&&sp.t<15)){
+ // Showstopper out (lane-adad 2026-11-04): the launcher's 10 s window is running, so a Raze that cast on a remembered enemy
+ // (ultCall 'mem') goes to get the shot - it walks onto the enemy's last seen / heard spot (its memory, never the real
+ // position; ULTX.memAge) instead of holding an angle the enemy may never cross (the rocket then went out unfired) - the
+ // Spike carrier too (it held its plant spot with the launcher out until the window closed).
+ const ssM=!u.human&&u.showstopper&&u.mem?BotBrain.memBest(u.mem,this.time,u.x,u.z,BotBrain.ULTX.memAge):null;if(ssM){goal=[ssM.x,ssM.y??u.y,ssM.z];u.spread=true;loose=true;}
+ const R=u.react;if(!ssM&&R&&R.until>this.time&&!carrier&&!(sp.st==='drop'&&u.team===this.atk)&&!(sp.st==='plant'&&u.team!==this.atk&&sp.t<15)){
   if(R.kind==='hold'){u.input=R.duck?{duck:true}:{};u.look=BotBrain.turnStep(persona(this,u).brain,u.look||0,Math.atan2(u.x-R.x,u.z-R.z),.05).yaw;/* turns onto the angle at its own turn rate */u.inputAt=this.time;return;}
   goal=[R.x,R.y,R.z];u.spread=true;loose=true;}
  if(u.plan&&u.plan.round===this.round&&this.time<u.plan.go&&!carrier){u.input={};u.inputAt=this.time;return;}/* staggered start */
@@ -190,7 +195,7 @@ export class SpikeSimulation extends Simulation{
   const ts=BotBrain.turnStep(P.brain,u.look||0,Math.atan2(-dx,-dz),bdt,u.turnSt||(u.turnSt={v:0}));u.look=ts.yaw;u.pitch=Math.atan2(pick.pt[1]-eye[1],h);
   const size=pick.kind==='barrier'?1.2:(SHOOT[pick.kind]?.r||.3),aligned=Math.abs(ts.left)<Math.max(.03,Math.atan2(size,h)*.8);
   u.input={};u.inputAt=this.time;if(u.ammo<=0){if(!u.reloadAt)this.command(u,{t:'reload'});}else if(aligned&&!u.reloadAt){u.input.fire=true;if(Wp.fireMode==='EWeaponFireModeDisplayType::SemiAutomatic'&&this.time>=(u.fireAt||0))u.triggerHeld=false;}
-  u.utilShot={id:pick.e.id,kind:pick.kind,at:this.time};return true;}
+  u.utilShot={id:pick.e.id,kind:pick.kind,at:this.time};u.lookOwn=this.time;return true;}
  // ---- Spike play (vendor/bot-brain.cjs plantSpot / postPlant / postPlay / retake) ----
  // The carrier's plant spot this round: default (near the centre), safe (toward the attackers' entrance) or open (toward the
  // defenders' side), the nearest plantable nav node (shrunk toward the centre until it is inside the plant zone) that lies

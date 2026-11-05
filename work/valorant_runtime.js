@@ -478,10 +478,12 @@ window.xvRoster=xvRoster;
 // Start downloading every agent as soon as the lobby is up (idle slot right after first paint), last pick first.
 {const go=()=>{let a='Jett';try{a=(typeof S!=='undefined'&&S&&S.lastAg)||localStorage.getItem('vs.lastAg')||a;}catch(e){}try{xvPreloadAgents(xvAgentName(a));}catch(e){console.warn('agent preload',e);}};if(window.requestIdleCallback)requestIdleCallback(go,{timeout:300});else setTimeout(go,0);}
 // Physical ability devices retain their gameplay roots, hit checks and timers.
-var XV_DEVICE = {};
+// lane-adad (test_combat_stress_perf): a device model that failed to load is asked for again after XV_DEVRETRY ms, not on the next
+// devices tick (a missing glb was a new GLTFLoader + FileLoader + request every few frames per device on screen).
+var XV_DEVICE = {}, XV_DEVFAIL = {}, XV_DEVRETRY = 5000;
 function xvDevice(m, slug, height, bottom) {
-  if(!m || m.userData.xvDevice)return;const token={};m.userData.xvDevice=token;
-  if(!XV_DEVICE[slug])XV_DEVICE[slug]=xvLoad(slug).then(gl=>xvStatic(gl,XV.config[slug])).catch(e=>{delete XV_DEVICE[slug];throw e;});
+  if(!m || m.userData.xvDevice)return;if(!XV_DEVICE[slug]&&performance.now()<(XV_DEVFAIL[slug]||0))return;const token={};m.userData.xvDevice=token;
+  if(!XV_DEVICE[slug])XV_DEVICE[slug]=xvLoad(slug).then(gl=>xvStatic(gl,XV.config[slug])).catch(e=>{delete XV_DEVICE[slug];XV_DEVFAIL[slug]=performance.now()+XV_DEVRETRY;throw e;});
   XV_DEVICE[slug].then(src=>{if(m.userData.xvDevice!==token)return;const b=new THREE.Box3().setFromObject(src),size=b.getSize(new THREE.Vector3()),root=new THREE.Group(),obj=src.clone(true),s=height/Math.max(.001,size.y);root.name='valorant-device';root.userData.dynamic=true;
     obj.position.set(-(b.min.x+b.max.x)/2,-b.min.y,-(b.min.z+b.max.z)/2);root.add(obj);root.scale.setScalar(s);root.position.y=bottom?0:-height/2;
     token.children=m.children.slice().map(o=>[o,o.visible]);token.children.forEach(([o])=>o.visible=false);if(m.material){token.material=m.material;const mat=m.material.clone();mat.visible=false;m.material=mat;}root.traverse(o=>{if(o.isMesh){o.raycast=XNR;o.castShadow=true;}});m.add(root);token.root=root;

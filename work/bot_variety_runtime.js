@@ -28,7 +28,7 @@ function xbRt(u,D){const k=(D&&D.rt?D.rt:260)/260;return ((u.rtE||.26)*1000+(u.p
 // A new trigger pull's length and the pause after it (bots-tune-1): BotBrain.firePattern, the server's tap / burst / spray
 // mix by range band (semi-auto guns tap); b.xbPz = the pause in s (scaled by the difficulty's cd in the base loop).
 function xbBurst(u,d,W){const B=window.BotBrain&&xbBrain(u);if(!B){u.xbPz=null;return d>20?3+Math.floor(Math.random()*3):6+Math.floor(Math.random()*5);}
- const f=BotBrain.firePattern(B,xbRand(u),d,!(W&&W.semi));u.xbPz=f.pause;u.xbPat=f.kind;return f.shots;}
+ const f=BotBrain.firePattern(B,xbRand(u),d,!(W&&W.semi),!!(u.xAdOn&&u.xAd&&!u.xbSl));if(f.adad)u.xAd.mb=1;/* lane-adad: a disciplined ADAD fight (xFight) at mid range fires 2-3 round bursts, the leg after each the other way (= server trigger) */u.xbPz=f.pause;u.xbPat=f.kind;return f.shots;}
 // Visible yaw while fighting: the planned flick (min-jerk, overshoot, correction) at the bot's own turn rate, not a snap.
 function xbFaceAim(u,want,dt){const B=xbBrain(u);if(!B||!u.xbAP||!u.g)return want;const e=BotBrain.aimAt(u.xbAP,u.see||0,XB_E);return BotBrain.turnStep(B,u.g.rotation.y,want+e[0],dt,u.xTurnSt||(u.xTurnSt={v:0})).yaw;}
 // A new trigger pull: once the bot believes it is on target (end of its flick / correction) or the crosshair passes close.
@@ -75,11 +75,11 @@ function xbShot(u,tg,from,w,W,d,D){const B=xbBrain(u);if(!B||!u.xbAP)return unde
 function xbTrDefer(u){if(!u||u.nt||!u.xbAP||u.bsW||!((u.see||0)>0||(u.ts||0)>0)||typeof xbShot!=='function')return false;u.xbTrP=1;return true;}
 var XB_TR=null;
 function xbMuzzle(u,out){try{const M=u.xm,g=M&&M.gun;if(!g||!g.matrixWorld)return null;const ud=g.userData||{};out.set(0,Number.isFinite(ud.my)?ud.my:0,Number.isFinite(ud.mz)?ud.mz:-.5);g.updateWorldMatrix(true,false);g.localToWorld(out);return Number.isFinite(out.x)&&Number.isFinite(out.y)&&Number.isFinite(out.z)?out:null;}catch(e){return null;}}
-function xbTracer(u){const L=u.xbLS;if(!L)return;const T=XB_TR||(XB_TR={m:new THREE.Vector3(),o:new THREE.Vector3(),d:new THREE.Vector3(),e:new THREE.Vector3(),rc:new THREE.Raycaster(),hl:[]});
+function xbTracer(u){const L=u.xbLS;if(!L)return;const T=XB_TR||(XB_TR={m:new THREE.Vector3(),o:new THREE.Vector3(),d:new THREE.Vector3(),e:new THREE.Vector3(),dir:new THREE.Vector3(),rc:new THREE.Raycaster(),hl:typeof xRayPool==='function'?xRayPool([]):[]});/* lane-adad: hit list pooled (xRayPool), tracer direction in scratch (bFx copies both) - was a Vector3 + native hits per bot shot */
  T.o.set(L.o.x,L.o.y,L.o.z);T.d.set(L.d.x,L.d.y,L.d.z);let len=L.net?L.len:L.hit?L.len:80,h=null;
  if(L.net){try{T.rc.set(T.o,T.d);T.rc.near=0;T.rc.far=len+.3;T.hl.length=0;for(const x of T.rc.intersectObjects(solids,true,T.hl)){const ud=x.object&&x.object.userData;if(ud&&(ud.bot||ud.aim))continue;if(Math.abs(x.distance-len)<.5){h=x;len=x.distance;}break;}}catch(e){h=null;}}
  else try{T.rc.set(T.o,T.d);T.rc.near=0;T.rc.far=len;T.hl.length=0;for(const x of T.rc.intersectObjects(solids,true,T.hl)){const ud=x.object&&x.object.userData;if(ud&&(ud.bot||ud.aim))continue;if(L.hit&&x.distance>len-.35)break;h=x;break;}if(h){len=h.distance;L.hit=null;}}catch(e){h=null;}
- T.e.copy(T.o).addScaledVector(T.d,len);const m=xbMuzzle(u,T.m)||T.m.copy(T.o);const dir=T.e.clone().sub(m),dl=dir.length()||1e-6;dir.multiplyScalar(1/dl);L.mz=[m.x,m.y,m.z];L.end=[T.e.x,T.e.y,T.e.z];
+ T.e.copy(T.o).addScaledVector(T.d,len);const m=xbMuzzle(u,T.m)||T.m.copy(T.o);const dir=T.dir.copy(T.e).sub(m),dl=dir.length()||1e-6;dir.multiplyScalar(1/dl);L.mz=[m.x,m.y,m.z];L.end=[T.e.x,T.e.y,T.e.z];
  try{bFx(m,dir,h||undefined,dl);}catch(e){}
  if(L.net)return;
  try{if(h&&typeof xBotWall==='function')xBotWall(u,T.o,T.d,h);}catch(e){}
@@ -644,8 +644,19 @@ function xhpYaw(u,dt,vx,vz){if(!xhpOn(u))return null;const p=u.g.position,now=pe
  if(H&&H.ang&&H.ang.length&&!H.seat){if(now>=H.aiT){const r=xhpRand(u),A=H.ang;let k=0;if(A.length>1&&r()>.55)k=1+Math.floor(r()*(A.length-1));H.ai=k;H.aiT=now+(2.2+r()*3)*1000;}const a=H.ang[Math.min(H.ai,H.ang.length-1)];u.xhpA=a;return Math.atan2(a.x-p.x,a.z-p.z);}
  if(H&&H.seat&&H.ang&&H.ang.length){const a=H.ang[0];u.xhpA=a;return Math.atan2(a.x-p.x,a.z-p.z);} // re-seating: keep the main angle (a shoulder step, not a turn away)
  u.xhpA=null;if(!(vx||vz))return null;const hd=Math.atan2(vx,vz);const c=u.xhpC;if(c&&now<c.t+250&&Math.abs(xAng(c.h-hd))<.5)return c.y;
+ {const r=xhpRoute(u,p,hd);if(r!=null){u.xhpC={t:now,h:hd,y:r};return r;}}
  const o=[p.x,p.y+1.5,p.z];XHP.ANG.length=XHP.DEP.length=0;for(let i=-6;i<=6;i++){const a=hd+i*.21;XHP.ANG.push(a);XHP.DEP.push(xhpDepth(o,a,40));}
  const y=BotBrain.cornerPick(XHP.ANG,XHP.DEP,hd);u.xhpC={t:now,h:hd,y:y==null?hd:y};return u.xhpC.y;}
+// Route-ahead pre-aim (bug lane 2026-11-03, user: "the bots aren't preaiming"; BotBrain.routeCorner, = server routeLook):
+// walking, the crosshair goes first to where the bot's own nav route toward its goal (xUg) leaves its sight - the corner it
+// is about to clear, at head height - and only then to the generic opening edge (cornerPick). Within 75 deg of the heading
+// (no walking backwards looking at a corner behind); routes come from nmPath's cache, at most XRT3.max new searches a frame.
+var XRT3={f:-1,n:0,max:2,P:null,Q:null};
+function xhpRoute(u,p,hd){const C=nmActive(),g=u.xUg;if(!C||!C.nav||!g||!BotBrain.routeCorner)return null;const s=nmNear(C,p.x,p.z,p.y),e=nmNear(C,g[0],g[1],p.y);if(s<0||e<0||s===e)return null;
+ const NL=C.nav.nodes.length;if(!NM.routeCache.has(s*NL+e)){if(XRT3.f!==XNF){XRT3.f=XNF;XRT3.n=0;}if(XRT3.n>=XRT3.max)return null;XRT3.n++;}
+ const R=nmPath(C,s,e);if(!R||R.length<2)return null;const N=C.nav.nodes,pts=[[p.x,p.y,p.z]];for(let i=1;i<R.length&&pts.length<12;i++)pts.push(N[R[i]]);
+ const eye=XRT3.P||(XRT3.P=new RV()),q=XRT3.Q||(XRT3.Q=new RV());eye.set(p.x,p.y+1.5,p.z);const c=BotBrain.routeCorner(pts,n=>los(eye,q.set(n[0],n[1]+1.5,n[2])));if(!c)return null;
+ const y=Math.atan2(c[0]-p.x,c[2]-p.z);return Math.abs(xAng(y-hd))<1.3?y:null;}
 if(typeof xFace==='function'){const f0=xFace;xFace=function(u,dt,vx,vz){if(u&&u.g&&!(u.hearT>0)&&!(typeof xbGlance==='function'&&xbGlance(u))){let t=null;try{t=xhpYaw(u,dt,vx,vz);}catch(e){t=null;}
   if(t!=null){const y=typeof xbFaceTo==='function'?xbFaceTo(u,t,dt):null;u.g.rotation.y=y!==null?y:u.g.rotation.y+xAng(t-u.g.rotation.y)*Math.min(1,dt*8);return;}}return f0.apply(this,arguments);};}
 // (2b) Pre-aiming what it heard or last saw (lane-preaim; integrate-16 probe: offline crosshair within 10 deg of the enemy at

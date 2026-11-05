@@ -14,10 +14,18 @@ const assert=require('assert/strict'),fs=require('fs'),os=require('os'),path=req
 // integration (bugs + move/constants + audio + sounds + combat, 2026-11-04): text caps raised where the scenario itself changed -
 // Phoenix w1 146, Sage w0 96, Killjoy w0 615 writes; every extra write is a write-on-change HUD value (xHp / xArm / hudT ammo
 // spans: the integrated tree's bot decisions differ, so the player takes more hits in the window), not a per-frame rewrite; still far under 'before'
+// lane-adad (bots ADAD + pre-aim, 2026-11-04): text caps re-baselined to this tree's counts + 10 % - Phoenix w1 265, Sage w0 397,
+// Sage w1 133, Killjoy w1 271 writes (deterministic, = bench_combat twice): per element (qa cs_inject breakdown) every extra write is
+// a write-on-change HUD value whose value changed (#xHp / #xArm / hudT 'hp' spans: the enemy shooting back hits the player more
+// often now that bots counter-strafe before each pull); same-value writes stay 12-15 a window (the level paint, as before).
+// objs caps unchanged: the extra objects were cut instead (placement preview / bot tracer scratch + pooled hits, failed device
+// glb retried after 5 s, shadow-LOD scratch) - now P 1349 / 529, S 137 / 104, K 1097 / 359.
+// lane-adad-cs (counter-strafe stop + 15-30 m bursts, Jeff delegated 2026-11-04): Phoenix w0 text 81 -> 130 (measured 118, +10 %):
+// per element every extra write is write-on-change (#xHp / #xArm / hp spans, kill feed - a kill now lands in the window); SAME 13.
 const CAP={
- Phoenix:[1836, 5805, 81, 161], // before 8501 / 8886 objs, 642 / 544 text; now 1669 / 5277 objs (5277: a gun model build, frame 277), 73 / 98 text
- Sage:[6063, 253, 106, 49],    // before 9135 / 1070 objs, 415 / 870 text; now 5512 / 230 objs, 63 / 44 text
- Killjoy:[1504, 1114, 677, 124], // before 1787 / 1432 objs, 2038 / 1453 text; now 1367 / 1012 objs, 557 / 112 text
+ Phoenix:[1836, 5805, 130, 292], // w0 text 81 -> 130: Jeff delegated 2026-11-04 - measured 118 at 6fae77a6, 105 'chg' (xHp/xArm 24, hud hp spans 12, kill feed 13: kills in the window, timer/xTm 28) + 13 SAME (level paint, as before); // before 8501 / 8886 objs, 642 / 544 text; now 1669 / 5277 objs (5277: a gun model build, frame 277), 73 / 98 text
+ Sage:[6063, 253, 437, 147],   // before 9135 / 1070 objs, 415 / 870 text; now 5512 / 230 objs, 63 / 44 text
+ Killjoy:[1504, 1114, 677, 299], // before 1787 / 1432 objs, 2038 / 1453 text; now 1367 / 1012 objs, 557 / 112 text
 };
 const AG=(process.env.CS_AGENTS||Object.keys(CAP).join(',')).split(',');
 const fail=[];
