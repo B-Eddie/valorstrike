@@ -26574,7 +26574,7 @@ function a18NetMesh(kind, e) {
   else { m = jM(smokeGeo, xSmokeM("a18net" + (a18NetMesh.n = (a18NetMesh.n || 0) + 1), col, col)); m.material.opacity = op; m.position.set(e.p[0], (e.p[1] || 0) + 1.5, e.p[2]); m.scale.setScalar((e.r || 4) / 4); }
   scene.add(m); return m;
 }
-function a18NetFree(r) { if (r.kind === "blazeNet") { if (r.w) r.w.t = 0; return; } if (r.kind === "acid") { a18AcidFree(r.ac); return; } if (r.kind === "salvo") { for (const m of r.ms) jRel(m); return; } if (r.kind === "armag") { a18ArmagFree(r.ag); return; } if (!r.m) return; if (r.kind === "duel") a18ArenaFree(r.m); else jRel(r.m); }
+function a18NetFree(r) { if (r.kind === "yoxd" || r.kind === "yoxf") { try { yoxEnd(r.h); (r.kind === "yoxd" ? yoxFakeoutPop : yoxBlindsidePop)(r.p); } catch (e) {} return; } if (r.kind === "blazeNet") { if (r.w) r.w.t = 0; return; } if (r.kind === "acid") { a18AcidFree(r.ac); return; } if (r.kind === "salvo") { for (const m of r.ms) jRel(m); return; } if (r.kind === "armag") { a18ArmagFree(r.ag); return; } if (!r.m) return; if (r.kind === "duel") a18ArenaFree(r.m); else jRel(r.m); }
 function a18NetSync(rows) {
   const seen = new Set();
   for (const e of rows) { if (e && e.kind === "duel" && Number.isFinite(e.id) && Array.isArray(e.p) && e.p.length === 3) { seen.add(e.id); if (!a18Net.has(e.id)) a18Net.set(e.id, { m: a18ArenaShell(e.p[0]), kind: "duel" }); continue; }
@@ -26590,6 +26590,8 @@ function a18NetSync(rows) {
       while (r.n < Q.ticks && el >= r.n * Q.gap) { const i = r.n++; if (el - i * Q.gap > 0.6) continue; const lo = Q.near + seg * i, cx = e.p[0] + fx * (lo + seg / 2), cz = e.p[2] + fz * (lo + seg / 2); let gy = e.p[1]; try { const g = groundAt(cx, cz, 0.3, e.p[1] + 1); if (Number.isFinite(g)) gy = g; } catch (err) {}
         try { a18QuakeBlast(cx, gy, cz, e.yaw, Q.w, seg); blip(60, 0.5, "sawtooth", 0.15); } catch (err) {} }
       continue; }
+    if (e && ((e.kind === "decoy" && e.ag === "Yoru") || (e.kind === "flash" && e.ag === "Yoru")) && Number.isFinite(e.id) && Array.isArray(e.p) && e.p.length === 3) { seen.add(e.id); const dec = e.kind === "decoy"; let r = a18Net.get(e.id); if (!r) { let h = null; try { if (dec) yoxFakeoutSpawn(e.p); h = dec ? yoxFakeoutFigure() : yoxBlindsideOrb(); } catch (er) {} r = { kind: dec ? "yoxd" : "yoxf", h, p: e.p.slice() }; a18Net.set(e.id, r); }
+      r.p = e.p.slice(); try { const o = r.h && r.h.fx && r.h.fx.objs && r.h.fx.objs[0]; if (o) { if (r.kind === "yoxd") { o.position.set(e.p[0], groundAt(e.p[0], e.p[2], 0.3, e.p[1] + 1) || 0, e.p[2]); if (e.d) o.rotation.y = Math.atan2(e.d[0], e.d[2]); } else o.position.set(e.p[0], (e.p[1] || 0) + 1, e.p[2]); } } catch (er) {} continue; }
     if (!e || !A18VIS[e.kind] || !Number.isFinite(e.id) || !Array.isArray(e.p) || e.p.length !== 3) continue; seen.add(e.id);
     let r = a18Net.get(e.id); if (!r) { r = { m: a18NetMesh(e.kind, e), kind: e.kind }; a18Net.set(e.id, r); }
     else if (r.m) { const k = A18VIS[e.kind][0]; if (k === "orb" || k === "wave" || k === "dev" || k === "star") r.m.position.set(e.p[0], k === "orb" ? (e.p[1] || 0) + 1 : k === "star" ? (e.p[1] || 0) + 1.4 : r.m.position.y === 1.1 ? 1.1 : (e.p[1] || 0) + .3, e.p[2]); else r.m.position.x = e.p[0], r.m.position.z = e.p[2]; if (Number.isFinite(e.yaw) && k === "wall") r.m.rotation.y = -e.yaw; } }
