@@ -23006,7 +23006,7 @@ function svxMatPlasmaBall(col, hot) { // soft swirling electric orb: wisps curl 
   return new THREE.ShaderMaterial({
     uniforms: { uT: { value: 0 }, uOp: { value: 1 }, uCol: { value: new THREE.Color(col) }, uHot: { value: new THREE.Color(hot) } },
     vertexShader: svxVert,
-    fragmentShader: svxGLSLnoise + "uniform float uT,uOp;uniform vec3 uCol,uHot;varying vec2 vUv;\nvoid main(){\nvec2 p=vUv*2.0-1.0;float r=length(p);if(r>1.0)discard;\nfloat ang=atan(p.y,p.x);\nfloat sw=noise(vec2(ang*2.5+uT*0.7,r*3.0-uT*1.4))+0.5*noise(vec2(ang*5.0-uT*1.1,r*6.0+uT*0.9));\nfloat wisp=smoothstep(0.5,1.0,sw)*(1.0-r);\nfloat core=exp(-r*7.0)*0.9;\nfloat body=(1.0-r)*(1.0-r)*1.1;\nfloat rim=smoothstep(0.72,0.9,r)*smoothstep(1.0,0.9,r)*(0.45+0.8*sw);\nvec3 col=uCol*(body+wisp*1.8+rim*1.25)+uHot*core;\nfloat a=clamp(body+wisp+rim+core,0.0,1.0)*uOp*smoothstep(1.0,0.88,r);\ngl_FragColor=vec4(col*a,a);\n}",
+    fragmentShader: svxGLSLnoise + "uniform float uT,uOp;uniform vec3 uCol,uHot;varying vec2 vUv;\nvoid main(){\nvec2 p=vUv*2.0-1.0;float r=length(p);if(r>1.0)discard;\nfloat ang=atan(p.y,p.x);\nfloat sw=noise(vec2(ang*2.5+uT*0.7,r*3.0-uT*1.4))+0.5*noise(vec2(ang*5.0-uT*1.1,r*6.0+uT*0.9));\nfloat wisp=smoothstep(0.42,1.0,sw)*(1.0-r);\nfloat core=exp(-r*7.0)*0.4;\nfloat body=(1.0-r)*(1.0-r)*0.15;\nfloat rim=smoothstep(0.72,0.9,r)*(1.0-smoothstep(0.9,1.0,r))*(0.28+0.55*sw);\nvec3 col=uCol*(body+wisp*2.3+rim*0.9)+uHot*core;\nfloat a=clamp(body+wisp+rim+core,0.0,1.0)*uOp*(1.0-smoothstep(0.88,1.0,r));\ngl_FragColor=vec4(col*a,a);\n}",
     transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, fog: false,
   });
 }
@@ -23014,7 +23014,7 @@ function svxMatPlasmaCone(col, hot, additive) { // flowing energy along the cone
   return new THREE.ShaderMaterial({
     uniforms: { uT: { value: 0 }, uOp: { value: 1 }, uCol: { value: new THREE.Color(col) }, uHot: { value: new THREE.Color(hot) } },
     vertexShader: svxVert,
-    fragmentShader: svxGLSLnoise + "uniform float uT,uOp;uniform vec3 uCol,uHot;varying vec2 vUv;\nvoid main(){\nfloat along=vUv.y,around=vUv.x;\nfloat n1=noise(vec2(around*9.0,along*22.0-uT*7.0));\nfloat n2=noise(vec2(around*3.0+7.0,along*8.0-uT*3.5));\nfloat e=pow(n1*0.65+n2*0.55,1.8)*1.9;\nfloat ends=smoothstep(0.0,0.14,along)*smoothstep(1.0,0.7,along);\nfloat a=(0.10+e*0.5)*ends*uOp;\nvec3 col=mix(uCol,uHot,clamp(e,0.0,1.0));\ngl_FragColor=vec4(col*a,a);\n}",
+    fragmentShader: svxGLSLnoise + "uniform float uT,uOp;uniform vec3 uCol,uHot;varying vec2 vUv;\nvoid main(){\nfloat along=vUv.y,around=vUv.x;\nfloat n1=noise(vec2(around*9.0,along*22.0-uT*7.0));\nfloat n2=noise(vec2(around*3.0+7.0,along*8.0-uT*3.5));\nfloat e=pow(n1*0.65+n2*0.55,1.8)*1.9;\nfloat ends=smoothstep(0.0,0.14,along)*(1.0-smoothstep(0.7,1.0,along));\nfloat a=(0.10+e*0.5)*ends*uOp;\nvec3 col=mix(uCol,uHot,clamp(e,0.0,1.0));\ngl_FragColor=vec4(col*a,a);\n}",
     transparent: true, depthWrite: false, blending: additive === false ? THREE.NormalBlending : THREE.AdditiveBlending, side: THREE.DoubleSide, fog: false,
   });
 }
@@ -23022,7 +23022,7 @@ function svxMatBolt(seed, additive, amp, sway) { // jagged animated lightning pa
   return new THREE.ShaderMaterial({
     uniforms: { uT: { value: 0 }, uOp: { value: 1 }, uSeed: { value: seed }, uAdd: { value: additive ? 1 : 0 }, uAmp: { value: amp || 0.3 }, uSway: { value: sway || 0 } },
     vertexShader: "uniform float uT,uSeed,uSway;varying vec2 vUv;\nvoid main(){\nvUv=uv;\nvec3 p=position;\nfloat v=uv.y;\np.x+=(sin(v*7.0+uSeed*37.0)+0.6*sin(v*13.0+uSeed*11.0+uT*3.0))*uSway*(0.25+0.75*v);\ngl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.0);\n}",
-    fragmentShader: "uniform float uT,uOp,uSeed,uAdd,uAmp;varying vec2 vUv;\nfloat h1(float n){return fract(sin(n*127.1+uSeed*311.7)*43758.5453);}\nvoid main(){\nfloat v=vUv.y,u=vUv.x;\nfloat seg=floor(v*6.0),f=fract(v*6.0);f=f*f*(3.0-2.0*f);\nfloat drift=floor(uT*16.0);\nfloat xc=0.5+uAmp*(mix(h1(seg+drift),h1(seg+1.0+drift),f)-0.5)+uAmp*0.4*(h1(seg*3.7+drift*1.3)-0.5);\nfloat d=abs(u-xc);\nfloat core=smoothstep(0.075,0.02,d);\nfloat glow=exp(-d*5.5)*0.55;\nfloat ends=smoothstep(0.0,0.04,v)*smoothstep(1.0,0.88,v)*smoothstep(0.0,0.14,u)*smoothstep(1.0,0.86,u);\nfloat flick=0.72+0.28*sin(uT*60.0+uSeed*47.0+v*30.0);\nfloat a=(core+glow)*ends*flick;\nif(uAdd>0.5){vec3 col=mix(vec3(0.30,0.62,1.0),vec3(1.0),core*0.55);gl_FragColor=vec4(col*a*uOp*0.85,a*uOp);}else{gl_FragColor=vec4(vec3(0.13,0.40,0.95)*(0.5+0.5*core),a*uOp*0.75);}\n}",
+    fragmentShader: "uniform float uT,uOp,uSeed,uAdd,uAmp;varying vec2 vUv;\nfloat h1(float n){return fract(sin(n*127.1+uSeed*311.7)*43758.5453);}\nvoid main(){\nfloat v=vUv.y,u=vUv.x;\nfloat seg=floor(v*9.0),f=fract(v*9.0);f=f*f*(3.0-2.0*f);\nfloat drift=floor(uT*16.0);\nfloat xc=0.5+uAmp*(mix(h1(seg+drift),h1(seg+1.0+drift),f)-0.5)+uAmp*0.4*(h1(seg*3.7+drift*1.3)-0.5);\nfloat d=abs(u-xc);\nfloat core=(1.0-smoothstep(0.02,0.075,d));\nfloat glow=exp(-d*5.5)*0.55;\nfloat ends=smoothstep(0.0,0.04,v)*(1.0-smoothstep(0.88,1.0,v))*smoothstep(0.0,0.14,u)*(1.0-smoothstep(0.86,1.0,u));\nfloat flick=0.72+0.28*sin(uT*60.0+uSeed*47.0+v*30.0);\nfloat a=(core+glow)*ends*flick;\nif(uAdd>0.5){vec3 col=mix(vec3(0.2,0.5,1.0),vec3(1.0),core*0.3);gl_FragColor=vec4(col*a*uOp*0.6,a*uOp*0.85);}else{gl_FragColor=vec4(vec3(0.13,0.40,0.95)*(0.5+0.5*core),a*uOp*0.75);}\n}",
     transparent: true, depthWrite: false, blending: additive ? THREE.AdditiveBlending : THREE.NormalBlending, side: THREE.DoubleSide, fog: false,
   });
 }
@@ -23040,7 +23040,7 @@ function svxOrient(m, axis) { // keep the strip's length (local Y) pinned to the
 }
 // Axial-billboard lightning strip from a along dir for len meters: dark base + additive glow pair,
 // re-oriented around its axis each frame so it reads from any viewpoint at any distance.
-function svxBoltStrip(a, dir, len, width, seed, life, amp, off, sway) {
+function svxBoltStrip(a, dir, len, width, seed, life, amp, off, sway, fade) {
   const geo = new THREE.PlaneGeometry(width, len, 1, 24);
   const center = a.clone().addScaledVector(dir, len / 2);
   if (off) { // sideways offset around the beam axis: end-on the strips read as spokes around the core
@@ -23055,14 +23055,15 @@ function svxBoltStrip(a, dir, len, width, seed, life, amp, off, sway) {
     m.raycast = () => {};
     m.renderOrder = layer === 1 ? 4 : 3;
     svxOrient(m, dir);
-    svxFxShader(m, m.material, life, layer === 1 ? 1.0 : 0.95, { axis: dir });
+    svxFxShader(m, m.material, life, layer === 1 ? 1.0 : 0.95, { axis: dir, fade: fade || 0 });
   }
 }
 function svxFxShader(mesh, mat, life, op0, opts) { // register a shader/billboard fx on the anim lane
   opts = opts || {};
   if (svxC.anim.length > 48) { scene.remove(mesh); return; }
   scene.add(mesh);
-  svxC.anim.push({ fx: 1, m: mesh, mat, t0: performance.now(), pt: performance.now(), life: life * 1000, op0, s: mesh.scale.x, grow: opts.grow || 0, bill: !!opts.bill, axis: opts.axis ? opts.axis.clone() : null });
+  svxC.fxT0 = performance.now();
+  svxC.anim.push({ fx: 1, m: mesh, mat, t0: svxC.fxT0, pt: svxC.fxT0, life: life * 1000 * (svxC.lifeScale || 1), op0, s: mesh.scale.x, grow: opts.grow || 0, fade: opts.fade || 0, bill: !!opts.bill, axis: opts.axis ? opts.axis.clone() : null });
   if (!svxC.raf) svxC.raf = requestAnimationFrame(svxAnimTick);
 }
 // ---- Shock Bolt: the blue-white electric sphere + rings + crackle (clip frames 7-10) ----
@@ -23072,12 +23073,12 @@ function svxShockBurst(p) {
     const ball = new THREE.Mesh(svxC.plane, svxMatPlasmaBall(0x3fb4ff, 0xd8f4ff)); // soft flowing electric orb
     ball.scale.setScalar(3.0); ball.position.copy(p); ball.raycast = () => {}; ball.renderOrder = 3;
     ball.lookAt(camera.position);
-    svxFxShader(ball, ball.material, 0.7, 1.0, { grow: 0.5, bill: true });
+    svxFxShader(ball, ball.material, 0.6, 1.0, { grow: 0.25, bill: true });
     const core = new THREE.Mesh(svxC.plane, svxMatPlasmaBall(0x7fd4ff, 0xffffff)); // small hot center
     core.scale.setScalar(0.45); core.position.copy(p); core.raycast = () => {}; core.renderOrder = 4;
     core.lookAt(camera.position);
-    svxFxShader(core, core.material, 0.35, 0.9, { grow: 0.4, bill: true });
-    const rg = svxPart(svxC.ring, xAdd("svxShkRingG", 0x4fc3ff, 0.22), svxC.v0.set(p.x, p.y + 0.06, p.z), 0.4, 3.0);
+    svxFxShader(core, core.material, 0.3, 0.65, { grow: 0.4, bill: true });
+    const rg = svxPart(svxC.ring, xAdd("svxShkRingG", 0x4fc3ff, 0.1), svxC.v0.set(p.x, p.y + 0.06, p.z), 0.3, 2.2);
     rg.rotation.x = -Math.PI / 2; // faint flat ground shockwave ring of the clip
     for (let i = 0; i < 3; i++) { // short crackle arcs curling off the burst
       const bd = new THREE.Vector3(Math.random() * 2 - 1, Math.random() * 2 - 0.6, Math.random() * 2 - 1).normalize();
@@ -23115,24 +23116,39 @@ function svxFuryBeam(o, d, hitPoint) {
     base.position.copy(o).addScaledVector(dir, 2.5 + (L - 2.5) / 2);
     base.lookAt(end);
     base.raycast = () => {}; base.renderOrder = 2;
-    svxFxShader(base, base.material, 0.6, 0.3);
+    svxFxShader(base, base.material, 1.1, 0.3, { fade: 1 });
     const cone = new THREE.Mesh(svxC.cone, svxMatPlasmaCone(0x2f9df0, 0x9fe4ff)); // additive flowing plasma glow on top
     cone.scale.set(0.92, 0.92, L - 2.5);
     cone.position.copy(o).addScaledVector(dir, 2.5 + (L - 2.5) / 2);
     cone.lookAt(end);
     cone.raycast = () => {}; cone.renderOrder = 3;
-    svxFxShader(cone, cone.material, 0.6, 0.45);
+    svxFxShader(cone, cone.material, 1.1, 0.45, { fade: 1 });
     const hot = svxPart(svxC.beam, xAdd("svxFuryHot", 0x9fdcff, 0.45), o, 0.5, 0); // hot thin core inside the cone
     hot.scale.set(0.3, 0.3, L - 4);
     hot.position.copy(o).addScaledVector(dir, 4 + (L - 4) / 2);
     hot.lookAt(end);
     const mz = svxPart(svxC.sphHi, xAdd("svxFuryMz", 0x4fb8f8, 0.2), svxC.v0.copy(o).addScaledVector(dir, 2.0), 0.3, 0);
     mz.scale.setScalar(0.12);
-    for (let i = 0; i < 5; i++) { // serpentine lightning strips running the full blast length, spread around the core
-      svxBoltStrip(svxC.v0.copy(o).addScaledVector(dir, 1.5), dir, 62, 2.2 + Math.random() * 1.4, Math.random() * 90, 0.62, 0.46, { a: i * 0.8976 + Math.random() * 0.4, r: 0.5 + Math.random() * 0.9 }, 1.15);
+    for (let i = 0; i < 6; i++) { // wide asymmetric serpentine tendrils, some tilted off-axis so they project wide end-on
+      const tdir = dir.clone();
+      tdir.x += (Math.random() - 0.5) * 0.16; tdir.y += (Math.random() - 0.5) * 0.12; tdir.z += (Math.random() - 0.5) * 0.16;
+      tdir.normalize();
+      svxBoltStrip(svxC.v0.copy(o).addScaledVector(dir, 1.5), tdir, 62, 3.5 + Math.random() * 2.5, Math.random() * 90, 1.1, 0.45, { a: i * 1.047 + Math.random() * 0.6, r: 1.5 + Math.random() * 4.5 }, 2.3, 1);
     }
+    for (let i = 0; i < 2; i++) { // near-field tendrils sweeping past the camera, as the clip's peripheral ribbons
+      const side = i === 0 ? 1 : -1;
+      const nf = new THREE.Vector3().crossVectors(dir, svxC.up).normalize();
+      const no = o.clone().addScaledVector(dir, -1.0).addScaledVector(nf, side * (1.2 + Math.random() * 0.8));
+      no.y -= 0.3 + Math.random() * 0.4;
+      svxBoltStrip(no, dir, 30, 2.5 + Math.random() * 1.5, Math.random() * 90, 1.1, 0.5, { a: Math.random() * 6.28, r: 0.4 + Math.random() * 0.8 }, 1.8, 1);
+    }
+    const pil = new THREE.Mesh(svxC.plane, svxMatBolt(Math.random() * 90, true, 0.5, 0.4)); // vertical discharge pillar at ignition (source 1.67-1.84s)
+    pil.scale.set(2.6, 16, 1); pil.position.copy(o).addScaledVector(dir, 1.2);
+    pil.raycast = () => {}; pil.renderOrder = 3;
+    pil.lookAt(camera.position);
+    svxFxShader(pil, pil.material, 0.28, 0.8, {});
     for (let i = 0; i < 2; i++) { // chaotic short arcs in the muzzle mass of the clip's first frames
-      svxBoltStrip(svxC.v0.copy(o).addScaledVector(dir, 0.8), dir, 8 + Math.random() * 4, 2.2 + Math.random() * 1.0, Math.random() * 90, 0.45, 0.5, { a: Math.random() * 6.28, r: 0.3 + Math.random() * 0.5 }, 1.6);
+      svxBoltStrip(svxC.v0.copy(o).addScaledVector(dir, 0.8), dir, 6 + Math.random() * 3, 1.6 + Math.random() * 0.8, Math.random() * 90, 0.4, 0.34, { a: Math.random() * 6.28, r: 0.3 + Math.random() * 0.5 }, 1.4, 0);
     }
     svxShards(o, dir, 10, 0x66c8ff, 3.5, 0.9, 40);
   } catch (e) { window.__svxErr = "fury: " + String(e && e.stack || e).slice(0, 300); xE(e); }
@@ -23203,7 +23219,8 @@ function svxShards(p, dir, n, col, spd, life, spread) {
       p.z + (dir ? dir.z * along : 0) + (Math.random() - 0.5) * (dir ? 2.4 : 0.4));
     const a = Math.random() * 6.2832, up = dir ? 1.1 : 0.5;
     scene.add(m);
-    svxC.anim.push({ m, t0: performance.now(), pt: performance.now(), life: life * 1000, s: 0.5 + Math.random() * 0.5,
+    svxC.fxT0 = performance.now();
+    svxC.anim.push({ m, t0: svxC.fxT0, pt: svxC.fxT0, life: life * 1000 * (svxC.lifeScale || 1), s: 0.5 + Math.random() * 0.5,
       v: new THREE.Vector3(Math.cos(a) * spd * (dir ? 0.25 : 1), up * (0.6 + Math.random()), Math.sin(a) * spd * (dir ? 0.25 : 1)),
       rx: (Math.random() - 0.5) * 2.4, ry: (Math.random() - 0.5) * 2.4 });
   }
@@ -23219,7 +23236,7 @@ function svxAnimTick() {
     if (u >= 1) { scene.remove(s.m); A.splice(i, 1); continue; }
     const dt = Math.min(0.1, (now - s.pt) / 1000); s.pt = now;
     if (s.fx) { // shader / fade lane: no velocity, no gravity
-      if (s.mat.uniforms) { s.mat.uniforms.uT.value += dt; s.mat.uniforms.uOp.value = s.op0 * (1 - u * u); }
+      if (s.mat.uniforms) { s.mat.uniforms.uT.value += dt; let f; if (s.fade === 1) { const r = u < 0.15 ? u / 0.15 : 1; const dec = u < 0.78 ? 1 : 1 - (u - 0.78) / 0.22; f = r * dec; } else if (s.fade === 2) { f = u < 0.72 ? 1 : Math.pow(1 - (u - 0.72) / 0.28, 1.5); } else { f = Math.pow(1 - u, 1.5); } s.mat.uniforms.uOp.value = s.op0 * f; }
       else s.mat.opacity = s.op0 * (1 - u);
       if (s.bill) s.m.lookAt(camera.position);
       if (s.axis) svxOrient(s.m, s.axis);
@@ -23234,6 +23251,8 @@ function svxAnimTick() {
 }
 // ---- END SOVA FX ----
 
+function svxSetLifeScale(x) { svxC.lifeScale = Math.max(0.1, +x || 1); }
+function svxFxAge() { return svxC.fxT0 ? Math.round(performance.now() - svxC.fxT0) : -1; }
 function svxAnimN() { return svxC.anim.length + (window.__svxErr ? " ERR " + window.__svxErr : ""); }
 function svxDumpEnds() {
   const out = [];
