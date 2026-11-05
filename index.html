@@ -9057,7 +9057,7 @@ function jFxTick(dt) { try { blzTick(dt); } catch (e) {}
       if (o.cb) o.m.scale.setScalar(XCBF.orb * (1 + 0.12 * Math.sin(o.t * 38))); // the flare flickers in flight
       if (o.t < ow) { A[k++] = o; continue; } jRel(o.m); o.en ? enPop(o.b, o.bl, o.bf) : jPop(o.b); }
     A.length = k; }
-  try { if (!omxGT) omxUseGameTick(); omxTick(dt); } catch (e) {} try { if (!phxGT) phxUseGameTick(); phxTick(dt); } catch (e) {} try { if (!reyGT) reyUseGameTick(); reyTick(dt); } catch (e) {} try { if (!rzxGT) rzxUseGameTick(); rzxTick(dt); } catch (e) {} try { if (!jfxGT) jfxUseGameTick(); jfxTick(dt); } catch (e) {} try { if (!yoxGT) yoxUseGameTick(); yoxTick(dt); } catch (e) {} try { if (!cyxGT) cyxUseGameTick(); cyxTick(dt); } catch (e) {} try { if (!kjxGT) kjxUseGameTick(); kjxTick(dt); } catch (e) {} try { if (!chxGT) chxUseGameTick(); chxTick(dt); jxBindTick(); } catch (e) {} try { if (!isoxGT) isoxUseGameTick(); isoxTick(dt); } catch (e) {} try { if (!neoxGT) neoxUseGameTick(); neoxTick(dt); } catch (e) {} try { if (!wayxGT) wayxUseGameTick(); wayxTick(dt); } catch (e) {} try { if (!asxGT) asxUseGameTick(); asxTick(dt); } catch (e) {} try { if (!brxGT) brxUseGameTick(); brxTick(dt); } catch (e) {} try { if (!cvxGT) cvxUseGameTick(); cvxTick(dt); } catch (e) {} try { if (!hbxGT) hbxUseGameTick(); hbxTick(dt); } catch (e) {} try { if (!hushxGT) hushxUseGameTick(); hushxTick(dt); } catch (e) {} try { if (!fdxGT) fdxUseGameTick(); fdxTick(dt); } catch (e) {} try { if (!gkxGT) gkxUseGameTick(); gkxTick(dt); } catch (e) {} try { if (!sgxGT) sgxUseGameTick(); sgxTick(dt); sgxSyncTick(); } catch (e) {} try { if (!skxGT) skxUseGameTick(); skxTick(dt); skxSyncTick(); } catch (e) {} try { if (!dlxGT) dlxUseGameTick(); dlxTick(dt); } catch (e) {} try { if (!mkxGT) mkxUseGameTick(); mkxTick(dt); mkxSyncTick(dt); } catch (e) {}
+  try { if (!omxGT) omxUseGameTick(); omxTick(dt); } catch (e) {} try { if (!phxGT) phxUseGameTick(); phxTick(dt); } catch (e) {} try { if (!reyGT) reyUseGameTick(); reyTick(dt); } catch (e) {} try { if (!rzxGT) rzxUseGameTick(); rzxTick(dt); } catch (e) {} try { if (!jfxGT) jfxUseGameTick(); jfxTick(dt); } catch (e) {} try { if (!yoxGT) yoxUseGameTick(); yoxTick(dt); } catch (e) {} try { if (!cyxGT) cyxUseGameTick(); cyxTick(dt); } catch (e) {} try { if (!kjxGT) kjxUseGameTick(); kjxTick(dt); } catch (e) {} try { if (!chxGT) chxUseGameTick(); chxTick(dt); jxBindTick(); } catch (e) {} try { if (!isoxGT) isoxUseGameTick(); isoxTick(dt); } catch (e) {} try { if (!neoxGT) neoxUseGameTick(); neoxTick(dt); } catch (e) {} try { if (!wayxGT) wayxUseGameTick(); wayxTick(dt); } catch (e) {} try { if (!asxGT) asxUseGameTick(); asxTick(dt); } catch (e) {} try { if (!brxGT) brxUseGameTick(); brxTick(dt); } catch (e) {} try { if (!cvxGT) cvxUseGameTick(); cvxTick(dt); } catch (e) {} try { if (!hbxGT) hbxUseGameTick(); hbxTick(dt); } catch (e) {} try { if (!hushxGT) hushxUseGameTick(); hushxTick(dt); } catch (e) {} try { if (!fdxGT) fdxUseGameTick(); fdxTick(dt); } catch (e) {} try { if (!gkxGT) gkxUseGameTick(); gkxTick(dt); } catch (e) {} try { if (!sgxGT) sgxUseGameTick(); sgxTick(dt); sgxSyncTick(); } catch (e) {} try { if (!skxGT) skxUseGameTick(); skxTick(dt); skxSyncTick(); } catch (e) {} try { if (!dlxGT) dlxUseGameTick(); dlxTick(dt); } catch (e) {} try { if (!mkxGT) mkxUseGameTick(); mkxTick(dt); mkxSyncTick(dt); } catch (e) {} try { if (!vtxGT) vtxUseGameTick(); vtxTick(dt); } catch (e) {} try { if (!vyxGT) vyxUseGameTick(); vyxTick(dt); } catch (e) {}
   if (J.dr) drTick(dt);
   J.arrows = J.arrows.filter((a) => {
     a.t += dt; xBoltMove(a); if (a.t < a.dur) return true; jRel(a.m);
@@ -10487,7 +10487,7 @@ function botAb(b, dt, see, tg, from) {
 }
 function jClear() {
   drEnd();
-  J.smokes.concat(J.walls, J.zones, J.orbs, J.arrows, J.fx, J.cbs).forEach((s) => jRel(s.m)); J.smokes = []; J.walls = []; J.zones = []; J.orbs = []; J.arrows = []; J.fx = []; J.cbs = []; try { omxReset(); } catch (e) {} try { phxReset(); } catch (e) {} try { reyReset(); } catch (e) {} try { rzxReset(); } catch (e) {} try { jfxReset(); } catch (e) {} try { yoxReset(); } catch (e) {} try { cyxReset(); } catch (e) {} try { kjxReset(); } catch (e) {} try { chxReset(); JXB.length = 0; } catch (e) {} try { isoxReset(); } catch (e) {} try { neoxReset(); } catch (e) {} try { wayxReset(); } catch (e) {} try { asxReset(); } catch (e) {} try { brxReset(); } catch (e) {} try { cvxReset(); } catch (e) {} try { hbxReset(); } catch (e) {} try { hushxReset(); } catch (e) {} try { fdxReset(); } catch (e) {} try { mkxReset(); J._mkH = null; dlxReset(); skxReset(); J._skT = null; gkxReset(); J._sgxw = null; J._sgxh = null; sgxReset(); } catch (e) {}
+  J.smokes.concat(J.walls, J.zones, J.orbs, J.arrows, J.fx, J.cbs).forEach((s) => jRel(s.m)); J.smokes = []; J.walls = []; J.zones = []; J.orbs = []; J.arrows = []; J.fx = []; J.cbs = []; try { omxReset(); } catch (e) {} try { phxReset(); } catch (e) {} try { reyReset(); } catch (e) {} try { rzxReset(); } catch (e) {} try { jfxReset(); } catch (e) {} try { yoxReset(); } catch (e) {} try { cyxReset(); } catch (e) {} try { kjxReset(); } catch (e) {} try { chxReset(); JXB.length = 0; } catch (e) {} try { isoxReset(); } catch (e) {} try { neoxReset(); } catch (e) {} try { wayxReset(); } catch (e) {} try { asxReset(); } catch (e) {} try { brxReset(); } catch (e) {} try { cvxReset(); } catch (e) {} try { hbxReset(); } catch (e) {} try { hushxReset(); } catch (e) {} try { fdxReset(); } catch (e) {} try { vtxReset(); vyxReset(); mkxReset(); J._mkH = null; dlxReset(); skxReset(); J._skT = null; gkxReset(); J._sgxw = null; J._sgxh = null; sgxReset(); } catch (e) {}
   if (J.ribM) scene.remove(J.ribM); J.rib = 0; J.hf = 0; XRCN.g++; XHFU.g++; jUnreveal(); $("xWh").style.opacity = 0; sgClear(); rsClear(); bcClear(); try { xKnClr(); xBTurClr(); xBSwClr(); } catch (e) {}
 }
 function resetBotRoundAbilities() { // per-round bot ability state; each kit re-inits lazily when its key is null
@@ -22492,6 +22492,239 @@ function mkxBassquake(o, d, dist) { try { const G = mkxGeos(), D = dist || 40, d
 function mkxReset() { while (mkxLive.length) mkxEnd({ fx: mkxLive[0] }); document.querySelectorAll(".mkxV").forEach((e) => e.remove()); }
 function mkxSyncTick(dt) { try { const q = J._mkH; if (!q) return; q.t -= dt; if (q.t <= 0) { J._mkH = null; return; } const o = pEye(); q.h.setTargets({ x: o.x, y: o.y - 1.4, z: o.z }, null); } catch (er) {} }
 // ---- END MIKS FX ----
+// ---- VETO FX ----
+// Veto ability visuals (work/veto_fx_runtime.js), reference-grounded in the wiki showcase clips
+// (wiki.playvalorant.com/en-us/images/Crosscut_Showcase.mp4, Chokehold_Showcase.mp4,
+// Interceptor_Showcase.mp4, Evolution_Showcase.mp4; frame sheets reviewed 2026-11-04).
+// Procedural approximation, not extracted game assets. Main entries keep game mechanics.
+// All positions are world-space. Every entry returns a handle accepted by vtxEnd (or use h.end()).
+// vtxUseGameTick() then vtxTick(dt) hands timing to the game loop (game-dt driven, never wall clock).
+// Shared geometry/programs persist; cloned per-effect materials are disposed recursively.
+var vtxU = { value: 0 }, vtxLive = [], vtxPumpOn = false, vtxGT = null, vtxGeo = null, vtxProg = {};
+function vtxNow() { try { return performance.now() / 1000; } catch (e) { return Date.now() / 1000; } }
+function vtxGeos() { if (vtxGeo) return vtxGeo; vtxGeo = {
+  sph: new THREE.SphereGeometry(1, 24, 16),
+  ring: new THREE.RingGeometry(0.82, 1, 48),
+  cone: new THREE.ConeGeometry(0.5, 1, 9, 4),
+  plane: new THREE.PlaneGeometry(1, 1, 1, 4),
+  box: new THREE.BoxGeometry(1, 1, 1) }; return vtxGeo; }
+function vtxShader(k, frag, opts) { if (vtxProg[k]) return vtxProg[k]; const m = new THREE.ShaderMaterial(Object.assign({
+  uniforms: { uT: vtxU, uP: { value: 0 }, uSeed: { value: 0 }, uA: { value: 1 } },
+  vertexShader: "uniform float uT;uniform float uP;uniform float uSeed;varying vec3 vN;varying vec3 vV;varying vec3 vP;varying vec2 vUv;void main(){vUv=uv;vec3 p=position;vP=p;vec4 mv=modelViewMatrix*vec4(p,1.0);vV=-mv.xyz;vN=normalMatrix*normal;gl_Position=projectionMatrix*mv;}",
+  fragmentShader: frag, transparent: true, depthWrite: false, side: THREE.DoubleSide }, opts || {}));
+  m.userData.vtx = k; vtxProg[k] = m; return m; }
+function vtxMat(k, shader, seed, opts) { const m = vtxShader(k, shader, opts).clone(); m.uniforms.uT = vtxU; if (seed !== undefined) m.uniforms.uSeed.value = seed; return m; }
+function vtxBasic(c, o, add) { return new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: o, depthWrite: false, blending: add ? THREE.AdditiveBlending : THREE.NormalBlending, side: THREE.DoubleSide }); }
+function vtxPush(fx) { if (vtxLive.length > 24) { const o = vtxLive.shift(); try { o.done(); } catch (e) {} } vtxLive.push(fx); if (!vtxGT && !vtxPumpOn) { vtxPumpOn = true; vtxPump.last = vtxNow(); requestAnimationFrame(vtxPump); } return fx; }
+function vtxStep(dt) { vtxU.value += dt; for (let i = vtxLive.length - 1; i >= 0; i--) { const fx = vtxLive[i]; fx.age += dt; try { fx.tick(dt, fx.age, Math.min(1, fx.age / fx.ttl)); } catch (e) { try { xE(e); } catch (e2) {} } if (fx.age >= fx.ttl) { try { fx.done(); } catch (e) {} vtxLive.splice(i, 1); } } }
+function vtxPump() { if (vtxGT) { vtxPumpOn = false; return; } const now = vtxNow(), dt = Math.min(0.1, Math.max(0.0005, now - (vtxPump.last || now))); vtxPump.last = now; vtxStep(dt); if (vtxLive.length) requestAnimationFrame(vtxPump); else vtxPumpOn = false; }
+function vtxUseGameTick() { vtxGT = true; vtxPumpOn = false; }
+function vtxTick(dt) { vtxStep(dt); }
+function vtxEnd(h) { if (!h || !h.fx) return; const i = vtxLive.indexOf(h.fx); if (i >= 0) vtxLive.splice(i, 1); try { h.fx.done(); } catch (e) {} }
+function vtxDispose(o) { o.traverse((m) => { if (m.material && m.material.dispose) m.material.dispose(); if (m.userData && m.userData.vtxOwnGeo && m.geometry && m.geometry.dispose) m.geometry.dispose(); }); }
+function vtxFx(ttl, objs, tick, done) { const fx = { age: 0, ttl, objs, tick, done: done || function () { objs.forEach((o) => { try { scene.remove(o); vtxDispose(o); } catch (e) {} }); } }; objs.forEach((o) => scene.add(o)); vtxPush(fx); return { fx, end: function () { vtxEnd(this); } }; }
+function vtxNearPlayer(p, d) { try { return player && Math.hypot(player.x - p.x, player.z - p.z) < d; } catch (e) { return false; } }
+// crosscut vortex: swirling cyan-blue liquid spiral (wiki clip)
+const vtxVORTEX = "uniform float uT;uniform float uP;uniform float uSeed;varying vec2 vUv;void main(){vec2 q=(vUv-0.5)*2.0;float r=length(q);if(r>1.0)discard;float a=atan(q.y,q.x);float sw=sin(a*3.0-r*9.0+uT*4.0);vec3 c=mix(vec3(0.02,0.15,0.45),vec3(0.30,0.80,1.0),0.5+0.5*sw);c+=vec3(0.6,0.95,1.0)*smoothstep(0.9,1.0,sw)*0.7;c=mix(c,vec3(0.75,0.97,1.0),(1.0-smoothstep(0.0,0.25,r)));float a2=(0.35+0.6*(0.5+0.5*sw))*(1.0-smoothstep(0.9,1.0,r))*(1.0-uP);gl_FragColor=vec4(c,a2);}";
+// chokehold tendril: near-black viscous strand, violet-blue sheen, viscous drip falloff
+const vtxGOO = "uniform float uT;uniform float uP;uniform float uSeed;varying vec3 vN;varying vec3 vV;varying vec2 vUv;void main(){float f=pow(1.0-abs(dot(normalize(vN),normalize(vV))),1.4);float w=sin(vUv.y*8.0+uT*2.6+uSeed*7.0)*sin(vUv.x*6.0-uT*1.9);vec3 c=mix(vec3(0.03,0.03,0.09),vec3(0.25,0.20,0.65),f)*(0.85+0.3*w);c+=vec3(0.20,0.60,1.0)*f*f*0.4;float width=0.30*(1.0-vUv.y*0.55);float edge=1.0-smoothstep(width*0.4,width,abs(vUv.x-0.5));float a=edge*smoothstep(0.0,0.15,vUv.y)*(1.0-smoothstep(0.6,1.0,vUv.y))*(0.6+0.4*w)*(1.0-uP);if(a<0.003)discard;gl_FragColor=vec4(c,a);}";
+// interceptor lens: teal-green glowing core
+const vtxLENS = "uniform float uT;uniform float uP;uniform float uSeed;varying vec3 vN;varying vec3 vV;varying vec2 vUv;void main(){float f=pow(1.0-abs(dot(normalize(vN),normalize(vV))),1.4);float p=0.7+0.3*sin(uT*4.0+uSeed);vec3 c=mix(vec3(0.55,1.0,0.75),vec3(0.05,0.55,0.35),f)*p;float a=(0.95-0.5*f)*(1.0-uP);gl_FragColor=vec4(c,a);}";
+// evolution shard: dark red crystal with glowing crimson veins
+const vtxVEIN = "uniform float uT;uniform float uP;uniform float uSeed;varying vec3 vN;varying vec3 vV;varying vec2 vUv;void main(){float f=pow(1.0-abs(dot(normalize(vN),normalize(vV))),1.2);float vein=smoothstep(0.75,0.95,abs(sin(vUv.y*14.0+vUv.x*9.0+uSeed*5.0)));float pulse=0.6+0.4*sin(uT*5.0+uSeed*3.0);vec3 c=mix(vec3(0.10,0.02,0.03),vec3(1.0,0.15,0.08),vein*pulse);c+=vec3(1.0,0.3,0.15)*f*0.35;float a=(0.9-0.3*f)*(1.0-uP);gl_FragColor=vec4(c,a);}";
+// ---- screen veils (DOM, CSS injected once) ----
+function vtxCss() { if (document.getElementById("vtxCss")) return; const s = document.createElement("style"); s.id = "vtxCss"; s.textContent =
+  ".vtxV{position:fixed;inset:0;pointer-events:none;z-index:6;background-repeat:no-repeat;opacity:0;transition:opacity .15s}" +
+  "@keyframes vtxPulse{0%,100%{opacity:.75}50%{opacity:1}}" +
+  ".vtxVTp{background:radial-gradient(80% 80% at 50% 50%,rgba(40,140,255,.55) 0%,rgba(10,60,180,.75) 55%,rgba(4,20,70,.92) 100%)}" +
+  ".vtxVEvo{background:radial-gradient(130% 130% at 50% 50%,rgba(120,0,0,0) 42%,rgba(160,10,5,.45) 78%,rgba(220,30,10,.6) 100%),repeating-conic-gradient(from 20deg at 50% 50%,rgba(255,40,15,0) 0deg 14deg,rgba(255,45,18,.28) 15deg 16deg,rgba(255,40,15,0) 17deg 33deg);animation:vtxPulse 0.9s ease-in-out infinite}";
+  (document.head || document.documentElement).appendChild(s); }
+function vtxVeil(kind, seconds) { try { vtxCss(); const d = document.createElement("div"); d.className = "vtxV vtxV" + kind; document.body.appendChild(d); d.style.opacity = "1";
+  const life = seconds || (kind === "Evo" ? 12 : 0.7);
+  return vtxFx(life, [], (dt, age) => { d.style.opacity = String(Math.min(1, Math.max(0, (life - age) / 0.3))); }, () => d.remove()); } catch (e) { return null; } }
+// ---- entries ----
+// Crosscut vortex marker: swirling blue liquid disc + orbiting wisps; handle lives until end()
+function vtxCrosscut(p) { try { const G = vtxGeos();
+  const grp = new THREE.Group(); grp.position.set(p.x, (p.y || 0), p.z);
+  const disc = new THREE.Mesh(new THREE.CircleGeometry(0.7, 36), vtxMat("vortex", vtxVORTEX, 0)); disc.userData.vtxOwnGeo = true; disc.rotation.x = -Math.PI / 2; disc.position.y = 0.06; grp.add(disc);
+  const core = new THREE.Mesh(G.sph, vtxBasic(0x9fe0ff, 0.8, true)); core.scale.setScalar(0.09); core.position.y = 0.22; grp.add(core);
+  const wisps = []; for (let i = 0; i < 3; i++) { const w = new THREE.Mesh(G.plane, vtxBasic(0x55b8ff, 0.5, true)); w.scale.set(0.16, 0.3, 1); grp.add(w); wisps.push(w); }
+  return vtxFx(1e9, [grp], (dt, age) => { wisps.forEach((w, i) => { const a = vtxU.value * 1.8 + i * Math.PI * 2 / 3; w.position.set(Math.cos(a) * 0.5, 0.3 + Math.sin(vtxU.value * 3 + i) * 0.12, Math.sin(a) * 0.5); w.rotation.y = -a + Math.PI / 2; });
+    core.material.opacity = 0.8 * (0.7 + 0.3 * Math.sin(vtxU.value * 5)); }); } catch (e) { try { window.vtxErr = String(e && e.stack || e).slice(0, 300); xE(e); } catch (e2) {} return null; } }
+// Crosscut teleport: blue liquid-energy swirl column at both ends + cyan veil for the caster
+function vtxCrosscutTP(from, to, opts) { try { const G = vtxGeos();
+  const own = opts && typeof opts.caster === "boolean" ? opts.caster : (vtxNearPlayer(from, 2.5) || vtxNearPlayer(to, 2.5));
+  if (own) vtxVeil("Tp");
+  const mk = (p, converge) => { const grp = new THREE.Group(); grp.position.set(p.x, (p.y || 0), p.z);
+    const strips = []; for (let i = 0; i < 5; i++) { const m = new THREE.Mesh(G.plane, vtxBasic(i % 2 ? 0x2f8fff : 0x7fd4ff, 0.75, true)); m.scale.set(0.35, 1.9, 1); m.userData.a = i * Math.PI * 2 / 5; grp.add(m); strips.push(m); }
+    const flash = new THREE.Mesh(G.sph, vtxBasic(0x9fe0ff, 0.7, true)); flash.scale.setScalar(0.4); flash.position.y = 0.7; grp.add(flash);
+    const ring = new THREE.Mesh(G.ring, vtxBasic(0x55b8ff, 0.6, true)); ring.rotation.x = -Math.PI / 2; ring.position.y = 0.06; grp.add(ring);
+    vtxFx(1.0, [grp], (dt, age, k) => { strips.forEach((m) => { const a = m.userData.a + age * (converge ? -7 : 7); const r = (converge ? 0.9 * (1 - k * 0.7) : 0.4 + k * 0.6); m.position.set(Math.cos(a) * r, 1.0, Math.sin(a) * r); m.rotation.y = -a + Math.PI / 2; m.material.opacity = 0.75 * (1 - k); });
+      flash.material.opacity = 0.7 * Math.max(0, 1 - age / 0.3); flash.scale.setScalar(0.4 + age * 1.2); ring.scale.setScalar(0.3 + age * 3); ring.material.opacity = 0.6 * (1 - k); }); };
+  mk(from, false); mk(to, true); return null; } catch (e) { try { window.vtxErr = String(e && e.stack || e).slice(0, 300); xE(e); } catch (e2) {} return null; } }
+// Chokehold: stealthed viscous fragment, faint dark shimmer + tiny blue glint; handle lives until end()/trigger
+function vtxChokehold(p, seconds) { try { const G = vtxGeos(), ttl = Math.max(1, seconds || 30);
+  const blob = new THREE.Mesh(G.sph, vtxMat("goo", vtxGOO, 2.2)); blob.scale.set(0.22, 0.10, 0.22); blob.position.set(p.x, (p.y || 0) + 0.05, p.z);
+  const glint = new THREE.Mesh(G.sph, vtxBasic(0x55b8ff, 0.35, true)); glint.scale.setScalar(0.03); glint.position.set(p.x, (p.y || 0) + 0.10, p.z);
+  const fx = vtxFx(ttl, [blob, glint], (dt, age) => { const die = Math.max(0, (age - (ttl - 0.3)) / 0.3);
+    blob.material.uniforms.uA.value = 0.10 + 0.05 * Math.sin(vtxU.value * 2); blob.material.uniforms.uP.value = die;
+    glint.material.opacity = (0.18 + 0.17 * Math.sin(vtxU.value * 3.4)) * (1 - die); });
+  return fx; } catch (e) { try { window.vtxErr = String(e && e.stack || e).slice(0, 300); xE(e); } catch (e2) {} return null; } }
+// Chokehold trigger: dark viscous tendrils lash up over a glossy goo pool
+function vtxChokeSnare(p, seconds) { try { const G = vtxGeos(), ttl = Math.max(1, seconds || 4.5);
+  const grp = new THREE.Group(); grp.position.set(p.x, (p.y || 0), p.z);
+  const pool = new THREE.Mesh(new THREE.CircleGeometry(1.6, 28), vtxBasic(0x0a0a1e, 0.85, false)); pool.userData.vtxOwnGeo = true; pool.rotation.x = -Math.PI / 2; pool.position.y = 0.04; grp.add(pool);
+  const tens = []; for (let i = 0; i < 7; i++) { const m = new THREE.Mesh(G.plane, vtxMat("goo", vtxGOO, i * 1.9)); const a = i * Math.PI * 2 / 7;
+    m.scale.set(0.5, 1.7, 1); m.position.set(Math.cos(a) * 0.7, 0.9, Math.sin(a) * 0.7); m.rotation.y = -a + Math.PI / 2; m.userData.a = a; grp.add(m); tens.push(m); }
+  const vein = new THREE.Mesh(G.ring, vtxBasic(0x3f8fff, 0.5, true)); vein.rotation.x = -Math.PI / 2; vein.position.y = 0.06; vein.scale.setScalar(1.6); grp.add(vein);
+  return vtxFx(ttl, [grp], (dt, age) => { const g = Math.min(1, age / 0.3), die = Math.max(0, (age - (ttl - 0.5)) / 0.5);
+    pool.scale.setScalar(Math.max(0.05, g) * (1 - die * 0.5)); pool.material.opacity = 0.85 * (1 - die);
+    tens.forEach((m) => { const r = 0.7 * (1 - g * 0.4); m.position.x = Math.cos(m.userData.a) * r; m.position.z = Math.sin(m.userData.a) * r; m.material.uniforms.uP.value = die; m.scale.y = 1.7 * g * (1 - die); });
+    vein.material.opacity = 0.5 * (0.5 + 0.5 * Math.sin(vtxU.value * 6)) * (1 - die); }); } catch (e) { try { window.vtxErr = String(e && e.stack || e).slice(0, 300); xE(e); } catch (e2) {} return null; } }
+// Interceptor: angular device with a teal-green lens; scan ring pulses over its radius while active
+function vtxInterceptor(p, r, seconds) { try { const G = vtxGeos(), ttl = Math.max(1, seconds || 30), R = r || 10;
+  const body = new THREE.Mesh(G.box, vtxBasic(0x141a22, 0.95, false)); body.scale.set(0.18, 0.14, 0.18); body.position.set(p.x, (p.y || 0) + 0.09, p.z); body.rotation.y = 0.7;
+  const lens = new THREE.Mesh(G.sph, vtxMat("lens", vtxLENS, 0)); lens.scale.setScalar(0.055); lens.position.set(p.x, (p.y || 0) + 0.19, p.z);
+  const scan = new THREE.Mesh(G.ring, vtxBasic(0x4ae8a0, 0.0, true)); scan.rotation.x = -Math.PI / 2; scan.position.set(p.x, (p.y || 0) + 0.06, p.z);
+  const fx = vtxFx(ttl, [body, lens, scan], (dt, age) => { const ph = age % 1.6; const die = Math.max(0, (age - (ttl - 0.4)) / 0.4);
+    scan.scale.setScalar(Math.max(0.2, ph / 1.6 * R)); scan.material.opacity = Math.max(0, 0.28 * (1 - ph / 1.6)) * (1 - die);
+    lens.material.uniforms.uP.value = die; body.material.opacity = 0.95 * (1 - die); });
+  return fx; } catch (e) { try { window.vtxErr = String(e && e.stack || e).slice(0, 300); xE(e); } catch (e2) {} return null; } }
+// Interceptor zap: bright green beam from the device to the destroyed utility + spark burst
+function vtxInterceptorZap(from, to) { try { const G = vtxGeos();
+  const d = new THREE.Vector3(to.x - from.x, (to.y || 0.5) - (from.y || 0.2), to.z - from.z), L = d.length();
+  const beam = new THREE.Mesh(G.plane, vtxBasic(0x6affb0, 0.9, true)); beam.scale.set(L, 0.06, 1);
+  beam.position.set((from.x + to.x) / 2, ((from.y || 0.2) + (to.y || 0.5)) / 2, (from.z + to.z) / 2);
+  beam.lookAt(to.x, to.y || 0.5, to.z); beam.rotateY(Math.PI / 2);
+  const spark = new THREE.Mesh(G.sph, vtxBasic(0xaaffd0, 0.9, true)); spark.scale.setScalar(0.15); spark.position.set(to.x, to.y || 0.5, to.z);
+  const shards = []; for (let i = 0; i < 5; i++) { const s = new THREE.Mesh(G.plane, vtxBasic(0x4ae8a0, 0.8, true)); s.scale.set(0.05, 0.3, 1); s.position.copy(spark.position); s.userData.v = new THREE.Vector3(Math.sin(i * 2.4) * 3, 2.5 + (i % 3), Math.cos(i * 2.4) * 3); scene.add(s); shards.push(s); }
+  const fx = vtxFx(0.4, [beam, spark], (dt, age, k) => { beam.material.opacity = 0.9 * (1 - k); spark.scale.setScalar(0.15 + age * 1.4); spark.material.opacity = 0.9 * (1 - k);
+    shards.forEach((s) => { s.position.addScaledVector(s.userData.v, dt); s.userData.v.y -= 14 * dt; s.material.opacity = 0.8 * (1 - k); s.rotation.z += dt * 9; }); },
+  function () { [beam, spark].concat(shards).forEach((o) => { try { scene.remove(o); vtxDispose(o); } catch (e) {} }); });
+  fx.fx.objs = fx.fx.objs.concat(shards); return fx; } catch (e) { try { window.vtxErr = String(e && e.stack || e).slice(0, 300); xE(e); } catch (e2) {} return null; } }
+// Evolution: red vein-crack screen edge veil for the duration + crimson crystal shard burst at cast
+function vtxEvolution(p, seconds) { try { const G = vtxGeos(), ttl = Math.max(1, seconds || 12);
+  const veil = vtxVeil("Evo", ttl);
+  const grp = new THREE.Group(); grp.position.set(p.x, (p.y || 0), p.z);
+  const shards = []; for (let i = 0; i < 9; i++) { const m = new THREE.Mesh(G.cone, vtxMat("vein", vtxVEIN, i * 1.4)); const a = i * Math.PI * 2 / 9;
+    const h = 0.7 + (i % 3) * 0.5; m.scale.set(0.14, h, 0.14); m.position.set(Math.cos(a) * 0.9, h * 0.3, Math.sin(a) * 0.9);
+    m.rotation.set(Math.cos(a) * 0.7, 0, -Math.sin(a) * 0.7); m.userData.h = h; m.userData.d = i * 0.03; grp.add(m); shards.push(m); }
+  vtxFx(1.1, [grp], (dt, age, k) => { shards.forEach((m) => { const g = Math.min(1, Math.max(0, (age - m.userData.d) / 0.2)); const up = 1 - Math.pow(1 - g, 3); m.scale.set(0.14 * up, m.userData.h * up * (1 - k * 0.6), 0.14 * up); m.material.uniforms.uP.value = k * k; }); });
+  return veil; } catch (e) { try { window.vtxErr = String(e && e.stack || e).slice(0, 300); xE(e); } catch (e2) {} return null; } }
+function vtxReset() { while (vtxLive.length) vtxEnd({ fx: vtxLive[0] }); document.querySelectorAll(".vtxV").forEach((e) => e.remove()); }
+// ---- END VETO FX ----
+// ---- VYSE FX ----
+// Vyse ability visuals (work/vyse_fx_runtime.js), reference-grounded in the wiki showcase clips
+// (wiki.playvalorant.com/en-us/images/Arc_Rose_Showcase.mp4, Razorvine_Showcase.mp4,
+// Shear_Showcase.mp4, Steel_Garden_Showcase.mp4; frame sheets reviewed 2026-11-04).
+// Procedural approximation, not extracted game assets. Main entries keep game mechanics.
+// All positions are world-space. Every entry returns a handle accepted by vyxEnd (or use h.end()).
+// vyxUseGameTick() then vyxTick(dt) hands timing to the game loop (game-dt driven, never wall clock).
+// Shared geometry/programs persist; cloned per-effect materials are disposed recursively.
+var vyxU = { value: 0 }, vyxLive = [], vyxPumpOn = false, vyxGT = null, vyxGeo = null, vyxProg = {};
+function vyxNow() { try { return performance.now() / 1000; } catch (e) { return Date.now() / 1000; } }
+function vyxGeos() { if (vyxGeo) return vyxGeo; vyxGeo = {
+  sph: new THREE.SphereGeometry(1, 24, 16),
+  ring: new THREE.RingGeometry(0.82, 1, 48),
+  cone: new THREE.ConeGeometry(0.5, 1, 9, 4),
+  plane: new THREE.PlaneGeometry(1, 1, 1, 4) }; return vyxGeo; }
+function vyxShader(k, frag, opts) { if (vyxProg[k]) return vyxProg[k]; const m = new THREE.ShaderMaterial(Object.assign({
+  uniforms: { uT: vyxU, uP: { value: 0 }, uSeed: { value: 0 }, uA: { value: 1 } },
+  vertexShader: "uniform float uT;uniform float uP;uniform float uSeed;varying vec3 vN;varying vec3 vV;varying vec3 vP;varying vec2 vUv;void main(){vUv=uv;vec3 p=position;vP=p;vec4 mv=modelViewMatrix*vec4(p,1.0);vV=-mv.xyz;vN=normalMatrix*normal;gl_Position=projectionMatrix*mv;}",
+  fragmentShader: frag, transparent: true, depthWrite: false, side: THREE.DoubleSide }, opts || {}));
+  m.userData.vyx = k; vyxProg[k] = m; return m; }
+function vyxMat(k, shader, seed, opts) { const m = vyxShader(k, shader, opts).clone(); m.uniforms.uT = vyxU; if (seed !== undefined) m.uniforms.uSeed.value = seed; return m; }
+function vyxBasic(c, o, add) { return new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: o, depthWrite: false, blending: add ? THREE.AdditiveBlending : THREE.NormalBlending, side: THREE.DoubleSide }); }
+function vyxPush(fx) { if (vyxLive.length > 24) { const o = vyxLive.shift(); try { o.done(); } catch (e) {} } vyxLive.push(fx); if (!vyxGT && !vyxPumpOn) { vyxPumpOn = true; vyxPump.last = vyxNow(); requestAnimationFrame(vyxPump); } return fx; }
+function vyxStep(dt) { vyxU.value += dt; for (let i = vyxLive.length - 1; i >= 0; i--) { const fx = vyxLive[i]; fx.age += dt; try { fx.tick(dt, fx.age, Math.min(1, fx.age / fx.ttl)); } catch (e) { try { xE(e); } catch (e2) {} } if (fx.age >= fx.ttl) { try { fx.done(); } catch (e) {} vyxLive.splice(i, 1); } } }
+function vyxPump() { if (vyxGT) { vyxPumpOn = false; return; } const now = vyxNow(), dt = Math.min(0.1, Math.max(0.0005, now - (vyxPump.last || now))); vyxPump.last = now; vyxStep(dt); if (vyxLive.length) requestAnimationFrame(vyxPump); else vyxPumpOn = false; }
+function vyxUseGameTick() { vyxGT = true; vyxPumpOn = false; }
+function vyxTick(dt) { vyxStep(dt); }
+function vyxEnd(h) { if (!h || !h.fx) return; const i = vyxLive.indexOf(h.fx); if (i >= 0) vyxLive.splice(i, 1); try { h.fx.done(); } catch (e) {} }
+function vyxDispose(o) { o.traverse((m) => { if (m.material && m.material.dispose) m.material.dispose(); if (m.userData && m.userData.vyxOwnGeo && m.geometry && m.geometry.dispose) m.geometry.dispose(); }); }
+function vyxFx(ttl, objs, tick, done) { const fx = { age: 0, ttl, objs, tick, done: done || function () { objs.forEach((o) => { try { scene.remove(o); vyxDispose(o); } catch (e) {} }); } }; objs.forEach((o) => scene.add(o)); vyxPush(fx); return { fx, end: function () { vyxEnd(this); } }; }
+// metal thorn: dark violet body, magenta fresnel edge, faint gold glint
+const vyxTHORN = "uniform float uT;uniform float uP;uniform float uSeed;varying vec3 vN;varying vec3 vV;varying vec2 vUv;void main(){float f=pow(1.0-abs(dot(normalize(vN),normalize(vV))),1.5);vec3 c=mix(vec3(0.13,0.07,0.20),vec3(0.65,0.25,0.75),f);c+=vec3(1.0,0.65,0.25)*smoothstep(0.86,1.0,sin(vUv.y*24.0-uT*2.0+uSeed*8.0))*0.5;float a=(0.95-0.35*f)*(1.0-uP);gl_FragColor=vec4(c,a);}";
+// razorvine ground: deep violet bed with glowing orange-gold crack veins
+const vyxVINE = "uniform float uT;uniform float uP;uniform float uSeed;varying vec2 vUv;\nfloat h2(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}\nvoid main(){vec2 q=(vUv-0.5)*2.0;float r=length(q);if(r>1.0)discard;vec2 g=q*7.0;vec2 i=floor(g),f=fract(g);float d=8.0;for(int y=-1;y<=1;y++)for(int x=-1;x<=1;x++){vec2 o=vec2(float(x),float(y));d=min(d,length(o+vec2(h2(i+o),h2(i+o+7.0))-f));}float vein=(1.0-smoothstep(0.06,0.30,d));float pulse=0.7+0.3*sin(uT*2.2+uSeed);vec3 c=mix(vec3(0.10,0.04,0.16),vec3(1.0,0.55,0.15),vein*pulse);c=mix(c,vec3(0.45,0.15,0.55),smoothstep(0.75,1.0,r)*0.5);float a=(0.75+0.25*vein)*(1.0-smoothstep(0.94,1.0,r))*(1.0-uP);gl_FragColor=vec4(c,a);}";
+// liquid-metal wall: deep indigo with flowing violet-blue waves and bright sheen streaks
+const vyxMETAL = "uniform float uT;uniform float uP;uniform float uSeed;varying vec3 vN;varying vec3 vV;varying vec3 vP;varying vec2 vUv;void main(){float f=pow(1.0-abs(dot(normalize(vN),normalize(vV))),1.3);float w1=sin(vUv.x*9.0+vUv.y*5.0-uT*2.6)*sin(vUv.x*4.0-vUv.y*7.0+uT*1.7);float w2=sin(vUv.y*16.0+uT*3.4+w1*3.0);vec3 c=mix(vec3(0.07,0.05,0.22),vec3(0.38,0.22,0.75),0.5+0.5*w1);c+=vec3(0.55,0.45,0.95)*smoothstep(0.55,0.95,w2)*0.6;c+=vec3(0.85,0.80,1.0)*f*0.55;c+=vec3(0.9,0.6,0.9)*smoothstep(0.92,1.0,vUv.y)*0.4;float a=(0.92)*(1.0-uP);gl_FragColor=vec4(c,a);}";
+// arc rose petal: pale silver with magenta glowing rim
+const vyxPETAL = "uniform float uT;uniform float uP;uniform float uSeed;varying vec3 vN;varying vec3 vV;varying vec2 vUv;void main(){float f=pow(1.0-abs(dot(normalize(vN),normalize(vV))),1.2);float glow=0.6+0.4*sin(uT*2.8+uSeed);vec3 c=mix(vec3(0.78,0.75,0.85),vec3(0.95,0.35,0.80),smoothstep(0.55,1.0,vUv.y)*glow);c+=vec3(0.9,0.4,0.8)*f*0.5;float a=(0.95)*(1.0-uP);gl_FragColor=vec4(c,a);}";
+// steel garden vine: silver ribbon with a magenta pulse running along its length
+const vyxVINE2 = "uniform float uT;uniform float uP;uniform float uSeed;varying vec2 vUv;void main(){float across=smoothstep(0.0,0.3,vUv.y)*(1.0-smoothstep(0.7,1.0,vUv.y));float trav=pow(0.5+0.5*sin(vUv.x*8.0-uT*4.5+uSeed),3.0);vec3 c=mix(vec3(0.62,0.60,0.70),vec3(0.95,0.35,0.85),trav);float a=across*(0.55+0.4*trav)*(1.0-uP);gl_FragColor=vec4(c,a);}";
+// ---- entries ----
+// Razorvine: dark thorn bramble over a glowing orange-vein bed (wiki clip)
+function vyxRazorvine(p, r, seconds) { try { const G = vyxGeos(), R = r || 6, ttl = Math.max(1, seconds || 30);
+  const bed = new THREE.Mesh(new THREE.CircleGeometry(R, 40), vyxMat("vine", vyxVINE, 0)); bed.userData.vyxOwnGeo = true;
+  bed.rotation.x = -Math.PI / 2; bed.position.set(p.x, (p.y || 0) + 0.06, p.z); bed.scale.setScalar(0.05);
+  const grp = new THREE.Group(); grp.position.set(p.x, (p.y || 0), p.z);
+  const thorns = [];
+  for (let i = 0; i < 22; i++) { const a = i * 2.399963, rr = R * (0.25 + 0.75 * ((i * 0.37) % 1));
+    const t = new THREE.Mesh(G.cone, vyxMat("thorn", vyxTHORN, i * 1.3)); const h = 0.5 + ((i * 0.61) % 1) * 0.8;
+    t.position.set(Math.cos(a) * rr, h * 0.32, Math.sin(a) * rr); t.scale.set(0.16, h, 0.16);
+    t.rotation.set(Math.cos(a) * 0.5, 0, -Math.sin(a) * 0.5); t.userData.h = h; t.userData.d = i * 0.016; grp.add(t); thorns.push(t); }
+  return vyxFx(ttl, [bed, grp], (dt, age) => { const g = Math.min(1, age / 0.4), out = 1 - Math.pow(1 - g, 3);
+    const die = Math.max(0, (age - (ttl - 0.5)) / 0.5), keep = Math.max(0, 1 - die);
+    bed.scale.setScalar(Math.max(0.05, out) * Math.max(0.05, keep)); bed.material.uniforms.uP.value = die;
+    thorns.forEach((t) => { const tg = Math.min(1, Math.max(0, (age - t.userData.d) / 0.3)); t.scale.set(0.16 * tg * keep, t.userData.h * tg * keep, 0.16 * tg * keep); t.material.uniforms.uP.value = die; }); }); } catch (e) { try { window.vyxErr = String(e && e.stack || e).slice(0, 300); xE(e); } catch (e2) {} return null; } }
+// Shear: jagged-top liquid-metal wall rising out of the ground (wiki clip)
+function vyxShear(p, yaw, len, seconds) { try { const L = len || 5, H = 2.2, ttl = Math.max(1, seconds || 8);
+  const pos = [], uv = [], ind = [], N = 22;
+  for (let i = 0; i <= N; i++) { const u = i / N, x = (u - 0.5) * L, top = H * (0.82 + 0.18 * Math.sin(i * 2.7) * Math.sin(i * 1.3 + 2));
+    pos.push(x, 0, 0, x, top, 0); uv.push(u, 0, u, 1);
+    if (i < N) { const k = i * 2; ind.push(k, k + 1, k + 2, k + 1, k + 3, k + 2); } }
+  const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute("uv", new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(ind); g.computeVertexNormals();
+  const wall = new THREE.Mesh(g, vyxMat("metal", vyxMETAL, 0)); wall.userData.vyxOwnGeo = true;
+  wall.position.set(p.x, (p.y || 0), p.z); wall.rotation.y = yaw || 0; wall.scale.set(1, 0.02, 1);
+  return vyxFx(ttl, [wall], (dt, age) => { const g2 = Math.min(1, age / 0.45), die = Math.max(0, (age - (ttl - 0.4)) / 0.4);
+    wall.scale.y = Math.max(0.02, (1 - Math.pow(1 - g2, 3)) * (1 - die * die)); wall.material.uniforms.uP.value = die; }); } catch (e) { try { window.vyxErr = String(e && e.stack || e).slice(0, 300); xE(e); } catch (e2) {} return null; } }
+// Arc Rose: small silver metal rose with magenta glow tips, pulsing (wiki clip)
+function vyxArcRose(p, seconds) { try { const G = vyxGeos(), ttl = Math.max(1, seconds || 30);
+  const grp = new THREE.Group(); grp.position.set(p.x, (p.y || 0) + 0.26, p.z);
+  const core = new THREE.Mesh(G.sph, vyxBasic(0xd8d4e8, 0.95, false)); core.scale.setScalar(0.13); grp.add(core);
+  const petals = []; for (let i = 0; i < 6; i++) { const m = new THREE.Mesh(G.plane, vyxMat("petal", vyxPETAL, i)); m.scale.set(0.19, 0.34, 1);
+    const a = i * Math.PI / 3; m.position.set(Math.cos(a) * 0.15, 0.1, Math.sin(a) * 0.15); m.rotation.y = -a + Math.PI / 2; m.rotation.x = -0.5; grp.add(m); petals.push(m); }
+  const halo = new THREE.Mesh(G.sph, vyxBasic(0xe84ab0, 0.16, true)); halo.scale.setScalar(0.34); grp.add(halo);
+  const fx = vyxFx(ttl, [grp], (dt, age) => { const s = Math.min(1, age / 0.3); grp.scale.setScalar(Math.max(0.05, s));
+    const die = Math.max(0, (age - (ttl - 0.35)) / 0.35); grp.rotation.y += dt * 0.8; grp.position.y = (p.y || 0) + 0.26 + Math.sin(vyxU.value * 2.2) * 0.04;
+    halo.material.opacity = 0.14 * (0.6 + 0.4 * Math.sin(vyxU.value * 2.8)) * (1 - die); petals.forEach((m) => { m.material.uniforms.uP.value = die; }); core.material.opacity = 0.95 * (1 - die); });
+  return fx; } catch (e) { try { window.vyxErr = String(e && e.stack || e).slice(0, 300); xE(e); } catch (e2) {} return null; } }
+// Arc Rose detonation: white-gold core with radiating pink rays on a violet glow (wiki clip)
+function vyxArcRoseFlash(p) { try { const G = vyxGeos(), y = (p.y || 0) + 1.1;
+  const core = new THREE.Mesh(G.sph, vyxBasic(0xfff2d8, 1, true)); core.scale.setScalar(0.2); core.position.set(p.x, y, p.z);
+  const glow = new THREE.Mesh(G.sph, vyxBasic(0x8a5ae8, 0.4, true)); glow.scale.setScalar(0.6); glow.position.copy(core.position);
+  const grp = new THREE.Group(); grp.position.copy(core.position);
+  const rays = []; for (let i = 0; i < 14; i++) { const m = new THREE.Mesh(G.plane, vyxBasic(i % 2 ? 0xf04ac8 : 0xffd86a, 0.85, true));
+    m.scale.set(0.12 + (i % 3) * 0.05, 2.4, 1); const a = i * Math.PI * 2 / 14; m.rotation.z = a; m.userData.a = a; grp.add(m); rays.push(m); }
+  const ring = new THREE.Mesh(G.ring, vyxBasic(0xffffff, 0.7, true)); ring.position.copy(core.position);
+  return vyxFx(0.75, [core, glow, grp, ring], (dt, age, k) => { core.scale.setScalar(0.2 + age * 1.6); core.material.opacity = 1 - k;
+    glow.scale.setScalar(0.6 + age * 4.5); glow.material.opacity = 0.4 * (1 - k);
+    grp.scale.setScalar(1 + age * 3.2); rays.forEach((m) => { m.material.opacity = 0.85 * (1 - k * k); });
+    ring.scale.setScalar(0.4 + age * 8); ring.material.opacity = 0.7 * (1 - k); ring.lookAt(camera ? camera.position : core.position); }); } catch (e) { try { window.vyxErr = String(e && e.stack || e).slice(0, 300); xE(e); } catch (e2) {} return null; } }
+// Steel Garden: branching glowing thorn vines race outward, big silver thorns erupt behind them (wiki clip)
+function vyxSteelGarden(p, r, seconds) { try { const G = vyxGeos(), R = r || 20, ttl = Math.max(1.5, seconds || 8);
+  const grp = new THREE.Group(); grp.position.set(p.x, (p.y || 0) + 0.05, p.z);
+  const vines = [], thorns = [];
+  for (let i = 0; i < 9; i++) { const a0 = i * Math.PI * 2 / 9 + (i % 3) * 0.2, pts = [], N2 = 12;
+    for (let j = 0; j <= N2; j++) { const u = j / N2, rr = u * R, a = a0 + Math.sin(u * 6 + i) * 0.35; pts.push(new THREE.Vector3(Math.cos(a) * rr, 0.02, Math.sin(a) * rr)); }
+    const geo = new THREE.BufferGeometry().setFromPoints(pts);
+    const pos = [], uv = [], ind = [];
+    for (let j = 0; j <= N2; j++) { const u = j / N2, pt = pts[j], tng = j < N2 ? pts[j + 1].clone().sub(pt) : pt.clone().sub(pts[j - 1]); tng.normalize();
+      const px = -tng.z, pz = tng.x, w = 0.35 * (1 - u * 0.5);
+      pos.push(pt.x - px * w, 0, pt.z - pz * w, pt.x + px * w, 0, pt.z + pz * w); uv.push(u, 0, u, 1);
+      if (j < N2) { const k = j * 2; ind.push(k, k + 2, k + 1, k + 1, k + 2, k + 3); } }
+    geo.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3)); geo.setAttribute("uv", new THREE.Float32BufferAttribute(uv, 2)); geo.setIndex(ind); geo.computeVertexNormals();
+    const m = new THREE.Mesh(geo, vyxMat("vine2", vyxVINE2, i * 1.9)); m.userData.vyxOwnGeo = true; m.userData.d = i * 0.09; grp.add(m); vines.push(m);
+    for (let j = 0; j < 2; j++) { const u = 0.45 + j * 0.4, pt = pts[Math.round(u * N2)];
+      const t = new THREE.Mesh(G.cone, vyxMat("thorn2", vyxTHORN, i * 3 + j)); const h = 1.6 + ((i + j) % 3) * 0.7;
+      t.position.set(pt.x, h * 0.35, pt.z); t.rotation.set(Math.sin(i * 2 + j) * 0.55, 0, Math.cos(i + j * 2) * 0.55); t.scale.set(0.3, h, 0.3);
+      t.userData.h = h; t.userData.d = i * 0.09 + j * 0.12 + 0.15; grp.add(t); thorns.push(t); } }
+  return vyxFx(ttl, [grp], (dt, age) => { const die = Math.max(0, (age - (ttl - 0.7)) / 0.7), keep = Math.max(0, 1 - die);
+    vines.forEach((m) => { const g = Math.min(1, Math.max(0, (age - m.userData.d) / 0.5)); m.scale.set(Math.max(0.03, g) * keep, 1, Math.max(0.03, g) * keep); m.material.uniforms.uP.value = die; });
+    thorns.forEach((t) => { const g = Math.min(1, Math.max(0, (age - t.userData.d) / 0.25)); const up = 1 - Math.pow(1 - g, 3); t.scale.set(0.3 * up * keep, t.userData.h * up * keep, 0.3 * up * keep); t.material.uniforms.uP.value = die; }); }); } catch (e) { try { window.vyxErr = String(e && e.stack || e).slice(0, 300); xE(e); } catch (e2) {} return null; } }
+function vyxReset() { while (vyxLive.length) vyxEnd({ fx: vyxLive[0] }); }
+// ---- END VYSE FX ----
 // jx binder: a module handle follows its legacy mesh; when the mesh leaves the scene the handle ends (generic cleanup for devices/fields)
 var JXB = [];
 function jxBind(m, h, hide) { try { if (m && h) { JXB.push({ m, h }); if (hide) m.visible = false; } } catch (e) {} return h; }
@@ -29342,8 +29575,8 @@ function a18Key(code) {
   if (a === "Astra" || a === "Tejo") { const r = a18Tac(k); if (r === true) return true; if (r === "no") return no(); }
   const chargeOk = k === "x" ? J.ult >= K().u : (a === "Astra" ? true : J[k] > 0); // Astra: the placed-star check inside the case is the gate, not the pool
   if (a === "Viper" && (k === "q" && A.cloud || k === "e" && A.screen || k === "x" && A.pit)) { J.cd[k] = 0.6; if (k === "q") A.cloudOn = !A.cloudOn; else if (k === "e") A.toxOn = !A.toxOn; else { A.pit = 0; if (A.pitM) { jRel(A.pitM); A.pitM = 0; } } return true; }
-  if (a === "Vyse" && k === "e" && A.rose) { const p = A.rose; A.rose = 0; a18Blind(p, C.rose.blind); SFX.flash(); return true; }
-  if (a === "Veto" && k === "c" && A.xcut) { P.x = A.xcut.x; P.z = A.xcut.z; P.y = A.xcut.y; A.xcut = 0; SFX.ab("dash"); return true; }
+  if (a === "Vyse" && k === "e" && A.rose) { const p = A.rose; A.rose = 0; try { vyxArcRoseFlash({ x: p.x, y: p.y || 0, z: p.z }); if (A.roseH) A.roseH.end(); A.roseH = null; } catch (er) {} a18Blind(p, C.rose.blind); SFX.flash(); return true; }
+  if (a === "Veto" && k === "c" && A.xcut) { try { vtxCrosscutTP({ x: P.x, y: P.y || 0, z: P.z }, { x: A.xcut.x, y: A.xcut.y || 0, z: A.xcut.z }); if (A.xcutH) A.xcutH.end(); A.xcutH = null; } catch (er) {} P.x = A.xcut.x; P.z = A.xcut.z; P.y = A.xcut.y; A.xcut = 0; SFX.ab("dash"); return true; }
   if (a === "Waylay" && k === "e" && A.mark) { P.x = A.mark.x; P.y = A.mark.y; P.z = A.mark.z; A.mark = 0; J.e = 0; SFX.ab("dash"); return true; }
   if (a === "Yoru" && k === "e" && A.gate && !(A.gateTp > 0)) { A.gateTp = 1.2; say("Gatecrash", 700); return true; } /* wiki: 1.2 s total (0.5 s windup + 0.7 s arrival); the move lands in a18Tick */
   if (a === "Neon" && k === "e" && A.gear > 0) { if (A.slides > 0) { A.slides--; A.gear = 0; J.dash = jDash(); SFX.ab("dash"); /* the slide ends High Gear (wiki); firing during it is allowed (v8.11) */ } return true; }
@@ -29448,16 +29681,16 @@ function a18Key(code) {
       else { const t = a18BotsIn(new THREE.Vector3(P.x, 0, P.z), C.annih.range)[0]; if (t) { t.teth = C.annih.detain; let jx = null; try { dlxAnnihilation({ x: P.x, y: (P.y || 0) + 1.4, z: P.z }, { x: t.g.position.x - P.x, y: 0, z: t.g.position.z - P.z }, C.annih.range); jx = dlxAnniCocoon({ x: t.g.position.x, y: t.g.position.y || 0, z: t.g.position.z }, C.annih.detain); } catch (er) {} a18Fx({ kind: "anni", tg: t, jx, jxEnd: () => {}, t: C.annih.detain }); } }
       return true; }
     case "Veto": { spend();
-      if (k === "c") { A.xcut = p; a18Ring(p, 1, 0xd04a8a, 0.6); }
-      else if (k === "q") a18Fx({ kind: "choke", p, t: C.choke.life, arm: 1 });
-      else if (k === "e") { const m = a18Ring(p, C.cept.r, 0xd04a8a, 0.3); a18Fx({ kind: "ceptor", m, p, t: C.cept.life }); }
-      else { A.evo = C.evo.life; A.stim = C.evo.life; say("Evolution", 900); }
+      if (k === "c") { A.xcut = p; const rm = a18Ring(p, 1, 0xd04a8a, 0.6); try { A.xcutH = jxBind(rm, vtxCrosscut({ x: p.x, y: p.y || 0, z: p.z }), 1); } catch (er) {} }
+      else if (k === "q") { let jx = null; try { jx = vtxChokehold({ x: p.x, y: p.y || 0, z: p.z }, C.choke.life); } catch (er) {} a18Fx({ kind: "choke", p, jx, jxEnd: (fe) => { try { if (fe.done) vtxChokeSnare({ x: fe.p.x, y: fe.p.y || 0, z: fe.p.z }, 2.5); } catch (er) {} }, t: C.choke.life, arm: 1 }); }
+      else if (k === "e") { const m = a18Ring(p, C.cept.r, 0xd04a8a, 0.3); try { jxBind(m, vtxInterceptor({ x: p.x, y: p.y || 0, z: p.z }, C.cept.r, C.cept.life), 1); } catch (er) {} a18Fx({ kind: "ceptor", m, p, t: C.cept.life }); }
+      else { A.evo = C.evo.life; A.stim = C.evo.life; say("Evolution", 900); try { vtxEvolution({ x: P.x, y: P.y || 0, z: P.z }, C.evo.life); } catch (er) {} }
       return true; }
     case "Vyse": { spend();
-      if (k === "c") a18Zone(p, C.vine.life, C.vine.r, C.vine.dps, "Razorvine", 0x8a2af0);
-      else if (k === "q") a18Fx({ kind: "shear", p, t: C.shear.life, arm: 1 });
-      else if (k === "e") { A.rose = p; a18Ring(p, 1, 0xd04a8a, 0.6); }
-      else { const m = a18Ring(new THREE.Vector3(P.x, 0, P.z), C.garden.r, 0xd04a8a, 0.5); a18Fx({ kind: "garden", m, p: new THREE.Vector3(P.x, 0, P.z), t: 1.2 }); }
+      if (k === "c") { const zm = a18Zone(p, C.vine.life, C.vine.r, C.vine.dps, "Razorvine", 0x8a2af0); try { jxBind(zm, vyxRazorvine({ x: p.x, y: p.y || 0, z: p.z }, C.vine.r, C.vine.life), 1); } catch (er) {} }
+      else if (k === "q") a18Fx({ kind: "shear", p, jyw: Math.atan2(-d.x, -d.z), t: C.shear.life, arm: 1 });
+      else if (k === "e") { A.rose = p; const rm = a18Ring(p, 1, 0xd04a8a, 0.6); try { A.roseH = jxBind(rm, vyxArcRose({ x: p.x, y: p.y || 0, z: p.z }, C.rose.life), 1); } catch (er) {} }
+      else { const m = a18Ring(new THREE.Vector3(P.x, 0, P.z), C.garden.r, 0xd04a8a, 0.5); try { jxBind(m, vyxSteelGarden({ x: P.x, y: P.y || 0, z: P.z }, C.garden.r, 4), 1); } catch (er) {} a18Fx({ kind: "garden", m, p: new THREE.Vector3(P.x, 0, P.z), t: 1.2 }); }
       return true; }
   }
   return true;
@@ -29557,7 +29790,7 @@ function a18Tick(dt) {
       case "seeker": { const t = e.tg; if (!t || !t.alive) { keep = false; break; } const d = [t.g.position.x - e.p.x, t.g.position.z - e.p.z], l = Math.hypot(d[0], d[1]); if (l < 0.8 || e.t <= 0) { if (e.near) t.blind = Math.max(t.blind || 0, e.near); if (e.conc) t.blind = Math.max(t.blind || 0, e.conc); keep = false; } else { e.p.x += d[0] / l * e.sp * dt; e.p.z += d[1] / l * e.sp * dt; } break; }
       case "sensor": if (e.arm > 0) e.arm -= dt; else { const t = a18BotsIn(e.p, C.sensor.r)[0]; if (t) { for (const b of a18BotsIn(e.p, C.sensor.r)) b.blind = Math.max(b.blind || 0, C.sensor.concuss); SFX.ab("cbPop", e.p); keep = false; } } if (e.t <= 0) keep = false; break;
       case "choke": { const t = a18BotsIn(e.p, C.choke.r)[0]; if (t && !e.done) { e.done = true; for (const b of a18BotsIn(e.p, C.choke.r)) { a18DecayB(b, C.choke.decay); b.hind = C.choke.slow; } SFX.ab("cbPop", e.p); keep = false; } if (e.t <= 0) keep = false; break; }
-      case "shear": { const t = a18BotsIn(e.p, C.shear.r)[0]; if (t && !e.done) { e.done = true; const m = a18Ring(e.p, C.shear.r, 0xd04a8a, 0.6); a18Fx({ kind: "meshw", m, t: C.shear.wall }); } if (e.t <= 0) keep = false; break; }
+      case "shear": { const t = a18BotsIn(e.p, C.shear.r)[0]; if (t && !e.done) { e.done = true; const m = a18Ring(e.p, C.shear.r, 0xd04a8a, 0.6); try { jxBind(m, vyxShear({ x: e.p.x, y: e.p.y || 0, z: e.p.z }, e.jyw || 0, 5, C.shear.wall), 1); } catch (er) {} a18Fx({ kind: "meshw", m, t: C.shear.wall }); } if (e.t <= 0) keep = false; break; }
       case "ceptor": if (e.t <= 0) { jRel(e.m); keep = false; } break;
       case "ncmd": { e.next -= dt; if (e.next <= 0) { e.next = C.nullcmd.pulse; for (const b of a18BotsIn(new THREE.Vector3(P.x, 0, P.z), C.nullcmd.r)) b.supp = C.zero.supp; } if (e.t <= 0) { jRel(e.m); keep = false; } break; }
       case "anni": { const t = e.tg; if (!t || !t.alive || e.t <= 0) { if (t && t.alive && e.t <= 0) jHit(t, 999, "Annihilate"); keep = false; break; } const d = [P.x - t.g.position.x, P.z - t.g.position.z], l = Math.hypot(d[0], d[1]) || 1; if (l > 1.2) { t.g.position.x += d[0] / l * 2.5 * dt; t.g.position.z += d[1] / l * 2.5 * dt; } break; }
