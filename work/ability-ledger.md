@@ -101,3 +101,9 @@ Sources: wiki.playvalorant.com/en-us/<Ability> pages + images/<Ability>_Showcase
 - Now: animated shader puddle (noise-warped edge, rippling surface, bubble rings, glints, lighter lip), 64 ballistic droplets, no cones. Offline capture sb3 (reduced harness, flat floor) checked by me; online path uses the same a18AcidPool. Online CI recheck pending. Pool radius/DoT unchanged (server-owned).
 - Not claimed: exact colour/gloss parity, pool thickness/height, fade-out look vs reference.
 ## Extra bugs found in ci8 (queue with the 8): kill-cam shows huge untextured grey head close-up; kill feed/killer label says "JETT · ABILITY" when the killer (Alpha) was Viper; HUD SPIKE/ability row text overlaps at 480x270 (HUD overlap at 960x540 not seen).
+
+## 2026-11-04 20:20 additions
+- Phoenix Blaze: SOURCE gap. In game FIRE sends the flame forward and HOLD FIRE bends the wall toward the crosshair (curved path). Ours (server DEV.blaze + client blazeWall) is straight only, so collision and visual are both not faithful. Needs path-point mechanics (server polyline hit test, client aim sampling while held) plus a curved visual. Not done.
+- Phoenix module b8b6e951 integrated for Blaze visuals only (blazeWall hides the old plane); Hot Hands, Curveball, Run It Back not wired yet. Provisional.
+- Waylay Convergent Paths made directional (e4babda): 3 m near-edge vs centre ambiguous, 4-tick outward expansion not modelled.
+- Harness: arm hook freezes the server at the cast tick (c8cdd3e).
