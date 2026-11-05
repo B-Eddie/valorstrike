@@ -30044,7 +30044,7 @@ function a18NetSync(rows) {
   const seen = new Set();
   for (const e of rows) { if (!e || e.kind !== "blast" || (e.ag !== "Clove" && e.ag !== "Harbor") || !Number.isFinite(e.id) || !Array.isArray(e.p) || e.p.length !== 3 || !e.p.every(Number.isFinite)) continue; seen.add(e.id); let r = a18Net.get(e.id);
     /* Clove Meddle / Harbor Storm Surge: the server blast row carries ag + the explicit impact flag dn:1 (it lingers 0.25 s). The module splash plays once on dn, never on a drop (cancel/reset/death stay silent). The own cast is drawn locally; the legacy ring is not built for these rows. */
-    if (!r) { r = { kind: "cvmed", done: false }; if (typeof MP !== "undefined" && MP && e.o != null && e.o === MP.me) r.done = true; a18Net.set(e.id, r); }
+    if (!r) { r = { kind: "cvmed", done: false }; a18Net.set(e.id, r); } /* authoritative online casts do not run the offline kit branch: owner also needs the row splash */
     if (e.dn && !r.done) { r.done = true; try { (e.ag === "Harbor" ? hbxSurge : cvxMeddleBurst)({ x: e.p[0], y: e.p[1], z: e.p[2] }, e.r || 4.5); } catch (er) {} } }
   for (const e of rows) { if (!e || e.kind !== "seeker" || e.ag !== "Skye" || !Number.isFinite(e.id) || !Array.isArray(e.p) || e.p.length !== 3 || !e.p.every(Number.isFinite) || !Number.isFinite(e.tl)) continue; seen.add(e.id); let r = a18Net.get(e.id);
     if (r && r.kind === "haunt0") continue; if (!r && typeof MP !== "undefined" && MP && e.o != null && e.o === MP.me) { a18Net.set(e.id, { kind: "haunt0" }); continue; } /* own Seekers: the local cast draws them */
