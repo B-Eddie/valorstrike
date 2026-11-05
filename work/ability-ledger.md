@@ -124,3 +124,9 @@ Sources: wiki.playvalorant.com/en-us/<Ability> pages + images/<Ability>_Showcase
 - Online rows wired: Yoru, Iso/Neon/Waylay, Astra/Brimstone/Clove/Harbor. NOT wired online: Hush, Fade, Gekko, Sage, Skye, Deadlock, Miks, Veto, Vyse, Chamber/Cypher/KJ devices, Phoenix remainder, Reyna Devour/Empress, others in the earlier gap list.
 - Open unverified: yaw/orientation of Gekko/Fade/Harbor movers; Cypher Cage combined look+occlusion; second-key and bot-trigger captures; Sage barrier colliders vs hidden legacy meshes in play.
 - Test capture: BONFX env in scen_gen.cjs places Bravo inside the server effect for in/out occlusion captures.
+
+## CI status (3:42 AM Nov 5)
+- Run https://github.com/B-Eddie/valorstrike/actions/runs/41993191596 (10552c8): all 6 jobs not started. Annotation, verbatim: "The job was not started because recent account payments have failed or your spending limit needs to be increased. Please check the 'Billing & plans' section in your settings". Read via the user's logged-in GitHub page, nothing changed. User decision held for morning.
+- Local full-assets two-browser run is infeasible here (2 cores, ~2 GB, one full-map 960x540 slot did not finish in 105 s; background jobs die between calls, calls cap at 120 s). Reduced untextured runs would be code/runtime evidence only.
+- 10552c8 (online mosh/gnet module binding, remote Yoru generic flash suppressed) is NOT visually verified. ci27 (931260c) remains the latest capture: Jett outside occlusion restored (inside unchecked); Yoru, Sage, Deadlock, Gekko not accepted.
+- Sage Barrier Orb online: no server wall row was found by grep in server sources, so the barrier is likely not drawn for remote casts. Still open.
