@@ -159,7 +159,7 @@ export function cast18(sim,u,m,o,d,push){
   case 'Miks':{spend();
    if(k==='c')fx(sim,u,'mpulse',p,C.mpulse.life,C.mpulse.r,{heal:m.alt===true,at:sim.time+.5,next:sim.time+.5});
    else if(k==='q'){const t=sim.units.filter(v=>v!==u&&v.team===u.team&&v.alive).sort((a,b)=>Math.hypot(a.x-u.x,a.z-u.z)-Math.hypot(b.x-u.x,b.z-u.z))[0];if(t){t.stimUntil=sim.time+C.harmon.life;t.hasteUntil=sim.time+C.harmon.life;}u.stimUntil=sim.time+C.harmon.life;u.hasteUntil=sim.time+C.harmon.life;}
-   else if(k==='e')fx(sim,u,'smoke',p,C.waveform.life,C.waveform.r);
+   else if(k==='e')fx(sim,u,'smoke',p,C.waveform.life,C.waveform.r,{wf:1});
    else fx(sim,u,'bassq',[u.x,u.y,u.z],.8,C.bassq.dist,{at:sim.time+.6,yaw:u.look});
    cast(sim,u,k,o,d,p);return true;}
   case 'Viper':{spend();
