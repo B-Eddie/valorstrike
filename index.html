@@ -14133,6 +14133,7 @@ function mpFx(u, ag, k, o, d, auth, p, quiet) { // u: caster unit, o/d: eye + ai
   const ty = ABI_M[ag][i] || "ult", al = allies.indexOf(u) >= 0, en = !al, nd = !auth, nm = KITS[ag].n[i] || "Ability", up = u.g.position, col = al ? 0x3fb4ff : 0xff4655;
   const tg = (far, back) => (p ? MPC.e.copy(p) : mpTgt(o, d, far, back));
   if (ty === "smoke") { const S = MP_SMK[ag] || [14, 7], e = tg(S[0], 0.5), cg = ag === "Cypher"; enSmoke(e.x, e.z, al, S[1], cg ? groundAt(e.x, e.z, 0.2, (up.y || 0) + 1) : ag === "Jett" && p ? e.y : undefined, XSMR[ag], cg); } // Jett: at the Cloudburst's landing point
+  else if (ty === "flash" && nd && ag === "Yoru") { /* online remote Yoru Blindside: the server flash row draws the module orb (a18Net); the relayed generic cream orb + enPop disc duplicated it (ci27) */ }
   else if (ty === "flash") { const ph = ag === "Phoenix", e = tg(ph ? 6 : 12, 0.4).clone(), m = ph ? xCbOrb(o) : jM(orbGeo, jMat("orb", () => new THREE.MeshBasicMaterial({ color: 0xfff2b0 }))); if (!ph) { m.position.copy(o); scene.add(m); } J.orbs.push({ m, a: o.clone(), b: e, t: 0, en, cb: ph ? 1 : 0 }); } // Curveball: the big flare (the blind itself is the server's)
   else if (ty === "fire" && ag === "Raze") { const e = tg(14, 0.4); mpPaint(e.x, e.z, groundAt(e.x, e.z, 0.2, (up.y || 0) + 1) || 0); } // Paint Shells: the bursts as they land (damage stays with the caster's own claims / the server)
   else if (ty === "fire") { const rz = false, e = p ? tg() : mpTgt(new THREE.Vector3(up.x, 1, up.z), MPC.d.set(d.x, 0, d.z).normalize(), 5, 0.5);
@@ -29978,6 +29979,8 @@ function a18NetMesh(kind, e) {
     else if (kind === "nova") h = asxNovaPulse(q, e.r || 4.5, { delay: Math.max(0.05, e.tl || 1) });
     else if (kind === "stim") h = brxStimBeacon(q, e.r || 4, Math.max(1, e.tl || 12));
     else if (kind === "orbital") h = brxOrbitalStrike(q, e.r || 5, { delay: 0.05, life: Math.max(1, e.tl || 4) });
+    else if (kind === "mosh") { jxBind(m, gkxMoshPool({ x: q.x, y: q.y, z: q.z }, e.r || 3.5, Math.max(1, e.tl || 3.6)), 1); }
+    else if (kind === "gnet") { jxBind(m, dlxGravNet({ x: q.x, y: q.y, z: q.z }, e.r || 6, Math.max(1.2, e.tl || 8)), 1); }
     else if (kind === "cove") { jxBind(m, hbxCove({ x: q.x, y: q.y + 1.7, z: q.z }, e.r || 4.5, Math.max(1, e.tl || 10)), 0); }
     if (h) jxBind(m, h, 1); } catch (er) {}
   scene.add(m); return m;
