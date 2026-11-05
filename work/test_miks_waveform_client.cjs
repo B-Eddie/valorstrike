@@ -7,6 +7,6 @@ vm.runInContext(html.slice(i,j)+';this.sync=netSyncWaveform;',ctx);
 const row=(o,tl,wf)=>[{id:1,kind:'smoke',o,p:[2,0,3],r:4.15,tl,...(wf?{wf:1}:{})}];
 ctx.sync(row(3,14,0));assert.equal(log.length,0,'plain smoke: no overlay');
 ctx.sync(row(3,13,1));ctx.sync(row(3,12,1));assert.deepEqual(log,[['new',2,4.15,13]],'one overlay');
-ctx.sync(row(7,12,1));assert.equal(log.filter(l=>l[0]==='new').length,1,'own skipped (row id reused is fine: own never creates)');
+ctx.sync([]);log.length=0;ctx.sync(row(7,12,1));assert.deepEqual(log,[['new',2,4.15,12]],'own A18 intent-only cast needs authoritative Waveform overlay');
 ctx.sync([]);assert.equal(log[log.length-1][0],'end');
 console.log('miks waveform client: overlay on wf rows, no overlay on plain smokes, one per row, end on drop (stub module)');

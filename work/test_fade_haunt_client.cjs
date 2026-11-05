@@ -16,5 +16,5 @@ log.length=0;ctx.sync(row(2));ctx.sync(row(1.5));ctx.sync([]);assert.deepEqual(l
 // late first snapshot after the pop: burst once, no orb
 log.length=0;ctx.sync(row(1.2,true));assert.deepEqual(log.map(l=>l[0]),['burst']);ctx.sync(row(1.1,true));assert.equal(log.length,1);ctx.sync([]);assert.equal(log.length,1);
 // own rows: nothing drawn
-log.length=0;ctx.sync([{id:6,kind:'haunt',o:7,p:[1,0,1],tl:2}]);ctx.sync([{id:6,kind:'haunt',o:7,p:[1,0,1],tl:1.5,dn:1}]);ctx.sync([]);assert.equal(log.length,0,'own row: nothing drawn');
-console.log('fade haunt client: orb flight, pop only on server dn, silent drop, late snapshot, own skip (stub modules)');
+log.length=0;ctx.sync([{id:6,kind:'haunt',o:7,p:[1,0,1],tl:2}]);ctx.sync([{id:6,kind:'haunt',o:7,p:[1,0,1],tl:1.5,dn:1}]);ctx.sync([]);assert.ok(log.some(l=>l[0]==='orb')&&log.some(l=>l[0]==='burst'),'own Fade row draws: intent-only online entrypoint');
+console.log('fade haunt client: orb flight, pop only on server dn, silent drop, late snapshot, own authoritative row (stub modules)');

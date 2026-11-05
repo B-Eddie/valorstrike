@@ -28,14 +28,18 @@ const scen=`[
  ['chamber rendezvous anchor: row visible at t=1.0 (not destroyed)',function(t){return t<1.5?[{id:14,kind:'dev',d:'rdvanchor',o:3,tm:1,p:[0,0,0],hp:50,age:3+t}]:[]},1.0],
  ['clove ruse: smoke row ag Clove age 3 (dome rebuilt at its age)',function(t){return [{id:21,kind:'smoke',o:3,ag:'Clove',p:[0,1.7,0],r:4.15,cyl:0,tl:9.75-t,age:3+t}]},1.5],
  ['clove meddle: blast row, dn at 0.5 s (splash on dn)',function(t){return t<0.5?[{id:22,kind:'blast',ag:'Clove',o:3,p:[0,0,0],r:4.5,tl:.6-t}]:t<0.75?[{id:22,kind:'blast',ag:'Clove',o:3,p:[0,0,0],r:4.5,tl:.1,dn:1}]:[]},1.5],
- ['harbor storm surge: blast row, dn at 0.5 s (hbxSurge on dn)',function(t){return t<0.5?[{id:23,kind:'blast',ag:'Harbor',o:3,p:[0,0,0],r:4.5,tl:.6-t}]:t<0.75?[{id:23,kind:'blast',ag:'Harbor',o:3,p:[0,0,0],r:4.5,tl:.1,dn:1}]:[]},1.5]
+ ['harbor storm surge: blast row, dn at 0.5 s (hbxSurge on dn)',function(t){return t<0.5?[{id:23,kind:'blast',ag:'Harbor',o:3,p:[0,0,0],r:4.5,tl:.6-t}]:t<0.75?[{id:23,kind:'blast',ag:'Harbor',o:3,p:[0,0,0],r:4.5,tl:.1,dn:1}]:[]},1.5],
+ ['MIXED own+remote seeker/haunt/anni, t .2',mixedRows,.2],
+ ['MIXED own+remote haunt dn + seekers/cocoons, t .8',mixedRows,.8],
+ ['MIXED cleared at 1.0, t 1.2',function(t){return t<1?mixedRows(t):[]},1.2]
+
 ]`;
 process.stdout.write(`<!doctype html><meta charset=utf-8><body style="margin:0;background:#111">
 <script>${three}</script>
 <script>
 var nowv=0,errs=[];window.performance.now=function(){return nowv};
 var player={x:0,y:0,z:0},innerWidth=${W},innerHeight=${H};function xE(e){errs.push(String(e&&e.stack||e))}
-var MP={me:7},allies=[],units=new Map(),J={smokes:[]};function groundAt(){return 0.05}function jRel(m){try{scene.remove(m)}catch(e){}}function netDevFree(m){try{scene.remove(m)}catch(e){}}function netOwnGone(){}function okMat(c){return new THREE.MeshBasicMaterial({color:c})}
+var RS={sk:[]};var MP={me:7},allies=[],units=new Map(),J={smokes:[]};function groundAt(){return 0.05}function jRel(m){try{scene.remove(m)}catch(e){}}function netDevFree(m){try{scene.remove(m)}catch(e){}}function netOwnGone(){}function okMat(c){return new THREE.MeshBasicMaterial({color:c})}
 var camera=new THREE.PerspectiveCamera(45,${W}/${H},.1,100);camera.position.set(6,4.2,8.5);camera.lookAt(0,1,0);var scene=null;
 var A18VIS={fire:['cloud',0xff5a1a,.5]};var NET_DEV={alarmbot:1,turret:1,trapwire:1,boombot:null,blastpack:null,trademark:null,rdvanchor:null},netDevs=new Map(),netOwnDevs=new Map();
 function netDevPart(kind,al){var m=new THREE.Mesh(new THREE.BoxGeometry(.4,.4,.4),new THREE.MeshBasicMaterial({color:al?0x3fb4ff:0xff4655}));m.userData.ownGeo=true;scene.add(m);return m}
@@ -43,14 +47,15 @@ function netSmoke0(x,z,al,tl,y,r,cyl){var m=new THREE.Mesh(new THREE.SphereGeome
 </script>
 <script>${mods}</script>
 <script>${net}
+function mixedRows(t){return [7,3].flatMap(function(o,n){return [{id:40+n*3,kind:'seeker',ag:'Skye',o:o,p:[-3+n,1,0],tl:3-t},{id:41+n*3,kind:'haunt',o:o,p:[n,0,0],tl:2-t,...(t>.4?{dn:1}:{})},{id:42+n*3,kind:'anni',o:o,p:[2+n,0,0],tl:3-t}]})}
 var scen=${scen};var _rle=rzxLogErr;rzxLogErr=function(e){errs.push('rzx '+(e&&e.stack||e));};
-function tickAll(dt){nowv+=dt*1000;['phxTick','omxTick','kjxTick','cyxTick','rzxTick','chxTick','cvxTick','hbxTick'].forEach(function(f){if(typeof window[f]==='function'){try{window[f](dt)}catch(e){errs.push(f+' '+e)}}})}
+function tickAll(dt){nowv+=dt*1000;['phxTick','omxTick','kjxTick','cyxTick','rzxTick','chxTick','cvxTick','hbxTick','skxTick','fdxTick','dlxTick'].forEach(function(f){if(typeof window[f]==='function'){try{window[f](dt)}catch(e){errs.push(f+' '+e)}}})}
 function sync(rows){a18NetSync(rows);netSyncSmokes(rows);netSyncDevices(rows)}
-var NR=document.createElement('canvas');document.body.appendChild(NR);var r2=new THREE.WebGLRenderer({canvas:NR,antialias:false,preserveDrawingBuffer:true});r2.setSize(${W*3},${H*6});r2.setScissorTest(true);
+var NR=document.createElement('canvas');document.body.appendChild(NR);var r2=new THREE.WebGLRenderer({canvas:NR,antialias:false,preserveDrawingBuffer:true});r2.setSize(${W*3},${H*7});r2.setScissorTest(true);
 scen.forEach(function(sc,n){scene=new THREE.Scene();scene.background=new THREE.Color(0x232a36);var g=new THREE.Mesh(new THREE.PlaneGeometry(30,30),new THREE.MeshBasicMaterial({color:0x3a4252}));g.rotation.x=-Math.PI/2;scene.add(g);scene.add(new THREE.GridHelper(30,30,0x556,0x445));
  a18Net.clear();J.smokes=[];nowv=0;
  for(var k=0;k<=Math.round(sc[2]/0.05);k++){var t=k*0.05;try{sync(sc[1](t))}catch(e){errs.push(sc[0]+' '+e)}tickAll(0.05)}
- var x=(n%3)*${W},y=${H}*(5-Math.floor(n/3));r2.setViewport(x,y,${W},${H});r2.setScissor(x,y,${W},${H});r2.render(scene,camera);
+ var x=(n%3)*${W},y=${H}*(6-Math.floor(n/3));r2.setViewport(x,y,${W},${H});r2.setScissor(x,y,${W},${H});r2.render(scene,camera);
  try{sync([])}catch(e){errs.push('end '+e)}for(var q=0;q<260;q++)tickAll(0.05);var left=scene.children.length;if(left>2)errs.push(sc[0]+' leftover scene objs '+(left-2));
 });
 document.title='NET2 DONE errs='+errs.length;document.body.setAttribute('data-errs',Array.from(new Set(errs)).join(' || ').slice(0,900));

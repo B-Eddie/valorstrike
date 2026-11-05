@@ -9,5 +9,5 @@ const row=(o,x,tl)=>[{id:8,kind:'anni',o,p:[x,0,0],tl}];
 ctx.sync(row(3,1,7));ctx.sync(row(3,2,6.5));assert.deepEqual(log,[['new',1,7],['pos',1],['pos',2]]);
 ctx.sync([]);assert.equal(log[log.length-1][0],'end','row dropped (detain end, snap, kill): module ends');
 log.length=0;ctx.sync(row(7,1,7));assert.equal(log[0][0],'new','own caster: no local cocoon -> drawn from the row');ctx.sync([]);
-log.length=0;J.a18fx=[{kind:'anni',jx:{}}];ctx.sync(row(7,1,7));ctx.sync(row(7,2,6));ctx.sync([]);assert.equal(log.length,0,'own caster with a live local cocoon: not drawn twice');
-console.log('deadlock anni client: follow, end on drop, own dedupe by live local cocoon (stub module)');
+log.length=0;J.a18fx=[{kind:'anni',jx:{}}];ctx.sync(row(7,1,7));ctx.sync(row(7,2,6));ctx.sync([]);assert.equal(log.filter(l=>l[0]==='new').length,1,'stale offline cocoon does not suppress authoritative owner visual');
+console.log('deadlock anni client: follow, end on drop, own authoritative row despite stale offline handle (stub module)');

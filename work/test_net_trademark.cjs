@@ -17,3 +17,5 @@ ctx.sync([]);log.length=0;const ar=(o={})=>[{kind:'dev',d:'rdvanchor',id:7,o:3,t
 ctx.sync(ar());ctx.sync(ar());assert.deepEqual(log,[['anchor',2]],'anchor body once');assert.equal(ctx.netDevs.get(7).jx.fx.age,12,'built at the row age');
 ctx.sync(ar({hp:0,dn:1}));assert.equal(log[log.length-1][0],'end','dn row (destroyed): body ended');
 console.log('net trademark module ok (real sync source, stub THREE/chx, not rendered)');
+
+ctx.sync([]);log.length=0;ctx.sync(ar({o:7}));assert.deepEqual(log,[['anchor',2]],'intent-only Rendezvous owner gets row body, not only legacy anchor ring');ctx.sync([]);

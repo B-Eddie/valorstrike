@@ -9,5 +9,5 @@ const r=(id,o,tg,x)=>({id,kind:'harmon',o,tg,p:[x,0,0],tl:7});
 ctx.sync([r(1,3,4,1)]);ctx.sync([r(1,3,4,2)]);assert.deepEqual(log,[['new',1,true],['pos',1],['pos',2]],'someone else buffed: pillar only (noVeil)');
 ctx.sync([]);assert.equal(log[log.length-1][0],'end');
 log.length=0;ctx.sync([r(2,3,7,1)]);assert.deepEqual(log.slice(0,1),[['new',1,false]],'I am buffed by an ally: veil + pillar');ctx.sync([]);
-log.length=0;J._mkH={};ctx.sync([r(3,7,7,1)]);ctx.sync([r(4,7,5,1)]);assert.deepEqual(log,[['new',1,true],['pos',1]],'caster own self row skipped while local cast live; teammate row drawn');
+log.length=0;J._mkH={};ctx.sync([r(3,7,7,1)]);ctx.sync([r(4,7,5,1)]);assert.deepEqual(log,[['new',1,false],['pos',1],['new',1,true],['pos',1],['end']],'A18 online owner row draws even if stale offline handle exists');
 console.log('miks harmonize client ok (stub)');

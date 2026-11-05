@@ -10,4 +10,4 @@ ctx.sync(row(2,[10,1,0]));ctx.sync(row(1,[10,1,0]));
 assert.deepEqual(log[0],['new',0,1,0]);assert.deepEqual(log[1].slice(1),[0,1,0]);assert.deepEqual(log[2].slice(1),[5,1,0]);
 ctx.sync([]);assert.equal(log[log.length-1][0],'end');
 console.log('skye seeker client: create at owner, lerp to target, end on drop (stub module)');
-log.length=0;ctx.sync([{id:11,kind:'seeker',o:7,ag:'Skye',p:[1,0,1],tl:2}]);ctx.sync([{id:11,kind:'seeker',o:7,ag:'Skye',p:[1,0,1],tl:1}]);ctx.sync([]);assert.equal(log.length,0,'own Seekers row not drawn');console.log('own seekers skipped');
+log.length=0;ctx.sync([{id:11,kind:'seeker',o:7,ag:'Skye',p:[1,0,1],tl:2}]);ctx.sync([{id:11,kind:'seeker',o:7,ag:'Skye',p:[1,0,1],tl:1}]);ctx.sync([]);assert.equal(log.filter(l=>l[0]==='new').length,1,'own seeker without a local handle renders from row');ctx.RS={sk:[{jx:{}}]};log.length=0;ctx.sync([{id:12,kind:'seeker',o:7,ag:'Skye',p:[1,0,1],tl:2}]);ctx.sync([]);assert.equal(log.length,0,'actual local seeker handle prevents own duplicate');
