@@ -24,6 +24,7 @@ module.exports=async T=>{const {A,B,qa,code,log,check,SHOT}=T;const fs=require('
  if(process.env.FIRE!=='0'){await A.page.mouse.down();await W(120);await A.page.mouse.up();}
  // the throw/cast message leaves on a later client frame (seconds in software GL); keep the room running and unmuted until the server has actually spent the charge, so the cast is not dropped by the freeze
  {const spentNow=async()=>{const a=(await snap()).a.ab;return ['c','q','e'].some(k=>a[k]<ab00[k])||a.ult<ab00.ult||Object.keys(a.cool||{}).length>0;};let ok=false;for(let i=0;i<300&&!(ok=await spentNow());i++)await W(200);log('server spent after fire',ok);if(ok){await frz(true);log('armed freeze at cast, server t',JSON.stringify(await qa('return C.armed')));}}
+ if(process.env.BONFX){const r=await qa(`const s=sim('${code}');const a=s.units.find(u=>u.name==='Alpha'),b=s.units.find(u=>u.name==='Bravo');const e=s.effects.find(e=>e.p&&Math.hypot(e.p[0]-a.x,e.p[2]-a.z)>2);if(!e)return 'noeffect';b.x=e.p[0]+${+process.env.BOX||0};b.z=e.p[2]+${+process.env.BOZ||0};if(e.p[1]!==undefined&&!(b.vy>0))b.y=Math.max(b.y,0)+0;return e.kind+':'+e.p.map(n=>n.toFixed(1)).join(',');`);log('BONFX moved Bravo to effect',JSON.stringify(r));}
  const fr=P=>P.X('renderer.info.render.frame').catch(()=>0);
  const waitFrames=async(P,n)=>{const f0=await fr(P);for(let i=0;i<120;i++){if((await fr(P))>=f0+n)return;await W(250);}};
  let last=null,prev=0;
