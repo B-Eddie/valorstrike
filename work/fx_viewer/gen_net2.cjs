@@ -25,7 +25,10 @@ const scen=`[
  ['raze blast pack: module body at the row point (blast = server boom event, not in this viewer)',function(t){return t<1.5?[{id:9,kind:'dev',d:'blastpack',o:3,tm:1,p:[0,0,0],hp:20,age:1+t}]:[]},1.0],
  ['chamber trademark: body at age 1.5, field starts at 0.5 s (fl 3.5), t=1.5',function(t){return t<0.5?[{id:12,kind:'dev',d:'trademark',o:3,tm:1,p:[0,0,0],hp:20,age:1.5+t}]:t<3.5?[{id:12,kind:'dev',d:'trademark',o:3,tm:1,p:[0,0,0],hp:0,fp:[0,0,0],fl:4-t}]:[]},1.5],
  ['chamber rendezvous anchor: row (age 12), then dn row at 0.8 s',function(t){return t<0.8?[{id:13,kind:'dev',d:'rdvanchor',o:3,tm:1,p:[0,0,0],hp:50,age:12+t}]:t<1.05?[{id:13,kind:'dev',d:'rdvanchor',o:3,tm:1,p:[0,0,0],hp:0,dn:1}]:[]},0.6],
- ['chamber rendezvous anchor: row visible at t=1.0 (not destroyed)',function(t){return t<1.5?[{id:14,kind:'dev',d:'rdvanchor',o:3,tm:1,p:[0,0,0],hp:50,age:3+t}]:[]},1.0]
+ ['chamber rendezvous anchor: row visible at t=1.0 (not destroyed)',function(t){return t<1.5?[{id:14,kind:'dev',d:'rdvanchor',o:3,tm:1,p:[0,0,0],hp:50,age:3+t}]:[]},1.0],
+ ['clove ruse: smoke row ag Clove age 3 (dome rebuilt at its age)',function(t){return [{id:21,kind:'smoke',o:3,ag:'Clove',p:[0,1.7,0],r:4.15,cyl:0,tl:9.75-t,age:3+t}]},1.5],
+ ['clove meddle: blast row, dn at 0.5 s (splash on dn)',function(t){return t<0.5?[{id:22,kind:'blast',ag:'Clove',o:3,p:[0,0,0],r:4.5,tl:.6-t}]:t<0.75?[{id:22,kind:'blast',ag:'Clove',o:3,p:[0,0,0],r:4.5,tl:.1,dn:1}]:[]},1.5],
+ ['harbor storm surge: blast row, dn at 0.5 s (hbxSurge on dn)',function(t){return t<0.5?[{id:23,kind:'blast',ag:'Harbor',o:3,p:[0,0,0],r:4.5,tl:.6-t}]:t<0.75?[{id:23,kind:'blast',ag:'Harbor',o:3,p:[0,0,0],r:4.5,tl:.1,dn:1}]:[]},1.5]
 ]`;
 process.stdout.write(`<!doctype html><meta charset=utf-8><body style="margin:0;background:#111">
 <script>${three}</script>
@@ -41,13 +44,13 @@ function netSmoke0(x,z,al,tl,y,r,cyl){var m=new THREE.Mesh(new THREE.SphereGeome
 <script>${mods}</script>
 <script>${net}
 var scen=${scen};var _rle=rzxLogErr;rzxLogErr=function(e){errs.push('rzx '+(e&&e.stack||e));};
-function tickAll(dt){nowv+=dt*1000;['phxTick','omxTick','kjxTick','cyxTick','rzxTick','chxTick'].forEach(function(f){if(typeof window[f]==='function'){try{window[f](dt)}catch(e){errs.push(f+' '+e)}}})}
+function tickAll(dt){nowv+=dt*1000;['phxTick','omxTick','kjxTick','cyxTick','rzxTick','chxTick','cvxTick','hbxTick'].forEach(function(f){if(typeof window[f]==='function'){try{window[f](dt)}catch(e){errs.push(f+' '+e)}}})}
 function sync(rows){a18NetSync(rows);netSyncSmokes(rows);netSyncDevices(rows)}
-var NR=document.createElement('canvas');document.body.appendChild(NR);var r2=new THREE.WebGLRenderer({canvas:NR,antialias:false,preserveDrawingBuffer:true});r2.setSize(${W*3},${H*5});r2.setScissorTest(true);
+var NR=document.createElement('canvas');document.body.appendChild(NR);var r2=new THREE.WebGLRenderer({canvas:NR,antialias:false,preserveDrawingBuffer:true});r2.setSize(${W*3},${H*6});r2.setScissorTest(true);
 scen.forEach(function(sc,n){scene=new THREE.Scene();scene.background=new THREE.Color(0x232a36);var g=new THREE.Mesh(new THREE.PlaneGeometry(30,30),new THREE.MeshBasicMaterial({color:0x3a4252}));g.rotation.x=-Math.PI/2;scene.add(g);scene.add(new THREE.GridHelper(30,30,0x556,0x445));
  a18Net.clear();J.smokes=[];nowv=0;
  for(var k=0;k<=Math.round(sc[2]/0.05);k++){var t=k*0.05;try{sync(sc[1](t))}catch(e){errs.push(sc[0]+' '+e)}tickAll(0.05)}
- var x=(n%3)*${W},y=${H}*(4-Math.floor(n/3));r2.setViewport(x,y,${W},${H});r2.setScissor(x,y,${W},${H});r2.render(scene,camera);
+ var x=(n%3)*${W},y=${H}*(5-Math.floor(n/3));r2.setViewport(x,y,${W},${H});r2.setScissor(x,y,${W},${H});r2.render(scene,camera);
  try{sync([])}catch(e){errs.push('end '+e)}for(var q=0;q<260;q++)tickAll(0.05);var left=scene.children.length;if(left>2)errs.push(sc[0]+' leftover scene objs '+(left-2));
 });
 document.title='NET2 DONE errs='+errs.length;document.body.setAttribute('data-errs',Array.from(new Set(errs)).join(' || ').slice(0,900));
