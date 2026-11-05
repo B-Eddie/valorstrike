@@ -18,4 +18,5 @@ const st=(s,u,sub,p)=>({t:'ac',i:u.id,ag:'Omen',k:'c',sub,o:p.slice(),d:[0,0,-1]
  // contrast: a normal cast from the same visible caster is delivered whole (existing rule)
  const n={...e,sub:undefined};assert.equal(fogCast(s,n,a),n);}
 {const {s,a,b}=mk();const c=s.add('C','Sova');c.team=b.team;Object.assign(c,{x:-12,y:0,z:0,alive:true,loading:false,vx:0,vz:0,input:{},ch:0});s.units.push(c);const e=st(s,b,'stepout',[38,0,2]);assert.equal(fogCast(s,e,c),e,'teammate gets whole');}
-console.log('fog step events ok');
+{const {s,a,b}=mk();b.x=5;for(const sub of ['shadeout','shadein']){const e={...st(s,b,sub,[38,0,2]),k:'x'};assert.equal(fogCast(s,e,a).p,undefined,'seen caster does not leak hidden Shade point');const visible={...e,p:[5,0,0]};assert.deepEqual(fogCast(s,visible,a).p,[5,0,0]);}}
+console.log('fog step and Shade events ok');

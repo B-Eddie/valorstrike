@@ -107,7 +107,7 @@ export function fogView(sim,snap,viewer){if(!snap||!viewer||sim.phase!=='game'||
 // only, flagged fog:1 (the page draws the effect there, server_runtime.js netCastFog); otherwise it is cut to
 // {t,i,ag,k,ts,fog:1} - no position at all.
 export function fogCast(sim,ev,viewer){if(!ev||ev.t!=='ac'||!viewer||sim.phase!=='game'||sim.fogOff)return ev;const c=sim.units.find(u=>u.id===ev.i);if(!c||c===viewer)return ev;const g=fogGroup(sim,viewer);if(fogGroup(sim,c)===g)return ev;
- const F=fogPass(sim,{ev:[]}),now=sim.time,rel=F.rel.get(g),kill=viewer.fogKiller&&viewer.fogKiller.until>=now?viewer.fogKiller.id:-1;const strict=ev.sub==='stepout'||ev.sub==='stepin';/* Omen Step: each point is shown only where the viewer's team can see it - being heard / seeing the caster elsewhere must not reveal the other point */if(!strict&&(c.id===kill||(rel&&rel.get(c.id)>=now)))return ev;
+ const F=fogPass(sim,{ev:[]}),now=sim.time,rel=F.rel.get(g),kill=viewer.fogKiller&&viewer.fogKiller.until>=now?viewer.fogKiller.id:-1;const strict=['stepout','stepin','shadeout','shadein'].includes(ev.sub);/* Omen Step: each point is shown only where the viewer's team can see it - being heard / seeing the caster elsewhere must not reveal the other point */if(!strict&&(c.id===kill||(rel&&rel.get(c.id)>=now)))return ev;
  const out={t:'ac',i:ev.i,ag:ev.ag,k:ev.k,ts:ev.ts,fog:1};if(ev.sub)out.sub=ev.sub;const p=ev.p;
  if(Array.isArray(p)&&p.length===3&&p.every(Number.isFinite)){const q=[p[0],p[1]+1,p[2]];if(sim.units.some(a=>live(a)&&fogGroup(sim,a)===g&&(near3(a,{x:p[0],y:p[1],z:p[2]},FOG.devNear)||eyes(a).some(e=>segClear(sim,e,q)))))out.p=p.slice();}
  return out;}

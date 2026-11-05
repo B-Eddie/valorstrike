@@ -12,8 +12,8 @@ const walk=(s,u)=>{u.input={forward:1};u.inputAt=s.time;};
 // 1. windup at the origin (rooted), Shade at the target (rooted) from 1.5 s, real at 4 s
 {const {s,u}=setup();assert.equal(s.command(u,{t:'ab',k:'x',p:[0,-30]}),true);assert.equal(u.ability.ult,0);
  for(let i=0;i<25;i++){walk(s,u);u.x+=.1;tick(s,.05);}assert.deepEqual([u.x,u.z],[0,0],'windup: rooted at the origin');assert.equal(s.roundState(u).channel.kind,'shadows');assert.equal(s.roundState(u).channel.shade,false);
- const seq=u.seq;tick(s,.3);assert.deepEqual([u.x,u.z],[0,-30],'1.5 s: arrives as a Shade');assert.equal(u.seq,seq+1,'a teleport (seq) the client snaps to');assert.equal(s.roundState(u).channel.shade,true);
- assert.ok(Math.abs(s.roundState(u).channel.remaining-2.5)<.06,'2.5 s as a Shade');u.look=1.2;for(let i=0;i<20;i++){walk(s,u);u.x+=.1;tick(s,.05);}assert.deepEqual([u.x,u.z],[0,-30],'Shade: rooted');assert.equal(u.look,1.2,'Shade: can still turn');
+ const seq=u.seq;tick(s,.3);assert.deepEqual([u.x,u.z],[0,-30],'1.5 s: arrives as a Shade');assert.equal(u.seq,seq+1,'a teleport (seq) the client snaps to');assert.equal(s.roundState(u).channel.shade,true);assert.deepEqual(s.castEvents.filter(e=>e.sub==='shadeout'||e.sub==='shadein').map(e=>[e.sub,e.p]),[['shadeout',[0,0,0]],['shadein',[0,0,-30]]],'entry events only at authoritative origin and destination');
+ assert.ok(Math.abs(s.roundState(u).channel.remaining-2.5)<.06,'2.5 s as a Shade');u.look=1.2;for(let i=0;i<20;i++){walk(s,u);u.x+=.1;tick(s,.05);}assert.deepEqual([u.x,u.z],[0,-30],'Shade: rooted');assert.equal(u.look,1.2,'Shade: can still turn');assert.equal(s.castEvents.filter(e=>e.sub==='shadein').length,1,'no repeat event while holding Shade');
  u.weapon='Classic';u.ammo=12;u.fireAt=0;assert.equal(s.fire(u),false,'no shots as a Shade');
  tick(s,1.6);assert.equal(u.pendingTeleport,null,'real at 4 s');assert.deepEqual([u.x,u.z],[0,-30]);walk(s,u);const x0=u.x;u.x+=.5;tick(s,.05);assert.ok(u.x!==x0,'free again');}
 // 2. a bullet on the Shade cancels it: back to the origin, no damage, ult still spent
@@ -24,5 +24,6 @@ const walk=(s,u)=>{u.input={forward:1};u.inputAt=s.time;};
 {const {s,u}=setup();assert.equal(s.command(u,{t:'ab',k:'x',p:[0,-30]}),true);tick(s,.5);assert.equal(s.command(u,{t:'ab',k:'x'}),false,'windup: no recast');
  tick(s,1.1);assert.equal(s.command(u,{t:'ab',k:'x'}),true,'Shade: X cancels');assert.deepEqual([u.x,u.z],[0,0]);assert.equal(u.pendingTeleport,null);assert.equal(u.ability.ult,0,'ult points lost (wiki v1.0)');}
 // 4. killed in the windup: no teleport
-{const {s,u}=setup();assert.equal(s.command(u,{t:'ab',k:'x',p:[0,-30]}),true);tick(s,.5);u.alive=false;tick(s,1.5);assert.equal(u.pendingTeleport,null);assert.deepEqual([u.x,u.z],[0,0]);}
+{const {s,u}=setup();assert.equal(s.command(u,{t:'ab',k:'x',p:[0,-30]}),true);tick(s,.5);assert.equal(s.castEvents.filter(e=>e.sub==='shadein').length,0);u.alive=false;tick(s,1.5);assert.equal(u.pendingTeleport,null);assert.deepEqual([u.x,u.z],[0,0]);assert.equal(s.castEvents.filter(e=>e.sub==='shadein').length,0,'no Shade event after death in windup');}
+{const {s,u}=setup();assert.equal(s.command(u,{t:'ab',k:'x',p:[0,-30]}),true);s.world={...s.world,blocked:()=>true};tick(s,1.6);assert.equal(u.pendingTeleport,null);assert.equal(s.castEvents.filter(e=>e.sub==='shadeout'||e.sub==='shadein').length,0,'blocked destination never enters Shade or emits entry bursts');}
 console.log('From the Shadows: 1.5 s rooted windup, 2.5 s rooted Shade at the target (can turn, no shots), a bullet or an X recast sends him back with no damage, real at 4 s');

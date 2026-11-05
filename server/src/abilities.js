@@ -140,7 +140,7 @@ export function aimFloor(sim,u,max){const o=[u.x,u.y+1.6,u.z],d=[-Math.sin(u.loo
 // target for 2.5 s (turning allowed, no shots: pendingTeleport); a bullet on the Shade (simulation.js applyHit -> shadeHit) or X again
 // sends Omen back where he cast it, unhurt; the ult stays spent. A target that became blocked by the end of the windup cancels.
 function pin(u,p){u.x=p[0];u.y=p[1];u.z=p[2];u.vx=u.vz=u.vy=0;}
-export function tickShadows(sim,u){const T=u.pendingTeleport;if(!T.shade){if(sim.time<T.shadeAt){pin(u,T.from);return;}if(sim.world.blocked(T.p[0],T.p[2],.43,T.p[1],1.92)){pin(u,T.from);u.pendingTeleport=null;return;}T.shade=true;pin(u,T.p);u.seq++;}
+export function tickShadows(sim,u){const T=u.pendingTeleport;if(!T.shade){if(sim.time<T.shadeAt){pin(u,T.from);return;}if(sim.world.blocked(T.p[0],T.p[2],.43,T.p[1],1.92)){pin(u,T.from);u.pendingTeleport=null;return;}T.shade=true;pin(u,T.p);u.seq++;const ts=Math.round(sim.time*1000);for(const [sub,p] of [["shadeout",T.from],["shadein",T.p]])sim.castEvents.push({t:"ac",i:u.id,ag:"Omen",k:"x",sub,o:[...p],d:[0,0,-1],p:[...p],ts});}
  if(sim.time>=T.at){pin(u,T.p);u.pendingTeleport=null;return;}pin(u,T.p);}
 export function shadeCancel(sim,u){const T=u.pendingTeleport;if(!T||T.kind!=='shadows')return false;pin(u,T.from);u.seq++;u.pendingTeleport=null;return true;}
 export function shadeHit(sim,target){return !!(target?.pendingTeleport?.kind==='shadows'&&target.pendingTeleport.shade&&shadeCancel(sim,target));}
