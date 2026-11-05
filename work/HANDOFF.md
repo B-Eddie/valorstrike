@@ -98,3 +98,7 @@ work/fx_viewer/gen_net2.cjs: the REAL a18NetSync/a18NetFree/netSyncSmokes/netSyn
 ## 13:01 Phoenix Run It Back (server rows/events + client marker)
 - Server: cast pushes a 'rib' state row (marker p, tl, owner); removed in tickUlts on the return. Return emits explicit 'ac' x/'return' (timeout) or 'retdeath' (died; o = body point). Tests: server/test-rib-row.js, work/test_phoenix_rib_client.cjs (real source, stub world; NOT rendered).
 - Client: a18NetSync 'rib' branch (marker via phxRibMarker, ended with the row, late join rebuilt, own skipped; mirrored in agents18_runtime.js); mpCastFx plays phxRibReturn / phxRibDeath on the events. Real-GL viewer scenario not yet added. phxRibForm (frozen body ghost) not wired remotely.
+
+## 13:23 Omen Shrouded Step remote + viewer batch with Run It Back
+- Server: the step teleport (tick, abilities.js) pushes an explicit 'ac' c/'stepdone' event (o origin, p destination) only when the teleport really happens; death/blocked = silent. Client mpCastFx draws omxStepVanish at o + omxStepArrive at p; the cast event itself draws nothing for a remote Omen (destination stays hidden). Tests: server/test-omen-step-event.js, work/test_omen_step_remote.cjs (real source, stub world). Events are broadcast without a fog check (same as other ac events).
+- Real-GL: gen_net2.cjs scenario 9 (Run It Back marker row, errs=0, no leftovers) -> /downloads/fx_net4.png. The marker is a small ring; stub bodies; not game acceptance. Step vanish/arrive module look was only checked in earlier viewer batches, not through the event path in GL.

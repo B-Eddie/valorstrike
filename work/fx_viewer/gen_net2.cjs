@@ -18,7 +18,8 @@ const scen=`[
  ['omen dark cover: row dropped early at 0.6 s (dome must end)',function(t){return t<0.6?[{id:2,kind:'smoke',o:3,p:[0,2,0],r:4.1,cyl:0,tl:15-t,age:t+0.05,ag:'Omen'}]:[]},1.0],
  ['killjoy alarmbot: place (age<0.6) -> alert -> boom (dn)',function(t){if(t<1.4)return [{id:3,kind:'dev',d:'alarmbot',o:3,tm:1,p:[0,0,0],yaw:0,hp:20,age:t+0.05,ph:t<0.5?0:1}];return t<1.65?[{id:3,kind:'dev',d:'alarmbot',o:3,tm:1,p:[0,0,0],hp:0,ph:4,dn:1}]:[]},1.45],
  ['killjoy turret: place then shots (sn counter) at t=3.0',function(t){var sn=t<2.8?0:(t<3.0?1:2);return [Object.assign({id:4,kind:'dev',d:'turret',o:3,tm:1,p:[-3,0,0],yaw:0,hp:100,age:t+0.05},sn?{sn:sn,ft:[2,1.2,0]}:{})]},3.0],
- ['cypher trapwire: module wire, trip counter flash at 0.9 s',function(t){return [Object.assign({id:5,kind:'dev',d:'trapwire',o:3,tm:1,p:[-3,0,0],q:[3,0,0],hp:20},t>=0.8?{tn:1,tp:[0,0,0]}:{})]},1.1]
+ ['cypher trapwire: module wire, trip counter flash at 0.9 s',function(t){return [Object.assign({id:5,kind:'dev',d:'trapwire',o:3,tm:1,p:[-3,0,0],q:[3,0,0],hp:20},t>=0.8?{tn:1,tp:[0,0,0]}:{})]},1.1],
+ ['phoenix run it back: marker row at t=2.0 (row-bound, ends with the row)',function(t){return t<3.0?[{id:6,kind:'rib',o:3,p:[0,0,0],r:0,tl:9.5-t}]:[]},2.0]
 ]`;
 process.stdout.write(`<!doctype html><meta charset=utf-8><body style="margin:0;background:#111">
 <script>${three}</script>
