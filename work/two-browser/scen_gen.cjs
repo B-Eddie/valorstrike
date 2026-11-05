@@ -17,8 +17,8 @@ module.exports=async T=>{const {A,B,qa,code,log,check,SHOT}=T;const fs=require('
  await A.page.bringToFront();await W(500);await unp();
  await A.page.keyboard.down(KEY);await W(120);await A.page.keyboard.up(KEY);await W(400);
  // software GL: client frames take seconds, so the equip/draw timer lags the wall clock. Hold the server still, let the client clock run, and click only once the client says the ability is ready (or it already threw).
- await qa('C.freeze=true;return 1');await A.X('window.__wsMute=true;1');let eqs='?';for(let i=0;i<180;i++){eqs=await A.X('J.eq?J.eq.st:"none"').catch(()=>'err');if(eqs!=='draw')break;await W(500);}
- log('equip wait done',eqs);await A.X('window.__wsMute=false;1');await qa('C.freeze=false;return 1');
+ await qa('C.freeze=true;return 1');await Promise.all([A,B].map(P=>P.X('window.__wsMute=true;1')));let eqs='?';for(let i=0;i<180;i++){eqs=await A.X('J.eq?J.eq.st:"none"').catch(()=>'err');if(eqs!=='draw')break;await W(500);}
+ log('equip wait done',eqs);await Promise.all([A,B].map(P=>P.X('window.__wsMute=false;1')));await qa('C.freeze=false;return 1');
  log('after key (equipped?)',JSON.stringify({a:await cl(A),s:(await snap()).a.ab}));
  if(process.env.FIRE!=='0'){await A.page.mouse.down();await W(120);await A.page.mouse.up();}
  const fr=P=>P.X('renderer.info.render.frame').catch(()=>0);
