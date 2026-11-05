@@ -15,6 +15,7 @@ module.exports=async T=>{const {A,B,qa,code,log,check,SHOT}=T;const fs=require('
  const cl=async P=>P.X(`JSON.stringify({a18:(J.a18fx||[]).map(f=>f.kind+':'+(+f.age||0).toFixed(2)),net:(NET.fx||[]).map(f=>f.kind),eq:J.eq,ult:J.ult})`).catch(e=>String(e));
  await frz(false);const before=await snap();const ab00=before.a.ab;log('before',JSON.stringify(before));
  await A.page.bringToFront();await W(500);await unp();
+ await qa(`const s=sim('${code}');const a=s.units.find(u=>u.name==='Alpha');const ab0=JSON.parse(JSON.stringify(a.ability));C.armed=null;C.arm=()=>{const x=a.ability;if(['c','q','e'].some(k=>x[k]<ab0[k])||x.ult<ab0.ult||Object.keys(x.cool||{}).length>0){C.freeze=true;C.armed=s.time;C.arm=null;}};return 1;`);
  await A.page.keyboard.down(KEY);await W(120);await A.page.keyboard.up(KEY);await W(400);
  // software GL: client frames take seconds, so the equip/draw timer lags the wall clock. Hold the server still, let the client clock run, and click only once the client says the ability is ready (or it already threw).
  await qa('C.freeze=true;return 1');await Promise.all([A,B].map(P=>P.X('window.__wsMute=true;1')));let eqs='?';for(let i=0;i<180;i++){eqs=await A.X('J.eq?J.eq.st:"none"').catch(()=>'err');if(eqs!=='draw')break;await W(500);}
@@ -22,7 +23,7 @@ module.exports=async T=>{const {A,B,qa,code,log,check,SHOT}=T;const fs=require('
  log('after key (equipped?)',JSON.stringify({a:await cl(A),s:(await snap()).a.ab}));
  if(process.env.FIRE!=='0'){await A.page.mouse.down();await W(120);await A.page.mouse.up();}
  // the throw/cast message leaves on a later client frame (seconds in software GL); keep the room running and unmuted until the server has actually spent the charge, so the cast is not dropped by the freeze
- {const spentNow=async()=>{const a=(await snap()).a.ab;return ['c','q','e'].some(k=>a[k]<ab00[k])||a.ult<ab00.ult||Object.keys(a.cool||{}).length>0;};let ok=false;for(let i=0;i<300&&!(ok=await spentNow());i++)await W(200);log('server spent after fire',ok);}
+ {const spentNow=async()=>{const a=(await snap()).a.ab;return ['c','q','e'].some(k=>a[k]<ab00[k])||a.ult<ab00.ult||Object.keys(a.cool||{}).length>0;};let ok=false;for(let i=0;i<300&&!(ok=await spentNow());i++)await W(200);log('server spent after fire',ok);if(ok){await frz(true);log('armed freeze at cast, server t',JSON.stringify(await qa('return C.armed')));}}
  const fr=P=>P.X('renderer.info.render.frame').catch(()=>0);
  const waitFrames=async(P,n)=>{const f0=await fr(P);for(let i=0;i<120;i++){if((await fr(P))>=f0+n)return;await W(250);}};
  let last=null,prev=0;

@@ -14,7 +14,7 @@ const C=await localCluster({env:{ALLOW_LOCAL_ORIGIN:'true',ENABLE_SPIKE:'true',Q
 // would go stale (inputs count for 0.3 s). With the lock on, each client message buys 250 ms of server time and the
 // clock waits otherwise: the room runs in slow motion at the page's frame rate.
 C.lock=false;C.budget=0;
-let last=Date.now(),busy=false;setInterval(async()=>{if(busy)return;busy=true;const t=Date.now();let dt=Math.min(250,t-last);last=t;if(C.freeze)dt=0;if(C.lock){dt=Math.min(dt,C.budget);C.budget-=dt;}try{if(dt>0)await C.advance(dt);}catch(e){console.error('advance',e);}busy=false;},10);
+let last=Date.now(),busy=false;setInterval(async()=>{if(busy)return;busy=true;const t=Date.now();let dt=Math.min(250,t-last);last=t;if(C.freeze)dt=0;if(C.lock){dt=Math.min(dt,C.budget);C.budget-=dt;}try{if(dt>0)await C.advance(dt);if(C.arm)try{C.arm();}catch(e){C.arm=null;}}catch(e){console.error('advance',e);}busy=false;},10);
 const room=code=>C.room(code),sim=code=>room(code)?.sim;
 const cors={'access-control-allow-origin':'*','access-control-allow-headers':'*','access-control-allow-methods':'GET,POST,OPTIONS'};
 const server=http.createServer(async(req,res)=>{
