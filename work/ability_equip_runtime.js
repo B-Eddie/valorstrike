@@ -67,6 +67,7 @@ const XAB_EQ = { // agent -> key -> ready-to-equip test (a charge to spend and n
 //   it closer (through walls, XDARK.min..max = server abilities.js DARK); E (the ability key again) or a quick FIRE tap casts. The marker
 //   (xDarkMesh, a 4.1 m outline seen through walls) shows where the smoke lands: on the aim line, sunk to the floor below (wiki: "the smoke
 //   will sink vertically" onto a horizontal surface). Was: E + FIRE put the smoke at the first wall within 30 m, 1.5-4 m high.
+const XAB_HOLD = { Skye: { e: "hawk" }, Sova: { q: "bow", e: "bow" }, Breach: { e: "fault" }, Omen: { e: "mark" } };
 const XAB_HOLD = { Sova: { q: "bow", e: "bow" }, Breach: { e: "fault" }, Omen: { e: "mark" } };
 var XDARK = { max: 80, min: 1, rate: 20, tap: 0.2, def: 30, lift: 1.7 }; // = server DARK (max / min / rate); lift = server SMOKE.lift (centre above the floor)
 function xDarkInit(q) { const o = pEye(), d = jAim(); ray.set(o, d); ray.far = XDARK.max; const h = ray.intersectObjects(solids)[0]; q.md = Math.max(XDARK.min, Math.min(XDARK.max, h ? h.distance - 0.5 : XDARK.def)); } // starts at the wall under the crosshair
@@ -105,6 +106,7 @@ function xEqFire(alt) { // FIRE / ALT FIRE while an ability is out: true when th
   if (hk === "mark") { if (q.st === "ready" || (q.st === "mark" && q.dir !== (alt ? -1 : 1))) { if (!Number.isFinite(q.md)) xDarkInit(q); q.st = "mark"; q.dir = alt ? -1 : 1; q.h = 0; } else if (q.st === "draw") q.buf = alt ? 2 : 1; return true; } // Dark Cover: FIRE / ALT FIRE move the marker (xEqTick)
   if (hk === "fault" && alt) return true; // Fault Line has no alternate
   if (hk === "bow" && alt) { if (q.st !== "rel" && q.st !== "rec") { q.bn = ((q.bn | 0) + 1) % 3; try { blip(500 + q.bn * 180, 0.05, "triangle", 0.1); } catch (e) {} } return true; } // ALT FIRE: one more bounce
+  if (hk === "hawk" && !alt) { if (q.st === "ready") { q.st = "rel"; q.t = XABT.rel; q.alt = false; } else if (q.st === "draw") q.buf = 1; return true; } // Guiding Light: FIRE launches the hawk; FIRE still down at the launch = HOLD FIRE steering (xEqTick keeps the hawk in hand while held)
   if (hk && !alt) { if (q.st === "ready") { q.st = "hold"; q.h = 0; } else if (q.st === "draw") q.buf = 1; return true; } // FIRE down: start the hold
   if (q.st === "ready") { q.st = "rel"; q.t = XABT.rel; q.alt = !!alt; } else if (q.st === "draw") q.buf = alt ? 2 : 1; return true;
 }
@@ -122,6 +124,7 @@ function xEqTick(dt) {
   const q = J.eq; if (!q) return;
   if (!jOn() || !running || !player || player.hp <= 0 || (mode === "five" && FV.buy > 0)) { J.eq = null; return; }
   if (q.rot) { if (!(typeof mpAltHeld !== "undefined" && mpAltHeld) || !xRotOn(q)) q.rot = false; else { yaw = q.ry; pitch = q.rp; } } // ALT FIRE let go: the mouse turns the view again
+  if (q.st === "steer") { if (!RS.hk || RS.hk.w != null || !RS.hk.hold || !fireHeld) { if (RS.hk) RS.hk.hold = false; q.st = "rec"; q.t = q.rec = xUneqT(q.k); } return; } // Guiding Light held: stays in hand until FIRE is released, the hawk pops or its flight ends (wiki), then the unequip + gun re-equip
   if (q.st === "hold") { q.h += dt; if (!fireHeld) { q.st = "rel"; q.t = XABT.rel; q.alt = false; } return; } // releasing FIRE throws
   if (xEqHold(q) === "mark" && q.st !== "rel" && q.st !== "rec" && !Number.isFinite(q.md) && q.st !== "draw") xDarkInit(q);
   if (q.st === "mark") { const held = q.dir > 0 ? fireHeld : typeof mpAltHeld !== "undefined" && mpAltHeld; q.h += dt; // Dark Cover: a quick FIRE tap casts; holding moves the marker
@@ -129,12 +132,14 @@ function xEqTick(dt) {
     if (!held) { if (q.dir > 0 && q.h <= XDARK.tap) { q.st = "rel"; q.t = XABT.rel; q.alt = false; } else q.st = "ready"; } return; }
   q.t -= dt; if (q.t > 0) return;
   if (q.st === "draw") { q.st = "ready"; q.t = 0; if (q.buf) { const a = q.buf === 2; q.buf = 0; xEqFire(a); } }
+  else if (q.st === "rel") { if (xEqCast(q)) { if (xEqHold(q) === "hawk" && RS.hk && RS.hk.hold) { q.st = "steer"; q.t = 0; } else { q.st = "rec"; q.t = q.rec = xUneqT(q.k); } } else { q.st = "ready"; q.t = 0; } }
   else if (q.st === "rel") { if (xEqCast(q)) { q.st = "rec"; q.t = q.rec = xUneqT(q.k); } else { q.st = "ready"; q.t = 0; } }
   else if (q.st === "rec") { J.eq = null; const w = xEqWeap(); VM.sw = VM.swT = xReeqT(q.k, w); VM.ins = 0; } // ability put away: the gun re-equips (fast / instant), no fire until it is up
 }
 const xEqKey0 = jKey;
 jKey = function (code) {
   if (XABT.casting || !jOn() || typeof code !== "string" || !/^Key[CQEX]$/.test(code) || (mode === "five" && FV.buy > 0)) return xEqKey0.apply(this, arguments);
+  if (code === "KeyE" && J.pick === "Skye" && J.eq && J.eq.st === "steer" && RS.hk) { J.eq.st = "rec"; J.eq.t = J.eq.rec = xUneqT("e"); RS.hk.hold = false; return xEqKey0.apply(this, arguments); } // RE-USE while steering: pop the hawk
   if (J.eq && J.eq.code === code && xEqHold(J.eq) === "mark" && (J.eq.st === "ready" || J.eq.st === "mark")) { if (!Number.isFinite(J.eq.md)) xDarkInit(J.eq); J.eq.st = "rel"; J.eq.t = XABT.rel; J.eq.alt = false; return true; } // Dark Cover: E again sends the smoke to the marker
   if (J.eq && J.eq.code === code && xRotKind(J.eq) && (J.eq.st === "draw" || J.eq.st === "ready")) { xRotKey(J.eq); return true; } // E again: Turret 180 deg; C again: Barrier 90 deg
   if (J.eq && J.eq.code === code && J.eq.st !== "rec") { if (J.eq.st !== "rel" && J.eq.st !== "hold") J.eq = null; return true; } // same key again: put it away
