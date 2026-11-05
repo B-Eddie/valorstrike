@@ -112,7 +112,7 @@ function asxNovaPulse(p, r, opts) { try { const R = r || 4.5, o = opts || {}, de
   const splash = new THREE.Mesh(G.circle, new THREE.MeshBasicMaterial({ map: asxRadialTex(), transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, fog: false, toneMapped: false })); splash.rotation.x = -Math.PI / 2; splash.position.y = 0.1; splash.visible = false; grp.add(splash);
   const splash2 = splash.clone(); splash2.material = splash.material.clone(); splash2.position.y = 0.42; grp.add(splash2);
   const shock = new THREE.Mesh(G.torus, asxBasic(0xd08af0, 0, true)); shock.rotation.x = Math.PI / 2; shock.position.y = 0.12; grp.add(shock);
-  const scorch = new THREE.Mesh(G.circle, asxBasic(0x3a1470, 0, false)); scorch.rotation.x = -Math.PI / 2; scorch.position.y = 0.01; scorch.scale.setScalar(R * 0.55); grp.add(scorch);
+  const scorch = new THREE.Mesh(G.circle, new THREE.MeshBasicMaterial({ map: asxRadialTex(), color: 0x2a0f55, transparent: true, opacity: 0, depthWrite: false, fog: false, toneMapped: false })); scorch.rotation.x = -Math.PI / 2; scorch.position.y = 0.01; scorch.scale.setScalar(R * 0.55); grp.add(scorch);
   return asxFx(delay + 1.6, [grp], (dt, age) => {
     if (age < delay) { const k = age / delay; disc.material.uniforms.uP.value = 0.25 + 0.6 * k; disc.rotation.z -= dt * (2 + 6 * k); disc.scale.setScalar(R * (1.05 - 0.35 * k)); return; }
     const k = Math.min(1, (age - delay) / 1.2);
@@ -121,7 +121,7 @@ function asxNovaPulse(p, r, opts) { try { const R = r || 4.5, o = opts || {}, de
     splash.visible = splash2.visible = k < 0.97;
     splash.scale.setScalar(R * (0.7 + sk2 * 2.3)); splash.material.opacity = 0.95 * (1 - sk2 * 0.8);
     splash2.scale.setScalar(R * (0.45 + sk2 * 1.5)); splash2.material.opacity = 0.55 * (1 - sk2);
-    shock.scale.setScalar(0.5 + k * R * 1.3); shock.material.opacity = 0.85 * (1 - k);
+    shock.scale.setScalar(0.5 + k * R * 1.3); const sga = Math.max(0, 1 - k * 3); shock.material.opacity = 0.4 * sga * sga;
     scorch.material.opacity = 0.55 * Math.max(0, 1 - k); }); } catch (e) { try { window.asxErr = String(e && e.stack || e).slice(0, 300); xE(e); } catch (e2) {} return null; } }
 // ---- Nebula sphere (visual only; asxNebulaSmoke keeps the J.smokes record) ----
 function asxNebula(p, r, life, opts) { try { const R = r || 4.1, o = opts || {}, G = asxGeos(), grp = new THREE.Group(); grp.position.set(p.x, (p.y || 0) + 1.7, p.z);
