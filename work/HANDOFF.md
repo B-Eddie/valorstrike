@@ -29,3 +29,9 @@
 
 ## Lost
 - /downloads/postmain_medium_memory.patch (the unapplied memory hypothesis) was lost in the box wipe; not recreated. Main holds some ci24-27 sheets. Hypothesis: duplicate-map peak; eliminate it before reducing texture quality; verify after main.
+
+## Update 8:20 AM (successor agent)
+- Pushed ce6803f: remote Skye Seekers rows draw skxSeeker (snapshot tags ag:'Skye'; row p is the TARGET position, wisp lerps from owner by flight fraction). Test work/test_skye_seeker_client.cjs (stub module).
+- Next push: Skye Trailblazer: 'trail' added to A18_NET_KINDS (server/src/agents18.js), client netSyncTrail draws skxTrailblazer, facing from motion. Tests server/test-skye-trail-row.js, work/test_skye_trail_client.cjs (stub module). Look, scale, ground height unverified. Skye keys: c Regrowth, q Trailblazer, e Guiding Light.
+- Still missing: Guiding Light hawk and heal beam rows, Fade Haunt, Miks Harmonize/Waveform, Deadlock Annihilation, older list.
+- Credential route: write-file in tools box lands the file in the workspace; clone/push with http.extraheader (never set remote URL or store the token); delete the file after.
