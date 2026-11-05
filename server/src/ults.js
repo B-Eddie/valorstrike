@@ -21,7 +21,7 @@ const enemies=(sim,u)=>sim.units.filter(v=>v!==u&&v.team!==u.team&&v.alive&&!v.l
 const effect=(sim,u,kind,p,seconds,radius,extra={})=>{const e={id:++sim.effectSeq,kind,owner:u.id,ag:u.agent,team:u.team,p:[...p],until:sim.time+seconds,radius,...extra};sim.effects.push(e);return e;};
 // Showstopper splash (wiki Showstopper: radii 4 m inner / 7 m outer, damage 30 - 150): full 150 inside 4 m, linear to 30 at 7 m, 0 beyond; client xSsDmg.
 export function ssDamage(r){const C=ULT.rocket;return r<=C.inner?C.damage:r<C.outer?C.damage-(C.damage-C.min)*(r-C.inner)/(C.outer-C.inner):0;}
-export function resetUlts(u){u.detainUntil=0;u.revealedUntil=0;u.runItBack=null;u.showstopper=null;if(u.ultWeapon){u.ultWeapon=null;}if(u.ability)u.ability.fury=null;}
+export function resetUlts(u){u.detainUntil=0;u.revealedUntil=0;u.sovaRevealUntil=0;u.runItBack=null;u.showstopper=null;if(u.ultWeapon){u.ultWeapon=null;}if(u.ability)u.ability.fury=null;}
 
 // Pre-cast checks that may reject the intent before the ult points are spent. Returns false to reject,
 // or a context object handed to startUlt.
@@ -60,7 +60,7 @@ export function recastUlt(sim,u){const F=u.ability?.fury;if(u.agent==='Sova'&&F)
 
 // One wall-piercing Hunter's Fury blast along the current server-side aim.
 function furyBlast(sim,u){const F=u.ability.fury,o=eye(u),d=aim(u),C=ULT.fury;F.left--;F.recastAt=sim.time+C.cycle;
- for(const v of sim.units.filter(v=>v!==u&&v.alive&&!v.loading)){/* Hunter's Fury: allies take 1/3 and are not revealed */let best=Infinity;for(const h of [1.62,.95,.35]){const q=[v.x-o[0],v.y+h-(v.ch||0)-o[1],v.z-o[2]],t=q.reduce((s,n,i)=>s+n*d[i],0);if(t<0||t>C.range)continue;const off=Math.sqrt(Math.max(0,q.reduce((s,n)=>s+n*n,0)-t*t));best=Math.min(best,off);}if(best<C.width){if(v.team!==u.team)v.revealedUntil=Math.max(v.revealedUntil||0,sim.time+C.reveal);abilityDamage(sim,u,v,C.damage);}}
+ for(const v of sim.units.filter(v=>v!==u&&v.alive&&!v.loading)){/* Hunter's Fury: allies take 1/3 and are not revealed */let best=Infinity;for(const h of [1.62,.95,.35]){const q=[v.x-o[0],v.y+h-(v.ch||0)-o[1],v.z-o[2]],t=q.reduce((s,n,i)=>s+n*d[i],0);if(t<0||t>C.range)continue;const off=Math.sqrt(Math.max(0,q.reduce((s,n)=>s+n*n,0)-t*t));best=Math.min(best,off);}if(best<C.width){if(v.team!==u.team){v.revealedUntil=Math.max(v.revealedUntil||0,sim.time+C.reveal);v.sovaRevealUntil=Math.max(v.sovaRevealUntil||0,sim.time+C.reveal);}abilityDamage(sim,u,v,C.damage);}}
  sim.castEvents.push({t:'ac',i:u.id,ag:u.agent,k:'x',sub:'blast',o,d,p:o.map((n,i)=>n+d[i]*C.range),ts:Math.round(sim.time*1000)});
  if(F.left<1)u.ability.fury=null;}
 
@@ -89,8 +89,9 @@ export function tickUlts(sim,dt){
  }
 }
 
-// Enemies the viewer's team currently has revealed by an ult (Hunter's Fury hit, Neural Theft).
-export function revealedFor(sim,u){return sim.units.filter(v=>v.team!==u.team&&v.alive&&(v.revealedUntil||0)>sim.time).map(v=>[v.id,+v.x.toFixed(2),+v.y.toFixed(2),+v.z.toFixed(2)]);}
+// Active reveals: first four fields remain legacy-compatible; remaining seconds + Sova-only remaining
+// let late joins rebuild current shells without replaying pulses or recolouring shared Cypher/Fade reveals.
+export function revealedFor(sim,u){return sim.units.filter(v=>v.team!==u.team&&v.alive&&(v.revealedUntil||0)>sim.time).map(v=>[v.id,+v.x.toFixed(2),+v.y.toFixed(2),+v.z.toFixed(2),+(v.revealedUntil-sim.time).toFixed(3),+Math.max(0,Math.min(v.revealedUntil,v.sovaRevealUntil||0)-sim.time).toFixed(3)]);}
 // Tour De Force kill: a 6 m, 4 s, 50 % slow field under the victim. Same effect as a spent Trademark's field (devices.js tickDevices
 // trademark field branch: orbSlowUntil for everyone inside; deviceRows sends it to the page as the Trademark field, fp = the spot).
 export function tdfKill(sim,u,v){if(!(u&&u.agent==='Chamber'&&u.ultWeapon&&u.weapon===ULT.tdf.weapon&&v))return null;const fp=[v.x,v.y,v.z];return effect(sim,u,'trademark',fp,ULT.tdf.slow,ULT.tdf.field,{field:true,fp:[...fp],hp:0,spotted:0,tdf:1});}

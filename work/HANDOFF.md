@@ -183,3 +183,10 @@ work/fx_viewer/gen_net2.cjs: the REAL a18NetSync/a18NetFree/netSyncSmokes/netSyn
 - Retained owner skips only where source shows actual legacy local module path (Phoenix HH/Blaze, Skye hawk/flash, Jett Cloudburst, legacy device bodies) with failure/race caveats in audit.
 - New noGL test executes FULL a18NetSync with mixed seeker/haunt/anni own+remote rows, dn, repeats, clearing, real A18 input wrapper. Dedicated tests revised for actual owner paths; all targeted tests + parity pass.
 - Real GL viewer mixed scenarios 19-21, grid 3x7: errs=0, no lifetime-end leftovers. Inspected /downloads/fx_mixed_owner_crop.png: green seeker wisps, purple Haunt, cyan cocoons, dn burst/clearing scene. This is scripted rows/stub ground, not human-view or two-client gameplay acceptance.
+
+## Nov 5 16:07 online reveal lifecycle
+- Real rs wrapper now reconstructs 3D reveal shells from authoritative remaining seconds, with separate Sova-only remaining time. Fury/Recon/Owl set that channel; shared Spycam/Fade/etc retain red, falling back when overlapping orange expires. No pulse replay on late join. Legacy four-number rows remain minimap-only.
+- Shells have independent handles (not offline J.rv), repeated rows dedupe, empty rows/death/disconnect/reset remove, per-frame hook expires them, shared materials/geometries not disposed. Remaining time additive protocol fields preserve old first four columns and sanitizer compatibility. Seat-bot transfer retains Sova timer, round reset clears it.
+- Targeted new server/test-reveal-rows.js, full-page realTHREE/noGL work/test_net_reveal.cjs, server/test-ults.js, net transport/clean rs, offline reveal and reinjection pass.
+- Inspected /downloads/net_reveal.png: real GL actual netRevealSync, dummy body behind wall, orange -> red after orange TTL -> empty after authoritative clear. Scripted state, not gameplay acceptance.
+- Bounded one-client real Lotus assets/input loaded twice with no probe failures; Omen KeyX enters FtS targeting. Both screenshot routes timed out; stopped within hard budgets (90s and 75s). No gameplay visual acceptance. No two-browser, CI, billing or publication action.

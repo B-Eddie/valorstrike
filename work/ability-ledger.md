@@ -177,3 +177,6 @@ Online gap is larger: mpCliRS reads rv rows but only sets netRvUntil used by nmS
 
 ### 15:42 full-page source-composition follow-up
 New test_sova_reveal_page.cjs boots the entire actual page through existing fake-DOM harness, confirms actual Recon/Fury helper uses svxRvMat identity, shared default uses rvMat, removal works. Real THREE, noGL, LOS/rings stubbed, no real input/network/human geometry. Separate existing Owl/Spycam full-page lifecycle test passes. This strengthens composition coverage only, not orange-reveal gameplay acceptance. Future validation runs must be narrowly targeted; do not trigger broad six-job capture matrices for isolated changes.
+
+### Nov 5 online reveal integration (not gameplay accepted)
+Sova Fury/Recon/Owl reveal timers now carry authoritative remaining duration and a separate Sova remaining component in rs.rv. Real online handler attaches orange body/head shells, falls back to shared red after orange expires, and clears on empty/death/reset/disconnect. Legacy rows stay minimap-only. Targeted server + full-page noGL tests and actual handler real-GL dummy-wall screenshot inspected. Match capture still blocked on slow software-rendered readback; no two-client rendered acceptance.
