@@ -12,7 +12,7 @@ console.log('clove ruse row ok');
 {const {s,u}=setup();const f=s.units.find(x=>x.name==='foe')||s.units.find(x=>x!==u);u.ability.q=Math.max(1,u.ability.q);assert.equal(s.command(u,{t:'ab',k:'q',d:[0,0,-1],o:[u.x,u.y+1.6,u.z]}),true,'meddle cast');
  const e=s.effects.find(x=>x.kind==='blast');Object.assign(f,{x:e.p[0],y:0,z:e.p[2]});const far=s.add('far');far.team=f.team;Object.assign(far,{x:e.p[0]+30,z:e.p[2]});const hp=f.hp;
  let r=s.snapshot().fx.find(x=>x.kind==='blast');assert.ok(r&&r.ag==='Clove'&&!r.dn,'flight row: ag, no dn');
- tick(s,.45);assert.equal(f.hp,hp,'nothing before the impact');tick(s,.1);assert.equal(f.decayAmt,70,'decay applied once at impact (mechanics: was missing server side)');assert.equal(f.hp,hp-70);assert.equal(far.decayAmt||0,0,'outside radius untouched');
- r=s.snapshot().fx.find(x=>x.kind==='blast');assert.ok(r&&r.dn===1,'explicit impact flag on the lingering row');tick(s,.3);assert.equal(s.snapshot().fx.some(x=>x.kind==='blast'),false,'row ends after the linger');assert.equal(f.decayAmt<=70,true);}
+ tick(s,.45);assert.equal(f.hp,hp,'nothing before the impact');tick(s,.1);/* NOTE: no server-side decay yet - the contract (wiki: 90 HP / 4 m / 0.75 s windup, LOS, affects all) is unverified and unimplemented; see HANDOFF */assert.equal(f.hp,hp,'no status application is claimed here');
+ r=s.snapshot().fx.find(x=>x.kind==='blast');assert.ok(r&&r.dn===1,'explicit impact flag on the lingering row');tick(s,.3);assert.equal(s.snapshot().fx.some(x=>x.kind==='blast'),false,'row ends after the linger');tick(s,2);assert.equal(s.effects.filter(x=>x.kind==='blast').length,0,'no repeated tick: row stays gone');}
 console.log('clove meddle server ok');
 

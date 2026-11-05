@@ -151,7 +151,7 @@ export function cast18(sim,u,m,o,d,push){
   case 'Clove':{if(k==='c'){/* Pick-me-up: a dead enemy you damaged inside 20 m (lightweight: your last kill within the window) */const t=sim.units.find(v=>v.team!==u.team&&!v.alive&&v.lastKiller===u.id&&sim.time-(u.killAt||0)<C.pmu.window);if(!t)return false;spend();u.hasteUntil=sim.time+C.pmu.haste;u.overheal=Math.min(50,(u.overheal||0)+C.pmu.overheal);u.hp=Math.min(150,u.hp+C.pmu.overheal);cast(sim,u,k,o,d,[t.x,t.y,t.z]);return true;}
    spend();if(k==='q')fx(sim,u,'blast',p,.6,C.meddle.r,{decay:C.meddle.decay,at:sim.time+.5,dnLinger:1});else if(k==='e')fx(sim,u,'smoke',p,C.ruse.life,C.ruse.r,{born:sim.time});cast(sim,u,k,o,d,p);return true;}
   case 'Harbor':{spend();
-   if(k==='c')fx(sim,u,'blast',p,.6,C.surge.r,{nearsight:C.surge.near,slow:C.surge.slow,at:sim.time+.5});
+   if(k==='c')fx(sim,u,'blast',p,.6,C.surge.r,{nearsight:C.surge.near,slow:C.surge.slow,at:sim.time+.5,dnLinger:1});
    else if(k==='q')fx(sim,u,'tide',[u.x,u.y,u.z],C.tide.dist/6,C.tide.w,{d:[aim(u)[0],0,aim(u)[2]],speed:6,life:C.tide.life});
    else if(k==='e')fx(sim,u,'cove',p,C.cove.life,C.cove.r,{hp:C.cove.shieldHp});
    else fx(sim,u,'reckon',[u.x,u.y,u.z],C.reckon.dist/C.reckon.speed,C.reckon.w,{d:[aim(u)[0],0,aim(u)[2]],speed:C.reckon.speed,born:sim.time,s:0,hit:[]});
@@ -252,7 +252,6 @@ export function tick18(sim,dt){
  for(const e of sim.effects){if(!e.ag||!AG18[e.ag])continue;const C=A18,own=sim.units.find(n=>n.id===e.owner);if(e.until<T){if(e.ag==='Gekko'){const k=e.kind==='mosh'?'c':e.kind==='dizzy'?'e':e.wing?'q':0;if(own&&k&&!own.ability['re_'+k])own.ability['re_'+k]=T+A18.globule.reclaim;}continue;}
   switch(e.kind){
    case 'gwell':{for(const v of enemies(sim,own||{}))if(inR(v,e.p,e.radius)){const d=[e.p[0]-v.x,e.p[2]-v.z],l=Math.hypot(...d)||1;v.x+=d[0]/l*4*dt;v.z+=d[1]/l*4*dt;status(v,'vulnerableUntil',2,sim);}break;}
-   case 'blast':if(!e.done&&T>=e.at){/* thrown-orb statuses (Meddle decay, Storm Surge nearsight+slow, Undercut/Relay/Saturate/Thrash/Zero Point/Special Delivery): applied once at the impact, to enemies in radius. Damage (Special Delivery) is handled by the generic blast branch in abilities.js. */e.done=true;for(const v of enemies(sim,own||{}))if(inR(v,e.p,e.radius)){if(e.decay)decay(sim,v,e.decay);if(e.nearsight)status(v,'nearsightUntil',e.nearsight,sim);if(e.slow)status(v,'slowUntil',e.slow,sim);if(e.supp)status(v,'suppressUntil',e.supp,sim);if(e.vuln)status(v,'vulnerableUntil',e.vuln,sim);if(e.concuss)status(v,'concussUntil',e.concuss,sim);if(e.hinder)status(v,'hinderUntil',e.hinder,sim);if(e.detain)status(v,'detainUntil',e.detain,sim);}}break;
    case 'nova':if(!e.done&&T>=e.at){e.done=true;for(const v of enemies(sim,own))if(inR(v,e.p,C.star.novaR))status(v,'concussUntil',C.star.novaConcuss,sim);gone.push(e);}break;
    case 'stim':for(const v of sim.units)if(v.alive&&v.team===e.team&&inR(v,e.p,e.radius))v.stimUntil=Math.max(v.stimUntil||0,T+.5);break;
    case 'orbital':if(T>=e.at)for(const v of sim.units)if(v.alive&&inR(v,e.p,e.radius))dmg18.f(sim,own,v,C.orbital.dps*dt);break;
