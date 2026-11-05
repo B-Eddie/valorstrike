@@ -67,7 +67,7 @@ export function tickAbilities(sim,dt){tickUlts(sim,dt);tickHawks(sim);tick18(sim
   for(let n=0;n<4&&sim.time>=e.at;n++){const v=active&&targets.filter(v=>v.alive&&v.team!==e.team&&inArc(v)&&sightClear(sim,[e.p[0],e.p[1]+1,e.p[2]],[v.x,v.y+1,v.z])).sort((a,b)=>Math.hypot(a.x-e.p[0],a.z-e.p[2])-Math.hypot(b.x-e.p[0],b.z-e.p[2]))[0];
    if(!v){e.lock=0;e.shot=0;e.at=sim.time+.1;break;}
    if(!e.lock){e.lock=1;e.shot=0;e.at=sim.time+T.windup;continue;}
-   if(!e.shot)e.burst=e.at;abilityDamage(sim,owner,v,turretDamage(Math.hypot(v.x-e.p[0],v.z-e.p[2])));v.tagUntil=Math.max(v.tagUntil||0,sim.time+T.tag);v.tagSoft=0;
+   if(!e.shot)e.burst=e.at;abilityDamage(sim,owner,v,turretDamage(Math.hypot(v.x-e.p[0],v.z-e.p[2])));v.tagUntil=Math.max(v.tagUntil||0,sim.time+T.tag);v.tagSoft=0;e.sn=(e.sn||0)+1;e.ft=[v.x,v.y+1,v.z];/* shot counter + target point: the online client draws one tracer per increment */
    e.shot=(e.shot||0)+1;if(e.shot>=T.shots){e.shot=0;e.at=e.burst+T.cycle;}else e.at+=T.gap;}}}sim.fxSrc=null;/* only an effect being ticked names an ownerless kill */}
 // Jett Cloudburst in flight: the owner's aim steers it while C is held (u.input.cb, fresh input only); it turns into the
 // 2.5 s smoke (same effect id, kind 'smoke', e.cb) where it lands or after 2 s in the air (vendor/cloudburst.cjs).
