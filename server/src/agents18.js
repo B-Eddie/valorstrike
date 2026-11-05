@@ -288,7 +288,7 @@ export function tick18(sim,dt){
    case 'dizzy':if(!e.done&&T>=e.at){e.done=true;for(const v of enemies(sim,own))if(inR(v,e.p,e.radius))status(v,'nearsightUntil',C.dizzy.blind,sim);}break;
    case 'nullcmd':if(own){e.p=[own.x,own.y,own.z];}if(own&&T>=e.next){e.next+=C.nullcmd.pulse;for(const v of enemies(sim,own))if(inR(v,[own.x,own.y,own.z],e.radius,8))status(v,'suppressUntil',C.nullcmd.supp,sim);}break;
    case 'nightfall':if(!e.done&&T>=e.at){e.done=true;for(const v of enemies(sim,own))if(strip({x:e.p[0],z:e.p[2],look:e.yaw},v,{dist:C.nightfall.dist,w:C.nightfall.w})){decay(sim,v,C.nightfall.decay);status(v,'revealedUntil',C.nightfall.mark,sim);}gone.push(e);}break;
-   case 'haunt':case 'seize':if(!e.done&&T>=e.at){e.done=true;for(const v of enemies(sim,own))if(inR(v,e.p,e.radius)){if(e.kind==='haunt')status(v,'revealedUntil',C.haunt.reveal,sim);else{decay(sim,v,C.seize.decay);status(v,'tetheredUntil',C.seize.tether,sim);}}gone.push(e);}break;
+   case 'haunt':case 'seize':if(!e.done&&T>=e.at){e.done=true;for(const v of enemies(sim,own))if(inR(v,e.p,e.radius)){if(e.kind==='haunt')status(v,'revealedUntil',C.haunt.reveal,sim);else{decay(sim,v,C.seize.decay);status(v,'tetheredUntil',C.seize.tether,sim);}}if(e.kind!=='haunt')gone.push(e);/* Haunt stays in the snapshot (dn:1) until its mark time ends so clients get an explicit pop signal; reveal is a unit status, nothing else reads this effect */}break;
   }}
  if(gone.length){for(const e of gone)if(e.ag==='Gekko'){const u=sim.units.find(n=>n.id===e.owner),k=e.kind==='mosh'?'c':e.kind==='dizzy'?'e':e.wing?'q':0;if(u&&k)u.ability['re_'+k]=T+A18.globule.reclaim;}sim.effects=sim.effects.filter(e=>!gone.includes(e));}
  // unit statuses
