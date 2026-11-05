@@ -15,4 +15,7 @@ assert.equal(row().ph,4);assert.equal(row().dn,1,'detonation is explicit, not a 
 sim.time=11.2;assert.equal(row(),undefined,'dn row expires');
 sim.effects=[{id:3,kind:'turret',owner:2,team:0,p:[0,0,0],until:30,hp:100,yaw:0,sn:2,ft:[1,1.5,3]}];
 const t=deviceRows(sim)[0];assert.equal(t.sn,2);assert.deepEqual(t.ft,[1,1.5,3]);
+sim.effects=[{id:4,kind:'trapwire',owner:2,team:0,p:[0,0,0],q:[4,0,0],until:30,hp:20,tn:2,tripP:[1,0,1]}];
+const w=deviceRows(sim)[0];assert.equal(w.tn,2);assert.deepEqual(w.tp,[1,0,1],'Cypher trip counter + intruder point');
+assert.ok(src.includes("e.tn=(e.tn||0)+1"),'the server increments the counter at the trip');
 console.log('killjoy device signals ok');

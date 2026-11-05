@@ -11,3 +11,11 @@ ctx.sync(row(0));ctx.sync(row(0));assert.deepEqual(log,[['new',0,4]],'module cre
 assert.ok([...ctx.netDevs.get(5).parts].every(p=>p.visible===false),'plain parts hidden under the module');
 ctx.sync([]);assert.deepEqual(log[log.length-1],['end']);
 console.log('net trapwire module overlay ok (stub)');
+// trip signal (explicit counter)
+{const log2=[];ctx.cyxWireTrigger=(p,t)=>log2.push([p.x,t]);
+const w=(tn,tp)=>[{kind:'dev',d:'trapwire',id:9,o:3,tm:1,p:[0,0,0],q:[4,0,0],...(tn?{tn,tp}:{})}];
+ctx.sync(w(1,[2,0,1]));assert.deepEqual(log2,[],'first sight of an already-tripped wire: baseline only');
+ctx.sync(w(1,[2,0,1]));assert.deepEqual(log2,[]);
+ctx.sync(w(2,[3,0,1]));assert.deepEqual(log2,[[3,null]],'a trip counter increase flashes once');
+ctx.sync(w(2,[3,0,1]));assert.equal(log2.length,1);
+console.log('net trapwire trip signal ok (stub)');}
