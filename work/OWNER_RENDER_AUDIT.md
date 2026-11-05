@@ -39,3 +39,6 @@ No full-game/two-browser acceptance. Tests below execute real source with script
 ## Remaining coverage limits
 
 This is source-composition plus scripted-snapshot evidence, not two real clients or full-map play. Legacy release/equip/authority-rejection races, reconnect local leftovers, actual input DOM, owner device destruction/detonation timing, human smoke occlusion and each visual's fidelity remain open. No broader acceptance inferred from these tests.
+
+## Local-handle-loss follow-through
+If a Skye owner row was initially marked skseekLocal and local handles later disappear while the server row is still alive, the next snapshot now reconstructs its module from that authoritative row. Regression covers loss and repeat-snapshot dedupe. This is noGL source-path evidence; reconnect UI and exact real-world local/server timing remain unverified.

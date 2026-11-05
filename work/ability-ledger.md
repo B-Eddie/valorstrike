@@ -141,3 +141,19 @@ Sources: wiki.playvalorant.com/en-us/<Ability> pages + images/<Ability>_Showcase
 - 6:50 Skye Regrowth online: server 'regrowth' rows (owner e.o, cast spot, 3600 s) now draw skxRegrowth on remote Skyes (netSyncRegrowth in index.html), following the owner's unit position (units.get(e.o).g.position); own Skye skipped (local RS.rg path). Visual only. Unverified: row field names (o, r) from the server push and the sampled y (feet vs eye), look, cleanup when Skye stops (relies on the row dropping). Skye Trailblazer/Guiding Light/Seekers and heal-beam rows still have no server rows or client draw.
 - 6:52 Hush Displacement online ('pull' row): binds hushxDisplacement from the owner's unit position (units.get(e.o).g.position + 1.4) to the row point, legacy ring hidden; if the owner unit is not found the legacy ring stays. Own casts are skipped (units has no own entry; the local path draws). Row 'susp' (Hush Suspension) intentionally NOT wired: the row moves with the projectile and the module travels itself, which would duplicate. Code-only; stub tests only; origin height (+1.4) and look unverified.
 - 7:05 work/test_fx_modules_real.cjs: real-three.js construct/tick/end/no-leak test for 17 module entry points passes (no GL: shader compile and look untested).
+
+## Sova source ownership transfer 2026-11-05 14:20 (NOT acceptance)
+Source-worker follow-through transferred here. Its final attachment work/sova_fx_runtime.js md5 prefix f2e80f85, sent Nov 4 20:58, was never pushed by that worker. Integrated source is currently md5 c612d2bccbe653e46752d6cd0f14d02f (901d91d d0574d4b patched onto a1ed94ff with safe reversed smoothstep fixes, then 94be5fb runtime mirror). Final original attachment requested from main before reconciliation; do NOT overwrite integration blindly.
+
+Open fidelity/integration gaps, none accepted:
+- Shock looks like soap bubble instead of dark arc volume; ground ellipse too faint.
+- Fury has straight blades instead of tighter S-weave, small weapon hot mass, pale against sky.
+- Recon heavy sky dashes require exposure pass.
+- Owl is a minimal placeholder; wrist deploy unresolved.
+- Orange enemy reveal never end-to-end tested. Online paths, bow/viewmodel and full-game acceptance remain unproven by source-worker evidence.
+- Valid source evidence is isolated single-effect captures at frozen ages and reference contact sheets. All 4x-life-stretched phase strips and multi-effect captures are WITHDRAWN as fidelity/timing evidence.
+- Source timing note: Shock impact about .5s (module .6s front fade). Fury three blasts, each about .15s ramp/.7s sustain/.2-.3s collapse (module 1.1s total). Re-verify against reference before changing game timing.
+- Classic JS SOVAFX/ENDSOVAFX, svx prefix, THREE r149, self-cleanup 48 cap. svxSetLifeScale is TEST ONLY and must never be called by game. svx_capture.cjs / svx_capture_boot.js, if recovered, are capture harnesses, not game code.
+
+### 14:21 source reconciliation result
+Original attachment bytes remain unrecovered, so no claim of byte-identical final source. Recovered exact source-worker 20:57:00 edit command from its archived transcript, followed by 20:57:56 output showing full md5 f2e80f85f9059a5617629361a4b2e562. Every actual patch anchor is ALREADY present in both integrated index.html and work/sova_fx_runtime.js: Shock core .4; rim .28+.55sw; small core .3s/.65 opacity; ground ring .1 opacity/.3s/2.2 grow; nine-segment weave; deeper-blue vec3(.2,.5,1), core .3; Fury kink .45. Thus do not apply that delta twice. Ordered smoothstep correction remains in place. work/test_sova_handoff.cjs locks these source facts and confirms svxSetLifeScale has no gameplay call. Reinjection test passes. This establishes reported delta reconciliation, not original attachment identity or visual acceptance.
