@@ -80,3 +80,6 @@ Server (devices.js/abilities.js): alarmbot row has ph (0 idle/deploying, 1 alert
 
 ### Cypher trip signal (11:39)
 Server: trapwire row carries tn (trip counter, incremented in tickDevices when the wire catches someone) and tp (where the intruder stood). Client: cyxWireTrigger(tp) once per counter increase on a known row (no target silhouette: the target Object3D is not resolvable from a row); first sight is baseline only. Tests: server/test-killjoy-device-signals.js, work/test_net_trapwire_module.cjs (stub). The earlier "no trip flash online" gap is closed.
+
+### Omen remote Paranoia (12:00)
+mpFx (index.html only, not in a runtime source): non-auth Omen 'flash' cast now draws omxParanoiaBolt on the relayed 'ac' event (one-shot event, so no snapshot replay) instead of the generic orb; the blind stays the server's. Test: work/test_omen_remote_paranoia.cjs (line-extracted, stubbed world; not rendered). NOT done: Shrouded Step remote (ABI type 'dash'; the 'ac' event carries origin o and destination p, server teleports after PARITY.step.time 1.2 s or cancels on death, so a fx needs arrival verification from the unit snapshot), Dark Cover dome online (server smoke row has tl but no age/owner agent; needs a placement-age field like device rows before omxCoverDome can be driven without replaying on late join).
