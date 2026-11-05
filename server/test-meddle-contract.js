@@ -16,4 +16,5 @@ const until=(s,T)=>{while(s.time<T-1e-9){const dt=Math.min(.01,T-s.time);s.time+
 {const v={hp:20};Debt.begin(v,0);Debt.tick(v,.75,true,100);assert.equal(v.hp,1,'never below 1 HP');Debt.tick(v,5,true,100);assert.equal(v.hp,20,'restore actual debt, not 90 unconditionally');}
 {const v={hp:150};Debt.begin(v,0);Debt.tick(v,.75,true,150);assert.equal(v.hp,60);Debt.tick(v,5,true,150);assert.equal(v.hp,150,'overheal cap preserved');}
 {const {s,u}=mk();u.medDecay={debt:80};s.spawn(u);assert.equal(u.medDecay,null,'respawn clears old debt');}
+{const {s,u,e}=mk();u.medDecay={debt:10};s.newRound();assert.equal(u.medDecay,null,'actual newRound clears debt');assert.equal(s.effects.some(x=>x.meddle),false,'actual newRound clears flight');}
 console.log('meddle contract ok (real authority/temporal module, stub world)');
