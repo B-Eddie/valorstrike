@@ -95,27 +95,30 @@ function hbxSurge(p, r, life) { try { const R = r || 4.5, ttl = Math.max(2, life
 // ---- High Tide: traveling water wall with foam crest; setPos/setDir follow the wall head ----
 function hbxHighTide(p0, yaw0, opts) { try { const o = opts || {}, ttl = Math.max(2, o.life || 12) + 0.8, G = hbxGeos(), grp = new THREE.Group();
   const W = o.width || 10, H = o.height || 4.4;
-  const wall = new THREE.Mesh(G.plane, hbxMat("wall", hbxWALL, Math.random() * 9)); wall.scale.set(W, H, 1); wall.position.y = H / 2; grp.add(wall);
-  const wallBack = wall.clone(); wallBack.material = wall.material; wallBack.rotation.y = Math.PI; grp.add(wallBack);
-  const crest = new THREE.Mesh(G.plane, new THREE.MeshBasicMaterial({ map: hbxFoamTex(), transparent: true, opacity: 0.95, depthWrite: false, fog: false, side: THREE.DoubleSide })); crest.material.map = hbxFoamTex().clone(); crest.material.map.needsUpdate = true; crest.material.map.repeat.set(3, 1); crest.material.map.wrapS = THREE.RepeatWrapping; crest.scale.set(W, 0.9, 1); crest.position.y = H - 0.15; crest.position.z = 0.3; crest.rotation.x = -0.5; grp.add(crest);
+  const RAD = W * 0.85, TH = W / RAD; // reference: thick curved shell, not a flat plane
+  const wgeo = new THREE.CylinderGeometry(RAD, RAD, H, 24, 1, true, -TH / 2, TH);
+  const wall = new THREE.Mesh(wgeo, hbxMat("wall", hbxWALL, Math.random() * 9)); wall.userData.og = true; wall.material.side = THREE.DoubleSide; wall.position.set(0, H / 2, -RAD); grp.add(wall);
+  const crests = []; for (let ci = 0; ci < 9; ci++) { const cs = hbxSprite(hbxFoamTex(), 0xffffff, 0.85, 1.1 + (ci % 3) * 0.35); cs.material.rotation = ci * 1.3; cs.userData = { a: -TH / 2 + (ci / 8) * TH, off: ci * 0.23 }; crests.push(cs); grp.add(cs); }
   const golds = []; for (let gi = 0; gi < 6; gi++) { const gs = hbxSprite(hbxPuffTex(), 0xffd070, 0.5, 0.5 + (gi % 2) * 0.25); gs.userData = { x0: (gi / 5 - 0.5) * W, off: gi * 0.37 }; golds.push(gs); grp.add(gs); }
   const base = []; for (let i = 0; i < 5; i++) { const s = hbxSprite(hbxPuffTex(), 0xbfeef2, 0.35, 0.9 + (i % 3) * 0.3); s.userData = { x0: (i / 4 - 0.5) * W, off: i * 0.19 }; base.push(s); grp.add(s); }
   if (p0) grp.position.set(p0.x, p0.y || 0, p0.z); grp.rotation.y = yaw0 || 0;
   const fx = hbxFx(ttl, [grp], (dt, age) => { const t = hbxU.value, die = Math.max(0, (age - (ttl - 0.8)) / 0.8), vis = 1 - die;
-    wall.material.uniforms.uP.value = die; crest.material.map.offset.x = t * 0.35;
-    crest.material.opacity = 0.95 * vis * (0.8 + 0.2 * Math.sin(t * 5));
-    golds.forEach((gs) => { const gp = (t * 0.9 + gs.userData.off) % 1; gs.position.set(gs.userData.x0, H - 0.4 + Math.sin(t * 3 + gs.userData.off * 9) * 0.35, 0.45); gs.material.opacity = 0.55 * vis * Math.sin(gp * Math.PI); });
+    wall.material.uniforms.uP.value = die;
+    crests.forEach((cs) => { const cp = (t * 0.7 + cs.userData.off) % 1; cs.position.set(RAD * Math.sin(cs.userData.a), H - 0.25 + Math.sin(t * 2.2 + cs.userData.off * 7) * 0.18 + cp * 0.3, RAD * Math.cos(cs.userData.a) - RAD + 0.35 + cp * 0.25); cs.material.opacity = 0.85 * vis * Math.sin(cp * Math.PI); });
+    golds.forEach((gs) => { const gp = (t * 0.9 + gs.userData.off) % 1; const ga = Math.asin(Math.max(-1, Math.min(1, gs.userData.x0 / RAD))); gs.position.set(gs.userData.x0, H - 0.4 + Math.sin(t * 3 + gs.userData.off * 9) * 0.35, RAD * Math.cos(ga) - RAD + 0.5); gs.material.opacity = 0.55 * vis * Math.sin(gp * Math.PI); });
     base.forEach((s) => { const ph = (t * 0.6 + s.userData.off) % 1; s.position.set(s.userData.x0, 0.3 + ph * 0.9, 0.3 + Math.sin(t * 2 + s.userData.off * 8) * 0.2); s.material.opacity = 0.35 * vis * Math.sin(ph * Math.PI); }); });
   return { fx: fx.fx, obj: grp, setPos: function (p) { try { grp.position.set(p.x, p.y != null ? p.y : grp.position.y, p.z); } catch (e) {} }, setDir: function (yaw) { try { grp.rotation.y = yaw; } catch (e) {} }, end: function () { fx.end(); } }; } catch (e) { try { window.hbxErr = String(e && e.stack || e).slice(0, 300); xE(e); } catch (e2) {} return null; } }
 // ---- Cove: water dome + foam rim + golden shield shimmer; hbxCoveAt keeps the J.smokes record ----
 function hbxCove(p, r, life) { try { const R = r || 4.1, ttl = Math.max(1, life || 12) + 1, G = hbxGeos(), grp = new THREE.Group(); grp.position.set(p.x, (p.y || 0), p.z);
   const dome = new THREE.Mesh(G.sph, hbxMat("cove", hbxCOVE, Math.random() * 9)); dome.scale.setScalar(R * 0.2); dome.position.y = 0; grp.add(dome);
-  const rim = new THREE.Mesh(G.ring, new THREE.MeshBasicMaterial({ map: hbxFoamTex(), transparent: true, opacity: 0.9, depthWrite: false, fog: false, side: THREE.DoubleSide })); rim.material.map = hbxFoamTex().clone(); rim.material.map.needsUpdate = true; rim.material.map.repeat.set(10, 1); rim.material.map.wrapS = THREE.RepeatWrapping; rim.rotation.x = -Math.PI / 2; rim.scale.setScalar(R * 1.02); rim.position.y = 0.1; grp.add(rim);
+  const rim = new THREE.Mesh(G.ring, new THREE.MeshBasicMaterial({ map: hbxFoamTex(), transparent: true, opacity: 0.9, depthWrite: false, fog: false, side: THREE.DoubleSide })); rim.material.map = hbxFoamTex().clone(); rim.material.map.needsUpdate = true; rim.material.map.repeat.set(5, 1); rim.material.map.wrapS = THREE.RepeatWrapping; rim.rotation.x = -Math.PI / 2; rim.scale.setScalar(R * 1.02); rim.position.y = 0.1; grp.add(rim);
+  const foams = []; for (let fi = 0; fi < 10; fi++) { const fs = hbxSprite(hbxFoamTex(), 0xffffff, 0.8, 0.85 + (fi % 3) * 0.3); fs.material.rotation = fi * 1.7; fs.userData = { a: fi / 10 * Math.PI * 2, off: fi * 0.31 }; foams.push(fs); grp.add(fs); }
   const state = { shielded: false };
   const fx = hbxFx(ttl, [grp], (dt, age) => { const t = hbxU.value, grow = Math.min(1, age / 0.6), g2 = 1 - (1 - grow) * (1 - grow) * (1 - grow), die = Math.max(0, (age - (ttl - 1)) / 1);
     dome.scale.setScalar(Math.max(0.01, R * (0.2 + 0.8 * g2))); dome.rotation.y += dt * 0.08;
     dome.material.uniforms.uP.value = die; dome.material.uniforms.uA.value += ((state.shielded ? 1 : 0) - dome.material.uniforms.uA.value) * Math.min(1, dt * 6);
-    rim.material.map.offset.x = t * 0.2; rim.material.opacity = 0.9 * (1 - die); });
+    rim.material.map.offset.x = t * 0.2; rim.material.opacity = 0.9 * (1 - die);
+    const fr = R * (0.2 + 0.8 * g2) * 0.98; foams.forEach((fs) => { const fp = (t * 0.4 + fs.userData.off) % 1; fs.position.set(Math.cos(fs.userData.a + t * 0.15) * fr, 0.25 + Math.sin(t * 1.8 + fs.userData.off * 6) * 0.15, Math.sin(fs.userData.a + t * 0.15) * fr); fs.material.opacity = 0.75 * (1 - die) * (0.5 + 0.5 * Math.sin(fp * 6.2832)); }); });
   return { fx: fx.fx, setShielded: function (on) { state.shielded = !!on; }, end: function () { fx.end(); } }; } catch (e) { try { window.hbxErr = String(e && e.stack || e).slice(0, 300); xE(e); } catch (e2) {} return null; } }
 function hbxCoveAt(p, dur, r) { let m = null; try { m = a18Smoke(p, dur, r, 0x2a7f8c, 0x9adfe8); m.visible = false; } catch (e) { try { xE(e); } catch (e2) {} }
   return hbxCove({ x: p.x, y: p.y || 0, z: p.z }, r, dur); }

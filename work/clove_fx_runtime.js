@@ -108,10 +108,10 @@ function cvxMeddleBurst(p, r) { try { const R = r || 4.5, ttl = 4.8, G = cvxGeos
   return cvxFx(ttl, [grp], (dt, age) => { const t = cvxU.value;
     const gk = Math.min(1, age / 0.35), die = Math.max(0, (age - (ttl - 1.2)) / 1.2);
     pool.scale.set(R * (0.15 + 0.85 * gk), R * 0.28 * (0.15 + 0.85 * gk), R * (0.15 + 0.85 * gk));
-    pool.material.uniforms.uP.value = Math.min(1, die + 0.35); pool.rotation.y += dt * 0.8;
+    pool.material.uniforms.uP.value = Math.min(1, Math.max(die, 0.8 - gk * 0.45)); pool.rotation.y += dt * 0.8;
     const rk = Math.min(1, age / 0.5); ring.scale.setScalar(0.3 + rk * R); ring.material.opacity = 0.9 * (1 - rk) * (1 - die);
     splash.scale.setScalar(R * (0.5 + Math.min(1, age / 0.25) * 0.9)); splash.material.opacity = 0.95 * Math.max(0, 1 - age / 0.6);
-    const fk = Math.min(1, age / 0.22); starf.scale.setScalar(R * (0.35 + fk * 0.55)); starf.material.opacity = Math.max(0, 0.9 - age * 2.4); starc.scale.setScalar(R * (0.16 + fk * 0.2)); starc.material.opacity = Math.max(0, 1.0 - age * 3.2);
+    const fk = Math.min(1, age / 0.22); starf.scale.setScalar(R * (0.5 + fk * 0.75)); starf.material.opacity = Math.max(0, 1.05 - age * 1.8); starc.scale.setScalar(R * (0.2 + fk * 0.26)); starc.material.opacity = Math.max(0, 1.1 - age * 2.4);
     streaks.forEach((st) => { const sk = Math.min(1, age / 0.28); st.material.opacity = 0.9 * (1 - sk) * (1 - sk); });
     frags.forEach((f) => { const d = Math.min(age * f.userData.v, R * 0.9); f.position.set(Math.cos(f.userData.a) * d, Math.max(0.05, 0.4 + f.userData.vy * age - 4.9 * age * age), Math.sin(f.userData.a) * d); f.rotation.z = t * 3 + f.userData.ph; f.rotation.y = f.userData.a; f.material.opacity = (1 - die) * Math.max(0, 1 - age / 3.4); }); }); } catch (e) { try { window.cvxErr = String(e && e.stack || e).slice(0, 300); xE(e); } catch (e2) {} return null; } }
 // ---- Ruse sphere (visual only; cvxRuseAt keeps the J.smokes record) ----
