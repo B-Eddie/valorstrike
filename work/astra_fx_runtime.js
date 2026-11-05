@@ -103,17 +103,19 @@ function asxGravityWell(p, r, opts) { try { const R = r || 3.5, o = opts || {}, 
 // ---- Nova Pulse: ground swirl charge, then a tall violet-pink eruption with a star flare ----
 function asxNovaPulse(p, r, opts) { try { const R = r || 4.5, o = opts || {}, delay = o.delay != null ? o.delay : 1.25, G = asxGeos(), grp = new THREE.Group(); grp.position.set(p.x, (p.y || 0) + 0.06, p.z);
   const disc = new THREE.Mesh(G.circle, asxMat("vortex", asxVORTEX, 4 + Math.random() * 9)); disc.rotation.x = -Math.PI / 2; disc.scale.setScalar(R * 0.8); grp.add(disc);
-  const col = new THREE.Mesh(G.cyl, asxMat("flame", asxFLAME, Math.random() * 9)); col.scale.set(R * 0.45, 0.01, R * 0.45); col.position.y = 0; col.visible = false; grp.add(col);
+  const col = new THREE.Mesh(G.cyl, asxMat("flame", asxFLAME, Math.random() * 9)); col.scale.set(R * 0.95, 0.01, R * 0.95); col.position.y = 0; col.visible = false; grp.add(col);
+  const splash = new THREE.Mesh(G.sph, asxBasic(0xc46af0, 0, true)); splash.visible = false; grp.add(splash);
   const flare = asxSprite(asxStarTex(), 0xf2b8ff, 0, 3.2); flare.position.y = 4.6; grp.add(flare);
   const shock = new THREE.Mesh(G.torus, asxBasic(0xd08af0, 0, true)); shock.rotation.x = Math.PI / 2; shock.position.y = 0.12; grp.add(shock);
   const scorch = new THREE.Mesh(G.circle, asxBasic(0x3a1470, 0, false)); scorch.rotation.x = -Math.PI / 2; scorch.position.y = 0.01; scorch.scale.setScalar(R * 0.55); grp.add(scorch);
-  const H = 7;
+  const H = 2.6; // reference: broad low purple wave, short plume
   return asxFx(delay + 1.6, [grp], (dt, age) => {
     if (age < delay) { const k = age / delay; disc.material.uniforms.uP.value = 0.25 + 0.6 * k; disc.rotation.z -= dt * (2 + 6 * k); disc.scale.setScalar(R * (1.05 - 0.35 * k)); return; }
     const k = Math.min(1, (age - delay) / 1.2);
     disc.material.uniforms.uP.value = Math.max(0, 1 - k * 2.2);
     col.visible = k < 0.92; const grow = Math.min(1, (age - delay) / 0.14), fade = 1 - Math.max(0, (k - 0.55) / 0.4);
-    col.scale.set(R * 0.45 * (1 - k * 0.35), Math.max(0.01, H * grow), R * 0.45 * (1 - k * 0.35)); col.position.y = H * grow / 2;
+    col.scale.set(R * 0.95 * (1 - k * 0.3), Math.max(0.01, H * grow), R * 0.95 * (1 - k * 0.3)); col.position.y = H * grow / 2;
+    splash.visible = k < 0.8; const sk2 = Math.min(1, (age - delay) / 0.7); splash.scale.set(R * (0.5 + sk2 * 1.6), R * 0.35 * (1 - sk2 * 0.5), R * (0.5 + sk2 * 1.6)); splash.material.opacity = 0.65 * (1 - sk2);
     col.material.uniforms.uP.value = 1 - fade;
     flare.material.opacity = Math.max(0, 0.95 - k * 1.6); flare.scale.setScalar(3.2 + k * 3.2);
     shock.scale.setScalar(0.5 + k * R * 1.3); shock.material.opacity = 0.85 * (1 - k);
