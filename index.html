@@ -10662,7 +10662,7 @@ function xAbTm() { const T = xAbTmv(), E = xAbTm.e || (xAbTm.e = {}); // per fra
   return T; }
 function jSmokeTick(dt) {
   XSU.value += dt;
-  J.smokes = J.smokes.filter((s) => { s.t -= dt; if (s.cyl && !s.jx && s.t > 0) { try { s.jx = cyxCage({ x: s.p.x, y: s.p.y, z: s.p.z }, s.r || 4, s.cyl, s.t); if (s.jx) s.m.visible = false; } catch (e) {} } s.m.material.opacity = 0.6 * Math.min(1, s.t / (s.fo || 0.5)); const sm = s.m.material.uniforms; if (sm) { sm.uO.value = s.m.material.opacity / 0.6; s.a = (s.a || 0) + dt; const k = Math.min(1, s.a / (s.dep || 0.3)); if (s.cb && s.m.userData.kids) for (const o of s.m.userData.kids) if (o.userData.sw) o.rotation.y += dt * 0.9; const g = 0.3 + 0.7 * (1 - (1 - k) ** 3), sx = (s.r || 4) / 4; if (s.cyl) s.m.scale.set(sx, g, sx); else s.m.scale.setScalar(sx * g); } if (s.t > 0) return true; try { if (s.jx) cyxEnd(s.jx); } catch (e) {} jRel(s.m); return false; });
+  J.smokes = J.smokes.filter((s) => { s.t -= dt; if (s.cyl && !s.jx && s.t > 0) { try { s.jx = cyxCage({ x: s.p.x, y: s.p.y, z: s.p.z }, s.r || 4, s.cyl, s.t); /* body stays visible: the cage blocks human sight */ } catch (e) {} } s.m.material.opacity = 0.6 * Math.min(1, s.t / (s.fo || 0.5)); const sm = s.m.material.uniforms; if (sm) { sm.uO.value = s.m.material.opacity / 0.6; s.a = (s.a || 0) + dt; const k = Math.min(1, s.a / (s.dep || 0.3)); if (s.cb && s.m.userData.kids) for (const o of s.m.userData.kids) if (o.userData.sw) o.rotation.y += dt * 0.9; const g = 0.3 + 0.7 * (1 - (1 - k) ** 3), sx = (s.r || 4) / 4; if (s.cyl) s.m.scale.set(sx, g, sx); else s.m.scale.setScalar(sx * g); } if (s.t > 0) return true; try { if (s.jx) cyxEnd(s.jx); } catch (e) {} jRel(s.m); return false; });
 }
 function jTick(dt) {
   jSmokeTick(dt);
