@@ -41,6 +41,12 @@ function asxGeos() { if (asxGeo) return asxGeo; asxGeo = {
   cyl: new THREE.CylinderGeometry(1, 1, 1, 28, 6, true),
   torus: new THREE.TorusGeometry(1, 0.045, 8, 48),
   octa: new THREE.OctahedronGeometry(1) }; return asxGeo; }
+function asxRadialTex() { if (asxTex.rad) return asxTex.rad; // soft translucent radial wash, fades to zero at edge (no hard silhouette)
+  const c = document.createElement("canvas"); c.width = c.height = 256; const g = c.getContext("2d");
+  const gr = g.createRadialGradient(128, 128, 8, 128, 128, 128);
+  gr.addColorStop(0, "rgba(198,110,242,0.50)"); gr.addColorStop(0.5, "rgba(172,84,236,0.30)"); gr.addColorStop(0.85, "rgba(150,62,222,0.08)"); gr.addColorStop(1, "rgba(150,62,222,0)");
+  g.fillStyle = gr; g.fillRect(0, 0, 256, 256);
+  asxTex.rad = new THREE.CanvasTexture(c); if (THREE.SRGBColorSpace) asxTex.rad.colorSpace = THREE.SRGBColorSpace; return asxTex.rad; }
 function asxStarTex() { if (asxTex.star) return asxTex.star; // 4-point star sparkle, white on transparent (tint via material color)
   const c = document.createElement("canvas"); c.width = c.height = 128; const g = c.getContext("2d"); g.clearRect(0, 0, 128, 128);
   const gr = g.createRadialGradient(64, 64, 0, 64, 64, 26); gr.addColorStop(0, "rgba(255,255,255,1)"); gr.addColorStop(1, "rgba(255,255,255,0)");
@@ -103,14 +109,18 @@ function asxGravityWell(p, r, opts) { try { const R = r || 3.5, o = opts || {}, 
 // ---- Nova Pulse: ground swirl charge, then a tall violet-pink eruption with a star flare ----
 function asxNovaPulse(p, r, opts) { try { const R = r || 4.5, o = opts || {}, delay = o.delay != null ? o.delay : 1.25, G = asxGeos(), grp = new THREE.Group(); grp.position.set(p.x, (p.y || 0) + 0.06, p.z);
   const disc = new THREE.Mesh(G.circle, asxMat("vortex", asxVORTEX, 4 + Math.random() * 9)); disc.rotation.x = -Math.PI / 2; disc.scale.setScalar(R * 0.8); grp.add(disc);
-  const splash = new THREE.Mesh(G.sph, asxBasic(0xc46af0, 0, true)); splash.visible = false; grp.add(splash);
+  const splash = new THREE.Mesh(G.circle, new THREE.MeshBasicMaterial({ map: asxRadialTex(), transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, fog: false, toneMapped: false })); splash.rotation.x = -Math.PI / 2; splash.position.y = 0.1; splash.visible = false; grp.add(splash);
+  const splash2 = splash.clone(); splash2.material = splash.material.clone(); splash2.position.y = 0.42; grp.add(splash2);
   const shock = new THREE.Mesh(G.torus, asxBasic(0xd08af0, 0, true)); shock.rotation.x = Math.PI / 2; shock.position.y = 0.12; grp.add(shock);
   const scorch = new THREE.Mesh(G.circle, asxBasic(0x3a1470, 0, false)); scorch.rotation.x = -Math.PI / 2; scorch.position.y = 0.01; scorch.scale.setScalar(R * 0.55); grp.add(scorch);
   return asxFx(delay + 1.6, [grp], (dt, age) => {
     if (age < delay) { const k = age / delay; disc.material.uniforms.uP.value = 0.25 + 0.6 * k; disc.rotation.z -= dt * (2 + 6 * k); disc.scale.setScalar(R * (1.05 - 0.35 * k)); return; }
     const k = Math.min(1, (age - delay) / 1.2);
     disc.material.uniforms.uP.value = Math.max(0, 1 - k * 2.2);
-    splash.visible = k < 0.97; const sk2 = Math.min(1, (age - delay) / 0.9); splash.scale.set(R * (0.6 + sk2 * 2.1), R * 0.42 * (1 - sk2 * 0.3), R * (0.6 + sk2 * 2.1)); splash.material.opacity = 0.72 * (1 - sk2 * 0.85);
+    const sk2 = Math.min(1, (age - delay) / 0.9);
+    splash.visible = splash2.visible = k < 0.97;
+    splash.scale.setScalar(R * (0.7 + sk2 * 2.3)); splash.material.opacity = 0.95 * (1 - sk2 * 0.8);
+    splash2.scale.setScalar(R * (0.45 + sk2 * 1.5)); splash2.material.opacity = 0.55 * (1 - sk2);
     shock.scale.setScalar(0.5 + k * R * 1.3); shock.material.opacity = 0.85 * (1 - k);
     scorch.material.opacity = 0.55 * Math.max(0, 1 - k); }); } catch (e) { try { window.asxErr = String(e && e.stack || e).slice(0, 300); xE(e); } catch (e2) {} return null; } }
 // ---- Nebula sphere (visual only; asxNebulaSmoke keeps the J.smokes record) ----

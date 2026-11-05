@@ -38,6 +38,14 @@ function cvxGeos() { if (cvxGeo) return cvxGeo; cvxGeo = {
   torus: new THREE.TorusGeometry(1, 0.05, 8, 48),
   cone: new THREE.ConeGeometry(0.5, 1, 5),
   plane: new THREE.PlaneGeometry(1, 1) }; return cvxGeo; }
+function cvxStarTex() { if (cvxTex.star) return cvxTex.star; // angular 4-point sparkle silhouette, soft glow inside
+  const c = document.createElement("canvas"); c.width = c.height = 128; const g = c.getContext("2d"); g.clearRect(0, 0, 128, 128);
+  const gr = g.createRadialGradient(64, 64, 2, 64, 64, 62); gr.addColorStop(0, "rgba(255,255,255,1)"); gr.addColorStop(0.3, "rgba(215,232,255,0.6)"); gr.addColorStop(1, "rgba(150,190,255,0)");
+  g.fillStyle = gr; g.fillRect(0, 0, 128, 128);
+  g.globalCompositeOperation = "destination-in"; g.beginPath(); g.moveTo(64, 0);
+  g.quadraticCurveTo(70, 58, 128, 64); g.quadraticCurveTo(70, 70, 64, 128); g.quadraticCurveTo(58, 70, 0, 64); g.quadraticCurveTo(58, 58, 64, 0);
+  g.closePath(); g.fill();
+  cvxTex.star = new THREE.CanvasTexture(c); if (THREE.SRGBColorSpace) cvxTex.star.colorSpace = THREE.SRGBColorSpace; return cvxTex.star; }
 function cvxWingTex() { if (cvxTex.wing) return cvxTex.wing; // jagged purple wing shard
   const c = document.createElement("canvas"); c.width = 128; c.height = 64; const g = c.getContext("2d"); g.clearRect(0, 0, 128, 64);
   g.fillStyle = "rgba(190,120,255,0.95)"; g.beginPath(); g.moveTo(0, 32);
@@ -101,17 +109,17 @@ function cvxMeddleBurst(p, r) { try { const R = r || 4.5, ttl = 4.8, G = cvxGeos
   const pool = new THREE.Mesh(G.sph, cvxMat("orb", cvxORB, Math.random() * 9)); pool.scale.set(R * 0.15, R * 0.15, R * 0.15); pool.position.y = 0.05; grp.add(pool);
   const ring = new THREE.Mesh(G.ring, cvxBasic(0xb050ff, 0.9, true)); ring.rotation.x = -Math.PI / 2; ring.position.y = 0.12; grp.add(ring);
   const frags = []; for (let i = 0; i < 9; i++) { const f = new THREE.Mesh(G.plane, new THREE.MeshBasicMaterial({ map: cvxWingTex(), color: 0xffffff, transparent: true, opacity: 1, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, fog: false, toneMapped: false })); f.scale.set(0.5, 0.25, 1); f.userData = { a: i * 0.7, v: 2.5 + (i % 4) * 1.4, vy: 3.5 + (i % 5), ph: i * 1.3 }; frags.push(f); grp.add(f); }
-  const splash = cvxSprite(cvxPuffTex(), 0xa050ff, 0.95, R * 0.5); splash.position.y = 0.5; grp.add(splash);
-  const starf = cvxSprite(cvxPuffTex(), 0xffe0f8, 0, R * 0.5); starf.position.y = 0.7; grp.add(starf);
-  const starc = cvxSprite(cvxPuffTex(), 0xffffff, 0, R * 0.22); starc.position.y = 0.7; grp.add(starc);
-  const streaks = []; for (let si = 0; si < 6; si++) { const st = new THREE.Mesh(G.plane, cvxBasic(0xf0c0ff, 0, true)); st.scale.set(R * 0.8, 0.05, 1); st.rotation.x = -Math.PI / 2; st.rotation.z = si * 0.52; st.position.y = 0.14 + si * 0.012; streaks.push(st); grp.add(st); }
+  const splash = cvxSprite(cvxPuffTex(), 0x9a78ff, 0.95, R * 0.5); splash.position.y = 0.5; grp.add(splash);
+  const starf = cvxSprite(cvxStarTex(), 0xcfe4ff, 0, R * 0.6); starf.position.y = 0.7; grp.add(starf);
+  const starc = cvxSprite(cvxPuffTex(), 0xeaf4ff, 0, R * 0.12); starc.position.y = 0.7; grp.add(starc);
+  const streaks = []; for (let si = 0; si < 6; si++) { const st = new THREE.Mesh(G.plane, cvxBasic(0xa8ccff, 0, true)); st.scale.set(R * 0.8, 0.05, 1); st.rotation.x = -Math.PI / 2; st.rotation.z = si * 0.52; st.position.y = 0.14 + si * 0.012; streaks.push(st); grp.add(st); }
   return cvxFx(ttl, [grp], (dt, age) => { const t = cvxU.value;
     const gk = Math.min(1, age / 0.35), die = Math.max(0, (age - (ttl - 1.2)) / 1.2);
     pool.scale.set(R * (0.15 + 0.85 * gk), R * 0.28 * (0.15 + 0.85 * gk), R * (0.15 + 0.85 * gk));
     pool.material.uniforms.uP.value = Math.min(1, Math.max(die, 0.8 - gk * 0.45)); pool.rotation.y += dt * 0.8;
     const rk = Math.min(1, age / 0.5); ring.scale.setScalar(0.3 + rk * R); ring.material.opacity = 0.9 * (1 - rk) * (1 - die);
     splash.scale.setScalar(R * (0.5 + Math.min(1, age / 0.25) * 0.9)); splash.material.opacity = 0.95 * Math.max(0, 1 - age / 0.6);
-    const fk = Math.min(1, age / 0.22); starf.scale.setScalar(R * (0.5 + fk * 0.75)); starf.material.opacity = Math.max(0, 1.05 - age * 1.8); starc.scale.setScalar(R * (0.2 + fk * 0.26)); starc.material.opacity = Math.max(0, 1.1 - age * 2.4);
+    const fk = Math.min(1, age / 0.22); starf.material.rotation = t * 1.1; starf.scale.setScalar(R * (0.55 + fk * 0.85)); starf.material.opacity = Math.max(0, 1.05 - age * 1.8); starc.scale.setScalar(R * (0.2 + fk * 0.26)); starc.material.opacity = Math.max(0, 1.1 - age * 2.4);
     streaks.forEach((st) => { const sk = Math.min(1, age / 0.28); st.material.opacity = 0.9 * (1 - sk) * (1 - sk); });
     frags.forEach((f) => { const d = Math.min(age * f.userData.v, R * 0.9); f.position.set(Math.cos(f.userData.a) * d, Math.max(0.05, 0.4 + f.userData.vy * age - 4.9 * age * age), Math.sin(f.userData.a) * d); f.rotation.z = t * 3 + f.userData.ph; f.rotation.y = f.userData.a; f.material.opacity = (1 - die) * Math.max(0, 1 - age / 3.4); }); }); } catch (e) { try { window.cvxErr = String(e && e.stack || e).slice(0, 300); xE(e); } catch (e2) {} return null; } }
 // ---- Ruse sphere (visual only; cvxRuseAt keeps the J.smokes record) ----
