@@ -98,7 +98,6 @@ function hbxHighTide(p0, yaw0, opts) { try { const o = opts || {}, ttl = Math.ma
   const wall = new THREE.Mesh(G.plane, hbxMat("wall", hbxWALL, Math.random() * 9)); wall.scale.set(W, H, 1); wall.position.y = H / 2; grp.add(wall);
   const wallBack = wall.clone(); wallBack.material = wall.material; wallBack.rotation.y = Math.PI; grp.add(wallBack);
   const crest = new THREE.Mesh(G.plane, new THREE.MeshBasicMaterial({ map: hbxFoamTex(), transparent: true, opacity: 0.95, depthWrite: false, fog: false, side: THREE.DoubleSide })); crest.material.map = hbxFoamTex().clone(); crest.material.map.needsUpdate = true; crest.material.map.repeat.set(3, 1); crest.material.map.wrapS = THREE.RepeatWrapping; crest.scale.set(W, 0.8, 1); crest.position.y = H - 0.1; grp.add(crest);
-  const front = new THREE.Mesh(G.plane, crest.material); front.scale.set(0.9, H * 0.9, 1); front.rotation.z = Math.PI / 2; front.position.set(0, H / 2, 0); front.userData.lead = true; grp.add(front);
   const base = []; for (let i = 0; i < 5; i++) { const s = hbxSprite(hbxPuffTex(), 0xbfeef2, 0.35, 0.9 + (i % 3) * 0.3); s.userData = { x0: (i / 4 - 0.5) * W, off: i * 0.19 }; base.push(s); grp.add(s); }
   if (p0) grp.position.set(p0.x, p0.y || 0, p0.z); grp.rotation.y = yaw0 || 0;
   const fx = hbxFx(ttl, [grp], (dt, age) => { const t = hbxU.value, die = Math.max(0, (age - (ttl - 0.8)) / 0.8), vis = 1 - die;
@@ -109,7 +108,7 @@ function hbxHighTide(p0, yaw0, opts) { try { const o = opts || {}, ttl = Math.ma
 // ---- Cove: water dome + foam rim + golden shield shimmer; hbxCoveAt keeps the J.smokes record ----
 function hbxCove(p, r, life) { try { const R = r || 4.1, ttl = Math.max(1, life || 12) + 1, G = hbxGeos(), grp = new THREE.Group(); grp.position.set(p.x, (p.y || 0), p.z);
   const dome = new THREE.Mesh(G.sph, hbxMat("cove", hbxCOVE, Math.random() * 9)); dome.scale.setScalar(R * 0.2); dome.position.y = 0; grp.add(dome);
-  const rim = new THREE.Mesh(G.plane, new THREE.MeshBasicMaterial({ map: hbxFoamTex(), transparent: true, opacity: 0.9, depthWrite: false, fog: false, side: THREE.DoubleSide })); rim.material.map = hbxFoamTex().clone(); rim.material.map.needsUpdate = true; rim.material.map.repeat.set(6, 1); rim.material.map.wrapS = THREE.RepeatWrapping; rim.rotation.x = -Math.PI / 2; rim.scale.setScalar(R * 2.1); rim.position.y = 0.12; grp.add(rim);
+  const rim = new THREE.Mesh(G.ring, new THREE.MeshBasicMaterial({ map: hbxFoamTex(), transparent: true, opacity: 0.9, depthWrite: false, fog: false, side: THREE.DoubleSide })); rim.material.map = hbxFoamTex().clone(); rim.material.map.needsUpdate = true; rim.material.map.repeat.set(10, 1); rim.material.map.wrapS = THREE.RepeatWrapping; rim.rotation.x = -Math.PI / 2; rim.scale.setScalar(R * 1.02); rim.position.y = 0.1; grp.add(rim);
   const state = { shielded: false };
   const fx = hbxFx(ttl, [grp], (dt, age) => { const t = hbxU.value, grow = Math.min(1, age / 0.6), g2 = 1 - (1 - grow) * (1 - grow) * (1 - grow), die = Math.max(0, (age - (ttl - 1)) / 1);
     dome.scale.setScalar(Math.max(0.01, R * (0.2 + 0.8 * g2))); dome.rotation.y += dt * 0.08;
