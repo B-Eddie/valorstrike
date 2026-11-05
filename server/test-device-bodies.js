@@ -13,7 +13,7 @@ const shoot=(s,h,pt,n)=>{for(let i=0;i<n;i++){const e=[h.x,h.y+1.6,h.z],q=pt.map
 const rows=s=>s.snapshot().fx.filter(r=>r.kind==='dev');
 // 1. values
 assert.deepEqual([SHOOT.spycam.hp,SHOOT.owl.hp,DEV.owl.life,DEV.spycam.life],[1,100,7,120],'Spycam 1 HP, Owl Drone 100 HP / 7 s (wiki)');
-assert.deepEqual([...DEV_ROWS].sort(),['alarmbot','blastpack','boombot','hunter','owl','spycam','trademark','trapwire','turret']);
+assert.deepEqual([...DEV_ROWS].sort(),['alarmbot','blastpack','boombot','hunter','owl','rdvanchor','spycam','trademark','trapwire','turret']);
 // 2. each device kind is a snapshot row with its owner, team, position (cm) and HP
 for(const [agent,k,kind] of [['Killjoy','e','turret'],['Killjoy','q','alarmbot'],['Cypher','c','trapwire'],['Chamber','c','trademark'],['Raze','q','blastpack'],['Cypher','e','spycam'],['Sova','c','owl']]){
  const {s,u}=setup(agent);u.ability[k]=1;assert.equal(ab(s,u,k),true,agent+' '+k);const e=s.effects.find(x=>x.kind===kind);assert.ok(e,kind+' effect');

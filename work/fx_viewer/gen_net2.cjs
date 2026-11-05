@@ -6,7 +6,7 @@ const fs=require('fs'),path=require('path');
 const html=fs.readFileSync(path.join(__dirname,'..','..','index.html'),'utf8');
 const three=fs.readFileSync(path.join(__dirname,'..','two-browser','qa','three.min.js'),'utf8');
 const seg=(a,b)=>{const i=html.indexOf(a),j=html.indexOf(b,i);if(i<0||j<i)throw new Error('extract '+a);return html.slice(i,j);};
-const mods=seg('// ---- PHOENIX FX ----','// ---- END PHOENIX FX ----')+'\n'+seg('// ---- OMEN FX ----','// ---- END OMEN FX ----')+'\n'+seg('// ---- RAZE FX ----','// ---- END RAZE FX ----');
+const mods=seg('// ---- PHOENIX FX ----','// ---- END PHOENIX FX ----')+'\n'+seg('// ---- OMEN FX ----','// ---- END OMEN FX ----');
 const net=[seg('const a18Net = new Map();','function a18NetMesh('),seg('function a18NetFree(r','\nfunction a18NetSync(rows) {'),seg('function a18NetSync(rows) {','const a18FxSync0'),
  seg('function netSyncSmokes(rows){','\nfunction ',),seg('const netAbDn=new Set();','\nconst netRg'),seg('function netDevDrop(id){','\n')].join('\n');
 const W=320,H=240;
@@ -22,7 +22,10 @@ const scen=`[
  ['phoenix run it back: marker row at t=2.0 (row-bound, ends with the row)',function(t){return t<3.0?[{id:6,kind:'rib',o:3,p:[0,0,0],r:0,tl:9.5-t}]:[]},2.0],
  ['raze boom bot: place (fresh), lock-on pulse at 1.2 s, running at 1.6 s',function(t){return [{id:7,kind:'dev',d:'boombot',o:3,tm:1,p:[-2+Math.min(t,2.2)*1.4,0,0],yaw:-1.5708,hp:60,age:t+0.05,ph:t<1.0?0:1}]},1.6],
  ['raze boom bot: dn row -> boom at 1.0 s (explicit detonation)',function(t){if(t<0.8)return [{id:8,kind:'dev',d:'boombot',o:3,tm:1,p:[0,0,0],yaw:0,hp:60,age:3+t,ph:t<0.5?1:2}];return t<1.05?[{id:8,kind:'dev',d:'boombot',o:3,tm:1,p:[0,0,0],hp:0,ph:4,dn:1}]:[]},1.5],
- ['raze blast pack: module body at the row point (blast = server boom event, not in this viewer)',function(t){return t<1.5?[{id:9,kind:'dev',d:'blastpack',o:3,tm:1,p:[0,0,0],hp:20,age:1+t}]:[]},1.0]
+ ['raze blast pack: module body at the row point (blast = server boom event, not in this viewer)',function(t){return t<1.5?[{id:9,kind:'dev',d:'blastpack',o:3,tm:1,p:[0,0,0],hp:20,age:1+t}]:[]},1.0],
+ ['chamber trademark: body at age 1.5, field starts at 0.5 s (fl 3.5), t=1.5',function(t){return t<0.5?[{id:12,kind:'dev',d:'trademark',o:3,tm:1,p:[0,0,0],hp:20,age:1.5+t}]:t<3.5?[{id:12,kind:'dev',d:'trademark',o:3,tm:1,p:[0,0,0],hp:0,fp:[0,0,0],fl:4-t}]:[]},1.5],
+ ['chamber rendezvous anchor: row (age 12), then dn row at 0.8 s',function(t){return t<0.8?[{id:13,kind:'dev',d:'rdvanchor',o:3,tm:1,p:[0,0,0],hp:50,age:12+t}]:t<1.05?[{id:13,kind:'dev',d:'rdvanchor',o:3,tm:1,p:[0,0,0],hp:0,dn:1}]:[]},0.6],
+ ['chamber rendezvous anchor: row visible at t=1.0 (not destroyed)',function(t){return t<1.5?[{id:14,kind:'dev',d:'rdvanchor',o:3,tm:1,p:[0,0,0],hp:50,age:3+t}]:[]},1.0]
 ]`;
 process.stdout.write(`<!doctype html><meta charset=utf-8><body style="margin:0;background:#111">
 <script>${three}</script>
@@ -31,20 +34,20 @@ var nowv=0,errs=[];window.performance.now=function(){return nowv};
 var player={x:0,y:0,z:0},innerWidth=${W},innerHeight=${H};function xE(e){errs.push(String(e&&e.stack||e))}
 var MP={me:7},allies=[],units=new Map(),J={smokes:[]};function groundAt(){return 0.05}function jRel(m){try{scene.remove(m)}catch(e){}}function netDevFree(m){try{scene.remove(m)}catch(e){}}function netOwnGone(){}function okMat(c){return new THREE.MeshBasicMaterial({color:c})}
 var camera=new THREE.PerspectiveCamera(45,${W}/${H},.1,100);camera.position.set(6,4.2,8.5);camera.lookAt(0,1,0);var scene=null;
-var A18VIS={fire:['cloud',0xff5a1a,.5]};var NET_DEV={alarmbot:1,turret:1,trapwire:1,boombot:null,blastpack:null},netDevs=new Map(),netOwnDevs=new Map();
+var A18VIS={fire:['cloud',0xff5a1a,.5]};var NET_DEV={alarmbot:1,turret:1,trapwire:1,boombot:null,blastpack:null,trademark:null,rdvanchor:null},netDevs=new Map(),netOwnDevs=new Map();
 function netDevPart(kind,al){var m=new THREE.Mesh(new THREE.BoxGeometry(.4,.4,.4),new THREE.MeshBasicMaterial({color:al?0x3fb4ff:0xff4655}));m.userData.ownGeo=true;scene.add(m);return m}
 function netSmoke0(x,z,al,tl,y,r,cyl){var m=new THREE.Mesh(new THREE.SphereGeometry(r||4,16,12),new THREE.MeshBasicMaterial({color:0x8a8f99,transparent:true,opacity:.35}));m.position.set(x,y||2,z);scene.add(m);J.smokes.push({m:m,p:m.position,t:tl,cb:false,netId:null})}
 </script>
 <script>${mods}</script>
 <script>${net}
 var scen=${scen};var _rle=rzxLogErr;rzxLogErr=function(e){errs.push('rzx '+(e&&e.stack||e));};
-function tickAll(dt){nowv+=dt*1000;['phxTick','omxTick','kjxTick','cyxTick','rzxTick'].forEach(function(f){if(typeof window[f]==='function'){try{window[f](dt)}catch(e){errs.push(f+' '+e)}}})}
+function tickAll(dt){nowv+=dt*1000;['phxTick','omxTick','kjxTick','cyxTick','rzxTick','chxTick'].forEach(function(f){if(typeof window[f]==='function'){try{window[f](dt)}catch(e){errs.push(f+' '+e)}}})}
 function sync(rows){a18NetSync(rows);netSyncSmokes(rows);netSyncDevices(rows)}
-var NR=document.createElement('canvas');document.body.appendChild(NR);var r2=new THREE.WebGLRenderer({canvas:NR,antialias:false,preserveDrawingBuffer:true});r2.setSize(${W*3},${H*4});r2.setScissorTest(true);
+var NR=document.createElement('canvas');document.body.appendChild(NR);var r2=new THREE.WebGLRenderer({canvas:NR,antialias:false,preserveDrawingBuffer:true});r2.setSize(${W*3},${H*5});r2.setScissorTest(true);
 scen.forEach(function(sc,n){scene=new THREE.Scene();scene.background=new THREE.Color(0x232a36);var g=new THREE.Mesh(new THREE.PlaneGeometry(30,30),new THREE.MeshBasicMaterial({color:0x3a4252}));g.rotation.x=-Math.PI/2;scene.add(g);scene.add(new THREE.GridHelper(30,30,0x556,0x445));
  a18Net.clear();J.smokes=[];nowv=0;
  for(var k=0;k<=Math.round(sc[2]/0.05);k++){var t=k*0.05;try{sync(sc[1](t))}catch(e){errs.push(sc[0]+' '+e)}tickAll(0.05)}
- var x=(n%3)*${W},y=${H}*(3-Math.floor(n/3));r2.setViewport(x,y,${W},${H});r2.setScissor(x,y,${W},${H});r2.render(scene,camera);
+ var x=(n%3)*${W},y=${H}*(4-Math.floor(n/3));r2.setViewport(x,y,${W},${H});r2.setScissor(x,y,${W},${H});r2.render(scene,camera);
  try{sync([])}catch(e){errs.push('end '+e)}for(var q=0;q<260;q++)tickAll(0.05);var left=scene.children.length;if(left>2)errs.push(sc[0]+' leftover scene objs '+(left-2));
 });
 document.title='NET2 DONE errs='+errs.length;document.body.setAttribute('data-errs',Array.from(new Set(errs)).join(' || ').slice(0,900));
