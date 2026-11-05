@@ -25220,6 +25220,8 @@ function a18AcidPool(cx, gy, cz, r, life, online) {
   a18Fx(E); return E;
 }
 function a18AcidFree(E) { for (const it of E.items) { scene.remove(it.m); if (it.t === "pool") it.m.geometry.dispose(); } for (const k in E.mats) E.mats[k].dispose(); E.dead = true; }
+let a18DustT = null;
+function a18DustTex() { if (a18DustT) return a18DustT; const c = document.createElement("canvas"); c.width = c.height = 128; const g = c.getContext("2d"); for (let i = 0; i < 26; i++) { const x = 64 + (Math.random() - 0.5) * 60, y = 64 + (Math.random() - 0.5) * 60, r = 16 + Math.random() * 22, gr = g.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, "rgba(255,255,255,0.28)"); gr.addColorStop(1, "rgba(255,255,255,0)"); g.fillStyle = gr; g.fillRect(0, 0, 128, 128); } a18DustT = new THREE.CanvasTexture(c); return a18DustT; }
 function a18QuakeBlast(cx, gy, cz, yaw, w, seg, fault) {
   if (!a18QkTex) {
     const c = document.createElement("canvas"); c.width = c.height = 256; const g = c.getContext("2d"); g.clearRect(0, 0, 256, 256); g.lineCap = "round";
@@ -25233,13 +25235,13 @@ function a18QuakeBlast(cx, gy, cz, yaw, w, seg, fault) {
     a18QkCone = new THREE.ConeGeometry(0.45, 1, 4); a18QkCone.translate(0, 0.5, 0); a18QkBox = new THREE.BoxGeometry(1, 1, 1); a18QkSph = new THREE.SphereGeometry(1, 8, 6);
   }
   const mk = (c, o, add) => new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: o, depthWrite: false, side: THREE.DoubleSide, blending: add ? THREE.AdditiveBlending : THREE.NormalBlending });
-  const E = { kind: "quakefx", age: 0, life: 2.2, items: [], mats: { crack: new THREE.MeshBasicMaterial({ map: a18QkTex, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 }), spike: mk(0xff7a10, 1), spike2: mk(0xffc030, 1), rock: mk(0x3a2a20, 1), smoke: mk(0x666666, 0.4) } };
+  const E = { kind: "quakefx", age: 0, life: 2.2, items: [], mats: { crack: new THREE.MeshBasicMaterial({ map: a18QkTex, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 }), spike: mk(0xff7a10, 1), spike2: mk(0xffc030, 1), rock: mk(0x3a2a20, 1), smoke: new THREE.SpriteMaterial({ map: a18DustTex(), color: 0xb89a78, transparent: true, depthWrite: false, opacity: 0.4 }) } };
   const fx = -Math.sin(yaw), fz = -Math.cos(yaw), add = (m, o) => { scene.add(m); E.items.push(Object.assign({ m }, o)); return m; };
   const R = (a, b) => a + Math.random() * (b - a), P = (u, v) => [cx + fx * v - fz * u, cz + fz * v + fx * u]; /* u: across (w), v: along (seg) */
   for (let k = 0; k < 3; k++) { const [x, z] = P(R(-w / 3, w / 3), R(-seg / 2, seg / 2)), m = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), E.mats.crack); m.rotation.x = -Math.PI / 2; m.rotation.z = Math.random() * 6.28; m.position.set(x, gy + 0.06 + k * 0.004, z); m.scale.setScalar(fault ? 5 : R(7, 10)); add(m, { t: "crack" }); }
   for (let k = 0, nk = fault ? 4 : 14; k < nk; k++) { const [x, z] = P(R(-w / 2, w / 2), R(-seg * 0.75, seg * 0.75)), m = new THREE.Mesh(a18QkCone, k % 3 ? E.mats.spike : E.mats.spike2), h = R(1.6, 4.2); m.position.set(x, gy, z); m.rotation.set(R(-0.35, 0.35), R(0, 6.28), R(-0.35, 0.35)); m.scale.set(R(0.8, 1.8), 0.01, R(0.8, 1.8)); add(m, { t: "spike", h, d: R(0, 0.12) }); }
   for (let k = 0, nk = fault ? 5 : 16; k < nk; k++) { const [x, z] = P(R(-w / 2, w / 2), R(-seg * 0.6, seg * 0.6)), m = new THREE.Mesh(a18QkBox, E.mats.rock); m.position.set(x, gy + 0.3, z); const s2 = R(0.12, 0.4); m.scale.set(s2, s2 * R(0.5, 1.2), s2 * R(0.7, 1.5)); add(m, { t: "rock", v: [R(-4, 4), R(5, 11), R(-4, 4)], r: [R(-9, 9), R(-9, 9), R(-9, 9)] }); }
-  for (let k = 0, nk = fault ? 0 : 5; k < nk; k++) { const [x, z] = P(R(-w / 2.5, w / 2.5), R(-seg / 2, seg / 2)), m = new THREE.Mesh(a18QkSph, E.mats.smoke); m.position.set(x, gy + 0.8, z); add(m, { t: "smoke", s0: R(0.4, 0.8), v: R(1.4, 2.6), d: R(0, 0.25) }); }
+  for (let k = 0, nk = fault ? 0 : 5; k < nk; k++) { const [x, z] = P(R(-w / 2.5, w / 2.5), R(-seg / 2, seg / 2)), m = new THREE.Sprite(E.mats.smoke); m.position.set(x, gy + 0.8, z); add(m, { t: "smoke", s0: R(2.2, 3.8), v: R(1.4, 2.6), d: R(0, 0.25) }); }
   a18Fx(E); return E;
 }
 
