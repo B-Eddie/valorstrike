@@ -201,3 +201,8 @@ work/fx_viewer/gen_net2.cjs: the REAL a18NetSync/a18NetFree/netSyncSmokes/netSyn
 - Inspected /downloads/omen_bounded_canvas.png: actual textured Lotus courtyard, Classic, native map barrier, 320x180. Actual KeyX enters FtS target selection, but canvas excludes DOM minimap/veil/HUD; not proof of FtS visuals.
 - Inspected /downloads/reveal_bounded_canvas.png: actual scene with loaded native enemy (Iso in this run) repositioned 6 m ahead, hidden hitbox objects, xHfRv orange sibling shell visible. Confirms real-map render composition, not natural cast/hit, server sync or two-client acceptance. The shell is plainly a simplified capsule/head, not a close agent silhouette. That fidelity gap remains.
 - No assets removed for the capture and no probe failures; not all agent FP models necessarily completed. No CI, billing, main or publication change.
+
+## Nov 5 17:04 actual rs wrapper with native target
+- Tightened bounded capture to wait for b.xm.valorant && sx.sc, not merely generic xm. REVEAL=online sets up a scripted socket/rs.rv through actual mpCliRS, not xHfRv. Viewport 480x270, 75s cap, completed ~19s.
+- Inspected /downloads/reveal_native_bounded_canvas.png: actual textured Lotus with loaded native Reyna (3 skinned meshes), 2 orange sibling hitbox shells visible. Native human arm/body contour pokes beside the capsule, confirming agent-shaped reveal remains a real visual mismatch. This capture proves actual rs composition with native asset, not server transport/natural ability/two-client acceptance.
+- No game behavior changed in this checkpoint; capture setup is explicitly scripted. No new assets, CI, main or spending.
