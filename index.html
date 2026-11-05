@@ -18442,9 +18442,13 @@ const reyNOISE = "float hash(vec3 p){p=fract(p*.3183099+vec3(.11,.23,.37));p*=17
 // soul energy: hot magenta core, violet swirl, additive rim glow (orbs / Leer core / bursts)
 const reySOUL = "uniform float uT;uniform float uP;uniform float uSeed;uniform float uA;varying vec3 vN;varying vec3 vV;varying vec3 vP;varying vec3 vW;varying vec2 vUv;\n" + reyNOISE + "\nvoid main(){float f=pow(abs(dot(normalize(vN),normalize(vV))),1.4);float sw=fbm(vec3(vP*3.0+uSeed*7.0+vec3(0.0,-uT*1.6,0.0)));vec3 c=mix(vec3(0.42,0.05,0.62),vec3(1.0,0.38,0.9),f);c*=0.55+0.75*sw;c+=vec3(0.5,0.1,0.6)*sw*sw;c=mix(c,vec3(1.0,0.85,1.0),pow(f,3.0));float a=(0.16+0.62*f+0.3*sw)*uA;if(a<0.004)discard;gl_FragColor=vec4(c,min(a,1.0));}";
 // dark violet smoke petals (Leer): near-black wispy body with a magenta rim, ragged falling edge
-const reyPETAL = "uniform float uT;uniform float uP;uniform float uSeed;uniform float uA;varying vec3 vN;varying vec3 vV;varying vec3 vP;varying vec3 vW;varying vec2 vUv;\n" + reyNOISE + "\nvoid main(){float w=fbm(vec3(vUv*3.0+uSeed*9.0,0.0)+vec3(0.0,-uT*0.9,0.0));vec2 q=vUv-vec2(0.5,0.35);float r=length(q*vec2(1.4,1.0));float edge=1.0-smoothstep(0.28+w*0.25,0.62+w*0.2,r);vec3 c=mix(vec3(0.05,0.01,0.10),vec3(0.35,0.05,0.55),w*0.8);c+=vec3(0.9,0.15,0.9)*pow(1.0-edge,2.0)*0.4;float a=edge*(0.55+0.4*w)*uA;if(a<0.004)discard;gl_FragColor=vec4(c,a);}";
+const reyPETAL = "uniform float uT;uniform float uP;uniform float uSeed;uniform float uA;varying vec3 vN;varying vec3 vV;varying vec3 vP;varying vec3 vW;varying vec2 vUv;\n" + reyNOISE + "\nvoid main(){float w=fbm(vec3(vUv*3.0+uSeed*9.0,0.0)+vec3(0.0,-uT*0.9,0.0));vec2 q=vUv-vec2(0.5,0.35);float r=length(q*vec2(1.4,1.0));float edge=1.0-smoothstep(0.28+w*0.25,0.62+w*0.2,r);vec3 c=mix(vec3(0.05,0.01,0.10),vec3(0.35,0.05,0.55),w*0.8);c+=vec3(0.9,0.15,0.9)*pow(1.0-edge,2.0)*0.4;float a=edge*edge*(0.5+0.35*w)*uA;if(a<0.004)discard;gl_FragColor=vec4(c,a);}";
 // soft radial halo (billboarded glow)
 const reyHALO = "uniform float uT;uniform float uP;uniform float uSeed;uniform float uA;varying vec3 vN;varying vec3 vV;varying vec3 vP;varying vec3 vW;varying vec2 vUv;void main(){float r=length(vUv-0.5)*2.0;float a=pow(max(0.0,1.0-r),2.2)*uA;vec3 c=mix(vec3(0.75,0.15,0.85),vec3(1.0,0.55,0.95),max(0.0,1.0-r*1.6));if(a<0.004)discard;gl_FragColor=vec4(c,a);}";
+// Leer iris: soft glowing annulus - gaussian band with noise-wobbled radius + swirl brightness, wide faint glow
+const reyRING = "uniform float uT;uniform float uP;uniform float uSeed;uniform float uA;varying vec3 vN;varying vec3 vV;varying vec3 vP;varying vec3 vW;varying vec2 vUv;\n" + reyNOISE + "\nvoid main(){vec2 q=(vUv-0.5)*2.0;float r=length(q);float ang=atan(q.y,q.x);float sw=fbm(vec3(q*3.0,uT*0.5))+0.4*noise(vec3(ang*2.0,r*4.0-uT*1.2,uSeed));float band=exp(-pow((r-0.62-sw*0.05)*7.0,2.0));float glow=exp(-pow((r-0.62)*2.6,2.0))*0.35;vec3 c=mix(vec3(0.85,0.14,0.75),vec3(1.0,0.65,0.95),band*band);c*=(0.8+0.5*sw);float a=(band*0.9+glow)*(0.85+0.3*sw)*uA;if(a<0.004)discard;gl_FragColor=vec4(c,min(a,1.0));}";
+// Leer dark feather: wispy noise-edged dark fringe softening the orb silhouette
+const reySHADE = "uniform float uT;uniform float uP;uniform float uSeed;uniform float uA;varying vec3 vN;varying vec3 vV;varying vec3 vP;varying vec3 vW;varying vec2 vUv;\n" + reyNOISE + "\nvoid main(){vec2 q=(vUv-0.5)*2.0;float r=length(q);float n=fbm(vec3(q*4.0,uT*0.4));float a=(1.0-smoothstep(0.5+n*0.15,0.95,r))*0.8*uA;vec3 c=vec3(0.07,0.01,0.14)+vec3(0.10,0.02,0.18)*n;if(a<0.004)discard;gl_FragColor=vec4(c,a);}";
 // devour tether: streaming magenta energy bands along the ribbon
 const reyTETHER = "uniform float uT;uniform float uP;uniform float uSeed;uniform float uA;varying vec3 vN;varying vec3 vV;varying vec3 vP;varying vec3 vW;varying vec2 vUv;\n" + reyNOISE + "\nvoid main(){float sway=0.20*sin(vUv.y*7.0-uT*5.0+uSeed)+0.08*sin(vUv.y*17.0-uT*9.0);float xc=vUv.x-0.5-sway;float band=0.5+0.5*sin(vUv.y*22.0+uT*13.0+uSeed*8.0);float n=noise(vec3(vUv.y*9.0-uT*3.0,vUv.x*3.0,uSeed));float edge=1.0-smoothstep(0.05,0.34,abs(xc));vec3 c=mix(vec3(0.20,0.03,0.36),vec3(0.55,0.12,0.68),band);c=mix(c,vec3(0.85,0.35,0.95),pow(band,5.0)*0.7);c+=vec3(1.0,0.7,1.0)*pow(band,9.0)*0.4;float a=edge*(0.16+0.30*band+0.22*n)*uA;if(a<0.004)discard;gl_FragColor=vec4(c,min(a,1.0));}";
 // ghost shell (Dismiss / Empress aura): transparent body, bright purple fresnel outline, rising wisps
@@ -18480,15 +18484,16 @@ function reyLeerCast(a, b, travel, windup, active) { try {
   // structure from Leer.mp4 close frames (3.2s/4.4s): big dark violet orb (~0.8m), bright magenta iris
   // RING with dark pupil, small white star glint offset from center, dark smoke wisps around the edge
   const dark = new THREE.Mesh(G.sph, new THREE.MeshBasicMaterial({ color: 0x16042a, fog: false, toneMapped: false })); dark.scale.setScalar(0.5);
-  const ring = new THREE.Mesh(new THREE.RingGeometry(0.55, 1.0, 40), reyBasic(0xff35d5, 0.95, true)); ring.scale.setScalar(0.31); ring.position.z = 0.51;
+  const shade = new THREE.Mesh(G.plane, reyMat("leshade", reySHADE, 5.1)); shade.scale.setScalar(1.3); shade.position.z = -0.05; shade.renderOrder = 0;
+  const ring = new THREE.Mesh(G.plane, reyMat("lering", reyRING, 2.2)); ring.scale.setScalar(0.84); ring.position.z = 0.51; ring.renderOrder = 2;
   const glint = new THREE.Group();
   for (let i = 0; i < 4; i++) { const long = i < 2; const gp = new THREE.Mesh(G.ray, reyBasic(0xfff0fa, 0.95, true)); gp.scale.set(long ? 0.05 : 0.03, long ? 0.20 : 0.12, 1); gp.rotation.z = i * Math.PI / 2 + (long ? 0 : Math.PI / 4); glint.add(gp); }
   glint.position.set(-0.14, 0.05, 0.53);
-  const halo = new THREE.Mesh(G.plane, reyMat("leh", reyHALO)); halo.scale.setScalar(1.1);
-  grp.add(dark, ring, glint, halo);
+  const halo = new THREE.Mesh(G.plane, reyMat("leh", reyHALO)); halo.scale.setScalar(1.1); halo.renderOrder = 1;
+  grp.add(dark, shade, ring, glint, halo);
   const petals = [];
   for (let i = 0; i < 8; i++) { const pt = new THREE.Mesh(G.petal, reyMat("lep", reyPETAL, i * 1.7)); const an = i / 8 * Math.PI * 2;
-    pt.position.set(Math.cos(an) * 0.52, Math.sin(an) * 0.38, -0.02); pt.rotation.z = an + Math.PI / 2; pt.scale.set(0.30, 0.40, 1); grp.add(pt); petals.push(pt); }
+    pt.position.set(Math.cos(an) * 0.52, Math.sin(an) * 0.38, -0.02); pt.rotation.z = an + Math.PI / 2; pt.scale.set(0.34, 0.44, 1); grp.add(pt); petals.push(pt); }
   const N = 8, pos = new Float32Array(N * 3), pts = new THREE.Points(new THREE.BufferGeometry(), reyBasic(0xa030e0, 0.8, true));
   pts.geometry.setAttribute("position", new THREE.BufferAttribute(pos, 3)); pts.material.size = 0.05; pts.frustumCulled = false;
   for (let i = 0; i < N; i++) { pos[i * 3] = a.x; pos[i * 3 + 1] = a.y; pos[i * 3 + 2] = a.z; }
@@ -18499,7 +18504,7 @@ function reyLeerCast(a, b, travel, windup, active) { try {
     const s = (deployed ? Math.min(1, (age - tr) / wu) * 0.8 : 0.42 + 0.18 * u); // swells open during the windup
     grp.scale.setScalar(Math.max(0.05, s * (1 + (winding ? 0.10 * Math.sin(age * 25) : 0.04 * Math.sin(age * 9)))));
     const f = dying ? Math.max(0, (ttl - age) / 0.4) : 1;
-    ring.material.opacity = (deployed ? 0.95 : 0.55) * f; halo.material.uniforms.uA.value = 0.28 * f;
+    ring.material.uniforms.uA.value = (deployed ? 1.0 : 0.6) * f; shade.material.uniforms.uA.value = f; halo.material.uniforms.uA.value = 0.28 * f;
     glint.visible = deployed; for (const gp of glint.children) gp.material.opacity = 0.9 * f;
     for (let i = 0; i < petals.length; i++) { const pt = petals[i], an = i / 8 * Math.PI * 2 + age * (deployed ? 0.9 : 2.6);
       pt.position.set(Math.cos(an) * 0.52, Math.sin(an) * 0.38, -0.02); pt.rotation.z = an + Math.PI / 2; pt.material.uniforms.uA.value = f * (deployed ? 0.6 : 0.5); }
@@ -18948,9 +18953,11 @@ var jfxU = { value: 0 }, jfxLive = [], jfxPumpOn = false, jfxGT = null, jfxGeo =
 function jfxNow() { try { return performance.now() / 1000; } catch (e) { return Date.now() / 1000; } }
 function jfxDomeTex() { return jfxCanvasTex("dome", 256, (g, s) => { g.clearRect(0, 0, s, s);
   g.fillStyle = "rgba(255,255,255,0.96)"; g.fillRect(0, 0, s, s);
-  for (let i = 0; i < 60; i++) { const x = Math.random() * s, y = Math.random() * s, rr = s * (0.05 + Math.random() * 0.10);
+  for (let i = 0; i < 90; i++) { const x = Math.random() * s, y = Math.random() * s, rr = s * (0.05 + Math.random() * 0.13);
     const r = g.createRadialGradient(x, y, 1, x, y, rr); const dk = Math.random() < 0.5;
-    r.addColorStop(0, dk ? "rgba(190,214,235,0.30)" : "rgba(255,255,255,0.28)"); r.addColorStop(1, "rgba(255,255,255,0)"); g.fillStyle = r; g.beginPath(); g.arc(x, y, rr, 0, 6.3); g.fill(); }
+    r.addColorStop(0, dk ? "rgba(178,204,228,0.5)" : "rgba(255,255,255,0.45)"); r.addColorStop(1, "rgba(255,255,255,0)"); g.fillStyle = r; g.beginPath(); g.arc(x, y, rr, 0, 6.3); g.fill(); }
+  for (let i = 0; i < 10; i++) { const x = Math.random() * s, y = Math.random() * s, rr = s * (0.18 + Math.random() * 0.2);
+    const r = g.createRadialGradient(x, y, 1, x, y, rr); r.addColorStop(0, "rgba(170,198,224,0.28)"); r.addColorStop(1, "rgba(170,198,224,0)"); g.fillStyle = r; g.beginPath(); g.arc(x, y, rr, 0, 6.3); g.fill(); }
   g.save(); g.translate(s / 2, s / 2); g.rotate(-0.55);
   for (let i = 0; i < 3; i++) { const yb = -s * 0.28 + i * s * 0.26, hh = s * 0.095;
     const rb = g.createLinearGradient(0, yb - hh, 0, yb + hh); rb.addColorStop(0, "rgba(165,198,232,0)"); rb.addColorStop(0.5, "rgba(165,198,232,0.8)"); rb.addColorStop(1, "rgba(165,198,232,0)");
@@ -19044,20 +19051,20 @@ function jfxCbPop(p) { try { p = jfxP(p); const G = jfxGeos();
  } catch (e) { jfxLogErr(e); return null; } }
 function jfxCbCloud(p, r, seconds) { try { p = jfxP(p); const R = r || 3.35, ttl = Math.max(0.8, seconds || 4.25);
   const grp = new THREE.Group(); grp.position.set(p.x, p.y, p.z);
-  const dome = new THREE.Mesh(jfxGeos().sph, new THREE.MeshBasicMaterial({ map: jfxDomeTex(), color: 0xeaf4ff, transparent: true, opacity: 0.92, depthWrite: false, side: THREE.DoubleSide, blending: THREE.NormalBlending, fog: false, toneMapped: false })); dome.userData.spr = 1;
-  dome.scale.set(R, R * 0.82, R); dome.position.y = R * 0.55; grp.add(dome);
-  const puffs = []; for (let i = 0; i < 12; i++) { const m = new THREE.Sprite(new THREE.SpriteMaterial({ map: jfxPuffTex(), color: 0xdfeefc, transparent: true, opacity: 0.30, depthWrite: false, blending: THREE.NormalBlending, fog: false, toneMapped: false })); m.userData.spr = 1;
-    const a = Math.random() * 6.3, b = (Math.random() - 0.5) * 2.4, d = R * (0.15 + Math.random() * 0.6);
-    const sc = R * (0.45 + Math.random() * 0.35); m.scale.setScalar(sc); m.material.rotation = Math.random() * 6.3;
+  const dome = new THREE.Mesh(jfxGeos().sph, new THREE.MeshBasicMaterial({ map: jfxDomeTex(), color: 0xdceeff, transparent: true, opacity: 0.5, depthWrite: false, side: THREE.FrontSide, blending: THREE.NormalBlending, fog: false, toneMapped: false })); dome.userData.spr = 1;
+  dome.scale.set(R, R * 0.60, R); dome.position.y = R * 0.28; grp.add(dome);
+  const puffs = []; for (let i = 0; i < 16; i++) { const m = new THREE.Sprite(new THREE.SpriteMaterial({ map: jfxPuffTex(), color: i % 3 === 0 ? 0xc8e0f5 : 0xdfeefc, transparent: true, opacity: 0.4, depthWrite: false, blending: THREE.NormalBlending, fog: false, toneMapped: false })); m.userData.spr = 1;
+    const a = Math.random() * 6.3, b = (Math.random() - 0.5) * 2.4, d = R * (0.40 + Math.random() * 0.65);
+    const sc = R * (0.5 + Math.random() * 0.4); m.scale.setScalar(sc); m.material.rotation = Math.random() * 6.3;
     m.userData = { a, b, d, s: sc, ph: Math.random() * 6.3, spin: (Math.random() - 0.5) * 0.5, spr: 1 };
     grp.add(m); puffs.push(m); }
-  const glows = []; for (let i = 0; i < 3; i++) { const gm = jfxSprite(0xeaf6ff, 0.12, jfxPuffTex()); gm.scale.setScalar(R * 0.7); gm.position.set((Math.random()-0.5) * R * 0.4, R * 0.5 + (Math.random()-0.5) * R * 0.3, (Math.random()-0.5) * R * 0.4); grp.add(gm); glows.push(gm); }
+  const glows = []; for (let i = 0; i < 3; i++) { const gm = jfxSprite(0xeaf6ff, 0.12, jfxPuffTex()); gm.scale.setScalar(R * 0.7); gm.position.set((Math.random()-0.5) * R * 0.4, R * 0.4 + (Math.random()-0.5) * R * 0.25, (Math.random()-0.5) * R * 0.4); grp.add(gm); glows.push(gm); }
   const h = jfxFx(ttl, [grp], (dt, age, k) => { const T = h.fx.ttl, grow = Math.min(1, age / 0.4), die = Math.max(0, (age - (T - h.fx.die)) / h.fx.die), s = (0.3 + 0.7 * grow) * (1 - die * die);
     grp.scale.setScalar(Math.max(0.001, s)); grp.rotation.y += dt * 0.12;
-    dome.material.opacity = 0.92 * grow * (1 - die); dome.rotation.y += dt * 0.25;
+    dome.material.opacity = 0.5 * grow * (1 - die); dome.rotation.y += dt * 0.25;
     puffs.forEach((pm) => { const u = pm.userData; u.a += dt * 0.10;
-      pm.position.set(Math.cos(u.a) * Math.cos(u.b) * u.d, R * 0.5 + Math.sin(u.b) * u.d * 0.6 + Math.sin(jfxU.value * 0.5 + u.ph) * R * 0.05, Math.sin(u.a) * Math.cos(u.b) * u.d);
-      pm.material.rotation += u.spin * dt; pm.material.opacity = 0.30 * grow * (1 - die); pm.scale.setScalar(u.s * (0.92 + 0.10 * Math.sin(jfxU.value * 0.7 + u.ph))); });
+      pm.position.set(Math.cos(u.a) * Math.cos(u.b) * u.d, R * 0.38 + Math.sin(u.b) * u.d * 0.45 + Math.sin(jfxU.value * 0.5 + u.ph) * R * 0.05, Math.sin(u.a) * Math.cos(u.b) * u.d);
+      pm.material.rotation += u.spin * dt; pm.material.opacity = 0.4 * grow * (1 - die); pm.scale.setScalar(u.s * (0.92 + 0.10 * Math.sin(jfxU.value * 0.7 + u.ph))); });
     glows.forEach((gm) => { gm.material.opacity = 0.12 * grow * (1 - die); }); }, { die: 0.45 });
   return h; } catch (e) { jfxLogErr(e); return null; } }
 
@@ -19134,6 +19141,12 @@ function jfxBladeThrow(o, t) { try { o = jfxP(o); t = jfxP(t); const G = jfxGeos
       flash.material.opacity = 0.95 * Math.max(0, 1 - dk / 0.25); flash.scale.setScalar(0.1 + Math.min(1, dk / 0.25) * 0.7);
       ring.material.opacity = 0.7 * Math.max(0, 1 - dk / 0.4); ring.scale.setScalar(0.12 + Math.min(1, dk / 0.4) * 0.55); } });
  } catch (e) { jfxLogErr(e); return null; } }
+// ---- END JETT FX ----
+
+// drop all cached shared GPU resources (textures, geometries); next use recreates them lazily.
+// integrator: call on full reconnect/reset cycles so retained memory stays bounded.
+function jfxDisposeShared() { for (const k in jfxTex) { try { jfxTex[k].dispose(); } catch (e) {} delete jfxTex[k]; }
+  if (jfxGeo) { for (const k in jfxGeo) { try { jfxGeo[k].dispose(); } catch (e) {} } jfxGeo = null; } }
 // ---- END JETT FX ----
 // ---- YORU FX ----
 // Yoru ability visuals (work/yoru_fx_runtime.js), reference-grounded in the wiki showcase clips

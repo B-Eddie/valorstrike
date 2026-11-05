@@ -12,9 +12,11 @@ var jfxU = { value: 0 }, jfxLive = [], jfxPumpOn = false, jfxGT = null, jfxGeo =
 function jfxNow() { try { return performance.now() / 1000; } catch (e) { return Date.now() / 1000; } }
 function jfxDomeTex() { return jfxCanvasTex("dome", 256, (g, s) => { g.clearRect(0, 0, s, s);
   g.fillStyle = "rgba(255,255,255,0.96)"; g.fillRect(0, 0, s, s);
-  for (let i = 0; i < 60; i++) { const x = Math.random() * s, y = Math.random() * s, rr = s * (0.05 + Math.random() * 0.10);
+  for (let i = 0; i < 90; i++) { const x = Math.random() * s, y = Math.random() * s, rr = s * (0.05 + Math.random() * 0.13);
     const r = g.createRadialGradient(x, y, 1, x, y, rr); const dk = Math.random() < 0.5;
-    r.addColorStop(0, dk ? "rgba(190,214,235,0.30)" : "rgba(255,255,255,0.28)"); r.addColorStop(1, "rgba(255,255,255,0)"); g.fillStyle = r; g.beginPath(); g.arc(x, y, rr, 0, 6.3); g.fill(); }
+    r.addColorStop(0, dk ? "rgba(178,204,228,0.5)" : "rgba(255,255,255,0.45)"); r.addColorStop(1, "rgba(255,255,255,0)"); g.fillStyle = r; g.beginPath(); g.arc(x, y, rr, 0, 6.3); g.fill(); }
+  for (let i = 0; i < 10; i++) { const x = Math.random() * s, y = Math.random() * s, rr = s * (0.18 + Math.random() * 0.2);
+    const r = g.createRadialGradient(x, y, 1, x, y, rr); r.addColorStop(0, "rgba(170,198,224,0.28)"); r.addColorStop(1, "rgba(170,198,224,0)"); g.fillStyle = r; g.beginPath(); g.arc(x, y, rr, 0, 6.3); g.fill(); }
   g.save(); g.translate(s / 2, s / 2); g.rotate(-0.55);
   for (let i = 0; i < 3; i++) { const yb = -s * 0.28 + i * s * 0.26, hh = s * 0.095;
     const rb = g.createLinearGradient(0, yb - hh, 0, yb + hh); rb.addColorStop(0, "rgba(165,198,232,0)"); rb.addColorStop(0.5, "rgba(165,198,232,0.8)"); rb.addColorStop(1, "rgba(165,198,232,0)");
@@ -108,20 +110,20 @@ function jfxCbPop(p) { try { p = jfxP(p); const G = jfxGeos();
  } catch (e) { jfxLogErr(e); return null; } }
 function jfxCbCloud(p, r, seconds) { try { p = jfxP(p); const R = r || 3.35, ttl = Math.max(0.8, seconds || 4.25);
   const grp = new THREE.Group(); grp.position.set(p.x, p.y, p.z);
-  const dome = new THREE.Mesh(jfxGeos().sph, new THREE.MeshBasicMaterial({ map: jfxDomeTex(), color: 0xeaf4ff, transparent: true, opacity: 0.92, depthWrite: false, side: THREE.DoubleSide, blending: THREE.NormalBlending, fog: false, toneMapped: false })); dome.userData.spr = 1;
-  dome.scale.set(R, R * 0.82, R); dome.position.y = R * 0.55; grp.add(dome);
-  const puffs = []; for (let i = 0; i < 12; i++) { const m = new THREE.Sprite(new THREE.SpriteMaterial({ map: jfxPuffTex(), color: 0xdfeefc, transparent: true, opacity: 0.30, depthWrite: false, blending: THREE.NormalBlending, fog: false, toneMapped: false })); m.userData.spr = 1;
-    const a = Math.random() * 6.3, b = (Math.random() - 0.5) * 2.4, d = R * (0.15 + Math.random() * 0.6);
-    const sc = R * (0.45 + Math.random() * 0.35); m.scale.setScalar(sc); m.material.rotation = Math.random() * 6.3;
+  const dome = new THREE.Mesh(jfxGeos().sph, new THREE.MeshBasicMaterial({ map: jfxDomeTex(), color: 0xdceeff, transparent: true, opacity: 0.5, depthWrite: false, side: THREE.FrontSide, blending: THREE.NormalBlending, fog: false, toneMapped: false })); dome.userData.spr = 1;
+  dome.scale.set(R, R * 0.60, R); dome.position.y = R * 0.28; grp.add(dome);
+  const puffs = []; for (let i = 0; i < 16; i++) { const m = new THREE.Sprite(new THREE.SpriteMaterial({ map: jfxPuffTex(), color: i % 3 === 0 ? 0xc8e0f5 : 0xdfeefc, transparent: true, opacity: 0.4, depthWrite: false, blending: THREE.NormalBlending, fog: false, toneMapped: false })); m.userData.spr = 1;
+    const a = Math.random() * 6.3, b = (Math.random() - 0.5) * 2.4, d = R * (0.40 + Math.random() * 0.65);
+    const sc = R * (0.5 + Math.random() * 0.4); m.scale.setScalar(sc); m.material.rotation = Math.random() * 6.3;
     m.userData = { a, b, d, s: sc, ph: Math.random() * 6.3, spin: (Math.random() - 0.5) * 0.5, spr: 1 };
     grp.add(m); puffs.push(m); }
-  const glows = []; for (let i = 0; i < 3; i++) { const gm = jfxSprite(0xeaf6ff, 0.12, jfxPuffTex()); gm.scale.setScalar(R * 0.7); gm.position.set((Math.random()-0.5) * R * 0.4, R * 0.5 + (Math.random()-0.5) * R * 0.3, (Math.random()-0.5) * R * 0.4); grp.add(gm); glows.push(gm); }
+  const glows = []; for (let i = 0; i < 3; i++) { const gm = jfxSprite(0xeaf6ff, 0.12, jfxPuffTex()); gm.scale.setScalar(R * 0.7); gm.position.set((Math.random()-0.5) * R * 0.4, R * 0.4 + (Math.random()-0.5) * R * 0.25, (Math.random()-0.5) * R * 0.4); grp.add(gm); glows.push(gm); }
   const h = jfxFx(ttl, [grp], (dt, age, k) => { const T = h.fx.ttl, grow = Math.min(1, age / 0.4), die = Math.max(0, (age - (T - h.fx.die)) / h.fx.die), s = (0.3 + 0.7 * grow) * (1 - die * die);
     grp.scale.setScalar(Math.max(0.001, s)); grp.rotation.y += dt * 0.12;
-    dome.material.opacity = 0.92 * grow * (1 - die); dome.rotation.y += dt * 0.25;
+    dome.material.opacity = 0.5 * grow * (1 - die); dome.rotation.y += dt * 0.25;
     puffs.forEach((pm) => { const u = pm.userData; u.a += dt * 0.10;
-      pm.position.set(Math.cos(u.a) * Math.cos(u.b) * u.d, R * 0.5 + Math.sin(u.b) * u.d * 0.6 + Math.sin(jfxU.value * 0.5 + u.ph) * R * 0.05, Math.sin(u.a) * Math.cos(u.b) * u.d);
-      pm.material.rotation += u.spin * dt; pm.material.opacity = 0.30 * grow * (1 - die); pm.scale.setScalar(u.s * (0.92 + 0.10 * Math.sin(jfxU.value * 0.7 + u.ph))); });
+      pm.position.set(Math.cos(u.a) * Math.cos(u.b) * u.d, R * 0.38 + Math.sin(u.b) * u.d * 0.45 + Math.sin(jfxU.value * 0.5 + u.ph) * R * 0.05, Math.sin(u.a) * Math.cos(u.b) * u.d);
+      pm.material.rotation += u.spin * dt; pm.material.opacity = 0.4 * grow * (1 - die); pm.scale.setScalar(u.s * (0.92 + 0.10 * Math.sin(jfxU.value * 0.7 + u.ph))); });
     glows.forEach((gm) => { gm.material.opacity = 0.12 * grow * (1 - die); }); }, { die: 0.45 });
   return h; } catch (e) { jfxLogErr(e); return null; } }
 

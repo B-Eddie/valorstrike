@@ -77,9 +77,13 @@ const reyNOISE = "float hash(vec3 p){p=fract(p*.3183099+vec3(.11,.23,.37));p*=17
 // soul energy: hot magenta core, violet swirl, additive rim glow (orbs / Leer core / bursts)
 const reySOUL = "uniform float uT;uniform float uP;uniform float uSeed;uniform float uA;varying vec3 vN;varying vec3 vV;varying vec3 vP;varying vec3 vW;varying vec2 vUv;\n" + reyNOISE + "\nvoid main(){float f=pow(abs(dot(normalize(vN),normalize(vV))),1.4);float sw=fbm(vec3(vP*3.0+uSeed*7.0+vec3(0.0,-uT*1.6,0.0)));vec3 c=mix(vec3(0.42,0.05,0.62),vec3(1.0,0.38,0.9),f);c*=0.55+0.75*sw;c+=vec3(0.5,0.1,0.6)*sw*sw;c=mix(c,vec3(1.0,0.85,1.0),pow(f,3.0));float a=(0.16+0.62*f+0.3*sw)*uA;if(a<0.004)discard;gl_FragColor=vec4(c,min(a,1.0));}";
 // dark violet smoke petals (Leer): near-black wispy body with a magenta rim, ragged falling edge
-const reyPETAL = "uniform float uT;uniform float uP;uniform float uSeed;uniform float uA;varying vec3 vN;varying vec3 vV;varying vec3 vP;varying vec3 vW;varying vec2 vUv;\n" + reyNOISE + "\nvoid main(){float w=fbm(vec3(vUv*3.0+uSeed*9.0,0.0)+vec3(0.0,-uT*0.9,0.0));vec2 q=vUv-vec2(0.5,0.35);float r=length(q*vec2(1.4,1.0));float edge=1.0-smoothstep(0.28+w*0.25,0.62+w*0.2,r);vec3 c=mix(vec3(0.05,0.01,0.10),vec3(0.35,0.05,0.55),w*0.8);c+=vec3(0.9,0.15,0.9)*pow(1.0-edge,2.0)*0.4;float a=edge*(0.55+0.4*w)*uA;if(a<0.004)discard;gl_FragColor=vec4(c,a);}";
+const reyPETAL = "uniform float uT;uniform float uP;uniform float uSeed;uniform float uA;varying vec3 vN;varying vec3 vV;varying vec3 vP;varying vec3 vW;varying vec2 vUv;\n" + reyNOISE + "\nvoid main(){float w=fbm(vec3(vUv*3.0+uSeed*9.0,0.0)+vec3(0.0,-uT*0.9,0.0));vec2 q=vUv-vec2(0.5,0.35);float r=length(q*vec2(1.4,1.0));float edge=1.0-smoothstep(0.28+w*0.25,0.62+w*0.2,r);vec3 c=mix(vec3(0.05,0.01,0.10),vec3(0.35,0.05,0.55),w*0.8);c+=vec3(0.9,0.15,0.9)*pow(1.0-edge,2.0)*0.4;float a=edge*edge*(0.5+0.35*w)*uA;if(a<0.004)discard;gl_FragColor=vec4(c,a);}";
 // soft radial halo (billboarded glow)
 const reyHALO = "uniform float uT;uniform float uP;uniform float uSeed;uniform float uA;varying vec3 vN;varying vec3 vV;varying vec3 vP;varying vec3 vW;varying vec2 vUv;void main(){float r=length(vUv-0.5)*2.0;float a=pow(max(0.0,1.0-r),2.2)*uA;vec3 c=mix(vec3(0.75,0.15,0.85),vec3(1.0,0.55,0.95),max(0.0,1.0-r*1.6));if(a<0.004)discard;gl_FragColor=vec4(c,a);}";
+// Leer iris: soft glowing annulus - gaussian band with noise-wobbled radius + swirl brightness, wide faint glow
+const reyRING = "uniform float uT;uniform float uP;uniform float uSeed;uniform float uA;varying vec3 vN;varying vec3 vV;varying vec3 vP;varying vec3 vW;varying vec2 vUv;\n" + reyNOISE + "\nvoid main(){vec2 q=(vUv-0.5)*2.0;float r=length(q);float ang=atan(q.y,q.x);float sw=fbm(vec3(q*3.0,uT*0.5))+0.4*noise(vec3(ang*2.0,r*4.0-uT*1.2,uSeed));float band=exp(-pow((r-0.62-sw*0.05)*7.0,2.0));float glow=exp(-pow((r-0.62)*2.6,2.0))*0.35;vec3 c=mix(vec3(0.85,0.14,0.75),vec3(1.0,0.65,0.95),band*band);c*=(0.8+0.5*sw);float a=(band*0.9+glow)*(0.85+0.3*sw)*uA;if(a<0.004)discard;gl_FragColor=vec4(c,min(a,1.0));}";
+// Leer dark feather: wispy noise-edged dark fringe softening the orb silhouette
+const reySHADE = "uniform float uT;uniform float uP;uniform float uSeed;uniform float uA;varying vec3 vN;varying vec3 vV;varying vec3 vP;varying vec3 vW;varying vec2 vUv;\n" + reyNOISE + "\nvoid main(){vec2 q=(vUv-0.5)*2.0;float r=length(q);float n=fbm(vec3(q*4.0,uT*0.4));float a=(1.0-smoothstep(0.5+n*0.15,0.95,r))*0.8*uA;vec3 c=vec3(0.07,0.01,0.14)+vec3(0.10,0.02,0.18)*n;if(a<0.004)discard;gl_FragColor=vec4(c,a);}";
 // devour tether: streaming magenta energy bands along the ribbon
 const reyTETHER = "uniform float uT;uniform float uP;uniform float uSeed;uniform float uA;varying vec3 vN;varying vec3 vV;varying vec3 vP;varying vec3 vW;varying vec2 vUv;\n" + reyNOISE + "\nvoid main(){float sway=0.20*sin(vUv.y*7.0-uT*5.0+uSeed)+0.08*sin(vUv.y*17.0-uT*9.0);float xc=vUv.x-0.5-sway;float band=0.5+0.5*sin(vUv.y*22.0+uT*13.0+uSeed*8.0);float n=noise(vec3(vUv.y*9.0-uT*3.0,vUv.x*3.0,uSeed));float edge=1.0-smoothstep(0.05,0.34,abs(xc));vec3 c=mix(vec3(0.20,0.03,0.36),vec3(0.55,0.12,0.68),band);c=mix(c,vec3(0.85,0.35,0.95),pow(band,5.0)*0.7);c+=vec3(1.0,0.7,1.0)*pow(band,9.0)*0.4;float a=edge*(0.16+0.30*band+0.22*n)*uA;if(a<0.004)discard;gl_FragColor=vec4(c,min(a,1.0));}";
 // ghost shell (Dismiss / Empress aura): transparent body, bright purple fresnel outline, rising wisps
@@ -115,15 +119,16 @@ function reyLeerCast(a, b, travel, windup, active) { try {
   // structure from Leer.mp4 close frames (3.2s/4.4s): big dark violet orb (~0.8m), bright magenta iris
   // RING with dark pupil, small white star glint offset from center, dark smoke wisps around the edge
   const dark = new THREE.Mesh(G.sph, new THREE.MeshBasicMaterial({ color: 0x16042a, fog: false, toneMapped: false })); dark.scale.setScalar(0.5);
-  const ring = new THREE.Mesh(new THREE.RingGeometry(0.55, 1.0, 40), reyBasic(0xff35d5, 0.95, true)); ring.scale.setScalar(0.31); ring.position.z = 0.51;
+  const shade = new THREE.Mesh(G.plane, reyMat("leshade", reySHADE, 5.1)); shade.scale.setScalar(1.3); shade.position.z = -0.05; shade.renderOrder = 0;
+  const ring = new THREE.Mesh(G.plane, reyMat("lering", reyRING, 2.2)); ring.scale.setScalar(0.84); ring.position.z = 0.51; ring.renderOrder = 2;
   const glint = new THREE.Group();
   for (let i = 0; i < 4; i++) { const long = i < 2; const gp = new THREE.Mesh(G.ray, reyBasic(0xfff0fa, 0.95, true)); gp.scale.set(long ? 0.05 : 0.03, long ? 0.20 : 0.12, 1); gp.rotation.z = i * Math.PI / 2 + (long ? 0 : Math.PI / 4); glint.add(gp); }
   glint.position.set(-0.14, 0.05, 0.53);
-  const halo = new THREE.Mesh(G.plane, reyMat("leh", reyHALO)); halo.scale.setScalar(1.1);
-  grp.add(dark, ring, glint, halo);
+  const halo = new THREE.Mesh(G.plane, reyMat("leh", reyHALO)); halo.scale.setScalar(1.1); halo.renderOrder = 1;
+  grp.add(dark, shade, ring, glint, halo);
   const petals = [];
   for (let i = 0; i < 8; i++) { const pt = new THREE.Mesh(G.petal, reyMat("lep", reyPETAL, i * 1.7)); const an = i / 8 * Math.PI * 2;
-    pt.position.set(Math.cos(an) * 0.52, Math.sin(an) * 0.38, -0.02); pt.rotation.z = an + Math.PI / 2; pt.scale.set(0.30, 0.40, 1); grp.add(pt); petals.push(pt); }
+    pt.position.set(Math.cos(an) * 0.52, Math.sin(an) * 0.38, -0.02); pt.rotation.z = an + Math.PI / 2; pt.scale.set(0.34, 0.44, 1); grp.add(pt); petals.push(pt); }
   const N = 8, pos = new Float32Array(N * 3), pts = new THREE.Points(new THREE.BufferGeometry(), reyBasic(0xa030e0, 0.8, true));
   pts.geometry.setAttribute("position", new THREE.BufferAttribute(pos, 3)); pts.material.size = 0.05; pts.frustumCulled = false;
   for (let i = 0; i < N; i++) { pos[i * 3] = a.x; pos[i * 3 + 1] = a.y; pos[i * 3 + 2] = a.z; }
@@ -134,7 +139,7 @@ function reyLeerCast(a, b, travel, windup, active) { try {
     const s = (deployed ? Math.min(1, (age - tr) / wu) * 0.8 : 0.42 + 0.18 * u); // swells open during the windup
     grp.scale.setScalar(Math.max(0.05, s * (1 + (winding ? 0.10 * Math.sin(age * 25) : 0.04 * Math.sin(age * 9)))));
     const f = dying ? Math.max(0, (ttl - age) / 0.4) : 1;
-    ring.material.opacity = (deployed ? 0.95 : 0.55) * f; halo.material.uniforms.uA.value = 0.28 * f;
+    ring.material.uniforms.uA.value = (deployed ? 1.0 : 0.6) * f; shade.material.uniforms.uA.value = f; halo.material.uniforms.uA.value = 0.28 * f;
     glint.visible = deployed; for (const gp of glint.children) gp.material.opacity = 0.9 * f;
     for (let i = 0; i < petals.length; i++) { const pt = petals[i], an = i / 8 * Math.PI * 2 + age * (deployed ? 0.9 : 2.6);
       pt.position.set(Math.cos(an) * 0.52, Math.sin(an) * 0.38, -0.02); pt.rotation.z = an + Math.PI / 2; pt.material.uniforms.uA.value = f * (deployed ? 0.6 : 0.5); }
