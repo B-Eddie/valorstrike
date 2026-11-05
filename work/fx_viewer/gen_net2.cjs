@@ -21,7 +21,8 @@ const scen=`[
  ['cypher trapwire: module wire, trip counter flash at 0.9 s',function(t){return [Object.assign({id:5,kind:'dev',d:'trapwire',o:3,tm:1,p:[-3,0,0],q:[3,0,0],hp:20},t>=0.8?{tn:1,tp:[0,0,0]}:{})]},1.1],
  ['phoenix run it back: marker row at t=2.0 (row-bound, ends with the row)',function(t){return t<3.0?[{id:6,kind:'rib',o:3,p:[0,0,0],r:0,tl:9.5-t}]:[]},2.0],
  ['raze boom bot: place (fresh), lock-on pulse at 1.2 s, running at 1.6 s',function(t){return [{id:7,kind:'dev',d:'boombot',o:3,tm:1,p:[-2+Math.min(t,2.2)*1.4,0,0],yaw:-1.5708,hp:60,age:t+0.05,ph:t<1.0?0:1}]},1.6],
- ['raze boom bot: dn row -> boom at 1.0 s (explicit detonation)',function(t){if(t<0.8)return [{id:8,kind:'dev',d:'boombot',o:3,tm:1,p:[0,0,0],yaw:0,hp:60,age:3+t,ph:t<0.5?1:2}];return t<1.05?[{id:8,kind:'dev',d:'boombot',o:3,tm:1,p:[0,0,0],hp:0,ph:4,dn:1}]:[]},1.5]
+ ['raze boom bot: dn row -> boom at 1.0 s (explicit detonation)',function(t){if(t<0.8)return [{id:8,kind:'dev',d:'boombot',o:3,tm:1,p:[0,0,0],yaw:0,hp:60,age:3+t,ph:t<0.5?1:2}];return t<1.05?[{id:8,kind:'dev',d:'boombot',o:3,tm:1,p:[0,0,0],hp:0,ph:4,dn:1}]:[]},1.5],
+ ['raze blast pack: module body at the row point (blast = server boom event, not in this viewer)',function(t){return t<1.5?[{id:9,kind:'dev',d:'blastpack',o:3,tm:1,p:[0,0,0],hp:20,age:1+t}]:[]},1.0]
 ]`;
 process.stdout.write(`<!doctype html><meta charset=utf-8><body style="margin:0;background:#111">
 <script>${three}</script>
@@ -30,7 +31,7 @@ var nowv=0,errs=[];window.performance.now=function(){return nowv};
 var player={x:0,y:0,z:0},innerWidth=${W},innerHeight=${H};function xE(e){errs.push(String(e&&e.stack||e))}
 var MP={me:7},allies=[],units=new Map(),J={smokes:[]};function groundAt(){return 0.05}function jRel(m){try{scene.remove(m)}catch(e){}}function netDevFree(m){try{scene.remove(m)}catch(e){}}function netOwnGone(){}function okMat(c){return new THREE.MeshBasicMaterial({color:c})}
 var camera=new THREE.PerspectiveCamera(45,${W}/${H},.1,100);camera.position.set(6,4.2,8.5);camera.lookAt(0,1,0);var scene=null;
-var A18VIS={fire:['cloud',0xff5a1a,.5]};var NET_DEV={alarmbot:1,turret:1,trapwire:1,boombot:null},netDevs=new Map(),netOwnDevs=new Map();
+var A18VIS={fire:['cloud',0xff5a1a,.5]};var NET_DEV={alarmbot:1,turret:1,trapwire:1,boombot:null,blastpack:null},netDevs=new Map(),netOwnDevs=new Map();
 function netDevPart(kind,al){var m=new THREE.Mesh(new THREE.BoxGeometry(.4,.4,.4),new THREE.MeshBasicMaterial({color:al?0x3fb4ff:0xff4655}));m.userData.ownGeo=true;scene.add(m);return m}
 function netSmoke0(x,z,al,tl,y,r,cyl){var m=new THREE.Mesh(new THREE.SphereGeometry(r||4,16,12),new THREE.MeshBasicMaterial({color:0x8a8f99,transparent:true,opacity:.35}));m.position.set(x,y||2,z);scene.add(m);J.smokes.push({m:m,p:m.position,t:tl,cb:false,netId:null})}
 </script>
