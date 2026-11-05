@@ -256,7 +256,7 @@ function netRevealSync(rows){const now=performance.now(),seen=new Set();for(cons
  if(!(r.length>=6&&r[4]>0&&r[4]<=60&&r[5]>=0&&r[5]<=r[4])){netRevealDrop(r[0]);b.netRvUntil=now+400;continue;}
  let q=netReveals.get(r[0]);if(q&&(q.b!==b||q.body!==b.body||q.head!==b.head)){netRevealDrop(r[0]);q=null;}
  const until=now+r[4]*1000,orange=now+r[5]*1000;b.netRvUntil=until;
- if(!q){if(!b.body||!b.head)continue;const meshes=[b.body,b.head].map(s=>{const m=new THREE.Mesh(s.geometry,orange>now?svxRvMat:rvMat);m.scale.setScalar(1.15);m.renderOrder=999;m.raycast=()=>{};s.add(m);return m;});q={b,body:b.body,head:b.head,meshes};netReveals.set(r[0],q);}
+ if(!q){if(!b.body||!b.head)continue;const meshes=[b.body,b.head].map(s=>{return xRevealShell(s,orange>now?svxRvMat:rvMat);});q={b,body:b.body,head:b.head,meshes};netReveals.set(r[0],q);}
  q.until=until;q.orange=orange;}for(const id of [...netReveals.keys()])if(!seen.has(id))netRevealDrop(id);netRevealTick();}
 function netClearEffects(){netRevealClear();for(const c of netCbs.values())if(c.m)jRel(c.m);netCbs.clear();for(const S of J.smokes||[])if(S.netId!=null)jRel(S.m);if(J.smokes)J.smokes=J.smokes.filter(S=>S.netId==null);document.getElementById('netBlind')?.remove();for(const m of netWalls.values()){scene.remove(m);m.children.forEach(q=>{q.geometry.dispose();q.material.dispose();});}netWalls.clear();for(const id of [...netDevs.keys()])netDevDrop(id);netOwnDevs.clear();}/* a barrier is a Group of segment meshes (no geometry of its own) */
 // Others' Cloudbursts from the snapshot: the projectile while it flies (s 0), then the smoke where the server landed it (s 1,

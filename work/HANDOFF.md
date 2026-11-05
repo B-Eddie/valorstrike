@@ -190,3 +190,8 @@ work/fx_viewer/gen_net2.cjs: the REAL a18NetSync/a18NetFree/netSyncSmokes/netSyn
 - Targeted new server/test-reveal-rows.js, full-page realTHREE/noGL work/test_net_reveal.cjs, server/test-ults.js, net transport/clean rs, offline reveal and reinjection pass.
 - Inspected /downloads/net_reveal.png: real GL actual netRevealSync, dummy body behind wall, orange -> red after orange TTL -> empty after authoritative clear. Scripted state, not gameplay acceptance.
 - Bounded one-client real Lotus assets/input loaded twice with no probe failures; Omen KeyX enters FtS targeting. Both screenshot routes timed out; stopped within hard budgets (90s and 75s). No gameplay visual acceptance. No two-browser, CI, billing or publication action.
+
+## Nov 5 16:24 reveal hidden-parent correction
+- Follow-through found mkGuy sets body/head visible=false. Previous child-shell design was therefore invisible in real game composition despite visible-parent dummy pixels. This affected original offline reveal callers too. Earlier isolated screenshots are not game-path validation.
+- xRevealShell now places a visible sibling under the hitbox's parent, copies the source world transform at render time, applies the same 1.15 expansion, recomputes modelView/normal matrices, and never unhides the damage volumes. Real Recon, Fury/shared helper, Neural Theft and online handler use it. No shader/material/sidedness changes.
+- Full-page tests now use actual mkGuy with hidden body/head, check sibling topology, transformed pose/scale and cleanup. Real-GL offline/online viewers now hide source hitboxes and still show orange/red through dummy wall, then clean removal. Pixel appearance inspected. Capsule/head stand-in remains an approximation, not agent-shaped outline or gameplay acceptance.
