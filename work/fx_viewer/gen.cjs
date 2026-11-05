@@ -5,6 +5,8 @@ const html=fs.readFileSync(path.join(__dirname,'..','..','index.html'),'utf8');
 const three=fs.readFileSync(path.join(__dirname,'..','two-browser','qa','three.min.js'),'utf8');
 const blocks=['SAGE','SKYE','FADE','MIKS','DEADLOCK'];
 let code='';for(const b of blocks){const i=html.indexOf('// ---- '+b+' FX ----'),j=html.indexOf('// ---- END '+b+' FX ----',i);if(i<0||j<i)throw new Error(b);code+=html.slice(i,j)+'\n';}
+const ext=(a,b)=>{const i=html.indexOf(a),j=html.indexOf(b,i);if(i<0||j<i)throw new Error('extract '+a);return html.slice(i,j);};
+const netCode=[ext('const netRg=new Map();','function netSyncEffects(rows)'),ext('const a18Net = new Map();','function a18NetMesh('),ext('function a18NetFree(r','\nfunction a18NetSync(rows) {'),ext('function a18NetSync(rows) {','const a18FxSync0')].join('\n');
 const W=+process.env.TW||320,H=+process.env.TH||240;
 const cases=[
  ['haunt orb mid-flight','fdxHauntOrb(0,1.4,0)',0.6,'orb'],
@@ -37,5 +39,26 @@ sel.forEach(function(ci,n){var c=cases[ci];scene=new THREE.Scene();scene.backgro
  var steps=Math.round(c[2]/0.05);for(var k=0;k<steps;k++)tickAll(0.05);
  var x=(n%3)*${W},y=${H}*(Math.ceil(sel.length/3)-1-Math.floor(n/3));renderer.setViewport(x,y,${W},${H});renderer.setScissor(x,y,${W},${H});renderer.render(scene,camera);
  try{if(h&&h.end)h.end()}catch(e){}});
-document.title='DONE errs='+errs.length;document.body.setAttribute('data-errs',errs.join(' || ').slice(0,800));
+document.title='DONE errs='+errs.length;errs=[];document.body.setAttribute('data-errs',errs.join(' || ').slice(0,800));
+</script>`);
+
+process.stdout.write(`<script>
+var MP={me:7},units=new Map([[3,{g:{position:new THREE.Vector3(-3,0,0)}}]]);function groundAt(){return 0}
+var A18VIS={haunt:['ring',0x9a6ff0,.5],seeker:['orb',0x3fd0c0]};
+${netCode}
+var rowsOf=function(t){var o=[];return o};
+var scen=[
+ ['net haunt (other owner): orb flight then burst',function(t){var tl=2-t,r={id:1,kind:'haunt',o:3,p:[3,0,0],tl:tl};if(t>=0.4)r.dn=1;return t<2?[r]:[]},0.55],
+ ['net skye seeker (other owner)',function(t){return t<1?[{id:2,kind:'seeker',o:3,ag:'Skye',p:[3,1,0],tl:1.05-t}]:[]},0.5],
+ ['net skye trailblazer (other owner)',function(t){return t<6?[{id:3,kind:'trail',o:3,p:[-3+t*1.5,0,0],yaw:-1.57,tl:6-t}]:[]},2.5],
+ ['net waveform (other owner)',function(t){return t<14?[{id:4,kind:'smoke',o:3,p:[0,0,0],r:4.15,wf:1,tl:14-t}]:[]},2.0],
+ ['net own haunt (must draw nothing)',function(t){var r={id:5,kind:'haunt',o:7,p:[3,0,0],tl:2-t};if(t>=0.4)r.dn=1;return [r]},0.55],
+];
+function netRun(sc,upto){var t=0;a18Net.clear();for(var k=0;k<=Math.round(upto/0.05);k++){t=k*0.05;try{netSyncTrail(sc[1](t));netSyncRegrowth([]);netSyncWaveform(sc[1](t));a18NetSync(sc[1](t))}catch(e){errs.push(sc[0]+' '+e)}tickAll(0.05)}}
+var NR=document.createElement('canvas');document.body.appendChild(NR);var r2=new THREE.WebGLRenderer({canvas:NR,antialias:false,preserveDrawingBuffer:true});r2.setSize(${W*3},${H*2});r2.setScissorTest(true);
+scen.forEach(function(sc,n){scene=new THREE.Scene();scene.background=new THREE.Color(0x232a36);var g=new THREE.Mesh(new THREE.PlaneGeometry(30,30),new THREE.MeshBasicMaterial({color:0x3a4252}));g.rotation.x=-Math.PI/2;scene.add(g);scene.add(new THREE.GridHelper(30,30,0x556,0x445));
+ netRun(sc,sc[2]);var x=(n%3)*${W},y=${H}*(1-Math.floor(n/3));r2.setViewport(x,y,${W},${H});r2.setScissor(x,y,${W},${H});r2.render(scene,camera);
+ try{netSyncTrail([]);netSyncWaveform([]);a18NetSync([])}catch(e){errs.push('end '+e)}
+ for(var q=0;q<80;q++)tickAll(0.05);var left=scene.children.length;if(left>2)errs.push(sc[0]+' leftover scene objs '+(left-2));});
+document.title='NET DONE errs='+errs.length;document.body.setAttribute('data-errs',errs.join(' || ').slice(0,900));
 </script>`);
