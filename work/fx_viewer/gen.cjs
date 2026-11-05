@@ -52,12 +52,15 @@ var scen=[
  ['net skye seeker (other owner)',function(t){return t<1?[{id:2,kind:'seeker',o:3,ag:'Skye',p:[3,1,0],tl:1.05-t}]:[]},0.5],
  ['net skye trailblazer (other owner)',function(t){return t<6?[{id:3,kind:'trail',o:3,p:[-3+t*1.5,0,0],yaw:-1.57,tl:6-t}]:[]},2.5],
  ['net waveform (other owner)',function(t){return t<14?[{id:4,kind:'smoke',o:3,p:[0,0,0],r:4.15,wf:1,tl:14-t}]:[]},2.0],
+ ['net deadlock cocoon (other owner, captive moves)',function(t){return t<7?[{id:6,kind:'anni',o:3,p:[t*0.3,0,0],tl:7-t}]:[]},1.5],
+ ['net skye hawk then flash dn burst',function(t){if(t<0.6)return [{id:7,kind:'hawk',o:3,p:[-4+t*18*0.4,1.5,0],hd:[1,0,0],tl:2-t}];if(t<0.9)return [{id:8,kind:'flash',o:3,ag:'Skye',p:[-4+0.6*7.2,1.5,0],tl:1,fa:Math.max(0,0.9-t)}];if(t<1.2)return [{id:8,kind:'flash',o:3,ag:'Skye',p:[-4+0.6*7.2,1.5,0],tl:0.2,fa:0,dn:1}];return []},1.0],
+ ['net miks harmonize (other player buffed: pillar only)',function(t){return t<8?[{id:9,kind:'harmon',o:3,tg:3,p:[0,0,0],tl:8-t}]:[]},1.5],
  ['net own haunt (must draw nothing)',function(t){var r={id:5,kind:'haunt',o:7,p:[3,0,0],tl:2-t};if(t>=0.4)r.dn=1;return [r]},0.55],
 ];
 function netRun(sc,upto){var t=0;a18Net.clear();for(var k=0;k<=Math.round(upto/0.05);k++){t=k*0.05;try{netSyncTrail(sc[1](t));netSyncRegrowth([]);netSyncWaveform(sc[1](t));a18NetSync(sc[1](t))}catch(e){errs.push(sc[0]+' '+e)}tickAll(0.05)}}
-var NR=document.createElement('canvas');document.body.appendChild(NR);var r2=new THREE.WebGLRenderer({canvas:NR,antialias:false,preserveDrawingBuffer:true});r2.setSize(${W*3},${H*2});r2.setScissorTest(true);
+var NR=document.createElement('canvas');document.body.appendChild(NR);var r2=new THREE.WebGLRenderer({canvas:NR,antialias:false,preserveDrawingBuffer:true});r2.setSize(${W*3},${H*3});r2.setScissorTest(true);
 scen.forEach(function(sc,n){scene=new THREE.Scene();scene.background=new THREE.Color(0x232a36);var g=new THREE.Mesh(new THREE.PlaneGeometry(30,30),new THREE.MeshBasicMaterial({color:0x3a4252}));g.rotation.x=-Math.PI/2;scene.add(g);scene.add(new THREE.GridHelper(30,30,0x556,0x445));
- netRun(sc,sc[2]);var x=(n%3)*${W},y=${H}*(1-Math.floor(n/3));r2.setViewport(x,y,${W},${H});r2.setScissor(x,y,${W},${H});r2.render(scene,camera);
+ netRun(sc,sc[2]);var x=(n%3)*${W},y=${H}*(2-Math.floor(n/3));r2.setViewport(x,y,${W},${H});r2.setScissor(x,y,${W},${H});r2.render(scene,camera);
  try{netSyncTrail([]);netSyncWaveform([]);a18NetSync([])}catch(e){errs.push('end '+e)}
  for(var q=0;q<80;q++)tickAll(0.05);var left=scene.children.length;if(left>2)errs.push(sc[0]+' leftover scene objs '+(left-2));});
 document.title='NET DONE errs='+errs.length;document.body.setAttribute('data-errs',errs.join(' || ').slice(0,900));
