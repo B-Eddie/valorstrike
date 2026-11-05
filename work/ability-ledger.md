@@ -107,3 +107,6 @@ Sources: wiki.playvalorant.com/en-us/<Ability> pages + images/<Ability>_Showcase
 - Phoenix module b8b6e951 integrated for Blaze visuals only (blazeWall hides the old plane); Hot Hands, Curveball, Run It Back not wired yet. Provisional.
 - Waylay Convergent Paths made directional (e4babda): 3 m near-edge vs centre ambiguous, 4-tick outward expansion not modelled.
 - Harness: arm hook freezes the server at the cast tick (c8cdd3e).
+
+## ci13 (run 41951904028, head 9295ffd) - 2026-11-04 21:20
+- Phoenix Blaze online: server charge spent, server fx row blaze -1,6,41 present ~12 s, but NEITHER client A nor B drew a wall (sheets /downloads/ci13_Phoenix_Blaze_A.png/_B.png). Still OPEN. Local page test work/test_blaze_net.cjs (row -> wall of |q-p|+1) passes, which is code-path only, not online proof. Client telemetry (a18Net kinds, J.walls) added to scen_gen.cjs to see row receipt.
