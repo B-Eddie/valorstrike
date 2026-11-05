@@ -9,7 +9,7 @@ module.exports=async T=>{const {A,B,qa,code,log,check,SHOT}=T;const fs=require('
  await W(2000);
  await qa(`const s=sim('${code}');const a=s.units.find(u=>u.name==='Alpha'),b=s.units.find(u=>u.name==='Bravo');b.x=a.x+${+process.env.BX||0};b.z=a.z+${+process.env.BZ||-12};b.y=a.y;if(b.vy!==undefined)b.vy=0;return 1;`);
  await A.X(`yaw=0;pitch=${process.env.PITCH||-0.05};1`);await W(2500);
- const frz=async v=>{await qa('C.freeze='+v+';return 1');await Promise.all([A,B].map(P=>P.X('window.__ts='+(v?0:1)+';1').catch(()=>0)));};
+ const frz=async v=>{await qa('C.freeze='+v+';return 1');await Promise.all([A,B].map(P=>P.X('window.__ts='+(v?0:1)+';window.__wsMute='+(v?'true':'false')+';1').catch(()=>0)));};
  const unp=()=>B.X('if(typeof paused!=="undefined"&&paused){const b=document.getElementById("xResume");if(b)b.click();}1').catch(()=>0);
  const snap=()=>qa(`const s=sim('${code}');const a=s.units.find(u=>u.name==='Alpha'),b=s.units.find(u=>u.name==='Bravo');return {t:+s.time.toFixed(2),a:{ab:a.ability,hp:a.hp,pos:[a.x,a.y,a.z].map(n=>+n.toFixed(1))},b:{hp:b.hp,pos:[b.x,b.y,b.z].map(n=>+n.toFixed(1)),flash:+(Math.max(0,(b.flashUntil||0)-s.time)).toFixed(2),conc:+(Math.max(0,(b.concussUntil||0)-s.time)).toFixed(2)},fx:s.effects.map(e=>e.kind+':'+(e.p?e.p.map(n=>Math.round(n)).join(','):'')),ev:(s.events||[]).slice(-6).map(e=>JSON.stringify(e).slice(0,100))};`);
  const cl=async P=>P.X(`JSON.stringify({a18:(J.a18fx||[]).map(f=>f.kind),net:(NET.fx||[]).map(f=>f.kind),eq:J.eq,ult:J.ult})`).catch(e=>String(e));
@@ -17,8 +17,8 @@ module.exports=async T=>{const {A,B,qa,code,log,check,SHOT}=T;const fs=require('
  await A.page.bringToFront();await W(500);await unp();
  await A.page.keyboard.down(KEY);await W(120);await A.page.keyboard.up(KEY);await W(400);
  // software GL: client frames take seconds, so the equip/draw timer lags the wall clock. Hold the server still, let the client clock run, and click only once the client says the ability is ready (or it already threw).
- await qa('C.freeze=true;return 1');let eqs='?';for(let i=0;i<180;i++){eqs=await A.X('J.eq?J.eq.st:"none"').catch(()=>'err');if(eqs!=='draw')break;await W(500);}
- log('equip wait done',eqs);await qa('C.freeze=false;return 1');
+ await qa('C.freeze=true;return 1');await A.X('window.__wsMute=true;1');let eqs='?';for(let i=0;i<180;i++){eqs=await A.X('J.eq?J.eq.st:"none"').catch(()=>'err');if(eqs!=='draw')break;await W(500);}
+ log('equip wait done',eqs);await A.X('window.__wsMute=false;1');await qa('C.freeze=false;return 1');
  log('after key (equipped?)',JSON.stringify({a:await cl(A),s:(await snap()).a.ab}));
  if(process.env.FIRE!=='0'){await A.page.mouse.down();await W(120);await A.page.mouse.up();}
  const fr=P=>P.X('renderer.info.render.frame').catch(()=>0);
