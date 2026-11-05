@@ -46,7 +46,7 @@ export function startUlt(sim,u,ctx,p){
   case 'Skye':{const list=enemies(sim,u).sort((a,b)=>Math.hypot(a.x-u.x,a.z-u.z)-Math.hypot(b.x-u.x,b.z-u.z)).slice(0,ULT.seekers.count);for(const v of list){const t=Math.min(ULT.seekers.maxTravel,Math.hypot(v.x-u.x,v.y-u.y,v.z-u.z)/ULT.seekers.speed);effect(sim,u,'seeker',[u.x,u.y+1,u.z],t+.05,0,{target:v.id,at:sim.time+t});}break;}
   case 'Cypher':{const c=ctx.corpse;p.splice(0,3,c.x,c.y,c.z);for(const dt of ULT.theft.reveals)effect(sim,u,'theft',[c.x,c.y,c.z],dt+.05,0,{at:sim.time+dt});break;}
   case 'Chamber':{endHeadhunter(u);u.ultWeapon={saved:u.weapon,savedAmmo:u.ammo,savedReserve:u.reserve};u.inventory[u.weapon]=u.ammo;u.weapon=ULT.tdf.weapon;u.ammo=ULT.tdf.ammo;u.reserve=0;u.reloadAt=0;u.fireAt=Math.max(u.fireAt||0,sim.time+WINDUP.tourDeForce);/* 2.3 s equip (wiki windup) */break;}
-  case 'Phoenix':{u.runItBack={p:[u.x,u.y,u.z],until:sim.time+ULT.rib.window,hp:u.hp,armor:u.armor};p.splice(0,3,u.x,u.y,u.z);break;}
+  case 'Phoenix':{u.runItBack={p:[u.x,u.y,u.z],until:sim.time+ULT.rib.window,hp:u.hp,armor:u.armor};effect(sim,u,'rib',[u.x,u.y,u.z],ULT.rib.window+.5,0,{});/* state row: the marker lives until the return (below) */p.splice(0,3,u.x,u.y,u.z);break;}
  }
 }
 
@@ -70,7 +70,7 @@ export function tickUlts(sim,dt){
   const F=u.ability?.fury;if(F&&(!u.alive||sim.time>=F.until))u.ability.fury=null;/* unfired charges are lost after 6 s (no auto blasts) */
   if(u.ultWeapon&&(!u.alive||u.weapon!==ULT.tdf.weapon||u.ammo<=0)){const W=u.ultWeapon;u.ultWeapon=null;if(u.weapon===ULT.tdf.weapon){u.weapon=W.saved;u.ammo=W.savedAmmo;u.reserve=W.savedReserve;}if(u.inventory)delete u.inventory[ULT.tdf.weapon];}
   if(u.showstopper&&(!u.alive||sim.time>=u.showstopper.until))u.showstopper=null;/* unfired launcher put away after 10 s */
-  const R=u.runItBack;if(R&&!u.loading&&(!u.alive||sim.time>=R.until)){u.runItBack=null;[u.x,u.y,u.z]=R.p;u.vx=u.vz=u.vy=0;u.hp=100;u.alive=true;u.respawnAt=0;u.input={};u.triggerHeld=false;u.seq++;u.invulnerableUntil=Math.max(u.invulnerableUntil||0,sim.time+ULT.rib.protect);sim.castEvents.push({t:'ac',i:u.id,ag:u.agent,k:'x',sub:'return',o:[...R.p],d:[0,0,-1],p:[...R.p],ts:Math.round(sim.time*1000)});}
+  const R=u.runItBack;if(R&&!u.loading&&(!u.alive||sim.time>=R.until)){const died=!u.alive,bodyAt=[u.x,u.y,u.z];u.runItBack=null;for(let i=sim.effects.length-1;i>=0;i--)if(sim.effects[i].kind==='rib'&&sim.effects[i].owner===u.id)sim.effects.splice(i,1);[u.x,u.y,u.z]=R.p;u.vx=u.vz=u.vy=0;u.hp=100;u.alive=true;u.respawnAt=0;u.input={};u.triggerHeld=false;u.seq++;u.invulnerableUntil=Math.max(u.invulnerableUntil||0,sim.time+ULT.rib.protect);sim.castEvents.push({t:'ac',i:u.id,ag:u.agent,k:'x',sub:died?'retdeath':'return',o:died?bodyAt:[...R.p],d:[0,0,-1],p:[...R.p],ts:Math.round(sim.time*1000)});}
  }
  for(let i=sim.effects.length-1;i>=0;i--){const e=sim.effects[i],owner=(sim.fxSrc=e,sim.units.find(u=>u.id===e.owner));
   if(e.kind==='rocket'){const C=ULT.rocket,step=C.speed*dt,d=e.d,hit=sim.world.ray(e.p,d,step);let at=Number.isFinite(hit)?hit:null;
