@@ -112,12 +112,13 @@ function reySoul(p, ttl) { try {
 // windup: s on arrival before it nearsights (0.4), active: s it then burns (XLEER 1.6).
 function reyLeerCast(a, b, travel, windup, active) { try {
   const G = reyGeos(), grp = new THREE.Group();
+  const dark = new THREE.Mesh(G.sph, new THREE.MeshBasicMaterial({ color: 0x1c0533, side: THREE.BackSide, fog: false, toneMapped: false })); dark.scale.setScalar(0.24);
   const core = new THREE.Mesh(G.sph, reyMat("le", reySOUL, a.x + b.z)); core.scale.setScalar(0.16);
-  const iris = new THREE.Mesh(G.sph, reyMat("le2", reySOUL, 4.4)); iris.scale.set(0.19, 0.17, 0.11); iris.position.z = 0.05;
+  const iris = new THREE.Mesh(G.sph, reyMat("le2", reySOUL, 4.4)); iris.scale.set(0.15, 0.135, 0.10); iris.position.z = 0.05;
   const glint = new THREE.Group();
   for (let i = 0; i < 4; i++) { const long = i < 2; const gp = new THREE.Mesh(G.ray, reyBasic(0xfff0fa, 0.95, true)); gp.scale.set(long ? 0.07 : 0.04, long ? 0.40 : 0.24, 1); gp.rotation.z = i * Math.PI / 2 + (long ? 0 : Math.PI / 4); gp.position.z = 0.12; glint.add(gp); }
   const halo = new THREE.Mesh(G.plane, reyMat("leh", reyHALO)); halo.scale.setScalar(0.9);
-  grp.add(core, iris, glint, halo);
+  grp.add(dark, core, iris, glint, halo);
   const petals = [];
   for (let i = 0; i < 8; i++) { const pt = new THREE.Mesh(G.petal, reyMat("lep", reyPETAL, i * 1.7)); const an = i / 8 * Math.PI * 2;
     pt.position.set(Math.cos(an) * 0.20, Math.sin(an) * 0.14, -0.02); pt.rotation.z = an + Math.PI / 2; pt.scale.set(0.26, 0.32, 1); grp.add(pt); petals.push(pt); }

@@ -109,12 +109,19 @@ function phxBlazePath(pts, o2) { try {
     return { x: pts[i - 1].x + (pts[i].x - pts[i - 1].x) * t, y: pts[i - 1].y + (pts[i].y - pts[i - 1].y) * t, z: pts[i - 1].z + (pts[i].z - pts[i - 1].z) * t,
       dx: pts[i].x - pts[i - 1].x, dz: pts[i].z - pts[i - 1].z }; };
   // one continuous ribbon following the (possibly steered) path - no panel seams
-  const M = Math.max(8, Math.min(48, Math.round(L / 0.45)));
-  const posA = new Float32Array((M + 1) * 2 * 3), uvA = new Float32Array((M + 1) * 2 * 2), idxA = [];
-  for (let j = 0; j <= M; j++) { const d = L * j / M, p = at(d);
-    posA[j * 6] = p.x; posA[j * 6 + 1] = 0; posA[j * 6 + 2] = p.z; posA[j * 6 + 3] = p.x; posA[j * 6 + 4] = 1; posA[j * 6 + 5] = p.z;
-    uvA[j * 4] = d / L; uvA[j * 4 + 1] = 0; uvA[j * 4 + 2] = d / L; uvA[j * 4 + 3] = 1;
-    if (j < M) { const a = j * 2; idxA.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); } }
+  // open-top tube (two side sheets + top cap, ~0.56m thick) so the wall reads from every angle -
+  // a single flat sheet projects to nothing when viewed edge-on (ci15 floor-strip-only finding)
+  const M = Math.max(8, Math.min(48, Math.round(L / 0.45))), HW = 0.28;
+  const posA = new Float32Array((M + 1) * 6 * 3), uvA = new Float32Array((M + 1) * 6 * 2), idxA = [];
+  for (let j = 0; j <= M; j++) { const d = L * j / M, p = at(d), nl = Math.hypot(p.dx, p.dz) || 1, nx = -p.dz / nl * HW, nz = p.dx / nl * HW, u = d / L, b = j * 18, v = j * 12;
+    const put = (k, x, y, z, vv) => { posA[b + k * 3] = x; posA[b + k * 3 + 1] = y; posA[b + k * 3 + 2] = z; uvA[v + k * 2] = u; uvA[v + k * 2 + 1] = vv; };
+    put(0, p.x - nx, 0, p.z - nz, 0); put(1, p.x - nx, 1, p.z - nz, 1);
+    put(2, p.x - nx, 1, p.z - nz, 1); put(3, p.x + nx, 1, p.z + nz, 1);
+    put(4, p.x + nx, 0, p.z + nz, 0); put(5, p.x + nx, 1, p.z + nz, 1);
+    if (j < M) { const a = j * 6, q = (j + 1) * 6;
+      idxA.push(a, q, a + 1, q, q + 1, a + 1);
+      idxA.push(a + 2, q + 2, a + 3, q + 2, q + 3, a + 3);
+      idxA.push(a + 4, q + 4, a + 5, q + 4, q + 5, a + 5); } }
   const geo = new THREE.BufferGeometry();
   geo.setAttribute("position", new THREE.BufferAttribute(posA, 3)); geo.setAttribute("uv", new THREE.BufferAttribute(uvA, 2)); geo.setIndex(idxA); geo.computeVertexNormals();
   const mat = phxMat("wall", phxWALL, pts[0].x + pts[0].z); mat.uniforms.uG = { value: 0 };
