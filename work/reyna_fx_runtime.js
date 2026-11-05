@@ -113,14 +113,14 @@ function reySoul(p, ttl) { try {
 function reyLeerCast(a, b, travel, windup, active) { try {
   const G = reyGeos(), grp = new THREE.Group();
   const core = new THREE.Mesh(G.sph, reyMat("le", reySOUL, a.x + b.z)); core.scale.setScalar(0.16);
-  const iris = new THREE.Mesh(G.sph, reyMat("le2", reySOUL, 4.4)); iris.scale.set(0.17, 0.15, 0.10); iris.position.z = 0.05;
+  const iris = new THREE.Mesh(G.sph, reyMat("le2", reySOUL, 4.4)); iris.scale.set(0.19, 0.17, 0.11); iris.position.z = 0.05;
   const glint = new THREE.Group();
-  for (let i = 0; i < 4; i++) { const long = i < 2; const gp = new THREE.Mesh(G.ray, reyBasic(0xfff0fa, 0.95, true)); gp.scale.set(long ? 0.09 : 0.05, long ? 0.58 : 0.34, 1); gp.rotation.z = i * Math.PI / 2 + (long ? 0 : Math.PI / 4); gp.position.z = 0.12; glint.add(gp); }
-  const halo = new THREE.Mesh(G.plane, reyMat("leh", reyHALO)); halo.scale.setScalar(1.6);
+  for (let i = 0; i < 4; i++) { const long = i < 2; const gp = new THREE.Mesh(G.ray, reyBasic(0xfff0fa, 0.95, true)); gp.scale.set(long ? 0.07 : 0.04, long ? 0.40 : 0.24, 1); gp.rotation.z = i * Math.PI / 2 + (long ? 0 : Math.PI / 4); gp.position.z = 0.12; glint.add(gp); }
+  const halo = new THREE.Mesh(G.plane, reyMat("leh", reyHALO)); halo.scale.setScalar(0.9);
   grp.add(core, iris, glint, halo);
   const petals = [];
   for (let i = 0; i < 8; i++) { const pt = new THREE.Mesh(G.petal, reyMat("lep", reyPETAL, i * 1.7)); const an = i / 8 * Math.PI * 2;
-    pt.position.set(Math.cos(an) * 0.34, Math.sin(an) * 0.24, -0.02); pt.rotation.z = an + Math.PI / 2; pt.scale.set(0.38, 0.47, 1); grp.add(pt); petals.push(pt); }
+    pt.position.set(Math.cos(an) * 0.20, Math.sin(an) * 0.14, -0.02); pt.rotation.z = an + Math.PI / 2; pt.scale.set(0.26, 0.32, 1); grp.add(pt); petals.push(pt); }
   const N = 8, pos = new Float32Array(N * 3), pts = new THREE.Points(new THREE.BufferGeometry(), reyBasic(0xa030e0, 0.8, true));
   pts.geometry.setAttribute("position", new THREE.BufferAttribute(pos, 3)); pts.material.size = 0.05; pts.frustumCulled = false;
   for (let i = 0; i < N; i++) { pos[i * 3] = a.x; pos[i * 3 + 1] = a.y; pos[i * 3 + 2] = a.z; }
@@ -128,13 +128,13 @@ function reyLeerCast(a, b, travel, windup, active) { try {
   const h = reyFx(ttl, [grp, pts], (dt, age) => { const tr = travel || 0.55, wu = windup || 0.4;
     let u = Math.min(1, age / tr); reyV0.lerpVectors(a, b, u); grp.position.copy(reyV0);
     const deployed = age >= tr, winding = deployed && age < tr + wu, dying = age > ttl - 0.4;
-    const s = (deployed ? Math.min(1, (age - tr) / wu) * 1.0 : 0.42 + 0.18 * u); // swells open during the windup
+    const s = (deployed ? Math.min(1, (age - tr) / wu) * 0.8 : 0.42 + 0.18 * u); // swells open during the windup
     grp.scale.setScalar(Math.max(0.05, s * (1 + (winding ? 0.10 * Math.sin(age * 25) : 0.04 * Math.sin(age * 9)))));
     const f = dying ? Math.max(0, (ttl - age) / 0.4) : 1;
-    core.material.uniforms.uA.value = f; iris.material.uniforms.uA.value = f * (deployed ? 1 : 0.6); halo.material.uniforms.uA.value = 0.6 * f;
+    core.material.uniforms.uA.value = f; iris.material.uniforms.uA.value = f * (deployed ? 1 : 0.6); halo.material.uniforms.uA.value = 0.4 * f;
     glint.visible = deployed; for (const gp of glint.children) gp.material.opacity = 0.95 * f;
     for (let i = 0; i < petals.length; i++) { const pt = petals[i], an = i / 8 * Math.PI * 2 + age * (deployed ? 0.9 : 2.6);
-      pt.position.set(Math.cos(an) * 0.31, Math.sin(an) * 0.22, -0.02); pt.rotation.z = an + Math.PI / 2; pt.material.uniforms.uA.value = f * (deployed ? 0.65 : 0.5); }
+      pt.position.set(Math.cos(an) * 0.19, Math.sin(an) * 0.13, -0.02); pt.rotation.z = an + Math.PI / 2; pt.material.uniforms.uA.value = f * (deployed ? 0.55 : 0.5); }
     if (typeof camera !== "undefined") { grp.lookAt(camera.position); halo.lookAt(camera.position); }
     for (let i = N - 1; i > 0; i--) { pos[i * 3] = pos[(i - 1) * 3]; pos[i * 3 + 1] = pos[(i - 1) * 3 + 1]; pos[i * 3 + 2] = pos[(i - 1) * 3 + 2]; }
     pos[0] = reyV0.x; pos[1] = reyV0.y; pos[2] = reyV0.z; pts.geometry.attributes.position.needsUpdate = true;
