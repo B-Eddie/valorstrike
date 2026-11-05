@@ -8919,7 +8919,9 @@ function xCbGlowMat(i) { const a = xCbGlowMat.m || (xCbGlowMat.m = []); return a
 function xCbOrb(p) { // the Curveball flare in flight: core + glow shells (children, released with the orb by jRel via userData.kids)
   const m = jM(cbOrbGeo, jMat("cbOrb", () => new THREE.MeshBasicMaterial({ color: 0xff3a1a, fog: false, toneMapped: false }))); m.scale.setScalar(XCBF.orb); m.position.copy(p);
   const kids = XCBF.glow.map((r, i) => { const h = new THREE.Mesh(cbOrbGeo, xCbGlowMat(i)); h.scale.setScalar(r / XCBF.orb); h.raycast = () => {}; h.renderOrder = 2; m.add(h); return h; });
-  m.userData.kids = kids; scene.add(m); return m;
+  m.userData.kids = kids; scene.add(m);
+  try { if (typeof phxCurveFlight === "function" && phxCurveFlight(m)) { m.visible = false; } } catch (e) { try { xE(e); } catch (e2) {} } /* Phoenix module look; the mesh stays the tracked projectile */
+  return m;
 }
 function xFlashScreen(hold, peak, fade, sty) { // the white flash screen: peak opacity held for hold s, then faded over fade s; a weaker flash never cuts a stronger one short
   const w = $("xWh"), t = performance.now(), F = xFlashScreen; if (!w) return;
@@ -8943,10 +8945,10 @@ function xFlashBots(p, bl) { // bots at a flash pop: in range, line of sight fro
   });
   return n;
 }
-function xCbRing(p) { const r = new THREE.Mesh(ringGeo, fireMat(0xfff0e0, 0.95)); r.position.copy(p); r.lookAt(camera.position); r.scale.setScalar(0.6); scene.add(r); const t0 = performance.now(), f = () => { const u = (performance.now() - t0) / 420; if (u >= 1) { scene.remove(r); r.material.dispose(); return; } r.scale.setScalar(0.6 + u * 2.4); r.material.opacity = 0.95 * (1 - u); requestAnimationFrame(f); }; f(); } /* Curveball pop: the thin white ring that opens around the flare (wiki clip) */
+function xCbRing(p) { try { if (typeof phxCurvePop === "function" && phxCurvePop(p)) return; } catch (e) {} const r = new THREE.Mesh(ringGeo, fireMat(0xfff0e0, 0.95)); r.position.copy(p); r.lookAt(camera.position); r.scale.setScalar(0.6); scene.add(r); const t0 = performance.now(), f = () => { const u = (performance.now() - t0) / 420; if (u >= 1) { scene.remove(r); r.material.dispose(); return; } r.scale.setScalar(0.6 + u * 2.4); r.material.opacity = 0.95 * (1 - u); requestAnimationFrame(f); }; f(); } /* Curveball pop: the thin white ring that opens around the flare (wiki clip) */
 function jPop(p) {
-  SFX.flash(); const m = jM(orbGeo, xAdd("pcore", 0xfff6e8, 1)); m.scale.setScalar(XCBF.pop / 0.25); m.position.copy(p); jFx(m, 0.3);
-  const hm = jM(smokeGeo, xAdd("phalo", 0xff9a40, 0.45)); hm.scale.setScalar(0.4); hm.position.copy(p); jFx(hm, 0.35).g = 0.25;
+  SFX.flash(); if (typeof phxCurvePop !== "function") { const m = jM(orbGeo, xAdd("pcore", 0xfff6e8, 1)); m.scale.setScalar(XCBF.pop / 0.25); m.position.copy(p); jFx(m, 0.3);
+    const hm = jM(smokeGeo, xAdd("phalo", 0xff9a40, 0.45)); hm.scale.setScalar(0.4); hm.position.copy(p); jFx(hm, 0.35).g = 0.25; } /* the module pop replaces the white core + halo (xCbRing) */
   try { xCbRing(p); } catch (e) {} xFlashBots(p, XCBF.blind);
   xFlashPlayer(p, XCBF.blind, "phoenix"); // Phoenix's own flash blinds him too when he looks at it (friendlyfire Yes)
 }
@@ -9007,7 +9009,7 @@ function phKey(code) {
     if (J.q < 1 || J.cd.q > 0) return no(); J.q--; J.cd.q = 0.6;
     ray.set(new THREE.Vector3(P.x, 1, P.z), new THREE.Vector3(fx, 0, fz)); ray.far = 5; const h = ray.intersectObjects(solids)[0];
     const dd = h ? Math.max(0, h.distance - 0.5) : 5, c = new THREE.Vector3(P.x + fx * dd, 0.05, P.z + fz * dd);
-    const m = jM(zoneGeo, hhMat()); m.rotation.x = -Math.PI / 2; m.position.copy(c); m.scale.setScalar(0.01); scene.add(m); J.zones.push({ m, p: c, t: XHOT.life, R: XHOT.r, a: 0 }); blip(220, 0.3, "sawtooth", 0.1);
+    const m = jM(zoneGeo, hhMat()); m.rotation.x = -Math.PI / 2; m.position.copy(c); m.scale.setScalar(0.01); scene.add(m); J.zones.push({ m, p: c, t: XHOT.life, R: XHOT.r, a: 0 }); blip(220, 0.3, "sawtooth", 0.1); try { if (typeof phxHotHands === "function" && phxHotHands(c, XHOT.r, XHOT.life, XHOT.grow)) m.visible = false; } catch (e) { try { xE(e); } catch (e2) {} }
   }
   if (code === "KeyX") {
     if (J.rib > 0) return say("Run It Back · " + Math.ceil(J.rib) + " s", 700);
@@ -18138,8 +18140,8 @@ function phxGeos() { if (phxGeo) return phxGeo; phxGeo = {
   cyl: new THREE.CylinderGeometry(1, 1, 1, 14, 3, true) };
   phxGeo.wall.translate(0, 0.5, 0); phxGeo.cyl.translate(0, 0.5, 0); for (const k in phxGeo) phxGeo[k].userData.phxShared = 1; return phxGeo; } // wall/cyl grow from y=0
 function phxShader(k, frag, uniforms) { if (phxProg[k]) return phxProg[k]; const m = new THREE.ShaderMaterial({
-  uniforms: Object.assign({ uT: phxU, uP: { value: 0 }, uSeed: { value: 0 }, uA: { value: 1 } }, uniforms || {}),
-  vertexShader: "uniform float uT;uniform float uP;uniform float uSeed;varying vec3 vN;varying vec3 vV;varying vec3 vP;varying vec3 vW;varying vec2 vUv;void main(){vUv=uv;vP=position;vec4 w=modelMatrix*vec4(position,1.0);vW=w.xyz;vec4 mv=viewMatrix*w;vV=-mv.xyz;vN=normalMatrix*normal;gl_Position=projectionMatrix*mv;}",
+  uniforms: Object.assign({ uT: phxU, uP: { value: 0 }, uSeed: { value: 0 }, uA: { value: 1 }, uInflate: { value: 0 } }, uniforms || {}),
+  vertexShader: "uniform float uT;uniform float uP;uniform float uSeed;uniform float uInflate;varying vec3 vN;varying vec3 vV;varying vec3 vP;varying vec3 vW;varying vec2 vUv;\n#include <skinning_pars_vertex>\nvoid main(){vUv=uv;vP=position;vec3 objectNormal=vec3(normal);vec3 transformed=vec3(position);\n#ifdef USE_SKINNING\n#include <skinbase_vertex>\n#include <skinnormal_vertex>\n#include <skinning_vertex>\n#endif\ntransformed+=objectNormal*uInflate;vec4 w=modelMatrix*vec4(transformed,1.0);vW=w.xyz;vec4 mv=viewMatrix*w;vV=-mv.xyz;vN=normalMatrix*objectNormal;gl_Position=projectionMatrix*mv;}",
   fragmentShader: frag, transparent: true, depthWrite: false, side: THREE.DoubleSide });
   m.userData.phx = k; phxProg[k] = m; return m; }
 function phxMat(k, shader, seed) { const m = phxShader(k, shader).clone(); m.uniforms.uT = phxU; if (seed !== undefined) m.uniforms.uSeed.value = seed; return m; }
@@ -18157,33 +18159,63 @@ function phxFx(ttl, objs, tick, done) { const fx = { age: 0, ttl, objs, tick, do
 // shared GLSL: cheap value noise + fbm (same construction as the Omen module's dome cloud)
 const phxNOISE = "float hash(vec3 p){p=fract(p*.3183099+vec3(.11,.23,.37));p*=17.0;return fract(p.x*p.y*p.z*(p.x+p.y+p.z));}float noise(vec3 p){vec3 i=floor(p),f=fract(p);f=f*f*(3.0-2.0*f);return mix(mix(mix(hash(i),hash(i+vec3(1,0,0)),f.x),mix(hash(i+vec3(0,1,0)),hash(i+vec3(1,1,0)),f.x),f.y),mix(mix(hash(i+vec3(0,0,1)),hash(i+vec3(1,0,1)),f.x),mix(hash(i+vec3(0,1,1)),hash(i+vec3(1,1,1)),f.x),f.y),f.z);}float fbm(vec3 p){float n=0.0;float a=.55;for(int i=0;i<3;i++){n+=a*noise(p);p=p*2.11+vec3(5.1,1.7,9.2);a*=.5;}return n;}";
 // Blaze curtain: coral-orange flame body, lighter swirls, torn top, intense molten base seam (world-space noise: no stretch)
-const phxWALL = "uniform float uT;uniform float uP;uniform float uSeed;uniform float uA;varying vec3 vN;varying vec3 vV;varying vec3 vP;varying vec3 vW;varying vec2 vUv;\n" + phxNOISE + "\nvoid main(){float y=vUv.y;float n=fbm(vec3(vW.x*1.4+uSeed*9.0,vW.y*1.0-uT*1.5,vW.z*1.4));float n2=noise(vec3(vW.x*3.1,vW.y*2.0-uT*2.7,vW.z*3.1+uSeed*5.0));float f=n*0.72+n2*0.28;float tongue=f+0.55-y*1.15;float body=smoothstep(0.0,0.22,tongue);float seam=smoothstep(0.10,0.0,y)*(0.75+0.25*sin(uT*9.0+vW.x*6.0));vec3 c=mix(vec3(0.90,0.27,0.30),vec3(0.99,0.47,0.16),smoothstep(0.85,0.30,y));c=mix(c,vec3(1.0,0.75,0.28),smoothstep(0.24,0.03,y));c+=vec3(0.45,0.18,0.02)*n2*(1.0-y);c=mix(c,vec3(1.0,0.95,0.66),seam);float a=(body*(0.60+0.32*f)+seam*0.55)*uA;if(a<0.004)discard;gl_FragColor=vec4(c,min(a,1.0));}";
+const phxWALL = "uniform float uT;uniform float uP;uniform float uSeed;uniform float uA;uniform float uG;varying vec3 vN;varying vec3 vV;varying vec3 vP;varying vec3 vW;varying vec2 vUv;\n" + phxNOISE + "\nvoid main(){float y=vUv.y;float wx=vW.x+vW.z;float wz=vW.x-vW.z;float n=fbm(vec3(vW.x*0.7,y*0.6-uT*0.8,vW.z*0.7));float top=0.80+0.20*n;float body=smoothstep(0.0,0.10,top-y);float mb=smoothstep(0.35,0.0,y);float lk=pow(noise(vec3(wx*2.2,y*1.5-uT*3.2,7.0)),2.0)*mb;float lk2=pow(noise(vec3(wz*1.4+31.0,y*0.9-uT*2.1,4.0)),3.0)*smoothstep(1.0,0.25,y);float vein=1.0-abs(2.0*fbm(vec3(wx*1.6,y*2.6-uT*1.7,wz*1.6))-1.0);vein=pow(vein,4.0)*body;vec3 c=mix(vec3(0.66,0.11,0.11),vec3(0.93,0.30,0.16),clamp(y*0.55+mb*0.45,0.0,1.0));c=mix(c,vec3(1.0,0.62,0.22),clamp(lk*0.9+lk2*0.7,0.0,0.85));c=mix(c,vec3(1.0,0.72,0.30),vein*0.55);c=mix(c,vec3(0.55,0.08,0.08),(1.0-vein)*0.18*body);c+=vec3(0.08,0.02,0.01)*n;float seam=smoothstep(0.06,0.0,y);c=mix(c,vec3(1.0,0.85,0.5),seam*0.8);float ef=smoothstep(0.0,0.04,vUv.x)*smoothstep(1.0,0.96,vUv.x);float gf=smoothstep(uG,uG-0.08,vUv.x);float a=(body*(0.66+0.34*clamp(lk+lk2*1.2+n*0.3,0.0,1.0))*ef*gf+seam*0.45*gf)*uA;if(a<0.004)discard;gl_FragColor=vec4(c,min(a,1.0));}";
 // molten pool (Hot Hands): dark red lava bed, bright flowing vein cracks, hot core pulse, ragged edge
-const phxPOOL = "uniform float uT;uniform float uP;uniform float uSeed;uniform float uA;varying vec3 vN;varying vec3 vV;varying vec3 vP;varying vec3 vW;varying vec2 vUv;\n" + phxNOISE + "\nvoid main(){vec2 q=(vUv-0.5)*2.0;float r=length(q);float wob=fbm(vec3(q*2.2+uSeed*7.0,uT*0.22));float rw=r+wob*0.42-0.21;float vein=1.0-abs(2.0*fbm(vec3(q*3.4,uT*0.35)+vec3(uSeed*3.0))-1.0);vein=pow(vein,5.0);float core=smoothstep(0.55,0.0,rw)*(0.72+0.28*sin(uT*3.2+uSeed));vec3 c=mix(vec3(0.45,0.08,0.05),vec3(0.95,0.30,0.08),smoothstep(0.9,0.25,rw));c+=vec3(1.0,0.72,0.20)*vein*1.6;c=mix(c,vec3(1.0,0.88,0.45),core*(0.35+vein));float a=(1.0-smoothstep(0.82,1.0,rw))*uA;if(a<0.004)discard;gl_FragColor=vec4(c,a*0.96);}";
+const phxPOOL = "uniform float uT;uniform float uP;uniform float uSeed;uniform float uA;varying vec3 vN;varying vec3 vV;varying vec3 vP;varying vec3 vW;varying vec2 vUv;\n" + phxNOISE + "\nvoid main(){vec2 q=(vUv-0.5)*2.0;float r=length(q);float wob=fbm(vec3(q*2.2+uSeed*7.0,uT*0.22));float rw=r+wob*0.42-0.21;float vein=1.0-abs(2.0*fbm(vec3(q*3.4,uT*0.35)+vec3(uSeed*3.0))-1.0);vein=pow(vein,3.0);float core=smoothstep(0.55,0.0,rw)*(0.72+0.28*sin(uT*3.2+uSeed));vec3 c=mix(vec3(0.40,0.09,0.06),vec3(0.96,0.36,0.20),smoothstep(0.9,0.25,rw));c+=vec3(1.0,0.60,0.38)*vein*0.9;c=mix(c,vec3(1.0,0.62,0.40),core*(0.30+0.4*vein));float rim=smoothstep(0.72,0.92,rw)*(1.0-smoothstep(0.92,1.02,rw));c+=vec3(1.0,0.55,0.30)*rim*0.7;float a=(1.0-smoothstep(0.82,1.0,rw))*uA;if(a<0.004)discard;gl_FragColor=vec4(c,a*0.96);}";
 // hot additive core (fireball / pop flash / embers): white-yellow centre to transparent orange rim
 const phxHOT = "uniform float uT;uniform float uP;uniform float uSeed;uniform float uA;varying vec3 vN;varying vec3 vV;varying vec3 vP;varying vec3 vW;varying vec2 vUv;void main(){float f=pow(abs(dot(normalize(vN),normalize(vV))),1.5);vec3 c=mix(vec3(1.0,0.42,0.10),vec3(1.0,0.92,0.60),f);float a=(0.25+0.75*f)*uA;gl_FragColor=vec4(c,a);}";
 // golden fire-form (Run It Back body): hot gold body with rising flame noise and a bright fresnel rim
-const phxFORM = "uniform float uT;uniform float uP;uniform float uSeed;uniform float uA;varying vec3 vN;varying vec3 vV;varying vec3 vP;varying vec3 vW;varying vec2 vUv;\n" + phxNOISE + "\nvoid main(){float f=pow(1.0-abs(dot(normalize(vN),normalize(vV))),1.3);float n=fbm(vec3(vW.x*3.0,vW.y*2.2-uT*3.4,vW.z*3.0));vec3 c=mix(vec3(1.0,0.55,0.10),vec3(1.0,0.85,0.35),n)*(0.85+0.5*f);c+=vec3(1.0,0.95,0.7)*f*f;float a=(0.30+0.38*n+0.5*f)*uA;if(a<0.004)discard;gl_FragColor=vec4(c,min(a,1.0));}";
+const phxFORM = "uniform float uT;uniform float uP;uniform float uSeed;uniform float uA;varying vec3 vN;varying vec3 vV;varying vec3 vP;varying vec3 vW;varying vec2 vUv;\n" + phxNOISE + "\nvoid main(){float f=pow(1.0-abs(dot(normalize(vN),normalize(vV))),1.3);float n=fbm(vec3(vW.x*3.0,vW.y*2.2-uT*3.4,vW.z*3.0));vec3 c=mix(vec3(1.0,0.66,0.18),vec3(1.0,0.95,0.62),n)*(1.0+0.5*f);c+=vec3(1.0,0.98,0.85)*f*f;c=mix(c,vec3(1.0,0.98,0.9),smoothstep(0.5,0.85,n)*0.55);float a=(0.62+0.30*n+0.5*f)*uA;if(a<0.004)discard;gl_FragColor=vec4(c,min(a,1.0));}";
+// flame marker column (Run It Back cast point): thin rising fire tongue
+const phxPOPRING = "uniform float uT;uniform float uP;uniform float uSeed;uniform float uA;varying vec3 vN;varying vec3 vV;varying vec3 vP;varying vec3 vW;varying vec2 vUv;void main(){float r=length(vUv-0.5)*2.0;float g=exp(-pow((r-0.72)*9.0,2.0));vec3 c=mix(vec3(0.10,0.45,0.95),vec3(0.45,0.85,1.0),g);float a=g*uA;if(a<0.004)discard;gl_FragColor=vec4(c,a);}";
+const phxPOPGLOW = "uniform float uT;uniform float uP;uniform float uSeed;uniform float uA;varying vec3 vN;varying vec3 vV;varying vec3 vP;varying vec3 vW;varying vec2 vUv;void main(){float r=length(vUv-0.5)*2.0;float a=pow(max(0.0,1.0-r),3.5)*0.18*uA;vec3 c=mix(vec3(0.40,0.75,1.0),vec3(0.80,0.92,1.0),max(0.0,1.0-r*1.5));if(a<0.004)discard;gl_FragColor=vec4(c,a);}";
 // flame marker column (Run It Back cast point): thin rising fire tongue
 const phxMARK = "uniform float uT;uniform float uP;uniform float uSeed;uniform float uA;varying vec3 vN;varying vec3 vV;varying vec3 vP;varying vec3 vW;varying vec2 vUv;\n" + phxNOISE + "\nvoid main(){float n=fbm(vec3(vUv.x*3.0+uSeed*5.0,vUv.y*2.0-uT*2.6,uSeed));float f=n-vUv.y*1.1;float a=smoothstep(0.0,0.35,f)*smoothstep(0.0,0.10,vUv.y)*uA;vec3 c=mix(vec3(1.0,0.45,0.10),vec3(1.0,0.85,0.40),smoothstep(0.5,0.0,vUv.y));if(a<0.004)discard;gl_FragColor=vec4(c,a);}";
 // swirl shell (Curveball orb): rotating red-orange swirl with a dark core window, additive rim
 const phxSWIRL = "uniform float uT;uniform float uP;uniform float uSeed;uniform float uA;varying vec3 vN;varying vec3 vV;varying vec3 vP;varying vec3 vW;varying vec2 vUv;\n" + phxNOISE + "\nvoid main(){float ang=atan(vP.y,vP.x)+uT*6.0+uSeed;float sw=0.5+0.5*sin(ang*3.0+length(vP.xy)*9.0-uT*7.0);float f=pow(1.0-abs(dot(normalize(vN),normalize(vV))),1.4);vec3 c=mix(vec3(0.75,0.10,0.04),vec3(1.0,0.55,0.15),sw);c+=vec3(1.0,0.75,0.35)*f;float a=(0.30+0.55*sw+0.4*f)*uA;if(a<0.004)discard;gl_FragColor=vec4(c,min(a,1.0));}";
 const phxV0 = new THREE.Vector3(), phxV1 = new THREE.Vector3(), phxV2 = new THREE.Vector3(), phxQ0 = new THREE.Quaternion();
 // ---- Blaze: flame curtain that rises segment by segment from the caster outward, then rapidly falls ----
-// o: ground point at the caster's feet, dir: normalized horizontal aim, len: wall length (XBLZ rule),
-// o2: { grow (s to full length, wiki deploy 0.125-0.75), life (s at full size, XBLZ.life), height (XBLZ.height) }
+// Straight cast (matches the game's current blazeWall): phxBlaze(o, dir, len, o2).
+// Source-faithful steered cast (wiki Blaze: "hold Fire to bend the wall in the direction of your
+// crosshair"): phxBlazePath(pts, o2) - pts = ordered ground points (Vector3-like) along the steered
+// path; segments follow the polyline and rise in path order. CALLER CONTRACT (proposed to integrator):
+// while fire is held, the caller samples the aim point each tick, appends to the path (clamped to
+// XBLZ.length total and 0.3 m short of blocked() geometry like blazeWall), then calls phxBlazePath once
+// at release with the recorded path. o2: { grow (deploy 0.125-0.75), life (XBLZ.life), height (XBLZ.height) }.
 function phxBlaze(o, dir, len, o2) { try {
+  return phxBlazePath([o, new THREE.Vector3(o.x + dir.x * len, o.y, o.z + dir.z * len)], o2); } catch (e) { phxErr(e); return null; } }
+function phxBlazePath(pts, o2) { try {
   const G = phxGeos(), op = o2 || {}, grow = op.grow || 0.6, life = op.life || 8, H = op.height || 3;
-  const n = Math.max(2, Math.min(10, Math.round(len / 1.4))), grp = new THREE.Group(), segs = [];
-  const yaw = Math.atan2(dir.x, dir.z) + Math.PI / 2;
-  for (let i = 0; i < n; i++) { const m = new THREE.Mesh(G.wall, phxMat("wall", phxWALL, i * 0.37 + o.x)); m.position.set(o.x + dir.x * (len * (i + 0.5) / n), o.y, o.z + dir.z * (len * (i + 0.5) / n)); m.rotation.y = yaw; m.scale.set(len / n + 0.05, 0.001, 1); grp.add(m); segs.push(m); }
-  const seam = new THREE.Mesh(G.plane, phxMat("seam", phxHOT)); seam.rotation.x = -Math.PI / 2; seam.rotateOnWorldAxis(phxV0.set(0, 1, 0), Math.atan2(-dir.z, dir.x)); seam.position.set(o.x + dir.x * len / 2, o.y + 0.06, o.z + dir.z * len / 2); seam.scale.set(len, 0.55, 1); seam.material.opacity = 1; grp.add(seam);
-  const per = grow / n, fall = 0.4, ttl = grow + life + fall;
+  const cum = [0]; for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + Math.hypot(pts[i].x - pts[i - 1].x, pts[i].z - pts[i - 1].z));
+  const L = cum[cum.length - 1] || 0.001;
+  const at = (d) => { let i = 1; while (i < cum.length - 1 && cum[i] < d) i++;
+    const t = Math.min(1, Math.max(0, (d - cum[i - 1]) / Math.max(0.001, cum[i] - cum[i - 1])));
+    return { x: pts[i - 1].x + (pts[i].x - pts[i - 1].x) * t, y: pts[i - 1].y + (pts[i].y - pts[i - 1].y) * t, z: pts[i - 1].z + (pts[i].z - pts[i - 1].z) * t,
+      dx: pts[i].x - pts[i - 1].x, dz: pts[i].z - pts[i - 1].z }; };
+  // one continuous ribbon following the (possibly steered) path - no panel seams
+  const M = Math.max(8, Math.min(48, Math.round(L / 0.45)));
+  const posA = new Float32Array((M + 1) * 2 * 3), uvA = new Float32Array((M + 1) * 2 * 2), idxA = [];
+  for (let j = 0; j <= M; j++) { const d = L * j / M, p = at(d);
+    posA[j * 6] = p.x; posA[j * 6 + 1] = 0; posA[j * 6 + 2] = p.z; posA[j * 6 + 3] = p.x; posA[j * 6 + 4] = 1; posA[j * 6 + 5] = p.z;
+    uvA[j * 4] = d / L; uvA[j * 4 + 1] = 0; uvA[j * 4 + 2] = d / L; uvA[j * 4 + 3] = 1;
+    if (j < M) { const a = j * 2; idxA.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); } }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute("position", new THREE.BufferAttribute(posA, 3)); geo.setAttribute("uv", new THREE.BufferAttribute(uvA, 2)); geo.setIndex(idxA); geo.computeVertexNormals();
+  const mat = phxMat("wall", phxWALL, pts[0].x + pts[0].z); mat.uniforms.uG = { value: 0 };
+  const wall = new THREE.Mesh(geo, mat); wall.frustumCulled = false;
+  const grp = new THREE.Group(); grp.add(wall);
+  const seams = [];
+  const ns = Math.max(2, Math.min(12, Math.round(L / 1.4)));
+  for (let i = 0; i < ns; i++) { const p = at(L * (i + 0.5) / ns);
+    const sm = new THREE.Mesh(G.plane, phxMat("seam", phxHOT)); sm.rotation.x = -Math.PI / 2; sm.rotateOnWorldAxis(phxV0.set(0, 1, 0), Math.atan2(-p.dz, p.dx)); sm.position.set(p.x, p.y + 0.06, p.z); sm.scale.set(L / ns + 0.1, 0.55, 1); grp.add(sm); seams.push(sm); }
+  const y0 = pts[0].y;
+  wall.position.y = y0;
+  const fall = 0.4, ttl = grow + life + fall;
   const h = phxFx(ttl, [grp], (dt, age) => {
-    for (let i = 0; i < n; i++) { const m = segs[i], up = age - i * per;
-      if (age >= grow + life) { const f = Math.max(0, 1 - (age - grow - life) / fall); m.scale.y = Math.max(0.001, H * f); m.material.uniforms.uA.value = f; }
-      else m.scale.y = Math.max(0.001, H * Math.min(1, up / (per * 2.2))); }
-    seam.material.uniforms.uA.value = age >= grow + life ? Math.max(0, 1 - (age - grow - life) / fall) : Math.min(1, age / grow); });
+    if (age >= grow + life) { const f = Math.max(0, 1 - (age - grow - life) / fall); wall.scale.y = Math.max(0.001, H * f); mat.uniforms.uA.value = f; mat.uniforms.uG.value = 1;
+      for (const sm of seams) sm.material.uniforms.uA.value = f; }
+    else { wall.scale.y = H; mat.uniforms.uG.value = Math.min(1, age / grow);
+      const se = Math.min(1, age / grow); for (const sm of seams) sm.material.uniforms.uA.value = se; } });
   return h; } catch (e) { phxErr(e); return null; } }
 // ---- Blaze cast: the missile hugging the ground, leaving a glowing trail (clip: a fireball runs the path) ----
 function phxBlazeTrail(o, dir, len, dur) { try {
@@ -18235,38 +18267,53 @@ function phxFireball(a, b, dur) { try {
 // m: the mesh the game already moves (xCbOrb's). Ends when the mesh leaves the scene or on end().
 function phxCurveFlight(m) { try {
   const G = phxGeos();
-  const ring = new THREE.Mesh(G.ring, phxMat("cbr", phxSWIRL)); ring.scale.setScalar(0.55);
-  const shell = new THREE.Mesh(G.sph, phxMat("cbs", phxSWIRL, 2.2)); shell.scale.setScalar(0.42);
+  const ring = new THREE.Mesh(G.ring, phxMat("cbr", phxSWIRL)); ring.scale.setScalar(0.13);
+  const shell = new THREE.Mesh(G.sph, phxMat("cbs", phxSWIRL, 2.2)); shell.scale.setScalar(0.11);
   const grp = new THREE.Group(); grp.add(ring, shell); grp.position.copy(m.position);
+  const streak = new THREE.Mesh(G.sph, phxBasic(0xff3020, 0.8, true)); streak.material.blending = THREE.AdditiveBlending; streak.frustumCulled = false;
+  const N = 8, pos = new Float32Array(N * 3), pts = new THREE.Points(new THREE.BufferGeometry(), phxBasic(0xff2818, 1.0, true));
+  pts.geometry.setAttribute("position", new THREE.BufferAttribute(pos, 3)); pts.material.size = 0.2; pts.material.sizeAttenuation = true; pts.frustumCulled = false;
+  for (let i = 0; i < N; i++) { pos[i * 3] = m.position.x; pos[i * 3 + 1] = m.position.y; pos[i * 3 + 2] = m.position.z; }
+  const px = m.position.x, py = m.position.y, pz = m.position.z; let lx = px, ly = py, lz = pz;
   const ttl = 3; let dead = false;
-  const h = phxFx(ttl, [grp], (dt, age) => { grp.position.copy(m.position); shell.rotation.y += dt * 10; ring.rotation.z += dt * 12;
+  const h = phxFx(ttl, [grp, streak, pts], (dt, age) => { grp.position.copy(m.position); shell.rotation.y += dt * 10; ring.rotation.z += dt * 12;
+    phxV0.set(m.position.x - lx, m.position.y - ly, m.position.z - lz); const sp = phxV0.length();
+    if (sp > 1e-4) { phxV0.normalize(); streak.quaternion.setFromUnitVectors(phxV1.set(1, 0, 0), phxV0);
+      streak.position.set(m.position.x - phxV0.x * 0.5, m.position.y - phxV0.y * 0.5, m.position.z - phxV0.z * 0.5);
+      streak.scale.set(0.55 + Math.min(0.6, sp * 6), 0.05, 0.05); }
+    lx = m.position.x; ly = m.position.y; lz = m.position.z;
+    for (let i = N - 1; i > 0; i--) { pos[i * 3] = pos[(i - 1) * 3]; pos[i * 3 + 1] = pos[(i - 1) * 3 + 1]; pos[i * 3 + 2] = pos[(i - 1) * 3 + 2]; }
+    pos[0] = m.position.x; pos[1] = m.position.y; pos[2] = m.position.z; pts.geometry.attributes.position.needsUpdate = true;
     if (!m.parent && !dead) { dead = true; h.end(); } });
   return h; } catch (e) { phxErr(e); return null; } }
 // ---- Curveball pop: radial starburst of long light rays + hot core flash + shock ring (clip) ----
 function phxCurvePop(p) { try {
-  const G = phxGeos(), grp = new THREE.Group(), rays = [];
-  const core = new THREE.Mesh(G.sph, phxMat("cpp", phxHOT)); core.material.blending = THREE.AdditiveBlending; core.scale.setScalar(0.3); core.position.copy(p); grp.add(core);
-  for (let i = 0; i < 18; i++) { const r = new THREE.Mesh(G.ray, phxBasic(i % 3 ? 0xffd9b0 : 0xfff4e6, 0.95, true));
-    phxV0.set(Math.random() * 2 - 1, Math.random() * 2 - 1, Math.random() * 2 - 1).normalize();
-    r.quaternion.setFromUnitVectors(phxV1.set(0, 1, 0), phxV0); r.position.copy(p).addScaledVector(phxV0, 0.5); r.scale.set(0.4, 1, 1); grp.add(r); rays.push([r, phxV0.clone()]); }
-  const ring = new THREE.Mesh(G.ring2, phxBasic(0xffe8d8, 0.8, true)); ring.position.copy(p); ring.scale.setScalar(0.4); grp.add(ring);
-  const ttl = 0.55;
+  const G = phxGeos(), grp = new THREE.Group();
+  const ring = new THREE.Mesh(G.plane, phxMat("cpr", phxPOPRING)); ring.material.blending = THREE.AdditiveBlending; ring.material.side = THREE.DoubleSide; ring.position.copy(p); ring.scale.setScalar(0.5); grp.add(ring);
+  const glow = new THREE.Mesh(G.plane, phxMat("cpg", phxPOPGLOW, 1.3)); glow.material.blending = THREE.AdditiveBlending; glow.material.side = THREE.DoubleSide; glow.position.copy(p); glow.scale.setScalar(0.3); grp.add(glow);
+  const ttl = 0.4;
   const h = phxFx(ttl, [grp], (dt, age) => { const u = Math.min(1, age / ttl);
-    for (const [r, d] of rays) { const L = 0.6 + u * 5.4; r.scale.y = L; r.position.copy(p).addScaledVector(d, L * 0.5); r.material.opacity = 0.95 * (1 - u * u); }
-    core.scale.setScalar(0.3 + u * 1.1); core.material.uniforms.uA.value = 1 - u;
-    ring.scale.setScalar(0.4 + u * 2.0); ring.material.opacity = 0.8 * (1 - u * u);
-    if (typeof camera !== "undefined") ring.lookAt(camera.position); });
+    ring.scale.setScalar(0.7 + u * 1.2); ring.material.uniforms.uA.value = 1 - u * u;
+    glow.scale.setScalar(0.35 + u * 0.55); glow.material.uniforms.uA.value = 1 - u;
+    if (typeof camera !== "undefined") { ring.lookAt(camera.position); glow.lookAt(camera.position); } });
   return h; } catch (e) { phxErr(e); return null; } }
 // ---- Run It Back: golden fire-form on the caster's body - mesh-conforming overlay shells ----
 // obj: the unit's Object3D (bot/ally model group). Every mesh gets a slightly inflated overlay using
 // the mesh's OWN geometry (so the fire silhouette follows the real model, animated poses included);
 // overlays are children of their source meshes and are removed on end. Caller geometries are never disposed.
+// overlay shell that follows animation: a SkinnedMesh riding the same skeleton for rigged parts
+// (the game's agents are SkinnedMesh rigs - a static child Mesh would NOT follow bones)
+function phxShell(s, mat, flag) { let o;
+  if (s.isSkinnedMesh) { o = new THREE.SkinnedMesh(s.geometry, mat); o.bind(s.skeleton, s.bindMatrix); o.frustumCulled = false; s.parent.add(o); }
+  else { o = new THREE.Mesh(s.geometry, mat); s.add(o); }
+  if (s.morphTargetInfluences && o.morphTargetInfluences) for (let i = 0; i < s.morphTargetInfluences.length; i++) o.morphTargetInfluences[i] = s.morphTargetInfluences[i];
+  if (mat.uniforms && mat.uniforms.uInflate) mat.uniforms.uInflate.value = 0.028; mat.polygonOffset = true; mat.polygonOffsetFactor = -2; mat.polygonOffsetUnits = -2; o.renderOrder = 3; o.raycast = () => {}; o.userData[flag] = 1; return o; }
 function phxRibForm(obj) { try {
   phxGeos();
   const mat = phxMat("rbf", phxFORM, obj.id % 7), ovs = [];
-  obj.traverse((s) => { if (s.isMesh && !s.userData.phxOv && s.geometry) { const o = new THREE.Mesh(s.geometry, mat); o.scale.setScalar(1.08); o.renderOrder = 3; o.raycast = () => {}; o.userData.phxOv = 1; s.add(o); ovs.push([s, o]); } });
+  obj.traverse((s) => { if (s.isMesh && !s.userData.phxOv && s.geometry) { const o = phxShell(s, mat, "phxOv"); ovs.push([s, o]); } });
   const fx = { age: 0, ttl: 12, objs: [], tick: (dt, age) => { mat.uniforms.uA.value = Math.min(1, age / 0.3) * (obj.parent ? 1 : 0); if (!obj.parent) phxEnd(h); },
-    done: () => { for (const [s, o] of ovs) { try { s.remove(o); } catch (e) {} } try { mat.dispose(); } catch (e) {} } };
+    done: () => { for (const [s, o] of ovs) { try { (o.isSkinnedMesh ? o.parent : s).remove(o); } catch (e) {} } try { mat.dispose(); } catch (e) {} } };
   phxPush(fx); const h = { fx, end: function () { phxEnd(this); } }; return h; } catch (e) { phxErr(e); return null; } }
 // ---- Run It Back: flame marker burning at the cast point (clip: a small fire mark on the ground) ----
 function phxRibMarker(p, ttl) { try {
