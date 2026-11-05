@@ -8,7 +8,7 @@ import Motor from './motor.cjs';
 import {ARENA_X,ARENA_STRIDE,ARENA_HALF} from './arena.js';
 import kits from './kits.json' with {type:'json'};
 export const AG18={Astra:1,Brimstone:1,Clove:1,Harbor:1,Miks:1,Viper:1,Hush:1,Iso:1,Neon:1,Waylay:1,Yoru:1,Fade:1,Gekko:1,'KAY/O':1,Tejo:1,Deadlock:1,Veto:1,Vyse:1};
-export const A18_NET_KINDS=new Set(['star','gwell','nova','stim','fire','orbital','conting','undercut','fastlane','blast','tide','reckon','cove','mpulse','bassq','snake','pit','susp','pull','decoy','seeker','hawk','seize','haunt','nightfall','regrowth','trail','mosh','dizzy','frag','nullcmd','sdrone','sd','salvo','armag','mesh','sensor','gnet','xcut','choke','ceptor','vine','shear','rose','garden','paths','anni','gatefake','duel','quake','blaze','flash']);/* effect kinds the online client renders (work/agents18_runtime.js A18VIS) */
+export const A18_NET_KINDS=new Set(['star','gwell','nova','stim','fire','orbital','conting','undercut','fastlane','blast','tide','reckon','cove','mpulse','bassq','snake','pit','susp','pull','decoy','seeker','hawk','harmon','seize','haunt','nightfall','regrowth','trail','mosh','dizzy','frag','nullcmd','sdrone','sd','salvo','armag','mesh','sensor','gnet','xcut','choke','ceptor','vine','shear','rose','garden','paths','anni','gatefake','duel','quake','blaze','flash']);/* effect kinds the online client renders (work/agents18_runtime.js A18VIS) */
 export const TYPES18={Astra:['pull','concuss','smoke'],Brimstone:['stim','fire','smoke'],Clove:['haste','decay','smoke'],Harbor:['surge','wall','cove'],Miks:['mpulse','harmonize','smoke'],Viper:['snakebite','smoke','wall'],Hush:['flow','flash','pull'],Iso:['wall','undercut','shield'],Neon:['wall','concuss','haste'],Waylay:['hinder','dash','teleport'],Yoru:['decoy','flash','teleport'],Fade:['prowler','tether','recon'],Gekko:['mosh','wingman','flash'],'KAY/O':['frag','flash','suppress'],Tejo:['drone','concuss','salvo'],Deadlock:['mesh','sensor','gravnet'],Veto:['crosscut','choke','interceptor'],Vyse:['vine','shear','arcrose']};
 // Wiki stats per ability (fetched 2026-11-03), project-lightweight where noted:
 export const A18={
@@ -158,7 +158,7 @@ export function cast18(sim,u,m,o,d,push){
    cast(sim,u,k,o,d,p);return true;}
   case 'Miks':{spend();
    if(k==='c')fx(sim,u,'mpulse',p,C.mpulse.life,C.mpulse.r,{heal:m.alt===true,at:sim.time+.5,next:sim.time+.5});
-   else if(k==='q'){const t=sim.units.filter(v=>v!==u&&v.team===u.team&&v.alive).sort((a,b)=>Math.hypot(a.x-u.x,a.z-u.z)-Math.hypot(b.x-u.x,b.z-u.z))[0];if(t){t.stimUntil=sim.time+C.harmon.life;t.hasteUntil=sim.time+C.harmon.life;}u.stimUntil=sim.time+C.harmon.life;u.hasteUntil=sim.time+C.harmon.life;}
+   else if(k==='q'){const t=sim.units.filter(v=>v!==u&&v.team===u.team&&v.alive).sort((a,b)=>Math.hypot(a.x-u.x,a.z-u.z)-Math.hypot(b.x-u.x,b.z-u.z))[0];if(t){t.stimUntil=sim.time+C.harmon.life;t.hasteUntil=sim.time+C.harmon.life;}u.stimUntil=sim.time+C.harmon.life;u.hasteUntil=sim.time+C.harmon.life;for(const w of t?[u,t]:[u])fx(sim,u,'harmon',[w.x,w.y,w.z],C.harmon.life,0,{tg:w.id});/* one row per buffed unit: p follows the unit (tick18), row ends with the buff, death or reset */}
    else if(k==='e')fx(sim,u,'smoke',p,C.waveform.life,C.waveform.r,{wf:1});
    else fx(sim,u,'bassq',[u.x,u.y,u.z],.8,C.bassq.dist,{at:sim.time+.6,yaw:u.look});
    cast(sim,u,k,o,d,p);return true;}
@@ -247,7 +247,7 @@ function cast(sim,u,k,o,d,p){sim.castEvents.push({t:'ac',i:u.id,ag:u.agent,k,o,d
 const strip=(u,v,C)=>{const q=[v.x-u.x,v.z-u.z],f=q[0]*-Math.sin(u.look)+q[1]*-Math.cos(u.look),s=q[0]*-Math.cos(u.look)+q[1]*Math.sin(u.look);return f>0&&f<C.dist&&Math.abs(s)<C.w/2;};
 // Per-frame effect + status simulation for the 18. Called from simulation.tick after unitTick.
 export function tick18(sim,dt){
- const T=sim.time,gone=[];
+ const T=sim.time,gone=[];for(const e of sim.effects.slice()){if(e.kind!=='harmon')continue;const w=sim.units.find(n=>n.id===e.tg);if(!w||!w.alive){sim.effects.splice(sim.effects.indexOf(e),1);continue;}e.p=[w.x,w.y,w.z];}
  for(const u of sim.units){const A=u.ability;if(A&&u.agent==='Astra'&&u.starBackAt&&T>=u.starBackAt){u.starBackAt=0;A.stars=Math.min(A18.star.max,A.stars+1);}}/* a dissipated Star reforms in the pool (wiki Nebula/Dissipate) */
  for(const e of sim.effects){if(!e.ag||!AG18[e.ag])continue;const C=A18,own=sim.units.find(n=>n.id===e.owner);if(e.until<T){if(e.ag==='Gekko'){const k=e.kind==='mosh'?'c':e.kind==='dizzy'?'e':e.wing?'q':0;if(own&&k&&!own.ability['re_'+k])own.ability['re_'+k]=T+A18.globule.reclaim;}continue;}
   switch(e.kind){
