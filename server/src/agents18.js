@@ -21,7 +21,7 @@ export const A18={
  meddle:{r:4.5,decay:70},/* Meddle: 70 decay */
  ruse:{life:12.75,r:4.15},
  ndy:{channel:3.3,window:12},/* Not Dead Yet: 3.3 s self-revive channel; earn kill/assist inside 12 s or die */
- surge:{r:4.5,near:2,slow:2},/* Storm Surge: nearsight + slow */
+ surge:{r:6,near:2,slow:2,wind:.6},/* Storm Surge (wiki /Storm_Surge, current): radius 6 m, 0.6 s windup after landing, nearsight 2 s + slow 2 s, no line of sight needed (v12), affects allies/self. Landing is instant here: projectile flight is NOT modelled (no sourced flight speed). */
  tide:{dist:45,life:12,slow:2,w:2},/* High Tide: vision wall that travels and slows on touch */
  cove:{life:12,r:4.1,shieldHp:500},/* Cove: smoke, then destructible shield */
  reckon:{dist:30,near:3,slow:4,speed:7},/* Reckoning (v11.10 rework): a wall that pushes forward, nearsight+slow on touch */
@@ -151,7 +151,7 @@ export function cast18(sim,u,m,o,d,push){
   case 'Clove':{if(k==='c'){/* Pick-me-up: a dead enemy you damaged inside 20 m (lightweight: your last kill within the window) */const t=sim.units.find(v=>v.team!==u.team&&!v.alive&&v.lastKiller===u.id&&sim.time-(u.killAt||0)<C.pmu.window);if(!t)return false;spend();u.hasteUntil=sim.time+C.pmu.haste;u.overheal=Math.min(50,(u.overheal||0)+C.pmu.overheal);u.hp=Math.min(150,u.hp+C.pmu.overheal);cast(sim,u,k,o,d,[t.x,t.y,t.z]);return true;}
    spend();if(k==='q')fx(sim,u,'blast',p,.6,C.meddle.r,{decay:C.meddle.decay,at:sim.time+.5,dnLinger:1});else if(k==='e')fx(sim,u,'smoke',p,C.ruse.life,C.ruse.r,{born:sim.time});cast(sim,u,k,o,d,p);return true;}
   case 'Harbor':{spend();
-   if(k==='c')fx(sim,u,'blast',p,.6,C.surge.r,{nearsight:C.surge.near,slow:C.surge.slow,at:sim.time+.5,dnLinger:1});
+   if(k==='c')fx(sim,u,'blast',p,C.surge.wind+.1,C.surge.r,{surge:1,nearsight:C.surge.near,slow:C.surge.slow,at:sim.time+C.surge.wind,dnLinger:1});
    else if(k==='q')fx(sim,u,'tide',[u.x,u.y,u.z],C.tide.dist/6,C.tide.w,{d:[aim(u)[0],0,aim(u)[2]],speed:6,life:C.tide.life});
    else if(k==='e')fx(sim,u,'cove',p,C.cove.life,C.cove.r,{hp:C.cove.shieldHp});
    else fx(sim,u,'reckon',[u.x,u.y,u.z],C.reckon.dist/C.reckon.speed,C.reckon.w,{d:[aim(u)[0],0,aim(u)[2]],speed:C.reckon.speed,born:sim.time,s:0,hit:[]});
