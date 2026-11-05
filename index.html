@@ -8902,7 +8902,7 @@ function jReveal(p) { const g = XRCN.g; p = p.clone(); XRCN.pulses.forEach((t) =
 function jRcnPulse(p) {
   jUnreveal(); J.rvT = XRCN.reveal;
   J.rv = bots.filter((b) => b.alive && b.g && xRcnSees(p, b.g.position.x, b.g.position.y + 1.2, b.g.position.z));
-  J.rv.forEach((b) => { b.rvO = [b.body, b.head].map((s) => { const o = new THREE.Mesh(s.geometry, rvMat); o.scale.setScalar(1.15); o.renderOrder = 999; o.raycast = () => {}; s.add(o); return o; }); });
+  J.rv.forEach((b) => { b.rvO = [b.body, b.head].map((s) => { const o = new THREE.Mesh(s.geometry, svxRvMat); o.scale.setScalar(1.15); o.renderOrder = 999; o.raycast = () => {}; s.add(o); return o; }); });
   xRcnRings(p, false);
   say(J.rv.length + " enem" + (J.rv.length === 1 ? "y" : "ies") + " revealed", 900);
 }
@@ -8970,16 +8970,16 @@ function xBoltMove(a) { if (!a.tr) return void a.m.position.lerpVectors(a.a, a.b
 // Sova Hunter's Fury (wiki.playvalorant.com/en-us/Hunter's_Fury): 3 charges, 1 blast every 2.125 s, 6 s to use them, a 66 m
 // cylinder of 1.76 m radius through walls, 80 damage, enemies hit revealed 1 s. Same values as the server (ULT.fury).
 const XHFU = { n: 3, cyc: 2.125, win: 6, len: 66, r: 1.76, dmg: 80, rv: 1, g: 0 };
-function xHfRv(list, t) { // reveal bots hit by a Hunter's Fury blast for XHFU.rv s (or t s: dart pings; adds to a running Recon / Neural Theft reveal)
+function xHfRv(list, t, mat) { // reveal bots hit by a Hunter's Fury blast for XHFU.rv s (or t s: dart pings; adds to a running Recon / Neural Theft reveal)
   list = list.filter((b) => b && b.alive && b.body && b.head && J.rv.indexOf(b) < 0); if (!list.length && !J.rv.length) return;
-  list.forEach((b) => { b.rvO = [b.body, b.head].map((s) => { const o = new THREE.Mesh(s.geometry, rvMat); o.scale.setScalar(1.15); o.renderOrder = 999; o.raycast = () => {}; s.add(o); return o; }); J.rv.push(b); });
+  list.forEach((b) => { b.rvO = [b.body, b.head].map((s) => { const o = new THREE.Mesh(s.geometry, mat || rvMat); o.scale.setScalar(1.15); o.renderOrder = 999; o.raycast = () => {}; s.add(o); return o; }); J.rv.push(b); });
   J.rvT = Math.max(J.rvT || 0, t || XHFU.rv);
 }
 function jBeam() {
   if (J.cd.x > 0 || J.hf < 1) return; J.cd.x = XHFU.cyc; J.hf--; kick = 1; blip(300, 0.4, "sawtooth", 0.2);
   const o = pEye(), d = jAim(), L = XHFU.len, hit = [];
   bots.forEach((b) => { if (!b.alive) return; const v = new THREE.Vector3(b.g.position.x, 1.1, b.g.position.z).sub(o), t = v.dot(d); if (t > 0 && t < L && v.addScaledVector(d, -t).length() < XHFU.r) { jHit(b, XHFU.dmg, "Hunter's Fury"); hit.push(b); } });
-  xHfRv(hit);
+  xHfRv(hit, undefined, svxRvMat);
   xFFArea("You", false, "Hunter's Fury", XHFU.dmg, (x, z) => { const v = new THREE.Vector3(x, 1.1, z).sub(o), t = v.dot(d); return t > 0 && t < L && v.addScaledVector(d, -t).length() < XHFU.r; }); // allies: a third, no reveal
   o.y -= 0.2; try { svxFuryBeam(o, d, o.clone().addScaledVector(d, L)); } catch (e) { const m = jM(beamGeo, fireMat(0x45d0ff, 0.85)); m.scale.z = L; m.position.copy(o).addScaledVector(d, L / 2); m.lookAt(o.clone().addScaledVector(d, L)); jFx(m, 0.35); }
 }
@@ -10237,7 +10237,7 @@ function xDartLoop(b, every, rv) { const g = XRCN.g, d = { b, g, rm: 0, off: 0 }
 // Not as the Spike carrier, not as a defender once the Spike is down (= server botDartRemove: those jobs come first); 5v5 only (Retake has no carrier and its bots hold a planted site)
 function xDartBusy(b) { if (mode !== "five" || typeof FV === "undefined" || !FV.sp || FV.dm) return false; const s = FV.sp; return (s.st === "carry" && s.c === b) || (s.st === "plant" && FV.atk !== (allies.indexOf(b) >= 0)); }
 function xDartRmTick(dt) { for (let i = XDRT.length - 1; i >= 0; i--) { const d = XDRT[i], b = d.b; if (d.off || d.g !== XRCN.g || !b.alive) { b.xdrm = false; XDRT.splice(i, 1); continue; } d.rm = b.see || xDartBusy(b) ? 0 : d.rm + dt; b.xdrm = d.rm > 0; /* channelling: the bot stands still (botK 0), as the server bot (spike.js botDartRemove returns before moving) */ if (d.rm >= XSPY.remove - 1e-9) { d.off = 1; b.xdrm = false; XDRT.splice(i, 1); say(b.name + " removed the tracking dart", 800); } } }
-function xDartPings(b, at, rv) { const g = XRCN.g; at.forEach((t) => setTimeout(() => { if (g === XRCN.g && b.alive && running) xHfRv([b], rv); }, t * 1000)); }
+function xDartPings(b, at, rv) { const g = XRCN.g; at.forEach((t) => setTimeout(() => { if (g === XRCN.g && b.alive && running) xHfRv([b], rv, svxRvMat); }, t * 1000)); }
 function drTag(b) {
   xDartPings(b, XOWL.pings, XOWL.reveal); say(b.name + " tagged", 900); blip(900, 0.12, "triangle", 0.15);
 }
@@ -12744,7 +12744,7 @@ html.xt-nocm .x-cmb{display:none!important}
     if (en) { if (player && player.hp > 0) beam(player, player.x, player.z); if (typeof allies !== "undefined") for (const a of allies) if (a.alive) beam(a, a.g.position.x, a.g.position.z); }
     else for (const b of bots) if (b.alive) beam(b, b.g.position.x, b.g.position.z);
     if (en) { if (hit.indexOf(player) >= 0 && player.hp > 0) { try { say("Revealed by Hunter's Fury", 900); enRvFx(); } catch (e) {} for (const b of bots) if (b.alive) b.cd = Math.min(b.cd, 0.3); } }
-    else xHfRv(hit);
+    else xHfRv(hit, undefined, svxRvMat);
     xFFArea(u, en, "Hunter's Fury", XHFU.dmg, on); // allies: a third, no reveal
   }
   function sova(u, en) { // XHFU.n blasts XHFU.cyc s apart at the nearest enemy (re-aimed each blast), within XHFU.win s; stops on death / round clear
