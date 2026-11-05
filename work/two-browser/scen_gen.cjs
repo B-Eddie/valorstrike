@@ -8,11 +8,11 @@ module.exports=async T=>{const {A,B,qa,code,log,check,SHOT}=T;const fs=require('
  await qa(`const s=sim('${code}');const a=s.units.find(u=>u.name==='Alpha');a.ability.c=2;a.ability.q=2;a.ability.e=2;${process.env.ULT?`a.ability.ult=99;`:''}return 1;`);
  await W(2000);
  await qa(`const s=sim('${code}');const a=s.units.find(u=>u.name==='Alpha'),b=s.units.find(u=>u.name==='Bravo');b.x=a.x+${+process.env.BX||0};b.z=a.z+${+process.env.BZ||-12};b.y=a.y;if(b.vy!==undefined)b.vy=0;return 1;`);
- await A.X(`yaw=0;pitch=${process.env.PITCH||-0.05};1`);await W(2500);
+ await A.X(`yaw=0;pitch=${process.env.PITCH||-0.05};1`);await B.X(`yaw=${process.env.BYAW||'Math.PI'};pitch=0;1`);await W(2500);
  const frz=async v=>{await qa('C.freeze='+v+';return 1');await Promise.all([A,B].map(P=>P.X('window.__ts='+(v?0:1)+';window.__wsMute='+(v?'true':'false')+';1').catch(()=>0)));};
  const unp=()=>B.X('if(typeof paused!=="undefined"&&paused){const b=document.getElementById("xResume");if(b)b.click();}1').catch(()=>0);
  const snap=()=>qa(`const s=sim('${code}');const a=s.units.find(u=>u.name==='Alpha'),b=s.units.find(u=>u.name==='Bravo');return {t:+s.time.toFixed(2),a:{ab:a.ability,hp:a.hp,pos:[a.x,a.y,a.z].map(n=>+n.toFixed(1))},b:{hp:b.hp,pos:[b.x,b.y,b.z].map(n=>+n.toFixed(1)),flash:+(Math.max(0,(b.flashUntil||0)-s.time)).toFixed(2),conc:+(Math.max(0,(b.concussUntil||0)-s.time)).toFixed(2)},fx:s.effects.map(e=>e.kind+':'+(e.p?e.p.map(n=>Math.round(n)).join(','):'')),ev:(s.events||[]).slice(-6).map(e=>JSON.stringify(e).slice(0,100))};`);
- const cl=async P=>P.X(`JSON.stringify({a18:(J.a18fx||[]).map(f=>f.kind),net:(NET.fx||[]).map(f=>f.kind),eq:J.eq,ult:J.ult})`).catch(e=>String(e));
+ const cl=async P=>P.X(`JSON.stringify({a18:(J.a18fx||[]).map(f=>f.kind+':'+(+f.age||0).toFixed(2)),net:(NET.fx||[]).map(f=>f.kind),eq:J.eq,ult:J.ult})`).catch(e=>String(e));
  await frz(false);const before=await snap();const ab00=before.a.ab;log('before',JSON.stringify(before));
  await A.page.bringToFront();await W(500);await unp();
  await A.page.keyboard.down(KEY);await W(120);await A.page.keyboard.up(KEY);await W(400);
@@ -27,7 +27,7 @@ module.exports=async T=>{const {A,B,qa,code,log,check,SHOT}=T;const fs=require('
  const waitFrames=async(P,n)=>{const f0=await fr(P);for(let i=0;i<120;i++){if((await fr(P))>=f0+n)return;await W(250);}};
  let last=null,prev=0;
  // server time advances only inside the unfrozen windows; screenshots (slow in software GL) are taken with the room frozen
- for(const [at,n] of [[0.4,'a'],[1.2,'b'],[2.5,'c'],[4,'d'],[7,'e'],[12,'f']]){await frz(false);await W((at-prev)*1000);prev=at;await frz(true);await waitFrames(A,3);await waitFrames(B,3);const s=await snap();last=s;log('state '+n+' @+'+at+'s',JSON.stringify({t:s.t,clientNow:[await A.X('Math.round(performance.now())'),await B.X('Math.round(performance.now())')],frames:[await fr(A),await fr(B)],ab:s.a.ab,b:s.b,fx:s.fx,ev:s.ev,A:await cl(A),B:await cl(B)}));await unp();await A.page.screenshot({path:SHOT+TAG+'_A_'+n+'.png'});await B.page.screenshot({path:SHOT+TAG+'_B_'+n+'.png'});}
+ for(const [at,n] of (process.env.TIMES||'0.4,1.2,2.5,4,7,12').split(',').map((t,i)=>[+t,'abcdefgh'[i]])){await frz(false);await W((at-prev)*1000);prev=at;await frz(true);await waitFrames(A,3);await waitFrames(B,3);const s=await snap();last=s;log('state '+n+' @+'+at+'s',JSON.stringify({t:s.t,clientNow:[await A.X('Math.round(performance.now())'),await B.X('Math.round(performance.now())')],frames:[await fr(A),await fr(B)],ab:s.a.ab,b:s.b,fx:s.fx,ev:s.ev,A:await cl(A),B:await cl(B)}));await unp();await A.page.screenshot({path:SHOT+TAG+'_A_'+n+'.png'});await B.page.screenshot({path:SHOT+TAG+'_B_'+n+'.png'});}
  await frz(false);
  const ab0=before.a.ab,ab1=last.a.ab;const spent=['c','q','e'].some(k=>ab1[k]<ab0[k])||(ab1.ult<ab0.ult)||Object.keys(ab1.cool||{}).length>0;
  check('server: cast spent a charge/ult/cooldown (key '+KEY+')',spent,{before:ab0,after:ab1});
