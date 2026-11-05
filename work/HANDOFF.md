@@ -19,6 +19,7 @@
 
 ## Tests and their limits
 - Pass: work/test_agents18_net.cjs, test_server_effects.cjs, test_net_drop.cjs, test_online_devices.cjs, work/test_skye_regrowth_client.cjs, server/test-skye-regrowth-row.js, server test-abilities, test-agents18, test-protocol.cjs.
+- NEW work/test_fx_modules_real.cjs: real three.js (no GL) builds 17 module entry points (Sage barrier, Skye regrowth, Deadlock GravNet/Mesh/Sensor, Gekko Mosh, Fade Seize/Nightfall, Miks M-Pulse/Bassquake, Veto Interceptor/Crosscut, Vyse x4, Hush Displacement), pokes handle methods, ticks 10 s, ends, ticks 100 s more and asserts zero scene leftovers. Shader compile, look, yaw and occlusion are NOT covered (no GL).
 - Limit: client tests run with the fx modules STUBBED (a recording stub or absent), so real module construction, yaw sign, height, look and occlusion are untested. Known pre-existing failures: test_tdf_round_reset, test-bot-brain "bot buys vary", work/test_iso_arena.cjs "arena shell renders".
 
 ## Remaining scope
