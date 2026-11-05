@@ -18,3 +18,10 @@ log.length=0;ctx.sync(row({id:6,ph:4,dn:1,hp:0}));ctx.sync(row({id:6,ph:4,dn:1,h
 ctx.sync([]);log.length=0;ctx.sync(row({id:8,age:3}));log.length=0;ctx.sync([]);assert.deepEqual(log,[['end']],'row dropped without dn (shot down / expired): body ends, no boom');
 log.length=0;ctx.sync(row({id:9,o:7}));assert.equal(log.length,0,'own bot: the local cast draws it');
 console.log('net boombot lifecycle ok (real sync source, stub THREE/rzx, not rendered)');
+// own bot: the server's row stops without a detonation -> the local one nearest the last server point is removed (real netOwnGone source)
+{const h=fs.readFileSync(require('path').join(__dirname,'..','index.html'),'utf8');const i=h.indexOf('function netOwnGone(d){'),j=h.indexOf('\nconst netAbDn',i);
+ const gone=[];const near={m:{position:{x:1,z:2}},wu:null},windup={m:{position:{x:1.2,z:2}},wu:0.3},far={m:{position:{x:30,z:2}},wu:null},enemy={m:{position:{x:1,z:2}},en:true,wu:null};
+ const c2=vm.createContext({Math,Number,Array,RS:{bb:[far,windup,enemy,near],pk:[]},J:{},BC:{},xBbGone:o=>gone.push(o),okRm(){},scene:{remove(){}}});
+ vm.runInContext(h.slice(i,j)+';this.f=netOwnGone;',c2);c2.f({k:'boombot',p:[1,0,2]});
+ assert.deepEqual(gone,[near],'only our non-detonating bot within 3 m is removed (not the windup one, not far, not the enemy)');assert.equal(c2.RS.bb.length,3);
+ console.log('net boombot own-gone ok (real source)');}

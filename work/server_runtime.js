@@ -277,6 +277,7 @@ function netOwnGone(d){const p=d.p,nr=(o,r)=>!!o&&Number.isFinite(o.x)&&Math.hyp
  else if(d.k==='spycam'){if(BC.cam&&nr(BC.cam.p,2.5)){scene.remove(BC.cam.m);BC.cam=null;BC.cv=false;}}
  else if(d.k==='trapwire'){const i=BC.cw.findIndex(W=>nr(W.a,2.5)||nr(W.b,2.5));if(i>=0){cyRm(BC.cw[i]);BC.cw.splice(i,1);}}
  else if(d.k==='blastpack'){const i=RS.pk.findIndex(o=>o.m&&nr(o.m.position,4));if(i>=0){scene.remove(RS.pk[i].m);RS.pk.splice(i,1);}}
+ else if(d.k==='boombot'){const i=RS.bb.findIndex(o=>!o.en&&o.wu==null&&o.m&&nr(o.m.position,3));if(i>=0){xBbGone(RS.bb[i]);RS.bb.splice(i,1);}}/* the server stopped our Boom Bot without a detonation (shot down / expired): the local one is not left rolling (a detonating one has o.wu set and plays its own blast) */
  else if(d.k==='owl'){if(J.dr&&!J.dr.tb&&J.dr.t>.4)drEnd();}}
 const netAbDn=new Set();/* alarmbot detonations already played */
 function netSyncDevices(rows){const seen=new Set(),own=new Set();for(const r of rows){if(r.kind!=='dev'||!Object.hasOwn(NET_DEV,r.d)||!Number.isFinite(r.id)||!Array.isArray(r.p)||r.p.length!==3||!r.p.every(Number.isFinite))continue;if(r.o===MP.me&&r.d!=='hunter'){own.add(r.id);netOwnDevs.set(r.id,{k:r.d,p:r.p.slice()});continue;}/* our own: the local cast draws it (netOwnGone takes it away when the server's row stops) */
