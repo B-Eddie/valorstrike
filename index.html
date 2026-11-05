@@ -27565,7 +27565,7 @@ function a18Key(code) {
       return true; }
     case "Yoru": { spend();
       if (k === "c") { let jx = null; try { yoxFakeoutSpawn(P); jx = yoxFakeoutFigure(); } catch (e) { try { xE(e); } catch (e2) {} } a18Fx({ kind: "decoy", p: new THREE.Vector3(P.x, 1, P.z), d: new THREE.Vector3(d.x, 0, d.z).normalize(), t: C.fakeout.life, jx, m: jx ? null : jM(smokeGeo, xSmokeM("a18decoy", 0x8a92ff, 0xc9d2ff)) }); }
-      else if (k === "q") { let jo = null; try { jo = yoxBlindsideOrb(); if (jo && jo.fx && jo.fx.objs && jo.fx.objs[0]) jo.fx.objs[0].position.copy(p); } catch (e) {} a18Orb(p, C.blindside.delay, () => { try { if (jo) yoxEnd(jo); yoxBlindsidePop(p); } catch (e) {} a18Blind(p, C.blindside.blind); }); }
+      else if (k === "q") { let jo = null; try { jo = yoxBlindsideOrb(); if (jo && jo.fx && jo.fx.objs && jo.fx.objs[0]) jo.fx.objs[0].position.copy(p); } catch (e) {} a18Orb(p, C.blindside.delay, () => { try { if (jo) yoxEnd(jo); yoxBlindsidePop(p); } catch (e) {} a18Blind(p, C.blindside.blind); }, !!jo); }
       else if (k === "e") { A.gate = a18Aim(C.gcrash.range); try { A.gateH = yoxGatecrashAnchor(A.gate, 30); } catch (e) {} }
       else { A.drift = C.drift.life; try { yoxDriftEnter({ x: P.x, y: P.y, z: P.z }); A.driftV = yoxDriftVeil(C.drift.life); } catch (e) {} say("Dimensional Drift", 900); }
       return true; }
