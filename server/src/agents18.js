@@ -45,7 +45,7 @@ export const A18={
  gear:{drain:10,regen:20,k:1.2},od:{life:10,dps:150,range:30},/* Overdrive: lightweight beam = high-dps ray while it lasts */
  satur:{r:4.5,hinder:4},ls:{dash:9,time:.35},/* Waylay Saturate / Lightspeed */
  refract:{life:20,travel:.6},/* Refract marker + immune return */
- cpaths:{dist:20,w:10,haste:3,hinder:4},/* Convergent Paths */
+ cpaths:{len:36,w:13.5,ahead:3,wind:1,haste:7,hinder:6},/* Convergent Paths (wiki: 36 x 13.5 m, 3 m ahead, 1 s windup, buff 7 s, debuff 6 s; whether 3 m is the near edge or centre is not stated, near edge used) */
  fakeout:{life:10,speed:4.5},/* Fakeout decoy walks forward */
  blindside:{blind:1.5,delay:.6},gcrash:{speed:12,life:20,range:30},/* Yoru */
  drift:{life:10},/* Dimensional Drift: invisible + intangible, Gatecrash stays up */
@@ -190,7 +190,7 @@ export function cast18(sim,u,m,o,d,push){
    if(k==='c')fx(sim,u,'blast',p,.6,C.satur.r,{hinder:C.satur.hinder,at:sim.time+.5});
    else if(k==='q'){const n=m.alt===true?1:2;u.dash=Motor.dash(m.f||1,0,u.look,C.ls.dash*n,C.ls.time*n);}
    else if(k==='e'){A.marker=[u.x,u.y,u.z];}
-   else{u.hasteUntil=sim.time+C.cpaths.haste;fx(sim,u,'paths',[u.x,u.y,u.z],C.cpaths.haste,C.cpaths.dist/2,{at:sim.time+1.2,w:C.cpaths.w,hinder:C.cpaths.hinder});}
+   else{const P=C.cpaths;u.hasteUntil=sim.time+P.haste;fx(sim,u,'paths',[u.x-Math.sin(u.look)*P.ahead,u.y,u.z-Math.cos(u.look)*P.ahead],P.haste,P.len,{at:sim.time+P.wind,w:P.w,len:P.len,yaw:u.look,hinder:P.hinder});}
    cast(sim,u,k,o,d,p);return true;}
   case 'Yoru':{spend();
    if(k==='c')fx(sim,u,'decoy',[u.x,u.y,u.z],C.fakeout.life,0,{d:[aim(u)[0],0,aim(u)[2]],speed:C.fakeout.speed,ag:u.agent});
@@ -266,7 +266,7 @@ export function tick18(sim,dt){
    case 'susp':{e.p=[e.p[0]+e.d[0]*C.susp.speed*dt,Math.max(sim.world.ground(e.p[0],e.p[2],e.p[1]+2)+.5,e.p[1]+e.d[1]*C.susp.speed*dt),e.p[2]+e.d[2]*C.susp.speed*dt];const t=enemies(sim,own).find(v=>inR(v,e.p,C.susp.r));if(t){status(t,'suppressUntil',4,sim);t.levUntil=T+C.susp.lev;gone.push(e);}break;}
    case 'conting':case 'tide':{e.p=[e.p[0]+e.d[0]*e.speed*dt,e.p[1],e.p[2]+e.d[2]*e.speed*dt];if(e.kind==='tide')for(const v of enemies(sim,own))if(inR(v,e.p,2))status(v,'hinderUntil',C.tide.slow,sim);break;}
    case 'reckon':{e.s=(e.s||0)+C.reckon.speed*dt;e.p=[e.p[0]+e.d[0]*C.reckon.speed*dt,e.p[1],e.p[2]+e.d[2]*C.reckon.speed*dt];for(const v of enemies(sim,own))if(!e.hit.includes(v.id)&&inR(v,e.p,C.reckon.near)){e.hit.push(v.id);status(v,'nearsightUntil',C.reckon.near,sim);status(v,'hinderUntil',C.reckon.slow,sim);}break;}
-   case 'paths':if(!e.done&&T>=e.at){e.done=true;for(const v of enemies(sim,own))if(inR(v,e.p,e.radius))status(v,'hinderUntil',e.hinder,sim);}break;
+   case 'paths':if(!e.done&&T>=e.at){e.done=true;for(const v of enemies(sim,own))if(strip({x:e.p[0],z:e.p[2],look:e.yaw},v,{dist:e.len,w:e.w})&&Math.abs(v.y-e.p[1])<4)status(v,'hinderUntil',e.hinder,sim);}break;
    case 'salvo':{/* wiki Guided Salvo: missile flies, 1.25 s windup, 3 pulses 0.8 s apart; inner 2.5 m full 65, outer 4.5 m falls 65 -> 50 at the edge; affects allies/self */
     if(T>=e.next&&e.left>0){e.next+=C.salvo.gap;e.left--;for(const v of sim.units.filter(x=>x.alive&&!x.loading)){const d=Math.hypot(v.x-e.p[0],v.z-e.p[2]);if(d>C.salvo.r)continue;const n=d<=C.salvo.inner?C.salvo.dmg:C.salvo.dmg-(C.salvo.dmg-C.salvo.dmgOut)*(d-C.salvo.inner)/(C.salvo.r-C.salvo.inner);dmg18.f(sim,own,v,n);}}break;}
    case 'frag':{const K=C.frag;if(T>=e.next&&e.left>0){e.next+=K.gap;e.left--;for(const v of sim.units.filter(x=>x.alive&&!x.loading)){const d=Math.hypot(v.x-e.p[0],v.z-e.p[2]);if(d>K.r)continue;const n=d<=K.inner?K.dmg:K.dmg-(K.dmg-K.dmgOut)*(d-K.inner)/(K.r-K.inner);dmg18.f(sim,own,v,n);}}break;}/* wiki FRAG/ment: 0.5 s windup, 4 ticks 1 s apart, inner 1 m 60, outer 4 m 25 at the edge, allies/self too (reduced) */
