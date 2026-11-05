@@ -28,6 +28,7 @@ module.exports=async T=>{const {A,B,qa,code,log,check,SHOT}=T;const fs=require('
  const waitFrames=async(P,n)=>{const f0=await fr(P);for(let i=0;i<120;i++){if((await fr(P))>=f0+n)return;await W(250);}};
  let last=null,prev=0;
  // server time advances only inside the unfrozen windows; screenshots (slow in software GL) are taken with the room frozen
+ if(process.env.AYAW2)await A.X('yaw='+process.env.AYAW2+';1');
  for(const [at,n] of (process.env.TIMES||'0.4,1.2,2.5,4,7,12').split(',').map((t,i)=>[+t,'abcdefgh'[i]])){await frz(false);await W((at-prev)*1000);prev=at;await frz(true);await waitFrames(A,3);await waitFrames(B,3);const s=await snap();last=s;log('state '+n+' @+'+at+'s',JSON.stringify({t:s.t,clientNow:[await A.X('Math.round(performance.now())'),await B.X('Math.round(performance.now())')],frames:[await fr(A),await fr(B)],ab:s.a.ab,b:s.b,fx:s.fx,ev:s.ev,A:await cl(A),B:await cl(B)}));await unp();await A.page.screenshot({path:SHOT+TAG+'_A_'+n+'.png'});await B.page.screenshot({path:SHOT+TAG+'_B_'+n+'.png'});}
  await frz(false);
  const ab0=before.a.ab,ab1=last.a.ab;const spent=['c','q','e'].some(k=>ab1[k]<ab0[k])||(ab1.ult<ab0.ult)||Object.keys(ab1.cool||{}).length>0;

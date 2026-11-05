@@ -110,3 +110,8 @@ Sources: wiki.playvalorant.com/en-us/<Ability> pages + images/<Ability>_Showcase
 
 ## ci13 (run 41951904028, head 9295ffd) - 2026-11-04 21:20
 - Phoenix Blaze online: server charge spent, server fx row blaze -1,6,41 present ~12 s, but NEITHER client A nor B drew a wall (sheets /downloads/ci13_Phoenix_Blaze_A.png/_B.png). Still OPEN. Local page test work/test_blaze_net.cjs (row -> wall of |q-p|+1) passes, which is code-path only, not online proof. Client telemetry (a18Net kinds, J.walls) added to scen_gen.cjs to see row receipt.
+
+## ci14 (run 41954967717, head 4be9fc4: Blaze row + Phoenix + Reyna wiring) - 2026-11-04 21:47
+- Blaze online: client telemetry shows a18Net=[blazeNet] and J.walls=[t~7.4, phx fire attached, h 5.5 (len 12)] on the clients, so the row IS received and applied (q-driven length ok). Visible output: an orange floor strip only; the camera looks along the wall axis so the vertical sheet is edge-on and cannot be judged. Off-axis capture queued (AYAW2=0.7). Not accepted.
+- Curveball online: old opaque disc gone; remote shows a small orange orb (B view frame a). Pop not captured (frames after 0.9 s show nothing; 4 of 6 B frames missing). Pop look unverified.
+- Reyna Leer: remote eye is a large magenta starburst with a white cross and smoke petals, not a small floating eye with iris. Likely oversized; not accepted.
