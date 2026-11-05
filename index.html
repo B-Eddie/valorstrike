@@ -8896,6 +8896,13 @@ function jRib() {
 function xRevealShell(source,mat){const m=new THREE.Mesh(source.geometry,mat);m.name='reveal-shell';m.matrixAutoUpdate=false;m.frustumCulled=false;m.renderOrder=999;m.raycast=()=>{};
  m.onBeforeRender=function(r,sc,cam){source.updateWorldMatrix(true,false);this.matrixWorld.copy(source.matrixWorld);this.matrixWorld.scale(xRevealShell.scale||(xRevealShell.scale=new THREE.Vector3(1.15,1.15,1.15)));this.modelViewMatrix.multiplyMatrices(cam.matrixWorldInverse,this.matrixWorld);this.normalMatrix.getNormalMatrix(this.modelViewMatrix);};
  (source.parent||scene).add(m);return m;}
+// Share the live rig skeleton/geometry, never clone bones or take ownership of their resources.
+// Each visible native skin gets one sibling overlay; detached binding retains the source's inverse.
+function xRevealUnit(b,mat){const sc=b.xm&&b.xm.valorant&&b.xm.sx&&b.xm.sx.sc,src=[];if(sc)sc.traverse(o=>{if(o.isSkinnedMesh&&o.visible&&o.skeleton&&o.name!=='reveal-native')src.push(o);});
+ if(!src.length)return [b.body,b.head].filter(Boolean).map(o=>xRevealShell(o,mat));
+ return src.map(o=>{const m=new THREE.SkinnedMesh(o.geometry,mat);m.name='reveal-native';m.bindMode='detached';m.bind(o.skeleton,o.bindMatrix);m.matrixAutoUpdate=false;m.frustumCulled=false;m.renderOrder=999;m.raycast=()=>{};
+ m.onBeforeRender=function(r,sc,cam){o.updateWorldMatrix(true,false);this.matrixWorld.copy(o.matrixWorld);this.bindMatrix.copy(o.bindMatrix);this.bindMatrixInverse.copy(o.bindMatrixInverse);this.modelViewMatrix.multiplyMatrices(cam.matrixWorldInverse,this.matrixWorld);this.normalMatrix.getNormalMatrix(this.modelViewMatrix);};
+ o.parent.add(m);return m;});}
 function jUnreveal() { J.rv.forEach((b) => (b.rvO || []).forEach((o) => o.parent && o.parent.remove(o))); J.rv = []; J.rvT = 0; }
 // Sova Recon Bolt (wiki.playvalorant.com/en-us/Recon_Bolt): after the bolt lands it sends 2 sonar pulses 1.6 s apart; each
 // reveals enemies within 30 m that the bolt can see for 0.75 s. Same table as the server (DEV.reconBolt); XRCN.g changes on
@@ -8907,7 +8914,7 @@ function jReveal(p) { const g = XRCN.g; p = p.clone(); XRCN.pulses.forEach((t) =
 function jRcnPulse(p) {
   jUnreveal(); J.rvT = XRCN.reveal;
   J.rv = bots.filter((b) => b.alive && b.g && xRcnSees(p, b.g.position.x, b.g.position.y + 1.2, b.g.position.z));
-  J.rv.forEach((b) => { b.rvO = [b.body, b.head].map((s) => { return xRevealShell(s, svxRvMat); }); });
+  J.rv.forEach((b) => { b.rvO = xRevealUnit(b, svxRvMat); });
   xRcnRings(p, false);
   say(J.rv.length + " enem" + (J.rv.length === 1 ? "y" : "ies") + " revealed", 900);
 }
@@ -8977,7 +8984,7 @@ function xBoltMove(a) { if (!a.tr) return void a.m.position.lerpVectors(a.a, a.b
 const XHFU = { n: 3, cyc: 2.125, win: 6, len: 66, r: 1.76, dmg: 80, rv: 1, g: 0 };
 function xHfRv(list, t, mat) { // reveal bots hit by a Hunter's Fury blast for XHFU.rv s (or t s: dart pings; adds to a running Recon / Neural Theft reveal)
   list = list.filter((b) => b && b.alive && b.body && b.head && J.rv.indexOf(b) < 0); if (!list.length && !J.rv.length) return;
-  list.forEach((b) => { b.rvO = [b.body, b.head].map((s) => { return xRevealShell(s, mat || rvMat); }); J.rv.push(b); });
+  list.forEach((b) => { b.rvO = xRevealUnit(b, mat || rvMat); J.rv.push(b); });
   J.rvT = Math.max(J.rvT || 0, t || XHFU.rv);
 }
 function jBeam() {
@@ -9924,7 +9931,7 @@ function bcSl(u) {
 // ---- Cypher kit (player + bot): Trapwire (pooled in BC.cw, anchors shootable, 20 HP), Cyber Cage (J.smokes), Spycam (BC.cam / BC.cv view + F dart), Neural Theft ----
 BC.cw = []; BC.cam = null; BC.cv = false;
 function cyReveal(list, t) { jUnreveal(); J.rvT = t; J.rv = list.filter((b) => b && b.body && b.head);
-  J.rv.forEach((b) => { b.rvO = [b.body, b.head].map((s) => { return xRevealShell(s, rvMat); }); }); }
+  J.rv.forEach((b) => { b.rvO = xRevealUnit(b, rvMat); }); }
 function cyRm(W) { try { if (W.jx) cyxEnd(W.jx); } catch (e) {} scene.remove(W.m); W.an.forEach((o) => scene.remove(o)); }
 // Cypher Trapwire (wiki Trapwire: max deploy distance 20 m, max wire length 15 m; "A viable position must have two pieces of terrain opposite each
 // other"): the crosshair's hit within 20 m, 0.8 m back toward Cypher; the wire runs across the aim to the nearest wall on each side (at the floor
@@ -16484,7 +16491,7 @@ function netRevealSync(rows){const now=performance.now(),seen=new Set();for(cons
  if(!(r.length>=6&&r[4]>0&&r[4]<=60&&r[5]>=0&&r[5]<=r[4])){netRevealDrop(r[0]);b.netRvUntil=now+400;continue;}
  let q=netReveals.get(r[0]);if(q&&(q.b!==b||q.body!==b.body||q.head!==b.head)){netRevealDrop(r[0]);q=null;}
  const until=now+r[4]*1000,orange=now+r[5]*1000;b.netRvUntil=until;
- if(!q){if(!b.body||!b.head)continue;const meshes=[b.body,b.head].map(s=>{return xRevealShell(s,orange>now?svxRvMat:rvMat);});q={b,body:b.body,head:b.head,meshes};netReveals.set(r[0],q);}
+ if(!q){if(!b.body||!b.head)continue;const meshes=xRevealUnit(b,orange>now?svxRvMat:rvMat);q={b,body:b.body,head:b.head,meshes};netReveals.set(r[0],q);}
  q.until=until;q.orange=orange;}for(const id of [...netReveals.keys()])if(!seen.has(id))netRevealDrop(id);netRevealTick();}
 function netClearEffects(){netRevealClear();for(const c of netCbs.values())if(c.m)jRel(c.m);netCbs.clear();for(const S of J.smokes||[])if(S.netId!=null)jRel(S.m);if(J.smokes)J.smokes=J.smokes.filter(S=>S.netId==null);document.getElementById('netBlind')?.remove();for(const m of netWalls.values()){scene.remove(m);m.children.forEach(q=>{q.geometry.dispose();q.material.dispose();});}netWalls.clear();for(const id of [...netDevs.keys()])netDevDrop(id);netOwnDevs.clear();}/* a barrier is a Group of segment meshes (no geometry of its own) */
 // Others' Cloudbursts from the snapshot: the projectile while it flies (s 0), then the smoke where the server landed it (s 1,
