@@ -8,7 +8,10 @@ vm.runInContext(html.slice(k,k2)+html.slice(i,j)+';this.sync=a18NetSync;this.fre
 const hk=(id,o,x)=>({id,kind:'hawk',o,p:[x,1,0],hd:[0,0,-1],tl:1});
 const fl=(id,o,x)=>({id,kind:'flash',ag:'Skye',o,p:[x,1,0],tl:.5,fa:.2});
 ctx.sync([hk(5,3,1)]);ctx.sync([hk(5,3,2)]);assert.deepEqual(log,[['hawk',1],['mv',1],['mv',2]]);
-log.length=0;ctx.sync([fl(6,3,2)]);assert.deepEqual(log.map(x=>x[0]),['end'],'hawk row dropped: hawk ends, flash row seen: no burst yet');
-log.length=0;ctx.sync([fl(6,3,2)]);assert.equal(log.length,0);ctx.sync([]);assert.deepEqual(log,[['burst',2]],'burst when the flash row drops at detonation');
-log.length=0;ctx.sync([hk(8,7,1)]);ctx.sync([fl(9,7,1)]);ctx.sync([]);assert.equal(log.filter(x=>x[0]==='hawk'||x[0]==='burst').length,0,'own hawk/flash: local cast draws it');
+const dn=(id,o,x)=>({...fl(id,o,x),fa:0,dn:1});
+log.length=0;ctx.sync([fl(6,3,2)]);assert.deepEqual(log.map(x=>x[0]),['end'],'hawk row dropped: hawk ends; flash windup row: no burst yet');
+log.length=0;ctx.sync([dn(6,3,2)]);ctx.sync([dn(6,3,2)]);assert.deepEqual(log,[['burst',2]],'burst exactly once, on the server dn:1 signal');ctx.sync([]);assert.equal(log.length,1);
+log.length=0;ctx.sync([fl(10,3,3)]);ctx.sync([]);assert.equal(log.length,0,'row drop without dn (death/reset/cancel): no burst');
+log.length=0;ctx.sync([dn(11,3,4)]);assert.deepEqual(log,[['burst',4]],'late first snapshot already carrying dn: still bursts once');ctx.sync([]);
+log.length=0;ctx.sync([hk(8,7,1)]);ctx.sync([fl(9,7,1)]);ctx.sync([dn(9,7,1)]);ctx.sync([]);assert.equal(log.filter(x=>x[0]==='hawk'||x[0]==='burst').length,0,'own hawk/flash: local cast draws it');
 console.log('skye hawk + pop client ok (stub)');
