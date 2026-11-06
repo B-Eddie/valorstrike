@@ -53,3 +53,6 @@ xe('NET.socket={readyState:1,send(){}};netSyncEffects([{id:744,kind:`barrier`,p:
 assert.equal(xe('sgxLive.length'),1);assert.equal(xe('netWalls.size'),1);
 xe('netClearEffects();true');assert.equal(xe('sgxLive.length'),0,'clear ends module not only hidden collision proxy');assert.equal(xe('netWalls.size'),0);
 console.log('Sage actual composed-page clear ends persistent module: PASS');
+
+xe('netSyncEffects([{id:745,kind:`barrier`,mesh:1,r:3.75,h:3,p:[0,0,0],yaw:0,hp:680,seg:[680],age:8,tl:22}]);true');
+assert.equal(xe('sgxLive.length'),0,'Deadlock never builds Sage ice');assert.equal(xe('dlxLive.length'),1);assert.equal(xe('netWalls.get(745).userData.sgxh.fx.age'),8);assert.equal(xe('netWalls.get(745).userData.sgxh.fx.ttl'),30);xe('netClearEffects();true');assert.equal(xe('dlxLive.length'),0);console.log('Deadlock actual composed-page barrier identity/current-age/drop: PASS');
