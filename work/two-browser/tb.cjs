@@ -2,7 +2,7 @@
 // A plays AGENT_A, B plays AGENT_B. Needs bridge :8787 (server/tools/browser-bridge.mjs) + static server :8876 at repo root.
 //   SCEN=/path/scenario.cjs node tb.cjs out.json
 const H=process.env.HOME;const {chromium}=require(process.env.PW||H+'/pw/node_modules/playwright-core'),fs=require('fs');
-const ROOT=process.env.ROOT||H+'/vs',QA=H+'/qa/',OUT=process.argv[2]||'/tmp/tb.json',SHOT=process.env.SHOT||'/tmp/shots/';
+const ROOT=process.env.ROOT||H+'/vs',QA=process.env.QA||H+'/qa/',OUT=process.argv[2]||'/tmp/tb.json',SHOT=process.env.SHOT||'/tmp/shots/';
 const AA=process.env.AGENT_A||'Clove',AB=process.env.AGENT_B||'Jett',MAP=process.env.MAP||'ascent';
 const LOCAL={'three.min.js':QA+'three.min.js','GLTFLoader.js':QA+'GLTFLoader.js','SkeletonUtils.js':QA+'SkeletonUtils.js'};
 const R={steps:[],checks:[],errors:[]};const t00=Date.now();
