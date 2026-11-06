@@ -592,4 +592,17 @@ const a18Chips0 = netStatusChips; netStatusChips = function (st) {
   if (el) { el.textContent = on.join(" \u00b7 "); el.style.display = on.length ? "block" : "none"; }
   return on;
 };
+// Offline shared-mesh consumer. Creation stays explicit until throw/cast migration is complete.
+var a18Meshes=[];
+function a18MeshDrop(e){if(!e)return;try{e.h.end();}catch(er){}for(const m of e.hitboxes){scene.remove(m);const i=XLDH.indexOf(m);if(i>=0)XLDH.splice(i,1);m.geometry.dispose();m.material.dispose();}const i=a18Meshes.indexOf(e);if(i>=0)a18Meshes.splice(i,1);}
+function a18MeshSync(e){e.h.update(e.state);e.hitboxes.forEach((m,i)=>{const n=e.state.nodes[i];m.visible=!!n&&n.hp>0&&!e.state.dead;});}
+function a18MeshCreate(p,yaw,world){const state=BarrierMesh.create(p,yaw,BarrierMesh.terrainResolver(world)),h=dlxBarrierState(state);if(!h)throw Error('Barrier Mesh renderer failed');const e={state,h,hitboxes:[]};
+ try{for(let i=0;i<5;i++){const n=state.nodes[i],m=new THREE.Mesh(new THREE.SphereGeometry(n?n.r:.2,12,8),new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false}));
+   if(n)m.position.set(n.p[0],n.p[1]+BarrierMesh.C.nodeLift,n.p[2]);
+   const ld={};Object.defineProperty(ld,'hp',{get:()=>state.nodes[i]?.hp||0,set:value=>{const n=state.nodes[i];if(n&&Number.isFinite(value)&&value<n.hp){BarrierMesh.damage(state,i,n.hp-value);a18MeshSync(e);}}});m.userData.ld=ld;m.userData.meshNode=i;const cast=m.raycast;m.raycast=function(rc,out){if(!state.dead&&state.nodes[i]?.hp>0)return cast.call(this,rc,out);};e.hitboxes.push(m);scene.add(m);XLDH.push(m);m.updateMatrixWorld(true);}
+  a18Meshes.push(e);a18MeshSync(e);return e;
+ }catch(er){a18MeshDrop(e);throw er;}}
+{const reset=a18Reset;a18Reset=function(){while(a18Meshes.length)a18MeshDrop(a18Meshes[a18Meshes.length-1]);return reset.apply(this,arguments);};
+ const tick=a18Tick;a18Tick=function(dt){for(const e of [...a18Meshes]){BarrierMesh.advance(e.state,e.state.age+dt);if(e.state.dead)a18MeshDrop(e);else a18MeshSync(e);}return tick.apply(this,arguments);};
+ const block=sgBlk;sgBlk=function(x,z,r,y){if(!(typeof NET!=='undefined'&&NET.socket))for(const e of a18Meshes)if(BarrierMesh.blocked(e.state,x,z,r,y||0,1.8))return true;return block.apply(this,arguments);};}
 // ---- END AGENTS 18 ----
