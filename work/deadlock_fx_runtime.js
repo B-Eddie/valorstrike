@@ -68,6 +68,34 @@ function dlxBarrierMesh(p, yaw, len, seconds) { try { /* yaw: radians (Three.js 
     grp.children.forEach((m) => { if (m.userData.dlxStrand) { m.material.uniforms.uP.value = Math.min(1, die + (1 - grow)); } else { m.material.uniforms.uP.value = die; m.visible = age > 0.08; } });
     grp.scale.set(1, Math.max(0.05, grow * (1 - die)), 1); });
   return fx; } catch (e) { try { window.dlxErr = String(e && e.stack || e).slice(0, 300); xE(e); } catch (e2) {} return null; } }
+// Node/arm state renderer for the shared BarrierMesh model. Kept separate from legacy entry until all gameplay consumers migrate.
+// The row is persistent state: first sight of a missing node is silent; update never invents a destruction burst.
+function dlxBarrierState(state) { try {
+  const G=dlxGeos(),grp=new THREE.Group(),orbs=[],arms=[];
+  for(let i=0;i<5;i++){
+    const orb=new THREE.Mesh(G.sph,dlxMat('node',dlxNODE,i*1.7));orb.userData.meshNode=i;grp.add(orb);orbs.push(orb);
+    if(i){const arm=new THREE.Group();arm.userData.meshArm=i;const strands=[];
+      // Six diagonal runs on each radial arm, plus the top edge. Heights are project approximations.
+      for(let j=0;j<6;j++){const a=j/6,b=(j+1)/6;
+        strands.push(dlxStrand({x:a,y:j%2?0.2:2.8,z:0},{x:b,y:j%2?2.8:0.2,z:0},.02,j+i*7));
+        strands.push(dlxStrand({x:a,y:j%2?2.8:0.2,z:0},{x:b,y:j%2?0.2:2.8,z:0},.02,j+i*13));}
+      strands.push(dlxStrand({x:0,y:2.9,z:0},{x:1,y:2.9,z:0},.018,i*19));strands.forEach(s=>arm.add(s));grp.add(arm);arms[i]=arm;}
+  }
+  let current=state;
+  const apply=()=>{if(!current||!Array.isArray(current.nodes)||current.nodes.length!==5)throw Error('Barrier Mesh state needs five node slots');
+    const centre=current.nodes[0];if(!centre||!Array.isArray(centre.p))throw Error('Barrier Mesh centre missing');
+    grp.visible=!current.dead;
+    current.nodes.forEach((n,i)=>{const orb=orbs[i],live=!!n&&n.hp>0&&!current.dead;orb.visible=live;
+      if(n){orb.position.set(n.p[0],n.p[1]+.2,n.p[2]);orb.scale.setScalar(i?.2:.28);orb.material.uniforms.uP.value=1-Math.max(0,Math.min(1,n.hp/(n.max||n.hp||1)));}
+      if(i){const arm=arms[i],up=live&&(current.age||0)>=1&&centre.hp>0;arm.visible=up;if(n){const dx=n.p[0]-centre.p[0],dz=n.p[2]-centre.p[2],L=Math.hypot(dx,dz),dy=n.p[1]-centre.p[1];
+        arm.position.set(...centre.p);arm.rotation.y=Math.atan2(-dz,dx);
+        // Transform each unit-length strand endpoint into the terrain-sloped arm before orienting its cylinder.
+        arm.children.forEach((m,j)=>{const a=j===12?0:Math.floor(j/2)/6,b=j===12?1:(Math.floor(j/2)+1)/6,flip=j%2,odd=Math.floor(j/2)%2;
+          const ya=j===12?2.9:((odd^flip)?0.2:2.8),yb=j===12?2.9:((odd^flip)?2.8:0.2),A=new THREE.Vector3(a*L,ya+a*dy,0),B=new THREE.Vector3(b*L,yb+b*dy,0),D=B.clone().sub(A);
+          m.position.copy(A.add(B).multiplyScalar(.5));m.scale.set(j===12?.018:.02,D.length(),j===12?.018:.02);m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),D.normalize());m.material.uniforms.uP.value=0;});}}
+    });};
+  const h=dlxFx(3600,[grp],()=>{});h.update=s=>{current=s;apply();};h.orbs=orbs;h.arms=arms;h.update(state);return h;
+ } catch(e){try{xE(e);}catch(er){}return null;} }
 // Sonic Sensor: small wall/ground device, dark body + pulsing blue lens + periodic faint scan ring
 function dlxSonicSensor(p, seconds) { try { const G = dlxGeos(), ttl = Math.max(1, seconds || 30);
   const body = new THREE.Mesh(G.box, dlxBasic(0x1a2430, 0.95, false)); body.scale.set(0.34, 0.20, 0.22); body.position.set(p.x, (p.y || 0) + 0.12, p.z);
