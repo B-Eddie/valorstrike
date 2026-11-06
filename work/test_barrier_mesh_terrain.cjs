@@ -1,5 +1,5 @@
 // Real triangle raycasts exercise the same API contract as server/src/world.js, not canned hit values.
-const assert=require('assert/strict'),T=require('../server/node_modules/three'),M=require('../vendor/barrier-mesh.cjs');
+const assert=require('assert/strict'),T=require('../server/node_modules/three/build/three.cjs'),M=require('../vendor/barrier-mesh.cjs');
 const floor=new T.Mesh(new T.PlaneGeometry(60,60),new T.MeshBasicMaterial({side:T.DoubleSide}));floor.rotation.x=-Math.PI/2;
 const wall=new T.Mesh(new T.BoxGeometry(.2,3,8),new T.MeshBasicMaterial({side:T.DoubleSide}));wall.position.set(4,1.5,0);
 const objects=[floor,wall];objects.forEach(o=>o.updateMatrixWorld(true));const r=new T.Raycaster();
