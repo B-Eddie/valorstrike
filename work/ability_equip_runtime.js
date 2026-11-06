@@ -68,7 +68,6 @@ const XAB_EQ = { // agent -> key -> ready-to-equip test (a charge to spend and n
 //   (xDarkMesh, a 4.1 m outline seen through walls) shows where the smoke lands: on the aim line, sunk to the floor below (wiki: "the smoke
 //   will sink vertically" onto a horizontal surface). Was: E + FIRE put the smoke at the first wall within 30 m, 1.5-4 m high.
 const XAB_HOLD = { Skye: { e: "hawk" }, Sova: { q: "bow", e: "bow" }, Breach: { e: "fault" }, Omen: { e: "mark" } };
-const XAB_HOLD = { Sova: { q: "bow", e: "bow" }, Breach: { e: "fault" }, Omen: { e: "mark" } };
 var XDARK = { max: 80, min: 1, rate: 20, tap: 0.2, def: 30, lift: 1.7 }; // = server DARK (max / min / rate); lift = server SMOKE.lift (centre above the floor)
 function xDarkInit(q) { const o = pEye(), d = jAim(); ray.set(o, d); ray.far = XDARK.max; const h = ray.intersectObjects(solids)[0]; q.md = Math.max(XDARK.min, Math.min(XDARK.max, h ? h.distance - 0.5 : XDARK.def)); } // starts at the wall under the crosshair
 function xDarkPt(md) { const o = pEye(), d = jAim(), p = o.addScaledVector(d, md); let g = NaN; try { g = groundAt(p.x, p.z, 0.2, p.y); } catch (e) {} if (!Number.isFinite(g) || g > p.y) g = Math.min(p.y, player.y || 0); return { x: p.x, y: g + XDARK.lift, z: p.z, f: g }; } // sunk to the floor below the marker
