@@ -31,7 +31,7 @@ function vtxDispose(o) { o.traverse((m) => { if (m.material && m.material.dispos
 function vtxFx(ttl, objs, tick, done) { const fx = { age: 0, ttl, objs, tick, done: done || function () { objs.forEach((o) => { try { scene.remove(o); vtxDispose(o); } catch (e) {} }); } }; objs.forEach((o) => scene.add(o)); vtxPush(fx); return { fx, end: function () { vtxEnd(this); } }; }
 function vtxNearPlayer(p, d) { try { return player && Math.hypot(player.x - p.x, player.z - p.z) < d; } catch (e) { return false; } }
 // crosscut vortex: swirling cyan-blue liquid spiral (wiki clip)
-const vtxVORTEX = "uniform float uT;uniform float uP;uniform float uSeed;varying vec2 vUv;void main(){vec2 q=(vUv-0.5)*2.0;float r=length(q);if(r>1.0)discard;float a=atan(q.y,q.x);float sw=sin(a*3.0-r*9.0+uT*4.0);vec3 c=mix(vec3(0.02,0.15,0.45),vec3(0.30,0.80,1.0),0.5+0.5*sw);c+=vec3(0.6,0.95,1.0)*smoothstep(0.9,1.0,sw)*0.7;c=mix(c,vec3(0.75,0.97,1.0),smoothstep(0.25,0.0,r));float a2=(0.35+0.6*(0.5+0.5*sw))*(1.0-smoothstep(0.9,1.0,r))*(1.0-uP);gl_FragColor=vec4(c,a2);}";
+const vtxVORTEX = "uniform float uT;uniform float uP;uniform float uSeed;varying vec2 vUv;void main(){vec2 q=(vUv-0.5)*2.0;float r=length(q);if(r>1.0)discard;float a=atan(q.y,q.x);float sw=sin(a*3.0-r*9.0+uT*4.0);vec3 c=mix(vec3(0.02,0.15,0.45),vec3(0.30,0.80,1.0),0.5+0.5*sw);c+=vec3(0.6,0.95,1.0)*smoothstep(0.9,1.0,sw)*0.7;c=mix(c,vec3(0.75,0.97,1.0),(1.0-smoothstep(0.0,0.25,r)));float a2=(0.35+0.6*(0.5+0.5*sw))*(1.0-smoothstep(0.9,1.0,r))*(1.0-uP);gl_FragColor=vec4(c,a2);}";
 // chokehold tendril: near-black viscous strand, violet-blue sheen, viscous drip falloff
 const vtxGOO = "uniform float uT;uniform float uP;uniform float uSeed;varying vec3 vN;varying vec3 vV;varying vec2 vUv;void main(){float f=pow(1.0-abs(dot(normalize(vN),normalize(vV))),1.4);float w=sin(vUv.y*8.0+uT*2.6+uSeed*7.0)*sin(vUv.x*6.0-uT*1.9);vec3 c=mix(vec3(0.03,0.03,0.09),vec3(0.25,0.20,0.65),f)*(0.85+0.3*w);c+=vec3(0.20,0.60,1.0)*f*f*0.4;float width=0.30*(1.0-vUv.y*0.55);float edge=1.0-smoothstep(width*0.4,width,abs(vUv.x-0.5));float a=edge*smoothstep(0.0,0.15,vUv.y)*(1.0-smoothstep(0.6,1.0,vUv.y))*(0.6+0.4*w)*(1.0-uP);if(a<0.003)discard;gl_FragColor=vec4(c,a);}";
 // interceptor lens: teal-green glowing core
@@ -59,7 +59,7 @@ function vtxCrosscut(p) { try { const G = vtxGeos();
     core.material.opacity = 0.8 * (0.7 + 0.3 * Math.sin(vtxU.value * 5)); }); } catch (e) { try { window.vtxErr = String(e && e.stack || e).slice(0, 300); xE(e); } catch (e2) {} return null; } }
 // Crosscut teleport: blue liquid-energy swirl column at both ends + cyan veil for the caster
 function vtxCrosscutTP(from, to, opts) { try { const G = vtxGeos();
-  const own = opts && typeof opts.caster === "boolean" ? opts.caster : (vtxNearPlayer(from, 2.5) || vtxNearPlayer(to, 2.5));
+  const own = !!(opts && opts.caster === true); /* explicit owner only, never proximity */
   if (own) vtxVeil("Tp");
   const mk = (p, converge) => { const grp = new THREE.Group(); grp.position.set(p.x, (p.y || 0), p.z);
     const strips = []; for (let i = 0; i < 5; i++) { const m = new THREE.Mesh(G.plane, vtxBasic(i % 2 ? 0x2f8fff : 0x7fd4ff, 0.75, true)); m.scale.set(0.35, 1.9, 1); m.userData.a = i * Math.PI * 2 / 5; grp.add(m); strips.push(m); }
@@ -67,7 +67,7 @@ function vtxCrosscutTP(from, to, opts) { try { const G = vtxGeos();
     const ring = new THREE.Mesh(G.ring, vtxBasic(0x55b8ff, 0.6, true)); ring.rotation.x = -Math.PI / 2; ring.position.y = 0.06; grp.add(ring);
     vtxFx(1.0, [grp], (dt, age, k) => { strips.forEach((m) => { const a = m.userData.a + age * (converge ? -7 : 7); const r = (converge ? 0.9 * (1 - k * 0.7) : 0.4 + k * 0.6); m.position.set(Math.cos(a) * r, 1.0, Math.sin(a) * r); m.rotation.y = -a + Math.PI / 2; m.material.opacity = 0.75 * (1 - k); });
       flash.material.opacity = 0.7 * Math.max(0, 1 - age / 0.3); flash.scale.setScalar(0.4 + age * 1.2); ring.scale.setScalar(0.3 + age * 3); ring.material.opacity = 0.6 * (1 - k); }); };
-  mk(from, false); mk(to, true); return null; } catch (e) { try { window.vtxErr = String(e && e.stack || e).slice(0, 300); xE(e); } catch (e2) {} return null; } }
+  if (from) mk(from, false); if (to) mk(to, true); return null; } catch (e) { try { window.vtxErr = String(e && e.stack || e).slice(0, 300); xE(e); } catch (e2) {} return null; } }
 // Chokehold: stealthed viscous fragment, faint dark shimmer + tiny blue glint; handle lives until end()/trigger
 function vtxChokehold(p, seconds) { try { const G = vtxGeos(), ttl = Math.max(1, seconds || 30);
   const blob = new THREE.Mesh(G.sph, vtxMat("goo", vtxGOO, 2.2)); blob.scale.set(0.22, 0.10, 0.22); blob.position.set(p.x, (p.y || 0) + 0.05, p.z);
@@ -109,13 +109,15 @@ function vtxInterceptorZap(from, to) { try { const G = vtxGeos();
   function () { [beam, spark].concat(shards).forEach((o) => { try { scene.remove(o); vtxDispose(o); } catch (e) {} }); });
   fx.fx.objs = fx.fx.objs.concat(shards); return fx; } catch (e) { try { window.vtxErr = String(e && e.stack || e).slice(0, 300); xE(e); } catch (e2) {} return null; } }
 // Evolution: red vein-crack screen edge veil for the duration + crimson crystal shard burst at cast
-function vtxEvolution(p, seconds) { try { const G = vtxGeos(), ttl = Math.max(1, seconds || 12);
-  const veil = vtxVeil("Evo", ttl);
+function vtxEvolution(p, seconds, opts) { try { const G = vtxGeos(), ttl = Math.max(1, seconds || 12);
+  // 1P dressing is CASTER-ONLY: pass {local:true} solely on the evolving player's own client; mirrors get the 3P shards only
+  const veil = (opts && opts.local) ? vtxVeil("Evo", ttl) : null;
   const grp = new THREE.Group(); grp.position.set(p.x, (p.y || 0), p.z);
   const shards = []; for (let i = 0; i < 9; i++) { const m = new THREE.Mesh(G.cone, vtxMat("vein", vtxVEIN, i * 1.4)); const a = i * Math.PI * 2 / 9;
     const h = 0.7 + (i % 3) * 0.5; m.scale.set(0.14, h, 0.14); m.position.set(Math.cos(a) * 0.9, h * 0.3, Math.sin(a) * 0.9);
     m.rotation.set(Math.cos(a) * 0.7, 0, -Math.sin(a) * 0.7); m.userData.h = h; m.userData.d = i * 0.03; grp.add(m); shards.push(m); }
-  vtxFx(1.1, [grp], (dt, age, k) => { shards.forEach((m) => { const g = Math.min(1, Math.max(0, (age - m.userData.d) / 0.2)); const up = 1 - Math.pow(1 - g, 3); m.scale.set(0.14 * up, m.userData.h * up * (1 - k * 0.6), 0.14 * up); m.material.uniforms.uP.value = k * k; }); });
-  return veil; } catch (e) { try { window.vtxErr = String(e && e.stack || e).slice(0, 300); xE(e); } catch (e2) {} return null; } }
+  const worldFx = vtxFx(1.1, [grp], (dt, age, k) => { shards.forEach((m) => { const g = Math.min(1, Math.max(0, (age - m.userData.d) / 0.2)); const up = 1 - Math.pow(1 - g, 3); m.scale.set(0.14 * up, m.userData.h * up * (1 - k * 0.6), 0.14 * up); m.material.uniforms.uP.value = k * k; }); });
+  if (veil) { const endVeil = veil.end; veil.end = function () { endVeil.call(veil); worldFx.end(); }; }
+  return veil || worldFx; } catch (e) { try { window.vtxErr = String(e && e.stack || e).slice(0, 300); xE(e); } catch (e2) {} return null; } }
 function vtxReset() { while (vtxLive.length) vtxEnd({ fx: vtxLive[0] }); document.querySelectorAll(".vtxV").forEach((e) => e.remove()); }
 // ---- END VETO FX ----

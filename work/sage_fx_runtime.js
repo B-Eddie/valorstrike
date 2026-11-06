@@ -30,7 +30,7 @@ function sgxGeos() { if (sgxGeo) return sgxGeo; sgxGeo = {
   cyl: new THREE.CylinderGeometry(1, 1, 1, 24, 1, true),
   plane: new THREE.PlaneGeometry(1, 1) }; return sgxGeo; }
 function sgxShader(k, frag, opts) { if (sgxProg[k]) return sgxProg[k]; const m = new THREE.ShaderMaterial(Object.assign({
-  uniforms: { uT: sgxU, uP: { value: 0 }, uSeed: { value: 0 }, uA: { value: 1 } },
+  uniforms: { uT: sgxU, uP: { value: 0 }, uSeed: { value: 0 }, uA: { value: 1 }, uD: { value: 0 } },
   vertexShader: "uniform float uT;uniform float uP;uniform float uSeed;varying vec3 vN;varying vec3 vV;varying vec3 vP;varying vec2 vUv;void main(){vUv=uv;vP=position;vec4 mv=modelViewMatrix*vec4(position,1.0);vV=-mv.xyz;vN=normalMatrix*normal;gl_Position=projectionMatrix*mv;}",
   fragmentShader: frag, transparent: true, depthWrite: false, side: THREE.DoubleSide }, opts || {}));
   sgxProg[k] = m; return m; }
@@ -88,8 +88,8 @@ function sgxShardBurst(p, n, col, spread) { try { const G = sgxGeos(), grp = new
 // handle.segs[i].mesh is the solid mesh (integrator registers collision); handle.breakSeg(i)
 // shatters and drops one; handle.fortify() is the 2s harden beat (brighter, frost pass).
 // jade: smooth luminous translucent teal-green, soft internal swirl, gentle fresnel - the Barrier wall look
-const sgxJADE = "uniform float uT;uniform float uP;uniform float uSeed;uniform float uA;varying vec3 vN;varying vec3 vV;varying vec3 vP;varying vec2 vUv;void main(){float f=pow(1.0-abs(dot(normalize(vN),normalize(vV))),1.9);float sw=0.5+0.5*sin(vP.y*2.2+uT*0.5+uSeed*3.0+sin(vP.x*1.8+uSeed)*1.6);float d2=0.5+0.5*sin(vP.x*3.1-uSeed*2.0+sin(vP.y*2.6)*1.2);vec3 c=mix(vec3(0.03,0.33,0.26),vec3(0.20,0.72,0.54),sw*0.4+d2*0.2+f*0.4);vec2 gp=vP.xy*1.7+vec2(uSeed*7.3,uSeed*3.1);vec2 ip=floor(gp);vec2 fp=fract(gp);float f1=8.0;float f2=8.0;for(int i=-1;i<=1;i++){for(int j=-1;j<=1;j++){vec2 g=vec2(float(i),float(j));vec2 o=vec2(fract(sin(dot(ip+g,vec2(127.1,311.7)))*43758.5),fract(sin(dot(ip+g,vec2(269.5,183.3)))*28001.8));float dd=length(g+o-fp);if(dd<f1){f2=f1;f1=dd;}else if(dd<f2){f2=dd;}}}float vein=1.0-smoothstep(0.0,0.10,f2-f1);c*=0.72+0.28*clamp(f1,0.0,1.0);c+=vec3(0.75,1.0,0.95)*vein*(0.35+0.25*f);c+=vec3(0.35,0.9,0.7)*pow(f,3.0)*0.4;float a=(0.82+0.18*f)*uA*(1.0-uP);if(a<0.004)discard;gl_FragColor=vec4(c,a);}";
-function sgxBarrierWall(p, yaw) { try { const G = sgxGeos(), grp = new THREE.Group(); grp.position.set(p.x, p.y || 0, p.z); grp.rotation.y = yaw || 0;
+const sgxJADE = "uniform float uT;uniform float uP;uniform float uSeed;uniform float uA;uniform float uD;varying vec3 vN;varying vec3 vV;varying vec3 vP;varying vec2 vUv;float sgxH(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5);}void main(){float f=pow(1.0-abs(dot(normalize(vN),normalize(vV))),1.9);float sw=0.5+0.5*sin(vP.y*2.2+uT*0.5+uSeed*3.0+sin(vP.x*1.8+uSeed)*1.6);float d2=0.5+0.5*sin(vP.x*3.1-uSeed*2.0+sin(vP.y*2.6)*1.2);vec3 c=mix(vec3(0.015,0.42,0.46),vec3(0.20,0.94,0.78),sw*0.4+d2*0.2+f*0.4);vec2 gp=vP.xy*(1.15+0.8*fract(uSeed*0.731))+vec2(uSeed*7.3,uSeed*3.1);vec2 ip=floor(gp);vec2 fp=fract(gp);float f1=8.0;float f2=8.0;vec2 cid=vec2(0.0);for(int i=-1;i<=1;i++){for(int j=-1;j<=1;j++){vec2 g=vec2(float(i),float(j));vec2 o=vec2(sgxH(ip+g),fract(sin(dot(ip+g,vec2(269.5,183.3)))*28001.8));float dd=length(g+o-fp);if(dd<f1){f2=f1;f1=dd;cid=ip+g;}else if(dd<f2){f2=dd;}}}float h1=sgxH(cid*1.7);float rh=sgxH(floor(gp*0.31)+vec2(uSeed));float w=0.03+0.15*rh;float vein=1.0-smoothstep(0.0,w,f2-f1);vein*=smoothstep(0.30,0.62,fract(h1*9.0+rh*5.0));c*=0.90+0.16*h1+0.06*clamp(f1,0.0,1.0);c+=vec3(0.42,0.95,0.90)*vein*0.08;float damage=clamp(uD,0.0,1.0);float fracture=(1.0-smoothstep(0.006,0.018+damage*0.025,f2-f1))*smoothstep(1.0-damage,1.05-damage,h1);c=mix(c,vec3(0.025,0.14,0.17),fracture*0.88);c+=vec3(0.35,0.9,0.7)*pow(f,3.0)*0.4;float a=(0.82+0.18*f)*uA*(1.0-uP);if(a<0.004)discard;gl_FragColor=vec4(c,a);}";
+function sgxBarrierWall(p, yaw, opts) { try { opts = opts || {}; const startAge = Number.isFinite(opts.age) ? Math.max(0, opts.age) : 0; const G = sgxGeos(), grp = new THREE.Group(); grp.position.set(p.x, p.y || 0, p.z); grp.rotation.y = yaw || 0;
   if (!sgxGeo.wall) sgxGeo.wall = [0, 1, 2, 3].map((i) => sgxRoundedBlock(2.55 + (i % 2) * 0.15, 2.9 + ((i * 7) % 3) * 0.12, 0.55 + (i % 2) * 0.08, 0.17));
   const jit = [[0, 0.04], [-0.05, -0.03], [0.03, 0.05], [-0.02, -0.04]];
   const segs = []; for (let i = 0; i < 4; i++) { const mat = sgxMat("jadeW", sgxJADE, i * 2.3); const m = new THREE.Mesh(sgxGeo.wall[i], mat);
@@ -100,14 +100,15 @@ function sgxBarrierWall(p, yaw) { try { const G = sgxGeos(), grp = new THREE.Gro
   const h = sgxFx(1e9, [grp], (dt, age) => { segs.forEach((s) => { if (s.state === "gone") return; const t = (age - s.delay) / 0.55; if (t < 0) return;
       if (t < 1) { s.mesh.visible = true; const e = 1 - Math.pow(1 - t, 3); s.mesh.position.y = -3 + e * 4.47; s.mat.uniforms.uA.value = e; }
       else if (s.state === "rising") { s.mesh.position.y = 1.47; s.mat.uniforms.uA.value = 1; s.state = "up"; sgxShardBurst(s.mesh.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(0, -1.2, 0)), 6, 0xbfeaff, 1.2); }
-      if (s.state === "up") { s.mat.uniforms.uSeed.value += dt * 0.4; } });
+      });
     frost.material.opacity = Math.max(0, Math.min(age, 1) * 0.5 - age * 0.35); });
+  if (startAge > 0) { h.fx.age = startAge; segs.forEach((s) => { const t = (startAge - s.delay) / 0.55; if (t >= 1) { s.state = "up"; s.mesh.visible = true; s.mesh.position.y = 1.47; s.mat.uniforms.uA.value = 1; } }); }
   h.segs = segs.map((s) => ({ mesh: s.mesh }));
   h.fortify = function () { if (fortified) return; fortified = true; segs.forEach((s, i) => { s.mat.uniforms.uSeed.value = 40 + i; });
     frost.material.opacity = 0.7; };
-  h.breakSeg = function (i) { const s = segs[i]; if (!s || s.state === "gone") return; s.state = "gone"; s.mesh.visible = false;
-    sgxShardBurst(s.mesh.getWorldPosition(new THREE.Vector3()), 16, 0xbfeaff, 3.5); };
-  h.setHp = function (i, frac) { const s = segs[i]; if (!s || s.state === "gone") return; const f = Math.max(0, Math.min(1, frac)); s.mat.uniforms.uA.value = 0.45 + 0.55 * f; };
+  h.breakSeg = function (i, opts) { const s = segs[i]; if (!s || s.state === "gone") return; s.state = "gone"; s.mesh.visible = false;
+    if (!(opts && opts.silent)) sgxShardBurst(s.mesh.getWorldPosition(new THREE.Vector3()), 16, 0xbfeaff, 3.5); };
+  h.setHp = function (i, frac) { const s = segs[i]; if (!s || s.state === "gone") return; const f = Math.max(0, Math.min(1, frac)); if (!Number.isFinite(f)) return; s.mat.uniforms.uD.value = 1 - f; };
   return h; } catch (e) { return sgxErr(e); } }
 // Slow Orb in flight: teal orb with icy shell and sparkle trail. move() follows the bolt arc.
 function sgxSlowOrb(x, y, z) { try { const G = sgxGeos(), grp = new THREE.Group();

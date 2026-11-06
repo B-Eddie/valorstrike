@@ -82,7 +82,7 @@ const isoxDOME = "uniform float uT;uniform float uP;uniform float uSeed;uniform 
 const isoxARC = "uniform float uT;uniform float uP;uniform float uSeed;uniform float uA;varying vec3 vN;varying vec3 vV;varying vec3 vP;varying vec2 vUv;\n" +
   "void main(){float x=vUv.x,y=vUv.y;\n" +
   "float wob=0.5+0.16*sin(y*21.0+uSeed*9.0)+0.09*sin(y*47.0-uT*13.0);\n" +
-  "float d=abs(x-wob);float core=smoothstep(0.045,0.0,d);float body=smoothstep(0.16,0.02,d);\n" +
+  "float d=abs(x-wob);float core=1.0-smoothstep(0.0,0.045,d);float body=1.0-smoothstep(0.02,0.16,d);\n" +
   "float ends=smoothstep(0.0,0.10,y)*(1.0-smoothstep(0.86,1.0,y));\n" +
   "vec3 c=vec3(0.42,0.24,0.95)*body+vec3(0.95,0.90,1.0)*core;\n" +
   "float a=(body*0.7+core)*ends*uA*(1.0-uP);\n" +
