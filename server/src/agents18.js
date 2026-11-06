@@ -1,3 +1,4 @@
+import BarrierMesh from '../../vendor/barrier-mesh.cjs';
 // The 18 agents added 2026-11-03 (roster 12 -> 30, per valorant-api.com as of patch 13.09): Astra, Brimstone, Clove,
 // Harbor, Miks, Viper, Hush, Iso, Neon, Waylay, Yoru, Fade, Gekko, KAY/O, Tejo, Deadlock, Veto, Vyse.
 // Same authority pattern as abilities.js / ults.js: the client sends intent only; origin, targets, timing, damage and
@@ -10,7 +11,7 @@ import MeddleDecay from '../../vendor/meddle-decay.cjs';
 import {ARENA_X,ARENA_STRIDE,ARENA_HALF} from './arena.js';
 import kits from './kits.json' with {type:'json'};
 export const AG18={Astra:1,Brimstone:1,Clove:1,Harbor:1,Miks:1,Viper:1,Hush:1,Iso:1,Neon:1,Waylay:1,Yoru:1,Fade:1,Gekko:1,'KAY/O':1,Tejo:1,Deadlock:1,Veto:1,Vyse:1};
-export const A18_NET_KINDS=new Set(['rib','star','gwell','nova','stim','fire','orbital','conting','undercut','fastlane','blast','tide','reckon','cove','mpulse','bassq','snake','pit','susp','pull','decoy','seeker','hawk','harmon','seize','haunt','nightfall','regrowth','trail','mosh','dizzy','frag','nullcmd','sdrone','sd','salvo','armag','mesh','sensor','gnet','xcut','choke','ceptor','vine','shear','rose','garden','paths','anni','gatefake','duel','quake','blaze','flash']);/* effect kinds the online client renders (work/agents18_runtime.js A18VIS) */
+export const A18_NET_KINDS=new Set(['meshflight','rib','star','gwell','nova','stim','fire','orbital','conting','undercut','fastlane','blast','tide','reckon','cove','mpulse','bassq','snake','pit','susp','pull','decoy','seeker','hawk','harmon','seize','haunt','nightfall','regrowth','trail','mosh','dizzy','frag','nullcmd','sdrone','sd','salvo','armag','mesh','sensor','gnet','xcut','choke','ceptor','vine','shear','rose','garden','paths','anni','gatefake','duel','quake','blaze','flash']);/* effect kinds the online client renders (work/agents18_runtime.js A18VIS) */
 export const TYPES18={Astra:['pull','concuss','smoke'],Brimstone:['stim','fire','smoke'],Clove:['haste','decay','smoke'],Harbor:['surge','wall','cove'],Miks:['mpulse','harmonize','smoke'],Viper:['snakebite','smoke','wall'],Hush:['flow','flash','pull'],Iso:['wall','undercut','shield'],Neon:['wall','concuss','haste'],Waylay:['hinder','dash','teleport'],Yoru:['decoy','flash','teleport'],Fade:['prowler','tether','recon'],Gekko:['mosh','wingman','flash'],'KAY/O':['frag','flash','suppress'],Tejo:['drone','concuss','salvo'],Deadlock:['mesh','sensor','gravnet'],Veto:['crosscut','choke','interceptor'],Vyse:['vine','shear','arcrose']};
 // Wiki stats per ability (fetched 2026-11-03), project-lightweight where noted:
 export const A18={
@@ -224,9 +225,8 @@ export function cast18(sim,u,m,o,d,push){
    else if(k==='e'){const dl=Math.hypot(p[0]-u.x,p[2]-u.z)/C.salvo.fly+C.salvo.wind;fx(sim,u,'salvo',p,dl+C.salvo.pulses*C.salvo.gap+1,C.salvo.r,{at:sim.time+dl,next:sim.time+dl,left:C.salvo.pulses});}
    else fx(sim,u,'armag',[u.x,u.y,u.z],C.armag.wind+(C.armag.segs-1)*C.armag.gap+C.armag.ticks*C.armag.tick+.2,C.armag.len,{at:sim.time+C.armag.wind,yaw:u.look,fired:[]});
    cast(sim,u,k,o,d,p);return true;}
-  case 'Deadlock':{spend();
-   if(k==='c')fx(sim,u,'barrier',p,C.mesh.life,C.mesh.len/2,{seg:[C.mesh.hp],hp:C.mesh.hp,yaw:u.look,mesh:1,h:C.mesh.h});
-   else if(k==='q')fx(sim,u,'sensor',p,C.sensor.life,0,{armR:C.sensor.r});
+  case 'Deadlock':{if(k==='c'){const W=sim.baseWorld||sim.world;if(typeof W.rayN!=='function')return false;const plan=BarrierMesh.flight(o,d,W,SovaBolt);if(!plan)return false;spend();fx(sim,u,'meshflight',o,plan.t+BarrierMesh.C.life,0,{plan,born:sim.time,landAt:sim.time+plan.t,yaw:u.look});cast(sim,u,k,o,d,plan.end);return true;}spend();
+   if(k==='q')fx(sim,u,'sensor',p,C.sensor.life,0,{armR:C.sensor.r});
    else if(k==='e')fx(sim,u,'gnet',p,C.gnet.life,C.gnet.r,{at:sim.time+.5});
    else{const t=enemies(sim,u).filter(v=>los(sim,eye(u),[v.x,v.y+1,v.z])&&Math.hypot(v.x-u.x,v.z-u.z)<C.annih.range).sort((a,b)=>Math.hypot(a.x-u.x,a.z-u.z)-Math.hypot(b.x-u.x,b.z-u.z))[0];if(t){t.anni={by:u.id,at:sim.time+C.annih.detain,hp:600};/* wiki Annihilate: 600 HP cocoon - teammates shoot it to free them */status(t,'tetheredUntil',C.annih.detain,sim);fx(sim,u,'anni',[t.x,t.y,t.z],C.annih.detain,1.5);/* the cocoon, rendered online */}}
    cast(sim,u,k,o,d,p);return true;}
@@ -253,6 +253,8 @@ export function tick18(sim,dt){
  for(const u of sim.units){const A=u.ability;if(A&&u.agent==='Astra'&&u.starBackAt&&T>=u.starBackAt){u.starBackAt=0;A.stars=Math.min(A18.star.max,A.stars+1);}}/* a dissipated Star reforms in the pool (wiki Nebula/Dissipate) */
  for(const e of sim.effects){if(!e.ag||!AG18[e.ag])continue;const C=A18,own=sim.units.find(n=>n.id===e.owner);if(e.until<T){if(e.ag==='Gekko'){const k=e.kind==='mosh'?'c':e.kind==='dizzy'?'e':e.wing?'q':0;if(own&&k&&!own.ability['re_'+k])own.ability['re_'+k]=T+A18.globule.reclaim;}continue;}
   switch(e.kind){
+   case 'meshflight':{const age=Math.max(0,T-e.born);SovaBolt.at(e.plan.tr,age,e.p);if(T>=e.landAt){const W=sim.baseWorld||sim.world,bm=BarrierMesh.create(e.plan.end,e.yaw,BarrierMesh.terrainResolver(W));e.kind='barrier';e.p=e.plan.end.slice();e.bm=bm;e.born=e.landAt;e.until=e.born+BarrierMesh.C.life;e.mesh=1;e.h=BarrierMesh.C.height;e.radius=BarrierMesh.C.arm;BarrierMesh.advance(bm,Math.min(BarrierMesh.C.life,Math.max(0,T-e.born)));e.hp=bm.nodes.reduce((sum,n)=>sum+(n?.hp||0),0);}break;}
+
    case 'gwell':{for(const v of enemies(sim,own||{}))if(inR(v,e.p,e.radius)){const d=[e.p[0]-v.x,e.p[2]-v.z],l=Math.hypot(...d)||1;v.x+=d[0]/l*4*dt;v.z+=d[1]/l*4*dt;status(v,'vulnerableUntil',2,sim);}break;}
    case 'nova':if(!e.done&&T>=e.at){e.done=true;for(const v of enemies(sim,own))if(inR(v,e.p,C.star.novaR))status(v,'concussUntil',C.star.novaConcuss,sim);gone.push(e);}break;
    case 'stim':for(const v of sim.units)if(v.alive&&v.team===e.team&&inR(v,e.p,e.radius))v.stimUntil=Math.max(v.stimUntil||0,T+.5);break;

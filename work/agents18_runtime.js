@@ -209,9 +209,8 @@ function a18Key(code) {
       else if (k === "e") a18Salvo(p);
       else a18Fx({ kind: "armag", p: new THREE.Vector3(P.x, 0, P.z), d: new THREE.Vector3(d.x, 0, d.z).normalize(), t: C.armag.wind });
       return true; }
-    case "Deadlock": { spend();
-      if (k === "c") { const w = a18Ring(p, C.mesh.len / 2, 0x4a9af0, 0.6); try { jxBind(w, dlxBarrierMesh({ x: p.x, y: p.y || 0, z: p.z }, Math.atan2(-d.x, -d.z), C.mesh.len, C.mesh.life), 1); } catch (er) {} a18Fx({ kind: "meshw", m: w, t: C.mesh.life }); }
-      else if (k === "q") { let jx = null; try { jx = dlxSonicSensor({ x: p.x, y: p.y || 0, z: p.z }, C.sensor.life); } catch (er) {} a18Fx({ kind: "sensor", p, jx, jxEnd: (fe) => { try { if (fe.t > 0) dlxSensorBlast({ x: fe.p.x, y: fe.p.y || 0, z: fe.p.z }); } catch (er) {} }, t: C.sensor.life, arm: 1 }); }
+    case "Deadlock": { if(k==="c"){const eye=pEye(),plan=a18MeshPlan([eye.x,eye.y,eye.z],[d.x,d.y,d.z]);if(!plan)return no();spend();a18MeshFlights.push({plan,age:0,yaw:Math.atan2(-d.x,-d.z),h:dlxMeshDisc(plan.tr[0].slice(0,3))});return true;}spend();
+      if (k === "q") { let jx = null; try { jx = dlxSonicSensor({ x: p.x, y: p.y || 0, z: p.z }, C.sensor.life); } catch (er) {} a18Fx({ kind: "sensor", p, jx, jxEnd: (fe) => { try { if (fe.t > 0) dlxSensorBlast({ x: fe.p.x, y: fe.p.y || 0, z: fe.p.z }); } catch (er) {} }, t: C.sensor.life, arm: 1 }); }
       else if (k === "e") a18Orb(p, 0.5, () => { try { dlxGravNet({ x: p.x, y: p.y || 0, z: p.z }, C.gnet.r, C.gnet.life); } catch (er) {} for (const b of a18BotsIn(p, C.gnet.r)) b.teth = C.gnet.life; SFX.ab("cbPop", p); });
       else { const t = a18BotsIn(new THREE.Vector3(P.x, 0, P.z), C.annih.range)[0]; if (t) { t.teth = C.annih.detain; let jx = null; try { dlxAnnihilation({ x: P.x, y: (P.y || 0) + 1.4, z: P.z }, { x: t.g.position.x - P.x, y: 0, z: t.g.position.z - P.z }, C.annih.range); jx = dlxAnniCocoon({ x: t.g.position.x, y: t.g.position.y || 0, z: t.g.position.z }, C.annih.detain); } catch (er) {} a18Fx({ kind: "anni", tg: t, jx, jxEnd: () => {}, t: C.annih.detain }); } }
       return true; }
@@ -596,7 +595,7 @@ const a18Chips0 = netStatusChips; netStatusChips = function (st) {
 function a18MeshWorld(){return {ray:(o,d,max)=>{const h=xBoltRay(o,d,max);return h?h.distance:Infinity;},rayN:(o,d,max)=>xBoltRay(o,d,max)};}
 function a18MeshPlan(o,d){return BarrierMesh.flight(o,d,a18MeshWorld(),SovaBolt);}
 // Offline shared-mesh consumer. Creation stays explicit until throw/cast migration is complete.
-var a18Meshes=[];
+var a18Meshes=[],a18MeshFlights=[];
 function a18MeshDrop(e){if(!e)return;try{e.h.end();}catch(er){}for(const m of e.hitboxes){scene.remove(m);const i=XLDH.indexOf(m);if(i>=0)XLDH.splice(i,1);m.geometry.dispose();m.material.dispose();}const i=a18Meshes.indexOf(e);if(i>=0)a18Meshes.splice(i,1);}
 function a18MeshSync(e){e.h.update(e.state);e.hitboxes.forEach((m,i)=>{const n=e.state.nodes[i];m.visible=!!n&&n.hp>0&&!e.state.dead;});}
 function a18MeshCreate(p,yaw,world,en=false){const state=BarrierMesh.create(p,yaw,BarrierMesh.terrainResolver(world)),h=dlxBarrierState(state);if(!h)throw Error('Barrier Mesh renderer failed');const e={state,h,hitboxes:[],en};
@@ -605,8 +604,8 @@ function a18MeshCreate(p,yaw,world,en=false){const state=BarrierMesh.create(p,ya
    const ld={};Object.defineProperty(ld,'hp',{get:()=>state.nodes[i]?.hp||0,set:value=>{const n=state.nodes[i];if(n&&Number.isFinite(value)&&value<n.hp){BarrierMesh.damage(state,i,n.hp-value);a18MeshSync(e);}}});m.userData.ld=ld;m.userData.meshNode=i;const cast=m.raycast;m.raycast=function(rc,out){if(!state.dead&&state.nodes[i]?.hp>0)return cast.call(this,rc,out);};e.hitboxes.push(m);scene.add(m);XLDH.push(m);m.updateMatrixWorld(true);}
   a18Meshes.push(e);a18MeshSync(e);return e;
  }catch(er){a18MeshDrop(e);throw er;}}
-{const reset=a18Reset;a18Reset=function(){while(a18Meshes.length)a18MeshDrop(a18Meshes[a18Meshes.length-1]);return reset.apply(this,arguments);};
- const tick=a18Tick;a18Tick=function(dt){for(const e of [...a18Meshes]){BarrierMesh.advance(e.state,e.state.age+dt);if(e.state.dead)a18MeshDrop(e);else a18MeshSync(e);}return tick.apply(this,arguments);};
+{const reset=a18Reset;a18Reset=function(){for(const f of a18MeshFlights)f.h.end();a18MeshFlights.length=0;while(a18Meshes.length)a18MeshDrop(a18Meshes[a18Meshes.length-1]);return reset.apply(this,arguments);};
+ const tick=a18Tick;a18Tick=function(dt){const landed=new Set();for(const f of [...a18MeshFlights]){f.age+=dt;const q=[0,0,0];SovaBolt.at(f.plan.tr,f.age,q);f.h.move(q);if(f.age>=f.plan.t){f.h.end();a18MeshFlights.splice(a18MeshFlights.indexOf(f),1);const e=a18MeshCreate(f.plan.end,f.yaw,a18MeshWorld());BarrierMesh.advance(e.state,Math.min(30,Math.max(0,f.age-f.plan.t)));a18MeshSync(e);landed.add(e);}}for(const e of [...a18Meshes]){if(landed.has(e))continue;BarrierMesh.advance(e.state,e.state.age+dt);if(e.state.dead)a18MeshDrop(e);else a18MeshSync(e);}return tick.apply(this,arguments);};
  const block=sgBlk;sgBlk=function(x,z,r,y){if(!(typeof NET!=='undefined'&&NET.socket))for(const e of a18Meshes)if(BarrierMesh.blocked(e.state,x,z,r,y||0,1.8))return true;return block.apply(this,arguments);};}
 // Include opposing offline meshes in the existing bot utility choice, never as opaque LOS solids.
 {const candidates=xUtilCands;xUtilCands=function(en){const L=candidates.apply(this,arguments);for(const e of a18Meshes){if(e.en===undefined||e.en===en||e.state.dead)continue;const n=e.state.nodes[0];L.push({kind:'barrier',o:e,bm:e.state,x:n.p[0],y:n.p[1],z:n.p[2],d:0,los:false,blocking:false,hit:(amount,index)=>{BarrierMesh.damage(e.state,index,amount);a18MeshSync(e);}});}return L;};}

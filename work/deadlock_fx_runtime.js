@@ -68,6 +68,8 @@ function dlxBarrierMesh(p, yaw, len, seconds) { try { /* yaw: radians (Three.js 
     grp.children.forEach((m) => { if (m.userData.dlxStrand) { m.material.uniforms.uP.value = Math.min(1, die + (1 - grow)); } else { m.material.uniforms.uP.value = die; m.visible = age > 0.08; } });
     grp.scale.set(1, Math.max(0.05, grow * (1 - die)), 1); });
   return fx; } catch (e) { try { window.dlxErr = String(e && e.stack || e).slice(0, 300); xE(e); } catch (e2) {} return null; } }
+// A small procedural disc follows an authoritative world position, never a guessed impact burst.
+function dlxMeshDisc(p){const m=new THREE.Mesh(dlxGeos().cyl,dlxMat('node',dlxNODE,2));m.scale.set(.16,.06,.16);m.position.set(...p);const h=dlxFx(3600,[m],()=>{});h.move=q=>m.position.set(...q);return h;}
 // Node/arm state renderer for the shared BarrierMesh model. Kept separate from legacy entry until all gameplay consumers migrate.
 // The row is persistent state: first sight of a missing node is silent; update never invents a destruction burst.
 function dlxBarrierState(state) { try {
