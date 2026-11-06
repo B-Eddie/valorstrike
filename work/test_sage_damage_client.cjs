@@ -46,3 +46,10 @@ ctx.sgxTick(.05);assert.equal(ctx.sgxLive.length,1,'old wall has no rise shard r
 late.seg[2]=0;ctx.netSyncEffects([late]);assert.equal(ctx.sgxLive.length,2,'subsequent real segment loss shatters once');
 ctx.netSyncEffects([late]);assert.equal(ctx.sgxLive.length,2);ctx.netSyncEffects([]);ctx.sgxReset();assert.equal(ctx.scene.children.length,0);
 console.log('Sage late row current age + silent initial missing segment, live loss once: PASS');
+
+// Full composed page: netClearEffects must end the separately-added Sage module group.
+const H=require('./page_harness.cjs').boot({real3:true}),xe=H.xe;
+xe('NET.socket={readyState:1,send(){}};netSyncEffects([{id:744,kind:`barrier`,p:[0,0,0],yaw:0,hp:1800,seg:[600,0,600,600],fo:1,age:8}]);true');
+assert.equal(xe('sgxLive.length'),1);assert.equal(xe('netWalls.size'),1);
+xe('netClearEffects();true');assert.equal(xe('sgxLive.length'),0,'clear ends module not only hidden collision proxy');assert.equal(xe('netWalls.size'),0);
+console.log('Sage actual composed-page clear ends persistent module: PASS');
