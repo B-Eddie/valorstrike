@@ -1,0 +1,31 @@
+/* Shared Barrier Mesh state/queries. Not installed into game until server+offline+visual consumers agree.
+ * Source: https://wiki.playvalorant.com/en-us/Barrier_Mesh (read 2026-11-06).
+ * Four max-10m arms, central/outer health, deployment 1s, fortify 3s, decay 25..30s.
+ * Wall thickness, node radii/height and cardinal orientation are project approximations, not measured source facts.
+ * Placement resolver owns terrain feasibility and endpoints; no inferred flat-ground fallback for missing nodes.
+ */
+(function(root,factory){const M=factory();if(typeof module==='object'&&module.exports)module.exports=M;else root.BarrierMesh=M;})(typeof globalThis!=='undefined'?globalThis:this,function(){
+ 'use strict';
+ const C=Object.freeze({arm:10,deploy:1,fortify:3,decay:25,life:30,central:680,centralFort:1200,outer:320,outerFort:480,height:3,thickness:.08,centralRadius:.28,outerRadius:.2,nodeLift:.2});
+ const finitePoint=p=>Array.isArray(p)&&p.length===3&&p.every(Number.isFinite);
+ function create(p,yaw=0,resolve){if(!finitePoint(p)||!Number.isFinite(yaw)||typeof resolve!=='function')throw Error('Barrier Mesh needs finite centre/yaw and a terrain resolver');
+  const nodes=[{p:p.slice(),hp:C.central,max:C.central,r:C.centralRadius}];
+  for(let i=0;i<4;i++){const a=yaw+i*Math.PI/2,target=[p[0]+Math.cos(a)*C.arm,p[1],p[2]-Math.sin(a)*C.arm],q=resolve(p.slice(),target.slice(),i);
+   if(q==null){nodes.push(null);continue;}if(!finitePoint(q))throw Error('Invalid Barrier Mesh endpoint');const dx=q[0]-p[0],dz=q[2]-p[2],len=Math.hypot(dx,dz);if(len>C.arm+1e-6||len<.01||dx*Math.cos(a)-dz*Math.sin(a)<len-1e-6)throw Error('Barrier Mesh endpoint must stay on its bounded arm');
+   nodes.push({p:q.slice(),hp:C.outer,max:C.outer,r:C.outerRadius});}
+  return {age:0,fortified:false,dead:false,nodes};
+ }
+ function advance(s,age){if(!Number.isFinite(age)||age<s.age)throw Error('Barrier Mesh age must advance monotonically');if(s.dead){s.age=age;return s;}const prev=s.age;
+  if(!s.fortified&&age>=C.fortify){s.nodes.forEach((n,i)=>{if(n&&n.hp>0){const max=i?C.outerFort:C.centralFort;n.hp+=max-n.max;n.max=max;}});s.fortified=true;}
+  if(age>C.decay){const oldLeft=C.life-Math.max(C.decay,prev),left=Math.max(0,C.life-age),ratio=oldLeft>0?left/oldLeft:0;s.nodes.forEach(n=>{if(n)n.hp*=ratio;});}
+  s.age=age;if(age>=C.life||!(s.nodes[0].hp>0)){s.dead=true;s.nodes.forEach(n=>{if(n)n.hp=0;});}return s;
+ }
+ function damage(s,index,amount){const n=s.nodes[index];if(!n||s.dead||!(amount>0)||!Number.isFinite(amount))return false;n.hp=Math.max(0,n.hp-amount);if(index===0&&n.hp===0){s.dead=true;s.nodes.forEach(x=>{if(x)x.hp=0;});}return true;}
+ function arms(s){if(s.dead||s.age<C.deploy)return [];const a=s.nodes[0].p;return s.nodes.slice(1).flatMap((n,i)=>n&&n.hp>0?[{index:i+1,a:a.slice(),b:n.p.slice(),h:C.height}]:[]);}
+ function blocked(s,x,z,r,y,height=1.8){for(const e of arms(s)){const dx=e.b[0]-e.a[0],dz=e.b[2]-e.a[2],t=Math.max(0,Math.min(1,((x-e.a[0])*dx+(z-e.a[2])*dz)/(dx*dx+dz*dz))),floor=e.a[1]+(e.b[1]-e.a[1])*t;if(y>=floor+e.h||y+height<=floor)continue;if(Math.hypot(x-e.a[0]-dx*t,z-e.a[2]-dz*t)<r+C.thickness/2)return true;}return false;}
+ // Shooting query hits orbs only. Transparent arms never stop shots or LOS/projectiles.
+ function ray(s,o,d,max=Infinity){if(s.dead||!finitePoint(o)||!finitePoint(d))return null;const A=d.reduce((n,v)=>n+v*v,0);if(!(A>0))return null;let out=null,limit=max;
+  s.nodes.forEach((n,i)=>{if(!n||!(n.hp>0))return;const q=[o[0]-n.p[0],o[1]-n.p[1]-C.nodeLift,o[2]-n.p[2]],B=q.reduce((n,v,k)=>n+v*d[k],0),cc=q.reduce((n,v)=>n+v*v,0)-n.r*n.r,disc=B*B-A*cc;if(disc<0)return;const t=Math.max(0,(-B-Math.sqrt(disc))/A);if(t<limit&&(-B+Math.sqrt(disc))/A>=0){limit=t;out={index:i,distance:t};}});return out;}
+ function points(s){return s.dead?[]:s.nodes.flatMap(n=>n&&n.hp>0?[[n.p[0],n.p[1]+C.nodeLift,n.p[2]]]:[]);}
+ return {C,create,advance,damage,arms,blocked,ray,points};
+});
